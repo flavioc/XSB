@@ -26,20 +26,20 @@
 /*
   Usage:
 
-  vstrDEFINE(foo);  // Declare foo as a variable length string
-  vstrDEFINE(boo);  // Declare boo as a variable length string
+  XSB_StrDefine(foo);  // Declare foo as a variable length string
+  XSB_StrDefine(boo);  // Declare boo as a variable length string
   VarString *goo;    // Declare a pointer to a varstring.
 
-  foo.op->set(&foo,"abc");        // or vstrSET(&foo, "abc");
-  foo.op->append(&foo,"123");     // or vstrAPPEND(&foo, "123");
+  foo.op->set(&foo,"abc");        // or XSB_StrSet(&foo, "abc");
+  foo.op->append(&foo,"123");     // or XSB_StrAppend(&foo, "123");
   // shrink foo, set the increment to 5
-  foo.op->shrink(&foo,5);         // or vstrSHRINK(&foo,5);
-  foo.op->prepend(&foo,"098");    // or vstrPREPEND(&foo,"098");
+  foo.op->shrink(&foo,5);         // or XSB_StrShrink(&foo,5);
+  foo.op->prepend(&foo,"098");    // or XSB_StrPrepend(&foo,"098");
 
   boo.op->prepend("pasddsf");
 
   goo = &boo;
-  goo->op->strcmp(goo, "jdshdd"); // or vstrSTRCMP(goo,"jdshdd");
+  goo->op->strcmp(goo, "jdshdd"); // or XSB_StrStrCmp(goo,"jdshdd");
 
   if (foo.length > 0)
      printf("%s   %d\n", foo.string, foo.length);
@@ -379,12 +379,12 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 
 int main (int argc, char** argv)
 {
-  vstrDEFINE(foo);
-  vstrDEFINE(boo);
-  vstrDEFINE(goo);
+  XSB_StrDefine(foo);
+  XSB_StrDefine(boo);
+  XSB_StrDefine(goo);
   VarString *loo;
 
-  vstrSET(&foo, "abc");
+  XSB_StrSet(&foo, "abc");
   printf("foo1: %s   %d/%d\n", foo.string, foo.length, foo.size);
   foo.op->append(&foo, "123");
   printf("foo2: %s   %d/%d\n", foo.string, foo.length, foo.size);
@@ -405,7 +405,7 @@ int main (int argc, char** argv)
       printf("foo4: %s   %d/%d\n", foo.string, foo.length, foo.size);
 
   boo.op->set(&boo,"123");
-  vstrAPPEND(loo,"---");
+  XSB_StrAppend(loo,"---");
   printf("boo3: %s     %d/%d\n", loo->string, boo.length, boo.size);
 
   boo.op->append(&boo,"4567");
@@ -414,16 +414,16 @@ int main (int argc, char** argv)
   printf("initialized: boo=%p  foo=%p  goo=%p\n",
 	 boo.string, foo.string, goo.string);
 
-  vstrSETV(loo, &foo);
+  XSB_StrSetV(loo, &foo);
   printf("boo5: %s     %d/%d\n", loo->string, boo.length, boo.size);
 
-  vstrENSURE_SIZE(loo, 1000);
+  XSB_StrEnsureSize(loo, 1000);
 
-  vstrAPPENDBLK(loo,NULL,5);
-  vstrAPPEND(loo,NULL);
+  XSB_StrAppendBlk(loo,NULL,5);
+  XSB_StrAppend(loo,NULL);
 
-  vstrDESTROY(&foo);
-  vstrDESTROY(loo);
+  XSB_StrDestroy(&foo);
+  XSB_StrDestroy(loo);
   goo.op->destroy(&goo);
 
 }

@@ -319,7 +319,7 @@ static void save_state_for_insertion(BTNptr last_node_match) {
  *  below the node of the last match.
  */
 
-static BTNptr construct_variant_call(bool wantAnsTemp, CPtr *answer_temp) {
+static BTNptr construct_variant_call(xsbBool wantAnsTemp, CPtr *answer_temp) {
 
   Cell subterm, symbol;
   BTNptr pCurrentBTN, pParentBTN;
@@ -346,10 +346,10 @@ static BTNptr construct_variant_call(bool wantAnsTemp, CPtr *answer_temp) {
      -------------------------------- */
   while ( ! TermStack_IsEmpty ) {
     subterm = TermStack_Pop;
-    deref(subterm);
+    XSB_Deref(subterm);
     switch (tag = cell_tag(subterm)) {
-    case REF:
-    case REF1:
+    case XSB_REF:
+    case XSB_REF1:
       if ( ! CallVar_IsMarked(subterm) ) {
 	symbol = EncodeNewTrieVar(counter);
 	CallVar_MarkIt(subterm,counter);
@@ -358,16 +358,16 @@ static BTNptr construct_variant_call(bool wantAnsTemp, CPtr *answer_temp) {
       else
 	symbol = EncodeTrieVar(CallVar_Index(subterm));
       break;
-    case STRING:
-    case INT:
-    case FLOAT:
+    case XSB_STRING:
+    case XSB_INT:
+    case XSB_FLOAT:
       symbol = EncodeTrieConstant(subterm);
       break;
-    case CS:
+    case XSB_STRUCT:
       symbol = EncodeTrieFunctor(subterm);
       TermStack_PushFunctorArgs(subterm)
       break;
-    case LIST:
+    case XSB_LIST:
       symbol = EncodeTrieList(subterm);
       TermStack_PushListArgs(subterm);
       break;
@@ -509,18 +509,18 @@ inline static CPtr compute_answer_template(TabledCallInfo *call_info,
   sizeAnsTmplt = 0;
   while ( ! TermStack_IsEmpty ) {
     subterm = TermStack_Pop;
-    deref(subterm);
+    XSB_Deref(subterm);
     symbol = SymbolStack_Pop;
     symbol_tag = TrieSymbolType(symbol);
-    if ( symbol_tag == TrieVar ) {
+    if ( symbol_tag == XSB_TrieVar ) {
       if ( IsNewTrieVar(symbol) ) {
 	*answer_tmplt-- = subterm;
 	sizeAnsTmplt++;
       }
     }
-    else if ( symbol_tag == CS )
+    else if ( symbol_tag == XSB_STRUCT )
       TermStack_PushFunctorArgs(subterm)
-    else if ( symbol_tag == LIST )
+    else if ( symbol_tag == XSB_LIST )
       TermStack_PushListArgs(subterm)
   }
   *answer_tmplt = makeint(sizeAnsTmplt);
@@ -727,10 +727,10 @@ inline static CPtr compute_answer_template(TabledCallInfo *call_info,
 /* Checking for Identical Terms
    ---------------------------- */
 
-bool are_identical_subterms(Cell term1, Cell term2) {
+xsbBool are_identical_subterms(Cell term1, Cell term2) {
 
-  deref(term1);
-  deref(term2);
+  XSB_Deref(term1);
+  XSB_Deref(term2);
   
   if ( term1 == term2 )
     return TRUE;
@@ -738,7 +738,7 @@ bool are_identical_subterms(Cell term1, Cell term2) {
   if ( cell_tag(term1) != cell_tag(term2) )
     return FALSE;
 
-  if ( cell_tag(term1) == CS ) {
+  if ( cell_tag(term1) == XSB_STRUCT ) {
     CPtr cptr1 = clref_val(term1);
     CPtr cptr2 = clref_val(term2);
     Psc psc1 = (Psc)*cptr1;
@@ -753,7 +753,7 @@ bool are_identical_subterms(Cell term1, Cell term2) {
 
     return TRUE;
   }
-  else if ( cell_tag(term1) == LIST ) {
+  else if ( cell_tag(term1) == XSB_LIST ) {
     CPtr cptr1 = clref_val(term1);
     CPtr cptr2 = clref_val(term2);
 
@@ -830,7 +830,7 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 
   int trievar_index;         /* temp for converting trievar num encoding */
 
-  bool variant_path;         /* Denotes whether the call is a variant of that
+  xsbBool variant_path;      /* Denotes whether the call is a variant of that
 				represented by the current path.  Search state
 				info is saved when its value changes from YES
 				to NO.  This may only occur once as this
@@ -921,14 +921,14 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
   while ( ! TermStack_IsEmpty ) {
     subterm = TermStack_Pop;
     TermStackLog_PushFrame;
-    deref(subterm);
+    XSB_Deref(subterm);
     switch(cell_tag(subterm)) {
       
     /* SUBTERM IS A CONSTANT
        --------------------- */
-    case STRING:
-    case INT:
-    case FLOAT:
+    case XSB_STRING:
+    case XSB_INT:
+    case XSB_FLOAT:
       /*
        *  NOTE:  A Trie constant looks like a Heap constant.
        */
@@ -957,10 +957,10 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 
     /* SUBTERM IS A STRUCTURE
        ---------------------- */
-    case CS:
+    case XSB_STRUCT:
       /*
-       *  NOTE:  A trie CS is a CS-tagged PSC ptr, while a heap CS
-       *         is a CS-tagged ptr to a PSC ptr.
+       *  NOTE:  A trie XSB_STRUCT is a XSB_STRUCT-tagged PSC ptr, while a heap
+       *      	  XSB_STRUCT is a XSB_STRUCT-tagged ptr to a PSC ptr.
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
 	symbol = EncodeTrieFunctor(subterm);
@@ -987,7 +987,7 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
       
     /* SUBTERM IS A LIST
        ----------------- */
-    case LIST:
+    case XSB_LIST:
       /*
        *  NOTE:  A trie LIST uses a plain LIST tag wherever a recursive
        *         substructure begins, while a heap LIST uses a LIST-
@@ -1001,7 +1001,7 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 	NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
 				     TermStack_PushListArgs(subterm))
 	/*
-	 *  We've failed to find a node in the trie with a LIST symbol, so
+	 *  We've failed to find a node in the trie with a XSB_LIST symbol, so
 	 *  now we consider bound trievars whose bindings exactly match the
 	 *  actual list subterm.
 	 */
@@ -1020,8 +1020,8 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
 
     /* SUBTERM IS AN UNBOUND VARIABLE
        ------------------------------ */
-    case REF:
-    case REF1:
+    case XSB_REF:
+    case XSB_REF1:
       /*
        *  A never-before-seen variable in the call must always match a
        *  free variable in the trie.  We can determine this by checking

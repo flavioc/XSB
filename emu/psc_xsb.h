@@ -126,10 +126,10 @@ extern struct Table_Info_Frame *get_tip(Psc);
 
 #define hilog_psc(psc)	\
 		(((!strcmp(get_name(psc),"apply")) && (get_arity(psc) > 1)))
-#define hilog_cs(term) /* to be used when known that term is a CS */ \
+#define hilog_cs(term) /* to be used when known that term is a XSB_STRUCT */ \
 		((hilog_psc(get_str_psc(term))))
 #define hilog_term(term) \
-		((cell_tag(term) == CS) && (hilog_psc(get_str_psc(term))))
+		((cell_tag(term) == XSB_STRUCT) && (hilog_psc(get_str_psc(term))))
 
 /*----------------------------------------------------------------------*/
 

@@ -34,7 +34,7 @@
  */
 
 static CPtr sched_answers(SGFrame producer_sf, CPtr producer_cpf,
-			  bool is_leader) {
+			  xsbBool is_leader) {
   ALNptr answer_set;
   CPtr first_sched_cons, last_sched_cons, consumer_cpf;
   SGFrame consumer_sf;

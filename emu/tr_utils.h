@@ -44,7 +44,7 @@ extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);
 extern void delete_trie(BTNptr);
 
-extern bool has_unconditional_answers(SGFrame);
+extern xsbBool has_unconditional_answers(SGFrame);
 
 extern void newtrie(void);
 extern void trie_intern(void);
@@ -52,4 +52,4 @@ extern int  trie_interned(void);
 extern void trie_dispose(void);
 extern void delete_interned_trie(int);
 
-extern bool check_table_cut;
+extern xsbBool check_table_cut;

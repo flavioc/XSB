@@ -62,49 +62,49 @@ void c_string_to_p_charlist(char *name, prolog_term list,
 /* Low level C interface						*/
 /*======================================================================*/
 
-DllExport bool call_conv is_var(prolog_term term)
+DllExport xsbBool call_conv is_var(prolog_term term)
 {
     Cell t = (Cell)term;
     return isref(t);
 }
 
-DllExport bool call_conv is_int(prolog_term term)
+DllExport xsbBool call_conv is_int(prolog_term term)
 {
     Cell t = (Cell)term;
     return isinteger(t);
 }
 
-DllExport bool call_conv is_float(prolog_term term)
+DllExport xsbBool call_conv is_float(prolog_term term)
 {
     Cell t = (Cell)term;
     return isfloat(t);
 }
 
-DllExport bool call_conv is_string(prolog_term term)
+DllExport xsbBool call_conv is_string(prolog_term term)
 {
     Cell t = (Cell)term;
     return isstring(t);
 }
 
-DllExport bool call_conv is_list(prolog_term term)
+DllExport xsbBool call_conv is_list(prolog_term term)
 {
     Cell t = (Cell)term;
     return islist(t);
 }
 
-DllExport bool call_conv is_nil(prolog_term term)
+DllExport xsbBool call_conv is_nil(prolog_term term)
 {
     Cell t = (Cell)term;
     return isnil(t);
 }
 
-DllExport bool call_conv is_functor(prolog_term term)
+DllExport xsbBool call_conv is_functor(prolog_term term)
 {
     Cell t = (Cell)term;
     return isconstr(t);
 }
 
-DllExport bool call_conv is_attv(prolog_term term)
+DllExport xsbBool call_conv is_attv(prolog_term term)
 {
     Cell t = (Cell)term;
     return isattv(t);
@@ -115,11 +115,11 @@ DllExport prolog_term call_conv reg_term(reg_num regnum)
     register Cell addr;
 
     addr = cell(reg+regnum);
-    deref(addr);
+    XSB_Deref(addr);
     return (prolog_term)addr;
 }
 
-DllExport bool call_conv c2p_int(Integer val, prolog_term var)
+DllExport xsbBool call_conv c2p_int(Integer val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -131,7 +131,7 @@ DllExport bool call_conv c2p_int(Integer val, prolog_term var)
     }
 }
 
-DllExport bool call_conv c2p_float(double val, prolog_term var)
+DllExport xsbBool call_conv c2p_float(double val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -143,7 +143,7 @@ DllExport bool call_conv c2p_float(double val, prolog_term var)
     }
 }
 
-DllExport bool call_conv c2p_string(char *val, prolog_term var)
+DllExport xsbBool call_conv c2p_string(char *val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -155,7 +155,7 @@ DllExport bool call_conv c2p_string(char *val, prolog_term var)
     }
 }
 
-DllExport bool call_conv c2p_list(prolog_term var)
+DllExport xsbBool call_conv c2p_list(prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -170,7 +170,7 @@ DllExport bool call_conv c2p_list(prolog_term var)
     }
 }
 
-DllExport bool call_conv c2p_nil(prolog_term var)
+DllExport xsbBool call_conv c2p_nil(prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -188,7 +188,7 @@ DllExport void call_conv c2p_setfree(prolog_term var)
     bld_free(v);
 }
 
-DllExport bool call_conv c2p_functor(char *functor, int arity, prolog_term var)
+DllExport xsbBool call_conv c2p_functor(char *functor, int arity, prolog_term var)
 {
     Cell v = (Cell)var;
     Pair sym;
@@ -240,27 +240,27 @@ DllExport int call_conv p2c_arity(prolog_term term)
 DllExport prolog_term call_conv p2p_arg(prolog_term term, int argno)
 {
     Cell t = (Cell)term;
-    deref(t);
+    XSB_Deref(t);
     t = cell(clref_val(t)+argno);
-    deref(t);
+    XSB_Deref(t);
     return (prolog_term)t;
 }
 
 DllExport prolog_term call_conv p2p_car(prolog_term term)
 {
     Cell t = (Cell)term;
-    deref(t);
+    XSB_Deref(t);
     t = cell(clref_val(t));
-    deref(t);
+    XSB_Deref(t);
     return (prolog_term)t;
 }
 
 DllExport prolog_term call_conv p2p_cdr(prolog_term term)
 {
     Cell t = (Cell)term;
-    deref(t);
+    XSB_Deref(t);
     t = cell(clref_val(t)+1);
-    deref(t);
+    XSB_Deref(t);
     return (prolog_term)t;
 }
 
@@ -271,7 +271,7 @@ DllExport prolog_term call_conv p2p_new(void)
     return (prolog_term)(cell(t));
 }
 
-DllExport bool call_conv p2p_unify(prolog_term term1, prolog_term term2)
+DllExport xsbBool call_conv p2p_unify(prolog_term term1, prolog_term term2)
 {
     return unify(term1, term2);
 }
@@ -279,7 +279,7 @@ DllExport bool call_conv p2p_unify(prolog_term term1, prolog_term term2)
 DllExport prolog_term call_conv p2p_deref(prolog_term term)
 {
     Cell t = (Cell)term;
-    deref(t);
+    XSB_Deref(t);
     return (prolog_term)t;
 }
 
@@ -306,7 +306,7 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
     xsb_abort("%s: %s is not a list of characters", in_func, where);
   }
 
-  vstrSET(buf, "");
+  XSB_StrSet(buf, "");
 
   while (is_list(list)) {
     if (is_nil(list)) break;
@@ -326,31 +326,31 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
     if (escape_mode)
       switch (*head_char) {
       case 'a':
-	vstrAPPENDBLK(buf, "\a", 1);
+	XSB_StrAppendBlk(buf, "\a", 1);
 	break;
       case 'b':
-	vstrAPPENDBLK(buf, "\b", 1);
+	XSB_StrAppendBlk(buf, "\b", 1);
 	break;
       case 'f':
-	vstrAPPENDBLK(buf, "\f", 1);
+	XSB_StrAppendBlk(buf, "\f", 1);
 	break;
       case 'n':
-	vstrAPPENDBLK(buf, "\n", 1);
+	XSB_StrAppendBlk(buf, "\n", 1);
 	break;
       case 'r':
-	vstrAPPENDBLK(buf, "\r", 1);
+	XSB_StrAppendBlk(buf, "\r", 1);
 	break;
       case 't':
-	vstrAPPENDBLK(buf, "\t", 1);
+	XSB_StrAppendBlk(buf, "\t", 1);
 	break;
       case 'v':
-	vstrAPPENDBLK(buf, "\v", 1);
+	XSB_StrAppendBlk(buf, "\v", 1);
 	break;
       default:
-	vstrAPPENDBLK(buf, head_char, 1);
+	XSB_StrAppendBlk(buf, head_char, 1);
       }
     else
-      vstrAPPENDBLK(buf, head_char, 1);
+      XSB_StrAppendBlk(buf, head_char, 1);
 
     if (*head_char == '\\' && !escape_mode) {
       escape_mode = TRUE;
@@ -362,7 +362,7 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
     list = p2p_cdr(list);
   } /* while */
 
-  vstrNULL_TERMINATE(buf);
+  XSB_StrNullTerminate(buf);
 
   return (buf->string);
 }
@@ -402,7 +402,7 @@ void c_string_to_p_charlist(char *name, prolog_term list,
    It also counts the size of the list.
    It deals with the same escape sequences as p_charlist_to_c_string */
 
-DllExport bool call_conv is_charlist(prolog_term term, int *size)
+DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
 {
   int escape_mode=FALSE, head_char;
   prolog_term list, head;
@@ -1000,16 +1000,16 @@ void printpstring(char *atom, int toplevel, VarString *straddr)
     int i;
    
     if (toplevel || !mustquote(atom)) {
-      vstrAPPEND(straddr,atom);
+      XSB_StrAppend(straddr,atom);
     } else {
-      vstrAPPENDBLK(straddr, "'", 1);
+      XSB_StrAppendBlk(straddr, "'", 1);
       for (i = 0; atom[i] != '\0'; i++) {
-	vstrAPPENDBLK(straddr, atom+i, 1);
+	XSB_StrAppendBlk(straddr, atom+i, 1);
 	if (atom[i] == '\'')
 	  /* double the quotes in a quoted string */
-	  vstrAPPENDBLK(straddr, "'", 1);
+	  XSB_StrAppendBlk(straddr, "'", 1);
       }
-      vstrAPPEND(straddr, "'");
+      XSB_StrAppend(straddr, "'");
     }
 }
     
@@ -1062,41 +1062,41 @@ void print_pterm(prolog_term term, int toplevel, VarString *straddr)
 
   if (is_var(term)) {
     xsb_sprint_variable(tempstring, (CPtr) term);
-    vstrAPPEND(straddr,tempstring);
+    XSB_StrAppend(straddr,tempstring);
   } else if (is_int(term)) {
     sprintf(tempstring,"%d", (int) p2c_int(term));
-    vstrAPPEND(straddr,tempstring);
+    XSB_StrAppend(straddr,tempstring);
   } else if (is_float(term)) {
     sprintf(tempstring,"%f", (float) p2c_float(term));
-    vstrAPPEND(straddr,tempstring);
+    XSB_StrAppend(straddr,tempstring);
   } else if (is_nil(term)) {
-    vstrAPPEND(straddr,"[]");
+    XSB_StrAppend(straddr,"[]");
   } else if (is_string(term)) {
     printpstring(p2c_string(term),toplevel,straddr);
   } else if (is_list(term)) {
-    vstrAPPEND(straddr, "[");
+    XSB_StrAppend(straddr, "[");
     print_pterm(p2p_car(term),FALSE,straddr);
     term = p2p_cdr(term);
     while (is_list(term)) {
-      vstrAPPEND(straddr, ",");
+      XSB_StrAppend(straddr, ",");
       print_pterm(p2p_car(term),FALSE,straddr);
       term = p2p_cdr(term);
     }
     if (!is_nil(term)) {
-      vstrAPPEND(straddr, "|");
+      XSB_StrAppend(straddr, "|");
       print_pterm(term,FALSE,straddr);
     }
-    vstrAPPEND(straddr, "]");
+    XSB_StrAppend(straddr, "]");
   } else if (is_functor(term)) {
     printpstring(p2c_functor(term),FALSE,straddr);
     if (p2c_arity(term) > 0) {
-      vstrAPPEND(straddr, "(");
+      XSB_StrAppend(straddr, "(");
       print_pterm(p2p_arg(term,1),FALSE,straddr);
       for (i = 2; i <= p2c_arity(term); i++) {
-	vstrAPPEND(straddr, ",");
+	XSB_StrAppend(straddr, ",");
 	print_pterm(p2p_arg(term,i),FALSE,straddr);
       }
-      vstrAPPEND(straddr, ")");
+      XSB_StrAppend(straddr, ")");
     }
   } else xsb_warn("PRINT_PTERM: Unrecognized prolog term type");
 }
@@ -1111,7 +1111,7 @@ int xsb_answer_string(VarString *ans, char *sep) {
   
   for (i=1; i<p2c_arity(reg_term(2)); i++) {
     print_pterm(p2p_arg(reg_term(2),i),TRUE,ans);
-    vstrAPPEND(ans,sep);
+    XSB_StrAppend(ans,sep);
   }
   print_pterm(p2p_arg(reg_term(2),p2c_arity(reg_term(2))),TRUE,ans);
   return 0;
@@ -1329,18 +1329,18 @@ int call_conv xsb_query_string_string(char *goal, VarString *ans, char *sep) {
 /*      xsb_get_last_answer.                                            */
 /*                                                                      */
 /************************************************************************/
-static vstrDEFINE(last_answer);
+static XSB_StrDefine(last_answer);
 
 DllExport
 int call_conv xsb_query_string_string_b(
 	     char *goal, char *buff, int buflen, int *anslen, char *sep) {
   int rc;
   
-  vstrSET(&last_answer,"");
+  XSB_StrSet(&last_answer,"");
   rc = xsb_query_string_string(goal,&last_answer,sep);
   if (rc > 0) return rc;
   *anslen = last_answer.length;
-  vstrNULL_TERMINATE(&last_answer);
+  XSB_StrNullTerminate(&last_answer);
   if (last_answer.length < buflen) {
     strcpy(buff,last_answer.string);
     return rc;
@@ -1418,11 +1418,11 @@ DllExport int call_conv xsb_next_string_b(
 		     char *buff, int buflen, int *anslen, char *sep) {
   int rc;
 
-  vstrSET(&last_answer,"");
+  XSB_StrSet(&last_answer,"");
   rc = xsb_next_string(&last_answer,sep);
   if (rc > 0) return rc;
   *anslen = last_answer.length;
-  vstrNULL_TERMINATE(&last_answer);
+  XSB_StrNullTerminate(&last_answer);
   if (last_answer.length < buflen) {
     strcpy(buff,last_answer.string);
     return rc;

@@ -43,7 +43,7 @@
 
 /*----------------------------------------------------------------------*/
 
-bool dummy()
+xsbBool dummy()
 {
     xsb_error("Trying to use an undefined foreign procedure");
     return FALSE;
@@ -63,7 +63,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   int 	strl = strlen(pofilename);
   HMODULE handle;
   void	*funcep;
-  bool	dummy();
+  xsbBool	dummy();
   
   /* (1) create filename.so */
   

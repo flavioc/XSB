@@ -26,17 +26,17 @@
 
 /* deref expects argument of type Cell */
 
-#define deref(op) deref2(op,break)
+#define XSB_Deref(op) XSB_Deref2(op,break)
 
 /*
-#define deref2(op,stat) while (isref(op)) { \
+#define XSB_Deref2(op,stat) while (isref(op)) { \
                     if (op == follow(op)) \
                         stat; \
                     op = follow(op); }
 */
 
-/* deref2 is changed to consider attributed variables */
-#define deref2(op, stat) {				\
+/* XSB_Deref2 is changed to consider attributed variables */
+#define XSB_Deref2(op, stat) {				\
   while (isref(op)) {					\
     if (op == follow(op))				\
       stat;						\
@@ -57,13 +57,13 @@
 }
 
 /*
-#define cptr_deref(op) while (isref(op)) { \
+#define XSB_CptrDeref(op) while (isref(op)) { \
 			 if (op == (CPtr) cell(op)) \
   			     break; \
 			 op = (CPtr) cell(op); }
 */
 
-#define cptr_deref(op) {				\
+#define XSB_CptrDeref(op) {				\
   while (isref(op)) {					\
     if (op == (CPtr) cell(op)) break;			\
     op = (CPtr) cell(op);				\

@@ -34,6 +34,6 @@ static inline Cell ptoc_tag(int regnum)
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
-  deref(addr);
+  XSB_Deref(addr);
   return addr;
 }

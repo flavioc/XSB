@@ -16,9 +16,17 @@ This is primarily a maintenance release.
 
 <h3>News</h3>
 <ul>
-<li> The XSB libwww package now has interface to the RDF parser
-     provided by the libwww package from W3C.
+<li> The XSB libwww package that first appeared in XSB 2.2.1 now has interface
+to the RDF parser provided by the libwww package from W3C.
 </ul>
+
+<h3>Backward Incompatibility</h3>
+The type <tt>bool</tt> used by the external C interface has been replaced with
+xsbBool, because of clashes with various include files that exist on some
+platforms. Likewise, the macros for dealing with the variable string type used
+by C programs that call XSB as a library have been renamed. For instance,
+<tt>vstrDEFINE</tt> is now <tt>XSB_StrDefine</tt>. See Vol. 2 of the manual for
+the new names.
 
 <hr>
 <center>

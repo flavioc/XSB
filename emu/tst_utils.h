@@ -41,8 +41,8 @@ SGFrame findSF_forAnswerLeaf(TSTNptr);
 SGFrame findProdSF_for_ConsSF(SGFrame);
 int containsSF(SGFrame, SGFrame);
 
-void triePrintPath(BTNptr, bool);
-void sfPrintGoal(SGFrame, bool);
+void triePrintPath(BTNptr, xsbBool);
+void sfPrintGoal(SGFrame, xsbBool);
 void sfPrintConsGoals(SGFrame);
 
 void printAnswerTemplate(CPtr, int);

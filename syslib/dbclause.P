@@ -123,7 +123,7 @@ db_abolish(Prref) :-
 	db_retract_abol(Prref),
         db_remove_prref(Prref).
 
-% db_clause(+Head,+Body,+Prref,-Clref) retrieves a clause.
+% db_clause(+Head,?Body,+Prref,-Clref) retrieves a clause.
 
 db_clause(Head,Body,Prref,Clref) :-
 	goal_cut_trans_a(Body,Tbody,_),

@@ -261,7 +261,7 @@ inline static pindex new_index_seg(int no_cells)
 
 /*----------------------------------------------------------------------*/
 
-static void gen_index(bool tabled, int clause_no, CPtr sob_arg_p, byte arity)
+static void gen_index(xsbBool tabled, int clause_no, CPtr sob_arg_p, byte arity)
 {
   pindex new_i;
   CPtr   ep1, ep2, temp;
@@ -437,7 +437,7 @@ static void load_index(FILE *fd, int index_bytes, int table_num)
     else temp_ptr = hptr = (CPtr)malloc(temp_space*sizeof(CPtr));
     t_len = get_index_tab(fd, clause_no);
     
-    gen_index((bool)(table_num > 0), clause_no, sob_arg_p, arity);
+    gen_index((xsbBool)(table_num > 0), clause_no, sob_arg_p, arity);
     free(indextab);
     if (temp_ptr != hreg) free(temp_ptr);
     count += 10 + t_len;
@@ -498,7 +498,7 @@ static int env_check[4][5] = {
 /* T_NEW      */ { T_VISIBLE, T_HIDDEN, T_UNLOADED, E_NOUSE, T_VISIBLE  }
 };
 
-void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
+void env_type_set(Psc psc, byte t_env, byte t_type, xsbBool is_new)
 {
   int env;
   byte type;
@@ -565,17 +565,17 @@ inline void get_obj_atom(FILE *fd, VarString *atom)
   } else
     len = x;
 
-  vstrENSURE_SIZE(atom,len+1);
+  XSB_StrEnsureSize(atom,len+1);
   get_obj_string(atom->string, len);
   atom->length = len;
-  vstrNULL_TERMINATE(atom);
+  XSB_StrNullTerminate(atom);
 }
 
 /*----------------------------------------------------------------------*/
 
-static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
+static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 {
-  static vstrDEFINE(str);
+  static XSB_StrDefine(str);
   int  is_new;
   byte t_arity, t_type, t_env;
   Pair temp_pair;
@@ -607,7 +607,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     if (is_new && t_env==T_IMPORTED)
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
-    env_type_set(temp_pair->psc_ptr, t_env, t_type, (bool)is_new);
+    env_type_set(temp_pair->psc_ptr, t_env, t_type, (xsbBool)is_new);
     /* dsw added following, maybe wrongly */
     if (exp && t_env == T_EXPORTED) {
       /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr); */
@@ -638,7 +638,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 *                                                                       *
 ************************************************************************/
 
-static bool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int exp)
+static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int exp)
 {
   int i;
   
@@ -748,7 +748,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 {
   byte name_len, *instr;
   char name[FOREIGN_NAMELEN];
-  static vstrDEFINE(ldoption);
+  static XSB_StrDefine(ldoption);
   unsigned long psc_count;
   Psc  cur_mod;
   Pair ptr;

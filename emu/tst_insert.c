@@ -206,7 +206,7 @@ inline static void tsiPromoteEntry(TSTNptr tstn, TimeStamp ts) {
  */
 
 inline static void tstnHashifyChildren(TSTNptr parent, TSTNptr root,
-				       bool needTSI) {
+				       xsbBool needTSI) {
 
   TSTNptr children;           /* child list of the parent */
   TSTNptr tstn;               /* current child for processing */
@@ -246,7 +246,7 @@ inline static void tstnHashifyChildren(TSTNptr parent, TSTNptr root,
  */
 
 inline static TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol,
-					bool needTSI, bool *is_new) {
+					xsbBool needTSI, xsbBool *is_new) {
 
   TSTHTptr ht;
   TSTNptr tstn, chain, *bucket;
@@ -293,8 +293,8 @@ inline static TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol,
  */
 
 inline static TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol,
-				       TSTNptr root, bool needTSI,
-				       bool *is_new) {
+				       TSTNptr root, xsbBool needTSI,
+				       xsbBool *is_new) {
 
   TSTNptr tstn, chain;
   int chain_length;
@@ -360,7 +360,7 @@ inline static void *newAnswerTST(int arity) {
  */
 
 inline static void update_timestamps(TSTNptr leaf, TSTNptr root,
-				     TimeStamp ts, bool containsTSIs) {
+				     TimeStamp ts, xsbBool containsTSIs) {
 
   if ( containsTSIs )
     do {
@@ -392,13 +392,13 @@ inline static void update_timestamps(TSTNptr leaf, TSTNptr root,
  */
 
 TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
-				  SGFrame sfProducer, bool *isNew) {
+				  SGFrame sfProducer, xsbBool *isNew) {
 
   TSTNptr tstRoot;          /* The root node of the TST answer set */
 
   TimeStamp tsNewAnswer;    /* Time stamp to assign to a new answer */
 
-  bool maintainTSI;         /* Whether indices have been created and need
+  xsbBool maintainTSI;      /* Whether indices have been created and need
 			       to be maintained during insertion */
 
   TSTNptr pParentTSTN;      /* Used for stepping down through the trie */
@@ -469,12 +469,12 @@ TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
     printf("TermStack contains %d terms\n",tstTermStack.top-tstTermStack.base);
   #endif
     subterm = TermStack_Pop;
-    deref(subterm);
+    XSB_Deref(subterm);
     symbol_type = cell_tag(subterm);
     switch (symbol_type) {
 
-    case REF:
-    case REF1:
+    case XSB_REF:
+    case XSB_REF1:
     #ifdef INTERN_DEBUG
       printf("Found variable: ");
       printterm(subterm, 1, 8);
@@ -490,7 +490,9 @@ TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
 	symbol = EncodeTrieVar(IndexOfStdVar(subterm));
       break;
 
-    case STRING: case INT: case FLOAT:
+    case XSB_STRING:
+    case XSB_INT:
+    case XSB_FLOAT:
     #ifdef INTERN_DEBUG
       printf("Found literal (str, int, flt): ");
       printterm((Cell)subterm, 1, 8);
@@ -499,7 +501,7 @@ TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
       symbol = EncodeTrieConstant(subterm);
       break;
 
-    case CS:
+    case XSB_STRUCT:
     #ifdef INTERN_DEBUG
       printf("Found function symbol: ");
       printterm(subterm, 1, 8);
@@ -509,7 +511,7 @@ TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
       TermStack_PushFunctorArgs(subterm);
       break;
 
-    case LIST:
+    case XSB_LIST:
     #ifdef INTERN_DEBUG
       printf("Found list: ");
       printterm((Cell)subterm, 1, 8);

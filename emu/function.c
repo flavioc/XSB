@@ -62,7 +62,7 @@ int  unifunc_call(int funcnum, CPtr regaddr)
   float fvalue; 
 
   value = cell(regaddr);
-  deref(value);
+  XSB_Deref(value);
   switch (funcnum) {
       case FUN_float:
 	  if (isinteger(value)) fvalue = (float) int_val(value);

@@ -152,7 +152,7 @@ extern void printterm(Cell, byte, int);
 
 /**static int  (*dyn_pred)(); unused-remove soon**/
 
-bool neg_delay;
+xsbBool neg_delay;
 int  xwammode, level_num;
 
 #ifdef DEBUG
@@ -507,7 +507,7 @@ contcase:     /* the main loop */
     
   case getlist_tvar_tvar: /* RRR */
     op1 = opreg;
-    deref(op1);
+    XSB_Deref(op1);
     if (isref(op1)) {
       bind_list((CPtr)(op1), hreg);
       op1 = (Cell)(opregaddr);
@@ -672,24 +672,24 @@ contcase:     /* the main loop */
     ppad; 
     op1 = opreg;
     pad64;
-    deref(op1);
+    XSB_Deref(op1);
     switch (cell_tag(op1)) {
-    case FREE:
-    case REF1:
-    case ATTV:
+    case XSB_FREE:
+    case XSB_REF1:
+    case XSB_ATTV:
       lpcreg += 2 * sizeof(Cell);
       break;
-    case INT:
-    case STRING:
-    case FLOAT:
+    case XSB_INT:
+    case XSB_STRING:
+    case XSB_FLOAT:
       lpcreg = *(pb *)lpcreg;	    
       break;
-    case CS:
+    case XSB_STRUCT:
       if (get_arity(get_str_psc(op1)) == 0) {
 	lpcreg = *(pb *)lpcreg;
 	break;
       }
-    case LIST:	/* include structure case here */
+    case XSB_LIST:	/* include structure case here */
       lpcreg += sizeof(Cell); lpcreg = *(pb *)lpcreg; 
       break;
     }
@@ -700,24 +700,24 @@ contcase:     /* the main loop */
     ppad; 
     op1 = opreg;
     pad64;
-    deref(op1);
+    XSB_Deref(op1);
     switch (cell_tag(op1)) {
-    case FREE:
-    case REF1:
-    case ATTV:
+    case XSB_FREE:
+    case XSB_REF1:
+    case XSB_ATTV:
       lpcreg += 2 * sizeof(Cell);
       goto sotd2;
-    case INT: 
-    case FLOAT:	/* Yes, use int_val to avoid conversion problem */
+    case XSB_INT: 
+    case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
       op1 = (Cell)int_val(op1);
       break;
-    case LIST:
+    case XSB_LIST:
       op1 = (Cell)(list_str); 
       break;
-    case CS:
+    case XSB_STRUCT:
       op1 = (Cell)get_str_psc(op1);
       break;
-    case STRING:	/* We should change the compiler to avoid this test */
+    case XSB_STRING:	/* We should change the compiler to avoid this test */
       op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
       break;
     }
@@ -746,24 +746,24 @@ contcase:     /* the main loop */
     for (i = 0; i <= 2; i++) {
       if (opa[i] != 0) {
 	op1 = opa[i];
-	deref(op1);
+	XSB_Deref(op1);
 	switch (cell_tag(op1)) {
-	case FREE:
-	case REF1:
-	case ATTV:
+	case XSB_FREE:
+	case XSB_REF1:
+	case XSB_ATTV:
 	  lpcreg += sizeof(Cell);
 	  goto sob3d2;
-	case INT: 
-	case FLOAT:	/* Yes, use int_val to avoid conversion problem */
+	case XSB_INT: 
+	case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
 	  op1 = (Cell)int_val(op1);
 	  break;
-	case LIST:
+	case XSB_LIST:
 	  op1 = (Cell)(list_str); 
 	  break;
-	case CS:
+	case XSB_STRUCT:
 	  op1 = (Cell)get_str_psc(op1);
 	  break;
-	case STRING:
+	case XSB_STRING:
 	  op1 = (Cell)string_val(op1);
 	  break;
 	default:
@@ -837,8 +837,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;							\
     pad64;								\
     op2 = *(op3);							\
-    deref(op1);								\
-    deref(op2);								\
+    XSB_Deref(op1);	       						\
+    XSB_Deref(op2);		       					\
     if (isinteger(op1)) {						\
 	if (isinteger(op2)) {						\
 	    bld_int(op3, int_val(op2) OP int_val(op1));	}		\
@@ -863,8 +863,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;							
     pad64;
     op2 = *(op3);
-    deref(op1);
-    deref(op2);
+    XSB_Deref(op1);
+    XSB_Deref(op2);
     if (isinteger(op1)) {						
       if (isinteger(op2)) {
 	bld_int(op3, int_val(op2) - int_val(op1)); }
@@ -891,8 +891,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64;
     op2 = *(op3);
-    deref(op1);
-    deref(op2);
+    XSB_Deref(op1);
+    XSB_Deref(op2);
     if (isinteger(op1)) {
       if (isinteger(op2)) {
 	bld_float(op3, (Float)int_val(op2)/(Float)int_val(op1)); }
@@ -914,8 +914,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64;
     op2 = *(op3);
-    deref(op1);
-    deref(op2);
+    XSB_Deref(op1);
+    XSB_Deref(op2);
     if (isinteger(op1) && isinteger(op2)) {
       if (int_val(op1) != 0) { bld_int(op3, int_val(op2) / int_val(op1)); }
       else {
@@ -931,7 +931,7 @@ contcase:     /* the main loop */
   case int_test_z:   /* PPR-N-L */
     ppad;
     op1 = opreg; pad64;
-    deref(op1); op2word;
+    XSB_Deref(op1); op2word;
     if (isnumber(op1)) {
       if ((int_val(op1) - (Integer)op2) == 0)
 	lpcreg = *(byte **)lpcreg;
@@ -946,7 +946,7 @@ contcase:     /* the main loop */
   case int_test_nz:   /* PPR-N-L */
     ppad;
     op1 = opreg; pad64;
-    deref(op1); op2word;
+    XSB_Deref(op1); op2word;
     if (isnumber(op1)) {
       if ((int_val(op1) - (Integer)op2) != 0)
 	lpcreg = *(byte **)lpcreg;
@@ -961,7 +961,7 @@ contcase:     /* the main loop */
   case putdval: /* PVR */
     pad; 
     op1 = opvar;
-    deref(op1);
+    XSB_Deref(op1);
     op2 = (Cell)(opregaddr);
     pad64;
     bld_copy((CPtr)op2, op1);
@@ -972,7 +972,7 @@ contcase:     /* the main loop */
     op1 = opvar;
     op2 = (Cell)(opregaddr);
     pad64;
-    deref(op1);
+    XSB_Deref(op1);
     if (isnonvar(op1) || ((CPtr)(op1) < hreg) || ((CPtr)(op1) >= ereg)) {
       bld_copy((CPtr)op2, op1);
     } else {
@@ -1222,8 +1222,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64; 
     op2 = *(op3);
-    deref(op1); 
-    deref(op2);
+    XSB_Deref(op1); 
+    XSB_Deref(op2);
     if (!isinteger(op1) || !isinteger(op2)) {
       arithmetic_abort(op2, "'>>'", op1);
     }
@@ -1236,8 +1236,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64;
     op2 = *(op3);
-    deref(op1); 
-    deref(op2);
+    XSB_Deref(op1); 
+    XSB_Deref(op2);
     if (!isinteger(op1) || !isinteger(op2)) {
       arithmetic_abort(op2, "'<<'", op1);
     }
@@ -1250,8 +1250,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64;
     op2 = *(op3);
-    deref(op1); 
-    deref(op2);
+    XSB_Deref(op1); 
+    XSB_Deref(op2);
     if (!isinteger(op1) || !isinteger(op2)) {
       arithmetic_abort(op2, "'\\/'", op1);
     }
@@ -1264,8 +1264,8 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64;
     op2 = *(op3);
-    deref(op1); 
-    deref(op2);
+    XSB_Deref(op1); 
+    XSB_Deref(op2);
     if (!isinteger(op1) || !isinteger(op2)) {
       arithmetic_abort(op2, "'/\\'", op1);
     }
@@ -1277,7 +1277,7 @@ contcase:     /* the main loop */
     op3 = opregaddr;
     pad64;
     op2 = *(op3);
-    deref(op2);
+    XSB_Deref(op2);
     if (!isinteger(op2)) { arithmetic_abort1("'\\'", op2); }
     else { bld_int(op3, ~(int_val(op2))); }
     goto contcase; 

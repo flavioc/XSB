@@ -704,7 +704,7 @@ static void db_genterms(struct instruction *inst_queue,
     }
     else { /* is_attv(T0) */
       T1 = cell(clref_val(T0) + 1);	/* the ATTR part of the attv */
-      deref(T1);
+      XSB_Deref(T1);
       dbgen_instB_ppv(getattv, Argno);	/* getattv */
       /* The register for a new attv CANNOT be released ! */
       /* reg_release(Argno); */
@@ -900,7 +900,7 @@ static void db_bldsubs(prolog_term Sub, RegStat Reg,
   }
 }
 
-static bool target_is_not_source(int Reg)
+static xsbBool target_is_not_source(int Reg)
 {
   int i;
   
@@ -911,7 +911,7 @@ static bool target_is_not_source(int Reg)
   return TRUE;
 }
 
-static bool source_is_not_target(int Reg)
+static xsbBool source_is_not_target(int Reg)
 {
   int i;
   
@@ -1183,7 +1183,7 @@ static void get_indexes( prolog_term prolog_ind )
   }
 }
 
-bool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
+xsbBool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
 {
   byte Arity;
   int AZ, HashTabSize;
@@ -1898,7 +1898,7 @@ static int retract_clause( ClRef Clause, int retract_nr )
  * Arg 9 returns the jump point into the code
  */
 
-bool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -EntryPoint*/ )
+xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -EntryPoint*/ )
 {
   PrRef Pred = (PrRef)ptoc_int(4);
   int IndexLevel, IndexArg, ni ;
@@ -1963,14 +1963,14 @@ set_outputs:
     return TRUE ;
 }
 
-bool db_reclaim0( /* CLRef, Type */ )
+xsbBool db_reclaim0( /* CLRef, Type */ )
 {
   ClRef Clause = (ClRef)ptoc_int(1) ;
 
   return retract_clause( Clause, 0 ) ;
 }
 
-bool db_retract0( /* ClRef, retract_nr */ )
+xsbBool db_retract0( /* ClRef, retract_nr */ )
 {
   ClRef Clause = (ClRef)ptoc_int(1) ;
   int retract_nr = (int)ptoc_int(2) ;
@@ -1987,7 +1987,7 @@ bool db_retract0( /* ClRef, retract_nr */ )
   ----------------------------------------------------------------------*/
 #define FIXED_BLOCK_SIZE_FOR_TABLED_PRED     (8 * sizeof(Cell))
 
-bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
+xsbBool db_build_prref( /* PSC, Tabled?, -PrRef */ )
 {
   CPtr p, tp;
   TIFptr tip;
@@ -2025,7 +2025,7 @@ bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
   return TRUE ;
 }
 
-bool db_remove_prref( /* PrRef */ ) 
+xsbBool db_remove_prref( /* PrRef */ ) 
 {
   CPtr *p = (CPtr *)ptoc_int(1) ;
 

@@ -55,7 +55,7 @@
 #include "flags_xsb.h"
 
 /* The folowing function must be defined. What's inside doesn't matter */
-bool private_builtin(void)
+xsbBool private_builtin(void)
 {
   /*
   ctop_string(1, "abc");
@@ -80,7 +80,7 @@ bool private_builtin(void)
 
 /* Arg 1 is the OP code. The rest are real arguments to the builtin */
 /*
-bool private_builtin(void)
+xsbBool private_builtin(void)
 {
   switch (ptoc_int(1)) {
   case PRINT_LS: print_ls(1) ; return TRUE ;

@@ -263,10 +263,10 @@ struct subgoal_frame {
   SGFrame consumers;    /* Producer: list of subgoal frames which consume from
 			     its answer table
 			   Consumer: link in this chain */
-  bool reclaimed_structs;   /* whether tabling structures associated with an
-			       incomplete table have already been reclaimed;
-			       could be folded into a single word with
-			       compl_flag */
+  xsbBool reclaimed_structs;   /* whether tabling structures associated with an
+				  incomplete table have already been reclaimed;
+				  could be folded into a single word with
+				  compl_flag */
 };
 
 #define CALLSTRUCTSIZE	(sizeof(struct subgoal_frame)/sizeof(CPtr))
@@ -532,7 +532,7 @@ void tstCreateStructures(TSTNptr);
 	  compl_visited(csf1) = DELAYED; \
 	  compl_visited(csf2) = DELAYED; \
   /* do not put TRUE but some !0 value that GC can recognize as int tagged */\
-	  csf_neg_loop(susp) = INT; \
+	  csf_neg_loop(susp) = XSB_INT; \
         }
 
 /*----------------------------------------------------------------------*/

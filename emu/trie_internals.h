@@ -97,15 +97,15 @@
 
 #define TN_SetInstr(pTN,Symbol)					\
    switch( TrieSymbolType(Symbol) ) {				\
-   case CS:							\
+   case XSB_STRUCT:							\
      TN_Instr(pTN) = (byte)trie_try_str;			\
      break;							\
-   case INT:							\
-   case STRING:							\
-   case FLOAT:							\
+   case XSB_INT:							\
+   case XSB_STRING:							\
+   case XSB_FLOAT:							\
      TN_Instr(pTN) = (byte)trie_try_numcon;			\
      break;							\
-   case TrieVar:						\
+   case XSB_TrieVar:						\
      if (IsNewTrieVar(Symbol))					\
        TN_Instr(pTN) = (byte)trie_try_var;			\
      else if (IsNewTrieAttv(Symbol))				\
@@ -113,7 +113,7 @@
      else							\
        TN_Instr(pTN) = (byte)trie_try_val;			\
      break;							\
-   case LIST:							\
+   case XSB_LIST:							\
      TN_Instr(pTN) = (byte)trie_try_list;			\
      break;							\
    default:							\
@@ -141,12 +141,12 @@
 
 /*
  *  An optimization which includes a "leafness" tag in the instruction
- *  for nodes -- containing either INT, FLOAT, or STRING data -- which
- *  appear as leaves of a trie.
+ *  for nodes -- containing either XSB_INT, XSB_FLOAT, or XSB_STRING
+ *  data -- which appear as leaves of a trie.
  */
 
 #define TN_UpgradeInstrTypeToSUCCESS(pTN,SymbolTag)			\
-   if (SymbolTag == STRING || SymbolTag == INT || SymbolTag == FLOAT)	\
+   if (SymbolTag == XSB_STRING || SymbolTag == XSB_INT || SymbolTag == XSB_FLOAT)	\
      TN_Instr(pTN) += 0x4
 
 
@@ -293,23 +293,23 @@ enum Types_of_Trie_Nodes {
  *  with a symbol which is just the tag LIST whose Child node contains a
  *  symbol for Head and the Child of this node starts Tail.  E.g., [a,b]
  *  = LIST-a-LIST-b-[], where [] is a STRING constant, and '-' represents
- *  a parent-to-child connection.  Structures are CS-tagged pointers to
+ *  a parent-to-child connection.  Structures are STRUCT-tagged pointers to
  *  PSC-records.  Variables are standardized and represented by TrieVar-
  *  tagged integers, starting from 0.
  */
 
-#define TrieSymbolType(Symbol)		cell_tag(Symbol)
+#define TrieSymbolType(Symbol)	     cell_tag(Symbol)
 
-#define IsTrieList(Symbol)		( TrieSymbolType(Symbol) == LIST )
-#define IsTrieFunctor(Symbol)		( TrieSymbolType(Symbol) == CS )
-#define IsTrieVar(Symbol)		( TrieSymbolType(Symbol) == TrieVar )
+#define IsTrieList(Symbol)	     ( TrieSymbolType(Symbol) == XSB_LIST )
+#define IsTrieFunctor(Symbol)	     ( TrieSymbolType(Symbol) == XSB_STRUCT )
+#define IsTrieVar(Symbol)	     ( TrieSymbolType(Symbol) == XSB_TrieVar )
 #define IsTrieConstant(Symbol)			\
-   ( (TrieSymbolType(Symbol) == STRING) ||	\
-     (TrieSymbolType(Symbol) == INT) ||		\
-     (TrieSymbolType(Symbol) == FLOAT) )
+   ( (TrieSymbolType(Symbol) == XSB_STRING) ||	\
+     (TrieSymbolType(Symbol) == XSB_INT) ||		\
+     (TrieSymbolType(Symbol) == XSB_FLOAT) )
 
-#define EncodeTrieFunctor(Cell_CS)	makecs(follow(clref_val(Cell_CS)))
-#define EncodeTrieList(Cell_LIST)	( (Cell)LIST )
+#define EncodeTrieFunctor(Cell_STRUCT)	makecs(follow(clref_val(Cell_STRUCT)))
+#define EncodeTrieList(Cell_LIST)	( (Cell)XSB_LIST )
 #define EncodeTrieConstant(Cell_Const)	( (Cell)Cell_Const )
 
 #define DecodeTrieFunctor(Symbol)	(Psc)cs_val(Symbol)
@@ -394,7 +394,7 @@ extern Cell TrieVarBindings[];
 #define TrieSymbol_Deref(Symbol)			\
    if (IsTrieVar(Symbol)) {				\
      Symbol = TrieVarBindings[DecodeTrieVar(Symbol)];	\
-     deref(Symbol);					\
+     XSB_Deref(Symbol);					\
    }
 
 #define IsUnboundTrieVar(dFreeVar)					\
@@ -475,7 +475,7 @@ extern Cell TrieVarBindings[];
 #define TrieHash(Symbol, HashSeed)			\
    ( IsTrieVar(Symbol)					\
       ? TRIEVAR_BUCKET					\
-      : ( ((Symbol) >> CELL_TAG_NBITS) & (HashSeed) )	\
+      : ( ((Symbol) >> XSB_CELL_TAG_NBITS) & (HashSeed) )	\
     )
 
 #define CalculateBucketForSymbol(pHT,Symbol)		\

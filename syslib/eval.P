@@ -42,12 +42,12 @@
 
 eval(Arg, Res) :- 
 	term_type(Arg, T), 
-	( (T =:= FREE; T =:= ATTV) ->
+	( (T =:= XSB_FREE; T =:= XSB_ATTV) ->
 	    abort('Unbound variable in arithmetic expression')
-	; T =:= INT -> Res=Arg
-	; T =:= FLOAT -> Res=Arg
+	; T =:= XSB_INT -> Res=Arg
+	; T =:= XSB_FLOAT -> Res=Arg
 	; eval0(Arg, Res) -> true	/* system defined function */
-	; T =:= CS -> eval1(Arg, Res)	/* user defined function */
+	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
 	).
 
 eval0('+'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 + Res2.

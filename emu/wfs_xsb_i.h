@@ -179,7 +179,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 				SGFrame leader_subg)
 {  
   CPtr ComplStkFrame; /* CopyFrame */
-  bool sccs_needed;
+  xsbBool sccs_needed;
   SGFrame curr_subg;
 #if (!defined(CHAT))
   CPtr cont_breg = leader_breg;
@@ -207,12 +207,12 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 
   if (sccs_needed) {
 #if (!defined(CHAT))
-    bool found;
+    xsbBool found;
 #endif
     CPtr nsf;
     CPtr CopyFrame;
     ComplStackFrame csf, max_finish_csf;
-    bool non_lrd_stratified;
+    xsbBool non_lrd_stratified;
 
     /* NOTE: many of the following assume that leader_compl_frame
      * remains unchanged */

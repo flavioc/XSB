@@ -70,10 +70,10 @@ static int make_flags(prolog_term flag_term, char *context);
 static int first_call = TRUE; /* whether this is the first call to the regexp
 				 matcher. Used to initialize the regexp tbl */
 
-static vstrDEFINE(input_buffer);
-static vstrDEFINE(subst_buf);
-static vstrDEFINE(output_buffer);
-static vstrDEFINE(regexp_buffer);
+static XSB_StrDefine(input_buffer);
+static XSB_StrDefine(subst_buf);
+static XSB_StrDefine(output_buffer);
+static XSB_StrDefine(regexp_buffer);
 
 
 /* XSB regular expression matcher entry point
@@ -283,7 +283,7 @@ int do_regsubstitute__(void)
      substitution string. */
   int conversion_required=FALSE; /* from C string to Prolog char list */
   
-  vstrSET(&output_buffer,"");
+  XSB_StrSet(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -315,7 +315,7 @@ int do_regsubstitute__(void)
   subst_str_list_term1 = subst_str_list_term;
 
   if (is_nil(subst_spec_list_term1)) {
-    vstrSET(&output_buffer, input_string);
+    XSB_StrSet(&output_buffer, input_string);
     goto EXIT;
   }
   if (is_nil(subst_str_list_term1))
@@ -355,14 +355,14 @@ int do_regsubstitute__(void)
       xsb_abort("RE_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
 
     /* do the actual replacement */
-    vstrAPPENDBLK(&output_buffer, input_string+last_pos, beg_offset-last_pos);
-    vstrAPPEND(&output_buffer, subst_string);
+    XSB_StrAppendBlk(&output_buffer,input_string+last_pos,beg_offset-last_pos);
+    XSB_StrAppend(&output_buffer, subst_string);
     
     last_pos = end_offset;
 
   } while (!is_nil(subst_spec_list_term1));
 
-  vstrAPPEND(&output_buffer, input_string+end_offset);
+  XSB_StrAppend(&output_buffer, input_string+end_offset);
 
  EXIT:
   /* get result out */
@@ -403,7 +403,7 @@ int do_regsubstring__(void)
   int beg_offset, end_offset, input_len, substring_len;
   int conversion_required=FALSE;
   
-  vstrSET(&output_buffer,"");
+  XSB_StrSet(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -443,8 +443,8 @@ int do_regsubstring__(void)
 
   /* do the actual replacement */
   substring_len = end_offset-beg_offset;
-  vstrAPPENDBLK(&output_buffer, input_string+beg_offset, substring_len);
-  vstrNULL_TERMINATE(&output_buffer);
+  XSB_StrAppendBlk(&output_buffer, input_string+beg_offset, substring_len);
+  XSB_StrNullTerminate(&output_buffer);
   
   /* get result out */
   if (conversion_required)
@@ -466,7 +466,7 @@ int do_regsubstring__(void)
 
 /* should be removed when XSB gets garbage collector */
 /* converts charlist to string, but doesn't intern */
-static vstrDEFINE(temp_buffer);
+static XSB_StrDefine(temp_buffer);
 int do_regcharlist_to_string__(void)
 {
 

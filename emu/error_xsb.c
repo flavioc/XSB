@@ -109,8 +109,8 @@ void xsb_bug(char *description, ...)
 
 void arithmetic_abort(Cell op1, char *OP, Cell op2)
 {
-  static vstrDEFINE(str_op1);
-  static vstrDEFINE(str_op2);
+  static XSB_StrDefine(str_op1);
+  static XSB_StrDefine(str_op2);
 
   print_pterm(op1, TRUE, &str_op1);
   print_pterm(op2, TRUE, &str_op2);
@@ -131,9 +131,9 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
 
 void arithmetic_abort1(char *OP, Cell op)
 {
-  static vstrDEFINE(str_op);
+  static XSB_StrDefine(str_op);
   
-  vstrSET(&str_op,"_Var");
+  XSB_StrSet(&str_op,"_Var");
   if (! isref(op)) print_pterm(op, TRUE, &str_op);
   xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
 	    (isref(op) ? "Uninstantiated argument of" : "Wrong domain in"),
@@ -143,9 +143,9 @@ void arithmetic_abort1(char *OP, Cell op)
 
 void arithmetic_comp_abort(Cell op1, char *OP, int op2)
 {
-  static vstrDEFINE(str_op1);
+  static XSB_StrDefine(str_op1);
 
-  vstrSET(&str_op1,"_Var");
+  XSB_StrSet(&str_op1,"_Var");
   if (! isref(op1)) print_pterm(op1, TRUE, &str_op1);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
 	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),

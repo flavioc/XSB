@@ -74,7 +74,7 @@ extern void printterm(Cell, byte, int);
 
 /*----------------------------------------------------------------------*/
 
-bool has_unconditional_answers(SGFrame subg)
+xsbBool has_unconditional_answers(SGFrame subg)
 {
   ALNptr node_ptr = subg_answers(subg);
  
@@ -131,11 +131,11 @@ BTNptr variant_trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
 
     while ( ! TermStack_IsEmpty && IsNonNULL(trieNode) ) {
       subterm = TermStack_Pop;
-      deref(subterm);
+      XSB_Deref(subterm);
       switch (cell_tag(subterm)) {
 
-      case REF:
-      case REF1:
+      case XSB_REF:
+      case XSB_REF1:
 	if ( ! IsStandardizedVariable(subterm) ) {
 	  StandardizeVariable(subterm, std_var_num);
 	  Trail_Push(subterm);
@@ -146,18 +146,18 @@ BTNptr variant_trie_lookup(int nTerms, CPtr termVector, BTNptr trieRoot,
 	  symbol = EncodeTrieVar(IndexOfStdVar(subterm));
 	break;
 
-      case STRING:
-      case INT:
-      case FLOAT:
+      case XSB_STRING:
+      case XSB_INT:
+      case XSB_FLOAT:
 	symbol = EncodeTrieConstant(subterm);
 	break;
 
-      case CS:
+      case XSB_STRUCT:
 	symbol = EncodeTrieFunctor(subterm);
 	TermStack_PushFunctorArgs(subterm);
 	break;
 
-      case LIST:
+      case XSB_LIST:
 	symbol = EncodeTrieList(subterm);
 	TermStack_PushListArgs(subterm);
 	break;
@@ -255,7 +255,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
   BTNptr cur, match, var, leaf;
   int arity, trievar_index;
   CPtr args;
-  extern bool are_identical_subterms(Cell,Cell);
+  extern xsbBool are_identical_subterms(Cell,Cell);
 
   /*
    * Base Case:
@@ -284,7 +284,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 #endif
   subterm = TermStack_Pop;
   TermStackLog_PushFrame;
-  deref(subterm);
+  XSB_Deref(subterm);
   if ( isref(subterm) ) {
 
     /* Handle Call Variables
@@ -423,7 +423,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * record any recursive components of subterm (for reconstitution later,
      * if needed).
      */
-    if ( isconstant(subterm) ) {      /* INT, FLOAT, STRING */
+    if ( isconstant(subterm) ) {      /* XSB_INT, XSB_FLOAT, XSB_STRING */
 #ifdef DEBUG_TRIE_LOOKUP
       printf("  Found constant\n");
 #endif
@@ -431,7 +431,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
       arity = 0;
       args = NULL;
     }
-    else if ( isconstr(subterm) ) {   /* CS */
+    else if ( isconstr(subterm) ) {   /* XSB_STRUCT */
 #ifdef DEBUG_TRIE_LOOKUP
       printf("  Found structure\n");
 #endif
@@ -439,7 +439,7 @@ static BTNptr sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
       arity = get_arity((Psc)*clref_val(subterm));
       args = clref_val(subterm) + 1;
     }
-    else if ( islist(subterm) ) {     /* LIST */
+    else if ( islist(subterm) ) {     /* XSB_LIST */
 #ifdef DEBUG_TRIE_LOOKUP
       printf("  Found list\n");
 #endif
@@ -678,7 +678,7 @@ void construct_answer_template(Cell callTerm, SGFrame producer,
   i = 1;
   while ( ! TermStack_IsEmpty ) {
     subterm = TermStack_Pop;
-    deref(subterm);
+    XSB_Deref(subterm);
     symbol = SymbolStack_Pop;
     if ( IsTrieVar(symbol) && IsNewTrieVar(symbol) ) {
       template[i] = subterm;
@@ -1452,8 +1452,8 @@ int trie_interned(void)
    */
   if ((Set_ArrayPtr[RootIndex] != NULL) &&
       (!((long) Set_ArrayPtr[RootIndex] & 0x3))) {
-    deref(trie_term);
-    deref(Leafterm);
+    XSB_Deref(trie_term);
+    XSB_Deref(Leafterm);
     if (isref(Leafterm)) {  
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;

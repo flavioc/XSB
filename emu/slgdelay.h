@@ -212,17 +212,17 @@ struct pos_neg_de_list {
  * Variables used in other parts of the system.
  */
 
-extern bool neg_delay;
+extern xsbBool neg_delay;
 
 
 /*
  * Procedures used in other parts of the system.
  */
 
-extern bool answer_is_junk(CPtr);
+extern xsbBool answer_is_junk(CPtr);
 extern void abolish_wfs_space(void);
 extern void simplify_neg_fails(SGFrame);
-extern void do_delay_stuff(NODEptr, SGFrame, bool);
+extern void do_delay_stuff(NODEptr, SGFrame, xsbBool);
 extern unsigned long allocated_de_space(int * num_blocks);
 extern unsigned long unused_de_space(void);
 extern unsigned long allocated_dl_space(int * num_blocks);

@@ -36,14 +36,14 @@
 %   LastVar-1.
 
 numbervars(Y,I,J) :- term_type(Y,T),
-	(T =:= FREE
+	(T =:= XSB_FREE
 	 ->	Y='$VAR'(I), J is I+1
-	 ; T =:= ATTV
+	 ; T =:= XSB_ATTV
 	 ->	Y='$VAR'(I), J is I+1
-	 ; T =:= LIST
+	 ; T =:= XSB_LIST
 	 ->	Y=[A1|A2],
 	 	numbervars(A1,I,I1), numbervars(A2,I1,J)
-	 ; T =:= CS
+	 ; T =:= XSB_STRUCT
 	 ->	term_psc(Y,PSC), psc_arity(PSC,N),
 	 	numbervars(Y,I,J,1,N)
 	 ;	J=I
@@ -78,7 +78,7 @@ unnumbervars(TermIn,FirstN,TermOut) :-
 
 unnumbervars(TermIn,FirstN,TermOut,Vars) :-
 	term_type(TermIn,Type),
-	(Type =:= CS
+	(Type =:= XSB_STRUCT
          ->     (TermIn = '$VAR'(I)
                  ->     (I >= FirstN
 	                 ->     log_ith(I,Vars,TermOut)
@@ -89,7 +89,7 @@ unnumbervars(TermIn,FirstN,TermOut,Vars) :-
 			psc_arity(PSC,Arity),
 			unnumbervars(1,Arity,TermIn,FirstN,TermOut,Vars)
 		)
-         ; Type =:= LIST
+         ; Type =:= XSB_LIST
          ->     TermIn = [A1|A2],
 	        TermOut = [B1|B2],
 		unnumbervars(A1,FirstN,B1,Vars),

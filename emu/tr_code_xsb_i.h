@@ -45,13 +45,15 @@
    Cell symbol = 0;	/* eliminate compiler warning */	\
 								\
    switch (cell_tag(Subterm)) {					\
-   case STRING:  case INT:  case FLOAT:				\
+   case XSB_STRING:    	       	       	       	       	       \
+   case XSB_INT:    	       	       	       	       	       \
+   case XSB_FLOAT:	      	  				\
      symbol = EncodeTrieConstant(Subterm);			\
      break;							\
-   case LIST:							\
+   case XSB_LIST:						\
      symbol = EncodeTrieList(Subterm);				\
      break;							\
-   case CS:							\
+   case XSB_STRUCT:						\
      symbol = EncodeTrieFunctor(Subterm);			\
      break;							\
    default:							\
@@ -191,7 +193,7 @@ int     delay_it;
 /*----------------------------------------------------------------------*/
 
 #define unify_with_trie_numcon {					\
-  deref(*reg_arrayptr);							\
+  XSB_Deref(*reg_arrayptr);					       	\
   if (isref(*reg_arrayptr)) {						\
     bind_ref((CPtr)*reg_arrayptr, opatom);				\
   }									\
@@ -211,7 +213,7 @@ int     delay_it;
   Psc psc;							\
   int i, arity;							\
 								\
-  deref(*reg_arrayptr);						\
+  XSB_Deref(*reg_arrayptr);			       		\
   psc = (Psc) cs_val(opatom);					\
   arity = (int) get_arity(psc);					\
   will_overflow_reg_array(reg_arrayptr + arity);		\
@@ -254,7 +256,7 @@ int     delay_it;
 }
 
 #define unify_with_trie_list {						\
-  deref(*reg_arrayptr);							\
+  XSB_Deref(*reg_arrayptr);    						\
   if (isref(*reg_arrayptr)) {						\
     bind_ref((CPtr) *reg_arrayptr, (Cell) makelist(hreg));		\
     *reg_arrayptr = (Cell)(hreg+1);         /* head of list */		\
@@ -297,16 +299,16 @@ int     delay_it;
 
 #define unify_with_trie_val {						\
   Cell cell2deref;							\
-  deref(*reg_arrayptr);							\
+  XSB_Deref(*reg_arrayptr);    						\
   if (isref(*reg_arrayptr)) {						\
     cell2deref = (Cell)var_regs[(int)int_val(opatom)];			\
-    deref(cell2deref);							\
+    XSB_Deref(cell2deref);	       					\
     if (cell2deref != *reg_arrayptr)					\
       bind_ref((CPtr) *reg_arrayptr, cell2deref);			\
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     cell2deref = (Cell) var_regs[(int)int_val(opatom)];			\
-    deref(cell2deref);							\
+    XSB_Deref(cell2deref);     						\
     if (*reg_arrayptr != cell2deref) {					\
       /* Do not trigger attv interrupt! */				\
       bind_ref(clref_val(*reg_arrayptr), cell2deref);			\
@@ -327,7 +329,7 @@ int     delay_it;
 }
 
 #define unify_with_trie_attv {						\
-  deref(*reg_arrayptr);							\
+  XSB_Deref(*reg_arrayptr);			       			\
   num_vars_in_var_regs = (int)int_val(opatom) &0xffff;			\
   if (isref(*reg_arrayptr)) {						\
     bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));			\

@@ -240,7 +240,7 @@ must_load(PSC) :-
 %% +Call, -PSC, -Pred, -Arity
 get_psc_info(Call, PSC, P, A) :-
 	term_type(Call,Type),
-	(Type =:= STRING
+	(Type =:= XSB_STRING
 	 ->	psc_insert(Call, 0, PSC, 0), P = Call, A = 0
 	 ;	term_psc(Call,PSC), psc_name(PSC,P), psc_arity(PSC,A)
 	).

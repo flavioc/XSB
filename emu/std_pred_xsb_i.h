@@ -28,10 +28,10 @@
 #include "sp_unify_xsb_i.h"
 /*----------------------------------------*/
 
-static bool atom_to_list(int call_type);
-static bool number_to_list(int call_type);
+static xsbBool atom_to_list(int call_type);
+static xsbBool number_to_list(int call_type);
 
-inline static bool functor_builtin(void)
+inline static xsbBool functor_builtin(void)
 {
   /* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
   int  new_indicator, arity, value, disp;
@@ -106,7 +106,7 @@ inline static bool functor_builtin(void)
 }
 
 
-inline static bool arg_builtin(void)
+inline static xsbBool arg_builtin(void)
 {
   /* r1: +index (int); r2: +term; r3: ?arg (term) */
   Cell index;
@@ -138,7 +138,7 @@ inline static bool arg_builtin(void)
 }
 
 
-inline static bool univ_builtin(void)
+inline static xsbBool univ_builtin(void)
 {
   /* r1: ?term; r2: ?list	*/
   int i, arity;
@@ -174,20 +174,20 @@ inline static bool univ_builtin(void)
   } else { /* usage is construction; term is known to be a variable */
     if (islist(list)) {
       head = clref_val(list);
-      deref(cell(head));
+      XSB_Deref(cell(head));
       if (isatom(cell(head))) {
 	if (isnil(cell(head+1))) {	/* atom construction */
 	  bind_copy((CPtr)term, cell(head));
 	  return TRUE;	/* succeed */
 	} else {
-	  bool list_construction = FALSE;
+	  xsbBool list_construction = FALSE;
 	  name = string_val(cell(head));
 	  if (!strcmp(name, ".")) { /* check for list construction */
-	    list = cell(head+1); deref(list);
+	    list = cell(head+1); XSB_Deref(list);
 	    if (islist(list)) {
-	      list = cell(clref_val(list)+1); deref(list);
+	      list = cell(clref_val(list)+1); XSB_Deref(list);
 	      if (islist(list)) {
-		list = cell(clref_val(list)+1); deref(list);
+		list = cell(clref_val(list)+1); XSB_Deref(list);
 		if (isnil(list)) list_construction = TRUE;
 	      }
 	    }
@@ -203,7 +203,7 @@ inline static bool univ_builtin(void)
 	    bind_cs((CPtr)term, sreg); hreg = sreg; sreg++;
 	    for (arity = 0, list = cell(head+1); ;
 		 arity++, list = cell(clref_val(list)+1)) {
-	      deref(list); /* necessary */
+	      XSB_Deref(list); /* necessary */
 	      if (!islist(list)) break; /* really ugly */
 	      bld_copy(sreg, cell(clref_val(list))); sreg++;
 	    }
@@ -250,7 +250,7 @@ inline static bool univ_builtin(void)
 }
 
 
-inline static bool hilog_arg(void)
+inline static xsbBool hilog_arg(void)
 {
   /* r1: +index (int); r2: +term; r3: ?arg (term) */
   Cell index, term;
@@ -283,7 +283,7 @@ inline static bool hilog_arg(void)
 
 #define INITIAL_NAMELEN 256
 
-inline static bool atom_to_list(int call_type)
+inline static xsbBool atom_to_list(int call_type)
 {
   /* r1: ?term; r2: ?character list	*/
   int i, len;
@@ -310,13 +310,13 @@ inline static bool atom_to_list(int call_type)
     atomnamelast = atomnameaddr + (atomnamelen - 1);
     term2 = list;	/* DON'T use heap for temp storage */
     do {
-      deref(term2);
+      XSB_Deref(term2);
       if (isnil(term2)) {
 	*atomname++ = '\0';
 	break;
       }
       if (islist(term2)) {
-	heap_addr = cell(clref_val(term2)); deref(heap_addr);
+	heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
 	if (((call_type==ATOM_CODES) && !isinteger(heap_addr))
 	    || ((call_type==ATOM_CHARS) && !isstring(heap_addr))) {
 	  if (isnonvar(heap_addr))
@@ -387,7 +387,7 @@ inline static bool atom_to_list(int call_type)
   return TRUE;
 }
 
-inline static bool number_to_list(int call_type)
+inline static xsbBool number_to_list(int call_type)
 {
   int i, tmpval;
   long c;
@@ -411,13 +411,13 @@ inline static bool number_to_list(int call_type)
   if (!isnonvar(term)) {	/* use is: CHARS/CODES --> NUMBER */
     numberAsString = str; term2 = list;
     do {
-      deref(term2);
+      XSB_Deref(term2);
       if (isnil(term2)) {
 	*numberAsString++ = '\0';
 	break;
       }
       if (islist(term2)) {
-	heap_addr = cell(clref_val(term2)); deref(heap_addr);
+	heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
 	if (((call_type==NUMBER_CODES) && (!isinteger(heap_addr)))
 	    || ((call_type==NUMBER_CHARS) && !isstring(heap_addr))
 	    || ((call_type==NUMBER_DIGITS)
@@ -513,7 +513,7 @@ inline static bool number_to_list(int call_type)
 }
 
 
-inline static bool sort(void)
+inline static xsbBool sort(void)
 {
   /* r1: +list of terms; r2: ?sorted list of terms */
   int i, len;
@@ -526,7 +526,7 @@ inline static bool sort(void)
   term = ptoc_tag(2);
   term2 = list; len = 0;
   do {
-    deref(term2);
+    XSB_Deref(term2);
     if (isnil(term2)) break;
     if (islist(term2)) {
       len++; term2 = cell(clref_val(term2)+1);
@@ -542,8 +542,8 @@ inline static bool sort(void)
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for sort/2");
     for (i=0 ; i < len ; ++i) {
-      deref(term2);	/* Necessary for correctness.	*/
-      heap_addr = cell(clref_val(term2)); deref(heap_addr);
+      XSB_Deref(term2);	/* Necessary for correctness.	*/
+      heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
       cell_tbl[i] = heap_addr;
       term2 = cell(clref_val(term2)+1);
     }
@@ -564,7 +564,7 @@ inline static bool sort(void)
   return unify(list, term);
 }
 
-inline static bool keysort(void)
+inline static xsbBool keysort(void)
 {
   /* r1: +list of terms of the form Key-Value;	*/
   /* r2: ?sorted list of terms			*/
@@ -578,10 +578,10 @@ inline static bool keysort(void)
   term = ptoc_tag(2);
   term2 = list; len = 0;
   do {
-    deref(term2);
+    XSB_Deref(term2);
     if (isnil(term2)) break;
     if (islist(term2)) {
-      heap_addr = cell(clref_val(term2)); deref(heap_addr);
+      heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
       if (isconstr(heap_addr) && 
 	  get_arity(get_str_psc(heap_addr)) == 2 &&
 	  !strcmp(get_name(get_str_psc(heap_addr)), "-")) {
@@ -603,8 +603,8 @@ inline static bool keysort(void)
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for keysort/2");
     for (i=0 ; i < len ; ++i) {
-      deref(term2);	/* Necessary for correctness.	*/
-      heap_addr = cell(clref_val(term2)); deref(heap_addr);
+      XSB_Deref(term2);	/* Necessary for correctness.	*/
+      heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
       cell_tbl[i] = heap_addr;
       term2 = cell(clref_val(term2)+1);
     }

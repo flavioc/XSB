@@ -70,12 +70,12 @@
 **  	    Register to Prolog term:
 **  		reg_term:	reg_num -> prolog_term
 **  	    C to Prolog:		
-**  		c2p_int:	prolog_int x prolog_term -> bool
-**  		c2p_float: 	prolog_float x prolog_term -> bool
-**  		c2p_string:	string x prolog_term -> bool
-**  		c2p_list: 	prolog_term -> bool
-**  		c2p_functor:	string x int x prolog_term -> bool
-**  		c2p_nil:	prolog_term -> bool
+**  		c2p_int:	prolog_int x prolog_term -> xsbBool
+**  		c2p_float: 	prolog_float x prolog_term -> xsbBool
+**  		c2p_string:	string x prolog_term -> xsbBool
+**  		c2p_list: 	prolog_term -> xsbBool
+**  		c2p_functor:	string x int x prolog_term -> xsbBool
+**  		c2p_nil:	prolog_term -> xsbBool
 **  		c2p_setfree:	prolog_term -> void  !! Dangerous
 **  	    Prolog to C:
 **  		p2c_int:	prolog_term -> prolog_int
@@ -88,18 +88,18 @@
 **  		p2p_car:	prolog_term -> prolog_term
 **  		p2p_cdr:	prolog_term -> prolog_term
 **  		p2p_new:	void -> prolog_term
-**  		p2p_unify:	prolog_term x prolog_term -> bool
-**  		p2p_call:	prolog_term -> bool
+**  		p2p_unify:	prolog_term x prolog_term -> xsbBool
+**  		p2p_call:	prolog_term -> xsbBool
 **   		p2p_funtrail:	val x fun -> void
-**  		p2p_deref:	prolot_term -> prolog_term   !! uncommon
+**  		p2p_deref:	prolog_term -> prolog_term   !! uncommon
 **  	    Type/Mode checking:
-**  		is_var:		prolog_term -> bool
-**  		is_int:		prolog_term -> bool
-**  		is_float:	prolog_term -> bool
-**  		is_string:	prolog_term -> bool
-**  		is_list:	prolog_term -> bool
-**  		is_nil:		prolog_term -> bool
-**  		is_functor:	prolog_term -> bool
+**  		is_var:		prolog_term -> xsbBool
+**  		is_int:		prolog_term -> xsbBool
+**  		is_float:	prolog_term -> xsbBool
+**  		is_string:	prolog_term -> xsbBool
+**  		is_list:	prolog_term -> xsbBool
+**  		is_nil:		prolog_term -> xsbBool
+**  		is_functor:	prolog_term -> xsbBool
 **  
 **  (3) High level Interface
 **     This can be viewed as an extention of the minimal interface above.
@@ -177,12 +177,12 @@ extern int   ptoc_term(char*, char*, reg_num);
 
 DllExport extern prolog_term call_conv reg_term(reg_num);
 
-DllExport extern bool call_conv c2p_int(prolog_int, prolog_term);
-DllExport extern bool call_conv c2p_float(double, prolog_term);
-DllExport extern bool call_conv c2p_string(char *, prolog_term);
-DllExport extern bool call_conv c2p_list(prolog_term);
-DllExport extern bool call_conv c2p_nil(prolog_term);
-DllExport extern bool call_conv c2p_functor(char *, int, prolog_term);
+DllExport extern xsbBool call_conv c2p_int(prolog_int, prolog_term);
+DllExport extern xsbBool call_conv c2p_float(double, prolog_term);
+DllExport extern xsbBool call_conv c2p_string(char *, prolog_term);
+DllExport extern xsbBool call_conv c2p_list(prolog_term);
+DllExport extern xsbBool call_conv c2p_nil(prolog_term);
+DllExport extern xsbBool call_conv c2p_functor(char *, int, prolog_term);
 DllExport extern void call_conv c2p_setfree(prolog_term);
 DllExport extern void call_conv c2p_chars(char *str, prolog_term term);
 
@@ -199,20 +199,20 @@ DllExport extern prolog_term call_conv p2p_arg(prolog_term, int);
 DllExport extern prolog_term call_conv p2p_car(prolog_term);
 DllExport extern prolog_term call_conv p2p_cdr(prolog_term);
 DllExport extern prolog_term call_conv p2p_new(void);
-DllExport extern bool        call_conv p2p_unify(prolog_term, prolog_term);
-DllExport extern bool        call_conv p2p_call(prolog_term);
+DllExport extern xsbBool        call_conv p2p_unify(prolog_term, prolog_term);
+DllExport extern xsbBool        call_conv p2p_call(prolog_term);
 DllExport extern void	     call_conv p2p_funtrail(/*val, fun*/);
 DllExport extern prolog_term call_conv p2p_deref(prolog_term);
 
-DllExport extern bool call_conv is_var(prolog_term);
-DllExport extern bool call_conv is_int(prolog_term);
-DllExport extern bool call_conv is_float(prolog_term);
-DllExport extern bool call_conv is_string(prolog_term);
-DllExport extern bool call_conv is_list(prolog_term);
-DllExport extern bool call_conv is_nil(prolog_term);
-DllExport extern bool call_conv is_functor(prolog_term);
-DllExport extern bool call_conv is_charlist(prolog_term,int*);
-DllExport extern bool call_conv is_attv(prolog_term);
+DllExport extern xsbBool call_conv is_var(prolog_term);
+DllExport extern xsbBool call_conv is_int(prolog_term);
+DllExport extern xsbBool call_conv is_float(prolog_term);
+DllExport extern xsbBool call_conv is_string(prolog_term);
+DllExport extern xsbBool call_conv is_list(prolog_term);
+DllExport extern xsbBool call_conv is_nil(prolog_term);
+DllExport extern xsbBool call_conv is_functor(prolog_term);
+DllExport extern xsbBool call_conv is_charlist(prolog_term,int*);
+DllExport extern xsbBool call_conv is_attv(prolog_term);
 
 extern int   c2p_term(char*, char*, prolog_term);
 extern int   p2c_term(char*, char*, prolog_term);

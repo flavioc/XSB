@@ -41,10 +41,7 @@ typedef int reg_num;
    the outer functor of a prolog term. */
 typedef unsigned long prolog_term;
 
-/* seems that some systems (Perl?) define bool as empty symbol; 
-   need to neutralize that */
-#undef bool
-typedef short  bool;
+typedef short  xsbBool;
 
 typedef unsigned char byte;
 typedef unsigned int counter;

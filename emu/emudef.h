@@ -97,7 +97,7 @@ int *asynint_ptr = &asynint_val;
 /* Replacements for labelled code in emusubs.i */
 
 #define nunify_with_nil(op)						\
-  deref(op);								\
+  XSB_Deref(op);       							\
   if (isref(op)) {							\
     /* op is FREE */							\
     bind_nil((CPtr)(op));						\
@@ -112,7 +112,7 @@ int *asynint_ptr = &asynint_val;
 /*======================================================================*/
 
 #define nunify_with_con(OP1,OP2)					\
-  deref(OP1);								\
+  XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
     bind_string((CPtr)(OP1), (char *)OP2);				\
@@ -131,7 +131,7 @@ int *asynint_ptr = &asynint_val;
 
 #define nunify_with_num(OP1,OP2)					\
   /* op1 is general, op2 has number (untagged) */			\
-  deref(OP1);								\
+  XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
     bind_int((CPtr)(OP1), (Integer)OP2);				\
@@ -143,12 +143,12 @@ int *asynint_ptr = &asynint_val;
     attv_dbgmsg(">>>> ATTV nunify_with_num, interrupt needed\n");	\
     add_interrupt(OP1, makeint(OP2));					\
   }									\
-  else Fail1;	/* op1 is STRING, FLOAT, CS, or LIST */
+  else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
 
 /*======================================================================*/
 
 #define nunify_with_float(OP1,OP2)					\
-  deref(OP1);								\
+  XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
     bind_float(vptr(op1), asfloat(op2));				\
@@ -160,13 +160,13 @@ int *asynint_ptr = &asynint_val;
     attv_dbgmsg(">>>> ATTV nunify_with_float, interrupt needed\n");	\
     add_interrupt(OP1, makefloat(asfloat(OP2)));			\
   }									\
-  else Fail1;	/* op1 is INT, STRING, CS, or LIST */ 
+  else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 
 /*======================================================================*/
 
 #define nunify_with_str(OP1,OP2)					\
   /* struct psc_rec *str_ptr; using op2 */				\
-  deref(OP1);								\
+  XSB_Deref(OP1);					       		\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
     bind_cs((CPtr)(OP1), (Pair)hreg);					\
@@ -192,7 +192,7 @@ int *asynint_ptr = &asynint_val;
 /*======================================================================*/
 
 #define nunify_with_list_sym(OP1)					\
-  deref(OP1);								\
+  XSB_Deref(OP1);	       						\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
     bind_list((CPtr)(OP1), hreg);					\
@@ -216,7 +216,7 @@ int *asynint_ptr = &asynint_val;
  * done by the attv unification handlers.
  */
 #define nunify_with_attv(OP1) {					\
-  deref(OP1);							\
+  XSB_Deref(OP1);	       					\
   if (isref(OP1)) {						\
     bind_attv((CPtr)(OP1), hreg);				\
   }								\

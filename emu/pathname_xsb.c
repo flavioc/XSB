@@ -66,7 +66,7 @@ static char *rectify_pathname(char *, char *);
 /*=========================================================================*/
 
 /* check if the path name is absolute */
-bool is_absolute_filename(char *filename) {
+xsbBool is_absolute_filename(char *filename) {
 
 #if defined(WIN_NT) 
   /*  If the file name begins with a "\" or with an "X:", where X is some
@@ -317,7 +317,7 @@ static char *rectify_pathname(char *inpath, char *outpath) {
   char *inptr1, *inptr2, *inpath_end;
   int length; /* length=inptr2-inptr1 */
   int i, outidx=0, nameidx=0; /* nameidx: 1st index to names */
-  bool leading_slash, leading_slash2, trailing_slash;
+  xsbBool leading_slash, leading_slash2, trailing_slash;
 
   tilde_expand_filename_norectify(inpath, expanded_inpath);
   
@@ -483,7 +483,7 @@ char *existing_file_extension(char *basename)
 
 /*=========================================================================*/
 
-bool almost_search_module(char *filename)
+xsbBool almost_search_module(char *filename)
 {
   char *fullname, *dir, *basename, *extension;
   struct stat fileinfo;

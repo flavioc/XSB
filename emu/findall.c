@@ -176,16 +176,16 @@ copy_again : /* for tail recursion optimisation */
 
   switch ( cell_tag( from ) )
     {
-    case INT :
-    case FLOAT :
-    case STRING :
+    case XSB_INT :
+    case XSB_FLOAT :
+    case XSB_STRING :
       *to = from;
       return;
     
-    case REF :
-    case REF1 :
-      deref(from);
-      if (! isref(from)) goto copy_again; /* it could be a LIST */
+    case XSB_REF :
+    case XSB_REF1 :
+      XSB_Deref(from);
+      if (! isref(from)) goto copy_again; /* it could be a XSB_LIST */
       if (on_glstack((CPtr)(from)))
 	*to = from;
       else
@@ -195,7 +195,7 @@ copy_again : /* for tail recursion optimisation */
 	}
       return;
 
-  case LIST :
+  case XSB_LIST :
     {
       CPtr pfirstel;
       Cell q ;
@@ -256,14 +256,14 @@ copy_again : /* for tail recursion optimisation */
       }
     }
 
-    case CS :
+    case XSB_STRUCT :
       {
 	CPtr pfirstel;
 	Cell newpsc;
 	int ar;
     
 	pfirstel = (CPtr)cs_val(from);
-	if ( cell_tag((*pfirstel)) == CS )
+	if ( cell_tag((*pfirstel)) == XSB_STRUCT )
 	  {
 	    /* this struct was copied before - it must be shared */
             *to = *pfirstel;
@@ -289,24 +289,24 @@ copy_again : /* for tail recursion optimisation */
 	goto copy_again ;
       }
   
-  case ATTV: {
+  case XSB_ATTV: {
     CPtr var;
     
     /*
-     * The following deref() is necessary, because, in copying
+     * The following XSB_Deref() is necessary, because, in copying
      * f(X,X), after the first occurrence of X is copied, the VAR
      * part of X has been pointed to the new copy on the heap.  When
      * we see this X again, we should dereference it to find that X
      * is already copied, but this deref is not done (see the code
-     * in `case CS:' -- deref's are gone).
+     * in `case XSB_STRUCT:' -- deref's are gone).
      */
-    deref(from);
+    XSB_Deref(from);
     var = clref_val(from);  /* the VAR part of the attv  */
     if (on_glstack(var))    /* is a new attv in the `to area' */
       bld_attv(to, var);
     else {		  /* has not been copied before */
       from = cell(var + 1); /* from -> the ATTR part of the attv */
-      deref(from);
+      XSB_Deref(from);
       *to = makeattv(*h);
       to = (*h);
       (*h) += 2;		  /* skip two cells */
@@ -320,7 +320,7 @@ copy_again : /* for tail recursion optimisation */
       to++;
       goto copy_again;
     }
-  } /* case ATTV */
+  } /* case XSB_ATTV */
   }
  
 } /*findall_copy_to_heap*/
@@ -416,14 +416,14 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 
     switch ( cell_tag( from ) )
       {
-      case INT :
-      case FLOAT :
-      case STRING :
+      case XSB_INT :
+      case XSB_FLOAT :
+      case XSB_STRING :
 	*to = from ;
 	return(size) ;
     
-      case REF :
-      case REF1 :
+      case XSB_REF :
+      case XSB_REF1 :
 	if (on_glstack((CPtr)(from)))
 	  {
 	    findall_trail((CPtr)from,from) ;
@@ -432,7 +432,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 	  } else *to = from ;
 	return(size) ;
 
-      case LIST :
+      case XSB_LIST :
 	{
 	  CPtr pfirstel ;
 	  Cell q ;
@@ -484,25 +484,25 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 	      {
 		findall_trail(pfirstel,q);
 		*pfirstel = makelist((CPtr)to);
-		deref(q);
+		XSB_Deref(q);
 		s = findall_copy_template_to_chunk(q,to,h);
 		if (s < 0) return(-1) ;
 		size += s + 2 ;
 	      }
 
-	    from = *(pfirstel+1) ; deref(from) ; to++ ;
+	    from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
 	    goto copy_again ;
 	  }
 	}
 	
-      case CS :
+      case XSB_STRUCT :
 	{
 	  CPtr pfirstel ;
 	  Cell newpsc;
 	  int ar ;
     
 	  pfirstel = (CPtr)cs_val(from) ;
-	  if ( cell_tag((*pfirstel)) == CS )
+	  if ( cell_tag((*pfirstel)) == XSB_STRUCT )
 	    {
 	      /* this struct was copied before - it must be shared */
 	      *to = *pfirstel;
@@ -530,22 +530,22 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 	  size += ar + 1 ;
 	  while ( --ar )
 	    {
-	      from = *(++pfirstel) ; deref(from) ; to++ ;
+	      from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
 	      s = findall_copy_template_to_chunk(from,to,h) ;
 	      if (s < 0) return(-1) ;
 	      size += s ;
 	    }
-	  from = *(++pfirstel) ; deref(from) ; to++ ;
+	  from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
 	  goto copy_again ;
 	}
   
-  case ATTV: {
+  case XSB_ATTV: {
     CPtr var;
     
     var = clref_val(from);  /* the VAR part of the attv  */
     if (on_glstack(var)) {  /* has not been copied before */
       from = cell(var + 1); /* from -> the ATTR part of the attv */
-      deref(from);
+      XSB_Deref(from);
       if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 3)) {
 	if (! get_more_chunk()) return(-1) ;
 	*h = current_findall->top_of_chunk ;
@@ -569,7 +569,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
       bld_attv(to, var);
       return(size);
     }
-  } /* case ATTV */
+  } /* case XSB_ATTV */
   } /* switch */
  
  return(-1) ; /* to keep compiler happy */
@@ -594,7 +594,7 @@ int findall_add()
   arg3 = ptoc_tag(3);
   {
     int t = cell_tag(arg3) ;
-    if ((t != REF) && (t != REF1)) return(0) ;
+    if ((t != XSB_REF) && (t != XSB_REF1)) return(0) ;
   }
   
   arg1 = ptoc_tag(1);
@@ -649,7 +649,7 @@ int findall_get_solutions()
   arg4 = ptoc_tag(4);
   {
     int t = cell_tag(arg4) ;
-    if ((t == REF) || (t == REF1)) *(CPtr)arg4 = makeint(666) ;
+    if ((t == XSB_REF) || (t == XSB_REF1)) *(CPtr)arg4 = makeint(666) ;
   }
   
   arg3 = ptoc_tag(3); 
@@ -664,7 +664,7 @@ int findall_get_solutions()
   
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   
-  from = *(p->first_chunk+1) ; /* deref not necessary */
+  from = *(p->first_chunk+1) ; /* XSB_Deref not necessary */
   findall_copy_to_heap(from,(CPtr)arg1,&hreg) ; /* this can't fail */
   *(CPtr)arg2 = *(p->tail) ; /* no checking, no trailing */
   findall_free(cur_f) ;
@@ -678,19 +678,22 @@ static long term_size(Cell term)
   long size = 0 ;
  recur:
   switch(cell_tag(term)) {
-  case FREE: case REF1:
-  case INT: case STRING: case FLOAT:
+  case XSB_FREE:
+  case XSB_REF1:
+  case XSB_INT:
+  case XSB_STRING:
+  case XSB_FLOAT:
     return size ;
-  case LIST: {
+  case XSB_LIST: {
     CPtr pfirstel ;
     
     pfirstel = clref_val(term) ;
-    term = *pfirstel ; deref(term) ;
+    term = *pfirstel ; XSB_Deref(term) ;
     size += 2 + term_size(term) ;
-    term = *(pfirstel+1) ; deref(term) ;
+    term = *(pfirstel+1) ; XSB_Deref(term) ;
     goto recur;
   }
-  case CS: {
+  case XSB_STRUCT: {
     int a ;
     CPtr pfirstel ;
     
@@ -698,23 +701,23 @@ static long term_size(Cell term)
     a = get_arity((Psc)(*pfirstel)) ;
     size += a + 1 ;
     while( --a ) {
-      term = *++pfirstel ; deref(term) ;
+      term = *++pfirstel ; XSB_Deref(term) ;
       size += term_size( term ) ;
     }
-    term = *++pfirstel ; deref(term) ;
+    term = *++pfirstel ; XSB_Deref(term) ;
     goto recur;
   }
-  case ATTV: {
+  case XSB_ATTV: {
     CPtr pfirstel;
 
     pfirstel = clref_val(term);
     if (pfirstel < hreg) {
       /*
        * This is the first occurrence of an attributed variable.  Its
-       * first cell (the VAR part) will be changed to an ATTV cell which
+       * first cell (the VAR part) will be changed to an XSB_ATTV cell which
        * points to hreg, and the cell of hreg will be set to a free
        * variable.  So the later occurrence of this attributed variable is
-       * dereferenced and seen as an ATTV pointing to hreg, and we can
+       * dereferenced and seen as an XSB_ATTV pointing to hreg, and we can
        * tell it has been counted before.
        */
       size += 2;
@@ -724,7 +727,7 @@ static long term_size(Cell term)
       term = cell(clref_val(term) + 1);
       goto recur;
     }
-    else /* this ATTV has been counted before */
+    else /* this XSB_ATTV has been counted before */
       return size;
   }
   }
@@ -741,14 +744,14 @@ copy_again : /* for tail recursion optimisation */
 
   switch ( cell_tag( from ) )
     {
-    case INT :
-    case FLOAT :
-    case STRING :
+    case XSB_INT :
+    case XSB_FLOAT :
+    case XSB_STRING :
       *to = from ;
       return ;
     
-    case REF :
-    case REF1 :
+    case XSB_REF :
+    case XSB_REF1 :
       if ((CPtr)from < hreg)  /* meaning: a not yet copied undef */
 	{
 	  findall_trail((CPtr)from,from) ;
@@ -758,7 +761,7 @@ copy_again : /* for tail recursion optimisation */
       else *to = from ;
       return ;
 
-    case LIST :
+    case XSB_LIST :
       {
 	/*
 	 *  before copying:
@@ -843,57 +846,56 @@ copy_again : /* for tail recursion optimisation */
 	    {
 	      findall_trail(pfirstel,q);
 	      *pfirstel = makelist((CPtr)to);
-	      deref(q);
+	      XSB_Deref(q);
 	      do_copy_term(q,to,h);
 	    }
 
-	  from = *(pfirstel+1) ; deref(from) ; to++ ;
+	  from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
 	  goto copy_again ;
 	}
       }
 
-    case CS :
-      {
-	/*
-	 *  before copying:
-	 *  
-	 *      +----+      +-----------------------------------+      +----+
-	 *  (b) |a CS|  (a) | Functor | arg1 | arg2 | ... | argn|  (f) |a CS|
-	 *      +----+      +-----------------------------------+      +----+
-	 *  
-	 *  trail stack empty
-	 *  
-	 *  after copying the first (at b)
-	 *  
-	 *  
-	 *      +----+      +-----------------------------------+      +----+
-	 *  (b) |a CS|  (a) | d    CS | arg1 | arg2 | ... | argn|  (f) |a CS|
-	 *      +----+      +-----------------------------------+      +----+
-	 *  	       
-	 *      +----+      +-----------------------------------+ 
-	 *  (c) |d CS|  (d) | Functor | arg1 | arg2 | ... | argn| 
-	 *      +----+      +-----------------------------------+ 
-	 *  
-	 *         +-------------+
-	 *  trail: | Functor | a |
-	 *         +-------------+
-	 *  
-	 *  c and d are addresses of the copied things
-	 *  
-	 *  so when we come at the CS pointer at f, we hit the |d CS| cell
-	 *  at a, which means that it was copied before
-	 *  
-	 *  this relies on a Functor cell not having a CS tag
-	 *  
-	 *  the situation for lists is more complicated
-	 */
-    
+    case XSB_STRUCT : {
+      /*
+       before copying:
+       
+           +--------+     +-----------------------------------+      +--------+
+       (b) |a STRUCT| (a) | Functor | arg1 | arg2 | ... | argn|  (f) |a STRUCT|
+           +--------+     +-----------------------------------+      +--------+
+       
+       trail stack empty
+       
+       after copying the first (at b)
+       
+       
+           +--------+     +------------------------------------+     +--------+
+       (b) |a STRUCT| (a) | d STRUCT | arg1 | arg2 | ... | argn| (f) |a STRUCT|
+           +--------+     +------------------------------------+     +--------+
+        	       
+           +--------+      +-----------------------------------+ 
+       (c) |d STRUCT|  (d) | Functor | arg1 | arg2 | ... | argn| 
+           +--------+      +-----------------------------------+ 
+       
+              +-------------+
+       trail: | Functor | a |
+              +-------------+
+        
+       c and d are addresses of the copied things
+       
+       so when we come at the STRUCT pointer at f, we hit the |d STRUCT| cell
+       at a, which means that it was copied before
+        
+       this relies on a Functor cell not having a STRUCT tag
+        
+       the situation for lists is more complicated
+      */
+      
 	CPtr pfirstel ;
 	Cell newpsc;
 	int ar ;
 
 	pfirstel = (CPtr)cs_val(from) ;
-	if ( cell_tag((*pfirstel)) == CS )
+	if ( cell_tag((*pfirstel)) == XSB_STRUCT )
 	  {
 	    /* this struct was copied before - it must be shared */
 	    *to = *pfirstel;
@@ -914,17 +916,17 @@ copy_again : /* for tail recursion optimisation */
 	*h += ar + 1 ;
 	while ( --ar )
 	  {
-	    from = *(++pfirstel) ; deref(from) ; to++ ;
+	    from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
 	    do_copy_term(from,to,h) ;
 	  }
-	from = *(++pfirstel) ; deref(from) ; to++ ;
+	from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
 	goto copy_again ;
       }
 
-    case ATTV:
+    case XSB_ATTV:
       {
 	/*
-	 *  before copying: (A means ATTV tag)
+	 *  before copying: (A means XSB_ATTV tag)
 	 *  
 	 *  +----+        +----+----+
 	 *  | x A|    (x) | a  | b  |    empty trail
@@ -960,7 +962,7 @@ copy_again : /* for tail recursion optimisation */
 	var = clref_val(from);	/* the VAR part of the attv  */
 	if (var < hreg) {	/* has not been copied before */
 	  from = cell(var + 1);	/* from -> the ATTR part of the attv */
-	  deref(from);
+	  XSB_Deref(from);
 	  *to = makeattv(*h);
 	  to = (*h);
 	  (*h) += 2;		/* skip two cells */
@@ -976,7 +978,7 @@ copy_again : /* for tail recursion optimisation */
 	  goto copy_again;
 	} else			/* is a new attv in the `to area' */
 	  bld_attv(to, var);
-      } /* case ATTV */
+      } /* case XSB_ATTV */
     } /* switch */
 } /* do_copy_term */
 

@@ -502,9 +502,9 @@ void strcpy_lower(char *to, const char *from)
 
 void print_prolog_term(prolog_term term, char *message)
 { 
-  static vstrDEFINE(StrArgBuf);
-  vstrSET(&StrArgBuf,"");
-  deref(term);
+  static XSB_StrDefine(StrArgBuf);
+  XSB_StrSet(&StrArgBuf,"");
+  p2p_deref(term);
   print_pterm(term, 1, &StrArgBuf); 
   xsb_dbgmsg("%s = %s", message, StrArgBuf.string);
 } 
@@ -572,7 +572,7 @@ PRIVATE AUTHENTICATION *find_credentials(AUTHENTICATION *auth_info,char *realm)
 PRIVATE char *extract_uri(prolog_term req_term, HTRequest *request,
 			  int request_id)
 {
-  static  vstrDEFINE(uristr);
+  static  XSB_StrDefine(uristr);
   int 	  urilen;
   char    *uri;
   prolog_term uri_term;
@@ -1022,7 +1022,7 @@ void add_result_param(prolog_term *result_param,
   xsb_dbgmsg("Starting add_result_param");
 #endif
 
-  deref(*result_param);
+  p2p_deref(*result_param);
   if (is_list(*result_param))
     listHead = p2p_car(*result_param);
   else {
@@ -1049,7 +1049,7 @@ PRIVATE prolog_term get_result_param_stub(prolog_term *result_param)
 {
   prolog_term listHead;
 
-  deref(*result_param);
+  p2p_deref(*result_param);
   if (is_list(*result_param))
     listHead = p2p_car(*result_param);
   else {

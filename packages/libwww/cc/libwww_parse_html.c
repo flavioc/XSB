@@ -108,7 +108,7 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
 /* The callback to capture text events */
 PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
 {
-  static vstrDEFINE(pcdata_buf);
+  static XSB_StrDefine(pcdata_buf);
   int shift = 0;
   REQUEST_CONTEXT *context =
     (REQUEST_CONTEXT *)HTRequest_context(htext->request);
@@ -127,10 +127,10 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
   html_push_element(htext, PCDATA_SPECIAL, NULL, NULL);
 
   /* copy textbuf (which isn't null-terminated) into a variable length str */
-  vstrENSURE_SIZE(&pcdata_buf, len+1);
+  XSB_StrEnsureSize(&pcdata_buf, len+1);
   strncpy(pcdata_buf.string, textbuf, len);
   pcdata_buf.length = len;
-  vstrNULL_TERMINATE(&pcdata_buf);
+  XSB_StrNullTerminate(&pcdata_buf);
 
   /* if string starts with a newline, skip the newline */
   if (strncmp(textbuf,"\n", strlen("\n")) == 0)
@@ -155,7 +155,7 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
 				       const char  **value)
 {
   int tag_attributes_number = HTTag_attributes(tag);
-  static vstrDEFINE(attrname);
+  static XSB_StrDefine(attrname);
   int cnt;
   prolog_term
     prop_list = p2p_arg(elt_term,2),
@@ -171,7 +171,7 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
 
   for (cnt=0; cnt<tag_attributes_number; cnt++) {
     if (present[cnt]) {
-      vstrENSURE_SIZE(&attrname, strlen(HTTag_attributeName(tag, cnt)));
+      XSB_StrEnsureSize(&attrname, strlen(HTTag_attributeName(tag, cnt)));
       strcpy_lower(attrname.string, HTTag_attributeName(tag, cnt));
       
 #ifdef LIBWWW_DEBUG_VERBOSE
@@ -203,7 +203,7 @@ PRIVATE void html_push_element (USERDATA       *htext,
 				const BOOL     *present,
 				const char     **value)
 {
-  static vstrDEFINE(tagname);
+  static XSB_StrDefine(tagname);
   HTTag *tag = special_find_tag(htext, element_number);
   prolog_term location;
 
@@ -236,7 +236,7 @@ PRIVATE void html_push_element (USERDATA       *htext,
   STACK_TOP(htext).element_type = HTTag_content(tag);
   c2p_functor("elt",3,STACK_TOP(htext).elt_term);
 
-  vstrENSURE_SIZE(&tagname, strlen(HTTag_name(tag)));
+  XSB_StrEnsureSize(&tagname, strlen(HTTag_name(tag)));
   strcpy_lower(tagname.string, HTTag_name(tag));
   c2p_string(tagname.string, p2p_arg(STACK_TOP(htext).elt_term, 1));
   collect_html_attributes(STACK_TOP(htext).elt_term, tag, present, value);

@@ -207,7 +207,7 @@ static void chat_update_stats(int incremental, int nrarguments, long size_tr)
 #define BATCH_MODE     0
 #define SELECTIVE_MODE 1
 
-static void chat_free_chat_area(chat_init_pheader phead, bool mode)
+static void chat_free_chat_area(chat_init_pheader phead, xsbBool mode)
 {
   chat_incr_pheader p,q;
 

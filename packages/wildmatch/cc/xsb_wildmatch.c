@@ -55,8 +55,8 @@ static prolog_term wild_term, input_string_term;
 
 static char *lowercase_string(char *str);
 
-static vstrDEFINE(wild_buffer);
-static vstrDEFINE(input_string_buffer);
+static XSB_StrDefine(wild_buffer);
+static XSB_StrDefine(input_string_buffer);
 
 
 /* XSB wildcard matcher entry point 

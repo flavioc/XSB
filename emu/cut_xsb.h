@@ -42,7 +42,7 @@
 /* this, is as follows:                                         	*/
 /*									*/
 /*	#define cut_code(OP1)						*/
-/*	    deref(OP1);							*/
+/*	    XSB_Deref(OP1);						*/
 /*	    cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		*/
 /*	    cut_restore_trail_condition_registers(cut_breg);		*/
 /*	    if (breg != cut_breg) {					*/
@@ -78,7 +78,7 @@
    { CPtr cut_breg;					        \
      byte inst_cut_over;                                        \
 								\
-     deref(OP1);						\
+     XSB_Deref(OP1);						\
      cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		\
      cut_restore_trail_condition_registers(cut_breg);		\
      if (breg != cut_breg) { /* not cutting back to the current CP */\

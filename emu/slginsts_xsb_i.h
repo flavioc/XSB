@@ -468,7 +468,7 @@ case new_answer_dealloc: {
   CPtr producer_cpf, producer_csf, answer_template;
   int template_size, attv_num, tmp;
   SGFrame producer_sf;
-  bool isNewAnswer = FALSE;
+  xsbBool isNewAnswer = FALSE;
   BTNptr answer_leaf;
 
   pad;

@@ -98,7 +98,7 @@ extern Cell  makefloat(Float);
 extern Float getfloatval(Cell);
 
 #define isref(cell)  (!((word)(cell)&0x3))
-#define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> bool */
+#define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> xsbBool */
 
 #define cell_tag(cell) ((word)(cell)&0x7)
 
@@ -193,23 +193,23 @@ extern Float getfloatval(Cell);
 
 /* integer manipulation */
 #define int_val(dcell) (Integer)dec_int(dcell)
-#define makeint(val) (Cell)((enc_int(val)) | INT)
+#define makeint(val) (Cell)((enc_int(val)) | XSB_INT)
 
 /* string manipulation */
 #define string_val(dcell) (char *)dec_addr(dcell)
-#define makestring(str) (Cell)(enc_addr(str) | STRING)
+#define makestring(str) (Cell)(enc_addr(str) | XSB_STRING)
 
 /* special-case strings [] */
 #define	makenil		makestring(nil_sym)
 
 /* pointer manipulation */
 #define cs_val(dcell) (Pair)dec_addr(dcell)
-#define makecs(str) (Cell)(enc_addr(str) | CS)
+#define makecs(str) (Cell)(enc_addr(str) | XSB_STRUCT)
 #define clref_val(dcell) (CPtr)dec_addr(dcell)
-#define makelist(list) (Cell)(enc_addr(list) | LIST)
-#define makeattv(attv) (Cell)(enc_addr(attv) | ATTV)
+#define makelist(list) (Cell)(enc_addr(list) | XSB_LIST)
+#define makeattv(attv) (Cell)(enc_addr(attv) | XSB_ATTV)
 #define trievar_val(dcell) (Integer)dec_int(dcell)
-#define maketrievar(val) (Cell)(enc_int(val) | TrieVar)
+#define maketrievar(val) (Cell)(enc_int(val) | XSB_TrieVar)
 
 #define addr_val(dcell) int_val(dcell)
 #define makeaddr(val) makeint(val)
@@ -231,15 +231,15 @@ extern Float getfloatval(Cell);
 #define bld_copy0(addr, val) cell(addr) = val
 #define bld_copy(addr, val) cell(addr) = val
 /* tls -- this bld_copy wont work for VARASINDEX */
-#define bld_free(addr) cell(addr) = (Cell)(addr) /* CPtr => FREE cell */
+#define bld_free(addr) cell(addr) = (Cell)(addr) /* CPtr => XSB_FREE cell */
 
-#define isinteger(dcell) (cell_tag(dcell)==INT)	/* dcell -> bool */
-#define isfloat(dcell) (cell_tag(dcell)==FLOAT)	/* dcell -> bool */
-#define isconstr(dcell) (cell_tag(dcell)==CS)	/* dcell -> bool */
-#define islist(dcell) (cell_tag(dcell)==LIST)	/* dcell -> bool */
-#define isattv(dcell) (cell_tag(dcell)==ATTV)	/* dcell -> bool */
+#define isinteger(dcell) (cell_tag(dcell)==XSB_INT)	/* dcell -> xsbBool */
+#define isfloat(dcell) (cell_tag(dcell)==XSB_FLOAT)	/* dcell -> xsbBool */
+#define isconstr(dcell) (cell_tag(dcell)==XSB_STRUCT)	/* dcell -> xsbBool */
+#define islist(dcell) (cell_tag(dcell)==XSB_LIST)	/* dcell -> xsbBool */
+#define isattv(dcell) (cell_tag(dcell)==XSB_ATTV)	/* dcell -> xsbBool */
 
-#define isstring(dcell) (cell_tag(dcell)==STRING)
+#define isstring(dcell) (cell_tag(dcell)==XSB_STRING)
 #define numequal(num1, num2) num1 == num2
 
 #define isnumber(dcell)	((isinteger(dcell)) || (isfloat(dcell)))

@@ -139,7 +139,7 @@ PRIVATE void xml_addText (void	         *userdata,
 			  int	     	 len)
 {
   USERDATA *userdata_obj = (USERDATA *) userdata;
-  static vstrDEFINE(pcdata_buf);
+  static XSB_StrDefine(pcdata_buf);
   int shift = 0;
   REQUEST_CONTEXT *context =
     (REQUEST_CONTEXT *)HTRequest_context(userdata_obj->request);
@@ -158,10 +158,10 @@ PRIVATE void xml_addText (void	         *userdata,
     return;
 
   /* copy textbuf (which isn't null-terminated) into a variable length str */
-  vstrENSURE_SIZE(&pcdata_buf, len+1);
+  XSB_StrEnsureSize(&pcdata_buf, len+1);
   strncpy(pcdata_buf.string, textbuf, len);
   pcdata_buf.length = len;
-  vstrNULL_TERMINATE(&pcdata_buf);
+  XSB_StrNullTerminate(&pcdata_buf);
 
   /* if string starts with a newline, skip the newline */
   if (strncmp(textbuf,"\n", strlen("\n")) == 0)
@@ -189,7 +189,7 @@ PRIVATE void xml_addText (void	         *userdata,
 PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 				     const XML_Char  **attrs)
 {
-  static vstrDEFINE(attrname);
+  static XSB_StrDefine(attrname);
   prolog_term
     prop_list = p2p_arg(elt_term,2),
     prop_list_tail = prop_list,
@@ -198,7 +198,7 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
   c2p_list(prop_list_tail);
 
   while (attrs && *attrs) {
-    vstrENSURE_SIZE(&attrname, strlen((char *)*attrs));
+    XSB_StrEnsureSize(&attrname, strlen((char *)*attrs));
     strcpy_lower(attrname.string, (char *)*attrs);
     
 #ifdef LIBWWW_DEBUG_VERBOSE
@@ -229,7 +229,7 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
 			       const XML_Char  *tag,
 			       const XML_Char  **attrs)
 {
-  static vstrDEFINE(lower_tagname);
+  static XSB_StrDefine(lower_tagname);
   prolog_term location;
 
   /*   If tag is not valid */
@@ -257,12 +257,12 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
   STACK_TOP(userdata).suppress = FALSE;
 
   /* lowercase the tag */
-  vstrENSURE_SIZE(&lower_tagname, strlen(tag)+1);
+  XSB_StrEnsureSize(&lower_tagname, strlen(tag)+1);
   strcpy_lower(lower_tagname.string, tag);
 
   /* normal tags look like elt(tagname, attrlist, contentlist);
      pcdata tags are: elt(pcdata,[],text); */
-  if (vstrSTRCMP(&lower_tagname, "pcdata")==0)
+  if (XSB_StrCmp(&lower_tagname, "pcdata")==0)
     c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
   else /* normal elt */
     c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
@@ -276,7 +276,7 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
 #endif
 
   /* normal element */
-  if (vstrSTRCMP(&lower_tagname, "pcdata")!=0) {
+  if (XSB_StrCmp(&lower_tagname, "pcdata")!=0) {
     STACK_TOP(userdata).content_list_tail =
       p2p_arg(STACK_TOP(userdata).elt_term,3);
     c2p_list(STACK_TOP(userdata).content_list_tail);
@@ -592,12 +592,12 @@ PRIVATE int xml_unknownEncoding (void 	        *encodingHandlerData,
 /* Default is commented out so that expat will parse entities.
 PRIVATE void xml_default (void * userData, const XML_Char * str, int len)
 {
-  vstrDEFINE(unparsed);
+  XSB_StrDefine(unparsed);
 
-  vstrENSURE_SIZE(&unparsed, len+1);
+  XSB_StrEnsureSize(&unparsed, len+1);
   strncpy(unparsed.string, str, len);
   unparsed.length = len;
-  vstrNULL_TERMINATE(&unparsed);
+  XSB_StrNullTerminate(&unparsed);
 #ifdef LIBWWW_DEBUG
   xsb_dbgmsg("In xml_default: Request: %s: Unparsed: %s",
 	     RequestID(((USERDATA *)userData)->request), unparsed.string);

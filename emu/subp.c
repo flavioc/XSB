@@ -149,7 +149,7 @@ Cell build_interrupt_chain(void) {
 /*  Unification routines.						*/
 /*======================================================================*/
 
-bool unify(Cell rop1, Cell rop2)
+xsbBool unify(Cell rop1, Cell rop2)
 { /* begin unify */
   register Cell op1, op2;
 
@@ -381,7 +381,7 @@ Float getfloatval(Cell w)
 Cell makefloat(Float f)
 {
   float_conv.f = f;
-  return ( float_conv.i & FLOAT_MASK ) | FLOAT;
+  return ( float_conv.i & FLOAT_MASK ) | XSB_FLOAT;
 }
 
 Float asfloat(Cell w)
@@ -420,12 +420,12 @@ int compare(Cell val1, Cell val2)
   int comp;
   CPtr cptr1, cptr2;
 
-  deref(val2);		/* val2 is not in register! */
-  deref(val1);		/* val1 is not in register! */
+  XSB_Deref(val2);		/* val2 is not in register! */
+  XSB_Deref(val1);		/* val1 is not in register! */
   if (val1 == val2) return 0;
   switch(cell_tag(val1)) {
-  case FREE:
-  case REF1:
+  case XSB_FREE:
+  case XSB_REF1:
     if (isattv(val2))
       return vptr(val1) - (CPtr)dec_addr(val2);
     else if (isnonvar(val2)) return -1;
@@ -449,25 +449,25 @@ int compare(Cell val1, Cell val2)
       }
       return vptr(val1) - vptr(val2);
     }
-  case FLOAT:
+  case XSB_FLOAT:
     if (isref(val2) || isattv(val2)) return 1;
     else if (isfloat(val2)) 
       return sign(float_val(val1) - float_val(val2));
     else return -1;
-  case INT:
+  case XSB_INT:
     if (isref(val2) || isfloat(val2) || isattv(val2)) return 1;
     else if (isinteger(val2)) 
       return int_val(val1) - int_val(val2);
     else return -1;
-  case STRING:
+  case XSB_STRING:
     if (isref(val2) || isfloat(val2) || isinteger(val2) || isattv(val2)) 
       return 1;
     else if (isstring(val2)) {
       return strcmp(string_val(val1), string_val(val2));
     }
     else return -1;
-  case CS:
-    if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
+  case XSB_STRUCT:
+    if (cell_tag(val2) != XSB_STRUCT && cell_tag(val2) != XSB_LIST) return 1;
     else {
       int arity1, arity2;
       Psc ptr1 = get_str_psc(val1);
@@ -492,8 +492,8 @@ int compare(Cell val1, Cell val2)
       return comp;
     }
     break;
-  case LIST:
-    if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
+  case XSB_LIST:
+    if (cell_tag(val2) != XSB_STRUCT && cell_tag(val2) != XSB_LIST) return 1;
     else if (isconstr(val2)) return -(compare(val2, val1));
     else {	/* Here we are comparing two list structures. */
       cptr1 = clref_val(val1);
@@ -503,7 +503,7 @@ int compare(Cell val1, Cell val2)
       return compare(cell(cptr1+1), cell(cptr2+1));
     }
     break;
-  case ATTV:
+  case XSB_ATTV:
     if (isattv(val2))
       return (CPtr)dec_addr(val1) - (CPtr)dec_addr(val2);
     else if (isref(val2))
@@ -526,8 +526,8 @@ int compare(Cell val1, Cell val2)
 
 int key_compare(Cell term1, Cell term2)
 {
-  deref(term1);		/* term1 is not in register! */
-  deref(term2);		/* term2 is not in register! */
+  XSB_Deref(term1);		/* term1 is not in register! */
+  XSB_Deref(term2);		/* term2 is not in register! */
   return compare(cell(clref_val(term1)+1), cell(clref_val(term2)+1));
 }
 

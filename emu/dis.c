@@ -55,7 +55,7 @@ static void dis_data(void);
 static void dis_text(void);
 static void dis_data_sub(Pair *);
 
-void dis(bool distext)
+void dis(xsbBool distext)
 {  
 /*   filedes = fopen("stdout","w"); */
    dis_data();

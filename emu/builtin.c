@@ -112,10 +112,10 @@
 extern TIFptr first_tip;
 
 extern int  sys_syscall(int);
-extern bool sys_system(int);
-extern bool formatted_io(void), read_canonical(void);
-extern bool file_stat(void);
-extern bool private_builtin(void);
+extern xsbBool sys_system(int);
+extern xsbBool formatted_io(void), read_canonical(void);
+extern xsbBool file_stat(void);
+extern xsbBool private_builtin(void);
 
 extern void xsb_segfault_quitter(int err);
 
@@ -123,27 +123,27 @@ extern void xsb_segfault_quitter(int err);
 extern boolean startInterruptThread(SOCKET intSocket);
 #endif
 
-extern bool assert_code_to_buff(void), assert_buff_to_clref(void);
-extern bool gen_retract_all(void), db_retract0(void), db_get_clause(void);
-extern bool db_build_prref(void), db_remove_prref(void), db_reclaim0(void);
+extern xsbBool assert_code_to_buff(void), assert_buff_to_clref(void);
+extern xsbBool gen_retract_all(void), db_retract0(void), db_get_clause(void);
+extern xsbBool db_build_prref(void), db_remove_prref(void), db_reclaim0(void);
 
 extern char *dirname_canonic(char *);
-extern bool almost_search_module(char *);
+extern xsbBool almost_search_module(char *);
 extern char *expand_filename(char *filename);
 extern char *existing_file_extension(char *);
 extern char *tilde_expand_filename(char *filename);
-extern bool is_absolute_filename(char *filename);
+extern xsbBool is_absolute_filename(char *filename);
 extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
 
-extern bool xsb_socket_request(void);
+extern xsbBool xsb_socket_request(void);
 
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
 extern int  copy_term(void);
 
-extern bool substring(void);
-extern bool string_substitute(void);
-extern bool str_cat(void);
-extern bool str_sub(void);
+extern xsbBool substring(void);
+extern xsbBool string_substitute(void);
+extern xsbBool str_cat(void);
+extern xsbBool str_sub(void);
 
 extern void force_answer_true(BTNptr);
 extern void force_answer_false(BTNptr);
@@ -173,17 +173,17 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
-  /* deref and then check the type */
-  deref(addr);
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
   switch (cell_tag(addr)) {
-  case FREE:
-  case REF1: 
-  case ATTV:
-  case CS:
-  case LIST:
-  case FLOAT: xsb_abort("PTOC_INT: Integer argument expected");
-  case STRING: return (prolog_int)string_val(addr);	/* dsw */
-  case INT: return int_val(addr);
+  case XSB_FREE:
+  case XSB_REF1: 
+  case XSB_ATTV:
+  case XSB_STRUCT:
+  case XSB_LIST:
+  case XSB_FLOAT: xsb_abort("PTOC_INT: Integer argument expected");
+  case XSB_STRING: return (prolog_int)string_val(addr);	/* dsw */
+  case XSB_INT: return int_val(addr);
   default: xsb_abort("PTOC_INT: Argument of unknown type");
   }
   return FALSE;
@@ -194,18 +194,18 @@ DllExport prolog_float call_conv ptoc_float(int regnum)
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
-  /* deref and then check the type */
-  deref( addr );
+  /* XSB_Deref and then check the type */
+  XSB_Deref( addr );
   switch (cell_tag(addr)) {
-  case FREE:
-  case REF1: 
-  case ATTV:
-  case CS:  
-  case LIST:
-  case INT:
-  case STRING:
+  case XSB_FREE:
+  case XSB_REF1: 
+  case XSB_ATTV:
+  case XSB_STRUCT:  
+  case XSB_LIST:
+  case XSB_INT:
+  case XSB_STRING:
     xsb_abort("PTOC_FLOAT: Float argument expected");
-  case FLOAT: return (prolog_float)float_val(addr);
+  case XSB_FLOAT: return (prolog_float)float_val(addr);
   default:
     xsb_abort("PTOC_FLOAT: Argument of unknown type");
   }
@@ -217,18 +217,18 @@ DllExport char* call_conv ptoc_string(int regnum)
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
   
-  /* deref and then check the type */
-  deref(addr);
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
   switch (cell_tag(addr)) {
-  case FREE:
-  case REF1:
-  case ATTV:
-  case CS:  
-  case LIST:
-  case FLOAT:
+  case XSB_FREE:
+  case XSB_REF1:
+  case XSB_ATTV:
+  case XSB_STRUCT:  
+  case XSB_LIST:
+  case XSB_FLOAT:
     xsb_abort("PTOC_STRING: String (atom) argument expected");
-  case INT: return (char *)int_val(addr);
-  case STRING: return string_val(addr); 
+  case XSB_INT: return (char *)int_val(addr);
+  case XSB_STRING: return string_val(addr); 
   default:
     xsb_abort("PTOC_STRING: Argument of unknown type");
   }
@@ -252,7 +252,7 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
 {
   register Cell addr = cell(reg+regnum);
   
-  deref(addr);
+  XSB_Deref(addr);
   if (isref(addr)) {
     bind_int(vptr(addr), value);
   }
@@ -266,7 +266,7 @@ DllExport void call_conv ctop_float(int regnum, prolog_float value) /* from floa
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
-  deref(addr);
+  XSB_Deref(addr);
   if (isref(addr)) {
     bind_float(vptr(addr), value);
   }
@@ -279,7 +279,7 @@ DllExport void call_conv ctop_string(int regnum, char *value)
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
-  deref(addr);
+  XSB_Deref(addr);
   if (isref(addr)) {
     bind_string(vptr(addr), value);
   }
@@ -291,7 +291,7 @@ inline static void ctop_constr(int regnum, Pair psc_pair)
 {				/* from psc_pair ptr form an constr node */
   register Cell addr = cell(reg+regnum);
 
-  deref(addr);
+  XSB_Deref(addr);
   if (isref(addr)) {
     bind_cs(vptr(addr), psc_pair);
   }
@@ -306,7 +306,7 @@ inline static void ctop_tag(int regnum, Cell term)
 {
   register Cell addr = cell(reg+regnum);
 
-  deref(addr);
+  XSB_Deref(addr);
   if (isref(addr)) {
     bind_copy(vptr(addr), term);
   }
@@ -327,17 +327,17 @@ Cell  val_to_hash(Cell term)
   Cell value;
 
   switch(cell_tag(term)) {
-    case INT:
-    case FLOAT:  /* Yes, use int_val to avoid conversion problem */
+    case XSB_INT:
+    case XSB_FLOAT:  /* Yes, use int_val to avoid conversion problem */
       value = (Cell)int_val(term);
       break;
-    case LIST:
+    case XSB_LIST:
       value = (Cell)(list_str);
       break;
-    case CS:
+    case XSB_STRUCT:
       value = (Cell)get_str_psc(term);
       break;
-    case STRING: /* The following test is a necessary nuisance caused  */
+    case XSB_STRING: /* The following test is a necessary nuisance caused  */
       /* by the strange (dynamic) compilation of []/0 in an */
       /* index position which should be fixed one fine day! */
       value = (Cell)(isnil(term) ? 0 : string_val(term));
@@ -353,24 +353,24 @@ Cell  val_to_hash(Cell term)
 
 static int ground(CPtr temp)
 {
-  cptr_deref(temp);
+  XSB_CptrDeref(temp);
   switch(cell_tag(temp)) {
-  case FREE: 
-  case REF1: 
-  case ATTV:
+  case XSB_FREE: 
+  case XSB_REF1: 
+  case XSB_ATTV:
     return FALSE;
-  case STRING: 
-  case INT: 
-  case FLOAT:
+  case XSB_STRING: 
+  case XSB_INT: 
+  case XSB_FLOAT:
     return TRUE;
-  case LIST:
+  case XSB_LIST:
     {
       int flag;
       flag = ground(clref_val(temp));
       flag = flag & ground(clref_val(temp)+1);
       return flag;
     }
-  case CS:
+  case XSB_STRUCT:
     {
       int j, arity, flag=1;
       arity = (int) get_arity(get_str_psc(temp));
@@ -392,10 +392,10 @@ inline static int is_proper_list(Cell term)	/* for standard preds */
   register Cell addr;
 
   addr = term;
-  deref(addr);
+  XSB_Deref(addr);
   while (islist(addr)) {
     addr = cell(clref_val(addr)+1);
-    deref(addr);
+    XSB_Deref(addr);
   }
   return isnil(addr);
 }
@@ -417,11 +417,11 @@ static CPtr *mini_trail_top;
 
 static int is_most_general_term(Cell term)
 {
-  deref(term);
+  XSB_Deref(term);
   switch (cell_tag(term)) {
-  case STRING:
+  case XSB_STRING:
     return TRUE;
-  case CS:
+  case XSB_STRUCT:
     {
       Psc psc;
       CPtr taddr;
@@ -435,7 +435,7 @@ static int is_most_general_term(Cell term)
 
       for (i = 1; i <= arity ; ++i) {
 	addr = cell(taddr+i);
-	deref(addr);
+	XSB_Deref(addr);
 	if (isnonvar(addr)) {
 	  mini_undo_bindings;
 	  return FALSE;
@@ -446,21 +446,21 @@ static int is_most_general_term(Cell term)
       mini_undo_bindings;
       return TRUE;
     }
-  case LIST:
+  case XSB_LIST:
     {
       register Cell addr;
 
       mini_trail_top = (CPtr *) (& mini_trail[0]) -1;
       while (islist(term)) {
 	addr = cell(clref_val(term));
-	deref(addr);
+	XSB_Deref(addr);
 	if (isnonvar(addr)) {
 	  mini_undo_bindings;
 	  return FALSE;
 	} else {
 	  mini_bind_variable(addr);
 	  term = cell(clref_val(term)+1);
-	  deref(term);
+	  XSB_Deref(term);
 	}
       }
       mini_undo_bindings;
@@ -778,7 +778,7 @@ static void write_out_profile(void)
 
 /*----------------------- write_quotedname/2 ---------------------------*/
 
-static bool no_quotes_needed(char *string)
+static xsbBool no_quotes_needed(char *string)
 {
   int nextchar;
   int ctr, flag;
@@ -927,7 +927,7 @@ int builtin_call(byte number)
     return file_function();
 
   case TERM_PSC:		/* R1: +term; R2: -PSC */
-    /* Assumes that `term' is a CS-tagged Cell. */
+    /* Assumes that `term' is a XSB_STRUCT-tagged Cell. */
     ctop_addr(2, get_str_psc(ptoc_tag(1)));
     break;
   case TERM_TYPE: {	/* R1: +term; R2: tag (-int)			  */
@@ -1049,19 +1049,20 @@ int builtin_call(byte number)
     disp *= ZOOM_FACTOR ;
     value = ptoc_int(3);
     switch (value) {
-    case REF: case REF1:
+    case XSB_REF:
+    case XSB_REF1:
       bld_ref(vptr(addr+disp), (CPtr)ptoc_int(4)); break;
-    case INT: {
+    case XSB_INT: {
       int tmpval = ptoc_int(4);
       bld_int(vptr(addr+disp), tmpval); break;
     }
-    case FLOAT:
+    case XSB_FLOAT:
       bld_float(vptr(addr+disp), ptoc_float(4)); break;
-    case CS: 
+    case XSB_STRUCT: 
       bld_cs(vptr(addr+disp), (Pair)ptoc_int(4)); break;
-    case STRING:
+    case XSB_STRING:
       bld_string(vptr(addr+disp), (char *)ptoc_int(4)); break;
-    case LIST:
+    case XSB_LIST:
       bld_list(vptr(addr+disp), (CPtr)ptoc_int(4)); break;
     default:
       xsb_warn("BUFF_SET_CELL: Type %d is not implemented", value);
@@ -1242,7 +1243,7 @@ int builtin_call(byte number)
     Pair sym = insert(ptoc_string(1), (char)ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
       set_data(pair_psc(sym), (psc));
-    env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (bool)value);
+    env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (xsbBool)value);
     link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
     break;
   }
@@ -1289,19 +1290,19 @@ int builtin_call(byte number)
     int tmpval = ptoc_int(1);
     SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(2)) {
-    case FREE   : {
+    case XSB_FREE   : {
       CPtr var = (CPtr)ptoc_tag(3);
       xsb_fprint_variable(fptr, var);
       break;
     }
-    case ATTV   : {
+    case XSB_ATTV   : {
       CPtr var = (CPtr)dec_addr(ptoc_tag(3));
       xsb_fprint_variable(fptr, var);
       break;
     }
-    case INT    : fprintf(fptr, "%ld", (long)ptoc_int(3)); break;
-    case STRING : fprintf(fptr, "%s", ptoc_string(3)); break;
-    case FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(3)); break;
+    case XSB_INT    : fprintf(fptr, "%ld", (long)ptoc_int(3)); break;
+    case XSB_STRING : fprintf(fptr, "%s", ptoc_string(3)); break;
+    case XSB_FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(3)); break;
     case TK_INT_0  : {
       int tmp = (int) ptoc_int(3);
       fix_bb4((byte *)&tmp);
@@ -1909,7 +1910,7 @@ int builtin_call(byte number)
   case IS_CHARLIST: {
     prolog_term size_var;
     int size;
-    bool retcode;
+    xsbBool retcode;
     size_var = reg_term(2);
     if (! is_var(size_var)) {
       xsb_abort("IS_CHARLIST: Arg 2 must be a variable");

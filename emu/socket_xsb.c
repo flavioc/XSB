@@ -70,7 +70,7 @@ extern FILE *fdopen(int fildes, const char *type);
 
 int retcode; /* return code from socket operation */
 
-static bool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where);
+static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where);
 
 static int connection_count = -1; /* global variable for socket select calls */
 
@@ -82,8 +82,8 @@ typedef struct fd_list {
 } FD_LIST;
 
 static void init_connections();
-static bool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
-			FD_LIST *head_ptr);
+static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
+			   FD_LIST *head_ptr);
 static void test_ready(prolog_term *avail_sockfds, fd_set *fdset,
 		       FD_LIST *fds_ptr);
 static void select_destroy(char *connection_name);
@@ -169,7 +169,7 @@ int readmsg(SOCKET sock_handle, char **msg_buff)
 
 /* in order to save builtin numbers, create a single socket function with
  * options socket_request(SockOperation,....)  */
-bool xsb_socket_request(void)
+xsbBool xsb_socket_request(void)
 {
   static int ecode = 0;                     /* error code for socket ops */
   static SOCKET sock_handle, sock_handle_in;
@@ -674,7 +674,7 @@ bool xsb_socket_request(void)
 }
 
 
-static bool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where)
+static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where)
 {
   prolog_term ecode_value_term, ecode_arg_term = p2p_new();
   
@@ -712,8 +712,8 @@ static void init_connections()
 
 
 /* utility function to take the user input in and make operations on it */
-static bool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
-			FD_LIST *head_ptr)
+static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
+			   FD_LIST *head_ptr)
 {
   prolog_term head;
   FD_LIST *fd_ptr;

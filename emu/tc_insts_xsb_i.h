@@ -547,7 +547,7 @@ case hash_opcode: {
 	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	temp_ptr_for_hash = (CPtr)*reg_arrayptr;
-	cptr_deref(temp_ptr_for_hash);
+	XSB_CptrDeref(temp_ptr_for_hash);
 	if (isref(temp_ptr_for_hash))
 	  cell(--tbreg) = makeint(HASH_IS_FREE);
 	else
@@ -592,7 +592,7 @@ case hash_handle:
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE+3);
       }
-      deref(*reg_arrayptr);
+      XSB_Deref(*reg_arrayptr);
       if (isref(*reg_arrayptr))   /* sanity check */
 	xsb_exit("error_condition in hash_handle\n");
 

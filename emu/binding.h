@@ -238,7 +238,7 @@
 /* --- for building vals on the heap ---------------------------------- */
 
 #define nbldval(OP1) {							  \
-   deref(OP1);								  \
+   XSB_Deref(OP1);								  \
    if ( isnonvar(OP1) ||						  \
 	( /* (CPtr)(OP1) >= glstack.low && */				  \
 	  (CPtr)(OP1) <= top_of_heap ) ) {			 	  \

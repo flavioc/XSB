@@ -135,7 +135,7 @@
 	  Cell x;
 	  fprintf(stddbg, ">>>> var_regs[%d] =",i);
 	  x = (Cell)var_regs[i];
-	  deref(x);
+	  XSB_Deref(x);
 	  printterm(x,1,25);
 	  fprintf(stddbg, "\n");
 	}

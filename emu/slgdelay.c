@@ -432,7 +432,7 @@ static void record_de_usage(DL dl)
  * conditional answer is now tabled.
  */
 
-void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, bool sf_exists)
+void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, xsbBool sf_exists)
 {
     ASI	asi;
     DL dl = NULL;
@@ -468,7 +468,7 @@ void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, bool sf_exists)
 
 /*----------------------------------------------------------------------*/
 
-bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
+xsbBool answer_is_junk(CPtr dlist)	  /* assumes that dlist != NULL */
 {
     CPtr    cptr;
     SGFrame subgoal;
@@ -496,7 +496,7 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
  * simplify_pos_unconditional() and simplify_neg_fails().
  */
 
-static bool remove_de_from_dl(DE de, DL dl)
+static xsbBool remove_de_from_dl(DE de, DL dl)
 {
   DE current = dl_de_list(dl);
   DE prev_de = NULL;
@@ -524,7 +524,7 @@ static bool remove_de_from_dl(DE de, DL dl)
  * simplify_neg_succeeds() and simplify_pos_unsupported()).
  */
 
-static bool remove_dl_from_dl_list(DL dl, ASI asi)
+static xsbBool remove_dl_from_dl_list(DL dl, ASI asi)
 {
   DL current = asi_dl_list(asi);
   DL prev_dl = NULL;

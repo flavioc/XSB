@@ -25,8 +25,8 @@
 */
 
  tail_recursion:
-  deref2(op1, goto label_op1_free);
-  deref2(op2, goto label_op2_free);
+  XSB_Deref2(op1, goto label_op1_free);
+  XSB_Deref2(op2, goto label_op2_free);
 
   if (isattv(op1)) goto label_op1_attv;
   if (isattv(op2)) goto label_op2_attv;
@@ -42,7 +42,7 @@
 
 
  label_op1_free:
-  deref2(op2, goto label_both_free);
+  XSB_Deref2(op2, goto label_both_free);
   bind_copy((CPtr)(op1), op2);
   IFTHEN_SUCCEED;
 

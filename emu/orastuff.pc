@@ -437,7 +437,7 @@ static int oracleCursor_prepare_and_declare(CursorHandle cursorHandle,
 static int oracleCursor_describe_BVs(CursorHandle cursorHandle, int numBVs) {
 
   SQLDA *descriptor;
-  bool successful_describe;
+  xsbBool successful_describe;
 
 
   do {
@@ -503,7 +503,7 @@ static int oracleCursor_describe_BVs(CursorHandle cursorHandle, int numBVs) {
 static int oracleCursor_describe_SLIs(CursorHandle cursorHandle, int numSLIs) {
 
   SQLDA *descriptor;
-  bool successful_describe;
+  xsbBool successful_describe;
 
 
   do {
@@ -1218,7 +1218,7 @@ static int resume_cursor(CursorHandle cursorHandle) {
  *  careful when calling these primitives...
  */
 
-static bool isValidArg_CursorHandle(CursorHandle ch, int status_reg) {
+static xsbBool isValidArg_CursorHandle(CursorHandle ch, int status_reg) {
 
   if ( (ch >= 0) && (ch < NUM_CURSORS) ) {
     if (cursors[ch].status == ACTIVE_CURSOR_STATUS)
@@ -1235,7 +1235,7 @@ static bool isValidArg_CursorHandle(CursorHandle ch, int status_reg) {
 }
 
 
-static bool isValidArg_TemplateNumber(TemplateNumber template,
+static xsbBool isValidArg_TemplateNumber(TemplateNumber template,
 				      int status_reg) {
 
   if (template >= 0)
@@ -1253,7 +1253,7 @@ static bool isValidArg_TemplateNumber(TemplateNumber template,
  * e.g., "SQL Statement".
  */
 
-static bool isValidArg_String(char *inputString, char stringDesc[],
+static xsbBool isValidArg_String(char *inputString, char stringDesc[],
 			      int status_reg) {
 
   if ( strcmp(inputString,"") != 0 )    /* ptoc_string returns "" on error */
@@ -1271,7 +1271,7 @@ static bool isValidArg_String(char *inputString, char stringDesc[],
  * e.g., "Bind Variables".
  */
 
-static bool isValidArg_IOCount(int io_count, char countDesc[],
+static xsbBool isValidArg_IOCount(int io_count, char countDesc[],
 			       int status_reg) {
 
   if ( (io_count >= 0) && (io_count <= MAX_NUM_IOVALUES) )

@@ -54,9 +54,9 @@ extern void c_string_to_p_charlist(char *name, prolog_term list,
 
 static Cell term, term2;
 
-static vstrDEFINE(input_buffer);
-static vstrDEFINE(subst_buf);
-static vstrDEFINE(output_buffer);
+static XSB_StrDefine(input_buffer);
+static XSB_StrDefine(subst_buf);
+static XSB_StrDefine(output_buffer);
 
 
 #include "ptoc_tag_xsb_i.h"
@@ -65,7 +65,7 @@ static vstrDEFINE(output_buffer);
 /* R1: +Substring; R2: +String; R3: ?Pos
    Check if Arg1 is a substring of Arg2; unify pos of match with Arg3
 */
-bool str_sub(void)
+xsbBool str_sub(void)
 {
   static char *subptr, *stringptr, *matchptr;
   static int substr_pos;
@@ -86,7 +86,7 @@ bool str_sub(void)
 }
 
 
-bool str_cat(void)
+xsbBool str_cat(void)
 {
   static char *str1, *str2, *tmpstr;
 
@@ -115,7 +115,7 @@ bool str_cat(void)
        Arg4: new (output) string
    Always succeeds, unless error.
 */
-bool substring(void)
+xsbBool substring(void)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -125,7 +125,7 @@ bool substring(void)
   int beg_offset=0, end_offset=0, input_len=0, substring_len=0;
   int conversion_required=FALSE;
 
-  vstrSET(&output_buffer,"");
+  XSB_StrSet(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -170,8 +170,8 @@ bool substring(void)
 
   /* do the actual replacement */
   substring_len = end_offset-beg_offset;
-  vstrAPPENDBLK(&output_buffer, input_string+beg_offset, substring_len);
-  vstrNULL_TERMINATE(&output_buffer);
+  XSB_StrAppendBlk(&output_buffer, input_string+beg_offset, substring_len);
+  XSB_StrNullTerminate(&output_buffer);
   
   /* get result out */
   if (conversion_required)
@@ -194,7 +194,7 @@ bool substring(void)
        Arg4: new (output) string
    Always succeeds, unless error.
 */
-bool string_substitute(void)
+xsbBool string_substitute(void)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -211,7 +211,7 @@ bool string_substitute(void)
      substitution string. */
   int conversion_required=FALSE; /* from C string to Prolog char list */
 
-  vstrSET(&output_buffer,"");
+  XSB_StrSet(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
@@ -243,7 +243,7 @@ bool string_substitute(void)
   subst_str_list_term1 = subst_str_list_term;
 
   if (is_nil(subst_spec_list_term1)) {
-    vstrSET(&output_buffer, input_string);
+    XSB_StrSet(&output_buffer, input_string);
     goto EXIT;
   }
   if (is_nil(subst_str_list_term1))
@@ -283,14 +283,14 @@ bool string_substitute(void)
       xsb_abort("STRING_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
 
     /* do the actual replacement */
-    vstrAPPENDBLK(&output_buffer, input_string+last_pos, beg_offset-last_pos);
-    vstrAPPEND(&output_buffer, subst_string);
+    XSB_StrAppendBlk(&output_buffer,input_string+last_pos,beg_offset-last_pos);
+    XSB_StrAppend(&output_buffer, subst_string);
     
     last_pos = end_offset;
 
   } while (!is_nil(subst_spec_list_term1));
 
-  vstrAPPEND(&output_buffer, input_string+end_offset);
+  XSB_StrAppend(&output_buffer, input_string+end_offset);
 
  EXIT:
   /* get result out */

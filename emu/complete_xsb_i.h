@@ -31,7 +31,7 @@
 case check_complete: {
   CPtr    cs_ptr;
   CPtr    orig_breg = breg;
-  bool    leader = FALSE;
+  xsbBool    leader = FALSE;
   SGFrame subgoal;
 #ifdef LOCAL_EVAL
   int     i;

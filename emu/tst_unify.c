@@ -35,7 +35,7 @@
 #include "binding.h"
 #include "psc_xsb.h"
 #include "deref.h"
-#include "subp.h"          /* bool unify(Cell, Cell) */
+#include "subp.h"          /* xsbBool unify(Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "macro_xsb.h"
@@ -159,14 +159,14 @@ static void consumption_error(char *string) {
 #define Unify_Symbol_With_Functor_Subterm(dSubterm,dSymbol,SymOrigTag)      \
 	                                                                    \
    switch(cell_tag(dSymbol)) {                                              \
-   case CS:                                                                 \
+   case XSB_STRUCT:                                                         \
      /*
       * Need to be careful here, because TrieVars can be bound to heap-
       * resident structures and a deref of the (trie) symbol doesn't
       * tell you whether we have something in the trie or in the heap.
       * Check that the same PSC Record is referred to by both.
       */                                                                    \
-     if ( SymOrigTag == CS ) {                                              \
+     if ( SymOrigTag == XSB_STRUCT ) {                                      \
        if ( get_str_psc(dSubterm) == DecodeTrieFunctor(dSymbol) ) {         \
 	 /*
 	  *  There's a corresponding function application in the trie, so
@@ -181,7 +181,7 @@ static void consumption_error(char *string) {
      }                                                                      \
      else {                                                                 \
        /*
-	* We have a TrieVar bound to a heap CS-term; use a standard
+	* We have a TrieVar bound to a heap STRUCT-term; use a standard
 	* unification algorithm to check the match and perform additional
 	* unifications.
 	*/                                                                  \
@@ -192,8 +192,8 @@ static void consumption_error(char *string) {
      }                                                                      \
      break;                                                                 \
 	                                                                    \
-   case REF:                                                                \
-   case REF1:                                                               \
+   case XSB_REF:                                                          \
+   case XSB_REF1:                                                        \
      /*
       * Either an unbound TrieVar or some unbound heap var.  We bind the
       * variable to the entire subterm (functor + args), so we don't need
@@ -217,13 +217,13 @@ static void consumption_error(char *string) {
 #define Unify_Symbol_With_List_Subterm(dSubterm,dSymbol,SymOrigTag)         \
 	                                                                    \
    switch(cell_tag(dSymbol)) {                                              \
-   case LIST:                                                               \
+   case XSB_LIST:                                                         \
      /*
       * Need to be careful here, because TrieVars can be bound to heap-
       * resident structures and a deref of the (trie) symbol doesn't
       * tell you whether we have something in the trie or in the heap.
       */                                                                    \
-     if ( SymOrigTag == LIST ) {                                            \
+     if ( SymOrigTag == XSB_LIST ) {                                        \
        /*
 	*  There's a corresponding list structure in the trie, so we must
 	*  process the rest of the term ourselves.
@@ -232,7 +232,7 @@ static void consumption_error(char *string) {
      }                                                                      \
      else {                                                                 \
        /*
-	* We have a TrieVar bound to a heap CS-term; use a standard
+	* We have a TrieVar bound to a heap STRUCT-term; use a standard
 	* unification algorithm to check the match and perform additional
 	* unifications.
 	*/                                                                  \
@@ -243,8 +243,8 @@ static void consumption_error(char *string) {
      }                                                                      \
      break;                                                                 \
 	                                                                    \
-   case REF:                                                                \
-   case REF1:                                                               \
+   case XSB_REF:                                                           \
+   case XSB_REF1:                                                          \
      /*
       * Either an unbound TrieVar or some unbound heap var.  We bind the
       * variable to the entire subterm ([First | Rest]), so we don't need
@@ -268,19 +268,19 @@ static void consumption_error(char *string) {
 #define Unify_Symbol_With_Variable_Subterm(dSubterm,dSymbol,SymOrigTag)     \
                                                                             \
    switch(cell_tag(dSymbol)) {                                              \
-   case INT:                                                                \
-   case FLOAT:                                                              \
-   case STRING:                                                             \
+   case XSB_INT:                                                            \
+   case XSB_FLOAT:                                                          \
+   case XSB_STRING:                                                         \
      Bind_and_Trail_Subterm(dSubterm,dSymbol)                               \
      break;                                                                 \
                                                                             \
-   case CS:                                                                 \
+   case XSB_STRUCT:                                                       \
      /*
       * Need to be careful here, because TrieVars can be bound to heap-
       * resident structures and a deref of the (trie) symbol doesn't
       * tell you whether we have something in the trie or in the heap.
       */                                                                    \
-     if ( SymOrigTag == CS ) {                                              \
+     if ( SymOrigTag == XSB_STRUCT ) {                                      \
        /*
 	*  Since the TST contains some f/n, create an f(X1,X2,...,Xn)
 	*  structure on the heap so that we can bind the subterm
@@ -306,14 +306,14 @@ static void consumption_error(char *string) {
      }                                                                      \
      else {                                                                 \
        /*
-	*  We have a TrieVar bound to a heap-resident CS.
+	*  We have a TrieVar bound to a heap-resident XSB_STRUCT.
 	*/                                                                  \
        Bind_and_Trail_Subterm(dSubterm, dSymbol)                            \
      }                                                                      \
      break;                                                                 \
                                                                             \
-   case LIST:                                                               \
-     if ( SymOrigTag == LIST ) {                                            \
+   case XSB_LIST:                                                           \
+     if ( SymOrigTag == XSB_LIST ) {                                        \
        /*
 	*  Since the TST contains a (sub)list beginning, create a
 	*  [X1|X2] structure on the heap so that we can bind the subterm
@@ -330,14 +330,14 @@ static void consumption_error(char *string) {
      }                                                                      \
      else {                                                                 \
        /*
-	*  We have a TrieVar bound to a heap-resident LIST.
+	*  We have a TrieVar bound to a heap-resident XSB_LIST.
 	*/                                                                  \
        Bind_and_Trail_Subterm(dSubterm, dSymbol)                            \
      }                                                                      \
      break;                                                                 \
                                                                             \
-   case REF:                                                                \
-   case REF1:                                                               \
+   case XSB_REF:                                                            \
+   case XSB_REF1:                                                           \
      /*
       *  The symbol is either an unbound TrieVar or some unbound heap
       *  variable.  If it's an unbound TrieVar, we bind it to the heap
@@ -395,27 +395,27 @@ void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
      ------------------ */
   while ( ! TermStack_IsEmpty ) {
     subterm = TermStack_Pop;
-    deref(subterm);
+    XSB_Deref(subterm);
     symbol = SymbolStack_Pop;
     sym_orig_tag = cell_tag(symbol);
     TrieSymbol_Deref(symbol);
     switch ( cell_tag(subterm) ) {
-    case INT:
-    case STRING:
-    case FLOAT:
+    case XSB_INT:
+    case XSB_STRING:
+    case XSB_FLOAT:
       Unify_Symbol_With_Constant_Subterm(subterm,symbol)
       break;
 
-    case REF:
-    case REF1:
+    case XSB_REF:
+    case XSB_REF1:
       Unify_Symbol_With_Variable_Subterm(subterm,symbol,sym_orig_tag)
       break;
 
-    case CS:
+    case XSB_STRUCT:
       Unify_Symbol_With_Functor_Subterm(subterm,symbol,sym_orig_tag)
       break;
 
-    case LIST:
+    case XSB_LIST:
       Unify_Symbol_With_List_Subterm(subterm,symbol,sym_orig_tag)
       break;
 

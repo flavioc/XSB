@@ -72,24 +72,24 @@ struct varstr {
 extern struct varstr_ops VarStrOps;
 
 /* calling sequence shortcuts; all expect a VarString pointer */
-#define vstrSET(vstr,str)           (vstr)->op->set(vstr,str)
-#define vstrSETV(vstr1,vstr2)       (vstr1)->op->setv(vstr1,vstr2)
-#define vstrAPPEND(vstr,str)        (vstr)->op->append(vstr,str)
-#define vstrPREPEND(vstr,str)       (vstr)->op->prepend(vstr,str)
-#define vstrAPPENDV(vstr1,vstr2)    (vstr)->op->appendv(vstr1,vstr2)
-#define vstrPREPENDV(vstr1,vstr2)   (vstr)->op->prependv(vstr1,vstr2)
-#define vstrCOMPARE(vstr1,vstr2)    (vstr1)->op->compare(vstr1,vstr2)
-#define vstrSTRCMP(vstr,str)        (vstr)->op->strcmp(vstr,str)
-#define vstrAPPENDBLK(vstr,blk,sz)  (vstr)->op->appendblk(vstr,blk,sz)
-#define vstrPREPENDBLK(vstr,blk,sz) (vstr)->op->prependblk(vstr,blk,sz)
-#define vstrNULL_TERMINATE(vstr)    (vstr)->op->null_terminate(vstr)
-#define vstrENSURE_SIZE(vstr,size)  (vstr)->op->ensure_size(vstr,size)
-#define vstrSHRINK(vstr,incr)       (vstr)->op->shrink(vstr,incr)
+#define XSB_StrSet(vstr,str)           (vstr)->op->set(vstr,str)
+#define XSB_StrSetV(vstr1,vstr2)       (vstr1)->op->setv(vstr1,vstr2)
+#define XSB_StrAppend(vstr,str)        (vstr)->op->append(vstr,str)
+#define XSB_StrPrepend(vstr,str)       (vstr)->op->prepend(vstr,str)
+#define XSB_StrAppendV(vstr1,vstr2)    (vstr)->op->appendv(vstr1,vstr2)
+#define XSB_StrPrependV(vstr1,vstr2)   (vstr)->op->prependv(vstr1,vstr2)
+#define XSB_StrCompare(vstr1,vstr2)    (vstr1)->op->compare(vstr1,vstr2)
+#define XSB_StrCmp(vstr,str)           (vstr)->op->strcmp(vstr,str)
+#define XSB_StrAppendBlk(vstr,blk,sz)  (vstr)->op->appendblk(vstr,blk,sz)
+#define XSB_StrPrependBlk(vstr,blk,sz) (vstr)->op->prependblk(vstr,blk,sz)
+#define XSB_StrNullTerminate(vstr)     (vstr)->op->null_terminate(vstr)
+#define XSB_StrEnsureSize(vstr,size)   (vstr)->op->ensure_size(vstr,size)
+#define XSB_StrShrink(vstr,incr)       (vstr)->op->shrink(vstr,incr)
 /* destruction is necessary for automatic VarString's */
-#define vstrDESTROY(vstr)           (vstr)->op->destroy(vstr)
+#define XSB_StrDestroy(vstr)           (vstr)->op->destroy(vstr)
 
 
-#define vstrDEFINE(vstr)          VarString vstr = {0,0,0,NULL,&VarStrOps}
+#define XSB_StrDefine(vstr)          VarString vstr = {0,0,0,NULL,&VarStrOps}
 
 
 #define VARSTRING_INCLUDED

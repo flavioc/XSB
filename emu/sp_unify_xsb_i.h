@@ -24,11 +24,11 @@
 
 
 /* to be used when cell op1 is known to contain an int */
-static inline bool int_unify(Cell op1, Cell op2)
+static inline xsbBool int_unify(Cell op1, Cell op2)
 {	/* No checking for interrupts is needed!       */
-  deref(op2);
+  XSB_Deref(op2);
   if (isref(op2)) {
-    /* op2 is FREE:                       num ... free */
+    /* op2 is XSB_FREE:                       num ... free */
     bind_copy((CPtr)(op2), op1);
     return TRUE;
   }
@@ -37,11 +37,11 @@ static inline bool int_unify(Cell op1, Cell op2)
 
 
 /* to be used when cell op1 is known to contain an atom */
-static inline bool atom_unify(Cell op1, Cell op2)
+static inline xsbBool atom_unify(Cell op1, Cell op2)
 {	/* No checking for interrupts is needed!	*/
-  deref(op2);
+  XSB_Deref(op2);
   if (isref(op2)) {
-    /* op2 is FREE                      string ... free */
+    /* op2 is XSB_FREE                      string ... free */
     bind_copy((CPtr)(op2), op1);
     return TRUE;
   }

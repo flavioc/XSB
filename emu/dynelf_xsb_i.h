@@ -53,7 +53,7 @@ extern int putenv(const char *);
 
 /*----------------------------------------------------------------------*/
 
-static bool dummy(void)
+static xsbBool dummy(void)
 {
   xsb_error("LOADER: Trying to use an undefined foreign procedure");
   return FALSE;
@@ -70,8 +70,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*funcep;
   char  ldtemp; 
   char  *ldp1,*ldp2;
-  static vstrDEFINE(ldstring_oldenv);
-  static vstrDEFINE(ldstring_newenv);
+  static XSB_StrDefine(ldstring_oldenv);
+  static XSB_StrDefine(ldstring_newenv);
   char  *libpath;
   
   /* (1) create filename.so */
@@ -95,9 +95,9 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   libpath = getenv("LD_LIBRARY_PATH");
   if (libpath == NULL)
     libpath = "";
-  vstrSET(&ldstring_oldenv,"LD_LIBRARY_PATH=");
-  vstrAPPEND(&ldstring_oldenv, libpath);
-  vstrSETV(&ldstring_newenv,&ldstring_oldenv);
+  XSB_StrSet(&ldstring_oldenv,"LD_LIBRARY_PATH=");
+  XSB_StrAppend(&ldstring_oldenv, libpath);
+  XSB_StrSetV(&ldstring_newenv,&ldstring_oldenv);
   
   /* search for -Lpath, -L"paths" or -L'paths' */
   for (ldp1=ld_option; (*ldp1); ldp1++) {
@@ -109,7 +109,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
       *ldp1 = '\0';
       ldtemp = *(ldp2-1);
       *(ldp2-1) = ':';
-      vstrAPPEND(&ldstring_newenv, ldp2-1);
+      XSB_StrAppend(&ldstring_newenv, ldp2-1);
       *ldp1 = ' ';
       *(ldp2-1) = ldtemp;
     } else if (*ldp1 == '\'') {

@@ -330,13 +330,13 @@ is_most_general_term(X) :- is_most_general_term(X).
 
 proper_hilog(X) :-
 	term_type(X, Type),
-	( Type =:= CS ->		% compound term (but not list)
+	( Type =:= XSB_STRUCT ->		% compound term (but not list)
 		term_psc(X, PSC), psc_name(PSC, Name), psc_arity(PSC, Arity),
 		( Name == apply, Arity > 1 -> true 
 		; prolog_arglist(X, ArgList, Arity, Arity),
 		  proper_hilog(ArgList)
 		)
-	; Type =:= LIST ->
+	; Type =:= XSB_LIST ->
 		X = [H|T], ( proper_hilog(H), !; proper_hilog(T) )
 	).
 
@@ -346,15 +346,15 @@ arg(I, T, A) :- arg(I, T, A).
 
 arg0(I, T, A) :- 
 	term_type(I, I_type),
-	( I_type =:= INT ->	% integer
+	( I_type =:= XSB_INT ->	% integer
 		term_type(T, T_type),
-		( T_type =\= FREE ->
+		( T_type =\= XSB_FREE ->
 			( I =:= 0 -> functor(T, A, _)
 			; I > 0 -> arg(I, T, A)
 			)
 		; abort('Uninstantiated argument 2 of arg0/3')
 		)
-	; (I_type =:= FREE; I_type =:= ATTV) ->		% variable
+	; (I_type =:= XSB_FREE; I_type =:= XSB_ATTV) ->		% variable
 		abort('Uninstantiated argument 1 of arg0/3')
 	; abort('Wrong type in argument 1 of arg0/3')
 	).
@@ -374,7 +374,7 @@ prolog_arglist(X, List, I, N) :-
 
 hilog_functor(T, F, N) :-
         term_type(T, Type),
-        ( Type =:= FREE ->
+        ( Type =:= XSB_FREE ->
 	    ( arity_integer(N) ->
 		( atomic(F) ->
 		    ( N =:= 0 ->
@@ -411,7 +411,7 @@ hilog_functor(T, F, N) :-
 		    )
 		)
 	    )
-	;   Type =:= LIST -> F = '.', N = 2
+	;   Type =:= XSB_LIST -> F = '.', N = 2
 	;   atomic(T) -> F = T, N = 0
 	;   T =.. [apply, F, FirstArg|Args] -> % HiLog term found
 	    length([FirstArg|Args], 0, N)
@@ -473,16 +473,16 @@ number_digits(T, L) :- number_digits(T, L).
 
 name(T, L) :-
 	term_type(T, Type),
-	( Type =:= FREE -> 
+	( Type =:= XSB_FREE -> 
 		( var(L) -> abort('Uninstantiated argument 2 of name/2')
 		; ( ascii_list(L) -> 
 			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
 		  ; abort('Wrong type in argument 2 of name/2')
 		  )
 		)
-	; Type =:= INT -> int_name(T, [], L)	% integer
-	; Type =:= FLOAT -> real_name(T, [], L)	% real
-	; Type =:= STRING -> atom_codes(T, L)
+	; Type =:= XSB_INT -> int_name(T, [], L)	% integer
+	; Type =:= XSB_FLOAT -> real_name(T, [], L)	% real
+	; Type =:= XSB_STRING -> atom_codes(T, L)
 	; abort('Wrong type in argument 1 of name/2')
 	).
 
@@ -919,10 +919,7 @@ abort :-
 	psc_prop(Psc, Cp),
         close_open_tables, 
 	'_$cutto'(Cp), 
-	(conget(quit_on_error,1) 
-	->  sys_exit(1)
-	; fail
-	).
+	fail.
 
 
 %  abort/1

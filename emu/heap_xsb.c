@@ -130,7 +130,7 @@ static float mark_threshold = 0.9F;
 
 /* to choose between copying or sliding collector:
    its value is determined based on the the value of flags[GARBAGE_COLLECT] */
-static bool slide;
+static xsbBool slide;
 
 /* max value of active delay register fields in CHAT areas.  it should
    not be bigger than the margin (2nd arg) of gc_heap instruction minus
@@ -186,10 +186,10 @@ static int print_anyway = 0 ;
 /*---------------------------------------------------------------------------*/
 
 static CPtr heap_bot,heap_top,
-            ls_bot,ls_top,
-            tr_bot,tr_top,
-            cp_bot,cp_top,
-            compl_top,compl_bot;
+  ls_bot,ls_top,
+  tr_bot,tr_top,
+  cp_bot,cp_top,
+  compl_top,compl_bot;
 
 #define stack_boundaries \
   heap_top = hreg; \
@@ -249,76 +249,78 @@ static char *compl_marks = NULL ;
 #ifdef GC
 inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
 {
-    int t;
-    CPtr retp;
+  int t;
+  CPtr retp;
 
-    t = cell_tag(cell) ;
+  t = cell_tag(cell) ;
 
-    /* the use of if-tests rather than a switch is for efficiency ! */
-    /* as this function is very heavily used - do not modify */
-    if (t == LIST)
-      {
-	*tag = LIST;
-	retp = clref_val(cell);
-	testreturnit(retp);
-      }
-    if (t == CS)
-      {
-	*tag = CS;
-	retp = (CPtr)(cs_val(cell));
-	testreturnit(retp);
-      }
-    if ((t == REF) || (t == REF1))
-      {
-	*tag = t;
-	retp = (CPtr)cell ;
-	if (points_into_heap(retp)) return(retp);
-      }
-    if (t == ATTV)
-      {
-	*tag = ATTV;
-	retp = clref_val(cell);
-	testreturnit(retp);
-      }
+  /* the use of if-tests rather than a switch is for efficiency ! */
+  /* as this function is very heavily used - do not modify */
+  if (t == XSB_LIST)
+    {
+      *tag = XSB_LIST;
+      retp = clref_val(cell);
+      testreturnit(retp);
+    }
+  if (t == XSB_STRUCT)
+    {
+      *tag = XSB_STRUCT;
+      retp = (CPtr)(cs_val(cell));
+      testreturnit(retp);
+    }
+  if ((t == XSB_REF) || (t == XSB_REF1))
+    {
+      *tag = t;
+      retp = (CPtr)cell ;
+      if (points_into_heap(retp)) return(retp);
+    }
+  if (t == XSB_ATTV)
+    {
+      *tag = XSB_ATTV;
+      retp = clref_val(cell);
+      testreturnit(retp);
+    }
 
-    return NULL;
+  return NULL;
 } /* hp_pointer_from_cell */
 #endif
 
 static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 { int t ;
-  CPtr retp ;
+ CPtr retp ;
 
-  *tag = t = cell_tag(cell) ;
-  switch (t)
-    {
-    case REF: case REF1: 
-      retp = (CPtr)cell ;
-      break ;
-    case LIST: case ATTV:
-      retp = clref_val(cell) ;
-      break ;
-    case CS:
-      retp = ((CPtr)(cs_val(cell))) ;
-      break ;
-    default:
-      *whereto = TO_NOWHERE ;
-      return((CPtr)cell) ;
-    }
+ *tag = t = cell_tag(cell) ;
+ switch (t)
+   {
+   case XSB_REF:
+   case XSB_REF1: 
+     retp = (CPtr)cell ;
+     break ;
+   case XSB_LIST: 
+   case XSB_ATTV:
+     retp = clref_val(cell) ;
+     break ;
+   case XSB_STRUCT:
+     retp = ((CPtr)(cs_val(cell))) ;
+     break ;
+   default:
+     *whereto = TO_NOWHERE ;
+     return((CPtr)cell) ;
+   }
 
-  if (points_into_heap(retp)) *whereto = TO_HEAP ;
-  else
-    if (points_into_tr(retp)) *whereto = TO_TR ;
-    else
-      if (points_into_ls(retp)) *whereto = TO_LS ;
-      else
-	if (points_into_cp(retp)) *whereto = TO_CP ;
-        else
-	  if (points_into_compl(retp)) *whereto = TO_COMPL ;
-  /*	  else
+ if (points_into_heap(retp)) *whereto = TO_HEAP ;
+ else
+   if (points_into_tr(retp)) *whereto = TO_TR ;
+   else
+     if (points_into_ls(retp)) *whereto = TO_LS ;
+     else
+       if (points_into_cp(retp)) *whereto = TO_CP ;
+       else
+	 if (points_into_compl(retp)) *whereto = TO_COMPL ;
+ /*	  else
 	  if (points_into_attv_array(retp)) *whereto = TO_ATTV_ARRAY ;*/
-	    else *whereto = TO_NOWHERE ;
-  return(retp) ;
+	 else *whereto = TO_NOWHERE ;
+ return(retp) ;
 
 } /* pointer_from_cell */
 
@@ -326,38 +328,38 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 
 inline static char * pr_h_marked(CPtr cell_ptr)
 { int i ;
-  i = cell_ptr - heap_bot ;
-  if (heap_marks == NULL) return("not_m") ;
-  if (h_marked(i) == MARKED) return("marked") ;
-  if (h_marked(i) == CHAIN_BIT) return("chained") ;
-  if (h_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
-  return("not_m") ;
+ i = cell_ptr - heap_bot ;
+ if (heap_marks == NULL) return("not_m") ;
+ if (h_marked(i) == MARKED) return("marked") ;
+ if (h_marked(i) == CHAIN_BIT) return("chained") ;
+ if (h_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
+ return("not_m") ;
 } /* pr_h_marked */
 
 inline static char * pr_ls_marked(CPtr cell_ptr) 
 { int i ; 
-  i = cell_ptr - ls_top ;
-  if (ls_marks == NULL) return("not_m") ;
-  if (ls_marked(i) == MARKED) return("marked") ;
-  if (ls_marked(i) == CHAIN_BIT) return("chained") ;
-  if (ls_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
-  return("not_m") ; 
+ i = cell_ptr - ls_top ;
+ if (ls_marks == NULL) return("not_m") ;
+ if (ls_marked(i) == MARKED) return("marked") ;
+ if (ls_marked(i) == CHAIN_BIT) return("chained") ;
+ if (ls_marked(i) == (CHAIN_BIT | MARKED)) return("chained+marked") ;
+ return("not_m") ; 
 } /* pr_ls_marked */ 
 
 inline static char * pr_cp_marked(CPtr cell_ptr) 
 { int i ; 
-  i = cell_ptr - cp_top ;
-  if (cp_marks == NULL) return("not_m") ;
-  if (cp_marks[i]) return("chained") ;
-  return("not_m") ; 
+ i = cell_ptr - cp_top ;
+ if (cp_marks == NULL) return("not_m") ;
+ if (cp_marks[i]) return("chained") ;
+ return("not_m") ; 
 } /* pr_cp_marked */ 
 
 inline static char * pr_tr_marked(CPtr cell_ptr) 
 { int i ; 
-  i = cell_ptr - tr_bot ;
-  if (tr_marks == NULL) return("not_m") ;
-  if (tr_marks[i]) return("chained") ;
-  return("not_m") ; 
+ i = cell_ptr - tr_bot ;
+ if (tr_marks == NULL) return("not_m") ;
+ if (tr_marks[i]) return("chained") ;
+ return("not_m") ; 
 } /* pr_tr_marked */ 
 
 /*-------------------------------------------------------------------------*/
@@ -382,10 +384,10 @@ static int mark_cell(CPtr cell_ptr)
   CPtr mark_stack[MAXS+MAX_ARITY+1] ;
 
   m = 0 ;
-mark_more:
+ mark_more:
   if (!points_into_heap(cell_ptr)) /* defensive marking */
     goto pop_more ;
-safe_mark_more:
+ safe_mark_more:
   i = cell_ptr - heap_bot ;
   if (h_marked(i)) goto pop_more ;
   h_mark(i) ;
@@ -394,44 +396,44 @@ safe_mark_more:
   cell_val = *cell_ptr;
   tag = cell_tag(cell_val);
 
-  if (tag == LIST || tag == ATTV)
+  if (tag == XSB_LIST || tag == XSB_ATTV)
     { cell_ptr = clref_val(cell_val) ;
-      if (mark_overflow)
-	{ m += mark_cell(cell_ptr+1) ; }
-      else push_to_mark(cell_ptr+1) ;
-      goto safe_mark_more ;
+    if (mark_overflow)
+      { m += mark_cell(cell_ptr+1) ; }
+    else push_to_mark(cell_ptr+1) ;
+    goto safe_mark_more ;
     }
 
-  if (tag == CS)
+  if (tag == XSB_STRUCT)
     { p = (CPtr)cell_val ;
-      cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-      i = cell_ptr - heap_bot ;
-      if (h_marked(i)) goto pop_more ;
-      h_mark(i) ; m++ ;
-      cell_val = *cell_ptr;
-      arity = get_arity((Psc)(cell_val)) ;
-      p = ++cell_ptr ;
-      if (mark_overflow)
-	{ while (--arity)
-	  { m += mark_cell(++p) ; }
-	}
-      else while (--arity) push_to_mark(++p) ;
-      goto mark_more ;
+    cell_ptr = ((CPtr)(cs_val(cell_val))) ;
+    i = cell_ptr - heap_bot ;
+    if (h_marked(i)) goto pop_more ;
+    h_mark(i) ; m++ ;
+    cell_val = *cell_ptr;
+    arity = get_arity((Psc)(cell_val)) ;
+    p = ++cell_ptr ;
+    if (mark_overflow)
+      { while (--arity)
+	{ m += mark_cell(++p) ; }
+      }
+    else while (--arity) push_to_mark(++p) ;
+    goto mark_more ;
     }
 
-  if ((tag == REF) || (tag == REF1))
+  if ((tag == XSB_REF) || (tag == XSB_REF1))
     { p = (CPtr)cell_val ;
-      if (p == cell_ptr) goto pop_more ;
-      cell_ptr = p ;
-      goto mark_more ;
+    if (p == cell_ptr) goto pop_more ;
+    cell_ptr = p ;
+    goto mark_more ;
     }
 
   /* if (tag == STRUCT)
      { xsb_dbgmsg("Unknown tag on heap during marking %ld", cell_val) ;
-       return(0) ;
+     return(0) ;
      } */
 
-pop_more:
+ pop_more:
   if (mark_top--)
     { cell_ptr = mark_stack[mark_top] ; goto mark_more ; }
   return(m) ;
@@ -447,26 +449,27 @@ static int mark_root(Cell cell_val)
   int tag, whereto ;
   Cell v ;
 
-/* this is one of the places to be defensive while marking: an uninitialised */
-/* cell in the ls can point to a Psc; the danger is not in following the Psc */
-/* and mark something outside of the heap: mark_cell takes care of that; the */
-/* dangerous thing is to mark the cell with the Psc on the heap without      */
-/* marking all its arguments */
+  /* this is one of the places to be defensive while marking: an uninitialised
+     cell in the ls can point to a Psc; the danger is not in following the Psc
+     and mark something outside of the heap: mark_cell takes care of that; the
+     dangerous thing is to mark the cell with the Psc on the heap without
+     marking all its arguments */
 
   if (cell_val == 0) return(0) ;
   switch (cell_tag(cell_val))
     {
-    case REF : case REF1 :
+    case XSB_REF:
+    case XSB_REF1:
       v = *(CPtr)cell_val ;
       pointer_from_cell(v,&tag,&whereto) ;
       switch (tag)
-    	{ case REF : case REF1 :
+    	{ case XSB_REF: case XSB_REF1:
 	  if (whereto != TO_HEAP) return(0) ;
 	  break ;
     	}
       return(mark_cell((CPtr)cell_val)) ;
 
-    case CS : 
+    case XSB_STRUCT : 
       cell_ptr = ((CPtr)(cs_val(cell_val))) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
       i = cell_ptr - heap_bot ; 
@@ -475,36 +478,40 @@ static int mark_root(Cell cell_val)
       v = *cell_ptr ;
       pointer_from_cell(v,&tag,&whereto) ;
       /* v must be a PSC - the following tries to test this */
-      switch (tag)
-	{ case REF: case REF1 :
-	    if (whereto != TO_NOWHERE) return(0) ;
-	    break ;
-	    /* default: return(0); */
-	}
+      switch (tag) {
+      case XSB_REF: 
+      case XSB_REF1 :
+	if (whereto != TO_NOWHERE) return(0) ;
+	break ;
+	/* default: return(0); */
+      }
       h_mark(i) ; m = 1 ; 
       cell_val = *cell_ptr;
       arity = get_arity((Psc)(cell_val)) ;
       while (arity--) m += mark_cell(++cell_ptr) ;
       return(m) ;
-
-    case LIST : case ATTV:
+      
+    case XSB_LIST: 
+    case XSB_ATTV:
       /* the 2 cells will be marked iff neither of them is a Psc */
       cell_ptr = clref_val(cell_val) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
       v = *cell_ptr ;
       pointer_from_cell(v,&tag,&whereto) ;
-      switch (tag)
-	{ case REF: case REF1 :
-	    if (whereto != TO_HEAP) return(0) ;
-	    break ;
-	}
+      switch (tag) {
+      case XSB_REF:
+      case XSB_REF1:
+	if (whereto != TO_HEAP) return(0) ;
+	break ;
+      }
       v = *(++cell_ptr) ;
       pointer_from_cell(v,&tag,&whereto) ;
-      switch (tag)
-	{ case REF: case REF1 :
-	    if (whereto != TO_HEAP) return(0) ;
-	    break ;
-	}
+      switch (tag) {
+      case XSB_REF:
+      case XSB_REF1:
+	if (whereto != TO_HEAP) return(0) ;
+	break ;
+      }
       m = mark_cell(cell_ptr) ;
       cell_ptr-- ; 
       m += mark_cell(cell_ptr) ;
@@ -543,16 +550,16 @@ static int mark_query(void)
   while (1)
     {
       while ((e < ls_bot) && (cp != NULL))
-      {
-	if (ls_marked(e - ls_top)) break ;
-        ls_mark(e - ls_top) ;
-        yvar = *(cp-2*sizeof(Cell)+3) - 1 ;
-        total_marked += mark_region(e-yvar,e-2) ;
-	i = (e-2) - ls_top ;
-	while (yvar-- > 1) { ls_mark(i--); }
-        cp = (byte *)e[-1] ;
-        e = (CPtr)e[0] ;
-      }
+	{
+	  if (ls_marked(e - ls_top)) break ;
+	  ls_mark(e - ls_top) ;
+	  yvar = *(cp-2*sizeof(Cell)+3) - 1 ;
+	  total_marked += mark_region(e-yvar,e-2) ;
+	  i = (e-2) - ls_top ;
+	  while (yvar-- > 1) { ls_mark(i--); }
+	  cp = (byte *)e[-1] ;
+	  e = (CPtr)e[0] ;
+	}
       if (b >= (cp_bot-CP_SIZE)) return(total_marked) ;
       a = (CPtr)tr ;
       tr = cp_trreg(b) ;
@@ -561,45 +568,45 @@ static int mark_query(void)
           trailed_cell = (CPtr)a[0] ;
           if (points_into_heap(trailed_cell))
 	    { i = trailed_cell - heap_bot ;
-	      if (! h_marked(i))
-		{
+	    if (! h_marked(i))
+	      {
 #if (EARLY_RESET == 1)
-		  {
-		    h_mark(i) ;
-		    total_marked++ ;
-		    bld_free(trailed_cell); /* early reset */
-		    /* could do trail compaction now or later */
-		    heap_early_reset++;
-		  }
-#else
-		  {
-		    total_marked += mark_root((Cell)trailed_cell);
-		  }
-#endif
+		{
+		  h_mark(i) ;
+		  total_marked++ ;
+		  bld_free(trailed_cell); /* early reset */
+		  /* could do trail compaction now or later */
+		  heap_early_reset++;
 		}
+#else
+		{
+		  total_marked += mark_root((Cell)trailed_cell);
+		}
+#endif
+	      }
 	    }
           else
 	    /* it must be a ls pointer, but for safety
 	       we take into account between_h_ls */
 	    if (points_into_ls(trailed_cell))
 	      { i = trailed_cell - ls_top ;
-          	if (! ls_marked(i))
-		  {
+	      if (! ls_marked(i))
+		{
 #if (EARLY_RESET == 1)
-		    {
-		      /* don't ls_mark(i) because we early reset
-			 so, it is not a heap pointer
-			 but marking would be correct */
-		      bld_free(trailed_cell) ; /* early reset */
-		      /* could do trail compaction now or later */
-		      ls_early_reset++;
-		    }
-#else
-		    { ls_mark(i) ;
-		      total_marked += mark_region(trailed_cell,trailed_cell);
-		    }
-#endif
+		  {
+		    /* don't ls_mark(i) because we early reset
+		       so, it is not a heap pointer
+		       but marking would be correct */
+		    bld_free(trailed_cell) ; /* early reset */
+		    /* could do trail compaction now or later */
+		    ls_early_reset++;
 		  }
+#else
+		  { ls_mark(i) ;
+		  total_marked += mark_region(trailed_cell,trailed_cell);
+		  }
+#endif
+		}
 	      }
         }
 
@@ -608,8 +615,8 @@ static int mark_query(void)
 
       /* the code for non-tabled choice points is ok */
       /* for all other cps - check that
-	   (1) the saved arguments are marked
-	   (2) the substitution factor is marked
+	 (1) the saved arguments are marked
+	 (2) the substitution factor is marked
       */
 
       /* the following code does not work for SLG-WAM as is */
@@ -630,10 +637,10 @@ static int mark_query(void)
 	/* there is nothing to do in this case */ ;
 #endif
       else { CPtr endregion, beginregion;
-             endregion = cp_prevbreg(b)-1;
-	     beginregion = b+CP_SIZE;
-	     total_marked += mark_region(beginregion,endregion) ;
-           }
+      endregion = cp_prevbreg(b)-1;
+      beginregion = b+CP_SIZE;
+      total_marked += mark_region(beginregion,endregion) ;
+      }
 
       /* mark the delay list field of all choice points in CP stack too */
       if ((d = cp_pdreg(b)) != NULL) {
@@ -670,49 +677,49 @@ static int chat_mark_trail(CPtr *tr, int trlen)
 	  tr++;
 	  if (points_into_heap(trailed_cell))
 	    { i = trailed_cell - heap_bot ;
-	      if (! h_marked(i))
-		{ h_mark(i) ; /* it is correct to mark this cell, because the
-				 value is also marked
-				 avoiding to mark the cell would make chat
-	                         trail compaction necessary
-			      */
+	    if (! h_marked(i))
+	      { h_mark(i) ; /* it is correct to mark this cell, because the
+			       value is also marked
+			       avoiding to mark the cell would make chat
+			       trail compaction necessary
+			    */
 #if (EARLY_RESET == 1)
-		  *tr = (CPtr)makeint(88888);
-		  heap_early_reset++;
+	      *tr = (CPtr)makeint(88888);
+	      heap_early_reset++;
 #endif
-		  m++ ;
-		}
+	      m++ ;
+	      }
 	    }
 	  else
 	    /* it must be a ls pointer, but we check between_h_ls */
 	    if (points_into_ls(trailed_cell))
 	      { i = trailed_cell - ls_top ;
-	        if (! ls_marked(i))
-		  {
-		    /* it is possible to come here:
-		       in SLG-WAM (and CHAT) there might exist envs
-		       that are not reachable from anywhere and some
-		       CHAT trail pointer might point into it
-		       as example (maybe not simplest):
-		       :- table g/1.
+	      if (! ls_marked(i))
+		{
+		  /* it is possible to come here:
+		     in SLG-WAM (and CHAT) there might exist envs
+		     that are not reachable from anywhere and some
+		     CHAT trail pointer might point into it
+		     as example (maybe not simplest):
+		     :- table g/1.
 
-		       g(X) :- a, g(Y).
-		       g(_) :- gc_heap.
+		     g(X) :- a, g(Y).
+		     g(_) :- gc_heap.
 
-		       a :- b(X), p(X), use(X).
+		     a :- b(X), p(X), use(X).
 		       
-		       p(17).
+		     p(17).
 		       
-		       use(_).
+		     use(_).
 		       
-		       b(_).
-		       b(_) :- fail.
-		    */
+		     b(_).
+		     b(_) :- fail.
+		  */
 #if (EARLY_RESET == 1)
-		    *tr = (CPtr)makeint(99999);
-		    ls_early_reset++;
+		  *tr = (CPtr)makeint(99999);
+		  ls_early_reset++;
 #endif
-		  }
+		}
 	      }
 
 	  /* mark value */
@@ -788,55 +795,55 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
   m = 0;
   initial_pheader = chat_link_headers;
   if (initial_pheader != NULL)
-  do
-    {
-      b = (CPtr)chat_get_args_start(initial_pheader);
-      /* marking of argument registers from consumer */
-      m += chat_mark_region(b,chat_get_nrargs(initial_pheader));
+    do
+      {
+	b = (CPtr)chat_get_args_start(initial_pheader);
+	/* marking of argument registers from consumer */
+	m += chat_mark_region(b,chat_get_nrargs(initial_pheader));
 
-      /* marking of heap pointer from consumer is unnecessary */
-      /* as consumer gets hreg from its scheduling generator  */
+	/* marking of heap pointer from consumer is unnecessary */
+	/* as consumer gets hreg from its scheduling generator  */
 
-      /* mark from the consumer the environment chain */
-      /* it is enough to do that until the e of the leader of the consumer */
-      /* we do it all the way up for now */
+	/* mark from the consumer the environment chain */
+	/* it is enough to do that until the e of the leader of the consumer */
+	/* we do it all the way up for now */
 
-      b = (CPtr)(&chat_get_cons_start(initial_pheader));
-      e = cp_ereg(b);
-      cp = cp_cpreg(b);
+	b = (CPtr)(&chat_get_cons_start(initial_pheader));
+	e = cp_ereg(b);
+	cp = cp_cpreg(b);
 
-      /* mark the delay list field of choice points too */
-      if ((d = cp_pdreg(b)) != NULL) {
-	if (slide) {
-	  if (*avail_dreg_marks > 0) {
-	    *avail_dreg_marks -= 1;
-	    *hreg = (Cell)d;
-	    heap_top++;
-	    m += mark_root((Cell)d)+1; /* +1 because of the following line */
-	    h_mark(hreg-heap_bot) ;
-	    hreg++;
-	  } else xsb_exit("Fatal: no heap space to mark Dreg of CHAT areas");
+	/* mark the delay list field of choice points too */
+	if ((d = cp_pdreg(b)) != NULL) {
+	  if (slide) {
+	    if (*avail_dreg_marks > 0) {
+	      *avail_dreg_marks -= 1;
+	      *hreg = (Cell)d;
+	      heap_top++;
+	      m += mark_root((Cell)d)+1; /* +1 because of the following line */
+	      h_mark(hreg-heap_bot) ;
+	      hreg++;
+	    } else xsb_exit("Fatal: no heap space to mark Dreg of CHAT areas");
+	  }
+	  else {
+	    m += mark_root((Cell)d);
+	  }
 	}
-	else {
-	  m += mark_root((Cell)d);
-	}
+
+	while ((e < ls_bot) && (cp != NULL))
+	  {
+	    if (ls_marked(e - ls_top)) break ;
+	    ls_mark(e - ls_top) ;
+	    yvar = *(cp-2*sizeof(Cell)+3) - 1 ;
+	    m += mark_region(e-yvar,e-2) ;
+	    i = (e-2) - ls_top ;
+	    while (yvar-- > 1) ls_mark(i--) ;
+	    cp = (byte *)e[-1] ;
+	    e = (CPtr)e[0] ;
+	  }
+
+	initial_pheader = initial_pheader->next_header;
       }
-
-      while ((e < ls_bot) && (cp != NULL))
-	{
-	  if (ls_marked(e - ls_top)) break ;
-          ls_mark(e - ls_top) ;
-	  yvar = *(cp-2*sizeof(Cell)+3) - 1 ;
-	  m += mark_region(e-yvar,e-2) ;
-	  i = (e-2) - ls_top ;
-	  while (yvar-- > 1) ls_mark(i--) ;
-	  cp = (byte *)e[-1] ;
-	  e = (CPtr)e[0] ;
-	}
-
-      initial_pheader = initial_pheader->next_header;
-    }
-  while (initial_pheader != chat_link_headers);
+    while (initial_pheader != chat_link_headers);
 
   initial_pheader = chat_link_headers;
   if (initial_pheader != NULL)
@@ -912,18 +919,18 @@ static int mark_hreg_from_choicepoints(void)
   m = 0;
   while (b != bprev)
     { h = cp_hreg(b) ;
-      i = h - heap_bot ;
-      if (! h_marked(i)) /* h from choicepoint should point to something that
-      				is marked; if not, mark it now and set it
-      				to something reasonable - int(666) is ok
-      				although a bit scary :-)
-      			  */
-	{
-	  h_mark(i) ;
-	  m++ ;
-	  cell(h) = makeint(666) ;
-	}
-      bprev = b; b = cp_prevbreg(b);
+    i = h - heap_bot ;
+    if (! h_marked(i)) /* h from choicepoint should point to something that
+			  is marked; if not, mark it now and set it
+			  to something reasonable - int(666) is ok
+			  although a bit scary :-)
+		       */
+      {
+	h_mark(i) ;
+	m++ ;
+	cell(h) = makeint(666) ;
+      }
+    bprev = b; b = cp_prevbreg(b);
     }
 
   return m;
@@ -942,7 +949,7 @@ inline static void adapt_hreg_from_choicepoints(CPtr h)
   bprev = 0;
   while (b != bprev)
     { cp_hreg(b) = h;
-      bprev = b; b = cp_prevbreg(b);
+    bprev = b; b = cp_prevbreg(b);
     }
 } /* adapt_hreg_from_choicepoints */
 
@@ -993,10 +1000,10 @@ int mark_heap(int arity, int *marked_dregs)
 
   if (slide)
     { int put_on_heap;
-      put_on_heap = arity;
-      marked += put_on_heap;
-      while (put_on_heap > 0)
-	h_mark((heap_top - put_on_heap--)-heap_bot);
+    put_on_heap = arity;
+    marked += put_on_heap;
+    while (put_on_heap > 0)
+      h_mark((heap_top - put_on_heap--)-heap_bot);
     }
 
 #ifdef CHAT
@@ -1045,16 +1052,17 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
   if (fromwhere == FROM_CP) heap_top-- ;
   switch (whereto)
     { case TO_HEAP : index = p - heap_bot ; s = "ref_heap" ; break ;
-      case TO_NOWHERE : index = (Integer)p ; s = "ref_nowhere" ; break ;
-      case TO_LS : index = ls_bot - p ; s = "ref_ls" ; break ;
-      case TO_CP : index = cp_bot - p ; s = "ref_cp" ; break ;
-      case TO_TR : index = p - tr_bot ; s = "ref_tr" ; break ;
-      case TO_COMPL : index = p - compl_bot ; s = "ref_compl" ; break ;
-	/*case TO_ATTV_ARRAY : index = p ; s = "ref_attv_array" ; break ;*/
+    case TO_NOWHERE : index = (Integer)p ; s = "ref_nowhere" ; break ;
+    case TO_LS : index = ls_bot - p ; s = "ref_ls" ; break ;
+    case TO_CP : index = cp_bot - p ; s = "ref_cp" ; break ;
+    case TO_TR : index = p - tr_bot ; s = "ref_tr" ; break ;
+    case TO_COMPL : index = p - compl_bot ; s = "ref_compl" ; break ;
+      /*case TO_ATTV_ARRAY : index = p ; s = "ref_attv_array" ; break ;*/
     }
   switch (tag)
     {
-    case REF : case REF1 :
+    case XSB_REF:
+    case XSB_REF1:
       if (p == NULL) fprintf(where,"null,0).\n") ;
       else
         if (p == cell_ptr) fprintf(where,"undef,_).\n") ;
@@ -1106,30 +1114,30 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 	  }
       break ;
       
-    case CS :
+    case XSB_STRUCT :
       if (whereto == TO_NOWHERE)
 	fprintf(where,"cs-%s,%lx).\n",s,(long)index) ;
       else
 	fprintf(where,"cs-%s,%ld).\n",s,(long)index) ;
       break ;
       
-    case LIST :
+    case XSB_LIST :
       fprintf(where,"list-%s,%ld).\n",s,(long)index) ;
       break ;
       
-    case INT :
+    case XSB_INT :
       fprintf(where,"int  ,%ld).\n",(long)int_val(cell_val)) ;
       break ;
       
-    case FLOAT :
+    case XSB_FLOAT :
       fprintf(where,"float,%.5g).\n",float_val((Integer)cell_val)) ;
       break ;
       
-    case STRING :
+    case XSB_STRING :
       fprintf(where,"atom ,'%s').\n",string_val(cell_val)) ;
       break ;
       
-    case ATTV :
+    case XSB_ATTV :
       fprintf(where,"attrv_%s,%ld).\n",s,(long)index) ;
       break ;
 
@@ -1587,7 +1595,7 @@ static void chat_relocate_all(CPtr heap_bot, int heap_offset,
 
 /*----------------------------------------------------------------------*/
 
-bool glstack_realloc(int new_size, int arity)
+xsbBool glstack_realloc(int new_size, int arity)
 {
   CPtr   new_heap_bot ;       /* bottom of new Global Stack area */
   CPtr   new_ls_bot ;         /* bottom of new Local Stack area */
@@ -1802,23 +1810,23 @@ static void unchain(CPtr hptr, CPtr destination)
 	    break;
 	}
       *hptr = *pointsto ;
-      switch (tag)
-	{
-	  case REF: case REF1:
-	    *pointsto = (Cell)destination ;
-	    break ;
-	  case CS :
-	    *pointsto = makecs((Cell)destination) ;
-	    break ;
-	  case LIST :
-	    *pointsto = makelist((Cell)destination) ;
-	    break ;
-	  case ATTV :
-	    *pointsto = makeattv((Cell)destination);
-	    break;
-	  default :
-	    xsb_exit("tag error during unchaining") ;
-	}
+      switch (tag) {
+      case XSB_REF: 
+      case XSB_REF1:
+	*pointsto = (Cell)destination ;
+	break ;
+      case XSB_STRUCT :
+	*pointsto = makecs((Cell)destination) ;
+	break ;
+      case XSB_LIST :
+	*pointsto = makelist((Cell)destination) ;
+	break ;
+      case XSB_ATTV :
+	*pointsto = makeattv((Cell)destination);
+	break;
+      default :
+	xsb_exit("tag error during unchaining") ;
+      }
     }
   while (continue_after_this) ;
 
@@ -1831,22 +1839,22 @@ inline static void swap_with_tag(CPtr p, CPtr q, int tag)
      make *q = p + tag, but maybe shift p
   */
    *p = *q ;
-   switch (tag)
-    {
-      case REF : case REF1 :
-        *q = (Cell)p ;
-	break ;
-      case CS :
-	*q = makecs((Cell)p) ;
-	break ;
-      case LIST :
-	*q = makelist((Cell)p) ;
-	break ;
-      case ATTV :
-	*q = makeattv((Cell)p);
-	break;
-      default : xsb_exit("error during swap_with_tag") ;
-    }
+   switch (tag) {
+   case XSB_REF:
+   case XSB_REF1:
+     *q = (Cell)p ;
+     break ;
+   case XSB_STRUCT :
+     *q = makecs((Cell)p) ;
+     break ;
+   case XSB_LIST :
+     *q = makelist((Cell)p) ;
+     break ;
+   case XSB_ATTV :
+     *q = makeattv((Cell)p);
+     break;
+   default : xsb_exit("error during swap_with_tag") ;
+   }
 } /* swap_with_tag */
 
 #endif /* GC */
@@ -2221,7 +2229,7 @@ static CPtr scan, next;
     CHECK(Q);\
     GCDBG("Adapting %p ", P); GCDBG("with %p ", Q);\
     Q = (CPtr)((CPtr)(cell(Q))+offset); \
-    if (TAG == REF || TAG == REF1) {\
+    if (TAG == XSB_REF || TAG == XSB_REF1) {\
       bld_ref(P, Q); \
     } else {\
       cell(P) = (Cell)(enc_addr(Q) | TAG); \
@@ -2253,57 +2261,58 @@ static void find_and_copy_block(CPtr hp)
     for ( ; scan < next; scan++) {
       q = (CPtr)cell(scan);
       tag = cell_tag(q);
-      switch (tag)
-      { case REF : case REF1 :
-	  if (points_into_heap(q)) {
-	    GCDBG("Reference to heap with tag %d\n", tag);
+      switch (tag) {
+      case XSB_REF: 
+      case XSB_REF1:
+	if (points_into_heap(q)) {
+	  GCDBG("Reference to heap with tag %d\n", tag);
 #ifdef GC_DEBUG
-	    fprintf(stddbg, "In adapting case for %p with %p (%lx)...",
-		    scan, q, cell(q));
+	  fprintf(stddbg, "In adapting case for %p with %p (%lx)...",
+		  scan, q, cell(q));
 #endif
-	   if (h_marked(q-heap_bot)) {
-	     copy_block(q,next);
-	   }
-	   q = (CPtr)((CPtr)(cell(q))+offset);
-	   GCDBG(" to be adapted to %p\n", q);
-	   bld_ref(scan, q);
+	  if (h_marked(q-heap_bot)) {
+	    copy_block(q,next);
 	  }
-	  break;
-        case CS :
-	  addr = (CPtr)cs_val(q);
-	  GCDBG("Structure pointing to %p found...\n", addr);
-	  if (h_marked(addr-heap_bot)) { /* if structure not already copied */
-	    copy_block(addr,next); /* this modifies *addr */
-	  }
-	  CHECK(addr);
-	  GCDBG("*p = %lx ", cell(addr));
-	  addr = (CPtr)((CPtr)(cell(addr))+offset);
-	  GCDBG("q = %p ", addr);
-	  bld_cs(scan, addr);
-	  GCDBG("made to point to %lx\n", cell(scan));
-          break;
-        case LIST :
-	  addr = clref_val(q);
-	  GCDBG("List %p found... \n", addr);
-	  if (h_marked(addr-heap_bot)) { /* if list head not already copied */
-	    copy_block(addr,next); /* this modifies *addr */
-	  }
-	  CHECK(addr);
-	  addr = (CPtr)((CPtr)(cell(addr))+offset);
-	  bld_list(scan, addr);
-          break;
-        case ATTV:
-	  addr = clref_val(q);
-	  GCDBG("Attv %p found... \n", addr);
-	  if (h_marked(addr-heap_bot)) {
-	    copy_block(addr,next);
-	  }
-	  CHECK(addr);
-	  addr = (CPtr)((CPtr)(cell(addr))+offset);
-	  bld_attv(scan, addr);
-	  break;
-        default :
-	  break;
+	  q = (CPtr)((CPtr)(cell(q))+offset);
+	  GCDBG(" to be adapted to %p\n", q);
+	  bld_ref(scan, q);
+	}
+	break;
+      case XSB_STRUCT :
+	addr = (CPtr)cs_val(q);
+	GCDBG("Structure pointing to %p found...\n", addr);
+	if (h_marked(addr-heap_bot)) { /* if structure not already copied */
+	  copy_block(addr,next); /* this modifies *addr */
+	}
+	CHECK(addr);
+	GCDBG("*p = %lx ", cell(addr));
+	addr = (CPtr)((CPtr)(cell(addr))+offset);
+	GCDBG("q = %p ", addr);
+	bld_cs(scan, addr);
+	GCDBG("made to point to %lx\n", cell(scan));
+	break;
+      case XSB_LIST :
+	addr = clref_val(q);
+	GCDBG("List %p found... \n", addr);
+	if (h_marked(addr-heap_bot)) { /* if list head not already copied */
+	  copy_block(addr,next); /* this modifies *addr */
+	}
+	CHECK(addr);
+	addr = (CPtr)((CPtr)(cell(addr))+offset);
+	bld_list(scan, addr);
+	break;
+      case XSB_ATTV:
+	addr = clref_val(q);
+	GCDBG("Attv %p found... \n", addr);
+	if (h_marked(addr-heap_bot)) {
+	  copy_block(addr,next);
+	}
+	CHECK(addr);
+	addr = (CPtr)((CPtr)(cell(addr))+offset);
+	bld_attv(scan, addr);
+	break;
+      default :
+	break;
       }
     }
 } /* find_and_copy_block */

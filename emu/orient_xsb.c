@@ -54,7 +54,7 @@ char *user_home;     	     	     	/* the user $HOME dir or install dir,
 					   if $HOME is null */ 
 
 
-extern bool is_absolute_filename(char *);
+extern xsbBool is_absolute_filename(char *);
 DllExport extern char * call_conv strip_names_from_path(char*, int);
 
 static void check_create_dir(char *);

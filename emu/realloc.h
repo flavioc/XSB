@@ -38,20 +38,21 @@
 
 #define reallocate_heap_or_ls_pointer(cell_ptr) 		\
     cell_val = (Cell)*cell_ptr ; 				\
-    switch (cell_tag(cell_val)) 				\
-    { case REF: case REF1 : 					\
-        realloc_ref(cell_ptr,(CPtr)cell_val);            	\
-        break ; /* end case FREE or REF */ 			\
-      case CS : 						\
-        if (heap_bot<=(clref_val(cell_val)) && (clref_val(cell_val))<heap_top)\
+    switch (cell_tag(cell_val)) { 				\
+    case XSB_REF:    	     	     	     	     	\
+    case XSB_REF1 : 					\
+      realloc_ref(cell_ptr,(CPtr)cell_val);            	\
+      break ; /* end case XSB_FREE or XSB_REF */ 			\
+    case XSB_STRUCT : 						\
+      if (heap_bot<=(clref_val(cell_val)) && (clref_val(cell_val))<heap_top)\
 	  *cell_ptr = (CPtr)makecs((Cell)(clref_val(cell_val)+heap_offset)) ; \
-        break ; 						\
-      case LIST : 						\
-        if (heap_bot<=(clref_val(cell_val)) && (clref_val(cell_val))<heap_top)\
+      break ; 						\
+    case XSB_LIST : 						\
+      if (heap_bot<=(clref_val(cell_val)) && (clref_val(cell_val))<heap_top)\
           *cell_ptr = (CPtr)makelist((Cell)(clref_val(cell_val)+heap_offset));\
-        break ; 						\
-      default : /* no need to reallocate */ 			\
-        break ; 						\
+      break ; 						\
+    default : /* no need to reallocate */ 			\
+      break ; 						\
     }
 
 

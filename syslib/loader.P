@@ -242,8 +242,8 @@ XSB's in-lined predicates, builtins, and functions.
 
 '_$load_undef'(Term) :-
 	term_type(Term, Type),
-	( Type =:= CS -> term_psc(Term, PSC)
-	; Type =:= STRING -> psc_insert(Term, 0, PSC, 0)
+	( Type =:= XSB_STRUCT -> term_psc(Term, PSC)
+	; Type =:= XSB_STRING -> psc_insert(Term, 0, PSC, 0)
 	),
 	load_pred(PSC),
 	call0(Term).

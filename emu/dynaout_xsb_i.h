@@ -48,7 +48,7 @@ char tfile[128];	/* uniquely-named tmp file for "ld" */
 
 /*----------------------------------------------------------------------*/
 
-bool dummy()
+xsbBool dummy()
 {
     xsb_error("Trying to use an undefined foreign procedure");
     return FALSE;

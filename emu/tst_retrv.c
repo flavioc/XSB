@@ -40,7 +40,7 @@
 #include "binding.h"
 #include "cut_xsb.h"	   /* trail frame field access macros */
 #include "sw_envs.h"
-#include "subp.h"          /* bool unify(Cell, Cell) */
+#include "subp.h"          /* xsbBool unify(Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "macro_xsb.h"
@@ -249,7 +249,7 @@ void initTSTRetrieve() {
    return NULL;							\
  }
 
-static void tstRetrievalError(char *string, bool cleanup_needed) {
+static void tstRetrievalError(char *string, xsbBool cleanup_needed) {
   fprintf(stderr, "Error encountered in Time-Stamped Trie "
 	  "retrieval algorithm!\n");
   if (cleanup_needed) {
@@ -451,7 +451,7 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
 	* resident structures and a deref of the trie symbol doesn't	
 	* tell you whether we have something in the trie or in the heap.
 	*/                                           			  \
-       if ( sym_tag == CS ) {                        			  \
+       if ( sym_tag == XSB_STRUCT ) {                        			  \
 	 if ( get_str_psc(Subterm) == DecodeTrieFunctor(symbol) ) {	  \
 	   /*							
 	    *  We must process the rest of the term ourselves.
@@ -464,7 +464,7 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
        }                                                        	  \
        else {                                                   	  \
 	 /*							
-	  * We have a TrieVar bound to a heap CS-term; use a standard
+	  * We have a TrieVar bound to a heap XSB_STRUCT-term; use a standard
 	  * unification algorithm to check the match and perform any
 	  * additional unification.			
 	  */                                                    	  \
@@ -521,7 +521,7 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
      TrieSymbol_Deref(symbol);                    			 \
      if ( isref(symbol) ) {						 \
        /*		
-	* Either an unbound TrieVar or some unbound Prolog var.  The
+	* Either an unbound XSB_TrieVar or some unbound Prolog var.  The
 	* variable is bound to the entire subterm ([First | Rest]), so
 	* we don't need to process its args; simply continue the search
 	* through the trie.
@@ -533,11 +533,11 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
      }									 \
      else if ( IsTrieList(symbol) ) {					 \
        /*					
-	* Need to be careful here, because TrieVars are bound to heap-
+	* Need to be careful here, because XSB_TrieVars are bound to heap-
 	* resident structures and a deref of the (trie) symbol doesn't
 	* tell you whether we have something in the trie or in the heap.
 	  */                                      			 \
-       if ( sym_tag == LIST ) {						 \
+       if ( sym_tag == XSB_LIST ) {					 \
 	 /*					
 	  *  We must process the rest of the term ourselves.
 	  */                                        			 \
@@ -548,7 +548,7 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
        }                                            			 \
        else {                                       			 \
 	 /*					
-	  * We have a TrieVar bound to a heap LIST-term; use a standard
+	  * We have a XSB_TrieVar bound to a heap LIST-term; use a standard
 	  * unification algorithm to check the match.
 	    */                                        			 \
 	 if (unify(Subterm, symbol)) {        				 \
@@ -574,13 +574,13 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
    symbol = TSTN_Symbol(Chain);						\
    TrieSymbol_Deref(symbol);						\
    switch(TrieSymbolType(symbol)) {					\
-   case INT:								\
-   case FLOAT:								\
-   case STRING:								\
+   case XSB_INT:       							\
+   case XSB_FLOAT:	       						\
+   case XSB_STRING:	       						\
      Bind_and_Conditionally_Trail((CPtr)Subterm,symbol);		\
      break;								\
 									\
-   case CS:                                             		\
+   case XSB_STRUCT:                                            		\
      /*
       * Need to be careful here, because TrieVars are bound to heap-
       * resident structures and a deref of the (trie) symbol doesn't
@@ -612,13 +612,13 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
      }                                                                	\
      else {                                                           	\
        /*
-	*  We have a TrieVar bound to a heap-resident CS.
+	*  We have a TrieVar bound to a heap-resident STRUCT.
 	*/								\
        Bind_and_Conditionally_Trail((CPtr)Subterm,symbol);		\
      }									\
      break;								\
 									\
-   case LIST:								\
+   case XSB_LIST:	       						\
      if ( IsTrieList(TSTN_Symbol(Chain)) ) {				\
        /*
 	*  Since the TSTN contains a (sub)list beginning, create a
@@ -642,8 +642,8 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
      }									\
      break;								\
 									\
-   case REF:								\
-   case REF1:								\
+   case XSB_REF:       							\
+   case XSB_REF1:      							\
      /*
       *  The symbol is either an unbound TrieVar or some unbound Prolog
       *  variable.  If it's an unbound TrieVar, we bind it to the Prolog
@@ -744,14 +744,14 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
 
   while ( ! TermStack_IsEmpty ) {
     subterm = TermStack_Pop;
-    deref(subterm);
+    XSB_Deref(subterm);
     switch(cell_tag(subterm)) {
 
     /* SUBTERM IS A CONSTANT
        --------------------- */
-    case INT:
-    case FLOAT:
-    case STRING:
+    case XSB_INT:
+    case XSB_FLOAT:
+    case XSB_STRING:
       /*
        *  NOTE:  A Trie constant looks like a Prolog constant.
        */
@@ -775,10 +775,10 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
 
     /* SUBTERM IS A STRUCTURE
        ---------------------- */
-    case CS:
+    case XSB_STRUCT:
       /*
-       *  NOTE:  A trie CS is a CS-tagged PSC ptr, while a heap CS
-       *         is a CS-tagged ptr to a PSC ptr.
+       *  NOTE:  A trie XSB_STRUCT is a XSB_STRUCT-tagged PSC ptr,
+       *  while a heap XSB_STRUCT is a XSB_STRUCT-tagged ptr to a PSC ptr.
        */
       if ( IsHashHeader(cur_chain) ) {
 	symbol = EncodeTrieFunctor(subterm);
@@ -799,12 +799,12 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
       
     /* SUBTERM IS A LIST
        ----------------- */
-    case LIST:
+    case XSB_LIST:
       /*
-       *  NOTE:  A trie LIST uses a plain LIST tag wherever a recursive
-       *         substructure begins, while a heap LIST uses a LIST-
+       *  NOTE:  A trie XSB_LIST uses a plain XSB_LIST tag wherever a recursive
+       *         substructure begins, while a heap XSB_LIST uses a XSB_LIST-
        *         tagged ptr to a pair of Cells, the first being the head
-       *         and the second being the recursive tail, another LIST-
+       *         and the second being the recursive tail, another XSB_LIST-
        *         tagged ptr.
        */
       if ( IsHashHeader(cur_chain) ) {
@@ -826,8 +826,8 @@ ALNptr retrieve_unifying_answers(TSTNptr tstRoot, TimeStamp ts,
       
     /* SUBTERM IS AN UNBOUND VARIABLE
        ------------------------------ */
-    case REF:
-    case REF1:
+    case XSB_REF:
+    case XSB_REF1:
       /*
        *  Since variables unify with any term, only prune based on
        *  timestamps.  For Hashed/HashRoot nodes we can use the TSI to

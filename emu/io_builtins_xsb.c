@@ -110,7 +110,7 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 #ifdef HAVE_SNPRINTF
 /* like PRINT_ARG, but uses snprintf */
 #define SPRINT_ARG(arg) \
-        vstrENSURE_SIZE(&OutString, OutString.length+SAFE_OUT_SIZE); \
+        XSB_StrEnsureSize(&OutString, OutString.length+SAFE_OUT_SIZE); \
         switch (current_fmt_spec->size) { \
         case 1: bytes_formatted=snprintf(OutString.string+OutString.length, \
 					 SAFE_OUT_SIZE, \
@@ -127,7 +127,7 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 	        break; \
 	} \
         OutString.length += bytes_formatted; \
-        vstrNULL_TERMINATE(&OutString);
+        XSB_StrNullTerminate(&OutString);
 
 #else
 /* like PRINT_ARG, but uses sprintf -- used with old compilers that don't have
@@ -136,7 +136,7 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
    strlen to count bytes formatted, for portability.
    */
 #define SPRINT_ARG(arg) \
-    	vstrENSURE_SIZE(&OutString, OutString.length+SAFE_OUT_SIZE); \
+    	XSB_StrEnsureSize(&OutString, OutString.length+SAFE_OUT_SIZE); \
      	switch (current_fmt_spec->size) { \
         case 1: sprintf(OutString.string+OutString.length, \
 			current_fmt_spec->fmt, arg); \
@@ -153,23 +153,23 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 	        break; \
 	} \
         OutString.length += bytes_formatted; \
-        vstrNULL_TERMINATE(&OutString);
+        XSB_StrNullTerminate(&OutString);
 #endif
 
 
 /* these are static & global, to save on alloc overhead and large footprint  */
-static vstrDEFINE(FmtBuf);    	       	      /* holder of format            */
-static vstrDEFINE(StrArgBuf);      	      /* holder for string arguments */
+static XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
+static XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
 
-bool fmt_write(void);
-bool fmt_write_string(void);
-bool fmt_read(void);
+xsbBool fmt_write(void);
+xsbBool fmt_write_string(void);
+xsbBool fmt_read(void);
 
 
 #include "ptoc_tag_xsb_i.h"
     	    
 
-bool formatted_io (void)
+xsbBool formatted_io (void)
 {
   switch (ptoc_int(1)) {
   case FMT_WRITE: return fmt_write();
@@ -191,7 +191,7 @@ bool formatted_io (void)
 ----------------------------------------------------------------------*/
 
 
-bool fmt_write(void)
+xsbBool fmt_write(void)
 {
   char *Fmt=NULL, *str_arg;
   static char aux_msg[50];
@@ -202,7 +202,7 @@ bool fmt_write(void)
   struct fmt_spec *current_fmt_spec;
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
-  vstrSET(&StrArgBuf,"");
+  XSB_StrSet(&StrArgBuf,"");
 
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
@@ -333,10 +333,10 @@ int sprintf(char *s, const char *format, /* args */ ...);
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE/2
 #endif
 
-bool fmt_write_string(void)
+xsbBool fmt_write_string(void)
 {
   char *Fmt=NULL, *str_arg;
-  static vstrDEFINE(OutString);
+  static XSB_StrDefine(OutString);
   static char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity;
@@ -347,8 +347,8 @@ bool fmt_write_string(void)
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
 					       returned by sprintf/snprintf */
-  vstrSET(&StrArgBuf,"");
-  vstrSET(&OutString,"");
+  XSB_StrSet(&StrArgBuf,"");
+  XSB_StrSet(&OutString,"");
 
   if (isnonvar(reg_term(2)))
     xsb_abort("FMT_WRITE_STRING: Arg 1 must be an unbound variable");
@@ -478,12 +478,12 @@ bool fmt_write_string(void)
       Status: 0 OK, -1 eof 
 ----------------------------------------------------------------------*/
 
-bool fmt_read(void)
+xsbBool fmt_read(void)
 {
   char *Fmt=NULL;
   prolog_term AnsTerm, Arg, Fmt_term;
   Integer i ;
-  static vstrDEFINE(aux_fmt);     	      /* auxiliary fmt holder 	     */
+  static XSB_StrDefine(aux_fmt);     	      /* auxiliary fmt holder 	     */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -530,8 +530,8 @@ bool fmt_read(void)
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */
 					1);  /* read    	      	     */
-  vstrSET(&aux_fmt, current_fmt_spec->fmt);
-  vstrAPPEND(&aux_fmt,"%n");
+  XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
+  XSB_StrAppend(&aux_fmt,"%n");
 
   for (i = 1; (i <= Arity); i++) {
     Arg = p2p_arg(AnsTerm,i);
@@ -557,7 +557,7 @@ bool fmt_read(void)
 	xsb_warn("FMT_READ: More arguments than format specifiers");
       goto EXIT_READ;
     case 's':
-      vstrENSURE_SIZE(&StrArgBuf, MAX_IO_BUFSIZE);
+      XSB_StrEnsureSize(&StrArgBuf, MAX_IO_BUFSIZE);
       curr_assignment = fscanf(fptr, aux_fmt.string,
 			       StrArgBuf.string,
 			       &curr_chars_consumed);
@@ -621,8 +621,8 @@ bool fmt_read(void)
     current_fmt_spec = next_format_substr(Fmt,
 					  0 /* don't initialize */,
 					  1 /* read */ );
-    vstrSET(&aux_fmt, current_fmt_spec->fmt);
-    vstrAPPEND(&aux_fmt,"%n");
+    XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
+    XSB_StrAppend(&aux_fmt,"%n");
   }
 
   /* if there are format specifiers beyond what corresponds to the last
@@ -1060,7 +1060,7 @@ int read_canonical(void)
 	findall_copy_to_heap(term,(CPtr)arg2,&hreg) ; /* this can't fail */
 	free_term_buffer();
 
-	deref(arg2);
+	XSB_Deref(arg2);
 	term = (prolog_term) arg2;
 	if (isinteger(term) || 
 	    isfloat(term) || 
@@ -1106,7 +1106,7 @@ int read_canonical(void)
 struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 {
   static int current_substr_start;   /* current substr pointer */
-  static vstrDEFINE(workspace);      /* copy of format used as workspace */
+  static XSB_StrDefine(workspace);      /* copy of format used as workspace */
   static char saved_char;    	     /* place to save char that we
 				        temporarily replace with '\0' */
   int pos, keep_going;
@@ -1116,7 +1116,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 
   if (initialize) {
     current_substr_start = 0;
-    vstrSET(&workspace,format);
+    XSB_StrSet(&workspace,format);
   } else {
     /* restore char that was replaced with \0 */
     workspace.string[current_substr_start] = saved_char;

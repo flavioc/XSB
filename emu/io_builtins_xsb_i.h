@@ -60,7 +60,7 @@ static void strclose(int i)
 
 /* use stat() to get file mod time, size, and other things */
 /* file_stat(+FileName, +FuncNumber, -Result)	     	   */
-bool file_stat(void)
+xsbBool file_stat(void)
 {
   int retcode = stat(ptoc_string(1), &stat_buff);
   int functor_arg3 = is_functor(reg_term(3));
@@ -105,7 +105,7 @@ bool file_stat(void)
 }
 
 /* file_flush, file_pos, file_truncate, file_seek */
-inline static bool file_function(void)
+inline static xsbBool file_function(void)
 {
   static FILE *fptr;
   static int io_port, value, size, offset, length, mode;

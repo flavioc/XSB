@@ -74,8 +74,8 @@ CPtr *var_addr;
 int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
 Cell VarEnumerator[NUM_TRIEVARS];
 Cell TrieVarBindings[NUM_TRIEVARS];
-bool check_table_cut = TRUE;  /* flag for close_open_tables to turn off
-				 cut-over-table check */
+xsbBool check_table_cut = TRUE;  /* flag for close_open_tables to turn off
+				    cut-over-table check */
 
 /*
  * global_num_vars is a new variable to save the value of variable
@@ -449,7 +449,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
     Macro_addr = (CPtr)pop_addr;					\
     xtemp2 = pop_term;							\
     switch( TrieSymbolType(xtemp2) ) {					\
-    case TrieVar: {							\
+    case XSB_TrieVar: {							\
       int index = DecodeTrieVar(xtemp2);				\
       if (IsNewTrieVar(xtemp2)) {					\
 	safe_assign(var_addr,index,Macro_addr,var_addr_arraysz);	\
@@ -466,18 +466,18 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       *Macro_addr = (Cell) var_addr[index];				\
     }									\
     break;								\
-    case STRING:							\
-    case INT:								\
-    case FLOAT:								\
+    case XSB_STRING:							\
+    case XSB_INT:	       						\
+    case XSB_FLOAT:	       						\
       *Macro_addr = DecodeTrieConstant(xtemp2);				\
       break;								\
-    case LIST:								\
+    case XSB_LIST:	       						\
       *Macro_addr = (Cell) makelist(hreg);				\
       hreg += 2;							\
       push_addr(hreg-1);						\
       push_addr(hreg-2);						\
       break;								\
-    case CS:								\
+    case XSB_STRUCT:		       					\
       *Macro_addr = (Cell) makecs(hreg);				\
       xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);			\
       *hreg = xtemp2;							\
@@ -501,7 +501,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
   int mArity,mj;							\
   xtemp2 = pop_term;							\
   switch( TrieSymbolType(xtemp2) ) {					\
-  case TrieVar: {							\
+  case XSB_TrieVar: {							\
     int index = DecodeTrieVar(xtemp2);					\
     if (IsNewTrieVar(xtemp2)) { /* diff with CHAT - Kostis */		\
       safe_assign(var_addr,index,ataddr,var_addr_arraysz);		\
@@ -519,19 +519,19 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
     ret_val = (Cell) var_addr[index];					\
   }									\
   break;								\
-  case STRING:								\
-  case INT:								\
-  case FLOAT:								\
+  case XSB_STRING:     							\
+  case XSB_INT:	       						\
+  case XSB_FLOAT:      							\
     ret_val = DecodeTrieConstant(xtemp2);				\
     break;								\
-  case LIST:								\
+  case XSB_LIST:			       				\
     ret_val = (Cell) makelist(hreg) ;					\
     hreg += 2;								\
     push_addr(hreg-1);							\
     push_addr(hreg-2);							\
     rec_macro_make_heap_term(dummy_addr);				\
     break;								\
-  case CS:								\
+  case XSB_STRUCT:		       					\
     ret_val = (Cell) makecs(hreg);					\
     xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);				\
     *hreg = xtemp2;							\
@@ -556,10 +556,11 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 									\
   while (!pdlempty ) {							\
     xtemp1 = (CPtr) pdlpop;						\
-    cptr_deref(xtemp1);							\
+    XSB_CptrDeref(xtemp1);			       			\
     tag = cell_tag(xtemp1);						\
     switch (tag) {							\
-    case FREE: case REF1:						\
+    case XSB_FREE:            	       	       	       	      	       \
+    case XSB_REF1:			  	    			\
       if (! IsStandardizedVariable(xtemp1)) {				\
 	StandardizeAndTrailVariable(xtemp1,ctr);			\
 	item = EncodeNewTrieVar(ctr);					\
@@ -571,15 +572,17 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 	one_node_chk_ins(flag, item, TrieType);				\
       }									\
       break;								\
-    case STRING: case INT: case FLOAT:					\
+    case XSB_STRING:    	    	      	    	    	    	\
+    case XSB_INT:    	    	    	    	    	    	    	\
+    case XSB_FLOAT:		      	    	    			\
       one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
       break;								\
-    case LIST:								\
+    case XSB_LIST:	       						\
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
       pdlpush(cell(clref_val(xtemp1)+1));				\
       pdlpush(cell(clref_val(xtemp1)));					\
       break;								\
-    case CS:								\
+    case XSB_STRUCT:           						\
       psc = (Psc) follow(cs_val(xtemp1));				\
       item = makecs(psc);						\
       one_node_chk_ins(flag, item, TrieType);				\
@@ -587,7 +590,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 	pdlpush(cell(clref_val(xtemp1)+j));				\
       }									\
       break;								\
-    case ATTV:								\
+    case XSB_ATTV:					       		\
       /* Now xtemp1 can only be the first occurrence of an attv */	\
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
       StandardizeAndTrailVariable(xtemp1, ctr);				\
@@ -620,10 +623,11 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 									\
   while (!pdlempty ) {							\
     xtemp1 = (CPtr) pdlpop;						\
-    cptr_deref(xtemp1);							\
+    XSB_CptrDeref(xtemp1);	       					\
     tag = cell_tag(xtemp1);						\
     switch (tag) {							\
-    case FREE: case REF1:						\
+    case XSB_FREE:     	       	       	       	       	        \
+    case XSB_REF1:						\
       if (! IsStandardizedVariable(xtemp1)){				\
 	bld_free(hreg);							\
 	bind_ref(xtemp1, hreg);						\
@@ -637,15 +641,17 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 			 TrieType);					\
       }									\
       break;								\
-    case STRING: case INT: case FLOAT:					\
+    case XSB_STRING: 	     	     	     	     	     	     	 \
+    case XSB_INT:	     	     	     	     	     	     	 \
+    case XSB_FLOAT:					\
       one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
       break;								\
-    case LIST:								\
+    case XSB_LIST:	       						\
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
       pdlpush(cell(clref_val(xtemp1)+1));				\
       pdlpush(cell(clref_val(xtemp1)));					\
       break;								\
-    case CS:								\
+    case XSB_STRUCT:	       						\
       psc = (Psc) follow(cs_val(xtemp1));				\
       item = makecs(psc);						\
       one_node_chk_ins(flag, item, TrieType);				\
@@ -653,7 +659,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 	pdlpush(cell(clref_val(xtemp1)+j));				\
       }									\
       break;								\
-    case ATTV:								\
+    case XSB_ATTV:				       			\
       /* Now xtemp1 can only be the first occurrence of an attv */	\
       *(hreg++) = (Cell) xtemp1;					\
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
@@ -689,12 +695,12 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  */
 
 BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
-			     SGFrame subgoal_ptr, bool *flagptr) {
+			     SGFrame subgoal_ptr, xsbBool *flagptr) {
 
   Psc   psc;
   CPtr  xtemp1;
   int   i, j, flag = 1;
-  Cell  tag = FREE, item, tmp_var;
+  Cell  tag = XSB_FREE, item, tmp_var;
   ALNptr answer_node;
 
   ans_chk_ins++; /* Counter (answers checked & inserted) */
@@ -742,10 +748,11 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
 				 * have been bound in the answer for
 				 * the call.
 				 */
-    cptr_deref(xtemp1);
+    XSB_CptrDeref(xtemp1);
     tag = cell_tag(xtemp1);
     switch (tag) {
-    case FREE: case REF1:
+    case XSB_FREE: 
+    case XSB_REF1:
       if (! IsStandardizedVariable(xtemp1)) {
 	/*
 	 * If this is the first occurrence of this variable, then:
@@ -779,11 +786,13 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
 	one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
       }
       break;
-    case STRING: case INT: case FLOAT:
+    case XSB_STRING: 
+    case XSB_INT:
+    case XSB_FLOAT:
       one_node_chk_ins(flag, EncodeTrieConstant(xtemp1),
 		       BASIC_ANSWER_TRIE_TT);
       break;
-    case LIST:
+    case XSB_LIST:
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), BASIC_ANSWER_TRIE_TT);
       pdlpush(cell(clref_val(xtemp1)+1));
       pdlpush(cell(clref_val(xtemp1)));
@@ -793,7 +802,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
       recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
 #endif 
       break;
-    case CS:
+    case XSB_STRUCT:
       psc = (Psc)follow(cs_val(xtemp1));
       item = makecs(psc);
       one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
@@ -806,7 +815,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
       recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
 #endif
       break;
-    case ATTV:
+    case XSB_ATTV:
       /* Now xtemp1 can only be the first occurrence of an attv */
       *(hreg++) = (Cell) xtemp1;
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
@@ -940,7 +949,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     Psc  psc;
     Cell item;
     CPtr xtemp1;
-    int  i, j, tag = FREE, flag = 1;
+    int  i, j, tag = XSB_FREE, flag = 1;
  
 #ifdef DEBUG_DELAYVAR
     xsb_dbgmsg(">>>> start delay_chk_insert()");
@@ -967,14 +976,15 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 #ifdef DPVR_DEBUG_BD
       fprintf(stddbg, "arg[%d] =  %x ",i, xtemp1);
 #endif
-      cptr_deref(xtemp1);
+      XSB_CptrDeref(xtemp1);
 #ifdef DPVR_DEBUG_BD
       printterm(xtemp1,1,25);
       fprintf(stddbg, "\n");
 #endif
       tag = cell_tag(xtemp1);
       switch (tag) {
-      case FREE: case REF1:
+      case XSB_FREE:
+      case XSB_REF1:
 	if (! IsStandardizedVariable(xtemp1)) {
           StandardizeAndTrailVariable(xtemp1,ctr);
           one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
@@ -987,16 +997,18 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
 			   DELAY_TRIE_TT);
         }
         break;
-      case STRING: case INT: case FLOAT:
+      case XSB_STRING: 
+      case XSB_INT:
+      case XSB_FLOAT:
         one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), DELAY_TRIE_TT);
         break;
-      case LIST:
+      case XSB_LIST:
         one_node_chk_ins(flag, EncodeTrieList(xtemp1), DELAY_TRIE_TT);
         pdlpush(cell(clref_val(xtemp1)+1));
         pdlpush(cell(clref_val(xtemp1)));
         recvariant_trie(flag,DELAY_TRIE_TT);
         break;
-      case CS:
+      case XSB_STRUCT:
         one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))),DELAY_TRIE_TT);
         for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
           pdlpush(cell(clref_val(xtemp1)+j));
@@ -1045,13 +1057,13 @@ static void load_solution_from_trie(int arity, CPtr cptr)
 
    for (i=0; i<arity; i++) {
      xtemp1 = (CPtr) (cptr-i);
-     cptr_deref(xtemp1);
+     XSB_CptrDeref(xtemp1);
      macro_make_heap_term(xtemp1,returned_val,Dummy_Addr);
      if (xtemp1 != (CPtr)returned_val) {
        if (isref(xtemp1)) {	/* a regular variable */
 	 dbind_ref(xtemp1,returned_val);
        }
-       else {			/* an ATTV */
+       else {			/* an XSB_ATTV */
 	 /* Bind the variable part of xtemp1 to returned_val */
 	 dbind_ref((CPtr) dec_addr(xtemp1), returned_val);
        }
@@ -1076,7 +1088,7 @@ static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
 
   num_heap_term_vars = 0;     
   follow_par_chain(Leaf);
-  deref(term);
+  XSB_Deref(term);
   gen = (CPtr) term;
   macro_make_heap_term(gen,returned_val,Dummy_Addr);
   bld_ref(gen,returned_val);
@@ -1100,7 +1112,7 @@ static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
 /*
  *  Used with tries created via the builtin trie_intern.
  */
-bool bottom_up_unify(void)
+xsbBool bottom_up_unify(void)
 {
   Cell    term;
   BTNptr root;
@@ -1161,9 +1173,10 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
 									\
   while (!pdlempty) {							\
     xtemp1 = (CPtr) pdlpop;						\
-    cptr_deref(xtemp1);							\
+    XSB_CptrDeref(xtemp1);     						\
     switch(tag = cell_tag(xtemp1)) {					\
-    case FREE: case REF1:						\
+    case XSB_FREE:    	      	      	      	      	        \
+    case XSB_REF1:						\
       if (! IsStandardizedVariable(xtemp1)) {				\
 	*(--VarPosReg) = (Cell) xtemp1;					\
 	StandardizeVariable(xtemp1,ctr);				\
@@ -1174,15 +1187,17 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
 			 TrieType);					\
       }									\
       break;								\
-    case STRING: case INT: case FLOAT:					\
+    case XSB_STRING:	    	    	    	    	\
+    case XSB_INT:	    	    	    	    	\
+    case XSB_FLOAT:					\
       one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
       break;								\
-    case LIST:								\
+    case XSB_LIST:							\
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
       pdlpush( cell(clref_val(xtemp1)+1) );				\
       pdlpush( cell(clref_val(xtemp1)) );				\
       break;								\
-    case CS:								\
+    case XSB_STRUCT:		       					\
       psc = (Psc) follow(cs_val(xtemp1));				\
       item = makecs(psc);						\
       one_node_chk_ins(flag, item, TrieType);				\
@@ -1190,7 +1205,7 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
 	pdlpush(cell(clref_val(xtemp1)+j));				\
       }									\
       break;								\
-    case ATTV:								\
+    case XSB_ATTV:							\
       /* Now xtemp1 can only be the first occurrence of an attv */	\
       *(--VarPosReg) = (Cell) xtemp1;					\
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
@@ -1235,7 +1250,7 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
   Psc  psc;
   CPtr call_arg;
   int  arity, i, j, flag = 1;
-  Cell tag = FREE, item;
+  Cell tag = XSB_FREE, item;
   CPtr cptr, VarPosReg, tVarPosReg;
   TIFptr pTIF;
 
@@ -1253,10 +1268,11 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
 
   for (i = 0; i < arity; i++) {
     call_arg = (CPtr) (cptr + i);            /* Note! */
-    cptr_deref(call_arg);
+    XSB_CptrDeref(call_arg);
     tag = cell_tag(call_arg);
     switch (tag) {
-    case FREE: case REF1:
+    case XSB_FREE:
+    case XSB_REF1:
       if (! IsStandardizedVariable(call_arg)) {
 #ifndef CHAT
 	/*
@@ -1292,16 +1308,18 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
 	one_node_chk_ins(flag,EncodeTrieVar(IndexOfStdVar(call_arg)),CALL_TRIE_TT);
       }
       break;
-    case STRING: case INT: case FLOAT:
+    case XSB_STRING:
+    case XSB_INT:
+    case XSB_FLOAT:
       one_node_chk_ins(flag, EncodeTrieConstant(call_arg), CALL_TRIE_TT);
       break;
-    case LIST:
+    case XSB_LIST:
       one_node_chk_ins(flag, EncodeTrieList(call_arg), CALL_TRIE_TT);
       pdlpush(cell(clref_val(call_arg)+1));
       pdlpush(cell(clref_val(call_arg)));
       recvariant_call(flag,CALL_TRIE_TT,call_arg);
       break;
-    case CS:
+    case XSB_STRUCT:
       psc = (Psc)follow(cs_val(call_arg));
       item = makecs(psc);
       one_node_chk_ins(flag, item, CALL_TRIE_TT);
@@ -1310,7 +1328,7 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
       }
       recvariant_call(flag,CALL_TRIE_TT,call_arg);
       break;
-    case ATTV:
+    case XSB_ATTV:
       /* Now call_arg can only be the first occurrence of an attv */
       *(--VarPosReg) = (Cell) call_arg;
       call_arg = clref_val(call_arg); /* the VAR part of the attv */
@@ -1349,7 +1367,7 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
   while (--tVarPosReg > VarPosReg) {
     if (isref(*tVarPosReg))	/* a regular variable */
       ResetStandardizedVariable(*tVarPosReg);
-    else			/* an ATTV */
+    else			/* an XSB_ATTV */
       ResetStandardizedVariable(clref_val(*tVarPosReg));
   }
 
@@ -1386,7 +1404,7 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
 
 void remove_open_tries(CPtr bottom_parameter)
 {
-  bool warned = FALSE;
+  xsbBool warned = FALSE;
   SGFrame CallStrPtr;
 
   while (openreg < bottom_parameter) {
@@ -1418,7 +1436,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
     Psc  psc;
     CPtr xtemp1;
     int  j, flag = 1;
-    Cell tag = FREE, item;
+    Cell tag = XSB_FREE, item;
 
 
     if ( IsNULL(*hook) )
@@ -1427,14 +1445,15 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
     GNodePtrPtr = &BTN_Child(Paren);
 
     xtemp1 = (CPtr) term;
-    cptr_deref(xtemp1);
+    XSB_CptrDeref(xtemp1);
     tag = cell_tag(xtemp1);
 
     mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
     ctr = attv_ctr = 0;
 
     switch (tag) {
-    case FREE: case REF1:
+    case XSB_FREE: 
+    case XSB_REF1:
       if (! IsStandardizedVariable(xtemp1)) {
 	StandardizeAndTrailVariable(xtemp1,ctr);
 	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
@@ -1446,23 +1465,25 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
 			 INTERN_TRIE_TT);
       }
       break;
-    case STRING: case INT: case FLOAT:
+    case XSB_STRING: 
+    case XSB_INT:
+    case XSB_FLOAT:
       one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), INTERN_TRIE_TT);
       break;
-    case LIST:
+    case XSB_LIST:
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), INTERN_TRIE_TT);
       pdlpush(cell(clref_val(xtemp1)+1));
       pdlpush(cell(clref_val(xtemp1)));
       recvariant_trie(flag,INTERN_TRIE_TT);
       break;
-    case CS:
+    case XSB_STRUCT:
       one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))),INTERN_TRIE_TT);
       for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
 	pdlpush(cell(clref_val(xtemp1)+j));
       }
       recvariant_trie(flag,INTERN_TRIE_TT);
       break;
-    case ATTV:
+    case XSB_ATTV:
       /* Now xtemp1 can only be the first occurrence of an attv */
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
       /*
@@ -1520,7 +1541,7 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
   CPtr cptr;
   CPtr xtemp1;
   int  i, j, flag = 1;
-  Cell tag = FREE, item;
+  Cell tag = XSB_FREE, item;
   Psc  psc;
 
   psc = term_psc((prolog_term)termptr);
@@ -1539,10 +1560,11 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
   GNodePtrPtr = &BTN_Child(root);
   for (i = 1; i<=arity; i++) {
     xtemp1 = (CPtr) (cptr + i);
-    cptr_deref(xtemp1);
+    XSB_CptrDeref(xtemp1);
     tag = cell_tag(xtemp1);
     switch (tag) {
-    case FREE: case REF1:
+    case XSB_FREE: 
+    case XSB_REF1:
       if (! IsStandardizedVariable(xtemp1)) {
 	StandardizeAndTrailVariable(xtemp1,ctr);
 	one_node_chk_ins(flag, EncodeNewTrieVar(ctr),
@@ -1554,16 +1576,18 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
 			 ASSERT_TRIE_TT);
       }
       break;
-    case STRING: case INT: case FLOAT:
+    case XSB_STRING: 
+    case XSB_INT:
+    case XSB_FLOAT:
       one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), ASSERT_TRIE_TT);
       break;
-    case LIST:
+    case XSB_LIST:
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), ASSERT_TRIE_TT);
       pdlpush(cell(clref_val(xtemp1)+1));
       pdlpush(cell(clref_val(xtemp1)));
       recvariant_trie(flag,ASSERT_TRIE_TT);
       break;
-    case CS:
+    case XSB_STRUCT:
       psc = (Psc) follow(cs_val(xtemp1));
       one_node_chk_ins(flag, makecs(psc),ASSERT_TRIE_TT);
       for (j = get_arity(psc); j >= 1 ; j--) {
@@ -1571,7 +1595,7 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
       }
       recvariant_trie(flag,ASSERT_TRIE_TT);
       break;
-    case ATTV:
+    case XSB_ATTV:
       /* Now xtemp1 can only be the first occurrence of an attv */
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
       /*
@@ -1639,7 +1663,7 @@ byte * trie_get_returns_for_call(void)
   else {
     retskel = (CPtr)ptoc_tag(2);
     term1 = retskel;
-    cptr_deref(term1);
+    XSB_CptrDeref(term1);
     num_vars_in_var_regs = -1;
 
     if (isconstr(term1)) {
