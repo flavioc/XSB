@@ -1,4 +1,4 @@
-/* File:      modes.H
+/* File:      modeinf.H
 ** Author(s): C.R. Ramakrishnan
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

@@ -1,4 +1,4 @@
-/* File:      modes.P
+/* File:      modeinf.P
 ** Author(s): C.R. Ramakrishnan
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
