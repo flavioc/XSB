@@ -554,13 +554,10 @@ a newline ({\tt 10}) or EOF ({\tt-1}).
     former returns strings, while the latter returns lists of ASCII
     characters.
     
-    {\bf Important}: {\tt file\_read\_line/3} does \underline{not} intern
-    the strings it reads from the input file. This is done for efficiency
-    reasons (it is designed to be a low-level I/O predicate).  In
-    particular, this means you cannot compare these strings to normal
-    (interned) XSB strings. If interning is necessary, this should be done
-    explicitly. For instance, {\tt intern\_string(Uninterned, Interned)}
-    converts an uninterned string into an interned one.
+    {\bf Important}: Reading large files using this function can cause XSB
+    to run out of memory, because all strings are converted to atoms.
+    This problem will go away when atom table garbage collection is
+    implemented for XSB.
 
 \ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
 \index{{\tt expand\_filename/2}}

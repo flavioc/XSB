@@ -381,37 +381,6 @@ bool fmt_write_string(void)
 }
 
 
-/* 
-** Works like fgets(buf, size, stdin). Fails on reaching the end of file 
-** Invoke: file_function(FILE_READ_LINE, +File, -Str, -IsFullLine). Returns the
-** string read and an indicator (IsFullLine = 1 or 0) of whether the string
-** read is a full 
-** line. Doesn't intern the string and is always using the same
-** spot in the memory. So, each file_read_line overrides the previous one.
-** If you want to intern, you must do so explicitly.
-** Prolog invocation: file_read_line(+File, -Str, -IsFullLine)
-*/
-
-bool file_read_line(void)
-{
-  static char buf[MAXBUFSIZE+1];
-  int filedes=ptoc_int(2);
-  FILE *file=fileptr(filedes);
-
-  /* MAXBUFSIZE-1, because fgets addts '\0' at the end */
-  if (fgets(buf, MAXBUFSIZE, file) == NULL) {
-    return FALSE;
-  } else {
-    /* the need to string-find(intern) the string was introduced only recently
-       by somebody */
-    ctop_string(3, string_find(buf,1));
-    if (buf[(strlen(buf)-1)] == '\n')
-      ctop_int(4, 1); /* full line */
-    else ctop_int(4, 0); /* partial line */
-    return TRUE;
-  }
-}
-
 
 /*----------------------------------------------------------------------
    like fscanf
@@ -425,10 +394,11 @@ bool file_read_line(void)
 
 bool fmt_read(void)
 {
-  char *Fmt=NULL, aux_fmt[MAXBUFSIZE];
+  char *Fmt=NULL;
   prolog_term AnsTerm, Arg, Fmt_term;
   Integer i ;
-  char str_arg[MAXBUFSIZE];     	      /* holder for string arguments */
+  char str_arg[MAXBUFSIZE],    	       	      /* holder for string arguments */
+    aux_fmt[MAXBUFSIZE];    	    	      /* auxiliary fmt holder 	     */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -454,7 +424,7 @@ bool fmt_read(void)
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */
 					1);  /* read    	      	     */
-  strcpy(aux_fmt, current_fmt_spec->fmt);
+  strncpy(aux_fmt, current_fmt_spec->fmt, MAXBUFSIZE-4);
   strcat(aux_fmt,"%n");
 
   for (i = 1; (i <= Arity); i++) {
@@ -1112,44 +1082,42 @@ static struct stat stat_buff;
 /* file_flish, file_pos, file_truncate, file_seek */
 bool file_function(void)
 {
-  int tmpval, value, disp, i, size;
-  static FILE* fptr;
+  static int file_des, value, size;
   static STRFILE *sfptr;
   static char buf[MAXBUFSIZE+1];
-  char *addr, *tmpstr;
+  static char *addr, *tmpstr;
   Cell term;
 
   switch (ptoc_int(1)) {
   case FILE_FLUSH: /* file_function(0,+filedes,-ret,-dontcare, -dontcare) */
-    tmpval = ptoc_int(2);
-    fptr = fileptr(tmpval);   
+    /* ptoc_int(2) is file descriptor */
+    fptr = fileptr(ptoc_int(2));   
     value = fflush(fptr);
     ctop_int(3, (int) value);
     break;
   case FILE_SEEK: /* file_function(1,+filedes, +offset, +place, -ret) */
-    tmpval = ptoc_int(2);
-    fptr = fileptr(tmpval);
+    fptr = fileptr(ptoc_int(2));
     value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
     ctop_int(5, (int) value);
     break;
   case FILE_TRUNCATE: /* file_function(2,+filedes,+length,-ret,-dontcare) */
-    tmpval = ptoc_int(2);
-    fptr = fileptr(tmpval);
+    fptr = fileptr(ptoc_int(2));
     value = ftruncate( fileno(fptr), (off_t) ptoc_int(3));
     ctop_int(4, (int) value);
     break;
   case FILE_POS: /* file_function(3, +filedes, -pos) */
-    tmpval = ptoc_int(2);  /* expand for reading from strings?? */
+    file_des = ptoc_int(2);  /* expand for reading from strings?? */
     term = ptoc_tag(3);
-    if (tmpval >= 0) {
-      if (isnonvar(term)) return ptoc_int(3) == ftell(fileptr(tmpval));
-      else ctop_int(3, ftell(fileptr(tmpval)));
+    if (file_des >= 0) {
+      if (isnonvar(term)) return ptoc_int(3) == ftell(fileptr(file_des));
+      else ctop_int(3, ftell(fileptr(file_des)));
     } else { /* reading from string */
-      sfptr = strfileptr(tmpval);
-      disp = sfptr->strptr - sfptr->strbase;
+      int offset;
+      sfptr = strfileptr(file_des);
+      offset = sfptr->strptr - sfptr->strbase;
       if (isnonvar(term))
-	return ptoc_int(3) == disp;
-      else ctop_int(3, disp);
+	return ptoc_int(3) == offset;
+      else ctop_int(3, offset);
     }
     break;
   case FILE_OPEN:		
@@ -1158,16 +1126,17 @@ bool file_function(void)
        when append, mode = 2, when opening a 
        string for read mode = 3 */
     tmpstr = ptoc_string(2);
-    tmpval = ptoc_int(3);
-    if (tmpval<3) {
+    file_des = ptoc_int(3);
+    if (file_des<3) {
       addr = expand_filename(tmpstr);
-      switch (tmpval) {
+      switch (file_des) {
 	/* "b"'s needed for DOS. -smd */
       case 0: fptr = fopen(addr, "rb"); break; /* READ_MODE */
       case 1: fptr = fopen(addr, "wb"); break; /* WRITE_MODE */
       case 2: fptr = fopen(addr, "ab"); break; /* APPEND_MODE */
       }
       if (fptr) {
+	int i;
 	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
 	  /* file exists and isn't a dir */
 	  for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
@@ -1180,7 +1149,7 @@ bool file_function(void)
 	  xsb_abort("File %s is a directory, cannot open!", tmpstr);
 	}
       } else ctop_int(4, -1);
-    } else if (tmpval==3) {  /* open string! */
+    } else if (file_des==3) {  /* open string! */
       if ((fptr = stropen(tmpstr))) ctop_int(4, (Integer)fptr);
       else ctop_int(4, -1000);
     } else {
@@ -1189,33 +1158,34 @@ bool file_function(void)
     }
     break;
   case FILE_CLOSE: /* file_function(5, +FileName) */
-    tmpval = ptoc_int(2);
-    if (tmpval < 0) strclose(tmpval);
+    file_des = ptoc_int(2);
+    if (file_des < 0) strclose(file_des);
     else {
-      fclose(fileptr(tmpval));
-      open_files[tmpval] = NULL;
+      fclose(fileptr(file_des));
+      open_files[file_des] = NULL;
     }
     break;
   case FILE_GET:	/* file_function(6, +FileDes, -IntVal) */
-    tmpval = ptoc_int(2);
-    if ((tmpval < 0) && (tmpval >= -MAXIOSTRS)) {
-      sfptr = strfileptr(tmpval);
+    file_des = ptoc_int(2);
+    if ((file_des < 0) && (file_des >= -MAXIOSTRS)) {
+      sfptr = strfileptr(file_des);
       ctop_int(3, strgetc(sfptr));
     }
-    else ctop_int(3, getc(fileptr(tmpval)));
+    else ctop_int(3, getc(fileptr(file_des)));
     break;
-  case FILE_PUT:  /* file_function(7, +FileDes, +IntVal) */
-    tmpval = ptoc_int(2); i = ptoc_int(3); fptr = fileptr(tmpval);
-    putc(i, fptr);
+  case FILE_PUT:   /* file_function(7, +FileDes, +IntVal) */
+    /* ptoc_int(2) is file descriptor */
+    fptr = fileptr(ptoc_int(2));
+    /* ptoc_int(3) is char to write */
+    putc(ptoc_int(3), fptr);
 #ifdef WIN_NT
-    if (tmpval==2 && i==10) fflush(fptr); /* hack for Java interface */
+    if (file_des==2 && ch==10) fflush(fptr); /* hack for Java interface */
 #endif
     break;
   case FILE_GETBUF:
-    /* file_function(8, +FileDes, +ByteCount (int), -String) */
-    /* Read ByteCount bytes from FileDes at into String starting 
+    /* file_function(8, +FileDes, +ByteCount (int), -String)
+       Read ByteCount bytes from FileDes into String starting 
        at position Offset	      */
-    tmpval = ptoc_int(2);
     size = ptoc_int(3);
     if (size > MAXBUFSIZE) {
       size = MAXBUFSIZE;
@@ -1223,7 +1193,7 @@ bool file_function(void)
 	       size, MAXBUFSIZE);
     }
 
-    fread(buf, 1, size, fileptr(tmpval));
+    fread(buf, 1, size, fileptr(ptoc_int(2)));
     *(buf+size) = '\0';
     ctop_string(4, buf);
     break;
@@ -1232,12 +1202,24 @@ bool file_function(void)
     /* Write ByteCount bytes into FileDes from String beginning with Offset in
        that string	      */
     addr = ptoc_string(4);
-    disp = ptoc_int(5);
-    tmpval = ptoc_int(2);
-    fwrite(addr+disp, 1, ptoc_int(3), fileptr(tmpval));
+    /* ptoc_int(5) is Offset */
+    fwrite(addr+ptoc_int(5), 1, ptoc_int(3), fileptr(ptoc_int(2)));
     break;
   case FILE_READ_LINE:
-    return file_read_line();
+    /* Works like fgets(buf, size, stdin). Fails on reaching the end of file
+    ** Invoke: file_function(FILE_READ_LINE, +File, -Str, -IsFullLine). Returns
+    ** the string read and an indicator (IsFullLine = 1 or 0) of whether the
+    ** string read is a full line. 
+    ** Prolog invocation: file_read_line(10, +File, -Str, -IsFullLine) */
+    if (fgets(buf, MAXBUFSIZE, fileptr(ptoc_int(2))) == NULL) {
+      return FALSE;
+    } else {
+      ctop_string(3, string_find(buf,1));
+      if (buf[(strlen(buf)-1)] == '\n')
+	ctop_int(4, 1);
+      else ctop_int(4, 0);
+      return TRUE;
+    }
   default:
     xsb_abort("Invalid file function request %d\n", ptoc_int(1));
   }
