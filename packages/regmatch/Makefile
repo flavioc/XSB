@@ -25,10 +25,10 @@
 
 ALL = 	regmtchconfig.O regmtchshell.O
 
-EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
-	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
-	../emu/system.h ../emu/xsbsocket.h 
-PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
+EMU_INCLUDES = ../../emu/builtin.h ../../emu/celltags.h ../../emu/flag_defs.h \
+	../../emu/io_defs.h ../../emu/msyscall.h ../../emu/sig.h \
+	../../emu/system.h ../../emu/xsbsocket.h 
+PROLOG_INCLUDES = ../../prolog_includes/char_defs.h ../../prolog_includes/standard.h
 
 Option = [optimize]
 
@@ -42,7 +42,7 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 #-----------------------------------------------------------------------#
 
 # Make sure warnings are saved in a file.
-SVFILE = '/tmp/regmatch_warn'
+SVFILE = '../../build/.regmatch_warn.tmp'
 OWRITE = 1
 STDWARN = 3
 STDERR = 2

@@ -196,7 +196,7 @@ DllExport bool call_conv c2p_functor(char *functor, int arity, prolog_term var)
 	for (i=0; i<arity; sreg++,i++) { bld_free(sreg); }
 	return TRUE;
     } else {
-	xsb_warn("C2P_FUNCTOR: Argument 2 must be a variable");
+	xsb_warn("C2P_FUNCTOR: Argument 3 must be a variable");
 	return FALSE;
     }
 }

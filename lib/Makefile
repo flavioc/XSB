@@ -44,7 +44,7 @@ Prolog = $(XSB) -e "segfault_handler(warn)."
 #-----------------------------------------------------------------------#
 
 # Make sure warnings are saved in a file.
-SVFILE = '/tmp/xsb_lib_warn'
+SVFILE = '../build/.xsb_lib_warn.tmp'
 OWRITE = 1
 STDWARN = 3
 HDRMSG = "While compiling XSB/lib:"

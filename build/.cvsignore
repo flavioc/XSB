@@ -1,6 +1,7 @@
 *.cache
 *.log
 *.status
+.*.tmp
 Installation*
 MS_VC_Mfile.mak
 makexsb

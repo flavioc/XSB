@@ -251,7 +251,10 @@ bool do_bulkmatch__(void)
     c2p_int(match_array[0].rm_eo+last_pos, p2p_arg(listHead,2));
 
     listTail = p2p_cdr(listTail);
-    last_pos = match_array[0].rm_eo+last_pos;
+    if (match_array[0].rm_eo > 0)
+      last_pos = match_array[0].rm_eo+last_pos;
+    else
+      last_pos++;
   }
 
   c2p_nil(listTail); /* bind tail to nil */

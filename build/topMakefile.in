@@ -158,19 +158,17 @@ prepare:
 	@cd $(srcdir)/gpp; \
 	  rm -f *.o Makefile ; \
 	  ln ${src_config_prefix}/gppMakefile ./Makefile 
-	@rm -f /tmp/xsb_*lib_warn
-	@rm -f /tmp/*match_warn
-	@rm -f /tmp/flora_*_warn
+	@rm -f $(srcdir)/build/.*.tmp
 
 emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	cd ${src_emudir}; \
 	    make depend; \
-	    rm -f /tmp/xsb-build-failed; \
+	    rm -f $(srcdir)/build/.xsb_build_failed; \
 	    (make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
-	                touch /tmp/xsb-build-failed) \
+	                touch $(srcdir)/build/.xsb_build_failed) \
 		2>&1 | tee -a ../build/Installation_summary; \
-	    (test ! -f /tmp/xsb-build-failed || \
-	                    (rm -f /tmp/xsb-build-failed; exit 1))
+	    (test ! -f $(srcdir)/build/.xsb_build_failed || \
+	                    (rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
 
 gpp:
 	cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
