@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "basictypes.h"
 #include "cinterf.h"
 
 #define MAXCURSORNUM                    20
