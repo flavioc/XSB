@@ -61,10 +61,13 @@
 	    ( N = 0 ->
 		nl, writeln('No.')
 	      ;
-	        '_$_$_flora_write_matches'(L), nl,
-		write(N), write(' solution(s) in '),
-		write(T), write(' seconds on '),
-		unix(hostname),
+		('_$_$_flora_switch'(no_chatter) -> true
+		  ;
+		    '_$_$_flora_write_matches'(L), nl,
+		    write(N), write(' solution(s) in '),
+		    write(T), write(' seconds on '),
+		    unix(hostname)
+		),
 		nl, writeln('Yes.')
 	    )
 	).

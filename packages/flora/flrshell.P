@@ -194,11 +194,15 @@ all :-
 	    trie_assert('_$_$_flora_switch'(all))
 	).
 
-
-/*********************************************************************/
 one :-
 	trie_retract_all('_$_$_flora_switch'(all)).
 
+
+%% Turn off printing CPU time and host information
+%% These are used in the test suite in order to eliminate 
+%% time/host dependent output. 
+chatterbox(off) :- trie_assert('_$_$_flora_switch'(no_chatter)).
+chatterbox(on) :- trie_retract_all('_$_$_flora_switch'(no_chatter)).
 
 /*********************************************************************/
 end :-
