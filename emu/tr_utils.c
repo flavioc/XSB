@@ -692,9 +692,9 @@ void reclaim_ans_list_nodes(SGFrame sg_frame)
 void breg_retskel(void)
 {
     Pair    sym;
-    Cell    term; /* the function assumes that term is free on call ! */
+    Cell    term;
     SGFrame sg_frame;
-    CPtr    tcp, cptr, where, sreg;
+    CPtr    tcp, cptr, where;
     int     new, i;
 #ifndef CHAT
     int     arity;
@@ -717,7 +717,7 @@ void breg_retskel(void)
     if (Nvars == 0) {
       ctop_string(3, (char *) ret_psc[0]);
     } else {
-      term = ptoc_tag(3);
+/*
       sreg = hreg;
       bind_cs((CPtr)term, sreg);
       sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &new);
@@ -732,6 +732,19 @@ void breg_retskel(void)
 	sreg++;
       }
       hreg = sreg;
+*/
+      bind_cs((CPtr)ptoc_tag(3), hreg);
+      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &new);
+      new_heap_functor(hreg, sym->psc_ptr);
+#ifdef CHAT
+      for (i = Nvars; i > 0; i--) {
+	term = (Cell)(*(CPtr)(cptr+i));
+#else
+      for (i = 0; i < Nvars; i++) {
+	term = (Cell)(*(CPtr)(cptr-i));
+#endif
+        nbldval(term);
+      }
     }
     ctop_int(4, (Integer)sg_frame);
 }

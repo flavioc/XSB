@@ -1636,24 +1636,20 @@ byte * trie_get_calls(void)
 static void construct_ret(void)
 {
     Pair sym;
-    Cell term; /* the function assumes that term is free on call ! */
-    CPtr sreg;
+    Cell term;
     int  arity, i, new;
 
     arity = global_num_vars + 1;
     if (arity == 0) {
       ctop_string(3, (char *) ret_psc[0]);
     } else {
-      term = ptoc_tag(3);
-      sreg = hreg;
-      bind_cs((CPtr)term, sreg);
+      bind_cs((CPtr)ptoc_tag(3), hreg);
       sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
-      new_heap_functor(sreg, sym->psc_ptr);
+      new_heap_functor(hreg, sym->psc_ptr);
       for (i = 0; i < arity; i++) {
-	bind_copy(sreg, (Cell)var_regs[i]);
-	sreg++;
+	term = (Cell)var_regs[i];
+	nbldval(term);
       }
-      hreg = sreg;
     }
 }
 
