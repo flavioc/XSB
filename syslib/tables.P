@@ -122,12 +122,47 @@ abolish_table_call(_Call) :-
 /* Predicates to retrieve information out of tables.                    */
 /*----------------------------------------------------------------------*/
 
-get_returns_for_call(Call, Return) :-  % Do NOT write (Call,Call) - WRONG !
-	get_call(Call, C, R), get_returns(C, R), Return = Call.
+/*
+ * get_call(+Call, -SubgoalPtr, -RetSkel)
+ *   Interpretive traversal of a Call Trie looking for call Call.
+ *   If Call is present, then SubgoalPtr is returned as a handle to this
+ *   table entry, and RetSkel is the Answer Template for retrieving the
+ *   answers of Call.
+ */
+get_call(Call, SubgoalPtr, RetSkel) :- get_call(Call, SubgoalPtr, RetSkel).
 
+
+/*
+ * get_calls(+CallSkel, -SubgoalPtr, -RetSkel)
+ *   Trie-code traversal of a Call Trie; selects paths that unify with
+ *   CallSkel through backtracking.  Each successful unification returns
+ *   a handle to this table entry in SubgoalPtr and the Answer Template,
+ *   for retrieving the answers of this entry, in RetSkel.
+ */
+get_calls(CallSkel, SubgoalPtr, RetSkel) :-
+	get_calls(CallSkel),
+	get_lastnode_cs_retskel(CallSkel, _Leaf, SubgoalPtr, RetSkel).
+
+/*
+ * get_calls_for_table(+Skeleton, -Call)
+ *   Only the predicate information of Skeleton is used to identify the
+ *   table from which all calls are enumerated through backtracking and
+ *   returned in Call.
+ */
 get_calls_for_table(Skeleton, Call) :-
 	functor(Skeleton,F,A), functor(Call,F,A),
 	get_calls(Call, _CallStr, _RetSkel).
+
+
+/* inline builtin #152 */
+get_lastnode_cs_retskel(LastNode, SubgoalPtr, RetSkel) :-
+	get_lastnode_cs_retskel(_CallTerm, LastNode, SubgoalPtr, RetSkel).
+get_lastnode_cs_retskel(CallTerm, LastNode, SubgoalPtr, RetSkel) :-
+	get_lastnode_cs_retskel(CallTerm, LastNode, SubgoalPtr, RetSkel).
+
+
+get_returns_for_call(Call, Return) :-  % Do NOT write (Call,Call) - WRONG !
+	get_call(Call, C, R), get_returns(C, R), Return = Call.
 
 get_residual(CallSkel, DelayList) :-
 	get_calls(CallSkel, S, R),
@@ -143,18 +178,6 @@ get_returns_and_dls(CallStr, RetSkel, DLs) :-
 
 /* inline builtin #144 */
 get_delay_lists(Leaf, DLs) :- get_delay_lists(Leaf, DLs).
-
-get_call(Call, SubgoalPtr, RetSkel) :-
-	get_subgoal_ptr(Call, SubgoalPtr), SubgoalPtr =\= 0,
-	construct_ret_for_call(R), RetSkel = R.
-
-get_calls(CallSkel, CallStrPtr, RetSkel) :-
-	get_calls(CallSkel),
-	get_lastnode_cs_retskel(_, CallStrPtr, RetSkel).
-
-/* inline builtin #152 */
-get_lastnode_cs_retskel(LastNode, CallStrPtr, RetSkel) :-
-	get_lastnode_cs_retskel(LastNode, CallStrPtr, RetSkel).
 
 /* Given the address of the call structure for a return trie (CallStr)
  * and a return skeleton (RetSkel), both as returned by get_calls/3, it
@@ -204,8 +227,7 @@ abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-
 	'_$builtin'(TRIE_DELETE_TERM).
 get_returns(_CallStr,_RetSkel) :- '_$builtin'(TRIE_GET_RETURN).
-get_calls(_CallSkel)  :- '_$builtin'(TRIE_GET_CALL).
-construct_ret_for_call(_RetSkel) :- '_$builtin'(CONSTRUCT_RET_FOR_CALL).
+get_calls(_CallSkel)  :- '_$builtin'(TRIE_UNIFY_CALL).
 force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(FORCE_TRUTH_VALUE).
 
 /* ------------------- end of file trie_tables.P ---------------------- */
