@@ -271,9 +271,71 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
 	concat_atom([Dir,InputFile],MainIdx),
 	detect_filetypes(Opts,Components,FileType,FileLevel),
 
+	document_front_matter(Format,FileType,FileLevel,Name,NDName,Dir,
+		      StartPage,PaperType,Idxs,Opts,
+		      InputFile,O,OS,IntroOS),
+
+	optional_message('Generating interface...',Opts),
+	doc_interface(MainIdx,Format,FileLevel,FileType,MainIdx,NDName,
+	              Idxs,OS,IntroOS,Opts),
+
+% TLS possibly replace by interface file.
+	get_comment(appendix,single,ignore(_),Format,Idxs,
+							Opts,Appendix),
+
+% TLS possibly replace by acl file.
+	get_comment(ack,single,ignore(_),Format,Idxs,Opts,Ack),
+
+	(  member('-nobugs',Opts) 
+	-> Bugs=[]
+	;  get_comment(bug,multiple,ignore(_),Format,Idxs,Opts,Bugs) ),
+
+	optional_message('Generating acs, apps...',Opts),
+
+	(  member('-nochangelog',Opts) 
+	-> Changes = []
+	;  (  member('-nopatches',Opts) 
+	   -> VPatch = 0
+	   ;  true ),
+	   (  setof(Change,
+	         VPatch^change_field(VPatch,Format,Idxs,Change),
+		 RChanges)
+	   -> reverse(RChanges,Changes) 
+	   ;  Changes = [] )
+	),
+
+	format_other_info(Format,FileLevel,Name,NDName,Appendix,Ack,Changes,
+	                  Bugs,OS,IntroOS),
+
+
+	(  FileLevel = main(_)
+	-> 
+%	   main_filenames(Components,PComponents),
+	   optional_message('Generating includes, end matter...',Opts),
+	   format_includes_and_end_matter(Format,Name,Components,
+	                                  Idxs,Opts,OS)
+	;  true ),
+
+	close(CitStr),
+	retractall(refs_stream(_)),
+	close(OS),
+	retractall(main_name(_)),
+	(close(IntroOS) ; true),
+
+	read_file_reset,
+	message('}'),
+	ttyflush,!.
+autodoc(_Format,_Main,_Idxs,_Components,_StartPage,_PaperType,_Opts) :-
+	xsbdoc_error('formatting could not be completed').
+
+document_front_matter(Format,FileType,FileLevel,Name,NDName,Dir,
+		      StartPage,PaperType,Idxs,
+		      Opts,InputFile,O,OS,IntroOS):- 
 	(FileType=part ->
 	     Version=[] 
 	  ;  get_last_version(Version,GVers,Dir,Opts) ),
+
+	optional_message('Generating intro...',Opts),
 	get_comment(title,single,xsbdoc_warning(_),
 	                                 Format,Idxs,Opts,Title),
 	(member('-noauthors',Opts) -> 
@@ -299,66 +361,12 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
 	                    Summary,Idxs,StartPage,PaperType,
 			    Opts,InputFile,O,OS),
 
-	optional_message('Generating intro...',Opts),
 	get_comment(module,single,note_message(_),
 			Format,Idxs,Opts,Comment),
 
-	(  member('-nochangelog',Opts) 
-	-> Changes = []
-	;  (  member('-nopatches',Opts) 
-	   -> VPatch = 0
-	   ;  true ),
-	   (  setof(Change,
-	         VPatch^change_field(VPatch,Format,Idxs,Change),
-		 RChanges)
-	   -> reverse(RChanges,Changes) 
-	   ;  Changes = [] )
-	),
-
         format_intro(Format,FileLevel,FileType,Name,NDName,Summary,
-	             GVers,Comment,OS,IntroOS),
+	             GVers,Comment,OS,IntroOS).
 
-
-	optional_message('Generating interface...',Opts),
-trace,
-	doc_interface(MainIdx,Format,FileLevel,FileType,MainIdx,NDName,
-	              Idxs,OS,IntroOS,Opts),
-
-% TLS possibly replace by interface file.
-	get_comment(appendix,single,ignore(_),Format,Idxs,
-							Opts,Appendix),
-
-% TLS possibly replace by acl file.
-	get_comment(ack,single,ignore(_),Format,Idxs,Opts,Ack),
-
-	(  member('-nobugs',Opts) 
-	-> Bugs=[]
-	;  get_comment(bug,multiple,ignore(_),Format,Idxs,Opts,Bugs) ),
-
-	optional_message('Generating acs, apps...',Opts),
-	format_other_info(Format,FileLevel,Name,NDName,Appendix,Ack,Changes,
-	                  Bugs,OS,IntroOS),
-
-
-	(  FileLevel = main(_)
-	-> 
-%	   main_filenames(Components,PComponents),
-	   optional_message('Generating includes, end matter...',Opts),
-	   format_includes_and_end_matter(Format,Name,Components,
-	                                  Idxs,Opts,OS)
-	;  true ),
-
-	close(CitStr),
-	retractall(refs_stream(_)),
-	close(OS),
-	retractall(main_name(_)),
-	(close(IntroOS) ; true),
-
-	read_file_reset,
-	message('}'),
-	ttyflush,!.
-autodoc(_Format,_Main,_Idxs,_Components,_StartPage,_PaperType,_Opts) :-
-	xsbdoc_error('formatting could not be completed').
 
 change_field(VPatch,Format,Idxs,change(Version,RC)) :-
 	version_format(V,_,_,VPatch,_,_,_,_,_,_,_),
@@ -1164,18 +1172,23 @@ get_comment(Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
 	!.
 */
 get_comment(Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
-	findall(Content,
-	       process_comment_content(Id,Format,Idxs,Opts,Content),
-		Contents ),
-	Contents \== [],
+   setof([Ctr,Content],
+	 Format^Idxs^Opts^process_comment_content(Ctr,Id,Format,
+						  Idxs,Opts,Content),
+		Contents1 ),
+	eliminate_counters(Contents1,Contents),
 	!.
 get_comment(Id,_,ErrorLevel,_Format,_Idxs,_Opts,[]) :-
 	copy_term(ErrorLevel,El),
 	arg(1,El,['no ":- comment(',Id,',,...)" declaration found']),
         call(El).
 
-process_comment_content(Id,Format,Idxs,Opts,Content):- 
-	         '_#clause'(directive(comment(Id,Field)), _Ctr),
+eliminate_counters([],[]).
+eliminate_counters([[_Ctr,String]|R],[String|R1]):- 
+	eliminate_counters(R,R1).
+
+process_comment_content(Ctr,Id,Format,Idxs,Opts,Content):- 
+	         '_#clause'(directive(comment(Id,Field)), Ctr),
                 process_content(Format,Idxs,Field,Opts,Content).
 
 get_comment_field(Id,Field) :-
@@ -1645,6 +1658,7 @@ eliminate_duplicates_([H|T],Seen,NT) :-
 	eliminate_duplicates_(T,Seen,NT).
 eliminate_duplicates_([H|T],Seen,[H|NT]) :-
 	eliminate_duplicates_(T,[H|Seen],NT).
+
 
 end_of_file.
 %% ---------------------------------------------------------------------------

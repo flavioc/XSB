@@ -1,8 +1,6 @@
-%% ISO and CIAO syntax files
-
 :- compiler_options([ciao_directives]).
 
-:- export xsbdoc/1,test/0,shell_stuff/1,make_bibfiles/1.
+:- export xsbdoc/1,test/0,main/0.
 
 :- import format/3 from format.
 
@@ -25,37 +23,6 @@
 
 :- import autodoc/7 from autodoc.
 
-:- load_dync(usage_message).
-
-:- comment(author, "Facultad de Inform@'{a}tica").
-:- comment(author, "Universidad Polit@'{e}cnica de Madrid").
-
-:- comment(copyright,"
-Copyright @copyright{} 1996-99 Manuel Hermenegildo/The CLIP Group.
-
-@include{Copyright.Manuals}
-").
-
-:- comment(summary,"@include{README.lpdoc}").
-
-:- comment(module,"@include{Intro.lpdoc}
-
-@section{lpdoc usage}
-
-The following provides the different command line options available
-when invoking @apl{lpdoc}. This description is intended only for
-advanced users which might like to use @apl{lpdoc} in custom
-applications. Note that the normal way to use @apl{lpdoc} is by
-setting parameters in a @file{SETTINGS} file (see @ref{Generating a
-manual}), and @apl{lpdoc} will be invoked automatically with the
-correct options by the @file{Makefile} provided with the distribution.
-
-@begin{verbatim}
-@includefact{usage_message/1}
-@end{verbatim}
-
-").
-
 :- dynamic xsbdoc_option/1.
 :- dynamic xsbdoc_index/1.
 :- dynamic xsbdoc_bibfile/1.
@@ -64,10 +31,52 @@ correct options by the @file{Makefile} provided with the distribution.
 :- dynamic xsbdoc_component/1.
 :- dynamic xsbdoc_main/1.
 
+
+%% ---------------------------------------------------------------------------
+%% Intro
+%% ---------------------------------------------------------------------------
+
+:- comment(title,"The xsbdoc Documentation Generator").
+
+:- comment(subtitle,"An Automatic Documentation Generator for XSB Programs").
+:- comment(subtitle,"Inspired by the Ciao lpdoc Document Generator").
+
+:- comment(author, "Terrance Swift").
+:- comment(author, "based in part on code by ").
+:- comment(author,"Manuel Hermenegildo and the CLIP Group").
+
+:- comment(copyright,"
+@em{This copyright needs to be worked out better before it can be released}.
+Copyright 2002 Terrance Swift/XSB Group, 
+Copyright @copyright{} 1996-99 Manuel Hermenegildo/The CLIP Group.
+
+@include{Copyright.Manuals}
+").
+
+:- comment(summary,"@include{README.xsbdoc}").
+
+:- comment(module,"@include{Intro.xsbdoc}
+
+@section{xsbdoc usage}
+
+To use xsbdoc, the package must be first loaded via the command
+
+@begin{verbatim}
+         [xsbdoc].
+@end{verbatim}
+
+The top-level interface of the @apl{xsbdoc} package consists of a
+single predicate, @pred{xsbdoc/1}, whose argument is the name of a
+Prolog format file that indicates the main file for the application,
+component files, and the various configuration options on which xsbdoc
+depends (see @ref{???} for more details.
+
+ ").
+
 %% ---------------------------------------------------------------------------
 %% Body
 %% ---------------------------------------------------------------------------
-test:- xsbdoc(xformat).
+test:- xsbdoc(xsbdoc_format).
 
 xsbdoc(Format_file):- 
 	clear_the_decks,
@@ -79,7 +88,7 @@ xsbdoc(Format_file):-
 	xsbdoc_main(Main),
 	corrected_search_module(Main,_Dir,Base,_Src,_Isl), 
 	findall(Index,xsbdoc_index(Index),Indices),
-        autodoc(texinfo,Main,Indices,Texics,
+        autodoc_fail(texinfo,Main,Indices,Texics,
 	             StartPage,PaperType,['-main'|Opts]),
 	xsbdoc_components(Components,Indices,Opts),
 	make_bibfiles(Base),	/* dont want main.P */
@@ -91,6 +100,12 @@ xsbdoc(Format_file):-
 xsbdoc(Format_file):- 
 	format(user_error,"~nCould not process: ~w",[Format_file]),
 	report_usage.
+
+
+autodoc_fail(Q,W,E,R,T,Y,U):- 
+	autodoc(Q,W,E,R,T,Y,U),
+	fail.
+autodoc_fail(_,_,_,_,_,_,_).
 
 component_texic([],[]).
 component_texic([P|Prest],[Texic|Trest]):- 
@@ -132,7 +147,8 @@ get_options(StartPage,PaperType,Opts):-
 display_version:- 
 	xsbdoc_version(Version),
 	format(user,"xsbdoc ~s ",[Version]),
-	format(user,"Using code from CLIP Group, T.U. of Madrid (UPM)~n",[]).
+	format(user,
+               "Using code modified from CLIP Group, T.U. of Madrid~n",[]).
 
 xsbdoc_version("0.1").
 
@@ -185,66 +201,6 @@ make_bibfiles(Main):-
 	    shell_list(['mv ',Main,'.refs.bbl ',Main,'refs.texic'])
 	  ; writeln('No Bibfiles found')).
 
+main.
+
 end_of_file.
-
-      	    shell_list(['cat *.refs > ',MainRefsAux]),
-	    shell_list(['cat \bibstyle{',XSBDoc,'lpdoc} >> ',MainRefsAux]),
-	    shell_list(['cat \bibdata{',Bibs,'} >> ',MainRefsAux]),
-
-required(Type,Vals):- 
-	findall(Val,xsbdoc_option(Type,Val),Vals),Vals \== [].
-
-/*
-parse_args:- 
- 	misc_opts(Opts),
-	xsbdoc_option('-htmlindex',[Main]),
-	!,  generate_description(html,Main,Opts) .
-parse_args:- 
- 	misc_opts(Opts),
-	xsbdoc_option('-man',[Main]),
-	!,  generate_man_page(Main,Opts) .
-parse_args:- 
- 	misc_opts(Opts),
-	xsbdoc_option('-infoindex',[Main]),
-	!,  generate_info_dir_entry(Main,Opts) .
-*/
-	
-option(Type,Vals):- 
-	findall(Val,(xsbdoc_option(Type,Val),
-		     option_comment(Val,_)),Vals).
-
-$(BASEMAIN).texic texic: $(MAIN) $(COMPTEXI) $(SETTINGS)
-	@$(ECHO) "*** --------------------------------------------------------"
-	@$(ECHO) "*** Converting $(BASEMAIN).P to $(BASEMAIN).texic ... (main)"
-	@$(ECHO) "*** --------------------------------------------------------"
-	@$(ECHO) ../xsbdoc.sh $(EMU) $(BASEMAIN) 
-	@../xsbdoc.sh $(EMU) $(BASEMAIN) -main
-	-@chmod $(DATAMODE) $(BASEMAIN).texic
-	-@chmod $(DATAMODE) $(BASEMAIN).refs
-	-@chmod $(DATAMODE) auto*.eps
-ifeq (,$(findstring norefs,$(MAINOPTS)))
-	@$(ECHO) "*** --------------------------------------------------------"
-	@$(ECHO) "*** Generating $(BASEMAIN)refs.texic, resolving refs..."
-	@$(ECHO) "*** --------------------------------------------------------"
-	-@$(ECHO) "*** Gathering all references from .refs files..."
-	-@cat *.refs > $*refs.aux
-	-@$(ECHO) "\\\bibstyle{$(LIBDIR)/alist}"    >> $*refs.aux
-	-@$(ECHO) "\\\bibdata{$(BIBFILES)}"         >> $*refs.aux
-	-@$(ECHO) "*** Building citation string database using BiBTeX..."
-	-@$(BIBTEX) $*refs
-	-@mv $*refs.bbl $*refs.el
-	-@$(ECHO) "*** Resolving citations in main and all components..."
-	-@$(REFSUPD) -file $*.texic -refsfile $*refs.el \
-                     -components $(COMPTEXI) 
-	-@chmod $(DATAMODE) *.texic
-	-@$(ECHO) "*** Gathering again all references from .refs files..."
-	-@cat *.refs > $*refs.aux
-	-@$(ECHO) "\\\bibstyle{$(LIBDIR)/lpdoc}"  >> $*refs.aux
-	-@$(ECHO) "\\\bibdata{$(BIBFILES)}"         >> $*refs.aux
-	-@$(ECHO) "*** Building references chapter using BiBTeX..."
-	-@$(BIBTEX) $*refs
-	-@mv $*refs.bbl $*refs.texic
-	-@chmod $(DATAMODE) $*refs.aux $*refs.blg 
-	-@chmod $(DATAMODE) $*refs.texic $*refs.el
-	-@$(ECHO) "Done."
-endif

@@ -4,6 +4,7 @@
 	    index_comment/2,               option_comment/2,
 	    format_front_matter/19,        format_intro/10,
 	    format_module_usage/10, 	   format_predicate_begin/6,
+	    format_predicates_begin/4,
 	    format_predicate_comment/3,    format_predicate_end/2,
 	    format_native_declaration/3,     
 	    format_predicates_end/2,
