@@ -170,7 +170,7 @@ flora_hilog_predicate(Funct,Workspace) :-
 	str_length(Funct,Len),
 	eval(Len-N+1,W),
 	!,
-	%% Checki if it is the HiLog wrapper.
+	%% Check if it is the HiLog wrapper.
 	substring(Funct,W,Len,WrapHiLog),
 	WrapHiLog=WRAP_HILOG,
 	%% Extract the workspace name.
