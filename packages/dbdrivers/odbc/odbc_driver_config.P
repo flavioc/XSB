@@ -1,0 +1,88 @@
+/* File:      odbc_driver_config.P -- loader for the ODBC driver
+** Author(s): Saikat Mukherjee
+** Contact:   saikat@cs.sunysb.edu
+** 
+*/
+
+
+:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
+:- import fmt_write_string/3, file_time/2 from file_io.
+:- import search_module/6 from consult.
+:- import xsb_configuration/2 from xsb_configuration.
+:- import rename/2 from shell.
+:- import compile_so/3 from foreign.
+:- import path_sysop/3, path_sysop/2 from file_io.
+
+make_odbc_driverH(CC, CC_opts) :-
+   	slash(Slash),
+    xsb_configuration(compiler, XCC),
+    xsb_configuration(configuration, XSBconfiguration),
+	xsb_configuration(config_dir, Configdir),
+	xsb_configuration(config_libdir, ConfigLibdir),
+    fmt_write_string(LD_flags,
+		     ' -Wl,-rpath %s -Wl,-rpath /usr/lib -L/usr/lib -lodbc -ldl %s%sdriver_manager.so %s%sodbc_driver.so', f(ConfigLibdir, ConfigLibdir, Slash, ConfigLibdir, Slash)),
+    package_configuration(dir(odbc_driver), ODBCDriverDir),
+    fmt_write_string(LD_directives_file,
+		     '%s%scc%sodbc_driver.H', f(ODBCDriverDir, Slash, Slash)),
+    telling(OldTell),
+    tell(LD_directives_file),
+    writeln('%% This file is generated on-the-fly by odbc_driver_config.P'),
+    writeln('%% Do not edit--any changes will be written over.'),
+    write('%% XSB config:    '), writeln(XSBconfiguration),
+    write('%% XSB CC:        '), writeln(XCC),
+    write('%% CC:       '), writeln(CC),
+    write('%% CC Opts: '), writeln(CC_opts), 
+    writeln(':- export driverODBC_register/0.'),
+	writeln(':- export driverODBC_initialise/0.'),
+    write(':- ldoption('''),
+	write(LD_flags),
+    writeln(''').'),
+    told,
+    tell(OldTell).
+    
+
+:-  package_configuration(dir(odbc_driver), ODBCDriverDir),
+    slash(Slash),
+    Basename = odbc_driver,
+    fmt_write_string(Module,
+		     '%s%scc%s%s', f(ODBCDriverDir, Slash, Slash, Basename)),
+	writeln(Module),
+    (  %% avoid recompilation: check if mysql_driver.O exists and 
+       %% is newer than mysql_driver.c.
+       search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
+       str_cat(Module, '.c', ModuleSourceFile),
+       str_cat(Module, '.H', ModuleH),
+       machine_file_exists(ModuleH),
+       file_time(ModuleO, time(CT1,CT2)),
+       file_time(ModuleSourceFile, time(ST1,ST2)),
+       time(ST1,ST2) @< time(CT1,CT2)
+	       %% module compiled and is current, so just load
+	       -> write('loading..'), [Basename]
+
+    %% Module isnt compiled or is old, so recompile
+    ; 
+	xsb_configuration(compiler, CC),
+	xsb_configuration(compiler_flags, CCflags),
+	xsb_configuration(config_dir, ConfigDir),
+	xsb_configuration(config_libdir, ConfigLibDir),
+	xsb_configuration(packagesdir, PackagesDir),
+	DBdriver = dbdrivers,
+	fmt_write_string(DBDriversDir, '%s%s%s', a(PackagesDir, Slash, DBdriver)),
+	fmt_write_string(CC_opts,
+			 ' %s -I %s -I %s', f(CCflags, ConfigDir, DBDriversDir)),
+	compile_so(Module, [cc(CC), cc_opts(CC_opts)], ''),
+	str_cat(Module, '.so', SharedLib),
+	str_cat(Module, '.O', Objfile),
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibDir,Slash,Basename)),
+	rename(SharedLib, LibMod),
+	make_odbc_driverH(CC, CC_opts),
+	consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	fmt_write_string(LibSharedObjFile,
+			 '%s%s%s.so', a(ConfigLibDir, Slash, Basename)),
+	rename(SharedLib, LibSharedObjFile),
+	fmt_write_string(LibObjFile,
+			 '%s%s%s.O', a(ConfigLibDir, Slash, Basename)),
+	rename(Objfile, LibObjFile)
+     ).
+	
+
