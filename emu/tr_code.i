@@ -60,7 +60,7 @@
      xsb_exit("In instruction hash_handle");			\
      break;							\
    }								\
-   BucketNum = TrieHash(symbol,BTHT_GetHashMask(pBTHT));	\
+   BucketNum = TrieHash(symbol,BTHT_GetHashSeed(pBTHT));	\
  }
 
 #define find_next_nonempty_bucket(pBTHT, pTable, BucketNum) {	\
