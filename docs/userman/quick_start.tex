@@ -119,21 +119,47 @@ Here are some ways that are guaranteed to not work in some or all cases:
   right files for the right architecture! 
   
 \item[Choice of the C Compiler and Other options] \label{cc} The {\tt
-    configure} script will attempt to use {\tt gcc}, if it is available.
-  Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions of
-  {\tt gcc} are broken, in which case you would have to give {\tt
-    configure} an additional directive {\tt --with-cc}. If you must use
-  some special compiler, use {\tt --with-cc=your-own-compiler}.  You can
-  also {\tt --disable-optimization} (to change the default), {\tt
-    --enable-debug}, and there are many other options.  Type {\tt configure
-    --help} to see them all. Also see the file \verb'$XSB_DIR/INSTALL' for
-  more details.
+configure} script will attempt to use {\tt gcc}, if it is available.
+Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions of
+{\tt gcc} are broken, in which case you would have to give {\tt
+configure} an additional directive {\tt --with-cc}. If you must use
+some special compiler, use {\tt --with-cc=your-own-compiler}.  You can
+also {\tt --disable-optimization} (to change the default), {\tt
+--enable-debug}, and there are many other options.  Finally, the {\tt
+force64} option forces compilation to use 64 bit mode on 64-bit
+machines that default to 32 bit compilation.  Type {\tt configure
+--help} to see them all. Also see the file \verb'$XSB_DIR/INSTALL' for
+more details.
+
 %%$
+\index{InterProlog Interface}
+\index{Oracle Interface}
+\index{SModels Interface}
+\index{XASP}
+\index{ODBC Interface}
+
 \item[Interfaces] Certain interfaces must be designated at
-configuration time, including those to Oracle, ODBC, and Libwww.
-However, the XSB-calling-C interface and the InterProlog Java
-interface do not need to be specified at configuration time.  See
-Volume 2, and the InterProlog site for details of specific interfaces.
+configuration time, including those to Oracle, ODBC, Smodels, and
+Libwww.  However, the XSB-calling-C interface interface does not need
+to be specified at configuration time.  See Volume 2, and the
+InterProlog site for details of specific interfaces.  If you wish to
+use the InterProlog Java interface that is based on {\tt jni}, you
+must specify this at configuration time; otherwise if you wish to use
+the sockets-based Interprolog interface, it does not need to be
+specified at configuration time.
+
+While the XSB configuration mechanism can detect most include and
+library paths, use of certain interfaces may require information about
+particular directories.  In particular the {\tt
+--site-static-libraries} option might be needed if compiling with
+support for statically linked packages (such as Oracle) or if your
+standard C libraries are in odd places. Alternately, dynamic libraries
+on odd places may need to be speficied at configuation time using the
+{\tt --site-dynamic-libraries} option.  and finally, the {\tt
+--site-includes} option might be needed if your standard header files
+(or your {\tt jni.h} file) are in odd places or if XSB is compiled
+with ODBC support.  Type {\tt configure --help} for more details.
+
 %%$
 \end{description}
 
@@ -158,6 +184,7 @@ explanations of the scheduling strategies can be found in
 \cite{JFLP-Scheduling}, and further experimentation in \cite{CaSW02}.
 
 %
+\comment{
 \index{memory management}
 \index{garbage collection}
 \item[Type of Memory Management.]  Routines for managing execution
@@ -172,6 +199,7 @@ space for Prolog execution, while the SLG-WAM configuration is faster
 and requires less space for large tabled evaluations.  See
 \cite{SaSw98,CHAT@PADL-99,CaSW02,CAT@PLILP-98,CATmem@ISMM-98} for
 in-depth discussion of the engine memory management.
+}
 \end{description}
 
 \subsection{Possible Installation Problems}

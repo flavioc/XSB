@@ -2,7 +2,7 @@
 %==========================================
 
 XSB is a research-oriented Logic Programming system for Unix and
-Windows-based systems.  In addition to providing all the
+Windows-based platforms.  In addition to providing all the
 functionality of Prolog, XSB contains several features not usually
 found in Logic Programming systems, including
 \begin{itemize}
@@ -11,31 +11,43 @@ found in Logic Programming systems, including
 \item Constraint handling for tabled programs based on an engine-level
   implementation of annotated variables and a package, {\tt clpqr} for
   handling real constraints;
-\item A compiled HiLog implementation;
 \item A variety of indexing techniques for asserted code and both
 backtrackable and non-backtrackable updates to asserted code.
+%
+\item A set of mature packages, to extend XSB to evaluate
+F-logic~\cite{KLW95} through the {\em FLORA} package, to manage
+ontologogies through the {\em Cold Dead Fish} package, and to support
+literate programming through the {\tt xsbdoc} package, among other
+features.
+%
+\item A number of interfaces to other software systems, such a C, Java,
+  Perl, ODBC, SModels \cite{NiSi97}, and Oracle.
+%
+\item A compiled HiLog implementation;
+%
+\item Extensive pattern matching packages, and interfaces to libwww
+  routines, all of which are especially useful for Web applications.
+%
 \item A novel transformation technique called {\em unification
 factoring} that can improve program speed and indexing for compiled
 code; 
-\item A number of interfaces to other software systems, such a C, Java,
-  Perl, ODBC, SModels \cite{NiSi97}, and Oracle.
-\item Extensive pattern matching libraries, and interfaces to libwww
-  routines, all of which are especially useful for Web applications.
+%
 \item Preprocessors and Interpreters so that XSB can be used to evaluate
   programs that are based on advanced formalisms, such as extended logic
   programs (according to the Well-Founded Semantics \cite{ADP94});
-Generalized Annotated Programs \cite{KiSu92}; and F-Logic \cite{KLW95}.
+Generalized Annotated Programs \cite{KiSu92}.
+%
 \item Source code availability for portability and extensibility.
 \end{itemize}
  
 Though XSB can be used as a Prolog system\footnote{Many of the Prolog
-components of XSB are based on PSB-Prolog~\cite{Xu90}, which itself is
-based on version 2.0 of SB-Prolog~\cite{Debr88}.}, we avoid referring
-to XSB as such, because of the availability of SLG resolution and the
-handling of HiLog terms.  These facilities, while seemingly simple,
-significantly extend its capabilities beyond those of a typical Prolog
-system. We feel that these capabilities justify viewing XSB as a new
-paradigm for Logic Programming.
+components of XSB are originally based on PSB-Prolog~\cite{Xu90},
+which itself is based on version 2.0 of SB-Prolog~\cite{Debr88}.}, we
+avoid referring to XSB as such, because of the availability of SLG
+resolution and the handling of HiLog terms.  These facilities, while
+seemingly simple, significantly extend its capabilities beyond those
+of a typical Prolog system. We feel that these capabilities justify
+viewing XSB as a new paradigm for Logic Programming.
 
 To understand the implications of SLG resolution \cite{ChWa96}, recall
 that Prolog is based on a depth-first search through trees that are
@@ -182,7 +194,7 @@ These modes of indexing can be combined: {\tt index(p/4,[3,2+1],trie)}
 creates alternative trie indices beginning with the third argument and
 with the second and first argument.  Using such indexing XSB can
 efficiently perform intensive analyses of in-memory knowledge bases
-with 1 million or so facts.  Indexing techniques for asserted code are
+with millions of facts.  Indexing techniques for asserted code are
 covered in Section \ref{sec:assert}.
 
 For compiled code, XSB offers {\em unification factoring}, which
