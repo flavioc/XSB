@@ -290,13 +290,13 @@ can be executed from \FLORA shell, if the corresponding XSB library has already 
 loaded.
 
 After a syntax error, parsing error, or compiling error, \FLORA shell will
-dicard tokens read from the current input stream until the end of file or a
-rule delimeter (.) is encountered. If \FLORA shell seems to hang forever
+discard tokens read from the current input stream until the end of file or a
+rule delimiter (.) is encountered. If \FLORA shell seems to hang forever
 after the prompt:
 \begin{verbatim}
 [FLORA: discarding tokens]
 \end{verbatim}
-hitting the Enter key once, then entering a .\ character and Enter again
+hitting the Enter key once, then entering a ``.'' character and Enter again
 will normally reset the current input buffer and cause \FLORA issue a
 command prompt:
 \begin{verbatim}
@@ -477,7 +477,7 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
 
 
 \begin{itemize}
-\item \emph{Symbols}: The \fl\ alphabet of \emph{object constructors}
+\item \emph{Symbols}: The \fl alphabet of \emph{object constructors}
   consists of the sets \funcs (function symbols), \preds (predicate symbols
   including $\eq$), and \vars (variables).  Variables are denoted by
   capitalized symbols or an underscore followed by zero or more letters
@@ -644,7 +644,7 @@ method applications, parentheses can be used. By default, path expressions
 associate to the left, so $a.b.c$ is equivalent to $(a.b).c$ and specifies
 the unique object $o$ such that $a[b\fd x] \land x[c\fd o]$ holds (note
 that $x=a.b$). In contrast, $a.(b.c)$ is the object $o'$ such that $b[c\fd
-x'] \land a[x'\fd o']$ holds (here, $x'=b.c$). In generall, these can be
+x'] \land a[x'\fd o']$ holds (here, $x'=b.c$). In general, these can be
 different objects. Note that in $(a.b).c$, $b$ is a method name, whereas in
 $a.(b.c)$ it is used as an object name.  Observe that function symbols can
 also be applied to path expressions, since path expressions (like id-terms)
@@ -681,7 +681,7 @@ need to slightly modify our query:
 \end{qrules}
 \end{example}
 Thus, \FLORA's path expressions support navigation 
-along the method application dimention using the operators
+along the method application dimension using the operators
 ``.''  and
 ``..''. In addition, intermediate objects through which such navigation
 takes place can be selected by specifying the properties of such objects
@@ -894,7 +894,7 @@ Escaped String &
 ($\texttt{'}$).  An escaped character normally begins with a backslash
 ($\texttt{\bksl}$).  Table~\ref{tab:tab-esc-str} lists the special escaped
 character strings and their corresponding special symbols. An escaped
-character may also be any ASCII character. Such a character is preceeded
+character may also be any ASCII character. Such a character is preceded
 with a backslash together with a lowercase $\texttt{x}$ (or an uppercase
 $\texttt{X}$) followed by one or two hexadecimal symbols representing its
 ASCII value. For example, $\texttt{{\bksl}xd}$ is the ASCII character
@@ -902,7 +902,7 @@ Carriage Return, whereas $\texttt{{\bksl}x3A}$ represents the semicolon. In
 other cases, a backslash is recognized as itself.
 
 One exception is that inside a quoted atom, a single quote character is escaped by another
-signle quote, e.g., $\texttt{'isn''t'}$.
+single quote, e.g., $\texttt{'isn''t'}$.
 
 \paragraph{Strings (Character Lists).}
 
@@ -941,12 +941,12 @@ digits greater than 9. Table~\ref{tab:tab-int-rep} lists a few sample integers.
 \end{tabular}
 }
 \end{center}
-\caption{Integers Representions}
+\caption{Representation of Integers}
 \label{tab:tab-int-rep}
 \end{table}
 
 Underscore (\texttt{\_}) can be put inside any sequence of digits as
-delimeters. It is used to partition some long numbers. For instance,
+delimiters. It is used to partition some long numbers. For instance,
 $\texttt{2'11\_1111\_1111}$ is the same as $\texttt{2'1111111111}$.
 However, ``\texttt{\_}'' cannot be the first symbol of an integer, since
 variables can start with an underscore. For example, $1\_2\_3$ represents
@@ -1057,11 +1057,11 @@ processed by \FLORA tokenizer and then passed to \FLORA parser.
 In general, the interpretation of ``.'' as a decimal point takes precedence
 over the interpretation as part of a single-valued path expression.
 
-Another ambiguious situation are the symbols $-$ and $+$. They can be used
-as minus/plus signs, e.g., $-3$ and $+3$, or as binary arithmetic
-operators; e.g., $4-7$ and $4+7$. Actually, the minus and plus signs are
-defined in \FLORA as unary operators; these operators take precedence over
-binary operators.
+Another ambiguous situation arises when the symbols $-$ and $+$ are used.
+Indeed, they can be used as minus/plus signs, e.g., $-3$ and $+3$, or as binary
+arithmetic operators; e.g., $4-7$ and $4+7$. Actually, the minus and plus
+signs are defined in \FLORA as unary operators; these operators take
+precedence over binary operators.
 
 Table~\ref{tab:tab-op-pre} lists various operators in decreasing precedence
 order, their associativity, and arity.
@@ -1137,8 +1137,8 @@ aux(X,Y) :- a[m ->> X; a -> Y].
 d[f->Z] :- e[w->Z; v->f(X,Y)], tnot(aux(X,Y)).
 \end{verbatim}
 %%
-Another restriction, due to the underlying XSB system, is that all the
-variables in negated predicates must be bound at the time when {\tt tnot} is called.
+One other restriction, due to the underlying XSB system, is that all
+variables in negated predicates must be bound before {\tt tnot} is called.
 
 \subsection{Inheritance}
 
@@ -1185,6 +1185,23 @@ maintenance enabled.
 
 The syntax of \fl leads itself naturally to meta-programming. For instance,
 it is easy to examine the methods and types defined for the various classes.
+Here are some simle examples:
+%%
+\begin{verbatim}
+// All classes where John is a member
+?- john : X.  
+
+// All superclasses of student
+?- student :: X
+
+// All unary scalar methods defined for object John
+?- john[M@(_) -> _].
+
+// All unary scalar methods that apply to John, {\it i.e.}, for which a
+// signature was specified
+?- john[M@(_) => _].
+\end{verbatim}
+%%
 However, a number of meta-programming primitives are still needed
 since they cannot be directly expressed in \fl. Many such features are
 provided by the underlying XSB system and \FLORA simply takes advantage of
@@ -1587,7 +1604,7 @@ work at the present time. The reason is that the \FLORA compiler always
 treats \fl molecules as oid's, if they appear as predicate arguments. in
 contrast, in {\tt findall}, we want the molecules in the second argument to
 be treated as logical formulas that evaluate to true or false.  This will
-be suported in a future release via a special compiler directive.
+be supported in a future release via a special compiler directive.
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
 
@@ -1652,9 +1669,9 @@ of equality maintenance are supported: 0 (no equality maintenance) and 1
 (full equality maintenance).
 
 Equality maintenance directives can appear in several places in a \FLORA
-program. However, {\tt :- eqlevel(1).} is specified somewhere in the
-module, \FLORA will compile the module with that equality maintenance
-level.
+program. However, if  {\tt eqlevel(1)} is requested somewhere in the
+module, \FLORA will compile the module with equality maintenance
+level 1.
 
 Note that equality level 1 should not be specified unnecessarily, since it
 can slow \FLORA down by an order of magnitude.  The default equality
@@ -1665,14 +1682,12 @@ to the equality level 1.  Therefore, path expressions in the rule head must
 be avoided if at all possible.
 
 Equality maintenance can also be requested when \FLORA modules are compiler
-using
-{\tt flcompile} and {\tt flconsult} (see
+using {\tt flcompile} and {\tt flconsult} (see
 Section~\ref{sec-shell-commands}). For instance, {\tt
   flcompile(benchmark,[eqlevel(1)])} will compile {\tt benchmark.flr} with
-equality maintenance level 1.
-If equality maintenance is given both in the {\tt flcompile} command and
-inside the flora module being compiled, the highest level will be selected
-by the compiler.
+equality maintenance level 1.  If equality maintenance is given both in the
+{\tt flcompile} command and inside the flora module being compiled, the
+highest level will be selected by the compiler.
 
 %------------------- cut below
 \end{document}
