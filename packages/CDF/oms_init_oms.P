@@ -28,6 +28,7 @@
 
 :- import intern_string/2, slash/1, stat_flag/2  from machine.
 :- import conset/2, conget/2 from gensym.
+:- import concat_atom/2 from string.
 :- import variant/2, subsumes/2 from subsumes.
 :- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
@@ -116,6 +117,8 @@ cdf_dynamic(retractall_oms_int/1).
 %%%%%%%%%%%%% Declarations for constraint checking
 %:- ensure_loaded(oms_constraints).
 %cdf_dynamic(oms_checking/1).
+
+:- ensure_loaded(oms_config).
 
 :- initialize_oms.
 
@@ -365,13 +368,10 @@ init_component_info :-
 			component('OMS Root','OMS',atom(_),'OMS',
 				  integer(_),'OMS'),
 			'OMS',_Compid),
-	cdf_install_dir(InstallDir),
-	newComponent('OMS',InstallDir,check,OCid,Rcid),
+	newClass('compName/2',Compid,
+			compName('OMS Root','OMS',atom(_),'OMS'),'OMS',_Tagid),
+	newComponent('OMS','.',check,OCid,Rcid),
 	newStrel(OCid,Rcid,OCid).
-
-cdf_install_dir(P) :- 
-	xsb_configuration(install_dir, InstallDir),
-        fmt_write_string(P,'%s/packages/CDF',f(InstallDir)).
 
 /* New component initializes a new component, creating version,
 dependency and path information.  Given a previously existing component, 
@@ -420,46 +420,52 @@ newPathandVersion(check,Name,NameId,Path,Path,V):-
 	    ; 
 	      newStrel(NameId,PathRid,atom(Path)) ),
 	newStrelName(hasVersion,hasVersion,Name,VersId),
-	(strel(NameId,VersId,integer(V)) -> 
+	(strel(compName(NameId,atom(Path)),VersId,integer(V)) -> 
 	     true 
 	   ; 
-	     newStrel(NameId,VersId,integer(0)),
+	     newStrel(compName(NameId,atom(Path)),VersId,integer(0)),
 	     V = 0 ).
 newPathandVersion(create,'OMS',NameId,_Pathin,Path,V):- !,
 	newStrelName(hasPath,hasPath,'OMS',PathRid),
 	newStrelName(hasVersion,hasVersion,'OMS',Versid),
 	immediate_strel(NameId,PathRid,atom(Path)),
-	immediate_strel(NameId,Versid,integer(V)).
+	immediate_strel(compName(NameId,atom(Path)),Versid,integer(V)).
+/* On create, even if the component has been loaded from somewhere else,  
+   it needs a new path and version, (obtained from the path). */
 newPathandVersion(create,Name,NameId,Pathin,Pathin,V1):- 
 	newStrelName(hasPath,hasPath,Name,PathRid),
+        retractallStrel(NameId,PathRid,atom(_)),
 	newStrelName(hasVersion,hasVersion,Name,VersId),
-	(strel(NameId,PathRid,atom(Pathin)) ->
-	     retract_superfluous_paths(NameId,PathRid,Pathin),
-	     strel(NameId,VersId,integer(V)),
-	     retractallStrel(NameId,VersId,integer(V)),
-	     V1 is V + 1,
-	     newStrel(NameId,VersId,integer(V1))
-	   ;  
-             retractallStrel(NameId,PathRid,atom(_)),
-             retractallStrel(NameId,VersId,integer(_)),
-	     newStrel(NameId,PathRid,atom(Pathin)),
-	     newStrel(NameId,VersId,integer(0)),
-	     V1 = 0 ).
-/* assumes merge_check has been done */
+        retractallStrel(compName(NameId,atom(_)),VersId,integer(_)),
+        newStrel(NameId,PathRid,atom(Pathin)),
+        concat_atom([Pathin,'/',Name],File),
+        (file_exists(File) ->
+  	     file_latest_version(Pathin,Name,Vold),
+	     V1 is Vold + 1
+	  ;  V1 = 0),
+       newStrel(compName(NameId,atom(Pathin)),VersId,integer(V1)).
+/* Assumes merge_check has been done.  Do nothing if the component has been
+   loaded from somewhere.  Otherwise, create it with the new directory path, 
+   and check the directory for the proper version to make the component.  */
 newPathandVersion(in_place,Name,NameId,Pathin,Path,V):- 
 	newStrelName(hasPath,hasPath,Name,PathRid),
 	newStrelName(hasVersion,hasVersion,Name,VersId),
-	class(Depid,componentDepends,componentDepends,Name),
-	(strel(component(NameId,atom(Path),integer(V)),Depid,_) -> 
-	    true
+	(strel(compName(NameId,atom(Path)),VersId,integer(V)) -> 
+  	     true
 	  ; 
     	     newStrel(NameId,PathRid,atom(Path)),
-	     newStrel(NameId,VersId,integer(0)),
-	     V = 0, Pathin = Path ).
+	     concat_atom([Pathin,'/',Name],File),
+  	     (file_exists(File) ->
+  	         file_latest_version(Pathin,Name,Vold),
+	          V is Vold + 1
+	       ;  V = 0),
+	     newStrel(NameId,VersId,integer(V)),
+	     Pathin = Path ).
 
-retract_superfluous_paths(NameId,PathRid,Path):-
+retract_superfluous_paths_and_vs(NameId,PathRid,Versid,Path):-
 	strel(NameId,PathRid,atom(Path1)),Path1 \= Path,
         retractallStrel(NameId,PathRid,atom(Path1)),
+        retractallStrel(compName(NameId,atom(Path1)),Versid,integer(_)),
 	fail.
 retract_superfluous_paths(_,_,_).
 
@@ -2420,7 +2426,43 @@ assert_oms(Term) :-
 
 assert_oms_term(Term) :-
 	assert_oms_int(Term),
-	!.
+	get_component_intensional(Term,Name),
+	(oms_dirty(Name)
+	 ->	true
+	 ;	make_oms_dirty(Name)
+	),	!.
+assert_oms_term(Term) :-
+	asserta(Term),
+	get_component_extensional(Term,Name),
+	(oms_dirty(Name)
+	 ->	true
+	 ;	make_oms_dirty(Name)
+	).
+
+get_component_extensional(Term,Component):- 
+	component_table_ext(Term,arg(Arg,Type),_),
+	arg(Arg,Term,CompId),
+	source_from_id(Type,CompId,Component).
+
+source_from_id(class,CompId,Component):- 
+	oms_cn(CompId,_,_,Component).
+source_from_id(obj,CompId,Component):- 
+	oms_obj(CompId,_,_,Component).
+
+
+get_component_intensional(Term,Body,Component):- 
+	component_table_int(Term,Arg,_Deps),
+	arg(Arg,Term,Source),
+	(atom(Source) -> 
+	    Source = Component
+	 ;  oms_warning(component,
+	                ['Cannot find component for intensional rule: ',
+			  (:-(Term,Body))]),
+	    fail).
+
+/*
+assert_oms_term(Term) :-
+	assert_oms_int(Term),!.
 assert_oms_term(Term) :-
 	asserta(Term),
 	oms_dirty(DFlg),
@@ -2428,6 +2470,7 @@ assert_oms_term(Term) :-
 	 ->	true
 	 ;	make_oms_dirty
 	).
+*/
 
 retractall_oms(Term) :-
 	oms_log(retractall(Term)),
@@ -2436,7 +2479,27 @@ retractall_oms(Term) :-
  
 retractall_oms_term(Term) :- 
 	retractall_oms_int(Term),
-	%% fail to check other components if component argument is not bound, i.e. retractall(oms_at(oid,_,_))
+	%% fail to check other components if component argument is not bound, 
+	%% i.e. retractall(oms_at(oid,_,_))
+	get_component_intensional(Term,Name),
+	(oms_dirty(Name)
+	 ->	true
+	 ;	make_oms_dirty(Name)
+	),	
+	fail. 
+retractall_oms_term(Term) :-
+	retractall(Term),
+	get_component_extensional(Term,Name),
+	(oms_dirty(Name)
+	 ->	true
+	 ;	make_oms_dirty(Name)
+	).
+
+/*
+retractall_oms_term(Term) :- 
+	retractall_oms_int(Term),
+	%% fail to check other components if component argument is not bound, 
+	%% i.e. retractall(oms_at(oid,_,_))
 	fail. 
 retractall_oms_term(Term) :-
 	retractall(Term),
@@ -2445,6 +2508,7 @@ retractall_oms_term(Term) :-
 	 ->	true
 	 ;	make_oms_dirty
 	).
+*/
 
 abolish_nec_tables(oms_rln(_,_,_)) :- !,
 	abolish_relationship_inherits.

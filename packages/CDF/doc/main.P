@@ -722,7 +722,7 @@ many important features of the OMS in order to present a clear
 semantics.  In this section we introduce several implementation
 features which together underly a notion of a @em{state} of an OMS.  
 
-@subsection{Identifiers: Internal and External}
+@subsection{External Identifiers}
 
 The previous section presented identifiers as a unique way of
 indicating a class, object, or relation, but did not discuss the
@@ -772,7 +772,131 @@ may differ significantly from their native identifiers.
 The source of an identifier has important uses in the OMS component
 system @ref{oms_components (library)}, and for the rest of this
 documentation identifiers will be shown in external source, unless
-otherwise noted.  At the same time, the external identifiers can
+otherwise noted.  
+
+@subsection{Extensional, Intensional, Immediate, and Implied Information}
+
+From an operational perspective, it is often useful to distinguish
+between the whether a given fact is present in a CDF Instance or is
+implied by a CDF instance; and whether a fact is intensionally or
+extensionally defined.  We discuss the various syntaxes for these
+cases.
+
+@bf{Extensional Facts} Section @ref{A (somewhat) Formal Introduction
+to CDF} assumed that all information in a CDF instance was contained
+in ground atomic facts.  Such information is termed @em{extensional
+information}, and in the actual implementation of the CDF, this
+information is kept in the following predicates, whose names have
+@tt{_ext} appended to them to indicate that they represent extensional
+information: @tt{class_ext/2}, @tt{object_ext/2}, @tt{subclass_ext/2},
+@tt{relation_ext/2}, @tt{memberof_ext/2}, @tt{subrel_ext/2},
+@tt{irel_ext/3}, @tt{schrel_ext/3}, @tt{strel_ext/3},
+@tt{attribute_ext/3}, and @tt{attribute_object_ext/3}.
+
+@bf{Example 7} The actual implementation of CDF requires extensional
+facts to be written using the above @tt{_ext} predicates.
+Accordingly, the fragment from Example 6 would be rewritten as
+follows:
+
+@begin{verbatim}
+  class_ext(medicalEquipment,id(42,unspsc))
+         class_ext(woundCareProducts,id(4231,unspsc)) 
+  class_ext(suturesAndRelatedProducts,id(423117,unspsc))
+         class_ext(sutures,id(42311701,unspsc)) 
+  class_ext(nonAbsorbableSutures,id(12953,dla))
+         class_ext(absorbableSutures,id(12952,dla)) 
+  class_ext(sutureNeedles,id(07251,dla))
+@end{verbatim}
+
+Extensional facts in all other examples are similarly rewritten.
+
+@bf{Intensional Rules} At the same time it is often convenient to use
+@em{intensional rules} to produce CDF data ""on-demand"".  This can be
+particularly useful when representing data from a legacy database:
+rules can be written to map the data to OMS format using the XSB ODBC
+or Oracle interface.
+
+The format of intensional rules closely resembles that of extensional
+CDF predicates, but now each functor is followed by @tt{_int} so that
+intensional rules can be defined using rules for the predicates
+@tt{class_int/2}, @tt{object_int/2}, @tt{subclass_int/2},
+@tt{relation_int/2}, @tt{memberof_int/2}, @tt{subrel_int/2},
+@tt{irel_int/3}, @tt{schrel_int/3}, @tt{strel_int/3},
+@tt{attribute_int/3}, and @tt{attribute_object_int/3}.
+
+Each of these rules is checked in the same manner as extensional data,
+so that intensional rules affect inheritance, subclassing, and other
+operations in exactly the same manner as extensional rules.
+
+@bf{TLS: there are some small problems with converting internal form
+to external form that we may have to explain}.
+
+When intensional rules are loaded, they are dynamically asserted in a
+manner that intensional rules can be loaded from several files, but
+reloading from file @tt{F} will retract rules previously loaded from
+@tt{F} and assert new ones.  Users, however do not need to worry about
+@tt{multifile/1} declarations for intensional rules.
+
+@bf{Example 8} Suppose that we wish to include Prolog-defined facts
+about approved item names in the dla ontology into the CDF.  These
+approved item name facts consist of an Item Name Code, the FIIG to
+which the Item Name Code belongs, the Item Name itself, and a
+description:
+
+@begin{verbatim}
+item_name('00001','A516K0','ELECTRON TUBE','An inclosure, including
+two or more electrodes, in which a flow of electrons may occur through
+a vacuum or a contained gas. The electronic conduction takes place
+either by means of electrons emitted from a cathode or by ionization
+of the contained gas. Includes phototubes (photoemissive type only),
+Geiger-Mueller tubes, traveling wave tubes, cathode ray tubes and
+microwave tubes (Klystron, magnetron, or the like). Excludes items
+whose primary purpose is to produce light energy. Also excludes
+PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).'). 
+@end{verbatim}
+
+We can translate these facts using intensional rules as follows.
+
+@begin{verbatim}
+class_int(Name,id(Nid,dla)):- item_name(Nid,_,Name,_).
+
+subclass_int(id(Nid,dla),id(Fiig,dla)):- item_name(Nid,Fiig_,_).
+
+strel_int(id(Nid,dla),id('Descriptions',dla),id(atom(Descr),'OMS)):- 
+	item_name(Nid,_,_,Descr).
+@end{verbatim}
+
+@bf{A CDF Instance and its implications} A CDF instance is therefore
+defined in terms of extensional facts and intensional rules.  The
+following set of predicates can be used to determine whether a fact is
+extensionally or intensionally defined by a CDF instance:
+@tt{class/2}, @tt{object/2}, @tt{relation/2},
+@tt{immediate_subclass/2}, @tt{immediate_memberof/2},
+@tt{immediate_subrel/2}, @tt{immediate_irel/3},
+@tt{immediate_strel/3}, @tt{immediate_strel/3},
+@tt{immediate_attribute/3}, and @tt{immediate_attribute_object/3}.
+
+Given a CDF instance, one uses the following predicates to query
+whether a given fact is implied by a CDF instance: @tt{subclass/2},
+@tt{memberof/2}, @tt{subrel/2}, @tt{irel/3}, @tt{strel/3},
+@tt{strel/3}, @tt{attribute/3}, and @tt{attribute_object/3} are
+reserved
+
+@subsection{Primitive Classes}
+
+@subsection{Using the OMS}
+
+@ref{oms_queries (library)}.  Updating?
+
+
+").
+
+main.
+
+
+end_of_file.
+
+At the same time, the external identifiers can
 consume space and be difficult to index.  As a result, the OMS stores
 some information using identifiers in internal form, where each 2-ary
 identifier of the form @em{id(Nid,Source)} is replaced by a generated
@@ -797,634 +921,3 @@ translate between a relation identifier whose external form is
 
 @bf{TLS: need to mention constraint about product classes and sources,
 if we dont remove it.}.
-
-@section{Extensional and Intensional Information}
-
-Section @ref{A (somewhat) Formal Introduction to CDF} assumed that all
-information in an OMS instance was contained in ground atomic facts.
-Such information is termed @em{extensional information}.  At the same
-time it is often useful to use @em{intensional rules} to produce OMS
-data ""on-demand"".  This can be particularly useful when representing
-data from a legacy database: rules can be written to map the data to
-OMS format using the XSB ODBC or Oracle interface.
-
-The format of intensional rules closely resembles that of extensional
-CDF predicates, where each functor is followed by @tt{_int} so that
-intensional rules can be defined using rules for the predicates
-@tt{class_int/2}, @tt{object_int/2}, @tt{subclass_int/2},
-@tt{relation_int/2}, @tt{memberof_int/2}, @tt{subrel_int/2},
-@tt{irel_int/3}, @tt{schrel_int/3}, @tt{strel_int/3},
-@tt{attribute_int/3}, and @tt{attribute_object_int/3}.
-
-Each of these rules is checked in the same manner as extensional data,
-so that intensional rules affect inheritance, subclassing, and other
-operations in exactly the same manner as extensional rules.
-
-@bf{TLS: there are some small problems with converting internal form
-to external form that we may have to explain}.
-
-When intensional rules are loaded, they are dynamically asserted in a
-manner that intensional rules can be loaded from several files, but
-reloading from file @tt{F} will retract rules previously loaded from
-@tt{F} and assert new ones.  Users, however do not need to worry about
-@tt{multifile/1} declarations for intensional rules.
-
-
-@bf{Example 6} Suppose that in Prolog, an approved item name fact
-consists of an Item Name Code, the FIIG to which the Item Name Code
-belongs, the Item Name itself, and a description:
-
-@begin{verbatim}
-item_name('00001','A516K0','ELECTRON TUBE','An inclosure, including
-two or more electrodes, in which a flow of electrons may occur through
-a vacuum or a contained gas. The electronic conduction takes place
-either by means of electrons emitted from a cathode or by ionization
-of the contained gas. Includes phototubes (photoemissive type only),
-Geiger-Mueller tubes, traveling wave tubes, cathode ray tubes and
-microwave tubes (Klystron, magnetron, or the like). Excludes items
-whose primary purpose is to produce light energy. Also excludes
-PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).'). 
-@end{verbatim}
-
-If we wish to include item name facts in our ontology, we might
-translate the above fact as follows.
-
-@begin{verbatim}
-class_ext('ELECTRON TUBE',id('OOOO1',dla)).
-
-subclass_ext('OOOO1',fiig,id('A516K0',dla)).
-
-strel(id('OOOO1',dla),id('Description',dla),id(atom(''An inclosure, including
-  two or more electrodes, in which a flow of electrons may occur
-  through a vacuum or a contained gas. The electronic conduction takes
-  place either by means of electrons emitted from a cathode or by
-  ionization of the contained gas. Includes phototubes (photoemissive
-  type only), Geiger-Mueller tubes, traveling wave tubes, cathode ray
-  tubes and microwave tubes (Klystron, magnetron, or the like). Excludes
-  items whose primary purpose is to produce light energy. Also excludes
-  PHOTOELECTRIC CELL; and SEMICONDUCTOR DEVICE (as modified).'),'OMS').
-@end{verbatim}
-
-To translate all such approved item names into the OMS wouldn't be
-hard, and a programmer might write scripts so that a file of item_name
-facts could then be transformed into OMS external form.  Alternately,
-the information could be stored as intensional rules:
-
-@begin{verbatim}
-class_int(Name,id(Nid,dla)):- item_name(Nid,_,Name,_).
-
-subclass_int(id(Nid,dla),id(Fiig,dla)):- item_name(Nid,Fiig_,_).
-
-strel_int(id(Nid,dla),id('Descriptions',dla),id(atom(Descr),'OMS)):- 
-	item_name(Nid,_,_,Descr).
-@end{verbatim}
-
-Information stored in intensional rules may be slower than if stored
-by extensional facts.  Nonetheless, there are often advantages in
-storing information in intensional rules if the data is updated
-outside of the OMS such as a legacy database, or information obtained
-by agents from the world wide web.
-
-
-@begin{verbatim}
-class(Id,Name,Nid,Src)
-@end{verbatim}
-
-@noindent will check not only the @pred{oms_cn/4} facts that may have
-been created from information external form but also will call
-@pred{class_int/3} rules.  Similarly, a query: 
-
-@begin{verbatim}
-subclass(ChildCid,ParentCid)
-@end{verbatim}
-
-@noindent will check @pred{oms_sc/2} rules, and also will translate
-the class ids of the query to native ids and sources and check
-@pred{subclass_int/4} rules, and translate the native ids and sources
-back to class ids when necessary. 
-
-For each @em{xxx}@tt{_ext/n} predicate, there is a corresponding
-@em{xxx}@tt{_int/n} predicate, and all views support a free
-intermixture of external intensional and explicitly loaded classes and
-/ or objects.  Even parameterized classes can be built using a mixture
-of intensional and explicitly loaded classes @footnote{Hopefully I've
-gotten all --- or at least most of --- the bugs out by now.}.
-
-As a final point, the OMS does not directly support assertion or
-deletion of information in the External Intensional Format.  As a
-result if intensional data is to be modified by, say, an XJ-based GUI,
-cache-coherency cannot be guarenteed.
-
-
-@section{Primitive Classes}
-
-@section{Using the OMS}
-
-@ref{oms_queries (library)}.  Updating?
-
-@subsection{OMS: External Format}
-
-The External Format is used when creating an ontology by hand and can
-be a means of porting another ontology into the OMS Internal Format.
-As a simple example, let us consider some classes taken from the file
-@tt{oms/test/ext4.P} @footnote{currently this test file is uses
-abstract classes.  In a future version of the documentation, I'll
-create more meaningful names.}.  @tt{ext4.P} contains class
-definitions that include the following classes.
-
-@begin{verbatim}
-class_ext('OMS Root','OMS Root'.
-class_ext('OMS Inheritable Relationships',
-          'OMS Inheritable Relationships'.
-class_ext('OMS Set-Valued Relations','OMS Set-Valued Relations'.
-class_ext('OMS Schema Relations','OMS Schema Relations'.
-class_ext('OMS Relations','OMS Relations'.
-class_ext('Descriptions','Descriptions'.
-
-class_ext(myownname,c1,test).
-class_ext(c2,c2,test).
-class_ext(c3,c3,test).
-class_ext(c11,c11,test).
-class_ext(c12,c12,test).
-class_ext(c13,c13,test).
-
-class_ext(r3,r3,test).
-
-class_ext(myf,f(c2,test,g(integer(1),'OMS',c12,test),test),test).
-@end{verbatim}
-
-@noindent These class definitions state that @tt{myownname}, say, is
-the name of a class, whose native id is @tt{c1} and whose source
-ontology is @tt{test}.  Classes with the source @tt{OMS} are built
-into the OMS and are present for every ontology -- see
-@ref{oms_init_oms (library)} for the descriptions of such classes.
-They need not be defined in a file in External Format, however we
-include them in this example for expository purposes.
-
-The final term defines a parameterized class.  The native od of this
-class has an @em{outer functor} of @tt{f}, and two @em{arguments}, the
-first of which has native id @tt{c2} and source ontology @tt{test},
-and the second of which is another parameterized class whose outer
-functor is @tt{g} whose source ontology is also @tt{test}.  The
-parameterized class @tt{f} is thus a combination of two classes each
-of which are identified by a native id and a source ontology.  Because
-it is a combination of two classes and will appear that way once the
-external form is loaded into the OMS, this parameterized class is
-referred to as @tt{f/2}, rather than as @tt{f/4} as it appears in the
-external form.  Similarly, the parametrized class @tt{g} is referred
-to as @tt{g/2} Note that the first argument of @tt{g/2} is
-@tt{integer(1)}, whose source is @tt{OMS}.  While this class has the
-syntax of a parameterized class, it is in fact an @em{OMS primitive
-class}.  OMS primitive classes allow the user to use useful
-programming types --- integers, floats, atoms, and so on --- without
-having to explicitly define a separate class for each integer, say.
-OMS primitive types are further discussed in @ref{???}.  As with
-@tt{integer(1)}, all OMS primitive types have @tt{OMS} as their source
-ontology.  The class hierarchy is defined as:
-
-@begin{verbatim}
-subclass_ext('OMS Inheritable Relationships','OMS','OMS Relations',OMS).
-subclass_ext('OMS Set-Valued Relations','OMS','OMS Relations',OMS).
-subclass_ext('OMS Schema Relations','OMS','OMS Relations',OMS).
-subclass_ext('OMS Relations','OMS','OMS Root'.
-subclass_ext('Descriptions','OMS','OMS Set-Valued Relations'.
-
-subclass_ext(c1,test,c2,test).
-subclass_ext(c2,test,c3,test).
-subclass_ext(c3,test,'OMS Root'.
-
-subclass_ext(c11,test,c12,test).
-subclass_ext(c12,test,c13,test).
-subclass_ext(c13,test,'OMS Root'.
-
-subclass_ext(r1,test,r2,test).
-subclass_ext(r2,test,'OMS Inheritable Relationships'.
-subclass_ext(r3,test,'OMS Schema Relations'.
-
-subclass_ext(f(c2,test,g(integer(1),'OMS',c11,test),test),test,c2,test).
-@end{verbatim}
-
-@noindent These subclass definitions denote the hierarchy of the
-ontology.  Note that in the External Format, classes are @em{always}
-referenced by the native id and the source ontology.  Also note that
-@tt{r2}, while being a perfectly good class, can also be used to
-define inheritable relationships, since it is a subclass of @tt{OMS
-Inheritable Relationships}.  Similarly, @tt{r3} can be used to define
-schema relations @footnote{For historical purposes, the term
-'relationship' is used to denote relations that are inheritable, while
-'relations' is used to denote relations that may or may not be
-inheritable.}.
-
-The final term defines
-@tt{f(c2,test,g(integer(1),'OMS',c12,test),test)} with source ontology
-@tt{test} as a subclass of @tt{c2} with source ontology @tt{test}.
-For implementation reasons, parameterized classes can only be defined
-as leaves of the hierarchy via explicit @pred{subclass_ext/4} (or
-@pred{subclass/2} definitions).  However, parameterized classes have a
-rich @em{implicit} hierarchy.  A parameterized class @em{C1} is a
-subclass of a parameternized class @em{C2} if @em{C1} and @em{C2} both
-have the same outer functor and each of the arguments of @em{C1} is a
-subclass of each of the arguments of @em{C2}.  As an example
-
-@begin{verbatim}
-@tt{f(c1,test,g(integer(1),'OMS',c22,test),test)} + test
-@end{verbatim}
-is a subclass of 
-@begin{verbatim}
-@tt{f(c2,test,g(integer(1),'OMS',c22,test),test)} + test
-@end{verbatim}
-
-@noindent since @tt{c1} is a subclass @tt{c2}, but not of 
-
-@begin{verbatim}
-@tt{f(c2,test,g(integer(1),'OMS',c22,test),test)} + test
-@end{verbatim}
-
-@noindent since @tt{c12} is a subclass @tt{c22} @footnote{In a precise
-sense, a parameterized class can be seen as a @em{product} of its
-arguments, and behaves that way in terms of inheritance.}.  Thus the
-hierarchy of atomic classes reflects through parameterized classes,
-and the inheritance structure for any ontology can roughly be seen as
-consisting of a DAG, whose leaves may or may not be parameterized
-classes, but whose internal nodes are atomic.
-
-The next conceptual part of the ontology are the relations, which include
-
-@begin{verbatim}
-relationship_ext(c2,test,r2,test,c12,test).
-relationship_ext(f(c2,test,g(integer(1),'OMS',c11,test),test),test,
-                 r1,test,c1,test).
-@end{verbatim}
-
-@noindent The first simply defines an @tt{r2} relationship in which
-@tt{c2} is the source and @tt{c12} the target.  In the second @tt{r1}
-is a specialization of the @tt{r2} relation since @tt{r1} is a
-subclass of @tt{r2}.  There is a further subtle point illustrated in
-the use of the parameterized class in the relation definition.
-@tt{f(c2,test,g(integer(1),'OMS',c11,test),test) + test} is
-(implicitly) a subclass of
-@tt{f(c2,test,g(integer(1),'OMS',c12,test),test) + test}.  This means
-that a subclass of @tt{f(c2,test,g(integer(1),'OMS',c12,test),test) +
-test} relations have an @tt{r1} relation defined for them, but all do
-not.  While this is somewhat abstract given this example, it is
-important in that once parameterized classes are put into a class
-hierarchy, the subclasses implicit in the parameterized class can be
-used freely throughout the rest of the ontology definition.
-
-Set-valued and schema relations are defined anagously:
-
-@begin{verbatim}
-strel_ext(c1,test,'Descriptions','OMS',atom('a description').
-
-schrel_ext(c1,test,r2,test,c12,test).
-@end{verbatim}
-Note the use of the primitive type @pred{atom/1} in the set-valued
-relation.
-
-The above predicates, @pred{class_ext/3}, @pred{subclass_ext/4},
-@pred{relationship_ext/6}, @pred{strel_ext/6}, @pred{schrel_ext/6},
-are collectively termed the @em{schema} for an ontology (in external
-form).  Analagous to the schema of an ontology is the data, consisting
-of predicates @pred{object_ext/3}, @pred{memberof_ext/4},
-@pred{attribute_ext/6}, and @pred{attribute_object_ext/6}.  Let us
-begin with definitions of objects.
-
-@begin{verbatim}
-object_ext(o1,o1,test).
-object_ext(o2,o2,test).
-object_ext(o3,o3,test).
-object_ext(o11,o11,test).
-object_ext(of,of,test).
-@end{verbatim}
-
-@noindent Definitions of objects are analgous to those for classes, in
-that objects have a name, a native id and a source ontology, and the
-native id plus source uniquely determines the object.  However at
-present all native ids for classes must have atomic names, unlike
-those for classes which specify a parameterized class (or subclass).
-Each object must be defined to be a member of at least one class, as
-in the following statements.
-
-@begin{verbatim}
-memberof_ext(o1,test,c1,test).
-memberof_ext(o2,test,c2,test).
-memberof_ext(o3,test,c3,test).
-memberof_ext(o11,test,c11,test).
-
-memberof_ext(of,test,f(c2,test,g(integer(1),'OMS',c11,test),test),test).
-@end{verbatim}
-
-@noindent The first two arguments of @pred{memberof_ext/4} are the
-native id of an object and its source; the second two are the native
-id of a class and its source.  The final term shows that it is allowed
-for an object to be member of a parameterized class.  
-
-Finally, the external form defines some attributes for objects.
-
-@begin{verbatim}
-attribute_ext(o2,test,r2,test,c12,test).
-
-attribute_object_ext(o2,test,r2,test,o12,test).
-@end{verbatim}
-
-The predicates @pred{attribute_ext/6} and
-@pred{attribute_object_ext/6} are similar except that the target of
-@pred{attribute_object_ext/6} must be an object, rather than a class
-as with @pred{attribute_ext/6}.
-
-@noindent Routines for loading data in External Format into an OMS and
-dumping an OMS to a file in External Format are described in
-@ref{oms_io (library)}.  The schema for the External Format is
-summarized below.  All relations in the External Format are
-extensional -- inheritance and transitivity is executed only after
-they are translated back to the Internal Format by routines in
-@ref{oms_io (library)}.
-
-@subsection{Programmer's View of the OMS}
-
-The Programmer's View of the OMS is the one that tightly coupled
-applications actually use.  To create a Programmer's View of the
-previously-discussed ontology in @tt{ext4.P}, the OMS may be consulted
-into XSB and the external form loaded by a predicate such as
-@pred{load_mergeomsext/1}.  For expository purposes we discuss aspects
-of the Programmer's View of the OMS by means of the XSB command
-prompt.  Various applications of the OMS may communicate through the
-Java interface to XSB, through an ontology editor, or in a number of
-other ways.  If we make the query:
-
-@begin{verbatim}
-| ?- class(Cid,myownname,Nid,Src).
-
-Cid = 17
-Nid = c1
-Src = test
-
-yes
-@end{verbatim}
-
-We see that a class defined in our External Format has in fact been
-loaded into the OMS.  However rather than having three arguments as
-with @pred{class_ext/3}, the predicate @pred{class/4} has four
-arguments: the original three plus @tt{17}, which unified with the
-variable @tt{Cid}.  This new argument is a @em{class id}, and is
-uniquely generated for each class that is loaded into the OMS.
-Similarly, if we make the query
-
-@begin{verbatim}
-| ?- object(Oid,OName,ONid,OSrc).
-@end{verbatim}
-
-@noindent we get back the bindings
-
-@begin{verbatim}
-Oid = 1
-OName = o1
-ONid = o1
-OSrc = test
-@end{verbatim}
-
-and infact, can backtrack through all other bindings for the goal
-object, if we wish.  In a similar manner to class, there is a new
-@em{Object Id} argument that is uniquely generated for each object
-loaded into the OMS.  Now, what happens if we use the object
-identifier @tt{1} where a class should be?  
-
-@begin{verbatim}
-| ?- class(1,Name,Nid,Src).
-@end{verbatim}
-
-@noindent gives back the bindings
-
-@begin{verbatim}
-Name = OMS Root
-ONid = OMS Root
-OSrc = OMS
-@end{verbatim}
-
-Illustrating the point that class ids and object ids are generated
-separately.  Class ids are generated for parameterized classes based
-on class ids for atomic classes.
-
-@begin{verbatim}
-| ?- class(Id,myf,Nid,Src).
-
-Id = f(18,g(integer(1),21))
-Nid = f(c2,test,g(integer(1),OMS,c12,test),test)
-Src = test
-@end{verbatim}
-
-In loading this class, the class @tt{c2 + test} is translated to its
-class id, @tt{18}, and a similar translation is done for @tt{c12 +
-test}.  Hoever, note that no translation is done for outer functors of
-parameterized classes or for primitive classes: @tt{integer(1)} has
-the same form in the class id as in the native id.  At this point it
-is easier to see why the OMS maintains clothes all integers in the
-form @tt{integer/1}: without this clothing the integer @tt{1} would be
-seen as the class id for @tt{OMS Root}!
-
-In the Programmer's View, native ids and sources are not found in OMS
-predicates other than @pred{class/4} and @pred{object/4}.  For
-instance, if we make the following query to @pred{subclass/2}
-
-@begin{verbatim}
-| ?- subclass(f(18,g(integer(1),21)),Cid),class(Cid,Name,Nid,Src).
-@end{verbatim}
-
-@noindent we get back a series of bindings to all classes to which
-this parameterized class belongs.  The first set of bindings is 
-
-@begin{verbatim}
-Cid = f(18,g(integer(1),21))
-Name = myf
-Nid = f(c2,test,g(integer(1),OMS,c12,test),test)
-Src = test;
-@end{verbatim}
-
-@noindent reflecting the fact that the @pred{subclass/2} is
-reflexive.  Further backtracking gives 
-
-@begin{verbatim}
-Cid = 18
-Name = c2
-Nid = c2
-Src = test;
-@end{verbatim}
-
-@noindent as well as other subclasses to which
-@tt{f(18,g(integer(1),21))} transtively belongs, up to @tt{OMS Root}
-@footnote{Because @pred{subclass/2} does not use tabling, superclasses
-or subclasses may be repeated when backtracking through a query to
-@pred{subclass/2}.}.
-
-In addition to providing transitivity for @pred{subclass/2}, the
-Programmer's View also supports inheritance for relationships and
-schrels.  Recall that the external form contained the fact
-
-@begin{verbatim}
-relationship_ext(c2,test,r2,test,c12,test).
-@end{verbatim}
-
-This relationship is, of course, supported in the Programmer's View,
-and can be accessed by translating into the appropriate class ids.  In
-addition, since @tt{c1 + test} is a subclass of @tt{c2 + test} calling
-making a call to @tt{relationship/3} shows that there is also an
-@tt{r2 + test} relation from @tt{c1 + test} to @tt{c12 + test},
-indicating that relational inheritance is transparently supported for
-the user.
-
-Further examination of the Programmer's View shows that inheritance is
-propagated to attribute information.  For instance, it can be seen
-that there is an @tt{r2 + test} attribute for @tt{o1 + test}, by
-calling @pred{attribute/3} with the appropriate class and object ids.
-
-
-
-In the Programmer's View, OMS predicates have the following form
-(described further in in @ref{oms_init_oms (library)}).
-@begin{itemize}
-
-@item @tt{class(CID,Name,NativeID,Source)} (@pred{class/4}: where
-@tt{CID} is a class ID, @tt{Name} is the name of the Class (an atom),
-@tt{NativeID} is a user ID for the node, and @tt{Source} is an atom
-that identifies the source ontology of this class.
-
-@item @tt{subclass(SubCID,SupCID)} (@pred{subclass/2}): where
-@tt{SubCID} is the class id of a class that is a sub-class of the
-class @tt{SupCID}.  @em{TLS explain a bit further about how exactly
-subclassing works with parameterized classes}.
-
-@item @tt{relationship(SCID,RelCID,TCID)} (@pred{relationship/3}): is
-an inheritable relation where @tt{SCID}, @tt{RelCID} and @tt{TCID} are
-class ids, indicating a source class, a relation class and a target
-class, respectively.  @tt{RelCID} must be a descendent of the @em{OMS
-Inheritable Relationships} class (this is ensured OMS routines that
-create new relations).  This predicate specifies monotonic
-inheritance: that each object that is a subclass of @tt{SCID} must
-have a @tt{RelCID} attribute of type (i.e. a subclass of) @tt{TCID}
-(the precise semantics is described in @ref{Semantic Axioms}).
-
-@item @tt{strel(SCID,RelCID,TCID)} (@pred{strel/3}): where @tt{SCID},
-@tt{RelCID} and @tt{TCID} are class IDs, indicating a source class, a
-relation class and a target class, respectively.  This predicate
-designates non-inheritable relationships.
-
-@item @tt{schrel(SCID,RelCID,TCID)} (@pred{schrel/3}): where
-@tt{SCID}, @tt{RelCID} and @tt{TCID} are class IDs, indicating a
-source class, a relation class and a target class, respectively.  This
-predicate designates the type of that an attribute must have: i.e. if
-an object is of type @tt{SCID} then any attribute of that object whose
-relation part is a subclass of @tt{RelCID} must have a target that is
-a subclass of @tt{TCID}; and any attribute_object of that object whose
-relation part is a subclass of @tt{RelCID} must have a target that is
-a memberof @tt{TCID}.  See @ref{Semantic Axioms} for more details.
-
-@item @tt{object(OID,Name,NativeID,Source)} (@pred{object/4}): where
-@tt{OID} is an internally-generated integer ID for this Object;
-@tt{Name} is the name of this object; @tt{NativeID} is a user ID for
-this object; and @tt{Source} is the source ontology.
-
-@item @tt{memberof(OID,CID)} (@pred{memberof/2}): where OID is the
-object ID of an object that is an element of the class CID.
-
-@item @tt{attribute(OID,RelCID,TCID)} (@pred{attribute/3}): indicates
-that the relational class @tt{RelCID} maps the object @tt{OID} to the
-class @tt{TCID}.  For this to be valid, there must be a tuple in
-relationship indicating that this is correctly typed.
-
-@item @tt{attribute_object(OID,RelCID,TOID)}
-(@pred{attribute_object/3}): indicates that the relational class
-@tt{RelCID} maps the object @tt{OID} to the object @tt{TOID}.  For
-this to be valid, there must be a tuple in relationship indicating
-that this is correctly typed.  @end{itemize}
-
-@subsection{OMS: Internal Format} The Internal Format of the OMS
-consists of raw facts upon which the Programmer's View is based.  It
-does not include relationships or attributes derived via inheritance
-or transitive subclass or memberof relations.  Users will rarely have
-to work directly with this level.  We include a brief description for
-completeness and because the predicates in internal form are are
-loaded and dumped to files via the predicates @pred{load_oms/1} and
-@pred{dump_oms/1}.
-
-The following predicates comprise the Internal Format.  Some of these
-predicates and their initialization are discussed in @ref{oms_init_oms
-(library)}.
-
-@begin{itemize}
-
-@item @tt{oms_cn(CID,Name,NativeID,Source)} (@pred{oms_cn/4}).
-Internal form of @pred{class/4}, where @tt{CID} is an internally
-generated class ID (an integer), @tt{Name} is the name of the Class
-(an atom), @tt{NativeID} is a user ID for the node (an atom), and
-@tt{Source} is an atom that identifies the source of this class.  
-
-@item @tt{oms_sc(SubCID,SupCID)}: (@pred{oms_sc/2}).  Internal form of
-a @pred{subclass/2} where SubCID is the CID of a class that is an
-immediate sub-class of the class SupCID.
-
-@item @tt{oms_rln(SCID,RelCID,TCID)}: (@pred{oms_rln/3}).  Internal
-form of @pred{relationship/3}, where SCID, RelCID and TCID are class
-IDs, indicating a source class, a relation class and a target class,
-respectively.  RelCID must be a descendent of the @index{OMS
-Inheritable Relationships} class.
-
-@item @tt{oms_strel(SCID,RelCID,TCID)}: (@pred{oms_strel/3}).
-Internal form of @pred{strel/3}, where SCID, RelCID and TCID are
-class IDs, indicating a source class, a relation class and a target
-class, respectively.  RelCID must be a descendent of the @index{OMS
-Set-Valued Relations} class.
-
-@item @tt{oms_schrel(SCID,RelCID,TCID)}: (@pred{oms_schrel/3}).
-Internal form of @pred{schrel/3}, where SCID, RelCID and TCID are
-class IDs, indicating a source class, a relation class and a target
-class, respectively.  RelCID must be a descendent of the @index{OMS
-Schema Relationships} class.
-
-@item @tt{OMS_obj(OID,Name,NativeID,Source)}: (@pred{oms_obj/4}).
-Internal form of @pred{object/4}, where OID is an internally-generated
-integer ID for this Object; Name is the name of this object, NativeID
-is a native ID for this object, and Source is its source ontology.
-
-@item @tt{OMS_mo(OID,CID)} (@pred{oms_mo/2}).  Internal form of the
-@pred{memberof/2} where OID is the object ID of an object that is
-contained in the class CID.
-
-@item @tt{OMS_at(OID,RelCID,TCID)}: (@pred{oms_at/3}).  Internal form of
-the @pred{attribute/3}, and indicates that (every relation in) the
-relational class RelCID maps the object OID to the class TCID.
-That is that RelCID maps OID to some object in TCID.  
-
-@item @tt{oms_ao(OID,RelCID,TOID)}: (@pred{oms_ao/3}).  Internal form of
-the @pred{attribute_object/3} relation, and indicates that the
-relational class RelCID maps the object OID to the object TOID.  
-@end{itemize}
-
-@subsection{Views on the Different Views}
-
-To summarize, users may load an OMS from the external form and dump
-information in external form to a file.  Alternatively, users may
-define external intensional predicates to access dynamically loaded
-data in non-OMS format, and eventually to access data from databases.
-As another alternative, once an OMS is created the internal form may
-be dumped to and loaded from files (say, by the predicates
-@pred{load_oms/1} and @pred{dump_oms/1}.  No matter how the
-information is loaded it is used by the predicates of the Programmer's
-View, either directly in the case of information in Internal Format;
-by translation from External Format into Internal Format (by,
-e.g. @pred{load_mergeomsext/1}); or by calling intensional rules.
-
-Which format should an application use to load and save OMS data?  The
-answer, of course, depends on the needs and size of an application.
-Data in Internal Format is fastest to save and load, but the saved
-data can be difficult to read, and impossible (or at least really
-difficult) to modify outside of the OMS.  Data in External Format is
-easier to create and view from an editor, but is slower to load.
-Finally, external intensional data may be fast to load, but execution
-of user-level queries is somewhat slower than data based on Internal
-Format, as translations need to be made form concept and object ids to
-native ids and sources and intensional rules need to be executed.
-
-").
-
-main.
-

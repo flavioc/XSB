@@ -1,17 +1,22 @@
 
 Nai Ching
 
-Rui
-
-
-
-Paper
-
-tt irel, schrel, etc.
-Updating OMS for paper.
 
 ---------------------------------------------------
-Doc
+Discussion: 
+
+Moving dynamic and index decs to config.
+
+Can we have both?  class(id(W,E),Name,W,E).
+
+Protection for Components?
+
+Relative file paths.
+
+question on * indexing and atom(_)  Also object.
+
+---------------------------------------------------
+Doc:
 
 doc -- is ontology model defined?
 
@@ -30,33 +35,29 @@ Probably haven't mentioned initialization file.
 ---------------------------------------------------
 OMS changes to update for paper.
 
+tt irel, schrel, etc.
+Updating OMS for paper.
+
 make sure omsext can read relation and subrel.
 
 Need to allow different sources for product classes.
 
-_int/6 => _int/3
-
 ---------------------------------------------------
-
 Component stuff
 
 -------------
 init_files not quite right.
+Need to change around add_component_initializer.
+
 
 bug if you give update a non-exist direct.
 
--- check for version 1 in dependenciy in create.
-
-also, clean up new component/create
-
--- do a merge, then check update.
-
--- update analyze_components.
-
---- Then start test suite of in_place.  First check that dependencies
-work.
-
 -------------
+
+Problems w. oms_dirty: 
+	1) did the 1 work (remember oms init).
+	2) made dirty upon loading.
+	
 
 new_oms: put oms_db_updatable into new_oms.  Also oms_dirty.  Also
 oms_caching.
