@@ -147,9 +147,14 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		   concat_atom([TempRoot,'.o '],TempObj)
 		),
 		xsb_configuration(config_dir,ConfigDir),
-		message(shell(['sh ',ConfigDir,'/saved.o/makedef.sh ',
+		(  TempObj = ''
+		-> message(shell(['sh ',ConfigDir,'/saved.o/makedef.sh ',
+			       Obj])),
+		   shell(['sh ',ConfigDir,'/makedef.sh ',Obj])
+		;  message(shell(['sh ',ConfigDir,'/saved.o/makedef.sh ',
 			       TempObj])),
-		shell(['sh ',ConfigDir,'/makedef.sh ',TempObj]),
+		   shell(['sh ',ConfigDir,'/makedef.sh ',TempObj])
+		),
 		message(shell(['mv out.def ', Base,'.def'])),
 		shell(['mv out.def ', Base,'.def']),
 		xsb_configuration(loader_flags,LD_Options),
