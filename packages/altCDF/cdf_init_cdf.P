@@ -956,11 +956,11 @@ immed_classHasAttr(SCid,Rid,TCid) :-
 immed_classHasAttr1(SCid,Rid,TCid) :- 
 	classHasAttr_ext(SCid,Rid,TCid).
 immed_classHasAttr1(SCid,Rid,TCid) :- 
-	cputime(T1),
-	classHasAttr_int(SCid,Rid,TCid),
-	cputime(T2),
-	Tot is T2 - T1,
-	writeln(classHasAttr_int(SCid,Rid,TCid)/Tot).
+%	cputime(T1),
+	classHasAttr_int(SCid,Rid,TCid).
+%	cputime(T2),
+%	Tot is T2 - T1,
+%	writeln(classHasAttr_int(SCid,Rid,TCid)/Tot).
 
 :- comment(classHasAttr/3, "@tt{classHasAttr(SCid,Rid,TCid)} defines
 the semantic set-valued relation predicate, where @tt{SCid} is the
