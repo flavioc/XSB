@@ -139,10 +139,13 @@ Step 2 (Choose directory): Decide where you want XSB to live. Let's assume
 
 Step 3 (Checkout):  cd ~/projects and type:
 
-    cvs -d :ext:sbprolog@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT \
+    cvs -d :ext:xxxyyyzzz@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT \
 					checkout xsbdevel
 
     (Note: this command is split in two lines. You will type it on one line.)
+
+    *** xxxyyyzzz: replace it with your local login at SBCS. If you don't
+        have a local account, replace it with 'sbprolog'
 
     *** You will be asked for the password that you used to create your
 	public/private key pair.
@@ -157,10 +160,12 @@ Then you will see a lot of messages about files being copied. When the dust
 settles, XSB will be checked out into the directory ~/projects/XSB.
 
 Explanations:
-    -d :ext:sbprolog@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT
+    -d :ext:xxxyyyzzz@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT
     specifies the repository to use. "ext" is one of the cvs access protocols,
     sbprolog is the account you used to log into, and compserv2.cs.sunysb.edu
     is one of the servers. (You can use compserv1, too.)
+    As explained above, xxxyyyzzz should be replaced with either your local
+    user name or `sbprolog'.
 
     The "checkout" command does what it says, and "xsbdevel" is one of the
     modules. 
