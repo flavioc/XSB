@@ -210,7 +210,7 @@ typical Prolog programs into \FLORA programs without choking the compiler.
 Other syntactic deviations from the original F-logic syntax are a direct
 consequence of the added support for HiLog, which obviates the need for the
 ``@'' sign in method invocations (this sign is now used to denote calls to
-other modules).
+\FLORA modules).
 
 \FLORA is part of the official distribution of XSB beginning with version
 2.4. It is organized as an XSB package and lives in the directory
@@ -373,7 +373,7 @@ you can also load them into other modules using the following syntax:
 }
 %%
 Understanding \FLORA modules is very important in order to be able to take
-full advantage of the system; we will discuss the module system in \FLORA
+full advantage of the system; we will discuss the module system of \FLORA
 in Section~\ref{sec:flora-modules}.  Once the program is loaded, you can
 pose queries and invoke methods for the objects defined in the program.
 
@@ -430,23 +430,23 @@ error is reported.
 \begin{itemize}
 \item {\tt flHelp}:
     Show the help info.
-\item {\tt flCompile FILE}:
-    Compile FILE.flr for the default module `main'.
-\item {\tt flCompile FILE>>Module}:
-    Compile FILE.flr for the module `{\tt Module}'.
-\item {\tt flLoad FILE>>Module}:
-    Load FILE.flr into the module `{\tt Module}'. If you specify 'FILE.P'
-    or 'FILE.O' then will load these files.
-\item {\tt flLoad FILE}:
-    Load FILE.flr into the default module `main'. If you specify 'FILE.P'
-    or 'FILE.O' then will load these files.
-\item {\tt [FILE.\{P$|$O$|$flr\} $>>$ Module,...]}:
-    Load the files in the specified list into the module `{\tt Module}'.
-\item {\tt flDemo(FILE)}:
+\item {\tt flCompile file}:
+    Compile FILE.flr for the default module {\tt main}.
+\item {\tt flCompile file>>module}:
+    Compile FILE.flr for the module {\tt module}.
+  \item {\tt flLoad file>>module}: Load {\tt file.flr} into the module {\tt
+      module}. If you specify {\tt file.P} or {\tt file.O} then will load
+    these files.
+  \item {\tt flLoad file}: Load {\tt file.flr} into the default module {\tt
+      main}. If you specify {\tt file.P} or {\tt file.O} then will load
+    these files.
+\item {\tt [file.\{P$|$O$|$flr\} $>>$ module,...]}:
+    Load the files in the specified list into the module {\tt module}.
+\item {\tt flDemo(demofilename)}:
     Consult a demo from \FLORA demos directory.
 \item {\tt equality \{none$|$basic$|$flogic\}}:
     Set the level of support for the equality predicate {\tt :=:} in the
-    shell module `main'.
+    shell module {\tt main}.
     {\tt none}  means that {\tt :=:} is treated as a regular
     predicate; {\tt basic} means that only standard first-order equality is
     supported ({\it i.e.}, the usual congruence rules); {\tt flogic} means
@@ -1310,13 +1310,13 @@ during the same program run by loading another file into that module. In
 this case, the old contents is erased and the module gets new contents from
 the second file.
 
-In \FLORA, modules are completely decoupled from file
-names. A \FLORA program knows only the module names it needs to call, but
-not the file names. Specific files can be loaded into modules by another,
-unrelated bootstrapping program. Moreover, a program can be written in such
-a way that it calls a method of some module without knowing that module's
-name. The name of the module can be passed as a parameter or in some other
-way and the concrete binding of the method to the module will be done at
+In \FLORA, modules are completely decoupled from file names. A \FLORA
+program knows only the module names it needs to call, but not the file
+names. Specific files can be loaded into modules by another, unrelated
+bootstrapping program. Moreover, a program can be written in such a way
+that it calls a method of some module without knowing that module's name.
+The name of the module can be passed as a parameter or in some other way
+and the concrete binding of the method to the module will be done at
 runtime.
 
 This dynamic nature of \FLORA modules stands in sharp contrast to the module
@@ -1324,14 +1324,41 @@ system of XSB, which is static and associates modules with files at compile
 time. Moreover, to call a predicate from another module, that predicate
 must be imported explicitly and referred to by the same name.
 
+\index{module!user}
+\index{module!Prolog}
+\index{module!system}
+\index{user module}
+\index{Prolog module}
+\index{system module}
+%%
+As a pragmatic measure, \FLORA defines \emph{three kinds of modules} rather
+than just one. The kind described above is actually just one of the three:
+the \emph{user module}. As explained, these modules are decoupled from the
+actual code, and so they can contain different code at different times.
+The next kind is a \emph{Prolog module}. This is an abstraction in \FLORA,
+which is used to call XSB predicates. Prolog modules are static and are
+assumed to be closely associated with their code. We describe these modules
+in Section~\ref{sec-prolog-modules}. (Do not confuse \FLORA Prolog modules
+--- an abstraction used in the language of \FLORA --- with XSB modules,
+which is an abstraction used in XSB.)  The third type of modules are the
+{\tt \FLORA system modules}. These modules are preloaded with \FLORA
+programs that provide useful methods and predicates ({\it e.g.}, I/O) and,
+thus, are also static. These modules are described in
+Section~\ref{sec-flora-system-modules} and~\ref{sec-service-libs}. The
+abstraction of system modules is a convenience provided by \FLORA, which
+enables user programs to perform common actions using standard names of
+predicates and methods implemented in those modules. The syntactic
+conventions for calling each of these types of modules are similar, but
+distinct.
 
-\subsection{Calling Methods and Predicates Defined in Other Modules}
+
+\subsection{Calling Methods and Predicates Defined in User Modules}
 
 
-\index{module!reference}
+\index{module!user!reference to}
 %
 If \emph{literal} is an F-molecule or a predicate defined in another
-module, it can be called using the following syntax:
+user module, it can be called using the following syntax:
 %%
 \begin{quote}
 \emph{literal} @ \emph{module} 
@@ -1345,7 +1372,7 @@ The name of the module can be any alphanumeric symbol.\footnote{
   }
 %%
 For instance, \verb|foo(a) @ foomod| tests whether {\tt foo(a)} is true in
-the module named {\tt foomod}, and {\tt mary[children\mvd X]@genealogy}
+the user module named {\tt foomod}, and {\tt mary[children\mvd X]@genealogy}
 queries the information on {\tt mary}'s children available in the module
 {\tt genealogy}. More interestingly, the module specifier can be a variable
 that gets bound to a module name at run time. For instance, 
@@ -1359,8 +1386,6 @@ that gets bound to a module name at run time. For instance,
 A call to a literal with an unbound module specification or one that is not
 bound to a symbol will result in a runtime error.
 
-\index{module!rules}
-%%
 When calling the literals defined in the same module, the {\tt @{\it
     module}} notation is not needed, of course. (In fact, since a program
 does not know where it will be loaded, using the @-notation to call a
@@ -1368,6 +1393,8 @@ literal in the same module is hard. However, it is possible with the help
 of the special predicate {\tt flThisModule/1}, described later, and is left
 as an exercise.)
 
+\index{module!rules for}
+%%
 The following rules apply when calling a literal defined in another module:
 %%
 \begin{enumerate}
@@ -1440,7 +1467,8 @@ The following rules apply when calling a literal defined in another module:
 
 \subsection{Finding the Current Module Name}
 
-\index{module!{\tt flThisModule}}
+\index{module!{\tt flThisModule/1}}
+\index{{\tt flThisModule/1}}
 %
 Since a \FLORA program can be loaded into any module, the program does not
 have a priori knowledge of the module it will be executing in. However, the
@@ -1450,15 +1478,14 @@ it to the name of the \FLORA module into which the program was loaded.
 
 
 
-
-\subsection{Loading Files into Modules}\label{sec-loading-mods}
+\subsection{Loading Files into User Modules}\label{sec-loading-mods}
 
 %
 
-\index{module!compilation}
+\index{module!user!compilation of}
 %%
 \FLORA provides commands for compiling and loading program files into
-specified modules.
+specified user modules.
 The
 command 
 %%
@@ -1466,11 +1493,12 @@ command
   {\tt ?- flCompile({\it file}>>{\it module}).}
 \end{quote}
 %%
-generates the byte code for the program to be loaded into the module named
-{\tt module}. The name of the byte code for the program in \emph{file}.flr,
-which can later be loaded into the specified module. In practice this means
-that the compiler generates files named \emph{file\_module.P} and
-\emph{file\_module.O} with symbols appropriately renamed to avoid clashes.
+generates the byte code for the program to be loaded into the user module
+named {\tt module}. The name of the byte code for the program in
+\emph{file}.flr, which can later be loaded into the specified module. In
+practice this means that the compiler generates files named
+\emph{file\_module.P} and \emph{file\_module.O} with symbols appropriately
+renamed to avoid clashes.
 
 If no module is specified, the command
 %%
@@ -1490,9 +1518,9 @@ To load a file, the following command can be used:
  \tt [myprog].  
 \end{quote}
 %%
-This loads the program in the file {\tt myprog.flr} into the default module
-{\tt main}. If {\tt myprog.flr} is newer than the compiled code, the source
-file is recompiled.  
+This loads the program in the file {\tt myprog.flr} into the default user
+module {\tt main}. If {\tt myprog.flr} is newer than the compiled code, the
+source file is recompiled.
 
 An optional module name can be used to load the program into a specified
 module:
@@ -1501,7 +1529,7 @@ module:
 [myprog >> foomod]
 \end{quote}
 %%
-This loads the \FLORA program {\tt myprog.flr} into the module named {\tt
+This loads the \FLORA program {\tt myprog.flr} into the user module named {\tt
   foomod}, compiling it if necessary.
 
 Like XSB, \FLORA also the user to compile and load several program
@@ -1536,19 +1564,38 @@ and is compiled as such. If {\it file}.{\tt flr} is not found, but {\it
 compilation.
 
 
-\subsection{Calling XSB from \FLORA}
+\index{module!{\tt flModule/1}}
+\index{{\tt flModule/1}}
+%%
+Sometimes it is useful to know which user modules are loaded or if a
+particular user module is loaded (say, because your might want to load it,
+if not).  To find out which modules are loaded at the present time. Use the
+predicate {\tt flModule/1} for that. For instance, the first query, below,
+succeeds if the module {\tt foo} is loaded. The second query succeeds and
+binds {\tt L} to the list of all user modules that are loaded at the
+present time.
+%%
+{\tt
+\begin{quote}
+  ?- flModule(foo).\\
+  ?- findall(X,flModule(X),L).
+\end{quote}
+}
+%%
 
-\index{static module}
-\index{module!static}
+
+\subsection{Calling XSB from \FLORA}\label{sec-prolog-modules}
+
+\index{Prolog module}
+\index{module!Prolog}
 %%
 XSB predicates can be called from \FLORA through the \FLORA module system
-\FLORA models XSB programs as collections of static modules, {\it i.e.},
-from \FLORA's point of view, XSB modules are always available and do not
-need to be loaded explicitly. Because the association between Prolog
-programs and modules is fixed, these modules are called \emph{static prolog
-  modules}.  The syntax to call XSB predicates is
+\FLORA models XSB programs as collections of static {\em Prolog modules},
+{\it i.e.}, from \FLORA's point of view, XSB modules are always available
+and do not need to be loaded explicitly because the association between XSB
+programs and modules is fixed.  The syntax to call XSB predicates is
 %%
-\index{module!{\tt @prolog(module)}}
+\index{module!{\tt @prolog(modulename)}}
 %%
 \begin{quote}
   \tt
@@ -1563,10 +1610,10 @@ module {\tt basics}, we can call it as follows:
  ?- member(abc,[cde,abc,pqr])@prolog(basics).
 \end{quote}
 %%
-To use this mechanism, you must know which module the particular predicate
+To use this mechanism, you must know which XSB module the particular predicate
 is defined in. Some predicates are defined by programs that do not belong
 to any module. When such an XSB program is loaded, the corresponding
-predicates become available in the special module called {\tt usermod} and
+predicates become available in the special XSB module called {\tt usermod} and
 \FLORA can call such predicates as follows:
 %%
 \begin{quote}
@@ -1585,7 +1632,7 @@ predicates, {\it i.e.},
 will cause a compilation error.
 
 Some XSB predicates are considered ``well-known'' and, even though they are
-defined in various obscure modules, the user can just use those predicates
+defined in various obscure XSB modules, the user can just use those predicates
 without remembering the corresponding XSB module names. These predicates
 (that are listed in the XSb manual) can be called from \FLORA with
 particular ease:
@@ -1628,9 +1675,9 @@ somewhere near the top of the file and then include the appropriate
 \end{quote}
 %%
 The first syntax is used to both import the predicate and also load the
-program file defining it into a given module. The second syntax is used
-when the flora program is already loaded and we only need to import the
-corresponding predicate.
+program file defining it into a given \FLORA user module. The second syntax
+is used when the flora program is already loaded into a module and we only
+need to import the corresponding predicate.
 
 In both cases, the option {\tt hilog} is used to import a HiLog predicate
 and {\tt firstorder} is used to import first-order predicates. The imported
@@ -1656,13 +1703,13 @@ queries:
  ?- flCompile  {\it flora-file}
 \end{quote}
 %%
-The first query loads the file {\it flora-file\/} into the given module and
-compiles it, if necessary. The second query loads the program into the
-default module {\tt main}. The last two queries compile the file for
-loading into the module {\it flora-module} and {\tt main}, respectively,
-but do not load it.
+The first query loads the file {\it flora-file\/} into the given user
+module and compiles it, if necessary. The second query loads the program
+into the default module {\tt main}. The last two queries compile the file
+for loading into the module {\it flora-module} and {\tt main},
+respectively, but do not load it.
 
-Finally, an XSB program can check if a certain \FLORA module has been
+Finally, an XSB program can check if a certain \FLORA user module has been
 loaded using the following call:
 %%
 \begin{quote}
@@ -1672,26 +1719,26 @@ loaded using the following call:
 \end{quote}
 %%
 
-\subsection{Flora Static Modules}
+\subsection{\FLORA System Modules}\label{sec-flora-system-modules}
 
-\index{static module}
-\index{module!static}
+\index{system module}
+\index{module!system}
 %%
 \FLORA provides a special set of modules that are \emph{preloaded} with
 useful utilities, such as prettyprinting or I/O. These modules have special
 syntax, {\tt @flora(modname)}, and cannot be loaded by the user. For this
-reason, these modules are called \emph{static \FLORA modules}.  For
+reason, these modules are called \emph{\FLORA system modules}.  For
 instance, to prettyprint all the attributes and methods of an object, the
-following method, defined in the static {\tt pp} module, can be used:
+following method, defined in the system module {\tt pp}, can be used:
 %%
 \begin{quote}
  \tt   ?- obj[\#pp\_self(foo)]@flora(pp).
 \end{quote}
 %%
 Here, the method {\tt \#pp\_self} is applied to the object {\tt obj}.
-Since {\tt obj} can have completely different methods in different modules,
-we have to tell the prettyprinting method which module to look at.  For
-more details on the existing \FLORA static modules, see
+Since {\tt obj} can have completely different methods in different user
+modules, we have to tell the prettyprinting method in which module to look.
+For more details on the existing \FLORA system modules, see
 Section~\ref{sec-service-libs}.
 
 
@@ -1712,7 +1759,7 @@ together and stored in {\tt foo.flr}.
 
 \subsection{More on Variables as Module Specifications}
 
-Earlier we mentioned that a module specification can be a variable, {\it
+Earlier we mentioned that a user module specification can be a variable, {\it
   e.g.}, {\tt a[m->b]@X}, which ranges over module names. This variable
 must be bound to a concrete module name before the call is made. However,
 this binding cannot be {\tt prolog()}, {\tt prolog(module)}, or {\tt
@@ -1739,13 +1786,13 @@ programming. Consider the following example:
   \end{center}
 %%
   
-  Here the method {\tt someservice} in module {\tt moo} performs different
-  operation depending on who is calling it, because {\tt something} can be
-  defined differently for different callers. This is, for instance, how the
-  pretty printing module of \FLORA works. A pretty-printing method is
-  called on an object in some module, and to do its job the pretty-printing
-  method needs to query the object \emph{in the context of
-    the caller} module to find the methods the object has.
+  Here the method {\tt someservice} in user module {\tt moo} performs
+  different operation depending on who is calling it, because {\tt
+    something} can be defined differently for different callers. This is,
+  for instance, how the pretty printing system module of \FLORA works. A
+  pretty-printing method is called on an object in some user module, and to
+  do its job the pretty-printing method needs to query the object \emph{in
+    the context of the calling module} to find the methods the object has.
 
 It is also possible to view adaptive methods as a declarative counterpart
 of the callback functions in C/C++, which allows the callee to behave
@@ -2275,7 +2322,7 @@ The native HiLog support in \FLORA causes some tension when crossing the
 border from one system to another. The reason is that \FLORA terms and XSB
 terms have different internal representation. Even though XSB supports
 HiLog (according to the manual, anyway), this support is incomplete and is
-not integrated well into the system --- most notably into its module
+not integrated well into the system --- most notably into the XSB module
 system. As a result, XSB does not recognize terms passed to it from \FLORA
 as HiLog terms and, thus, many useful primitives will not work correctly.
 (Try {\tt ?- writeln(foo(abc))@prolog()} and see what happens.)
@@ -2378,8 +2425,9 @@ the following compiler directive:
   :- firstorderall.
 \end{quote}
 
-First-order predicates are module-aware. This means that the predicates defined
-in different modules are treated as unrelated entities.
+First-order predicates are module-aware. This means that the predicates
+defined in different user, system, or Prolog modules are treated as
+unrelated entities.
 
 There is one other reason why we might sometimes choose first-order
 predicates over HiLog predicates --- predicate tabling. This issue
@@ -2390,10 +2438,12 @@ is discussed in Section~\ref{sec-tabling-flora}.
 \subsection{Expunging First-Order Predicates}
 
 
+\index{{\tt expunge}}
 \index{module!{\tt expunge}}
 %
-To expunge a predicate of the form {\tt functor/arity} from the module that
-a program is loaded into, the following compiler directive can be used:
+To expunge a predicate of the form {\tt functor/arity} from the user module
+that a program is loaded into, the following compiler directive can be
+used:
 \begin{quote}
 \verb!:- expunge functor/arity.!
 \end{quote}
@@ -2401,17 +2451,17 @@ a program is loaded into, the following compiler directive can be used:
 \noindent
 {\tt expunge} can also be called like a normal predicate,
 either from the shell or from within a rule body, to expunge
-predicates in one specific module. The syntax is shown below:
+predicates in one specific user module. The syntax is shown below:
 %%
 \begin{quote}
 \verb!:- expunge functor/arity, ..., functor/arity in modulename.!
 \end{quote}
-where {\tt in} is a special keyword, and {\tt module} stands for the
-name of the module from which to expunge the list of predicates.
+where {\tt in} is a special keyword, and {\tt modulename} stands for the
+name of the user module from which to expunge the given list of predicates.
 
 Note that when {\tt expunge functor/arity} is used as a normal predicate
 (not as a compiler directive), it will expunge the predicate for the
-default module.
+current program module.
 
 
 
@@ -2465,10 +2515,10 @@ by providing the following three compiler directives:
 }
 
 \noindent
-These directives affect the particular modules in which they are included.
-Thus, equality can be treated differently in different modules. This allows
-to compartmentalize the problem and, if used judiciously, can lead to
-significant gain in performance.
+These directives affect the particular user modules in which they are
+included.  Thus, equality can be treated differently in different modules.
+This allows to compartmentalize the problem and, if used judiciously, can
+lead to significant gain in performance.
 
 To first directive, \mbox{\tt equality none}, does not maintain equality
 and {\tt :=:} is considered just like any other user-defined predicate
@@ -2483,8 +2533,8 @@ the Skolem terms introduced to represent the path expressions might be
 equal to some real objects).
 
 Note that equality can also be maintained when working with the \FLORA
-shell. Furthermore, \FLORA allows one module to set the level of equality
-maintenance in another module:
+shell. Furthermore, \FLORA allows one user module to set the level of equality
+maintenance in another user module:
 %%
 \begin{quote}
 \verb!equality {none|basic|flogic} in modulename!
@@ -3234,9 +3284,9 @@ The primitive {\tt insertall} is also known as a bulk-insert operator.
 Note that literals appearing inside the update predicates are treated as
 facts and should follow the syntactic rules for facts and literals in the
 rule head. In particular, multi-valued path expressions are not allowed.
-However, \FLORA permits database updates whose target is a module other
-than the current one.  Thus, flora module specifications \emph{are}
-allowed. As before, module specification is distributing through
+However, \FLORA permits database updates whose target is a user module
+other than the current one.  Thus, \FLORA module specifications \emph{are}
+allowed. As before, module specification is distributive through
 parentheses, so
 %%
 \begin{quote}
@@ -3266,7 +3316,7 @@ XSB does not understand and will not associate it with the predicate {\tt
  {\tt ?- flP2H(PrologRepr,foo(a,b,c)) assert(PrologRepr)@prolog().  }
 \end{quote}
 %%
-This will insert {\tt foo(a,b,c)} into the catch-all module of XSB called
+This will insert {\tt foo(a,b,c)} into the catch-all XSB module called
 {\tt usermod}. If {\tt foo/3} is defined in another XSB module and is
 imported by {\tt usermod}, then the above statement will not do anything
 useful due to certain idiosyncrasies in the XSB module system.
@@ -3685,7 +3735,7 @@ need to conform to any type; or if it does, the type would normally cover
 only certain portions of the object structure.)
 
 
-\section{Summary of \FLORA Compiler Directives} \label{sec-comp-directives}
+\section{Summary of Compiler Directives} \label{sec-comp-directives}
 
 \index{compiler directive}
 %
@@ -3706,18 +3756,18 @@ compiler directives:
 \begin{itemize}
 \item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity}
   \\
-  Expunges the listed first-order predicates in the current program's
+  Expunges the listed first-order predicates in the current user
   module, {\it i.e.}, deletes the contents as well as the definition of the
-  corresponding predicate. By program's module we mean the module into
+  corresponding predicate. By the current module we mean the user module into
   which the program that contains this particular {\tt expunge} directive
   is loaded.
 \item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity} {\tt
     in} \emph{module}\\
   Same as above, except the predicates are expunged in the specified
-    module rather than in the current program's module.
+    module rather than in the current user module.
   \item {\tt equality none|basic|flogic}
     \\
-    Sets the equality maintenance level in the current program's module.
+    Sets the equality maintenance level in the current user module.
     With {\tt none}, equality is not maintained, and the symbol {\tt :=:}
     works like an ordinary predicate.  With {\tt basic}, the predicate {\tt
       :=:} is treated as the equality, but only the usual congruence axioms
@@ -3727,7 +3777,7 @@ compiler directives:
 \item {\tt equality none|basic|flogic} {\tt in}  \emph{module}
   \\
   Same as above, except that equality maintenance is set for the specified
-  module.
+  user module.
 \item {\tt firstorder} {\em functor/arity}, ..., {\em functor/arity}
   \\
   Declare the listed predicates as first-order predicates (as opposed to HiLog
@@ -3746,10 +3796,6 @@ compiler directives:
   type of compilation is useful in meta-predicates, such as {\tt
     findall/3}, which need to consider the truth value of some of their
   arguments rather than their oid.
-\item {\tt import {\it functor/arity}, ..., {\it functor/arity} from
-    {\it module}}
-  \\
-  Imports the given predicate from the specified XSB module.
 \item {\tt index({\it PredicateSpec,IndexSpec})}
   \\
   Specifies how the given first-order predicate must be indexed.
@@ -3785,29 +3831,29 @@ compiler directives:
 \end{itemize}
 
 
-\section{\FLORA Static Modules}\label{sec-service-libs}
+\section{\FLORA System Modules}\label{sec-service-libs}
 
-\index{module!static}
-\index{static module}
+\index{module!system}
+\index{system module}
 %%
 \FLORA provides a number of useful libraries that other programs can use.
 These libraries are statically preloaded into modules that are accessible
 through the special {\tt @flora(modname)} syntax, and they are called
-\emph{static \FLORA modules}.  We describe the functionality of these
-modules below.
+\emph{system modules}.  We describe the functionality of these modules
+below.
 
 \subsection{Pretty Printing}
 
 This library provides methods for pretty printing the information about an
 object or about all objects in a given class. This information can be saved
 in a file or printed on the screen. This library is preloaded in the
-static module {\tt pp} and is accessible using the {\tt @flora(pp)}
+system module {\tt pp} and is accessible using the {\tt @flora(pp)}
 syntax.
 
 To pretty print information about an object, the following calls can be
-used.  The first argument is the module whose object is to be pretty
+used.  The first argument is the user module whose object is to be pretty
 printed. (Recall that the same object can have completely different sets of
-properties in different modules, so the pretty printing methods need to
+properties in different user modules, so the pretty printing methods need to
 know which set of properties to use.)
 %%
 \begin{itemize}
@@ -3835,7 +3881,7 @@ The following example illustrates the use of this library:
 \subsection{Input and Output}
 
 This library simplifies access to the most common XSB I/O facilities.
-This library is preloaded into the static module {\tt io} and
+This library is preloaded into the system module {\tt io} and
 can be accessed using the {\tt @flora(io)} syntax.
 
 The purpose of the I/O library is not to replace the standard I/O predicates
@@ -3941,7 +3987,7 @@ of keeping the syntax object-oriented.
 \end{itemize}
 %%
 
-\section{A Note on the Programming Style}
+\section{A Note on Programming Style}
 
 Programming in \FLORA is similar to programming in Prolog, but is more
 declarative. For one thing, F-molecules are always tabled, so the
@@ -4033,12 +4079,12 @@ chances that the bug will be fixed speedily:
 %%
 \begin{enumerate}
   \item  Reduce the size of your \FLORA program as much as possible.
-  \item  Eliminate all the calls to the static modules that use the
-    {\tt @flora(lib)} syntax. (Prolog static modules that are accessible
+  \item  Eliminate all calls to the system modules that use the
+    {\tt @flora(lib)} syntax. (Prolog modules that are accessible
     through the {\tt @prolog(modname)} syntax are OK, but the more you can
-    reduce the size of the program the better.)
-  \item  If the program has several modules, try to put them into one file
-    and use just one module.
+    eliminate the better.)
+  \item If the program has several user modules, try to put them into one
+    file and use just one module. 
   \item  Use {\tt flDump/1} to strip \FLORA macros from the output of the
     \FLORA compiler.
   \item  Use a pretty printing utility to produce a human-readable 
@@ -4073,9 +4119,8 @@ the algorithm is much more simple:
   \item Reduce the size of the program as much as possible by deleting 
     unrelated program clauses and squeezing a multi-module program into
     just one file.
-  \item Remove all the calls to static modules (that use {\tt
-      @flora(mod)} syntax), unless such a call that is the essence of the
-    bug.
+  \item Remove all the calls to system modules, unless such a call that is
+    the essence of the bug.
 \end{enumerate}
 %%
 
@@ -4344,7 +4389,7 @@ compiles it into XSB syntax and then outputs XSB code. For instance the command
 compiles the \FLORA program {\tt myprog.flr} and generate the following
 files: {\tt myprog.P}, {\tt myprog\_main.O}, and {\tt myprog.fdb} (if {\tt
   myprog.flr} contains \fl facts).  By default, {\tt flLoad(myprog)} loads
-the program into the default module named {\tt main}. If {\tt myprog.flr}
+the program into the default user module named {\tt main}. If {\tt myprog.flr}
 contains \fl facts, all these facts will be compiled separately into the
 XSB file {\tt myprog.fdb} that is dynamically loaded at runtime.  Next, the
 file {\tt myprog.P} is generated --- take a look at ``{\tt
@@ -4355,9 +4400,9 @@ executed.  If {\tt myprog.flr} contains queries, they are immediately
 executed by XSB (provided there are no errors).
 
 In the module system of \FLORA, the same program can be loaded into any
-arbitrarily module. The same program can even be loaded into two different
+user module. The same program can even be loaded into two different
 modules at the same time, in which case there will be two distinct copies
-of the same program running at the same time. For each module, a different
+of the same program running at the same time. For each user module, a different
 byte code is generated (this is why {\tt myprog.O} was renamed into an
 object file that contains the module name as part of the file name).
 
@@ -4468,7 +4513,7 @@ instructions to include the appropriate pieces of the templates from the
 The above is a much simplified picture of the inner-workings of \FLORA. The
 actual translation into Prolog and the form of the closure rules is very
 complex.  Some of this complexity exists to ensure good performance.  Other
-complications come from the need to provide a module system of \FLORA and
+complications come from the need to provide a module system and
 integrate it into the XSB system.  The module system serves two purposes.
 First, it promotes modular design for \FLORA programs, making it possible
 to split the code into separate files and import objects defined in other
@@ -4493,7 +4538,7 @@ even harder to match.\footnote{
   }
 %%
 
-Apart from the prefix, each predicate name's prefix contains the module
+Apart from the general prefix, each predicate name's prefix contains the module
 name where this predicate is defined. Since the same \fl program
 can be loaded into different modules, the \FLORA compiler does not actually
 know the real names of the predicates it is producing. Instead, it dumps
@@ -4505,17 +4550,17 @@ instance, the predicate {\tt fd} would be dumped as
 \end{quote}
 %%
 When the program, {\tt myprog.P}, compiled by the \FLORA compiler needs to
-be loaded into a module, say {\tt main}, the XSB's preprocessor, {\tt gpp},
-is called with the macro {\tt FLORA\_VAR\_WORKSPACE} set to {\tt main}. Gpp
-replaces all macros with the actual values, includes the necessary files,
-and then pipes the result to the XSB compiler. The latter produces the
-object {\tt myprog.O} file where all the predicate names are wrapped with
-the module name, as described above.  This object file is renamed to
-{\tt myprog\_main.O}. If later we need to compile {\tt 
-  myprog.P} for another module, {\tt foo}, {\tt gpp} is called again, but
-this time it sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When XSB finally
-compiles the program into the object file, the file is renames to
-{\tt myprog\_foo.O}.
+be loaded into a user module, say {\tt main}, the XSB's preprocessor, {\tt
+  gpp}, is called with the macro {\tt FLORA\_VAR\_WORKSPACE} set to {\tt
+  main}. Gpp replaces all macros with the actual values, includes the
+necessary files, and then pipes the result to the XSB compiler. The latter
+produces the object {\tt myprog.O} file where all the predicate names are
+wrapped with the user module name, as described above.  This object file is
+renamed to {\tt myprog\_main.O}. If later we need to compile {\tt myprog.P}
+for another user module, {\tt foo}, {\tt gpp} is called again, but this time it
+sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When XSB finally compiles
+the program into the object file, the file is renames to {\tt
+  myprog\_foo.O}.
 
 It is important to keep in ming that only the predicate names are wrapped
 with the {\tt FLORA\_PREFIX} macro and a module name. Predicate arguments
@@ -4527,7 +4572,7 @@ This does not preclude the possibility of encapsulating objects, because
 only the methods need to be encapsulated --- oids do not carry any meaning
 by themselves.
 
-To provide encapsulation for HiLog predicates, they are also wrapped with
+To provide encapsulation for HiLog predicates, they are also prepended with
 the module name. In particular, this implies that HiLog atomic formulas
 have different representation than HiLog terms: a formula {\tt p(a,f(b))}
 would be encoded as
@@ -4549,7 +4594,7 @@ Thus, \FLORA implements a 2-sorted version of HiLog \cite{hilog-icdt-95}.
 
 \paragraph{The updatable part of the database.}
 All objects and facts that are explicitly inserted by the program are kept
-in the special \emph{storage trie} associated with the module where the
+in the special \emph{storage trie} associated with the user module where the
 program is loaded. A tries is a special data structure, which is
 well-suited for indexing tree-structured objects, like Prolog terms. This
 workhorse does much of the grudge work in the XSB engine. To manipulate the
@@ -4684,10 +4729,10 @@ is part of the XSB system.
 The following is a list of the key files of the system.
 %%
 \begin{itemize}
-\item \texttt{flrshell.P}: The top level module that implements the \FLORA
-  shell --- a subsystem for accepting user commands and queries and passing
-  them to the compiler.  See Section~\ref{sec-shell-commands} for a full
-  description of shell commands.
+\item \texttt{flrshell.P}: The top level XSB module that implements the
+  \FLORA shell --- a subsystem for accepting user commands and queries and
+  passing them to the compiler.  See Section~\ref{sec-shell-commands} for a
+  full description of shell commands.
 \item \texttt{flrlexer.P}: The \FLORA tokenizer.
 \item \texttt{flrcomposer.P}: The \FLORA composer, which parses tokens
   according to the operator grammar and does other magic.
@@ -4721,7 +4766,7 @@ primitives that are part of the syntax of the language, the
 libraries in {\tt lib/} implement functionality that is part of the system, but
 not part of the syntax. An example is the pretty-printing library.
 Methods and predicates defined in these libraries are accessible through
-the {\tt @flora(lib-name)} module and (unlike the other \FLORA modules)
+the {\tt @flora(lib-name)} system module and (unlike user modules)
 they are loaded automatically at startup.
 
 There are several subdirectories that hold the various files that contain
