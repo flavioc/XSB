@@ -1249,7 +1249,7 @@ For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 {\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
 {\tt /home/john} is what {\tt $\sim$john} expands into).  
 
-\ournewitem{file\_to\_list(IOport, List)}{scrptutl}s
+\ournewitem{file\_to\_list(IOport, List)}{scrptutls}
 \index{{\tt file\_to\_list/2}}
 %%
 Read lines from an \emph{open} I/O port. Return a
@@ -2171,6 +2171,85 @@ retract/1}, {\tt retractall/1}, {\tt retract\_nr/1}, {\tt abolish/1}
 and {\tt dynamic/1} respectively.  If the index specification is other
 than {\tt tries}, the predicate will issue a warning message and have
 no effect on the database.
+
+\section{Trie Manipulation Utilities}
+
+The following utilities are used to implement assert and retract, but they
+can also be used to implement special purpose operations, like
+backtrackable assert and retract. All the utilities in this section are
+very low-level and require good understanding of the trie mechanism in XSB.
+
+%%
+\begin{description}
+  %%
+\ournewitem{newtrie(-Root)}{intern} \index{{\tt newtrie/1}}
+	Root is instantiated to a handle for a new trie.
+
+\ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}\index{trie\_intern/5}
+%%
+{\tt Term} is the Prolog term to be interned. {\tt Root} is the handle for
+a trie. {\tt Leaf} is the handle for the interned {\tt Term} in the trie.
+{\tt Flag} is 1 if the term is ``old'' (already exists in the trie); it is
+0, if the term is newly inserted.  {\tt Skel} represents the collection of
+all the variables in {\tt Term}. It has the form ret(V1,V2,...,VN), exactly
+as in {\tt get\_calls}.
+
+
+\ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{trie\_intern/3}
+%%
+Interns {\tt Term} into the default trie. Does not return the new/old flag.
+
+
+\ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}\index{trie\_interned/4}
+%%
+This builtin will backtrack through the terms interned into the trie
+represented by the handle {\tt Root} if {\tt Leaf} is a free variable.
+Otherwise, if {\tt Leaf} is bound, it will backtrack over the terms in the
+trie that unify with the term pointed to by Leaf {\tt to}.  {\tt Term} is
+the term to be retrieved; it can be either (partially) bound or free.  {\tt
+  Skel} is the collection of all the variables in {\tt Term}; it has the
+form {\tt ret(V1,...,Vn)}.
+
+\ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{trie\_interned/3}
+%%
+Similar to {\tt trie\_interned/4}  but uses the default trie.
+
+
+\ournewitem{trie\_unintern(+Root,+Leaf)}{intern} \index{trie\_unintern/2}
+%%
+Uninterns (deletes) a term from the trie indicated by root.  This predicate
+has to be called with care. Uninterning can be done only when the trie from
+which the term is being uninterned is not being actively accessed.
+
+\ournewitem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{trie\_unintern\_nr/2}
+%%
+This is a safe version of {\tt trie\_unintern/2}. The term pointed to by
+{\tt Leaf} is marked as deleted, but is not deleted from the trie. This
+permits an efficient implementation of backtrackable updates.
+
+\ournewitem{unmark\_uninterned\_nr(+Root,+Leaf)}{intern}\index{unmark\_uninterned\_nr/2}
+The term pointed to by {\tt Leaf} should have been previously marked for
+deletion using
+{\tt trie\_unintern\_nr/2}. This term is then ``unmarked'' (or undeleted)
+and becomes again a notmal interned term.
+
+\ournewitem{reclaim\_unintern\_nr(+Root)}{intern} \index{reclaim_unintern_rn(+Root)}
+%%
+Not yet implemented.\\
+Runs through the chain of leaves of the trie {\tt Root} and
+deletes the terms that have been marked for deletion by
+{\tt trie\_unintern\_nr/2}. This is a garbage collection step that should
+be done just before returning to the top level.
+
+\ournewitem{delete\_trie(+Root)}{intern} \index{delete\_trie/1}
+%%
+Deletes all the terms in the trie pointed to by Root.
+
+
+%%
+\end{description}
+
+
 
 \section{Extended Logic Programs}  \label{library_utilities:wfsx}
 \index{WFSX}
