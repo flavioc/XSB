@@ -1556,52 +1556,180 @@ file\_read/3}, so documentation for that predicate gives further details.
 \section{Script Writing Utilities}
 %========================
 
-Prolog, (or XSB) can be useful for writing scripts in a UNIX system.
-Prolog's simple syntax and declarative semantics make it especially
-suitable for scripts that involve text processing.  Wherever noted, some of
-these functions are currently working under Unix only.
+Prolog, (or XSB) can be useful for writing scripts.  Prolog's simple
+syntax and declarative semantics make it especially suitable for
+scripts that involve text processing.  There are several ways to
+access script-writing commands from XSB.  The first is to execute the
+command via the predicates {\tt shell/1} or {\tt shell/2}.  These
+predicates can execute any command but they do not provide portablity
+across UNIX and Windows commands, and they do not return any output of
+commands to Prolog.  Special predicates are provided to handle
+cross-platform compatability and to bring output into XSB.  
+
+\subsection{Executing Shell Commands}
 
 \begin{description}
-\ournewitem{date(?Date)}{scrptutl}
-\index{\texttt{date/1}}
+\ouritem{shell(+SystemCall)}\index{\texttt{shell/1}}
+    Calls the operating system with the atom {\tt SystemCall} as argument.
+    It succeeds if {\tt SystemCall} is executed successfully, otherwise it
+    fails.  As a notational convenience, the user can supply {\tt SystemCall} 
+    in the form of a list (something currently not possible for {\tt shell/2}).
 
-Unifies {\tt Date} to the current date, returned as a Prolog term, suitable
-for term comparison.  Currently this only works under Unix, is slow, and
-should be rewritten in C using {\tt time()} and {\tt localtime()}.
+    For example, the call:
+
+    \demo{{\tt $|$ ?- shell('echo \$HOME').}}
+
+    \noindent
+    will output in the current output stream of \ourprolog\ the name of
+    the user's home directory; while the call:
+
+    \demo{{\tt $|$ ?- File = 'test.c', shell(['cc -c ', File]).}}
+
+    \noindent
+    will call the C compiler to compile the file {\tt test.c}.
+
+    Note that in UNIX systems, since {\tt shell/1} is executed by
+    forking off a shell process, it cannot be used, for example, to
+    change the working directory of the interpreter.  For that reason
+    the standard predicate {\tt cd/1} described below should be used.
+
+%    {\em Note to DOS users.} \index{DOS}  The {\tt shell/1} command works
+%    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
+
+\ouritem{shell(+SystemCall, -Result)}\index{\texttt{shell/2}}
+    Calls the operating system with the atom {\tt SystemCall} as argument
+    and returns the result of the call in {\tt Result}.  In comparison with
+    {\tt shell/1} this predicate always succeeds, even if the {\tt SystemCall} 
+    cannot be successfully executed.
+
+\ournewitem{rm(+Path)}{shell}
+\index{\texttt{rm/1}}
+Remove file.
+
+\end{description}
+
+%---------------------------------------------------------------------------------------
+\comment{
+\ouritem{ls}\index{\texttt{ls/0}} 
+    Under UNIX, this command lists in the current output stream the files 
+    in the system's current directory if it can do so.  If so, it succeeds.
+    It is the same as {\tt shell('ls -F', 0)}.  
+
+\ouritem{cd(+Dir)}\index{\texttt{cd/1}}
+    Under UNIX and Windows, this predicate changes the interpreter's
+    working directory to {\tt Dir}.  If the directory specified does
+    not exist or is not a directory, or the user does not have execute
+    permission for that directory, predicate {\tt cd/1} simply fails
+    raising no permission error.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+        {\tt Dir} is not instantiated at the time of call.
+    \item[{\tt type\_error}]
+        {\tt Dir} is not an atom.
+    \end{description}
+
+\ouritem{edit(+Module)}\index{\texttt{edit/1}}
+    Provided that the environment variable {\tt EDITOR} has been set,
+    and the system is executing under UNIX, 
+    a call to {\tt edit(foo)} will call the default editor on the file
+    named {\tt foo.P}.  The argument to {\tt edit/1}, should be instantiated,
+    it can be an absolute or a relative file name, but it should {\em not}
+    contain the suffix {\tt .P}.  Users can also set their preferred options
+    of calling the default editor by setting an environment variable named
+    {\tt EDITOR\_OPTIONS}.
+
+    Examples of possible uses of predicate {\tt edit/1} are:
+    \begin{enumerate}
+    \item If the environment variables have been set as follows:
+          \begin{verbatim}
+                setenv EDITOR /usr/ucb/vi
+                setenv EDITOR_OPTIONS -l
+          \end{verbatim}
+          a call like:
+          \begin{verbatim}
+                | ?- edit(foo).
+          \end{verbatim}
+          will call the vi editor in the mode where left and right parentheses
+          and curly brackets are checked for balance for the file {\tt foo.P}
+          in the current working directory.
+    \item If, on the other hand, they have been set as follows:
+          \begin{verbatim}
+                setenv EDITOR /usr/local/bin/emacs
+                setenv EDITOR_OPTIONS -r
+          \end{verbatim}
+          a call like:
+          \begin{verbatim}
+                | ?- edit('~/foo').
+          \end{verbatim}	
+          will call the emacs editor in reverse video for the file {\tt foo.P}
+          in user's home directory.
+    \end{enumerate}
+}
+%---------------------------------------------------------------------------------------
+
+\begin{description}
+\ournewitem{datime(?Date)}{standard}
+\index{\texttt{datime/1}}
+
+Unifies {\tt Date} to the current date, returned as a Prolog term,
+suitable for term comparison.  Note that {\tt datime/1} must be
+explicitly imported from the module {\tt standard}.
 
 Example:
 {\footnotesize
 \begin{verbatim}
-                > date 
-                Thu Feb 20 08:46:08 EST 1997
-                > xsb -i
-               XSB Version 1.7
-               [sequential, single word, optimal mode]
-               | ?- [scrptutl].
-               [scrptutl loaded]
+                > date
+                Mon Aug  9 16:19:44 EDT 2004
+                > nxsb1
+                XSB Version 2.6 (Duff) of June 24, 2003
+                [i686-pc-cygwin; mode: optimal; engine: slg-wam; gc: indirection; scheduling: local]
 
-               yes
-               | ?- date(D).
-               D = date(1997,1,20,8,47,41)
+                | ?- import datime/1 from standard
 
-               yes
+                yes
+                | ?- datime(F).
+                F = datime(2004,8,9,20,20,23)
+
+                yes
 \end{verbatim}}
-  
-  This predicate is obsolete and \verb|datime/1|, defined in
-  \texttt{standard}, should be used instead.
 
+%------------------------------------------------------------------------------------------------  
+\comment{
+% Moved doc to path_sysop...
 \ournewitem{file\_time(+FileName, -time(Time1,Time2))}{file\_io}
 \index{\texttt{file\_time/2}}
 
-Returns file's modification time. Because 
-XSB steals 5 bits from each word, time must be returned as two words:
-Time1, representing the most significant digits, and Time2, representing
-the less significant digits.
+Returns file's modification time. Because XSB steals 5 bits from each
+word, time must be returned as two words: Time1, representing the most
+significant digits, and Time2, representing the less significant
+digits.
 
 \ournewitem{file\_size(+FileName, -Size)}{file\_io}
 \index{\texttt{file\_size/2}}
 
 Returns file size.
+
+\ournewitem{cwd(-Dir)}{shell}
+\index{\texttt{cwd/1}}
+Get current working directory.
+
+\ournewitem{is\_absolute\_filename(+FileName)}{machine} 
+\index{\texttt{is\_absolute\_filename/1}} Succeeds, if file name is absolute; fails
+otherwise.  This predicate works also under Windows, {\it
+i.e.}, it recognizes drive letters, etc.
+
+\ournewitem{cd(+Path)}{shell}
+\index{\texttt{cd/1}}
+Change directory.
+
+\ournewitem{rename(+Old,-New)}{shell}
+\index{\texttt{rename/2}}
+Rename file.
+
+}
+%------------------------------------------------------------------------------------------------  
 
 \ournewitem{directory(+Path,?Directory)}{directry}
 \index{\texttt{directory/2}}
@@ -1612,32 +1740,29 @@ path.  Information about the files is similar to that obtained by {\tt ls
 Unix only, is slow, and should be reimplemented in C using {\tt opendir()}
 and {\tt readdir()}.
 
-
 \ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
 \index{\texttt{expand\_filename/2}}
+%
+Expands the file name passed as the first argument and binds the
+variable in the second argument to the expanded name. This includes
+(1) expanding Unix tildas, (2) prepending {\tt FileName} to the
+current directory, and (3) ``rectifying'' the expanded file name.  In
+rectification, the expanded file name is ``rectified'' so that
+multiple repeated slashes are replaced with a single slash, the
+intervening ``./'' are removed, and ``../'' are applied so that the
+preceding item in the path name is deleted. For instance, if the
+current directory is {\tt /home}, then {\tt abc//cde/..///ff/./b} will
+be converted into {\tt /home/abc/ff/b}.
 
-Expands the file name passed as the first argument and binds the variable
-in the second argument to the expanded name. This includes expanding Unix
-tildas, prepending the current directory, etc. In addition, the expanded
-file name is ``rectified'' so that multiple repeated slashes are replaced
-with a single slash, the intervening ``./'' are removed, and ``../'' are
-applied so that the preceding item in the path name is deleted. For
-instance, if the current directory is {\tt /home}, then {\tt
-  abc//cde/..///ff/./b} will be converted into {\tt /home/abc/ff/b}.
+Under Windows, this predicates does rectification as described above,
+(using backslashes when appropriate), but it does not expand the
+tildas.
 
-Under Windows, this predicates does rectification (using
-backslashes when appropriate), but it does not expand the tildas.
-
-\ournewitem{tilde\_expand\_filename(+FileName,-ExpandedName)}{machine}
-\index{\texttt{tilde\_expand\_filename/2}}
-Like {\tt expand\_filename/2}, but only expands tildas and does
-rectification. This does not prepend the current working directory to
-relative file names.
-
-\ournewitem{is\_absolute\_filename(+FileName)}{machine} 
-\index{\texttt{is\_absolute\_filename/1}} Succeeds, if file name is absolute; fails
-otherwise.  This predicate works also under Windows, {\it
-i.e.}, it recognizes drive letters, etc.
+\ournewitem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{shell}
+\index{\texttt{expand\_filename\_no\_prepend/2}}
+This predicate behaves as {\tt expand\_filename/2}, but only expands
+tildas and does rectification. It does not prepend the current working
+directory to relative file names.
 
 \ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
 \index{\texttt{parse\_filename/4}}
@@ -1704,34 +1829,14 @@ application program responsibility.
 \index{\texttt{sleep/1}}
 Put XSB to sleep for a given number of seconds.
 
-\ournewitem{cd(+Path)}{shell}
-\index{\texttt{cd/1}}
-Change directory.
-
-\ournewitem{rename(+Old,-New)}{shell}
-\index{\texttt{rename/2}}
-Rename file.
-
-\ournewitem{ls}{shell}
+\ouritem{ls}{shell}
 \index{\texttt{ls/0}}
-Does {\tt ls -F}. Unix only.
-
-\ournewitem{rm(+Path)}{shell}
-\index{\texttt{rm/1}}
-Remove file.
-
-\ournewitem{cwd(-Dir)}{shell}
-\index{\texttt{cwd/1}}
-Get current working directory.
+Does {\tt ls -F} in Unix, and a {\tt dir} in Windows.
 
 \ournewitem{edit(+Path)}{shell}
 \index{\texttt{edit/1}}
 Edit file using your favorite editor (specified by the environment variable
 {\tt EDITOR}. Unix only.
-
-\ournewitem{sys\_exit(+ExitCode)}{shell}
-\index{\texttt{sys\_exit/1}}
-Exit XSB with a given exit code.
 
 \ournewitem{sys\_pid(-Pid)}{shell}
 \index{\texttt{pid/1}}
@@ -1739,45 +1844,50 @@ Get Id of the current process.
 
 \end{description}
 
-In addition, the module {\tt file\_io} provides the following unified
-interface to the operations on files. All these calls succeed iff the
-corresponding system call succeeds.
+\subsection{The {\tt path\_sysop/2} interface}
+%
+In addition, XSB provides the following unified interface to the
+operations on files. All these calls succeed iff the corresponding
+system call succeeds.  These calls work on both Windows and Unixes
+unless otherwise noted.
 %%
 \begin{description}
-  \ournewitem{path\_sysop(isplain, +Path)}{file\_io}
+  \ouritem{path\_sysop(isplain, +Path)}
   \index{\texttt{path\_sysop/2}}
   Succeeds, if {\tt Path} is a plain file.
-  \ournewitem{path\_sysop(isdir, +Path)}{file\_io}
+  \ouritem{path\_sysop(isdir, +Path)}
   Succeeds, if {\tt Path} is a directory.
-  \ournewitem{path\_sysop(rename, +OldPath, +NewPath)}{file\_io}
+  \ouritem{path\_sysop(rename, +OldPath, +NewPath)}
   \index{\texttt{path\_sysop/3}}
   Renames {\tt OldPath} into {\tt NewPath}.
-  \ournewitem{path\_sysop(copy, +FromPath, +ToPath)}{file\_io}
+  \ouritem{path\_sysop(copy, +FromPath, +ToPath)}
   \index{\texttt{path\_sysop/3}}
   Copies {\tt FromPath} into {\tt ToPath}.
-  \ournewitem{path\_sysop(rm, +Path)}{file\_io}
+  \ouritem{path\_sysop(rm, +Path)}
   Removes the plain file {\tt Path}.
-  \ournewitem{path\_sysop(unlink, +Path)}{file\_io}
+  \ouritem{path\_sysop(rmdir, +Path)}
+  Deletes the directory {\tt Path}, succeeding only if the directory is empty.
+  \ouritem{path\_sysop(rmdir\_rec, +Path)}
+  Deletes the directory {\tt Path} along with any of its contents.
+  \ouritem{path\_sysop(unlink, +Path)}
   Same as {\tt rm}.
-  \ournewitem{path\_sysop(link, +SrsPath, +DestPath)}{file\_io}
+  \ouritem{path\_sysop(link, +SrsPath, +DestPath)}
   Creates a hard link from {\tt SrsPath} to {\tt DestPath}. UNIX only.
-  \ournewitem{path\_sysop(cwd, -Path)}{file\_io}
+  \ouritem{path\_sysop(cwd, -Path)}
   Binds {\tt Path} to the current working directory.
-  \ournewitem{path\_sysop(chdir, +Path)}{file\_io}
+  \ouritem{path\_sysop(chdir, +Path)}
   Changes the current working directory to {\tt Path}.
-  \ournewitem{path\_sysop(mkdir, +Path)}{file\_io}
+  \ouritem{path\_sysop(mkdir, +Path)}
   Creates a new directory, {\tt Path}.
-  \ournewitem{path\_sysop(rmdir, +Path)}{file\_io}
-  Deletes the directory {\tt Path}.
-  \ournewitem{path\_sysop(exists, +Path)}{file\_io}
+  \ouritem{path\_sysop(exists, +Path)}
   Succeeds if the file {\tt Path} exists.
-  \ournewitem{path\_sysop(readable, +Path)}{file\_io}
+  \ouritem{path\_sysop(readable, +Path)}
   Succeeds if {\tt Path} is a readable file.
-  \ournewitem{path\_sysop(writable, +Path)}{file\_io}
+  \ouritem{path\_sysop(writable, +Path)}
   Succeeds if {\tt Path} is a writable file.
-  \ournewitem{path\_sysop(executable, +Path)}{file\_io}
+  \ouritem{path\_sysop(executable, +Path)}
   Succeeds if {\tt Path} is an executable file.
-  \ournewitem{path\_sysop(modtime, +Path, -Time)}{file\_io}
+  \ouritem{path\_sysop(modtime, +Path, -Time)}
   Returns a list that represents the last modification time of the file.
   Succeeds if file exists. In this case, {\tt Time} is bound to a list
   {\tt [high,low]} where {\tt low} is the least significant 24 bits of the
@@ -1786,38 +1896,37 @@ corresponding system call succeeds.
   The actual value is thus $\tt high*2^{24} + low$, which represents the
   number of seconds elapsed since 00:00:00 on
        January 1, 1970, Coordinated Universal Time (UTC).
-  \ournewitem{path\_sysop(newerthan, +Path1, +Path2)}{file\_io}
+  \ouritem{path\_sysop(newerthan, +Path1, +Path2)}
   Succeeds is the last modification time of {\tt Path1} is higher than that
   of {\tt Path2}. Also succeeds if {\tt Path1} exists but {\tt Path2} does
   not.
-  \ournewitem{path\_sysop(size, +Path, -Size)}{file\_io}
+  \ouritem{path\_sysop(size, +Path, -Size)}
   Returns a list that represents the byte size of {\tt Path}.
   Succeeds if the file exists. In this case {\tt Size} is bound to the list
   of the form {\tt [high,low]} where {\tt low} is the least significant 24
   bits of the byte-size and {\tt high} is the most significant bits (25th)
   and up. The actual value is thus $\tt high*2^{24} + low$.
-  \ournewitem{path\_sysop(tmpfilename, -Name)}{file\_io}
+  \ouritem{path\_sysop(tmpfilename, -Name)}
   Returns the name of a new temporary file. This is useful when the
   application needs to open a completely new temporary file.
-  \ournewitem{path\_sysop(extension, +Name, -Ext)}{file\_io}
+  \ouritem{path\_sysop(extension, +Name, -Ext)}
   Returns file name extension.
-  \ournewitem{path\_sysop(basename, +Name, -Base)}{file\_io}
+  \ouritem{path\_sysop(basename, +Name, -Base)}
   Returns the base name of the file name ({\it i.e.}, the name sans the
   directory and the extension).
-  \ournewitem{path\_sysop(dirname, +Name, -Dir)}{file\_io}
+  \ouritem{path\_sysop(dirname, +Name, -Dir)}
   Returns the directory portion of the filename. The directory is slash or
   backslash terminated.
-  \ournewitem{path\_sysop(isabsolute, +Name)}{file\_io}
+  \ouritem{path\_sysop(isabsolute, +Name)}
   Succeeds if {\tt Name} is an absolute path name. File does not need to exist.
-  \ournewitem{path\_sysop(expand, +Name, -ExpandedName)}{file\_io}
+  \ouritem{path\_sysop(expand, +Name, -ExpandedName)}
   Binds {\tt ExpandedName} to the expanded absolute path name of {\tt Name}.
   The file does not need to exist. Duplicate slashes, references to the
   current and parent directories are factored out.
 \end{description}
 %%
 
-
-\section{Communication with Subprocesses}
+\subsection{Communication with Subprocesses} \label{sec:subprocesses}
 
 In the previous section, we have seen several predicates that allow XSB to
 create other processes. However, these predicates offer only a very limited
@@ -2717,6 +2826,8 @@ machines, so if you want profiling to work somewhere it doesn't, maybe
 you can help figure out how to get appropriate scheduling.
 
 %----------------------------------------------------------------------
+\comment{
+%TLS: finally took this out...
 %\input{tr_assert}
 \section{Asserts/Retracts using Tries }
 
@@ -2741,6 +2852,7 @@ are defined as {\tt assert/1}, {\tt retract/1}, {\tt retractall/1},
 {\tt retract\_nr/1}, {\tt abolish/1} and {\tt dynamic/1} respectively.
 If the index specification is other than {\tt tries}, the predicate
 will issue a warning message and have no effect on the database.
+}
 
 \section{Low-level Trie Manipulation Utilities}
 

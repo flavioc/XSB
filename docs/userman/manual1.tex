@@ -35,6 +35,12 @@
 \newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
 \newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
 
+\newcommand{\ourusageitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.25in}}
+\newcommand{\ourisousageitem}[1]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf ISO}}\ \\ \vspace*{-.25in}}
+\newcommand{\ourusage}[1]{\begin{itemize} 
+	                               \item {\bf Usage:} {\tt #1} 
+	                               \end{itemize}}
+
 \newcommand{\stuff}[1]{
         \begin{minipage}{4in}
         {\tt \samepage
@@ -55,7 +61,7 @@
 \newcommand{\comment}[1]{}
 \newcommand{\ourprolog}{XSB}
 \newcommand{\smallourprolog}{xsb}
-\newcommand{\version}{Version 2.6}
+\newcommand{\version}{Version 2.7}
 \newcommand{\LRD}{LRD-stratified}
 
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}

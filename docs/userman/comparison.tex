@@ -91,7 +91,8 @@ The basic predicates for comparison of arbitrary terms are:
 
 \ouritem{T1 @$=$ T2}
 \index{@$=/2$}
-    Succeeds if the main strucure symbols of {\tt T1} and {\tt T2} are identical.
+    Succeeds if {\tt T1} and {\tt T2} are identical variables, or if
+    the main strucure symbols of {\tt T1} and {\tt T2} are identical.
 
 \end{description}
 
@@ -162,7 +163,7 @@ Some further predicates involving comparison of terms are:
 	The elements of {\tt L1} are not of the form \verb'Key-Value'.
     \end{description}
 
-\ouritem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}
+\ournewitem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{machine}
 \index{\texttt{parsort/4}}
 
     {\tt parsort/4} is a very general sorting routine.  The list {\tt
