@@ -44,13 +44,13 @@ Option = [sysmod,optimize]
 
 .SUFFIXES: .P .xwam .H .so
 
+all: rest
+
 xasppkg.xwam: xasppkg.H
 	echo 'mc($*, $(Option)).' >> cmd...
 
 .P.xwam:
 	echo 'mc($*,$(Option)).' >> cmd...
-
-all: rest
 
 rest: $(ALL)
 	../../build/touch.sh cmd... ; \
