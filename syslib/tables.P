@@ -264,8 +264,11 @@ get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
 
 get_calls_for_table(PredSpec,Call) :-
 	( PredSpec = P/N
-	  -> functor(Call,P,N)
-	  ;  functor(PredSpec,P,N), functor(Call,P,N) ),
+	 ->	functor(Call,P,N)
+	 ;	term_psc(PredSpec,PSC),
+		term_new(PSC,Call)
+	        %% functor(PredSpec,P,N), functor(Call,P,N) ),
+	),
 	get_calls(Call, _CallStr, _RetSkel).
 
 

@@ -66,7 +66,7 @@
      from assert.
 :- import (=..)/2, abort/1, call/1, functor/3, is_attv/1, (table)/1, tcall/1
      from standard.  
-:- import abolish_table_info/0, delete_attributes/1
+:- import abolish_table_info/0, delete_attributes/1, term_psc/2, term_new/2
      from machine.
 :- import numbervars/3, unnumbervars/2
      from num_vars.
