@@ -181,7 +181,7 @@ bool fmt_write(void)
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
-  int offset=0;	       	       	       	      /* used in print_term 	     */
+  int offset;	       	       	       	      /* used in print_term 	     */
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
   SET_FILEPTR(fptr, ptoc_int(2));
@@ -230,16 +230,13 @@ bool fmt_write(void)
 
     if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
+      offset = 0;
       print_pterm(Arg, 1, str_arg_buf, &offset);
       PRINT_ARG(str_arg_buf);
     } else if (is_string(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       str_arg = string_val(Arg);
       PRINT_ARG(str_arg);
-    } else if ((is_list(Arg)) && (current_fmt_spec->type == 'S')) {
-      /* Print as a list */
-      print_pterm(Arg, 1, str_arg_buf, &offset);
-      PRINT_ARG(str_arg_buf);
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
@@ -306,7 +303,7 @@ bool fmt_write_string(void)
   long int_arg;     	     	     	    /* holder for int args     	    */
   float float_arg;     	     	     	    /* holder for float args   	    */
   struct fmt_spec *current_fmt_spec;
-  int offset=0;	       	       	       	    /* used in print_term 	    */
+  int offset;	       	       	       	    /* used in print_term 	    */
   int width=0, precision=0;      	    /* these are used in conjunction
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
@@ -361,6 +358,7 @@ bool fmt_write_string(void)
 
     if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
+      offset = 0;
       print_pterm(Arg, 1, str_arg_buf, &offset);
       SPRINT_ARG(str_arg_buf);
     } else if (is_string(Arg)) {
