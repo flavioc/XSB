@@ -301,10 +301,6 @@ callable(X) :- callable(X).
 
 is_list(X) :- is_list(X).
 
-%% Check if  the argument is a string of characters
-is_string([]). 
-is_string([C|Cs]) :- C >= 0, C =< 255, is_string(Cs). 
-
 % A term X is a proper hilog term if it somewhere 
 % contains a subterm that is not a prolog term.
 
