@@ -480,6 +480,8 @@ int DescribeSelectList(int);
 //-----------------------------------------------------------------------------
 void Parse()
 {
+  char tmpstr[255];
+  char *str1, *str2, *str3;
   int j;
   int i = ptoc_int(2);
   RETCODE rc;
@@ -522,10 +524,17 @@ void Parse()
   }
   switch (CursorTable[i].StmtNum) {
   case (0):             // column information retrieval
+    strcpy(tmpstr,ptoc_string(3));
+    str1 = strtok(tmpstr,".");
+    str2 = str3 = NULL;
+    if (str1) str2 = strtok(NULL,".");
+    if (str2) str3 = strtok(NULL,".");
+    if (!str3 && !str2) {str3 = str1; str1 = NULL;}
+    else if (!str3) {str3 = str2; str2 = NULL;}
     if (((rc=SQLColumns(CursorTable[i].hstmt,
-			NULL, 0,
-			NULL, 0,
-			ptoc_string(3), SQL_NTS,
+			str1, SQL_NTS,
+			str2, SQL_NTS,
+			str3, SQL_NTS,
 			NULL,0)) == SQL_SUCCESS) ||
 	(rc == SQL_SUCCESS_WITH_INFO)) {
       ctop_int(4,DescribeSelectList(i));
