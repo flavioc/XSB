@@ -80,9 +80,9 @@ reconsult(Path, Options, Ensure_loaded) :-
 	( nonvar(Path) -> 
 		( atom(Path)
                    -> \+ (\+ (reconsult0(Path, Options, Ensure_loaded)))
-		   ; abort('Wrong type in argument 1 of reconsult/[1,2], cannot reconsult!')
+		   ; abort('RECONSULT: Wrong type in argument 1!')
 		)
-	; abort('Uninstantiated argument 1 of reconsult/[1,2], cannot reconsult!')
+	; abort('RECONSULT: Uninstantiated argument 1!')
 	).
 
 reconsult0(Path, Options, Ensure_loaded) :-
@@ -134,7 +134,8 @@ needs_recompile('c', Base, Obj) :-
 	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
           ; (str_sub('linux', OS_type) -> str_cat(Base, '.so', C_Obj))
 	  ; (str_sub('windows', OS_type) -> str_cat(Base, '.dll', C_Obj)
-            ; str_cat(Base, '.o', C_Obj))
+            ; str_cat(Base, '.o', C_Obj)
+	    )
 	  ),
 	  ( file_exists(C_Obj) -> 
 		file_time(C_Obj, time(COTime1,COTime2)),
@@ -495,41 +496,40 @@ do_assert_and_fail(Term,Dir) :-	% Now Term is the output of
 	 ;	conpsc(Head, Psc), OPsc = Psc
 	),
 	('_$trie_asserted'(Head) 
-	 ->     (Term = (_ :- _)
-                 ->     warning('Trying to assert nonfact into a trie, ignored'(Term)),
-		        fail
-		 ;      true
-	        ),
-		(load_dyn_trie_retracted(OPsc) 
-		-> true
-		;       psc_arity(Psc,Arity),
-			psc_name(Psc,Name),
-			functor(Gen,Name,Arity),
-			retractall(Gen),
-			asserta(load_dyn_trie_retracted(OPsc))
-		),
-		t_assert(Term, _Flag)
-
+	->  (Term = (_ :- _)
+	    ->  warning('Asserting a nonfact into a trie, ignored'(Term)),
+		fail
+	    ;   true
+	    ),
+	    (load_dyn_trie_retracted(OPsc) 
+	    ->  true
+	    ;   psc_arity(Psc,Arity),
+		psc_name(Psc,Name),
+		functor(Gen,Name,Arity),
+		retractall(Gen),
+		asserta(load_dyn_trie_retracted(OPsc))
+	    ),
+	    t_assert(Term, _Flag)
 	;
-		(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
-		 ->	true
-		 ;	psc_arity(Psc,Arity),
-			psc_name(Psc,Name),
-			functor(Gen,Name,Arity),
-			retractall(Gen),
-			set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize),
-			NArity is Arity+1
-		),
-		(Term = (_ :- Body)
-		 ->	Head =.. Hlist,
-			append(Hlist,[Cutpoint],Nhlist),
-			Nhead =.. Nhlist,
-			goal_cut_trans(Body,Nbody,Cutpoint),
-			(assert_code_to_buff((Nhead:-Nbody)),fail;true)
-		 ;	(assert_code_to_buff(Term),fail;true)
-		),
-		assert_buff_to_clref(Head,NArity,Prref,Dir,Index,Hashsize)
-		),
+	    (load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
+	    ->	true
+	    ;	psc_arity(Psc,Arity),
+		psc_name(Psc,Name),
+		functor(Gen,Name,Arity),
+		retractall(Gen),
+		set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize),
+		NArity is Arity+1
+	    ),
+	    (Term = (_ :- Body)
+	    ->	Head =.. Hlist,
+		append(Hlist,[Cutpoint],Nhlist),
+		Nhead =.. Nhlist,
+		goal_cut_trans(Body,Nbody,Cutpoint),
+		(assert_code_to_buff((Nhead:-Nbody)),fail;true)
+	    ;	(assert_code_to_buff(Term),fail;true)
+	    ),
+	    assert_buff_to_clref(Head,NArity,Prref,Dir,Index,Hashsize)
+	),
 	fail.
 
 
