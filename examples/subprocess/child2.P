@@ -1,11 +1,11 @@
 %% This is the program executed by child-XSB process spawned off by parent.P
 
-:- import pipe2file/2 from file_io.
+:- import fd2ioport/2 from file_io.
 :- import file_read_line_atom/3 from file_io.
 
 :- dynamic pipe/1.
 
-?- pipe(P), pipe2file(P,F),
+?- pipe(P), fd2ioport(P,F),
    %% get parent process as an atom
    read(Pr),
    %% Acknowledge receipt of the pipe

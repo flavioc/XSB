@@ -107,7 +107,7 @@ bool file_stat(void)
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static bool file_function(void)
 {
-  static int file_des, value, size, offset, length, mode;
+  static int io_port, value, size, offset, length, mode;
   static STRFILE *sfptr;
   static char buf[MAX_IO_BUFSIZE+1];
   static char *addr, *tmpstr;
@@ -115,18 +115,18 @@ inline static bool file_function(void)
   static Cell term;
 
   switch (ptoc_int(1)) {
-  case FILE_FLUSH: /* file_function(0,+filedes,-ret,-dontcare, -dontcare) */
-    /* ptoc_int(2) is file descriptor */
+  case FILE_FLUSH: /* file_function(0,+IOport,-Ret,_,_) */
+    /* ptoc_int(2) is XSB I/O port */
     SET_FILEPTR(fptr, ptoc_int(2));   
     value = fflush(fptr);
     ctop_int(3, (int) value);
     break;
-  case FILE_SEEK: /* file_function(1,+filedes, +offset, +place, -ret) */
+  case FILE_SEEK: /* file_function(1,+IOport, +Offset, +Place, -Ret) */
     SET_FILEPTR(fptr, ptoc_int(2));
     value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
     ctop_int(5, (int) value);
     break;
-  case FILE_TRUNCATE: /* file_function(2,+filedes,+length,-ret,-dontcare) */
+  case FILE_TRUNCATE: /* file_function(2,+IOport,+Length,-Ret,_) */
     size = ptoc_int(3);
 #ifndef WIN_NT
     SET_FILEPTR(fptr, ptoc_int(2));
@@ -137,15 +137,15 @@ inline static bool file_function(void)
     xsb_warn("FILE_TRUNCATE: operation not supported under Windows.");
 #endif
     break;
-  case FILE_POS: /* file_function(3, +filedes, -pos) */
-    file_des = ptoc_int(2);  /* expand for reading from strings?? */
+  case FILE_POS: /* file_function(3, +IOport, -Pos) */
+    io_port = ptoc_int(2);  /* expand for reading from strings?? */
     term = ptoc_tag(3);
-    if (file_des >= 0) {
-      SET_FILEPTR(fptr, file_des);
+    if (io_port >= 0) {
+      SET_FILEPTR(fptr, io_port);
       if (isnonvar(term)) return ptoc_int(3) == ftell(fptr);
       else ctop_int(3, ftell(fptr));
     } else { /* reading from string */
-      sfptr = strfileptr(file_des);
+      sfptr = strfileptr(io_port);
       offset = sfptr->strptr - sfptr->strbase;
       if (isnonvar(term))
 	return ptoc_int(3) == offset;
@@ -153,7 +153,7 @@ inline static bool file_function(void)
     }
     break;
   case FILE_OPEN:		
-    /* file_function(4, +FileName, +Mode, -FileDes)
+    /* file_function(4, +FileName, +Mode, -OIport)
        When read, mode = 0; when write, mode = 1, 
        when append, mode = 2, when opening a 
        string for read mode = 3 */
@@ -197,39 +197,39 @@ inline static bool file_function(void)
       ctop_int(4, -1000);
     }
     break;
-  case FILE_CLOSE: /* file_function(5, +FileDes) */
-    file_des = ptoc_int(2);
-    if (file_des < 0) strclose(file_des);
+  case FILE_CLOSE: /* file_function(5, +OIport) */
+    io_port = ptoc_int(2);
+    if (io_port < 0) strclose(io_port);
     else {
-      SET_FILEPTR(fptr, file_des);
+      SET_FILEPTR(fptr, io_port);
       fclose(fptr);
-      open_files[file_des] = NULL;
+      open_files[io_port] = NULL;
     }
     break;
-  case FILE_GET:	/* file_function(6, +FileDes, -IntVal) */
-    file_des = ptoc_int(2);
-    if ((file_des < 0) && (file_des >= -MAXIOSTRS)) {
-      sfptr = strfileptr(file_des);
+  case FILE_GET:	/* file_function(6, +OIport, -IntVal) */
+    io_port = ptoc_int(2);
+    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
+      sfptr = strfileptr(io_port);
       ctop_int(3, strgetc(sfptr));
     } else {
-      SET_FILEPTR(fptr, file_des);
+      SET_FILEPTR(fptr, io_port);
       ctop_int(3, getc(fptr));
     }
     break;
-  case FILE_PUT:   /* file_function(7, +FileDes, +IntVal) */
-    /* ptoc_int(2) is file descriptor */
-    file_des = ptoc_int(2);
-    SET_FILEPTR(fptr, file_des);
+  case FILE_PUT:   /* file_function(7, +OIport, +IntVal) */
+    /* ptoc_int(2) is XSB I/O port */
+    io_port = ptoc_int(2);
+    SET_FILEPTR(fptr, io_port);
     /* ptoc_int(3) is char to write */
     value = ptoc_int(3);
     putc(value, fptr);
 #ifdef WIN_NT
-    if (file_des==2 && value=='\n') fflush(fptr); /* hack for Java interface */
+    if (io_port==2 && value=='\n') fflush(fptr); /* hack for Java interface */
 #endif
     break;
   case FILE_GETBUF:
-    /* file_function(8, +FileDes, +ByteCount (int), -String, -BytesRead)
-       Read ByteCount bytes from FileDes into String starting 
+    /* file_function(8, +OIport, +ByteCount (int), -String, -BytesRead)
+       Read ByteCount bytes from OIport into String starting 
        at position Offset. Doesn't intern string.	      */
     size = ptoc_int(3);
     if (size > MAX_IO_BUFSIZE) {
@@ -245,9 +245,9 @@ inline static bool file_function(void)
     ctop_int(5, value);
     break;
   case FILE_PUTBUF:
-    /* file_function(9, +FileDes, +ByteCount (int), +String, +Offset,
+    /* file_function(9, +OIport, +ByteCount (int), +String, +Offset,
 			-BytesWritten) */
-    /* Write ByteCount bytes into FileDes from String beginning with Offset in
+    /* Write ByteCount bytes into OIport from String beginning with Offset in
        that string	      */
     pterm = reg_term(4);
     if (is_list(pterm))
@@ -282,7 +282,7 @@ inline static bool file_function(void)
       return TRUE;
     }
     /* Like FILE_PUTBUF, but ByteCount=Line length. Also, takes atoms and lists
-       of characters: file_function(11, +FileDes, +String, +Offset) */
+       of characters: file_function(11, +OIport, +String, +Offset) */
   case FILE_WRITE_LINE:
     pterm = reg_term(3);
     if (is_list(pterm))
@@ -299,7 +299,7 @@ inline static bool file_function(void)
     break;
 
   case FILE_REOPEN: 
-    /* file_function(FILE_REOPEN, +Filename,+Mode,+FileDes,-ErrorCode) */
+    /* file_function(FILE_REOPEN, +Filename,+Mode,+OIport,-ErrorCode) */
     tmpstr = ptoc_string(2);
     pterm = reg_term(3);
     if (is_int(pterm))
@@ -347,7 +347,7 @@ inline static bool file_function(void)
     break;
 
   case FILE_CLONE: {
-    /* file_function(FILE_CLONE,SrcFileDes,DestFileDes,ErrorCode) */
+    /* file_function(FILE_CLONE,SrcOIport,DestOIport,ErrorCode) */
     /* Note: when cloning (dup) streams, NT doesn't copy the buffering mode of
        the source file. So, if this will turn out to be a problem, a new
        builtin (interface to setvbuf) will have to be introduced. */
@@ -414,9 +414,8 @@ inline static bool file_function(void)
     break;
   }
 
-  case PIPE2FILE: { /* pipe_to_file(+Pipe, -FileDes) */
-    /* this can take any C file descriptor and make it into an XSB file
-       descriptor */
+  case FD2IOPORT: { /* fd2ioport(+Pipe, -OIport) */
+    /* this can take any C file descriptor and make it into an XSB I/O port */
     int pipe_fd;
     char *mode=NULL;
 #ifndef WIN_NT /* unix */
@@ -441,7 +440,7 @@ inline static bool file_function(void)
 #endif
 
     fptr = fdopen(pipe_fd, mode);
-    ctop_int(3, xsb_intern_file(fptr, "PIPE2FILE"));
+    ctop_int(3, xsb_intern_file(fptr, "FD2IOPORT"));
     break;
   }
     

@@ -39,7 +39,7 @@
 #define FILE_REOPEN    	   12
 #define FILE_CLONE     	   13
 #define PIPE_OPEN     	   14
-#define PIPE2FILE   	   15
+#define FD2IOPORT   	   15
 
 /* OP numbers for formatted_io */
 #define FMT_WRITE    	   1

@@ -165,9 +165,9 @@ bool formatted_io (void)
 
 /*----------------------------------------------------------------------
     like fprintf
-     C invocation: formatted_io(FMT_WRITE, FileDes, Format, ValTerm)
-     Prolog invocation: fmt_write(+FileDes, +Format, +ValTerm)
-       FileDes: file descriptor
+     C invocation: formatted_io(FMT_WRITE, IOport, Format, ValTerm)
+     Prolog invocation: fmt_write(+IOport, +Format, +ValTerm)
+       IOport: XSB I/O port
        Format: format as atom or string;
        ValTerm: term whose args are vars to receive values returned.
 ----------------------------------------------------------------------*/
@@ -215,7 +215,7 @@ bool fmt_write(void)
     else if (is_float(ValTerm))
       c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
-      xsb_abort("Usage: fmt_write([+FileDes,] +FmtStr, +args(A1,A2,...))");
+      xsb_abort("Usage: fmt_write([+IOport,] +FmtStr, +args(A1,A2,...))");
 
     ValTerm = TmpValTerm;
     Arity = 1;
@@ -462,9 +462,9 @@ bool fmt_write_string(void)
 
 /*----------------------------------------------------------------------
    like fscanf
-     C invocation: formatted_io(FMT_READ, File, Format, ArgTerm, Status)
-     Prolog invocation: fmt_read(+File, +Format, -ArgTerm, -Status)
-      File: file descriptor
+     C invocation: formatted_io(FMT_READ, IOport, Format, ArgTerm, Status)
+     Prolog invocation: fmt_read(+IOport, +Format, -ArgTerm, -Status)
+      IOport: XSB I/O port
       Format: format as atom or string;
       ArgTerm: Term whose args are vars to receive values returned.
       Status: 0 OK, -1 eof 
@@ -515,11 +515,11 @@ bool fmt_read(void)
     p2p_unify(TmpArg, AnsTerm);
     AnsTerm = TmpAnsTerm;
   } else
-    xsb_abort("Usage: fmt_read([FileDes,] FmtStr, args(A1,A2,...), RetCode");
+    xsb_abort("Usage: fmt_read([IOport,] FmtStr, args(A1,A2,...), RetCode");
 
   /* status variable */
   if (isnonvar(reg_term(5)))
-    xsb_abort("Usage: fmt_read([FileDes,] FmtStr, args(A1,A2,...), RetCode");
+    xsb_abort("Usage: fmt_read([IOport,] FmtStr, args(A1,A2,...), RetCode");
 
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */
@@ -697,9 +697,9 @@ static int getvarnum(char *varname)
 }
 
 
-/* Read a canonical term from file desc in r1 and put answer in variable in r2;
-   r3 set to 0 if ground fact (non zero-ary), to 1 if variable or :-. 
-   Fail on EOF */ 
+/* Read a canonical term from XSB I/O port in r1 and put answer in variable in
+   r2; r3 set to 0 if ground fact (non zero-ary), to 1 if variable or :-.
+   Fail on EOF */
 
 int read_canonical(void)
 {

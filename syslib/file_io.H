@@ -50,4 +50,4 @@
 	  file_read_line_atom/2, file_read_line_atom/3,
 	  file_read_line_list/2, file_read_line_list/3,
 	  file_reopen/4, file_clone/3,
-	  pipe_open/2, pipe2file/2.
+	  pipe_open/2, fd2ioport/2.

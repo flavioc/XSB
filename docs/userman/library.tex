@@ -340,16 +340,18 @@ handled by the XSB compiler.
 
 XSB has various low-level routines that support input and output, at both
 the term level and the character level.  Unlike the standard Prolog stream
-I/O, the low-level routines use \emph{XSB file descriptors} (or I/O ports)
-to refer to files. XSB file descriptors should not be confused with the
-file descriptors used by the OS ({\it e.g.}, the small integers returned by
-the C {\tt open} function). XSB file descriptors are indices into the XSB
-table of open files. Typically XSB opens files for buffered I/O (whether
-using the stream I/O predicates or the predicates described here), so XSB
-file descriptors actually correspond to {\tt FILE} data structures like
-those returned by the C {\tt fopen} function.
+I/O, the low-level routines use \emph{XSB I/O ports} to refer to files. XSB
+I/O ports should not be confused with the file descriptors used by the OS
+Both are small integers, but they refer to different things. However, the
+OS file descriptors are objects returned by the C {\tt open} function; XSB
+I/O ports indices into the internal XSB table of open files. The OS does
+not know about XSB I/O ports, while XSB (obviously) does know about the OS
+file descriptors. Typically XSB opens files for buffered I/O (whether using
+the stream I/O predicates or the predicates described here), so XSB I/O
+ports internally refer to {\tt FILE} data structures (those returned by the
+C {\tt fopen} function).
 
-When it starts, XSB opens a number of standard file descriptors that it uses to
+When it starts, XSB opens a number of standard I/O ports that it uses to
 print results, errors, debugging info, etc. The descriptors are described
 in the file {\tt prolog\_includes/standard.h}. This file provides the
 following symbolic definitions:
@@ -386,19 +388,19 @@ a file using {\tt consult} and such.)
 
 \begin{description}
 
-\ournewitem{current\_input\_fd(-FileDes)}{curr\_sym} \index{{\tt current\_input\_fd/}}
+\ournewitem{current\_input\_fd(-IOport)}{curr\_sym} \index{{\tt current\_input\_fd/}}
    See {\tt current\_output\_fd/1}.
-\ournewitem{current\_output\_fd(-FileDes)}{curr\_sym} \index{{\tt current\_output\_fd/}}
-   The above two predicates instantiate {\tt FileDes} to the XSB file
-   descriptor for the current user input and output ({\it i.e.}, the things
+\ournewitem{current\_output\_fd(-IOport)}{curr\_sym} \index{{\tt current\_output\_fd/}}
+   The above two predicates instantiate {\tt IOport} to the XSB I/O port
+   for the current user input and output ({\it i.e.}, the things 
    that are manipulated through {\tt see/seen} and {\tt tell/told} predicates).
-   Once the file descriptor is obtained, it is possible to safely use the
+   Once the I/O port is obtained, it is possible to safely use the
    lower-level I/O predicates described below interchangeably with stream
    I/O. 
     
-\ournewitem{file\_open(+FileName,+Mode,-FileDes)}{file\_io} \index{{\tt file\_open/3}}
+\ournewitem{file\_open(+FileName,+Mode,-IOport)}{file\_io} \index{{\tt file\_open/3}}
     Opens a file with name {\tt FileName} to be accessed
-    in mode {\tt Mode} and returns a file-descriptor in {\tt FileDes} that
+    in mode {\tt Mode} and returns a file-descriptor in {\tt IOport} that
     can be used to access the file.  If {\tt Mode} is atom ``{\tt r}'', the
     the file is opened for reading; if it is ``{\tt w}'', the file is
     opened for writing; if it is ``{\tt a}'', the file is opened for
@@ -411,8 +413,8 @@ a file using {\tt consult} and such.)
     The old-style mode specification, 0 ({\tt OREAD}), 1 ({\tt OWRITE}), 2
     ({\tt OAPPEND}), or 3 ({\tt OSTRING}), is also supported.
 
-\ournewitem{file\_reopen(+FileName,+Mode,+FileDes,-RetCode)}{file\_io}\index{{\tt file\_reopen/1}}
-    Takes an existing file descriptor, closes it, then opens it and
+\ournewitem{file\_reopen(+FileName,+Mode,+IOport,-RetCode)}{file\_io}\index{{\tt file\_reopen/1}}
+    Takes an existing I/O port, closes it, then opens it and
     attaches it to a file. This can be used to redirect I/O from any of the
     standard streams to a file. For instance, 
 %%
@@ -424,16 +426,16 @@ a file using {\tt consult} and such.)
 
     On success, {\tt RetCode} is 0; on error, the return code is negative.
 
-\ournewitem{file\_clone(+SrcFileDes,?DestFileDes,-RetCode)}{file\_io}\index{{\tt file\__clone/1}}
+\ournewitem{file\_clone(+SrcIOport,?DestIOport,-RetCode)}{file\_io}\index{{\tt file\__clone/1}}
     This is yet another way to redirect I/O. It is a prolog interface to
-    the C {\tt dup} and {\tt dup2} system calls. If {\tt DestFileDes} is a
-    variable, then this call creates a new XSB file descriptor that is a
-    clone of {\tt SrcFileDes}. This means that I/O sent to either
-    descriptor goes to the same place. If {\tt DestFileDes} is not a
-    variable, then it must be a number corresponding to a valid file
-    descriptor. In this case, XSB closes {\tt DestFileDes} and makes it
-    into a clone on {\tt SrcFileDes}. For instance, suppose that 10 is a
-    file descriptor that is currently open for writing to file {\tt foo.bar}.
+    the C {\tt dup} and {\tt dup2} system calls. If {\tt DestIOport} is a
+    variable, then this call creates a new XSB I/O port that is a
+    clone of {\tt SrcIOport}. This means that I/O sent to either
+    descriptor goes to the same place. If {\tt DestIOport} is not a
+    variable, then it must be a number corresponding to a valid I/O
+    port. In this case, XSB closes {\tt DestIOport} and makes it 
+    into a clone on {\tt SrcIOport}. For instance, suppose that 10 is a
+    I/O port that is currently open for writing to file {\tt foo.bar}.
     Then
     %%
     \begin{verbatim}
@@ -448,14 +450,14 @@ a file using {\tt consult} and such.)
     | ?- file_clone(1,10,_).      
     \end{verbatim}
     %%
-    This means that file descriptor 10 now becomes clone of standard
+    This means that I/O port 10 now becomes clone of standard
     output. So, all subsequent I/O will now go to standard output instead
     of {\tt foo.bar}. 
 
     On success, {\tt RetCode} is 0; on error, the return code is negative.
 
-\ournewitem{file\_close(+FileDes)}{file\_io}\index{{\tt file\_close/1}}
-    Closes the file (or string) for descriptor {\tt FileDes}.
+\ournewitem{file\_close(+IOport)}{file\_io}\index{{\tt file\_close/1}}
+    Closes the file (or string) for descriptor {\tt IOport}.
 
 \ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/3}}
 %\predindex{fmt\_read/4~(L)}
@@ -547,12 +549,12 @@ a file using {\tt consult} and such.)
     arguments to be printed, an error is issued. If the number of arguments
     is greater, then a warning is issued.
 
-\ournewitem{file\_flush(+FileDes, -Return)}{file\_io}
+\ournewitem{file\_flush(+IOport, -Return)}{file\_io}
 \index{{\tt file\_flush/2}}
     Any buffered data gets delivered. If the call is successful, {\tt Return}
     is zero; otherwise {\tt EOF} is returned.
 
-\ournewitem{file\_seek(+FileDes, +Offset, +Place, -Return)}{file\_io}
+\ournewitem{file\_seek(+IOport, +Offset, +Place, -Return)}{file\_io}
 \index{{\tt file\_seek/4}}
     Sets the file position indicator for the next input or output
     operation. The position is {\tt Offset} bytes from {\tt Place}.
@@ -561,32 +563,32 @@ a file using {\tt consult} and such.)
     the end of the file, respectively. If the call is successful,
     {\tt Return} is set to zero.
 
-\ournewitem{file\_pos(+FileDes, -Position)}{file\_io}
+\ournewitem{file\_pos(+IOport, -Position)}{file\_io}
 \index{{\tt file\_pos/2}}
     Unifies {\tt Position} with the position inside the file indicated by
-    {\tt FileDes}.
+    {\tt IOport}.
 
-\ournewitem{file\_truncate(+FileDes, +Length, -Return)}{file\_io}
+\ournewitem{file\_truncate(+IOport, +Length, -Return)}{file\_io}
 \index{{\tt file\_truncate/3}}
-    The regular file  referenced by file descriptor {\tt FileDes}
-    is chopped to have a size of {\tt Length} bytes. Upon successful
+    The regular file  referenced by the I/O port {\tt IOport}
+    is chopped to have the size of {\tt Length} bytes. Upon successful
     completion {\tt Return} is set to zero.
 
-\ournewitem{file\_write(+FileDes,+Term)}{xsb\_writ}
+\ournewitem{file\_write(+IOport,+Term)}{xsb\_writ}
 \index{{\tt file\_write/2}}
     Writes the term {\tt Term} to the file (or string) with descriptor {\tt
-    FileDes}.
+    IOport}.
 
-\ournewitem{file\_read(+FileDes,-Term)}{xsb\_read}
+\ournewitem{file\_read(+IOport,-Term)}{xsb\_read}
 \index{{\tt file\_read/2}}
     Reads a term from the file (or string) with descriptor {\tt
-    FileDes} into {\tt Term}.  Note that the term must be terminated
+    IOport} into {\tt Term}.  Note that the term must be terminated
     with a period (.) (whether it appears in a file or in a string.)
 
-\ournewitem{file\_read(+FileDes,-Term,-Vars)}{xsb\_read}
+\ournewitem{file\_read(+IOport,-Term,-Vars)}{xsb\_read}
 \index{{\tt file\_read/3}}
     Reads a term from the file (or string) with descriptor {\tt
-    FileDes} into {\tt Term}, and returns in {\tt Vars} an open-tailed list of
+    IOport} into {\tt Term}, and returns in {\tt Vars} an open-tailed list of
     pairs of names of variables and the variables themselves that
     appear in Term.  For example, reading a term {\tt f(a,X,Y,X)}
     would result in {\tt term} being bound to {\tt
@@ -597,24 +599,24 @@ a file using {\tt consult} and such.)
     {\tt Vars} is not a proper list, but has a free variable instead 
     of [] at its end.
 
-\ournewitem{file\_read\_canonical(+FileDes,-Term,-Psc)}{machine}
+\ournewitem{file\_read\_canonical(+IOport,-Term,-Psc)}{machine}
 \index{{\tt file\_read\_canonical/3}}
-    Reads a term that is in canonical format from the the file
-    indicated by {\tt FileDes} (as returned by {\tt file\_open/3} or
-    by {\tt stat\_flag(10,FileDes))}, and returns it in {\tt Term}.
+    Reads a term that is in canonical format from the the I/O port
+    indicated by {\tt IOport} (as returned by {\tt file\_open/3} or
+    by {\tt stat\_flag(10,IOport))}, and returns it in {\tt Term}.
     It also returns (in {\tt Psc}) the psc address of the main functor
     symbol of the term, if it is the same as that of the previously
     read term, and the current term is a ground (non 0-ary) fact.
     (This is used for efficiency in the implementation of {\tt
     load\_dync/1}).  Otherwise {\tt Psc} is set to 0.  To initialize
     its previous psc value to zero, this predicate can be called with
-    {\tt FileDes} of -1000.
+    {\tt IOport} of -1000.
 
-\ournewitem{file\_read\_line(+FileDes,-String,-IsFullLine)}{file\_io}
+\ournewitem{file\_read\_line(+IOport,-String,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line/3}}
     This is a low-level predicate that allows XSB to read input files
     efficiently, line by line. It returns the string read from {\tt
-      FileDes} using the variable {\tt String}. The output variable {\tt
+      IOport} using the variable {\tt String}. The output variable {\tt
       IsFullLine} is 1, if the line read contains the newline character at
     the end. Otherwise, it is 0. This latter case arises in two situations:
     when the last line in the stream does not have a newline  character or
@@ -633,7 +635,7 @@ a file using {\tt consult} and such.)
     See \verb|file_read_line_atom| and \verb|file_read_line_list| for
     alternatives that are easier to use.
 
-\ournewitem{file\_read\_line\_atom(+FileDes,-String,-IsFullLine)}{file\_io}
+\ournewitem{file\_read\_line\_atom(+IOport,-String,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line\_atom/3}}
     This predicate is like \verb|file_read_line|, but the line read from
     the input is interned. Therefore, {\tt String} is instantiated
@@ -647,10 +649,10 @@ a file using {\tt consult} and such.)
 
 \ournewitem{file\_read\_line\_atom(-String,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line\_atom/2}}
-   Like \verb|file_read_line_atom/3|, but {\tt FileDes} is not required.
+   Like \verb|file_read_line_atom/3|, but {\tt IOport} is not required.
    The file being read is the one previously opened with {\tt see/1}.
 
-\ournewitem{file\_read\_line\_list(+FileDes,-CharList,-IsFullLine)}{file\_io}
+\ournewitem{file\_read\_line\_list(+IOport,-CharList,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line\list/3}}
     This predicate is like \verb|file_read_line_atom|, but the line read from
     the input is converted into a list of characters.
@@ -660,7 +662,7 @@ a file using {\tt consult} and such.)
 
 \ournewitem{file\_read\_line\_list(-String,-IsFullLine)}{file\_io}
 \index{{\tt file\_read\_line\_list/2}}
-   Like \verb|file_read_line_list/3|, but {\tt FileDes} is not required.
+   Like \verb|file_read_line_list/3|, but {\tt IOport} is not required.
    The file being read is the one previously opened with {\tt see/1}.
 
 \ournewitem{fget\_line(+Str,-Inlist,-Next)}{scrptutl}
@@ -673,10 +675,10 @@ a file using {\tt consult} and such.)
     This predicate exists for backward compatibility. It is very
     inefficient compared to \verb|file_read_line_list|.
 
-\ournewitem{file\_write\_line(+FileDes, +String, +Offset)}{file\_io}
+\ournewitem{file\_write\_line(+IOport, +String, +Offset)}{file\_io}
 \index{{\tt file\_write\_line/3}}
    Write {\tt String} beginning with character {\tt Offset}  to the output
-   file represented by the file descriptor {\tt FileDes}. {\tt String} can
+   file represented by the I/O port {\tt IOport}. {\tt String} can
    be an atom or a list of ASCII characters. This does \emph{not} put the
    newline character at the end of the string (unless {\tt String} already
    had this character). Note that escape sequences, like \verb|\n|, are
@@ -689,10 +691,10 @@ a file using {\tt consult} and such.)
    output stream.
 
 
-\ournewitem{file\_getbuf(+FileDes, +BytesRequested, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf/4}}
-Read {\tt BytesRequested} bytes from file represented by file descriptor {\tt
-  FileDes} (which must already be open for reading) into variable {\tt
+Read {\tt BytesRequested} bytes from file represented by I/O port {\tt
+  IOport} (which must already be open for reading) into variable {\tt
   String}. This is analogous to {\tt fread} in C.  This predicate always
 succeeds. It does not distinguish between a file error and end of file.
 You can determine if either of these conditions has happened by verifying
@@ -703,7 +705,7 @@ Note: The string read is {\bf not} interned. Please see explanations to
 this predicate, the predicates \verb|file_getbuf_atom| and
 \verb|file_getbuf_list| are often better alternatives.
 
-\ournewitem{file\_getbuf\_atom(+FileDes, +BytesRequested, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_atom(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_atom/4}}
 Like \verb|file_getbuf|, but {\tt String} is instantiated to an interned atom.
 
@@ -718,7 +720,7 @@ succeeds. It does not distinguish between a file error and end of file.
 You can determine if either of these conditions has happened by verifying
 that $\tt BytesRead < BytesRequested$.
 
-\ournewitem{file\_getbuf\_list(+FileDes, +BytesRequested, -CharList, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_list(+IOport, +BytesRequested, -CharList, -BytesRead)}{file\_io}
 \index{{\tt file\_getbuf\_list/4}}
 Like \verb|file_getbuf_atom/4|, but {\tt CharList} is instantiated to a list
 of characters that represent the string read from the input.
@@ -729,10 +731,10 @@ Like \verb|file_getbuf_list/3|, but reads from the currently open input stream
 ({\it i.e.}, with {\tt see/1}).
 
 
-\ournewitem{file\_putbuf(+FileDes, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
+\ournewitem{file\_putbuf(+IOport, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
 \index{{\tt file\_putbuf/5}}
-Write {\tt BytesRequested} bytes into file represented by file descriptor {\tt
-  FileDes} (which must already be open for writing) from variable {\tt
+Write {\tt BytesRequested} bytes into file represented by I/O port {\tt
+  IOport} (which must already be open for writing) from variable {\tt
   String} at position {\tt Offset}. This is analogous to C {\tt fwrite}.
 The value of {\tt String} can be an atom or a list of ASCII characters.
 
@@ -877,9 +879,9 @@ lets one create any number of pipes (that do not need to be connected to
 the standard I/O port) and talk to child processes through these pipes.
 
 All predicates in this section, except {\tt pipe\_open/2} and
-{\tt pipe2file/2}, must be imported from module {\tt shell}.
+{\tt fd2ioport/2}, must be imported from module {\tt shell}.
 The predicates {\tt pipe\_open/2} and
-{\tt pipe2file/2} must be imported from {\tt file\_io}.
+{\tt fd2ioport/2} must be imported from {\tt file\_io}.
 
 \begin{description}
 \ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc,-ProcStderrStream,-ProcId)}\index{{\tt spawn\_process/5}} 
@@ -897,8 +899,8 @@ specification. That is, {\tt CmdSpec} must represent a single command.
 {\tt shell/5}.)
 
 The next three parameters of \verb|spawn_process| are XSB I/O ports
-to the process (pipe to the subprocess standard input), from the process
-(pipe from the subprocess standard output), and a port capturing the
+to the process (leading to the subprocess standard input), from the process
+(from its standard output), and a port capturing the
 subprocess standard error output. The last parameter is the system process id.
 \end{description}
 %%
@@ -1012,9 +1014,9 @@ Finally, we should note that the port variables in the
 is an example:
 %%
 \begin{verbatim}
-| ?- file_open(test,w,File),
+| ?- file_open(test,w,IOport),
      spawn_process([cat, 'data'], none, FromCat1, none, _),
-     spawn_process([sort], FromCat1, File, none, _).  
+     spawn_process([sort], FromCat1, IOport, none, _).  
 \end{verbatim}
 %%
 Here, we first open file {\tt test}. Then \verb|cat data| is spawned.  This
@@ -1022,8 +1024,8 @@ process has the input and standard error ports blocked (as indicated by the
 atom {\tt none}), and its output goes into port FromCat1.  Then we spawn
 another process, {\tt sort}, which picks the output from the first process
 (since it uses the port {\tt FromCat1} as its input) and sends its own
-output (the sorted version of {\tt data}) to its output port {\tt File}.
-However, {\tt File} has already been open for output into the file {\tt
+output (the sorted version of {\tt data}) to its output port {\tt IOport}.
+However, {\tt IOport} has already been open for output into the file {\tt
   test}. Thus, the overall result of the above clause is tantamount to the
 following shell command:
 %%
@@ -1032,21 +1034,26 @@ following shell command:
 \end{verbatim}
 %%
 
+{\em Important note about spawned processes\/}: Asynchronous processes
+spawned by XSB do not disappear (at least on Unix) when they terminate,
+\emph{unless} the XSB program executes a \emph{wait} on them (see {\tt
+  process\_control} below). Instead, such processes become defunct
+\emph{zombies} (in Unix terminology); they do not do anything, but consume
+resources (such as file descriptors). So, when a subprocess is known to
+terminate, it must be waited on.
+
+Also, the XSB parent process must know how to terminate the asynchronous
+subprocesses it spawns. The drastic way is to kill it (see
+{\tt process\_control} below). Sometimes a subprocess might terminate by itself
+({\it e.g.}, having finished reading a file). In other cases, the parent
+and the child programs must agree on a protocol by which the parent can
+tell the child to exit. The programs in the XSB subdirectory
+{\tt examples/subprocess} illustrate this idea. If the child subprocess is
+another XSB process, then it can be terminated by sending the atom
+{\tt end\_of\_file} or {\tt halt} to the standard input of the child. (For
+this to work, the child XSB must waiting at the prompt).
+
 \begin{description}
-\ouritem{get\_process\_table(-ProcessList)}\index{{\tt get\_process\_table/1}} 
-    Binds {\tt ProcessList} to the list of terms, each describing one of
-    the active XSB subprocesses (created via \verb|spawn_process/5|).
-    Each term has the form:
-    %%
-    \begin{center}
-      \verb|process(Pid,ToStream,FromStream,StderrStream,CommandLine)|. 
-    \end{center}
-    %%
-    The first argument in the term is the process id of the corresponding
-    process, the next three arguments describe the three standard ports
-    of the process, and the lat is an atom that shows the command line used
-    to invoke the process.
-    This predicate always succeeds.
 \ouritem{process\_status(+Pid,-Status)}\index{{\tt process\_status/2}} 
     This predicate always succeeds. Given a process id, it binds the second
     argument (which must be an unbound variable) to one of the following
@@ -1083,6 +1090,20 @@ following shell command:
     
     \emph{Note}: under Windows, the programmer's manual warns of dire
     consequences if one kills a process that has DLLs attached to it.
+\ouritem{get\_process\_table(-ProcessList)}\index{{\tt get\_process\_table/1}} 
+    Binds {\tt ProcessList} to the list of terms, each describing one of
+    the active XSB subprocesses (created via \verb|spawn_process/5|).
+    Each term has the form:
+    %%
+    \begin{center}
+      \verb|process(Pid,ToStream,FromStream,StderrStream,CommandLine)|. 
+    \end{center}
+    %%
+    The first argument in the term is the process id of the corresponding
+    process, the next three arguments describe the three standard ports
+    of the process, and the lat is an atom that shows the command line used
+    to invoke the process.
+    This predicate always succeeds.
 
 \ouritem{shell(+CmdSpec,-StreamToProc, -StreamFromProc, -ProcStderr,
   -ErrorCode)}\index{{\tt shell/5}} 
@@ -1124,8 +1145,8 @@ following shell command:
   args''. For instance,
 %%
 \begin{verbatim}
-| ?- file_open(test,w,File),
-     shell('cat | sort > data', File, none, none, ErrCode)
+| ?- file_open(test,w,IOport),
+     shell('cat | sort > data', IOport, none, none, ErrCode)
 \end{verbatim}
 %%
 As seen from this example, the same rules for blocking I/O streams
@@ -1142,23 +1163,25 @@ abnormality.
   Open a new pipe and return the read end and the write end of that pipe.
   If the operation fails, both {\tt ReadPipe} and {\tt WritePipe} are bound
   to negative numbers.
-
+  
   The pipes returned by the {\tt pipe\_open/2} predicate are small integers
-  that represent file handles of the underlying OS. They {\bf are not XSB file
-  descriptors}, and they cannot be used for I/O directly. To use them, one
-  must call the {\tt pipe2file/2} predicate, as described next.\footnote{
+  that represent file descriptors used by the underlying OS. They are {\bf
+    not XSB I/O ports}, and they cannot be used for I/O directly. To
+  use them, one must call the {\tt fd2ioport/2} predicate, as described
+  next.\footnote{
     %%
-    XSB does not convert pipes into file descriptors automatically because.
-    Because of the way XSB file descriptors are represented, they are not
+    XSB does not convert pipes into I/O ports automatically.
+    Because of the way XSB I/O ports are represented, they are not
     inherited by the child process and they do not make sense to the child
     process (especially if the child is not another xsb). Therefore, we
-    must pass the child processes an OS file handle instead. The child then
-    converts these handles into XSB file descriptors.
+    must pass the child processes an OS file descriptor instead. The child then
+    converts these descriptor into XSB I/O ports.
     %%
     }
-\ouritem{pipe2file(+Pipe, -FileDes)}\index{{\tt pipe2file/2}} 
-    Take a pipe and convert it to an XSB file descriptor that can be used
-    for I/O.
+\ouritem{fd2ioport(+Pipe, -IOport)}\index{{\tt fd2ioport/2}} 
+    Take a pipe and convert it to an XSB I/O port that can be used
+    for I/O. This predicate is needed because pipes must be associated with
+    XSB I/O ports before any I/O can be on them by an XSB program.
 
     The best way to illustrate how one can create a new pipe to a child
     (even if the child has been created earlier) is to show an example.
@@ -1178,11 +1201,11 @@ abnormality.
     %%
     \begin{verbatim}
 %% parent.p      
-:- import pipe_open/2, pipe2file/2, fmt_write/3, file_flush/2 from file_io.
+:- import pipe_open/2, fd2ioport/2, fmt_write/3, file_flush/2 from file_io.
 %% Create the pipe and pass it to the child process
 ?- pipe_open(RP,WP),
-   %% WF is now the XSB file descriptor bound to the write part of the pipe
-   pipe2file(WP,WF),
+   %% WF is now the XSB I/O port bound to the write part of the pipe
+   fd2ioport(WP,WF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
    spawn_process(xsb, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is
@@ -1197,10 +1220,10 @@ abnormality.
     %%
     \begin{verbatim}
 %% child.P
-:- import pipe2file/2 from file_io.
+:- import fd2ioport/2 from file_io.
 :- import file_read_line_atom/3 from file_io.
 :- dynamic pipe/1.
-?- pipe(P), pipe2file(P,F),
+?- pipe(P), fd2ioport(P,F),
    %% Acknowledge receipt of the pipe
    fmt_write("\nPipe %d received\n", arg(P)),
    %% Get a message from the parent and print it to stdout
@@ -1228,17 +1251,17 @@ Message was: Hello!               <- child.P gets the message and prints it
 yes       
     \end{verbatim}
     %%
-
-    Finally, we should note htat this mechanism can be used to communicate
-    through pipes with
-    non-XSB processes as well. Indeed, an XSB process can create
-    a pipe using {\tt pipe\_open}, pass one end of the pipe to a child
-    process (which can be a C program), and use {\tt pipe2file} to convert
-    the other end of the pipe to an XSB file. The C program, of course,
-    does not need {\tt pipe2file}, since it can use the pipe file handle
-    directly. Likewise, a C program can spawn off an XSB process and pass
-    it one end of a pipe. The XSB child-process can then convert this pipe
-    to a file using {\tt pipe2file} and then talk to the paren C program.
+    
+    Finally, we should note that this mechanism can be used to communicate
+    through pipes with non-XSB processes as well. Indeed, an XSB process
+    can create a pipe using {\tt pipe\_open} (\emph{before} spawning a
+    child process), pass one end of the pipe to a child process (which can
+    be a C program), and use {\tt fd2ioport} to convert the other end of
+    the pipe to an XSB file. The C program, of course, does not need {\tt
+      fd2ioport}, since it can use the pipe file handle directly. Likewise,
+    a C program can spawn off an XSB process and pass it one end of a pipe.
+    The XSB child-process can then convert this pipe fd to a file using {\tt
+      fd2ioport} and then talk to the paren C program.
 
 \end{description}
 
@@ -1281,22 +1304,23 @@ stream is closed.
 \ouritem{socket\_bind(+Sockfd,+Port)}\index{{\tt socket\_bind/2}}
    The socket Sockfd is bound to the address (Port is the port number).
 
-\ouritem{socket\_connect(+Sockfd,+Port,+Hostname,Sockfptr)}\index{{\tt socket\_connect/4}}
+\ouritem{socket\_connect(+Sockfd,+Port,+Hostname,SockIOport)}\index{{\tt socket\_connect/4}}
     The socket Sockfd is connected to the address (Hostname and
-Port). Sockfptr is a stream on which items can be both read and written.
+Port). SockIOport is an XSB I/O port on which items can be both read and
+    written. 
 
 \ouritem{socket\_listen(+Socket, +Length)}\index{{\tt socket\_listen/2}}
     The socket Sockfd is defined to have a maximum backlog queue of
 Length pending connections.
 
-\ouritem{socket\_accept(+Sockfd,-Sockfptr)}\index{{\tt socket\_accept/2}}
+\ouritem{socket\_accept(+Sockfd,-SockIOport)}\index{{\tt socket\_accept/2}}
     Block the caller until a connection attempt arrives. If the incoming 
     queue is not empty, the first connection request is accepted, the call
-    succeeds and binds Sockfptr to a stream that can be used for this new
-    connection.
+    succeeds and binds SockIOport to an XSB I/O port that can be used for
+    this new connection.
 
-\ouritem{socket\_flush(+Sockfptr)}\index{{\tt socket\_flush/1}}
-    Any buffered data in stream Sockfptr gets delivered.
+\ouritem{socket\_flush(+SockIOport)}\index{{\tt socket\_flush/1}}
+    Any buffered data in the XSB I/O port SockIOport gets delivered.
 
 \ouritem{socket\_select} \index{{\tt socket\_select}} \emph{Not implemented.}
 
@@ -1319,7 +1343,7 @@ routines.  Currently only the domain {\tt AF\_INET} is supported.
 \begin{description}
 \ournewitem{socket(-Socket\_fd)}{socket}
 
-\ournewitem{socket\_request(+Socket\_fd,+Port,+Hostname,+Sockfptr)}{socket}
+\ournewitem{socket\_request(+Socket\_fd,+Port,+Hostname,+SockIOport)}{socket}
 
 
 
@@ -1327,9 +1351,9 @@ routines.  Currently only the domain {\tt AF\_INET} is supported.
 
 \ournewitem{socket\_listen(+Socket\_fd,+Length)}{socket}
 
-\ournewitem{socket\_accept(+Socket\_fd,Sockfptr)}{socket}
+\ournewitem{socket\_accept(+Socket\_fd,SockIOport)}{socket}
 
-\ournewitem{socket\_connect(+Socket\_fd,Port,Hostname,Sockfptr)}{socket}
+\ournewitem{socket\_connect(+Socket\_fd,Port,Hostname,SockIOport)}{socket}
 
 \ournewitem{socket\_flush(+Socket\_fd)}{socket}
 
@@ -1369,10 +1393,10 @@ not empty, the first connection request is accepted, the call succeeds and
 binds NewSockfd with a socket descriptor that will be used for this new
 connection.
 
-socket_connect(+Sockfd, +Port, +Hostname, -Sockfileptr) :
+socket_connect(+Sockfd, +Port, +Hostname, -SockIOport) :
 The caller identifies a server's IP address in Hostname and port in Port.
 TCP will attempt to establish a connection with the server using local socket
-with descriptor Sockfd. For information about Sockfileptr argument see the
+with descriptor Sockfd. For information about SockIOport argument see the
 note below.
 
 socket_close(+Sockfd) :
@@ -1395,14 +1419,15 @@ Send the ascii character with ASCII code Code appended with end_of_message
 symbol ```''  over the connection identified with the descriptor Sockfd.
 
 
-Note: (UNIX only) file_write_canonical(+Sockfileptr, +Data)
-		  file_read_canonical(+Sockfileptr, -Data, -Psc) 
-		  socket_flush(+Sockfileptr)
+Note: (UNIX only) file_write_canonical(+SockIOport, +Data)
+		  file_read_canonical(+SockIOport, -Data, -Psc) 
+		  socket_flush(+SockIOport)
 
-The above calls can be used for sending/flushing and receiving Data over a
-Unix file descriptor Sockfileptr associated with a socket. Sockfileptr can be
-either obtained from the socket_accept(+Sockfd, -Sockfileptr) in server mode
-or from socket_connect(+Sockfd, +Port, +Hostname, -Sockfileptr) in client mode.
+The above calls can be used for sending/flushing and receiving {\tt Data}
+over an XSB I/O port
+SockIOport associated with a socket. SockIOport can be
+either obtained from the socket_accept(+Sockfd, -SockIOport) in server mode
+or from socket_connect(+Sockfd, +Port, +Hostname, -SockIOport) in client mode.
 
 socket_get0(+Sockfd, -Char, -ErrorCode):
 The equivalent of {\tt get0} for sockets.

@@ -34,22 +34,22 @@
 	       /********************************/
 
 fmt_write(Fmt, Args) :-
-       stat_flag(CURRENT_OUTPUT, FileDes),   % Current output
-	fmt_write(FileDes, Fmt, Args).
+       stat_flag(CURRENT_OUTPUT, OIport),   % Current output
+	fmt_write(OIport, Fmt, Args).
 
-fmt_write(FileDes, Fmt, Args) :-
-	formatted_io(FMT_WRITE, FileDes, Fmt, Args, _Ret).
+fmt_write(OIport, Fmt, Args) :-
+	formatted_io(FMT_WRITE, OIport, Fmt, Args, _Ret).
 
 fmt_write_string(Str, Fmt, Args) :-
 	formatted_io(FMT_WRITE_STRING, Str, Fmt, Args, _Ret).
 
 
 fmt_read(Fmt,Result,Status) :-
-        stat_flag(CURRENT_INPUT, FileDes),  % Current input
-	fmt_read(FileDes, Fmt,Result,Status).
+        stat_flag(CURRENT_INPUT, OIport),  % Current input
+	fmt_read(OIport, Fmt,Result,Status).
 
-fmt_read(FileDes, Fmt, Result, Status) :-
-	formatted_io(FMT_READ, FileDes, Fmt, Result, Status).
+fmt_read(OIport, Fmt, Result, Status) :-
+	formatted_io(FMT_READ, OIport, Fmt, Result, Status).
 
 
 /***************************************************************/
@@ -58,136 +58,136 @@ fmt_read(FileDes, Fmt, Result, Status) :-
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
 
-file_flush(FileDes, Ret) :-
-	file_function(FILE_FLUSH, FileDes, Ret, _D, _E, _,_).
-file_seek(FileDes, Offset, Place, Ret) :-
-	file_function(FILE_SEEK, FileDes, Offset, Place, Ret, _,_).
-file_truncate(FileDes, Length, Ret) :-
-	file_function(FILE_TRUNCATE, FileDes, Length, Ret, _E, _,_).
-file_pos(FileDes, Pos) :-
-	file_function(FILE_POS, FileDes, Pos, _Ret, _E, _,_).
-file_open(FileName, RWMode, FileDes) :-
-	file_function(FILE_OPEN, FileName, RWMode, FileDes, _E, _,_).
-file_close(FileDes) :-
-	file_function(FILE_CLOSE,FileDes,_X,_Y,_Z, _,_).
-file_get(FileDes,Char) :-
-	file_function(FILE_GET, FileDes, Char, _X, _Y, _,_).
-file_put(FileDes,Char) :-
-	file_function(FILE_PUT, FileDes, Char, _X, _Y, _,_).
+file_flush(OIport, Ret) :-
+	file_function(FILE_FLUSH, OIport, Ret, _D, _E, _,_).
+file_seek(OIport, Offset, Place, Ret) :-
+	file_function(FILE_SEEK, OIport, Offset, Place, Ret, _,_).
+file_truncate(OIport, Length, Ret) :-
+	file_function(FILE_TRUNCATE, OIport, Length, Ret, _E, _,_).
+file_pos(OIport, Pos) :-
+	file_function(FILE_POS, OIport, Pos, _Ret, _E, _,_).
+file_open(FileName, RWMode, OIport) :-
+	file_function(FILE_OPEN, FileName, RWMode, OIport, _E, _,_).
+file_close(OIport) :-
+	file_function(FILE_CLOSE,OIport,_X,_Y,_Z, _,_).
+file_get(OIport,Char) :-
+	file_function(FILE_GET, OIport, Char, _X, _Y, _,_).
+file_put(OIport,Char) :-
+	file_function(FILE_PUT, OIport, Char, _X, _Y, _,_).
 
 %% These are lower level than file_read_line_atom/list
 %% Therefore, they don''t check their arguments.
 %% file_getbuf doesn''t intern ToString.
-file_getbuf(FileDes, ByteCount, ToString, BytesRead) :-
-	file_function(FILE_GETBUF, FileDes,ByteCount,ToString,BytesRead,_,_).
+file_getbuf(OIport, ByteCount, ToString, BytesRead) :-
+	file_function(FILE_GETBUF, OIport,ByteCount,ToString,BytesRead,_,_).
 
-file_getbuf_atom(FileDes, ByteCount, ToAtom, BytesRead) :-
+file_getbuf_atom(OIport, ByteCount, ToAtom, BytesRead) :-
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
+	    file_function(FILE_GETBUF, OIport,ByteCount,TmpStr,BytesRead,_,_),
 	    intern_string(TmpStr, ToAtom)
 	;
-	 abort('Usage: file_getbuf_atom([+FileDes,] +ByteCount, -ToAtom, -BytesRead)')
+	 abort('Usage: file_getbuf_atom([+OIport,] +ByteCount, -ToAtom, -BytesRead)')
         ).
 
 file_getbuf_atom(ByteCount, ToAtom, BytesRead) :-
-	stat_flag(CURRENT_INPUT, FileDes),
+	stat_flag(CURRENT_INPUT, OIport),
 	(var(ToAtom), var(BytesRead) ->
-	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
+	    file_function(FILE_GETBUF, OIport,ByteCount,TmpStr,BytesRead,_,_),
 	    intern_string(TmpStr, ToAtom)
 	;
-	 abort('Usage: file_getbuf_atom([+FileDes,] +ByteCount, -ToAtom, -BytesRead)')
+	 abort('Usage: file_getbuf_atom([+OIport,] +ByteCount, -ToAtom, -BytesRead)')
         ).
 
-file_getbuf_list(FileDes, ByteCount, ToList, BytesRead) :-
+file_getbuf_list(OIport, ByteCount, ToList, BytesRead) :-
 	(var(ToList), var(BytesRead) ->
-	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
+	    file_function(FILE_GETBUF, OIport,ByteCount,TmpStr,BytesRead,_,_),
 	    atom_codes(TmpStr, ToList)
 	;
-	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
+	abort('Usage: file_getbuf_list([+OIport,] +ByteCount, -ToList, -BytesRead)')).
 
 file_getbuf_list(ByteCount, ToList, BytesRead) :-
-	stat_flag(CURRENT_INPUT, FileDes),
+	stat_flag(CURRENT_INPUT, OIport),
 	(var(ToList), var(BytesRead) ->
-	    file_function(FILE_GETBUF, FileDes,ByteCount,TmpStr,BytesRead,_,_),
+	    file_function(FILE_GETBUF, OIport,ByteCount,TmpStr,BytesRead,_,_),
 	    atom_codes(TmpStr, ToList)
 	;
-	abort('Usage: file_getbuf_list([+FileDes,] +ByteCount, -ToList, -BytesRead)')).
+	abort('Usage: file_getbuf_list([+OIport,] +ByteCount, -ToList, -BytesRead)')).
 
-file_putbuf(FileDes, ByteCount, FromString, Offset, BytesWritten) :-
+file_putbuf(OIport, ByteCount, FromString, Offset, BytesWritten) :-
 	(var(BytesWritten) ->
-	    file_function(FILE_PUTBUF, FileDes,ByteCount,FromString,Offset,BytesWritten,_)
+	    file_function(FILE_PUTBUF, OIport,ByteCount,FromString,Offset,BytesWritten,_)
 	;
-	abort('Usage: file_putbuf([+FileDes,] +ByteCount, +FromString, +Offset, -BytesWritten)')
+	abort('Usage: file_putbuf([+OIport,] +ByteCount, +FromString, +Offset, -BytesWritten)')
     ).
 
 file_putbuf(ByteCount, FromString, Offset, BytesWritten) :-
-	stat_flag(CURRENT_OUTPUT, FileDes),
+	stat_flag(CURRENT_OUTPUT, OIport),
 	(var(BytesWritten) ->
-	    file_function(FILE_PUTBUF, FileDes,ByteCount,FromString,Offset,BytesWritten,_)
+	    file_function(FILE_PUTBUF, OIport,ByteCount,FromString,Offset,BytesWritten,_)
 	;
-	abort('Usage: file_putbuf([+FileDes,] +ByteCount, +FromString, +Offset, -BytesWritten)')
+	abort('Usage: file_putbuf([+OIport,] +ByteCount, +FromString, +Offset, -BytesWritten)')
 	).
 
 %% This doesn''t intern Str
-file_read_line(FileDes, Str, IsFullLine) :-
+file_read_line(OIport, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(FILE_READ_LINE, FileDes, Str, IsFullLine, _, _,_)
+	    file_function(FILE_READ_LINE, OIport, Str, IsFullLine, _, _,_)
 	    ;
-	    abort('Usage: file_read_line([+FileDes,] -InputStr, -IsFullLine)')
+	    abort('Usage: file_read_line([+OIport,] -InputStr, -IsFullLine)')
         ).
 
 %% Like file_read_line, but Str becomes an interned atom
-file_read_line_atom(FileDes, Str, IsFullLine) :-
+file_read_line_atom(OIport, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(FILE_READ_LINE, FileDes, UnStr, IsFullLine, _, _,_),
+	    file_function(FILE_READ_LINE, OIport, UnStr, IsFullLine, _, _,_),
 	    intern_string(UnStr,Str)
 	    ;
-	    abort('Usage: file_read_line_atom([+FileDes,] -InputStr, -IsFullLine)')
+	    abort('Usage: file_read_line_atom([+OIport,] -InputStr, -IsFullLine)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
 %% Intern string
 file_read_line_atom(Str, IsFullLine) :-
-	stat_flag(CURRENT_INPUT, FileDes),  % Current input
-	file_read_line_atom(FileDes, Str, IsFullLine).
+	stat_flag(CURRENT_INPUT, OIport),  % Current input
+	file_read_line_atom(OIport, Str, IsFullLine).
 
 %% Like file_read_line_atom, but returns list of characters
-file_read_line_list(FileDes, CharLst, IsFullLine) :-
+file_read_line_list(OIport, CharLst, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
-	    file_function(FILE_READ_LINE, FileDes, Str, IsFullLine, _, _,_),
+	    file_function(FILE_READ_LINE, OIport, Str, IsFullLine, _, _,_),
 	    atom_codes(Str,CharLst)
 	    ;
-	    abort('Usage: file_read_line_list([+FileDes,] -InputStr, -IsFullLine)')
+	    abort('Usage: file_read_line_list([+OIport,] -InputStr, -IsFullLine)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
 %% Return list of chars
 file_read_line_list(Lst, IsFullLine) :-
-	stat_flag(CURRENT_INPUT, FileDes),  % Current input
-	file_read_line_list(FileDes, Lst, IsFullLine).
+	stat_flag(CURRENT_INPUT, OIport),  % Current input
+	file_read_line_list(OIport, Lst, IsFullLine).
 
-%% Write Str out to FileDes. Str must be atom or list of chars.
+%% Write Str out to OIport. Str must be atom or list of chars.
 %% This is checked in C, by the builtin.
-file_write_line(FileDes, Str, Offset) :-
-	file_function(FILE_WRITE_LINE, FileDes, Str, Offset, _,_,_).
+file_write_line(OIport, Str, Offset) :-
+	file_function(FILE_WRITE_LINE, OIport, Str, Offset, _,_,_).
 
 %% Same as file_write_line/3, but write to current output
 file_write_line(Str, Offset) :-
-	stat_flag(CURRENT_OUTPUT, FileDes),  % Current output
-	file_function(FILE_WRITE_LINE, FileDes, Str, Offset, _,_,_).
+	stat_flag(CURRENT_OUTPUT, OIport),  % Current output
+	file_function(FILE_WRITE_LINE, OIport, Str, Offset, _,_,_).
 
 
 /* Fancy stuff */
 %% Like freopen
-file_reopen(FileName, Mode, FileDes,ErrCode) :-
-	file_function(FILE_REOPEN, FileName,  Mode, FileDes, ErrCode,_,_).
+file_reopen(FileName, Mode, OIport,ErrCode) :-
+	file_function(FILE_REOPEN, FileName,  Mode, OIport, ErrCode,_,_).
 
-%% Like dup/dup2: make DestFileDes into the same file descriptor as SrcFileDes
-%% If DestFileDes is var, then behaves like dup; else like dup2 
-%% (and then expects DestFileDes to be a file descriptor).
+%% Like dup/dup2: make DestOIport into the same file descriptor as SrcOIport
+%% If DestOIport is var, then behaves like dup; else like dup2 
+%% (and then expects DestOIport to be a file descriptor).
 %% ErrCode=0 - ok
-file_clone(SrcFileDes, DestFileDes, ErrorCode) :-
-	file_function(FILE_CLONE, SrcFileDes, DestFileDes, ErrorCode,_,_,_).
+file_clone(SrcOIport, DestOIport, ErrorCode) :-
+	file_function(FILE_CLONE, SrcOIport, DestOIport, ErrorCode,_,_,_).
 
 %% Open pipe. ReadPipe is for reading from pipe,
 %% WritePipe is for writing to the pipe.
@@ -197,8 +197,8 @@ pipe_open(ReadPipe, WritePipe) :-
 %% Convert pipe into an XSB file descriptor.
 %% This should be done on both ends: by the parent XSB process and by 
 %% the child XSB process
-pipe2file(Pipe, FileDes) :-
-	file_function(PIPE2FILE, Pipe, FileDes,_,_,_,_).
+fd2ioport(Pipe, OIport) :-
+	file_function(FD2IOPORT, Pipe, OIport,_,_,_,_).
 
 
 /***************************************************************/
@@ -217,16 +217,16 @@ file_size(FileName, Size) :- file_stat(FileName,FILE_STAT_SIZE,Size).
 ****************************************************************/
 
 print_file_contents(Filename) :-
-	stat_flag(CURRENT_OUTPUT, ToFileDes),  % current output
-	print_file_contents(Filename, ToFileDes).
+	stat_flag(CURRENT_OUTPUT, ToOIport),  % current output
+	print_file_contents(Filename, ToOIport).
 
-print_file_contents(FileName, ToFileDes) :-
+print_file_contents(FileName, ToOIport) :-
 	file_open(FileName, OREAD, Fdes),
-	print_fd_contents(Fdes, ToFileDes),
+	print_fd_contents(Fdes, ToOIport),
 	file_close(Fdes).
-print_fd_contents(Fdes, ToFileDes) :-
-	(file_read_line(Fdes, Line, _) -> file_write(ToFileDes, Line)),
-	print_fd_contents(Fdes, ToFileDes),
+print_fd_contents(Fdes, ToOIport) :-
+	(file_read_line(Fdes, Line, _) -> file_write(ToOIport, Line)),
+	print_fd_contents(Fdes, ToOIport),
 	fail.        	 %% so as to not leave choice points around
 print_fd_contents(_,_).
 
