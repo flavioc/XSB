@@ -538,15 +538,15 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define ODBC_QUERY		239
 
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
-#define PR_LS                   240
-#define PR_TR                   241
-#define PR_HEAP                 242
-#define PR_CP                   243
-#define PR_REGS                 244
-#define PR_ALL                  245
-#define EXP_H                   246
-#define MARK_H                  247
-#define GC_H                    248
+#define PRINT_LS                240
+#define PRINT_TR                241
+#define PRINT_HEAP              242
+#define PRINT_CP                243
+#define PRINT_REGS              244
+#define PRINT_ALL_STACKS        245
+#define EXP_HEAP                246
+#define MARK_HEAP               247
+#define GC_HEAP                 248
 
 #define FINDALL_INIT		249
 #define FINDALL_ADD		250

@@ -73,7 +73,7 @@
 		print_cp
 		print_regs
 		print_tr
-		print_all: does all of the above
+		print_all_stacks: does all of the above
 	some - maybe all - of these were somewhere in the system already
 		but weren't entirely what we needed
 
@@ -111,7 +111,7 @@ Todo:
 #include "xmacro.h"    /* Completion Stack and Subgoal Frame def's */
 #include "realloc.h"   /* Heap - ls reallocation macros */
 #include "chat.h"      /* CHAT related declarations */
-
+#include "heap.h"
 
 /* choose between copying or sliding collector */
 static int slide = 0;
@@ -201,9 +201,7 @@ static char *tr_marks = NULL ;
 #define ls_marked(i) (ls_marks[i])
 #define ls_mark(i) ls_marks[i] |= MARKED
 
-
-
-void print_all() ;
+/*=========================================================================*/
 
 static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 { int t ;
@@ -340,7 +338,7 @@ mark_more:
 	goto pop_more ;
 
       default :
-        fprintf(stderr,"Unknown tag on heap during marking %ld\n",(Cell)cell_val) ; /* JF: long */
+        fprintf(stderr,"Unknown tag on heap during marking %ld\n",(Cell)cell_val) ;
 	return(0) ;
         break ;
     }
@@ -777,7 +775,6 @@ static void adapt_hreg_from_choicepoints(CPtr h)
     { cp_hreg(b) = h;
       bprev = b; b = cp_prevbreg(b);
     }
-
 } /* adapt_hreg_from_choicepoints */
 
 
@@ -786,7 +783,7 @@ int mark_heap(int arity, int num_var_regs, int num_reg_array)
 
   stack_boundaries ;
 
-if (print_on_gc) print_all() ;
+if (print_on_gc) print_all_stacks() ;
 
   heap_marks = ((char *)calloc(heap_top - heap_bot+2,1)) + 1 ;  /* see its free */
   ls_marks = calloc(ls_bot - ls_top + 1,1) ;
@@ -825,7 +822,7 @@ if (print_on_gc) print_all() ;
 
   marked += mark_hreg_from_choicepoints();
 
-if (print_on_gc) print_all() ;
+if (print_on_gc) print_all_stacks() ;
 
   return(marked) ;
 } /* mark_heap */
@@ -1208,7 +1205,7 @@ void print_chat(int add)
 
 #endif
 
-void print_all()
+void print_all_stacks()
 {
     printnum++ ;
     print_regs(10,0) ;
@@ -1219,7 +1216,7 @@ void print_all()
 #ifdef CHAT
     print_chat(0);
 #endif
-} /* print_all */
+} /* print_all_stacks */
 
 /*
         new_size = new size of heap + environmentstack
@@ -1373,7 +1370,7 @@ void glstack_realloc(int new_size, int arity)
   		/* and let's hope K stays divisible by sizeof(Cell) */
 
 /*
-print_all() ;
+print_all_stacks() ;
 */
 
   stack_boundaries ;
@@ -1466,7 +1463,7 @@ print_all() ;
 	expandtime) ;
 #endif
 
-  /*  print_all() ;  */
+  /*  print_all_stacks() ;  */
 
 } /* glstack_realloc */
 
@@ -1805,7 +1802,7 @@ static CPtr slide_heap(int num_marked)
 		}
 #endif
 
-		/* if (print_on_gc) print_all() ; */
+		/* if (print_on_gc) print_all_stacks() ; */
 
 { CPtr destination, hptr ;
   long garbage = 0 ;
@@ -1841,7 +1838,7 @@ static CPtr slide_heap(int num_marked)
 	  /* the first heap cell is not marked */
 	  *heap_bot = (Cell)garbage ;
 
-if (print_on_gc) print_all() ;
+if (print_on_gc) print_all_stacks() ;
 
         /* one phase downwards - from bottom of heap to top of heap */
 
@@ -2396,7 +2393,7 @@ int gc_heap(int arity)
 #endif
     }
 
-  if (print_on_gc) print_all() ;
+  if (print_on_gc) print_all_stacks() ;
 
   /* get rid of the marking areas - if they exist */
   if (heap_marks) { check_zero(heap_marks,(heap_top-heap_bot),"heap") ;
@@ -2446,11 +2443,4 @@ void print_gc_statistics(void)
 
   printf("\n%d heap garbage collections by %s took %d millisecs and collected %d cells\n\n",
 	 num_gc, which, total_time_gc, total_collected);
-}
-
-
-void check_tr()
-{
-  if ((CPtr)trreg > ((CPtr)breg-100))
-    fprintf(stderr,"overflow\n");
 }

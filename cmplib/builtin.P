@@ -191,6 +191,15 @@ inline_builtin(tab, 1, 211).
 inline_builtin(sort, 2, 220).
 inline_builtin(keysort, 2, 221).
 
+inline_builtin(print_ls, 0, 240).
+inline_builtin(print_tr, 0, 241).
+inline_builtin(print_heap, 2, 242).
+inline_builtin(print_cp, 0, 243).
+inline_builtin(print_regs, 0, 244).
+inline_builtin(print_all_stacks, 0, 245).
+inline_builtin(expand_heap, 0, 246).
+inline_builtin(mark_heap, 1, 247).
+inline_builtin(gc_heap, 0, 248).
 inline_builtin('$$findall_init', 2, 249).
 inline_builtin('$$findall_add', 3, 250).
 inline_builtin('$$findall_get_solutions', 4, 251).

@@ -168,11 +168,19 @@ trimcore :- '_$builtin'(158).
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
 odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(239).
 
+print_ls :- '_$builtin'(240).
+print_tr :- '_$builtin'(241).
+print_heap(_X,_Y) :-'_$builtin'(242).
+print_cp :- '_$builtin'(243).
+print_regs :- '_$builtin'(244).
+print_all_stacks :- '_$builtin'(245).
+expand_heap :- '_$builtin'(246).
+mark_heap(_) :- '_$builtin'(247).
+gc_heap :- '_$builtin'(248).
 '$$findall_init'(_I,_C) :- '_$builtin'(249).
 '$$findall_add'(_T,_I,_C) :- '_$builtin'(250).
 '$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(251).
 
-% SOCKET_IO
 socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr) :-
 	'_$builtin'(252).
 /*======================================================================*/
