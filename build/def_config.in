@@ -128,8 +128,8 @@
 #endif
 
 #ifdef ___ALWAYS_TRUE___
-#if (defined(SOLARIS) || defined(WIN_NT))
-#define bcopy(A,B,L) memmove(B,A,L)
+#if ( defined(SUN) )
+#define memmove(A,B,L) bcopy(B,A,L)
 #endif
 #endif
 
