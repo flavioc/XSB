@@ -77,7 +77,7 @@ struct sigaction act, oact;
 #endif
 
 void (*xsb_default_segfault_handler)(int); /* where the previous value of the
-					     SIGSEGV handler is saved */
+					     SIGSEGV/SIGBUS handler is saved */
 
 /*======================================================================*/
 /*  Unification routines.						*/
@@ -193,7 +193,8 @@ void keyint_proc(int sig)
   *asynint_ptr |= KEYINT_MARK;
 }
 
-/* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
+/* SIGSEGV/SIGBUS handler that catches segfaults; used unless 
+   configured with DEBUG */ 
 void xsb_segfault_catcher(int err)
 {
   longjmp(xsb_segfault_fallback_environment, 1);
@@ -211,12 +212,15 @@ void init_interrupt(void)
 #endif
 
 #ifdef DEBUG
-  /* Don't handle SIGSEGV if configured with DEBUG */
+  /* Don't handle SIGSEGV/SIGBUS if configured with DEBUG */
   xsb_default_segfault_handler = SIG_DFL;
 #else 
   xsb_default_segfault_handler = xsb_segfault_catcher;
 #endif
+
+#ifdef SIGBUS
   signal(SIGBUS, xsb_default_segfault_handler);
+#endif
   signal(SIGSEGV, xsb_default_segfault_handler);
 }
 
