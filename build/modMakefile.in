@@ -50,7 +50,7 @@ SHELL=/bin/sh
 
 ###### END NO-EDIT ZONE
 
-##################### You may need to edit some of these!
+##################### You may need to edit some of the files below!
 
 # Where to install your C program that calls XSB binaries
 bindir=$(arch_dir)/bin
