@@ -26,7 +26,6 @@
 */
 
 
-
 :- import
 	write/1, writeln/1, repeat/0, atom_chars/2, abort/0,
 	cputime/1, push_abort_cutpoint/0, pop_abort_cutpoint/0,
