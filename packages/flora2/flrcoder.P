@@ -901,7 +901,7 @@ flora_build_wsstruct(Term,WS,DWS,Prefix,VarList,Code) :-
   Note: This function must conform to the way macro is defined for workspace.
 ****************************************************************************/
 flora_build_workspace(Funct,WS,Code) :-
-	fmt_write_string(Code,"%s'%s",args(WS,Funct)).
+	fmt_write_string(Code,"%s'%s'%s",args(FLORA_PREFIX,WS,Funct)).
 
 
 /****************************************************************************

@@ -409,11 +409,17 @@
 
 /****************************************************************************
   commonly used identifiers
-****************************************************************************/
-#define	FLORA_EOF	eof
-#define FLORA_NOT_EOF	not_eof
 
-#define FLSYSLIB	flsyslib
+  Notes: (1) FLORA_PREFIX_LEN is the length of FLORA_PREFIX PLUS 1. This
+             macro is used in syslib/flrdbop.P.
+****************************************************************************/
+#define	FLORA_EOF		eof
+#define FLORA_NOT_EOF		not_eof
+
+#define FLSYSLIB		flsyslib
+
+#define FLORA_PREFIX		'_$_$_flora'
+#define FLORA_PREFIX_LEN	11
 
 
 /****************************************************************************

@@ -233,88 +233,92 @@ flora_erase_facts([F|Fs]) :-
 
 /*****************************************************************************
   flora_erase_one_fact(+Fact)
+
+  Note: Because this function needs to extract the workspace name from
+        a predicate, it relies on the definition of FLORA_PREFIX in
+        includes/flora_terms.flh
 *****************************************************************************/
 flora_erase_one_fact(Fact) :-
 	Fact =.. [Funct|Args],
 	( flora_flogic_base(isa,Bisa), str_sub(Bisa,Funct,X) ->
 	    Args=[O,_C],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(sub,Bsub), str_sub(Bsub,Funct,X) ->
 	    Args=[O,_C],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(fd,Bfd), str_sub(Bfd,Funct,X) ->
 	    Args=[_S,_A,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(mvd,Bmvd), str_sub(Bmvd,Funct,X) ->
 	    Args=[_S,_A,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(ifd,Bifd), str_sub(Bifd,Funct,X) ->
 	    Args=[_S,_IA,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(imvd,Bimvd), str_sub(Bimvd,Funct,X) ->
 	    Args=[_S,_IA,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(meth,Bmeth), str_sub(Bmeth,Funct,X) ->
 	    Args=[O,_M],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(imeth,Bimeth), str_sub(Bimeth,Funct,X) ->
 	    Args=[O,_IM],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(exists,Bexists), str_sub(Bexists,Funct,X) ->
 	    Args=[O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(mvddef,Bmvddef), str_sub(Bmvddef,Funct,X) ->
 	    Args=[O,_A],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(imvddef,Bimvddef), str_sub(Bimvddef,Funct,X) ->
 	    Args=[O,_IA],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(tran,Btran), str_sub(Btran,Funct,X) ->
 	    Args=[O,_T],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(fdsig,Bfdsig), str_sub(Bfdsig,Funct,X) ->
 	    Args=[_S,_AS,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(ifdsig,Bifdsig), str_sub(Bifdsig,Funct,X) ->
 	    Args=[_S,_IAS,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(mvdsig,Bmvdsig), str_sub(Bmvdsig,Funct,X) ->
 	    Args=[_S,_AS,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 
 	; flora_flogic_base(imvdsig,Bimvdsig), str_sub(Bimvdsig,Funct,X) ->
 	    Args=[_S,_IAS,O],
 	    eval(X-1,Y),
-	    substring(Funct,0,Y,Workspace)
+	    substring(Funct,FLORA_PREFIX_LEN,Y,Workspace)
 	),
 	( var(O) ->
 	    true
@@ -372,22 +376,22 @@ flora_setup_flogic_base :-
 flora_setup_flogic_wsbase(WS) :-
 	retractall(flora_flogic_workspace(_WS)),
 	assert(flora_flogic_workspace(WS)),
-	fmt_write_string(WSBisa,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_ISA)),
-	fmt_write_string(WSBsub,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_SUB)),
-	fmt_write_string(WSBmeth,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_METH)),
-	fmt_write_string(WSBimeth,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMETH)),
-	fmt_write_string(WSBtran,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_TRAN)),
-	fmt_write_string(WSBfd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_FD)),
-	fmt_write_string(WSBifd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IFD)),
-	fmt_write_string(WSBfdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_FDSIG)),
-	fmt_write_string(WSBifdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IFDSIG)),
-	fmt_write_string(WSBmvd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_MVD)),
-	fmt_write_string(WSBimvd,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMVD)),
-	fmt_write_string(WSBmvdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_MVDSIG)),
-	fmt_write_string(WSBimvdsig,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMVDSIG)),
-	fmt_write_string(WSBexists,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_EXISTS)),
-	fmt_write_string(WSBmvddef,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_MVDDEF)),
-	fmt_write_string(WSBimvddef,"%s'%s%s",args(WS,FLFACTPREFIX,WRAP_IMVDDEF)),
+	fmt_write_string(WSBisa,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_ISA)),
+	fmt_write_string(WSBsub,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_SUB)),
+	fmt_write_string(WSBmeth,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_METH)),
+	fmt_write_string(WSBimeth,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMETH)),
+	fmt_write_string(WSBtran,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_TRAN)),
+	fmt_write_string(WSBfd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_FD)),
+	fmt_write_string(WSBifd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IFD)),
+	fmt_write_string(WSBfdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_FDSIG)),
+	fmt_write_string(WSBifdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IFDSIG)),
+	fmt_write_string(WSBmvd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVD)),
+	fmt_write_string(WSBimvd,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVD)),
+	fmt_write_string(WSBmvdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVDSIG)),
+	fmt_write_string(WSBimvdsig,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVDSIG)),
+	fmt_write_string(WSBexists,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_EXISTS)),
+	fmt_write_string(WSBmvddef,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_MVDDEF)),
+	fmt_write_string(WSBimvddef,"%s'%s'%s%s",args(FLORA_PREFIX,WS,FLFACTPREFIX,WRAP_IMVDDEF)),
 	assert(flora_flogic_wsbase(isa,WSBisa)),
 	assert(flora_flogic_wsbase(sub,WSBsub)),
 	assert(flora_flogic_wsbase(meth,WSBmeth)),
