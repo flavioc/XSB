@@ -865,12 +865,12 @@ compile_direct(DirectTerm,[],[]) :-
 	flora_define_prolog(P,N),
 	!.
 
-compile_direct(DirectTerm,[Code],[]) :-
+compile_direct(DirectTerm,CodeList,[]) :-
 	is_flfirstorder(DirectTerm,P,N),
 	flora_define_firstorder(P,N),
 	%% Check if it is a firstorderall.
 	( (var(P); var(N)) ->
-	    true
+	    CodeList=[]
 	;
 	  %% Generate the patch rule.
 	  atomobj_struct(P,PCode),
@@ -878,7 +878,8 @@ compile_direct(DirectTerm,[Code],[]) :-
 	  termlit_struct(PCode,N,ArgsCode,HCode),
 	  thisstorage_struct(SCode),
 	  prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
-	  rule_struct(HCode,BCode,Code)
+	  rule_struct(HCode,BCode,Code),
+	  CodeList=[Code]
 	),
 	!.
 
