@@ -52,21 +52,21 @@ default_error_handler(Error) :-
 default_sys_error_handler('_$abort_ball'(Backtrace)):- 
 	% here is where we may do something abt backtraces.
 	get_sys_error_description('_$abort_ball'(Backtrace),NewMsg),
+	messageln(NewMsg,STDERR),
 	xsb_flag(backtrace_on_error,BT),
 	(BT == on
 	 ->	print_backtrace(Backtrace)
 	 ;	true
-	),
-	messageln(NewMsg,STDERR).
+	).
 default_sys_error_handler('_$abort_ball'(Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	get_sys_error_description('_$abort_ball'(Msg, Backtrace),NewMsg),
+	messageln(NewMsg,STDERR),
 	xsb_flag(backtrace_on_error,BT),
 	(BT == on
 	 ->	print_backtrace(Backtrace)
 	 ;	true
-	),
-	messageln(NewMsg,STDERR).
+	).
 default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	xsb_flag(backtrace_on_error,BT),
