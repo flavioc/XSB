@@ -737,22 +737,56 @@ tcall(X) :- call0(X).
 
 %  transforms a goal to turn its cuts (!) into '_$cutto's.
 
-goal_cut_trans(X,call(X),_) :- var(X), !.
-goal_cut_trans([X|Y],Z,_) :- !, hack_consult([X|Y],Z).	% a HACK!
-goal_cut_trans(!,'_$cutto'(Cutpoint),Cutpoint) :- !.
-goal_cut_trans('_$load_undef'(X),Y,_) :- !,
+goal_cut_trans(Goal,TGoal,Cutpoint) :-
+	(requires_cut_transforming(Goal)
+	 ->	goal_cut_transform(Goal,TGoal,Cutpoint)
+	 ;	TGoal = Goal
+	).
+
+requires_cut_transforming(X) :-
+	(var(X) -> true ; requires_cut_transforming1(X)).
+
+requires_cut_transforming1([_|_]).
+requires_cut_transforming1('!').
+requires_cut_transforming1('_$load_undef'(_)).
+requires_cut_transforming1((A,B)) :-
+	(requires_cut_transforming(A)
+	 ->	true
+	 ;	requires_cut_transforming(B)
+	).
+requires_cut_transforming1((A->B)) :-
+	(requires_cut_transforming(A)
+	 ->	true
+	 ;	requires_cut_transforming(B)
+	).
+requires_cut_transforming1((A;B)) :-
+	(requires_cut_transforming(A)
+	 ->	true
+	 ;	requires_cut_transforming(B)
+	).
+
+goal_cut_transform(Goal,TGoal,Cutpoint) :-
+	(var(Goal)
+	 ->	TGoal = call(Goal)
+	 ; goal_cut_transform1(Goal,TGoal,Cutpoint)
+	 ->	true
+	 ;	TGoal = Goal
+	).
+
+goal_cut_transform1([X|Y],Z,_) :- hack_consult([X|Y],Z).	% a HACK!
+goal_cut_transform1(!,'_$cutto'(Cutpoint),Cutpoint).
+goal_cut_transform1('_$load_undef'(X),Y,_) :-
 	(atom(X) -> conname(X,Y1),Y=Y1 ; Y=X).
-goal_cut_trans((A,B),(Na,Nb),Cutpoint) :- !,
-	goal_cut_trans(A,Na,Cutpoint),
-	goal_cut_trans(B,Nb,Cutpoint).
-goal_cut_trans((A;B),(Na;Nb),Cutpoint) :- !,
-	goal_cut_trans(A,Na,Cutpoint),
-	goal_cut_trans(B,Nb,Cutpoint).
-goal_cut_trans((A->B),(Na->Nb),Cutpoint) :- !,
+goal_cut_transform1((A,B),(Na,Nb),Cutpoint) :-
+	goal_cut_transform(A,Na,Cutpoint),
+	goal_cut_transform(B,Nb,Cutpoint).
+goal_cut_transform1((A;B),(Na;Nb),Cutpoint) :-
+	goal_cut_transform(A,Na,Cutpoint),
+	goal_cut_transform(B,Nb,Cutpoint).
+goal_cut_transform1((A->B),(Na->Nb),Cutpoint) :-
 	'_$savecp'(Condcutpoint),
-	goal_cut_trans(A,Na,Condcutpoint),
-	goal_cut_trans(B,Nb,Cutpoint).
-goal_cut_trans(X,X,_).
+	goal_cut_transform(A,Na,Condcutpoint),
+	goal_cut_transform(B,Nb,Cutpoint).
 
 hack_consult([-X],reconsult(X)) :- !.
 hack_consult([X],consult(X)) :- !.
