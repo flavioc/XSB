@@ -44,7 +44,6 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
 	flora_hilog_predicate(PredName,Workspace),
 	!,
-	flora_stderr_nl,
 	flora_error_line('undefined HiLog predicate %s in module %s',
 			 args(PredName,Workspace)),
 	abort.
@@ -54,7 +53,6 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	flora_nohilog_predicate(PredName,Predicate,Workspace),
 	!,
 	psc_arity(PscRecord,N),
-	flora_stderr_nl,
 	flora_error_line('undefined predicate %s/%d in module %s',
 			 args(Predicate,N,Workspace)),
 	abort.

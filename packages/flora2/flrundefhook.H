@@ -33,7 +33,6 @@
    from flrwrapper.
 
 :- import
-	flora_stderr_nl/0,
 	flora_error_line/2
    from flrprint.
 
