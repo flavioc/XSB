@@ -94,9 +94,9 @@ geninl_load_lhs(Term,R,Pil,Pilr,Tin,Tout,SaveR) :-
 		vprag_occ(Prag, Oc), vprag_loc(Prag, Loc),
 		(T = t
 		 ->	R = Loc, Tout = Tmid,
-			(memberchk(R,Tmid)
+			(Oc==l
 			 ->	SaveR = []
-			 ; (Oc=l; Oc=v)
+			 ; Oc==v
 			 ->	SaveR = []
 			 ;	SaveR = [R]
 			)
