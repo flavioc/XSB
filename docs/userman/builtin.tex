@@ -664,17 +664,20 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 no
      \end{verbatim}}
 
-\ouritem{is\_string(?X)}\index{{\tt is\_string/1}}
+\ouritem{is\_charlist(+X)}\index{{\tt is\_charlist/1}}
     Succeeds if {\tt X} is a Prolog string, {\it i.e.}, a list of
     characters.
     Examples:
     {\footnotesize
      \begin{verbatim}
-                | ?- is_string("abc").
+                | ?- is_charlist("abc").
                 yes
-                | ?- is_string(abc).
+                | ?- is_charlist(abc).
                 no
      \end{verbatim}}
+\ouritem{is\_charlist(+X,-Size)}\index{{\tt is\_charlist/2}}
+    Like above, but also returns the length of that string in the second
+    argument, which must be a variable.
 
 \ouritem{callable(?X)}\index{{\tt callable/1}}
     Succeeds if {\tt X} is currently instantiated to a term that standard
