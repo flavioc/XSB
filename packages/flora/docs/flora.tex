@@ -292,7 +292,20 @@ first looks for {\tt FILE} in the \FLORA demo directory. In general, all XSB com
 can be executed from \FLORA shell, if the corresponding XSB library has already been
 loaded.
 
+After a syntax error, parsing error, or compiling error, \FLORA shell will dicard tokens
+read from the current input stream until an end of file character or a rule delimeter (.) is
+encountered. If \FLORA shell seems to hang forever after the prompt:
+\begin{verbatim}
+[FLORA: discarding tokens]
+\end{verbatim}
+hitting the Enter key once, then entering a .\ character and Enter again will normally reset
+the current input buffer and have \FLORA shell print out the prompt:
+\begin{verbatim}
+FLORA> ?-
+\end{verbatim}
+and wait for a new query or command.
 
+ 
 \section{\fl and \FLORA by Example}
 
 In the future, this section will contain a number of small
@@ -778,21 +791,6 @@ $\textit{student}, \textit{apple\_pie}$. Atoms may also be \emph{any} sequence
 of characters enclosed by a pair of single quotes, e.g.,
 $\textit{'JOHN SMITH'},\textit{'default.flr'}$.
 
-\FLORA also recognizes escaped characters inside a pair of single quotes ($\texttt{'}$).
-An escaped character normally begins with a backslash ($\texttt{\bksl}$).
-Table~\ref{tab:tab-esc-str}
-lists the special escaped character strings and their corresponding special symbols. An
-escaped character may also be any ASCII character. Such a character is entered by
-a backslash together with a lowercase $\texttt{x}$ (or uppercase $\texttt{X}$) followed
-by one or two hexadecimal symbols representing its ASCII value. For example,
-$\texttt{{\bksl}xd}$
-is the ASCII character Carriage Return, whereas $\texttt{{\bksl}x3A}$ represents the
-semicolon. In case that a backslash is unable to escape any following character, it is
-recognized as itself. 
-
-One exception is that inside a quoted atom, a single quote character is escaped by another
-signle quote, e.g., $\texttt{'isn''t'}$.
-
 \begin{table}[htb]
 \begin{center}
 \texttt{ \small
@@ -827,6 +825,21 @@ Escaped String &
 \caption{Escaped Character Strings and Their Corresponding Symbols}
 \label{tab:tab-esc-str}
 \end{table}
+
+\FLORA also recognizes escaped characters inside a pair of single quotes ($\texttt{'}$).
+An escaped character normally begins with a backslash ($\texttt{\bksl}$).
+Table~\ref{tab:tab-esc-str}
+lists the special escaped character strings and their corresponding special symbols. An
+escaped character may also be any ASCII character. Such a character is entered by
+a backslash together with a lowercase $\texttt{x}$ (or uppercase $\texttt{X}$) followed
+by one or two hexadecimal symbols representing its ASCII value. For example,
+$\texttt{{\bksl}xd}$
+is the ASCII character Carriage Return, whereas $\texttt{{\bksl}x3A}$ represents the
+semicolon. In case that a backslash is unable to escape any following character, it is
+recognized as itself. 
+
+One exception is that inside a quoted atom, a single quote character is escaped by another
+signle quote, e.g., $\texttt{'isn''t'}$.
 
 \paragraph{Strings (Character Lists)}
 
