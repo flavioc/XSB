@@ -53,7 +53,7 @@ set_dcg_style(X) :- write(X), writeln(': invalid DCG style'), fail.
 
 :- dynamic word(_,_,_).
 :- dynamic num_words(_).
-:- index(word(_,_,_),2,101).
+:- index(word(_,_,_),1,501).
 
 reset_dcg_mode :- 
 	(word([_|_],_,_)
