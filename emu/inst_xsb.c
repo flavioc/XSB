@@ -120,6 +120,7 @@ static void init_inst_table_2(void)
   set_inst(bldnumcon, "bldnumcon",       PPP,N, X,X);
   set_inst(getlist_tvar_tvar, "getlist_tvar_tvar", R, R, R,X);
 
+  /* the following are generated dynamically */
   set_inst(trie_root, "trie_root", X, X, X,X);
   set_inst(trie_no_cp_str, "trie_no_cp_str", X, X, X,X);
   set_inst(trie_try_str, "trie_try_str", X, X, X,X);
@@ -140,12 +141,12 @@ static void init_inst_table_2(void)
   set_inst(trie_no_cp_list, "trie_no_cp_list", X, X, X,X);
   set_inst(trie_try_list, "trie_try_list", X, X, X,X);
   set_inst(trie_retry_list, "trie_retry_list", X,X,X,X);
-  set_inst(trie_trust_list, "trie_trust_list", X, X, X,X);
+  set_inst(trie_trust_list, "trie_trust_list", X,X,X,X);
   set_inst(trie_proceed, "trie_proceed", X,X,X,X);
   set_inst(hash_opcode, "hash_opcode", X,X,X,X);
   set_inst(hash_handle, "hash_handle", X,X,X,X);
   set_inst(trie_assert_inst,"trie_assert_inst",X,X,X,X);
-  set_inst(trie_proceed, "trie_root", X,X,X,X);
+  set_inst(trie_proceed, "trie_proceed", X,X,X,X);
   set_inst(trie_no_cp_numcon_succ, "trie_no_cp_numcon_succ", X, X, X,X);
   set_inst(trie_try_numcon_succ, "trie_try_numcon_succ", X, X, X,X);
   set_inst(trie_retry_numcon_succ, "trie_retry_numcon_succ", X,X,X,X);
@@ -170,26 +171,26 @@ static void init_inst_table_3(void)
   set_inst(putpbreg, "putpbreg",           PP, V, X,X);
   set_inst(puttbreg, "puttbreg",           PP, R, X,X);
   set_inst(jumptbreg, "jumptbreg",         PP, R, L,X);
-
   set_inst(getVn, "getVn",                 PP, V, X,X);
   set_inst(test_heap, "test_heap",         PP, A, N,X);
-
-  set_inst(switchonterm, "switchonterm",       PPR,L, L,X);
-  set_inst(switchonbound, "switchonbound",      PPR,I, I,X);
-  set_inst(switchon3bound, "switchon3bound",      RRR,I, I,X);
-  set_inst(trymeorelse, "trymeorelse",          PP, A, L,X);
-  set_inst(retrymeorelse, "retrymeorelse",        PP, A, L,X);
+  set_inst(switchonterm, "switchonterm",     PPR, L, L,X);
+  set_inst(switchonbound, "switchonbound",   PPR, I, I,X);
+  set_inst(switchon3bound, "switchon3bound", RRR, I, I,X);
+  set_inst(trymeorelse, "trymeorelse",        PP, A, L,X);
+  set_inst(retrymeorelse, "retrymeorelse",    PP, A, L,X);
   set_inst(trustmeorelsefail, "trustmeorelsefail",   PP, A, X,X);
   set_inst(dyntrustmeelsefail, "dyntrustmeelsefail", PP, A, L,X); 
   set_inst(tableretry, "tableretry",          PP, A, L,X);
   set_inst(tabletry, "tabletry",              PP, A, L,T); 
   set_inst(tabletrust, "tabletrust",          PP, A, L,X); 
-  set_inst(tabletrysingle, "tabletrysingle",  PP, A, L,T); 
-  set_inst(answer_return, "answer_return",   PPP, X, X,X); 
+  set_inst(tabletrysingle, "tabletrysingle",  PP, A, L,T);
 
-  set_inst(check_complete, "check_complete",     PPP, X, X,X); 
+  /* the following are generated dynamically */
+  set_inst(answer_return, "answer_return",   PPP, X, X,X); 
+  set_inst(check_complete, "check_complete", PPP, X, X,X); 
   set_inst(resume_compl_suspension, "resume_compl_suspension", PPP, X, X,X); 
-  set_inst(new_answer_dealloc, "new_answer_dealloc", P, A, R, X);
+
+  set_inst(new_answer_dealloc, "new_answer_dealloc", P, A, A, X);
   set_inst(term_comp, "term_comp",     R,  R, R,X);
   set_inst(movreg, "movreg",           P,  R, R,X);
   set_inst(negate, "negate",           PP, R, X,X);

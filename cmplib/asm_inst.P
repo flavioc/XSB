@@ -74,7 +74,7 @@ asm_inst(getpbreg(V),		4,	166,	[pp, v(V)]	).
 asm_inst(gettbreg(R),		4,	167,	[pp, r(R)]	).
 asm_inst(putpbreg(V),		4,	168,	[pp, v(V)]	).
 asm_inst(puttbreg(R),		4,	169,	[pp, r(R)]	).
-asm_inst(jumpsavebreg(A,L),	8,	170,	[pp, a(A),l(L)]	).
+asm_inst(jumpsavebreg(A,L),	8,	170,	[pp, a(A), l(L)]).
 
 asm_inst(getVn(V),              4,      171,    [pp, v(V)]      ).
 asm_inst(test_heap(A,N),        8,      172,    [pp, a(A), n(N)]).
@@ -89,14 +89,13 @@ asm_inst(switchon3bound(R1, R2, R3, L, N),
 asm_inst(trymeorelse(A,L),	8,	183,	[pp, a(A), l(L)]).
 asm_inst(retrymeorelse(A,L),	8,	184,	[pp, a(A), l(L)]).
 asm_inst(trustmeorelsefail(A),	4,	185,	[pp, a(A)]	).
-asm_inst(dyntrustmeelsefail(A,L),	8,	186,	[pp, a(A), l(L)]).
 
 asm_inst(tableretry(A,L),	8,	189,	[pp, a(A), l(L)]).
-asm_inst(tabletry(A,L,Tbind),   12,     190,    [pp, a(A),l(L),i(Tbind)]  ).
-asm_inst(tabletrust(A,L), 	8,     	193,    [pp, a(A),l(L)]  ).
-asm_inst(tabconfig(Chs,Rhs), 	0,    	194,    [ppp, i(Chs),i(Rhs)]  ).
-asm_inst(tabletrysingle(A,L,Tbi),12,	197,	[pp, a(A),l(L),i(Tbi)]  ).
-asm_inst(new_answer_dealloc(A,R), 4,   	207,    [p,a(A),r(R)]  ).
+asm_inst(tabletry(A,L,Tbind),   12,     190,    [pp, a(A), l(L), i(Tbind)]).
+asm_inst(tabletrust(A,L), 	8,     	193,    [pp, a(A), l(L)]).
+asm_inst(tabconfig(Chs,Rhs), 	0,    	194,    [ppp, i(Chs), i(Rhs)]).
+asm_inst(tabletrysingle(A,L,Tbi),12,	197,	[pp, a(A), l(L), i(Tbi)]).
+asm_inst(new_answer_dealloc(A1,A2), 4,  207,    [p, a(A1), a(A2)]).
 
 asm_inst(term_comp(R1,R2,R),	4,	208,	[r(R1),r(R2),r(R)]).
 asm_inst(movreg(R,R1),		4,	209,	[p, r(R), r(R1)]).
@@ -115,7 +114,7 @@ asm_inst(int_test_nz(R,I,L),   12,	221,	[pp, r(R), n(I), l(L)]).
 
 asm_inst(putdval(V,R),		4,	224,	[p, v(V), r(R)]	).
 asm_inst(putuval(V,R),		4,	225,	[p, v(V), r(R)]	).
-asm_inst(allocate_gc(R,R1),     4,      231,    [p, a(R),a(R1)] ).
+asm_inst(allocate_gc(A1,A2),    4,      231,    [p, a(A1), a(A2)]).
 asm_inst(call(S,B),		8,	232,	[pp, a(B), s(S)]).
 	% Address has been preprocessed
 asm_inst(allocate,		4,	233,	[ppp]		).
@@ -128,12 +127,12 @@ asm_inst(calld(L,B),		8,	239,	[pp, a(B), n(L)]).
 asm_inst(executed(I),		8,	240,	[ppp, n(I)]	).
 	% only used in assembler; executed = jump except addr is preprocessed
 asm_inst(jump(L),		8,	240,	[ppp, l(L)]	).
-asm_inst(jumpz(R,L),		8,	241,	[pp, r(R),  l(L)]).
-asm_inst(jumpnz(R,L),		8,	242,	[pp, r(R),  l(L)]).
-asm_inst(jumplt(R,L),		8,	243,	[pp, r(R),  l(L)]).
-asm_inst(jumple(R,L),		8,	244,	[pp, r(R),  l(L)]).
-asm_inst(jumpgt(R,L),		8,	245,	[pp, r(R),  l(L)]).
-asm_inst(jumpge(R,L),		8,	246,	[pp, r(R),  l(L)]).
+asm_inst(jumpz(R,L),		8,	241,	[pp, r(R), l(L)]).
+asm_inst(jumpnz(R,L),		8,	242,	[pp, r(R), l(L)]).
+asm_inst(jumplt(R,L),		8,	243,	[pp, r(R), l(L)]).
+asm_inst(jumple(R,L),		8,	244,	[pp, r(R), l(L)]).
+asm_inst(jumpgt(R,L),		8,	245,	[pp, r(R), l(L)]).
+asm_inst(jumpge(R,L),		8,	246,	[pp, r(R), l(L)]).
 asm_inst(cases(A,I,N),		10,	247,	[a(A), n(I), n(N)]	). 
 	% only used in index block
 asm_inst(fail,			4,	248,	[ppp]		).
