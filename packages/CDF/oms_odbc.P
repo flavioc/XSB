@@ -1,5 +1,5 @@
 
-:- import scan/2 from stdscan.
+:- import scan/2, set_scan_pars/1 from stdscan.
 :- import odbc_open/3, odbc_close/0, 
 	  odbc_show_schema/1, 
 	  odbc_import/2, odbc_attach/2,
@@ -11,6 +11,8 @@
 
 :- dynamic odbc_debug/0.
 :- assert(odbc_debug).
+
+?- set_scan_pars([letter(0'_)]).
 
 init(Name,Pwd):- 
 	odbc_open(sqlserver,Name,Pwd),
@@ -129,7 +131,7 @@ is_atom_list([H|T]):-
 	atom(H),
 	is_atom_list(T).
 
- pss1(Table,Selection) --> 
+pss1(Table,Selection) --> 
 	['SELECT'],
 	table(Table),
  	get_selection(Selection).
@@ -177,7 +179,8 @@ opt_space --> [''],!.
 opt_space --> [].
 	
 get_selection_1([Selection|R]) --> 
-	get_equality(Selection),
+%	get_equality(Selection),
+	where_predicate(Selection),
 	get_selection_1_rest(R).
 
 get_selection_1_rest([Sel|R]) --> 
