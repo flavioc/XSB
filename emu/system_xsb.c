@@ -808,7 +808,7 @@ static void split_command_arguments(char *string, char *params[], char *callname
   static char buffer[MAX_CMD_LEN];
 
   if (buflen > MAX_CMD_LEN - 1)
-    xsb_abort("[%s] Command string too long", callname);
+    xsb_abort("[%s] Command string too long, %s", callname, string);
 
   buf_ptr = buffer;
 
