@@ -512,7 +512,7 @@ void ODBCDisconnect()
 
   if (hdbc == NULL) {  /* close entire connection*/
     if (FCursor != NULL)
-      xsb_abort("Must close all connections before shutting down");
+      xsb_abort("[ODBC] Must close all connections before shutting down");
     SQLFreeEnv(henv);
     serverConnected = 0;
     return;
@@ -640,7 +640,7 @@ void FindFreeCursor()
 	  (rc==SQL_SUCCESS_WITH_INFO))) {
       free(curi);
       /*      numberOfCursors--; */
-      xsb_abort("while trying to allocate ODBC statement\n");
+      xsb_abort("[ODBC] ERROR while trying to allocate ODBC statement\n");
     }
 
     num->CursorCount++;
@@ -672,7 +672,7 @@ void FindFreeCursor()
   curi->hdbc = hdbc;
   curi->Sql = (UCHAR *)strdup(Sql_stmt);
   if (!curi->Sql)
-    xsb_exit("Not enough memory for SQL stmt in FindFreeCursor!");
+    xsb_abort("[ODBC] Not enough memory for SQL stmt in FindFreeCursor!\n");
   curi->Status = 3;
   ctop_int(4, (long)curi);
   return;
@@ -701,17 +701,17 @@ void SetBindVarNum()
 
   if (cur->Status == 2) {
     if (cur->NumBindVars != NumBindVars)
-      xsb_exit("Number of Bind values provided does not agree with query\n");
+      xsb_abort("[ODBC] Number of Bind values provided does not agree with query\n");
     return;
   }
 
   cur->NumBindVars = NumBindVars;
   cur->BindList = malloc(sizeof(UCHAR *) * NumBindVars);
   if (!cur->BindList)
-    xsb_exit("Not enough memory for cur->BindList!");
+    xsb_abort("[ODBC] Not enough memory for cur->BindList!");
   cur->BindTypes = malloc(sizeof(int) * NumBindVars);
   if (!cur->BindTypes)
-    xsb_exit("Not enough memory for cur->BindTypes!");
+    xsb_abort("[ODBC] Not enough memory for cur->BindTypes!");
 }
 
 void write_canonical_term(Cell prologterm);
@@ -767,7 +767,7 @@ void SetBindVal()
   Cell BindVal = ptoc_tag(4);
 
   if (!((j >= 0) && (j < cur->NumBindVars)))
-    xsb_exit("Abnormal argument in SetBindVal!");
+    xsb_abort("[ODBC] Abnormal argument in SetBindVal!");
 
   /* if we're reusing an opened cursor w/ the statement number*/
   /* reallocate BindVar if type has changed (May not be such a good idea?)*/
@@ -834,7 +834,7 @@ void SetBindVal()
 	cur->BindList[j] = term_string[j];
       }
     } else {
-      xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
+      xsb_abort("[ODBC] Unknown bind variable type, %d", cur->BindTypes[j]);
     }
     ctop_int(5,0);
     return;
@@ -845,13 +845,13 @@ void SetBindVal()
     cur->BindTypes[j] = 0;
     cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
     if (!cur->BindList[j])
-      xsb_exit("Not enough memory for an int in SetBindVal!");
+      xsb_abort("[ODBC] Not enough memory for an int in SetBindVal!");
     *((int *)cur->BindList[j]) = oint_val(BindVal);
   } else if (isfloat(BindVal)) {
     cur->BindTypes[j] = 1;
     cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
     if (!cur->BindList[j])
-      xsb_exit("Not enough memory for a float in SetBindVal!");
+      xsb_abort("[ODBC] Not enough memory for a float in SetBindVal!");
     *((float *)cur->BindList[j]) = (float)float_val(BindVal);
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
@@ -876,7 +876,7 @@ void SetBindVal()
       cur->BindList[j] = term_string[j];
     }
   } else {
-    xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
+    xsb_abort("[ODBC] Unknown bind variable type, %d", cur->BindTypes[j]);
   }
   ctop_int(5,0);
   return;
@@ -950,7 +950,7 @@ void Parse()
 			      SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
 	break;
       default:
-	xsb_exit("illegal BindVal");
+	xsb_abort("[ODBC] illegal BindVal");
 	rc = 0;
       }
       if (rc != SQL_SUCCESS) {
@@ -1289,22 +1289,22 @@ void ODBCDescribeSelect()
     cur->ColTypes =
       (SWORD *)malloc(sizeof(SWORD) * cur->NumCols);
     if (!cur->ColTypes)
-      xsb_exit("Not enough memory for ColTypes!");
+      xsb_abort("[ODBC] Not enough memory for ColTypes!");
 
     cur->Data =
       (UCHAR **)malloc(sizeof(char *) * cur->NumCols);
     if (!cur->Data)
-      xsb_exit("Not enough memory for Data!");
+      xsb_abort("[ODBC] Not enough memory for Data!");
 
     cur->OutLen =
       (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
     if (!cur->OutLen)
-      xsb_exit("Not enough memory for OutLen!");
+      xsb_abort("[ODBC] Not enough memory for OutLen!");
 
     cur->ColLen =
       (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
     if (!cur->ColLen)
-      xsb_exit("Not enough memory for ColLen!");
+      xsb_abort("[ODBC] Not enough memory for ColLen!");
 
     for (j = 0; j < cur->NumCols; j++) {
       SQLDescribeCol(cur->hstmt, (short)(j+1), (UCHAR FAR*)colname,
@@ -1328,7 +1328,7 @@ void ODBCDescribeSelect()
       cur->Data[j] =
 	(UCHAR *) malloc(((unsigned) cur->ColLen[j]+1)*sizeof(UCHAR));
       if (!cur->Data[j])
-	xsb_exit("Not enough memory for Data[j]!");
+	xsb_abort("[ODBC] Not enough memory for Data[j]!");
     }
   }
   /* bind them*/
