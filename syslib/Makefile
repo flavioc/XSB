@@ -30,7 +30,7 @@ ALL =	assert.O basics.O consult.O curr_sym.O \
 	machine.O num_vars.O setof.O standard.O std_sbp.O \
 	string.O subsumes.O term_exp.O \
 	x_interp.O xcallxsb.O xsb_read.O xsb_tok.O xsb_writ.O \
-	packaging.O sysinitrc.O tables.O unix.O
+	tables.O unix.O
 
 
 # The following file(s) are not used any more do not make them!
