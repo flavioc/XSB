@@ -80,11 +80,11 @@ STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora2:"
 
 
-all: init system misc showerrors finish
+all: init system libs misc showerrors finish
 
 core: init system showerrors finish
 
-extra: init misc showerrors finish
+extra: init system libs pkgs showerrors finish
 
 showerrors:
 	@cat $(XSBDIR)/build/.flora*.tmp
@@ -96,8 +96,10 @@ system: $(ALLOBJS)
 	cd genincludes; $(MAKE)
 	cd syslib; $(MAKE)
 	cd trailer; $(MAKE)
-	cd lib; $(MAKE)
 	cd debugger; $(MAKE)
+
+libs:
+	cd lib; $(MAKE)
 
 misc:
 	cd pkgs; $(MAKE)

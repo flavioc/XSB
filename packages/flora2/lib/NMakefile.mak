@@ -1,6 +1,6 @@
 # Make file for Microsoft NMAKE
 
-OBJEXT = .O
+OBJEXT = .xwam
 
 ALLOBJS = flrprettyprint.P flrio.P flrstorage.P flrsystem.P
 
