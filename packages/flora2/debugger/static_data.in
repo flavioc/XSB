@@ -114,4 +114,6 @@ flora_hide_this_hide(FLLIBSHDIRECT/3).
 flora_hide_this_hide(FLLIBSHDIRECT/4).
 flora_hide_this_hide(FLLIBSHDIRECT/5).
 
+trace_this_noprint(FLORA_SYMBOL('catch'),3).
+
 FLORA_SYMBOL('debugger_static_data_loaded').

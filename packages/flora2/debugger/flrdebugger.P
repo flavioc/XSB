@@ -183,6 +183,10 @@ flora_write_goal(Call) :-
 	is_disjunction(Call),
 	!,
 	write_disjunction(Call).
+flora_write_goal('->'(Call1,Call2)) :-
+	flora_write_goal(Call1),
+	print_item(' -> '),
+	flora_write_goal(Call2).
 
 flora_write_goal(Call) :-
 	Call =.. [F, Subcall],
@@ -199,9 +203,40 @@ flora_write_goal(Call) :-
 	print_items((' ', FL_UNIVEQFORM, ' ')),
 	flora_write_goal(Right).
 
+flora_write_goal(call(Call)) :-
+	print_item('call('),
+	flora_write_goal(Call),
+	print_item(')').
+
+flora_write_goal(catch(Call,Catcher,Handler)) :-
+	print_item('catch('),
+	flora_write_goal(Call),
+	print_item(','),
+	write_hilog(Catcher),
+	print_item(','),
+	flora_write_goal(Handler),
+	print_item(')').
+
 flora_write_goal(FL_IF(IfCall)) :-
 	!,
 	flora_print_if_statement(IfCall).
+
+flora_write_goal(FL_WHILE(FL_DO(Cond,Action))) :-
+	!,
+	flora_print_while('DO',Cond,Action).
+
+flora_write_goal(FL_WHILE(FL_LOOP(Cond,Action))) :-
+	!,
+	flora_print_while('LOOP',Cond,Action).
+
+flora_write_goal(FL_DO(FL_UNTIL(Action,Cond))) :-
+	!,
+	flora_print_until('DO',Action,Cond).
+
+flora_write_goal(FL_LOOP(FL_UNTIL(Action,Cond))) :-
+	!,
+	flora_print_until('LOOP',Action,Cond).
+
 
 %% This occurs when you have hilog-lit@Module, where Module is a var
 flora_write_goal(FLLIBMODLIT(WRAP_HILOG,Args,Module)) :-
@@ -401,6 +436,25 @@ write_if_body(Then) :-
 	flora_write_goal(Then),
 	print_item(')').
 
+%%%%%%%%%%%%%%%%%%%%%% WHILE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_print_while(LoopType,Cond,Action) :-
+	print_item('WHILE ('),
+	flora_write_goal(Cond),
+	print_items((') ', LoopType, ' (')),
+	flora_write_goal(Action),
+	print_item(')').
+
+%%%%%%%%%%%%%%%%%%%%%% UNTIL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_print_until(LoopType,Action,Cond) :-
+	print_items((LoopType, ' (')),
+	flora_write_goal(Action),
+	print_item(') UNTIL ( '),
+	flora_write_goal(Cond),
+	print_item(')').
+
+
 %%%%%%%%%%%%%%%%%%%%% Updates %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 is_update_call(FLLIBINSERT, FL_INSERT).
@@ -531,7 +585,7 @@ write_value(Val) :-
 write_value(Val) :-
 	is_prolog(Val),
 	!,
-	print_item( Val).
+	print_item(Val).
 
 write_hilog(Val) :-
 	(atomic(Val);var(Val)),
@@ -568,15 +622,19 @@ write_hilog(Val) :-
 	;
 	    %% check if there is a workspace
 	    (flora_decode_predicate(Val,_,WS,_,_,_), ! ; true),
-	    Val =.. [_,Head|Args],
-	    write_hilog(Head),
-	    (Args == [], !
-	    ;
-		print_item( '('),
-		write_hilog_args(Args),
-		print_item( ')')
-	    ),
-	    (nonvar(WS) -> write_workspace(WS); true)
+	    Val =.. [Funct,Head|Args],
+	    (str_sub(WRAP_HILOG,Funct)
+	    -> write_hilog(Head),
+		(Args == [], !
+		;
+		    print_item( '('),
+		    write_hilog_args(Args),
+		    print_item( ')')
+		),
+		(nonvar(WS) -> write_workspace(WS); true)
+	    ; % Not a hilog term
+		write_value(Val)
+	    )
 	).
 
 write_hilog_args([]) :- true.
