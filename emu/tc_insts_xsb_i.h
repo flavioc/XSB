@@ -55,7 +55,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_str,_trie_retry_str) 
         CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_str");
 #endif
@@ -69,7 +68,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_str,_trie_trust_str) 
         CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_str");
 #endif
@@ -113,7 +111,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_numcon,_trie_retry_numcon) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_numcon");
 #endif
@@ -128,7 +125,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_numcon,_trie_trust_numcon) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_numcon");
 #endif
@@ -173,7 +169,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_numcon_succ,_trie_retry_numcon_succ) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_numcon_succ");
 #endif
@@ -188,7 +183,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_numcon_succ,_trie_trust_numcon_succ) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_numcon_succ");
 #endif
@@ -255,7 +249,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_var,_trie_retry_var) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_var");
 #endif
@@ -281,7 +274,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_var,_trie_trust_var)  
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_var");
 #endif
@@ -338,7 +330,6 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_retry_val,_trie_retry_val) 
   Def2ops
   CPtr tbreg;
-  CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
   xsb_dbgmsg("trie_retry_val");
 #endif
@@ -353,7 +344,6 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_trust_val,_trie_trust_val) 
   Def2ops
   CPtr tbreg;
-  CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
   xsb_dbgmsg("trie_trust_val");
 #endif
@@ -395,7 +385,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_list,_trie_retry_list) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_list:");
 #endif
@@ -409,7 +398,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_list,_trie_trust_list) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_list");
 #endif
@@ -435,7 +423,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_fail,_trie_trust_fail) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_trust_fail");
 #endif	
@@ -464,7 +451,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_fail,_trie_retry_fail) 
 	CPtr tbreg;
-	CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
 	xsb_dbgmsg("trie_retry_fail");
 #endif
@@ -573,7 +559,6 @@ XSB_Start_Instr(hash_handle,_hash_handle)
     CPtr    tbreg;
     BTHTptr hash_hdr, *hash_base;
     int     hash_offset, hashed_hash_offset;
-    CPtr xtemp1; 
 
 #ifdef PVR_DEBUG_TC_INSTS
     xsb_dbgmsg("hash_handle");
@@ -708,7 +693,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_attv,_trie_retry_attv) 
   CPtr tbreg;
-  CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
   xsb_dbgmsg("trie_retry_attv:");
 #endif
@@ -722,7 +706,6 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_attv,_trie_trust_attv) 
   CPtr tbreg;
-  CPtr xtemp1;
 #ifdef PVR_DEBUG_TC_INSTS
   xsb_dbgmsg("trie_trust_attv");
 #endif

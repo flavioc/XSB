@@ -26,11 +26,12 @@
 #if (!defined(CHAT))
 #define freeze_and_switch_envs(tbreg, CPsize)	\
   if (bfreg > breg) {				\
+    CPtr local_top;				\
     bfreg = breg + CPsize;			\
     if (trfreg < trreg)  trfreg = trreg;	\
     if (hfreg < hreg)  hfreg = hreg;		\
-    xtemp1 = top_of_localstk;			\
-    if (efreg > xtemp1) efreg = xtemp1;		\
+    local_top = top_of_localstk;		\
+    if (efreg > local_top) efreg = local_top;	\
   }						\
   switch_envs(tbreg)
 #endif
@@ -78,14 +79,16 @@
 #endif
 
 #ifdef MEASURE_WAM_STUFF
-#define undo_bindings(TBREG)	\
-    undbind_num++;\
-    xtemp1 = (CPtr) cp_trreg(TBREG);\
-    table_undo_bindings(xtemp1);
+#define undo_bindings(TBREG) {			\
+   CPtr *old_trreg = cp_trreg(TBREG);		\
+   undbind_num++;				\
+   table_undo_bindings(old_trreg);		\
+}
 #else
-#define undo_bindings(TBREG)	\
-    xtemp1 = (CPtr) cp_trreg(TBREG);\
-    table_undo_bindings(xtemp1);
+#define undo_bindings(TBREG) {			\
+   CPtr *old_trreg = cp_trreg(TBREG);		\
+   table_undo_bindings(old_trreg);		\
+}
 #endif
 
 #ifdef WAM_TRAIL

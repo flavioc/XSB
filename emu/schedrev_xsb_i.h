@@ -63,17 +63,20 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
     /**** Check each consumer for unresolved answers ****/
     if ( IsSubsumptiveProducer(producer_sf) )
       while ( IsNonNULL(consumer_cpf) ) {
-	ALNptr answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
-	SubConsSF consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
-	if ( IsNULL(answer_set) && ((VariantSF)consumer_sf != producer_sf) )
-	  if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
-	    switch_envs(consumer_cpf);
-	    answer_set =
-	      table_identify_relevant_answers((SubProdSF)producer_sf,
-					      consumer_sf,
-					      consumer_cpf + NLCPSIZE);
-	  }
-	if ( IsNonNULL(answer_set) )
+	SubConsSF consumer_sf;
+	ALNptr answer_continuation;
+	BTNptr next_answer;
+
+	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
+	table_pending_answer( nlcp_trie_return(consumer_cpf),
+			      answer_continuation,
+			      next_answer,
+			      consumer_sf,
+			      (SubProdSF)producer_sf,
+			      consumer_cpf + NLCPSIZE,
+			      switch_envs(consumer_cpf),
+			      TPA_NoOp );
+	if ( IsNonNULL(answer_continuation) )
 	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }

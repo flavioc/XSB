@@ -394,15 +394,6 @@ typedef struct SubsumedConsumerSubgoalFrame {
  }
 
 
-/*
- * Determines whether a producer subgoal has added answers to its set
- * since the given consumer last collected relevant answers from this set.
- */
-#define MoreAnswersAvailable(ConsSF,ProdSF)			\
-   ( IsNonNULL(subg_ans_root_ptr(ProdSF)) &&			\
-     (TSTN_TimeStamp((TSTNptr)subg_ans_root_ptr(ProdSF)) >	\
-      conssf_timestamp(ConsSF)) )
-
 extern ALNptr empty_return(void);
 
 

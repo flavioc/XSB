@@ -240,7 +240,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    */
   {
     CPtr consumer_cpf;
-    ALNptr answer_set;
+    ALNptr answer_continuation;
     BTNptr first_answer;
 
     /* Create Consumer Choice Point
@@ -266,15 +266,16 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
     /* Consume First Answer or Suspend
        ------------------------------- */
-    answer_set = subg_answers(consumer_sf);
-    if ( IsNULL(answer_set) && (consumer_sf != producer_sf) )
-      if ( MoreAnswersAvailable(consumer_sf,producer_sf) )
-	answer_set =
-	  table_identify_relevant_answers((SubProdSF)producer_sf,
-					  (SubConsSF)consumer_sf,
-					  answer_template);
+    table_pending_answer( subg_ans_list_ptr(consumer_sf),
+			  answer_continuation,
+			  first_answer,
+			  (SubConsSF)consumer_sf,
+			  (SubProdSF)producer_sf,
+			  answer_template,
+			  TPA_NoOp,
+			  TPA_NoOp );
 
-    if ( IsNonNULL(answer_set) ) {
+    if ( IsNonNULL(answer_continuation) ) {
       int tmp;
 #ifdef CHAT      /* for the time being let's update consumed answers eagerly */
       nlcp_trie_return((CPtr)
@@ -282,9 +283,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 			((chat_init_pheader)
 			 nlcp_chat_area(consumer_cpf)))) =
 #endif
-      nlcp_trie_return(consumer_cpf) = answer_set; 
+      nlcp_trie_return(consumer_cpf) = answer_continuation; 
       hbreg = hreg;
-      first_answer = ALN_Answer(answer_set);
 
       tmp = int_val(cell(answer_template));
       get_var_and_attv_nums(template_size, attv_num, tmp);
@@ -361,34 +361,28 @@ XSB_End_Instr()
 
 XSB_Start_Instr(answer_return,_answer_return) 
   VariantSF consumer_sf;
-  ALNptr answer_set;
-  BTNptr answer_leaf;
+  ALNptr answer_continuation;
+  BTNptr next_answer;
   CPtr answer_template;
   int template_size, attv_num;
 
   /* Locate relevant answers
      ----------------------- */
-  answer_set = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
+  answer_continuation = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
   consumer_sf = (VariantSF)nlcp_subgoal_ptr(breg);
   answer_template = breg + NLCPSIZE;
-  if ( IsNULL(answer_set) && IsProperlySubsumed(consumer_sf) ) {
-    SubProdSF producer_sf = conssf_producer(consumer_sf);
-    if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
-#ifdef CHAT
-      CPtr xtemp1;
-#endif
-      switch_envs(breg);
-      answer_set =
-	table_identify_relevant_answers(producer_sf, (SubConsSF)consumer_sf,
-					answer_template);
-    }
-  }
+  table_pending_answer( nlcp_trie_return(breg),
+			answer_continuation,
+			next_answer,
+			(SubConsSF)consumer_sf,
+			conssf_producer(consumer_sf),
+			answer_template,
+			switch_envs(breg),
+			TPA_NoOp );
 
-  if ( IsNonNULL(answer_set)) {
+  if ( IsNonNULL(answer_continuation)) {
     int tmp;
-#ifdef CHAT
-    CPtr xtemp1;
-#endif
+
     /* Restore Consumer's state
        ------------------------ */
     switch_envs(breg);
@@ -398,16 +392,15 @@ XSB_Start_Instr(answer_return,_answer_return)
 
     /* Consume the next answer
        ----------------------- */
-    nlcp_trie_return(breg) = answer_set;   /* update answer continuation */
-    answer_leaf = ALN_Answer(answer_set);
+    nlcp_trie_return(breg) = answer_continuation;   /* update */
     tmp = int_val(cell(answer_template));
     get_var_and_attv_nums(template_size, attv_num, tmp);
     answer_template += template_size;
 
-    table_consume_answer(answer_leaf,template_size,attv_num,answer_template,
+    table_consume_answer(next_answer,template_size,attv_num,answer_template,
 			 subg_tif_ptr(consumer_sf));
 
-    if (is_conditional_answer(answer_leaf)) {
+    if (is_conditional_answer(next_answer)) {
       /*
        * After load_solution_trie(), the substitution factor of the
        * answer is left in array var_addr[], and its arity is in
@@ -415,7 +408,7 @@ XSB_Start_Instr(answer_return,_answer_return)
        * the heap) and pass it to delay_positively().
        */
       if (num_heap_term_vars == 0) {
-	delay_positively(consumer_sf, answer_leaf,
+	delay_positively(consumer_sf, next_answer,
 			 makestring(get_ret_string()));
       }
       else {
@@ -426,9 +419,9 @@ XSB_Start_Instr(answer_return,_answer_return)
 	for (i = 0; i < num_heap_term_vars; i++) {
 	  cell(hreg++) = (Cell) var_addr[i];
 	}
-	delay_positively(consumer_sf, answer_leaf, makecs(temp_hreg));
+	delay_positively(consumer_sf, next_answer, makecs(temp_hreg));
 #else
-	delay_positively(consumer_sf, answer_leaf,
+	delay_positively(consumer_sf, next_answer,
 			 makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
       }
@@ -687,7 +680,6 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 #ifdef CHAT
 {
     chat_init_pheader chat_area;
-    CPtr xtemp1;
 
     switch_envs(breg);
     ptcpreg = csf_ptcp(breg);
@@ -706,7 +698,6 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 #else
 {
     CPtr csf = cs_compsuspptr(breg);
-    CPtr xtemp1;
     /* Switches the environment to a frame of a subgoal that was	*/
     /* suspended on completion, and sets the continuation pointer.	*/
     check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());

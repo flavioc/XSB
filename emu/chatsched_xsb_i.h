@@ -49,29 +49,28 @@ static CPtr schedule_subgoal(VariantSF producer_sf, CPtr compl_fr)
 
     /**** find the first consumer with unresolved answers, if any ****/
 
-    if ( IsSubsumptiveProducer(producer_sf) ) {
-      SubConsSF consumer_sf;
-      ALNptr answer_set;
+    if ( IsSubsumptiveProducer(producer_sf) )
       while ( IsNonNULL(chat_ptr) ) {
+	SubConsSF consumer_sf;
+	ALNptr answer_continuation;
+	BTNptr next_answer;
+	CPtr templ, *baseTR;
+
 	consumer_cpf = (CPtr)(&chat_get_cons_start(chat_ptr));
 	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
-	answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
-	if ( IsNULL(answer_set) && ((VariantSF)consumer_sf != producer_sf) )
-	  if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
-	    CPtr templ, *baseTR;
-
-	    templ = restore_answer_template(chat_ptr, &baseTR);
-	    answer_set =
-	      table_identify_relevant_answers((SubProdSF)producer_sf,
-					      consumer_sf, templ);
-	    undo_template_restoration(baseTR);
-	  }
-	if ( IsNonNULL(answer_set) )
+	table_pending_answer( nlcp_trie_return(consumer_cpf),
+			      answer_continuation,
+			      next_answer,
+			      consumer_sf,
+			      (SubProdSF)producer_sf,
+			      templ,
+			      templ = restore_answer_template(chat_ptr,&baseTR),
+			      undo_template_restoration(baseTR) );
+	if ( IsNonNULL(answer_continuation) )
 	  break;
 	else
 	  chat_ptr = (chat_init_pheader)nlcp_prevlookup(consumer_cpf);
       }
-    }
     else
       while ( IsNonNULL(chat_ptr) ) {
 	consumer_cpf = (CPtr)(&chat_get_cons_start(chat_ptr));

@@ -51,10 +51,9 @@
 #define RESTORE_SUB                                                       \
 {                                                                         \
   CPtr tbreg;                                                             \
-  CPtr xtemp1;                                                            \
                                                                           \
   tbreg = breg;                                                           \
-  /*   switch_envs(tbreg); */                                             \
+  /*  switch_envs(tbreg); */                                              \
   undo_bindings(tbreg);                                                   \
   ptcpreg = cp_ptcp(tbreg);                                               \
   delayreg = cp_pdreg(tbreg);                                             \
