@@ -602,10 +602,20 @@ Both are small integers, but they refer to different things. However, the
 OS file descriptors are objects returned by the C {\tt open} function; XSB
 I/O ports indices into the internal XSB table of open files. The OS does
 not know about XSB I/O ports, while XSB (obviously) does know about the OS
-file descriptors. Typically XSB opens files for buffered I/O (whether using
-the stream I/O predicates or the predicates described here), so XSB I/O
-ports internally refer to {\tt FILE} data structures (those returned by the
-C {\tt fopen} function).
+file descriptors. An OS file descriptor (which can be returned by some
+predicates, such as {\tt pipe\_open/2}, can be promoted to XSB I/O port
+using the predicate {\tt fd2ioport/2}.
+
+Typically XSB opens files for buffered I/O (whether using the standard
+stream I/O predicates or the predicates described here), so XSB I/O ports
+internally refer to {\tt FILE} data structures (those returned by the C
+{\tt fopen} function).
+
+XSB I/O ports should not be confused with I/O streams used by the standard
+Prolog predicates, like see/1, tell/1, etc. The streams are higher-level
+objects associated with atom constants and which use I/O ports underneath.
+An I/O port can be promoted to an I/O stream using the predicate
+{\tt ioport2iostream/2}, described below.
 
 When it starts, XSB opens a number of standard I/O ports that it uses to
 print results, errors, debugging info, etc. The descriptors are described
@@ -1004,6 +1014,13 @@ The value of {\tt String} can be an atom or a list of ASCII characters.
 \ournewitem{file\_putbuf(+BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
 \index{{\tt file\_putbuf/4}}
 Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
+
+\ournewitem{ioport2iostream(+IOport, -Stream)}{file\_io}
+\index{{\tt ioport2iostream/2}}
+Takes a valid open I/O port and returns an I/O stream. This stream can then
+be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
+The stream returns by this predicate is identified by a newly created atom,
+such as \verb|_$newstream_#123|. 
 
 
 \end{description}

@@ -96,4 +96,5 @@ extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
 
 /* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
 extern void xsb_segfault_catcher (int);
+extern void xsb_segfault_quitter(int);
 

@@ -39,13 +39,15 @@ read_debugger_data :- '_$_debugger_data_loaded', !.
 read_debugger_data :- 
 	xsb_configuration(syslibdir, SysLib),
 	fmt_write_string(DebugDataFile, '%s/debugger_data.P', arg(SysLib)),
+	seeing(OldFile),
 	see(DebugDataFile),
 	repeat,
 	    read(T),
 	    (T = end_of_file -> true
 	    	    	     ;  assert(T), fail
 	    ),
-	seen.
+	seen,
+	see(OldFile).
 
 /* -- tracing flags setting  -------------------------------------- */
 

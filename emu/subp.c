@@ -355,7 +355,7 @@ void init_interrupt(void)
   /* Don't handle SIGSEGV/SIGBUS if configured with DEBUG */
   xsb_default_segfault_handler = SIG_DFL;
 #else 
-  xsb_default_segfault_handler = xsb_segfault_catcher;
+  xsb_default_segfault_handler = xsb_segfault_quitter;
 #endif
 
 #ifdef SIGBUS
