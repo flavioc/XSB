@@ -70,11 +70,10 @@ If {\tt test.html} is a file with the following contents
 then the following call
 %%
 \begin{verbatim}
-?- load_html_structure(file('test.html'), Term, Warn),
-   pretty_print(Term).
+?- load_html_structure(file('test.html'), Term, Warn).
 \end{verbatim}
 %%
-will parse it and bind {\tt Term} to the following Prolog term: 
+will parse the document and bind {\tt Term} to the following Prolog term: 
 %%
 \begin{verbatim}
 [ element(html,
@@ -107,6 +106,7 @@ will parse it and bind {\tt Term} to the following Prolog term:
           ])
 ].
 \end{verbatim}
+%%
 
 
 
