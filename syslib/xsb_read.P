@@ -184,6 +184,7 @@ read5(func(Functor), [punc(CH_LPAREN)|S1], Precedence, Answer, S) :-
 % Term ::= PreOp Term
 read5(atom(Functor), S0, Precedence, Answer, S) :-
         read_prefixop(Functor, Prec, Right),
+	avoid_nonsense_parentheses(S0),
 	!,
         read_aft_pref_op(Functor, Prec, Right, S0, Precedence, Answer, S).
 
@@ -269,6 +270,15 @@ read5(_Token, S0, _, _, _) :-
 	read_record_error(S0).     /* Found a token that cannot start an */
 	                           /* expression, i.e. "]", "," */
 
+
+% total hack which fixes commonly reported problem of O'Keefe reader in the
+% handling of atoms who also happen to be operators with precedence > 1000.
+% by Kostis.
+avoid_nonsense_parentheses([punc(Punc)|_]) :-
+	!,
+	Punc =\= CH_RPAREN, Punc =\= CH_COMMA,
+	Punc =\= CH_RBRACKET, Punc =\= CH_BAR.
+avoid_nonsense_parentheses(_).
 
 %   rest_read_structure(+Functor, +FirstArg, +TermList, 
 %			+Precedence, -Term, -LeftOver)
