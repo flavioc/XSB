@@ -7,10 +7,10 @@ EOF
 
 cd ../emu
 
-# Make sure we have the right config.h before runing makedepend
+# Make sure we have the right xsb_config.h before runing makedepend
 configdir=../config/x86-pc-windows
-cp -f $configdir/config.h configs
-cp -f $configdir/debug.h  debugs
+cp -f $configdir/xsb_config.h configs
+cp -f $configdir/xsb_debug.h  debugs
 
 # -w1000 tells makedepend to create long line, 1 dependency per source file: 
 # we don't know how MSVC's NMAKE handles multiple dependencies per source file
