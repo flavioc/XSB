@@ -35,20 +35,31 @@
 FL_IF(FL_THEN(Cond,FL_ELSE(Then,_Else))) :- call(Cond), call(Then).
 %% This cut prevents `if' with the `else' clause from matching the third clause
 FL_IF(FL_THEN(Cond,FL_ELSE(_Then,Else))) :- !, sk_not(Cond), call(Else).
-FL_IF(FL_THEN(Cond,Then)) :- call(Cond), call(Then).
 
+%% IF THEN
+FL_IF(FL_THEN(Cond,Then)) :- call(Cond), call(Then).
+%% IF THEN succeeds, if Cond fails
+FL_IF(FL_THEN(Cond,_Then)) :- sk_not(Cond).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%   while-do and do-until loops commit storage after each iteration
+%%%%   so they are not backtrackable (backtracking over updates can occur
+%%%%   only within the condition or action parts, but not after an iteration
+%%%%   is finished)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% This should fail ONLY if Cond is true, but Action fails.
 %% We use catch/throw to achieve this
 FL_WHILE(FL_DO(Cond,Action)) :- 
-	catch((call(Cond),
-	       (call(Action) -> flora_commit_storage, fail
-	       ; throw(quitLoop)
-	       )
-	      ; true
-	      ),
-	      quitLoop, % catcher
-	      fail).    % fail, if condition was thrown
+	FLORA_SYMBOL('catch')((call(Cond),
+		     (call(Action) -> flora_commit_storage, fail
+		     ; throw(quitLoop)
+		     )
+		    ; true
+		    ),
+		    quitLoop,	% catcher
+		    fail).	% fail, if condition was thrown
 
 %% Fails only if Action becomes false before Cond becomes true
 FL_DO(FL_UNTIL(Action,Cond)) :-
@@ -56,3 +67,23 @@ FL_DO(FL_UNTIL(Action,Cond)) :-
 	flora_commit_storage,
 	call(Cond).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% while-loop and loop-while
+%%% These loops are fully backtrackable, but they are more expensive, 
+%%% since they are recursive.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+FL_WHILE(FL_LOOP(Cond,Action)) :- 
+	call(Cond),
+	call(Action),
+	FL_WHILE(FL_LOOP(Cond,Action)).
+
+FL_LOOP(FL_UNTIL(Action,Cond)) :-
+	call(Action),
+	call(Cond),
+	FL_LOOP(FL_UNTIL(Action,Cond)).
+
+
+%% These exist in order to be able to hide the calls 
+%% to catch/throw in the debugger
+FLORA_SYMBOL('catch')(X,Y,Z) :- catch(X,Y,Z).

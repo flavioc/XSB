@@ -40,6 +40,8 @@ flora_arguments_spec(get_residual,2,[FL_BODYFORMULA,FL_OID]) :- !.
 flora_arguments_spec((FL_UNIVEQFORM),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
 flora_arguments_spec((FL_DO),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
 flora_arguments_spec((FL_DO),1,[FL_BODYFORMULA]) :- !.
+flora_arguments_spec((FL_LOOP),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
+flora_arguments_spec((FL_LOOP),1,[FL_BODYFORMULA]) :- !.
 flora_arguments_spec((FL_WHILE),1,[FL_BODYFORMULA]) :- !.
 flora_arguments_spec((FL_UNTIL),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
 

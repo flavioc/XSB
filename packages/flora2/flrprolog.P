@@ -122,8 +122,10 @@ flora_prlg(FL_ELSE,2) :- !.
 
 flora_prlg(FL_WHILE,1) :- !.
 flora_prlg(FL_DO,2) :- !.
+flora_prlg(FL_LOOP,2) :- !.
 flora_prlg(FL_UNTIL,2) :- !.
 flora_prlg(FL_DO,1) :- !.
+flora_prlg(FL_LOOP,1) :- !.
 
 
 /****************************************************************************
