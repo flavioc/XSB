@@ -41,7 +41,7 @@ ALLOBJS = flrarguments$(OBJEXT) \
 	  flroperator$(OBJEXT) \
 	  flrparser$(OBJEXT) \
 	  flrporting$(OBJEXT) \
-	  flrprettyprint$(OBJEXT) \
+	  flrpretifydump$(OBJEXT) \
 	  flrprint$(OBJEXT) \
 	  flrprolog$(OBJEXT) \
 	  flrregistry$(OBJEXT) \
