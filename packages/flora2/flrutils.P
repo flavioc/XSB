@@ -353,6 +353,7 @@ flora_flcompile(FlrFile,ModuleName) :-
 	  (
 	    %% Issue only important preprocessor warnings
 	    %% to avoid warnings when atoms or strings have \n in them
+	    flora_set_xpp_options_for_compile(ModuleName),
 	    flora_add_xpp_options('-warninglevel 1 '),
 	    %%compile(MPFile,[optimize,spec_repr,ti_all])
 	    compile(MPFile,[optimize,ti_all]) ->
@@ -503,6 +504,7 @@ flora_flload(FlrFile,Workspace) :-
 	    true
 	;
 	  (
+	    flora_set_xpp_options_for_compile(Workspace),
 	    flora_add_xpp_options('-warninglevel 0 '),
 	    %%compile(MPFile,[optimize,spec_repr,ti_all])
 	    compile(MPFile,[optimize,ti_all])
@@ -704,7 +706,6 @@ flora_set_xpp_options_for_compile(Module) :- flora_set_xpp_options(compile,Modul
 flora_set_xpp_options_for_compile(Module,ExtraOpts) :-
 	flora_set_xpp_options(compile,Module,ExtraOpts).
 
-%%flora_set_xpp_options_for_dump :- flora_set_xpp_options(dump).
 %%flora_set_xpp_options_for_dump(Module) :- flora_set_xpp_options(dump,Module).
 flora_set_xpp_options_for_dump(Module,ExtraOpts) :-
 	flora_set_xpp_options(dump,Module,ExtraOpts).
@@ -790,24 +791,6 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 	writeln('#endif'),
 	nl.
 
-/*************************************************************************
-  flora_loaddyn_FLD_filename(+FLDFileName)
-*************************************************************************/
-flora_loaddyn_FLD_filename(FLDFileName) :-
-	%% Output the base file name only. The full path will be taken
-	%% care of by flora_load_dyn_fld and consult.
-	parse_filename(FLDFileName,_Dir,Base,Ext),
-	writeln('#if !defined(FLORA_FLD_FILENAME)'),
-	writeln(':- import flora_load_dyn_fld/2 from flrutils.'),
-	current_output_port(OutPort),
-	fmt_write(OutPort, "#define FLORA_FLD_FILENAME  '%s.%s'", args(Base,Ext)),
-	nl,
-	writeln('?- flora_load_dyn_fld(FLORA_FLD_FILENAME,FLORA_THIS_MODULE_NAME).'),
-	writeln('#else'),
-	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
-	writeln('?- flora_read_canonical_and_insert(FLORA_FLD_FILENAME,FLORA_THIS_FLD_STORAGE).'),
-	writeln('#endif'),
-	nl.
 
 /*************************************************************************
   flora_loaddyn_FLD_filename(+FLDFileName)
@@ -942,6 +925,7 @@ flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
 flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus) :-
+	%% Generate FLD file for undefinedness checking
 	flora_debug_code(CompiledRuleList, FLDFile),
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
 	sort(FileOptionList,FileOptions),
@@ -1018,6 +1002,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
   (2) output header file.
   (3) facts.
 *************************************************************************/
+
 flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 	telling(PreOutFile),
 	tell(DBFileName),
@@ -1034,6 +1019,44 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 	told,
 	tell(PreOutFile),
 	!.
+
+/* This version preprocesses the DB file as much as possible, leaving
+   FLORA_VAR_WORKSPACE only. Unfortunately, it occurs between quotes
+   and is not expanded.
+
+:- import file_write/2, file_nl/2 from xsb_srit.
+flora_set_xpp_options_for_dump :- flora_set_xpp_options(dump).
+flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
+	telling(PreOutFile),
+	flora_set_xpp_options_for_dump,
+	file_open(DBFileName,w,DBFilePort),
+	file_write(DBFilePort,'#mode save'), file_nl(DBFilePort),
+	file_write(DBFilePort,'#mode nostring "\!#''"'), file_nl(DBFilePort),
+	%% get data from stdin, dump to DBFilePort (redirected to DBFileName)
+	xpp_process_file(IntoXPP,XPP_process,DBFilePort),
+	stat_set_flag(CURRENT_OUTPUT,IntoXPP),
+	%% Include the Macro definitions.
+	writeln('#include "flrheader.flh"'),
+	nl,
+	flora_extern_code(FactList,CoderStatus),
+	( CoderStatus == [] ->
+	    FileStatus=FLORA_SUCCESS
+	;
+	  flora_coder_error(CoderStatus),
+	  FileStatus=FLORA_FAILURE
+	),
+	file_close(IntoXPP),
+	process_control(XPP_process,wait(ExitStatus)),
+	(ExitStatus==0, !
+	; flora_error_line('Error while generating %s', DBFileName)
+	),
+	flora_clear_xpp_options,
+	file_write(DBFilePort,'#mode restore'), file_nl(DBFilePort),
+	file_close(DBFilePort),
+	tell(PreOutFile),
+	!.
+
+*/
 
 
 /*************************************************************************
@@ -1728,20 +1751,10 @@ flDump(InFile) :-
 flora_dump_file(InFile,Workspace,SquashingOption) :-
 	flora_check_filename(InFile),
 	flora_check_workspace(Workspace),
-	( flora_locate_file(InFile,FLORA_FILE_EXT,FlrFile) ->
-	    flora_flcompile(FlrFile,Workspace)
-	;
-	  flora_flrfilename_error(InFile),
-	  !,
-	  fail
-	),
-	!,
-	%% Compilation succeeds. Need to dump file contents.
-	( SquashingOption == squash ->
-	    NewWorkspace=''
-	;
-	  %% Add '_' to the workspace to simplify reading.
-	  str_cat(Workspace,'_',NewWorkspace)
+	( flora_locate_file(InFile,FLORA_FILE_EXT,FlrFile), !
+	; flora_flrfilename_error(InFile),
+	    !,
+	    fail
 	),
 	%% Find the files that need to be dumped.
 	flora_mainP_filename(FlrFile,PFile),
@@ -1750,6 +1763,20 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	flora_dump_filename(PFile,DumpPFile),
 	flora_dump_filename(FDBFile,DumpFDBFile),
 	flora_dump_filename(FLDFile,DumpFLDFile),
+
+	flora_set_xpp_options_for_compile,
+	flora_compile_file(FlrFile,PFile,FDBFile,FLDFile,Status),
+	( Status == FLORA_FAILURE -> flora_clear_xpp_options, !, fail
+	; true
+	),
+	flora_clear_xpp_options,
+	!,
+	%% Compilation has succeeded. Need to dump file contents.
+	( SquashingOption == squash -> NewWorkspace=''
+	;
+	  %% Add '_' to the workspace to simplify reading.
+	  str_cat(Workspace,'_',NewWorkspace)
+	),
 	!,
 	( path_sysop(exists,PFile) ->
 	    %% Dump the main .P file.
@@ -1762,13 +1789,13 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	    %% Dump the .fdb file if it exists.
 	    flora_gpp_dumpfile(FDBFile,DumpFDBFile,NewWorkspace)
 	;
-	  true
+	    true
 	),
 	( path_sysop(exists,FLDFile) ->
 	    %% Dump the .fld file if it exists.
 	    flora_gpp_dumpfile(FLDFile,DumpFLDFile,NewWorkspace)
 	;
-	  true
+	    true
 	),
 	!.
 

@@ -448,27 +448,27 @@
 
 %% Wrapper names that occur in the body of the compiled rules that come
 %% from the user program
-#define	WRAP_D_ISA		FLDEBUGPREFIX(isa)
-#define	WRAP_D_SUB		FLDEBUGPREFIX(sub)
-#define	WRAP_D_METH		FLDEBUGPREFIX(meth)
-#define	WRAP_D_IMETH		FLDEBUGPREFIX(imeth)
-#define	WRAP_D_TRAN		FLDEBUGPREFIX(tran)
-#define	WRAP_D_FD		FLDEBUGPREFIX(fd)
-#define	WRAP_D_IFD		FLDEBUGPREFIX(ifd)
-#define	WRAP_D_FDSIG		FLDEBUGPREFIX(fdsig)
-#define	WRAP_D_IFDSIG		FLDEBUGPREFIX(ifdsig)
-#define	WRAP_D_MVD		FLDEBUGPREFIX(mvd)
-#define	WRAP_D_IMVD		FLDEBUGPREFIX(imvd)
-#define	WRAP_D_MVDSIG		FLDEBUGPREFIX(mvdsig)
-#define	WRAP_D_IMVDSIG		FLDEBUGPREFIX(imvdsig)
-#define	WRAP_D_MVDINC		FLDEBUGPREFIX(mvdinc)
-#define	WRAP_D_IMVDINC		FLDEBUGPREFIX(imvdinc)
-#define WRAP_D_MVDTOLIST	FLDEBUGPREFIX(mvdtolist)
-#define WRAP_D_IMVDTOLIST	FLDEBUGPREFIX(imvdtolist)
-#define	WRAP_D_FDDEF		FLDEBUGPREFIX(fddef)
-#define	WRAP_D_IFDDEF		FLDEBUGPREFIX(ifddef)
-#define	WRAP_D_MVDDEF		FLDEBUGPREFIX(mvddef)
-#define	WRAP_D_IMVDDEF		FLDEBUGPREFIX(imvddef)
+#defeval WRAP_D_ISA		FLDEBUGPREFIX(isa)
+#defeval WRAP_D_SUB		FLDEBUGPREFIX(sub)
+#defeval WRAP_D_METH		FLDEBUGPREFIX(meth)
+#defeval WRAP_D_IMETH		FLDEBUGPREFIX(imeth)
+#defeval WRAP_D_TRAN		FLDEBUGPREFIX(tran)
+#defeval WRAP_D_FD		FLDEBUGPREFIX(fd)
+#defeval WRAP_D_IFD		FLDEBUGPREFIX(ifd)
+#defeval WRAP_D_FDSIG		FLDEBUGPREFIX(fdsig)
+#defeval WRAP_D_IFDSIG		FLDEBUGPREFIX(ifdsig)
+#defeval WRAP_D_MVD		FLDEBUGPREFIX(mvd)
+#defeval WRAP_D_IMVD		FLDEBUGPREFIX(imvd)
+#defeval WRAP_D_MVDSIG		FLDEBUGPREFIX(mvdsig)
+#defeval WRAP_D_IMVDSIG		FLDEBUGPREFIX(imvdsig)
+#defeval WRAP_D_MVDINC		FLDEBUGPREFIX(mvdinc)
+#defeval WRAP_D_IMVDINC		FLDEBUGPREFIX(imvdinc)
+#defeval WRAP_D_MVDTOLIST	FLDEBUGPREFIX(mvdtolist)
+#defeval WRAP_D_IMVDTOLIST	FLDEBUGPREFIX(imvdtolist)
+#defeval WRAP_D_FDDEF		FLDEBUGPREFIX(fddef)
+#defeval WRAP_D_IFDDEF		FLDEBUGPREFIX(ifddef)
+#defeval WRAP_D_MVDDEF		FLDEBUGPREFIX(mvddef)
+#defeval WRAP_D_IMVDDEF		FLDEBUGPREFIX(imvddef)
 
 
 /****************************************************************************
@@ -619,25 +619,25 @@
         atom, but not the text string.
 ******************************************************************************/
 
-#define FLORA_PREFIX_LEN_PLUS1	    #eval length(FLORA_PREFIX)-1
-#define FLORA_FO_PREFIX_LEN_PLUS1   #eval length(FLORA_FO_PREFIX)-1
+#defeval FLORA_PREFIX_LEN_PLUS1	     #eval length(FLORA_PREFIX)-1
+#defeval FLORA_FO_PREFIX_LEN_PLUS1   #eval length(FLORA_FO_PREFIX)-1
 
 %% length of FLORA_PREFIX'FLORA_USER_MODULE
-#define FLORA_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_USER_MODULE_PREFIX)-2
+#defeval FLORA_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_USER_MODULE_PREFIX)-2
 
 %% length of FLORA_PREFIX'FLORA_SYSTEM_MODULE
-#define FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_SYSTEM_MODULE_PREFIX)-2
+#defeval FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_SYSTEM_MODULE_PREFIX)-2
 
 %% length of FLORA_FO_PREFIX'FLORA_USER_MODULE
-#define FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_USER_MODULE_PREFIX)-2
+#defeval FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_USER_MODULE_PREFIX)-2
 
 %% length of FLORA_FO_PREFIX'FLORA_SYSTEM_MODULE
-#define FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_SYSTEM_MODULE_PREFIX)-2
+#defeval FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_SYSTEM_MODULE_PREFIX)-2
 
-#define FLFACTPREFIX_LEN		#eval length(FLFACTPREFIX)-2
-#define FLHEADPREFIX_LEN		#eval length(FLHEADPREFIX)-2
-#define FLBODYPREFIX_LEN		#eval length(FLBODYPREFIX)-2
-#define FLTRAILERPREFIX_LEN		#eval length(FLTRAILERPREFIX)-2
+#defeval FLFACTPREFIX_LEN		#eval length(FLFACTPREFIX)-2
+#defeval FLHEADPREFIX_LEN		#eval length(FLHEADPREFIX)-2
+#defeval FLBODYPREFIX_LEN		#eval length(FLBODYPREFIX)-2
+#defeval FLTRAILERPREFIX_LEN		#eval length(FLTRAILERPREFIX)-2
 
 
 /****************************************************************************
