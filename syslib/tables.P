@@ -50,13 +50,12 @@ tfindall(T, Call, Result) :-
 	; Status =:= 3 ->
 	        get_ptcp(PTCP), get_subgoal_ptr(Call, SubgPtr),
 		is_incomplete(Call,SubgPtr,PTCP,_), findall(T,Call,Result)
-        ; abort(('Illegal (untabled?) subgoal to tfindall/3: ', Call))
+        ; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
 	).
 
 tnot(X) :-
 	( ground(X) -> 't not'(X)
-	; functor(X,F,A),
-	  abort(('FLOUNDERING: tnot/1 used with a non-ground subgoal of predicate ', F/A))
+	; abort(['FLOUNDERING: tnot/1 used with a non-ground subgoal: ', X])
 	).
 
 't not'(X) :-
