@@ -196,9 +196,6 @@ case answer_return:
  *
  * This instruction will be taken out sometime in the future, in release
  * 2.x or 3.0.
- *
- * Note: CHAT does not support old .O files.  So those `#ifdef CHAT'-s
- *       here are meaningless and can be taken out.
  */
 case old_new_answer_dealloc:
     if (delayreg != NULL && answer_is_junk(delayreg)) {
@@ -211,12 +208,6 @@ case old_new_answer_dealloc:
     pad64;
     xtemp3 = (CPtr) *(ereg-Yn);
 
-#ifdef CHAT
-    COMPL_STK_FRAME = subg_compl_stack_ptr(SUBGOAL);
-    /* substitution factor is now in the heap for generators */
-    CallNumVar = int_val(cell(compl_hreg(COMPL_STK_FRAME)));
-    VarsInCall = compl_hreg(COMPL_STK_FRAME)-1;
-#else
     /*
      * All the information from the choice point stack, including
      * CallNumVar, VarsInCall, and ARITY's registers, was set in tabletry.
@@ -231,7 +222,6 @@ case old_new_answer_dealloc:
     CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
     VarsInCall = GENERATOR_CP + TCP_SIZE + (Cell) ARITY + CallNumVar;
     SUBGOAL = tcp_subgoal_ptr(GENERATOR_CP);
-#endif
 
     xflag = 0;
     SUBGOAL = tcp_subgoal_ptr(GENERATOR_CP);
@@ -251,11 +241,7 @@ case old_new_answer_dealloc:
     }
     else { /* go ahead -- look for more answers */
 /*----------------------------------------------------------------------*/
-#ifdef CHAT
-      delayreg = compl_pdreg(COMPL_STK_FRAME); /* restore delayreg of parent */
-#else
       delayreg = tcp_pdreg(GENERATOR_CP);      /* restore delayreg of parent */
-#endif
       if (is_conditional_answer(TrieRetPtr)) {	/* positive delay */
 #ifndef LOCAL_EVAL
 	/*
@@ -287,11 +273,7 @@ case old_new_answer_dealloc:
 #ifdef LOCAL_EVAL
       Fail1;	/* and do not return answer to the generator */
 #else
-#ifdef CHAT
-      ptcpreg = compl_ptcp(COMPL_STK_FRAME);
-#else
       ptcpreg = tcp_ptcp(GENERATOR_CP);
-#endif
       cpreg = *((byte **)ereg-1);
       ereg = *(CPtr *)ereg;
       lpcreg = cpreg; 
