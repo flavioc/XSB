@@ -1149,14 +1149,105 @@ string]} then the query {\tt ?- student[name \Fd X]} succeeds with {\tt X =
 string}.
 
 Behavioral inheritance is much more complex. The problem  is that it is
-non-monotonic. That is, values specified for more specific classes override
-the values specified for less specific classes.
+\emph{non-monotonic}. That is, addition of new facts might change previously
+established inferences.
 
-Behavioral inheritance in F-logic is discussed at length in \cite{KLW95}
-and a fixpoint-based semantics was introduced there. However, this
-semantics is only one of several possible ones, and it is very hard to
-implement efficiently. \FLORA uses a different, more cautious semantics for
-inheritance, which can be summarized using the following rules:
+F-logic (and \FLORA) distinguishes between attributes and methods that can
+inherit values from superclasses and those that do not. The syntax that we
+used so far applies to \emph{non-inheritable} attributes only.
+\emph{Inheritable attributes} are declared using the {\tt *=>}, {\tt *=>>}
+style arrows and defined using the {\tt *->}, {\tt *->>} style arrows. For
+instance, the following is a \FLORA program for the classical Royal
+Elephant example:
+%%
+\begin{verbatim}
+elephant[color *=> color].
+royal_elephant :: elephant.\\
+clyde : elephant.\\
+elephant[color *-> gray].\\
+\end{verbatim}
+%%
+The question is what is the color of Clyde?
+Clyde's color has not been defined in the above program. However, since
+Clyde is an elephant and the default color for elephants is gray, Clyde
+must be gray. Thus, we can derive:
+%%
+\begin{verbatim}
+clyde[color -> gray].  
+\end{verbatim}
+%%
+Observe that when inheritable methods are inherited from a class by its
+members, the attribute becomes non-inheritable. On the other hand, when
+such a method is inherited by a subclass from its superclass, then the
+method is still inheritable, so it can be further inherited by the members
+of that subclass or by its subclasses. For instance, if we have
+%%
+\begin{verbatim}
+circus_elephant :: elephant.
+\end{verbatim}
+%%
+then we can derive 
+%%
+\begin{verbatim}
+circus_elephant[color *-> gray].  
+\end{verbatim}
+%%
+
+Nono-monotonicity of behavioral inheritance shows when certain new
+information gets added to the knowledge base. For instance, suppose that we
+learn that
+%%
+\begin{verbatim}
+royal_elephant[color *-> white].  
+\end{verbatim}
+%%
+Although we have previously established that Clyde is gray, this new
+information renders our earlier conclusion invalid. Indeed,
+Since Clyde is a royal elephant, he must be white, while being an elephant
+he must be gray.
+The conventional wisdom in object-oriented languages, however, is that
+inheritance from more specific classes must take precedence. Thus, we must
+retract our earlier conclusion that Clyde is gray and assume that he is white:
+%%
+\begin{verbatim}
+clyde[color -> white].    
+\end{verbatim}
+%%
+
+Behavioral inheritance in F-logic is discussed at length in \cite{KLW95}.
+The above problem of non-monotonicity is just a tip of the iceberg. Much
+more difficult problems arise when inheritance interacts with the regular
+deduction. To illustrate, consider the following program:
+%%
+\begin{verbatim}
+b[m *->> c].
+a : b.
+a[m ->> d] :- a[m ->> c].
+\end{verbatim}
+%%
+In the beginning, it seems that \verb|a[m ->> c]| should be derived by
+inheritance, and so we can derive \verb|a[m ->> d]|. Now, however, we can
+reason in two different ways:
+%%
+\begin{enumerate}
+\item \verb|a[m ->> c]| was derived based on the belief that attribute {\tt
+    m} is not defined for the object {\tt a}. However, once inherited,
+  necessarily we must have \verb|a[m ->> {c,d}]|. So, the value of
+  attribute {\tt m} is not really that produced by inheritance. In other
+  words, inheritance of \verb|a[m ->> c]| negates the very premise on which
+  the original inheritance was based, so we must undo the opeation and the
+  ensuing rule application.
+\item We did derive \verb|a[m ->> d]| as a result of inheritance, but
+  that's OK --- we should not really be looking back.
+\end{enumerate}
+%%
+A semantics that favors the second interpretation was proposed in
+\cite{KLW95}. This approach is based on a fixpoint computation of
+non-monotonic behavioral inheritance.  However, this semantics is very hard
+to implement efficiently, especially using a top-down deductive engine
+provided by XSB. Thus, \FLORA uses a different, more cautious semantics for
+inheritance, which favors the first interpretation above.  The idea can be
+summarized using the following rules:
 %%
 \begin{verbatim}
 // Inheritance rules for scalar attributes
@@ -1180,6 +1271,39 @@ that the well-founded semantics for negation in the presence of equality is
 not sufficiently develped yet. For this reason, inheritance is turned off
 if \FLORA compiler is instructed to compile a \FLORA module with equality
 maintenance enabled.
+
+\paragraph{Inheritable attributes and path expressions.}
+In the previous examples, path expressions used only non-inheritable
+attributes. Clearly, there is no reason to disalow inheritable attributes
+in such expressions. To distinguish inheritable from non-inheritable
+attributes in path expressions, \FLORA uses ``!'' and ``!!''. For instance, 
+%%
+\begin{verbatim}
+clyde!color.           means: clyde[color *-> X], for some X
+obj!!attr.             means: obj[attr *->> Y].
+\end{verbatim}
+%%
+
+\subsection{Type Checking}
+
+Although \FLORA allows the user to specify object types through signatures,
+type correctness is not being checked automatically. So, what are the
+signatures goof for then? One answer is that future versions of \FLORA
+might support some forms of type checking. However, because F-logic can
+natively support powerful meta-programming, even the current level
+of support for signatures is useful. For instance, the programmer can write
+simple queries to check the types of methods that might look suspicious.
+Here is one way to construct such a type-checking query:
+%%
+\begin{verbatim}
+scalar_type_incorrect(O,M,R) :- O[X -> R] , O:C, C[X => D], tnot(R:D).
+?- scalar_type_incorrect(obj, meth, Result).
+\end{verbatim}
+%%
+Here, we defined what it means to violate type checking using the usual
+F-logic semantics. The corresponding predicate can then be queried. The
+``no'' answer means that the corresponding attribute does not violates the
+typing rules.
 
 \subsection{Meta-programming in \FLORA}
 
