@@ -64,7 +64,7 @@ all: init $(ALL) finish
 	@cat $(SVFILE)
 
 %.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
-	@cp -f $*.O $(OBJFILESAVED)
+	@cp -f $*.O $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
@@ -76,7 +76,7 @@ all: init $(ALL) finish
 .H.P:
 	touch $@
 .P.O:
-	@cp -f $*.O $(OBJFILESAVED)
+	@cp -f $*.O $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
