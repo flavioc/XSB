@@ -46,6 +46,8 @@ extern Cell flags[];		/* System flags + user flags */
 #define MOD_LIST	13	/* the list of module (Psc) entries	YR */
 #define RELOC_TABLE	14	/* relocation table			YR */
 
+#define DCG_MODE        18      /* DGC mode: standard or xsb	        MK */
+
 #define GARBAGE_COLLECT 20      /* type of garbage collecion employed:     */
                                 /* 0 = none; 1 = sliding; 2 = copying.  NW */
 #define CMD_LINE_GOAL  	21	/* The Prolog goal passd on cmd 

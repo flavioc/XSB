@@ -331,10 +331,27 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       {\em different (unintended) meaning} if {\tt a/2} is called with
       its second argument bound.
 
-      However, to obtain the alternate expansion provided by the other Prolog
-      systems, the user may simply interchange file {\tt dcg.P} with the file
-      {\tt dcg\_qsc.P} found in the {\tt syslib} system directory (and of
-      course make a new {\tt dcg.O} file after that).
+      However, to obtain the standard expansion provided by the other Prolog
+      systems, the user can simply execute:
+      
+      \index{set_dcg_style/1}
+      \stuff{
+        \>\> set\_dcg\_style(standard).
+      }
+    
+      To switch back to the XSB-style DCG's, call
+      
+      \stuff{
+        \>\> set\_dcg\_style(xsb).
+      }
+
+      This can be done anywhere in the program, or interactively.
+      By default, XSB starts with the XSB-style DCG's. To change that,
+      start XSB as follows:
+
+      \stuff{
+        \> \> xsb -e "set\_dcg\_style(standard)."
+        }
 
       Problems of DCG expansion in the presence of {\em cuts} have been known
       for a long time and almost all Prolog implementations expand a DCG
@@ -434,3 +451,8 @@ available in the tech reports directory.
 %See the examples in the {\tt examples} directory of \ourprolog\ to see how
 %this facility can be used.
 
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 

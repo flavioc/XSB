@@ -182,6 +182,7 @@ char *init_para(int argc, char *argv[])
 
   flags[STACK_REALLOC] = TRUE;
   flags[GARBAGE_COLLECT] = SLIDING_GC;
+  flags[DCG_MODE] = XSB_STYLE_DCG;
 
   /* Set default Prolog files.
      ------------------------- */

@@ -49,6 +49,10 @@
 /*	  file with file dcg_qsc.P found in this directory.		*/
 /*----------------------------------------------------------------------*/
 
+set_dcg_style(xsb) :-      stat_set_flag(18, 0), !.
+set_dcg_style(standard) :- stat_set_flag(18, 1), !. % Quintus,C-Prolog,SICStus
+set_dcg_style(X) :- write(X), writeln(': invalid DCG style'), fail.
+
 dcg((LHS --> RHS), (OutHead :- OutBody)) :-
 	( functor(LHS, ',', 2) -> 
 		arg(1, LHS, Non_Terminal),
@@ -108,47 +112,6 @@ dcg_body(RHS, In, Out, Goal) :-
 %	but for the moment I dunno the way to do it.
 dcg_body_var(Phrase, In, Out, phrase(Phrase, In, Out)).
 
-dcg_body_nonvar(','(Term1,Term2), In, Out, ','(Goal1,Goal2)) :-
-	!,
-	dcg_body(Term1, In, Middle, Goal1),
-	( (Term2 == '!' ; Term2 == '{}'('!')) ->
-		Goal2 = ('!', Middle = Out)  /* Make the expansion steadfast. */
-	; dcg_body(Term2, Middle, Out, Goal2)
-	).
-dcg_body_nonvar(';'(Term1,Term2), In, Out, ';'(Goal1,Goal2)) :-
-	!,
-	dcg_body(Term1, In, Out, Goal1),
-	dcg_body(Term2, In, Out, Goal2).
-dcg_body_nonvar('->'(Term1,Term2), In, Out, '->'(Goal1,Goal2)) :-
-	!,
-	dcg_body(Term1, In, Middle, Goal1),
-	dcg_body(Term2, Middle, Out, Goal2).
-dcg_body_nonvar(not(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
-	!,
-	dcg_body(Term, In, _, Goal).
-dcg_body_nonvar('\+'(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
-	!,
-	dcg_body(Term, In, _, Goal).
-dcg_body_nonvar(fail_if(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
-	!,
-	dcg_body(Term, In, _, Goal).
-dcg_body_nonvar('{}'(G), In, Out, Goal) :- 
-	!,
-	( G == '!' -> Goal = G, In = Out	/* A {!} is the same as a !. */
-		    ; Goal = (G, In = Out) ).
-dcg_body_nonvar('!', In, In, '!') :- 
-	!.
-dcg_body_nonvar([], In, Out, (In = Out)) :-
-	!.
-dcg_body_nonvar(L, In, Out, Goal) :-
-	( (L = [_|_] ->
-		( is_list(L) -> 		/* proper list of terminals */
-			dcg_list_of_terminals(L, In, Out, Goal)
-		; abort('A list of terminals in DCG rule is not a proper list')
-		)
-	  )
-	; expand_dcg_non_ternimal(L, In, Out, Goal)	/* nonterminal */
-	).
 
 dcg_list_of_terminals([H], In, Out, 'C'(In,H,Out)).
 dcg_list_of_terminals([H|L], In, Out, ','('C'(In,H,Mid), Goal)) :-
@@ -177,6 +140,113 @@ phrase(Phrase_Type, List, Rest) :-
 		call(Goal)
 	; abort('Uninstantiated argument 1 of phrase/3')
 	).
+
+
+%%%%%%% Select the right style DCG: XSB or Standard,
+%%%%%%% based of xsb_flag(dcg_style, X).
+
+dcg_body_nonvar(Phrase_Type, List, Rest, Goal) :-
+	xsb_flag(dcg_style, xsb),
+	xsb_dcg_body_nonvar(Phrase_Type, List, Rest, Goal).
+dcg_body_nonvar(Phrase_Type, List, Rest, Goal) :-
+	xsb_flag(dcg_style, standard),
+	standard_dcg_body_nonvar(Phrase_Type, List, Rest, Goal).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% XSB-style DCG's
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+xsb_dcg_body_nonvar(','(Term1,Term2), In, Out, ','(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Middle, Goal1),
+	( (Term2 == '!' ; Term2 == '{}'('!')) ->
+		Goal2 = ('!', Middle = Out)  /* Make the expansion steadfast. */
+	; dcg_body(Term2, Middle, Out, Goal2)
+	).
+xsb_dcg_body_nonvar(';'(Term1,Term2), In, Out, ';'(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Out, Goal1),
+	dcg_body(Term2, In, Out, Goal2).
+xsb_dcg_body_nonvar('->'(Term1,Term2), In, Out, '->'(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Middle, Goal1),
+	dcg_body(Term2, Middle, Out, Goal2).
+xsb_dcg_body_nonvar(not(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+	!,
+	dcg_body(Term, In, _, Goal).
+xsb_dcg_body_nonvar('\+'(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+	!,
+	dcg_body(Term, In, _, Goal).
+xsb_dcg_body_nonvar(fail_if(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+	!,
+	dcg_body(Term, In, _, Goal).
+xsb_dcg_body_nonvar('{}'(G), In, Out, Goal) :- 
+	!,
+	( G == '!' -> Goal = G, In = Out	/* A {!} is the same as a !. */
+		    ; Goal = (G, In = Out) ).
+xsb_dcg_body_nonvar('!', In, In, '!') :- 
+	!.
+xsb_dcg_body_nonvar([], In, Out, (In = Out)) :-
+	!.
+xsb_dcg_body_nonvar(L, In, Out, Goal) :-
+	( (L = [_|_] ->
+		( is_list(L) -> 		/* proper list of terminals */
+			dcg_list_of_terminals(L, In, Out, Goal)
+		; abort('A list of terminals in DCG rule is not a proper list')
+		)
+	  )
+	; expand_dcg_non_ternimal(L, In, Out, Goal)	/* nonterminal */
+	).
+%%%%%%%%%%% END of xsb_dcg_body_nonvar %%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% This is the standard style DCG
+%% standard_dcg_body_nonvar
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+standard_dcg_body_nonvar(','(Term1,Term2), In, Out, ','(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Middle, Goal1),
+	dcg_body(Term2, Middle, Out, Goal2).
+standard_dcg_body_nonvar(';'(Term1,Term2), In, Out, ';'(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Out, Goal1),
+	dcg_body(Term2, In, Out, Goal2).
+standard_dcg_body_nonvar('->'(Term1,Term2), In, Out, '->'(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Middle, Goal1),
+	dcg_body(Term2, Middle, Out, Goal2).
+standard_dcg_body_nonvar(not(Term), In, Out, not(Goal)) :-
+	!,
+	warning('Use of not/1 in DCG rule may not be sound!'),
+	dcg_body(Term, In, Out, Goal).
+standard_dcg_body_nonvar('\+'(Term), In, Out, '\+'(Goal)) :-
+	!,
+	warning('Use of (\+)/1 in DCG rule may not be sound!'),
+	dcg_body(Term, In, Out, Goal).
+standard_dcg_body_nonvar(fail_if(Term), In, Out, fail_if(Goal)) :-
+	!,
+	warning('Use of fail_if/1 in DCG rule may not be sound!'),
+	dcg_body(Term, In, Out, Goal).
+standard_dcg_body_nonvar('{}'(G), In, Out, Goal) :- 
+	!,
+	( G == '!' -> Goal = G, Out = In	/* A {!} is the same as a !. */
+		    ; Goal = (G, In = Out) ).
+standard_dcg_body_nonvar('!', In, In, '!') :- 
+	!.
+standard_dcg_body_nonvar([], In, Out, (In = Out)) :-
+	!.
+standard_dcg_body_nonvar(L, In, Out, Goal) :-
+	( (L = [_|_] ->
+		( is_list(L) -> 		/* proper list of terminals */
+			dcg_list_of_terminals(L, In, Out, Goal)
+		; abort('A list of terminals in DCG rule is not a proper list')
+		)
+	  )
+	; expand_dcg_non_ternimal(L, In, Out, Goal)	/* nonterminal */
+	).
+
+%%%%%%%%%%%% End of standard style DGC %%%%%%%%%%%%%%%%%%
+
 
 /* ----------------------- end of file dcg.P -------------------------- */
 

@@ -467,6 +467,13 @@ xsb_flag(tracing, Trace) :-
 xsb_flag(goal, Goal) :-
 	stat_flag(21, GoalUninterned),
 	intern_string(GoalUninterned, Goal).      	
+
+xsb_flag(dcg_style, DcgMode) :-
+	stat_flag(18, Dcg_flag),
+	(Dcg_flag = 0 -> DcgMode = xsb
+    	    ;
+	  DcgMode = standard
+        ).
 	
 
 hdr_ext(HExt) :-

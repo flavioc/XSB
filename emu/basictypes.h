@@ -75,3 +75,6 @@ typedef unsigned long prolog_term;	/* opaque type definition */
 
 #endif
 
+
+#define XSB_STYLE_DCG  0    /* use XSB style DCG grammars */
+#define STANDARD_DCG   1    /* use standard DCG grammars */
