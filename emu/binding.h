@@ -91,11 +91,11 @@
 }
 
 #ifdef PRE_IMAGE_TRAIL
-#define push_pre_image_trail0(addr, prev_value, new_value) {		\
+#define push_pre_image_trail0(addr, new_value) {			\
   if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {	\
     handle_tcpstack_overflow();						\
   }									\
-  *(trreg++) = (CPtr) (prev_value);					\
+  *(trreg++) = (CPtr) (cell(addr));					\
   *(trreg++) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);			\
 }
 #endif /* PRE_IMAGE_TRAIL */
@@ -127,7 +127,7 @@
    }
 
 #ifdef PRE_IMAGE_TRAIL
-#define push_pre_image_trail0(addr, prev_value, new_value)	\
+#define push_pre_image_trail0(addr, new_value)			\
   if (trfreg > trreg) {						\
     if ((char *)trfreg > ((char *)(top_of_cpstack) -		\
                           TRAIL_FRAME_SIZE*sizeof(CPtr))) {	\
@@ -137,7 +137,7 @@
     trreg = trfreg + 4;						\
     *(trreg - 1) = (CPtr) (new_value);				\
     *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);	\
-    *(trreg - 3) = (CPtr) (prev_value);				\
+    *(trreg - 3) = (CPtr) (cell(addr));				\
   }								\
   else {							\
     if ((char *)trreg > ((char *)(top_of_cpstack) -		\
@@ -148,7 +148,7 @@
     *trreg = (CPtr) trreg - 4;					\
     *(trreg - 1) = (CPtr) (new_value);				\
     *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);	\
-    *(trreg - 3) = (CPtr) (prev_value);				\
+    *(trreg - 3) = (CPtr) (cell(addr));				\
   }
 #endif /* PRE_IMAGE_TRAIL */
 
@@ -165,8 +165,8 @@
 #define dpushtrail(a,v) pushtrail0(a,v)
 
 #ifdef PRE_IMAGE_TRAIL
-#define push_pre_image_trail(a, prev_v, new_v)			\
-  if (conditional(a)) {push_pre_image_trail0(a, prev_v, new_v)}
+#define push_pre_image_trail(a, new_v)			\
+  if (conditional(a)) {push_pre_image_trail0(a, new_v)}
 #endif /* PRE_IMAGE_TRAIL */
 
 /* --- binding -------------------------------------------------------- */

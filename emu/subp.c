@@ -94,17 +94,12 @@ void add_interrupt(Cell op1, Cell op2) {
 #error "PRE_IMAGE_TRAIL has to be defined for add_interrupt() !"
 #else
   num = int_val(cell(interrupt_reg));
-
-  push_pre_image_trail(&(attv_interrupts[num][0]),
-		       attv_interrupts[num][0], op1);
+  push_pre_image_trail(&(attv_interrupts[num][0]), op1);
   attv_interrupts[num][0] = op1;
-
-  push_pre_image_trail(&(attv_interrupts[num][1]),
-		       attv_interrupts[num][1], op2);
+  push_pre_image_trail(&(attv_interrupts[num][1]), op2);
   attv_interrupts[num][1] = op2;
-
   num++;
-  push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(num));
+  push_pre_image_trail(interrupt_reg, makeint(num));
   bld_int(interrupt_reg, num);
 #endif
 }
@@ -134,7 +129,7 @@ Cell build_interrupt_chain(void) {
 #error "PRE_IMAGE_TRAIL has to be defined for synint_proc() !"
 #else
   /* Reset the interrupt counter to 0 for further attv interrupts. */
-  push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(0));
+  push_pre_image_trail(interrupt_reg, makeint(0));
 #endif
   bld_int(interrupt_reg, 0);
   
