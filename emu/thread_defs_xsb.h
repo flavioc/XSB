@@ -1,6 +1,3 @@
-/* TLS: temporary for testing.. */
-#define CTXT
-#define CTXTc			
  
 /* THREAD PRIMITIVES */
 
@@ -33,7 +30,7 @@
 
 /* first mutexes are recursive */
 
-#define LAST_REC_MUTEX		8
+#define LAST_REC_MUTEX		6
 
 /* Mutexes to protect execution of critical system stuff */
 
@@ -46,22 +43,23 @@
 #define MUTEX_LOAD_UNDEF	6	/* Must be recursive */
 #define MUTEX_STRING		7
 #define MUTEX_ATOM_BUF		8
-#define MUTEX_STACKS		8
+#define MUTEX_STACKS		10
+#define MUTEX_SM		9
 
-#define MAX_SYS_MUTEXES		20
+#define MAX_SYS_MUTEXES		40
 
 /* Some mutexes available to users */
 
-#define MUTEX_CONSOLE		10
-#define MUTEX_USER1		11
-#define MUTEX_USER2		12
-#define MUTEX_USER3		13
-#define MUTEX_USER4		14
-#define MUTEX_USER5		15
-#define MUTEX_USER6		16
-#define MUTEX_USER7		17
-#define MUTEX_USER8		18
-#define MUTEX_USER9		19
+#define MUTEX_CONSOLE		20
+#define MUTEX_USER1		21
+#define MUTEX_USER2		22
+#define MUTEX_USER3		23
+#define MUTEX_USER4		24
+#define MUTEX_USER5		25
+#define MUTEX_USER6		26
+#define MUTEX_USER7		27
+#define MUTEX_USER8		28
+#define MUTEX_USER9		29
 
 /* Used for random number generation in testing modules */
 

@@ -29,6 +29,9 @@
  * -------------------------------------------------------------------------- **
  *
  * $Log$
+ * Revision 1.3  2005/01/14 18:31:39  ruim
+ * Integration of multithreaded system
+ *
  * Revision 1.2  2004/01/29 18:44:09  dwarren
  * Modified implementation of profiling to avoid the extra psc-record
  * field for the count.  Now the counts are kept in the code-ptr records
@@ -449,7 +452,7 @@ long ubi_btSgn( long x );
    * ------------------------------------------------------------------------ **
    */
 
-ubi_btNodePtr ubi_btInitNode( ubi_btNodePtr NodePtr );
+ubi_btNodePtr ubi_btInitNode( ubi_btNodePtr uNodePtr );
   /* ------------------------------------------------------------------------ **
    * Initialize a tree node.
    *

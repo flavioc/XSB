@@ -50,6 +50,8 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "tr_utils.h"
+#include "rw_lock.h"
+#include "thread_xsb.h"
 #include "debug_xsb.h"
 #include "subp.h"
 
@@ -61,15 +63,15 @@ extern TIFptr get_tip(Psc);
 /* The following variables are used in other parts of the system        */
 /*----------------------------------------------------------------------*/
 
-BTNptr Paren;
-
 long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
 
+#ifndef MULTI_THREAD
 int  num_heap_term_vars;
 CPtr *var_addr;
 int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
 Cell VarEnumerator[NUM_TRIEVARS];
 Cell TrieVarBindings[NUM_TRIEVARS];
+#endif
 xsbBool check_table_cut = TRUE;  /* flag for close_open_tables to turn off
 				    cut-over-table check */
 
@@ -77,15 +79,19 @@ xsbBool check_table_cut = TRUE;  /* flag for close_open_tables to turn off
  * global_num_vars is a new variable to save the value of variable
  * num_vars_in_var_regs temporarily.
  */
+#ifndef MULTI_THREAD
 int global_num_vars;
+#endif
 
 /*
- * Array mini_trail[] is used to trail the variable bindings when we
- * copy terms into tries.  The variables trailed using mini_trail are
+ * Array VarEnumerator_trail[] is used to trail the variable bindings when we
+ * copy terms into tries.  The variables trailed using VarEnumerator_trail are
  * those that are bound to elements in VarEnumerator[].
  */
-static CPtr mini_trail[NUM_TRIEVARS];
-static CPtr *mini_trail_top;
+#ifndef MULTI_THREAD
+static CPtr VarEnumerator_trail[NUM_TRIEVARS];
+static CPtr *VarEnumerator_trail_top;
+#endif
 
 /*----------------------------------------------------------------------*/
 /* Safe assignment -- can be generalized by type.
@@ -99,9 +105,11 @@ static CPtr *mini_trail_top;
 
 /*----------------------------------------------------------------------*/
 /*****************Addr Stack*************/
+#ifndef MULTI_THREAD
 static int addr_stack_pointer = 0;
 static CPtr *Addr_Stack;
 static int addr_stack_size    = DEFAULT_ARRAYSIZ;
+#endif
 
 #define pop_addr Addr_Stack[--addr_stack_pointer]
 #define push_addr(X) {\
@@ -113,9 +121,11 @@ static int addr_stack_size    = DEFAULT_ARRAYSIZ;
 
 /*----------------------------------------------------------------------*/
 /*****************Term Stack*************/
+#ifndef MULTI_THREAD
 static int  term_stackptr = -1;
 static Cell *term_stack;
 static long term_stacksize = DEFAULT_ARRAYSIZ;
+#endif
 
 #define pop_term term_stack[term_stackptr--]
 #define push_term(T) {\
@@ -129,14 +139,14 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 /*********Simpler trails ****************/
 
 #define simple_table_undo_bindings		\
-    while (mini_trail_top >= mini_trail) {	\
-	untrail(*mini_trail_top);		\
-	mini_trail_top--;			\
+    while (VarEnumerator_trail_top >= VarEnumerator_trail) {	\
+	untrail(*VarEnumerator_trail_top);		\
+	VarEnumerator_trail_top--;			\
     }	
 
 #define StandardizeAndTrailVariable(addr,n)	\
    StandardizeVariable(addr,n);			\
-    *(++mini_trail_top) = addr;
+    *(++VarEnumerator_trail_top) = addr;
 		
 /*----------------------------------------------------------------------*/
 /* Variables used only in this file                                     */
@@ -144,9 +154,9 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 
 static BasicTrieNode dummy_ans_node = {{0,1,0,0},NULL,NULL,NULL,0};
 
-static int AnsVarCtr, ctr, attv_ctr;
-
-static BTNptr *GNodePtrPtr;
+#ifndef MULTI_THREAD
+static int AnsVarCtr;
+#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -177,18 +187,29 @@ Structure_Manager smAssertBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
 
 /* Maintains Current Structure Space
    --------------------------------- */
+#ifndef MULTI_THREAD
 Structure_Manager *smBTN = &smTableBTN;
 Structure_Manager *smBTHT = &smTableBTHT;
+#endif
 
 /*----------------------------------------------------------------------*/
 
-void init_trie_aux_areas(void)
+void init_trie_aux_areas(CTXTdecl)
 {
   int i;
 
+  smBTN = &smTableBTN;
+  smBTHT = &smTableBTHT;
+
+  addr_stack_size = DEFAULT_ARRAYSIZ;
+  addr_stack_pointer = 0;
+  term_stacksize = DEFAULT_ARRAYSIZ;
+  term_stackptr = -1;
+  var_addr_arraysz = DEFAULT_ARRAYSIZ;
+
+  alloc_arr(CPtr,Addr_Stack,addr_stack_size);
   alloc_arr(Cell,term_stack,term_stacksize);
   alloc_arr(CPtr,var_addr,var_addr_arraysz);
-  alloc_arr(CPtr,Addr_Stack,addr_stack_size);
   alloc_arr(Cell,reg_array,reg_array_size);
   reg_arrayptr = reg_array -1;
 
@@ -196,9 +217,17 @@ void init_trie_aux_areas(void)
     VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
 }
 
+void free_trie_aux_areas(CTXTdecl)
+{
+  free(term_stack);
+  free(var_addr);
+  free(Addr_Stack);
+  free(reg_array);
+}
+
 /*-------------------------------------------------------------------------*/
 
-BTNptr new_btn(int trie_t, int node_t, Cell symbol, BTNptr parent,
+BTNptr new_btn(CTXTdeclc int trie_t, int node_t, Cell symbol, BTNptr parent,
 	       BTNptr sibling) {
 
   void *btn;
@@ -227,7 +256,7 @@ TSTNptr new_tstn(int trie_t, int node_t, Cell symbol, TSTNptr parent,
  * Creates a root node for a given type of trie.
  */
 
-BTNptr newBasicTrie(Cell symbol, int trie_type) {
+BTNptr newBasicTrie(CTXTdeclc Cell symbol, int trie_type) {
 
   BTNptr pRoot;
 
@@ -295,6 +324,7 @@ BTNptr newBasicTrie(Cell symbol, int trie_type) {
    int count = 0;							\
    BTNptr LocalNodePtr;							\
 									\
+   TRIE_W_LOCK();							\
    if ( IsNULL(*GNodePtrPtr) ) {					\
      New_BTN(LocalNodePtr,TrieType,INTERIOR_NT,item,Paren,NULL);	\
      *GNodePtrPtr = Paren = LocalNodePtr;				\
@@ -315,9 +345,10 @@ BTNptr newBasicTrie(Cell symbol, int trie_type) {
      IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		\
      if (IsLongSiblingChain(count))					\
        /* used to pass in GNodePtrPtr (ptr to hook) */			\
-       hashify_children(pParent,TrieType);				\
+       hashify_children(CTXTc pParent,TrieType);			\
    }									\
    GNodePtrPtr = &(BTN_Child(LocalNodePtr));				\
+   TRIE_W_UNLOCK();							\
 }
 
 /*----------------------------------------------------------------------*/
@@ -329,7 +360,7 @@ BTNptr newBasicTrie(Cell symbol, int trie_type) {
    of trie nodes whose length has become "too long."
 */
 
-void hashify_children(BTNptr parent, int trieType) {
+void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
 
   BTNptr children;		/* child list of the parent */
   BTNptr btn;			/* current child for processing */
@@ -413,7 +444,7 @@ void expand_trie_ht(BTHTptr pHT) {
  * Push the symbols along the path from the leaf to the root in a trie
  * onto the termstack.
  */
-static void follow_par_chain(BTNptr pLeaf)
+static void follow_par_chain(CTXTdeclc BTNptr pLeaf)
 {
   term_stackptr = -1; /* Forcibly Empty term_stack */
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) ) {
@@ -690,7 +721,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  * The returned value of this function is the leaf of the answer trie.
  */
 
-BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
+BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
 			     VariantSF subgoal_ptr, xsbBool *flagptr) {
 
   Psc   psc;
@@ -698,10 +729,12 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
   int   i, j, flag = 1;
   Cell  tag = XSB_FREE, item, tmp_var;
   ALNptr answer_node;
+  int ctr, attv_ctr;
+  BTNptr Paren, *GNodePtrPtr;
 
   ans_chk_ins++; /* Counter (answers checked & inserted) */
 
-  mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+  VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
   AnsVarCtr = 0;
   ctr = 0;
   if ( IsNULL(subg_ans_root_ptr(subgoal_ptr)) ) {
@@ -711,7 +744,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
     else
       retSymbol = EncodeTrieConstant(makestring(get_ret_string()));
     subg_ans_root_ptr(subgoal_ptr) =
-      newBasicTrie(retSymbol, BASIC_ANSWER_TRIE_TT);
+      newBasicTrie(CTXTc retSymbol, BASIC_ANSWER_TRIE_TT);
   }
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);
@@ -762,12 +795,12 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
 	 * 	StandardizeAndTrailVariable(xtemp1, ctr)
 	 * 			||
 	 * 	bld_ref(xtemp1, VarEnumerator[ctr]);
-	 * 	*(++mini_trail_top) = xtemp1
+	 * 	*(++VarEnumerator_trail_top) = xtemp1
 	 *
 	 * Notice that all the variables appear in the answer are bound
 	 * to elements in VarEnumerator[], and each element in
 	 * VarEnumerator[] is a free variable itself.  Besides, all
-	 * these variables are trailed (saved in mini_trail[]) and they
+	 * these variables are trailed (saved in VarEnumerator_trail[]) and they
 	 * will be used in delay_chk_insert() (in function
 	 * do_delay_stuff()).
 	 */
@@ -858,7 +891,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
   else	
     bld_functor(ans_var_pos_reg, get_ret_psc(ctr));
 #else /* IGNORE_DELAYVAR */
-  undo_answer_bindings();
+  undo_answer_bindings(CTXT);
 #endif
 
   /*
@@ -909,7 +942,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
  * done.
  */
 
-void undo_answer_bindings() {
+void undo_answer_bindings(CTXTdecl) {
   simple_table_undo_bindings;
 }
 
@@ -946,12 +979,14 @@ void undo_answer_bindings() {
  * occur as single paths, there is currently no need for a root node.
  */
  
-BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
+BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
 {
     Psc  psc;
     Cell item;
     CPtr xtemp1;
     int  i, j, tag = XSB_FREE, flag = 1;
+    int ctr, attv_ctr;
+    BTNptr Paren, *GNodePtrPtr;
  
 #ifdef DEBUG_DELAYVAR
     xsb_dbgmsg((LOG_DEBUG,">>>> start delay_chk_insert()"));
@@ -1045,7 +1080,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
  * the vector `cptr') are to be unified -- has been pushed onto the
  * termstack.
  */
-static void load_solution_from_trie(int arity, CPtr cptr)
+static void load_solution_from_trie(CTXTdeclc int arity, CPtr cptr)
 {
    int i;
    CPtr xtemp1, Dummy_Addr;
@@ -1061,7 +1096,7 @@ static void load_solution_from_trie(int arity, CPtr cptr)
        }
        else {			/* an XSB_ATTV */
 	 /* Bind the variable part of xtemp1 to returned_val */
-	 add_interrupt(cell(((CPtr)dec_addr(xtemp1) + 1)), returned_val); 
+	 add_interrupt(CTXTc cell(((CPtr)dec_addr(xtemp1) + 1)), returned_val); 
 	 dbind_ref((CPtr) dec_addr(xtemp1), returned_val);
        }
      }
@@ -1076,7 +1111,7 @@ static void load_solution_from_trie(int arity, CPtr cptr)
  * `term'.  It appears that `term' is expected to be an unbound variable.
  * Also, `Root' does not appear to be used.
  */
-static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
+static void bottomupunify(CTXTdeclc Cell term, BTNptr Root, BTNptr Leaf)
 {
   CPtr Dummy_Addr;
   Cell returned_val, xtemp2;
@@ -1084,7 +1119,7 @@ static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
   int  i;
 
   num_heap_term_vars = 0;     
-  follow_par_chain(Leaf);
+  follow_par_chain(CTXTc Leaf);
   XSB_Deref(term);
   gen = (CPtr) term;
   macro_make_heap_term(gen,returned_val,Dummy_Addr);
@@ -1109,7 +1144,7 @@ static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
 /*
  *  Used with tries created via the builtin trie_intern.
  */
-xsbBool bottom_up_unify(void)
+xsbBool bottom_up_unify(CTXTdecl)
 {
   Cell    term;
   BTNptr root;
@@ -1118,14 +1153,14 @@ xsbBool bottom_up_unify(void)
   extern  BTNptr *Set_ArrayPtr;
 
 
-  leaf = (BTNptr) ptoc_int(3);   
+  leaf = (BTNptr) ptoc_int(CTXTc 3);   
   if( IsDeletedNode(leaf) )
     return FALSE;
 
-  term    = ptoc_tag(1);
-  rootidx = ptoc_int(2);
+  term    = ptoc_tag(CTXTc 1);
+  rootidx = ptoc_int(CTXTc 2);
   root    = Set_ArrayPtr[rootidx];  
-  bottomupunify(term, root, leaf);
+  bottomupunify(CTXTc term, root, leaf);
   return TRUE;
 }
 
@@ -1135,7 +1170,7 @@ xsbBool bottom_up_unify(void)
  * `TriePtr' is a leaf in the answer trie, and `cptr' is a vector of
  * variables for receiving the substitution.
  */
-void load_solution_trie(int arity, int attv_num, CPtr cptr, BTNptr TriePtr)
+void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr TriePtr)
 {
   CPtr xtemp;
   
@@ -1148,18 +1183,18 @@ void load_solution_trie(int arity, int attv_num, CPtr cptr, BTNptr TriePtr)
 	  var_addr[num_heap_term_vars++] = (CPtr) cell(xtemp);
       }
     }
-    follow_par_chain(TriePtr);
-    load_solution_from_trie(arity,cptr);
+    follow_par_chain(CTXTc TriePtr);
+    load_solution_from_trie(CTXTc arity,cptr);
   }
 }
 
 /*----------------------------------------------------------------------*/
 
-void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
+void load_delay_trie(CTXTdeclc int arity, CPtr cptr, BTNptr TriePtr)
 {
    if (arity) {
-     follow_par_chain(TriePtr);
-     load_solution_from_trie(arity,cptr);
+     follow_par_chain(CTXTc TriePtr);
+     load_solution_from_trie(CTXTc arity,cptr);
    }
 }
  
@@ -1242,7 +1277,7 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
  * the treatment of "cptr" as these terms are inspected.
  */
 
-void variant_call_search(TabledCallInfo *call_info,
+void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 			 CallLookupResults *results)
 {
   Psc  psc;
@@ -1250,7 +1285,8 @@ void variant_call_search(TabledCallInfo *call_info,
   int  arity, i, j, flag = 1;
   Cell tag = XSB_FREE, item;
   CPtr cptr, VarPosReg, tVarPosReg;
-
+  int ctr, attv_ctr;
+  BTNptr Paren, *GNodePtrPtr;
 
   subg_chk_ins++;
   Paren = TIF_CallTrie(CallInfo_TableInfo(*call_info));
@@ -1372,20 +1408,20 @@ void variant_call_search(TabledCallInfo *call_info,
 
 /*----------------------------------------------------------------------*/
 
-static void remove_calls_and_returns(VariantSF CallStrPtr)
+static void remove_calls_and_returns(CTXTdeclc VariantSF CallStrPtr)
 {
   ALNptr pALN;
 
   /* Delete the call entry
      --------------------- */
-  delete_branch(subg_leaf_ptr(CallStrPtr),
+  delete_branch(CTXTc subg_leaf_ptr(CallStrPtr),
 		&TIF_CallTrie(subg_tif_ptr(CallStrPtr)));
 
   /* Delete its answers
      ------------------ */
   for ( pALN = subg_answers(CallStrPtr);  IsNonNULL(pALN);
 	pALN = ALN_Next(pALN) )
-    delete_branch(ALN_Answer(pALN), &subg_ans_root_ptr(CallStrPtr));
+    delete_branch(CTXTc ALN_Answer(pALN), &subg_ans_root_ptr(CallStrPtr));
 
   /* Delete the table entry
      ---------------------- */
@@ -1394,7 +1430,7 @@ static void remove_calls_and_returns(VariantSF CallStrPtr)
 }
 
 
-void remove_open_tries(CPtr bottom_parameter)
+void remove_open_tries(CTXTdeclc CPtr bottom_parameter)
 {
   xsbBool warned = FALSE;
   VariantSF CallStrPtr;
@@ -1407,7 +1443,7 @@ void remove_open_tries(CPtr bottom_parameter)
 	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }
-      remove_calls_and_returns(CallStrPtr);
+      remove_calls_and_returns(CTXTc CallStrPtr);
     }
     openreg += COMPLFRAMESIZE;
   }
@@ -1419,16 +1455,18 @@ void remove_open_tries(CPtr bottom_parameter)
  * For creating interned tries via buitin "trie_intern".
  */
 
-BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
+BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr)
 {
     Psc  psc;
     CPtr xtemp1;
     int  j, flag = 1;
     Cell tag = XSB_FREE, item;
+    int ctr, attv_ctr;
+    BTNptr Paren, *GNodePtrPtr;
 
 
     if ( IsNULL(*hook) )
-      *hook = newBasicTrie(EncodeTriePSC(get_intern_psc()),INTERN_TRIE_TT);
+      *hook = newBasicTrie(CTXTc EncodeTriePSC(get_intern_psc()),INTERN_TRIE_TT);
     Paren = *hook;
     GNodePtrPtr = &BTN_Child(Paren);
 
@@ -1436,7 +1474,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
     XSB_CptrDeref(xtemp1);
     tag = cell_tag(xtemp1);
 
-    mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+    VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
     ctr = attv_ctr = 0;
 
     switch (tag) {
@@ -1502,7 +1540,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
      * (Skel).  This is done in construct_ret(), which is called in
      * get_lastnode_cs_retskel().
      */
-    for (j = 0; j < ctr; j++) var_regs[j] = mini_trail[j];
+    for (j = 0; j < ctr; j++) var_regs[j] = VarEnumerator_trail[j];
     /*
      * Both global_num_vars and Last_Nod_Sav are needed by
      * get_lastnode_cs_retskel() (see trie_intern/5 in intern.P).
@@ -1530,7 +1568,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
  * For creating asserted tries with builtin "trie_assert".
  */
 
-BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
+BTNptr one_term_chk_ins(CTXTdeclc CPtr termptr, BTNptr root, int *flagptr)
 {
   int  arity;
   CPtr cptr;
@@ -1538,12 +1576,14 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
   int  i, j, flag = 1;
   Cell tag = XSB_FREE, item;
   Psc  psc;
+  int ctr, attv_ctr;
+  BTNptr Paren, *GNodePtrPtr;
 
   psc = term_psc((prolog_term)termptr);
   arity = get_arity(psc);
   cptr = (CPtr)cs_val(termptr);
 
-  mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+  VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
   ctr = attv_ctr = 0;
   /*
    * The value of `Paren' effects the "body" of the trie: nodes which
@@ -1637,10 +1677,16 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
  * This is builtin #150: TRIE_GET_RETURN
  */
 
-byte *trie_get_returns(VariantSF sf, Cell retTerm) {
+byte *trie_get_returns(CTXTdeclc VariantSF sf, Cell retTerm) {
 
   BTNptr ans_root_ptr;
   Cell retSymbol;
+#ifdef MULTI_THREAD
+   CPtr tbreg;
+#ifdef SLG_GC
+   CPtr old_cptop;
+#endif
+#endif
 
 
 #ifdef DEBUG_DELAYVAR
@@ -1684,12 +1730,26 @@ byte *trie_get_returns(VariantSF sf, Cell retTerm) {
   xsb_dbgmsg((LOG_DEBUG,">>>> The end of trie_get_returns ==> go to answer trie"));
 #endif
   delay_it = 0;  /* Don't delay the answer. */
+#ifdef MULTI_THREAD
+/* save choice point for trie_unlock instruction */
+       save_find_locx(ereg);
+       tbreg = top_of_cpstack;
+#ifdef SLG_GC
+       old_cptop = tbreg;
+#endif
+       save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
+#ifdef SLG_GC
+       cp_prevtop(tbreg) = old_cptop;
+#endif
+       breg = tbreg;
+       hbreg = hreg;
+#endif
   return (byte *)ans_root_ptr;
 }
 
 /*----------------------------------------------------------------------*/
 
-byte * trie_get_calls(void)
+byte * trie_get_calls(CTXTdecl)
 {
    Cell call_term;
    Psc psc_ptr;
@@ -1697,8 +1757,14 @@ byte * trie_get_calls(void)
    BTNptr call_trie_root;
    CPtr cptr;
    int i;
+#ifdef MULTI_THREAD
+   CPtr tbreg;
+#ifdef SLG_GC
+   CPtr old_cptop;
+#endif
+#endif
 
-   call_term = ptoc_tag(1);
+   call_term = ptoc_tag(CTXTc 1);
    if ((psc_ptr = term_psc(call_term)) != NULL) {
      tip_ptr = get_tip(psc_ptr);
      if (tip_ptr == NULL) {
@@ -1718,6 +1784,21 @@ byte * trie_get_calls(void)
 #endif
 	 pushreg(cell(cptr+i));
        }
+#ifdef MULTI_THREAD
+/* save choice point for trie_unlock instruction */
+       save_find_locx(ereg);
+       tbreg = top_of_cpstack;
+#ifdef SLG_GC
+       old_cptop = tbreg;
+#endif
+       save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
+#ifdef SLG_GC
+       cp_prevtop(tbreg) = old_cptop;
+#endif
+       breg = tbreg;
+       hbreg = hreg;
+#endif
+
        return (byte *)call_trie_root;
      }
    }
@@ -1747,7 +1828,7 @@ byte * trie_get_calls(void)
  * in the table.  Otherwise, we return the variables placed in
  * "var_regs[]" during the embedded-trie-code walk.
  */
-Cell get_lastnode_cs_retskel(Cell callTerm) {
+Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
 
   int arity;
   Cell *vector;
@@ -1757,13 +1838,13 @@ Cell get_lastnode_cs_retskel(Cell callTerm) {
   if ( IsInCallTrie(Last_Nod_Sav) ) {
     VariantSF sf = CallTrieLeaf_GetSF(Last_Nod_Sav);
     if ( IsProperlySubsumed(sf) ) {
-      construct_answer_template(callTerm, conssf_producer(sf),
+      construct_answer_template(CTXTc callTerm, conssf_producer(sf),
 				(Cell *)var_regs);
       arity = (int)var_regs[0];
       vector = (Cell *)&var_regs[1];
     }
   }
-  return ( build_ret_term(arity, vector) );
+  return ( build_ret_term(CTXTc arity, vector) );
 }
 
 /*----------------------------------------------------------------------*/

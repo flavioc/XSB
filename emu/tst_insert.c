@@ -41,6 +41,7 @@
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
+#include "thread_xsb.h"
 
 
 
@@ -321,7 +322,7 @@ TSTNptr tstnAddSymbol(TSTNptr parent, Cell symbol, int trieType) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 inline static
-BTNptr btnAddSymbol(BTNptr parent, Cell symbol, int trieType) {
+BTNptr btnAddSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
 
   BTNptr newBTN;
 
@@ -363,7 +364,7 @@ TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 inline static
-BTNptr btnInsertSymbol(BTNptr parent, Cell symbol, int trieType) {
+BTNptr btnInsertSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
 
   BTNptr btn, chain;
   int chain_length;
@@ -378,7 +379,7 @@ BTNptr btnInsertSymbol(BTNptr parent, Cell symbol, int trieType) {
     chain = BTN_Sibling(chain);
   }
   if ( IsLongSiblingChain(chain_length) )
-    hashify_children(parent,trieType);
+    hashify_children(CTXTc parent,trieType);
   return btn;
 }
 
@@ -427,7 +428,7 @@ TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-inline static  BTNptr bthtInsertSymbol(BTNptr parent, Cell symbol,
+inline static  BTNptr bthtInsertSymbol(CTXTdeclc BTNptr parent, Cell symbol,
 				       int trieType) {
 
   BTHTptr ht;
@@ -529,7 +530,7 @@ inline static  void update_timestamps(TSTNptr tstLeaf, TSTNptr tstRoot,
  * 'maintainTSI' -- these need to be maintained during insertion.
  */
 
-TSTNptr tst_insert(TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbol,
+TSTNptr tst_insert(CTXTdeclc TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbol,
 		   xsbBool maintainTSI) {
 
   Cell symbol;
@@ -569,7 +570,7 @@ TSTNptr tst_insert(TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbol,
 /*-------------------------------------------------------------------------*/
 
 
-BTNptr bt_insert(BTNptr btRoot, BTNptr lastMatch, Cell firstSymbol) {
+BTNptr bt_insert(CTXTdeclc BTNptr btRoot, BTNptr lastMatch, Cell firstSymbol) {
 
   Cell symbol;
   int std_var_num;
@@ -586,17 +587,17 @@ BTNptr bt_insert(BTNptr btRoot, BTNptr lastMatch, Cell firstSymbol) {
     ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
 
   if ( IsNULL(BTN_Child(lastMatch)) )
-    lastMatch = btnAddSymbol(lastMatch,symbol,trieType);
+    lastMatch = btnAddSymbol(CTXTc lastMatch,symbol,trieType);
   else if ( IsHashHeader(BTN_Child(lastMatch)) )
-    lastMatch = bthtInsertSymbol(lastMatch,symbol,trieType);
+    lastMatch = bthtInsertSymbol(CTXTc lastMatch,symbol,trieType);
   else
-    lastMatch = btnInsertSymbol(lastMatch,symbol,trieType);
+    lastMatch = btnInsertSymbol(CTXTc lastMatch,symbol,trieType);
 
   /* Insert remaining symbols
      ------------------------ */
   while ( ! TermStack_IsEmpty ) {
     ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
-    lastMatch = btnAddSymbol(lastMatch,symbol,trieType);
+    lastMatch = btnAddSymbol(CTXTc lastMatch,symbol,trieType);
   }
   MakeLeafNode(lastMatch);
   TN_UpgradeInstrTypeToSUCCESS(lastMatch,TrieSymbolType(symbol));

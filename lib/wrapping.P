@@ -55,17 +55,23 @@ write_header :-
 	xsb_configuration(install_dir,InstallDir),
 	write('#include "'),
 	write(InstallDir),
-	write('/emu/cinterf.h"'),nl.
+	write('/emu/cinterf.h"'),nl,nl.
 
 process_directive(':-'(foreign_pred(PredDecl))) :- !,
 %	write(PredDecl),
 	process_from(PredDecl,_PredName).
+process_directive(Directive) :- 
+	throw(error(cinterf_wrapper(undefined_directive(Directive)))).
 
-process_from(from(PDecl,CDecl),/(PredName,Arity)) :-
+process_from(In,Out) :-
+%	xsb_configuration(engine,EngType),
+	process_from(In,Out,multi_threading).
+		
+process_from(from(PDecl,CDecl),/(PredName,Arity),EngType) :-
 	write('/* New Definition: '),
 	process_pdecl(PDecl,PredName,Arity,NArgUseList),
 	write(' from '),
-	process_cdecl(CDecl,FuncName,ArgTypeList,RetType),
+	process_cdecl(CDecl,FuncName,ArgTypeList,RetType,EngType),
 	linearize_arguse(NArgUseList,ArgUseList),
 	write('. */'),
 	nl,
@@ -76,7 +82,7 @@ process_from(from(PDecl,CDecl),/(PredName,Arity)) :-
 	write(' '),
 	write(FuncName),
 	write('('),
-	write_cargs(CTypeList),
+	write_cargs(CTypeList,EngType),
 	write(');'),
 	nl,
 	% check for need to deal with return value
@@ -157,8 +163,13 @@ out_all_postcall([argtype(Var,Type)|ArgType],ArgUse) :-
 	    (mod_type(Type,MType), out_postcall(Var,Use,MType));
 	out_postcall(Var,Use,Type)).
 
-write_cargs([]) :- !,write(void).
-write_cargs([carg(Var,Type)|Rest]) :-
+write_cargs([],EngType) :- !,
+	(EngType = multi_threading -> write('th_context *th') ; write(void)).
+write_cargs(Listin,EngType) :-
+	(EngType = multi_threading -> 
+	    List = [carg(th,'th_context *')|Listin]
+	  ; List = Listin),
+	List = [carg(Var,Type)|Rest],
 	write_cargs0(Rest),
 	write(Type),
 	write(' '),
@@ -178,19 +189,25 @@ create_ctypelist([argtype(Var,Type)|Rest],ArgUse,[carg(Var,CType)|CRest]) :-
 	define_ctype(Type,Use,CType),
 	create_ctypelist(Rest,NArgUse,CRest).
 
-process_cdecl(':'(CFunc,CRetType),Functor,ArgTypeList,CRetType) :- !,
+process_cdecl(':'(CFunc,CRetType),Functor,ArgTypeList,CRetType,EngType) :- !,
 	write(CRetType),
 	write(' '),
-	process_cfunc(CFunc,Functor,ArgTypeList).
+	process_cfunc(CFunc,Functor,ArgTypeList,EngType).
 
-process_cfunc(CFunc,Functor,LArgType) :-
+process_cfunc(CFunc,Functor,LArgType,EngType) :-
 	functor(CFunc,Functor,Arity),
 	write(Functor),
 	write('/'),
 	write(Arity),
 	write('('),
 	cargs_list(CFunc,Arity,LArgType),
+	add_thread_context(EngType,LArgType),
 	write(')').
+
+add_thread_context(multi_threading,LArgType):- 
+	(LArgType \== [] -> write(' , ') ; true),
+	write('th_context *th').
+add_thread_context(single_threading,_).
 
 cargs_list(_,0,[]) :- !.
 cargs_list(CFunc,1,[]) :-

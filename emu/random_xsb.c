@@ -56,7 +56,7 @@ static double TZ = 1.0/30323.0;
  * Returns a float number within the range [0.0, 1.0) in reg 2.
  * ret_random() returns FALSE if there is an error, TRUE if everything is OK.
  */
-int ret_random() {
+int ret_random(CTXTdecl) {
   short X, Y, Z;
   double T;
   Cell term;
@@ -69,9 +69,9 @@ int ret_random() {
   IY = Y;
   IZ = Z;
 
-  term = ptoc_tag(2);
+  term = ptoc_tag(CTXTc 2);
   if (isref(term)) {
-    ctop_float(2, T - (int)T);
+    ctop_float(CTXTc 2, T - (int)T);
     return TRUE;
   }
   else return FALSE;
@@ -81,24 +81,24 @@ int ret_random() {
  * Unifies reg 2,3,4 with the random seeds IX, IY, IZ.  
  * getrand() returns FALSE if there is an error, TRUE if everything is OK.
  */
-int getrand() {
+int getrand(CTXTdecl) {
   Cell term;
 
-  term = ptoc_tag(2);
+  term = ptoc_tag(CTXTc 2);
   if (isref(term))
-    ctop_int(2, IX);
+    ctop_int(CTXTc 2, IX);
   else if (!isinteger(term) || (oint_val(term) != IX))
     return FALSE;
 
-  term = ptoc_tag(3);
+  term = ptoc_tag(CTXTc 3);
   if (isref(term))
-    ctop_int(3, IY);
+    ctop_int(CTXTc 3, IY);
   else if (!isinteger(term) || (oint_val(term) != IY))
     return FALSE;
 
-  term = ptoc_tag(4);
+  term = ptoc_tag(CTXTc 4);
   if (isref(term))
-    ctop_int(4, IZ);
+    ctop_int(CTXTc 4, IZ);
   else if (!isinteger(term) || (oint_val(term) != IZ))
     return FALSE;
 
@@ -109,8 +109,8 @@ int getrand() {
  * Sets the random seeds IX, IY and IZ using reg 2,3,4.  The type and
  * range checking are done in random.P.
  */
-void setrand() {
-  IX = ptoc_int(2);
-  IY = ptoc_int(3);
-  IZ = ptoc_int(4);
+void setrand(CTXTdecl) {
+  IX = ptoc_int(CTXTc 2);
+  IY = ptoc_int(CTXTc 3);
+  IZ = ptoc_int(CTXTc 4);
 }

@@ -72,7 +72,7 @@ static Cell cell_array[500];
 /*----------------------------------------------------------------------*/
 
 #define build_subgoal_args(SUBG)	\
-	load_solution_trie(arity, 0, &cell_array[arity-1], subg_leaf_ptr(SUBG))
+	load_solution_trie(CTXTc arity, 0, &cell_array[arity-1], subg_leaf_ptr(SUBG))
 
 
 CPtr *copy_of_var_addr;
@@ -90,7 +90,7 @@ int copy_of_num_heap_term_vars;
  * answer for the delayed subgoal.
  */
 
-void build_delay_list(CPtr delay_list, DE de)
+void build_delay_list(CTXTdeclc CPtr delay_list, DE de)
 {
   Psc  psc;
   int  i, j, arity;
@@ -109,7 +109,7 @@ void build_delay_list(CPtr delay_list, DE de)
     tail = hreg+1;
     bind_list(delay_list, hreg);
     hreg = hreg + 3; 
-    build_delay_list(tail, de_next(de)); /* recursive call */
+    build_delay_list(CTXTc tail, de_next(de)); /* recursive call */
     head = hreg;
     subg = de_subgoal(de);
     psc = TIF_PSC(subg_tif_ptr(subg));
@@ -185,7 +185,7 @@ void build_delay_list(CPtr delay_list, DE de)
 	 * and binds the call substitution factor.  The substitution
 	 * factor of the answer is left in var_addr[].
 	 */
-	load_solution_trie(i, 0, &cell_array[i-1], ans_subst);
+	load_solution_trie(CTXTc i, 0, &cell_array[i-1], ans_subst);
 	
 #ifdef DEBUG_DELAYVAR
 	xsb_dbgmsg((LOG_DEBUG,">>>> (after load_solution_trie) num_heap_term_vars = %d",
@@ -249,7 +249,7 @@ void build_delay_list(CPtr delay_list, DE de)
 #endif /* DEBUG_DELAYVAR */
 	
 #ifndef IGNORE_DELAYVAR
-	load_delay_trie(i, &cell_array[i-1], de_subs_fact_leaf(de));
+	load_delay_trie(CTXTc i, &cell_array[i-1], de_subs_fact_leaf(de));
 #endif
 	
 #ifdef DEBUG_DELAYVAR

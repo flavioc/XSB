@@ -29,12 +29,12 @@
 #include "sp_unify_xsb_i.h"
 /*----------------------------------------*/
 
-static xsbBool atom_to_list(int call_type);
-static xsbBool number_to_list(int call_type);
+static xsbBool atom_to_list(CTXTdeclc int call_type);
+static xsbBool number_to_list(CTXTdeclc int call_type);
 
 /* TLS 10/01 changed functor so that it did not core dump on 
    functor(X,1,2) */
-inline static xsbBool functor_builtin(void)
+inline static xsbBool functor_builtin(CTXTdecl)
 {
   /* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
   int  new_indicator, arity, value, disp;
@@ -43,29 +43,29 @@ inline static xsbBool functor_builtin(void)
   Cell functor, term;
   Pair sym;
 
-  term = ptoc_tag(1);
+  term = ptoc_tag(CTXTc 1);
   if (isnonvar(term)) {
     if (isconstr(term) && !isboxedinteger(term)) {
       psc = get_str_psc(term);
       name = get_name(psc);
       arity = get_arity(psc);
-      return (atom_unify(makestring(name), ptoc_tag(2)) &&
-	      int_unify(makeint(arity), ptoc_tag(3)));
+      return (atom_unify(CTXTc makestring(name), ptoc_tag(CTXTc 2)) &&
+	      int_unify(CTXTc makeint(arity), ptoc_tag(CTXTc 3)));
     } else if (islist(term))
-      return (atom_unify(makestring(list_dot), ptoc_tag(2)) &&
-	      int_unify(makeint(2), ptoc_tag(3)));
-    else return (unify(term, ptoc_tag(2)) &&
-		 int_unify(makeint(0), ptoc_tag(3)));
+      return (atom_unify(CTXTc makestring(list_dot), ptoc_tag(CTXTc 2)) &&
+	      int_unify(CTXTc makeint(2), ptoc_tag(CTXTc 3)));
+    else return (unify(CTXTc term, ptoc_tag(CTXTc 2)) &&
+		 int_unify(CTXTc makeint(0), ptoc_tag(CTXTc 3)));
   } else {	/* term is a variable */
-    functor = ptoc_tag(2);
+    functor = ptoc_tag(CTXTc 2);
     if (isstring(functor) || isinteger(functor) || isfloat(functor) ||
 	isboxedinteger(functor) ||
 	(isconstr(term) && get_arity(get_str_psc(term)) == 0)) {
-      arity = ptoc_tag(3);
+      arity = ptoc_tag(CTXTc 3);
       /* tls: added !isnumber conjunct */
       if (arity_integer(arity) && !isnumber(functor)) {
 	value = int_val(arity);
-	if (value == 0) return unify(functor, term);
+	if (value == 0) return unify(CTXTc functor, term);
 	else {
 	  if (value == 2 && isstring(functor) 
 	      && string_val(functor) == list_dot) {
@@ -91,15 +91,15 @@ inline static xsbBool functor_builtin(void)
 	/* TLS rearranged order of the two elses below */
       } else {
 	  if (isnumber(functor))
-	    return (unify(term, functor) && 
-		    int_unify(makeint(0), arity));
+	    return (unify(CTXTc term, functor) && 
+		    int_unify(CTXTc makeint(0), arity));
 	  else {
 	    if (isnonvar(arity)) {
 	      if (isinteger(arity))
-		err_handle(RANGE, 3, "functor", 3,
+		err_handle(CTXTc RANGE, 3, "functor", 3,
 		       "integer in the range 0..255", arity);
 	      else 
-		xsb_type_error("integer",arity,"functor",3,3); 
+		xsb_type_error(CTXTc "integer",arity,"functor",3,3); 
 
 	    }
 	  else err(INSTANTIATION, 3, "functor", 3);
@@ -108,7 +108,7 @@ inline static xsbBool functor_builtin(void)
     }
       else {
       if (isnonvar(functor))
-	xsb_type_error("atom",functor,"functor",3,2); 
+	xsb_type_error(CTXTc "atom",functor,"functor",3,2); 
       else err(INSTANTIATION, 2, "functor", 3);
       }
   }
@@ -116,39 +116,39 @@ inline static xsbBool functor_builtin(void)
 }
 
 
-inline static xsbBool arg_builtin(void)
+inline static xsbBool arg_builtin(CTXTdecl)
 {
   /* r1: +index (int); r2: +term; r3: ?arg (term) */
   Cell index;
   Cell term;
   int disp;
 
-  index = ptoc_tag(1);
+  index = ptoc_tag(CTXTc 1);
   if (isinteger(index)) {
     if ((disp = int_val(index)) > 0) {
-      term = ptoc_tag(2);
+      term = ptoc_tag(CTXTc 2);
       if (isnonvar(term)) {
 	if (isconstr(term)) {
 	  if (disp <= (int)get_arity(get_str_psc(term))) {
-	    return unify((Cell)(clref_val(term)+disp),
-			 ptoc_tag(3));
+	    return unify(CTXTc (Cell)(clref_val(term)+disp),
+			 ptoc_tag(CTXTc 3));
 	  } 
 	  else return FALSE;	/* fail */
 	} else if (islist(term) && (disp==1 || disp==2)) {
-	  return unify((Cell)(clref_val(term)+disp-1),
-		       ptoc_tag(3));
+	  return unify(CTXTc (Cell)(clref_val(term)+disp-1),
+		       ptoc_tag(CTXTc 3));
 	} else return FALSE;	/* fail */
       } else err(INSTANTIATION, 2, "arg", 3);
     } else return FALSE;	/* fail */
   } else {
-    if (isnonvar(index)) xsb_type_error("integer",index,"arg",3,1); 
+    if (isnonvar(index)) xsb_type_error(CTXTc "integer",index,"arg",3,1); 
     else err(INSTANTIATION, 1, "arg", 3);
   }
   return TRUE;
 }
 
 
-inline static xsbBool univ_builtin(void)
+inline static xsbBool univ_builtin(CTXTdecl)
 {
   /* r1: ?term; r2: ?list	*/
   int i, arity;
@@ -158,8 +158,8 @@ inline static xsbBool univ_builtin(void)
   CPtr head, top = 0;
   Pair sym;
 
-  term = ptoc_tag(1);
-  list = ptoc_tag(2);
+  term = ptoc_tag(CTXTc 1);
+  list = ptoc_tag(CTXTc 2);
   if (isnonvar(term)) {	/* Usage is deconstruction of terms */
     new_list = makelist(hreg);
     if (isatomic(term) || isboxedinteger(term)) { follow(hreg++) = term; top = hreg++; }
@@ -180,7 +180,7 @@ inline static xsbBool univ_builtin(void)
       follow(top) = (Cell)(clref_val(term)+1); top = hreg++;
     }
     follow(top) = makenil;
-    return unify(list, new_list);
+    return unify(CTXTc list, new_list);
   } else { /* usage is construction; term is known to be a variable */
     if (islist(list)) {
       head = clref_val(list);
@@ -231,7 +231,7 @@ inline static xsbBool univ_builtin(void)
 	      if (arity > MAX_ARITY)
 		xsb_abort("[In =..] Attempt to construct a functor with arity %d > %d",
 			  arity, MAX_ARITY);
-	      else xsb_type_error("list",list,"=..",2,2);  /* X =.. [foo|Y]. */
+	      else xsb_type_error(CTXTc "list",list,"=..",2,2);  /* X =.. [foo|Y]. */
 	      return FALSE;
 	    }
 	  }
@@ -243,44 +243,44 @@ inline static xsbBool univ_builtin(void)
       }
       else
 	{
-	  xsb_type_error("list",list,"=..",2,2);  /* X =.. X =.. [2,a,b]. */
+	  xsb_type_error(CTXTc "list",list,"=..",2,2);  /* X =.. X =.. [2,a,b]. */
 	  return(FALSE);
 	}
     }
     if (isnonvar(list))
-	  xsb_type_error("list",list,"=..",2,2);  /* X =.. a */
+	  xsb_type_error(CTXTc "list",list,"=..",2,2);  /* X =.. a */
     else err(INSTANTIATION, 2, "=..", 2);
   }
   return TRUE;
 }
 
 
-inline static xsbBool hilog_arg(void)
+inline static xsbBool hilog_arg(CTXTdecl)
 {
   /* r1: +index (int); r2: +term; r3: ?arg (term) */
   Cell index, term;
   int disp;
 
-  index = ptoc_tag(1);
+  index = ptoc_tag(CTXTc 1);
   if (isinteger(index)) {
     if ((disp = int_val(index)) > 0) {
-      term = ptoc_tag(2);
+      term = ptoc_tag(CTXTc 2);
       if (isnonvar(term)) {
 	if (isconstr(term)) {
 	  if (hilog_cs(term)) disp++;
 	  if (disp <= (int)get_arity(get_str_psc(term))) {
-	    return unify((Cell)(clref_val(term)+disp),
-			 ptoc_tag(3));
+	    return unify(CTXTc (Cell)(clref_val(term)+disp),
+			 ptoc_tag(CTXTc 3));
 	  } return FALSE;		/* fail */
 	} else if (islist(term) && (disp==1 || disp==2)) {
-	  return unify((Cell)(clref_val(term)+disp-1),
-		       ptoc_tag(3));
+	  return unify(CTXTc (Cell)(clref_val(term)+disp-1),
+		       ptoc_tag(CTXTc 3));
 	} else return FALSE;	/* fail */
       } else err(INSTANTIATION, 2, "hilog_arg", 3);
     } else return FALSE;	/* fail */
   } else {
     if (isnonvar(index))
-      xsb_type_error("integer",index,"hilog_arg",3,1);
+      xsb_type_error(CTXTc "integer",index,"hilog_arg",3,1);
     else err(INSTANTIATION, 1, "hilog_arg", 3);
   }
   return TRUE;
@@ -288,7 +288,7 @@ inline static xsbBool hilog_arg(void)
 
 #define INITIAL_NAMELEN 256
 
-inline static xsbBool atom_to_list(int call_type)
+inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 {
   /* r1: ?term; r2: ?character list	*/
   int i, len;
@@ -303,8 +303,10 @@ inline static xsbBool atom_to_list(int call_type)
   char *call_name = (call_type == ATOM_CODES ? "atom_codes" : "atom_chars");
   char *elt_type = (call_type == ATOM_CODES ? "ASCII code" : "character atom");
 
-  term = ptoc_tag(1);
-  list = ptoc_tag(2);
+  SYS_MUTEX_LOCK(MUTEX_ATOM_BUF);
+
+  term = ptoc_tag(CTXTc 1);
+  list = ptoc_tag(CTXTc 2);
   if (!isnonvar(term)) {	/* use is: CODES/CHARS --> ATOM */
     if (atomnameaddr == NULL) {
       atomnameaddr = (char *)malloc(INITIAL_NAMELEN);
@@ -325,9 +327,10 @@ inline static xsbBool atom_to_list(int call_type)
 	if (((call_type==ATOM_CODES) && !isinteger(heap_addr))
 	    || ((call_type==ATOM_CHARS) && !isstring(heap_addr))) {
 	  if (isnonvar(heap_addr)) {
-	    xsb_type_error(elt_type,list,call_name,2,2); 
+	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); 
 	  }
 	  else err(INSTANTIATION, 2, call_name, 2);
+  	  SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
 	  return FALSE;	/* fail */
 	}
 	if (isinteger(heap_addr))
@@ -336,7 +339,8 @@ inline static xsbBool atom_to_list(int call_type)
 	  c = *string_val(heap_addr);
 
 	if (c < 0 || c > 255) {
-	  err_handle(RANGE, 2, call_name, 2, "ASCII code", heap_addr);
+	  err_handle(CTXTc RANGE, 2, call_name, 2, "ASCII code", heap_addr);
+  	  SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
 	  return FALSE;	/* fail */
 	}
 	if (atomname >= atomnamelast) {
@@ -350,11 +354,13 @@ inline static xsbBool atom_to_list(int call_type)
 	term2 = cell(clref_val(term2)+1);
       } else {
 	if (isref(term2)) err(INSTANTIATION, 2, call_name, 2);
-	else xsb_type_error("list",term2,call_name,2,2);  /* atom_chars(X,[1]) */
+	else xsb_type_error(CTXTc "list",term2,call_name,2,2);  /* atom_chars(X,[1]) */
+  	SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
 	return FALSE;	/* fail */
       }
     } while (1);
     bind_string((CPtr)(term), (char *)string_find((char *)atomnameaddr, 1));
+    SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
     return TRUE;
   } else {	/* use is: ATOM --> CODES/CHARS */
     if (isstring(term)) {
@@ -362,13 +368,18 @@ inline static xsbBool atom_to_list(int call_type)
       len = strlen(atomname);
       if (len == 0) {
 	if (!isnonvar(list)) {
-	  bind_nil((CPtr)(list)); return TRUE;
+	  bind_nil((CPtr)(list)); 
+          SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	  return TRUE;
 	}
-	else return isnil(list);
+	else 
+	{ SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	  return isnil(list);
+	}
       } else {
 	/* check that there is enough space on the heap! */
 	check_glstack_overflow(2, pcreg, 2*len*sizeof(Cell)) ;
-	list = ptoc_tag(2);   /* in case it changed */
+	list = ptoc_tag(CTXTc 2);   /* in case it changed */
 
 	new_list = makelist(hreg);
 	for (i = 0; i < len; i++) {
@@ -385,14 +396,16 @@ inline static xsbBool atom_to_list(int call_type)
 	  follow(top) = makelist(hreg);
 	}
 	follow(top) = makenil;
-	return unify(list, new_list);
+	SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	return unify(CTXTc list, new_list);
       } 
-    } else xsb_type_error("atom",term,call_name,2,1);  /* atom_codes(1,F) */
+    } else xsb_type_error(CTXTc "atom",term,call_name,2,1);  /* atom_codes(1,F) */
   }
+  SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
   return TRUE;
 }
 
-inline static xsbBool number_to_list(int call_type)
+inline static xsbBool number_to_list(CTXTdeclc int call_type)
 {
   int i, tmpval;
   long c;
@@ -412,8 +425,8 @@ inline static xsbBool number_to_list(int call_type)
      "integer" : (call_type == NUMBER_DIGITS? "digit" : "digit atom"));
 
 
-  term = ptoc_tag(1);
-  list = ptoc_tag(2);
+  term = ptoc_tag(CTXTc 1);
+  list = ptoc_tag(CTXTc 2);
   if (!isnonvar(term)) {	/* use is: CHARS/CODES --> NUMBER */
     term2 = list;
     do {
@@ -430,7 +443,7 @@ inline static xsbBool number_to_list(int call_type)
 		&& !isstring(heap_addr)
 		&& !isinteger(heap_addr))) {
 	  if (isnonvar(heap_addr))
-	    xsb_type_error(elt_type,list,call_name,2,2); /* number_chars(X,[a]) */
+	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); /* number_chars(X,[a]) */
 	  else err(INSTANTIATION, 2, call_name, 2);
 	  return FALSE;	/* fail */
 	}
@@ -439,17 +452,17 @@ inline static xsbBool number_to_list(int call_type)
 	else if ((call_type==NUMBER_DIGITS) && (isinteger(heap_addr))) {
 	  tmpval = int_val(heap_addr);
 	  if ((tmpval < 0) || (tmpval > 9)) {
-	    xsb_type_error(elt_type,list,call_name,2,2); /* number_chars(X,[11]) */
+	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); /* number_chars(X,[11]) */
 	  }
 	  c = (long) '0' + int_val(heap_addr);
 	} else if (isstring(heap_addr))
 	  c = *string_val(heap_addr);
 	else {
-	    xsb_type_error("integer, digit, or atom",list,call_name,2,2); /* number_chars(X,[a]) */
+	    xsb_type_error(CTXTc "integer, digit, or atom",list,call_name,2,2); /* number_chars(X,[a]) */
 	}
 
 	if (c < 0 || c > 255) {
-	  err_handle(RANGE, 2, call_name, 2, "ASCII code", heap_addr);
+	  err_handle(CTXTc RANGE, 2, call_name, 2, "ASCII code", heap_addr);
 	  return FALSE;	/* fail */
 	}
 	if (StringLoc > 200) return FALSE;
@@ -459,7 +472,7 @@ inline static xsbBool number_to_list(int call_type)
 	if (isref(term2))
 	  err(INSTANTIATION, 2, call_name, 2);
 	else
-	  xsb_type_error("list",term2,call_name,2,2);
+	  xsb_type_error(CTXTc "list",term2,call_name,2,2);
 	return FALSE;	/* fail */
       }
     } while (1);
@@ -488,7 +501,7 @@ inline static xsbBool number_to_list(int call_type)
 	if (isboxedinteger(term)) {
 	  sprintf(str,"%ld",(long)boxedint_val(term));
 	} else {
-	  xsb_type_error("number",term,call_name,2,1);
+	  xsb_type_error(CTXTc "number",term,call_name,2,1);
 	}
       }
     }
@@ -515,13 +528,85 @@ inline static xsbBool number_to_list(int call_type)
       top = hreg++;
       follow(top) = makelist(hreg);
     } follow(top) = makenil;
-    return unify(list, new_list);
+    return unify(CTXTc list, new_list);
   }
   return TRUE;
 }
 
+#ifdef MULTI_THREAD
 
-inline static xsbBool sort(void)
+typedef int (*compfptr)(CTXTdeclc const void *, const void *) ;
+
+#define INSERT_SORT	8
+
+#define QSORT_SWAP(a,b) { Cell t = *a ; *a = *b ; *b = t ; }
+
+#define QSORT_LESS(A,B) ((*qsort_cmp)((CTXT),(A),(B)) < 0)
+
+void qsort0(CTXTdeclc compfptr qsort_cmp, CPtr low, CPtr high )
+{
+/* low is address of lowest element on array */
+/* high is address of rightmost element on array */
+
+	if ( high - low >= INSERT_SORT )
+	{
+		Cell pivot ;
+		CPtr l, r ;
+		CPtr mid = low + ( high - low ) / 2 ;
+
+		if ( QSORT_LESS(mid,low) )
+			QSORT_SWAP( mid, low )
+		if ( QSORT_LESS(high,mid) )
+		{	QSORT_SWAP( high, mid )
+			if ( QSORT_LESS(mid,low) )
+				QSORT_SWAP( mid, low ) 
+		}
+		pivot = *mid ;
+
+		l = low + 1 ;
+		r = high - 1 ;
+		do
+		{	while( QSORT_LESS(l, &pivot) ) l++ ;
+			while( QSORT_LESS(&pivot, r) ) r-- ;
+
+			if( l < r )
+			{	QSORT_SWAP( l, r )
+				l++; r--;
+			}
+			else if( l == r )
+			{	l++; r--;
+			}
+		} while( l <= r ) ;
+		qsort0(CTXTc qsort_cmp, low, r) ;
+		qsort0(CTXTc qsort_cmp, l, high) ;
+	}
+	else if( low < high )		/* insertion sort for small lists */
+	{	CPtr p, min = low, r ;
+		
+		/* set a sentinel to speed up insert sort main loop */
+		for( p = low + 1 ; p <= high ; p++ )
+			if( QSORT_LESS( p, min ) )
+				min = p ;
+		if( low != min )
+			QSORT_SWAP( low, min ) ;
+
+		for( r = low + 2 ; r <= high ; r++ )
+		{	Cell new_el = *r ;
+
+			for( p = r ; QSORT_LESS( &new_el, p-1 ) ; p-- )
+				*p = *(p-1) ;
+			*p = new_el ;
+		}
+	}
+}
+
+void mt_qsort(th_context *th, CPtr v, int len, unsigned int sz, compfptr comp)
+{
+	qsort0( th, comp, v, v + len - 1 ) ;
+}
+#endif /* MULTI_THREAD */
+
+inline static xsbBool sort(CTXTdecl)
 {
   /* r1: +list of terms; r2: ?sorted list of terms */
   int i, len;
@@ -530,7 +615,7 @@ inline static xsbBool sort(void)
   Cell list, new_list;
   CPtr top = 0;
 
-  list = ptoc_tag(1);
+  list = ptoc_tag(CTXTc 1);
   term2 = list; len = 0;
   do {
     XSB_Deref(term2);
@@ -539,11 +624,11 @@ inline static xsbBool sort(void)
       len++; term2 = cell(clref_val(term2)+1);
     } else {
       if (isref(term2)) err(INSTANTIATION, 1, "sort", 2);
-      else xsb_type_error("list",list,"sort",2,1);
+      else xsb_type_error(CTXTc "list",list,"sort",2,1);
     }
   } while(1);
   check_glstack_overflow(3, pcreg, (2*len)*sizeof(Cell)) ;
-  list = ptoc_tag(1); /* reset in case moved */
+  list = ptoc_tag(CTXTc 1); /* reset in case moved */
   if (len > 0) {
     term2 = list;
     cell_tbl = (Cell *)malloc((len * sizeof(Cell)));
@@ -555,26 +640,30 @@ inline static xsbBool sort(void)
       cell_tbl[i] = heap_addr;
       term2 = cell(clref_val(term2)+1);
     }
+#ifndef MULTI_THREAD
     qsort(cell_tbl, len, sizeof(Cell), compare);
+#else
+    mt_qsort(CTXTc cell_tbl, len, sizeof(Cell), compare);
+#endif
     new_list = makelist(hreg);
     follow(hreg++) = cell_tbl[0]; top = hreg++;
     follow(top) = makelist(hreg);
     for (i=1 ; i < len ; i++) {
-      if (compare((void*)cell_tbl[i], (void*)cell_tbl[i-1])) {
+      if (compare(CTXTc (void*)cell_tbl[i], (void*)cell_tbl[i-1])) {
 	follow(hreg++) = cell_tbl[i];
 	top = hreg++;
 	follow(top) = makelist(hreg);
       }
     } follow(top) = makenil;
     free(cell_tbl);
-    term = ptoc_tag(2);
-    return unify(new_list, term);
+    term = ptoc_tag(CTXTc 2);
+    return unify(CTXTc new_list, term);
   }
-  term = ptoc_tag(2);
-  return unify(list, term);
+  term = ptoc_tag(CTXTc 2);
+  return unify(CTXTc list, term);
 }
 
-inline static xsbBool keysort(void)
+inline static xsbBool keysort(CTXTdecl)
 {
   /* r1: +list of terms of the form Key-Value;	*/
   /* r2: ?sorted list of terms			*/
@@ -584,7 +673,7 @@ inline static xsbBool keysort(void)
   Cell *cell_tbl;
   CPtr top = 0;
 
-  list = ptoc_tag(1);
+  list = ptoc_tag(CTXTc 1);
   term2 = list; len = 0;
   do {
     XSB_Deref(term2);
@@ -596,17 +685,17 @@ inline static xsbBool keysort(void)
 	  !strcmp(get_name(get_str_psc(heap_addr)), "-")) {
 	len++; term2 = cell(clref_val(term2)+1);
       } else {
-	xsb_type_error("pair of the form Key-Value", (Cell)NULL,"keysort",2,1);
+	xsb_type_error(CTXTc "pair of the form Key-Value", (Cell)NULL,"keysort",2,1);
       }
     } else {
       if (isref(term2)) err(INSTANTIATION, 1, "keysort", 2);
-      else xsb_type_error("list", list,"keysort",2,1);
+      else err_handle(CTXTc TYPE, 1, "keysort", 2, "list", list);
       return FALSE;	/* fail */
     }
   } while(1);
   check_glstack_overflow(3, pcreg, (2*len)*sizeof(Cell)) ;
-  list = ptoc_tag(1);  /* reset in case moved */
-  term = ptoc_tag(2);
+  list = ptoc_tag(CTXTc 1);  /* reset in case moved */
+  term = ptoc_tag(CTXTc 2);
   if (len > 0) {
     term2 = list;
     cell_tbl = (Cell *)malloc(len * sizeof(Cell));
@@ -618,7 +707,11 @@ inline static xsbBool keysort(void)
       cell_tbl[i] = heap_addr;
       term2 = cell(clref_val(term2)+1);
     }
+#ifndef MULTI_THREAD
     qsort(cell_tbl, len, sizeof(Cell), key_compare);
+#else
+    mt_qsort(CTXTc cell_tbl, len, sizeof(Cell), key_compare);
+#endif
     new_list = makelist(hreg);
     for (i=0 ; i < len ; i++) {
       follow(hreg++) = cell_tbl[i];
@@ -626,16 +719,16 @@ inline static xsbBool keysort(void)
       follow(top) = makelist(hreg);
     } follow(top) = makenil;
     free(cell_tbl);
-    return unify(new_list, term);
+    return unify(CTXTc new_list, term);
   }
-  return unify(list, term);
+  return unify(CTXTc list, term);
 }
 
 long sort_par_dir[10];
 long sort_par_ind[10];
 long sort_num_pars;
 
-int par_key_compare(const void * t1, const void * t2) {
+int par_key_compare(CTXTdeclc const void * t1, const void * t2) {
   long ipar, cmp, ind1, ind2;
   Cell term1 = (Cell) t1 ;
   Cell term2 = (Cell) t2 ;
@@ -648,8 +741,8 @@ int par_key_compare(const void * t1, const void * t2) {
       ind1 = ind2 = sort_par_ind[ipar];
       if (islist(term1)) ind1--;
       if (islist(term2)) ind2--;
-      cmp = compare((void*)cell(clref_val(term1)+ind1),
-		    (void*)cell(clref_val(term2)+ind2));
+      cmp = compare(CTXTc (void*)cell(clref_val(term1)+ind1),
+		          (void*)cell(clref_val(term2)+ind2));
       if (cmp) {
 	if (sort_par_dir[ipar]) return cmp;
 	else return -cmp;
@@ -657,12 +750,12 @@ int par_key_compare(const void * t1, const void * t2) {
     }
     return 0;
   } else if (sort_num_pars == 0) {
-    return compare((void*)term1, (void*)term2);
+    return compare(CTXTc (void*)term1, (void*)term2);
   } else
-    return -compare((void*)term1, (void*)term2);
+    return -compare(CTXTc (void*)term1, (void*)term2);
 }
 
-inline static xsbBool parsort(void)
+inline static xsbBool parsort(CTXTdecl)
 {
   /* r1: +list of terms;				*/
   /* r2: +list of sort indicators: asc(I) or desc(I)	*/
@@ -676,9 +769,9 @@ inline static xsbBool parsort(void)
   CPtr top = 0;
   char ermsg[50];
 
-  elim_dupls = ptoc_int(3);
+  elim_dupls = ptoc_int(CTXTc 3);
 
-  list = ptoc_tag(2);
+  list = ptoc_tag(CTXTc 2);
   term2 = list; sort_num_pars = 0;
 
   XSB_Deref(term2);
@@ -697,21 +790,21 @@ inline static xsbBool parsort(void)
 		   get_arity(get_str_psc(heap_addr)) == 1 &&
 		   !strcmp(get_name(get_str_psc(heap_addr)),"desc")) {
 	  sort_par_dir[sort_num_pars] = 0;
-	} else xsb_type_error("asc/1 or desc/1 term",heap_addr,"parsort",4,2);
+	} else xsb_type_error(CTXTc "asc/1 or desc/1 term",heap_addr,"parsort",4,2);
 	tmp_ind = cell(clref_val(heap_addr)+1); XSB_Deref(tmp_ind);
-	if (!isinteger(tmp_ind)) xsb_type_error("integer arg for asc/1 or desc/1",tmp_ind,"parsort",4,2);
+	if (!isinteger(tmp_ind)) xsb_type_error(CTXTc "integer arg for asc/1 or desc/1",tmp_ind,"parsort",4,2);
 	i = int_val(tmp_ind);
 	/* TLS: Should be range below */
-	if (i < 1 || i > 255) err_handle(TYPE,2,"parsort",4,"arity-sized integer",tmp_ind);
+	if (i < 1 || i > 255) err_handle(CTXTc TYPE,2,"parsort",4,"arity-sized integer",tmp_ind);
 	sort_par_ind[sort_num_pars] = i;
 	if (i > max_ind) max_ind = i;
 	sort_num_pars++;
 	term2 = cell(clref_val(term2)+1);
 	XSB_Deref(term2);
-      } else xsb_type_error("list",list,"parsort",4,2);
+      } else xsb_type_error(CTXTc "list",list,"parsort",4,2);
     }
       
-  list = ptoc_tag(1);
+  list = ptoc_tag(CTXTc 1);
   term2 = list; len = 0;
   do {
     XSB_Deref(term2);
@@ -724,19 +817,19 @@ inline static xsbBool parsort(void)
 	len++; term2 = cell(clref_val(term2)+1);
       } else {
 	sprintf(ermsg,"Term with arity at least %d", max_ind);
-	err_handle(TYPE, 1, "parsort", 4, ermsg, (Cell)NULL);
+	err_handle(CTXTc TYPE, 1, "parsort", 4, ermsg, (Cell)NULL);
 	return FALSE;	/* fail */
       }
     } else {
       if (isref(term2)) err(INSTANTIATION, 1, "parsort", 4);
-      else err_handle(TYPE, 1, "parsort", 4, "list", list);
+      else err_handle(CTXTc TYPE, 1, "parsort", 4, "list", list);
       return FALSE;	/* fail */
     }
   } while(1);
 
   check_glstack_overflow(4, pcreg, (2*len)*sizeof(Cell)) ;
-  list = ptoc_tag(1);  /* reset in case moved */
-  term = ptoc_tag(4);
+  list = ptoc_tag(CTXTc 1);  /* reset in case moved */
+  term = ptoc_tag(CTXTc 4);
   if (len > 0) {
     term2 = list;
     cell_tbl = (Cell *)malloc(len * sizeof(Cell));
@@ -748,13 +841,17 @@ inline static xsbBool parsort(void)
       cell_tbl[i] = heap_addr;
       term2 = cell(clref_val(term2)+1);
     }
+#ifndef MULTI_THREAD
     qsort(cell_tbl, len, sizeof(Cell), par_key_compare);
+#else
+    mt_qsort(CTXTc cell_tbl, len, sizeof(Cell), par_key_compare);
+#endif
     new_list = makelist(hreg);
     if (elim_dupls) {
       follow(hreg++) = cell_tbl[0]; top = hreg++;
       follow(top) = makelist(hreg);
       for (i=1 ; i < len ; i++) {
-	if (compare((void*)cell_tbl[i], (void*)cell_tbl[i-1])) {
+	if (compare(CTXTc (void*)cell_tbl[i], (void*)cell_tbl[i-1])) {
 	  follow(hreg++) = cell_tbl[i];
 	  top = hreg++;
 	  follow(top) = makelist(hreg);
@@ -769,8 +866,8 @@ inline static xsbBool parsort(void)
     }
     follow(top) = makenil;
     free(cell_tbl);
-    return unify(new_list, term);
+    return unify(CTXTc new_list, term);
   }
-  return unify(list, term);
+  return unify(CTXTc list, term);
 }
 

@@ -154,7 +154,7 @@ static void find_and_copy_block(CPtr hp)
 /*-------------------------------------------------------------------------*/
 #ifdef GC
 
-inline static void adapt_hreg_from_choicepoints(CPtr h)
+inline static void adapt_hreg_from_choicepoints(CTXTdeclc CPtr h)
 {
   CPtr b, bprev;
 
@@ -173,7 +173,7 @@ inline static void adapt_hreg_from_choicepoints(CPtr h)
 
 #ifdef SLG_GC
 
-inline static void adapt_hfreg_from_choicepoints(CPtr h)
+inline static void adapt_hfreg_from_choicepoints(CTXTdeclc CPtr h)
 {
   CPtr b, bprev;
   b = (bfreg < breg ? bfreg : breg);
@@ -194,7 +194,7 @@ inline static void adapt_hfreg_from_choicepoints(CPtr h)
 
 #ifdef GC
 
-static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
+static CPtr copy_heap(CTXTdeclc int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 {
     CPtr p, q;
     int  tag; 

@@ -72,6 +72,8 @@
 #include "macro_xsb.h"
 #include "table_stats.h"
 #include "unify_xsb.h"
+#include "subp.h"
+#include "thread_xsb.h"
 #include "debug_xsb.h"
 #include "hash_xsb.h"
 
@@ -92,8 +94,8 @@ double realtime_count;
 extern int asynint_val;	/* 0 - no interrupt (or being processed) */
 extern int asynint_code;	/* 0 means keyboard interrupt */
 
-extern void dis(xsbBool), debug_call(Psc);
-extern void total_stat(double);
+extern void dis(xsbBool), debug_call(CTXTdeclc Psc);
+extern void total_stat(CTXTdeclc double);
 extern void perproc_stat(void), perproc_reset_stat(void), reset_stat_total(void); 
 
 #ifdef LINUX
@@ -110,7 +112,7 @@ Cell attv_interrupts[20480][2];
  * attv, and op2 is the value (see verify_attributes/2).
  */
 
-void add_interrupt(Cell op1, Cell op2) {
+void add_interrupt(CTXTdeclc Cell op1, Cell op2) {
   int num;
 
 #ifndef PRE_IMAGE_TRAIL
@@ -135,7 +137,7 @@ void add_interrupt(Cell op1, Cell op2) {
 }
 
 
-Cell build_interrupt_chain(void) {
+Cell build_interrupt_chain(CTXTdecl) {
   Cell head;
   CPtr tmp = &head;
   int num, i;
@@ -171,7 +173,7 @@ Cell build_interrupt_chain(void) {
 /*  Unification routines.						*/
 /*======================================================================*/
 
-xsbBool unify(Cell rop1, Cell rop2)
+xsbBool unify(CTXTdeclc Cell rop1, Cell rop2)
 { /* begin unify */
   register Cell op1, op2;
 
@@ -239,7 +241,7 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
  * Called through builtins statistics/1 and statistics/0.
  * ( statistics :- statistics(1). )
  */
-void print_statistics(int amount) {
+void print_statistics(CTXTdeclc int amount) {
 
   switch (amount) {
   case 0:		    /* Reset Statistical Parameters */
@@ -251,7 +253,7 @@ void print_statistics(int amount) {
     break;
   case 1:		    /* Print Stack Usage and CPUtime: */
     perproc_stat();		/* move max usage into 'ttt' struct variable */
-    total_stat(real_time()-realtime_count);   /* print */
+    total_stat(CTXTc real_time()-realtime_count);   /* print */
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     break;
   case 2:		    /* Print Detailed Table Usage */
@@ -259,7 +261,7 @@ void print_statistics(int amount) {
     break;
   case 3:		    /* Print Detailed Table, Stack, and CPUtime */
     perproc_stat();
-    total_stat(real_time()-realtime_count);
+    total_stat(CTXTc real_time()-realtime_count);
     reset_stat_total();
     print_detailed_tablespace_stats();
     print_detailed_subsumption_stats();
@@ -311,7 +313,7 @@ static void default_inthandler(int intcode)
 /* builds the current call onto the heap and returns a pointer to it.	*/
 /*======================================================================*/
 
-Pair build_call(Psc psc)
+Pair build_call(CTXTdeclc Psc psc)
 {
   register Cell arg;
   register Pair callstr;
@@ -334,7 +336,7 @@ Pair build_call(Psc psc)
 /* are set up on the Prolog side via set_inthandler/2                   */
 /*======================================================================*/
 
-Psc synint_proc(Psc psc, int intcode)
+Psc synint_proc(CTXTdeclc Psc psc, int intcode)
 {
   if (flags[intcode+INT_HANDLERS_FLAGS_START]==(Cell)0) {
     /* default hard handler */
@@ -343,11 +345,12 @@ Psc synint_proc(Psc psc, int intcode)
   } else {				/* call Prolog handler */
     switch (intcode) {
     case MYSIG_UNDEF:		/*  0 */
+      SYS_MUTEX_LOCK( MUTEX_LOAD_UNDEF ) ;
     case MYSIG_KEYB:		/*  1 */
     case MYSIG_SPY:		/*  3 */
     case MYSIG_TRACE:		/*  4 */
     case MYSIG_CLAUSE:		/* 16 */
-      if (psc) bld_cs(reg+1, build_call(psc));
+      if (psc) bld_cs(reg+1, build_call(CTXTc psc));
       psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
       bld_int(reg+2, asynint_code);
       pcreg = get_ep(psc);
@@ -355,14 +358,14 @@ Psc synint_proc(Psc psc, int intcode)
     case MYSIG_ATTV:		/*  8 */
       /* the old call must be built first */
       if (psc)
-	bld_cs(reg+2, build_call(psc));
+	bld_cs(reg+2, build_call(CTXTc psc));
       psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
       /*
        * Pass the interrupt chain to reg 1.  The counter of attv
        * interrupts (stored in *interrupt_reg) will be reset to 0 in
        * build_interrupt_chain()).
        */
-      bld_copy(reg + 1, build_interrupt_chain());
+      bld_copy(reg + 1, build_interrupt_chain(CTXT));
       /* bld_int(reg + 3, intcode); */	/* Not really needed */
       pcreg = get_ep(psc);
       break;
@@ -401,7 +404,7 @@ void init_interrupt(void)
   signal(SIGINT, keyint_proc); 
 #endif
 
-#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM) || defined(DEBUG_ASSERTIONS))
+#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM) || defined(DEBUG_ASSERTIONS) || defined(DEBUG))
   /* Don't handle SIGSEGV/SIGBUS if configured with DEBUG */
   xsb_default_segfault_handler = SIG_DFL;
 #else 
@@ -418,22 +421,22 @@ void init_interrupt(void)
 /*
  * Maintains max stack usage when "-s" option is given at startup.
  */
-void intercept(Psc psc) {
+void intercept(CTXTdeclc Psc psc) {
 
   if (flags[CLAUSE_INT])
-    synint_proc(psc, MYSIG_CLAUSE);
+    synint_proc(CTXTc psc, MYSIG_CLAUSE);
   else if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
     if (get_spy(psc)) { /* spy'ed pred, interrupted */
-      synint_proc(psc, MYSIG_SPY);
+      synint_proc(CTXTc psc, MYSIG_SPY);
       flags[HIDE_STATE]++; /* hide interrupt handler */
     }
     else if (flags[TRACE]) {
-      synint_proc(psc, MYSIG_TRACE);
+      synint_proc(CTXTc psc, MYSIG_TRACE);
       flags[HIDE_STATE]++; /* hide interrupt handler */
     }
   }
   if (flags[HITRACE])
-    debug_call(psc);
+    debug_call(CTXTc psc);
 
   if (flags[TRACE_STA]) {
     unsigned long  byte_size;
@@ -522,7 +525,7 @@ static inline int sign(Float num)
 /*	in the above ordering list.					*/
 /*======================================================================*/
 
-int compare(const void * v1, const void * v2)
+int compare(CTXTdeclc const void * v1, const void * v2)
 {
   int comp;
   CPtr cptr1, cptr2;
@@ -602,9 +605,9 @@ int compare(const void * v1, const void * v2)
       cptr2 = clref_val(val2);
       for (arity2 = 1; arity2 <= arity1; arity2++) {
 	if (islist(val2))
-	  comp = compare((void*)cell(cptr1+arity2), (void*)cell(cptr2+arity2-1));  
+	  comp = compare(CTXTc (void*)cell(cptr1+arity2), (void*)cell(cptr2+arity2-1));  
 	else
-	  comp = compare((void*)cell(cptr1+arity2), (void*)cell(cptr2+arity2));
+	  comp = compare(CTXTc (void*)cell(cptr1+arity2), (void*)cell(cptr2+arity2));
 	if (comp) break;
       }
       return comp;
@@ -612,13 +615,13 @@ int compare(const void * v1, const void * v2)
     break;
   case XSB_LIST:
     if (cell_tag(val2) != XSB_STRUCT && cell_tag(val2) != XSB_LIST) return 1;
-    else if (isconstr(val2)) return -(compare((void*)val2, (void*)val1));
+    else if (isconstr(val2)) return -(compare(CTXTc (void*)val2, (void*)val1));
     else {	/* Here we are comparing two list structures. */
       cptr1 = clref_val(val1);
       cptr2 = clref_val(val2);
-      comp = compare((void*)cell(cptr1), (void*)cell(cptr2));
+      comp = compare(CTXTc (void*)cell(cptr1), (void*)cell(cptr2));
       if (comp) return comp;
-      return compare((void*)cell(cptr1+1), (void*)cell(cptr2+1));
+      return compare(CTXTc (void*)cell(cptr1+1), (void*)cell(cptr2+1));
     }
     break;
   case XSB_ATTV:
@@ -642,14 +645,14 @@ int compare(const void * v1, const void * v2)
 /*	standard total order of Prolog terms (see compare()).		*/
 /*======================================================================*/
 
-int key_compare(const void * t1, const void * t2)
+int key_compare(CTXTdeclc const void * t1, const void * t2)
 {
   Cell term1 = (Cell) t1 ;
   Cell term2 = (Cell) t2 ;
 
   XSB_Deref(term1);		/* term1 is not in register! */
   XSB_Deref(term2);		/* term2 is not in register! */
-  return compare((void*)cell(clref_val(term1)+1), (void*)cell(clref_val(term2)+1));
+  return compare(CTXTc (void*)cell(clref_val(term1)+1), (void*)cell(clref_val(term2)+1));
 }
 
 /*======================================================================*/
@@ -720,7 +723,7 @@ void print_op(FILE *file, char *string, int pos)
 
 /* ----- The following is also called from the Prolog level ----------- */
 
-void remove_open_tables_reset_freezes(void)
+void remove_open_tables_reset_freezes(CTXTdecl)
 {
   if (xwammode) {
     remove_open_tables();
@@ -735,9 +738,13 @@ void remove_open_tables_reset_freezes(void)
 void xsb_segfault_catcher(int err)
 {
   char *tmp_message = xsb_segfault_message;
+#ifdef MULTI_THREAD
+  xsb_exit(tmp_message);
+#else
   xsb_segfault_message = xsb_default_segfault_msg; /* restore default */
   printf("segfault!!\n");
   xsb_basic_abort(tmp_message);
+#endif
 }
 
 void xsb_segfault_quitter(int err)

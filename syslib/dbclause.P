@@ -99,6 +99,16 @@ db_retractall(Call,Prref) :-
 	fail.
 db_retractall(_,_).
 
+/* This predicate works as follows.  It starts with a pointer from a
+PSC record, and finds the PrRef.  If the predicate is tabled (via a
+transformation) the single-clause tabled predicate is skipped.  Then
+we look to the instruction in the PrRef.  If the instruction is a
+jump, it must be pointing to trie code.  We check that it is (probably
+unnecessary at this point) and then call gen_retract_all.  Non-trie
+dynamic code has in it an instruction of jumptbreg (I think) which
+sets a choice point so that cuts in asserted code may be handled, and
+then jumps. */
+
 %%:- import writeln/1 from standard.
 db_retract_abol(Prref1) :-
 	buff_byte(Prref1,0,Op1),
@@ -123,7 +133,8 @@ db_retract_abol(Prref1) :-
 	buff_set_byte(Prref,0,248).	% fail
 
 
-% db_abolish(+Prref) deletes all clauses of a predicate.
+/* db_abolish(+Prref) deletes all clauses of a predicate and abolishes
+its prref structures */
 
 db_abolish(Prref) :-
 	db_retract_abol(Prref),

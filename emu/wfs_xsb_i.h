@@ -128,7 +128,7 @@ static void reclaim_edge_space(ComplStackFrame csf_ptr)
 
 /*----------------------------------------------------------------------*/
 
-static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
+static inline void construct_dep_graph(CTXTdeclc ComplStackFrame leader_compl_frame)
 {
     EPtr eptr;
     CPtr asf, nsf;
@@ -169,7 +169,7 @@ static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
 /* The following function handles negation for Batched Scheduling.	*/
 /*----------------------------------------------------------------------*/
 
-static void batched_compute_wfs(CPtr leader_compl_frame, 
+static void batched_compute_wfs(CTXTdeclc CPtr leader_compl_frame, 
 				CPtr leader_breg, 
 				VariantSF leader_subg)
 {  
@@ -239,10 +239,10 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     print_completion_stack();
 #endif
 
-    construct_dep_graph((ComplStackFrame)leader_compl_frame);
+    construct_dep_graph(CTXTc (ComplStackFrame)leader_compl_frame);
     dbg_print_completion_stack(LOG_COMPLETION);
 
-    max_finish_csf = DFS_DGT((ComplStackFrame)leader_compl_frame);
+    max_finish_csf = DFS_DGT(CTXTc (ComplStackFrame)leader_compl_frame);
     xsb_dbgmsg((LOG_COMPLETION, 
 	       "! MAX FINISH_SUBGOAL AT COMPL STACK: %p",max_finish_csf));
     /* mark as not visited all subgoals in the completion stack

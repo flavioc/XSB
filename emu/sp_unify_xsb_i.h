@@ -24,7 +24,7 @@
 
 
 /* to be used when cell op1 is known to contain an int */
-static inline xsbBool int_unify(Cell op1, Cell op2)
+static inline xsbBool int_unify(CTXTdeclc Cell op1, Cell op2)
 {	/* No checking for interrupts is needed!       */
   XSB_Deref(op2);
   if (isref(op2)) {
@@ -37,7 +37,7 @@ static inline xsbBool int_unify(Cell op1, Cell op2)
 
 
 /* to be used when cell op1 is known to contain an atom */
-static inline xsbBool atom_unify(Cell op1, Cell op2)
+static inline xsbBool atom_unify(CTXTdeclc Cell op1, Cell op2)
 {	/* No checking for interrupts is needed!	*/
   XSB_Deref(op2);
   if (isref(op2)) {

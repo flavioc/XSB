@@ -49,6 +49,7 @@
 #include "memory_xsb.h"
 #include "heap_xsb.h"
 #include "sig_xsb.h"
+#include "context.h"
 #include "emudef.h"
 #include "loader_xsb.h"
 #include "binding.h"
@@ -69,6 +70,8 @@
 #include "unify_xsb.h"
 #include "emuloop_aux.h"
 #include "remove_unf.h"
+#include "thread_xsb.h"
+#include "rw_lock.h"
 #include "debug_xsb.h"
 
 #include "hash_xsb.h"
@@ -79,7 +82,9 @@
  * variable used in variant_call_search() to save the substitution factor
  * of the call.
  */
+#ifndef MULTI_THREAD
 CPtr	ans_var_pos_reg;
+#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -93,7 +98,7 @@ CPtr	ans_var_pos_reg;
 
 #define XSB_Debug_Instr                                    \
    if (flags[PIL_TRACE]) {                                 \
-      debug_inst(lpcreg, ereg);                            \
+      debug_inst(CTXTc lpcreg, ereg);                      \
    }                                                       \
    xctr++;
 
@@ -260,21 +265,23 @@ static void *instr_addr[256];
 
 /*----------------------------------------------------------------------*/
 
-extern int  builtin_call(byte), unifunc_call(int, CPtr);
+extern int  builtin_call(CTXTdeclc byte), unifunc_call(CTXTdeclc int, CPtr);
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
-extern Pair build_call(Psc);
+extern Pair build_call(CTXTdeclc Psc);
 
 extern void log_prog_ctr(byte *);
 extern long prof_flag;
 
 #ifdef DEBUG_VM
-extern void debug_inst(byte *, CPtr);
+extern void debug_inst(CTXTdeclc byte *, CPtr);
 #endif
 
 /**static int  (*dyn_pred)(); unused-remove soon**/
 
+#ifndef MULTI_THREAD
 xsbBool neg_delay;
 int  xwammode, level_num;
+#endif
 
 #ifdef DEBUG_VM
 int  xctr;
@@ -330,7 +337,7 @@ jmp_buf xsb_abort_fallback_environment;
  *  instruction)
  */
 
-static int emuloop(byte *startaddr)
+int emuloop(CTXTdeclc byte *startaddr)
 {
   register CPtr rreg;
   register byte *lpcreg POST_LPCREG_DECL;
@@ -373,7 +380,7 @@ static int emuloop(byte *startaddr)
 contcase:     /* the main loop */
 
 #ifdef DEBUG_VM
-  if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
+  if (flags[PIL_TRACE]) debug_inst(CTXTc lpcreg, ereg);
   xctr++;
 #endif
 #ifdef PROFILE
@@ -737,7 +744,7 @@ contcase:     /* the main loop */
       new_heap_free(hreg);
      } else if (isattv(op1)) {
       attv_dbgmsg(">>>> getlist_tvar_tvar: ATTV interrupt needed\n");
-      add_interrupt(op1, makelist(hreg));
+      add_interrupt(CTXTc op1, makelist(hreg));
       op1 = (Cell)op2;
       bld_ref((CPtr)op1, hreg);
       new_heap_free(hreg);
@@ -916,10 +923,10 @@ contcase:     /* the main loop */
     if ((ereg - hreg) < (long)op2)
       {
 #endif
-        if (gc_heap(op1)) { /* garbage collection potentially modifies hreg */
+        if (gc_heap(CTXTc op1)) { /* garbage collection potentially modifies hreg */
 	  if ((ereg - hreg) < (long)op2) {
 	    if (flags[STACK_REALLOC]) {
-	      if (glstack_realloc(resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {
+	      if (glstack_realloc(CTXTc resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {
 		xsb_basic_abort(local_global_exception);
 	      }
 	    } else {
@@ -1145,7 +1152,7 @@ contcase:     /* the main loop */
     Op2(get_xrx);
     Op3(get_xxr);
     ADVANCE_PC(size_xxx);
-    bld_int(op3, compare((void *)op1, (void *)op2));
+    bld_int(op3, compare(CTXTc (void *)op1, (void *)op2));
   XSB_End_Instr()
 
   XSB_Start_Instr(movreg,_movreg) /* PRR */
@@ -1173,7 +1180,7 @@ contcase:     /* the main loop */
         else if (isboxedinteger(op2)) {                                 \
             Integer temp = boxedint_val(op2) OP int_val(op1);           \
             bld_oint(op3, temp); }                                      \
-	else { arithmetic_abort(op2, STROP, op1); }                     \
+	else { arithmetic_abort(CTXTc op2, STROP, op1); }               \
     } else if (isfloat(op1)) {						\
 	if (isfloat(op2)) {						\
             Float temp = float_val(op2) OP float_val(op1);              \
@@ -1184,7 +1191,7 @@ contcase:     /* the main loop */
         else if (isboxedinteger(op2)) {                                 \
             Float temp = (Float)boxedint_val(op2) OP float_val(op1);    \
 	    bld_float(op3, temp); }                                     \
-	else { arithmetic_abort(op2, STROP, op1); } 	                \
+	else { arithmetic_abort(CTXTc op2, STROP, op1); } 	        \
     } else if (isboxedinteger(op1)) {                                   \
 	if (isinteger(op2)) {						\
             Integer temp = int_val(op2) OP boxedint_val(op1);           \
@@ -1195,8 +1202,8 @@ contcase:     /* the main loop */
 	else if (isfloat(op2)) {					\
             Float temp = float_val(op2) OP (Float)boxedint_val(op1);    \
 	    bld_float(op3, temp); }                                     \
-	else { arithmetic_abort(op2, STROP, op1); }                     \
-    } else { arithmetic_abort(op2, STROP, op1); }
+	else { arithmetic_abort(CTXTc op2, STROP, op1); }               \
+    } else { arithmetic_abort(CTXTc op2, STROP, op1); }
 
 
   XSB_Start_Instr(addreg,_addreg) /* PRR */
@@ -1223,7 +1230,7 @@ contcase:     /* the main loop */
       else if (isboxedinteger(op2)) {
         Integer temp = boxedint_val(op2) - int_val(op1);
         bld_oint(op3, temp); }
-      else { arithmetic_abort(op2, "-", op1); }
+      else { arithmetic_abort(CTXTc op2, "-", op1); }
     } else if (isfloat(op1)) {
       if (isfloat(op2)) {
         Float temp = float_val(op2) - float_val(op1);
@@ -1234,7 +1241,7 @@ contcase:     /* the main loop */
       else if (isboxedinteger(op2)) {
         Float temp = (Float)boxedint_val(op2) - float_val(op1);
 	bld_float(op3, temp); }
-      else arithmetic_abort(op2, "-", op1);
+      else arithmetic_abort(CTXTc op2, "-", op1);
     } else if (isboxedinteger(op1)) {
       if (isinteger(op2)) {
         Integer temp = int_val(op2) - boxedint_val(op1);
@@ -1245,8 +1252,8 @@ contcase:     /* the main loop */
       else if (isfloat(op2)) {
         Float temp = float_val(op2) - (Float)boxedint_val(op1);
 	bld_float(op3, temp); }
-      else { arithmetic_abort(op2, "-", op1); }
-      } else arithmetic_abort(op2, "-", op1); ****/
+      else { arithmetic_abort(CTXTc op2, "-", op1); }
+      } else arithmetic_abort(CTXTc op2, "-", op1); ****/
   XSB_End_Instr() 
 
   XSB_Start_Instr(mulreg,_mulreg) /* PRR */
@@ -1272,7 +1279,7 @@ contcase:     /* the main loop */
       else if (isboxedinteger(op2)) {
         Float temp = (Float)boxedint_val(op2)/(Float)int_val(op1);
 	bld_float(op3, temp); }
-      else { arithmetic_abort(op2, "/", op1); }
+      else { arithmetic_abort(CTXTc op2, "/", op1); }
     } else if (isfloat(op1)) {
       if (isfloat(op2)) {
         Float temp = float_val(op2)/float_val(op1);
@@ -1283,7 +1290,7 @@ contcase:     /* the main loop */
       else if (isboxedinteger(op2)) {
         Float temp = (Float)boxedint_val(op2)/float_val(op1);
 	bld_float(op3, temp); }
-      else { arithmetic_abort(op2, "/", op1); }
+      else { arithmetic_abort(CTXTc op2, "/", op1); }
     } else if (isboxedinteger(op1)) {
       if (isinteger(op2)) {
         Float temp = (Float)int_val(op2) / (Float)boxedint_val(op1);
@@ -1294,8 +1301,8 @@ contcase:     /* the main loop */
       else if (isfloat(op2)) {
         Float temp = (Float)float_val(op2) / (Float)boxedint_val(op1);
 	bld_float(op3, temp); }
-      else { arithmetic_abort(op2, "/", op1); }
-    } else { arithmetic_abort(op2, "/", op1); }
+      else { arithmetic_abort(CTXTc op2, "/", op1); }
+    } else { arithmetic_abort(CTXTc op2, "/", op1); }
   XSB_End_Instr() 
 
   XSB_Start_Instr(idivreg,_idivreg) /* PRR */
@@ -1314,9 +1321,9 @@ contcase:     /* the main loop */
           } else if (isboxedinteger(op2)) {
             Integer temp = boxedint_val(op2) / int_val(op1);
             bld_oint(op3, temp); 
-          } else { arithmetic_abort(op2, "//", op1); }
+          } else { arithmetic_abort(CTXTc op2, "//", op1); }
         } else {
-	  err_handle(ZERO_DIVIDE, 2,
+	  err_handle(CTXTc ZERO_DIVIDE, 2,
 		     "arithmetic expression involving is/2 or eval/2",
 		     2, "non-zero number", op1);
 	  lpcreg = pcreg;
@@ -1330,7 +1337,7 @@ contcase:     /* the main loop */
           bld_oint(op3, temp);
         }
       }
-    else { arithmetic_abort(op2, "//", op1); }
+    else { arithmetic_abort(CTXTc op2, "//", op1); }
   XSB_End_Instr() 
 
   XSB_Start_Instr(int_test_z,_int_test_z)   /* PPR-B-L */
@@ -1349,7 +1356,7 @@ contcase:     /* the main loop */
           lpcreg = (byte *)op3;
     }	  
     else {
-      arithmetic_comp_abort(op1, "=\\=", op2);
+      arithmetic_comp_abort(CTXTc op1, "=\\=", op2);
     }
   XSB_End_Instr()
 
@@ -1369,7 +1376,7 @@ contcase:     /* the main loop */
           lpcreg = (byte *)op3;
     }	  
     else {
-      arithmetic_comp_abort(op1, "=:=", op2);
+      arithmetic_comp_abort(CTXTc op1, "=:=", op2);
     }
   XSB_End_Instr()
 
@@ -1427,7 +1434,7 @@ contcase:     /* the main loop */
       cpreg = lpcreg;
       bld_cs(reg + 2, hreg);	/* see subp.c: build_call() */
       new_heap_functor(hreg, true_psc);
-      bld_copy(reg + 1, build_interrupt_chain());
+      bld_copy(reg + 1, build_interrupt_chain(CTXT));
       lpcreg = get_ep((Psc) flags[MYSIG_ATTV + INT_HANDLERS_FLAGS_START]);
     }
   XSB_End_Instr()
@@ -1460,17 +1467,29 @@ contcase:     /* the main loop */
     Psc psc;
     
     Op1(get_xxxs);
+    SYS_MUTEX_LOCK(MUTEX_LOAD_UNDEF);
     ADVANCE_PC(size_xxxX);
     psc = (Psc)op1;
     /* check env or type to give (better) error msgs? */
     switch (get_type(psc)) {
     case T_PRED:
     case T_DYNA:
+    case T_FORN:
+#ifndef MULTI_THREAD
       xsb_abort("[EMULOOP] Trying to load an already loaded pred");
+#else
+      /* predicate was loaded by another thread */
+      /* fprintf(stderr,"Predicate loaded by other thread\n");
+         fflush(stderr);
+       */	
+      SYS_MUTEX_UNLOCK(MUTEX_LOAD_UNDEF);
+      lpcreg = get_ep(psc);             /* new ep of predicate */
+      break;
+#endif
     default:
       /* xsb_dbgmsg("loading module %s for %s/%d\n",
 	 get_name(get_data(psc)),get_name(psc),get_arity(psc)); */
-      bld_cs(reg+1, build_call(psc));   /* put call-term in r1 */
+      bld_cs(reg+1, build_call(CTXTc psc));   /* put call-term in r1 */
       /* get psc of undef handler */
       psc = (Psc)flags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START];
       bld_int(reg+2, MYSIG_UNDEF);      /* undef-pred code */
@@ -1537,7 +1556,7 @@ contcase:     /* the main loop */
     lpcreg = cpreg;
   XSB_End_Instr()
 
-  XSB_Start_Instr(execute,_execute) /* PPP-S */
+  XSB_Start_Instr(xsb_execute,_xsb_execute) /* PPP-S */
     Def1op
     Psc psc;
 
@@ -1655,7 +1674,7 @@ contcase:     /* the main loop */
     Op1(get_xxa);
     ADVANCE_PC(size_xxx);
     pcreg=lpcreg; 
-    if (builtin_call((byte)(op1))) {lpcreg=pcreg;}
+    if (builtin_call(CTXTc (byte)(op1))) {lpcreg=pcreg;}
     else Fail1;
   XSB_End_Instr()
 
@@ -1664,7 +1683,7 @@ contcase:     /* the main loop */
     Op1(get_xax);
     Op2(get_xxr);
     ADVANCE_PC(size_xxx);
-    if (unifunc_call((int)(op1), (CPtr)op2) == 0) {
+    if (unifunc_call(CTXTc (int)(op1), (CPtr)op2) == 0) {
       xsb_error("Error in unary function call");
       Fail1;
     }
@@ -1695,7 +1714,7 @@ contcase:     /* the main loop */
         Integer temp = boxedint_val(op2) >> int_val(op1);
         bld_oint(op3, temp); 
       }
-      else {arithmetic_abort(op2, "'>>'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'>>'", op1);}
     }
     else if (isboxedinteger(op1)) {
       if (isinteger(op2)) {
@@ -1706,9 +1725,9 @@ contcase:     /* the main loop */
         Integer temp = boxedint_val(op2) >> boxedint_val(op1);
         bld_oint(op3, temp); 
       }
-      else {arithmetic_abort(op2, "'>>'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'>>'", op1);}
     }
-    else {arithmetic_abort(op2, "'>>'", op1);}
+    else {arithmetic_abort(CTXTc op2, "'>>'", op1);}
   XSB_End_Instr() 
 
   XSB_Start_Instr(logshiftl,_logshiftl)   /* PRR */
@@ -1728,7 +1747,7 @@ contcase:     /* the main loop */
         Integer temp = boxedint_val(op2) << int_val(op1);
         bld_oint(op3, temp); 
       }
-      else {arithmetic_abort(op2, "'<<'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'<<'", op1);}
     }
     else if (isboxedinteger(op1)) {
       if (isinteger(op2)) {
@@ -1739,9 +1758,9 @@ contcase:     /* the main loop */
         Integer temp = boxedint_val(op2) << boxedint_val(op1);
         bld_oint(op3, temp); 
       }
-      else {arithmetic_abort(op2, "'<<'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'<<'", op1);}
     }
-    else {arithmetic_abort(op2, "'<<'", op1);}
+    else {arithmetic_abort(CTXTc op2, "'<<'", op1);}
   XSB_End_Instr() 
 
   XSB_Start_Instr(or,_or)   /* PRR */
@@ -1761,7 +1780,7 @@ contcase:     /* the main loop */
         Integer temp = (boxedint_val(op2)) | (int_val(op1));
         bld_oint(op3, temp);
       }
-      else {arithmetic_abort(op2, "'\\/'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'\\/'", op1);}
     }
     else if (isboxedinteger(op1)) {
       if (isinteger(op2)) {
@@ -1772,11 +1791,11 @@ contcase:     /* the main loop */
         Integer temp = (boxedint_val(op2)) | (boxedint_val(op1));
         bld_oint(op3, temp); 
       }
-      else {arithmetic_abort(op2, "'\\/'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'\\/'", op1);}
     }
-    else {arithmetic_abort(op2, "'\\/'", op1);}
+    else {arithmetic_abort(CTXTc op2, "'\\/'", op1);}
 /**    if (!isinteger(op1) || !isinteger(op2)) {
-      arithmetic_abort(op2, "'\\/'", op1);
+      arithmetic_abort(CTXTc op2, "'\\/'", op1);
     }
     else { bld_oint(op3, int_val(op2) | int_val(op1)); } ***/
   XSB_End_Instr() 
@@ -1798,7 +1817,7 @@ contcase:     /* the main loop */
         Integer temp = (boxedint_val(op2)) & (int_val(op1));
         bld_oint(op3, temp);
       }
-      else {arithmetic_abort(op2, "'/\\'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'/\\'", op1);}
     }
     else if (isboxedinteger(op1)) {
       if (isinteger(op2)) {
@@ -1809,12 +1828,12 @@ contcase:     /* the main loop */
         Integer temp = (boxedint_val(op2)) & (boxedint_val(op1));
         bld_oint(op3, temp); 
       }
-      else {arithmetic_abort(op2, "'/\\'", op1);}
+      else {arithmetic_abort(CTXTc op2, "'/\\'", op1);}
     }
-    else {arithmetic_abort(op2, "'/\\'", op1);}
+    else {arithmetic_abort(CTXTc op2, "'/\\'", op1);}
 
 /**    if (!isinteger(op1) || !isinteger(op2)) {
-      arithmetic_abort(op2, "'/\\'", op1);
+      arithmetic_abort(CTXTc op2, "'/\\'", op1);
     }
     else { bld_oint(op3, int_val(op2) & int_val(op1)); } **/
   XSB_End_Instr() 
@@ -1830,7 +1849,7 @@ contcase:     /* the main loop */
       Integer temp = ~(boxedint_val(op1));
       bld_oint(op3, temp); 
     }
-    else { arithmetic_abort1("'\\'", op1); }
+    else { arithmetic_abort1(CTXTc "'\\'", op1); }
   XSB_End_Instr() 
 
 #ifndef JUMPTABLE_EMULOOP
@@ -1862,10 +1881,13 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
    FILE *fd;
    unsigned int magic_num;
    static double realtime;	/* To retain its value across invocations */
+#ifdef MULTI_THREAD
+   static th_context *th ;
+#endif
 
    extern void dis(xsbBool);
    extern char *init_para(int, char **);
-   extern void init_machine(void), init_symbols(void);
+   extern void init_machine(CTXTdecl), init_symbols(void);
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
 #ifndef FOREIGN_WIN32
@@ -1894,7 +1916,10 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
      realtime = real_time();
      setbuf(stdout, NULL);
      startup_file = init_para(argc, argv);	/* init parameters */
-     init_machine();		/* init space, regs, stacks */
+#ifdef MULTI_THREAD
+     th = malloc( sizeof( th_context ) ) ;
+#endif
+     init_machine(CTXT);	/* init space, regs, stacks */
      init_inst_table();		/* init table of instruction types */
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */
@@ -1931,7 +1956,7 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
    } else if (flag == 1) {  /* continue execution */
 
-     return(emuloop(inst_begin));
+     return(emuloop(CTXTc inst_begin));
 
    } else if (flag == 2) {  /* shutdown xsb */
 

@@ -127,18 +127,18 @@
  loc##_label_op1_attv:\
   if (isattv(op2)) goto loc##_label_both_attv;\
   attv_dbgmsg(">>>> ATTV = something, interrupt needed\n");\
-  add_interrupt(op1, op2);\
+  add_interrupt(CTXTc op1, op2);\
   IFTHEN_SUCCEED;\
 \
  loc##_label_op2_attv:\
   attv_dbgmsg(">>>> something = ATTV, interrupt needed\n");\
-  add_interrupt(op2, op1);\
+  add_interrupt(CTXTc op2, op1);\
   IFTHEN_SUCCEED;\
 \
  loc##_label_both_attv:\
   if (op1 != op2)\
     {\
       attv_dbgmsg(">>>> ATTV = ???, interrupt needed\n");\
-      add_interrupt(op1, op2);\
+      add_interrupt(CTXTc op1, op2);\
     }\
   IFTHEN_SUCCEED

@@ -36,13 +36,14 @@ ALL =	assert${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
 	push_io${OBJEXT} \
 	setof${OBJEXT} shell${OBJEXT} standard${OBJEXT} std_xsb${OBJEXT} \
 	string${OBJEXT} subsumes${OBJEXT} sysinitrc${OBJEXT} tables${OBJEXT}  \
-	term_exp${OBJEXT} \
+	term_exp${OBJEXT} thread${OBJEXT} \
 	unix${OBJEXT} x_interp${OBJEXT} xsb_hook${OBJEXT} xsb_read${OBJEXT}  \
 	xsb_writ${OBJEXT} xcallxsb${OBJEXT}
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
-	../emu/system_defs_xsb.h ../emu/socket_defs_xsb.h 
+	../emu/system_defs_xsb.h ../emu/socket_defs_xsb.h \
+	../emu/thread_defs_xsb.h
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
 

@@ -44,6 +44,7 @@
 #include "io_defs_xsb.h"
 #include "celltags_xsb.h"
 #include "psc_defs.h"
+#include "thread_defs_xsb.h"
 #include "extensions_xsb.h"
 
 %% Provide tests for the respective OS.
@@ -248,6 +249,7 @@ XSB's in-lined predicates, builtins, and functions.
 	; Type =:= XSB_STRING -> psc_insert(Term, 0, PSC, 0)
 	),
 	load_pred(PSC),
+	xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
 	call0(Term).
 
 
@@ -279,12 +281,14 @@ load_pred1(PSC) :-
 		%% '_$cutto'(B)
 		!
 		;
+		xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
 		xsb_backtrace(BT),
 		throw(error(undefined_predicate(Name,Arity,ModName),
 			    ['The predicate: ', Name, '/', Arity,
 			     ' is not defined in module ', ModName],BT))
 	    )
 	;
+	    xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
 	    xsb_backtrace(BT),
 	    throw(error(undefined_predicate(Name,Arity,usermod),
 			['Undefined predicate: ', Name, '/', Arity],BT))

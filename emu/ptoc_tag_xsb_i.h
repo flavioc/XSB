@@ -30,7 +30,7 @@
  *  Returns the still-tagged value (a Cell) at the end of the deref chain
  *  leading from `regnum'.
  */
-static inline Cell ptoc_tag(int regnum)
+static inline Cell ptoc_tag(CTXTdeclc int regnum)
 {
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);

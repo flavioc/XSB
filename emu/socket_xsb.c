@@ -73,13 +73,13 @@
 #include "register.h"
 
 /* return error code handling */
-static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber,char *Where);
+static xsbBool set_error_code(CTXTdeclc int ErrCode, int ErrCodeArgNumber,char *Where);
 
 /* define a macro to do memory free and errro handling for timeout related 
    socket calls */
 #define FREE_TIMEOUT_AND_SET_ECODE(ecode, arg_num, Where) \
 		free_timeout_obj(pSock); \
-                return set_error_code(ecode, arg_num, Where); 
+                return set_error_code(CTXTc ecode, arg_num, Where); 
 
 /* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
 extern FILE *fdopen(int fildes, const char *type);
@@ -104,7 +104,7 @@ static void init_connections();
 static void set_sockfd(int count);
 static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
 			   int **fds, int * size);
-static void test_ready(prolog_term *avail_sockfds, fd_set *fdset,
+static void test_ready(CTXTdeclc prolog_term *avail_sockfds, fd_set *fdset,
 		       int *fds, int size);
 static void select_destroy(char *connection_name);
 static int getsize (prolog_term list);
@@ -198,8 +198,8 @@ static int readmsg(SOCKET sock_handle, char **msg_buff)
    The formal parameter is pointer to xsbTimeout.
 */
 
-static void socket_accept(xsbTimeout *pptr) {
-    SOCKET sock_handle_in = (SOCKET) ptoc_int(2);
+static void socket_accept(CTXTdeclc xsbTimeout *pptr) {
+    SOCKET sock_handle_in = (SOCKET) ptoc_int(CTXTc 2);
     SOCKET sock_handle = accept(sock_handle_in, NULL, NULL);
 
     pptr->return_code = (int) sock_handle;
@@ -207,14 +207,14 @@ static void socket_accept(xsbTimeout *pptr) {
 }
 
 
-static void socket_connect(xsbTimeout *pptr) {
+static void socket_connect(CTXTdeclc xsbTimeout *pptr) {
     SOCKET sock_handle;
     int domain, portnum;
     SOCKADDR_IN socket_addr;
     
-    domain = ptoc_int(2);
-    sock_handle = (SOCKET) ptoc_int(3);
-    portnum = ptoc_int(4);
+    domain = ptoc_int(CTXTc 2);
+    sock_handle = (SOCKET) ptoc_int(CTXTc 3);
+    portnum = ptoc_int(CTXTc 4);
    
     if (domain == 0) domain = AF_INET;
     else if (domain == 1) {
@@ -229,26 +229,26 @@ static void socket_connect(xsbTimeout *pptr) {
     socket_addr.sin_port = htons((unsigned short)portnum);
     socket_addr.sin_family = AF_INET;
     socket_addr.sin_addr.s_addr =
-      inet_addr((char*)get_host_IP(ptoc_string(5)));
+      inet_addr((char*)get_host_IP(ptoc_string(CTXTc 5)));
 
     pptr->return_code =
       connect(sock_handle,(PSOCKADDR)&socket_addr,sizeof(socket_addr));
     NOTIFY_PARENT_THREAD(pptr);
 }
 
-static void socket_recv(xsbTimeout *pptr)	{
+static void socket_recv(CTXTdeclc xsbTimeout *pptr)	{
     SOCKET sock_handle;
     
-    sock_handle = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(CTXTc 2);
     
     pptr->return_code = readmsg(sock_handle,(char**)(&pptr->sockdata)); 
 
     NOTIFY_PARENT_THREAD(pptr);
 }
 
-static void socket_send(xsbTimeout *pptr) {
-    SOCKET sock_handle = (SOCKET) ptoc_int(2);
-    char *send_msg_aux = ptoc_string(3);
+static void socket_send(CTXTdeclc xsbTimeout *pptr) {
+    SOCKET sock_handle = (SOCKET) ptoc_int(CTXTc 2);
+    char *send_msg_aux = ptoc_string(CTXTc 3);
     unsigned int msg_body_len, network_encoded_len;
 
     /* We use the first XSB_MSG_HEADER_LENGTH bytes for the message size.*/
@@ -271,22 +271,22 @@ static void socket_send(xsbTimeout *pptr) {
     NOTIFY_PARENT_THREAD(pptr);
 }
 
-static void socket_get0(xsbTimeout * pptr) {
+static void socket_get0(CTXTdeclc xsbTimeout * pptr) {
     SOCKET sock_handle;
     pptr->sockdata = malloc(sizeof(char));
     
-    sock_handle = (SOCKET) ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(CTXTc 2);
     pptr->return_code =
           recvfrom(sock_handle,(char*)(pptr->sockdata),1,0,NULL,0);
     NOTIFY_PARENT_THREAD(pptr);
 }
   
-static void socket_put(xsbTimeout *pptr) {
+static void socket_put(CTXTdeclc xsbTimeout *pptr) {
     SOCKET sock_handle;
     static char tmpch;	
     
-    sock_handle = (SOCKET) ptoc_int(2);
-    tmpch = (char)ptoc_int(3);
+    sock_handle = (SOCKET) ptoc_int(CTXTc 2);
+    tmpch = (char)ptoc_int(CTXTc 3);
 
     pptr->return_code = sendto(sock_handle, &tmpch, 1, 0, NULL,0);
     NOTIFY_PARENT_THREAD(pptr);
@@ -294,7 +294,7 @@ static void socket_put(xsbTimeout *pptr) {
 
 /* in order to save builtin numbers, create a single socket function with
  * options socket_request(SockOperation,....)  */
-xsbBool xsb_socket_request(void)
+xsbBool xsb_socket_request(CTXTdecl)
 {
   static int ecode = 0;  /* error code for socket ops */
   static SOCKET sock_handle;
@@ -304,11 +304,11 @@ xsbBool xsb_socket_request(void)
 
   xsbTimeout *pSock;
 
-  switch (ptoc_int(1)) {
+  switch (ptoc_int(CTXTc 1)) {
   case SOCKET_ROOT: /* this is the socket() request */
     /* socket_request(SOCKET_ROOT,+domain,-socket_fd,-Error,_,_,_) 
        Currently only AF_INET domain */
-    domain = ptoc_int(2); 
+    domain = ptoc_int(CTXTc 2); 
     if (domain == 0) domain = AF_INET;
     else if (domain == 1){
       domain = AF_UNIX;
@@ -327,16 +327,16 @@ xsbBool xsb_socket_request(void)
     } else
       ecode = SOCK_OK;
 	
-    ctop_int(3, (SOCKET) sock_handle);
+    ctop_int(CTXTc 3, (SOCKET) sock_handle);
 	
-    return set_error_code(ecode, 4, "SOCKET_REQUEST");
+    return set_error_code(CTXTc ecode, 4, "SOCKET_REQUEST");
 
   case SOCKET_BIND:
     /* socket_request(SOCKET_BIND,+domain,+sock_handle,+port,-Error,_,_) 
        Currently only supports AF_INET */
-    sock_handle = (SOCKET) ptoc_int(3);
-    portnum = ptoc_int(4);
-    domain = ptoc_int(2);
+    sock_handle = (SOCKET) ptoc_int(CTXTc 3);
+    portnum = ptoc_int(CTXTc 4);
+    domain = ptoc_int(CTXTc 2);
 
     if (domain == 0) domain = AF_INET;
     else if (domain == 1){
@@ -365,12 +365,12 @@ xsbBool xsb_socket_request(void)
     } else
       ecode = SOCK_OK;
 
-    return set_error_code(ecode, 5, "SOCKET_BIND");
+    return set_error_code(CTXTc ecode, 5, "SOCKET_BIND");
 
   case SOCKET_LISTEN: 
     /* socket_request(SOCKET_LISTEN,+sock_handle,+length,-Error,_,_,_) */
-    sock_handle = (SOCKET) ptoc_int(2);
-    retcode = listen(sock_handle, ptoc_int(3));
+    sock_handle = (SOCKET) ptoc_int(CTXTc 2);
+    retcode = listen(sock_handle, ptoc_int(CTXTc 3));
 
     /* error handling */
     if (SOCKET_OP_FAILED(retcode)) {
@@ -379,7 +379,7 @@ xsbBool xsb_socket_request(void)
     } else
       ecode = SOCK_OK;
 
-    return set_error_code(ecode, 4, "SOCKET_LISTEN");
+    return set_error_code(CTXTc ecode, 4, "SOCKET_LISTEN");
 
   case SOCKET_ACCEPT:
     /* socket_request(SOCKET_ACCEPT,+sock_handle_in,
@@ -389,7 +389,7 @@ xsbBool xsb_socket_request(void)
     if (CHECK_TIMER_SET) {
       int timeout_flag; 
 
-      timeout_flag=make_timed_call(pSock, socket_accept);
+      timeout_flag=make_timed_call(CTXTc pSock, socket_accept);
 
       if (timeout_flag == TIMER_SETUP_ERR) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,4,"SOCKET_ACCEPT");
@@ -397,7 +397,7 @@ xsbBool xsb_socket_request(void)
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4,"SOCKET_ACCEPT");
       }
     } else { /* timer not set */
-      socket_accept(pSock);
+      socket_accept(CTXTc pSock);
     }
 	
     /* error handling */ 
@@ -409,7 +409,7 @@ xsbBool xsb_socket_request(void)
       ecode = SOCK_OK;
     }
 
-    ctop_int(3, (SOCKET) sock_handle);
+    ctop_int(CTXTc 3, (SOCKET) sock_handle);
 	
     FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_ACCEPT");
   
@@ -421,7 +421,7 @@ xsbBool xsb_socket_request(void)
     /* control time out */
     if (CHECK_TIMER_SET) {
       int timeout_flag; 
-      timeout_flag=make_timed_call(pSock, socket_connect);
+      timeout_flag=make_timed_call(CTXTc pSock, socket_connect);
 
       if (timeout_flag == TIMER_SETUP_ERR) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,6,"SOCKET_CONNECT");
@@ -429,7 +429,7 @@ xsbBool xsb_socket_request(void)
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 6,"SOCKET_CONNECT");
       }
     } else { /* timer not set */
-      socket_connect(pSock);
+      socket_connect(CTXTc pSock);
     }
 
     /* error handling */
@@ -437,7 +437,7 @@ xsbBool xsb_socket_request(void)
       ecode = XSB_SOCKET_ERRORCODE;
       perror("SOCKET_CONNECT");
       /* close, because if connect() fails then socket becomes unusable */
-      closesocket(ptoc_int(3));
+      closesocket(ptoc_int(CTXTc 3));
     } else
       ecode = SOCK_OK;
 	
@@ -447,7 +447,7 @@ xsbBool xsb_socket_request(void)
   case SOCKET_CLOSE: 
     /* socket_request(SOCKET_CLOSE,+sock_handle,-Error,_,_,_,_) */
     
-    sock_handle = (SOCKET)ptoc_int(2);
+    sock_handle = (SOCKET)ptoc_int(CTXTc 2);
     
     /* error handling */
     retcode = closesocket(sock_handle);
@@ -457,7 +457,7 @@ xsbBool xsb_socket_request(void)
     } else
       ecode = SOCK_OK;
     
-    return set_error_code(ecode, 3, "SOCKET_CLOSE");
+    return set_error_code(CTXTc ecode, 3, "SOCKET_CLOSE");
     
   case SOCKET_RECV:
     /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
@@ -467,14 +467,14 @@ xsbBool xsb_socket_request(void)
     if (CHECK_TIMER_SET) {
       int timeout_flag; 
 
-      timeout_flag=make_timed_call(pSock,socket_recv);
+      timeout_flag=make_timed_call(CTXTc pSock,socket_recv);
       if(timeout_flag == TIMER_SETUP_ERR) {
 	FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,4,"SOCKET_RECV");
       } else if(timeout_flag) {  /* timed out */
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR,4,"SOCKET_RECV");
       }
     } else  /* timer not set */ 
-      socket_recv(pSock);
+      socket_recv(CTXTc pSock);
     
     /* error handling */
     switch (pSock->return_code) {
@@ -493,9 +493,9 @@ xsbBool xsb_socket_request(void)
     }
     
     if (pSock->sockdata != NULL) 
-      ctop_string(3,(char*)string_find((char *)pSock->sockdata,1));
+      ctop_string(CTXTc 3,(char*)string_find((char *)pSock->sockdata,1));
     else  /* this happens at end of file */
-      ctop_string(3,(char*)string_find("",1));
+      ctop_string(CTXTc 3,(char*)string_find("",1));
 
     FREE_TIMEOUT_AND_SET_ECODE(ecode,4,"SOCKET_RECV");  
 
@@ -507,14 +507,14 @@ xsbBool xsb_socket_request(void)
     if (CHECK_TIMER_SET) {
       int timeout_flag; 
 
-      timeout_flag=make_timed_call(pSock,socket_send);
+      timeout_flag=make_timed_call(CTXTc pSock,socket_send);
       if(timeout_flag == TIMER_SETUP_ERR ) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_SEND");
       } else if(timeout_flag) {  /* timed out */
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4, "SOCKET_SEND"); 
       }
     } else  /* timer not set */
-      socket_send(pSock);
+      socket_send(CTXTc pSock);
     
     if (SOCKET_OP_FAILED(pSock->return_code)) {
       ecode = XSB_SOCKET_ERRORCODE;
@@ -532,26 +532,26 @@ xsbBool xsb_socket_request(void)
     if (CHECK_TIMER_SET) {
       int timeout_flag;
       
-      timeout_flag=make_timed_call(pSock,socket_get0);
+      timeout_flag=make_timed_call(CTXTc pSock,socket_get0);
       if (timeout_flag == TIMER_SETUP_ERR) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_GET0"); 
       } else if(timeout_flag) /* timed out */ {
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4, "SOCKET_GET0"); 
       }
     } else  /* timer not set */
-      socket_get0(pSock);
+      socket_get0(CTXTc pSock);
     
     /*error handling */ 
     switch (pSock->return_code) {
     case 1:
-      ctop_int(3,(unsigned char)(*(char*)(pSock->sockdata)));
+      ctop_int(CTXTc 3,(unsigned char)(*(char*)(pSock->sockdata)));
       ecode = SOCK_OK;
       break;
     case 0:
       ecode = SOCK_EOF;
       break;
     default:
-      ctop_int(3,-1);
+      ctop_int(CTXTc 3,-1);
       perror("SOCKET_GET0");
       ecode = XSB_SOCKET_ERRORCODE;
     }
@@ -567,7 +567,7 @@ xsbBool xsb_socket_request(void)
     if (CHECK_TIMER_SET) {
       int timeout_flag;
 
-      timeout_flag=make_timed_call(pSock,socket_put);
+      timeout_flag=make_timed_call(CTXTc pSock,socket_put);
 
       if(timeout_flag == TIMER_SETUP_ERR)  {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_PUT"); 
@@ -575,7 +575,7 @@ xsbBool xsb_socket_request(void)
         FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4, "SOCKET_PUT"); 
       }
     } else  /* timer not set */ {
-      socket_put(pSock);
+      socket_put(CTXTc pSock);
     }
 
     /* error handling */
@@ -591,13 +591,13 @@ xsbBool xsb_socket_request(void)
   case SOCKET_SET_OPTION: {
     /* socket_request(SOCKET_SET_OPTION,+Sockfd,+OptionName,+Value,_,_,_) */
     
-    char *option_name = ptoc_string(3);
+    char *option_name = ptoc_string(CTXTc 3);
 
-    sock_handle = (SOCKET)ptoc_int(2);
+    sock_handle = (SOCKET)ptoc_int(CTXTc 2);
 
     /* Set the "linger" parameter to a small number of seconds */
     if (0==strcmp(option_name,"linger")) {
-      int  linger_time=ptoc_int(4);
+      int  linger_time=ptoc_int(CTXTc 4);
 
       if (linger_time < 0) {
 	sock_linger_opt.l_onoff = FALSE;
@@ -627,12 +627,12 @@ xsbBool xsb_socket_request(void)
     prolog_term R_sockfd, W_sockfd, E_sockfd;
     int i, connection_count;
     int rmax_fd=0, wmax_fd=0, emax_fd=0; 
-    char *connection_name = ptoc_string(2);
+    char *connection_name = ptoc_string(CTXTc 2);
 
     /* bind fds to input arguments */
-    R_sockfd = reg_term(3);
-    W_sockfd = reg_term(4);
-    E_sockfd = reg_term(5);	
+    R_sockfd = reg_term(CTXTc 3);
+    W_sockfd = reg_term(CTXTc 4);
+    E_sockfd = reg_term(CTXTc 5);	
 
     /* initialize the array of connect_t structure for select call */	
     init_connections(); 
@@ -684,7 +684,7 @@ xsbBool xsb_socket_request(void)
 
     int maxfd;
     int i;       /* index for connection_count */
-    char *connection_name = ptoc_string(2);
+    char *connection_name = ptoc_string(CTXTc 2);
     struct timeval *tv;
     prolog_term timeout_term;
     int timeout =0;
@@ -692,7 +692,7 @@ xsbBool xsb_socket_request(void)
     int count=0;			
 
     /* specify the time out */
-    timeout_term = reg_term(3);
+    timeout_term = reg_term(CTXTc 3);
     if (isinteger(timeout_term)|isboxedinteger(timeout_term)) {
       timeout = oint_val(timeout_term);
       /* initialize tv */
@@ -703,22 +703,22 @@ xsbBool xsb_socket_request(void)
       tv = NULL; /* no timeouts */
 
     /* initialize the prolog term */ 
-    Avail_rsockfds = p2p_new();
-    Avail_wsockfds = p2p_new();
-    Avail_esockfds = p2p_new(); 
+    Avail_rsockfds = p2p_new(CTXT);
+    Avail_wsockfds = p2p_new(CTXT);
+    Avail_esockfds = p2p_new(CTXT); 
 
     /* bind to output arguments */
-    Avail_rsockfds = reg_term(4);
-    Avail_wsockfds = reg_term(5);
-    Avail_esockfds = reg_term(6);
+    Avail_rsockfds = reg_term(CTXTc 4);
+    Avail_wsockfds = reg_term(CTXTc 5);
+    Avail_esockfds = reg_term(CTXTc 6);
 
     Avail_rsockfds_tail = Avail_rsockfds;
     Avail_wsockfds_tail = Avail_wsockfds;
     Avail_esockfds_tail = Avail_esockfds;
 
-    c2p_list(Avail_rsockfds_tail);
-    c2p_list(Avail_wsockfds_tail);	
-    c2p_list(Avail_esockfds_tail); 
+    c2p_list(CTXTc Avail_rsockfds_tail);
+    c2p_list(CTXTc Avail_wsockfds_tail);	
+    c2p_list(CTXTc Avail_esockfds_tail); 
     
     for (i=0; i < MAXCONNECT; i++) {
       /* find the matching connection_name to select */
@@ -755,50 +755,50 @@ xsbBool xsb_socket_request(void)
       ecode = SOCK_OK;
 
       /* call the utility function to return the available socket fds */
-      test_ready(&Avail_rsockfds_tail, &connections[count].readset,
+      test_ready(CTXTc &Avail_rsockfds_tail, &connections[count].readset,
 	       connections[count].read_fds,connections[count].sizer);
 
-      test_ready(&Avail_wsockfds_tail, &connections[count].writeset,
+      test_ready(CTXTc &Avail_wsockfds_tail, &connections[count].writeset,
 	       connections[count].write_fds,connections[count].sizew);
 
-      test_ready(&Avail_esockfds_tail,&connections[count].exceptionset,
+      test_ready(CTXTc &Avail_esockfds_tail,&connections[count].exceptionset,
 		connections[count].exception_fds,connections[count].sizee);
     }
 
     if (tv) free((struct timeval *)tv);
-    return set_error_code(ecode, 7, "SOCKET_SELECT");
+    return set_error_code(CTXTc ecode, 7, "SOCKET_SELECT");
   }
 
   case SOCKET_SELECT_DESTROY:  { 
     /*socket_request(SOCKET_SELECT_DESTROY, +connection_name) */
-    char *connection_name = ptoc_string(2);
+    char *connection_name = ptoc_string(CTXTc 2);
     select_destroy(connection_name);
     return TRUE;
   }
 
   default:
-    xsb_warn("[SOCKET_REQUEST] Invalid socket request %d", (int) ptoc_int(1));
+    xsb_warn("[SOCKET_REQUEST] Invalid socket request %d", (int) ptoc_int(CTXTc 1));
     return FALSE;
   }
 
   /* This trick would report a bug, if a newly added case
      doesn't have a return clause */
-  xsb_bug("SOCKET_REQUEST case %d has no return clause", ptoc_int(1));
+  xsb_bug("SOCKET_REQUEST case %d has no return clause", ptoc_int(CTXTc 1));
 }
 
 
-static xsbBool set_error_code(int ErrCode, int ErrCodeArgNumber, char *Where)
+static xsbBool set_error_code(CTXTdeclc int ErrCode, int ErrCodeArgNumber, char *Where)
 {
-  prolog_term ecode_value_term, ecode_arg_term = p2p_new();
+  prolog_term ecode_value_term, ecode_arg_term = p2p_new(CTXT);
   
-  ecode_value_term = reg_term(ErrCodeArgNumber);
+  ecode_value_term = reg_term(CTXTc ErrCodeArgNumber);
   if (!isref(ecode_value_term) && 
       !(isinteger(ecode_value_term)|isboxedinteger(ecode_value_term)))
     xsb_abort("[%s] Arg %d (the error code) must be a variable or an integer!",
 	      Where, ErrCodeArgNumber);
 
-  c2p_int(ErrCode, ecode_arg_term);
-  return p2p_unify(ecode_arg_term, ecode_value_term);
+  c2p_int(CTXTc ErrCode, ecode_arg_term);
+  return p2p_unify(CTXTc ecode_arg_term, ecode_value_term);
 }
 
 /* free timeout object */
@@ -900,7 +900,7 @@ static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
 }
 
 /* utility function to return the available socket descriptors after testing */
-static void test_ready(prolog_term *avail_sockfds, fd_set *fdset,
+static void test_ready(CTXTdeclc prolog_term *avail_sockfds, fd_set *fdset,
 		       int *fds, int size) 
 {
   prolog_term head;
@@ -909,12 +909,12 @@ static void test_ready(prolog_term *avail_sockfds, fd_set *fdset,
   for (i=0;i<size;i++) {
     if (FD_ISSET(fds[i], fdset)) {
       head = p2p_car(*avail_sockfds);
-      c2p_int(fds[i], head);
+      c2p_int(CTXTc fds[i], head);
       *avail_sockfds = p2p_cdr(*avail_sockfds);
-      c2p_list(*avail_sockfds);
+      c2p_list(CTXTc *avail_sockfds);
     } 
   }
-  c2p_nil(*avail_sockfds);
+  c2p_nil(CTXTc *avail_sockfds);
   return;
 }
 

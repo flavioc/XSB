@@ -119,6 +119,12 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   VariantSF producer_sf, consumer_sf;
   CPtr answer_template;
   int template_size, attv_num, tmp;
+#ifdef MULTI_THREAD
+  CPtr tbreg;
+#ifdef SLG_GC
+  CPtr old_cptop;
+#endif
+#endif
 
   xwammode = 1;
   CallInfo_Arguments(callInfo) = reg + 1;
@@ -153,7 +159,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    *  CallInfo_VarVectorLoc(callInfo).
    */
 
-  table_call_search(&callInfo,&lookupResults);
+  table_call_search(CTXTc &callInfo,&lookupResults);
 
   producer_sf = CallLUR_Subsumer(lookupResults);
   answer_template = CallLUR_VarVector(lookupResults);
@@ -218,6 +224,20 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       }
       delay_it = 1;
       lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
+#ifdef MULTI_THREAD
+/* save choice point for trie_unlock instruction */
+      save_find_locx(ereg);
+      tbreg = top_of_cpstack;
+#ifdef SLG_GC
+      old_cptop = tbreg;
+#endif
+      save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
+#ifdef SLG_GC
+      cp_prevtop(tbreg) = old_cptop;
+#endif
+      breg = tbreg;
+      hbreg = hreg;
+#endif
       XSB_Next_Instr();
     }
     else {
@@ -294,7 +314,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       get_var_and_attv_nums(template_size, attv_num, tmp);
       answer_template--;
 
-      table_consume_answer(first_answer,template_size,attv_num,answer_template,
+      table_consume_answer(CTXTc first_answer,template_size,attv_num,answer_template,
 			   CallInfo_TableInfo(callInfo));
 
       if (is_conditional_answer(first_answer)) {
@@ -395,7 +415,7 @@ XSB_Start_Instr(answer_return,_answer_return)
     get_var_and_attv_nums(template_size, attv_num, tmp);
     answer_template--;
 
-    table_consume_answer(next_answer,template_size,attv_num,answer_template,
+    table_consume_answer(CTXTc next_answer,template_size,attv_num,answer_template,
 			 subg_tif_ptr(consumer_sf));
 
     if (is_conditional_answer(next_answer)) {
@@ -540,7 +560,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   }
 #endif
 
-  answer_leaf = table_answer_search( producer_sf, template_size, attv_num,
+  answer_leaf = table_answer_search( CTXTc producer_sf, template_size, attv_num,
 				     answer_template, &isNewAnswer );
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */

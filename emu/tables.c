@@ -47,6 +47,8 @@
 #include "tst_utils.h"
 #include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
 /*#include "subp.h"  for exception_handler, used in stack expansion */
+#include "tables.h"
+#include "thread_xsb.h"
 
 #include "sub_tables_xsb_i.h"
 #include "debug_xsb.h"
@@ -87,7 +89,7 @@ Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
  * the root of the trie is labelled with the predicate symbol.
  */
 
-inline static  BTNptr newCallIndex(Psc predicate) {
+inline static  BTNptr newCallIndex(CTXTdeclc Psc predicate) {
 
   BTNptr pRoot;
 
@@ -108,18 +110,18 @@ inline static  BTNptr newCallIndex(Psc predicate) {
  * for answer template layout.
  */
 
-void table_call_search(TabledCallInfo *call_info,
+void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 		       CallLookupResults *results) {
 
   TIFptr tif;
 
   tif = CallInfo_TableInfo(*call_info);
   if ( IsNULL(TIF_CallTrie(tif)) )
-    TIF_CallTrie(tif) = newCallIndex(TIF_PSC(tif));
+    TIF_CallTrie(tif) = newCallIndex(CTXTc TIF_PSC(tif));
   if ( IsVariantPredicate(tif) )
-    variant_call_search(call_info,results);
+    variant_call_search(CTXTc call_info,results);
   else
-    subsumptive_call_search(call_info,results);
+    subsumptive_call_search(CTXTc call_info,results);
   {
     /*
      * Move answer template from CPS to Heap.  The
@@ -168,14 +170,14 @@ void table_call_search(TabledCallInfo *call_info,
  * elements arranged from high to low memory.
  */
 
-BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
+BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
 			   CPtr templ, xsbBool *is_new) {
 
   void *answer;
 
   if ( IsSubsumptiveProducer(producer) ) {
     answer =
-      subsumptive_answer_search((SubProdSF)producer,size,templ,is_new);
+      subsumptive_answer_search(CTXTc (SubProdSF)producer,size,templ,is_new);
     if ( *is_new ) {
       ALNptr newALN;
       New_ALN(newALN,answer,NULL);
@@ -215,7 +217,7 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */
 
-    answer = variant_answer_search(size,attv_num,templ,producer,&wasFound);
+    answer = variant_answer_search(CTXTc size,attv_num,templ,producer,&wasFound);
 
 #ifdef DEBUG_DELAYVAR
 #ifndef IGNORE_DELAYVAR
@@ -228,10 +230,10 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
 #endif /* IGNORE_DELAYVAR */
 #endif /* DEBUG_DELAYVAR */
 
-    do_delay_stuff((NODEptr)answer, producer, wasFound);
+    do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
 
 #ifndef IGNORE_DELAYVAR
-    undo_answer_bindings();
+    undo_answer_bindings(CTXT);
 #endif /* IGNORE_DELAYVAR */
 
     *is_new = ! wasFound;
@@ -247,15 +249,15 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
  */
 
 
-void table_consume_answer(BTNptr answer, int size, int attv_num,
+void table_consume_answer(CTXTdeclc BTNptr answer, int size, int attv_num,
 			  CPtr templ, TIFptr predicate) {
 
   if ( size > 0 ) {
     if ( IsSubsumptivePredicate(predicate) )
-      consume_subsumptive_answer(answer,size,templ);
+      consume_subsumptive_answer(CTXTc answer,size,templ);
     else
       /* this also tracks variables created during unification */
-      load_solution_trie(size,attv_num,templ,answer);
+      load_solution_trie(CTXTc size,attv_num,templ,answer);
   }
   else if ( size == 0 ) {
     if ( ! IsEscapeNode(answer) )
@@ -284,7 +286,7 @@ void table_consume_answer(BTNptr answer, int size, int attv_num,
  *  answers found, or NULL if no answers were found.
  */
 
-ALNptr table_identify_relevant_answers(SubProdSF prodSF, SubConsSF consSF,
+ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF consSF,
 				       CPtr templ) {
 
   int size;
@@ -304,7 +306,7 @@ ALNptr table_identify_relevant_answers(SubProdSF prodSF, SubConsSF consSF,
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
   NumSubOps_IdentifyRelevantAnswers++;
-  answers = tst_collect_relevant_answers(tstRoot,ts,size,templ);
+  answers = tst_collect_relevant_answers(CTXTc tstRoot,ts,size,templ);
   conssf_timestamp(consSF) = TSTN_TimeStamp(tstRoot);
   if ( IsNonNULL(answers) )
     SF_AppendNewAnswerList(consSF,answers);

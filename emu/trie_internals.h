@@ -358,8 +358,10 @@ enum Types_of_Trie_Nodes {
  *  in TrieVarBindings[I].
  */
 
+#ifndef MULTI_THREAD
 extern Cell VarEnumerator[];
 extern Cell TrieVarBindings[];
+#endif
 
 #define NEW_TRIEVAR_TAG		0x10000
 #define NEW_TRIEATTV_TAG	0x20000
@@ -474,7 +476,11 @@ extern Cell TrieVarBindings[];
  *  Threshold to determine when to change from a chain of children to a
  *  hash table for them.
  */
+#ifndef MULTI_THREAD
 #define MAX_SIBLING_LEN   8
+#else
+#define MAX_SIBLING_LEN   10000
+#endif
 #define IsLongSiblingChain(ChainLength)	   ( ChainLength > MAX_SIBLING_LEN )
 
 /*
@@ -498,7 +504,11 @@ extern Cell TrieVarBindings[];
 #define TrieHT_INIT_SIZE     64
 #define TrieHT_NewSize(pHT)  ( TrieHT_NumBuckets(pHT) << 1 )
 
+#ifndef MULTI_THREAD
 extern void  hashify_children(BTNptr, int);
+#else
+extern void  hashify_children(struct th_context*, BTNptr, int);
+#endif
 
 
 /*
@@ -573,13 +583,20 @@ extern void  hashify_children(BTNptr, int);
 #define BTNs_PER_BLOCK   2*K
 extern Structure_Manager smTableBTN;
 extern Structure_Manager smAssertBTN;
+#ifndef MULTI_THREAD
 extern Structure_Manager *smBTN;
+#endif
 
+#ifndef MULTI_THREAD
 extern BTNptr new_btn(int TrieType, int NodeType, Cell Symbol,
 		      BTNptr Parent, BTNptr Sibling);
+#else
+extern BTNptr new_btn(struct th_context *th, int TrieType, int NodeType, Cell Symbol,
+		      BTNptr Parent, BTNptr Sibling);
+#endif
 
 #define New_BTN(BTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
-   BTN = new_btn(TrieType,NodeType,Symbol,(BTNptr)Parent,(BTNptr)Sibling)
+   BTN = new_btn(CTXTc TrieType,NodeType,Symbol,(BTNptr)Parent,(BTNptr)Sibling)
 
 #define CreateEscapeBTN(pBTN,TrieType,Parent) {				\
    New_BTN(pBTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\
@@ -667,7 +684,9 @@ extern void expand_trie_ht(BTHTptr);
 #define BTHTs_PER_BLOCK   16
 extern Structure_Manager smTableBTHT;
 extern Structure_Manager smAssertBTHT;
+#ifndef MULTI_THREAD
 extern Structure_Manager *smBTHT;
+#endif
 
 #define New_BTHT(BTHT,TrieType)      _New_TrieHT(*smBTHT,BTHT,TrieType)
 
@@ -877,8 +896,13 @@ extern Structure_Manager smALN;
 
 /* Term Lookup
    ----------- */
+#ifndef MULTI_THREAD
 extern void *var_trie_lookup(void *, xsbBool *, Cell *);
 extern void *iter_sub_trie_lookup(void *trieNode, TriePathType *);
+#else
+extern void *var_trie_lookup(struct th_context *, void *, xsbBool *, Cell *);
+extern void *iter_sub_trie_lookup(struct th_context *, void *trieNode, TriePathType *);
+#endif
 
 #define trie_escape_lookup(Root)		\
    ( IsEscapeNode(TN_Child((BTNptr)Root))	\
@@ -888,13 +912,27 @@ extern void *iter_sub_trie_lookup(void *trieNode, TriePathType *);
 
 /* Term Insertion
    -------------- */
+#ifndef MULTI_THREAD
 void *stl_restore_variant_cont(void);
+#else
+void *stl_restore_variant_cont(struct th_context *);
+#endif
 
 enum {NO_INSERT_SYMBOL = 0};
+#ifndef MULTI_THREAD
 extern BTNptr  bt_escape_search(BTNptr root, xsbBool *isNew);
 extern BTNptr  bt_insert(BTNptr root, BTNptr start, Cell firstSym);
 extern TSTNptr tst_insert(TSTNptr root, TSTNptr start, Cell firstSym,
 			  xsbBool maintainTSI);
+#else
+extern BTNptr  bt_escape_search(struct th_context *th,
+			 BTNptr root, xsbBool *isNew);
+extern BTNptr  bt_insert(struct th_context *th,
+			 BTNptr root, BTNptr start, Cell firstSym);
+extern TSTNptr tst_insert(struct th_context *th,
+			  TSTNptr root, TSTNptr start, Cell firstSym,
+			  xsbBool maintainTSI);
+#endif
 
 #define TST_InsertEscapeNode(Root,NewNode) {				    \
    CreateEscapeTSTN(NewNode,TSTN_TrieType(Root),Root);			    \

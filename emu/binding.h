@@ -68,7 +68,7 @@
    if (trfreg > trreg) {\
      if ((char *)trfreg > \
 	 ((char *)(top_of_cpstack) - (TRAIL_FRAME_SIZE*sizeof(CPtr)))) {\
-       handle_tcpstack_overflow();\
+       handle_tcpstack_overflow(CTXT);\
      }\
      *(trfreg+3) = (CPtr) trreg;\
      trreg = trfreg + 3;\
@@ -78,7 +78,7 @@
    else {\
      if ((char *)trreg > \
 	 ((char *)(top_of_cpstack) - (TRAIL_FRAME_SIZE*sizeof(CPtr)))) {\
-       handle_tcpstack_overflow();\
+       handle_tcpstack_overflow(CTXT);\
      }\
      trreg = trreg+3;\
      *trreg = (CPtr) trreg-3;\
@@ -91,7 +91,7 @@
   if (trfreg > trreg) {						\
     if ((char *)trfreg > ((char *)(top_of_cpstack) -		\
                           TRAIL_FRAME_SIZE*sizeof(CPtr))) {	\
-      handle_tcpstack_overflow();				\
+      handle_tcpstack_overflow(CTXT);				\
     }								\
     *(trfreg + 4) = (CPtr) trreg;				\
     trreg = trfreg + 4;						\
@@ -102,7 +102,7 @@
   else {							\
     if ((char *)trreg > ((char *)(top_of_cpstack) -		\
                           TRAIL_FRAME_SIZE*sizeof(CPtr))) {	\
-      handle_tcpstack_overflow();				\
+      handle_tcpstack_overflow(CTXT);				\
     }								\
     trreg = trreg + 4;						\
     *trreg = (CPtr) trreg - 4;					\

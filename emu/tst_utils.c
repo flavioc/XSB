@@ -61,16 +61,18 @@ extern void printterm(FILE *, Cell, int);   /* prints to stddbg */
  */
 
 
+#ifndef MULTI_THREAD
 DynamicStack  tstTermStack;
 DynamicStack  tstTermStackLog;
 DynamicStack  tstSymbolStack;
 DynamicStack  tstTrail;
+#endif
 
 
-void tstInitDataStructs() {
+void tstInitDataStructs(CTXTdecl) {
 
   extern void initCollectRelevantAnswers(void);
-  extern void initSubsumptiveLookup(void);
+  extern void initSubsumptiveLookup(CTXTdecl);
 
   DynStk_Init(&tstTermStack, TST_TERMSTACK_INITSIZE, Cell, "TST Term Stack");
   DynStk_Init(&tstTermStackLog, TST_TERMSTACKLOG_INITSIZE, tstLogFrame,
@@ -78,12 +80,12 @@ void tstInitDataStructs() {
   DynStk_Init(&tstSymbolStack, TST_SYMBOLSTACK_INITSIZE, Cell,
 	      "Trie-Symbol Stack");
   DynStk_Init(&tstTrail, TST_TRAIL_INITSIZE, CPtr, "TST Trail");
-  initSubsumptiveLookup();
+  initSubsumptiveLookup(CTXT);
   initCollectRelevantAnswers();
 }
 
 
-void tstShrinkDynStacks() {
+void tstShrinkDynStacks(CTXTdecl) {
 
   dsShrink(&tstTermStack);
   dsShrink(&tstTermStackLog);
@@ -208,7 +210,7 @@ void printTrieNode(FILE *fp, BTNptr pTN) {
  *		----------------------------------------
  */
 
-static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
+static void symstkPrintNextTerm(CTXTdeclc FILE *fp, xsbBool list_recursion) {
 
   Cell symbol;
 
@@ -259,10 +261,10 @@ static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
       psc = DecodeTrieFunctor(symbol);
       fprintf(fp, "%s(", get_name(psc));
       for (i = 1; i < (int)get_arity(psc); i++) {
-	symstkPrintNextTerm(fp,FALSE);
+	symstkPrintNextTerm(CTXTc fp,FALSE);
 	fprintf(fp, ",");
       }
-      symstkPrintNextTerm(fp,FALSE);
+      symstkPrintNextTerm(CTXTc fp,FALSE);
       fprintf(fp, ")");
       if ( list_recursion )
 	fprintf(fp, "]");
@@ -273,8 +275,8 @@ static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
       fprintf(fp, ",");
     else
       fprintf(fp, "[");
-    symstkPrintNextTerm(fp,FALSE);
-    symstkPrintNextTerm(fp,TRUE);
+    symstkPrintNextTerm(CTXTc fp,FALSE);
+    symstkPrintNextTerm(CTXTc fp,TRUE);
     break;
   default:
     fprintf(fp, "<unknown symbol>");
@@ -284,7 +286,7 @@ static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-void printTriePath(FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
+void printTriePath(CTXTdeclc FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
 
   BTNptr pRoot;
 
@@ -315,15 +317,15 @@ void printTriePath(FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
   SymbolStack_PushPathRoot(pLeaf,pRoot);
   if ( IsTrieFunctor(BTN_Symbol(pRoot)) ) {
     SymbolStack_Push(BTN_Symbol(pRoot));
-    symstkPrintNextTerm(fp,FALSE);
+    symstkPrintNextTerm(CTXTc fp,FALSE);
   }
   else {
     printTrieSymbol(fp,BTN_Symbol(pRoot));
     fprintf(fp, "(");
-    symstkPrintNextTerm(fp,FALSE);
+    symstkPrintNextTerm(CTXTc fp,FALSE);
     while ( ! SymbolStack_IsEmpty ) {
       fprintf(fp, ",");
-      symstkPrintNextTerm(fp,FALSE);
+      symstkPrintNextTerm(CTXTc fp,FALSE);
     }
     fprintf(fp, ")");
   }
@@ -367,28 +369,28 @@ void printAnswerTemplate(FILE *fp, CPtr pAnsTmplt, int size) {
 
 /* Printing a SF's associated Call
    ------------------------------- */
-void sfPrintGoal(FILE *fp, VariantSF pSF, xsbBool printAddr) {
+void sfPrintGoal(CTXTdeclc FILE *fp, VariantSF pSF, xsbBool printAddr) {
 
   if ( printAddr )
     fprintf(fp, "SF %p  ", pSF);
-  printTriePath(fp, subg_leaf_ptr(pSF), NO);
+  printTriePath(CTXTc fp, subg_leaf_ptr(pSF), NO);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* Printing Subsumed Calls
    ----------------------- */
-void sfPrintConsGoals(FILE *fp, SubProdSF pProd) {
+void sfPrintConsGoals(CTXTdeclc FILE *fp, SubProdSF pProd) {
 
   SubConsSF pCons;
 
   fprintf(fp, "Producer:\n  ");
-  sfPrintGoal(fp, (VariantSF)pProd, YES);
+  sfPrintGoal(CTXTc fp, (VariantSF)pProd, YES);
   fprintf(fp, "\nConsumers:\n");
   for ( pCons = subg_consumers(pProd);  IsNonNULL(pCons);
         pCons = conssf_consumers(pCons) ) {
     fprintf(fp, "  ");
-    sfPrintGoal(fp, (VariantSF)pCons, YES);
+    sfPrintGoal(CTXTc fp, (VariantSF)pCons, YES);
     fprintf(fp, "\n");
   }
 }
@@ -397,12 +399,12 @@ void sfPrintConsGoals(FILE *fp, SubProdSF pProd) {
 
 /* Printing Answers in an Answer List
    ---------------------------------- */
-void printAnswerList(FILE *fp, ALNptr pALN) {
+void printAnswerList(CTXTdeclc FILE *fp, ALNptr pALN) {
 
   fprintf(fp, "Answer List %p:\n", pALN);
   while ( IsNonNULL(pALN) ) {
     fprintf(fp, "  ");
-    printTriePath(fp, ALN_Answer(pALN), YES);
+    printTriePath(CTXTc fp, ALN_Answer(pALN), YES);
     fprintf(fp, "\n");
     pALN = ALN_Next(pALN);
   }
@@ -432,7 +434,7 @@ void printTabledCall(FILE *fp, TabledCallInfo callInfo) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-void printTriePathType(FILE *fp, TriePathType type, BTNptr leaf) {
+void printTriePathType(CTXTdeclc FILE *fp, TriePathType type, BTNptr leaf) {
 
   switch (type) {
   case NO_PATH:
@@ -440,11 +442,11 @@ void printTriePathType(FILE *fp, TriePathType type, BTNptr leaf) {
     break;
   case VARIANT_PATH:
     fprintf(fp,"Variant path found: ");
-    printTriePath(fp,leaf,FALSE);
+    printTriePath(CTXTc fp,leaf,FALSE);
     break;
   case SUBSUMPTIVE_PATH:
     fprintf(fp,"Subsumptive path found: ");
-    printTriePath(fp,leaf,FALSE);
+    printTriePath(CTXTc fp,leaf,FALSE);
     break;
   default:
     fprintf(fp,"What kind of path? (%d)\n", type);

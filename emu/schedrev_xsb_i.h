@@ -40,8 +40,9 @@
    Last = Consumer;					\
  }
 
-static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
-			  xsbBool is_leader) {
+static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
+			  xsbBool is_leader)
+{
 
   CPtr first_sched_cons, last_sched_cons, consumer_cpf;
 
@@ -107,7 +108,8 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
  * check_complete instruction.
  */
 
-static CPtr find_fixpoint(VariantSF subg, CPtr producer_cpf) {
+static CPtr find_fixpoint(CTXTdeclc VariantSF subg, CPtr producer_cpf) 
+{
 
   VariantSF currSubg;
   CPtr complFrame; /* completion frame for currSubg */
@@ -132,7 +134,7 @@ static CPtr find_fixpoint(VariantSF subg, CPtr producer_cpf) {
     tcp = subg_cp_ptr(currSubg);
 
     /* if there are unresolved answers for currSubg */
-    if ((tmp_sched = sched_answers(currSubg, tcp, FALSE))) {
+    if ((tmp_sched = sched_answers(CTXTc currSubg, tcp, FALSE))) {
       if (prev_sched) { /* if there is a prev subgoal scheduled */
 	/* link new node to the previous one */
 	tcp_prevbreg(prev_sched) = tmp_sched;

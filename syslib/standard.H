@@ -19,6 +19,8 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
+** $Id$
+**
 */
 
 
@@ -79,8 +81,8 @@
 /* --------------------------------------------------------------- */
 
 :- export
-        call_c/1,	        
-        catch/3,                throw/1,        '$$exception_ball'/1,
+        call_c/1,	
+        catch/3,                throw/1,        '$$exception_ball'/2,
         goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
 	message/1,      message/2, messageln/2,
@@ -129,6 +131,7 @@
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
+:- import xsb_thread_self/1 from thread.
 
 
 

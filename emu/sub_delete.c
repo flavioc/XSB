@@ -35,6 +35,7 @@
 #include "trie_internals.h"
 #include "macro_xsb.h"
 #include "error_xsb.h"
+#include "thread_xsb.h"
 
 extern BTHTptr hhadded;
 

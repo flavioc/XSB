@@ -22,6 +22,8 @@
 ** 
 */
 
+#ifndef _TIMER_XSB_H_
+#define _TIMER_XSB_H_
 
 #ifndef CONFIG_INCLUDED
 #error "File xsb_config.h must be included before this file"
@@ -62,7 +64,13 @@ void xsb_timer_handler(int signo);
 #endif
 
 /* generic function to control the timeout */
+#ifndef MULTI_THREAD
 int make_timed_call(xsbTimeout*, void (*) (xsbTimeout*));
+#else
+struct th_context ;
+int make_timed_call(struct th_context *, xsbTimeout*, 
+		    void (*) (struct th_context *, xsbTimeout*));
+#endif
 
 #define NEW_TIMEOUT_OBJECT  (xsbTimeout *)malloc(sizeof(xsbTimeout))
 
@@ -89,3 +97,5 @@ int make_timed_call(xsbTimeout*, void (*) (xsbTimeout*));
 #define OP_TIMED_OUT                  (sigsetjmp(xsb_timer_env,1) != 0)
 
 #endif
+
+#endif /* _TIMER_XSB_H_ */

@@ -62,3 +62,5 @@
 %%:- import assert_hook/1, retract_hook/2 from usermod.
 :- import call_xsb_hook/3, xsb_assert_hook/1, xsb_retract_hook/1 from xsb_hook.
 
+:- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
+

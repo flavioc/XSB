@@ -56,7 +56,9 @@
 #include "tr_utils.h"
 #include "tst_utils.h"
 #include "subp.h"
+#include "rw_lock.h"
 #include "debug_xsb.h"
+#include "thread_xsb.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -96,7 +98,7 @@ xsbBool has_unconditional_answers(VariantSF subg)
  * passed back via the last argument.
  */
 
-VariantSF get_variant_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
+VariantSF get_variant_sf(CTXTdeclc Cell callTerm, TIFptr pTIF, Cell *retTerm) {
 
   int arity;
   BTNptr root, leaf;
@@ -107,11 +109,11 @@ VariantSF get_variant_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
     return NULL;
 
   arity = get_arity(TIF_PSC(pTIF));
-  leaf = variant_trie_lookup(root, arity, clref_val(callTerm) + 1, callVars);
+  leaf = variant_trie_lookup(CTXTc root, arity, clref_val(callTerm) + 1, callVars);
   if ( IsNULL(leaf) )
     return NULL;
   if ( IsNonNULL(retTerm) )
-    *retTerm = build_ret_term(callVars[0], &callVars[1]);
+    *retTerm = build_ret_term(CTXTc callVars[0], &callVars[1]);
   return ( CallTrieLeaf_GetSF(leaf) );
 }
 
@@ -125,7 +127,7 @@ VariantSF get_variant_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
  * last argument.
  */
 
-SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
+SubProdSF get_subsumer_sf(CTXTdeclc Cell callTerm, TIFptr pTIF, Cell *retTerm) {
 
   BTNptr root, leaf;
   int arity;
@@ -138,17 +140,17 @@ SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
     return NULL;
 
   arity = get_arity(TIF_PSC(pTIF));
-  leaf = subsumptive_trie_lookup(root, arity, clref_val(callTerm) + 1,
+  leaf = subsumptive_trie_lookup(CTXTc root, arity, clref_val(callTerm) + 1,
 				 &path_type, ansTmplt);
   if ( IsNULL(leaf) )
     return NULL;
   sf = (SubProdSF)CallTrieLeaf_GetSF(leaf);
   if ( IsProperlySubsumed(sf) ) {
     sf = conssf_producer(sf);
-    construct_answer_template(callTerm, sf, ansTmplt);
+    construct_answer_template(CTXTc callTerm, sf, ansTmplt);
   }
   if ( IsNonNULL(retTerm) )
-    *retTerm = build_ret_term(ansTmplt[0], &ansTmplt[1]);
+    *retTerm = build_ret_term(CTXTc ansTmplt[0], &ansTmplt[1]);
   return ( sf );
 }
   
@@ -175,7 +177,7 @@ BTNptr get_trie_root(BTNptr node) {
  * on the heap containing those terms.  Returns this constructed term.
  */
 
-Cell build_ret_term(int arity, Cell termVector[]) {
+Cell build_ret_term(CTXTdeclc int arity, Cell termVector[]) {
 
   Pair sym;
   CPtr ret_term;
@@ -200,7 +202,7 @@ Cell build_ret_term(int arity, Cell termVector[]) {
  * The template is stored in an array supplied by the caller.
  */
 
-void construct_answer_template(Cell callTerm, SubProdSF producer,
+void construct_answer_template(CTXTdeclc Cell callTerm, SubProdSF producer,
 			       Cell templ[]) {
 
   Cell subterm, symbol;
@@ -249,7 +251,7 @@ void construct_answer_template(Cell callTerm, SubProdSF producer,
  * the location pointed to by the second argument.
  */
 
-VariantSF get_call(Cell callTerm, Cell *retTerm) {
+VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 
   Psc  psc;
   TIFptr tif;
@@ -261,7 +263,7 @@ VariantSF get_call(Cell callTerm, Cell *retTerm) {
 
   psc = term_psc(callTerm);
   if ( IsNULL(psc) ) {
-    err_handle(TYPE, 1, "get_call", 3, "callable term", callTerm);
+    err_handle(CTXTc TYPE, 1, "get_call", 3, "callable term", callTerm);
     return NULL;
   }
 
@@ -274,14 +276,14 @@ VariantSF get_call(Cell callTerm, Cell *retTerm) {
     return NULL;
 
   arity = get_arity(psc);
-  leaf = variant_trie_lookup(root, arity, clref_val(callTerm) + 1, callVars);
+  leaf = variant_trie_lookup(CTXTc root, arity, clref_val(callTerm) + 1, callVars);
   if ( IsNULL(leaf) )
     return NULL;
   else {
     sf = CallTrieLeaf_GetSF(leaf);
     if ( IsProperlySubsumed(sf) )
-      construct_answer_template(callTerm, conssf_producer(sf), callVars);
-    *retTerm = build_ret_term(callVars[0],&callVars[1]);
+      construct_answer_template(CTXTc callTerm, conssf_producer(sf), callVars);
+    *retTerm = build_ret_term(CTXTc callVars[0],&callVars[1]);
     return sf;
   }
 }
@@ -316,7 +318,8 @@ int node_stk_top = 0;
   node = freeing_stack[node_stk_top];\
 }
 
-static void free_trie_ht(BTHTptr ht) {
+
+static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 
   TrieHT_RemoveFromAllocList(*smBTHT,ht);
   free(BTHT_BucketArray(ht));
@@ -324,7 +327,7 @@ static void free_trie_ht(BTHTptr ht) {
 }
 
 
-static void delete_variant_table(BTNptr x) {
+static void delete_variant_table(CTXTdeclc BTNptr x) {
 
   int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
@@ -333,6 +336,7 @@ static void delete_variant_table(BTNptr x) {
   if ( IsNULL(x) )
     return;
 
+  TRIE_W_LOCK();
   push_node(x);
   while (node_stk_top > 0) {
     pop_node(node);
@@ -344,7 +348,7 @@ static void delete_variant_table(BTNptr x) {
 	if ( IsNonNULL(*Bkp) )
 	  push_node(*Bkp);
       }
-      free_trie_ht(ht);
+      free_trie_ht(CTXTc ht);
     }
     else {
       if ( IsNonNULL(BTN_Sibling(node)) )
@@ -368,7 +372,7 @@ static void delete_variant_table(BTNptr x) {
 		  if ( IsNonNULL(*Bkp) )
 		    push_node(*Bkp);
 		}
-		free_trie_ht(ht);
+		free_trie_ht(CTXTc ht);
 	      }
 	      else {
 		if (BTN_Sibling(rnod)) 
@@ -388,17 +392,18 @@ static void delete_variant_table(BTNptr x) {
       SM_DeallocateStruct(*smBTN,node);
     }
   }
+  TRIE_W_UNLOCK();
 }
 
 /*----------------------------------------------------------------------*/
 /* Delete the table for a given tabled predicate, specified as a TIF    */
 /*----------------------------------------------------------------------*/
 
-void delete_predicate_table(TIFptr tif) {
+void delete_predicate_table(CTXTdeclc TIFptr tif) {
 
   if ( TIF_CallTrie(tif) != NULL ) {
     if ( IsVariantPredicate(tif) )
-      delete_variant_table(TIF_CallTrie(tif));
+      delete_variant_table(CTXTc TIF_CallTrie(tif));
     else
       delete_subsumptive_table(tif);
     TIF_CallTrie(tif) = NULL;
@@ -485,7 +490,7 @@ static BTNptr get_prev_sibl(BTNptr node)
  * field of the root).
  */
 
-void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
+void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 
   int num_left_in_hash;
   BTNptr prev, parent_ptr, *y1, *z;
@@ -517,7 +522,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
 	return;
       }
       else
-	free_trie_ht((BTHTptr)(*y1));
+	free_trie_ht(CTXTc (BTHTptr)(*y1));
     }
     /*
      *  Remove this node and continue.
@@ -641,7 +646,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
 }  
 
 
-void delete_trie(BTNptr iroot) {
+void delete_trie(CTXTdeclc BTNptr iroot) {
 
   BTNptr root, sib, chil;  
   int trie_op_top = 0;
@@ -666,7 +671,7 @@ void delete_trie(BTNptr iroot) {
       SM_DeallocateStruct(*smBTN,root);
       break;
     case DT_HT:
-      free_trie_ht(delete_trie_hh[trie_hh_top--]);
+      free_trie_ht(CTXTc delete_trie_hh[trie_hh_top--]);
       break;
     case DT_NODE:
       root = delete_trie_node[trie_node_top--];
@@ -734,7 +739,7 @@ void delete_trie(BTNptr iroot) {
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
  */
-void delete_return(BTNptr l, VariantSF sg_frame) 
+void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame) 
 {
   ALNptr a, n, next;
   NLChoice c;
@@ -761,7 +766,7 @@ void delete_return(BTNptr l, VariantSF sg_frame)
   if (is_completed(sg_frame)) {
     safe_delete_branch(l);
   } else {
-    delete_branch(l,&subg_ans_root_ptr(sg_frame));
+    delete_branch(CTXTc l,&subg_ans_root_ptr(sg_frame));
     n = subg_ans_list_ptr(sg_frame);
     /* Find previous sibling -pvr */
     while (ALN_Answer(ALN_Next(n)) != l) {
@@ -805,10 +810,10 @@ void delete_return(BTNptr l, VariantSF sg_frame)
     }      
   }
   if (is_conditional_answer(l)) {
-    simplify_pos_unsupported(l);
+    simplify_pos_unsupported(CTXTc l);
     if (groundcall) {
       mark_subgoal_failed(sg_frame);
-      simplify_neg_fails(sg_frame);
+      simplify_neg_fails(CTXTc sg_frame);
     }
   }
 }
@@ -841,7 +846,7 @@ void  reclaim_del_ret_list(VariantSF sg_frame) {
 **   	      Pointer to the subgoal.
 */
 
-void breg_retskel(void)
+void breg_retskel(CTXTdecl)
 {
     Pair    sym;
     Cell    term;
@@ -850,16 +855,16 @@ void breg_retskel(void)
     int     is_new, i;
     Integer breg_offset, Nvars;
 
-    breg_offset = ptoc_int(1);
+    breg_offset = ptoc_int(CTXTc 1);
     tcp = (CPtr)((Integer)(tcpstack.high) - breg_offset);
     sg_frame = (VariantSF)(tcp_subgoal_ptr(tcp));
     where = tcp_template(tcp);
     Nvars = int_val(cell(where)) & 0xffff;
     cptr = where - Nvars - 1;
     if (Nvars == 0) {
-      ctop_string(3, get_ret_string());
+      ctop_string(CTXTc 3, get_ret_string());
     } else {
-      bind_cs((CPtr)ptoc_tag(3), hreg);
+      bind_cs((CPtr)ptoc_tag(CTXTc 3), hreg);
       sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &is_new);
       new_heap_functor(hreg, sym->psc_ptr);
       for (i = Nvars; i > 0; i--) {
@@ -867,7 +872,7 @@ void breg_retskel(void)
         nbldval(term);
       }
     }
-    ctop_int(4, (Integer)sg_frame);
+    ctop_int(CTXTc 4, (Integer)sg_frame);
 }
 
 
@@ -943,40 +948,46 @@ Integer newtrie(void)
 
 /*----------------------------------------------------------------------*/
 
-void trie_intern(void)
+void trie_intern(CTXTdecl)
 {
   prolog_term term;
   int RootIndex;
   int flag;
   BTNptr Leaf;
 
-  term = ptoc_tag(1);
-  RootIndex = ptoc_int(2);
+  term = ptoc_tag(CTXTc 1);
+  RootIndex = ptoc_int(CTXTc 2);
 
   xsb_dbgmsg((LOG_INTERN, "Interning "));
   dbg_printterm(LOG_INTERN,stddbg,term,25);
   xsb_dbgmsg((LOG_INTERN, "In trie with root %d", RootIndex));
 
   switch_to_trie_assert;
-  Leaf = whole_term_chk_ins(term,&(Set_ArrayPtr[RootIndex]),&flag);
+  Leaf = whole_term_chk_ins(CTXTc term,&(Set_ArrayPtr[RootIndex]),&flag);
   switch_from_trie_assert;
   
-  ctop_int(3,(Integer)Leaf);
-  ctop_int(4,flag);
+  ctop_int(CTXTc 3,(Integer)Leaf);
+  ctop_int(CTXTc 4,flag);
   xsb_dbgmsg((LOG_INTERN, "Exit flag %d",flag));
 }
 
 /*----------------------------------------------------------------------*/
 
-int trie_interned(void)
+int trie_interned(CTXTdecl)
 {
   int RootIndex;
   int ret_val = FALSE;
   Cell Leafterm, trie_term;
+#ifdef MULTI_THREAD
+   CPtr tbreg;
+#ifdef SLG_GC
+   CPtr old_cptop;
+#endif
+#endif
 
-  trie_term =  ptoc_tag(1);
-  RootIndex = ptoc_int(2);
-  Leafterm = ptoc_tag(3);
+  trie_term =  ptoc_tag(CTXTc 1);
+  RootIndex = ptoc_int(CTXTc 2);
+  Leafterm = ptoc_tag(CTXTc 3);
   
   /*
    * Only if Set_ArrayPtr[RootIndex] is a valid BTNptr can we run this
@@ -991,6 +1002,20 @@ int trie_interned(void)
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;
       pushreg(trie_term);
+#ifdef MULTI_THREAD
+/* save choice point for trie_unlock instruction */
+       save_find_locx(ereg);
+       tbreg = top_of_cpstack;
+#ifdef SLG_GC
+       old_cptop = tbreg;
+#endif
+       save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
+#ifdef SLG_GC
+       cp_prevtop(tbreg) = old_cptop;
+#endif
+       breg = tbreg;
+       hbreg = hreg;
+#endif
       pcreg = (byte *)Set_ArrayPtr[RootIndex];
       ret_val =  TRUE;
     }
@@ -1008,15 +1033,15 @@ int trie_interned(void)
  * of the trie rooted at Set_ArrayPtr[ROOT].
  */
 
-void trie_dispose(void)
+void trie_dispose(CTXTdecl)
 {
   BTNptr Leaf;
   long Rootidx;
 
-  Rootidx = ptoc_int(1);
-  Leaf = (BTNptr)ptoc_int(2);
+  Rootidx = ptoc_int(CTXTc 1);
+  Leaf = (BTNptr)ptoc_int(CTXTc 2);
   switch_to_trie_assert;
-  delete_branch(Leaf, &(Set_ArrayPtr[Rootidx]));
+  delete_branch(CTXTc Leaf, &(Set_ArrayPtr[Rootidx]));
   switch_from_trie_assert;
 }
 
@@ -1024,7 +1049,7 @@ void trie_dispose(void)
 
 #define DELETED_SET 1
 
-void delete_interned_trie(Integer tmpval) {
+void delete_interned_trie(CTXTdeclc Integer tmpval) {
   /*
    * We can only delete a valid BTNptr, so that only those sets
    * that were used before can be put into the free set list.
@@ -1032,7 +1057,7 @@ void delete_interned_trie(Integer tmpval) {
   if ((Set_ArrayPtr[tmpval] != NULL) &&
       (!((Integer) Set_ArrayPtr[tmpval] & 0x3))) {
     switch_to_trie_assert;
-    delete_trie(Set_ArrayPtr[tmpval]);
+    delete_trie(CTXTc Set_ArrayPtr[tmpval]);
     switch_from_trie_assert;
     /*
      * Save the value of first_free_set into Set_ArrayPtr[tmpval].
@@ -1184,13 +1209,13 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
  * mark for  disposal a branch
  * of the trie rooted at Set_ArrayPtr[ROOT].
  */
-void trie_dispose_nr(void)
+void trie_dispose_nr(CTXTdecl)
 {
   BTNptr Leaf;
   long Rootidx;
 
-  Rootidx = ptoc_int(1);
-  Leaf = (BTNptr)ptoc_int(2);
+  Rootidx = ptoc_int(CTXTc 1);
+  Leaf = (BTNptr)ptoc_int(CTXTc 2);
   switch_to_trie_assert;
   insertLeaf(getIGRnode(Rootidx), Leaf);
   safe_delete_branch(Leaf);
@@ -1198,7 +1223,7 @@ void trie_dispose_nr(void)
 }
 
 
-void reclaim_uninterned_nr(long rootidx)
+void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 {
   IGRptr r = getAndRemoveIGRnode(rootidx);
   IGLptr l, p;
@@ -1218,7 +1243,7 @@ void reclaim_uninterned_nr(long rootidx)
     free(l);
     switch_to_trie_assert;
     if(IsDeletedNode(leaf)) {
-      delete_branch(leaf, &(Set_ArrayPtr[rootidx]));
+      delete_branch(CTXTc leaf, &(Set_ArrayPtr[rootidx]));
     } else {
       /* This is allowed:
 	 If we backtrack over a delete, the node that was marked for deletion

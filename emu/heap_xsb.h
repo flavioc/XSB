@@ -49,20 +49,21 @@
 /*----------------------------------------------------------------------*/
 
 #include "heap_defs_xsb.h"
+#include "context.h"
 
 /*----- The following functions are used in other parts of the system --*/
 
-extern int  gc_heap(int);
-extern int  mark_heap(int,int *);
-extern xsbBool glstack_ensure_space(int,int);
-extern xsbBool glstack_realloc(int,int);
+extern int  gc_heap(CTXTdeclc int);
+extern int  mark_heap(CTXTdeclc int,int *);
+extern xsbBool glstack_ensure_space(CTXTdeclc int,int);
+extern xsbBool glstack_realloc(CTXTdeclc int,int);
 
-extern void print_cp(int);
-extern void print_tr(int);
-extern void print_ls(int);
-extern void print_all_stacks(int);
-extern void print_regs(int,int);
-extern void print_heap(int,int,int);
+extern void print_cp(CTXTdeclc int);
+extern void print_tr(CTXTdeclc int);
+extern void print_ls(CTXTdeclc int);
+extern void print_all_stacks(CTXTdeclc int);
+extern void print_regs(CTXTdeclc int,int);
+extern void print_heap(CTXTdeclc int,int,int);
 extern void print_gc_statistics(void);
 extern Cell attv_interrupts[20480][2];
 

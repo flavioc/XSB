@@ -144,7 +144,7 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
     }
 } /* print_cell */
 
-void print_heap(int start, int end, int add)
+void print_heap(CTXTdeclc int start, int end, int add)
 {
   CPtr startp, endp ;
   char buf[100] ;
@@ -173,7 +173,7 @@ void print_heap(int start, int end, int add)
   fclose(where) ;
 } /* print_heap */
 
-void print_ls(int add)
+void print_ls(CTXTdeclc int add)
 {
   CPtr startp, endp ;
   char buf[100] ;
@@ -202,7 +202,7 @@ void print_ls(int add)
   fclose(where) ;
 } /* print_ls */
 
-void print_cp(int add)
+void print_cp(CTXTdeclc int add)
 {
   CPtr startp, endp ;
   char buf[100] ;
@@ -232,7 +232,7 @@ void print_cp(int add)
   fclose(where) ;
 } /* print_cp */
 
-void print_tr(int add)
+void print_tr(CTXTdeclc int add)
 {
   CPtr startp, endp ;
   int  start ;
@@ -284,7 +284,7 @@ void print_tr(int add)
   fclose(where) ;
 } /* print_tr */
 
-void print_regs(int a, int add)
+void print_regs(CTXTdeclc int a, int add)
 {
   CPtr startp, endp ;                                                     
   int  start ;                                                             
@@ -340,13 +340,13 @@ void print_regs(int a, int add)
 } /* print_regs */
 
 
-void print_all_stacks(int arity)
+void print_all_stacks(CTXTdeclc int arity)
 {
     printnum++ ;
-    print_regs(arity,0) ;
-    print_heap(0,200000,0) ;
-    print_ls(0) ;
-    print_tr(0) ;
-    print_cp(0) ;
+    print_regs(CTXTc arity,0) ;
+    print_heap(CTXTc 0,200000,0) ;
+    print_ls(CTXTc 0) ;
+    print_tr(CTXTc 0) ;
+    print_cp(CTXTc 0) ;
 } /* print_all_stacks */
 

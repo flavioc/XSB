@@ -105,6 +105,7 @@
    num_vars_in_var_regs = -1;			\
    Last_Nod_Sav = NodePtr;			\
    lpcreg = cpreg;				\
+   TRIE_R_UNLOCK();				\
  }
 
 /*
@@ -116,6 +117,8 @@
 /*----------------------------------------------------------------------*/
 /* Global variables -- should really be made local ones...              */
 /*----------------------------------------------------------------------*/
+
+#ifndef MULTI_THREAD
 
 Cell *reg_array;
 CPtr reg_arrayptr;
@@ -137,6 +140,8 @@ BTNptr NodePtr, Last_Nod_Sav;
  * get_returns/2, we need to set it to 0.
  */
 int     delay_it;
+
+#endif /* MULTI_THREAD */
 
 /*----------------------------------------------------------------------*/
 
@@ -199,7 +204,7 @@ int     delay_it;
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_numcon\n");	\
-    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), opatom);		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), opatom);\
     bind_int_tagged((CPtr)dec_addr(*reg_arrayptr), opatom);          		\
   }									\
   else {								\
@@ -230,7 +235,7 @@ int     delay_it;
   }								\
   else if (isattv(*reg_arrayptr)) {				\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_str\n");	\
-    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makecs(hreg));	\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makecs(hreg));	\
     bind_copy((CPtr)dec_addr(*reg_array), makecs(hreg));                       \
     reg_arrayptr--;						\
     *(hreg++) = (Cell) psc;					\
@@ -269,7 +274,7 @@ int     delay_it;
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_list\n");	\
-    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makelist(hreg));	\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makelist(hreg));	\
     bind_copy((CPtr)dec_addr(*reg_arrayptr), makelist(hreg));       \
     *reg_arrayptr = (Cell)(hreg+1);         /* tail of list */		\
     will_overflow_reg_array(reg_arrayptr + 1);				\
@@ -323,7 +328,7 @@ int     delay_it;
   else {								\
     op1 = (Cell)*reg_arrayptr;						\
     op2 = (Cell) var_regs[(int)int_val(opatom)];			\
-    if (unify(op1,op2) == FALSE) {					\
+    if (unify(CTXTc op1,op2) == FALSE) {				\
       Fail1;								\
       XSB_Next_Instr();							\
     }									\
@@ -338,12 +343,12 @@ int     delay_it;
     bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));			\
   }									\
   else if (isattv(*reg_arrayptr)) {					\
-    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)),makeattv(hreg));   \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)),makeattv(hreg));   \
     bind_ref((CPtr)dec_addr(*reg_arrayptr), makeattv(hreg));	\
   }									\
   else {								\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_attv\n");	\
-    add_interrupt(makeattv(hreg), *reg_arrayptr);			\
+    add_interrupt(CTXTc makeattv(hreg), *reg_arrayptr);			\
   }									\
   var_regs[num_vars_in_var_regs] = (CPtr) makeattv(hreg);		\
   new_heap_free(hreg);							\

@@ -34,6 +34,8 @@
 #include "psc_xsb.h"
 #include "tries.h"
 #include "macro_xsb.h"
+#include "context.h"
+#include "scc_xsb.h"
 
 #if (!defined(LOCAL_EVAL))
 
@@ -83,7 +85,7 @@ static void DFS_DGT_visit(ComplStackFrame u)
     }
 }
 
-ComplStackFrame DFS_DGT(ComplStackFrame leader)
+ComplStackFrame DFS_DGT(CTXTdeclc ComplStackFrame leader)
 {
     ComplStackFrame u, max_u = NULL;
 

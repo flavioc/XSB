@@ -224,13 +224,23 @@ extern xsbBool neg_delay;
 
 extern xsbBool answer_is_junk(CPtr);
 extern void abolish_wfs_space(void);
+#ifndef MULTI_THREAD
 extern void simplify_neg_fails(VariantSF);
 extern void do_delay_stuff(NODEptr, VariantSF, xsbBool);
+#else
+struct th_context;
+extern void simplify_neg_fails(struct th_context *, VariantSF);
+extern void do_delay_stuff(struct th_context *, NODEptr, VariantSF, xsbBool);
+#endif
 extern unsigned long allocated_de_space(int * num_blocks);
 extern unsigned long unused_de_space(void);
 extern unsigned long allocated_dl_space(int * num_blocks);
 extern unsigned long unused_dl_space(void);
+#ifndef MULTI_THREAD
 extern void simplify_pos_unsupported(NODEptr);
+#else
+extern void simplify_pos_unsupported(struct th_context *, NODEptr);
+#endif
 extern void release_all_dls(ASI);
 
 /*---------------------- end of file slgdelay.h ------------------------*/

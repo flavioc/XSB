@@ -82,7 +82,7 @@ int get_more_chunk()
    without trailing, so that later add's will not occur
 */
 
-int findall_init_c()
+int findall_init_c(CTXTdecl)
 {
   CPtr w ;
   findall_solution_list *p ;
@@ -119,13 +119,13 @@ int findall_init_c()
   return(thisfree) ;
 } /* findall_init_c */
 
-int findall_init()
+int findall_init(CTXTdecl)
 {
   Cell arg1 ;
   int ichunk;
  
-  arg1 = ptoc_tag(1); 
-  ichunk = findall_init_c(); 
+  arg1 = ptoc_tag(CTXTc 1); 
+  ichunk = findall_init_c(CTXT); 
   *(CPtr)arg1 = makeint(ichunk) ;
   return TRUE;
 } /* findall_init */
@@ -586,20 +586,20 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
   if findall_add/2 fails, the associated term remains unchanged
 */
 
-int findall_add()
+int findall_add(CTXTdecl)
 {
   Cell arg1, arg2, arg3 ;
   CPtr to, h ;
   int size ;
   
-  arg3 = ptoc_tag(3);
+  arg3 = ptoc_tag(CTXTc 3);
   {
     int t = cell_tag(arg3) ;
     if ((t != XSB_REF) && (t != XSB_REF1)) return(0) ;
   }
   
-  arg1 = ptoc_tag(1);
-  arg2 = ptoc_tag(2);
+  arg1 = ptoc_tag(CTXTc 1);
+  arg2 = ptoc_tag(CTXTc 2);
   
   current_findall = findall_solutions + int_val(arg2) ;
   if (current_findall->tail == 0)
@@ -641,27 +641,27 @@ int findall_add()
    arg1-arg2 
 */
 
-int findall_get_solutions()
+int findall_get_solutions(CTXTdecl)
 {
   Cell arg1, arg2, arg3, arg4, from ;
   int cur_f ;
   findall_solution_list *p ;
   
-  arg4 = ptoc_tag(4);
+  arg4 = ptoc_tag(CTXTc 4);
   {
     int t = cell_tag(arg4) ;
     if ((t == XSB_REF) || (t == XSB_REF1)) *(CPtr)arg4 = makeint(666) ;
   }
   
-  arg3 = ptoc_tag(3); 
+  arg3 = ptoc_tag(CTXTc 3); 
   cur_f = int_val(arg3) ;
   
   p = findall_solutions + cur_f ;
   
   check_glstack_overflow(4, pcreg, p->size*sizeof(Cell)) ;
   
-  arg1 = ptoc_tag(1);  /* only after enough space is ensured */
-  arg2 = ptoc_tag(2);  /* only after enough space is ensured */
+  arg1 = ptoc_tag(CTXTc 1);  /* only after enough space is ensured */
+  arg2 = ptoc_tag(CTXTc 2);  /* only after enough space is ensured */
   
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   
@@ -674,7 +674,7 @@ int findall_get_solutions()
 
 /* adapted from findall_copy_template_to_chunck */
 /* returns the number of cells needed for the construction of term */
-static long term_size(Cell term)
+static long term_size(CTXTdeclc Cell term)
 {
   long size = 0 ;
  recur:
@@ -690,7 +690,7 @@ static long term_size(Cell term)
     
     pfirstel = clref_val(term) ;
     term = *pfirstel ; XSB_Deref(term) ;
-    size += 2 + term_size(term) ;
+    size += 2 + term_size(CTXTc term) ;
     term = *(pfirstel+1) ; XSB_Deref(term) ;
     goto recur;
   }
@@ -703,7 +703,7 @@ static long term_size(Cell term)
     size += a + 1 ;
     while( --a ) {
       term = *++pfirstel ; XSB_Deref(term) ;
-      size += term_size( term ) ;
+      size += term_size( CTXTc term ) ;
     }
     term = *++pfirstel ; XSB_Deref(term) ;
     goto recur;
@@ -739,7 +739,7 @@ static long term_size(Cell term)
 /* recursively copies a term to a area of memory */
 /* used by copy_term to build a variant in the heap */
 
-static void do_copy_term(Cell from, CPtr to, CPtr *h)
+static void do_copy_term(CTXTdeclc Cell from, CPtr to, CPtr *h)
 {
 copy_again : /* for tail recursion optimisation */
 
@@ -848,7 +848,7 @@ copy_again : /* for tail recursion optimisation */
 	      findall_trail(pfirstel,q);
 	      *pfirstel = makelist((CPtr)to);
 	      XSB_Deref(q);
-	      do_copy_term(q,to,h);
+	      do_copy_term(CTXTc q,to,h);
 	    }
 
 	  from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
@@ -918,7 +918,7 @@ copy_again : /* for tail recursion optimisation */
 	while ( --ar )
 	  {
 	    from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-	    do_copy_term(from,to,h) ;
+	    do_copy_term(CTXTc from,to,h) ;
 	  }
 	from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
 	goto copy_again ;
@@ -990,31 +990,31 @@ copy_again : /* for tail recursion optimisation */
    arg2 - new term; copy of old term unifies with new term
 */
 
-int copy_term()
+int copy_term(CTXTdecl)
 {
   long size ;
   Cell arg1, arg2, to ;
   CPtr hptr ;
 
-  arg1 = ptoc_tag(1);
+  arg1 = ptoc_tag(CTXTc 1);
   
   if( isref(arg1) ) return 1;
 
   init_findall_trail() ;
-  size = term_size(arg1) ;
+  size = term_size(CTXTc arg1) ;
   findall_untrail() ;
 
   check_glstack_overflow( 2, pcreg, size*sizeof(Cell)) ;
   
   /* again because stack might have been reallocated */
-  arg1 = ptoc_tag(1);
-  arg2 = ptoc_tag(2);
+  arg1 = ptoc_tag(CTXTc 1);
+  arg2 = ptoc_tag(CTXTc 2);
   
   hptr = hreg ;
   
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   init_findall_trail() ;
-  do_copy_term( arg1, &to, &hptr ) ;
+  do_copy_term( CTXTc arg1, &to, &hptr ) ;
   findall_untrail() ;
   
   {
@@ -1026,5 +1026,28 @@ int copy_term()
 
   hreg = hptr;
 
-  return(unify(arg2, to));
+  return(unify(CTXTc arg2, to));
 } /* copy_term */
+
+
+/* Copies a term from another thread's stack
+ * Source thread hreg is used to make do_copy_term work properly
+ */
+#ifdef MULTI_THREAD
+Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 )
+{
+  CPtr hptr ;
+  Cell to ;
+
+  hptr = hreg ;
+  hreg = from->_hreg ;
+  init_findall_trail() ;
+  do_copy_term( th, arg1, &to, &hptr ) ;
+  findall_untrail() ;
+
+  hreg = hptr ;
+
+  return to ;
+}
+#endif
+

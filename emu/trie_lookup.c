@@ -156,7 +156,7 @@ static struct VariantContinuation {
  * available location in the stack.
  */
 
-static xsbBool save_variant_continuation(BTNptr last_node_match) {
+static xsbBool save_variant_continuation(CTXTdeclc BTNptr last_node_match) {
 
   int i;
   CPtr termptr, *binding;
@@ -207,7 +207,7 @@ static xsbBool save_variant_continuation(BTNptr last_node_match) {
  * encountered, and noting these bindings on the trail.
  */
 
-void *stl_restore_variant_cont() {
+void *stl_restore_variant_cont(CTXTdecl) {
 
   int i;
 
@@ -366,7 +366,7 @@ static struct {
  * array.
  */
 
-void initSubsumptiveLookup() {
+void initSubsumptiveLookup(CTXTdecl) {
 
   int i;
 
@@ -394,9 +394,9 @@ void initSubsumptiveLookup() {
 /* Error Handling
    -------------- */
 
-#define SubsumptiveTrieLookupError(String)   sub_trie_lookup_error(String)
+#define SubsumptiveTrieLookupError(String)   sub_trie_lookup_error(CTXTc String)
 
-static void sub_trie_lookup_error(char *string) {
+static void sub_trie_lookup_error(CTXTdeclc char *string) {
   Trail_Unwind_All;
   xsb_abort("Subsumptive Check/Insert Operation:\n\t%s\n", string);
 }
@@ -520,7 +520,7 @@ static void sub_trie_lookup_error(char *string) {
 
 #define SetNoVariant(LastNodeMatched)				\
    if (variant_path == YES) {					\
-     if ( ! save_variant_continuation(LastNodeMatched) )	\
+     if ( ! save_variant_continuation(CTXTc LastNodeMatched) )	\
        SubsumptiveTrieLookupError("Memory exhausted.");		\
      variant_path = NO;						\
    }
@@ -701,7 +701,7 @@ typedef enum Search_Strategy_Mode {
 } SearchMode;
 
 
-void *iter_sub_trie_lookup(void *trieNode, TriePathType *pathType) {
+void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
 
   BTNptr pParentBTN;
 
@@ -1022,7 +1022,7 @@ void *iter_sub_trie_lookup(void *trieNode, TriePathType *pathType) {
  * lookup routines.
  */
 
-void *var_trie_lookup(void *branchRoot, xsbBool *wasFound,
+void *var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
 		      Cell *failedSymbol) {
 
   BTNptr parent;	/* Last node containing a matched symbol */
@@ -1087,7 +1087,7 @@ void *var_trie_lookup(void *branchRoot, xsbBool *wasFound,
  * encountered variable is placed in array element i.
  */
 
-void *variant_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
+void *variant_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termVector,
 			  Cell varArray[]) {
 
   BTNptr trieNode;
@@ -1107,7 +1107,7 @@ void *variant_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
     Trail_ResetTOS;
     TermStack_ResetTOS;
     TermStack_PushLowToHighVector(termVector,nTerms);
-    trieNode = var_trie_lookup(trieRoot,&wasFound,&symbol);
+    trieNode = var_trie_lookup(CTXTc trieRoot,&wasFound,&symbol);
     if ( wasFound ) {
       if ( IsNonNULL(varArray) ) {
 	int i;
@@ -1152,7 +1152,7 @@ void *variant_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
  * VarEnumerator[].
  */
 
-static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
+static BTNptr rec_sub_trie_lookup(CTXTdeclc BTNptr parent, TriePathType *pathType) {
 
   Cell subterm, symbol;
   BTNptr cur, match, var, leaf;
@@ -1228,7 +1228,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  /*** CallVar_MarkIt(subterm,trievar_index); ***/
 	  StandardizeVariable(subterm,trievar_index);
 	  Trail_Push(subterm);
-	  leaf = rec_sub_trie_lookup(cur,pathType);
+	  leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
 	    if ( *pathType == NO_PATH )
 	      *pathType = VARIANT_PATH;
@@ -1266,7 +1266,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  if ( are_identical_terms(TrieVarBindings[trievar_index],
 				   subterm) ) {
 	    xsb_dbgmsg((LOG_TRIE, "  Found trivar with identical binding"));
-	    leaf = rec_sub_trie_lookup(cur,pathType);
+	    leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	    if ( IsNonNULL(leaf) ) {
 	      /*
 	       * This may or may not be a variant path, depending on what has
@@ -1298,7 +1298,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  TrieVarBindings[trievar_index] =
 	    TrieVarBindings[IndexOfStdVar(subterm)];
 	  Trail_Push(&TrieVarBindings[trievar_index]);
-	  leaf = rec_sub_trie_lookup(cur,pathType);
+	  leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
 	    *pathType = SUBSUMPTIVE_PATH;
 	    return leaf;
@@ -1373,7 +1373,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	int origTermStackTopIndex = TermStack_Top - TermStack_Base;
 	xsb_dbgmsg((LOG_TRIE, "  Found matching trie symbol"));
 	TermStack_PushLowToHighVector(args,arity);
-	leaf = rec_sub_trie_lookup(cur,pathType);
+	leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	if ( IsNonNULL(leaf) ) {
 	  if ( *pathType == NO_PATH )
 	    *pathType = VARIANT_PATH;
@@ -1402,7 +1402,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	if ( are_identical_terms(TrieVarBindings[trievar_index],
 				    subterm) ) {
 	  xsb_dbgmsg((LOG_TRIE, "  Found trievar bound to matching symbol"));
-	  leaf = rec_sub_trie_lookup(cur,pathType);
+	  leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
 	    *pathType = SUBSUMPTIVE_PATH;
 	    return leaf;
@@ -1424,7 +1424,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	/*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
 	TrieVarBindings[trievar_index] = subterm;
 	Trail_Push(&TrieVarBindings[trievar_index]);
-	leaf = rec_sub_trie_lookup(cur,pathType);
+	leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	if ( IsNonNULL(leaf) ) {
 	  *pathType = SUBSUMPTIVE_PATH;
 	  return leaf;
@@ -1458,7 +1458,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
  * to indicate how the path relates to the subterm.
  */
 
-void *subsumptive_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
+void *subsumptive_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termVector,
 			      TriePathType *path_type, Cell subtermArray[]) {
 
   BTNptr leaf;
@@ -1478,7 +1478,7 @@ void *subsumptive_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
     TermStackLog_ResetTOS;
     TermStack_ResetTOS;
     TermStack_PushLowToHighVector(termVector,nTerms);
-    leaf = rec_sub_trie_lookup(trieRoot, path_type);
+    leaf = rec_sub_trie_lookup(CTXTc trieRoot, path_type);
     if ( IsNonNULL(leaf) && IsNonNULL(subtermArray) ) {
       int i;
       for ( i = 0;

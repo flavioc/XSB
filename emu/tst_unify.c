@@ -89,7 +89,7 @@
      bld_ref((CPtr)UnknownVar,PrologVar);		\
    }							\
    else							\
-     unify(UnknownVar,PrologVar);			\
+     unify(CTXTc UnknownVar,PrologVar);			\
  }
 
 
@@ -102,7 +102,7 @@ static BTNptr gAnsLeaf;    /* answer to consume */
 static CPtr gAnsTmplt;      /* ... using this template */
 static int gSizeTmplt;      /* ... of this size */
 
-static void consumption_error(char *string) {
+static void consumption_error(CTXTdeclc char *string) {
 
   char *abort_string;
 
@@ -154,7 +154,7 @@ static void consumption_error(char *string) {
    if (isref(dSymbol))						\
      Bind_and_Trail_Symbol(dSymbol,dSubterm)			\
    else if (dSymbol != dSubterm) {				\
-     consumption_error("Unequal Constants");			\
+     consumption_error(CTXTc "Unequal Constants");		\
      return;							\
    }								\
 }
@@ -185,7 +185,7 @@ static void consumption_error(char *string) {
 	 TermStack_PushFunctorArgs(dSubterm);				   \
        }								   \
        else {								   \
-	 consumption_error("Distinct Functor Symbols");			   \
+	 consumption_error(CTXTc "Distinct Functor Symbols");		   \
 	 return;							   \
        }								   \
      }									   \
@@ -195,8 +195,8 @@ static void consumption_error(char *string) {
 	* unification algorithm to check the match and perform additional  \
 	* unifications.							   \
 	*/								   \
-       if ( ! unify(dSubterm, dSymbol) ) {				   \
-	 consumption_error("Distinct Function Applications");		   \
+       if ( ! unify(CTXTc dSubterm, dSymbol) ) {			   \
+	 consumption_error(CTXTc "Distinct Function Applications");	   \
 	 return;							   \
        }								   \
      }									   \
@@ -213,7 +213,8 @@ static void consumption_error(char *string) {
      break;								   \
 									   \
    default:								   \
-     consumption_error("Trie symbol fails to unify with functor subterm"); \
+     consumption_error(CTXTc 						   \
+		       "Trie symbol fails to unify with functor subterm"); \
      return;								   \
    }
 
@@ -246,8 +247,8 @@ static void consumption_error(char *string) {
 	* unification algorithm to check the match and perform additional \
 	* unifications.							  \
 	*/								  \
-       if ( ! unify(dSubterm, dSymbol) ) {				  \
-	 consumption_error("Distinct Lists");				  \
+       if ( ! unify(CTXTc dSubterm, dSymbol) ) {			  \
+	 consumption_error(CTXTc "Distinct Lists");			  \
 	 return;							  \
        }								  \
      }									  \
@@ -264,7 +265,8 @@ static void consumption_error(char *string) {
      break;								  \
 									  \
    default:								  \
-     consumption_error("Trie symbol fails to unify with list subterm");	  \
+     consumption_error(CTXTc 						  \
+			"Trie symbol fails to unify with list subterm");  \
      return;								  \
    }
 
@@ -357,7 +359,7 @@ static void consumption_error(char *string) {
      break;								 \
 									 \
    default:								 \
-     consumption_error("Unsupported tag on trie node symbol");		 \
+     consumption_error(CTXTc "Unsupported tag on trie node symbol");	 \
      return;								 \
    }
 
@@ -379,7 +381,7 @@ static void consumption_error(char *string) {
  *  is used to note these bindings for untrailing.
  */
 
-void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
+void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 				CPtr pAnsTmplt) {
 
   Cell subterm, symbol, sym_orig_tag;
@@ -392,7 +394,7 @@ void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
   gSizeTmplt = sizeTmplt;
 
   if ( ! IsLeafNode(pAnsLeaf) ) {
-    consumption_error("Bad answer handle");
+    consumption_error(CTXTc "Bad answer handle");
     return;
   }
   NumSubOps_AnswerConsumption++;
@@ -436,7 +438,7 @@ void consume_subsumptive_answer(BTNptr pAnsLeaf, int sizeTmplt,
       break;
 
     default:
-      consumption_error("Unsupported subterm tag");
+      consumption_error(CTXTc "Unsupported subterm tag");
       return;
     }
   }

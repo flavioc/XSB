@@ -121,6 +121,7 @@ Todo:
 #include "io_builtins_xsb.h"
 #include "subp.h"          /* for attv_interrupts[][] */
 #include "binding.h"       /* for PRE_IMAGE_TRAIL */
+#include "thread_xsb.h"	   /* for mutex definitions */
 #include "debug_xsb.h"
 #include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
 /*=========================================================================*/
@@ -295,7 +296,7 @@ static unsigned long slide_buf_size = 0;
 */
 /*----------------------------------------------------------------------*/
 
-xsbBool glstack_realloc(int new_size, int arity)
+xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 {
   CPtr   new_heap_bot ;       /* bottom of new Global Stack area */
   CPtr   new_ls_bot ;         /* bottom of new Local Stack area */
@@ -310,6 +311,8 @@ xsbBool glstack_realloc(int new_size, int arity)
   long   expandtime ;
 
   if (new_size <= glstack.size) return 0;
+
+  SYS_MUTEX_LOCK( MUTEX_STACKS ) ;
 
   xsb_dbgmsg((LOG_REALLOC, 
 	     "Reallocating the Heap and Local Stack data area"));
@@ -346,10 +349,12 @@ xsbBool glstack_realloc(int new_size, int arity)
       }
       if (new_heap_bot == NULL) {
 	xsb_mesg("Not enough core to resize the Heap and Local Stack!");
+        SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
 	return 1; /* return an error output -- will be picked up later */
       }
     } else {
       xsb_mesg("Not enough core to resize the Heap and Local Stack!");
+      SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
       return 1; /* return an error output -- will be picked up later */
     }
   }
@@ -442,6 +447,8 @@ xsbBool glstack_realloc(int new_size, int arity)
 	     "Heap/Local Stack data area expansion - finished in %ld msecs\n",
 	     expandtime));
 
+  SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
+
   return 0;
 } /* glstack_realloc */
 
@@ -450,7 +457,7 @@ xsbBool glstack_realloc(int new_size, int arity)
 /* The main routine that performs garbage collection.                   */
 /*======================================================================*/
 
-int gc_heap(int arity)
+int gc_heap(CTXTdeclc int arity)
 {
 #ifdef GC
   CPtr p;
@@ -459,6 +466,8 @@ int gc_heap(int arity)
   int  marked = 0, marked_dregs = 0, i;
   int  start_heap_size;
   DECL_GC_PROFILE;
+
+  SYS_MUTEX_LOCK( MUTEX_STACKS ) ;
   
   INIT_GC_PROFILE;
   if (flags[GARBAGE_COLLECT] != NO_GC) {
@@ -512,7 +521,7 @@ int gc_heap(int arity)
     }
 #endif
 
-    marked = mark_heap(arity, &marked_dregs);
+    marked = mark_heap(CTXTc arity, &marked_dregs);
     
     end_marktime = cpu_time();
     
@@ -606,10 +615,10 @@ int gc_heap(int arity)
 	  xsb_exit("copying garbage collection could not allocate new heap");
 	end_new_heap = begin_new_heap+marked;
 
-	hreg = copy_heap(marked,begin_new_heap,end_new_heap,arity);
+	hreg = copy_heap(CTXTc marked,begin_new_heap,end_new_heap,arity);
 
 	free(begin_new_heap);
-	adapt_hfreg_from_choicepoints(hreg);
+	adapt_hfreg_from_choicepoints(CTXTc hreg);
 	hbreg = cp_hreg(breg);
 
 #ifdef SLG_GC
@@ -623,7 +632,7 @@ int gc_heap(int arity)
 	GC_PROFILE_COPY_FINAL_SUMMARY;
       }
     
-    if (print_on_gc) print_all_stacks(arity);
+    if (print_on_gc) print_all_stacks(CTXTc arity);
     
     /* get rid of the marking areas - if they exist */
     if (heap_marks)  { 
@@ -667,18 +676,21 @@ int gc_heap(int arity)
   GC_PROFILE_POST_REPORT;
   
 #endif /* GC */
+
+  SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
+
   return(TRUE);
 
 } /* gc_heap */
 
 /*--------------------------------------------------------------------------*/
 
-xsbBool glstack_ensure_space(int extra, int arity) {
+xsbBool glstack_ensure_space(CTXTdeclc int extra, int arity) {
   if (flags[GARBAGE_COLLECT] != NO_GC && arity < 255) {
-    gc_heap(arity);
+    gc_heap(CTXTc arity);
   }
   if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + extra) {
-    return glstack_realloc(resize_stack(glstack.size,extra+OVERFLOW_MARGIN),arity);
+    return glstack_realloc(CTXTc resize_stack(glstack.size,extra+OVERFLOW_MARGIN),arity);
   }
   else return FALSE;
 }

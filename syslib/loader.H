@@ -47,6 +47,6 @@
 	  unload_seg/1, machine_file_exists/1, call0/1,
               formatted_io/5, slash/1, dirname_canonic/2, xsb_backtrace/1
    from machine.
-
 %%:- import call_xsb_hook/3, xsb_undefined_predicate_hook/1 from xsb_hook.
+:- import xsb_sys_mutex_unlock/1 from thread.
 

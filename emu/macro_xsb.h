@@ -127,7 +127,7 @@ struct ascc_edge {
 
 struct completion_stack_frame {
   VariantSF subgoal_ptr;
-  int     level_num;
+  int     _level_num;
   ALNptr  del_ret_list;   /* to reclaim deleted returns */
   int     visited;
 #ifndef LOCAL_EVAL
@@ -139,7 +139,7 @@ struct completion_stack_frame {
 #define COMPLFRAMESIZE	(sizeof(struct completion_stack_frame)/sizeof(CPtr))
 
 #define compl_subgoal_ptr(b)	((ComplStackFrame)(b))->subgoal_ptr
-#define compl_level(b)		((ComplStackFrame)(b))->level_num
+#define compl_level(b)		((ComplStackFrame)(b))->_level_num
 #define compl_del_ret_list(b)	((ComplStackFrame)(b))->del_ret_list
 #define compl_visited(b)	((ComplStackFrame)(b))->visited
 #ifndef LOCAL_EVAL
@@ -610,7 +610,7 @@ void tstCreateTSIs(TSTNptr);
 
 #define remove_open_tables_loop(Endpoint) remove_open_tries(Endpoint)
 
-#define remove_open_tables() remove_open_tries(COMPLSTACKBOTTOM)
+#define remove_open_tables() remove_open_tries(CTXTc COMPLSTACKBOTTOM)
 
 /*----------------------------------------------------------------------*/
 

@@ -57,12 +57,12 @@
 
 /* the following really belongs somewhere else */
 extern char *expand_filename(char *);
-extern void xsb_sprint_variable(char *sptr, CPtr var);
+extern void xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var);
 
 
-char *p_charlist_to_c_string(prolog_term term, VarString *buf,
+char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 			     char *in_func, char *where);
-void c_string_to_p_charlist(char *name, prolog_term list,
+void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
 			    char *in_func, char *where);
 
 /*======================================================================*/
@@ -132,7 +132,7 @@ DllExport xsbBool call_conv is_attv(prolog_term term)
     return isattv(t);
 }
 
-DllExport prolog_term call_conv reg_term(reg_num regnum)
+DllExport prolog_term call_conv reg_term(CTXTdeclc reg_num regnum)
 {
     register Cell addr;
 
@@ -141,7 +141,7 @@ DllExport prolog_term call_conv reg_term(reg_num regnum)
     return (prolog_term)addr;
 }
 
-DllExport xsbBool call_conv c2p_int(Integer val, prolog_term var)
+DllExport xsbBool call_conv c2p_int(CTXTdeclc Integer val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -153,7 +153,7 @@ DllExport xsbBool call_conv c2p_int(Integer val, prolog_term var)
     }
 }
 
-DllExport xsbBool call_conv c2p_float(double val, prolog_term var)
+DllExport xsbBool call_conv c2p_float(CTXTdeclc double val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -165,7 +165,7 @@ DllExport xsbBool call_conv c2p_float(double val, prolog_term var)
     }
 }
 
-DllExport xsbBool call_conv c2p_string(char *val, prolog_term var)
+DllExport xsbBool call_conv c2p_string(CTXTdeclc char *val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -177,7 +177,7 @@ DllExport xsbBool call_conv c2p_string(char *val, prolog_term var)
     }
 }
 
-DllExport xsbBool call_conv c2p_list(prolog_term var)
+DllExport xsbBool call_conv c2p_list(CTXTdeclc prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -192,7 +192,7 @@ DllExport xsbBool call_conv c2p_list(prolog_term var)
     }
 }
 
-DllExport xsbBool call_conv c2p_nil(prolog_term var)
+DllExport xsbBool call_conv c2p_nil(CTXTdeclc prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
@@ -210,7 +210,8 @@ DllExport void call_conv c2p_setfree(prolog_term var)
     bld_free(v);
 }
 
-DllExport xsbBool call_conv c2p_functor(char *functor, int arity, prolog_term var)
+DllExport xsbBool call_conv c2p_functor(CTXTdeclc char *functor, int arity, 
+					prolog_term var)
 {
     Cell v = (Cell)var;
     Pair sym;
@@ -286,16 +287,16 @@ DllExport prolog_term call_conv p2p_cdr(prolog_term term)
     return (prolog_term)t;
 }
 
-DllExport prolog_term call_conv p2p_new(void)
+DllExport prolog_term call_conv p2p_new(CTXTdecl)
 {
     CPtr t = hreg;
     new_heap_free(hreg);
     return (prolog_term)(cell(t));
 }
 
-DllExport xsbBool call_conv p2p_unify(prolog_term term1, prolog_term term2)
+DllExport xsbBool call_conv p2p_unify(CTXTdeclc prolog_term term1, prolog_term term2)
 {
-    return unify(term1, term2);
+    return unify(CTXTc term1, term2);
 }
 
 DllExport prolog_term call_conv p2p_deref(prolog_term term)
@@ -317,7 +318,7 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
    This function converts escape sequences in the Prolog string
    (except octal/hexadecimal escapes) into the corresponding real characters.
 */
-char *p_charlist_to_c_string(prolog_term term, VarString *buf,
+char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 			     char *in_func, char *where)
 {
   Integer head_val;
@@ -396,7 +397,7 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
    high-level function from this c_string_to_p_charlist was called.
    WHERE is another string with additional info. These two are used to provide
    informative error messages to the user. */
-void c_string_to_p_charlist(char *name, prolog_term list,
+void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
 			    char *in_func, char *where)
 {
   Cell new_list;
@@ -416,7 +417,7 @@ void c_string_to_p_charlist(char *name, prolog_term list,
       top = hreg++;
       follow(top) = makelist(hreg);
     } follow(top) = makenil;
-    unify(list, new_list);
+    unify(CTXTc list, new_list);
   } 
 }
 
@@ -483,11 +484,11 @@ DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
 /* they extend the c interface to allow for an easy interface for 
 lists of characters */
 
-DllExport char *call_conv p2c_chars(prolog_term term, char *buf, int bsize)
+DllExport char *call_conv p2c_chars(CTXTdeclc prolog_term term, char *buf, int bsize)
 {
   XSB_StrDefine(bufvar);
 
-  p_charlist_to_c_string(term, &bufvar, "p2c_chars", "list -> char*");
+  p_charlist_to_c_string(CTXTc term, &bufvar, "p2c_chars", "list -> char*");
   
   if (strlen(bufvar.string) > bsize) {
     xsb_abort("Buffer overflow in p2c_chars");
@@ -496,9 +497,9 @@ DllExport char *call_conv p2c_chars(prolog_term term, char *buf, int bsize)
   return strcpy(buf,bufvar.string);
 }
 
-DllExport void call_conv c2p_chars(char *str, prolog_term term)
+DllExport void call_conv c2p_chars(CTXTdeclc char *str, prolog_term term)
 {
-  c_string_to_p_charlist(str,term,"c2p_chars", "char* -> list");
+  c_string_to_p_charlist(CTXTc str,term,"c2p_chars", "char* -> list");
 }
 
 
@@ -641,7 +642,7 @@ static int count_csize(char *ptr, int quote)
 **
 */
 
-static char *ctop_term0(char *ptr, char *c_dataptr,
+static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
 			prolog_term variable, int ignore)
 {
     char ch;
@@ -656,38 +657,38 @@ static char *ctop_term0(char *ptr, char *c_dataptr,
     switch (ch) {
 	case 'i':			/* int */
 	
-	if (!ignore) c2p_int(*((int *)(c_dataptr)), variable);
+	if (!ignore) c2p_int(CTXTc *((int *)(c_dataptr)), variable);
 	c_dataptr_rest = c_dataptr + sizeof(int);
 	break;
 
 	case 'c':
 
-	if (!ignore) c2p_int((int)(*(char *)(c_dataptr)), variable);
+	if (!ignore) c2p_int(CTXTc (int)(*(char *)(c_dataptr)), variable);
 	c_dataptr_rest = c_dataptr + 1;
 	break;
 
 	case 's':
 
-	if (!ignore) c2p_string(*(char **)(c_dataptr), variable);
+	if (!ignore) c2p_string(CTXTc *(char **)(c_dataptr), variable);
 	c_dataptr_rest = c_dataptr + sizeof(char*);
 	break;
 
 	case 'z':
 
-	if (!ignore) c2p_string(c_dataptr, variable);
+	if (!ignore) c2p_string(CTXTc c_dataptr, variable);
 	ch = *ptr++;
 	c_dataptr_rest = c_dataptr + (ch -'0')*4;
 	break;
 
 	case 'f':
 
-	if (!ignore) c2p_float((double)(*((float *)(c_dataptr))), variable);
+	if (!ignore) c2p_float(CTXTc (double)(*((float *)(c_dataptr))), variable);
 	c_dataptr_rest = c_dataptr + sizeof(float);
 	break;
 
 	case 'd':
 
-	if (!ignore) c2p_float(*((double *)(c_dataptr)), variable);
+	if (!ignore) c2p_float(CTXTc *((double *)(c_dataptr)), variable);
 	c_dataptr_rest = c_dataptr + sizeof(double);
 	break;
 
@@ -696,13 +697,13 @@ static char *ctop_term0(char *ptr, char *c_dataptr,
 	fields = count_fields(ptr, ']');
 	if (!ignore) {
 	    argno = count_arity(ptr, ']');
-	    if (!is_functor(variable)) c2p_functor("c2p", argno, variable);
+	    if (!is_functor(variable)) c2p_functor(CTXTc "c2p", argno, variable);
 	}
 	argno = 0;
 	for (i = 1; i <= fields; i++) {
 	    if (*(ptr+1)=='*') ignore1 = 1;
 	    else { ignore1 = ignore; argno++; }
-	    ptr = ctop_term0(ptr,c_dataptr,p2p_arg(variable,argno),ignore1);
+	    ptr = ctop_term0(CTXTc ptr,c_dataptr,p2p_arg(variable,argno),ignore1);
 	    c_dataptr = c_dataptr_rest;
 	}
 	ptr = skip_subfmt(ptr, ']');
@@ -718,16 +719,16 @@ static char *ctop_term0(char *ptr, char *c_dataptr,
 		if (*(ptr++) !='(') cppc_error(2);
 		argno = count_arity(ptr, ')');
 		fields = count_fields(ptr, ')');
-		if (!is_functor(variable)) c2p_functor("c2p", argno, variable);
+		if (!is_functor(variable)) c2p_functor(CTXTc "c2p", argno, variable);
 		cdptr2 = * (char **)(c_dataptr);
 		argno = 0;
 		for (i = 1; i <= fields; i++) {
 		    if (*(ptr+1)=='*') ignore = 1;
 		    else { ignore = 0; argno++; }
-		    ptr = ctop_term0(ptr,cdptr2,p2p_arg(variable,argno),ignore);
+		    ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_arg(variable,argno),ignore);
 		    cdptr2 = c_dataptr_rest;
 		}
-	    } else c2p_nil(variable);
+	    } else c2p_nil(CTXTc variable);
 	}
 	ptr = skip_subfmt(ptr, ')');
 	c_dataptr_rest = c_dataptr + 4;
@@ -742,23 +743,23 @@ static char *ctop_term0(char *ptr, char *c_dataptr,
 		if (*(ptr++) != '(') cppc_error(3);
 		argno = count_arity(ptr, ')');
 		fields = count_fields(ptr, ')');
-		if (!is_list(variable)) c2p_list(variable);
+		if (!is_list(variable)) c2p_list(CTXTc variable);
 		cdptr2 = * (char **)(c_dataptr);
 		argno = 0;
 		for (i = 1; i <= fields; i++) {
 		    if (*(ptr+1)=='*') ignore = 1;
 		    else { ignore = 0; argno++; }
 		    if (argno==1) 
-		       ptr = ctop_term0(ptr,cdptr2,p2p_car(variable),ignore);
+		       ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_car(variable),ignore);
 		    else if (argno==2)
-		       ptr = ctop_term0(ptr,cdptr2,p2p_cdr(variable),ignore);
+		       ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_cdr(variable),ignore);
 		    else if (argno==0)
-		       ptr = ctop_term0(ptr,cdptr2,p2p_car(variable),ignore);
+		       ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_car(variable),ignore);
 		       /* always ignored */
 		    else cppc_error(30);
 		    cdptr2 = c_dataptr_rest;
 		}
-	    } else c2p_nil(variable);
+	    } else c2p_nil(CTXTc variable);
 	}
 	ptr = skip_subfmt(ptr, ')');
 	c_dataptr_rest = c_dataptr + 4;
@@ -777,8 +778,8 @@ static char *ctop_term0(char *ptr, char *c_dataptr,
 
 	if (!ignore) {
 	    if (*(char **)(c_dataptr)) {
-		ctop_term0(subformat[ch-'0'], c_dataptr, variable, 0);
-	    } else c2p_nil(variable);
+		ctop_term0(CTXTc subformat[ch-'0'], c_dataptr, variable, 0);
+	    } else c2p_nil(CTXTc variable);
 	}
 	c_dataptr_rest = c_dataptr + 4;
 	break;
@@ -958,14 +959,14 @@ static char *ptoc_term0(char *ptr, char *c_dataptr,
 **
 */
 
-int ctop_term(char *fmt, char *c_dataptr, reg_num regnum)
+int ctop_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
 {
     prolog_term variable;
     int my_errno;
 
-    variable = reg_term(regnum);
+    variable = reg_term(CTXTc regnum);
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ctop_term0(fmt, c_dataptr, variable, 0);
+    ctop_term0(CTXTc fmt, c_dataptr, variable, 0);
     return 0;
 }
 
@@ -974,12 +975,12 @@ int ctop_term(char *fmt, char *c_dataptr, reg_num regnum)
 **
 */
 
-int ptoc_term(char *fmt, char *c_dataptr, reg_num regnum)
+int ptoc_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
 {
     prolog_term variable;
     int my_errno;
 
-    variable = reg_term(regnum);
+    variable = reg_term(CTXTc regnum);
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
     ptoc_term0(fmt, c_dataptr, variable, 0);
     return 0;
@@ -990,12 +991,12 @@ int ptoc_term(char *fmt, char *c_dataptr, reg_num regnum)
 **
 */
 
-int c2p_term(char *fmt, char *c_dataptr, prolog_term variable)
+int c2p_term(CTXTdeclc char *fmt, char *c_dataptr, prolog_term variable)
 {
     int my_errno;
 
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ctop_term0(fmt, c_dataptr, variable, 0);
+    ctop_term0(CTXTc fmt, c_dataptr, variable, 0);
     return 0;
 }
 
@@ -1090,15 +1091,16 @@ char tempstring[MAXBUFSIZE];
    Buffer is a VarString. If the VarString is non-empty, the term is appended
    to the current contents of the VarString.
 */
-DllExport void call_conv print_pterm(prolog_term term, int toplevel, VarString *straddr)
+DllExport void call_conv print_pterm(CTXTdeclc prolog_term term, int toplevel, 
+				     VarString *straddr)
 {
   int i;
 
   if (is_var(term)) {
-    xsb_sprint_variable(tempstring, (CPtr) term);
+    xsb_sprint_variable(CTXTc tempstring, (CPtr) term);
     XSB_StrAppend(straddr,tempstring);
   } else if (is_attv(term)) {
-    xsb_sprint_variable(tempstring, (CPtr) dec_addr(term));
+    xsb_sprint_variable(CTXTc tempstring, (CPtr) dec_addr(term));
     XSB_StrAppend(straddr,tempstring);
   } else if (is_int(term)) {
     sprintf(tempstring,"%d", (int) p2c_int(term));
@@ -1112,26 +1114,26 @@ DllExport void call_conv print_pterm(prolog_term term, int toplevel, VarString *
     printpstring(p2c_string(term),toplevel,straddr);
   } else if (is_list(term)) {
     XSB_StrAppend(straddr, "[");
-    print_pterm(p2p_car(term),FALSE,straddr);
+    print_pterm(CTXTc p2p_car(term),FALSE,straddr);
     term = p2p_cdr(term);
     while (is_list(term)) {
       XSB_StrAppend(straddr, ",");
-      print_pterm(p2p_car(term),FALSE,straddr);
+      print_pterm(CTXTc p2p_car(term),FALSE,straddr);
       term = p2p_cdr(term);
     }
     if (!is_nil(term)) {
       XSB_StrAppend(straddr, "|");
-      print_pterm(term,FALSE,straddr);
+      print_pterm(CTXTc term,FALSE,straddr);
     }
     XSB_StrAppend(straddr, "]");
   } else if (is_functor(term)) {
     printpstring(p2c_functor(term),FALSE,straddr);
     if (p2c_arity(term) > 0) {
       XSB_StrAppend(straddr, "(");
-      print_pterm(p2p_arg(term,1),FALSE,straddr);
+      print_pterm(CTXTc p2p_arg(term,1),FALSE,straddr);
       for (i = 2; i <= p2c_arity(term); i++) {
 	XSB_StrAppend(straddr, ",");
-	print_pterm(p2p_arg(term,i),FALSE,straddr);
+	print_pterm(CTXTc p2p_arg(term,i),FALSE,straddr);
       }
       XSB_StrAppend(straddr, ")");
     }
@@ -1143,15 +1145,16 @@ DllExport void call_conv print_pterm(prolog_term term, int toplevel, VarString *
 /*	xsb_answer_string copies an answer from reg 2 into ans.		*/
 /*                                                                      */
 /************************************************************************/
-int xsb_answer_string(VarString *ans, char *sep) {
+int xsb_answer_string(CTXTdeclc VarString *ans, char *sep) 
+{
   int i;
   
-  if (!is_string(reg_term(2))) {
-    for (i=1; i<p2c_arity(reg_term(2)); i++) {
-      print_pterm(p2p_arg(reg_term(2),i),TRUE,ans);
+  if (!is_string(reg_term(CTXTc 2))) {
+    for (i=1; i<p2c_arity(reg_term(CTXTc 2)); i++) {
+      print_pterm(CTXTc p2p_arg(reg_term(CTXTc 2),i),TRUE,ans);
       XSB_StrAppend(ans,sep);
     }
-    print_pterm(p2p_arg(reg_term(2),p2c_arity(reg_term(2))),TRUE,ans);
+    print_pterm(CTXTc p2p_arg(reg_term(CTXTc 2),p2c_arity(reg_term(CTXTc 2))),TRUE,ans);
   }
   return 0;
 }
@@ -1252,16 +1255,16 @@ DllExport int call_conv xsb_init_string(char *cmdline_param) {
 
 int xsb_inquery = 0;
 
-DllExport int call_conv xsb_command()
+DllExport int call_conv xsb_command(CTXTdecl)
 {
   if (xsb_inquery) return(2);  /* error */
-  c2p_int(0,reg_term(3));  /* command for calling a goal */
+  c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) return(1);  /* goal failed, so return 1 */
-  c2p_int(1,reg_term(3));  /* command for next answer */
+  if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
+  c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) return(0);  /* goal succeeded */
-  (void) xsb_close_query();
+  if (is_var(reg_term(CTXTc 1))) return(0);  /* goal succeeded */
+  (void) xsb_close_query(CTXT);
   return(2);
 }
 
@@ -1275,17 +1278,17 @@ DllExport int call_conv xsb_command()
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_command_string(char *goal)
+DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
   if (xsb_inquery) return(2);  /* error */
-  c2p_string(goal,reg_term(1));
-  c2p_int(2,reg_term(3));  /* command for calling a string goal */
+  c2p_string(CTXTc goal,reg_term(CTXTc 1));
+  c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) return(1);  /* goal failed, so return 1 */
-  c2p_int(1,reg_term(3));  /* command for next answer */
+  if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
+  c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) return(0);  /* goal succeeded */
-  (void) xsb_close_query();
+  if (is_var(reg_term(CTXTc 1))) return(0);  /* goal succeeded */
+  (void) xsb_close_query(CTXT);
   return(2);
 }
 
@@ -1303,12 +1306,12 @@ DllExport int call_conv xsb_command_string(char *goal)
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_query()
+DllExport int call_conv xsb_query(CTXTdecl)
 {
   if (xsb_inquery) return(2);
-  c2p_int(0,reg_term(3));  /* set command for calling a goal */
+  c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) return(1);
+  if (is_var(reg_term(CTXTc 1))) return(1);
   xsb_inquery = 1;
   return(0);
 }
@@ -1329,13 +1332,13 @@ DllExport int call_conv xsb_query()
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_query_string(char *goal)
+DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
   if (xsb_inquery) return(2);
-  c2p_string(goal,reg_term(1));
-  c2p_int(2,reg_term(3));  /* set command for calling a string goal */
+  c2p_string(CTXTc goal,reg_term(CTXTc 1));
+  c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) return(1);
+  if (is_var(reg_term(CTXTc 1))) return(1);
   xsb_inquery = 1;
   return(0);
 }
@@ -1349,13 +1352,14 @@ DllExport int call_conv xsb_query_string(char *goal)
 /*                                                                      */
 /************************************************************************/
 
-DllExport
-int call_conv xsb_query_string_string(char *goal, VarString *ans, char *sep) {
+int call_conv xsb_query_string_string(CTXTdeclc char *goal, 
+				      VarString *ans, char *sep) 
+{
   int rc;
   
-  rc = xsb_query_string(goal);
+  rc = xsb_query_string(CTXTc goal);
   if (rc > 0) return rc;
-  return xsb_answer_string(ans,sep);
+  return xsb_answer_string(CTXTc ans,sep);
 }
 
 /************************************************************************/
@@ -1370,13 +1374,13 @@ int call_conv xsb_query_string_string(char *goal, VarString *ans, char *sep) {
 /************************************************************************/
 static XSB_StrDefine(last_answer);
 
-DllExport
-int call_conv xsb_query_string_string_b(
-	     char *goal, char *buff, int buflen, int *anslen, char *sep) {
+int call_conv xsb_query_string_string_b(CTXTdeclc
+	     char *goal, char *buff, int buflen, int *anslen, char *sep) 
+{
   int rc;
   
   XSB_StrSet(&last_answer,"");
-  rc = xsb_query_string_string(goal,&last_answer,sep);
+  rc = xsb_query_string_string(CTXTc goal,&last_answer,sep);
   if (rc > 0) return rc;
   *anslen = last_answer.length;
   XSB_StrNullTerminate(&last_answer);
@@ -1417,12 +1421,12 @@ DllExport int call_conv
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_next()
+DllExport int call_conv xsb_next(CTXTdecl)
 {
   if (!xsb_inquery) return(2);
-  c2p_int(0,reg_term(3));  /* set command for next answer */
+  c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) {
+  if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery = 0;
     return(1);
   } else return(0);
@@ -1436,10 +1440,11 @@ DllExport int call_conv xsb_next()
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_next_string(VarString *ans, char *sep) {
-  int rc = xsb_next();
+DllExport int call_conv xsb_next_string(CTXTdeclc VarString *ans, char *sep) 
+{
+  int rc = xsb_next(CTXT);
   if (rc > 0) return rc;
-  return xsb_answer_string(ans,sep);
+  return xsb_answer_string(CTXTc ans,sep);
 }
 
 /************************************************************************/
@@ -1453,12 +1458,13 @@ DllExport int call_conv xsb_next_string(VarString *ans, char *sep) {
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_next_string_b(
-		     char *buff, int buflen, int *anslen, char *sep) {
+DllExport int call_conv xsb_next_string_b(CTXTdeclc
+		     char *buff, int buflen, int *anslen, char *sep) 
+{
   int rc;
 
   XSB_StrSet(&last_answer,"");
-  rc = xsb_next_string(&last_answer,sep);
+  rc = xsb_next_string(CTXTc &last_answer,sep);
   if (rc > 0) return rc;
   *anslen = last_answer.length;
   XSB_StrNullTerminate(&last_answer);
@@ -1479,12 +1485,12 @@ DllExport int call_conv xsb_next_string_b(
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_close_query()
+DllExport int call_conv xsb_close_query(CTXTdecl)
 {
   if (!xsb_inquery) return(2);
-  c2p_int(1,reg_term(3));  /* set command for cut */
+  c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
   xsb(1,0,0);
-  if (is_var(reg_term(1))) {
+  if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery = 0;
     return(0);
   } else return(2);
@@ -1497,7 +1503,7 @@ DllExport int call_conv xsb_close_query()
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_close()
+DllExport int call_conv xsb_close(CTXTdecl)
 {
   if (xsb_initted) return(0);
   else return(1);

@@ -24,7 +24,9 @@
 **
 ** 
 */
-:- compiler_options([ciao_directives,sysmod,optimize]).
+:- compiler_options([ciao_directives,sysmod,optimize,xpp_on]).
+
+#include "thread_defs_xsb.h"
 
 :- export write_term/2, write_term/3, write_option/1,code_class/2.
 
@@ -34,6 +36,9 @@
 	  type_error/4,domain_error/4 from error_handler.
 
 :- import write/1 from standard.
+
+:- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
+
 %:- import get_atts/2 from atts.
 
 :- op(200,fy,(?)).
@@ -53,17 +58,21 @@ display(Term):- write(Term).
 % Mats Carlsson, Daniel Cabeza, and Manuel Hermenegildo.
 
 write_term(Stream, Term, OptList) :-
+	xsb_sys_mutex_lock( MUTEX_IO ),
         current_output(Curr),
         set_output(Stream),
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 3, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
-        set_output(Curr).
+	set_output(Curr),
+	xsb_sys_mutex_unlock( MUTEX_IO ).
 
 write_term(Term,OptList):- 
+	xsb_sys_mutex_lock( MUTEX_IO ),
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 2, Default, 1200, Options, Priority),
-        write_out(Term, Options, Priority, 0, 0, '(', 2'100, _).
+        write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
+	xsb_sys_mutex_unlock( MUTEX_IO ).
 
 :- comment(write_option/1, "@var{Opt} is a valid write option which
  affects the predicate @tt{write_term/3} and similar ones. Possible

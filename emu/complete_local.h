@@ -25,7 +25,7 @@
 #define __COMPLETE_LOCAL_H__
 
 #ifdef LOCAL_EVAL
-void makeConsumerFromGenerator(VariantSF producer_sf)
+void makeConsumerFromGenerator(CTXTdeclc VariantSF producer_sf)
 {
   nlcp_trie_return(breg) = subg_ans_list_ptr(producer_sf);
   nlcp_pcreg(breg) = (pb) &answer_return_inst;
@@ -195,7 +195,8 @@ void SpitOutGraph(CPtr cs_ptr)
   subg_compl_susp_ptr(compl_subg) = NULL; \
 }
   
-static inline CPtr ProcessSuspensionFrames(CPtr cc_tbreg_in, CPtr cs_ptr)
+static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in, 
+					   CPtr cs_ptr)
 {
   CPtr ComplStkFrame = cs_ptr;
   VariantSF compl_subg;
@@ -250,7 +251,7 @@ static inline CPtr ProcessSuspensionFrames(CPtr cc_tbreg_in, CPtr cs_ptr)
   return cc_tbreg;
 }
 
-static inline void CompleteSimplifyAndReclaim(CPtr cs_ptr)
+static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 {
   VariantSF compl_subg;
   CPtr ComplStkFrame = cs_ptr; 
@@ -262,7 +263,7 @@ static inline void CompleteSimplifyAndReclaim(CPtr cs_ptr)
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
     mark_as_completed(compl_subg); 
     if (neg_simplif_possible(compl_subg)) {
-      simplify_neg_fails(compl_subg);
+      simplify_neg_fails(CTXTc compl_subg);
     }
 
     ComplStkFrame = next_compl_frame(ComplStkFrame);
@@ -283,7 +284,8 @@ static inline void CompleteSimplifyAndReclaim(CPtr cs_ptr)
   } /* while */
 }
 
-static inline void SetupReturnFromLeader(CPtr orig_breg, CPtr cs_ptr, VariantSF subgoal)
+static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr, 
+					 VariantSF subgoal)
 {
   CPtr answer_template;
   int template_size, attv_num;

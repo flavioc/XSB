@@ -22,10 +22,11 @@
 ** 
 */
 
+#include "context.h"
 
-extern int trie_assert(void);
-extern int trie_retract(void);
-extern int trie_retract_safe(void);
+extern int trie_assert(CTXTdecl);
+extern int trie_retract(CTXTdecl);
+extern int trie_retract_safe(CTXTdecl);
 
 
 #define switch_to_trie_assert {		\

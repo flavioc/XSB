@@ -28,7 +28,6 @@
 
 #define PUBLIC_TRIE_DEFS
 
-
 /*===========================================================================*/
 
 /*
@@ -288,12 +287,14 @@ typedef struct Call_Check_Insert_Results {
 
 /*-- exported trie functions ------------------------------------------*/
 
+#ifndef MULTI_THREAD
 extern BTNptr   newBasicTrie(Cell,int);
 extern byte *	trie_get_calls(void);
 extern Cell	get_lastnode_cs_retskel(Cell);
 extern byte *	trie_get_returns(struct subgoal_frame *, Cell);
 extern void	remove_open_tries(CPtr);
 extern void     init_trie_aux_areas(void);
+extern void     free_trie_aux_areas(void);
 extern void     load_solution_trie(int, int, CPtr, BTNptr);
 extern void     variant_call_search(TabledCallInfo *, CallLookupResults *);
 extern BTNptr   one_term_chk_ins(CPtr, BTNptr, int *);
@@ -305,33 +306,80 @@ extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void     undo_answer_bindings(void);
 extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
+#else
+struct th_context ;
+extern BTNptr   newBasicTrie(struct th_context *, Cell,int);
+extern byte *	trie_get_calls(struct th_context *);
+extern Cell	get_lastnode_cs_retskel(struct th_context *, Cell);
+extern byte *	trie_get_returns(struct th_context *, struct subgoal_frame *, Cell);
+extern void	remove_open_tries(struct th_context *, CPtr);
+extern void     init_trie_aux_areas(struct th_context *);
+extern void     free_trie_aux_areas(struct th_context *);
+extern void     load_solution_trie(struct th_context *, int, int, CPtr, BTNptr);
+extern void     variant_call_search(struct th_context *, TabledCallInfo *, CallLookupResults *);
+extern BTNptr   one_term_chk_ins(struct th_context *, CPtr, BTNptr, int *);
+extern BTNptr   whole_term_chk_ins(struct th_context *, Cell, BTNptr *, int *);
+extern BTNptr	get_next_trie_solution(ALNptr *);
+extern BTNptr	variant_answer_search(struct th_context *, int, int, CPtr, 
+				      struct subgoal_frame *, xsbBool *);
+extern BTNptr   delay_chk_insert(struct th_context *, int, CPtr, CPtr *);
+extern void     undo_answer_bindings(struct th_context *);
+extern void	load_delay_trie(struct th_context *, int, CPtr, BTNptr);
+extern xsbBool  bottom_up_unify(struct th_context *);
+#endif
 
+#ifndef MULTI_THREAD
 extern void    consume_subsumptive_answer(BTNptr, int, CPtr);
 extern ALNptr  tst_collect_relevant_answers(TSTNptr, TimeStamp, int, CPtr);
+#else
+extern void    consume_subsumptive_answer(struct th_context *, BTNptr, int, CPtr);
+extern ALNptr  tst_collect_relevant_answers(struct th_context *, TSTNptr, TimeStamp, int, CPtr);
+#endif
 extern void    delete_subsumptive_table(struct Table_Info_Frame *);
 
+#ifndef MULTI_THREAD
 extern void    tstShrinkDynStacks(void);
 
 extern TSTNptr subsumptive_tst_search(TSTNptr, int, CPtr, xsbBool, xsbBool *);
 extern BTNptr  subsumptive_bt_search(BTNptr, int, CPtr, xsbBool *);
 extern TSTNptr variant_tst_search(TSTNptr, int, CPtr, xsbBool, xsbBool *);
 extern BTNptr  variant_bt_search(BTNptr, int, CPtr, xsbBool *);
+#else
+extern void    tstShrinkDynStacks(struct th_context *);
+
+extern TSTNptr subsumptive_tst_search(struct th_context *,
+				TSTNptr, int, CPtr, xsbBool, xsbBool *);
+extern BTNptr  subsumptive_bt_search(struct th_context *,
+				BTNptr, int, CPtr, xsbBool *);
+extern TSTNptr variant_tst_search(struct th_context *,
+				TSTNptr, int, CPtr, xsbBool, xsbBool *);
+extern BTNptr  variant_bt_search(struct th_context *,
+				 BTNptr, int, CPtr, xsbBool *);
+#endif
 
 
 typedef enum Trie_Path_Type {
   NO_PATH, VARIANT_PATH, SUBSUMPTIVE_PATH
 } TriePathType;
 
+#ifndef MULTI_THREAD
 extern void *subsumptive_trie_lookup(void *root, int, CPtr,
 				     TriePathType *, Cell[]);
 extern void *variant_trie_lookup(void *root, int, CPtr, Cell[]);
+#else
+extern void *subsumptive_trie_lookup(struct th_context *th, void *root, int, CPtr,
+				     TriePathType *, Cell[]);
+extern void *variant_trie_lookup(struct th_context *th, void *root, int, CPtr, Cell[]);
+#endif
 
 /*---------------------------------------------------------------------*/
 
 /* slg variables */
+#ifndef MULTI_THREAD
 extern CPtr ans_var_pos_reg;
 extern int  num_vars_in_var_regs;
 extern int  global_num_vars;
+#endif
 
 /* used for statistics */
 extern long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;

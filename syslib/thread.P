@@ -1,0 +1,216 @@
+/* File:      thread.P
+** Author(s): Rui Marques
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+:- compiler_options([xpp_on,sysmod]).
+#include "standard.h"
+#include "thread_defs_xsb.h"
+#include "flag_defs_xsb.h"
+
+:- import (:-)/2 from usermod.
+
+xsb_thread_create( Goal, ThreadId, ErrorVal ) :-
+	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, _, ErrorVal ).
+xsb_thread_exit( ExitCode, ErrorVal ) :-
+	ts_abolish_tables,
+	ts_abolish,
+	thread_request( XSB_THREAD_EXIT, ExitCode, _, _, ErrorVal ).
+xsb_thread_join( ThreadId, ExitCode, ErrorVal ) :-
+	thread_request( XSB_THREAD_JOIN, ThreadId, ExitCode, _, ErrorVal ).
+xsb_thread_detach( ThreadId, ErrorVal ) :-
+	thread_request( XSB_THREAD_DETACH, ThreadId, _, _, ErrorVal ).
+xsb_thread_self( ThreadId, ErrorVal ) :-
+	thread_request( XSB_THREAD_SELF, ThreadId, _, _, ErrorVal ).
+
+xsb_mutex_init_np0( MutexId, KindNP, ErrorVal ) :-
+	thread_request( XSB_MUTEX_INIT, KindNP, MutexId, _, ErrorVal ).
+/* "mutex kind" is a non portable extension to POSIX */
+xsb_mutex_init( MutexId, ErrorVal ) :-
+	thread_request( XSB_MUTEX_INIT, XSB_FAST_MUTEX, MutexId, _, ErrorVal ).
+xsb_mutex_lock( MutexId, ErrorVal ) :-
+	thread_request( XSB_MUTEX_LOCK, MutexId, _, _, ErrorVal ).
+xsb_mutex_trylock( MutexId, ErrorVal ) :-
+	thread_request( XSB_MUTEX_TRYLOCK, MutexId, _, _, ErrorVal ).
+xsb_mutex_unlock( MutexId, ErrorVal ) :-
+	thread_request( XSB_MUTEX_UNLOCK, MutexId, _, _, ErrorVal ).
+xsb_mutex_destroy( MutexId, ErrorVal ) :-
+	thread_request( XSB_MUTEX_DESTROY, MutexId, _, _, ErrorVal ).
+
+xsb_mutex_init_np( fast, MutexId, ErrorVal ) :-
+	xsb_mutex_init_np0( MutexId, XSB_FAST_MUTEX, ErrorVal ).
+xsb_mutex_init_np( recursive, MutexId, ErrorVal ) :-
+	xsb_mutex_init_np0( MutexId, XSB_RECURSIVE_MUTEX, ErrorVal ).
+xsb_mutex_init_np( error_check, MutexId, ErrorVal ) :-
+	xsb_mutex_init_np0( MutexId, XSB_ERRORCHECK_MUTEX, ErrorVal ).
+
+xsb_sys_mutex_lock( Id, ErrorVal ) :- 
+	thread_request( XSB_SYS_MUTEX_LOCK, Id, _, _, ErrorVal ).
+xsb_sys_mutex_unlock( Id, ErrorVal ) :- 
+	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, ErrorVal ).
+
+
+/* Shortcuts */
+
+xsb_thread_create( Goal )	    :- xsb_thread_create( Goal, _, _ ).
+xsb_thread_create( Goal, ThreadId ) :- xsb_thread_create( Goal, ThreadId, _ ).
+
+xsb_thread_exit( ExitCode ) 	    :- xsb_thread_exit( ExitCode, _ ).
+xsb_thread_exit 		    :- xsb_thread_exit( 0, _ ).
+
+xsb_thread_join( ThreadId, ExitCode ) :-
+	xsb_thread_join( ThreadId, ExitCode, _ ).
+xsb_thread_join( ThreadId )	    :- xsb_thread_join( ThreadId, _, _ ).
+
+
+xsb_thread_detach( ThreadId )	    :- xsb_thread_detach( ThreadId, _ ).
+
+xsb_thread_self( ThreadId )	    :- xsb_thread_self( ThreadId, _ ).
+
+xsb_mutex_init( MutexId )	:- xsb_mutex_init( MutexId, _ ).
+xsb_mutex_init_np( Type, MutexId ) :-
+				   xsb_mutex_init_np( Type, MutexId, _ ).
+xsb_mutex_lock( MutexId )	:- xsb_mutex_lock( MutexId, _ ).
+xsb_mutex_trylock( MutexId )	:- xsb_mutex_trylock( MutexId, _ ).
+xsb_mutex_unlock( MutexId )	:- xsb_mutex_unlock( MutexId, _ ).
+xsb_mutex_destroy( MutexId )	:- xsb_mutex_destroy( MutexId, _ ).
+
+
+xsb_sys_mutex_lock( Id ) :- 
+	thread_request( XSB_SYS_MUTEX_LOCK, Id, _, _, _ ).
+xsb_sys_mutex_unlock( Id ) :- 
+	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, _ ).
+
+/***************************************************************/
+
+/* private predicate that runs a thread */
+
+'_$thread_run'( Goal ) :- ts_init_tables, call(Goal), xsb_thread_exit(0,_).
+'_$thread_run'( _ ) :- xsb_thread_exit(0,_).
+
+/* store thread flag predicate in THREAD_RUN flag */
+
+:- init_multi_threading.
+
+init_multi_threading:- 
+	term_psc('_$thread_run'(_), PSC), 
+	stat_set_flag(THREAD_RUN, PSC).
+
+
+/* System provided mutexes for users */
+
+user_mutex( N, N1 ) :-
+	N1 is N + MUTEX_USER1 - 1,
+	N1 >= MUTEX_USER1,
+	N1 < MAX_SYS_MUTEXES.
+
+xsb_user_mutex_lock(N) :- user_mutex(N,N1), xsb_sys_mutex_lock(N1, Rc), 
+			  Rc == 0, !.
+xsb_user_mutex_lock(N) :- writeln( 'Error trying to lock mutex '(N) ).
+
+xsb_user_mutex_unlock(N) :- user_mutex(N,N1), xsb_sys_mutex_unlock(N1, Rc),
+			  Rc == 0, !.
+xsb_user_mutex_lock(N) :- writeln( 'Error trying to unlock mutex '(N) ).
+
+
+/**************************************************************/
+
+/** Thread specific assert and call **/
+
+/* make_ts_goal transforms a goal into a thread specific term */
+
+ts_prefix("$ts_").
+
+make_ts_goal(Goal, TSGoal) :-
+	xsb_thread_self(TID), name(TID, LTID),
+	ts_prefix(LPrefix),
+	append(LPrefix, LTID, LTSName ),
+	name(TSName, LTSName),
+	TSGoal =.. [TSName,Goal].
+
+ts_assert( (G:-C) ) :-
+	!,
+        make_ts_goal(G, TSG),
+	assert((TSG:-C)).
+ts_assert( G ) :-
+        make_ts_goal(G, TSG),
+	assert(TSG).
+
+ts_call( G ) :-
+	make_ts_goal(G, TSG), call(TSG).
+
+ts_abolish_table_call( G ) :-
+	make_ts_goal(G, TSG),
+	abolish_table_call(TSG).
+
+ts_tnot( G ) :-
+	make_ts_goal(G, TSG),
+	tnot(TSG).
+
+ts_init_tables :-
+	xsb_sys_mutex_lock( MUTEX_TABLE ),
+        make_ts_goal(_, TSG),
+        functor(TSG,NameTSG,ArityTSG),
+        table(NameTSG/ArityTSG),
+        dynamic(NameTSG/ArityTSG),
+	xsb_sys_mutex_unlock( MUTEX_TABLE ).
+
+ts_abolish_tables :-
+	make_ts_goal(_, TSPred),
+	abolish_table_pred( TSPred ).
+ts_abolish :-
+	make_ts_goal(_, TSPred),
+	abolish( TSPred ).
+
+/**************************************************************/
+
+/** Higher level stuff **/
+
+par_execute( GoalList ) :-
+	par_spawn( GoalList, ThreadList ),
+	par_wait( ThreadList ).
+
+n_par_execute( Goal, N ) :-
+	n_list( N, Goal, GoalList ),
+	par_execute( GoalList ).
+
+n_list( _, 0, [] ).
+n_list( X, N, [X|L] ) :- N1 is N - 1, n_list( X, N1, L ).
+
+
+par_spawn( [], [] ).
+par_spawn( [G|GL], [T|TL] ) :- 
+	xsb_thread_create( G, T ), par_spawn( GL, TL ).
+
+par_wait( [] ).
+par_wait( [T|L] ) :- xsb_thread_join(T), par_wait(L).
+
+exmut_execute( G, M ) :-
+	xsb_user_mutex_lock(M), G, !, xsb_user_mutex_unlock(M).
+exmut_execute( _, M ) :- xsb_user_mutex_unlock(M).
+
+
+console_exmut( G ) :- 
+	xsb_user_mutex_lock(MUTEX_CONSOLE), 
+	G, !, xsb_user_mutex_unlock(MUTEX_CONSOLE).
+console_exmut( _ ) :- 
+	xsb_user_mutex_unlock(MUTEX_CONSOLE).

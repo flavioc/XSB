@@ -44,4 +44,6 @@
 :- import windows_os_loader/0 from loader.
 
 :- import conget/2, conset/2 from gensym.
+
+:- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
 /* ------------------- end of file file_write.H ----------------------- */

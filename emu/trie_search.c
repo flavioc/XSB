@@ -79,7 +79,7 @@
 
 /*-------------------------------------------------------------------------*/
 
-BTNptr bt_escape_search(BTNptr btRoot, xsbBool *isNew) {
+BTNptr bt_escape_search(CTXTdeclc BTNptr btRoot, xsbBool *isNew) {
 
   BTNptr btn;
 
@@ -130,7 +130,7 @@ inline static TSTNptr tst_escape_search(TSTNptr tstRoot, xsbBool *isNew) {
 
 /*-------------------------------------------------------------------------*/
 
-BTNptr subsumptive_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
+BTNptr subsumptive_bt_search(CTXTdeclc BTNptr btRoot, int nTerms, CPtr termVector,
 			     xsbBool *isNew) {
 
   BTNptr btn;
@@ -147,15 +147,15 @@ BTNptr subsumptive_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
     TermStack_ResetTOS;
     TermStack_PushHighToLowVector(termVector,nTerms);
     if ( IsEmptyTrie(btRoot) ) {
-      btn = bt_insert(btRoot,btRoot,NO_INSERT_SYMBOL);
+      btn = bt_insert(CTXTc btRoot,btRoot,NO_INSERT_SYMBOL);
       *isNew = TRUE;
     }
     else {
       TermStackLog_ResetTOS;
-      btn = iter_sub_trie_lookup(btRoot,&path_type);
+      btn = iter_sub_trie_lookup(CTXTc btRoot,&path_type);
       if ( path_type == NO_PATH ) {
 	Trail_Unwind_All;
-	btn = bt_insert(btRoot,stl_restore_variant_cont(),
+	btn = bt_insert(CTXTc btRoot,stl_restore_variant_cont(CTXT),
 			NO_INSERT_SYMBOL);
 	*isNew = TRUE;
       }
@@ -165,7 +165,7 @@ BTNptr subsumptive_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
     Trail_Unwind_All;
   }
   else
-    btn = bt_escape_search(btRoot,isNew);
+    btn = bt_escape_search(CTXTc btRoot,isNew);
   return btn;
 }
 
@@ -177,7 +177,7 @@ BTNptr subsumptive_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
  * information is needed when the term set is inserted.
  */
 
-TSTNptr subsumptive_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
+TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termVector,
 			       xsbBool maintainTSI, xsbBool *isNew) {
 
   TSTNptr tstn;
@@ -207,15 +207,15 @@ TSTNptr subsumptive_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
     TermStack_ResetTOS;
     TermStack_PushHighToLowVector(termVector,nTerms);
     if ( IsEmptyTrie(tstRoot) ) {
-      tstn = tst_insert(tstRoot,tstRoot,NO_INSERT_SYMBOL,maintainTSI);
+      tstn = tst_insert(CTXTc tstRoot,tstRoot,NO_INSERT_SYMBOL,maintainTSI);
       *isNew = TRUE;
     }
     else {
       TermStackLog_ResetTOS;
-      tstn = iter_sub_trie_lookup(tstRoot,&path_type);
+      tstn = iter_sub_trie_lookup(CTXTc tstRoot,&path_type);
       if ( path_type == NO_PATH ) {
 	Trail_Unwind_All;
-	tstn = tst_insert(tstRoot, stl_restore_variant_cont(),
+	tstn = tst_insert(CTXTc tstRoot, stl_restore_variant_cont(CTXT),
 			  NO_INSERT_SYMBOL, maintainTSI);
 	*isNew = TRUE;
       }
@@ -244,7 +244,7 @@ TSTNptr subsumptive_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
 
 /*-------------------------------------------------------------------------*/
 
-BTNptr variant_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
+BTNptr variant_bt_search(CTXTdeclc BTNptr btRoot, int nTerms, CPtr termVector,
 			 xsbBool *isNew) {
 
   BTNptr btn;
@@ -262,19 +262,19 @@ BTNptr variant_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
     TermStack_ResetTOS;
     TermStack_PushLowToHighVector(termVector,nTerms);
     if ( IsEmptyTrie(btRoot) ) {
-      btn = bt_insert(btRoot,btRoot,NO_INSERT_SYMBOL);
+      btn = bt_insert(CTXTc btRoot,btRoot,NO_INSERT_SYMBOL);
       *isNew = TRUE;
     }
     else {
-      btn = var_trie_lookup(btRoot,&wasFound,&symbol);
+      btn = var_trie_lookup(CTXTc btRoot,&wasFound,&symbol);
       if ( ! wasFound )
-	btn = bt_insert(btRoot,btn,symbol);
+	btn = bt_insert(CTXTc btRoot,btn,symbol);
       *isNew = ( ! wasFound );
     }
     Trail_Unwind_All;
   }
   else
-    btn = bt_escape_search(btRoot,isNew);
+    btn = bt_escape_search(CTXTc btRoot,isNew);
   return btn;
 }
 
@@ -286,7 +286,7 @@ BTNptr variant_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
  * information is needed when the term set is inserted.
  */
 
-TSTNptr variant_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
+TSTNptr variant_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termVector,
 			   xsbBool maintainTSI, xsbBool *isNew) {
 
   TSTNptr tstn;
@@ -304,13 +304,13 @@ TSTNptr variant_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
     TermStack_ResetTOS;
     TermStack_PushHighToLowVector(termVector,nTerms);
     if ( IsEmptyTrie(tstRoot) ) {
-      tstn = tst_insert(tstRoot,tstRoot,NO_INSERT_SYMBOL,maintainTSI);
+      tstn = tst_insert(CTXTc tstRoot,tstRoot,NO_INSERT_SYMBOL,maintainTSI);
       *isNew = TRUE;
     }
     else {
-      tstn = var_trie_lookup(tstRoot,&wasFound,&symbol);
+      tstn = var_trie_lookup(CTXTc tstRoot,&wasFound,&symbol);
       if ( ! wasFound )
-	tstn = tst_insert(tstRoot,tstn,symbol,maintainTSI);
+	tstn = tst_insert(CTXTc tstRoot,tstn,symbol,maintainTSI);
       *isNew = ( ! wasFound );
     }
     Trail_Unwind_All;

@@ -23,6 +23,7 @@
 ** 
 */
 
+#include "context.h"
 #ifndef __XSB_CINTERF_H__
 #define __XSB_CINTERF_H__
 
@@ -161,38 +162,44 @@ extern "C" {
 #include "export.h"
 #include "varstring_xsb.h"
 
-DllExport extern prolog_int call_conv ptoc_int(reg_num);	/* defined in builtin.c */
-DllExport extern prolog_float call_conv ptoc_float(reg_num);	/* defined in builtin.c */
-DllExport extern char* call_conv ptoc_string(reg_num);	/* defined in builtin.c */
-DllExport extern char* call_conv ptoc_longstring(reg_num);	/* defined in builtin.c */
+DllExport extern prolog_int call_conv ptoc_int(CTXTdeclc reg_num);	
+						/* defined in builtin.c */
+DllExport extern prolog_float call_conv ptoc_float(CTXTdeclc reg_num);
+						/* defined in builtin.c */
+DllExport extern char* call_conv ptoc_string(CTXTdeclc reg_num);
+						/* defined in builtin.c */
+DllExport extern char* call_conv ptoc_longstring(CTXTdeclc reg_num);
+						/* defined in builtin.c */
 DllExport extern char* call_conv ptoc_abs(reg_num);
 
-DllExport extern void  call_conv ctop_int(reg_num, prolog_int); /* defined in builtin.c */
-DllExport extern void  call_conv ctop_float(reg_num, double); /* def in builtin.c */
-DllExport extern void  call_conv ctop_string(reg_num, char*); /* def in builtin.c */
+DllExport extern void  call_conv ctop_int(CTXTdeclc reg_num, prolog_int);
+						/* defined in builtin.c */
+DllExport extern void  call_conv ctop_float(CTXTdeclc reg_num, double);
+						/* def in builtin.c */
+DllExport extern void  call_conv ctop_string(CTXTdeclc reg_num, char*);
+						/* def in builtin.c */
 DllExport extern int   call_conv ctop_abs(reg_num, char*);
 
 extern char* string_find(char*, int);		/* defined in psc.c	*/
 
-extern int   ctop_term(char*, char*, reg_num);
-extern int   ptoc_term(char*, char*, reg_num);
+extern int   ctop_term(CTXTdeclc char*, char*, reg_num);
+extern int   ptoc_term(CTXTdeclc char*, char*, reg_num);
 
 /*======================================================================*/
 /* Low level C interface						*/
 /*======================================================================*/
 
 
-DllExport extern prolog_term call_conv reg_term(reg_num);
+DllExport extern prolog_term call_conv reg_term(CTXTdeclc reg_num);
 
-DllExport extern xsbBool call_conv c2p_int(prolog_int, prolog_term);
-DllExport extern xsbBool call_conv c2p_float(double, prolog_term);
-DllExport extern xsbBool call_conv c2p_string(char *, prolog_term);
-DllExport extern xsbBool call_conv c2p_list(prolog_term);
-DllExport extern xsbBool call_conv c2p_nil(prolog_term);
-DllExport extern xsbBool call_conv c2p_functor(char *, int, prolog_term);
+DllExport extern xsbBool call_conv c2p_int(CTXTdeclc prolog_int, prolog_term);
+DllExport extern xsbBool call_conv c2p_float(CTXTdeclc double, prolog_term);
+DllExport extern xsbBool call_conv c2p_string(CTXTdeclc char *, prolog_term);
+DllExport extern xsbBool call_conv c2p_list(CTXTdeclc prolog_term);
+DllExport extern xsbBool call_conv c2p_nil(CTXTdeclc prolog_term);
+DllExport extern xsbBool call_conv c2p_functor(CTXTdeclc char *, int, prolog_term);
 DllExport extern void call_conv c2p_setfree(prolog_term);
-DllExport extern void call_conv c2p_chars(char *str, prolog_term term);
-
+DllExport extern void call_conv c2p_chars(CTXTdeclc char *str, prolog_term term);
 
 
 DllExport extern prolog_int   call_conv p2c_int(prolog_term);
@@ -200,13 +207,13 @@ DllExport extern prolog_float call_conv p2c_float(prolog_term);
 DllExport extern char*    call_conv p2c_string(prolog_term);
 DllExport extern char*    call_conv p2c_functor(prolog_term);
 DllExport extern int      call_conv p2c_arity(prolog_term);
-DllExport extern char*    call_conv p2c_chars(prolog_term,char *,int);
+DllExport extern char*    call_conv p2c_chars(CTXTdeclc prolog_term,char *,int);
 
 DllExport extern prolog_term call_conv p2p_arg(prolog_term, int);
 DllExport extern prolog_term call_conv p2p_car(prolog_term);
 DllExport extern prolog_term call_conv p2p_cdr(prolog_term);
-DllExport extern prolog_term call_conv p2p_new(void);
-DllExport extern xsbBool        call_conv p2p_unify(prolog_term, prolog_term);
+DllExport extern prolog_term call_conv p2p_new(CTXTdecl);
+DllExport extern xsbBool        call_conv p2p_unify(CTXTdeclc prolog_term, prolog_term);
 DllExport extern xsbBool        call_conv p2p_call(prolog_term);
 DllExport extern void	     call_conv p2p_funtrail(/*val, fun*/);
 DllExport extern prolog_term call_conv p2p_deref(prolog_term);
@@ -222,7 +229,7 @@ DllExport extern xsbBool call_conv is_functor(prolog_term);
 DllExport extern xsbBool call_conv is_charlist(prolog_term,int*);
 DllExport extern xsbBool call_conv is_attv(prolog_term);
 
-extern int   c2p_term(char*, char*, prolog_term);
+extern int   c2p_term(CTXTdeclc char*, char*, prolog_term);
 extern int   p2c_term(char*, char*, prolog_term);
 
 /*======================================================================*/
@@ -240,21 +247,21 @@ extern char *vfile_obj(/* vfile */);
 
 DllExport extern int call_conv xsb_init(int, char **);
 DllExport extern int call_conv xsb_init_string(char *);
-DllExport extern int call_conv xsb_command();
-DllExport extern int call_conv xsb_command_string(char *);
-DllExport extern int call_conv xsb_query();
-DllExport extern int call_conv xsb_query_string(char *);
-DllExport extern int call_conv xsb_query_string_string(char*,VarString*,char*);
-DllExport extern int call_conv xsb_query_string_string_b(char*,char*,int,int*,char*);
-DllExport extern int call_conv xsb_next();
-DllExport extern int call_conv xsb_next_string(VarString*,char*);
-DllExport extern int call_conv xsb_next_string_b(char*,int,int*,char*);
+DllExport extern int call_conv xsb_command(CTXTdecl);
+DllExport extern int call_conv xsb_command_string(CTXTdeclc char *);
+DllExport extern int call_conv xsb_query(CTXTdecl);
+DllExport extern int call_conv xsb_query_string(CTXTdeclc char *);
+DllExport extern int call_conv xsb_query_string_string(CTXTdeclc char*,VarString*,char*);
+DllExport extern int call_conv xsb_query_string_string_b(CTXTdeclc char*,char*,int,int*,char*);
+DllExport extern int call_conv xsb_next(CTXTdecl);
+DllExport extern int call_conv xsb_next_string(CTXTdeclc VarString*,char*);
+DllExport extern int call_conv xsb_next_string_b(CTXTdeclc char*,int,int*,char*);
 DllExport extern int call_conv xsb_get_last_answer_string(char*,int,int*);
-DllExport extern int call_conv xsb_close_query();
-DllExport extern int call_conv xsb_close();
+DllExport extern int call_conv xsb_close_query(CTXTdecl);
+DllExport extern int call_conv xsb_close(CTXTdecl);
 
-DllExport extern void call_conv print_pterm(Cell, int, VarString*);
-extern char *p_charlist_to_c_string(prolog_term term, VarString *buf,
+DllExport extern void call_conv print_pterm(CTXTdeclc Cell, int, VarString*);
+extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 				    char *in_func, char *where);
 
 /* macros for constructing answer terms and setting and retrieving atomic

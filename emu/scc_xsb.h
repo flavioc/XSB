@@ -24,7 +24,7 @@
 
 
 #if (!defined(LOCAL_EVAL))
-extern ComplStackFrame DFS_DGT(ComplStackFrame);
+extern ComplStackFrame DFS_DGT(CTXTdeclc ComplStackFrame);
 extern void find_independent_scc(ComplStackFrame);
 #endif
 

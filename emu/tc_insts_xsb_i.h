@@ -28,7 +28,10 @@
 /* The following is the list of Trie-Code instructions.			*/
 /*----------------------------------------------------------------------*/
 
+
+
 XSB_Start_Instr(trie_no_cp_str,_trie_no_cp_str)
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_str"));
 	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_str;
@@ -40,6 +43,7 @@ XSB_Start_Instr(trie_try_str,_trie_try_str)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_str"));
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
@@ -60,6 +64,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_str,_trie_retry_str) 
         CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_str"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -71,6 +76,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_str,_trie_trust_str) 
         CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_str"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -84,6 +90,7 @@ XSB_End_Instr()
 /*----------------------------------------------------------------------*/
 
 XSB_Start_Instr(trie_no_cp_numcon,_trie_no_cp_numcon)
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_numcon:"));
 	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_numcon;
@@ -96,6 +103,7 @@ XSB_Start_Instr(trie_try_numcon,_trie_try_numcon)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_numcon"));
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
@@ -117,6 +125,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_numcon,_trie_retry_numcon) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_numcon"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -129,6 +138,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_numcon,_trie_trust_numcon) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_numcon"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -143,6 +153,7 @@ XSB_End_Instr()
 /*----------------------------------------------------------------------*/
 
 XSB_Start_Instr(trie_no_cp_numcon_succ,_trie_no_cp_numcon_succ)
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_numcon_succ"));
 	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_numcon;
@@ -155,6 +166,7 @@ XSB_Start_Instr(trie_try_numcon_succ,_trie_try_numcon_succ)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_numcon_succ"));
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
@@ -176,6 +188,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_numcon_succ,_trie_retry_numcon_succ) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_numcon_succ"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -188,6 +201,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_numcon_succ,_trie_trust_numcon_succ) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_numcon_succ"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -202,6 +216,7 @@ XSB_End_Instr()
 /*----------------------------------------------------------------------*/
 
 XSB_Start_Instr(trie_no_cp_var,_trie_no_cp_var)
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_var"));
 	NodePtr = (BTNptr) lpcreg;
 	num_vars_in_var_regs = DecodeTrieVar(opatom);
@@ -224,6 +239,7 @@ XSB_Start_Instr(trie_try_var,_trie_try_var)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_var"));
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
@@ -257,6 +273,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_var,_trie_retry_var) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_var"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -280,6 +297,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_var,_trie_trust_var)  
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_var"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -306,6 +324,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
   Def2ops
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_val"));
   NodePtr = (BTNptr) lpcreg;
 {
@@ -331,7 +350,7 @@ XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
   else {								
     op1 = (Cell)*reg_arrayptr;						
     op2 = (Cell) var_regs[(int)int_val(opatom)];			
-    if (unify(op1,op2) == FALSE) {					
+    if (unify(CTXTc op1,op2) == FALSE) {					
       Fail1;								
       XSB_Next_Instr();							
     }									
@@ -348,6 +367,7 @@ XSB_Start_Instr(trie_try_val,_trie_try_val)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_val"));
   NodePtr = (BTNptr) lpcreg;
   save_find_locx(ereg);
@@ -369,6 +389,7 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_retry_val,_trie_retry_val) 
   Def2ops
   CPtr tbreg;
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_val"));
   NodePtr = (BTNptr) lpcreg;
   tbreg = breg;
@@ -381,6 +402,7 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_trust_val,_trie_trust_val) 
   Def2ops
   CPtr tbreg;
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_val"));
   NodePtr = (BTNptr) lpcreg;
   tbreg = breg;
@@ -394,6 +416,7 @@ XSB_End_Instr()
 /*----------------------------------------------------------------------*/
 
 XSB_Start_Instr(trie_no_cp_list,_trie_no_cp_list)
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_list"));
 	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_list;
@@ -405,6 +428,7 @@ XSB_Start_Instr(trie_try_list,_trie_try_list)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_list"));
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
@@ -425,6 +449,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_list,_trie_retry_list) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_list:"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -436,6 +461,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_list,_trie_trust_list) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_list"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -457,6 +483,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_fail,_trie_trust_fail) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_fail"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -471,6 +498,7 @@ XSB_Start_Instr(trie_try_fail,_trie_try_fail)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_fail"));
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
@@ -490,6 +518,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_fail,_trie_retry_fail) 
 	CPtr tbreg;
+	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_fail"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
@@ -676,11 +705,19 @@ XSB_Start_Instr(trie_proceed,_trie_proceed)	/* This is essentially a "proceed" *
 XSB_End_Instr()
 
 XSB_Start_Instr(trie_root,_trie_root)      /* A no-op; begin processing with child */
+	TRIE_R_LOCK()
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_root:"));
 	NodePtr = (BTNptr) lpcreg;
 	lpcreg = (byte *) BTN_Child(NodePtr);
 XSB_End_Instr()
 
+XSB_Start_Instr(trie_fail_unlock,_trie_fail_unlock)
+ 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_fail_unlock"));
+	TRIE_R_UNLOCK()
+        breg = cp_prevbreg(breg);       /* Remove this CP */
+        restore_trail_condition_registers(breg);
+	lpcreg = (byte *) & fail_inst;
+XSB_End_Instr()
 /*
  * This is the embedded-trie instruction which is placed in the root of
  * asserted tries.  It looks a lot like both "return_table_code", which
@@ -691,20 +728,43 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_assert_inst,_trie_assert_inst)
   Psc psc_ptr;
   int i;
+#ifdef MULTI_THREAD
+  CPtr tbreg;
+#ifdef SLG_GC
+  CPtr old_cptop;
+#endif
+#endif
 
+  xsb_dbgmsg((LOG_TRIE_INSTR, "trie_assert"));
   NodePtr = (BTNptr) lpcreg;
   if (Child(NodePtr) != NULL) {
+    TRIE_R_LOCK()
     psc_ptr = DecodeTrieFunctor(BTN_Symbol(NodePtr));
     reg_arrayptr = reg_array -1;
     num_vars_in_var_regs = -1;
     for (i = get_arity(psc_ptr); i >= 1; i--) { pushreg(*(rreg+i)); }
     lpcreg = (byte *) Child(NodePtr);
+#ifdef MULTI_THREAD
+/* save choice point for trie_unlock instruction */
+    save_find_locx(ereg);
+    tbreg = top_of_cpstack;
+#ifdef SLG_GC
+    old_cptop = tbreg;
+#endif
+    save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
+#ifdef SLG_GC
+    cp_prevtop(tbreg) = old_cptop;
+#endif
+    breg = tbreg;
+    hbreg = hreg;
+#endif
   }
   else
     lpcreg = (byte *) &fail_inst;
 XSB_End_Instr()
 
 XSB_Start_Instr(trie_no_cp_attv,_trie_no_cp_attv)
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_attv"));
   NodePtr = (BTNptr) lpcreg;
   unify_with_trie_attv;
@@ -716,6 +776,7 @@ XSB_Start_Instr(trie_try_attv,_trie_try_attv)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_attv"));
   NodePtr = (BTNptr) lpcreg;
   save_find_locx(ereg);
@@ -736,6 +797,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_attv,_trie_retry_attv) 
   CPtr tbreg;
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_attv:"));
   NodePtr = (BTNptr) lpcreg;
   tbreg = breg;
@@ -747,6 +809,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_attv,_trie_trust_attv) 
   CPtr tbreg;
+  TRIE_R_LOCK();
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_attv"));
   NodePtr = (BTNptr) lpcreg;
   tbreg = breg;

@@ -48,7 +48,7 @@
 #include "sp_unify_xsb_i.h"
 #include "string_xsb.h"
 
-extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring, 
+extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
@@ -63,12 +63,12 @@ static XSB_StrDefine(output_buffer);
 #include "ptoc_tag_xsb_i.h"
 
 
-xsbBool str_cat(void)
+xsbBool str_cat(CTXTdecl)
 {
   static char *str1, *str2, *tmpstr;
 
-  term = ptoc_tag(1);
-  term2 = ptoc_tag(2);
+  term = ptoc_tag(CTXTc 1);
+  term2 = ptoc_tag(CTXTc 2);
   if (isatom(term) && isatom(term2)) {
     str1 = string_val(term);
     str2 = string_val(term2);
@@ -78,7 +78,7 @@ xsbBool str_cat(void)
     strcat(tmpstr, str2);
     str1 = string_find(tmpstr, 1);
     free(tmpstr);
-    return atom_unify(makestring(str1), ptoc_tag(3));
+    return atom_unify(CTXTc makestring(str1), ptoc_tag(CTXTc 3));
   } else return FALSE;
 }
 
@@ -106,7 +106,7 @@ xsbBool str_cat(void)
       The meaning of End and of negative offsets is consistent with substring
       and string_substitute predicates.
 */
-xsbBool str_match(void)
+xsbBool str_match(CTXTdecl)
 {
   static char *subptr, *stringptr, *direction, *matchptr;
   static int substr_beg, substr_end;
@@ -116,11 +116,11 @@ xsbBool str_match(void)
   int str_len, sub_len; /* length of string and substring */
   Cell beg_offset_term, end_offset_term;
 
-  term = ptoc_tag(1);
-  term2 = ptoc_tag(2);
-  term3 = ptoc_tag(3);
-  beg_offset_term = ptoc_tag(4);
-  end_offset_term = ptoc_tag(5);
+  term = ptoc_tag(CTXTc 1);
+  term2 = ptoc_tag(CTXTc 2);
+  term3 = ptoc_tag(CTXTc 3);
+  beg_offset_term = ptoc_tag(CTXTc 4);
+  end_offset_term = ptoc_tag(CTXTc 5);
   if (!isatom(term) || !isatom(term2) || !isatom(term3)) {
     xsb_abort("STR_MATCH: Arguments 1,2,3 must be bound to strings");
   }
@@ -163,8 +163,8 @@ xsbBool str_match(void)
 		);
   
   return
-    (p2p_unify(beg_offset_term, makeint(substr_beg))
-     && p2p_unify(end_offset_term, makeint(substr_end)));
+    (p2p_unify(CTXTc beg_offset_term, makeint(substr_beg))
+     && p2p_unify(CTXTc end_offset_term, makeint(substr_end)));
 }
 
 
@@ -179,7 +179,7 @@ xsbBool str_match(void)
       Arg4: new (output) string
    Always succeeds, unless error.
 */
-xsbBool substring(void)
+xsbBool substring(CTXTdecl)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -191,11 +191,11 @@ xsbBool substring(void)
 
   XSB_StrSet(&output_buffer,"");
 
-  input_term = reg_term(1);  /* Arg1: string to find matches in */
+  input_term = reg_term(CTXTc 1);  /* Arg1: string to find matches in */
   if (isatom(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (islist(input_term)) {
-    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+    input_string = p_charlist_to_c_string(CTXTc input_term, &input_buffer,
 					  "SUBSTRING", "input string");
     conversion_required = TRUE;
   } else
@@ -204,7 +204,7 @@ xsbBool substring(void)
   input_len = strlen(input_string);
 
   /* arg 2: beginning offset */
-  beg_offset_term = reg_term(2);
+  beg_offset_term = reg_term(CTXTc 2);
   if (! (isinteger(beg_offset_term)|isboxedinteger(beg_offset_term)))
     xsb_abort("[SUBSTRING] Arg 2 (the beginning offset) must be an integer");
   beg_offset = int_val(beg_offset_term);
@@ -214,7 +214,7 @@ xsbBool substring(void)
     beg_offset = input_len;
 
   /* arg 3: ending offset */
-  end_offset_term = reg_term(3);
+  end_offset_term = reg_term(CTXTc 3);
   if (isref(end_offset_term))
     end_offset = input_len;
   else if (! (isinteger(end_offset_term)|isboxedinteger(end_offset_term)))
@@ -228,7 +228,7 @@ xsbBool substring(void)
   else if (end_offset < beg_offset)
     end_offset = beg_offset;
 
-  output_term = reg_term(4);
+  output_term = reg_term(CTXTc 4);
   if (! isref(output_term))
     xsb_abort("[SUBSTRING] Arg 4 (the output string) must be an unbound variable");
 
@@ -242,7 +242,7 @@ xsbBool substring(void)
     c_string_to_p_charlist(output_buffer.string, output_term,
 			   "SUBSTRING", "Arg 4");
   else
-    c2p_string(output_buffer.string, output_term);
+    c2p_string(CTXTc output_buffer.string, output_term);
   
   return(TRUE);
 }
@@ -258,7 +258,7 @@ xsbBool substring(void)
        Arg4: new (output) string
    Always succeeds, unless error.
 */
-xsbBool string_substitute(void)
+xsbBool string_substitute(CTXTdecl)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -277,11 +277,11 @@ xsbBool string_substitute(void)
 
   XSB_StrSet(&output_buffer,"");
 
-  input_term = reg_term(1);  /* Arg1: string to find matches in */
+  input_term = reg_term(CTXTc 1);  /* Arg1: string to find matches in */
   if (isatom(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (islist(input_term)) {
-    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+    input_string = p_charlist_to_c_string(CTXTc input_term, &input_buffer,
 					  "STRING_SUBSTITUTE", "input string");
     conversion_required = TRUE;
   } else
@@ -290,16 +290,16 @@ xsbBool string_substitute(void)
   input_len = strlen(input_string);
 
   /* arg 2: substring specification */
-  subst_spec_list_term = reg_term(2);
+  subst_spec_list_term = reg_term(CTXTc 2);
   if (!islist(subst_spec_list_term) && !isnil(subst_spec_list_term))
     xsb_abort("[STRING_SUBSTITUTE] Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
-  subst_str_list_term = reg_term(3);
+  subst_str_list_term = reg_term(CTXTc 3);
   if (! islist(subst_str_list_term))
     xsb_abort("[STRING_SUBSTITUTE] Arg 3 must be a list of strings");
 
-  output_term = reg_term(4);
+  output_term = reg_term(CTXTc 4);
   if (! isref(output_term))
     xsb_abort("[STRING_SUBSTITUTE] Arg 4 (the output) must be an unbound variable");
 
@@ -324,7 +324,7 @@ xsbBool string_substitute(void)
       if (isatom(subst_str_term)) {
 	subst_string = string_val(subst_str_term);
       } else if (islist(subst_str_term)) {
-	subst_string = p_charlist_to_c_string(subst_str_term, &subst_buf,
+	subst_string = p_charlist_to_c_string(CTXTc subst_str_term, &subst_buf,
 					      "STRING_SUBSTITUTE",
 					      "substitution string");
       } else 
@@ -363,7 +363,7 @@ xsbBool string_substitute(void)
     c_string_to_p_charlist(output_buffer.string, output_term,
 			   "STRING_SUBSTITUTE", "Arg 4");
   else
-    c2p_string(output_buffer.string, output_term);
+    c2p_string(CTXTc output_buffer.string, output_term);
   
   return(TRUE);
 }

@@ -29,26 +29,35 @@
 #include "char_defs.h"
 #include "token_defs_xsb.h"
 #include "flag_defs_xsb.h"
+#include "thread_defs_xsb.h"
 
 
 		/**************************/
 		/*	file_nl/1	  */
 		/**************************/
 
-file_nl(File) :- (windows_os_loader
+file_nl(File) :- xsb_sys_mutex_lock(MUTEX_IO),
+		(windows_os_loader
 		 ->  file_put(File, CH_RETURN), file_put(File, CH_NEWLINE)
 		 ;   file_put(File, CH_NEWLINE)
-		 ).
+		 ),
+		xsb_sys_mutex_unlock(MUTEX_IO).
 
 
 		/**************************/
 		/*	file_write/2	  */
 		/**************************/
 
-file_write(File, Term) :- l_write(File, Term, 999), fail.
+file_write(File, Term) :- xsb_sys_mutex_lock(MUTEX_IO),
+			  l_write(File, Term, 999), 
+			  xsb_sys_mutex_unlock(MUTEX_IO), 
+			  fail.
 file_write(_, _).
 
-file_write0(File, Term) :- l_write(File, Term, 999), fail.
+file_write0(File, Term) :- xsb_sys_mutex_lock(MUTEX_IO),
+			   l_write(File, Term, 999), 
+			   xsb_sys_mutex_unlock(MUTEX_IO),
+                           fail.
 file_write0(_, _).
 
     	    	/******************************/
@@ -271,7 +280,11 @@ l_writetail(File, X, D) :-
 		/*	file_write_prolog/2	  */
 		/**********************************/
 
-file_write_prolog(File, Term) :- l_write_prolog(File, Term, 999), fail.
+file_write_prolog(File, Term) :- 
+		xsb_sys_mutex_lock(MUTEX_IO),
+		l_write_prolog(File, Term, 999), 
+		xsb_sys_mutex_unlock(MUTEX_IO),
+		fail.
 file_write_prolog(_, _).
 
 
@@ -434,7 +447,11 @@ l_writetail_prolog(File, X) :-
 		/*	file_write_quoted/2      */
 		/*********************************/
 
-file_write_quoted(File, Term) :- l_write_quoted(File, Term, 999), fail.
+file_write_quoted(File, Term) :- 
+		xsb_sys_mutex_lock(MUTEX_IO),
+		l_write_quoted(File, Term, 999), 
+		xsb_sys_mutex_unlock(MUTEX_IO),
+		fail.
 file_write_quoted(_, _).
 
 
@@ -607,7 +624,11 @@ file_write_canonical(File,Term) :-
 	file_puttoken(File,TK_TERM,Term).
 
 /******************** Leave in Prolog for awhile, till secure
-file_write_canonical(File, Term) :- l_write_canonical(File, Term), fail.
+file_write_canonical(File, Term) :- 
+		xsb_sys_mutex_lock(MUTEX_IO),
+		l_write_canonical(File, Term), 
+		xsb_sys_mutex_unlock(MUTEX_IO),
+		fail.
 file_write_canonical(_, _).
 
 l_write_canonical(File, Var) :-

@@ -35,6 +35,7 @@
 #include "deref.h"
 #include "heap_xsb.h"
 #include "binding.h"
+#include "context.h"
 
 #define FUN_PLUS   1
 #define FUN_MINUS  2
@@ -71,7 +72,7 @@
     else return 0
 
 
-int  unifunc_call(int funcnum, CPtr regaddr)
+int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
 {
   Cell value;
   Float fvalue; 

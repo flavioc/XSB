@@ -175,7 +175,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	   break;
 	 case S:
 	   if (cell_opcode(&instr) == (byte) call ||
-	       cell_opcode(&instr) == (byte) execute) {
+	       cell_opcode(&instr) == (byte) xsb_execute) {
 	     fprintf(fd, ", 0x%lx", *loc_pcreg);
 	     psc = (Psc) cell(loc_pcreg++);
 	     fprintf(fd,", '%s'/%d", get_name(psc), get_arity(psc));

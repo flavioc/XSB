@@ -25,8 +25,6 @@
 
 #ifndef __DEBUG_XSB_H__
 #define __DEBUG_XSB_H__
-/* Terry's stuff */
-extern void terry_print_heap(int);
 
 #define STRIDESIZE     30
 

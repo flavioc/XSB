@@ -51,11 +51,13 @@ interpreter :-
         fail.
 
 interpreter :-
-	retractall('$$exception_ball'(_)),
+	xsb_thread_self(T),
+	retractall('$$exception_ball'(T,_)),
 	catch(interpreter_cmd_goal([]),Ball,default_error_handler(Ball)),
 	fail.
 interpreter :-
-	retractall('$$exception_ball'(_)),
+	xsb_thread_self(T),
+	retractall('$$exception_ball'(T,_)),
 	x_interp_repeat,
 	catch(interpreter_readloop([]),Ball,default_error_handler(Ball)),
 	fail.

@@ -26,6 +26,7 @@
 :- compiler_options([xpp_on]).
 #include "builtin.h"
 #include "psc_defs.h"
+#include "thread_defs_xsb.h"
 
 /*======================================================================*/
 /* Predicates to add dynamic clauses in Prolog's database:		*/
@@ -287,11 +288,12 @@ dynamic((P1,P2)) :- !, dynamic(P1), dynamic(P2).
 dynamic(Spec) :- mpa_to_skel(Spec,Head), convert_to_dyna(Head,_).
 
 convert_to_dyna(PHead,Prref) :-
+	xsb_sys_mutex_lock(MUTEX_DYNAMIC),
 	conpsc(PHead, PSC),
 	psc_type(PSC, SYMTYPE),
 	( SYMTYPE =:= T_DYNA ->			/* already dynamic */
 		psc_tabled(PSC, Tabled),
-		(Tabled =:= T_ORDI
+		(Tabled =:= 0
 		 ->	psc_ep(PSC, Prref),		/* get the Prref */
 			buff_byte(Prref, 0, Tmp),
 			(Tmp =:= 124	/* a trie_assert_inst instruction!!*/
@@ -309,9 +311,13 @@ convert_to_dyna(PHead,Prref) :-
 		db_new_prref(PSC,PHead,Prref)
 	; SYMTYPE =:= T_PRED ->		     /* compiled, illegal */
                 functor(PHead, F, A),
+		xsb_sys_mutex_unlock(MUTEX_DYNAMIC),
 		abort(['Not permitted to assert to static predicate', F/A])
-	; abort(('Asserting to something illegal (Type = ', SYMTYPE, ')'))
-	).
+	; 
+		xsb_sys_mutex_unlock(MUTEX_DYNAMIC),
+		abort(('Asserting to something illegal (Type = ', SYMTYPE, ')'))
+	),
+	xsb_sys_mutex_unlock(MUTEX_DYNAMIC).
 
 /*======================================================================*/
 /* db_new_prref(+PSC,+PHead,-Prref):					*/
@@ -612,12 +618,10 @@ check_clause(Head) :-
 
 /*======================================================================*/
 /*======================================================================*/
-
-t_assert_exit(Clause) :- abort(('Illegal Term in trie_assert:',Clause)).
-
-%t_assert(Clause) :- Clause = (_Head :- _Body), t_assert_exit(Clause).
 t_assert(Clause, Flag) :- check_assert(Clause,'trie_assert/1'),
 	t_assert_1(Clause, Flag).
+
+t_assert_exit(Clause) :- abort(('Illegal Term in trie_assert:',Clause)).
 
 t_assert_1((Head :- Body), _Flag) :- t_assert_exit((Head :- Body)).
 t_assert_1(Clause, Flag) :- 

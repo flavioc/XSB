@@ -94,7 +94,7 @@ void perproc_stat(void)
  * time of 'time_start'.
  */
 
-void total_stat(double elapstime) {
+void total_stat(CTXTdeclc double elapstime) {
 
   NodeStats
     tbtn,		/* Table Basic Trie Nodes */

@@ -23,26 +23,27 @@
 ** 
 */
 
+#include "context.h" 
 
-extern void intercept(Psc);
+extern void intercept(CTXTdeclc Psc);
 extern void init_interrupt(void);
-extern void print_statistics(int);
+extern void print_statistics(CTXTdeclc int);
 extern void print_qatom(FILE *, char *);
 extern void print_aqatom(FILE *, char *);
 extern void print_dqatom(FILE *, char *);
 extern void print_op(FILE *, char *, int);
-extern void remove_open_tables_reset_freezes(void);
+extern void remove_open_tables_reset_freezes(CTXTdecl);
 
-extern xsbBool unify(Cell, Cell);
+extern xsbBool unify(CTXTdeclc Cell, Cell);
 extern xsbBool are_identical_terms(Cell, Cell);
 
 /* don't use Cell declarations here, to avoid gcc compiler warnings;
    However, this causes warnings under Windows */
-extern int compare( const void *, const void * );
-extern int key_compare( const void *, const void * );
+extern int compare( CTXTdeclc const void *, const void * );
+extern int key_compare( CTXTdeclc const void *, const void * );
 
-extern byte *exception_handler(char *);
+extern byte *exception_handler(CTXTdeclc char *);
 
-extern Psc synint_proc(Psc, int);
-extern void add_interrupt(Cell, Cell);
-extern Cell build_interrupt_chain(void);
+extern Psc synint_proc(CTXTdeclc Psc, int);
+extern void add_interrupt(CTXTdeclc Cell, Cell);
+extern Cell build_interrupt_chain(CTXTdecl);

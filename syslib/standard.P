@@ -31,6 +31,7 @@
 
 #include "celltags_xsb.h"
 #include "flag_defs_xsb.h"
+#include "thread_defs_xsb.h"
 #include "standard.h"
 #include "char_defs.h"
 #include "psc_defs.h"
@@ -46,6 +47,7 @@
 %--------------------------%
 % File Handling Predicates %
 %--------------------------%
+
 
 set_input(Stream):- 
 	check_open_stream_or_alias(Stream,set_input/1,1,input,Stream1),
@@ -69,11 +71,9 @@ see(File) :-
 
 seeing(Str) :- stat_flag(CURRENT_INPUT, Str).
 
-seen :-  stat_flag(CURRENT_INPUT, Str),
+seen :- stat_flag(CURRENT_INPUT, Str),
 	(Str > 6 -> close(Str) ; true),
 	stat_set_flag(CURRENT_INPUT, STDIN).
-
-%--------------------------%
 
 set_output(Stream):- 
 	check_open_stream_or_alias(Stream,set_output/1,1,output,Stream1),
@@ -269,7 +269,8 @@ get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 char_blank(Ch) :- Ch >= 0, Ch =< 9.
 char_blank(Ch) :- Ch >= 11, Ch =< 32.
 
-get0(C) :- stat_flag(CURRENT_INPUT, Str), file_get(Str, C0), C = C0.
+get0(C) :- stat_flag(CURRENT_INPUT, Str), 
+	   file_get(Str, C0), C = C0.
 
 % Not in manual.
 skip(C) :- get0(C0), (C0=C ; skip(C)).
@@ -411,7 +412,8 @@ writeq(S_or_A,Term):-
 	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
 	file_write_quoted(Ostr, Term).
 
-writeq(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write_quoted(Str, T).
+writeq(T) :- stat_flag(CURRENT_OUTPUT, Str), 
+	     file_write_quoted(Str, T).
 
 write_canonical(S_or_A,Term):- 
 	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
@@ -1304,8 +1306,8 @@ set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
 %%     Do not call any of the $$ predicates below at other places.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- dynamic '$$exception_ball'/1.
-:- index '$$exception_ball'/1-0.
+:- dynamic '$$exception_ball'/2.
+:- index '$$exception_ball'/2-0.
 
 catch(Goal,_Catcher,_Handler) :-
         '$$set_scope_marker',  % should not be called in any other place
@@ -1313,10 +1315,11 @@ catch(Goal,_Catcher,_Handler) :-
 	call(Goal),
         '$$clean_up_block'.    % if no choicepoints in call(Goal) cleans up one
 catch(_Goal,Catcher,Handler) :-
-        '$$exception_ball'(Ball),  %% only ever one fact here so no CP
+	xsb_thread_self(T),
+        '$$exception_ball'(T,Ball),  %% only ever one fact here so no CP
         (
             Ball = Catcher ->
-            retractall('$$exception_ball'(_)),
+            retractall('$$exception_ball'(T,_)),
 %%	    close_open_tables,  %% leave to catcher... 
             call(Handler)
         ;
@@ -1325,7 +1328,8 @@ catch(_Goal,Catcher,Handler) :-
 
 
 throw(Ball) :-
-        asserta('$$exception_ball'(Ball)),
+	xsb_thread_self(T),
+        asserta('$$exception_ball'(T,Ball)),
         '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
 
 /* --------------------- end of file standard.P ----------------------- */

@@ -37,6 +37,7 @@
 #include "psc_xsb.h"
 #include "subp.h"
 #include "register.h"
+#include "context.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "cinterf.h"
@@ -49,6 +50,7 @@
 #include "cut_xsb.h"
 #include "flags_xsb.h"
 #include "term_psc_xsb_i.h"
+#include "thread_xsb.h"
 
 FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
 FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
@@ -72,7 +74,7 @@ extern void print_cp_backtrace();
 
 static Cell *space_for_ball_assert = 0;
 
-DllExport void call_conv xsb_throw(prolog_term Ball)
+DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 {
   Psc exceptballpsc;
   PrRef Prref;
@@ -82,25 +84,26 @@ DllExport void call_conv xsb_throw(prolog_term Ball)
   prolog_term term_to_assert;
 
   if (!space_for_ball_assert) {
-    /* 2 cells needed for term */
-    space_for_ball_assert = (Cell *) malloc(2*sizeof(Cell));
+    /* 3 cells needed for term */
+    space_for_ball_assert = (Cell *) malloc(3*sizeof(Cell));
     if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
   }
 
-  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)1, 
+  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
 					pair_psc(insert_module(0,"standard")), 
 					&isnew));
   tptr = space_for_ball_assert;
   term_to_assert = makecs(tptr);
   bld_functor(tptr, exceptballpsc); tptr++;
-  cell(tptr) = Ball;
+  bld_int(tptr, xsb_thread_self()); tptr++;
+  cell(tptr) = Ball; 
 
-  assert_code_to_buff_p(term_to_assert);
-  /* need arity of 2, for extra cut_to arg */
+  assert_code_to_buff_p(CTXTc term_to_assert);
+  /* need arity of 3, for extra cut_to arg */
   Prref = (PrRef)get_ep(exceptballpsc);
-  assert_buff_to_clref_p(term_to_assert,2,Prref,0,makeint(0),0,&clause);
+  assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
   /* reset WAM emulator state to Prolog catcher */
-  if (unwind_stack()) xsb_exit("Unwind_stack failed in xsb_throw!");
+  if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
 
   /* Resume main emulator instruction loop */
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
@@ -109,8 +112,8 @@ DllExport void call_conv xsb_throw(prolog_term Ball)
 static Cell *space_for_iso_ball = 0;
 
 /*****************/
-void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int arity,
-			      int arg) 
+void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit, 
+					char *predicate,int arity, int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -140,12 +143,13 @@ void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int
   tptr++;
   bld_ref(tptr,culprit);
 
-  xsb_throw(ball_to_throw);
+  xsb_throw(CTXTc ball_to_throw);
 
 }
 
 /*****************/
-void call_conv xsb_permission_error(char *operation,char *object,int rtrn,
+void call_conv xsb_permission_error(CTXTdeclc
+				    char *operation,char *object,int rtrn,
 				    char *predicate,int arity) 
 {
   prolog_term ball_to_throw;
@@ -176,12 +180,13 @@ void call_conv xsb_permission_error(char *operation,char *object,int rtrn,
   tptr++;
   bld_string(tptr,string_find(object,1));
 
-  xsb_throw(ball_to_throw);
+  xsb_throw(CTXTc ball_to_throw);
 
 }
 
 /*****************/
-void call_conv xsb_instantiation_error(char *predicate,int arity,int arg,char *state) 
+void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
+						 int arg,char *state) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -209,7 +214,7 @@ void call_conv xsb_instantiation_error(char *predicate,int arity,int arg,char *s
   tptr++;
   bld_copy(tptr,build_xsb_backtrace());
 
-  xsb_throw(ball_to_throw);
+  xsb_throw(CTXTc ball_to_throw);
 
 }
 
@@ -218,6 +223,7 @@ void call_conv xsb_instantiation_error(char *predicate,int arity,int arg,char *s
 
 static Cell *space_for_ball = 0;
 
+#ifndef MULTI_THREAD
 void call_conv xsb_basic_abort(char *message)
 {
   prolog_term ball_to_throw;
@@ -238,8 +244,9 @@ void call_conv xsb_basic_abort(char *message)
   bld_copy(tptr,build_xsb_backtrace());
   xsb_throw(ball_to_throw);
 }
+#endif
 
-
+#ifndef MULTI_THREAD
 DllExport void call_conv xsb_abort(char *description, ...)
 {
   char message[MAXBUFSIZE];
@@ -252,7 +259,9 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_end(args);
   xsb_basic_abort(message);
 }
+#endif
 
+#ifndef MULTI_THREAD
 /* could give this a different ball to throw */
 DllExport void call_conv xsb_bug(char *description, ...)
 {
@@ -269,18 +278,19 @@ DllExport void call_conv xsb_bug(char *description, ...)
   va_end(args);
   xsb_basic_abort(message);
 }
+#endif
 
 /*----------------------------------------------------------------------*/
 
-void arithmetic_abort(Cell op1, char *OP, Cell op2)
+void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
 {
   static XSB_StrDefine(str_op1);
   static XSB_StrDefine(str_op2);
 
   XSB_StrSet(&str_op1,"");
   XSB_StrSet(&str_op2,"");
-  print_pterm(op1, TRUE, &str_op1);
-  print_pterm(op2, TRUE, &str_op2);
+  print_pterm(CTXTc op1, TRUE, &str_op1);
+  print_pterm(CTXTc op2, TRUE, &str_op2);
   if (isref(op1) || isref(op2)) {
     xsb_abort("Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
 	      OP, "   Goal:",
@@ -296,24 +306,24 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
   }
 }
 
-void arithmetic_abort1(char *OP, Cell op)
+void arithmetic_abort1(CTXTdeclc char *OP, Cell op)
 {
   static XSB_StrDefine(str_op);
   
   XSB_StrSet(&str_op,"_Var");
-  if (! isref(op)) print_pterm(op, TRUE, &str_op);
+  if (! isref(op)) print_pterm(CTXTc op, TRUE, &str_op);
   xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
 	    (isref(op) ? "Uninstantiated argument of" : "Wrong domain in"),
 	    OP, "   Goal:", OP, str_op.string,
 	    ", probably as 2nd arg of is/2");  
 }
 
-void arithmetic_comp_abort(Cell op1, char *OP, int op2)
+void arithmetic_comp_abort(CTXTdeclc Cell op1, char *OP, int op2)
 {
   static XSB_StrDefine(str_op1);
 
   XSB_StrSet(&str_op1,"_Var");
-  if (! isref(op1)) print_pterm(op1, TRUE, &str_op1);
+  if (! isref(op1)) print_pterm(CTXTc op1, TRUE, &str_op1);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
 	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),
 	    OP, "   Goal:", str_op1.string, OP, op2);
@@ -391,14 +401,14 @@ DllExport void call_conv xsb_exit(char *description, ...)
 
 /*----------------------------------------------------------------------*/
 
-void err_handle(int description, int arg, char *f,
+void err_handle(CTXTdeclc int description, int arg, char *f,
 		int ar, char *expected, Cell found)
 {
   char message[240];	/* Allow 3 lines of error reporting.	*/
   
   switch (description) {
   case INSTANTIATION:
-    xsb_instantiation_error(f,ar,arg,NULL);
+    xsb_instantiation_error(CTXTc f,ar,arg,NULL);
     /*
     sprintf(message, 
 	    "! %s error in argument %d of %s/%d",
@@ -413,7 +423,7 @@ void err_handle(int description, int arg, char *f,
        ar, expected, (int) int_val(found));
     break;
   case TYPE:
-    xsb_type_error(expected,found,f,ar,arg);
+    xsb_type_error(CTXTc expected,found,f,ar,arg);
   case ZERO_DIVIDE:
     sprintf(message,
 	    "! %s error in %s\n! %s expected, but %lx found",
@@ -460,7 +470,7 @@ void err_handle(int description, int arg, char *f,
 
 static byte *scope_marker;
 
-int set_scope_marker()
+int set_scope_marker(CTXTdecl)
 {
   /*   printf("%x %x\n",cp_ereg(breg),ereg);*/
    scope_marker = pcreg;
@@ -474,7 +484,7 @@ int set_scope_marker()
 
 
 
-int unwind_stack()
+int unwind_stack(CTXTdecl)
 {
    byte *cp, *cpmark;
    CPtr e,b;
@@ -505,7 +515,7 @@ int unwind_stack()
 } /* unwind_stack */
 
 
-int clean_up_block()
+int clean_up_block(CTXTdecl)
 {
    if (cp_ereg(breg) > ereg) {
      /*     printf("%x %x\n",cp_ereg(breg),ereg); */

@@ -46,9 +46,9 @@
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 
-static void simplify_neg_succeeds(VariantSF);
-extern void simplify_pos_unsupported(NODEptr);
-static void simplify_pos_unconditional(NODEptr);
+static void simplify_neg_succeeds(CTXTdeclc VariantSF);
+extern void simplify_pos_unsupported(CTXTdeclc NODEptr);
+static void simplify_pos_unconditional(CTXTdeclc NODEptr);
 
 /*
  * Some new global variables ...
@@ -74,7 +74,6 @@ static DE current_de_block_top = NULL;	/* the top of current DE block */
 static DL current_dl_block_top = NULL;	/* the top of current DL block */
 static PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
 
-static char *new_block;		/* used in new_entry() */
 
 /*
  * A macro definition for allocating a new entry of DE, DL, or PNDE.  To
@@ -107,6 +106,7 @@ static char *new_block;		/* used in new_entry() */
   else if (NEXT_FREE < CURRENT_BLOCK_TOP)				\
     NEW_ENTRY = NEXT_FREE++;						\
   else {								\
+    char *new_block;							\
     if ((new_block = (char *) malloc(BLOCK_SIZE + sizeof(Cell))) == NULL)\
       xsb_abort(ABORT_MESG);						\
     *(char **) new_block = CURRENT_BLOCK;				\
@@ -226,7 +226,7 @@ unsigned long unused_dl_space(void)
  * block.  A new block will be allocate if necessary.
  */
   
-static DE intern_delay_element(Cell delay_elem)
+static DE intern_delay_element(CTXTdeclc Cell delay_elem)
 {
   DE de;
   CPtr cptr = (CPtr) cs_val(delay_elem);
@@ -293,7 +293,7 @@ static DE intern_delay_element(Cell delay_elem)
 #ifndef IGNORE_DELAYVAR
     if (arity != 0) {
       CPtr hook = NULL;
-      de_subs_fact_leaf(de) = delay_chk_insert(arity, ret_n + 1,
+      de_subs_fact_leaf(de) = delay_chk_insert(CTXTc arity, ret_n + 1,
 					       &hook);
     }
 #endif /* IGNORE_DELAYVAR */
@@ -310,14 +310,14 @@ static DE intern_delay_element(Cell delay_elem)
  * necessary.
  */
 
-static DL intern_delay_list(CPtr dlist) /* assumes that dlist != NULL	*/
+static DL intern_delay_list(CTXTdeclc CPtr dlist) /* assumes that dlist != NULL	*/
 {
   DE head = NULL, de;
   DL dl = NULL;
 
   while (islist(dlist)) {
     dlist = clref_val(dlist);
-    if ((de = intern_delay_element(cell(dlist))) != NULL) {
+    if ((de = intern_delay_element(CTXTc cell(dlist))) != NULL) {
       de_next(de) = head;
       head = de;
     }
@@ -433,7 +433,7 @@ static void record_de_usage(DL dl)
  * conditional answer is now tabled.
  */
 
-void do_delay_stuff(NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
+void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
 {
     ASI	asi;
     DL dl = NULL;
@@ -447,7 +447,7 @@ void do_delay_stuff(NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
 #endif
 
     if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
-      if ((dl = intern_delay_list(delayreg)) != NULL) {
+      if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
 	mark_conditional_answer(as_leaf, subgoal, dl);
 	record_de_usage(dl);
       }
@@ -461,10 +461,10 @@ void do_delay_stuff(NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
        * Initiate positive simplification in places where this answer
        * substitution has already been returned.
        */
-      simplify_pos_unconditional(as_leaf);
+      simplify_pos_unconditional(CTXTc as_leaf);
     }
     if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal)) {
-      simplify_neg_succeeds(subgoal);
+      simplify_neg_succeeds(CTXTc subgoal);
     }
 }
 
@@ -554,7 +554,7 @@ static xsbBool remove_dl_from_dl_list(DL dl, ASI asi)
  * simplification operations go on ...
  */
 
-static void handle_empty_dl_creation(DL dl)
+static void handle_empty_dl_creation(CTXTdeclc DL dl)
 {
   NODEptr as_leaf = dl_asl(dl);
   ASI asi = Delay(as_leaf);
@@ -586,13 +586,13 @@ static void handle_empty_dl_creation(DL dl)
      * simplify_pos_unconditional(as_leaf) will release all other DLs for
      * as_leaf, and mark as_leaf as UNCONDITIONAL.
      */
-    simplify_pos_unconditional(as_leaf);
+    simplify_pos_unconditional(CTXTc as_leaf);
     /*-- perform early completion if necessary; please preserve invariants --*/
     if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
       perform_early_completion(subgoal, subg_cp_ptr(subgoal));
       subg_compl_susp_ptr(subgoal) = NULL;
     }
-    simplify_neg_succeeds(subgoal);
+    simplify_neg_succeeds(CTXTc subgoal);
   }
 }
 
@@ -602,7 +602,7 @@ static void handle_empty_dl_creation(DL dl)
  * all DLs of as_leaf are removed (by remove_dl_from_dl_list)
  */
 
-static void handle_unsupported_answer_subst(NODEptr as_leaf)
+static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
 {
   ASI unsup_asi = Delay(as_leaf);
   VariantSF unsup_subgoal = asi_subgoal(unsup_asi);
@@ -611,11 +611,11 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
   fprintf(stddbg, ">>>> start handle_unsupported_answer_subst()\n");
 #endif
 
-  delete_branch(as_leaf, &subg_ans_root_ptr(unsup_subgoal));
-  simplify_pos_unsupported(as_leaf);
+  delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal));
+  simplify_pos_unsupported(CTXTc as_leaf);
   if (is_completed(unsup_subgoal)) {
     if (subgoal_fails(unsup_subgoal)) {
-      simplify_neg_fails(unsup_subgoal);
+      simplify_neg_fails(CTXTc unsup_subgoal);
     }
   }
   free(unsup_asi);
@@ -658,7 +658,7 @@ void release_all_dls(ASI asi)
  * delay lists that contain them.
  */
 
-static void simplify_pos_unconditional(NODEptr as_leaf)
+static void simplify_pos_unconditional(CTXTdeclc NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
   PNDE pde;
@@ -678,7 +678,7 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
     dl = pnde_dl(pde);
     remove_pnde(asi_pdes(asi), pde);
     if (!remove_de_from_dl(de, dl))
-      handle_empty_dl_creation(dl);
+      handle_empty_dl_creation(CTXTc dl);
   }
   /*
    * Now this DelayInfo `asi' does not contain any useful info, so we can
@@ -694,7 +694,7 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
  * that contain them.
  */
 
-void simplify_neg_fails(VariantSF subgoal)
+void simplify_neg_fails(CTXTdeclc VariantSF subgoal)
 {
   PNDE nde;
   DE de;
@@ -712,7 +712,7 @@ void simplify_neg_fails(VariantSF subgoal)
     dl = pnde_dl(nde);
     remove_pnde(subg_nde_list(subgoal), nde);
     if (!remove_de_from_dl(de, dl))
-      handle_empty_dl_creation(dl);
+      handle_empty_dl_creation(CTXTc dl);
   }
 
 #ifdef DEBUG_DELAYVAR
@@ -731,7 +731,7 @@ void simplify_neg_fails(VariantSF subgoal)
  * in the DL has also to be released.
  */
 
-static void simplify_neg_succeeds(VariantSF subgoal)
+static void simplify_neg_succeeds(CTXTdeclc VariantSF subgoal)
 {
   PNDE nde;
   DL dl;
@@ -765,7 +765,7 @@ static void simplify_neg_succeeds(VariantSF subgoal)
 	de = tmp_de; /* next DE */
       } /* while */
       if (!remove_dl_from_dl_list(dl, used_asi)) {
-	handle_unsupported_answer_subst(used_as_leaf);
+	handle_unsupported_answer_subst(CTXTc used_as_leaf);
       }
     } /* if */
   } /* while */
@@ -779,7 +779,7 @@ static void simplify_neg_succeeds(VariantSF subgoal)
  * pointing to that AnswerSubstitution.
  */
 
-void simplify_pos_unsupported(NODEptr as_leaf)
+void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
   PNDE pde;
@@ -814,7 +814,7 @@ void simplify_pos_unsupported(NODEptr as_leaf)
 	de = tmp_de; /* next DE */
       } /* while */
       if (!remove_dl_from_dl_list(dl, used_asi)) {
-	handle_unsupported_answer_subst(used_as_leaf);
+	handle_unsupported_answer_subst(CTXTc used_as_leaf);
       }
     } /* if */
   } /* while */
@@ -875,18 +875,18 @@ void abolish_wfs_space(void)
  * Two functions added for builtin force_truth_value/2.
  */
 
-void force_answer_true(NODEptr as_leaf)
+void force_answer_true(CTXTdeclc NODEptr as_leaf)
 {
   VariantSF subgoal;
   
   if (is_conditional_answer(as_leaf)) {
     subgoal = asi_subgoal(Delay(as_leaf));
-    simplify_pos_unconditional(as_leaf);
-    simplify_neg_succeeds(subgoal);
+    simplify_pos_unconditional(CTXTc as_leaf);
+    simplify_neg_succeeds(CTXTc subgoal);
   }
 }
 
-void force_answer_false(NODEptr as_leaf)
+void force_answer_false(CTXTdeclc NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
   VariantSF subgoal;
@@ -894,10 +894,10 @@ void force_answer_false(NODEptr as_leaf)
   if (is_conditional_answer(as_leaf)) {
     subgoal = asi_subgoal(asi);
     release_all_dls(asi);
-    delete_branch(as_leaf, &subg_ans_root_ptr(subgoal));
-    simplify_pos_unsupported(as_leaf);
+    delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(subgoal));
+    simplify_pos_unsupported(CTXTc as_leaf);
     mark_subgoal_failed(subgoal);
-    simplify_neg_fails(subgoal);
+    simplify_neg_fails(CTXTc subgoal);
   }
 }
 

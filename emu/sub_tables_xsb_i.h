@@ -55,7 +55,7 @@
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-inline static  CPtr extract_template_from_lookup(CPtr ans_tmplt) {
+inline static  CPtr extract_template_from_lookup(CTXTdeclc CPtr ans_tmplt) {
 
   int i;
 
@@ -69,7 +69,7 @@ inline static  CPtr extract_template_from_lookup(CPtr ans_tmplt) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 inline static
-CPtr reconstruct_template_for_producer(TabledCallInfo *call_info,
+CPtr reconstruct_template_for_producer(CTXTdeclc TabledCallInfo *call_info,
 				       SubProdSF subsumer, CPtr ans_tmplt) {
 
   int sizeAnsTmplt;
@@ -114,7 +114,7 @@ CPtr reconstruct_template_for_producer(TabledCallInfo *call_info,
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-inline static  CPtr extract_template_from_insertion(CPtr ans_tmplt) {
+inline static  CPtr extract_template_from_insertion(CTXTdeclc CPtr ans_tmplt) {
 
   int i;
 
@@ -152,7 +152,7 @@ inline static  CPtr extract_template_from_insertion(CPtr ans_tmplt) {
  * root node).
  */
 
-inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
+inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct,
 					    CallLookupResults *results) {
 
   BTNptr btRoot, btn;
@@ -187,7 +187,7 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
   if (CallInfo_CallArity(*callStruct) == 0) {
     xsbBool isNew;
 
-    btn = bt_escape_search(btRoot, &isNew);
+    btn = bt_escape_search(CTXTc btRoot, &isNew);
     if ( isNew )
       NumSubOps_ProducerCall++;
     else {
@@ -212,7 +212,7 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
   TermStack_PushLowToHighVector(CallInfo_Arguments(*callStruct),
 				CallInfo_CallArity(*callStruct));
 
-  btn = iter_sub_trie_lookup(btRoot, &path_type);
+  btn = iter_sub_trie_lookup(CTXTc btRoot, &path_type);
 
   /*
    * If this subsuming call maintains its own answer set, then this call
@@ -231,9 +231,9 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
     CallLUR_Subsumer(*results) = NULL;  /* no SF found, so no subsumer */
     CallLUR_VariantFound(*results) = NO;
     CallLUR_Leaf(*results) =
-      bt_insert(btRoot,stl_restore_variant_cont(),NO_INSERT_SYMBOL);
+      bt_insert(CTXTc btRoot,stl_restore_variant_cont(CTXT),NO_INSERT_SYMBOL);
     CallLUR_VarVector(*results) =
-      extract_template_from_insertion(answer_template);
+      extract_template_from_insertion(CTXTc answer_template);
     Trail_Unwind_All;
 #ifdef DEBUG_CALL_CHK_INS
     if ( strcmp(targetGN,goal_name) == 0 ) {
@@ -264,7 +264,7 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
 	else
 	  NumSubOps_SubsumedCall++;
       }
-      answer_template = extract_template_from_lookup(answer_template);
+      answer_template = extract_template_from_lookup(CTXTc answer_template);
       Trail_Unwind_All;
     }
     else {
@@ -284,7 +284,7 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
 	NumSubOps_SubsumedCall++;
       Trail_Unwind_All;
       answer_template =
-	reconstruct_template_for_producer(callStruct, sf_with_ans_set,
+	reconstruct_template_for_producer(CTXTc callStruct, sf_with_ans_set,
 					  answer_template);
     }
 
@@ -304,7 +304,7 @@ inline static  void subsumptive_call_search(TabledCallInfo *callStruct,
     if ( (path_type != VARIANT_PATH) && (! is_completed(sf_with_ans_set)) ) {
       NumSubOps_SubsumedCallEntry++;
       CallLUR_Leaf(*results) =
-	bt_insert(btRoot,stl_restore_variant_cont(),NO_INSERT_SYMBOL);
+	bt_insert(CTXTc btRoot,stl_restore_variant_cont(CTXT),NO_INSERT_SYMBOL);
       Trail_Unwind_All;
 #ifdef DEBUG_CALL_CHK_INS
       if ( strcmp(targetGN,goal_name) == 0 ) {
@@ -354,7 +354,7 @@ inline static  void *newAnswerSet(int n) {
  */
 
 inline static
-TSTNptr subsumptive_answer_search(SubProdSF sf, int nTerms,
+TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
 				  CPtr answerVector, xsbBool *isNew) {
 
   TSTNptr root, tstn;
@@ -363,7 +363,7 @@ TSTNptr subsumptive_answer_search(SubProdSF sf, int nTerms,
   if ( IsNULL(subg_ans_root_ptr(sf)) )
     subg_ans_root_ptr(sf) = newAnswerSet(nTerms);
   root = (TSTNptr)subg_ans_root_ptr(sf);
-  tstn = subsumptive_tst_search( root, nTerms, answerVector,
+  tstn = subsumptive_tst_search( CTXTc root, nTerms, answerVector,
 				 ProducerSubsumesSubgoals(sf), isNew );
   if ( *isNew )
     NumSubOps_AnswerInsert++;

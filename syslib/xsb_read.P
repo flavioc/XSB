@@ -29,6 +29,7 @@
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
+#include "thread_defs_xsb.h"
 
 %   file_read(+File, -Answer).
 file_read(File, Answer) :- 
@@ -40,18 +41,21 @@ file_read(File, Answer) :-
 %   error (and doesn''t try again to read another term.)
 
 file_read_foe(File, Answer, Variables) :-
+	xsb_sys_mutex_lock(MUTEX_IO),
 	stat_set_flag(51, File),
 	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
 	read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
 	read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
 	read_all(LeftOver),			% precedence
-	Answer = Term.
+	Answer = Term,
+	xsb_sys_mutex_unlock(MUTEX_IO).
 
 %   file_read(+File, -Answer, -Variables)
 %   reads a term from the current input stream and unifies it with
 %   Answer.  Variables is bound to a list of [Atom=Variable] pairs.
 
 file_read(File, Answer, Variables) :-
+	xsb_sys_mutex_lock(MUTEX_IO),
 	stat_set_flag(51, File),
 	repeat,	% reading terms until you find one with no syntax errors
 	    term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
@@ -62,7 +66,8 @@ file_read(File, Answer, Variables) :-
 	      Term = Term			% To avoid a lamp variable
 	    ),
 	!,
-	Answer = Term.
+	Answer = Term,
+	xsb_sys_mutex_unlock(MUTEX_IO).
 
 %   read_all(+Tokens)
 %   checks that there are no unparsed tokens left over.

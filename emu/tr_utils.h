@@ -25,31 +25,33 @@
 #ifndef __TR_UTILS_H__
 #define __TR_UTILS_H__
 
-extern VariantSF get_variant_sf(Cell, TIFptr, Cell *);
-extern SubProdSF get_subsumer_sf(Cell, TIFptr, Cell *);
+#include "context.h"
+
+extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
+extern SubProdSF get_subsumer_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern BTNptr get_trie_root(BTNptr);
-extern VariantSF get_call(Cell, Cell *);
-extern Cell build_ret_term(int, Cell[]);
-extern void construct_answer_template(Cell, SubProdSF, Cell[]);
-extern void breg_retskel(void);
-extern void delete_predicate_table(TIFptr);
+extern VariantSF get_call(CTXTdeclc Cell, Cell *);
+extern Cell build_ret_term(CTXTdeclc int, Cell[]);
+extern void construct_answer_template(CTXTdeclc Cell, SubProdSF, Cell[]);
+extern void breg_retskel(CTXTdecl);
+extern void delete_predicate_table(CTXTdeclc TIFptr);
 extern void reclaim_del_ret_list(VariantSF);
-extern void delete_return(BTNptr, VariantSF);
+extern void delete_return(CTXTdeclc BTNptr, VariantSF);
 extern void init_newtrie(void);
-extern void delete_branch(BTNptr, BTNptr *);
+extern void delete_branch(CTXTdeclc BTNptr, BTNptr *);
 extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);
-extern void reclaim_uninterned_nr(long rootidx);
-extern void delete_trie(BTNptr);
+extern void reclaim_uninterned_nr(CTXTdeclc long rootidx);
+extern void delete_trie(CTXTdeclc BTNptr);
 
 extern xsbBool has_unconditional_answers(VariantSF);
 
 extern Integer  newtrie(void);
-extern void trie_intern(void);
-extern int  trie_interned(void);
-extern void trie_dispose(void);
-extern void trie_dispose_nr(void);
-extern void delete_interned_trie(Integer);
+extern void trie_intern(CTXTdecl);
+extern int  trie_interned(CTXTdecl);
+extern void trie_dispose(CTXTdecl);
+extern void trie_dispose_nr(CTXTdecl);
+extern void delete_interned_trie(CTXTdeclc Integer);
 extern void trie_undispose(long, BTNptr);
 extern xsbBool check_table_cut;
 

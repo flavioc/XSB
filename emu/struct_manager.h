@@ -218,6 +218,7 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
  */
 #define SM_AllocateStruct(SM,pStruct) {		\
 						\
+   SYS_MUTEX_LOCK( MUTEX_SM ); 			\
    if ( IsNonNULL(SM_FreeList(SM)) ) {		\
      SM_AllocateFree(SM,pStruct);		\
    }						\
@@ -226,6 +227,7 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
        smAllocateBlock(&SM);			\
      SM_AllocateFromBlock(SM,pStruct);		\
    }						\
+   SYS_MUTEX_UNLOCK( MUTEX_SM ); 		\
  }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -239,8 +241,10 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
  *  the chain must be deallocated individually.
  */
 #define SM_DeallocateStructList(SM,pHead,pTail) {	\
+   SYS_MUTEX_LOCK( MUTEX_SM ); 				\
    SMFL_NextFreeStruct(pTail) = SM_FreeList(SM);	\
    SM_FreeList(SM) = pHead;				\
+   SYS_MUTEX_UNLOCK( MUTEX_SM ); 			\
  }
 
 #define SM_DeallocateStruct(SM,pStruct)		\

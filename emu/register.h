@@ -27,6 +27,8 @@
 
 #include "psc_xsb.h"
 
+#ifndef MULTI_THREAD
+
 /* Argument Registers
    ------------------ */
 #define MAX_REGS    257
@@ -77,6 +79,8 @@ extern CPtr root_address;
 /*---- for splitting stack mode ----------------------------------------*/
 
 extern CPtr ebreg;	/* breg into environment stack */
+
+#endif
 
 
 #endif /* __REGISTER_H__ */

@@ -75,5 +75,5 @@ extern CPtr gl_bot, gl_top ;
 extern void findall_free(int);
 extern int get_more_chunk(void);
 extern void findall_copy_to_heap(Cell, CPtr, CPtr *);
-extern int findall_init_c(void);
+extern int findall_init_c(CTXTdecl);
 

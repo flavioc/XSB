@@ -24,22 +24,22 @@
 
 
   case IS_ATTV:	/* r1: ?term */
-    return isattv(ptoc_tag(1));
+    return isattv(ptoc_tag(CTXTc 1));
 
   case VAR:		/* r1: ?term */
-    return isref(ptoc_tag(1));
+    return isref(ptoc_tag(CTXTc 1));
     
   case NONVAR:	/* r1: ?term */
-    return isnonvar(ptoc_tag(1));
+    return isnonvar(ptoc_tag(CTXTc 1));
     
   case ATOM:		/* r1: ?term */
-    return isatom(ptoc_tag(1));
+    return isatom(ptoc_tag(CTXTc 1));
     
   case INTEGER:	/* r1: ?term */ {
      Cell tmp1;
      Psc tmp2;
 
-      Cell tag = ptoc_tag(1);
+      Cell tag = ptoc_tag(CTXTc 1);
       if (isinteger(tag)) return TRUE;
       if (!isconstr(tag)) return FALSE;
       tmp1 = dec_addr(tag);
@@ -53,45 +53,45 @@
   }
     
   case REAL:		/* r1: ?term */
-    return isfloat(ptoc_tag(1));
+    return isfloat(ptoc_tag(CTXTc 1));
     
   case NUMBER:	/* r1: ?term */ {
-      Cell tag = ptoc_tag(1);
+      Cell tag = ptoc_tag(CTXTc 1);
       return (isnumber(tag) || isboxedinteger(tag));
   }
   case ATOMIC: {	/* r1: ?term */
-    Cell term = ptoc_tag(1);
+    Cell term = ptoc_tag(CTXTc 1);
     return (isatomic(term) || isboxedinteger(term));
   }
 
   case COMPOUND: {	/* r1: ?term */
-    Cell term = ptoc_tag(1);
+    Cell term = ptoc_tag(CTXTc 1);
     return (((isconstr(term) && get_arity(get_str_psc(term))) ||
 	    (islist(term))) && !isboxedinteger(term));
   }
 
   case CALLABLE: {	/* r1: ?term */
-    Cell term = ptoc_tag(1);
+    Cell term = ptoc_tag(CTXTc 1);
     return (isconstr(term) || isstring(term) || islist(term));
   }
 
   case IS_LIST:	/* r1: ?term */
-    return is_proper_list(ptoc_tag(1));
+    return is_proper_list(ptoc_tag(CTXTc 1));
     
   case IS_MOST_GENERAL_TERM: /* r1: ?term */
-    return is_most_general_term(ptoc_tag(1)); 
+    return is_most_general_term(ptoc_tag(CTXTc 1)); 
 
   case FUNCTOR:	/* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
-    return functor_builtin();
+    return functor_builtin(CTXT);
     
   case ARG:	/* r1: +index (int); r2: +term; r3: ?arg (term) */
-    return arg_builtin();
+    return arg_builtin(CTXT);
     
   case UNIV:	/* r1: ?term; r2: ?list	*/
-    return univ_builtin();
+    return univ_builtin(CTXT);
     
   case HiLog_ARG:	/* r1: +index (int); r2: +term; r3: ?arg (term) */
-    return hilog_arg();
+    return hilog_arg(CTXT);
 
   case HiLog_UNIV:	/* r1: ?term; r2: ?list	*/
     break;
@@ -99,50 +99,50 @@
   /* atom_chars should be redefined to return char-atoms rather than ASCII
      codes */ 
   case ATOM_CHARS:	/* r1: ?term; r2: ?character symbol list	*/
-    return atom_to_list(ATOM_CHARS);
+    return atom_to_list(CTXTc ATOM_CHARS);
   case ATOM_CODES:	/* r1: ?term; r2: ?character ascii code list	*/
-    return atom_to_list(ATOM_CODES);
+    return atom_to_list(CTXTc ATOM_CODES);
     
   /* number_chars should be redefined to return digit-atoms */
   case NUMBER_CHARS:	/* r1: ?term; r2: ?character symbol list	*/
-    return number_to_list(NUMBER_CHARS);
+    return number_to_list(CTXTc NUMBER_CHARS);
   case NUMBER_CODES:	/* r1: ?term; r2: ?character code list	*/
-    return number_to_list(NUMBER_CODES);
+    return number_to_list(CTXTc NUMBER_CODES);
   case NUMBER_DIGITS:	/* r1: ?term; r2: ?digit list	*/
-    return number_to_list(NUMBER_DIGITS);
+    return number_to_list(CTXTc NUMBER_DIGITS);
     
     
   case PUT: {	/* r1: +integer	*/
-    Cell term = ptoc_tag(1);
+    Cell term = ptoc_tag(CTXTc 1);
     if (isinteger(term)) {
       putc(int_val(term), fileptr(flags[CURRENT_OUTPUT]));
     } else {
-      if (isnonvar(term)) err_handle(TYPE, 1, "put", 1, "integer", term);
+      if (isnonvar(term)) err_handle(CTXTc TYPE, 1, "put", 1, "integer", term);
       else err(INSTANTIATION, 1, "put", 1);
     }
     break;
   }
   case TAB: {	/* r1: +integer	*/
-    Cell term = ptoc_tag(1);
+    Cell term = ptoc_tag(CTXTc 1);
     if (isinteger(term)) {
       int  i;
       for (i=1; i<=int_val(term); i++)
 	putc(' ', fileptr(flags[CURRENT_OUTPUT]));
     } else {
-      if (isnonvar(term)) err_handle(TYPE, 1, "tab", 1, "integer", term);
+      if (isnonvar(term)) err_handle(CTXTc TYPE, 1, "tab", 1, "integer", term);
       else err(INSTANTIATION, 1, "tab", 1);
     }
     break;
   }
 
   case SORT:		/* r1: +list of terms; r2: ?sorted list of terms */
-  return sort();
+  return sort(CTXT);
     
   case KEYSORT:	/* r1: +list of terms of the form Key-Value;	*/
     /* r2: ?sorted list of terms			*/
-   return keysort();
+   return keysort(CTXT);
 
   case PARSORT:	/* r1: +list of terms of the form Key-Value;	*/
     /* r2: +list of sort paramater specs			*/
     /* r3: ?sorted list of terms			*/
-   return parsort();
+   return parsort(CTXT);

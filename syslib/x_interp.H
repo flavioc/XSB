@@ -38,7 +38,7 @@
 :- import abort/0, call/1, call_c/1, call_expose/1, catch/3, goal_cut_trans/3,
           atom_codes/2, seeing/1, telling/1, see/1, tell/1, seen/0, told/0
      from standard.
-:- import '$$exception_ball'/1 from standard.
+:- import '$$exception_ball'/2 from standard.
 :- import close_open_tables/0, conname/2, 
           intern_string/2, is_xwammode/1, 
           psc_prop/2, psc_set_prop/2, psc_set_type/2, 
@@ -58,4 +58,6 @@
 :- import conset/2, conget/2 from gensym.
 
 :- import banner_control/1 from banner.
+
+:- import xsb_thread_self/1 from thread.
 

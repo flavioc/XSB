@@ -85,8 +85,8 @@ struct fmt_spec {
   char *fmt;
 };
 
-struct fmt_spec *next_format_substr(char*, int, int);
-char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
+struct fmt_spec *next_format_substr(CTXTdeclc char*, int, int);
+char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
 
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
@@ -160,22 +160,22 @@ char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 static XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
 static XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
 
-xsbBool fmt_write(void);
-xsbBool fmt_write_string(void);
-xsbBool fmt_read(void);
+xsbBool fmt_write(CTXTdecl);
+xsbBool fmt_write_string(CTXTdecl);
+xsbBool fmt_read(CTXTdecl);
 
 
 #include "ptoc_tag_xsb_i.h"
     	    
 
-xsbBool formatted_io (void)
+xsbBool formatted_io (CTXTdecl)
 {
-  switch (ptoc_int(1)) {
-  case FMT_WRITE: return fmt_write();
-  case FMT_WRITE_STRING: return fmt_write_string();
-  case FMT_READ: return fmt_read();
+  switch (ptoc_int(CTXTc 1)) {
+  case FMT_WRITE: return fmt_write(CTXT);
+  case FMT_WRITE_STRING: return fmt_write_string(CTXT);
+  case FMT_READ: return fmt_read(CTXT);
   default:
-    xsb_abort("[FORMATTED_IO] Invalid operation number: %d", ptoc_int(1));
+    xsb_abort("[FORMATTED_IO] Invalid operation number: %d", ptoc_int(CTXTc 1));
   }
   return TRUE; /* just to get rid of compiler warning */
 }
@@ -190,7 +190,7 @@ xsbBool formatted_io (void)
 ----------------------------------------------------------------------*/
 
 
-xsbBool fmt_write(void)
+xsbBool fmt_write(CTXTdecl)
 {
   char *Fmt=NULL, *str_arg;
   static char aux_msg[50];
@@ -203,16 +203,16 @@ xsbBool fmt_write(void)
 						 with the *.* format         */
   XSB_StrSet(&StrArgBuf,"");
 
-  SET_FILEPTR(fptr, ptoc_int(2));
-  Fmt_term = reg_term(3);
-  if (islist(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term,&FmtBuf,"FMT_WRITE","format string");
+  SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+  Fmt_term = reg_term(CTXTc 3);
+  if (is_list(Fmt_term))
+    Fmt = p_charlist_to_c_string(CTXTc Fmt_term,&FmtBuf,"FMT_WRITE","format string");
   else if (isstring(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_WRITE] Format must be an atom or a character string");
 
-  ValTerm = reg_term(4);
+  ValTerm = reg_term(CTXTc 4);
   if (isconstr(ValTerm))
     Arity = get_arity(get_str_psc(ValTerm));
   else if (isref(ValTerm))
@@ -220,15 +220,15 @@ xsbBool fmt_write(void)
     Arity = 0;
   else {
     /* assume single argument; convert ValTerm into arg(val) */
-    prolog_term TmpValTerm=p2p_new();
+    prolog_term TmpValTerm=p2p_new(CTXT);
 
-    c2p_functor("arg", 1, TmpValTerm);
+    c2p_functor(CTXTc "arg", 1, TmpValTerm);
     if (isstring(ValTerm))
-      c2p_string(string_val(ValTerm), p2p_arg(TmpValTerm,1));
+      c2p_string(CTXTc string_val(ValTerm), p2p_arg(TmpValTerm,1));
     else if (isinteger(ValTerm)|isboxedinteger(ValTerm))
-      c2p_int(oint_val(ValTerm), p2p_arg(TmpValTerm,1));
+      c2p_int(CTXTc oint_val(ValTerm), p2p_arg(TmpValTerm,1));
     else if (isfloat(ValTerm))
-      c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
+      c2p_float(CTXTc float_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
       xsb_abort("Usage: fmt_write([+IOport,] +FmtStr, +args(A1,A2,...))");
 
@@ -236,7 +236,7 @@ xsbBool fmt_write(void)
     Arity = 1;
   }
 
-  current_fmt_spec = next_format_substr(Fmt,
+  current_fmt_spec = next_format_substr(CTXTc Fmt,
 					1,   /* initialize    	      	     */
 					0);  /* write    	      	     */
   xsb_segfault_message =
@@ -273,7 +273,7 @@ xsbBool fmt_write(void)
     } else if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
       XSB_StrSet(&StrArgBuf,"");
-      print_pterm(Arg, TRUE, &StrArgBuf);
+      print_pterm(CTXTc Arg, TRUE, &StrArgBuf);
       PRINT_ARG(StrArgBuf.string);
     } else if (isstring(Arg) && !isnil(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
@@ -282,7 +282,7 @@ xsbBool fmt_write(void)
     } else if (islist(Arg) || isnil(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, &StrArgBuf, "FMT_WRITE", aux_msg);
+      str_arg = p_charlist_to_c_string(CTXTc Arg, &StrArgBuf, "FMT_WRITE", aux_msg);
       PRINT_ARG(str_arg);
     } else if (isinteger(Arg)|isboxedinteger(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE");
@@ -295,7 +295,7 @@ xsbBool fmt_write(void)
     } else {
       xsb_abort("[FMT_WRITE] Argument %d has illegal type", i);
     }
-    current_fmt_spec = next_format_substr(Fmt,
+    current_fmt_spec = next_format_substr(CTXTc Fmt,
 					  0 /* don't initialize */,
 					  0 /* write */ );
   }
@@ -332,7 +332,7 @@ int sprintf(char *s, const char *format, /* args */ ...);
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE/2
 #endif
 
-xsbBool fmt_write_string(void)
+xsbBool fmt_write_string(CTXTdecl)
 {
   char *Fmt=NULL, *str_arg;
   static XSB_StrDefine(OutString);
@@ -349,19 +349,19 @@ xsbBool fmt_write_string(void)
   XSB_StrSet(&StrArgBuf,"");
   XSB_StrSet(&OutString,"");
 
-  if (isnonvar(reg_term(2)))
+  if (isnonvar(reg_term(CTXTc 2)))
     xsb_abort("[FMT_WRITE_STRING] Arg 1 must be an unbound variable");
   
-  Fmt_term = reg_term(3);
+  Fmt_term = reg_term(CTXTc 3);
   if (islist(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
+    Fmt = p_charlist_to_c_string(CTXTc Fmt_term, &FmtBuf,
 				 "FMT_WRITE_STRING", "format string");
   else if (isstring(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_WRITE_STRING] Format must be an atom or a character string");
 
-  ValTerm = reg_term(4);
+  ValTerm = reg_term(CTXTc 4);
   if (isconstr(ValTerm))
     Arity = get_arity(get_str_psc(ValTerm));
   else if (isref(ValTerm))
@@ -369,15 +369,15 @@ xsbBool fmt_write_string(void)
     Arity = 0;
   else {
     /* assume single argument; convert ValTerm into arg(val) */
-    prolog_term TmpValTerm=p2p_new();
+    prolog_term TmpValTerm=p2p_new(CTXT);
 
-    c2p_functor("arg", 1, TmpValTerm);
+    c2p_functor(CTXTc "arg", 1, TmpValTerm);
     if (isstring(ValTerm))
-      c2p_string(string_val(ValTerm), p2p_arg(TmpValTerm,1));
+      c2p_string(CTXTc string_val(ValTerm), p2p_arg(TmpValTerm,1));
     else if (isinteger(ValTerm)|isboxedinteger(ValTerm))
-      c2p_int(oint_val(ValTerm), p2p_arg(TmpValTerm,1));
+      c2p_int(CTXTc oint_val(ValTerm), p2p_arg(TmpValTerm,1));
     else if (isfloat(ValTerm))
-      c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
+      c2p_float(CTXTc float_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
       xsb_abort("Usage: fmt_write_string(-OutStr, +FmtStr, +args(A1,A2,...))");
 
@@ -385,7 +385,7 @@ xsbBool fmt_write_string(void)
     Arity = 1;
   }
 
-  current_fmt_spec = next_format_substr(Fmt,
+  current_fmt_spec = next_format_substr(CTXTc Fmt,
 					1,  /* initialize     	      	     */
 					0); /* write     	      	     */
   xsb_segfault_message =
@@ -422,7 +422,7 @@ xsbBool fmt_write_string(void)
     } else if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
       XSB_StrSet(&StrArgBuf,"");
-      print_pterm(Arg, TRUE, &StrArgBuf);
+      print_pterm(CTXTc Arg, TRUE, &StrArgBuf);
       SPRINT_ARG(StrArgBuf.string);
     } else if (isstring(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
@@ -431,7 +431,7 @@ xsbBool fmt_write_string(void)
     } else if (islist(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, &StrArgBuf,
+      str_arg = p_charlist_to_c_string(CTXTc Arg, &StrArgBuf,
 				       "FMT_WRITE_STRING", aux_msg);
       SPRINT_ARG(str_arg);
     } else if (isinteger(Arg)|isboxedinteger(Arg)) {
@@ -445,7 +445,7 @@ xsbBool fmt_write_string(void)
     } else {
       xsb_abort("[FMT_WRITE_STRING] Argument %d has illegal type", i);
     }
-    current_fmt_spec = next_format_substr(Fmt,
+    current_fmt_spec = next_format_substr(CTXTc Fmt,
 					  0 /* don't initialize */,
 					  0 /* write */ );
   }
@@ -462,7 +462,7 @@ xsbBool fmt_write_string(void)
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
      Therefore, must use string_find(..., 1). */
-  ctop_string(2, string_find(OutString.string,1));
+  ctop_string(CTXTc 2, string_find(OutString.string,1));
   
   return TRUE;
 }
@@ -479,7 +479,7 @@ xsbBool fmt_write_string(void)
       Status: 0 OK, -1 eof 
 ----------------------------------------------------------------------*/
 
-xsbBool fmt_read(void)
+xsbBool fmt_read(CTXTdecl)
 {
   char *Fmt=NULL;
   prolog_term AnsTerm, Arg, Fmt_term;
@@ -493,24 +493,24 @@ xsbBool fmt_read(void)
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
 
-  SET_FILEPTR(fptr, ptoc_int(2));
-  Fmt_term = reg_term(3);
+  SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+  Fmt_term = reg_term(CTXTc 3);
   if (islist(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term,&FmtBuf,"FMT_READ","format string");
+    Fmt = p_charlist_to_c_string(CTXTc Fmt_term,&FmtBuf,"FMT_READ","format string");
   else if (isstring(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_READ] Format must be an atom or a character string");
 
-  AnsTerm = reg_term(4);
+  AnsTerm = reg_term(CTXTc 4);
   if (isconstr(AnsTerm))
     Arity = get_arity(get_str_psc(AnsTerm));
   else if (isref(AnsTerm)) {
     /* assume that only one input val is reuired */
-    prolog_term TmpAnsTerm=p2p_new(), TmpArg;
+    prolog_term TmpAnsTerm=p2p_new(CTXT), TmpArg;
 
     Arity = 1;
-    c2p_functor("arg", 1, TmpAnsTerm);
+    c2p_functor(CTXTc "arg", 1, TmpAnsTerm);
     /* The following is a bit tricky: Suppose AnsTerm was X.
        We unify AnsTerm (which is avriable) with
        TmpArg, the argument of the new term TmpAnsTerm.
@@ -518,16 +518,16 @@ xsbBool fmt_read(void)
        code would think that AnsTerm was arg(X).
        Eventually, X will get bound to the result */
     TmpArg = p2p_arg(TmpAnsTerm,1);
-    p2p_unify(TmpArg, AnsTerm);
+    p2p_unify(CTXTc TmpArg, AnsTerm);
     AnsTerm = TmpAnsTerm;
   } else
     xsb_abort("Usage: fmt_read([IOport,] FmtStr, args(A1,A2,...), Feedback)");
 
   /* status variable */
-  if (isnonvar(reg_term(5)))
+  if (isnonvar(reg_term(CTXTc 5)))
     xsb_abort("[FMT_READ] Arg 4 must be an unbound variable");
 
-  current_fmt_spec = next_format_substr(Fmt,
+  current_fmt_spec = next_format_substr(CTXTc Fmt,
 					1,   /* initialize    	      	     */
 					1);  /* read    	      	     */
   XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
@@ -568,7 +568,7 @@ xsbBool fmt_read(void)
 	else return FALSE;
       }
       if (isref(Arg))
-	c2p_string(StrArgBuf.string,Arg);
+	c2p_string(CTXTc StrArgBuf.string,Arg);
       else if (strcmp(StrArgBuf.string, string_val(Arg)))
 	return FALSE;
       break;
@@ -580,7 +580,7 @@ xsbBool fmt_read(void)
       curr_chars_consumed = int_arg;
       int_arg += chars_accumulator;
       if (isref(Arg))
-	c2p_int(int_arg,Arg);
+	c2p_int(CTXTc int_arg,Arg);
       else xsb_abort("[FMT_READ] Argument %i must be a variable", i);
       break;
     case 'i':
@@ -593,7 +593,7 @@ xsbBool fmt_read(void)
 	else return FALSE;
       }
       if (isref(Arg))
-	c2p_int(int_arg,Arg);
+	c2p_int(CTXTc int_arg,Arg);
       else if (int_arg != (Integer)oint_val(Arg)) return FALSE;
       break;
     case 'f':
@@ -603,7 +603,7 @@ xsbBool fmt_read(void)
       if (!isref(Arg)) return FALSE;
       /* if no match, leave prolog variable uninstantiated */
       if (curr_assignment <= 0) break;
-      c2p_float(float_arg, Arg);
+      c2p_float(CTXTc float_arg, Arg);
       break;
     default:
       xsb_abort("[FMT_READ] Unsupported format specifier for argument %d", i);
@@ -618,7 +618,7 @@ xsbBool fmt_read(void)
     else
       break;
 
-    current_fmt_spec = next_format_substr(Fmt,
+    current_fmt_spec = next_format_substr(CTXTc Fmt,
 					  0 /* don't initialize */,
 					  1 /* read */ );
     XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
@@ -640,7 +640,7 @@ xsbBool fmt_read(void)
     number_of_successes = -1;
 
  EXIT_READ:
-  ctop_int(5, number_of_successes);
+  ctop_int(CTXTc 5, number_of_successes);
   return TRUE;
 }
 
@@ -662,8 +662,8 @@ add clear findall stack at toploop
 ***/
 static int findall_chunk_index;
 
-CPtr init_term_buffer() {
-  findall_chunk_index = findall_init_c();
+CPtr init_term_buffer(CTXTdecl) {
+  findall_chunk_index = findall_init_c(CTXT);
   current_findall = findall_solutions + findall_chunk_index;
   return current_findall->top_of_chunk ;
 }
@@ -676,7 +676,7 @@ CPtr init_term_buffer() {
 
 #define free_term_buffer() findall_free(findall_chunk_index)
 
-static int read_can_error(FILE *filep, STRFILE *instr, int prevchar, Cell prologvar)
+static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, Cell prologvar)
 {
   char *ptr;
 
@@ -707,7 +707,7 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar, Cell prolog
   else
     fprintf(stderr,"\n");
   free_term_buffer();
-  unify(prologvar,makestring(string_find("read_canonical_error",1)));
+  unify(CTXTc prologvar,makestring(string_find("read_canonical_error",1)));
   return 0;
 }
 
@@ -755,13 +755,13 @@ int funstk_size = 0;
     prolog_term varval;
   } vars[MAXVAR];
 
-int read_canonical(void)
+int read_canonical(CTXTdecl)
 {
   FILE *filep;
   STRFILE *instr;
   long tempfp;
   
-  tempfp = ptoc_int(1);
+  tempfp = ptoc_int(CTXTc 1);
   if (tempfp == -1000) {
     prevpsc = 0;
     return TRUE;
@@ -774,16 +774,16 @@ int read_canonical(void)
     instr = NULL;
     SET_FILEPTR(filep, tempfp);
   }
-  ctop_int(3,read_canonical_term(filep, instr, 1));
+  ctop_int(CTXTc 3,read_canonical_term(CTXTc filep, instr, 1));
   return TRUE;
 }
 
-Cell read_canonical_return_var(int code) {
+Cell read_canonical_return_var(CTXTdeclc int code) {
   if (code == 1) { /* from read_canonical */
-    return (Cell)ptoc_tag(2);
+    return (Cell)ptoc_tag(CTXTc 2);
   } else if (code == 2) { /* from odbc */
     Cell op1, op;
-    op = ptoc_tag(4);
+    op = ptoc_tag(CTXTc 4);
     op1 = cell(clref_val(op)+1);
     XSB_Deref(op1);
     return op1;
@@ -791,7 +791,7 @@ Cell read_canonical_return_var(int code) {
 }
 
 /* read canonical term, and return prev psc pointer, if valid */
-int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
+int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_location_code)
 {
   int funtop = 0;
   int optop = 0;
@@ -805,7 +805,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
   char *cvar;
   int postopreq = FALSE, varfound = FALSE;
   prolog_term term;
-  Cell prologvar = read_canonical_return_var(return_location_code);
+  Cell prologvar = read_canonical_return_var(CTXTc return_location_code);
   
   if (opstk_size == 0) {
     opstk = 
@@ -817,7 +817,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
   }
 
   /* get findall buffer to read term into */
-  h = init_term_buffer();
+  h = init_term_buffer(CTXT);
   size = 0;
 
   prevchar = 10;
@@ -893,13 +893,13 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 		      optop = op1+1;
 		    }
 		  } else {
-  		    return read_can_error(filep,instr,prevchar,prologvar); /* ')' ends a list? */
+  		    return read_can_error(CTXTc filep,instr,prevchar,prologvar); /* ')' ends a list? */
 		  }
 		} else if (*token->value == ']') {	/* end of list */
 		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN || funstk[funtop].funtyp == FUNCOMMALIST)
-			return read_can_error(filep,instr,prevchar,prologvar);
+			return read_can_error(CTXTc filep,instr,prevchar,prologvar);
 		  ensure_term_space(h,2);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
@@ -948,9 +948,9 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 		} else if (*token->value == '|') {
 		  postopreq = FALSE;
 		  if (funstk[funtop-1].funtyp != FUNLIST) 
-			return read_can_error(filep,instr,prevchar,prologvar);
+			return read_can_error(CTXTc filep,instr,prevchar,prologvar);
 		  funstk[funtop-1].funtyp = FUNDTLIST;
-		} else return read_can_error(filep,instr,prevchar,prologvar);
+		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar);
       } else {  /* check for neg numbers and backpatch if so */
 		if (opstk[optop-1].typ == TK_ATOM && 
 				!strcmp("-",string_val(opstk[optop-1].op))) {
@@ -961,8 +961,8 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 			opstk[optop-1].typ = TK_REAL;
 			float_temp = (Float) *(double *)(token->value);
 			opstk[optop-1].op = makefloat(-float_temp);
-		  } else return read_can_error(filep,instr,prevchar,prologvar);
-		} else return read_can_error(filep,instr,prevchar,prologvar);
+		  } else return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar);
       }
     } else {  /* must be an operand */
       switch (token->type) {
@@ -1000,7 +1000,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 		funtop++;
 
 		if (token->nextch != '(')
-			return read_can_error(filep,instr,prevchar,prologvar);
+			return read_can_error(CTXTc filep,instr,prevchar,prologvar);
 		token = GetToken(filep,instr,prevchar);
 		/* print_token(token->type,token->value); */
 		prevchar = token->nextch;
@@ -1101,9 +1101,9 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 	free_term_buffer();
 	if (isnonvar(prologvar)) 
 	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
-	unify(prologvar,makestring(string_find("end_of_file",1)));
+	unify(CTXTc prologvar,makestring(string_find("end_of_file",1)));
 	return 0;
-      default: return read_can_error(filep,instr,prevchar,prologvar);
+      default: return read_can_error(CTXTc filep,instr,prevchar,prologvar);
       }
     }
     if (funtop == 0) {  /* term is finished */
@@ -1111,7 +1111,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
       /* print_token(token->type,token->value); */
       prevchar = token->nextch; /* accept EOF as end_of_clause */
       if (token->type != TK_EOF && token->type != TK_EOC) 
-	return read_can_error(filep,instr,prevchar,prologvar);
+	return read_can_error(CTXTc filep,instr,prevchar,prologvar);
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	if (isnonvar(prologvar)) 
@@ -1120,7 +1120,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 	
 	check_glstack_overflow(5, pcreg, (size+1)*sizeof(Cell)) ;
 	/* get return location again, in case it moved, whole reasong for r_c_r_v */
-	prologvar = read_canonical_return_var(return_location_code); 
+	prologvar = read_canonical_return_var(CTXTc return_location_code); 
 	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high;
 	bind_ref((CPtr)prologvar,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
@@ -1178,7 +1178,8 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 
    FORMAT: format string, INITIALIZE: 1-process new fmt string; 0 - continue
    with old fmt string. READ: 1 if this is called for read op; 0 for write.  */
-struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
+struct fmt_spec *next_format_substr(CTXTdeclc char *format, int initialize, 
+				    int read_op)
 {
   static int current_substr_start;   /* current substr pointer */
   static XSB_StrDefine(workspace);      /* copy of format used as workspace */
@@ -1622,7 +1623,7 @@ void wcan_append_string_chk(char *string)
   }
 }
 
-DllExport void write_canonical_term(Cell prologterm)
+DllExport void write_canonical_term(CTXTdeclc Cell prologterm)
 {
   XSB_Deref(prologterm);
   switch (cell_tag(prologterm)) 
@@ -1635,8 +1636,7 @@ DllExport void write_canonical_term(Cell prologterm)
       wcan_append_string_chk(string_val(prologterm));
     break;
     case XSB_FLOAT:
-      /*      sprintf(wcan_buff,"%2.4f",float_val(prologterm)); */
-      sprintf(wcan_buff,"%f",float_val(prologterm));
+      sprintf(wcan_buff,"%2.4f",float_val(prologterm));
       wcan_append_string(wcan_buff);
       break;
     case XSB_REF:
@@ -1684,11 +1684,11 @@ DllExport void write_canonical_term(Cell prologterm)
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = '(';
 	for (i = 1; i < get_arity(get_str_psc(prologterm)); i++) {
-	  write_canonical_term(cell(clref_val(prologterm)+i));
+	  write_canonical_term(CTXTc cell(clref_val(prologterm)+i));
 	  if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	  wcan_string[wcan_disp++] = ',';
 	}
-	write_canonical_term(cell(clref_val(prologterm)+i));
+	write_canonical_term(CTXTc cell(clref_val(prologterm)+i));
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = ')';
       }
@@ -1697,20 +1697,20 @@ DllExport void write_canonical_term(Cell prologterm)
       {Cell tail;
       if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
       wcan_string[wcan_disp++] = '[';
-      write_canonical_term(cell(clref_val(prologterm)));
+      write_canonical_term(CTXTc cell(clref_val(prologterm)));
       tail = cell(clref_val(prologterm)+1);
       XSB_Deref(tail);
       while (islist(tail)) {
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = ',';
-	write_canonical_term(cell(clref_val(tail)));
+	write_canonical_term(CTXTc cell(clref_val(tail)));
 	tail = cell(clref_val(tail)+1);
 	XSB_Deref(tail);
       } 
       if (!isnil(tail)) {
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = '|';
-	write_canonical_term(tail);
+	write_canonical_term(CTXTc tail);
       }
       if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
       wcan_string[wcan_disp++] = ']';
@@ -1723,12 +1723,12 @@ DllExport void write_canonical_term(Cell prologterm)
   return;
 }
 
-void print_term_canonical(FILE *fptr, Cell prologterm, int letterflag)
+void print_term_canonical(CTXTdeclc FILE *fptr, Cell prologterm, int letterflag)
 {
 
   letter_flag = letterflag;
   wcan_disp = 0;
-  write_canonical_term(prologterm);
+  write_canonical_term(CTXTc prologterm);
   if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
   wcan_string[wcan_disp] = '\0';
 

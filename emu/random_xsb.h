@@ -22,9 +22,9 @@
 ** 
 */
 
-extern int ret_random();
-extern int getrand();
-extern void setrand();
+extern int ret_random(CTXTdecl);
+extern int getrand(CTXTdecl);
+extern void setrand(CTXTdecl);
 
 #define RET_RANDOM	1
 #define GET_RAND	2

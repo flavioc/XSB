@@ -31,3 +31,4 @@
 :- import repeat/0, tell/1, see/1 from standard.
 :- import fmt_write/2 from file_io.
 :- import xsb_configuration/2 from xsb_configuration.
+:- import throw/1 from standard.

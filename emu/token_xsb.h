@@ -23,6 +23,8 @@
 ** 
 */
 
+#ifndef _TOKEN_XSB_H_
+#define _TOKEN_XSB_H_
 
 #include "token_defs_xsb.h"
 
@@ -53,6 +55,8 @@ extern struct token *token;
 extern struct token *GetToken(FILE *, STRFILE *, int);
 
 extern int intype(int);
+
+#endif /* _TOKEN_XSB_H_ */
 
 /*======================================================================*/
 /*======================================================================*/

@@ -25,6 +25,7 @@
 #include "basictypes.h"
 #include "setjmp_xsb.h"
 #include "export.h"
+#include "context.h"
 
 /*----------------------------------------------------------------------*/
 /* The following is a list of errors as defined by the Prolog ISO	*/
@@ -66,24 +67,30 @@
 
 
 DllExport extern void call_conv xsb_exit(char *, ...);
+#ifndef MULTI_THREAD
 DllExport extern void call_conv xsb_abort(char *, ...);
 DllExport extern void call_conv xsb_bug(char *, ...);
+#else
+#define	xsb_abort	xsb_exit
+#define	xsb_basic_abort	xsb_exit
+#define	xsb_bug		xsb_exit
+#endif
 DllExport extern void call_conv xsb_warn(char *, ...);
 DllExport extern void call_conv xsb_mesg(char *, ...);
 DllExport extern void call_conv xsb_error(char *, ...);
 DllExport extern void call_conv xsb_dbgmsg1(int, char *, ...);
 
-extern void arithmetic_abort1(char *, Cell);
-extern void arithmetic_abort(Cell, char *, Cell);
-extern void arithmetic_comp_abort(Cell, char *, int);
-extern void err_handle(int, int, char *, int, char *, Cell);
+extern void arithmetic_abort1(CTXTdeclc char *, Cell);
+extern void arithmetic_abort(CTXTdeclc Cell, char *, Cell);
+extern void arithmetic_comp_abort(CTXTdeclc Cell, char *, int);
+extern void err_handle(CTXTdeclc int, int, char *, int, char *, Cell);
 
 extern FILE *stdmsg;	    	/* Stream for XSB messages     	         */
 extern FILE *stdwarn;	    	/* Stream for XSB warnings     	         */
 extern FILE *stddbg;	    	/* Stream for XSB debugging msgs         */
 extern FILE *stdfdbk;	    	/* Stream for XSB feedback msgs         */
 
-#define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
+#define err(d, a, f, ar)	err_handle(CTXTc d, a, f, ar, NULL, (Cell)NULL)
 
 extern char *xsb_default_segfault_msg;
 extern char *xsb_segfault_message; /* Put your segfault message here prior to
@@ -103,12 +110,14 @@ extern int print_xsb_backtrace();
 extern void xsb_segfault_catcher (int);
 extern void xsb_segfault_quitter(int);
 
-int unwind_stack(void);
+int unwind_stack(CTXTdecl);
 
-void call_conv xsb_type_error(char *,Cell , char *,int, int) ;
-void call_conv xsb_permission_error(char *,char *, int, char *,int) ;
-void call_conv xsb_instantiation_error(char *, int, int, char *) ;
+void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
+void call_conv xsb_permission_error(CTXTdeclc char *,char *, int, char *,int) ;
+void call_conv xsb_instantiation_error(CTXTdeclc char *, int, int, char *) ;
+#ifndef MULTI_THREAD
 void call_conv xsb_basic_abort(char *);
+#endif
 
 /* should include these from whereever they are.... split out from biassert **/
 typedef struct
@@ -122,11 +131,11 @@ typedef struct ClRefHdr
 	struct ClRefHdr *prev ;
 }	*ClRef, ClRefData, ClRefHdr ;
 
-xsbBool assert_buff_to_clref_p(prolog_term, byte, PrRef, int,
+xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term, byte, PrRef, int,
 			       prolog_term, int, ClRef *);
 
-int assert_code_to_buff_p(prolog_term);
+int assert_code_to_buff_p(CTXTdeclc prolog_term);
 
-DllExport void call_conv xsb_throw(prolog_term);
+DllExport void call_conv xsb_throw(CTXTdeclc prolog_term);
 
 extern prolog_term build_xsb_backtrace();

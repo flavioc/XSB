@@ -486,7 +486,7 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 }
 /*----------------------------------------------------------------------*/
 
-static int mark_query(void)
+static int mark_query(CTXTdecl)
 {
   Integer i;
   int yvar, total_marked = 0 ;
@@ -611,7 +611,7 @@ restart:
 
 /*----------------------------------------------------------------------*/
 
-static int mark_hreg_from_choicepoints(void)
+static int mark_hreg_from_choicepoints(CTXTdecl)
 {
   CPtr b, bprev, h;
   Integer i;
@@ -668,7 +668,7 @@ static int mark_hreg_from_choicepoints(void)
  * 
  * Return value: number of marked cells.
  **/
-static int mark_from_attv_array()
+static int mark_from_attv_array(CTXTdecl)
 {
   int i,max;
   int m=0;
@@ -685,7 +685,7 @@ static int mark_from_attv_array()
 /*-------------------------------------------------------------------------*/
 
 
-int mark_heap(int arity, int *marked_dregs)
+int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 {
   int avail_dreg_marks = 0, marked = 0;
 
@@ -696,7 +696,7 @@ int mark_heap(int arity, int *marked_dregs)
   
   stack_boundaries ;
   
-  if (print_on_gc) print_all_stacks(arity);
+  if (print_on_gc) print_all_stacks(CTXTc arity);
   
   if (slide) {
 #ifdef INDIRECTION_SLIDE
@@ -774,14 +774,14 @@ int mark_heap(int arity, int *marked_dregs)
 #endif
 
 
-  marked += mark_query();
+  marked += mark_query(CTXT);
 
-  marked += mark_from_attv_array();
+  marked += mark_from_attv_array(CTXT);
 
   if (slide)
-    marked += mark_hreg_from_choicepoints();
+    marked += mark_hreg_from_choicepoints(CTXT);
 
-  if (print_on_gc) print_all_stacks(arity);
+  if (print_on_gc) print_all_stacks(CTXTc arity);
 
   return marked ;
 } /* mark_heap */

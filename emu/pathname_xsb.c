@@ -549,7 +549,7 @@ char *existing_file_extension(char *basename)
 
 /*=========================================================================*/
 
-xsbBool almost_search_module(char *filename)
+xsbBool almost_search_module(CTXTdeclc char *filename)
 {
   char *fullname, *dir, *basename, *extension;
   struct stat fileinfo;
@@ -562,8 +562,8 @@ xsbBool almost_search_module(char *filename)
      * function is called "almost_".  Note that arguments 4 and 5 are
      * left unbound here.
      */
-    ctop_string(2, string_find(dir, 1));
-    ctop_string(3, string_find(filename, 1)); /* Mod = FileName */
+    ctop_string(CTXTc 2, string_find(dir, 1));
+    ctop_string(CTXTc 3, string_find(filename, 1)); /* Mod = FileName */
   } else { /* input argument is a full file name */
     if (! strcmp(extension, "")) {
       extension = existing_file_extension(fullname);
@@ -576,16 +576,16 @@ xsbBool almost_search_module(char *filename)
       dot_dir[0] = '.';
       dot_dir[1] = SLASH;
       dot_dir[2] = '\0';
-      ctop_string(2, string_find(dot_dir, 1));
+      ctop_string(CTXTc 2, string_find(dot_dir, 1));
       strcat(dot_dir, basename); /* dot_dir is updated here */
-      ctop_string(5, string_find(dot_dir, 1));
+      ctop_string(CTXTc 5, string_find(dot_dir, 1));
     } else {
-      ctop_string(2, string_find(dir, 1));
+      ctop_string(CTXTc 2, string_find(dir, 1));
       strcat(dir, basename);
-      ctop_string(5, string_find(dir, 1));
+      ctop_string(CTXTc 5, string_find(dir, 1));
     }
-    ctop_string(3, string_find(basename, 1));
-    ctop_string(4, string_find(extension, 1));
+    ctop_string(CTXTc 3, string_find(basename, 1));
+    ctop_string(CTXTc 4, string_find(extension, 1));
   }
   return TRUE;
 }

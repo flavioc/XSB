@@ -24,6 +24,6 @@
 */
 
 
-extern void build_delay_list(CPtr, DE);
+extern void build_delay_list(CTXTdeclc CPtr, DE);
 
 /*---------------------- end of file residual.h ------------------------*/

@@ -25,6 +25,7 @@
 
 #include "debugs/debug_attv.h"
 
+#ifndef MULTI_THREAD
 /* Argument Registers
    ------------------ */
 Cell reg[MAX_REGS];
@@ -72,6 +73,8 @@ CPtr *trdfreg;
 Cell interrupt_counter;
 CPtr interrupt_reg = &interrupt_counter;
 
+#endif /* MULTI_THREAD */
+
 /*
  * Ptr to the beginning of instr. array
  */ 
@@ -110,7 +113,7 @@ int asynint_val = 0;
   else if (isattv(op)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_nil, interrupt needed\n"));	\
     /* add_interrupt(op, makenil);	*/				\
-    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makenil);   		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makenil);   		\
     bind_copy((CPtr)dec_addr(op1), makenil);                  		\
   }									\
   else Fail1;	/* op is LIST, INT, or FLOAT */
@@ -129,7 +132,7 @@ int asynint_val = 0;
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_con, interrupt needed\n"));	\
     /* add_interrupt(OP1, makestring((char *)OP2)); */			\
-    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makestring((char *)OP2));   	\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makestring((char *)OP2));   	\
     bind_string((CPtr)dec_addr(op1),(char *)OP2);     	\
   }									\
   else Fail1;
@@ -150,7 +153,7 @@ int asynint_val = 0;
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n"));	\
     /* add_interrupt(OP1, OP2); */				        \
-    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),OP2);        		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2);  		\
     bind_int_tagged((CPtr)dec_addr(op1), OP2);                 		\
   }									\
   else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
@@ -169,7 +172,7 @@ int asynint_val = 0;
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
     /* add_interrupt(OP1, OP2); */				        \
-    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),OP2);        		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2); 		\
     bind_float_tagged((CPtr)dec_addr(op1), OP2);                 		\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
@@ -196,7 +199,7 @@ int asynint_val = 0;
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));	\
     /* add_interrupt(OP1, makecs(hreg)); */				\
-    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg));        \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg));  \
     bind_copy((CPtr)dec_addr(op1), makecs(hreg));                       \
     new_heap_functor(hreg, (Psc)OP2);					\
     flag = WRITE;							\
@@ -219,7 +222,7 @@ int asynint_val = 0;
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_list_sym, interrupt needed\n"));	\
     /* add_interrupt(OP1, makelist(hreg)); */				\
-    add_interrupt(cell(((CPtr)dec_addr(op1) + 1)),makelist(hreg));      \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makelist(hreg));\
     bind_copy((CPtr)dec_addr(op1), makelist(hreg));                     \
     flag = WRITE;							\
   }									\
@@ -255,7 +258,7 @@ int asynint_val = 0;
     xsb_dbgmsg((LOG_ATTV,">>>> nunify_with_attv, interrupt needed\n"));	\
     /* add_interrupt(makeattv(hreg), OP1); */			\
     *hreg = OP1; hreg++;					\
-    add_interrupt((Integer)hreg, OP1);				\
+    add_interrupt(CTXTc (Integer)hreg, OP1);			\
   }								\
   flag = WRITE;							\
 }
@@ -264,13 +267,13 @@ int asynint_val = 0;
 
 #define call_sub(PSC) {							\
   if ( (asynint_val) | int_val(cell(interrupt_reg)) ) {   	        \
-     if (asynint_val & KEYINT_MARK) {                            \
-        synint_proc(PSC, MYSIG_KEYB);	                           	\
+     if (asynint_val & KEYINT_MARK) {                                   \
+        synint_proc(CTXTc PSC, MYSIG_KEYB);	                      	\
         lpcreg = pcreg;							\
         asynint_val = asynint_val & ~KEYINT_MARK;			\
         asynint_code = 0;		         			\
      } else if (int_val(cell(interrupt_reg))) {                         \
-        synint_proc(PSC, MYSIG_ATTV);		                        \
+        synint_proc(CTXTc PSC, MYSIG_ATTV);		                \
         lpcreg = pcreg;							\
         /* Set PSC to '_$attv_int'/2, so that the later call of	*/	\
         /* intercept(PSC) will set the return point, pcreg, to	*/	\
@@ -278,7 +281,7 @@ int asynint_val = 0;
         PSC = (Psc) flags[MYSIG_ATTV+INT_HANDLERS_FLAGS_START];		\
      } else if (asynint_val & MSGINT_MARK) {                            \
         pcreg = (byte *)get_ep(PSC);					\
-        intercept(PSC);							\
+        intercept(CTXTc PSC);						\
         lpcreg = pcreg;							\
      }  else {                                                          \
         if (asynint_val & PROFINT_MARK) {				\

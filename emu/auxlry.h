@@ -76,7 +76,8 @@ extern char *xsb_segfault_message;
 /* This would yield a meaningful message in case of segfault */
 #define SET_FILEPTR(stream, xsb_filedes) \
     if (xsb_filedes < 0 || xsb_filedes >= MAX_OPEN_FILES) \
-	xsb_abort("Invalid file descriptor %d in I/O predicate", xsb_filedes);\
+	xsb_abort("Invalid file descriptor %d in I/O predicate",\
+			xsb_filedes);\
     stream = fileptr(xsb_filedes); \
     if ((stream==NULL) && (xsb_filedes != 0)) \
 	xsb_abort("Invalid file descriptor %d in I/O predicate", xsb_filedes);

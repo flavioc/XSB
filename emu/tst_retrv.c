@@ -48,6 +48,7 @@
 #include "tst_utils.h"
 #include "debug_xsb.h"
 #include "flags_xsb.h"
+#include "thread_xsb.h"
 
 /*  Data Structures and Related Macros
     ==================================  */
@@ -235,11 +236,11 @@ void initCollectRelevantAnswers() {
 #define NoCleanupRequired  FALSE
 
 #define TST_Collection_Error(String, DoesRequireCleanup) {	\
-   tstCollectionError(String, DoesRequireCleanup);		\
+   tstCollectionError(CTXTc String, DoesRequireCleanup);	\
    return NULL;							\
  }
 
-static void tstCollectionError(char *string, xsbBool cleanup_needed) {
+static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
   fprintf(stderr, "Error encountered in Time-Stamped Trie "
 	  "Collection algorithm!\n");
   if (cleanup_needed) {
@@ -458,7 +459,7 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
 	  * standard unification algorithm to check the match and	  \
 	  * perform any additional unification.				  \
 	  */								  \
-	 if (unify(Subterm, symbol)) {					  \
+	 if (unify(CTXTc Subterm, symbol)) {				  \
 	   CPStack_PushFrame(alt_chain);				  \
 	   TermStackLog_PushFrame;					  \
 	   Descend_Into_TST_and_Continue_Search;			  \
@@ -542,7 +543,7 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
 	  * We have a XSB_TrieVar bound to a heap LIST-term; use a	\
 	  * standard unification algorithm to check the match.		\
 	  */								\
-	 if (unify(Subterm, symbol)) {					\
+	 if (unify(CTXTc Subterm, symbol)) {				\
 	   CPStack_PushFrame(alt_chain);				\
 	   TermStackLog_PushFrame;					\
 	   Descend_Into_TST_and_Continue_Search;			\
@@ -644,7 +645,7 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
        Bind_and_Trail((CPtr)symbol,Subterm);				   \
      }									   \
      else								   \
-       unify(symbol,Subterm);						   \
+       unify(CTXTc symbol,Subterm);					   \
      break;								   \
 									   \
    default:								   \
@@ -687,7 +688,7 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
  *  In the code, we push a CPF before doing any of this recording.
  *  However, the log info is, in fact, saved.  */
 
-ALNptr tst_collect_relevant_answers(TSTNptr tstRoot, TimeStamp ts,
+ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
 				    int numTerms, CPtr termsRev) {
 
   ALNptr tstAnswerList;  /* for collecting leaves to be returned */

@@ -35,7 +35,7 @@
   } \
 }
 
-#define check_fixpoint(sg, b)    find_fixpoint(sg, b)
+#define check_fixpoint(sg, b)    find_fixpoint(CTXTc sg, b)
 
 /*----------------------------------------------------------------------*/
 
@@ -66,7 +66,7 @@ XSB_Start_Instr(check_complete,_check_complete)
  * for this subgoal.  Its purely a heuristic -- perhaps we should test
  * to see whether its inclusion makes any difference 
  */
-  FailIfAnswersFound(sched_answers(subgoal, breg, leader));
+  FailIfAnswersFound(sched_answers(CTXTc subgoal, breg, leader));
 
   if (leader) {
 
@@ -86,16 +86,16 @@ XSB_Start_Instr(check_complete,_check_complete)
       breg = orig_breg; /* mark topmost SCC as completed */
       
       /* schedule completion suspensions if any */
-      cc_tbreg = ProcessSuspensionFrames(cc_tbreg, cs_ptr);
+      cc_tbreg = ProcessSuspensionFrames(CTXTc cc_tbreg, cs_ptr);
       FailIfAnswersFound((cc_tbreg == orig_breg ? 0 : cc_tbreg));
       
-      CompleteSimplifyAndReclaim(cs_ptr);
+      CompleteSimplifyAndReclaim(CTXTc cs_ptr);
 
       /* leader has non-returned answers? */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
 	reclaim_incomplete_table_structs(subgoal);
 	/* schedule return of answers from trie code */
-	SetupReturnFromLeader(orig_breg, cs_ptr, subgoal);
+	SetupReturnFromLeader(CTXTc orig_breg, cs_ptr, subgoal);
 	lpcreg = (byte *) subg_ans_root_ptr(subgoal);
 	XSB_Next_Instr();
       } else {  /* There are no answers to return */
@@ -110,7 +110,7 @@ XSB_Start_Instr(check_complete,_check_complete)
     
 #else /* NOT LOCAL:  FOR BATCHED SCHEDULING */
 
-    batched_compute_wfs(cs_ptr, orig_breg, subgoal);
+    batched_compute_wfs(CTXTc cs_ptr, orig_breg, subgoal);
 
     /* do all possible stack reclamation */
     if (openreg == prev_compl_frame(cs_ptr)) {
@@ -125,7 +125,7 @@ XSB_Start_Instr(check_complete,_check_complete)
   }
   else {    /* if not leader */
 #ifdef LOCAL_EVAL
-    makeConsumerFromGenerator(subgoal);
+    makeConsumerFromGenerator(CTXTc subgoal);
 /*     subg_cp_ptr(subgoal) = NULL; */
 #endif
     breg = tcp_prevbreg(breg); 

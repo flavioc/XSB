@@ -90,7 +90,7 @@ void mem_dealloc(byte *addr, unsigned long size)
  * to "new_size" K-byte blocks.
  */
 
-void tcpstack_realloc(long new_size) {
+void tcpstack_realloc(CTXTdeclc long new_size) {
 
   byte *cps_top,         /* addr of topmost byte in old CP Stack */
        *trail_top;       /* addr of topmost frame (link field) in old Trail */
@@ -250,11 +250,11 @@ void tcpstack_realloc(long new_size) {
 
 /* ------------------------------------------------------------------------- */
 
-void handle_tcpstack_overflow(void)
+void handle_tcpstack_overflow(CTXTdecl)
 {
   if (flags[STACK_REALLOC]) {
     xsb_warn("Expanding the Trail and Choice Point Stack...");
-    tcpstack_realloc(resize_stack(tcpstack.size,0));
+    tcpstack_realloc(CTXTc resize_stack(tcpstack.size,0));
   }
   else {
     xsb_exit("Trail/ChoicePoint stack overflow detected but expansion is off");
@@ -268,7 +268,7 @@ void handle_tcpstack_overflow(void)
  * K-byte blocks.
  */
 
-void complstack_realloc (long new_size) {
+void complstack_realloc (CTXTdeclc long new_size) {
 
   byte *new_top,    /* bottom of new trail area */
   *new_bottom;      /* bottom of new choice point stack area */

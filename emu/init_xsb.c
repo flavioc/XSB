@@ -63,6 +63,7 @@
 #include "io_builtins_xsb.h"
 #include "timer_defs_xsb.h"
 #include "sig_xsb.h"
+#include "thread_xsb.h"
 
 /*-----------------------------------------------------------------------*/
 
@@ -91,6 +92,7 @@ long pspacesize = 0;	/* actual space dynamically allocated by loader.c */
 
 /* The SLG-WAM data regions
    ------------------------ */
+#ifndef MULTI_THREAD
 System_Stack
 pdl = {NULL, NULL, 0,
        PDL_DEFAULT_SIZE},             /* PDL                   */
@@ -100,6 +102,17 @@ pdl = {NULL, NULL, 0,
 		TCPSTACK_DEFAULT_SIZE},   /* Trail + CP Stack      */
       complstack = {NULL, NULL, 0,
 		    COMPLSTACK_DEFAULT_SIZE};   /* Completion Stack  */
+#else
+static System_Stack
+init_pdl = {NULL, NULL, 0,
+       PDL_DEFAULT_SIZE},             /* PDL                   */
+  init_glstack = {NULL, NULL, 0,
+	     GLSTACK_DEFAULT_SIZE},     /* Global + Local Stacks */
+    init_tcpstack = {NULL, NULL, 0,
+		TCPSTACK_DEFAULT_SIZE},   /* Trail + CP Stack      */
+      init_complstack = {NULL, NULL, 0,
+		    COMPLSTACK_DEFAULT_SIZE};   /* Completion Stack  */
+#endif
 
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
 
@@ -116,6 +129,7 @@ Cell resume_compl_suspension_inst2;
 Cell check_complete_inst;
 Cell hash_handle_inst;
 Cell fail_inst;
+Cell trie_fail_unlock_inst;
 Cell halt_inst;
 Cell proceed_inst;
 
@@ -187,6 +201,7 @@ static void init_flags(void)
   flags[SYS_TIMER]  = TIMEOUT_ERR; /* start with expired timer */
   flags[BANNER_CTL] = 1;           /* a product of prime numbers; each prime
 				      determines which banner isn't shown */
+  flags[NUM_THREADS] = 1;          /* 1 thread will be run at start */
   flags[BACKTRACE] = 1;           /* Backtrace on error by default */
 }
 
@@ -297,8 +312,11 @@ char *init_para(int argc, char *argv[])
   char *boot_module, *cmd_loop_driver;
   char cmd_line_goal[MAXBUFSIZE+1] = "";
   int  strlen_instdir, strlen_initfile, strlen_2ndfile;
-  void tstInitDataStructs();
 
+#ifdef MULTI_THREAD
+  init_system_mutexes() ;
+  init_system_threads() ;
+#endif
   init_flags();
   /* this needs to appear here as streams are used below in xsb_warn() */
   for (i=1; i<argc; i++) { /* check to see if should redirect output */
@@ -311,8 +329,6 @@ char *init_para(int argc, char *argv[])
   init_open_files();
 
   init_newtrie();
-  init_trie_aux_areas();
-  tstInitDataStructs();
 
   /* init stat. structures */
   perproc_reset_stat();
@@ -387,44 +403,76 @@ char *init_para(int argc, char *argv[])
       break;
     case 'u':
       if (argv[i][2] != '\0')
+#ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &pdl.init_size);
+#else
+	sscanf(argv[i]+2, "%ld", &init_pdl.init_size);
+#endif
       else {
 	i++;
 	if (i < argc)
+#ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &pdl.init_size);
+#else
+	  sscanf(argv[i], "%ld", &init_pdl.init_size);
+#endif
 	else
 	  xsb_warn("Missing size value");
       }
       break;
     case 'm':
       if (argv[i][2] != '\0')
+#ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &glstack.init_size);
+#else
+	sscanf(argv[i]+2, "%ld", &init_glstack.init_size);
+#endif
       else {
 	i++;
 	if (i < argc)
+#ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &glstack.init_size);
+#else
+	  sscanf(argv[i], "%ld", &init_glstack.init_size);
+#endif
 	else
 	  xsb_warn("Missing size value");
       }
       break;
     case 'c':
       if (argv[i][2] != '\0')
+#ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &tcpstack.init_size);
+#else
+	sscanf(argv[i]+2, "%ld", &init_tcpstack.init_size);
+#endif
       else {
 	i++;
 	if (i < argc)
+#ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &tcpstack.init_size);
+#else
+	  sscanf(argv[i], "%ld", &init_tcpstack.init_size);
+#endif
 	else
 	  xsb_warn("Missing size value");
       }
       break;
     case 'o':
       if (argv[i][2] != '\0')
+#ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &complstack.init_size);
+#else
+	sscanf(argv[i]+2, "%ld", &init_complstack.init_size);
+#endif
       else {
 	i++;
 	if (i < argc)
+#ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &complstack.init_size);
+#else
+	  sscanf(argv[i], "%ld", &init_complstack.init_size);
+#endif
 	else
 	  xsb_warn("Missing size value");
       }
@@ -643,8 +691,9 @@ char *init_para(int argc, char *argv[])
 
 /* Initialize Memory Regions and Related Variables
    ----------------------------------------------- */
-void init_machine(void)
+void init_machine(CTXTdecl)
 {
+  void tstInitDataStructs(CTXTdecl);
   /* set special SLG_WAM instruction addresses */
   cell_opcode(&answer_return_inst) = answer_return;
   cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
@@ -652,9 +701,20 @@ void init_machine(void)
   cell_opcode(&check_complete_inst) = check_complete;
   cell_opcode(&hash_handle_inst) = hash_handle;
   cell_opcode(&fail_inst) = fail;
+  cell_opcode(&trie_fail_unlock_inst) = trie_fail_unlock;
   cell_opcode(&halt_inst) = halt;
   cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
 
+#ifdef MULTI_THREAD
+  interrupt_reg = &interrupt_counter;
+
+  pdl		= init_pdl ;
+  glstack	= init_glstack ;
+  tcpstack	= init_tcpstack ;
+  complstack	= init_complstack ;
+
+/*  call_intercept = init_call_intercept ; */
+#endif
   /* Allocate Stack Spaces and set Boundary Parameters
      ------------------------------------------------- */
   pdl.low = (byte *)real_alloc(pdl.init_size * K);
@@ -753,10 +813,26 @@ void init_machine(void)
   /* Other basic initializations
      --------------------------- */
   realtime_count = real_time();
-  inst_begin = 0;
 
-  symbol_table.table = (void **)calloc(symbol_table.size, sizeof(Pair));
-  string_table.table = (void **)calloc(string_table.size, sizeof(char *));
+  /* init trie stuff */
+
+#ifdef MULTI_THREAD
+  th->trie_locked = 0 ;
+#endif
+  reg_array_size = DEFAULT_ARRAYSIZ;
+  num_vars_in_var_regs = -1;
+  init_trie_aux_areas(CTXT);
+  tstInitDataStructs(CTXT);
+}
+
+void cleanup_machine(CTXTdecl)
+{
+	free(glstack.low) ;
+	free(tcpstack.low) ;
+	free(complstack.low) ;
+	free(pdl.low) ;
+
+	free_trie_aux_areas(CTXT) ;
 }
 
 Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
@@ -781,6 +857,10 @@ void init_symbols(void)
   Psc  tables_psc, standard_psc;
   Pair temp, tp;
   int  i, new_indicator;
+
+  inst_begin = 0;
+  symbol_table.table = (void **)calloc(symbol_table.size, sizeof(Pair));
+  string_table.table = (void **)calloc(string_table.size, sizeof(char *));
 
   /* insert mod name global */
   /*tp = insert_module(T_MODU, "global");	/ loaded */

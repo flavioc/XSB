@@ -42,11 +42,11 @@ typedef struct choice_point {
 #ifdef CP_DEBUG
   Psc  psc;             /* PSC of predicate that created this CP */
 #endif
-    CPtr ebreg;		/* environment backtrack -- top of env stack */
-    CPtr hreg;		/* current top of heap */
-    CPtr *trreg;	/* current top of trail stack */
-    byte *cpreg;	/* return point of the call to the procedure	*/
-    CPtr ereg;		/* current top of stack */
+    CPtr _ebreg;	/* environment backtrack -- top of env stack */
+    CPtr _hreg;		/* current top of heap */
+    CPtr *_trreg;	/* current top of trail stack */
+    byte *_cpreg;	/* return point of the call to the procedure	*/
+    CPtr _ereg;		/* current top of stack */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;          /* pointer to parent tabled CP (subgoal) */
     CPtr prev;		/* dynamic link */
@@ -55,11 +55,11 @@ typedef struct choice_point {
 #define CP_SIZE	(sizeof(struct choice_point)/sizeof(CPtr))
 
 #define cp_pcreg(b)		((Choice)(b))->next_clause
-#define cp_ebreg(b)		((Choice)(b))->ebreg
-#define cp_hreg(b)		((Choice)(b))->hreg
-#define cp_trreg(b)		((Choice)(b))->trreg
-#define cp_cpreg(b)		((Choice)(b))->cpreg
-#define cp_ereg(b)		((Choice)(b))->ereg
+#define cp_ebreg(b)		((Choice)(b))->_ebreg
+#define cp_hreg(b)		((Choice)(b))->_hreg
+#define cp_trreg(b)		((Choice)(b))->_trreg
+#define cp_cpreg(b)		((Choice)(b))->_cpreg
+#define cp_ereg(b)		((Choice)(b))->_ereg
 #define cp_prevbreg(b)		((Choice)(b))->prev
 #define cp_pdreg(b)		((Choice)(b))->pdreg
 #define cp_ptcp(b)              ((Choice)(b))->ptcp
@@ -102,11 +102,11 @@ typedef struct tabled_choice_point {
 #ifdef CP_DEBUG
   Psc  psc;             /* PSC of predicate that created this CP */
 #endif
-    CPtr ebreg;		/* environment backtrack -- top of env stack */
-    CPtr hreg;		/* current top of heap */
-    CPtr *trreg;	/* current top of trail stack */
-    byte *cpreg;	/* return point of the call to the procedure */
-    CPtr ereg;		/* current top of stack */
+    CPtr _ebreg;	/* environment backtrack -- top of env stack */
+    CPtr _hreg;		/* current top of heap */
+    CPtr *_trreg;	/* current top of trail stack */
+    byte *_cpreg;	/* return point of the call to the procedure */
+    CPtr _ereg;		/* current top of stack */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
     CPtr prev;		/* previous choicepoint */
@@ -116,10 +116,10 @@ typedef struct tabled_choice_point {
   CPtr prev_top;
 #endif
 /* The following are needed to reclaim frozen space at SCC completion time */
-    CPtr bfreg;
-    CPtr hfreg;
-    CPtr *trfreg;
-    CPtr efreg;
+    CPtr _bfreg;
+    CPtr _hfreg;
+    CPtr *_trfreg;
+    CPtr _efreg;
 #ifdef LOCAL_EVAL
     ALNptr trie_return;
 #endif
@@ -128,11 +128,11 @@ typedef struct tabled_choice_point {
 #define TCP_SIZE	(sizeof(struct tabled_choice_point)/sizeof(CPtr))
 
 #define tcp_pcreg(b)		((TChoice)(b))->next_clause
-#define tcp_ebreg(b)		((TChoice)(b))->ebreg
-#define tcp_hreg(b)		((TChoice)(b))->hreg
-#define tcp_trreg(b)		((TChoice)(b))->trreg
-#define tcp_cpreg(b)		((TChoice)(b))->cpreg
-#define tcp_ereg(b)		((TChoice)(b))->ereg
+#define tcp_ebreg(b)		((TChoice)(b))->_ebreg
+#define tcp_hreg(b)		((TChoice)(b))->_hreg
+#define tcp_trreg(b)		((TChoice)(b))->_trreg
+#define tcp_cpreg(b)		((TChoice)(b))->_cpreg
+#define tcp_ereg(b)		((TChoice)(b))->_ereg
 #define tcp_prevbreg(b)		((TChoice)(b))->prev
 #define tcp_pdreg(b)		((TChoice)(b))->pdreg
 #define tcp_ptcp(b)		((TChoice)(b))->ptcp
@@ -151,10 +151,10 @@ typedef struct tabled_choice_point {
 
 #define tcp_template(b)         ((TChoice)(b))->answer_template
 
-#define tcp_bfreg(b)		((TChoice)(b))->bfreg
-#define tcp_hfreg(b)		((TChoice)(b))->hfreg
-#define tcp_trfreg(b)		((TChoice)(b))->trfreg
-#define tcp_efreg(b)		((TChoice)(b))->efreg
+#define tcp_bfreg(b)		((TChoice)(b))->_bfreg
+#define tcp_hfreg(b)		((TChoice)(b))->_hfreg
+#define tcp_trfreg(b)		((TChoice)(b))->_trfreg
+#define tcp_efreg(b)		((TChoice)(b))->_efreg
 
 #ifdef LOCAL_EVAL
 #define tcp_trie_return(b)	((TChoice)(b))->trie_return
@@ -218,11 +218,11 @@ typedef struct consumer_choice_point {
 #ifdef CP_DEBUG
     Psc  psc;             /* PSC of predicate that created this CP */
 #endif    
-    CPtr ebreg;		/* environment backtrack -- top of env stack */
-    CPtr hreg;		/* current top of heap */
-    CPtr *trreg;	/* current top of trail stack */
-    byte *cpreg;	/* return point of the call to the procedure */
-    CPtr ereg;		/* current top of local stack */
+    CPtr _ebreg;	/* environment backtrack -- top of env stack */
+    CPtr _hreg;		/* current top of heap */
+    CPtr *_trreg;	/* current top of trail stack */
+    byte *_cpreg;	/* return point of the call to the procedure */
+    CPtr _ereg;		/* current top of local stack */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
     CPtr prev;		/* prev top of choice point stack */
@@ -235,11 +235,11 @@ typedef struct consumer_choice_point {
 #define NLCP_SIZE	(sizeof(struct consumer_choice_point)/sizeof(CPtr))
 
 #define nlcp_pcreg(b)		((NLChoice)(b))->next_clause
-#define nlcp_ebreg(b)		((NLChoice)(b))->ebreg
-#define nlcp_hreg(b)		((NLChoice)(b))->hreg
-#define nlcp_trreg(b)		((NLChoice)(b))->trreg
-#define nlcp_cpreg(b)		((NLChoice)(b))->cpreg
-#define nlcp_ereg(b)		((NLChoice)(b))->ereg
+#define nlcp_ebreg(b)		((NLChoice)(b))->_ebreg
+#define nlcp_hreg(b)		((NLChoice)(b))->_hreg
+#define nlcp_trreg(b)		((NLChoice)(b))->_trreg
+#define nlcp_cpreg(b)		((NLChoice)(b))->_cpreg
+#define nlcp_ereg(b)		((NLChoice)(b))->_ereg
 #define nlcp_subgoal_ptr(b)	((NLChoice)(b))->subgoal_ptr
 #define nlcp_pdreg(b)		((NLChoice)(b))->pdreg
 #define nlcp_ptcp(b)		((NLChoice)(b))->ptcp
@@ -295,11 +295,11 @@ typedef struct compl_susp_frame {
 #ifdef CP_DEBUG
   Psc  psc;             /* PSC of predicate that created this CP */
 #endif    
-  CPtr ebreg;		/* environment backtrack -- top of env stack */
-  CPtr hreg;		/* current top of heap */
-  CPtr *trreg;	/* current top of trail stack */
-  byte *cpreg;	/* return point of the call to the procedure */
-  CPtr ereg;		/* current top of stack */
+  CPtr _ebreg;		/* environment backtrack -- top of env stack */
+  CPtr _hreg;		/* current top of heap */
+  CPtr *_trreg;	/* current top of trail stack */
+  byte *_cpreg;	/* return point of the call to the procedure */
+  CPtr _ereg;		/* current top of stack */
   CPtr pdreg;		/* value of delay register for the parent subgoal */
   CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
   CPtr subgoal_ptr;	/* pointer to the call structure */
@@ -310,11 +310,11 @@ typedef struct compl_susp_frame {
 #define CSF_SIZE	(sizeof(struct compl_susp_frame)/sizeof(CPtr))
 
 #define csf_pcreg(b)		((ComplSuspFrame)(b))->next_clause
-#define csf_ebreg(b)		((ComplSuspFrame)(b))->ebreg
-#define csf_hreg(b)		((ComplSuspFrame)(b))->hreg
-#define csf_trreg(b)		((ComplSuspFrame)(b))->trreg
-#define csf_cpreg(b)		((ComplSuspFrame)(b))->cpreg
-#define csf_ereg(b)		((ComplSuspFrame)(b))->ereg
+#define csf_ebreg(b)		((ComplSuspFrame)(b))->_ebreg
+#define csf_hreg(b)		((ComplSuspFrame)(b))->_hreg
+#define csf_trreg(b)		((ComplSuspFrame)(b))->_trreg
+#define csf_cpreg(b)		((ComplSuspFrame)(b))->_cpreg
+#define csf_ereg(b)		((ComplSuspFrame)(b))->_ereg
 #define csf_pdreg(b)		((ComplSuspFrame)(b))->pdreg
 #define csf_ptcp(b)		((ComplSuspFrame)(b))->ptcp
 #define csf_subgoal_ptr(b)	((ComplSuspFrame)(b))->subgoal_ptr
@@ -364,12 +364,12 @@ typedef struct compl_susp_choice_point {
 #ifdef CP_DEBUG
   Psc  psc;             /* PSC of predicate that created this CP */
 #endif    
-    CPtr ebreg;		/* environment backtrack -- top of env stack */
-    CPtr hreg;		/* current top of heap */
+    CPtr _ebreg;	/* environment backtrack -- top of env stack */
+    CPtr _hreg;		/* current top of heap */
 #ifdef SLG_GC
-  CPtr *trreg;	/* current top of trail stack */
-  byte *cpreg;	/* return point of the call to the procedure */
-  CPtr ereg;		/* current top of stack */
+  CPtr *_trreg;	/* current top of trail stack */
+  byte *_cpreg;	/* return point of the call to the procedure */
+  CPtr _ereg;		/* current top of stack */
   CPtr pdreg;		/* value of delay register for the parent subgoal */
   CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
 #endif
@@ -381,16 +381,16 @@ typedef struct compl_susp_choice_point {
 	(sizeof(struct compl_susp_choice_point)/sizeof(CPtr))
 
 #define cs_pcreg(b)		((ComplSuspChoice)(b))->next_clause
-#define cs_ebreg(b)		((ComplSuspChoice)(b))->ebreg
-#define cs_hreg(b)		((ComplSuspChoice)(b))->hreg
+#define cs_ebreg(b)		((ComplSuspChoice)(b))->_ebreg
+#define cs_hreg(b)		((ComplSuspChoice)(b))->_hreg
 #define cs_compsuspptr(b)	((ComplSuspChoice)(b))->compsuspptr
 #define cs_prevbreg(b)		((ComplSuspChoice)(b))->prev
 #ifdef SLG_GC
 #define SAVE_CSCP_EXTRA(t_breg) \
 ((ComplSuspChoice)(t_breg))->prev_top = t_breg + COMPL_SUSP_CP_SIZE; \
-((ComplSuspChoice)(t_breg))->trreg = trreg; \
-((ComplSuspChoice)(t_breg))->cpreg = cpreg; \
-((ComplSuspChoice)(t_breg))->ereg = ereg; \
+((ComplSuspChoice)(t_breg))->_trreg = trreg; \
+((ComplSuspChoice)(t_breg))->_cpreg = cpreg; \
+((ComplSuspChoice)(t_breg))->_ereg = ereg; \
 ((ComplSuspChoice)(t_breg))->pdreg = delayreg; \
 ((ComplSuspChoice)(t_breg))->ptcp = ptcpreg
 #else

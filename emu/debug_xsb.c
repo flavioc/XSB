@@ -37,6 +37,7 @@
 #include "psc_xsb.h"
 #include "memory_xsb.h"
 #include "flags_xsb.h"
+#include "context.h"
 #include "register.h"
 #include "deref.h"
 #include "trie_internals.h"
@@ -77,7 +78,7 @@ extern int  xctr;
 /*======================================================================*/
 
 #ifdef DEBUG_VM
-static void debug_interact(void);
+static void debug_interact(CTXTdecl);
 #endif
 
 /*======================================================================*/
@@ -193,7 +194,7 @@ void printterm(FILE *fp, Cell term, int depth) {
 
 /*----------------------------------------------------------------------*/
 
-static void print_call(Psc psc)
+static void print_call(CTXTdeclc Psc psc)
 {
   int i, arity;
 
@@ -211,14 +212,14 @@ static void print_call(Psc psc)
 
 /*----------------------------------------------------------------------*/
 
-void debug_call(Psc psc)
+void debug_call(CTXTdeclc Psc psc)
 {
   if (call_step || get_spy(psc)) {
-    print_call(psc);
+    print_call(CTXTc psc);
 #ifdef DEBUG_VM
-    debug_interact();
+    debug_interact(CTXT);
 #endif
-  } else if (!hitrace_suspend) print_call(psc);
+  } else if (!hitrace_suspend) print_call(CTXTc psc);
 }
 
 /*======================================================================*/
@@ -479,7 +480,7 @@ static char *compl_stk_frame_field[] = {
 #endif
 };
 
-void print_completion_stack(void)
+void print_completion_stack(CTXTdecl)
 {
   int i = 0;
   EPtr eptr;
@@ -509,7 +510,7 @@ void print_completion_stack(void)
 /*----------------------------------------------------------------------*/
 
 #ifdef DEBUG_VM
-static void print_pdlstack(void)
+static void print_pdlstack(CTXTdecl)
 {
   CPtr temp = pdlreg;
 
@@ -816,7 +817,7 @@ static void set_memory_watch(Integer num1, int num2)
 
 /*----------------------------------------------------------------------*/
 
-static void monitor_register_watch(void)
+static void monitor_register_watch(CTXTdecl)
 {
   if (reg_watch.heap_flag) 
     if (reg_watch.heap_val == hreg)
@@ -869,26 +870,26 @@ static void monitor_memory_watch(void)
       mem_watch.trail_val = *(CPtr *) mem_watch.trail_flag;
     }
 }
-void debug_inst(byte *lpcreg, CPtr le_reg)
+void debug_inst(CTXTdeclc byte *lpcreg, CPtr le_reg)
 {
   if (!print_hide) {
     fprintf(stddbg, "xctr %d ",xctr);
     print_inst(stddbg, lpcreg);
   }
-  if (register_watch_flag) monitor_register_watch();
+  if (register_watch_flag) monitor_register_watch(CTXT);
   if (memory_watch_flag) monitor_memory_watch();
   if (pil_step && debug_ctr == 0) {
     print_hide = 0;
     pcreg = lpcreg; ereg = le_reg;
-    debug_interact();
+    debug_interact(CTXT);
   } else { 
     if (debug_ctr > 0) debug_ctr--;
     else 
       if (call_step == 1 && *lpcreg == call) {
-	pil_step = 1; debug_interact();
+	pil_step = 1; debug_interact(CTXT);
       }
     if (compl_step == 1 && *lpcreg == check_complete) {
-      pil_step = 1; debug_interact();
+      pil_step = 1; debug_interact(CTXT);
     }
   }
 }
@@ -1001,7 +1002,8 @@ static void print_cp_cell(char *addrtype, CPtr addr, Cell term)
 /*
  * Local Stack grows from high to low memory.
  */
-static void print_local_stack(int overlap)
+
+static void print_local_stack(CTXTdeclc int overlap)
 {
   int i;
   CPtr cell_ptr,
@@ -1045,7 +1047,7 @@ static void print_local_stack(int overlap)
 
 /*----------------------------------------------------------------------*/ 
 
-static void print_trail(int overlap)		/* trail grows up */
+static void print_trail(CTXTdeclc int overlap)	/* trail grows up */
 {
   int  i, offset=0;
   char ans = 'y';
@@ -1079,7 +1081,7 @@ static void print_trail(int overlap)		/* trail grows up */
 /*----------------------------------------------------------------------*/ 
 
 /* Needs to change when new xwam stacks are introduced.  */
- void terry_print_heap(int overlap)	/* Heap grows up */
+static void terry_print_heap(CTXTdeclc int overlap)	/* Heap grows up */
 {
   int i = 0;
  
@@ -1097,7 +1099,7 @@ static void print_trail(int overlap)		/* trail grows up */
 
 /*----------------------------------------------------------------------*/
 
-static void print_freeze_choice_points(int overlap)	/* CPs grow down */
+static void print_freeze_choice_points(CTXTdeclc int overlap)	/* CPs grow down */
 {
   int i,last = 0;
   char ans = 'y';
@@ -1230,7 +1232,7 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
  * Choice point stack grows from high to low memory.
  */
 
-static void print_cpfs(int overlap)
+static void print_cpfs(CTXTdeclc int overlap)
 {
   int i, frames = 2;
   char ans = 'y';
@@ -1268,7 +1270,7 @@ static void print_cpfs(int overlap)
 
 /*----------------------------------------------------------------------*/ 
 
-static void print_choice_points(int overlap)
+static void print_choice_points(CTXTdeclc int overlap)
 {
   int i, last = 0;
   char ans = 'y';
@@ -1331,7 +1333,7 @@ static void print_heap(int overlap)	/* Heap grows up */
 }
 #endif
 
-static void print_status(void)
+static void print_status(CTXTdecl)
 {
   xsb_dbgmsg((LOG_DEBUG,"     ereg: 0x%p", ereg));
   xsb_dbgmsg((LOG_DEBUG,"    ebreg: 0x%p", ebreg));
@@ -1377,7 +1379,7 @@ static void print_status(void)
   xsb_dbgmsg((LOG_DEBUG,"\tinit size: %ld", complstack.init_size)); /* JF: long */
 }
 
-static void debug_interact(void)
+static void debug_interact(CTXTdecl)
 {
   char command, mod[32], name[32];
   Integer num, num1;
@@ -1416,17 +1418,17 @@ static void debug_interact(void)
   case 'B':
     scanf("%d", &num);
     skip_to_nl();
-    print_cpfs(num);
+    print_cpfs(CTXTc num);
     goto again;
   case 'c':
     scanf("%d", &num);
     skip_to_nl();
-    print_choice_points(num);
+    print_choice_points(CTXTc num);
     goto again;
   case 'C':
     scanf("%d", &num);
     skip_to_nl();
-    print_freeze_choice_points(num);
+    print_freeze_choice_points(CTXTc num);
     skip_to_nl();
     goto again;
   case 'd':
@@ -1442,12 +1444,12 @@ static void debug_interact(void)
   case 'e':
     scanf("%d", &num);
     skip_to_nl();
-    tcpstack_realloc(num);
+    tcpstack_realloc(CTXTc num);
     goto again;
   case 'E':
     scanf("%d", &num);
     skip_to_nl();
-    print_local_stack(num);
+    print_local_stack(CTXTc num);
     goto again;
   case 'g':
     skip_to_nl();
@@ -1467,7 +1469,7 @@ static void debug_interact(void)
   case 'H':
     scanf("%d", &num);
     skip_to_nl();
-    terry_print_heap(num);
+    terry_print_heap(CTXTc num);
     goto again;
   case 'k':
     scanf("%d", &num);
@@ -1492,7 +1494,7 @@ static void debug_interact(void)
     break;
   case 'M':
     skip_to_nl();
-    print_statistics(1);
+    print_statistics(CTXTc 1);
     goto again;
   case 'n':
     skip_to_nl();
@@ -1506,11 +1508,11 @@ static void debug_interact(void)
     break;
   case 'o':
     skip_to_nl();
-    print_completion_stack();
+    print_completion_stack(CTXT);
     goto again;
   case 'P':
     skip_to_nl();
-    print_pdlstack();
+    print_pdlstack(CTXT);
     goto again;
   case 'q':
   case 'x':
@@ -1537,12 +1539,12 @@ static void debug_interact(void)
     break;
   case 'S':
     skip_to_nl(); 
-    print_status();
+    print_status(CTXT);
     goto again;
   case 'T': 
     scanf("%d", &num);
     skip_to_nl();
-    print_trail(num);
+    print_trail(CTXTc num);
     goto again;
   case 'u':
     scanf("%s %s %d", mod, name, &num);

@@ -8,6 +8,7 @@
 
 xsbBool xsb_thread_request( CTXTdecl ) ;
 xsbBool mt_random_request( CTXTdecl ) ;
+int xsb_thread_self() ;
 
 
 #ifdef MULTI_THREAD
@@ -32,5 +33,15 @@ void init_system_threads( void ) ;
 {	if( flags[NUM_THREADS] > 1 ) 				\
 		xsb_abort( "more then one thread running" ) ; 	\
 }
+
+/* TLS: for Cygwin, these constants must be re-defined */
+
+#if defined(CYGWIN)
+
+#define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
+#define PTHREAD_MUTEX_ERRORCHECK_NP PTHREAD_MUTEX_ERRORCHECK
+#define PTHREAD_MUTEX_FAST_NP PTHREAD_MUTEX_NORMAL
+
+#endif
 
 #endif
