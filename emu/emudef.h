@@ -102,8 +102,12 @@ int asynint_code = 0;
 int asynint_val = 0;
 
 int next_free_code = 0;
-Integer enc[16] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-Integer dec[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
+unsigned long enc[16] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
+			 0xffffffff,0xffffffff,0xffffffff,0xffffffff,
+			 0xffffffff,0xffffffff,0xffffffff,0xffffffff,
+			 0xffffffff,0xffffffff,0xffffffff,0xffffffff};
+unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
+			0xffffffff,0xffffffff,0xffffffff,0xffffffff};
 
 /* Replacements for labelled code in emusubs.i */
 

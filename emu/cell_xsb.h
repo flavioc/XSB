@@ -163,7 +163,7 @@ extern Float getfloatval(Cell);
 #define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)
 
 #elif defined(GENERAL_TAGGING)
-extern Integer enc[], dec[];
+extern unsigned long enc[], dec[];
 
 #define enc_int(val)  (((Integer)(val) << 3))
 #define dec_int(val)  ((Integer)(val) >> 3)
