@@ -110,8 +110,9 @@ extern pw reloc_table[];
 /* jf: to init stat. structs */
 extern void perproc_reset_stat(), reset_stat_total(); 
 
-extern char *install_dir; /* from xmain.c */
-extern char *xsb_config_file; /* from xmain.c */
+/* these three are from self_orientation.c */
+extern char *install_dir; 
+extern char *xsb_config_file; /* configuration.P */
 extern char *user_home; /* the user HOME dir or install dir, if HOME is null */
 
 Cell *term_stack;

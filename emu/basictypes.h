@@ -25,6 +25,9 @@
 
 #ifndef BASICTYPES_INCLUDED
 
+/* seems that some systems (Perl?) define bool as empty symbol; 
+   need to neutralize that */
+#undef bool
 typedef short  bool;
 
 #ifdef BITS64

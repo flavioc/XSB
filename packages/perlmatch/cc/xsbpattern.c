@@ -35,8 +35,8 @@
        
 ----------------------------------------------------------------------------*/
 
-/**------------------------------------------------------------------------**/
 
+#include "interface.h"
 #include "perlpattern.c"          /*pattern match basic functions */   
 
 void build_sub_match_spec( void );

@@ -25,8 +25,7 @@
 
 #include <EXTERN.h>               /*perlembed c function's header file*/ 
 #include <perl.h> 
-#include "cinterf.h"   
-                                  /*for c and XSB interface functions*/
+#include "cinterf.h"	    	  /*for c and XSB interface functions*/
 
 /*----------------------------------------------------------------------------
 definitions for the XSB perl interface

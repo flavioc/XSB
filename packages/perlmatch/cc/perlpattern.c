@@ -23,15 +23,6 @@
 */
 
 
-/* match()
-   matchAgain()
-   substitute()
-*/
-
-
-
-#include "interface.h"
-
  
 /*----------------------------------------------------------------------------
 int match(SV *string, char *pattern)

@@ -939,12 +939,32 @@ int xsb_answer_string(char *ans, int anslen, char *sep) {
 /* returned.                                                            */
 /*                                                                      */
 /************************************************************************/
+
+/* these are from self_orientation.c */
+extern void xsb_executable_full_path(char *);
+extern void set_xsbinfo_dir (void);
+extern void set_install_dir(void);
+extern void set_config_file(void);
+extern void set_user_home(void);
+
 int xsb_initted = 0;   /* if xsb has been called */
 
 DllExport int call_conv xsb_init(int argc, char *argv[])
 {
   if (xsb_initted) return(1);
+
+  /* set the name of the executable to the real name */
+  xsb_executable_full_path(argv[0]);
+
+  /* set install_dir, xsb_config_file, and user_home */
+  set_install_dir();
+  set_config_file();
+  set_user_home();
+  
   xsb(0, argc,argv);  /* initialize xsb */
+
+  set_xsbinfo_dir ();
+
   xsb(1, 0, 0);       /* enter xsb to set up regs */
   xsb_initted = 1;
   return(0);

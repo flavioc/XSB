@@ -187,8 +187,8 @@ static void write_out_profile(void);
 
 Cell  flags[64];			/* System flags + user flags */
 FILE *open_files[MAX_OPEN_FILES]; /* open file table */
-extern char *install_dir;    	  /* from xmain.c */
-extern char *user_home;    	  /* from xmain.c */
+extern char *install_dir;    	  /* from self_orientation.c */
+extern char *user_home;    	  /* from self_orientation.c */
 
 /* ------- working variables for the procedure "builtin_call" ---------	*/
 
