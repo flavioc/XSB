@@ -36,7 +36,6 @@
 %%% ======================================================================
 
 
-:- flEquality flogic.
 
 male :: person.		% subclass relation
 female :: person.	% subclass relation
