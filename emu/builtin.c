@@ -2744,8 +2744,8 @@ prolog_term build_xsb_backtrace() {
       tmp_psc = psc_from_code_addr(tmp_cpreg);
       follow(forward) = makelist(hreg);
       threg = hreg++;
-      bld_oint(threg,tmp_psc);
       forward = hreg++;
+      bld_oint(threg,tmp_psc);
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
       instruction = *(tmp_cpreg-2*sizeof(Cell));
@@ -2758,8 +2758,8 @@ prolog_term build_xsb_backtrace() {
       tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
       follow(backward) = makelist(hreg);
       threg = hreg++;
-      bld_oint(threg,tmp_psc);
       backward = hreg++;
+      bld_oint(threg,tmp_psc);
       tmp_breg = cp_prevbreg(tmp_breg);
     }
     follow(backward) = makenil;
@@ -2774,8 +2774,8 @@ prolog_term build_xsb_backtrace() {
 	called_psc = *((Psc *)tmp_cpreg - 1);
 	follow(forward) = makelist(hreg);
 	threg = hreg++;
-	bld_oint(threg,called_psc);
 	forward = hreg++;
+	bld_oint(threg,called_psc);
       }
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
