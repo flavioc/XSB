@@ -1119,9 +1119,10 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 	check_glstack_overflow(5, pcreg, (size+1)*sizeof(Cell)) ;
 	/* get return location again, in case it moved, whole reasong for r_c_r_v */
 	prologvar = read_canonical_return_var(return_location_code); 
-	/*gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; ??*/
+	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high;
 	bind_ref((CPtr)prologvar,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
+	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /* so findall_copy* finds vars */
 	findall_copy_to_heap(term,(CPtr)prologvar,&hreg) ; /* this can't fail */
 	free_term_buffer();
 
