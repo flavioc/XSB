@@ -37,12 +37,14 @@
 :- import
 	flora_set_xpp_options/0,
 	flora_clear_xpp_options/0,
-	flora_stderr_nl/0,
-	flora_error_line/2,
 	flora_check_filename/1,
 	flora_locate_file/3,
 	flora_FLH_filename/2
    from flrutils.
+:- import
+	flora_stderr_nl/0,
+	flora_error_line/2
+   from flrprint.
 :- import member/2 from basics.
 :- import process_control/2 from shell.
 :- import xpp_process_file/3 from parse.

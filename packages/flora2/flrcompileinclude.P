@@ -178,9 +178,12 @@ intern_predicate_spec(P) :-
 	storage_insert_fact(flora_compile_trie,NewP,_).
 %% of the form name(_,...,_)
 intern_predicate_spec(P) :-
-	functor(P,Name,Arity),
+	functor(P,Name,Arity), Arity > 0,
+	!,
 	storage_insert_fact(flora_compile_trie,P,_),
 	storage_insert_fact(flora_compile_trie,Name/Arity,_).
+intern_predicate_spec(P) :-
+	flora_error_line('[flCompileInclude] Invalid predicate specification in a wraparound directive: %S', arg(P)).
 
 dump_other_directive(Directive, PredSpecs) :-
 	write(':- '), writeln(Directive),
