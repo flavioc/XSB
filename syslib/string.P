@@ -56,34 +56,40 @@ str_fl_put(Buff, N, [A|T]) :-
 	N1 is N + 1,
 	str_fl_put(Buff, N1, T).
 
-% This could be made more efficient.  Quadratic.
-concat_atom([],'').
-concat_atom([H],H):-!.
-concat_atom([H1,H2|T],Out):-
-	atom(H1),atom(H2),
-	str_cat(H1,H2,Mid),	
-	concat_atom_1(T,Mid,Out).
+%--- 
+/* 
+TLS 7/99 This version is linear rather than quadratic and seems
+much faster than the old one (which I must confess to writing).  Also,
+this is well-behaved for memory management since it no longer uses
+str_cat or str_len.
+*/
 
-concat_atom_1([],Out,Out).
-concat_atom_1([Atom|T],In,Out):-
+concat_atom(Atomlist,Atom):-
+	atom_to_charlist(Atomlist,Charlist1),
+	flatten(Charlist1,Charlist),
+	atom_chars(Atom,Charlist).
+
+atom_to_charlist([],[]).
+atom_to_charlist([Atom|Rest],[List|Lrest]):- 
 	atom(Atom),
-	str_cat(In,Atom,Mid),
-	concat_atom_1(T,Mid,Out).
+	atom_chars(Atom,List),
+	atom_to_charlist(Rest,Lrest).
 
-concat_atom([],_Sep,'').
-concat_atom([H],_Sep,H):-!.
-concat_atom([H|T],Sep,Out):-
-	concat_atom_1(T,Sep,H,Out).
+%---
+concat_atom(Atomlist,Sep,Atom):-
+	atom(Sep),
+	atom_chars(Sep,Slist),
+	atom_to_charlist(Atomlist,Slist,Charlist1),
+	flatten(Charlist1,Charlist),
+	atom_chars(Atom,Charlist).
 
-concat_atom_1([H],Sep,Mid,Out):-!,
-	atom(H),
-	str_cat(Mid,Sep,Mid1),
-	str_cat(Mid1,H,Out).
-concat_atom_1([Atom|T],Sep,In,Out):-
+atom_to_charlist([Atom],_,[List]):- !,
 	atom(Atom),
-	str_cat(In,Sep,Mid1),
-	str_cat(Mid1,Atom,Mid),
-	concat_atom_1(T,Sep,Mid,Out).
+	atom_chars(Atom,List).
+atom_to_charlist([Atom|Rest],Slist,[List,Slist|Lrest]):- 
+	atom(Atom),
+	atom_chars(Atom,List),
+	atom_to_charlist(Rest,Slist,Lrest).
 
 str_length(Str, Len) :- ( atom(Str) -> str_len(Str, L), Len = L ).
 
