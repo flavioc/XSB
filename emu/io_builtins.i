@@ -132,9 +132,13 @@ inline static bool file_function(void)
     ctop_int(5, (int) value);
     break;
   case FILE_TRUNCATE: /* file_function(2,+filedes,+length,-ret,-dontcare) */
+#ifndef WIN_NT
     SET_FILEPTR(fptr, ptoc_int(2));
     value = ftruncate( fileno(fptr), (off_t) ptoc_int(3));
     ctop_int(4, (int) value);
+#else
+    xsb_warn("FILE_TRUNCATE: operation not supported under Windows.");
+#endif
     break;
   case FILE_POS: /* file_function(3, +filedes, -pos) */
     file_des = ptoc_int(2);  /* expand for reading from strings?? */
