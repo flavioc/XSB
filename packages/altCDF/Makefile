@@ -1,5 +1,5 @@
-## File:      lib/Makefile
-## Author(s): Kostis Sagonas, Jiyang Xu
+## File:      packages/altCDF/Makefile
+## Author(s): David S. Warren (from Kostis Sagonas, Jiyang Xu)
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
