@@ -619,7 +619,7 @@ Prolog side in argument 5.
        Arg4: new (output) string
    Always succeeds, unless error.
 */
-bool do_regsubstitute__(void)
+int do_regsubstitute__(void)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -761,7 +761,7 @@ bool do_regsubstitute__(void)
              All matched substrings are returned. Parenthesized expressions are
              ignored.
 */
-bool do_bulkmatch__(void)
+int do_bulkmatch__(void)
 {
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
