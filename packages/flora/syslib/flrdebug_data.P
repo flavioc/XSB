@@ -78,7 +78,7 @@ hide_this_hide(STD_FPREFIX(max),3).
 hide_this_hide(STD_FPREFIX(avg),3).
 hide_this_hide(STD_FPREFIX(sum),3).
 
-hide_this_hide(STD_FPREFIX(debug_get_context),2).
+hide_this_hide(flora_debug_get_context,2).
 hide_this_hide(flora_write_debug_goal,2).
 
 hide_this_hide(flora_trace,0).

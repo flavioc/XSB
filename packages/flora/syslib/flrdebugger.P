@@ -45,7 +45,7 @@
 
 :- dynamic debug_display_call_hook(_).
 :- dynamic STD_FPREFIX(switch)/1, STD_FPREFIX(debugger_data_loaded)/0.
-:- dynamic STD_FPREFIX(debug_context)/1.
+:- dynamic flora_debug_context/1.
 
 %%:- export STD_FPREFIX(trace)/0, STD_FPREFIX(notrace)/0.
 
@@ -140,7 +140,7 @@ flora_write_debug_goal(Call) :-
 	nonvar(Call),
 	Call =.. [',' | GoalList],
 	GoalList = [Call1 | Rest],
-	STD_FPREFIX(debug_get_context)(Rest,Context),
+	flora_debug_get_context(Rest,Context),
 	!,
 	%% Context=none means list of independent goals
 	(Context == none -> flora_write_debug_goal(GoalList, none)
@@ -151,7 +151,7 @@ flora_write_debug_goal(Call) :-
 %% aggregates -- they come with "context" obtained from ','(Goal1,Goal2, ...)
 flora_write_debug_goal(Call) :- 
 	functor(Call, findall, 3),
-	STD_FPREFIX(debug_context)(Context),
+	flora_debug_context(Context),
 	!,
 	flora_write_debug_goal(Call, Context).
 
