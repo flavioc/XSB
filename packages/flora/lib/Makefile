@@ -1,4 +1,4 @@
-## File:      packages/flora/Makefile
+## File:      packages/flora/lib/Makefile
 ## Author(s): kifer (adapted from lib/Makefile)
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
