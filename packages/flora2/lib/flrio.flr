@@ -99,7 +99,7 @@ readline(Request,_) :-
 
 write(O) :- !, flP2H(PO,O), write(PO)@prolog().
 IOstream[#write(O)] :- flP2H(PO,O), writeln(IOstream,PO)@prolog().
-writeln(O) :- !, flP2H(PO,O), write(PO)@prolog().
+writeln(O) :- !, flP2H(PO,O), writeln(PO)@prolog().
 IOstream[#writeln(O)] :- flP2H(PO,O), writeln(IOstream,PO)@prolog().
 nl :- nl@prolog().
 

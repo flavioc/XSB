@@ -13,9 +13,9 @@
 #if !defined(FLORA_TERMS_FLH)
 #define FLORA_TERMS_FLH
 #include "flora_terms.flh"
-:- import flora_load_system_module/1 from flrlibman.
 #endif
 
+:- import flora_load_system_module/1 from flrlibman.
 ?- flora_load_system_module(FLSYSMODPP).
 
 /***********************************************************************/

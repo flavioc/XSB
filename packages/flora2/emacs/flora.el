@@ -70,24 +70,27 @@
   "*Non-nil means automatically align comments when indenting.")
 
 (defconst flora-quoted-atom-regexp
-  "\\(^\\|[^0-9]\\)\\('\\([^\n']\\|''\\)*'\\)"
+  "'\\([^\n']\\|''\\)*'"
   "Regexp matching a quoted atom.")
-(defconst flora-atom-regexp
+(defconst flora-unquoted-atom-regexp
   "\\([:.,()*&^$#@]\\|[A-Za-z0-9_]+\\)"
+  "Regexp matching an unquoted atom.")
+(defconst flora-atom-regexp
+  (format "\\(%s\\|%s\))" flora-quoted-atom-regexp flora-unquoted-atom-regexp)
   "Regexp matching an atom.")
 (defconst flora-string-regexp
-  "\\(\"\\([^\n\"]\\|\"\"\\)*\"\\|'\\([^\n']\\|''\\)*'\\)"
-  "Regexp matching a string.")
+  (format "\\(\"\\([^\n\"]\\|\"\"\\)*\"\\|%s\\)" flora-quoted-atom-regexp)
+  "Regexp matching a string (things inside double or single quotes).")
 (defconst flora-bracketed-object "\\[.*\\]"
   "Like list. Used to prevent recursion in flora-list-regexp.")
 (defconst flora-list-regexp
-  (format "\\[\\( %s \\| %s \\)\\]" flora-atom-regexp flora-bracketed-object)
+  (format "\\[\\([^\]\[]*\\|%s\\)\\]" flora-bracketed-object)
   "Regexp for matching a list.")
 (defconst flora-oid-regexp
   (format "\\(%s\\|%s\\|%s\\|%s\\|[A-Za-z0-9]+\\)"
-	  flora-list-regexp flora-bracketed-object
+	  flora-bracketed-object flora-list-regexp 
 	  flora-string-regexp flora-atom-regexp)
-  "Regexp to recognize atoms.")
+  "Regexp to recognize oid.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Do fontifification of F-logic-syntax with font-lock.
@@ -105,6 +108,10 @@
 (make-face 'flora-font-lock-query-face)
 (set-face-foreground 'flora-font-lock-query-face "darkgreen")
 
+(defconst flora-directives-regexp
+  "index\\|from\\|hilogtable\\|hilogtableall\\|import\\|table\\|firstorder\\|firstorderall\\|arguments"
+  "Flora compiler directives without the \\( and \\).")
+
 (defconst flora-font-lock-keywords
    (list
     '("\\(\\(flora\\)? +\\?-\\|:-\\|\\.[ \t\n]*$\\)"
@@ -120,8 +127,8 @@
       1 'font-lock-type-face)
     '("\\(\\[\\|\\]\\|{\\|}\\)"
       1 'bold)
-    '("\\b\\(index\\|from\\|hilogtable\||hilogtableall\\|import\\|table\||firstorder\||firstorderall\||arguments\||^#[a-z]\\)\\b"
-      1 'flora-font-lock-system-face)
+    (list (format "\\b\\(%s\\|^#[a-z]\\)\\b" flora-directives-regexp)
+	  1 'flora-font-lock-system-face)
     '("\\(\\b[A-Za-z0-9_]+\\b *\\((\\b[^)]+\\b)\\)?\\)[ \t\n]*\\((.*)[ \t\C-m]*\\)?\\*?[---=]>"
       1 'font-lock-function-name-face)
     )
@@ -185,8 +192,9 @@
   ;; This complex regexp makes sure that comments cannot start
   ;; inside quoted atoms or strings
   (setq comment-start-skip 
-	(format "^\\(\\(%s\\|%s\\|[^\n\'\"%%]\\)*\\)\\(/\\*+ *\\|%%+ *\\)" 
-		flora-quoted-atom-regexp flora-string-regexp))
+	(format
+	 "^\\(\\(%s\\|[^\n'\"%%/]\\|/[^'\"]\\)*\\)\\(/\\*+ *\\|%%%%+ *\\|//\\)"
+		flora-string-regexp))
   (make-local-variable 'comment-end)
   (setq comment-end "")
   (make-local-variable 'comment-column)
@@ -328,12 +336,13 @@ This assumes that the point is inside a comment."
  	      (setq empty nil)
  	    (skip-chars-forward " \t")
  	    (if (not (or (looking-at "%[^%]") (looking-at "\n")))
- 		(setq empty nil))))
+ 		(setq empty nil))
+	    ))
  	(if (bobp)
  	    (setq ind 0)		;Beginning of buffer
 	  (setq ind (current-column)))	;Beginning of clause
 	;; See its beginning
-	(if (looking-at "%%[^%]")
+	(if (looking-at "\\(%%%%[^%%]\\|//\\)")
 	    ind
 	  ;; Real Prolog code
 	  (if (looking-at "(")
@@ -342,16 +351,47 @@ This assumes that the point is inside a comment."
 	  ;; See its tail
 	  (end-of-flora-clause)
 	  (or (bobp) (forward-char -1))
-	  (cond ((looking-at "[,(;>@]")
+	  (cond ((looking-at "[,(;]")
 		 (if (and more (looking-at "[^,]"))
 		     (+ ind flora-indent-width) ;More indentation
 		   (max tab-width ind))) ;Same indentation
 		((looking-at "-") tab-width) ;TAB
+		((flora-sitting-in
+		  (format ":- *\\(%s\\)" flora-directives-regexp))
+		 tab-width)
 		((or less (looking-at "[^.]"))
 		 (max (- ind flora-indent-width) 0)) ;Less indentation
 		(t 0))			;No indentation
 	  )))
      )))
+
+;; Returns t, if the string before point matches the regexp STR.
+(defsubst flora-looking-back (str)
+  (and (save-excursion (re-search-backward str (flora-get-bol) t))
+       (= (point) (match-end 0))))
+
+;; Returns t, if the string surrounding point matches the regexp STR.
+;; Assume there is only one match on the line -- lazy
+(defun flora-sitting-in (str)
+  (and (save-excursion
+	 (end-of-line)
+	 (re-search-backward str (flora-get-bol) t))
+       (and (>= (point) (match-beginning 0)) (<= (point) (match-end 0)))
+       ))
+
+;; return beginning of line pos
+(defun flora-get-bol ()
+  (save-excursion
+    (beginning-of-line)
+    (point)
+    ))
+;; return end of line pos
+(defun flora-get-eol ()
+  (save-excursion
+    (end-of-line)
+    (point)
+    ))
+
 
 (defun flora-electric-star (arg)
   "Insert a star character.
@@ -409,10 +449,10 @@ is inhibited."
 (defun end-of-flora-clause ()
   "Go to end of clause in this line."
   (beginning-of-line 1)
-  (let* ((eolpos (save-excursion (end-of-line) (point))))
+  (let* ((eolpos (flora-get-eol)))
     (if (re-search-forward comment-start-skip eolpos 'move)
-	(goto-char (match-beginning 0)))
-    (skip-chars-backward " \t")))
+	(goto-char (match-end 0)))
+    (skip-chars-backward " \t%/*")))
 
 (defun flora-comment-indent ()
   "Compute Prolog-style comment indentation."
