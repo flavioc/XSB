@@ -46,7 +46,7 @@
 
 #define BUFFEXTRA 1024
 
-#ifdef SOLARIS
+#if (defined(SOLARIS) && defined(__GNUC__))
 /* just to supress stupid gcc warning */
 extern int putenv(const char *);
 #endif
