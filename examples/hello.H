@@ -1,2 +1,0 @@
-:- export hello/0.
-
