@@ -78,7 +78,8 @@ str_length(Str, Len) :- str_len(Str, Len).
 
 str_cat(S1, S2, S3) :- str_cat(S1, S2, S3).
 %% Only checks the first match
-str_sub(S1, S2, Pos) :- str_sub(S1, S2, Pos).
-str_sub(S1, S2) :- str_sub(S1, S2, _Pos).
+str_match(Sub,Str,Direction,Beg,End) :- str_match(Sub,Str,Direction,Beg,End).
+str_sub(S1, S2, Pos) :- str_match(S1, S2, forward, Pos, _).
+str_sub(S1, S2) :- str_match(S1, S2, forward, _, _).
 
 /* ---------------------- end of file string.P ------------------------ */

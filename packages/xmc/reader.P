@@ -102,12 +102,12 @@ end_comment(Str) :- suffix('*/', Str).
 %---------------------------------------------------------
 
 prefix(Sub, Str) :- init_whitespaces(Str, W),
-		    N is W + 1, str_sub(Sub, Str, N).
+		    str_sub(Sub, Str, W).
 
 suffix(Sub, Str) :- end_whitespaces(Str, W),
 		    str_length(Str, LStr),
 		    str_length(Sub, LSub),
-		    N is LStr - W - LSub + 1,
+		    N is LStr - W - LSub,
 		    str_sub(Sub, Str, N).
 
 %---------------------------------------------------------

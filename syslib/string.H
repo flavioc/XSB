@@ -26,7 +26,7 @@
 
 :- export concat_atom/2, concat_atom/3.
 :- export str_cat/3, str_sub/2, str_sub/3, str_length/2, substring/4,
-	string_substitute/4.
+	str_match/5, string_substitute/4.
 
 :- import flatten/2 from basics.
 :- import str_len/2 from machine.

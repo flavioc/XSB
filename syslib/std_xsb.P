@@ -235,6 +235,7 @@ standard_symbol(str_sub, 2, string).
 standard_symbol(str_length, 2, string).
 standard_symbol(substring, 4, string).
 standard_symbol(string_substitute, 4, string).
+standard_symbol(str_match, 5, string).
 
 standard_symbol((use_variant_tabling), 1, tables).
 standard_symbol((use_subsumptive_tabling), 1, tables).

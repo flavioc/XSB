@@ -95,8 +95,11 @@ buff_set_var(Buff, Disp, BuffSize, Var) :-
 buff_dealloc(Buff, OldSize, NewSize) :- buff_dealloc(Buff, OldSize, NewSize).
 buff_cell(Buff, Disp, Cell) :- buff_cell(Buff, Disp, Cell).
 buff_set_cell(Buff, Disp, Tag, Value) :- buff_set_cell(Buff, Disp, Tag, Value).
-/* check if Sub is a substring in Str */
-str_sub(Sub, Str, Pos) :- str_sub(Sub, Str, Pos).
+
+/* check if Sub is a substring in Str and return the matches.
+   Also does matching from the end */
+str_match(Sub,Str,Direction,Beg,End) :- str_match(Sub,Str,Direction,Beg,End).
+
 /* If file is a directory, add slash, if needed, or strip extra slashes */
 dirname_canonic(File, Canonic) :- dirname_canonic(File, Canonic).
 /* for efficiency reasons, the following predicates are also implemented */

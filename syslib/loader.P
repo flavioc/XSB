@@ -55,10 +55,10 @@
 windows_os_loader :-  stat_flag(CONFIG_NAME, ConfigurationC),
 	%% convert C string to Prolog
 	intern_string(ConfigurationC, Configuration),
-	(   str_sub('win', Configuration, _)
-	;   str_sub('-nt', Configuration, _)
-	;   str_sub('w95', Configuration, _)
-	;   str_sub('wnt', Configuration, _) ).
+	(   str_match('win', Configuration, f, _, _)
+	;   str_match('-nt', Configuration, f, _, _)
+	;   str_match('w95', Configuration, f, _, _)
+	;   str_match('wnt', Configuration, f, _, _) ).
 
 %% we duplicate fmt_write_* here because they are used early on, in libpath()
 fmt_write_string(S,Fmt,A) :- formatted_io(FMT_WRITE_STRING, S,Fmt,A,_).
