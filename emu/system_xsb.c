@@ -59,6 +59,7 @@
 #include "system_xsb.h"
 #include "system_defs_xsb.h"
 
+#define MAX_CMD_LEN 1024
 
 static int xsb_spawn (char *prog, char *arg[], int callno,
 		      int pipe1[], int pipe2[], int pipe3[],
@@ -79,7 +80,7 @@ static struct proc_table_t {
     int to_stream;     	       /* XSB stream to process stdin    */
     int from_stream;           /* XSB stream from process stdout */
     int stderr_stream;	       /* XSB stream from process stderr */
-    char cmdline[MAXPATHLEN];  /* the cmd line used to invoke the process */
+    char cmdline[MAX_CMD_LEN];  /* the cmd line used to invoke the process */
   } process[MAX_SUBPROC_NUMBER];
 } xsb_process_table;
 
@@ -145,9 +146,9 @@ int sys_syscall(int callno)
   }
   case SYS_rename: result = rename(ptoc_string(3), ptoc_string(4)); break;
   case SYS_cwd: {
-    char current_dir[MAXPATHLEN];
+    char current_dir[MAX_CMD_LEN];
     /* returns 0, if != NULL, 1 otherwise */
-    result = (getcwd(current_dir, MAXPATHLEN-1) == NULL);
+    result = (getcwd(current_dir, MAX_CMD_LEN-1) == NULL);
     if (result == 0)
       ctop_string(3,string_find(current_dir,1));
     break;
@@ -363,7 +364,7 @@ xsbBool sys_system(int callno)
     xsb_process_table.process[tbl_pos].from_stream = fromproc_stream;
     xsb_process_table.process[tbl_pos].stderr_stream = fromproc_stderr_stream;
     concat_array(params, " ",
-		 xsb_process_table.process[tbl_pos].cmdline,MAXPATHLEN);
+		 xsb_process_table.process[tbl_pos].cmdline,MAX_CMD_LEN);
     
     return TRUE;
   }
@@ -488,7 +489,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 {
   int pid;
   int stdin_saved, stdout_saved, stderr_saved;
-  static char shell_command[MAXPATHLEN];
+  static char shell_command[MAX_CMD_LEN];
 
   if ( (pipe_to_proc != NULL) && PIPE(pipe_to_proc) < 0 ) {
     /* can't open pipe to process */
@@ -605,7 +606,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
     }
   } else { /* SHELL command */
     /* no separator */
-    concat_array(argv, "", shell_command, MAXPATHLEN);
+    concat_array(argv, "", shell_command, MAX_CMD_LEN);
     pid = system(shell_command);
   }
 
@@ -735,13 +736,13 @@ static void split_string(char *string, char *params[], char *callname)
   int buflen = strlen(string);
   int idx = 0, pos;
   char *prev_ptr, *buf_ptr;
-  static char buffer[MAXPATHLEN];
+  static char buffer[MAX_CMD_LEN];
 
-  if (buflen > MAXPATHLEN - 1)
+  if (buflen > MAX_CMD_LEN - 1)
     xsb_abort("[%s] Command string too long",
 	      callname);
 
-  strncpy(buffer, string, MAXPATHLEN);
+  strncpy(buffer, string, MAX_CMD_LEN);
   buf_ptr = buffer;
 
   do {

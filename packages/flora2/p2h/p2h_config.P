@@ -26,24 +26,24 @@
 %% Loading p2h_config.P ensures that the module prolog2hilog is compiled 
 %% and loaded.
 
-:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
-:- import fmt_write_string/3, file_time/2 from file_io.
+:- import slash/1 from machine.
+:- import fmt_write_string/3, path_sysop/3 from file_io.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2, windows_os/0 from xsb_configuration.
-:- import rename/2 from shell.
+:- import str_cat/3, str_sub/2 from string.
 
-:-  package_configuration(dir(flora), FloraDir),
+is_cygwin :- xsb_configuration(architecture,A), str_sub(cygwin,A).
+
+?-  package_configuration(dir(flora), FloraDir),
     slash(Slash),
     Basename = prolog2hilog,
     fmt_write_string(Module,
 		     '%s%sp2h%s%s', f(FloraDir, Slash, Slash,Basename)),
-    (  %% avoid recompilation: check if prolog2hilog.O exists and 
-       %% is newer than prolog2hilog.c.
-       search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
-       str_cat(Module, '.c', ModuleSourceFile),
-       file_time(ModuleO, time(CT1,CT2)),
-       file_time(ModuleSourceFile, time(ST1,ST2)),
-       time(ST1,ST2) @< time(CT1,CT2)
+    (   %% avoid recompilation: check if prolog2hilog.O exists and 
+	%% is newer than prolog2hilog.c.
+	search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
+	str_cat(Module, '.c', ModuleSourceFile),
+	path_sysop(newerthan,ModuleO,ModuleSourceFile)
     %% module compiled and is current, so just load
     -> [Basename]
 
@@ -54,8 +54,8 @@
 	consult(Module, [cc(CC), cc_opts(' ')]),
 	fmt_write_string(LibObjFile,
 			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
-	rename(Objfile, LibObjFile),
-	(windows_os, !
+	path_sysop(rename,Objfile, LibObjFile),
+	((windows_os; is_cygwin), !
 	;
 	    %% Note: the .so ending is Unix-ism. I dunno what this
 	    %% corresponds to in windows. - mk
@@ -63,6 +63,6 @@
 	    fmt_write_string(LibMod,
 			     '%s%s%s.so',
 			     a(ConfigLibdir,Slash,Basename)),
-	    rename(SharedLib,LibMod)
+	    path_sysop(rename,SharedLib,LibMod)
 	)
      ).
