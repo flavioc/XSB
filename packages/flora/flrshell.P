@@ -61,10 +61,12 @@
 	dynconsult/2, displayln_warning/1
    from flrutils.
 
+:- import glob_directory/4 from wildmatch.
+
 :- dynamic '_$_$_flora_switch'/1.
 
 /*********************************************************************/
-flora_shell :-
+'_$_$_flora_shell' :-
 	( package_configuration(dir(flora),FloraDir) ->
 	    true
 
@@ -206,16 +208,28 @@ help :-
 rundemo(X,Dtvs) :-
 	'_$_$_flora_check_filename'(X),
 	package_configuration(dir(flora),FloraDir),
-	slash(S),
-	fmt_write_string(Demo,'%s%sdemos%s%s',f(FloraDir,S,S,X)),
-	flconsult(Demo,Dtvs).
+	slash(Slash),
+	%% Add the demo directory to library_directory
+	fmt_write_string(DemoDir, '%s%sdemos', f(FloraDir, Slash)),
+	(library_directory(DemoDir)
+	       -> true
+		; assert(library_directory(DemoDir))
+	),
+	flconsult(X,Dtvs),
+	retract(library_directory(DemoDir)).
 
 rundemo(X) :-
 	'_$_$_flora_check_filename'(X),
 	package_configuration(dir(flora),FloraDir),
-	slash(S),
-	fmt_write_string(Demo,'%s%sdemos%s%s',f(FloraDir,S,S,X)),
-	flconsult(Demo).
+	slash(Slash),
+	%% Add the demo directory to library_directory
+	fmt_write_string(DemoDir, '%s%sdemos', f(FloraDir, Slash)),
+	(library_directory(DemoDir)
+	       -> true
+		; assert(library_directory(DemoDir))
+	),
+	flconsult(X),
+	retract(library_directory(DemoDir)).
 
 
 /*********************************************************************/
@@ -241,19 +255,26 @@ end :-
 
 
 /*********************************************************************/
+%% Take all *,flr files in ./flora/demos/ and flora-compile them.
+%% This relies on the availability of Posix wildcard matcher.
+%% It is used only for configuring the demos.
 flcompile_all_demos  :-
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
-	fmt_write_string(F1,'%s%sdemos%sdefault',f(FloraDir,S,S)),
-	fmt_write_string(F2,'%s%sdemos%sfamily_obj',f(FloraDir,S,S)),
-	fmt_write_string(F3,'%s%sdemos%sfamily_rel',f(FloraDir,S,S)),
-	fmt_write_string(F4,'%s%sdemos%sflogic_basics',f(FloraDir,S,S)),
-	fmt_write_string(F5,'%s%sdemos%srel_ops',f(FloraDir,S,S)),
-	'_$_$_flora_flcompile'(static_mode,[],F1,noforce,_),
-	'_$_$_flora_flcompile'(static_mode,[],F2,noforce,_),
-	'_$_$_flora_flcompile'(static_mode,[],F3,noforce,_),
-	'_$_$_flora_flcompile'(static_mode,[],F4,noforce,_),
-	'_$_$_flora_flcompile'(static_mode,[],F5,noforce,_).
+	fmt_write_string(DemoDir,'%s%sdemos',f(FloraDir,S)),
+        glob_directory('*.flr', DemoDir, _, DemoList),
+	(library_directory(DemoDir) -> true
+	    ;
+	    assert(library_directory(DemoDir))
+	),
+	flcompile_demo(DemoList),
+	retract(library_directory(DemoDir)).
+
+flcompile_demo([D|Rest]) :- 
+	'_$_$_flora_flcompile'(static_mode,[],D,noforce,_),
+	flcompile_demo(Rest).
+flcompile_demo([]).
+
 
 
 /********************************************************************/
