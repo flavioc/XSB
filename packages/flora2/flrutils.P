@@ -639,7 +639,11 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
 	( PFileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	  flora_generate_DBfile(DBFile,FlogicFactList,FileStatus)
+	  ( FlogicFactList == [] ->
+	      FileStatus=FLORA_SUCCESS
+	  ;
+	    flora_generate_DBfile(DBFile,FlogicFactList,FileStatus)
+	  )
         ),
 	!.
 
