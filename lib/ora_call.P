@@ -2349,7 +2349,7 @@ get_output_value(CursorHandle,BindVarValue,Status) :-
 execute_immediate(StmtString,Status) :-
 	oracle_query(12,StmtString,Status).
 
-attribute('$','$','$','$').
+:- assert(attribute('$','$','$','$')).
 
 db_sqlcaid(Res) :- oracle_query(16,Res).
 db_sqlcabc(Res) :- oracle_query(17,Res).
