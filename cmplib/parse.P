@@ -528,7 +528,10 @@ parse_directive(import(from(X, Mod)), SymTab) :-
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
 parse_directive(document_import(from(X, Mod)), SymTab) :-
-	parse_list(X, SymTab, [docim(Mod)], (document_import)).
+	(var(Mod)
+	 ->	error(('Module cannot be a variable. Document_importing: ',X))
+	 ;	parse_list(X, SymTab, [docim(Mod)], (document_import))
+	).
 parse_directive(local(X), SymTab) :-
 	parse_list(X, SymTab, [(local)], (local)).
 parse_directive(index(X), SymTab) :-	% for compiled-code indexing
