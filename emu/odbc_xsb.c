@@ -58,6 +58,8 @@
 #include "loader_xsb.h"
 #include "memory_xsb.h"
 #include "heap_xsb.h"
+//#include "error_xsb.h"
+#include "context.h"
 
 #define MAXCURSORNUM                    25
 #define MAXVARSTRLEN                    65000
@@ -435,7 +437,7 @@ void SetCursorClose(struct Cursor *cur)
 /*     If any of these allocations or connection fails, function returns a*/
 /*     failure code 1.  Otherwise 0. */
 /*-----------------------------------------------------------------------------*/
-void ODBCConnect()
+void ODBCConnect(CTXTdecl)
 {
   UCHAR *server;
   UCHAR *pwd;
@@ -450,7 +452,7 @@ void ODBCConnect()
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       xsb_error("Environment allocation failed");
-      ctop_int(6, 0);
+      ctop_int(CTXTc 6, 0);
       return;
     }
     /*    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2,
@@ -466,37 +468,37 @@ void ODBCConnect()
   rc = SQLAllocConnect(henv, &hdbc);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
     xsb_error("Connection Resources Allocation Failed");
-    ctop_int(6, 0);
+    ctop_int(CTXTc 6, 0);
     return;
   }
 
-  if (!ptoc_int(2)) {
+  if (!ptoc_int(CTXTc 2)) {
     /* get server name, user id and password*/
-    server = (UCHAR *)ptoc_string(3);
-    strcpy(uid, (UCHAR *)ptoc_string(4));
-    pwd = (UCHAR *)ptoc_string(5);
+    server = (UCHAR *)ptoc_string(CTXTc 3);
+    strcpy(uid, (UCHAR *)ptoc_string(CTXTc 4));
+    pwd = (UCHAR *)ptoc_string(CTXTc 5);
 
     /* connect to database*/
     rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
       xsb_error("Connection to server %s failed", server);
-      ctop_int(6, 0);
+      ctop_int(CTXTc 6, 0);
       return;
     }
   } else {
     /* connecting through driver using a connection string */
-    connectIn = (UCHAR *)ptoc_longstring(3);
+    connectIn = (UCHAR *)ptoc_longstring(CTXTc 3);
     rc = SQLDriverConnect(hdbc, NULL, connectIn, SQL_NTS, NULL, 0, NULL,SQL_DRIVER_NOPROMPT);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
       xsb_error("Connection to driver failed: %s", connectIn);
-      ctop_int(6, 0);
+      ctop_int(CTXTc 6, 0);
       return;
     }
   }
 
-  ctop_int(6, (long)hdbc);
+  ctop_int(CTXTc 6, (long)hdbc);
   return;
 }
 
@@ -512,12 +514,12 @@ void ODBCConnect()
 /*     allocated for the session - statement handlers, connection handler,*/
 /*     environment handler and memory space. */
 /*-----------------------------------------------------------------------------*/
-void ODBCDisconnect()
+void ODBCDisconnect(CTXTdecl)
 {
   struct Cursor *cur = FCursor;
   struct Cursor *tcur;
   struct NumberofCursors *numi = FCurNum, *numj = FCurNum;
-  HDBC hdbc = (HDBC)ptoc_int(2);
+  HDBC hdbc = (HDBC)ptoc_int(CTXTc 2);
   RETCODE rc;
 
   rc = SQLTransact(henv,hdbc,SQL_COMMIT);
@@ -586,12 +588,12 @@ void ODBCDisconnect()
 /*         needs to be allocated*/
 /*     3 - using a cursor that has no resource - it needs to be allocated*/
 /*-----------------------------------------------------------------------------*/
-void FindFreeCursor()
+void FindFreeCursor(CTXTdecl)
 {
   struct Cursor *curi = FCursor, *curj = NULL, *curk = NULL;
   struct NumberofCursors *num = FCurNum;
-  HDBC hdbc = (HDBC)ptoc_int(2);
-  char *Sql_stmt = ptoc_longstring(3);
+  HDBC hdbc = (HDBC)ptoc_int(CTXTc 2);
+  char *Sql_stmt = ptoc_longstring(CTXTc 3);
   RETCODE rc;
 
   /* search */
@@ -612,7 +614,7 @@ void FindFreeCursor()
 	      FCursor = curi;
 	    }
 	    curi->Status = 2;
-	    ctop_int(4, (long)curi);
+	    ctop_int(CTXTc 4, (long)curi);
 	    /*printf("reuse cursor: %p\n",curi);*/
 	    return;
 	  } else {
@@ -663,7 +665,7 @@ void FindFreeCursor()
     /*printf("allocate a new cursor: %p\n",curi);*/
     }
     else if (curk == NULL) {  /* no cursor left*/
-      ctop_int(4, 0);
+      ctop_int(CTXTc 4, 0);
       return;
     }
     else {                    /* steal a cursor*/
@@ -689,7 +691,7 @@ void FindFreeCursor()
   if (!curi->Sql)
     xsb_abort("[ODBC] Not enough memory for SQL stmt in FindFreeCursor!\n");
   curi->Status = 3;
-  ctop_int(4, (long)curi);
+  ctop_int(CTXTc 4, (long)curi);
   return;
 }
 
@@ -709,10 +711,10 @@ void FindFreeCursor()
 /*     the statement is indeed the same statement w/ the same bind*/
 /*     variable number.*/
 /*-----------------------------------------------------------------------------*/
-void SetBindVarNum()
+void SetBindVarNum(CTXTdecl)
 {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
-  int NumBindVars = ptoc_int(3);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
+  int NumBindVars = ptoc_int(CTXTc 3);
 
   if (cur->Status == 2) {
     if (cur->NumBindVars != NumBindVars)
@@ -774,12 +776,12 @@ void string_to_char(Cell list, char **term_string) {
 /*     set the bind variables' values. */
 /*     allocate memory if it is needed(status == 3)*/
 /*-----------------------------------------------------------------------------*/
-void SetBindVal()
+void SetBindVal(CTXTdecl)
 {
   RETCODE rc;
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
-  int j = ptoc_int(3);
-  Cell BindVal = ptoc_tag(4);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
+  int j = ptoc_int(CTXTc 3);
+  Cell BindVal = ptoc_tag(CTXTc 4);
 
   if (!((j >= 0) && (j < cur->NumBindVars)))
     xsb_abort("[ODBC] Abnormal argument in SetBindVal!");
@@ -796,7 +798,7 @@ void SetBindVal()
 			      SQL_C_SLONG, SQL_INTEGER,
 			      0, 0, (int *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
-	  ctop_int(5,PrintErrorMsg(cur));
+	  ctop_int(CTXTc 5,PrintErrorMsg(cur));
 	  SetCursorClose(cur);
 	  return;
 	}
@@ -812,7 +814,7 @@ void SetBindVal()
 			      SQL_C_FLOAT, SQL_FLOAT,
 			      0, 0, (float *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
-	  ctop_int(5,PrintErrorMsg(cur));
+	  ctop_int(CTXTc 5,PrintErrorMsg(cur));
 	  SetCursorClose(cur);
 	  return;
 	}
@@ -851,7 +853,7 @@ void SetBindVal()
     } else {
       xsb_abort("[ODBC] Unknown bind variable type, %d", cur->BindTypes[j]);
     }
-    ctop_int(5,0);
+    ctop_int(CTXTc 5,0);
     return;
   }
 
@@ -893,7 +895,7 @@ void SetBindVal()
   } else {
     xsb_abort("[ODBC] Unknown bind variable type, %d", cur->BindTypes[j]);
   }
-  ctop_int(5,0);
+  ctop_int(CTXTc 5,0);
   return;
 }
 
@@ -911,16 +913,16 @@ void SetBindVal()
 /*     determination of column number in the resulting rowset and the length*/
 /*     of each column and memory allocation which is used to store each row.*/
 /*-----------------------------------------------------------------------------*/
-void Parse()
+void Parse(CTXTdecl)
 {
   int j;
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   RETCODE rc;
 
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-      ctop_int(3, PrintErrorMsg(cur));
+      ctop_int(CTXTc 3, PrintErrorMsg(cur));
       SetCursorClose(cur);
       return;
     }
@@ -939,7 +941,7 @@ void Parse()
     }
   } else {
     if (SQLPrepare(cur->hstmt, cur->Sql, SQL_NTS) != SQL_SUCCESS) {
-      ctop_int(3,PrintErrorMsg(cur));
+      ctop_int(CTXTc 3,PrintErrorMsg(cur));
       SetCursorClose(cur);
       return;
     }
@@ -969,7 +971,7 @@ void Parse()
 	rc = 0;
       }
       if (rc != SQL_SUCCESS) {
-	ctop_int(3,PrintErrorMsg(cur));
+	ctop_int(CTXTc 3,PrintErrorMsg(cur));
 	SetCursorClose(cur);
 	return;
       }
@@ -977,11 +979,11 @@ void Parse()
   }
   /* submit it for execution*/
   if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
-    ctop_int(3,PrintErrorMsg(cur));
+    ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
     return;
   }
-  ctop_int(3,0);
+  ctop_int(CTXTc 3,0);
   return;
 }
 
@@ -993,10 +995,10 @@ void Parse()
 /*     R2: Connection Handle*/
 /*     R3: var, returned status, 0 if successful*/
 /*-----------------------------------------------------------------------------*/
-void ODBCCommit()
+void ODBCCommit(CTXTdecl)
 {
   struct Cursor *cur = FCursor;
-  HDBC hdbc = (HDBC)ptoc_int(2);
+  HDBC hdbc = (HDBC)ptoc_int(CTXTc 2);
   RETCODE rc;
 
   if (((rc=SQLTransact(henv,hdbc,SQL_COMMIT)) == SQL_SUCCESS) ||
@@ -1006,9 +1008,9 @@ void ODBCCommit()
       if (cur->hdbc == hdbc && cur->Status != 0) SetCursorClose(cur);
       cur = cur->NCursor;
     }
-    ctop_int(3,0);
+    ctop_int(CTXTc 3,0);
   } else
-    ctop_int(3,PrintErrorMsg(NULL));
+    ctop_int(CTXTc 3,PrintErrorMsg(NULL));
   return;
 }
 
@@ -1020,10 +1022,10 @@ void ODBCCommit()
 /*     R2: Connection Handle*/
 /*     R3: var, for returned status: 0 if successful*/
 /*-----------------------------------------------------------------------------*/
-void ODBCRollback()
+void ODBCRollback(CTXTdecl)
 {
   struct Cursor *cur = FCursor;
-  HDBC hdbc = (HDBC)ptoc_int(2);
+  HDBC hdbc = (HDBC)ptoc_int(CTXTc 2);
   RETCODE rc;
 
   if (((rc=SQLTransact(henv,hdbc,SQL_ROLLBACK)) == SQL_SUCCESS) ||
@@ -1033,9 +1035,9 @@ void ODBCRollback()
       if (cur->hdbc == hdbc && cur->Status != 0) SetCursorClose(cur);
       cur = cur->NCursor;
     }
-    ctop_int(3,0);
+    ctop_int(CTXTc 3,0);
   } else
-    ctop_int(3, PrintErrorMsg(NULL));
+    ctop_int(CTXTc 3, PrintErrorMsg(NULL));
   return;
 }
 
@@ -1048,14 +1050,14 @@ void ODBCRollback()
 /*     R3: Table name*/
 /*     R4: var for returned status: 0 if successful*/
 /*-----------------------------------------------------------------------------*/
-void ODBCColumns()
+void ODBCColumns(CTXTdecl)
 {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   char tmpstr[255];
   char *str1, *str2, *str3;
   RETCODE rc;
 
-  strcpy(tmpstr,ptoc_string(3));
+  strcpy(tmpstr,ptoc_string(CTXTc 3));
   str1 = strtok(tmpstr,".");
   str2 = str3 = NULL;
   if (str1) str2 = strtok(NULL,".");
@@ -1069,9 +1071,9 @@ void ODBCColumns()
 		      str3, SQL_NTS,
 		      NULL,0)) == SQL_SUCCESS) ||
       (rc == SQL_SUCCESS_WITH_INFO)) {
-    ctop_int(4,0);
+    ctop_int(CTXTc 4,0);
   } else {
-    ctop_int(4,PrintErrorMsg(cur));
+    ctop_int(CTXTc 4,PrintErrorMsg(cur));
     SetCursorClose(cur);
   }
   return;
@@ -1085,15 +1087,15 @@ void ODBCColumns()
 /*     R2: Cursor*/
 /*     R3: var, returned status: 0 if successful*/
 /*-----------------------------------------------------------------------------*/
-void ODBCTables()
+void ODBCTables(CTXTdecl)
 {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   RETCODE rc;
 
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-      ctop_int(3, PrintErrorMsg(cur));
+      ctop_int(CTXTc 3, PrintErrorMsg(cur));
       SetCursorClose(cur);
       return;
     }
@@ -1105,9 +1107,9 @@ void ODBCTables()
 		     NULL, 0,
 		     NULL, 0)) == SQL_SUCCESS) ||
       (rc == SQL_SUCCESS_WITH_INFO)) {
-    ctop_int(3,0);
+    ctop_int(CTXTc 3,0);
   } else {
-    ctop_int(3,PrintErrorMsg(cur));
+    ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
   }
   return;
@@ -1121,9 +1123,9 @@ void ODBCTables()
 /*     R2: Cursor*/
 /*     R3: var, for returned status: 0 if successful*/
 /*-----------------------------------------------------------------------------*/
-void ODBCUserTables()
+void ODBCUserTables(CTXTdecl)
 {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   UWORD TablePrivilegeExists;
   RETCODE rc;
 
@@ -1132,7 +1134,7 @@ void ODBCUserTables()
   SQLGetFunctions(cur->hdbc,SQL_API_SQLTABLEPRIVILEGES,&TablePrivilegeExists);
   if (!TablePrivilegeExists) {
     printf("Privilege concept does not exist in this DVMS: you probably can access any of the existing tables\n");
-    ctop_int(3, 2);
+    ctop_int(CTXTc 3, 2);
     return;
   }
   if (((rc=SQLTablePrivileges(cur->hstmt,
@@ -1140,9 +1142,9 @@ void ODBCUserTables()
 			      NULL, 0,
 			      NULL, 0)) == SQL_SUCCESS) ||
       (rc == SQL_SUCCESS_WITH_INFO))
-    ctop_int(3,0);
+    ctop_int(CTXTc 3,0);
   else {
-    ctop_int(3,PrintErrorMsg(cur));
+    ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
   }
   return;
@@ -1192,22 +1194,22 @@ extern xsbBool unify(Cell, Cell);
 /*     R4: var, returns status */
 /*  NOTES:*/
 /*-----------------------------------------------------------------------------*/
-void ODBCDataSources()
+void ODBCDataSources(CTXTdecl)
 {
   static SQLCHAR DSN[SQL_MAX_DSN_LENGTH+1];
   static SQLCHAR Description[SQL_MAX_DSN_LENGTH+1];
   RETCODE rc;
   int seq, new;
   SWORD dsn_size, descr_size;
-  Cell op2 = ptoc_tag(3);
-  Cell op3 = ptoc_tag(4);
+  Cell op2 = ptoc_tag(CTXTc 3);
+  Cell op3 = ptoc_tag(CTXTc 4);
 
   if (!henv) {
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       xsb_error("Environment allocation failed");
-      ctop_int(5,1);
+      ctop_int(CTXTc 5,1);
       return;
     }
     LCursor = FCursor = NULL;
@@ -1215,7 +1217,7 @@ void ODBCDataSources()
     nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
   }
 
-  seq = ptoc_int(2);
+  seq = ptoc_int(CTXTc 2);
 
   if (seq == 1) {
     rc = SQLDataSources(henv,SQL_FETCH_FIRST,DSN,
@@ -1223,12 +1225,12 @@ void ODBCDataSources()
 			Description,SQL_MAX_DSN_LENGTH,
 			&descr_size);
     if (rc == SQL_NO_DATA_FOUND) {
-      ctop_int(5,2);
+      ctop_int(CTXTc 5,2);
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       xsb_error("Environment allocation failed");
-      ctop_int(5,1);
+      ctop_int(CTXTc 5,1);
       return;
     }
   } else {
@@ -1237,12 +1239,12 @@ void ODBCDataSources()
 			Description,SQL_MAX_DSN_LENGTH,
 			&descr_size);
     if (rc == SQL_NO_DATA_FOUND) {
-      ctop_int(5,2);
+      ctop_int(CTXTc 5,2);
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       xsb_error("Environment allocation failed");
-      ctop_int(5,1);
+      ctop_int(CTXTc 5,1);
       return;
     }
   }
@@ -1251,7 +1253,7 @@ void ODBCDataSources()
     unify(op2, makestring(string_find(DSN,1)));
   else {
     xsb_error("[ODBCDataSources] Param 2 should be a free variable.");
-    ctop_int(5,1);
+    ctop_int(CTXTc 5,1);
     return;
   }
   XSB_Deref(op3);
@@ -1259,10 +1261,10 @@ void ODBCDataSources()
     unify(op3, makestring(string_find(Description,1)));
   else {
     xsb_error("[ODBCDataSources] Param 3 should be a free variable.");
-    ctop_int(5,1);
+    ctop_int(CTXTc 5,1);
     return;
   }
-  ctop_int(5,0);
+  ctop_int(CTXTc 5,0);
   return;
 }
 
@@ -1280,7 +1282,7 @@ void ODBCDataSources()
 /*  NOTES:*/
 /*     memory is also allocated for future data storage*/
 /*-----------------------------------------------------------------------------*/
-void ODBCDescribeSelect()
+void ODBCDescribeSelect(CTXTdecl)
 {
   int j;
   UCHAR colname[50];
@@ -1288,14 +1290,14 @@ void ODBCDescribeSelect()
   SWORD scale;
   SWORD nullable;
   UDWORD collen;
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
 
   cur->NumCols = 0;
   SQLNumResultCols(cur->hstmt, (SQLSMALLINT*)&(cur->NumCols));
   if (!(cur->NumCols)) {
     /* no columns are affected, set cursor status to unused */
     cur->Status = 1;
-    ctop_int(3,2);
+    ctop_int(CTXTc 3,2);
     return;
   }
   /* if we aren't reusing a closed statement handle, we need to get*/
@@ -1337,7 +1339,7 @@ void ODBCDescribeSelect()
 	cur->NumCols = j; /* set so close frees memory allocated thus far*/
 	SetCursorClose(cur);
 	/*	return(1);*/
-	ctop_int(3,1);
+	ctop_int(CTXTc 3,1);
 	return;
       }
       cur->Data[j] =
@@ -1353,7 +1355,7 @@ void ODBCDescribeSelect()
 	       cur->ColLen[j], (SDWORD FAR *)(&(cur->OutLen[j])));
   }
   /*  return 0;*/
-  ctop_int(3,0);
+  ctop_int(CTXTc 3,0);
   return;
 }
 
@@ -1370,27 +1372,27 @@ void ODBCDescribeSelect()
 /*  NOTES:*/
 /*     fetch next row of result rowset.*/
 /*-----------------------------------------------------------------------------*/
-void FetchNextRow()
+void FetchNextRow(CTXTdecl)
 {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   RETCODE rc;
 
   if (cur->Status == 0) {
-    ctop_int(3,2);
+    ctop_int(CTXTc 3,2);
     return;
   }
 
   rc = SQLFetch(cur->hstmt);
 
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO))
-    ctop_int(3,0);
+    ctop_int(CTXTc 3,0);
   else if (rc == SQL_NO_DATA_FOUND){
     cur->Status = 1; /* done w/fetching. set cursor status to unused */
-    ctop_int(3,1);
+    ctop_int(CTXTc 3,1);
   }
   else {
     SetCursorClose(cur);         /* error occured in fetching*/
-    ctop_int(3,2);
+    ctop_int(CTXTc 3,2);
   }
   return;
 }
@@ -1409,27 +1411,27 @@ void FetchNextRow()
 /*  NOTES:*/
 /*     either gets value of a connection option, or sets it.*/
 /*-----------------------------------------------------------------------------*/
-void ODBCConnectOption()
+void ODBCConnectOption(CTXTdecl)
 {
-  HDBC hdbc = (HDBC)ptoc_int(2);
-  int set = ptoc_int(3);
+  HDBC hdbc = (HDBC)ptoc_int(CTXTc 2);
+  int set = ptoc_int(CTXTc 3);
   long value = 0;
   RETCODE rc;
 
   if (set) {
-    rc = SQLSetConnectOption(hdbc,(UWORD)ptoc_int(4),(UDWORD)ptoc_int(5));
+    rc = SQLSetConnectOption(hdbc,(UWORD)ptoc_int(CTXTc 4),(UDWORD)ptoc_int(CTXTc 5));
   } else {
-    rc = SQLGetConnectOption(hdbc,(UWORD)ptoc_int(4),(PTR)&value);
-    ctop_int(5,value);
+    rc = SQLGetConnectOption(hdbc,(UWORD)ptoc_int(CTXTc 4),(PTR)&value);
+    ctop_int(CTXTc 5,value);
   }
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO))
-    ctop_int(6,0);
-  else ctop_int(6,PrintErrorMsg(NULL));
+    ctop_int(CTXTc 6,0);
+  else ctop_int(CTXTc 6,PrintErrorMsg(NULL));
 }
 
-extern xsbBool glstack_realloc(int,int);
+//extern xsbBool glstack_realloc(CTXTc int,int);
 
-Cell build_codes_list(char *charptr) {
+Cell build_codes_list(CTXTdeclc char *charptr) {
   int len = strlen(charptr);
 
   if (len == 0) {
@@ -1461,20 +1463,20 @@ Cell build_codes_list(char *charptr) {
 /*  NOTES:*/
 /*     get the indicated column.*/
 /*-----------------------------------------------------------------------------*/
-int GetColumn()
+int GetColumn(CTXTdecl)
 {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
-  int ColCurNum = ptoc_int(3);
-  Cell op = ptoc_tag(4);
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
+  int ColCurNum = ptoc_int(CTXTc 3);
+  Cell op = ptoc_tag(CTXTc 4);
   UDWORD len;
 
   if (ColCurNum < 0 || ColCurNum >= cur->NumCols) {
     /* no more columns in the result row*/
-    ctop_int(5,1);
+    ctop_int(CTXTc 5,1);
     return TRUE;
   }
 
-  ctop_int(5,0);
+  ctop_int(CTXTc 5,0);
 
   /* get the data*/
   if (cur->OutLen[ColCurNum] == SQL_NULL_DATA) {
@@ -1500,8 +1502,8 @@ int GetColumn()
       return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
-	return unify(cell(clref_val(ptoc_tag(4))+1),  /* op might have moved! */
-		       build_codes_list(cur->Data[ColCurNum]));
+	return unify(cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
+		       build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
 	
@@ -1509,7 +1511,7 @@ int GetColumn()
 	if (strfile.strcnt >= MAXVARSTRLEN-1)
 	  xsb_warn("[ODBC] Likely overflow of data in column of PROLOG_TERM type\n");
 	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-	read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
+	read_canonical_term(CTXTc NULL,&strfile,2); /* terminating '.'? */
 	return TRUE;
       }
     }
@@ -1528,14 +1530,14 @@ int GetColumn()
       return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
-	return unify(cell(clref_val(ptoc_tag(4))+1),  /* op might have moved! */
-		       build_codes_list(cur->Data[ColCurNum]));
+	return unify(cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
+		       build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
 	
 	strfile.strcnt = strlen(cur->Data[ColCurNum]);
 	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-	read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
+	read_canonical_term(CTXTc NULL,&strfile,2); /* terminating '.'? */
 	return TRUE;
       }
     }
@@ -1567,9 +1569,9 @@ int GetColumn()
 /*	   information type,-2 SQLGetInfo is not supported by the connection.      */
 /*																			   */
 /*-----------------------------------------------------------------------------*/
-void ODBCGetInfo()
+void ODBCGetInfo(CTXTdecl)
 {
-  HDBC hdbc 	  = (HDBC) ptoc_int(2);
+  HDBC hdbc 	  = (HDBC) ptoc_int(CTXTc 2);
   SQLRETURN sqlrc = SQL_SUCCESS;
 
   SQLCHAR strValue[50];
@@ -1578,7 +1580,7 @@ void ODBCGetInfo()
   SQLINTEGER nValue;
   SQLSMALLINT pcbValue;
 
-  short int InfoType = ptoc_int(3);
+  short int InfoType = ptoc_int(CTXTc 3);
   short int InfoTypeType = GetInfoTypeType(InfoType);
 
   /* check to see if SQLGetInfo() is supported */
@@ -1592,10 +1594,10 @@ void ODBCGetInfo()
 		if(retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
   	    {
 			//printf("string type:%d:%s:%d\n",InfoType,strValue,pcbValue);
-			ctop_string(4,string_find(strValue,1));
-			ctop_int(5,0);
+			ctop_string(CTXTc 4,string_find(strValue,1));
+			ctop_int(CTXTc 5,0);
   		} else {
-			ctop_int(5,1);
+			ctop_int(CTXTc 5,1);
 		}
 		break;
 	  case 1:
@@ -1606,19 +1608,19 @@ void ODBCGetInfo()
 		if(retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
   	    {
 			//printf("int type:%d:%d:%d\n",InfoType,nValue,pcbValue);
-			ctop_int(4,nValue);
-			ctop_int(5,0);
+			ctop_int(CTXTc 4,nValue);
+			ctop_int(CTXTc 5,0);
   		} else {
-			ctop_int(5,1);
+			ctop_int(CTXTc 5,1);
 		}
 		break;
 	  case -1:
 	  default:
-	  	ctop_int(5, -1);
+	  	ctop_int(CTXTc 5, -1);
 		break;
 	  }
   } else {
-	  ctop_int(5,-2);
+	  ctop_int(CTXTc 5,-2);
   }
 }
 /*------------------------------------------------------------------------------*/
@@ -1635,19 +1637,19 @@ void ODBCGetInfo()
 /*     executed UPDATE, INSERT, or DELETE statement.				*/
 /*     Return Code is 0 for success, 1 error, ...				*/
 /*------------------------------------------------------------------------------*/
-void ODBCRowCount() {
-  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+void ODBCRowCount(CTXTdecl) {
+  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   SQLINTEGER count;
   RETCODE rc;
 
   rc = SQLRowCount(cur->hstmt, &count);
   if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-    ctop_int(3, 0);
-    ctop_int(4, PrintErrorMsg(cur));
+    ctop_int(CTXTc 3, 0);
+    ctop_int(CTXTc 4, PrintErrorMsg(cur));
     return;
   }
 
-  ctop_int(3,count);
-  ctop_int(4,0);
+  ctop_int(CTXTc 3,count);
+  ctop_int(CTXTc 4,0);
   return;
 }
