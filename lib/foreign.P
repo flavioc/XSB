@@ -81,7 +81,7 @@ runtime_loader_flag(_Hints, Flag) :-
 compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	cc_name(Options, CC_Name),
-	cc_options(Options, CC_Opts),
+	cc_options(CC_Name, Options, CC_Opts),
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = ''; true),
@@ -118,11 +118,15 @@ cc_name(Options, CC_Name) :-
 	( memberchk(cc(CC_Name), Options), atom(CC_Name) -> true
 	;   xsb_configuration(compiler, CC_Name)
 	).
-cc_options(Options, CC_Opts) :-
+cc_options(CC_Name, Options, CC_Opts) :-
 	xsb_configuration(emudir, Emudir),
 	(   memberchk(cc_opts(CC_Opts1), Options)
-	->  fmt_write_string(CC_Opts, '-I%s %s', args(Emudir,CC_Opts1))
-	;   str_cat('-I', Emudir, CC_Opts)
+	->  fmt_write_string(CC_Opts2, '-I%s %s', args(Emudir,CC_Opts1))
+	;   str_cat('-I', Emudir, CC_Opts2)
+	),
+	(  CC_Name == gcc 
+	-> str_cat(' -Wall ', CC_Opts2, CC_Opts)
+	;  CC_Opts = CC_Opts2
 	).
 
 compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
