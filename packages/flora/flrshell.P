@@ -286,6 +286,7 @@ flcompile_demo([]).
 :- dynamic '_$_$_flora_sub_dyn'/2.
 :- dynamic '_$_$_flora_fs_dyn'/3.
 :- dynamic '_$_$_flora_mvs_dyn'/3.
+:- dynamic '_$_$_flora_mvs_dyn'/2.
 :- dynamic '_$_$_flora_mvd_dyn'/2.
 :- dynamic '_$_$_flora_imvd_dyn'/2.
 :- dynamic '_$_$_flora_exists_dyn'/1.
