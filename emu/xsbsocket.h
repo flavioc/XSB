@@ -47,26 +47,15 @@
 #define SOCKET 	        int
 #define SOCKADDR_IN 	struct sockaddr_in /* in windows, but not Unix */
 #define PSOCKADDR       struct sockaddr *  /* in windows, but not Unix */
-#define closesocket    	       	   close
-#define WSAGetLastError()      	   1       /* in windows; use 1 in Unix */
-#define BAD_SOCKET(sockfd)         sockfd<0
-#define SOCKET_OP_FAILED(sockfd)   sockfd<0
-#define IS_IP_ADDR(string)    	   inet_addr(string) != -1
+#define closesocket    	       	  close
+#define WSAGetLastError()      	  1       /* in windows; use 1 in Unix */
+#define BAD_SOCKET(sockfd)        sockfd<0
+#define SOCKET_OP_FAILED(sockfd)  sockfd<0
+#define IS_IP_ADDR(string)    	  inet_addr(string) != -1
 #endif
 
 #ifdef WIN_NT
-#define FillWithZeros(addr)    	   ZeroMemory(&addr, sizeof(addr));
+#define FillWithZeros(addr)    	  ZeroMemory(&addr, sizeof(addr));
 #else
-#define FillWithZeros(addr)    	   memset((char *)&addr, (int) 0, sizeof(addr));
+#define FillWithZeros(addr)    	  memset((char *)&addr, (int) 0, sizeof(addr));
 #endif
-
-int retcode; /* return code from socket operation */
-
-SOCKADDR_IN socket_addr;
-FILE *sockptr;
-int rc, domain, portnum;
-char ch;
-SOCKET sock_handle, sock_handle_in;
-int sockfd;
-char *sock_msg, ci, last[1];
-

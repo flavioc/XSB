@@ -61,6 +61,16 @@
 #include "io_builtins.h"
 #include "xsbsocket.h"
 
+int retcode; /* return code from socket operation */
+
+SOCKADDR_IN socket_addr;
+FILE *sockptr;
+int rc, domain, portnum;
+char ch;
+SOCKET sock_handle, sock_handle_in;
+int sockfd;
+char *sock_msg, ci, last[1];
+
 struct linger sock_linger_opt;
 
 static char *get_host_IP(char *host_name_or_IP) {
