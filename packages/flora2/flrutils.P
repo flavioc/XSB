@@ -322,7 +322,13 @@ flora_flcompile(FlrFile,Workspace) :-
 /*************************************************************************
   flora_flload(+FlrFile,+Workspace)
 *************************************************************************/
-flora_flload(FlrFile,Workspace) :-
+flora_flload(InFlrFile,Workspace) :-
+	(InFlrFile == 'user.flr'
+	->  path_sysop(tmpfilename,FlrFile1),
+	    str_cat(FlrFile1,'.flr',FlrFile),
+	    flora_save_user_clauses(FlrFile)
+	;   InFlrFile = FlrFile
+	),
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_WSP_filename(FlrFile,Workspace,WSPFile),
@@ -354,6 +360,18 @@ flora_flload(FlrFile,Workspace) :-
 	flora_clear_xpp_options,
 	!.
 
+/*****************************************************************************
+  flora_save_user_clauses(+FlrFile)
+  Read user input and save it in the given file
+*****************************************************************************/
+flora_save_user_clauses(FlrFile) :-
+	flora_message_line('Enter FLORA program clauses. When done, type Ctl-D.'),
+	file_open(FlrFile,w,Port),
+	stat_flag(CURRENT_INPUT, InPort),
+	copyIOport(InPort,Port),
+	file_close(Port),
+	flora_message_line('User program saved in file %s', arg(FlrFile)).
+
 
 /*************************************************************************
   flora_locate_file(+InFile,+ExtType,-ExtFile)
@@ -362,13 +380,16 @@ flora_flload(FlrFile,Workspace) :-
   ExtType is appended).
 *************************************************************************/
 flora_locate_file(InFile,ExtType,ExtFile) :-
-	parse_filename(InFile,_,_,Ext),
-	( Ext == ExtType ->
-	    ExtFileName=InFile
-	;
-	  fmt_write_string(ExtFileName,"%s.%s",args(InFile,ExtType))
+	(InFile==user, ExtType==FLORA_FILE_EXT
+	->  fmt_write_string(ExtFile,'%s.%s',args(InFile,ExtType))
+	;  parse_filename(InFile,_,_,Ext),
+	    ( Ext == ExtType ->
+		ExtFileName=InFile
+	    ;
+		fmt_write_string(ExtFileName,"%s.%s",args(InFile,ExtType))
+	    ),
+	    flora_locate_file(ExtFileName,ExtFile)
 	),
-	flora_locate_file(ExtFileName,ExtFile),
 	!.
 
 

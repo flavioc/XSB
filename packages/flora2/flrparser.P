@@ -408,6 +408,8 @@ is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
 flplib_struct(Goal,Name,FLPLIB(Goal,Name)).
 flplib_struct(Goal,FLPLIB(Goal)).
+flflib_struct(Goal,Name,FLFLIB(Goal,Name)).
+flflib_struct(Goal,FLFLIB(Goal)).
 
 is_dbinsertop(FL_INSERT) :- !.
 is_dbinsertop(FL_INSERTALL) :- !.
@@ -571,13 +573,12 @@ flora_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
 	get_atom(T,FL_SLASH),
 	!,
 	( get_atom(Funct,F) ->
-	    ( get_integer(Arity,A), A >= 0 ->
-		Status=[]
-	    ;
-	      parsing_error(Arity,EXP_POSINTEGER,Status)
+	    ( get_integer(Arity,A), A >= 0
+	    -> Status=[]
+	    ; parsing_error(Arity,EXP_POSINTEGER,Status)
 	    )
 	;
-	  parsing_error(Funct,EXP_ATOMICFUNCT,Status)
+	    parsing_error(Funct,EXP_ATOMICFUNCT,Status)
         ).
 
 flora_fapair(CanoniTerm,_F,_A,Status) :-
@@ -590,14 +591,15 @@ flora_fapair(CanoniTerm,_F,_A,Status) :-
 flora_var_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
 	get_atom(T,FL_SLASH),
 	!,
-	( (get_atom(Funct,F); get_flvar_struct(Funct,F)) ->
-	    ( (get_integer(Arity,A), A >= 0; get_flvar_struct(Arity,A)) ->
-		Status=[]
-	    ;
-	      parsing_error(Arity,ERROR_ARITY,Status)
-	    )
+	( (get_atom(Funct,F); get_flvar_struct(Funct,F))
+	-> ( (get_integer(Arity,A), A >= 0
+	     ; get_flvar_struct(Arity,A)
+	     )
+	   -> Status=[]
+	   ; parsing_error(Arity,ERROR_ARITY,Status)
+	   )
 	;
-	  parsing_error(Funct,ERROR_FUNCTOR,Status)
+	    parsing_error(Funct,ERROR_FUNCTOR,Status)
         ).
 
 flora_var_fapair(CanoniTerm,_F,_A,Status) :-
@@ -831,8 +833,8 @@ flora_functarg(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),F,N,A,Status) :-
 	( N == 0 ->
 	    parsing_error(Ip,ERROR_ARGUMENTS,Status)
 
-	; get_atom(Funct,F) ->
-	    flora_argspec(Args,A,Status)
+	; get_atom(Funct,F)
+	-> flora_argspec(Args,A,Status)
 	;
 	  parsing_error(If,EXP_ATOMICFUNCT,Status)
         ).
@@ -845,10 +847,10 @@ flora_argspec([],[],[]) :- !.
 
 flora_argspec([CanoniTerm|CanoniTermList],[A|AL],Status) :-
 	get_name(CanoniTerm,A),
-	( (A == FL_OID; A == FL_BODYFORMULA) ->
-	    flora_argspec(CanoniTermList,AL,Status)
+	( (A == FL_OID; A == FL_BODYFORMULA)
+	->  flora_argspec(CanoniTermList,AL,Status)
 	;
-	  parsing_error(CanoniTerm,ERROR_ARGTYPE,Status)
+	    parsing_error(CanoniTerm,ERROR_ARGTYPE,Status)
         ).
 
 
@@ -862,29 +864,26 @@ flora_operator_directive(CANOTERM(Funct,3,FL_PARENTHESIS,L,_If,_Ip),CodeList,Sta
 	L=[Number,Associativity,Operator],
 	( get_integer(Number,Precedence), Precedence > 0 ->
 	    ( get_name(Associativity,A), flora_operator_definition(A) ->
-		( get_atom(Operator,Op) ->
-		    ( flora_conflict_operator(Precedence,A,Op) ->
-		      parsing_error(Operator,NO_REDEFOP,Status)
-		    ;
-		      flopdef_struct(Precedence,A,Op,Code),
-		      CodeList=[Code],
-		      Status=[]
+		( get_atom(Operator,Op)
+		->  ( flora_conflict_operator(Precedence,A,Op)
+		    ->  parsing_error(Operator,NO_REDEFOP,Status)
+		    ;   flopdef_struct(Precedence,A,Op,Code),
+			CodeList=[Code],
+			Status=[]
 		    )
 
-		; Operator=CANOLIST(OpList,T,N,_I,Ib), N > 0 ->
-		    ( T == [] ->
-			flora_operator_list(OpList,Precedence,A,CodeList,Status)
-		    ;
-		      parsing_error(Ib,NO_LISTTAIL,Status)
-		    )
-		;
-		  parsing_error(Operator,ERROR_OPERATOR,Status)
+		;  Operator=CANOLIST(OpList,T,N,_I,Ib), N > 0
+		-> ( T == []
+		   -> flora_operator_list(OpList,Precedence,A,CodeList,Status)
+		   ;  parsing_error(Ib,NO_LISTTAIL,Status)
+		   )
+		;  parsing_error(Operator,ERROR_OPERATOR,Status)
 	        )
 	    ;
-	      parsing_error(Associativity,ERROR_OPDEF,Status)
+		parsing_error(Associativity,ERROR_OPDEF,Status)
 	    )
 	;
-	  parsing_error(Number,EXP_POSINTEGER,Status)
+	    parsing_error(Number,EXP_POSINTEGER,Status)
         ).
 
 
@@ -920,14 +919,13 @@ flora_index_directive(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),[Code],Stat
 	get_name(Funct,FL_INDEX),
 	flora_fapair(L,F,A,S),
 	( S == [] ->
-	    ( get_name(R,(trie)) ->
-		flindxdirect_struct(F,A,(trie),Code),
+	    ( get_name(R,(trie))
+	    ->  flindxdirect_struct(F,A,(trie),Code),
 		Status=[]
-	    ;
-	      parsing_error(R,ERROR_INDXDIREC,Status)
+	    ;   parsing_error(R,ERROR_INDXDIREC,Status)
 	    )
 	;
-	  Status=S
+	    Status=S
         ).
 
 
@@ -961,68 +959,74 @@ flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Sta
 	get_name(F,FL_IN),
 	!,
 	( get_name(R,M) ->
-	    ( get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC) ->
-		fleqldirect_struct(A,M,Code),
+	    ( get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC)
+	    ->  fleqldirect_struct(A,M,Code),
 		Status=[]
-	    ;
-	      parsing_error(L,ERROR_EQLSPEC,Status)
+	    ;   parsing_error(L,ERROR_EQLSPEC,Status)
 	    )
 	;
-	  parsing_error(R,ERROR_WSNAME,Status)
+	    parsing_error(R,ERROR_WSNAME,Status)
         ).
 
 flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
 	get_name(Funct,FL_EQUALITY),
 	!,
-	( get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC) ->
-	    fleqldirect_struct(A,Code),
+	( get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC)
+	->  fleqldirect_struct(A,Code),
 	    Status=[]
-	;
-	  parsing_error(T,ERROR_EQLSPEC,Status)
+	;   parsing_error(T,ERROR_EQLSPEC,Status)
 	).
 
 
 /****************************************************************************
   flora_exec_equality_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
+			      [Code],Status) :-
 	get_name(Funct,FL_EQUALITY),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
 	( flora_name_or_normvar(R,M) ->
-	    ( (get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC); get_flvar_struct(L,A)) ->
-		fleqldirect_struct(A,M,Code),
+	    ( (get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC)
+	      ; get_flvar_struct(L,A)
+	      )
+	    ->  fleqldirect_struct(A,M,Code),
 		Status=[]
-	    ;
-	      parsing_error(L,ERROR_EQLSPEC,Status)
+	    ;   parsing_error(L,ERROR_EQLSPEC,Status)
 	    )
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
 
-flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
+			      [Code],Status) :-
 	get_name(Funct,FL_EQUALITY),
 	!,
-	( (get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC); get_flvar_struct(T,A)) ->
-	    fleqldirect_struct(A,Code),
+	( (get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC)
+	  ; get_flvar_struct(T,A)
+	  )
+	->  fleqldirect_struct(A,Code),
 	    Status=[]
-	;
-	  parsing_error(T,ERROR_EQLSPEC,Status)
+	;   parsing_error(T,ERROR_EQLSPEC,Status)
 	).
 
 
 /****************************************************************************
   flora_expunge_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+flora_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
+			[Code],Status) :-
 	get_name(Funct,FL_EXPUNGE),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
-	( get_name(R,M) ->
-	    flora_commasep_falist(L,FAList,Status),
-	    (Status == [] -> flexpungedirect_struct(FAList,M,Code); true)
+	( get_name(R,M)
+	->  flora_commasep_falist(L,FAList,Status),
+	    (Status == []
+	    -> flexpungedirect_struct(FAList,M,Code)
+	    ;  true
+	    )
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
@@ -1036,19 +1040,23 @@ flora_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Stat
 /****************************************************************************
   flora_exec_expunge_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
+			     [Code],Status) :-
 	get_name(Funct,FL_EXPUNGE),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
-	( flora_name_or_normvar(R,M) ->
-	    flora_commasep_var_falist(L,FAList,Status),
-	    (Status == [] -> flexpungedirect_struct(FAList,M,Code); true)
-	;
-	  parsing_error(R,ERROR_WSNAME,Status)
+	( flora_name_or_normvar(R,M)
+	->  flora_commasep_var_falist(L,FAList,Status),
+	    (Status == []
+	    -> flexpungedirect_struct(FAList,M,Code)
+	    ; true
+	    )
+	;   parsing_error(R,ERROR_WSNAME,Status)
         ).
 
-flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
+			     [Code],Status) :-
 	get_name(Funct,FL_EXPUNGE),
 	flora_commasep_var_falist(T,FAList,Status),
 	(Status == [] -> flexpungedirect_struct(FAList,Code); true).
@@ -1092,19 +1100,23 @@ flora_head(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),CodeList,Status) :-
 	get_atom(Funct,F),
 	( F == FL_COMMA ->
 	    flora_head(L,LCodeList,S),
-	    ( S == [] ->
-		flora_head(R,RCodeList,Status),
-		(Status == [] -> append(LCodeList,RCodeList,CodeList); true)
+	    ( S == []
+	    ->  flora_head(R,RCodeList,Status),
+		(Status == []
+		-> append(LCodeList,RCodeList,CodeList)
+		; true
+		)
 	    ;
-	      Status=S
+		Status=S
 	    )
 
-	; F == FL_SEMICOLON -> %% Disjunction is prohibited.
+	; F == FL_SEMICOLON
+	->			% Disjunction is prohibited.
 	    parsing_error(If,NO_DISJUNCTION,Status)
 
-	; %% Workspace in rule head is prohibited.
-	  F == FL_AT,
-	  parsing_error(If,NO_WSINRULEHEAD,Status)
+	;		       % Workspace in rule head is prohibited.
+	    F == FL_AT,
+	    parsing_error(If,NO_WSINRULEHEAD,Status)
 	),
 	!.
 
@@ -1177,7 +1189,7 @@ flora_head_literal(CanoniTerm,_Code,Status) :-
   Note: Workspace specification is distributive over negation, conjunction
         and disjunction in the rule body. It works like nesting of variable
         scope. Workspace specification is also allowed in the position of
-        predicate arguments, e.g., f(o[att -> val] @ ws).
+        predicate arguments, e.g., p(o[att -> val] @ ws).
 ****************************************************************************/
 flora_body(CanoniTerm,Goal,Status) :-
 	flora_body(CanoniTerm,NULL,Goal,Status).
@@ -1186,7 +1198,7 @@ flora_body(CanoniTerm,Goal,Status) :-
 flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,Code,Status) :-
 	get_atom(Funct,F),
 	(F == FL_COMMA; F == FL_SEMICOLON),
-	!, %% Workspace is distributive over conjunction or disjunction.
+	!, % Workspace is distributive over conjunction or disjunction.
 	flora_body(L,WS,LCode,S),
 	( S == [] ->
 	    flora_body(R,WS,RCode,Status),
@@ -1194,10 +1206,10 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,Code,Status) :-
 		( F == FL_COMMA ->
 		    flconjunct_struct(LCode,RCode,Code)
 		;
-		  fldisjunct_struct(LCode,RCode,Code)
+		    fldisjunct_struct(LCode,RCode,Code)
 	        )
 	    ;
-	      true
+		true
 	    )
 	;
 	  Status=S
@@ -1206,33 +1218,35 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,Code,Status) :-
 flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,[G],_If,_Ip),WS,Code,Status) :-
 	get_atom(Funct,F),
 	(is_notop(F); is_tnotop(F)),
-	!, %% Workspace is distributive over negation.
+	!, % Workspace is distributive over negation.
 	flora_body(G,WS,C,Status),
 	( Status == [] ->
 	    (is_notop(F) -> flnot_struct(C,Code); fltnot_struct(C,Code))
 	;
-	  true
+	    true
         ).
 
 flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
 	get_atom(Funct,FL_AT),
-	!, %% nesting of workspace scope
-	( flora_name_or_normvar(R,RCode) -> %% Path expression needs runtime support.
+	!, % nesting of workspace scope
+	( flora_name_or_normvar(R,RCode) ->  % Path expr needs runtime support
 	    flora_body(L,RCode,Code,Status)
 
-	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
-	    flora_prlgterm(L,LCode,Status),
+	;  R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),
+	    get_name(Mod,FL_PLIB)
+	->  flora_prlgterm(L,LCode,Status),
 	    (Status == [] -> flplib_struct(LCode,Code); true)
 
-	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
-	    ( get_name(M,MCode) ->
+	;  R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),
+	    get_name(Mod,FL_PLIB)
+	->  ( get_name(M,MCode) ->
 		flora_prlgterm(L,LCode,Status),
 		(Status == [] -> flplib_struct(LCode,MCode,Code); true)
 	    ;
-	      parsing_error(M,ERROR_WSNAME,Status)
+		parsing_error(M,ERROR_WSNAME,Status)
 	    )
 	;
-	  parsing_error(R,ERROR_WSNAME,Status)
+	    parsing_error(R,ERROR_WSNAME,Status)
         ).
 
 flora_body(CanoniTerm,NULL,Code,Status) :-
@@ -1438,9 +1452,10 @@ flora_loaditem(CanoniTerm,_Code,Status) :-
 
 
 flora_name_or_normvar(CanoniTerm,Code) :-
-	( get_name(CanoniTerm,A), flatom_struct(A,Code)
+	(  get_name(CanoniTerm,A), flatom_struct(A,Code)
         ;
-	  get_flvar_struct(CanoniTerm,Code), not is_anonymous_flvar_struct(Code)
+	    get_flvar_struct(CanoniTerm,Code),
+	    not is_anonymous_flvar_struct(Code)
         ),
 	!.
 
@@ -1569,35 +1584,34 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( flora_name_or_normvar(R,RCode) ->
-	    flora_pathexp(L,LCode,S),
+	( flora_name_or_normvar(R,RCode)
+	->  flora_pathexp(L,LCode,S),
 	    ( S == [] ->
-		( is_flworkspace_struct(LCode) ->
-		    parsing_error(If,NO_WSNESTING,Status)
-
-		; nowspathexp(LCode) ->
-		    parsing_error(L,NO_WORKSPACE,Status)
+		( is_flworkspace_struct(LCode)
+		->  parsing_error(If,NO_WSNESTING,Status)
+		;   nowspathexp(LCode)
+		->  parsing_error(L,NO_WORKSPACE,Status)
 		;
-		  flworkspace_struct(LCode,RCode,Code),
-		  Status=[]
+		    flworkspace_struct(LCode,RCode,Code),
+		    Status=[]
 	        )
 	    ;
-	      Status=S
+		Status=S
 	    )
 
-	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
-	    flora_prlgterm(L,LCode,Status),
+	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB)
+	->  flora_prlgterm(L,LCode,Status),
 	    (Status == [] -> flplib_struct(LCode,Code); true)
 
-	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
-	    ( get_name(M,MCode) ->
+	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_PLIB)
+	->  ( get_name(M,MCode) ->
 		flora_prlgterm(L,LCode,Status),
 		(Status == [] -> flplib_struct(LCode,MCode,Code); true)
 	    ;
-	      parsing_error(M,ERROR_WSNAME,Status)
+		parsing_error(M,ERROR_WSNAME,Status)
 	    )
 	;
-	  parsing_error(R,ERROR_WSNAME,Status)
+	    parsing_error(R,ERROR_WSNAME,Status)
         ).
 
 flora_pathexp(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
@@ -1648,8 +1662,8 @@ flora_objspec(Obj,N,Args,Code,Status) :-
 		Spec=[],
 		Status=[]
 	    ;
-	      Args=[Body],
-	      flora_objspec(Body,Spec,Status)
+		Args=[Body],
+		flora_objspec(Body,Spec,Status)
 	    ),
 	    (Status == [] -> flobjspec_struct(O,Spec,Code); true)
 	;
@@ -1738,10 +1752,10 @@ flora_attmethspec(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 		  )
 	        )
 	    ;
-	      Status=S
+		Status=S
 	    )
 	;
-	  parsing_error(R,ERROR_WSNAME,Status)
+	    parsing_error(R,ERROR_WSNAME,Status)
         ).
 
 flora_attmethspec(CANOTERM(Funct,1,FL_PARENTHESIS,[A],_If,_Ip),Code,Status) :-

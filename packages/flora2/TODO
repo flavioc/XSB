@@ -1,13 +1,10 @@
-0. Make table imply firstorder.
+1. Make :- table imply :- firstorder.
    Do variable analysis in delete{...}/insert{...}
    to avoid errors like in demo/aggregate.flr
    Move the decision about how to compile @prolog(module) from the compiler
    to the coder. Make the compilation different depending on whether it is
    in the shell or in the batch.
 
-
-1. Implement [flUser] analogous to [user] of XSB.
-   Look how [user] is implemented in XSB (in )
 
 2. Implement undefined predicate/method handling infrastructure.
 

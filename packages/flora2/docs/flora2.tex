@@ -321,14 +321,14 @@ Then the usual \FLORA shell prompt is displayed.
 \end{quote}
 %%
 The demos can be run by issuing the command
-``\verb|rundemo(demo-filename).|''
+``\verb|flDemo(demo-filename).|''
 at the \FLORA prompt, {\it e.g.},
 %%
 \begin{quote}
- \verb|flora2 ?- rundemo(flogic_basics).|
+ \verb|flora2 ?- flDemo(flogic_basics).|
 \end{quote}
 %%
-There is no need to change to the demo directory, as {\tt rundemo} knows
+There is no need to change to the demo directory, as {\tt flDemo} knows
 where to find the demos.
 
 
@@ -337,9 +337,15 @@ where to find the demos.
 The most common shell command you might need to execute is loading and
 compiling a program:
 %%
-\begin{itemize}
-  \item  {\tt [program-file].}
-\end{itemize}
+\begin{quote}
+  flora2 ?-  {\tt [programfile].}
+\end{quote}
+%%
+or 
+%%
+\begin{quote}
+  flora2 ?- {\tt flLoad programfile.}
+\end{quote}
 %%
 Here {\tt program-file} can contain a \FLORA program or an XSB program. If
 {\tt program-file.flr} exists, it is assumed to be a \FLORA program. The
@@ -353,11 +359,36 @@ an XSB program and the system will look for the file named {\tt
   program-file.P}. This file then is compiled into {\tt program-file.O} and
 loaded.
 
-By default, all \FLORA programs are loaded into the module {\tt main}.
+By default, all \FLORA programs are loaded into the module {\tt main}, but
+you can also load them into other modules using the following syntax:
+%%
+{\tt
+\begin{quote}
+ flora2 ?-  [file>>modulename].
+\end{quote}
+}
+%%
 Understanding \FLORA modules is very important in order to be able to take
 full advantage of the system; we will discuss the module system in \FLORA
 in Section~\ref{sec:flora-modules}.  Once the program is loaded, you can
 pose queries and invoke methods for the objects defined in the program.
+
+There is an important special of the {\tt flLoad} and {\tt [...]} command
+when the file name is {\tt user}. In that case, instead of looking for the
+program file {\tt user.flr}, \FLORA starts reading user input. At this
+point, the user can start typing in program clauses, which the system saves
+in a temporary file. When the user is done and types {\tt Control-D} (end
+of file), the file is compiled and loaded. It is also possible to load such
+a program into a designated module, rather than the default one,
+using one of the following commands:
+%%
+{\tt
+\begin{quote}
+  flora2 ?- [file>>module].\\
+  flora2 ?- flLoad file>>module.
+\end{quote}
+}
+%%
 
 \index{don't care variable}
 \index{anonymous variable}
@@ -407,7 +438,7 @@ error is reported.
     or 'FILE.O' then will load these files.
 \item {\tt [FILE.\{P$|$O$|$flr\} $>>$ Module,...]}:
     Load the files in the specified list into the module `{\tt Module}'.
-\item {\tt rundemo(FILE)}:
+\item {\tt flDemo(FILE)}:
     Consult a demo from \FLORA demos directory.
 \item {\tt equality \{none$|$basic$|$flogic\}}:
     Set the level of support for the equality predicate {\tt :=:} in the
@@ -418,7 +449,9 @@ error is reported.
     that F-logic style equality is supported ({\it i.e.}, congruence plus
     the axiom for scalar methods).
 \item {\tt abolish\_all\_tables}:
-    Flush all tabled data.
+    Flush all tabled data. This is sometimes needed when XSB's tabling 
+    gets in the way. We describe tabling (as it pertains to \FLORA) in
+    Section~\ref{sec-tabling-flora}.
 \item {\tt firstorder Functor/Arity}:
     Define Functor/Arity as non-HiLog in shell mode.
 \item {\tt arguments Functor(\{oid$|$form\}, ...)}:
@@ -448,7 +481,7 @@ error is reported.
 
 All commands with a FILE argument passed to them use the XSB
 {\tt library\_directory} predicate to search for the file, except that the
-command {\tt rundemo(FILE)} first looks for {\tt FILE} in the \FLORA demo
+command {\tt flDemo(FILE)} first looks for {\tt FILE} in the \FLORA demo
 directory. The search path typically includes the standard system's
 directories used by XSB followed by the current directory. 
 
@@ -2150,14 +2183,14 @@ discussed in Section~\ref{sec-tabling-flora}.
 To expunge a predicate of the form {\tt functor/arity} from the module that
 a program is loaded into, the following compiler directive can be used:
 \begin{quote}
-\verb!:- expunge functor/arity!
+\verb!:- expunge functor/arity.!
 \end{quote}
 
 {\tt expunge} can also be called like a normal predicate,
 either from the shell or from within a rule body, to expunge
 predicates in one specific module. The syntax is shown below:
 \begin{quote}
-\verb!expunge functor/arity, ..., functor/arity in module!
+\verb!:- expunge functor/arity, ..., functor/arity in module.!
 \end{quote}
 where {\tt in} is a special keyword, and {\tt module} stands for the
 name of the module from which to expunge the list of predicates.
@@ -3577,7 +3610,7 @@ is achieved by encoding the name of the module into all predicates
 The main purpose of the \FLORA shell, however, is to allow the evaluation
 of ad-hoc \fl queries. For example, after having consulted the
 the \texttt{'default.flr'} file from the demo directory by launching
-the command \texttt{flora2~?-~rundemo(default).}, you may ask
+the command \texttt{flora2~?-~flDemo(default).}, you may ask
 \begin{verbatim}
     flora2 ?-  X..kids[                 % Whose kids
                  self -> K,             % ... (list them by name)

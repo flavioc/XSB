@@ -56,6 +56,7 @@
 	slash/1,
 	is_absolute_filename/1,
 	parse_filename/4,
+	stat_flag/2,
 	stat_set_flag/2
    from machine.
 
@@ -65,6 +66,7 @@
 	fmt_write/3,
 	file_close/1,
 	print_file_contents/1,
+	copyIOport/2,
 	path_sysop/2
    from file_io.
 

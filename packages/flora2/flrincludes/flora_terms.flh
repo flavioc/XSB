@@ -168,6 +168,7 @@
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
+#define FL_FLIB			flora
 #define FL_WRAPAROUND	        wraparound
 %%#define FL_FIRSTORDERNOSTORAGE	fl_firstorder_nostorage
 %%#define FL_FIRSTORDERNOSTORAGEALL fl_firstorder_nostorage_all
@@ -248,6 +249,8 @@
   FLWORKSPACE(FLTERM|FLOBJSPEC|FLBIRELATE,Name)
   FLPLIB(FLTERM,Name)
   FLPLIB(FLTERM)
+  FLFLIB(FLTERM,Name)
+  FLFLIB(FLTERM)
   FLCONJUNCT(Goal,Goal)
   FLDISJUNCT(Goal,Goal)
   FLNOT(Goal)
@@ -299,6 +302,7 @@
 #define FLLOAD			flload
 #define FLWORKSPACE		flworkspace
 #define FLPLIB			flplib
+#define FLFLIB			flflib
 #define FLCONJUNCT		flconjunct
 #define FLDISJUNCT		fldisjunct
 #define FLNOT			flnot
