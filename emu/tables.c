@@ -135,8 +135,10 @@ void table_call_search(TabledCallInfo *call_info,
     size = int_val(*tmplt_component) & 0xffff;
 
     /* expand heap if there's not enough space */
-    check_glstack_overflow(call_info->call_arity, dummy, size, 
-			   xsb_exit("Heap/Local overflow\n"));
+    if ((pb)top_of_localstk < (pb)top_of_heap + size +
+	OVERFLOW_MARGIN) {
+      xsb_abort("{table_call_search} Heap overflow copying answer template");
+    }
 
     for ( j = size - 1, tmplt_component = tmplt_component + size;
 	  j >= 0;

@@ -134,10 +134,32 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   if ( this_instr == tabletry ) {
     /* lpcreg was left pointing to the next clause, e.g. tableretry */
     continuation = lpcreg;
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
   }
-  else
+  else 
     continuation = (pb) &check_complete_inst;
+
+/*    if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + OVERFLOW_MARGIN) {   */
+/*      if ((pb)top_of_localstk < (pb)top_of_heap) {			    */
+/*        lpcreg = exception_handler("\nFatal ERROR:  -- "			    */
+/* 				 "Local Stack clobbered Heap --\n");	    */
+/*        {XSB_Next_Instr();}						    */
+/*      }									    */
+/*      else {								    */
+/*        fprintf(stdwarn, "\n++Warning: Heap / Local Stack overflow:   ");    */
+/*        if (flags[STACK_REALLOC]) {					    */
+/* 	 fprintf(stdwarn, "Expanding ...\n");				    */
+/* 	 glstack_realloc(resize_stack(glstack.size,OVERFLOW_MARGIN+OVERFLOW_MARGIN),  */
+/* 			 MAX_ARITY);					    */
+/*        }								    */
+/*        else {								    */
+/* 	 fprintf(stdwarn, "Reallocation turned OFF!\n");		    */
+/* 	 print_statistics(1);						    */
+/* 	 local_global_exception(lpcreg);					    */
+/* 	 {XSB_Next_Instr();}						    */
+/*        }								    */
+/*      }									    */
+/*    } */
+  check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
 
   /*
    *  Perform a call-check/insert operation on the current call.  The
