@@ -284,6 +284,8 @@ fix_arg([Arg|Args],Arity,[Narg|Nargs]) :- !,
 fix_arg(Arg,Arity,Narg) :-
 	(integer(Arg), Arg >= 256
 	 ->	Narg = Arg
+	 ; Arg == 0
+	 ->	Narg = Arg
 	 ;	conv_joint(Arg,Arity,Narg)
 	).
 
