@@ -28,7 +28,6 @@
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
 
-:- import trace/0 from debugger.
 compile_cH(Modname, Base, Options, ExList, Dir) :-
 	/* ldoption is needed at compile time for ELF systems,
 	   so compile_H is now done first. */

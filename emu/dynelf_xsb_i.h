@@ -68,9 +68,9 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   char	sofilename[MAXPATHLEN];
   void	*handle;
   void	*funcep;
-  char  ldtemp; 
 
 #ifndef RUNTIME_LD_PATH
+  char  ldtemp; 
   char  *ldp1,*ldp2;
   static vstrDEFINE(ldstring_oldenv);
   static vstrDEFINE(ldstring_newenv);
