@@ -85,9 +85,9 @@ strel2strele :-
 		Strels),
 	sort_and_write_terms(Strels).
 
-allattr2allattre :-
-	findall(allattr_ext(NSCid,NRCid,NTCid),
-		allattr_ext(NSCid,NRCid,NTCid),
+allAttr2allAttre :-
+	findall(allAttr_ext(NSCid,NRCid,NTCid),
+		allAttr_ext(NSCid,NRCid,NTCid),
 		Allattrs),
 	sort_and_write_terms(Allattrs).
 
@@ -158,11 +158,11 @@ merge_intensional_rules :-
 	 ;
 	 retractall(classHasAttr_int(_,_,_)),
 
-	 allattr_int(SCid,RCid,TCid), \+allattr_ext(SCid,RCid,TCid),
-	 asserta(allattr_ext(SCid,RCid,TCid)),
+	 allAttr_int(SCid,RCid,TCid), \+allAttr_ext(SCid,RCid,TCid),
+	 asserta(allAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
-	 retractall(allattr_int(_,_,_)).
+	 retractall(allAttr_int(_,_,_)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
