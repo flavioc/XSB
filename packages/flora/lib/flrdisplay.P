@@ -44,59 +44,50 @@
 
 /********************************************************************/
 '_$_$_flora_print_all'(Gs,NVs) :-
-	( '_$_$_flora_check_predicates'(Gs) ->
-	    cputime(T0),
-	    ( NVs = [] ->
-		( call(Gs) ->
-		    nl, writeln('Yes.')
-		  ;
-		    nl, writeln('No.')
-		)
-
+	cputime(T0),
+	( NVs = [] ->
+	    ( call(Gs) ->
+		nl, writeln('Yes.')
 	      ;
-		findall(NVs,Gs,TempL),
-		sort(TempL,L),
-		cputime(T1),
-		T is T1-T0,
-		length(L,N),
-		( N = 0 ->
-		    nl, writeln('No.')
-		  ;
-		    '_$_$_flora_write_matches'(L), nl,
-		    write(N), write(' solution(s) in '),
-		    write(T), write(' seconds on '),
-		    unix(hostname),
-		    nl, writeln('Yes.')
-		)
+	        nl, writeln('No.')
 	    )
 
 	  ;
-	    nl, writeln('No.')
+	    findall(NVs,Gs,TempL),
+	    sort(TempL,L),
+	    cputime(T1),
+	    T is T1-T0,
+	    length(L,N),
+	    ( N = 0 ->
+		nl, writeln('No.')
+	      ;
+	        '_$_$_flora_write_matches'(L), nl,
+		write(N), write(' solution(s) in '),
+		write(T), write(' seconds on '),
+		unix(hostname),
+		nl, writeln('Yes.')
+	    )
 	).
 
 
 /********************************************************************/
 '_$_$_flora_print_one'(Gs,NVs) :-
-	( '_$_$_flora_check_predicates'(Gs)	->
-	    ( NVs = [] ->
-		( call(Gs) ->
-		    nl, writeln('Yes.')
-		  ;
-		    nl, writeln('No.')
-		)
-
+	( NVs = [] ->
+	    ( call(Gs) ->
+		nl, writeln('Yes.')
 	      ;
-		( call(Gs),
-		  '_$_$_flora_write_pairs'(NVs),
-		  '_$_$_flora_fail_unless_return', !
-		 ;
-		  nl, writeln('No.')
-		)
+	        nl, writeln('No.')
 	    )
 
 	  ;
-	    nl, writeln('No.')
+	    ( call(Gs),
+	      '_$_$_flora_write_pairs'(NVs),
+	      '_$_$_flora_fail_unless_return', !
+	     ;
+	      nl, writeln('No.')
+	    )
 	).
+
 
 '_$_$_flora_fail_unless_return' :- 
 	get0(C),
@@ -123,7 +114,7 @@
 	    '_$_$_flora_check_predicates'(Gs)
 
 	  ;
-	    nl, write('*** FLORA Warning: '),
+	    nl, '_$_$_write_flora_warnheader',
 	    write(F/N),
 	    writeln(' undefined'),
 	    fail
