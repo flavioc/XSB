@@ -159,6 +159,12 @@ void HTXML_newInstance (HTStream *		me,
 			HTStream *		target_stream,
 			XML_Parser              xmlparser,
 			void * 			context);
+void libwww_newRDF_parserHandler (HTStream *		me,
+				  HTRequest *		request,
+				  HTFormat 		target_format,
+				  HTStream *		target_stream,
+				  HTRDF *    	        rdfparser,
+				  void *         	context);
 void add_result_param(prolog_term *result_param, 
 		      char *functor, int cnt, ...);
 void report_asynch_subrequest_status(HTRequest *request, int status);

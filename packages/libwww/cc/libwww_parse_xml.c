@@ -370,9 +370,9 @@ PRIVATE void xml_pop_suppressed_element(USERDATA *userdata)
 }
 
 
-USERDATA *xml_create_userData(XML_Parser parser,
-			      HTRequest *request,
-			      HTStream  *target_stream)
+PRIVATE USERDATA *xml_create_userData(XML_Parser parser,
+				      HTRequest *request,
+				      HTStream  *target_stream)
 {
   USERDATA *me = NULL;
 #ifdef LIBWWW_DEBUG

@@ -22,3 +22,21 @@
 ** 
 */
 
+
+typedef struct RDF_userData USERDATA;
+struct RDF_userData {
+  DELETE_USERDATA *   	  delete_method;
+  int 	      	      	  status;    	   /* this is used to carry status into
+					      delete_userData */
+  HTRDF *                 parser; 
+  HTRequest *		  request;
+  HTStream *		  target;
+  prolog_term	     	  parsed_term;      /* actual result of the parse */
+  prolog_term	     	  parsed_term_tail; /* auxil variable */
+};
+
+PRIVATE void rdf_new_triple_handler (HTRDF *rdfp, HTTriple *t, void *context);
+PRIVATE void rdf_delete_userData(void *userdata);
+PRIVATE USERDATA *rdf_create_userData(HTRDF 	*parser,
+				      HTRequest *request,
+				      HTStream  *target_stream);

@@ -774,6 +774,7 @@ PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term, int request_id)
 PRIVATE void init_htable(HASH_TABLE *htable, int size, REQUEST_TYPE type)
 {
   int i;
+  /* RDFPARSE, FETCH, and HEADER requests don't use the hash table */
   if ((type != XMLPARSE) && (type != HTMLPARSE)) {
     htable->table = NULL;
     return;
@@ -880,7 +881,7 @@ PRIVATE int request_termination_handler (HTRequest   *request,
 					 int 	     status)
 {
   REQUEST_CONTEXT *context = ((REQUEST_CONTEXT *)HTRequest_context(request));
-  void *userdata = context->userdata;
+  USERDATA *userdata = (USERDATA *)(context->userdata);
 
 #ifdef LIBWWW_DEBUG
   xsb_dbgmsg("Request %s: In request_termination_handler, status %d",
@@ -890,7 +891,6 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   /* the following conditions are handled by standard libwww filters */
   if (context->retry && AUTH_OR_REDIRECTION(status))
     return HT_OK; /* this causes other filters to be used */
-
 
   /* Redirection code is commented out. It is better handled by the standard
      Libwww redirection/proxy handling filters */
@@ -919,8 +919,8 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   }
 
   status = (context->statusOverride ? context->statusOverride : status);
-  if (context->userdata)
-    ((USERDATA *)(context->userdata))->status = status;
+  if (userdata)
+    userdata->status = status;
   /* we should have checked already that status is a var */
   if (is_var(context->status_term))
     c2p_int(status, context->status_term);
@@ -930,9 +930,9 @@ PRIVATE int request_termination_handler (HTRequest   *request,
   c2p_nil(context->result_params);
 
   /* Clean Up */
-  if (userdata)
-    (((USERDATA *)userdata)->delete_method)(userdata);
-  else if (context->type == FETCH) {
+  if (userdata) {
+    (userdata->delete_method)(userdata);
+  } else if (context->type == FETCH) {
     char *result_as_string = HTChunk_toCString(context->result_chunk);
 
     if (!is_var(context->request_result))
@@ -972,7 +972,7 @@ PRIVATE void setup_callbacks(REQUEST_TYPE type)
     HTXMLCallback_registerNew(HTXML_newInstance, NULL);
     break;
   case RDFPARSE:
-    /* not yet implemented */
+    HTRDF_registerNewParserCallback(libwww_newRDF_parserHandler, NULL);
     break;
   case FETCH:
     break;
@@ -1043,6 +1043,8 @@ void add_result_param(prolog_term *result_param,
 }
 
 
+/* returns an uninstantiated var, which is a placeholder in the list of result
+   parameters. The list of params is moved one elt down */
 PRIVATE prolog_term get_result_param_stub(prolog_term *result_param)
 {
   prolog_term listHead;

@@ -68,3 +68,144 @@ void set_rdf_conversions()
 		   HTRDFToTriples, 1.0, 0.0, 0.0);
 }
 
+
+void libwww_newRDF_parserHandler (HTStream *		me,
+				  HTRequest *		request,
+				  HTFormat 		target_format,
+				  HTStream *		target_stream,
+				  HTRDF *    	        rdfparser,
+				  void *         	context)
+{
+  if (rdfparser) {
+    
+    /* Create userdata and pass rdfparser there */
+    USERDATA *userdata = rdf_create_userData(rdfparser,request,target_stream);
+    
+    /* Register the triple callback */
+    HTRDF_registerNewTripleCallback (rdfparser,
+				     rdf_new_triple_handler,
+				     userdata);
+  }
+}
+
+
+/* context here is of type USERDATA */
+PRIVATE void rdf_new_triple_handler (HTRDF *rdfp, HTTriple *t, void *context)
+{
+  USERDATA *userdata = (USERDATA *)context;
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In rdf_new_triple_handler(%s)", RequestID(userdata->request));
+#endif
+  /* create a new triple */
+  if (rdfp && t) {
+    prolog_term ptriple = p2p_car(userdata->parsed_term_tail);
+
+    c2p_functor("rdftriple",3,ptriple);
+    if (HTTriple_predicate(t))
+      c2p_string(HTTriple_predicate(t), p2p_arg(ptriple,1));
+    else
+      c2p_string("rdfunknown", p2p_arg(ptriple,1));
+    if (HTTriple_subject(t))
+      c2p_string(HTTriple_subject(t), p2p_arg(ptriple,2));
+    else
+      c2p_string("rdfunknown", p2p_arg(ptriple,2));
+    if (HTTriple_object(t))
+      c2p_string(HTTriple_object(t), p2p_arg(ptriple,3));
+    else
+      c2p_string("rdfunknown", p2p_arg(ptriple,3));
+
+#ifdef LIBWWW_DEBUG_VERBOSE
+    print_prolog_term(userdata->parsed_term_tail, "Current result tail");
+#endif
+
+    userdata->parsed_term_tail = p2p_cdr(userdata->parsed_term_tail);
+    c2p_list(userdata->parsed_term_tail);
+  }
+}
+
+
+PRIVATE USERDATA *rdf_create_userData(HTRDF     *parser,
+				      HTRequest *request,
+				      HTStream  *target_stream)
+{
+  USERDATA *me = NULL;
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("Start rdf_create_userData: Request %s", RequestID(request));
+#endif
+  if (parser) {
+    /* make sure that MIME type is appropriate for RDF */
+    if (!verifyMIMEformat(request, RDFPARSE)) {
+      /*
+	HTStream * input = HTRequest_inputStream(request);
+	(*input->isa->abort)(input, NULL);
+	HTRequest_setInputStream(request,NULL);
+	HTRequest_kill(request);
+	return NULL;
+      */
+      xsb_abort("LIBWWW_REQUEST: Bug: Request type/MIME type mismatch");
+    }
+    if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
+      HT_OUTOFMEM("libwww_parse_rdf");
+    me->delete_method = rdf_delete_userData;
+    me->parser = parser;
+    me->request = request;
+    me->target = target_stream;
+    me->parsed_term = p2p_new();
+    c2p_list(me->parsed_term);
+    me->parsed_term_tail = me->parsed_term;
+  }
+  
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("End rdf_create_userData: Request %s", RequestID(request));
+#endif
+
+  /* Hook up userdata to the request context */
+  ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata = (void *)me;
+
+  return me;
+}
+
+
+
+PRIVATE void rdf_delete_userData(void *userdata)
+{
+  prolog_term parsed_result, status_term;
+  USERDATA *me = (USERDATA *)userdata;
+  HTRequest *request = me->request;
+
+  if (request) {
+    parsed_result =
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->request_result;
+    status_term =
+      ((REQUEST_CONTEXT *)HTRequest_context(request))->status_term;
+  }
+  else return;
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In rdf_delete_userData(%s)", RequestID(request));
+#endif
+
+#ifdef LIBWWW_DEBUG_VERBOSE
+  print_prolog_term(me->parsed_term, "Current parse value");
+#endif
+
+  /* terminate the parsed prolog terms list */
+  c2p_nil(me->parsed_term_tail);
+
+  /* pass the result to the outside world */
+  if (is_var(me->parsed_term))
+    p2p_unify(parsed_result, me->parsed_term);
+  else
+    xsb_abort("LIBWWW_REQUEST: Request %s: Arg 4 (Result) must be unbound variable",
+	      RequestID(request));
+
+  HT_FREE(me);
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("Request %s: freed the USERDATA object", RequestID(request));
+#endif
+
+  return;
+}
+
