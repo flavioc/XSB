@@ -76,6 +76,7 @@ slx::
 
 flora2::
 	@echo ""
+	ln -s flora2/flora2.P .
 	cd flora2; makeflora all ../$(PROLOG)
 
 libwww::
