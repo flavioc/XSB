@@ -225,7 +225,7 @@ other XSB modules, and regular XSB modules can query the objects defined in
 because it heavily relies on tabling and the well-founded semantics for
 negation, both of which are available only in XSB.
 
-%% UNIMPLEMENTED -- slg-wam/chat
+%% Unimplemented -- slg-wam/chat
 Due to certain problems with XSB, \FLORA runs best when XSB is configured
 with SLG-WAM and local scheduling. This problem will be fixed in a future
 release of XSB. Under the default XSB configuration, certain \fl programs might
@@ -1276,14 +1276,13 @@ and the contents consists of the program code that is typically loaded from
 some file (but it can also be constructed dynamically by inserting
 facts\footnote{
   %%
-  %% UNIMPLEMENTED -- asserting rules
-  Dynamic insertion of rules will be implemented in the future.
+  {\bf Unimplemented}: Dynamic insertion of rules will be implemented in
+  the future.
   %%
   }
 %%
 into another module).
 
-%% UNIMPLEMENTED -- encapsulation
 The basic idea behind \FLORA modularization is that reusable code libraries
 are to be placed in separate files.  To use a library, it must be
 \emph{loaded into a module}. Other parts of the program can then invoke
@@ -1292,8 +1291,8 @@ method/predicate names, of course).  There is no need to export anything
 from a library --- any public method or predicate can be called by other
 parts of the program.\footnote{
   %%
-  At present, all methods are public, but encapsulation will be implemented
-  in the future.
+  {\bf Unimplemented}: At present, all methods are public, but
+  encapsulation will be implemented in the future.
   %%
   }
 %%
@@ -2231,10 +2230,11 @@ Yes.
 \end{verbatim}
 \end{quote}
 %%
-%% UNIMPLEMENTED -- meta programming
 Note that these primitives are used for Prolog terms only and
-are described in the XSB manual. Meta-programming support for HiLog terms
-and F-molecules will be provided through future enhancement.
+are described in the XSB manual.
+
+{\bf Unimplemented}: Meta-programming support for HiLog terms and
+F-molecules will be provided through future enhancement.
 
 
 \subsection{Passing Arguments between \FLORA and XSB}\label{sec-passing-args}
@@ -2282,7 +2282,7 @@ following queries into the \FLORA shell, they both succeed:
 %%
 
 
-%% UNIMPLEMENTED -- useful libraries
+%% Unimplemented -- useful libraries
 Not all arguments passed back and forth to XSB need conversion. For
 instance, {\tt sort/2}, {\tt ground/1}, {\tt compound/1}, and many others
 do not need conversion because they work the same for Prolog and HiLog
@@ -2960,8 +2960,7 @@ tc(X,Y) :- edge(X,Y), tc(Y,Z).
 \end{quote}
 %%
 which renders {\tt tc/2}  as a tabled first-order predicate.
-%% UNIMPLEMENTED --  :-table implies :-firstorder
-(In the future, the tabling directive will imply {\tt firstorder}.)
+({\bf Unimplemented}: In the future, the tabling directive will imply {\tt firstorder}.)
 
 \index{hilogtable}
 \index{compiler directive!{\tt hilogtable}}
@@ -2976,7 +2975,7 @@ predicates of a given arity: For instance,
 %%
 tables all HiLog predicates of arity 3.
 
-%% UNIMPLEMENTED -- Flora and subsumptive tabling
+%% Unimplemented -- Flora and subsumptive tabling
 It is important to keep in mind that XSB does not do reordering of \fl
 molecules and predicates during joins. Instead, all joins are performed
 left-to-right.  Thus, program clauses must be written in such a way as to
@@ -3061,7 +3060,7 @@ F-molecule (again, provided that the body has no F-molecule to the left of
 that cut). If you need to use cuts, plan on using procedural methods or
 non-tabled predicates.
 
-%% UNIMPLEMENTED -- demand tabling
+%% Unimplemented -- demand tabling
 In a future release, XSB will implement a different tabling schema. While
 cutting across tables will still be prohibited, it will provide an
 alternative mechanism that achieves many of the goals a cut is used to
@@ -3085,10 +3084,9 @@ to update it. Instead, every predicate (HiLog or first-order) and object
 has a \emph{base part} and a \emph{derived part}.  Updates directly change
 only the base parts and only indirectly the derived parts.
 
-%%UNIMPLEMENTED -- make base part dynamic
-Note that the base part of a predicate or an object contains only the facts
-that were \emph{explicitly inserted} into the database. If you just put the
-facts such as 
+Note that the base part of a predicate or an object contains \emph{both}
+the facts that were \emph{inserted explicitly} into the database and the
+facts that you specified in the program. For instance, in
 %%
 {\tt
 \begin{quote}
@@ -3098,15 +3096,24 @@ facts such as
 }
 %%
 \noindent
-into the database, they will be located in the derived part and cannot be
-deleted. (This might change in a future release).
+the fact {\tt p(a)} will be placed in the base part of the predicate p/1 tt
+and it can be deleted by the {\tt delete} primitive. Likewise,
+the fact {\tt a[m->b]} is updatable. If you do not want
+some facts to be updatable, use the following syntax:
+%%
+{\tt
+\begin{quote}
+ p(a) :- true.\\
+ a[m->b] :- true.
+\end{quote}
+}
+%%
 
-%%UNIMPLEMENTED
-Also, in the current release, the base part of first-order predicates
-cannot be queried in the \FLORA shell (but it can be queried in the program
-file).  Likewise, if the {\tt firstorderall} directive is in effect, the
-base part of the first-order predicates is inaccessible to querying.  These
-limitations will be removed in the future.
+{\bf Unimplemented}: In the current release, the base part of first-order
+predicates cannot be queried in the \FLORA shell (but it can be queried in
+the program file).  Likewise, if the {\tt firstorderall} directive is in
+effect, the base part of the first-order predicates is inaccessible to
+querying.  These limitations will be removed in the future.
 
 
 \FLORA updates can be \emph{non-backtrackable,} as in Prolog,
@@ -3436,16 +3443,15 @@ system backtracks to {\tt btinsert\{q(a)\}} and removes {\tt q(a)} that
 was previously inserted into the database. Thus the next query
 \verb|q(a)| returns with {\tt No}.
 
-%% UNIMPLEMENTED -- while loops
 Keep in mind that some things that Prolog programmers routinely do with
 {\tt assert} and {\tt retract} goes against the grain of the use of
 backtrackable updates. In particular, {\tt fail}-loops are not going to
-work (will leave the database unchanged) for obvious reasons. In a future
-release, we will provide {\tt while}-loops that will work correctly with
-such updates.
+work (will leave the database unchanged) for obvious reasons. The {\tt
+  while} primitive should be used in such situations.
 
-%% UNIMPLEMENTED -- backtrackable updates and the fail-loop
-There are certain less obvious pitfalls in using backtrackable predicates
+{\bf Unimplemented}:  This release does not support the {\tt while}-loops.
+
+{\bf Unimplemented}: There are certain less obvious pitfalls in using backtrackable predicates
 in \FLORA. For instance, the query
 %%
 \begin{quote}
@@ -3470,6 +3476,19 @@ answering machinery much better. For now, we recommend using the {\tt
 \noindent
 (Note: {\tt flOne,p(X),btinsert\{q(X)\}} will not work: {\tt flOne} must be
 issued in a separate query.)
+
+
+{\bf Unimplemented}: In the current release, arithmetic expressions in the
+query part of an update must have their variables be bound by the subgoals
+that precede the update primitive, except that the literal part does not
+currently bind. For instance, 
+%%
+\begin{quote}
+ ?- delete{X[salary->Y] | Y<20000}.  
+\end{quote}
+%%
+is going to cause a run-time error. This limitation will be removed in a
+future release.
 
 
 \subsection{Updates and Tabling}
@@ -3517,7 +3536,7 @@ The reason for this result is, again, that XSB tables remember that {\tt
 
 \index{abolish\_all\_tables}
 %%
-%% UNIMPLEMENTED: tabling and updates
+%% Unimplemented: tabling and updates
 In a future release, \FLORA will provide a workaround for these
 problems (and it is even possible that a future release of XSB will
 start doing the right thing in these situations). For now, the only
@@ -3529,14 +3548,14 @@ One other temporal solution could be to design your program in such a way
 that tabled predicates and F-molecules will not depend on the facts that
 are dynamically inserted or deleted.
 
-%% UNIMPLEMENTED -- checking dependency of tabled preds on update
-%% primitives
 Another, related, issue is that a tabled predicate might have an update in
 its body. In this case, the update will be executed the first time the
 predicate is evaluated. Subsequent calls will return the predicate truth
 value from the tables, without invoking the predicate definition.
-Such a dependency is most likely a mistake, which should be caught by the
-compiler. This enhancement will be supported in the future.
+Such a dependency is most likely a mistake, which is caught by the
+compiler.
+
+{\bf Unimplemented}: This compiler check has not been implemented yet.
 
 
 \section{Negation} \label{sec:negation}
@@ -3593,11 +3612,11 @@ operators, and they bind stronger than the conjunction ``,'', the
 disjunction ``;'', etc. This is why the parentheses are needed in the above
 example.
 
-%% UNIMPLEMENTED -- if then else
-In the current version, the \FLORA parser does not yet handle all the
-syntax errors associated with the use of {\tt if-then-else} and nested
-clauses are not always parsed the way one would expect (say, as in C).
-Therefore, explicit parentheses are recommended around the entire clause. 
+{\bf Unimplemented}: In the current version, the \FLORA parser does not yet
+handle all the syntax errors associated with the use of {\tt if-then-else}
+and nested clauses are not always parsed the way one would expect (say, as
+in C).  Therefore, explicit parentheses are recommended around the entire
+clause.
 
 
 
@@ -3606,7 +3625,7 @@ Therefore, explicit parentheses are recommended around the entire clause.
 
 \index{type checking}
 %%
-%% UNIMPLEMENTED -- type checking
+%% Unimplemented -- type checking
 Although \FLORA allows specification of object types through signatures,
 type correctness is not checked automatically. So, what are the
 signatures good for then? One answer is that future versions of \FLORA
@@ -3696,10 +3715,23 @@ a list of all the compiler directives supported by \FLORA:
     {\it module}}
   \\
   Imports the given predicate from the specified XSB module.
-\item {\tt index {\it functor/arity-argNumber}}
+\item {\tt index({\it PredicateSpec,IndexSpec}}
   \\
-  Specifies that the given predicate must be indexed on the specified
-  argument.
+  Specifies how the given first-order predicate must be indexed.
+  {\em PredicateSpec} is of the form functor/arity. \emph{IndexSpec} is
+  either {\tt trie} --- meaning that trie indexing should be used --- or a
+  number. In the last case, indexing is hash-based on the specified
+  argument (which should not exceed the arity, of course).
+  Trie indexing is best if several arguments are instantiated, beginning
+  with the first. Hash indexing is better if the fist argument is
+  uninstantiated, because then you can specify another argument to index
+  on.
+  
+  Note that the {\tt index} directive is not very useful for predicates
+  that mostly contain facts, because these are trie-indexed anyway
+  (regardless of what you say). Thus, this instruction is useful only for
+  predicates with partially instantiated arguments that appear in the rule
+  heads.
 \item {\tt op({\it precedence},{\it type},{\it operator})}
   \\
   Defines \emph{operator} as a \FLORA operator with the given precedence
@@ -3711,9 +3743,10 @@ a list of all the compiler directives supported by \FLORA:
   with the same precedence and type.
 \item {\tt table {\it functor/arity}, ..., {\it functor/arity}}
   Requests that the specified first order predicates must be tabled.
-  %% UNIMPLEMENTED -- table implies firstorder
-  (Currently this also requires an explicit {\tt firstorder} directive, but
-  this restriction will be eliminated in the future.)
+  
+  {\bf Unimplemented}: Currently, the {\tt table} directive also requires
+  an explicit {\tt firstorder} directive, but this restriction will be
+  eliminated in the future.
 \end{itemize}
 
 
@@ -3766,9 +3799,8 @@ The following example illustrates the use of this library:
 \index{debugging}
 
 
-%% UNIMPLEMENTED
-This has not been implemented yet, but this is how the initial version will
-look like.
+{\bf Unimplemented}: Debugger has not been implemented yet, but this is how
+the initial version will look like.
 
 
 \FLORA debugger is essentially a presentation layer on top of the XSB
@@ -3983,18 +4015,10 @@ compiles it into XSB syntax and then outputs XSB code. For instance the command
 compiles the \FLORA program {\tt myprog.flr} and generate the following
 files: {\tt myprog.P}, {\tt myprog\_main.O}, and {\tt myprog.fdb} (if {\tt
   myprog.flr} contains \fl facts).  By default, {\tt flLoad(myprog)} loads
-the program into the default module named {\tt main}. If {\tt
-  myprog.flr} contains \fl facts, all these facts will be compiled
-separately into the XSB file {\tt myprog.fdb} that is dynamically
-loaded at runtime.\footnote{
-  %%
-  %% UNIMPLEMENTED
-  Currently these facts are compiled, but will be loaded dynamically in the
-  future.
-  %%
-  }
-%%
-Next, the file {\tt myprog.P} is generated --- take a look at ``{\tt
+the program into the default module named {\tt main}. If {\tt myprog.flr}
+contains \fl facts, all these facts will be compiled separately into the
+XSB file {\tt myprog.fdb} that is dynamically loaded at runtime.  Next, the
+file {\tt myprog.P} is generated --- take a look at ``{\tt
   myprog\_main.P}'' to see what has become of your \FLORA program! --- and
 passed to the XSB compiler, yielding Prolog byte code {\tt myprog.O}, which
 is then renamed to {\tt myprog\_main.O}. This file is then loaded and
@@ -4273,7 +4297,8 @@ such rules statically. After all, XSb limits us to functor arity no larger
 than 255! The problem arises with first-order predicates, because they need
 to be collected by the compiler and a separate rule needs to be created for
 each first-order predicate. The static patch rules are located in
-{\tt genincludes/flrpatch.fli}.  The patch rules for the first-order
+{\tt genincludes/flrpatch.fli} (from which {\tt flrpatch.flh} is generated
+during the installation).  The patch rules for the first-order
 predicates are dumped directly into the {\tt .P} file of the main program
 generated by the \FLORA compiler.
 
@@ -4281,8 +4306,41 @@ A similar problem arises when the user enters a {\tt firstorder} directive
 to the shell. In this case, a patch rule must be generated dynamically and
 asserted into the system.
 
+One complication is that the file {\tt flrpatch.flh} must be compiled for
+the right module, so the preprocessor macro {\tt FLORA\_VAR\_WORKSPACE} can
+be given value only when we load the patch rules into a specified module.
+If the directory {\tt genincludes} that holds {\tt flrpatch.flh} is not
+writable by the user (which is often the case, if XSB is installed in a
+shared public directory on the server) then it will not be possible to run
+any \FLORA programs at all. For this reason, a copy of the patch rules is
+stored in the user's home directory, {\tt .xsb/flora/}, in the file {\tt
+  patch.P}, so patch rules are always compiled in the user's home
+directory.
+
 
 \subsection{System Architecture}
+
+\index{canonic term}
+%%
+The overall architecture of \FLORA is depicted in Figure~\ref{fig-arch}.
+The program is first tokenized and then the \emph{composer} combines the
+disparate tokens into terms. Since, due to the existence of operators, not
+everything looks like a term in the source program, the composer consults
+the operator definitions in the file {\tt flroperator.P} to get the
+directives on how to turn the operator expressions into terms. Next, the
+parser checks the syntax of the rules and of the various other primitives
+({\it e.g.}, the aggregates, updates, module specifications, etc.). The
+output of the parser is a \emph{canonic term} list, which represents the
+entire parsed program. The canonic term is taken up by the compiler, which
+generates abstract code. This code is represented in a form that is
+convenient for manipulation and is not yet Prolog code.  The compiler might
+add additional rules (such as patch rules) and XSB instructions. The
+compiled program is converted into (almost) Prolog syntax by the coder. As
+mentioned previously, the code produced by the compiler is full of
+preprocessor macros, so before passing it to XSB it must be preprocessed by
+GPP. GPP pipes the result to XSB, which finally produces the byte code
+program that can run under the control of the XWAM abstract machine, which
+is part of the XSB system.
 
 %%
 \begin{figure}
@@ -4294,34 +4352,81 @@ asserted into the system.
 \end{figure}
 %%
 
-\FLORA consists of the following modules:
+The following is a list of the key files of the system.
+%%
 \begin{itemize}
-\item \texttt{flrshell.P}: The top level module that provides the \FLORA shell
-  commands for compiling and consulting \FLORA programs, for setting the
-  output mode, and -- last but not the least -- for directly issuing
-  queries against the loaded database/program (see
-  Section~\ref{sec-shell-commands} for a full description of shell
-  commands).
-\item \texttt{flrlexer.P}: The \FLORA lexer.
-\item \texttt{flrcomposer.P}: The \FLORA composer that parses tokens 
-  according to the operator grammar (converts operator syntax into Prolog
-  terms) and also does other magic.
+\item \texttt{flrshell.P}: The top level module that implements the \FLORA
+  shell --- a subsystem for accepting user commands and queries and passing
+  them to the compiler.  See Section~\ref{sec-shell-commands} for a full
+  description of shell commands.
+\item \texttt{flrlexer.P}: The \FLORA tokenizer.
+\item \texttt{flrcomposer.P}: The \FLORA composer, which parses tokens
+  according to the operator grammar and does other magic.
 \item \texttt{flrparser.P}: The \FLORA parser.
-\item \texttt{flrcompiler.P}: The \FLORA compiler that translates \fl to XSB.
-\item \texttt{flrcoder.P}: The \FLORA coder that generates XSB code.
-\item \texttt{flrutils.P}: Miscellaneous utility predicates.
+\item \texttt{flrcompiler.P}: The \FLORA compiler.
+\item \texttt{flrcoder.P}: The \FLORA coder, which generates XSB code.
+\item \texttt{flrutils.P}: Miscellaneous utility predicates for loading
+  programs, checking if files exist, whether they need to be recompiled,
+  etc.
 \end{itemize}
 %%
 Additional system libraries are located in the {\tt syslib/} subdirectory.
-The sbudirectory {\tt trailer/} contains trailers that implement the
-various axioms implied by \FLORA semantics.  There is also a number of
-files in the {\tt closure/} subdirectory that serve as headers and trailers
-that are automatically included into the {\tt .P} files by the \FLORA
-compiler (explained later).
+These include the various printing utilities, implementation for
+aggregates, update primitives, and some others. The compiler determines
+which of these libraries are needed while parsing the program. When a
+library is needed, the compiler generates an {\tt \#include} statement to
+include an appropriate file in the {\tt syslibinc} directory. For instance,
+to include support for the {\tt avg} aggregate function, the compiler
+copies the file {\tt syslibinc/flraggavg\_inc.flh} to the output {\tt .P}
+file.  Since {\tt syslibinc/flraggavg\_inc.flh} contains the code to load
+the library {\tt syslib/flraggavg.P}, this library will be loaded together
+with that output file. The association between the libraries and the files
+that need to be included to provide the appropriate functionality is
+implemented in the file {\tt flrlibman.P}, which also implements the
+utility used to load the libraries.
+
+While {\tt syslib/} directory contains the libraries implemented in Prolog,
+the {\tt lib/} directory contains libraries implemented in \FLORA itself.
+While the libraries in {\tt syslib/} implement the functionality of the
+primitives that are part of the syntax of the language, the
+libraries in {\tt lib/} implement functionality that is part of the system, but
+not part of the syntax. An example is the pretty-printing library.
+Methods and predicates defined in these libraries are accessible through
+the {\tt @flora(lib-name)} module and (unlike the other \FLORA modules)
+they are loaded automatically at startup.
 
 There are several subdirectories that hold the various files that contain
 definitions included at compile time. These will be described in a
 technical document.
+
+A number of other important directories contain the various included files
+(many of which include other files). The directory {\tt flrincludes/}
+contains the all-important {\tt flora\_terms.flh} file, which defines all
+the names used in the system. These names are defined as preprocessor
+macros, so that it would be easy to change them, if necessary.
+The directory {\tt genincludes/} currently contains the already mentioned
+patch rules. The file {\tt flrpatch.fli} is a template, and {\tt
+  flrpatch.flh}, which contains the actual patch rules, is generated from
+{\tt flrpatch.fli} during the installation.
+
+The directory {\tt includes/} contains the header file, which defines the
+macros ({\it e.g.}, {\tt FLORA\_WORKSPACE}) that wrap all the names with
+prefixes to separate the different modules of the user program.  The
+directory {\tt headerinc/} is another place where the template files are
+located. Each of these files contains just a few {\tt \#include}
+statements, mostly for the files in the {\tt closure/} directory (which, if
+you recall, contains pieces of the trailer). When the system is installed
+certain combinations of these files are concatenated and dumped into the
+{\tt trailer/} directory. Recall that the files in the {\tt trailer/}
+directory are trailers that implement the closure axioms (there are three
+trailers: without equality, with standard equality, and with \fl equality).
+This double-indirection is needed to simplify the installation procedure
+and to eliminate code duplication among the various trailers.
+
+The directory {\tt p2h} contains (the only!) C program in the system. It
+implements conversion of Prolog terms to HiLog and back. Finally, the {\tt
+  pkgs/} directory is empty. Some day it will contain add-on programs, such
+as Internet access, etc.
 
 
 
