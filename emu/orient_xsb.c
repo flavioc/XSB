@@ -43,6 +43,7 @@
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
 #include "export.h"
+#include "basicdefs.h"
 #include "basictypes.h"
 
 char executable[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */

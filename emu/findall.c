@@ -42,7 +42,7 @@
 #include "subp.h"
 #include "flags_xsb.h"
 #include "loader_xsb.h"
-
+#include "cinterf.h"
 #include "findall.h"
 
 findall_solution_list *findall_solutions = NULL;
@@ -55,8 +55,10 @@ static int nextfree ; /* nextfree index in findall array */
 CPtr gl_bot, gl_top ;
 #define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
 
-/* get_more_chunk mallocs a new chunck and links it in in the current findall */
+#include "ptoc_tag_xsb_i.h"
 
+
+/* malloc a new chunck and link it in in the current findall */
 int get_more_chunk()
 { CPtr newchunk ;
 
@@ -68,17 +70,16 @@ int get_more_chunk()
   current_findall->current_chunk = newchunk ;
   current_findall->top_of_chunk = newchunk + 1 ;
 
-  return(1) ;
+  return TRUE;
 
 } /*get_more_chunk*/
 
-/*
-$$findall_init/2
+/* $$findall_init/2
 
-	to be called with 2 free variables
-	the first variable is bound to an index in the findall table
-	the second remains free - it will be set to 666 by findall_get_solutions
-	without trailing, so that later add's will not occur
+   to be called with 2 free variables
+   the first variable is bound to an index in the findall table
+   the second remains free - it will be set to 666 by findall_get_solutions
+   without trailing, so that later add's will not occur
 */
 
 int findall_init_c()
@@ -122,11 +123,10 @@ int findall_init()
   Cell arg1 ;
   int ichunk;
  
-  arg1 = (Cell)Areg(1) ; 
-  deref(arg1) ;
+  arg1 = ptoc_tag(1); 
   ichunk = findall_init_c(); 
   *(CPtr)arg1 = makeint(ichunk) ;
-  return(1);
+  return TRUE;
 } /* findall_init */
 
 /* findall_free is called to desactive an entry in the solution_list
@@ -286,28 +286,29 @@ static void findall_untrail()
 } /* findall_untrail */
 
 static int findall_trail(CPtr p)
-{ f_tr_chunk *new_tr_chunk ;
+{ 
+  f_tr_chunk *new_tr_chunk ;
 
-	if (cur_tr_top == cur_tr_limit)
-		{ if (!(new_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
-			xsb_exit("findall_trail failed");
-		  cur_tr_top = new_tr_chunk->tr ;
-		  cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
-		  new_tr_chunk->previous = cur_tr_chunk ;
-		  cur_tr_chunk = new_tr_chunk ;
-		}
-	*(cur_tr_top++) = p ;
-	return(1) ;
+  if (cur_tr_top == cur_tr_limit) {
+    if (!(new_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
+      xsb_exit("findall_trail failed");
+    cur_tr_top = new_tr_chunk->tr ;
+    cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
+    new_tr_chunk->previous = cur_tr_chunk ;
+    cur_tr_chunk = new_tr_chunk ;
+  }
+  *(cur_tr_top++) = p ;
+  return TRUE;
 } /* findall_trail */
 
 static int init_findall_trail()
 {
-	if (!(cur_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
-		xsb_exit("init_findall_trail failed");
-	cur_tr_top = cur_tr_chunk->tr ;
-	cur_tr_limit = cur_tr_chunk->tr+F_TR_NUM ;
-	cur_tr_chunk->previous = 0 ;
-	return(1) ;
+  if (!(cur_tr_chunk = (f_tr_chunk *)malloc(sizeof(f_tr_chunk))))
+    xsb_exit("init_findall_trail failed");
+  cur_tr_top = cur_tr_chunk->tr ;
+  cur_tr_limit = cur_tr_chunk->tr+F_TR_NUM ;
+  cur_tr_chunk->previous = 0 ;
+  return TRUE;
 } /* init_findall_trail */
 
 /* findall_copy_template_to_chunk
@@ -436,51 +437,53 @@ int findall_add()
    CPtr to, h ;
    int size ;
 
-   arg3 = (Cell)Areg(3) ; deref(arg3) ;
-   {	int t = cell_tag(arg3) ;
-	if ((t != REF) && (t != REF1)) return(0) ;
+   arg3 = ptoc_tag(3);
+   {
+     int t = cell_tag(arg3) ;
+     if ((t != REF) && (t != REF1)) return(0) ;
    }
 
-   arg1 = (Cell)Areg(1) ; deref(arg1) ;
-   arg2 = (Cell)Areg(2) ; deref(arg2) ;
+   arg1 = ptoc_tag(1);
+   arg2 = ptoc_tag(2);
 
    current_findall = findall_solutions + int_val(arg2) ;
    if (current_findall->tail == 0)
-		xsb_exit("internal error 1 in findall") ;
+     xsb_exit("internal error 1 in findall") ;
 
    to = current_findall->top_of_chunk ;
-   if ((to+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1))
-	{ if (! get_more_chunk()) return(0) ;
-	  to = current_findall->top_of_chunk ;
-	}
-
+   if ((to+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+     if (! get_more_chunk()) return(0) ;
+     to = current_findall->top_of_chunk ;
+   }
 
    h = to + 2 ;
    gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
-
+   
    if (init_findall_trail() &&
-		(0 <= (size = findall_copy_template_to_chunk(arg1,to,&h))))
-	{ findall_untrail() ;
-	  current_findall->top_of_chunk = h ;
-	  /* 2 because of ./2 of solution list */
-	  current_findall->size += size + 2 ;
-	  bld_free((to+1)) ;
-	  *(CPtr)(*(current_findall->tail)) = makelist(to) ; /* link in new template now */
-	  current_findall->tail = to+1 ; /* fill in new tail */
-	  return(1) ;
-	}
+       (0 <= (size = findall_copy_template_to_chunk(arg1,to,&h)))) {
+     findall_untrail() ;
+     current_findall->top_of_chunk = h ;
+     /* 2 because of ./2 of solution list */
+     current_findall->size += size + 2 ;
+     bld_free((to+1)) ;
+     /* link in new template now */
+     *(CPtr)(*(current_findall->tail)) = makelist(to);
+     current_findall->tail = to+1 ; /* fill in new tail */
+     return TRUE;
+   }
 
    findall_untrail() ;
-   return(0) ;
+   return FALSE;
 } /* findall_add */
 
-/*
-$$findall_get_solutions/4
-arg1 : out : solution list of findall
-arg2 : out : tail of the list
-arg3 : in : integer = findall index
-arg4 : a variable which is now destructively set to 666
-the list at arg3 is copied to the heap and then this copy is unified with arg1-arg2
+/* $$findall_get_solutions/4
+   arg1 : out : solution list of findall
+   arg2 : out : tail of the list
+   arg3 : in : integer = findall index
+   arg4 : a variable which is now destructively set to 666
+
+   the list at arg3 is copied to the heap and then this copy is unified with
+   arg1-arg2 
 */
 
 int findall_get_solutions()
@@ -489,19 +492,21 @@ int findall_get_solutions()
    int cur_f ;
    findall_solution_list *p ;
 
-   arg4 = (Cell)Areg(4) ; deref(arg4) ;
-	{ int t = cell_tag(arg4) ;
-	  if ((t == REF) || (t == REF1)) *(CPtr)arg4 = makeint(666) ;
-	}
+   arg4 = ptoc_tag(4);
+   {
+     int t = cell_tag(arg4) ;
+     if ((t == REF) || (t == REF1)) *(CPtr)arg4 = makeint(666) ;
+   }
 
-   arg3 = (Cell)Areg(3) ; deref(arg3) ; cur_f = int_val(arg3) ;
+   arg3 = ptoc_tag(3); 
+   cur_f = int_val(arg3) ;
 
    p = findall_solutions + cur_f ;
 
    check_glstack_overflow(4, pcreg, p->size*sizeof(Cell)) ;
 
-   arg1 = (Cell)Areg(1) ; deref(arg1) ; /* only after enough space is ensured */
-   arg2 = (Cell)Areg(2) ; deref(arg2) ; /* only after enough space is ensured */
+   arg1 = ptoc_tag(1);  /* only after enough space is ensured */
+   arg2 = ptoc_tag(2);  /* only after enough space is ensured */
 
    gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
 
@@ -509,57 +514,54 @@ int findall_get_solutions()
    findall_copy_to_heap(from,(CPtr)arg1,&hreg) ; /* this can't fail */
    *(CPtr)arg2 = *(p->tail) ; /* no checking, no trailing */
    findall_free(cur_f) ;
-contcase:
-   return(1) ;
+ contcase:
+   return TRUE;
 } /* findall_get_solutions */
 
 /* adapted from findall_copy_template_to_chunck */
 /* returns the number of cells needed for the construction of term */
 static long term_size(Cell term)
 {
-        static char message[60];
-        long size = 0 ;
-recur:
-        switch(cell_tag(term))
-        {       case FREE: case REF1:
-                case INT: case STRING: case FLOAT:
-                        return size ;
-                case LIST:
-                {       CPtr pfirstel ;
-
-                        pfirstel = clref_val(term) ;
-                        term = *pfirstel ; deref(term) ;
-                        size += 2 + term_size(term) ;
-                        term = *(pfirstel+1) ; deref(term) ;
-                        goto recur;
-                }
-                case CS:
-                {       int a ;
-                        CPtr pfirstel ;
-
-                        pfirstel = (CPtr)cs_val(term) ;
-                        a = get_arity((Psc)(*pfirstel)) ;
-                        size += a + 1 ;
-                        while( --a )
-                        {       term = *++pfirstel ; deref(term) ;
-                                size += term_size( term ) ;
-                        }
-                        term = *++pfirstel ; deref(term) ;
-                        goto recur;
-                }
-		case ATTV:
-		{
-			size += 2;
-			term = cell(clref_val(term) + 1);
-			goto recur;
-		}	
-                default:
-                        sprintf(message,
-                        "Term type (tag = %ld) not handled by term_size.",
-                                (Cell)cell_tag(term));
-                        xsb_abort(message);
-        }
-        return 0 ;
+  long size = 0 ;
+ recur:
+  switch(cell_tag(term))
+    {
+    case FREE: case REF1:
+    case INT: case STRING: case FLOAT:
+      return size ;
+    case LIST: {
+      CPtr pfirstel ;
+      
+      pfirstel = clref_val(term) ;
+      term = *pfirstel ; deref(term) ;
+      size += 2 + term_size(term) ;
+      term = *(pfirstel+1) ; deref(term) ;
+      goto recur;
+    }
+    case CS: {
+      int a ;
+      CPtr pfirstel ;
+      
+      pfirstel = (CPtr)cs_val(term) ;
+      a = get_arity((Psc)(*pfirstel)) ;
+      size += a + 1 ;
+      while( --a ) {
+	term = *++pfirstel ; deref(term) ;
+	size += term_size( term ) ;
+      }
+      term = *++pfirstel ; deref(term) ;
+      goto recur;
+    }
+    case ATTV: {
+      size += 2;
+      term = cell(clref_val(term) + 1);
+      goto recur;
+    }	
+    default:
+      xsb_abort("Term type (tag = %ld) not handled by term_size.",
+		(Cell)cell_tag(term));
+    }
+  return FALSE;
 }
 
 /* copied from findall_copy_template_to_chunck */
@@ -569,109 +571,109 @@ static void do_copy_term(Cell from, CPtr to, CPtr *h)
 {
 copy_again : /* for tail recursion optimisation */
 
-  switch ( cell_tag( from ) )
-   {
-        case INT :
-        case FLOAT :
-        case STRING :   *to = from ; return ;
-
-        case REF :
-        case REF1 :     if ((CPtr)from < hreg)
-                                { findall_trail((CPtr)from) ;
-                                  *(CPtr)from = (Cell)to ;
-                                  *to = (Cell)to ;
-                                }
-                        else *to = from ;
-                        return ;
-        case LIST :
-              { CPtr pfirstel ;
-
-                *to = makelist(*h) ;
-                to = (*h) ;
-                (*h) += 2 ;
-                pfirstel = clref_val(from) ;
-                from = *pfirstel ; deref(from) ;
-                do_copy_term(from,to,h) ;
-                from = *(pfirstel+1) ; deref(from) ; to++ ;
-                goto copy_again ;
-             }
-        case CS :
-              { CPtr pfirstel ;
-                int ar ;
-
-                pfirstel = (CPtr)cs_val(from) ;
-                ar = get_arity((Psc)(*pfirstel)) ;
-
-                *to = makecs((Cell)(*h)) ;
-                to = *h ;
-                *to = *pfirstel ; /* the functor */
-
-                *h += ar + 1 ;
-                while ( --ar )
-                   { from = *(++pfirstel) ; deref(from) ; to++ ;
-                     do_copy_term(from,to,h) ;
-                   }
-                from = *(++pfirstel) ; deref(from) ; to++ ;
-                goto copy_again ;
-             }
-	case ATTV: {
-	  CPtr var;
-
-	  var = clref_val(from);  /* the VAR part of the attv  */
-	  if (var < hreg) {	  /* has not been copied before */
-	    from = cell(var + 1); /* from -> the ATTR part of the attv */
-	    deref(from);
-	    *to = makeattv(*h);
-	    to = (*h);
-	    (*h) += 2;		  /* skip two cells */
-	    /*
-	     * Trail and bind the VAR part of the attv to the new attv
-	     * just created in the `to area', so that attributed variables
-	     * are shared in the `to area'.
-	     */
-	    findall_trail(var);
-	    bld_attv(var, to);
-	    cell(to) = (Cell) to++;
-	    goto copy_again;
-	  }
-	  else			  /* is a new attv in the `to area' */
-	    bld_attv(to, var);
-	} /* case ATTV */
-   }
+  switch ( cell_tag( from ) ) {
+  case INT :
+  case FLOAT :
+  case STRING :
+    *to = from ; return ;
+    
+  case REF :
+  case REF1 :
+    if ((CPtr)from < hreg) {
+      findall_trail((CPtr)from) ;
+      *(CPtr)from = (Cell)to ;
+      *to = (Cell)to ;
+    }
+    else *to = from ;
+    return ;
+  case LIST : {
+    CPtr pfirstel ;
+    
+    *to = makelist(*h) ;
+    to = (*h) ;
+    (*h) += 2 ;
+    pfirstel = clref_val(from) ;
+    from = *pfirstel ; deref(from) ;
+    do_copy_term(from,to,h) ;
+    from = *(pfirstel+1) ; deref(from) ; to++ ;
+    goto copy_again ;
+  }
+  case CS : {
+    CPtr pfirstel ;
+    int ar ;
+    
+    pfirstel = (CPtr)cs_val(from) ;
+    ar = get_arity((Psc)(*pfirstel)) ;
+    
+    *to = makecs((Cell)(*h)) ;
+    to = *h ;
+    *to = *pfirstel ; /* the functor */
+    
+    *h += ar + 1 ;
+    while ( --ar ) {
+      from = *(++pfirstel) ; deref(from) ; to++ ;
+      do_copy_term(from,to,h) ;
+    }
+    from = *(++pfirstel) ; deref(from) ; to++ ;
+    goto copy_again ;
+  }
+  case ATTV: {
+    CPtr var;
+    
+    var = clref_val(from);  /* the VAR part of the attv  */
+    if (var < hreg) {	  /* has not been copied before */
+      from = cell(var + 1); /* from -> the ATTR part of the attv */
+      deref(from);
+      *to = makeattv(*h);
+      to = (*h);
+      (*h) += 2;		  /* skip two cells */
+      /*
+       * Trail and bind the VAR part of the attv to the new attv
+       * just created in the `to area', so that attributed variables
+       * are shared in the `to area'.
+       */
+      findall_trail(var);
+      bld_attv(var, to);
+      cell(to) = (Cell) to++;
+      goto copy_again;
+    }
+    else			  /* is a new attv in the `to area' */
+      bld_attv(to, var);
+  } /* case ATTV */
+  } /*switch */
 }
 
 /* creates a new variant of a term in the heap
    arg1 - old term
-   arg2 - new term ( must be given as an unbound variable, prolog
-                     glue has to be provided for unification )
+   arg2 - new term; copy of old term unifies with new term
 */
 int copy_term()
 {
-        long size ;
-        Cell arg1, arg2, to ;
-        CPtr hptr ;
-
-        arg1 = (Cell)Areg(1) ; deref(arg1) ;
-
-        if( isref(arg1) ) return 1;
-
-        size = term_size(arg1) ;
-        check_glstack_overflow( 2, pcreg, size*sizeof(Cell) ) ;
-
-		/* again because stack might have been reallocated */
-		arg1 = (Cell)Areg(1) ; deref(arg1) ;
-        arg2 = (Cell)Areg(2) ; deref(arg2) ;
-
-        if( !isref(arg2) ) xsb_abort( "incorrect use of copy_term0" ) ;
-        hptr = hreg ;
-
-        init_findall_trail() ;
-        do_copy_term( arg1, &to, &hptr ) ;
-        findall_untrail() ;
-
-        hreg += size ;
-        bind_copy((CPtr)arg2,to) ;
-
-contcase:
-        return 1 ;
+  long size ;
+  Cell arg1, arg2, to ;
+  CPtr hptr ;
+  bool result = FALSE;
+  
+  arg1 = ptoc_tag(1);
+  
+  if( isref(arg1) ) return 1;
+  
+  size = term_size(arg1) ;
+  check_glstack_overflow( 2, pcreg, size*sizeof(Cell) ) ;
+  
+  /* again because stack might have been reallocated */
+  arg1 = ptoc_tag(1);
+  arg2 = ptoc_tag(2);
+  
+  hptr = hreg ;
+  
+  init_findall_trail() ;
+  do_copy_term( arg1, &to, &hptr ) ;
+  findall_untrail() ;
+  
+  hreg += size ;
+  
+  result = p2p_unify((prolog_term)arg2, (prolog_term)to);
+ contcase:
+  return result;
 }

@@ -1,8 +1,9 @@
-/* File:      cell_def_xsb.h
-** Author(s): David S. Warren, Jiyang Xu, Terrance Swift
+/* File:      term_psc_xsb_i.h
+** Author(s): Xu, Warren, Sagonas, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1993-1999
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1999
+** Copyright (C) ECRC, Germany, 1990
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,8 +24,21 @@
 */
 
 
-/* CELL and PROLOG_TERM are defined identically.
-   However, CELL is used to refer to elements of (slg-)WAM stacks, while
-   PROLOG_TERM is used in the interface to point to a cell containing 
-   the outer functor of a prolog term. */
-typedef unsigned long Cell;
+
+static inline Psc term_psc(Cell term)
+{
+  int value;
+  Psc psc;
+  Pair sym;
+
+  if (isconstr(term))
+    return get_str_psc(term);
+  else {
+    if (isstring(term)) {
+      psc = (Psc)flags[CURRENT_MODULE];
+      sym = insert(string_val(term), 0, psc, &value);
+      return pair_psc(sym);
+    }
+    else return NULL;
+  }
+}

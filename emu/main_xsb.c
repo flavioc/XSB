@@ -52,7 +52,7 @@
 #endif
 
 #include "orient_xsb.h"
-#include "basictypes.h"
+#include "basicdefs.h"
 
 int main(int argc, char *argv[])
 { 

@@ -68,10 +68,14 @@
 CPtr Temp_VarPosReg;
 CPtr call_vars[MAX_VAR_SIZE];
 
-extern Cell ptoc_tag(int);
 #ifdef DEBUG
 extern void printterm(Cell, byte, int);
 #endif
+
+
+#include "ptoc_tag_xsb_i.h"
+#include "term_psc_xsb_i.h"
+
 
 /*----------------------------------------------------------------------*/
 
@@ -264,7 +268,6 @@ CPtr get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
 
   int arity;
   BTNptr pTrieRepOfCall;
-  extern Psc term_psc(Cell);
 
   arity = get_arity(term_psc(callTerm));
   pTrieRepOfCall = variant_call_lookup(arity, (CPtr)cs_val(callTerm),

@@ -164,6 +164,9 @@ static vstrDEFINE(StrArgBuf);      	      /* holder for string arguments */
 bool fmt_write(void);
 bool fmt_write_string(void);
 bool fmt_read(void);
+
+
+#include "ptoc_tag_xsb_i.h"
     	    
 
 bool formatted_io (void)
@@ -999,8 +1002,7 @@ int read_canonical(void)
 	/* p = findall_solutions + findall_chunk_index;*/
 	check_glstack_overflow(3, pcreg, size*sizeof(Cell)) ;
 	/*printf("checked overflow: size: %d\n",size*sizeof(Cell));*/
-	arg2 = (Cell)Areg(2);
-	deref(arg2);
+	arg2 = ptoc_tag(2);
 	if (isnonvar(arg2)) 
 	  xsb_abort("READ_CANONICAL: argument must be a variable");
 	bind_ref((CPtr)arg2,hreg);  /* build a new var to trail binding */

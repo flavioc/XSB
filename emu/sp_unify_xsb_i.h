@@ -29,7 +29,7 @@ static inline bool int_unify(Cell op1, Cell op2)
   deref(op2);
   if (isref(op2)) {
     /* op2 is FREE:                       num ... free */
-    bind_copy0((CPtr)(op2), op1);
+    bind_copy((CPtr)(op2), op1);
     return TRUE;
   }
   return (op1 == op2);
@@ -42,7 +42,7 @@ static inline bool atom_unify(Cell op1, Cell op2)
   deref(op2);
   if (isref(op2)) {
     /* op2 is FREE                      string ... free */
-    bind_copy0((CPtr)(op2), op1);
+    bind_copy((CPtr)(op2), op1);
     return TRUE;
   }
   return (op1 == op2);

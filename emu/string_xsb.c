@@ -52,14 +52,14 @@ extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring,
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
 
-extern Cell ptoc_tag(int regnum);
-
 static Cell term, term2;
 
 static vstrDEFINE(input_buffer);
 static vstrDEFINE(subst_buf);
 static vstrDEFINE(output_buffer);
 
+
+#include "ptoc_tag_xsb_i.h"
 
 
 /* R1: +Substring; R2: +String; R3: ?Pos

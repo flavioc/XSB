@@ -30,7 +30,6 @@
 #include "file_modes_xsb.h"
 
 static struct stat stat_buff;
-extern Cell   ptoc_tag(int i);
 extern char   *expand_filename(char *filename);
 
 

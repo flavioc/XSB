@@ -2,7 +2,7 @@
 ** Author(s): Jiyang Xu
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1999
 ** Copyright (C) ECRC, Germany, 1990
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
@@ -144,6 +144,7 @@
 **  		both file and obj are opaque pointers of type char*
 */
 
+#include "basicdefs.h"
 #include "basictypes.h"
 
 

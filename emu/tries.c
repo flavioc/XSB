@@ -56,8 +56,6 @@
 
 /*----------------------------------------------------------------------*/
 
-extern Psc term_psc(Cell);
-extern Cell ptoc_tag(int);
 extern TIFptr get_tip(Psc);
 #ifdef DPVR_DEBUG_BD
 extern void printterm(Cell, byte, int);
@@ -670,6 +668,11 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
   }									\
   resetpdl;								\
 }
+
+
+#include "term_psc_xsb_i.h"
+#include "ptoc_tag_xsb_i.h"
+
 
 /*
  * Called in SLG instruction `new_answer_dealloc', variant_answer_search()

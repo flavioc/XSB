@@ -47,7 +47,6 @@
 
 #include <fcntl.h>
 
-#include "basictypes.h"
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"

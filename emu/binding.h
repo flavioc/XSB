@@ -198,8 +198,6 @@
 #define bind_attv(addr, attv)	pushtrail(addr, makeattv(attv));\
 				bld_attv(addr, attv)
 
-#define bind_copy0(addr, val)	pushtrail(addr, val); *(addr) = val
-
 #define bind_copy(addr, val)	pushtrail(addr, val); *(addr) = val
 
 /* value trail MUST be used because first CP cell has cp_trreg = 0 !!!! */

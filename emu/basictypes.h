@@ -2,7 +2,7 @@
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,12 +23,8 @@
 */
 
 
-#ifndef BASICTYPES_INCLUDED
 
-/* seems that some systems (Perl?) define bool as empty symbol; 
-   need to neutralize that */
-#undef bool
-typedef short  bool;
+#ifndef BASIC_TYPES_INCLUDED
 
 #ifdef BITS64
 typedef long prolog_int ;
@@ -38,58 +34,27 @@ typedef int prolog_int ;
 
 typedef double prolog_float ;
 typedef int reg_num;
-typedef unsigned long prolog_term;	/* opaque type definition */
+
+/* CELL and PROLOG_TERM are defined identically.
+   However, CELL is used to refer to elements of (slg-)WAM stacks, while
+   PROLOG_TERM is used in the C interface to point to a cell containing 
+   the outer functor of a prolog term. */
+typedef unsigned long prolog_term;
+
+/* seems that some systems (Perl?) define bool as empty symbol; 
+   need to neutralize that */
+#undef bool
+typedef short  bool;
+
+typedef unsigned char byte;
+typedef unsigned int counter;
+typedef unsigned long word;
+typedef byte *pb;
+typedef word *pw;
+typedef int (*PFI)();
+typedef int *int_ptr;
 
 
-#ifndef FALSE
-#define FALSE  0
-#endif
-#ifndef TRUE
-#define TRUE  (!FALSE)
-#endif
+#endif /* BASIC_TYPES_INCLUDED */
 
-#ifndef NO
-#define NO  FALSE
-#endif
-#ifndef YES
-#define YES  TRUE
-#endif
-
-
-#ifdef WIN_NT
-#define SLASH '\\'
-#else
-#define SLASH '/'
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN   1024  /* SYSV */
-#endif
-
-#ifndef MAXNAME
-#define MAXNAME   255  /* SYSV */
-#endif
-
-#ifndef MAXBUFSIZE
-#define MAXBUFSIZE   1024  /* used when a large string buffer is needed */
-#endif
-
-#define MAX_IO_BUFSIZE  4096 /* 1 page */
-
-#define K   1024  /* please make sure that K stays divisible by sizeof(Cell) */
-
-#define BASICTYPES_INCLUDED
-
-#endif
-
-
-#define XSB_STYLE_DCG  0    /* use XSB style DCG grammars */
-#define STANDARD_DCG   1    /* use standard DCG grammars */
-
-
-#ifndef max
-#define max(p1,p2) ((p1)>=(p2)?(p1):(p2))
-#endif
-#ifndef min
-#define min(p1,p2) ((p1)<=(p2)?(p1):(p2))
-#endif
+#define BASIC_TYPES_INCLUDED

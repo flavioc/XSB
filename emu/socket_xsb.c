@@ -59,7 +59,6 @@
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
-#include "basictypes.h"
 
 #include "io_builtins_xsb.h"
 #include "socket_xsb.h"
