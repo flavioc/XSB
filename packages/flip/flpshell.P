@@ -397,19 +397,21 @@ rundemo_(X) :-
 	run(X),
 	retract(library_directory(DemoDir)).
 
-parse_all_demos_ :- package_configuration(dir(flip), FlipDir),
+parse_all_demos  :- package_configuration(dir(flip), FlipDir),
 		    slash(Slash),
 		    fmt_write_string(DemoDir, '%s%sdemos', f(FlipDir, Slash)),
 		    (library_directory(DemoDir)
 		     -> true
 		      ; assert(library_directory(DemoDir))
 		    ),
-		    parse_(default),
-		    parse_(family_obj),
-		    parse_(family_rel),
-		    parse_(flogic_basics),
-		    parse_(rel_ops),
+		    parse_internal(default, noforce, _),
+		    parse_internal(family_obj, noforce, _),
+		    parse_internal(family_rel, noforce, _),
+		    parse_internal(flogic_basics, noforce, _),
+		    parse_internal(rel_ops, noforce, _),
 		    retract(library_directory(DemoDir)).
+
+parse_all_demos_ :- parse_all_demos.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Find module in XSB libraries.

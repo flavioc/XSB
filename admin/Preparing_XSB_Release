@@ -28,11 +28,12 @@ NOTE: Autoconf must be installed.
        DOS:
 	   config/x86-pc-pcdos
 
-   NOTE: If you won't to configure with Oracle, ODBC, debugging support or
-         if you won't local scheduling, you must use these options to the
+   NOTE: If you want to configure with Oracle, ODBC, debugging support or
+         if you want local scheduling, you must use these options to the
 	 configure script:
 
 	--enable-local-scheduling   to set LOCAL_EVAL
+	--enable-debug	      	    to set DEBUG
 	--with-oracle               to set ORACLE
 	--enable-oracle-debug       to set both ORACLE and ORACLE_DEBUG
 	--with-odbc                 to set XSB_ODBC

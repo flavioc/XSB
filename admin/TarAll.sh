@@ -9,11 +9,7 @@ files="./LICENSE ./INSTALL ./INSTALL_PROBLEMS ./INSTALL_WINDOWS \
 	./admin \
       ./build/ac* ./build/*.in ./build/config.guess ./build/config.sub \
       ./build/*sh ./build/*.msg ./build/configure ./build/README \
-      ./emu/README     ./emu/*.[chi]     ./emu/*.pc    ./emu/*.mk \
-      ./emu/configs ./emu/debugs ./emu/orastuff \
-      ./syslib/README  ./syslib/Makefile ./syslib/*.[DHPO] \
-      ./cmplib/README  ./cmplib/Makefile ./cmplib/*.[DHPO] \
-      ./lib/README     ./lib/Makefile    ./lib/*.[DHPO] \
+      ./emu ./syslib ./cmplib  ./lib \
       ./etc \
       ./packages \
       ./docs \
