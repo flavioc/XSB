@@ -214,6 +214,7 @@ standard_symbol(table_prop, 3, tables).
 standard_symbol(table_prop, 4, tables).
 standard_symbol(tbagof, 3, setof).
 standard_symbol(table_state, 2, tables).
+standard_symbol(table_state, 4, tables).
 standard_symbol(tell, 1, standard).
 standard_symbol(telling, 1, standard).
 standard_symbol(tfindall, 3, tables).

@@ -157,7 +157,7 @@ inline_builtin(assert_buff_to_clref, 6, ASSERT_BUFF_TO_CLREF).
 inline_builtin(abolish_table_info, 0, ABOLISH_TABLE_INFO).
 
 inline_builtin(formatted_io, 5, FORMATTED_IO).
-inline_builtin(table_status, 2, TABLE_STATUS).
+inline_builtin(table_status, 4, TABLE_STATUS).
 inline_builtin(get_delay_lists, 2, GET_DELAY_LISTS).
 
 inline_builtin(abolish_table_predicate, 1, ABOLISH_TABLE_PREDICATE).

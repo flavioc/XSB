@@ -30,7 +30,7 @@
 :- compiler_options([sysmod,xpp_on]).
 
 #include "builtin.h"
-#include "flag_defs_xsb.h"
+#include "table_status_defs.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -50,51 +50,112 @@ subsumptive(PredSpecList) :-
 	  fail;
 	  true ).
 
-set_tabled_eval_for_pred(P/N,Method) :-
-	functor(Term,P,N),
+set_tabled_eval_for_pred(PredSpec,Method) :-
+	( PredSpec = P/N -> functor(Term,P,N); Term = PredSpec ),
 	set_tabled_eval(Term,Method).
 
 set_tabled_eval(_Term,_Method) :- '_$builtin'(SET_TABLED_EVAL).
 
 /*----------------------------------------------------------------------*/
 
-table_state(Call, State) :-
-	table_status(Call, Status),
-	status_to_state(Status, State).
+/*
+ * To obtain info about both subsumptive and variant predicates.
+ * See the file ../emu/builtin.c for a description of the valid
+ * combinations of values for PredType, CallType, and AnsSetStatus.
+ */
 
-status_to_state(0, undef).
-status_to_state(1, no_call_yet).
-status_to_state(2, complete).
-status_to_state(3, incomplete).
+table_state(Call, PredType, CallType, AnsSetStatus) :-
+	table_status(Call,PredTypeCode,CallTypeCode,AnsSetStatusCode),
+	predicate_type_code(PredTypeCode,PredType),
+	call_type_code(CallTypeCode,CallType),
+	answer_set_status_code(AnsSetStatusCode,AnsSetStatus).
+
+
+table_status(Call,PredType,CallType,AnsSetStatus) :-
+	table_status(Call,PredType,CallType,AnsSetStatus).
+
+predicate_type_code(UNTABLED_PREDICATE,      undefined).
+predicate_type_code(VARIANT_EVAL_METHOD,     variant).
+predicate_type_code(SUBSUMPTIVE_EVAL_METHOD, subsumptive).
+
+call_type_code(UNDEFINED_CALL, undefined).
+call_type_code(PRODUCER_CALL,  producer).
+call_type_code(SUBSUMED_CALL,  subsumed).
+call_type_code(NO_CALL_ENTRY,  no_entry).
+
+answer_set_status_code(UNDEFINED_ANSWER_SET,  undefined).
+answer_set_status_code(COMPLETED_ANSWER_SET,  complete).
+answer_set_status_code(INCOMPLETE_ANSWER_SET, incomplete).
+
+
+/*
+ * For [temporary] backward compatibility, redefine table_state/2 in
+ * terms of the newer table_state/4.  */
+table_state(Call, State) :-
+	table_state(Call, PredType, _CallType, AnsSetStatus),
+	( PredType == variant ->
+	  ( AnsSetStatus == undefined
+	    -> State = no_call_yet
+	    ;  State = AnsSetStatus
+	  )
+	; PredType == undefined -> State = undef
+	).
 
 /*----------------------------------------------------------------------*/
 
+/*
+ * Temporarily abort computations on subsumptive predicates by
+ * standard predicates that utilize, or provide, negation.
+ */
+
+:- import warning/1 from standard.
+
 tfindall(T, Call, Result) :-
-	table_status(Call, Status),
-	( Status =:= 2 -> findall(T,Call,Result)
-	; Status =:= 1 -> (call(Call),fail ; tfindall(T,Call,Result))
-	; Status =:= 3 ->
+	table_state(Call,PredType,_CallType,AnsSetStatus),
+	( PredType == variant ->
+	  ( AnsSetStatus == complete -> findall(T,Call,Result)
+	  ; AnsSetStatus == undefined ->
+		(call(Call), fail ; tfindall(T,Call,Result))
+	  ; AnsSetStatus == incomplete ->
 	        get_ptcp(PTCP), get_subgoal_ptr(Call, SubgPtr),
 		is_incomplete(Call,SubgPtr,PTCP,_), findall(T,Call,Result)
+	  )
+        ; PredType == subsumptive ->
+	  ( warning(('tfindall/3 does not yet fully support subsumptive',
+	             ' predicates.')),
+	    ( AnsSetStatus == complete ->
+		warning((Call, ' answer set is complete; continuing...')),
+		findall(T,Call,Result)
+	    ; abort('  Answer set is not complete; cannot continue.')
+	    )
+	  )
         ; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
 	).
 
-tnot(X) :-
-	( ground(X) -> 't not'(X)
-	; abort(['FLOUNDERING: tnot/1 used with a non-ground subgoal: ', X])
-	).
 
-'t not'(X) :-
-	get_ptcp(PTCP), get_subgoal_ptr(X, SubgPtr),
-	( SubgPtr =:= 0, tcall(X), fail
-	; is_incomplete(X, SubgPtr, PTCP, Subg), slg_not(Subg)
-	).
+tnot(Goal) :-
+	ground(Goal)
+	 -> 't not'(Goal)
+	;   abort(['FLOUNDERING: tnot/1 used with a non-ground subgoal: ',
+		   Goal]).
 
+'t not'(Goal) :-
+	table_state(Goal,PredType,_CallType,_AnsSetStatus),
+	( PredType == subsumptive ->
+	  abort(['tnot/1: Negation of subsumptive predicates currently ',
+	         'not supported'])
+	; get_ptcp(PTCP), get_subgoal_ptr(Goal, SubgPtr),
+	  ( SubgPtr =:= 0, tcall(Goal), fail
+	  ; is_incomplete(Goal, SubgPtr, PTCP, Subg), slg_not(Subg)
+	  )
+	).
+	
 % skolemized tnot.  Variables temporarily changed to ground and tnot 
 % call is made.  Should give prolog's semantics to nonground negative
 % calls.
 
 :- table tunnumcall/1.
+:- variant([tunnumcall(_)]).
 
 sk_not(Goal) :-
 	copy_term(Goal,Goal1),
@@ -129,6 +190,7 @@ abolish_table_call(_Call) :-
  *   table entry, and RetSkel is the Answer Template for retrieving the
  *   answers of Call.
  */
+
 get_call(Call, SubgoalPtr, RetSkel) :- get_call(Call, SubgoalPtr, RetSkel).
 
 
@@ -137,11 +199,13 @@ get_call(Call, SubgoalPtr, RetSkel) :- get_call(Call, SubgoalPtr, RetSkel).
  *   Trie-code traversal of a Call Trie; selects paths that unify with
  *   CallSkel through backtracking.  Each successful unification returns
  *   a handle to this table entry in SubgoalPtr and the Answer Template,
- *   for retrieving the answers of this entry, in RetSkel.
+ *   needed for retrieving the answers of this entry, in RetSkel.
  */
+
 get_calls(CallSkel, SubgoalPtr, RetSkel) :-
 	get_calls(CallSkel),
 	get_lastnode_cs_retskel(CallSkel, _Leaf, SubgoalPtr, RetSkel).
+
 
 /*
  * get_calls_for_table(+Skeleton, -Call)
@@ -149,6 +213,7 @@ get_calls(CallSkel, SubgoalPtr, RetSkel) :-
  *   table from which all calls are enumerated through backtracking and
  *   returned in Call.
  */
+
 get_calls_for_table(Skeleton, Call) :-
 	functor(Skeleton,F,A), functor(Call,F,A),
 	get_calls(Call, _CallStr, _RetSkel).
@@ -220,7 +285,6 @@ trie_retract_all(X) :- retractall(X).
 /* builtins to get (and change) trie nodes - they belong somewhere else */
 /*======================================================================*/
 
-table_status(_Call,_Status) :- '_$builtin'(TABLE_STATUS).
 abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-
 	'_$builtin'(TRIE_DELETE_TERM).
@@ -228,5 +292,4 @@ get_returns(_CallStr,_RetSkel) :- '_$builtin'(TRIE_GET_RETURN).
 get_calls(_CallSkel)  :- '_$builtin'(TRIE_UNIFY_CALL).
 force_truth_value(_AnsLeafNode, _TruthValue) :- '_$builtin'(FORCE_TRUTH_VALUE).
 
-/* ------------------- end of file trie_tables.P ---------------------- */
-
+/* ---------------------- end of file tables.P ------------------------ */
