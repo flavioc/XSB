@@ -8,10 +8,10 @@
 
 The good news is that you don't really need to know much about
 Autoconf---the hard work has already been done! The following is primarily
-intended to make sure that noone deletes the files that Autoconf needs ;-)
+intended to make sure that no one deletes the files that Autoconf needs ;-)
 
 The new setup makes XSB much more flexible as a platform for building other
-sytems. XSB can be built in-place or installed in another place after the
+systems. XSB can be built in-place or installed in another place after the
 compilation. The executable code can be moved around without the fear of
 breaking the system.  XSB can be compiled for different architectures from
 the same source tree, and there will be no conflict between the
@@ -33,7 +33,7 @@ configure.in	  - this is the main workhorse that Autoconf uses to create
 aclocal.m4	  - some m4 macros customized for the XSB build.
 accconfig.h	  - a set of undef statements that autoheader uses to
 		    create def_config.h. Autoconf then uses def_config.h to 
-		    breate the file emu/configs/config.h.
+		    create the file emu/configs/config.h.
 		    This file is a replacement of the old emu/config.h
 
 topMakefile.in	  - the Makefile template from which the main makefile is
