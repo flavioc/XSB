@@ -115,17 +115,18 @@ void call_conv xsb_basic_abort(char *message)
   int isnew;
   Cell *tptr;
 
-  print_xsb_backtrace();
   if (!space_for_ball) {
     space_for_ball = (Cell *) malloc(2*sizeof(Cell)); /* 2 cells needed for term */
     if (!space_for_ball) xsb_exit("out of memory in xsb_basic_abort!");
   }
   tptr = space_for_ball;
   ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("_$abort_ball",1,
+  bld_functor(tptr, pair_psc(insert("_$abort_ball",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
   tptr++;
   bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace());
   xsb_throw(ball_to_throw);
 }
 
