@@ -24,19 +24,21 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+
+#include "../emu/sig.h"
+#include "../emu/flag_defs.h"
+#include "../prolog_includes/standard.h"
+#include "../prolog_includes/char_defs.h"
 
 /*======================================================================*/
 /*  This file contains the main program of the interpreter.		*/
-/*======================================================================*/
-/*  WARNING: Should you change this file better consult the comment in	*/
-/*	     predicate hack_libpath_changed/0 first!			*/
 /*======================================================================*/
 
 :- interpreter.
 
 interpreter :-
-        set_inthandler('_$keyboard_int'(_), 1),         % MYSIG_KEYB
-        set_inthandler('_$calltonum'(_), 3),            % MYSIG_SPY
+        set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
         version_message,
         prompt('| ?- ',[]),
         prompt('',[],'_$more_prompt'(_)),
@@ -44,47 +46,47 @@ interpreter :-
         fail.
 
 interpreter :-
-	push_abort_cutpoint,		% set abort cutpoint to this cp
+	push_abort_cutpoint,         %% set abort cutpoint to this cp
         %% Execute command line goal passed to XSB with the -e option
         xsb_flag(goal, CmdGoal),
         (CmdGoal == 'true.' ->
             true
-        ;   file_nl(2),
-            file_write(2, 'Evaluating command line goal:  '),
-            file_nl(2),
-            file_write(2, '| ?- '),
-            file_write(2, CmdGoal), file_nl(2),
+        ;   file_nl(STDERR),
+            file_write(STDERR, 'Evaluating command line goal:  '),
+            file_nl(STDERR),
+            file_write(STDERR, '| ?- '),
+            file_write(STDERR, CmdGoal), file_nl(STDERR),
             file_open(CmdGoal, 3, FileDes),
             eval_command_line_goal(FileDes),
             file_close(FileDes),
-            file_nl(2)
+            file_nl(STDERR)
         ),
         fail.
 
 interpreter :-
 	x_interp_repeat,
 	pop_abort_cutpoint,
-	push_abort_cutpoint, % reset abort cutpoint
-	interpreter1.	% Protect varible state, so fail to this point
-			% doesn't require untrailing (when aborting or
-			% segfault handling)
+	push_abort_cutpoint, %% reset abort cutpoint
+	interpreter1.	%% Protect varible state, so fail to this point
+			%% does not require untrailing (when aborting or
+			%% segfault handling)
 
 interpreter1 :-
 	x_interp_repeat,
 	trimcore,
-	stat_set_flag(5, 1), % hide call interceptions.
-	stat_set_flag(7, 0), % reset trace number
+	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
+	stat_set_flag(INVOKE_NUM, 0),
 	conset('_$break_level', 0),
 	print_debug_state,
 	prompt(Prompt,Prompt),
-	file_write(2, Prompt),
-	file_read(0, X, Vars),
-	( nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
+	file_write(STDERR, Prompt),
+	file_read(STDIN, X, Vars),
+	( nonvar(X), read_in_stop(X), halt, ! %% end of top loop; halt
 	; process_query(X, Vars)
 	).
 
-read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
-read_in_stop(end_of_file).	% pop a break level, out if at top
+read_in_stop(halt) :- halt.    %% quit entire system, regardless of break level
+read_in_stop(end_of_file).     %% pop a break level, out if at top
 
 eval_command_line_goal(FileDes) :-
 	file_read(FileDes, Goal),
@@ -100,60 +102,59 @@ eval_command_line_goal(_).
 process_query(X, Vars) :-
 	exclude__(Vars,PrintableVars), process_query1(X,PrintableVars).
 
-process_query1(X, []) :-	% no printable variables appeared in the input
+process_query1(X, []) :-	%% no printable variables appeared in the input
 	!,
 	call_query(X), close_open_tables,
 	!,
-	file_nl(2), file_write(2, yes), file_nl(2),
+	file_nl(STDERR), file_write(STDERR, yes), file_nl(STDERR),
 	fail.
 process_query1(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	call_query(X),
-	stat_flag(55, LetterVars),
+	stat_flag(LETTER_VARS, LetterVars),
 	( LetterVars =:= 0 -> print_answer(Vars)
 	; ( numbervars(Vars), print_answer(Vars), fail ; true )
 	),
-	file_write(2, MorePrompt),
+	file_write(STDERR, MorePrompt),
 	no_more,
 	close_open_tables,
 	!,
-	file_nl(2), file_write(2, yes), file_nl(2),
+	file_nl(STDERR), file_write(STDERR, yes), file_nl(STDERR),
 	fail.
 
 no_more :- file_get(0, X), ( X =:= -1 /* end_of_file */ ; X =:= 10 ), !.
 no_more :- no_more, fail.
 
 call_query(X) :- 
-%%%	'_$savecp'(C),			% moved into call/1, affect trace?
-	func_trans(X, Y),
-	( stat_set_flag(5, 0) 		% expose tracing
-	; stat_set_flag(5, 1), fail		% hide again when backtrack
+%%	'_$savecp'(C),			%% moved into call/1, affect trace?
+	( stat_set_flag(HIDE_STATE, 0)         %% expose tracing
+	; stat_set_flag(HIDE_STATE, 1), fail   %% hide again when backtrack
 	),
-	'_$call'(Y), 
-	( stat_set_flag(5, 1)		% hide tracing when succeed
-	; stat_set_flag(5, 0), fail		% expose when backtrack to user
+	'_$call'(X), 
+	( stat_set_flag(HIDE_STATE, 1)	       %% hide tracing when succeed
+	; stat_set_flag(HIDE_STATE, 0), fail   %% expose when backtrack to user
 	).
 call_query(_) :- 
-	file_nl(2), file_write(2, no), file_nl(2), fail.
+	file_nl(STDERR), file_write(STDERR, no), file_nl(STDERR), fail.
 
-% hidden version of call
+%% hidden version of call
 '_$call'(Y) :- 
 	'_$savecp'(C), 
 	goal_cut_trans(Y,X,C),
 	call_expose(X).
 
-% first argument is an open ended list
+%% first argument is an open ended list
 exclude__([], []) :- !.
 exclude__([V|Vs], PVs) :-
 	V = vv(Name,_),
 	atom_codes(Name, [Code|_]),
-	( Code =:= 0'_ -> PVs = NPVs ; PVs = [V|NPVs] ),
+	( Code =:= CH_UNDERSCORE -> PVs = NPVs ; PVs = [V|NPVs] ),
 	exclude__(Vs, NPVs).
 
 print_answer([]) :- !.
 print_answer([vv(Name,Val)|Tail]) :-
-	file_nl(2), file_write(2, Name), 
-	file_write(2, ' = '), file_write(2, Val),
+	file_nl(STDERR), file_write(STDERR, Name), 
+	file_write(STDERR, ' = '), file_write(STDERR, Val),
 	print_answer(Tail).
 
 
@@ -161,23 +162,22 @@ print_answer([vv(Name,Val)|Tail]) :-
 
 break :- conval('_$break_level', Blevel),
 	Nblevel is Blevel+1, conset('_$break_level', Nblevel),
-	file_write(2, '[ Break (level '), file_write(2, Nblevel),
-	file_write(2, ') ]'),file_nl(2),
+	file_write(STDERR, '[ Break (level '), file_write(STDERR, Nblevel),
+	file_write(STDERR, ') ]'), file_nl(STDERR),
 	readl_brklp1,
 	conset('_$break_level', Blevel),
-	file_write(2, '[ End break (level '),file_write(2, Nblevel),
-	file_write(2, ') ]'),file_nl(2).
+	file_write(STDERR, '[ End break (level '), file_write(STDERR, Nblevel),
+	file_write(STDERR, ') ]'), file_nl(STDERR).
 
 readl_brklp1 :- 
 	x_interp_repeat, 
 		conval('_$break_level', Blevel),
-		file_write(2, Blevel), file_write(2, ': ?- '),
-		file_read(0, X, Vars),
+		file_write(STDERR, Blevel), file_write(STDERR, ': ?- '),
+		file_read(STDIN, X, Vars),
 		( nonvar(X), read_in_stop(X), !
-			% end read loop; pop a break level, out if X=halt.
+			%% end read loop; pop a break level, out if X=halt.
 		; process_query(X, Vars)
 		).
-
 
 /* === interrupt handlers ============================================== */
 
@@ -185,36 +185,26 @@ readl_brklp1 :-
 	is_xwammode(Flag),
 	( Flag =:= 1 -> abort ; break, call_c(Call) ).
 
-
-'_$calltonum'(_) :-
-	file_write(2, 'Illegal call: to a number!'), 
-	file_nl(2), abort.
-
-
 /* === version message ================================================= */
 
 version_message :-
-	file_nl(2),
+	file_nl(STDERR),
 	slash(Slash),
 	%% xsb_configuration(etcdir, EtcDir),
 	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(EtcDir,Slash)),
-	%% print_file_contents(CopyingMsg,2),
-	%% file_nl(2),
+	%% print_file_contents(CopyingMsg, STDERR),
+	%% file_nl(STDERR),
 	xsb_configuration(config_dir, ConfigDir),
 	fmt_write_string(ConfMsg, '%s%sbanner.msg', f(ConfigDir,Slash)),
-	%% print everything to stderr
-	print_file_contents(ConfMsg,2).
+	print_file_contents(ConfMsg, STDERR).
 
 /* === utilities ======================================================= */
-
 
 conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val).
 conval(Con, Val) :- conpsc(Con, PSC), psc_prop(PSC, Val).
 
-
-% The interpreter NEEDS this: do not use the one in standard.
+%% The interpreter NEEDS this repeat: do not use the one in standard.
 x_interp_repeat :- true ; x_interp_repeat.
-
 
 prompt(New,Old) :- prompt(New,Old,'_$main_prompt'(_)).
 
@@ -231,56 +221,22 @@ prompt(New,Old,Pstore) :-
 get_prompt(Pstore,Prompt) :-
 	term_psc(Pstore, Psc),
 	psc_prop(Psc, Buff),	
-	intern_string(Buff, String),	% temp solution, since ALIAS not work
-	Prompt = String.		% for double word.
+	intern_string(Buff, String),	%% temp solution, since ALIAS not work
+	Prompt = String.		%% for double word.
 
 set_prompt(Pstore,Prompt) :-
 	term_psc(Pstore, Psc),
-	psc_set_type(Psc, 8),			% T_CSET
+	psc_set_type(Psc, 8),			%% T_CSET
 	conname(Prompt, String),
 	psc_set_prop(Psc, String).
 
 print_debug_state :-
-	stat_flag(6,Trace),
-	stat_flag(4,Debug),
-	stat_flag(9,QuasiSkip),
+	stat_flag(TRACE,Trace),
+	stat_flag(DEBUG_ON,Debug),
+	stat_flag(QUASI_SKIPPING,QuasiSkip),
 	( (Trace > 0, QuasiSkip =:= 0)
-	  ->	file_write(2,[trace]), file_nl(2)
+	  ->	file_write(STDERR,[trace]), file_nl(STDERR)
 	  ; (Debug > 0; (Trace > 0, QuasiSkip > 0))
-	  ->	file_write(2,[debug]), file_nl(2)
+	  ->	file_write(STDERR,[debug]), file_nl(STDERR)
 	; true
 	).
-		
-/*
-func_trans(X, X).
-*/
-
-% The following should be a syntactic transformation 
-% to handle functional syntax. dsw
-
-func_trans(X, Y) :- func_trans(X, Z, Z, Y).
-
-func_trans(X, Y, O, N) :- 
-	term_type(X, T),
-	( T =:= 0 -> Y = X, N = O
-	; T =:= 3 -> X = [X1|X2], Y = [Y1|Y2],
-		func_trans(X1, Y1, O, M), func_trans(X2, Y2, M, N)
-	; T =:= 1 ->
-		term_psc(X, Psc),
-		psc_type(Psc, Type),
-		( Type =:= 14, M = ((Y is Z), O)	% Y is free
-		; Type =\= 14, M = O, Z = Y
-		),
-		term_new(Psc, Z),
-		psc_arity(Psc, A),
-		func_transargs(A, X, Z, M, N)
-	; /* T=:=5; T=:=2; T=:=6 */ Y = X, N = O
-	).
-
-func_transargs(0, _, _, O, O) :- !.
-func_transargs(I, X, Y, O, N) :-
-	term_arg(X, I, X1),
-	term_arg(Y, I, Y1),
-	func_trans(X1, Y1, O, M),
-	I1 is I - 1,
-	func_transargs(I1, X, Y, M, N).

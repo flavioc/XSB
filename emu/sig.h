@@ -31,35 +31,12 @@
 /* 2-4) are synchronous. The procedure "interrupt_proc" is invoked       */
 /* directly.								 */
 
-#define MYSIG_UNDEF 0			/* undefined predicate */
-#define MYSIG_KEYB 1			/* keyboard interrupt (^C) */
-#define MYSIG_SPY 3			/* spy point */
-#define MYSIG_TRACE 4			/* trace point */
-#define MYSIG_CLAUSE 16			/* clause interrupt */
+#define MYSIG_UNDEF    0       		/* undefined predicate */
+#define MYSIG_KEYB     1	       	/* keyboard interrupt (^C) */
+#define MYSIG_SPY      3		/* spy point */
+#define MYSIG_TRACE    4	       	/* trace point */
+#define MYSIG_CLAUSE  16	       	/* clause interrupt */
 
 #define KEYINT_MARK 0x80		/* keyboard interrupt ^C */
 
 #define MSGINT_MARK 0x20		/* software message interrupt */
-
-extern int *asynint_ptr;	/* 0 - no interrupt (or being processed) */
-
-
-
-/*
- *  These are no longer supported.
- */
-
-/*** #define MYSIG_OFMEM 2 ***/		/* global/local stack overflow */
-/*** #define MYSIG_OFTC 5 ***/		/* trail/CP stack overflow */
-/*** #define MYSIG_KILLED 6 ***/	/* response to MYSIG_KILL */
-/*** #define MYSIG_STAT 7 ***/		/* gather statistics */
-/*** #define MYSIG_TERM 8 ***/		/* termination of child */
-/*** #define MYSIG_CUT 9 ***/		/* send by child to parent */
-/*** #define MYSIG_KILL 10 ***/		/* send by parent to child */
-/*** #define MYSIG_DELAY 11 ***/	/* delayed goal awaking */
-/*** #define MYSIG_QJOB 12 ***/		/* request for job; not used now */
-/*** #define MYSIG_RJOB 13 ***/		/* response for job; not used now */
-/*** #define MYSIG_GJOB 14 ***/		/* get a job */
-/*** #define MYSIG_SJOB 15 ***/		/* send a job */
-
-/*** #define DELAYINT_MARK 0x40 ***/	/* delayed goal awaken interrupt */

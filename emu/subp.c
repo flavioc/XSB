@@ -67,6 +67,8 @@
 
 double realtime_count;
 
+extern int *asynint_ptr;	/* 0 - no interrupt (or being processed) */
+
 extern void dis(int), debug_call(Psc);
 extern void total_stat(double);
 extern void perproc_stat(), perproc_reset_stat(), reset_stat_total(); 

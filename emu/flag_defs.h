@@ -71,7 +71,6 @@ As best as I can tell, only the following exist/are used:
 
  MYSIG_UNDEF      32    // _$load_undef
  MYSIG_KEYB       33    // _$keyboard_int
- MYSIG_SPY        35    // _$calltonum
 
  MYSIG_CLAUSE     48    // _$clause_int
 --------------------------------------------------------- */
@@ -93,7 +92,6 @@ As best as I can tell, only the following exist/are used:
 #define ORA_INPUTARRAY_LENGTH     58   /* max # simultaneous input tuples */
 #define ORA_INPUTARRAY_WIDTH      59   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    60   /* max # simultaneous output tuples */
-
 
 #define TABLING_METHOD	61   /* Method used to evaluate tabled calls:
 				variant or subsumption */
