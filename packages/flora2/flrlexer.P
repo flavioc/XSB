@@ -618,11 +618,14 @@ read_special(CH_QUOTE,LN1,CN1,LN,CN,TokenList,Status) :-
 	flora_quoted_atom_struct(Chars,[CH_QUOTE|TxChs],LN1,CN1,LN2,CN2,Tk),
 	TokenList=[Tk|Tokens].
 
+/*
+%% We no longer use % for comments in Flora2
 read_special(CH_PERCENT,LN1,CN1,LN,CN,[Tk|Tokens],Status) :-
 	!,
 	flora_comment_struct([CH_PERCENT|TxChs],LN1,CN1,LN2,CN2,Tk),
 	get_char(LN,CN,Ch,NLN,NCN),
 	read_comment_line(Ch,LN,CN,NLN,NCN,LN1,CN1,TxChs,LN2,CN2,Tokens,Status).
+*/
 
 read_special(CH_EXCLAMATION,LN1,CN1,LN,CN,[Tk|Tokens],Status) :-
 	!,
@@ -945,6 +948,7 @@ symbol_char(CH_BAR) :- !.         % |
 symbol_char(CH_PLUS) :- !.        % +
 symbol_char(CH_MINUS) :- !.       % -
 symbol_char(CH_HAT) :- !.         % ^
+symbol_char(CH_PERCENT) :- !.     % %     % is no longer a comment in Flora2
 symbol_char(CH_HASH) :- !.        % #
 symbol_char(CH_DOLLAR) :- !.      % $
 symbol_char(CH_SLASH) :- !.       % /

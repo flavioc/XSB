@@ -35,6 +35,7 @@ FLORADIR = ..
 
 ALLOBJS = flranswer$(OBJEXT) \
 	  flrcontrol$(OBJEXT) \
+	  flrclause$(OBJEXT) \
 	  flrdisplay$(OBJEXT) \
 	  flrload$(OBJEXT) \
 	  flraggavg$(OBJEXT) \
@@ -59,8 +60,8 @@ ALLOBJS = flranswer$(OBJEXT) \
 	  flrdecode$(OBJEXT)  \
 	  flrcanon$(OBJEXT)  \
 	  flrmetaops$(OBJEXT)  \
-	  flrtrim${OBJEXT} \
-	  flrexport${OBJEXT} \
+	  flrtrim$(OBJEXT) \
+	  flrexport$(OBJEXT) \
 	  flrimport$(OBJEXT)
 
 FLORA_INCLUDES_DIR = ../flrincludes

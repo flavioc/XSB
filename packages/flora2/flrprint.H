@@ -25,7 +25,6 @@
 
 
 :- import format/3 from format.
-:- import ioport2iostream/2 from file_io.
 
 
 :- export

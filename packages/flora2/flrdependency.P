@@ -42,7 +42,7 @@
 
 #define MAXDEPTH	3
 #define STARTPOINT	1
-#define DEFAULT_WORKSPACE   '_@'
+#define DEFAULT_WORKSPACE   FL_THISMODULE
 
 #mode save
 #mode nostring "\!#'"
@@ -331,7 +331,7 @@ depend(Sk1,Sk2,T1,T2,Opt) :-
 
 /****************************************************************************
   depend(+Sk1,+Sk2,+Option)
-  decides whether Sk1 dependes on Sk2 without caring about the 
+  decides whether Sk1 depends on Sk2 without caring about the 
   instantiations
  ****************************************************************************/
 depend(Sk1,Sk2,Opt) :- 
@@ -374,27 +374,21 @@ remove_dup([H|T],NewList) :-
 depend_list([]) :- !.
 depend_list([(H)|T]) :-
     H = (HC,_HI),
+    retractall(dependency(_,_,_,_)),
     get_canonical_form(HC,FLCANON(Wrap,Args,Mod,_Callable)),
     ( ignored(W1,A1,M1), subsumes(ignored(W1,A1,M1),ignored(Wrap,Args,Mod)) ->
         true
     ;
-        findall((Body,anu(A,N,U),Templete),
-	    depend_detail(H,dep(Body,anu(A,N,U),Templete)),
-	    DependencyList),
-        (DependencyList == [] ->
-            true
+        (
+            depend_detail(H,dep(Body,anu(A,N,U),Template)),
+            assert(dependency(H,Body,anu(A,N,U),Template)),
+            fail
         ;
-            retractall(dependency(_,_,_,_)),
-            assert_dependency_list(H,DependencyList),
-            aggregate_warnings
-        )
+            true
+        ),
+        aggregate_warnings
     ),
     depend_list(T).
-
-assert_dependency_list(_,[]) :- !.
-assert_dependency_list(Term,[(Body,anu(A,N,U),Templete)|T]) :-
-    assert(dependency(Term,Body,anu(A,N,U),Templete)),
-    assert_dependency_list(Term,T).
 
 depend_detail((_Sk1,IndSk1),dep(S,anu(A,N,U),Templ)) :-
     same_rule(IndSk1,_RuleHead,(B,BI),anu(A,N,U)),
@@ -646,8 +640,6 @@ aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T]) :-
 
         fmt_write_string(WarnHead,"Tabled literal in the head of rule that starts with %s", args(Str1)),
         fmt_write_string(WarnBody," depends on %s %s", args(Type,Str2)),
-        %%fmt_write_string(WarnMsg,"Tabled literal in the head of rule that starts with %s depends on %s %s",
-	%%		 args(Str1,Type,Str2)),
 
 	( warning_seen(RuleID,HInd1,HInd2,BMinInd,_) ->
 	    ( (HInd1<HMinInd;HInd1=HMinInd),(HInd2<HNMinInd;HInd2=HNMinInd) ->
@@ -664,8 +656,9 @@ aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T]) :-
 /****************************************************************************
  to_string(+Term,+IndexedTerm,-Str,-RuleID)
  ****************************************************************************/
- to_string(Term,(IT,Ind),Str,RuleID) :-
-	rebuild_text(Term,(IT,Ind),Text),
+to_string(Term,IndTerm,Str,RuleID) :-
+	flora_decode_goal_as_atom(Term,Text),
+	set_indexes(IndTerm),
 	flora_get_counter(min_ind,Index),
 	( (Index==NO_INDEX) ->
 	    fmt_write_string(Str,"`%s'",args(Text)),
@@ -677,362 +670,55 @@ aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T]) :-
 	    fmt_write_string(Str,"`%s' near line(%d)/char(%d)",
 			     args(Text,BL,BC))
 	).
- 	
-/****************************************************************************
- rebuild_text(+Term,+IndexdTerm,-Text)
- return a string for the given term to construct warning message
- ****************************************************************************/
-rebuild_text(DEFAULT_WORKSPACE,(DEFAULT_WORKSPACE,0), DEFAULT_WORKSPACE) :- !.
-
-rebuild_text(_Term,(T,Index),Text) :-
-	(atomic(T);var(T)),
-	!,
-	flora_get_counter(min_ind,MinInd),
-	flora_get_counter(next_min_ind,NextMinInd),
-	( (Index<MinInd; MinInd=0) ->
-	    flora_set_counter(next_min_ind,MinInd),
-	    flora_set_counter(min_ind,Index)
-	;
-	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        flora_set_counter(next_min_ind,Index)
-	    ;
-	        true
-	    )
-	),
-	flora_nth_token(Index,Token),
-	flora_token_text(Token,Text1,_BL,_BC,_EL,_EC),
-        escape(Text1,Text).
-
-rebuild_text(_Term,(string(_IndTerm),Index),Text) :-
-	!,
-	flora_get_counter(min_ind,MinInd),
-	flora_get_counter(next_min_ind,NextMinInd),
-	( (Index<MinInd; MinInd=0) ->
-	    flora_set_counter(next_min_ind,MinInd),
-	    flora_set_counter(min_ind,Index)
-	;
-	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        flora_set_counter(next_min_ind,Index)
-	    ;
-	        true
-	    )
-	),
-	flora_nth_token(Index,Token),
-	flora_token_text(Token,Text1,_BL,_BC,_EL,_EC),
-        escape(Text1,Text).
-
-rebuild_text(Term,(IndTerm,_Ind),Text) :-
-	Term=..['.'|_ListItems],
-	!,
-	rebuild_text_list(Term,IndTerm,ListText),
-	fmt_write_string(Text,"[%s]",args(ListText)).
-
-rebuild_text((T1,T2),(IndTerm,_Ind),Text) :-
-	!,
-        IndTerm = (IT1,IT2),
-        rebuild_text(T1,IT1,Text1),
-        rebuild_text(T2,IT2,Text2),
-	fmt_write_string(Text,"(%s,%s)",args(Text1,Text2)).
-
-rebuild_text(FLLIBMODLIT(FL_LIBMOD,Term,_Mod,_),
-            (FLLIBMODLIT(_IW,IndTerm,_,_),_Ind),Text) :-
-        rebuild_text(Term,IndTerm,Text).
-
-rebuild_text(FLLIBMODLIT(WRAP_HILOG,[FL_TRAN,Term,_],_Mod,_),
-            (FLLIBMODLIT(_IW,([_,IndTerm,_],_),_IndMod,_),_),Text) :-
-        rebuild_text(Term,IndTerm,TermText),
-        fmt_write_string(Text,"#%s",args(TermText)).
-
-rebuild_text(Term,(_IndT,Index),Text) :-
-	( is_upd(Term,_Op,_List,_Cond)
-	; is_updall(Term,_Op,_List,_Cond)
-	; is_agg(Term,_Op,_Var,_Group,_Condition,_Result)
-	),
-    	!,
-	flora_get_counter(min_ind,MinInd),
-	flora_get_counter(next_min_ind,NextMinInd),
-	( (Index<MinInd; MinInd=0) ->
-	    flora_set_counter(next_min_ind,MinInd),
-	    flora_set_counter(min_ind,Index)
-	;
-	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        flora_set_counter(next_min_ind,Index)
-	    ;
-	        true
-	    )
-	),
-	flora_nth_token(Index,Token),
-	flora_token_text(Token,Text,_BL,_BC,_EL,_EC).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_TRAN(Var,Tran,_),
-	!,
-	IndT=PREFIXED_WRAP_TRAN(IndVar,IndTran,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Tran,IndTran,TranText),
-	fmt_write_string(Text,"%s[#%s]",args(VarText,TranText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_ISA(Var,Class,_),
-	!,
-	IndT=PREFIXED_WRAP_ISA(IndVar,IndClass,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Class,IndClass,ClassText),
-	fmt_write_string(Text,"%s:%s",args(VarText,ClassText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_SUB(Var,Class,_),
-	!,
-	IndT=PREFIXED_WRAP_SUB(IndVar,IndClass,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Class,IndClass,ClassText),
-	fmt_write_string(Text,"%s::%s",args(VarText,ClassText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_METH(Var,Meth,_),
-	!,
-	IndT=PREFIXED_WRAP_METH(IndVar,IndMeth,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Meth,IndMeth,MethText),
-	fmt_write_string(Text,"%s[%s]",args(VarText,MethText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_IMETH(Var,IMeth,_),
-	!,
-	IndT=PREFIXED_WRAP_IMETH(IndVar,IndIMeth,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(IMeth,IndIMeth,IMethText),
-	fmt_write_string(Text,"%s[*%s]",args(VarText,IMethText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=fdskolem(Var,Meth),
-	!,
-	IndT=fdskolem(IndVar,IndMeth),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Meth,IndMeth,MethText),
-	fmt_write_string(Text,"%s.%s",args(VarText,MethText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=ifdskolem(Var,IMeth),
-	!,
-	IndT=ifdskolem(IndVar,IndIMeth),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(IMeth,IndIMeth,IMethText),
-	fmt_write_string(Text,"%s!%s",args(VarText,IMethText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_FD(Var,Attr,Val,_),
-	!,
-	IndT=PREFIXED_WRAP_FD(IndVar,IndAttr,IndVal,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	( (not(var(Val)),(Val=fdskolem(Var,Attr))) ->
-	    fmt_write_string(Text,"%s.%s[]",args(VarText,AttrText))
-	;
-	    rebuild_text(Val,IndVal,ValText),
-	    fmt_write_string(Text,"%s[%s->%s]",args(VarText,AttrText,ValText))
-	).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_IFD(Var,Attr,Val,_),
-	!,
-	IndT=PREFIXED_WRAP_IFD(IndVar,IndAttr,IndVal,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	( (not(var(Val)),(Val=ifdskolem(Var,Attr))) ->
-	    fmt_write_string(Text,"%s!%s[]",args(VarText,AttrText))
-	;
-	    rebuild_text(Val,IndVal,ValText),
-	    fmt_write_string(Text,"%s[%s*->%s]",args(VarText,AttrText,ValText))
-	).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_FDSIG(Var,Attr,Type,_),
-	!,
-	IndT=PREFIXED_WRAP_FDSIG(IndVar,IndAttr,IndType,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	rebuild_text(Type,IndType,TypeText),
-	fmt_write_string(Text,"%s[%s=>%s]",args(VarText,AttrText,TypeText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_IFDSIG(Var,Attr,Type,_),
-	!,
-	IndT=PREFIXED_WRAP_IFDSIG(IndVar,IndAttr,IndType,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	rebuild_text(Type,IndType,TypeText),
-	fmt_write_string(Text,"%s[%s*=>%s]",args(VarText,AttrText,TypeText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_MVD(Var,Attr,Val,_),
-	!,
-	IndT=PREFIXED_WRAP_MVD(IndVar,IndAttr,IndVal,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	rebuild_text(Val,IndVal,ValText),
-	fmt_write_string(Text,"%s[%s->>{%s}]",args(VarText,AttrText,ValText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_IMVD(Var,Attr,Val,_),
-	!,
-	IndT=PREFIXED_WRAP_IMVD(IndVar,IndAttr,IndVal,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	rebuild_text(Val,IndVal,ValText),
-	fmt_write_string(Text,"%s[%s*->>{%s}]",args(VarText,AttrText,ValText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_MVDSIG(Var,Attr,Type,_),
-	!,
-	IndT=PREFIXED_WRAP_MVDSIG(IndVar,IndAttr,IndType,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	rebuild_text(Type,IndType,TypeText),
-	fmt_write_string(Text,"%s[%s=>>%s]",args(VarText,AttrText,TypeText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_IMVDSIG(Var,Attr,Type,_),
-	!,
-	IndT=PREFIXED_WRAP_IMVDSIG(IndVar,IndAttr,IndType,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	rebuild_text(Type,IndType,TypeText),
-	fmt_write_string(Text,"%s[%s*=>>%s]",args(VarText,AttrText,TypeText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_EXISTS(Var,_),
-	!,
-	IndT=PREFIXED_WRAP_EXISTS(IndVar,_),
-	rebuild_text(Var,IndVar,VarText),
-	fmt_write_string(Text,"%s[]",args(VarText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_MVDDEF(Var,Attr,_),
-	!,
-	IndT=PREFIXED_WRAP_MVDDEF(IndVar,IndAttr,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	fmt_write_string(Text,"%s[%s->>{}]",args(VarText,AttrText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_IMVDDEF(Var,Attr,_),
-	!,
-	IndT=PREFIXED_WRAP_IMVDDEF(IndVar,IndAttr,_),
-	rebuild_text(Var,IndVar,VarText),
-	rebuild_text(Attr,IndAttr,AttrText),
-	fmt_write_string(Text,"%s[%s*->>{}]",args(VarText,AttrText)).
-
-rebuild_text(Term,(IndT,_Index),Text) :-
-	Term=PREFIXED_WRAP_OBJEQL(O1,O2,_),
-	!,
-	IndT=PREFIXED_WRAP_OBJEQL(IndO1,IndO2,_),
-	rebuild_text(O1,IndO1,O1Text),
-	rebuild_text(O2,IndO2,O2Text),
-	fmt_write_string(Text,"%s:=:%s",args(O1Text,O2Text)).
-
-rebuild_text(Term,(IndT1,Index),Text) :-
-        flora_decode_predicate(Term,_Type,Mod,F,_Prefix,Pred,A),
-        (IndT1 = (IndT,_),!; IndT1=IndT),
-        ( F==WRAP_TRAN,nonvar(Mod) ->
-            IndT=..[_IndF,IndVar,IndTran,_],
-            A=[Var,Tran,_],
-	    rebuild_text(Var,IndVar,VarText),
-	    rebuild_text(Tran,IndTran,TranText),
-	    fmt_write_string(Text,"%s[#%s]",args(VarText,TranText))
-        ;
-	    IndT=..[_IndF|IndA],
-            ( F==WRAP_TABLED_HILOG,nonvar(Mod) -> %tabled hilog pred
-                Pred=Func,
-                IndA=[IndFunc|IndArgsCaller],
-                remove_caller(A,Args),
-                remove_caller(IndArgsCaller,IndArgs),
-                rebuild_text(Func,IndFunc,FuncText)
-            ; F==WRAP_HILOG,nonvar(Mod) -> %non-tabled hilog pred
-                Pred=Func,
-	        IndA=[IndFunc|IndArgsCaller],
-                remove_caller(A,Args),
-                remove_caller(IndArgsCaller,IndArgs),
-	        rebuild_text(Func,IndFunc,FT),
-                fmt_write_string(FuncText,"#%s",args(FT))
-            ; F==WRAP_HILOG -> %hilog term
-                A=[Func|Args],
-                IndA=[IndFunc|IndArgs],
-                rebuild_text(Func,IndFunc,FuncText)
-	    ;
-	        flora_get_counter(min_ind,MinInd),
-	        flora_get_counter(next_min_ind,NextMinInd),
-	        ( (Index<MinInd; MinInd=0) ->
-	            flora_set_counter(next_min_ind,MinInd),
-	            flora_set_counter(min_ind,Index)
-	        ;
-	            ( (Index<NextMinInd; NextMinInd=0) ->
-	                flora_set_counter(next_min_ind,Index)
-	            ;
-	                true
-	            )
-	        ),
-	        flora_nth_token(Index,Token),
-	        flora_token_text(Token,FuncText,_BL,_BC,_EL,_EC),
-	        Args=A,
-	        IndArgs=IndA
-	    ),
-	    ( (Args==[]) ->
-	        fmt_write_string(Text,"%s",args(FuncText))
-	    ;
-	        rebuild_text_list(Args,IndArgs,ArgsText),
-	        fmt_write_string(Text,"%s(%s)",args(FuncText,ArgsText))
-	    )
-        ).
 
 /****************************************************************************
- rebuild_text_list(+List,+IndexdList,-Text)
+ set_indexes(+IndTerm)
+ set the counters min_ind and next_min_ind for IndTerm
  ****************************************************************************/
-rebuild_text_list(L,(_Var,Index),Text) :-
-	var(L),
-	!,
-	flora_get_counter(min_ind,MinInd),
-	flora_get_counter(next_min_ind,NextMinInd),
-	( (Index<MinInd; MinInd=0) ->
-	    flora_set_counter(next_min_ind,MinInd),
-	    flora_set_counter(min_ind,Index)
+set_indexes((T,Index)) :-
+        !,
+	( Index == NO_INDEX ->
+	    true
 	;
-	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        flora_set_counter(next_min_ind,Index)
+	    flora_get_counter(min_ind,MinInd),
+	    flora_get_counter(next_min_ind,NextMinInd),
+	    ( (Index<MinInd; MinInd=0) ->
+	        flora_set_counter(next_min_ind,MinInd),
+	        flora_set_counter(min_ind,Index)
 	    ;
-	        true
-	    )
-	),
-	flora_nth_token(Index,Token),
-	flora_token_text(Token,Text,_BL,_BC,_EL,_EC).
-
-rebuild_text_list([],_,'') :- !.
-
-rebuild_text_list([H|L],[IndH|IndL],Text) :-
-	( var(L) ->
-	    rebuild_text(H,IndH,HText),
-	    ( (IndL=..['.'|_ListItems]) ->
-	        rebuild_text_list(L,IndL,LText),
-	        fmt_write_string(Text,"%s,%s",args(HText,LText))
-	    ;
-	        rebuild_text(L,IndL,LText),
-	        fmt_write_string(Text,"%s|%s",args(HText,LText))
-	    )
-	;
-	    ( L==[] ->
-	        rebuild_text(H,IndH,Text)
-	    ;
-	        rebuild_text(H,IndH,HText),
-	        ( (IndL=..['.'|_ListItems]) ->
-	            rebuild_text_list(L,IndL,LText),
-	            fmt_write_string(Text,"%s,%s",args(HText,LText))
+	        ( (Index<NextMinInd; NextMinInd=0) ->
+	            flora_set_counter(next_min_ind,Index)
 	        ;
-	            rebuild_text(L,IndL,LText),
-	            fmt_write_string(Text,"%s|%s",args(HText,LText))
+	            true
 	        )
 	    )
+	),
+	( (atomic(T);var(T)) ->
+	    true
+        ; is_list(T) ->
+            set_indexes_list(T)
+	;
+	    T =.. [_F|Args],
+	    set_indexes_list(Args)
 	).
 
+set_indexes(T) :-
+	( (atomic(T);var(T)) ->
+	    true
+        ; is_list(T) ->
+            set_indexes_list(T)
+	;
+	    T =.. [_F|Args],
+	    set_indexes_list(Args)
+	).
+        
+
+set_indexes_list([]) :- !.
+set_indexes_list([H|L]) :-
+	set_indexes(H),
+	set_indexes_list(L).
+	 
+ 	
 /****************************************************************************
  generate_warnings(-WarnList)
  ****************************************************************************/
@@ -1045,13 +731,6 @@ append_warnings([],[]) :- !.
 append_warnings([(HInd,BInd,WarnMsg)|T],[warning(HInd,BInd,WarnMsg)|InterWarnList]) :-
 	append_warnings(T,InterWarnList).
 
-/****************************************************************************
- remove_caller(+Args1, -Args2)
- remove the last element of the argument list which is the caller
- ****************************************************************************/
-remove_caller([_H], []) :- !.
-remove_caller([H|L],[H|NL]) :-
-        remove_caller(L,NL).
 
 /****************************************************************************
  canonical_list(+L1,-L2)
@@ -1060,18 +739,4 @@ canonical_list([], []) :- !.
 canonical_list([H|L],[Callable|NL]) :-
         get_canonical_form(H,FLCANON(_,_,_,Callable)),
         canonical_list(L,NL).
-
-/****************************************************************************
- escape(+Text1, -Text2)
- for strings, replace every occurency of \ with \\ so that \n is printed
- as it is instead of being interpreted
- ****************************************************************************/
-escape([],[]) :- !.
-escape([CH_BACKSLASH|L],[CH_BACKSLASH,CH_BACKSLASH|EL]) :-
-        !,
-        escape(L,EL).
-escape([H|L],[H|EL]) :-
-        !,
-        escape(L,EL).
-escape(NL,NL) :- !.
 

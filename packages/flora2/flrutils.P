@@ -28,7 +28,6 @@
 
 :- compiler_options([xpp_on]).
 
-#include "flag_defs_xsb.h"
 #include "standard.h"
 
 #include "flora_characters.flh"
@@ -78,6 +77,78 @@ flora_compile_internal(File,Workspace) :-
 	!.
 
 
+/*************************************************************************
+  flora_compile_add(+File)
+  Compiles flora files for adding into "main" module
+*************************************************************************/
+flora_compile_add(File) :-
+	flora_compile_add(File,FLORA_DEFAULT_WORKSPACE).
+
+
+/******************************************************************************
+  flora_compile_add(+File,+Workspace)
+  Compiles flora files for adding into module
+  The OBJ file is renamed using the module name
+******************************************************************************/
+flora_compile_add(File,Workspace) :-
+	flora_check_filename(File),
+	flora_check_workspace(Workspace),
+	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
+	    flora_compile_then_prolog_compile_add(FlrFile,Workspace)
+	;
+	  flora_flrfilename_error(File),
+	  !,
+	  fail
+	),
+	!.
+
+/**********************************************************************
+  flora_add_module_dyn(+File,+Workspace)
+  File must be a FLORA file.
+**********************************************************************/
+flora_add_module_dyn(InFile,Workspace) :-
+	flora_check_filename(InFile),
+	flora_check_workspace(Workspace),
+	flora_get_user_program_maybe(InFile,File),
+	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
+	    flora_fladd(FlrFile,Workspace)
+	;
+	  flora_flrfilename_error(InFile),
+	  !,
+	  fail
+	),
+	!.
+
+
+/**********************************************************************
+  flora_add_module_dyn(+File)
+  File may be a FLORA file.
+**********************************************************************/
+flora_add_module_dyn(InFile) :-
+	flora_check_filename(InFile),
+	flora_get_user_program_maybe(InFile,File),
+	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
+	    flora_fladd(FlrFile,FLORA_DEFAULT_WORKSPACE)
+
+	; 
+	parse_filename(File,_,_,Ext),
+          Ext \== '',  Ext \== FLORA_FILE_EXT,
+	  flora_file_op(exists,File)
+	->
+	    flora_stderr_nl,
+	    flora_error_line('~w: Filename extension must be ~w',
+	                     [File,FLORA_FILE_EXT]),
+	    fail
+	;
+	
+	  flora_stderr_nl,
+	  flora_error_line('File ~w[.~w] does not exist',
+			   [File,FLORA_FILE_EXT]),
+          fail
+        ),
+	!.
+	
+
 /**********************************************************************
   flora_load_module_internal(+File,+Workspace)
   File must be a FLORA file.
@@ -111,10 +182,10 @@ flora_load_module_internal(InFile) :-
 	    flora_message_line('Consulting ~w',[PFile]),
 	    %% Note: when the loaded file has prolog extension, we don't know
 	    %% if this is a Prolog module or a FLORA compiled output.
-	    %% So, we just in case arrange the GPP options, but don't rename
+	    %% So, just in case we arrange the GPP options, but don't rename
 	    %% the .xwam file. Maybe we should use a different extension for
 	    %% the target of FLORA compilation?
-	    flora_set_xpp_options_for_compile(FLORA_DEFAULT_WORKSPACE),
+	    flora_set_xpp_options_for_prolog_compile(FLORA_DEFAULT_WORKSPACE),
 	    flora_add_xpp_options('-warninglevel 1 '),
 	    consult(PFile),
 	    flora_clear_xpp_options
@@ -191,7 +262,7 @@ flloadtrailer(TrailerOptions,Workspace) :-
 	    ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
 		true
 	    ; 
-		flora_set_xpp_options_for_compile(Workspace),
+		flora_set_xpp_options_for_prolog_compile(Workspace),
 		%%compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
 		compile(UserTrailerPFile,[optimize,ti_all]),
 		flora_rename_file(UserTrailerOFile,UserTrailerWSOFile),
@@ -251,7 +322,7 @@ flloadpatch(Workspace) :-
 	),
 	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) -> true
 	;
-	    flora_set_xpp_options_for_compile(Workspace),
+	    flora_set_xpp_options_for_prolog_compile(Workspace),
 	    %%compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
 	    compile(UserPatchPFile,[optimize,ti_all]),
 	    flora_rename_file(UserPatchOFile,UserPatchWSOFile),
@@ -306,6 +377,48 @@ flora_rename_file(F1,F2) :-
 	).
 
 
+
+/*************************************************************************
+  flora_compile_then_prolog_compile_add(+FlrFile,+ModuleName)
+
+  This procedure is called to compile either a Flora user module or a
+  Flora system module. In the former case, the module name is an atom
+  whereas in the latter case the module name looks like flora(name).
+  It first calls the FLORA-2 compiler and then Prolog compiler.
+*************************************************************************/
+flora_compile_then_prolog_compile_add(FlrFile,ModuleName) :-
+	flora_addP_filename(FlrFile,APFile),
+	flora_addFDB_filename(FlrFile,FDBFile),
+	flora_addFLD_filename(FlrFile,FLDFile),
+	flora_set_xpp_options_for_compile(ModuleName),
+	flora_compile_file_add(FlrFile,APFile,FDBFile,FLDFile,Status),
+	( Status == FLORA_FAILURE ->
+	    flora_clear_xpp_options,
+	    !,
+	    fail
+	;
+ 	  flora_addO_filename(FlrFile,AOFile),
+	  flora_message_line('Calling XSB compiler'),
+	  (
+	    %% Issue only important preprocessor warnings
+	    %% to avoid warnings when atoms or strings have \n in them
+	    flora_set_xpp_options_for_prolog_compile(ModuleName),
+	    flora_add_xpp_options('-warninglevel 1 '),
+	    compile(APFile,[optimize,ti_all]) ->
+	      true
+	  ;
+	    flora_clear_xpp_options,
+	    fail
+	  ),
+	  !,
+	  flora_clear_xpp_options,
+	  flora_module_name(ModuleName,_Type,Workspace),
+	  flora_addWSO_filename(FlrFile,Workspace,WSOFile),
+	  flora_rename_file(AOFile,WSOFile)
+        ),
+	!.
+
+
 /*************************************************************************
   flora_compile_then_prolog_compile(+FlrFile,+ModuleName)
 
@@ -330,9 +443,8 @@ flora_compile_then_prolog_compile(FlrFile,ModuleName) :-
 	  (
 	    %% Issue only important preprocessor warnings
 	    %% to avoid warnings when atoms or strings have \n in them
-	    flora_set_xpp_options_for_compile(ModuleName),
+	    flora_set_xpp_options_for_prolog_compile(ModuleName),
 	    flora_add_xpp_options('-warninglevel 1 '),
-	    %%compile(MPFile,[optimize,spec_repr,ti_all])
 	    compile(MPFile,[optimize,ti_all]) ->
 	      true
 	  ;
@@ -405,7 +517,7 @@ flora_load_system_module_internal(SysModID) :-
 	    flora_message_line('loading FLORA system module `~w''',[SysModID]),
 	    %% Issue only important preprocessor warnings
 	    %% to avoid warnings when atoms or strings have \n in them
-	    flora_set_xpp_options_for_compile(ModuleName, '-warninglevel 0 '),
+	    flora_set_xpp_options_for_prolog_compile(ModuleName, '-warninglevel 0 '),
 	    consult(WSOFile),
 	    flora_clear_xpp_options
 	;
@@ -445,6 +557,57 @@ flora_compile_system_module_by_ID(SysModID) :-
 
 
 /*************************************************************************
+  flora_fladd(+FlrFile,+Workspace)
+
+  Need to make sure the GPP options are cleared when this procedure is
+  finished.
+*************************************************************************/
+flora_fladd(FlrFile,Workspace) :-
+	flora_addP_filename(FlrFile,APFile),
+	flora_addO_filename(FlrFile,AOFile),
+	flora_addFDB_filename(FlrFile,FDBFile),
+	%% support for undefinedness
+	flora_addFLD_filename(FlrFile,FLDFile),
+
+	flora_addWSO_filename(FlrFile,Workspace,WSOFile),
+	!,
+	flora_set_xpp_options_for_compile(Workspace),
+        ( flora_file_newerthan(APFile,FlrFile) ->
+	    flora_stdmsg_nl,
+	    true
+	;
+	  flora_compile_file_add(FlrFile,APFile,FDBFile,FLDFile,Status),
+	  ( Status == FLORA_FAILURE ->
+	      flora_clear_xpp_options,
+	      !,
+	      fail
+	  ;
+	    true
+	  )
+	),
+	!,
+	flora_message_line('Adding ~w into module ~w',[FlrFile,Workspace]),
+	( flora_file_newerthan(WSOFile,APFile) ->
+	    true
+	;
+	  (
+	    flora_set_xpp_options_for_prolog_compile(Workspace),
+	    flora_add_xpp_options('-warninglevel 0 '),
+	    compile(APFile,[optimize,ti_all])
+	  ->
+	    true
+	  ;
+	    flora_clear_xpp_options,
+	    fail
+	  ),
+	  flora_rename_file(AOFile,WSOFile)
+        ),
+        consult(WSOFile),
+	flora_clear_xpp_options,
+	!.
+
+
+/*************************************************************************
   flora_flload(+FlrFile,+Workspace)
 
   Need to make sure the GPP options are cleared when this procedure is
@@ -479,9 +642,8 @@ flora_flload(FlrFile,Workspace) :-
 	    true
 	;
 	  (
-	    flora_set_xpp_options_for_compile(Workspace),
+	    flora_set_xpp_options_for_prolog_compile(Workspace),
 	    flora_add_xpp_options('-warninglevel 0 '),
-	    %%compile(MPFile,[optimize,spec_repr,ti_all])
 	    compile(MPFile,[optimize,ti_all])
 	  ->
 	    true
@@ -510,7 +672,7 @@ flora_save_user_clauses(FlrFile) :-
 /*************************************************************************
   flora_get_user_program_maybe(+InFile,-File)
   If InFile = user assume the user wants to input the program from the shell.
-  Retrun the name of the tempfile that has the program.
+  Return the name of the tempfile that has the program.
 *************************************************************************/
 flora_get_user_program_maybe(InFile,File) :-
 	( InFile == user ->
@@ -572,6 +734,35 @@ flora_file_newerthan(File1,File2) :-
 	flora_file_op(exists,File1),
 	flora_file_op(newerthan,File1,File2).
 
+
+
+/*************************************************************************
+  flora_addP_filename(+File,-APFile)
+  flora_addO_filename(+File,-AOFile)
+  flora_addFDB_filename(+File,-FDBFile)
+  flora_addFLD_filename(+File,-FLDFile)
+  flora_addWSO_filename(+File,+WS,-WSOFile)
+*************************************************************************/
+flora_addP_filename(File,APFile) :-
+	parse_filename(File,Dir,Base,_),
+	flora_concat_atoms([Dir,Base,'#for_add.',PROLOG_PFILE_EXT],APFile).
+
+flora_addO_filename(File,AOFile) :-
+	parse_filename(File,Dir,Base,_),
+	flora_concat_atoms([Dir,Base,'#for_add.',PROLOG_OFILE_EXT],AOFile).
+
+flora_addFDB_filename(File,FDBFile) :-
+	parse_filename(File,Dir,Base,_),
+	flora_concat_atoms([Dir,Base,'#for_add.',FLORA_FDB_EXT],FDBFile).
+
+flora_addFLD_filename(File,FLDFile) :-
+	parse_filename(File,Dir,Base,_),
+	flora_concat_atoms([Dir,Base,'#for_add.',FLORA_FLD_EXT],FLDFile).
+
+%% File name for the object file with module name attached
+flora_addWSO_filename(File,WS,WSOFile) :-
+	parse_filename(File,Dir,Base,_),
+	flora_concat_atoms([Dir,Base,'_',WS,'#for_add.',PROLOG_OFILE_EXT],WSOFile).
 
 
 /*************************************************************************
@@ -661,15 +852,23 @@ is_alphanumericL([Ch|Rest]) :-
   gpp control utilities
 *************************************************************************/
 %% standard gpp options used by Flora.
-flora_xpp_standard_options_for_compile('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
-flora_xpp_standard_options_for_dump('-P -m -nostdinc -curdirinclast').
+flora_xpp_standard_options_for_compile('-F -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
+flora_xpp_standard_options_for_prolog_compile('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
+flora_xpp_standard_options_for_dump('-F -m -nostdinc -curdirinclast').
 flora_xpp_standard_options_for_read('-P -m -nostdinc -curdirinclast').
 
 
 flora_set_xpp_options_for_compile :- flora_set_xpp_options(compile).
-flora_set_xpp_options_for_compile(Module) :- flora_set_xpp_options(compile,Module).
+flora_set_xpp_options_for_compile(Module) :-
+	flora_set_xpp_options(compile,Module).
 flora_set_xpp_options_for_compile(Module,ExtraOpts) :-
 	flora_set_xpp_options(compile,Module,ExtraOpts).
+%%flora_set_xpp_options_for_prolog_compile :-
+%%	flora_set_xpp_options(prolog_compile).
+flora_set_xpp_options_for_prolog_compile(Module) :-
+	flora_set_xpp_options(prolog_compile,Module).
+flora_set_xpp_options_for_prolog_compile(Module,ExtraOpts) :-
+	flora_set_xpp_options(prolog_compile,Module,ExtraOpts).
 
 %%flora_set_xpp_options_for_dump(Module) :- flora_set_xpp_options(dump,Module).
 flora_set_xpp_options_for_dump(Module,ExtraOpts) :-
@@ -684,11 +883,20 @@ flora_set_xpp_options_for_read(Module,ExtraOpts) :-
 
 flora_set_xpp_options(Purpose) :-
 	retractall(xpp_options(_)),
-	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
-	; Purpose==dump -> flora_xpp_standard_options_for_dump(StandardOpt)
+	(Purpose==read
+	-> flora_xpp_standard_options_for_read(StandardOpt)
+	; Purpose==dump
+	-> flora_xpp_standard_options_for_dump(StandardOpt)
+	; Purpose==prolog_compile
+	-> flora_xpp_standard_options_for_prolog_compile(StandardOpt)
 	; flora_xpp_standard_options_for_compile(StandardOpt)
 	),
-	assert(xpp_options(StandardOpt)).
+	(Purpose==prolog_compile, !
+	; %% don't increment counter when loading trailers and things like that
+	    flora_increment_counter(flora_compile_id,1,_,Id)
+	),
+	flora_concat_items([StandardOpt,' -D FLORA_COMPILATION_ID=',Id,' '],Opt),
+	assert(xpp_options(Opt)).
 
 
 %% This is always called before invoking GPP.
@@ -711,10 +919,16 @@ flora_set_xpp_options(Purpose,ModuleName) :-
 	),
 	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
 	; Purpose==dump -> flora_xpp_standard_options_for_dump(StandardOpt)
+	; Purpose==prolog_compile
+	-> flora_xpp_standard_options_for_prolog_compile(StandardOpt)
 	; flora_xpp_standard_options_for_compile(StandardOpt)
 	),
-	flora_concat_atoms([StandardOpt,' -D FLORA_VAR_WORKSPACE=',WS,
-			    ' ',ExtraOpt],
+	(Purpose==prolog_compile, !
+	; %% don't increment counter when loading trailers and things like that
+	    flora_increment_counter(flora_compile_id,1,_,Id)
+	),
+	flora_concat_items([StandardOpt,' -D FLORA_VAR_WORKSPACE=',WS,
+			    ' ',ExtraOpt,' -D FLORA_COMPILATION_ID=',Id,' '],
 			   Opt),
 	assert(xpp_options(Opt)),
 	!.
@@ -842,6 +1056,160 @@ flora_reset_modules_for_shell :-
 
 
 /*************************************************************************
+  flora_compile_file_add(+InputFile,+OutputPFile,+OutputDBFile,+OutputFLDFile,-FileStatus)
+
+  Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
+
+        The appropriate GPP options must be set before this procedure is called.
+*************************************************************************/
+flora_compile_file_add(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
+	flora_maxerr(MaxErrNum),
+	flora_stdmsg_nl,
+	flora_message_line('Compiling ~w for adding into module',[InputFile]),
+	flora_cputime(T0),
+	seeing(PreInFile),
+	%% Disable the compilation for FLORA template include file.
+	flora_set_counter(flora_compile_include_file,0),
+	flora_reset_modules_for_file(InputFile),
+	xpp_process_file(InputFile,XPP_process,IOportFromProc),
+	see(IOportFromProc),
+	flora_measure_time(
+			   flora_rpc_file_add(MaxErrNum,0,0,CompiledRuleList,
+					  FileOptionList,CompileStatus),
+			   'Compile time '
+			   ),
+	%% Wait, to not leave zombies.
+	process_control(XPP_process,wait(ExitStatus)),
+	(ExitStatus==0, !
+	; flora_error_line('Error while preprocessing ~w', [InputFile])
+	),
+	%% Release the file descriptor used to read from cpp.
+	%%close(IOportFromProc),
+	seen,
+	see(PreInFile),
+	( CompileStatus == FLORA_FAILURE ->
+	    FileStatus=FLORA_FAILURE
+	;
+	    extract_trailer_options(InputFile,FileOptionList,
+				    %% Default options
+				    FLORA_DEFAULT_SEMANTICS,
+				    StrippedFileOptions,TrailerOptions),
+	    flora_measure_time(
+			       check_for_dependencies(CompiledRuleList,DepWarnList),
+			       'Dependency checking time: '
+			      ),
+	    check_for_dependencies_errorwarn(DepWarnList,DepWarnNum,DepErrNum),
+	    flora_errorwarn_count(0,DepWarnNum),
+
+	    ( DepErrNum>0 ->
+		FileStatus=FLORA_FAILURE
+	    ;
+		(check_custom_trailer_file(TrailerOptions)
+		->
+		    flora_generate_code_add(CompiledRuleList,
+					StrippedFileOptions,TrailerOptions,
+					PFile,DBFile,FLDFile,FileStatus)
+		; 
+		    flora_stderr_string('++compilation aborted'),
+		    flora_stderr_nl,
+		    FileStatus=FLORA_FAILURE
+		)
+	    )
+        ),
+	flora_cputime(T1),
+	( FileStatus == FLORA_FAILURE ->
+	    true
+	;
+	    T is T1-T0,
+	  flora_message_line('Done! CPU time used: ~w seconds',[T])
+	),
+	!.
+
+%% Catch a failure
+flora_compile_file_add(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
+
+/*************************************************************************
+  flora_generate_code_add(+CompiledRuleList,+FileOptionList,+TrailerOptions,+PFile,+DBFile,+FLDFile,-FileStatus)
+
+  Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
+*************************************************************************/
+flora_generate_code_add(CompiledRuleList,FileOptionList,TrailerOptions,PFile,DBFile,FLDFile,FileStatus) :-
+	%% Generate FLD file for undefinedness checking
+	flora_debug_code(CompiledRuleList, FLDFile),
+	flora_divide_program(CompiledRuleList,RuleList,FactList),
+	sort(FileOptionList,FileOptions),
+	flora_measure_time(
+			   flora_generate_Pfile_add(PFile,
+						FileOptions,TrailerOptions,
+						RuleList,FactList,
+						DBFile,FLDFile,PFileStatus),
+			   '[Coder] Generating P file'
+			   ),
+	( PFileStatus == FLORA_FAILURE ->
+	    FileStatus=FLORA_FAILURE
+	;
+	  ( FactList == [] ->
+	      FileStatus=FLORA_SUCCESS
+	  ;
+	      flora_measure_time(
+				 flora_generate_DBfile(DBFile,FactList,FileStatus),
+				 '[Coder] Generating DB file'
+				 )
+	  )
+        ),
+	!.
+
+
+/*************************************************************************
+  flora_generate_Pfile_add(+PFileName,+FileOptionList,+TrailerOptions,
+                       +RuleList,+FactList,
+                       +DBFile,+FLDFile,-FileStatus)
+
+  Things to do:
+  (1) include .flh file directive.
+  (2) output header file.
+  (3) syslib and sysmod loading instrucitons.
+  (4) DB file loading instruction.
+  (5) program.
+  (6) trailer.
+*************************************************************************/
+flora_generate_Pfile_add(PFileName,FileOptionList,TrailerOptions,RuleList,FactList,DBFile,FLDFile,FileStatus) :-
+	telling(PreOutFile),
+	tell(PFileName),
+	writeln('?- abolish_all_tables.'),
+	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
+	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
+	append(SysLibOptionList,SysModOptionList,OptList),
+	( member(XSB_SPECREPR,FileOptionList) -> true
+	; writeln(':- compiler_options([spec_off]).')),
+	flora_include_file([FLHEADER],FLHeaderStatus),
+	( FLHeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
+	;
+	    findall((Arity,Pos),member(FLINDEX(Arity,Pos),FileOptionList),IndexList),
+	    write_index_directives(IndexList),
+	    include_trailer_control_definitions(TrailerOptions),
+            flora_include_file(OptList,HeaderStatus),
+	    ( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
+	    ;
+		(FactList == [] -> true; 
+		    flora_insert_code_for_loaddyn_data(DBFile)),
+		    flora_insert_code_for_loaddyn_data(FLDFile),
+		    flora_extern_code(RuleList,CoderStatus),
+		    ( CoderStatus == [] ->
+			%% flora_include_file([FLTRAILER,FLDYNZ,FLPREDDEF],FileStatus)
+			true
+		    ;
+		        flora_coder_error(CoderStatus),
+		        FileStatus=FLORA_FAILURE
+		    )
+		)
+	    ),
+	told,
+	tell(PreOutFile),
+	!.
+
+
+/*************************************************************************
   flora_compile_file(+InputFile,+OutputPFile,+OutputDBFile,+OutputFLDFile,-FileStatus)
 
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
@@ -858,7 +1226,7 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	flora_set_counter(flora_compile_include_file,0),
 	flora_reset_modules_for_file(InputFile),
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
-	stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	see(IOportFromProc),
 	flora_measure_time(
 			   flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,
 					  FileOptionList,CompileStatus),
@@ -870,7 +1238,8 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	; flora_error_line('Error while preprocessing ~w', [InputFile])
 	),
 	%% Release the file descriptor used to read from cpp.
-	file_close(IOportFromProc),
+	%%close(IOportFromProc),
+	seen,
 	see(PreInFile),
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -1072,17 +1441,16 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
    FLORA_VAR_WORKSPACE only. Unfortunately, it occurs between quotes
    and is not expanded.
 
-:- import file_write/2, file_nl/2 from xsb_writ.
 flora_set_xpp_options_for_dump :- flora_set_xpp_options(dump).
 flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 	telling(PreOutFile),
 	flora_set_xpp_options_for_dump,
 	file_open(DBFileName,w,DBFilePort),
-	file_write(DBFilePort,'#mode save'), file_nl(DBFilePort),
-	file_write(DBFilePort,'#mode nostring "\!#''"'), file_nl(DBFilePort),
+	write(DBFilePort,'#mode save'), file_nl(DBFilePort),
+	write(DBFilePort,'#mode nostring "\!#''"'), file_nl(DBFilePort),
 	%% get data from stdin, dump to DBFilePort (redirected to DBFileName)
 	xpp_process_file(IntoXPP,XPP_process,DBFilePort),
-	stat_set_flag(CURRENT_OUTPUT,IntoXPP),
+	tell(IntoXPP),
 	%% Include the Macro definitions.
 	writeln('#include "flrheader.flh"'),
 	nl,
@@ -1093,14 +1461,14 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 	  flora_coder_error(CoderStatus),
 	  FileStatus=FLORA_FAILURE
 	),
-	file_close(IntoXPP),
+	told,
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
 	; flora_error_line('Error while generating ~w', [DBFileName])
 	),
 	flora_clear_xpp_options,
-	file_write(DBFilePort,'#mode restore'), file_nl(DBFilePort),
-	file_close(DBFilePort),
+	write(DBFilePort,'#mode restore'), file_nl(DBFilePort),
+	close(DBFilePort),
 	tell(PreOutFile),
 	!.
 
@@ -1136,7 +1504,7 @@ flora_loaddyn_data(InFile,ModuleName,Ext) :-
 	    %% Don't issue irrelevant warnings
 	    flora_add_xpp_options('-warninglevel 1 '),
 	    xpp_process_file(File,XPP_process,IOportFromProc),
-	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	    see(IOportFromProc),
 	    ( Ext==FLORA_FDB_EXT,
 		flora_fdb_storage_name(ModuleName,StorageName)
 	    ; Ext==FLORA_FLD_EXT,
@@ -1149,7 +1517,8 @@ flora_loaddyn_data(InFile,ModuleName,Ext) :-
 	    ; flora_error_line('Error while preprocessing ~w', [File])
 	    ),
 	    %% Release the file descriptor used to read from xpp.
-	    file_close(IOportFromProc),
+	    %%close(IOportFromProc),
+	    seen,
 	    flora_clear_xpp_options,
 	    see(PreInFile),
 	    flora_cputime(T1),
@@ -1210,6 +1579,150 @@ flora_reclaim_storage_space :-
 	    fail
 	; true
 	).
+
+
+/*************************************************************************
+flora_rpc_file_add(+MaxErr,+ErrNum,+WarnNum,-CompiledRuleList,-FileOptionList,-FileStatus),
+
+  flora_rpc_file_add/6 calls the lexer/composer/parser/compiler rule-by-rule.
+      Each time checks if there have been any errors. 
+*************************************************************************/
+flora_rpc_file_add(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus) :-
+	flora_read_parse_compile_add(FLORA_FILE,Tokens,
+                                 CompiledRuleList-NewCompiledRuleList,
+                                 RuleOptions,RuleStatus),
+	member(error(EN),RuleStatus),
+	member(warning(WN),RuleStatus),
+	NewErrNum is ErrNum+EN,
+	NewWarnNum is WarnNum+WN,
+	( EN > 0 -> %% errors found in the latest compiled rule
+	    ( MaxErr \== FLORA_ALL, NewErrNum >= MaxErr ->
+		FileStatus=FLORA_FAILURE,
+		flora_stderr_nl,
+		flora_errorwarn_count(NewErrNum,NewWarnNum),
+		flora_stderr_nl,
+		flora_stderr_string('++compilation aborted'),
+		flora_stderr_nl
+
+	    ; flora_rule_delimeter_struct(_,_,_,_,_,RuleDelimeterToken),
+	      flora_not_end_of_input(RuleStatus), member(RuleDelimeterToken,Tokens) ->
+	        flora_rpc_file_add(MaxErr,NewErrNum,NewWarnNum,
+                               _CompiledRuleList,_FileOptionList,FileStatus)
+
+	    ; flora_not_end_of_input(RuleStatus), flora_discard_tokens ->
+	        flora_rpc_file_add(MaxErr,NewErrNum,NewWarnNum,
+                               _CompiledRuleList,_FileOptionList,FileStatus)
+	    ;
+	      FileStatus=FLORA_FAILURE,
+		flora_stderr_nl,
+		flora_errorwarn_count(NewErrNum,NewWarnNum),
+		flora_stderr_nl,
+		flora_stderr_string('++compilation aborted'),
+		flora_stderr_nl
+	    )
+	;
+	  ( NewErrNum == 0 -> %% no errors so far
+	      flora_tailappend(FileOptionList,RuleOptions,NewFileOptionList)
+	  ;
+	    true
+	  ),
+	  ( flora_not_end_of_input(RuleStatus) ->
+	      flora_rpc_file_add(MaxErr,NewErrNum,NewWarnNum,
+                             NewCompiledRuleList,NewFileOptionList,FileStatus)
+	  ; %% end of file already
+	    ( NewErrNum == 0 ->
+		NewCompiledRuleList=[],
+		NewFileOptionList=[],
+		FileStatus=FLORA_SUCCESS,
+		( NewWarnNum == 0 ->
+		    true
+		;
+		  flora_stdwarn_nl,
+		  flora_errorwarn_count(NewErrNum,NewWarnNum)
+		)
+	    ;
+	      FileStatus=FLORA_FAILURE,
+		flora_stderr_nl,
+		flora_errorwarn_count(NewErrNum,NewWarnNum),
+		flora_stderr_nl,
+		flora_stderr_string('++compilation aborted'),
+		flora_stderr_nl
+	    )
+	  )
+	),
+	!.
+
+
+/*************************************************************************
+  flora_read_parse_compile_add(+Option,-Tokens,-FlattenedRules,-OptionList,-Status)
+
+  Note: This procedure can be used to read both file and command line.
+        For reading file, Option is FLORA_FILE. For reading command line,
+        Option is FLORA_COMMANDLINE.
+
+        FlattenedRules is a difference list in the form of List-Tail,
+        where Tail is the tail of List. Tail is unbound when this procedure
+        returns and so it should be set to [] later accordingly to close
+        the end of the list.
+*************************************************************************/
+flora_read_parse_compile_add(Option,Tokens,FlattenedRules,OptionList,Status) :-
+	flora_tokens(InputTokens,LexerStatus), 
+	%% get InputTokens
+	flora_lexer_error(InputTokens,LexerStatus,LexErrNum),
+	( LexErrNum > 0 ->
+	    Tokens=InputTokens,
+	    FlattenedRules=T-T,
+	    OptionList=[],
+	    ErrNum=LexErrNum,
+	    WarnNum=0
+
+	; flora_blank_line(InputTokens) ->
+	    Tokens=InputTokens,
+	    FlattenedRules=T-T,
+	    OptionList=[],
+	    ErrNum=0,
+	    WarnNum=0
+	;
+	  ( Option == FLORA_COMMANDLINE ->
+	      flora_construct_query_term(InputTokens,Tokens)
+	  ;
+	    Tokens=InputTokens
+	%% get Tokens from InputTokens
+	  ),
+	  flora_compose(Tokens,ComposerTerm,ComposerStatus),
+	%% compose
+	  flora_composer_errorwarn(ComposerStatus,CompoErrNum,CompoWarnNum),
+	  ( CompoErrNum > 0 ->
+	      FlattenedRules=T-T,
+	      OptionList=[],
+	      ErrNum=CompoErrNum,
+	      WarnNum=CompoWarnNum
+	  ;
+	    flora_parse(ComposerTerm,ParserTerm,ParserStatus),
+	    %%writeln(parsedterm=ParserTerm),
+	%% parse
+	    flora_parser_error(ParserStatus,ParErrNum),
+	    ( ParErrNum > 0 ->
+		FlattenedRules=T-T,
+		OptionList=[],
+		ErrNum=ParErrNum,
+		WarnNum=CompoWarnNum
+	    ;
+	      flora_compile_add(ParserTerm,FlattenedRules,OptionList,CompilerStatus),
+	%% compile, and get FlattenedRules,OptionList
+	      flora_compiler_errorwarn(CompilerStatus,CompiErrNum,CompiWarnNum),
+	      ErrNum=CompiErrNum,
+	      WarnNum is CompoWarnNum+CompiWarnNum
+	    )
+	  )
+        ),
+	EWS=[error(ErrNum),warning(WarnNum)],
+	( flora_end_of_input(LexerStatus) ->
+	    Status=[FLORA_EOF|EWS]
+	;
+	  Status=[FLORA_NOT_EOF|EWS]
+	).
+
 
 
 /*************************************************************************
@@ -1329,7 +1842,8 @@ flora_discard_tokens :-
         the end of the list.
 *************************************************************************/
 flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
-	flora_tokens(InputTokens,LexerStatus),
+	flora_tokens(InputTokens,LexerStatus), 
+	%% get InputTokens
 	flora_lexer_error(InputTokens,LexerStatus,LexErrNum),
 	( LexErrNum > 0 ->
 	    Tokens=InputTokens,
@@ -1345,33 +1859,37 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	    ErrNum=0,
 	    WarnNum=0
 	;
-	  ( Option == FLORA_COMMANDLINE ->
-	      flora_construct_query_term(InputTokens,Tokens)
-	  ;
-	    Tokens=InputTokens
-	  ),
-	  flora_compose(Tokens,ComposerTerm,ComposerStatus),
-	  flora_composer_errorwarn(ComposerStatus,CompoErrNum,CompoWarnNum),
-	  ( CompoErrNum > 0 ->
-	      FlattenedRules=T-T,
-	      OptionList=[],
-	      ErrNum=CompoErrNum,
-	      WarnNum=CompoWarnNum
-	  ;
-	    flora_parse(ComposerTerm,ParserTerm,ParserStatus),
-	    flora_parser_error(ParserStatus,ParErrNum),
-	    ( ParErrNum > 0 ->
+	    ( Option == FLORA_COMMANDLINE ->
+		flora_construct_query_term(InputTokens,Tokens)
+	    ;
+		%% set Tokens from InputTokens
+		Tokens=InputTokens
+	    ),
+	    %% compose
+	    flora_compose(Tokens,ComposerTerm,ComposerStatus),
+	    flora_composer_errorwarn(ComposerStatus,CompoErrNum,CompoWarnNum),
+	    ( CompoErrNum > 0 ->
 		FlattenedRules=T-T,
 		OptionList=[],
-		ErrNum=ParErrNum,
+		ErrNum=CompoErrNum,
 		WarnNum=CompoWarnNum
 	    ;
-	      flora_compile(ParserTerm,FlattenedRules,OptionList,CompilerStatus),
-	      flora_compiler_errorwarn(CompilerStatus,CompiErrNum,CompiWarnNum),
-	      ErrNum=CompiErrNum,
-	      WarnNum is CompoWarnNum+CompiWarnNum
+		flora_parse(ComposerTerm,ParserTerm,ParserStatus),
+		%% parse
+		flora_parser_error(ParserStatus,ParErrNum),
+		( ParErrNum > 0 ->
+		    FlattenedRules=T-T,
+		    OptionList=[],
+		    ErrNum=ParErrNum,
+		    WarnNum=CompoWarnNum
+		;
+		    flora_compile(ParserTerm,FlattenedRules,OptionList,CompilerStatus),
+		    %% compile, and get FlattenedRules,OptionList
+		    flora_compiler_errorwarn(CompilerStatus,CompiErrNum,CompiWarnNum),
+		    ErrNum=CompiErrNum,
+		    WarnNum is CompoWarnNum+CompiWarnNum
+		)
 	    )
-	  )
         ),
 	EWS=[error(ErrNum),warning(WarnNum)],
 	( flora_end_of_input(LexerStatus) ->
@@ -1439,17 +1957,19 @@ flora_shell_command_line(Code,Options,Status) :-
 	      InputStatus=FLORA_EOF
 	    ),
 	    Status=[InputStatus,FLORA_FAILURE]
-	;
+	; %% ErrNum > 0  end
 	  ( Rules == [] ->
 	      CommandStatus=FLORA_NOOP
 	  ;
-	    flora_intern_code(Rules,FLORA_DEFAULT_WORKSPACE,Code,CoderStatus),
-	    ( CoderStatus == [] ->
-		CommandStatus=FLORA_SUCCESS
-	    ;
-	      flora_coder_error(CoderStatus),
-	      CommandStatus=FLORA_FAILURE
-	    )
+	      %% The below is ErrNum = 0 and Rules \= []
+	      flora_intern_code(Rules,FLORA_DEFAULT_WORKSPACE,Code,CoderStatus),
+	      %% get Code from Rules
+	      ( CoderStatus == [] ->
+		  CommandStatus=FLORA_SUCCESS
+	      ;
+		  flora_coder_error(CoderStatus),
+		  CommandStatus=FLORA_FAILURE
+	      )
 	  ),
 	  ( flora_end_of_input(RuleStatus) ->
 	      Status=[FLORA_EOF,CommandStatus]
@@ -1642,7 +2162,7 @@ check_for_dependencies_errorwarn([warning(HTK,BTK,(MH,MB))|L],WarnNum,ErrNum) :-
 	(
          flora_compile_filename_by_token(HTK,HFileName),
          flora_compile_filename_by_token(BTK,BFileName) ->
-	    flora_warning_line('[Dependency check] ~w in [~w] dependes on ~w in [~w]', [MH,HFileName,MB,BFileName])
+	    flora_warning_line('[Dependency check] ~w in [~w]~w in [~w]', [MH,HFileName,MB,BFileName])
         ;
          flora_compile_filename_by_token(HTK,HFileName),
 	    flora_warning_line('[Dependency check] ~w in [~w] dependes on ~w', [MH,HFileName,MB])
@@ -1763,8 +2283,7 @@ flMaxerr(X) :-
 *************************************************************************/
 flora_string_command_line(String,Code,Options,Status) :-
 	file_open(String, sr, IOport),
-	ioport2iostream(IOport,Stream),
-	see(Stream),
+	see(IOport),
 	!,
 	flora_shell_command_line(Code,Options,Status).
 
@@ -1934,13 +2453,13 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	flora_set_xpp_options_for_dump(Workspace,ExtraOptions),
 	xpp_process_file(FileName,XPP_process,IOportFromGPP),
 	%% Save standard input and output ports
-	stat_flag(CURRENT_INPUT, StdIn),
-	stat_flag(CURRENT_OUTPUT, StdOut),
+	seeing(StdIn),
+	telling(StdOut),
 	%% Pipe gpp output to standard input
-	stat_set_flag(CURRENT_INPUT,IOportFromGPP),
+	see(IOportFromGPP),
 	%% Pipe standard output to the dump file
 	file_open(DumpFileName,w,DumpPort),
-	stat_set_flag(CURRENT_OUTPUT,DumpPort),
+	tell(DumpPort),
 	%% do prettyprinting; gpp output is now piped through
 	%% this predicate to the dumpfile
 	prettyprint_stdin,
@@ -1949,11 +2468,13 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	; flora_error_line('Error while preprocessing ~w', [FileName])
 	),
 	flora_clear_xpp_options,
-	file_close(IOportFromGPP),
-	file_close(DumpPort),
+	%%close(IOportFromGPP),
+	%%close(DumpPort),
+	seen,
+	told,
 	%% Restore the old stdin and stdout
-	stat_set_flag(CURRENT_INPUT,StdIn),
-	stat_set_flag(CURRENT_OUTPUT,StdOut),
+	see(StdIn),
+	tell(StdOut),
 	!.
 
 flora_gpp_dumpfile(FileName,_DumpFileName,_Workspace) :-
@@ -2219,3 +2740,20 @@ delete_from_list(Element, [Element|Rest_Elements], Rest_Elements).
 delete_from_list(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
 	delete_from_list(Element, Rest_L1, Rest_L2).
 
+
+
+%% If CallerInfo is a var, abort - used in closure/ for debugging to
+%% make sure that Caller is always bound
+%% For now, the second elt in caller info list is just the callee mudule name
+%% Later it might be a term with arguments, such as module(arg1,arg2,...)
+checkCallerInfo(Call,_CalleeModule,[Caller,_ModArgs|_]) :-
+	var(Caller),
+	!,
+	flora_abort(['internal bug: ', Call, '- unbound Caller argument']).
+checkCallerInfo(Call,CalleeModule,[_Caller,ModArgs|_]) :-
+	(CalleeModule = ModArgs -> fail
+	; flora_abort(['internal bug: ', Call, '- the callee component ',
+		       ModArgs, ' does not match its presumed module ',
+		       CalleeModule])
+	). 
+checkCallerInfo(_,_,_).

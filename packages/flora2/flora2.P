@@ -41,8 +41,10 @@
 
 :- import
 	flora_load_module_internal/2, flora_load_module_internal/1,
+	flora_add_module_dyn/2, flora_add_module_dyn/1,
 	flora_abort/1,
-	flora_compile_internal/2, flora_compile_internal/1
+	flora_compile_internal/2, flora_compile_internal/1,
+	flora_compile_add/2, flora_compile_add/1
    from flrutils.
 
 :- import flora_configuration/2,
@@ -54,14 +56,14 @@
 
 :- import
 	flora_concat_atoms/2,
+	flora_set_counter/2,
+	flora_get_counter/2,
 	flora_slash/1
    from flrporting.
 
 :- import flora_shell_loop/0 from usermod.
 
 :- import hide_this_show/2 from usermod.
-
-:- import conget/2, conset/2 from gensym.
 
 :- import xpp_include_dir/1 from parse.
 
@@ -78,6 +80,8 @@
 	(flImport)/1,
 	(flLoad)/1,
 	(flCompile)/1,
+	(flAdd)/1,
+	(flCompileAdd)/1,
 	flLoadedModule/1,
 	flora_query/4,
 	flora_shell/0.
@@ -101,6 +105,7 @@
    abort('FLORA-2 is loaded as a package and as a standalone application').
 
 bootstrap_flora :-
+	\+ flora_configuration(loaded,yes),
 	flora_configuration(installdir,FloraDir),
 	(
 	  %% running FLORA as a standalone version
@@ -126,6 +131,7 @@ bootstrap_flora :-
 	assert(xpp_include_dir(FlrIncludes)),
 	assert(xpp_include_dir(GenIncludes)),
 	assert(flora_configuration(includedirs, [Closure,Includes,FlrIncludes,GenIncludes])),
+	flora_set_counter(flora_compile_id,0), % disambiguates _# in flAdd
 	[p2h_config].
 
 bootstrap_flora.
@@ -145,7 +151,7 @@ unstrap_flora :-
 	remove_include_dirs(IncludeDirs),
 	(flora_configuration(standalone,yes), ! ; unload_package(flora)),
 	retractall(flora_configuration(loaded,_)),
-	conset(flora_shell_loaded,0).
+	flora_set_counter(flora_shell_loaded,0).
 
 
 /*****************************************************************************/
@@ -157,7 +163,7 @@ unstrap_flora :-
 flora_shell :-
 	bootstrap_flora,
 	notrace,
-	( conget(flora_shell_loaded,1), !
+	( flora_get_counter(flora_shell_loaded,1), !
 	;
 	  consult(flrshell),
 	  flora_shell_loop
@@ -180,14 +186,28 @@ flora_shell :-
       :- flCompile file.
   or
       :- flCompile file>>module.
+
+  To add file to an existing module without overriding:
+      :- flAdd file.
+  or
+      :- flAdd file>>module.
+
+  To compile for adding to an existing module without overriding:
+      :- flCompileAdd file.
+  or
+      :- flCompileAdd file>>module.
+
 ************************************************************************/
 
 :- op(500,yfx,(as)).
 :- op(1170,fx,(flImport)).
 
 :- op(1050,fx,(flLoad)).	% loads file into module: flLoad(File>>Module)
-      % compiles file for loading into module: flCompile(File>>Module)
-:- op(1050,fx,(flCompile)).
+:- op(1050,fx,(flCompile)).     % compile file for loading into module: flCompile(File>>Module)
+
+:- op(1050,fx,(flAdd)).	        % add file to module: flAdd(File>>Module)
+:- op(1050,fx,(flCompileAdd)).  % compile for adding to module: flCompileAdd(File>>Module)
+
 %% The other operators, '>>' and 'from', are already defined in Prolog
 
 flImport(from(as(What,AsWhat),FileMod)) :- !,
@@ -204,10 +224,20 @@ flImport(from(as(What,AsWhat),FileMod)) :- !,
 flImport(X) :- flora_abort(['Invalid flImport syntax: ', X]).
 
 flLoad(File>>Module) :- flora_load_module_internal(File,Module).
-flLoad(Module) :- flora_load_module_internal(Module).
+flLoad(File) :- flora_load_module_internal(File).
 
 flCompile(File>>Module) :- flora_compile_internal(File,Module).
-flCompile(Module) :- flora_compile_internal(Module).
+flCompile(File) :- flora_compile_internal(File).
+
+
+%% Add file contents to module
+flAdd(File>>Module) :- flora_add_module_dyn(File,Module).
+flAdd(File) :- flora_add_module_dyn(File).
+
+%% Compile for adding to module
+flCompileAdd(File>>Module) :- flora_compile_add(File,Module).
+flCompileAdd(File) :- flora_compile_add(File).
+
 
 %% tells if ModuleName is loaded
 flLoadedModule(ModuleName) :- 

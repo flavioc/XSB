@@ -33,7 +33,7 @@ X[dfs -> Val] :-
 
 leaf[dfs->0].
 
-%% This one measures cpu time for method M.
+// This one measures cpu time for method M.
 X[cpu(M)->T] :-
 	cputime(T0)@prolog(), atom(M)@prolog(), X[M->V], cputime(T1)@prolog(),
 	T is T1-T0,

@@ -78,41 +78,41 @@ flora_hide_this_show(FLHEADPREFIX(WRAP_IMVDINC)/4).
 flora_hide_this_show(FLHEADPREFIX(WRAP_MVDTOLIST)/4).
 flora_hide_this_show(FLHEADPREFIX(WRAP_IMVDTOLIST)/4).
 
-flora_hide_this_show(FLDYNAPREFIX(WRAP_ISA)/2).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_SUB)/2).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_METH)/2).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IMETH)/2).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_FD)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IFD)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_FDSIG)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IFDSIG)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_MVD)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVD)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDSIG)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDSIG)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_TRAN)/2).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDINC)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDINC)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDTOLIST)/3).
-flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDTOLIST)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_ISA)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_SUB)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_METH)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMETH)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_FD)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IFD)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_FDSIG)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IFDSIG)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVD)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVD)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDSIG)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDSIG)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_TRAN)/3).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDINC)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDINC)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_MVDTOLIST)/4).
+flora_hide_this_show(FLDYNAPREFIX(WRAP_IMVDTOLIST)/4).
 
-flora_hide_this_show(FLDYNZPREFIX(WRAP_ISA)/2).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_SUB)/2).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_METH)/2).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IMETH)/2).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_FD)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IFD)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_FDSIG)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IFDSIG)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_MVD)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVD)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDSIG)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDSIG)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_TRAN)/2).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDINC)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDINC)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDTOLIST)/3).
-flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDTOLIST)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_ISA)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_SUB)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_METH)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMETH)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_FD)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IFD)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_FDSIG)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IFDSIG)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVD)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVD)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDSIG)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDSIG)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_TRAN)/3).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDINC)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDINC)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_MVDTOLIST)/4).
+flora_hide_this_show(FLDYNZPREFIX(WRAP_IMVDTOLIST)/4).
 
 %% Hide
 flora_hide_this_hide(FLHEADPREFIX(WRAP_FDDEF)/3).
@@ -120,81 +120,81 @@ flora_hide_this_hide(FLHEADPREFIX(WRAP_IFDDEF)/3).
 flora_hide_this_hide(FLHEADPREFIX(WRAP_MVDDEF)/3).
 flora_hide_this_hide(FLHEADPREFIX(WRAP_IMVDDEF)/3).
 
-flora_hide_this_hide(FLDYNAPREFIX(WRAP_FDDEF)/2).
-flora_hide_this_hide(FLDYNAPREFIX(WRAP_IFDDEF)/2).
-flora_hide_this_hide(FLDYNAPREFIX(WRAP_MVDDEF)/2).
-flora_hide_this_hide(FLDYNAPREFIX(WRAP_IMVDDEF)/2).
-flora_hide_this_hide(FLDYNAPREFIX(WRAP_OBJEQL)/2).
-flora_hide_this_hide(FLDYNAPREFIX(WRAP_EXISTS)/1).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_FDDEF)/3).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_IFDDEF)/3).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_MVDDEF)/3).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_IMVDDEF)/3).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_OBJEQL)/3).
+flora_hide_this_hide(FLDYNAPREFIX(WRAP_EXISTS)/2).
 
-flora_hide_this_hide(FLDYNZPREFIX(WRAP_FDDEF)/2).
-flora_hide_this_hide(FLDYNZPREFIX(WRAP_IFDDEF)/2).
-flora_hide_this_hide(FLDYNZPREFIX(WRAP_MVDDEF)/2).
-flora_hide_this_hide(FLDYNZPREFIX(WRAP_IMVDDEF)/2).
-flora_hide_this_hide(FLDYNZPREFIX(WRAP_OBJEQL)/2).
-flora_hide_this_hide(FLDYNZPREFIX(WRAP_EXISTS)/1).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_FDDEF)/3).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_IFDDEF)/3).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_MVDDEF)/3).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_IMVDDEF)/3).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_OBJEQL)/3).
+flora_hide_this_hide(FLDYNZPREFIX(WRAP_EXISTS)/2).
 
 
 /***************************************************************************
   F-logic predicates that appear in the trailer
 ***************************************************************************/
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_SUB)/2).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_ISA)/2).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_FD)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_IFD)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_MVD)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMVD)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_METH)/2).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMETH)/2).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_TRAN)/2).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_FDSIG)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_IFDSIG)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_MVDSIG)/3).
-flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMVDSIG)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_SUB)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_ISA)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_FD)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IFD)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_MVD)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMVD)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_METH)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMETH)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_TRAN)/3).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_FDSIG)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IFDSIG)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_MVDSIG)/4).
+flora_hide_this_show(FLTRAILERPREFIX(WRAP_IMVDSIG)/4).
 
-flora_hide_this_hide(FLTRAILERPREFIX(WRAP_FDDEF)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(WRAP_IFDDEF)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(WRAP_MVDDEF)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(WRAP_IMVDDEF)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(WRAP_EXISTS)/1).
-flora_hide_this_hide(FLTRAILERPREFIX(WRAP_OBJEQL)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_FDDEF)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_IFDDEF)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_MVDDEF)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_IMVDDEF)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_EXISTS)/2).
+flora_hide_this_hide(FLTRAILERPREFIX(WRAP_OBJEQL)/3).
 
 
-flora_hide_this_show(match(WRAP_SUB/2)).
-flora_hide_this_show(match(WRAP_ISA/2)).
-flora_hide_this_show(match(WRAP_FD/3)).
-flora_hide_this_show(match(WRAP_IFD/3)).
-flora_hide_this_show(match(WRAP_MVD/3)).
-flora_hide_this_show(match(WRAP_IMVD/3)).
-flora_hide_this_show(match(WRAP_METH/2)).
-flora_hide_this_show(match(WRAP_IMETH/2)).
-flora_hide_this_show(match(WRAP_TRAN/2)).
-flora_hide_this_show(match(WRAP_FDSIG/3)).
-flora_hide_this_show(match(WRAP_IFDSIG/3)).
-flora_hide_this_show(match(WRAP_MVDSIG/3)).
-flora_hide_this_show(match(WRAP_IMVDSIG/3)).
+flora_hide_this_show(match(WRAP_SUB/3)).
+flora_hide_this_show(match(WRAP_ISA/3)).
+flora_hide_this_show(match(WRAP_FD/4)).
+flora_hide_this_show(match(WRAP_IFD/4)).
+flora_hide_this_show(match(WRAP_MVD/4)).
+flora_hide_this_show(match(WRAP_IMVD/4)).
+flora_hide_this_show(match(WRAP_METH/3)).
+flora_hide_this_show(match(WRAP_IMETH/3)).
+flora_hide_this_show(match(WRAP_TRAN/3)).
+flora_hide_this_show(match(WRAP_FDSIG/4)).
+flora_hide_this_show(match(WRAP_IFDSIG/4)).
+flora_hide_this_show(match(WRAP_MVDSIG/4)).
+flora_hide_this_show(match(WRAP_IMVDSIG/4)).
 
-flora_hide_this_hide(WRAP_FDDEF/2).
-flora_hide_this_hide(WRAP_IFDDEF/2).
-flora_hide_this_hide(WRAP_MVDDEF/2).
-flora_hide_this_hide(WRAP_IMVDDEF/2).
-flora_hide_this_hide(WRAP_EXISTS/1).
-flora_hide_this_hide(WRAP_OBJEQL/2).
+flora_hide_this_hide(WRAP_FDDEF/3).
+flora_hide_this_hide(WRAP_IFDDEF/3).
+flora_hide_this_hide(WRAP_MVDDEF/3).
+flora_hide_this_hide(WRAP_IMVDDEF/3).
+flora_hide_this_hide(WRAP_EXISTS/2).
+flora_hide_this_hide(WRAP_OBJEQL/3).
 
 /***************************************************************************
   intermediate F-logic predicates that appear in the trailer
 ***************************************************************************/
 
-flora_hide_this_hide(silent_sub/2).
-flora_show_this_hide(inheritance_sub/2).
-flora_show_this_hide(inheritance_ifd/3).
-flora_show_this_hide(inheritance_imvd/3).
-flora_show_this_hide(inheritance_imvddef/2).
-flora_show_this_hide(inheritance_ifd_eql/3).
-flora_show_this_hide(inheritance_imvd_eql/3).
-flora_show_this_hide(inheritance_imvddef_eql/2).
+flora_hide_this_hide(silent_sub/3).
+flora_show_this_hide(inheritance_sub/3).
+flora_show_this_hide(inheritance_ifd/4).
+flora_show_this_hide(inheritance_imvd/4).
+flora_show_this_hide(inheritance_imvddef/3).
+flora_show_this_hide(inheritance_ifd_eql/4).
+flora_show_this_hide(inheritance_imvd_eql/4).
+flora_show_this_hide(inheritance_imvddef_eql/3).
 
-flora_show_this_hide(match((local_)/2)).
+flora_show_this_hide(match((local_)/3)).
 
 flora_hide_this_hide(match(multiple_object_/_)).
 flora_hide_this_hide(match(multiple_class_/_)).
@@ -206,15 +206,15 @@ flora_hide_this_hide(match(candidate_class_/_)).
 /***************************************************************************
   F-logic predicates that appear only in the trailer with equality maintenance
 ***************************************************************************/
-flora_hide_this_hide(diffobjeql/2).
-flora_hide_this_hide(FLTRAILERPREFIX(sub_eql)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(isa_eql)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(ifd_eql)/3).
-flora_hide_this_hide(FLTRAILERPREFIX(imvd_eql)/3).
-flora_hide_this_hide(FLTRAILERPREFIX(imvddef_eql)/2).
-flora_hide_this_hide(FLTRAILERPREFIX(fd_eql)/3).
-flora_hide_this_hide(FLTRAILERPREFIX(mvd_eql)/3).
-flora_hide_this_hide(FLTRAILERPREFIX(mvddef_eql)/2).
+flora_hide_this_hide(diffobjeql/3).
+flora_hide_this_hide(FLTRAILERPREFIX(sub_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(isa_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(ifd_eql)/4).
+flora_hide_this_hide(FLTRAILERPREFIX(imvd_eql)/4).
+flora_hide_this_hide(FLTRAILERPREFIX(imvddef_eql)/3).
+flora_hide_this_hide(FLTRAILERPREFIX(fd_eql)/4).
+flora_hide_this_hide(FLTRAILERPREFIX(mvd_eql)/4).
+flora_hide_this_hide(FLTRAILERPREFIX(mvddef_eql)/3).
 
 /***************************************************************************
   Flora debugging predicates
@@ -272,7 +272,7 @@ flora_hide_this_show(propermatch(WRAP_TABLED_HILOG/_)).
 %% Things that sometimes is useful to hide in a low-level trace
 flora_always_hide_this_hide(match(dyna_/_)).
 flora_always_hide_this_hide(match(dynz_/_)).
-flora_always_hide_this_show(match(silent_sub/2)).
+flora_always_hide_this_show(match(silent_sub/3)).
 */
 
 

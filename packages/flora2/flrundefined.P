@@ -661,16 +661,15 @@ flora_error_notexported(Predicate):-
 			       _WPrefix, _PSymbol, _AList),
         flora_module_type_and_name(MName,ModuleType,ModuleName),
 	flora_decode_goal_as_atom(Predicate,PrintablePred),
+	MainMessage = 'Call to unexported method/predicate or attempt to update a non-updatable method/predicate ',
 	( ModuleType==system ->
-	flora_concat_items(['Call to unexported or update of non-updatable predicate ',
-			    PrintablePred,
-			    ' in system module ',ModuleName],
-			   ErrorMsg)
+	    flora_concat_items([MainMessage, PrintablePred,
+				' in system module ', ModuleName],
+			       ErrorMsg)
 	;
-	flora_concat_items(['Call to unexported or update of non-updatable predicate ',
-			    PrintablePred,
-			    ' in user module ',ModuleName],
-			   ErrorMsg)
+	    flora_concat_items([MainMessage, PrintablePred,
+				' in user module ', ModuleName],
+			       ErrorMsg)
 	),
 	close_open_tables,
 	throw(FLORA_NOT_EXPORTED_EXCEPTION(Predicate,ErrorMsg)).

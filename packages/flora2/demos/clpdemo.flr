@@ -1,5 +1,5 @@
 
-%% Illustrates the use of constraint solver
+// Illustrates the use of constraint solver
 
 p(1.0).
 p(2.0).

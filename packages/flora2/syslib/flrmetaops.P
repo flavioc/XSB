@@ -26,6 +26,7 @@
 
 
 :- compiler_options([xpp_on]).
+#include "flora_terms.flh"
 
 :- import flora_module_predicate/4 from flrwrapper.
 
@@ -81,7 +82,7 @@ FLLIBUNIVEQFORM(FLLIBMODLIT(WrapX,X,MX,_Caller),FLLIBMODLIT(WrapY,Y,MY,_Caller))
 	X=Y,
 	MX=MY.
 
-FLLIBUNIVEQFORM(FLSYSRULEUPDATE(H1,B1,_,_),FLSYSRULEUPDATE(H2,B2,_,_)) :-
+FLLIBUNIVEQFORM(FLSYSRULEUPDATE(H1,B1),FLSYSRULEUPDATE(H2,B2)) :-
 	!,
 	flora_list2conjunct(H1,H1C),
 	flora_list2conjunct(H2,H2C),
@@ -97,16 +98,16 @@ FLLIBUNIVEQFORM([H1|T1],[H2|T2]) :-
 	FLLIBUNIVEQFORM(T1,T2).
 
 %% (... :- ...) ~ X
-FLLIBUNIVEQFORM(FLSYSRULEUPDATE(H,B,_,_),FLLIBMODLIT(FL_LIBMOD,Var,_,_)) :-
+FLLIBUNIVEQFORM(FLSYSRULEUPDATE(H,B),FLLIBMODLIT(FL_LIBMOD,Var)) :-
 	!,
 	var(Var),
-	Var = FLSYSRULEUPDATE(H,B,_,_).
+	Var = FLSYSRULEUPDATE(H,B).
 
 %% X ~ (... :- ...)
-FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,Var,_,_),FLSYSRULEUPDATE(H,B,_,_)) :-
+FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,Var,_,_),FLSYSRULEUPDATE(H,B)) :-
 	!,
 	var(Var),
-	Var = FLSYSRULEUPDATE(H,B,_,_).
+	Var = FLSYSRULEUPDATE(H,B).
 
 
 %% Speed up the case of nonvar1@nonvarmod1 ~ nonvar2@nonvarmod2

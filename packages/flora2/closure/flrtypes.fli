@@ -9,17 +9,22 @@
 ***************************************************************************/
 
 
-isa(X,integer) :- integer(X).
-isa(X,float) :- float(X).
+isa(X,integer,_Caller) :- integer(X).
+isa(X,float,_Caller) :- float(X).
 %% integer or float
-isa(X,number) :- number(X).
-%%isa(X,atomicId) :- atom(X).
+isa(X,number,_Caller) :- number(X).
+%%isa(X,atomicId,_Caller) :- atom(X).
 
 %% Type combinators
 %% The non-vars are just to take care of XSB bugs
-isa(X, (C1,C2)) :- nonvar(C1), nonvar(C2), isa(X,C1), isa(X,C2).
-isa(X, (C1;C2)) :- nonvar(C1), nonvar(C2), (isa(X,C1); isa(X,C2)).
-%%isa(X,not(C)) :- flora_tnot(isa(X,C)).
+isa(X, (C1,C2),_Caller) :-
+	nonvar(C1), nonvar(C2),
+	isa(X,C1,_Caller), isa(X,C2,_Caller).
+isa(X, (C1;C2),_Caller) :-
+	nonvar(C1), nonvar(C2),
+	(isa(X,C1,_Caller); isa(X,C2,_Caller)).
+
+%%isa(X,not(C),_Caller) :- flora_tnot(isa(X,C,_Caller)).
 
 /********************* End of standard type definitions *******************/
 

@@ -111,7 +111,7 @@
 (set-face-foreground 'flora-font-lock-query-face "darkgreen")
 
 (defconst flora-directives-regexp
-  "index\\|from\\|hilogtable\\|hilogtableall\\|import\\|table\\|firstorder\\|firstorderall\\|arguments"
+  "index\\|semantics\\|ignoredeps"
   "FLORA-2 compiler directives without the \\( and \\).")
 
 (defconst flora-font-lock-keywords
@@ -123,7 +123,7 @@
     ;; for objects
     '("\\([A-Za-z0-9_][A-Za-z0-9_!.]*\\) *\\["
       1 'font-lock-variable-name-face)
-    '("\\b\\(\\\+\\|tnot\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|btinsertall\\|deleteall\\|btdeleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\\|insertrule_?[az]?\\|if\\|then\\|else\\|while\\|do\\|until\\|unless\\|fl[A-Z][a-zA-Z]*\\)\\b"
+    '("\\b\\(\\\+\\|not\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|btinsertall\\|deleteall\\|btdeleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\\|insertrule_?[az]?\\|if\\|then\\|else\\|while\\|do\\|until\\|unless\\|p2h\\|semantics\||setsemantics\\|caller\\|newoid\\|fl[A-Z][a-zA-Z]*\\)\\b"
       1 'font-lock-keyword-face)
     '("\\(:\\||\\)" 
       1 'font-lock-type-face)
@@ -164,14 +164,14 @@
     (modify-syntax-entry ?+    "."      table)
     (modify-syntax-entry ?-    "."      table)
     (modify-syntax-entry ?=    "."      table)
-    (modify-syntax-entry ?%    "<"  table)
+    ;(modify-syntax-entry ?%    "<"  table)
     (modify-syntax-entry ?\n   ">"    table)
-    (modify-syntax-entry ?\C-m ">"    table)
+    (modify-syntax-entry ?\C-m ">"      table)
     (modify-syntax-entry ?<    "."      table)
     (modify-syntax-entry ?>    "."      table)
     (modify-syntax-entry ?\'   "\""     table)
-    ;; the // comment style isn't supported, due to the limitation of emacs
-    (modify-syntax-entry ?/    ". 14b" table)
+    ;; the % comment style isn't supported, due to the limitation of emacs
+    (modify-syntax-entry ?/    ". 124" table)
     (modify-syntax-entry ?*    ". 23b"   table)
     (setq flora-mode-syntax-table table)
     ))
@@ -309,10 +309,7 @@ This assumes that the point is inside a comment."
     (beginning-of-line)
     (skip-chars-forward " \t")
     (cond
-     ((looking-at "%%%") 0)		;Large comment starts
-     ((and (looking-at "%[^%]")
-	   (not (flora-in-mline-comment)))
-      comment-column) ;Small comment starts
+     ((looking-at "///") 0)		;Large comment starts
      ;;End of /* */ comment
      ((or (looking-at "\\*/") (looking-at "\\*\\*"))
       (save-excursion
@@ -340,14 +337,14 @@ This assumes that the point is inside a comment."
  	  (if (bobp)
  	      (setq empty nil)
  	    (skip-chars-forward " \t")
- 	    (if (not (or (looking-at "%[^%]") (looking-at "\n")))
+ 	    (if (not (or (looking-at "//") (looking-at "\n")))
  		(setq empty nil))
 	    ))
  	(if (bobp)
  	    (setq ind 0)		;Beginning of buffer
 	  (setq ind (current-column)))	;Beginning of clause
 	;; See its beginning
-	(if (looking-at "\\(%%%%[^%%]\\|//\\)")
+	(if (looking-at "//")
 	    ind
 	  ;; Real Prolog code
 	  (if (looking-at "(")
@@ -434,10 +431,11 @@ is inhibited."
   (let* ((ch (char-before))
 	 (indentp (and (not arg)
 		       (eq last-command-char ?/)
-		       (or (and (eq ch ?/)
-				(not (flora-in-literal)))
-			   (and (eq ch ?*)
-				(flora-in-mline-comment)))
+		       (or 
+			;;(and (eq ch ?/)
+			;;     (not (flora-in-literal)))
+			(and (eq ch ?*)
+			     (flora-in-mline-comment)))
 		       ))
 	 )
     (self-insert-command (prefix-numeric-value arg))
@@ -461,8 +459,7 @@ is inhibited."
 
 (defun flora-comment-indent ()
   "Compute Prolog-style comment indentation."
-  (cond ((looking-at "%%%") 0)
-	((looking-at "%%") (flora-indent-level))
+  (cond ((looking-at "///") 0)
 	((looking-at "//") (flora-indent-level))
 	(t
 	 (save-excursion

@@ -16,203 +16,270 @@
 
 :- WRAP_COPY_UNQUOTED 'FLORA_THIS_MODULE_NAME'.
 
-WRAP_D_ISA(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_ISA(X,Y,Caller)).
-
-WRAP_D_SUB(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_SUB(X,Y,Caller)).
-
-WRAP_D_METH(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_METH(X,Y,Caller)).
-
-WRAP_D_IMETH(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMETH(X,Y,Caller)).
-
-WRAP_D_FD(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FD(X,Y,Z,Caller)).
-
-WRAP_D_IFD(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFD(X,Y,Z,Caller)).
-
-WRAP_D_FDDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FDDEF(X,Y,Caller)).
-
-WRAP_D_IFDDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFDDEF(X,Y,Caller)).
-
-WRAP_D_FDSIG(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FDSIG(X,Y,Z,Caller)).
-
-WRAP_D_FDSIGDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FDSIGDEF(X,Y,Caller)).
-
-WRAP_D_IFDSIG(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFDSIG(X,Y,Z,Caller)).
-
-WRAP_D_IFDSIGDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFDSIGDEF(X,Y,Caller)).
-
-WRAP_D_MVD(X,Y,Z,Caller) :-
-      flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVD(X,Y,Z,Caller)).
-
-WRAP_D_IMVD(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVD(X,Y,Z,Caller)).
-
-WRAP_D_MVDDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDDEF(X,Y,Caller)).
-
-WRAP_D_IMVDDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDDEF(X,Y,Caller)).
-
-WRAP_D_MVDSIG(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDSIG(X,Y,Caller)).
-
-WRAP_D_MVDSIGDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDSIGDEF(X,Y,Caller)).
-
-WRAP_D_IMVDSIG(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDSIG(X,Y,Z,Caller)).
-
-WRAP_D_IMVDSIGDEF(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDSIGDEF(X,Y,Caller)).
-
-WRAP_D_MVDINC(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDINC(X,Y,Z,Caller)).
-
-WRAP_D_IMVDINC(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDINC(X,Y,Z,Caller)).
-
-WRAP_D_MVDTOLIST(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDTOLIST(X,Y,Z,Caller)).
-
-WRAP_D_IMVDTOLIST(X,Y,Z,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDTOLIST(X,Y,Z,Caller)).
-
-WRAP_D_TRAN(X,Y,Caller) :- 
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TRAN(X,Y,Caller)).
-
-WRAP_HILOG(X01,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,Caller)).
-
-WRAP_HILOG(X01,X02,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,Caller)).
-
-WRAP_HILOG(X01,X02,X03,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,Caller)).
-
-WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,Caller)).
-
-WRAP_TABLED_HILOG(X01,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,Caller)).
-
-WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,Caller) :-
-        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,Caller)).
+WRAP_D_ISA(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_ISA(X,Y,CallerInfo)).
+
+WRAP_D_SUB(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_SUB(X,Y,CallerInfo)).
+
+WRAP_D_METH(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_METH(X,Y,CallerInfo)).
+
+WRAP_D_IMETH(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMETH(X,Y,CallerInfo)).
+
+WRAP_D_FD(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FD(X,Y,Z,CallerInfo)).
+
+WRAP_D_IFD(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFD(X,Y,Z,CallerInfo)).
+
+WRAP_D_FDDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FDDEF(X,Y,CallerInfo)).
+
+WRAP_D_IFDDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFDDEF(X,Y,CallerInfo)).
+
+WRAP_D_FDSIG(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FDSIG(X,Y,Z,CallerInfo)).
+
+WRAP_D_FDSIGDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_FDSIGDEF(X,Y,CallerInfo)).
+
+WRAP_D_IFDSIG(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFDSIG(X,Y,Z,CallerInfo)).
+
+WRAP_D_IFDSIGDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IFDSIGDEF(X,Y,CallerInfo)).
+
+WRAP_D_MVD(X,Y,Z,CallerInfo) :-
+	CallerInfo = [Caller|_],
+      flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVD(X,Y,Z,CallerInfo)).
+
+WRAP_D_IMVD(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVD(X,Y,Z,CallerInfo)).
+
+WRAP_D_MVDDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDDEF(X,Y,CallerInfo)).
+
+WRAP_D_IMVDDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDDEF(X,Y,CallerInfo)).
+
+WRAP_D_MVDSIG(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDSIG(X,Y,CallerInfo)).
+
+WRAP_D_MVDSIGDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDSIGDEF(X,Y,CallerInfo)).
+
+WRAP_D_IMVDSIG(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDSIG(X,Y,Z,CallerInfo)).
+
+WRAP_D_IMVDSIGDEF(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDSIGDEF(X,Y,CallerInfo)).
+
+WRAP_D_MVDINC(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDINC(X,Y,Z,CallerInfo)).
+
+WRAP_D_IMVDINC(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDINC(X,Y,Z,CallerInfo)).
+
+WRAP_D_MVDTOLIST(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_MVDTOLIST(X,Y,Z,CallerInfo)).
+
+WRAP_D_IMVDTOLIST(X,Y,Z,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_IMVDTOLIST(X,Y,Z,CallerInfo)).
+
+WRAP_D_TRAN(X,Y,CallerInfo) :- 
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TRAN(X,Y,CallerInfo)).
+
+WRAP_HILOG(X01,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,CallerInfo)).
+
+WRAP_HILOG(X01,X02,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,CallerInfo)).
+
+WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,CallerInfo)).
+
+WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,CallerInfo) :-
+	CallerInfo = [Caller|_],
+        flora_check_export_registry(Caller, 'FLORA_THIS_MODULE_NAME',  WRAP_TABLED_HILOG(X01,X02,X03,X04,X05,X06,X07,X08,X09,X10, X11,X12,X13,X14,X15,X16,X17,X18,X19,X20,X21,CallerInfo)).

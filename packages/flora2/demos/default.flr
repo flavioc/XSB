@@ -23,70 +23,70 @@
 */
 
 
-%%% ===========================================================================
-%%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
-%%% ===========================================================================
+//  ===========================================================================
+//  SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
+//  ===========================================================================
 :- ignore_depchk #e(_,_).
 
-#times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
-fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
+#times_flies_like_an_arrow.	      // a 0-ary PREDICATE (proposition)
+fruit_flies_like_an_apple[].	      // an OBJECT with empty specification []
 
-#e(a,b). #e(b,a). #e(b,c).		% a binary PREDICATE (graph)
+#e(a,b). #e(b,a). #e(b,c).	      // a binary PREDICATE (graph)
 
-tc(X,Y) :- #e(X,Y).			% a RULE and ...
-tc(X,Y) :- tc(X,Z), tc(Z,Y).		% ... a (doubly) RECURSIVE RULE
+tc(X,Y) :- #e(X,Y).		      // a RULE and ...
+tc(X,Y) :- tc(X,Z), tc(Z,Y).	      // ... a (doubly) RECURSIVE RULE
 
-john:employee.				% INSTANCE : CLASS 
-employee::person.			% SUBCLASS :: SUPERCLASS
+john:employee.			      // INSTANCE : CLASS 
+employee::person.		      // SUBCLASS :: SUPERCLASS
 
-person[age=>integer, kids=>>person].    % some (optional) SIGNATURE information
+person[age=>integer, kids=>>person].  // some (optional) SIGNATURE information
 
-mary:employee[				% a more complex MOLECULE involving
-	age->29,			% ... a SINGLE-VALUED (svd) method
-	kids ->> {tim,leo},		% ... a MULTI-VALUED (mvd) method
-	salary(1998) -> a_lot		% ... a PARAMETERIZED (and svd) method
+mary:employee[			      // a more complex MOLECULE involving
+	age->29,		      // ... a SINGLE-VALUED (svd) method
+	kids ->> {tim,leo},	      // ... a MULTI-VALUED (mvd) method
+	salary(1998) -> a_lot	      // ... a PARAMETERIZED (and svd) method
 ].
 
-tim[hobbies ->> {stamps, snowboard}].	% somebodies hobbies
+tim[hobbies ->> {stamps, snowboard}]. // somebody's hobbies
 
-snowboard:dangerous_hobby.		% isn't it??
+snowboard:dangerous_hobby.	      // isn't it??
 
-_X[self->_X].				% defines self
-
-
-person[believes_in *->>			% INHERITABLE mvd method
-       {something, something_else}].	% of CLASS person
-
-person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
+_X[self->_X].			      // defines self
 
 
-%%% ===========================================================================
-%%% now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
-%%% ===========================================================================
+person[believes_in *->>		      // INHERITABLE mvd method
+       {something, something_else}].  // of CLASS person
 
-?- #times_flies_like_an_arrow.	% ==> `yes'
+person[instances ->> {X}] :- X:person. // NON-INHERITABLE mvd method of person
 
-?- fruit_flies_like_an_apple[].	% ==> `yes'
 
-?- tc(X,Y).			% computes the transitive closure of e(_,_)
+//  ===========================================================================
+//  now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
+//  ===========================================================================
 
-?- X:person.			% What persons are there? (mary, john)
+?- #times_flies_like_an_arrow.	// ==> `yes'
+
+?- fruit_flies_like_an_apple[].	// ==> `yes'
+
+?- tc(X,Y).			// computes the transitive closure of e(_,_)
+
+?- X:person.			// What persons are there? (mary, john)
 
 
 ?-  writeln('Bombs out in this query!!!!')@prolog(),
-    person[instances ->> {X}].  % ... same Q, but asked differently (see above)
+    person[instances ->> {X}].  // ... same Q, but asked differently (see above)
 
-?- X[believes_in ->> {Y}].	% Who believes in what?
+?- X[believes_in ->> {Y}].	// Who believes in what?
 
-?- X..kids[			% Whose kids
-           self -> K,		% ... (and name the kid!)
-	   hobbies ->>		% ... has hobbies
-            {H:dangerous_hobby}	% ... which are dangerous?
+?- X..kids[			// Whose kids
+           self -> K,		// ... (and name the kid!)
+	   hobbies ->>		// ... has hobbies
+            {H:dangerous_hobby}	// ... which are dangerous?
 ]. 
 
 
 
-%% Bombs out on this one due to mary[].
+// Bombs out on this one due to mary[].
 ?- nl@prolog(), write('mary[] ??')@prolog(), mary[].
 
 ?- nl@prolog(), write('mary..kids[] ??')@prolog(), mary..kids[].

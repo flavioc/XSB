@@ -26,17 +26,17 @@
 #include "standard.h"
 #include "flora_terms.flh"
 
-%% The purpose of this library is to provide optimal conversion from
-%% HiLog to Prolog and back before passing the arguments to the I/O predicates.
-%% In addition, it passes the result through flora_write_oid/1 in order 
-%% to ensure that all the FLORA module info and encoding is stripped.
-%%
-%% This all is ued for user-level output. For file I/O one should use
-%% @prolog() instead of @flora(io), i.e., use Prolog I/O primitives directly.
+// The purpose of this library is to provide optimal conversion from
+// HiLog to Prolog and back before passing the arguments to the I/O predicates.
+// In addition, it passes the result through flora_write_oid/1 in order 
+// to ensure that all the FLORA module info and encoding is stripped.
+//
+// This all is ued for user-level output. For file I/O one should use
+// @prolog() instead of @flora(io), i.e., use Prolog I/O primitives directly.
 
-%%%%%%%%%%%%%%%%%%%%%%
-%% I/O port based ops
-%%%%%%%%%%%%%%%%%%%%%%
+/**************************
+**   I/O port based ops
+**************************/
 
 :- export
          _[#open(_,_)],
@@ -89,7 +89,7 @@ Port[#write(Term)] :-
 	flora_write(STDOUT,Term)@prolog(flrdisplay).
 
 
-%% Use arg(obj, obj, obj) to supply multiple arguments
+// Use arg(obj, obj, obj) to supply multiple arguments
 #fmt_write(Format,O) :-
 	!,
 	#florify_arguments(O,FO),
@@ -134,9 +134,9 @@ _Filehandle[#readline(Request,_)] :-
 	#abort(('Invalid readline format, ', Request))@flora(sys).
 
 
-%%%%%%%%%%%%%%%%%%%%
-%% Stream-based I/O
-%%%%%%%%%%%%%%%%%%%%
+/***********************
+**  Stream-based I/O
+***********************/
 
 #write(O) :- !,
 	flora_write_oid(O)@prolog(flrdecode).
@@ -168,21 +168,21 @@ Stream[#telling] :- telling(Stream)@prolog().
 
 
 
-%% UTILITIES
+// UTILITIES
 
-%% This is used for fmt_write_* predicates. Takes a *prolog* term argument 
-%% of the form 
-%% _(arg1,...,argn) and returns _(arg1',..., argn'), where arg_i=arg_i'
-%% if arg_i is not compound. Otherwise we apply flora_write_oid/1
-%% This is needed in order make sure that arguments like f(a) are printed 
-%% as f(a) and not _flora'main'f(a) or something like that.
+// This is used for fmt_write_* predicates. Takes a *prolog* term argument 
+// of the form 
+// _(arg1,...,argn) and returns _(arg1',..., argn'), where arg_i=arg_i'
+// if arg_i is not compound. Otherwise we apply flora_write_oid/1
+// This is needed in order make sure that arguments like f(a) are printed 
+// as f(a) and not _flora'main'f(a) or something like that.
 #florify_arguments(WrappedArgs,OutTerm) :-
 	WrappedArgs =.. [Wrapper, Fun | Args],
         (Wrapper==WRAP_HILOG;Wrapper==WRAP_TABLED_HILOG),
 	!,
 	#florify_arglist(Args,OutList),
 	OutTerm =.. [Fun|OutList].
-%% single argument to fmt_write without the arg(...) envelope
+// single argument to fmt_write without the arg(...) envelope
 #florify_arguments(Arg,OutTerm) :-
 	flora_decode_oid_as_atom(Arg,OutTerm)@prolog(flrdecode).
 #florify_arglist([],[]) :- !.

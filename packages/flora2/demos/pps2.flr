@@ -1,4 +1,4 @@
-%% pps2.flr -- a parts production system
+// pps2.flr -- a parts production system
 
 /*
   This is like pps.flr, but randomly adds/deletes tabled facts.

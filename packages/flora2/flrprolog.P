@@ -116,6 +116,8 @@ flora_prlg(flMaxerr,1) :- !.
 flora_prlg(flDemo,1) :- !.
 flora_prlg(FL_COMPILE,1) :- !.
 flora_prlg(FL_LOAD,1) :- !.
+flora_prlg(FL_COMPILE_ADD,1) :- !.
+flora_prlg(FL_ADD,1) :- !.
 flora_prlg(FL_DUMP,1) :- !.
 flora_prlg(flTrace,0) :- !.
 flora_prlg(flTrace,1) :- !.

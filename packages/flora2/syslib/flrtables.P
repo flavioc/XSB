@@ -46,9 +46,15 @@
 	%%flora_cleanup_negation/1,
 	flora_cleanup_negation/0
    from flrnegation.
+:- import
+	flora_generalize_last/2
+   from flrtrim.
 :- import FLORA_SYMBOL('refresh_table_for')/1 from usermod.
 :- import flora_warning_line/2 from flrprint.
 :- import flora_decode_goal_as_atom/2 from flrdecode.
+:- import
+	predicate_property/2
+   from curr_sym.
 
 
 FLLIBREFRESH(_ThisModule,CallList) :-
@@ -61,9 +67,10 @@ flora_refresh_list([H|T]) :-
 
 %% refresh tables for call
 flora_refresh_tables(Call) :-
-	FLORA_SYMBOL('refresh_table_for')(Call),
+	flora_generalize_last(Call,GenCall),
+	FLORA_SYMBOL('refresh_table_for')(GenCall),
 	flora_cleanup_negation,
-	%%flora_cleanup_negation(Call),
+	%%flora_cleanup_negation(GenCall),
 	!.
 flora_refresh_tables(_).
 
@@ -102,6 +109,7 @@ flora_abolish_table_call(Call) :-
         flora_abolish_table_call(Call,abolish_table_call_hook(_Error)).
 
 flora_abolish_table_call(Call,Hook) :-
+	predicate_property(Call,tabled), % if non-tabled then no-op
 	get_calls(Call,Handle,_Template),
 	table_state(Handle,PredType,_CallType,AnsSetStatus),
 	(   AnsSetStatus = undefined

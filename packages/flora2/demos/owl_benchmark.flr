@@ -1,54 +1,54 @@
-%% OWL in Flora-2 (v0.2)
-%%
-%% Contributed by Harry Chen <harry.chen@umbc.edu>
-%%
+// OWL in Flora-2 (v0.2)
+//
+// Contributed by Harry Chen <harry.chen@umbc.edu>
+//
 
-% The followings are used by nsexpand.pl to replace shortname URI
-% with fully qualified URI.
-%
-% namespace owl_   http://www.w3.org/2002/07/owl#
-% namespace xsd_   http://www.w3.org/2001/XMLSchema#
-% namespace rdfs_  http://www.w3.org/2000/01/rdf-schema#
-% namespace rdf_   http://www.w3.org/1999/02/22-rdf-syntax-ns#
-% namespace dc_    http://purl.org/dc/elements/1.1/#
+// The followings are used by nsexpand.pl to replace shortname URI
+// with fully qualified URI.
+//
+// namespace owl_   http://www.w3.org/2002/07/owl#
+// namespace xsd_   http://www.w3.org/2001/XMLSchema#
+// namespace rdfs_  http://www.w3.org/2000/01/rdf-schema#
+// namespace rdf_   http://www.w3.org/1999/02/22-rdf-syntax-ns#
+// namespace dc_    http://purl.org/dc/elements/1.1/#
 
-%%%%%%%%%%%%%%%%%%%% RDF-S Part %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/******************** RDF-S Part ****************************************/
 
-%% RDF-S in Flora-2 (v0.2)
-%%
-%% This Flora-2 program provides an inference mechanism to reason over
-%% RDF-S data model and ontologies defined in RDF-S. This program is a
-%% part of the F-OWL system (a larger program that provides inferences
-%% for the OWL language).
-%%
-%% The inference mechanism in this program is built on the N-Triple
-%% representation of RDF statements. N-Triples are mapped into Flora-2
-%% as F-logic formulas. Logic inferences are done in the allowable
-%% F-logic reasoning in Flora-2/XSB.
-%%
-%% NOTE: This is the source file for RDF-S inferences. All namespace
-%% URI should be declared in their "shortname" (e.g., rdf_, rdfs_). 
-%% For more information, see doc/fowl-rdfs-intro.pdf. 
-%%
-%% Credit: The initial mapping from N-Triple to Flora-2 are adopted
-%% from http://www.agfa.com/w3c/euler/rdfs-rules 
-%%
-%% Author: Harry Chen, Tim Finin
-%% $Revision$, $Date$ 
-%%
+// RDF-S in Flora-2 (v0.2)
+//
+// This Flora-2 program provides an inference mechanism to reason over
+// RDF-S data model and ontologies defined in RDF-S. This program is a
+// part of the F-OWL system (a larger program that provides inferences
+// for the OWL language).
+//
+// The inference mechanism in this program is built on the N-Triple
+// representation of RDF statements. N-Triples are mapped into Flora-2
+// as F-logic formulas. Logic inferences are done in the allowable
+// F-logic reasoning in Flora-2/XSB.
+//
+// NOTE: This is the source file for RDF-S inferences. All namespace
+// URI should be declared in their "shortname" (e.g., rdf_, rdfs_). 
+// For more information, see doc/fowl-rdfs-intro.pdf. 
+//
+// Credit: The initial mapping from N-Triple to Flora-2 are adopted
+// from http://www.agfa.com/w3c/euler/rdfs-rules 
+//
+// Author: Harry Chen, Tim Finin
+// $Revision$, $Date$ 
+//
 
-% The followings are used by nsexpand.pl to replace shortname URI
-% with fully qualified URI. 
-%
-% namespace owl_  http://www.w3.org/2002/07/owl#
-% namespace xsd_  http://www.w3.org/2001/XMLSchema#
-% namespace rdfs_ http://www.w3.org/2000/01/rdf-schema#
-% namespace rdf_  http://www.w3.org/1999/02/22-rdf-syntax-ns# 
+// The followings are used by nsexpand.pl to replace shortname URI
+// with fully qualified URI. 
+//
+// namespace owl_  http://www.w3.org/2002/07/owl#
+// namespace xsd_  http://www.w3.org/2001/XMLSchema#
+// namespace rdfs_ http://www.w3.org/2000/01/rdf-schema#
+// namespace rdf_  http://www.w3.org/1999/02/22-rdf-syntax-ns# 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% RDF-S Data Model Statements: Flora-2 atomic formulas that
-%% defines the RDF-S data model.  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*******************************************************************
+** RDF-S Data Model Statements: Flora-2 atomic formulas that
+** defines the RDF-S data model.  
+*******************************************************************/
 
 rdf_Property : rdfs_Class.
 rdfs_Datatype : rdfs_Class.
@@ -130,109 +130,109 @@ rdfs_seeAlso[rdfs_range->rdfs_Resource].
 
 rdfs_isDefinedBy[rdfs_subPropertyOf->rdfs_seeAlso].
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% RDF-S Data Model Inference Rule: Flora-2 rules that defines
-%% logic inferences that can be made over the RDF-S data model.
-%%
-%% In v0.2, all RDF statements are assumed to be have 
-%% representation rdf(<subject>,<predicate>,<value>) and are 
-%% loaded into the XSB "main" module (not any another module).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/****************************************************************
+**  RDF-S Data Model Inference Rule: Flora-2 rules that defines
+**  logic inferences that can be made over the RDF-S data model.
+** 
+**  In v0.2, all RDF statements are assumed to be have 
+**  representation rdf(<subject>,<predicate>,<value>) and are 
+**  loaded into the XSB "main" module (not any another module).
+****************************************************************/
 
-%% Rule D1
-%% Maps all N-triple statements into Flora data atoms
+// Rule D1
+// Maps all N-triple statements into Flora data atoms
 S[P->O] :- rdf(S,P,O).
 
-%% Rule D2
-%% Maps all RDF-S "Property" into Flora signature atoms
+// Rule D2
+// Maps all RDF-S "Property" into Flora signature atoms
 X[P=>>O] :- P[rdfs_domain->X, rdfs_range->O],
 	    P : rdf_Property, X : rdfs_Class, O : rdfs_Class.
 
-%% Rule D3
-%% Infers an instance of a class from Flora data and signature atoms.
-%% i.e., X is an instance of C if X is the value of some property P,
-%% and P has some defined Flora class schema C.  
+// Rule D3
+// Infers an instance of a class from Flora data and signature atoms.
+// i.e., X is an instance of C if X is the value of some property P,
+// and P has some defined Flora class schema C.  
 X : C :- _[Prop *-> X, Prop *=> C].
 
-%% Rule D4
-%% Maps all RDF-S "Class" definitions into Flora data atoms.
+// Rule D4
+// Maps all RDF-S "Class" definitions into Flora data atoms.
 C : rdfs_Class :- C[rdf_type->rdfs_Class].
 
-%% Rule D5
-%% Maps all RDF "Property" definitions into Flora data atoms.
+// Rule D5
+// Maps all RDF "Property" definitions into Flora data atoms.
 X : rdf_Property :- X[rdf_type->rdf_Property].
 
-%% Rule D6
-%% Maps all subclasses relationship into Flora data atoms 
-%% NOTE: this rule depends on Rule D3.
+// Rule D6
+// Maps all subclasses relationship into Flora data atoms 
+// NOTE: this rule depends on Rule D3.
 C1 :: C2 :- C1 : rdfs_Class, C2 : rdfs_Class, C1[rdfs_subClassOf->C2].
 
-%% Rule D7
-%% Defines all RDF-S "Classes" are subclasses of the RDF-S "Resource".
-%% According to the RDF-S spec, Resource is also subclass of itself. 
-%% However, because Flora-2 does not allow an object to be defined as
-%% a subclass of itself (i.e., C :: C is not allowed), we exclude
-%% "Resource" from being a subclass of itself.
+// Rule D7
+// Defines all RDF-S "Classes" are subclasses of the RDF-S "Resource".
+// According to the RDF-S spec, Resource is also subclass of itself. 
+// However, because Flora-2 does not allow an object to be defined as
+// a subclass of itself (i.e., C :: C is not allowed), we exclude
+// "Resource" from being a subclass of itself.
 C :: rdfs_Resource :- C : rdfs_Class, tnot(C=rdfs_Resource).
 
-%% Rule D8
-%% Defines everything is an instance of the class "Resource"
+// Rule D8
+// Defines everything is an instance of the class "Resource"
 Subject : rdfs_Resource :- Subject[_Predicate->_Value].
 Value : rdfs_Resource :- _Subject[_Predicate->Value].
 
-%% Rule D9
-%% Infers all instances of a class from the rdf:type property.
+// Rule D9
+// Infers all instances of a class from the rdf:type property.
 X : C :- X[rdf_type->C], C : rdfs_Class, X : rdfs_Resource.
 
-%% Rule D10 
-%% Infers all instances of a class from the rdfs:domain property.
+// Rule D10 
+// Infers all instances of a class from the rdfs:domain property.
 X : C :- X[P->_], P[rdfs_domain->C].
 
-%% Rule D11
-%% Infers all instances of a class from the rdfs:range property.
+// Rule D11
+// Infers all instances of a class from the rdfs:range property.
 X : C :- X[_->O], O[rdfs_range->C].
 
-%% Rule D12
-%% Defines inheritence over the property of a class. 
-%% If C1 is a subclass of of C2 and C2 has property P with range O,
-%% then C1 also has property P with range O.
+// Rule D12
+// Defines inheritence over the property of a class. 
+// If C1 is a subclass of of C2 and C2 has property P with range O,
+// then C1 also has property P with range O.
 C1[P=>>O] :- C1 :: C2, C2[P=>>O], 
 	     C1 : rdfs_Class, C2 : rdfs_Class, 
 	     P : rdf_Property, O : rdfs_Resource.
 
-%% Rule D13
-%% Defines rdfs:subPropertyOf is a transitive property.
-%% (NOT TESTED)
+// Rule D13
+// Defines rdfs:subPropertyOf is a transitive property.
+// (NOT TESTED)
 P1[rdfs_subPropertyOf->P2] :- P1[rdfs_subPropertyOf->X], 
 			      X[rdfs_subPropertyOf->P2], tnot(P1=P2).
 
 
-%% Rule D14
-%% Defines the property value of a class is a super-set of its all 
-%% sub-property values. (NOT TESTED)
-%S[P1->O] :- P2[rdfs_subPropertyOf->P1], S[P2*->O].
+// Rule D14
+// Defines the property value of a class is a super-set of its all 
+// sub-property values. (NOT TESTED)
+// S[P1->O] :- P2[rdfs_subPropertyOf->P1], S[P2*->O].
 
-%% Rule D15
-%% Defines inheritence over the domain property. A sub-property
-%% inherits the domain value of its parent property.
+// Rule D15
+// Defines inheritence over the domain property. A sub-property
+// inherits the domain value of its parent property.
 P[rdfs_domain->O] :- P[rdfs_subPropertyOf->SP], SP[rdfs_domain->O].
 
-%% Rule D16
-%% Defines inheritence over the range property. A sub-property
-%% inherits the range value of its parent property.
+// Rule D16
+// Defines inheritence over the range property. A sub-property
+// inherits the range value of its parent property.
 P[rdfs_range->O] :- P[rdfs_subPropertyOf->SP], SP[rdfs_range->O].
 
-%% Rule D17
-%% Infers each instance of rdfs:ContainerMembershipProperty is an
-%% rdfs:subPropertyOf the rdfs:member property.
+// Rule D17
+// Infers each instance of rdfs:ContainerMembershipProperty is an
+// rdfs:subPropertyOf the rdfs:member property.
 X[rdfs_subPropertyOf -> rdfs_member] :- X:rdfs_ContainerMembershipProperty. 
 
-%% Rule D18
-%% Infers each instance of rdfs:Datatype is a subclass of the rdfs:Literal.
+// Rule D18
+// Infers each instance of rdfs:Datatype is a subclass of the rdfs:Literal.
 X :: rdfs_Literal :- X : rdfs_Datatype.
 
 
-%%%%%%%%%%%%%%%%%% OWL Part %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/******************** OWL Part ***********************************************/
 
 'http://www.w3.org/2002/07/owl':owl_Ontology.
 'http://www.w3.org/2002/07/owl'[owl_versionInfo -> "March 18. 2003, GS"].
@@ -367,116 +367,116 @@ rdfs_seeAlso:owl_AnnotationProperty.
 rdfs_isDefinedBy:owl_AnnotationProperty.
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% OWL-Lite Model Inference Rules
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*************************************************************************
+**  OWL-Lite Model Inference Rules
+*************************************************************************/
 
 
-%% Rule D1
-%% All classes are subclasses of owl:Thing
-%% NOTE: owl:Thing is excluded because Flora2 does not allow
-%% an object to be defined as an instance and subclass of itself.
+// Rule D1
+// All classes are subclasses of owl:Thing
+// NOTE: owl:Thing is excluded because Flora2 does not allow
+// an object to be defined as an instance and subclass of itself.
 C :: owl_Thing :- C : owl_Class, tnot(C=owl_Thing).
 
-%% Rule D2
-%% Defines an instances of a class using the owl:allValuesFrom property.
-%% For a triple S[P->X] and a restriction class R with property P that has
-%% owl:allValuesFrom class C, X is a type of C if S is a type of R.
+// Rule D2
+// Defines an instances of a class using the owl:allValuesFrom property.
+// For a triple S[P->X] and a restriction class R with property P that has
+// owl:allValuesFrom class C, X is a type of C if S is a type of R.
 X : C :- R[owl_onProperty->P], R[owl_allValuesFrom->C], S:R, S[P->X].
 
-%% Rule D3
-%% Defines the owl:inverseOf property
+// Rule D3
+// Defines the owl:inverseOf property
 P[owl_inverseOf->Q] :- Q[owl_inverseOf->P], tnot(P=Q).
 O[Q->S] :- P[owl_inverseOf->Q], S[P->O].
 
-%% Rule D4
-%% Defines the owl:SymmetricProperty
+// Rule D4
+// Defines the owl:SymmetricProperty
 O[P->S] :- P:owl_SymmetricProperty, S[P->O], tnot(S=O).
 
-%% Rule D5
-%% Defines the owl:TransitiveProperty
+// Rule D5
+// Defines the owl:TransitiveProperty
 S[P->O] :- P:owl_TransitiveProperty, S[P->X], X[P->O], tnot(S=O).
 
-%% Rule D6
-%% Defines the equivalence of two properties, NOT property equality.
-%% This rule defines two properties to have the same values. However,
-%% these two properties may have different intensional meaning.
-%% NOTE: DISABLED BECAUSE OF AN UNKNOWN BUG IN FLORA2
-%P[owl_equivalentProperty->Q] :- P : rdf_Property, Q : rdf_Property,
-%				 P=Q
+// Rule D6
+// Defines the equivalence of two properties, NOT property equality.
+// This rule defines two properties to have the same values. However,
+// these two properties may have different intensional meaning.
+// NOTE: DISABLED BECAUSE OF AN UNKNOWN BUG IN FLORA2
+//P[owl_equivalentProperty->Q] :- P : rdf_Property, Q : rdf_Property,
+//				 P=Q
 
-%% Rule D6a
-%% Defines owl:equivalentProperty is transitive and symmetrical.
+// Rule D6a
+// Defines owl:equivalentProperty is transitive and symmetrical.
 P[owl_equivalentProperty->Q] :- P[owl_equivalentProperty->R],
 				R[owl_equivalentProperty->Q].
 
 S[R->O] :- P[owl_equivalentProperty->R], S[P->O].
 
-%% Rule D7
-%% Defines an individual is the same as itself.
-%% NOTE: DISABLED BECAUSE OF AN UNKNOWN BUG IN FLORA2
-%X[owl_sameAs->Y] :- X=Y, X : _, Y : _.
+// Rule D7
+// Defines an individual is the same as itself.
+// NOTE: DISABLED BECAUSE OF AN UNKNOWN BUG IN FLORA2
+//X[owl_sameAs->Y] :- X=Y, X : _, Y : _.
 
 X[owl_sameAs->Z] :- X[owl_sameAs->Y], Y[owl_sameAs->Z].
 
-%% Rule D8
-%% Infers two distinctive individuals are the same individual
-%% if they are the objects of the same functional property.
+// Rule D8
+// Infers two distinctive individuals are the same individual
+// if they are the objects of the same functional property.
 X[owl_sameAs->Y] :- P:owl_FunctionalProperty, S[P->X], S[P->Y].
 
-%% Rule D9
-%% Infers two distinctive individuals are the same individual
-%% if they are the subjects of the same inverse functional property
+// Rule D9
+// Infers two distinctive individuals are the same individual
+// if they are the subjects of the same inverse functional property
 X[owl_sameAs->Y] :- P:owl_InverseFunctionalProperty, X[P->O], Y[P->O].
 
 
-%% Rule D10
-%% Infers two distinctive individuals are the same individual
-%% if they are the objects of some property P which is the property
-%% of a restricted class, and this property is restricted to have
-%% max cardinality of 1.
+// Rule D10
+// Infers two distinctive individuals are the same individual
+// if they are the objects of some property P which is the property
+// of a restricted class, and this property is restricted to have
+// max cardinality of 1.
 X[owl_sameAs->Y] :- R[owl_onProperty->P], R[owl_maxCardinality->"1"],
  		    S:R, S[P->X], S[P->Y].
 
-%% RD10a
-%% Defines the property values of two distinctive individuals are the
-%% same if they are defined be to the same thing using owl:sameAs
+// RD10a
+// Defines the property values of two distinctive individuals are the
+// same if they are defined be to the same thing using owl:sameAs
 Z[P->Y] :- X[owl_sameAs->Z], X[P->Y], tnot(P=owl_sameAs).
 
-%% Rule D13
+// Rule D13
 P:owl_InverseFunctionalProperty :- P[owl_inverseOf->Q],
 				   Q : owl_FunctionalProperty.
 
-%% Rule D14
+// Rule D14
 P:owl_FunctionalProperty :- P[owl_inverseOf->Q],
 			    Q : owl_InverseFunctionalProperty.
 
-%% Rule D15
-%% Defines a property to have cardinality M if the property has both
-%% maxCardinality and  minCardinality M.
+// Rule D15
+// Defines a property to have cardinality M if the property has both
+// maxCardinality and  minCardinality M.
 R[owl_cardinality->M] :- R[owl_onProperty->_], R[owl_minCardinality->M],
 			 R[owl_maxCardinality->M].
 
-%% Rule D16
-%% Defines a property to have maxCardinality M if the property has
-%% cardinality M.
+// Rule D16
+// Defines a property to have maxCardinality M if the property has
+// cardinality M.
 R[owl_minCardinality->M] :- R[owl_onProperty->_], R[owl_cardinality->M].
 
-%% Rule D17
-%% Defines a property to have minCardinality M if the property has
-%% cardinality M.
+// Rule D17
+// Defines a property to have minCardinality M if the property has
+// cardinality M.
 R[owl_maxCardinality->M] :- R[owl_onProperty->_], R[owl_cardinality->M].
 
-%% Rule D18
-%% Infers two individual are different if each of them belongs to two
-%% disjoint classes
+// Rule D18
+// Infers two individual are different if each of them belongs to two
+// disjoint classes
 X[fowl_differentFrom->Y] :- X : A, Y : B, A[owl_disjointWith->B],
 			   tnot(X=Y).
 
-%% Rule D19
-%% Infers two distinctive items X and Y are different from each other
-%% if they are items on a list L which is the object of an
-%% owl:distinctMembers property.
+// Rule D19
+// Infers two distinctive items X and Y are different from each other
+// if they are items on a list L which is the object of an
+// owl:distinctMembers property.
 X[owl_differentFrom->Y] :- X[fowl_differentFrom->Y].
 
 X[fowl_differentFrom->Y] :- Y[fowl_differentFrom->X], tnot(X=Y).
@@ -485,122 +485,123 @@ X[fowl_differentFrom->Y] :- L[rdf_first->X], L[rdf_rest->M],
  			    M[fowl_item->Y], _[owl_distinctMembers->L].
 
 
-%% Rule D20
-%% Defines any class is equivalent to itself.
-%% NOTE: DISABLED BECAUSE OF AN UNKNOWN BUG IN FLORA2
-%X[owl_equivalentClass->Y] :- X : owl_Class, Y : owl_Class, X = Y.
+// Rule D20
+// Defines any class is equivalent to itself.
+// NOTE: DISABLED BECAUSE OF AN UNKNOWN BUG IN FLORA2
+//X[owl_equivalentClass->Y] :- X : owl_Class, Y : owl_Class, X = Y.
 
-%% Rule D21
-%% Defines owl:equivalentClass property is transitive & symmetrical.
+// Rule D21
+// Defines owl:equivalentClass property is transitive & symmetrical.
 X[owl_equivalentClass->Z] :- X[owl_equivalentClass->Y],
 		             Y[owl_equivalentClass->Z].
 
-%% Rule D22
-%% Infers all instance of a class are also instances of another class that
-%% this class equivalent to.
+// Rule D22
+// Infers all instance of a class are also instances of another class that
+// this class equivalent to.
 X : C2 :- X : C1, C1[owl_equivalentClass->C2].
 
 
-%% Rule 20
-%% Infers two unamed class defined by property restriction are
-%% equivalent if they have the same cardinality restriction on the
-%% same property
-%A[owl_equivalentClass->B] :- A[owl_onProperty->P],
-%		             A[owl_cardinality->M],
-%			     B[owl_onProperty->P],
-%			     B[owl_cardinality->M].
+// Rule 20
+// Infers two unamed class defined by property restriction are
+// equivalent if they have the same cardinality restriction on the
+// same property
+//A[owl_equivalentClass->B] :- A[owl_onProperty->P],
+//		             A[owl_cardinality->M],
+//			     B[owl_onProperty->P],
+//			     B[owl_cardinality->M].
 
-%% Rule 21
-%% Infers two classes are equivalent if they are the complement of
-%% the same class.
-%% NOTE: DISABLED BECAUSE IT HAS NOT BEEN TESTED
-%A[owl_equivalentClass->B] :- A[owl_complementOf->C],
-%			     B[owl_complementOf->C].
+// Rule 21
+// Infers two classes are equivalent if they are the complement of
+// the same class.
+// NOTE: DISABLED BECAUSE IT HAS NOT BEEN TESTED
+//A[owl_equivalentClass->B] :- A[owl_complementOf->C],
+//			     B[owl_complementOf->C].
 
-%% Rule 22
-%% Infers class A & B are equivalent if class B is the intersection
-%% of a list which only has one item A.
-%% NOTE: DISABLED BECAUSE IT HAS NOT BEEN TESTED
-%A[owl_equivalentClass->B] :- B[owl_intersectionOf->L],
-%			     L[rdf_first->A], L[rdf_rest->rdf_nil].
+// Rule 22
+// Infers class A & B are equivalent if class B is the intersection
+// of a list which only has one item A.
+// NOTE: DISABLED BECAUSE IT HAS NOT BEEN TESTED
+//A[owl_equivalentClass->B] :- B[owl_intersectionOf->L],
+//			     L[rdf_first->A], L[rdf_rest->rdf_nil].
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Rules for supporting reasoning over a Collection of resources
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*************************************************************************
+**  Rules for supporting reasoning over a Collection of resources
+*************************************************************************/
 
-%% Rule L1
-%% Defines a resource X is an item in a list S if X is
-%% the first item on the list S.
+// Rule L1
+// Defines a resource X is an item in a list S if X is
+// the first item on the list S.
 S[fowl_item->X] :- S[rdf_first->X], S : rdf_List.
 
-%% Rule L2
-%% Define a resource X is an item in a list S if X is the first item
-%% on some list B which is a part of list S (defined by rdf:rest).
+// Rule L2
+// Define a resource X is an item in a list S if X is the first item
+// on some list B which is a part of list S (defined by rdf:rest).
 S[fowl_item->X] :- S[rdf_rest->B], B[fowl_item->X], S : rdf_List.
 
-%% Rule L3
-%% Defines rdf:nil is not an item in any list.
+// Rule L3
+// Defines rdf:nil is not an item in any list.
 rdf_nil[fowl_item->_] :- false.
 
-%% Rule L4
-%% Defines an rdf:List X includes another rdf:List S if
-%%    1) there are item A and B
-%%    2) A is the first item in S and B is the head of the rest of S
-%%    3) A is an item in X
-%%    4) B is included in X.
+// Rule L4
+// Defines an rdf:List X includes another rdf:List S if
+//    1) there are item A and B
+//    2) A is the first item in S and B is the head of the rest of S
+//    3) A is an item in X
+//    4) B is included in X.
 X[fowl_includes->S] :- S[rdf_first->A], X[fowl_item->A],
 		       S[rdf_rest->B], X[fowl_includes->B],
 		       X : rdf_List, S : rdf_List, tnot(X=S).
 
-%% Rule L5
-%% Define any rdf:List always includes rdf:nil
+// Rule L5
+// Define any rdf:List always includes rdf:nil
 X[fowl_includes->rdf_nil] :- X : rdf_List, tnot(X=rdf_nil).
 
-%% Rule L6
-%X[fowl_oneItemIn->S] :- X[rdf_first->A], S[fowl_item->A],
-%			X[rdf_rest->B], B[fowl_zeroItemsIn->S].
+// Rule L6
+//X[fowl_oneItemIn->S] :- X[rdf_first->A], S[fowl_item->A],
+//			X[rdf_rest->B], B[fowl_zeroItemsIn->S].
 
-%% Rule L6
-%X[fowl_oneItemIn->S] :- X[rdf_first->A], tnot(S[fowl_item->A]),
-%			X[rdf_rest->B], B[fowl_oneItemIn->S].
+// Rule L6
+//X[fowl_oneItemIn->S] :- X[rdf_first->A], tnot(S[fowl_item->A]),
+//			X[rdf_rest->B], B[fowl_oneItemIn->S].
 
-%% Rule L7
-%rdf_nil[fowl_zeroItemsIn->_] :- true.
+// Rule L7
+//rdf_nil[fowl_zeroItemsIn->_] :- true.
 
-%% Rule L8
-%X[fowl_zeroItemsIn->S] :- X[rdf_first->A], tnot(S[fowl_item->A]),
-%		          X[rdf_rest->B], B[fowl_zeroItemsIn->S].
+// Rule L8
+//X[fowl_zeroItemsIn->S] :- X[rdf_first->A], tnot(S[fowl_item->A]),
+//		          X[rdf_rest->B], B[fowl_zeroItemsIn->S].
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Rules for checking knowledge that is inconsistent with
-%% the OWL ontology model (only OWL-Lite is supported)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*************************************************************************
+**  Rules for checking knowledge that is inconsistent with
+**  the OWL ontology model (only OWL-Lite is supported)
+*************************************************************************/
 
 inconsistent[resource=>>string, errmsg=>>string].
 cardinalityInconsistent:inconsistent.
 beyondOWLLite:inconsistent.
 
-%% Rule IC1
-%% The cardinality of a restriction class is exactly 1 for its
-%% owl:onProperty property.
+// Rule IC1
+// The cardinality of a restriction class is exactly 1 for its
+// owl:onProperty property.
 cardinalityInconsistent[resource->C, errmsg->"for a restriction class, the cardinality of its owl:onProperty must be 1"] :-
   C[owl_onProperty->P1], C[owl_onProperty->P2], tnot(P1=P2).
 
-%% Rule IC2 (not tested)
+// Rule IC2 (not tested)
 beyondOWLLite[resource->C, errmsg->" for a restriction class which has a owl:allValuesFrom property, the object must be a named class"] :-
   C : owl_Restriction, C[owl_allValuesFrom->P], P : owl_Restriction.
 
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%% Animal Info %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Generated by ./nsreduce.pl 
-% namespace http://users.ebiquity.org/~hchen4/ont/animals#      animals_
-% namespace http://www.w3.org/1999/02/22-rdf-syntax-ns#         rdf_
-% namespace http://www.w3.org/2000/01/rdf-schema#               rdfs_
-% namespace http://www.w3.org/2002/07/owl#                      owl_
-% namespace http://www.w3.org/2001/10/XMLSchema#                xsd_
+/************************* Animal Info *************************************
+// Generated by ./nsreduce.pl 
+// namespace http://users.ebiquity.org/~hchen4/ont/animals#      animals_
+// namespace http://www.w3.org/1999/02/22-rdf-syntax-ns#         rdf_
+// namespace http://www.w3.org/2000/01/rdf-schema#               rdfs_
+// namespace http://www.w3.org/2002/07/owl#                      owl_
+// namespace http://www.w3.org/2001/10/XMLSchema#                xsd_
+****************************************************************************/
 
 
 rdf(uri("http://users.ebiquity.org/~hchen4/ont/animals"),rdf_type,owl_Ontology ).
@@ -773,7 +774,7 @@ rdf(animals_jARP46372, rdf_type, owl_AllDifferent).
 
 
 
-%%%%%%%%%%%%%%%%%%%%% Query %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/************************** Query *******************************************/
 
 ?- (nl, writeln('*** This query runs for a veeeery loooong tiiiime.'))@prolog(),
    X : owl_Class.

@@ -9,6 +9,7 @@ PROLOGEXT = .P
 
 ALLOBJS =  flranswer$(OBJEXT) \
 	   flrcontrol$(OBJEXT) \
+	   flrclause$(OBJEXT) \
 	   flrdisplay$(OBJEXT) \
 	   flrload$(OBJEXT) \
 	   flraggavg$(OBJEXT) \
@@ -24,11 +25,17 @@ ALLOBJS =  flranswer$(OBJEXT) \
 	   flrbtdbop$(OBJEXT) \
 	   flrshdirect$(OBJEXT) \
 	   flrdynmod$(OBJEXT) \
+	   flrdynrule$(OBJEXT) \
 	   flrsemantics$(OBJEXT) \
+	   flrnegation$(OBJEXT) \
 	   flrtables$(OBJEXT) \
 	   flrimportedcalls$(OBJEXT) \
 	   flrerrhandler$(OBJEXT) \
+	   flrdecode$(OBJEXT)  \
+	   flrcanon$(OBJEXT)  \
+	   flrmetaops$(OBJEXT)  \
 	   flrtrim$(OBJEXT) \
+	   flrexport$(OBJEXT) \
 	   flrimport$(OBJEXT)
 
 OPTIONS = [optimize]

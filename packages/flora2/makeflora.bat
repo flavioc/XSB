@@ -5,11 +5,14 @@ REM     makeflora [-c] full-path-to-prolog
 REM     makeflora clean
 
 REM   makeflora -c full-path-to-prolog means use the C compiler
-REM                  to recompile the directory p2h\ - developer's option
+REM                  to recompile the directory .\p2h - developer's option
 
 REM  NOTE: DOS batch language is very brittle. For instance, replacing
 REM        %1 with %ARG%, where set ARG=%1 will not work if
 REM        full-path-to-prolog has a file extension, e.g., \xsb\bin\wxsb.bat
+
+if "%1" == "" echo Usage:  makeflora [-c] full-path-to-prolog
+if "%1" == "" goto end
 
 if "%1" == "-c"  set PROLOG=%2 -s -m 40000 -c 4000
 if not "%1" == "-c"  set PROLOG=%1 -s -m 40000 -c 4000
@@ -34,7 +37,8 @@ del prolog2hilog.dll prolog2hilog.lib prolog2hilog.def prolog2hilog.exp
 del prolog2hilog.obj prolog2hilog.a prolog2hilog.o
 
 if "%1" == "-c" nmake /f NMakefile.mak
-if not "%1" == "-c" copy windows\*
+move prolog2hilog.dll windows
+del prolog2hilog.obj prolog2hilog.lib prolog2hilog.exp
 
 cd ..
 nmake /f NMakefile.mak

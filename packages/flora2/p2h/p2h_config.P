@@ -34,16 +34,22 @@
 	flora_slash/1,
 	flora_concat_atoms/2,
 	flora_file_op/3,
+	flora_file_op/2,
 	flora_running_under/1
     from flrporting.
 :- import flora_configuration/2 from flrregistry.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
+:- import shell/1 from shell.
 
 ?-  flora_configuration(installdir, FloraDir),
     flora_slash(Slash),
     Basename = prolog2hilog,
+    xsb_configuration(config_libdir, ConfigLibdir),
+    flora_concat_atoms([ConfigLibdir,Slash,Basename,'.',PROLOG_OFILE_EXT],
+		       LibObjFile),
     flora_concat_atoms([FloraDir,Slash,p2h,Slash,Basename],Module),
+    flora_concat_atoms([Module,'.', PROLOG_OFILE_EXT], Objfile),
     (   %% avoid recompilation: check if prolog2hilog.OBJ exists and 
 	%% is newer than prolog2hilog.c.
 	search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
@@ -52,17 +58,36 @@
     %% module compiled and is current, so just load
     -> [Basename]
 
-    ;  % Don't check anything on Windows -- module is supposed to be compiled
-	(flora_running_under(windows) ; flora_running_under(cygwin))
-	-> [Basename]
+    ; (flora_running_under(windows) ; flora_running_under(cygwin))
+    ->
+	xsb_configuration(config_bindir, ConfigBindir),
+	flora_concat_atoms([Module, '.dll'],CygModDLL),
+	flora_concat_atoms([FloraDir,Slash,'p2h\windows',Slash,Basename,'.dll'],WinModDLL),
+	flora_concat_atoms([ConfigBindir,Slash,Basename,'.dll'],TargetDLL),
+	(flora_running_under(cygwin)
+	->
+	    consult(Module, []),
+	    flora_file_op(rename,CygModDLL, TargetDLL),
+	    %% clean up
+	    flora_concat_atoms([Module, '.a'],CygModA),
+	    flora_concat_atoms([Module, '.o'],CygModO),
+	    flora_concat_atoms([Module, '.def'],CygModDEF),
+	    flora_file_op(unlink,CygModA),
+	    flora_file_op(unlink,CygModO),
+	    flora_file_op(unlink,CygModDEF)
+	; 
+	    /*
+	    %% This seems to be copying ASCII files in windoze, so use shell
+	    flora_file_op(copy,WinModDLL, TargetDLL),
+	    */
+	    shell(['copy /B /Y ', WinModDLL, ' ', TargetDLL])
+	),
+	[Basename],
+	flora_file_op(rename,Objfile,LibObjFile)
 
     %% If Module isn't compiled or is old --- recompile
     ;   xsb_configuration(compiler, CC),
-	xsb_configuration(config_libdir, ConfigLibdir),
-	flora_concat_atoms([Module,'.', PROLOG_OFILE_EXT], Objfile),
 	consult(Module, [cc(CC), cc_opts(' ')]),
-	flora_concat_atoms([ConfigLibdir,Slash,Basename,'.',PROLOG_OFILE_EXT],
-			   LibObjFile),
 	flora_file_op(rename,Objfile, LibObjFile),
 	(flora_running_under(unix)
 	->
@@ -71,7 +96,7 @@
 	    flora_concat_atoms([Module, '.so'], SharedLib),
 	    flora_concat_atoms([ConfigLibdir,Slash,Basename,'.so'], LibMod),
 	    flora_file_op(rename,SharedLib,LibMod)
-	; % Not sure what to do under Cygwin -- probably nothing
+	; % Not sure what to do under Mac
 	  true
 	)
      ).

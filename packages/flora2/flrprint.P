@@ -33,16 +33,16 @@
 	flora_msg_stream(_), flora_fdbk_stream(_).
 
 ?- (flora_err_stream(Stream) -> close(Stream), retractall(flora_err_stream(_))
-   ; ioport2iostream(STDERR,Stream), assert(flora_err_stream(Stream))
+   ; assert(flora_err_stream(STDERR))
    ).
 ?- (flora_warn_stream(Stream) -> close(Stream), retractall(flora_warn_stream(_))
-   ; ioport2iostream(STDWARN,Stream), assert(flora_warn_stream(Stream))
+   ; assert(flora_warn_stream(STDWARN))
    ).
 ?- (flora_msg_stream(Stream) -> close(Stream), retractall(flora_msg_stream(_))
-   ; ioport2iostream(STDMSG,Stream), assert(flora_msg_stream(Stream))
+   ; assert(flora_msg_stream(STDMSG))
    ).
 ?- (flora_fdbk_stream(Stream) -> close(Stream), retractall(flora_fdbk_stream(_))
-   ; ioport2iostream(STDFDBK,Stream), assert(flora_fdbk_stream(Stream))
+   ; assert(flora_fdbk_stream(STDFDBK))
    ).
 
 /*************************************************************************

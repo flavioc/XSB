@@ -14,7 +14,7 @@ o2[M->R] :-
 
 ?- writeln('Methods of o2:')@prolog(), o2[M -> R].
 
-%% All these must succeed
+// All these must succeed
 ?- X[a->b]@Y ~ k[a->C]@U, #writeln((tst1,x=X,y=Y,c=C,u=U))@flora(io).
 ?- Q=mod, X[a->b]@mod ~ Y[Z->P]@Q, #writeln((tst2,q=Q,x=X,y=Y,z=Z,p=P))@flora(io).
 ?- Y[Z->P]@Q ~ X[a->b]@mod, #writeln((tst3,q=Q,x=X,y=Y,p=P))@flora(io).

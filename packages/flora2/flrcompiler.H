@@ -66,6 +66,11 @@
 
 :- import flora_error_line/2 from flrprint.
 
+:- dynamic compile_with_var_module(_).
+
+:- dynamic dynrule_warnings(_).
+
 :- export 
+	flora_compile_add/4,
 	flora_reset_compiler/0, 
 	flora_compile/4.

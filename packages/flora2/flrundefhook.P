@@ -55,10 +55,10 @@ flora_undefined_predicate_hook(PredName,Arity,PrologModule) :-
 	    ( flLoadedModule(ModuleName) ->
 		%% This is very unlikely to happen unless something goes wrong.
 		flora_error_line('Attempt to call undefined F-logic molecule `~w'' in FLORA module `~w''',
-			         [PredicateSymbol,ModuleName])
+			         [PredicateSymbol/Arity,ModuleName])
 	    ;
 	        flora_error_line('Attempt to call an F-logic molecule in an unloaded FLORA module `~w''',
-                                 [ModuleName])
+                                 [PredicateSymbol/Arity,ModuleName])
 	    )
 
 	; PredicateType == (hilog) ->

@@ -33,244 +33,244 @@
 /***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
-%% inferred_sub_eql/2
-inferred_sub_eql(X,Y) :-
-	inferred_sub(X,Y).
+%% inferred_sub_eql/3
+inferred_sub_eql(X,Y,CallerInfo) :-
+	inferred_sub(X,Y,CallerInfo).
 
-inferred_sub_eql(X,Y) :-
-	diffobjeql(X,OX),
-	inferred_sub(OX,Y).
+inferred_sub_eql(X,Y,CallerInfo) :-
+	diffobjeql(X,OX,CallerInfo),
+	inferred_sub(OX,Y,CallerInfo).
 
-inferred_sub_eql(X,Y) :-
-	diffobjeql(Y,OY),
-	inferred_sub(X,OY).
+inferred_sub_eql(X,Y,CallerInfo) :-
+	diffobjeql(Y,OY,CallerInfo),
+	inferred_sub(X,OY,CallerInfo).
 
-inferred_sub_eql(X,Y) :-
-	diffobjeql(X,OX),
-	diffobjeql(Y,OY),
-	inferred_sub(OX,OY).
+inferred_sub_eql(X,Y,CallerInfo) :-
+	diffobjeql(X,OX,CallerInfo),
+	diffobjeql(Y,OY,CallerInfo),
+	inferred_sub(OX,OY,CallerInfo).
 
 
-%% sub/2
-sub(X,Y) :-
-	inferred_sub_eql(X,Y),
+%% sub/3
+sub(X,Y,CallerInfo) :-
+	inferred_sub_eql(X,Y,CallerInfo),
 	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
-sub(X,Y) :-
-	silent_sub(X,Z),
-	inferred_sub_eql(Z,Y),
+sub(X,Y,CallerInfo) :-
+	silent_sub(X,Z,CallerInfo),
+	inferred_sub_eql(Z,Y,CallerInfo),
 	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
 
 /***************************************************************************
   closure rules for O:C
 ***************************************************************************/
-%% inferred_isa_eql/2
-inferred_isa_eql(O,C) :-
-	inferred_isa(O,C).
+%% inferred_isa_eql/3
+inferred_isa_eql(O,C,CallerInfo) :-
+	inferred_isa(O,C,CallerInfo).
 
-inferred_isa_eql(O,C) :-
-	diffobjeql(O,OX),
-	inferred_isa(OX,C).
+inferred_isa_eql(O,C,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_isa(OX,C,CallerInfo).
 
-inferred_isa_eql(O,C) :-
-	diffobjeql(C,CX),
-	inferred_isa(O,CX).
+inferred_isa_eql(O,C,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_isa(O,CX,CallerInfo).
 
-inferred_isa_eql(O,C) :-
-	diffobjeql(O,OX),
-	diffobjeql(C,CX),
-	inferred_isa(OX,CX).
+inferred_isa_eql(O,C,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(C,CX,CallerInfo),
+	inferred_isa(OX,CX,CallerInfo).
 
 
-%% isa/2
-isa(O,C) :-
-	inferred_isa_eql(O,C).
+%% isa/3
+isa(O,C,CallerInfo) :-
+	inferred_isa_eql(O,C,CallerInfo).
 
-isa(O,C) :-
-	inferred_isa_eql(O,S),
-	sub(S,C).
+isa(O,C,CallerInfo) :-
+	inferred_isa_eql(O,S,CallerInfo),
+	sub(S,C,CallerInfo).
 
 
 /*****************************************************************************
   The following rules propogate the effects of equality.
 *****************************************************************************/
-%% inferred_ifd_eql/3
-inferred_ifd_eql(C,M,V) :-
-	inferred_ifd(C,M,V).
+%% inferred_ifd_eql/4
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	inferred_ifd(C,M,V,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	inferred_ifd(CX,M,V).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_ifd(CX,M,V,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(V,VX),
-	inferred_ifd(C,M,VX).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(V,VX,CallerInfo),
+	inferred_ifd(C,M,VX,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(M,MX),
-	inferred_ifd(C,MX,V).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_ifd(C,MX,V,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_ifd(C,MX,VX).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_ifd(C,MX,VX,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	diffobjeql(V,VX),
-	inferred_ifd(CX,M,VX).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_ifd(CX,M,VX,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_ifd(CX,MX,V).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_ifd(CX,MX,V,CallerInfo).
 
-inferred_ifd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_ifd(CX,MX,VX).
-
-
-%% inferred_fd_eql/3
-inferred_fd_eql(O,M,V) :-
-	inferred_fd(O,M,V).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	inferred_fd(OX,M,V).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(M,MX),
-	inferred_fd(O,MX,V).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(V,VX),
-	inferred_fd(O,M,VX).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_fd(O,MX,VX).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(V,VX),
-	inferred_fd(OX,M,VX).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_fd(OX,MX,V).
-
-inferred_fd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_fd(OX,MX,VX).
+inferred_ifd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_ifd(CX,MX,VX,CallerInfo).
 
 
-%% inferred_imvd_eql/3
-inferred_imvd_eql(C,M,V) :-
-	inferred_imvd(C,M,V).
+%% inferred_fd_eql/4
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	inferred_fd(O,M,V,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	inferred_imvd(CX,M,V).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_fd(OX,M,V,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(M,MX),
-	inferred_imvd(C,MX,V).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_fd(O,MX,V,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(V,VX),
-	inferred_imvd(C,M,VX).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(V,VX,CallerInfo),
+	inferred_fd(O,M,VX,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_imvd(C,MX,VX).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_fd(O,MX,VX,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	diffobjeql(V,VX),
-	inferred_imvd(CX,M,VX).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_fd(OX,M,VX,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_imvd(CX,MX,V).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_fd(OX,MX,V,CallerInfo).
 
-inferred_imvd_eql(C,M,V) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_imvd(CX,MX,VX).
-
-
-%% inferred_imvddef_eql/2
-inferred_imvddef_eql(C,M) :-
-	inferred_imvddef(C,M).
-
-inferred_imvddef_eql(C,M) :-
-	diffobjeql(C,CX),
-	inferred_imvddef(CX,M).
-
-inferred_imvddef_eql(C,M) :-
-	diffobjeql(M,MX),
-	inferred_imvddef(C,MX).
+inferred_fd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_fd(OX,MX,VX,CallerInfo).
 
 
-%% inferred_mvd_eql/3
-inferred_mvd_eql(O,M,V) :-
-	inferred_mvd(O,M,V).
+%% inferred_imvd_eql/4
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	inferred_imvd(C,M,V,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	inferred_mvd(OX,M,V).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_imvd(CX,M,V,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(M,MX),
-	inferred_mvd(O,MX,V).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvd(C,MX,V,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(V,VX),
-	inferred_mvd(O,M,VX).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(V,VX,CallerInfo),
+	inferred_imvd(C,M,VX,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_mvd(O,MX,VX).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_imvd(C,MX,VX,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(V,VX),
-	inferred_mvd(OX,M,VX).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_imvd(CX,M,VX,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_mvd(OX,MX,V).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvd(CX,MX,V,CallerInfo).
 
-inferred_mvd_eql(O,M,V) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	diffobjeql(V,VX),
-	inferred_mvd(OX,MX,VX).
+inferred_imvd_eql(C,M,V,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_imvd(CX,MX,VX,CallerInfo).
 
 
-%% inferred_mvddef_eql/2
-inferred_mvddef_eql(O,M) :-
-	inferred_mvddef(O,M).
+%% inferred_imvddef_eql/3
+inferred_imvddef_eql(C,M,CallerInfo) :-
+	inferred_imvddef(C,M,CallerInfo).
 
-inferred_mvddef_eql(O,M) :-
-	diffobjeql(O,OX),
-	inferred_mvddef(OX,M).
+inferred_imvddef_eql(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_imvddef(CX,M,CallerInfo).
 
-inferred_mvddef_eql(O,M) :-
-	diffobjeql(M,MX),
-	inferred_mvddef(O,MX).
+inferred_imvddef_eql(C,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvddef(C,MX,CallerInfo).
+
+
+%% inferred_mvd_eql/4
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	inferred_mvd(O,M,V,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_mvd(OX,M,V,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvd(O,MX,V,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(V,VX,CallerInfo),
+	inferred_mvd(O,M,VX,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_mvd(O,MX,VX,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_mvd(OX,M,VX,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvd(OX,MX,V,CallerInfo).
+
+inferred_mvd_eql(O,M,V,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(V,VX,CallerInfo),
+	inferred_mvd(OX,MX,VX,CallerInfo).
+
+
+%% inferred_mvddef_eql/3
+inferred_mvddef_eql(O,M,CallerInfo) :-
+	inferred_mvddef(O,M,CallerInfo).
+
+inferred_mvddef_eql(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_mvddef(OX,M,CallerInfo).
+
+inferred_mvddef_eql(O,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvddef(O,MX,CallerInfo).
 
 
 /*****************************************************************************
@@ -278,183 +278,183 @@ inferred_mvddef_eql(O,M) :-
 
   The argument "MethSign" is in the form of Funct/Arity/Type.
 *****************************************************************************/
-%% local_ifd/2
-local_ifd(S,MethSign) :-
+%% local_ifd/3
+local_ifd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_ifd_eql(S,M,_V),
+	inferred_ifd_eql(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_ifd(S,MethSign) :-
+local_ifd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_ifd_eql(S,M,_V).
+	inferred_ifd_eql(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-%% local_fd/2
-local_fd(S,MethSign) :-
+%% local_fd/3
+local_fd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_fd_eql(S,M,_V),
+	inferred_fd_eql(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_fd(S,MethSign) :-
+local_fd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_fd_eql(S,M,_V).
+	inferred_fd_eql(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-%% local_imvd/2
-local_imvd(S,MethSign) :-
+%% local_imvd/3
+local_imvd(S,MethSign,CallerInfo) :-
 	var(MethSign),
-	inferred_imvd_eql(S,M,_V),
+	inferred_imvd_eql(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_imvd(S,MethSign) :-
-	var(MethSign),
-	!,
-	inferred_imvddef_eql(S,M),
-	flora_funct_arity(M,MethSign).
-
-local_imvd(S,MethSign) :-
-	nonvar(MethSign), % the cut above might not work under local scheduling
-	flora_funct_arity(M,MethSign),
-	inferred_imvd_eql(S,M,_V).
-	%% Should have a cut here when XSB will allow
-
-local_imvd(S,MethSign) :-
-	nonvar(MethSign), % the cut above might not work under local scheduling
-	flora_funct_arity(M,MethSign),
-	inferred_imvddef_eql(S,M).
-
-
-%% local_mvd/2
-local_mvd(S,MethSign) :-
-	var(MethSign),
-	inferred_mvd_eql(S,M,_V),
-	%% Should have a cut here when XSB will allow
-	flora_funct_arity(M,MethSign).
-
-local_mvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_mvddef_eql(S,M),
+	inferred_imvddef_eql(S,M,CallerInfo),
 	flora_funct_arity(M,MethSign).
 
-local_mvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_mvd_eql(S,M,_V).
+	inferred_imvd_eql(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
-local_mvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_mvddef_eql(S,M).
+	inferred_imvddef_eql(S,M,CallerInfo).
+
+
+%% local_mvd/3
+local_mvd(S,MethSign,CallerInfo) :-
+	var(MethSign),
+	inferred_mvd_eql(S,M,_V,CallerInfo),
+	%% Should have a cut here when XSB will allow
+	flora_funct_arity(M,MethSign).
+
+local_mvd(S,MethSign,CallerInfo) :-
+	var(MethSign),
+	!,
+	inferred_mvddef_eql(S,M,CallerInfo),
+	flora_funct_arity(M,MethSign).
+
+local_mvd(S,MethSign,CallerInfo) :-
+	nonvar(MethSign), % the cut above might not work under local scheduling
+	flora_funct_arity(M,MethSign),
+	inferred_mvd_eql(S,M,_V,CallerInfo).
+	%% Should have a cut here when XSB will allow
+
+local_mvd(S,MethSign,CallerInfo) :-
+	nonvar(MethSign), % the cut above might not work under local scheduling
+	flora_funct_arity(M,MethSign),
+	inferred_mvddef_eql(S,M,CallerInfo).
 
 
 /*****************************************************************************
   nonmonotonic multiple inheritance of scalar attributes
   from superclasses to subclasses
 *****************************************************************************/
-ifd(C,M,V) :-
-	inferred_ifd_eql(C,M,V).
+ifd(C,M,V,CallerInfo) :-
+	inferred_ifd_eql(C,M,V,CallerInfo).
 
-ifd(C,M,V) :-
+ifd(C,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_ifd_eql(Super,M,V),
+	inheritance_ifd_eql(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_ifd(C,MethSign)),
-	candidate_class_ifd(Super,MethSign,C),
-	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C)).
+	candidate_class_ifd(Super,MethSign,C,CallerInfo),
+	FLORA_TNOT(local_ifd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C,CallerInfo)).
 
-ifd(C,M,V) :-
+ifd(C,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_ifd(C,MethSign)),
-	candidate_class_ifd(Super,MethSign,C),
-	inheritance_ifd_eql(Super,M,V),
-	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C)).
+	candidate_class_ifd(Super,MethSign,C,CallerInfo),
+	inheritance_ifd_eql(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_ifd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C,CallerInfo)).
 
 
 /*****************************************************************************
   nonmonotonic multiple inheritance of scalar attributes
   from superclasses to instances/members
 *****************************************************************************/
-fd(O,M,V) :-
-	inferred_fd_eql(O,M,V).
+fd(O,M,V,CallerInfo) :-
+	inferred_fd_eql(O,M,V,CallerInfo).
 
-fd(O,M,V) :-
+fd(O,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_ifd_eql(Super,M,V),
+	inheritance_ifd_eql(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_fd(O,MethSign)),
-	candidate_object_ifd(Super,MethSign,O),
-	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O)).
+	candidate_object_ifd(Super,MethSign,O,CallerInfo),
+	FLORA_TNOT(local_fd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O,CallerInfo)).
 
-fd(O,M,V) :-
+fd(O,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_fd(O,MethSign)),
-	candidate_object_ifd(Super,MethSign,O),
-	inheritance_ifd_eql(Super,M,V),
-	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O)).
+	candidate_object_ifd(Super,MethSign,O,CallerInfo),
+	inheritance_ifd_eql(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_fd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O,CallerInfo)).
 
 
 /*****************************************************************************
   nonmonotonic multiple inheritance of multivalued attributes
   from superclasses to subclasses
 *****************************************************************************/
-imvd(C,M,V) :-
-	inferred_imvd_eql(C,M,V).
+imvd(C,M,V,CallerInfo) :-
+	inferred_imvd_eql(C,M,V,CallerInfo).
 
-imvd(C,M,V) :-
+imvd(C,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvd_eql(Super,M,V),
+	inheritance_imvd_eql(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	candidate_class_imvd(Super,MethSign,C),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
-imvd(C,M,V) :-
+imvd(C,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	candidate_class_imvd(Super,MethSign,C),
-	inheritance_imvd_eql(Super,M,V),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	inheritance_imvd_eql(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
 
-imvddef(C,M) :-
-	inferred_imvddef_eql(C,M).
+imvddef(C,M,CallerInfo) :-
+	inferred_imvddef_eql(C,M,CallerInfo).
 
-imvddef(C,M) :-
+imvddef(C,M,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvddef_eql(Super,M),
+	inheritance_imvddef_eql(Super,M,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	candidate_class_imvd(Super,MethSign,C),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
-imvddef(C,M) :-
+imvddef(C,M,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	candidate_class_imvd(Super,MethSign,C),
-	inheritance_imvddef_eql(Super,M),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	inheritance_imvddef_eql(Super,M,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
-imvddef(C,M) :-
-	imvd(C,M,_V).
+imvddef(C,M,CallerInfo) :-
+	imvd(C,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
@@ -462,416 +462,416 @@ imvddef(C,M) :-
   nonmonotonic multiple inheritance of multivalued attributes
   from superclasses to instances/members
 *****************************************************************************/
-mvd(O,M,V) :-
-	inferred_mvd_eql(O,M,V).
+mvd(O,M,V,CallerInfo) :-
+	inferred_mvd_eql(O,M,V,CallerInfo).
 
-mvd(O,M,V) :-
+mvd(O,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvd_eql(Super,M,V),
+	inheritance_imvd_eql(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	candidate_object_imvd(Super,MethSign,O),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
-mvd(O,M,V) :-
+mvd(O,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	candidate_object_imvd(Super,MethSign,O),
-	inheritance_imvd_eql(Super,M,V),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	inheritance_imvd_eql(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
 
-mvddef(O,M) :-
-	inferred_mvddef_eql(O,M).
+mvddef(O,M,CallerInfo) :-
+	inferred_mvddef_eql(O,M,CallerInfo).
 
-mvddef(O,M) :-
+mvddef(O,M,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvddef_eql(Super,M),
+	inheritance_imvddef_eql(Super,M,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	candidate_object_imvd(Super,MethSign,O),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
-mvddef(O,M) :-
+mvddef(O,M,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	candidate_object_imvd(Super,MethSign,O),
-	inheritance_imvddef_eql(Super,M),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	inheritance_imvddef_eql(Super,M,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
-mvddef(O,M) :-
+mvddef(O,M,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
-	mvd(O,M,_V).
+	mvd(O,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
 /*****************************************************************************
   monotonic inheritance of binary attributes (tabled methods)
 *****************************************************************************/
-meth(O,M) :-
-	inferred_meth(O,M).
+meth(O,M,CallerInfo) :-
+	inferred_meth(O,M,CallerInfo).
 
-meth(O,M) :-
-	diffobjeql(O,OX),
-	inferred_meth(OX,M).
+meth(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_meth(OX,M,CallerInfo).
 
-meth(O,M) :-
-	diffobjeql(M,MX),
-	inferred_meth(O,MX).
+meth(O,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_meth(O,MX,CallerInfo).
 
-meth(O,M) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_meth(OX,MX).
+meth(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_meth(OX,MX,CallerInfo).
 
-meth(O,M) :-
-	isa(O,C),
-	imeth(C,M).
+meth(O,M,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	imeth(C,M,CallerInfo).
 
 
-imeth(C,M) :-
-	inferred_imeth(C,M).
+imeth(C,M,CallerInfo) :-
+	inferred_imeth(C,M,CallerInfo).
 
-imeth(C,M) :-
-	diffobjeql(C,CX),
-	inferred_imeth(CX,M).
+imeth(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_imeth(CX,M,CallerInfo).
 
-imeth(C,M) :-
-	diffobjeql(M,MX),
-	inferred_imeth(C,MX).
+imeth(C,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imeth(C,MX,CallerInfo).
 
-imeth(C,M) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_imeth(CX,MX).
+imeth(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imeth(CX,MX,CallerInfo).
 
-imeth(C,M) :-
-	inheritance_sub(C,S),
-	imeth(S,M).
+imeth(C,M,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	imeth(S,M,CallerInfo).
 
 
 /*****************************************************************************
   nontabled methods (transactions)
 *****************************************************************************/
-tran(O,T) :-
-	inferred_tran(O,T).
+tran(O,T,CallerInfo) :-
+	inferred_tran(O,T,CallerInfo).
 
-tran(O,T) :-
-	diffobjeql(O,OX),
-	inferred_tran(OX,T).
+tran(O,T,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_tran(OX,T,CallerInfo).
 
-tran(O,T) :-
-	diffobjeql(T,TX),
-	inferred_tran(O,TX).
+tran(O,T,CallerInfo) :-
+	diffobjeql(T,TX,CallerInfo),
+	inferred_tran(O,TX,CallerInfo).
 
-tran(O,T) :-
-	diffobjeql(O,OX),
-	diffobjeql(T,TX),
-	inferred_tran(OX,TX).
+tran(O,T,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(T,TX,CallerInfo),
+	inferred_tran(OX,TX,CallerInfo).
 
 /*****************************************************************************
   monotonic inheritance of signatures
 *****************************************************************************/
-%% fdsig/3
-fdsig(O,M,R) :-
-	inferred_fdsig(O,M,R).
+%% fdsig/4
+fdsig(O,M,R,CallerInfo) :-
+	inferred_fdsig(O,M,R,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	inferred_fdsig(OX,M,R).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_fdsig(OX,M,R,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(M,MX),
-	inferred_fdsig(O,MX,R).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_fdsig(O,MX,R,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(R,RX),
-	inferred_fdsig(O,M,RX).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(R,RX,CallerInfo),
+	inferred_fdsig(O,M,RX,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_fdsig(O,MX,RX).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_fdsig(O,MX,RX,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	diffobjeql(R,RX),
-	inferred_fdsig(OX,M,RX).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_fdsig(OX,M,RX,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_fdsig(OX,MX,R).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_fdsig(OX,MX,R,CallerInfo).
 
-fdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_fdsig(OX,MX,RX).
+fdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_fdsig(OX,MX,RX,CallerInfo).
 
-fdsig(O,M,R) :-
-	isa(O,C),
-	ifdsig(C,M,R).
+fdsig(O,M,R,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	ifdsig(C,M,R,CallerInfo).
 
 
-%% fdsigdef/2
-fdsigdef(O,M) :-
-	inferred_fdsigdef(O,M).
+%% fdsigdef/3
+fdsigdef(O,M,CallerInfo) :-
+	inferred_fdsigdef(O,M,CallerInfo).
 
-fdsigdef(O,M) :-
-	diffobjeql(O,OX),
-	inferred_fdsigdef(OX,M).
+fdsigdef(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_fdsigdef(OX,M,CallerInfo).
 
-fdsigdef(O,M) :-
-	diffobjeql(M,MX),
-	inferred_fdsigdef(O,MX).
+fdsigdef(O,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_fdsigdef(O,MX,CallerInfo).
 
-fdsigdef(O,M) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_fdsigdef(OX,MX).
+fdsigdef(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_fdsigdef(OX,MX,CallerInfo).
 
-fdsigdef(O,M) :-
-	isa(O,C),
-	ifdsigdef(C,M).
+fdsigdef(O,M,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	ifdsigdef(C,M,CallerInfo).
 
-fdsigdef(O,M) :-
-	fdsig(O,M,_V).
+fdsigdef(O,M,CallerInfo) :-
+	fdsig(O,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-%% ifdsig/3
-ifdsig(C,M,R) :-
-	inferred_ifdsig(C,M,R).
+%% ifdsig/4
+ifdsig(C,M,R,CallerInfo) :-
+	inferred_ifdsig(C,M,R,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	inferred_ifdsig(CX,M,R).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_ifdsig(CX,M,R,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(M,MX),
-	inferred_ifdsig(C,MX,R).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_ifdsig(C,MX,R,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(R,RX),
-	inferred_ifdsig(C,M,RX).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(R,RX,CallerInfo),
+	inferred_ifdsig(C,M,RX,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_ifdsig(C,MX,RX).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_ifdsig(C,MX,RX,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	diffobjeql(R,RX),
-	inferred_ifdsig(CX,M,RX).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_ifdsig(CX,M,RX,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_ifdsig(CX,MX,R).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_ifdsig(CX,MX,R,CallerInfo).
 
-ifdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_ifdsig(CX,MX,RX).
+ifdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_ifdsig(CX,MX,RX,CallerInfo).
 
-ifdsig(C,M,R) :-
-	inheritance_sub(C,S),
-	ifdsig(S,M,R).
+ifdsig(C,M,R,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	ifdsig(S,M,R,CallerInfo).
 
 
-%% ifdsigdef/2
-ifdsigdef(C,M) :-
-	inferred_ifdsigdef(C,M).
+%% ifdsigdef/4
+ifdsigdef(C,M,CallerInfo) :-
+	inferred_ifdsigdef(C,M,CallerInfo).
 
-ifdsigdef(C,M) :-
-	diffobjeql(C,CX),
-	inferred_ifdsigdef(CX,M).
+ifdsigdef(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_ifdsigdef(CX,M,CallerInfo).
 
-ifdsigdef(C,M) :-
-	diffobjeql(M,MX),
-	inferred_ifdsigdef(C,MX).
+ifdsigdef(C,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_ifdsigdef(C,MX,CallerInfo).
 
-ifdsigdef(C,M) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_ifdsigdef(CX,MX).
+ifdsigdef(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_ifdsigdef(CX,MX,CallerInfo).
 
-ifdsigdef(C,M) :-
-	inheritance_sub(C,S),
-	ifdsigdef(S,M).
+ifdsigdef(C,M,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	ifdsigdef(S,M,CallerInfo).
 
-ifdsigdef(C,M) :-
-	ifdsig(C,M,_V).
+ifdsigdef(C,M,CallerInfo) :-
+	ifdsig(C,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-%% mvdsig/3
-mvdsig(O,M,R) :-
-	inferred_mvdsig(O,M,R).
+%% mvdsig/4
+mvdsig(O,M,R,CallerInfo) :-
+	inferred_mvdsig(O,M,R,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	inferred_mvdsig(OX,M,R).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_mvdsig(OX,M,R,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(M,MX),
-	inferred_mvdsig(O,MX,R).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvdsig(O,MX,R,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(R,RX),
-	inferred_mvdsig(O,M,RX).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(R,RX,CallerInfo),
+	inferred_mvdsig(O,M,RX,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_mvdsig(O,MX,RX).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_mvdsig(O,MX,RX,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	diffobjeql(R,RX),
-	inferred_mvdsig(OX,M,RX).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_mvdsig(OX,M,RX,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_mvdsig(OX,MX,R).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvdsig(OX,MX,R,CallerInfo).
 
-mvdsig(O,M,R) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_mvdsig(OX,MX,RX).
+mvdsig(O,M,R,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_mvdsig(OX,MX,RX,CallerInfo).
 
-mvdsig(O,M,R) :-
-	isa(O,C),
-	imvdsig(C,M,R).
+mvdsig(O,M,R,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	imvdsig(C,M,R,CallerInfo).
 
 
-%% mvdsigdef/2
-mvdsigdef(O,M) :-
-	inferred_mvdsigdef(O,M).
+%% mvdsigdef/3
+mvdsigdef(O,M,CallerInfo) :-
+	inferred_mvdsigdef(O,M,CallerInfo).
 
-mvdsigdef(O,M) :-
-	diffobjeql(O,OX),
-	inferred_mvdsigdef(OX,M).
+mvdsigdef(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	inferred_mvdsigdef(OX,M,CallerInfo).
 
-mvdsigdef(O,M) :-
-	diffobjeql(M,MX),
-	inferred_mvdsigdef(O,MX).
+mvdsigdef(O,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvdsigdef(O,MX,CallerInfo).
 
-mvdsigdef(O,M) :-
-	diffobjeql(O,OX),
-	diffobjeql(M,MX),
-	inferred_mvdsigdef(OX,MX).
+mvdsigdef(O,M,CallerInfo) :-
+	diffobjeql(O,OX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_mvdsigdef(OX,MX,CallerInfo).
 
-mvdsigdef(O,M) :-
-	isa(O,C),
-	imvdsigdef(C,M).
+mvdsigdef(O,M,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	imvdsigdef(C,M,CallerInfo).
 
-mvdsigdef(O,M) :-
-	mvdsig(O,M,_V).
+mvdsigdef(O,M,CallerInfo) :-
+	mvdsig(O,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-%% imvdsig/3
-imvdsig(C,M,R) :-
-	inferred_imvdsig(C,M,R).
+%% imvdsig/4
+imvdsig(C,M,R,CallerInfo) :-
+	inferred_imvdsig(C,M,R,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	inferred_imvdsig(CX,M,R).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_imvdsig(CX,M,R,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(M,MX),
-	inferred_imvdsig(C,MX,R).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvdsig(C,MX,R,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(R,RX),
-	inferred_imvdsig(C,M,RX).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(R,RX,CallerInfo),
+	inferred_imvdsig(C,M,RX,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_imvdsig(C,MX,RX).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_imvdsig(C,MX,RX,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	diffobjeql(R,RX),
-	inferred_imvdsig(CX,M,RX).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_imvdsig(CX,M,RX,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_imvdsig(CX,MX,R).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvdsig(CX,MX,R,CallerInfo).
 
-imvdsig(C,M,R) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	diffobjeql(R,RX),
-	inferred_imvdsig(CX,MX,RX).
+imvdsig(C,M,R,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	diffobjeql(R,RX,CallerInfo),
+	inferred_imvdsig(CX,MX,RX,CallerInfo).
 
-imvdsig(C,M,R) :-
-	inheritance_sub(C,S),
-	imvdsig(S,M,R).
+imvdsig(C,M,R,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	imvdsig(S,M,R,CallerInfo).
 
 
-%% imvdsigdef/2
-imvdsigdef(C,M) :-
-	inferred_imvdsigdef(C,M).
+%% imvdsigdef/3
+imvdsigdef(C,M,CallerInfo) :-
+	inferred_imvdsigdef(C,M,CallerInfo).
 
-imvdsigdef(C,M) :-
-	diffobjeql(C,CX),
-	inferred_imvdsigdef(CX,M).
+imvdsigdef(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	inferred_imvdsigdef(CX,M,CallerInfo).
 
-imvdsigdef(C,M) :-
-	diffobjeql(M,MX),
-	inferred_imvdsigdef(C,MX).
+imvdsigdef(C,M,CallerInfo) :-
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvdsigdef(C,MX,CallerInfo).
 
-imvdsigdef(C,M) :-
-	diffobjeql(C,CX),
-	diffobjeql(M,MX),
-	inferred_imvdsigdef(CX,MX).
+imvdsigdef(C,M,CallerInfo) :-
+	diffobjeql(C,CX,CallerInfo),
+	diffobjeql(M,MX,CallerInfo),
+	inferred_imvdsigdef(CX,MX,CallerInfo).
 
-imvdsigdef(C,M) :-
-	inheritance_sub(C,S),
-	imvdsigdef(S,M).
+imvdsigdef(C,M,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	imvdsigdef(S,M,CallerInfo).
 
-imvdsigdef(C,M) :-
-	imvdsig(C,M,_V).
+imvdsigdef(C,M,CallerInfo) :-
+	imvdsig(C,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
 /*****************************************************************************
   object existence
 *****************************************************************************/
-exists(X) :-
-	inferred_exists(X).
+exists(X,CallerInfo) :-
+	inferred_exists(X,CallerInfo).
 
-exists(X) :-
-	diffobjeql(X,OX),
-	inferred_exists(OX).
+exists(X,CallerInfo) :-
+	diffobjeql(X,OX,CallerInfo),
+	inferred_exists(OX,CallerInfo).
 
 
 /*****************************************************************************
   basic equality maintenance
 *****************************************************************************/
 %% Means X,Y are equal, but not identical
-diffobjeql(X,Y) :-
-	inferred_objeql(X,Y),
+diffobjeql(X,Y,CallerInfo) :-
+	inferred_objeql(X,Y,CallerInfo),
 	X \= Y.
 
-diffobjeql(X,Y) :-
-	inferred_objeql(Y,X),
+diffobjeql(X,Y,CallerInfo) :-
+	inferred_objeql(Y,X,CallerInfo),
 	X \= Y.
 
-diffobjeql(X,Y) :-
-	diffobjeql(X,Z),
-	diffobjeql(Z,Y),
+diffobjeql(X,Y,CallerInfo) :-
+	diffobjeql(X,Z,CallerInfo),
+	diffobjeql(Z,Y,CallerInfo),
 	X \= Y.

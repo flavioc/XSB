@@ -27,7 +27,6 @@
 
 :- compiler_options([xpp_on,spec_off]).
 
-#include "flag_defs_xsb.h"
 #include "token_defs_xsb.h"
 %% DO NOT include any FLORA .flh files here, or else FLORA won't
 %% build correctly when installed outside of the XSB tree
@@ -36,7 +35,7 @@
 :- import conget/2, conset/2 from gensym.
 :- import eval/2 from eval.
 :- import
-	slash/1, stat_flag/2,
+	slash/1,
 	str_len/2,
 	file_puttoken/3, file_writequoted/2
    from machine.
@@ -166,8 +165,8 @@ flora_file_op(copy,From,To)         :- path_sysop(copy,From,To).
 
 %% Copies stdin to stdout
 flora_copy_input :-
-	stat_flag(CURRENT_INPUT, StdIn),
-	stat_flag(CURRENT_OUTPUT, StdOut),
+	seeing(StdIn),
+	telling(StdOut),
 	copyIOport(StdIn,StdOut).
 
 
@@ -176,11 +175,11 @@ flora_write_quoted_atom(Atom) :-
 	flora_abort(['flora_write_quoted_atom: Non-atom argument, ', Atom]).
 	
 flora_write_quoted_atom(Atom) :-
-	stat_flag(CURRENT_OUTPUT, StdOut),
+	telling(StdOut),
 	file_writequoted(StdOut,Atom).
 %% Unquoted atom
 flora_write_atom(Atom) :-
-	stat_flag(CURRENT_OUTPUT, StdOut),
+	telling(StdOut),
 	file_puttoken(StdOut,TK_ATOM,Atom).
 
 flora_read_line_as_atom(Str) :- file_read_line_atom(Str).

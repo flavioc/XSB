@@ -23,7 +23,7 @@ CLEAN :
 	-@erase *.bak
 
 $(PROLOGEXT)$(OBJEXT):
-	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
+	$(PROLOG) -e "asserta(library_directory('..')). ['..\flora2']. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 static_data.dat: static_data.in
 	copy static_data.in static_data.dat

@@ -30,8 +30,9 @@ FLORADIR = ..
 
 ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh \
 	  flrdyna.flh flrdynz.flh \
+	  flrexportcheck.flh \
 	  flrtable.flh flrhilogtable.flh \
-	  flrrefreshtable.flh flrexportcheck.flh
+	  flrrefreshtable.flh
 
 PROLOG = none
 

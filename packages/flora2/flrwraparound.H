@@ -30,8 +30,7 @@
 #include "flora_porting.flh"
 
 :- import
-	parse_filename/4,
-	stat_set_flag/2
+	parse_filename/4
    from machine.
 
 :- import ','/2 from standard.

@@ -52,8 +52,8 @@
 
 
 %% to extract the individual terms from the detailed code.
-is_flexport(FLEXPORT(UpdTag, Module, ExtModuleList, Term),UpdTag, Module, ExtModuleList, Term).
-is_flexport(FLEXPORT(DynamicModule, UpdTag, Module, ExtModuleList, Term),DynamicModule, UpdTag, Module, ExtModuleList, Term).
+is_flexport(FLEXPORT(UpdTag, CallerMod, ExtModuleList, Term),UpdTag, CallerMod, ExtModuleList, Term).
+is_flexport(FLEXPORT(DynamicModule, UpdTag, CallerMod, ExtModuleList, Term),DynamicModule, UpdTag, CallerMod, ExtModuleList, Term).
 
 is_fllibmodlit(FLLIBMODLIT(_,_,_,_)).
 
@@ -71,17 +71,17 @@ flora_reset_export_registries(Module) :-
 ****************************************************************************/
 FLLIBEXPORT([H|T]) :-
 	(
-		(
-			(
-				is_flexport(H,UpdTag, Module, ExtModuleList, Term)
-			;
-				is_flexport(H, WS, UpdTag, Module, ExtModuleList, Term)
-			),
-			FLLIBEXPORT(WS,UpdTag, Module, ExtModuleList, Term)
-		)
+	  (
+	    (
+	      is_flexport(H,UpdTag, CallerMod, ExtModuleList, Term)
+	    ;
+	      is_flexport(H, WS, UpdTag, CallerMod, ExtModuleList, Term)
+	    ),
+	    FLLIBEXPORT(WS,UpdTag, CallerMod, ExtModuleList, Term)
+	  )
 	;
-		%%could be a list within itself.
-		FLLIBEXPORT(H)	
+	  %% could be a list within itself.
+	  FLLIBEXPORT(H)	
 	),
 	FLLIBEXPORT(T).
 
@@ -89,20 +89,20 @@ FLLIBEXPORT([]) :- !.
 
 
 /****************************************************************************
-  FLLIBEXPORT(+WorkSpace,+Updatable,+ModuleName,+ExportedModuleList,+Functor)
+  FLLIBEXPORT(+WorkSpace,+Updatable,+CallerMod,+ExportedModuleList,+Functor)
 ****************************************************************************/
-FLLIBEXPORT(WS,UpdateTag,Module,[],Term) :-
-        flora_assert_into_export_registry(WS,Module,_ExtModuleName,UpdateTag,Term).
+FLLIBEXPORT(WS,UpdateTag,CallerMod,[],Term) :-
+        flora_assert_into_export_registry(WS,CallerMod,_ExtModuleName,UpdateTag,Term).
 
-FLLIBEXPORT(WS,UpdateTag,Module,ExtModuleList,Term) :-
-	FLLIBEXPORT_INTERNAL(WS,UpdateTag,Module,ExtModuleList,Term).
+FLLIBEXPORT(WS,UpdateTag,CallerMod,ExtModuleList,Term) :-
+	FLLIBEXPORT_INTERNAL(WS,UpdateTag,CallerMod,ExtModuleList,Term).
 
-FLLIBEXPORT_INTERNAL(WS,UpdateTag,Module,[T|L],Term) :-
+FLLIBEXPORT_INTERNAL(WS,UpdateTag,CallerMod,[T|L],Term) :-
 	!,
-	flora_assert_into_export_registry(WS,Module,T,UpdateTag,Term),
-	FLLIBEXPORT_INTERNAL(WS,UpdateTag,Module,L,Term).
+	flora_assert_into_export_registry(WS,CallerMod,T,UpdateTag,Term),
+	FLLIBEXPORT_INTERNAL(WS,UpdateTag,CallerMod,L,Term).
 
-FLLIBEXPORT_INTERNAL(_WS,_UpdateTag,_Module,[],_Term) :- !.
+FLLIBEXPORT_INTERNAL(_WS,_UpdateTag,_CallerMod,[],_Term) :- !.
 
 
 /****************************************************************************
@@ -113,79 +113,79 @@ FLLIBEXPORT_INTERNAL(_WS,_UpdateTag,_Module,[],_Term) :- !.
 ****************************************************************************/
 flora_assert_into_export_registry(DynamicModulename,SelfModuleName,ExportedModuleName,UpdateTag,Term) :-
 	!,
-	(
-	  var(DynamicModulename) ->	
+	( var(DynamicModulename) ->	
+	    (
+	      is_fllibmodlit(Term) ->
+	      %% need to check whether it is FLLIBMODLIT
+	      %% error!! Since it should have been initialized before.
+	      flora_error_invalid_export(Term)
+	    ;
+	      (
+		flora_export_registry(SelfModuleName, ExportedModuleName, UpdateTag, Term), !
+	      ;
+		%% write('flora_export_registry('),write(SelfModuleName),write(','),write(ExportedModuleName),write(','),write(UpdateTag),write(','),writeln(Term),write(')'),
+		assert(flora_export_registry(SelfModuleName, ExportedModuleName, UpdateTag, Term))
+	      )
+	    )
+	;
+	    (
+	      is_fllibmodlit(Term) ->
+	      (
+		%% do we need to convert it into canonical form??
+		get_canonical_form(Term,FLCANON(_,_,_,TermCode)),
 		(
-			is_fllibmodlit(Term) ->
-				%% need to check whether it is FLLIBMODLIT
-				%% error!! Since it should have been initialized before.
-				flora_error_invalid_export(Term)
-			;
-			(
-				flora_export_registry(SelfModuleName, ExportedModuleName, UpdateTag, Term), !;
-				%%write('flora_export_registry('),write(SelfModuleName),write(','),write(ExportedModuleName),write(','),write(UpdateTag),write(','),writeln(Term),write(')'),
-				assert(flora_export_registry(SelfModuleName, ExportedModuleName, UpdateTag, Term))
-			)
+		  flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, TermCode), !
+		;
+		  %%write('flora_export_registry('),write(DynamicModulename),write(','),write(ExportedModuleName),write(','),write(UpdateTag),write(','),writeln(TermCode),write(')'),
+		  assert(flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, TermCode))
 		)
-	  ;
-		(
-			is_fllibmodlit(Term) ->
-			(
-				%% do we need to convert it into canonical form??
-				get_canonical_form(Term,FLCANON(_,_,_,TermCode)),
-				(
-					flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, TermCode), !
-					;
-					%%write('flora_export_registry('),write(DynamicModulename),write(','),write(ExportedModuleName),write(','),write(UpdateTag),write(','),writeln(TermCode),write(')'),
-					assert(flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, TermCode))
-				)
-			)
-			;
-			(
-				flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, Term), !
-				;
-				%%write('flora_export_registry('),write(DynamicModulename),write(','),write(ExportedModuleName),write(','),write(UpdateTag),write(','),writeln(Term),write(')'),
-				assert(flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, Term))
-			)
-		)
+	      )
+	    ;
+	      (
+		flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, Term), !
+	      ;
+		%%write('flora_export_registry('),write(DynamicModulename),write(','),write(ExportedModuleName),write(','),write(UpdateTag),write(','),writeln(Term),write(')'),
+		assert(flora_export_registry(DynamicModulename, ExportedModuleName, UpdateTag, Term))
+	      )
+	    )
 	).
 
 
 /****************************************************************************
-  flora_check_export_registry_internal(+ModuleName,+ExternalModuleName,+Term,+UpdateTag)
+  flora_check_export_registry_internal(+CallerMod,+ModBeingCalled,+Term,+UpdateTag)
 	
-	ModuleName = The module name of the predicate that is calling the 
-		     predicate from the external module (ExternalModuleName).
+	CallerMod = The module name of the predicate that is calling the 
+		     predicate from the external module (ModBeingCalled).
 	
 	Term = The representation of the predicate is of the form:	
-			FLORA_USER_WORKSPACE(ModuleName,FunctorType)Term
+			FLORA_USER_WORKSPACE(CallerMod,FunctorType)Term
 	       where Term = (...)
 	
 	UpdateTag = UPDATABLE/ READABLE.
 
-	Is is invoked by the flora_check_export_registry predicates.
+	It is invoked by the flora_check_export_registry predicates.
 ****************************************************************************/
-flora_check_export_registry_internal(Module,ExternalModuleName,Term,UpdateTag) :-
-	%%write('flora_check_export_registry_internal--'),write(','),write(Module),write(','),write(Term),write(UpdateTag),write(','),writeln(ExternalModuleName),
+flora_check_export_registry_internal(CallerMod,ModBeingCalled,Term,UpdateTag) :-
+	%%write('flora_check_export_registry_internal--'),write(CallerMod),write(','),write(Term),write(','),write(UpdateTag),write(','),writeln(ModBeingCalled),
 	(
-		flora_no_predicates_exported(ExternalModuleName)
+	  flora_no_predicates_exported(ModBeingCalled)
 	;
-		%% If the external module is the same module, just let the call pass through.
-		Module == ExternalModuleName ->
-		true	
+	  %% If external module = current module - let the call pass through.
+	  CallerMod == ModBeingCalled ->
+	  true	
 	;
-		%%check if it unifies without any transformations...
-		flora_export_registry(ExternalModuleName,Module,UpdateTag,Term)
+	  %% check if it unifies without any transformations...
+	  flora_export_registry(ModBeingCalled,CallerMod,UpdateTag,Term)
 	;
-		%%transformations mvd -> d_mvd types.
-		convert_to_body_literal(Term,ExptTerm),
-		%% check the export registry.
-		flora_export_registry(ExternalModuleName,Module,UpdateTag,ExptTerm)
+	  %% transformations mvd -> d_mvd types.
+	  convert_to_body_literal(Term,ExptTerm),
+	  %% check the export registry.
+	  flora_export_registry(ModBeingCalled,CallerMod,UpdateTag,ExptTerm)
 	).
 
 
 /****************************************************************************
-  flora_no_predicates_exported(ModuleName)
+  flora_no_predicates_exported(Module)
   
   If no predicates are exported by a module, then it basically means that it
   does not require any encapsulation. All its predicates are accessible to 
@@ -201,38 +201,41 @@ flora_no_predicates_exported(_Module) :- !.
 
 
 /****************************************************************************
-  flora_check_export_registry(+ModuleName,+ExternalModuleName,+Term,+UpdateTag)
+  flora_check_export_registry(+Caller,+ModBeingCalled,+Term,+UpdateTag)
   Called by the flrdb, insert delete, predicates with the Updatable tag.
   flora_check_export_registry/4
 ****************************************************************************/
 %% basic idea: if the check succeeds, the call is failed & hence it
 %% makes the next call & proceeds towards unification with the answers.
-flora_check_export_registry(Module,ExternalModuleName,Term,UpdateTag) :-
-	flora_check_export_registry_internal(Module,ExternalModuleName,Term,UpdateTag),
+flora_check_export_registry(Caller,ModBeingCalled,Term,UpdateTag) :-
+	flora_check_export_registry_internal(Caller,ModBeingCalled,Term,UpdateTag),
 	!.
 %% check if call is protected from undefinedness checking (when module
 %% name was unbound)
-flora_check_export_registry(_Module,_ExternalModuleName,Term,_UpdateTag) :-
+flora_check_export_registry(_Caller,_ModBeingCalled,Term,_UpdateTag) :-
 	flora_export_undef_check_protected(Term),
-	!,fail.
+	!,
+	fail.
 %%error handling.
-flora_check_export_registry(_Module,_ExternalModuleName,Term,_UpdateTag) :-
+flora_check_export_registry(_Caller,_ModBeingCalled,Term,_UpdateTag) :-
 	flora_error_notexported(Term).
 
 /******************************************************************************
 **  flora_check_export_registry/3
 ******************************************************************************/
-flora_check_export_registry(Module,ExternalModuleName,Term) :-
-	flora_check_export_registry_internal(Module,ExternalModuleName,Term,_UpdateTag),
-	!,fail.
+flora_check_export_registry(CallerMod,ModBeingCalled,Term) :-
+	flora_check_export_registry_internal(CallerMod,ModBeingCalled,Term,_UpdateTag),
+	!,
+	fail.
 
 %% check if call is protected from undefinedness checking (when module
 %% name was unbound)
 %% flora_check_export_registry/3
-flora_check_export_registry(_Module,_ExternalModuleName,Term) :-
+flora_check_export_registry(_CallerInfo,_ModBeingCalled,Term) :-
 	flora_export_undef_check_protected(Term),
-	!,fail.
-flora_check_export_registry(_Module,_ExternalModuleName,Term) :-
+	!,
+	fail.
+flora_check_export_registry(_CallerInfo,_ModBeingCalled,Term) :-
 	flora_error_notexported(Term).
 
 
@@ -243,7 +246,7 @@ flora_check_export_registry(_Module,_ExternalModuleName,Term) :-
   Id is a unique Id that is used to delete the call from the registry.
 ****************************************************************************/
 flora_add_undef_export_call(Predicate,Id) :-
-	%% write('Undefindness check add -- '),writeln(Predicate),
+	%% write('Undefindness check add -- '), writeln(Predicate),
 	assert(flora_undefinedness_export_registry(Predicate,Id)).
 
 
@@ -258,14 +261,12 @@ flora_remove_undef_export_call(Id) :-
 flora_export_undef_check_protected(Predicate) :-
 	%% write('Undefindness check -- '),writeln(Predicate),
 	(
-		flora_undefinedness_export_registry(Predicate,_Id),
-		!
+	  flora_undefinedness_export_registry(Predicate,_Id),
+	  !
 	;
-		%%transformations mvd -> d_mvd types.
-		convert_to_body_literal(Predicate,PredicateTerm),
-		%% check the undefindness registry.
-		%% write('Undefindness check -- '),writeln(PredicateTerm),
-		flora_undefinedness_export_registry(PredicateTerm,_Id)
+	  %% transformations mvd -> d_mvd types.
+	  convert_to_body_literal(Predicate,PredicateTerm),
+	  %% check the undefindness registry.
+	  %% write('Undefindness check -- '),writeln(PredicateTerm),
+	  flora_undefinedness_export_registry(PredicateTerm,_Id)
 	).
-
-

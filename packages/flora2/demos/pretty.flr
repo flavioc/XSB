@@ -1,7 +1,7 @@
 
 ?- [pretty_data>>data].
 ?- debug[#check_undefined(on)]@flora(sys),
-	%% Don't check undefinedness for the module data
+	// Don't check undefinedness for the module data
 	debug[#check_undefined(off,data)]@flora(sys).
 
 ?- writeln('Self info: ')@prolog(), student[#pp_self(data)]@flora(pp).

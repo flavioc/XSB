@@ -27,20 +27,20 @@
 #mode standard Prolog
 
 
-%% Thrown when an undefined method is found and check_undefined is on
+/* Thrown when an undefined method is found and check_undefined is on */
 #define FLORA_UNDEFINED_EXCEPTION     '_$flora_undefined'
 
-%% Thrown when a non-exported predicate is accessed from another module.
+/* Thrown when a non-exported predicate is accessed from another module. */
 #define FLORA_NOT_EXPORTED_EXCEPTION     '_$flora_not_exported'
 
-%% Thrown to return to top level
+/* Thrown to return to top level */
 #define FLORA_TOP_LEVEL	       	      '_$flora_top_level'
 
-%% Thrown to exit from FLORA shell
+/* Thrown to exit from FLORA shell */
 #define END_OF_FLORA_SHELL    	      '_$end_of_flora_shell'
 
-%% Thrown by flora shell when it is finished with the command line argument
-%% passed from the OS shell
+/* Thrown by flora shell when it is finished with the command line argument
+** passed from the OS shell */
 #define FLORA_CMD_LINE_ARGUMENT_DONE  '_$flora_cmd_line_argument_done'
 
 #define FLORA_ABORT                   '_$flora_abort'

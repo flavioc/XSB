@@ -32,23 +32,40 @@
 
 #define FLINS		flins
 #define FLDEL		fldel
+#define FLREF           flref
+#define FLCLS           flcls
 
 %% @flora(...)
 #define FLORASYSMOD	        florasysmod
 %% @prolog(), @prolog(...)
 #define PROLOGMODULE	        prologmodule
-%% @prologall(), @proologall(...)
+%% @prologall(), @prologall(...)
 #define PROLOGALLMODULE         prologallmodule
 #define FLORAUSERMOD	        florausermod
 #define FLORARULEWORKSPACE	floraruleworkspace
 
-#define ALLOW_VARIABLES       allow_variables
-#define DISALLOW_VARIABLES    disallow_variables
+#define ALLOW_VARIABLES         allow_variables
+#define DISALLOW_VARIABLES      disallow_variables
+
+%% If the module specification is for a dynamic rule (eg. foo in
+%% insertrule{(...)@foo}), the module information is just discarded when
+%% module specification is not allowed.  No NO_WORKSPACE errors reported.
+#define WS_FROM_DYNRULE         dynrule
+#define WS_FROM_BODY            body
+#define WITH_MODULE             with_module
+#define WITHOUT_MODULE          without_module
 
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 
+#define PARSER_CONTEXT	        parsecontext
+
 :- dynamic FLORA_SYMBOL('parser_flag')(_).
+:- dynamic PARSER_CONTEXT(_).
+
+initialize_work :-
+	clear_context(_).
+
 
 /****************************************************************************
                            AN INFORMAL BNF GRAMMAR
@@ -61,6 +78,11 @@
 
 
 Rule := Head (':-' Body)? .
+
+Query := '?-' Body.
+
+Directive := ':-' ExportDirective | OperatorDirective | SetSemanticsDirective
+	             | IgnoreDependencyCheckDirective | PrologDirective
 
 Head := HeadLiteral
 Head := Head (',' | 'and') Head
@@ -469,6 +491,8 @@ get_index(OBJECT(_PrimitiveType,Index),Index) :- !.
 
 get_index(FLATOM(_Name,Index),Index) :- !.
 
+get_index(FLVAR(_Name,Index),Index) :- !.
+
 
 get_spectoken(OBJECT(SPECIAL_TOKEN(Atom),_I),Atom) :- !.
 
@@ -541,13 +565,13 @@ flfact_struct(Head,FLFACT(Head)).
 flquery_struct(Body,FLQUERY(Body)).
 fldirective_struct(Direct,Index,FLDIRECTIVE(Direct,Index)).
 
-flexport_wrap_term(WS,Term,Modules,UpdTag,Code) :-
+flexport_wrap_term(WS,WSFrom,Term,Modules,UpdTag,Code) :-
 	( var(UpdTag) ->
-		Code = (WS,Term,Modules,FLEXPORT_READABLE)
+		Code = (WS,WSFrom,Term,Modules,FLEXPORT_READABLE)
 	;
-		Code = (WS,Term,Modules,FL_UPDATABLE)
+		Code = (WS,WSFrom,Term,Modules,FL_UPDATABLE)
 	).
-flexport_unwrap_term((WS,Term,Modules,Updtag),WS,Term,Modules,Updtag).
+flexport_unwrap_term((WS,WSFrom,Term,Modules,Updtag),WS,WSFrom,Term,Modules,Updtag).
 
 flexport_struct(Term,Modules,Updtag,FLEXPORT(Term,Modules,FLATOM(Updtag,_I))).
 flexport_struct(DynamicModule,Term,Modules,Updtag,FLEXPORT(DynamicModule,Term,Modules,FLATOM(Updtag,_I))).
@@ -555,7 +579,6 @@ flexport_struct_list(TermList,FLEXPORT_LIST(TermList)).
 
 fldynrule_struct(Head,Body,FLDYNRULE(Head,Body)).
 
-flcmddirect_struct(C,FLCOMMAND(C)).
 %%flargumentsdirect_struct(F,N,Args,FLARGUMENTS(F,N,Args)).
 %%flprlgdirect_struct(F,A,FLPROLOG(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
@@ -737,6 +760,8 @@ is_ruleupdateop(FL_DELETERULE_A) :- !.
 is_ruleupdateop(FL_DELETERULE_Z) :- !.
 is_ruleupdateop(FL_DELETERULE) :- !.
 
+is_clauseop(FL_CLAUSE) :- !.
+
 is_callermoduleop(FL_CALLERMODULE) :- !.
 
 is_reifyop(FL_REIFYOP) :- !.
@@ -751,6 +776,9 @@ fldelete_struct(Op,List,FLDELETE(Op,List)).
 flnewmodule_struct(Op,Mod,FLNEWMODULE(Op,Mod)).
 flcallermodule_struct(Op,Var,FLCALLERMODULE(Op,Var)).
 flupdaterule_struct(Op,RuleList,FLUPDATERULE(Op,RuleList)).
+
+flclause_struct(Head,Body,FLCLAUSE(Head,Body)).
+flclause_struct(Mode,Head,Body,FLCLAUSE(Mode,Head,Body)).
 
 is_flcallermodule_struct(FLCALLERMODULE(_,_)).
 is_flupdaterule_struct(FLUPDATERULE(_,_)).
@@ -802,6 +830,10 @@ get_control_construct_definition(FLDOUNTIL,FL_DO,FL_UNTIL).
 get_control_construct_definition(FLLOOPUNTIL,FL_LOOP,FL_UNTIL).
 get_control_construct_definition(FLUNLESSDO,FL_UNLESS,FL_DO).
 
+%% Management of global parser context
+clear_context(X) :- retractall(PARSER_CONTEXT(X)).
+report_context(X) :- assert(PARSER_CONTEXT(X)).
+
 
 /****************************************************************************
   parsing_error(+IndexOrTerm,+ErrorMessage,-Status)
@@ -830,6 +862,7 @@ parsing_error(CanoniTerm,ErrorMessage,Status) :-
 flora_parse(NULL,NULL,[]) :- !.
 
 flora_parse(ComposerTerm,Code,Status) :-
+	initialize_work,
 	canonical_form(ComposerTerm,CanoniTerm),
 	( is_rule(CanoniTerm,Head,Body) ->
 	    flora_parse_rule(Head,Body,Code,Status)
@@ -859,11 +892,10 @@ flora_parse(_ComposerTerm,_Code,[error(UNKNOWN_ERROR)]).
 flora_parse_directive(CanoniTerm,Code,Status) :-
 	CanoniTerm = CANOTERM(_Funct,_Arity,_,_L,If,_Ip),
 	(
-	flora_export_directive(CanoniTerm,_WS,CodeList,Status)
+	flora_export_directive(CanoniTerm,_WS,WS_FROM_BODY,CodeList,Status)
 	%%; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
-	; flora_command_directive(CanoniTerm,CodeList,Status)
 	; flora_setsemantics_directive(CanoniTerm,CodeList,Status)
 	; flora_cmpopt_directive(CanoniTerm,CodeList,Status)
 	; flora_ignoredep_directive(CanoniTerm,CodeList,Status)
@@ -880,7 +912,7 @@ flora_parse_directive(CanoniTerm,_Code,Status) :-
 
 
 /****************************************************************************
-  flora_exec_directive(+CanoniTerm,+FloraModSpec,-Code,-Status)
+  flora_exec_directive(+CanoniTerm,+FloraModSpec,+WSFrom,-Code,-Status)
   Code: FLDIRECTIVE([directives])
 
   Note: This is to parse those executable directives either from a shell
@@ -888,11 +920,11 @@ flora_parse_directive(CanoniTerm,_Code,Status) :-
         program is translated. Executable directives affect the translation
         of all subsequent command entered from the shell.
 ****************************************************************************/
-flora_exec_directive(CanoniTerm,FloraModSpec,Code,Status) :-
+flora_exec_directive(CanoniTerm,FloraModSpec,WSFrom,Code,Status) :-
 	CanoniTerm = CANOTERM(_Funct,_Arity,_,_L,If,_Ip),
 	fldirective_struct(CodeList,If,Code),
 	( 
-	flora_exec_export_directive(CanoniTerm,FloraModSpec,CodeList,Status)
+	flora_exec_export_directive(CanoniTerm,FloraModSpec,WSFrom,CodeList,Status)
 	%%; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_index_directive(CanoniTerm,CodeList,Status)
@@ -900,27 +932,6 @@ flora_exec_directive(CanoniTerm,FloraModSpec,Code,Status) :-
 	; flora_exec_semantics_directive(CanoniTerm,CodeList,Status)
 	),
 	!.
-
-
-/****************************************************************************
-  flora_command_directive(+CanoniTerm,-CodeList,-Status)  
-****************************************************************************/
-flora_command_directive(CanoniTerm,[Code],[]) :-
-	get_atom(CanoniTerm,D),
-	flora_is_command_directive(D),
-	flcmddirect_struct(D,Code).
-
-
-/****************************************************************************
-  Listed as follows are those parser directives that look like commands.
-****************************************************************************/
-flora_is_command_directive(spec_repr) :- !.
-flora_is_command_directive(spec_off) :- !.
-flora_is_command_directive(spec_dump) :- !.
-flora_is_command_directive(ti_dump) :- !.
-flora_is_command_directive(ti_long_names) :- !.
-flora_is_command_directive(ti_all) :- !.
-flora_is_command_directive(ti_off_all) :- !.
 
 
 /****************************************************************************
@@ -985,13 +996,13 @@ flora_list_to_conjunct([H|Tail],
 
 
 /****************************************************************************
- flora_exec_export_directive(+CanoniTerm,+FloraModSpec,-CodeList,-Status)
+ flora_exec_export_directive(+CanoniTerm,+FloraModSpec,+WSFrom,-CodeList,-Status)
  Parsing for the executable directive case.
 ****************************************************************************/
 %% Export for a dynamic module.
 %% WS = dynamic module name, may or may not be specified.
-flora_exec_export_directive(CanoniTerm,WS,CodeList,Status):-
-	flora_export_directive(CanoniTerm,WS,CodeList,Status),
+flora_exec_export_directive(CanoniTerm,WS,WSFrom,CodeList,Status):-
+	flora_export_directive(CanoniTerm,WS,WSFrom,CodeList,Status),
 	(var(Status) ->
 		Status = []
 	;
@@ -1000,22 +1011,22 @@ flora_exec_export_directive(CanoniTerm,WS,CodeList,Status):-
 
 
 /****************************************************************************
- flora_export_directive(+CanoniTerm,+WorkSpace,-CodeList,-Status)
+ flora_export_directive(+CanoniTerm,+WorkSpace,+WSFrom,-CodeList,-Status)
  The work-horse that does the parsing both in the executable and
  non-executable case.
 ****************************************************************************/
-flora_export_directive(CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip),WS,[Code],Status) :-
+flora_export_directive(CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip),WS,WSFrom,[Code],Status) :-
 	%% check directive name.
 	get_name(Funct,FL_EXPORT),
 	%% parse the exported terms
-	flora_regularize_export_spec(Args,WS,TermList),
+	flora_regularize_export_spec(Args,WS,WSFrom,TermList),
 	%% parse the list
 	flora_export_parse_term_list(TermList,[],TermListCode,Status),
 	flexport_struct_list(TermListCode,Code),
 	!.
 
 %% error case.
-flora_export_directive(CANOTERM(Funct,_N,FL_PARENTHESIS,_Args,If,_Ip),_WS,_Code,Status) :-
+flora_export_directive(CANOTERM(Funct,_N,FL_PARENTHESIS,_Args,If,_Ip),_WS,_WSFrom,_Code,Status) :-
 	%% check directive name.
 	get_name(Funct,FL_EXPORT),
 	!,
@@ -1023,46 +1034,46 @@ flora_export_directive(CANOTERM(Funct,_N,FL_PARENTHESIS,_Args,If,_Ip),_WS,_Code,
 
 
 /****************************************************************************
- flora_regularize_export_spec(+ExportedTerms,+WorkSpace,-CodeList,-Status)
+ flora_regularize_export_spec(+ExportedTerms,+WorkSpace,+WSFrom,-CodeList,-Status)
  The work-horse that first regularises and then does the parsing both 
  in the executable and non-executable case.
 ****************************************************************************/
 %% Export as an operator, multiple terms exported.
 %% :-(export(','((term>>m1),m2,m3... ))
-flora_regularize_export_spec([CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip)],WS,ListCode) :-
+flora_regularize_export_spec([CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip)],WS,WSFrom,ListCode) :-
 	(get_name(Funct,FL_COMMA) ; get_name(Funct,FL_AND)),
 	!,
 	%% convert a comma-separated list into a normal list
 	flora_comma_separated_list(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),List),
 	%% regularize to a list
-	flora_export_compose_term_list(List,[],WS,_IsUpd,ListCode).
+	flora_export_compose_term_list(List,[],WS,WSFrom,_IsUpd,ListCode).
 
 %% for all other cases.
 %% :-(export( (term1),(term2),(term3) ))
 %% One or many terms exported (may be enclosed by paranthesis).
 %% typical canonical term = (export((term>>m1),m2,m3...mn))
-flora_regularize_export_spec(Args,WS,ListCode) :-
+flora_regularize_export_spec(Args,WS,WSFrom,ListCode) :-
 	%% regularize to a list
-	flora_export_compose_term_list(Args,[],WS,_IsUpd,ListCode),
+	flora_export_compose_term_list(Args,[],WS,WSFrom,_IsUpd,ListCode),
 	!.
 
 
 /****************************************************************************
- flora_export_compose_term_list(+Args,+InitTermCode,+WorkSpace,+IsUpdatable,-ExportCode)
+ flora_export_compose_term_list(+Args,+InitTermCode,+WorkSpace,+WSFrom,+IsUpdatable,-ExportCode)
  InitTermCode represents the list of terms processed till now.
  It is initally an empty list ([]) and gets populated progressively.
 ***************************************************************************/
 %% single term exported
 %% t1>>m1,m2,m3
-flora_export_compose_term_list(Args,_InitTermCode,WS,IsUpd,[Code]) :-
+flora_export_compose_term_list(Args,_InitTermCode,WS,WSFrom,IsUpd,[Code]) :-
 	flora_export_check_single_term(Args),
-	flora_export_compose_term(Args,WS,IsUpd,Code).
+	flora_export_compose_term(Args,WS,WSFrom,IsUpd,Code).
 
-flora_export_compose_term_list([H|T],InitTermCode,WS,IsUpd,Code) :-
+flora_export_compose_term_list([H|T],InitTermCode,WS,WSFrom,IsUpd,Code) :-
 	%% The flora_export_compose_term expects the argument to be a list.
 	%% That list may contain more than one members in the case where the 
 	%% term is exported to more than one modules.
-	flora_export_compose_term([H],WS,IsUpd,TermCode),
+	flora_export_compose_term([H],WS,WSFrom,IsUpd,TermCode),
 	%% The Code is usually a single term. However in cases 
 	%% like (t1,t2) >> (m1,m2,m3), it is a list. In this case
 	%% we need to explicitly append it to a list.
@@ -1077,25 +1088,25 @@ flora_export_compose_term_list([H|T],InitTermCode,WS,IsUpd,Code) :-
 	  %% in other cases where it is a simple term and not a list.
 	  List = [TermCode|InitTermCode]
 	),
-	flora_export_compose_term_list(T,List,WS,IsUpd,Code).
+	flora_export_compose_term_list(T,List,WS,WSFrom,IsUpd,Code).
 
-flora_export_compose_term_list([],InitTermCode,_WS,_IsUpd,Code) :- 
+flora_export_compose_term_list([],InitTermCode,_WS,_WSFrom,_IsUpd,Code) :- 
 	Code = InitTermCode,
 	!.
 
 /****************************************************************************
- flora_export_compose_term(+ExportedTerm,+WorkSpace,+IsUpdatable,-TermCode)
+ flora_export_compose_term(+ExportedTerm,+WorkSpace,+WSFrom,+IsUpdatable,-TermCode)
 ****************************************************************************/
 %% with the updatable tag.
-flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip)],WS,_IsUpdatable,ExportCode) :-
+flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip)],WS,WSFrom,_IsUpdatable,ExportCode) :-
 	%% check whether the Funct is updatable
 	get_name(Funct,FL_UPDATABLE),
 	%% single or mutiple terms enclosed.
 	(
-	  flora_export_compose_term(Args,WS,FL_UPDATABLE,ExportCode),
+	  flora_export_compose_term(Args,WS,WSFrom,FL_UPDATABLE,ExportCode),
 	  !
 	;
-	  flora_export_compose_term_list(Args,[],WS,FL_UPDATABLE,ExportCode)
+	  flora_export_compose_term_list(Args,[],WS,WSFrom,FL_UPDATABLE,ExportCode)
 	).
 
 
@@ -1113,15 +1124,15 @@ flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip)],WS,_I
  Term >> Module(s)
  canoterm(RIGHTTO,_,FL_PARANTHESIS, [canoterm([Term,FirstModule]),OtherModuleList],_,_)
 ****************************************************************************/
-flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,[Term|FirstModule],_If,_Ip)|OtherModules],WS,IsUpdatable,Code) :- 
+flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,[Term|FirstModule],_If,_Ip)|OtherModules],WS,WSFrom,IsUpdatable,Code) :- 
 	get_name(Funct,FL_RIGHTTO),
 	append(FirstModule,OtherModules,Modules),
 	(
 		%% may be a list of term instead of a sinlge term.
 		%% (t1,t2) >> (m1,m2)
-		flora_export_wrap_multiple_terms(WS,Term,Modules,IsUpdatable,Code)
+		flora_export_wrap_multiple_terms(WS,WSFrom,Term,Modules,IsUpdatable,Code)
 	;	
-		flexport_wrap_term(WS,Term,Modules,IsUpdatable,Code)
+		flexport_wrap_term(WS,WSFrom,Term,Modules,IsUpdatable,Code)
 	),
 	!.
 
@@ -1138,9 +1149,9 @@ flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,[Term|FirstModule],_
  Thus for the first term, we need extract the canonical term by stripping the 
  comma. The predicate below does the same.
 ****************************************************************************/
-flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip)],WS,IsUpdatable,Code) :- 
+flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip)],WS,WSFrom,IsUpdatable,Code) :- 
 	(get_name(Funct,FL_COMMA) ; get_name(Funct,FL_AND)),
-	flora_export_compose_term(Args,WS,IsUpdatable,Code),
+	flora_export_compose_term(Args,WS,WSFrom,IsUpdatable,Code),
 	!.
 
 /****************************************************************************
@@ -1150,41 +1161,41 @@ flora_export_compose_term([CANOTERM(Funct,_N,FL_PARENTHESIS,Args,_If,_Ip)],WS,Is
  export(_[a->_]).
  Term = canoterm(ExportedTerm)
 ****************************************************************************/
-flora_export_compose_term([CANOTERM(Funct,N,PType,Args,If,Ip)],WS,IsUpdatable,Code) :- 
-	flexport_wrap_term(WS,CANOTERM(Funct,N,PType,Args,If,Ip),[],IsUpdatable,Code),
+flora_export_compose_term([CANOTERM(Funct,N,PType,Args,If,Ip)],WS,WSFrom,IsUpdatable,Code) :- 
+	flexport_wrap_term(WS,WSFrom,CANOTERM(Funct,N,PType,Args,If,Ip),[],IsUpdatable,Code),
 	!.
 
 %% simple atom exported, export(flora2).
-flora_export_compose_term(Args,WS,IsUpdatable,Code) :- 
+flora_export_compose_term(Args,WS,WSFrom,IsUpdatable,Code) :- 
 	get_name(Args,_Name),
-	flexport_wrap_term(WS,Args,[],IsUpdatable,Code),
+	flexport_wrap_term(WS,WSFrom,Args,[],IsUpdatable,Code),
 	!.
 
 %% variable exported. export(F).
-flora_export_compose_term([OBJECT(VARIABLE(Term),N)],WS,IsUpdatable,Code) :- 
-	flexport_wrap_term(WS,OBJECT(VARIABLE(Term),N),[],IsUpdatable,Code),
+flora_export_compose_term([OBJECT(VARIABLE(Term),N)],WS,WSFrom,IsUpdatable,Code) :- 
+	flexport_wrap_term(WS,WSFrom,OBJECT(VARIABLE(Term),N),[],IsUpdatable,Code),
 	!.
 
 
 /****************************************************************************
- flora_export_wrap_multiple_terms(+WorkSpace,+Args,+InitTermCode,+Modules,+IsUpdatable,-Code)
+ flora_export_wrap_multiple_terms(+WorkSpace,+WSFrom,+Args,+InitTermCode,+Modules,+IsUpdatable,-Code)
  Transfroms (t1,t2) >> (m1,m2,m3) --> [(t1,(m1,m2,m3)) , (t2,(m1,m2,m3))]
 ***************************************************************************/
-flora_export_wrap_multiple_terms(WS,CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),Modules,IsUpdatable,Code) :-
+flora_export_wrap_multiple_terms(WS,WSFrom,CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),Modules,IsUpdatable,Code) :-
 	(get_name(Funct,FL_COMMA) ; get_name(Funct,FL_AND)),
 	%% convert a comma-separated list into a normal list
 	flora_comma_separated_list(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),List),
-	flora_export_wrap_termlist(List,[],WS,Modules,IsUpdatable,Code).
+	flora_export_wrap_termlist(List,[],WS,WSFrom,Modules,IsUpdatable,Code).
 
 
 /****************************************************************************
- flora_export_wrap_termlist(+Args,+InitTermCode,+WorkSpace,+Modules,+IsUpdatable,-Code)
+ flora_export_wrap_termlist(+Args,+InitTermCode,+WorkSpace,+WSFrom,+Modules,+IsUpdatable,-Code)
 ***************************************************************************/
-flora_export_wrap_termlist([H|T],InitTermCode,WS,Modules,IsUpdatable,Code) :-
-	flexport_wrap_term(WS,H,Modules,IsUpdatable,HCode),
-	flora_export_wrap_termlist(T,[HCode|InitTermCode],WS,Modules,IsUpdatable,Code).
+flora_export_wrap_termlist([H|T],InitTermCode,WS,WSFrom,Modules,IsUpdatable,Code) :-
+	flexport_wrap_term(WS,WSFrom,H,Modules,IsUpdatable,HCode),
+	flora_export_wrap_termlist(T,[HCode|InitTermCode],WS,WSFrom,Modules,IsUpdatable,Code).
 
-flora_export_wrap_termlist([],InitTermCode,_WS,_Modules,_IsUpd,Code) :- 
+flora_export_wrap_termlist([],InitTermCode,_WS,_WSFrom,_Modules,_IsUpd,Code) :- 
 	Code = InitTermCode,
 	!.
 	
@@ -1207,7 +1218,7 @@ flora_export_parse_term_list([],InitialTerm,Code,_Status) :-
 
 /****************************************************************************
  flora_export_parse_term(+Term,-TermCode,-Status)
- Term = (WS,Term,Modules,IsUpd)
+ Term = (WS,WSFrom,Term,Modules,IsUpd)
  TermCode = flrexport()
 	The parsing of the exported term(s) takes place in two steps. 
  Initially, each exported term is normalized and wrapped in its 
@@ -1215,7 +1226,7 @@ flora_export_parse_term_list([],InitialTerm,Code,_Status) :-
  one-by-one.
 ****************************************************************************/
 flora_export_parse_term(TermCode,ExportCode,Status) :-
-	flexport_unwrap_term(TermCode,WS,Term,Modules,IsUpdatable),
+	flexport_unwrap_term(TermCode,WS,WSFrom,Term,Modules,IsUpdatable),
 	%% check for errors in the term exported
 	flora_export_check_error(Term,Status),
 	(var(Status) -> 
@@ -1225,7 +1236,7 @@ flora_export_parse_term(TermCode,ExportCode,Status) :-
 	),
 	(var(Status) -> 
 	    (
-		flora_export_parse_body_term(Term,WS,TCode,StatusBody),
+		flora_export_parse_body_term(Term,WS,WSFrom,TCode,StatusBody),
 		flfact_struct(TCode,FactTermCode),
 		%% the module(s)
 		(StatusBody == [] ->
@@ -1242,7 +1253,7 @@ flora_export_parse_term(TermCode,ExportCode,Status) :-
 
 
 /****************************************************************************
- flora_export_parse_body_term(+Args,+WS,-Code,-Status)
+ flora_export_parse_body_term(+Args,+WS,+WSFrom,-Code,-Status)
  Parses the predicate body by calling the appropriate flora_body predicate.
       The var(WS) checks whether the exported terms correspond to the module 
  other than the one which it is loaded currently. It is initialized through 
@@ -1255,11 +1266,11 @@ flora_export_parse_term(TermCode,ExportCode,Status) :-
  program is loaded else an error (Attempt to export from an invalid or 
  uninstantiated module/term.) will be reported.
 ****************************************************************************/
-flora_export_parse_body_term(Term,WS,Code,Status) :-
+flora_export_parse_body_term(Term,WS,WSFrom,Code,Status) :-
 	(var(WS) -> 
 		flora_body(Term,Code,Status)
 		;
-		flora_body(Term,FLORAUSERMOD(WS),Code,Status)
+		flora_body(Term,FLORAUSERMOD(WS),WSFrom,Code,Status)
 	).
 
 
@@ -1784,7 +1795,9 @@ flora_parse_fact(CanoniTerm,NULL,Status) :-
 	!.
 
 flora_parse_fact(CanoniTerm,Code,Status) :-
+	report_context(parsing_facts),
 	flora_head(CanoniTerm,CodeList,Status),
+	clear_context(parsing_facts),
 	flfact_struct(CodeList,Code).
 
 
@@ -1951,7 +1964,7 @@ flora_head_literal(CanoniTerm,_Code,Status) :-
   is a list containing some error message.
 
 
-  flora_body(+CanoniTerm,+WorkSpace,-Goal,-Status)
+  flora_body(+CanoniTerm,+WorkSpace,+WSFrom,-Goal,-Status)
 
   Note: Module name specification is distributive over negation, conjunction
         and disjunction in the rule body. It works like nesting of variable
@@ -1963,16 +1976,16 @@ flora_head_literal(CanoniTerm,_Code,Status) :-
         the same effect as (if a@mod then b@mod else c@mod).
 ****************************************************************************/
 flora_body(CanoniTerm,Goal,Status) :-
-	flora_body(CanoniTerm,NULL,Goal,Status).
+	flora_body(CanoniTerm,NULL,WS_FROM_BODY,Goal,Status).
 
 
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,WSFrom,Code,Status) :-
 	get_atom(Funct,F),
 	(F == FL_COMMA; F == FL_SEMICOLON ; F==FL_AND ; F==FL_OR),
 	!, % Module name is distributive over conjunction or disjunction.
-	flora_body(L,WS,LCode,S),
+	flora_body(L,WS,WSFrom,LCode,S),
 	( S == [] ->
-	    flora_body(R,WS,RCode,Status),
+	    flora_body(R,WS,WSFrom,RCode,Status),
 	    ( Status == [] ->
 		( (F == FL_COMMA ; F==FL_AND) ->
 		    flconjunct_struct(LCode,RCode,Code)
@@ -1986,27 +1999,27 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,Code,Status) :-
 	  Status=S
         ).
 
-flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,[G],_If,_Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,[G],_If,_Ip),WS,WSFrom,Code,Status) :-
 	get_atom(Funct,F),
 	(is_notop(F); is_tnotop(F)),
 	!, % Module name is distributive over negation.
-	flora_body(G,WS,C,Status),
+	flora_body(G,WS,WSFrom,C,Status),
 	( Status == [] ->
 	    (is_notop(F) -> flnot_struct(C,Code); fltnot_struct(C,Code))
 	;
 	    true
         ).
 
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,_WSFrom,Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!, % nesting of module name scope
 	%% The module name needs to be parsed early; otherwise, some
-        %% incorrect syntax may be overridden by nesting module specification.
+        %% incorrect syntax may be overridden by nested module specification.
 	flora_workspace(R,RCode,S),
-	(S == [] -> flora_body(L,RCode,Code,Status); Status=S).
+	(S == [] -> flora_body(L,RCode,WS_FROM_BODY,Code,Status); Status=S).
 
 %% reify op ${...} that occurs as a formula
-flora_body(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),_WS,Code,Status) :-
+flora_body(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),_WS,_WSFrom,Code,Status) :-
 	get_atom(Funct,Atom),
 	is_reifyop(Atom),
 	!,
@@ -2019,7 +2032,7 @@ flora_body(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),_WS,Code,Status) :-
 	).
 
 %% Literal is a rule and we are inside reification
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[Head,Body],If,Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[Head,Body],If,Ip),WS,_WSFrom,Code,Status) :-
 	get_name(Funct,FL_IMPLYOP),
 	if_reifying,
 	!,
@@ -2034,58 +2047,58 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[Head,Body],If,Ip),WS,Code,Status) :-
 	).
 
 %% At this point, CanoniTerm is not a logical formula.
-flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status) :-
 	get_name(Funct,FL_IF),
 	!,
 	%% Module name is distributive over if-then-else statement.
-        flora_body_ifthenelse(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
+        flora_body_ifthenelse(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status).
 
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_WS,_Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_WS,_WSFrom,_Code,Status) :-
 	get_name(Funct,FL_THEN),
 	!,
         parsing_error(If,ERROR_THENBODY,Status).
 
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_WS,_Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_WS,_WSFrom,_Code,Status) :-
 	get_name(Funct,FL_ELSE),
 	!,
         parsing_error(If,ERROR_ELSEBODY,Status).
 
 %% Parse the a<-b form of if-then
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[IfPart,ThenPart],_If,_Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[IfPart,ThenPart],_If,_Ip),WS,WSFrom,Code,Status) :-
 	get_name(Funct,FL_LEFTARROW),
 	!,
-	flora_leftarrow_implication(IfPart,ThenPart,WS,Code,Status).
+	flora_leftarrow_implication(IfPart,ThenPart,WS,WSFrom,Code,Status).
 
 %% Parse the ~ meta predicate
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status) :-
 	get_name(Funct,FL_UNIVEQFORM),
 	!,
-        flora_body_univeqform(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
+        flora_body_univeqform(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status).
 
 %% Parse the =.. meta predicate
 %% Workspace as in (A=..B)@foo is illegal.  But (A@foo =.. B) is fine.
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status) :-
 	get_name(Funct,FL_METAUNIV),
 	!,
-        flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
+        flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status).
 
 %% Parse the ~.. meta predicate
 %% Workspace as in (A~..B)@foo is illegal.  But (A@foo =.. B) is fine.
-flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WSFrom,WS,Code,Status) :-
 	get_name(Funct,FL_METAUNIVFORM),
 	!,
-        flora_body_metaunivform(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
+        flora_body_metaunivform(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,WSFrom,Code,Status).
 
 %% Process the control constructs while-do/loop, loop/do-until, unless-do
-flora_body(CANOTERM(TopWrapper,1,FL_PARENTHESIS,Args,_If,_Ip), WS,Code,Status) :-
+flora_body(CANOTERM(TopWrapper,1,FL_PARENTHESIS,Args,_If,_Ip),WS,WSFrom,Code,Status) :-
 	get_name(TopWrapper,TopName),
 	get_control_construct_definition(_CtlWrapper,TopName,_InnerName),
 	!,
 	%% Args should be [CanonTerm]. If not, will issue a syntax error
-	flora_body_controlconstruct(Args,WS,TopName,Code,Status).
+	flora_body_controlconstruct(Args,WS,WSFrom,TopName,Code,Status).
 
 %% If inner keyword of ctl construct occurs at the top level -- error
-flora_body(CANOTERM(TopWrapper,2,_Paren,_Args,If,_Ip), _WS,_Code,Status) :-
+flora_body(CANOTERM(TopWrapper,2,_Paren,_Args,If,_Ip), _WS,_WSFrom,_Code,Status) :-
 	get_name(TopWrapper,TopName),
 	get_control_construct_definition(_,_,TopName),
 	!,
@@ -2094,20 +2107,20 @@ flora_body(CANOTERM(TopWrapper,2,_Paren,_Args,If,_Ip), _WS,_Code,Status) :-
 %% At this point, CanoniTerm is neither a logical formula nor a 
 %% if-then-else statement, nor some other special builtin 
 %% (like while-loops or meta operators)
-flora_body(CanoniTerm,NULL,Code,Status) :-
+flora_body(CanoniTerm,NULL,_WSFrom,Code,Status) :-
 	!,
 	%% no module name
 	flora_body_literal(CanoniTerm,Code,Status).
 
 %% @prolog()
-flora_body(CanoniTerm,PROLOGMODULE,Code,Status) :-
+flora_body(CanoniTerm,PROLOGMODULE,_WSFrom,Code,Status) :-
 	!,
 	%% Prolog builtin
 	flora_prlgterm(CanoniTerm,TCode,Status),
 	(Status == [] -> flplib_struct(TCode,Code); true).
 
 %% @prolog(...)
-flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
+flora_body(CanoniTerm,PrologModuleSpec,_WSFrom,Code,Status) :-
 	get_module_from_spec(PrologModuleSpec,PROLOGMODULE,Mod),
 	!,
 	%% Prolog module
@@ -2115,7 +2128,7 @@ flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
 	(Status == [] -> flmodule_struct(TCode,Mod,PROLOGMODULE,Code); true).
 
 %% @prologall()
-flora_body(CanoniTerm,PROLOGALLMODULE,Code,Status) :-
+flora_body(CanoniTerm,PROLOGALLMODULE,_WSFrom,Code,Status) :-
 	!,
 	%% Prolog builtin
 	flora_pure_term(CanoniTerm,TCode,Status1),
@@ -2127,7 +2140,7 @@ flora_body(CanoniTerm,PROLOGALLMODULE,Code,Status) :-
 	).
 
 %% @prologall(...)
-flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
+flora_body(CanoniTerm,PrologModuleSpec,_WSFrom,Code,Status) :-
 	get_module_from_spec(PrologModuleSpec,PROLOGALLMODULE,Mod),
 	!,
 	%% Prolog module
@@ -2140,14 +2153,26 @@ flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
 	).
 
 %% @module or @flora(...)
-flora_body(CanoniTerm,FloraModSpec,Code,Status) :-
+flora_body(CanoniTerm,FloraModSpec,WSFrom,Code,Status) :-
 	get_module_from_spec(FloraModSpec,ModuleType,Module),
 	!,
 	%% Flora user or system module
-	flora_body_wsliteral(CanoniTerm,Module,TCode,Status),
-	(Status == []
-	-> flmodule_struct(TCode,Module,ModuleType,Code)
-	; true
+	(PARSER_CONTEXT(parsing_facts), is_flvar_struct(Module)
+	-> 
+	    %% Variables are not allowed in the module specs in the
+	    %% reifications that occur in facts.
+	    get_index(Module,Idx),
+	    parsing_error(Idx,NO_WS_VAR,Status)
+	;
+	    flora_body_wsliteral(CanoniTerm,Module,WSFrom,WSFlag,TCode,Status),
+	    (Status == [] ->
+		( WSFlag == WITH_MODULE ->
+	            flmodule_struct(TCode,Module,ModuleType,Code)
+		;
+		    Code = TCode
+		)
+	    ; true
+	    )
 	).
 
         
@@ -2232,14 +2257,14 @@ flora_workspace(CanoniTerm,_WSCode,Status) :-
 
 
 /****************************************************************************
-  flora_body_ifthenelse(+CanoniTerm,+Workspace,-Code,-Status)
+  flora_body_ifthenelse(+CanoniTerm,+Workspace,+WSFrom,-Code,-Status)
 
   parses an if-then-else statement. "Workspace" is the module name specified
   for the entire statement and should be distributed over the substatements
   inside.
 ****************************************************************************/
-flora_body_ifthenelse(CanoniTerm,WS,Code,Status) :-
-	flora_body_ifthenelse(CanoniTerm,WS,NK,_NT,Code,S),
+flora_body_ifthenelse(CanoniTerm,WS,WSFrom,Code,Status) :-
+	flora_body_ifthenelse(CanoniTerm,WS,WSFrom,NK,_NT,Code,S),
         ( S \== [] ->
 	    Status=S
 
@@ -2255,7 +2280,7 @@ flora_body_ifthenelse(CanoniTerm,WS,Code,Status) :-
 
 
 /****************************************************************************
-  flora_body_ifthenelse(+CanoniTerm,+Workspace,-NextKeyword,-NextTerm,-Code,-Status).
+  flora_body_ifthenelse(+CanoniTerm,+Workspace,+WSFrom,-NextKeyword,-NextTerm,-Code,-Status).
 
   Takes a canonical term (which represents a stream of tokens) and parses
   a normal statement at the beginning  of it. Moreover, it returns the next
@@ -2269,21 +2294,21 @@ flora_body_ifthenelse(CanoniTerm,WS,Code,Status) :-
   Status denotes success/failure when the beginning of the token stream
   is parsed.
 
-  This procedure complements flora_body/4 and handles the distribution of
+  This procedure complements flora_body/5 and handles the distribution of
    module name over if-then-else statements.
 ****************************************************************************/
 flora_body_ifthenelse(CANOTERM(Funct,1,FL_PARENTHESIS,[CTerm],If,_Ip),WS,
-		      NextKeyword,NextTerm,Code,Status) :-
+		      WSFrom,NextKeyword,NextTerm,Code,Status) :-
 	get_name(Funct,FL_IF),
 	!,
-	flora_body_ifthenelse(CTerm,WS,NK1,NT1,CondStruct,S1),
+	flora_body_ifthenelse(CTerm,WS,WSFrom,NK1,NT1,CondStruct,S1),
 	( S1 == [] ->
 	    ( NK1 = then(_IThen) ->
-		flora_body_ifthenelse(NT1,WS,NK2,NT2,ThenStruct,S2), 
+		flora_body_ifthenelse(NT1,WS,WSFrom,NK2,NT2,ThenStruct,S2), 
 		( S2 == [] ->
 		    ( NK2 = else(_IElse) ->
 			flifthenelse_struct(CondStruct,ThenStruct,ElseStruct,Code),
-			flora_body_ifthenelse(NT2,WS,NextKeyword,NextTerm,ElseStruct,Status)
+			flora_body_ifthenelse(NT2,WS,WSFrom,NextKeyword,NextTerm,ElseStruct,Status)
 		    ;
 		      flifthen_struct(CondStruct,ThenStruct,Code),
 		      NextKeyword=NK2,
@@ -2305,7 +2330,7 @@ flora_body_ifthenelse(CANOTERM(Funct,1,FL_PARENTHESIS,[CTerm],If,_Ip),WS,
 	).
 
 flora_body_ifthenelse(CANOTERM(Funct,2,FL_PARENTHESIS,[STerm,NextTerm],If,_Ip),WS,
-		      NextKeyword,NextTerm,Code,Status) :-
+		      WSFrom,NextKeyword,NextTerm,Code,Status) :-
 	( get_name(Funct,FL_THEN) ->
 	    NextKeyword=then(If)
 
@@ -2313,20 +2338,20 @@ flora_body_ifthenelse(CANOTERM(Funct,2,FL_PARENTHESIS,[STerm,NextTerm],If,_Ip),W
 	    NextKeyword=else(If)
 	),
 	!,
-	flora_body(STerm,WS,Code,Status).
+	flora_body(STerm,WS,WSFrom,Code,Status).
 
-flora_body_ifthenelse(CanoniTerm,WS,[],[],Code,Status) :-
-	flora_body(CanoniTerm,WS,Code,Status).
+flora_body_ifthenelse(CanoniTerm,WS,WSFrom,[],[],Code,Status) :-
+	flora_body(CanoniTerm,WS,WSFrom,Code,Status).
 
 
 /*****************************************************************************
-   flora_leftarrow_implication(+IfPart,+ThenPart,+WS,-Code,-Status)
+   flora_leftarrow_implication(+IfPart,+ThenPart,+WS,+WSFrom,-Code,-Status)
    If-then expressed using <-
 *****************************************************************************/
-flora_leftarrow_implication(IfPart,ThenPart,WS,Code,Status) :-
-	flora_body(IfPart,WS,IfCode,Stat1),
+flora_leftarrow_implication(IfPart,ThenPart,WS,WSFrom,Code,Status) :-
+	flora_body(IfPart,WS,WSFrom,IfCode,Stat1),
 	(Stat1==[]
-	-> flora_body(ThenPart,WS,ThenCode,Status),
+	-> flora_body(ThenPart,WS,WSFrom,ThenCode,Status),
 	    (Status==[]
 	    ->
 		flifthen_struct(IfCode,ThenCode,Code)
@@ -2339,24 +2364,24 @@ flora_leftarrow_implication(IfPart,ThenPart,WS,Code,Status) :-
 
 
 /****************************************************************************
-  flora_body_univeqform(+CanoniTerm,+WS,-Code,-Status)
+  flora_body_univeqform(+CanoniTerm,+WS,+WSFrom,-Code,-Status)
 
   Parse the meta op ~
 ****************************************************************************/
-flora_body_univeqform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Status) :-
-	protect_reification(flora_distribute_ws(Args,WS,[LCode,RCode],Status)),
+flora_body_univeqform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,WSFrom,Code,Status) :-
+	protect_reification(flora_distribute_ws(Args,WS,WSFrom,[LCode,RCode],Status)),
 	(Status == [] -> fluniveqform_struct(LCode,RCode,Code) ; true).
 
 
 /****************************************************************************
-  flora_body_metauniv(+CanoniTerm,+WS,-Code,-Status)
+  flora_body_metauniv(+CanoniTerm,+WS,+WSFrom,-Code,-Status)
 
   Parse the meta op =..
   (_=.. _)@floramodule, (_ =.. _)@prolog(mod) and (_ =.. _)@prologall(mod)
   are illegal, but
   (_ =.. _)@prolog() and (_ =.. _)@prologall() are legal.
 ****************************************************************************/
-flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
+flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,WS_FROM_BODY,_Code,Status) :-
 	%% only @prolog() and @prologall() are allowed;
 	%% they don't match get_module_from_spec/3
 	get_module_from_spec(WS,_,_),
@@ -2364,7 +2389,7 @@ flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Stat
 	parsing_error(If,NO_WORKSPACE,Status).
 
 %% If (_ =.. _)@prolog() or (_ =.. _)@prologall(), then use Prolog =..
-flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Status) :-
+flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,_WSFrom,Code,Status) :-
 	(WS == PROLOGMODULE; WS == PROLOGALLMODULE),
 	!,
 	Args = [LCode,RCode],
@@ -2398,7 +2423,7 @@ flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Status
 	; true
 	).
 
-flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Status) :-
+flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,_WSFrom,Code,Status) :-
 	Args = [Left,Right],
 	flora_pathexp(Left,LeftParsed,S1),
 	(S1 == [] -> flora_pathexp(Right,RightParsed,Status)
@@ -2412,7 +2437,7 @@ flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Stat
 
 
 /****************************************************************************
-  flora_body_metaunivform(+CanoniTerm,+WS,-Code,-Status)
+  flora_body_metaunivform(+CanoniTerm,+WS,+WSFrom,-Code,-Status)
 
   Parse the meta op ~..
   This is like =.. but is compiled differently: the left arg is meta.
@@ -2421,12 +2446,12 @@ flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Stat
       (_ ~.. _)@prologall(mod), (_ ~.. _)@prologall(),
 
 ****************************************************************************/
-flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
+flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,WS_FROM_BODY,_Code,Status) :-
 	(get_module_from_spec(WS,_,_) ; get_module_from_spec(WS,null)),
 	!,
 	parsing_error(If,NO_WORKSPACE,Status).
 
-flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Status) :-
+flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,_WSFrom,Code,Status) :-
 	Args = [Left,Right],
 	protect_reification(flora_body(Left,LeftParsed,S1)),
 	(S1 == [] -> flora_pathexp(Right,RightParsed,Status)
@@ -2439,14 +2464,14 @@ flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,
 	).
 
 /****************************************************************************
-  flora_body_controlconstruct(+CanoniTermList1,+WS,+TopWrapper,-Code,-Status).
+  flora_body_controlconstruct(+CanoniTermList1,+WS,+WSFrom,+TopWrapper,-Code,-Status).
    Process control constructs while-do/loop, loop/do-until, unless-do
    CanoniTermList1 represents the inner part of the control construct,
    e.g., the do-part in while(do(Cond,Action)).
    It should be a singleton list that contains a canonic term.
    TopWrapper is the unary wrapper (whole,do,loop,unless) for the construct
 ****************************************************************************/
-flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],WS,TopWrapper,Code,Status) :-
+flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],WS,WSFrom,TopWrapper,Code,Status) :-
 	get_name(InnerFunct,InnerName),
 	!,
 	(get_control_construct_definition(StructType,TopWrapper,InnerName), !
@@ -2458,8 +2483,8 @@ flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],
 	),
 	(var(Status)
 	-> Args=[Cond,Action],
-	    flora_body(Cond,WS,CondCode,S1),
-	    (S1== [] -> flora_body(Action,WS,ActionCode,Status)
+	    flora_body(Cond,WS,WSFrom,CondCode,S1),
+	    (S1== [] -> flora_body(Action,WS,WSFrom,ActionCode,Status)
 	    ; Status = S1
 	    ),
 	    (Status==[]
@@ -2470,13 +2495,13 @@ flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],
 	).
 
 %% If wrong number of args or wrong parenthesis - issue an error
-flora_body_controlconstruct([CANOTERM(_InnerFunct,_Arity,_Parenthesis,_Args,If,_Ip)],_WS,TopWrapper,_Code,Status) :-
+flora_body_controlconstruct([CANOTERM(_InnerFunct,_Arity,_Parenthesis,_Args,If,_Ip)],_WS,_WSFrom,TopWrapper,_Code,Status) :-
 	flora_concat_atoms(['Illegal syntax in `', TopWrapper, ''' construct'],
 			   ErrMsg),
 	parsing_error(If,ErrMsg,Status).
 
 
-flora_body_controlconstruct([SomethingElse],_WS,TopWrapper,_Code,Status) :-
+flora_body_controlconstruct([SomethingElse],_WS,_WSFrom,TopWrapper,_Code,Status) :-
 	get_index(SomethingElse,Idx),
 	flora_concat_atoms(['Illegal syntax in `', TopWrapper, ''' construct'],
 			   ErrMsg),
@@ -2485,17 +2510,17 @@ flora_body_controlconstruct([SomethingElse],_WS,TopWrapper,_Code,Status) :-
 
 
 /****************************************************************************
-  flora_distribute_ws(+List,+WS,-TransformedList,-Status)
+  flora_distribute_ws(+List,+WS,+WSFrom,-TransformedList,-Status)
 
   Distribute the workspace through a list of formulae
 ****************************************************************************/
-flora_distribute_ws([],_WS,[],[]) :- !.
-flora_distribute_ws([A|Args],WS,[TA|TArgs],Status) :-
+flora_distribute_ws([],_WS,_WSFrom,[],[]) :- !.
+flora_distribute_ws([A|Args],WS,WSFrom,[TA|TArgs],Status) :-
 	(get_flvar_struct(A,TA), Status1 = [], !
 	;
-	    flora_body(A,WS,TA,Status1)
+	    flora_body(A,WS,WSFrom,TA,Status1)
 	),
-	(Status1 == [] -> flora_distribute_ws(Args,WS,TArgs,Status)
+	(Status1 == [] -> flora_distribute_ws(Args,WS,WSFrom,TArgs,Status)
 	; Status=Status1
 	).
 
@@ -2507,7 +2532,7 @@ flora_distribute_ws([A|Args],WS,[TA|TArgs],Status) :-
   not associate with any module name specification.
 ****************************************************************************/
 flora_body_literal(CanoniTerm,Code,Status) :-
-	flora_exec_directive(CanoniTerm,_WS,Code,Status),
+	flora_exec_directive(CanoniTerm,_WS,_WSFrom,Code,Status),
 	!.
 
 %% :(_,_), ::(_,_)
@@ -2620,8 +2645,8 @@ flora_body_literal(CANOTERM(Funct,1,FL_BRACE,[Arg],_If,Ip),Code,Status) :-
 	).
 
 
-%% insertrule_a{...}, insertrule_z{...}, deleterule_a{...}, or
-%% deleterule_z{...}
+%% insertrule_a{...}, insertrule_z{...}, deleterule_a{...},
+%% deleterule_z{...}, or deleterule{...}
 flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	get_name(Funct,Atom),
 	is_ruleupdateop(Atom),
@@ -2632,6 +2657,53 @@ flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	  flobject_struct(Funct,FCode),
 	  flora_ruleupdate(FCode,N,Args,Code,Status)
         ).
+
+%% clause{[Mode,]Head, Body}
+flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
+	get_name(Funct,Atom),
+	is_clauseop(Atom),
+	!,
+        (N==2 ->
+            Args = [Head,Body],
+	    flora_comma_separated_list(Head,HeadList),
+	    flora_dbliteral_list(FLCLS,HeadList,HeadCodeList,S),
+            ( S == [] ->
+                flora_body(Body,BodyCode,Status),
+                ( Status == [] ->
+                    flclause_struct(HeadCodeList,BodyCode,Code)
+                ;
+                    true
+                )
+            ;
+                Status = S
+            )
+        ; N==3 ->
+            Args = [Mode,Head,Body],
+            flobject_struct(Mode,ModeCode),
+            (is_flatom_struct(ModeCode,ModeAtom), valid_clause_mode(ModeAtom) ->
+	        flora_comma_separated_list(Head,HeadList),
+	        flora_dbliteral_list(FLCLS,HeadList,HeadCodeList,S),
+                ( S == [] ->
+                    flora_body(Body,BodyCode,Status),
+                    ( Status == [] ->
+                        flclause_struct(ModeCode,HeadCodeList,BodyCode,Code)
+                    ;
+                        true
+                    )
+                ;
+                    Status = S
+                )
+            ;
+                parsing_error(Ip,ERROR_CLAUSE,Status)
+            )
+        ;
+            parsing_error(Ip,ERROR_CLAUSE,Status)
+        ).
+        
+valid_clause_mode(STATIC) :- !.
+valid_clause_mode(DYNAMIC) :- !.
+valid_clause_mode(DYNA) :- !.
+valid_clause_mode(DYNZ) :- !.
 
 %% :=:
 flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
@@ -2682,25 +2754,33 @@ flora_body_literal(CanoniTerm,_Code,Status) :-
 
 
 /****************************************************************************
-  flora_body_wsliteral(+CanoniTerm,+FloraModSpec,-WorkspaceLiteral,-Status)
+  flora_body_wsliteral(+CanoniTerm,+FloraModSpec,+WSFrom,-WSFlag,-WorkspaceLiteral,-Status)
 
   This predicate is called to parse a literal in a rule body, which is
-  associated with some module name specification.
+  associated with some module name specification.  If WSFlag is WITH_MODULE,
+  then the code needs to be wrapped with the module specification; otherwise
+  WSFlag is WITHOUT_MODULE.
 
   Note: Most builtin FLORA operators are allowed to be associated with
         module name specification.
 ****************************************************************************/
-flora_body_wsliteral(CanoniTerm,FloraModSpec,Code,Status) :-
-	flora_exec_directive(CanoniTerm,FloraModSpec,Code,Status),
+flora_body_wsliteral(CanoniTerm,FloraModSpec,WSFrom,WITH_MODULE,Code,Status) :-
+	flora_exec_directive(CanoniTerm,FloraModSpec,WSFrom,Code,Status),
 	!.
 
-flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),_FloraModSpec,Code,Status) :-
+flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),_FloraModSpec,WSFrom,WSFlag,Code,Status) :-
 	get_atom(Funct,F),
 	!,
 	( flora_nowsp(F,N) ->
-	    parsing_error(If,NO_WORKSPACE,Status)
+	    ( WSFrom == WS_FROM_DYNRULE ->
+	        flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),Code,Status),
+		WSFlag = WITHOUT_MODULE
+	    ;
+		parsing_error(If,NO_WORKSPACE,Status)
+	    )
 
 	; N == 2, is_birelop(F) ->
+	    WSFlag = WITH_MODULE,
 	    flora_pathexplist(Args,[LCode,RCode],Status),
 	    (Status == [] -> flbirelate_struct(LCode,F,RCode,Code); true)
 
@@ -2708,49 +2788,65 @@ flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),_FloraModSpec,
 	    parsing_error(If,ERROR_BDLITERAL,Status)
 
 	; N == 2, F == FL_OBJEQL ->
+	    WSFlag = WITH_MODULE,
 	    flora_pathexplist(Args,[LCode,RCode],Status),
 	    (Status == [] -> flobjeql_struct(LCode,RCode,Code); true)
 
 	;
+	  WSFlag = WITH_MODULE,
 	  flora_term(Funct,N,Args,Code,Status)
         ).
 
-flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),_FloraModSpec,Code,Status) :-
+flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),_FloraModSpec,_WSFrom,WITH_MODULE,Code,Status) :-
 	!,
 	flora_term(Funct,N,Args,Code,Status).
 
-flora_body_wsliteral(CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),_FloraModSpec,Code,Status) :-
+flora_body_wsliteral(CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),_FloraModSpec,_WSFrom,WITH_MODULE,Code,Status) :-
 	!,
 	flora_objspec(Funct,N,Args,Code,Status).
 
 
-flora_body_wsliteral(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),_FloraModSpec,Code,Status) :-
+flora_body_wsliteral(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),_FloraModSpec,_WSFrom,WITHOUT_MODULE,Code,Status) :-
 	get_atom(Funct,F),
 	((is_dbinsertop(F); is_dbdeleteop(F);
-	  is_ruleupdateop(F); is_tablerefreshop(F);
+	  is_ruleupdateop(F); is_clauseop(F); is_tablerefreshop(F);
 	  is_callermoduleop(F); is_newmoduleop(F))),
 	!,
 	flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),Code,Status).
 
-flora_body_wsliteral(CanoniTerm,_FloraModSpec,Code,Status) :-
+flora_body_wsliteral(CanoniTerm,_FloraModSpec,WSFrom,WSFlag,Code,Status) :-
 	get_atom(CanoniTerm,A),
 	!,
 	( flora_nowsp(A,0) ->
-	    parsing_error(CanoniTerm,NO_WORKSPACE,Status)
+	    ( WSFrom == WS_FROM_DYNRULE ->
+		WSFlag = WITHOUT_MODULE,
+		flora_body_literal(CanoniTerm,Code,Status)
+	    ;
+	        parsing_error(CanoniTerm,NO_WORKSPACE,Status)
+	    )
 	;
+	  WSFlag = WITH_MODULE,
 	  flobject_struct(CanoniTerm,Code),
 	  Status=[]
         ).
 
-flora_body_wsliteral(CANOLIST(_L,_T,_N,I,_Ib),_FloraModSpec,_Code,Status) :-
+flora_body_wsliteral(CANOLIST(L,T,N,I,Ib),_FloraModSpec,WSFrom,WITHOUT_MODULE,Code,Status) :-
 	!,
-	parsing_error(I,NO_WORKSPACE,Status).
+	( WSFrom == WS_FROM_DYNRULE ->
+	    flora_body_literal(CANOLIST(L,T,N,I,Ib),Code,Status)
+	;
+	    parsing_error(I,NO_WORKSPACE,Status)
+	).
 
-flora_body_wsliteral(CanoniTerm,_FloraModSpec,Code,[]) :-
+flora_body_wsliteral(CanoniTerm,_FloraModSpec,_WSFrom,WITH_MODULE,Code,[]) :-
 	get_flvar_struct(CanoniTerm,Code),
 	!.
 
-flora_body_wsliteral(CanoniTerm,_FloraModSpec,_Code,Status) :-
+flora_body_wsliteral(CanoniTerm,_FloraModSpec,WS_FROM_DYNRULE,WITHOUT_MODULE,Code,Status) :-
+	!,
+	flora_body_literal(CanoniTerm,Code,Status).
+
+flora_body_wsliteral(CanoniTerm,_FloraModSpec,_WSFrom,_WSFlag,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_BDLITERAL,Status).
 
 
@@ -2953,7 +3049,12 @@ flora_attmeth_template(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Statu
 flora_attmeth_template(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-        ( (get_flname_struct(R,RCode);get_flvar_struct(R,RCode),is_anonymous_flvar_struct(RCode)) ->
+        ( (get_flname_struct(R,RCode)
+	  ;
+	      get_flvar_struct(R,RCode),
+	      is_anonymous_flvar_struct(RCode)
+	  )
+	->
 	    flora_attmeth_template(L,LCode,S),
 	    ( S == [] ->
 		( ( is_flattspec_struct(LCode)
@@ -3105,12 +3206,22 @@ flora_loaditem(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Status) :-
 	    ;
 	      parsing_error(R,ERROR_WSNAME,Status)
 	    )
+	; flora_addfile(L,LCode,_S) ->  % support for adding files to modules
+	    ( flora_name_or_normvar(R,RCode) ->
+		flterm_struct(FCode,2,[LCode,RCode],Code),
+		Status=[]
+	    ;
+		parsing_error(R,ERROR_WSNAME,Status)
+	    )
 	;
-	  parsing_error(L,ERROR_LOADFILE,Status)
+	    parsing_error(L,ERROR_LOADFILE,Status)
         ).
 
 flora_loaditem(CanoniTerm,Code,[]) :-
-	flora_name_or_normvar(CanoniTerm,Code),
+	( flora_name_or_normvar(CanoniTerm,Code), !
+	;
+	    flora_addfile(CanoniTerm,Code,_S)
+	),
 	!.
 
 flora_loaditem(CanoniTerm,_Code,Status) :-
@@ -3125,6 +3236,18 @@ flora_name_or_normvar(CanoniTerm,Code) :-
 	  not is_anonymous_flvar_struct(Code)
         ),
 	!.
+
+%% support for adding files to modules
+flora_addfile(CANOTERM(Funct,1,FL_PARENTHESIS,[L],_If,_Ip),Code,Status) :-
+	get_atom(Funct,FL_PLUS),
+	flobject_struct(Funct,FCode),
+	!,
+	( flora_name_or_normvar(L,LCode) ->
+	    flterm_struct(FCode,1,[LCode],Code),
+	    Status=[]
+	;
+	    parsing_error(L,ERROR_ADDFILE,Status)
+        ).
 
 thismodule_token(CanoniTerm,ThisModToken) :-
 	get_spectoken(CanoniTerm,FL_THISMODULE),
@@ -3158,8 +3281,8 @@ flora_body_literal_list([L|Lits],Code,Status) :-
   flora_prlgterm(+CanoniTerm,-Code,-Status)
 
   This predicate is called to parse a Prolog predicate or prolog term.
-  Its arguments can be F-logic molecules and path expressions, so they are
-  not parsed as Prolog terms.
+  Its arguments can be F-logic molecules and path expressions, so the arguments
+  are not parsed as Prolog terms.
 ****************************************************************************/
 flora_prlgterm(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	!,
@@ -3375,6 +3498,7 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	  true
         ).
 
+%% DEPRECATED!!
 %% This procedure is to handle module specification in the argument position.
 %% It might be useful to support meta-programming feature. The distribution
 %% and nesting rule for literals in rule body does not apply to arguments. For
@@ -3382,6 +3506,7 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
+	%%abort('Parser - DEPRECATED!!'),
 	flora_workspace(R,WSCode,S1),
 	( S1 == [] ->
 	    ( (WSCode = PROLOGMODULE; WSCode = PROLOGMODULE(Mod)) ->
@@ -3728,7 +3853,7 @@ var_list(CanoniTerm,[Var],Status) :-
   flora_head_term(+Funct,+Arity,+Args,-Code,-Status)
 
   This predicate is called to parse a term in a rule head. Parsing of its
-  arguments should be adjusted according to its arguments mode definition.
+  arguments is adjusted according to its arguments mode definition.
 ****************************************************************************/
 flora_head_term(Funct,N,Args,Code,Status) :-
 	get_atom(Funct,FAtom),
@@ -3830,9 +3955,6 @@ flora_head_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 
 	; F == FL_AT ->
 	    %% Module specs for F-logic molecules in the head are not allowed.
-	    %% However, module name specs for a term should be OK, since it
-	    %% might be a useful meta-programming feature.
-	    %% But this requires more checking.
 	    parsing_error(If,NO_WSINRULEHEAD,Status)
 	;
 	  flora_head_term(Funct,2,Args,Code,Status)
@@ -3978,7 +4100,7 @@ flora_head_setexp(CanoniTerm,[Code],Status) :-
 ****************************************************************************/
 
 flora_tablerefresh(Args,Code,Status) :-
-	flora_dbliteral_list(FLDEL,Args,CodeList,Status),
+	flora_dbliteral_list(FLREF,Args,CodeList,Status),
 	(Status == []
 	-> flrefresh_struct(CodeList,Code)
 	; true
@@ -4071,7 +4193,7 @@ flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Sta
 	%% Module name, Var, or special token _@
 	( (flora_name_or_normvar(R,RCode)
 	  ; thismodule_token(R,RCode)
-	  ; flora_workspace(R,RCode,S), S==[]
+	  %% ; flora_workspace(R,RCode,S), S==[]
 	  )
 	->
 	    flora_comma_separated_list(L,LList),
@@ -4120,7 +4242,6 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	%% Module name, Var, or special token _@
 	( (flora_name_or_normvar(R,RCode)
 	  ; thismodule_token(R,RCode)
-	  ; flora_workspace(R,RCode,S), S==[]
 	  )
 	->
 	    flora_comma_separated_list(L,LList),
@@ -4210,6 +4331,8 @@ flora_check_update_builtin(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,_Args,If,_Ip),St
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,NO_DELETE,Status)
+        ; 
+          parsing_error(If,ERROR_BUILTIN,Status)
 	).
 
 
@@ -4257,6 +4380,12 @@ flora_dblit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,ERROR_DELETE,Status)
+        ;
+          Mode == FLREF,
+          parsing_error(If,ERROR_REFRESH,Status)
+        ;
+          Mode == FLCLS,
+          parsing_error(If,ERROR_CLAUSE,Status)
 	).
 
 flora_dblit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
@@ -4286,7 +4415,7 @@ flora_dblit(_Mode,CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
 flora_dblit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	!,
 	( get_atom(Funct,F), flora_prlgdef(F,N) ->
-	    parsing_error(If,NO_PROLOGUPDATE,Status)
+	    parsing_error(If,NO_PROLOG,Status)
 	;
 	  flora_db_term(Mode,Funct,N,Args,Code,Status)
 	).
@@ -4304,10 +4433,12 @@ flora_dblit(Mode,CanoniTerm,Code,Status) :-
 	    ;
 	      Mode == FLDEL,
 	      parsing_error(CanoniTerm,NO_DELETE,Status)
+            ;
+              parsing_error(CanoniTerm,ERROR_BUILTIN,Status)
 	    )
 
 	; flora_prlgdef(A,0) ->
-	    parsing_error(CanoniTerm,NO_PROLOGUPDATE,Status)
+	    parsing_error(CanoniTerm,NO_PROLOG,Status)
 	;
 	  flobject_struct(CanoniTerm,Code),
 	  Status=[]
@@ -4325,6 +4456,13 @@ flora_dblit(Mode,CanoniTerm,_Code,Status) :-
 	;
 	  Mode == FLDEL,
 	  parsing_error(CanoniTerm,ERROR_DELETE,Status)
+        ;
+          Mode == FLREF,
+          parsing_error(CanoniTerm,ERROR_REFRESH,Status)
+        ;
+          Mode == FLCLS,
+          parsing_error(CanoniTerm,ERROR_CLAUSE,Status)
+        
 	).
 
 
@@ -4354,6 +4492,12 @@ flora_dbwslit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,ERROR_DELETE,Status)
+	;
+	  Mode == FLREF,
+	  parsing_error(If,ERROR_REFRESH,Status)
+	;
+	  Mode == FLCLS,
+	  parsing_error(If,ERROR_CLAUSE,Status)
 	).
 
 flora_dbwslit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
@@ -4384,6 +4528,7 @@ flora_dbwslit(Mode,CanoniTerm,Code,Status) :-
 	    ;
 	      Mode == FLDEL,
 	      parsing_error(CanoniTerm,NO_DELETE,Status)
+            ; parsing_error(CanoniTerm,ERROR_BUILTIN,Status)
 	    )
 
 	; flora_nowsp(A,0) ->
@@ -4393,10 +4538,17 @@ flora_dbwslit(Mode,CanoniTerm,Code,Status) :-
 	  Status=[]
         ).
 
+flora_dbwslit(_Mode,CanoniTerm,Code,[]) :-
+	get_flvar_struct(CanoniTerm,Code),
+	not is_anonymous_flvar_struct(Code),
+	!.
+
+/**** allow insert{Var@Mod}
 flora_dbwslit(_Mode,CanoniTerm,_Code,Status) :-
 	get_flvar_struct(CanoniTerm,_V),
 	!,
 	parsing_error(CanoniTerm,NO_WORKSPACE,Status).
+****/
 
 flora_dbwslit(Mode,CanoniTerm,_Code,Status) :-
 	!,
@@ -4405,6 +4557,12 @@ flora_dbwslit(Mode,CanoniTerm,_Code,Status) :-
 	;
 	  Mode == FLDEL,
 	  parsing_error(CanoniTerm,ERROR_DELETE,Status)
+	;
+	  Mode == FLREF,
+	  parsing_error(CanoniTerm,ERROR_REFRESH,Status)
+	;
+	  Mode == FLCLS,
+	  parsing_error(CanoniTerm,ERROR_CLAUSE,Status)
 	).
 
 
@@ -4481,7 +4639,7 @@ flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) 
 	( Mode == FLINS ->
 	    parsing_error(If,NO_INSERTMULATT,Status)
 	;
-	  Mode == FLDEL,
+	  (Mode==FLDEL; Mode==FLREF; Mode==FLCLS),
 	  flora_db_pathexplist(Mode,Args,[LCode,RCode],Status),
 	  (Status == [] -> flobjref_struct(LCode,F,RCode,Code); true)
 	).
@@ -4547,6 +4705,12 @@ flora_db_pathexp(Mode,CanoniTerm,_Code,Status) :-
 	;
 	  Mode == FLDEL,
 	  parsing_error(CanoniTerm,ERROR_EXPDELETE,Status)
+	;
+	  Mode == FLREF,
+	  parsing_error(CanoniTerm,ERROR_EXPREFRESH,Status)
+	;
+	  Mode == FLCLS,
+	  parsing_error(CanoniTerm,ERROR_EXPCLAUSE,Status)
 	).
 
 
@@ -4587,6 +4751,7 @@ flora_db_objspec(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status)
 	  ;
 	    Mode == FLDEL,
 	    parsing_error(If,NO_DELETEDISJUN,Status)
+          ; parsing_error(If,NO_DISJUNCTION,Status)
 	  )
 	).
 
@@ -4599,6 +4764,12 @@ flora_db_objspec(Mode,CANOTERM(Funct,1,FL_PARENTHESIS,[_G],If,_Ip),_Code,Status)
 	;
 	  Mode == FLDEL,
 	  parsing_error(If,NO_DELETENEG,Status)
+	;
+	  Mode == FLREF,
+	  parsing_error(If,ERROR_REFRESH,Status)
+	;
+	  Mode == FLCLS,
+	  parsing_error(If,ERROR_CLAUSE,Status)
 	).
 
 flora_db_objspec(Mode,CanoniTerm,Code,Status) :-
@@ -4626,6 +4797,12 @@ flora_db_attmethspec(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Sta
 	    ;
 	      Mode == FLDEL,
 	      parsing_error(If,ERROR_DELETE,Status)
+	    ;
+	      Mode == FLREF,
+	      parsing_error(If,ERROR_REFRESH,Status)
+	    ;
+	      Mode == FLCLS,
+	      parsing_error(If,ERROR_CLAUSE,Status)
 	    )
         ;
 	  F == FL_AT,
@@ -4687,7 +4864,7 @@ flora_dynrule(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Status) :-
 	%% Module name, Var, or special token _@
 	( (flora_name_or_normvar(R,RCode)
 	  ; thismodule_token(R,RCode)
-	  ; flora_workspace(R,RCode,S), S==[]
+	  %% ; flora_workspace(R,RCode,S), S==[]
 	  )
 	->
 	    flora_comma_separated_list(L,LList),
@@ -4726,7 +4903,6 @@ flora_wsdynrule(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeList,Stat
 	%% Module name, Var, or special token _@
 	( (flora_name_or_normvar(R,RCode)
 	  ; thismodule_token(R,RCode)
-	  ; flora_workspace(R,RCode,S), S==[]
 	  )
 	->
 	    flora_comma_separated_list(L,LList),
@@ -4741,10 +4917,10 @@ flora_wsdynrule(CanoniTerm,WS,[Code],Status) :-
 	    ( S == [] ->
 		(get_module_from_spec(WS,ModuleType,Module)
 		-> % this is typically a system module case
-		    flora_body(Body,WS,BodyCode,Status),
+		    flora_body(Body,WS,WS_FROM_DYNRULE,BodyCode,Status),
 		    flmodule_structlist(HCL,Module,ModuleType,WSHCL)
 		; % module is a var, an atom, or a _@
-		    flora_body(Body,FLORAUSERMOD(WS),BodyCode,Status),
+		    flora_body(Body,FLORAUSERMOD(WS),WS_FROM_DYNRULE,BodyCode,Status),
 		    flmodule_structlist(HCL,WS,FLORAUSERMOD,WSHCL)
 		),
 		fldynrule_struct(WSHCL,BodyCode,RuleCode),

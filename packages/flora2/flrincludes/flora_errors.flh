@@ -80,15 +80,21 @@
 **************************************/
 #define ERROR_OPDEF	'invalid associativity definition'
 #define ERROR_OPERATOR	'invalid operator'
-%%#define ERROR_FAPAIR	'invalid functor/arity pair'
+/*
+  #define ERROR_FAPAIR	'invalid functor/arity pair'
+*/
 #define ERROR_SKELETON  'invalid functor/arity skeleton'
 
 #mode save
 #mode nostring "\!#'"
-%%#define ERROR_ARGTYPE	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
+/*
+  #define ERROR_ARGTYPE	'invalid argument type specification: FL_OID/FL_BODYFORMULA expected'
+*/
 #mode restore
 
-%%#define ERROR_ARGUMENTS	'invalid arguments directive'
+/*
+  #define ERROR_ARGUMENTS	'invalid arguments directive'
+*/
 #define ERROR_AGGREGT	'syntax error in aggregate body'
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_TEMPLATE  'invalid literal/molecule template'
@@ -103,11 +109,17 @@
 #define ERROR_LOADFILE	'invalid file name'
 #define ERROR_INSERT	'invalid literal in insert{...}'
 #define ERROR_DELETE	'invalid literal in delete{...}'
+#define ERROR_REFRESH	'invalid literal in refresh{...}'
+#define ERROR_CLAUSE	'invalid literal in clause{...}'
 #define ERROR_EXPINSERT 'invalid path expression in insert{...}'
 #define ERROR_EXPDELETE 'invalid path expression in delete{...}'
+#define ERROR_EXPREFRESH 'invalid path expression in refresh{...}'
+#define ERROR_EXPCLAUSE 'invalid path expression in clause{...}'
 #define ERROR_INDXDIREC	'invalid indexing directive'
 #define ERROR_NEWOID	'invalid use of anonymous oid'
-%%#define ERROR_FUNCTOR	'invalid functor (atom or variable expected)'
+/*
+  #define ERROR_FUNCTOR	'invalid functor (atom or variable expected)'
+*/
 #define ERROR_ARITY	'invalid arity (non-negative integer or variable expected)'
 #define ERROR_SEMOPT	'invalid option syntax in a semantics{...} directive'
 #define ERROR_SETSEMOPT	'invalid option syntax in a setsemantics{...} directive'
@@ -116,7 +128,9 @@
 #define ERROR_GPP	'error while parsing the output from the gpp preprocessor'
 #define ERROR_CMPOPT	'invalid compiler option'
 #define ERROR_TABLE	'invalid arguments for table command'
+#define ERROR_CLAUSE    'invalid syntax in clause{...}'
 #define ERROR_NAMEDVAR  'invalid use of named variable'
+#define ERROR_ADDFILE   'invalid file name in flAdd'
 
 #define EXP_POSINTEGER	'positive integer (>= 0) expected'
 #define EXP_VARIABLE	'variable expected'
@@ -133,7 +147,8 @@
 #define NO_DISJUNCTION	'disjunction is illegal in rule heads and facts'
 #define NO_NEGATION	'negation is illegal in rule head'
 #define NO_WORKSPACE	'invalid use of @module specification'
-#define NO_WSINRULEHEAD	'@module is illegal in rule heads and update primitives'
+#define NO_WS_VAR	'module spec of the form @Variable is illegal in a fact'
+#define NO_WSINRULEHEAD	'@module is illegal in rule heads'
 #define NO_WSNESTING	'invalid nesting of module specifications'
 #define NO_REDEFINITION 'redefinition of built-ins in rule head is illegal'
 #define NO_MULTIATT	'multivalued reference is illegal in rule head'
@@ -145,11 +160,12 @@
 #define NO_DELETEDISJUN	'disjunction is illegal in delete{...}'
 #define NO_INSERTNEG	'negation is illegal in insert{...}'
 #define NO_DELETENEG	'negation is illegal in delete{...}'
-#define NO_PROLOGUPDATE 'updating Prolog predicates is illegal'
+#define NO_PROLOG       'invalid operation on Prolog predicates'
 #define UNKNOWN_AGGREGT 'unknown aggregate operator'
 #define UNKNOWN_DIRECT	'unknown compiler directive'
-#define DISALLOWED_DIRECT 'dynamic calls through @ disallowed in non-executable calls'
+#define DISALLOWED_DIRECT 'compile-time export directive does not have the @module form'
 #define UNREG_SYSMOD	'unregistered system module'
+#define ERROR_BUILTIN   'invalid operation on a built-in'
 #define ERROR_IFHEAD	'invalid if-statement in rule head'
 #define ERROR_THENHEAD	'invalid then-statement in rule head'
 #define ERROR_ELSEHEAD	'invalid else-statement in rule head'

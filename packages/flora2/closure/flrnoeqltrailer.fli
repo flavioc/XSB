@@ -33,25 +33,25 @@
 /***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
-sub(X,Y) :-
-	inferred_sub(X,Y),
+sub(X,Y,CallerInfo) :-
+	inferred_sub(X,Y,CallerInfo),
 	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
-sub(X,Y) :-
-	silent_sub(X,Z),
-	inferred_sub(Z,Y),
+sub(X,Y,CallerInfo) :-
+	silent_sub(X,Z,CallerInfo),
+	inferred_sub(Z,Y,CallerInfo),
 	(X=Y, flora_warning_line('cycle in class hierarchy'); true).
 
 
 /***************************************************************************
   closure rules for O:C
 ***************************************************************************/
-isa(O,C) :-
-	inferred_isa(O,C).
+isa(O,C,CallerInfo) :-
+	inferred_isa(O,C,CallerInfo).
 
-isa(O,C) :-
-	silent_sub(S,C),
-	inferred_isa(O,S).
+isa(O,C,CallerInfo) :-
+	silent_sub(S,C,CallerInfo),
+	inferred_isa(O,S,CallerInfo).
 
 
 /*****************************************************************************
@@ -60,182 +60,182 @@ isa(O,C) :-
   The argument "MethSign" is in the form of Funct/Arity/Type.
 *****************************************************************************/
 %% local_ifd/2
-local_ifd(S,MethSign) :-
+local_ifd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_ifd(S,M,_V),
+	inferred_ifd(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_ifd(S,MethSign) :-
+local_ifd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_ifd(S,M,_V).
+	inferred_ifd(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
 %% local_fd/2
-local_fd(S,MethSign) :-
+local_fd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_fd(S,M,_V),
+	inferred_fd(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_fd(S,MethSign) :-
+local_fd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_fd(S,M,_V).
+	inferred_fd(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
 %% local_imvd/2
-local_imvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	var(MethSign),
-	inferred_imvd(S,M,_V),
+	inferred_imvd(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_imvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_imvddef(S,M),
+	inferred_imvddef(S,M,CallerInfo),
 	flora_funct_arity(M,MethSign).
 
-local_imvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_imvd(S,M,_V).
+	inferred_imvd(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
-local_imvd(S,MethSign) :-
+local_imvd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_imvddef(S,M).
+	inferred_imvddef(S,M,CallerInfo).
 
 
 %% local_mvd/2
-local_mvd(S,MethSign) :-
+local_mvd(S,MethSign,CallerInfo) :-
 	var(MethSign),
-	inferred_mvd(S,M,_V),
+	inferred_mvd(S,M,_V,CallerInfo),
 	%% Should have a cut here when XSB will allow
 	flora_funct_arity(M,MethSign).
 
-local_mvd(S,MethSign) :-
+local_mvd(S,MethSign,CallerInfo) :-
 	var(MethSign),
 	!,
-	inferred_mvddef(S,M),
+	inferred_mvddef(S,M,CallerInfo),
 	flora_funct_arity(M,MethSign).
 
-local_mvd(S,MethSign) :-
+local_mvd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_mvd(S,M,_V).
+	inferred_mvd(S,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
-local_mvd(S,MethSign) :-
+local_mvd(S,MethSign,CallerInfo) :-
 	nonvar(MethSign), % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	inferred_mvddef(S,M).
+	inferred_mvddef(S,M,CallerInfo).
 
 
 /*****************************************************************************
   nonmonotonic multiple inheritance of scalar attributes
   from superclasses to subclasses
 *****************************************************************************/
-ifd(C,M,V) :-
-	inferred_ifd(C,M,V).
+ifd(C,M,V,CallerInfo) :-
+	inferred_ifd(C,M,V,CallerInfo).
 
-ifd(C,M,V) :-
+ifd(C,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_ifd(Super,M,V),
+	inheritance_ifd(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	candidate_class_ifd(Super,MethSign,C),
-	FLORA_TNOT(local_ifd(C,MethSign)),
-	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C)).
+	candidate_class_ifd(Super,MethSign,C,CallerInfo),
+	FLORA_TNOT(local_ifd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C,CallerInfo)).
 
-ifd(C,M,V) :-
+ifd(C,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_ifd(C,MethSign)),
-	candidate_class_ifd(Super,MethSign,C),
-	inheritance_ifd(Super,M,V),
-	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C)).
+	candidate_class_ifd(Super,MethSign,C,CallerInfo),
+	inheritance_ifd(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_ifd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_ifd(Super,MethSign,C,CallerInfo)).
 
 
 /*****************************************************************************
   nonmonotonic multiple inheritance of scalar attributes
   from superclasses to instances/members
 *****************************************************************************/
-fd(O,M,V) :-
-	inferred_fd(O,M,V).
+fd(O,M,V,CallerInfo) :-
+	inferred_fd(O,M,V,CallerInfo).
 
-fd(O,M,V) :-
+fd(O,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_ifd(Super,M,V),
+	inheritance_ifd(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	candidate_object_ifd(Super,MethSign,O),
-	FLORA_TNOT(local_fd(O,MethSign)),
-	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O)).
+	candidate_object_ifd(Super,MethSign,O,CallerInfo),
+	FLORA_TNOT(local_fd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O,CallerInfo)).
 
-fd(O,M,V) :-
+fd(O,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_fd(O,MethSign)),
-	candidate_object_ifd(Super,MethSign,O),
-	inheritance_ifd(Super,M,V),
-	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O)).
+	candidate_object_ifd(Super,MethSign,O,CallerInfo),
+	inheritance_ifd(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_fd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_ifd(Super,MethSign,O,CallerInfo)).
 
 
 /*****************************************************************************
   nonmonotonic multiple inheritance of multivalued attributes
   from superclasses to subclasses
 *****************************************************************************/
-imvd(C,M,V) :-
-	inferred_imvd(C,M,V).
+imvd(C,M,V,CallerInfo) :-
+	inferred_imvd(C,M,V,CallerInfo).
 
-imvd(C,M,V) :-
+imvd(C,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvd(Super,M,V),
+	inheritance_imvd(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	candidate_class_imvd(Super,MethSign,C),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
-imvd(C,M,V) :-
+imvd(C,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	candidate_class_imvd(Super,MethSign,C),
-	inheritance_imvd(Super,M,V),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	inheritance_imvd(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
 
-imvddef(C,M) :-
-	inferred_imvddef(C,M).
+imvddef(C,M,CallerInfo) :-
+	inferred_imvddef(C,M,CallerInfo).
 
-imvddef(C,M) :-
+imvddef(C,M,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvddef(Super,M),
+	inheritance_imvddef(Super,M,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	candidate_class_imvd(Super,MethSign,C),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
-imvddef(C,M) :-
+imvddef(C,M,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_imvd(C,MethSign)),
-	candidate_class_imvd(Super,MethSign,C),
-	inheritance_imvddef(Super,M),
-	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C)).
+	candidate_class_imvd(Super,MethSign,C,CallerInfo),
+	inheritance_imvddef(Super,M,CallerInfo),
+	FLORA_TNOT(local_imvd(C,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_class_imvd(Super,MethSign,C,CallerInfo)).
 
-imvddef(C,M) :-
-	imvd(C,M,_V).
+imvddef(C,M,CallerInfo) :-
+	imvd(C,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
@@ -243,173 +243,173 @@ imvddef(C,M) :-
   nonmonotonic multiple inheritance of multivalued attributes
   from superclasses to instances/members
 *****************************************************************************/
-mvd(O,M,V) :-
-	inferred_mvd(O,M,V).
+mvd(O,M,V,CallerInfo) :-
+	inferred_mvd(O,M,V,CallerInfo).
 
-mvd(O,M,V) :-
+mvd(O,M,V,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvd(Super,M,V),
+	inheritance_imvd(Super,M,V,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	candidate_object_imvd(Super,MethSign,O),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
-mvd(O,M,V) :-
+mvd(O,M,V,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	candidate_object_imvd(Super,MethSign,O),
-	inheritance_imvd(Super,M,V),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	inheritance_imvd(Super,M,V,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
 
-mvddef(O,M) :-
-	inferred_mvddef(O,M).
+mvddef(O,M,CallerInfo) :-
+	inferred_mvddef(O,M,CallerInfo).
 
-mvddef(O,M) :-
+mvddef(O,M,CallerInfo) :-
 	var(M),
 	!,
-	inheritance_imvddef(Super,M),
+	inheritance_imvddef(Super,M,CallerInfo),
 	flora_funct_arity(M,MethSign),
-	candidate_object_imvd(Super,MethSign,O),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
-mvddef(O,M) :-
+mvddef(O,M,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
 	flora_funct_arity(M,MethSign),
-	FLORA_TNOT(local_mvd(O,MethSign)),
-	candidate_object_imvd(Super,MethSign,O),
-	inheritance_imvddef(Super,M),
-	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O)).
+	candidate_object_imvd(Super,MethSign,O,CallerInfo),
+	inheritance_imvddef(Super,M,CallerInfo),
+	FLORA_TNOT(local_mvd(O,MethSign,CallerInfo)),
+	FLORA_TNOT(multiple_object_imvd(Super,MethSign,O,CallerInfo)).
 
-mvddef(O,M) :-
+mvddef(O,M,CallerInfo) :-
 	nonvar(M),  % the cut above might not work under local scheduling
-	mvd(O,M,_V).
+	mvd(O,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
 /*****************************************************************************
   monotonic inheritance of binary attributes (tabled methods)
 *****************************************************************************/
-meth(O,M) :-
-	inferred_meth(O,M).
+meth(O,M,CallerInfo) :-
+	inferred_meth(O,M,CallerInfo).
 
-meth(O,M) :-
-	isa(O,C),
-	imeth(C,M).
+meth(O,M,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	imeth(C,M,CallerInfo).
 
 
-imeth(C,M) :-
-	inferred_imeth(C,M).
+imeth(C,M,CallerInfo) :-
+	inferred_imeth(C,M,CallerInfo).
 
-imeth(C,M) :-
-	inheritance_sub(C,S),
-	imeth(S,M).
+imeth(C,M,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	imeth(S,M,CallerInfo).
 
 
 /*****************************************************************************
   nontabled methods (transactions)
 *****************************************************************************/
-tran(O,T) :-
-	inferred_tran(O,T).
+tran(O,T,CallerInfo) :-
+	inferred_tran(O,T,CallerInfo).
 
 
 /*****************************************************************************
   monotonic inheritance of signatures
 *****************************************************************************/
-fdsig(O,M,R) :-
-	inferred_fdsig(O,M,R).
+fdsig(O,M,R,CallerInfo) :-
+	inferred_fdsig(O,M,R,CallerInfo).
 
-fdsig(O,M,R) :-
-	isa(O,C),
-	ifdsig(C,M,R).
+fdsig(O,M,R,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	ifdsig(C,M,R,CallerInfo).
 
 
-fdsigdef(O,M) :-
-	inferred_fdsigdef(O,M).
+fdsigdef(O,M,CallerInfo) :-
+	inferred_fdsigdef(O,M,CallerInfo).
 
-fdsigdef(O,M) :-
-	isa(O,C),
-	ifdsigdef(C,M).
+fdsigdef(O,M,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	ifdsigdef(C,M,CallerInfo).
 
-fdsigdef(O,M) :-
-	fdsig(O,M,_V).
+fdsigdef(O,M,CallerInfo) :-
+	fdsig(O,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-ifdsig(C,M,R) :-
-	inferred_ifdsig(C,M,R).
+ifdsig(C,M,R,CallerInfo) :-
+	inferred_ifdsig(C,M,R,CallerInfo).
 
-ifdsig(C,M,R) :-
-	inheritance_sub(C,S),
-	ifdsig(S,M,R).
+ifdsig(C,M,R,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	ifdsig(S,M,R,CallerInfo).
 
 
-ifdsigdef(C,M) :-
-	inferred_ifdsigdef(C,M).
+ifdsigdef(C,M,CallerInfo) :-
+	inferred_ifdsigdef(C,M,CallerInfo).
 
-ifdsigdef(C,M) :-
-	inheritance_sub(C,S),
-	ifdsigdef(S,M).
+ifdsigdef(C,M,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	ifdsigdef(S,M,CallerInfo).
 
-ifdsigdef(C,M) :-
-	ifdsig(C,M,_V).
+ifdsigdef(C,M,CallerInfo) :-
+	ifdsig(C,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-mvdsig(O,M,R) :-
-	inferred_mvdsig(O,M,R).
+mvdsig(O,M,R,CallerInfo) :-
+	inferred_mvdsig(O,M,R,CallerInfo).
 
-mvdsig(O,M,R) :-
-	isa(O,C),
-	imvdsig(C,M,R).
+mvdsig(O,M,R,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	imvdsig(C,M,R,CallerInfo).
 
 
-mvdsigdef(O,M) :-
-	inferred_mvdsigdef(O,M).
+mvdsigdef(O,M,CallerInfo) :-
+	inferred_mvdsigdef(O,M,CallerInfo).
 
-mvdsigdef(O,M) :-
-	isa(O,C),
-	imvdsigdef(C,M).
+mvdsigdef(O,M,CallerInfo) :-
+	isa(O,C,CallerInfo),
+	imvdsigdef(C,M,CallerInfo).
 
-mvdsigdef(O,M) :-
-	mvdsig(O,M,_V).
+mvdsigdef(O,M,CallerInfo) :-
+	mvdsig(O,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
-imvdsig(C,M,R) :-
-	inferred_imvdsig(C,M,R).
+imvdsig(C,M,R,CallerInfo) :-
+	inferred_imvdsig(C,M,R,CallerInfo).
 
-imvdsig(C,M,R) :-
-	inheritance_sub(C,S),
-	imvdsig(S,M,R).
+imvdsig(C,M,R,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	imvdsig(S,M,R,CallerInfo).
 
 
-imvdsigdef(C,M) :-
-	inferred_imvdsigdef(C,M).
+imvdsigdef(C,M,CallerInfo) :-
+	inferred_imvdsigdef(C,M,CallerInfo).
 
-imvdsigdef(C,M) :-
-	inheritance_sub(C,S),
-	imvdsigdef(S,M).
+imvdsigdef(C,M,CallerInfo) :-
+	inheritance_sub(C,S,CallerInfo),
+	imvdsigdef(S,M,CallerInfo).
 
-imvdsigdef(C,M) :-
-	imvdsig(C,M,_V).
+imvdsigdef(C,M,CallerInfo) :-
+	imvdsig(C,M,_V,CallerInfo).
 	%% Should have a cut here when XSB will allow
 
 
 /*****************************************************************************
   object existence
 *****************************************************************************/
-exists(X) :-
-	inferred_exists(X).
+exists(X,CallerInfo) :-
+	inferred_exists(X,CallerInfo).
 
 
 /*****************************************************************************
   equality maintenance
   Here we just treat :=: as an ordinary relation.
 *****************************************************************************/
-diffobjeql(X,Y) :-
-	inferred_objeql(X,Y),
+diffobjeql(X,Y,CallerInfo) :-
+	inferred_objeql(X,Y,CallerInfo),
 	X \= Y.

@@ -11,7 +11,7 @@ ms(_)::student.
 student[first      *=>  string,
 	last	   *=>  string,
 	email      *=>  string,
-	joined     *=>  semester, % when joined graduate program
+	joined     *=>  semester, // when joined graduate program
         advisor    *=>> supervising,
 	advisor    *->> {},
         support    *=>> support,
@@ -29,10 +29,10 @@ student[first      *=>  string,
 	graduated  *->  futuredate,
 	taught     *=>> teaching,
 	taught     *->> {},
-	%%canteach   *=>  list(courseCode),
+	//canteach   *=>  list(courseCode),
 	canteach   *-> [],
 	ta_eligibility *->> {},
-	remarks    *=>  string,    % whatever appropriate
+	remarks    *=>  string,    // whatever appropriate
         remarks    *->  '',
         #print(_),
 	#enroll(_,_)
@@ -40,7 +40,7 @@ student[first      *=>  string,
 
 instructor[name        =>  string,
 	   department  =>  string,
-	   department *->  cse      % default dept is cse
+	   department *->  cse      // default dept is cse
 ].
 
 

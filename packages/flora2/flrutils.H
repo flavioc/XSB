@@ -40,6 +40,7 @@
 	flora_slash/1,
 	flora_cputime/1,
 	flora_set_counter/2,
+	flora_increment_counter/4,
 	flora_concat_atoms/2,
 	flora_concat_items/2,
 	flora_copy_input/0,
@@ -59,15 +60,11 @@
 :- import xpp_options/1, xpp_process_file/3 from parse.
 
 :- import
-	parse_filename/4,
-	stat_flag/2,
-	stat_set_flag/2
+	parse_filename/4
    from machine.
 
 :- import
-	file_close/1,
-	file_open/3,
-	ioport2iostream/2
+	file_open/3
    from file_io.
 
 :- import process_control/2 from shell.
@@ -114,7 +111,8 @@
 
 :- import
 	flora_reset_compiler/0,
-	flora_compile/4
+	flora_compile/4,
+        flora_compile_add/4
    from flrcompiler.
 
 :- import
@@ -187,6 +185,8 @@
 	flora_abort/1,
 	flMaxerr/1,
 	flHalt/0,
+	checkCallerInfo/3,
+
 	flora_compile_internal/1,
 	flora_compile_internal/2,
 	flora_compile_system_module/1,
@@ -227,5 +227,10 @@
 	flora_compile_system_module_by_ID/1,
 	flora_load_system_module_internal/1,
 	flora_measure_time/2,
+	
+	flora_add_module_dyn/1,
+	flora_add_module_dyn/2, 
+	flora_compile_add/2, 
+	flora_compile_add/1,
 
 	flora_patch_full_filename/1.

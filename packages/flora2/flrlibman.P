@@ -185,6 +185,9 @@ flora_library_file(FLLIBDELETERULE_A,flrdynrule,syslib) :- !.
 flora_library_file(FLLIBDELETERULE_Z,flrdynrule,syslib) :- !.
 flora_library_file(FLLIBDELETERULE,flrdynrule,syslib) :- !.
 
+flora_library_file(FLLIBCLAUSE,flrclause,syslib) :- !.
+flora_library_file(FLLIBINSRULESIG,flrclause,syslib) :- !.
+
 flora_library_file(FLLIBCONTROL,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHENELSE,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHEN,flrcontrol,syslib) :- !.
@@ -216,6 +219,7 @@ flora_library_file(FLHEADER2,flrheader2,header) :- !.
 flora_library_file(FLTRAILER,flrtrailer,header) :- !.
 flora_library_file(FLTRAILERREGISTRY,flrtrailerregistry,header) :- !.
 flora_library_file(FLDEFINITION,flrdefinition,header) :- !.
+flora_library_file(FLDEFINITION_ADD,flrdefinition_add,header) :- !.
 flora_library_file(FLPATCH,flrpatch,header) :- !.
 
 %% support for undefinedness

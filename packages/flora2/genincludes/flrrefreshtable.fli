@@ -19,72 +19,72 @@
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_SUB(X,Y,_Caller)) :-
 	    	    !,
-	       	    flora_abolish_table_call(WRAP_SUB(X,Y))
+	       	    flora_abolish_table_call(WRAP_SUB(X,Y,_Caller))
 	  )).
 ?- assert((
             FLORA_SYMBOL('refresh_table_for')(WRAP_ISA(X,Y,_Caller)) :-
 	    	    !,
-		    flora_abolish_table_call(WRAP_ISA(X,Y))
+		    flora_abolish_table_call(WRAP_ISA(X,Y,_Caller))
 	  )).
 	
 %% FD, IFD, MVD, IMVD
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_FD(X,Y,Z,_Caller)) :-
 	    	    !,
-	       	    flora_abolish_table_call(WRAP_FD(X,Y,Z)),
-	       	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
+	       	    flora_abolish_table_call(WRAP_FD(X,Y,Z,_Caller)),
+	       	    flora_abolish_table_call(WRAP_FDDEF(X,Y,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFD(X,Y,Z,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IFD(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_IFDDEF(X,Y)),
-	    	    flora_abolish_table_call(WRAP_FD(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
+	    	    flora_abolish_table_call(WRAP_IFD(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_IFDDEF(X,Y,_Caller)),
+	    	    flora_abolish_table_call(WRAP_FD(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVD(X,Y,Z,_Caller)) :-
 	    	    !,
-		    flora_abolish_table_call(WRAP_MVD(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
+		    flora_abolish_table_call(WRAP_MVD(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMVD(X,Y,Z,Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IMVD(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_IMVDDEF(X,Y)),
-	    	    flora_abolish_table_call(WRAP_MVD(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
+	    	    flora_abolish_table_call(WRAP_IMVD(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_IMVDDEF(X,Y,_Caller)),
+	    	    flora_abolish_table_call(WRAP_MVD(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y,_Caller))
 	  )).
 
 %% FDSIG, IFDSIG, MVDSIG, IMVDSIG
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_FDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_FDSIG(X,Y,Z))
+	    	    flora_abolish_table_call(WRAP_FDSIG(X,Y,Z,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IFDSIG(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_FDSIG(X,Y,Z))
+	    	    flora_abolish_table_call(WRAP_IFDSIG(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_FDSIG(X,Y,Z,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_MVDSIG(X,Y,Z))
+	    	    flora_abolish_table_call(WRAP_MVDSIG(X,Y,Z,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDSIG(X,Y,Z,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IMVDSIG(X,Y,Z)),
-	    	    flora_abolish_table_call(WRAP_MVDSIG(X,Y,Z))
+	    	    flora_abolish_table_call(WRAP_IMVDSIG(X,Y,Z,_Caller)),
+	    	    flora_abolish_table_call(WRAP_MVDSIG(X,Y,Z,_Caller))
 	  )).
 
 %% FDDEF, IFDDEF, MVDDEF, IMVDDEF
@@ -94,53 +94,53 @@
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_FDDEF(X,Y,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
+	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y,_Caller))
 	  )).
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IFDDEF(X,Y,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IFDDEF(X,Y)),
-	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y))
+	    	    flora_abolish_table_call(WRAP_IFDDEF(X,Y,_Caller)),
+	    	    flora_abolish_table_call(WRAP_FDDEF(X,Y,_Caller))
 	  )).
 */
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_MVDDEF(X,Y,_Caller)) :-
 	    	    !,
-		    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
+		    flora_abolish_table_call(WRAP_MVDDEF(X,Y,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMVDDEF(X,Y,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IMVDDEF(X,Y)),
-	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y))
+	    	    flora_abolish_table_call(WRAP_IMVDDEF(X,Y,_Caller)),
+	    	    flora_abolish_table_call(WRAP_MVDDEF(X,Y,_Caller))
 	  )).
 
 %% METH, IMETH
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_METH(X,Y,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_METH(X,Y))
+	    	    flora_abolish_table_call(WRAP_METH(X,Y,_Caller))
 	  )).
 	
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_IMETH(X,Y,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_IMETH(X,Y)),
-	    	    flora_abolish_table_call(WRAP_METH(X,Y))
+	    	    flora_abolish_table_call(WRAP_IMETH(X,Y,_Caller)),
+	    	    flora_abolish_table_call(WRAP_METH(X,Y,_Caller))
 	  )).
 
 %% EXISTS, OBJEQL
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_EXISTS(X,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_EXISTS(X))
+	    	    flora_abolish_table_call(WRAP_EXISTS(X,_Caller))
 	  )).
 ?- assert((
     	    FLORA_SYMBOL('refresh_table_for')(WRAP_OBJEQL(X,Y,_Caller)) :-
 	    	    !,
-	    	    flora_abolish_table_call(WRAP_DIFFOBJEQL(X,Y))
+	    	    flora_abolish_table_call(WRAP_DIFFOBJEQL(X,Y,_Caller))
 	  )).
 
 

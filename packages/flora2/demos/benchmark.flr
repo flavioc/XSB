@@ -1,20 +1,20 @@
-%%% =================================================================
-%%% London Underground system map. Central area only!
-%%% Format is
-%%%	station[x=>coord,y=>coord,l=>>line].
-%%%
-%%% X_coord and Y_coord are millimetres from the bottom left hand
-%%% corner of the London Underground map and have little geographical
-%%% significance.
-%%%
-%%% l references a list of London Underground lines that pass through
-%%% the Station. These are atoms, usually those used by LRT but
-%%% sometimes extended to cope with branching (e.g. northern_west).
-%%%
-%%% data from: Ken Johnson, ken@aiai.ed.ac.uk, 30-4-90, 
-%%% f-logic-format: Heinz Uphoff, Heinz.Uphoff@majestix.zis18.db.de
-%%% changes: Bertram Ludaescher, ludaesch@informatik.uni-freiburg.de
-%%% =================================================================
+/*********************************************************************
+**  London Underground system map. Central area only!
+**  Format is
+** 	station[x=>coord,y=>coord,l=>>line].
+** 
+**  X_coord and Y_coord are millimetres from the bottom left hand
+**  corner of the London Underground map and have little geographical
+**  significance.
+** 
+**  l references a list of London Underground lines that pass through
+**  the Station. These are atoms, usually those used by LRT but
+**  sometimes extended to cope with branching (e.g. northern_west).
+** 
+**  data from: Ken Johnson, ken@aiai.ed.ac.uk, 30-4-90, 
+**  f-logic-format: Heinz Uphoff, Heinz.Uphoff@majestix.zis18.db.de
+**  changes: Bertram Ludaescher, ludaesch@informatik.uni-freiburg.de
+*********************************************************************/
 
 
 :- setsemantics{equality(flogic)}.
@@ -145,27 +145,26 @@ white_city:station[x->99,y->140,l->>{central}].
 whitechapel:station[x->324,y->130,l->>{district,metropolitan}].
 
 
-%%% connections
+// connections
 
 direct::connection.
 
-%%% there's a direct connection from X to Y iff they have a line in common 
+// there's a direct connection from X to Y iff they have a line in common 
 d(X,Y):direct[(from)->X,to->Y,l->>{L}] :- 
 	X:station[l->>{L}],
 	Y:station[l->>{L}], \+ X=Y.
 
 L:line :- _X:station[l->>{L}].
-%%
-
+//
 
 ?- C:connection.
 
-%?- X:station.
+//?- X:station.
 
-%?- X:direct.
+//?- X:direct.
 
-%?- X:direct[from->F].
+//?- X:direct[from->F].
 
-%?- X[from->F], X:direct.
+//?- X[from->F], X:direct.
 
 

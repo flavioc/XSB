@@ -38,6 +38,9 @@
 #deffast FLORA_USER_FLD_STORAGE(X)	FLORA_USER_FLD_TRIE_PREFIX'#1'
 #deffast FLORA_SYSTEM_FLD_STORAGE(X)	FLORA_SYSTEM_FLD_TRIE_PREFIX'#1'
 
+%% used for generating new oids statically
+#define FLORA_THIS_COMPILATION(X)       #1'FLORA_COMPILATION_ID'
+
 #ifndef FLORA_COMPILE_SYSTEM_MODULE
 
 %% compiling a Flora user module
@@ -78,5 +81,8 @@
 #deffast FLORA_THIS_FDB_STORAGE		FLORA_USER_FDB_STORAGE(FLORA_VAR_WORKSPACE)
 #deffast FLORA_THIS_FLD_STORAGE		FLORA_USER_FLD_STORAGE(FLORA_VAR_WORKSPACE)
 #define FLORA_THIS_MODULE_NAME		''
+
+%% used for generating new oids statically
+#define FLORA_THIS_COMPILATION(X)       #1FLORA_COMPILATION_ID
 
 #endif

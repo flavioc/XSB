@@ -70,11 +70,10 @@ tables[#abolish] :- abolish_all_tables@prolog().
 #warning(X) :-
 	p2h{PX,X},
 	flora_warning_heading@prolog(flrprint),
-	%%flora_stderr_string('[Runtime] ')@prolog(flrprint),
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint).
 
-%% Put a message on stderr
+// Put a message on stderr
 #message(X) :-
 	p2h{PX,X},
 	message(PX,STDERR)@prolog(standard),
@@ -108,18 +107,18 @@ debug[#check_undefined(off)] :-
 	#turn_off_debug_all(ML).
 
 debug[#check_undefined(InvalidOpt)] :-
-	%% Note: this abort is defined in this module
+	// Note: this abort is defined in this module
 	#abort(('Invalid option in #check_undefined: ', InvalidOpt)),
 	fail.
 
 
 debug[#check_undefined(_Flag,Module)] :-
 	( var(Module)@prolog(),
-	    %% Note: this abort defined in this module
+	    // Note: this abort defined in this module
 	    #abort(('Invalid module name in #check_undefined: ', Module))
 	; Module\=flora(_),
 	    \+ flora_module_registry(Module)@prolog(flrregistry),
-	    %% Note: this abort defined in this module
+	    // Note: this abort defined in this module
 	    #abort(('Unloaded module name in #check_undefined: ', Module))
 	).
 
@@ -166,7 +165,7 @@ debug[#check_undefined(off,Module)] :-
 	).
 
 debug[#check_undefined(InvalidOpt,_Module)] :-
-	%% Note: this abort is defined in this module
+	// Note: this abort is defined in this module
 	#abort(('Invalid option in #check_undefined: ', InvalidOpt)).
 
 #turn_on_debug_all([]) :- !.

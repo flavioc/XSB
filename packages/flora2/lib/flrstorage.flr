@@ -32,7 +32,7 @@
 
 #commit :- flora_commit_storage@prolog(flrutils).
 
-%% This commit is only for user modules
+// This commit is only for user modules
 #commit(Module) :-
 	flora_user_storage_name(Module,StorageName)@prolog(flrwrapper),
 	storage_commit(StorageName)@prolog(storage),

@@ -14,6 +14,9 @@
 
 #include "flrtypes.fli"
 
+%% checkCallerInfo is just for debugging
+:- import checkCallerInfo/3 from flrutils.
+
 :- WRAP_COPY_UNQUOTED 'FLORA_THIS_MODULE_NAME'.
 
 
@@ -24,27 +27,70 @@
   the trailer dynamically loadable. Note that the program rules use wrapper
   predicates with the 'derived_' prefix.
 ***************************************************************************/
-inferred_sub(X,Y) :- derived_sub(X,Y,'FLORA_THIS_MODULE_NAME').
-inferred_isa(O,C) :- derived_isa(O,C,'FLORA_THIS_MODULE_NAME').
-inferred_fd(O,A,V) :- derived_fd(O,A,V,'FLORA_THIS_MODULE_NAME').
-inferred_ifd(C,A,V) :- derived_ifd(C,A,V,'FLORA_THIS_MODULE_NAME').
-inferred_mvd(O,A,V) :- derived_mvd(O,A,V,'FLORA_THIS_MODULE_NAME').
-inferred_imvd(C,A,V) :- derived_imvd(C,A,V,'FLORA_THIS_MODULE_NAME').
-inferred_mvddef(O,A) :- derived_mvddef(O,A,'FLORA_THIS_MODULE_NAME').
-inferred_imvddef(C,A) :- derived_imvddef(C,A,'FLORA_THIS_MODULE_NAME').
-inferred_fdsig(O,MethodArgs,R) :- derived_fdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
-inferred_fdsigdef(O,MethodArgs) :- derived_fdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
-inferred_ifdsig(O,MethodArgs,R) :- derived_ifdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
-inferred_ifdsigdef(O,MethodArgs) :- derived_ifdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
-inferred_mvdsig(O,MethodArgs,R) :- derived_mvdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
-inferred_mvdsigdef(O,MethodArgs) :- derived_mvdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
-inferred_imvdsig(O,MethodArgs,R) :- derived_imvdsig(O,MethodArgs,R,'FLORA_THIS_MODULE_NAME').
-inferred_imvdsigdef(O,MethodArgs) :- derived_imvdsigdef(O,MethodArgs,'FLORA_THIS_MODULE_NAME').
-inferred_meth(O,M) :- derived_meth(O,M,'FLORA_THIS_MODULE_NAME').
-inferred_imeth(C,M) :- derived_imeth(C,M,'FLORA_THIS_MODULE_NAME').
-inferred_tran(O,T) :- derived_tran(O,T,'FLORA_THIS_MODULE_NAME').
-inferred_objeql(X,Y) :- derived_objeql(X,Y,'FLORA_THIS_MODULE_NAME').
-inferred_exists(X) :- derived_exists(X,'FLORA_THIS_MODULE_NAME').
+inferred_sub(X,Y,CallerInfo) :-
+	%% checkCallerInfo is just for debugging
+	checkCallerInfo(sub(X,Y),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_sub(X,Y,CallerInfo).
+inferred_isa(O,C,CallerInfo) :-
+	checkCallerInfo(isa(O,C),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_isa(O,C,CallerInfo).
+inferred_fd(O,A,V,CallerInfo) :-
+	checkCallerInfo(fd(O,A,V),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_fd(O,A,V,CallerInfo).
+inferred_ifd(C,A,V,CallerInfo) :-
+	checkCallerInfo(ifd(C,A,V),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_ifd(C,A,V,CallerInfo).
+inferred_mvd(O,A,V,CallerInfo) :-
+	checkCallerInfo(mvd(O,A,V),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_mvd(O,A,V,CallerInfo).
+inferred_imvd(C,A,V,CallerInfo) :-
+	checkCallerInfo(imvd(C,A,V),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_imvd(C,A,V,CallerInfo).
+inferred_mvddef(O,A,CallerInfo) :-
+	checkCallerInfo(mvddef(O,A),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_mvddef(O,A,CallerInfo).
+inferred_imvddef(C,A,CallerInfo) :-
+	checkCallerInfo(imvddef(C,A),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_imvddef(C,A,CallerInfo).
+inferred_fdsig(O,MethodArgs,R,CallerInfo) :-
+	checkCallerInfo(fdsig(O,MethodArgs,R),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_fdsig(O,MethodArgs,R,CallerInfo).
+inferred_fdsigdef(O,MethodArgs,CallerInfo) :-
+	checkCallerInfo(fdsigdef(O,MethodArgs),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_fdsigdef(O,MethodArgs,CallerInfo).
+inferred_ifdsig(O,MethodArgs,R,CallerInfo) :-
+	checkCallerInfo(ifdsig(O,MethodArgs,R),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_ifdsig(O,MethodArgs,R,CallerInfo).
+inferred_ifdsigdef(O,MethodArgs,CallerInfo) :-
+	checkCallerInfo(ifdsigdef(O,MethodArgs),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_ifdsigdef(O,MethodArgs,CallerInfo).
+inferred_mvdsig(O,MethodArgs,R,CallerInfo) :-
+	checkCallerInfo(mvdsig(O,MethodArgs,R),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_mvdsig(O,MethodArgs,R,CallerInfo).
+inferred_mvdsigdef(O,MethodArgs,CallerInfo) :-
+	checkCallerInfo(mvdsigdef(O,MethodArgs),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_mvdsigdef(O,MethodArgs,CallerInfo).
+inferred_imvdsig(O,MethodArgs,R,CallerInfo) :-
+	checkCallerInfo(imvdsig(O,MethodArgs,R),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_imvdsig(O,MethodArgs,R,CallerInfo).
+inferred_imvdsigdef(O,MethodArgs,CallerInfo) :-
+	checkCallerInfo(imvdsigdef(O,MethodArgs),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_imvdsigdef(O,MethodArgs,CallerInfo).
+inferred_meth(O,M,CallerInfo) :-
+	checkCallerInfo(meth(O,M),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_meth(O,M,CallerInfo).
+inferred_imeth(C,M,CallerInfo) :-
+	checkCallerInfo(imeth(C,M),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_imeth(C,M,CallerInfo).
+inferred_tran(O,T,CallerInfo) :-
+	checkCallerInfo(tran(O,T),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_tran(O,T,CallerInfo).
+inferred_objeql(X,Y,CallerInfo) :-
+	checkCallerInfo(objeql(X,Y),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_objeql(X,Y,CallerInfo).
+inferred_exists(X,CallerInfo) :-
+	checkCallerInfo(exists(X),'FLORA_THIS_MODULE_NAME',CallerInfo),
+	derived_exists(X,CallerInfo).
 
 
 /*****************************************************************************
@@ -53,31 +99,31 @@ inferred_exists(X) :- derived_exists(X,'FLORA_THIS_MODULE_NAME').
   Note that the argument "Class" here is considered as a class.
   It is about inheritance from superclasses to subclasses.
 *****************************************************************************/
-override_class_ifd(C,MethSign,Class) :-
-	sub(X,C),
-	sub(Class,X),
+override_class_ifd(C,MethSign,Class,CallerInfo) :-
+	sub(X,C,CallerInfo),
+	sub(Class,X,CallerInfo),
 	X \= C,
 	X \= Class,
-	local_ifd(X,MethSign).
+	local_ifd(X,MethSign,CallerInfo).
 
 
-candidate_class_ifd(C,MethSign,Class) :-
+candidate_class_ifd(C,MethSign,Class,CallerInfo) :-
 	var(MethSign),
 	!,
-	sub(Class,C),
-	local_ifd(C,MethSign),
+	sub(Class,C,CallerInfo),
+	local_ifd(C,MethSign,CallerInfo),
 	C \= Class,
-	FLORA_TNOT(override_class_ifd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_ifd(C,MethSign,Class,CallerInfo)).
 
-candidate_class_ifd(C,MethSign,Class) :-
-	local_ifd(C,MethSign),
-	sub(Class,C),
+candidate_class_ifd(C,MethSign,Class,CallerInfo) :-
+	local_ifd(C,MethSign,CallerInfo),
+	sub(Class,C,CallerInfo),
 	C \= Class,
-	FLORA_TNOT(override_class_ifd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_ifd(C,MethSign,Class,CallerInfo)).
 
 
-multiple_class_ifd(C,MethSign,Class) :-
-	candidate_class_ifd(X,MethSign,Class),
+multiple_class_ifd(C,MethSign,Class,CallerInfo) :-
+	candidate_class_ifd(X,MethSign,Class,CallerInfo),
 	X \= C.
 
 
@@ -87,31 +133,31 @@ multiple_class_ifd(C,MethSign,Class) :-
   Note that the argument "Object" here is considered as an object.
   It is about inheritance from superclasses to instances/members.
 *****************************************************************************/
-override_object_ifd(C,MethSign,Object) :-
-	sub(X,C),
-	isa(Object,X),
+override_object_ifd(C,MethSign,Object,CallerInfo) :-
+	sub(X,C,CallerInfo),
+	isa(Object,X,CallerInfo),
 	X \= C,
 	X \= Object,
-	local_ifd(X,MethSign).
+	local_ifd(X,MethSign,CallerInfo).
 
 
-candidate_object_ifd(C,MethSign,Object) :-
+candidate_object_ifd(C,MethSign,Object,CallerInfo) :-
 	var(MethSign),
 	!,
-	isa(Object,C),
-	local_ifd(C,MethSign),
+	isa(Object,C,CallerInfo),
+	local_ifd(C,MethSign,CallerInfo),
 	C \= Object,
-	FLORA_TNOT(override_object_ifd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_ifd(C,MethSign,Object,CallerInfo)).
 
-candidate_object_ifd(C,MethSign,Object) :-
-	local_ifd(C,MethSign),
-	isa(Object,C),
+candidate_object_ifd(C,MethSign,Object,CallerInfo) :-
+	local_ifd(C,MethSign,CallerInfo),
+	isa(Object,C,CallerInfo),
 	C \= Object,
-	FLORA_TNOT(override_object_ifd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_ifd(C,MethSign,Object,CallerInfo)).
 
 
-multiple_object_ifd(C,MethSign,Object) :-
-	candidate_object_ifd(X,MethSign,Object),
+multiple_object_ifd(C,MethSign,Object,CallerInfo) :-
+	candidate_object_ifd(X,MethSign,Object,CallerInfo),
 	X \= C.
 
 
@@ -121,31 +167,31 @@ multiple_object_ifd(C,MethSign,Object) :-
   Note that the argument "Class" here is considered as a class.
   It is about inheritance from superclasses to subclasses.
 *****************************************************************************/
-override_class_imvd(C,MethSign,Class) :-
-	sub(X,C),
-	sub(Class,X),
+override_class_imvd(C,MethSign,Class,CallerInfo) :-
+	sub(X,C,CallerInfo),
+	sub(Class,X,CallerInfo),
 	X \= C,
 	X \= Class,
-	local_imvd(X,MethSign).
+	local_imvd(X,MethSign,CallerInfo).
 
 
-candidate_class_imvd(C,MethSign,Class) :-
+candidate_class_imvd(C,MethSign,Class,CallerInfo) :-
 	var(MethSign),
 	!,
-	sub(Class,C),
-	local_imvd(C,MethSign),
+	sub(Class,C,CallerInfo),
+	local_imvd(C,MethSign,CallerInfo),
 	C \= Class,
-	FLORA_TNOT(override_class_imvd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_imvd(C,MethSign,Class,CallerInfo)).
 
-candidate_class_imvd(C,MethSign,Class) :-
-	local_imvd(C,MethSign),
-	sub(Class,C),
+candidate_class_imvd(C,MethSign,Class,CallerInfo) :-
+	local_imvd(C,MethSign,CallerInfo),
+	sub(Class,C,CallerInfo),
 	C \= Class,
-	FLORA_TNOT(override_class_imvd(C,MethSign,Class)).
+	FLORA_TNOT(override_class_imvd(C,MethSign,Class,CallerInfo)).
 
 
-multiple_class_imvd(C,MethSign,Class) :-
-	candidate_class_imvd(X,MethSign,Class),
+multiple_class_imvd(C,MethSign,Class,CallerInfo) :-
+	candidate_class_imvd(X,MethSign,Class,CallerInfo),
 	X \= C.
 
 
@@ -155,51 +201,53 @@ multiple_class_imvd(C,MethSign,Class) :-
   Note that the argument "Object" here is considered as an object.
   It is about inheritance from superclasses to instances/members.
 *****************************************************************************/
-override_object_imvd(C,MethSign,Object) :-
-	sub(X,C),
-	isa(Object,X),
+override_object_imvd(C,MethSign,Object,CallerInfo) :-
+	sub(X,C,CallerInfo),
+	isa(Object,X,CallerInfo),
 	X \= C,
 	X \= Object,
-	local_imvd(X,MethSign).
+	local_imvd(X,MethSign,CallerInfo).
 
 
-candidate_object_imvd(C,MethSign,Object) :-
+candidate_object_imvd(C,MethSign,Object,CallerInfo) :-
 	var(MethSign),
 	!,
-	isa(Object,C),
-	local_imvd(C,MethSign),
+	isa(Object,C,CallerInfo),
+	local_imvd(C,MethSign,CallerInfo),
 	C \= Object,
-	FLORA_TNOT(override_object_imvd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_imvd(C,MethSign,Object,CallerInfo)).
 
-candidate_object_imvd(C,MethSign,Object) :-
-	local_imvd(C,MethSign),
-	isa(Object,C),
+candidate_object_imvd(C,MethSign,Object,CallerInfo) :-
+	local_imvd(C,MethSign,CallerInfo),
+	isa(Object,C,CallerInfo),
 	C \= Object,
-	FLORA_TNOT(override_object_imvd(C,MethSign,Object)).
+	FLORA_TNOT(override_object_imvd(C,MethSign,Object,CallerInfo)).
 
 
-multiple_object_imvd(C,MethSign,Object) :-
-	candidate_object_imvd(X,MethSign,Object),
+multiple_object_imvd(C,MethSign,Object,CallerInfo) :-
+	candidate_object_imvd(X,MethSign,Object,CallerInfo),
 	X \= C.
 
 
 /***************************************************************************
   defined scalar attributes
 ***************************************************************************/
-fddef(O,A) :- fd(O,A,_V).
+fddef(O,A,CallerInfo) :- fd(O,A,_V,CallerInfo).
 
-ifddef(C,A) :- ifd(C,A,_V).
+ifddef(C,A,CallerInfo) :- ifd(C,A,_V,CallerInfo).
 
 
 /***************************************************************************
   multivalued attributes inclusion
 ***************************************************************************/
-mvdinc(_O,_M,[]) :- !.
-mvdinc(O,M,[H|T]) :- mvd(O,M,H), mvdinc(O,M,T).
+mvdinc(_O,_M,[],CallerInfo) :- !.
+mvdinc(O,M,[H|T],CallerInfo) :-
+    	mvd(O,M,H,CallerInfo), mvdinc(O,M,T,CallerInfo).
 
 
-imvdinc(_O,_M,[]) :- !.
-imvdinc(O,M,[H|T]) :- imvd(O,M,H), imvdinc(O,M,T).
+imvdinc(_O,_M,[],CallerInfo) :- !.
+imvdinc(O,M,[H|T],CallerInfo) :-
+    	imvd(O,M,H,CallerInfo), imvdinc(O,M,T,CallerInfo).
 
 
 /****************************************************************************
@@ -208,69 +256,69 @@ imvdinc(O,M,[H|T]) :- imvd(O,M,H), imvdinc(O,M,T).
   Note: (1) These two predicates always succeeds.
         (2) These two predicates are not tabled.
 ****************************************************************************/
-mvdtolist(O,M,L) :-
-	mvddef(O,M),
-	findall(V,mvd(O,M,V),L).
+mvdtolist(O,M,L,CallerInfo) :-
+	mvddef(O,M,CallerInfo),
+	findall(V,mvd(O,M,V,CallerInfo),L).
 
-mvdtolist(O,M,[]) :-
-	FLORA_TNOT(mvddef(O,M)).
+mvdtolist(O,M,[],CallerInfo) :-
+	FLORA_TNOT(mvddef(O,M,CallerInfo)).
 
 
-imvdtolist(O,M,L) :-
-	imvddef(O,M),
-	findall(V,imvd(O,M,V),L).
+imvdtolist(O,M,L,CallerInfo) :-
+	imvddef(O,M,CallerInfo),
+	findall(V,imvd(O,M,V,CallerInfo),L).
  
-imvdtolist(O,M,[]) :-
-	FLORA_TNOT(imvddef(O,M)).
+imvdtolist(O,M,[],CallerInfo) :-
+	FLORA_TNOT(imvddef(O,M,CallerInfo)).
 
 
 /****************************************************************************
   exists/1
 ****************************************************************************/
-exists(X) :- fd(X,_,_).
-exists(X) :- fd(_,_,X).
-exists(X) :- mvd(X,_,_).
-exists(X) :- mvd(_,_,X).
-exists(X) :- mvddef(X,_).
-exists(X) :- ifd(X,_,_).
-exists(X) :- ifd(_,_,X).
-exists(X) :- imvd(X,_,_).
-exists(X) :- imvd(_,_,X).
-exists(X) :- imvddef(X,_).
-exists(X) :- isa(X,_).
-exists(X) :- isa(_,X).
-exists(X) :- sub(X,_).
-exists(X) :- sub(_,X).
-exists(X) :- meth(X,_).
-exists(X) :- imeth(X,_).
+exists(X,CallerInfo) :- fd(X,_,_,CallerInfo).
+exists(X,CallerInfo) :- fd(_,_,X,CallerInfo).
+exists(X,CallerInfo) :- mvd(X,_,_,CallerInfo).
+exists(X,CallerInfo) :- mvd(_,_,X,CallerInfo).
+exists(X,CallerInfo) :- mvddef(X,_,CallerInfo).
+exists(X,CallerInfo) :- ifd(X,_,_,CallerInfo).
+exists(X,CallerInfo) :- ifd(_,_,X,CallerInfo).
+exists(X,CallerInfo) :- imvd(X,_,_,CallerInfo).
+exists(X,CallerInfo) :- imvd(_,_,X,CallerInfo).
+exists(X,CallerInfo) :- imvddef(X,_,CallerInfo).
+exists(X,CallerInfo) :- isa(X,_,CallerInfo).
+exists(X,CallerInfo) :- isa(_,X,CallerInfo).
+exists(X,CallerInfo) :- sub(X,_,CallerInfo).
+exists(X,CallerInfo) :- sub(_,X,CallerInfo).
+exists(X,CallerInfo) :- meth(X,_,CallerInfo).
+exists(X,CallerInfo) :- imeth(X,_,CallerInfo).
 
 
 /****************************************************************************
   objeql/3
 ****************************************************************************/
-objeql(X,Y,_Caller) :- X=Y.
+objeql(X,Y,_CallerInfo) :- X=Y.
 %%objeql(X,Y,_Caller) :- (nonvar(X); nonvar(Y)), X=Y.
-objeql(X,Y,_Caller) :- diffobjeql(X,Y).
+objeql(X,Y,CallerInfo) :- diffobjeql(X,Y,CallerInfo).
 
 
 /****************************************************************************
     Introduced in support of the debugger
 ****************************************************************************/
 %% like sub, but the debugger won't trace it
-silent_sub(C,S) :- sub(C,S).
+silent_sub(C,S,CallerInfo) :- sub(C,S,CallerInfo).
 
 %% like sub, but the debugger will print it specially and won't trace inside
-inheritance_sub(C,S) :- sub(C,S).
+inheritance_sub(C,S,CallerInfo) :- sub(C,S,CallerInfo).
 
 %% Like inferred_* but the debugger will print it in a special way
-inheritance_ifd(C,M,V) :- inferred_ifd(C,M,V).
-inheritance_imvd(C,M,V) :- inferred_imvd(C,M,V).
-inheritance_imvddef(C,M) :- inferred_imvddef(C,M).
+inheritance_ifd(C,M,V,CallerInfo) :- inferred_ifd(C,M,V,CallerInfo).
+inheritance_imvd(C,M,V,CallerInfo) :- inferred_imvd(C,M,V,CallerInfo).
+inheritance_imvddef(C,M,CallerInfo) :- inferred_imvddef(C,M,CallerInfo).
 
 %% Like inferred_* but the debugger (actually the decoder, flrdecode.P)
 %% will print it in a special way
-inheritance_ifd_eql(C,M,V) :- inferred_ifd_eql(C,M,V).
-inheritance_imvd_eql(C,M,V) :- inferred_imvd_eql(C,M,V).
-inheritance_imvddef_eql(C,M) :- inferred_imvddef_eql(C,M).
+inheritance_ifd_eql(C,M,V,CallerInfo) :- inferred_ifd_eql(C,M,V,CallerInfo).
+inheritance_imvd_eql(C,M,V,CallerInfo) :- inferred_imvd_eql(C,M,V,CallerInfo).
+inheritance_imvddef_eql(C,M,CallerInfo) :- inferred_imvddef_eql(C,M,CallerInfo).
 
 FL_SILENT_EQUAL(X,X).

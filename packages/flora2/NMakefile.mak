@@ -59,7 +59,7 @@ OPTIONS = [optimize]
 
 .SUFFIXES: $(PROLOGEXT) $(OBJEXT)
 
-## p2h is handled specially, but makeflora
+## p2h is handled specially, buy makeflora
 ALL:: $(ALLOBJS)
 	cd closure
 	nmake /f NMakefile.mak
@@ -92,6 +92,8 @@ CLEAN :
 	cd ..\syslib
 	nmake /f NMakefile.mak clean
 	cd ..\debugger
+	nmake /f NMakefile.mak clean
+	cd ..\lib
 	nmake /f NMakefile.mak clean
 	cd ..\pkgs
 	nmake /f NMakefile.mak clean

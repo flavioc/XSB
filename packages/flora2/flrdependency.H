@@ -5,6 +5,8 @@
 
 :- import flora_abolish_table_predicate/1 from flrtables.
 
+:- import flora_decode_goal_as_atom/2 from flrdecode.
+
 :- import
 	flora_set_counter/2,
 	flora_get_counter/2
@@ -23,8 +25,6 @@
         is_prignoredep/2,
 	flora_build_struct/6
    from flrcoder.
-
-:- import flora_decode_predicate/7 from flrwrapper.
 
 :- import get_canonical_form/2 from flrcanon.
 

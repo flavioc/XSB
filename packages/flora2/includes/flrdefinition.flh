@@ -24,6 +24,7 @@
    from flrregistry.
 
 :- import FLORA_TNOT_PREDICATE/1 from flrnegation.
+:- import flora_abolish_table_call/1 from flrtables.
 
 :- import flora_db_find_base/2 from flrstoragebase.
 
@@ -32,6 +33,7 @@
 :- import flora_error_notexported/1 from flrundefined.
 :- import flora_check_export_registry/3 from flrexport.
 :- import flora_reset_export_registries/1 from flrexport.
+:- import flora_reset_rule_signature/1 from flrcanon.
 
 ?- storage_delete_all(FLORA_THIS_FLD_STORAGE).
 ?- flora_in_debug_mode(_), !,
@@ -55,6 +57,8 @@
 %%%% Export predicate registries start%%%
 ?- flora_reset_export_registries(FLORA_THIS_MODULE_NAME).
 %%%% Export predicate registries end%%%%
+
+?- flora_reset_rule_signature(FLORA_THIS_MODULE_NAME).
 
 
 /***********************************************************************/

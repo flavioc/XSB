@@ -36,7 +36,7 @@
 
   All Flora symbols begin with this prefix.
 ******************************************************************************/
-%% for F-logic and HiLog predicates
+/* for F-logic and HiLog predicates */
 #define FLORA_PREFIX			'_$_$_flora'
 
 
@@ -53,14 +53,14 @@
 
   These strings should be quoted.
 ******************************************************************************/
-%% Keep "mod" in the name of a formula wrapper rights after FLORA_PREFIX
-%% We rely on this to identify meta wrappers
+/* Keep "mod" in the name of a formula wrapper right after FLORA_PREFIX
+   We rely on this to identify meta wrappers */
 #define FLORA_USER_MODULE		'moduser'
 #define FLORA_SYSTEM_MODULE		'modsys'
 #define FLORA_USER_FDB_TRIE		'userfdbtrie'
 #define FLORA_SYSTEM_FDB_TRIE		'sysfdbtrie'
 
-%%  Trie for keeping skeletons of defined facts -- debugging
+/*  Trie for keeping skeletons of defined facts -- debugging */
 #define FLORA_USER_FLD_TRIE		'userfldtrie'
 #define FLORA_SYSTEM_FLD_TRIE		'sysfldtrie'
 
@@ -69,22 +69,22 @@
 /******************************************************************************
   Module and trie prefixes
 ******************************************************************************/
-%% prefix to construct Flora user module predicates.
+/* prefix to construct Flora user module predicates. */
 #deffast FLORA_USER_MODULE_PREFIX	FLORA_SYMBOL(FLORA_USER_MODULE)
 
-%% prefix to construct Flora system module predicates.
+/* prefix to construct Flora system module predicates. */
 #deffast FLORA_SYSTEM_MODULE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_MODULE)
 
-%% prefix to name Flora storage trie for a user module.
+/*  prefix to name Flora storage trie for a user module. */
 #deffast FLORA_USER_FDB_TRIE_PREFIX	FLORA_SYMBOL(FLORA_USER_FDB_TRIE)
 
-%% prefix to name Flora storage trie for a system module.
+/*  prefix to name Flora storage trie for a system module. */ 
 #deffast FLORA_SYSTEM_FDB_TRIE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_FDB_TRIE)
 
-%% prefix to name Flora fld storage trie for a user module.
+/* prefix to name Flora fld storage trie for a user module. */
 #deffast FLORA_USER_FLD_TRIE_PREFIX	FLORA_SYMBOL(FLORA_USER_FLD_TRIE)
 
-%% prefix to name Flora fld storage trie for a system module.
+/* prefix to name Flora fld storage trie for a system module. */
 #deffast FLORA_SYSTEM_FLD_TRIE_PREFIX	FLORA_SYMBOL(FLORA_SYSTEM_FLD_TRIE)
 
 
@@ -118,11 +118,11 @@
 #define FLDEBUGPREFIX		'd_'
 #define FLDYNAPREFIX		'dyna_'
 #define FLDYNZPREFIX		'dynz_'
-%% Prefixes used for checking undefinedness
+/* Prefixes used for checking undefinedness */
 #define FLDEFINEDPREFIX		'defined_'
 #define FLCHECKPREFIX		'check_'
 
-%% Corresponding macros
+/* Corresponding macros */
 #mode save
 #mode nostring "\!#'"
 #define FLDEBUGPREFIX(X)        'd_#1'
@@ -143,8 +143,8 @@
 
 #deffast FLORA_PREFIX_LEN_PLUS1	     #eval length(FLORA_PREFIX)-1
 
-%% length of FLORA_PREFIX'FLORA_USER_MODULE
+/* length of FLORA_PREFIX'FLORA_USER_MODULE */
 #deffast FLORA_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_USER_MODULE_PREFIX)-2
 
-%% length of FLORA_PREFIX'FLORA_SYSTEM_MODULE
+/* length of FLORA_PREFIX'FLORA_SYSTEM_MODULE */
 #deffast FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_SYSTEM_MODULE_PREFIX)-2

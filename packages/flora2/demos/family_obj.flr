@@ -22,38 +22,38 @@
 ** 
 */
 
-%%% ======================================================================
-%%% QUERYING THE PEDIGREE OF ``THE FALLERS'' 
-%%% (German TV serial; see: www.swf.de/diefallers/stammbaum/index.html)
-%%% 
-%%% An OBJECT-ORIENTED version of family_rel.flp
-%%%
-%%% ======================================================================
+//  ======================================================================
+//  QUERYING THE PEDIGREE OF ``THE FALLERS'' 
+//  (German TV serial; see: www.swf.de/diefallers/stammbaum/index.html)
+//  
+//  An OBJECT-ORIENTED version of family_rel.flp
+// 
+//  ======================================================================
 
 
-%%% ======================================================================
-%%% SCHEMA DATA: CLASSES & SIGNATURES
-%%% ======================================================================
+//  ======================================================================
+//  SCHEMA DATA: CLASSES & SIGNATURES
+//  ======================================================================
 
 
 
-male :: person.		% subclass relation
-female :: person.	% subclass relation
+male :: person.		// subclass relation
+female :: person.	// subclass relation
 
-person[	mother=>person, father=>person,		% some SINGLE-valued...
-	spouse=>person, husband=>person,	% ... methods
+person[	mother=>person, father=>person,		// some SINGLE-valued...
+	spouse=>person, husband=>person,	// ... methods
 
-	son=>>person, daughter=>>person,	% some MULTI-valued...
-	brother=>>person, sister=>>person,	% ... methods...
+	son=>>person, daughter=>>person,	// some MULTI-valued...
+	brother=>>person, sister=>>person,	// ... methods...
 	uncle=>>person, aunt=>>person,
 	ancestor=>>person, parent=>>person
 ].
 
 
-%%% ======================================================================
-%%% INSTANCE DATA  (aka EDB/BASE FACTS)
-%%% (partially) define mother, father, spouse, (fe)male info
-%%% ======================================================================
+//  ======================================================================
+//  INSTANCE DATA  (aka EDB/BASE FACTS)
+//  (partially) define mother, father, spouse, (fe)male info
+//  ======================================================================
 
 wilhelm:male[spouse->rita].
 rita:female.
@@ -70,11 +70,11 @@ albert:male[mother->monique,father->bernhard].
 eva:female[mother->kati].
 
 
-%%% ======================================================================
-%%% RULES (aka IDB/DERIVED RELATIONS)
-%%% ======================================================================
+//  ======================================================================
+//  RULES (aka IDB/DERIVED RELATIONS)
+//  ======================================================================
 
-X[spouse->Y] :- Y[spouse->X].	% spouse is symmetric!
+X[spouse->Y] :- Y[spouse->X].	// spouse is symmetric!
 
 X[parent->>{Y}] :- X[father->Y].
 X[parent->>{Y}] :- X[mother->Y].
@@ -103,19 +103,19 @@ X[ancestor->>{Y}] :- X..ancestor[ancestor->>{Y}].
 X:illegitimate :- X[father->F, mother->M], M[spouse -> S], S\=F.
 
 
-%%% ======================================================================
-%%% QUERIES
-%%% ======================================================================
+//  ======================================================================
+//  QUERIES
+//  ======================================================================
 
-?- albert:C.			% which classes...
-?- albert[M->X].		% ... and methods...
-?- albert[M->>{X}].		% ... are known for Albert? 
+?- albert:C.			// which classes...
+?- albert[M->X].		// ... and methods...
+?- albert[M->>{X}].		// ... are known for Albert? 
 
-?- _.S[].			% show SINGLE-valued and...
-?- _..M[].			% ... MULTI-valued methods...
-?- _:C[].			% ... and classes
+?- _.S[].			// show SINGLE-valued and...
+?- _..M[].			// ... MULTI-valued methods...
+?- _:C[].			// ... and classes
 
-?- albert..parent..uncle[sister_in_law ->> {Y}]. % a path expression
+?- albert..parent..uncle[sister_in_law ->> {Y}]. // a path expression
 
 ?- X[sister_in_law->>{Y}].
 

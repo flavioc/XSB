@@ -22,59 +22,59 @@
 ** 
 */
 
-%%% ==================================================================
-%%% So you're familiar with RELATIONAL OPERATORS and want to know the 
-%%% corresponding rules? Here are some illustrative EXAMPLES:
-%%%
-%%% This has nothing to do with F-logic, actually
-%%% ==================================================================
+// ==================================================================
+// So you're familiar with RELATIONAL OPERATORS and want to know the 
+// corresponding rules? Here are some illustrative EXAMPLES:
+//
+// This has nothing to do with F-logic, actually
+// ==================================================================
 
-%%% SELECT some tuples from #p(X,Y):
+// SELECT some tuples from #p(X,Y):
 #ans_sel(X,Y) :- #p(X,Y), \+ X=Y.
 
-%%% PROJECT on the first argument of #p(X,Y):
+// PROJECT on the first argument of #p(X,Y):
 #ans_proj(X) :- #p(X,_Y).		
 
-%%% JOIN #p(A,B), #q(C,D) wrt. B and C: 
+// JOIN #p(A,B), #q(C,D) wrt. B and C: 
 #ans_join(X,Y,Z) :- #p(X,Y), #q(Y,Z).
 
-%%% PRODUCT of #p(X) and #q(Y):
+// PRODUCT of #p(X) and #q(Y):
 #ans_prod(X,Y) :- #p(X), #q(Y).
 
-%%% UNION of #p(X), #q(X): 
+// UNION of #p(X), #q(X): 
 #ans_union(X) :- #p(X).
 #ans_union(X) :- #q(X).
 
-%%% INTERSECTION of #p(X), #q(X):
+// INTERSECTION of #p(X), #q(X):
 #ans_intersect(X) :- #p(X), #q(X).
 
-%%% SET-DIFFERENCE #p(X) \ #q(X):
+// SET-DIFFERENCE #p(X) \ #q(X):
 #ans_diff(X) :- #p(X), \+ #q(X).
 
 
-%%% ==================================================================
-%%% Here are some base facts.
-%%% ==================================================================
+// ==================================================================
+// Here are some base facts.
+// ==================================================================
 
-%%% #p(X,Y):
+// #p(X,Y):
 #p(a,a).
 #p(a,b).
 #p(b,c).
 
-%%% #q(X,Y).
+// #q(X,Y).
 #q(a,e).
 #q(b,f).
 
-%%% #p(X):
+// #p(X):
 #p(a). #p(b). #p(c).
 
-%%% #q(X):
+// #q(X):
 #q(b). #q(d).
 
 
-%%% ==================================================================
-%%% now you may ask:
-%%% ==================================================================
+// ==================================================================
+// now you may ask:
+// ==================================================================
 
 
     ?- #ans_sel(X,Y).

@@ -43,6 +43,8 @@
 :- import
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
+	flora_add_module_dyn/1,
+	flora_add_module_dyn/2,
 	flora_locate_file/3
    from flrutils.
 
@@ -80,6 +82,52 @@ fllibload([T|L],HostFile,HostMod,Location) :-
   Note: Runtime checking of file and workspace names is needed, since
         the load list can be constructed at runtime.
 *********************************************************************/
+%% adding files to modules
+flora_load_file(FL_PLUS(T),HostFile,HostMod,Location) :-
+	atom(T),
+	!,
+	flora_check__module_overriding(T,FLORA_DEFAULT_WORKSPACE,HostFile,HostMod,Location),
+	flora_add_module_dyn(T).
+
+flora_load_file(FL_PLUS(T),_,_,_) :-
+	var(T),
+	!,
+	flora_stderr_nl,
+	flora_error_line('file name unbound at time of adding'),
+	fail.
+
+
+%% adding files to modules
+flora_load_file(FL_RIGHTTO(FL_PLUS(FileName),Workspace),HostFile,HostMod,Location) :-
+	!,
+	flora_check__module_overriding(FileName,Workspace,HostFile,HostMod,Location),
+	( atom(FileName) ->
+	    ( atom(Workspace) ->
+		flora_add_module_dyn(FileName,Workspace)
+	    ;
+	      flora_stderr_nl,
+	      ( var(Workspace) ->
+		  flora_error_line('uninstantiated module name at time of adding')
+	      ;
+	        flora_error_heading,
+		flora_stderr_string('invalid module name: '),
+		flora_display_error(Workspace),
+		flora_stderr_nl
+	      ),
+	      !,
+	      fail
+	    )
+	;
+	  flora_stderr_nl,
+	  flora_error_heading,
+	  flora_stderr_string('invalid file name: '),
+	  flora_display_error(FileName),
+	  flora_stderr_nl,
+	  !,
+	  fail
+        ).
+
+%% Replacing contents of modules
 flora_load_file(T,HostFile,HostMod,Location) :-
 	atom(T),
 	!,

@@ -37,11 +37,13 @@
     from basics.
 :- export
 	flora_add_last/3,
+	flora_bind_last/2,
 	flora_generalize_last/2,
 	flora_trim_last/2.
 
 :- dynamic flora_trim_cache/2.
 :- dynamic flora_generalization_cache/2.
+:- dynamic flora_binding_cache/2.
 :- dynamic flora_add_arg_cache/3.
 
 %% Trims the last argument from both lists and predicates
@@ -74,8 +76,6 @@ flora_trim_last(X,Y) :-
 %%    then ListTempl2 is ListTempl1 with last element changed to new variable
 %% If Optype=trim
 %%    then ListTempl2 is ListTempl1 with the last list element removed.
-%% If Optype=add
-%%    then ListTempl2 is ListTempl1 with one addl last list member, a  new var.
 get_arg_templates(generalize,Len,ListTempl1,ListTempl3) :-
 	length(ListTempl1,Len),
 	reverse(ListTempl1,ListTempl1reversed),
@@ -87,9 +87,20 @@ get_arg_templates(trim,Len,ListTempl1,ListTempl2) :-
 	reverse(ListTempl1,ListTempl1reversed),
 	ListTempl1reversed = [_|ListTempl2reversed],
 	reverse(ListTempl2reversed,ListTempl2).
+
+%%  ListTempl2 is ListTempl1 with one addl last list member, a  new var.
+%%  get_arg_templates(add,+Len,-ListTempl1,-ListTempl4,-LastVar)
 get_arg_templates(add,Len,ListTempl1,ListTempl4,LastVar) :-
 	length(ListTempl1,Len),
 	append(ListTempl1,[LastVar],ListTempl4).
+
+%% Make a list of variables of length Len and bind the last variable to Binding
+%% get_arg_templates(bind,+Len,-ListTempl1,+Binding)
+get_arg_templates(bind,Len,ListTempl1,Binding) :-
+	length(ListTempl1,Len),
+	reverse(ListTempl1,ListTempl1reversed),
+	ListTempl1reversed = [Last|_Rest],
+	Last=Binding.
 
 flora_generalize_last(X,X) :-
 	var(X),
@@ -136,3 +147,31 @@ flora_add_last(X,Y,LastVar) :-
 	assert(flora_add_arg_cache(InPredTempl,OutPredTempl,LastVar)),
 	X=InPredTempl,
 	Y=OutPredTempl.
+
+flora_bind_last(X,_) :-
+	var(X),
+	!.
+flora_bind_last(X,Binding) :-
+	flora_binding_cache(X,Binding),
+	!.
+flora_bind_last(X,Binding) :-
+	is_list(X),
+	!,
+	length(X,InLen),
+	get_arg_templates(bind,InLen,InArgsTempl,BindTempl),
+	( flora_binding_cache(InArgsTempl,BindTempl), !
+	; assert(flora_binding_cache(InArgsTempl,BindTempl))
+	),
+	(X=InArgsTempl, BindTempl=Binding, !
+	; true
+	).
+flora_bind_last(X,Binding) :-
+	functor(X,Fun,InLen),
+	get_arg_templates(bind,InLen,InArgsTempl,BindTempl),
+	InPredTempl =.. [Fun|InArgsTempl],
+	( flora_binding_cache(InPredTempl,BindTempl), !
+	; assert(flora_binding_cache(InPredTempl,BindTempl))
+	),
+	( X=InPredTempl, BindTempl=Binding, !
+	; true
+	).
