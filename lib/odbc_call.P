@@ -1826,8 +1826,6 @@ odbc_get_attr(ConnHandle,Tab,Col,Type) :-
 		odbc_error('Parse error.')
 	).
 
-
-
 odbc_accessible_tables(ConnHandle,User,Tab) :-
 	find_free_cursor(ConnHandle,'GET TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
@@ -1871,6 +1869,19 @@ odbc_user_tables(ConnHandle,Tab) :-
 	).
     
 
+odbc_data_sources(DataSourceName,Description) :-
+	odbc_data_sources(1,DataSourceName,Description).
+
+odbc_data_sources(N,DataSourceName,Description) :-
+	odbc_data_sources(N,DataSourceName,Description,RetVal),
+	(RetVal =:= 0
+	-> true
+	; !, fail
+	).
+odbc_data_sources(_,DataSourceName,Description) :-
+	odbc_data_sources(2,DataSourceName,Description).
+	
+
 odbc_current_cursor(Cursor) :-
 	(odbc_active_cursors(ACursor)
 	 ->	Cursor = ACursor
@@ -1897,7 +1908,7 @@ odbc_deactivate_cursor(Cursor) :-
 		 fail
 		 ;
 		 true
-		)		 
+		) 
 	 ;	true
 	).
 
@@ -1950,6 +1961,8 @@ odbc_tables(Cursor,Ret) :- odbc_exec_query(13,Cursor,Ret).
 odbc_usertables(Cursor,Ret) :- odbc_exec_query(14,Cursor,Ret).
 
 odbc_describe_select(Cursor,Ret) :- odbc_exec_query(15,Cursor,Ret).
+
+odbc_data_sources(N,DSN,Descr,Ret) :- odbc_exec_query(17,N,DSN,Descr,Ret).
 
 %%% parameters in SQLEXT.H;
 %%Attr: SQL_AUTOCOMMIT(102) Val: on(1), off(0);

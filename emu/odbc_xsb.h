@@ -41,6 +41,7 @@ extern void ODBCTables();
 extern void ODBCUserTables();
 extern void ODBCDescribeSelect();
 extern void ODBCConnectOption();
+extern void ODBCDataSources();
 
 #define ODBC_CONNECT             1
 #define ODBC_PARSE               2
@@ -58,6 +59,7 @@ extern void ODBCConnectOption();
 #define ODBC_USER_TABLES        14
 #define ODBC_DESCRIBE_SELECT    15
 #define ODBC_CONNECT_OPTION     16
+#define ODBC_DATA_SOURCES       17
 
 #endif
 

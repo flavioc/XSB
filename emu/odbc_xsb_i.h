@@ -77,6 +77,9 @@ switch (ptoc_int(1)) {
  case ODBC_CONNECT_OPTION:
    ODBCConnectOption();
    break;
+ case ODBC_DATA_SOURCES:
+   ODBCDataSources();
+   break;
  default:
    xsb_error("Unknown or unimplemented ODBC request type");
    /* Put an error message here */

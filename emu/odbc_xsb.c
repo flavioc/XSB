@@ -807,10 +807,6 @@ void ODBCColumns()
 void ODBCTables()
 {
   struct Cursor *cur = (struct Cursor *)ptoc_int(2);
-  /* dummy_string is used to trick the code in FindFreeCursor into
-     not reusing cursors used by this function. It seems that SQLTables
-     leaves cursors in an invalid state.                  -- lfcastro */
-  static const char *dummy_string="THIS is NOT an SQL query";
   RETCODE rc;
   
   if (cur->Status == 2) { /* reusing opened cursor*/
@@ -829,9 +825,6 @@ void ODBCTables()
 		     NULL, 0)) == SQL_SUCCESS) ||
       (rc == SQL_SUCCESS_WITH_INFO)) {
     ctop_int(3,0);
-    /*     free(cur->Sql); */
-    /*     cur->Sql = malloc(strlen(dummy_string)+1); */
-    /*     strcpy(cur->Sql, dummy_string); */
   } else {
     ctop_int(3,PrintErrorMsg(cur));
     SetCursorClose(cur);
@@ -906,7 +899,91 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
     return 0;
   }
 }
+extern xsbBool unify(Cell, Cell);
 
+/*-----------------------------------------------------------------------------*/
+/*  FUNCTION NAME:*/
+/*     ODBCDataSources()*/
+/*  PARAMETERS:*/
+/*     R1: 1 - first call; 2 - subsequent calls */
+/*     R2: var, returns DSN */
+/*     R3: var, returns DS description */
+/*     R4: var, returns status */
+/*  NOTES:*/
+/*-----------------------------------------------------------------------------*/
+void ODBCDataSources()
+{
+  static UCHAR DSN[SQL_MAX_DSN_LENGTH+1];
+  static UCHAR Description[SQL_MAX_DSN_LENGTH+1];
+  RETCODE rc;
+  int seq;
+  SWORD dsn_size, descr_size;
+  Cell op2 = ptoc_tag(3);
+  Cell op3 = ptoc_tag(4);
+
+  if (!henv) {
+    /* allocate environment handler*/
+    rc = SQLAllocEnv(&henv);
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      xsb_error("Environment allocation failed");   
+      ctop_int(5,1);
+      return;
+    }
+    LCursor = FCursor = NULL;
+    FCurNum = NULL;
+    nullStrAtom = makestring(string_find("NULL",1));
+  }
+
+  seq = ptoc_int(2);
+  
+  if (seq == 1) {
+    rc = SQLDataSources(henv,SQL_FETCH_FIRST,&DSN,
+			SQL_MAX_DSN_LENGTH,&dsn_size,
+			&Description,SQL_MAX_DSN_LENGTH,
+			&descr_size);
+    if (rc == SQL_NO_DATA_FOUND) {
+      ctop_int(5,2);
+      return;
+    }
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      xsb_error("Environment allocation failed");   
+      ctop_int(5,1);
+      return;
+    }
+  } else {
+    rc = SQLDataSources(henv,SQL_FETCH_NEXT,&DSN,
+			SQL_MAX_DSN_LENGTH,&dsn_size,
+			&Description,SQL_MAX_DSN_LENGTH,
+			&descr_size);
+    if (rc == SQL_NO_DATA_FOUND) {
+      ctop_int(5,2);
+      return;
+    }
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      xsb_error("Environment allocation failed");   
+      ctop_int(5,1);
+      return;
+    }
+  }
+  XSB_Deref(op2);
+  if (isref(op2))
+    unify(op2, makestring(string_find(DSN,1)));
+  else {
+    xsb_error("[ODBCDataSources] Param 2 should be a free variable.");
+    ctop_int(5,1);
+    return;
+  }
+  XSB_Deref(op3);
+  if (isref(op3))
+    unify(op3, makestring(string_find(Description,1)));
+  else {
+    xsb_error("[ODBCDataSources] Param 3 should be a free variable.");
+    ctop_int(5,1);
+    return;
+  }
+  ctop_int(5,0);
+  return;
+}
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
@@ -1069,7 +1146,6 @@ void ODBCConnectOption()
   else ctop_int(6,PrintErrorMsg(NULL));
 }
 
-extern xsbBool unify(Cell, Cell);
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
