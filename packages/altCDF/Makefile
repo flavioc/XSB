@@ -38,7 +38,7 @@ Option = [optimize,quit_on_error]
 #-----------------------------------------------------------------------#
 #
 #XSB=../../bin/xsb
-XSB=c:/XSBNEW/XSB/config/x86-pc-windows/bin/xsb
+XSB=.../../../XSBENV/XSB/bin/xsb
 Prolog = $(XSB) -e "segfault_handler(warn)."
 #
 #-----------------------------------------------------------------------#
@@ -53,7 +53,7 @@ HDRMSG = "While compiling XSB/packages/altCDF:"
 .SUFFIXES: .P ${OBJEXT} .H
 
 all: init $(ALL) finish
-	@../../build/touch.sh cmd...
+	@../../../XSBENV/XSB/build/touch.sh cmd...
 	$(Prolog) < cmd...
 	/bin/rm -f cmd...
 	@cat $(SVFILE)
@@ -63,13 +63,13 @@ all: init $(ALL) finish
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
 %.P:   %.H
-	../../build/touch.sh $@
+	../../../XSBENV/XSB/build/touch.sh $@
 
 
 # These targets are obsolete. They are here just in case some 
 # obscure make utility doesn't understand patterns
 .H.P:
-	../build/touch.sh $@
+	../../../XSBENV/XSB/build/touch.sh $@
 .P${OBJEXT}:
 	echo 'mc($*, $(Option)).' >> cmd...
 
