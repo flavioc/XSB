@@ -23,7 +23,7 @@
 */
 
 
-:- export singleton_check/2.
+:- export singleton_check/2,calculate_singleton/3.
 
 :- import vv/2 from xsb_read.
 :- import warning/1 from auxlry.

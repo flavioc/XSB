@@ -1,5 +1,6 @@
 /* File:      singleton.P
-** Author(s): Kostis F. Sagonas
+** Author(s): Xu, Sagonas
+** Modified by Swift to support read_term.
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -55,7 +56,6 @@ singleton_check(Clause, VariableList) :-
 	fail.	% Undo numbervars' side-effects and reclaim all space used.
 'singleton check'(_, _).
 
-
 singleton_warnings(Clause, VariableList) :-
 	numbervars_cmplib(Clause, 1, NumberOfVars),
 	N is NumberOfVars - 1,
@@ -65,11 +65,32 @@ singleton_warnings(Clause, VariableList) :-
 	hilog_functor(Head, P, A),
 	write_singleton_warnings(VariableList, Occurences, P, A).
 
+/* TLS: This is used for read_term */
+calculate_singleton(Clause,VarList,Occurences) :-
+	copy_term((Clause,VarList),(Clause1,VarList1)),
+	numbervars_cmplib(Clause1, 1, NumberOfVars),
+	N is NumberOfVars - 1,
+	functor(Occ, occ, N),
+	calculate_occurences(Clause1, Occ),
+	process_raw_occurences(VarList,VarList1,Occ,Occurences).
+
+process_raw_occurences([],_, _, []):- !.
+%process_raw_occurences([_],_, _, []):- !.
+process_raw_occurences([vv(Name,Var)|R],[vv(Name,'_$cmplib_var'(N))|R1], 
+	                                                                              Occ, Occurences) :-
+	atom_codes(Name, CharList),
+	( CharList = [95|_] ->	% variable Var begins with an "_"
+                Occurences = NewOccurences
+	  ; ll_arg(N, Occ, OccCount),
+	    ( OccCount == found('at least twice') -> 
+  	        Occurences = NewOccurences
+	      ; Occurences = [Name = Var|NewOccurences] )
+	),
+	process_raw_occurences(R, R1, Occ, NewOccurences).
 
 calculate_occurences(Term, Occurences) :-
 	functor(Term, _, Arity),
 	'calculate occurences'(Term, 0, Arity, Occurences).
-
 
 'calculate occurences'(_, N, N, _) :- 
 	!.
