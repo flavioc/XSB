@@ -897,7 +897,14 @@ void ODBCDescribeSelect()
 void FetchNextRow()
 {
   struct Cursor *cur = (struct Cursor *)ptoc_int(2);
-  RETCODE rc = SQLFetch(cur->hstmt);
+  RETCODE rc;
+
+  if (!serverConnected || cur->Status == 0) {
+    ctop_int(3,2);
+    return;
+  }
+
+  rc = SQLFetch(cur->hstmt);
 
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) 
     ctop_int(3,0);
