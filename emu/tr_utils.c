@@ -681,7 +681,13 @@ void reclaim_ans_list_nodes(SGFrame sg_frame)
   }
 }
 
-/*----------------------------------------------------------------------*/
+/*
+**   Used in aggregs.P to implement aggregates.
+**   Takes:   breg (the place where choice point is saved) and arity.  
+**   Returns: subgoal skeleton (i.e., ret(X,Y,Z), where X,Y,Z are all the 
+**    	      	                distinct variables in the subgoal);
+**   	      Pointer to the subgoal.
+*/
 
 void breg_retskel(void)
 {

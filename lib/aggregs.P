@@ -94,8 +94,13 @@ bagReduce1(Call,Res,Op,Id) :-
 % Define HiLog bagOf in terms of Prolog bagof. 
 bagOf(Call,List) :- bagof(Var,Call(Var),List).
 
-/*------------------------------------------------------------------------*/
-/* A built-in used in the implementation of aggregates.                   */
-/*------------------------------------------------------------------------*/
+/*
+** A built-in used in the implementation of aggregates.                   
+** Takes: Breg (where the choice point was saved), 
+**    	  Arity of the skeleton term to return.
+** Returns: Subgoal skeleton, Ptr to a subgoal structure.
+**          Subgoal skeleton is of the form ret(X,Y,Z), where X,Y,Z are
+**    	    all the free variables in the subgoal.
+*/
 
 breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
