@@ -690,11 +690,7 @@ static chat_init_pheader chat_save_consumer_state(int incremental,
 
 chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
 {
-#ifdef INCREMENTAL_CP_TRAVERSAL
     CPtr b, h, eb;
-#else
-    CPtr b;
-#endif
     TChoice prev_tcp;
     chat_incr_pheader ip;
     chat_init_pheader pheader;
@@ -702,7 +698,6 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
     CPtr *dest_tr, dest_cons;
     CRPtr cr;
 
-#ifdef INCREMENTAL_CP_TRAVERSAL
     if (incremental) {
       b = subg_cp_ptr(subg_ptr); h = cp_hreg(b); eb = cp_ebreg(b);
     } else {
@@ -717,12 +712,6 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
     /* The following is needed because restore_some_wamregs()
        resets from hbreg and not from cp_hreg(top_cp) */
     hbreg = h;
-#else
-    if (incremental) b = subg_cp_ptr(subg_ptr); else b = breg;
-    for (prev_tcp = (TChoice)cp_prevbreg(b);
-         !(is_generator_choicepoint(b));
-         prev_cp = (TChoice)cp_prevbreg(prev_tcp)) ;
-#endif
 #ifdef Chat_DEBUG
     fprintf(stderr, "In save_a_cons_copy: leader tcp = %p\n", prev_tcp);
 #endif
@@ -834,14 +823,6 @@ chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
     nlcp_pcreg(consumer) = (pb) &answer_return_inst;
     nlcp_trie_return(consumer) = subg_ans_list_ptr(subg_ptr);
 
-/* OLD CODE
-    *(consumer+NLCPSIZE) = subst_fact_var_num;
-    cptr = compl_hreg(compl_fr)-subst_fact_var_num;
-    for (i = 1; i <= subst_fact_var_num; i++) {
-      *(consumer+NLCPSIZE+i) = cell(cptr);
-      cptr++;
-    }
- */
     cptr = (CPtr *)(compl_hreg(compl_fr)-subst_fact_var_num);
     chat_save_cons_arguments(pheader,subst_fact_var_num,cptr);
 
@@ -873,10 +854,6 @@ chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
 /*----------------------------------------------------------------------*/
 /* save_a_chat_compl_susp                                               */
 /*----------------------------------------------------------------------*/
-
-#if (!defined(INCREMENTAL_CP_TRAVERSAL))
-#error "Function save_a_chat_compl_susp will not work on this configuration !"
-#else
 
 chat_init_pheader save_a_chat_compl_susp(int nrarguments, CPtr reg_base,
 					 SGFrame subg_ptr, CPtr ptcp, byte *cp)
@@ -946,8 +923,6 @@ chat_init_pheader save_a_chat_compl_susp(int nrarguments, CPtr reg_base,
 
 } /* save_a_chat_compl_susp */
 
-#endif /* INCREMENTAL_CP_TRAVERSAL */
-
 /*----------------------------------------------------------------------*/
 /* routines for memory statistics about CHAT areas                      */
 /*----------------------------------------------------------------------*/
@@ -982,7 +957,7 @@ void print_chat_statistics(void)
 }
 
 /*----------------------------------------------------------------------*/
-/* some gc related stuff                                                */
+/* some garbage collection related stuff                                */
 /*----------------------------------------------------------------------*/
 
 void chat_set_chained(CPtr p)
@@ -1021,9 +996,8 @@ int chat_is_chained(CPtr p)
   return(((int)*pc));
 } /* chat_is_chained */
 
-
+/*-----------------------------------------------------------------------*/
 
 #endif	/* CHAT */
-
 
 /*------------------------- end of file chat.c --------------------------*/

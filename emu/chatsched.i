@@ -107,7 +107,7 @@ static CPtr chat_fixpoint(SGFrame subg_ptr, TChoice leader_tcp)
 
 /*----------------------------------------------------------------------*/
 /* Makes an incremental CHAT copy area and links it to all consumer	*/
-/* areas that need it -- it works only for CHAT_TREE_COPY.		*/
+/* areas that need it -- in effect, chat areas have a tree form.       	*/
 /*----------------------------------------------------------------------*/
 
 static void chat_incremental_copy(SGFrame subg_ptr)
