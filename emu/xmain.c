@@ -231,4 +231,3 @@ static void check_create_dir(char *path) {
     exit(1);
   }
 }
-
