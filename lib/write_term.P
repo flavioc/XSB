@@ -181,14 +181,19 @@ maybe_close_paren(_, _, C, C).
 %   generates spaces as needed to ensure that two successive
 %   tokens won't run into each other.
 
-maybe_space(Ci, Co) :-
-	(   Ci\/Co<2'100, xor(Ci,Co,C),C < 2'010 -> put_code(0' )
-        ;   true
-        ).
+/*
+TLS: I'm simplifying this.  The original ciao code had spaces depend
+in a rather persnickety way on the '$atom_mode', but I'm trying
+something much simpler for now.
+
+In any case, I really should tie the spacing in with the tokenizing somehow.
+*/
+
+maybe_space(C1,Co):- put_code(0' ).
 
 /*
 maybe_space(Ci, Co) :-
-	(   Ci\/Co<2'100, Ci#Co<2'010 -> put_code(0' )
+	(   Ci\/Co<2'100, xor(Ci,Co,C),C < 2'010 -> put_code(0' )
         ;   true
         ).
 */
