@@ -1,0 +1,662 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<link type="text/css" rel="stylesheet" href="xsb.css">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+<title>Release Notes</title>
+</head>
+
+<body>
+<div class="xsb-menu">
+<p>
+<a href="index.html" >Home</a>
+<a href="research.html" >Research</a>
+<a href="xsbsystem.html" >XSB System</a>
+<a href="contactus.html" >Contact Us</a>
+</p>
+</div>
+
+<h1>Release Notes</h1>
+
+<h2>Version 2.6 (Duff)</h2>
+
+<h3>General</h3>
+<p>
+Version 2.6 contains a number of changes, including new packages and
+libraries for generation of manuals from code documentation and for
+answer set programming.  Version 2.6 also allows a user-modifiable
+extension for byte-code files, whose default .xwam extension replaces
+the previous .O extension.  Existing features Version 2.6 have been
+improved  in various ways, from better exception handling, to a more
+robust Windows implementation, to numerous bug-fixes.
+</p>
+
+<h3>News</h3>
+<ul>
+  <li>
+  The Chat engine has been removed. An optimized version of the
+  SLG-WAM is now the single engine supported in XSB. The garbage
+  collectors have been ported to this engine.
+  </li>
+  <li>
+  Various aspects of XSB have been rewritten to support an
+  ISO-compatible error handling mechanism in which exceptional
+  conditions can be caught and handled by user programs.
+  </li>
+  <li>
+  Fixed-depth indexing has been added for dynamic predicates.
+  Using fixed-depth indexing a term in a given arguments may be indexed
+  on the first five non-variable symbols.  Multiple-argument and
+  alternative indices also work with fixed-depth indexing just as they
+  do with outer functor indexing.
+  </li>
+  <li>
+  Full-word integers are now supported in XSB via an implementation
+  of boxed integers.
+  </li>
+  <li>
+  Date and time routines have been added as standard
+  predicates.
+  </li>
+</ul>
+
+<h3>Packages and Libraries</h3>
+<ul>
+  <li>
+  A new package, xsbdoc, has been added.  xsbdoc supports a
+  "literate programming" style, in which code-level comments can be used
+  to generate manuals.  It is based in part on Ciao system's lpdoc.
+  </li>
+  <li>
+  The XASP package provides an efficient interface to SModels from
+  XSB.  It is a significant rewrite of the previous SModels interface.
+  </li>
+  <li>
+  An ODBC interface to MySQL is now supported under Linux.  In
+  addition, Prolog terms can now be written to and read from database
+  strings.  
+  </li>
+  <li> A new library, stdscan.P is provided containing a configurable
+  scanner for text parsing.
+  </li>
+  <li>
+  Updates to the major packages, including Flora-2 and XMC.
+  </li>
+</ul>
+
+<h3>Platform stabilization</h3>
+<ul>
+  <li>
+  Stability of XSB on Windows has been improved in many ways,
+  both when XSB is compiled with Cygwin/GCC, and when compiled by
+  native windows compilers.  These changes include a better
+  configuration mechanism for Windows, a robust XSB-calling-C
+  interface, and better support for gpp preprocessing of Prolog files.
+  In addition, many standard and library predicates have been
+  stabilized for Windows, including cputime/1, directory query
+  routines, path and file handling, the format.P library, and others.
+  </li>
+  <li>
+  The build process has been fixed for 64-bit MIPS machine.  XSB
+  should be easily portable to most 64-bit machines.
+  </li>
+</ul>
+
+<h3>Bugfixes</h3>
+<ul>
+  <li>
+  Several bugfixes have been made for the CLP(R) package, including
+  expansion of math functions to include min/1, max/1, and pow/2.
+  </li>
+  <li>
+  Hashing function have been changed to provide better indexing of
+  longish strings.
+  </li>
+  <li>
+  Various bugs in pathname handling were fixed, and differences in
+  pathname handling between Unix and Windows were minimized.
+  </li>
+  <li>
+  Bugs closed since last release (see <a
+  href="http://sourceforge.net/tracker/?group_id=1176&atid=101176">Bugs</a>
+  for more information): #585031, #569972, #723875, #535270, #683785,
+  #666940, #637782, #635399, #524348, #626921, #449237, #706145,
+  #641852, #638830, #642024, #535257, #529566, #475363, #589668,
+  #531264
+  </li>
+
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li>
+  The object files now have the .xwam extension instead of the .O
+  extension.
+  </li>
+  <li>
+  The <tt>xsb_undefined_predicate_hook</tt> has been
+  deprecated. Instead, XSB now throws the exception of the form
+  <tt>error(undefined_predicate(Name,Arity,ModName),ErrorMessage)</tt>
+  when an undefined predicate is called. This exception can be caught
+  and appropriate action can be taken.
+  </li>
+</ul>
+
+<h2>Version 2.5 (Okocim)</h2>
+<h3>General</h3>
+<p>
+This is mostly a transitional release, where the major changes are the
+move to use the SLG-WAM engine as default, and the introduction of
+garbage collection support for this engine. Also, several important
+memory management related bugs have been fixed, increasing the
+system's stability considerably.
+</p>
+
+<h3>Important Note</h3>
+<p>
+This is the last release to support the Chat engine. 
+</p>
+
+<h3>News</h3>
+<ul>
+  <li>
+  SLG-WAM stack management has been made the default rather than Chat.
+  Chat is still available through a configuration option.
+  </li>
+  <li> A new heap garbage collector, called <tt> indirect </tt> has
+  been made the default garbage collector for SLG-WAM.  In addition,
+  the Chat sliding and copying garbage collectors now also work on the
+  SLG-WAM configuration.
+  </li>
+  <li> New builtins round/2, ceil/2 and floor/2 for dealing with
+  floating point numbers added.
+  </li>
+</ul>
+
+<h3>Bugfixes</h3>
+<ul>
+  <li>
+  Several memory management related bugs fixed.
+  </li>
+  <li>
+  Minor bug in Prolog debugger fixed.
+  </li>
+  <li>
+  Fixed problem with NULL values and ODBC.
+  </li>
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li>
+  None
+  </li>
+</ul>
+
+<h3>FLORA News</h3>
+<p>
+Flora-2 is still a late alpha release, but there have been
+considerable improvements in stability and speed.
+This release fixes many bugs, eliminates some restrictions, and adds
+new features.
+</p>
+<ul>
+  <li>
+  The most important new feature is the ability to check for undefined
+  predicates and methods in debug mode (see the manual regarding
+  checking undefinedness checks). This feature simplifies debugging
+  considerably.
+  </li>
+  <li>
+  Flora compiler now checks if a tabled predicate depends on an update
+  operation and issues appropriate warnings. Such dependency is
+  considered to be a likely program bug.
+  </li>
+  <li>
+  Numbered anonymous oids added (e.g., _#123). They behave like
+  regular anonymous oids (_#) in the sense that they are substituted
+  by a new oid. However, numbered oids can be referenced within the
+  same clause (e.g., _#12[self-&gt;_#12]).
+  </li>
+  <li>
+  Optimized compilation of path expressions and nested terms.
+  </li>
+</ul>
+
+<h2>Version 2.4 (Bavaria)</h2>
+
+<h3>General</h3>
+
+<h3>News</h3>
+<ul>
+  <li>
+  XSB now permits user programs to register hooks to be called when an
+  undefined predicate is encountered. This and other (previously
+  undocumented) hooks are described in the chapter titled <i>Hooks</i>
+  in Manual Part 1.
+  </li>
+  <li> The <a href="http://www.cs.sunysb.edu/~lmc/">XMC Model Checking
+  System</a> is now included as a package in XSB.
+  </li>
+  <li>
+  Local scheduling has been made the default scheduler.
+  </li>
+  <li> Uniform interface to various file operations (chdir, isdir,
+  readable, etc.) through the predicate <tt>path_sysop/2</tt> and
+  <tt>path_sysop/3</tt> (in module file_io). See Manual, Part 2
+  (<i>Script Utilities</i>).
+  </li>
+  <li>
+  New string matching function, <tt>string_match/4</tt>, which extends
+  <tt>str_sub/3</tt> (<tt>string_match/4</tt> doesn't do pattern
+  matching - use the <tt>regmatch</tt> package for that). See Manual,
+  Part 2, (<i>String Manipulation</i>).
+  </li>
+</ul>
+
+<h3>Bugfixes</h3>
+<ul>
+  <li>
+  Fixed subsumption bug prompted by certain uses of functors and
+  lists.  The bug appeared as an inability to unify a (falsely
+  identified) answer with an answer template.
+  </li>
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li>
+  The meaning of argument 3 in predicate str_sub/3 has changed. It
+  still represents the position of the substring match. However,
+  offsets now start from 0, like other string functions, instead of 1.
+  </li>
+  <li>
+  A number of new predicates have been added as a step towards ISO
+  compatibility.
+  </li>
+</ul>
+
+<h3>FLORA News</h3>
+<p>
+This release of XSB contains an alpha release of a completely
+redesigned and re-implemented FLORA system (now called FLORA-2). Here
+is an incomplete list of the main new features of the system:
+</p>
+<ul>
+  <li>
+  Integrates F-logic, HiLog, and Transaction Logic into one coherent
+  language
+  </li>
+  <li>
+  Provides a new, flexible module system
+  </li>
+  <li>
+  Better equality maintenance and support for inheritance
+  </li>
+  <li>
+  Support for preprocessing
+  </li>
+  <li>
+  Many more enhancements
+  </li>
+</ul>
+<p>
+We recommend that Flora users should start using Flora-2, as the previous
+version of Flora is no longer maintained and will eventually be deprecated.
+</p>
+
+<h2>Version 2.3 (Zombie)</h2>
+
+<h3> General</h3>
+<p>
+A great number of bugs fixed, new features, performance improvements.
+</p>
+
+<h3>News</h3>
+<ul>
+  <li>
+  <b>Subsumption:</b> In addition to variant-based tabling, XSB now
+  provides tabling based on subsumption of calls. In such a
+  "subsumption-based" tabled evaluation, answers from a more general
+  subgoal are used to satisfy a subsumed (more specific) subgoal,
+  thereby permitting greater reuse of computed results.  The tabling
+  strategy may be chosen on a per predicate basis.  Subsumption-based
+  tabling typically yields better performance in both time and space.
+  However, subsumptive tabling is better suited to more declarative
+  programs, as it may fail to give proper results in the presence of
+  certain Prolog constructs such as var/1.  This implementation of
+  subsumption-based tabling correctly evaluates normal logic programs
+  which do not require subgoal delays.
+  </li>
+  <li>
+  <b>Jumptable Emulator:</b> The system is now able to take advantage
+  of special gcc features to implement a jumptable-based emulator,
+  which speeds up XSB considerably.
+  </li>
+  <li>
+  <b>Sockets:</b> XSB now supports the socket select call and
+  timeouts.
+  </li>
+  <li>
+  <b>RDF parser:</b> The XSB libwww package that first appeared in XSB
+  2.2 now has new interface to the RDF parser provided by e libwww
+  package from W3C.  It requires that the libwww library from W3C is
+  installed.
+  </li>
+  <li>
+  An ISO-compatable <b>throw/catch mechanism</b>: It was already
+  present in version 2.2, but now it is also documented.
+  </li>
+  <li>
+  Foreign C interface now works on SGI's IRIX.
+  </li>
+  <li>
+  <b>Backtrackable assert and retract</b>, plus Perl-style associative
+  arrays. (Read about them in the section on modifying the database in
+  Manual 1.)
+  </li>
+  <li>
+  <b>Oracle Interface:</b> The Oracle interface has been brought
+  up-to-date with newer versions of Oracle.
+  </li>
+  <li><b>ODBC Interface:</b> The ODBC interface has been some major
+  cleanups, and several bugs have been fixed; it also now works with
+  SQL Server as well as Access. Support for multiple simultaneous
+  connections has been introduced.
+  </li>
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li>
+  The type <tt>bool</tt> used by the external C interface has
+  been renamed to xsbBool, because of clashes with various include
+  files that exist on some platforms. Likewise, the macros for dealing
+  with the variable string type used by C programs that call XSB as a
+  library have been renamed. For instance, <tt>vstrDEFINE</tt> is now
+  <tt>XSB_StrDefine</tt>. See Vol. 2 of the manual for the new names.
+  </li>
+  <li>
+  The predicates <tt>file_read_line</tt>,
+  <tt>file_read_line_atom</tt>, <tt>file_read_line_list</tt> have lost
+  the last argument (the indicator of whether the read has read the
+  entire line). This argument is no longer necessary, since buffers
+  expand automatically to accommodate any size input.
+  </li>
+</ul>
+
+<h2>Version 2.2 (Tsingtao)</h2>
+
+<h3> General</h3>
+
+<h3>News</h3>
+<ul>
+  <li>
+  <b>Support of Attributed Variables:</b> Attributed variables are now
+  supported in XSB (partially compatible with SICStus 3.8).  See <a
+  href="manual/manual2.pdf">XSB Manual, Volume 2, Attributed
+  Variables.</a>
+  </li>
+  <li>
+  <b>Random Number Generator:</b> A builtin random number generator is
+  implemented, and a set of predicates, which are compatible with
+  SICStus 3.8, are provided.
+  </li>
+</ul>
+
+
+<h3>New Packages</h3>
+<ul>
+  <li>
+  <b><tt>libwww</tt></b> - a powerful Web access package. See <a
+  href="manual/manual2.pdf">XSB Manual, Volume 2, The Libwww
+  Package.</a> This package has been tested only on Solaris 2.6 and
+  Linux 2.2. It definitely needs configuration work in order to run
+  under Windows.
+  <br>
+  This XSB package relies on the W3C's libwww library and requires it to
+  be installed. The entire package is implemented in C and is much faster
+  than other related Internet access packages for Prolog, e.g., PiLLOW). The
+  package provides the following functionality: 
+  <ul>
+    <li>
+    HTML parser.
+    </li>
+    <li>
+    (Non-validating) XML parser (including handling of external
+    entities).
+    </li>
+    <li>
+    The ability to simultaneously dispatch several HTTP requests and
+    parse the responses as they arrive; no waiting until the entire
+    document is received.
+    </li>
+    <li>
+    Fetching web pages and filling out forms.
+    </li>
+    <li>
+    Header information.
+    </li>
+    <li>
+    Timeouts.
+    </li>
+    <li>
+    Basic and digest  authentication. SSL to follow.
+    </li>
+    <li>
+    Redirection.
+    </li>
+    <li>
+    Error handling.
+    </li>
+  </ul>
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li>
+  The C calls <tt>xsb_query_string_string</tt> and
+  <tt>xsb_next_string</tt> that interface C programs to XSB now use
+  the new <tt>VarString</tt> data type instead of <tt>char*</tt>. It
+  is no longer necessary to pass the size of the buffer to these
+  functions. See XSB Manual, Volume 2, to learn more about the
+  variable-length string data type.
+  </li>
+</ul>
+
+<h3>Bug Fixes</h3>
+<ul>
+  <li>
+  Crashing of XSB-ODBC interface under Windows;
+  </li>
+  <li>
+  Memory violations of some internal operations on delay lists.
+  </li>
+</ul>
+
+<h2>Version 2.1 (Skol)</h2>
+
+<h3> General</h3>
+
+<h3>News</h3>
+<p>
+<b>Process management API:</b> XSB can now spawn subprocesses and
+capture their standard I/O into XSB streams. This allows XSB to
+communicate with other processes. See <a href="manual/manual2.pdf">XSB
+Manual, Volume 2, Communication with Subprocesses.</a>
+</p>
+<p>
+<b>XSB preprocessor:</b> There is now a compiler option, <tt>xpp_on</tt>,
+which tells the XSB compiler to put the source through a
+preprocessor. The default is <a
+href="http://www.math.polytechnique.fr/cmat/auroux/prog/gpp.html">gpp</a>,
+a powerful preprocessor that understands both C and Prolog syntax.
+</p>
+<p>
+<b>High-level C interface:</b> XSB can now automatically generate
+wrappers for the most common C functions. Such functions can now be
+simply declared using compiler directives and then be called from XSB.
+</p>
+<p>
+<B>Enhancements to the sockets interface:</B> New calls such as
+<tt>socket_set_option, socket_select,</tt>, etc. Certain socket calls
+and file I/O calls can be timed-out.
+</p>
+<p>
+<b>I/O enhancements:</b> There are several additions to the low-level
+I/O library, such as <tt>file_clone, file_reopen,
+pipe_open</tt>. Certain socket calls and file I/O calls can be
+timed-out.
+</p>
+<p>
+<b>New section on string manipulation in manual part 2:</b> Some of
+the predicates described there are old (but weren't documented) and
+some are new.
+</p>
+<p>
+<b>Call changes:</b> New calls: number_digits/2, number_codes/2,
+atom_codes/2 replace atom_chars/2 and number_chars/2.
+</p>
+<p>
+<b>Atom length:</b> Atom length in compiled code is no longer limited
+to 255. The 255 limit on the size of ldoptions directive in the
+Foreign C interface has been removed as well.
+</p>
+<p>
+<b>Debugger enhancements:</b> Many additional options: profiling,
+verbose skip, extensive trace control facility.
+</p>
+
+<h3>New Packages</h3>
+<p>
+<b>sModels</b>: Implements stable model semantics.
+</p>
+
+<h3> Backward Incompatibility</h3>
+<ul>
+  <li> 
+  <b>Binary incompatibility!!!</b> The format of the XSB .O files has
+  been changed. Make sure you recompile all your programs! (The
+  binaries that come with the XSB distribution have the new format.)
+  </li>
+  <li>
+  <tt>unix/1</tt> is now called <tt>shell/1</tt>. It exists in module
+  <tt>shell</tt>, and is imported from there automatically.
+  </li>
+  <li>
+  The standard predicates atom_chars/2 and number_codes/2 now behave
+  as in the Prolog standard (return lists of atoms rather than ASCII
+  codes). The old behavior is provided by the standard predicates
+  atom_codes/2 and number_codes/2.
+  </li>
+  <li>
+  A number of backward-incompatible changes in socket calls. First,
+  the predicates socket_send_eof/1 and socket_send_asci/2 have been
+  removed. This functionality is available through other calls.
+  </li>
+  <br>
+  Second, all socket predicates now have an extra argument, the error
+  code. The old-style predicates have been preserved, but their
+  behavior isn't guaranteed to be 100% the same. The fileptr argument
+  in socket_connect call has been deleted. The fileptr argument in
+  socket_accept no longer denotes an XSB I/O port. Instead, it denoted
+  a socket descriptor. It can be converted to an I/O port using the
+  new builtin fd2ioport.
+  <br>
+  socket_send/3 no longer appends the message delimited (the
+  backquote). Programs that rely on this feature will not work any
+  longer. Instead of this old hack, socket_send now prepends a 4-byte
+  header that specifies the length of the message body. The primitive
+  socket_recv/3 uses it to determine the length of the message it
+  received.
+  </li>
+</ul>
+
+<h2>Version 2.0 (Gouden Carolus)</h2>
+
+<h3> General</h3>
+<p>
+XSB Version 2.0 offers a more flexible handling of dynamic code. XSB
+now also includes a number of preprocessors that allow it to
+efficiently evaluate powerful formalisms such as F-logic, Annotated
+logic, and the well-founded semantics with explicit negation.
+Finally, XSB 2.0 provides various packages for regular expression and
+wildcard matching.
+</p>
+<p>
+Large parts of XSB have been rewritten for this release, especially
+memory management, and representation of tabled clauses. The result is
+a more robust system with improved functionality that is more suitable
+for use in commercial and large-scale research development.
+</p>
+<p>
+Added support for <a
+href="http://www.declarativa.com/interprolog">InterProlog</a>, a Java
+front-end enhancement for Prolog</li>
+</p>
+
+<h3> Packages</h3>
+<p>
+Version 2.0 of XSB includes the following packages:
+</p>
+<ul>
+  <li>
+  <i>FLORA</i>: A full-fledged F-logic to XSB compiler and shell.
+  </li>
+  <li>
+  <i>GAP</i>: support for annotated logic programming.
+  </li>
+  <li>
+  <i>SLX</i>: allows XSB to evaluate extended logic programs according
+  to the well-founded semantics with explicit negation.
+  </li>
+  <li>
+  <i>PERLMATCH</i>: an interface to Perl pattern matching and string
+  substitution capabilities.
+  </li>
+  <li>
+  <i>REGMATCH</i>: provides similar functionality, but relies on a
+  POSIX-compliant C library instead of Perl.
+  </li>
+  <li>
+  <i>WILDMATCH</i>: allows matching wildcards and globbing of
+  directories. Relies on a POSIX 2 compliant C library.
+  </li>
+</ul>
+
+<h3> Backward Incompatibility</h3>
+<p>
+The following incompatible changes have been made in XSB Version 2.0:
+</p>
+<ul>
+  <li>
+  The file .xsbrc in the home directory is no longer used. Instead, XSB
+  now uses the directory .xsb/ and the startup file is .xsb/xsbrc
+  It is now possible to have pretty much any Prolog code in that file.
+  </li>
+  <li>
+  There is a change in how the library_directory predicate is used.
+  The user must now assert directories into this predicate.
+  There is no need to export this predicate (this predicate is now
+  global).
+  </li>
+  <li>
+  XSB is no longer supported on MS DOS.
+  </li>
+  <li>
+  In order to be consistent with the ISO Prolog standard, XSB no
+  longer supports mixing compiled and dynamic code for the same
+  predicate.
+  </li>
+  <li> 
+  The predicate is_string/1, which used to check if its argument is a list of
+  characters, is now replaced by the builtin is_charlist/1. There is now also
+  is_charlist/2 (see the manual).
+  </li>
+</ul>
+
+
+<hr>
+<address>Email: <a href="mailto:xsb-users@lists.sourceforge.net" >xsb-users@lists.sourceforge.net</a></address>
+<!-- hhmts start -->Last modified: Mon Jun 23 15:08:51 EDT 2003 <!-- hhmts end -->
+</body> </html>

@@ -1,0 +1,98 @@
+body { 
+       margin-left: 10%;
+       margin-right: 10%;
+       margin-top: 10%;
+/*       background-color: #CCF; */
+       background-color: white;
+       font-family: sans-serif;
+/*        background-image: url(xsb-logo-big.png);
+       background-position: center center;
+       background-attachment: fixed;
+       background-repeat: no-repeat;  */
+}
+
+strong { 
+         font-weight: bold;
+/*         color: red; */
+}
+
+em { 
+     font-style: italic;
+/*      color: green; */
+}
+
+h1 { 
+     border-bottom: solid;
+     border-bottom-style: double;
+     text-align: center;
+}
+
+h2.ack { 
+         font-size: 100%;
+         font-weight: medium;
+         font-style: normal;
+         text-align: right;
+}
+
+/* dir.sf { 
+         text-align: center;
+         list-style-type: none;
+} */
+
+div.xsb-menu { 
+               margin: 0;
+               font-size: 120%;
+               font-weight: bold;
+               line-height: 1.1;
+               text-align: center;
+               position: fixed;
+               top: 0;
+               width: 80%;
+}
+
+div.xsb-menu p { 
+                 margin: 0;
+                 padding: 0.3em 0.4em;
+                 font-family: sans-serif;
+/*                  background: url(semi2x2b.png) transparent; */
+/*                  background: url(trans2x2.png) transparent; */
+                 background: url(blk2x2.png);
+                 border: thin outset #003366;
+                 color: white;
+ }
+
+div.xsb-menu a, div.xsb-menu em { 
+                                  display: inline;
+                                  margin: 0 0.5em;
+}
+/* div.xsb-menu a, div.xsb-menu em { border-top: 2px groove #036 } */
+/* div.xsb-menu a:first-child { border-top: none } */
+/* div.xsb-menu em { color: #CFC } */
+
+div.xsb-menu a:link { text-decoration: none; color: white }
+div.xsb-menu a:visited { text-decoration: none; color: lightgray }
+div.xsb-menu a:hover { background: black; color: white }
+
+div.figure { 
+             float: right;
+             width: 25%;
+             border: none;
+             margin: 0.5em;
+             padding: 0.5em;
+}
+
+img.scaled { 
+             width: 100%;
+             height: auto;
+}
+
+ul.code { 
+          padding: 1em;
+          font-family: monospace;
+          background: black;
+          color: lightgreen;
+}
+
+b.code { 
+         font-family: monospace;
+}

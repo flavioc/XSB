@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<link type="text/css" rel="stylesheet" href="xsb.css">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+<title>About XSB</title>
+</head>
+<body>
+<div class="xsb-menu">
+<p>
+<a href="index.html" >Home</a>
+<a href="research.html" >Research</a>
+<a href="xsbsystem.html" >XSB System</a>
+<a href="contactus.html" >Contact Us</a>
+</p>
+</div>
+
+<h1>About XSB</h1>
+
+<h3>Tabled Resolution</h3>
+<p>
+Tabled resolution is useful for recursive query computation, allowing programs
+to terminate correctly in many cases where Prolog does not. Users interested
+in Parsing, Program Analysis, Model-checking, Data Mining and Diagnosis
+may benefit from XSB.
+</p>
+<p>XSB's Tabling implementation:</p>
+<ul>
+  <li>
+  Evaluates at the engine level programs with stratified and non-stratified
+  negation, and programs with stratified aggregation.
+  </li>
+  
+  <li>
+  Allows full Prolog functionality in tabled code including cuts, (subject
+  to weak semantic restrictions), in meta-logical predicates, in second-order
+  predicates, etc.
+  </li>
+
+  <li>
+  Allows for declaration of tabled predicates either automatically by the
+  system or manually by the user. Furthermore, tabling can be automatically
+  performed for termination, for efficiency, or for both.
+  </li>
+
+  <li>
+  Provides standard tabling predicates which can be used to program a number
+  of applications in Non-Monotonic reasoning and Knowledge
+  representation.
+  </li>
+
+  <li>
+  Dynamically compiles tables into trie-based SLG-WAM code. which is indexed
+  dynamically and for which full memory management is provided.
+  </li>
+
+  <li>
+  Versions 2.4 and later have as default a tabling strategy called
+  <i>Local Evaluation</i> which is efficient for returning all answers
+  to a query, and is useful for applications such as program analysis
+  and non-monotonic reasoning.  As a configuration alternative, <i>
+  Batched Evaluation </i> is a Prolog-like tabling strategy that
+  efficiently returns the first answer to a query.
+  </li>
+
+  <li> Versions 2.5 and later have as their default stack management
+  configuration the SLG-WAM configuration, for which a choice of three
+  heap garbage collectors are available.  An alternative stack
+  management configuration, Chat, is also available for which a choice
+  of two heap garbage collectors are available.
+  </li>
+</ul>
+
+<h3>Indexing and Dynamic Code</h3>
+
+<p>
+XSB contains a variety of features to support in-memory data-oriented
+applications. Using these features, knowledge bases of up to one
+million clauses can be quickly loaded and efficiently indexed.
+</p>
+
+<ul>
+  <li>
+  XSB provides a variety of read and assert mechanisms for quickly
+  loading dynamic predicates, especially if these predicates are unit
+  clauses.
+  </li>
+
+  <li>
+  Indexes can be created on alternate or joint arguments of dynamic
+  code. Furthermore this indexing can be hash-based, or trie-based if
+  it is necessary to perform indexing deep within a term.
+  </li>
+
+  <li>
+  XSB provides mechanisms for backtrackable asserts: asserts whose
+  effects become undone upon backtracking.
+  </li> 
+
+  <li>
+  For static code XSB provides <i>unification factoring</i> which
+  extends clause indexing by factoring common unifications out of
+  clause heads, and can be used to optimize many Prolog programs.
+  </li>
+</ul>
+
+<h3>Interfaces</h3>
+<p>
+XSB supports a variety of interfaces.  All source code is available so
+that the interfaces can be tuned as needed or ported to other Prologs.
+</p>
+
+<ul>
+  <li>
+  Interfaces to call C functions or to be called by them, under UNIX.
+  </li>
+
+  <li>
+  An interface to Oracle that
+  </li>
+  <ul>
+    <li>
+    efficiently generates SQL code for Prolog queries on-demand,
+    making use of Level 4 of Oracle's ProC.
+    </li>
+
+    <li>
+    translates Datalog clauses into SQL automatically.
+    </li>
+  </ul>
+
+  <li>
+  An ODBC interface, to call data stored by other Windows
+  applications.
+  </li>
+
+  <li>
+  A DLL interface so that XSB can be called from within a Windows
+  application.
+  </li>
+
+  <li>
+  Java interfaces provided through <a
+  href="http://www.declarativa.com/interprolog">InterProlog</a> and 
+  <a href="http://www-db.stanford.edu/~stefan/rdf/yajxb/">
+  YAJXB</a>
+  </li>
+
+  <li>
+  Interfaces to libwww routines and various pattern-matching utilities,
+  all of which are useful for Web applications.
+  </li>
+
+  <li>
+  An interface to the stable model generator 
+  <a href="http://www.tcs.hut.fi/Software/smodels"> 
+  SModels</a> via the new <em>XASP</em> package.
+  </li>
+
+</ul>
+
+<h3>HiLog Compilation</h3>
+<p>
+HiLog supports a type of higher-order programming in which predicate
+symbols can be variable or structured. This allows unification to be
+performed on the predicate symbols themselves in addition to the
+arguments of the predicates.
+</p>
+<p>
+XSB's HiLog implementation:
+</p>
+
+<ul>
+  <li>
+  Includes compiled HiLog. Higher-order predicates execute at
+  essentially the same speed as compiled first-order predicates.
+  </li>
+
+  <li>
+  Includes a fully integrated HiLog preprocessor. HiLog terms can be
+  used anywhere in XSB, including the interpreter level.
+  </li>
+
+  <li>
+  Provides a number of meta-logical standard predicates for HiLog
+  terms.
+  </li>
+</ul>
+
+<p>
+XSB has been tested on over a dozen hardware and operating system
+platforms under Microsoft Windows 95/98, Windows NT, Windows 2000 and
+various versions of 32-bit UNIX. XSB 2.0 has been ported to 64-bit
+architectures and has been tested on 64-bit SGI machines. Various
+versions of XSB have been used to construct large-scale commercial
+systems for the U.S. Customs Service, the U.S. Defense Logistics
+Agency, the National Security Agency, Medicine Rules, Inc, MdLogix
+Inc., and many others.
+</p>
+
+<hr>
+<address>Email: <a href="mailto:xsb-users@lists.sourceforge.net" >xsb-users@lists.sourceforge.net</a></address>
+<!-- hhmts start -->Last modified: Mon Jun 23 15:08:26 EDT 2003 <!-- hhmts end -->
+</body> </html>
