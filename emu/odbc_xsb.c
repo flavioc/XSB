@@ -1,25 +1,25 @@
 /* File:      odbc_xsb.c
 ** Author(s): Lily Dong, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
-** 
+**
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
-** 
+**
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
-** 
+**
 */
 
 #include "xsb_config.h"
@@ -115,12 +115,206 @@ SWORD ODBCToXSBType(SWORD odbcType)
     return SQL_BINARY;
   case SQL_DATE:
   case SQL_TIME:
-  case SQL_TIMESTAMP: 
+  case SQL_TIMESTAMP:
   case SQL_CHAR:
   case SQL_VARCHAR:
   default:
     return SQL_C_CHAR;
   }
+}
+
+int GetInfoTypeType(int SQL_INFO_TYPE)
+{	//-1: Unkown
+	//0 : String
+	//1 : SQLUSMALLINT
+	//2 : SQLUINTEGER
+	//3 : SQLUINTEGER bitmask
+	//4 : SQLUINTEGER flag
+
+	int type;
+	switch(SQL_INFO_TYPE) {
+		case SQL_ACCESSIBLE_PROCEDURES:
+		case SQL_ACCESSIBLE_TABLES:
+		case SQL_CATALOG_NAME:
+		case SQL_CATALOG_NAME_SEPARATOR:
+		case SQL_CATALOG_TERM:
+		case SQL_COLLATION_SEQ:
+		case SQL_COLUMN_ALIAS:
+		case SQL_DATA_SOURCE_NAME:
+		case SQL_DATA_SOURCE_READ_ONLY:
+		case SQL_DATABASE_NAME:
+		case SQL_DBMS_NAME:
+		case SQL_DBMS_VER:
+		case SQL_DESCRIBE_PARAMETER:
+		case SQL_DM_VER:
+		case SQL_DRIVER_NAME:
+		case SQL_DRIVER_ODBC_VER:
+		case SQL_DRIVER_VER:
+		case SQL_EXPRESSIONS_IN_ORDERBY:
+		case SQL_IDENTIFIER_QUOTE_CHAR:
+		case SQL_INTEGRITY:
+		case SQL_KEYWORDS:
+		case SQL_LIKE_ESCAPE_CLAUSE:
+		case SQL_MAX_ROW_SIZE_INCLUDES_LONG:
+		case SQL_MULT_RESULT_SETS:
+		case SQL_MULTIPLE_ACTIVE_TXN:
+		case SQL_NEED_LONG_DATA_LEN:
+		case SQL_ODBC_VER:
+		case SQL_ORDER_BY_COLUMNS_IN_SELECT:
+		case SQL_PROCEDURE_TERM:
+		case SQL_PROCEDURES:
+		case SQL_ROW_UPDATES:
+		case SQL_SCHEMA_TERM:
+		case SQL_SEARCH_PATTERN_ESCAPE:
+		case SQL_SERVER_NAME:
+		case SQL_SPECIAL_CHARACTERS:
+		case SQL_TABLE_TERM:
+		case SQL_USER_NAME:
+		case SQL_XOPEN_CLI_YEAR:
+			type = 0;
+			break;
+		case SQL_ACTIVE_ENVIRONMENTS:
+		case SQL_CATALOG_LOCATION:
+		case SQL_CONCAT_NULL_BEHAVIOR:
+		case SQL_CORRELATION_NAME:
+		case SQL_CURSOR_COMMIT_BEHAVIOR:
+		case SQL_CURSOR_ROLLBACK_BEHAVIOR:
+		case SQL_FILE_USAGE:
+		case SQL_GROUP_BY:
+		case SQL_IDENTIFIER_CASE:
+		case SQL_MAX_CATALOG_NAME_LEN:
+		case SQL_MAX_COLUMN_NAME_LEN:
+		case SQL_MAX_COLUMNS_IN_GROUP_BY:
+		case SQL_MAX_COLUMNS_IN_INDEX:
+		case SQL_MAX_COLUMNS_IN_ORDER_BY:
+		case SQL_MAX_COLUMNS_IN_SELECT:
+		case SQL_MAX_COLUMNS_IN_TABLE:
+		case SQL_MAX_CONCURRENT_ACTIVITIES:
+		case SQL_MAX_CURSOR_NAME_LEN:
+		case SQL_MAX_DRIVER_CONNECTIONS:
+		case SQL_MAX_IDENTIFIER_LEN:
+		case SQL_MAX_PROCEDURE_NAME_LEN:
+		case SQL_MAX_SCHEMA_NAME_LEN:
+		case SQL_MAX_TABLE_NAME_LEN:
+		case SQL_MAX_TABLES_IN_SELECT:
+		case SQL_MAX_USER_NAME_LEN:
+		case SQL_NON_NULLABLE_COLUMNS:
+		case SQL_NULL_COLLATION:
+		case SQL_QUOTED_IDENTIFIER_CASE:
+		case SQL_TXN_CAPABLE:
+			type = 1;
+			break;
+		case SQL_ASYNC_MODE:
+		//case SQL_CURSOR_ROLLBACK_SQL_CURSOR_SENSITIVITY:
+		case SQL_DDL_INDEX:
+		case SQL_DEFAULT_TXN_ISOLATION:
+		case SQL_DRIVER_HDBC:
+		case SQL_DRIVER_HENV:
+		case SQL_DRIVER_HDESC:
+		case SQL_DRIVER_HLIB:
+		case SQL_DRIVER_HSTMT:
+		case SQL_MAX_ASYNC_CONCURRENT_STATEMENTS:
+		case SQL_MAX_BINARY_LITERAL_LEN:
+		case SQL_MAX_CHAR_LITERAL_LEN:
+		case SQL_MAX_INDEX_SIZE:
+		case SQL_MAX_ROW_SIZE:
+		case SQL_MAX_STATEMENT_LEN:
+		case SQL_ODBC_INTERFACE_CONFORMANCE:
+		case SQL_SQL_CONFORMANCE:
+			type = 2;
+			break;
+		case SQL_AGGREGATE_FUNCTIONS:
+		case SQL_ALTER_DOMAIN:
+		case SQL_ALTER_TABLE:
+		case SQL_BATCH_ROW_COUNT:
+		case SQL_BATCH_SUPPORT:
+		case SQL_BOOKMARK_PERSISTENCE:
+		case SQL_CATALOG_USAGE:
+		case SQL_CONVERT_BIGINT:
+		case SQL_CONVERT_BINARY:
+		case SQL_CONVERT_BIT:
+		case SQL_CONVERT_CHAR:
+		case SQL_CONVERT_GUID:
+		case SQL_CONVERT_DATE:
+		case SQL_CONVERT_DECIMAL:
+		case SQL_CONVERT_DOUBLE:
+		case SQL_CONVERT_FLOAT:
+		case SQL_CONVERT_INTEGER:
+		case SQL_CONVERT_INTERVAL_YEAR_MONTH:
+		case SQL_CONVERT_INTERVAL_DAY_TIME:
+		case SQL_CONVERT_LONGVARBINARY:
+		case SQL_CONVERT_LONGVARCHAR:
+		case SQL_CONVERT_NUMERIC:
+		case SQL_CONVERT_REAL:
+		case SQL_CONVERT_SMALLINT:
+		case SQL_CONVERT_TIME:
+		case SQL_CONVERT_TIMESTAMP:
+		case SQL_CONVERT_TINYINT:
+		case SQL_CONVERT_VARBINARY:
+		case SQL_CONVERT_VARCHAR:
+		case SQL_CONVERT_FUNCTIONS:
+		case SQL_CREATE_ASSERTION:
+		case SQL_CREATE_CHARACTER_SET:
+		case SQL_CREATE_COLLATION:
+		case SQL_CREATE_DOMAIN:
+		case SQL_CREATE_SCHEMA:
+		case SQL_CREATE_TABLE:
+		case SQL_CREATE_TRANSLATION:
+		case SQL_CREATE_VIEW:
+		case SQL_DATETIME_LITERALS:
+		case SQL_DROP_ASSERTION:
+		case SQL_DROP_CHARACTER_SET:
+		case SQL_DROP_COLLATION:
+		case SQL_DROP_DOMAIN:
+		case SQL_DROP_SCHEMA:
+		case SQL_DROP_TABLE:
+		case SQL_DROP_TRANSLATION:
+		case SQL_DROP_VIEW:
+		case SQL_DYNAMIC_CURSOR_ATTRIBUTES1:
+		case SQL_DYNAMIC_CURSOR_ATTRIBUTES2:
+		case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1:
+		case SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2:
+		case SQL_GETDATA_EXTENSIONS:
+		case SQL_INDEX_KEYWORDS:
+		case SQL_INFO_SCHEMA_VIEWS:
+		case SQL_INSERT_STATEMENT:
+		case SQL_KEYSET_CURSOR_ATTRIBUTES1:
+		case SQL_KEYSET_CURSOR_ATTRIBUTES2:
+		case SQL_NUMERIC_FUNCTIONS:
+		case SQL_OJ_CAPABILITIES:
+		case SQL_PARAM_ARRAY_ROW_COUNTS:
+		case SQL_PARAM_ARRAY_SELECTS:
+		case SQL_POS_OPERATIONS:
+		case SQL_SCHEMA_USAGE:
+		case SQL_SCROLL_OPTIONS:
+		case SQL_SQL92_DATETIME_FUNCTIONS:
+		case SQL_SQL92_FOREIGN_KEY_DELETE_RULE:
+		case SQL_SQL92_FOREIGN_KEY_UPDATE_RULE:
+		case SQL_SQL92_GRANT:
+		case SQL_SQL92_NUMERIC_VALUE_FUNCTIONS:
+		case SQL_SQL92_PREDICATES:
+		case SQL_SQL92_RELATIONAL_JOIN_OPERATORS:
+		case SQL_SQL92_REVOKE:
+		case SQL_SQL92_ROW_VALUE_CONSTRUCTOR:
+		case SQL_SQL92_STRING_FUNCTIONS:
+		case SQL_SQL92_VALUE_EXPRESSIONS:
+		case SQL_STANDARD_CLI_CONFORMANCE:
+		case SQL_STATIC_CURSOR_ATTRIBUTES1:
+		case SQL_STATIC_CURSOR_ATTRIBUTES2:
+		case SQL_STRING_FUNCTIONS:
+		case SQL_SUBQUERIES:
+		case SQL_SYSTEM_FUNCTIONS:
+		case SQL_TIMEDATE_ADD_INTERVALS:
+		case SQL_TIMEDATE_DIFF_INTERVALS:
+		case SQL_TIMEDATE_FUNCTIONS:
+		case SQL_TXN_ISOLATION_OPTION:
+		case SQL_UNION:
+			type = 3;
+			break;
+		default:
+			type= -1;
+	}
+	return type;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -152,7 +346,7 @@ int PrintErrorMsg(struct Cursor *cur)
   else
     rc = SQLError(SQL_NULL_HENV, NULL, SQL_NULL_HSTMT, szsqlstate,
 		  pfnativeerror, szerrormsg,cberrormsgmax,pcberrormsg);
-  if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) { 
+  if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) {
     printf("ODBC SYSCALL ERROR (CODE %s): %s\n", szsqlstate, szerrormsg);
   }
   free(szsqlstate);
@@ -177,7 +371,7 @@ void SetCursorClose(struct Cursor *cur)
   SQLFreeStmt(cur->hstmt, SQL_CLOSE);    /* free statement handler*/
 
   if (cur->NumBindVars) {                 /* free bind variable list*/
-    for (j = 0; j < cur->NumBindVars; j++) 
+    for (j = 0; j < cur->NumBindVars; j++)
       if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
     free(cur->BindList);
     free(cur->BindTypes);
@@ -188,12 +382,12 @@ void SetCursorClose(struct Cursor *cur)
       free(cur->Data[j]);
     free(cur->ColTypes);
     free(cur->ColLen);
-    free(cur->OutLen);                
+    free(cur->OutLen);
     free(cur->Data);
   }
 
   /* free memory for the sql statement associated w/ this cursor*/
-  if (cur->Sql) free(cur->Sql);  
+  if (cur->Sql) free(cur->Sql);
   /* initialize the variables.  set them to the right value*/
   cur->Sql = 0;
   cur->NumCols =
@@ -218,7 +412,7 @@ void SetCursorClose(struct Cursor *cur)
 /*     resources for the new session, including allocations of various things:*/
 /*     environment handler, connection handler, statement handlers and then*/
 /*     tries to connect to the database, either by server,userid,pw if R2=0,*/
-/*     or thrugh a driver by using r3 as the connections tring, if R2=1. */ 
+/*     or thrugh a driver by using r3 as the connections tring, if R2=1. */
 /*     If any of these allocations or connection fails, function returns a*/
 /*     failure code 1.  Otherwise 0. */
 /*-----------------------------------------------------------------------------*/
@@ -235,11 +429,11 @@ void ODBCConnect()
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");   
+      xsb_error("Environment allocation failed");
       ctop_int(6, 0);
       return;
     }
-    /*    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2, 
+    /*    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2,
 		SQL_IS_UINTEGER);
     */
 
@@ -266,7 +460,7 @@ void ODBCConnect()
     rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
-      xsb_error("Connection to server %s failed", server);   
+      xsb_error("Connection to server %s failed", server);
       ctop_int(6, 0);
       return;
     }
@@ -276,7 +470,7 @@ void ODBCConnect()
     rc = SQLDriverConnect(hdbc, NULL, connectIn, SQL_NTS, NULL, 0, NULL,SQL_DRIVER_NOPROMPT);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
-      xsb_error("Connection to driver failed: %s", connectIn);   
+      xsb_error("Connection to driver failed: %s", connectIn);
       ctop_int(6, 0);
       return;
     }
@@ -309,7 +503,7 @@ void ODBCDisconnect()
   if (!serverConnected) return;
 
   if (hdbc == NULL) {  /* close entire connection*/
-    if (FCursor != NULL) 
+    if (FCursor != NULL)
       xsb_abort("Must close all connections before shutting down");
     SQLFreeEnv(henv);
     serverConnected = 0;
@@ -321,7 +515,7 @@ void ODBCDisconnect()
     if(numj != FCurNum) numi=numi->NCurNum;
     numj=numj->NCurNum;
   }
-  
+
   if(numj != NULL){
     if(numj == FCurNum) FCurNum=numj->NCurNum;
     else numi->NCurNum=numj->NCurNum;
@@ -370,7 +564,7 @@ void ODBCDisconnect()
 /*     3 - using a cursor that has no resource - it needs to be allocated*/
 /*-----------------------------------------------------------------------------*/
 void FindFreeCursor()
-{ 
+{
   struct Cursor *curi = FCursor, *curj = NULL, *curk = NULL;
   struct NumberofCursors *num = FCurNum;
   HDBC hdbc = (HDBC)ptoc_int(2);
@@ -453,7 +647,7 @@ void FindFreeCursor()
       curi = curk;
       SetCursorClose(curi);
       /*printf("steal a cursor: %p\n",curi);*/
-    } 
+    }
   }
 
   /* move to front of list.*/
@@ -473,7 +667,7 @@ void FindFreeCursor()
     xsb_exit("Not enough memory for SQL stmt in FindFreeCursor!");
   curi->Status = 3;
   ctop_int(4, (long)curi);
-  return;    
+  return;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -502,7 +696,7 @@ void SetBindVarNum()
       xsb_exit("Number of Bind values provided does not agree with query\n");
     return;
   }
-    
+
   cur->NumBindVars = NumBindVars;
   cur->BindList = malloc(sizeof(UCHAR *) * NumBindVars);
   if (!cur->BindList)
@@ -542,7 +736,7 @@ void SetBindVal()
 
   if (!((j >= 0) && (j < cur->NumBindVars)))
     xsb_exit("Abnormal argument in SetBindVal!");
-    
+
   /* if we're reusing an opened cursor w/ the statement number*/
   /* reallocate BindVar if type has changed (May not be such a good idea?)*/
   if (cur->Status == 2) {
@@ -551,7 +745,7 @@ void SetBindVal()
 	if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
 	cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
 	cur->BindTypes[j] = 0;
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, 
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT,
 			      SQL_C_SLONG, SQL_INTEGER,
 			      0, 0, (int *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
@@ -562,12 +756,12 @@ void SetBindVal()
       }
       *((int *)cur->BindList[j]) = oint_val(BindVal);
     } else if (isfloat(BindVal)) {
-      if (cur->BindTypes[j] != 1) { 
+      if (cur->BindTypes[j] != 1) {
 	/*printf("ODBC: Changing Type: flt to %d\n",cur->BindTypes[j]);*/
 	if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
 	cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
 	cur->BindTypes[j] = 1;
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, 
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT,
 			      SQL_C_FLOAT, SQL_FLOAT,
 			      0, 0, (float *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
@@ -578,7 +772,7 @@ void SetBindVal()
       }
       *((float *)cur->BindList[j]) = (float)float_val(BindVal);
     } else if (isstring(BindVal)) {
-      if (cur->BindTypes[j] != 2) { 
+      if (cur->BindTypes[j] != 2) {
 	/*printf("ODBC: Changing Type: str to %d\n",cur->BindTypes[j]);*/
 	free((void *)cur->BindList[j]);
 	cur->BindTypes[j] = 2;
@@ -601,7 +795,7 @@ void SetBindVal()
     ctop_int(5,0);
     return;
   }
-    
+
   /* otherwise, memory needs to be allocated in this case*/
   if (isinteger(BindVal)) {
     cur->BindTypes[j] = 0;
@@ -665,7 +859,7 @@ void Parse()
     /* reset just char select vars, since they store addr of chars*/
     for (j = 0; j < cur->NumBindVars; j++) {
       if (cur->BindTypes[j] == 2)
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, 
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
 			      SQL_CHAR, 0, 0,(char *) cur->BindList[j], 0, &SQL_NTSval);
     }
   } else {
@@ -674,12 +868,12 @@ void Parse()
       SetCursorClose(cur);
       return;
     }
-    
+
     /* set the bind variables*/
     for (j = 0; j < cur->NumBindVars; j++) {
       if (cur->BindTypes[j] == 2)
 	/* we're sloppy here.  it's ok for us to use the default values*/
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, 
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
 			      SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
       else if (cur->BindTypes[j] == 1) {
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT,
@@ -719,7 +913,7 @@ void ODBCCommit()
   RETCODE rc;
 
   if (((rc=SQLTransact(henv,hdbc,SQL_COMMIT)) == SQL_SUCCESS) ||
-      (rc == SQL_SUCCESS_WITH_INFO)) { 
+      (rc == SQL_SUCCESS_WITH_INFO)) {
     /* close only those with right hdbc....*/
     while (cur != NULL) {
       if (cur->hdbc == hdbc && cur->Status != 0) SetCursorClose(cur);
@@ -793,8 +987,8 @@ void ODBCColumns()
     ctop_int(4,PrintErrorMsg(cur));
     SetCursorClose(cur);
   }
-  return; 
-} 
+  return;
+}
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
@@ -808,7 +1002,7 @@ void ODBCTables()
 {
   struct Cursor *cur = (struct Cursor *)ptoc_int(2);
   RETCODE rc;
-  
+
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
@@ -817,7 +1011,7 @@ void ODBCTables()
       return;
     }
   }
-  
+
   if (((rc=SQLTables(cur->hstmt,
 		     NULL, 0,
 		     NULL, 0,
@@ -829,7 +1023,7 @@ void ODBCTables()
     ctop_int(3,PrintErrorMsg(cur));
     SetCursorClose(cur);
   }
-  return; 
+  return;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -858,13 +1052,13 @@ void ODBCUserTables()
 			      NULL, 0,
 			      NULL, 0,
 			      NULL, 0)) == SQL_SUCCESS) ||
-      (rc == SQL_SUCCESS_WITH_INFO)) 
+      (rc == SQL_SUCCESS_WITH_INFO))
     ctop_int(3,0);
   else {
     ctop_int(3,PrintErrorMsg(cur));
     SetCursorClose(cur);
   }
-  return; 
+  return;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -882,7 +1076,7 @@ void ODBCUserTables()
 UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
 {
   switch (ODBCToXSBType(coltype)) {
-  case SQL_C_SLONG: 
+  case SQL_C_SLONG:
     return sizeof(long *);
   case SQL_C_CHAR: {
     UDWORD tmp = MAXI(collen+1, strlen((char *) colname));
@@ -894,7 +1088,7 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
   }
   case SQL_C_FLOAT:
     return sizeof(float *);
-  default: 
+  default:
     printf("Illegal ODBC Type: %d\n",coltype);
     return 0;
   }
@@ -925,7 +1119,7 @@ void ODBCDataSources()
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");   
+      xsb_error("Environment allocation failed");
       ctop_int(5,1);
       return;
     }
@@ -935,7 +1129,7 @@ void ODBCDataSources()
   }
 
   seq = ptoc_int(2);
-  
+
   if (seq == 1) {
     rc = SQLDataSources(henv,SQL_FETCH_FIRST,DSN,
 			SQL_MAX_DSN_LENGTH,&dsn_size,
@@ -946,7 +1140,7 @@ void ODBCDataSources()
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");   
+      xsb_error("Environment allocation failed");
       ctop_int(5,1);
       return;
     }
@@ -960,7 +1154,7 @@ void ODBCDataSources()
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");   
+      xsb_error("Environment allocation failed");
       ctop_int(5,1);
       return;
     }
@@ -1013,7 +1207,7 @@ void ODBCDescribeSelect()
   SQLNumResultCols(cur->hstmt, (SQLSMALLINT*)&(cur->NumCols));
   if (!(cur->NumCols)) {
     /* no columns are affected, set cursor status to unused */
-    cur->Status = 1; 
+    cur->Status = 1;
     ctop_int(3,2);
     return;
   }
@@ -1024,7 +1218,7 @@ void ODBCDescribeSelect()
       (SWORD *)malloc(sizeof(SWORD) * cur->NumCols);
     if (!cur->ColTypes)
       xsb_exit("Not enough memory for ColTypes!");
-    
+
     cur->Data =
       (UCHAR **)malloc(sizeof(char *) * cur->NumCols);
     if (!cur->Data)
@@ -1039,7 +1233,7 @@ void ODBCDescribeSelect()
       (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
     if (!cur->ColLen)
       xsb_exit("Not enough memory for ColLen!");
-    
+
     for (j = 0; j < cur->NumCols; j++) {
       SQLDescribeCol(cur->hstmt, (short)(j+1), (UCHAR FAR*)colname,
 		     sizeof(colname), &colnamelen,
@@ -1047,7 +1241,7 @@ void ODBCDescribeSelect()
 		     &collen, &scale, &nullable);
       /* SQLServer returns this wierd type for a system table, treat it as varchar?*/
       if (cur->ColTypes[j] == -9) cur->ColTypes[j] = SQL_VARCHAR;
-      colnamelen = (colnamelen > 49) ? 49 : colnamelen; 
+      colnamelen = (colnamelen > 49) ? 49 : colnamelen;
       colname[colnamelen] = '\0';
       if (!(cur->ColLen[j] =
 	    DisplayColSize(cur->ColTypes[j],collen,colname))) {
@@ -1067,7 +1261,7 @@ void ODBCDescribeSelect()
   }
   /* bind them*/
   for (j = 0; j < cur->NumCols; j++) {
-    SQLBindCol(cur->hstmt, (short)(j+1), 
+    SQLBindCol(cur->hstmt, (short)(j+1),
 	       ODBCToXSBType(cur->ColTypes[j]), cur->Data[j],
 	       cur->ColLen[j], (SDWORD FAR *)(&(cur->OutLen[j])));
   }
@@ -1101,7 +1295,7 @@ void FetchNextRow()
 
   rc = SQLFetch(cur->hstmt);
 
-  if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) 
+  if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO))
     ctop_int(3,0);
   else if (rc == SQL_NO_DATA_FOUND){
     cur->Status = 1; /* done w/fetching. set cursor status to unused */
@@ -1112,7 +1306,7 @@ void FetchNextRow()
     ctop_int(3,2);
   }
   return;
-} 
+}
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
@@ -1141,11 +1335,10 @@ void ODBCConnectOption()
     rc = SQLGetConnectOption(hdbc,(UWORD)ptoc_int(4),(PTR)&value);
     ctop_int(5,value);
   }
-  if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) 
+  if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO))
     ctop_int(6,0);
   else ctop_int(6,PrintErrorMsg(NULL));
 }
-
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
@@ -1168,7 +1361,7 @@ int GetColumn()
 
   if (ColCurNum < 0 || ColCurNum >= cur->NumCols) {
     /* no more columns in the result row*/
-    ctop_int(5,1);   
+    ctop_int(5,1);
     return TRUE;
   }
 
@@ -1191,11 +1384,11 @@ int GetColumn()
 
     /* compare strings here, so don't intern strings unnecessarily*/
     XSB_Deref(op);
-    if (isref(op)) 
-      return unify(op, makestring(string_find(cur->Data[ColCurNum],1))); 
+    if (isref(op))
+      return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       STRFILE strfile;
-      
+
       strfile.strcnt = strlen(cur->Data[ColCurNum]);
       strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
       read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
@@ -1212,11 +1405,11 @@ int GetColumn()
 
     /* compare strings here, so don't intern strings unnecessarily*/
     XSB_Deref(op);
-    if (isref(op)) 
-      return unify(op, makestring(string_find(cur->Data[ColCurNum],1))); 
+    if (isref(op))
+      return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       STRFILE strfile;
-      
+
       strfile.strcnt = strlen(cur->Data[ColCurNum]);
       strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
       read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
@@ -1233,4 +1426,74 @@ int GetColumn()
 
   return FALSE;
 }
+/*-----------------------------------------------------------------------------*/
+/*  FUNCTION NAME:*/
+/*     ODBCGetInfo() */
+/*  PARAMETERS:*/
+/*     R1: 18*/
+/*     R2: Connection Handle*/
+/*     R3: InfoType*/
+/*     R4: Info*/
+/*     R5: Return Code*/
+/*  NOTES:*/
+/*     Returns meta data information about the connection. Type of information */
+/* 	   available is detailed in ODBC API under the SQLGetInfo Function. The	   */
+/*	   information returned can be of type string or integer.  Return Code     */
+/*	   values 0 means success, 1 is error getting the info, -1 is unkown       */
+/*	   information type,-2 SQLGetInfo is not supported by the connection.      */
+/*																			   */
+/*-----------------------------------------------------------------------------*/
+void ODBCGetInfo()
+{
+  HDBC hdbc 	  = (HDBC) ptoc_int(2);
+  SQLRETURN sqlrc = SQL_SUCCESS;
 
+  SQLCHAR strValue[50];
+  SQLUSMALLINT  supported;
+  SQLRETURN retcode;
+  SQLINTEGER nValue;
+  SQLSMALLINT pcbValue;
+
+  short int InfoType = ptoc_int(3);
+  short int InfoTypeType = GetInfoTypeType(InfoType);
+
+  /* check to see if SQLGetInfo() is supported */
+  sqlrc = SQLGetFunctions(hdbc, SQL_API_SQLGETINFO, &supported);
+
+  if (supported == SQL_TRUE)
+  {
+	  switch(InfoTypeType) {
+	  case 0:
+		retcode = SQLGetInfo(hdbc, InfoType, strValue, 50, &pcbValue);
+		if(retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
+  	    {
+			//printf("string type:%d:%s:%d\n",InfoType,strValue,pcbValue);
+			ctop_string(4,string_find(strValue,1));
+			ctop_int(5,0);
+  		} else {
+			ctop_int(5,1);
+		}
+		break;
+	  case 1:
+	  case 2:
+	  case 3:
+	  case 4:
+	  	retcode = SQLGetInfo(hdbc, InfoType, &nValue, 0, &pcbValue);
+		if(retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
+  	    {
+			//printf("int type:%d:%d:%d\n",InfoType,nValue,pcbValue);
+			ctop_int(4,nValue);
+			ctop_int(5,0);
+  		} else {
+			ctop_int(5,1);
+		}
+		break;
+	  case -1:
+	  default:
+	  	ctop_int(5, -1);
+		break;
+	  }
+  } else {
+	  ctop_int(5,-2);
+  }
+}
