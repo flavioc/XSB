@@ -148,7 +148,6 @@ extern tab_inf_ptr first_tip;
 extern tab_inf_ptr last_tip;
 
 extern int  sys_syscall(int);
-extern int  buff_copyterm(Cell, pb, long, long, long);
 extern bool fmt_read(void), fmt_write(void), fmt_write_string(void),
   read_canonical(void), file_read_line(void);
 extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
