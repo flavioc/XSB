@@ -95,6 +95,7 @@ conv([C|Cs],Name) :-
 conv(X,X).
 
 
+
 run(File) :- 
 	conv(File, FileN),
 	gen_code_verbose(FileN, noforce),
