@@ -5,6 +5,16 @@ caching
 logging
 */
 
+% keep a table with all possible flags here.
+cdf_flag(dirty).
+cdf_flag(check_implication).
+cdf_flag(check_types).
+cdf_flag(classify_if_necessary).
+
+
+% initial_cdf_flag/2 facts can be overridden by declaring
+% corresponding user_cdf_flag/2 facts in $(HOME)/.xsb/xsbrc.P
+
 %initial_cdf_flag(dirty,<component>).
 %initial_cdf_flag(check_implication,<context>).
 initial_cdf_flag(check_types,term_update).

@@ -31,7 +31,7 @@
 :- import cdf_flags/2, cdf_log_trie/1, 
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
-:- import initial_cdf_flag/2 from usermod.
+:- import cdf_flag/1, initial_cdf_flag/2 from usermod.
 
 :- import load_component/3 from cdf_components.
 
@@ -48,6 +48,8 @@
 :- import search_module/6 from consult.
 :- import new_trie/1, delete_trie/1, trie_interned/4, 
 	  trie_unintern_nr/2, trie_intern/5 from intern.
+:- dynamic user_cdf_flag/2.
+:- import user_cdf_flag/2 from usermod.
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -111,9 +113,15 @@ init_dynamic_code:-
 	fail.
 init_dynamic_code.
 
+% we assume that for all A in cdf_flag(A), there exists a
+% corresponding initial_cdf_flag(A,_)
 initialize_cdf_flags:- 
 	retractall(cdf_flags(_,_)),
-	initial_cdf_flag(A,B),
+	cdf_flag(A),
+	(   user_cdf_flag(A,B)
+	->  true
+	;   initial_cdf_flag(A,B)
+	),
 	assert(cdf_flags(A,B)),
 	fail.
 initialize_cdf_flags.
