@@ -55,10 +55,11 @@ CPtr root_address;
 CPtr ptcpreg;
 CPtr delayreg;
 /*
- * interrupt_reg points to the first cell in the heap, and it stores the
- * number of interrupts in the interrupt chain for attributed variables.
+ * interrupt_reg points to interrupt_counter, which stores the number of
+ * interrupts in the interrupt chain for attributed variables.
  */
-CPtr interrupt_reg;
+Cell interrupt_counter;
+CPtr interrupt_reg = &interrupt_counter;
 
 /*
  * Ptr to the beginning of instr. array
@@ -97,7 +98,6 @@ int *asynint_ptr = &asynint_val;
     else if (isnil(op)) goto contcase; /* op == [] */ \
     else if (isattv(op)) {\
       /* fprintf(stderr, ".... ATTV nunify_with_nil, interrupt needed\n"); */\
-      *asynint_ptr |= ATTVINT_MARK;\
       add_interrupt(op, makenil);\
     }\
     else Fail1;	/* op is LIST, INT, or FLOAT */ 
@@ -115,7 +115,6 @@ int *asynint_ptr = &asynint_val;
     } \
     else if (isattv(OP1)) {\
       /* fprintf(stderr, ".... ATTV nunify_with_con, interrupt needed\n"); */\
-      *asynint_ptr |= ATTVINT_MARK;\
       add_interrupt(OP1, makestring((char *)OP2));\
     }\
     else Fail1;
@@ -134,7 +133,6 @@ int *asynint_ptr = &asynint_val;
     }\
     else if (isattv(OP1)) {\
       /* fprintf(stderr, ".... ATTV nunify_with_num, interrupt needed\n"); */\
-      *asynint_ptr |= ATTVINT_MARK;\
       add_interrupt(OP1, makeint(OP2));\
     }\
     else Fail1;	/* op1 is STRING, FLOAT, CS, or LIST */
@@ -152,7 +150,6 @@ int *asynint_ptr = &asynint_val;
     } \
     else if (isattv(OP1)) {\
       /* fprintf(stderr, ".... ATTV nunify_with_float, interrupt needed\n"); */\
-      *asynint_ptr |= ATTVINT_MARK;\
       add_interrupt(OP1, makefloat(asfloat(OP2)));\
     }\
     else Fail1;	/* op1 is INT, STRING, CS, or LIST */ 
@@ -178,9 +175,7 @@ int *asynint_ptr = &asynint_val;
     } \
     else if (isattv(OP1)) { \
         /* fprintf(stderr, ".... ATTV nunify_with_str, interrupt needed\n"); */ \
-        *asynint_ptr |= ATTVINT_MARK; \
-	xtemp1 = hreg + 5; /* a new interrupt pair takes 5 cells */\
-        add_interrupt(OP1, makecs(xtemp1)); \
+        add_interrupt(OP1, makecs(hreg)); \
         new_heap_functor(hreg, (Psc)OP2); \
 	flag = WRITE; \
     } \
@@ -201,9 +196,7 @@ int *asynint_ptr = &asynint_val;
     }\
     else if (isattv(OP1)) { \
         /* fprintf(stderr, ".... ATTV nunify_with_list_sym, interrupt needed\n"); */\
-        *asynint_ptr |= ATTVINT_MARK; \
-	xtemp1 = hreg + 5; /* a new interrupt pair takes 5 cells */\
-        add_interrupt(OP1, makelist(xtemp1)); \
+        add_interrupt(OP1, makelist(hreg)); \
 	flag = WRITE; \
     } \
     else Fail1;
@@ -212,53 +205,56 @@ int *asynint_ptr = &asynint_val;
 
 #define obtain_ep(PSC) dyn_pred = (PFI)get_ep(PSC);
 
-#define call_sub(PSC) \
-  if (*asynint_ptr > 0) {                /* interrupt detected */ \
-    if (*asynint_ptr == KEYINT_MARK) { \
-      synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));\
-      lpcreg = pcreg; \
-    } \
-    if (*asynint_ptr & ATTVINT_MARK) {\
-      synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));\
-      lpcreg = pcreg;\
-    }\
-    else \
-      lpcreg = (byte *)get_ep(PSC); \
-    *asynint_ptr = 0; \
-  } \
-  else \
-    switch (get_type(PSC)) { \
-    case T_PRED: \
-    case T_DYNA: \
-      lpcreg = (pb)get_ep(PSC); \
-      /*check_glstack_overflow(get_arity(PSC),lpcreg,OVERFLOW_MARGIN);*/ \
-      break; \
-    case T_FORN: \
-      obtain_ep(PSC);\
-      /* only call the predicate in case it won't be called in intercept() */ \
-      if (!call_intercept || \
-          !(flags[DEBUG_ON] && !flags[HIDE_STATE] && \
-               (get_spy(psc) || flags[TRACE]) \
-         ) ) {\
-      /* A foreign function must return an int! \
-	 If dyn_pred returns 0, then fail    	 */ \
-        if (dyn_pred()) \
-          lpcreg = cpreg;		/* "proceed" */ \
-        else lpcreg = (pb)&fail_inst; \
-      } \
-      break; \
-    case T_UDEF: \
-    default: \
-      PSC = synint_proc(PSC, MYSIG_UNDEF, lpcreg-2*sizeof(Cell)); \
-      if (!PSC) \
-	lpcreg = pcreg; \
-      else \
-	lpcreg = get_ep(PSC); \
-      break; \
-    } \
-  if (call_intercept) {               /* for debugging or for statistics */ \
-    pcreg = lpcreg; \
-    intercept(PSC); \
-    lpcreg = pcreg; \
-  }
-
+#define call_sub(PSC) {							\
+  if (*asynint_ptr > 0) { /* non-attv interrupt detected */		\
+    if (*asynint_ptr == KEYINT_MARK) {					\
+      synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\
+      lpcreg = pcreg;							\
+    }									\
+    else								\
+      lpcreg = (byte *)get_ep(PSC);					\
+    *asynint_ptr = 0;							\
+  }									\
+  else if (int_val(cell(interrupt_reg))) {				\
+    /* there is attv interrupt */					\
+    synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
+    lpcreg = pcreg;							\
+  }									\
+  else									\
+    switch (get_type(PSC)) {						\
+    case T_PRED:							\
+    case T_DYNA:							\
+      lpcreg = (pb)get_ep(PSC);						\
+      /* check_glstack_overflow(get_arity(PSC),	        */		\
+      /*                       lpcreg,OVERFLOW_MARGIN); */		\
+      break;								\
+    case T_FORN:							\
+      obtain_ep(PSC);							\
+      /* only call the predicate in case   */				\
+      /* it won't be called in intercept() */				\
+      if (!call_intercept ||						\
+          !(flags[DEBUG_ON] && !flags[HIDE_STATE] &&			\
+	    (get_spy(psc) || flags[TRACE])				\
+	    ) ) {							\
+	/* A foreign function must return an int! */			\
+	/* If dyn_pred returns 0, then fail       */			\
+        if (dyn_pred())							\
+          lpcreg = cpreg;		/* "proceed" */			\
+        else lpcreg = (pb)&fail_inst;					\
+      }									\
+      break;								\
+    case T_UDEF:							\
+    default:								\
+      PSC = synint_proc(PSC, MYSIG_UNDEF, lpcreg-2*sizeof(Cell));	\
+      if (!PSC)								\
+	lpcreg = pcreg;							\
+      else								\
+	lpcreg = get_ep(PSC);						\
+      break;								\
+    }									\
+  if (call_intercept) { /* for debugging or for statistics */		\
+    pcreg = lpcreg;							\
+    intercept(PSC);							\
+    lpcreg = pcreg;							\
+  }									\
+}

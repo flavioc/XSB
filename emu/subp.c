@@ -90,17 +90,23 @@ static Cell attv_interrupts[20480][2];
 void add_interrupt(Cell op1, Cell op2) {
   int num;
 
-  num = int_val(cell(interrupt_reg));
-  attv_interrupts[num][0] = op1;
-  attv_interrupts[num][1] = op2;
-  num++;
-
 #ifndef PRE_IMAGE_TRAIL
 #error "PRE_IMAGE_TRAIL has to be defined for add_interrupt() !"
 #else
+  num = int_val(cell(interrupt_reg));
+
+  push_pre_image_trail(&(attv_interrupts[num][0]),
+		       attv_interrupts[num][0], op1);
+  attv_interrupts[num][0] = op1;
+
+  push_pre_image_trail(&(attv_interrupts[num][1]),
+		       attv_interrupts[num][1], op2);
+  attv_interrupts[num][1] = op2;
+
+  num++;
   push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(num));
-#endif
   bld_int(interrupt_reg, num);
+#endif
 }
 
 
@@ -253,7 +259,7 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
       psc = (Psc)flags[intcode+32];
       /*
        * Pass the interrupt chain to reg 1.  The counter of attv
-       * interrupts (stored in interrupt_reg) will be reset to 0 in
+       * interrupts (stored in *interrupt_reg) will be reset to 0 in
        * build_interrupt_chain()).
        */
       bld_copy(reg + 1, build_interrupt_chain());

@@ -92,7 +92,6 @@ tail_recursion:
        }
        else if (isattv(op2)) {
 	 /* fprintf(stderr, ".... CS = ATTV, interrupt needed\n"); */
-	 *asynint_ptr |= ATTVINT_MARK;
 	 add_interrupt(op2, op1);
 	 IFTHEN_SUCCEED;
        }
@@ -118,7 +117,6 @@ tail_recursion:
        }
        else if (isattv(op2)) {
 	 /* fprintf(stderr, ".... LIST = ATTV, interrupt needed\n"); */
-	 *asynint_ptr |= ATTVINT_MARK;
 	 add_interrupt(op2, op1);
 	 IFTHEN_SUCCEED;
        }
@@ -132,7 +130,6 @@ tail_recursion:
 	 { IFTHEN_SUCCEED; }
        else if (isattv(op2)) {
 	 /* fprintf(stderr, ".... INT = ATTV, interrupt needed\n"); */
-	 *asynint_ptr |= ATTVINT_MARK;
 	 add_interrupt(op2, op1);
 	 IFTHEN_SUCCEED;
        }
@@ -148,7 +145,6 @@ tail_recursion:
        }
        else if (!isattv(op2) || (isattv(op2) && op1 != op2)) {
 	 /* fprintf(stderr, ".... ATTV = ???, interrupt needed\n"); */
-	 *asynint_ptr |= ATTVINT_MARK;
 	 add_interrupt(op1, op2);
 	 IFTHEN_SUCCEED;
        }
