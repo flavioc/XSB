@@ -800,6 +800,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
   int j, op1, retpscptr;
   Pair sym;
   Float float_temp;
+  Psc headpsc, termpsc;
   char *cvar;
   int postopreq = FALSE, varfound = FALSE;
   prolog_term term;
@@ -1131,16 +1132,23 @@ int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 	if ((isinteger(term)|isboxedinteger(term)) || 
 	    isfloat(term) || 
 	    isstring(term) ||
-	    varfound || 
-	    (isconstr(term) && get_str_psc(term) != if_psc)) {
+	    varfound) {
 	  retpscptr = 0;
 	  prevpsc = 0;
-	}
-	else if (get_str_psc(term) == prevpsc) {
-	  retpscptr = (Integer)prevpsc;
 	} else {
-	  prevpsc = get_str_psc(term);
-	  retpscptr = 0;
+	  termpsc = get_str_psc(term);
+	  if (termpsc == if_psc) {
+	    if (!isconstr(p2p_arg(term,1))) headpsc = 0;
+	    else headpsc = get_str_psc(p2p_arg(term,1));
+	  } else {
+	    headpsc = termpsc;
+	  }
+	  if (headpsc == prevpsc) {
+	      retpscptr = (Integer)prevpsc;
+	  } else {
+	    prevpsc = headpsc;
+	    retpscptr = 0;
+	  }
 	}
       } else {
 	retpscptr = 0;
