@@ -401,6 +401,15 @@ transform_directive(dynamic(P/A),dynamic(Skel)) :-
 transform_directive(table(P/A),table(Skel)) :-
 	atom(P),integer(A),!,
 	functor(Skel,P,A).
+transform_directive(index(P/A),index(Skel)) :-
+	atom(P),integer(A),!,
+	functor(Skel,P,A).
+transform_directive(index(P/A,X),index(Skel,X)) :-
+	atom(P),integer(A),!,
+	functor(Skel,P,A).
+transform_directive(index(P/A,X,Y),index(Skel,X,Y)) :-
+	atom(P),integer(A),!,
+	functor(Skel,P,A).
 transform_directive(Directive,Directive).
 
 /*======================================================================*/
