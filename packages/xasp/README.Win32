@@ -51,10 +51,9 @@ compile XSB such that it doesn't use the Cygwin DLL (using the
 
 $ cd $XSB/build
 $ ./configure --enable-no-cygwin \
-	--site-includes="/cygdrive/c/smodels-2.27" \
-	--site-static-libraries="/cygdrive/c/smodels-2.27"
+	--with-smodels="/cygdrive/c/smodels-2.27"
 
-If the configuration succeeds, compile XSB. First, compile the
+After the configuration succeeds, compile XSB. First, compile the
 executable:
 
 $ ./makexsb

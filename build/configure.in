@@ -1403,6 +1403,41 @@ if test "${enable_no_cygwin+set}" = "set"; then
    DLLTYPE=cygdll
 fi
 
+#These are used to compile the interface with sModels
+AC_ARG_WITH(smodels,
+[  --with-smodels=path		   use SMODELS for the XNMR module.
+				   path is the path where smodels has 
+				   been installed and compiled])
+
+if test "x${with_smodels}" = "x"; then
+   echo "    Not using SMODELS"
+   smodels_goal=nope
+else
+   smodels_goal=all
+   if test  "$os_type" = "windows"; then
+      XASPLIBNAME=xasppkg.dll
+      XASPDEFFILE=xasppkg.def
+      smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
+      smoLDFLAGS="-L${arch_config_prefix}/bin -L${with_smodels}"
+      smoLIB="-lsmodels -lxsb"
+   else
+      XASPLIBNAME=xasppkg.so
+      XASPDEFFILE=
+      smoCFLAGS="-I${arch_config_prefix} -I${with_smodels}"
+      smoLDFLAGS="-L${arch_config_prefix}/bin"
+      smoLIB="${with_smodels}/.libs/libsmodels.a"
+   fi
+AC_SUBST(XASPLIBNAME)
+AC_SUBST(XASPDEFFILE)
+AC_SUBST(smoCFLAGS)
+AC_SUBST(smoLDFLAGS)
+AC_SUBST(smoLIB)
+fi
+
+AC_SUBST(with_smodels)
+AC_SUBST(smodels_goal)
+
+
 loaderCFLAGS="${c_site_includes} ${loader_opt_level} ${c_inline_level} ${CFLAGS}"
 builtinsCFLAGS="${c_site_includes} ${builtins_opt_level} ${c_inline_level} ${CFLAGS}"
 emuloopCFLAGS="${c_site_includes} ${emuloop_opt_level} ${c_inline_level} ${CFLAGS}"
@@ -1523,33 +1558,6 @@ AC_SUBST(xsb_dcl_extension)
 topdir_base=/`basename $topdir`
 topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
 AC_SUBST(topdir_wind)
-
-#These are used to compile the interface with sModels
-AC_ARG_WITH(smodels,
-[  --with-smodels		   use SMODELS for the XNMR module
-				   you should use --site-includes and
-				   --site-static-libraries if smodel's 
-				   include files and libraries are not
-				   globally installed])
-
-if test -n "${with_smodels}"; then
-   smodels_goal=nope
-else
-   smodels_goal=all
-fi
-
-AC_SUBST(with_smodels)
-AC_SUBST(smodels_goal)
-
-if test  "$os_type" = "windows"; then
-   XASPLIBNAME=xasppkg.dll
-   XASPDEFFILE=xasppkg.def
-else
-   XASPLIBNAME=xasppkg.so
-   XASPDEFFILE=
-fi
-AC_SUBST(XASPLIBNAME)
-AC_SUBST(XASPDEFFILE)
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in

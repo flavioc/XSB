@@ -22,24 +22,23 @@
 ## 
 ##
 
-# Assume .h files are in the include path (use --site-includes)
-# and smodels.dll is in site-lib path
-
 CXX = @CXX@
 GCC = @CC@
 CFLAGS=@CFLAGS@
-LDFLAGS=@LDFLAGS@
+LDFLAGS=@LDFLAGS@ 
 PROLOG = ../../bin/xsb
 DEFFILE=@XASPDEFFILE@
 
 LIBNAME=@XASPLIBNAME@
 
+CFLAGS += @smoCFLAGS@
+LDFLAGS += @smoLDFLAGS@
+SMODELS=@with_smodels@
+SMOLIB=@smoLIB@
+
 ALL = xasppkg.xwam sm_clause_store.xwam sm_int.xwam
 
 Option = [sysmod,optimize]
-
-CFLAGS += -I@arch_config_prefix@
-LDFLAGS += -L@arch_config_prefix@/bin
 
 .IGNORE:
 
@@ -69,12 +68,12 @@ xsb_wrap_xasppkg.o: xsb_wrap_xasppkg.c
 	$(GCC) $(CFLAGS) -c xsb_wrap_xasppkg.c
 
 xasppkg.o: xasppkg.c
-	$(CXX) $(CFLAGS) -c -o xasppkg.o $(LDFLAGS) -lsmodels xasppkg.c
+	$(CXX) $(CFLAGS) -c -o xasppkg.o xasppkg.c
 
 
 module: xsb_wrap_xasppkg.o xasppkg.o xasppkg.def
-	$(CXX) $(CFLAGS) $(LDFLAGS) -shared -s -o $(LIBNAME) \
-		xasppkg.o xsb_wrap_xasppkg.o $(DEFFILE) -lsmodels -lxsb
+	$(CXX) $(CFLAGS) $(LDFLAGS) -shared -o $(LIBNAME) \
+		xasppkg.o xsb_wrap_xasppkg.o $(DEFFILE) $(SMOLIB)
 	@cp $(LIBNAME) @arch_config_prefix@/bin
 
 nope:
