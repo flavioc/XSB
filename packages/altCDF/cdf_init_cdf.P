@@ -186,6 +186,7 @@ CDF configuration file. ").
 
 initialize_state:- 
 	reset_dynamics,
+	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
 	init_cdf_rels.
@@ -218,8 +219,6 @@ init_cdf_rels :-
 
 	concat_atom([CDFDir,Slash,cdfpt],CDFPTDir),
 	load_intensional_rules(CDFPTDir),
-
-%	newExtTerm(isa_ext(cid([],cdf),cid('CDF Primitive Types',cdf))),
 
 	init_component_info.
 
@@ -655,10 +654,8 @@ before it can be added.
 ").
 
 newExtTerm(Term):- 
-%            writeln(before(Term)),
 	newExtTerm(Term,Upd0,[]),
 	sort(Upd0,Upds),
-%            writeln(after(Upds)),
 	cdf_update_list(Upds).
 
 newExtTerm(Term,Upd0,Upd):- 
@@ -785,7 +782,8 @@ cdf_reset_log:-
 /* Need to handle variables better.  */
 cdf_log(Term):- 
 	cdf_logging_state(X),
-	(X == on -> cdf_log_1(Term) ; true).
+	(X == on -> cdf_log_1(Term) ; true),
+	!.
 
 cdf_log_1(assert(Term)):- 
 	cdf_log_trie(T),
@@ -800,6 +798,7 @@ cdf_log_1(retractall(Term)):-
 
 :- comment(hide,show_log/0).	
 show_log:- 
+	listing(cdf_logging_state(_)),
 	cdf_log_trie(T),
 	trie_interned(Term,T,_,_),
 	writeln(Term),

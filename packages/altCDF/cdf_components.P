@@ -1079,24 +1079,3 @@ find_component_dir(Name,Full):-
 	     cdf_error(component,['component name is not a directory',Full])).
 
 
-overload_cdfext(Dir) :-
-	cdf_fix_dir(Dir,DirS),
-	dir_overload_dync(DirS,cdf_extensional).
-
-dir_overload_dync(Dir,Base) :-
-	concat_atom([Dir,Base,'.P'],File),!,
-	(overload_dync(File) 		% i.e. use asserta
-              -> true
-	  ; cdf_warning(permission,('File does not exist ',
-                                    'or is not readable: ',File))).
-
-overload_dync(File):- 
-	see(File),
-	overload_dync_1,
-	seen.
-
-overload_dync_1:- 
-	repeat,
-	read_canonical(T),
-	(T = end_of_file -> true ; newExtTerm(T),fail).
-
