@@ -520,10 +520,13 @@ The order in which these options appear makes no difference.
   here instead of the standard XSB interpreter. This is most useful when
   XSB is used as a server.
 \item[{\tt -r}] Turns off automatic stack expansion.
-\item[{\tt -s gc\_type}] Chooses the garbage collection strategy that
+\item[{\tt -g gc\_type}] Chooses the garbage collection strategy that
     is employed; choice of the strategy is between {\tt "none"} (meaning
     perform no garbage collection), or garbage collection based on
-    {\tt "sliding"} or on {\tt "copying"}.
+    {\tt "sliding"} or on {\tt "copying"}.  Since garbage collection is
+    only available when the emulator is based on a CHAT model (see also
+    the installation options), this option only makes sense in this
+    context; it is ineffective when the emulator is SLG-WAM based.
 \item[{\tt -s}] Maintains information on the size of program stacks 
     for the predicate {\tt statistics/0}.  This option may be expected
     to slow execution by around 10\%.  Default: off.
