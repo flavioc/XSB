@@ -96,9 +96,9 @@ XSB_INST(0x59, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x5a, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x5b, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x5c, trie_no_cp_attv, _trie_no_cp_attv,X,X,X,X);
-XSB_INST(0x5d, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x5e, trie_try_attv, _trie_try_attv,X,X,X,X);
-XSB_INST(0x5f, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0x5d, trie_trust_attv, _trie_trust_attv,X,X,X,X);
+XSB_INST(0x5e, trie_try_attv,   _trie_try_attv,  X,X,X,X);
+XSB_INST(0x5f, trie_retry_attv, _trie_retry_attv,X,X,X,X);
 
 XSB_INST(0x60, trie_no_cp_str, _trie_no_cp_str,PPP,X,X,X);
 XSB_INST(0x61, trie_trust_str, _trie_trust_str, X, X, X,X);
