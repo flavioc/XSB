@@ -167,7 +167,7 @@ inline static bool xsb_socket_request(void)
     */
 #ifdef WIN_NT
     sockptr = NULL;
-    i = sockfd;
+    i = -1;
 #else
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       sockptr = NULL;
@@ -216,7 +216,7 @@ inline static bool xsb_socket_request(void)
     */
 #ifdef WIN_NT
     sockptr = NULL;
-    i = sockfd;
+    i = -1;
 #else
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       xsb_warn("SOCKET_CONNECT: fdopen failed");
