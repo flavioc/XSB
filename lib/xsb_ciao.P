@@ -1,5 +1,10 @@
+:- compiler_options([sysmod,optimize]).
 
-:- export current_infixop/4, current_postfixop/3, current_prefixop/3.
+:- export current_infixop/4, current_postfixop/3, current_prefixop/3,
+	basename/2, no_path_file_name/2.
+
+:- import concat_atom/2 from string.
+:- import abort/1, atom/1, current_op/3, parse_filename/4 from usermod.
 
 % Ciao idioms and support -- adapted from operators.pl
 current_prefixop(Op,_,Prec):- 
@@ -21,3 +26,17 @@ op_ass(xfy, Less, Prec, Prec, in) :- Less is Prec-1.
 op_ass(xfx, Less, Prec, Less, in) :- Less is Prec-1.
 op_ass(yf, Prec, Prec, 0, post).
 op_ass(xf, Less, Prec, 0, post) :- Less is Prec-1.
+
+no_path_file_name(Path,Name):- 
+	(atom(Path) -> true 
+	   ; abort(no_path_file_name(Path))),
+	parse_filename(Path,_,Name1,Ext),
+	concat_atom([Name1,Ext],Name).
+
+basename(Path,Name):- 
+	(atom(Path) -> true 
+	   ; abort(no_path_file_name(Path))),
+	parse_filename(Path,_,Name,_Ext).
+
+
+	 
