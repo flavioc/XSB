@@ -208,6 +208,10 @@ case IS_INCOMPLETE: {
 	  new_heap_free(hreg);
 	  new_heap_free(hreg);
 	  de = dl_de_list(dl);
+#ifdef DEBUG_DELAY
+	  fprintf(stderr, "orig_delayed_term(");
+	  print_subgoal(stderr, de_subgoal(de)); fprintf(stderr, ").\n");
+#endif
 	  /*
 	   * This answer may have more than one delay list.  We have to
 	   * restore copy_of_num_heap_term_vars for each of them.  But,
