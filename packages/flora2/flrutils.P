@@ -1146,4 +1146,4 @@ maxerr(X) :-
 	  assert(flora_maxerr(X))
 	).
 
-flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,flapply).
+flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG).
