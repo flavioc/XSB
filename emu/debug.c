@@ -38,7 +38,7 @@
 #include "flags.h"
 #include "register.h"
 #include "deref.h"
-#include "tries.h"
+#include "trie_internals.h"
 #include "choice.h"
 #include "xmacro.h"
 #include "inst.h"
@@ -86,13 +86,13 @@ extern int  xctr;
 
 /*----------------------------------------------------------------------*/
 
-int count_subgoals(void)
+static int count_producer_subgoals(void)
 {
   int i;
   SGFrame temp_ptr;
 
   i = 0;
-  temp_ptr = subg_structure_list;
+  temp_ptr = SM_AllocList(smSF);
   while(temp_ptr != NULL){
     i ++;
     temp_ptr = subg_next_subgoal(temp_ptr);
@@ -465,7 +465,7 @@ void print_subgoal(FILE *fp, SGFrame subg)
 {
   BTNptr leaf;
   int  i = 0;
-  Psc  psc = TIF_PSC(subg_tip_ptr(subg));
+  Psc  psc = TIF_PSC(subg_tif_ptr(subg));
 
   for (leaf = subg_leaf_ptr(subg); leaf != NULL; leaf = Parent(leaf)) {
     cell_array[i++] = Atom(leaf);
@@ -1093,11 +1093,11 @@ static void print_tables(void)
   char ans = 'y';
   SGFrame subg;
 
-  i = count_subgoals();
-  xsb_dbgmsg("\t There are %d subgoal structures...", i);
+  i = count_producer_subgoals();
+  xsb_dbgmsg("\t There are %d producer subgoal structures...", i);
   if (i)
     fprintf(stddbg,EOSUBG);
-  subg = subg_structure_list;
+  subg = SM_AllocList(smSF);
   i = 0;
   while ((subg != NULL) && (ans == 'y')) {
     i++;
@@ -1111,8 +1111,8 @@ static void print_tables(void)
 	       subg_next_subgoal(subg), subg_ans_root_ptr(subg),
 	   subg_asf_list_ptr(subg));
 #endif
-    xsb_dbgmsg("\t  tip_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,",
-	       subg_tip_ptr(subg), subg_compl_stack_ptr(subg),
+    xsb_dbgmsg("\t  tif_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,",
+	       subg_tif_ptr(subg), subg_compl_stack_ptr(subg),
 	       subg_compl_susp_ptr(subg));
     xsb_dbgmsg("\t ans_list = %6p,       leaf_ptr = %6p,          cp_ptr = %p",
 	       subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
