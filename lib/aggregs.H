@@ -46,9 +46,11 @@
 % to use bagAvg, must define in usermod: 
 %	:- hilog sumcount.  sumcount([S|C],X,[S1|C1]) :- S1 is S+X, C1 is C+1.
 	bagAvg/2,
+	filterPO/2,
 	filterPO/3,
 	filterReduce/4,
-        filterReduce1/4.  % this predicate only for demonstration purposes.
+        filterReduce1/4,  % this predicate only for demonstration purposes.
+	table_once/1.
 
 :- import apply/2,apply/3,apply/4 from usermod.
 

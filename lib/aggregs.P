@@ -234,6 +234,45 @@ get_opt_non_opt_1([H],[],H):-!.
 get_opt_non_opt_1([H|T],[H|T1],O):-
 	get_opt_non_opt_1(T,T1,O).
 
+%-----------------
+
+filterPO(Call,PO) :- filterPO1(Call,PO), fail.
+filterPO(Call,PO) :- filterPO1(Call,PO).
+
+:- table filterPO1/2.
+filterPO1(Call,PO) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,2,Skel,Cs),
+	copy_term(p(Call,Skel),p(Ocall,Oskel)),
+	call(Call),
+	((get_returns(Cs,Oskel,Leaf),
+          apply_last(PO,[Ocall,Call],PO_call),
+	  call(PO_call))
+	 ->	fail
+	 ;	(findall(p(Cs,Ocall,Leaf),
+			 (get_returns(Cs,Oskel,Leaf), 
+			  apply_last(PO,[Call,Ocall],PO_call_1),
+			  call(PO_call_1)
+			  ),
+			 Rets),
+		 sort(Rets,Rets1),
+		 member(p(Cs,Ocall,Leaf),Rets1),
+		 delete_return(Cs,Leaf),
+		 fail
+		;
+		 true
+		)
+	).
+
+%-----------------
+:- table table_once/1.
+table_once(Call) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,1,Skel,Cs),
+	copy_term(Skel,Oskel),
+	call(Call),
+	(get_returns(Cs,Oskel,_Leaf) -> fail ; true).
+
 /*
 ** A built-in used in the implementation of aggregates.                   
 ** Takes: Breg (where the choice point was saved), 
