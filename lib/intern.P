@@ -80,16 +80,12 @@ Leaf Parameters are incorrect)
 --------------------------------------------------*/
 
 trie_interned(Term,Root,Leaf,Skel) :-
-	var(Leaf), !,
-	i_trie_interned(Term,Root,Leaf),
+	(var(Leaf)
+	 ->	i_trie_interned(Term,Root,Leaf)
+	 ;	bottom_up_unify(Term1,Root,Leaf),
+		Term1 = Term
+	),
 	get_lastnode_cs_retskel(_,Leaf,_,Skel1),
-	Skel1 = Skel.
-
-trie_interned(Term,Root,Leaf,Skel) :-
-	integer(Leaf),
-	bottom_up_unify(Term1,Root,Leaf),
-	Term1 = Term,
-	get_lastnode_cs_retskel(_,_,_,Skel1),
 	Skel1 = Skel.
 
 /* --------------------------------------------------
@@ -98,6 +94,24 @@ version which interns into a fixed trie
 
 trie_interned(Term,Leaf,Skel) :- 
 	trie_interned(Term,0,Leaf,Skel).
+
+
+/*--------------------------------------------------
+trie_set_last_int(+Leaf,+IntVal)
+Leaf must be a pointer to a Leaf node obtained from
+trie_intern(ed), and it must point to a term whose last
+atomic value is an integer (and must not have a sibling).
+This predicate resets that last integer to IntVal.
+(This should be moved to a builtin in C.)
+--------------------------------------------------*/
+trie_set_last_int(Leaf,Val) :-
+	buff_word(Leaf,12,Par),
+	buff_word(Par,8,Child),
+	Child =:= Leaf,
+	buff_word(Leaf,16,TagVal),
+	(TagVal /\ 7) =:= 2,
+	NTagVal is (Val << 3) + 2,
+	buff_set_word(Leaf,16,NTagVal).
 
 /*--------------------------------------------------
 trie_unintern(+Root,+Leaf)
@@ -120,7 +134,6 @@ trie_unintern_nr(+Root, +Leaf)
 trie_unintern_nr(Root,Leaf) :- 
 	integer(Root),
 	integer(Leaf),
-	!,
 	trie_dispose_nr(Root,Leaf).
 
 /*--------------------------------------------------
@@ -129,22 +142,12 @@ unmark_uninterned_nr(+Root, +Leaf)
 unmark_uninterned_nr(Root,Leaf) :- 
 	integer(Root),
 	integer(Leaf),
-	!,
 	trie_undispose(Root,Leaf).
 
 
 /*--------------------------------------------------
 delete_trie(+Root)
 --------------------------------------------------*/
-/*delete_trie(Root) :-
-	findall(Leaf,trie_interned(_,Root,Leaf,_),L),
-	delete_all(Root,L).
-
-delete_all(_,[]).
-delete_all(Root,[Hd|Tl]) :- trie_unintern(Root,Hd),
-	delete_all(Root,Tl).
-*/
-
 delete_trie(Root) :- delete_trie(Root,intern).
 
 

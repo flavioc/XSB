@@ -25,8 +25,11 @@
 
 :- export new_trie/1, trie_intern/5, trie_intern/4, trie_interned/4,
 	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1,
+	  trie_set_last_int/2,
 	  trie_unintern_nr/2, trie_reclaim_uninterned_nr/1, 
 	  unmark_uninterned_nr/2. 
 
 :- import integer/1, abort/1 from standard.
 :- import get_lastnode_cs_retskel/4 from tables.
+
+:- import buff_word/3, buff_set_word/3  from machine.
