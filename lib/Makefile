@@ -33,7 +33,8 @@ ALL = 	aggregs${OBJEXT} array${OBJEXT} array1${OBJEXT} assoc_xsb${OBJEXT} \
 	packaging${OBJEXT} random${OBJEXT} scrptutl${OBJEXT} \
 	socket${OBJEXT} storage${OBJEXT} \
 	ugraphs${OBJEXT} wrapping${OBJEXT} write_term${OBJEXT} \
-	xsb_ciao${OBJEXT} xnmr${OBJEXT} justifyLP${OBJEXT} 
+	xsb_ciao${OBJEXT} xnmr${OBJEXT} justifyLP${OBJEXT} \
+	xsb_profiling${OBJEXT}
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
