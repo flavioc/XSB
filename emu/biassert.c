@@ -1122,7 +1122,7 @@ typedef ClRef SOBRef ;
 #define ClRefJumpInstr(Cl)	(ClRefWord((Cl),5))
 #define ClRefFirstIndex(Cl)	(ClRefWord((Cl),6))
 #define ClRefLastIndex(Cl)	(ClRefWord((Cl),7))
-#define ClRefNumClauses(Cl)	(ClRefWord((Cl),8))
+#define ClRefNumNonemptyBuckets(Cl)	(ClRefWord((Cl),8))
 #define ClRefHashTable(Cl)	(&ClRefWord((Cl),9))
 #define ClRefHashBucket(Cl,b)	((CPtr)(ClRefHashTable(Cl)[(b)]))
 
@@ -1192,7 +1192,7 @@ void dump_assert_index_block(FILE *fd, ClRef clrefptr, ClRef lastclrefptr, int i
       fprintf(fd,"SOB: %lx, HT: %lx, HTs: %lu, BR: %lx, Else: %lx, Last: %lx, Num: %ld\n",
 	      ClRefSOBInstr(clrefptr), ClRefWord(clrefptr,3), ClRefHashSize(clrefptr), 
 	      ClRefJumpInstr(clrefptr), ClRefFirstIndex(clrefptr),
-	      ClRefLastIndex(clrefptr), ClRefNumClauses(clrefptr));
+	      ClRefLastIndex(clrefptr), ClRefNumNonemptyBuckets(clrefptr));
       htsize = ClRefHashSize(clrefptr);
       for (i=0; i<htsize; i++) {
 	if (ClRefHashBucket(clrefptr,i) != &fail_inst) {
@@ -1391,12 +1391,12 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
    unsigned int ThisTabSize ;
 
 /* xsb_dbgmsg(LOG_DEBUG,"SOB - %p, with %d cls",
-	      SOBrec, ClRefNumClauses(SOBrec) ) ;
+	      SOBrec, ClRefNumNonemptyBuckets(SOBrec) ) ;
 */
    /* Compute number of clauses */
    if( PredOpCode(Pred) != fail && ClRefType(SOBrec) == SOB_RECORD )
    {    ThisTabSize = ClRefHashSize(SOBrec) ;
-        if (ClRefNumClauses(SOBrec)+ClRefNumClauses(SOBrec)/2 >= ThisTabSize)
+        if (2*ClRefNumNonemptyBuckets(SOBrec) > ThisTabSize)
             ThisTabSize = 2*ThisTabSize+1 ;
 	return max(ThisTabSize, OldTabSize) ;
     }
@@ -1490,7 +1490,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind )
    dbgen_inst_ppp(fail,&ClRefJumpInstr(NewSOB),&Loc);
    ClRefFirstIndex(NewSOB) = (Cell)&ClRefJumpInstr(NewSOB) ;
    ClRefLastIndex( NewSOB) = (Cell)&ClRefJumpInstr(NewSOB) ;
-   ClRefNumClauses(NewSOB) = 0 ;
+   ClRefNumNonemptyBuckets(NewSOB) = 0 ;
       
    /* Initialize hash table */
    for (i = 0; i < ThisTabSize; i++)
@@ -1510,6 +1510,7 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
       *Bucketaddr = NewInd ;
       IndRefPrev(NewInd) = (CPtr) Bucketaddr ;
       IndRefNext(NewInd) = (CPtr) SOBrec ;
+      ClRefNumNonemptyBuckets(SOBrec)++ ;
     } else if (AZ == 0) { /* add at beginning */
       *Bucketaddr = NewInd ;
       IndRefPrev(NewInd) = (CPtr) Bucketaddr ;
@@ -1589,7 +1590,6 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
       /* add new SOB block */
       db_addbuff(Arity,SOBbuff,Pred,AZ,Inum);
     }
-    ClRefNumClauses(SOBbuff)++ ;
     Pred = ClRefPrRef(SOBbuff) ; /* fake a prref */
     addto_hashchain(AZ, Hashval, SOBbuff, ClRefIndPtr(Clause,Inum), Arity);
   }
@@ -1908,25 +1908,24 @@ static int really_delete_clause(ClRef Clause)
             delete_from_allchain(Clause) ;
 
             /* remove it from index chains */
-            for( i = NI; i >= 1; i-- )
-            {	IP = ClRefIndPtr(Clause, i) ;
-                while(  cell_opcode(IP) != dyntrustmeelsefail &&
-                        cell_opcode(IP) != noop )
-                	IP = IndRefNext(IP) ;
-                /* last pointer in index chain points to indexing SOB */
-                sob = (SOBRef)IndRefNext(IP) ;
-                xsb_dbgmsg((LOG_RETRACT,
-			   "SOB(%d) - hash size %d - %d clauses",
-			   i, ClRefHashSize(sob), ClRefNumClauses(sob) ));
-                xsb_dbgmsg((LOG_RETRACT,
-			   "Addr %p : prev %p : next %p",
-			   sob, ClRefNext(sob), ClRefPrev(sob) ));
-                delete_from_hashchain(Clause,i,NI) ;
-                if( --ClRefNumClauses(sob) == 0 )
-                {
+            for( i = NI; i >= 1; i-- ) {
+	      IP = ClRefIndPtr(Clause, i);
+	      if (cell_opcode(IP) == noop) /* deleting last in bucket */
+		sob = (SOBRef)IndRefNext(IP); /* so get SOB addr */
+	      else sob = NULL;
+
+	      xsb_dbgmsg((LOG_RETRACT,
+			  "SOB(%d) - hash size %d - %d clauses",
+			  i, ClRefHashSize(sob), ClRefNumNonemptyBuckets(sob) ));
+	      xsb_dbgmsg((LOG_RETRACT,
+			  "Addr %p : prev %p : next %p",
+			  sob, ClRefNext(sob), ClRefPrev(sob) ));
+	      delete_from_hashchain(Clause,i,NI) ;
+	      if (sob && --ClRefNumNonemptyBuckets(sob) == 0) 
+                { /* if emptied bucket, decrement count; if all empty, reclaim SOB */
                     xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
                     delete_from_sobchain(sob) ;
-                }
+		}
             }
             break ;
         }
