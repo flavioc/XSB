@@ -25,6 +25,7 @@
 	base_imvdsig/3,
 	base_meth/2,
 	base_imeth/2,
+	base_tran/2,
 	base_exists/1,
 	base_objeql/2.
 
@@ -43,6 +44,7 @@
 	base_imvdsig/3,
 	base_meth/2,
 	base_imeth/2,
+	base_tran/2,
 	base_exists/1,
 	base_objeql/2.
 
@@ -60,6 +62,6 @@
 :- index(base_imvdsig/3,trie).
 :- index(base_meth/2,trie).
 :- index(base_imeth/2,trie).
+:- index(base_tran/2,trie).
 :- index(base_exists/1,trie).
 :- index(base_objeql/2,trie).
-

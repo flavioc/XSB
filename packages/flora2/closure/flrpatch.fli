@@ -1,0 +1,107 @@
+/***************************************************************************
+  file: closure/flrpatch.fli
+
+  Author(s): Guizhen Yang
+
+  Contact:   xsb-contact@cs.sunysb.edu
+
+  Copyright (C) The Research Foundation of SUNY, 1999-2001
+
+  This is a template file to generate the FLORA include file for
+  backtrackable storage.
+***************************************************************************/
+
+
+#include "flora_terms.flh"
+
+
+/**************************************************************************
+  F-logic
+***************************************************************************/
+:- import storage_find_fact/2 from storage.
+:- sign storage_find_fact(oid,form).
+
+
+:- florapred derived_sub/2.
+:- florapred derived_isa/2.
+:- florapred derived_ifd/3.
+:- florapred derived_imvd/3.
+:- florapred derived_imvddef/2.
+:- florapred derived_fd/3.
+:- florapred derived_mvd/3.
+:- florapred derived_mvddef/2.
+:- florapred derived_meth/2.
+:- florapred derived_imeth/2.
+:- florapred derived_tran/2.
+:- florapred derived_fdsig/3.
+:- florapred derived_ifdsig/3.
+:- florapred derived_mvdsig/3.
+:- florapred derived_imvdsig/3.
+:- florapred derived_exists/1.
+:- florapred derived_objeql/2.
+
+
+:- florapred base_sub/2.
+:- florapred base_isa/2.
+:- florapred base_ifd/3.
+:- florapred base_imvd/3.
+:- florapred base_imvddef/2.
+:- florapred base_fd/3.
+:- florapred base_mvd/3.
+:- florapred base_mvddef/2.
+:- florapred base_meth/2.
+:- florapred base_imeth/2.
+:- florapred base_tran/2.
+:- florapred base_fdsig/3.
+:- florapred base_ifdsig/3.
+:- florapred base_mvdsig/3.
+:- florapred base_imvdsig/3.
+:- florapred base_exists/1.
+:- florapred base_objeql/2.
+
+
+derived_sub(X,Y) :- storage_find_fact(FLORA_STORAGE_NAME,base_sub(X,Y)).
+derived_isa(O,C) :- storage_find_fact(FLORA_STORAGE_NAME,base_isa(O,C)).
+derived_ifd(C,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_ifd(C,A,V)).
+derived_imvd(C,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_imvd(C,A,V)).
+derived_imvddef(C,A) :- storage_find_fact(FLORA_STORAGE_NAME,base_imvddef(C,A)).
+derived_fd(O,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_fd(O,A,V)).
+derived_mvd(O,A,V) :- storage_find_fact(FLORA_STORAGE_NAME,base_mvd(O,A,V)).
+derived_mvddef(O,A) :- storage_find_fact(FLORA_STORAGE_NAME,base_mvddef(O,A)).
+derived_meth(O,M) :- storage_find_fact(FLORA_STORAGE_NAME,base_meth(O,M)).
+derived_imeth(C,M) :- storage_find_fact(FLORA_STORAGE_NAME,base_imeth(C,M)).
+derived_tran(O,T) :- storage_find_fact(FLORA_STORAGE_NAME,base_tran(O,T)).
+derived_fdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_fdsig(O,M,R)).
+derived_ifdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_ifdsig(O,M,R)).
+derived_mvdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_mvdsig(O,M,R)).
+derived_imvdsig(O,M,R) :- storage_find_fact(FLORA_STORAGE_NAME,base_imvdsig(O,M,R)).
+derived_exists(X) :- storage_find_fact(FLORA_STORAGE_NAME,base_exists(X)).
+derived_objeql(X,Y) :- storage_find_fact(FLORA_STORAGE_NAME,base_objeql(X,Y)).
+
+
+/**************************************************************************
+  HiLog
+***************************************************************************/
+:- florapred WRAP_HILOG/1.
+:- florapred WRAP_HILOG/2.
+:- florapred WRAP_HILOG/3.
+:- florapred WRAP_HILOG/4.
+:- florapred WRAP_HILOG/5.
+:- florapred WRAP_HILOG/6.
+:- florapred WRAP_HILOG/7.
+:- florapred WRAP_HILOG/8.
+:- florapred WRAP_HILOG/9.
+:- florapred WRAP_HILOG/10.
+
+
+WRAP_HILOG(A1) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1)).
+WRAP_HILOG(A1,A2) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2)).
+WRAP_HILOG(A1,A2,A3) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3)).
+WRAP_HILOG(A1,A2,A3,A4) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4)).
+WRAP_HILOG(A1,A2,A3,A4,A5) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5)).
+WRAP_HILOG(A1,A2,A3,A4,A5,A6) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6)).
+WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7)).
+WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8)).
+WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9)).
+WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)).
+

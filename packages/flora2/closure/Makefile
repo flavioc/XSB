@@ -30,7 +30,8 @@ XSBDIR = ../../..
 
 ALLOBJS = flrtrailer.flh \
 	  flreqltrailer.flh \
-          flrdbdyn.flh
+          flrdbdyn.flh \
+          flrpatch.flh
 
 XSB = $(XSBDIR)/bin/xsb
 
@@ -62,6 +63,10 @@ flreqltrailer.flh : flreqltrailer.fli $(FLORA_TERMS)
 
 flrdbdyn.flh : flrdbdyn.fli
 	@echo 'flcompinc(flrdbdyn).' >> cmd...
+
+
+flrpatch.flh : flrpatch.fli $(FLORA_TERMS)
+	@echo 'flcompinc(flrpatch).' >> cmd...
 
 
 init:

@@ -457,6 +457,8 @@
 
 #define FLORA_THIS_MODULE	flthismod
 
+#define FLORA_STORAGE_NAME	FLORA_PREFIX'flstorage'
+
 
 /****************************************************************************
   F-logic atoms prefixes

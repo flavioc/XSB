@@ -8,5 +8,7 @@
 
 WORKSPACE(VAR_WORKSPACE,flthismod)(VAR_WORKSPACE).
 
+#include "flrpatch.flh"
+
 /***********************************************************************/
 

@@ -39,6 +39,7 @@ ALLOBJS = flranswer.O \
 	  flraggmin.O \
 	  flraggsum.O \
 	  flrdbop.O \
+	  flrbtdbop.O \
 	  flrshdirect.O
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
@@ -119,6 +120,10 @@ flraggsum.O : flraggsum.P $(FLORA_TERMS)
 
 flrdbop.O : flrdbop.P $(FLORA_TERMS)
 	@echo 'mc(flrdbop,$(OPTION)).' >> cmd...
+
+
+flrbtdbop.O : flrbtdbop.P $(FLORA_TERMS)
+	@echo 'mc(flrbtdbop,$(OPTION)).' >> cmd...
 
 
 flrshdirect.O : flrshdirect.P $(FLORA_TERMS)
