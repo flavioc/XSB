@@ -26,10 +26,11 @@
 
 :- export concat_atom/2, concat_atom/3, str_cat/3, str_sub/2, str_sub/3,
    str_fromlist/2, str_length/2, str_substring/4, str_substring/2, 
-   sublist/2.
+   sublist/2.   
 
 :- import atom/1 from standard.
 :- import buff_set_byte/3, buff_alloc/2, buff_byte/3, buff_dealloc/3,
 	  str_insert/2, str_len/2 from machine.
+:- import flatten/2 from basics.
 
 /* ---------------------- end of file string.H ------------------------ */
