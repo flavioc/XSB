@@ -1,0 +1,391 @@
+:- compiler_options([ciao_directives]).
+
+:- document_export
+	clear_db_oms/1,
+	load_db_oms/1,
+	dump_db_oms/2, dump_db_oms/1.
+
+%% for debugging:
+
+:- import odbc_open/4 from odbc_call.
+
+open :- odbc_open(oms_lazy_db,warren,'',lazy).
+dump :- dump_db_oms(lazy,_).
+clear :- clear_db_oms(lazy).
+load :- load_db_oms(lazy).
+drop :- drop_db_oms(lazy).
+create :- create_db_oms(lazy).
+
+:- comment(module,
+"
+@section{Storing an OMS in an ODBC database}
+
+The 9 OMS relations, while usually stored in prolog .P files, may also
+be stored in 9 relations in a relational database.  Each relation is
+stored in its external form.  Each field (except an object ID) is
+stored as a Prolog Term.
+
+These routines allow the loading of an OMS into memory from an ODBC
+database and the dumping of an OMS from memory to an ODBC database.
+
+In the future they will allow all updates to such an OMS in memory to
+be immediately reflected back out to the stored DB.
+
+").
+
+%%:- export load_db_oms/3, dump_db_oms/3.
+
+:- ensure_loaded(oms_io).
+
+:- import odbc_sql/4 from odbc_call.
+
+:- comment(clear_db_oms/1," @tt{clear_db_oms(+Connection)} deletes all
+tuples in the OMS tables in the database accessible through the
+database connection named @tt(Connection}, which must have been opened
+with odbc_open/1.
+").
+
+clear_db_oms(Connection) :-
+	odbc_sql(Connection,[],'delete from oms_class',[]),
+	odbc_sql(Connection,[],'delete from oms_subclass',[]),
+	odbc_sql(Connection,[],'delete from oms_relationship',[]),
+	odbc_sql(Connection,[],'delete from oms_schrel',[]),
+	odbc_sql(Connection,[],'delete from oms_strel',[]),
+	odbc_sql(Connection,[],'delete from oms_object',[]),
+	odbc_sql(Connection,[],'delete from oms_memberof',[]),
+	odbc_sql(Connection,[],'delete from oms_attribute',[]),
+	odbc_sql(Connection,[],'delete from oms_attribute_object',[]).
+
+drop_db_oms(Connection) :-
+	odbc_sql(Connection,[],'drop table oms_class',[]),
+	odbc_sql(Connection,[],'drop table oms_subclass',[]),
+	odbc_sql(Connection,[],'drop table oms_relationship',[]),
+	odbc_sql(Connection,[],'drop table oms_schrel',[]),
+	odbc_sql(Connection,[],'drop table oms_strel',[]),
+	odbc_sql(Connection,[],'drop table oms_object',[]),
+	odbc_sql(Connection,[],'drop table oms_memberof',[]),
+	odbc_sql(Connection,[],'drop table oms_attribute',[]),
+	odbc_sql(Connection,[],'drop table oms_attribute_object',[]).
+	
+/* no indexes now/yet. */
+create_db_oms(Connection) :-
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_attribute] (
+		 [SNatOid] [varchar] (200) NOT NULL,
+		 [SSource] [varchar] (50) NOT NULL,
+		 [RNatCid] [varchar] (200) NOT NULL,
+		 [RSource] [varchar] (50) NOT NULL,
+		 [TNatCid] [varchar] (2000) NOT NULL,
+		 [TSource] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_attribute_object] (
+		 [SNatOid] [varchar] (200) NOT NULL,
+		 [SSource] [varchar] (50) NOT NULL,
+		 [RNatCid] [varchar] (200) NOT NULL,
+		 [RSource] [varchar] (50) NOT NULL,
+		 [TNatOid] [varchar] (200) NOT NULL,
+		 [TSource] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_class] (
+		 [Name] [varchar] (200) NULL,
+		 [NatCid] [varchar] (200) NOT NULL,
+		 [Source] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_memberof] (
+		 [NatOid] [varchar] (200) NOT NULL,
+		 [Source] [varchar] (50) NOT NULL,
+		 [NatCid] [varchar] (200) NOT NULL,
+		 [CSource] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_object] (
+		 [Name] [varchar] (200) NULL,
+		 [NatOid] [varchar] (200) NOT NULL,
+		 [Source] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_relationship] (
+		 [SNatCid] [varchar] (200) NOT NULL,
+		 [SSource] [varchar] (50) NOT NULL,
+		 [RNatCid] [varchar] (200) NOT NULL,
+		 [RSource] [varchar] (50) NOT NULL,
+		 [TNatCid] [varchar] (2000) NOT NULL,
+		 [TSource] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_schrel] (
+		 [SNatCid] [varchar] (200) NOT NULL,
+		 [SSource] [varchar] (50) NOT NULL,
+		 [RNatCid] [varchar] (200) NOT NULL,
+		 [RSource] [varchar] (50) NOT NULL,
+		 [TNatCid] [varchar] (200) NOT NULL,
+		 [TSource] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_strel] (
+		 [SNatCid] [varchar] (200) NOT NULL,
+		 [SSource] [varchar] (50) NOT NULL,
+		 [RNatCid] [varchar] (200) NOT NULL,
+		 [RSource] [varchar] (50) NOT NULL,
+		 [TNatCid] [varchar] (2000) NOT NULL,
+		 [TSource] [varchar] (50) NOT NULL 
+		)',[]),
+	odbc_sql(Connection,[],
+		 'CREATE TABLE [oms_subclass] (
+		 [NatCid] [varchar] (200) NOT NULL,
+		 [Source] [varchar] (50) NOT NULL,
+		 [ParNatCid] [varchar] (200) NOT NULL,
+		 [ParSource] [varchar] (50) NOT NULL 
+		)',[]).
+
+
+load_db_oms(Connection) :-
+	load_db_class(Connection),
+	load_db_subclass(Connection),
+	load_db_relationship(Connection),
+	load_db_schrel(Connection),
+	load_db_strel(Connection),
+	load_db_object(Connection),
+	load_db_memberof(Connection),
+	load_db_attribute(Connection),
+	load_db_attribute_object(Connection).
+
+load_db_class(Connection) :-
+	retractall(saved_class(_,_,_)),
+	odbc_sql(Connection,[],
+		 'select Name,NatCid,Source from oms_class',
+		 [term(Name),term(NatCid),term(Source)]),
+	catch(newClass(Name,unk,NatCid,Source,_),oms_error(update,_Msg),
+	      save_class(Name,NatCid,Source)),
+	fail.
+load_db_class(_) :-		% try once to re-order, could iterate if nested and necessary.
+	saved_class(Name,NatCid,Source),
+	newClass(Name,unk,NatCid,Source,_),
+	fail.
+load_db_class(_).
+	
+:- dynamic saved_class/3.
+
+save_class(Name,NatCid,Source) :-
+	assert(saved_class(Name,NatCid,Source)),
+	fail.
+
+load_db_subclass(Connection) :-
+	odbc_sql(Connection,[],
+		 'select NatCid,Source,ParNatCid,ParSource from oms_subclass',
+		 [term(NatCid),term(Source),term(ParNatCid),term(ParSource)]),
+	Term = subclass_ext(NatCid,Source,ParNatCid,ParSource),
+	get_cid_from_nid_src(NatCid,Source,Term,SubCid),
+	get_atomic_class(ParNatCid,ParSource,SupCid,Term),
+	(immediate_subclass(SubCid,SupCid)
+	 ->	fail
+	 ;	newSubclass(SubCid,SupCid),
+		fail
+	).
+load_db_subclass(_Connection).
+
+load_db_relationship(Connection) :-
+	odbc_sql(Connection,[],
+		 'select SNatCid,SSource,RNatCid,RSource,TNatCid,TSource from oms_relationship',
+		 [term(SNCid),term(SSrc),term(RNCid),term(RSrc),term(TNCid),term(TSrc)]),
+	Term = relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	newRelationship_omsext(SCid,RCid,TCid),
+	fail.
+load_db_relationship(_Connection).
+	
+load_db_schrel(Connection) :-
+	odbc_sql(Connection,[],
+		 'select SNatCid,SSource,RNatCid,RSource,TNatCid,TSource from oms_schrel',
+		 [term(SNCid),term(SSrc),term(RNCid),term(RSrc),term(TNCid),term(TSrc)]),
+	Term = relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	newSchrel(SCid,RCid,TCid),
+	fail.
+load_db_schrel(_Connection).
+	
+load_db_strel(Connection) :-
+	odbc_sql(Connection,[],
+		 'select SNatCid,SSource,RNatCid,RSource,TNatCid,TSource from oms_strel',
+		 [term(SNCid),term(SSrc),term(RNCid),term(RSrc),term(TNCid),term(TSrc)]),
+	Term = relationship_ext(SNCid,SSrc,RNCid,RSrc,TNCid,TSrc),
+	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
+	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
+	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
+	newStrel(SCid,RCid,TCid),
+	fail.
+load_db_strel(_Connection).
+
+load_db_object(Connection) :-
+	odbc_sql(Connection,[],
+		 'select Name,NatOid,Source from oms_object',
+		 [term(Name),term(NatOid),term(Source)]),
+	newObject(Name,unk,NatOid,Source,_),
+	fail.
+load_db_object(_).
+	
+load_db_memberof(Connection) :-
+	odbc_sql(Connection,[],
+		 'select NatOid,Source,NatCid,CSource from oms_memberof',
+		 [term(NatOid),term(Source),term(NatCid),term(CSource)]),
+	Term = memberof_ext(NatOid,Source,NatCid,CSource),
+	get_oid_from_nid_src(NatOid,Source,Term,Oid),
+	get_cid_from_nid_src(NatCid,CSource,Term,Cid),
+	newMemberof(Oid,Cid),
+	fail.
+load_db_memberof(_Connection).
+
+load_db_attribute(Connection) :-
+	odbc_sql(Connection,[],
+		 'select SNatOid,SSource,RNatCid,RSource,TNatCid,TSource from oms_attribute',
+		 [term(SNatOid),term(SSource),term(RNatCid),term(RSource),term(TNatCid),term(TSource)]),
+	Term = attribute_ext(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),
+	get_oid_from_nid_src(SNatOid,SSource,Term,Oid),
+	get_cid_from_nid_src(RNatCid,RSource,Term,RCid),
+	get_cid_from_nid_src(TNatCid,TSource,Term,TCid),
+	newAttribute(Oid,RCid,TCid),
+	fail.
+load_db_attribute(_Connection).
+
+load_db_attribute_object(Connection) :-
+	odbc_sql(Connection,[],
+		 'select SNatOid,SSource,RNatCid,RSource,TNatOid,TSource from oms_attribute_object',
+		 [term(SNatOid),term(SSource),term(RNatCid),term(RSource),term(TNatOid),term(TSource)]),
+	Term = attribute_object_ext(SNatOid,SSource,RNatCid,RSource,TNatOid,TSource),
+	get_oid_from_nid_src(SNatOid,SSource,Term,Oid),
+	get_cid_from_nid_src(RNatCid,RSource,Term,RCid),
+	get_oid_from_nid_src(TNatOid,TSource,Term,TOid),
+	newAttribute_object(Oid,RCid,TOid),
+	fail.
+load_db_attribute_object(_Connection).
+
+
+dump_db_oms(Connection) :-
+	dump_db_oms(Connection,Connection).
+
+dump_db_oms(Connection,Source) :-
+	dump_db_class(Connection,Source),
+	dump_db_subclass(Connection,Source),
+	dump_db_relationship(Connection,Source),
+	dump_db_schrel(Connection,Source),
+	dump_db_strel(Connection,Source),
+	dump_db_object(Connection,Source),
+	dump_db_memberof(Connection,Source),
+	dump_db_attribute(Connection,Source),
+	dump_db_attribute_object(Connection,Source).
+
+dump_db_class(Connection,Source) :-
+	class(_,Name,NatCid,Source),
+	odbc_sql(Connection,
+		 [term(Name),term(NatCid),term(Source)],
+		 'insert into oms_class (Name,NatCid,Source) values (?,?,?)',
+		 []),
+	fail.
+dump_db_class(_Connection,_Source).
+
+dump_db_subclass(Connection,Source) :-
+	class(Cid,_,_,Source),
+	immediate_subclass(Cid,ParCid),
+	cvt_cid_nid(Cid,NatCid,Source),
+	cvt_cid_nid(ParCid,ParNatCid,ParSource),
+	odbc_sql(Connection,
+		 [term(NatCid),term(Source),term(ParNatCid),term(ParSource)],
+		 'insert into oms_subclass (NatCid,Source,ParNatCid,ParSource)
+		 values (?,?,?,?)',
+		 []),
+	fail.
+dump_db_subclass(_Connection,_Source).
+
+dump_db_relationship(Connection,Source) :-
+	immediate_relationship(SCid,RCid,TCid),
+	cvt_cid_nid(SCid,SNatCid,Source),
+	cvt_cid_nid(RCid,RNatCid,RSource),
+	cvt_cid_nid(TCid,TNatCid,TSource),
+	odbc_sql(Connection,
+		 [term(SNatCid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 'insert into oms_relationship (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
+		 values (?,?,?,?,?,?)',
+		 []),
+	fail.
+dump_db_relationship(_Connection,_Source).
+
+dump_db_schrel(Connection,Source) :-
+	immediate_schrel(SCid,RCid,TCid),
+	cvt_cid_nid(SCid,SNatCid,Source),
+	cvt_cid_nid(RCid,RNatCid,RSource),
+	cvt_cid_nid(TCid,TNatCid,TSource),
+	odbc_sql(Connection,
+		 [term(SNatCid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 'insert into oms_schrel (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
+		 values (?,?,?,?,?,?)',
+		 []),
+	fail.
+dump_db_schrel(_Connection,_Source).
+
+dump_db_strel(Connection,Source) :-
+	strel(SCid,RCid,TCid),
+	cvt_cid_nid(SCid,SNatCid,Source),
+	cvt_cid_nid(RCid,RNatCid,RSource),
+	cvt_cid_nid(TCid,TNatCid,TSource),
+	odbc_sql(Connection,
+		 [term(SNatCid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 'insert into oms_strel (SNatCid,SSource,RNatCid,RSource,TNatCid,TSource)
+		 values (?,?,?,?,?,?)',
+		 []),
+	fail.
+dump_db_strel(_Connection,_Source).
+
+dump_db_object(Connection,Source) :-
+	object(_,Name,NatOid,Source),
+	odbc_sql(Connection,
+		 [term(Name),term(NatOid),term(Source)],
+		 'insert into oms_object (Name,NatOid,Source) values (?,?,?)',
+		 []),
+	fail.
+dump_db_object(_Connection,_Source).
+
+dump_db_memberof(Connection,Source) :-
+	object(Oid,_,NatOid,Source),
+	immediate_memberof(Oid,Cid),
+	cvt_cid_nid(Cid,NatCid,CSource),
+	odbc_sql(Connection,
+		 [term(NatOid),term(Source),term(NatCid),term(CSource)],
+		 'insert into oms_memberof (NatOid,Source,NatCid,CSource)
+		 values (?,?,?,?)',
+		 []),
+	fail.
+dump_db_memberof(_Connection,_Source).
+
+dump_db_attribute(Connection,Source) :-
+	object(Oid,_,NatOid,Source),
+	immediate_attribute(Oid,RCid,TCid),
+	cvt_cid_nid(RCid,RNatCid,RSource),
+	cvt_cid_nid(TCid,TNatCid,TSource),
+	odbc_sql(Connection,
+		 [term(NatOid),term(Source),term(RNatCid),term(RSource),term(TNatCid),term(TSource)],
+		 'insert into oms_attribute (SNatOid,SSource,RNatCid,RSource,TNatCid,TSource)
+		 values (?,?,?,?,?,?)',
+		 []),
+	fail.
+dump_db_attribute(_Connection,_Source).
+
+dump_db_attribute_object(Connection,Source) :-
+	object(Oid,_,NatOid,Source),
+	immediate_attribute_object(Oid,RCid,TOid),
+	cvt_cid_nid(RCid,RNatCid,RSource),
+	object(TOid,_,TNatOid,TSource),
+	odbc_sql(Connection,
+		 [term(NatOid),term(Source),term(RNatCid),term(RSource),term(TNatOid),term(TSource)],
+		 'insert into oms_attribute_object (SNatOid,SSource,RNatCid,RSource,TNatOid,TSource)
+		 values (?,?,?,?,?,?)',
+		 []),
+	fail.
+dump_db_attribute_object(_Connection,_Source).
+
