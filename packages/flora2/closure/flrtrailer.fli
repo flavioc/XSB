@@ -92,8 +92,8 @@ ifd(C,A,V) :-
 	inferred_ifd(C,A,V).
 
 ifd(C,A,V) :-
-	immediate_sub(C,S),
 	ifd(S,A,V),
+	immediate_sub(C,S),
 	tnot(defined_inferred_ifd(C,A)),
 	tnot(conflict_ifd(C,A)).
 
@@ -120,8 +120,8 @@ imvd(C,A,V) :-
 	inferred_imvd(C,A,V).
 
 imvd(C,A,V) :-
-	immediate_sub(C,S),
 	imvd(S,A,V),
+	immediate_sub(C,S),
 	tnot(defined_inferred_imvd(C,A)),
 	tnot(conflict_imvd(C,A)).
 
@@ -130,8 +130,8 @@ imvddef(C,A) :-
 	inferred_imvddef(C,A).
 
 imvddef(C,A) :-
-	immediate_sub(C,S),
 	imvddef(S,A),
+	immediate_sub(C,S),
 	tnot(defined_inferred_imvd(C,A)),
 	tnot(conflict_imvd(C,A)).
 
@@ -158,8 +158,8 @@ fd(O,A,V) :-
 	inferred_fd(O,A,V).
 
 fd(O,A,V) :-
-	immediate_isa(O,C),
 	ifd(C,A,V),
+	immediate_isa(O,C),
 	tnot(defined_inferred_fd(O,A)),
 	tnot(conflict_obj_ifd(O,A)).
 
@@ -186,8 +186,8 @@ mvd(O,A,V) :-
 	inferred_mvd(O,A,V).
 
 mvd(O,A,V) :-
-	immediate_isa(O,C),
 	imvd(C,A,V),
+	immediate_isa(O,C),
 	tnot(defined_inferred_mvd(O,A)),
 	tnot(conflict_obj_imvd(O,A)).
 
@@ -196,8 +196,8 @@ mvddef(O,A) :-
 	inferred_mvddef(O,A).
 
 mvddef(O,A) :-
-	immediate_isa(O,C),
 	imvddef(C,A),
+	immediate_isa(O,C),
 	tnot(defined_inferred_mvd(O,A)),
 	tnot(conflict_obj_imvd(O,A)).
 
