@@ -1365,7 +1365,7 @@ if test "${do_debugging}" = "yes" ; then
    fi
 fi
 
-if test "${has_gcc}" = "yes"; then
+if test "${has_gcc}" = "yes" -a "${host_os}" != "windows" ; then
    dnl gcc is smarter when creating dynamic libraries in Unix
    LD=gcc 
 else
