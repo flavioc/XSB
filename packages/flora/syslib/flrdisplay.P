@@ -110,7 +110,7 @@
 /********************************************************************/
 %% Hookup to the Flora debugger
 
-%% flora_call essentially repeats the XSB call definition
+%% flora_call is a wrapper around XSB call
 '_$_$_flora_call'(Goal) :- 
     	'_$_$_flora_handle_trace',
     	call(Goal),

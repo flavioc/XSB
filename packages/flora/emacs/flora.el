@@ -203,11 +203,8 @@
   (define-key map "\C-c\C-r" 'flora-consult-region)
   (define-key map "\C-c\C-f" 'flora-consult-file)
   (define-key map "\C-c\C-s" 'flora-restart)
-  (define-key map "\M-\t"    'comint-dynamic-complete)
   (define-key map "\C-c\C-c" 'flora-interrupt)
   (define-key map "\C-c\C-d" 'flora-quit)
-  (define-key map "\C-m"     'flora-electric-return)
-  (define-key map [return] 'flora-electric-return)
   (define-key map "*"	     'flora-electric-star)
   (define-key map "/"	     'flora-electric-slash))
 
@@ -400,13 +397,6 @@ is inhibited."
     (if indentp
 	(flora-indent-line))))
 
-(defun flora-electric-return ()
-  "If flora-electric is t, indent automatically whenever the user types RETURN.
-Otherwise, just insert newline."
-  (interactive)
-  (insert "\n")
-  (if flora-electric
-      (indent-according-to-mode)))
 
 (defun flora-in-literal ()
   ;; to be worked out
@@ -468,9 +458,11 @@ Return not at end copies rest of line to end and sends it.
 	mode-name "Inferior-Flora"
 	comint-prompt-regexp "flora + \\?- +")
   (flora-mode-variables)
-  (if inferior-flora-mode-map nil
+  (if inferior-flora-mode-map 
+      nil
     (setq inferior-flora-mode-map (copy-keymap comint-mode-map))
-    (flora-mode-commands inferior-flora-mode-map))
+    (flora-mode-commands inferior-flora-mode-map)
+    (define-key inferior-flora-mode-map "\M-\t" 'comint-dynamic-complete))
   (use-local-map inferior-flora-mode-map)
   (run-hooks 'inferior-flora-mode-hook)
   (setq comint-input-ring-file-name 
