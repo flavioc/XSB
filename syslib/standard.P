@@ -984,15 +984,7 @@ pop_abort_cutpoint :-
 	!.
 pop_abort_cutpoint.
 
-%  abort/0
-abort :- 
-	conpsc('_$abort_cutpoint', Psc), 
-	psc_prop(Psc, Cp),
-        close_open_tables, 
-	'_$cutto'(Cp), 
-	reset_undef_pred_handlers,
-	fail.
-
+abort :- throw('_$abort_ball').
 
 %  abort/1
 abort([H|T]) :- !,

@@ -68,9 +68,10 @@ eval(Arg, Res,Expr) :-
 	; T =:= XSB_INT -> Res=Arg
 	; T =:= XSB_FLOAT -> Res=Arg
 	; (T =:= XSB_STRING; T =:= XSB_LIST) ->
-	    abort(['Type Error: Non evaluable arithmetic expression:',Expr])	
+		throw(error(type_error(arithmetic_expression,Expr),
+		      ('Non evaluable arithmetic expression:',Expr)))
 	; eval0(Arg, Res,Expr) -> true	/* system defined function */
-	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
+%	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
 	).
 
 /* TLS: we are now more ISO-compatable for fp-to-integer rouinding
@@ -83,7 +84,7 @@ eval0('-'(X,Y), Res,Expr) :- eval(X, Res1,Expr),
 eval0('*'(X,Y), Res,Expr) :- eval(X,Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 * Res2.  
 eval0('/'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
-		eval(Y, Res2,Expr), Res is Res1 / Res2.  
+ 		eval(Y, Res2,Expr), Res is Res1 / Res2.  
 eval0('//'(X,Y),Res,Expr) :- eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 // Res2.
 eval0(rem(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
@@ -124,54 +125,13 @@ eval0(log(X), Res,Expr) :- eval(X, Res1,Expr), Res is log(Res1).
 eval0(log10(X), Res,Expr) :- eval(X, Res1,Expr), Res is log10(Res1).
 eval0(sqrt(X), Res,Expr) :- eval(X, Res1,Expr), Res is sqrt(Res1).
 
-eval1(Term, Res) :-
-	term_psc(Term, Psc),
-	psc_type(Psc, T0),
-	( T0 =:= 15 ->		% unloaded function
-	    psc_prop(Psc, ModPSC),
-            psc_name(ModPSC, ModName),
-            psc_type(ModPSC, ModType),
-            ( ModType =:= 4
-            ; ModType =\= 4,              % module is not loaded yet
-              load(ModName)               % can fail here
-            )
-	; true
-	),
-	psc_type(Psc, T1),
-	( T1 =\= 14, eval_regularterm(Term, Res)	 % Regular term
-	; T1 =:= 14,
-	  abort('Invalid term in arithmetic expression')
-% no longer support user-defined functions
-%          psc_prop(Psc, Code),
-%	  eval_func(Code, Term, T1),
-%	  '_$getreturn'(Res)
-	).
-
-/* need this because code_call/3 must be the last goal of a clause.
-no longer support user-defined functions
-eval_func(Code, Term, T1) :- code_call(Code, Term, T1).  
-*/
-
-eval_regularterm(Term, Res) :-
-	functor(Term, F, A),
-	functor(Res, F, A),
-	eval_rt_args(0, A, Term, Res).
-
-eval_rt_args(A, A, _, _).
-eval_rt_args(I, A, Term, Res) :- I < A,
-	I1 is I + 1,
-	arg(I1, Term, X),
-	arg(I1, Res, Y),
-	eval(X, Y),
-	eval_rt_args(I1, A, Term, Res).
-
-/* TLS this is to get us around a second error message when expr is
-   uninstantiated */
 eval_instantiation_abort(Expr):- 
 	var(Expr),!,
-	abort(['Type Error: Uninstantiated Arithmetic Expression']).
+	throw(error(instantiation_error,
+              ('Error: Uninstantiated Arithmetic Expression'))).
 eval_instantiation_abort(Expr):- 
-	abort(['Type Error: Unbound variable in arithmetic expression',Expr]).
+	throw(error(instantiation_error,
+	      ('Unbound variable in arithmetic expression',Expr))).
 
 
 /* ---------------------- end of file eval.P --------------------------	*/

@@ -26,8 +26,10 @@
 
 :- export default_error_handler/1.
 
-:- import abort/0, messageln/2 from standard.
 :- import (dynamic)/1 from assert.
+:- import reset_undef_pred_handlers/0 from loader.
+:- import close_open_tables/0, conpsc/2, psc_prop/2 from machine.
+:- import messageln/2 from standard.
 
 
 

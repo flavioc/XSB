@@ -1,5 +1,5 @@
 /* File:      eval.H
-** Author(s): David S. Warren, Kostis F. Sagonas
+** Author(s): Warren, Xu, Sagonas, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -26,10 +26,7 @@
 
 :- export eval/2.
 
-:- import load/1 from loader.
-:- import functor/3, arg/3, abort/1 from standard.
-:- import term_type/2, term_psc/2, psc_type/2, 
-          psc_prop/2, psc_name/2, pow/3
-     from machine.
+:- import throw/1 from standard.
+:- import term_type/2, pow/3 from machine.
 
 
