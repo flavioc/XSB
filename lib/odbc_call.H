@@ -66,3 +66,5 @@
 	from setof.
 
 :- import numbervars/1 from num_vars.
+
+:- import ','/2, (:-)/2, '/'/2 from usermod.

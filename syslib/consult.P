@@ -380,7 +380,7 @@ multifile_apply(ModName) :-
 		functor(TT1, apply, A),
 		TT1 =.. [apply|Args],
 		TT2 =.. [P_Mod|Args],
-		call(multifile([apply/A, TT1, TT2])),
+		multifile([apply/A, TT1, TT2]),
 		multifile_apply(ModName)
 	;	true
         ).
@@ -398,7 +398,7 @@ multifile_query(ModName) :-
 		functor(TT1, P, A),
 		TT1 =.. [P|Args],
 		TT2 =.. [P_Mod|Args],
-		call(multifile([P/A, TT1, TT2])),
+		multifile([P/A, TT1, TT2]),
 		multifile_query(ModName)
 	;	true).
  

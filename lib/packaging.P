@@ -24,7 +24,7 @@
 
 
 :- dynamic package_configuration/2.
-
+:- import library_directory/1 from usermod.
 
 %% This predicate is suppsed to keep track of the packages.
 %% Currently, the only conventions for the first arg are: dir(<packname>),

@@ -71,3 +71,4 @@
 :- import xsb_configuration/2 from xsb_configuration.
 
 :- import banner_control/1 from banner.
+:- import (multifile)/1 from standard.

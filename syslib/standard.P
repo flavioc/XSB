@@ -38,6 +38,7 @@
 #include "psc_defs.h"
 #include "builtin.h"
 
+:- import (:-)/2 from usermod.
 
 			/************************/
 			/*   INPUT and OUTPUT   */

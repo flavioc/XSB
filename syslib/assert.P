@@ -27,8 +27,6 @@
 #include "builtin.h"
 #include "psc_defs.h"
 
-
-
 /*======================================================================*/
 /* Predicates to add dynamic clauses in Prolog's database:		*/
 /*  - assert(+Clause)							*/
@@ -203,7 +201,9 @@ check_assert((Head :- Body), Pred) :-
 	).
 check_assert(Head, Pred) :- 	% asserting a fact
 	( callable(Head) -> 
-	    ( functor(Head, F, A), standard_symbol(F, A, _Prop) ->
+	    ( functor(Head, F, A),
+		standard_symbol(F, A, _Prop),
+		\+ standard_dynamic_symbol(F, A) ->
 		abort(('Not permitted to assert to a built-in predicate: ',F/A))
 	    ;	true
 	    )
@@ -323,7 +323,7 @@ call_retract_hook(Head,Body) :-
 
 do_multifile_retract(Head, Body) :-
 	'_$multifile_retract'(Head, _, New_Head),
-	check_retract(New_Head, retract/1),
+	check_retract(New_Head, multifile_retract/1),
 	conpsc(New_Head, PSC),
 	psc_type(PSC,Type), 
 	(Type =:= T_PRED		/* is compiled */
@@ -344,7 +344,7 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	psc_type(PSC,Type),
 	(Type =:= T_PRED		/* is Compiled */
 	 ->	functor(Head,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A])
+	        abort(['Not permitted to retract from static predicate', F/A, Rule])
 	 ;      Type =:= T_DYNA,
 		psc_ep(PSC, Prref),			/* get Prref */
 	        db_retract(Head, Body, Prref)
@@ -369,7 +369,7 @@ retractall0(Fact) :-
 	psc_type(PSC,Type), 
 	(Type =:= T_PRED		/* is Compiled */
 	 ->	functor(Fact,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A])
+	        abort(['Not permitted to retract from static predicate', F/A, Fact])
 	 ;	(	Type =:= T_DYNA
 			->
 			psc_ep(PSC, Prref),		/* get Prref */
@@ -388,7 +388,7 @@ retract_nr(Rule) :-
 	psc_type(PSC,Type), 
 	(Type =:= T_PRED		/* is Compiled */
 	 ->	functor(Head,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A])
+	        abort(['Not permitted to retract from static predicate', F/A, Rule])
          ;      Type =:= T_DYNA,
 		psc_ep(PSC, Prref),			/* get Prref */
 	        db_retract_nr(Head, Body, Prref)
@@ -400,7 +400,7 @@ reclaim_space(Fact) :-
 	psc_type(PSC,Type), 
 	(Type =:= T_PRED		/* is compiled */
 	 ->	functor(Fact,F,A),
-	        abort(['Not permitted to retract from static predicate', F/A])
+	        abort(['Not permitted to retract from static predicate', F/A, Fact])
 	 ;	(	Type =:= T_DYNA
 			->
 			psc_ep(PSC, Prref),		/* get Prref */
@@ -430,14 +430,15 @@ check_retract(Head, Pred) :-
 	( var(Head) ->
 		abort(('Uninstantiated argument 1 of ', Pred))
 	; callable(Head) -> 
-		( functor(Head, F, A), standard_symbol(F, A, _Prop) ->
-			abort(('Not permitted to retract clauses of built-in predicate ', F/A))
-		; true
+	    (   functor(Head, F, A),
+		standard_symbol(F, A, _Prop),
+		\+ standard_dynamic_symbol(F, A) ->
+		   abort(('Not permitted to retract clauses of built-in predicate ', F/A, ' ', Head, ' in ', Pred))
+		;   true
 		)
 	; abort(('Wrong type in argument 1 of ', Pred,
 			 ' (callable term expected)'))
 	).
-
 
 /*======================================================================*/
 /* abolish(+Pred/+Arity) or abolish(+PredSpec)				*/

@@ -35,6 +35,7 @@
 :- import stat_set_flag/2 from machine.
 :- import assert/1, retractall/1, (dynamic)/1 from assert.
 :- import abolish_all_tables/0 from tables.
+:- import (:-)/2 from usermod.
 
 /* ----------------------- end of file dcg.H -------------------------- */
 

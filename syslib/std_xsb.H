@@ -25,3 +25,4 @@
 
 :- export standard_symbol/3.
 :- export standard_metapredicate/3.
+:- export standard_dynamic_symbol/2.
