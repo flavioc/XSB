@@ -1,0 +1,21 @@
+component_table_ext(oms_cn(_,_,_,_),arg(1,class),[]).
+component_table_ext(oms_obj(_,_,_,_),arg(1,obj),[]).
+component_table_ext(oms_sc(_,_),arg(1,class),[arg(2,class)]).
+component_table_ext(oms_mo(_,_),arg(1,obj),[arg(2,class)]).
+component_table_ext(oms_rln(_,_,_),arg(2,class),[arg(1,class),arg(3,class)]).
+component_table_ext(oms_schrel(_,_,_),arg(2,class),
+					[arg(1,class),arg(3,class)]).
+component_table_ext(oms_strel(_,_,_),arg(2,class),[arg(1,class),arg(3,class)]).
+component_table_ext(oms_at(_,_,_),arg(2,obj),[arg(1,class),arg(3,class)]).
+component_table_ext(oms_ao(_,_,_),arg(2,obj),[arg(1,class),arg(3,obj)]).
+
+component_table_int(oms_cn(_,_,_,_),1,[]).
+component_table_int(oms_obj(_,_,_,_),1,[]).
+component_table_int(oms_sc(_,_),1,[arg(2,warn)]).
+component_table_int(oms_mo(_,_),1,[arg(2,warn)]).
+component_table_int(oms_rln(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(oms_schrel(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(oms_strel(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(oms_at(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(oms_ao(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+

@@ -37,49 +37,136 @@ allow the knowledge to persist in a database of file system, and to
 visualize that knowledge through Interprolog @cite{Cale01} or other
 tools.
 
-@section{A Quick Tour of the OMS}
+@section{A (somewhat) Formal Introduction to CDF}
 
-In this section, we briefly introduce terminology and ideas that will
-be discussed more thoroughly in the succeeding sections.  At a high
-level, the OMS stores @concept{objects}, their @concept{attributes},
-@concept{classes}, their @concept{relations}, and schema information
-about all.  Storage can be in different formats according to the needs
-of an application.  Different formats are explained below; for this
-introduction we present all facts in an @em{external} format
-(discussed more in @ref{OMS: External Format}).  Reasoning about objects
-is supported in part by the @pred{class_ext/3} relation which denote
-sets of objects (or equivalently types or classes of objects).  As an
-example, the fact @begin{verbatim} class_ext('Sutures','A2390',dla)
-@end{verbatim} @noindent indicates that @tt{Sutures} is a class in the
-@tt{dla} ontology and that within this ontology, it has the native id
-@tt{A2390}.  Since native ids may not be unique across organizations
-or ontologies, the external form uses the native id together with the
-source ontology as a keys in its various data facts.
+In this section we motivate design decisions taken by CDF, and
+introduce a semantics of CDF based on a translation of an @em{ CDF
+instance} into a set of first-order logic sentences that constitute an
+@em{Ontology Theory} whose models are the models of a CDF instance.
+For simplicity of presentation our description of CDF instances omits
+features that will be introduced in later sections -- such as
+primitive types, extensional facts vs. intensional rules, internal
+format vs. external format to name a few @footnote{The development of
+this section generally follows @cite{SwiW03}.}.
 
-Classes and sets are interchangible in the OMS, and reasoning about
-classes and their inheritance mechanisms can generally be done using
-intuitions about naive set theory.  Accordingly, the OMS distinguishes
-the subset relation among classes via the @pred{subclass_ext/4}
-predicate.  This relation is similar to that used in many
-object-oriented systems -- the relation can be seen as defining a
-reflexive, transitive and weakly asymetric partial order, with a
-single node, denoted as the @index{OMS Root} that is maximal in the
-partial order.  As an example, the fragment
+From a semantic point of view, a @em{CDF instance} can be thought of
+as a set of ground Prolog facts for the following 9 predicates:
+@em{class/2}, @em{object/2}, @em{subclass/2}, @em{memberof/2},
+@em{irel/3}, @em{schrel/3}, @em{strel/3}, @em{attribute/3}, and
+@em{attribute_object/3}.  In practice, these facts may be defined
+either @em{extensionally}, or @em{intensionally} using XSB rules.
+
+Most of the arguments of facts in a CDF instance are @em{identifiers},
+where a term @em{T} is an identifier iff:
+
+@begin{enumerate}
+
+@item @em{T} has the form @em{id(A1,A2)} where @em{A1} and @em{A2} are
+Prolog atoms (logical constants); or 
+
+@item @em{T} has the form @em{id(T1,A2)} in which @em{T1} has the
+form: @em{f(I1,...,In)} where @em{I1,...,In} are identifiers, and
+@em{A2} is a Prolog atom.  
+@end{enumerate} 
+In the first case, an identifier is called @em{atomic}; in the second
+it is called a @em{ product identifier}.  For either type of
+identifier, the atomic second argument is called the @em{source}.  We
+will see in later sections that identifiers can be in either @em{internal}
+or @em{external} format.
+
+Despite the simple syntax of CDF instances, their semantics differs
+from the usual semantics assigned to facts in Prolog.  While some
+identifiers identify objects of a given structure (as in the semantics
+of Prolog), others identify tuples of objects, sets of objects or of
+tuples of objects, or relationships.  Furthermore, the facts of a CDF
+instance can implicitly denote inheritance of various relationships
+among classes and objects or constraints about what relationships are
+allowed.
+
+The rest of this section has two aims: first it motivates the
+semantics of CDF via various examples -- as it does so, it introduces
+the formal semantics for the various predicates that are introduced as
+well as axioms for CDF as a whole.
+
+@bf{Classes and Objects}
+Naive set theory provides a natural way to classify objects and to
+discuss their relations.  Accordingly, CDF makes a fundamental
+distinction between objects and sets.
+
+@bf{Example 1}  We begin to construct a fragment of a CDF instance for
+representing medical sutures, which will form a running example
+throughout the paper.  In the process of modelling this instance, we
+adapt meta-data from the U.S. Defence Logistics Information Service
+(@tt{http://www.dlis.mil}), from the Universal Standard Products and
+Services Classification @cite{UNSPSC}, as well as from the website of
+various commercial medical supply companies.
 
 @begin{verbatim}
-class_ext('FIIG','FIIG',dla) 
-subclass_ext('A2390',dla,'FIIG',dla)
-@end{verbatim} 
-@noindent indicates that the class @tt{Sutures}, from the @tt{dla}
-ontology, whose native id is @tt{'A2390'} is a subclass of the class
-@tt{FIIG} which is also found in the @tt{dla} ontology.  Another way
-to say this is that the set of parts 
-that are sutures is a subset of the set of parts classified in all
-FIIGs.  Note that while it may be meaningful to distinguish native ids
-from names, as with @tt{Sutures}, this is not necessary.  The
-@pred{class_ext/4} predicate for @tt{FIIG} defines the native id to be
-the same as the name, and then uses this native id in the
-@pred{subclass_ext/4} predicate.
+  class(medicalEquipment,id(42,unspsc))
+         class(woundCareProducts,id(4231,unspsc)) 
+  class(suturesAndRelatedProducts,id(423117,unspsc))
+         class(sutures,id(42311701,unspsc)) 
+  class(nonAbsorbableSutures,id(12953,dla))
+         class(absorbableSutures,id(12952,dla)) \\
+  class(sutureNeedles,id(07251,dla))
+@end{verbatim}
+
+In CDF, sets are termed @em{classes} to stress the informality of its
+sets from the perspective of set theory.  The first argument in the
+@tt{class/2} tuples is the name of the class, and the second is an
+identifier.  Each identifier is taken to uniquely identify an ontology
+element which may be a class, an object, or a relation.  For instance
+the identifier for the class @tt{ medicalEquipment},
+@em{id('42',unspsc)} is unique, and from a practical perspective means
+that @tt{medicalEquipment}, has the identifier @tt{42} within the
+UNSPSC system, although @tt{42} may have a very different meaning
+within the DLA system.  Along with classes, the fragment contains the
+following objects, whose names and identifiers are formed from their
+various part numbers.  
+ @begin{verbatim}
+  object(suture547466,id('000547466',dla))
+  object(sutureU245H,id('U245H',sru))
+@end{verbatim}
+
+The component @tt{sru} is used to denote a commercial source of
+sutures~@footnote{All examples used in this paper arise from actual
+data used by XSB, Inc., although company names and part numbers have
+been changed to protect proprietary information.}.  Note that the
+decision of whether to denote an entity as an object or as a class
+depends on the use of a given CDF instance.  Here, a given part number
+can specify a number of physical parts, but the physical parts are
+taken to be identical for the purposes of this instance.  However, if
+we were constructing a CDF instance for warehouse management, the
+above objects might be better represented as classes, and the physical
+objects represented as CDF objects.
+
+While each identifier uniquely determines an ontology element, the
+identifiers described above can be somewhat hard to read so for the
+purposes of presentation, in this section we substitute the names of
+the various elements for the first arguments of their identifiers.
+
+In the instance of Example 1, there is no explicit
+indication that the objects are members of the class @tt{
+id(sutures,dla)}, nor is there explicit indication that the class of
+@tt{id(absorbableSutures,dla)} is a subclass of @tt{
+id(sutures,dla)}.  This information can be added via the predicate:
+
+@begin{itemize}
+@item	@em{memberof(Object_id,Class_id)}
+@end{itemize}
+
+indicating that a given object is a member of a given class; and via
+the predicate: 
+@begin{itemize}
+@item	@em{subclass(Class1_id,Class2_id)}
+@end{itemize}
+
+indicating that @em{Class1_id} is a subclass of @em{Classs2_id}.
+
+
+
+
+
 
 Given classes and their subclass relations, denoted via the predicate
 @pred{subclass_ext/4}, simple but useful @concept{taxonomies} can be

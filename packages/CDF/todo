@@ -1,3 +1,19 @@
+I tried that yesterday and was getting duplicate facts in the OMS.  If 
+I fast_loadmerge-d the same component twice I would get duplicates of
+all the immediate_subclass facts, for instance.  So I think we
+probably should check for duplicate oms_sc facts (and all the others)
+before we assert them.  The other alternative is to refuse to load the 
+same component twice, assuming that component-versions can't be
+modified, but only a new version written....
+
+warnings for loading oms component.
+
+Updating intensional rules.
+
+Doc: oms => CDF.
+
+Index External View Documentation.
+
 If a version conflict is detected between a component to be loaded and
 one already in the OMS state or about to be loaded,
 @tt{loadmerge_component/2} aborts without changing the OMS state.
@@ -10,11 +26,7 @@ strelschrels.  Constraints on strels?
 
 Does update_components create internal component info?
 
-Warnings in arg 3.
-
 Log in doc. etc.
-
-Second and third argument inheritance for strels.
 
 Ontology vs. OMS instance vs. OMS state.
 
@@ -27,19 +39,23 @@ get rid of []?
 Intentional rules -- product classes get only direct dependencies.
 
 -----------------------------
+
+in fast_merge, decode whether we need to do an OMS_update or just an
+assert.
+
 Components: 
 
 -- Probably need a component dirty for dump component or dump new version.
 
 -- Renaming.  
 
--- Finish Extint.  Update.
-
 -- Merge Components.
 
 -- Configurable components.
 
 -- Keeping track of files.
+
+-- Second and third argument inheritance for strels.
 
 update_components/2, fail if subdependencies are not
 themselves components.

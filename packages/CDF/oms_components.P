@@ -20,6 +20,7 @@
 
 :- ensure_loaded(oms_io).
 :- ensure_loaded(oms_queries).
+:- ensure_loaded(oms_config).
 
 :- comment(module,"Typically, an OMS instance can be partitioned into
 several separate cells, representing information that arises from
@@ -189,109 +190,143 @@ OMS instance to partition it into components and for each component
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 analyze_components(Name,List):- 
-	abolish_table_pred(analyze_component_relation_1/2),
-	analyze_component_relation(Name1,List),
+	abolish_table_pred(analyze_component_table/2),
+	analyze_component_1(Name1,List),
 	get_version_info(Name1,Name).
 
-%-----------
-analyze_component_relation(Name,List):-
-	setof(Dep,analyze_component_relation_w_version(Name,Dep),List).
+analyze_component_1(Name,List):-
+	setof(Dep,analyze_component_w_version(Name,Dep),List).
 
-analyze_component_relation_w_version(Name,Dep):-
-	analyze_component_relation_1(Name,Dep1),
+analyze_component_w_version(Name,Dep):-
+	analyze_component_table(Name,Dep1),
         (get_version_info(Dep1,Dep)
 	   ; 
 	 get_version_info('OMS',Dep) ).
-
-:- table analyze_component_relation_1/2.
-analyze_component_relation_1(Name,Name):- 
-	analyze_class(Name,Name).
-analyze_component_relation_1(Name,Name):- 
-	analyze_object(Name,Name).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_subclass(Name,Dep).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_memberof(Name,Dep).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_irel_r(Name,Dep).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_strel_r(Name,Dep).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_schrel_r(Name,Dep).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_attribute_r(Name,Dep).
-analyze_component_relation_1(Name,Dep):- 
-	analyze_attribute_object_r(Name,Dep).
 
 get_version_info(Name,CV):- 
    (q_strel(id(Name,Name),id(has_version,Name),id(integer(Version),'OMS')) -> 
 	    CV = compVers(Name,Name,integer(Version),'OMS')
 	  ; CV = compVers(Name,Name,integer(0),'OMS')).
-	
-analyze_irel_r(Name,Dep):-  
-	oms_rln(Id1,Id2,Id3),
-	source_from_cid(Id2,Name),
-	(source_from_cid(Id1,Dep) ; dep_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_irel_r(Name,Dep):-  
-	Term =  immediate_relationship_int(_A,Sa,_B,Sb,_C,Sc),
+
+:- table analyze_component_table/2.
+analyze_component_table(Name,Dep):- 
+	analyze_extensional(Name,Dep).
+analyze_component_table(Name,Dep):- 
+	analyze_intensional(Name,Dep).
+
+analyze_extensional(Name,Dep):- 
+	oms_cn(I0,I1,I2,I3),
+	get_component_extensional(oms_cn(I0,I1,I2,I3),Name),
+	get_dependency_extensional(oms_cn(I0,I1,I2,I3),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_obj(I0,I1,I2,I3),
+	get_component_extensional(oms_obj(I0,I1,I2,I3),Name),
+	get_dependency_extensional(oms_obj(I0,I1,I2,I3),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_sc(I0,I1),
+	get_component_extensional(oms_sc(I0,I1),Name),
+	get_dependency_extensional(oms_sc(I0,I1),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_mo(I0,I1),
+	get_component_extensional(oms_mo(I0,I1),Name),
+	get_dependency_extensional(oms_mo(I0,I1),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_rln(I0,I1,I2),
+	get_component_extensional(oms_rln(I0,I1,I2),Name),
+	get_dependency_extensional(oms_rln(I0,I1,I2),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_schrel(I0,I1,I2),
+	get_component_extensional(oms_schrel(I0,I1,I2),Name),
+	get_dependency_extensional(oms_schrel(I0,I1,I2),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_strel(I0,I1,I2),
+	get_component_extensional(oms_strel(I0,I1,I2),Name),
+	get_dependency_extensional(oms_strel(I0,I1,I2),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_at(I0,I1,I2),
+	get_component_extensional(oms_at(I0,I1,I2),Name),
+	get_dependency_extensional(oms_at(I0,I1,I2),Dep).
+analyze_extensional(Name,Dep):- 
+	oms_ao(I0,I1,I2),
+	get_component_extensional(oms_ao(I0,I1,I2),Name),
+	get_dependency_extensional(oms_ao(I0,I1,I2),Dep).
+
+analyze_intensional(Name,Dep):- 
+	Term =  class_int(_,_,_),
 	get_intensional_rule(Term,Body),
-	check_component(Sb,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sa,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_strel_r(Name,Dep):-  
-	oms_strel(Id1,Id2,Id3),
-	source_from_cid(Id2,Name),
-	(source_from_cid(Id1,Dep) ; dep_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_strel_r(Name,Dep):-  
-	Term =  strel_int(_A,Sa,_B,Sb,_C,Sc),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  object_int(_,_,_),
 	get_intensional_rule(Term,Body),
-	check_component(Sb,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sa,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_schrel_r(Name,Dep):-  
-	oms_schrel(Id1,Id2,Id3),
-	source_from_cid(Id2,Name),
-	(source_from_cid(Id1,Dep) ; dep_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_schrel_r(Name,Dep):-  
-	Term =  immediate_schrel_int(_A,Sa,_B,Sb,_C,Sc),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_subclass_int(_,_,_,_),
 	get_intensional_rule(Term,Body),
-	check_component(Sb,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sa,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_attribute_r(Name,Dep):-  
-	oms_at(Id1,Id2,Id3),
-	source_from_cid(Id2,Name),
-	(source_from_oid(Id1,Dep) ; dep_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_attribute_r(Name,Dep):-  
-	Term =  immediate_attribute_int(_A,Sa,_B,Sb,_C,Sc),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_memberof_int(_,_,_,_),
 	get_intensional_rule(Term,Body),
-	check_component(Sb,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sa,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_attribute_object_r(Name,Dep):-  
-	oms_at(Id1,Id2,Id3),
-	source_from_cid(Id2,Name),
-	(source_from_oid(Id1,Dep) ; dep_from_cid(Id2,Dep) 
-                                                ; source_from_oid(Id3,Dep)).
-analyze_irel_r(Name,Dep):-  
-	Term =  attribute_object_int(_A,Sa,_B,Sb,_C,Sc),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_memberof_int(_,_,_,_),
 	get_intensional_rule(Term,Body),
-	check_component(Sb,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sa,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_relationship_int(_,_,_,_,_,_),
+	get_intensional_rule(Term,Body),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_schrel_int(_,_,_,_,_,_),
+	get_intensional_rule(Term,Body),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_schrel_int(_,_,_,_,_,_),
+	get_intensional_rule(Term,Body),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  immediate_attribute_int(_,_,_,_,_,_),
+	get_intensional_rule(Term,Body),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
+analyze_intensional(Name,Dep):- 
+	Term =  attribute_object_int(_,_,_,_,_,_),
+	get_intensional_rule(Term,Body),
+	get_component_intensional(Term,Body,Name),
+	get_dependency_intensional(Term,Body,Dep).
 
 %----------------
 
-source_from_cid(Id,Source):-  oms_cn(Id,_,_,Source).
+get_component_extensional(Term,Component):- 
+	component_table_ext(Term,arg(Arg,Type),_),
+	arg(Arg,Term,CompId),
+	source_from_id(Type,CompId,Component).
+
+source_from_id(class,CompId,Component):- 
+	oms_cn(CompId,_,_,Component).
+source_from_id(obj,CompId,Component):- 
+	oms_obj(CompId,_,_,Component).
+
+get_dependency_extensional(Term,Dep):- 
+	component_table_ext(Term,arg(Comp,Type),Deps),
+	(    arg(Comp,Term,CompId),
+	     dep_from_id(Type,CompId,Dep) 
+	  ; 
+	     member(arg(DepArg,DType),Deps),
+	     arg(DepArg,Term,DepId),
+	     source_from_id(DType,DepId,Dep) ).
+
+dep_from_id(class,CompId,Component):- 
+	dep_from_cid(CompId,Component).
+dep_from_id(obj,CompId,Component):- 
+	dep_from_oid(CompId,Component).
 
 dep_from_cid(Id,Source):-  oms_cn(Id,_,_,Source).
 dep_from_cid(Id,Source):-  
@@ -303,9 +338,6 @@ dep_from_cid(Id,Source):-
 dep_from_cid_list(Arglist,Source):- 
 	member(Id,Arglist),
 	dep_from_cid(Id,Source).
-dep_from_cid(Id,Source):-  oms_cn(Id,_,_,Source).
-
-source_from_oid(Id,Source):-  oms_obj(Id,_,_,Source).
 
 dep_from_oid(Id,Source):-  oms_obj(Id,_,_,Source).
 dep_from_oid(Id,Source):-  
@@ -318,67 +350,47 @@ dep_from_oid_list(Arglist,Source):-
 	member(Id,Arglist),
 	dep_from_cid(Id,Source).
 
-check_component(Source,Component,Rule):- 
+%------------------
+ 
+get_component_intensional(Term,Body,Component):- 
+	component_table_int(Term,Arg,_Deps),
+	arg(Arg,Term,Source),
 	(atom(Source) -> 
 	    Source = Component
 	 ;  oms_warning(component,
 	                ['Cannot find component for intensional rule: ',
-			  Rule])).
+			  (:-(Term,Body))]),
+	    fail).
 
-check_dependency(Source,Component,Arg,Rule):- 
+get_dependency_intensional(Term,Body,Component):- 
+	component_table_int(Term,Arg,_Deps),
+	arg(Arg,Term,Source),
 	(atom(Source) -> 
 	    Source = Component
 	 ;  oms_warning(component,
 	                  ['Cannot find dependencies in arg: ',Arg,
-			   ' of intensional rule: ',Rule]),
+			   ' of intensional rule: ', (:-(Term,Body))]),
+	    fail).
+get_dependency_intensional(Term,Body,Component):- 
+	component_table_int(Term,_A,Deps),
+	member(arg(Arg,Warn),Deps),
+	arg(Arg,Term,Source),
+	(atom(Source) -> 
+	    Source = Component
+	 ;  (Warn == warn -> 
+	        oms_warning(component,
+	                  ['Cannot find dependencies in arg: ',Arg,
+			   ' of intensional rule: ', (:-(Term,Body))])
+	        ; true),
 	    fail).
 
-/* Deep assumptions on XSB's multifile system */
+/* Assumes that intensional rules have been read in via
+   load_intensional_rules/2 */
 get_intensional_rule(Head,Body1):- 
 	clause(Head,Body),
 	Head =.. [_|Alist],
 	clause(Body,Body1),
 	Body =.. [_|Alist].
-
-analyze_class(Name,Dep):-  
-	oms_cn(Id,_,_,_),
-	source_from_cid(Id,Name),
-	dep_from_cid(Id,Dep).
-analyze_class(Name,Name):-  
-	Term = class_int(_A,_B,Source),
-	get_intensional_rule(Term,Body),
-	check_component(Source,Name,(':-'(Term),Body)).
-
-analyze_object(Name,Dep):-  
-	oms_obj(Id,_,_,_),
-	source_from_oid(Id,Name),
-	dep_from_oid(Id,Dep).
-analyze_object(Name,Name):-  
-	Term = object_int(_A,_B,Source),
-	get_intensional_rule(Term,Body),
-	check_component(Source,Name,(':-'(Term),Body)).
-
-analyze_subclass(Name,Dep):-  
-	oms_sc(Id1,Id2),
-	source_from_cid(Id1,Name),
-	(dep_from_cid(Id1,Dep) ; source_from_cid(Id2,Dep)).
-analyze_subclass(Name,Dep):-  
-	Term = immediate_subclass_int(_A,Sa,_B,Sb),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term),Body)),
-	(Dep = Name
-  	    ;  check_dependency(Sb,Dep,2,(':-'(Term),Body)) ).
-
-analyze_memberof(Name,Dep):-  
-	oms_mo(Id1,Id2),
-	source_from_oid(Id1,Name),
-	(dep_from_oid(Id1,Dep) ; source_from_cid(Id2,Dep)).
-analyze_memberof(Name,Dep):-  
-	Term = immediate_membeof_int(_A,Sa,_B,Sb),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term),Body)),
-	(Dep = Name
-  	    ;  check_dependency(Sb,Dep,2,(':-'(Term),Body))  ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(loadmerge_component/2,
@@ -451,6 +463,7 @@ update_all_components(Dir):-
 	Comp = compVers(Name,Name,integer(V),_),
 	newComponent(Name,NameId,RelId),
 	create_dependencies_int_1(Dep,Name,NameId,RelId),
+	writeln(dumping(Name)),
 	dump_component_1(Dir,Name,V),
 	fail.
 update_all_components(_Dir).
@@ -481,11 +494,6 @@ create_dependencies_int_1([_|T],Name,Compid,Relid):-
 	create_dependencies_int_1(T,Name,Compid,Relid).
 
 dump_component_1(Dir,Name,Version):- 
-	    dump_component_1_relation(Dir,Name,Version).
-
-%----------
-
-dump_component_1_relation(Dir,Name,Version):- 
 	Name \== 'OMS',
 	slash(Slash),
   	concat_atom([Dir,Slash,Name,'_',Version],NewDir),
@@ -494,108 +502,117 @@ dump_component_1_relation(Dir,Name,Version):-
 	init_ext_schema_index,
 	tell(SchFile),
 	compwrite_class(Name),compwrite_subclass(Name),
-	compwrite_irel_r(Name),compwrite_schrel_r(Name),
-	compwrite_strel_r(Name),
+	compwrite_irel(Name),compwrite_schrel(Name),
+	compwrite_strel(Name),
 	told,
 	concat_atom([NewDir,Slash,'data_omsext.P'],DataFile),
 	init_ext_data_index,
 	tell(DataFile),
 	compwrite_object(Name),compwrite_memberof(Name),
-	compwrite_attribute_r(Name),compwrite_attribute_object_r(Name),
+	compwrite_attribute(Name),compwrite_attribute_object(Name),
 	told,
 	concat_atom([NewDir,Slash,'oms_intensional.P'],IntFile),
 	tell(IntFile),
 	write_component_intensional(Name),
 	told.
 
-
-compwrite_irel_r(Source):- 
-%	write_hdr(relationship_ext(_,_,_,_,_,_)),
-	oms_rln(Sub,Mid,Targ),
-%	writeln(oms_rln(Sub,Mid,Targ)),
-	class_cidbound(Mid,_,Nid1,Source),
-	class_cidbound(Sub,_,Nid,Source1),
-	class_cidbound(Targ,_,Nid2,Source2),
-	write_ext_term(
-                 relationship_ext(Nid,Source1,Nid1,Source,Nid2,Source2)),
-	fail.
-compwrite_irel_r(_).
-
-compwrite_schrel_r(Source):- 
-	write_hdr(schrel_ext(_,_,_,_,_,_)),
-	oms_schrel(Sub,Mid,Targ),
-	class_cidbound(Sub,_,Nid,Source1),
-	class_cidbound(Mid,_,Nid1,Source),
-	class_cidbound(Targ,_,Nid2,Source2),
-	write_ext_term(schrel_ext(Nid,Source1,Nid1,Source,Nid2,Source2)),
-	fail.
-compwrite_schrel_r(_).
-
-compwrite_strel_r(Source):- 
-	write_hdr(strel_ext(_,_,_,_,_,_)),
-	oms_strel(Sub,Mid,Targ),
-	class_cidbound(Sub,_,Nid,Source1),
-	class_cidbound(Mid,_,Nid1,Source),
-	class_cidbound(Targ,_,Nid2,Source2),
-	write_ext_term(strel_ext(Nid,Source1,Nid1,Source,Nid2,Source2)),
-	fail.
-compwrite_strel_r(_).
-
-compwrite_attribute_r(Source):- 
-	write_hdr(attribute_ext(_,_,_,_,_,_)),
-	oms_at(Sub,Mid,Targ),
-	oms_obj(Sub,_,Nid,Source1),
-	class_cidbound(Mid,_,Nid1,Source),
-	class_cidbound(Targ,_,Nid2,Source2),
-	write_ext_term(
-	           attribute_ext(Nid,Source1,Nid1,Source,Nid2,Source2)),
-	fail.
-compwrite_attribute_r(_).
-
-compwrite_attribute_object_r(Source):- 
-	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
-	oms_ao(Sub,Mid,Targ),
-	oms_obj(Sub,_,Nid,Source1),
-	class_cidbound(Mid,_,Nid1,Source),
-	oms_obj(Targ,_,Nid2,Source2),
-	write_ext_term(
-	       attribute_object_ext(Nid,Source1,Nid1,Source,Nid2,Source2)),
-	fail.
-compwrite_attribute_object_r(_).
-
-%---------
-
 compwrite_class(Source):- 
 	write_hdr(class_ext(_,_,_)),
-	oms_cn(_,Name,Nid,Source),
+	oms_cn(Id,Name,Nid,Src),
+	get_component_extensional(oms_cn(Id,Name,Nid,Src),Source),
 	write_ext_term(class_ext(Name,Nid,Source)),
 	fail.
 compwrite_class(_).
 
-compwrite_subclass(Source):- 
-	write_hdr(subclass_ext(_,_,_,_)),
-	oms_sc(Sub,Sup),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Sup,_,Nid1,Source1),
-	write_ext_term(subclass_ext(Nid,Source,Nid1,Source1)),
-	fail.
-compwrite_subclass(_).
-	
 compwrite_object(Source):- 
 	write_hdr(object_ext(_,_,_)),
-	oms_obj(_,Name,Nid,Source),
+	oms_obj(Id,Name,Nid,Src),
+	get_component_extensional(oms_obj(Id,Name,Nid,Src),Source),
 	write_ext_term(object_ext(Name,Nid,Source)),
 	fail.
 compwrite_object(_).
 
+compwrite_subclass(Source):- 
+	write_hdr(subclass_ext(_,_,_,_)),
+	oms_sc(Sub,Sup),
+	get_component_extensional(oms_sc(Sub,Sup),Source),
+	class_cidbound(Sub,_,Nid1,Source1),
+	class_cidbound(Sup,_,Nid2,Source2),
+	write_ext_term(
+                 subclass_ext(Nid1,Source1,Nid2,Source2)),
+	fail.
+compwrite_subclass(_).
+
 compwrite_memberof(Source):- 
 	write_hdr(memberof_ext(_,_,_,_)),
 	oms_mo(Sub,Sup),
-	oms_obj(Sub,_,Nid,Source),
-	oms_cn(Sup,_,Nid1,Source1),
-	write_ext_term(memberof_ext(Nid,Source,Nid1,Source1)),
+	get_component_extensional(oms_mo(Sub,Sup),Source),
+	class_cidbound(Sub,_,Nid1,Source1),
+	class_cidbound(Sup,_,Nid2,Source2),
+	write_ext_term(
+                 memberof_ext(Nid1,Source1,Nid2,Source2)),
 	fail.
 compwrite_memberof(_).
+
+compwrite_irel(Source):- 
+	write_hdr(relationship_ext(_,_,_,_,_,_)),
+	oms_rln(Src,Rel,Targ),
+	get_component_extensional(oms_rln(Src,Rel,Targ),Source),
+	class_cidbound(Src,_,Nid1,Source1),
+	class_cidbound(Rel,_,Nid2,Source2),
+	class_cidbound(Targ,_,Nid3,Source3),
+	write_ext_term(
+                 relationship_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
+	fail.
+compwrite_irel(_).
+
+compwrite_schrel(Source):- 
+	write_hdr(schrel_ext(_,_,_,_,_,_)),
+	oms_schrel(Src,Rel,Targ),
+	get_component_extensional(oms_schrel(Src,Rel,Targ),Source),
+	class_cidbound(Src,_,Nid1,Source1),
+	class_cidbound(Rel,_,Nid2,Source2),
+	class_cidbound(Targ,_,Nid3,Source3),
+	write_ext_term(
+                 schrel_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
+	fail.
+compwrite_schrel(_).
+
+compwrite_strel(Source):- 
+	write_hdr(strel_ext(_,_,_,_,_,_)),
+	oms_strel(Src,Rel,Targ),
+	get_component_extensional(oms_strel(Src,Rel,Targ),Source),
+	class_cidbound(Src,_,Nid1,Source1),
+	class_cidbound(Rel,_,Nid2,Source2),
+	class_cidbound(Targ,_,Nid3,Source3),
+	write_ext_term(
+                 strel_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
+	fail.
+compwrite_strel(_).
+
+compwrite_attribute(Source):- 
+	write_hdr(attribute_ext(_,_,_,_,_,_)),
+	oms_at(Src,Rel,Targ),
+	get_component_extensional(oms_at(Src,Rel,Targ),Source),
+	class_cidbound(Src,_,Nid1,Source1),
+	class_cidbound(Rel,_,Nid2,Source2),
+	class_cidbound(Targ,_,Nid3,Source3),
+	write_ext_term(
+                 attribute_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
+	fail.
+compwrite_attribute(_).
+
+compwrite_attribute_object(Source):- 
+	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
+	oms_ao(Src,Rel,Targ),
+	get_component_extensional(oms_ao(Src,Rel,Targ),Source),
+	class_cidbound(Src,_,Nid1,Source1),
+	class_cidbound(Rel,_,Nid2,Source2),
+	class_cidbound(Targ,_,Nid3,Source3),
+	write_ext_term(
+                 attribute_object_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
+	fail.
+compwrite_attribute_object(_).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utilities
@@ -894,196 +911,4 @@ write_call(_Call):-
 
 :- table table_call/1.
 table_call(Call):- call(Call).
-
-:- comment(dump_component/1,"@tt{dump_component(Name)} dumps the
-component @tt{Name}.  It does not dump other components upon which
-@tt{Name} depends.").
-
-dump_component(Name):- 
-	find_component_dir(Name,Dir),
-	throw_oms_writable(Dir),
-	dump_component_1(Dir,Name).
-
-%-----------
-analyze_component_class(Name,List):-
-         setof(Dep,analyze_component_class_w_version(Name,Dep),List).
-
-analyze_component_class_w_version(Name,Dep):-
-	analyze_component_class_1(Name,Dep1),
-             get_version_info(Dep1,Dep)
-	   ; 
-	 get_version_info('OMS',Dep).
-
-:- table analyze_component_class_1/2.
-analyze_component_class_1(Name,Name):- 
-	analyze_class(Name,Name).
-analyze_component_class_1(Name,Name):- 
-	analyze_object(Name,Name).
-analyze_component_class_1(Name,Dep):- 
-	analyze_subclass(Name,Dep).
-analyze_component_class_1(Name,Dep):- 
-	analyze_memberof(Name,Dep).
-analyze_component_class_1(Name,Dep):- 
-	analyze_irel_c(Name,Dep).
-analyze_component_class_1(Name,Dep):- 
-	analyze_strel_c(Name,Dep).
-analyze_component_class_1(Name,Dep):- 
-	analyze_schrel_c(Name,Dep).
-analyze_component_class_1(Name,Dep):- 
-	analyze_attribute_c(Name,Dep).
-analyze_component_class_1(Name,Dep):- 
-	analyze_attribute_object_c(Name,Dep).
-
-analyze_irel_c(Name,Dep):-  
-	oms_rln(Id1,Id2,Id3),
-	source_from_cid(Id1,Name),
-	(dep_from_cid(Id1,Dep) ; source_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_irel_c(Name,Dep):-  
-	Term =  immediate_relationship_int(_A,Sa,_B,Sb,_C,Sc),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sb,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_strel_c(Name,Dep):-  
-	oms_strel(Id1,Id2,Id3),
-	source_from_cid(Id1,Name),
-	(dep_from_cid(Id1,Dep) ; source_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_strel_c(Name,Dep):-  
-	Term =  strel_int(_A,Sa,_B,Sb,_C,Sc),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sb,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_schrel_c(Name,Dep):-  
-	oms_schrel(Id1,Id2,Id3),
-	source_from_cid(Id1,Name),
-	(dep_from_cid(Id1,Dep) ; source_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_schrel_c(Name,Dep):-  
-	Term =  schrel_int(_A,Sa,_B,Sb,_C,Sc),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sb,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_attribute_c(Name,Dep):-  
-	oms_at(Id1,Id2,Id3),
-	source_from_cid(Id1,Name),
-	(dep_from_oid(Id1,Dep) ; source_from_cid(Id2,Dep) 
-                                                ; source_from_cid(Id3,Dep)).
-analyze_attribute_c(Name,Dep):-  
-	Term =  immediate_attribute_int(_A,Sa,_B,Sb,_C,Sc),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sb,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-analyze_attribute_object_c(Name,Dep):-  
-	oms_at(Id1,Id2,Id3),
-	source_from_cid(Id1,Name),
-	(dep_from_oid(Id1,Dep) ; source_from_cid(Id2,Dep) 
-                                                ; source_from_oid(Id3,Dep)).
-analyze_attribute_object_c(Name,Dep):-  
-	Term =  attribute_object_int(_A,Sa,_B,Sb,_C,Sc),
-	get_intensional_rule(Term,Body),
-	check_component(Sa,Name,(':-'(Term,Body))),
-	(Dep = Name 
-  	    ;  check_dependency(Sb,Dep,1,(':-'(Term,Body)))
-  	    ;  check_dependency(Sc,Dep,3,(':-'(Term,Body))) ).
-
-analyze_components(Name,List):- 
-	abolish_table_pred(analyze_component_relation_1/2),
-	(oms_component_type(class_based) -> 
- 	    analyze_component_class(Name1,List),
-	    get_version_info(Name1,Name)
-	  ; 
- 	    analyze_component_relation(Name1,List),
-	    get_version_info(Name1,Name)).
-
-:- dynamic oms_component_type/1.
-%oms_component_type(class_based).
-
-dump_component_1_class(Dir,Name,Version):- 
-	slash(Slash),
-  	concat_atom([Dir,Slash,Name,'_',Version],NewDir),
-	xsb_makedir(NewDir),
-	concat_atom([NewDir,Slash,'schema_omsext.P'],SchFile),
-	init_ext_schema_index,
-	tell(SchFile),
-	compwrite_class(Name),compwrite_subclass(Name),
-	compwrite_irel_c(Name),compwrite_schrel_c(Name),
-	compwrite_strel_c(Name),
-	told,
-  	concat_atom([NewDir,Slash,'data_omsext.P'],DataFile),
-	init_ext_data_index,
-	tell(DataFile),
-	compwrite_object(Name),compwrite_memberof(Name),
-	compwrite_attribute_c(Name),compwrite_attribute_object_c(Name),
-	told.
-
-compwrite_irel_c(Source):- 
-	write_hdr(relationship_ext(_,_,_,_,_,_)),
-	oms_rln(Sub,Mid,Targ),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(
-                 relationship_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_irel_c(_).
-
-compwrite_schrel_c(Source):- 
-	write_hdr(schrel_ext(_,_,_,_,_,_)),
-	oms_schrel(Sub,Mid,Targ),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(schrel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_schrel_c(_).
-
-compwrite_strel_c(Source):- 
-	write_hdr(strel_ext(_,_,_,_,_,_)),
-	oms_strel(Sub,Mid,Targ),
-	oms_cn(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(strel_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_strel_c(_).
-
-compwrite_attribute_c(Source):- 
-	write_hdr(attribute_ext(_,_,_,_,_,_)),
-	oms_at(Sub,Mid,Targ),
-	oms_obj(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_cn(Targ,_,Nid2,Source2),
-	write_ext_term(
-	           attribute_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_attribute_c(_).
-
-compwrite_attribute_object_c(Source):- 
-	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
-	oms_ao(Sub,Mid,Targ),
-	oms_obj(Sub,_,Nid,Source),
-	oms_cn(Mid,_,Nid1,Source1),
-	oms_obj(Targ,_,Nid2,Source2),
-	write_ext_term(
-	       attribute_object_ext(Nid,Source,Nid1,Source1,Nid2,Source2)),
-	fail.
-compwrite_attribute_object_c(_).
-
-analyze_components(Name,List):- 
-	abolish_table_pred(analyze_component_relation_1/2),
-	(oms_component_type(class_based) -> 
- 	    analyze_component_class(Name1,List),
-	    get_version_info(Name1,Name)
-	  ; 
- 	    analyze_component_relation(Name1,List),
-	    get_version_info(Name1,Name)).
 

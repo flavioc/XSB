@@ -630,7 +630,10 @@ fast_subclass_extoms :-
 %	writeln(subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource)),
 	get_cid_from_nid_src(SubNatCid,SubSource,Term,SubCid),
 	get_atomic_class(SupNatCid,SupSource,SupCid,Term),
-	oms_update_list([asserta(oms_sc(SubCid,SupCid))]),
+	(oms_sc(SubCid,SupCid) -> 
+	    true
+	  ; 
+	    oms_update_list([asserta(oms_sc(SubCid,SupCid))])),
 	fail.
 fast_subclass_extoms.
 
@@ -641,11 +644,14 @@ fast_relationship_extoms :-
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
-        (is_an_inheritable_relationship(RCid) -> 
+	(oms_rln(SCid,RCid,TCid) -> 
+	    true
+	  ; 
+            (is_an_inheritable_relationship(RCid) -> 
    	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
 	        ;  oms_warning(update,('attempt to add an inheritable ',
 		    ' relationship for class that is not a ',
-		    ' relationship: ',RCid))),
+		    ' relationship: ',RCid)))),
 	fail.
 fast_relationship_extoms.
 
@@ -656,7 +662,13 @@ fast_strel_extoms :-
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
-	asserta(oms_strel(SCid,RCid,TCid)),
+	(oms_strel(SCid,RCid,TCid) -> 
+	    true
+	  ; 
+            (is_a_strel(RCid) -> 
+   	           oms_update_list([asserta(oms_strel(SCid,RCid,TCid))])
+	        ;  oms_warning(update,('attempt to add a',
+		    ' schrel for class that is not a strel: ',RCid)))),
 	fail.
 fast_strel_extoms.
 
@@ -667,7 +679,14 @@ fast_schrel_extoms :-
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
-	asserta(oms_schrel(SCid,RCid,TCid)),
+	(oms_schrel(SCid,RCid,TCid) -> 
+	    true
+	  ; 
+            (is_an_inheritable_relationship(RCid) -> 
+   	           oms_update_list([asserta(oms_schrel(SCid,RCid,TCid))])
+	        ;  oms_warning(update,('attempt to add an inheritable ',
+		    ' schrel for class that is not a ',
+		    ' relationship: ',RCid)))),
 	fail.
 fast_schrel_extoms.
 
@@ -678,7 +697,10 @@ fast_memberof_extoms :-
 	get_oid_from_nid_src(NOid,OSrc,Term,Oid),
 	get_cid_from_nid_src(NCid,Src,Term,Cid),
 %	get_atomic_class(NCid,Src,Cid,Term),
-	asserta(oms_mo(Oid,Cid)),
+	(oms_mo(Oid,Cid) -> 
+	    true
+	  ; 
+	    oms_update_list([asserta(oms_mo(Oid,Cid))])),
 	fail.
 fast_memberof_extoms.
 
@@ -689,7 +711,10 @@ fast_attribute_extoms :-
 	get_oid_from_nid_src(NOid,Osrc,Term,Oid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
-	asserta(oms_at(Oid,RCid,TCid)),
+	(oms_at(Oid,RCid,TCid) -> 
+	    true
+	  ; 
+	    oms_update_list([asserta(oms_at(Oid,RCid,TCid))])),
 	fail.
 fast_attribute_extoms.
 
@@ -699,7 +724,10 @@ fast_attribute_object_extoms :-
 	get_oid_from_nid_src(SNOid,Osrc1,Term,SOid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_oid_from_nid_src(TNOid,Osrc2,Term,TOid),
-	asserta(oms_ao(SOid,RCid,TOid)),
+	(oms_ao(SOid,RCid,TOid) -> 
+	    true
+	  ; 
+	    oms_update_list([asserta(oms_ao(SOid,RCid,TOid))])),
 	fail.
 fast_attribute_object_extoms.
 

@@ -3,22 +3,13 @@
 /* spec turned off to avoid double tabling message */
 
 :- document_export 
+	
+	q_class/2, q_object/2.
+
 %    attr/3,isa/2,immediate_attr/3,
 %    key_label/2,
 %    at_least/3, at_most/3,
 %    gt/2,gte/2,lt/2,lte/2,
-
-    q_subclass/2,q_subclass_nr/2,q_immediate_subclass/2,
-    q_memberof/2, q_immediate_memberof/2,
-    q_irel/3,q_immediate_irel/3,
-    q_schrel/3,q_immediate_schrel/3,
-    q_strel/3, 
-    q_attribute/3,q_immediate_attribute/3,
-    q_attribute_object/3,
-
-    q_newSubclass/2, q_newMemberof/2, 
-    q_newIrel/3, q_newSchrel/3, q_newStrel/3, 
-    q_newAttribute/3, q_newAttribute_object/3.
 
 :- import length/2, ground/1 from basics.
 
@@ -36,14 +27,46 @@ that can be difficult to use and debug.
 
 The External View of the interface permits the same functionality as
 the internal view, but uses external forms of identifiers as in
-Section @ref{}.  The convention is that if @tt{q_XXX/n} is a predicate
-in the External View, then it has the same functionality as the
-predicate @tt{XXX/n} in the Internal View.  
+Section @ref{}.  Many predicates in the External View adopt the
+convention is that a predicateif @tt{q_XXX/n} in the External View,
+has the same functionality as the predicate @tt{XXX/n} in the Internal
+View.  These include the following predicates which query a CDF state:
+
+@tt{    q_class/2, q_object/2,
+    q_subclass/2,q_subclass_nr/2,q_immediate_subclass/2,
+    q_memberof/2, q_immediate_memberof/2,
+    q_irel/3,q_immediate_irel/3,
+    q_schrel/3,q_immediate_schrel/3,
+    q_strel/3, 
+    q_attribute/3,q_immediate_attribute/3,
+    q_attribute_object/3}
+
+along with the following predicates which can be used to manipulate a
+CDF state.
+
+    q_newSubclass/2, q_newMemberof/2, 
+    q_newIrel/3, q_newSchrel/3, q_newStrel/3, 
+    q_newAttribute/3, q_newAttribute_object/3.
+
+Other predicates in the External View are documented individually.
 ").
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Query Predicates.
+
+:- comment(q_class/2,"q_class(-Name,id(+Nid,+Source)) can be used to
+obtain the name of a class identifier.").
+
+q_class(Name,id(Nid,Source)):- 
+	class(_,Name,Nid,Source).
+
+:- comment(q_object/2,"q_object(-Name,id(+Nid,+Source)) can be used to
+obtain the name of an object identifier.").
+
+q_object(Name,id(Nid,Source)):- 
+	object(_,Name,Nid,Source).
+
 
 :- comment(q_attribute/3,"This predicate has the same behavior as
 @pred{attribute/3}, except that Native Ids and Source pairs are used
