@@ -32,7 +32,7 @@ and <a href="http://www.uu.se/">Uppsala Universitet</a>.
 <a href="rel_notes.html"> Release Notes</a>:&nbsp; New features, backward incompatible changes, etc.</li>
 
 <li>
-<a href="http://sourceforge.net/project/filelist.php?group_id=1176"> Download the System</a>:
+<a href="http://sourceforge.net/project/showfiles.php?group_id=1176"> Download the System</a>:
 	&nbsp; Current version: 2.3, released on February 21, 2001.<img SRC="new.gif" IMG align=TOP>
 </li>
 
