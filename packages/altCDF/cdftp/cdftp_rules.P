@@ -1,0 +1,110 @@
+
+:- [cdftp_meta].
+:- [cdftp_cdfsc].
+
+:- export check_rule/1, dlrule_to_cdf/2.
+
+:- import allAttr/3, hasAttr/3, 
+	   isa/2, maxAttr/4, minAttr/4,
+	   cdf_id_fields/4 from cdf_init_cdf.
+:- import cdf_warning/2 from cdf_exceptions.
+:- import pretty_print/1 from newpp.
+
+dlrule_to_cdf('<='(Head,Body),CDFList):- 
+	head_ce_to_formula(Head,V,HeadList,[],Cmpt),
+	(var(Cmpt) -> 
+	    cdf_warning(rule,('No component info given in rule: ',
+	                           '<='(Head,Body))), fail
+	;  true),
+	body_ce_to_formula(Body,V,BodyF),
+	add_cmpt_check_to_body(BodyF,V,Cmpt,BodyCF),	
+	distribute_heads_to_bodies(HeadList,BodyCF,CDFList).
+
+head_ce_to_formula(','(CE1,CE2),Var,ListIn,ListOut,Cmpt):- !,
+	head_ce_to_formula(CE1,Var,ListIn,ListMid,Cmpt),
+	head_ce_to_formula(CE2,Var,ListMid,ListOut,Cmpt).
+head_ce_to_formula(exists(R,Cid),Var,
+	                   [hasAttr_int(Var,R,Cid)|L],L,_Cmpt):- !,
+	cdf_id_fields(Cid,cid,_,_).
+head_ce_to_formula(all(R,Cid),Var,
+	                   [allAttr_int(Var,R,Cid)|L],L,_Cmpt):- !,
+	cdf_id_fields(Cid,cid,_,_).
+head_ce_to_formula(atLeast(N,R,Cid),Var,
+	                   [minAttr_int(Var,R,Cid,N)|L],L,_C):- !,
+	cdf_id_fields(Cid,cid,_,_).
+head_ce_to_formula(atMost(N,R,Cid),Var,
+	                  [maxAttr_int(Var,R,Cid,N)|L],L,_C):- !,
+	cdf_id_fields(Cid,cid,_,_).
+head_ce_to_formula(component(Cmpt),_Var,L,L,Cmpt):- !.
+head_ce_to_formula(Cid,Var,[isa_int(Var,Cid)|L],L,_Cmpt):- 
+	cdf_id_fields(Cid,cid,_,_),!.
+head_ce_to_formula(CE,_,_,_,_Cmpt):- !,
+	cdf_warning(rule,('Incorrectly formed Head Expression in DL Rule ',
+	                           CE)),
+	fail.
+	
+body_ce_to_formula(','(CE1,CE2),Var,','(F1,F2)):- !,
+	body_ce_to_formula(CE1,Var,F1),
+	body_ce_to_formula(CE2,Var,F2).
+body_ce_to_formula(';'(CE1,CE2),Var,';'(F1,F2)):- !,
+	body_ce_to_formula(CE1,Var,F1),
+	body_ce_to_formula(CE2,Var,F2).
+body_ce_to_formula(not(CE1),Var,\+(F1)):- !,
+	body_ce_to_formula(CE1,Var,F1).
+body_ce_to_formula(exists(R,CE1),Var,','(hasAttr(Var,R,Var1),F1)):- !,
+	body_ce_to_formula(CE1,Var1,F1).
+body_ce_to_formula(all(R,CE1),Var,','(allAttr(Var,R,Var1),F1)):- !,
+	body_ce_to_formula(CE1,Var1,F1).
+body_ce_to_formula(atLeast(N,R,CE),Var,','(minAttr(Var,R,Var1,N),F1)):- !,
+	body_ce_to_formula(CE,Var1,F1).
+body_ce_to_formula(atMost(N,R,CE),Var,','(maxAttr(Var,R,Var1,N),F1)):- !,
+	body_ce_to_formula(CE,Var1,F1).
+body_ce_to_formula(Cid,Var,isa(Var,Cid)):- 
+	cdf_id_fields(Cid,cid,_,_),!.
+body_ce_to_formula(CE,_,_):- !,
+	cdf_warning(rule,('Dont know how to translate ',CE)),fail.
+
+add_cmpt_check_to_body(','(A,B),V,Cmpt,','(NewA,B)):- !,
+	add_cmpt_check_to_body(A,V,Cmpt,NewA).
+add_cmpt_check_to_body(A,V,Cmpt,','(A,cdf_id_fields(V,_,_,Cmpt))):- !.
+
+pretty_print_list([]).
+pretty_print_list([H|R]):- 
+	pretty_print(H),
+	nl,
+	pretty_print_list(R).
+
+distribute_heads_to_bodies([],_Body,[]).
+distribute_heads_to_bodies([Head|Rest],BodyF,[(Head :- BodyF)|RRest]):- 
+	distribute_heads_to_bodies(Rest,BodyF,RRest).
+	
+check_rule(Rule):- 
+	dlrule_to_cdf(Rule,CDFList),
+	pretty_print_list(CDFList).
+
+end_of_file.
+
+/*	
+body_ce_to_formula(exists(R,CE1),Var,','(hasAttr(Var,R,Var1),F1)):- !,
+	body_ce_to_formula(CE1,Var1,F1).
+body_ce_to_formula(all(R,CE1),Var,\+(','(hasAttr(Var,R,Var1),\+((F1))))):- !,
+	body_ce_to_formula(CE1,Var1,F1).
+body_ce_to_formula(atLeast(N,R,CE),Var,atLeast(N,Var,F1)):- !,
+	body_ce_to_formula(exists(R,CE),Var,F1).
+body_ce_to_formula(atMost(N,R,CE),Var,atMost(N,Var,F1)):- !,
+	body_ce_to_formula(exists(R,CE),Var,F1).
+*/
+
+atLeast(N,Var,F):-
+	findall(Var,F,Insts),
+	sort(Insts,Uniq),
+	length(Uniq,L),
+	L >= N.
+
+atMost(N,Var,F):-
+	findall(Var,F,Insts),
+	sort(Insts,Uniq),
+	length(Uniq,L),
+	L =< N.
+
+
