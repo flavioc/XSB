@@ -129,6 +129,7 @@ inline static EntryPtr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#ifdef COMMENT	/* tsiRemoveEntry is not used anywhere now */
 /*
  *  Remove a tsi_Entry from a tsi and place it on the global TSI free
  *  list for later reuse.
@@ -151,6 +152,7 @@ static void tsiRemoveEntry(TSTHTptr ht, EntryPtr entry) {
      ------------------------------- */
   SM_DeallocateStruct(smEntry,entry);
 }
+#endif /* COMMENT */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
