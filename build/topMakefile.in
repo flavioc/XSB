@@ -295,13 +295,11 @@ copy_files::
 	    echo ""; echo "Installed!" \
 	  )
 
-# When compiling source, don't compile flora demos -- give people a break!
 configure_packages_src: smodels
-	./pkg_config.sh -skip-flora-demos $(src_scriptdir)/xsb$(config_tag) | \
+	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
 	  chmod 644  $(src_config_libdir)/xsb_configuration.O
 
-# Compile flora demos only when installing
 configure_packages_install:
 	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(install_config_libdir)/xsb_configuration.O

@@ -23,10 +23,10 @@
 ##
 
 
-ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
+ALL = 	flora2.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
 	sModels.O libwww.O clpr.O xsbdoc.O xmc.O
 
-SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww sModels \
+SUBDIR = flora2 slx perlmatch gap regmatch wildmatch libwww sModels \
 	clpqr xsbdoc xmc
 
 Option = [optimize]
@@ -71,9 +71,9 @@ slx::
 	@echo ""
 	cd slx; make
 
-flora::
+flora2::
 	@echo ""
-	cd flora; make
+	cd flora2; make
 
 libwww::
 	@echo ""

@@ -52,12 +52,13 @@
 #define BUFF_BYTE	22
 #define BUFF_SET_BYTE	23
 #define CODE_CALL	24
-#define STR_LEN		25
 
+#define STR_LEN		25
 #define SUBSTRING       26
 #define STR_CAT		27
 #define STR_CMP		28
 #define STRING_SUBSTITUTE 29
+#define STR_MATCH       30
 
 #define CALL0		31
 /* some other builtins that might need hard implementation */
@@ -70,7 +71,6 @@
 #define BUFF_SET_CELL	38
 #define COPY_TERM	39
 /* check for substring */
-#define STR_SUB	        40
 #define DIRNAME_CANONIC 41
 /* for efficiency reasons, the following predicates are also implemented */
 #define PSC_INSERT	42

@@ -104,7 +104,7 @@ inline_builtin(buff_dealloc, 3, BUFF_DEALLOC).
 inline_builtin(buff_cell, 3, BUFF_CELL).
 inline_builtin(buff_set_cell, 4, BUFF_SET_CELL).
 inline_builtin(copy_term, 2, COPY_TERM).
-inline_builtin(str_sub, 3, STR_SUB).
+inline_builtin(str_match, 5, STR_MATCH).
 inline_builtin(dirname_canonic, 2, DIRNAME_CANONIC).
 inline_builtin(psc_insert, 4, PSC_INSERT).
 inline_builtin(psc_import, 3, PSC_IMPORT).

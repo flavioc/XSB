@@ -141,6 +141,7 @@ extern xsbBool substring(void);
 extern xsbBool string_substitute(void);
 extern xsbBool str_cat(void);
 extern xsbBool str_sub(void);
+extern xsbBool str_match(void);
 
 extern void force_answer_true(BTNptr);
 extern void force_answer_false(BTNptr);
@@ -630,7 +631,7 @@ void init_builtin_table(void)
   set_builtin_table(BUFF_SET_CELL, "buff_set_cell");
   set_builtin_table(COPY_TERM,"copy_term");
 
-  set_builtin_table(STR_SUB, "str_sub");
+  set_builtin_table(STR_MATCH, "str_match");
   set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
 
   set_builtin_table(PSC_INSERT, "psc_insert");
@@ -1255,8 +1256,8 @@ int builtin_call(byte number)
   case STR_CMP:		/* R1: +Str1; R2: +Str2: R3: -Res */
     ctop_int(3, strcmp(ptoc_string(1), ptoc_string(2)));
     break;
-  case STR_SUB:   /* R1: +Substring; R2: +String; R3: -Pos */
-    return str_sub();
+  case STR_MATCH:
+    return str_match();
   case INTERN_STRING: /* R1: +String1; R2: -String2 ; Intern string */
     ctop_string(2, string_find(ptoc_string(1), 1));
     break;

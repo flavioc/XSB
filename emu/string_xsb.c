@@ -52,38 +52,15 @@ extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring,
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
 
-static Cell term, term2;
+static Cell term, term2, term3;
 
 static XSB_StrDefine(input_buffer);
 static XSB_StrDefine(subst_buf);
 static XSB_StrDefine(output_buffer);
+static char *xsb_strrstr(char *str, char *pat);
 
 
 #include "ptoc_tag_xsb_i.h"
-
-
-/* R1: +Substring; R2: +String; R3: ?Pos
-   Check if Arg1 is a substring of Arg2; unify pos of match with Arg3
-*/
-xsbBool str_sub(void)
-{
-  static char *subptr, *stringptr, *matchptr;
-  static int substr_pos;
-
-  term = ptoc_tag(1);
-  term2 = ptoc_tag(2);
-  if (isstring(term) && isstring(term2)) { 
-    subptr = string_val(term);
-    stringptr = string_val(term2);
-    matchptr = strstr(stringptr, subptr);
-    substr_pos = matchptr-stringptr+1; /* relative pos of substring */
-    if (matchptr == NULL)
-      return FALSE;
-    else {
-      return int_unify(makeint(substr_pos), ptoc_tag(3));
-    }
-  } else return FALSE;
-}
 
 
 xsbBool str_cat(void)
@@ -106,13 +83,99 @@ xsbBool str_cat(void)
 }
 
 
+/*
+  Input:
+      Arg1: +Substr
+      Arg2: + String
+      Arg3: +forward/reverse (checks only f/r)
+        f means the first match from the start of String
+	r means the first match from the end of String
+  Output:
+      Arg4: Beg
+        Beg is the offset where Substr matches. Must be a variable or an
+	integer
+      Arg5: End
+	End is the offset of the next character after the end of Substr
+	Must be a variable or an integer.
+
+      Both Beg and End can be negative, in which case they represent the offset
+      from the 2nd character past the end of String.
+      For instance, -1 means the next character past the end of String,
+      so End = -1 means that Substr must be a suffix of String..
+
+      The meaning of End and of negative offsets is consistent with substring
+      and string_substitute predicates.
+*/
+xsbBool str_match(void)
+{
+  static char *subptr, *stringptr, *direction, *matchptr;
+  static int substr_beg, substr_end;
+  int reverse=TRUE; /* search in reverse */
+  int beg_bos_offset=TRUE; /* measure beg offset from the beg of string */
+  int end_bos_offset=TRUE; /* measure end offset from the beg of string */
+  int str_len, sub_len; /* length of string and substring */
+  Cell beg_offset_term, end_offset_term;
+
+  term = ptoc_tag(1);
+  term2 = ptoc_tag(2);
+  term3 = ptoc_tag(3);
+  beg_offset_term = ptoc_tag(4);
+  end_offset_term = ptoc_tag(5);
+  if (!isstring(term) || !isstring(term2) || !isstring(term3))
+    xsb_abort("STRING_MATCH: Arguments 1,2,3 must be bound to strings");
+  subptr = string_val(term);
+  stringptr = string_val(term2);
+  direction = string_val(term3);
+
+  if (*direction == 'f')
+    reverse=FALSE;
+  else if (*direction != 'r')
+    xsb_abort("STRING_MATCH: Argument 3 must be bound to forward/reverse");
+
+  str_len=strlen(stringptr);
+  sub_len=strlen(subptr);
+
+  if (is_int(beg_offset_term)) {
+    if (int_val(beg_offset_term) < 0) {
+      beg_bos_offset = FALSE;
+    }
+  }
+  if (is_int(end_offset_term)) {
+    if (int_val(end_offset_term) < 0) {
+      end_bos_offset = FALSE;
+    }
+  }
+
+  if (reverse)
+    matchptr = xsb_strrstr(stringptr, subptr);
+  else
+    matchptr = strstr(stringptr, subptr);
+
+  if (matchptr == NULL) return FALSE;
+
+  substr_beg = (beg_bos_offset?
+		matchptr - stringptr : -(str_len - (matchptr - stringptr))
+		);
+  substr_end = (end_bos_offset?
+		(matchptr - stringptr) + sub_len
+		: -(str_len + 1 - (matchptr - stringptr) - sub_len)
+		);
+  
+  return
+    (p2p_unify(beg_offset_term, makeint(substr_beg))
+     && p2p_unify(end_offset_term, makeint(substr_end)));
+}
+
+
+
+
 /* XSB string substitution entry point
    In: 
-       Arg1: string
-       Arg2: beginning offset
-       Arg3: ending offset. `-' : end of string, -1 : char before last, etc.
+      Arg1: string
+      Arg2: beginning offset
+      Arg3: ending offset. `_' or -1: end of string, -2: char before last, etc.
    Out:
-       Arg4: new (output) string
+      Arg4: new (output) string
    Always succeeds, unless error.
 */
 xsbBool substring(void)
@@ -158,7 +221,7 @@ xsbBool substring(void)
   else end_offset = int_val(end_offset_term);
 
   if (end_offset < 0)
-    end_offset = input_len + end_offset;
+    end_offset = input_len + 1 + end_offset;
   else if (end_offset > input_len)
     end_offset = input_len;
   else if (end_offset < beg_offset)
@@ -189,7 +252,7 @@ xsbBool substring(void)
    In: 
        Arg1: string
        Arg2: substring specification, a list [s(B1,E1),s(B2,E2),...]
-       Arg3: list of replacement string
+       Arg3: list of replacement strings
    Out:
        Arg4: new (output) string
    Always succeeds, unless error.
@@ -301,5 +364,27 @@ xsbBool string_substitute(void)
     c2p_string(output_buffer.string, output_term);
   
   return(TRUE);
+}
+
+
+/*
+ * strrstr.c -- find last occurence of string in another string
+ *
+ */
+
+static char *xsb_strrstr(char *str, char *pat)
+{
+  size_t len, patlen;
+  const char *p;
+  
+  len = strlen(str);
+  patlen = strlen(pat);
+  
+  if (patlen > len)
+    return NULL;
+  for (p = str + (len - patlen); p > str; --p)
+    if (*p == *pat && strncmp(p, pat, patlen) == 0)
+      return (char *) p;
+  return NULL;
 }
 

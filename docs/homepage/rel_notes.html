@@ -23,12 +23,23 @@ in Manual Part 1.
 etc.) through the predicate <tt>path_sysop/2</tt> and
 <tt>path_sysop/3</tt> (in module file_io). See Manual, Part 2 (<i>Script
 Utilities</i>).
+<li> New string matching function, <tt>string_match/4</tt>, which extends
+<tt>str_sub/3</tt>. 
+(<tt>string_match/4</tt> doesn't do pattern matching - use the
+<tt>regmatch</tt> package for that). See Manual, Part 2, (<i>String
+Manipulation</i>).
+</ul>
+<h3>Backward Incompatibility</h3>
+<ul>
+<li> The meaning of argument 3 in predicate str_sub/3 has changed. It still
+represents the position of the substring match. However, offsets now start from
+0, like other string functions, instead of 1.
 </ul>
 <h3>FLORA News</h3>
 <p>
 This release of XSB contains an alpha release of a
-completely revamped FLORA system (now called FLORA-2). Here is an incomplete
-list of the main new features of the system:
+completely redesigned and reimplemented FLORA system (now called FLORA-2). Here
+is an incomplete list of the main new features of the system:
 <ul>
 <li> Integrates F-logic, HiLog, and Transaction Logic into one coherent
 language

@@ -1036,9 +1036,54 @@ described in Chapter~\ref{chap-posix}.
 \begin{description}
 \ournewitem{str\_sub(+Sub, +Str, ?Pos)}{string}
 \index{{\tt str\_sub/3}}
+\index{{\tt str\_sub/2}}
 
 Succeeds if {\tt Sub} is a substring of {\tt Str}. In that case, {\tt Pos}
-unifies with the position where the match occurred.
+unifies with the position where the match occurred. Positions start
+from 0. {\tt str\_sub/2} is also available, which is equivalent
+to having {\tt \_} in the third argument of {\tt str\_sub/3}.
+
+\ournewitem{str\_match(+Sub, +Str, +Direction, ?Beg, ?End)}{string}
+\index{{\tt str\_match/5}}
+
+This is an enhanced version of the previous predicate.
+{\tt Direction} can be {\tt forward} or {\tt reverse} (or any abbreviation
+of these). If {\tt forward}, the predicate finds the first match of {\tt
+  Sub} from the beginning of {\tt Str}. If {\tt reverse}, it finds the
+first match from the end of the string ({\it i.e.}, the last match of {\tt
+  Sub} from the beginning of {\tt Str}). {\tt Beg} and {\tt End} must be
+integers or unbound variables. (It is possible that one is bound and
+another is not.)
+{\tt Beg} unifies with the offset of the first character where {\tt Sub}
+matched, and {\tt End} unifies with the offset of the next character to the
+right of {\tt Sub} (such a character might not exist, but the offset is
+stil defined). Offsets start from 0.
+
+Both {\tt Beg} and {\tt End} can be bound to negative integers.
+In this case, the value represents the offset from the \emph{second}
+character past the end of {\tt Str}. Thus {\tt -1} represents the character
+next to the end of {\tt Str} and can be used to check where the end of {\tt
+  Sub}  matches in {\tt Str}. In the following examples
+%%
+\begin{verbatim}
+    ?- string_match(Sub,Str,forw,X,-1).  
+    ?- string_match(Sub,Str,rev,X,-1).  
+    ?- string_match(Sub,Str,forw,0,X).  
+\end{verbatim}
+%%
+the first checks if the \emph{first} match of {\tt Sub} from the beginning
+of {\tt Str} is a suffix of {\tt Str} (because {\tt End} represents the
+character next to the last character in {\tt Sub}, so {\tt End=-1} means
+that the last characters of {\tt Sub} and of {\tt Str} occupy the same
+position). If so, {\tt X} is bound to the offset (from the end of {\tt
+  Str}) of the first character of {\tt Sub}. The second example checks if
+the \emph{last} match of {\tt Sub} in {\tt Str} is a suffix of {\tt Str}
+and binds {\tt X} to the offset of the beginning of that match (counted
+from the beginning of {\tt Str}).  The last example checks if the first
+match of {\tt Sub} is a prefix of {\tt Str}. If so, {\tt X} is bound to the
+offset (from the beginning of {\tt Str}) of the last character of {\tt
+  Sub}.
+ 
 
 \ournewitem{str\_cat(+Str1, +Str2, ?Result)}{string}
 \index{{\tt str\_cat/3}}
@@ -1061,11 +1106,13 @@ Unifies the {\tt Result}  with the length of {\tt Str}.
 %%
 {\tt String} can be an atom or a list of characters, and the offsets must
 be integers.  If {\tt EndOffset} is negative, endof({\tt String})+{\tt
-  EndOffset} is assumed. If {\tt EndOffset} is an unbound variable, then
-end of string is assumed. If {\tt BeginOffset} is less than 0, then 0 is
-assumed; if it is greater than the length of the string, then string end is
-assumed. If {\tt EndOffset} is non-negative, but is less than {\tt
-  BeginOffset}, then empty string is returned.
+  EndOffset}+1 is assumed. Thus, {\tt -1} means end of string.  If {\tt
+  BeginOffset} is less than 0, then 0 is assumed; if it is greater than the
+length of the string, then string end is assumed. If {\tt EndOffset} is
+non-negative, but is less than {\tt BeginOffset}, then empty string is
+returned.
+
+Offsets start from 0.
 
 The result returned in the fourth argument is a string, if {\tt String} is
 an atom, or a list of characters, if so is {\tt String}.
@@ -1091,12 +1138,15 @@ L = [101,102]
 \index{{\tt string\_substitute/4}}
 
 {\tt InputStr} can an atom or a list of characters.  {\tt SubstrList} must
-be a list of terms of the form {\tt s(BegOffset, EndOffset)}, where the name
-of the functor is immaterial.  The meaning of the offsets is the same as
-for {\tt re\_substring/4}.  Each such term specifies a substring (between
-{\tt BegOffset} and {\tt EndOffset}; negative {\tt EndOffset} stands for
-the end of string) to be replaced.  {\tt SubstitutionList} must be a list
-of atoms or character lists.
+be a list of terms of the form {\tt s(BegOffset, EndOffset)}, where the
+name of the functor is immaterial.  The meaning of the offsets is the same
+as for {\tt substring/4}. (In particular, negative offsets represent
+offsets from the first character past the end of {\tt String}.)  Each such
+term specifies a substring (between {\tt BegOffset} and {\tt EndOffset};
+negative {\tt EndOffset} stands for the end of string) to be replaced.
+{\tt SubstitutionList} must be a list of atoms or character lists.
+
+Offsets start from 0, as in C/Java.
 
 This predicate replaces the substrings specified in {\tt SubstrList} with
 the corresponding strings from {\tt SubstitutionList}.  The result is
