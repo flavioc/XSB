@@ -179,6 +179,7 @@ rest_predicate_arity_list([]) --> [], !.
 /**************************************************************/
 ground_signature(signature(Class,L)) -->
 	atom_name(Class),
+	white_space0,
 	[atom('$[')],
 	!,
 	white_space0,
@@ -482,15 +483,19 @@ object(O,V) -->
 
 /**************************************************************/
 specification([Is|Ms],V) -->
+	white_space0,
 	isa_specification(Is,V),
 	!,
+	white_space0,
 	method_specification0(Ms,V).
 
-specification(Ms,V) --> method_specification1(Ms,V), !.
+specification(Ms,V) -->
+	white_space0,
+	method_specification1(Ms,V),
+	!.
 
 
 isa_specification(relationship(A,O),V) -->
-	white_space0,
 	isa_symbol(A),
 	white_space0,
 	object(O,V).
