@@ -209,6 +209,7 @@ static FILE *openInCurrentDir(char *incfile);
 char *ArithmEval(int pos1,int pos2);
 void replace_definition_with_blank_lines(char *start, char *end);
 void replace_directive_with_blank_line(FILE *file);
+void write_include_marker(FILE *f, int lineno, char *filename, char *marker);
 
 void bug(char *s)
 {
@@ -1115,7 +1116,7 @@ void initthings(int argc,char **argv)
     case 'C':
       ishelp|=ismode|hasmeta|usrmode; ismode=1;
       S->User=KUser; S->Meta=KMeta;
-      S->preservelf=1;
+      S->preservelf=0;
       add_comment(S,"ccc",strdup("/*"),strdup("*/"),0,0);
       add_comment(S,"ccc",strdup("//"),strdup("\n"),0,0);
       add_comment(S,"ccc",strdup("\\\n"),strdup(""),0,0);
@@ -1125,7 +1126,7 @@ void initthings(int argc,char **argv)
     case 'P':
       ishelp|=ismode|hasmeta|usrmode; ismode=1;
       S->User=KUser; S->Meta=KMeta;
-      S->preservelf=1;
+      S->preservelf=0;
       S->op_set=PrologOp;
       add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
       add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
