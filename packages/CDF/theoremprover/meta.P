@@ -24,9 +24,10 @@ backend(smodels).
 
 :- [xasp].
 
-?- use_capi.
+%?- use_capi.
+?- use_files.
 
-?- init_capi_if_needed.
+%?- init_capi_if_needed.
 
 init_capi_if_needed:- interface(capi),[xasp].
 init_capi_if_needed:- \+ interface(capi).

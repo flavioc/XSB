@@ -1,5 +1,0 @@
-#!/bin/sh
-## This file is the command file for running SubprocessListener
-
-java -classpath .:interprolog.jar com.xsb.interprolog.NativeEngineWindow -d ../..
-

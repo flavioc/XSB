@@ -27,7 +27,7 @@
 
 init_chr:- 
 	bootstrap_package([chr],'chr'),
-	[chr],
+	[chr_interp],
 	[chr_pp].
 
 :- init_chr.

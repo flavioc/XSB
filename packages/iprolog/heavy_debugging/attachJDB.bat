@@ -1,1 +1,0 @@
-jdb -attach jdbconn

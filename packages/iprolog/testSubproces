@@ -1,4 +1,0 @@
-#!/bin/sh
-## This is the testit file
-
-java -classpath .:junit.jar:interprolog.jar com.declarativa.interprolog.TestSubprocessEngine
