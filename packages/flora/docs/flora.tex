@@ -1296,7 +1296,7 @@ circus_elephant[color *-> gray].
 \end{verbatim}
 %%
 
-Nono-monotonicity of behavioral inheritance shows when certain new
+Non-monotonicity of behavioral inheritance becomes apparent when certain new
 information gets added to the knowledge base. For instance, suppose that we
 learn that
 %%
@@ -1385,10 +1385,14 @@ by the {\tt tnot} operator).
 
 One problem with the current implementation of behavioral inheritance is
 that the well-founded semantics for negation in the presence of equality is
-not sufficiently developed yet. For this reason, inheritance is turned off
-if \FLORA compiler is instructed to compile a \FLORA module with equality
-maintenance enabled. This restriction will be eliminated in a future
-release.
+not yet sufficiently developed. Since \FLORA's treatment of inheritance
+relies on well-founded negation, interaction of equality and inheritance
+becomes an issue. Fortunately, it is not hard to extend the semantics to
+the case when derived equalities do not depend on negation or inheritance.
+In the current implementation of \FLORA, it is the responsibility of the
+programmer to ensure that this is the case: if a derived equality does
+depend on negation, the result is unpredictable.  Interaction between
+equality and inheritance will be made more structured in a future release.
 
 \paragraph{Inheritable attributes and path expressions.}
 In the previous examples, path expressions used only non-inheritable
