@@ -62,12 +62,9 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	        /* The following is here because C compilers usually put 
 	           the object file in the current directory
 	           and not in the source one. */
-	        (	Dir == './'
+	        (   Dir == './'
 		->  true
-		;   ( str_sub('msdos', Configuration)
-		    ->	shell(['ren ', Modname, '.o', Dir])
-		    ;	shell(['mv ', Modname, '.o ', Dir])
-		    )
+		;   shell(['mv ', Modname, '.o ', Dir])
 		)
 	    )
         ;   shell([CompComm])

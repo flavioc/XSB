@@ -1366,7 +1366,9 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */
 
-     fd = fopen(startup_file, "rb");   /* "b" needed for DOS. -smd */
+     /* "b" does nothing, but POSIX allows it */
+     fd = fopen(startup_file, "rb");
+
      if (!fd) {
        char message[256];
        sprintf(message, "The startup file, %s, could not be found!",

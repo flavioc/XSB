@@ -48,8 +48,5 @@
 :- import xsb_configuration/2 from xsb_configuration.
 :- import fmt_write_string/3 from file_io.
 
-%% don't support dos any more
-%%:- import dos_os/2 from xsb_configuration.
-
 
 /* ----------------- end of file current_sym.H -------------------- */

@@ -176,7 +176,7 @@ inline static bool file_function(void)
     if ((mode >= 0) && (mode<3)) {
       addr = expand_filename(tmpstr);
       switch (mode) {
-	/* "b"'s needed for DOS. -smd */
+	/* "b" does nothing, but POSIX allows it */
       case 0: fptr = fopen(addr, "rb"); break; /* READ_MODE */
       case 1: fptr = fopen(addr, "wb"); break; /* WRITE_MODE */
       case 2: fptr = fopen(addr, "ab"); break; /* APPEND_MODE */
@@ -320,7 +320,7 @@ inline static bool file_function(void)
       SET_FILEPTR(fptr, ptoc_int(4));
       fflush(fptr);
       switch (mode) {
-	/* "b"'s needed for DOS. -smd */
+	/* "b" does nothing, but POSIX allows it */
       case 0: fptr = freopen(addr, "rb", fptr); break; /* READ_MODE */
       case 1: fptr = freopen(addr, "wb", fptr); break; /* WRITE_MODE */
       case 2: fptr = freopen(addr, "ab", fptr); break; /* APPEND_MODE */

@@ -68,7 +68,7 @@ static char *rectify_pathname(char *, char *);
 /* check if the path name is absolute */
 bool is_absolute_filename(char *filename) {
 
-#if defined(WIN_NT) || defined(DJGPP)
+#if defined(WIN_NT) 
   /*  If the file name begins with a "\" or with an "X:", where X is some
    *  character, then the file name is absolute.
    *  Otherwise it's not. */
@@ -108,7 +108,7 @@ char *dirname_canonic(char *filename) {
 /* Like tilde_expand_filename, but doesn't rectify */
 char *tilde_expand_filename_norectify(char *filename, char *expanded) {
   
-#if defined(WIN_NT) || defined(DJGPP)
+#if defined(WIN_NT)
   strcpy(expanded, filename);
   return expanded;
 
@@ -159,7 +159,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
 /*
 ** Like expand_filename, but ONLY expands Unix tilde by replacing '~', '~user'
 ** with the home directory of the appropriate user.
-** Does nothing on NT and DOS.
+** Does nothing on Windows.
 */
 char *tilde_expand_filename(char *filename) {
   char aux_filename[MAXPATHLEN];
@@ -178,7 +178,7 @@ char *expand_filename(char *filename) {
   char aux_filename[MAXPATHLEN], aux_filename2[MAXPATHLEN];
   static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
   
-#if defined(WIN_NT) || defined(DJGPP)
+#if defined(WIN_NT)
 
   if ( is_absolute_filename(filename) ) {
     return rectify_pathname(filename, absolute_filename);

@@ -40,11 +40,7 @@
 #define CH_OS_SLASH    	      47    	/*  /     */
 #endif
 
-#ifdef DJGPP  /* DOS */
-#define XSB_OBJFILE_EXTENSION	 '.OX'
-else  /* Unix, NT */
 #define XSB_OBJFILE_EXTENSION	 '.O'
-#endif
 
 
 /* architecture is something like i386-pc-linux or sparc-sun-solaris5.2 */

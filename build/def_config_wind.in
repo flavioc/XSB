@@ -77,8 +77,7 @@
 /* Define if XSB is built with support for ODBC */
 #undef XSB_ODBC
 
-#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF) \
-	|| defined(FOREIGN_WIN32))
+#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_WIN32))
 #define FOREIGN
 #endif
 

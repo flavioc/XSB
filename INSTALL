@@ -1,6 +1,6 @@
 
     This file contains instructions for compiling and installing XSB.
-    These instructions are NOT for Windows and DOS. For these, see
+    These instructions are NOT for Windows: see
     INSTALL_WINDOWS
 
 1. Unpack the tarball in some directory. This should create a subdirectory, 

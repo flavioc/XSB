@@ -42,8 +42,6 @@ emuMakefile.in	  - the Makefile template from which the makefile for the
 		    emu directory is derived.
 MS_VC_Mfile.mak   - the Makefile for building using MS Visual C++ on Windows.
 
-def_config_pcdos.in - Out of this, configure generates a config.h file for
-		      DOS.
 def_config_wind.in  - Out of this, configure generates a config.h file for
 		     Windows NT/95/98.
 def_debug.h.in	  - the template from which debug.h is produced. Debug.h is 
@@ -198,8 +196,6 @@ The structure of the config directory:
 		     available to the running XSB programs. No longer you
 		     need to use the stat_flag built in --- AND YOU MUST NOT!
 		     (Many of the old flags don't even exist any more.)
-        xsb_configuration_pcdos.P -
-	    	     template for creating configuration.P under DOS.
         xsb_configuration_wind.P  -
 	    	     template for configuration.P under Windows NT/95/98.
 

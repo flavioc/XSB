@@ -276,8 +276,6 @@ char *init_para(int argc, char *argv[])
      ------------------------- */
 #ifdef WIN_NT
   boot_module = "\\syslib\\loader.O";
-#elif DJGPP
-  boot_module = "/syslib/loader.OX";
 #else
   boot_module = "/syslib/loader.O";
 #endif

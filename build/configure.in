@@ -224,7 +224,7 @@ echo ""
 echo "Building XSB Version ${xsb_version} (${xsb_codename}) of ${xsb_release_date}"
 echo ""
 
-# check for NT and DOS configurations
+# check for NT configurations
 case "$with_os" in
   win* | *nt*) dnl Windows
 	canonical=x86-pc-windows
@@ -236,17 +236,6 @@ case "$with_os" in
 	configuration_templ=xsb_configuration_wind.in
 	config_dot_h_templ=def_config_wind.in
 	echo 'Configuring for host system type... Windows NT/95/98/2000'
-	;;
-  pcdo*) dnl PC DOS
-	canonical=x86-pc-pcdos
-	host_os=pcdos
-	os_type=pcdos
-	os_version=
-	host_vendor=pc
-	host_cpu=x86
-	configuration_templ=xsb_configuration_pcdos.in
-	config_dot_h_templ=def_config_pcdos.in
-	echo 'Configuring for host system type... PC DOS'
 	;;
   *)    dnl check for unknown OS
 	if test -n "$with_os" ; then
@@ -463,7 +452,7 @@ AC_DEFINE_UNQUOTED(CC, "${CC}")
 dnl Let autoconf take care of the "inline" and "const" keywords.
 if test -z "$with_os" ; then
     dnl do testing for inlining only on Unix
-    dnl we set it in config.h on windows and dos
+    dnl we hard-set it in config.h on windows 
     AC_C_INLINE
 fi
 
@@ -1074,7 +1063,6 @@ AC_SUBST(release_day)
 AC_SUBST(xsb_scheduling_strategy)
 AC_SUBST(site_prefix)
 
-# These are needed for NT and DOS config.h files
 AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)

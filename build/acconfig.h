@@ -43,10 +43,6 @@
 /* Defined on DEC stations */
 #undef DECstation
 
-/* DOS gcc compiler? */
-#undef DOS_GCC
-#undef DJGPP
-
 /* HP300 running HP-UX */
 #undef HP300
 
@@ -120,31 +116,18 @@
 /* XSB is built with support for ODBC */
 #undef XSB_ODBC
 
-/* DOS gcc stuff */
-#ifdef DOS_GCC
-#ifndef DJGPP
-#define DJGPP
-#endif
-#endif
-
 
 #undef HAVE_SNPRINTF
 
 /* XSB's FOREIGN_ELF is designed in away such that it supports
-   any system using the high level dlopen... functions, even if
-   the actual object file format is COFF. That's the case on
-   DECALPHA, running OSF1 v3.x
- */
+   any system using the high level dlopen... functions.
+*/
 
 #undef FOREIGN_ELF
 #undef FOREIGN_OUT
 
-#ifdef DJGPP
-#define FOREIGN_COFF
-#endif
-
 #ifdef ___ALWAYS_TRUE___
-#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF))
+#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_WIN32))
 #define FOREIGN
 #endif
 #endif

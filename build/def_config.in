@@ -105,17 +105,14 @@
 #undef XSB_ODBC
 
 /* XSB's FOREIGN_ELF is designed in away such that it supports
-   any system using the high level dlopen... functions, even if
-   the actual object file format is COFF. That's the case on
-   DECALPHA, running OSF1 v3.x
- */
+   any system using the high level dlopen... functions.
+*/
 
 #undef FOREIGN_ELF
 #undef FOREIGN_AOUT
 
 #ifdef ___ALWAYS_TRUE___
-#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF) \
-	|| defined(FOREIGN_WIN32))
+#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_WIN32))
 #define FOREIGN
 #endif
 #endif
