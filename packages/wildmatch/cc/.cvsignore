@@ -1,3 +1,7 @@
 xsb_wildmatch.H
 xsb_wildmatch.O
 *.xwam
+*.o
+*.obj
+*.def
+*.lib

@@ -1,2 +1,6 @@
 xsbpattern.H
 xsbpattern.xwam
+*.def
+*.obj
+*.lib
+*.o

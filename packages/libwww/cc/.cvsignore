@@ -1,3 +1,7 @@
 *.H
 *.O
 *.so
+*.o
+*.obj
+*.def
+*.lib

@@ -1,3 +1,7 @@
 xsb_re_match.H
 xsb_re_match.O
 *.xwam
+*.o
+*.obj
+*.def
+*.lib
