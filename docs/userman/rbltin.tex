@@ -524,12 +524,13 @@ tries) \cite{RRSSW98}.
 the session.
 \begin{itemize}
 \item Call Subsumption Subgoal Operations.  For predicates that use
-subsumptive tabling, the total number of subgoal calls is given, as is
-the number of new calls ({\tt producers}) and the number of repeated
-calls to non-completed tables ({\tt variants}).  Furthermore, the
-number of properly subsumed calls is given, along with the number of
-table entries constructed for these subsumed calls.  Finally, the
-number of subsuming calls to completed tables is given.
+subsumptive tabling, the total number of subsumptive subgoal calls is
+given, as is the number of new calls ({\tt producers}) and the number
+of repeated calls to non-completed tables ({\tt variants}).
+Furthermore, the number of properly subsumed calls to incomplete
+tables is given, along with the number of subsumed calls to completed
+tables.  Finally, the total number of subsumptive table entries
+overall is given, including all producer and consumer calls.
 %
 \item Call Subsumption Answer Operations.  The number of {\tt
 answer ident} operations represents the number of copies of answer
@@ -607,9 +608,9 @@ Memory (total)         1941216 bytes:       238120 in use,      1703096 free
 
 Tabling Operations
   Call Subsumption Subgoal Operations:
-            call check/insert ops: 0 producers, 0 variants,
-            0 properly subsumed (0 table entries), 
-            0 used completed table.
+            0 call check/insert ops: 0 producers, 0 variants,
+            0 properly subsumed. 0 used completed table, 
+	    0 table entries overall.
   Call Subsumption Answer Operations:
             0 relevant answer ident ops.  0 consumptions via answer list.
   Call Variance Subgoal Operations: 
