@@ -23,10 +23,9 @@
 */
 
 
-%% Inserts fact. On backtracking, fact is deleted.
-
+%% Inserts facts. On backtracking, the fact is deleted.
 storage_insert_fact_bt(StorageName,Fact,Inserted) :-	
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	trie_intern(Fact, H, Leaf, New, _),
 	(New == 0
 	->  Inserted=1,  % new fact inserted
@@ -39,7 +38,7 @@ storage_insert_fact_bt(StorageName,Fact,Inserted) :-
 
 %% Nonbacktrackable insert
 storage_insert_fact(StorageName,Fact,Inserted) :-	
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	trie_intern(Fact, H, _Leaf, New, _),
 	(New == 0
 	->  Inserted=1   % new fact inserted
@@ -52,7 +51,7 @@ storage_insert_fact(StorageName,Fact,Inserted) :-
 %% On backtracking: unmarks facts that are marked for deletion
 
 storage_delete_fact_bt(StorageName,Fact,Deleted) :-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
 	    ( trie_unintern_nr(H, Leaf)
@@ -63,7 +62,7 @@ storage_delete_fact_bt(StorageName,Fact,Deleted) :-
 
 %% Nonbacktrackable delete
 storage_delete_fact(StorageName,Fact,Deleted) :-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
 	    trie_unintern_nr(H, Leaf)
@@ -73,7 +72,7 @@ storage_delete_fact(StorageName,Fact,Deleted) :-
 
 %% Find fact in storage
 storage_find_fact(StorageName,Fact) :-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	trie_interned(Fact, H, _, _).
 
 
@@ -84,7 +83,7 @@ storage_find_fact(StorageName,Fact) :-
 %% In both cases don't insert anything.
 %% If keypair is new, return 1 and insert pair(Key,Val)
 storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	%% If this key already exists, then don't insert and return -1
 	(trie_interned(pair(Key,Val), H, _Leaf, _)
 	-> (Val==Value -> Inserted=0 ; Inserted = -1)
@@ -101,7 +100,7 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
 storage_delete_keypair_bt(StorageName,Key, Deleted):-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
 	    ( trie_unintern_nr(H, Leaf) 
@@ -115,7 +114,7 @@ storage_delete_keypair_bt(StorageName,Key, Deleted):-
 %% Like keypair_insert_bt, keypair_delete_bt, 
 %% but these are not backtrackable.
 storage_insert_keypair(StorageName,Key, Value, Inserted):-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	%% If this key already exists, then don't insert and return -1
 	( trie_interned(pair(Key,Val), H, _Leaf, _)
 	-> (Val==Value -> Inserted=0 ; Inserted = -1)
@@ -128,7 +127,7 @@ storage_insert_keypair(StorageName,Key, Value, Inserted):-
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
 storage_delete_keypair(StorageName,Key, Deleted):-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
 	    trie_unintern_nr(H, Leaf) 
@@ -137,14 +136,14 @@ storage_delete_keypair(StorageName,Key, Deleted):-
 
 
 storage_find_keypair(StorageName,Key,Value) :-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	trie_interned(pair(Key,Value),H,_,_).
 
 %% Reclaims space by removing nodes from the backtrackable insert/keypair trie
 %% which were marked for deletion. This should be done only at the top 
 %% level of a query.
 storage_reclaim_space(StorageName) :-
-	triehandle_for_backtrackable_op(StorageName,H),
+	triehandle_for_storage(StorageName,H),
 	trie_reclaim_uninterned_nr(H).
 
 
@@ -152,7 +151,7 @@ storage_reclaim_space(StorageName) :-
 
 %% Create a new trie or use an existing one 
 %% that is already saved as a property of IdAtom
-triehandle_for_backtrackable_op(IdAtom,Handle) :-
+triehandle_for_storage(IdAtom,Handle) :-
 	conget(IdAtom,H),
 	(H==0
 	-> new_trie(Handle), conset(IdAtom,Handle)
