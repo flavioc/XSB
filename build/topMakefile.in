@@ -136,9 +136,14 @@ INSTALL_DATA = @INSTALL_DATA@
 XSB = xsb
 
 
-all: prepare emu run_xsb_src register emu_clean 
+# Normal user
+all: prepare emu configure_packages_src register emu_clean 
 
-devel: prepare emu run_xsb_src emu_clean
+# Developer who just checked out or updated CVS copy
+devel: prepare emu remake_dot_O_files configure_packages_src emu_clean
+
+# Developer who needs a quick re-make of the executable
+fast: prepare emu emu_clean
 
 prepare:
 	@cd $(src_emudir); \
@@ -169,7 +174,7 @@ register:
 	@register.sh
 
 
-install:: copy_files run_xsb_install
+install:: copy_files configure_packages_install
 
 copy_files::
 	@( test "${prefix}" = "${srcdir}" && \
@@ -221,14 +226,17 @@ copy_files::
 	    echo "Installed!" \
 	  )
 
-run_xsb_src:
-	run_xsb.sh $(src_scriptdir)/xsb$(config_tag) | \
+configure_packages_src:
+	pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
 	  chmod 644  $(src_config_prefix)/configuration.O
 
-run_xsb_install:
-	@run_xsb.sh $(install_scriptdir)/xsb$(config_tag) ; \
+configure_packages_install:
+	@pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(install_config_prefix)/configuration.O
+
+remake_dot_O_files:
+	cd $(srcdir); make
 
 # clean for this architecture only
 configclean::

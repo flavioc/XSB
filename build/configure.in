@@ -382,7 +382,6 @@ if test -z "$with_os" ; then
     dnl we set it in config.h on windows and dos
     AC_C_INLINE
 fi
-AC_C_CONST
 
 
 dnl Set up the additional libraries

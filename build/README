@@ -15,12 +15,12 @@ the same source tree, and there will be no conflict between the
 architecture-specific files. Moreover, at run time XSB can find 
 libraries specific to its current configuration and use them.
 
-One limitation: you cannot build XSB for several different
-architectures simultaneously, since `configure' and `make' use the same
-output files. However, after you have built for one architecture, the
-scripts clean up after themselves, and the source tree is ready to be built
-for the next architecture. XSB can then be run on all architectures for
-which it was built.
+One limitation: you cannot build XSB for several different architectures
+simultaneously, since `configure' and `make' use the same output
+files. However, after you have built for one architecture (configure
+followed by makexsb; see below), the scripts clean up after themselves, and
+the source tree is ready to be built for the next architecture. XSB can
+then be run on all architectures for which it was built.
 
 
 configure.in	  - this is the main workhorse that Autoconf uses to create 
@@ -77,7 +77,7 @@ makexsb.in	  - Input for producing the `makexsb' script. You run
 		    is to find the appropriate architecture-specific make
 		    file and then run make on it. 
 
-run_xsb.sh
+pkg_config.sh
 copysubdirs.sh    - Scripts used in topMakefile to configure packages and
 		    copy subdirectories when the user types `makexsb install'.
 
@@ -262,15 +262,24 @@ How to build:
     that is different from the one that might be otherwise produced when
     those other options are in effect.
 
-    The main makefile has several useful targets. When you type `makexsb'
-    then both the run-in-place and the installation executable will be
-    produced.  If you are debugging XSB, waiting for the installation
-    executable is just a waste of time. So, type:
+    The top makefile has several useful targets. When you type `makexsb'
+    then the executable will be produced and XSB packages will be
+    configured.  If you are debugging XSB, waiting for the packages
+    is just a waste of time. So, type:
 
-	 makexsb devel
+	 makexsb fast
 
-    instead. When you type `makexsb devel' you will not be asked to
+    instead. When you type `makexsb fast' you will not be asked to
     register.
+
+    However, when you just checked out a fresh copy from the XSB repository 
+    or if you just ran `cvs update' then you should type 
+
+        makexsb devel
+
+    to rebuild the missing .O files in the XSB installation. (XSB CVS
+    repository stores only the very necessary .O files, leaving the rest to 
+    be rebuilt by the user.
 
     Here are some other makexsb targets:
 
@@ -301,20 +310,20 @@ How to build:
     NOTE: you don't need to run `configure' every time you recompile
 	  XSB!  Configure script needs to be run only if you need to build
 	  XSB for a different architecture or to use different options
-	  (e.g., build for Oracle, build with the -g option, etc.).
+	  (e.g., build for Oracle, build with the debug option, etc.).
 	  
-	  If the building parameters havent changed, you only need to
+	  If the building parameters haven't changed, you only need to
 	  remake XSB in order to recompile it.
 
 
 Development tricks:
 
-    As mentioned before, the present set up allows one to build XSb for
+    As mentioned before, the present set up allows one to build XSB for
     different architectures from a single source tree without the risk of
     wiping out the object files, etc. This can save a lot of time that
     would otherwise be wasted waiting for things to get compiled.
 
-    The setup also saves all the architecture specific make files and files 
+    The setup also saves all the architecture-specific make files and files 
     that must be included using the #include statement in the C source.
     All these files are automatically copied in the right place when you
     type `makexsb' in the build/ directory.
@@ -333,11 +342,12 @@ Development tricks:
 	   configure --config-tag=ora
 	   makexsb --config-tag=ora
 
-	then all configuration-specific files will go into
+	then all configuration-specific files will go into the directory
 
 	    config/<arch>-ora/
 
-	directory, and the results of the earlier build will be preserved.
+	and the results of the earlier build for the same architecture will
+	be preserved.
 
 	One problem with this is that the bin/xsb script will be looking for
 
