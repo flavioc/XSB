@@ -794,7 +794,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${emudir}/pcdos/configuration.P:xsb_configuration_pcdos.in
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
-	    ${etcdir}/config.msg:confmsg.in
+	    ${arch_config_prefix}/config.msg:confmsg.in
 	    ])
 
 chmod 644 ${arch_config_file}
