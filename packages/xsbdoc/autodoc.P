@@ -437,8 +437,6 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 	findall(op(P,Prec,PredNames),
                    clause_read(1,op(P,Prec,PredNames),_),Ops),
 
-%	trace,
-
 	get_file_level_declarations(NDecls),
 
         format_module_usage(Format,Name,RModuleType,Exports,
@@ -602,7 +600,6 @@ doc_predicates([P|Ps],IsDecl,File,Idxs,OS,Format,Opts) :-
 doc_predicate(F/A,IsDecl,File,Idxs,OS,Format,Opts):-
         optional_message(['Generating documentation for ',File,':',F/A],Opts),
  	functor(Pred,F,A),
-%	trace,
 	predicate_usages(Pred,IsDecl,Usages,_N,Multiple),
         predicate_level_comment(F/A,Format,Idxs,Opts,Comment,CommentHead),
 %        other_assertions(Pred,IsDecl,OtherAssrt,ON),

@@ -11,7 +11,7 @@ xsbdoc_component('assertions_props.P').
 xsbdoc_bibfile(all).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Miscellaneous Comments
+% Indexing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 xsbdoc_index(all).

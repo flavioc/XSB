@@ -83,8 +83,8 @@ xsbdoc(Format_file,Generation_type):-
         autodoc_fail(texinfo,Main,Indices,Texics,
 	             StartPage,PaperType,['-main'|Opts]),
 	xsbdoc_components(Components,Indices,Opts),
-	make_bibfiles(Base),	/* dont want main.P */
-            tex_commands(Base),
+	make_bibfiles(Base),
+        tex_commands(Base),
 	perform_generation_type(Generation_type,Base,Components),
 	!.
 xsbdoc(Format_file,_):- 
@@ -217,7 +217,10 @@ make_bibfiles(Main):-
 	    close(MainStr),
 	    shell_list(['bibtex ',Main,'.refs']),
 	    shell_list(['mv ',Main,'.refs.bbl ',Main,'refs.texic'])
-	  ; writeln('No Bibfiles found')).
+	  ; 
+	    shell_list(['touch ',Main,'refs.texic']),
+	    % TLS the above seems to be necessary ?!?!
+	    writeln('No Bibfiles found')).
 
 make_distclean:- 
 	shell('rm -f *.aux *.blg *.cp *.cps *.fn *.fns *.gl *.gls *.ky *.kys'),

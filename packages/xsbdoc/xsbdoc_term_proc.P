@@ -70,7 +70,7 @@ process_a_file(File,Dir,Base,SrcName,IsLib) :-
  	corrected_search_module(File,Dir,Base,SrcName,IsLib),
 	concat_atom([Dir,SrcName],Full),
         read_record_file(Full),
-	concat_atom([Base,'.H'],Hname),
+	concat_atom([Dir,Base,'.H'],Hname),
 	(file_exists(Hname) -> read_record_file(Hname) ; true).
 
 /* corrected_search_module(main,Dir,main,main.P,<true/false>) */
