@@ -312,11 +312,13 @@ is_mvdobjrefop(FL_INHERIMVD) :- !.
 
 is_fdattspecop(FL_FDARROW)     :- !.
 is_fdattspecop(FL_INFDARROW)   :- !.
-is_fdattspecop(FL_FDSIGARROW)  :- !.
-is_fdattspecop(FL_MVDSIGARROW) :- !.
-is_fdattspecop(FL_INFDSIGARR)  :- !.
-is_fdattspecop(FL_INMVDSIGARR) :- !.
 
+%% Note: => and *=> are multivatued attribute specifications, because
+%%       a[b=>{c,d}] and a[b*=>{c,d}] are legal (semantics is intersection)
+is_mvdattspecop(FL_FDSIGARROW)  :- !.
+is_mvdattspecop(FL_INFDSIGARR)  :- !.
+is_mvdattspecop(FL_MVDSIGARROW) :- !.
+is_mvdattspecop(FL_INMVDSIGARR) :- !.
 is_mvdattspecop(FL_MVDARROW)   :- !.
 is_mvdattspecop(FL_INMVDARROW) :- !.
 

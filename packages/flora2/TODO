@@ -446,7 +446,7 @@ DONE 13. Do dependency checking in the compiler to determine if a tabled
 19. Implement support for the full directive :- index/2
     (right now it only allows trie indexing)
 
-20. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
+DONE 20. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
 
 21. Allow inheritance of procedural methods: a[*#p(...)].
 

@@ -117,6 +117,7 @@ is_flbirelate(FLBIRELATE(Obj1,RelType,Obj2),Obj1,RelType,Obj2).
 is_flobjspec(FLOBJSPEC(Obj,Spec),Obj,Spec).
 %% Represents object reference: O.M, O..M, O!M, O!!M. RefType is ->, ->>, ...
 is_flobjref(FLOBJREF(Obj,RefType,Att),Obj,RefType,Att).
+
 %% RefType represents the arrow type: ->, *->, ->, =>>, ...
 is_flfdattspec(FLFDATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flmvdattspec(FLMVDATTSPEC(Att,RefType,Val),Att,RefType,Val).
@@ -125,6 +126,7 @@ is_fltolistattspec(FLTOLISTATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flmethspec(FLMETHSPEC(Meth),Meth).
 is_flimethspec(FLIMETHSPEC(IMeth),IMeth).
 is_fltranspec(FLTRANSPEC(Tran),Tran).
+
 is_flobjeql(FLOBJEQL(O1,O2),O1,O2).
 is_flcut(FLCUT(I),I).
 
@@ -225,7 +227,6 @@ hilogtable_struct(A,PRHILOGTABLE(A)).
   disjunct_struct(+Goal1,+Goal2,-Code)
   not_struct(+Goal,-Code)
   tnot_struct(+Goal,-Code)
-  conjunct_code(+Goal1,+Goal2,-Code)
 ****************************************************************************/
 conjunct_struct(Goal1,Goal2,PRAND(Goal1,Goal2)).
 disjunct_struct(Goal1,Goal2,PROR(Goal1,Goal2)).
@@ -236,15 +237,23 @@ tnot_struct(Goal,PRTNOT(Goal)) :-
 	directive_struct(ICode,DCode),
 	report_directive(DCode).
 
-conjunct_code(Goal1,Goal2,Code) :-
-	( Goal1 == NULL ->
-	    Code=Goal2
 
-	; Goal2 == NULL ->
-	    Code=Goal1
+/****************************************************************************
+  conjunct_code(+GoalList,-Code)
+
+  Takes a list of goals and constructs a disjunct:
+        prand(G1, prand(G2, G3))
+  Discards NULLs
+  If all are NULLs, returns NULL.
+****************************************************************************/
+conjunct_code([Goal],Goal).
+conjunct_code([NULL|GList],ConjGoal) :- !, conjunct_code(GList,ConjGoal).
+conjunct_code([Goal|GList],ConjGoal) :-
+	conjunct_code(GList,ConjGoalTail),
+	(ConjGoalTail==NULL -> ConjGoal=Goal
 	;
-	  conjunct_struct(Goal1,Goal2,Code)
-        ).
+	    conjunct_struct(Goal,ConjGoalTail,ConjGoal)
+	).
 
 
 /****************************************************************************
@@ -418,23 +427,11 @@ isaspec_struct(Obj1,Obj2,PRISA(Obj1,Obj2)).
 subspec_struct(Obj1,Obj2,PRSUB(Obj1,Obj2)).
 
 fdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
-	( is_fdspecop(RefType) ->
+	(
+	  is_fdspecop(RefType) ->
 	    fdspec_struct(Object,AttObj,ValObj,Code)
-
 	; is_ifdspecop(RefType) ->
 	    ifdspec_struct(Object,AttObj,ValObj,Code)
-
-	; is_fdsigspecop(RefType) ->
-	    fdsigspec_struct(Object,AttObj,ValObj,Code)
-
-	; is_mvdsigspecop(RefType) ->
-	    mvdsigspec_struct(Object,AttObj,ValObj,Code)
-
-	; is_ifdsigspecop(RefType) ->
-	    ifdsigspec_struct(Object,AttObj,ValObj,Code)
-	;
-	  is_imvdsigspecop(RefType),
-	  imvdsigspec_struct(Object,AttObj,ValObj,Code)
         ).
 
 fdspec_struct(Object,AttObj,ValObj,PRFD(Object,AttObj,ValObj)).
@@ -473,11 +470,21 @@ mvddef_struct(Object,AttObj,PRMVDDEF(Object,AttObj)).
 imvddef_struct(Object,AttObj,PRIMVDDEF(Object,AttObj)).
 
 mvdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
-	( is_mvdspecop(RefType) ->
+	(
+	  is_mvdspecop(RefType) ->
 	    mvdspec_struct(Object,AttObj,ValObj,Code)
-	;
-	  is_imvdspecop(RefType),
-	  imvdspec_struct(Object,AttObj,ValObj,Code)
+	; is_imvdspecop(RefType),
+	    imvdspec_struct(Object,AttObj,ValObj,Code)
+	; is_mvdsigspecop(RefType) ->
+	    mvdsigspec_struct(Object,AttObj,ValObj,Code)
+	; is_imvdsigspecop(RefType),
+	    imvdsigspec_struct(Object,AttObj,ValObj,Code)
+	%% Note: => and *=> are permitted to have multiple values
+	%%       (semantic is intersection)
+	; is_fdsigspecop(RefType) ->
+	    fdsigspec_struct(Object,AttObj,ValObj,Code)
+	; is_ifdsigspecop(RefType) ->
+	    ifdsigspec_struct(Object,AttObj,ValObj,Code)
         ).
 
 mvdspec_struct(Object,AttObj,ValObj,PRMVD(Object,AttObj,ValObj)).
@@ -1330,77 +1337,91 @@ compile_body(ParserTerm,Code,Status) :-
 ****************************************************************************/
 compile_body_literal(ParserTerm,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_fltermlit(Funct,N,Args,Code,Status)
+	    compile_fltermlit(Funct,N,Args,OidCode,SpecCode,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,_Obj,Code,Status)
+	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,_Obj,OidCode,SpecCode,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_flobjspec(ObjTerm,Spec,_Object,Code,Status)
+	    compile_flobjspec(ObjTerm,Spec,_Object,OidCode,SpecCode,Status)
 
 	; is_flload(ParserTerm,LoadList) ->
-	    compile_flload(LoadList,Code,Status)
+	    compile_flload(LoadList,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_flworkspace(ParserTerm,P,WS) ->
-	    compile_wsliteral(P,WS,Code,Status)
+	    compile_wsliteral(P,WS,OidCode,SpecCode,Status)
 
 	; is_flplib(ParserTerm,P) ->
-	    compile_prologliblit(P,Code,Status)
+	    compile_prologliblit(P,OidCode,SpecCode,Status)
 
 	; is_flplib(ParserTerm,P,Module) ->
-	    compile_prologliblit(P,Module,Code,Status)
+	    compile_prologliblit(P,Module,OidCode,SpecCode,Status)
 
 	; is_flfloralib(ParserTerm,P,Module) ->
-	    compile_floraliblit(P,Module,Code,Status)
+	    compile_floraliblit(P,Module,OidCode,SpecCode,Status)
 
 	; is_flinsert(ParserTerm,Op,List,Cond) ->
-	    compile_flinsert(Op,List,Cond,Code,Status)
+	    compile_flinsert(Op,List,Cond,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_flinsert(ParserTerm,Op,List) ->
-	    compile_flinsert(Op,List,Code,Status)
+	    compile_flinsert(Op,List,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_fldelete(ParserTerm,Op,List,Cond) ->
-	    compile_fldelete(Op,List,Cond,Code,Status)
+	    compile_fldelete(Op,List,Cond,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_fldelete(ParserTerm,Op,List) ->
-	    compile_fldelete(Op,List,Code,Status)
+	    compile_fldelete(Op,List,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_flifthenelse(ParserTerm,Cond,Then,Else) ->
-	    compile_flifthenelse(Cond,Then,Else,Code,Status)
+	    compile_flifthenelse(Cond,Then,Else,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_flifthen(ParserTerm,Cond,Then) ->
-	    compile_flifthen(Cond,Then,Code,Status)
+	    compile_flifthen(Cond,Then,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_fluniveqform(ParserTerm,Left,Right) ->
-	    compile_fluniveqform(Left,Right,Code,Status)
+	    compile_fluniveqform(Left,Right,SpecCode,Status),
+	    OidCode=NULL
 
 	; is_flmetauniv(ParserTerm,Left,Right) ->
-	    compile_flmetauniv(Left,Right,Code,Status)
+	    compile_flmetauniv(Left,Right,OidCode,SpecCode,Status)
 	
 	; is_flmetaunivform(ParserTerm,Left,Right) ->
-	    compile_flmetaunivform(Left,Right,Code,Status)
+	    compile_flmetaunivform(Left,Right,OidCode,SpecCode,Status)
 	
 	; is_flcontrolconstruct(ParserTerm,Wrapper,Cond,Action) ->
-	    compile_flcontrolconstruct(Cond,Action,Wrapper,Code,Status)
+	    compile_flcontrolconstruct(Cond,Action,Wrapper,SpecCode,Status),
+	    OidCode = NULL
 	
 	; is_flcut(ParserTerm,I) ->
-	    cut_struct(I,Code),
+	    cut_struct(I,SpecCode),
+	    OidCode=NULL,
 	    Status=[]
 
 	; is_flatom(ParserTerm,_A) ->
-	    atomlit_struct(ParserTerm,Code) ->
+	    atomlit_struct(ParserTerm,SpecCode) ->
+	    OidCode=NULL,
 	    Status=[]
 
 	; is_flvar(ParserTerm,Name,Index) ->
-	    call_struct(Name,Index,Code),
+	    call_struct(Name,Index,SpecCode),
+	    OidCode=NULL,
 	    Status=[]
 
 	; is_flobjeql(ParserTerm,O1,O2) ->
-	    compile_flobjeql(O1,O2,Code,Status)
+	    compile_flobjeql(O1,O2,OidCode,SpecCode,Status)
 
 	; is_fldirective(ParserTerm,DirectList) ->
-	    compile_exec_directive(DirectList,Code,Status)
-	).
+	    compile_exec_directive(DirectList,SpecCode,Status),
+	    OidCode=NULL
+	),
+	conjunct_code([OidCode,SpecCode],Code).
 
 
 /****************************************************************************
@@ -1435,7 +1456,10 @@ compile_flifthen(Cond,Then,Code,Status) :-
 
 /****************************************************************************
   compile_fluniveqform(+Left,+Right,-Code,-Status)
+
   Compiling ~
+  This produces only spec code -- no oid code, because each argument
+  is treated as Meta, so no oid is passed utside of this term
 ****************************************************************************/
 compile_fluniveqform(Left,Right,Code,Status) :-
 	compile_body(Left,LeftCode,S1),
@@ -1448,23 +1472,21 @@ compile_fluniveqform(Left,Right,Code,Status) :-
 
 
 /****************************************************************************
-  compile_flmetauniv(+Left,+Right,-Code,-Status)
+  compile_flmetauniv(+Left,+Right,-OidCode,-Code,-Status)
   Compiling =..
 ****************************************************************************/
-compile_flmetauniv(Left,Right,Code,Status) :-
+compile_flmetauniv(Left,Right,OidCode,Code,Status) :-
 	%% Use pathexp translation instead of body translation, because we
 	%% don't want module name to be tacked on unless requested
 	%% LeftCode becomes bound to the OID code of Left
 	%% ObjCode is later conjuncted with the result
-	compile_pathexp(Left,LeftCode,ObjCode,S1),
+	compile_pathexp(Left,LeftCode,OidCodeLeft,ObjCode,S1),
 	( S1 == []
-	-> compile_pathexp(Right,RightCode,_RightObjCode,Status),
+	-> compile_pathexp(Right,RightCode,OidCodeRight,RightObjCode,Status),
 	    (Status == []
 	    -> metauniv_struct(LeftCode,RightCode,UnivCode),
-		( ObjCode==NULL -> UnivCode=Code
-		%% Conjoin ObjCode to the right
-		; conjunct_struct(UnivCode,ObjCode,Code)
-		)
+		conjunct_code([UnivCode,ObjCode,RightObjCode],Code),
+		conjunct_code([OidCodeLeft,OidCodeRight],OidCode)
 	    ; true
 	    )
 	;
@@ -1474,15 +1496,16 @@ compile_flmetauniv(Left,Right,Code,Status) :-
 
 
 /****************************************************************************
-  compile_flmetaunivform(+Left,+Right,-Code,-Status)
+  compile_flmetaunivform(+Left,+Right,-OidCode,-Code,-Status)
   Compiling ~..
 ****************************************************************************/
-compile_flmetaunivform(Left,Right,Code,Status) :-
+compile_flmetaunivform(Left,Right,OidCode,Code,Status) :-
 	compile_body(Left,LeftCode,S1),
 	( S1 == []
-	-> compile_pathexp(Right,RightCode,_RightObjCode,Status),
+	-> compile_pathexp(Right,RightCode,OidCode,RightObjCode,Status),
 	    (Status == []
-	    -> metauniv_struct(LeftCode,RightCode,Code)
+	    -> metauniv_struct(LeftCode,RightCode,UnivCode),
+		conjunct_code([UnivCode,RightObjCode],Code)
 	    ; true
 	    )
 	; Status=S1
@@ -1509,7 +1532,8 @@ compile_flcontrolconstruct(Cond,Action,Wrapper,Code,Status) :-
 /****************************************************************************
   compile_pathexp(+ParserTerm,-Object,-Code,-Status)
 ****************************************************************************/
-compile_pathexp(ParserTerm,Object,NULL,[]) :-
+%% ParserTerm is a primitive object -- no oid code and no spec code results
+compile_pathexp(ParserTerm,Object,NULL,NULL,[]) :-
 	( is_flatom(ParserTerm,_A) ->
 	    atomobj_struct(ParserTerm,Object)
 
@@ -1524,74 +1548,88 @@ compile_pathexp(ParserTerm,Object,NULL,[]) :-
 	),
 	!.
 
-compile_pathexp(ParserTerm,Object,Code,Status) :-
+compile_pathexp(ParserTerm,Object,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_fltermobj(Funct,N,Args,Object,Code,Status)
+	    compile_fltermobj(Funct,N,Args,Object,OidCode,Code,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Object,Code,Status)
+	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Object,OidCode,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_flobjspec(ObjTerm,Spec,Object,Code,Status)
+	    compile_flobjspec(ObjTerm,Spec,Object,OidCode,Code,Status)
 
 	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
-	    compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status)
+	    compile_flobjref(ObjTerm,RefType,AttTerm,Object,OidCode,Code,Status)
 
 	; is_fllist(ParserTerm,L,T,I) ->
-	    compile_fllist(L,T,I,Object,Code,Status)
+	    compile_fllist(L,T,I,Object,OidCode,Code,Status)
 
 	; is_flaggregate(ParserTerm,Op,V,GV,B) ->
-	    compile_flaggregate(Op,V,GV,B,Object,Code,Status)
+	    %% Aggregates are treated as OID, so its code would come
+	    %% ahead of the code of the literal it occurs in
+	    compile_flaggregate(Op,V,GV,B,Object,OidCode,Status)
 
 	; is_flplib(ParserTerm,P) ->
-	    compile_prologlibobj(P,Object,Code,Status)
+	    compile_prologlibobj(P,Object,OidCode,Code,Status)
 
 	; is_flplib(ParserTerm,P,Module) ->
-	    compile_prologlibobj(P,Module,Object,Code,Status)
+	    compile_prologlibobj(P,Module,Object,OidCode,Code,Status)
 
 	; is_flfloralib(ParserTerm,P,Module) ->
-	    compile_floralibobj(P,Module,Object,Code,Status)
+	    compile_floralibobj(P,Module,Object,OidCode,Code,Status)
 	;
 	  is_flworkspace(ParserTerm,P,WS),
-	  compile_wspathexp(P,WS,Object,Code,Status)
+	  compile_wspathexp(P,WS,Object,OidCode,Code,Status)
 	).
 
 
 /****************************************************************************
-  compile_pathexplist(+ParserTermList,-ObjectList,-Code,-Status)
+  compile_pathexplist(+ParserTermList,-ObjectList,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_pathexplist([],[],NULL,[]) :- !.
+compile_pathexplist([],[],NULL,NULL,[]) :- !.
 
-compile_pathexplist([T|L],[TObj|LObj],Code,Status) :-
-	compile_pathexp(T,TObj,TCode,S),
+compile_pathexplist([T|L],[TObj|LObj],OidCode,Code,Status) :-
+	compile_pathexp(T,TObj,OidCodeHead,TCode,S),
 	( S == [] ->
-	    compile_pathexplist(L,LObj,LCode,Status),
-	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	    compile_pathexplist(L,LObj,OidCodeTail,LCode,Status),
+	    (Status == [] ->
+		conjunct_code([TCode,LCode],Code),
+		conjunct_code([OidCodeHead,OidCodeTail],OidCode)
+	    ;
+		true
+	    )
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-Code,-Status)
+  compile_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_argpathexplist([],[],[],NULL,[]).
+compile_argpathexplist([],[],[],NULL,NULL,[]).
 
-compile_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],Code,Status) :-
+compile_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],OidCode,Code,Status) :-
 	!,
-	compile_pathexp(T,TObj,TCode,S),
+	compile_pathexp(T,TObj,OidCodeHead,TCode,S),
 	( S == [] ->
-	    compile_argpathexplist(L,ArgTypeList,LObj,LCode,Status),
-	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	    compile_argpathexplist(L,ArgTypeList,LObj,OidCodeTail,LCode,Status),
+	    (Status == [] ->
+		conjunct_code([TCode,LCode],Code),
+		conjunct_code([OidCodeHead,OidCodeTail],OidCode)
+	    ; true
+	    )
 	;
 	  Status=S
         ).
 
-compile_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Status) :-
+compile_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],OidCode,Code,Status) :-
 	!,
+	%% because we are compiling a meta here, the code
+	%% is self-contained -- no oid part will be pushed
+	%% to the front of the enveloping term
 	compile_body(T,TCode,S),
 	( S == [] ->
-	    compile_argpathexplist(L,ArgTypeList,LObj,Code,Status)
+	    compile_argpathexplist(L,ArgTypeList,LObj,OidCode,Code,Status)
 	;
 	  Status=S
         ).
@@ -1602,10 +1640,11 @@ compile_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Stat
 ****************************************************************************/
 compile_flload(LoadList,Code,Status) :-
 	is_fllist(LoadList,L,T,I),
-	compile_fllist(L,T,I,ObjList,OCode,Status),
+	%% since complex terms aren't allowed in load lists, we ignore OidCode
+	compile_fllist(L,T,I,ObjList,_OidCode,OCode,Status),
 	( Status == [] ->
 	    florasyslib_struct(FLLIBLOAD,1,[ObjList],LCode),
-	    conjunct_code(OCode,LCode,Code)
+	    conjunct_code([OCode,LCode],Code)
 	;
 	  true
         ).
@@ -1623,71 +1662,72 @@ compile_flvar(Name,Index,VarObject) :-
 
 
 /****************************************************************************
-  compile_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-Code,-Status)
+  compile_fltermobj(+FunctorTerm,+Arity,+ArgList,-OidCode,-Object,-Code,-Status)
+
+  Compile term in the OID position.
 ****************************************************************************/
-compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
+compile_fltermobj(Funct,N,Args,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_argpathexplist(Args,ArgTypes,AObj,Code,Status),
+	compile_argpathexplist(Args,ArgTypes,AObj,OidCode,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
-compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
-	compile_pathexplist([Funct|Args],[FObj|AObj],Code,Status),
+compile_fltermobj(Funct,N,Args,Object,OidCode,Code,Status) :-
+	compile_pathexplist([Funct|Args],[FObj|AObj],OidCode,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 
 /****************************************************************************
-  compile_fltermlit(+FunctorTerm,+Arity,+ArgList,-Code,-Status)
+  compile_fltermlit(+FunctorTerm,+Arity,+ArgList,-OidCode,-Code,-Status)
+
+  Compile term in a predicate position in rule body.
 ****************************************************************************/
-compile_fltermlit(Funct,N,Args,Code,Status) :-
+compile_fltermlit(Funct,N,Args,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_argpathexplist(Args,ArgTypes,AObj,ObjCode,Status),
+	compile_argpathexplist(Args,ArgTypes,AObj,OidCode,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
-	    %% We need to change the order:
-	    %%     the code needed to produce the oid should come before TCode
-	    %%     and the rest of the code in ObjCode should come after TCode
-	    conjunct_code(ObjCode,TCode,Code)
+	    conjunct_code([TCode,ObjCode],Code)
 	;
 	  true
         ).
 
-compile_fltermlit(Funct,N,Args,Code,Status) :-
-	compile_pathexplist([Funct|Args],[FObj|AObj],ObjCode,Status),
+compile_fltermlit(Funct,N,Args,OidCode,Code,Status) :-
+	compile_pathexplist([Funct|Args],[FObj|AObj],OidCode,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
-	    %% We need to change the order:
-	    %%     the code needed to produce the oid should come before TCode
-	    %%     and the rest of the code in ObjCode should come after TCode
-	    conjunct_code(ObjCode,TCode,Code)
+	    conjunct_code([TCode,ObjCode],Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_fllist(+ObjTermList,+ObjTerm,+Index,-Object,-Code,-Status)
+  compile_fllist(+ObjTermList,+ObjTerm,+Index,-Object,-OidCode,-Code,-Status)
 
   Index refers to '['.
+  Lists are like this: [a,b,c|rest]
+  ObjTermList refers to the list [a,b,c] and ObjTerm to rest.
 ****************************************************************************/
-compile_fllist(ObjTermList,ObjTerm,Index,Object,Code,Status) :-
-	compile_pathexplist(ObjTermList,ObjList,ObjListCode,S),
+compile_fllist(ObjTermList,ObjTerm,Index,Object,OidCode,Code,Status) :-
+	compile_pathexplist(ObjTermList,ObjList,OidCodeList,ObjListCode,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
 		Obj=[],
 		ObjCode=NULL,
 		Status=[]
 	    ;
-	      compile_pathexp(ObjTerm,Obj,ObjCode,Status)
+	      compile_pathexp(ObjTerm,Obj,OidCodeObj,ObjCode,Status)
 	    ),
 	    ( Status == [] ->
 		list_struct(ObjList,Obj,Index,Object),
-		conjunct_code(ObjListCode,ObjCode,Code)
+		conjunct_code([ObjListCode,ObjCode],Code),
+		conjunct_code([OidCodeList,OidCodeObj],OidCode)
 	    ;
 	      true
 	    )
@@ -1697,15 +1737,19 @@ compile_fllist(ObjTermList,ObjTerm,Index,Object,Code,Status) :-
 
 
 /****************************************************************************
-  compile_flobjref(+ObjTerm,+RefType,+AttTerm,-Object,-Code,-Status)
+  compile_flobjref(+ObjTerm,+RefType,+AttTerm,-Object,-OidCode,-Code,-Status)
+
+  Process an object reference like a.b.c
+  An objref can be more complex, e.g., a[f->g].b[h->>p].c[k->u]
 ****************************************************************************/
-compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
-	compile_pathexplist([ObjTerm,AttTerm],[Obj,Att],OCode,Status),
+compile_flobjref(ObjTerm,RefType,AttTerm,Object,OidCode,Code,Status) :-
+	compile_pathexplist([ObjTerm,AttTerm],[Obj,Att],OidCodeList,OCode,Status),
 	( Status == [] ->
 	    %% Approximate the textual information for the new variable.
 	    approximate_index(AttTerm,Index),
 	    objref_struct(Obj,RefType,Att,Index,Object,TCode),
-	    conjunct_code(OCode,TCode,Code)
+	    Code = OCode,
+	    conjunct_code([OidCodeList,TCode],OidCode)
 	;
 	  true
         ).
@@ -1713,198 +1757,258 @@ compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
 
 /****************************************************************************
   compile_flbirelate(+ObjTerm1,+RelType,+ObjTerm2,-Object,-Code,-Status)
+
   Compiles binary relationships, like : or ::.
 ****************************************************************************/
-compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
-	compile_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCode,Status),
+compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,OidCode,Code,Status) :-
+	compile_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OidCode,OCode,Status),
 	( Status == [] ->
 	    birelate_struct(Obj1,RelType,Obj2,TCode),
-	    %% We need to change the order:
-	    %%     the code needed to produce the oid should come before TCode
-	    %%     and the rest of the code in ObjCode should come after TCode
-	    conjunct_code(OCode,TCode,Code)
+	    conjunct_code([TCode,OCode],Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_flobjspec(+ObjTerm,+SpecBody,-Object,-Code,-Status)
-  compile_flspecbody(+Object,+SpecTerm,-Code,-Status)
-  compile_mvdattspec(+Object,+AttObj,+RefType,+ValTermList,-Code,-Status)
+  compile_flobjspec(+ObjTerm,+SpecBody,-Object,-OidCode,-Code,-Status)
+
+  Code produced by this and similar predicates is divided into
+  OidCode and Code. 
+  OidCode is the code needed to compute the attribute of molecule
+  and the oid, and the oid of the value part (in ->, ->>, etc.)
+  Code represents the code needed to compute the the attribute specification.
+  For instance, in  a.b[c.d->e.f],
+      OidCode will represent the computation of c.d and e.d:
+	 prand(prfd(a,b,_newvar1),prand(prfd(c,d,_newvar2),prfd(e,d,_newvar3)))
+      Code will represent the -> part:
+                 prfd(_newvar1,_newvar2,_newvar3)
 ****************************************************************************/
-compile_flobjspec(ObjTerm,SpecBody,Object,Code,Status) :-
+compile_flobjspec(ObjTerm,SpecBody,Object,OidCode,Code,Status) :-
 	( SpecBody == [] ->
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
-		compile_pathexplist([OTerm,ATerm],[OObj,AObj],ObjCode,Status),
+		compile_pathexplist([OTerm,ATerm],[OObj,AObj],OidCode,ObjCode,Status),
 		( Status == [] ->
 		    objattdef_struct(OObj,RefType,AObj,TCode),
-		    conjunct_code(ObjCode,TCode,Code)
+		    conjunct_code([TCode,ObjCode],Code)
 		;
 		  true
 	        )
 	    ;
-	      compile_pathexp(ObjTerm,Object,ObjCode,Status),
-	      ( Status == [] ->
-		  objexists_struct(Object,ECode),
-		  conjunct_code(ObjCode,ECode,Code)
-	      ;
-	        true
-	      )
+		%% object exist statement: a.b.c[]
+		compile_pathexp(ObjTerm,Object,OidCode,ObjCode,Status),
+		( Status == [] ->
+		    objexists_struct(Object,ECode),
+		    conjunct_code([ECode,ObjCode],Code)
+		;
+		    true
+		)
 	    )
-	;
-	  compile_pathexp(ObjTerm,Object,ObjCode,S),
+	; % oid spec plus object spec. something like a.b[c->d]
+	    compile_pathexp(ObjTerm,Object,ObjOidCode,ObjCode,S),
 	  ( S == [] ->
-	      compile_flspecbody(Object,SpecBody,SpecCode,Status),
-	      (Status == [] -> conjunct_code(ObjCode,SpecCode,Code); true)
+	      compile_flspecbody(Object,SpecBody,SpecOidCode,SpecCode,Status),
+	      (Status == [] ->
+		  conjunct_code([ObjCode,SpecCode],Code),
+		  conjunct_code([ObjOidCode,SpecOidCode],OidCode)
+	      ; true
+	      )
 	  ;
 	    Status=S
           )
         ).
 
+/****************************************************************************
+  compile_flspecbody(+Object,+SpecTerm,-OidCode,-Code,-Status)
 
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+   Compile the specification part of a molecule Object[SpecTerm]
+   Object: describes the oid
+   SpecTerm: descripes the specification inside the brackets
+   Code: the resulting compiled code
+****************************************************************************/
+compile_flspecbody(Object,SpecTerm,OidCode,Code,Status) :-
 	is_flconjunct(SpecTerm,L,R),
 	!,
-	compile_flspecbody(Object,L,LCode,S),
+	compile_flspecbody(Object,L,OidCode,LCode,S),
 	( S == [] ->
-	    compile_flspecbody(Object,R,RCode,Status),
-	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
+	    compile_flspecbody(Object,R,OidCode,RCode,Status),
+	    (Status == [] -> conjunct_code([LCode,RCode],Code); true)
 	;
 	  Status=S
         ).
 
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,OidCode,Code,Status) :-
 	is_fldisjunct(SpecTerm,L,R),
 	!,
-	compile_flspecbody(Object,L,LCode,S),
+	compile_flspecbody(Object,L,OidCode,LCode,S),
 	( S == [] ->
-	    compile_flspecbody(Object,R,RCode,Status),
+	    compile_flspecbody(Object,R,OidCode,RCode,Status),
 	    (Status == [] -> disjunct_struct(LCode,RCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,OidCode,Code,Status) :-
 	is_flnot(SpecTerm,G),
 	!,
-	compile_flspecbody(Object,G,GCode,Status),
-	(Status == [] -> not_struct(GCode,Code); true).
+	compile_flspecbody(Object,G,OidCode,GCode,Status),
+	(Status == [] ->
+	    conjunct_code([OidCode,GCode],CombinedGCode),
+	    not_struct(CombinedGCode,Code)
+	; true
+	).
 
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,OidCode,Code,Status) :-
 	is_fltnot(SpecTerm,G),
 	!,
-	compile_flspecbody(Object,G,GCode,Status),
-	(Status == [] -> tnot_struct(GCode,Code); true).
+	compile_flspecbody(Object,G,OidCode,GCode,Status),
+	(Status == [] ->
+	    conjunct_code([OidCode,GCode],CombinedGCode),
+	    tnot_struct(CombinedGCode,Code)
+	; true
+	).
 
 %% F-molecule with attribute specification.
 %% Can be O[M->V], where O,M,V can be any complex F-molecule
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+%% OidCodeList below gets bound to code needed to produce
+%% the attribute (M) and the value (V). We conjunct this code in front of the
+%% code for the molecule
+%% NULL means tht we don't pass OID code out, because we use it right here.
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
+	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
 	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    conjunct_code(SCode,OCode,Code)
+	    %% SCode: code to produce object reference, attribute, and value
+	    %% OCode: code for the pure attribute spec of the object
+	    %% OidCode: code to produce the attribute and the value
+	    conjunct_code([OidCode,SCode,OCode],Code)
 	;
 	  true
         ).
 
 %% Same for ->>
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+%% No OidCode is passed outside: we consume it here
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flmvdattspec(SpecTerm,AttTerm,RefType,ValTermList),
 	!,
-	compile_pathexp(AttTerm,AttObj,ACode,S),
+	compile_pathexp(AttTerm,AttObj,AOidCode,ACode,S),
 	( S == [] ->
 	    ( ValTermList == [] ->
 		mvdattdef_struct(Object,AttObj,RefType,SCode),
-		conjunct_code(ACode,SCode,Code),
+		conjunct_code([AOidCode,ACode,SCode],Code),
 		Status=[]
 	    ;
-	      compile_mvdattspec(Object,AttObj,RefType,ValTermList,SCode,Status),
-	      (Status == [] -> conjunct_code(ACode,SCode,Code); true)
+		%% An mvd spec can have several terms in the value set
+		%% (represented by ValTermList). This compiles such
+		%% a spec into a conjunction.
+		compile_mvdattspec(Object,AttObj,RefType,ValTermList,VOidCode,SCode,Status),
+		%% ACode: Code to produce attribute
+		%% SCode: code to produce pure attr specs and 
+		%%         the objects that represents the values
+	      (Status == [] ->
+		  conjunct_code([AOidCode,VOidCode,ACode,SCode],Code)
+	      ;
+		  true
+	      )
 	    )
         ;
 	  Status=S
         ).
 
 %% +>>, *+>>
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flincattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
+	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
 	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    conjunct_code(SCode,OCode,Code)
+	    conjunct_code([OidCode,SCode,OCode],Code)
 	;
 	  true
         ).
 
 %% same for ->->
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_fltolistattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
+	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
 	    tolistattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    conjunct_code(SCode,OCode,Code)
+	    %% Fold OidCode in front of the molecule
+	    conjunct_code([OidCode,SCode,OCode],Code)
 	;
 	  true
         ).
 
 %% for O[BoolMeth]
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
-	compile_pathexp(MethTerm,MethObj,MCode,Status),
+	compile_pathexp(MethTerm,MethObj,OidCode,MCode,Status),
 	( Status == [] ->
 	    methspec_struct(Object,MethObj,SCode),
-	    conjunct_code(MCode,SCode,Code)
+	    %% Fold OidCode in front of the molecule
+	    conjunct_code([OidCode,MCode,SCode],Code)
 	;
 	  true
         ).
 
 %% for O[*BoolMeth]
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flimethspec(SpecTerm,IMethTerm),
 	!,
-	compile_pathexp(IMethTerm,IMethObj,IMCode,Status),
+	compile_pathexp(IMethTerm,IMethObj,OidCode,IMCode,Status),
 	( Status == [] ->
 	    imethspec_struct(Object,IMethObj,SCode),
-	    conjunct_code(IMCode,SCode,Code)
+	    %% Fold OidCode in front of the molecule
+	    conjunct_code([OidCode,IMCode,SCode],Code)
 	;
 	  true
         ).
 
 %% O[#M]
-compile_flspecbody(Object,SpecTerm,Code,Status) :-
+compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_fltranspec(SpecTerm,TranTerm),
 	!,
-	compile_pathexp(TranTerm,TranObj,TCode,Status),
+	compile_pathexp(TranTerm,TranObj,OidCode,TCode,Status),
 	( Status == [] ->
 	    transpec_struct(Object,TranObj,SCode),
-	    conjunct_code(TCode,SCode,Code)
+	    conjunct_code([OidCode,TCode,SCode],Code)
 	;
 	  true
         ).
 
 
-compile_mvdattspec(Object,AttObj,RefType,[T],Code,Status) :-
+/****************************************************************************
+  compile_mvdattspec(+Object,+AttObj,+RefType,+ValTermList,-OidCode,-Code,-Status)
+   Arg 4 is a list representing the value set of the attribute.
+   This predicate compiles such a spec into a conjunction.
+   Each conjunct corresponds to each member of the value set.
+   Assumes that AttObj is already an oid
+****************************************************************************/
+compile_mvdattspec(Object,AttObj,RefType,[T],OidCode,Code,Status) :-
 	!,
-	compile_pathexp(T,TObj,TCode,Status),
+	compile_pathexp(T,TObj,OidCode,TCode,Status),
 	( Status == [] ->
 	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
-	    conjunct_code(SCode,TCode,Code)
+	    conjunct_code([SCode,TCode],Code)
 	;
 	  true
         ).
 
-compile_mvdattspec(Object,AttObj,RefType,[T|L],Code,Status) :-
+compile_mvdattspec(Object,AttObj,RefType,[T|L],OidCode,Code,Status) :-
 	!,
-	compile_mvdattspec(Object,AttObj,RefType,[T],TCode,S),
+	compile_mvdattspec(Object,AttObj,RefType,[T],OidCodeHead,TCode,S),
 	( S == [] ->
-	    compile_mvdattspec(Object,AttObj,RefType,L,LCode,Status),
-	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	    compile_mvdattspec(Object,AttObj,RefType,L,OidCodeTail,LCode,Status),
+	    (Status == [] ->
+		conjunct_code([TCode,LCode],Code),
+		conjunct_code([OidCodeHead,OidCodeTail],OidCode)
+	    ;
+		true
+	    )
 	;
 	  Status=S
         ).
@@ -1918,7 +2022,7 @@ compile_flaggregate(Op,Var,GVars,BodyTerm,Object,Code,Status) :-
 	( S == [] ->
 	    check_aggregate(Var,GVars,BodyTerm,Status),
 	    ( Status == [] ->
-		compile_pathexplist([Var|GVars],[VarCode|GVarsCode],NULL,[]),
+		compile_pathexplist([Var|GVars],[VarCode|GVarsCode],NULL,NULL,[]),
 		list_struct(GVarsCode,[],GVarsListCode),
 		aggregate_struct(Op,VarCode,GVarsListCode,BCode,Object,Code)
 	    ;
@@ -2018,13 +2122,13 @@ allgvar_notin([H|T],[Msg|S],TS) :-
 
 
 /****************************************************************************
-  compile_flobjeql(+Obj1,+Obj2,-Code,-Status)
+  compile_flobjeql(+Obj1,+Obj2,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_flobjeql(Obj1,Obj2,Code,Status) :-
-	compile_pathexplist([Obj1,Obj2],[O1,O2],OCode,Status),
+compile_flobjeql(Obj1,Obj2,OidCode,Code,Status) :-
+	compile_pathexplist([Obj1,Obj2],[O1,O2],OidCode,OCode,Status),
 	( Status == [] ->
 	    objeql_struct(O1,O2,OECode),
-	    conjunct_code(OCode,OECode,Code)
+	    conjunct_code([OCode,OECode],Code)
 	;
 	  true
 	).
@@ -2049,7 +2153,7 @@ compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
 /****************************************************************************
   compile_head_fltermlit(+FunctorTerm,+Arity,+ArgList,-CodeList,-Status)
 
-  This procedure compiles a term in a rule head.
+  Compile a term in a rule head in a predicate position.
 ****************************************************************************/
 compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
 	is_flatom(Funct,FAtom),
@@ -2245,8 +2349,6 @@ compile_head_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,CodeList,Status) :-
 
 /****************************************************************************
   compile_head_flobjspec(+ObjTerm,+SpecBody,-Object,-CodeList,-Status)
-  compile_head_flspecbody(+Object,+SpecTerm,-CodeList,-Status)
-  compile_head_mvdattspec(+Object,+AttObj,+RefType,+VL,-CodeList,-Status)
 ****************************************************************************/
 compile_head_flobjspec(ObjTerm,SpecBody,Object,CodeList,Status) :-
 	( SpecBody == [] ->
@@ -2272,6 +2374,10 @@ compile_head_flobjspec(ObjTerm,SpecBody,Object,CodeList,Status) :-
         ).
 
 
+/****************************************************************************
+  compile_head_flspecbody(+Object,+SpecTerm,-CodeList,-Status)
+  compile_head_mvdattspec(+Object,+AttObj,+RefType,+VL,-CodeList,-Status)
+****************************************************************************/
 compile_head_flspecbody(Object,SpecTerm,CodeList,Status) :-
 	is_flconjunct(SpecTerm,L,R),
 	!,
@@ -2384,235 +2490,248 @@ compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
   This procedure compiles a literal that is associated with a Flora system
   module specification.
 ****************************************************************************/
-compile_floraliblit(ParserTerm,WS,Code,Status) :-
+compile_floraliblit(ParserTerm,WS,OidCode,Code,Status) :-
 	%% Flora system modules are like normal users modules except that
 	%% users cannot load into those areas.
 	is_flatom(WS,WSName,Index),
 	report_option(FLSYSMOD(WSName)),
 	atomobj_struct(WSName,Index,WSNameCode),
 	floralib_struct(WSNameCode,WSCode),
-	compile_wsliteral(ParserTerm,WSCode,Code,Status).
+	compile_wsliteral(ParserTerm,WSCode,OidCode,Code,Status).
 
 
 /****************************************************************************
-  compile_wsliteral(+ParserTerm,+Workspace,-Code,-Status)
+  compile_wsliteral(+ParserTerm,+Workspace,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
+compile_wsliteral(ParserTerm,WS,OidCode,WSCode,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_wstermlit(Funct,N,Args,WS,WSCode,Status)
+	    compile_wstermlit(Funct,N,Args,WS,OidCode,WSCode,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,WSCode,Status)
+	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,OidCode,WSCode,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_wsflobjspec(ObjTerm,Spec,WS,_Obj,WSCode,Status)
+	    compile_wsflobjspec(ObjTerm,Spec,WS,_Obj,OidCode,WSCode,Status)
 
 	; is_flobjeql(ParserTerm,O1,O2) ->
-	    compile_wsflobjeql(O1,O2,WS,WSCode,Status)
+	    compile_wsflobjeql(O1,O2,WS,OidCode,WSCode,Status)
 	;
-	  atomlit_struct(ParserTerm,Code),
-	  workspacelit_struct(Code,WS,WSCode),
-	  Status=[]
+	    atomlit_struct(ParserTerm,Code),
+	    workspacelit_struct(Code,WS,WSCode),
+	    OidCode=NULL,
+	    Status=[]
 	).
 
 
 /****************************************************************************
-  compile_floralibobj(+ParserTerm,+Workspace,-Object,-Code,-Status)
+  compile_floralibobj(+ParserTerm,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_floralibobj(ParserTerm,WS,Object,Code,Status) :-
+compile_floralibobj(ParserTerm,WS,Object,OidCode,Code,Status) :-
 	is_flatom(WS,WSName,Index),
 	report_option(FLSYSMOD(WSName)),
 	atomobj_struct(WSName,Index,WSNameCode),
 	floralib_struct(WSNameCode,WSCode),
-	compile_wspathexp(ParserTerm,WSCode,Object,Code,Status).
+	compile_wspathexp(ParserTerm,WSCode,Object,OidCode,Code,Status).
 
 
 /****************************************************************************
-  compile_wspathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
+  compile_wspathexp(+ParserTerm,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wspathexp(ParserTerm,WS,Object,Code,Status) :-
+compile_wspathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
 	( atomlit_struct(ParserTerm,A) ->
 	    workspaceobj_struct(A,WS,Object,Code),
+	    OidCode=NULL,
 	    Status=[]
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_wstermobj(Funct,N,Args,WS,Object,Code,Status)
+	    compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,Code,Status)
+	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,OidCode,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,Code,Status)
+	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,OidCode,Code,Status)
 	;
 	  is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm),
-	  compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
+	  compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,OidCode,Code,Status)
 	).
 
 
 /****************************************************************************
-  compile_wsflpathexplist(+ParserTermList,+Workspace,-ObjectList,-Code,-Status)
+  compile_wsflpathexplist(+ParserTermList,+Workspace,-ObjectList,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wsflpathexplist([],_WS,[],NULL,[]).
+compile_wsflpathexplist([],_WS,[],NULL,NULL,[]).
 
-compile_wsflpathexplist([T|L],WS,[TObj|LObj],Code,Status) :-
-	compile_wsflpathexp(T,WS,TObj,TCode,S),
+compile_wsflpathexplist([T|L],WS,[TObj|LObj],OidCode,Code,Status) :-
+	compile_wsflpathexp(T,WS,TObj,OidCodeHead,TCode,S),
 	( S == [] ->
-	    compile_wsflpathexplist(L,WS,LObj,LCode,Status),
-	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	    compile_wsflpathexplist(L,WS,LObj,OidCodeTail,LCode,Status),
+	    (Status == [] ->
+		conjunct_code([TCode,LCode],Code),
+		conjunct_code([OidCodeHead,OidCodeTail],OidCode)
+	    ; true
+	    )
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_wsflargpathexplist(+ParserTermList,+ArgTypeList,+WS,-ObjectList,-Code,-Status)
+  compile_wsflargpathexplist(+ParserTermList,+ArgTypeList,+WS,-ObjectList,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wsflargpathexplist([],[],_WS,[],NULL,[]) :- !.
+compile_wsflargpathexplist([],[],_WS,[],NULL,NULL,[]) :- !.
 
-compile_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],Code,Status) :-
+compile_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],OidCode,Code,Status) :-
 	!,
-	compile_wsflpathexp(T,WS,TObj,TCode,S),
+	compile_wsflpathexp(T,WS,TObj,OidCodeHead,TCode,S),
 	( S == [] ->
-	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,LCode,Status),
-	    (Status == [] -> conjunct_code(TCode,LCode,Code); true)
+	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,OidCodeTail,LCode,Status),
+	    (Status == [] ->
+		conjunct_code([TCode,LCode],Code),
+		conjunct_code([OidCodeHead,OidCodeTail],OidCode)
+	    ; true
+	    )
 	;
 	  Status=S
         ).
 
-compile_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,[TCode|LObj],Code,Status) :-
+compile_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,[TCode|LObj],OidCode,Code,Status) :-
 	!,
-	%% workspace not distributive over nested "form"
+	%% workspace not distributive over nested "meta"
 	compile_body(T,TCode,S),
 	( S == [] ->
-	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,Code,Status)
+	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,OidCode,Code,Status)
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_wsflpathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
+  compile_wsflpathexp(+ParserTerm,+Workspace,-Object,-OidCode,-Code,-Status)
 
   Note: The difference between compile_wsflpathexp and compile_wspathexp
         is that compile_wsflpathexp applies workspace only to F-Logic
         constructs.
 ****************************************************************************/
-compile_wsflpathexp(ParserTerm,WS,Object,Code,Status) :-
+compile_wsflpathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
 	( is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
-	    compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status)
+	    compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,OidCode,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,Code,Status)
+	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,OidCode,Code,Status)
 
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
-	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,Code,Status)
+	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Object,OidCode,Code,Status)
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status)
+	    compile_wsfltermobj(Funct,N,Args,WS,Object,OidCode,Code,Status)
 
 	; is_fllist(ParserTerm,L,T,I) ->
-	    compile_wsfllist(L,T,I,WS,Object,Code,Status)
+	    compile_wsfllist(L,T,I,WS,Object,OidCode,Code,Status)
 
 	; is_flworkspace(ParserTerm,P,NestedWS) ->
-	    compile_wspathexp(P,NestedWS,Object,Code,Status)
+	    compile_wspathexp(P,NestedWS,Object,OidCode,Code,Status)
 	;
 	  %% workspace not distributive over nested aggregates
-	  compile_pathexp(ParserTerm,Object,Code,Status)
+	  compile_pathexp(ParserTerm,Object,OidCode,Code,Status)
         ).
 
 
 /****************************************************************************
-  compile_wstermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-Code,-Status)
+  compile_wstermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
+compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,TCode,Status),
+	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,OidCode,TCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
-	    conjunct_code(TCode,WCode,Code)
+	    conjunct_code([TCode,WCode],Code)
 	;
 	  true
 	).
 
-compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
-	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],TCode,Status),
+compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
+	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],OidCode,TCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
-	    conjunct_code(TCode,WCode,Code)
+	    conjunct_code([TCode,WCode],Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-Code,-Status)
+  compile_wsfltermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-OidCode,-Code,-Status)
 
   Note: The difference between compile_wsfltermobj and compile_wstermobj
         is that compile_wsfltermobj applies workspace only to F-Logic
         constructs.  
 ****************************************************************************/
-compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
+compile_wsfltermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
+	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,OidCode,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
-compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
-	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],Code,Status),
+compile_wsfltermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
+	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],OidCode,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 
 /****************************************************************************
-  compile_wstermlit(+FunctorTerm,+Arity,+ArgList,+Workspace,-Code,-Status)
+  compile_wstermlit(+FunctorTerm,+Arity,+ArgList,+Workspace,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
+compile_wstermlit(Funct,N,Args,WS,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
 	atomobj_struct(Funct,FObj),
-	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCode,Status),
+	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,OidCode,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
-	    conjunct_code(ObjCode,WSCode,Code)
+	    conjunct_code([WSCode,ObjCode],Code)
 	;
 	  true
         ).
 
-compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
-	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCode,Status),
+compile_wstermlit(Funct,N,Args,WS,OidCode,Code,Status) :-
+	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],OidCode,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
-	    conjunct_code(ObjCode,WSCode,Code)
+	    conjunct_code([WSCode,ObjCode],Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_wsfllist(+ObjTermList,+ObjTerm,+Index,+WS,-Object,-Code,-Status)
+  compile_wsfllist(+ObjTermList,+ObjTerm,+Index,+WS,-Object,-OidCode,-Code,-Status)
+    Lists are like this: [a,b,c|rest]
+    ObjTermList refers to the list [a,b,c] and ObjTerm to rest.
 ****************************************************************************/
-compile_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,Code,Status) :-
-	compile_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCode,S),
+compile_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,OidCode,Code,Status) :-
+	compile_wsflpathexplist(ObjTermList,WS,ObjList,OidCodeList,ObjListCode,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
 		Obj=[],
 		ObjCode=NULL,
 		Status=[]
 	    ;
-	      compile_wsflpathexp(ObjTerm,WS,Obj,ObjCode,Status)
+	      compile_wsflpathexp(ObjTerm,WS,Obj,OidCodeObj,ObjCode,Status)
 	    ),
 	    ( Status == [] ->
 		list_struct(ObjList,Obj,Index,Object),
-		conjunct_code(ObjListCode,ObjCode,Code)
+		conjunct_code([ObjListCode,ObjCode],Code),
+		conjunct_code([OidCodeList,OidCodeObj],OidCode)
 	    ;
 	      true
 	    )
@@ -2622,64 +2741,85 @@ compile_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,Code,Status) :-
 
 
 /****************************************************************************
-  compile_wsflobjref(+ObjTerm,+RefType,+AttTerm,+Workspace,-Object,-Code,-Status)
+  compile_wsflobjref(+ObjTerm,+RefType,+AttTerm,+Workspace,-Object,-OidCode,-Code,-Status)
+
+  Process an object reference like a.b.c@module
+  An objref can be more complex, e.g., a[f->g].b[h->>p].c[k->u]@module
 ****************************************************************************/
-compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status) :-
-	compile_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACode,Status),
+compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,OidCode,Code,Status) :-
+	compile_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OidCodeList,OACode,Status),
 	( Status == [] ->
 	    %% Approximate the textual information for the new variable.
 	    approximate_index(AttTerm,Index),
 	    objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
-	    conjunct_code(OACode,WTCode,Code)
+	    Code = OACode,
+	    conjunct_code([OidCodeList,WTCode],OidCode)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_wsflbirelate(+ObjTerm1,+RelType,+ObjTerm2,+Workdpace,-Object,-Code,-Status)
+  compile_wsflbirelate(+ObjTerm1,+RelType,+ObjTerm2,+Workdpace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,Code,Status) :-
-	compile_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OCode,Status),
+compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,OidCode,Code,Status) :-
+	compile_wsflpathexplist([ObjTerm1,ObjTerm2],WS,[Obj1,Obj2],OidCode,OCode,Status),
 	( Status == [] ->
 	    birelate_struct(Obj1,RelType,Obj2,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
-	    conjunct_code(OCode,WTCode,Code)
+	    conjunct_code([WTCode,OCode],Code)
 	;
 	  true
         ).
 
 
 /****************************************************************************
-  compile_wsflobjspec(+ObjTerm,+SpecBody,+Workspace,-Object,-Code,-Status)
+  compile_wsflobjspec(+ObjTerm,+SpecBody,+Workspace,-Object,-OidCode,-Code,-Status)
+
+  Code produced by this and similar predicates is divided into
+  OidCode and Code. 
+  OidCode is the code needed to compute the attribute of molecule
+  and the oid, and the oid of the value part (in ->, ->>, etc.)
+  Code represents the code needed to compute the the attribute specification.
+  For instance, in  a.b[c.d->e.f],
+      OidCode will represent the computation of c.d and e.d:
+	 prand(prfd(a,b,_newvar1),prand(prfd(c,d,_newvar2),prfd(e,d,_newvar3)))
+      Code will represent the -> part:
+                 prfd(_newvar1,_newvar2,_newvar3)
 ****************************************************************************/
-compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,Code,Status) :-
+compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,OidCode,Code,Status) :-
 	( SpecBody == [] ->
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
-		compile_wsflpathexplist([OTerm,ATerm],WS,[OObj,AObj],ObjCode,Status),
+		compile_wsflpathexplist([OTerm,ATerm],WS,[OObj,AObj],OidCode,ObjCode,Status),
 		( Status == [] ->
 		    objattdef_struct(OObj,RefType,AObj,TCode),
 		    workspacelit_struct(TCode,WS,WTCode),
-		    conjunct_code(ObjCode,WTCode,Code)
+		    conjunct_code([WTCode,ObjCode],Code)
 		;
 		  true
 	        )
 	    ;
-	      compile_wsflpathexp(ObjTerm,WS,Object,ObjCode,Status),
-	      ( Status == [] ->
-		  objexists_struct(Object,ECode),
-		  workspacelit_struct(ECode,WS,WSECode),
-		  conjunct_code(ObjCode,WSECode,Code)
-	      ;
-	        true
-	      )
+		%% object exists test: a.b.c[]@module
+		compile_wsflpathexp(ObjTerm,WS,Object,OidCode,ObjCode,Status),
+		( Status == [] ->
+		    objexists_struct(Object,ECode),
+		    workspacelit_struct(ECode,WS,WSECode),
+		    conjunct_code([WSECode,ObjCode],Code)
+		;
+		    true
+		)
 	    )
-	;
-	  compile_wsflpathexp(ObjTerm,WS,Object,ObjCode,S),
+	; % oid spec plus object spec. something like a.b[c->d]@module
+	  compile_wsflpathexp(ObjTerm,WS,Object,ObjOidCode,ObjCode,S),
 	  ( S == [] ->
-	      compile_wsflspecbody(Object,SpecBody,WS,SpecCode,Status),
-	      (Status == [] -> conjunct_code(ObjCode,SpecCode,Code); true)
+	      compile_wsflspecbody(Object,SpecBody,WS,SpecOidCode,SpecCode,Status),
+	      (Status == [] ->
+		  conjunct_code([ObjCode,SpecCode],Code),
+		  conjunct_code([ObjOidCode,SpecOidCode],OidCode)
+	      ; 
+		  true
+	      )
 	  ;
 	    Status=S
           )
@@ -2687,209 +2827,254 @@ compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,Code,Status) :-
 
 
 /****************************************************************************
-  compile_wsflspecbody(+Object,+SpecTerm,+Workspace,-Code,-Status)
-  compile_wsmvdattspec(+Object,+AttObj,+RefType,+ValTermList,+Workspace,-Code,-Status)
+  compile_wsflspecbody(+Object,+SpecTerm,+Workspace,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+compile_wsflspecbody(Object,SpecTerm,WS,OidCode,Code,Status) :-
 	is_flconjunct(SpecTerm,L,R),
 	!,
-	compile_wsflspecbody(Object,L,WS,LCode,S),
+	compile_wsflspecbody(Object,L,WS,OidCode,LCode,S),
 	( S == [] ->
-	    compile_wsflspecbody(Object,R,WS,RCode,Status),
-	    (Status == [] -> conjunct_struct(LCode,RCode,Code); true)
+	    compile_wsflspecbody(Object,R,WS,OidCode,RCode,Status),
+	    (Status == [] -> conjunct_code([LCode,RCode],Code); true)
 	;
 	  Status=S
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+compile_wsflspecbody(Object,SpecTerm,WS,OidCode,Code,Status) :-
 	is_fldisjunct(SpecTerm,L,R),
 	!,
-	compile_wsflspecbody(Object,L,WS,LCode,S),
+	compile_wsflspecbody(Object,L,WS,OidCode,LCode,S),
 	( S == [] ->
-	    compile_wsflspecbody(Object,R,WS,RCode,Status),
+	    compile_wsflspecbody(Object,R,WS,OidCode,RCode,Status),
 	    (Status == [] -> disjunct_struct(LCode,RCode,Code); true)
 	;
 	  Status=S
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+compile_wsflspecbody(Object,SpecTerm,WS,OidCode,Code,Status) :-
 	is_flnot(SpecTerm,G),
 	!,
-	compile_wsflspecbody(Object,G,WS,GCode,Status),
-	(Status == [] -> not_struct(GCode,Code); true).
+	compile_wsflspecbody(Object,G,WS,OidCode,GCode,Status),
+	(Status == [] ->
+	    conjunct_code([OidCode,GCode],CombinedGCode),
+	    not_struct(CombinedGCode,Code)
+	; true
+	).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+compile_wsflspecbody(Object,SpecTerm,WS,OidCode,Code,Status) :-
 	is_fltnot(SpecTerm,G),
 	!,
-	compile_wsflspecbody(Object,G,WS,GCode,Status),
-	(Status == [] -> tnot_struct(GCode,Code); true).
+	compile_wsflspecbody(Object,G,WS,OidCode,GCode,Status),
+	(Status == [] ->
+	    conjunct_code([OidCode,GCode],CombinedGCode),
+	    tnot_struct(CombinedGCode,Code)
+	; true
+	).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+%% OidCodeList below gets bound to code needed to produce
+%% the attribute (M) and the value (V). We conjunct this code in front of the
+%% code for the molecule
+%% NULL means tht we don't pass OID code out, because we use it right here.
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
 	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(WSCode,OCode,Code)
+	    %% WSCode: code to produce object reference, attribute, and value
+	    %% OCode: code for the pure attribute spec of the object
+	    %% OidCode: code to produce the attribute and the value
+	    conjunct_code([OidCode,WSCode,OCode],Code)
 	;
 	  true
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+%% No OidCode is passed outside: we consume it here
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_flmvdattspec(SpecTerm,AttTerm,RefType,ValTermList),
 	!,
-	compile_wsflpathexp(AttTerm,WS,AttObj,ACode,S),
+	compile_wsflpathexp(AttTerm,WS,AttObj,AOidCode,ACode,S),
 	( S == [] ->
 	    ( ValTermList == [] ->
 		mvdattdef_struct(Object,AttObj,RefType,SCode),
 		workspacelit_struct(SCode,WS,WSCode),
-		conjunct_code(ACode,WSCode,Code),
+		%% Fold OidCode in front of molecule
+		conjunct_code([AOidCode,ACode,WSCode],Code),
 		Status=[]
 	    ;
-	      compile_wsmvdattspec(Object,AttObj,RefType,ValTermList,WS,WSCode,Status),
-	      (Status == [] -> conjunct_code(ACode,WSCode,Code); true)
+	      compile_wsmvdattspec(Object,AttObj,RefType,ValTermList,WS,VOidCode,WSCode,Status),
+	      (Status == [] ->
+		  %% ACode: Code to produce attribute
+		  %% WSCode: code to produce pure attr specs and 
+		  %%         the objects that represents the values
+		  conjunct_code([AOidCode,VOidCode,ACode,WSCode],Code)
+	      ; true
+	      )
 	    )
         ;
 	  Status=S
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+
+%% +>>, *+>>@module
+%% NULL means: consume OidCode for attr and val here -- don't pass up the chain
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_flincattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
 	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(WSCode,OCode,Code)
+	    %% Fold OidCode in front of molecule
+	    conjunct_code([OidCode,WSCode,OCode],Code)
 	;
 	  true
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+%% same for ->->@module
+%% NULL means: consume OidCode for attr and val here -- don't pass up the chain
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_fltolistattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OidCode,OCode,Status),
 	( Status == [] ->
 	    tolistattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(WSCode,OCode,Code)
+	    conjunct_code([OidCode,WSCode,OCode],Code)
 	;
 	  true
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+%% for O[BoolMeth]@module
+%% NULL means: consume OidCode for attr and val here -- don't pass up the chain
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
-	compile_wsflpathexp(MethTerm,WS,MethObj,MCode,Status),
+	compile_wsflpathexp(MethTerm,WS,MethObj,OidCode,MCode,Status),
 	( Status == [] ->
 	    methspec_struct(Object,MethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(MCode,WSCode,Code)
+	    conjunct_code([OidCode,MCode,WSCode],Code)
 	;
 	  true
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+%% for O[*BoolMeth]@module
+%% NULL means: consume OidCode for attr and val here -- don't pass up the chain
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_flimethspec(SpecTerm,IMethTerm),
 	!,
-	compile_wsflpathexp(IMethTerm,WS,IMethObj,IMCode,Status),
+	compile_wsflpathexp(IMethTerm,WS,IMethObj,OidCode,IMCode,Status),
 	( Status == [] ->
 	    imethspec_struct(Object,IMethObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(IMCode,WSCode,Code)
+	    %% Fold OidCode in front of molecule
+	    conjunct_code([OidCode,IMCode,WSCode],Code)
 	;
 	  true
         ).
 
-compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+%% O[#M]@module
+compile_wsflspecbody(Object,SpecTerm,WS,NULL,Code,Status) :-
 	is_fltranspec(SpecTerm,TranTerm),
 	!,
-	compile_wsflpathexp(TranTerm,WS,TranObj,TCode,Status),
+	compile_wsflpathexp(TranTerm,WS,TranObj,OidCode,TCode,Status),
 	( Status == [] ->
 	    transpec_struct(Object,TranObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(TCode,WSCode,Code)
+	    conjunct_code([OidCode,TCode,WSCode],Code)
 	;
 	  true
         ).
 
 
-compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,Code,Status) :-
+/****************************************************************************
+  compile_wsmvdattspec(+Object,+AttObj,+RefType,+ValTermList,+Workspace,-OidCode,-Code,-Status)
+
+  Compiles ->>, *->>, etc., when they have one or more value terms
+****************************************************************************/
+compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,OidCode,Code,Status) :-
 	!,
-	compile_wsflpathexp(T,WS,TObj,TCode,Status),
+	compile_wsflpathexp(T,WS,TObj,OidCode,TCode,Status),
 	( Status == [] ->
 	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(WSCode,TCode,Code)
+	    conjunct_code([WSCode,TCode],Code)
 	;
 	  true
         ).
 
-compile_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,Code,Status) :-
+compile_wsmvdattspec(Object,AttObj,RefType,[T|L],WS,OidCode,Code,Status) :-
 	!,
-	compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,WTCode,S),
+	compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,OidCodeHead,WTCode,S),
 	( S == [] ->
-	    compile_wsmvdattspec(Object,AttObj,RefType,L,WS,WLCode,Status),
-	    (Status == [] -> conjunct_code(WTCode,WLCode,Code); true)
+	    compile_wsmvdattspec(Object,AttObj,RefType,L,WS,OidCodeTail,WLCode,Status),
+	    (Status == [] ->
+		conjunct_code([WTCode,WLCode],Code),
+		conjunct_code([OidCodeHead,OidCodeTail],OidCode)
+	    ; true
+	    )
 	;
 	  Status=S
         ).
 
 
 /****************************************************************************
-  compile_wsflobjeql(+Obj1,+Obj2,+Workspace,-Code,-Status)
+  compile_wsflobjeql(+Obj1,+Obj2,+Workspace,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
-	compile_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OCode,Status),
+compile_wsflobjeql(Obj1,Obj2,WS,OidCode,Code,Status) :-
+	compile_wsflpathexplist([Obj1,Obj2],WS,[O1,O2],OidCode,OCode,Status),
 	( Status == [] ->
 	    objeql_struct(O1,O2,OECode),
 	    workspacelit_struct(OECode,WS,WSCode),
-	    conjunct_code(OCode,WSCode,Code)
+	    conjunct_code([OCode,WSCode],Code)
 	;
 	  true
 	).
 
 
 /****************************************************************************
-  compile_prologliblit(+ParserTerm,-Code,-Status)
+  compile_prologliblit(+ParserTerm,-OidCode,-Code,-Status)
 
   This is for compiling Prolog library calls whose module name is not provided.
 ****************************************************************************/
-compile_prologliblit(ParserTerm,Code,Status) :-
+compile_prologliblit(ParserTerm,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_prlgterm(Funct,N,Args,TCode,ACode,Status),
-	    (Status == [] -> conjunct_code(ACode,TCode,Code); true)
+	    compile_prlgterm(Funct,N,Args,TCode,OidCode,ACode,Status),
+	    (Status == [] -> conjunct_code([ACode,TCode],Code); true)
 	;
-	  atomobj_struct(ParserTerm,FObj),
-	  N=0,
-	  prologterm_struct(FObj,0,[],Code),
-	  Status=[]
+	    atomobj_struct(ParserTerm,FObj),
+	    N=0,
+	    prologterm_struct(FObj,0,[],Code),
+	    OidCode=NULL,
+	    Status=[]
 	),
 	!.
 
 
 /****************************************************************************
-  compile_prologliblit(+ParserTerm,+Module,-Code,-Status)
+  compile_prologliblit(+ParserTerm,+Module,-OidCode,-Code,-Status)
 
   This is for compiling Prolog library calls whose module is provided.
 ****************************************************************************/
-compile_prologliblit(ParserTerm,Module,Code,Status) :-
+compile_prologliblit(ParserTerm,Module,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(Funct,N,Args,TCode,ACode,Status)
+	    compile_prlgterm(Funct,N,Args,TCode,OidCode,ACode,Status)
 	;
-	  is_flatom(ParserTerm,FAtom),
-	  atomobj_struct(ParserTerm,FObj),
-	  N=0,
-	  prologterm_struct(FObj,0,[],TCode),
-	  ACode=NULL,
-	  Status=[]
+	    is_flatom(ParserTerm,FAtom),
+	    atomobj_struct(ParserTerm,FObj),
+	    N=0,
+	    prologterm_struct(FObj,0,[],TCode),
+	    ACode=NULL,
+	    OidCode=NULL,
+	    Status=[]
 	),
 	( Status == [] ->
 	    %% build a special structure for the coder
 	    prologliblit_struct(TCode,PCode),
-	    conjunct_code(ACode,PCode,Code),
+	    conjunct_code([ACode,PCode],Code),
 	    %% generate an import statement for the corresponding XSB predicate
 	    is_flatom(Module,MName),
 	    import_struct(FAtom,N,MName,ICode),
@@ -2902,42 +3087,44 @@ compile_prologliblit(ParserTerm,Module,Code,Status) :-
 
 
 /****************************************************************************
-  compile_prologlibobj(+ParserTerm,-Object,-Code,-Status)
+  compile_prologlibobj(+ParserTerm,-Object,-OidCode,-Code,-Status)
 
   This is for compiling Prolog library calls in the arguments position. E.g.,
   f(member(X,[a])@prolog(basics)). This feature might be userful for
   meta-programming.  
 ****************************************************************************/
-compile_prologlibobj(ParserTerm,Object,Code,Status) :-
+compile_prologlibobj(ParserTerm,Object,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    compile_prlgterm(Funct,N,Args,Object,Code,Status)
+	    compile_prlgterm(Funct,N,Args,Object,OidCode,Code,Status)
 	;
-	  atomobj_struct(ParserTerm,FObj),
-	  N=0,
-	  prologterm_struct(FObj,0,[],Object),
-	  Code=NULL,
-	  Status=[]
+	    atomobj_struct(ParserTerm,FObj),
+	    N=0,
+	    prologterm_struct(FObj,0,[],Object),
+	    Code=NULL,
+	    OidCode=NULL,
+	    Status=[]
 	),
 	!.
 
 
 /****************************************************************************
-  compile_prologlibobj(+ParserTerm,+Module,-Object,-Code,-Status)
+  compile_prologlibobj(+ParserTerm,+Module,-Object,-OidCode,-Code,-Status)
 
   This is for compiling Prolog library calls in the arguments position, when
   the library name is provided.
 ****************************************************************************/
-compile_prologlibobj(ParserTerm,Module,Object,Code,Status) :-
+compile_prologlibobj(ParserTerm,Module,Object,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(Funct,N,Args,Object,Code,Status)
+	    compile_prlgterm(Funct,N,Args,Object,OidCode,Code,Status)
 	;
-	  is_flatom(ParserTerm,FAtom),
-	  atomobj_struct(ParserTerm,FObj),
-	  N=0,
-	  prologterm_struct(FObj,0,[],Object),
-	  Code=NULL,
-	  Status=[]
+	    is_flatom(ParserTerm,FAtom),
+	    atomobj_struct(ParserTerm,FObj),
+	    N=0,
+	    prologterm_struct(FObj,0,[],Object),
+	    Code=NULL,
+	    OidCode=NULL,
+	    Status=[]
 	),
 	!,
 	( Status == [] ->
@@ -2953,16 +3140,16 @@ compile_prologlibobj(ParserTerm,Module,Object,Code,Status) :-
 
 
 /****************************************************************************
-  compile_prlgterm(+FunctTerm,+Arity,+ArgList,-Object,-Code,-Status)
+  compile_prlgterm(+FunctTerm,+Arity,+ArgList,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_prlgterm(Funct,N,Args,Object,Code,Status) :-
+compile_prlgterm(Funct,N,Args,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	atomobj_struct(Funct,FObj),
 	prologterm_struct(FObj,N,AObj,Object),
 	( flora_argdef(FAtom,N,ArgTypes) ->
-	    compile_argpathexplist(Args,ArgTypes,AObj,Code,Status)
+	    compile_argpathexplist(Args,ArgTypes,AObj,OidCode,Code,Status)
 	;
-	  compile_pathexplist(Args,AObj,Code,Status)
+	  compile_pathexplist(Args,AObj,OidCode,Code,Status)
 	),
 	!.
 
