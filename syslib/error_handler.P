@@ -52,6 +52,10 @@ default_error_handler(Error) :-
 default_sys_error_handler('_$abort_ball'(_BackTrace)).
 default_sys_error_handler('_$abort_ball'(Msg,_BackTrace)) :-
 	messageln(Msg,STDERR).
+
+default_sys_error_handler(error(Error,Msg,_Backtrace)) :-
+	default_sys_error_handler(error(Error,Msg)).
+
 default_sys_error_handler(error(instantiation_error,Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Instantiation] ', Msg), 
 	           STDERR).
@@ -115,33 +119,40 @@ print_mod_pred_arity_list([Psc|Pscs]) :-
 % ISO-compatable convenience predicates
 
 domain_error(Valid_type,Culprit,Predicate,Arg):- 
+	xsb_backtrace(Bt),
 	throw(error(domain_error(Valid_type,Culprit),
-	                             (' in arg ',Arg,' of predicate ',Predicate))).
+	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
 
 existence_error(Object_type,Culprit,Predicate,Arg):- 
+	xsb_backtrace(Bt),
 	throw(error(existence_error(Object_type,Culprit),
-	                             (' in arg ',Arg,' of predicate ',Predicate))).
+	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
 
 % obsolete TLS
 instantiation_error(Predicate,Arg):- 
+	xsb_backtrace(Bt),
 	throw(error(instantiation_error,
-	                             (' in arg ',Arg,' of predicate ',Predicate))).
+	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
 
 instantiation_error(Predicate,Arg,State):- 
+	xsb_backtrace(Bt),
 	throw(error(instantiation_error,
-	      (' in arg ',Arg,' of predicate ',Predicate,': must be ',State))).
+	      (' in arg ',Arg,' of predicate ',Predicate,': must be ',State),Bt)).
 
 permission_error(Op,Obj_type,Culprit,Predicate):- 
-	throw(error(permission_error(Op,Obj_type,Culprit),(' in ',Predicate))).
+	xsb_backtrace(Bt),
+	throw(error(permission_error(Op,Obj_type,Culprit),(' in ',Predicate),Bt)).
 
 type_error(Valid_type,Culprit,Predicate,Arg):- 
+	xsb_backtrace(Bt),
 	throw(error(type_error(Valid_type,Culprit),
-	                             (' in arg ',Arg,' of predicate ',Predicate))).
+	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
 
 % Misc Errors
 
 misc_error(Message):- 
-	throw(error(misc_error,Message)).
+	xsb_backtrace(Bt),
+	throw(error(misc_error,Message,Bt)).
 
 %--------------------------------
 % These checks can be reused for various types of ISO compatability.
