@@ -26,7 +26,8 @@
 
 :- import package_configuration/2 from packaging.
 :- import trie_assert/1, trie_retract_all/1 from tables.
-:- import fmt_write/2 from file_io.
+:- import fmt_write/2, file_open/3, file_close/1 from file_io.
+:- import file_read/2 from xsb_read.
 :- import debug_display_call_hook/1,
 	'_$_$_flora_debugger_data_loaded'/0, '_$_$_flora_switch'/1
 	from usermod.
@@ -358,18 +359,24 @@ flora_print_univ(V,L) :-
 
 '_$_$_flora_trace' :-
 	flora_read_debugger_data,
-	trie_assert('_$_$_flora_switch'(trace)).
-'_$_$_flora_notrace' :- trie_retract_all('_$_$_flora_switch'(trace)).
+	trie_assert('_$_$_flora_switch'(trace)),
+	'_$_$_flora_handle_trace'.
+'_$_$_flora_notrace' :-
+	trie_retract_all('_$_$_flora_switch'(trace)),
+	'_$_$_flora_handle_notrace'.
 
 flora_read_debugger_data :- '_$_$_flora_debugger_data_loaded', !.
 flora_read_debugger_data :- 
 	package_configuration(dir(flora), FlrSysLib),
 	fmt_write_string(DebugDataFile,
 			 '%s/syslib/flrdebug_data.P', arg(FlrSysLib)),
-	see(DebugDataFile),
+	file_open(DebugDataFile, 0, File),
+	writeln(File),
 	repeat,
-	    read(T),
+	    file_read(File,T),
 	    (T = end_of_file -> true
 	    	    	     ;  assert(T), fail
 	    ),
-	seen.
+	file_close(File),
+	!.
+
