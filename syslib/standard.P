@@ -239,6 +239,18 @@ nl :- (windows_os
       ;	  put(CH_NEWLINE) ).
 
 
+%ISO
+get_char(Str,Char):- get_code(Str,Code),atom_codes(Char,[Code]).
+
+%ISO
+get_char(Char):- get_code(Code),atom_codes(Char,[Code]).
+
+%ISO
+get_code(Str,C) :- seeing(Istr),see(Str),get_code(C),see(Istr).
+
+%ISO
+get_code(C) :- get(C).
+
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
 %% characters ignored (treat as blanks)
@@ -250,19 +262,22 @@ get0(C) :- stat_flag(CURRENT_INPUT, File), file_get(File, C0), C = C0.
 skip(C) :- get0(C0), (C0=C ; skip(C)).
 
 % TLS: most error checking assumed to happen in atom_codes or put.
-% Still need put_char/2 and put_code/2
 
-put_char(Str,C):- telling(Cstr),tell(Str),put_char(C),tell(Cstr).
+%ISO
+put_char(Str,C):- telling(Cstr),tell(Str),put_char(C),tell(Cstr). 	
 
-put_char(C):- 			%ISO
+%ISO
+put_char(C):- 			
 	atom_codes(C,L),
 	(L = [L1] -> true ; 
 		abort('Type error in argument 1 of put_char/1')),
 	put(L1).
 
+%ISO
 put_code(Str,C):- telling(Cstr),tell(Str),put_code(C),tell(Cstr).
 
-put_code(C):- put(C).		%ISO
+%ISO
+put_code(C):- put(C).		
 
 put(C) :- put(C).
 
@@ -1094,19 +1109,5 @@ catch(_Goal,Catcher,Handler) :-
 throw(Ball) :-
         asserta('$$exception_ball'(Ball)),
         '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Towards ISO flags
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Needed for ISO: 
-% Max integer
-% Min Integer
-% Debug
-% Undefined predicate.
-
-current_prolog_flag(Flag,Value):- xsb_flag(Flag,Value).
-current_prolog_flag(max_arity,256).
-
 
 /* --------------------- end of file standard.P ----------------------- */

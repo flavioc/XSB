@@ -76,6 +76,7 @@ standard_symbol(current_output, 1, curr_sym).
 standard_symbol(current_output_port, 1, curr_sym).
 standard_symbol(current_predicate, 1, curr_sym).
 standard_symbol(current_predicate, 2, curr_sym).
+standard_symbol(current_prolog_flag, 1, standard).	% ISO
 standard_symbol(debug, 0, debugger).
 standard_symbol(debugging, 0, debugger).
 standard_symbol(delete_return, 2, tables).
@@ -130,6 +131,10 @@ standard_symbol(functor, 3, standard).
 standard_symbol(garbage_collection, 1, curr_sym).
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
+standard_symbol(get_char, 1, standard).		% ISO
+standard_symbol(get_char, 2, standard).		% ISO
+standard_symbol(get_code, 1, standard).		% ISO
+standard_symbol(get_code, 2, standard).		% ISO
 standard_symbol(get_call, 3, tables).
 standard_symbol(get_producer_call, 3, tables).
 standard_symbol(get_calls, 3, tables).
