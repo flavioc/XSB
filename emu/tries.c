@@ -455,7 +455,6 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       int index = DecodeTrieVar(xtemp2);				\
       if (IsNewTrieVar(xtemp2)) {					\
 	safe_assign(var_addr,index,Macro_addr,var_addr_arraysz);	\
-	*Macro_addr = (Cell)var_addr[index];				\
 	num_heap_term_vars++;						\
       }									\
       else if (IsNewTrieAttv(xtemp2)) {					\
@@ -466,8 +465,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
         push_addr(hreg);						\
         hreg++;								\
       }									\
-      else								\
-	*Macro_addr = (Cell) var_addr[index];				\
+      *Macro_addr = (Cell) var_addr[index];				\
     }									\
     break;								\
     case STRING:							\
@@ -509,20 +507,18 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
     int index = DecodeTrieVar(xtemp2);					\
     if (IsNewTrieVar(xtemp2)) { /* diff with CHAT - Kostis */		\
       safe_assign(var_addr,index,ataddr,var_addr_arraysz);		\
-      ret_val = (Cell)var_addr[index];					\
       num_heap_term_vars++;						\
     }									\
     else if (IsNewTrieAttv(xtemp2)) {					\
-      ret_val = makeattv(hreg);						\
-      safe_assign(var_addr, index, (CPtr) ret_val,var_addr_arraysz);	\
+      safe_assign(var_addr, index,					\
+		  (CPtr) makeattv(hreg),var_addr_arraysz);		\
       num_heap_term_vars++;						\
       new_heap_free(hreg);						\
       push_addr(hreg);							\
       hreg++;								\
       rec_macro_make_heap_term(dummy_addr);				\
     }									\
-    else								\
-      ret_val = (Cell) var_addr[index];					\
+    ret_val = (Cell) var_addr[index];					\
   }									\
   break;								\
   case STRING:								\
@@ -557,48 +553,55 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 
 /*----------------------------------------------------------------------*/
 
-#define recvariant_trie(flag,TrieType)\
-{\
-	int  j;\
-\
-	while (!pdlempty ) {\
-	  xtemp1 = (CPtr) pdlpop;\
-	  cptr_deref(xtemp1);\
-	  tag = cell_tag(xtemp1);\
-	  switch (tag) {\
-	    case FREE: case REF1: \
-	      if (! IsStandardizedVariable(xtemp1)) {\
-	        StandardizeAndTrailVariable(xtemp1,ctr);\
-	        item = EncodeNewTrieVar(ctr);\
-	        one_node_chk_ins(flag, item, TrieType);\
-	        ctr++;\
-	      } else {\
-	        item = IndexOfStdVar(xtemp1);\
-	        item = EncodeTrieVar(item);\
-                one_node_chk_ins(flag, item, TrieType);\
-	      }\
-            break;\
-	    case STRING: case INT: case FLOAT:\
-	      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);\
-	      break;\
-	    case LIST:\
-	      one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);\
-	      pdlpush(cell(clref_val(xtemp1)+1));\
-              pdlpush(cell(clref_val(xtemp1)));\
-	      break;\
-	    case CS:\
-              psc = (Psc) follow(cs_val(xtemp1));\
-              item = makecs(psc);\
-	      one_node_chk_ins(flag, item, TrieType);\
-	      for (j = get_arity(psc); j>=1 ; j--) {\
-  	         pdlpush(cell(clref_val(xtemp1)+j));\
-              }\
-	      break;\
-	    default: \
-              xsb_abort("Bad type tag in recvariant_trie...\n");\
-	  }\
-	}\
-        resetpdl;\
+#define recvariant_trie(flag,TrieType) {				\
+  int  j;								\
+									\
+  while (!pdlempty ) {							\
+    xtemp1 = (CPtr) pdlpop;						\
+    cptr_deref(xtemp1);							\
+    tag = cell_tag(xtemp1);						\
+    switch (tag) {							\
+    case FREE: case REF1:						\
+      if (! IsStandardizedVariable(xtemp1)) {				\
+	StandardizeAndTrailVariable(xtemp1,ctr);			\
+	item = EncodeNewTrieVar(ctr);					\
+	one_node_chk_ins(flag, item, TrieType);				\
+	ctr++;								\
+      } else {								\
+	item = IndexOfStdVar(xtemp1);					\
+	item = EncodeTrieVar(item);					\
+	one_node_chk_ins(flag, item, TrieType);				\
+      }									\
+      break;								\
+    case STRING: case INT: case FLOAT:					\
+      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
+      break;								\
+    case LIST:								\
+      one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
+      pdlpush(cell(clref_val(xtemp1)+1));				\
+      pdlpush(cell(clref_val(xtemp1)));					\
+      break;								\
+    case CS:								\
+      psc = (Psc) follow(cs_val(xtemp1));				\
+      item = makecs(psc);						\
+      one_node_chk_ins(flag, item, TrieType);				\
+      for (j = get_arity(psc); j>=1 ; j--) {				\
+	pdlpush(cell(clref_val(xtemp1)+j));				\
+      }									\
+      break;								\
+    case ATTV:								\
+      /* Now xtemp1 can only be the first occurrence of an attv */	\
+      xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
+      StandardizeAndTrailVariable(xtemp1, ctr);				\
+      one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), INTERN_TRIE_TT);	\
+      attv_ctr++; ctr++;						\
+      pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */		\
+      break;								\
+    default:								\
+      xsb_abort("Bad type tag in recvariant_trie...\n");		\
+    }									\
+  }									\
+  resetpdl;								\
 }
 
 /*----------------------------------------------------------------------*/
@@ -1067,7 +1070,6 @@ static void bottomupunify(Cell term, BTNptr Root, BTNptr Leaf)
   CPtr gen;
   int  i;
 
-
   num_heap_term_vars = 0;     
   follow_par_chain(Leaf);
   deref(term);
@@ -1306,7 +1308,7 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
       recvariant_call(flag,CALL_TRIE_TT,call_arg);
       break;
     case ATTV:
-      /* Now xtemp1 can only be the first occurrence of an attv */
+      /* Now call_arg can only be the first occurrence of an attv */
       *(--VarPosReg) = (Cell) call_arg;
       call_arg = clref_val(call_arg); /* the VAR part of the attv */
       /*
@@ -1426,7 +1428,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
     tag = cell_tag(xtemp1);
 
     mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
-    ctr = 0;
+    ctr = attv_ctr = 0;
 
     switch (tag) {
     case FREE: case REF1:
@@ -1457,6 +1459,20 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
       }
       recvariant_trie(flag,INTERN_TRIE_TT);
       break;
+    case ATTV:
+      /* Now xtemp1 can only be the first occurrence of an attv */
+      xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
+      /*
+       * Bind the VAR part of this attv to VarEnumerator[ctr], so all the
+       * later occurrences of this attv will look like a regular variable
+       * (after dereferencing).
+       */
+      StandardizeAndTrailVariable(xtemp1, ctr);	
+      one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), INTERN_TRIE_TT);
+      attv_ctr++; ctr++;
+      pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */
+      recvariant_trie(flag, INTERN_TRIE_TT);
+      break;
     default:
       xsb_abort("Bad type tag in whole_term_check_ins()");
     }
@@ -1469,6 +1485,11 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
       TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
     }
 
+    /*
+     * var_regs[] is used to construct the last argument of trie_intern/5
+     * (Skel).  This is done in construct_ret(), which is called in
+     * get_lastnode_cs_retskel().
+     */
     for (j = 0; j < ctr; j++) var_regs[j] = mini_trail[j];
     /*
      * Both global_num_vars and Last_Nod_Sav are needed by
