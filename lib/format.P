@@ -475,6 +475,9 @@ fmt_print(0'
 	  , Xs, _, _, Stream) :- !,
 	nl,
 	fmt_print(Xs, 0, 0' , Stream).
+fmt_print(92, [110|Xs], _, _, Stream) :- !,
+	nl,
+	fmt_print(Xs, 0, 0' , Stream).
 fmt_print(C, Xs, Tab, Fill, Stream) :-
 	Char is truncate(C),
 	put_code(Char),
@@ -622,6 +625,10 @@ putn_list(N, []) :- !,
 	N1 is N-1,
 	put_code(0' ),
 	putn_list(N1, []).
+putn_list(N, [92,110|Chars]) :-
+	N1 is N-2,
+	nl,
+	putn_list(N1, Chars).
 putn_list(N, [C|Chars]) :-
 	N1 is N-1,
 	Char is truncate(C),
@@ -645,7 +652,7 @@ preproc_newlines_list1([H|T],[H1|T1]):-
 	  ; H1 = H),
 	preproc_newlines_list1(T,T1).
 
-preproc_newlines(H,T):-
+preproc_newlines(H,T):- 
 	xsb_configuration(host_os,Type),
 	(Type == windows ->
 	    (	atom(H)
@@ -665,3 +672,4 @@ preproc_newlines1([H|Tin],[H|Tout]):-
 
 string([]).
 string([H|T]):- integer(H),string(T).
+
