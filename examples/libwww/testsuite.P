@@ -1,7 +1,7 @@
 
-:- [libwww_request].
+:- [libwww].
 
-:- import libwww_request/1 from libwww_request.
+:- import libwww_request/1 from libwww.
 
 
 %% XML
