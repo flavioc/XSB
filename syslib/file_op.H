@@ -28,13 +28,14 @@
 :- export add_index/3, retract_index/1, add_trie_index/1, retract_trie_index/1, 
 	  '_$index'/3 , '_$trie_asserted'/1.
 :- export add_table/1, '_$table'/1.
+:- export mpa_to_skel/2.
 :- export force_file_op_loaded/0.
 
 :- import default_assert_size/1 from config.
-:- import integer/1, functor/3 from standard.
+:- import integer/1, functor/3, atom/1 from standard.
 :- import assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
 
-:- import conpsc/2, psc_type/2 from machine.
+:- import conpsc/2, psc_type/2, term_new/2, psc_insert/4 from machine.
 
 :- index '_$op1'/3-3.
 

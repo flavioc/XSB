@@ -232,10 +232,8 @@ table to use. */
         ).
 	
 
-add_trie_index(P/Arity) :- !, 
-	functor(Pcall,P,Arity),
-	assert_trie_index(Pcall).
-add_trie_index(Pcall) :- 
+add_trie_index(Spec) :-
+	mpa_to_skel(Spec,Pcall),
 	assert_trie_index(Pcall).
 
 
@@ -247,11 +245,8 @@ retract_trie_index(Pcall) :-
 	retractall('_$trie_asserted1'(Pcall)).
 
 add_index(Pred,Arg,Size) :-
-	(Pred = P/Arity
-	 ->	functor(Pcall,P,Arity)
-	;	Pcall = Pred,
-		functor(Pcall,P,Arity)
-	),
+	mpa_to_skel(Pred,Pcall),
+	functor(Pcall,_P,Arity),
 	(Size =< 0 -> default_assert_size(Hsize) ; Hsize = Size),
 	(Arg == []
 	 ->	Narg = 0, Targ = Arg
@@ -330,11 +325,24 @@ conv_one_indx(A,Arity,Aout) :-
         ).
 
 
-add_table(P/A) :-
-	functor(Call,P,A),
+add_table(Spec) :-
+	mpa_to_skel(Spec,Call),
 	retractall('_$table1'(Call)),
 	assertai('_$table1'(Call),1).
 
+
+/*======================================================================*/
+/* mpa_to_skel(+MPAorSkel,-Skel) converts M:P/A or P/A to Skel 		*/
+/*======================================================================*/
+
+mpa_to_skel(Mod:P/A,Skel) :-
+	atom(Mod),atom(P),integer(A),!,
+	psc_insert(P,A,PSC,Mod),
+	term_new(PSC,Skel).
+mpa_to_skel(P/A,Skel) :- !,
+	atom(P),integer(A),!,
+	functor(Skel,P,A).
+mpa_to_skel(Skel,Skel) :- nonvar(Skel).
 
 /*======================================================================*/
 /* The purpose of the following is explained in file: interpreter.P     */
