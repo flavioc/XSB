@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb,alltt}
+\usepackage{hyperref}
 
 \pagestyle{headings}
 \bibliographystyle{plain}
@@ -1399,6 +1400,8 @@ it to the name of the \FLORA module into which the program was loaded.
 
 %
 
+\index{module!compilation}
+%%
 \FLORA provides commands for compiling and loading program files into
 specified modules.
 The
@@ -1479,257 +1482,153 @@ and is compiled as such. If {\it file}.{\tt flr} is not found, but {\it
 compilation.
 
 
-\subsection{\FLORA Predicates and Prolog Predicates}
-\label{sec:flora-modules-predicates}
-
-\index{module!compilation}
-%
-To compile a program file for a module, \FLORA actually encodes the
-module name into all predicate names in the program, and into all
-those predicate names used for translating \fl literals. Different
-modules will cause different names to be encoded, thus avoiding
-predicate name clashes and rendering the program loadable to different
-modules at runtime.  For example, the following \FLORA program:
-\begin{quote}
-\begin{verbatim}
-foo(a).
-john[father->smith].
-\end{verbatim}
-\end{quote}
-will be compiled into the following XSB program, assuming it is to
-loaded into the module named {\tt foomod}:
-\begin{quote}
-\begin{verbatim}
-'_$_$_flora''foomod''flapply'(foo,a).
-'_$_$_flora''foomod''fd'(john,father,smith).
-\end{verbatim}
-\end{quote}
-
-\index{compiler directive!{\tt flPredicate}}
-%
-In the above examples, the translation of {\tt foo(a)} into
-\verb|'_$_$_flora''foomod''flapply'(foo,a)| is due to the HiLog
-translation. If this is not wanted, the compiler directive,
-{\tt flPredicate functor/arity}, can be used to turn off the HiLog
-translation, as illustrated as follows:
-\begin{quote}
-\begin{verbatim}
-:- flPredicate foo/1.
-foo(a).
-john[father->smith].
-\end{verbatim}
-\end{quote}
-The above program will be compiled into the following XSB program,
-assuming it is to be loaded into the module named {\tt foomod}:
-\begin{quote}
-\begin{verbatim}
-'_$_$_flora''foomod''foo'(a).
-'_$_$_flora''foomod''fd'(john,father,smith).
-\end{verbatim}
-\end{quote}
-
-Note that the compiler directive \mbox{\tt flProlog functor/arity} is used
-to define a Prolog term, no matter whether it appears as
-a predicate call or as an argument. However, \mbox{\tt flPredicate functor/arity}
-only turns off HiLog translation for predicate calls, not for arguments.
-Moreover, the presence of a {\tt flProlog} directive will obviate
-the {\tt flPredicate} directive for the same functor and arity pair. 
-
-Shown below is an example to illustrate the different effects of the
-{\tt flProlog} and {\tt flPredicate} compiler directives:
-\begin{quote}
-\begin{verbatim}
-:- flProlog foo/1.
-:- flProlog goo/1.
-:- flPredicate foo/1.
-:- flPredicate hoo/1.
-foo(X) :- hoo(goo(X)), goo(hoo(X)).
-\end{verbatim}
-\end{quote}
-Assuming the above program is to be loaded into the module named
-{\tt foomod}, it will be compiled into the following XSB program:
-\begin{quote}
-\begin{verbatim}
-foo(X) :- '_$_$_flora''foomod''hoo'(goo(X)), goo(flapply(hoo,X)).
-\end{verbatim}
-\end{quote}
-
-\index{compiler directive!{\tt flPredicateAll}}
-%
-To turn off the HiLog translation for all predicate calls in a program,
-the following compiler directive can be used:
-\begin{quote}
-\begin{verbatim}
-:- flPredicateAll.
-\end{verbatim}
-\end{quote}
-
-
-
 \subsection{Calling XSB from \FLORA}
 
-
-\index{module!calling XSB}
-\index{module!import}
-\index{compiler directive!{\tt import}}
-%
-Like XSB, \FLORA supports the compiler directive,
-\mbox{\tt import functor/arity from module}, to call a predicate
-with functor {\tt functor} and arity {\tt arity} that is defined in an
-XSB module named {\tt module}. For example, the following line:
-\begin{quote}
-\verb|:- import member/2 from basics.|
-\end{quote}
-will tell the \FLORA compiler to compile {\tt member/2} as a predicate
-that refers to the XSB module named {\tt basics}.
-
-In fact, the above compiler directive will cause \emph{every}
-occurrence of {\tt member/2} in a \FLORA program to be compiled into a
-predicate that refers to the XSB module {\tt basics}. Moreover, its
-side effect is also to define {\tt member/2} as a Prolog
-term. It is equivalent to saying the following two lines of
-compiler directives:
-\begin{quote}
-\begin{verbatim}
-:- flProlog member/2.
-:- import member/2 from basics.
-\end{verbatim}
-\end{quote}
-
-
+XSB predicates can be called from \FLORA through the \FLORA module system
+\FLORA models XSB programs as collections of static modules, {\it i.e.},
+from \FLORA's point of view, XSB modules are always available
+and do not need to be loaded. The syntax to call XSB predicates is
+%%
 \index{module!{\tt prologlib}}
-%
-To avoid the above mentioned side effect, the following syntax, which
-is an extension to the module name specification, can be exploited to
-make individual XSB calls in a \FLORA program:
+%%
 \begin{quote}
-\begin{verbatim}
-xsb_predicate @ prologlib xsb_module
-\end{verbatim}
+  \tt
+  ?- {\it predicate}@prologlib({\it module})  
 \end{quote}
-where {\tt prologlib} is a fixed keyword, and \verb|xsb_predicate| is a
-predicate defined in the XSB module named \verb|xsb_module|. Note that
-the translation of other predicates that have the same functor and
-arity as \verb|xsb_predicate| will not be affected by this call. For
-example, the \FLORA query below:
+%%
+For instance, since the predicate {\tt member/2} is defined in the XSB
+module {\tt basics}, we can call it as follows:
+%%
 \begin{quote}
-\verb|?- member(a,[a]) @ prologlib basics, member(X,[a]).|
+ \tt
+ ?- member(abc,[cde,abc,pqr])@prologlib(basics).
 \end{quote}
-will be compiled into the following XSB query:
+%%
+To use this mechanism, you must know which module the particular predicate
+is defined in. Some predicates are defined by programs that do not belong
+to any module. When such an XSB program is loaded, the corresponding
+predicates become available in the special module called {\tt usermod} and
+\FLORA can call such predicates as follows:
+%%
 \begin{quote}
-\begin{verbatim}
-?- import member/2 from basics, member(a,[a]),
-   '_$_$_flora''main''flapply(member,X,[a]).
-\end{verbatim}
+ \tt
+ ?- foo(X)@prologlib(usermod).
 \end{quote}
+%%
+Note that variables are not allowed in the module specifications of Prolog
+predicates, {\it i.e.},
+%%
+\begin{quote}
+ \tt
+ ?- M=usermod, foo(X)@prologlib(M).
+\end{quote}
+%%
+will cause a compilation error.
 
-Some XSB predicates, including those standard predicates like
-{\tt write/1}, can be called directly without being imported from a
-module. To call such XSB predicates in a \FLORA program, simply omit
-the XSB module name and replace it with a pair of parentheses {\tt ()},
-e.g,
+Some XSB predicates are considered ``well-known'' and, even though they are
+defined in various obscure modules, the user can just use those predicates
+without remembering the corresponding XSB module names. These predicates
+(that are listed in the XSb manual) can be called from \FLORA with
+particular ease:
+%%
 \begin{quote}
-\verb|write(X) @ prologlib ()|
+ \tt
+ ?- writeln('Hello')@prologlib()
 \end{quote}
+%%
+{\it i.e.}, we can simply omit the XSB module name (but parentheses must be
+preserved). 
+
+
 
 
 \subsection{Calling \FLORA from XSB}
 
-\index{module!calling \FLORA}
-%
-The major problem with calling \FLORA from XSB is that XSB does not
-understand the \fl syntax. However, \FLORA supports the XSB syntax and
-since every \FLORA program is finally compiled into an XSB program, it
-can loaded and used like an XSB program.
-
-First, the \FLORA program needs to declare the predicates to be called
-as Prolog terms. If the calling XSB module needs to access \fl data,
-then new predicates should be introduced to contain the relevant
-F-molecules.  For example, the following program segment shows how to
-define a new Prolog predicate to carry course selection information
-about students:
+Since XSB does not understand object-oriented syntax, it can call only the
+predicates defined in \FLORA programs. These predicates can be HiLog or
+\FLORA predicates (See Section~\ref{sec:hilog}). To call predicates
+defined in \FLORA programs, they must be imported by the XSB program.
+To do this, the XSB program must execute the query
+%%
 \begin{quote}
-\begin{verbatim}
-:- flProlog studinfo/4.
-
-studinfo(SSN,Year,Semester,CourseCode) :-
-        _Person:student[ssn->SSN,Year(Semester)->>CourseCode].
-\end{verbatim}
+ ?- bootstrap\_flora.  
 \end{quote}
+%%
+somewhere near the top of the file and then include the appropriate
+{\tt flImport} statements described below:
+%%
+\begin{quote}
+  \tt
+   ?- flImport \{flHilog|flPredicate\} {\it flora-predicate/arity} as {\it
+     xsb-name}(\_,\_,...,\_)\\
+   \hspace*{5cm}from {\it filename} >> {\it flora-module-name}
+   \\
+   ?- flImport \{flHilog|flPredicate\} {\it flora-predicate/arity} as {\it 
+     xsb-name}(\_,\_,...,\_)\\
+   \hspace*{5cm}from {\it flora-module-name}
+\end{quote}
+%%
+The first syntax is used to both import the predicate and also load the
+program file defining it into a given module. The second syntax is used
+when the flora program is already loaded and we only need to import the
+corresponding predicate.
 
-Once the predicates of interest have been properly defined in a \FLORA
-program, the calling XSB program needs to import them using the
-compiler directive \mbox{\tt import functor/arity from module}, where
-{\tt module} must be either {\tt usermod} or {\tt global}. This means
-that the calling XSB module must explicitly load the \FLORA program 
-at runtime by issuing the command {\tt consult/1}.
+In both cases, the option {\tt flHilog} is used to import a HiLog predicate
+and {\tt flPredicate} is used to import \FLORA predicates. The imported
+predicate must be given a name by which the imported predicate will be
+known in XSB.  (This name can be the same as the name used in \FLORA.)  It
+is important, however, that the XSB name be specified as shown, {\it i.e.},
+as a predicate skeleton with the same number of arguments as in the \FLORA
+predicate. For instance, {\tt foo(\_,\_,\_)} will do, but {\tt foo/3} will
+not.
 
-\index{module!file name}
-%
-The only thing that needs extra care is the name of the file that
-should be passed to \mbox{\tt consult/1}. As pointed out earlier at
-the beginning of Section~\ref{sec:flora-modules}, module names are
-appended to \FLORA file names to generate the names for the byte code
-files. Therefore, the name of final byte code file, but not the
-original \FLORA file, should be used in {\tt consult/1}.
+Once the predicate is imported, it can be used under its XSB name as a
+regular predicate.
 
-For instance, suppose the name of the \FLORA program is
-{\tt studentdb.flr}, and the byte code is generated using the \FLORA
-command {\tt flCompile(studentdb>>studmod)}, then the XSB program
-calling predicates in it should use the command
-\verb|consult(studentdb_studmod)| to load the file.
+XSB programs can also load and compile \FLORA programs using the following
+queries: 
+%%
+\begin{quote}
+ \tt
+ :- import flLoad/1, flCompile/1 from flora2.\\
+ ?- flLoad  {\it flora-file} >> {\it flora-module}.\\
+ ?- flLoad  {\it flora-file}\\
+ ?- flCompile {\it flora-file} >> {\it flora-module}.\\
+ ?- flCompile  {\it flora-file}
+\end{quote}
+%%
+The first query loads the file {\it flora-file\/} into the given module and
+compiles it, if necessary. The second query loads the program into the
+default module {\tt main}. The last two queries compile the file for
+loading into the module {\it flora-module} and {\tt main}, respectively,
+but do not load it.
+
+Finally, an XSB program can check if a certain \FLORA module has been
+loaded using the following call:
+%%
+\begin{quote}
+ \tt
+ :- import flModule/1 from flora2.\\
+ ?- flModule({\it flora-module-name}).
+\end{quote}
+%%
 
 
 \subsection{Including Files into \FLORA Programs}
 
-
-There are programs that encode a lot of common functionalities but
-need to access predicates in the calling program. These programs are
-like an integral part of the calling program and therefore cannot be
-used like a \FLORA module or an XSB module. Ideally these programs
-need to be embeded into the calling program to function correctly.
-
-\index{module!include}
-%
-The only way to use these programs is to include their sources into
-the calling program. To include a file into a program, the following
-preprocessing command can be used:
+The last and the simplest way to construct multi-file \FLORA 
+programs is by using the {\tt \#include} preprocessing directive.
+For instance if file {\tt foo.flr} contains the following instructions:
+%%
 \begin{quote}
-\verb|#include "file_name"|
+  \#include file1 \\
+  \#include file2\\
+  \#include file3
 \end{quote}
-where \verb|file_name| is the name of the program file to be included.
+%%
+the effect is the same as if the above three files were concatenated
+together and stored in {\tt foo.flr}.
 
-In fact, before parsing a program, \FLORA \emph{always} calls the
-{\tt gpp} preprocessor to process its input program. Therefore, any
-preprocessing command that is recognized by {\tt gpp} can appear in
-a \FLORA program (refer to the XSB manual for more information on
-{\tt gpp}). The above mentioned \verb|#include "file_name"| is one
-of the preprocessing commands supported by {\tt gpp}.
-
-
-\subsection{Abolishing \FLORA Predicates}
-
-
-\index{module!{\tt flAbolish}}
-%
-To abolish a predicate of the form {\tt functor/arity} from the module that
-a program is loaded into, the following compiler directive can be used:
-\begin{quote}
-\verb!:- flAbolish functor/arity!
-\end{quote}
-
-{\tt flAbolish} can also be called like a normal predicate,
-either from the shell or from within a rule body, to abolish
-predicates in one specific module. The syntax is shown below:
-\begin{quote}
-\verb!flAbolish functor/arity, ..., functor/arity in module!
-\end{quote}
-where {\tt in} is a special keyword, and {\tt module} stands for the
-name of the module from which to abolish the list of predicates.
-
-Note that when {\tt flAbolish functor/arity} is used as a normal predicate
-(not as a compiler directive), it will abolish the predicate for the
-default module.
 
 
 \section{Path Expressions}\label{sec-pathexpr}
@@ -1876,7 +1775,7 @@ it to the user to tell the compiler whether equality maintenance is needed.
 Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
 
 
-\subsection{Truth Values, Object Values, and Predicate Meta Signature}
+\section{Truth Values, Object Values, and Predicate Meta Signatures}
 \label{sec-references}
 
 
@@ -1919,7 +1818,7 @@ a..b[c\mvd\{d.e\}] \quad\ \Leftrightarrow \quad\  a[b\mvd X_{ab}]
 \noindent
 Such decomposition is used to determine the truth value of arbitrarily complex
 path expressions in the \emph{body} of a rule.  Let $\tt \obj(path)$ denote
-the ids of all objects represented by the path expression. Then, for
+the Ids of all objects represented by the path expression. Then, for
 (\ref{eq-decomp}) above, we have:
 
 \begin{displaymath} \tt
@@ -2045,6 +1944,278 @@ directive {\tt flSign}.  For instance, the following directive will make
 This signature declaration tells \FLORA that the first and the third
 arguments to {\tt findall/3} should be translated as oids, while the second
 argument of {\tt findall/3} into a formula.
+
+
+
+\section{HiLog and Related Issues} \label{sec:hilog}
+
+
+\index{HiLog}
+%
+HiLog \cite{hilog-jlp} is the default syntax that \FLORA uses to represent
+functor terms (including object Ids) and predicates.  In HiLog, complex
+terms can appear wherever a function symbol is allowed, e.g., {\tt
+  group(X)(Y,Z)}, where the functor is the complex term {\tt group(X)}. In
+\FLORA, any id-term, including function symbols, predicate symbols, and
+their arguments, can be a HiLog term.
+
+\index{HiLog!translation}
+%
+In fact, HiLog has a higher order syntax but a first order semantics
+\cite{hilog-jlp}. Any HiLog term can be consistently translated into
+a Prolog term. For instance, {\tt group(X)(Y,Z)} can be represented
+by the Prolog term {\tt flapply(flapply(group,X),Y,Z)}. The translation
+scheme is pretty straightforward and described in \cite{hilog-jlp}.
+
+In \FLORA any term is considered as a HiLog term and therefore subject
+to translation. That is, even a normal Prolog term will by default be
+represented using the HiLog translaiton, e.g., {\tt foo(a)} will be
+represented as {\tt flapply(foo,a)}. This is to guarantee that no
+extra translation will be needed for unification to work correctly at
+runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and
+bind the variable {\tt F} to {\tt foo}.
+
+\index{compiler directive!{\tt flProlog}}
+%
+However, if the default HiLog translation is not intended, the following
+compiler directive can be used to define a traditional Prolog term:
+\begin{quote}
+\verb|:- flProlog functor/arity.|
+\end{quote}
+where {\tt functor} stands for the functor of a Prolog term and
+{\tt arity} stands for its arity.
+
+Note that the above {\tt flProlog} compiler directive does not affect
+the translation of its arguments. For instance, if nothing more than
+the following directive is defined in a \FLORA program:
+\begin{quote}
+\verb|:- flProlog member/2.|
+\end{quote}
+then a term like {\tt member(foo(a),X)} in this program will be translated
+into {\tt member(flapply(foo,a),X)}.
+
+\index{compiler directive!{\tt flPrologAll}}
+%
+In the case where all Prolog terms should stay as they are, the following
+compiler directive can be used:
+\begin{quote}
+\verb|:- flPrologAll.|
+\end{quote}
+However, for those non-Prolog terms, they will still be represented using
+the HiLog translation.
+
+For a list of built-in Prolog term definitions in \FLORA, refer to the
+file {\tt flrprolog.P}.
+
+\index{HiLog!unification}
+%
+The following problem arises as far as unificatoin is concerned:
+Should {\tt foo} unify with {\tt foo()}, which both seem like 0-ary
+terms? Moreover, if the answer is yes, then should {\tt foo} unify
+with {\tt foo()()}, which is also a valid HiLog term?  In \FLORA, the
+answers depend on whether these 0-ary terms appear as predicate calls
+in rule heads and bodies, or just as id-terms, i.e., arguments.
+
+In general, the presence of a pair of parentheses in a term would imply
+one application of the HiLog translation during
+compilation. Therefore, {\tt foo()} would be represented as
+{\tt flapply(foo)}, {\tt foo()()} as {\tt flapply(flapply(foo))},
+and {\tt foo} as it is, i.e, {\tt foo}.  So {\tt foo} does not unify
+with {\tt foo()} or {\tt foo()()} while they all act as id-terms. One
+of the advantages of keeping them differently is to make a \FLORA module
+communicate easily with normal XSB modules, which do not fully support
+HiLog. Refer to Section~\ref{sec:flora-modules} for more information
+on \FLORA modules.
+
+However, to make programming easy in the higher order fashion, 0-ary
+Prolog terms are translated like 0-ary HiLog terms when they appear
+as predicate calls in rule heads and bodies. For instance, the
+following two rules are equivalent in \FLORA:
+\begin{quote}
+\begin{verbatim}
+foo :- body.
+foo() :- body.
+\end{verbatim}
+\end{quote}
+and can be invoked in a rule body by either {\tt foo}, {\tt foo()},
+or more fancily, {\tt X()}, where {\tt X} is a variable to be bound
+to {\tt foo} when the call succeeds.
+
+{\tt foo} never unifies with {\tt foo()()} in \FLORA.
+
+
+\subsection{Meta-programming}
+
+
+\index{meta-programming}
+%
+\fl enhanced with HiLog lends itself naturally to meta-programming. For
+instance, it is easy to examine the methods and types defined for the
+various classes.  Here are some simle examples:
+%%
+\begin{quote}
+\begin{verbatim}
+// all unary scalar methods defined for John
+?- john[M(_) -> _].
+
+// all unary scalar methods that apply to John,
+// for which a signature was declared
+?- john[M(_) => _].
+
+// all method signatures that apply to John,
+// which are either declared explicitly or inherited
+?- john[M => _].
+
+// all method invocations defined for John
+?- john[M -> _].
+\end{verbatim}
+\end{quote}
+%%
+
+However, a number of meta-programming primitives are still needed
+since they cannot be directly expressed in \fl. Many such features are
+provided by the underlying XSB system and \FLORA simply takes advantage of
+them: 
+%%
+\begin{quote}
+\begin{verbatim}
+?- functor(X,f,3).
+X = f(_h455,_h456,_h457)
+Yes.
+
+?- compound(f(X)).
+X = _h472
+Yes.
+
+?- X =.. [f,a,b].
+X = f(a,b)
+Yes.
+\end{verbatim}
+\end{quote}
+%%
+Note that these primitives are used for Prolog terms only and
+described in the XSB manual. Meta-programming support for HiLog terms
+and F-molecules will be provided through future enhancement.
+
+
+
+\subsection{\FLORA Predicates and Prolog Predicates}
+\label{sec:flora-modules-predicates}
+
+\FLORA is an object-relational language in the sense that it supports both
+the object-oriented syntax of \fl and the predicate-based ({\it i.e.},
+relational) syntax of Prolog. Incorporation of predicates is conceptually
+simple, but is somewhat burdened by pragmatic considerations, namely,
+integration with the host language (XSB) and HiLog. As a result, \FLORA has
+not one type of predicates but three!
+
+The native syntax for predicates in \FLORA is that of HiLog, as explained
+in Section~\ref{sec:hilog}, due to HiLog's support for meta-programming.
+In particular, the query 
+%%
+\begin{quote}
+ \tt
+ ?- X(a,b).
+\end{quote}
+%%
+would return all names of binary predicates that contain
+the tuple {\tt a,b}. However, it is sometimes useful to exclude certain
+predicates from the domain of the meta-variables, such as {\tt X} above.
+For instance, if {\tt write/2}  is an I/O predicates, should the above
+query return the binding {\tt X=write}? If so, if {\tt a} happens to be the
+name of a file and {\tt b} a string, should this string be written out to
+that file as a side effect of the evaluation of this query?
+
+To avoid these semantic problems, \FLORA supports the {\tt flPredicate}
+declaration, which defines certain symbols as \FLORA predicates. For
+instance,
+%%
+\index{compiler directive!{\tt flPredicate}}
+%%
+\begin{quote}
+ \tt
+ :- flPredicate foo/1, moo/3.
+\end{quote}
+%%
+Predicates defined in this way are outside of the range of HiLog variables.
+If you want all predicates to be shielded from meta programming, you can use
+the following compiler directive:
+%%
+\index{compiler directive!{\tt flPredicateAll}}
+%%
+\begin{quote}
+  \tt
+  :- flPredicateAll.
+\end{quote}
+
+\FLORA predicates are module-aware. This means that the predicates defined
+in different modules are treated as unrelated entities.
+
+There is one other reason for using \FLORA predicates over HiLog
+predicates, which has to do with tabling. This issue is discussed in
+Section~\ref{sec-tabling-flora}.
+
+
+The third type of predicates, called \emph{Prolog predicates}, is the
+vehicle that allows \FLORA to call XSB predicates with ease. 
+
+
+
+\subsection{Abolishing \FLORA Predicates}
+
+
+\index{module!{\tt flAbolish}}
+%
+To abolish a predicate of the form {\tt functor/arity} from the module that
+a program is loaded into, the following compiler directive can be used:
+\begin{quote}
+\verb!:- flAbolish functor/arity!
+\end{quote}
+
+{\tt flAbolish} can also be called like a normal predicate,
+either from the shell or from within a rule body, to abolish
+predicates in one specific module. The syntax is shown below:
+\begin{quote}
+\verb!flAbolish functor/arity, ..., functor/arity in module!
+\end{quote}
+where {\tt in} is a special keyword, and {\tt module} stands for the
+name of the module from which to abolish the list of predicates.
+
+Note that when {\tt flAbolish functor/arity} is used as a normal predicate
+(not as a compiler directive), it will abolish the predicate for the
+default module.
+
+
+
+\section{Control Constructs}
+
+For user convenience, \FLORA provides a number of control structures
+borrowed from other languages. One often used such construct is
+{\tt if-then-else}. For instance, 
+%%
+\begin{quote}
+ \tt
+ ?- if (foo(a),foo2(b)) then (abc(X),cde(Y)) else (qpr(X),rts(Y)).
+\end{quote}
+%%
+Here the system first evaluates {\tt foo(a),foo2(b)} and, if true,
+evaluates {\tt abc(X),cde(Y)}. Otherwise, it evaluates {\tt qpr(X),rts(Y)}.
+The entire clause succeeds or fails depending on whether the {\tt
+  then}-part or the {\tt else}-part succeeds or fails (whichever applies).
+The {\tt if-then} version (without the {\tt else}-part) is also provided.
+In this case, when the {\tt if}-condition succeeds, the {\tt then}-part is
+evaluated. The entire clause is then succeeds or fails depending on the
+{\tt then}-part. When the {\tt if}-condition is false, the entire clause fails.
+
+Note that {\tt if}, {\tt then}, and {\tt else} are implemented as
+operators, and they bind stronger than the conjunction ``,'', the
+disjunction ``;'', etc. This is why the parentheses are needed in the above
+example.
+
+In the current version, the \FLORA parser does not yet handle all the
+syntax errors associated with the use of {\tt if-then-else} and nested
+clauses are not always parsed the way one would expect (say, as in C).
+Therefore, explicit parentheses are recommended around the entire clause. 
 
 
 
@@ -2530,155 +2701,6 @@ another new operator, {\tt *+>>}, for use in the list notation.
 The only limitation to the use of {\tt +>>} and {\tt *+>>} is that
 they cannot appear in a fact or the head of a rule.
 
-
-\subsection{HiLog and Related Issues} \label{sec:hilog}
-
-
-\index{HiLog}
-%
-\FLORA now supports HiLog. In HiLog, complex terms can appear wherever
-a function symbol is allowed, e.g., {\tt group(X)(Y,Z)}, where the
-functor is the complex term {\tt group(X)}. In \FLORA, any id-term,
-including function symbols, predicate symbols, and their arguments,
-can be a HiLog term.
-
-\index{HiLog!translation}
-%
-In fact, HiLog has a higher order syntax but a first order semantics
-\cite{hilog-jlp}. Any HiLog term can be consistently translated into
-a Prolog term. For instance, {\tt group(X)(Y,Z)} can be represented
-by the Prolog term {\tt flapply(flapply(group,X),Y,Z)}. The translation
-scheme is pretty straightforward and described in \cite{hilog-jlp}.
-
-In \FLORA any term is considered as a HiLog term and therefore subject
-to translation. That is, even a normal Prolog term will by default be
-represented using the HiLog translaiton, e.g., {\tt foo(a)} will be
-represented as {\tt flapply(foo,a)}. This is to guarantee that no
-extra translation will be needed for unification to work correctly at
-runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and
-bind the variable {\tt F} to {\tt foo}.
-
-\index{compiler directive!{\tt flProlog}}
-%
-However, if the default HiLog translation is not intended, the following
-compiler directive can be used to define a traditional Prolog term:
-\begin{quote}
-\verb|:- flProlog functor/arity.|
-\end{quote}
-where {\tt functor} stands for the functor of a Prolog term and
-{\tt arity} stands for its arity.
-
-Note that the above {\tt flProlog} compiler directive does not affect
-the translation of its arguments. For instance, if nothing more than
-the following directive is defined in a \FLORA program:
-\begin{quote}
-\verb|:- flProlog member/2.|
-\end{quote}
-then a term like {\tt member(foo(a),X)} in this program will be translated
-into {\tt member(flapply(foo,a),X)}.
-
-\index{compiler directive!{\tt flPrologAll}}
-%
-In the case where all Prolog terms should stay as they are, the following
-compiler directive can be used:
-\begin{quote}
-\verb|:- flPrologAll.|
-\end{quote}
-However, for those non-Prolog terms, they will still be represented using
-the HiLog translation.
-
-For a list of built-in Prolog term definitions in \FLORA, refer to the
-file {\tt flrprolog.P}.
-
-\index{HiLog!unification}
-%
-The following problem arises as far as unificatoin is concerned:
-Should {\tt foo} unify with {\tt foo()}, which both seem like 0-ary
-terms? Moreover, if the answer is yes, then should {\tt foo} unify
-with {\tt foo()()}, which is also a valid HiLog term?  In \FLORA, the
-answers depend on whether these 0-ary terms appear as predicate calls
-in rule heads and bodies, or just as id-terms, i.e., arguments.
-
-In general, the presence of a pair of parentheses in a term would imply
-one application of the HiLog translation during
-compilation. Therefore, {\tt foo()} would be represented as
-{\tt flapply(foo)}, {\tt foo()()} as {\tt flapply(flapply(foo))},
-and {\tt foo} as it is, i.e, {\tt foo}.  So {\tt foo} does not unify
-with {\tt foo()} or {\tt foo()()} while they all act as id-terms. One
-of the advantages of keeping them differently is to make a \FLORA module
-communicate easily with normal XSB modules, which do not fully support
-HiLog. Refer to Section~\ref{sec:flora-modules} for more information
-on \FLORA modules.
-
-However, to make programming easy in the higher order fashion, 0-ary
-Prolog terms are translated like 0-ary HiLog terms when they appear
-as predicate calls in rule heads and bodies. For instance, the
-following two rules are equivalent in \FLORA:
-\begin{quote}
-\begin{verbatim}
-foo :- body.
-foo() :- body.
-\end{verbatim}
-\end{quote}
-and can be invoked in a rule body by either {\tt foo}, {\tt foo()},
-or more fancily, {\tt X()}, where {\tt X} is a variable to be bound
-to {\tt foo} when the call succeeds.
-
-{\tt foo} never unifies with {\tt foo()()} in \FLORA.
-
-
-\subsection{Meta-programming in \FLORA}
-
-
-\index{meta-programming}
-%
-The syntax of \fl and HiLog lends itself naturally to meta-programming. For
-instance, it is easy to examine the methods and types defined for the
-various classes.  Here are some simle examples:
-%%
-\begin{quote}
-\begin{verbatim}
-// all unary scalar methods defined for John
-?- john[M(_) -> _].
-
-// all unary scalar methods that apply to John,
-// for which a signature was declared
-?- john[M(_) => _].
-
-// all method signatures that apply to John,
-// which are either declared explicitly or inherited
-?- john[M => _].
-
-// all method invocations defined for John
-?- john[M -> _].
-\end{verbatim}
-\end{quote}
-%%
-
-However, a number of meta-programming primitives are still needed
-since they cannot be directly expressed in \fl. Many such features are
-provided by the underlying XSB system and \FLORA simply takes advantage of
-them: 
-%%
-\begin{quote}
-\begin{verbatim}
-?- functor(X,f,3).
-X = f(_h455,_h456,_h457)
-Yes.
-
-?- compound(f(X)).
-X = _h472
-Yes.
-
-?- X =.. [f,a,b].
-X = f(a,b)
-Yes.
-\end{verbatim}
-\end{quote}
-%%
-Note that these primitives are used for Prolog terms only and
-described in the XSB manual. Meta-programming support for HiLog terms
-and F-molecules will be provided through future enhancement.
 
 
 \subsection{Anonymous Oid}
@@ -3215,7 +3237,7 @@ negation, well-founded semantics, and the XSB operators {\tt tnot} and
 \verb|sk_not|.
 
 
-\section{\FLORA Compiler Directives} \label{sec-comp-directives}
+\section{Summary of \FLORA Compiler Directives} \label{sec-comp-directives}
 
 \index{compiler directive}
 %
@@ -3301,6 +3323,14 @@ by \FLORA:
   with the same precedence and type.
 \item {\tt table {\it functor/arity}, ..., {\it functor/arity}}
 \end{itemize}
+
+
+\section{\FLORA Libraries}
+
+\FLORA provides a number of useful libraries that other programs can
+use. We describe the functionality of these libraries below.
+
+\paragraph{Pretty printing.}
 
 
 \section{\FLORA Debugger}
