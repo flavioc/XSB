@@ -109,36 +109,24 @@ extern Float getfloatval(Cell);
 /*======================================================================*/
 /*======================================================================*/
 
-/* for HP machines (works for HP700 & 9000 series) take bits 0-1, 28, 29, 31 */
-#if defined(HP700)
-#define enc_int(val) ( ((Integer)(val) & 0xb0000003) ?\
-			(((Integer)(val) << 5) | 0x10) :\
-			(((Integer)(val) << 1) & 0x80000000) |\
-			(((Integer)(val) << 3) & 0x7fffffe0) )
-#define dec_int(dcell) ( ((Integer)(dcell) & 0x10) ?\
-                        ((Integer)(dcell) >> 5) :\
-			(((Integer)(dcell) >> 1) & 0x40000000) |\
-			(((Integer)(dcell) >> 3) & 0x0ffffffc) )
+#if (defined(HP700) || defined(IBM) || defined(MIPS_BASED) || defined(SOLARIS_x86))
+#define GENERAL_TAGGING
+#endif
 
-/* Fewer bit representation of pointers (take bits 0-1, 28-29 only) */
-#define enc_addr(addr) (((Cell)(addr) & 0xc0000000) |\
-			 (((Cell)(addr) << 2) & 0x3ffffff0))
-#define dec_addr(dcell) (((Cell)(dcell) & 0xc0000000) |\
-			 (((Cell)(dcell) >> 2) & 0x0ffffffc))
+#if defined(GENERAL_TAGGING)
 
-#elif defined(IBM)
-/* for IBM machines (like RS-6000) take bits 0-1, 27, 30-31 */
-#define enc_int(val) ( ((Integer)(val) & 0xc8000003) ?\
-			(((Integer)(val) << 5) | 0x10) :\
-			(((Integer)(val) << 2) & 0xc0000000) |\
-			(((Integer)(val) << 3) & 0x3fffffe0) )
-#define dec_int(dcell) ( ((Integer)(dcell) & 0x10) ?\
-			((Integer)(dcell) >> 5) :\
-			(((Integer)(dcell) >> 2) & 0x30000000) |\
-			(((Integer)(dcell) >> 3) & 0x07fffffc) )
-/* Fewer bit representation of pointers */
-#define enc_addr(addr) ((Cell)(addr) << 2)
-#define dec_addr(dcell) (((Cell)(dcell) >> 2) & 0x3ffffffc)
+/* General Tagging for systems that return addresses in higher half
+   (2-4GB) of virtual memory.  This builds a table for the high-order
+   nibble of addresses and maps them to 0-7, to free up the 1st bit to
+   allow it to be stolen. */
+
+extern unsigned long enc[], dec[];
+
+#define enc_int(val)  (((Integer)(val) << 3))
+#define dec_int(val)  ((Integer)(val) >> 3)
+
+#define enc_addr(addr) ((Cell)((enc[((unsigned long)addr)>>28] | ((unsigned long)(addr) & 0x0ffffffc)) << 1))
+#define dec_addr(dcell) ((Cell)(dec[(unsigned long)(dcell)>>29] | (((unsigned long)(dcell) >> 1) & 0x0ffffffc)))
 
 #elif BITS64
 /* 64 bit, take bits 0, 61-63 */
@@ -149,31 +137,10 @@ extern Float getfloatval(Cell);
 #define enc_addr(addr) ((Cell)(addr))
 #define dec_addr(dcell) (((Cell)(dcell)) & 0xfffffffffffffff8)
 
-#elif (defined(MIPS_BASED) || defined(SOLARIS_x86)) 
-/* take bits 0-1, 29-31 */
-/* Encoded integers/addresses */
-#define enc_int(val) ( ((Integer)(val) & 0xe0000003) ?\
-	(((Integer)(val) << 5) | 0x10) :\
-	((Integer)(val) << 3) )
-#define dec_int(dcell) ( ((Integer)(dcell) & 0x10) ?\
-	((Integer)(dcell) >> 5) :\
-	(((Integer)(dcell) >> 3) & 0x1ffffffc) )
-/* Fewer bit representation of pointers */
-#define enc_addr(addr) ((Cell)(addr) << 1)
-#define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)
-
-#elif defined(GENERAL_TAGGING)
-extern unsigned long enc[], dec[];
-
-#define enc_int(val)  (((Integer)(val) << 3))
-#define dec_int(val)  ((Integer)(val) >> 3)
-
-#define enc_addr(addr) ((Cell)((enc[((unsigned long)addr)>>28] | ((unsigned long)(addr) & 0x0ffffffc)) << 1))
-#define dec_addr(dcell) ((Cell)(dec[(unsigned long)(dcell)>>29] | (((unsigned long)(dcell) >> 1) & 0x0ffffffc)))
-
 #else
-/* take bits 0-1, 30-31 */
-/* BIG_MEM allows Solaris/Sun machines to use 1 gig of memory */
+/* take bits 0-1, 31 */
+/* Steals bit 31 (high order).  If system allocates memory (malloc) in
+   the upper 2 GB of virtual memory, then use GENERAL_TAGGING. */
 
 #define enc_int(val)  (((Integer)(val) << 3))
 #define dec_int(val)  ((Integer)(val) >> 3)
