@@ -593,7 +593,7 @@ xsbBool fmt_read(void)
       }
       if (isref(Arg))
 	c2p_int(int_arg,Arg);
-      else if (int_arg != oint_val(Arg)) return FALSE;
+      else if (int_arg != (Integer)oint_val(Arg)) return FALSE;
       break;
     case 'f':
       curr_assignment = fscanf(fptr, aux_fmt.string,
