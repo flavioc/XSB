@@ -124,6 +124,7 @@
 #define NO_DELETEDISJUN	'disjunction not allowed in delete'
 #define NO_INSERTNEG	'negation not allowed in insert'
 #define NO_DELETENEG	'negation not allowed in delete'
+#define NO_PROLOGUPDATE 'updating Prolog predicates not allowed'
 #define UNKNOWN_AGGREGT 'unknown aggregate operator'
 #define UNKNOWN_DIRECT	'unknown compiler directive'
 

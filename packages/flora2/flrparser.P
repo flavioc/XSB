@@ -2120,20 +2120,8 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
 
-flora_dbwsliteral(_Mode,CANOTERM(Funct,N,FL_PARENTHESIS,_Args,If,_Ip),_WS,_CodeList,Status) :-
-	get_atom(Funct,F),
-	flora_nowsp(F,N),
-	!,
-	parsing_error(If,NO_WORKSPACE,Status).
-
-flora_dbwsliteral(_Mode,CanoTerm,_WS,_CodeList,Status) :-
-	get_atom(CanoTerm,F),
-	flora_nowsp(F,0),
-	!,
-	parsing_error(CanoTerm,NO_WORKSPACE,Status).
-
 flora_dbwsliteral(Mode,CanoniTerm,WS,[WSCode],Status) :-
-	flora_dblit(Mode,CanoniTerm,Code,Status),
+	flora_dbwslit(Mode,CanoniTerm,Code,Status),
 	flworkspace_struct(Code,WS,WSCode).
 
 
@@ -2175,19 +2163,31 @@ flora_dblit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	flora_db_pathexplist(Mode,Args,[LCode,RCode],Status),
 	(Status == [] -> flobjeql_struct(LCode,RCode,Code); true).
 
-flora_dblit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
+flora_dblit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	!,
-	flora_db_term(Mode,Funct,N,Args,Code,Status).
+	( get_atom(Funct,F), flora_prlgdef(F,N) ->
+	    parsing_error(If,NO_PROLOGUPDATE,Status)
+	;
+	  flora_db_term(Mode,Funct,N,Args,Code,Status)
+	).
 
 flora_dblit(Mode,CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),Code,Status) :-
 	!,
 	flora_db_objspec(Mode,Funct,N,Args,Code,Status).
 
-flora_dblit(_Mode,CanoniTerm,Code,Status) :-
+flora_dblit(Mode,CanoniTerm,Code,Status) :-
 	get_atom(CanoniTerm,A),
 	!,
 	( flora_nodefp(A,0) ->
-	    parsing_error(CanoniTerm,NO_INSERT,Status)
+	    ( Mode == FLINS ->
+		parsing_error(CanoniTerm,NO_INSERT,Status)
+	    ;
+	      Mode == FLDEL,
+	      parsing_error(CanoniTerm,NO_DELETE,Status)
+	    )
+
+	; flora_prlgdef(A,0) ->
+	    parsing_error(CanoniTerm,NO_PROLOGUPDATE,Status)
 	;
 	  flatom_struct(A,Code),
 	  Status=[]
@@ -2198,6 +2198,91 @@ flora_dblit(_Mode,CanoniTerm,Code,[]) :-
 	!.
 
 flora_dblit(Mode,CanoniTerm,_Code,Status) :-
+	!,
+	( Mode == FLINS ->
+	    parsing_error(CanoniTerm,ERROR_INSERT,Status)
+	;
+	  Mode == FLDEL,
+	  parsing_error(CanoniTerm,ERROR_DELETE,Status)
+	).
+
+
+/****************************************************************************
+  flora_dbwslit(+Mode,+CanoniTerm,-Code,-Status)
+
+  Note: Updating Prolog predicates is not allowed. But explicit workspace
+        specification overrides the Prolog directive.
+****************************************************************************/
+flora_dbwslit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,_Args,If,_Ip),_CodeList,Status) :-
+	get_atom(Funct,F),
+	flora_nodefp(F,N),
+	!,
+	( Mode == FLINS ->
+	    parsing_error(If,NO_INSERT,Status)
+	;
+	  Mode == FLDEL,
+	  parsing_error(If,NO_DELETE,Status)
+	).
+
+flora_dbwslit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
+	get_atom(Funct,F),
+	is_birelop(F),
+	!,
+	flora_db_pathexplist(Mode,Args,[LCode,RCode],Status),
+	(Status == [] -> flbirelate_struct(LCode,F,RCode,Code); true).
+
+flora_dbwslit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
+	get_atom(Funct,F),
+	is_objrefop(F),
+	!,
+	( Mode == FLINS ->
+	    parsing_error(If,ERROR_INSERT,Status)
+	;
+	  Mode == FLDEL,
+	  parsing_error(If,ERROR_DELETE,Status)
+	).
+
+flora_dbwslit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
+	get_atom(Funct,FL_OBJEQL),
+	!,
+	flora_db_pathexplist(Mode,Args,[LCode,RCode],Status),
+	(Status == [] -> flobjeql_struct(LCode,RCode,Code); true).
+
+flora_dbwslit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
+	!,
+	( get_atom(Funct,F), flora_nowsp(F,N) ->
+	    parsing_error(If,NO_WORKSPACE,Status)
+	;
+	  flora_db_term(Mode,Funct,N,Args,Code,Status)
+	).
+
+flora_dbwslit(Mode,CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),Code,Status) :-
+	!,
+	flora_db_objspec(Mode,Funct,N,Args,Code,Status).
+
+flora_dbwslit(Mode,CanoniTerm,Code,Status) :-
+	get_atom(CanoniTerm,A),
+	!,
+	( flora_nodefp(A,0) ->
+	    ( Mode == FLINS ->
+		parsing_error(CanoniTerm,NO_INSERT,Status)
+	    ;
+	      Mode == FLDEL,
+	      parsing_error(CanoniTerm,NO_DELETE,Status)
+	    )
+
+	; flora_nowsp(A,0) ->
+	    parsing_error(CanoniTerm,NO_WORKSPACE,Status)
+	;
+	  flatom_struct(A,Code),
+	  Status=[]
+        ).
+
+flora_dbwslit(_Mode,CanoniTerm,Code,[]) :-
+	get_flvar_struct(CanoniTerm,Code),
+	!.
+
+flora_dbwslit(Mode,CanoniTerm,_Code,Status) :-
 	!,
 	( Mode == FLINS ->
 	    parsing_error(CanoniTerm,ERROR_INSERT,Status)
