@@ -428,8 +428,7 @@ sign in method invocations.
 %%
 Additional system libraries are located in the {\tt syslib/} subdirectory.
 The sbudirectory {\tt trailer/} contains three trailers that can be
-loaded by the \FLORA commands {\tt fllEquality/1} and \linebreak
-{\tt flEquality/2}. There
+loaded by the \FLORA commands {\tt flEquality}. There
 is also a number of files in the {\tt closure/} subdirectory that serve as
 headers and trailers that are automatically included into the {\tt .P} files by the
 \FLORA compiler (explained later).
@@ -593,6 +592,16 @@ congruence relation among object equalities, i.e., transivity, reflexity,
 and symmetry. Besides the properties of equality stipulated by
 \mbox{\tt flEquality basic}, \mbox{\tt flEquality floigc} will enforce the full
 equality implied by \fl, including the scalar axiom.
+
+Note that {\tt flEquality} can also be used as a normal predicate. When it
+is called from the shell or from within a rule body, it will set equality
+support for the default module. Moreover, it can also set equality level
+for one specific module. The syntax is as follows:
+\begin{quote}
+\verb!flEquality {none|basic|flogic} in module!
+\end{quote}
+where {\tt in} is a special keyword, and {\tt module} stands for the name of
+the module.
 
 
 \section{Basic \fl Syntax}
@@ -2422,19 +2431,44 @@ of the preprocessing commands supported by {\sf gpp}.
 \subsection{This Module Name}
 
 
-\index{module!{\tt flthismod}}
+\index{module!{\tt flThisModule}}
 %
 Although a \FLORA program can be loaded into any arbitrary module, the
-program itself can call the predicate {\tt flthismod/1} to retrieve
+program itself can call the predicate {\tt flThisModule/1} to retrieve
 the name of the module into which it is loaded at runtime.
 
-By default, {\tt flthismod/1} is declared for each compiled \FLORA program
+By default, {\tt flThisModule/1} is declared for each compiled \FLORA program
 as follows:
 \begin{quote}
-\verb|:- flPredicate flthismod/1.|
+\verb|:- flPredicate flThisModule/1.|
 \end{quote}
 It accepts one argument and will bind it to the name of the \FLORA
 module.
+
+
+\subsection{Abolishing \FLORA Predicates}
+
+
+\index{module!{\tt flAbolish}}
+%
+To abolish a predicate of the form {\tt functor/arity} from the module that
+a program is loaded into, the following compiler directive can be used:
+\begin{quote}
+\verb!:- flAbolish functor/arity!
+\end{quote}
+
+{\tt flAbolish} can also be called like a normal predicate,
+either from the shell or from within a rule body, to abolish
+predicates in one specific module. The syntax is shown below:
+\begin{quote}
+\verb!flAbolish functor/arity, ..., functor/arity in module!
+\end{quote}
+where {\tt in} is a special keyword, and {\tt module} stands for the
+name of the module from which to abolish the list of predicates.
+
+Note that when {\tt flAbolish functor/arity} is used as a normal predicate
+(not as a compiler directive), it will abolish the predicate for the
+default module.
 
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
@@ -2932,7 +2966,10 @@ by \FLORA:
 \item \verb!auto_table!
 \item \verb!dynamic functor/arity, ..., functor/arity!
 \item \verb!export functor/arity, ..., functor/arity!
+\item \verb!flAbolish functor/arity, ..., functor/arity!
+\item \verb!flAbolish functor/arity, ..., functor/arity in module!
 \item \verb!flEquality none|basic|flogic!
+\item \verb!flEquality none|basic|flogic in module!
 \item \verb!flPredicate functor/arity, ..., functor/arity!
 \item \verb!flPredicateAll!
 \item \verb!flProlog functor/arity, ..., functor/arity!
