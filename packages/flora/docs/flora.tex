@@ -1788,6 +1788,48 @@ eraseall :- erase, fail. \\
 eraseall.
 \end{qrules}
 
+\paragraph{Asserting, retracting, and tabling.}
+To implement object properties, \FLORA relies on a feature of XSB called
+\emph{tabling} (see Section~\ref{sec-tabling-flora} for more details).
+Unfortunately, tabling and {\tt retract} do not mix well.
+The problem is that results from previous queries are cached in
+tables, and {\tt retract} does not delete facts from tables. Thus, you
+might get the following counterintuitive result:
+%%
+\begin{verbatim}
+flora ?- assert(o[m->1]).
+Yes.
+flora ?- o[m->1].
+Yes.
+flora ?- retract(o[m->1]), o[m->1].
+Yes.
+\end{verbatim}
+%%
+The reason for the wrong positive answer here is that the cache remembers
+that the query {\tt o[m->1]} is true. So, when the same query is asked
+after {\tt retract}, a wrong result is returned from the cache. Similarly,
+tabling might interact poorly with {\tt assert}:
+%%
+\begin{verbatim}
+flora ?- o[m->1].
+No.
+flora ?- assert(o[m->1]), o[m->1].
+No.
+\end{verbatim}
+%%
+The reason for the wrong result here is, again, that the cache remembers
+that {\tt o[m->1]} is false, which is no longer correct after the assert
+operation.
+
+\index{abolish\_all\_tables}
+%%
+In a future release, \FLORA will provide a workaround for these problems
+(and it is even possible that a future release of XSB will start doing the
+right thing in these situations. For now, the only remedy is to use a call
+to {\tt abolish\_all\_tables}, which would drop all tables.
+However, at present, the only safe way to do this is by executing {\tt
+  abolish\_all\_tables} as a separate query.
+
 
 \section{\FLORA Modules and Interaction with XSB}\label{sec-module}
 
@@ -1980,6 +2022,8 @@ Unfortunately, the current notion of similarity used by XSB is fairly weak,
 and many unnecessary recomputations might result. This problem will be
 corrected in a future release.
 
+\index{abolish\_all\_tables}
+%%
 It is also important to be aware that when XSB (and \FLORA) evaluate a program,
 all tabled predicates are partially materialized and all the computed
 tuples are stored in XSB tables. Thus, if you change the set of facts, the
@@ -2009,17 +2053,17 @@ for methods with side effects, so this restriction will be lifted.
 \index{cut in \FLORA}
 \index{cutting across tables}
 %%
-No discussion of a logic programming language is
-complete without a few words about the infamous Prolog cut (!). Although
-Prolog cut has been (mostly rightfully) excommunicated by the Church of
-Database Query Languages, it is sometimes indispensable when doing ``real
-work'', like pretty-printing \FLORA programs or implementing a pattern
-matching algorithm.  To facilitate this kind of tasks, \FLORA lets the
-programmer use cuts.  However, the current implementation of XSB has a
-limitation that Prolog cuts cannot ``cut across tabled predicates.''
-Without trying to pretend to be experts, we refer the reader to the XSB
-manual for details on this obscure problem. The XSB team is considering
-correcting this problem in a future release.
+No discussion of a logic programming language is complete without a few
+words about the infamous Prolog cut (!). Although Prolog cut has been
+(mostly rightfully) excommunicated by as far as Database Query Languages
+are concerned, it is sometimes indispensable when doing ``real work'', like
+pretty-printing \FLORA programs or implementing a pattern matching
+algorithm.  To facilitate this kind of tasks, \FLORA lets the programmer
+use cuts.  However, the current implementation of XSB has a limitation that
+Prolog cuts cannot ``cut across tabled predicates.''  Without trying to
+pretend to be experts, we refer the reader to the XSB manual for details on
+this obscure problem. The XSB team is considering correcting this problem
+in a future release.
 
 For now, enjoy your cut.  If you get an error message telling something
 about cutting across the tables --- you know that you may have cut too much
