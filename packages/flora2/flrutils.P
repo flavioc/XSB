@@ -872,8 +872,18 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
+	    /*
+	    cputime(T11),
+	    Tcompile is T11 - T0,
+	    writeln(compilation=Tcompile),
+	    */
 	    check_for_dependencies(CompiledRuleList, DepWarnList),
 	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
+	    /*
+	    cputime(T22),
+	    Tdep is T22 - T11,
+	    writeln(dependencycheck=Tdep),
+	    */
 	    flora_stderr_nl,
 	    flora_errorwarn_count(0,DepWarnNum),
 
@@ -883,7 +893,11 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( FileStatus == FLORA_FAILURE ->
 	    true
 	;
-	  T is T1-T0,
+	    T is T1-T0,
+	    /*
+	    Tcoder is T1 - T22,
+	    writeln(coder=Tcoder),
+	    */
 	  flora_message_line('Done! CPU time used: ~w seconds',[T])
 	),
 	!.
@@ -1921,14 +1935,6 @@ flora_measure_time(Call,Message) :-
 	format('~w ~w seconds', [Message,Delta]),
 	nl.
 
-
-%% Copies stdin to stdout
-flora_copy_input :-
-	repeat,
-	  get0(Ch),
-	  (Ch =:= CH_EOF_P, !
-	  ; put(Ch), fail
-	  ).
 
 %% From, To are file names. Variable means stdin or stdout, respectively
 flora_copy_input(From,To) :-

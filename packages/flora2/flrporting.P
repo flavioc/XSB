@@ -24,19 +24,27 @@
 **
 */
 
+
+:- compiler_options([xpp_on]).
+#include "flag_defs_xsb.h"
+#include "flora_characters.flh"
+
 :- import conget/2, conset/2 from gensym.
 :- import eval/2 from eval.
-:- import slash/1 from machine.
+:- import
+	slash/1, stat_flag/2
+   from machine.
 :- import substring/4 from string.
 :- import library_directory/1 from usermod.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import path_sysop/2, path_sysop/3 from file_io.
+:- import path_sysop/2, path_sysop/3, copyIOport/2 from file_io.
 
 
 :- export
 	flora_slash/1,
 	flora_file_op/2,
 	flora_file_op/3,
+	flora_copy_input/0,
 	flora_user_home/1,
 	flora_match_substring/3,
 	flora_match_substring/5,
@@ -128,3 +136,17 @@ flora_file_op(expand,File,Base)     :- path_sysop(expand,File,Base).
 flora_file_op(newerthan,File,Base)  :- path_sysop(newerthan,File,Base).
 flora_file_op(dirname,File,Dir)     :- path_sysop(dirname,File,Dir).
 flora_file_op(copy,From,To)         :- path_sysop(copy,From,To).
+
+
+%% Copies stdin to stdout
+flora_copy_input :-
+	stat_flag(CURRENT_INPUT, StdIn),
+	stat_flag(CURRENT_OUTPUT, StdOut),
+	copyIOport(StdIn,StdOut).
+	/*
+	repeat,
+	  get0(Ch),
+	  (Ch =:= CH_EOF_P, !
+	  ; put(Ch), fail
+	  ).
+	*/

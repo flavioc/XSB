@@ -37,7 +37,8 @@
 	flora_slash/1,
 	flora_cputime/1,
 	flora_set_counter/2,
-	flora_concat_atoms/2
+	flora_concat_atoms/2,
+	flora_copy_input/0
    from flrporting.
 
 :- import format/2 from format.

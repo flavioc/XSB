@@ -27,8 +27,6 @@
 
 :- import format/2 from format.
 
-:- import write_canonical/1, writeln/1 from standard.
-
 :- import append/3 from basics.
 
 :- import eval/2 from eval.

@@ -308,7 +308,7 @@ flora_write_fact(Term) :-
 	retractall(using_debug_prefix(_)),
 	flora_write_struct(Term,FLBODYPREFIX),
 	assert(using_debug_prefix(1)),
-	writeln('.').
+	put(0'.), nl.
 
 
 /****************************************************************************
@@ -319,7 +319,7 @@ flora_write_rule(Head,Body) :-
 	retractall(using_debug_prefix(_)),
 	flora_write_struct(Head,FLHEADPREFIX),
 	assert(using_debug_prefix(1)),
-	write(','),
+	put(0',),
 	flora_write_struct(Body,FLBODYPREFIX),
 	writeln(').').
 
@@ -344,7 +344,7 @@ flora_write_structlist([T],Prefix) :-
 flora_write_structlist([T|L],Prefix) :-
 	!,
 	flora_write_struct(T,Prefix),
-	write(','),
+	put(0',),
 	flora_write_structlist(L,Prefix).
 
 
@@ -366,12 +366,12 @@ flora_write_structlist([T|L],Prefix) :-
 flora_write_struct(Term,_Prefix) :-
 	is_pratom(Term,Atom,_Index),
 	!,
-	write_canonical(Atom).
+	writeq(Atom).
 
 flora_write_struct(Term,_Prefix) :-
 	is_prnumber(Term,Number,_Index),
 	!,
-	write_canonical(Number).
+	write(Number).
 
 flora_write_struct(Term,_Prefix) :-
 	is_prvariable(Term,Name,_Index),
@@ -389,15 +389,15 @@ flora_write_struct(Term,Prefix) :-
 	( L == [] ->
 	    write('[]')
 	;
-	  write('['),
+	  put(0'[),
 	  flora_write_structlist(L,Prefix),
 	  ( T == [] ->
 	      true
 	  ;
-	    write('|'),
+	    put(0'|),
 	    flora_write_struct(T,Prefix)
 	  ),
-	  write(']')
+	  put(0'])
         ).
 
 flora_write_struct(Term,Prefix) :-
@@ -412,13 +412,13 @@ flora_write_struct(Term,Prefix) :-
 flora_write_struct(Term,Prefix) :-
 	is_goallogic(Term,F,N,Args),
 	!,
-	write_canonical(F),
+	writeq(F),
 	( N == 0 ->
 	    true
 	;
-	  write('('),
+	  put(0'(),
 	  flora_write_structlist(Args,Prefix),
-	  write(')')
+	  put(0'))
         ).
 
 flora_write_struct(Term,Prefix) :-
@@ -430,7 +430,7 @@ flora_write_struct(Term,Prefix) :-
 	is_pratomlit(Term,A,_Index),
 	!,
 	( flora_prlgdef(A,0) ->
-	    write_canonical(A)
+	    writeq(A)
 	;
 	  flora_write_atomlit(THISMODULE,_WS,A,Prefix)
 	).
@@ -517,7 +517,7 @@ flora_write_struct(Term,_Prefix) :-
 	%% This refers to a Flora user module storage.
 	write('FLORA_USER_FDB_STORAGE('),
 	flora_write_functor(WSName),
-	write(')').
+	put(0')).
 
 flora_write_struct(Term,_Prefix) :-
 	( is_prcommand(Term,C) ->
@@ -530,14 +530,14 @@ flora_write_struct(Term,_Prefix) :-
 	    D=import(from(P/A,M))
 	),
 	!,
-	write_canonical(D).
+	writeq(D).
 
 flora_write_struct(Term,_Prefix) :-
 	is_prtable(Term,P,A),
 	!,
 	write('table(/('),
 	flora_write_predicate_symbol(P,A),
-	write(','),
+	put(0',),
 	write(A),
 	writeln('))').
 
@@ -547,7 +547,7 @@ flora_write_struct(Term,_Prefix) :-
 	eval(A+1,N),
 	write('table(/('),
 	flora_write_workspace(THISMODULE,_WS,WRAP_HILOG),
-	write(','),
+	put(0',),
 	write(N),
 	writeln('))').
 
@@ -556,7 +556,7 @@ flora_write_struct(Term,_Prefix) :-
 %%	!,
 %%	write('dynamic(/('),
 %%	flora_write_predicate_symbol(P,A),
-%%	write(','),
+%%	put(0',),
 %%	write(A),
 %%	writeln('))').
 
@@ -565,16 +565,16 @@ flora_write_struct(Term,_Prefix) :-
 	!,
 	write('index(/('),
 	flora_write_predicate_symbol(P,A),
-	write(','),
+	put(0',),
 	write(A),
 	write('),'),
 	write(N),
-	writeln(')').
+	put(0')), nl.
 
 flora_write_struct(Term,_Prefix) :-
 	atomic(Term),
 	!,
-	write_canonical(Term).
+	writeq(Term).
 
 
 /****************************************************************************
@@ -585,7 +585,7 @@ flora_write_struct(Term,_Prefix) :-
 ****************************************************************************/
 flora_write_predicate_symbol(P,A) :-
 	( flora_prlgdef(P,A) ->
-	    write_canonical(P)
+	    writeq(P)
 
 	; flora_flogicstaticdef(P,A) ->
 	    flora_write_workspace(THISMODULE,_WS,P)
@@ -593,7 +593,7 @@ flora_write_predicate_symbol(P,A) :-
 	; flora_firstorderdef(P,A) ->
 	    flora_write_workspace(FOTHISMODULE,_WS,P)
 	;
-	  write_canonical(P)
+	  writeq(P)
 	).
 
 
@@ -604,7 +604,7 @@ flora_write_predicate_symbol(P,A) :-
          by a new unique explicitly named variable.
 ****************************************************************************/
 flora_write_variable(Name) :-
-	write(FL_UNDERSCORE),
+	put(CH_UNDERSCORE),
 	write(Name).
 
 
@@ -697,9 +697,9 @@ flora_write_wsliteral(Mode,WS,Funct,N,Args,Prefix) :-
 	( N == 0 ->
 	    true
 	;
-	  write('('),
+	  put(0'(),
 	  flora_write_structlist(Args,Prefix),
-	  write(')')
+	  put(0'))
         ).
 
 
@@ -718,52 +718,54 @@ flora_write_workspace(THISMODULE,_WS,Funct) :-
 	%% _WS is a just a place holder.
 	write('FLORA_THIS_WORKSPACE('),
 	flora_write_functor(Funct),
-	write(')').
+	put(0')).
 
 flora_write_workspace(USERMODULE,WS,Funct) :-
 	!,
 	write('FLORA_USER_WORKSPACE('),
 	flora_write_functor(WS),
-	write(','),
+	put(0',),
 	flora_write_functor(Funct),
-	write(')').
+	put(0')).
 
 flora_write_workspace(SYSTEMMODULE,WS,Funct) :-
 	!,
 	write('FLORA_SYSTEM_WORKSPACE('),
 	flora_write_functor(WS),
-	write(','),
+	put(0',),
 	flora_write_functor(Funct),
-	write(')').
+	put(0')).
 
 flora_write_workspace(FOTHISMODULE,_WS,Funct) :-
 	!,
 	%% _WS is a just a place holder.
 	write('FLORA_FO_THIS_WORKSPACE('),
 	flora_write_functor(Funct),
-	write(')').
+	put(0')).
 
 flora_write_workspace(FOUSERMODULE,WS,Funct) :-
 	!,
 	write('FLORA_FO_USER_WORKSPACE('),
 	flora_write_functor(WS),
-	write(','),
+	put(0',),
 	flora_write_functor(Funct),
-	write(')').
+	put(0')).
 
 flora_write_workspace(FOSYSTEMMODULE,WS,Funct) :-
 	!,
 	write('FLORA_FO_SYSTEM_WORKSPACE('),
 	flora_write_functor(WS),
-	write(','),
+	put(0',),
 	flora_write_functor(Funct),
-	write(')').
+	put(0')).
 
 
 /****************************************************************************
   flora_write_functor(+Atom)
 ****************************************************************************/
 flora_write_functor(A) :-
+	writeq(A).
+/*
 	atom_codes(A,Chars),
 	flora_write_funct(Chars).
 
@@ -782,6 +784,7 @@ flora_write_funct([H|T]) :-
 	  put(H)
         ),
 	flora_write_funct(T).
+*/
 
 
 /****************************************************************************
@@ -792,13 +795,13 @@ flora_write_funct([H|T]) :-
         in a rule body.
 ****************************************************************************/
 flora_write_prolog(F,N,Args,Prefix) :-
-	write_canonical(F),
+	writeq(F),
 	( N == 0 ->
 	    true
 	;
-	  write('('),
+	  put(0'(),
 	  flora_write_structlist(Args,Prefix),
-	  write(')')
+	  put(0'))
         ).
 
 
@@ -823,23 +826,23 @@ flora_write_syslib(Lib,1,[List],_Prefix) :-
 	is_fllibdb(Lib),
 	!,
 	retractall(using_debug_prefix(_)),
-	write_canonical(Lib),
-	write('('),
+	write(Lib),
+	put(0'(),
 	flora_write_struct(List,FLBODYPREFIX),
 	assert(using_debug_prefix(1)),
-	write(')').
+	put(0')).
 
 flora_write_syslib(Lib,2,[List,Cond],_Prefix) :-
 	is_fllibdb(Lib),
 	!,
 	retractall(using_debug_prefix(_)),
-	write_canonical(Lib),
-	write('('),
+	write(Lib),
+	put(0'(),
 	flora_write_struct(List,FLBODYPREFIX),
 	assert(using_debug_prefix(1)),
-	write(','),
+	put(0',),
 	flora_write_struct(Cond,FLBODYPREFIX),
-	write(')').
+	put(0')).
 
 flora_write_syslib(Lib,N,Args,Prefix) :-
 	( Lib == FLLIBMODLIT, N == 2 ->
