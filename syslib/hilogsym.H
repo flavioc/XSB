@@ -26,7 +26,7 @@
 :- export '_$hilog_symbol'/1, add_hilog_symbol/1. 
 
 
-:- import assertai/2 from assert.
+:- import assertai/2, (dynamic)/1 from assert.
 :- import atom/1, abort/1 from standard.
 
 

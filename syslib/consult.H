@@ -27,6 +27,7 @@
 	  compile/1, compile/2, search_module/6,
 	  add_lib_dir/1,
 	  load_dyn/1, load_dyn/2, 
+	  load_dyn_module/1,
 	  load_dync/1, load_dync/2, read_canonical/1,
 	  current_loaded_file/1,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,

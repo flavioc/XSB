@@ -23,6 +23,8 @@
 */
 
 
+:- dynamic '_$hilog_symbol1'/1.
+
 add_hilog_symbol(X) :- 
 	var(X), 
 	!, 
