@@ -1,0 +1,599 @@
+\chapter{Constraint Handling Rules} \label{chr}
+%=============================================
+
+\section{Introduction}
+%=====================
+
+Constraint Handling Rules (CHR) is a committed-choice bottom-up language
+embedded in XSB. It is dedicated to writing constraint solvers and
+particularily useful for providing application-specific constraints.
+It has been used in many kinds of applications, like scheduling,
+model checking, abduction, type checking and many others.
+
+CHR has previously been implemented in other Prolog systems (SICStus,
+Eclipse, Yap, hProlog), Haskell and Java. The XSB CHR system is based on
+the hProlog CHR system.
+
+In this documentation we restrict ourselves to giving a short overview of CHR
+in general and mainly focus on XSB specific elements.  For a more thourough
+review of CHR we refer the reader to \cite{chr_survey}. More background on
+CHR can be found at \cite{chr_site}.
+
+In Section \ref{SyntaxAndSemantics} we present the syntax of CHR in XSB and
+explain informally its operational semantics. Next, Section \ref{practical}
+deals with practical issues of writing and compiling XSB programs containing
+CHR. Section \ref{predicates} provides a few useful predicates to inspect
+the constraint store and Section \ref{examples} illustrates CHR with two
+example programs. How to combine CHR with tabled predicates is covered in
+Section \ref{TCHR}. Finally, Section \ref{guidelines} concludes with a few
+practical guidelines for using CHR.
+
+
+\section{Syntax and Semantics} \label{SyntaxAndSemantics}
+%=============================
+
+\subsection{Syntax}
+%-----------------
+
+The syntax of CHR rules in XSB is the following:
+
+\begin{verbatim}
+rules --> rule, rules.
+rules --> [].
+
+rule --> name, actual_rule, pragma, [atom('.')].
+
+name --> xsb_atom, [atom('@')].
+name --> [].
+
+actual_rule --> simplification_rule.
+actual_rule --> propagation_rule.
+actual_rule --> simpagation_rule.
+
+simplification_rule --> constraints, [atom('<=>')], guard, body.
+propagation_rule --> constraints, [atom('==>')], guard, body.
+simpagation_rule --> constraints, [atom('\')], constraints, [atom('<=>')], 
+                     guard, body.
+
+constraints --> constraint, constraint_id.
+constraints --> constraint, [atom(',')], constraints.
+
+constraint --> xsb_compound_term.
+
+constraint_id --> [].
+constraint_id --> [atom('#')], xsb_variable.
+
+guard --> [].
+guard --> xsb_goal, [atom('|')].
+
+body --> xsb_goal.
+
+pragma --> [].
+pragma --> [atom('pragma')], actual_pragmas.
+
+actual_pragmas --> actual_pragma.
+actual_pragmas --> actual_pragma, [atom(',')], actual_pragmas.
+
+actual_pragma --> [atom('passive(')], xsb_variable, [atom(')')].
+
+\end{verbatim}
+
+Additional syntax-related terminology:
+
+\begin{itemize}
+\item \textbf{head:} the constraints in an \texttt{actual\_rule} before
+                     the arrow (either \texttt{<=>} or \texttt{==>})
+\end{itemize}
+
+\subsection{Semantics}
+%--------------------
+
+In this subsection the operational semantics of CHR in XSB are presented
+informally. They do not differ essentially from other CHR systems.
+
+When a constraint is called, it is considered an active constraint and
+the system will try to apply the rules to it. Rules are tried and executed
+sequentially in the order they are written. 
+
+A rule is conceptually tried for an active constraint in the following
+way. The active constraint is matched with a constraint in the head of the
+rule. If more constraints appear in the head they are looked for among the
+suspended constraints who are called passive constraints in this context. If
+the necessary passive constraints can be found and all match with the head of
+the rule and the gaurd of the rule succeeds, then the rule is committed and
+the body of the rule executed.  If not all the necessary passive constraint
+can be found, the matching fails or the guard fails, then the body is not
+executed and the process of trying and executing simply continues. If for
+a rule, there are multiple constraints in the head, the active constraint
+will try the rule sequentially as many times, each time trying to match with
+another constraint.
+
+This process either ends when the active constraint disappears, i.e. it is
+removed by some rule, or after the last rule has been processed. In the latter
+case the active constraint becomes suspended.
+
+A suspended constraint is eligible as a passive constraint for an active
+constraint. The other way it may interact again with the rules, is when
+a variable appearing in the constraint becomes bound to either a nonvariable
+or another variable involved in one or more constraints. In that case the
+constraint is triggered, i.e. just like an active constraint all the rules
+are tried.
+
+\paragraph{Rule Types}
+%- - - - - - - - - - 
+There are three different kinds of rules, each with their specific semantics:
+\begin{itemize}
+\item \texttt{simplification:}
+
+The simplification rule removes the constraints in its head and calls its body.
+
+\item \texttt{propagation:}
+
+The propagation rule calls its body exactly once for the constraints in its head.
+
+\item \texttt{simpagation:}
+
+The simpagation rule removes the constraints in its head after the $\backslash$ and then calls its body.
+It is an optimization of simplification rules of the form:
+\[constraints_1, constraints_2 <=> constraints_1, body \]
+Namely, in the simpagation form:
+\[ constraints_1 \backslash constraints_2 <=> body \]
+The $constraints_1$ constraints are not called in the body.
+
+\end{itemize}
+
+\paragraph{Rule Names}
+%- - - - - - - - - - 
+Naming a rule is optional and has no semantical meaning. It only functions
+as documentation for the programmer.
+
+\paragraph{Pragmas}
+%- - - - - - - - -
+The semantics of the pragmas are:
+\begin{itemize}
+\item \textbf{passive/1:} the constraint in the head of a rule with the identifier specified by
+                          the \textbf{passive/1} pragma can only act as a passive constraint in that rule.
+\end{itemize}
+Additional pragmas may be released in the future.
+
+\section{CHR in XSB Programs} \label{practical}
+%===========================
+
+\subsection{Embedding in XSB Programs}
+
+CHR rules are written in a .chr file. They should be preceded by a declaration of the constraints used
+\begin{verbatim}
+:- constraints ConstraintSpec1, ConstraintSpec2, ...
+\end{verbatim}
+where each \texttt{ConstraintSpec} is a functor description of the form name$\slash$arity pair. Ordinary code
+may be freely written between the CHR rules.
+
+The CHR constraints defined in a particulary .chr file are associated
+with a CHR module. The CHR module name can be any atom. The default module is
+\texttt{user}. A different module name can be declared as follows:
+\begin{verbatim}
+:- chr_module(modulename).
+\end{verbatim}
+One should never load different files with the same CHR module name.
+
+\subsection{Compilation}
+
+A \texttt{.chr} file containing CHR rules should be run through the CHR pre-processor
+to generate a \texttt{.P} file contraining pure XSB code. This \texttt{.P} file can then be
+loaded in the XSB emulator and used normally.
+
+For this purpose the \texttt{bin} directory of the XSB installation contains
+the \texttt{chr\_pp} script. The example below shows how to run it on a
+\texttt{.chr} file to create the corresponding \texttt{.P} file.
+
+\begin{verbatim}
+$ chr_pp leq.chr
+[xsb_configuration loaded]
+[sysinitrc loaded]
+[packaging loaded]
+
+XSB Version 2.6-b1 (Verboden Vrucht) of October 2, 2003
+[i686-pc-linux-gnu; mode: optimal; engine: slg-wam; gc: indirection; scheduling: local]
+
+| ?- [chr_pp loaded]
+
+yes
+| ?- start of CHR compilation
+ * loading file leq.chr...
+   finished loading file leq.chr
+ * CHR compiling leq.chr...
+   finished CHR compiling leq.chr
+ * writing file leq.P...
+   finished writing file leq.P
+end of CHR compilation
+
+yes
+| ?-
+End XSB (cputime 0.03 secs, elapsetime 0.05 secs)
+\end{verbatim}
+
+\paragraph{Note}
+
+When loading a \texttt{.P} file generated by the preprocessor, many singleton
+warnings may be issued.
+
+
+\section{Useful Predicates} \label{predicates}
+%=========================
+
+The \texttt{chr} module contains several useful predicates that allow
+inspecting and printing the content of the constraint store.
+
+\begin{description}
+\ournewitem{show\_store(+Mod)}{chr}\index{\texttt{show\_store/1}}
+  Prints all suspended constraints of module \texttt{Mod} to
+  the standard output.
+\ournewitem{suspended\_chr\_constraints(+Mod,-List)}{chr}\index{\texttt{suspended\_constraints/2}}
+  Returns the list of all suspended CHR constraints of the given module.
+\end{description}
+
+\section{Examples} \label{examples}
+%================
+
+Here are two example constraint solvers written in CHR.
+
+\begin{itemize}
+
+\item
+The program below defines a solver with one constraint, 
+\texttt{leq/2}, which is a less-than-or-equal constraint.
+
+\begin{verbatim}
+:- chr_module(leq).
+
+:- export cycle/3.
+
+:- import length/2 from basics.
+
+:- constraints leq/2.
+reflexivity  @ leq(X,X) <=> true.
+antisymmetry @ leq(X,Y), leq(Y,X) <=> X = Y.
+idempotence  @ leq(X,Y) \ leq(X,Y) <=> true.
+transitivity @ leq(X,Y), leq(Y,Z) ==> leq(X,Z).
+
+cycle(X,Y,Z):-
+        leq(X,Y),
+        leq(Y,Z),
+        leq(Z,X).
+\end{verbatim}
+
+\item
+The program below implements a simple finite domain
+constraint solver.
+
+\begin{verbatim}
+:- chr_module(dom).
+
+:- import member/2 from basics.
+
+:- constraints dom/2. 
+
+dom(X,[]) <=> fail.
+dom(X,[Y]) <=> X = Y.
+dom(X,L1), dom(X,L2) <=> intersection(L1,L2,L3), dom(X,L3).
+
+intersection([],_,[]).
+intersection([H|T],L2,[H|L3]) :-
+        member(H,L2), !,
+        intersection(T,L2,L3).
+intersection([_|T],L2,L3) :-
+        intersection(T,L2,L3).
+\end{verbatim}
+		
+\end{itemize}
+
+These and more examples can be found in the \texttt{examples/chr/} folder accompanying
+this XSB release.
+
+\section{CHR and Tabling} \label{TCHR}
+%=======================
+
+The advantage of CHR in XSB over other Prolog systems, is that CHR can be
+combined with tabling. Hence part of the constraint solving can be performed
+once and reused many times. This has already shown to be useful for applications
+of model checking with constraints.
+
+However the use of CHR constraints is slightly more complicated for tabled
+predicates.  In this section it is covered how exactly to write a tabled
+predicate that has one or more arguments that also appear as arguments in
+suspended constraints. In the current release the CHR-related parts of the
+tabled predicates have to be written by hand. In a future release this may
+be substituted by an automatic transformation.
+
+\subsection{General Issues and Principles}
+%----------------------------------------
+
+The general issue is how call constraints should be passed in to the tabled
+predicate and how answer constraints are passed out of the predicate. Additionally,
+in some cases care has to be taken not to generate infinite programs.
+
+The recommended approach is to write the desired tabled predicate as if
+no additional code is required to integrate it with CHR.  Next transform
+the tabled predicate to take into account the combination of tabling and
+CHR. Currently this transformation step has to be done by hand. In the future
+we hope to replace this hand coding with programmer declarations that guide
+automated transformations.
+
+Hence we depart from an ordinary tabled predicate, say \texttt{p/1}:
+
+\begin{small}
+\begin{verbatim}
+:- table p/1.
+
+p(X) :- 
+   ... /* original body of p/1 */.
+\end{verbatim}
+\end{small}
+
+In the following we will present several transformations or extensions of
+this code to achieve a particular behavior. At least the transformation
+discussed in subsection \ref{abstraction} should be applied to obtain a
+working integration of CHR and tabling. Further extensions are optional.
+
+\subsection{Call Abstraction} \label{abstraction}
+%---------------------------
+
+Currently only one type of call abstraction is supported: full constraint
+abstraction, i.e. all constraints on variables in the call should be
+removed. The technique to accomplish this is to replace all variables in
+the call that have constraints on them with fresh variables. After the call,
+the original variables should be unified with the new ones.
+
+In addition, the call environment constraint store should be replaced with an
+empty constraint store before the call and the answer store should be merged
+back into the call environment constraint store.
+
+The previously mentioned tabled predicate \texttt{p/1} should be transformed
+ to:
+
+\begin{small}
+\begin{verbatim}
+:- import merge_answer_store/1, 
+          get_chr_store/1,
+          set_chr_store/1,
+          get_chr_answer_store/2
+   from chr.
+
+:- table tabled_p/2.
+
+p(X) :-
+        tabled_p(X1,AnswerStore),
+        merge_answer_store(AnswerStore),
+        X1 = X.
+
+tabled_p(X,AnswerStore) :-
+        get_chr_store(CallStore),
+        set_chr_store(_EmptyStore)
+        orig_p(X),
+        get_chr_answer_store(chrmod,AnswerStore),
+        set_chr_store(CallStore).
+
+orig_p(X) :-
+   ... /* original body of p/1 */.
+\end{verbatim}
+\end{small}
+
+This example shows how to table the CHR constraints of a single CHR module
+\texttt{chrmod}. If multiple CHR modules are involved, one should add similar
+arguments for the other modules.
+
+\subsection{Answer Projection}
+%----------------------------
+
+To get rid of irrelevant constraints, most notably on local variables, the answer
+constraint store should in some cases be projected on the variables in the call.
+This is particularly important for programs where otherwise an infinite number 
+of answers with ever growing answer constraint stores could be generated.
+
+The current technique of projection is adding an additional \texttt{project/1}
+constraint to the CHR solver definition. The argument of this constraint is
+the list of variables to project on. Appropriate CHR rules should be written
+to describe the interaction of this \texttt{project/1} constraint with other
+constraints in the store. An additional rule should take care of removing
+the \texttt{project/1} constraint after all such interaction.
+
+The \texttt{project/1} constraint should be posed before returning from the tabled
+predicate.
+
+If this approach is not satisfactory or powerful enough to implement the
+desired projection operation, you should resort to manipulating the underlying
+constraint store representation. Contact the maintainer of XSB's CHR system
+for assistance.
+
+\paragraph{Example}
+%- - - - - - - - -
+Take for example a predicate \texttt{p/1} with a less than or equal constraint
+\texttt{leq/2} on variables and integers. The predicate \texttt{p/1} has local
+variables, but when \texttt{p} returns we are not interested in any constraints
+involving local variables. Hence we project on the argument of \texttt{p/1}
+with a project constraint as follows:
+
+\begin{small}
+\begin{verbatim}
+:- import memberchk/2 from lists.
+
+:- import merge_answer_store/1, 
+          get_chr_store/1,
+          set_chr_store/1,
+          get_chr_answer_store/2
+   from chr.
+
+:- table tabled_p/2.
+
+:- constraints leq/2, project/1.
+
+... /* other CHR rules */
+project(L) \ leq(X,Y) <=>
+        ( var(X), \+ memberchk(X,L) 
+        ; var(Y), \+ memberchk(Y,L)
+        ) | true.
+       
+project(_) <=> true. 
+        
+p(X) :-
+        tabled_p(X1,AnswerStore),
+        merge_answer_store(AnswerStore),
+        X1 = X.
+
+tabled_p(X,AnswerStore) :-
+        get_chr_store(CallStore),
+        set_chr_store(_EmptyStore)
+        orig_p(X),
+        project([X]),
+        get_chr_answer_store(chrmod,AnswerStore),
+        set_chr_store(CallStore).
+        
+orig_p(X) :-
+   ... /* original body of p/1 */.
+\end{verbatim}
+\end{small}
+
+The example in the following subsection shows projection in a full application.
+
+\subsection{Answer Combination}
+%-----------------------------
+
+Sometimes it is desirable to combine different answers to a tabled predicate
+into one single answer or a subset of answers. Especially when otherwise
+there would be an infinite number of answers. If the answers are expressed as
+constraints on some arguments and the logic of combining is encoded as CHR
+rules, answers can be combined by merging the respective answer constraint
+stores.
+
+Another case where this is useful is when optimization is desired. If the
+answer to a predicate represents a valid solution, but an optimal solution
+is desired, the answer should be represented as constraints on arguments.
+By combining the answer constraints, only the most constrained, or optimal,
+answer is kept.
+
+\paragraph{Example} 
+%- - - - - - - - -
+An example of a program that combines answers for
+both termination and optimisation is the shortest path program below:
+
+\begin{small}
+\begin{verbatim}
+:- chr_module(path).
+
+:- import length/2 from lists.
+
+:- import merge_chr_answer_store/1, 
+          get_chr_store/1,
+          set_chr_store/1,
+          get_chr_answer_store/2
+   from chr.
+
+breg_retskel(A,B,C,D) :- '_$builtin'(154).
+
+:- constraints geq/2, plus/3, project/1.
+
+geq(X,N) \ geq(X,M) <=> number(N), number(M), N =< M | true.
+
+reflexivity  @ geq(X,X) <=> true.
+antisymmetry @ geq(X,Y), geq(Y,X) <=> X = Y.
+idempotence  @ geq(X,Y) \ geq(X,Y) <=> true.
+transitivity @ geq(X,Y), geq(Y,Z) ==> var(Y) | geq(X,Z).
+
+plus(A,B,C) <=> number(A), number(B) | C is A + B.
+plus(A,B,C), geq(A,A1) ==> plus(A1,B,C1), geq(C,C1).
+plus(A,B,C), geq(B,B1) ==> plus(A,B1,C1), geq(C,C1).
+
+project(X) \ plus(_,_,_) # ID <=> true pragma passive(ID).
+project(X) \ geq(Y,Z) # ID <=> (Y \== X ; var(Z) )| true pragma passive(ID).
+project(_) <=> true.
+
+path(X,Y,C) :-
+	tabled_path(X,Y,C1,AS),
+	merge_chr_answer_store(AS),
+	C = C1.
+	
+:- table tabled_path/4.
+
+tabled_path(X,Y,C,AS) :-
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+	copy_term(p(X,Y,C,AS,Skel),p(OldX,OldY,OldC,OldAS,OldSkel)),
+        get_chr_store(GS),
+	set_chr_store(_GS1),
+	orig_path(X,Y,C),
+        project(C),
+	( get_returns(Cs,OldSkel,Leaf),
+	  OldX == X, OldY == Y ->
+            merge_chr_answer_store(OldAS),
+            C = OldC,
+            get_chr_answer_store(path,MergedAS),
+            sort(MergedAS,AS),
+            ( AS = OldAs ->
+                fail
+            ;
+                delete_return(Cs,Leaf)
+            )
+	;
+            get_chr_answer_store(path,UnsortedAS),
+            sort(UnsortedAS,AS)
+	),
+        set_chr_store(GS).
+
+orig_path(X,Y,C) :- edge(X,Y,C1), geq(C,C1).
+orig_path(X,Y,C) :- path(X,Z,C2), edge(Z,Y,C1), plus(C1,C2,C0), geq(C,C0).
+
+edge(a,b,1).
+edge(b,a,1).
+edge(b,c,1).
+edge(a,c,3).
+edge(c,a,1).
+\end{verbatim}
+\end{small}
+
+The predicate \texttt{orig\_path/3} specifies a possible path between two
+nodes in a graph. In \texttt{tabled\_path/4} multiple possible paths are
+combined together into a single path with the shortest distance.  Hence the
+tabling of the predicate will reject new answers that have a worse distance
+and will replace the old answer when a better answer is found. The final
+answer gives the optimal solution, the shortest path. It is also necessary
+for termination to keep only the best answer. When cycles appear in the graph,
+ paths with longer and longer distance could otherwise be put in the table,
+contributing to the generation of even longer paths. Failing for worse answers avoids
+this infinite build-up.
+
+The predicate also includes a projection to remove constraints on local variables 
+and only retain the bounds on the distance.
+
+The sorting canonicalizes the answer stores, so that they can be compared.
+
+\subsection{Overview of Tabling-related Predicates}
+%-------------------------------------------------
+\begin{description}
+\ournewitem{merge\_answer\_store(+AnswerStore)}{chr}\index{\texttt{merge\_answer\_store/1}}
+  Merges the given CHR answer store into the current global CHR constraint store.
+\ournewitem{get\_chr\_store(-ConstraintStore)}{chr}\index{\texttt{get\_chr\_store/1}}
+  Returns the current global CHR constraint store.
+\ournewitem{set\_chr\_store(?ConstraintStore)}{chr}\index{\texttt{set\_chr\_store/1}}
+  Set the current global CHR constraint store. If the argument is a fresh variable,
+  the current global CHR constaint store is set to be an empty store.
+\ournewitem{get\_chr\_answer\_store(+Mod,-AnswerStore)}{chr}\index{\texttt{get\_chr\_answer\_store/1}}
+  Returns the part of the current global CHR constraint store of constraints
+  in the specified CHR module, in the format of an answer store
+  usable as a return argument of a tabled predicate.
+\end{description}
+
+\section{Guidelines} \label{guidelines}
+%==================
+
+In this section we cover several guidelines on how to use CHR to write constraint solvers
+and how to do so efficiently.
+\begin{itemize}
+\item \textbf{Set semantics:}
+      The CHR system allows the presence of identical constraints, i.e. multiple constraints
+      with the same functor, arity and arguments. For most constraint solvers, this is not
+      desirable: it affects efficiency and possibly termination. Hence appropriate simpagation
+      rules should be added of the form:
+      \[ constraint \backslash constraint <=> true \]
+\item \textbf{Multi-headed rules:}
+      Multi-headed rules are executed more efficiently when the constraints share one or more variables.
+\end{itemize}
