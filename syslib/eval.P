@@ -87,14 +87,17 @@ eval1(Term, Res) :-
 	psc_type(Psc, T1),
 	( T1 =\= 14, eval_regularterm(Term, Res)	 % Regular term
 	; T1 =:= 14,
-          psc_prop(Psc, Code),
-	  eval_func(Code, Term, T1),
-	  '_$getreturn'(Res)
+	  abort('Invalid term in arithmetic expression')
+% no longer support user-defined functions
+%          psc_prop(Psc, Code),
+%	  eval_func(Code, Term, T1),
+%	  '_$getreturn'(Res)
 	).
 
-/* need this because code_call/3 must be the last goal of a clause.	*/
-
-eval_func(Code, Term, T1) :- code_call(Code, Term, T1).
+/* need this because code_call/3 must be the last goal of a clause.
+no longer support user-defined functions
+eval_func(Code, Term, T1) :- code_call(Code, Term, T1).  
+*/
 
 eval_regularterm(Term, Res) :-
 	functor(Term, F, A),

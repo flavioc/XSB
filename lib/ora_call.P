@@ -25,16 +25,17 @@
 
 :- dynamic attribute/4.
 :- dynamic '$inact_cursor_table$'/1.
-:- retractall('$inact_cursor_table$'(_)).
+%:- retractall('$inact_cursor_table$'(_)).
 :- dynamic '$act_cursor_table$'/1.
-:- retractall('$act_cursor_table$'(_)).
+%:- retractall('$act_cursor_table$'(_)).
 :- dynamic '$select_stack$'/1.
-:- retractall('$select_stack$'(_)).
+%:- retractall('$select_stack$'(_)).
 :- dynamic '$ora_err$'/1.
-:- retractall('$ora_err$'(_)).
+%:- retractall('$ora_err$'(_)).
 :- dynamic table_arity/2.
 :- dynamic '$show_query$'/1.
-:- retractall('$show_query$'(_)).
+%:- retractall('$show_query$'(_)).
+:- dynamic relation/3.
 
 db_open(oracle(Name,Passwd)) :- 
 	conset(count,1),init_gensym(table1),init_gensym(null),
