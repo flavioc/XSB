@@ -85,7 +85,7 @@ tcond(inlinegoal(Op,_,Args),SuccLab,FailLab,
 	)
     ; Args = [Arg],		% Op = var/nonvar (only for the moment)
 	tcond_sot(Op,Arg,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
-    ; Args = [], Op = true, Pil = Pilr, Tin = Tout
+    ; Args = [], Pil = Pilr, Tin = Tout
     ).
 
 tcond_relop(Op, Arg1, Arg2, SuccLab, FailLab,
