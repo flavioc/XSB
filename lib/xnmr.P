@@ -30,6 +30,11 @@
 #include "standard.h"
 #include "char_defs.h"
 
+:- local '_$xnmrmode'/0.
+:- local '_$answers_found'/0.
+
+:- set_nmr_mode.
+
 :- nmr.
 
 nmr :-
@@ -62,8 +67,11 @@ nmr1 :-
 
 	file_read(STDIN, X, Vars),
 	(nonvar(X), read_in_stop(X)	% end of top loop; halt
-         ->     !
-         ;      process_query(X,Vars)
+	->  !
+	;   (conget('_$xnmrmode',0)
+	    ->	process_query(X,Vars)
+	    ;	process_eneg_query(X,Vars)
+	    )
 	).
 
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
@@ -250,6 +258,17 @@ process_answerset_semantics(Query) :-
 	),
 	file_nl(STDFDBK).
 
+test_answerset_semantics(Query) :-
+	(Query = {tnot(Q)}
+	->  Neg = 1
+	;   Q = Query, Neg = 0
+	),
+	init_smodels(Q),
+	(in_all_stable_models(1,Neg)
+	->  true
+	;   fail
+	).
+
 prompt(New,Old) :- prompt(New,Old,'_$nmr_main_prompt'(_)).
 
 prompt(New,Old,Pstore) :- 
@@ -291,4 +310,106 @@ version_message :-
 	xsb_configuration(config_dir, ConfigDir),
 	fmt_write_string(ConfMsg, '%s%sbanner.msg', f(ConfigDir,Slash)),
 	print_file_contents(ConfMsg, STDMSG).
+
+
+% answer set semantics with explicit negation
+
+set_answerset_mode :-
+        prompt('ans| ?- ',[]),
+	coninc('_$xnmrmode').
+
+set_nmr_mode :-
+        prompt('nmr| ?- ',[]),
+	conset('_$xnmrmode',0).
+
+% processes querys in the context of extended logic programs
+% in this implementation, deals with answerset semantics, only
+process_eneg_query(X,Vars) :-
+	conset('_$answers_found',0),
+	process_eneg_query0(X,Vars).
+process_eneg_query0(X,Vars) :-
+	abolish_all_tables,
+	compute_query(X,Q1),
+	process_ans_eneg_query(Q1,Vars,yes).
+process_eneg_query0(X,Vars) :-
+	abolish_all_tables,
+	explicitly_negate_query(X,X1),
+	compute_query(X1,Q1),
+	process_ans_eneg_query(Q1,Vars,no).
+process_eneg_query0(_X,_Vars) :-
+	conget('_$answers_found',0),
+	file_write(STDFDBK, 'unknown'),
+	file_nl(STDFDBK),
+	fail.
+
+% processes querys according to the answerset semantics for
+% extended logic programs
+process_ans_eneg_query(X,Vars,YesNo) :-
+	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
+	stat_flag(LETTER_VARS,LetterVars),
+	nmr_get_residual(X,Vars,Res),
+	(var(Vars), Res == []
+	->  !,
+	    file_write(STDFDBK,YesNo),
+	    coninc('_$answers_found'),
+	    file_nl(STDFDBK),
+	    fail
+	;   true
+	),
+	(LetterVars =:= 0
+	->  true
+	;   numbervars([Vars,Res])
+	),
+	(Res == []
+	->  file_write(STDFDBK,YesNo),
+	    coninc('_$answers_found'),
+	    file_write(STDFDBK,': '),
+	    print_answer(Vars)
+	;   (test_answerset_semantics(X)
+	    ->	(var(Vars)
+		->  !,
+		    file_write(STDFDBK,YesNo),
+		    coninc('_$answers_found'),
+		    file_nl(STDFDBK),
+		    fail
+		;   file_write(STDFDBK,YesNo),
+		    file_write(STDFDBK,': '),
+		    print_answer(Vars)
+		)
+	    ;	fail
+	    )
+	),
+	file_write(STDFDBK, MorePrompt),
+	file_flush(STDFDBK, _),
+	no_more(C),
+	(C =:= 10
+	->  !,
+%	    file_nl(STDFDBK),
+%	    file_write(STDFDBK, YesNo),
+	    file_nl(STDFDBK)
+	;   true
+	),
+	fail.
+
+% creates the explicit negation of a query
+explicitly_negate_query(X,X1) :-
+	X = '{}'(T1),!,
+	explicitly_negate_query(T1,T2),
+	X1 = '{}'(T2).
+explicitly_negate_query(X,X1) :-
+	X = tnot(T1), !,
+	explicitly_negate_query(T1,T2),
+	X1 = tnot(T2).
+explicitly_negate_query(X,X1) :-
+	X = '-'(X1),!.
+explicitly_negate_query(X,X1) :-
+	X1 = '-'(X),!.
+
+
+
+
+
+
+
+
 

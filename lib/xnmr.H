@@ -25,6 +25,8 @@
 
 :- export wfs/0.
 
+:- export set_answerset_mode/0, set_nmr_mode/0.
+
 :- import [] / 0 from usermod.	% just to make usermod typed "module"
 :- import numbervars/1 from num_vars.
 :- import file_write/2, file_nl/1 from xsb_writ.
@@ -47,6 +49,8 @@
 
 :- import consult/1 from consult.
 :- consult(sModels).
+
+:- import coninc/1, conget/2 from prof_sbp.
 
 :- import init_smodels/1, a_stable_model/0, print_current_stable_model/0,
 	in_all_stable_models/2, set_query_true/1
