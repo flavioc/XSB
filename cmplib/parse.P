@@ -512,6 +512,13 @@ parse_directive(compiler_options(Options),_SymTab) :-
 	%% request if xpp_on is subsequently set.
 	(conget(xpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
 	setoptions1(Options).
+parse_directive(Directive,_SymTab) :-
+	option(ciao_directives),
+	included_ciao_directive(Directive).
+
+included_ciao_directive(comment(_,_)).
+included_ciao_directive(pred(_)).
+included_ciao_directive(prop(_)).
 
 /*======================================================================*/
 /* process regular clauses --- collect them in List			*/
