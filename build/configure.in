@@ -132,18 +132,21 @@ if test "$release_year" = "${xsb_release_date}" ; then
    echo "   is not Y2K compliant!"
    echo "   Please specify the date as yyyy/mm/dd or yyy-mm-dd."
    echo ""
+   rm -f  buildxsb.lock
    exit 1
 elif test "$release_month" = "${xsb_release_date}" ; then
    echo "configure: error:"
    echo "   XSB release date in "$build_dir"/version.sh"
    echo "   must have the form yyyy/mm/dd, yyyy-mm-dd, or yyyy.mm.dd"
    echo ""
+   rm -f  buildxsb.lock
    exit 1
 elif test "$release_day" = "${xsb_release_date}" ; then
    echo "configure: error:"
    echo "   XSB release date in "$build_dir"/version.sh must have the form"
    echo "   must have the form yyyy/mm/dd, yyyy-mm-dd, or yyyy.mm.dd"
    echo ""
+   rm -f  buildxsb.lock
    exit 1
 fi
 
@@ -249,6 +252,7 @@ case "$with_os" in
   *)    dnl check for unknown OS
 	if test -n "$with_os" ; then
 	   echo "OS \`$with_os' is not supported"
+	   rm -f  buildxsb.lock
 	   exit 1
 	fi
 	configuration_templ=xsb_configuration.in
@@ -270,6 +274,7 @@ case "$with_os" in
 	    if test -n "`echo "$canonical" | sed -e [s/${configuration}//]`" ; then
 		echo $canonical
 		echo ""
+		rm -f  buildxsb.lock
 		exit 1
   	    else
         	AC_CHECKING(host system type... $canonical)
@@ -367,9 +372,10 @@ dnl Find the source directory.
 if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
   echo ""
   echo "    ******* I cannot find XSB sources!!! *******"
-  echo "    You should run \`configure' in the directory \`srcDir/build' "
+  echo "    You must run \`configure' in the directory \`srcDir/build' "
   echo "    where \`srcDir' is the top directory of the XSB source tree."
   echo ""
+  rm -f  buildxsb.lock
   exit 1
 fi
 
@@ -540,6 +546,7 @@ if test "${ac_cv_sizeof_long}" = 0; then
   echo "*** $CC says that sizeof(long)=0 !!!"
   echo "*** Please check config.log for compilation errors and use a different compiler."
   echo ""
+  rm -f  buildxsb.lock
   exit 1
 fi
 
@@ -1087,7 +1094,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
-	    ${arch_config_prefix}/MS_VC_Mfile.mak:MS_VC_Mfile.in
+	    ${arch_config_prefix}/MSVC_Makefile.mak:MSVC_Makefile.in
 	    ])
 
 chmod 644 ${arch_config_file}
@@ -1302,6 +1309,11 @@ if test -n "$site_dynamic_libraries"; then
   rm -f ${tempfile}
 fi
 
+if test "$with_os" = wind ; then
+  MSVC.sh
+  mv MSVC.dep ${arch_config_prefix}
+fi
+
 
 # Now set modes, copy some files
 chmod 555 ${scriptdir}/xsb${config_tag}  makexsb
@@ -1312,7 +1324,7 @@ chmod 644 ${arch_config_file} \
 	  ${arch_config_prefix}/config.h \
 	  ${arch_config_prefix}/debug.h \
 	  ${arch_config_prefix}/*Makefile \
-	  ${arch_config_prefix}/MS_VC_Mfile.mak
+	  ${arch_config_prefix}/MSVC*
 
 
 # phantom private_builtin.c file
@@ -1334,13 +1346,22 @@ if test "$have_warnings" = "yes"; then
 	echo ""
 fi
 
+if test "$with_os" = wind ; then
+   xsb_compile_command=makexsb_wind
+else
+   xsb_compile_command=makexsb
+fi
 
 echo ""
 if test -z "$config_tag" ; then
-    echo "***Now compile XSB with:   \`makexsb'"
+    echo "***Now compile XSB with:   \`$xsb_compile_command'"
 else
-    echo "***Now compile XSB with:   \`makexsb --config-tag=${config_tag_sans_dash}'"
+    echo "***Now compile XSB with:   \`$xsb_compile_command --config-tag=${config_tag_sans_dash}'"
 fi
+if test "$with_os" = wind ; then
+   echo "***on a windows box."
+fi
+
 echo ""
 
 rm -f  buildxsb.lock

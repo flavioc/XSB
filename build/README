@@ -40,7 +40,9 @@ topMakefile.in	  - the Makefile template from which the main makefile is
 		    produced. 
 emuMakefile.in	  - the Makefile template from which the makefile for the
 		    emu directory is derived.
-MS_VC_Mfile.mak   - the Makefile for building using MS Visual C++ on Windows.
+MSVC_Makefile.mak - the Makefile for building using MS Visual C++ on Windows.
+MSVC.sh           - shell script that creates dependencies for Microsoft NMAKE
+MSVC.sed          - sed script used by MSVC.sh
 
 def_config_wind.in  - Out of this, configure generates a config.h file for
 		     Windows NT/95/98.

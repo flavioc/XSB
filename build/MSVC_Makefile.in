@@ -1,0 +1,329 @@
+#   MS_VC_Mfile.mak:  Makefile to compile XSB on Windows using VC++ NMAKE
+#   @configure_input@
+#
+# Usage:
+#   NMAKE /f "MS_VC_Mfile.mak" CFG="option" [DLL="yes"] [ORACLE="yes"] [SITE_LIBS="addl libs"]
+#
+# Where: CFG = release | debug
+#    	 DLL = yes: build as a DLL
+#        ORACLE=yes: build with support for Oracle
+#        SITE_LIBS=<...> : additional loader libraries (required for Oracle)
+#
+# Note: Specifying any non-zero string for DLL and ORACLE means "yes"!
+#
+
+!IF "$(CFG)" == ""
+CFG=release
+!ENDIF 
+
+!IF "$(CFG)" != "release" && "$(CFG)" != "debug"
+!MESSAGE Invalid configuration "$(CFG)" specified.
+!MESSAGE You can specify a configuration when running NMAKE on this makefile
+!MESSAGE by defining the macro CFG on the command line.  For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "MS_VC_Mfile.mak" CFG="debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration (CFG) are:
+!MESSAGE 
+!MESSAGE "release"
+!MESSAGE "debug"
+!MESSAGE ""  (defaults to "release")
+!MESSAGE 
+!ERROR An invalid configuration is specified.
+!ENDIF 
+
+!IF "$(DLL)" != "yes" && "$(DLL)" != "no" && "$(DLL)" != ""
+!MESSAGE Invalid macro DLL="$(DLL)" specified.
+!MESSAGE This macro controls whether you want XSB to be built as a DLL.
+!MESSAGE For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "MS_VC_Mfile.mak" CFG="debug" DLL="yes"
+!MESSAGE 
+!MESSAGE Possible choices for the DLL macro are:
+!MESSAGE 
+!MESSAGE "yes"
+!MESSAGE "no"
+!MESSAGE ""
+!MESSAGE 
+!ERROR An invalid value for the DLL macro specified.
+!ENDIF 
+
+!IF "$(ORACLE)" != "yes" && "$(ORACLE)" != "no" && "$(ORACLE)" != ""
+!MESSAGE Invalid macro ORACLE="$(ORACLE)" specified.
+!MESSAGE This macro controls whether you want XSB to be built
+!MESSAGE with support for ORACLE. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "MS_VC_Mfile.mak" CFG="release" && ORACLE="yes"
+!MESSAGE 
+!MESSAGE Possible choices for the ORACLE macro are:
+!MESSAGE 
+!MESSAGE "yes"
+!MESSAGE "no"
+!MESSAGE ""
+!MESSAGE 
+!ERROR An invalid value for the ORACLE macro specified.
+!ENDIF 
+
+!IF "$(DLL)" == ""
+DLL=no
+!ENDIF
+!IF "$(ORACLE)" == ""
+ORACLE=no
+!ENDIF
+
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+################################################################################
+# Begin Project
+CPP=cl.exe
+
+# Assume we are running NMAKE in the emu directory
+#!IF  "$(DLL)" == "yes"
+# Put DLL in the bin directory
+DLLDIR=..\config\@canonical@@config_tag@\bin
+OUTDIR=..\config\@canonical@@config_tag@\bin
+#!ELSE
+#OUTDIR=..\config\@canonical@@config_tag@\bin
+#!ENDIF
+
+OBJDIR=..\config\@canonical@@config_tag@\saved.o
+
+INTDIR=.
+
+!IF  "$(ORACLE)" == "yes"
+ORACLE_FLAG=/D "ORACLE"
+ORACLE_MSG=with Oracle support
+!IF  "$(SITE_LIBS)" == ""
+!MESSAGE Oracle libraries must be specified, if building XSB with support for Oracle
+!MESSAGE Usage:
+!ERROR NMAKE /f "MS_VC_Mfile.mak" CFG="..." ORACLE=yes SITE_LIBS="oracle libs"
+!ENDIF
+!ENDIF
+
+!IF "$(DLL)" == "yes"
+ALL : "$(DLLDIR)\xsb.dll" "$(OUTDIR)\xsb.exe"
+!ELSE
+ALL : "$(OUTDIR)\xsb.exe"
+!ENDIF
+
+SOCKET_LIBRARY=wsock32.lib
+
+CLEAN : 
+	-@erase "$(OBJDIR)\auxlry.obj"
+	-@erase "$(OBJDIR)\biassert.obj"
+	-@erase "$(OBJDIR)\builtin.obj"
+	-@erase "$(OBJDIR)\cinterf.obj"
+	-@erase "$(OBJDIR)\debug.obj"
+	-@erase "$(OBJDIR)\dis.obj"
+	-@erase "$(OBJDIR)\dynload.obj"
+	-@erase "$(OBJDIR)\emuloop.obj"
+	-@erase "$(OBJDIR)\findall.obj"
+	-@erase "$(OBJDIR)\function.obj"
+	-@erase "$(OBJDIR)\hash.obj"
+	-@erase "$(OBJDIR)\heap.obj"
+	-@erase "$(OBJDIR)\inst.obj"
+	-@erase "$(OBJDIR)\init.obj"
+	-@erase "$(OBJDIR)\io_builtins.obj"
+	-@erase "$(OBJDIR)\loader.obj"
+	-@erase "$(OBJDIR)\chat.obj
+	-@erase "$(OBJDIR)\xsb_memory.obj"
+	-@erase "$(OBJDIR)\orastuff.obj"
+	-@erase "$(OBJDIR)\psc.obj"
+	-@erase "$(OBJDIR)\private_builtin.obj"
+	-@erase "$(OBJDIR)\residual.obj"
+	-@erase "$(OBJDIR)\scc.obj"
+	-@erase "$(OBJDIR)\self_orientation.obj"
+	-@erase "$(OBJDIR)\slgdelay.obj"
+	-@erase "$(OBJDIR)\struct_manager.obj"
+	-@erase "$(OBJDIR)\sub_insert.obj"
+	-@erase "$(OBJDIR)\subp.obj"
+	-@erase "$(OBJDIR)\system.obj"
+	-@erase "$(OBJDIR)\table_stats.obj"
+	-@erase "$(OBJDIR)\tables.obj"
+	-@erase "$(OBJDIR)\token.obj"
+	-@erase "$(OBJDIR)\trace.obj"
+	-@erase "$(OBJDIR)\tries.obj"
+	-@erase "$(OBJDIR)\tr_utils.obj"
+	-@erase "$(OBJDIR)\tst_insert.obj"
+	-@erase "$(OBJDIR)\tst_retrv.obj"
+	-@erase "$(OBJDIR)\tst_unify.obj"
+	-@erase "$(OBJDIR)\tst_utils.obj"
+	-@erase "$(OBJDIR)\xmain.obj"
+	-@erase "$(OBJDIR)\xpathname.obj"
+	-@erase "$(OBJDIR)\xsb_odbc.obj"
+	-@erase "$(OBJDIR)\xsberror.obj"
+	-@erase "$(OBJDIR)\xsbsocket.obj"
+	-@erase "$(OBJDIR)\xsb_string.obj"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP_OBJS=$(OBJDIR)/
+CPP_SBRS=
+LINK32=link.exe
+DLL_LINK32_OBJS= \
+	"$(OBJDIR)/auxlry.obj" \
+	"$(OBJDIR)/builtin.obj" \
+	"$(OBJDIR)/biassert.obj" \
+	"$(OBJDIR)/chat.obj"\
+	"$(OBJDIR)/cinterf.obj" \
+	"$(OBJDIR)/debug.obj" \
+	"$(OBJDIR)/dis.obj" \
+	"$(OBJDIR)/dynload.obj" \
+	"$(OBJDIR)/emuloop.obj" \
+	"$(OBJDIR)/findall.obj" \
+	"$(OBJDIR)/function.obj" \
+	"$(OBJDIR)/hash.obj" \
+	"$(OBJDIR)/heap.obj" \
+	"$(OBJDIR)/init.obj" \
+	"$(OBJDIR)/inst.obj" \
+	"$(OBJDIR)/io_builtins.obj" \
+	"$(OBJDIR)/loader.obj" \
+	"$(OBJDIR)/xsb_memory.obj" \
+	"$(OBJDIR)/psc.obj" \
+	"$(OBJDIR)/private_builtin.obj" \
+	"$(OBJDIR)/residual.obj" \
+	"$(OBJDIR)/self_orientation.obj" \
+	"$(OBJDIR)/slgdelay.obj" \
+	"$(OBJDIR)/subp.obj" \
+	"$(OBJDIR)/struct_manager.obj" \
+	"$(OBJDIR)/sub_insert.obj" \
+	"$(OBJDIR)/scc.obj" \
+	"$(OBJDIR)/system.obj" \
+	"$(OBJDIR)/table_stats.obj" \
+	"$(OBJDIR)/tables.obj" \
+	"$(OBJDIR)/token.obj" \
+	"$(OBJDIR)/trace.obj" \
+	"$(OBJDIR)/tries.obj" \
+	"$(OBJDIR)/tr_utils.obj" \
+	"$(OBJDIR)/tst_insert.obj" \
+	"$(OBJDIR)/tst_retrv.obj" \
+	"$(OBJDIR)/tst_unify.obj" \
+	"$(OBJDIR)/tst_utils.obj" \
+	"$(OBJDIR)/xpathname.obj" \
+	"$(OBJDIR)/xsb_odbc.obj" \
+	"$(OBJDIR)/xsberror.obj" \
+	"$(OBJDIR)/xsbsocket.obj" \
+	"$(OBJDIR)/xsb_string.obj"
+
+# DLLs don't use xmain.c
+!IF  "$(DLL)" == "no"
+LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/xmain.obj
+!ELSE
+LINK32_OBJS=$(OBJDIR)/xmain.obj
+!ENDIF
+
+# Oracle requires one additional file
+!IF "$(ORACLE)" == "yes"
+!IF "$(DLL)" == "yes"
+DLL_LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/orastuff.obj
+!ELSE
+LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/orastuff.obj
+!ENDIF
+!ENDIF
+
+!IF  "$(CFG)" == "release"  &&  "$(DLL)" == "no"
+!MESSAGE Building XSB executable in Release mode $(ORACLE_MSG)
+
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+ $(ORACLE_FLAG) /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
+
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:console /incremental:no\
+ /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
+ /out:"$(OUTDIR)/xsb.exe" 
+
+
+!ELSEIF  "$(CFG)" == "debug"  &&  "$(DLL)" == "no"
+!MESSAGE Building XSB executable in Debug mode $(ORACLE_MSG)
+
+CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
+ /D "DEBUG" $(ORACLE_FLAG)\
+  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:console /incremental:yes\
+ /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
+ /out:"$(OUTDIR)\xsb.exe" 
+
+
+!ELSEIF "$(CFG)" == "release" && "$(DLL)" == "yes"
+!MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG)
+
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+ /D "XSB_DLL_C" $(ORACLE_FLAG) /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
+DLL_CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
+  /D "XSB_DLL_C" $(ORACLE_FLAG) /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
+ /nologo /subsystem:console /incremental:no\
+ /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
+ /out:"$(OUTDIR)/xsb.exe" 
+DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" \
+ /nologo /subsystem:windows /dll /incremental:no\
+ /pdb:"$(DLLDIR)/xsb.pdb" /machine:I386 /out:"$(DLLDIR)/xsb.dll"\
+ /implib:"$(DLLDIR)/xsb.lib" 
+
+!ELSEIF "$(CFG)" == "debug" &&  "$(DLL)" == "yes"
+!MESSAGE Building XSB as a DLL in Debug mode $(ORACLE_MSG)
+
+DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
+ /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL_C" /Fp"$(OBJDIR)/xsb.pch" /YX\
+ /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
+
+DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:yes\
+ /pdb:"$(DLLDIR)/xsb.pdb" /debug /machine:I386\
+ /out:"$(DLLDIR)\xsb.dll"\
+ /implib:"$(DLLDIR)/xsb.lib"	 
+CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
+ /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL_C" \
+  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
+ /nologo /subsystem:console /incremental:yes\
+ /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
+ /out:"$(OUTDIR)\xsb.exe" 
+
+!ENDIF 
+
+
+"$(OUTDIR)\xsb.exe" : "$(OBJDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+"$(DLLDIR)\xsb.dll" : "$(DLLDIR)" $(DEF_FILE) $(DLL_LINK32_OBJS)
+    $(LINK32) @<<
+  $(DLL_LINK32_FLAGS) $(DLL_LINK32_OBJS)
+<<
+
+.c{$(CPP_OBJS)}.obj:
+   $(CPP) $(CPP_PROJ) $<  
+
+.cpp{$(CPP_OBJS)}.obj:
+   $(CPP) $(CPP_PROJ) $<  
+
+.cxx{$(CPP_OBJS)}.obj:
+   $(CPP) $(CPP_PROJ) $<  
+
+.c{$(CPP_SBRS)}.sbr:
+   $(CPP) $(CPP_PROJ) $<  
+
+.cpp{$(CPP_SBRS)}.sbr:
+   $(CPP) $(CPP_PROJ) $<  
+
+.cxx{$(CPP_SBRS)}.sbr:
+   $(CPP) $(CPP_PROJ) $<  
+
+

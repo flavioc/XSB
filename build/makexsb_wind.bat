@@ -6,7 +6,6 @@ del ..\emu\debugs\debug.h
 
 set XSBCONFIGdir=..\config\x86-pc-windows
 
-copy %XSBCONFIGdir%\MS_VC_Mfile.mak  ..\emu
 copy %XSBCONFIGdir%\config.h  ..\emu\configs
 copy %XSBCONFIGdir%\debug.h   ..\emu\debugs
 
@@ -17,10 +16,13 @@ mkdir %XSBCONFIGdir%\lib
 
 @cd ..\emu
 
-nmake /f "MS_VC_Mfile.mak" %1 %2 %3 %4 %5 %6 %7
+# Concatenate config\MSVC_Makefile.mak and MSVC.dep into emu\MSVC_Makefile.mak
+copy %XSBCONFIGdir%\MSVC_Makefile.mak+%XSBCONFIGdir%\MSVC.dep MSVC_Makefile.mak
+
+nmake /f "MSVC_Makefile.mak" %1 %2 %3 %4 %5 %6 %7
 
 @cd ..\gpp
 
-nmake /f "MS_VC_Mfile.mak"
+nmake /f "MSVC_Makefile.mak"
 
 @cd ..\build
