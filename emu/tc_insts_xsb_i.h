@@ -680,7 +680,6 @@ case trie_assert_inst:
     psc_ptr = DecodeTriePSC(BTN_Symbol(NodePtr));
     reg_arrayptr = reg_array -1;
     num_vars_in_var_regs = -1;
-    save_find_locx(ereg);
     for (i = get_arity(psc_ptr); i >= 1; i--) { pushreg(*(rreg+i)); }
     lpcreg = (byte *) Child(NodePtr);
   }
