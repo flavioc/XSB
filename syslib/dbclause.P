@@ -132,7 +132,7 @@ db_clause(Head,Body,Prref,Clref) :-
 	 ->	chk_if_trie_assert(Clref,Result,_),
 		(Result = trie ->
 			Body = true,
-			db_clause_match_trassert(Head,Clref)
+			db_clause_match_trassert(Head)
 		;
 		Result = nottrie ->
 			Body = '$compiled'	
@@ -162,16 +162,9 @@ db_clause_match(Head,Body,Entry) :-
 	).
 
 
-db_clause_match_trassert(Head,Clref) :-
-	Entry is Clref + 8,
-	(db_do_call(Entry,Head) ->
-		stat_set_flag(24,0),
-		true
-	;
-		stat_set_flag(24,0),
-		fail
-	).
-
+db_clause_match_trassert(Head) :-
+	stat_set_flag(24,0),
+	call(Head).
 
 
 % db_do_call(+CodeEntry, +Head)
