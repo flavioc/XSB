@@ -262,12 +262,12 @@ func_transargs(I, X, Y, O, N) :-
 
 
 print_file_contents(FileName) :-
-	see(FileName),
-	print_file_contents1,
-	seen.
-print_file_contents1 :-
-	(file_read_line(Line, _) -> file_write(2,Line)),
-	print_file_contents1,
+	file_open(FileName, 0, Fdes),
+	print_file_contents1(Fdes),
+	file_close(Fdes).
+print_file_contents1(Fdes) :-
+	(file_read_line(Fdes, Line, _) -> file_write(2,Line)),
+	print_file_contents1(Fdes),
 	fail.        	 %% so as to not leave choice points around
-print_file_contents1.
+print_file_contents1(_).
 

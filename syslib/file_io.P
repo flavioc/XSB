@@ -77,6 +77,7 @@ file_getbuf(FileDes, ByteCount, ToString, Offset) :-
 file_putbuf(FileDes, ByteCount, FromString, Offset) :-
 	file_function(9, FileDes, ByteCount, FromString, Offset).
 
+%% This doesn't intern Str
 file_read_line(File, Str, IsFullLine) :-
 	( var(Str), var(IsFullLine) ->
 	    file_function(10, File, Str, IsFullLine, _)
@@ -84,10 +85,35 @@ file_read_line(File, Str, IsFullLine) :-
 	    abort('Usage: file_read_line([+FileDes,] -InputStr, -IsFullLine)')
         ).
 
+%% Like file_read_line, but Str becomes an interned atom
+file_read_line_atom(File, Str, IsFullLine) :-
+	( var(Str), var(IsFullLine) ->
+	    file_function(10, File, UnStr, IsFullLine, _),
+	    intern_string(UnStr,Str)
+	    ;
+	    abort('Usage: file_read_line_atom([+FileDes,] -InputStr, -IsFullLine)')
+        ).
+
 %% Read line from current input stream (previously set by 'see')
-file_read_line(Str, IsFullLine) :-
+%% Intern string
+file_read_line_atom(Str, IsFullLine) :-
 	stat_flag(10, File),
-	file_read_line(File, Str, IsFullLine).
+	file_read_line_atom(File, Str, IsFullLine).
+
+%% Like file_read_line_atom, but returns list of characters
+file_read_line_list(File, CharLst, IsFullLine) :-
+	( var(Str), var(IsFullLine) ->
+	    file_function(10, File, Str, IsFullLine, _),
+	    atom_chars(Str,CharLst)
+	    ;
+	    abort('Usage: file_read_line_list([+FileDes,] -InputStr, -IsFullLine)')
+        ).
+
+%% Read line from current input stream (previously set by 'see')
+%% Return list of chars
+file_read_line_list(Lst, IsFullLine) :-
+	stat_flag(10, File),
+	file_read_line_list(File, Lst, IsFullLine).
 
 
 /***************************************************************/

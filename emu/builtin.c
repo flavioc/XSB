@@ -132,13 +132,8 @@
 
 #define DELETED_SET 1
 
-#ifdef HAVE_SOCKET
-#ifdef WIN_NT
-extern FILE *_fdopen(int handle, const char *mode);
-#else
+/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
 extern FILE *fdopen(int fildes, const char *type);
-#endif
-#endif
 
 extern tab_inf_ptr get_tip(Psc);
 extern tab_inf_ptr first_tip;
@@ -146,7 +141,6 @@ extern tab_inf_ptr last_tip;
 
 extern int  sys_syscall(int);
 extern bool formatted_io(void), read_canonical(void);
-extern bool file_function(void);
 extern bool file_stat(void);
 extern bool private_builtin(void);
 
@@ -663,6 +657,10 @@ void init_builtin_table(void)
   set_builtin_table(JAVA_INTERRUPT, "setupJavaInterrupt");
   set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
 }
+
+
+/* inlined definition of file_function */
+#include "io_builtins.i"
 
 /* --- built in predicates --------------------------------------------	*/
 

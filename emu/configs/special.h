@@ -32,6 +32,10 @@
 #define snprintf _snprintf
 #endif
 
+#ifdef WIN_NT
+#define fdopen   _fdopen
+#endif
+
 /* The separator used between pathnames in PATH environment */
 #ifdef WIN_NT
 #define PATH_SEPARATOR ';'
