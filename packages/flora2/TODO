@@ -1,5 +1,6 @@
 0. Remove the export/dynamic directives.
-   Use \+ and "not" only. No "tnot".
+   Make flTable imply flPredicate. Issue an error if both flPredicate and
+   flProlog are issued.
 
 
 1. Implement [flUser] analogous to [user] of XSB.

@@ -63,7 +63,6 @@ flora_op(1300,xfy,FL_THEN).
 flora_op(1300,xfy,FL_ELSE).
 
 flora_op(1200,fy,FL_TNOT).
-flora_op(1200,fy,FL_NOT).
 flora_op(1200,fy,FL_NEG).
 
 flora_op(1100,xfx,FL_FDARROW).

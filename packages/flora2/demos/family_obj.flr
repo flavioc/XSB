@@ -82,8 +82,8 @@ X[parent->>{Y}] :- X[mother->Y].
 X[son->>{Y}]      :- Y[parent->>{X}], Y:male.
 X[daughter->>{Y}] :- Y[parent->>{X}], Y:female.
 
-X[brother->>{Y}] :- X..parent[son->>{Y}], not X=Y.
-X[sister->>{Y}]  :- X..parent[daughter->>{Y}], not X=Y.
+X[brother->>{Y}] :- X..parent[son->>{Y}], \+ X=Y.
+X[sister->>{Y}]  :- X..parent[daughter->>{Y}], \+ X=Y.
 
 X[brother_in_law->>{Y}] :- X..sister[spouse->Y].
 X[brother_in_law->>{Y}] :- X.spouse[brother->>{Y}].

@@ -40,6 +40,8 @@
 
 :- import ground/1 from basics.
 
+:- flTable flora_in_between_isa/3, flora_in_between_sub/3.
+:- flPredicate flora_in_between_isa/3, flora_in_between_sub/3.
 
 %% Methods to ignore during pretty printing
 flora_print_ignore(print(pretty)).
@@ -182,7 +184,6 @@ flora_pp_immediate_isa(Class,Module) :-
 flora_pp_immediate_isa(_,_).
 
 %% There is an intermediate class between X and Class
-:- flTable flora_in_between_isa/3.
 flora_in_between_isa(X,Class,Module) :-
 	(X:C1)@Module, C1 \= Class, (C1::Class)@Module.
 
@@ -196,7 +197,6 @@ flora_pp_subclasses_isa(Class,Module) :-
 	fail.
 flora_pp_subclasses_isa(_,_).
 
-:- flTable flora_in_between_sub/3.
 flora_in_between_sub(Sub,Class,Module) :-
 	(Sub :: Sub1)@Module,
 	Sub \= Sub1, Sub1 \= Class,

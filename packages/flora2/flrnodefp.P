@@ -36,7 +36,6 @@ flora_nodefp(FL_SEMICOLON,2) :- !.
 flora_nodefp(FL_COMMA,2) :- !.
 
 flora_nodefp(FL_TNOT,1) :- !.
-flora_nodefp(FL_NOT,1) :- !.
 flora_nodefp(FL_NEG,1) :- !.
 
 flora_nodefp(FL_UNIVEQ,2) :- !.

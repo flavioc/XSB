@@ -314,7 +314,6 @@ is_aggregtop(FL_COUNT)      :- !.
 is_aggregtop(FL_COLLECTSET) :- !.
 is_aggregtop(FL_COLLECTBAG) :- !.
 
-is_notop(FL_NOT)	:- !.
 is_notop(FL_NEG)	:- !.
 
 is_tnotop(FL_TNOT)	:- !.

@@ -109,7 +109,6 @@
 #define FL_NEWOID		'_#'
 
 #define FL_TNOT			(tnot)
-#define FL_NOT			(not)
 #define FL_NEG			'\+'
 
 #define FL_ISA			':'

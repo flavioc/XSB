@@ -153,7 +153,7 @@ direct::connection.
 %%% there's a direct connection from X to Y iff they have a line in common 
 d(X,Y):direct[(from)->X,to->Y,l->>{L}] :- 
 	X:station[l->>{L}],
-	Y:station[l->>{L}], not X=Y.
+	Y:station[l->>{L}], \+ X=Y.
 
 %L:line :- X:station[l->>{L}].
 
