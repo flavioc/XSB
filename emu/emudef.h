@@ -188,7 +188,7 @@ int *asynint_ptr = &asynint_val;
     case T_FUNC: \
     case T_DYNA: \
       lpcreg = (pb)get_ep(PSC); \
-      check_glstack_overflow(get_arity(PSC),lpcreg,OVERFLOW_MARGIN); \
+      /*check_glstack_overflow(get_arity(PSC),lpcreg,OVERFLOW_MARGIN);*/ \
       break; \
     case T_FORN: \
       obtain_ep(PSC);\
