@@ -1185,10 +1185,9 @@ if test "$canonical" = "x86-pc-windows" ; then
    cp -f MS_VC_Mfile.mak ${emudir}
 fi
 
-/* phantom private_builtin.c file */
-if test ! -f ${emudir}/private_builtin.c ; then
+# phantom private_builtin.c file
+test -f ${emudir}/private_builtin.c || \
    cp ${build_dir}/private_builtin.in ${emudir}/private_builtin.c
-fi
 
 dnl Copying to the installation directory ($prefix) is done in the top
 dnl makefile now! 

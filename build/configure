@@ -3935,6 +3935,10 @@ if test "$canonical" = "x86-pc-windows" ; then
    cp -f MS_VC_Mfile.mak ${emudir}
 fi
 
+# phantom private_builtin.c file
+test -f ${emudir}/private_builtin.c || \
+   cp ${build_dir}/private_builtin.in ${emudir}/private_builtin.c
+
 echo ""
 echo "XSB is configured for installation in ${prefix}"
 echo "Site libraries are to be found in ${site_prefix}"
