@@ -261,15 +261,13 @@ write_canonical_list(Term) :-
 	),
 	write_canonical(Term),writeln('.').
 
-
 load_dyn(File) :-
 	load_dyn(File,1).
+
+%% TLS: changed behavior to throw error rather than fail to make
+%% compatable with other ISO type errors, e.g. open/[3,4].  
 load_dyn(File,Dir) :-
-	(atom(File)
-	 ->	true
-	;	file_write0(STDERR, 'Wrong type in argument 1 of load_dyn/1'),
-		fail
-	),
+	check_atom(File,'load_dyn/1',1),
 	get_fname(File,SExt,Base,Mod),
 	load_dyn0(SExt,Base,Mod,Dir).
 

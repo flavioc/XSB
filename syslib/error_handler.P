@@ -62,11 +62,12 @@ default_sys_error_handler(error(domain_error(Valid_type,Culprit),Msg)) :-
 		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR).
 default_sys_error_handler(error(existence_error(_Object_type,_Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
-default_sys_error_handler(error(undefined_predicate(_Name,_Arity,_Module),Msg)) :-
+default_sys_error_handler(error(
+                                      undefined_predicate(_Name,_Arity,_Module),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
 default_sys_error_handler(error(permission_error(Op,Obj_type,Culprit),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Permission (Operation',Culprit,
-	           ' of type ',Op,' on ',Obj_type,')] ', Msg), STDERR).
+	messageln(('++Error[XSB/Runtime/P]: [Permission (Operation) ',
+	Op,' on ',Obj_type,': ',Culprit,'] ',Msg), STDERR).
 default_sys_error_handler(error(representation_error(Flag),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Representation (',Flag,
 	            ')] ', Msg), STDERR).
@@ -81,29 +82,32 @@ default_sys_error_handler(Msg) :-
 
 % ISO-compatable convenience predicates
 
-instantiation_error(Predicate,Arg):- 
-	throw(error(instantiation_error,
-	                             (' in arg ',Arg,' of predicate ',Predicate))).
-
-type_error(Valid_type,Culprit,Predicate,Arg):- 
-	throw(error(type_error(Valid_type,Culprit),
-	                             (' in arg ',Arg,' of predicate ',Predicate))).
 
 domain_error(Valid_type,Culprit,Predicate,Arg):- 
 	throw(error(domain_error(Valid_type,Culprit),
 	                             (' in arg ',Arg,' of predicate ',Predicate))).
 
+instantiation_error(Predicate,Arg):- 
+	throw(error(instantiation_error,
+	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+permission_error(Op,Obj_type,Culprit,Predicate):- 
+	throw(error(permission_error(Op,Obj_type,Culprit),(' in ',Predicate))).
+
+type_error(Valid_type,Culprit,Predicate,Arg):- 
+	throw(error(type_error(Valid_type,Culprit),
+	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+
 %--------------------------------
 % These checks can be reused for various types of ISO compatability.
 
-% Checks that a given Term is a "stream.
-% Should make stream a term for better checking.  
-check_stream(Stream,Predicate,Arg) :- 
-	check_nonvar(Stream,Predicate,Arg),
-	(atom(Stream) -> 
+%-------------
+% Checks that a term is not a variable
+check_atom(Term,Predicate,Arg) :- 
+	(atom(Term) -> 
 	    true
-	;
-	    instantiation_error(Predicate,Arg)).
+	 ;  type_error(atom,Term,Predicate,Arg) ).
 
 %-------------
 % Checks that a term is not a variable
@@ -126,5 +130,16 @@ check_nonvar_list1([H|T],Predicate,Arg):-
 	(nonvar(H) -> 
 	    check_nonvar_list1(T,Predicate,Arg)
 	; 
+	    instantiation_error(Predicate,Arg)).
+
+%-------------
+
+% Checks that a given Term is a "stream.
+% Should make stream a term for better checking.  
+check_stream(Stream,Predicate,Arg) :- 
+	check_nonvar(Stream,Predicate,Arg),
+	(atom(Stream) -> 
+	    true
+	;
 	    instantiation_error(Predicate,Arg)).
 

@@ -318,14 +318,14 @@ read_term(T,List):-
 	read_term_check(stream,List,read_term/3),
 	stat_flag(CURRENT_INPUT, File), 
 	file_read(File, T,Vlist),
-	process_variable_list(List,T,Vlist).
+	process_variable_list(List,T,Vlist),!.
 
 read_term(Istr,T,List):- 
 	read_term_check(Istr,List,read_term/3),
             seeing(Oldstr),see(Istr),stat_flag(CURRENT_INPUT, File), 
 	file_read(File, T,Vlist),
 	see(Oldstr),
-	process_variable_list(List,T,Vlist).
+	process_variable_list(List,T,Vlist),!.
 
 read_term_check(Istr,List,Predvers):- 
 	check_stream(Istr,Predvers,1),

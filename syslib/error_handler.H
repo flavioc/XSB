@@ -23,8 +23,11 @@
 ** 
 */
 
-:- export domain_error/4, type_error/4, instantiation_error/2,
-              check_stream/3, check_nonvar_list/3, check_nonvar/3, 
+:- export domain_error/4, permission_error/4,
+              instantiation_error/2, type_error/4, 
+              check_atom/3,
+              check_nonvar_list/3, check_nonvar/3, 
+              check_stream/3, 
               default_error_handler/1.
 
 :- import (dynamic)/1 from assert.
