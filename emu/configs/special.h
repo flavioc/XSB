@@ -30,9 +30,6 @@
 
 #ifdef WIN_NT
 #define snprintf _snprintf
-#endif
-
-#ifdef WIN_NT
 #define fdopen   _fdopen
 #define popen    _popen
 #define pclose   _pclose
@@ -40,6 +37,7 @@
 #define putenv   _putenv
 #define dup2     _dup2
 #define fileno   _fileno
+#define unlink   _unlink
 #endif
 
 /* The separator used between pathnames in PATH environment */

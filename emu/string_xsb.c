@@ -59,7 +59,7 @@ static Cell term, term2;
 static char output_buffer[5*MAXBUFSIZE], input_buffer[4*MAXBUFSIZE];
 
 
-/* R1: +Substring; R2: +String; R3: -Pos
+/* R1: +Substring; R2: +String; R3: ?Pos
    Check if Arg1 is a substring of Arg2; unify pos of match with Arg3
 */
 bool str_sub(void)
