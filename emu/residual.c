@@ -60,6 +60,8 @@ extern void print_subgoal(FILE *, VariantSF);
    printf("atom(%s/%d)",get_name((Psc)dec_addr(X)),get_arity((Psc)dec_addr(X)));\
  else if (isinteger(X)) \
    printf("atom(%d)",int_val(X));\
+ else if (isboxedinteger(X)) \
+   printf("atom(%d)",boxedint_val(X));\
  else if (islist(X))\
    printf("./2");\
  else\

@@ -180,6 +180,21 @@
 #define bind_int(addr, val)	pushtrail(addr, makeint(val));\
 				bld_int(addr, val)
 
+#define bind_boxedint(addr, val)				 \
+     {Cell temp = makecs(hreg);					 \
+      new_heap_functor(hreg,box_psc);				 \
+      bld_int(hreg,1); hreg++;					 \
+      bld_int(hreg,(((unsigned long)(val)) >> 24)); hreg++;	 \
+      bld_int(hreg,((val) & 0xffffff)); hreg++;			 \
+      pushtrail(addr, temp);					 \
+      cell(addr) = temp;}
+
+#define bind_oint(addr, val)					\
+     if (int_overflow(val)) {					\
+	bind_boxedint(addr, val);				\
+      } else {bind_int(addr, val);}
+
+
 #define bind_float(addr, val)	pushtrail(addr, (Cell) makefloat(val)); \
 				bld_float(addr, val)
 

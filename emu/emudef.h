@@ -74,6 +74,7 @@ Pair list_str;
 
 Psc list_psc, comma_psc;
 Psc tnot_psc, delay_psc;
+Psc box_psc;
 
 /*
  * Ret PSC's are used to store substitution factors for subgoal calls

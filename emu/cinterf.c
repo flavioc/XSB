@@ -71,7 +71,7 @@ DllExport xsbBool call_conv is_var(prolog_term term)
 DllExport xsbBool call_conv is_int(prolog_term term)
 {
     Cell t = (Cell)term;
-    return isinteger(t);
+    return (isinteger(t) | isboxedinteger(t));
 }
 
 DllExport xsbBool call_conv is_float(prolog_term term)
@@ -129,11 +129,11 @@ DllExport xsbBool call_conv c2p_int(Integer val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
-	bind_int(vptr(v), val);
-	return TRUE;
+      bind_oint(vptr(v), val);
+      return TRUE;
     } else {
-	xsb_warn("[C2P_INT] Argument 2 must be a variable");
-	return FALSE;
+      xsb_warn("[C2P_INT] Argument 2 must be a variable");
+      return FALSE;
     }
 }
 
@@ -216,7 +216,7 @@ DllExport xsbBool call_conv c2p_functor(char *functor, int arity, prolog_term va
 DllExport Integer call_conv p2c_int(prolog_term term)
 {
     Cell t = (Cell)term;
-    return int_val(t);
+    return oint_val(t);
 }
 
 DllExport double call_conv p2c_float(prolog_term term)

@@ -1095,7 +1095,7 @@ contcase:     /* the main loop */
     bld_copy((CPtr) op2, *((CPtr)op1));
   XSB_End_Instr()
 
-#define ARITHPROC(OP, STROP) \
+#define ARITHPROC(OP, STROP)                                            \
     Op1(Register(get_xrx));                                             \
     Op3(get_xxr);                                                       \
     ADVANCE_PC(size_xxx);                                               \
@@ -1104,17 +1104,39 @@ contcase:     /* the main loop */
     XSB_Deref(op2);		       					\
     if (isinteger(op1)) {						\
 	if (isinteger(op2)) {						\
-	    bld_int(op3, int_val(op2) OP int_val(op1)); }               \
+            Integer temp = int_val(op2) OP int_val(op1);                \
+	    bld_oint(op3, temp);                         }              \
 	else if (isfloat(op2)) {					\
-	    bld_float(op3, float_val(op2) OP (Float)int_val(op1)); }	\
+            Float temp = float_val(op2) OP (Float)int_val(op1);         \
+	    bld_float(op3, temp); }	                                \
+        else if (isboxedinteger(op2)) {                                 \
+            Integer temp = boxedint_val(op2) OP int_val(op1);           \
+            bld_oint(op3, temp); }                                      \
 	else { arithmetic_abort(op2, STROP, op1); }                     \
     } else if (isfloat(op1)) {						\
 	if (isfloat(op2)) {						\
-	    bld_float(op3, float_val(op2) OP float_val(op1)); }		\
+            Float temp = float_val(op2) OP float_val(op1);              \
+	    bld_float(op3, temp); }		                        \
 	else if (isinteger(op2)) {					\
-	    bld_float(op3, (Float)int_val(op2) OP float_val(op1)); }	\
+            Float temp = (Float)int_val(op2) OP float_val(op1);         \
+	    bld_float(op3, temp); }	                                \
+        else if (isboxedinteger(op2)) {                                 \
+            Float temp = (Float)boxedint_val(op2) OP float_val(op1);    \
+	    bld_float(op3, temp); }                                     \
 	else { arithmetic_abort(op2, STROP, op1); } 	                \
+    } else if (isboxedinteger(op1)) {                                   \
+	if (isinteger(op2)) {						\
+            Integer temp = int_val(op2) OP boxedint_val(op1);           \
+	    bld_oint(op3, temp); }                                      \
+        else if (isboxedinteger(op2)) {                                 \
+            Integer temp = boxedint_val(op2) OP boxedint_val(op1);      \
+            bld_oint(op3, temp); }                                      \
+	else if (isfloat(op2)) {					\
+            Float temp = float_val(op2) OP (Float)boxedint_val(op1);    \
+	    bld_float(op3, temp); }                                     \
+	else { arithmetic_abort(op2, STROP, op1); }                     \
     } else { arithmetic_abort(op2, STROP, op1); }
+
 
   XSB_Start_Instr(addreg,_addreg) /* PRR */
     Def3ops
@@ -1123,7 +1145,8 @@ contcase:     /* the main loop */
 
   XSB_Start_Instr(subreg,_subreg) /* PRR */
     Def3ops
-    Op1(Register(get_xrx));
+    ARITHPROC(-, "-");
+  /**    Op1(Register(get_xrx));
     Op3(get_xxr);
     ADVANCE_PC(size_xxx);
     op2 = *(op3);
@@ -1131,18 +1154,38 @@ contcase:     /* the main loop */
     XSB_Deref(op2);
     if (isinteger(op1)) {						
       if (isinteger(op2)) {
-	bld_int(op3, int_val(op2) - int_val(op1)); }
+        Integer temp = int_val(op2) - int_val(op1);
+	bld_oint(op3, temp); }
       else if (isfloat(op2)) {
-	bld_float(op3, float_val(op2) - (Float)int_val(op1)); }
+        Float temp = float_val(op2) - (Float)int_val(op1);
+	bld_float(op3, temp); }
+      else if (isboxedinteger(op2)) {
+        Integer temp = boxedint_val(op2) - int_val(op1);
+        bld_oint(op3, temp); }
       else { arithmetic_abort(op2, "-", op1); }
     } else if (isfloat(op1)) {
       if (isfloat(op2)) {
-	bld_float(op3, float_val(op2) - float_val(op1)); }
+        Float temp = float_val(op2) - float_val(op1);
+	bld_float(op3, temp); }
       else if (isinteger(op2)) {
-	bld_float(op3, (Float)int_val(op2) - float_val(op1)); }
+        Float temp = (Float)int_val(op2) - float_val(op1);
+	bld_float(op3, temp); }
+      else if (isboxedinteger(op2)) {
+        Float temp = (Float)boxedint_val(op2) - float_val(op1);
+	bld_float(op3, temp); }
       else arithmetic_abort(op2, "-", op1);
-    }
-    else arithmetic_abort(op2, "-", op1);
+    } else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = int_val(op2) - boxedint_val(op1);
+        bld_oint(op3, temp); }
+      else if (isboxedinteger(op2)) {
+        Integer temp = boxedint_val(op2) - boxedint_val(op1);
+        bld_oint(op3, temp); }
+      else if (isfloat(op2)) {
+        Float temp = float_val(op2) - (Float)boxedint_val(op1);
+	bld_float(op3, temp); }
+      else { arithmetic_abort(op2, "-", op1); }
+      } else arithmetic_abort(op2, "-", op1); ****/
   XSB_End_Instr() 
 
   XSB_Start_Instr(mulreg,_mulreg) /* PRR */
@@ -1160,15 +1203,36 @@ contcase:     /* the main loop */
     XSB_Deref(op2);
     if (isinteger(op1)) {
       if (isinteger(op2)) {
-	bld_float(op3, (Float)int_val(op2)/(Float)int_val(op1)); }
+        Float temp = (Float)int_val(op2)/(Float)int_val(op1);
+	bld_float(op3, temp); }
       else if (isfloat(op2)) {
-	bld_float(op3, float_val(op2)/(Float)int_val(op1)); }
+        Float temp = float_val(op2)/(Float)int_val(op1);
+	bld_float(op3, temp); }
+      else if (isboxedinteger(op2)) {
+        Float temp = (Float)boxedint_val(op2)/(Float)int_val(op1);
+	bld_float(op3, temp); }
       else { arithmetic_abort(op2, "/", op1); }
     } else if (isfloat(op1)) {
       if (isfloat(op2)) {
-	bld_float(op3, float_val(op2)/float_val(op1)); }
+        Float temp = float_val(op2)/float_val(op1);
+	bld_float(op3, temp); }
       else if (isinteger(op2)) {
-	bld_float(op3, (Float)int_val(op2)/float_val(op1)); }
+        Float temp = (Float)int_val(op2)/float_val(op1);
+	bld_float(op3, temp); }
+      else if (isboxedinteger(op2)) {
+        Float temp = (Float)boxedint_val(op2)/float_val(op1);
+	bld_float(op3, temp); }
+      else { arithmetic_abort(op2, "/", op1); }
+    } else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Float temp = (Float)int_val(op2) / (Float)boxedint_val(op1);
+        bld_float(op3, temp); }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (Float)boxedint_val(op2) / (Float)boxedint_val(op1);
+        bld_float(op3, temp); }
+      else if (isfloat(op2)) {
+        Float temp = (Float)float_val(op2) / (Float)boxedint_val(op1);
+	bld_float(op3, temp); }
       else { arithmetic_abort(op2, "/", op1); }
     } else { arithmetic_abort(op2, "/", op1); }
   XSB_End_Instr() 
@@ -1181,16 +1245,30 @@ contcase:     /* the main loop */
     op2 = *(op3);
     XSB_Deref(op1);
     XSB_Deref(op2);
-    if (isinteger(op1) && isinteger(op2)) {
-      if (int_val(op1) != 0) { 
-          bld_int(op3, int_val(op2) / int_val(op1)); 
-      } else {
-	err_handle(ZERO_DIVIDE, 2,
-		   "arithmetic expression involving is/2 or eval/2",
-		   2, "non-zero number", op1);
-	lpcreg = pcreg;
+      if (isinteger(op1)) {
+        if (int_val(op1) != 0) {
+          if (isinteger(op2)) {
+            Integer temp = int_val(op2) / int_val(op1);
+            bld_oint(op3, temp); 
+          } else if (isboxedinteger(op2)) {
+            Integer temp = boxedint_val(op2) / int_val(op1);
+            bld_oint(op3, temp); 
+          } else { arithmetic_abort(op2, "//", op1); }
+        } else {
+	  err_handle(ZERO_DIVIDE, 2,
+		     "arithmetic expression involving is/2 or eval/2",
+		     2, "non-zero number", op1);
+	  lpcreg = pcreg;
+        }
+      } else if (isboxedinteger(op1)) {
+        if (isinteger(op2)) {
+          Integer temp = int_val(op2) / boxedint_val(op1);
+          bld_oint(op3, temp);
+        } else if (isboxedinteger(op2)) {
+          Integer temp = boxedint_val(op2) / boxedint_val(op1);
+          bld_oint(op3, temp);
+        }
       }
-    }
     else { arithmetic_abort(op2, "//", op1); }
   XSB_End_Instr() 
 
@@ -1413,7 +1491,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(jumpnz,_jumpnz)    /* PPR-L */
     Def1op
     Op1(Register(get_xxr));
-    if (int_val(op1) != 0)
+    if (oint_val(op1) != 0)
       lpcreg = (byte *)get_xxxl;
     else ADVANCE_PC(size_xxxX);;
   XSB_End_Instr()
@@ -1421,37 +1499,61 @@ contcase:     /* the main loop */
   XSB_Start_Instr(jumplt,_jumplt)    /* PPR-L */
     Def1op
     Op1(Register(get_xxr));
-    if ((isinteger(op1) && int_val(op1) < 0) ||
-	(isfloat(op1) && float_val(op1) < 0.0))
-      lpcreg = (byte *)get_xxxl;
-    else ADVANCE_PC(size_xxxX);
+    if (isinteger(op1)) {
+      if (int_val(op1) < 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isfloat(op1)) {
+      if (float_val(op1) < 0.0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isboxedinteger(op1)) {
+      if (boxedint_val(op1) < 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    }
   XSB_End_Instr() 
 
   XSB_Start_Instr(jumple,_jumple)    /* PPR-L */
     Def1op
     Op1(Register(get_xxr));
-    if ((isinteger(op1) && int_val(op1) <= 0) ||
-	(isfloat(op1) && float_val(op1) <= 0.0))
-      lpcreg = (byte *)get_xxxl;
-    else ADVANCE_PC(size_xxxX);
+    if (isinteger(op1)) {
+      if (int_val(op1) <= 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isfloat(op1)) {
+      if (float_val(op1) <= 0.0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isboxedinteger(op1)) {
+      if (boxedint_val(op1) <= 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    }
   XSB_End_Instr() 
 
   XSB_Start_Instr(jumpgt,_jumpgt)    /* PPR-L */
     Def1op
     Op1(Register(get_xxr));
-    if ((isinteger(op1) && int_val(op1) > 0) ||
-	(isfloat(op1) && float_val(op1) > 0.0))
-        lpcreg = (byte *)get_xxxl;
-    else ADVANCE_PC(size_xxxX);
+    if (isinteger(op1)) {
+      if (int_val(op1) > 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isfloat(op1)) {
+      if (float_val(op1) > 0.0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isboxedinteger(op1)) {
+      if (boxedint_val(op1) > 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    }
   XSB_End_Instr()
 
   XSB_Start_Instr(jumpge,_jumpge)    /* PPR-L */
     Def1op
     Op1(Register(get_xxr));
-    if ((isinteger(op1) && int_val(op1) >= 0) ||
-	(isfloat(op1) && float_val(op1) >= 0.0))
-        lpcreg = (byte *)get_xxxl;
-    else ADVANCE_PC(size_xxxX);
+    if (isinteger(op1)) {
+      if (int_val(op1) >= 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isfloat(op1)) {
+      if (float_val(op1) >= 0.0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    } else if (isboxedinteger(op1)) {
+      if (boxedint_val(op1) >= 0) lpcreg = (byte *)get_xxxl;
+      else {ADVANCE_PC(size_xxxX);}
+    }
   XSB_End_Instr() 
 
   XSB_Start_Instr(fail,_fail)    /* PPP */
@@ -1508,10 +1610,29 @@ contcase:     /* the main loop */
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) {
-      arithmetic_abort(op2, "'>>'", op1);
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = int_val(op2) >> int_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = boxedint_val(op2) >> int_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(op2, "'>>'", op1);}
     }
-    else { bld_int(op3, int_val(op2) >> int_val(op1)); }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = int_val(op2) >> boxedint_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = boxedint_val(op2) >> boxedint_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(op2, "'>>'", op1);}
+    }
+    else {arithmetic_abort(op2, "'>>'", op1);}
   XSB_End_Instr() 
 
   XSB_Start_Instr(logshiftl,_logshiftl)   /* PRR */
@@ -1522,10 +1643,29 @@ contcase:     /* the main loop */
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) {
-      arithmetic_abort(op2, "'<<'", op1);
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = int_val(op2) << int_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = boxedint_val(op2) << int_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(op2, "'<<'", op1);}
     }
-    else { bld_int(op3, int_val(op2) << int_val(op1)); }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = int_val(op2) << boxedint_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = boxedint_val(op2) << boxedint_val(op1);
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(op2, "'<<'", op1);}
+    }
+    else {arithmetic_abort(op2, "'<<'", op1);}
   XSB_End_Instr() 
 
   XSB_Start_Instr(or,_or)   /* PRR */
@@ -1536,10 +1676,33 @@ contcase:     /* the main loop */
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) {
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = (int_val(op2)) | (int_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (boxedint_val(op2)) | (int_val(op1));
+        bld_oint(op3, temp);
+      }
+      else {arithmetic_abort(op2, "'\\/'", op1);}
+    }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = (int_val(op2)) | (boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (boxedint_val(op2)) | (boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(op2, "'\\/'", op1);}
+    }
+    else {arithmetic_abort(op2, "'\\/'", op1);}
+/**    if (!isinteger(op1) || !isinteger(op2)) {
       arithmetic_abort(op2, "'\\/'", op1);
     }
-    else { bld_int(op3, int_val(op2) | int_val(op1)); }
+    else { bld_oint(op3, int_val(op2) | int_val(op1)); } ***/
   XSB_End_Instr() 
 
   XSB_Start_Instr(and,_and)   /* PRR */
@@ -1550,10 +1713,34 @@ contcase:     /* the main loop */
     op2 = *(op3);
     XSB_Deref(op1); 
     XSB_Deref(op2);
-    if (!isinteger(op1) || !isinteger(op2)) {
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = (int_val(op2)) & (int_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (boxedint_val(op2)) & (int_val(op1));
+        bld_oint(op3, temp);
+      }
+      else {arithmetic_abort(op2, "'/\\'", op1);}
+    }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = (int_val(op2)) & (boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (boxedint_val(op2)) & (boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(op2, "'/\\'", op1);}
+    }
+    else {arithmetic_abort(op2, "'/\\'", op1);}
+
+/**    if (!isinteger(op1) || !isinteger(op2)) {
       arithmetic_abort(op2, "'/\\'", op1);
     }
-    else { bld_int(op3, int_val(op2) & int_val(op1)); }
+    else { bld_oint(op3, int_val(op2) & int_val(op1)); } **/
   XSB_End_Instr() 
 
   XSB_Start_Instr(negate,_negate)   /* PPR */
@@ -1562,8 +1749,12 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxx);
     op1 = *(op3);
     XSB_Deref(op1);
-    if (!isinteger(op1)) { arithmetic_abort1("'\\'", op1); }
-    else { bld_int(op3, ~(int_val(op1))); }
+    if (isinteger(op1)) { bld_int(op3, ~(int_val(op1))); }
+    else if (isboxedinteger(op1)) { 
+      Integer temp = ~(boxedint_val(op1));
+      bld_oint(op3, temp); 
+    }
+    else { arithmetic_abort1("'\\'", op1); }
   XSB_End_Instr() 
 
   XSB_Start_Instr(reset,_reset)  /* PPP */

@@ -121,7 +121,7 @@ inline static xsbBool file_function(void)
     tmpstr = ptoc_string(2);
     pterm = reg_term(3);
     if (is_int(pterm))
-      mode = int_val(pterm);
+      mode = oint_val(pterm);
     else if (is_string(pterm)) {
       switch ((string_val(pterm))[0]) {
       case 'r': mode = OREAD; break;
@@ -299,7 +299,7 @@ inline static xsbBool file_function(void)
     tmpstr = ptoc_string(2);
     pterm = reg_term(3);
     if (is_int(pterm))
-      mode = int_val(pterm);
+      mode = oint_val(pterm);
     else if (is_string(pterm)) {
       switch ((string_val(pterm))[0]) {
       case 'r': mode = OREAD; break;

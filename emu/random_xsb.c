@@ -87,19 +87,19 @@ int getrand() {
   term = ptoc_tag(2);
   if (isref(term))
     ctop_int(2, IX);
-  else if (!isinteger(term) || (int_val(term) != IX))
+  else if (!isinteger(term) || (oint_val(term) != IX))
     return FALSE;
 
   term = ptoc_tag(3);
   if (isref(term))
     ctop_int(3, IY);
-  else if (!isinteger(term) || (int_val(term) != IY))
+  else if (!isinteger(term) || (oint_val(term) != IY))
     return FALSE;
 
   term = ptoc_tag(4);
   if (isref(term))
     ctop_int(4, IZ);
-  else if (!isinteger(term) || (int_val(term) != IZ))
+  else if (!isinteger(term) || (oint_val(term) != IZ))
     return FALSE;
 
   return TRUE;

@@ -268,3 +268,32 @@ extern Float getfloatval(Cell);
 					  && int_val(dcell) <= MAX_ARITY)
 
 #define CELL_DEFS_INCLUDED
+
+#define isboxedinteger(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) && (int_val(cell(clref_val(dcell)+1)) == 1))
+
+#define boxedint_val(dcell) \
+       ((Integer)((((unsigned long)int_val(cell(clref_val(dcell)+2))<<24)   \
+                  | int_val(cell(clref_val(dcell)+3))))) 
+
+#define oint_val(dcell)      \
+    (isinteger(dcell)        \
+     ?int_val(dcell)         \
+     :(isboxedinteger(dcell) \
+       ?boxedint_val(dcell)  \
+       :0x80000000))
+
+#define int_overflow(value)                 \
+   (int_val(makeint(value)) != (value))
+
+#define bld_boxedint(addr, value)				\
+     {Cell binttemp = makecs(hreg);				\
+      new_heap_functor(hreg,box_psc);				\
+      bld_int(hreg,1); hreg++;					\
+      bld_int(hreg,(((unsigned)(value)) >> 24)); hreg++;	\
+      bld_int(hreg,((value) & 0xffffff)); hreg++;		\
+      cell(addr) = binttemp;}
+
+#define bld_oint(addr, value)					\
+    if (int_overflow(value)) {					\
+      bld_boxedint(addr, value);				\
+    } else {bld_int(addr,value);}

@@ -758,6 +758,10 @@ void init_symbols(void)
   temp = insert(",", 2, global_mod, &new_indicator);
   comma_psc = pair_psc(temp);
 
+  /* insert symbol "$BOX$"/3 */
+  temp = insert("$BOX$", 3, global_mod, &new_indicator);
+  box_psc = pair_psc(temp);
+
   /* insert symbol tnot/1 into module tables */
   tp = insert_module(0, "tables");		/* unloaded */
   tables_psc = pair_psc(tp);

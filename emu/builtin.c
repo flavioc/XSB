@@ -180,10 +180,11 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   /* XSB_Deref and then check the type */
   XSB_Deref(addr);
   switch (cell_tag(addr)) {
+  case XSB_STRUCT:
+    if (isboxedinteger(addr)) return(boxedint_val(addr));
   case XSB_FREE:
   case XSB_REF1: 
   case XSB_ATTV:
-  case XSB_STRUCT:
   case XSB_LIST:
   case XSB_FLOAT: xsb_abort("[PTOC_INT] Integer argument expected");
   case XSB_STRING: return (prolog_int)string_val(addr);	/* dsw */
@@ -324,7 +325,7 @@ DllExport char* call_conv ptoc_longstring(int regnum)
  */
 #define ptoc_addr(regnum)	(void *)ptoc_int(regnum)
 #define is_encoded_addr(term)	isinteger(term)
-#define decode_addr(term)	(void *)int_val(term)
+#define decode_addr(term)	(void *)oint_val(term)
 
 
 /*
@@ -337,9 +338,7 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
   
   XSB_Deref(addr);
   if (isref(addr)) {
-    bind_int(vptr(addr), value);
-    if (value != ptoc_int(regnum))
-      xsb_warn("[CTOP_INT] OVERFLOW %x (Reg = %d)\n", value, regnum);
+    bind_oint(vptr(addr),value);
   }
   else
     xsb_abort("[CTOP_INT] Wrong type of argument %lx (Reg = %d)", addr, regnum);

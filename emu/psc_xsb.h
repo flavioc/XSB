@@ -109,6 +109,7 @@ extern char* string_find(char*, int);
 extern Psc global_mod;			/* PSC for "global" */
 extern Psc list_psc;
 extern Psc comma_psc;
+extern Psc box_psc;
 extern Psc tnot_psc;
 extern Psc delay_psc;
 extern char *nil_sym;

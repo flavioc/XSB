@@ -43,7 +43,7 @@
 /*									*/
 /*	#define cut_code(OP1)						*/
 /*	    XSB_Deref(OP1);						*/
-/*	    cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		*/
+/*	    cut_breg = (CPtr)(tcpstack.high - oint_val(OP1));		*/
 /*	    cut_restore_trail_condition_registers(cut_breg);		*/
 /*	    if (breg != cut_breg) {					*/
 /*		while (cp_prevbreg(breg) != cut_breg)			*/
@@ -90,7 +90,7 @@
      CPtr xtemp1, xtemp2;                                       \
 								\
      XSB_Deref(OP1);						\
-     cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		\
+     cut_breg = (CPtr)(tcpstack.high - oint_val(OP1));		\
      cut_restore_trail_condition_registers(cut_breg);		\
      if (breg != cut_breg) { /* not cutting back to the current CP */\
 /*      xsb_dbgmsg("Tidying trail (cutbreg = %p, breg = %p)", cut_breg,breg); */\
