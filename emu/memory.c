@@ -241,10 +241,6 @@ void tcpstack_realloc(long new_size) {
   trfreg = (CPtr *)((byte *)trfreg + trail_offset);
   bfreg = (CPtr)((byte *)bfreg + cps_offset);
 #endif
-#ifdef PTCP_IN_CP
-  if (ptcpreg != NULL)
-    ptcpreg = (CPtr)((byte *)ptcpreg + cps_offset);
-#endif
   if (root_address != NULL)
     root_address = (CPtr)((byte *)root_address + cps_offset);
   /* I'm not sure if the following is REALLY needed - RFM */

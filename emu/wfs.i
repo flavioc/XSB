@@ -139,9 +139,6 @@ static void construct_dep_graph(ComplStackFrame leader_compl_frame)
     TChoice p;
     CPtr asf, nsf;
     SGFrame source_subg;
-#ifdef PTCP_IN_CP
-    SGFrame dest_subg;
-#endif
     ComplStackFrame csf1, csf2;
 
     csf1 = leader_compl_frame;
@@ -150,35 +147,20 @@ static void construct_dep_graph(ComplStackFrame leader_compl_frame)
       if (!is_completed(source_subg)) {
 	/*--- find the edge of the DepGraph due to the generator node ---*/
 	if ((p = ptcp_of_gen(source_subg,csf1)) != NULL) {
-#ifdef PTCP_IN_CP
-	  dest_subg = (SGFrame)tcp_subgoal_ptr(p);
-	  add_ascc_edges(dest_subg, csf1, leader_compl_frame);
-#else
 	  add_ascc_edges(p, csf1, leader_compl_frame);
-#endif
 	}
 	/*--- find the edges of the DepGraph due to the consumers ---*/
 	for (asf = first_consumer(source_subg,csf1);
 	     asf != NULL; asf = nlcp_prevlookup(asf)) {
 	  if ((p = ptcp_of_cons(asf)) != NULL) {
-#ifdef PTCP_IN_CP
-	    dest_subg = (SGFrame)tcp_subgoal_ptr(p);
-	    add_ascc_edges(dest_subg, csf1, leader_compl_frame);
-#else
 	    add_ascc_edges(p, csf1, leader_compl_frame);
-#endif
 	  }
 	}
 	/*--- find the edges of the DepGraph due to the suspended nodes ---*/
 	for (nsf = subg_compl_susp_ptr(source_subg);
 	     nsf != NULL; nsf = csf_prevcsf(nsf)) {
 	  if ((p = ptcp_of_csusp(nsf)) != NULL) {
-#ifdef PTCP_IN_CP
-	    dest_subg = (SGFrame)tcp_subgoal_ptr(p);
-	    add_ascc_edges(dest_subg, csf1, leader_compl_frame);
-#else
 	    add_ascc_edges(p, csf1, leader_compl_frame);
-#endif
 	  }
 	}
       }
@@ -237,11 +219,6 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
      * remains unchanged */
     /**********************************************************************/
 
-#ifdef DEBUG
-#define VERBOSE_COMPLETION
-#define COMPLETION_DEBUG
-#endif
-
 #ifdef VERBOSE_COMPLETION
     fprintf(stderr,
 	    "\t===> SCC detection is needed...(%d subgoals in ASCC)...\n",
@@ -289,11 +266,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	  for (nsf = subg_compl_susp_ptr(curr_subg);
 	       nsf != NULL; nsf = csf_prevcsf(nsf)) {
 	    if ((p = ptcp_of_csusp(nsf)) != NULL) {
-#ifdef PTCP_IN_CP
-	      susp_subgoal = tcp_subgoal_ptr(p);
-#else
 	      susp_subgoal = (CPtr)p;
-#endif
 	      susp_csf = subg_compl_stack_ptr(susp_subgoal);      
 	      if (!is_completed(susp_subgoal) && 
 		  susp_csf <= leader_compl_frame &&

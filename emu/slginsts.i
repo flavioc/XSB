@@ -102,12 +102,8 @@ case tabletry:		/* cur_label arity label xcurcall	*/
       save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
 #endif
       push_completion_frame((SGFrame)xcurcall);
-#ifdef PTCP_IN_CP
-      subg_cp_ptr(xcurcall) = ptcpreg = breg = VarPosReg;
-#else
       ptcpreg = xcurcall;
       subg_cp_ptr(xcurcall) = breg = VarPosReg;
-#endif
       delayreg = NULL;
       if (root_address == 0) root_address = breg;
       hbreg = hreg;
@@ -379,12 +375,8 @@ case tabletrysingle:
       save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
 #endif
       push_completion_frame((SGFrame) xcurcall);
-#ifdef PTCP_IN_CP
-      subg_cp_ptr(xcurcall) = ptcpreg = breg = VarPosReg;
-#else
       ptcpreg = xcurcall;
       subg_cp_ptr(xcurcall) = breg = VarPosReg;
-#endif
       delayreg = NULL;
       if (root_address == 0) root_address = breg;
       hbreg = hreg;
