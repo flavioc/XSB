@@ -2601,13 +2601,14 @@ parameters.
 \section{XSB Lint}
 %================================
 
-The xsb\_lint\_impexp.P file contains a simple tool to analyze
+The {\tt xsb\_lint\_impexp.P} file contains a simple tool to analyze
 import/exports and definitions and uses of predicates.  It tries to
 find possible inconsistencies, producing warnings when it finds them
-and generating document\_import/export declarations that might be
-useful.  It can be used after a large multi-file, multi-module XSB
-program has been written to find possible inconsistencies in (or
-interesting aspects of) how predicates are defined and used.
+and generating {\tt document\_import}/{\tt document\_export}
+declarations that might be useful.  It can be used after a large
+multi-file, multi-module XSB program has been written to find possible
+inconsistencies in (or interesting aspects of) how predicates are
+defined and used.
 
 XSB source files that contain an {\tt export} compiler directive are
 considered as modules.  Predicates defined in modules, but not
@@ -2621,31 +2622,31 @@ document\_export} and {\tt document\_import} compiler directives
 (exactly analogous to the {\tt export} and {\tt import} directives) to
 non-module source files.  These directives are ignored by the compiler
 for its compilation, but cause the define-use analysis to be done and
-the warning messages to be issued, if appropriate.  This allows a user
+any warning messages to be issued, if appropriate.  This allows a user
 to get the benefit of the define-use analysis without using modules.
+(See Volume 1, Chapter 3 for more details.)
 
 The {\tt xsb\_lint\_impexp} utility processes both modules and regular
 XSB source files that contain {\tt document\_export} statements.
-
-To use this tool, [xsb\_lint\_impexp] must be consulted, which will
-define the checkImpExps/1/2 and add\_libraries/1 predicates.
+%
+{\tt xsb\_lint\_impexp} is not itself a module.  To use it, {\tt
+[xsb\_lint\_impexp]} must be consulted, which will define the {\tt
+checkImpExps/\{1,2\}} and {\tt add\_libraries/1} predicates in {\tt
+usermod}.
 
 \begin{description}
-\ournewitem{add\_libraries(+DirectoryNameList)}{xsb\_lint\_impexp}
-
+\ouritem{add\_libraries(+DirectoryNameList)}
+%
 {\tt add\_libraries/1} takes a list of directory names and adds them
 to the {\tt library\_directory/1} predicate.  This causes the XSB
 system to look for XSB source code files in these directories.  To use
-{\tt checkImpExps/1/2}, all the directories that contain files (or
+{\tt checkImpExps/\{1,2\}}, all the directories that contain files (or
 modules) referenced (recursively) in the files to be processed must be
 in the {\tt library\_directory/1} predicate.  This predicate can be
 used to add a number of directories at once.
 
-\end{description}
-
-\begin{description}
-\ournewitem{checkImpExps(+Options,+FileNameList)}{xsb\_lint\_impexp}
-
+\ouritem{checkImpExps(+Options,+FileNameList)}
+%
 {\tt checkImpExps/1} reads all the XSB source files named in the list
 {\tt FileNameList}, and all files they reference (recursively), and
 produces a listing that describes properties of how they reference
@@ -2656,48 +2657,45 @@ details of how {\tt checkImpExps} should work.
 
 \begin{enumerate}
 \item
-   used\_elsewhere: Print a warning message in the case of a predicate
-   defined in a file, not used there, but used elsewhere.  This can be
-   useful to see whether it might be better to move the predicate
-   definition to another file, but it produces many warnings for
-   predicates multi-use libraries libraries.
+   {\tt used\_elsewhere}: Print a warning message in the case of a
+   predicate defined in a file, not used there, but used elsewhere (in
+   a file in {\tt FileNameList}). This can be useful to see whether it
+   might be better to move the predicate definition to another file,
+   but it produces many warnings for predicates in multi-use
+   libraries.
 \item
-   unused: Print a warning message in the case of a predicate that is
+   {\tt unused}: Print a warning message in the case of a predicate that is
    exported but never used.  This can be useful to see if predicate is
    not used anywhere, and thus could be deleted.  Again this produces
    many warnings for predicates in multi-use libraries.
 \item
-   all\_files: By default, only predicates in files that contain a {\tt
+   {\tt all\_files}: By default, only predicates in files that contain a {\tt
    :- document\_export} or {\tt :- export} declaration are processed.
    This option causes predicates of {\em all} files (and modules) to be
    processed.
 \item
-   all\_symbol\_uses: Treat {\em all} non-predicate uses of symbols
+   {\tt all\_symbol\_uses}: Treat {\em all} non-predicate uses of symbols
    (even constants) as predicate uses for the purpose of generating
    imports.
 \item
-   no\_symbol\_uses: Don't treat any non-predicate uses of symbols as
+   {\tt no\_symbol\_uses}: Don't treat any non-predicate uses of symbols as
    predicate uses for the purpose of generating imports.
 \end{enumerate}
 
 We further explain the final two options, which allow the user to
 determine more precisely what uses of a symbol are considered as uses
-of it as the predicate symbol.
+of it as the predicate symbol.  All uses of symbols that appear in a
+``predicate context", i.e., in the body of a rule or in a
+meta-predicate argument position of a use of a meta-predicate, are
+considered uses of that predicate symbol.  The default is also to
+allow nonconstant symbols appearing in any other context to also count
+as uses of that symbol as that predicate symbol.  This is useful for
+programs that define their own meta-predicates.
 
-All uses of symbols that appear in a ``predicate context", i.e., in the
-body of a rule or in a meta-predicate argument position of a use of a
-meta-predicate, are considered uses of that predicate symbol.  The
-default is also to allow nonconstant symbols appearing in any other
-context to also count as uses of that symbol as that predicate symbol.
-This is useful for programs that define their own meta-predicates.
-
-\end{description}
-
-\begin{description}
-\ournewitem{checkImpExps(++FileNameList)}{xsb\_lint\_impexp}
-
-{\tt checkImpExps/1} calls {\tt checkImpExps/2} with the default
-options.
+\ouritem{checkImpExps(+FileNameList)}
+%
+{\tt checkImpExps/1}  is
+currently equivalent to {\tt checkImpExps([],FileNameList)}.
 \end{description}
 
 
