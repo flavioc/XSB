@@ -69,6 +69,8 @@ AC_ARG_WITH(wind,
 [  --with-wind                  build XSB for Windows NT/95/98])
 AC_ARG_WITH(libwww,
 [  --with-libwww=DIR            the libwww library used for Web access is at DIR])
+AC_ARG_WITH(xpath,
+[  --with-xpath=DIR             the libxml2 library used for XPath is at DIR])
 AC_ARG_WITH(dbdrivers,
 [  --with-dbdrivers             configure dbdrivers package])
 AC_ARG_WITH(oracle,
@@ -776,14 +778,23 @@ if test -n "$site_includes"; then
 fi
 
 dnl --with-libwww=DIR
-if test -n "$with_libwww" && test -f $topdir/packages/libwww; then
+if test -n "$with_libwww" && test -d $topdir/packages/libwww; then
     cd $topdir/packages/libwww
+    echo "***Configuring Libwww"
     ./configure --with-config="$canonical" --with-libwww="$with_libwww" > /dev/null
     cd $build_dir
 fi
 
-if test -n "${with_dbdrivers}" && test -f $topdir/packages/dbdrivers; then
+if test -n "$with_xpath" && test -d $topdir/packages/xpath; then
+   cd $topdir/packages/xpath
+   echo "***Configuring XPath"
+    ./configure --prefix="$with_xpath" > /dev/null
+    cd $build_dir
+fi
+
+if test -n "${with_dbdrivers}" && test -d $topdir/packages/dbdrivers; then
     cd $topdir/packages/dbdrivers
+    echo "***Configuring DB drivers"
     ./run_configure_scripts --with-odbc-libdir="$with_odbc_libdir" \
                             --with-odbc-incdir="$with_odbc_incdir" \
                             --with-mysql-libdir="$with_mysql_libdir" \
