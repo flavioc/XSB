@@ -7,7 +7,7 @@
 
 ALL = comp.O count.O formula.O mucalculus.O quad.O  \
 	typecheck.O util.O xmc.O \
-	justify.O navigate.O gui.O
+	justify.O navigate.O gui.O xlparse.O
 
 Option = [optimize]
 
