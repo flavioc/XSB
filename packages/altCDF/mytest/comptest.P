@@ -1,0 +1,30 @@
+
+:- [altcdf].
+
+:- import load_extensional_facts/1 from cdf_io.
+:- import update_all_components/2 ,
+	   load_component/3 from cdf_components.
+
+updtest1:- 
+	load_extensional_facts('cdftest1'),
+	update_all_components('mytest\cdfcomp1',[action(create)]).
+
+loadtest1:- 
+      load_component(testo1,'mytest\cdfcomp1',[]).
+
+loadtest2:- 
+      load_component(testo1,'mytest\cdfcomp1',[force(yes)]).
+
+
+end_of_file.
+
+try in different sessions
+
+updtest1.
+
+ loadtest1, loadtest2, 
+
+updtest1  
+
+oadtest1,loadtest1.
+  
