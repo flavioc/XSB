@@ -491,8 +491,8 @@ isa_fx(Sub,Sup):-
 	         
 isa_nospec_fx(Sub,Sub).
 isa_nospec_fx(Sub,Sup):- 
-	immed_isa1(Sub,Sup),
-	isa_nospec_fx(Sub,Sup).
+	immed_isa1(Mid,Sup),
+	isa_nospec_fx(Sub,Mid).
 
 isa_subclass_fx(Sub,Sub).
 isa_subclass_fx(Sub,Sup):- 
