@@ -1,7 +1,7 @@
 # Make file for mysql_driver.dll
 
-MySQLLib="Insert Proper Path\mysqlclient.lib"
-MySQLIncludeDir="Insert Proper Path"
+MySQLLib="<Insert Proper Path>\mysqlclient.lib"
+MySQLIncludeDir="<Insert Proper Path>"
 
 XSBDIR=..\..\..\..
 MYPROGRAM=mysql_driver

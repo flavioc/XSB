@@ -16,6 +16,7 @@ files="./flora2/LICENSE ./flora2/INSTALLATION \
     	./flora2/demos/Makefile ./flora2/demos/NMakefile.mak \
     	./flora2/docs/flora2.pdf \
     	./flora2/docs/*.txt \
+    	./flora2/docs/Makefile ./flora2/docs/NMakefile.mak \
     	./flora2/emacs/flora.el \
     	./flora2/flrincludes/*.flh \
     	./flora2/genincludes/Makefile ./flora2/genincludes/NMakefile.mak \

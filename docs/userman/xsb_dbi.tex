@@ -43,7 +43,9 @@ without problems. For the MySQL driver one has to edit the file
     packages\dbdrivers\mysql\cc\NMakefile.mak  
 \end{verbatim}
 %%
-to indicate where MySQL is installed.
+to indicate where MySQL is installed: Search for the variables
+{\tt MySQLLib} and {\tt MySQLIncludeDir} at the top of the file and replace  
+the text of the form {\tt <...>}  with the appropriate directories.
 
 \paragraph{Unix:}
 Under Unix, the {\tt configure} script should also build the drivers
@@ -71,7 +73,9 @@ Under Cygwin, XSB must be configured as follows:
  ./makexsb
 \end{verbatim}
 %%
-Other than that, no special configuration steps are required.
+Other than that, no special configuration steps are required --- the
+appropriate files will be compiled automatically the first time you use
+the various drivers.
 
 \paragraph{Configuring database interface at a later time:}
 If at the time of configuring XSB some database packages ({\it e.g.},
