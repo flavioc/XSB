@@ -1,5 +1,0 @@
-*.o 
-*.h 
-*.O
-*.so
-xsb_wrap_smodels.c
