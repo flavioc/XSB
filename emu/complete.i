@@ -41,11 +41,13 @@
 case check_complete: {
   CPtr orig_breg = breg, tmp_breg;
   int leader = 0;
-  
+
   SUBGOAL = tcp_subgoal_ptr(breg);	/* get the subgoal that is checked */
 
 #ifdef DEBUG_DELAY
   xcurcall = SUBGOAL;
+  fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
+  print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
 #endif
 
   CC_CSPTR = subg_compl_stack_ptr(SUBGOAL);
@@ -74,17 +76,46 @@ case check_complete: {
       op3 = breg + TCP_SIZE + (Cell) ARITY + CallNumVar; 
       OldRetPtr = (ALPtr) aln_next_aln(tcp_trie_return(breg)); 
       /* get next answer */ 
-      if (OldRetPtr){ 
-	if (is_conditional_answer(aln_answer_ptr(OldRetPtr))) { 
-	  delay_positively(SUBGOAL, aln_answer_ptr(OldRetPtr)); 
-	} 
+      if (OldRetPtr){
 	/* if (is_cond...) */ 
 	tcp_trie_return(breg) = OldRetPtr; 
 	/* last answer consumed */ 
 	TrieRetPtr = get_next_trie_solution(&OldRetPtr); 
 	load_solution_trie(CallNumVar,op3,TrieRetPtr); 
-	lpcreg = cpreg;  
-	goto contcase; 
+	/*
+	 * This piece of code is new (different from version 1.8.1) for
+	 * delay variable stuff.  In LOCAL_EVAL, in order to save the
+	 * substitution factor of the answer into the delay list for the
+	 * parent subgoal, we have to get it from var_addr[] (the result
+	 * of load_solution_trie()) instead of from the pointer
+	 * `ans_var_pos_reg'.  `ans_var_pos_reg' points to the
+	 * substitution factor of the answer that we saved on the heap in
+	 * variant_trie_search().  Because the space of heap may be
+	 * reclaimed (see restore_some_wamregs() in check_complete), the
+	 * substitution factor information we saved in heap may be
+	 * overwritten.
+	 *
+	 * This is similar to the situation in retry_active and
+	 * lay_down_active.
+	 */
+	if (is_conditional_answer(aln_answer_ptr(tcp_trie_return(breg)))) { 
+#ifdef DEBUG_DELAYVAR
+	  fprintf(stderr, ">>>> delay_positively in check_complete\n");
+#endif
+	  {
+	    int i;
+	    CPtr temp_hreg;
+	    
+	    temp_hreg = hreg;
+	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	    for (i = 0; i < num_heap_term_vars; i++)
+	      cell(hreg++) = (Cell) var_addr[i];
+	    delay_positively(SUBGOAL, aln_answer_ptr(tcp_trie_return(breg)),
+			     temp_hreg);
+	  }
+	}
+	lpcreg = cpreg;
+	goto contcase;
       } 
       else { 
 	tcp_tag(breg) = (int)CHECK_COMPLETE_TAG;      
