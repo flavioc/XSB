@@ -12,13 +12,13 @@
 db_connect(Handle, Driver, Server, Database, User, Password) :- 
 		(openConnection(Handle, Driver, Server, Database, User, Password)
 		-> true; 
-		exception(Mesg), throw(xsb_error(Mesg))
+		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
 		).
 
 db_connect(Handle, Driver, Dsn, User, Password) :-
 		(openConnection(Handle, Driver, '', Dsn, User, Password)
 		-> true; 
-		exception(Mesg), throw(xsb_error(Mesg))
+		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
 		).
 
 %% closing connection to the database 
@@ -26,7 +26,7 @@ db_connect(Handle, Driver, Dsn, User, Password) :-
 db_disconnect(Handle) :- 
 		(closeConnection(Handle)
 		-> true; 
-		exception(Mesg), throw(xsb_error(Mesg))
+		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
 		).
 
 %% direct querying
@@ -35,8 +35,8 @@ db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 		(queryConnection(Connhandle, QueryHandle, SQLQueryList, ReturnList)
 		-> true;
 		!, 
-		(exception(Mesg)
-		-> throw(xsb_error(Mesg));
+		(exception(Number, Mesg)
+		-> throw(xsb_error(database(Number), Mesg));
 		fail)
 		).
 
@@ -48,14 +48,14 @@ db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 
 db_prepare(ConnHandle, QueryHandle, SQLQuery) :-
 		(prepareStatement(ConnHandle, QueryHandle, SQLQuery)
-		-> true; exception(Mesg), throw(xsb_error(Mesg))).
+		-> true; exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))).
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 		(executePreparedStatement(QueryHandle, BindList, ReturnList)
 		-> true;
 		!, 
-		(exception(Mesg)
-		-> throw(xsb_error(Mesg));
+		(exception(Number, Mesg)
+		-> throw(xsb_error(database(Number), Mesg));
 		fail)
 		).
 
@@ -67,7 +67,7 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 db_statement_close(QueryHandle) :-
 		(closeStatement(QueryHandle)
 		-> true; 
-		exception(Mesg), throw(xsb_error(Mesg))
+		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
 		).
 
 

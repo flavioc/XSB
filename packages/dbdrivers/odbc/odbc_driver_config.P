@@ -17,7 +17,6 @@ make_odbc_driverH(CC, CC_opts) :-
    	slash(Slash),
     xsb_configuration(compiler, XCC),
     xsb_configuration(configuration, XSBconfiguration),
-	xsb_configuration(config_dir, Configdir),
 	xsb_configuration(config_libdir, ConfigLibdir),
     fmt_write_string(LD_flags,
 		     ' -Wl,-rpath %s -Wl,-rpath /usr/lib -L/usr/lib -lodbc -ldl %s%sdriver_manager.so %s%sodbc_driver.so', f(ConfigLibdir, ConfigLibdir, Slash, ConfigLibdir, Slash)),

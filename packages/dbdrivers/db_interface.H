@@ -4,6 +4,6 @@
 		    prepareStatement/3,
 			executePreparedStatement/3,
 			closeStatement/1,
-			exception/1 from driver_manager.
+			exception/2 from driver_manager.
 			
 

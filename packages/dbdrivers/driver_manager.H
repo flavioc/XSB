@@ -13,5 +13,5 @@
 			prepareStatement/3,
 			executePreparedStatement/3,
 			closeStatement/1,
-			exception/1.
+			exception/2.
 

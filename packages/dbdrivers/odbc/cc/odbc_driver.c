@@ -5,7 +5,7 @@
 ** This is the ODBC driver for connecting to a database.
 */
 
-#include "odbc_driver.h"
+#include "odbc_driver_defs.h"
 
 struct driverODBC_connectionInfo* odbcHandles[MAX_HANDLES];
 struct driverODBC_queryInfo* odbcQueries[MAX_QUERIES];
@@ -101,9 +101,11 @@ int driverODBC_disconnect(struct xsb_connectionHandle* handle)
 			
 			for (j = i + 1 ; j < numHandles ; j++)
 				odbcHandles[j-1] = odbcHandles[j];
+			numHandles--;
+			break;
 		}
 	}
-
+	
 	return SUCCESS;
 }
 
@@ -290,14 +292,6 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
 	int i;
 	
 	hdbc = NULL;
-	for (i = 0 ; i < numQueries ; i++)
-	{
-		if (!strcmp(odbcQueries[i]->handle, qHandle->handle))
-		{
-			errorMesg = "ODBC Error: a handle for this query already exists\n";
-			return FAILURE;
-		}
-	}
 
 	query = (struct driverODBC_queryInfo *)malloc(sizeof(struct driverODBC_queryInfo));
 	query->handle = (char *)malloc((strlen(qHandle->handle) + 1) * sizeof(char));
@@ -370,11 +364,6 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
 			break;
 		}
 	}
-	if (query == NULL)
-	{
-		errorMesg = "ODBC Error: no such query has been prepared\n";
-		return NULL;
-	}
 	
 	if (handle->state == QUERY_RETRIEVE)
 		return driverODBC_getNextRow(query, 0);
@@ -383,11 +372,6 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
 
 	for (i = 0 ; i < query->parammeta->numCols ; i++)
 	{
-		if (param[i] == NULL)
-		{
-			errorMesg = "ODBC Error: not all parameters supplied\n";
-			return NULL;
-		}
 		if (param[i]->type == STRING_TYPE)
 			val = SQLBindParameter(query->hstmt, i + 1, SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_CHAR, 0, 0, (SQLPOINTER)param[i]->val->str_val, strlen(param[i]->val->str_val) + 1, NULL);
 		else if (param[i]->type == INT_TYPE)

@@ -12,18 +12,20 @@
 #include <string.h>
 
 #include "cinterf.h"
-#include "driver_manager.h"
+#include "driver_manager_defs.h"
 
 struct xsb_connectionHandle* CHandles[MAX_CONNECTIONS];
 struct xsb_queryHandle* QHandles[MAX_QUERIES];
 struct driver* DBdrivers[MAX_DRIVERS];
 int numDrivers, numCHandles, numQHandles;
 char* errorMesg;
+char* errorNumber;
 
 int initialise(void)
 {
 	numDrivers = numCHandles = numQHandles = 0;
 	errorMesg = NULL;
+	errorNumber = NULL;
 	return TRUE;
 }
 
@@ -48,7 +50,8 @@ int openConnection(void)
 
 	if (isConnectionHandle(handle) != NULL)
 	{
-		errorMesg = "XSB_DBI ERROR: repeated use of same connection handle\n";
+		errorMesg = "XSB_DBI ERROR: connection handle already exists\n";
+		errorNumber = "XSB_DBI_006";
 		return FALSE;
 	}
 
@@ -160,12 +163,13 @@ int closeConnection(void)
 			for (j = i + 1 ; j < numCHandles ; j++)
 				CHandles[j-1] = CHandles[j];
 			numCHandles--;
-			break;
+			return TRUE;
 		}
 	}
-
 	
-	return TRUE;
+	errorMesg = "XSB_DBI ERROR: no such connection handle";
+	errorNumber = "XSB_DBI_004";
+	return FALSE;
 }
 
 
@@ -191,7 +195,8 @@ int queryConnection(void)
 	{
 		if (strcmp(qHandle->connHandle->handle, chandle))
 		{
-			errorMesg = "XSB_DBI ERROR: same query handle for different connections\n";
+			errorMesg = "XSB_DBI ERROR: query handle already exists";
+			errorNumber = "XSB_DBI_007";;
 			return FALSE;
 		}
 		queryDriver = getDriverFunction(qHandle->connHandle->driver, QUERY)->queryDriver;
@@ -231,7 +236,8 @@ int queryConnection(void)
 	}
 	else
 	{
-		errorMesg = "XSB_DBI ERROR: no such connection or query handle\n";
+		errorMesg = "XSB_DBI ERROR: no such connection handle\n";
+		errorNumber = "XSB_DBI_004";
 		return FALSE;		
 	}
 
@@ -277,13 +283,15 @@ int prepareStatement(void)
 	
 	if ((cHandle = isConnectionHandle(chandle)) == NULL)
 	{
-		errorMesg = "XSB_DBI ERROR: no such connection handle\n";
+		errorMesg = "XSB_DBI ERROR: connection handle does not exist\n";
+		errorNumber = "XSB_DBI_004";
 		return FALSE;
 	}
 	
 	if ((qHandle = isQueryHandle(qhandle)) != NULL)
 	{
 		errorMesg = "XSB_DBI ERROR: query handle already exists\n";
+		errorNumber = "XSB_DBI_007";
 		return FALSE;
 	}
 
@@ -333,7 +341,8 @@ int executePreparedStatement(void)
 
 	if ((qHandle = isQueryHandle(queryHandle)) == NULL)
 	{
-		errorMesg = "XSB_DBI ERROR: no such query handle\n";
+		errorMesg = "XSB_DBI ERROR: query handle does not exist\n";
+		errorNumber = "XSB_DBI_005";
 		return FALSE;
 	}
 
@@ -346,6 +355,7 @@ int executePreparedStatement(void)
 			if (is_nil(bindList))
 			{
 				errorMesg = "XSB_DBI ERROR: not all paremeters supplied\n";
+				errorNumber = "XSB_DBI_008";
 				return FALSE;
 			}
 			element = p2p_car(bindList);
@@ -376,6 +386,7 @@ int executePreparedStatement(void)
 			else if (is_var(element))
 			{
 				errorMesg = "XSB_DBI ERROR: unbound variable in query list\n";
+				errorNumber = "XSB_DBI_009";
 				return FALSE;
 			}
 			bindList = p2p_cdr(bindList);
@@ -447,20 +458,26 @@ int closeStatement(void)
 	return TRUE;
 }
 
+
 int exception(void)
 {
-	prolog_term element;
-
-	element = reg_term(1);
-	if (is_var(element) && errorMesg != NULL)
+	prolog_term number;
+	prolog_term message;
+	
+	number = reg_term(1);
+	message = reg_term(2);
+	if (is_var(message) && errorMesg != NULL)
 	{
-		c2p_string(errorMesg, element);
+		c2p_string(errorMesg, message);
+		c2p_string(errorNumber, number);
 		errorMesg = NULL;
+		errorNumber = NULL;
 		return TRUE;
 	}
 	
 	return FALSE;
 }
+
 
 char* buildSQLQuery(prolog_term sqlQueryList)
 {
@@ -491,7 +508,8 @@ char* buildSQLQuery(prolog_term sqlQueryList)
 		}
 		else if (is_var(element))
 		{
-			errorMesg = "XSB_DBI ERROR: unbound variable in query list\n";
+			errorMesg = "XSB_DBI ERROR: unbound variable in query list";
+			errorNumber = "XSB_DBI_009";
 			return NULL;
 		}
 		sqlQueryList = p2p_cdr(sqlQueryList);
@@ -528,7 +546,8 @@ int registerXSBDriver(char* drivername, int num)
 	{
 		if (!strcmp(DBdrivers[i]->driver, drivername))
 		{
-			errorMesg = "XSB_DBI ERROR: driver already registered\n";
+			errorMesg = "XSB_DBI ERROR: driver already registered";
+			errorNumber = "XSB_DBI_001";
 			return -1;
 		}
 	}
@@ -537,7 +556,8 @@ int registerXSBDriver(char* drivername, int num)
 	dr->numberFunctions = num;
 	dr->functions = (struct driverFunction **)malloc(num * sizeof(struct driverFunction *));
 	for (i = 0 ; i < num ; i++)
-		dr->functions[i] = (struct driverFunction *)malloc(sizeof(struct driverFunction));
+		dr->functions[i] = NULL;
+
 	DBdrivers[numDrivers++] = dr;
 	return 0;
 }
@@ -545,15 +565,22 @@ int registerXSBDriver(char* drivername, int num)
 
 int registerXSBFunction(char* drivername, int type, union functionPtrs* func)
 {
-	int i;
+	int i, j;
 
 	for (i = 0 ; i < numDrivers ; i++)
 	{
 		if (!strcmp(DBdrivers[i]->driver, drivername))
 		{
-			DBdrivers[i]->functions[type]->functionType = type;
-			DBdrivers[i]->functions[type]->functionName = func;
-			break;
+			for (j = 0 ; j < DBdrivers[i]->numberFunctions ; j++)
+			{
+				if (DBdrivers[i]->functions[j] == NULL)
+				{
+					DBdrivers[i]->functions[j] = (struct driverFunction *)malloc(sizeof(struct driverFunction));
+					DBdrivers[i]->functions[j]->functionType = type;
+					DBdrivers[i]->functions[j]->functionName = func;
+					break;
+				}
+			}
 		}
 	}
 
@@ -574,11 +601,13 @@ union functionPtrs* getDriverFunction(char* drivername, int type)
 				if (DBdrivers[i]->functions[j]->functionType == type)
 					return DBdrivers[i]->functions[j]->functionName;
 			}
-			errorMesg = "XSB_DBI ERROR: no such function\n";
+			errorMesg = "XSB_DBI ERROR: function does not exist in this driver";
+			errorNumber = "XSB_DBI_002";
 			return NULL;
 		}
 	}
-	errorMesg = "XSB_DBI ERROR: no such driver\n";
+	errorMesg = "XSB_DBI ERROR: driver does not exist";
+	errorNumber = "XSB_DBI_003";
 	return NULL;
 }
 
