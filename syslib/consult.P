@@ -70,24 +70,39 @@ consult(Path, Options) :- \+ (\+ (reconsult(Path, Options))).
 
 /*======================================================================*/
 /*======================================================================*/
+:- dynamic consult_file_loaded(_).
 
 reconsult(Path) :- reconsult(Path, []).
 
-reconsult(Path, Options) :- 
+reconsult(Path, Options) :- reconsult(Path, Options, false).
+
+reconsult(Path, Options, Ensure_loaded) :- 
 	( nonvar(Path) -> 
-		( atom(Path) -> \+ (\+ (reconsult0(Path, Options)))
-		; abort('Wrong type in argument 1 of reconsult/[1,2], cannot reconsult!')
+		( atom(Path)
+                   -> \+ (\+ (reconsult0(Path, Options, Ensure_loaded)))
+		   ; abort('Wrong type in argument 1 of reconsult/[1,2], cannot reconsult!')
 		)
 	; abort('Uninstantiated argument 1 of reconsult/[1,2], cannot reconsult!')
 	).
 
-reconsult0(Path, Options) :-
+reconsult0(Path, Options, Ensure_loaded) :-
 	( Path == user -> compile_load_user(Options)
 	; ( search_module(Path, Dir, Mod, SExt, Base, Obj) ->
 	      (	 ( SExt \== 'O', i_want_compile(SExt, Base, Obj) )
 	      ->  compile_f(SExt, Base, Options, _ExList, Mod, Dir),
-		  load_exec(Obj, Mod)
-	      ;	  load_exec(Obj, Mod)
+		  load_exec(Obj, Mod),
+		  (consult_file_loaded(Path)
+	           ->     true
+	           ;      assert(consult_file_loaded(Path))
+	          )
+	      ;	  (Ensure_loaded==true,consult_file_loaded(Path)
+	           ->     true
+	           ;      load_exec(Obj, Mod),
+		          (consult_file_loaded(Path)
+			   ->	  true
+			   ;	  assert(consult_file_loaded(Path))
+			  )
+		  )
 	      )
 	  ; file_write0(STDERR, 'Cannot find the file/module '),
 	    file_write0(STDERR, Path), file_nl(STDERR), fail
@@ -254,23 +269,29 @@ get_fname(Filename,SExt,Base,Mod) :-
 	).
 
 load_dyn0(SExt,Base,Mod,Dir) :-
+	get_HRname(SExt,Base,Hfname,Rfname),
+	init_for_load(Rfname, Mod),
+	(Hfname == []
+         ->     true
+         ;      load_dyn1(Hfname,Dir)
+        ),
+	load_dyn1(Rfname,Dir),
+	cleanup_for_load.
+
+get_HRname(SExt,Base,Hfname,Rfname) :-
 	(SExt == ''	% no suffix
-	 ->	init_for_load(Base,Mod),
-		load_dyn1(Base,Dir),
-		cleanup_for_load
+	 ->     Rfname = Base,
+		Hfname = []
 	 ;      dotted_ext(SExt, DExt),
 	        str_cat(Base, DExt, Rfname),
-		init_for_load(Rfname, Mod),
 		(SExt == 'P'
-		 ->	str_cat(Base, '.H', Hfname),
-			(file_exists(Hfname)
-			 ->	load_dyn1(Hfname,Dir)
-			 ;	true
+		 ->	str_cat(Base, '.H', Hfname0),
+			(file_exists(Hfname0)
+			 ->	Hfname = Hfname0
+			 ;	Hfname = []
 			)
-		 ;	true
-		),
-		load_dyn1(Rfname,Dir),
-		cleanup_for_load
+		 ;	Hfname = []
+		)
 	).
 
 dotted_ext(Ext,DExt) :- str_cat('.',Ext,DExt).
@@ -391,24 +412,15 @@ load_dync(File,Dir) :-
 	load_dync0(SExt,Base,Mod,Dir).
 
 load_dync0(SExt,Base,Mod,Dir) :-
-	(SExt == ''	% no suffix
-	 ->	init_for_load(Base,Mod),
-		load_dync1(Base,Dir),
-		cleanup_for_load
-	 ;      dotted_ext(SExt, DExt),
-	        str_cat(Base, DExt, Rfname),
-		init_for_load(Rfname, Mod),
-		(SExt == 'P'
-		 ->	str_cat(Base, '.H', Hfname),
-			(file_exists(Hfname)
-			 ->	load_dync1(Hfname,Dir)
-			 ;	true
-			)
-		 ;	true
-		),
-		load_dync1(Rfname,Dir),
-		cleanup_for_load
-	).
+	get_HRname(SExt,Base,Hfname,Rfname),
+	init_for_load(Rfname, Mod),
+	(Hfname == []
+         ->     true
+         ;      load_dync1(Hfname,Dir)
+        ),
+	load_dync1(Rfname,Dir),
+	cleanup_for_load.
+
 
 load_dync1(Rfname,Dir) :-
 	cputime(T0),
@@ -622,10 +634,7 @@ ensure_loaded([File|Files]) :- !,
 	ensure_loaded(File),
 	ensure_loaded(Files).
 ensure_loaded(File) :-
-	(if_should_not_reload(File)
-	 ->	true
-	 ;	reconsult(File)
-	).	
+	reconsult(File,[],true).
 
 ensure_dyn_loaded([]) :- !.
 ensure_dyn_loaded([File|Files]) :- !, 
@@ -648,9 +657,10 @@ ensure_dync_loaded(File) :-
 	).
 
 if_should_not_reload(File) :-
-	tilde_expand_filename(File,Filename),
-	load_dyn_file_loaded(Filename,time(Ltime1,Ltime2)),
+	get_fname(File,SExt,Base,_Mod),
+	get_HRname(SExt,Base,_Hfname,Filename),
 	file_time(Filename,time(Ctime1,Ctime2)),
+	load_dyn_file_loaded(Filename,time(Ltime1,Ltime2)),
 	time(Ltime1,Ltime2) @=< time(Ctime1,Ctime2),
 	\+ need_more_index(Filename).
 

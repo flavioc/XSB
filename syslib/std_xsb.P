@@ -80,6 +80,8 @@ standard_symbol(debugging, 0, debugger).
 standard_symbol(display, 1, standard).
 standard_symbol((dynamic), 1, assert).
 standard_symbol(edit, 1, shell).
+standard_symbol(ensure_loaded, 1, consult).
+standard_symbol(ensure_loaded, 2, consult).
 standard_symbol(expand_filename, 2, machine).
 standard_symbol(expand_term, 2, standard).
 standard_symbol(fail, 0, standard).
