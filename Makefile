@@ -1,4 +1,4 @@
-## File:      Makefile
+## File:      Makefile - recompiles all .O files in all directories
 ## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
