@@ -94,6 +94,8 @@
 
 #undef GC
 
+#undef MULTI_THREAD
+
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
 
