@@ -23,6 +23,12 @@
 ** 
 */
 
+#ifndef __XSB_CINTERF_H__
+#define __XSB_CINTERF_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef CELL_DEFS_INCLUDED
 #include "cell_def_xsb.h"
@@ -277,3 +283,8 @@ the lower-level ctop_* routines directly. */
 /* return float argument i of answer term */
 #define xsb_var_float(i) (p2c_float(p2p_arg(reg_term(2),i)))
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __XSB_CINTERF_H__ */
