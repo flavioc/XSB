@@ -1,9 +1,6 @@
 1. Make :- table imply :- firstorder.
    Do variable analysis in delete{...}/insert{...}
    to avoid errors like in demo/aggregate.flr
-   Move the decision about how to compile @prolog(module) from the compiler
-   to the coder. Make the compilation different depending on whether it is
-   in the shell or in the batch.
 
 
 2. Implement undefined predicate/method handling infrastructure.
@@ -190,8 +187,10 @@
 	    Functor: the name of the predicate, functor, or method.
 
    Note: foreign(foo) should not be distributive or nested, unlike @module,
-	 @flora(...) and @ prolog(...). Any nesting of foreign inside
-	 foreign should be an error.
+	 @flora(...) and @ prolog(...). Any nesting of another @foreign,
+	 @prolog, or @flora inside @foreign should be an error.
+	 Allow only a conjunction of literals (excluding updates and
+	 predicates) under the scope of @foreign
 
 7. Implement asserting the storage-linking rules (the patch rules) in the
    Flora shell, so that we'll be able to use insert/delete for firstorder
@@ -267,16 +266,32 @@
 14. Do smart reordering of arithmetic operations in rule bodies to minimize
     the possibility of errors due to unbound variables.
 
+	Algorithm: Bring query/\literal in update{literal|query}
+		   into disjunctive normal form. For each disjunct, move
+		   arithmetic expressions around to as close to the left as
+		   possible subject to the restriction that the variables
+		   must be bound. This requires variable analysis.
+        Input: term (which includes , and ;)
+	       A set of declarations like binding(op,Arity,[+,-])
+
 15. Figure out some workaround for the tabled stuff that depends on
     dynamically asserted and deleted facts.
 
-16. Instead of compiling, load .fdb facts into the trie associated with the
-    corresponding module. This way the facts specified as
-    p(a).
-    f[m->b].
-    etc. can be deleted from the database.
-    We also need to make sure that the coder puts predicates (first-order
-    and hilog) into .fdb.
+16. Implement the :- database directive, which will direct the compiler to
+    not include the patch rules and to disallow real rules (as opposed to
+    just facts in the file).
+    In conjunction with this, do the following in the parser:
+       1. Ensure that directives are allowed only at the top of the file.
+          Have a flag, clause, which is conset to 0. When the first
+	  non-directive is encountered, conset it to 1.
+	  If a directive is encountered after that---issue an error.
+       2. Ensure that :- database occurs before any :- firstorder or :-
+	  hilog directive. If one of these directives is encountered,
+	  set the nodatabase flag. If :- directive is encountered after
+	  that, issue an error.
+       3. If :- database is encountered, set the database flag.
+	  The compiler should check this flag to decide whether to dump the
+	  patch rules and for deciding on the error checking.
 
 17. Provide primitives
     :- firstorder foo/1 in modname.
@@ -328,3 +343,5 @@
     call(f(a)) would change the outermost wrapper and attach module name.
     Also, call(p) should convert to call(apply(p)), because Flora treats
     propositional constants like p as p().
+
+19. Implement support for the directive :- index a/2-1.
