@@ -130,7 +130,9 @@ bagReduce1(Call,Res,Op,Id) :-
 bagOf(Call,List) :- bagof(Var,Call(Var),List).
 
 /*=======================================================================*/
-/* Can this be done with sysmod? */
+/* Need to figure out a way around module system so that 
+   the proper call of min is done.
+
 filterMin(Call,Var) :- filterReduce(Call,min,neg_inf,Var).
 
 filterMax(Call,Var) :- filterReduce(Call,max,inf,Var).
@@ -142,6 +144,7 @@ max(X,Y,Z):- (X > Y -> Z = X ; Z = Y).
 min(X,Y,Y):- \+ number(X),!.
 min(X,Y,X):- \+ number(Y),!.
 min(One,Two,Min):- One > Two -> Min = Two ; Min = One.
+*/
 
 % Reduce elements using associative Op with identity Id.
 filterReduce(Call,Op,Id,Res) :- filterReduce1(Call,Op,Id,Res), fail.
