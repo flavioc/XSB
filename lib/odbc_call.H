@@ -48,4 +48,16 @@
 
 :- import call0/1, odbc_exec_query/6 from machine.
 :- import conset/2, conget/2, coninc/1 from gensym.
-:- import length/2, append/3, member/2 from basics.
+:- import length/2, append/3, member/2, copy_term/2 from basics.
+
+:- import (dynamic)/1, retractall/1, abolish/1, asserta/1, assert/1,
+	retract/1
+	from assert.
+
+:- import writeln/1, write/1 , '=..'/2, atomic/1, atom_codes/2,
+        atom/1, number_codes/2, name/2, number/1, integer/1, nl/0,
+	'\='/2, functor/3, abort/1
+	from standard.
+
+:- import findall/3, setof/3, bagof/3
+	from setof.
