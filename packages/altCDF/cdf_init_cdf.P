@@ -42,13 +42,12 @@
 :- import get_component_extensional/2,
 	  load_component/3 from cdf_comps_share.
 
-:- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
 	from cdf_xj.
 
 :- import '_$index'/3 from file_op.
 %:- import conset/2, conget/2 from gensym.
-:- import ground/1, member/2 from basics.
+:- import ground/1 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
 :- dynamic user_cdf_flag/2.
@@ -265,14 +264,7 @@ product_identifier(Id):-
 	cdf_id_fields(Id,_F,I,_S),
 	structure(I).
 
-abstract_identifier(Id,IdAb):- 
-	cdf_id_fields(Id,F,I,S),
-	(structure(Id) -> 
-		functor(I,N,A),functor(I1,N,A),
-		cdf_id_fields(IdAb,F,I1,S)
-	; 	Id = IdAb).
-
-%%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 in_hierarchy(Term):- 
 	(  immed_isa(Term,_) 
@@ -506,32 +498,21 @@ explosive_isa_list([Arg1|R1],[Arg2|R2]):-
     explosive_isa_list(R1,R2).
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% hasAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-:- comment(is_a_rel/1, "@tt{is_a_rel(RCid)} checks that @tt{RCid} is
-the identifier of a subrelation of @tt{id('CDF Object-Object
-Relations',cdf)}.  If @tt{RCid} is unbound, all such (proper)
-subrelations are returned nondeterministically.").
-
-is_a_rel(RCid):- 
-	RelsCid = rid('CDF Object-Object Relations',cdf),
-	(ground(RCid)
-	 ->	isa(RCid,RelsCid), RCid \== RelsCid	
-	 ;	findall(RCid,(isa_fx(RCid,RelsCid), RCid \== RelsCid),URCids),
-		sort(URCids,RCids), % eliminate duplicates
-		member(RCid,RCids)
-	).
+%%%%%%%%%%%%%%%%%% hasAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(immed_hasAttr/3, "@tt{immed_hasAttr(SCid,RCid,TCid)}
 accesses facts stored directly in @pred{hasAttr_ext/3} in the CDF state,
 as well as those defined via intensional rules.").
 
 immed_hasAttr(SCid,RCid,TCid) :- 
+%	writeln(calling_hasAttr(SCid,RCid,TCid)),
 	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_ext(SCid,RCid,TCid).
+%	writeln(succ_hasAttr_i(SCid,RCid,TCid)).
 immed_hasAttr(SCid,RCid,TCid) :-
 	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_int(SCid,RCid,TCid).
+%	writeln(succ_hasAttr_i(SCid,RCid,TCid)).
 
 :- comment(hasAttr/3, "@tt{hasAttr(SCid,RCid,TCid)} defines the
 inheritable relation predicate, where @tt{SCid} is the source class or
@@ -564,7 +545,6 @@ gens_good_isas(Term):-
 	\+ product_identifier(Term).
 
 /**********/
-
 
 hasAttr(SCid,Rid,TCid):- 
 	check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
@@ -664,14 +644,6 @@ not_max_implicative_hasAttr_23fix(Term,BindPat) :-
 
 %%% ClassHasAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(is_a_classHasAttr/1, "@tt{is_a_classHasAttr(RCid)} checks
-that @tt{RCid} is the class ID of a subclass of @tt{id('CDF
-Class-Object Relations',cdf)}.  If @tt{RCid} is unbound, all such
-(proper) subclasses are returned nondeterministically.").
-
-is_a_classHasAttr(RCid) :-
-	proper_isa(RCid,crid('CDF Class-Object Relations',cdf)).
-
 :- comment(immed_classHasAttr/3,
 "@tt{immed_classHasAttr(SCid,RCid,TCid)} accesses facts stored
 directly in @pred{classHasAttr_ext/3} in the CDF state, as well as
@@ -689,69 +661,98 @@ the semantic set-valued relation predicate, where @tt{SCid} is the
 source class ID, @tt{RCid} is the relation class ID, and @tt{TCid} is
 the target class ID. ").
 
-classHasAttr(SCid,RCid,TCid) :-
-	var(SCid),var(RCid),var(TCid), !,
-	immed_classHasAttr(SCid,RCid,TCid).
-classHasAttr(SCid,Rid,TCid) :-
-	product_identifier(Rid),!,
-	(ground(Rid) -> 
-		check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
-		abstract_identifier(Rid,RidAb),
-		classHasAttr_gen13(SCid,RidAb,TCid),
-		isa(RidAb,Rid)
-	   ;   	cdf_error(cdf,['partially ground relation identifiers not',
-			       'handled in ',classHasAttr(SCid,Rid,TCid)]) ).
-classHasAttr(SCid,RCid,TCid) :-
-	\+ ground(RCid), !, 
-	is_a_classHasAttr(RCid),
-	check_types_checkflag(query,classHasAttr(SCid,RCid,TCid)),
-	classHasAttr_2fix(SCid,RCid,TCid).
-classHasAttr(SCid,RCid,TCid) :-
-	%% relation is ground
-	check_types_checkflag(query,classHasAttr(SCid,RCid,TCid)),
-	classHasAttr_2inh(SCid,RCid,TCid).
+classHasAttr(SCid,Rid,TCid):- 
+	check_types_checkflag(query,classHasAttr(SCid,Rid,TCid)),
+	classHasAttr1(SCid,Rid,TCid).
+	
+% cdf_index(classHasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+classHasAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(SCid),
+	gens_good_isas(Rid),!,
+   	classHasAttr_12fix(SCid,Rid,TCid).
+classHasAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(SCid),!,
+   	classHasAttr_1fix(SCid,Rid,TCid).
+classHasAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(Rid),
+	gens_good_isas(TCid),!,
+   	classHasAttr_23fix(SCid,Rid,TCid).
+classHasAttr1(SCid,Rid,TCid) :-
+	immed_classHasAttr(SCid,RidAb,TCidAb),
+	once(explosive_isa(RidAb,Rid)),
+	once(explosive_isa(TCidAb,TCid)).
 
-:- table classHasAttr_2fix/3.
-classHasAttr_2fix(SCid,RCid,TCid) :-
-	OutTerm = classHasAttr(SCid,RCid,TCid),
+:- table classHasAttr_12fix/3.
+classHasAttr_12fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
 	copy_term(OutTerm,BindPat),
-	classHasAttr_gen13(SCid,RCid,TCid),
-	(not_max_implicative_classHasAttr(OutTerm,BindPat) -> fail ; true).
+	classHasAttr_12fix_sub(SCid,RCid,TCid),
+	(not_max_implicative_classHasAttr_12fix(OutTerm,BindPat) -> 
+	    fail ; true).
 
-:- table classHasAttr_2inh/3.
-classHasAttr_2inh(SCid,RCid,TCid) :-
-	OutTerm = classHasAttr(SCid,RCid,TCid),
+:- table classHasAttr_12fix_sub/3.
+classHasAttr_12fix_sub(SCid,RCid,TCid) :-
+	isa(RCidC,RCid),
+	immed_classHasAttr(SCid,RCidC,TCidC),
+	once(explosive_isa(TCidC,TCid)).
+
+% Succeeds if Term is maximally implicative for binding pattern,
+% i.e. there is no other Term that unifies with BindPat implied by
+% the axioms of the CDF state that implies Term, other than Term itself.
+not_max_implicative_classHasAttr_12fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	classHasAttr_12fix_sub(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	SCid = SCidO,
+	once(explosive_isa(RCidO,RCid)),	
+	once(explosive_isa(TCidO,TCid)).	
+
+%----------
+:- table classHasAttr_1fix/3.
+classHasAttr_1fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
 	copy_term(OutTerm,BindPat),
-	classHasAttr_gen2(SCid,RCid,TCid),
-	(not_max_implicative_classHasAttr(OutTerm,BindPat) -> fail ; true).
+	classHasAttr_1fix_sub(SCid,RCid,TCid),
+	(not_max_implicative_classHasAttr_1fix(OutTerm,BindPat) -> fail ; true).
 
-:- table classHasAttr_gen2/3.
-classHasAttr_gen2(SCid,RCid,TCid) :-
-	isa(RCidP,RCid),
-	classHasAttr_gen13(SCid,RCidP,TCid).
+:- table classHasAttr_1fix_sub/3.
+classHasAttr_1fix_sub(SCid,RCid,TCid):- 
+	immed_classHasAttr(SCid,RCidC,TCidC),
+	once(explosive_isa(RCidC,RCid)),
+	once(explosive_isa(TCidC,TCid)).
 
-:- table classHasAttr_gen13/3.
-classHasAttr_gen13(SCid,RCid,TCid) :-
-	(var(SCid)
-	 ->	(var(TCid)
-		 ->	immed_classHasAttr(SCid,RCid,TCid)
-		 ;	isa(TCidP,TCid),
-			immed_classHasAttr(SCid,RCid,TCidP)
-		)
-	 ;      immed_classHasAttr(SCid,RCid,TCidP),
-		(var(TCid)
-		 ->	TCid = TCidP
-		 ;	isa(TCidP,TCid) 
-		)
-	).
+not_max_implicative_classHasAttr_1fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	classHasAttr_1fix_sub(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	SCid = SCidO,
+	once(explosive_isa(RCidO,RCid)),	
+	once(explosive_isa(TCidO,TCid)).	
+%----------
+:- table classHasAttr_23fix/3.
+classHasAttr_23fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	classHasAttr_23fix_sub(SCid,RCid,TCid),
+	(not_max_implicative_classHasAttr_23fix(OutTerm,BindPat) -> 
+	    fail ; true).
 
-not_max_implicative_classHasAttr(Term,BindPat) :-
-	BindPat = classHasAttr(SCid,RCidO,TCidO),
-	Term = classHasAttr(SCid,RCid,TCid),
-	classHasAttr_gen2(SCid,RCidO,TCidO),
-	\+ (Term = BindPat),	
-	isa(RCidO,RCid),	
-	isa(TCidO,TCid).
+:- table classHasAttr_23fix_sub/3.
+classHasAttr_23fix_sub(SCid,RCid,TCid):- 
+	isa(RCidC,RCid),
+	isa(TCidC,TCid),
+	immed_classHasAttr(SCid,RCidC,TCidC).
+
+not_max_implicative_classHasAttr_23fix(Term,BindPat) :-
+	BindPat = rln(SCid,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	classHasAttr_23fix_sub(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	SCidO = SCid,
+	once(explosive_isa(RCidO,RCid)),	
+	once(explosive_isa(TCidO,TCid)).	
 
 %%% allAttr/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -773,64 +774,102 @@ ID.  Since schema relations are inheritable, the taxonomy is traversed
 and the most specific schema relations consistent with the parameters
 are returned.  ").
 
-allAttr(SCid,RCid,TCid) :-
-	var(SCid),var(RCid),var(TCid), !,
-	immed_allAttr(SCid,RCid,TCid).
-allAttr(SCid,RCid,TCid) :-
-	\+ ground(RCid), !,  
-	is_a_rel(RCid),
-	check_types_checkflag(query,allAttr(SCid,RCid,TCid)),
-	allAttr_2fix(SCid,RCid,TCid).
-allAttr(SCid,RCid,TCid) :-
-	%% relation is ground!!
-	check_types_checkflag(query,allAttr(SCid,RCid,TCid)),
-	allAttr_2inh(SCid,RCid,TCid).
+allAttr(SCid,Rid,TCid):- 
+	check_types_checkflag(query,allAttr(SCid,Rid,TCid)),
+	allAttr1(SCid,Rid,TCid).
+	
+% cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+allAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(SCid),
+	gens_good_isas(Rid),!,
+   	allAttr_12fix(SCid,Rid,TCid).
+allAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(SCid),!,
+   	allAttr_1fix(SCid,Rid,TCid).
+allAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(Rid),
+	gens_good_isas(TCid),!,
+   	allAttr_23fix(SCid,Rid,TCid).
+allAttr1(SCid,Rid,TCid) :-
+	immed_allAttr(SCidAb,RidAb,TCidAb),
+	once(explosive_isa(SCid,SCidAb)),
+	once(explosive_isa(RidAb,Rid)),
+	once(explosive_isa(TCidAb,TCid)).
 
-:- table allAttr_2fix/3.
-allAttr_2fix(SCid,RCid,TCid) :-
-	OutTerm = allAttr(SCid,RCid,TCid),
+:- table allAttr_12fix/3.
+allAttr_12fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
 	copy_term(OutTerm,BindPat),
-	allAttr_gen13(SCid,RCid,TCid),
-	(not_max_implicative_allAttr(OutTerm,BindPat) -> fail ; true).
+	allAttr_12fix_sub(SCid,RCid,TCid),
+	(not_max_implicative_allAttr_12fix(OutTerm,BindPat) -> fail ; true).
 
-:- table allAttr_2inh/3.
-allAttr_2inh(SCid,RCid,TCid) :-
-	OutTerm = allAttr(SCid,RCid,TCid),
+:- table allAttr_12fix_sub/3.
+allAttr_12fix_sub(SCid,RCid,TCid) :-
+	isa(SCid,SCidP), %\+ cdf_root(SCidP),
+	isa(RCid,RCidC),
+	immed_allAttr(SCidP,RCidC,TCidC),
+	once(explosive_isa(TCidC,TCid)).
+
+% Succeeds if Term is maximally implicative for binding pattern,
+% i.e. there is no other Term that unifies with BindPat implied by
+% the axioms of the CDF state that implies Term, other than Term itself.
+not_max_implicative_allAttr_12fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	allAttr_12fix_sub(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RCid,RCidO)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCidO,TCid)).	
+
+%--------------
+:- table allAttr_1fix/3.
+allAttr_1fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
 	copy_term(OutTerm,BindPat),
-	allAttr_gen2(SCid,RCid,TCid),
-	(not_max_implicative_allAttr(OutTerm,BindPat) -> fail ; true).
+	allAttr_1fix_sub(SCid,RCid,TCid),
+	(not_max_implicative_allAttr_1fix(OutTerm,BindPat) -> fail ; true).
 
-:- table allAttr_gen2/3.
-allAttr_gen2(SCid,RCid,TCid) :-
-	isa(RCid,RCidP),
-	allAttr_gen13(SCid,RCidP,TCid).
+:- table allAttr_1fix_sub/3.
+allAttr_1fix_sub(SCid,RCid,TCid):- 
+	isa(SCid,SCidP), %\+ cdf_root(SCidP),
+	immed_allAttr(SCidP,RCidC,TCidC),
+	once(explosive_isa(RCid,RCidC)),
+	once(explosive_isa(TCidC,TCid)).
 
-:- table allAttr_gen13/3.
-allAttr_gen13(SCid,RCid,TCid) :-
-	(var(SCid)
-	 ->	(var(TCid)
-		 ->	immed_allAttr(SCid,RCid,TCid)
-		 ;	isa(TCidP,TCid),
-			immed_allAttr(SCid,RCid,TCidP)
-		)
-	 ;      isa(SCid,SCidP),  \+ cdf_root(SCidP),
-		immed_allAttr(SCidP,RCid,TCidP),
-		(var(TCid)
-		 ->	TCid = TCidP
-		 ;	isa(TCidP,TCid) 
-		)
-	).
+not_max_implicative_allAttr_1fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	allAttr_1fix_sub(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RCid,RCidO)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCidO,TCid)).	
+%----------
+:- table allAttr_23fix/3.
+allAttr_23fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	allAttr_23fix_sub(SCid,RCid,TCid),
+	(not_max_implicative_allAttr_23fix(OutTerm,BindPat) -> fail ; true).
 
-not_max_implicative_allAttr(OutTerm,BindPat) :-
-	BindPat = allAttr(SCidO,RCidO,TCidO),
-	OutTerm = allAttr(SCid,RCid,TCid),
-	allAttr_gen2(SCidO,RCidO,TCidO),
-	\+ (OutTerm = BindPat),	
-	isa(RCid,RCidO),	
-	isa(SCid,SCidO),	
-	isa(TCidO,TCid).
+:- table allAttr_23fix_sub/3.
+allAttr_23fix_sub(SCid,RCid,TCid):- 
+	isa(RCid,RCidC),
+	isa(TCidC,TCid),
+	immed_allAttr(SCidP,RCidC,TCidC),
+	once(explosive_isa(SCid,SCidP)). %\+ cdf_root(SCidP).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+not_max_implicative_allAttr_23fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	allAttr_23fix_sub(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RCid,RCidO)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCidO,TCid)).	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
 all extensional CDF facts that unify with the parameters.  Note that
@@ -937,16 +976,20 @@ abolish_hasAttr_inherits :-
 	abolish_table_pred(hasAttr_23fix_sub(_,_,_)).
 
 abolish_classHasAttr_inherits :-
-	abolish_table_pred(classHasAttr_gen2(_,_,_)),
-	abolish_table_pred(classHasAttr_gen13(_,_,_)),
-	abolish_table_pred(classHasAttr_2fix(_,_,_)),
-	abolish_table_pred(classHasAttr_2inh(_,_,_)).
+	abolish_table_pred(classHasAttr_1fix(_,_,_)),
+	abolish_table_pred(classHasAttr_12fix(_,_,_)),
+	abolish_table_pred(classHasAttr_23fix(_,_,_)),
+	abolish_table_pred(classHasAttr_1fix_sub(_,_,_)),
+	abolish_table_pred(classHasAttr_12fix_sub(_,_,_)),
+	abolish_table_pred(classHasAttr_23fix_sub(_,_,_)).
 
 abolish_allAttr_inherits :-
-	abolish_table_pred(allAttr_gen13(_,_,_)),
-	abolish_table_pred(allAttr_gen2(_,_,_)),
-	abolish_table_pred(allAttr_2fix(_,_,_)),
-	abolish_table_pred(allAttr_2inh(_,_,_)).
+	abolish_table_pred(allAttr_1fix(_,_,_)),
+	abolish_table_pred(allAttr_12fix(_,_,_)),
+	abolish_table_pred(allAttr_23fix(_,_,_)),
+	abolish_table_pred(allAttr_1fix_sub(_,_,_)),
+	abolish_table_pred(allAttr_12fix_sub(_,_,_)),
+	abolish_table_pred(allAttr_23fix_sub(_,_,_)).
 
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1044,7 +1087,6 @@ updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
 	 ;	updateExtTermMerge(SOVals,[],ArgsVars,Updates0,Updates)
 	).
 updateExtTermMerge([],[],_ArgsVars,Updates,Updates).
-
 
 end_of_file.
 
@@ -1175,9 +1217,6 @@ hasAttr_gen13(SCid,Rid,TCid) :-
 :- table hasAttr_gen23/3.
 hasAttr_gen13(SCid,Rid,TCid) :-
 	 ->	(ground(TCid)
-		
-
-
 		 ->	immed_hasAttr(SCid,Rid,TCid)
 		 ;	isa(TCidP,TCid),
 			immed_hasAttr(SCid,Rid,TCidP)
@@ -1190,4 +1229,135 @@ hasAttr_gen13(SCid,Rid,TCid) :-
 		)
 	).
 
+
+
+:- table allAttr_2fix/3.
+allAttr_2fix(SCid,RCid,TCid) :-
+	OutTerm = allAttr(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	allAttr_gen13(SCid,RCid,TCid),
+	(not_max_implicative_allAttr(OutTerm,BindPat) -> fail ; true).
+
+:- table allAttr_2inh/3.
+allAttr_2inh(SCid,RCid,TCid) :-
+	OutTerm = allAttr(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	allAttr_gen2(SCid,RCid,TCid),
+	(not_max_implicative_allAttr(OutTerm,BindPat) -> fail ; true).
+
+:- table allAttr_gen2/3.
+allAttr_gen2(SCid,RCid,TCid) :-
+	isa(RCid,RCidP),
+	allAttr_gen13(SCid,RCidP,TCid).
+
+:- table allAttr_gen13/3.
+allAttr_gen13(SCid,RCid,TCid) :-
+	(var(SCid)
+	 ->	(var(TCid)
+		 ->	immed_allAttr(SCid,RCid,TCid)
+		 ;	isa(TCidP,TCid),
+			immed_allAttr(SCid,RCid,TCidP)
+		)
+	 ;      isa(SCid,SCidP),  \+ cdf_root(SCidP),
+		immed_allAttr(SCidP,RCid,TCidP),
+		(var(TCid)
+		 ->	TCid = TCidP
+		 ;	isa(TCidP,TCid) 
+		)
+	).
+
+:- comment(is_a_rel/1, "@tt{is_a_rel(RCid)} checks that @tt{RCid} is
+the identifier of a subrelation of @tt{id('CDF Object-Object
+Relations',cdf)}.  If @tt{RCid} is unbound, all such (proper)
+subrelations are returned nondeterministically.").
+
+is_a_rel(RCid):- 
+	RelsCid = rid('CDF Object-Object Relations',cdf),
+	(ground(RCid)
+	 ->	isa(RCid,RelsCid), RCid \== RelsCid	
+	 ;	findall(RCid,(isa_fx(RCid,RelsCid), RCid \== RelsCid),URCids),
+		sort(URCids,RCids), % eliminate duplicates
+		member(RCid,RCids)
+	).
+
+
+classHasAttr(SCid,RCid,TCid) :-
+	var(SCid),var(RCid),var(TCid), !,
+	immed_classHasAttr(SCid,RCid,TCid).
+classHasAttr(SCid,Rid,TCid) :-
+	product_identifier(Rid),!,
+	(ground(Rid) -> 
+		check_types_checkflag(query,hasAttr(SCid,Rid,TCid)),
+		abstract_identifier(Rid,RidAb),
+		classHasAttr_gen13(SCid,RidAb,TCid),
+		isa(RidAb,Rid)
+	   ;   	cdf_error(cdf,['partially ground relation identifiers not',
+			       'handled in ',classHasAttr(SCid,Rid,TCid)]) ).
+classHasAttr(SCid,RCid,TCid) :-
+	\+ ground(RCid), !, 
+	is_a_classHasAttr(RCid),
+	check_types_checkflag(query,classHasAttr(SCid,RCid,TCid)),
+	classHasAttr_2fix(SCid,RCid,TCid).
+classHasAttr(SCid,RCid,TCid) :-
+	%% relation is ground
+	check_types_checkflag(query,classHasAttr(SCid,RCid,TCid)),
+	classHasAttr_2inh(SCid,RCid,TCid).
+
+:- table classHasAttr_2fix/3.
+classHasAttr_2fix(SCid,RCid,TCid) :-
+	OutTerm = classHasAttr(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	classHasAttr_gen13(SCid,RCid,TCid),
+	(not_max_implicative_classHasAttr(OutTerm,BindPat) -> fail ; true).
+
+:- table classHasAttr_2inh/3.
+classHasAttr_2inh(SCid,RCid,TCid) :-
+	OutTerm = classHasAttr(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	classHasAttr_gen2(SCid,RCid,TCid),
+	(not_max_implicative_classHasAttr(OutTerm,BindPat) -> fail ; true).
+
+:- table classHasAttr_gen2/3.
+classHasAttr_gen2(SCid,RCid,TCid) :-
+	isa(RCidP,RCid),
+	classHasAttr_gen13(SCid,RCidP,TCid).
+
+:- table classHasAttr_gen13/3.
+classHasAttr_gen13(SCid,RCid,TCid) :-
+	(var(SCid)
+	 ->	(var(TCid)
+		 ->	immed_classHasAttr(SCid,RCid,TCid)
+		 ;	isa(TCidP,TCid),
+			immed_classHasAttr(SCid,RCid,TCidP)
+		)
+	 ;      immed_classHasAttr(SCid,RCid,TCidP),
+		(var(TCid)
+		 ->	TCid = TCidP
+		 ;	isa(TCidP,TCid) 
+		)
+	).
+
+not_max_implicative_classHasAttr(Term,BindPat) :-
+	BindPat = classHasAttr(SCid,RCidO,TCidO),
+	Term = classHasAttr(SCid,RCid,TCid),
+	classHasAttr_gen2(SCid,RCidO,TCidO),
+	\+ (Term = BindPat),	
+	isa(RCidO,RCid),	
+	isa(TCidO,TCid).
+
+
+:- comment(is_a_classHasAttr/1, "@tt{is_a_classHasAttr(RCid)} checks
+that @tt{RCid} is the class ID of a subclass of @tt{id('CDF
+Class-Object Relations',cdf)}.  If @tt{RCid} is unbound, all such
+(proper) subclasses are returned nondeterministically.").
+
+is_a_classHasAttr(RCid) :-
+	proper_isa(RCid,crid('CDF Class-Object Relations',cdf)).
+
+abstract_identifier(Id,IdAb):- 
+	cdf_id_fields(Id,F,I,S),
+	(structure(Id) -> 
+		functor(I,N,A),functor(I1,N,A),
+		cdf_id_fields(IdAb,F,I1,S)
+	; 	Id = IdAb).
 

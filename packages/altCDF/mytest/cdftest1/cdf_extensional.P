@@ -28,6 +28,12 @@ isa_ext(oid(o11,test),cid(c11,test)).
 isa_ext(oid(o12,test),cid(c12,test)).
 isa_ext(oid(o13,test),cid(c13,test)).
 
+isa_ext(rid(prod(rid(r2,test),rid(r2,test)),test),
+	rid('CDF Object-Object Relations',cdf)).
+
+isa_ext(crid(prod(crid(s2,test),crid(s2,test)),test),
+	crid('CDF Class-Object Relations',cdf)).
+
 hasAttr_ext(cid(c2,test),rid(r2,test),cid(c12,test)).
 hasAttr_ext(cid(c2,test),rid(r2,test),oid(o12,test)).
 hasAttr_ext(oid(o2,test),rid(r1,test),cid(c12,test)).
@@ -35,11 +41,16 @@ hasAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test)).
 hasAttr_ext(oid(o2,test),rid(r2,test),oid(o12,test)).
 hasAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
 
+hasAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test)).
+
 classHasAttr_ext(cid(c2,test),crid(s2,test),cid(c12,test)).
 classHasAttr_ext(cid(c2,test),crid(s2,test),oid(o12,test)).
 
-classHasAttr_ext(crid(s2,test),crcrid(name,test),oid('s2 cridname',test)).
+classHasAttr_ext(crid(s2,test),crcrid('Name',test),oid('s2 cridname',test)).
 classHasAttr_ext(rid(r2,test),crrid(s2,test),oid('rd ridname',test)).
+
+classHasAttr_ext(cid(c2,test),
+	              crid(prod(crid(s2,test),crid(s2,test)),test),cid(c12,test)).
 
 allAttr_ext(cid(c2,test),rid(r2,test),cid(c12,test)).
 allAttr_ext(cid(c2,test),rid(r2,test),oid(o12,test)).
@@ -48,6 +59,5 @@ allAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test)).
 allAttr_ext(oid(o2,test),rid(r2,test),oid(o12,test)).
 allAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
 
-isa_ext(rid(prod(rid(r2,test),rid(r2,test)),test),rid('CDF Object-Object Relations',cdf)).
+allAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test)).
 
-hasAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test)).
