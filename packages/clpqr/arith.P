@@ -35,6 +35,8 @@
 	  rat_float/3,
 	  compile_case_signum_R/5.
 
+:- import raise_exception/1 from dump.
+
 eps( 1.0e-3, -1.0e-3).
 
 %-----------------------------------------------------------------------

@@ -11,6 +11,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+:- import raise_exception/1 from dump.
+
 bb_inf( Is, Term, Inf) :-
 	bb_inf( Is, Term, Inf, _, 0.001).
 

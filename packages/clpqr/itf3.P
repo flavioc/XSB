@@ -34,6 +34,8 @@
 :- import combine/3 from ordering.
 :- import decompose/4, mult_hom/3 from store.
 
+:- import raise_exception/1 from dump.
+
 %-----------------------------------------------------------------------
 % My verion of verify_attributes/2
 %-----------------------------------------------------------------------

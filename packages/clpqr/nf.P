@@ -37,6 +37,8 @@
 :- import project_attributes/2 from project.
 :- import get_atts/2 from atts.
 
+:- import raise_exception/1 from dump.
+
 
 %-----------------------------------------------------------------------
 % term_variables/2
