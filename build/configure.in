@@ -484,6 +484,11 @@ AC_CHECK_LIB(dl, main,, have_dl=no)
 AC_CHECK_LIB(nsl, main, , have_nsl=no)
 AC_CHECK_LIB(socket, main,, have_socket=no)
 
+AC_CHECK_LIB(readline, readline, have_readline=yes)
+if test "$have_readline" = yes ; then
+   AC_DEFINE(HAVE_READLINE)
+fi
+
 
 
 # Checks for header files

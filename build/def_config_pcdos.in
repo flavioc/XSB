@@ -108,6 +108,9 @@
 /* Define if you have the snprintf function.  */
 #define HAVE_SNPRINTF 1
 
+/* Define if you have readline library */
+#undef HAVE_READLINE
+
 /* Define if you have the strdup function.  */
 #define HAVE_STRDUP 1
 

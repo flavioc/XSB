@@ -171,6 +171,9 @@
 /* Define if you have the socket function.  */
 #undef HAVE_SOCKET
 
+/* Define if you have readline library */
+#undef HAVE_READLINE
+
 /* Define if you have the strdup function.  */
 #undef HAVE_STRDUP
 
