@@ -189,6 +189,8 @@ delete_attributes(_Var) :- '_$builtin'(DELETE_ATTRIBUTES).
 
 '_$attv_unify'(_Var,_Value) :- '_$builtin'(ATTV_UNIFY).
 
+is_attv(X) :- is_attv(X).
+
 attv_unify(Var, Value) :-
 	(   is_attv(Var)
 	->  '_$attv_unify'(Var,Value)
