@@ -128,7 +128,6 @@ void table_call_search(TabledCallInfo *call_info,
      * are still arranged from high mem (first) to low (last).
      */
     CPtr tmplt_component, tmplt_var_addr, h_addr;
-    byte *dummy;
     int size, j;
 
     tmplt_component = CallLUR_VarVector(*results);
