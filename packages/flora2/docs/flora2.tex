@@ -331,14 +331,14 @@ The following \FLORA shell commands are supported:
     flush all tabled data
 \item {\tt prolog Functor/Arity}:
     define Functor/Arity as Prolog in shell mode
-\item {\tt nohilog Functor/Arity}:
+\item {\tt flpred Functor/Arity}:
     define Functor/Arity as non-HiLog in shell mode
 \item {\tt sign Functor(\{oid$|$form\}[,\{oid$|$form\}]*)}:
     define predicate signature in shell mode
 \item {\tt op(Precedence,Associativity,Operator)}:
     define an operator in shell mode
-\item {\tt reset(prolog$|$nohilog$|$sign$|$op)}:
-    clear all dynamic prolog/nohilog/sign/op definitions in shell mode
+\item {\tt reset(prolog$|$flpred$|$sign$|$op)}:
+    clear all dynamic prolog/flpred/sign/op definitions in shell mode
 \item {\tt all}:
     show all solutions (default)
 \item {\tt one}:
@@ -2050,16 +2050,16 @@ loaded into the module named {\tt foomod}:
 \end{verbatim}
 \end{quote}
 
-\index{compiler directive!{\tt nohilog}}
+\index{compiler directive!{\tt flpred}}
 %
 In the above examples, the translation of {\tt foo(a)} into
 \verb|'_$_$_flora''foomod''flapply'(foo,a)| is due to the HiLog
 translation. If this is not wanted, the compiler directive,
-{\tt nohilog functor/arity}, can be used to turn off the HiLog
+{\tt flpred functor/arity}, can be used to turn off the HiLog
 translation, as illustrated as follows:
 \begin{quote}
 \begin{verbatim}
-:- nohilog foo/1.
+:- flpred foo/1.
 foo(a).
 john[father->smith].
 \end{verbatim}
@@ -2075,19 +2075,19 @@ assuming it is to be loaded into the module named {\tt foomod}:
 
 Note that the compiler directive \mbox{\tt prolog functor/arity} is used
 to define a Prolog term, no matter whether it appears as
-a predicate call or as an argument. However, \mbox{\tt nohilog functor/arity}
+a predicate call or as an argument. However, \mbox{\tt flpred functor/arity}
 only turns off HiLog translation for predicate calls, not for arguments.
 Moreover, the presence of a {\tt prolog} directive will obviate
-the {\tt nohilog} directive for the same functor and arity pair. 
+the {\tt flpred} directive for the same functor and arity pair. 
 
 Shown below is an example to illustrate the different effects of the
-{\tt prolog} and {\tt nohilog} compiler directives:
+{\tt prolog} and {\tt flpred} compiler directives:
 \begin{quote}
 \begin{verbatim}
 :- prolog foo/1.
 :- prolog goo/1.
-:- nohilog foo/1.
-:- nohilog hoo/1.
+:- flpred foo/1.
+:- flpred hoo/1.
 foo(X) :- hoo(goo(X)), goo(hoo(X)).
 \end{verbatim}
 \end{quote}
@@ -2099,13 +2099,13 @@ foo(X) :- '_$_$_flora''foomod''hoo'(goo(X)), goo(flapply(hoo,X)).
 \end{verbatim}
 \end{quote}
 
-\index{compiler directive!{\tt nohilogall}}
+\index{compiler directive!{\tt flpredall}}
 %
 To turn off the HiLog translation for all predicate calls in a program,
 the following compiler directive can be used:
 \begin{quote}
 \begin{verbatim}
-:- nohilogall.
+:- flpredall.
 \end{verbatim}
 \end{quote}
 
@@ -2367,7 +2367,7 @@ a HiLog predicate cannot be tabled directly (without hacking into the
 \FLORA implementation). To table a predicate, this predicate must be
 declared either as a Prolog term using the \mbox{\tt prolog functor/arity}
 compiler directive, or as a non-HiLog term using the
-\mbox{\tt nohilog functor/arity} compiler directive (refer to
+\mbox{\tt flpred functor/arity} compiler directive (refer to
 Section~\ref{sec:hilog} and Section~\ref{sec:flora-modules-compilation}
 for more information on these compiler directives). For instance,
 the following \FLORA program:
@@ -2812,8 +2812,8 @@ by \FLORA:
 \item \verb!export functor/arity, ..., functor/arity!
 \item \verb!import functor/arity, ..., functor/arity from module!
 \item \verb!index(functor/arity,trie)!
-\item \verb!nohilog functor/arity, ..., functor/arity!
-\item \verb!nohilogall!
+\item \verb!flpred functor/arity, ..., functor/arity!
+\item \verb!flpredall!
 \item \verb!op(precedence,type,operator)!
 \item \verb!op(precedence,type,[operator, ..., operator])!
 \item \verb!prolog functor/arity, ..., functor/arity!

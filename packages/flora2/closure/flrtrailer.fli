@@ -21,10 +21,10 @@
 /***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
-:- nohilog base_sub/2.
-:- nohilog derived_sub/2.
-:- nohilog super_sub/2.
-:- nohilog immediate_sub/2.
+:- flpred base_sub/2.
+:- flpred derived_sub/2.
+:- flpred super_sub/2.
+:- flpred immediate_sub/2.
 
 
 :- table derived_sub/2.
@@ -63,10 +63,10 @@ sub(X,Y) :-
 /***************************************************************************
   closure rules for O:C
 ***************************************************************************/
-:- nohilog base_isa/2.
-:- nohilog derived_isa/2.
-:- nohilog super_isa/2.
-:- nohilog ultimate_isa/2.
+:- flpred base_isa/2.
+:- flpred derived_isa/2.
+:- flpred super_isa/2.
+:- flpred ultimate_isa/2.
 
 
 :- table derived_isa/2.
@@ -100,10 +100,10 @@ ultimate_isa(O,C) :-
 /*****************************************************************************
   nonmonotonic inheritance of scalar attributes among classes
 *****************************************************************************/
-:- nohilog base_ifd/3.
-:- nohilog derived_ifd/3.
-:- nohilog defined_derived_ifd/2.
-:- nohilog conflict_ifd/2.
+:- flpred base_ifd/3.
+:- flpred derived_ifd/3.
+:- flpred defined_derived_ifd/2.
+:- flpred conflict_ifd/2.
 
 
 :- table derived_ifd/3.
@@ -141,12 +141,12 @@ conflict_ifd(C,A) :-
 /*****************************************************************************
   nonmonotonic inheritance of (defined) multivalued attributes among classes
 *****************************************************************************/
-:- nohilog base_imvd/3.
-:- nohilog derived_imvd/3.
-:- nohilog base_imvddef/2.
-:- nohilog derived_imvddef/2.
-:- nohilog defined_derived_imvd/2.
-:- nohilog conflict_imvd/2.
+:- flpred base_imvd/3.
+:- flpred derived_imvd/3.
+:- flpred base_imvddef/2.
+:- flpred derived_imvddef/2.
+:- flpred defined_derived_imvd/2.
+:- flpred conflict_imvd/2.
 
 
 :- table derived_imvd/3.
@@ -206,10 +206,10 @@ conflict_imvd(C,A) :-
 /*****************************************************************************
   nonmonotonic inheritance of scalar attributes among objects
 *****************************************************************************/
-:- nohilog base_fd/3.
-:- nohilog derived_fd/3.
-:- nohilog defined_derived_fd/2.
-:- nohilog conflict_obj_ifd/2.
+:- flpred base_fd/3.
+:- flpred derived_fd/3.
+:- flpred defined_derived_fd/2.
+:- flpred conflict_obj_ifd/2.
 
 
 :- table derived_fd/3.
@@ -264,12 +264,12 @@ ifddef(C,A) :-
 /*****************************************************************************
   nonmonotonic inheritance of (defined) multivalued attributes among objects
 *****************************************************************************/
-:- nohilog base_mvd/3.
-:- nohilog derived_mvd/3.
-:- nohilog base_mvddef/2.
-:- nohilog derived_mvddef/2.
-:- nohilog defined_derived_mvd/2.
-:- nohilog conflict_obj_imvd/2.
+:- flpred base_mvd/3.
+:- flpred derived_mvd/3.
+:- flpred base_mvddef/2.
+:- flpred derived_mvddef/2.
+:- flpred defined_derived_mvd/2.
+:- flpred conflict_obj_imvd/2.
 
 
 :- table derived_mvd/3.
@@ -358,10 +358,10 @@ imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L).
 /*****************************************************************************
   monotonic inheritance of binary attributes (tabled methods)
 *****************************************************************************/
-:- nohilog base_meth/2.
-:- nohilog derived_meth/2.
-:- nohilog base_imeth/2.
-:- nohilog derived_imeth/2.
+:- flpred base_meth/2.
+:- flpred derived_meth/2.
+:- flpred base_imeth/2.
+:- flpred derived_imeth/2.
 
 
 :- table derived_meth/2.
@@ -397,8 +397,8 @@ imeth(C,M) :-
 /*****************************************************************************
   nontabled methods (transactions)
 *****************************************************************************/
-:- nohilog base_tran/2.
-:- nohilog derived_tran/2.
+:- flpred base_tran/2.
+:- flpred derived_tran/2.
 
 
 derived_tran(O,T) :-
@@ -411,14 +411,14 @@ tran(O,T) :-
 /*****************************************************************************
   monotonic inheritance of signatures
 *****************************************************************************/
-:- nohilog base_fdsig/3.
-:- nohilog derived_fdsig/3.
-:- nohilog base_ifdsig/3.
-:- nohilog derived_ifdsig/3.
-:- nohilog base_mvdsig/3.
-:- nohilog derived_mvdsig/3.
-:- nohilog base_imvdsig/3.
-:- nohilog derived_imvdsig/3.
+:- flpred base_fdsig/3.
+:- flpred derived_fdsig/3.
+:- flpred base_ifdsig/3.
+:- flpred derived_ifdsig/3.
+:- flpred base_mvdsig/3.
+:- flpred derived_mvdsig/3.
+:- flpred base_imvdsig/3.
+:- flpred derived_imvdsig/3.
 
 
 :- table fdsig/3.
@@ -474,8 +474,8 @@ imvdsig(S,MethodArgs,R) :-
 /*****************************************************************************
   object existence
 *****************************************************************************/
-:- nohilog base_exists/1.
-:- nohilog derived_exists/1.
+:- flpred base_exists/1.
+:- flpred derived_exists/1.
 
 
 :- table derived_exists/1.
