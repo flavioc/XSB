@@ -817,7 +817,7 @@ contcase:     /* the main loop */
     pad64;
     goto contcase;
 
-#define ARITHPROC(OP) \
+#define ARITHPROC(OP, STROP) \
     pad;								\
     op1 = opreg;							\
     op3 = opregaddr;							\
@@ -830,17 +830,17 @@ contcase:     /* the main loop */
 	    bld_int(op3, int_val(op2) OP int_val(op1));	}		\
 	else if (isfloat(op2)) {					\
 	    bld_float(op3, float_val(op2) OP (Float)int_val(op1)); }	\
-	else {arithmetic_exception(lpcreg);}				\
+	else { arithmetic_abort(op2, STROP, op1); }                     \
     } else if (isfloat(op1)) {						\
 	if (isfloat(op2)) {						\
 	    bld_float(op3, float_val(op2) OP float_val(op1)); }		\
 	else if (isinteger(op2)) {					\
 	    bld_float(op3, (Float)int_val(op2) OP float_val(op1)); }	\
-	else {arithmetic_exception(lpcreg);}			\
-    } else {arithmetic_exception(lpcreg);}
+	else { arithmetic_abort(op2, STROP, op1); } 	                \
+    } else { arithmetic_abort(op2, STROP, op1); }
 
   case addreg: /* PRR */
-    ARITHPROC(+);
+    ARITHPROC(+, "+");
     goto contcase; 
 
   case subreg: /* PRR */
@@ -857,19 +857,19 @@ contcase:     /* the main loop */
 	bld_int(op3, int_val(op2) - int_val(op1)); }
       else if (isfloat(op2)) {
 	bld_float(op3, float_val(op2) - (Float)int_val(op1)); }
-      else {arithmetic_exception(lpcreg);}
+      else { arithmetic_abort(op2, "-", op1); }
     } else if (isfloat(op1)) {
       if (isfloat(op2)) {
 	bld_float(op3, float_val(op2) - float_val(op1)); }
       else if (isinteger(op2)) {
 	bld_float(op3, (Float)int_val(op2) - float_val(op1)); }
-      else arithmetic_exception(lpcreg);
+      else arithmetic_abort(op2, "-", op1);
     }
-    else arithmetic_exception(lpcreg);
+    else arithmetic_abort(op2, "-", op1);
     goto contcase; 
 
   case mulreg: /* PRR */
-    ARITHPROC(*);
+    ARITHPROC(*, "*");
     goto contcase; 
 
   case divreg: /* PRR */
@@ -885,14 +885,14 @@ contcase:     /* the main loop */
 	bld_float(op3, (Float)int_val(op2)/(Float)int_val(op1)); }
       else if (isfloat(op2)) {
 	bld_float(op3, float_val(op2)/(Float)int_val(op1)); }
-      else {arithmetic_exception(lpcreg);}
+      else { arithmetic_abort(op2, "/", op1); }
     } else if (isfloat(op1)) {
       if (isfloat(op2)) {
 	bld_float(op3, float_val(op2)/float_val(op1)); }
       else if (isinteger(op2)) {
 	bld_float(op3, (Float)int_val(op2)/float_val(op1)); }
-      else {arithmetic_exception(lpcreg);}
-    } else {arithmetic_exception(lpcreg);}
+      else { arithmetic_abort(op2, "/", op1); }
+    } else { arithmetic_abort(op2, "/", op1); }
     goto contcase; 
 
   case idivreg: /* PRR */
@@ -912,7 +912,7 @@ contcase:     /* the main loop */
 	lpcreg = pcreg;
       }
     }
-    else {arithmetic_exception(lpcreg);}
+    else { arithmetic_abort(op2, "//", op1); }
     goto contcase; 
 
   case int_test_z:   /* PPR-N-L */
@@ -926,7 +926,7 @@ contcase:     /* the main loop */
     }
     else {
       ADVANCE_PC;
-      arithmetic_exception(lpcreg);
+      arithmetic_comp_abort(op1, "=/=", op2);
     }
     goto contcase;
 
@@ -941,7 +941,7 @@ contcase:     /* the main loop */
     }
     else {
       ADVANCE_PC;
-      arithmetic_exception(lpcreg);
+      arithmetic_comp_abort(op1, "=:=", op2);
     }
     goto contcase;
 

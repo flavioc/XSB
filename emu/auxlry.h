@@ -49,9 +49,6 @@ extern struct trace_str tds;
 
 extern byte call_intercept;	/* hitrace or trace_sta for efficiency */
 
-#define arithmetic_exception(t_pcreg) \
- t_pcreg = exception_handler("! Arithmetic Exception\n")
-
 #define local_global_exception(t_pcreg) \
  t_pcreg = exception_handler("! Local/Global Stack Overflow Exception\n")
 
@@ -65,7 +62,7 @@ extern byte call_intercept;	/* hitrace or trace_sta for efficiency */
  t_pcreg = exception_handler("! Bitop Exception\n")
 
 #define complstack_exception(t_pcreg) \
- t_pcreg = exception_handler("! Opentable Stack Overflow Exception\n")
+ t_pcreg = exception_handler("! Completion Stack Overflow Exception\n")
 
 #define trail_cp_exception(t_pcreg) \
  t_pcreg = exception_handler("! Trail/CP Stack Overflow Exception\n")

@@ -37,8 +37,9 @@
 #include "register.h"
 #include "xsberror.h"
 
-/*----------------------------------------------------------------------*/
+extern void print_pterm(Cell, int, char *, int *);
 
+/*----------------------------------------------------------------------*/
 
 static char *err_msg[] = {
 	"Calculation", "Database", "Evaluation", "Implementation",
@@ -54,23 +55,57 @@ static char *err_msg[] = {
 */
 void xsb_abort(char *description, ...)
 {
-    char message[MAXBUFSIZE];
-    va_list args;
+  char message[MAXBUFSIZE];
+  va_list args;
 
-    va_start(args, description);
+  va_start(args, description);
 
-    strcpy(message, "\n++Error: ");
-    vsprintf(message+strlen(message), description, args);
-    if (message[strlen(message)-1] != '\n')
-      strcat(message, "\n");
+  strcpy(message, "\n++Error: ");
+  vsprintf(message+strlen(message), description, args);
+  if (message[strlen(message)-1] != '\n')
+    strcat(message, "\n");
 
-    va_end(args);
-    pcreg = exception_handler(message);
+  va_end(args);
+  pcreg = exception_handler(message);
 
-    /* this allows xsb_abort to jump out even from nested loops */
-    longjmp(xsb_abort_fallback_environment, (int) pcreg);
+  /* this allows xsb_abort to jump out even from nested loops */
+  longjmp(xsb_abort_fallback_environment, (int) pcreg);
 }
 
+/*----------------------------------------------------------------------*/
+
+void arithmetic_abort(Cell op1, char *OP, Cell op2)
+{
+  int  index;
+  char str_op1[30], str_op2[30];
+
+  index = 0; print_pterm(op1, 1, str_op1, &index);
+  index = 0; print_pterm(op2, 1, str_op2, &index);
+  if (isref(op1) || isref(op2)) {
+    xsb_abort("Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
+	      OP,
+	      "   Goal:", str_op1, OP, str_op2,
+	      ", probably as 2nd arg of is/2");
+  }
+  else {
+    xsb_abort("Wrong domain in evaluable function %s/2\n%s %s %s %s found",
+	      OP, "         Arithmetic expression expected, but",
+	      str_op1, OP, str_op2);
+  }
+}
+
+void arithmetic_comp_abort(Cell op1, char *OP, int op2)
+{
+  int  index;
+  char str_op1[30];
+
+  index = 0; print_pterm(op1, 1, str_op1, &index);
+  xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
+	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),
+	    OP, "   Goal:", str_op1, OP, op2);
+}
+
+/*----------------------------------------------------------------------*/
 
 void xsb_warn(char *description, ...)
 {
@@ -92,7 +127,6 @@ void xsb_mesg(char *description, ...)
   va_end(args);
   fprintf(stderr, "\n");
 }
-
 
 /*----------------------------------------------------------------------*/
 

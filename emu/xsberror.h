@@ -54,6 +54,8 @@ extern void xsb_exit(char *, ...);
 extern void xsb_abort(char *, ...);
 extern void xsb_warn(char *, ...);
 extern void xsb_mesg(char *, ...);
+extern void arithmetic_abort(Cell, char *, Cell);
+extern void arithmetic_comp_abort(Cell, char *, int);
 extern void err_handle(int, int, char *, int, char *, Cell);
 
 #define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
