@@ -716,19 +716,23 @@ fi
 
 
 dnl Choose an abstract machine for XSB
-engine_mode=slg-wam
+engine_mode=chat
 
 AC_ARG_ENABLE(chat,
-[  --enable-chat              compile using CHAT as the abstract machine;
-			     default is SLG-WAM])
-if test "${with_chat}" = "yes" ; then
-   enable_chat=yes
+[  --enable-chat              compile using the new CHAT abstract machine;
+			     this is the default])
+AC_ARG_ENABLE(slg-wam,
+[  --enable-slg-wam           compile using the olde SLG-WAM abstract machine;
+			     default is CHAT])
+if test "${with_slg_wam}" = "yes" ; then
+   enable_slg_wam=yes
 fi
-if test "${enable_chat}" = "yes" ; then
+if test "${enable_slg_wam}" = "yes" ; then
+   engine_mode=slg-wam
+else
    AC_DEFINE(CHAT)
    AC_DEFINE(GC)
    AC_DEFINE(WAM_TRAIL)
-   engine_mode=chat
 fi
 
 
