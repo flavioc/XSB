@@ -6,8 +6,7 @@ Usage:	xsb [flags] [-l] [-i]
 	xsb -[h | v]
 
       	memory management flags:
-	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r
-	    -g gc_type (where gc_type is one of "none", "sliding", or "copying")
+	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -g gc_type
 	miscellaneous flags:
 	     -s | -T
 	module:
@@ -41,6 +40,7 @@ Usage:	xsb [flags] [-l] [-i]
           -o N : allocate N KB for the SLG completion stackof
           -u N : allocate N KB for the SLG unification (table copy) stack
             -r : turn off automatic stack expansion
+    -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
             -s : record maximum usage of stacks (for statistics/0).
             -T : print a trace of each called predicate
             -v : print the version and configuration information about XSB.
