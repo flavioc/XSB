@@ -2,8 +2,7 @@
 ** Author(s): Bart Demoen, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
-** Copyright (C) ECRC, Germany, 1990
+** Copyright (C) The Research Foundation of SUNY, 1998
 ** Copyright (C) K.U. Leuven, 1998-1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
@@ -853,7 +852,9 @@ if (! slide) { /* VERY VERY TEMPORARY TEST --- SHOULD BE REVISED */
       if ((subg_cp_ptr(subg_ptr) == NULL) /* not in the CP stack anymore */ &&
 	  (! is_completed(subg_ptr))) {
 	if ((d = compl_pdreg(compl_fr)) != NULL) {
+#ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE -- NEEDS REVISION FOR SLIDING */
 	  xsb_mesg("Marking of Dreg field in compl stack is needed !");
+#endif
 	  m += mark_root((Cell)d);
 	}
       }
@@ -2307,7 +2308,9 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 
 	  /* we also need to adapt the Dreg fields */
 	  if (compl_pdreg(compl_fr) != NULL) {
+#ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE - NEEDS REVISION FOR SLIDING */
 	    xsb_mesg("Adapting the Dreg field in compl stack...");
+#endif
 	    p = (CPtr)(&(compl_pdreg(compl_fr)));
 	    contents = cell(p) ;
 	    q = hp_pointer_from_cell(contents,&tag) ;
