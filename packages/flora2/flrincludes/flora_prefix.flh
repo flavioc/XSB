@@ -44,3 +44,11 @@
 %% modules.
 #define FLORA_SERVICE_STR		 |service|
 #define FLORA_SERVICE_STR_QUOTED	 '|service|'
+
+
+/******************************************************************************
+   Attaching FLORA_PREFIX
+******************************************************************************/
+
+#define FLORA_SYMBOL(X)		      FLORA_PREFIX'X'
+

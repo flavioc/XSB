@@ -1,0 +1,172 @@
+/* File:        flrdebug_data.fli -- data guides for XSB debugger in Flora shell
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2001
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** $Id$
+** 
+*/
+
+%% The data in this file is workspace-dependent
+
+%% This might not work on windows, but on windows we provide 
+%% a prebuilt .flh file
+#include "../closure/includes/flrpred.fli"
+
+:- wraparound
+	WRAP_HILOG/_A,
+	debugger_data_loaded/0.
+
+#mode standard Prolog
+#include "flrheader.flh"
+#include "flora_terms.flh"
+
+
+%% For HiLog should hide every arity. Need to change XSB debugger 
+%% to support hide_this_hide/1.
+hide_this_hide(WRAP_HILOG/_A).
+
+
+/***************************************************************************
+  F-logic facts
+***************************************************************************/
+hide_this_hide(base_sub/2).
+hide_this_hide(base_isa/2).
+hide_this_hide(base_fd/3).
+hide_this_hide(base_ifd/3).
+hide_this_hide(base_mvd/3).
+hide_this_hide(base_imvd/3).
+hide_this_hide(base_mvddef/2).
+hide_this_hide(base_imvddef/2).
+hide_this_hide(base_fdsig/3).
+hide_this_hide(base_ifdsig/3).
+hide_this_hide(base_mvdsig/3).
+hide_this_hide(base_imvdsig/3).
+hide_this_hide(base_meth/2).
+hide_this_hide(base_imeth/2).
+hide_this_hide(base_tran/2).
+hide_this_hide(base_exists/1).
+hide_this_hide(base_objeql/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear in a rule head
+***************************************************************************/
+hide_this_hide(derived_sub/2).
+hide_this_hide(derived_isa/2).
+hide_this_hide(derived_fd/3).
+hide_this_hide(derived_ifd/3).
+hide_this_hide(derived_mvd/3).
+hide_this_hide(derived_imvd/3).
+hide_this_hide(derived_mvddef/2).
+hide_this_hide(derived_imvddef/2).
+hide_this_hide(derived_fdsig/3).
+hide_this_hide(derived_ifdsig/3).
+hide_this_hide(derived_mvdsig/3).
+hide_this_hide(derived_imvdsig/3).
+hide_this_hide(derived_meth/2).
+hide_this_hide(derived_imeth/2).
+hide_this_hide(derived_tran/2).
+hide_this_hide(derived_exists/1).
+hide_this_hide(derived_objeql/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear in the trailer
+***************************************************************************/
+hide_this_hide(inferred_sub/2).
+hide_this_hide(inferred_isa/2).
+hide_this_hide(inferred_ifd/3).
+hide_this_hide(defined_inferred_ifd/2).
+hide_this_hide(inferred_imvd/3).
+hide_this_hide(inferred_imvddef/2).
+hide_this_hide(defined_inferred_imvd/2).
+hide_this_hide(inferred_fd/3).
+hide_this_hide(defined_inferred_fd/2).
+hide_this_hide(inferred_mvd/3).
+hide_this_hide(inferred_mvddef/2).
+hide_this_hide(defined_inferred_mvd/2).
+hide_this_hide(inferred_meth/2).
+hide_this_hide(inferred_imeth/2).
+hide_this_hide(inferred_tran/2).
+hide_this_hide(inferred_fdsig/3).
+hide_this_hide(inferred_ifdsig/3).
+hide_this_hide(inferred_mvdsig/3).
+hide_this_hide(inferred_imvdsig/3).
+hide_this_hide(inferred_exists/1).
+hide_this_hide(inferred_objeql/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear in a rule body
+***************************************************************************/
+hide_this_hide(sub/2).
+hide_this_hide(isa/2).
+hide_this_hide(fd/3).
+hide_this_hide(ifd/3).
+hide_this_hide(mvd/3).
+hide_this_hide(imvd/3).
+hide_this_hide(mvddef/2).
+hide_this_hide(imvddef/2).
+hide_this_hide(fdsig/3).
+hide_this_hide(ifdsig/3).
+hide_this_hide(mvdsig/3).
+hide_this_hide(imvdsig/3).
+hide_this_hide(meth/2).
+hide_this_hide(imeth/2).
+hide_this_hide(tran/2).
+hide_this_hide(exists/1).
+hide_this_hide(objeql/2).
+hide_this_hide(fddef/2).
+hide_this_hide(ifddef/2).
+hide_this_hide(mvdinc/3).
+hide_this_hide(imvdinc/3).
+hide_this_hide(mvdtolist/3).
+hide_this_hide(imvdtolist/3).
+
+
+/***************************************************************************
+  intermediate F-logic predicates that appear in the trailer
+***************************************************************************/
+hide_this_hide(super_sub/2).
+hide_this_hide(immediate_sub/2).
+hide_this_hide(super_isa/2).
+hide_this_hide(ultimate_isa/2).
+hide_this_hide(conflict_ifd/2).
+hide_this_hide(conflict_imvd/2).
+hide_this_hide(conflict_obj_ifd/2).
+hide_this_hide(conflict_obj_imvd/2).
+hide_this_hide(diffobjeql/2).
+
+
+/***************************************************************************
+  F-logic predicates that appear only in the trailer with equality maintenance
+***************************************************************************/
+hide_this_hide(inferred_sub_eql/2).
+hide_this_hide(inferred_isa_eql/2).
+hide_this_hide(inferred_ifd_eql/3).
+hide_this_hide(inferred_imvd_eql/3).
+hide_this_hide(inferred_imvddef_eql/2).
+hide_this_hide(inferred_fd_eql/3).
+hide_this_hide(inferred_mvd_eql/3).
+hide_this_hide(inferred_mvddef_eql/2).
+
+
+
+debugger_data_loaded.

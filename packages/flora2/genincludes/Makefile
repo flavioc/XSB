@@ -28,7 +28,7 @@
 
 XSBDIR = ../../..
 
-ALLOBJS = flrpatch.flh
+ALLOBJS = flrpatch.flh flrdebug_dyndata.flh
 
 XSB = $(XSBDIR)/bin/xsb
 

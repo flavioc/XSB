@@ -48,6 +48,3 @@
 #define FLORA_WORKSPACE(X,Y)			#1#2
 #define FLORA_WSSTORAGE(X,Y)	        	FLORA_STORAGE_PREFIX#1
 #endif
-
-
-

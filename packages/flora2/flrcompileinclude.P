@@ -170,15 +170,19 @@ intern_predicate_specs(','(P,Ps)) :-
 intern_predicate_specs(P) :- intern_predicate_spec(P).
 
 %% Insert both the p/a form and p(_,...,_)
+%% Arity can also be a variable. In this case, it is treated specially and the
+%% predicate spec is dumped without the arity.
 intern_predicate_spec(P) :-
 	P = '/'(Name,Arity),
 	!,
 	storage_insert_fact(flora_compile_trie,P,_),
-	functor(NewP,Name,Arity),
-	storage_insert_fact(flora_compile_trie,NewP,_).
-%% of the form name(_,...,_)
+	(var(Arity) -> true
+	;   functor(NewP,Name,Arity),
+	    storage_insert_fact(flora_compile_trie,NewP,_)
+	).
+%% Spec of the form of the form name(_,...,_)
 intern_predicate_spec(P) :-
-	functor(P,Name,Arity), Arity > 0,
+	functor(P,Name,Arity), Arity >= 0,
 	!,
 	storage_insert_fact(flora_compile_trie,P,_),
 	storage_insert_fact(flora_compile_trie,Name/Arity,_).
@@ -207,13 +211,19 @@ dump_storage_rule(PredSpec) :-
 	write('storage_find_fact(FLORA_WSSTORAGE(FLORA_VAR_WORKSPACE),'),
 	dump_pred_spec(Skeleton,0), writeln(').').
 	
-dump_rule((Head :- Body)) :-
+dump_rule((Head :- Body)) :- !,
 	dump_pred_spec(Head,0),
 	writeln(' :-'),
 	dump_rule_body(Body,1),
 	writeln('.').
 %% Headless rule
-dump_rule((:- Body)) :- writeln(':- '), dump_rule_body(Body,1), writeln('.').
+dump_rule((:- Body)) :- !,
+    	writeln(':- '), dump_rule_body(Body,1), writeln('.').
+
+%% Facts
+dump_rule(Head) :-
+	dump_pred_spec(Head,0),
+	writeln('.').
 
 dump_rule_body(','(L,Rest),Indent) :-  !,
 	dump_pred_spec(L,Indent), writeln(','),
@@ -252,6 +262,13 @@ dump_rule_body(call(Body), Indent) :-  !,
 	Indent1 is Indent+1,
 	dump_rule_body(Body,Indent1),
 	nl, indent(Indent), write(')').
+dump_rule_body(hide_this_hide(Spec), Indent) :- !,
+	indent(Indent), write('hide_this_hide('),
+	dump_as_symbol(Spec,Indent),
+	(Spec = _Func/Arity, integer(Arity) -> write(','), write(Arity)
+	; true
+	),
+	write(')').
 dump_rule_body(L,Indent) :- dump_pred_spec(L,Indent).
 
 
@@ -268,6 +285,7 @@ dump_pred_spec(Spec,Indent) :-
 	; WSpec = 'tnot'(F) -> dump_rule_body(WSpec,Indent)
 	; WSpec = 'call'(F) -> dump_rule_body(WSpec,Indent)
 	; WSpec = '->'(F,B) -> dump_rule_body(WSpec,Indent)
+	; WSpec = 'hide_this_hide'(F) -> dump_rule_body(WSpec,Indent)
 	; indent(Indent),
 	    (Changed=notwrapped
 	    ->  (WSpec = '/'(P,A) -> write_canonical(P), write(' / '), write(A)
@@ -283,8 +301,24 @@ dump_pred_spec(Spec,Indent) :-
 		    write(P), write('('),
 		    write_args(Args),
 		    write(')')
-		; write_canonical(WSpec)
+		; write(WSpec)
 		)
+	    )
+	).
+
+%% This one accepts only symbol/arity or symbol
+dump_as_symbol(Spec,Indent) :-
+	wrapper(Spec,WSpec,Changed),
+	indent(Indent),
+	(Changed=notwrapped
+	->  (WSpec = '/'(P,A) -> write_canonical(P)
+	    ; atom(WSpec) -> write_canonical(WSpec)
+	    ; true
+	    )
+	; %% Wrapped
+	    (WSpec = '/'(P,A) -> write(P)
+	    ; atom(WSpec) -> write(WSpec)
+	    ; true
 	    )
 	).
 

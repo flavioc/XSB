@@ -189,23 +189,16 @@ flEnd :-
 
 /*********************************************************************/
 %% Enable Flora high-level debugging
-flTrace :-
-	( flora_debugger_data_loaded ->
-	    true
-	;
-	  consult(flrdebugger)
-	),
-	flora_trace.
-flNoTrace :-
-	( flora_debugger_data_loaded ->
-	    true
-	;
-	  consult(flrdebugger)
-	),
-	flora_notrace.
+flTrace :- ensure_debugger_loaded, flora_trace.
+flNoTrace :- ensure_debugger_loaded, flora_notrace.
 %% Disables flora debugging and enables low-level XSB debugging
 flLowTrace :- assert(flora_switch(low_level_trace)), trace.
 
+ensure_debugger_loaded :-
+	( FLORA_SYMBOL(debugger_loaded)
+	-> true
+	;  consult(flrdebugger)
+	).
 
 
 /*********************************************************************/

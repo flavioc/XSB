@@ -30,11 +30,12 @@
 
 
 
-:- import trie_assert/1, trie_retract_all/1 from tables.
 :- import fmt_write/3, file_open/3, file_close/1 from file_io.
 :- import file_write/2 from xsb_writ.
 :- import debug_display_call_hook/1, flora_switch/1 from usermod.
 :- import flora_classify_call/5 from flrwrapper.
+:- import flora_wssymbol/3 from flrwrapper.
+:- import flora_set_xpp_options/1, flora_clear_xpp_options/0 from flrutils.
 
 :- dynamic debug_display_call_hook/1.
 :- dynamic flora_switch/1.
@@ -428,3 +429,32 @@ flora_notrace :-
 	retract_all(flora_switch(low_level_trace)),
 	flora_handle_notrace.
 
+flora_debug_dyndata_file(Filename) :-
+	package_configuration(dir(flora), FlrSysLib),
+	fmt_write_string(Filename,
+			 '%s/genincludes/flrdebug_dyndata.flh',
+			 arg(FlrSysLib)),
+flora_debug_statdata_file(Filename) :-
+	package_configuration(dir(flora), FlrSysLib),
+	fmt_write_string(Filename,
+			 '%s/syslib/flrdebug_statdata.P',
+			 arg(FlrSysLib)),
+
+flora_read_debugger_data(WS,_Datafile) :-
+	flora_wssymbol(debugger_data_loaded,WS,WSSym), call(WSSym), !.
+flora_read_debugger_data(WS,Datafile) :- 
+	flora_set_xpp_options(WS),
+	xpp_process_file(Datafile, CPP_process, IOportFromCPP),
+	repeat,
+	    file_read(IOportFromCPP,T),
+	    (T = end_of_file -> true
+	    	    	     ;  assert(T), fail
+	    ),
+	process_control(CPP_process, wait),
+	flora_clear_xpp_options,
+	file_close(IOportFromCPP),
+	conset(xpp_on,0),
+	!.
+
+%% Notify the system that this file is loaded
+FLORA_SYMBOL(debugger_loaded).
