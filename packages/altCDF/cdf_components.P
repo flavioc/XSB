@@ -2,17 +2,17 @@
 
 :- export 
 	  add_component_initializer/3,
-	  analyze_components/2,
+              analyze_components/2,
 	  get_component_extensional/2,
 	  newComponent/4,
 	  update_components/2,
 	  update_all_components/2,
-          load_component/3.
+              load_component/3.
 
 :- import 
-	classHasAttr/3, immed_classHasAttr/3, 
-	retractallExtTerm/1, newExtTerm/1
-			from cdf_init_cdf.
+	classHasAttr/3,
+	retractallExtTerm/1, newExtTerm/1,
+	system_component/1 from cdf_init_cdf.
 
 :- import 
 	hasAttr_ext/3, isa_ext/2, classHasAttr_ext/3, allAttr_ext/3
@@ -24,12 +24,10 @@
 
 :- import cdf_warning/2,cdf_error/2 from cdf_exceptions.
 
-:- import call_assert/1, cdf_fix_dir/2, 
-	  file_latest_version/3 from cdf_utilities.
+:- import call_assert/1, file_latest_version/3 from cdf_utilities.
 
 %cdf_io
-:- import load_intensional_rules/1 from cdf_io.
-
+:- import load_intensional_rules/1,load_extensional_facts/1 from cdf_io.
 
 :- import member/2,ground/1 from basics.
 :- import slash/1 from machine.
@@ -433,27 +431,27 @@ load_component_pass1(Name,Path,Vin,Arglist):-
 	get_full_path_and_loadname(Name,Path,Vin,Full,V,Loadname),
 	(check_component(Name,Full,V,Arglist) -> 
   	    message(['Loading component: ',Full,'/',Loadname]),nl,
-  	    concat_atom([Full,'/',Loadname],Absname),
-	    overload_cdfext(Absname),
+                concat_atom([Full,'/',Loadname],Absname),
+	    load_extensional_facts(Absname),
 	    check_good_component(Name,Full),
-            load_component_dependencies_pass1(Name,Full,Arglist) 
+                load_component_dependencies_pass1(Name,Full,Arglist) 
 	  ; 
 	    fail ).
 
 load_component_dependencies_pass1(Name,Path,Arglist):- 
 	classHasAttr_ext(cid(component(cid(Name,Name),cid(Path,cdfpt),
-				       cid(_V,cdfpt)),cdf),
+				       cid(_V,cdfpt)),Name),
 			 crid(componentDepends,Name),
 			 cid(component(cid(New,New),cid(Pathnew,cdfpt),
-				       cid(Vnew,cdfpt)),cdf)),
-%	writeln(checking(dep(Name,New))),	
+				       cid(Vnew,cdfpt)),New)),
+%        writeln(checking(dep(Name,New))),	
         load_component_pass1(New,Pathnew,version(Vnew),Arglist),
         assert_dependencies_for_path2(Name,New,Pathnew,Vnew),
 	fail.
 load_component_dependencies_pass1(_,_,_).
 
 assert_dependencies_for_path2(Name,New,Pathnew,Vnew):- 
-	New \== cdf,
+	system_component(New),
 	New \== Name,
 	call_assert(temp_depends(Name,New,Pathnew,Vnew)).
 
@@ -466,7 +464,7 @@ load_component_pass2(Name,Path,Vin,Anclist):-
 	get_full_path_and_loadname(Name,Path,Vin,Full,_V,Loadname),
 	message(['Loading int rules and initializing componen: ',
 			Full,Slash,Loadname]),nl,
-        load_component_dependencies_pass2(Name,Full,Anclist),
+            load_component_dependencies_pass2(Name,Full,Anclist),
 	concat_atom([Full,Slash,Loadname],Dir),
 	load_intensional_rules(Dir),
 	initialize_component(Loadname,Full).
@@ -486,7 +484,7 @@ initialize_component(Name,Path):-
 %---------------
 
 check_good_component(Name,Full):- 
-	(classHasAttr(cid(Name,Name),crid(hasPath,Name),_) -> 
+	(component_exists(Name) -> 
 	    true
 	  ;
 	    cdf_error(component_load,['Pathname: ',Full,
@@ -497,7 +495,7 @@ component_exists(Name):-
 
 /* If check_component succeeds, we go ahead and do a pass 1 load. */
 check_component(Name,Path,V,Arglist):- 
-	Name \== cdf,
+	\+ system_component(Name),
 	check_conflicting_path(Name,Path,Arglist),
 	check_conflicting_version(Name,Path,V),
 	\+ already_present(Name,Path,V,Arglist).
@@ -509,22 +507,15 @@ check_conflicting_version(Name,Path,V):-
 			' is halreaty loaded '])
 	  ; true).
 
-%---------------
-
 /* TLS: For now, each component is taken to depend on some version of
 the CDF. */
 conflicting_version(Name,Path,V,V1):- 
-	(classHasAttr_ext(cid(component(cid(Name,Name),cid(Path,cdfpt),
-					cid(V1,cdfpt)),Name),
-			  crid(componentDepends,Name),_)
-	 ; 
-	     immed_classHasAttr(
-		cid(component(cid(Name,Name),
-			      crid(Path,cdfpt),cid(V1,cdfpt)),Name),
-	        crid(componentDepends,Name),_)
-	),
-        V \== V1,
-	!.
+	classHasAttr_ext(cid(compName(cid(Name,Name),
+	                                                 cid(Path,cdfpt)),Name),
+	                          cid(hasVersion,Name),cid(V1,cdfpt)),
+	V \== V1.
+
+%---------------
 
 check_conflicting_path(Name,Path,Arglist):- 
 	(\+ member(action(union),Arglist) -> 
@@ -537,35 +528,16 @@ check_conflicting_path(Name,Path,Arglist):-
 	      ;  true).
 
 conflicting_path(Name,P,P1):- 
-	(   classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),cid(P1,cdfpt))
-	 ; 
-	     immed_classHasAttr(cid(Name,Name),crid(hasPath,Name),
-						   cid(P1,cdfpt))
-	),
-        P \== P1,
-	!.
+	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),cid(P1,cdfpt)),
+	P \== P1.
 
 %---------------
 
-/* TLS: if component is in cache, it has  already scheduled been
-traversed in pass1.  Otherwise count merged components as traversed
-unless force is yes. */
-
 already_present(Name,Path,V,Arglist):- 
-	
-	(   classHasAttr_ext(cid(Name,Name),
-	                     crid(hasPath,Name),cid(Path,cdfpt)),
-	    classHasAttr_ext(cid(compName(cid(Name,Name),cid(Path,cfpt)),cdf),
-  	  	             crid(hasVersion,Name),cid(V,cdfpt))
-	    
-	 ; 
-  	     \+ member(force(yes),Arglist),
-	     immed_classHasAttr(cid(Name,Name),crid(hasPath,Name),
-						   cid(Path,cdfpt)),
-	     immed_classHasAttr(
-		cid(compName(cid(Name,Name),cid(Path,cdfpt)),Name),
-	        crid(hasVersion,Name),cid(V,cdfpt))
-	).
+	\+ member(force(yes),Arglist),
+	classHasAttr_ext(cid(compName(cid(Name,Name),
+	                                                cid(Path,cdfpt)),Name),
+	                          crid(hasVersion,Name),cid(V,cdfpt)).
 
 %---------------
 
@@ -702,7 +674,7 @@ versions_for_new_component(Dir,Name):-
 
 /* also, adjust version here */
 versions_for_existing_component(Name):- 
-	immed_classHasAttr(cid(compName(cid(Name,Name),cid(P,cdfpt)),Name),
+	classHasAttr_ext(cid(compName(cid(Name,Name),cid(P,cdfpt)),Name),
 	                       crid(hasVersion,Name),cid(V,cdfpt)),
         ((needs_update(Name),Name \== cdf) -> 
 	      V1 is V + 1,
@@ -735,8 +707,8 @@ comp_depends_on(X,Z):-
 	(Z = Y ; comp_depends_on(Y,Z) ).
 
 merge_has_occurred:- 
-	immed_classHasAttr(Nameid,hasPath,cid(P1,cdfpt)),
-	immed_classHasAttr(Nameid,hasPath,cid(P2,cdfpt)),
+	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),cid(P1,cdfpt)),
+	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),cid(P2,cdfpt)),
 	P1 \== P2.
 
 %-----------------
@@ -748,7 +720,7 @@ merge_has_occurred:-
 
 update_component_1(create,Name,Dep,Dir):- 
 	Name \== cdf,
-	(immed_classHasAttr(
+	(classHasAttr_ext(
   	                    cid(component(cid(Name,Name),
 	                                  cid(Oldp,_),_V),_),_,_) -> 
                true
@@ -814,7 +786,7 @@ create_dependencies_create([_|T],FromName,Compid,Dir):-
    retract all old dependencies, using the version we have previously found */
 create_all_dependencies_create(cdf,_Dir,FromCompid):- !,
 	FromCompid = cid(_,FromName),
-	immed_classHasAttr(cid(component(cid(cdf,cdf),cid(Pcdf,cdfpt),
+	classHasAttr_ext(cid(component(cid(cdf,cdf),cid(Pcdf,cdfpt),
 					     cid(Vcdf,cdfpt)),cdf),
 			crid(componentDepends,cdf),_),	
 	retractallExtTerm(classHasAttr_ext(FromCompid,
@@ -851,7 +823,7 @@ create_dependencies_in_place([_|T],FromName,FromCompid,Dir):-
  
 create_all_dependencies_in_place(ToName,Dir,FromCompid):- !,	
 	FromCompid = cid(_,FromName),
-	(immed_classHasAttr(cid(ToName,ToName),crid(hasPath,ToName),
+	(classHasAttr_ext(cid(ToName,ToName),crid(hasPath,ToName),
 				              cid(ToPath,cdfpt)) -> 
   	    true
 	  ;  
@@ -936,27 +908,6 @@ write_ext_term(Term):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utilities
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-overload_cdfext(Dir) :-
-	cdf_fix_dir(Dir,DirS),
-	dir_overload_dync(DirS,cdf_extensional).
-
-dir_overload_dync(Dir,Base) :-
-	concat_atom([Dir,Base,'.P'],File),!,
-	(overload_dync(File) 		% i.e. use asserta
-              -> true
-	  ; cdf_warning(permission,('File does not exist ',
-                                    'or is not readable: ',File))).
-
-overload_dync(File):- 
-	see(File),
-	overload_dync_1,
-	seen.
-
-overload_dync_1:- 
-	repeat,
-	read_canonical(T),
-	(T = end_of_file -> true ; asserta(T),fail).
-
 xsb_makedir(Dir):- 
 	(path_sysop(isdir,Dir) -> true ; path_sysop(mkdir,Dir)).
 
@@ -992,7 +943,7 @@ newComponent(Name,Path,Compout):-
 */
 
 newComponent(cid(Name,Name),Path,Action,
-			cid(component(cid(Name,Name),Pathout,Version),Name)):- 
+		cid(component(cid(Name,Name),Pathout,Version),Name)):- 
 	newPathandVersion(Action,cid(Name,Name),Path,Pathout,Version).
 
 /* check gives an error if a component exists whose file path is not
@@ -1020,12 +971,13 @@ newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 			crid(hasVersion,Src),Version) -> 
 	     true 
 	   ; 
-	     newExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),Path),Src),
-			crid(hasVersion,Src),oid(0,Src))),
+	     newExtTerm(classHasAttr_ext(
+	                                           cid(compName(cid(Src,Src),Path),Src),
+ 	                                           crid(hasVersion,Src),cid(0,cdfpt))),
 	     Version = cid(0,cdfpt) ).
 newPathandVersion(create,cid(cdf,cdf),_Pathin,Path,V):- !,
-	immed_classHasAttr(cid(cdf,cdf),crid(hasPath,cdf),Path),
-	immed_classHasAttr(cid(compName(cid(cdf,cdf),Path),cdf),
+	classHasAttr_ext(cid(cdf,cdf),crid(hasPath,cdf),Path),
+	classHasAttr_ext(cid(compName(cid(cdf,cdf),Path),cdf),
 			crid(hasVersion,cdf),V).
 /* On create, even if the component has been loaded from somewhere else,  
    it needs a new path and version, (obtained from the path). */
@@ -1125,4 +1077,26 @@ find_component_dir(Name,Full):-
 	    true 
 	  ; 
 	     cdf_error(component,['component name is not a directory',Full])).
+
+
+overload_cdfext(Dir) :-
+	cdf_fix_dir(Dir,DirS),
+	dir_overload_dync(DirS,cdf_extensional).
+
+dir_overload_dync(Dir,Base) :-
+	concat_atom([Dir,Base,'.P'],File),!,
+	(overload_dync(File) 		% i.e. use asserta
+              -> true
+	  ; cdf_warning(permission,('File does not exist ',
+                                    'or is not readable: ',File))).
+
+overload_dync(File):- 
+	see(File),
+	overload_dync_1,
+	seen.
+
+overload_dync_1:- 
+	repeat,
+	read_canonical(T),
+	(T = end_of_file -> true ; newExtTerm(T),fail).
 

@@ -5,14 +5,17 @@
 	hasAttr/3, immed_hasAttr/3, 
 	allAttr/3, immed_allAttr/3, 
 	classHasAttr/3, immed_classHasAttr/3, 
+	in_hierarchy/1,
 	newExtTerm/1, retractallExtTerm/1,
-	initialize_state/0,
+	initialize_state/0, system_component/1,
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
 	cdf_set_log_on/0, cdf_set_log_off/0, cdf_reset_log/0, show_log/0,
 	updateAttribute/5.
 
-:- import check_implication/2, check_types/2 from cdf_checks.
+:- import check_implication/2, check_types/2,
+	classify_if_necessary/3
+	from cdf_checks.
 
 :- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 
 							from usermod.
@@ -24,7 +27,7 @@
 
 :- import load_extensional_facts/1, load_intensional_rules/1 from 
 						cdf_io.
-:- import file_latest_version/3 from cdf_utilities.
+
 :- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, cdf_update_list/1 from cdf_cdf.
 :- import get_component_extensional/2, newComponent/4 
@@ -225,8 +228,16 @@ init_cdf_rels :-
 init_component_info :-
 	newComponent(cid(cdf,cdf),cid('.',cdfpt),check,OCid),
 	newExtTerm(classHasAttr_ext(OCid,crid(componentDepends,cdf),OCid)).
+system_component(cdf).
+system_component(cdfpt).
 
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+in_hierarchy(Term):- 
+	(  immed_isa(Term,_) 
+             ; implicit_isa(Term,_) 
+	 ; Term = id('CDF Root',cdf) ),
+	!.
 
 :- comment(implicit_isa/2,"@tt{implicit_isa(Id1,Id2)} forms a partial
 implementation of the implicit isa axioms for product identifiers
@@ -644,13 +655,17 @@ before it can be added.
 ").
 
 newExtTerm(Term):- 
+%            writeln(before(Term)),
 	newExtTerm(Term,Upd0,[]),
-	cdf_update_list(Upd0).
+	sort(Upd0,Upds),
+%            writeln(after(Upds)),
+	cdf_update_list(Upds).
 
 newExtTerm(Term,Upd0,Upd):- 
 	check_types(update,Term),
 	(check_implication(update,Term) -> 
-	    Upd0 = [asserta(Term)|Upd]
+	    classify_if_necessary(Term,Upd0,Upd1),
+	    Upd1 = [asserta(Term)|Upd]
 	  ; Upd0 = Upd).
 
 %-----------------------------------------------------------

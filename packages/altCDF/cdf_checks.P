@@ -1,12 +1,21 @@
 :- compiler_options([ciao_directives]).
 
-:- export check_types/2, check_implication/2.
+:- export check_types/2, check_implication/2,classify_if_necessary/3.
 
 % fool that module system... 
-:- export check_isa_types/2, check_ind_types/3.
+:- export check_isa_types/4, check_ind_types/3.
 
 :- import ground/1,memberchk/2  from basics.
 :- import cdf_error/2, cdf_warning/2 from cdf_exceptions.
+:- import in_hierarchy/1 from cdf_init_cdf.
+
+/*
+   TLS: right now need to check: 
+    types on insert / query.
+    implication on insert
+    classify on insert.
+*/
+    
 
 % Type checking.	
 % TLS: should be turned on and off...
@@ -36,17 +45,33 @@ check_types(query,Term):-
 
 %------
 :- comment(hide,check_isa_types/2).
-check_isa_types(Context,isa_ext(First,Second)):- 
+
+check_isa_types(update,First,Second,Term):- 
+	check_isa_arg_1(First,Term,Context,F1),
+	check_isa_arg_2(Second,Term,Context,F1).
+
+check_isa_types(query,First,Second,Term):- 
+	(var(First) -> 
+	     true
+	  ; check_isa_arg_1(First,Term,Context,F1)),
+	(var(Second) -> 
+	     true
+	  ; check_isa_arg_2(Second,Term,Context,F1)).
+
+check_isa_arg_1(First,Term,Context,F1):- 
 	(functor(First,F1,2) -> 
 	    true
 	  ; cdf_warning(Context,[First,' in ',Term,' is not of proper type.']),
 	    fail ),
 	arg(1,First,A1),
-	check_arg_consist(A1,F1,First,Context,Term),	
+	check_arg_consist(A1,F1,First,Context,Term).
+
+check_isa_arg_2(Second,Term,Context,F1):- 
+	arg(2,Term,Second),
 	((Second = id('CDF Root',cdf) 
 	    ; functor(Second,F2,2),isa_consist(F1,F2)) -> 
 	    true
-	  ; cdf_warning(Context,['Arguments in ',isa_ext(First,Second),
+	  ; cdf_warning(Context,['Arguments in ',Term,
 				' are not of proper type.']),
 	    fail ),
 	arg(1,Second,A2),
@@ -93,9 +118,9 @@ check_arg_consist_list([Nid|T],F,Id,Context,Term):-
 		fail ) ),
 	  check_arg_consist_list(T,F,Id,Context,Term).
 	
-type_table(isa(A,B),check_isa_types(_,isa(A,B))).
-type_table(isa_ext(A,B),check_isa_types(_,isa_ext(A,B))).
-type_table(isa_int(A,B),check_isa_types(_,isa_int(A,B))).
+type_table(isa(A,B),check_isa_types(_,A,B,isa(A,B))).
+type_table(isa_ext(A,B),check_isa_types(_,A,B,isa_ext(A,B))).
+type_table(isa_int(A,B),check_isa_types(_,A,B,isa_int(A,B))).
 
 type_table(hasAttr(A,B,C),check_ind_types(_,hasAttr(A,B,C),
 				[ [cid,oid], [rid], [cid,oid] ] ) ).
@@ -122,3 +147,43 @@ check_implication(update,Term):-
 	(call(Term) -> fail ; true).
 
 %----------------------------------------------------------------------
+
+classify_if_necessary(Term,Upd1,Upd):-
+	\+ (Term = isa_ext(_,_)),!,
+	Term =.. [_|L],
+	classify_if_necessary_list(L,Upd1,Upd).
+classify_if_necessary(isa_ext(First,Second),Upd1,Upd):-
+	arg(1,First,Arg),
+	(structure(Arg) -> 
+	    Arg =.. [_|L],
+	    classify_if_necessary_list([Second|L],Upd1,Upd)
+	  ; classify_arg(Second,Upd1,Upd)).
+
+classify_if_necessary_list([],Upd,Upd).
+classify_if_necessary_list([Arg|R],Updin,Upd):- 
+%	writeln(cinl(Arg)),
+	classify_arg(Arg,Updin,Updmid),
+	classify_if_necessary_list(R,Updmid,Upd).
+
+classify_arg(Id,Upd1,Upd):- 
+%	writeln(ca(Id)),
+	(in_hierarchy(Id) -> 
+	    Upd1 = Upd
+	  ; functor(Id,F,_),
+	    classification_type(F,Sup),
+	    Upd1 = [asserta(isa_ext(Id,Sup))|Updmid]),
+	  arg(1,Id,Nid),
+	   (structure(Nid) -> 
+	       Nid =.. [_|L],
+	       classify_if_necessary_list(L,Updmid,Upd)
+	     ; Updmid = Upd).
+
+classification_type(oid,cid('CDF Classes',cdf)).
+classification_type(cid,cid('CDF Classes',cdf)).
+classification_type(rid,rid('CDF Object-Object Relations',cdf)).
+classification_type(crid,crid('CDF Class-Object Relations',cdf)).
+
+%classification_type(crrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
+%classification_type(crcrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
+
+

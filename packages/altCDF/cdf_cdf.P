@@ -45,6 +45,5 @@ cdf_do_update_list([Term|Terms]) :-
 cdf_update_term(asserta(Term)) :-
 	assert_cdf(Term).
 cdf_update_term(retractall(Term)) :- 
-	retractall_cdf(Term),
-	retractall(Term).
+	retractall_cdf(Term).
 

@@ -1,4 +1,4 @@
-/* Utilities for use with OMS's */
+/* Utilities for use with CDF's */
 
 :- export 
 	  build_taxonomy/4,
@@ -6,11 +6,11 @@
 	  cdf_fix_dir/2,
 	  file_latest_version/3,
 	  odbc_sql_local/4,
-	  oms_ascii_scan/0,
-	  oms_clean/0,
-	  oms_clean/2.
+	  cdf_ascii_scan/0,
+	  cdf_clean/0,
+	  cdf_clean/2.
 
-:- import oms_warning/2 from oms_exceptions.
+:- import cdf_warning/2 from cdf_exceptions.
 :- import (attribute)/3, retractallAttribute/3 from cdf_init_cdf.
 :- import append/3, member/2 from basics.
 :- import short_directory/2 from directry.
@@ -35,18 +35,18 @@ friendly_atom_codes(A,Codes):-
 	     atom_codes(A,Codes) . 	% and so abort.
 
 %------
-oms_ascii_scan:- oms_warning(obsolete,
-	['oms_ascii_scan/0 is not implemented in CDF.']).
+cdf_ascii_scan:- cdf_warning(obsolete,
+	['cdf_ascii_scan/0 is not implemented in CDF.']).
 
 %------
-oms_clean :-  oms_warning(obsolete,
-	['oms_clean/0 is obsolete in CDF as it checked ',
+cdf_clean :-  cdf_warning(obsolete,
+	['cdf_clean/0 is obsolete in CDF as it checked ',
 	  'for dangling classes and objects']).
 
 %------
 /* check for functionality of an attribute. */
 
-oms_clean(attribute_function(RelCid),Fix) :-
+cdf_clean(attribute_function(RelCid),Fix) :-
 	(attribute(Oid,RelCid,Val),
 	 findall(Val1,(attribute(Oid,RelCid,Val1),Val1 \== Val),Vals),
 	 (Vals \== []
@@ -66,7 +66,7 @@ oms_clean(attribute_function(RelCid),Fix) :-
 
 
 build_taxonomy(_DataAccessor,_HookCid,_RootID,_Source) :-
-	oms_warning(unimplemented,['build_taxonomy/4 has not ',
+	cdf_warning(unimplemented,['build_taxonomy/4 has not ',
 	  ' yet been updated to CDF.']).
 
 /*
@@ -82,7 +82,7 @@ build_taxonomy(DataAccessor,_HookCid,_RootID,_Source) :-
 	assert(bc_node(IDC,Label)),
 	fail.
 build_taxonomy(_DataAccessor,HookCid,RootID,Source) :-
-%%	init_oms_rels,
+%%	init_cdf_rels,
 	bc_node(IDC,Label),
 	find_parent(IDC,HookCid,RootID,Source,PCid),
 	atom_codes(ID,IDC),
@@ -118,7 +118,7 @@ lappend([],L,L).
 */
 
 odbc_sql_local(_DataAccessor,_HookCid,_RootID,_Source) :-
-	oms_warning(unimplemented,['odbc_sql_local/4 has not ',
+	cdf_warning(unimplemented,['odbc_sql_local/4 has not ',
 	  ' yet been updated to CDF.']).
 
 /*

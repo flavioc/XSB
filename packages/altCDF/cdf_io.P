@@ -15,11 +15,9 @@
 
 :- import newExtTerm/1 from cdf_init_cdf.
 
-:- import cdf_fix_dir/2 from cdf_utilities.
-
 :- import cdf_error/2 from cdf_exceptions.
 
-
+:- import cdf_fix_dir/2 from cdf_utilities.
 
 :- import member/2,reverse/2 from basics.
 :- import concat_atom/2 from string.
@@ -111,7 +109,7 @@ load_extensional_facts([Dir|DirList]) :-
 	load_extensional_facts(DirList).
 load_extensional_facts(Dir) :-
 	cdf_fix_dir(Dir,DirS),
-	write('Loading '),write(Dir),write(':'),
+	write('Loading '),writeln(Dir),
 	reload_extensional(DirS).
 
 reload_extensional(Dir):- 
