@@ -251,14 +251,14 @@ wfs_true(Call) :- (Call, fail; get_residual(Call,[])).
 :- table VAR_FPREFIX(eql)/2.
 :- table VAR_FPREFIX(metheql)/2.
 
-VAR_FPREFIX(eql)(X,Y) :- X == Y.
+VAR_FPREFIX(eql)(X,Y) :- X == Y, fail.
 
 VAR_FPREFIX(eql)(X,Y) :-
 	X @< Y,
 	wfs_true(VAR_FPREFIX(fd)(O,M1,X)),
 	(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
 	wfs_true(VAR_FPREFIX(fd)(O,M2,Y)),
-	not X=Y.
+	X \= Y.
 
 VAR_FPREFIX(eql)(X,Y) :-
 	X @< Y,
@@ -266,13 +266,18 @@ VAR_FPREFIX(eql)(X,Y) :-
 	wfs_true(VAR_FPREFIX(fd)(O1,M1,X)),
 	(M1=M2 ; VAR_FPREFIX(metheql)(M1,M2)),
 	wfs_true(VAR_FPREFIX(fd)(O2,M2,Y)),
-	not X=Y.
+	X \= Y.
 
 VAR_FPREFIX(eql)(X,Y) :-
 	X @< Y,
 	VAR_FPREFIX(eql)(X,Z),
 	VAR_FPREFIX(eql)(Z,Y),
-	not X=Y.
+	X \= Y.
+
+VAR_FPREFIX(eql)(X,Y) :-
+	X @< Y,
+	VAR_FPREFIX(eql)(Y,X),
+	X \= Y.
 
 
 VAR_FPREFIX(metheql)(X,Y) :-
