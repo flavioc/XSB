@@ -18,10 +18,11 @@ This is primarily a maintenance release.
 <ul>
 <li> The XSB libwww package that first appeared in XSB 2.2.1 now has interface
 to the RDF parser provided by the libwww package from W3C.
+<li> Foreign C module interface now works on SGI's.
 </ul>
 
 <h3>Backward Incompatibility</h3>
-The type <tt>bool</tt> used by the external C interface has been replaced with
+The type <tt>bool</tt> used by the external C interface has been renamed to
 xsbBool, because of clashes with various include files that exist on some
 platforms. Likewise, the macros for dealing with the variable string type used
 by C programs that call XSB as a library have been renamed. For instance,
