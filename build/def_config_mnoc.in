@@ -385,3 +385,6 @@ the local program counter */
 /* GC on SLG-WAM! ;) */
 #undef SLG_GC
 
+/* Guess tagging strategy for newer versions of Linux */
+#undef GUESS_TAGGING
+

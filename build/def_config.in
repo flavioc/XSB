@@ -52,6 +52,9 @@
 /* Defined under Linux */
 #undef LINUX
 
+/* Guess tagging strategy for newer versions of Linux */
+#undef GUESS_TAGGING
+
 /* Defined under OS X */
 #undef DARWIN
 

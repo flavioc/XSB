@@ -128,3 +128,6 @@
 /* Defined under OS X */
 #undef DARWIN
 
+/* Guess tagging strategy for newer versions of Linux */
+#undef GUESS_TAGGING
+

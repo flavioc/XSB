@@ -1243,6 +1243,10 @@ case "$canonical" in
 		;;
      *linux*) AC_DEFINE(LINUX)
 	      AC_DEFINE(_GNU_SOURCE)
+	      if test $((`uname -r | cut -d "." -f "1 2"`)) == 2.6; then
+		echo "Guessing the tagging for this version of Linux"
+		AC_DEFINE(GUESS_TAGGING)
+	      fi
 	      case "${canonical}" in
 		   *ppc* | *powerpc* | *m68k* ) AC_DEFINE(MKLINUX_PPC) ;;
 		   dnl Linux a.out
@@ -1352,12 +1356,13 @@ case "$canonical" in
 		;;
       *-aix*)  AC_DEFINE(IBM)
 	       ;;
-      *-sunos4*) AC_DEFINE(SUN)
+      *-sunos4*)    AC_DEFINE(SUN)
 		 AC_DEFINE(FOREIGN_AOUT)
 		 CFLAGS="${CFLAGS} -DBIG_MEM"
 		 LDFLAGS="${LDFLAGS} -N"
 		;;
       *-cygwin*) AC_DEFINE(CYGWIN)
+	      
                  real_host_os=cygwin
 		 builtins_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 		 loader_opt_level=-${optimization_level-"O2 -fomit-frame-pointer"}
