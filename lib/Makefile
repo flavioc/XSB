@@ -30,7 +30,7 @@
 #-----------------------------------------------------------------------#
 
 ALL = 	aggregs.O array.O array1.O copyterm.O directry.O foreign.O \
-	intern.O interprolog.O odbc_call.O ordsets.O ora_call.O \
+	intern.O interprolog.O obsolete.O odbc_call.O ordsets.O ora_call.O \
 	record.O packaging.O unix.O scrptutl.O setof.O socket.O
 
 Option = [sysmod,optimize]
