@@ -32,8 +32,8 @@
 %% package_configuration(dir(PackageName), FullPackageDirname)
 %% some packages use it.
 
-:- export re_match/5, re_bulkmatch/5,
-	re_substitute/4, re_substring/4, re_charlist_to_string/2.
+:- export re_match/5, re_bulkmatch/5, re_substring/4,
+	re_substitute/4, re_charlist_to_string/2.
 :- import 
       do_regmatch__/5, do_bulkmatch__/5,
       do_regsubstitute__/4,

@@ -262,6 +262,7 @@ bool do_bulkmatch__(void)
 }
 
 
+/* should be removed when XSB gets garbage collector */
 /* XSB string substitution entry point: replace substrings specified in Arg2
    with strings in Arg3.
    In: 
@@ -401,6 +402,7 @@ bool do_regsubstitute__(void)
 }
 
 
+/* should be removed when XSB gets garbage collector */
 /* XSB string substitution entry point
    In: 
        Arg1: string
@@ -480,6 +482,7 @@ bool do_regsubstring__(void)
 }
 
 
+/* should be removed when XSB gets garbage collector */
 /* converts charlist to string, but doesn't intern */
 bool do_regcharlist_to_string__(void)
 {

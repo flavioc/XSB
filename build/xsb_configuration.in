@@ -65,7 +65,8 @@ xsb_configuration(libwww_ldflags, X) :-
 	fmt_write_string(Ldflags_file,
 	    	    	 '%s%slibwww_ldflags', args(ConfigDir, Slash)),
         file_open(Ldflags_file, r, IOport),
-	file_read_line_atom(IOport,X,_),
+	file_read_line_atom(IOport,Y,_),
+	substring(Y,0,-1,X), % chop off the \n char
 	file_close(IOport).
 
 /* Java compiler */
