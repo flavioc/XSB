@@ -58,7 +58,6 @@ static prolog_term map_commalist(prolog_term (*func)(), prolog_term term, char *
 static prolog_term map_list(prolog_term func(), prolog_term term, char *apply);
 
 
-
 /*
   When called from Prolog, takes 3 args:
   - Pterm:  Prolog term
@@ -301,7 +300,17 @@ static char *pterm2string(prolog_term term)
 
 inline static int is_hilog(prolog_term term, char *apply_funct)
 {
-  return (strcmp(apply_funct, p2c_functor(term))==0);
+  size_t length_diff;
+  char *func = p2c_functor(term); /* term functor */
+  
+  length_diff = strlen(func) - strlen(apply_funct);
+  
+  if (0 > length_diff) return FALSE;
+
+  /* Match apply_funct to the end of the term functor.
+     HiLog terms have functor=apply_functor.
+     HiLog predicates have complex functor, whose tail matches flapply */
+  return (strcmp(apply_funct, func+length_diff)==0);
 }
 
 
@@ -310,6 +319,8 @@ inline static int is_commalist(prolog_term term)
   if (is_scalar(term) || is_list(term)) return FALSE;
   return (strcmp(",", p2c_functor(term))==0);
 }
+
+
 
 /* 
    plg2hlg(a(qq,b(c,4),b(c,5,d(X,U))),X,aaa).
