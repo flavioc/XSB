@@ -913,8 +913,8 @@ extern xsbBool unify(Cell, Cell);
 /*-----------------------------------------------------------------------------*/
 void ODBCDataSources()
 {
-  static UCHAR DSN[SQL_MAX_DSN_LENGTH+1];
-  static UCHAR Description[SQL_MAX_DSN_LENGTH+1];
+  static SQLCHAR DSN[SQL_MAX_DSN_LENGTH+1];
+  static SQLCHAR Description[SQL_MAX_DSN_LENGTH+1];
   RETCODE rc;
   int seq;
   SWORD dsn_size, descr_size;
@@ -937,9 +937,9 @@ void ODBCDataSources()
   seq = ptoc_int(2);
   
   if (seq == 1) {
-    rc = SQLDataSources(henv,SQL_FETCH_FIRST,&DSN,
+    rc = SQLDataSources(henv,SQL_FETCH_FIRST,DSN,
 			SQL_MAX_DSN_LENGTH,&dsn_size,
-			&Description,SQL_MAX_DSN_LENGTH,
+			Description,SQL_MAX_DSN_LENGTH,
 			&descr_size);
     if (rc == SQL_NO_DATA_FOUND) {
       ctop_int(5,2);
@@ -951,9 +951,9 @@ void ODBCDataSources()
       return;
     }
   } else {
-    rc = SQLDataSources(henv,SQL_FETCH_NEXT,&DSN,
+    rc = SQLDataSources(henv,SQL_FETCH_NEXT,DSN,
 			SQL_MAX_DSN_LENGTH,&dsn_size,
-			&Description,SQL_MAX_DSN_LENGTH,
+			Description,SQL_MAX_DSN_LENGTH,
 			&descr_size);
     if (rc == SQL_NO_DATA_FOUND) {
       ctop_int(5,2);
