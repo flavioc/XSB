@@ -114,7 +114,7 @@ help :-
 	flora_stdmsg_line('    compile FILE.flr for the module `Module'''),
 	flora_stdmsg_line('o flConsult(FILE.flr)'),
 	flora_stdmsg_line('    load FILE.flr into the default module `main'''),
-	flora_stdmsg_line('o flLoad(FILE.flr,Module)'),
+	flora_stdmsg_line('o flLoad(FILE.flr>>Module)'),
 	flora_stdmsg_line('    load FILE.flr into the module `Module'''),
 	flora_stdmsg_line('o flLoad(FILE.{P|O|flr})'),
 	flora_stdmsg_line('    load the given file into the default module `main'''),

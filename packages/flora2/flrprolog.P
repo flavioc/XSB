@@ -87,7 +87,6 @@ flora_prlg(flCompile,1) :- !.
 flora_prlg(flCompile,2) :- !.
 flora_prlg(flP2H,2) :- !.
 flora_prlg(flLoad,1) :- !.
-flora_prlg(flLoad,2) :- !.
 flora_prlg(flConsult,1) :- !.
 flora_prlg(flCompileInclude,1) :- !.
 flora_prlg(help,0) :- !.

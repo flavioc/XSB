@@ -75,7 +75,6 @@
 	unstrap_flora/0,
 	(flImport)/1,
 	(flLoad)/1,
-	(flLoad)/2,
 	flora_shell/0.
 
 

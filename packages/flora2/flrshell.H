@@ -64,8 +64,7 @@
 
 :- import
 	unstrap_flora/0,
-	(flLoad)/1,
-	(flLoad)/2
+	(flLoad)/1
    from flora2.
 
 :- import flora_shreset_operator/0 from flroperator.
