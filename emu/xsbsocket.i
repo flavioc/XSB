@@ -128,7 +128,7 @@ inline static bool xsb_socket_request(void)
     sock_linger_opt.l_onoff = TRUE;
     sock_linger_opt.l_linger = 5;
     if (setsockopt(sock_handle, SOL_SOCKET, SO_LINGER,
-		   &sock_linger_opt, sizeof(sock_linger_opt))
+		   (void *) &sock_linger_opt, sizeof(sock_linger_opt))
 	< 0) {
       xsb_warn("SOCKET_REQUEST: Cannot set socket linger option");
       return FALSE;
