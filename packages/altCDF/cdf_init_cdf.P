@@ -62,6 +62,7 @@
 
 % For newDLRule/2 etc.
 :- import dlrule_to_cdf/2 from cdftp_rules.
+:- import compdlrule/3 from usermod.
 
 %%%%%%%%%% 
 %:- import apply_checks/2 from cdf_checks.
@@ -824,10 +825,6 @@ Q[V/E'] -> Q[V/E].
 
 An index I is used only if all arguments that I uses consist of ground
 atomic identifiers.").
-
-gens_good_isas(Term):-  
-	ground(Term),
-	\+ product_identifier(Term).
 
 /**********/
 
@@ -1755,6 +1752,7 @@ retractallDLRule_1(H,B,Name) :-
 	BlankBody =.. [_|Args],
 %	clause_assert(BlankHead,BlankBody),
 %	assert((:-(NewHead,Body))),
+	retract(compdlrule(Name,H,B)),
 	retract((NewHead :- Body)),
 	cdf_log(retractall((Head :- Body))),
 	(cdf_flags(dirty,Name)
