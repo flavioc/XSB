@@ -42,6 +42,74 @@
 
 
 /****************************************************************************
+                           An Informal Grammar
+
+
+Rule := Head (':-' Body)?
+
+Head := HeadLiteral
+Head := Head ',' Head
+
+HeadLiteral := BinaryRelationship | ObjectSpecification | Term
+
+Body := BodyLiteral
+Body := BodyConjunt | BodyDisjunct | BodyNegative | IfThenElse
+Body := Body '@' ModuleName
+
+ModuleName := prolog() | prolog(atom) | atom | flora(atom) 
+
+BodyConjuct := Body ',' Body
+BodyDisjunct := Body ';' Body
+BodyNegative := ('tnot' | '\+') Body
+IfThenElse := 'if' Body 'then' Body  ('else' Body)?
+
+BodyLiteral := BinaryRelationship | ObjectSpecification | Term |
+               DBUpdate | Builtin | Loading
+
+Builtin := Arithmetic Comparison, etc.
+
+Loading := '[' LoadingCommand (',' LoadingCommand)* ']'
+LoadingCommand := filename ('>>' atom)
+
+BinaryRelationship := Oid ':' Oid
+BinaryRelationship := Oid '::' Oid
+
+ObjectSpecification := Oid '[' SpecBody ']'
+
+SpecBody := 'tnot' AttributeSpecification
+SpecBody := SpecBody ',' SpecBody
+SpecBody := SpecBody ';' SpecBody
+
+AttributeSpecification := ('#' | '*')? Term
+AttributeSpecification := Oid ('->' | '->>' | '*->' | '*->>' | '=>' | '=>>') Oid
+
+Oid := atom | number | string | variable | anonymousOid | numberedOid
+Oid := Term | List
+Oid := Oid ('.' | '..' | '!' | '!!') Oid
+Oid := BinaryRelationship
+Oid := ObjectSpecification
+Oid := Aggregate
+
+List := '[' Oid (',' Oid)* ('|' Oid)? ']'
+
+Term := Functor '(' Arguments ')'
+
+Functor := Oid
+
+Arguments := Oid (',' Oid)*
+
+Aggregate := AggregateOperator '{' variable (GroupingVariables)? '|' Body '}'
+AggregateOperator := 'max' | 'min' | 'avg' | 'sum' | 'collectset' | 'collectbag'
+GroupingVariables := '[' variable, (',' variable)* ']'
+
+DBUpdate := DBOp '{' UpdateList ('|' Body)? '}'
+DBOp := insert, delete, etc.
+UpdateList := HeadLiteral ('@' atom)?
+UpdateList := UpdateList ',' UpdateList
+****************************************************************************/
+
+
+/****************************************************************************
   canonical_form(+ComposerTerm,-CanoniTerm)
   canonical_form(+ComposerTerm,-CanoniTerm,-PrimaryIndex)
   translates a structure constructed by the composer into an intermidiate
@@ -648,6 +716,8 @@ flora_comma_separated_list(CanoniTerm,[CanoniTerm]) :- !.
 
 /****************************************************************************
   flora_fapair(+Term,?Functor,?Arity,-Status)
+
+  parses a structure like functor/arity, where arity must be an integer >= 0.
 ****************************************************************************/
 flora_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
 	get_atom(T,FL_SLASH),
@@ -668,6 +738,9 @@ flora_fapair(CanoniTerm,_F,_A,Status) :-
 
 /****************************************************************************
   flora_var_fapair(+Term,?Functor,?Arity,-Status)
+
+  parses a structure like functor/arity where variables (but not anonymous)
+  can appear in either position.
 ****************************************************************************/
 flora_var_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
 	get_atom(T,FL_SLASH),
@@ -1213,6 +1286,9 @@ flora_head(CanoniTerm,[Code],Status) :-
 
 /****************************************************************************
   flora_head_literal(+CanoniTerm,-HeadLiteral,-Status)
+
+  parses a single literal in the head of a rule. Look for the grammar at
+  the beginning to see what is allowed.
 ****************************************************************************/
 flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	get_atom(Funct,F),
@@ -1483,6 +1559,10 @@ flora_workspace(CanoniTerm,_WSCode,Status) :-
 
 /****************************************************************************
   flora_body_ifthenelse(+CanoniTerm,+Workspace,-Code,-Status)
+
+  parses an if-then-else statement. "Workspace" is the module name specified
+  for the entire statement and should be distributed over the substatements
+  inside.
 ****************************************************************************/
 flora_body_ifthenelse(CanoniTerm,WS,Code,Status) :-
 	flora_body_ifthenelse(CanoniTerm,WS,NK,_NT,Code,S),
@@ -1997,6 +2077,8 @@ flora_list(L,T,Index,Code,Status) :-
 
 /****************************************************************************
   flora_pathexplist(+ListOfCanoniTerms,-ListOfPathExpressions,-Status)
+
+  parses a list of path expressions that are supposed to represent oids.
 ****************************************************************************/
 flora_pathexplist([],[],[]) :- !.
 
@@ -2011,6 +2093,10 @@ flora_pathexplist([T|L],[TCode|LCode],Status) :-
 
 /****************************************************************************
   flora_argpathexplist(+Terms,+ArgumentTypes,-PathExpressions,-Status)
+
+  parses a list of path expressions according to a list of argument specification
+  directives. FL_OID means the oid represented by a path expression while
+  FL_BODYFORMULA means the formula represented by a path expression.
 ****************************************************************************/
 flora_argpathexplist([],[],[],[]) :- !.
 
@@ -2145,6 +2231,9 @@ nowspathexp(S) :-
 /****************************************************************************
   flora_objspec(+Obj,+Arity,+Args,-Code,-Status)
   flora_objspec(+CanoniTerm,-Code,-Status)
+
+  parses ObjectSpecificatoin as described in the informal grammar at the
+  beginning of this file.
 ****************************************************************************/
 flora_objspec(Obj,N,Args,Code,Status) :-
 	flora_pathexp(Obj,O,S),
