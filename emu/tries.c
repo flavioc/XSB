@@ -732,6 +732,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
     }
     /* now ctr should be equal to attv_num */
   }
+  attv_ctr = attv_num;
 
   for (i = 0; i < arity; i++) {
     xtemp1 = (CPtr) (cptr - i); /* One element of VarsInCall.  It might
@@ -1513,86 +1514,100 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
 
 BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
 {
-    int  arity;
-    CPtr cptr;
-    CPtr xtemp1;
-    int  i, j, flag = 1;
-    Cell tag = FREE, item;
-    Psc  psc;
+  int  arity;
+  CPtr cptr;
+  CPtr xtemp1;
+  int  i, j, flag = 1;
+  Cell tag = FREE, item;
+  Psc  psc;
 
-    psc = term_psc((prolog_term)termptr);
-    arity = get_arity(psc);
-    cptr = (CPtr)cs_val(termptr);
+  psc = term_psc((prolog_term)termptr);
+  arity = get_arity(psc);
+  cptr = (CPtr)cs_val(termptr);
 
-    mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
-    ctr = 0;
-    /*
-     * The value of `Paren' effects the "body" of the trie: nodes which
-     * are created the first level down get this value in their parent
-     * field.  This could be a problem when deleting trie paths, as this
-     * root needs to persist beyond the life of its body.
-     */
-    Paren = root;
-    GNodePtrPtr = &BTN_Child(root);
-    for (i = 1; i<=arity; i++) {
-      xtemp1 = (CPtr) (cptr + i);
-      cptr_deref(xtemp1);
-      tag = cell_tag(xtemp1);
-      switch (tag) {
-	case FREE: case REF1:
-	  if (! IsStandardizedVariable(xtemp1)) {
-	    StandardizeAndTrailVariable(xtemp1,ctr);
-	    one_node_chk_ins(flag, EncodeNewTrieVar(ctr),
-			     ASSERT_TRIE_TT);
-	    ctr++;
-	  } else {
-	    one_node_chk_ins(flag,
-			     EncodeTrieVar(IndexOfStdVar(xtemp1)),
-			     ASSERT_TRIE_TT);
-	  }
-          break;
-	case STRING: case INT: case FLOAT:
-	  one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), ASSERT_TRIE_TT);
-	  break;
-	case LIST:
-	  one_node_chk_ins(flag, EncodeTrieList(xtemp1), ASSERT_TRIE_TT);
-	  pdlpush(cell(clref_val(xtemp1)+1));
-	  pdlpush(cell(clref_val(xtemp1)));
-	  recvariant_trie(flag,ASSERT_TRIE_TT);
-	  break;
-	case CS:
-	  psc = (Psc) follow(cs_val(xtemp1));
-	  one_node_chk_ins(flag, makecs(psc),ASSERT_TRIE_TT);
-	  for (j = get_arity(psc); j >= 1 ; j--) {
-	    pdlpush(cell(clref_val(xtemp1)+j));
-	  }
-	  recvariant_trie(flag,ASSERT_TRIE_TT);
-	  break;
-	default:
-	  xsb_abort("Bad type tag in one_term_check_ins()");
+  mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+  ctr = attv_ctr = 0;
+  /*
+   * The value of `Paren' effects the "body" of the trie: nodes which
+   * are created the first level down get this value in their parent
+   * field.  This could be a problem when deleting trie paths, as this
+   * root needs to persist beyond the life of its body.
+   */
+  Paren = root;
+  GNodePtrPtr = &BTN_Child(root);
+  for (i = 1; i<=arity; i++) {
+    xtemp1 = (CPtr) (cptr + i);
+    cptr_deref(xtemp1);
+    tag = cell_tag(xtemp1);
+    switch (tag) {
+    case FREE: case REF1:
+      if (! IsStandardizedVariable(xtemp1)) {
+	StandardizeAndTrailVariable(xtemp1,ctr);
+	one_node_chk_ins(flag, EncodeNewTrieVar(ctr),
+			 ASSERT_TRIE_TT);
+	ctr++;
+      } else {
+	one_node_chk_ins(flag,
+			 EncodeTrieVar(IndexOfStdVar(xtemp1)),
+			 ASSERT_TRIE_TT);
       }
-    }                
-    resetpdl;                                                   
-
-    simple_table_undo_bindings;
-
-    /* if there is no term to insert, an ESCAPE node has to be created/found */
-
-    if (arity == 0) {
-      one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, ASSERT_TRIE_TT);
-      Instr(Paren) = trie_proceed;
+      break;
+    case STRING: case INT: case FLOAT:
+      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), ASSERT_TRIE_TT);
+      break;
+    case LIST:
+      one_node_chk_ins(flag, EncodeTrieList(xtemp1), ASSERT_TRIE_TT);
+      pdlpush(cell(clref_val(xtemp1)+1));
+      pdlpush(cell(clref_val(xtemp1)));
+      recvariant_trie(flag,ASSERT_TRIE_TT);
+      break;
+    case CS:
+      psc = (Psc) follow(cs_val(xtemp1));
+      one_node_chk_ins(flag, makecs(psc),ASSERT_TRIE_TT);
+      for (j = get_arity(psc); j >= 1 ; j--) {
+	pdlpush(cell(clref_val(xtemp1)+j));
+      }
+      recvariant_trie(flag,ASSERT_TRIE_TT);
+      break;
+    case ATTV:
+      /* Now xtemp1 can only be the first occurrence of an attv */
+      xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
+      /*
+       * Bind the VAR part of this attv to VarEnumerator[ctr], so all the
+       * later occurrences of this attv will look like a regular variable
+       * (after dereferencing).
+       */
+      StandardizeAndTrailVariable(xtemp1, ctr);	
+      one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), ASSERT_TRIE_TT);
+      attv_ctr++; ctr++;
+      pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */
+      recvariant_trie(flag, ASSERT_TRIE_TT);
+      break;
+    default:
+      xsb_abort("Bad type tag in one_term_check_ins()");
     }
+  }                
+  resetpdl;                                                   
 
-    /*
-     *  If an insertion was performed, do some maintenance on the new leaf.
-     */
-    if ( flag == 0 ) {
-      MakeLeafNode(Paren);
-      TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
-    }
+  simple_table_undo_bindings;
 
-    *flagptr = flag;	
-    return(Paren);
+  /* if there is no term to insert, an ESCAPE node has to be created/found */
+
+  if (arity == 0) {
+    one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, ASSERT_TRIE_TT);
+    Instr(Paren) = trie_proceed;
+  }
+
+  /*
+   *  If an insertion was performed, do some maintenance on the new leaf.
+   */
+  if ( flag == 0 ) {
+    MakeLeafNode(Paren);
+    TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
+  }
+
+  *flagptr = flag;	
+  return(Paren);
 }
 
 /*----------------------------------------------------------------------*/
