@@ -344,9 +344,8 @@ predicates are described here.
     Format can also be an atom enclosed in single quotes. However, in that
     case, escape sequences are not recognized and are printed as is.
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
-    will be unified with 
-    the field values read in.  (The functor symbol of {\tt
-    Term} is ignored.)  
+    will be unified with the field values read in.  (The functor symbol of {\tt
+    Term} is ignored.)  Note that floats do not unify with anything.
     {\tt Ret} must be a variable and it will be assigned a return value by
     the predicate: a negative integer if end-of-file is encountered;
     otherwise the number of fields read (as returned by {\tt scanf}.)

@@ -65,8 +65,11 @@ static FILE *fptr;			/* working variable */
 
 struct fmt_spec {
   char type; 	     	     	 /* i(nteger), f(loat), s(tring) */
-  char size;	    	    	 /* in case f the specifiers *, this number is
-				    1 or 2, depending the number of *'s */
+  /* in case of a print op and the specifiers *, this number is 1, 2, or 3,
+     depending the number of *'s. This tells how manu arguments to expect. In
+     case of a read operation, size can be 0, since here '*' means assignment
+     suppression. */
+  char size;
   char *fmt;
 };
 
@@ -430,7 +433,19 @@ bool fmt_read(void)
     cont = 0;
     curr_chars_consumed=0;
 
+    /* if there was an assignment suppression spec, '*' */
+    if (current_fmt_spec->size == 0)
+      current_fmt_spec->type = '-';
+
     switch (current_fmt_spec->type) {
+    case '-':
+      /* we had an assignment suppression character: just count how 
+	 many chars were scanned, don't skip to the next scan variable */
+      fscanf(fptr, aux_fmt, &curr_chars_consumed);
+      curr_assignment = 0;
+      i--; /* don't skip scan variable */
+      cont = 1; /* don't leave the loop */
+      break;
     case '.': /* last format substring (and has no conversion spec) */
       curr_assignment = fscanf(fptr, current_fmt_spec->fmt);
       if (is_var(Arg))
@@ -439,6 +454,12 @@ bool fmt_read(void)
     case 's':
       curr_assignment = fscanf(fptr, aux_fmt,
 			       str_arg, &curr_chars_consumed);
+      /* if no match, leave prolog variable uninstantiated;
+	 if it is a prolog constant, then return FALSE (no unification) */
+      if (curr_assignment == 0) {
+	if (is_var(Arg)) break;
+	else return FALSE;
+      }
       if (is_var(Arg))
 	c2p_string(str_arg,Arg);
       else if (strcmp(str_arg,string_val(Arg))) return FALSE;
@@ -457,6 +478,12 @@ bool fmt_read(void)
     case 'i':
       curr_assignment = fscanf(fptr, aux_fmt,
 			       &int_arg, &curr_chars_consumed);
+      /* if no match, leave prolog variable uninstantiated;
+	 if it is a prolog constant, then return FALSE (no unification) */
+      if (curr_assignment == 0) {
+	if (is_var(Arg)) break;
+	else return FALSE;
+      }
       if (is_var(Arg))
 	c2p_int(int_arg,Arg);
       else if (int_arg != int_val(Arg)) return FALSE;
@@ -464,6 +491,10 @@ bool fmt_read(void)
     case 'f':
       curr_assignment = fscanf(fptr, aux_fmt,
 			       &float_arg, &curr_chars_consumed);
+      /* floats never unify with anything */
+      if (!is_var(Arg)) return FALSE;
+      /* if no match, leave prolog variable uninstantiated */
+      if (curr_assignment == 0) break;
       c2p_float(float_arg, Arg);
       break;
     default:
@@ -847,7 +878,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 
   /* this doesn't do full parsing; it assumes anything that starts at % and
      ends at a valid conversion character is a conversion specifier. */ 
-  keep_going = 1;
+  keep_going = TRUE;
   expect = exclude = "";
   while ((pos < length) && keep_going) {
     if (strchr(exclude, workspace[pos]) != NULL) {
@@ -896,13 +927,19 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       exclude = "+- #[]hlL";
       break;
     case 'c':
+      if (read_op)
+	result.type = 's';
+      else
+	result.type = 'i';
+      keep_going = FALSE;
+      break;
     case 'd':
     case 'i':
     case 'u':
     case 'o':
     case 'x':
     case 'X':
-      keep_going = 0;
+      keep_going = FALSE;
       result.type = 'i'; /* integer or character */
       break;
     case 'e':
@@ -910,11 +947,11 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
     case 'f':
     case 'g':
     case 'G':
-      keep_going = 0;
+      keep_going = FALSE;
       result.type = 'f'; /* float */
       break;
     case 's':
-      keep_going = 0;
+      keep_going = FALSE;
       result.type = 's'; /* float */
       break;
     case 'p':
@@ -924,7 +961,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       if (read_op) {
 	result.type = 'n'; /* %n is like integer, but in fmt_read we treat it
 			      specially */
-	keep_going = 0;
+	keep_going = FALSE;
 	break;
       }
       xsb_abort("Format specifier %%n not supported: %s",
@@ -941,10 +978,14 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 		  workspace+current_substr_start);
       }
       result.type = 's';
-      keep_going = 0;
+      keep_going = FALSE;
       break;
 
     case '*':
+      if (read_op) {
+	result.size = 0;
+	break;
+      }
       if (strncmp(workspace+pos, ".*", 2) == 0) {
 	pos = pos+2;
 	expect = "feEgEscdiuoxX";
