@@ -52,6 +52,8 @@ OWRITE = 1
 STDWARN = 3
 HDRMSG = "While compiling XSB/cmplib:"
 
+OBJFILESAVED = objfiles.saved
+
 
 # suffix rules
 .SUFFIXES: .P .O .H
@@ -63,6 +65,7 @@ all: init  $(ALL) finish
 	@cat $(SVFILE)
 
 %.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
+	@cp -f $*.O $(OBJFILESAVED)
 	echo 'mc($*, $(Option)).' >> cmd...
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
@@ -74,10 +77,12 @@ all: init  $(ALL) finish
 .H.P:
 	touch $@
 .P.O:
+	@cp -f $*.O $(OBJFILESAVED)
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
-	/bin/rm -f $(SVFILE)
+	rm -f $(SVFILE)
+	@test -d $(OBJFILESAVED) || mkdir $(OBJFILESAVED)
 	@echo 'import file_reopen/4, fmt_write/3, file_flush/2 from file_io.' >> cmd...
 	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings --------------------\n",_).' >> cmd...
@@ -87,6 +92,8 @@ init:
 finish:
 	@echo 'fmt_write($(STDWARN),"%s\n",arg("--------------------------------------------")).' >> cmd...
 
+restore:
+	mv -f $(OBJFILESAVED)/*.O .
 
 
 .DONE:
