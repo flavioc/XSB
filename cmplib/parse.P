@@ -49,13 +49,16 @@
 % '_$multifile1'/1 and '_$apply_arity'/1 will be retracted in parse/4
 % '_$multifile_retract'/3 will be retracted in parse/4.
 %-----------------------------------------------------------------------
-
+:- import file_size/2 from file_io.
 parse(Modname, PFile, HFile, Module) :-
 	conset(needs_restart, 0),  % reset, if an error prevented this
 	(Modname == user
-	 ->	see(user), parse_clauses(user, Module0)
+	 ->	set_symbol_hash_table_size(1),
+		see(user), parse_clauses(user, Module0)
 	 ; file_exists(PFile)
-	 ->	(file_exists(HFile)
+	 ->	file_size(PFile,FileSize),
+		set_symbol_hash_table_size(FileSize),
+		(file_exists(HFile)
 		 ->	parse1(Modname,HFile,Module0)
 		 ;	Module0 = Module0	% init (lamp variable)
 		),
@@ -65,6 +68,19 @@ parse(Modname, PFile, HFile, Module) :-
 	conset(needs_restart, 0),  % clean up this var
 	retractall('_$multifile_retract'(_, Modname, _)),
 	module_close(Module0,Module), !.
+
+:- dynamic symbol_hash_table_size(_).
+
+set_symbol_hash_table_size(FileSize) :-
+	retractall(symbol_hash_table_size(_)),
+	EstSyms is FileSize // 50,
+	next_bigger_prime(EstSyms,Prime),
+	assert(symbol_hash_table_size(Prime)).
+
+next_bigger_prime(EstSyms,Prime) :-
+	prime(Prime),
+	EstSyms < Prime,
+	!.
 
 parse1(Modname, File, Module) :-
 	seeing(OldFile),
@@ -786,6 +802,25 @@ trans_arg(RawArg, structure(Sym, ArgList), SymTab, VidIn, VidOut) :-
 	prolog_arglist(RawArg, RawArgs, A, A),
 	sym_insert(N, A, _Prop, SymTab, Sym),
 	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
+
+prime(401).
+prime(809).
+prime(1601).
+prime(3203).
+prime(6421).
+prime(12809).
+prime(25601).
+prime(102407).
+prime(204803).
+prime(409609).
+prime(819229).
+prime(1638431).
+prime(3276803).
+prime(6553621).
+prime(13107229).
+prime(19999999).
+prime(_).  % to generate an error!
+
 
 /* ---------------------- end of file parse.P ------------------------- */
 

@@ -66,6 +66,8 @@
 /*======================================================================*/
 
 %%:- import term_set_arg/4 from machine.
+:- import symbol_hash_table_size/1 from parse.
+
 sym_insert(Name, Arity, Prop, sym_tab(Buff,_Completed,HashTab), Sym) :-
 	( var(HashTab) ->	% SymTab does not exist yet (is empty).
 		buff_alloc(8, Buff),
@@ -82,8 +84,6 @@ sym_insert(Name, Arity, Prop, sym_tab(Buff,_Completed,HashTab), Sym) :-
 		backtrackable_buff_set_word(Buff, 4, New_I, Index)
         ; true
 	).
-
-symbol_hash_table_size(1009).
 
 %   for indexed insertion both into an uncompleted and a completed symbol table
 sym_inserti(Name, Arity, Prop, [Sym|_], Sym, Index) :- 
