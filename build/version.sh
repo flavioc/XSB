@@ -9,7 +9,7 @@ xsb_beta_version=1
 #xsb_codename="Bavaria"          # the beer from Holland
 #xsb_codename="Okocim"           # from Poland! ;)
 #xsb_codename="Duff"              # Simpsons
-xsb_codename="Verboden Vrucht"    # by Tom Schrijvers
+xsb_codename="Verboden Vrucht"    # Belgian beer by Tom Schrijvers
 
 # Format: YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
 # With this, XSB should become Y2K compliant :-)
