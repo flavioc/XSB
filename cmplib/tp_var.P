@@ -34,12 +34,23 @@ getvarinst(VPrag, N, Pil, Pilr, Tin) :-
 	).
 
 putvarinst(VPrag, N, Pil, Pilr, Tabled) :-
+        vprag_type1(VPrag, Typ),
+        vprag_loc(VPrag,Loc),
+        vprag_occ(VPrag, Occ),
+        ( ( Occ == v ) -> putvoid(Typ,Loc,N,Pil,Pilr)
+        ; ( Occ == f) -> putvar_f(Typ,Loc,N,Pil,Pilr)
+        ; ( Occ == l ; Occ == s ) -> putvar_s(Typ,Loc,N,Tabled,Pil,Pilr)
+        ).
+
+/** Previous is Bart's suggested fix of a bug arising from nonglobalization
+putvarinst(VPrag, N, Pil, Pilr, Tabled) :-
 	vprag_type1(VPrag, Typ),
 	vprag_loc(VPrag,Loc),
 	vprag_occ(VPrag, Occ),
 	( ( Occ == v ; Occ == f ) -> putvar_f(Typ,Loc,N,Pil,Pilr)
 	; ( Occ == l ; Occ == s ) -> putvar_s(Typ,Loc,N,Tabled,Pil,Pilr)
 	).
+**/
 
 getvar_f(p,Loc,N,[getpvar(Loc,N)|Pil],Pil).
 getvar_f(t,Loc,N,Pil,Pilr) :-
@@ -55,6 +66,9 @@ getvar_s(u,Loc,N,[putuval(Loc,N1),gettval(N1,N)|Pil],Pil,T) :-
 
 putvar_f(p,Loc,N,[putpvar(Loc,N)|Pil],Pil).
 putvar_f(t,Loc,N,[puttvar(Loc,N)|Pil],Pil).
+
+putvoid(p,Loc,N,[putpvar(Loc,N),putuval(Loc,N)|Pil],Pil).
+putvoid(t,Loc,N,[puttvar(Loc,N)|Pil],Pil).
 
 /* tabled predicates always need an environment */
 /* warning !!! don't unify Tab in these clauses */
