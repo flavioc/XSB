@@ -1,5 +1,5 @@
 /* File:      aggregs.H
-** Author(s): David S. Warren
+** Author(s): David S. Warren, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, , 1993-1998
@@ -45,12 +45,16 @@
 	bagCount/2,
 % to use bagAvg, must define in usermod: 
 %	:- hilog sumcount.  sumcount([S|C],X,[S1|C1]) :- S1 is S+X, C1 is C+1.
-	bagAvg/2.
+	bagAvg/2,
+	filterReduce/4,
+        filterReduce1/4.  % this predicate only for demonstration purposes.
 
 :- import apply/2,apply/3,apply/4 from usermod.
 
-:- import member/2, copy_term/2 from basics.
+
+:- import arg/3, call/1, functor/3, '=..'/2 from standard.
+:- import member/2, copy_term/2, append/3 from basics.
 :- import sort/2, findall/3, bagof/3 from setof.
 :- import get_returns/3, delete_return/2 from tables.
 :- import (table)/1 from usermod.
-
+:- import variant/2 from subsumes.

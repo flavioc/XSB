@@ -1,5 +1,5 @@
 /* File:      aggregs.P
-** Author(s): David S. Warren
+** Author(s): David S. Warren, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1993-1998
@@ -36,6 +36,41 @@ bagReduce(+UnaryPred,?Result,+BinOp,+OpId) reduces all values that
 bagPO(+UnaryPred,?Result,+PO) finds all the maximal elements (under
 	the partial order PO) that unify with Result and that
 	UnaryPred is true of.
+
+filterReduce(?UnaryPred,+BinOp,+OpId,?Result) 
+	is copied from bagReduce with two changes.  NOTE CHANGE IN
+	ARGUMENT ORDER!!!
+	1) it does not use HiLog.  Rather than trying to reduce Hilog
+	terms of the form, e.g. p(X,Y)(Value), it assumes that BinOp
+	is applied to the last argument of a non-Hilog term,
+	e.g. p(X,Y,Value).  The Hilog version is more elegant, surely,
+	but is only as robust as XSB's Hilog implementation.
+
+	2) it aggregates answers using a variance rather than a
+	unification. If we have two facts
+
+	p(X)(1)
+	p(a)(2)
+	p(a)(3)
+
+	or equivalently 
+
+	p(X,1).
+	p(a,2).
+	p(a,3).
+
+	and want to construct the maximum, bagReduce will return
+
+	p(a)(3).
+
+	while filterReduce will return 
+
+	p(X,1).
+	p(a,3).
+
+	Clause indexing should be more efficient for filterReduce, but
+	indexing of answers within the table should be more efficient for
+	bagReduce.
 
 ========================================================================*/
 
@@ -94,6 +129,73 @@ bagReduce1(Call,Res,Op,Id) :-
 % Define HiLog bagOf in terms of Prolog bagof. 
 bagOf(Call,List) :- bagof(Var,Call(Var),List).
 
+/*=======================================================================*/
+/* Can this be done with sysmod? */
+filterMin(Call,Var) :- filterReduce(Call,min,neg_inf,Var).
+
+filterMax(Call,Var) :- filterReduce(Call,max,inf,Var).
+
+max(X,Y,Y):- \+ number(X),!.
+max(X,Y,X):- \+ number(Y),!.
+max(X,Y,Z):- (X > Y -> Z = X ; Z = Y).
+
+min(X,Y,Y):- \+ number(X),!.
+min(X,Y,X):- \+ number(Y),!.
+min(One,Two,Min):- One > Two -> Min = Two ; Min = One.
+
+% Reduce elements using associative Op with identity Id.
+filterReduce(Call,Op,Id,Res) :- filterReduce1(Call,Op,Id,Res), fail.
+filterReduce(Call,Op,Id,Res) :- filterReduce1(Call,Op,Id,Res).
+:- table filterReduce1/4.
+filterReduce1(Call,Op,Id,Res) :-
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+		functor(Comp,Op,3),
+		functor(Idcomp,Op,3),
+	copy_term(Skel,Oskel),
+	get_new_call(Call,Nvar,New_call),   % rather than copy_term,
+					    % since we want variant.
+		arg(1,Idcomp,Id),arg(2,Idcomp,Nvar),arg(3,Idcomp,Res),
+		arg(1,Comp,Oopt),arg(2,Comp,Nvar),arg(3,Comp,Res),
+	get_non_opt(Skel,Sargs),	        % divide into opt arg and rest
+	New_call,
+%	writeln(New_call),
+	(get_returns(Cs,Oskel,Leaf),
+%	 writeln(get_returns(Cs,Oskel,Leaf)),
+ 	 get_opt_non_opt(Oskel,Osargs,Oopt),	
+						% divide into opt arg and rest
+%	 writeln((Sargs,Osargs)),
+	 variant(Sargs,Osargs)
+	 ->	
+		Comp,
+%		writeln(p(Comp,Res,Oopt)),
+		Res \== Oopt,
+		delete_return(Cs,Leaf)
+	 ;	
+		Idcomp	
+	).
+
+get_new_call(Call,Res,Newcall):- 
+	Call =.. List,
+	append(List,[Res],Newlist),
+	Newcall =.. Newlist,!.
+
+get_opt_non_opt(Call,Args,Opt):- 
+	Call =.. [_Functor|List],
+	get_opt_non_opt_1(List,Args,Opt).
+
+get_non_opt(Call,Args):- 
+	Call =.. [_Functor|List],
+	get_non_opt_1(List,Args).
+
+get_non_opt_1([_H],[]):-!.
+get_non_opt_1([H|T],[H|T1]):-
+	get_non_opt_1(T,T1).
+
+get_opt_non_opt_1([H],[],H):-!.
+get_opt_non_opt_1([H|T],[H|T1],O):-
+	get_opt_non_opt_1(T,T1,O).
+
 /*
 ** A built-in used in the implementation of aggregates.                   
 ** Takes: Breg (where the choice point was saved), 
@@ -104,3 +206,6 @@ bagOf(Call,List) :- bagof(Var,Call(Var),List).
 */
 
 breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
+
+
+
