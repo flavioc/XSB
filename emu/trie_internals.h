@@ -28,29 +28,25 @@
 
 #define INTERNAL_TRIE_DEFS
 
+
 /*
  * Internal specifications of tries that the hard-core trie routines
  * require.  However, these specs need not be visible to engine
- * components which simply use these structures through normal
- * channels.
+ * components which simply use tries through normal channels.
  */
 
-
+#include "inst.h"
 #include "struct_manager.h"
 #include "tries.h"
-
 
 
 /*===========================================================================*/
 
 /*
- *	  G E N E R A L   C O M P O N E N T   O P E R A T I O N S
+ *	  G E N E R I C   C O M P O N E N T - O P E R A T I O N S
  *	  =======================================================
  *
- *  The definitions in this section apply to both types of tries: Basic
- *  and Time-Stamped.  We ensure type compatibility by defining generic
- *  macros for accessing their common fields and using them exclusively
- *  in the definitions that follow.
+ *  See the docs at the top of tries.h.
  *
  *  We use the following notation:
  *    TN_*         Trie Node operation
@@ -61,30 +57,16 @@
  *    pTSC         pointer to a Trie SubComponent
  */
 
-#define TN_Instr(pTN)		TSC_Instr(pTN)
-#define TN_Status(pTN)		TSC_Status(pTN)
-#define TN_TrieType(pTN)	TSC_TrieType(pTN)
-#define TN_NodeType(pTN)	TSC_NodeType(pTN)
-#define TN_Parent(pTN)		( (void *)BTN_Parent((BTNptr)(pTN)) )
-#define TN_Child(pTN)		( (void *)BTN_Child((BTNptr)(pTN)) )
-#define TN_Sibling(pTN)		( (void *)BTN_Sibling((BTNptr)(pTN)) )
-#define TN_Symbol(pTN)		BTN_Symbol((BTNptr)(pTN))
-#define TN_GetHashHdr(pTN)	TN_Child(pTN)
-
 #define TrieHT_Instr(pTHT)	   TSC_Instr(pTHT)
 #define TrieHT_Status(pTHT)	   TSC_Status(pTHT)
 #define TrieHT_TrieType(pTHT)	   TSC_TrieType(pTHT)
 #define TrieHT_NodeType(pTHT)      TSC_NodeType(pTHT)
-#define TrieHT_NumBuckets(pTHT)    BTHT_NumBuckets((BTHTptr)(pTHT))
-#define TrieHT_NumContents(pTHT)   BTHT_NumContents((BTHTptr)(pTHT))
-#define TrieHT_BucketArray(pTHT)   ( (void **)BTHT_BucketArray((BTHTptr)(pTHT)) )
-#define TrieHT_AllocLink(pTHT)     ( (void *)BTHT_AllocLink((BTHTptr)(pTHT)) )
-#define TrieHT_GetHashMask(pTHT)   BTHT_GetHashMask((BTHTptr)(pTHT))
-
-#define TSC_Instr(pTSC)		IPT_Instr(*(InstrPlusType *)(pTSC))
-#define TSC_Status(pTSC)	IPT_Status(*(InstrPlusType *)(pTSC))
-#define TSC_TrieType(pTSC)	IPT_TrieType(*(InstrPlusType *)(pTSC))
-#define TSC_NodeType(pTSC)	IPT_NodeType(*(InstrPlusType *)(pTSC))
+#define TrieHT_NumBuckets(pTHT)    ( (pTHT)->numBuckets )
+#define TrieHT_NumContents(pTHT)   ( (pTHT)->numContents )
+#define TrieHT_BucketArray(pTHT)   ( (pTHT)->pBucketArray )
+#define TrieHT_PrevHT(pTHT)	   ( (pTHT)->prev )
+#define TrieHT_NextHT(pTHT)	   ( (pTHT)->next )
+#define TrieHT_GetHashSeed(pTHT)   ( TrieHT_NumBuckets(pTHT) - 1 )
 
 /*---------------------------------------------------------------------------*/
 
@@ -113,28 +95,28 @@
  */
 
 
-#define TN_SetInstr(pTN,Symbol)				\
-   switch( TrieSymbolType(Symbol) ) {			\
-   case CS:						\
-     TN_Instr(pTN) = (byte)trie_try_str;		\
-     break;						\
-   case INT:						\
-   case STRING:						\
-   case FLOAT:						\
-     TN_Instr(pTN) = (byte)trie_try_numcon;		\
-     break;						\
-   case TrieVar:					\
-     if (IsNewTrieVar(Symbol))				\
-       TN_Instr(pTN) = (byte)trie_try_var;		\
-     else						\
-       TN_Instr(pTN) = (byte)trie_try_val;		\
-     break;						\
-   case LIST:						\
-     TN_Instr(pTN) = (byte)trie_try_list;		\
-     break;						\
-   default:						\
-     xsb_abort("Trie Node creation: Bad tag in symbol %lx", \
-               Symbol);	    	    	    		\
+#define TN_SetInstr(pTN,Symbol)					\
+   switch( TrieSymbolType(Symbol) ) {				\
+   case CS:							\
+     TN_Instr(pTN) = (byte)trie_try_str;			\
+     break;							\
+   case INT:							\
+   case STRING:							\
+   case FLOAT:							\
+     TN_Instr(pTN) = (byte)trie_try_numcon;			\
+     break;							\
+   case TrieVar:						\
+     if (IsNewTrieVar(Symbol))					\
+       TN_Instr(pTN) = (byte)trie_try_var;			\
+     else							\
+       TN_Instr(pTN) = (byte)trie_try_val;			\
+     break;							\
+   case LIST:							\
+     TN_Instr(pTN) = (byte)trie_try_list;			\
+     break;							\
+   default:							\
+     xsb_abort("Trie Node creation: Bad tag in symbol %lx",	\
+               Symbol);						\
    }
 
 
@@ -144,6 +126,7 @@
    else							\
      TN_Instr(pHead) -= 0x2;	/* TRY -> NO_CP */	\
  }
+
 
 /*
  *  Applied to the current head of a node-chain when adding a new node at
@@ -209,6 +192,7 @@
 
 /* The following definition depends upon the instruction field having
    already been set to a valid trie instruction code. */
+
 #define MakeStatusDeleted(pTSC)	  TSC_Status(pTSC) = TSC_Instr(pTSC)
 
 /*---------------------------------------------------------------------------*/
@@ -221,6 +205,7 @@
  *  1) The underlying structure of the trie: Basic or Time-Stamped
  *  2) The role the trie is playing in the system
  */
+
 enum Types_of_Tries {
   CALL_TRIE_TT, BASIC_ANSWER_TRIE_TT, TS_ANSWER_TRIE_TT,
   DELAY_TRIE_TT, ASSERT_TRIE_TT, INTERN_TRIE_TT
@@ -252,12 +237,14 @@ enum Types_of_Tries {
  *  There are 6 basic types of TSCs that we wish to discriminate.
  */
 
-#define  TRIE_ROOT_NT		0x08   /* binary:  1000 */
-#define  HASH_HEADER_NT		0x04   /* binary:  0100 */
-#define  LEAF_NT		0x02   /* binary:  0010 */
-#define  HASHED_LEAF_NT		0x03   /* binary:  0011 */
-#define  INTERRIOR_NT		0x00   /* binary:  0000 */
-#define  HASHED_INTERRIOR_NT	0x01   /* binary:  0001 */
+enum Types_of_Trie_Nodes {
+  TRIE_ROOT_NT		= 0x08,   /* binary:  1000 */
+  HASH_HEADER_NT	= 0x04,   /* binary:  0100 */
+  LEAF_NT		= 0x02,   /* binary:  0010 */
+  HASHED_LEAF_NT	= 0x03,   /* binary:  0011 */
+  INTERRIOR_NT		= 0x00,   /* binary:  0000 */
+  HASHED_INTERRIOR_NT	= 0x01    /* binary:  0001 */
+};
 
 #define  HASHED_NODE_MASK	0x01
 #define  LEAF_NODE_MASK		0x02
@@ -349,13 +336,22 @@ enum Types_of_Tries {
  *
  *  When interning a term into a trie, variables in the term must be
  *  marked as they are encountered (to handle nonlinearity).  Marking of
- *  these variables is performed by binding them to a special array of
- *  self-referential pointers, VarEnumerator[].  After dereferencing the
- *  variable, we can check to see whether the pointer lies within the
- *  array; if so, the variable has already been encountered.  The integer
- *  assigned to a trievar is the index into this array for the cell that
- *  marks the term's variable.
+ *  (or standardizing) these variables is performed by binding them to a
+ *  special array of self-referential pointers, CallVarEnum[].  After
+ *  dereferencing the variable, we can check to see whether the pointer
+ *  lies within the array; if so, the variable has already been
+ *  encountered.  The integer assigned to a trievar is the index into this
+ *  array for the cell that marks the term's variable.
+ *
+ *  When unifying a term with a trie path, it will be necessary to track
+ *  bindings made to variables of the trie.  Another array of
+ *  self-referential pointers, TrieVarBindings[], is used to maintain
+ *  these bindings.  The binding for a trievar with index I is contained
+ *  in TrieVarBindings[I].
  */
+
+extern Cell CallVarEnum[];
+extern Cell TrieVarBindings[];
 
 #define NEW_TRIEVAR_TAG      0x10000
 
@@ -368,19 +364,37 @@ enum Types_of_Tries {
 #define IsNewTrieVar(Symbol)	  ( trievar_val(Symbol) & NEW_TRIEVAR_TAG )
 
 
-#define StandardizeVariable(DerefedVar,Index)	\
-   bld_ref(DerefedVar,VarEnumerator[Index])
+#define StandardizeVariable(dFreeVar,Index)	\
+   bld_ref((CPtr)dFreeVar,CallVarEnum[Index])
 
-#define IsStandardizedVariable(DerefedVar)			\
-   ( ((CPtr)(DerefedVar) >= VarEnumerator) &&			\
-     ((CPtr)(DerefedVar) <= (VarEnumerator + NUM_TRIEVARS - 1)) )
+#define IsStandardizedVariable(dFreeVar)			\
+   ( ((CPtr)(dFreeVar) >= CallVarEnum) &&			\
+     ((CPtr)(dFreeVar) <= (CallVarEnum + NUM_TRIEVARS - 1)) )
+
+#define ResetStandardizedVariable(VarAddr)	\
+   bld_free( ((CPtr)VarAddr) )
 
 /*
  *  Given an address that has been determined to lie within the
- *  VarEnumerator array, determine its index within this array.
+ *  CallVarEnum array, determine its index within this array.
  */
 #define IndexOfStandardizedVariable(pVarEnumCell)	\
-   ( (CPtr)(pVarEnumCell) - VarEnumerator )
+   ( (CPtr)(pVarEnumCell) - CallVarEnum )
+
+
+/*
+ *  Derefs a symbol stored in a trie node by converting a TrieVar into
+ *  an address, and then performing a normal deref operation.
+ */
+#define TrieSymbol_Deref(Symbol)			\
+   if (IsTrieVar(Symbol)) {				\
+     Symbol = TrieVarBindings[DecodeTrieVar(Symbol)];	\
+     deref(Symbol);					\
+   }
+
+#define IsUnboundTrieVar(dFreeVar)					\
+   ( ((CPtr)(dFreeVar) >= TrieVarBindings) &&				\
+     ((CPtr)(dFreeVar) <= (TrieVarBindings + NUM_TRIEVARS - 1)) )
 
 /*---------------------------------------------------------------------------*/
 
@@ -388,6 +402,29 @@ enum Types_of_Tries {
  *			 Subcomponent Operations
  *		         =======================
  */
+
+/*
+ *                            Trie Nodes
+ *                            ----------
+ */
+
+#define TN_Init(TN,TrieType,NodeType,Symbol,Parent,Sibling) {	\
+								\
+   if ( NodeType != TRIE_ROOT_NT ) {				\
+     TN_SetInstr(TN,Symbol);					\
+     TN_ResetInstrCPs(TN,Sibling);				\
+   }								\
+   else								\
+     TN_Instr(TN) = trie_root;					\
+   TN_Status(TN) = VALID_NODE_STATUS;				\
+   TN_TrieType(TN) = TrieType;					\
+   TN_NodeType(TN) = NodeType;					\
+   TN_Symbol(TN) = Symbol;					\
+   TN_Parent(TN) = Parent;					\
+   TN_Child(TN) = NULL;						\
+   TN_Sibling(TN) = Sibling;					\
+ }
+
 
 #define SearchChainForSymbol(Chain,Symbol,ChainLength) {	\
    ChainLength = 0;						\
@@ -400,8 +437,8 @@ enum Types_of_Tries {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *                       Basic Trie Hash Table
- *                       ---------------------
+ *                         Trie Hash Tables
+ *                         ----------------
  *
  *  A hash table is created below a trie node when the number of its
  *  children becomes greater than MAX_SIBLING_LEN.  The hash table is
@@ -431,17 +468,24 @@ enum Types_of_Tries {
 #define CELL_TAG_SIZE	4	/* should go into cell.h for each machine */
 #define TRIEVAR_BUCKET	0
 
-#define TrieHash(Symbol, HashMask)			\
+#define TrieHash(Symbol, HashSeed)			\
    ( IsTrieVar(Symbol)					\
       ? TRIEVAR_BUCKET					\
-      : ( ((Symbol) >> CELL_TAG_SIZE) & (HashMask) )	\
+      : ( ((Symbol) >> CELL_TAG_SIZE) & (HashSeed) )	\
     )
+
+#define CalculateBucketForSymbol(pHT,Symbol)		\
+   ( TrieHT_BucketArray(pHT) + TrieHash(Symbol,TrieHT_GetHashSeed(pHT)) )
+
 
 /*
  *  Hashtable sizes; must be power of 2 and > MAX_SIBLING_LEN.
  */
 #define TrieHT_INIT_SIZE     64
 #define TrieHT_NewSize(pHT)  ( TrieHT_NumBuckets(pHT) << 1 )
+
+extern void     hashify_children(BTNptr, int);
+
 
 /*
  *  Inserting into a bucket with few nodes reflects a good hash.  In
@@ -459,34 +503,27 @@ enum Types_of_Tries {
 #define TrieHT_ExpansionCheck(pHT,NumBucketContents) {		\
    if ( (NumBucketContents > BUCKET_CONTENT_THRESHOLD) &&	\
         (TrieHT_NumContents(pHT) > TrieHT_NumBuckets(pHT)) )	\
-     expand_trie_ht(pHT);					\
+     expand_trie_ht((BTHTptr)pHT);				\
  }
 
    
 /*
- *  Insert a Trie Node into a hash table whose size is HashMask+1.
+ *  Insert a Trie Node into a hash table whose size is HashSeed+1.
  */
-#define TrieHT_InsertNode(pBucketArray,HashMask,pTrieNode) {		\
-									\
-   BTNptr pTN, *pBucket;						\
-          								\
-   pTN = (BTNptr)pTrieNode;						\
-   pBucket = (BTNptr *)pBucketArray + TrieHash(TN_Symbol(pTN),HashMask);\
-   if ( IsNonNULL(*pBucket) ) {						\
-     TN_ForceInstrCPtoTRY(pTN);						\
-     TN_RotateInstrCPtoRETRYorTRUST(*pBucket);				\
-   }									\
-   else									\
-     TN_ForceInstrCPtoNOCP(pTN);					\
-   BTN_Sibling(pTN) = *pBucket;						\
-   *pBucket = pTN;							\
+#define TrieHT_InsertNode(pBucketArray,HashSeed,pTN) {			  \
+									  \
+   void **pBucket;							  \
+									  \
+   pBucket = (void **)(pBucketArray + TrieHash(TN_Symbol(pTN),HashSeed)); \
+   if ( IsNonNULL(*pBucket) ) {						  \
+     TN_ForceInstrCPtoTRY(pTN);						  \
+     TN_RotateInstrCPtoRETRYorTRUST((BTNptr)*pBucket);			  \
+   }									  \
+   else									  \
+     TN_ForceInstrCPtoNOCP(pTN);					  \
+   TN_Sibling(pTN) = *pBucket;						  \
+   *pBucket = pTN;							  \
  }
-
-
-#define Calculate_Bucket_for_Symbol(pHT,Symbol)		\
-   (void *)( TrieHT_BucketArray(pHT) +			\
-	     TrieHash(Symbol,TrieHT_GetHashMask(pHT)) )
-
 
 /*===========================================================================*/
 
@@ -495,42 +532,40 @@ enum Types_of_Tries {
  *	  =========================================================
  */
 
-/*
- *				Basic Tries
- *				===========
- */
-
+/*-------------------------------------------------------------------------*/
 
 /*
- *                            Basic Trie Node
- *                            ---------------
+ *				 Basic Tries
+ *				 ===========
  */
 
-#define BTN_SetHashHdr(pBTN,pTHT)   BTN_Child(pBTN) = (BTNptr)(pTHT)
-#define BTN_GetHashHdr(pBTN)        ((BTHTptr)BTN_Child(pBTN))
+/*
+ *                             Basic Trie Node
+ *                             ---------------
+ */
 
-#define BTN_SetSF(pBTN,pSF)     BTN_Child(pBTN) = (BTNptr)(pSF)
-#define BTN_GetSF(pBTN)         ((SGFrame)BTN_Child(pBTN))
+/* For BTNs which hash children
+   ---------------------------- */
+#define BTN_SetHashHdr(pBTN,pTHT)	TN_SetHashHdr(pBTN,pTHT)
+#define BTN_GetHashHdr(pBTN)		( (BTHTptr)TN_GetHashHdr(pBTN) )
 
+/* For leaves of Call Tries
+   ------------------------ */
+#define CallTrieLeaf_SetSF(pBTN,pSF)     BTN_Child(pBTN) = (BTNptr)(pSF)
+#define CallTrieLeaf_GetSF(pBTN)         ((SGFrame)BTN_Child(pBTN))
+
+/* Allocating New BTNs
+   ------------------- */
 #define BTNs_PER_BLOCK   2*K
 extern Structure_Manager smTableBTN;
 extern Structure_Manager smAssertBTN;
 extern Structure_Manager *smBTN;
 
-/* Allocating New BTNs
-   ------------------- */
-#define New_BTN(pBTN,TrieType,NodeType,Symbol,Parent,Sibling) {	\
-   SM_AllocateStruct(*smBTN,pBTN);				\
-   TN_SetInstr(pBTN,Symbol);					\
-   TN_ResetInstrCPs(pBTN,Sibling);				\
-   BTHT_Status(pBTN) = VALID_NODE_STATUS;			\
-   BTN_TrieType(pBTN) = TrieType;				\
-   BTN_NodeType(pBTN) = NodeType;				\
-   BTN_Symbol(pBTN) = Symbol;					\
-   BTN_Parent(pBTN) = Parent;					\
-   BTN_Child(pBTN) = NULL;					\
-   BTN_Sibling(pBTN) = Sibling;					\
- }
+BTNptr new_btn(int TrieType, int NodeType, Cell Symbol,
+	       BTNptr Parent, BTNptr Sibling);
+
+#define New_BTN(BTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
+   BTN = new_btn(TrieType,NodeType,Symbol,Parent,Sibling)
 
 #define CreateEscapeBTN(pBTN,TrieType,Parent) {				\
    New_BTN(pBTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\
@@ -540,65 +575,261 @@ extern Structure_Manager *smBTN;
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *                     Basic Trie Hash Table Headers
- *                     -----------------------------
+ *                        Basic Trie Hash Tables
+ *                        ----------------------
  */
 
+typedef struct Basic_Trie_HashTable *BTHTptr;
+typedef struct Basic_Trie_HashTable {
+  InstrPlusType info;
+  unsigned long  numContents;
+  unsigned long  numBuckets;
+  BTNptr *pBucketArray;
+  BTHTptr prev, next;		   /* DLL needed for branch deletion */
+} BasicTrieHT;
 
-#define BTHTs_PER_BLOCK   16
-extern Structure_Manager smTableBTHT;
-extern Structure_Manager smAssertBTHT;
-extern Structure_Manager *smBTHT;
+/* Field Access Macros
+   ------------------- */
+#define BTHT_Instr(pTHT)		TrieHT_Instr(pTHT)
+#define BTHT_Status(pTHT)		TrieHT_Status(pTHT)
+#define BTHT_TrieType(pTHT)		TrieHT_TrieType(pTHT)
+#define BTHT_NodeType(pTHT)		TrieHT_NodeType(pTHT)
+#define BTHT_NumBuckets(pTHT)		TrieHT_NumBuckets(pTHT)
+#define BTHT_NumContents(pTHT)		TrieHT_NumContents(pTHT)
+#define BTHT_BucketArray(pTHT)		TrieHT_BucketArray(pTHT)
+#define BTHT_PrevBTHT(pTHT)		TrieHT_PrevHT(pTHT)
+#define BTHT_NextBTHT(pTHT)		TrieHT_NextHT(pTHT)
 
-#define New_BTHT(pBTHT,TrieType) {					\
-   SM_AllocateStruct(*smBTHT,pBTHT);					\
-   BTHT_Instr(pBTHT) = hash_opcode;					\
-   BTHT_Status(pBTHT) = VALID_NODE_STATUS;				\
-   BTHT_TrieType(pBTHT) = TrieType;					\
-   BTHT_NodeType(pBTHT) = HASH_HEADER_NT;				\
-   BTHT_NumContents(pBTHT) = MAX_SIBLING_LEN + 1;			\
-   BTHT_NumBuckets(pBTHT) = TrieHT_INIT_SIZE;				\
-   BTHT_BucketArray(pBTHT) =						\
-     (BTNptr *)calloc(TrieHT_INIT_SIZE, sizeof(BTNptr));		\
-   if ( IsNonNULL(BTHT_BucketArray(pBTHT)) )				\
-     BTHT_AddNewToAllocList(pBTHT) 					\
+#define BTHT_GetHashSeed(pTHT)		TrieHT_GetHashSeed(pTHT)
+
+/* General Header Management
+   ------------------------- */
+#define _New_TrieHT(SM,THT,TrieType) {					\
+									\
+   BTHTptr btht;							\
+									\
+   SM_AllocateStruct(SM,btht);						\
+   BTHT_Instr(btht) = hash_opcode;					\
+   BTHT_Status(btht) = VALID_NODE_STATUS;				\
+   BTHT_TrieType(btht) = TrieType;					\
+   BTHT_NodeType(btht) = HASH_HEADER_NT;				\
+   BTHT_NumContents(btht) = MAX_SIBLING_LEN + 1;			\
+   BTHT_NumBuckets(btht) = TrieHT_INIT_SIZE;				\
+   BTHT_BucketArray(btht) =						\
+     (BTNptr *)calloc(TrieHT_INIT_SIZE, sizeof(void *));		\
+   if ( IsNonNULL(BTHT_BucketArray(btht)) )				\
+     TrieHT_AddNewToAllocList(SM,btht)					\
    else {								\
-     SM_DeallocateStruct(*smBTHT,pBTHT);				\
+     SM_DeallocateStruct(SM,btht);					\
      xsb_abort("No room to allocate buckets for tabling hash table");	\
    }									\
- }
+   THT = (void *)btht;							\
+}
+
+extern void     expand_trie_ht(BTHTptr);
 
 /*
  * Allocated Hash Tables are maintained on a list to facilitate
  * deallocation of the bucket arrays when the trie space is freed
  * en masse.
  */
-#define BTHT_AddNewToAllocList(pBTHT)					\
-   SM_AddToAllocList_DL(*smBTHT,pBTHT,BTHT_PrevBTHT,BTHT_NextBTHT)
+#define TrieHT_AddNewToAllocList(SM,THT)	\
+   SM_AddToAllocList_DL(SM,THT,BTHT_PrevBTHT,BTHT_NextBTHT)
 
-#define BTHT_RemoveFromAllocList(pBTHT)					 \
-   SM_RemoveFromAllocList_DL(*smBTHT,pBTHT,BTHT_PrevBTHT,BTHT_NextBTHT)
+#define TrieHT_RemoveFromAllocList(SM,THT)	\
+   SM_RemoveFromAllocList_DL(SM,THT,BTHT_PrevBTHT,BTHT_NextBTHT)
 
-/* Prepare for mass deallocation */
-#define BTHT_FreeAllocatedBuckets {				\
-   BTHTptr pBTHT;						\
-								\
-   for ( pBTHT = SM_AllocList(*smBTHT);  IsNonNULL(pBTHT);	\
-	 pBTHT = BTHT_NextBTHT(pBTHT) )				\
-     free(BTHT_BucketArray(pBTHT));				\
+/* Preparation for mass deallocation */
+#define TrieHT_FreeAllocatedBuckets(SM) {		\
+   BTHTptr pBTHT;					\
+							\
+   for ( pBTHT = SM_AllocList(SM);  IsNonNULL(pBTHT);	\
+	 pBTHT = BTHT_NextBTHT(pBTHT) )			\
+     free(BTHT_BucketArray(pBTHT));			\
+ }
+
+/* Allocating Headers
+   ------------------ */
+#define BTHTs_PER_BLOCK   16
+extern Structure_Manager smTableBTHT;
+extern Structure_Manager smAssertBTHT;
+extern Structure_Manager *smBTHT;
+
+#define New_BTHT(BTHT,TrieType)      _New_TrieHT(*smBTHT,BTHT,TrieType)
+
+/*---------------------------------------------------------------------------*/
+
+/*
+ *			    Time-Stamped Tries
+ *			    ==================
+ */
+
+/*
+ *			  Time-Stamped Trie Nodes
+ *			  -----------------------
+ */
+
+/* For roots of TS Answer Tries
+   ---------------------------- */
+#define TSTRoot_SetHTList(pTST,pTSTHT)  TSTN_Sibling(pTST) = (TSTNptr)pTSTHT
+#define TSTRoot_GetHTList(pTST)         ((TSTHTptr)TSTN_Sibling(pTST))
+
+/* For TSTNs which hash children
+   ----------------------------- */
+#define TSTN_SetHashHdr(pTSTN,pTSTHT)	TN_SetHashHdr(pTSTN,pTSTHT)
+#define TSTN_GetHashHdr(pTSTN)		( (TSTHTptr)TN_GetHashHdr(pTSTN) )
+
+/* For Hashed TSTNs
+   ---------------- */
+#define TSTN_SetEntry(pTSTN,Entry)   TSTN_TimeStamp(pTSTN) = (TimeStamp)(Entry)
+#define TSTN_GetEntry(pTSTN)	      ((EntryPtr)TSTN_TimeStamp(pTSTN))
+#define TSTN_GetTSfromEntry(pTSTN)    Entry_TimeStamp(TSTN_GetEntry(pTSTN))
+
+/* For leaves of TS Answer Tries
+   ----------------------------- */
+#define TSTN_GetDelayList(pTSTN)      TSTN_Child(pTSTN)
+
+/* Allocating New TSTNs
+   -------------------- */
+#define TSTNs_PER_BLOCK   16
+extern Structure_Manager smTSTN;
+
+TSTNptr new_tstn(int TrieType, int NodeType, Cell Symbol,
+		 TSTNptr Parent, TSTNptr Sibling);
+
+#define New_TSTN(TSTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
+   TSTN = new_tstn(TrieType,NodeType,Symbol,Parent,Sibling)
+
+#define CreateEscapeTSTN(pTSTN,TrieType,Parent) {			\
+   New_TSTN(pTSTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\
+   TSTN_Instr(pTSTN) = trie_proceed;					\
+ }
+
+#define EMPTY_TST_TIMESTAMP	0
+#define TSTN_DEFAULT_TIMESTAMP	1
+#define PRODUCER_SF_INITIAL_TS	TSTN_DEFAULT_TIMESTAMP
+#define CONSUMER_SF_INITIAL_TS	EMPTY_TST_TIMESTAMP
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *                         Time Stamp Index
+ *                         ----------------
+ *
+ *  Hash tables allow for indexing on symbols of the stored terms.  But
+ *  in the absence of symbol-key info (i.e., variable processing) it is
+ *  desirable to select symbols based on time stamp value.  Therefore,
+ *  hashed symbols are also organized in a secondary indexing structure
+ *  based on their time stamps.  This index allows for the selection of
+ *  symbols with valid time stamps -- symbols having time stamp values
+ *  greater than some given time stamp -- in time proportional to such
+ *  symbols.  The organization of a Time Stamp Index is maintained by a
+ *  TST hash table and consists of a doubly-linked list of nodes (the
+ *  'prev' field of the first node and the 'next' field of the last are
+ *  always NULL) which, when traversed from head to tail, visits the
+ *  symbols in decreasing time-stamp order.  These nodes are assigned
+ *  one to a TSTN and contain bidirectional references, allowing for
+ *  reorganization in constant time (TSTNs are likely to change their
+ *  time stamp value during insertions).  The nodes of this index are
+ *  globally maintained by a "Structure Manager" structure, are
+ *  allocated from this pool when needed, and returned when not.  To
+ *  allow rapid deallocation in accordance with the constraints of the
+ *  Structure_Manager, the first word in these indexing nodes contain
+ *  one of the fields used to link them into a chain.
+ */
+
+typedef struct TimeStamp_Index_Node *EntryPtr;
+typedef struct TimeStamp_Index_Node {
+  EntryPtr prev;
+  EntryPtr next;
+  TimeStamp ts;
+  TSTNptr tstn;
+} TSI_Entry;
+
+#define Entry_Prev(pEntry)		((pEntry)->prev)
+#define Entry_Next(pEntry)		((pEntry)->next)
+#define Entry_TimeStamp(pEntry)		((pEntry)->ts)
+#define Entry_TSTNode(pEntry)		((pEntry)->tstn)
+
+#define IsHeadOfEntryList(pEntry)	IsNULL(Entry_Prev(pEntry))
+#define IsTailOfEntryList(pEntry)	IsNULL(Entry_Next(pEntry))
+
+/* Memory Management
+   ----------------- */
+#define TSI_ENTRIES_PER_BLOCK    16
+
+extern Structure_Manager smEntry;
+
+/*
+ *  Set `pEntry' to an unused Entry in the global TSI_Entry resource,
+ *  and associate this Entry with the TSTN pointed to by pTSTN.
+ * 'prev' and 'next' links are left to the caller to set.
+ */
+#define New_Entry(pEntry, pTSTN) {			\
+   SM_AllocateStruct(smEntry,pEntry);			\
+   Entry_TSTNode(pEntry) = pTSTN;			\
+   Entry_TimeStamp(pEntry) = TSTN_TimeStamp(pTSTN);	\
+ }
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *                       Time-Stamped Trie Hash Table
+ *                       ----------------------------
+ *
+ */
+
+typedef struct HashTable_for_TSTNs *TSTHTptr;
+typedef struct HashTable_for_TSTNs {
+  InstrPlusType info;
+  unsigned long  numContents;
+  unsigned long  numBuckets;
+  TSTNptr *pBucketArray;
+  TSTHTptr prev, next;
+  TSTHTptr internalLink;     /* for reclaimation of Entries w/i a TST */
+  EntryPtr head_entry;       /* these fields maintain TSI */
+  EntryPtr tail_entry;
+} TST_HashTable;
+
+/* Field Access Macros
+   ------------------- */
+#define TSTHT_Instr(pTSTHT)		TrieHT_Instr(pTSTHT)
+#define TSTHT_Padding(pTSTHT)		TrieHT_Status(pTSTHT)
+#define TSTHT_TrieType(pTSTHT)		TrieHT_TrieType(pTSTHT)
+#define TSTHT_NodeType(pTSTHT)		TrieHT_NodeType(pTSTHT)
+#define TSTHT_NumBuckets(pTSTHT)	TrieHT_NumBuckets(pTSTHT)
+#define TSTHT_NumContents(pTSTHT)	TrieHT_NumContents(pTSTHT)
+#define TSTHT_BucketArray(pTSTHT)	TrieHT_BucketArray(pTSTHT)
+#define TSTHT_PrevTSTHT(pTSTHT)		TrieHT_PrevHT(pTSTHT)
+#define TSTHT_NextTSTHT(pTSTHT)		TrieHT_NextHT(pTSTHT)
+#define TSTHT_InternalLink(pTSTHT)	((pTSTHT)->internalLink)
+#define TSTHT_HeadEntry(pTSTHT)		((pTSTHT)->head_entry)
+#define TSTHT_TailEntry(pTSTHT)		((pTSTHT)->tail_entry)
+
+#define TSTHT_GetHashSeed(pTSTHT)   BTHT_GetHashSeed((BTHTptr)(pTSTHT))
+
+/* Memory Management
+   ----------------- */
+#define TSTHTs_PER_BLOCK    K
+
+extern Structure_Manager smTSTHT;
+
+#define New_TSTHT(TSTHT,TrieType,TST) {				\
+   _New_TrieHT(smTSTHT,TSTHT,TrieType);				\
+   TSTHT_InternalLink(TSTHT) = TSTRoot_GetHTList(TST);		\
+   TSTRoot_SetHTList(TST,TSTHT);				\
+   TSTHT_HeadEntry(TSTHT) = TSTHT_TailEntry(TSTHT) = NULL;	\
  }
 
 /*===========================================================================*/
 
 /*
- *			      Subgoal Frames
- *			      ==============
+ *                             Answer List Node
+ *                             ================
  */
-
 
 #define ALNs_PER_BLOCK     512
 extern Structure_Manager smALN;
-
 
 /* Allocating New ALNs
    ------------------- */
@@ -607,7 +838,6 @@ extern Structure_Manager smALN;
    ALN_Answer(pALN) = pTN;			\
    ALN_Next(pALN) = pNext;			\
  }
-
 
 #define free_answer_list(SubgoalFrame) {			\
    if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
@@ -618,6 +848,7 @@ extern Structure_Manager smALN;
      SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame))	\
  }
 
+/*=========================================================================*/
 
 
 #endif
