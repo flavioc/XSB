@@ -247,7 +247,7 @@ extraction of the matches:
 | ?- import intern_string/2 from machine.
 
 | ?- Str = 'abbbcd\bbo',
-      re_match("a(b*)cd\\\\",'abbbcd\bbo',0,_,[match(X,Y), match(V,W)|L]),
+      re_match("a(b*)cd\\\\",Str,0,_,[match(X,Y), match(V,W)|L]),
       re_substring(Str,X,Y,UninternedMatch),
       intern_string(UninternedMatch,Match),
       re_substring(Str,V,W,UninternedParen1),
@@ -259,7 +259,7 @@ Y = 7
 V = 1
 W = 4
 L = []
-UninternedMatch = bbb
+UninternedMatch = abbbcd\
 Match = abbbcd\
 UninternedParen1 = bbb
 Paren1 = [98,98,98]
@@ -290,6 +290,15 @@ Section~\ref{sec-strings}, except that the result of the substitution is
 not interned (for the same reason as in {\tt re\_substring/4}. This
 predicate will become an alias to {\tt string\_substitute/4} when atom
 garbage collection will be added to XSB.
+%%
+%%
+\begin{verbatim}
+| ?- re_bulkmatch('[^a-zA-Z0-9]+', '123&*-456 )7890| 123', 0, _, X),
+     re_substitute('123&*-456 )7890| 123', X, ['+++'], Y).
+
+X = [match(3,6),match(9,11),match(15,17)]
+Y = 123+++456+++7890+++123
+\end{verbatim}
 %%
 
 \paragraph{Efficiency considerations.}

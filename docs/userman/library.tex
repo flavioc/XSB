@@ -833,42 +833,35 @@ As in the case of {\tt re\_substring/4}, if {\tt OutStr} is an atom, it is
 not interned.  The user should either intern this string or convert it into
 a list, as explained previously.
 
-The \verb|re_substitute/4| predicate always succeeds.
+The \verb|string_substitute/4| predicate always succeeds.
 
 Here are some examples:
 %%
 \begin{verbatim}
-| ?- re_substitute('qaddf', [s(2,4)], ['123'] ,L).
+| ?- string_substitute('qaddf', [s(2,4)], ['123'] ,L).
 
 L = qa123f
 
-| ?- re_substitute('qaddf', [s(2,-1)], ['123'] ,L).
+| ?- string_substitute('qaddf', [s(2,-1)], ['123'] ,L).
 
 L = qa123
 
-| ?- re_substitute("abcdefg", [s(4,-1)], ["123"],L).
+| ?- string_substitute("abcdefg", [s(4,-1)], ["123"],L).
 
 L = [97,98,99,100,49,50,51]
 
-| ?- re_substitute('1234567890123', [f(1,5),f(5,7),f(9,-2)], ["pppp", lll],X).
+| ?- string_substitute('1234567890123', [f(1,5),f(5,7),f(9,-2)], ["pppp", lll],X).
 
 X = 1pppplll89lll
 
-| ?- re_substitute('1234567890123', [f(1,5),f(6,7),f(9,-2)], ['---'],X).
+| ?- string_substitute('1234567890123', [f(1,5),f(6,7),f(9,-2)], ['---'],X).
 
 X = 1---6---89---
-
-| ?- re_bulkmatch('[^a-zA-Z0-9]+', '123&*-456 )7890| 123', 0, _, X),
-     re_substitute('123&*-456 )7890| 123', X, ['+++'], Y).
-
-X = [match(3,6),match(9,11),match(15,17)]
-Y = 123+++456+++7890+++123
 \end{verbatim}
 %%
 
 \end{description}
 %%
-
 
 
 
