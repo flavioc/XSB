@@ -563,7 +563,6 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxr);
     Op2(get_xxxn);
-printf("float %x\n",op2);
     ADVANCE_PC(size_xxxX);
     bld_float_tagged((CPtr)op1, op2);
   XSB_End_Instr()
