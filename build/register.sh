@@ -8,8 +8,7 @@ The installation process is now complete. The log is in: Installation_summary
 
 We shall greatly appreciate, if you would agree to send us this log.
 Installation logs help the XSB group to keep track of the usage of the
-system on different architectures and to focus its efforts on the 
-architectures that are used more frequently.
+system on different architectures and to isolate problems more easily.
 
 The log will be sent automatically to  \`xsb-contact@cs.sunysb.edu'
 Would you like to send us the installation log? (y/n): y
