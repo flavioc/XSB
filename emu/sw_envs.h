@@ -77,11 +77,12 @@
 #endif
 
 #ifdef WAM_TRAIL
-#define table_undo_bindings(old_trreg) \
-    while (trreg > (CPtr *) old_trreg) {\
-      CPtr temp_trreg = *(--trreg); \
-      untrail(temp_trreg); \
-    }
+#define table_undo_bindings(old_trreg) {	\
+  while (trreg > (CPtr *) old_trreg) {		\
+    CPtr temp_trreg = *(--trreg);		\
+    untrail2(trreg, (Cell)temp_trreg);		\
+  }						\
+}
 #else
 #define table_undo_bindings(old_trreg) \
     while (trreg > (CPtr *) old_trreg) {\

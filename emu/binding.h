@@ -42,14 +42,21 @@
 
 #ifdef WAM_TRAIL
 
-#define pushtrail0(addr,val)  \
-   if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {\
-     handle_tcpstack_overflow();\
-   }\
-   *(trreg++) = addr
+#define pushtrail0(addr,val) {						\
+  if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {	\
+    handle_tcpstack_overflow();						\
+  }									\
+  *(trreg++) = addr;							\
+}
 
 /* push_pre_image_trail0: TO BE FINISHED */
-#define push_pre_image_trail0(addr, prev_value, new_value)
+#define push_pre_image_trail0(addr, prev_value, new_value) {		\
+  if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {	\
+    handle_tcpstack_overflow();						\
+  }									\
+  *(trreg++) = (CPtr) (prev_value);					\
+  *(trreg++) = (CPtr) ((Cell) (addr) | PRE_IMAGE_TRAIL);		\
+}
 
 #else  /* ifndef WAM_TRAIL */
 
@@ -155,20 +162,15 @@
 /* untrail2 is for pre_image trail. */
 
 #ifdef WAM_TRAIL
-
-/* untrail2: TO BE FINISHED */
-
-#define untrail2(trail_ptr, addr)
-
-/* #define untrail2(trail_ptr, addr)		\
+#define untrail2(trail_ptr, addr) {		\
   if ((addr) & PRE_IMAGE_TRAIL) {		\
     bld_copy0((CPtr)((addr) - PRE_IMAGE_TRAIL),	\
               cell((CPtr)trail_ptr - 1));	\
     trreg--;					\
   }						\
   else						\
-    bld_free((CPtr)(addr))
-*/
+    bld_free((CPtr)(addr));			\
+}
 #else  /* ifndef WAM_TRAIL */
 #define untrail2(trail_ptr, addr)		\
   if ((addr) & PRE_IMAGE_TRAIL) {		\
