@@ -1,5 +1,5 @@
 
-This directory contains examples that show how to call XSb from C.
+This directory contains examples that show how to call XSB from C.
 
 All these programs assume that they are compiled and placed in the XSB
 directory for executables, $XSB_HOME/config/<your system architecture>/bin

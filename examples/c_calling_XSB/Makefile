@@ -26,12 +26,16 @@
 
 ##################### You may need to edit some of these!
 
+
 # Where the architectue specific XSB stuff is
-arch_dir=$(HOME)/XSB/XSB/config/i686-pc-linux-gnu
+ARCH=arch_dir=i686-pc-linux-gnu
+arch_dir=$(HOME)/XSB/XSB/config/$(ARCH)
 
 CC=gcc
 CFLAGS= -O4 -ansi -pedantic -Wall
 LDFLAGS= -lm -ldl -Wl,-export-dynamic
+# For Soraris use:
+LDFLAGS= -lsocket  -lm -lnsl -ldl -Wl,-export-dynamic
 
 ## DON'T EDIT BELOW THIS LINE
 ############################################################################
@@ -41,7 +45,7 @@ bindir=$(arch_dir)/bin
 # where the object code goes
 arch_config_objlibdir=$(arch_dir)/saved.o
 
-xsbmodule=$(arch_config_objlibdir)/xsbmodule.o
+xsbmodule=$(arch_config_objlibdir)/xsb.o
 
 # just to be sure the sh is used 
 SHELL=/bin/sh
