@@ -38,6 +38,6 @@ extern void write_quotedname(FILE *file, char *string);
 extern void double_quotes(char *string, char *new_string);
 extern xsbBool no_quotes_needed(char *string);
 
-int read_canonical_term(FILE *, STRFILE *, Cell);
+int read_canonical_term(FILE *, STRFILE *, int);
 
 void print_term_canonical(FILE *, Cell, int);

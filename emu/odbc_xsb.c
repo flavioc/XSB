@@ -1163,7 +1163,6 @@ int GetColumn()
 {
   struct Cursor *cur = (struct Cursor *)ptoc_int(2);
   int ColCurNum = ptoc_int(3);
-  Cell op1;
   Cell op = ptoc_tag(4);
   UDWORD len;
 
@@ -1197,12 +1196,9 @@ int GetColumn()
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       STRFILE strfile;
       
-      op1 = cell(clref_val(op)+1);
-      XSB_Deref(op1);
-      
       strfile.strcnt = strlen(cur->Data[ColCurNum]);
       strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-      read_canonical_term(NULL,&strfile,op1); /* terminating '.'? */
+      read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
       return TRUE;
     }
     if (!isstring(op)) return FALSE;
@@ -1221,12 +1217,9 @@ int GetColumn()
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       STRFILE strfile;
       
-      op1 = cell(clref_val(op)+1);
-      XSB_Deref(op1);
-      
       strfile.strcnt = strlen(cur->Data[ColCurNum]);
       strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
-      read_canonical_term(NULL,&strfile,op1); /* terminating '.'? */
+      read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
       return TRUE;
     }
     if (!isstring(op)) return FALSE;

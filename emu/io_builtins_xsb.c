@@ -736,6 +736,7 @@ int funstk_size = 0;
 #define FUNFUN 0
 #define FUNLIST 1
 #define FUNDTLIST 2
+#define FUNCOMMALIST 3
   struct funstktype {
     char *fun;		/* functor name */
     int funop;	        /* index into opstk of first operand */
@@ -758,7 +759,6 @@ int read_canonical(void)
   FILE *filep;
   STRFILE *instr;
   long tempfp;
-  Cell prologvar;
   
   tempfp = ptoc_int(1);
   if (tempfp == -1000) {
@@ -773,13 +773,24 @@ int read_canonical(void)
     instr = NULL;
     SET_FILEPTR(filep, tempfp);
   }
-  prologvar = ptoc_tag(2);
-  ctop_int(3,read_canonical_term(filep, instr, prologvar));
+  ctop_int(3,read_canonical_term(filep, instr, 1));
   return TRUE;
 }
 
+Cell read_canonical_return_var(int code) {
+  if (code == 1) { /* from read_canonical */
+    return (Cell)ptoc_tag(2);
+  } else if (code == 2) { /* from odbc */
+    Cell op1, op;
+    op = ptoc_tag(4);
+    op1 = cell(clref_val(op)+1);
+    XSB_Deref(op1);
+    return op1;
+  } else return (Cell)NULL;
+}
+
 /* read canonical term, and return prev psc pointer, if valid */
-int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
+int read_canonical_term(FILE *filep, STRFILE *instr, int return_location_code)
 {
   int funtop = 0;
   int optop = 0;
@@ -792,6 +803,7 @@ int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
   char *cvar;
   int postopreq = FALSE, varfound = FALSE;
   prolog_term term;
+  Cell prologvar = read_canonical_return_var(return_location_code);
   
   if (opstk_size == 0) {
     opstk = 
@@ -816,39 +828,75 @@ int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
 		if (*token->value == ')') {
 		  CPtr this_term;
 		  funtop--;
-		  if (funstk[funtop].funtyp != FUNFUN)	/* ending a list, oops */
-		    return read_can_error(filep,instr,prevchar,prologvar);
-		  arity = optop - funstk[funtop].funop;
-		  ensure_term_space(h,arity+1);
-		  this_term = h;
-		  op1 = funstk[funtop].funop;
-		  if ((arity == 2) && !(strcmp(funstk[funtop].fun,"."))) {
-			if (opstk[op1].typ == TK_VAR) { setvar(h,op1) }
-			else cell(h) = opstk[op1].op;
+		  if (funstk[funtop].funtyp == FUNFUN) {
+		    arity = optop - funstk[funtop].funop;
+		    ensure_term_space(h,arity+1);
+		    this_term = h;
+		    op1 = funstk[funtop].funop;
+		    if ((arity == 2) && !(strcmp(funstk[funtop].fun,"."))) {
+		      if (opstk[op1].typ == TK_VAR) { setvar(h,op1) }
+		      else cell(h) = opstk[op1].op;
+		      h++;
+		      if (opstk[op1+1].typ == TK_VAR) { setvar(h,op1+1) }
+		      else cell(h) = opstk[op1+1].op;
+		      h++;
+		      opstk[op1].op = makelist(this_term);
+		      opstk[op1].typ = TK_FUNC;
+		      size += 2;
+		    } else {
+		      size += arity+1;
+		      sym = (Pair)insert(funstk[funtop].fun,(char)arity,
+					 (Psc)flags[CURRENT_MODULE],&i);
+		      new_heap_functor(h, sym->psc_ptr);
+		      for (j=op1; j<optop; h++,j++) {
+			if (opstk[j].typ == TK_VAR) { setvar(h,j) }
+			else cell(h) = opstk[j].op;
+		      }
+		      opstk[op1].op = makecs(this_term);
+		      opstk[op1].typ = TK_FUNC;
+		    }
+		    optop = op1+1;
+		  } else if (funstk[funtop].funtyp == FUNCOMMALIST) {
+		    op1 = funstk[funtop].funop;
+		    if ((op1+1) == optop) { /* no comma-list, just parens */
+		    } else {	/* handle comma list... */
+		      CPtr prev_tail;
+		      ensure_term_space(h,3);
+		      this_term = h;
+
+		      new_heap_functor(h, comma_psc);
+
+		      if (opstk[op1].typ == TK_VAR) { setvar(h,op1) }
+		      else cell(h) = opstk[op1].op;
+		      h++;
+		      prev_tail = h;
+		      h++;
+		      size += 3;
+		      for (j=op1+1; j<optop-1; j++) {
+			ensure_term_space(h,3);
+			cell(prev_tail) = makecs(h);
+			new_heap_functor(h, comma_psc);
+			if (opstk[j].typ == TK_VAR) { setvar(h,j) }
+			else cell(h) = opstk[j].op;
 			h++;
-			if (opstk[op1+1].typ == TK_VAR) { setvar(h,op1+1) }
-			else cell(h) = opstk[op1+1].op;
+			prev_tail = h;
 			h++;
-			opstk[op1].op = makelist(this_term);
-			opstk[op1].typ = TK_FUNC;
-			size += 2;
+			size += 3;
+		      }
+		      j = optop-1;
+		      if (opstk[j].typ == TK_VAR) { setvar(prev_tail,j) }
+		      else cell(prev_tail) = opstk[j].op;
+		      opstk[op1].op = makecs(this_term);
+		      opstk[op1].typ = TK_FUNC;
+		      optop = op1+1;
+		    }
 		  } else {
-		        size += arity+1;
-			sym = (Pair)insert(funstk[funtop].fun,(char)arity,
-				       (Psc)flags[CURRENT_MODULE],&i);
-			new_heap_functor(h, sym->psc_ptr);
-			for (j=op1; j<optop; h++,j++) {
-			  if (opstk[j].typ == TK_VAR) { setvar(h,j) }
-			  else cell(h) = opstk[j].op;
-			}
-			opstk[op1].op = makecs(this_term);
-			opstk[op1].typ = TK_FUNC;
+  		    return read_can_error(filep,instr,prevchar,prologvar); /* ')' ends a list? */
 		  }
-		  optop = op1+1;
 		} else if (*token->value == ']') {	/* end of list */
 		  CPtr this_term, prev_tail;
 		  funtop--;
-		  if (funstk[funtop].funtyp == FUNFUN)
+		  if (funstk[funtop].funtyp == FUNFUN || funstk[funtop].funtyp == FUNCOMMALIST)
 			return read_can_error(filep,instr,prevchar,prologvar);
 		  ensure_term_space(h,2);
 		  this_term = h;
@@ -933,6 +981,12 @@ int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
 			funstk[funtop].funtyp = FUNLIST; /* assume regular list */
 			funtop++;
 		  }
+		  break;
+		} else if (*token->value == '(') { /* beginning of comma list */
+		  if (funtop >= funstk_size) expand_funstk;
+		  funstk[funtop].funop = optop;
+		  funstk[funtop].funtyp = FUNCOMMALIST;
+		  funtop++;
 		  break;
 		}
 	  /* let a punctuation mark be a functor symbol */
@@ -1058,13 +1112,16 @@ int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
 	return read_can_error(filep,instr,prevchar,prologvar);
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
-	term = opstk[0].op;
-	check_glstack_overflow(3, pcreg, (size+1)*sizeof(Cell)) ;
 	if (isnonvar(prologvar)) 
 	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
+	term = opstk[0].op;
+	
+	check_glstack_overflow(5, pcreg, (size+1)*sizeof(Cell)) ;
+	/* get return location again, in case it moved, whole reasong for r_c_r_v */
+	prologvar = read_canonical_return_var(return_location_code); 
+	/*gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; ??*/
 	bind_ref((CPtr)prologvar,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
-	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
 	findall_copy_to_heap(term,(CPtr)prologvar,&hreg) ; /* this can't fail */
 	free_term_buffer();
 
