@@ -1,0 +1,132 @@
+/*** syslib/flrassert.P: appended automatically by the FLORA compiler *******/
+
+
+:- import var/1, call/1 from standard.
+
+:- import clause/2 from assert.
+
+:- import trie_assert/1, trie_retract_nr/1 from tables.
+
+
+/*****************************************************************************
+  rules for assert/retract
+*****************************************************************************/
+'_$_$_flora_assert'([]).
+
+'_$_$_flora_assert'([H|T]) :-
+	trie_assert(H),
+	'_$_$_flora_assert'(T).
+
+
+/****************************************************************************/
+'_$_$_flora_retract'(Gs,Cs) :-
+	'_$_$_flora_prove_goals'(Gs,Fs),
+	'_$_$_flora_prove_conditions'(Cs),
+	'_$_$_flora_check_facts'(Fs),
+	'_$_$_flora_retract_facts'(Fs).
+
+
+'_$_$_flora_prove_goals'([],[]).
+
+'_$_$_flora_prove_goals'(['_$_$_flora_rtrct'(G)|Gs],[G|Fs]) :-
+	!,
+	call(G),
+	'_$_$_flora_prove_goals'(Gs,Fs).
+
+'_$_$_flora_prove_goals'([G|Gs],Fs) :-
+	call(G),
+	'_$_$_flora_prove_goals'(Gs,Fs).
+
+
+'_$_$_flora_prove_conditions'([]).
+
+'_$_$_flora_prove_conditions'([C|Cs]) :-
+	call(C),
+	!,
+	'_$_$_flora_prove_conditions'(Cs).
+
+
+'_$_$_flora_check_facts'([]).
+
+'_$_$_flora_check_facts'([H|Fs]) :-
+	clause(H,true),
+	'_$_$_flora_check_facts'(Fs).
+
+
+'_$_$_flora_retract_facts'([]).
+
+'_$_$_flora_retract_facts'([H|Fs]) :-
+	trie_retract_nr((H :- true)),
+	'_$_$_flora_retract_facts'(Fs).
+
+
+/****************************************************************************/
+'_$_$_flora_retractall'(Gs,Cs) :-
+	'_$_$_flora_retract'(Gs,Cs),
+	fail.
+
+'_$_$_flora_retractall'(_,_).
+
+
+/****************************************************************************/
+'_$_$_flora_erase'(Gs,Cs) :-
+	'_$_$_flora_prove_goals'(Gs,Fs),
+	'_$_$_flora_prove_conditions'(Cs),
+	'_$_$_flora_check_facts'(Fs),
+	'_$_$_flora_erase_facts'(Fs).
+
+
+'_$_$_flora_erase_facts'([]).
+
+'_$_$_flora_erase_facts'([H|Fs]) :-
+	'_$_$_flora_erase_one_fact'(H),
+	'_$_$_flora_erase_facts'(Fs).
+
+
+'_$_$_flora_erase_one_fact'(G) :-
+	trie_retract_nr(G),
+	( G = '_$_$_flora_exists_dyn'(O)     -> true
+	  ; G = '_$_$_flora_isa_dyn'(O,_)    -> true
+	  ; G = '_$_$_flora_fd_dyn'(_,_,O)   -> true
+	  ; G = '_$_$_flora_mvd_dyn'(_,_,O)  -> true
+	  ; G = '_$_$_flora_ifd_dyn'(_,_,O)  -> true
+	  ; G = '_$_$_flora_imvd_dyn'(_,_,O) -> true
+	  ; G = '_$_$_flora_fs_dyn'(_,_,O)   -> true
+	  ; G = '_$_$_flora_mvs_dyn'(_,_,O)  -> true
+	  ; NextAction=no
+	),
+	( NextAction==no ->
+	    true
+
+	  ; var(O) ->
+	    true
+	  ;
+	    '_$_$_flora_erase_object'(O)
+	).
+
+
+'_$_$_flora_erase_object'(O) :-
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_exists_dyn'(O))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_isa_dyn'(O,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_sub_dyn'(O,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_fd_dyn'(O,_,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_mvd_dyn'(O,_,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_mvd_dyn'(O,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_ifd_dyn'(O,_,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_imvd_dyn'(O,_,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_imvd_dyn'(O,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_fs_dyn'(O,_,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_mvs_dyn'(O,_,_))],[]),
+	'_$_$_flora_eraseall'(['_$_$_flora_rtrct'('_$_$_flora_mvs_dyn'(O,_))],[]).
+
+
+/****************************************************************************/
+'_$_$_flora_eraseall'(Gs,Cs) :-
+	'_$_$_flora_erase'(Gs,Cs),
+	fail.
+
+'_$_$_flora_eraseall'(_,_).
+
+
+/****************************  End of syslib/flrassert.P  *******************/
+
