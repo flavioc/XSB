@@ -1,0 +1,33 @@
+:- export tp_gensym/2, tp_gennum/1, reset_gennum/0, tp_testgennum/1,
+	  tp_incatomnum/1, reset_atomnum/0, tp_testatomnum/1.
+
+:- import conset/2,conget/2 from gensym.
+
+?- reset_gennum.
+?- reset_atomnum.
+
+reset_gennum:- conset(tp_gennum_val, 1).  %true is 1.
+
+reset_atomnum:- conset(tp_atomnum, 0).  %true is 1.
+
+/*----gennum------------------------------------------------------------*/
+
+tp_gennum(N) :- conget(tp_gennum_val, O), N is O + 1, conset(tp_gennum_val, N).
+
+tp_incatomnum(Inc) :- conget(tp_atomnum, O), 
+		    N is O + Inc, conset(tp_atomnum, N).
+
+tp_testatomnum(N):- conget(tp_atomnum, N).
+
+/*----gensym------------------------------------------------------------*/
+
+tp_gensym(Root, Sym) :-
+	(atom(Root),var(Sym)
+	->  tp_gennum(N),
+	    number_codes(N,NLst), atom_codes(NAtm, NLst),
+	    str_cat(Root, NAtm, Sym)
+	;   abort('Wrong type argument in gensym/2')
+	).
+
+tp_testgennum(N):- conget(tp_gennum_val, N).
+
