@@ -57,6 +57,13 @@ static void strclose(int i)
   iostrs[i] = NULL;
 }
 
+/* TLS: these are ports, rather than file descriptors, therefore using
+   the Prolog defines.  Should they be moved into a different .h file? 
+*/
+
+#define STDIN 0
+#define STDOUT 1
+
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static xsbBool file_function(void)
 {
@@ -70,7 +77,7 @@ inline static xsbBool file_function(void)
   static char *strmode;
   static char *line_buff = NULL;
   static int line_buff_len = 0;
-  int line_buff_disp;
+  int line_buff_disp, ioport;
 
   switch (ptoc_int(1)) {
   case FILE_FLUSH: /* file_function(0,+IOport,-Ret,_,_) */
@@ -166,29 +173,27 @@ inline static xsbBool file_function(void)
     
     /* we reach here only if the mode is OREAD,OWRITE,OAPPEND */
     addr = expand_filename(tmpstr);
-    fptr = fopen(addr, strmode);
 
-    if (fptr) {
-      if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
-	/* file exists and isn't a dir */
-	ctop_int(4, xsb_intern_file(fptr, "FILE_OPEN"));
-      else {
-	xsb_warn("FILE_OPEN: File %s is a directory, cannot open!", tmpstr);
-	fclose(fptr);
-	ctop_int(4, -1);
-      }
-    } else
-      ctop_int(4, -1);
-    
+    if (!xsb_intern_file("FILE_OPEN",addr, &ioport,strmode))
+      ctop_int(4,ioport);
+    else ctop_int(4,-1);
+
     break;
 
+    /* TLS: handling the case in which we are closing a flag that
+       we're currently seeing or telling.  Probably bad programming
+       style to mix streams w. open/close, though. */
   case FILE_CLOSE: /* file_function(5, +IOport) */
     io_port = ptoc_int(2);
     if (io_port < 0) strclose(io_port);
     else {
       SET_FILEPTR(fptr, io_port);
       fclose(fptr);
-      open_files[io_port] = NULL;
+      open_files[io_port].file_ptr = NULL;
+      open_files[io_port].file_name = NULL;
+      open_files[io_port].io_mode = '\0';
+      if (flags[CURRENT_INPUT] == io_port) { flags[CURRENT_INPUT] = STDIN;}
+      if (flags[CURRENT_OUTPUT] == io_port) { flags[CURRENT_OUTPUT] = STDOUT;}
     }
     break;
   case FILE_GET:	/* file_function(6, +IOport, -IntVal) */
@@ -409,17 +414,23 @@ inline static xsbBool file_function(void)
 
     break;
 
+    /* TLS: I looked through this, and it seems to work with streams,
+       but its possible that the file clone should move the file name
+       and mode from the source to the destination when it copies or
+       creates an io port? */
+
   case FILE_CLONE: {
     /* file_function(FILE_CLONE,SrcIOport,DestIOport,ErrorCode) */
     /* Note: when cloning (dup) streams, NT doesn't copy the buffering mode of
        the source file. So, if this will turn out to be a problem, a new
        builtin (interface to setvbuf) will have to be introduced. */
     FILE *src_fptr, *dest_fptr;
-    int src_fd, dest_fd, dest_xsb_fileno, errcode=0;
+    int src_fd, dest_fd, dest_xsb_fileno, src_xsb_fileno, errcode=0;
     char *mode = NULL;
     prolog_term dest_fptr_term;
 
-    SET_FILEPTR(src_fptr, ptoc_int(2));
+    src_xsb_fileno = ptoc_int(2);
+    SET_FILEPTR(src_fptr, src_xsb_fileno);
     fflush(src_fptr);
     src_fd = fileno(src_fptr);
 
@@ -480,7 +491,12 @@ inline static xsbBool file_function(void)
 #endif
 	dest_fptr = fdopen(dest_fd, mode);
 	if (dest_fptr) {
-	  dest_xsb_fileno = xsb_intern_file(dest_fptr, "FILE_CLONE");
+	  dest_xsb_fileno = old_xsb_intern_fileptr(dest_fptr, "FILE_CLONE");
+	  open_files[dest_xsb_fileno].file_name =  
+	    open_files[src_xsb_fileno].file_name;
+	  open_files[dest_xsb_fileno].io_mode =  
+	    open_files[src_xsb_fileno].io_mode;
+
 	  c2p_int(dest_xsb_fileno, dest_fptr_term);
 	} else {
 	  /* error */
@@ -535,7 +551,7 @@ inline static xsbBool file_function(void)
     fptr = fdopen(pipe_fd, mode);
 
     /* xsb_intern_file will return -1, if fdopen fails */
-    ctop_int(3, xsb_intern_file(fptr, "FD2IOPORT"));
+    ctop_int(3, old_xsb_intern_fileptr(fptr, "FD2IOPORT"));
     break;
   }
     
@@ -554,7 +570,7 @@ inline static xsbBool file_function(void)
     /* file_function(17, -IOport)
        Opens a temp file in r/w mode and returns its IO port */
     if ((fptr = tmpfile()))
-      ctop_int(2, xsb_intern_file(fptr, "TMPFILE_OPEN"));
+      ctop_int(2, old_xsb_intern_fileptr(fptr, "TMPFILE_OPEN"));
     else
       ctop_int(2, -1);
     break;

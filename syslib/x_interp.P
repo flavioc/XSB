@@ -86,7 +86,8 @@ interpreter_cmd_goal(_) :-
 	    ),
             file_open(CmdGoal, sr, FileDes),
 	    %% promote I/O port to stream
-	    ioport2iostream(FileDes,CmdGoalStream),
+	    FileDes = CmdGoalStream,
+%	    ioport2iostream(FileDes,CmdGoalStream),
 	    %% make CmdGoalStream the current input stream;s
 	    %% push the old stream on cmd_line_argument stack
 	    push_stdin(cmd_line_argument, CmdGoalStream),

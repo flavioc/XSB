@@ -368,18 +368,18 @@ xsbBool sys_system(int callno)
 
     if (toproc_needed) {
       toprocess_fptr = fdopen(pipe_to_proc[1], "w");
-      toproc_stream = xsb_intern_file(toprocess_fptr, callname);
+      toproc_stream = old_xsb_intern_fileptr(toprocess_fptr, callname);
       ctop_int(3, toproc_stream);
     }
     if (fromproc_needed) {
       fromprocess_fptr = fdopen(pipe_from_proc[0], "r");
-      fromproc_stream = xsb_intern_file(fromprocess_fptr, callname);
+      fromproc_stream = old_xsb_intern_fileptr(fromprocess_fptr, callname);
       ctop_int(4, fromproc_stream);
     }
     if (fromstderr_needed) {
       fromproc_stderr_fptr = fdopen(pipe_from_stderr[0], "r");
       fromproc_stderr_stream
-	= xsb_intern_file(fromproc_stderr_fptr, callname);
+	= old_xsb_intern_fileptr(fromproc_stderr_fptr, callname);
       ctop_int(5, fromproc_stderr_stream);
     }
     ctop_int(6, pid_or_status);

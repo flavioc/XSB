@@ -37,7 +37,7 @@
 
 :- import gensym/2 from gensym.
 
-:- import is_plain_file/1, is_directory/1, rename/2, rm/1, cwd/1,
+:- import is_plain_file/1, is_directory/1, rename/2, rm/1, rmdir_rec/1, cwd/1,
 	sys_filecopy/3,
 	cd/1, sys_link/3, sys_mkdir/2, sys_rmdir/2, sys_access/3
       from shell.
@@ -64,4 +64,5 @@
 	  file_reopen/4, file_clone/3,
 	  pipe_open/2, fd2ioport/2, ioport2iostream/2,
 	  file_clearerr/1, tmpfile_open/1,
-	  is_valid_ioport/1.
+  is_valid_ioport/1,
+print_openfiles/0.

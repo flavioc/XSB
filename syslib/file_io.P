@@ -29,6 +29,7 @@
 #include "standard.h"
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
+#include "builtin.h"
 
 
 	       /********************************/
@@ -59,6 +60,14 @@ fmt_read(IOport, Fmt, Result, Status) :-
 /*       file_flush, file_seek, file_truncate, file_pos, etc.  */
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
+%port2fd(_Port,_Fd):- '_$builtin'(PORT2FD).
+%
+%file_write_port(Port,Term):- 
+%	port2fd(Port,Fd),
+%	file_write(Fd,Term).
+
+%print_openfiles:- '_$builtin'(PRINTOFILES).
+print_openfiles:- '_$builtin'(103).
 
 file_flush(IOport, Ret) :-
 	file_function(FILE_FLUSH, IOport, Ret, _D, _E, _,_).
@@ -204,12 +213,13 @@ fd2ioport(Pipe, IOport) :-
 %% Promotes I/O port to a strean, which can be manipulated 
 %% using see/seen/tell/told
 %% The I/O port must be a valid open I/O port
+/*
 ioport2iostream(IOport,Stream) :-
 	gensym('_$newstream_#', Stream),
 	conpsc(Stream,PSC),
 	psc_set_prop(PSC,IOport),
 	psc_set_type(PSC,T_FILE).
-
+*/
 
 /***************************************************************
 **
@@ -272,6 +282,7 @@ path_sysop(cwd, Path) :- !, cwd(Path).
 path_sysop(chdir, Path) :- !, cd(Path).
 path_sysop(mkdir, Path) :- !, sys_mkdir(Path,Res), Res=:=0.
 path_sysop(rmdir, Path) :- !, sys_rmdir(Path,Res), Res=:=0.
+path_sysop(rmdir_rec, Path) :- !, rmdir_rec(Path).
 path_sysop(exists, Path) :- !, file_exists(Path).
 path_sysop(readable, Path) :- !, sys_access(Path, 'r', Res), Res =:= 0.
 path_sysop(writable, Path) :- !, sys_access(Path, 'w', Res), Res =:= 0.

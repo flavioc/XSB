@@ -300,7 +300,6 @@ load_dyn(File) :-
 %% TLS: changed behavior to throw error rather than fail to make
 %% compatable with other ISO type errors, e.g. open/[3,4].  
 load_dyn(File,Dir) :-
-	check_stream(File,'load_dyn/1',1),
 	get_fname(File,SExt,Base,Mod),
 	load_dyn0(SExt,Base,Mod,Dir).
 

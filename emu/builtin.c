@@ -1478,6 +1478,7 @@ int builtin_call(byte number)
 
   case FILE_GETTOKEN: {    /* R1: +File, R2: +PrevCh, R3: -Type; */
                                 /* R4: -Value, R5: -NextCh */
+    
     int tmpval = ptoc_int(1);
     if ((tmpval < 0) && (tmpval >= -MAXIOSTRS))
       token = GetToken(NULL,strfileptr(tmpval), ptoc_int(2));
@@ -1685,9 +1686,21 @@ int builtin_call(byte number)
     ctop_int(2, (Integer)get_spy(psc));
     break;
   }
- case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
+  case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
     Psc psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_tip(psc));
+    break;
+  }
+  case PRINTOFILES: { /* no args */
+    int i; 
+    for (i= 0 ; i < MAX_OPEN_FILES ; i++) {
+      if ((int) open_files[i].file_name == 0) {
+	printf("i: %d File Ptr %x \n",i,open_files[i].file_ptr);
+      } else {
+	printf("i; %d File Ptr %x Name %s Mode %c \n",i,
+	       open_files[i].file_ptr, open_files[i].file_name,open_files[i].io_mode);
+      }
+    }
     break;
   }
 /*----------------------------------------------------------------------*/

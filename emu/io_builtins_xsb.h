@@ -30,9 +30,32 @@
 #define MIN_USR_OPEN_FILE 7     /* Where user files start in the XSB
 				   open files table */
 
-extern FILE *open_files[];      /* Table of file pointers for open files */
+/* TLS: The following data structure holds all info abt. streams that
+   we might eventually want to access from Prolog.  Names, etc come
+   from the definition of stream properties in "Prolog: the standard",
+   pg. 207-209.  Not everything is implemented, but I figured I'd set
+   things up so we can implement them when/as needed */
 
-extern int xsb_intern_file(FILE *f, char *c);
+#define TEXT_STREAM        0
+#define BINARY_STREAM    1
+
+#define ERROR_ON_EOF         0 
+#define EOF_CODE_ON_EOF   1
+#define RESET_ON_EOF          2
+
+typedef struct  {
+  FILE *file_ptr;
+  char *file_name;
+  char io_mode;
+  int stream_type;
+  int reposition;
+  int eof_action;
+} stream_record;
+
+extern stream_record open_files[];      /* Table of file pointers for open files */
+
+extern int old_xsb_intern_file(FILE *file,char *c);
+extern int xsb_intern_file(char *c1,char *c2,int *i,char *strmode);
 
 extern void write_quotedname(FILE *file, char *string);
 extern void double_quotes(char *string, char *new_string);

@@ -19,8 +19,6 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id$
-** 
 */
 
 
@@ -51,13 +49,14 @@
 	nofileerrors/0, nonvar/1,	(not)/1,	number/1,
 	number_chars/2, number_codes/2, number_digits/2,
 	once/1,		op/3,		open/3,		otherwise/0,
-	print/1,	proper_hilog/1,	
-        put/1,          put_char/1,     put_char/2,     put_code/1,
-        put_code/2,
-  read/1,		read/2,             read_term/3,    read_term/2,
+%	print/1,	
+            proper_hilog/1,	
+            put/1,          put_char/1,     put_char/2,     put_code/1,
+            put_code/2,
+            read/1,		read/2,             read_term/3,    read_term/2,
             real/1,		repeat/0,
 	see/1,		seeing/1,	seen/0,
-        set_input/1,    set_output/1,  
+            set_input/1,    set_output/1,  
 	demand_once/1,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		tell/2,		telling/1,	told/0,
@@ -102,7 +101,8 @@
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
-:- import domain_error/4, check_atom/3, check_nonvar/3,type_error/4
+:- import domain_error/4, check_atom/3, check_nonvar/3,type_error/4,
+  permission_error/4
      from error_handler.
 :- import  check_stream/3, check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.

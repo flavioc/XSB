@@ -57,8 +57,9 @@
 #include "deref.h"
 #include "findall.h"
 
-FILE *open_files[MAX_OPEN_FILES]; /* open file table */
+static struct stat stat_buff;
 
+stream_record open_files[MAX_OPEN_FILES]; /* open file table */
 
 static FILE *fptr;			/* working variable */
     
@@ -1374,21 +1375,99 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
   return(&result);
 }
 
+/* TLS: changed the name of this function.  Here we are just checking
+   whether a file pointer is present or not, rather than a file and
+   I/O mode, as below. */
 
-/* Take a FILE pointer and return an XSB stream, an index into the XSB table of
-   open files; return -1, if too many open files. */
-int xsb_intern_file(FILE *fptr, char *context)
+int old_xsb_intern_fileptr(FILE *fptr, char *context)
 {
   int i;
   if (!fptr) return -1;
 
-  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i] != NULL; i++);
+  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i].file_ptr != NULL; i++);
   if (i == MAX_OPEN_FILES) {
     xsb_warn("[%s] Too many open files", context);
     return -1;
   } else 
-    open_files[i] = fptr;
+    open_files[i].file_ptr = fptr;
   return i;
+}
+
+/* static int open_files_high_water = MIN_USR_OPEN_FILE+1;*/
+
+/* Takes a file address, and mode and returns an ioport (in third
+   argument) along with success/error.  The nonsense in the beginning
+   is to handle possible Posix I/O modes, of which there is
+   redundancy. */
+
+int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode)
+{
+  int i, first_null, stream_found; 
+  char mode = '\0';
+
+  /*  printf("xif Context %s Addr %s strmode %s\n",context,addr,strmode);*/
+  
+  if (!strcmp(strmode,"rb") || !strcmp(strmode,"r"))
+    mode = 'r';
+  else if (!strcmp(strmode,"wb")  || !strcmp(strmode,"w"))
+    mode = 'w';
+  else if (!strcmp(strmode,"ab")  || !strcmp(strmode,"a"))
+    mode = 'a';
+  else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"r+") || !strcmp(strmode,"r+b"))
+    mode = 's';  /* (i.e. r+) */
+  else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"w+") || !strcmp(strmode,"w+b"))
+    mode = 'x'; /* (i.e. r+) */
+  else if (!strcmp(strmode,"rb+") || !strcmp(strmode,"a+") || !strcmp(strmode,"a+b"))
+    mode = 'b'; /* (i.e. a+) */
+
+  for (i=MIN_USR_OPEN_FILE, stream_found = -1, first_null = -1; 
+       i < MAX_OPEN_FILES; 
+       i++) {
+    if (open_files[i].file_ptr != NULL) {
+      if (open_files[i].file_name != NULL &&
+	  !strcmp(addr,open_files[i].file_name) && 
+	  open_files[i].io_mode == mode) {
+	stream_found = i;
+	break;
+      } } else if (first_null < 0) {first_null = i;}
+  }
+
+  /*
+  printf("stream_found %d file_ptr %x file_name %s first_null %d\n",
+	 stream_found,open_files[stream_found].file_ptr,
+	 open_files[stream_found].file_name,first_null);
+  */
+
+  if (stream_found < 0 && first_null < 0) {
+  for (i=MIN_USR_OPEN_FILE; 
+       i < MAX_OPEN_FILES ;
+       i++) printf("File Ptr %x Name %s\n",open_files[i].file_ptr, open_files[i].file_name);
+
+    xsb_warn("[%s] Too many open files", context);
+    *ioport = 0;
+    return -1;
+  }
+  else if (stream_found >= 0) { /* File already interned */
+    fptr = open_files[i].file_ptr;
+    *ioport = stream_found;
+    return 0;
+  } 
+  else { /* try to intern new file */
+    fptr = fopen(addr, strmode);
+    if (!fptr) {*ioport = 0; return -1;}
+    else  if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
+	/* file exists and isn't a dir */
+      open_files[first_null].file_ptr = fptr;
+      open_files[first_null].file_name = string_find(addr,1);
+      open_files[first_null].io_mode = mode;
+      *ioport = first_null;
+      return 0;
+    }  else {
+	xsb_warn("FILE_OPEN: File %s is a directory, cannot open!", addr);
+	fclose(fptr);
+	return -1;
+    }
+  }
 }
 
 

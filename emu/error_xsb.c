@@ -106,7 +106,7 @@ DllExport void call_conv xsb_throw(prolog_term Ball)
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
 
-static Cell *space_for_type_ball = 0;
+static Cell *space_for_iso_ball = 0;
 
 /*****************/
 void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int arity,
@@ -114,16 +114,15 @@ void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr;
-  char message[255];
+  Cell *tptr; char message[255];
 
   sprintf(message," in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  if (!space_for_type_ball) {
-    space_for_type_ball = (Cell *) malloc(8*sizeof(Cell)); /* 3 cells needed for term */
-    if (!space_for_type_ball) xsb_exit("out of memory in xsb_type_error!");
+  if (!space_for_iso_ball) {
+    space_for_iso_ball = (Cell *) malloc(8*sizeof(Cell)); /* cells needed for term */
+    if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
   }
-  tptr = space_for_type_ball;
+  tptr = space_for_iso_ball;
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
@@ -146,6 +145,40 @@ void call_conv xsb_type_error(char *valid_type,Cell culprit, char *predicate,int
 }
 
 /*****************/
+void call_conv xsb_instantiation_error(char *predicate,int arity,int arg,char *state) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+
+  if (! IsNULL(state)) {
+    sprintf(message," in arg %d of predicate %s/%d must be %s",arg,predicate,arity,
+	    state);
+  } else {
+    sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
+  }    
+
+  if (!space_for_iso_ball) {
+    space_for_iso_ball = (Cell *) malloc(4*sizeof(Cell)); /* cells needed for term */
+    if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
+  }
+  tptr = space_for_iso_ball;
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find("instantiation_error",1));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace());
+
+  xsb_throw(ball_to_throw);
+
+}
+
+/*****************/
+
 
 static Cell *space_for_ball = 0;
 
@@ -329,10 +362,13 @@ void err_handle(int description, int arg, char *f,
   
   switch (description) {
   case INSTANTIATION:
+    xsb_instantiation_error(f,ar,arg,NULL);
+    /*
     sprintf(message, 
 	    "! %s error in argument %d of %s/%d",
 	    err_msg[description], arg, f, ar);
     break;
+    */
   case RANGE:	/* I assume expected != NULL */
     sprintf
       (message,

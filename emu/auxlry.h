@@ -68,7 +68,7 @@ typedef enum XSB_Execution_Mode {
 
 extern Exec_Mode xsb_mode;
 
-#define fileptr(xsb_filedes)  open_files[xsb_filedes]
+#define fileptr(xsb_filedes)  open_files[xsb_filedes].file_ptr
 
 extern char *xsb_default_segfault_msg;
 extern char *xsb_segfault_message;

@@ -28,9 +28,7 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod, optimize, xpp_on,ciao_directives]).
-
-% Ciao directives added for documentation.
+:- compiler_options([sysmod, optimize, xpp_on]).
 
 #include "celltags_xsb.h"
 #include "flag_defs_xsb.h"
@@ -49,190 +47,76 @@
 % File Handling Predicates %
 %--------------------------%
 
-set_input(Stream):- see(Stream).
+set_input(Stream):- stat_set_flag(CURRENT_INPUT, Stream).
 
-% whenever streams are fixed, dont forget userin and user.
-see(Stream) :- 
-	check_stream(Stream,'see/1',1),
-	see0(Stream).
+see(userin):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
+see(user):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
+see(Integer):- 
+	integer(Integer),!,
+	set_input(Integer).
+see(File) :- 
+	check_atom(File,see/1,1),
+	open(File,read,Str),
+	set_input(Str).
 
-see0(F) :- 
-	conpsc(F, PSC),
-	psc_type(PSC, Type), 
-	( Type =:= T_FILE, !				% already opened
-	; Type =:= T_ORDI, 
-	  psc_name(PSC, Name),
-	  file_open(Name, r, File),		% 0: "r"
-	  File > 0,                             % file F exists and
-	  !,					% is readable.
-	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, T_FILE)
-	; abort([F,'not a file or file not readable, cannot see!'])
-	),
-	psc_prop(PSC, File0),
-	stat_set_flag(CURRENT_INPUT, File0),
-	conpsc(current_input, CurinPsc),
-	psc_set_prop(CurinPsc, PSC).
+seeing(Str) :- stat_flag(CURRENT_INPUT, Str).
 
-seeing(F) :- 
-	conpsc(current_input, CurinPsc), 
-	psc_prop(CurinPsc, Curin),
-	psc_name(Curin, Con), 
-	Con = F.
+seen :- stat_flag(CURRENT_INPUT, Str),
+	(Str > 6 -> close(Str) ; true),
+	stat_set_flag(CURRENT_INPUT, STDIN).
 
-seen :- conpsc(current_input, CurinPsc), 
-	psc_prop(CurinPsc, FilePSC),
-	psc_type(FilePSC, Type), 
-	Type =:= T_FILE,
-	psc_prop(FilePSC, File),
-	( File > 1 ->
-		file_close(File),
-		psc_set_type(FilePSC, T_ORDI)
-	; true
-	),
-	stat_set_flag(CURRENT_INPUT, STDIN),
-	conpsc(userin, UserPsc),
-	psc_set_prop(CurinPsc, UserPsc).
+%--------------------------%
 
-set_output(Stream):- tell(Stream).
+set_output(Stream):- stat_set_flag(CURRENT_OUTPUT, Stream).
 
-% whenever streams are fixed, dont forget userout and user.
-tell(Stream) :- 
-	check_stream(Stream,'tell/1',1),
-	tell0(Stream,w).
+tell(userout):- !,	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+tell(user):- !,	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+tell(Integer):- 
+	integer(Integer),!,
+	set_output(Integer).
+tell(File) :- 
+	check_atom(File,tell/1,1),
+	open(File,write,Str),
+	set_output(Str).
 
-tell(Stream,WA) :-
-	check_stream(Stream,'tell/2',1),
-	tell0(Stream,WA).
+telling(Str) :- stat_flag(CURRENT_OUTPUT, Str).
 
-tell0(F,WA) :- 
-	conpsc(F, PSC),
-	psc_type(PSC, Type), 
-	( Type =:= T_FILE, !				% already opened
-	; Type =:= T_ORDI,
-	  psc_name(PSC, Name),
-	  file_open(Name, WA, File), 		% 1: "w"
-	  File > 0,                             % file F exists and
-	  !,					% is writable.
-	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, T_FILE)
-	; abort([F,': Not a file or file not writable, cannot tell!'])
-	),
-	psc_prop(PSC, File0),
-	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_output, CuroutPsc),
-	psc_set_prop(CuroutPsc, PSC).
-
-telling(F) :- 
-	conpsc(current_output, CuroutPsc), 
-	psc_prop(CuroutPsc, Curout),
-	psc_name(Curout, Con), 
-	Con = F.
-
-told :- conpsc(current_output, CuroutPsc), 
-	psc_prop(CuroutPsc, FilePSC),
-	psc_type(FilePSC, Type), 
-	Type =:= T_FILE,
-	psc_prop(FilePSC, File),
-	( File > 1 ->
-		file_close(File),
-		psc_set_type(FilePSC, 0)
-	; true
-	),
-	stat_set_flag(CURRENT_OUTPUT, STDOUT),
-	conpsc(userout, UserPsc),
-	psc_set_prop(CuroutPsc, UserPsc).
-
-file_exists(F) :- 
-	check_nonvar(F,'file_exists/1',1),
-	check_atom(F,'file_exists/1',1),
-	expand_filename(F, EF),
-	machine_file_exists(EF).
+told :-    stat_flag(CURRENT_OUTPUT, Str),
+	(Str > 6 -> close(Str) ; true),
+	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 
 open(File,_,_):-
 	var(File), !, 
 	abort('Uninstantiated argument 1 of open/3').
-open(user,write,userin):-!, 
-	tell0(userin,w).
-open(user,read,userin):-!, 
-	see0(userin).
-open(F,read,F):-!, 
-	seeing(CurFile),
-	conpsc(F, PSC),
-	psc_name(PSC, Name),
-	( file_open(Name, r, File),		% 0: "r"
-	  File > 0,                             % file F exists and
-	  !,					% is readable.
-	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, T_FILE)
-	; abort([F,'not a file or not readable, cannot open'])
-	),
-	psc_prop(PSC, File0),
-	stat_set_flag(CURRENT_INPUT, File0),
-	conpsc(current_input, CurinPsc),
-	psc_set_prop(CurinPsc, PSC),
-	see0(CurFile).
-open(F,write,F):-!, 
-	telling(CurFile),
-	conpsc(F, PSC),
-	psc_name(PSC, Name),
-	( file_open(Name, w, File),		% 0: "w"
-	  File > 0,                             % file F exists and
-	  !,					% is readable.
-	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, 5)
-	; abort([F,'not a file or not writable, cannot open'])
-	),
-	psc_prop(PSC, File0),
-	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_output, CuroutPsc),
-	psc_set_prop(CuroutPsc, PSC),
-	tell0(CurFile,w).
-open(F,append,F):-!, 
-	telling(CurFile),
-	conpsc(F, PSC),
-	psc_name(PSC, Name),
-	( file_open(Name, a, File),		% 0: "a"
-	  File > 0,                             % file F exists and
-	  !,					% is readable.
-	  psc_set_prop(PSC, File),
-	  psc_set_type(PSC, 5)
-	; abort([F,'not a file or not writable, cannot open'])
-	),
-	psc_prop(PSC, File0),
-	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_output, CuroutPsc),
-	psc_set_prop(CuroutPsc, PSC),
-	tell0(CurFile,w).
+open(user,read, STDIN):-!,
+	stat_set_flag(CURRENT_INPUT, STDIN).
+open(userin,read,STDIN):-!,
+	stat_set_flag(CURRENT_INPUT, STDIN).
+open(user,write,STDOUT):-!,
+	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+open(userout,write,STDOUT):-!,
+	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+open(F,Mode,Stream):-
+	translate(Mode,M),
+	file_open(F,M,Stream),
+	(Stream < 0 -> 
+	    permission_error(open,file,F,open/3)
+	 ;  true).
 
-open(File,w,File):-!, 
-	open(File,write,userin).
-open(File,r,File):-!, 
-	open(File,read,userin).
-open(File,a,File):-!, 
-	open(File,append,File).
-%% catch wrong mode
-open(File,Mode,File):- 
-	abort([Mode, ': unknown file mode in OPEN/2-3']).
+translate(read,r).
+translate(write,w).
+translate(append,a).
 
 close(user) :- !.
 close(userin) :- !.
 close(userout) :- !.
-close(F) :- 
-	conpsc(F, PSC),
-	psc_type(PSC, Type), Type=T_FILE,
-	psc_prop(PSC, File), 
-	file_close(File),
-	psc_set_type(PSC, T_ORDI).
-
+close(Str) :- file_close(Str).
 
 %--------------------------%
 % Character I/O Predicates %
 %--------------------------%
 
-nl(Ostr) :-  telling(Oldstr),
-	     tell(Ostr),nl,
-	     tell(Oldstr).
+nl(Ostr) :-  file_nl(Ostr).
 
 nl :- (windows_os_loader 
       ->  put(CH_RETURN), put(CH_NEWLINE)
@@ -250,7 +134,7 @@ get_char(Str,Char):- get_code(Str,Code),atom_codes(Char,[Code]).
 get_char(Char):- get_code(Code),atom_codes(Char,[Code]).
 
 %ISO
-get_code(Str,C) :- seeing(Istr),see(Str),get_code(C),see(Istr).
+get_code(Str,C) :- file_get(Str,C).
 
 %ISO
 get_code(C) :- get0(C).
@@ -261,7 +145,7 @@ get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 char_blank(Ch) :- Ch >= 0, Ch =< 9.
 char_blank(Ch) :- Ch >= 11, Ch =< 32.
 
-get0(C) :- stat_flag(CURRENT_INPUT, File), file_get(File, C0), C = C0.
+get0(C) :- stat_flag(CURRENT_INPUT, Str), file_get(Str, C0), C = C0.
 
 % Not in manual.
 skip(C) :- get0(C0), (C0=C ; skip(C)).
@@ -269,7 +153,11 @@ skip(C) :- get0(C0), (C0=C ; skip(C)).
 % TLS: most error checking assumed to happen in atom_codes or put.
 
 %ISO
-put_char(Str,C):- telling(Cstr),tell(Str),put_char(C),tell(Cstr). 	
+put_char(Str,C):- 
+	atom_codes(C,L),
+	(L = [L1] -> true ; 
+		abort('Type error in argument 1 of put_char/1')),
+	file_put(Str,L1).
 
 %ISO
 put_char(C):- 			
@@ -279,7 +167,7 @@ put_char(C):-
 	put(L1).
 
 %ISO
-put_code(Str,C):- telling(Cstr),tell(Str),put_code(C),tell(Cstr).
+put_code(Str,C):- file_put(Str,C).
 
 %ISO
 put_code(C):- put(C).		
@@ -287,6 +175,13 @@ put_code(C):- put(C).
 put(C) :- put(C).
 
 tab(N) :- tab(N).
+
+% TLS: this can probably go...
+file_exists(F) :- 
+	check_nonvar(F,'file_exists/1',1),
+	check_atom(F,'file_exists/1',1),
+	expand_filename(F, EF),
+	machine_file_exists(EF).
 
 %---------------------%
 % Term I/O Predicates %
@@ -306,9 +201,7 @@ read_term(T,List):-
 
 read_term(Istr,T,List):- 
 	read_term_check(Istr,List,read_term/3),
-            seeing(Oldstr),see(Istr),stat_flag(CURRENT_INPUT, File), 
-	file_read(File, T,Vlist),
-	see(Oldstr),
+	file_read(Istr, T,Vlist),
 	process_variable_list(List,T,Vlist),!.
 
 read_term_check(Istr,List,Predvers):- 
@@ -351,45 +244,34 @@ isoify([vv(A,V)|R],[A = V|R1]):-
 	isoify(R,R1).
 
 %-------------
-read(Istr,T) :- seeing(Oldstr),see(Istr),read(T),see(Oldstr).
+read(Istr,T) :- file_read(Istr,T).
 
-read(T) :- stat_flag(CURRENT_INPUT, File), file_read(File, T).
+read(T) :- stat_flag(CURRENT_INPUT, Str), file_read(Str, T).
 
-write(Ostr,Term):- telling(Str),tell(Ostr),	
-		   write(Term),tell(Str).
+write(Ostr,Term):- file_write(Ostr,Term).
 
-write(T) :- stat_flag(CURRENT_OUTPUT, File), file_write(File, T).
+write(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write(Str, T).
 
-writeln(Ostr,Term):- telling(Oldstr),tell(Ostr),writeln(Term),tell(Oldstr).
+writeln(Str,Term):- file_write(Str,Term),file_nl(Str).
 
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
 % yes, according to the manual this is what it should do.
 display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
 
-write_prolog(Ostr,Term):- telling(Oldstr),
-			  tell(Ostr),write_prolog(Term),tell(Oldstr).
+write_prolog(Ostr,Term):- file_write_prolog(Ostr,Term).
 
-write_prolog(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_prolog(File, T).
+write_prolog(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write_prolog(Str, T).
 
+writeq(Ostr,Term):- file_write_quoted(Ostr, Term).
 
-writeq(Ostr,Term):- tell(Ostr),	writeq(Term),tell(userout).
+writeq(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write_quoted(Str, T).
 
-writeq(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_quoted(File, T).
+write_canonical(Ostr,Term):- file_write_canonical(Ostr,Term).
 
-
-write_canonical(Ostr,Term):- telling(Oldstr),tell(Ostr),
-	stat_flag(CURRENT_OUTPUT, IOport),
-	file_write_canonical(IOport,Term),
-	tell(Oldstr).
-
-write_canonical(T) :-
-	stat_flag(CURRENT_OUTPUT, File),
-	file_write_canonical(File, T).
-
-print(T) :-	% Not what is supposed 2 B
-	telling(F), tell(userout), write(T), told, tell(F).
-
+write_canonical(T) :-  
+	stat_flag(CURRENT_OUTPUT,Str),
+	file_write_canonical(Str, T).
 
 %---------------------------------------------------------------%
 	

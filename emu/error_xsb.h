@@ -106,6 +106,7 @@ extern void xsb_segfault_quitter(int);
 int unwind_stack(void);
 
 void call_conv xsb_type_error(char *,Cell , char *,int, int) ;
+void call_conv xsb_instantiation_error(char *, int, int, char *) ;
 void call_conv xsb_basic_abort(char *);
 
 /* should include these from whereever they are.... split out from biassert **/

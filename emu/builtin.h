@@ -119,6 +119,7 @@
 #define PSC_SPY		        101
 #define PSC_TABLED	        102
 
+#define PRINTOFILES                103
 #define IS_INCOMPLETE           104
 
 #define GET_PTCP	        107

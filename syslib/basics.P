@@ -259,7 +259,7 @@ member(X,[_|L]) :- member(X,L).
 memberchk(X,[X|_]) :- !.
 memberchk(X,[_|L]) :- memberchk(X,L).
 
-%---
+%---SW
 % subset
 subset([],_).
 subset([H|T],List) :-
