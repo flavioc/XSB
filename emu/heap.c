@@ -262,6 +262,10 @@ static inline CPtr hp_pointer_from_cell(Cell cell, int *tag)
 	retp = (CPtr)cell ;
 	if (points_into_heap(retp)) return(retp);
       }
+    if (t == ATTV)
+      {
+	xsb_abort("case ATTV in hp_pointer_from_cell() is not implemented yet");
+      }
 
     return NULL;
 } /* hp_pointer_from_cell */
@@ -276,6 +280,10 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 	{ case REF: case REF1:
 	    retp = (CPtr)cell ;
 	    break ;
+	  case ATTV:
+	    retp = (CPtr)cell;
+	    xsb_abort("case ATTV in pointer_from_cell is not implemented yet");
+	    break;
 	  case LIST:
 	    retp = clref_val(cell) ;
 	    break ;

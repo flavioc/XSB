@@ -124,6 +124,9 @@ void printterm(Cell term, byte car, int level)
       case FREE:  case REF1:
 	fprintf(stddbg, "_%p", vptr(term));
 	return;
+      case ATTV:
+	fprintf(stddbg, "_%p", (CPtr)dec_addr(term));
+	return;
       case CS:
 	psc_ptr1 = get_str_psc(term);
 	fflush(stddbg); 
@@ -158,6 +161,7 @@ void printterm(Cell term, byte car, int level)
 	switch (cell_tag(term)) {
 	        case FREE:
 	        case REF1: 
+	        case ATTV:
 	            goto vertbar;
                 case LIST:
 		    fprintf(stddbg, ",");
@@ -585,6 +589,11 @@ static void print_cell(char *addrtype, CPtr addr, Cell term, char *more_info)
     fprintf(stddbg, "%s %p: REF (tag=%ld), value=0x%p",
 	    addrtype, addr, cell_tag(term), ref_val(term));
     break;
+  case ATTV:
+    fprintf(stddbg, "%s %p: ATTV (tag=%ld), value=0x%p",
+	   addrtype, (CPtr)dec_addr(cell(addr)),
+	   cell_tag(term), ref_val(term));
+    break;
   case CS: 
     if (addr == (CPtr)dec_addr(term) || (CPtr)dec_addr(term) == NULL) {
       fprintf(stddbg, "Possible source of core dump\n");
@@ -640,6 +649,11 @@ static void print_cp_cell(char *addrtype, CPtr addr, Cell term)
     case REF: case REF1:
       fprintf(stddbg, "%s %p: REF (tag=%ld), value=0x%p\n",
 	      addrtype, addr, cell_tag(term), ref_val(term));
+      break;
+    case ATTV:
+      fprintf(stddbg, "%s %p: ATTV (tag=%ld), value=0x%p\n",
+	     addrtype, (CPtr)dec_addr(cell(addr)),
+	     cell_tag(term), ref_val(term));
       break;
     case CS:
       fprintf(stddbg, "%s %p: CS, value=0x%p, hexval=0x%p (%s/%d)\n", 

@@ -40,4 +40,4 @@ extern int key_compare(/* Cell, Cell */);
 extern byte *exception_handler(char *);
 
 extern Psc synint_proc(Psc, int, byte *);
-
+extern void add_interrupt(Cell, Cell);

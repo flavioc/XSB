@@ -34,5 +34,4 @@
 #define REF1	4	/* REF */
 #define STRING  5	/* Non-Numeric Constant (Atom) */
 #define FLOAT	6	/* Floating point number */
-/* Tag 7 is unused */
-
+#define ATTV	7	/* Attributed variable */

@@ -54,6 +54,11 @@ CPtr root_address;
 
 CPtr ptcpreg;
 CPtr delayreg;
+/*
+ * interrupt_reg points to the first cell in the heap, and it stores the
+ * number of interrupts in the interrupt chain for attributed variables.
+ */
+CPtr interrupt_reg;
 
 /*
  * Ptr to the beginning of instr. array
@@ -90,6 +95,11 @@ int *asynint_ptr = &asynint_val;
 	bind_nil((CPtr)(op)); \
     } \
     else if (isnil(op)) goto contcase; /* op == [] */ \
+    else if (isattv(op)) {\
+      /* fprintf(stderr, ".... ATTV nunify_with_nil, interrupt needed\n"); */\
+      *asynint_ptr |= ATTVINT_MARK;\
+      add_interrupt(op, makenil);\
+    }\
     else Fail1;	/* op is LIST, INT, or FLOAT */ 
 
 /*======================================================================*/
@@ -103,6 +113,11 @@ int *asynint_ptr = &asynint_val;
     else if (isstring(OP1)) { \
         if (string_val(OP1) == (char *)OP2) goto contcase; else Fail1; \
     } \
+    else if (isattv(OP1)) {\
+      /* fprintf(stderr, ".... ATTV nunify_with_con, interrupt needed\n"); */\
+      *asynint_ptr |= ATTVINT_MARK;\
+      add_interrupt(OP1, makestring((char *)OP2));\
+    }\
     else Fail1;
 
 /*======================================================================*/
@@ -117,6 +132,11 @@ int *asynint_ptr = &asynint_val;
     else if (isinteger(OP1)) {\
        if (int_val(OP1) == (Integer)OP2) goto contcase; else Fail1;\
     }\
+    else if (isattv(OP1)) {\
+      /* fprintf(stderr, ".... ATTV nunify_with_num, interrupt needed\n"); */\
+      *asynint_ptr |= ATTVINT_MARK;\
+      add_interrupt(OP1, makeint(OP2));\
+    }\
     else Fail1;	/* op1 is STRING, FLOAT, CS, or LIST */
 
 /*======================================================================*/
@@ -130,6 +150,11 @@ int *asynint_ptr = &asynint_val;
     else if (isfloat(op1)) { \
        if (float_val(op1) == asfloat(op2)) goto contcase; else Fail1; \
     } \
+    else if (isattv(OP1)) {\
+      /* fprintf(stderr, ".... ATTV nunify_with_float, interrupt needed\n"); */\
+      *asynint_ptr |= ATTVINT_MARK;\
+      add_interrupt(OP1, makefloat(asfloat(OP2)));\
+    }\
     else Fail1;	/* op1 is INT, STRING, CS, or LIST */ 
 
 /*======================================================================*/
@@ -150,8 +175,16 @@ int *asynint_ptr = &asynint_val;
 	    sreg = (CPtr)OP1 + 1; \
 	} \
 	else Fail1; \
-     } \
-     else Fail1;
+    } \
+    else if (isattv(OP1)) { \
+        /* fprintf(stderr, ".... ATTV nunify_with_str, interrupt needed\n"); */ \
+        *asynint_ptr |= ATTVINT_MARK; \
+	xtemp1 = hreg + 5; /* a new interrupt pair takes 5 cells */\
+        add_interrupt(OP1, makecs(xtemp1)); \
+        new_heap_functor(hreg, (Psc)OP2); \
+	flag = WRITE; \
+    } \
+    else Fail1;
 
 /*======================================================================*/
 
@@ -166,6 +199,13 @@ int *asynint_ptr = &asynint_val;
 	sreg = clref_val(OP1);\
 	flag = READFLAG;\
     }\
+    else if (isattv(OP1)) { \
+        /* fprintf(stderr, ".... ATTV nunify_with_list_sym, interrupt needed\n"); */\
+        *asynint_ptr |= ATTVINT_MARK; \
+	xtemp1 = hreg + 5; /* a new interrupt pair takes 5 cells */\
+        add_interrupt(OP1, makelist(xtemp1)); \
+	flag = WRITE; \
+    } \
     else Fail1;
 
 /*======================================================================*/
@@ -178,6 +218,10 @@ int *asynint_ptr = &asynint_val;
       synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));\
       lpcreg = pcreg; \
     } \
+    if (*asynint_ptr & ATTVINT_MARK) {\
+      synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));\
+      lpcreg = pcreg;\
+    }\
     else \
       lpcreg = (byte *)get_ep(PSC); \
     *asynint_ptr = 0; \

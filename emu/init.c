@@ -639,7 +639,10 @@ void init_machine(void)
 
   pdlreg = (CPtr)(pdl.high) - 1;
 
-  hbreg = hreg = (CPtr)(glstack.low);
+  interrupt_reg = (CPtr)(glstack.low);
+  bld_int(interrupt_reg, 0);
+
+  hbreg = hreg = (CPtr)(glstack.low) + 1;
 
   ebreg = ereg = (CPtr)(glstack.high) - 1;
 

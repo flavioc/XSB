@@ -91,6 +91,12 @@ tail_recursion:
 	 }
 	 IFTHEN_SUCCEED;
        }
+       else if (isattv(op2)) {
+	 /* fprintf(stderr, ".... CS = ATTV, interrupt needed\n"); */
+	 *asynint_ptr |= ATTVINT_MARK;
+	 add_interrupt(op2, op1);
+	 IFTHEN_SUCCEED;
+       }
        else { /* op2 is STRING, FLOAT, LIST, or INT.	*/
 	 IFTHEN_FAILED;
        }
@@ -111,14 +117,45 @@ tail_recursion:
 	 }
 	 IFTHEN_SUCCEED;
        }
+       else if (isattv(op2)) {
+	 /* fprintf(stderr, ".... LIST = ATTV, interrupt needed\n"); */
+	 *asynint_ptr |= ATTVINT_MARK;
+	 add_interrupt(op2, op1);
+	 IFTHEN_SUCCEED;
+       }
        else { IFTHEN_FAILED; }
        break; /* op1=list */
 
      case INT:    /* op1=num */
      case STRING: /* op1=string */
      case FLOAT:
-       if (op1 == op2) { IFTHEN_SUCCEED; } else { IFTHEN_FAILED; }
+       if (op1 == op2)
+	 { IFTHEN_SUCCEED; }
+       else if (isattv(op2)) {
+	 /* fprintf(stderr, ".... INT = ATTV, interrupt needed\n"); */
+	 *asynint_ptr |= ATTVINT_MARK;
+	 add_interrupt(op2, op1);
+	 IFTHEN_SUCCEED;
+       }
+       else { IFTHEN_FAILED; }
        break;     /* op1=atomic */
+
+     case ATTV:
+       deref(op2);
+       if (isref(op2)) {
+	 /* op2 is FREE				attv ... free */
+	 bind_copy0((CPtr)op2, op1);
+	 IFTHEN_SUCCEED;
+       }
+       else if (!isattv(op2) || (isattv(op2) && op1 != op2)) {
+	 /* fprintf(stderr, ".... ATTV = ???, interrupt needed\n"); */
+	 *asynint_ptr |= ATTVINT_MARK;
+	 add_interrupt(op1, op2);
+	 IFTHEN_SUCCEED;
+       }
+       else	/* isattv(op2) && op1==op2: no need to interrupt */
+	 IFTHEN_SUCCEED;
+       break;
        
        /* default:
 	  xsb_abort("Unknown term type in unify()");

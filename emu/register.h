@@ -52,6 +52,7 @@ extern CPtr openreg;
 
 extern CPtr ptcpreg;	/* parent tabled CP (subgoal)	*/
 extern CPtr delayreg;
+extern CPtr interrupt_reg;
 
 /*---- other stuff added for the SLG-WAM -------------------------------*/
 

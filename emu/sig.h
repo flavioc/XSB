@@ -35,8 +35,10 @@
 #define MYSIG_KEYB     1	       	/* keyboard interrupt (^C) */
 #define MYSIG_SPY      3		/* spy point */
 #define MYSIG_TRACE    4	       	/* trace point */
+#define MYSIG_ATTV     8		/* attributed var interrupt */
 #define MYSIG_CLAUSE  16	       	/* clause interrupt */
 
 #define KEYINT_MARK 0x80		/* keyboard interrupt ^C */
+#define ATTVINT_MARK 0x40		/* attributed var interrupt */
 
 #define MSGINT_MARK 0x20		/* software message interrupt */

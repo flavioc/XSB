@@ -28,15 +28,58 @@
 
 #define deref(op) deref2(op,break)
 
+/*
 #define deref2(op,stat) while (isref(op)) { \
                     if (op == follow(op)) \
                         stat; \
                     op = follow(op); }
+*/
 
+/* deref2 is changed to consider attributed variables */
+#define deref2(op, stat) {				\
+  while (isref(op)) {					\
+    if (op == follow(op))				\
+      stat;						\
+    op = follow(op);					\
+  }							\
+  while (isattv(op)) {					\
+    if (cell((CPtr) dec_addr(op)) == dec_addr(op)) 	\
+      break; /* end of an attv */			\
+    else {						\
+      op = cell((CPtr) dec_addr(op));			\
+      while (isref(op)) {				\
+	if (op == follow(op))				\
+          stat;						\
+	op = follow(op);				\
+      }							\
+    }							\
+  }							\
+}
+
+/*
 #define cptr_deref(op) while (isref(op)) { \
 			 if (op == (CPtr) cell(op)) \
   			     break; \
 			 op = (CPtr) cell(op); }
+*/
+
+#define cptr_deref(op) {				\
+  while (isref(op)) {					\
+    if (op == (CPtr) cell(op)) break;			\
+    op = (CPtr) cell(op);				\
+  }							\
+  while (isattv(op)) {					\
+    if (cell((CPtr) dec_addr(op)) == dec_addr(op))	\
+      break;						\
+    else {						\
+      op = (CPtr) cell((CPtr) dec_addr(op));		\
+      while (isref(op)) {				\
+	if (op == (CPtr) cell(op)) break;		\
+	op = (CPtr) cell(op);				\
+      }							\
+    }							\
+  }							\
+}
 
 #define printderef(op) while (isref(op) && op > 0) { \
 			 if (op==follow(op)) \

@@ -201,6 +201,7 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
+  case ATTV:
   case CS:
   case LIST:
   case FLOAT: xsb_abort("PTOC_INT: Integer argument expected");
@@ -221,6 +222,7 @@ DllExport prolog_float call_conv ptoc_float(int regnum)
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
+  case ATTV:
   case CS:  
   case LIST:
   case INT:
@@ -242,7 +244,8 @@ DllExport char* call_conv ptoc_string(int regnum)
   deref(addr);
   switch (cell_tag(addr)) {
   case FREE:
-  case REF1: 
+  case REF1:
+  case ATTV:
   case CS:  
   case LIST:
   case FLOAT:
@@ -384,7 +387,7 @@ static int ground(CPtr temp)
 
   cptr_deref(temp);
   switch(cell_tag(temp)) {
-  case FREE: case REF1:
+  case FREE: case REF1: case ATTV:
     return FALSE;
   case STRING: case INT: case FLOAT:
     return TRUE;
@@ -706,6 +709,10 @@ void init_builtin_table(void)
 
   set_builtin_table(JAVA_INTERRUPT, "setupJavaInterrupt");
   set_builtin_table(FORCE_TRUTH_VALUE, "force_truth_value");
+  set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
+  set_builtin_table(GET_ATTRIBUTES, "get_attributes");
+  set_builtin_table(DELETE_ATTRIBUTES, "delete_attributes");
+  set_builtin_table(ATTV_UNIFY, "attv_unify");
 }
 
 /*----------------------------------------------------------------------*/
@@ -731,6 +738,7 @@ int builtin_call(byte number)
   Pair sym;
   CPtr subgoal_ptr, t_ptcp;
   register CPtr xtemp1, xtemp2;
+  Cell attv, atts;
 #ifdef FOREIGN
   static int (*proc_ptr)(void);		/* working variable */
 #endif
@@ -774,8 +782,8 @@ int builtin_call(byte number)
     /* Assumes that `term' is a CS-tagged Cell. */
     ctop_addr(2, get_str_psc(ptoc_tag(1)));
     break;
-  case TERM_TYPE:		/* R1: +term; R2: tag (-int)		*/
-				/* <0 - var, 1 - cs, 2 - int, 3 - list>	*/
+  case TERM_TYPE:	/* R1: +term; R2: tag (-int)			  */
+			/* <0 - var, 1 - cs, 2 - int, 3 - list, 7 - ATTV> */
     term = ptoc_tag(1);
     if (isref(term)) ctop_int(2, 0);
     else ctop_int(2, cell_tag(term));
@@ -1103,6 +1111,10 @@ int builtin_call(byte number)
     SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(2)) {
     case FREE   : var = (CPtr)ptoc_tag(3);
+      xsb_fprint_variable(fptr, var);
+      break;
+    case ATTV:
+      var = (CPtr)dec_addr(ptoc_tag(3));
       xsb_fprint_variable(fptr, var);
       break;
     case INT    : fprintf(fptr, "%ld", (long)ptoc_int(3)); break;
@@ -1590,6 +1602,63 @@ int builtin_call(byte number)
     else xsb_abort("FORCE_TRUTH_VALUE: Argument 2 has unknown truth value");
     break;
   }
+
+  case PUT_ATTRIBUTES: /* R1: -Var; R2: +Atts */
+    attv = ptoc_tag(1);
+    atts = ptoc_tag(2);
+    if (isref(attv)) {		/* attv is a free var */
+      if (!isnil(atts)) {
+	bind_attv((CPtr)attv, hreg);
+	bld_free(hreg); hreg++;
+	bld_copy(hreg, atts); hreg++;
+      }
+    }
+    else if (isattv(attv)) {	/* attv is already an attv */
+      if (isnil(atts)) {	/* change it back to normal var */
+	bind_ref((CPtr)dec_addr(attv), hreg);
+	bld_free(hreg); hreg++;
+      }
+      else {			/* update the atts (another copy) */
+	bind_attv((CPtr)dec_addr(attv), hreg);
+	bld_free(hreg); hreg++;
+	bld_copy(hreg, atts); hreg++;
+      }
+    }
+    else xsb_abort("PUT_ATTRIBUTES: Argument 1 is nonvar");
+    break;
+
+  case GET_ATTRIBUTES: /* R1: +Var; R2: -Vector; R3: -OldMask */
+    attv = ptoc_tag(1);
+    if (isref(attv)) {		/* a free var */
+      /* ctop_tag(2, makenil); */ /* keep it as a free var */
+      ctop_tag(3, makeint(0));
+    }
+    else {
+      CPtr vector;
+      vector = (CPtr)dec_addr(attv) + 1;
+      ctop_tag(2, cell(vector));
+      ctop_tag(3, cell(clref_val(cell(vector)) + 1));
+    }
+    break;
+
+  case DELETE_ATTRIBUTES: /* R1: -Var */
+    attv = ptoc_tag(1);
+    if (isattv(attv)) {
+      bind_ref((CPtr)dec_addr(attv), hreg);
+      bld_free(hreg); hreg++;
+    }
+    break;
+
+  /*
+   * attv_unify/1 is a internal builtin for binding an attv to a value
+   * (it could be another attv or a nonvar term).  The users can call
+   * this builtin in verify_attributes/2 to bind an attributed var
+   * without trigger the attv interrupt.
+   */
+  case ATTV_UNIFY: /* R1: +Var; R2: +Value */
+    attv = ptoc_tag(1);
+    bind_copy((CPtr)dec_addr(attv), ptoc_tag(2));
+    break;
 
   default:
     xsb_exit("Builtin #%d is not implemented", number);

@@ -80,6 +80,47 @@ struct sigaction act, oact;
 void (*xsb_default_segfault_handler)(int); /* where the previous value of the
 					     SIGSEGV/SIGBUS handler is saved */
 
+static Cell attv_interrupts[20480][2];
+
+/*
+ * Put an attv interrupt into the interrupt chain. op1 is the related
+ * attv, and op2 is the value (see verify_attributes/2).
+ */
+
+void add_interrupt(Cell op1, Cell op2) {
+  int num;
+
+  num = int_val(cell(interrupt_reg));
+  attv_interrupts[num][0] = op1;
+  attv_interrupts[num][1] = op2;
+  num++;
+  push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(num));
+  bld_int(interrupt_reg, num);
+}
+
+
+Cell build_interrupt_chain() {
+  Cell head;
+  CPtr tmp = &head;
+  int num, i;
+
+  num = int_val(cell(interrupt_reg));
+  for (i = 0; i < num; i++) {
+    bind_list(tmp, hreg);
+    sreg = hreg + 2;
+    bind_list(hreg, sreg); hreg++;
+    if (i == (num - 1)) {
+      bind_nil(hreg);
+    }
+    else
+      tmp = hreg;
+    bld_copy(sreg, attv_interrupts[i][0]); sreg++;
+    bld_copy(sreg, attv_interrupts[i][1]); sreg++;
+    hreg = sreg;
+  }
+  return head;
+}
+
 /*======================================================================*/
 /*  Unification routines.						*/
 /*======================================================================*/
@@ -177,10 +218,34 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
     default_inthandler(intcode, cur_inst);
     psc = 0;
   } else {				/* call Prolog handler */
-    if (psc) { bld_cs(reg+1, build_call(psc)); }
-    psc = (Psc)flags[intcode+32];
-    bld_int(reg+2, intcode);
-    pcreg = get_ep(psc);
+    switch (intcode) {
+    case MYSIG_UNDEF:		/* 0 */
+    case MYSIG_KEYB:		/* 1 */
+    case MYSIG_SPY:		/* 3 */
+    case MYSIG_TRACE:		/* 4 */
+    case MYSIG_CLAUSE:		/* 16 */
+      if (psc) bld_cs(reg+1, build_call(psc));
+      psc = (Psc)flags[intcode+32];
+      bld_int(reg+2, intcode);
+      pcreg = get_ep(psc);
+      break;
+    case MYSIG_ATTV:		/* 8 */
+      /* the old call must be built first */
+      if (psc) bld_cs(reg + 2, build_call(psc));
+      psc = (Psc)flags[intcode+32];
+      /*
+       * Pass the interrupt chain to reg 1, and then reset interrupt_reg
+       * to 0 (note: this has to be trailed using pre-image trail).
+       */
+      bld_copy(reg + 1, build_interrupt_chain());
+      push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(0));
+      bld_int(interrupt_reg, 0);
+      /* bld_int(reg + 3, intcode); */	/* Not really needed */
+      pcreg = get_ep(psc);
+      break;
+    default:
+      xsb_abort("Unknown intcode in synint_proc()");
+    } /* switch */
   }
   return psc;
 }
@@ -330,7 +395,9 @@ int compare(Cell val1, Cell val2)
   switch(cell_tag(val1)) {
   case FREE:
   case REF1:
-    if (isnonvar(val2)) return -1;
+    if (isattv(val2))
+      return vptr(val1) - (CPtr)dec_addr(val2);
+    else if (isnonvar(val2)) return -1;
     else { /* in case there exist local stack variables in the    */
            /* comparison, globalize them to guarantee that their  */
            /* order is retained as long as nobody "touches" them  */
@@ -352,17 +419,17 @@ int compare(Cell val1, Cell val2)
       return vptr(val1) - vptr(val2);
     }
   case FLOAT:
-    if (!isnonvar(val2)) return 1;
+    if (isref(val2) || isattv(val2)) return 1;
     else if (isfloat(val2)) 
       return sign(float_val(val1) - float_val(val2));
     else return -1;
   case INT:
-    if (!isnonvar(val2) || isfloat(val2)) return 1;
+    if (isref(val2) || isfloat(val2) || isattv(val2)) return 1;
     else if (isinteger(val2)) 
       return int_val(val1) - int_val(val2);
     else return -1;
   case STRING:
-    if (!isnonvar(val2) || isfloat(val2) || isinteger(val2)) 
+    if (isref(val2) || isfloat(val2) || isinteger(val2) || isattv(val2)) 
       return 1;
     else if (isstring(val2)) {
       return strcmp(string_val(val1), string_val(val2));
@@ -403,6 +470,13 @@ int compare(Cell val1, Cell val2)
       return compare(cell(cptr1+1), cell(cptr2+1));
     }
     break;
+  case ATTV:
+    if (isattv(val2))
+      return (CPtr)dec_addr(val1) - (CPtr)dec_addr(val2);
+    else if (isref(val2))
+      return (CPtr)dec_addr(val1) - vptr(val2);
+    else
+      return -1;
   default:
     xsb_abort("Compare (unknown tag %ld); returning 0", cell_tag(val1));
     return 0;

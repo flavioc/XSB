@@ -203,6 +203,11 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 /*----- Instructions for tries as code (Do NOT change the numbers) -----*/
 
+#define trie_no_cp_attv		0x50
+#define trie_trust_attv		0x51
+#define trie_try_attv		0x52
+#define trie_retry_attv		0x53
+
 #define trie_no_cp_str		0x60
 #define trie_trust_str		0x61
 #define trie_try_str		0x62

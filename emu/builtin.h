@@ -163,6 +163,11 @@
 
 #define SET_SUBSUMPTIVE_EVAL	170
 
+#define PUT_ATTRIBUTES		172
+#define GET_ATTRIBUTES		173
+#define DELETE_ATTRIBUTES	174
+#define ATTV_UNIFY		175
+
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO DO
    IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY NUMBER

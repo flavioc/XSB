@@ -220,6 +220,9 @@ copy_again : /* for tail recursion optimisation */
 			if (on_glstack((CPtr)(from))) *to = from ;
 				else { *(CPtr)from = (Cell)to ; *to = (Cell)to ; }
 			return ;
+	case ATTV:
+	  xsb_abort("case ATTV in findall_copy_to_heap is not implemented yet");
+	  return;
 
       case LIST :
               {	CPtr pfirstel ;
@@ -340,6 +343,9 @@ copy_again : /* for tail recursion optimisation */
 				}
 			else *to = from ;
 			return(size) ;
+	case ATTV:
+	  xsb_abort("case ATTV in findall_copy_template_to_chunk is not implemented yet");
+	  return 0;
 
 	case LIST :
               {	CPtr pfirstel ;

@@ -38,6 +38,8 @@
  *  TRreg and TRFreg always point to the Dynamic Link field of a trail frame.
  */
 
+#define PRE_IMAGE_TRAIL   1
+
 #ifdef WAM_TRAIL
 
 #define pushtrail0(addr,val)  \
@@ -46,9 +48,12 @@
    }\
    *(trreg++) = addr
 
-#else
+/* push_pre_image_trail0: TO BE FINISHED */
+#define push_pre_image_trail0(addr, prev_value, new_value)
 
-#define TRAIL_FRAME_SIZE  3
+#else  /* ifndef WAM_TRAIL */
+
+#define TRAIL_FRAME_SIZE  4
 
 #define pushtrail0(addr,val)  \
    if (trfreg > trreg) {\
@@ -71,7 +76,32 @@
      *(trreg-1) = (CPtr) val;\
      *(trreg-2) = addr;\
    }
-#endif
+
+#define push_pre_image_trail0(addr, prev_value, new_value)	\
+  if (trfreg > trreg) {						\
+    if ((char *)trfreg > ((char *)(top_of_cpstack) -		\
+                          TRAIL_FRAME_SIZE*sizeof(CPtr)))	\
+      handle_tcpstack_overflow();				\
+    }								\
+    *(trfreg + 4) = (CPtr) trreg;				\
+    trreg = trfreg + 4;						\
+    *(trreg - 1) = (CPtr) (new_value);				\
+    *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_TRAIL);	\
+    *(trreg - 3) = (CPtr) (prev_value);				\
+  }								\
+  else {							\
+    if ((char *)trreg > ((char *)(top_of_cpstack) -		\
+                          TRAIL_FRAME_SIZE*sizeof(CPtr)))	\
+      handle_tcpstack_overflow();				\
+    }								\
+    trreg = trreg + 4;						\
+    *trreg = (CPtr) trreg - 4;					\
+    *(trreg - 1) = (CPtr) (new_value);				\
+    *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_TRAIL);	\
+    *(trreg - 3) = (CPtr) (prev_value);				\
+  }
+
+#endif /* ifdef WAM_TRAIL */
 
 #ifdef CHAT
 #define conditional(a)	( ((a) >= ebreg) || ((a) < hbreg) )
@@ -82,6 +112,8 @@
 
 #define pushtrail(a,v)	if (conditional(a)) { pushtrail0(a,v); }
 #define dpushtrail(a,v) pushtrail0(a,v)
+#define push_pre_image_trail(a, prev_v, new_v)			\
+  if (conditional(a)) {push_pre_image_trail0(a, prev_v, new_v)}
 
 /* --- binding -------------------------------------------------------- */
 
@@ -109,6 +141,9 @@
 #define bind_list(addr, list)	pushtrail(addr, makelist(list));\
 				bld_list(addr, list)
 
+#define bind_attv(addr, attv)	pushtrail(addr, makeattv(attv));\
+				bld_attv(addr, attv)
+
 #define bind_copy0(addr, val)	pushtrail(addr, val); *(addr) = val
 
 #define bind_copy(addr, val)	pushtrail(addr, val); *(addr) = val
@@ -116,6 +151,33 @@
 /* value trail MUST be used because first CP cell has cp_trreg = 0 !!!! */
 
 #define untrail(addr) bld_free(addr)
+
+/* untrail2 is for pre_image trail. */
+
+#ifdef WAM_TRAIL
+
+/* untrail2: TO BE FINISHED */
+
+#define untrail2(trail_ptr, addr)
+
+/* #define untrail2(trail_ptr, addr)		\
+  if ((addr) & PRE_IMAGE_TRAIL) {		\
+    bld_copy0((CPtr)((addr) - PRE_IMAGE_TRAIL),	\
+              cell((CPtr)trail_ptr - 1));	\
+    trreg--;					\
+  }						\
+  else						\
+    bld_free((CPtr)(addr))
+*/
+#else  /* ifndef WAM_TRAIL */
+#define untrail2(trail_ptr, addr)		\
+  if ((addr) & PRE_IMAGE_TRAIL) {		\
+    bld_copy0((CPtr)((addr) - PRE_IMAGE_TRAIL),	\
+	      cell((CPtr)trail_ptr - 3));	\
+  }						\
+  else						\
+    bld_free((CPtr)(addr))
+#endif /* ifdef WAM_TRAIL */
 
 /* --- testing location of variable ----------------------------------- */
 

@@ -230,7 +230,9 @@ static int emuloop(byte *startaddr)
 /* for slginsts.i
    -------------- */
   CallLookupResults lookupResults;
-  Cell  CallNumVar;
+  Cell  CallNumVar;	/* number of vars (including attvs) in the call */
+/*   Cell  CallNumAttv; */	/* number of attvs in the call */
+/*   Integer tmp;	 */	/* used to get CallNumVar & CallNumAttv */
   ALNptr OldRetPtr;
   NODEptr TrieRetPtr;
 
@@ -671,7 +673,8 @@ contcase:     /* the main loop */
     deref(op1);
     switch (cell_tag(op1)) {
     case FREE:
-    case REF1: 
+    case REF1:
+    case ATTV:
       lpcreg += 2 * sizeof(Cell);
       break;
     case INT:
@@ -698,7 +701,8 @@ contcase:     /* the main loop */
     deref(op1);
     switch (cell_tag(op1)) {
     case FREE:
-    case REF1: 
+    case REF1:
+    case ATTV:
       lpcreg += 2 * sizeof(Cell);
       goto sotd2;
     case INT: 
@@ -741,7 +745,8 @@ contcase:     /* the main loop */
 	deref(op1);
 	switch (cell_tag(op1)) {
 	case FREE:
-	case REF1: 
+	case REF1:
+	case ATTV:
 	  lpcreg += sizeof(Cell);
 	  goto sob3d2;
 	case INT: 
