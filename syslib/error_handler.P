@@ -23,7 +23,6 @@
 ** 
 */
 
-
 :- compiler_options([xpp_on,sysmod,optimize]).
 
 #include "sig_xsb.h"
@@ -77,3 +76,55 @@ default_sys_error_handler(error(calculation_error(Flag),Msg)) :-
 default_sys_error_handler(Msg) :-
 	messageln(('++Error[XSB/Runtime/P] uncaught exception: ', Msg), 
 	           STDERR).
+
+%-----------------------------------------------------------------------
+
+% ISO-compatable convenience predicates
+
+instantiation_error(Predicate,Arg):- 
+	throw(error(instantiation_error,
+	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+type_error(Valid_type,Culprit,Predicate,Arg):- 
+	throw(error(type_error(Valid_type,Culprit),
+	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+domain_error(Valid_type,Culprit,Predicate,Arg):- 
+	throw(error(domain_error(Valid_type,Culprit),
+	                             (' in arg ',Arg,' of predicate ',Predicate))).
+
+%--------------------------------
+% These checks can be reused for various types of ISO compatability.
+
+% Checks that a given Term is a "stream.
+% Should make stream a term for better checking.  
+check_stream(Stream,Predicate,Arg) :- 
+	check_nonvar(Stream,Predicate,Arg),
+	(atom(Stream) -> 
+	    true
+	;
+	    instantiation_error(Predicate,Arg)).
+
+%-------------
+% Checks that a term is not a variable
+check_nonvar(Term,Predicate,Arg) :- 
+	(var(Term) -> 
+	    instantiation_error(Predicate,Arg)
+             ;  true).
+
+%-------------
+
+% Checks that Term is a list containing no variable elements
+check_nonvar_list(Term,Predicate,Arg):- 
+	check_nonvar(Term,Predicate,Arg),
+	(check_nonvar_list1(Term,Predicate,Arg) -> 
+	    true
+	 ;  type_error(list,Term,Predicate,Arg)).
+	    
+check_nonvar_list1([],_Predicate,_Arg).
+check_nonvar_list1([H|T],Predicate,Arg):- 
+	(nonvar(H) -> 
+	    check_nonvar_list1(T,Predicate,Arg)
+	; 
+	    instantiation_error(Predicate,Arg)).
+

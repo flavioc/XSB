@@ -26,7 +26,7 @@
 
 :- export file_read/2, file_read/3, string_as/1, vv/2, 'syntax errors'/0.
 :- export file_read_foe/3.
-
+:- export vv/2.
 
 :- import '_$op'/3 from file_op.
 :- import file_put/2 from file_io.

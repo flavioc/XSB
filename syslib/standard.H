@@ -52,7 +52,8 @@
 	print/1,	proper_hilog/1,	
         put/1,          put_char/1,     put_char/2,     put_code/1,
         put_code/2,
-	read/1,		read/2,         real/1,		repeat/0,
+  read/1,		read/2,             read_term/3,    read_term/2,
+            real/1,		repeat/0,
 	see/1,		seeing/1,	seen/0,
         set_input/1,    set_output/1,  
 	demand_once/1,
@@ -85,6 +86,26 @@
 	set_timer/1,
 	(import)/1,	(multifile)/1.
 
+
+:- import windows_os/0 from xsb_configuration.
+
+
+:- import (dynamic)/1, asserta/1 from assert.
+:- import member/2 from basics.
+:- import consult/1, reconsult/1 from consult.
+:- import predicate_property/2 from curr_sym.
+:- import dcg/2 from dcg.
+:- import eval/2 from eval.
+:- import file_open/3, file_close/1, file_get/2, file_put/2
+     from file_io.
+:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
+          add_trie_index/1, add_table/1
+     from file_op.
+:- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
+:- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
+:- import domain_error/4 from error_handler.
+:- import  check_stream/3, check_nonvar_list/3 from error_handler.
+
 :- import call0/1, conname/2, conpsc/2, 
 	  expand_filename/2, machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
@@ -96,27 +117,12 @@
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
           '$$clean_up_block'/0 
      from machine. 
-
-:- import windows_os/0 from xsb_configuration.
-
-:- import file_open/3, file_close/1, file_get/2, file_put/2
-     from file_io.
-
+:- import numbervars/1 from num_vars.
+:- import calculate_singleton/3 from singlton.
+:- import concat_atom/2 from string.
+:- import file_read/2, file_read/3 from xsb_read.
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
-:- import file_read/2 from xsb_read.
-:- import eval/2 from eval.
-:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
-          add_trie_index/1, add_table/1
-     from file_op.
-:- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
-:- import dcg/2 from dcg.
-:- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
-:- import numbervars/1 from num_vars.
-:- import predicate_property/2 from curr_sym.
-:- import (dynamic)/1, asserta/1 from assert.
-:- import concat_atom/2 from string.
-:- import consult/1, reconsult/1 from consult.
 
 /* --------------------- end of file standard.H ----------------------- */

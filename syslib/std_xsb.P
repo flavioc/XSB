@@ -224,10 +224,12 @@ standard_symbol(put_code, 2, standard).		%ISO
 
 standard_symbol(read, 1, standard).
 standard_symbol(read, 2, standard).
+standard_symbol(read_term,3,standard).                        %ISO
+standard_symbol(read_term,2,standard).                        %ISO
 standard_symbol(real, 1, standard).
 standard_symbol(reconsult, 1, consult).
 standard_symbol(reconsult, 2, consult).
-standard_symbol(rename, 2, shell).		% obsolecent
+standard_symbol(rename, 2, shell).		
 standard_symbol(repeat, 0, standard).
 standard_symbol(reset_dcg_mode,0,dcg).
 standard_symbol(retract, 1, assert).

@@ -23,13 +23,14 @@
 ** 
 */
 
-
-:- export default_error_handler/1.
+:- export domain_error/4, type_error/4, instantiation_error/2,
+              check_stream/3, check_nonvar_list/3, check_nonvar/3, 
+              default_error_handler/1.
 
 :- import (dynamic)/1 from assert.
 %%:- import reset_undef_pred_handlers/0 from loader.
 :- import close_open_tables/0 from machine.
-:- import messageln/2 from standard.
+:- import atom/1, messageln/2, throw/1 from standard.
 
 
 

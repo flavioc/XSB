@@ -29,6 +29,7 @@
 /*----------------------------------------------------------------------*/
 
 :- compiler_options([sysmod, optimize, xpp_on,ciao_directives]).
+
 % Ciao directives added for documentation.
 
 #include "celltags_xsb.h"
@@ -307,6 +308,65 @@ tab(N) :- tab(N).
 % Term I/O Predicates %
 %---------------------%
 
+%-------------
+:- import vv/2 from xsb_read.
+
+% TLS: this is more-or-less ISO compliant, modulo some exception handling
+% that would need to be added to the tokenizer.
+
+read_term(T,List):- 
+	read_term_check(stream,List,read_term/3),
+	stat_flag(CURRENT_INPUT, File), 
+	file_read(File, T,Vlist),
+	process_variable_list(List,T,Vlist).
+
+read_term(Istr,T,List):- 
+	read_term_check(Istr,List,read_term/3),
+            seeing(Oldstr),see(Istr),stat_flag(CURRENT_INPUT, File), 
+	file_read(File, T,Vlist),
+	see(Oldstr),
+	process_variable_list(List,T,Vlist).
+
+read_term_check(Istr,List,Predvers):- 
+	check_stream(Istr,Predvers,1),
+	check_nonvar_list(List,Predvers,3),
+	check_read_options(List,Predvers,3).
+
+process_variable_list(List,T,Vlist):- 
+	(member(singletons(Sings),List) -> 
+	    calculate_singleton(T,Vlist,Sings)
+	  ; true),
+	(member(variables(Vars),List) -> 
+	    extract_vars(Vlist,Vars)
+	  ; true),
+	(member(variable_names(Names),List) -> 
+	    isoify(Vlist,Names)
+	  ; true).
+
+% TLS: keeping the following predicate here, 
+% as read_options check affects only these two predicates.
+
+check_read_options([],_Predvers,_Arg).
+check_read_options([H|T],Predvers,Arg):- 
+	(read_option(H) -> 
+	    check_read_options(T,Predvers,Arg)
+	 ;  domain_error(read_option,H,Predvers,Arg)).
+
+read_option(variables(_)).
+read_option(variable_names(_)).
+read_option(singletons(_)).
+
+extract_vars([],[]).
+extract_vars([A],[]):- var(A),!.
+extract_vars([H|R],[V|R1]):- 
+	H = vv(_,V),
+	extract_vars(R,R1).
+
+isoify([],[]).
+isoify([vv(A,V)|R],[A = V|R1]):- 
+	isoify(R,R1).
+
+%-------------
 read(Istr,T) :- seeing(Oldstr),see(Istr),read(T),see(Oldstr).
 
 read(T) :- stat_flag(CURRENT_INPUT, File), file_read(File, T).
