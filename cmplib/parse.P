@@ -54,7 +54,7 @@ parse(Modname, PFile, HFile, Module) :-
 	conset(needs_restart, 0),  % reset, if an error prevented this
 	(Modname == user
 	 ->	set_symbol_hash_table_size(1,Module0),
-		see(user), parse_clauses(user, Module0)
+		see(userin), parse_clauses(user, Module0)
 	 ; file_exists(PFile)
 	 ->	file_size(PFile,FileSize),
 		set_symbol_hash_table_size(FileSize,Module0),
