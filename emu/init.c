@@ -133,7 +133,7 @@ void static version_message(void)
 
   sprintf(licensemsg, "%s%cetc%ccopying.msg", install_dir, SLASH, SLASH);
   sprintf(configmsg, "%s%cbanner.msg", 
-	  strip_names_from_path(xsb_config_file, 1), SLASH);
+	  strip_names_from_path(xsb_config_file, 2), SLASH);
 
   display_file(configmsg);
   puts("");
