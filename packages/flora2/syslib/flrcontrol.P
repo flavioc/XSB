@@ -69,6 +69,8 @@ FLLIBUNLESSDO(Cond,Action) :- sk_not(Cond), call(Action).
 %%%%   so they are not backtrackable (backtracking over updates can occur
 %%%%   only within the condition or action parts, but not after an iteration
 %%%%   is finished)
+%%%%   These loops fail only if Action fails.
+%%%%   Variables that were unbound at the time of the call stay unbound
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% This should fail ONLY if Cond is true, but Action fails.
@@ -90,20 +92,47 @@ FLLIBDOUNTIL(Action,Cond) :-
 	call(Cond).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% while-loop and loop-until
-%%% These loops are fully backtrackable, but they are more expensive, 
-%%% since they are recursive.
+%%%% while-loop and loop-until
+%%%% These loops are fully backtrackable, but they are more expensive, 
+%%%% since they are recursive.
+%%%% These loops fail only if Action fails.
+%%%% Variables that were unbound at the time of the call stay unbound
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 FLLIBWHILELOOP(Cond,Action) :- 
-	call(Cond),
-	call(Action),
-	FLLIBWHILELOOP(Cond,Action).
+	%% Must copy_term Action&Cond together so the variables
+	%% will be preserved
+	copy_term((Action,Cond),(Action1,Cond1)),
+	FLORA_SYMBOL('catch')(
+			      (call(Cond1) ->
+				  (call(Action1), ! ; throw(quitLoop)),
+				  FLLIBWHILELOOP(Cond,Action)
+			      ; true
+			      ),
+			      quitLoop, % catcher
+			      fail % fail if action failed
+			     ).
 
+%% Cond shouldn't be tabled!!! Otherwise "not" barks!!!
+%% We can't use sk_not instead of "not" because sk_not
+%% would table Cond and cause more iterations than necessary.
+%% We could call abolish_all_tables from within sk_not, but this is dangerous:
+%% If there is a recursive dependency on Cond then abolishing tables
+%% while computing them can crash XSB
 FLLIBLOOPUNTIL(Action,Cond) :-
-	call(Action),
-	call(Cond),
-	FLLIBLOOPUNTIL(Action,Cond).
+	%% Must copy_term Action&Cond together so the variables
+	%% will be preserved
+	copy_term((Action,Cond),(Action1,Cond1)),
+	FLORA_SYMBOL('catch')(
+			      ((call(Action1), ! ; throw(quitLoop)),
+				  (not(call(Cond1))
+				  -> FLLIBLOOPUNTIL(Action,Cond)
+				  ; true
+				  )
+			      ),
+			      quitLoop, % catcher
+			      fail % fail if action failed
+			     ).
 
 
 %% These exist in order to be able to hide the calls 

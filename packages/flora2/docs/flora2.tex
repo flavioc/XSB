@@ -3437,7 +3437,7 @@ XSB does not understand and will not associate it with the predicate {\tt
   foo/3}  that it might have. To do it right, use explicit conversion:
 %%
 \begin{quote}
- {\tt ?- flP2H(PrologRepr,foo(a,b,c)) assert(PrologRepr)@prolog().  }
+ {\tt ?- flP2H(PrologRepr,foo(a,b,c)), assert(PrologRepr)@prolog().  }
 \end{quote}
 %%
 This will insert {\tt foo(a,b,c)} into the catch-all XSB module called {\tt
@@ -3453,10 +3453,10 @@ the following will work if {\tt foo/3} is defined as dynamic in the module
 %%
 
 We should also mention one important difference between insertion of facts
-in \FLORA and Prolog. Prolog treats facts as a \emph{bag}, so duplicates
-are allowed. In contrast, \FLORA treats the database as a \emph{set} of
-facts with no duplicates. Thus, insertion of a fact that is already in the
-database has no effect.
+in \FLORA and Prolog. Prolog treats facts as a \emph{list}, so duplicates
+are allowed and the order matters. In contrast, \FLORA treats the database
+as a \emph{set} of facts with no duplicates. Thus, insertion of a fact that
+is already in the database has no effect.
 
 
 \index{non-backtrackable update!delete}
@@ -3873,6 +3873,10 @@ undone. However, updates made by backtrackable update statements during the
 previous iteration remain committed.
 
 
+\index{while-loop}
+\index{until}
+\index{loop-until}
+%%
 \paragraph{while-loop and loop-until.}
 This pair of loop statements is similar to {\tt while-do} and {\tt
   do-until}, except that backtrackable updates are \emph{not} committed
@@ -3885,6 +3889,20 @@ expensive (both time- and space-wise) than {\tt while-do} and {\tt
 of updates is required. In particular, there is no justification for {\tt
   while-loop} and {\tt loop-until} if all updates in the query are
 non-backtrackable.
+
+\paragraph{Note:}
+At present, XSB has serious problems with its implementation of
+{\tt assert/retract} predicates, which affects {\tt while-do} and {\tt
+  do-until}. Therefore, it is recommended to avoid these control
+constructs.
+
+\subsection{Pitfalls in Using Loops}
+
+Observe that typically the {\tt while/until} loops are used in situation
+when the condition in the loop is being updated inside the loop body.
+Therefore, the condition must \emph{not} contain tables predicates.
+If such predicates are involved in the loop condition, the loop is likely
+to execute infinitely many times, and can even be infinite.
 
 
 \section{Negation} \label{sec:negation}
