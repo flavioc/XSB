@@ -26,7 +26,7 @@
 :- compiler_options([cpp_on]).
 
 #include "char_defs.h"
-
+#include "flag_defs.h"
 
 compile_cH(Modname, Base, Options, ExList, Dir) :-
 	/* ldoption is needed at compile time for ELF systems,
@@ -84,10 +84,23 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 		),
 		message(('[Compiling Foreign Module ', Base, M, ']')),
 		cputime(TimeStart),
-		see(HFile),
-		read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile),
+		seeing(OldFile),
+		telling(OldTell),
+%		see(HFile),
+		repeat,
+		open_or_cpp_file(HFile,CPPprocess),
+		read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile), !,
+		( CPPprocess = none, ! 
+	        ; 
+	          process_control(CPPprocess,wait),
+		  stat_flag(CURRENT_INPUT,FromPort),
+		  file_close(FromPort)
+	        ),
 		closefile(TempFile),
-		seen,
+		see(OldFile),
+		tell(OldTell),
+		conset(cpp_on,0),
+%		seen,
 		length(ExList, Count),
 		obj_ext(OExt),
 		str_cat(Base, OExt, OFile),
@@ -108,6 +121,14 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 		LdOptionMid = LdOptionIn
 	    ; Clause = (':-'(ldoption(Opt))) ->
 		form_ld_option(Opt, LdOptionIn, LdOptionMid)
+	    ; Clause = (':-'(compiler_options(CompOpt))) ->
+	        (memberchk(cpp_on,CompOpt), conget(cpp_on,0) ->
+		    closefile(TempFile),
+		    conset(cpp_on,1),
+		    seen, 
+		    fail
+		;
+		    LdOptionMid = LdOptionIn)
 	    ; Clause = (':-'(compile_command(CompComm))) -> 
 		LdOptionMid = LdOptionIn
 	    ; Clause = (':-'(foreign_pred(PredDecl))) ->

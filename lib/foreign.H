@@ -35,7 +35,14 @@
 :- import message/1, warning/1, time_message/2 from auxlry.
 :- import str_len/2, str_cat/3 from machine.
 :- import read/1, see/1, seen/0, write/1, put/1, tell/1, told/0,
-	  atom/1, file_exists/1, cputime/1, abort/1
+	  atom/1, file_exists/1, cputime/1, abort/1, seeing/1,
+          telling/1
      from standard.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import write_header/0, process_from/2 from wrapping.
+:- import file_close/1 from file_io.
+:- import stat_flag/2 from machine.
+:- import process_control/2 from shell.
+:- import conset/2, conget/2 from prof_sbp.
+:- import open_or_cpp_file/2 from parse.
+:- import repeat/0 from standard.
