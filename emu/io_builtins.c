@@ -31,8 +31,6 @@
 #include <string.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <signal.h>
-
 
 #include "auxlry.h"
 #include "cell.h"
