@@ -83,6 +83,7 @@
 #include "chat.h"
 #endif
 #include "residual.h"
+#include "tables.h"
 
 #ifdef ORACLE
 #include "oracle.h"
@@ -707,7 +708,7 @@ inline static void abolish_table_info(void)
   }
   reset_freeze_registers;
   openreg = COMPLSTACKBOTTOM;
-  abolish_trie();
+  release_all_tabling_resources();
   abolish_wfs_space(); 
 }
 
@@ -1632,6 +1633,7 @@ int builtin_call(byte number)
     break;
 
   case SET_SUBSUMPTIVE_EVAL: {    /* R1: +Term */
+#ifndef CHAT
     Psc psc;
     TIFptr tif;
 
@@ -1639,7 +1641,7 @@ int builtin_call(byte number)
     tif = get_tip(psc);
     if ( IsNonNULL(tif) ) {
       if ( IsNULL(TIF_CallTrie(tif)) ) {
-	TIF_TablingMethod(tif) = SUBSUMPTIVE_TM;
+	TIF_TablingMethod(tif) = SUBSUMPTIVE_TCM;
 	return TRUE;
       }
       else {
@@ -1654,6 +1656,13 @@ int builtin_call(byte number)
       xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
       return FALSE;
     }
+#else
+    {
+      void print_chat_sub_warning();
+      print_chat_sub_warning();
+      return FALSE;
+    }
+#endif
   }
   case PRINT_CHAT: print_chat(1) ; return TRUE ;
   case PRINT_LS: print_ls(1) ; return TRUE ;
