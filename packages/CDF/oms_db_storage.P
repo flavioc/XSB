@@ -612,7 +612,7 @@ object_int_cdb(Name,NatOid,Source) :-
 	).
 
 immediate_memberof_int_cdb(NatOid,OSource,NatCid,CSource) :-
-	get_component_intensional_bind(memberof_int(NatOid,OSource,NatCid,CSource),Source),
+	get_component_intensional_bind(immediate_memberof_int(NatOid,OSource,NatCid,CSource),Source),
 	ext_caching(Source,Cx),
 	db_cache_call(calls_immediate_memberof(NatOid,OSource,NatCid,CSource),
 		      cache_immediate_memberof(NatOid,OSource,NatCid,CSource),
@@ -917,7 +917,7 @@ assert_oms_int_cdb(oms_obj(Oid,Name,NatOid,Source)) :-
 			)
 	).
 assert_oms_int_cdb(oms_mo(Oid,Cid)) :-
-	get_component_intensional_bind(memberof_int(NatOid,OSource,NatCid,CSource),Source),
+	get_component_intensional_bind(immediate_memberof_int(NatOid,OSource,NatCid,CSource),Source),
 	ext_caching(Source,Cx),
 	(var(CSource) %% object defines the component
 	 ->	ob_id_map(Oid,_,NatOid,OSource),
@@ -1080,7 +1080,7 @@ retractall_oms_int_cdb(oms_obj(Oid,Name,NatOid,Source)) :-
 	).
 retractall_oms_int_cdb(oms_mo(Oid,Cid)) :-
 	(nonvar(Oid),nonvar(Cid)
-	 ->	get_component_intensional_bind(memberof_int(NatOid,OSource,NatCid,CSource),Source),
+	 ->	get_component_intensional_bind(immediate_memberof_int(NatOid,OSource,NatCid,CSource),Source),
 		ext_caching(Source,Cx),
 		(var(CSource) %% object defines the component
 		 ->	ob_id_map(Oid,_,NatOid,OSource),
