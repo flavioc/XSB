@@ -45,8 +45,11 @@ concat_atom(Atomlist,Atom):-
 
 atom_to_charlist([],[]).
 atom_to_charlist([Atom|Rest],[List|Lrest]):- 
-	atom(Atom),
-	atom_codes(Atom,List),
+	(atom(Atom)
+	 ->	atom_codes(Atom,List)
+	 ; number(Atom)
+	 ->	number_codes(Atom,List)
+	),
 	atom_to_charlist(Rest,Lrest).
 
 %---

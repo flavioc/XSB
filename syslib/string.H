@@ -30,6 +30,6 @@
 
 :- import flatten/2 from basics.
 :- import str_len/2 from machine.
-:- import atom/1, atom_codes/2 from standard.
+:- import atom/1, atom_codes/2, number/1, number_codes/2 from standard.
 
 /* ---------------------- end of file string.H ------------------------ */
