@@ -2,14 +2,15 @@
 :- export atom_handle/2.
 :- export in_all_stable_models/2.
 :- export a_stable_model/0.
-:- export print_current_stable_model/0.
 :- export in_current_stable_model/1.
+:- export current_stable_model/1.
+:- export print_current_stable_model/0.
 
 :- import conset/2,coninc/1,conget/2 from prof_sbp.
 :- import new_trie/1, delete_trie/1, trie_intern/5 from intern.
 :- import trie_interned/4 from intern.
 :- import file_write/2, file_nl/1 from xsb_writ.
-:- import excess_vars/4 from setof.
+:- import findall/3, excess_vars/4 from setof.
 :- import warning/1, abort/1, integer/1, repeat/0 from standard.
 :- import get_calls/3, get_returns/3, table_state/2 from tables.
 :- import (dynamic)/1, assert/1, retractall/1, retract/1 from assert.

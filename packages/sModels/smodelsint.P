@@ -22,10 +22,13 @@ set by the previous invocation of init_smodels.)  If there are no
 through backtracking.  Atoms true in a stable model can be obtained by
 in_current_stable_model/1.
 
-print_current_stable_model: prints the current stable model on STDFDBK.
-
 in_current_stable_model(?AtomHandle): true of handles of atoms true in
 the current stable model (set by an invocation of a_stable_model/0.)
+
+current_stable_model(-AtomList) returns the list of atoms true in the
+current stable model.
+
+print_current_stable_model: prints the current stable model on STDFDBK.
 
 */
 
@@ -193,24 +196,37 @@ in_current_stable_model(Handle) :-
 	smodelsCheckAtom(Handle,Ret),
 	Ret =\= 0.
 	
-print_current_stable_model :-
+current_stable_model(Atoms) :-
 	smodels_initted,
 	have_sm,
-	conset('_$smprflg',0),
+	findall(Atom,true_in_csm(Atom),Atoms).
+
+true_in_csm(Atom) :-
+	atomtrie(AtomTrie),
 	conget('_$smctr',NumAtoms),
-	file_write(STDFDBK,'{'),
 	for(Hand,1,NumAtoms),
 	smodelsCheckAtom(Hand,Ret),
 	Ret =\= 0,
-	(conget('_$smprflg',1)
-         ->     file_write(STDFDBK,'; ')
-         ;      conset('_$smprflg',1)
-        ),
-	atom_handle(Atom,Hand),
-	file_write(STDFDBK,Atom),
-	fail.
+	atomhandle(Hand,Leaf),
+	trie_interned(Atom,AtomTrie,Leaf,_Skel).
+
 print_current_stable_model :-
-	file_write(STDFDBK,'}').
+	current_stable_model(SM),
+	file_write(STDFDBK,'{'),
+	(SM = [Atom|Atoms]
+         ->     file_write(STDFDBK,Atom),
+                write_list_tail(Atoms,STDFDBK)
+	 ;      true
+        ),
+	file_write(STDFDBK,'}'),
+	fail.
+print_current_stable_model.
+
+write_list_tail([],_).
+write_list_tail([Atom|Atoms],Port) :-
+	file_write(Port,'; '),
+	file_write(Port,Atom),
+	write_list_tail(Atoms,Port).
 
 
 write_rules([]).

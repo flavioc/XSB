@@ -202,6 +202,7 @@ all_distinct1([vv(_Name,Var)|Rest]) :-
 	all_distinct1(Rest).
 
 process_stable_models(Query) :-
+	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	(Query = {tnot(Q)}
          ->     true
          ;      Q = Query
@@ -213,9 +214,17 @@ process_stable_models(Query) :-
 	file_nl(STDFDBK),
 	file_write(STDFDBK,'  '),
 	print_current_stable_model,
+	file_write(STDFDBK, MorePrompt),
+	file_flush(STDFDBK, _),
+	no_more(Cmd),
+	(Cmd =:= 10
+         ->     !,
+	        file_write(STDFDBK, '  yes'), 
+		file_nl(STDFDBK)
+	 ; true
+        ),
 	fail.
-process_stable_models(_) :- 
-	file_nl(STDFDBK).
+process_stable_models(_).
 
 process_answerset_semantics(Query) :-
 	(Query = {tnot(Q)}
