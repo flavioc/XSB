@@ -18,20 +18,24 @@ Ontology vs. OMS instance vs. OMS state.
 
 Make sure ive mentioned product identifiers, and direct constituents.
 
+Probably haven't mentioned initialization file.
+
 ---------------------------------------------------
 OMS changes to update for paper.
 
 make sure omsext can read relation and subrel.
 
+Need to allow different sources for product classes.
+
+
+
 ---------------------------------------------------
 
 Component changes.
 
-Does update_components create internal component info?
+Test: version conflicts.
 
-Intentional rules -- product classes get only direct dependencies.
-
-in fast_merge, decode whether we need to do an OMS_update or just an
+In fast_merge, decode whether we need to do an OMS_update or just an
 assert.
 
 Components: 
@@ -40,19 +44,7 @@ Probably need a component dirty for dump component or dump new version.
 
 -- Renaming.  
 
-3) Merge Components.
-
--- Keeping track of files.
-
--- Update_all.
-
--- Second and third argument inheritance for strels.
-
-1)  DB updatable.
-
-2)  DB storage.
-
-
+update_all inplace.
 
 --------------------------------------------------------------
 Other: 

@@ -363,25 +363,72 @@ newPrimitiveClass(Name,ParentCid,NewCid,Source,NativeID):-
 
 init_component_info :-
         class(RootCid,'OMS Root','OMS Root','OMS'),
-	newClass('OMS Component',RootCid,'OMS',_),
-	newClass('compVers/2',RootCid,
-			compVers('OMS Root','OMS',integer(_),'OMS'),
-			'OMS',_CVid),
-	newComponent('OMS',OCid,Rcid),
+	newClass('OMS Component',RootCid,'OMS',Compid),
+	newClass('component/3',Compid,
+			component('OMS Root','OMS',atom(_),'OMS',
+				  integer(_),'OMS'),
+			'OMS',_Compid),
+%	newClass('compVers/2',Compid,
+%			compVers('OMS Root','OMS',integer(_),'OMS'),
+%			'OMS',_CVid),
+	newComponent('OMS','.',check,OCid,Rcid),
 	newStrel(OCid,Rcid,OCid).
 
-newComponent(Name,compVers(NameId,integer(V)),Depid):- 
+/* New component initializes a new component, creating version,
+dependency and path information.  Given a previously existing component, 
+re-creating the component with the same path is a safe operation.
+
+	If Action unifies with check and
+		if a previous component exists with the same path, 
+			no action is taken; 
+		otherwise if a previous component exists with a different path,
+ 			an error occurs. 
+	If Action is replace
+		if a previous component exists 
+		    its directoryPath is overwritten with the new path
+*/
+	
+newComponent(Name,Path,component(NameId,atom(Path),integer(V)),Depid):- 
+	newComponent(Name,Path,check,
+			component(NameId,atom(Path),integer(V)),Depid).
+
+newComponent(Name,Path,Action,component(NameId,atom(Path),integer(V)),Depid):- 
 	class(GenCompid,_,'OMS Component','OMS'),
 	newClass(Name,GenCompid,Name,NameId),
-	newStrelName(has_version,has_version,Name,VersId),
-	newStrelName(initialization_file,initialization_file,Name,_InitId),
+	newStrelName(hasVersion,hasVersion,Name,VersId),
+	newStrelName(componentDepends,componentDepends,Name,Depid),
+	newDirectoryPath(Action,Name,NameId,Path),
 	(strel(NameId,VersId,integer(V)) -> 
 	     true 
 	   ; 
 	     newStrel(NameId,VersId,integer(0)),
-	     V = 0 ),
-	newStrelName(componentDepends,componentDepends,Name,Depid).
+	     V = 0 ).
 
+/* check gives an error if the component is recreated with a different
+path.  create renames the file paths for each component; in_place does
+not.  The latter two should just be used in component updates. */
+
+newDirectoryPath(check,Name,NameId,Path):-
+	newStrelName(hasPath,hasPath,Name,PathRid),
+	((strel(NameId,PathRid,atom(Path1)),Path1 \= Path) ->
+
+
+	      oms_error(component,['Creating a component path ',Path1,
+			' for ',Name,' which has path ',Path]) 
+	    ; 
+	      newStrel(NameId,PathRid,atom(Path)) ).
+/* TLS slight inefficiency as same path is retracted */
+newDirectoryPath(create,Name,NameId,Path):- 
+	newStrelName(hasPath,hasPath,Name,PathRid),
+        retractallStrel(NameId,PathRid,atom(_)),
+        newStrel(NameId,PathRid,atom(Path)).
+newDirectoryPath(in_place,Name,NameId,Path):- 
+	newStrelName(hasPath,hasPath,Name,PathRid),
+	((strel(NameId,PathRid,atom(Path1)),Path1 \= Path) -> 
+	      true
+	    ; 
+	      newStrel(NameId,PathRid,atom(Path)) ).
+	
 oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
 
 oms_primitive_class(aint(X),'AINT/1',aint(X),'OMS').
@@ -728,6 +775,7 @@ check_source_consistency(Nid,Source):-
 	(atomic(Nid) -> true ; 
 	    check_source_consistency_1(Nid,Source)).
 
+
 check_source_consistency_1(Nid,Source):-
 	    skeleton(Nid,Skel),
 	    (oms_cn(_,_,Skel,Source1) ; cn_id_map(_,_,Skel,Source1)),
@@ -735,6 +783,7 @@ check_source_consistency_1(Nid,Source):-
 	    oms_warning(update,('Cannot create a class for ',Nid,' in ',Source,
   	                    ' since ',Skel,' is already used for ',Source1,
 	 	            ' ontology.')).
+
 check_source_consistency_1(_,_).
 
 add_parent_if_nec(_,_,unk,UdL,UdL) :- !.

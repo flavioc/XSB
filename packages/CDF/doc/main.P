@@ -46,8 +46,8 @@ instance} into a set of first-order logic sentences that constitute an
 For simplicity of presentation our description of CDF instances omits
 features that will be introduced in later sections -- such as
 primitive types, extensional facts vs. intensional rules, internal
-identifiers vs. identifiers to name a few @footnote{The development of
-this section generally follows @cite{SwiW03}.}.
+identifiers vs. external identifiers to name a few @footnote{The
+development of this section generally follows @cite{SwiW03}.}.
 
 From a semantic point of view, a @em{CDF instance} can be thought of
 as a set of ground Prolog facts for the following predicates:
@@ -637,16 +637,15 @@ relations, and can be proved in a straightforward manner.
 Let @em{M} be an ontology model.
 @begin{itemize}
 @item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)}) @bf{and}
-	Int(@tt{subclass(Id0,Id1)})} then @em{M |= @tt{irel(Id0,Id2,Id3)})}
+	Int(@tt{subclass(Id0,Id1)})} then @em{M |= Int(@tt{irel(Id0,Id2,Id3)})}
 
-@item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)}) @bf{and}
-	Int(memberof(Id0,Id1))} then @em{M |= Int(attribute(Id0,Id2,Id3)})}
+@item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)})} @bf{and}
+	@em{Int(@tt{memberof(Id0,Id1)})} then 
+		@em{M |= Int(@tt{attribute(Id0,Id2,Id3)})}
 
-@item If @em{M |= Int(@tt{irel(Id1,Id2,Id3)}) @bf{and}
-	Int(memberof(Id0,Id1))} then @em{M |= Int(attribute(Id0,Id2,Id3)})}
-
-@item If @em{M |= Int(@tt{schrel(Id1,Id2,Id3)}) @bf{and}
-    Int(@tt{subclass(Id0,Id1)})} then @em{M |= Int(@tt{schrel(Id0,Id2,Id3)})}
+@item If @em{M |= Int(@tt{schrel(Id1,Id2,Id3)})} @bf{and}
+    	@em{Int(@tt{subclass(Id0,Id1)})}
+	 then @em{M |= Int(@tt{schrel(Id0,Id2,Id3)})}
 
 @item If @em{M |= Int(@tt{schrel(Id1,Id2,Id3)}) @bf{and}
 		         Int(@tt{memberof(Id0,Id1)}) 
@@ -716,12 +715,21 @@ reflected in the final inheritance propositions.
 	subclass(Id2,Id4))} then @em{M |= strel(Id0,Id4,Id3)}
 @end{itemize}
 
+@section{From OMS Instances to OMS States}
 
-@section{Views and Formats of the OMS}
+Section @ref{A (somewhat) Formal Introduction to CDF} abstracts out
+many important features of the OMS in order to present a clear
+semantics.  In this section we introduce several implementation
+features which together underly a notion of a @em{state} of an OMS.  
 
+@subsection{Identifiers: Internal and External}
 
-where a term @em{T} is an identifier iff:
+The previous section presented identifiers as a unique way of
+indicating a class, object, or relation, but did not discuss the
+actual form of an identifier.  We first discuss the @em{external form}
+of identifiers.
 
+A term @em{T} is an identifier in external form iff:
 @begin{enumerate}
 
 @item @em{T} has the form @em{id(A1,A2)} where @em{A1} and @em{A2} are
@@ -731,47 +739,81 @@ Prolog atoms (logical constants); or
 form: @em{f(I1,...,In)} where @em{I1,...,In} are identifiers, and
 @em{A2} is a Prolog atom.  
 @end{enumerate} 
-In the first case, an identifier is called @em{atomic}; in the second
-it is called a @em{ product identifier}.  For either type of
-identifier, the atomic second argument is called the @em{source}.  We
-will see in later sections that identifiers can be in either @em{internal}
-or @em{external} format.
+
+@noindent In the first case, an identifier is called @em{atomic}; in
+the second it is called a @em{product identifier}.  For either type of
+identifier, the first argument is termed the @em{native id} and the
+atomic second argument is called the @em{source}.
+
+@bf{Example 6} The external form of identifiers allows the OMS to
+incorporate information from different ontologies in a clear way.  For
+instance, one might want to construct an ontology from information
+maintained by boththe U.S. Defence Logistics Information Service
+(@tt{http://www.dlis.mil}), from the Universal Standard Products and
+Services Classification @cite{UNSPSC}.  In such a case, the fragment
+of Example 1 represented by identifiers in external form might look
+like:
+
+@begin{verbatim}
+  class(medicalEquipment,id(42,unspsc))
+         class(woundCareProducts,id(4231,unspsc)) 
+  class(suturesAndRelatedProducts,id(423117,unspsc))
+         class(sutures,id(42311701,unspsc)) 
+  class(nonAbsorbableSutures,id(12953,dla))
+         class(absorbableSutures,id(12952,dla)) 
+  class(sutureNeedles,id(07251,dla))
+@end{verbatim}
+
+Such a representation allows use of identifiers internal to
+@tt{unspsc} and to @tt{dla} to be maintained by the OMS.  It also
+shows that in many existing ontologies names of classes and objects
+may differ significantly from their native identifiers.
+
+The source of an identifier has important uses in the OMS component
+system @ref{}, and for the rest of this documentation identifiers will
+be shown in external source, unless otherwise noted.  At the same
+time, the external identifiers can consume space and be difficult to
+index.  As a result, the OMS stores some information using identifiers
+in internal form, where each 2-ary identifier of the form
+@em{id(Nid,Source)} is replaced by a generated atomic value.
+Identifiers can be transformed between internal and external form
+through the predicates:
+
+@begin{itemize} 
+
+@item @tt{class(Cid,Name,Nid,Source)} which can be used to translate
+between a class identifier whose external form is @tt{id(Nid,Source)}
+and whose internal form is @tt{Cid}.
+
+@item @tt{object(Cid,Name,Nid,Source)} which can be used to translate
+between an object identifier whose external form is
+@tt{id(Nid,Source)} and whose internal form is @tt{Cid}.
+
+@item @tt{relation(Cid,Name,Nid,Source)} which can be used to
+translate between a relation identifier whose external form is
+@tt{id(Nid,Source)} and whose internal form is @tt{Cid}.
+
+@end{itemize}
+
+@section{Extensional and Intensional Information}
+
+Section @ref{A (somewhat) Formal Introduction to CDF} assumed that all
+information in an OMS instance was contained in ground atomic facts.
+Such information is termed @em{extensional information}.  At the same
+time it is often useful to use @em{intensional rules} to produce OMS
+data ""on-demand"".  This can be particularly useful when representing
+data from a legacy database: rules can be written to map the data to
+OMS format using the XSB ODBC or Oracle interface.
+
+The format of intensional rules closely resembles that of OMS
+predicates:
 
 
+@section{Primitive Classes}
 
+@section{Using the OMS}
 
-
-
-@section{Views and Formats of the OMS}
-
-There are several views and formats of the OMS -- a Programmer's View,
-a Query View, an Internal Format, an External Format, and an External
-Intensional Format.  The @index{Programmer's View} should be used by
-application programs that interface tightly with the OMS.  This view
-uses generated keys for classes and objects; it supports inheritance
-of relations among subclasses and objects; and defines
-@pred{subclass/2} and @pred{memberof/2} relations as reflexive and
-transitive.  More loosely coupled systems, and human users can use a
-Query View for the OMS which has the same semantics as the
-Programmer's View in terms of inheritance and transitivity of the
-hierarchical predicates but classes and objects are queried via pairs
-of native ids and sources along the lines of the examples of @ref{A
-Quick Tour of the OMS}.
-
-Underlying both of these views are different formats in which OMS
-information can be kept.  The @index{Internal Format} is an
-extensional database of OMS facts that use generate keys of objects
-and classes.  The @index{External Format} of the OMS, does not make
-use of generated keys is also defined.  The external format provides a
-means of representing the extensional database of OMS facts in
-human-readable format, using native ids and sources.  It was this
-format that was represented in the examples of @ref{A Quick Tour of
-the OMS}.  Finally, the @index{External Intensional Format} provides a
-mechanism for the OMS to dynamically access and intern ontology data
-that is not in an OMS format -- for example, data that is kept in an
-extenal database.  These views and formats are discussed below with
-the exception of the Query View, which is discussed in
-@ref{omsqueries (library)}.
+@ref{oms_queries (library)}.  Updating?
 
 @subsection{OMS: External Format}
 
