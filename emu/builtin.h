@@ -225,6 +225,7 @@
 
 #define SORT			220
 #define KEYSORT			221
+#define PARSORT			222
 
 #define ORACLE_QUERY		230
 #define ODBC_EXEC_QUERY		231

@@ -818,6 +818,7 @@ void init_builtin_table(void)
   set_builtin_table(TAB, "tab");
   set_builtin_table(SORT, "sort");
   set_builtin_table(KEYSORT, "keysort");
+  set_builtin_table(PARSORT, "parsort");
 
   set_builtin_table(ORACLE_QUERY, "oracle_query");
   set_builtin_table(ODBC_EXEC_QUERY, "odbc_exec_query");

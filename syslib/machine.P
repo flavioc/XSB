@@ -87,6 +87,9 @@ str_cmp(Str1, Str2, Res) :- str_cmp(Str1, Str2, Res).
 string_substitute(_String, _SubstSpec, _SubstList, _Result) :-
 	'_$builtin'(STRING_SUBSTITUTE).
 
+parsort(_InList,_ParSpec,_ElimDupls,_OutList) :-
+	'_$builtin'(PARSORT).
+
 call0(Term) :- call0(Term).
 stat_sta(X) :- stat_sta(X).
 stat_cputime(X) :- stat_cputime(X).

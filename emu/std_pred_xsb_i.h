@@ -637,3 +637,142 @@ inline static xsbBool keysort(void)
   return unify(list, term);
 }
 
+long sort_par_dir[10];
+long sort_par_ind[10];
+long sort_num_pars;
+
+int par_key_compare(const void * t1, const void * t2) {
+  long ipar, cmp, ind;
+  Cell term1 = (Cell) t1 ;
+  Cell term2 = (Cell) t2 ;
+
+  XSB_Deref(term1);		/* term1 is not in register! */
+  XSB_Deref(term2);		/* term2 is not in register! */
+  if (sort_num_pars > 0) {
+    ipar = 0;
+    while (ipar < sort_num_pars) {
+      ind = sort_par_ind[ipar];
+      cmp = compare((void*)cell(clref_val(term1)+ind),
+		    (void*)cell(clref_val(term2)+ind));
+      if (cmp) {
+	if (sort_par_dir[ipar]) return cmp;
+	else return -cmp;
+      } else ipar++;
+    }
+    return 0;
+  } else if (sort_num_pars == 0) {
+    return compare((void*)term1, (void*)term2);
+  } else
+    return -compare((void*)term1, (void*)term2);
+}
+
+inline static xsbBool parsort(void)
+{
+  /* r1: +list of terms;				*/
+  /* r2: +list of sort indicators: asc(I) or desc(I)	*/
+  /* r3: 1 if eliminate dupls, 0 if not			*/
+  /* r4: ?sorted list of terms				*/
+  int i, len;
+  int max_ind = 0, elim_dupls;
+  Cell heap_addr, term, term2, tmp_ind;
+  Cell list, new_list;
+  Cell *cell_tbl;
+  CPtr top = 0;
+  char ermsg[50];
+
+  elim_dupls = ptoc_int(3);
+
+  list = ptoc_tag(2);
+  term2 = list; sort_num_pars = 0;
+
+  XSB_Deref(term2);
+  if (isstring(term2) && !strcmp(string_val(term2),"asc")) sort_num_pars = 0;
+  else if (isstring(term2) && !strcmp(string_val(term2),"desc")) sort_num_pars = -1;
+  else
+    while (TRUE) {
+      if (isnil(term2)) break;
+      if (islist(term2)) {
+	heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
+	if (isconstr(heap_addr) && 
+	    get_arity(get_str_psc(heap_addr)) == 1 &&
+	    !strcmp(get_name(get_str_psc(heap_addr)),"asc")) {
+	  sort_par_dir[sort_num_pars] = 1;
+	} else if (isconstr(heap_addr) && 
+		   get_arity(get_str_psc(heap_addr)) == 1 &&
+		   !strcmp(get_name(get_str_psc(heap_addr)),"desc")) {
+	  sort_par_dir[sort_num_pars] = 0;
+	} else err_handle(TYPE,2,"parsort",4,"asc/1 or desc/1 term",heap_addr);
+	tmp_ind = cell(clref_val(heap_addr)+1); XSB_Deref(tmp_ind);
+	if (!isinteger(tmp_ind)) err_handle(TYPE,2,"parsort",4,"integer",tmp_ind);
+	i = int_val(tmp_ind);
+	if (i < 1 || i > 255) err_handle(TYPE,2,"parsort",4,"arity-sized integer",tmp_ind);
+	sort_par_ind[sort_num_pars] = i;
+	if (i > max_ind) max_ind = i;
+	sort_num_pars++;
+	term2 = cell(clref_val(term2)+1);
+	XSB_Deref(term2);
+      } else err_handle(TYPE, 2, "parsort", 4, "list or asc or desc", list);
+    }
+      
+  list = ptoc_tag(1);
+  term2 = list; len = 0;
+  do {
+    XSB_Deref(term2);
+    if (isnil(term2)) break;
+    if (islist(term2)) {
+      heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
+      if (sort_num_pars == 0 || 
+	  (isconstr(heap_addr) && get_arity(get_str_psc(heap_addr)) >= max_ind)) {
+	len++; term2 = cell(clref_val(term2)+1);
+      } else {
+	sprintf(ermsg,"Term with arity at least %d", max_ind);
+	err_handle(TYPE, 1, "parsort", 4, ermsg, (Cell)NULL);
+	return FALSE;	/* fail */
+      }
+    } else {
+      if (isref(term2)) err(INSTANTIATION, 1, "parsort", 4);
+      else err_handle(TYPE, 1, "parsort", 4, "list", list);
+      return FALSE;	/* fail */
+    }
+  } while(1);
+
+  check_glstack_overflow(4, pcreg, (2*len)*sizeof(Cell)) ;
+  list = ptoc_tag(1);  /* reset in case moved */
+  term = ptoc_tag(4);
+  if (len > 0) {
+    term2 = list;
+    cell_tbl = (Cell *)malloc(len * sizeof(Cell));
+    if (!cell_tbl)
+      xsb_abort("Cannot allocate temporary memory for parsort/4");
+    for (i=0 ; i < len ; ++i) {
+      XSB_Deref(term2);	/* Necessary for correctness.	*/
+      heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
+      cell_tbl[i] = heap_addr;
+      term2 = cell(clref_val(term2)+1);
+    }
+    qsort(cell_tbl, len, sizeof(Cell), par_key_compare);
+    new_list = makelist(hreg);
+    if (elim_dupls) {
+      follow(hreg++) = cell_tbl[0]; top = hreg++;
+      follow(top) = makelist(hreg);
+      for (i=1 ; i < len ; i++) {
+	if (compare((void*)cell_tbl[i], (void*)cell_tbl[i-1])) {
+	  follow(hreg++) = cell_tbl[i];
+	  top = hreg++;
+	  follow(top) = makelist(hreg);
+	}
+      } 
+    } else {
+      for (i=0 ; i < len ; i++) {
+	follow(hreg++) = cell_tbl[i];
+	top = hreg++;
+	follow(top) = makelist(hreg);
+      } 
+    }
+    follow(top) = makenil;
+    free(cell_tbl);
+    return unify(new_list, term);
+  }
+  return unify(list, term);
+}
+

@@ -124,6 +124,7 @@
 	db_reclaim0/2,
 	oracle_query/7,
 	odbc_exec_query/6,
+        parsort/4,
 	private_builtin/11,
 	segfault_handler/1,
 	is_charlist/2,

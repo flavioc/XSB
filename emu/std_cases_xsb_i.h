@@ -129,3 +129,8 @@
   case KEYSORT:	/* r1: +list of terms of the form Key-Value;	*/
     /* r2: ?sorted list of terms			*/
    return keysort();
+
+  case PARSORT:	/* r1: +list of terms of the form Key-Value;	*/
+    /* r2: +list of sort paramater specs			*/
+    /* r3: ?sorted list of terms			*/
+   return parsort();
