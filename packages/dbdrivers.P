@@ -44,6 +44,5 @@
 
 
 load_driver(Driver) :-
-		[Driver], 
-		write('['), write(Driver), writeln(': driver is installed]').
+		[Driver]. 
 
