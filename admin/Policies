@@ -1,7 +1,7 @@
 Ways to Stay out of Trouble with CVS
 ====================================
 
-1. Don't configure RCS or CVS to use local time---always use
+1. Don't configure RCS or CVS to use local time --- always use
    Greenwich time. Since people work with XSB repository from different
    parts of the world, using local time could create havoc.
 
