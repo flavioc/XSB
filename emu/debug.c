@@ -423,12 +423,21 @@ static void print_term_of_subgoal(FILE *fp, int *i)
 	if (args > 0) fprintf(fp, ")");
 	break;
       case LIST:	/* the list [a,b(1),c] is stored as . . . [] c b 1 a */
+	/*
+	 * This is the old version, which does not work anymore.
+	 *
+	 * if (isnil(cell_array[(*i)-1])) {
+	 *   (*i) -= 2;
+	 *   print_term_of_subgoal(fp, i);
+	 *   fprintf(fp, "]");
+	 * } else xsb_error("Non-single element list in print_subgoal()");
+	 */
 	fprintf(fp, "[");
-	if (isnil(cell_array[(*i)-1])) {
-	  (*i) -= 2;
-	  print_term_of_subgoal(fp, i);
-	  fprintf(fp, "]");
-	} else xsb_error("Non-single element list in print_subgoal()");
+	(*i)--;
+	print_term_of_subgoal(fp, i);
+	(*i)--;
+	print_term_of_subgoal(fp, i);
+	fprintf(fp, "]");
 	break;
       case STRING:
 	fprintf(fp, "%s", string_val(term));
@@ -460,7 +469,7 @@ void print_subgoal(FILE *fp, SGFrame subg)
   fprintf(fp, "%s", get_name(psc));
   if (get_arity(psc) > 0) {
     fprintf(fp, "(");
-    for (i--; i >= 0 ; i--) {
+    for (i = i-2; i >= 0 ; i--) {
       print_term_of_subgoal(fp, &i);
       if (i > 0) fprintf(fp, ", ");
     }
