@@ -197,11 +197,11 @@ bintree3(K,[L|R],E,N) :-
 % length/2 that works both ways
 length(L,N) :-
 	var(N)
-	 ->	length1(L,N)
+	 ->	length1(L,0,N)
 	 ;	length2(L,N).
 
-length1([], 0).
-length1([_|R], N) :- length1(R, N1), N is N1 + 1.
+length1([],N,N).
+length1([_|R],N0,N) :- N1 is N0+1, length1(R,N1,N).
 
 length2(L,N) :-
 	N =< 0
