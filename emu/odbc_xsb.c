@@ -57,6 +57,7 @@
 #include "flag_defs_xsb.h"
 #include "loader_xsb.h"
 #include "memory_xsb.h"
+#include "heap_xsb.h"
 
 #define MAXCURSORNUM                    25
 #define MAXVARSTRLEN                    2000
@@ -66,6 +67,7 @@ static Cell     nullStrAtom;
 static int      serverConnected = 0;
 /* static int      numberOfCursors = 0; */
 static long      SQL_NTSval = SQL_NTS;
+static long      SQL_NULL_DATAval = SQL_NULL_DATA;
 
 static HENV henv = NULL;
 /*HDBC hdbc;*/
@@ -80,7 +82,7 @@ struct Cursor {
   HSTMT hstmt;          /* the statement handle*/
   int NumBindVars;      /* number of bind values*/
   UCHAR **BindList;     /* pointer to array of pointers to the bind values*/
-  int *BindTypes;       /* types of the bind values*/
+  int *BindTypes;       /* types of the bind values, 0->int, 1->float, 2->char, 3->nullvalue(anytype)*/
   SWORD NumCols;        /* number of columns selected*/
   SWORD *ColTypes;      /* pointer to array of column types*/
   UDWORD *ColLen;       /* pointer to array of max column lengths*/
@@ -377,7 +379,7 @@ void SetCursorClose(struct Cursor *cur)
 
   if (cur->NumBindVars) {                 /* free bind variable list*/
     for (j = 0; j < cur->NumBindVars; j++)
-      if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
+      if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
     free(cur->BindList);
     free(cur->BindTypes);
   }
@@ -771,7 +773,7 @@ void SetBindVal()
   if (cur->Status == 2) {
     if (isinteger(BindVal)) {
       if (cur->BindTypes[j] != 0) {
-	if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
+	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
 	cur->BindTypes[j] = 0;
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT,
@@ -787,7 +789,7 @@ void SetBindVal()
     } else if (isfloat(BindVal)) {
       if (cur->BindTypes[j] != 1) {
 	/*printf("ODBC: Changing Type: flt to %d\n",cur->BindTypes[j]);*/
-	if (cur->BindTypes[j] != 2) free((void *)cur->BindList[j]);
+	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
 	cur->BindTypes[j] = 1;
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT,
@@ -803,17 +805,23 @@ void SetBindVal()
     } else if (isstring(BindVal)) {
       if (cur->BindTypes[j] != 2) {
 	/*printf("ODBC: Changing Type: str to %d\n",cur->BindTypes[j]);*/
-	free((void *)cur->BindList[j]);
+	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	cur->BindTypes[j] = 2;
-	/* SQLBindParameter will be done anyway*/
+	/* SQLBindParameter will be done later in parse for char variables*/
       }
       cur->BindList[j] = string_val(BindVal);
+    } else if (isconstr(BindVal) && !strcmp(get_name(get_str_psc(BindVal)),"NULL")) {
+      if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
+      cur->BindTypes[j] = 3;
+      cur->BindList[j] = NULL;
     } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
       if (!strcmp(get_name(get_str_psc(BindVal)),"string")) {
+	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	string_to_char(p2p_arg(BindVal,1),&(term_string[j]));
 	cur->BindTypes[j] = 2;
 	cur->BindList[j] = term_string[j];
       } else {
+	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	letter_flag = 1;
 	wcan_disp = 0;
 	write_canonical_term(p2p_arg(BindVal,1));
@@ -847,6 +855,9 @@ void SetBindVal()
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
     cur->BindList[j] = string_val(BindVal);
+  } else if (isconstr(BindVal) && !strcmp(get_name(get_str_psc(BindVal)),"NULL")) {
+    cur->BindTypes[j] = 3;
+    cur->BindList[j] = NULL;
   } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
     if (!strcmp(get_name(get_str_psc(BindVal)),"string")) {
 	string_to_char(p2p_arg(BindVal,1),&(term_string[j]));
@@ -897,11 +908,18 @@ void Parse()
       SetCursorClose(cur);
       return;
     }
-    /* reset just char select vars, since they store addr of chars*/
+    /* reset just char and null vars, since they store addr of chars*/
     for (j = 0; j < cur->NumBindVars; j++) {
-      if (cur->BindTypes[j] == 2)
+      switch (cur->BindTypes[j]) {
+      case 2:
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
 			      SQL_CHAR, 0, 0,(char *) cur->BindList[j], 0, &SQL_NTSval);
+	break;
+      case 3:
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
+			      SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
+	break;
+      }
     }
   } else {
     if (SQLPrepare(cur->hstmt, cur->Sql, SQL_NTS) != SQL_SUCCESS) {
@@ -912,16 +930,28 @@ void Parse()
 
     /* set the bind variables*/
     for (j = 0; j < cur->NumBindVars; j++) {
-      if (cur->BindTypes[j] == 2)
+      switch (cur->BindTypes[j]) {
+      case 0:
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER,
+			 0, 0, (int *)(cur->BindList[j]), 0, NULL);
+	break;
+      case 1:
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT,
+			 0, 0, (float *)cur->BindList[j], 0, NULL);
+	break;
+      case 2:
 	/* we're sloppy here.  it's ok for us to use the default values*/
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
 			      SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
-      else if (cur->BindTypes[j] == 1) {
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT,
-			 0, 0, (float *)cur->BindList[j], 0, NULL);
-      } else
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER,
-			 0, 0, (int *)(cur->BindList[j]), 0, NULL);
+	break;
+      case 3:
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
+			      SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
+	break;
+      default:
+	xsb_exit("illegal BindVal");
+	rc = 0;
+      }
       if (rc != SQL_SUCCESS) {
 	ctop_int(3,PrintErrorMsg(cur));
 	SetCursorClose(cur);
@@ -1433,7 +1463,13 @@ int GetColumn()
   /* get the data*/
   if (cur->OutLen[ColCurNum] == SQL_NULL_DATA) {
     /* column value is NULL*/
-    return unify(op,nullStrAtom);
+    //    return unify(op,nullStrAtom);
+    int new;
+    Cell retterm;
+    retterm = makecs(hreg);
+    new_heap_functor(hreg,pair_psc(insert("NULL",1,global_mod,&new)));
+    new_heap_free(hreg);
+    return unify(op,retterm);
   }
 
   /* convert the string to either integer, float or string*/
