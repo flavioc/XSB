@@ -135,7 +135,7 @@ odbc_sql_local(_DataAccessor,_HookCid,_RootID,_Source) :-
 */
 
 :- import odbc_sql/4 from odbc_call.
-:- import conset/2, conget/2, coninc/1 from gensym.
+:- import conset/2, conget/2 from gensym.
 :- resetdbctr.
 resetdbctr :- conset('_dbctr',0),conset('_duplctr',0).
 

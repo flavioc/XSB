@@ -235,19 +235,33 @@ cdf_root(cid('CDF Classes',cdf)).
 cdf_root(rid('CDF Object-Object Relations',cdf)).
 cdf_root(crid('CDF Class-Object Relations',cdf)).
 cdf_root(crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
-cdf_root(crcrid('CDF Higher-Order (Classt-Object)-Object Relations',cdf)).
+cdf_root(crcrid('CDF Higher-Order (Class-Object)-Object Relations',cdf)).
 
 :- comment(cdf_id_fields/4,
 "@tt{cdf_id_fields(ID,Functor,NatId,Component)} is true if ID is a
 legal cdf identifier term, and Functor is its main functor symbol,
 NatId is its first field and Component is its second field.").
 
-cdf_id_fields(cid(N,S),cid,N,S).
-cdf_id_fields(oid(N,S),oid,N,S).
-cdf_id_fields(rid(N,S),rid,N,S).
-cdf_id_fields(crid(N,S),crid,N,S).
-cdf_id_fields(crrid(N,S),crid,N,S).
-cdf_id_fields(crcrid(N,S),crid,N,S).
+cdf_id_fields(A,B,C,D) :-
+	(var(A)
+	 ->	cdf_id_fields2(A,B,C,D)
+	 ;	cdf_id_fields1(A,B,C,D)
+	).
+
+cdf_id_fields1(cid(N,S),cid,N,S).
+cdf_id_fields1(oid(N,S),oid,N,S).
+cdf_id_fields1(rid(N,S),rid,N,S).
+cdf_id_fields1(crid(N,S),crid,N,S).
+cdf_id_fields1(crrid(N,S),crrid,N,S).
+cdf_id_fields1(crcrid(N,S),crcrid,N,S).
+
+:- index cdf_id_fields2/4-2.
+cdf_id_fields2(cid(N,S),cid,N,S).
+cdf_id_fields2(oid(N,S),oid,N,S).
+cdf_id_fields2(rid(N,S),rid,N,S).
+cdf_id_fields2(crid(N,S),crid,N,S).
+cdf_id_fields2(crrid(N,S),crrid,N,S).
+cdf_id_fields2(crcrid(N,S),crcrid,N,S).
 
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -332,6 +346,56 @@ term_isa_list([],[]).
 term_isa_list([H|T],[H1|T1]):- 
 	once(isa(H,H1)),
 	term_isa_list(T,T1).
+
+/*****************
+%%% super_query_terms(+Sub,-Sup) returns query terms for all things higher
+%%%  in the isa hierarchy.
+
+:- table super_query_terms/2.
+super_query_terms(Sub,Sup) :-
+	(var(Sub)
+	 ->	Sup = Sub
+	 ; ground(Sub)
+	 ->	isa_bf(Sub,Sup)
+	 ;	cdf_id_fields(Sub,Type,NatId,Comp),
+		(var(NatId)
+		 ->	Sup = Sub
+		 ;	NatId =.. [Fun|Args],
+			super_query_terms_list(Args,SupArgs),
+			SupNatId =.. [Fun|SupArgs],
+			cdf_id_fields(Sup,Type,SupNatId,Comp)
+		)
+	).
+
+super_query_terms_list([],[]).
+super_query_terms_list([A|As],[S|Ss]) :-
+	super_query_terms(A,S),
+	super_query_terms_list(As,Ss).
+
+%%% sub_query_terms(+Sup,-Sub) returns query terms for all things lower
+%%%  in the isa hierarchy.
+
+:- table sub_query_terms/2.
+sub_query_terms(Sup,Sub) :-
+	(var(Sup)
+	 ->	Sub = Sup
+	 ; ground(Sup)
+	 ->	isa_fx(Sub,Sup)
+	 ;	cdf_id_fields(Sup,Type,NatId,Comp),
+		(var(NatId)
+		 ->	Sub = Sup
+		 ;	NatId =.. [Fun|Args],
+			sub_query_terms_list(Args,SubArgs),
+			SubNatId =.. [Fun|SubArgs],
+			cdf_id_fields(Sub,Type,SubNatId,Comp)
+		)
+	).
+
+sub_query_terms_list([],[]).
+sub_query_terms_list([A|As],[S|Ss]) :-
+	sub_query_terms(A,S),
+	sub_query_terms_list(As,Ss).
+********************/
 
 :- comment(immed_isa/2, "@tt{immed_isa(SubCid,SupCid)} is true
 if there is a corresponding fact in @pred{isa_ext/2} or in the
@@ -425,6 +489,15 @@ class or object ID.  For these inheritable relations, the taxonomy is
 traversed and the most specific relations consistent with the
 parameters are returned.  ").
 
+/*********
+hasAttr(S,R,T) :-
+	super_query_terms(S,S1),
+	sub_query_terms(R,R1),
+	sub_query_terms(T,T1),
+	immed_hasAttr(S1,R1,T1).
+**********/
+
+/**********/
 hasAttr(SCid,RCid,TCid) :-
 	var(SCid),var(RCid),var(TCid), !,
 	immed_hasAttr(SCid,RCid,TCid).
@@ -436,6 +509,7 @@ hasAttr(SCid,RCid,TCid) :-
 hasAttr(SCid,RCid,TCid) :-
 	check_types_checkflag(query,hasAttr(SCid,RCid,TCid)),
 	hasAttr_2inh(SCid,RCid,TCid).
+/**********/
 
 :- table hasAttr_2fix/3.
 hasAttr_2fix(SCid,RCid,TCid) :-

@@ -55,7 +55,7 @@
 :- ensure_loaded(cdf_config).
 
 :- dynamic temp_depends(_,_,_,_).
-:- dynamic loaded_component/1.
+:- dynamic loaded_component(_).
 
 /*
 handle_load_component_error(Message):- 
@@ -509,6 +509,12 @@ load_component_dependencies_pass1(Name,Abs,Arglist):-
 							 cid(Vnew,cdfpt)),
 					       New))),
 	newExtTerm(component_create,
+		   isa_ext(cid(component(cid(Name,Name),cid(allAtoms,cdf),cid(allIntegers,cdf)),Name),
+			   cid(components,cdf))),
+	newExtTerm(component_create,
+		   isa_ext(cid(component(cid(New,New),cid(allAtoms,cdf),cid(allIntegers,cdf)),New),
+			   cid(components,cdf))),
+	newExtTerm(component_create,
 		   classHasAttr_ext(cid(component(cid(Name,Name),
 						  cid(Abs,cdfpt),
 						  cid(V,cdfpt)),Name),
@@ -687,7 +693,7 @@ path information.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- dynamic temp_new_version/2.
+:- dynamic temp_new_version(_,_).
 
 update_all_components(In,Options):- 
 	update_setup(In,Options,Abs,Action),
@@ -784,16 +790,7 @@ versions_for_existing_component(Name):-
 			 classHasAttr_ext(cid(compName(cid(Name,Name),
  						              cid(P,cdfpt)),
 					      Name),
- 	                             crid(hasVersion,Name),cid(V1,cdfpt))),
- 	    retractallExtTerm(isa_ext(cid(component(cid(Name,Name),
- 						    cid(P,cdfpt),
- 						    cid(V,cdfpt)), Name),
- 				      cid('CDF Classes',cdf))),
- 	    newExtTerm(component_create,
-	               isa_ext(cid(component(cid(Name,Name),
-					     cid(P,cdfpt),
- 					     cid(V1,cdfpt)), Name),
- 			       cid('CDF Classes',cdf)))
+ 	                             crid(hasVersion,Name),cid(V1,cdfpt)))
 	    ; call_assert(temp_new_version(Name,V))).
 
 propagate_for_name(Name):- 
@@ -830,6 +827,9 @@ update_component_1(create,Name,Dep,Abs):-
 	temp_new_version(Name,Version),
 	NewCompid = cid(component(cid(Name,Name),
 				  cid(Abs,cdfpt),cid(Version,cdfpt)),Name),
+	newExtTerm(component_create,
+		   isa_ext(cid(component(cid(Name,Name),cid(allAtoms,cdf),cid(allIntegers,cdf)),Name),
+			   cid(components,cdf))),
 	create_dependencies_create(Dep,Name,NewCompid,Abs),
 	dump_component_1(Name,Abs,Version,nocopy).
 
@@ -844,6 +844,9 @@ update_component_1(in_place,Name,Dep,Abs):-
 	temp_new_version(Name,Version),
 	NewCompid = cid(component(cid(Name,Name),
 				  cid(Newpath,cdfpt),cid(Version,cdfpt)),Name),
+	newExtTerm(component_create,
+		   isa_ext(cid(component(cid(Name,Name),cid(allAtoms,cdf),cid(allIntegers,cdf)),Name),
+			   cid(components,cdf))),
 	create_dependencies_in_place(Dep,Name,NewCompid,Abs),
 	dump_component_1(Name,Newpath,Version,nocopy).
 
@@ -1122,6 +1125,10 @@ newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 	     Version = cid(0,cdfpt) ).
 newPathandVersion(create,cid(Name,Name),_Pathin,Path,V):- 
 	system_component(Name),!,
+        newExtTerm(isa_ext(cid(Name,Name),cid(componentIDs,cdf))),
+	newExtTerm(isa_ext(cid(compName(cid(componentIDs,cdf),cid(allAtoms,cdf)),Name),
+			   cid(compNames,cdf))),
+%%%	newExtTerm(isa_ext(cid(compName(cid(Name,Name),Path),Name),cid(compNames,cdf))),
 	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),Path),
 	classHasAttr_ext(cid(compName(cid(Name,Name),Path),Name),
 			crid(hasVersion,Name),V).
@@ -1129,12 +1136,16 @@ newPathandVersion(create,cid(Name,Name),_Pathin,Path,V):-
    it needs a new path and version, (obtained from the path). */
 newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
 							cid(V1,cdfpt)):- 
+        newExtTerm(isa_ext(cid(Src,Src),cid(componentIDs,cdf))),
+%%	retractallExtTerm(isa_ext(cid(compName(cid(Src,Src),_),Src),_)),
+	newExtTerm(isa_ext(cid(compName(cid(Src,Src),cid(allAtoms,cdf)),Src),
+			   cid(compNames,cdf))),
+%%%	newExtTerm(isa_ext(cid(compName(cid(Src,Src),cid(Pathin,cdfpt)),Src),cid(compNames,cdf))),
         retractallExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),_)),
         retractallExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),_),Src),
 			 	crid(hasVersion,Src),_Int)),
         newExtTerm(component_create,classHasAttr_ext(cid(Src,Src),
 				    crid(hasPath,Src),cid(Pathin,cdfpt))),
-        newExtTerm(isa_ext(cid(Src,Src),cid(componentClasses,cdf))),
         slash(Slash),
         concat_atom([Pathin,Slash,Src],File),
         (file_exists(File) ->
@@ -1169,7 +1180,7 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
 	     Pathin = Path ).
 
 %%%% Path manipulation.
-:- dynamic pe_cwd/1, pe_dir_stack/1, pe_sysdir/1.
+:- dynamic pe_cwd(_), pe_dir_stack(_), pe_sysdir(_).
 
 %% initialize default path to CDF package dir
 :- init_path_engine.
@@ -1271,6 +1282,7 @@ use_canonical_path(classHasAttr_ext(cid(component(cid(N,N),cid(_,cdfpt),
 					      cid(V,cdfpt)),N),
 				crid(componentDepends,N),
 				Dependency)) :- !.
+/*****
 use_canonical_path(isa_ext(cid(compName(SrcCid,cid(_,cdfpt)),Src),ParCid),
 	               CPath,
 		   isa_ext(cid(compName(SrcCid,cid(CPath,cdfpt)),Src),
@@ -1280,6 +1292,7 @@ use_canonical_path(isa_ext(cid(component(SrcCid,cid(_,cdfpt),VCid),Src),
 	               CPath,
 		   isa_ext(cid(component(SrcCid,cid(CPath,cdfpt),VCid),Src),
 		                   ParCid)):- !.
+********/
 use_canonical_path(Term,_,Term).
 
 end_of_file.
