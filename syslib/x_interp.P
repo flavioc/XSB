@@ -65,7 +65,7 @@ interpreter :-
 interpreter :-
 	repeat,
 	pop_abort_cutpoint,
-	push_abort_cutpoint,
+	push_abort_cutpoint,    % reset abort cutpoint
 	trimcore,
 	stat_set_flag(5, 1, 1),	% hide call interceptions.
 	stat_set_flag(7, 0, 1),	% reset trace number
