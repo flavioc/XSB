@@ -39,14 +39,6 @@ extern void terry_print_heap(int);
     if (is_completed(SUBG)) fprintf(stddbg, " (completed) ===\n"); \
     else fprintf(stddbg, " (incomplete) ===\n"); }
 
-static char *compl_stk_frame_field[] = {
-  "subgoal_ptr", "level_num",
-  "del_ret_list", "visited", 
-#ifndef LOCAL_EVAL
-"DG_edges", "DGT_edges"
-#endif
-};
-
 /* extern int cur_log_level; */
 #define cur_log_level flags[VERBOSENESS_LEVEL]
 typedef struct subgoal_frame *VariantSF;

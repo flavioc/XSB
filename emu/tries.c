@@ -976,7 +976,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
       xtemp1 = (CPtr) (cptr + i);
       xsb_dbgmsg((LOG_BD, "arg[%d] =  %x ",i, xtemp1));
       XSB_CptrDeref(xtemp1);
-      dbg_printterm(LOG_BD,stddbg,xtemp1,25);
+      dbg_printterm(LOG_BD,stddbg,(unsigned int)xtemp1,25);
       xsb_dbgmsg((LOG_BD, "\n"));
       tag = cell_tag(xtemp1);
       switch (tag) {

@@ -471,6 +471,14 @@ void print_delay_list(FILE *fp, CPtr dlist)
 
 /*----- For table debugging --------------------------------------------*/ 
 
+static char *compl_stk_frame_field[] = {
+  "subgoal_ptr", "level_num",
+  "del_ret_list", "visited", 
+#ifndef LOCAL_EVAL
+"DG_edges", "DGT_edges"
+#endif
+};
+
 void print_completion_stack(void)
 {
   int i = 0;
@@ -500,6 +508,7 @@ void print_completion_stack(void)
 
 /*----------------------------------------------------------------------*/
 
+#ifdef DEBUG_VM
 static void print_pdlstack(void)
 {
   CPtr temp = pdlreg;
@@ -509,7 +518,8 @@ static void print_pdlstack(void)
     temp++;
   }
 }
- 
+#endif
+
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -1150,23 +1160,22 @@ static void analyze_cpf(CPtr cpf_addr, int *length, int *cpf_type)
  */
 
 static void print_common_cpf_part(CPtr cpf_addr) {
-  char *s = "   CP stack ";
 
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tptr to next clause:\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tptr to next clause:\t0x%p",
 	     &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tprev env cap (ebreg):\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tprev env cap (ebreg):\t0x%p",
 	     &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\ttop of heap:\t\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\ttop of heap:\t\t0x%p", 
 	     &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\ttop of trail:\t\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\ttop of trail:\t\t0x%p",
 	     &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tcontinuation pointer:\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tcontinuation pointer:\t0x%p", 
 	     &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\ttop of local stack:\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\ttop of local stack:\t0x%p", 
 	     &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tdynamic link:\t\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tdynamic link:\t\t0x%p", 
 	     &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tparent subgoal dreg:\t0x%p", s,
+  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tparent subgoal dreg:\t0x%p", 
 	     &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr)));
 }
 
@@ -1174,7 +1183,6 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 
   CPtr arg;
   int i, num_of_args;
-  char *s = "   CP stack ";
 
   switch (cpf_type) {
   case STANDARD_CP_FRAME:
@@ -1183,32 +1191,32 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 
     num_of_args = length - CP_SIZE;
     for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
-      xsb_dbgmsg((LOG_DEBUG,"%s%p:\tpredicate arg #%d:\t0x%p",
-		 s, arg, i, ref_val(*arg)));
+      xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tpredicate arg #%d:\t0x%p",
+		 arg, i, ref_val(*arg)));
     break;
   case GENERATOR_CP_FRAME:
     xsb_dbgmsg((LOG_DEBUG,"Generator Choice Point Frame:"));
     print_common_cpf_part(cpf_addr);
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tparent tabled CP:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tparent tabled CP:\t0x%p", 
 	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tsubgoal frame ptr:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tsubgoal frame ptr:\t0x%p", 
 	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tCh P  freeze register:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tCh P  freeze register:\t0x%p", 
 	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tHeap  freeze register:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tHeap  freeze register:\t0x%p", 
 	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tTrail freeze register:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tTrail freeze register:\t0x%p", 
 	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tLo St freeze register:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tLo St freeze register:\t0x%p", 
 	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr)));
 #ifdef LOCAL_EVAL
-    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tlocal eval trie_return:\t0x%p", s,
+    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tlocal eval trie_return:\t0x%p",
 	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr)));
 #endif
     num_of_args = length - TCP_SIZE;
     for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
-      xsb_dbgmsg((LOG_DEBUG,"%s%p:\tpredicate arg #%d:\t0x%p",
-		 s, arg, i, ref_val(*arg)));
+      xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tpredicate arg #%d:\t0x%p",
+		arg, i, ref_val(*arg)));
     break;
   default:
     xsb_error("CP Type %d not handled yet...", cpf_type);
@@ -1292,6 +1300,7 @@ static void print_choice_points(int overlap)
 
 /*----------------------------------------------------------------------*/ 
 
+#ifdef DEBUG_VERBOSE
 /* Needs to change when new xwam stacks are introduced.  */
 static void print_heap(int overlap)	/* Heap grows up */
 {
@@ -1320,6 +1329,7 @@ static void print_heap(int overlap)	/* Heap grows up */
     }
   }
 }
+#endif
 
 static void print_status(void)
 {
