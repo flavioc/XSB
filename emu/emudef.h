@@ -234,36 +234,64 @@ int asynint_val = 0;
 /*======================================================================*/
 
 
+/* #define call_sub(PSC) {							\ */
+/*   if ( (asynint_val) | int_val(cell(interrupt_reg)) ) {   	        \ */
+/*     if (asynint_val) { /\* non-attv intrpt *\/				\ */
+/*       if (asynint_val & KEYINT_MARK) {					\ */
+/*         synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\ */
+/*         lpcreg = pcreg;							\ */
+/*       }									\ */
+/*       else								\ */
+/*         lpcreg = (byte *)get_ep(PSC);					\ */
+/*       asynint_val = asynint_val & ~KEYINT_MARK;			\ */
+/*       asynint_code = 0;		         				\ */
+/*     }									\ */
+/*     else if (int_val(cell(interrupt_reg))) { /\* attv intrpt *\/		\ */
+/*       synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\ */
+/*       lpcreg = pcreg;							\ */
+/*       /\* Set PSC to '_$attv_int'/2, so that the later call of	*\/	\ */
+/*       /\* intercept(PSC) will set the return point, pcreg, to	*\/	\ */
+/*       /\* '_$attv_int'/2.					*\/	\ */
+/*       PSC = (Psc) flags[MYSIG_ATTV+INT_HANDLERS_FLAGS_START];		\ */
+/*     }									\ */
+/*     if (asynint_val & MSGINT_MARK) { /\* for debug or for stats *\/	\ */
+/*       pcreg = lpcreg;							\ */
+/*       intercept(PSC);							\ */
+/*       lpcreg = pcreg;							\ */
+/*     }									\ */
+/*   } else {								\ */
+/*     lpcreg = (pb)get_ep(PSC);						\ */
+/*     /\* check_glstack_overflow(get_arity(PSC),	  *\/    		\ */
+/*     /\*                       lpcreg,OVERFLOW_MARGIN); *\/		\ */
+/*   }									\ */
+/* } */
+
+
 #define call_sub(PSC) {							\
   if ( (asynint_val) | int_val(cell(interrupt_reg)) ) {   	        \
-    if (asynint_val) { /* non-attv intrpt */				\
-      if (asynint_val & KEYINT_MARK) {					\
+     if (asynint_val & KEYINT_MARK) {                                   \
         synint_proc(PSC, MYSIG_KEYB, lpcreg-2*sizeof(Cell));		\
         lpcreg = pcreg;							\
-      }									\
-      else								\
+        asynint_val = asynint_val & ~KEYINT_MARK;			\
+        asynint_code = 0;		         			\
+     } else if (int_val(cell(interrupt_reg))) {                         \
+        synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
+        lpcreg = pcreg;							\
+        /* Set PSC to '_$attv_int'/2, so that the later call of	*/	\
+        /* intercept(PSC) will set the return point, pcreg, to	*/	\
+        /* '_$attv_int'/2.					*/	\
+        PSC = (Psc) flags[MYSIG_ATTV+INT_HANDLERS_FLAGS_START];		\
+     } else if (asynint_val & MSGINT_MARK) {                            \
+        pcreg = (byte *)get_ep(PSC);					\
+        intercept(PSC);							\
+        lpcreg = pcreg;							\
+     }  else {                                                          \
         lpcreg = (byte *)get_ep(PSC);					\
-      asynint_val = asynint_val & ~KEYINT_MARK;			\
-      asynint_code = 0;		         				\
-    }									\
-    else if (int_val(cell(interrupt_reg))) { /* attv intrpt */		\
-      synint_proc(PSC, MYSIG_ATTV, lpcreg-2*sizeof(Cell));		\
-      lpcreg = pcreg;							\
-      /* Set PSC to '_$attv_int'/2, so that the later call of	*/	\
-      /* intercept(PSC) will set the return point, pcreg, to	*/	\
-      /* '_$attv_int'/2.					*/	\
-      PSC = (Psc) flags[MYSIG_ATTV+INT_HANDLERS_FLAGS_START];		\
-    }									\
-    if (asynint_val & MSGINT_MARK) { /* for debug or for stats */	\
-      pcreg = lpcreg;							\
-      intercept(PSC);							\
-      lpcreg = pcreg;							\
-    }									\
+        asynint_code = 0;		         			\
+     }                                                                  \
   } else {								\
     lpcreg = (pb)get_ep(PSC);						\
     /* check_glstack_overflow(get_arity(PSC),	  */    		\
     /*                       lpcreg,OVERFLOW_MARGIN); */		\
   }									\
 }
-
-
