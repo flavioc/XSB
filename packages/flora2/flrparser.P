@@ -2746,7 +2746,7 @@ flora_db_pathexp(_Mode,ObjectTerm,Code,[]) :-
 	flobject_struct(ObjectTerm,Code),
 	!.
 
-flora_db_pathexp(_Mode,CanoniTerm,_Code,Status) :-
+flora_db_pathexp(Mode,CanoniTerm,_Code,Status) :-
 	( Mode == FLINS ->
 	    parsing_error(CanoniTerm,ERROR_EXPINSERT,Status)
 	;
