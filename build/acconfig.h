@@ -29,9 +29,6 @@
 /* sometimes needed for C preprocessor under HP-UX */
 #undef _HPUX_SOURCE
 
-/* Defined, if AMIGA */
-#undef AMIGA
-
 /* Defined if 64 bit machine */
 #undef BITS64
 

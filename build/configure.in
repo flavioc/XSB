@@ -690,7 +690,6 @@ LDFLAGS="-lm"
 
 # Set OS-specific variables for XSB
 case "$canonical" in
-     *amiga*) AC_DEFINE(AMIGA) ;;
      *alpha*) AC_DEFINE(DECALPHA)
 	      AC_DEFINE(FOREIGN_ELF)
 		;;
