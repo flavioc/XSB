@@ -1,4 +1,4 @@
-/* File:      builtin.c
+/* File:      call_xsb_i.h
 ** Author(s): Xu, Warren, Sagonas, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
