@@ -41,6 +41,8 @@
 
 :- import '_$_$_write_flora_warnheader'/0 from flrutils.
 
+:- dynamic '_$_$_flora_switch'/1.
+
 
 /********************************************************************/
 '_$_$_flora_print_all'(Gs,NVs) :-
