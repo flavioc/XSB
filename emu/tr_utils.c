@@ -396,12 +396,14 @@ static void delete_variant_table(BTNptr x) {
 
 void delete_predicate_table(TIFptr tif) {
 
-  if ( IsVariantPredicate(tif) )
-    delete_variant_table(TIF_CallTrie(tif));
-  else
-    delete_subsumptive_table(tif);
-  TIF_CallTrie(tif) = NULL;
-  TIF_Subgoals(tif) = NULL;
+  if ( TIF_CallTrie(tif) != NULL ) {
+    if ( IsVariantPredicate(tif) )
+      delete_variant_table(TIF_CallTrie(tif));
+    else
+      delete_subsumptive_table(tif);
+    TIF_CallTrie(tif) = NULL;
+    TIF_Subgoals(tif) = NULL;
+  }
 }
 
 /*----------------------------------------------------------------------*/
