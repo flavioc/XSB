@@ -69,7 +69,7 @@ xsbBool str_cat(void)
 
   term = ptoc_tag(1);
   term2 = ptoc_tag(2);
-  if (isstring(term) && isstring(term2)) {
+  if (isatom(term) && isatom(term2)) {
     str1 = string_val(term);
     str2 = string_val(term2);
     
@@ -121,8 +121,9 @@ xsbBool str_match(void)
   term3 = ptoc_tag(3);
   beg_offset_term = ptoc_tag(4);
   end_offset_term = ptoc_tag(5);
-  if (!isstring(term) || !isstring(term2) || !isstring(term3))
-    xsb_abort("STRING_MATCH: Arguments 1,2,3 must be bound to strings");
+  if (!isatom(term) || !isatom(term2) || !isatom(term3)) {
+    xsb_abort("STR_MATCH: Arguments 1,2,3 must be bound to strings");
+  }
   subptr = string_val(term);
   stringptr = string_val(term2);
   direction = string_val(term3);
@@ -130,7 +131,7 @@ xsbBool str_match(void)
   if (*direction == 'f')
     reverse=FALSE;
   else if (*direction != 'r')
-    xsb_abort("STRING_MATCH: Argument 3 must be bound to forward/reverse");
+    xsb_abort("STR_MATCH: Argument 3 must be bound to forward/reverse");
 
   str_len=strlen(stringptr);
   sub_len=strlen(subptr);
@@ -191,7 +192,7 @@ xsbBool substring(void)
   XSB_StrSet(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
-  if (is_string(input_term)) /* check it */
+  if (isatom(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
@@ -277,7 +278,7 @@ xsbBool string_substitute(void)
   XSB_StrSet(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
-  if (is_string(input_term)) /* check it */
+  if (isatom(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
     input_string = p_charlist_to_c_string(input_term, &input_buffer,
@@ -320,7 +321,7 @@ xsbBool string_substitute(void)
       subst_str_term = p2p_car(subst_str_list_term1);
       subst_str_list_term1 = p2p_cdr(subst_str_list_term1);
 
-      if (is_string(subst_str_term)) {
+      if (isatom(subst_str_term)) {
 	subst_string = string_val(subst_str_term);
       } else if (is_list(subst_str_term)) {
 	subst_string = p_charlist_to_c_string(subst_str_term, &subst_buf,
@@ -387,4 +388,3 @@ static char *xsb_strrstr(char *str, char *pat)
       return (char *) p;
   return NULL;
 }
-
