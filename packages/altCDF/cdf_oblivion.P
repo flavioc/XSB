@@ -137,7 +137,7 @@ gc_class_fail(Cid) :-
 	 retractallExtTerm(isa_ext(O,Cid)),
 	 fail
 	 ;
-	 findall(cid(Cid,Comp),immed_isa(cid(Cid,Comp),Cid),CCids),
+	 findall(cid(Cid0,Comp),immed_isa(cid(Cid0,Comp),Cid),CCids),
 	 member(CCid,CCids),
 	 retractallExtTerm(isa_ext(CCid,Cid)),
 	 \+ immed_isa(CCid,_),
@@ -165,15 +165,15 @@ gc_classHasAttr_fail :-
 
 orphan_hasAttr(A,B,C) :-
 	hasAttr_ext(A,B,C),
-	\+ (immed_isa(A,_), immed_isa(B,_), immed_isa(C,_)).
+	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).
 	 
 orphan_allAttr(A,B,C) :-
 	allAttr_ext(A,B,C),
-	\+ (immed_isa(A,_), immed_isa(B,_), immed_isa(C,_)).
+	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).
 	 
 orphan_classHasAttr(A,B,C) :-
 	classHasAttr_ext(A,B,C),
-	\+ (immed_isa(A,_), immed_isa(B,_), immed_isa(C,_)).
+	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).
 	 
 /* Delete a class, all its subclasses, and all their relations and attributes */
 delete_class_cascade(ACid) :-
@@ -192,6 +192,12 @@ retractall_subclasses(Cid):-
 
 thereis_another_parent(Sid,Cid):-
 	immed_isa(Sid,X),\+(X=Cid).
+
+:- import implicit_isa/2 from cdf_init_cdf.
+explicit_implicit_isa(Cid):-
+	immed_isa(Cid,_), !.
+explicit_implicit_isa(Cid):-
+	implicit_isa(Cid,_).
 
 
 
