@@ -1,0 +1,197 @@
+:- compiler_options([ciao_directives]).
+
+:- export
+	delete_class_cascade/1,
+	obliterate_class/1,obliterate_classes/1,
+	obliterate_object/1,	obliterate_objects/1,	
+	retractall_itsobjects/1,
+	retractall_subclasses/1.
+
+:- import
+            immed_isa/2, 
+            retractallExtTerm/1
+	from cdf_init_cdf.
+
+:- import classHasAttr_ext/3, hasAttr_ext/3, allAttr_ext/3 from usermod.
+
+:- import member/2 from basics.
+
+:- comment(module,"These predicates allow a user of CDF to delete
+large portions of the currently loaded CDF.  They are implmented in a
+way that tries to be efficient for reasonably large sets of deletions.
+").
+
+%% handle caches
+
+:- comment(obliterate_class/1, " @tt{obliterate_class(+ClassID)}
+removes (most) extensional facts that refer to ClassId within the
+ontology.  All its subclasses that are not subclasses of other
+non-deleted concepts are removed.  It also removes objects that become
+disconnected because they are only members of deleted classes. It
+deletes various relations that reference any deleted class or object
+@em{at the top level}.  NB: References to the deleted classes and
+objects that are embedded in produce classes are @em{not} detected and
+are thus @em{not} deleted.
+").
+
+% TLS: dont understand why findall is necessary.
+obliterate_class(Cid) :-
+	(findall(PCid,immed_isa(Cid,PCid),PCids),
+	 member(PCid,PCids),
+	 retractallExtTerm(isa_ext(Cid,PCid)),
+	 fail
+	 ;
+	 gc_class(Cid)
+	).
+
+retractall_itsobjects(Cid):-
+	findall(oid(Oid,Comp),immed_isa(oid(Oid,Comp),Cid),Oids),
+	(
+	 member(O,Oids),
+	 retractallExtTerm(isa_ext(O,Cid)),
+	 \+ (immed_isa(O,_)),
+	 obliterate_object(O),
+	 fail
+	 ;
+	 true
+	).
+
+:- comment(obliterate_objects/1, " @tt{obliterate_objects(+ObjIdList)}
+removes all objects whose ObjID's are in the input list.  It removes
+them from all classes they are in, and it removes all extensional
+relation facts that refer to them @em{at the top level}.  NB:
+References to the deleted objects that are embedded in product classes
+are @em{not} detected and are thus @em{not} deleted. ").
+
+obliterate_objects(ObjList) :-
+	findall(p(Oid,Cid),(member(Oid,ObjList),
+		     immed_isa(Oid,Cid)),
+		Cids),
+	member(p(Oid,Cid),Cids),
+	retractallExtTerm(isa_ext(Oid,Cid)),
+	fail.
+obliterate_objects(_) :- gc_hasAttr_fail.
+obliterate_objects(_) :- gc_classHasAttr_fail.
+obliterate_objects(_) :- gc_allAttr_fail.
+obliterate_objects(_).
+
+:- comment(obliterate_object/1, " @tt{obliterate_object(+ObjId)}
+removes the object identified by ObjID.  It removes it from all
+classes it is in, and it removes all extensional relation facts that
+refers to it @em{at the top level}.  NB: References to the deleted
+objects that are embedded in product classes are @em{not} detected and
+are thus @em{not} deleted.").
+
+obliterate_object(Oid) :-
+	retractallExtTerm(hasAttr_ext(Oid,_,_)),
+	retractallExtTerm(hasAttr_ext(_,_,Oid)),
+	retractallExtTerm(allAttr_ext(Oid,_,_)),
+	retractallExtTerm(allAttr_ext(_,_,Oid)),
+	retractallExtTerm(classHasAttr_ext(_,_,Oid)),
+	retractallExtTerm(isa_ext(Oid,_)).
+
+:- comment(obliterate_classes/1, " @tt{obliterate_classes(+CidList)}
+takes a list of class IDs, removes them from the taxonomy and then
+removes (most) other facts that refer to these classes.  All
+subclasses that are not subclasses of other non-deleted concepts are
+removed.  It also removes objects that become disconnected by being
+members of any deleted class and not a member of any other nondeleted
+class.  It deletes extensional relation facts that reference any
+deleted class or object @em{at the top level}.  NB: References to the
+deleted classes and objects that are embedded in product classes are
+@em{not} detected and are thus @em{not} deleted.").
+
+obliterate_classes(Cids) :-
+	(findall(p(Cid,PCid),
+		 (member(Cid,Cids),immed_isa(Cid,PCid)),
+		 PCids),
+	 member(p(Cid,PCid),PCids),
+	 retractallExtTerm(isa_ext(Cid,PCid)),
+	 fail
+	 ;
+	 gc_classes(Cids)
+	).
+
+/* gc_class takes a class and if it is not connected in the taxonomy,
+deletes it and all other implied unconnected CDF components.  It is
+primarily intended to be called after retractall_isa, to transitively
+remove the newly detached subclass (if it is indeed detached) and all
+newly detached CDF components.  */
+
+gc_class(Cid) :-
+	\+ immed_isa(Cid,_),
+	gc_class_fail(Cid).
+gc_class(_) :- gc_allrels_fail.
+gc_class(_).
+
+gc_classes(Cids) :-
+	member(Cid,Cids),
+	\+ immed_isa(Cid,_),
+	gc_class_fail(Cid).
+gc_classes(_) :- gc_allrels_fail.
+gc_classes(_).
+
+gc_class_fail(Cid) :-
+	(findall(oid(Oid,Comp),immed_isa(oid(Oid,Comp),Cid),Oids),
+	 member(O,Oids),
+	 retractallExtTerm(isa_ext(O,Cid)),
+	 fail
+	 ;
+	 findall(cid(Cid,Comp),immed_isa(cid(Cid,Comp),Cid),CCids),
+	 member(CCid,CCids),
+	 retractallExtTerm(isa_ext(CCid,Cid)),
+	 \+ immed_isa(CCid,_),
+	 gc_class_fail(CCid)
+	).
+
+gc_allrels_fail :- gc_hasAttr_fail.
+gc_allrels_fail :- gc_allAttr_fail.
+gc_allrels_fail :- gc_classHasAttr_fail.
+
+gc_hasAttr_fail :-
+	orphan_hasAttr(A,B,C),
+	retractallExtTerm(hasAttr_ext(A,B,C)),
+	fail.
+
+gc_allAttr_fail :-
+	orphan_allAttr(A,B,C),
+	retractallExtTerm(allAttr_ext(A,B,C)),
+	fail.
+
+gc_classHasAttr_fail :-
+	orphan_classHasAttr(A,B,C),
+	retractallExtTerm(classHasAttr_ext(A,B,C)),
+	fail.
+
+orphan_hasAttr(A,B,C) :-
+	hasAttr_ext(A,B,C),
+	\+ (immed_isa(A,_), immed_isa(B,_), immed_isa(C,_)).
+	 
+orphan_allAttr(A,B,C) :-
+	allAttr_ext(A,B,C),
+	\+ (immed_isa(A,_), immed_isa(B,_), immed_isa(C,_)).
+	 
+orphan_classHasAttr(A,B,C) :-
+	classHasAttr_ext(A,B,C),
+	\+ (immed_isa(A,_), immed_isa(B,_), immed_isa(C,_)).
+	 
+/* Delete a class, all its subclasses, and all their relations and attributes */
+delete_class_cascade(ACid) :-
+	obliterate_class(ACid).
+
+retractall_subclasses(Cid):-
+	findall(cid(C,Comp),immed_isa(cid(C,Comp),Cid),Sids),
+	(
+	 member(Sid,Sids),
+	 \+ thereis_another_parent(Sid,Cid),
+	 obliterate_class(Sid),
+	 fail
+	 ;
+	 true
+	).
+
+thereis_another_parent(Sid,Cid):-
+	immed_isa(Sid,X),\+(X=Cid).
+
+
+
