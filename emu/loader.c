@@ -44,13 +44,14 @@
 #include "psc.h"
 #include "loader.h"
 #include "cell.h"
+#include "heap.h"
 #include "flags.h"
 #include "load_seg.h"
 #include "tries.h"
 #include "xmacro.h"
 #include "xsberror.h"
 
-#define V2_OBJECT_FORMAT 1	/* temporarily */
+/* #define V2_OBJECT_FORMAT 1 */
 
 #ifdef FOREIGN
 #include "dynload.h"
@@ -189,6 +190,18 @@ byte *loader(char *file, int exp)
       xsb_abort(message);
       first_inst = NULL;
     }
+
+#ifdef GC
+    if (magic_num == 0x11121304) {
+      sprintf(message,
+	"File: %s has an old byte code format which does not support\n%s",
+	file,
+	"\t   garbage collection.  You are recommended to recompile it.");
+      xsb_warn(message);
+      flags[GARBAGE_COLLECT] = NO_GC;
+    }
+#endif
+
     fclose(fd);
     if (reloc_table) {
       free(reloc_table);
