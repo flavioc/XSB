@@ -669,12 +669,26 @@ if test "${enable_debug}" = "yes"; then
 fi
 
 
+dnl The following is to be used only by developers for GC debugging
+gc_test=no
+
+AC_ARG_ENABLE(gc-test,
+[  --enable-gc-test           stress-test the garbage collector (for developers)])
+if test "${with_gc_test}" = "yes" ; then
+   enable_gc_test=yes
+fi
+if test "${enable_gc_test}" = "yes" ; then
+   AC_DEFINE(GC_TEST)
+   gc_test=yes
+fi
+
+
 dnl Choose an abstract machine for XSB
 engine_mode=slg-wam
 
 AC_ARG_ENABLE(chat,
-[  --enable-chat                 compile using CHAT as the abstract machine;
-				default is SLG-WAM])
+[  --enable-chat              compile using CHAT as the abstract machine;
+			     default is SLG-WAM])
 if test "${with_chat}" = "yes" ; then
    enable_chat=yes
 fi
@@ -690,8 +704,8 @@ dnl Take care of the scheduling strategy
 xsb_scheduling_strategy=batched
 
 AC_ARG_ENABLE(local-scheduling,
-[  --enable-local-scheduling	compile using the local scheduling strategy;
-				default is the batched strategy])
+[  --enable-local-scheduling  compile using the local scheduling strategy;
+                             default is the batched strategy])
 dnl Allow some slack in how local scheduling is specified
 if test "${enable_local_sched}" = "yes" || \
    test "${enable_local_schedule}" = "yes" || \
@@ -978,7 +992,8 @@ Date: ${install_date}
   Loader flags:                                   ${LDFLAGS}
   Compilation mode:                               ${compile_mode}
   XSB abstract machine: 			  ${engine_mode}
-  XSB scheduling strategy:                        $xsb_scheduling_strategy"
+  XSB scheduling strategy:                        ${xsb_scheduling_strategy}
+  Garbage Collection Stress-Test:                 ${gc_test}"
 
 
 case "$with_oracle" in

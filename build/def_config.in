@@ -151,6 +151,8 @@
 
 #undef GC
 
+#undef GC_TEST
+
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
 
