@@ -37,7 +37,8 @@ putvarinst(VPrag, N, Pil, Pilr, Tabled) :-
         vprag_type1(VPrag, Typ),
         vprag_loc(VPrag,Loc),
         vprag_occ(VPrag, Occ),
-        ( ( Occ == v ) -> putvoid(Typ,Loc,N,Pil,Pilr)
+%        ( ( Occ == v ) -> putvoid(Typ,Loc,N,Pil,Pilr)
+        ( ( Occ == v ) -> putvoid(Typ,N,N,Pil,Pilr)
         ; ( Occ == f) -> putvar_f(Typ,Loc,N,Pil,Pilr)
         ; ( Occ == l ; Occ == s ) -> putvar_s(Typ,Loc,N,Tabled,Pil,Pilr)
         ).
