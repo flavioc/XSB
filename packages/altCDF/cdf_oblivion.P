@@ -5,10 +5,11 @@
 	obliterate_class/1,obliterate_classes/1,
 	obliterate_object/1,	obliterate_objects/1,	
 	retractall_itsobjects/1,
-	retractall_subclasses/1.
+	retractall_subclasses/1,
+	delete_all_things_to_delete.
 
 :- import
-            immed_isa/2, 
+            isa/2, immed_isa/2,
             retractallExtTerm/1
 	from cdf_init_cdf.
 
@@ -34,7 +35,204 @@ objects that are embedded in produce classes are @em{not} detected and
 are thus @em{not} deleted.
 ").
 
-% TLS: dont understand why findall is necessary.
+obliterate_class(Cid) :-
+	retractall(things_to_delete(_)),
+	assert(things_to_delete(Cid)),
+	delete_all_things_to_delete.
+
+:- comment(obliterate_objects/1, " @tt{obliterate_objects(+ObjIdList)}
+removes all objects whose ObjID's are in the input list.  It removes
+them from all classes they are in, and it removes all extensional
+relation facts that refer to them @em{at the top level}.  NB:
+References to the deleted objects that are embedded in product classes
+are @em{not} detected and are thus @em{not} deleted. ").
+
+obliterate_objects(ObjList) :-
+	retractall(things_to_delete(_)),
+	(member(Thing,ObjList),
+	 assert(things_to_delete(Thing)),
+	 fail
+	 ;
+	 true
+	),
+	delete_all_things_to_delete.
+
+:- comment(obliterate_object/1, " @tt{obliterate_object(+ObjId)}
+removes the object identified by ObjID.  It removes it from all
+classes it is in, and it removes all extensional relation facts that
+refers to it @em{at the top level}.  NB: References to the deleted
+objects that are embedded in product classes are @em{not} detected and
+are thus @em{not} deleted.").
+
+obliterate_object(Oid) :-
+	retractall(things_to_delete(_)),
+	assert(things_to_delete(Oid)),
+	delete_all_things_to_delete.
+
+:- comment(obliterate_classes/1, " @tt{obliterate_classes(+CidList)}
+takes a list of class IDs, removes them from the taxonomy and then
+removes (most) other facts that refer to these classes.  All
+subclasses that are not subclasses of other non-deleted concepts are
+removed.  It also removes objects that become disconnected by being
+members of any deleted class and not a member of any other nondeleted
+class.  It deletes extensional relation facts that reference any
+deleted class or object @em{at the top level}.  NB: References to the
+deleted classes and objects that are embedded in product classes are
+@em{not} detected and are thus @em{not} deleted.").
+
+obliterate_classes(Cids) :-
+	retractall(things_to_delete(_)),
+	(member(Thing,Cids),
+	 assert(things_to_delete(Thing)),
+	 fail
+	 ;
+	 true
+	),
+	delete_all_things_to_delete.
+	
+:- comment(retractall_itsobjects/1, " @tt{retractall_itsobjects(+Cid)}
+obliterates all the objects that are immedicate members of Cid.").
+
+retractall_itsobjects(Cid):-
+	retractall(things_to_delete(_)),
+	(Oid = oid(_,_),
+	 immed_isa(Oid,Cid),
+	 assert(things_to_delete(Oid)),
+	 fail
+	 ;
+	 true
+	),
+	delete_all_things_to_delete.
+
+retractall_subclasses(PCid):-
+	retractall(things_to_delete(_)),
+	(Cid = cid(_,_),
+	 immed_isa(Cid,PCid),
+	 assert(things_to_delete(Cid)),
+	 fail
+	 ;
+	 true
+	),
+	delete_all_things_to_delete.
+
+
+/* Delete a class, all its subclasses, and all their relations and attributes */
+delete_class_cascade(ACid) :-
+	obliterate_class(ACid).
+
+
+/************************************************************************/
+/*									*/
+/*	Mass Delete Utilities						*/
+/*									*/
+/* Caller should assert Oids, Cids, etc. to dynamic predicate		*/
+/* things_to_delete/1, and call delete_all_things_to_delete/0.		*/
+/* It will delete all facts in the extensional database that contains	*/
+/* any class/reln/object in things_to_delete/1.				*/
+/*									*/
+/************************************************************************/
+
+:- import things_to_delete/1 from usermod.
+:- dynamic things_to_delete/1.
+:- index(things_to_delete/1,trie).
+:- dynamic things_in_closure/1.
+:- index(things_in_closure/1,trie).
+
+:- dynamic facts_to_delete/1.
+:- index(facts_to_delete/1,trie).
+
+:- import call0/1 from machine.
+delete_all_things_to_delete :-
+	close_things_to_delete,
+	cdf_term_ext(Goal,Filt),
+	%%conset(myctr,0),
+	retractall(facts_to_delete(_)),
+	(call0(Goal),
+	 (Filt == true
+	  ->	 true
+	  ;	 call0(Filt)
+	 ),
+	 cdf_term_ext_arg(Goal,Thing),
+	 (things_in_closure(Thing)
+	  ->	 true
+	  ;	 things_to_delete(Thing)
+	 ),
+	 assert(facts_to_delete(Goal)),
+	 %%coninc(myctr),
+	 fail
+	 ;
+	 facts_to_delete(Fact),
+	 retractallExtTerm(Fact),
+	 fail
+	 %% ;
+	 %%conget(myctr,CNT),
+	 %%writeln(deleted(Goal,CNT)),
+	 %%fail
+	).
+delete_all_things_to_delete :-
+	retractall(facts_to_delete(_)),
+	retractall(things_to_delete(_)),
+	retractall(things_in_closure(_)).
+
+/* close_things_to_delete/0 adds to the things_to_delete/1 table all
+things that will be disconnected from the taxonomy when all things in
+things_to_delete are deleted. */
+
+%%%:- import conset/2, conget/2, coninc/1 from gensym.
+close_things_to_delete :-
+	%%write('closing...'),
+	%%conset(myctr,0),
+	(abolish_table_pred(disconnected(_)),
+	 retractall(things_in_closure(_)),
+	 things_to_delete(Thing),
+	 isa(SubThing,Thing), SubThing \== Thing,
+	 disconnected(SubThing),
+	 \+ things_to_delete(SubThing),
+	 \+ things_in_closure(SubThing),
+	 %%coninc(myctr),
+	 assert(things_in_closure(SubThing)),
+	 fail
+	 ;
+	 abolish_table_pred(disconnected(_))
+	).
+	%%conget(myctr,CNT),
+	%%writeln(done(CNT)).
+
+:- table disconnected/1.
+disconnected(X) :- things_to_delete(X).
+disconnected(X) :- findall(Y,immed_isa(X,Y),Ys), all_disconnected(Ys).
+
+all_disconnected([]).
+all_disconnected([X|Xs]) :- disconnected(X), all_disconnected(Xs).
+
+cdf_term_ext(hasAttr_ext(_,_,_),true).
+cdf_term_ext(allAttr_ext(_,_,_),true).
+cdf_term_ext(classHasAttr_ext(_,_,_),true).
+cdf_term_ext(minAttr_ext(_,_,_,_),true).
+cdf_term_ext(maxAttr_ext(_,_,_,_),true).
+cdf_term_ext(isa_ext(oid(_,_),_),true).
+cdf_term_ext(isa_ext(Cid,_),\+Cid=oid(_,_)).
+
+cdf_term_ext_arg(isa_ext(X,_),X).
+cdf_term_ext_arg(isa_ext(_,X),X).
+cdf_term_ext_arg(hasAttr_ext(X,_,_),X).
+cdf_term_ext_arg(hasAttr_ext(_,X,_),X).
+cdf_term_ext_arg(hasAttr_ext(_,_,X),X).
+cdf_term_ext_arg(allAttr_ext(X,_,_),X).
+cdf_term_ext_arg(allAttr_ext(_,X,_),X).
+cdf_term_ext_arg(allAttr_ext(_,_,X),X).
+cdf_term_ext_arg(classHasAttr_ext(X,_,_),X).
+cdf_term_ext_arg(classHasAttr_ext(_,X,_),X).
+cdf_term_ext_arg(classHasAttr_ext(_,_,X),X).
+cdf_term_ext_arg(minAttr_ext(X,_,_,_),X).
+cdf_term_ext_arg(minAttr_ext(_,X,_,_),X).
+cdf_term_ext_arg(minAttr_ext(_,_,X,_),X).
+cdf_term_ext_arg(maxAttr_ext(X,_,_,_),X).
+cdf_term_ext_arg(maxAttr_ext(_,X,_,_),X).
+cdf_term_ext_arg(maxAttr_ext(_,_,X,_),X).
+
+end_of_file.
+
 obliterate_class(Cid) :-
 	(findall(PCid,immed_isa(Cid,PCid),PCids),
 	 member(PCid,PCids),
@@ -56,13 +254,6 @@ retractall_itsobjects(Cid):-
 	 true
 	).
 
-:- comment(obliterate_objects/1, " @tt{obliterate_objects(+ObjIdList)}
-removes all objects whose ObjID's are in the input list.  It removes
-them from all classes they are in, and it removes all extensional
-relation facts that refer to them @em{at the top level}.  NB:
-References to the deleted objects that are embedded in product classes
-are @em{not} detected and are thus @em{not} deleted. ").
-
 obliterate_objects(ObjList) :-
 	findall(p(Oid,Cid),(member(Oid,ObjList),
 		     immed_isa(Oid,Cid)),
@@ -77,13 +268,6 @@ obliterate_objects(_) :- gc_minAttr_fail.
 obliterate_objects(_) :- gc_maxAttr_fail.
 obliterate_objects(_).
 
-:- comment(obliterate_object/1, " @tt{obliterate_object(+ObjId)}
-removes the object identified by ObjID.  It removes it from all
-classes it is in, and it removes all extensional relation facts that
-refers to it @em{at the top level}.  NB: References to the deleted
-objects that are embedded in product classes are @em{not} detected and
-are thus @em{not} deleted.").
-
 obliterate_object(Oid) :-
 	retractallExtTerm(hasAttr_ext(Oid,_,_)),
 	retractallExtTerm(hasAttr_ext(_,_,Oid)),
@@ -92,16 +276,6 @@ obliterate_object(Oid) :-
 	retractallExtTerm(classHasAttr_ext(_,_,Oid)),
 	retractallExtTerm(isa_ext(Oid,_)).
 
-:- comment(obliterate_classes/1, " @tt{obliterate_classes(+CidList)}
-takes a list of class IDs, removes them from the taxonomy and then
-removes (most) other facts that refer to these classes.  All
-subclasses that are not subclasses of other non-deleted concepts are
-removed.  It also removes objects that become disconnected by being
-members of any deleted class and not a member of any other nondeleted
-class.  It deletes extensional relation facts that reference any
-deleted class or object @em{at the top level}.  NB: References to the
-deleted classes and objects that are embedded in product classes are
-@em{not} detected and are thus @em{not} deleted.").
 
 obliterate_classes(Cids) :-
 	(findall(p(Cid,PCid),
@@ -208,10 +382,6 @@ orphan_minAttr(A,B,C,N) :-
 	     explicit_implicit_isa(B), 
 	     explicit_implicit_isa(C)).
 	 
-/* Delete a class, all its subclasses, and all their relations and attributes */
-delete_class_cascade(ACid) :-
-	obliterate_class(ACid).
-
 retractall_subclasses(Cid):-
 	findall(cid(C,Comp),immed_isa(cid(C,Comp),Cid),Sids),
 	(
@@ -233,6 +403,5 @@ explicit_implicit_isa(Cid):-
 	implicit_isa(Cid,_), !.
 explicit_implicit_isa(Cid):-
 	cdf_root(Cid).
-
 
 
