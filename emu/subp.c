@@ -196,7 +196,7 @@ void keyint_proc(int sig)
 /* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
 void xsb_segfault_catcher (int err)
 {
-  longjmp(xsb_fall_back_environment, 1);
+  longjmp(xsb_segfault_fallback_environment, 1);
 }
 
 void init_interrupt(void)
