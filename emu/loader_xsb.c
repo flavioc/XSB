@@ -52,6 +52,7 @@
 #include "inst_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
+#include "varstring_xsb.h"
 
 #ifdef FOREIGN
 #include "dynload.h"
@@ -549,34 +550,32 @@ unsigned int read_magic(FILE *fd)
 
 /*----------------------------------------------------------------------*/
 
-inline static char *get_obj_atom(FILE *fd, char *str)
+inline void get_obj_atom(FILE *fd, VarString *atom)
 {
   byte x;
+  unsigned int len;
   
   get_obj_data((&x),1);
-  /* ``x'' gets the length of the ldoption string or > SHORT_LDOPTIONLEN.
-     The latter means we have a long ldoption.
+  /* ``x'' gets the length of the string or > SHORT_LDOPTIONLEN.
+     The latter means we have a long atom.
      In this case, the length is stored in 4 bytes & we use get_obj_word_bb */
   if (x > SHORT_LDOPTIONLEN) { /* handle unusual case specially */
-    char *real_str;
-    unsigned int len;
     get_obj_word_bb(&len);
     /* xsb_dbgmsg("get_obj_len = %d... Case is not handled yet!\n",len); */
-    real_str = (char *)malloc(len);
-    get_obj_string(real_str, len); real_str[len] = '\0';
-    return real_str;
-  }
-  else { /* optimize common case -- no malloc() */
-    get_obj_string(str, x); str[x] = '\0';
-    return NULL;
-  }
+  } else
+    len = x;
+
+  vstrENSURE_SIZE(atom,len+1);
+  get_obj_string(atom->string, len);
+  atom->length = len;
+  vstrNULL_TERMINATE(atom);
 }
 
 /*----------------------------------------------------------------------*/
 
 static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 {
-  char str[SHORT_LDOPTIONLEN+1], *real_str;
+  static vstrDEFINE(str);
   int  is_new;
   byte t_arity, t_type, t_env;
   Pair temp_pair;
@@ -590,9 +589,9 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
   get_obj_byte(&t_type);
   get_obj_byte(&t_arity);
-  real_str = get_obj_atom(fd, str);
+  get_obj_atom(fd, &str);
   if (t_type == T_MODU)
-    temp_pair = insert_module(0, (real_str ? real_str : str));
+    temp_pair = insert_module(0, str.string);
   else {
     if (t_env == T_IMPORTED) {
       byte t_modlen;
@@ -604,7 +603,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       mod = temp_pair->psc_ptr;
     } else if (t_env == T_GLOBAL) mod = global_mod;
     else mod = cur_mod;
-    temp_pair = insert((real_str ? real_str : str), t_arity, mod, &is_new);
+    temp_pair = insert(str.string, t_arity, mod, &is_new);
     if (is_new && t_env==T_IMPORTED)
       set_ep(temp_pair->psc_ptr, (byte *)(mod));
     /* set ep to the psc record of the module name */
@@ -618,8 +617,6 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   }
   if (!temp_pair) return FALSE;
   
-  if (real_str) { free(real_str); real_str = NULL; }
-
   /*	if (count >= REL_TAB_SIZE) {
 	xsb_dbgmsg("Reloc_table overflow");
 	return FALSE;
@@ -750,7 +747,8 @@ static byte *loader1(FILE *fd, int exp)
 static byte *loader_foreign(char *filename, FILE *fd, int exp)
 {
   byte name_len, *instr;
-  char name[FOREIGN_NAMELEN], ldoption[SHORT_LDOPTIONLEN+1], *real_ldoption;
+  char name[FOREIGN_NAMELEN];
+  static vstrDEFINE(ldoption);
   unsigned long psc_count;
   Psc  cur_mod;
   Pair ptr;
@@ -762,14 +760,12 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
   }
   get_obj_string(name, name_len);
   name[name_len] = 0;
-  real_ldoption = get_obj_atom(fd, ldoption);
+  get_obj_atom(fd, &ldoption);
   ptr = insert_module(T_MODU, name);
   cur_mod = ptr->psc_ptr;
   get_obj_word_bb(&psc_count);
   if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) return FALSE;
-  instr = load_obj(filename, cur_mod,
-		   (real_ldoption ? real_ldoption : ldoption));
-  if (real_ldoption) { free(real_ldoption); real_ldoption = NULL; }
+  instr = load_obj(filename, cur_mod, ldoption.string);
   return instr;
 } /* end of loader_foreign */
 #endif

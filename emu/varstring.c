@@ -149,12 +149,9 @@ static inline void vs_shrink(VarString *vstr, int increment)
 /* ensure that the VarString has room for minsize bytes */
 static inline void vs_ensure_size(VarString *vstr, int minsize)
 {
-  if (vstr->string == NULL)
-    vs_init(vstr,0);
-  else { /* already initialized */
-    /* make sure we don't clobber existing stuff */
-    vs_adjust_size(vstr, max(vstr->length,minsize)+1);
-  }
+  vs_init(vstr,0);
+
+  vs_adjust_size(vstr, max(vstr->length,minsize)+1);
 }
 
 

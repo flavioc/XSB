@@ -55,7 +55,7 @@ extern int putenv(const char *);
 
 static bool dummy(void)
 {
-  xsb_error("Trying to use an undefined foreign procedure");
+  xsb_error("LOADER: Trying to use an undefined foreign procedure");
   return FALSE;
 }
 
@@ -68,14 +68,11 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   char	sofilename[MAXPATHLEN];
   void	*handle;
   void	*funcep;
-
-#ifndef RUNTIME_LD_PATH
   char  ldtemp; 
   char  *ldp1,*ldp2;
   static vstrDEFINE(ldstring_oldenv);
   static vstrDEFINE(ldstring_newenv);
   char  *libpath;
-#endif
   
   /* (1) create filename.so */
   
@@ -83,19 +80,18 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* replace the O suffix with the so suffix */
   strcpy(sofilename+strlen(pofilename)-1, "so");
   
-#ifndef RUNTIME_LD_PATH
-  /* When RUNTIME_LD_PATH is defined, the search path is built into the .so
-     file. On Solaris, one can't use putenv("LD_LIBRARY_PATH=path")
-     to change the library search path.
-     On Linux, this is possible, but still using the -Rpath option when
-     compiling the .so file is better.
-     -Rpath should be supplied with the ldoption parameter.
+  /* (1.5) include necessary paths into LD_LIBRARY_PATH
+     so that the right libraries would be consulted at loading time.
+     NOTE: Some systems (Solaris) ignore runtime changes of LD_LIBRARY_PATH,
+     so adding these libraries won't help. This works on Linux, though.
 
-     If RUNTIME_LD_PATH isn't defined, then we use putenv 
-     in the hope it works :-(
+     On systems where LD_LIBRARY_PATH can't be changed at runtime, one should
+     build the runtime library search path into the .so module at compile
+     time. Usually, this is done with the -R linker flag.
+     XSB provides a predicate, runtime_loader_flag/2, which gives the
+     appropriate loader flag, if possible.
   */
 
-  /* (1.5) include necessary paths into LD_LIBRARY_PATH */
   libpath = getenv("LD_LIBRARY_PATH");
   if (libpath == NULL)
     libpath = "";
@@ -129,16 +125,12 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   if (putenv(ldstring_newenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
-#endif
-
   
   /* (2) open the needed object */
   handle = dlopen(sofilename, RTLD_LAZY);
 
-#ifndef RUNTIME_LD_PATH
   if (putenv(ldstring_oldenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't restore the value of LD_LIBRARY_PATH");
-#endif
   
 
   if (handle == 0) {
@@ -156,7 +148,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int *) dlsym(handle, name)) == NULL) {
 	fprintf(stdwarn, "%s\n", dlerror());
-	xsb_warn("Cannot find foreign procedure %s", name);
+	xsb_warn("LOADER: Cannot find foreign procedure %s", name);
 	set_ep(search_ptr->psc_ptr, (byte *)(dummy));
       } else { 
 	set_ep(search_ptr->psc_ptr, (byte *)(funcep));
