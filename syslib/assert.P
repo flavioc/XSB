@@ -40,7 +40,9 @@
 /* where:								*/
 /*    assert(+Clause, +AorZ, +Index)            			*/
 /*	Asserts a clause.		                                */
-/*	AorZ:  0 for insertion as the first clause, 1 for as the last.	*/
+/*	AorZ/\1:  0 for insertion as the first clause, 1 for as last.	*/
+/*	AorZ/\2:  0 for uniform treatment of anonymous variables,	*/
+/*		  2 for special treatment of anonymous variables.	*/
 /*	Index: the number of the argument on which to index; 		*/
 /*		0 for no indexing. 					*/
 /*======================================================================*/
@@ -142,8 +144,7 @@ asserti(Clause, Index) :- assert(Clause,1,Index).
 assertai(Clause,Index) :- assert(Clause,0,Index).
 assertzi(Clause,Index) :- assert(Clause,1,Index).
 
-
-assert(Clause, AZ, Index1) :-
+assert(Clause, AZL, Index1) :-
 	(Clause = (Head:-_)
 	 ->	conpsc(Head, PSC)
 	 ;	Clause = Head -> conpsc(Head, PSC)
@@ -165,15 +166,61 @@ assert(Clause, AZ, Index1) :-
 		NArity is Arity+1, % to hold the cut addr
 		convert_to_dyna(Head,Prref),
 		cut_transform(Clause,Nclause),
-		code_to_buff(Nclause),
+		code_to_buff(Nclause,AZL),
+		AZ is AZL /\ 1,
 		assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize)
 	).
 
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */
-code_to_buff(Clause) :- assert_code_to_buff(Clause), fail.
-code_to_buff(_).
+code_to_buff(Clause,AZ) :-
+	(AZ =< 1
+	 ->	assert_code_to_buff(Clause), fail
+	 ;	bind_single_occ_vars(Clause,'$assertAVAR'),
+		assert_code_to_buff(Clause), fail
+	).
+code_to_buff(_,_).
 
+/* bind all single-occurrence variables in Term to Val.  Used so
+assert in C will know which variables are anonymous and can generate
+better code for them (and not use registers) */
+bind_single_occ_vars(Term,Val) :-
+	(ground(Term)
+	 ->	true
+	 ;	accumulate_vars(Term,AllVars,[]),
+		parsort(AllVars,asc,0,SAllVars),
+		SAllVars = [V1|RVars],
+		bind_single_occs_f(RVars,V1,Val)
+	).
+
+accumulate_vars(Term,Vars0,Vars) :-
+	(var(Term)
+	 ->	Vars0 = [Term|Vars]
+	 ; atomic(Term)
+	 ->	Vars0 = Vars
+	 ;	Term =.. [_|Args],
+		accumulate_vars_list(Args,Vars0,Vars)
+	).
+
+accumulate_vars_list([],Vars,Vars).
+accumulate_vars_list([T|Ts],Vars0,Vars) :-
+	accumulate_vars(T,Vars0,Vars1),
+	accumulate_vars_list(Ts,Vars1,Vars).
+
+bind_single_occs_f([],Val,Val).
+bind_single_occs_f([V1|RVars],V1a,Val) :-
+	(V1 == V1a
+	 ->	bind_single_occs(RVars,V1a,Val)
+	 ;	V1a = Val,
+		bind_single_occs_f(RVars,V1,Val)
+	).
+
+bind_single_occs([],_V1a,_Val).
+bind_single_occs([V1|RVars],V1a,Val) :-
+	(V1 == V1a
+	 ->	bind_single_occs(RVars,V1a,Val)
+	 ;	bind_single_occs_f(RVars,V1,Val)
+	).
 
 /*======================================================================*/
 /* check_assert(+Clause, +Predicate_Called)				*/

@@ -25,7 +25,7 @@
 
 
 :- export assert0/1, assert/1, asserta/1, assertz/1, 
-	  asserti/2, assertai/2, assertzi/2.
+	  asserti/2, assertai/2, assertzi/2, assert/3.
 :- export retract/1, retractall/1, abolish/1, abolish/2. 
 :- export retract0/1.	% used in standard.P (for multifile)
 :- export retract_nr/1, reclaim_space/1.
@@ -36,9 +36,10 @@
 :- export exchange_definitions/2.
 
 :- import append/3 from basics.
+:- import ground/1 from basics.
 :- import (=..)/2, functor/3, integer/1, callable/1, throw/1,
   goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1,
-  is_most_general_term/1
+  is_most_general_term/1, atomic/1
      from standard.
 %%:- import call_c/1 from standard.
 :- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,
@@ -51,6 +52,7 @@
   psc_tabled/2, psc_set_ep/2, unload_seg/1, db_build_prref/3,
   code_call/3, db_retract0/2
      from machine.
+:- import parsort/4 from machine.
 :- import db_get_last_clause/4 from machine.
 %%:- import term_psc/2 from machine.
 :- import '_$table'/1 from file_op.
