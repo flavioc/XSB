@@ -87,7 +87,7 @@ l_write(File, T, Prec) :- 	% functor(T, OP, N),
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
 	OP = Name,
-	( N=:=0 -> file_puttoken(File, XSB_STRING, Name)
+	( N=:=0 -> file_puttoken(File, TK_ATOM, Name)
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
@@ -133,11 +133,11 @@ l_writevar(File, N, Quoted) :-
 		file_put(File, ChrLetter),
 		Number is N // 26,
 		( Number =:= 0 -> true
-		; file_puttoken(File, XSB_INT, Number) 
+		; file_puttoken(File, TK_VAR, Number) 
 		)
-	; ( Quoted =:= 0 -> file_puttoken(File, XSB_STRING, '$VAR')
+	; ( Quoted =:= 0 -> file_puttoken(File, TK_ATOM, '$VAR')
 	  ; file_put(File, CH_QUOTE),
-	    file_puttoken(File, XSB_STRING, '$VAR'), 
+	    file_puttoken(File, TK_ATOM, '$VAR'), 
 	    file_put(File, CH_QUOTE)
 	  ),
 	  file_put(File, CH_LPAREN),
@@ -146,7 +146,7 @@ l_writevar(File, N, Quoted) :-
 	).
 
 l_writestr(File, Name, N, Term) :-
-	file_puttoken(File, XSB_STRING, Name), 
+	file_puttoken(File, TK_ATOM, Name), 
 	file_put(File, CH_LPAREN),    % (
 	term_arg(Term, 1, X),
 	l_write(File, X, 999),
@@ -182,7 +182,7 @@ l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :-
 'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp) :-
 	l_write(File, Arg1, Newlp),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
-	file_puttoken(File, 19, Op),
+	file_puttoken(File, TK_INOP, Op),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
 	l_write(File, Arg2, Newrp).
 
@@ -190,11 +190,11 @@ l_writepreop(File, Op, Term, Oldp, Curp, Newp) :-
 	term_arg(Term, 1, Arg),
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
-		file_puttoken(File, 18, Op),
+		file_puttoken(File, TK_PREOP, Op),
 		l_write(File, Arg, Newp),
 		file_put(File, 41)		% ')'
 	;
-		file_puttoken(File, 18, Op),
+		file_puttoken(File, TK_PREOP, Op),
 		l_write(File, Arg, Newp)
 	).
 
@@ -203,11 +203,11 @@ l_writepostop(File, Op, Term, Oldp, Curp, Newp) :-
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
 		l_write(File, Arg, Newp),
-		file_puttoken(File, 20, Op),
+		file_puttoken(File, TK_POSTOP, Op),
 		file_put(File, 41)		% ')'
 	;
 		l_write(File, Arg, Newp),
-		file_puttoken(File, 20, Op)
+		file_puttoken(File, TK_POSTOP, Op)
 	).
 
 
@@ -268,7 +268,7 @@ l_write_prolog(File, T, Prec) :- 	% functor(T, OP, N),
 	psc_arity(PSC, N),
 	psc_name(PSC, Name),
 	OP = Name,
-	( N=:=0 -> file_puttoken(File, XSB_STRING, Name)
+	( N=:=0 -> file_puttoken(File, TK_ATOM, Name)
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
@@ -303,7 +303,7 @@ l_write_prolog(File, T, _) :-
 	file_puttoken(File, Type, T).
 
 l_writestr_prolog(File, Name, N, Term) :-
-	file_puttoken(File, XSB_STRING, Name), 
+	file_puttoken(File, TK_ATOM, Name), 
 	file_put(File, 40), 		% '('
 	term_arg(Term, 1, X),
 	l_write_prolog(File, X, 999),
@@ -330,7 +330,7 @@ l_writebinop_prolog(File, Op, Term, Oldp, Curp, Newlp, Newrp) :-
 'write binop prolog'(File, Arg1, Op, Arg2, Newlp, Newrp) :-
 	l_write_prolog(File, Arg1, Newlp),
 	file_put(File, CH_SPACE),    	
-	file_puttoken(File, 19, Op),
+	file_puttoken(File, TK_INOP, Op),
 	file_put(File, CH_SPACE),
 	l_write_prolog(File, Arg2, Newrp).
 
@@ -338,11 +338,11 @@ l_writepreop_prolog(File, Op, Term, Oldp, Curp, Newp) :-
 	term_arg(Term, 1, Arg),
 	(Curp > Oldp -> 
 	    file_put(File, CH_LPAREN),	    % (
-	    file_puttoken(File, 18, Op),
+	    file_puttoken(File, TK_PREOP, Op),
 	    l_write_prolog(File, Arg, Newp),
 	    file_put(File, CH_RPAREN)	% )
 	;   
-	    file_puttoken(File, 18, Op),
+	    file_puttoken(File, TK_PREOP, Op),
 	    l_write_prolog(File, Arg, Newp)
 	).
 
@@ -351,11 +351,11 @@ l_writepostop_prolog(File, Op, Term, Oldp, Curp, Newp) :-
 	(Curp > Oldp -> 
 	    file_put(File, CH_LPAREN),	% (
 	    l_write_prolog(File, Arg, Newp),
-	    file_puttoken(File, 20, Op),
+	    file_puttoken(File, TK_POSTOP, Op),
 	    file_put(File, CH_RPAREN)	% )
 	;
 	    l_write_prolog(File, Arg, Newp),
-	    file_puttoken(File, 20, Op)
+	    file_puttoken(File, TK_POSTOP, Op)
 	).
 
 l_writearg_prolog(_File, _Term, N, N) :- !.
@@ -412,7 +412,7 @@ l_write_quoted(File, [X|Y], _) :-
 	l_writetail_quoted(File, Y).
 l_write_quoted(File, Atom, _) :-	% This takes care of all atoms but []
 	term_type(Atom, Type),
-	Type =:= XSB_STRING,
+	Type =:= TK_ATOM,
 	!,
 	file_writequoted(File, Atom).
 l_write_quoted(File, T, Prec) :- 	% functor(T, OP, N),
@@ -498,7 +498,7 @@ l_writeqbinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :-
 'write binop quoted'(File, Arg1, Op, Arg2, Newlp, Newrp) :-
 	l_write_quoted(File, Arg1, Newlp),
 	file_put(File, CH_SPACE),
-	file_puttoken(File, 19, Op),
+	file_puttoken(File, TK_INOP, Op),
 	file_put(File, CH_SPACE),
 	l_write_quoted(File, Arg2, Newrp).
 
@@ -506,11 +506,11 @@ l_writeqpreop(File, Op, Term, Oldp, Curp, Newp) :-
 	term_arg(Term, 1, Arg),
 	(Curp > Oldp -> 
 	    file_put(File, CH_LPAREN),	    % (
-	    file_puttoken(File, 18, Op),
+	    file_puttoken(File, TK_PREOP, Op),
 	    l_write_quoted(File, Arg, Newp),
 	    file_put(File, CH_RPAREN)	    % )
 	;
-	    file_puttoken(File, 18, Op),
+	    file_puttoken(File, TK_PREOP, Op),
 	    l_write_quoted(File, Arg, Newp)
 	).
 
@@ -519,11 +519,11 @@ l_writeqpostop(File, Op, Term, Oldp, Curp, Newp) :-
 	(Curp > Oldp -> 
 	    file_put(File, CH_LPAREN),	% (
 	    l_write_quoted(File, Arg, Newp),
-	    file_puttoken(File, 20, Op),
+	    file_puttoken(File, TK_POSTOP, Op),
 	    file_put(File, CH_RPAREN)	% )
 	;   
 	    l_write_quoted(File, Arg, Newp),
-	    file_puttoken(File, 20, Op)
+	    file_puttoken(File, TK_POSTOP, Op)
 	).
 
 
@@ -572,7 +572,7 @@ l_write_canonical(File, []) :-
 	file_put(File, CH_RBRACKET).	% ]
 /**l_write_canonical(File, [X|Y]) :-
 	!,
-	file_puttoken(File, XSB_STRING, '''.''('),
+	file_puttoken(File, TK_ATOM, '''.''('),
 	l_write_canonical(File, X),
 	file_put(File, CH_COMMA),	% ','
 	l_write_canonical(File, Y),
@@ -585,7 +585,7 @@ l_write_canonical(File, [X|Y]) :- !,
 	file_put(File, CH_RBRACKET).
 l_write_canonical(File, Atom) :-
 	term_type(Atom, Type),
-	Type =:= XSB_STRING,
+	Type =:= TK_ATOM,
 	!,
 	file_writequoted(File, Atom).
 l_write_canonical(File, Term) :-	% functor(Term, Name, N)
@@ -649,7 +649,7 @@ l_write_canonical_lettervar(File, Var) :-
 	term_type(Var, Type),
 	Type =:= 0,
 	!,
-	file_puttoken(File, 0, Var).
+	file_puttoken(File, TK_PUNC, Var).
 l_write_canonical_lettervar(File, '$VAR'(N)) :- 
 	!,
 	l_writevar_lettervar(File, N).
@@ -659,7 +659,7 @@ l_write_canonical_lettervar(File, []) :-
 	file_put(File, 93).	% ']'
 l_write_canonical_lettervar(File, [X|Y]) :-
 	!,
-	file_puttoken(File, 5, '''.''('),
+	file_puttoken(File, TK_ATOM, '''.''('),
 	l_write_canonical_lettervar(File, X),
 	file_put(File, 44),		% ','
 	l_write_canonical_lettervar(File, Y),
@@ -704,7 +704,7 @@ l_writevar_lettervar(File, N) :-
 		file_put(File, ChrLetter),
 		Number is N // 26,
 		( Number =:= 0 -> true
-		; file_puttoken(File, 2, Number) 
+		; file_puttoken(File, TK_VAR, Number) 
 		)
 	; fail
 	).
