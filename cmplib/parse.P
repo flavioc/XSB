@@ -82,7 +82,8 @@ parse1(Modname, File, Module) :-
 	    %% Also, release the file descriptor used to read from cpp
 	    current_input_port(FromPort), file_close(FromPort),
 	    %% and reset xpp_on
-	    conset(xpp_on,0)
+	    conset(xpp_on,0),
+	    conset(xpp_dump,0)
 	),
 	multifile_query(Modname, Module),
 	('_$apply_arity'(_)
@@ -103,7 +104,7 @@ parse1(Modname, File, Module) :-
 %% and parse1 is restarted. Since xpp_on is now 1, the restart 
 %% process doesn''t repeat itself. -mk
 parse1(Modname, File, Module) :- 
-	%% If we are restarting due to cpp, then reset needs_restart.
+	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
 	parse1(Modname, File, Module).
 
@@ -120,7 +121,7 @@ open_or_xpp_file(File, XPP_process) :-
 
 xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	(xpp_program(XPP_command), !
-	;   make_gpp_command(XPP_command)
+	;   make_gpp_command(XPP_command,FileName)
 	),
 	fmt_write_string(FullXPP_command, '%s %s', args(XPP_command,FileName)),
 #ifdef DEBUG_GPP
@@ -140,7 +141,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	retractall(xpp_program(_)).
 
 
-make_gpp_command(GPP_command) :-
+make_gpp_command(GPP_command,FileName) :-
 	%% Construct the -Include directories
 	make_include_directive(Directive, '-I'),
 	slash(Slash),
@@ -150,9 +151,14 @@ make_gpp_command(GPP_command) :-
 			      '-I',InstallDir,Slash,
 			      '-I',InstallDir,Slash)),
 	xsb_configuration(config_bindir, Bindir),
+	(   conget(xpp_dump,1)
+	->  fmt_write_string(DumpDirective, ' -O %s_gpp ', arg(FileName))
+	;   DumpDirective = ' '
+	),
 	%% Construct the gpp command
-	fmt_write_string(GPP_command, '%s%sgpp -P -m -nostdinc -nocurinc %s -DXSB_PROLOG ',
-			 args(Bindir,Slash,IncludeDirs)).
+	fmt_write_string(GPP_command,
+			 '%s%sgpp %s -P -m -nostdinc -nocurinc %s -DXSB_PROLOG ',
+			 args(Bindir,Slash,DumpDirective,IncludeDirs)).
 
 %% Make an include directive out of the dirs in xpp_include_dir/1
 %% The dirs are supplied by applications that keep include files
@@ -187,9 +193,9 @@ parse_clauses(ModName, Module) :-
 	    %% stop parsing clauses, if needs_restart parsing
 	    (conget(needs_restart, 1) 
 	    -> (ModName = user
-	       ->  warning('Module "user" cannot be C preprocessed')
+	       ->  warning('Module "user" cannot be preprocessed')
 	       ;   ModName = xsb_configuration
-	       ->  warning('Module "xsb_configuration" cannot be C preprocessed')
+	       ->  warning('Module "xsb_configuration" cannot be preprocessed')
 	       ;   true
 	       )
 	    ; parse_clauses(ModName, Module)

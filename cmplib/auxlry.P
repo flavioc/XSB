@@ -80,6 +80,7 @@ setoptions1([Opt|Rest]) :-
 	 ->	setopt(Opt1,0)
 	 ;	setopt(Opt,1)
 	),
+	(conget(xpp_dump,1) -> conset(xpp_on,1); true),
 	%% cpp was off and now is on, hence we had compiler_options(xpp_on)
 	%% Restart!
 	(conget(migh_need_restart,1), conget(xpp_on,1)
@@ -119,6 +120,7 @@ current_option(reorder).
 
 /* preprocessor */
 current_option(xpp_on).
+current_option(xpp_dump).
 
 /* parse */
 current_option(quit_on_error).
