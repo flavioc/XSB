@@ -140,7 +140,7 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\title{\FLORA User's Manual}
+\title{\FLORA: User's Manual}
 
 \author{
   {Guizhen Yang
@@ -473,7 +473,7 @@ error is reported.
 \item {\tt flTrace/flNoTrace}:
     Turn on/off \FLORA trace.
 \item {\tt flChatter/flNoChatter}:
-    Turn on/off the display of the number of solutons at the end of query
+    Turn on/off the display of the number of solutions at the end of query
     evaluation.
 \item {\tt flEnd}:
     Say Ciao to \FLORA, stay in XSB.
@@ -497,7 +497,7 @@ rule delimiter (``.'') is encountered. If \FLORA shell seems to be hanging
 after the message
 \begin{quote}
 \begin{verbatim}
-++FLORA Warning: discarding tokens (rule delimeter `.' or EOF expected)
+++FLORA Warning: discarding tokens (rule delimiter `.' or EOF expected)
 \end{verbatim}
 \end{quote}
 %%
@@ -873,6 +873,7 @@ Escaped String &
 \end{table}
 
 \index{escaped character}
+%%
 \FLORA also recognizes escaped characters inside single quotes
 (\texttt{'}).  An escaped character normally begins with a backslash
 (\texttt{\bksl}).  Table~\ref{tab:tab-esc-str} lists the special escaped
@@ -985,7 +986,7 @@ infix operator, then {\tt X foo a} will be parsed as {\tt foo(X,a)} and if
 \index{operators!type}
 %
 Each operator has a \emph{precedence level}, which is a positive integer.
-Each operator also has a \emph{type}. The possible types for infix operatos
+Each operator also has a \emph{type}. The possible types for infix operators
 are: {\tt xfx}, {\tt xfy}, {\tt yfx}; the possible types for prefix
 operators are: {\tt fx}, {\tt fy}; and the possible types for postfix
 operators are: {\tt xf}, {\tt yf}. In each of these type expressions, {\tt
@@ -1268,14 +1269,16 @@ We discuss each of the aforesaid modularization methods in turn.
 \subsection{\FLORA Modules} \label{sec:flora-modules}
 
 \index{module}
+\index{module!name}
+\index{module!contents}
 %%
 A \emph{\FLORA module} is a programming abstraction that allows a large
 program to be split into separate libraries that can be reused in multiple
 ways in the same program. Formally, a module is a pair that consists of a
-\emph{name} and a \emph{contents}. The name is just an alphanumeric symbol,
-and the contents consists of the program code that is typically loaded from
-some file (but it can also be constructed dynamically by inserting
-facts\footnote{
+\emph{name} and a \emph{contents}. The name is just an alphanumeric symbol
+(the underscore, {\tt \_}, is also allowed), and the contents consists of
+the program code that is typically loaded from some file (but it can also
+be constructed dynamically by inserting facts\footnote{
   %%
   {\bf Unimplemented}: Dynamic insertion of rules will be implemented in
   the future.
@@ -1402,7 +1405,7 @@ The following rules apply when calling a literal defined in another module:
     \verb|foo(a) @ foomod, goo(b) @ goomod, hoo(c) @ foomod|
   \end{quote}
   
-\item The module specification propogates to any F-molecule appearing
+\item The module specification propagates to any F-molecule appearing
   in the argument of a predicate for which the module is
   specified. For example,
   \begin{quote}
@@ -1424,7 +1427,7 @@ The following rules apply when calling a literal defined in another module:
   \end{quote}
   %%
   {\tt goo/1} refers to the same functor both in module {\tt foomod} and in
-  the calling module. However, if the module is attched explicitly, as in
+  the calling module. However, if the module is attached explicitly, as in
   \begin{quote}
     \verb|?- foo(goo(a) @ goomod) @ foomod.|
   \end{quote}
@@ -1662,6 +1665,24 @@ loaded using the following call:
  ?- flModule({\it flora-module-name}).
 \end{quote}
 %%
+
+\subsection{Flora Service Libraries}
+
+\FLORA provides a special set of modules that are preloaded with useful
+utilities, such as prettyprinting or I/O. These modules have special
+syntax, {\tt @flora(modname)}, and cannot be loaded into by the user. For
+instance, to prettyprint all the attributes and methods of an object, the
+following method, defined in the special {\tt pp} module, can be used:
+%%
+\begin{quote}
+ \tt   ?- obj[\#pp\_self(foo)]@flora(pp).
+\end{quote}
+%%
+Here, the method {\tt \#pp\_self} is applied to the object {\tt obj}.
+Since {\tt obj} can have completely different methods in different modules,
+we have to tell the prettyprinting method which module to look at.  For
+more details on the existing \FLORA service libraries, see
+Section~\ref{sec-service-libs}.
 
 
 \subsection{Including Files into \FLORA Programs}
@@ -2101,7 +2122,7 @@ pretty straightforward and described in \cite{hilog-jlp}.
 In \FLORA any Id-term, including function symbols and predicate symbols,
 are considered to be HiLog terms and therefore are subject to translation.
 That is, even a normal Prolog term will by default be represented using the
-HiLog translaiton, e.g., {\tt foo(a)} will be represented as {\tt
+HiLog translation, e.g., {\tt foo(a)} will be represented as {\tt
   apply(foo,a)}. This guarantees that HiLog unification will work correctly
 at runtime. For instance, {\tt foo(a)} will unify with {\tt F(a)} and bind
 the variable {\tt F} to {\tt foo}.
@@ -2290,7 +2311,8 @@ do not need conversion because they work the same for Prolog and HiLog
 representations. On the other hand, most I/O predicates require conversion.
 In a future release, \FLORA will provide libraries of useful predicates and
 methods that do appropriate conversion without the user having to do
-this explicitly.
+this explicitly. One such library, {\tt io}, is described in
+Section~\ref{sec-service-libs}.
 
 
 \subsection{First-Order Predicates and HiLog Predicates}
@@ -2413,7 +2435,7 @@ equality \emph{explicitly} in the source program using the predicate {\tt
 \verb|john:=:batman.|
 \end{quote}
 
-Once oids are made equal, this fact may need to be propogate to all \fl
+Once oids are made equal, this fact may need to be propagate to all \fl
 structures, including the subclass hierarchy, the ISA hierarchy, etc.,
 depending on the application domain. Although equality is a powerful
 feature, its maintenance can slow the program down quite significantly.
@@ -2442,7 +2464,7 @@ To first directive, \mbox{\tt equality none}, does not maintain equality
 and {\tt :=:} is considered just like any other user-defined predicate
 without any special semantics.  The directive \mbox{\tt equality basic}
 guarantees that {\tt :=:} obeys the usual congruence rules for equality,
-i.e., transivity, reflexity, and symmetry, and substitution, but not the
+i.e., transitivity, reflexivity, and symmetry, and substitution, but not the
 special \fl equality rule for scalar methods. Finally, \mbox{\tt equality
   flogic} means that the full equality theory for \fl is in force.  In
 particular, programs with path expressions in the rule heads might require
@@ -2712,7 +2734,7 @@ where {\tt agg} represents the aggregate operator, {\tt X} is called the
 aggregation variable, {\tt Gs} is a list of comma-separated grouping
 variables, and {\it body} is a logical formula that specifies the
 query conditions. The grouping variables, {\tt Gs}, are optional. {\it body}
-can be any combinaiton of conjunction, disjunction, and negation of literals.
+can be any combination of conjunction, disjunction, and negation of literals.
 
 All the variables appearing in {\it body} but not in {\tt X} or {\tt Gs} are
 considered to be existentially quantified. Furthermore, the syntax of an
@@ -3017,7 +3039,7 @@ the first call), because XSB will simply look it up in a table.  Thus, if
 the predicate is intended to perform the side effect each time it is
 called, it will not operate correctly.
 
-Object-oriented programms often rely on methods that produce side effects
+Object-oriented programs often rely on methods that produce side effects
 or make updates.  In \FLORA we call such methods \emph{procedural}.
 Because by default \FLORA tables everything that looks like an F-molecule,
 these procedural methods are potentially subject to the aforesaid problem.
@@ -3303,7 +3325,7 @@ and end up deleting much of your data. These primitives are described
 below.
 %%
 \begin{enumerate}
-\item If there are serveral bindings or matches for the literals to be
+\item If there are several bindings or matches for the literals to be
   deleted, then {\tt delete} will choose only one of them
   nondeterministically, and delete it.  For instance, suppose the database
   contains the following facts:
@@ -3666,8 +3688,10 @@ only certain portions of the object structure.)
 \index{compiler directive!{\tt op}}
 %
 Like XSB compiler, \FLORA compiler can take compiler directives, which
-begin with {\tt :-} in contrast to {\tt ?-} for queries.  The following is
-a list of all the compiler directives supported by \FLORA:
+begin with {\tt :-} in contrast to {\tt ?-} for queries.  \FLORA requires
+that all directives appear at the top of the program prior to the first
+appearance of a rule or a fact.  The following is a list of all the supported
+compiler directives:
 %%
 \begin{itemize}
 \item {\tt expunge} {\em functor/arity}, ..., {\em functor/arity}
@@ -3716,7 +3740,7 @@ a list of all the compiler directives supported by \FLORA:
     {\it module}}
   \\
   Imports the given predicate from the specified XSB module.
-\item {\tt index({\it PredicateSpec,IndexSpec}}
+\item {\tt index({\it PredicateSpec,IndexSpec})}
   \\
   Specifies how the given first-order predicate must be indexed.
   {\em PredicateSpec} is of the form functor/arity. \emph{IndexSpec} is
@@ -3751,25 +3775,24 @@ a list of all the compiler directives supported by \FLORA:
 \end{itemize}
 
 
-\section{\FLORA Libraries}
+\section{\FLORA Service Libraries}\label{sec-service-libs}
 
 \FLORA provides a number of useful libraries that other programs can
 use. We describe the functionality of these libraries below.
 
-\paragraph{Pretty printing.}
-This library allows one to pretty print the information about an object or
-about all objects in a given class. This information can be saved in a file
-or printed on the screen. The library should be first loaded into some
-module, say
-%%
-\begin{quote}
- {\tt
-   ?- [flrprettyprint>pp].
-   }
-\end{quote}
-%%
-To pretty print information about an object, the following calls can be used.
-The first argument is the module name of the calling object.
+\subsection{Pretty Printing}
+
+This library provides methods for pretty printing the information about an
+object or about all objects in a given class. This information can be saved
+in a file or printed on the screen. This library is preloaded in the
+special module {\tt pp} and is accessible using the {\tt @flora(pp)}
+syntax.
+
+To pretty print information about an object, the following calls can be
+used.  The first argument is the module whose object is to be pretty
+printed. (Recall that the same object can have completely different sets of
+properties in different modules, so the pretty printing methods need to
+know which set of properties to use.)
 %%
 \begin{itemize}
   \item  {\tt Class[\#pp\_class(Module,Outfile)]} --- pretty print all
@@ -3788,12 +3811,119 @@ The following example illustrates the use of this library:
 %%
 \begin{quote}
  {\tt
-   ?- flThisModule(M), john[\#pp\_self(M)].
+   ?- flThisModule(M), john[\#pp\_self(M)]@flora(pp).
    }
 \end{quote}
 %%
 
-\paragraph{Input and output.}
+\subsection{Input and Output}
+
+This library simplifies the access to the most common XSB I/O facilities.
+This library is preloaded into the special service module {\tt io} and
+can be accessed using the {\tt @flora(io)} syntax.
+
+The purpose of the I/O library is not to replace the standard I/O predicates
+with \FLORA methods, but rather to relieve the user from the need to do
+explicit conversion of arguments between the HiLog representation of terms
+used in \FLORA and the standard Prolog representation used in XSB.\footnote{
+  %%
+  See Section~\ref{sec:hilog} for a discussion of the problems associated
+  with this representation mismatch.
+  %%
+  }
+%%
+\index{I/O!stream-based}
+\index{I/O!port-based}
+%%
+However, for uniformity, the {\tt io} library also provides certain methods
+that do not suffer from the conversion problem.
+
+The library contains two types of I/O operations: \emph{stream-based I/O}
+and \emph{port-based}.  Stream-based I/O is based on the standard Prolog
+I/O primitives. It uses symbols as file handles. Port-based I/O is specific
+to XSB. Its file handles are internally represented as numbers. Although
+stream-based I/O is often easier to use, there are many more port-based
+primitives that can accomplish various low-level I/O operations. This
+\FLORA library provides just a few common ones. See the XSB manual, volume
+2, for a complete list of these primitives.
+
+The methods and predicates accessible through the {\tt io} library are
+listed below.  Note that some operations are defined as procedural methods
+and others as predicates. This is because we use the object-oriented
+representation only where it makes sense --- we avoid introducing
+additional classes and objects that require more typing just for the sake
+of keeping the syntax object-oriented.
+
+\paragraph{Stream-based I/O.}
+%%
+\begin{itemize}
+\item  {\tt Filename[\#see]} --- open {\tt Filename} and make it into the
+  current input stream.
+\item {\tt seeing(Stream)} --- binds {\tt Stream} to the current input
+  stream.
+\item {\tt seen} --- closes the current input stream.
+\item {\tt Filename[\#tell]} --- opens {\tt Filename} as the current output
+  stream.
+\item {\tt telling(Stream)} --- binds {\tt Stream} to the current output
+  stream. 
+\item {\tt told} --- closes the current output stream.
+\item {\tt write(Obj)} --- writes {\tt Obj} to the current output stream.
+\item Stream[\#write(Obj)] --- writes {\tt Obj} to the stream {\tt Stream}.
+\item {\tt writeln(Obj)}, {\tt Stream[\#writeln(Obj)]} --- same as above,
+  except that the newline character is output after {\tt Obj}.
+\item {\tt nl} --- writes the newline character to the current output
+  stream.
+\item {\tt read(Result)} --- binds {\tt Result} to the next term in the
+  current input stream.
+\item {\tt Stream[\#read(Result)]} --- same as above, but use {\tt Stream}
+  as the input stream.
+\end{itemize}
+%%
+
+\paragraph{Port-based I/O.}
+%%
+\begin{itemize}
+\item  {\tt Filename[\#open(Mode,Port)]} --- opens {\tt Filename} with mode
+  {\tt Mode} (which can be {\tt r}, {\tt w}, or {\tt a}) and binds {\tt
+  Port} to the file handle.
+\item {\tt Port[\#close]} --- closes the file handle to which {\tt Port} is
+  bound.
+\item {\tt Port[\#read(Result)]} --- bind {\tt Result} to the next term
+  in the previously open input {\tt Port}.
+\item {\tt stdread(Result)} --- same, but use the standard input as the port.
+\item {\tt Port[\#write(Result)]} --- write {\tt Result} out to the
+  previously open output {\tt Port}.
+\item {\tt stdwrite(Result)} --- same, but use standard output as the port.
+\item {\tt fmt\_write(Format,Term)} --- C-style formatted output to the
+  standard output. See the XSB manual, volume 2, for the description of all
+  the options.
+\item {\tt Port[\#fmt\_write(Format,O)]} --- same, but use {\tt Port} for the
+  output. 
+\item {\tt fmt\_write\_string(String,Format,Obj} --- same as above, but bind
+  {\tt String} to the result. See the XSB manual for the details.
+\item {\tt fmt\_read(Format,Result,Status)} --- C-style formatted read from
+  standard input. See the XSB manual.
+\item {\tt Port[\#fmt\_read(Format,Result,Status)]}  ---  same, but use {\tt
+    Port} for input.
+\item {\tt write\_canonical(Term)} --- write {\tt Term} to standard output
+  in canonic Prolog form.
+\item {\tt Port[\#write\_canonical(Term)]} --- same, but use {\tt Port} for
+  output.
+\item {\tt read\_canonical(Term)} --- read standard input and bind {\tt
+    Term} to the next term in the input. The term \emph{must} be in
+  canonical Prolog form, or else an error will result. This method is much
+  faster than the usual {\tt read} operation, but it is not as versatile,
+  as it assumes that input is in canonical form.
+\item {\tt Port[\#read\_canonical(Term)]} --- same, but use {\tt Port} for
+  input.
+\item {\tt readline(Type,String)} --- read the standard input and bind
+  {\tt String} to the next line. {\tt Type} is either {\tt atom} or
+  {\tt charlist}. The former means that {\tt String} is to be bound to a
+  Prolog atom and the latter binds it to a list of characters.
+\item {\tt Port[\#readline(Type,String)]} --- same, but use {\tt Port} for
+  input.
+\end{itemize}
+%%
 
 
 \section{\FLORA Debugger}
@@ -3838,7 +3968,7 @@ common ones are listed below. See the XSB manual for more.
     program
 \end{itemize}
 %%
-The behavior of the debugger is controled by the predicate {\tt
+The behavior of the debugger is controlled by the predicate {\tt
   debug\_ctl}. For instance, executing {\tt debug\_ctl(profile, on)} at the
 \FLORA prompt tells XSB to measure the CPU time it takes to execute each
 call. This is useful for tuning your program for performance. Other useful
@@ -3859,7 +3989,7 @@ highlighting, automatic indentation, and the ability to run \FLORA programs
 right out of the Emacs buffer.
 
 
-\subsection{Instalation}
+\subsection{Installation}
 
 
 To install \emph{flora-mode}, you must perform the following steps. Put the
@@ -4344,7 +4474,7 @@ program that can run under the control of the XWAM abstract machine, which
 is part of the XSB system.
 
 %%
-\begin{figure}
+\begin{figure}[bt]
   \begin{center}
     \includegraphics[width=5.5in]{architecture}
   \end{center}
