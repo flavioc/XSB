@@ -107,7 +107,6 @@ load(File) :-
 	consult(Module,[optimize,auto_table,spec_repr]).
 
 
-
 %%% gen_code(+InFile, +Force): generate code for InFile
 %%% If Force=force, then force compilation, even if the .P file is newer
 gen_code(InFile, Force) :-
