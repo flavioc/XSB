@@ -378,7 +378,7 @@ static void record_de_usage(DL dl)
  * Function do_delay_stuff() is called in the SLG instruction
  * `new_answer_dealloc', when an answer (new or not) is returned for the
  * current call.  Here, `as_leaf' is the leaf node of the answer trie
- * (TrieRetPtr, the return value of variant_trie_search), `subgoal' is
+ * (TrieRetPtr, the return value of variant_answer_search), `subgoal' is
  * the subgoal frame of the current call, and `sf_exists' tells whether
  * this answer is new or not.
  *
