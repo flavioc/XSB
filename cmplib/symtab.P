@@ -479,3 +479,12 @@ tree_listify(T,L0,L) :-
 		 ;	L0 = [T|L]
 		).
 
+/* The following is extremely DIRTY and should be used very very	*/
+/* cautiously!.  For the moment it is only used when the symbol that	*/
+/* was inserted into the symbol table may be retracted and the count    */
+/* of the symbols has to remain the same.	        		*/
+
+backtrackable_buff_set_word(Buff, Bytes, NewValue, _) :- 
+	buff_set_word(Buff, Bytes, NewValue). 
+backtrackable_buff_set_word(Buff, Bytes, _, OldValue) :- 
+	buff_set_word(Buff, Bytes, OldValue), fail.

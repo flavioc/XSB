@@ -27,8 +27,8 @@
 :- export sym_name/3, sym_offset/2, sym_propin/2, sym_prop/2,
 	  extract_symlist/3, sym_empty/1, sym_env/2, sym_category/2, 
 	  sym_type/2, sym_insert/5, sym_scan/3, sym_gen/2, 
-	  sym_count/2, sort_by_index/2, sym_complete/1,
-	  sym_index/2, sym_pass_thru/1, typ_prop/1, env_prop/1, dispose_symtab/1.
+	  sym_count/2, sort_by_index/2, sym_complete/1, sym_index/2,
+	  sym_pass_thru/1, typ_prop/1, env_prop/1, dispose_symtab/1.
 :- export add_new_clause/2, clause_listify/2.
 
 :- import 'table #'/0 from compile.
@@ -37,7 +37,7 @@
 :- import membercheck/2, member2/2, closetail/1 from listutil.
 :- import append/3, member/2, ll_arg/3, conget/2, conset/2 from prof_sbp.
 :- import buff_alloc/2, buff_word/3, buff_set_word/3, term_hash/3,
-	  backtrackable_buff_set_word/4, buff_dealloc/3 
+	  buff_dealloc/3 
      from machine.
 :- import copy_term/2 from basics.
 
