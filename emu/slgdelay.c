@@ -475,10 +475,9 @@ static bool remove_de_from_dl(DE de, DL dl)
   }
   if (prev_de == NULL)		/* to remove the first DE */
     dl_de_list(dl) = de_next(current);
-  else {
+  else
     de_next(prev_de) = de_next(current);
-    release_entry(current, released_des, de_next);
-  }
+  release_entry(current, released_des, de_next);
   return (NULL != dl_de_list(dl));
 }
 
