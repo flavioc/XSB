@@ -44,6 +44,7 @@
 #include "macro_xsb.h"
 #include "error_xsb.h"
 #include "flags_xsb.h"
+#include "tst_utils.h"
 
 
 #include "sub_tables_xsb_i.h"
@@ -174,6 +175,28 @@ BTNptr table_answer_search(VariantSF producer, int size, int attv_num,
       ALNptr newALN;
       New_ALN(newALN,answer,NULL);
       SF_AppendNewAnswer(producer,newALN);
+    }
+    /*
+     * Conditional answers could result via dependence upon variant
+     * subgoals which produce/consume conditional answers.
+     */
+    if ( IsNonNULL(delayreg) ) {
+      fprintf(stdwarn, "\n++Warning: Derivation of conditional answer for "
+	               "subsumptive subgoal ");
+      sfPrintGoal(stdwarn, producer, NO);
+      fprintf(stdwarn, "\n");
+      if ( *is_new ) {
+	fprintf(stderr, "++Error: The answer is new: ");
+	printTriePath(stderr, answer, NO);
+	fprintf(stderr, "\n");
+	xsb_abort("Unsupported table operation: conditional-answer insertion");
+      }
+      else {
+	fprintf(stdwarn, "++Warning: Answer is subsumed by: ");
+	printTriePath(stdwarn, answer, NO);
+	fprintf(stdwarn, "\n++Warning: Answer is rejected as redundant.  "
+		         "Continuing...\n");
+      }
     }
   }
   else {
