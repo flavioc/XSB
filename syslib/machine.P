@@ -112,8 +112,6 @@ tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(67).
 is_absolute_filename(_FileName) :- '_$builtin'(68).
 parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(69).
 
-buff_assign_word(_Buffer, _Disp, _Value) :- '_$builtin'(96).
-
 psc_env(_PSC, _Env) :- '_$builtin'(100).
 psc_spy(_PSC, _Spy) :- '_$builtin'(101).
 psc_tabled(_PSC, _Tabled) :- '_$builtin'(102).

@@ -99,7 +99,6 @@
 	fast_ground/1,
         file_pos/2,
         intern_string/2,
-	buff_assign_word/3,
  	psc_env/2, 
 	psc_spy/2, 
 	psc_tabled/2, 
