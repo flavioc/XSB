@@ -25,12 +25,12 @@
 */
 
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod]).
 
 
 :- import assert/1, retract/1 from assert.
 
-:- import consult/1 from consult.
+:- import consult/1, '.'/2  from consult.
 
 :- import
 	bootstrap_package/2,
@@ -52,7 +52,11 @@
 
 :- import slash/1 from machine.
 
-:- import assert/1 from assert.
+:- import (dynamic)/1, assert/1 from assert.
+
+:- import abort/1, (index)/2, op/3 from standard.
+
+:- import notrace/0 from debugger.
 
 :- import conget/2, conset/2 from gensym.
 
@@ -76,13 +80,15 @@ bootstrap_flora :-
 	assert(package_configuration(version(flora),'0.80 of April, 2001')),
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
-	fmt_write_string(FloraFlrIncludesDir,"%s%sflrincludes",args(FloraDir,S)),
+	fmt_write_string(FloraFlrIncludesDir,
+			 '%s%sflrincludes',args(FloraDir,S)),
 	assert(xpp_include_dir(FloraFlrIncludesDir)),
-	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
+	fmt_write_string(FloraClosureDir,'%s%sclosure',args(FloraDir,S)),
 	assert(xpp_include_dir(FloraClosureDir)),
-	fmt_write_string(FloraIncludesDir,"%s%sincludes",args(FloraDir,S)),
+	fmt_write_string(FloraIncludesDir,'%s%sincludes',args(FloraDir,S)),
 	assert(xpp_include_dir(FloraIncludesDir)),
-	fmt_write_string(FloraGenIncludesDir,"%s%sgenincludes",args(FloraDir,S)),
+	fmt_write_string(FloraGenIncludesDir,
+			 '%s%sgenincludes',args(FloraDir,S)),
 	assert(xpp_include_dir(FloraGenIncludesDir)),
 	[p2h_config].
 
@@ -124,22 +130,22 @@ flora_shell :-
   Flora import stuff
 
   Syntax:
-      :- flImport [hilog|prolog|predicate] Pred/Arity as Pred1(_,_,...)
+      :- flImport [flHilog|flProlog|flPredicate] Pred/Arity as Pred1(_,_,...)
                                 from File[.flr]>>FloraModule
 ************************************************************************/
 
-:- op(1150,fx,(prolog)).
-:- op(1150,fx,(predicate)).
+:- op(1150,fx,(flProlog)).
+:- op(1150,fx,(flPredicate)).
+:- op(1150,fx,(flHilog)).
 
 :- op(500,yfx,(as)).
 :- op(1170,fx,(flImport)).
-%% The other operators, 'hilog', '>>', and 'from' are already defined in XSB
+%% The other operators, '>>' and 'from' are already defined in XSB
 
-flImport(hilog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+flImport(flHilog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
 	flImportHiLog(What,AsWhat,File,Module).
-flImport(prolog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+flImport(flProlog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
 	flImportProlog(What,AsWhat,File,Module).
-flImport(predicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+flImport(flPredicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
 	flImportFloraPred(What,AsWhat,File,Module).
-flImport(X) :-
-	abort(['Invalid flImport syntax: ', X]).
+flImport(X) :- abort(['Invalid flImport syntax: ', X]).

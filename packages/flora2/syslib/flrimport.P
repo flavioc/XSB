@@ -61,7 +61,7 @@ funish_up(NewA,NewP,File,Module) :-
 %% Make bar(...) dynamic and place it
 %% into the correct XSB module (the module where flImport is called)
 %% Use:
-%%        :- flImport hilog/prolog/predicate P as A from File>>Module.
+%%        :- flImport flHilog/flProlog/flPredicate P as A from File>>Module.
 
 %% This assumes that P is a Flora predicate
 flImportFloraPred(P,A,File,Module) :-
