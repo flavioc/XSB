@@ -1516,14 +1516,6 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
     *result=result1<result2;
     return 1;
   }
-  
-  if (SpliceInfix(buf,pos1,pos2,"-",&spl1,&spl2))
-    if (spl1!=pos1) {
-      if (!DoArithmEval(buf,pos1,spl1,&result1)||
-          !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-      *result=result1-result2;
-      return 1;
-    }
 
   if (SpliceInfix(buf,pos1,pos2,"+",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
@@ -1532,11 +1524,18 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
     return 1;
   }
   
-  if (SpliceInfix(buf,pos1,pos2,"%",&spl1,&spl2)) {
+  if (SpliceInfix(buf,pos1,pos2,"-",&spl1,&spl2))
+    if (spl1!=pos1) {
+      if (!DoArithmEval(buf,pos1,spl1,&result1)||
+          !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
+      *result=result1-result2;
+      return 1;
+    }
+  
+  if (SpliceInfix(buf,pos1,pos2,"*",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
         !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-    if (result2==0) bug("Division by zero in expression");
-    *result=result1%result2;
+    *result=result1*result2;
     return 1;
   }
 
@@ -1548,10 +1547,11 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
     return 1;
   }
   
-  if (SpliceInfix(buf,pos1,pos2,"*",&spl1,&spl2)) {
+  if (SpliceInfix(buf,pos1,pos2,"%",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
         !DoArithmEval(buf,spl2,pos2,&result2)) return 0;
-    *result=result1*result2;
+    if (result2==0) bug("Division by zero in expression");
+    *result=result1%result2;
     return 1;
   }
 
@@ -2357,12 +2357,9 @@ void ParseText()
   if (ParsePossibleUser()>=0) return;
   
   l=1;
-  /* MK: changed this If-statement. Check with Denis
-     if (matchSequence(S->User.mArgRef,&l)) {
-  */
   /* If matching numbered macro argument and inside a macro */
   if (matchSequence(S->User.mArgRef,&l) && C->ambience==FLAG_META) {
-    /* Process macro argument referenced as #1,#2,... */
+    /* Process macro arguments referenced as #1,#2,... */
     c=getChar(l);
     if ((c>='1')&&(c<='9')) {
       c=c-'1';
