@@ -86,10 +86,6 @@ str_substring(String, Loc, Len, SubString) :-
 	intern_string(Buff, SubString),
 	buff_dealloc(Buff, BufSize, 0).
 
-sublist([], _).
-sublist([C|S], [C|L]) :- sublist(S,L).
-sublist(S, [_|L]) :- sublist(S,L).
-
 str_ncopy(_, _, _, _, 0).
 str_ncopy(Source, SDisp, Dest, DDisp, Len) :- Len > 0,
 	buff_byte(Source, SDisp, Char),
