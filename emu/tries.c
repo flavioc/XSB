@@ -1267,7 +1267,8 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
 	 * the new substitution factor may contain FREE variables if we
 	 * don't point the local variables to heap here.
 	 */
-	if (ls_top <= call_arg && call_arg <= ls_bot) {
+	if (top_of_localstk <= call_arg &&
+	    call_arg <= (CPtr) glstack.high - 1) {
 	  bld_free(hreg);
 	  bind_ref(call_arg, hreg);
 	  call_arg = hreg++;
