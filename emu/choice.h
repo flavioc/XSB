@@ -44,6 +44,7 @@ typedef struct choice_point {
     CPtr ereg;		/* current top of stack */
     CPtr prev;		/* dynamic link */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
+    CPtr ptcp;          /* pointer to parent tabled CP (subgoal) */
 } *Choice;
 
 #define CP_SIZE	(sizeof(struct choice_point)/sizeof(CPtr))
@@ -56,9 +57,11 @@ typedef struct choice_point {
 #define cp_ereg(b)		((Choice)(b))->ereg
 #define cp_prevbreg(b)		((Choice)(b))->prev
 #define cp_pdreg(b)		((Choice)(b))->pdreg
+#define cp_ptcp(b)              ((Choice)(b))->ptcp
 
 #define save_choicepoint(t_breg, t_ereg, next_clause, prev) \
     t_breg -= CP_SIZE; \
+    cp_ptcp(t_breg) = ptcpreg; \
     cp_pdreg(t_breg) = delayreg; \
     cp_prevbreg(t_breg) = prev; \
     cp_ereg(t_breg) = t_ereg; \

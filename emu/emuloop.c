@@ -1272,6 +1272,7 @@ restore_sub:
 
   tbreg = breg;
   switch_envs(tbreg);
+  ptcpreg = cp_ptcp(tbreg);
   delayreg = cp_pdreg(tbreg);
   restore_some_wamregs(tbreg, ereg);
   restore_registers(tbreg, (int)op1, i, rreg);
