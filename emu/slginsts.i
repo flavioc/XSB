@@ -118,7 +118,7 @@ case tabletrysingle: {
   CallLookupResults lookupResults;
   SGFrame producer_sf, consumer_sf;
   CPtr answer_template;
-  int template_size, attv_num;
+  int template_size, attv_num, tmp;
 
   xwammode = 1;
   CallInfo_Arguments(callInfo) = reg + 1;
@@ -190,8 +190,21 @@ case tabletrysingle: {
       print_subgoal(stddbg, producer_sf);
       fprintf(stddbg, "\n");
 #endif
-      template_size = int_val(cell(answer_template));
+      tmp = int_val(cell(answer_template));
+      get_var_and_attv_nums(template_size, attv_num, tmp);
       num_vars_in_var_regs = -1;
+
+      /* Initialize var_regs[] as the attvs in the call. */
+      if (attv_num > 0) {
+	CPtr cptr;
+	for (cptr = answer_template + template_size;
+	     cptr > answer_template; cptr--) {
+	  if (isattv(cell(cptr)))
+	    var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
+	}
+	/* now num_vars_in_var_regs should be CallNumAttv - 1 */
+      }
+
       reg_arrayptr = reg_array-1;
       for (i = 1; i <= template_size; i++) {
 	pushreg(cell(answer_template+i));
@@ -454,7 +467,7 @@ case answer_return: {
 case new_answer_dealloc: {
 
   CPtr producer_cpf, producer_csf, answer_template;
-  int template_size;
+  int template_size, attv_num, tmp;
   SGFrame producer_sf;
   bool isNewAnswer = FALSE;
   BTNptr answer_leaf;
@@ -489,11 +502,13 @@ case new_answer_dealloc: {
 
 #ifdef CHAT
   /* answer template is now in the heap for generators */
-  template_size = int_val(cell(compl_hreg(producer_csf)));
+  tmp = int_val(cell(compl_hreg(producer_csf)));
+  get_var_and_attv_nums(template_size, attv_num, tmp);
   answer_template = compl_hreg(producer_csf)-1;
 #else
   answer_template = producer_cpf + TCP_SIZE + (Cell) ARITY;
-  template_size = int_val(*answer_template);
+  tmp = int_val(*answer_template);
+  get_var_and_attv_nums(template_size, attv_num, tmp);
   answer_template += template_size;
 #endif
 
@@ -525,7 +540,7 @@ case new_answer_dealloc: {
   }
 #endif
 
-  answer_leaf = table_answer_search( producer_sf, template_size,
+  answer_leaf = table_answer_search( producer_sf, template_size, attv_num,
 				     answer_template, &isNewAnswer );
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */

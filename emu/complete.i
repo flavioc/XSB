@@ -66,7 +66,7 @@ case check_complete: {
     }
     else { /* This code mimics the answer_return code */
       CPtr answer_template;
-      Cell template_size, attv_num;
+      int template_size, attv_num;
       ALNptr answer_set;
       BTNptr answer_leaf;
 
@@ -272,7 +272,7 @@ case check_complete: {
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
 
 	CPtr answer_template;
-	Cell template_size;
+	int template_size, attv_num, tmp;
 
 	reclaim_incomplete_table_structs(subgoal);
 	/* so that answers will be returned right after the neg susps
@@ -309,17 +309,20 @@ case check_complete: {
 	openreg = prev_compl_frame(cs_ptr);
 	reclaim_stacks(orig_breg);
 #ifdef CHAT
-	template_size = int_val(cell(compl_hreg(cs_ptr)));
+	tmp = int_val(cell(compl_hreg(cs_ptr)));
+	get_var_and_attv_nums(template_size, attv_num, tmp);
 	answer_template = compl_hreg(cs_ptr) - template_size;
 #else
 	ARITY = tcp_arity(orig_breg);
 	answer_template = orig_breg + TCP_SIZE + (Cell)ARITY;
-	template_size = int_val(cell(answer_template));
+	tmp = int_val(cell(answer_template));
+	get_var_and_attv_nums(template_size, attv_num, tmp);
 	answer_template++;
 #endif
 	/* `answer_template' points to the mth term */
 	{
 	  int  ii;
+	  reg_arrayptr = reg_array-1;
 	  for (ii=0; ii<template_size; ii++) {
 	    CPtr cptr = answer_template;
 	    pushreg(*cptr);
@@ -327,6 +330,18 @@ case check_complete: {
 	  }
 	}
 	num_vars_in_var_regs = -1;
+
+	/* Initialize var_regs[] as the attvs in the call. */
+	if (attv_num > 0) {
+	  CPtr cptr;
+	  for (cptr = answer_template + template_size - 1;
+	       cptr >= answer_template; cptr--) {
+	    if (isattv(cell(cptr)))
+	      var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
+	  }
+	  /* now num_vars_in_var_regs should be CallNumAttv - 1 */
+	}
+
 	lpcreg = (byte *)subg_ans_root_ptr(subgoal);
 	/* backtrack to prev tabled subgoal after returning answers */
 	breg = tcp_prevbreg(orig_breg); /* orig_???*/ 

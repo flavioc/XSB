@@ -117,8 +117,8 @@ void table_call_search(TabledCallInfo *call_info, CallLookupResults *results) {
  * Template is a pointer to the first term in the vector, with the
  * elements arranged from high to low memory.
  */
-BTNptr table_answer_search(SGFrame producer, int size, CPtr template,
-			   bool *is_new) {
+BTNptr table_answer_search(SGFrame producer, int size, int attv_num,
+			   CPtr template, bool *is_new) {
 
   BTNptr answer;
 
@@ -147,7 +147,7 @@ BTNptr table_answer_search(SGFrame producer, int size, CPtr template,
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */
 
-    answer = variant_answer_search(size,template,producer,&wasFound);
+    answer = variant_answer_search(size,template,attv_num,producer,&wasFound);
 
 #ifdef DEBUG_DELAYVAR
 #ifndef IGNORE_DELAYVAR
