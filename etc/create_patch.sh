@@ -1,2 +1,2 @@
 #!/bin/sh
-cvs diff -u -b -B 
+cvs diff -u -b -B $@
