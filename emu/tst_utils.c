@@ -303,25 +303,29 @@ void printTriePath(FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
     fprintf(fp, "Leaf %p: ", pLeaf);
 
   if ( IsEscapeNode(pLeaf) ) {
-    fprintf(fp, "ESCAPE node");
+    pRoot = BTN_Parent(pLeaf);
+    if ( IsNonNULL(pRoot) )
+      printTrieSymbol(fp, BTN_Symbol(pRoot));
+    else
+      fprintf(fp, "ESCAPE node");
+    return;
+  }
+
+  SymbolStack_ResetTOS;
+  SymbolStack_PushPathRoot(pLeaf,pRoot);
+  if ( IsTrieFunctor(BTN_Symbol(pRoot)) ) {
+    SymbolStack_Push(BTN_Symbol(pRoot));
+    symstkPrintNextTerm(fp,FALSE);
   }
   else {
-    SymbolStack_ResetTOS;
-    SymbolStack_PushPathRoot(pLeaf,pRoot);
-    if ( IsTrieFunctor(BTN_Symbol(pRoot)) ) {
-      SymbolStack_Push(BTN_Symbol(pRoot));
+    printTrieSymbol(fp,BTN_Symbol(pRoot));
+    fprintf(fp, "(");
+    symstkPrintNextTerm(fp,FALSE);
+    while ( ! SymbolStack_IsEmpty ) {
+      fprintf(fp, ",");
       symstkPrintNextTerm(fp,FALSE);
     }
-    else {
-      printTrieSymbol(fp,BTN_Symbol(pRoot));
-      fprintf(fp, "(");
-      symstkPrintNextTerm(fp,FALSE);
-      while ( ! SymbolStack_IsEmpty ) {
-	fprintf(fp, ",");
-	symstkPrintNextTerm(fp,FALSE);
-      }
-      fprintf(fp, ")");
-    }
+    fprintf(fp, ")");
   }
 }
 
@@ -365,9 +369,6 @@ void printAnswerTemplate(FILE *fp, CPtr pAnsTmplt, int size) {
    ------------------------------- */
 void sfPrintGoal(FILE *fp, VariantSF pSF, xsbBool printAddr) {
 
-  Psc pPSC;
-
-  pPSC = TIF_PSC(subg_tif_ptr(pSF));
   if ( printAddr )
     fprintf(fp, "SF %p  ", pSF);
   printTriePath(fp, subg_leaf_ptr(pSF), NO);
