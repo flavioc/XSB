@@ -331,7 +331,8 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
 		in_func, where);
     }
     head_val = int_val(list_head);
-    if (head_val < 0 || head_val > 255) {
+    /* ' ' is the lowest printable ascii and '~' is the highest */
+    if (head_val < (int)' ' || head_val > (int)'~') {
       xsb_abort("[%s] A Prolog string (a character list) expected, %s",
 		in_func, where);
     }
