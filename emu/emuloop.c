@@ -804,6 +804,7 @@ contcase:     /* the main loop */
     Def1op
     Op1(get_xxa);
     restore_type = 1;
+    handle_xsb_profile_interrupt;
     ADVANCE_PC(size_xxx);
     RESTORE_SUB
   XSB_End_Instr()
@@ -838,6 +839,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(trust,_trust) /* PPA-L */
     Def1op
     Op1(get_xxa);
+    handle_xsb_profile_interrupt;
     lpcreg = *(pb *)(lpcreg+sizeof(Cell));
     restore_type = 1;
     RESTORE_SUB
@@ -1100,6 +1102,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(trustmeorelsefail,_trustmeorelsefail) /* PPA */
     Def1op
     Op1(0);
+    handle_xsb_profile_interrupt;
     ADVANCE_PC(size_xxx);
     cpreg = lpcreg+sizeof(Cell);
     restore_type = 1;
@@ -1109,6 +1112,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(dyntrustmeelsefail,_dyntrustmeelsefail) /* PPA-L, second word ignored */
     Def1op
     Op1(get_xxa);
+    handle_xsb_profile_interrupt;
     ADVANCE_PC(size_xxxX);
     restore_type = 1;
     RESTORE_SUB
