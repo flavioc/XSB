@@ -32,10 +32,12 @@
 
 
 :- import file_write/2 from xsb_writ.
+:- import concat_atom/2 from string.
 
 :- export
 	flora_stderr_write/1,
 	flora_stdfdbk_write/1,
+	flora_write_string/2,
 	flora_write/2.
 
 
@@ -44,63 +46,82 @@ flora_stderr_write(X) :- flora_write(STDERR,X).
 flora_stdfdbk_write(X) :- flora_write(STDFDBK,X).
 
 
+
 /********************************************************************/
-flora_write(IOPort,X) :-
+%% Write Flora term to I/O port
+flora_write(IOPort,X) :- flora_write_string(X,Str), file_write(IOPort, Str).
+
+%% Write Flora term to string
+flora_write_string(X,Str) :-
+	flora_write_string1(X, AtomList, Tail), Tail = [],
+	concat_atom(AtomList,Str).
+
+flora_write_string1(X, Tail, NewTail) :-
 	var(X),
 	!,
-	file_write(IOPort,X).
+	fmt_write_string(Xatom,'%S',arg(X)),
+	Tail = [Xatom | NewTail].
 
-flora_write(IOPort,X) :-
+flora_write_string1(X, Tail, NewTail) :-
 	atomic(X),
 	!,
-	file_write(IOPort,X).
+	%% Note: atom_codes won't do here because X can be an atom or a number
+	Tail = [X | NewTail].
 
-flora_write(IOPort,[]) :-
+flora_write_string1([], Tail, NewTail) :- 
+	Tail = ['[]' | NewTail].
+
+flora_write_string1([H|T], Tail, NewTail) :-
 	!,
-	file_write(IOPort,[]).
+	Tail = ['[' | NewTail1],
+	flora_write_args([H|T], NewTail1 , NewTail2),
+	NewTail2 = [']' | NewTail].
 
-flora_write(IOPort,[H|T]) :-
-	!,
-	file_write(IOPort,'['),
-	flora_write_args(IOPort,[H|T]),
-	file_write(IOPort,']').
-
-flora_write(IOPort,X) :-
+flora_write_string1(X,Tail, NewTail) :-
 	X =.. [WRAP_HILOG,Funct|Args],
 	!,
-	flora_write(IOPort,Funct),
-	file_write(IOPort,'('),
-	flora_write_args(IOPort,Args),
-	file_write(IOPort,')').
+	flora_write_string1(Funct,Tail,NewTail1),
+	NewTail1 = ['(' | NewTail2],
+	flora_write_args(Args,NewTail2,NewTail3),
+	NewTail3 = [')'| NewTail].
 
-flora_write(IOPort,WRAP_FDSKOLEM(O1,O2)) :-
+flora_write_string1(WRAP_FDSKOLEM(O1,O2),Tail, NewTail) :-
 	!,
-	flora_write(IOPort,O1),
-	file_write(IOPort,'.'),
-	flora_write(IOPort,O2).
+	flora_write_string1(O1,Tail,NewTail1),
+	NewTail1 = ['.' | NewTail2],
+	flora_write_string1(O2,NewTail2,NewTail).
 
-flora_write(IOPort,WRAP_IFDSKOLEM(O1,O2)) :-
+flora_write_string1(WRAP_IFDSKOLEM(O1,O2),Tail,NewTail) :-
 	!,
-	flora_write(IOPort,O1),
-	file_write(IOPort,'!'),
-	flora_write(IOPort,O2).
+	flora_write_string1(O1,Tail,NewTail1),
+	NewTail1 = ['!' | NewTail2],
+	flora_write_string1(O2,NewTail2,NewTail).
 
-flora_write(IOPort,X) :-
+flora_write_string1(X,Tail,NewTail) :-
 	X =.. [Funct|Args],
 	!,
-	file_write(IOPort,Funct),
-	file_write(IOPort,'('),
-	flora_write_args(IOPort,Args),
-	file_write(IOPort,')').
+	Tail = [Funct, '(' | NewTail1],
+	flora_write_args(Args,NewTail1,NewTail2),
+	NewTail2 = [')' | NewTail].
 
 
-flora_write_args(_IOPort,[]) :- !.
+flora_write_args([],_Tail,_NewTail) :- !.
 
-flora_write_args(IOPort,[X]) :-
+%% This catches lists [X|Y] where Y is a var.
+%% Otherwise it might unify with [X] in the next clause.
+flora_write_args([X|Y],Tail,NewTail) :-
+	var(Y),
+	!,
+	flora_write_string1(X,Tail,NewTail1),
+	NewTail1 = ['|' | NewTail2],
+	flora_write_string1(Y,NewTail2,NewTail).
+
+flora_write_args([X],Tail,NewTail) :-
         !,
-        flora_write(IOPort,X).
+        flora_write_string1(X,Tail,NewTail).
 
-flora_write_args(IOPort,[X1,X2|Xs]) :-
-        flora_write(IOPort,X1),
-        file_write(IOPort,','),
-        flora_write_args(IOPort,[X2|Xs]).
+flora_write_args([X1,X2|Xs],Tail,NewTail) :-
+        flora_write_string1(X1,Tail,NewTail1),
+	NewTail1 = [',' | NewTail2],
+        flora_write_args([X2|Xs],NewTail2,NewTail).
+
