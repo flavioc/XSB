@@ -42,6 +42,7 @@
    from standard.
 
 :- import length/2 from basics.
+:- import storage_reclaim_space/0 from storage.
 
 :- import findall/3, sort/2 from setof.
 
@@ -87,7 +88,10 @@ fllibprogramans(Gs,NVs) :-
 	flora_print_all(Gs,NVs).
 
 
-/********************************************************************/
+/********************************************************************
+  NVs is a list of output variables
+  Gs is a list of goals to evaluate
+********************************************************************/
 flora_print_all(Gs,NVs) :-
 	cputime(T0),
 	( NVs == [] ->
@@ -110,7 +114,8 @@ flora_print_all(Gs,NVs) :-
 	    ),
 	    flora_write_Yes
 	  )
-	).
+	),
+	storage_reclaim_space.
 
 
 /********************************************************************/
@@ -124,7 +129,8 @@ flora_print_one(Gs,NVs) :-
 	  ;
 	    flora_write_No
 	  )
-	).
+	),
+	storage_reclaim_space.
 
 
 /********************************************************************/
