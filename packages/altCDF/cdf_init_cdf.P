@@ -25,24 +25,20 @@
 :- import cdf_dirty/1, cdf_log_trie/1, 
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
-:- import load_extensional_facts/1, load_intensional_rules/1 from 
-						cdf_io.
+:- import load_component/3 from cdf_components.
 
 :- import cdf_error/2 from cdf_exceptions.
-:- import make_cdf_dirty/1, cdf_update_list/1 from cdf_cdf.
-:- import get_component_extensional/2, newComponent/4 
-	from cdf_components.
+:- import make_cdf_dirty/1, make_cdf_clean/0, 
+	  cdf_update_list/1 from cdf_cdf.
+:- import get_component_extensional/2 	from cdf_components.
 
 :- import '_$index'/3 from file_op.
 %:- import conset/2, conget/2 from gensym.
-:- import concat_atom/2 from string.
 :- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
 :- import new_trie/1, delete_trie/1, trie_interned/4, 
 	  trie_unintern_nr/2, trie_intern/5 from intern.
-:- import slash/1 from machine.
-:- import xsb_configuration/2 from xsb_configuration.
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -100,7 +96,9 @@ initialize_cdf:-
 	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
-	init_cdf_rels.
+	load_component(cdf,'.',[]),
+	load_component(cdfpt,'.',[]),
+	make_cdf_clean.
 	
 init_dynamic_code:- 
 	cdf_dynamic(F/A),
@@ -189,7 +187,9 @@ initialize_state:-
 	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
-	init_cdf_rels.
+	load_component(cdf,'.',[]),
+	load_component(cdfpt,'.',[]),
+	make_cdf_clean.
 
 reset_dynamics:- 
 	cdf_dynamic(F/A),
@@ -208,25 +208,6 @@ init_index_std.
 
 %-------
 
-% Need to do full component loads.
-
-init_cdf_rels :-
-
-	xsb_configuration(install_dir,Dir),
-	slash(Slash),
-	concat_atom([Dir,Slash,packages,Slash,altCDF],CDFDir),
-	load_extensional_facts(CDFDir),
-
-	concat_atom([CDFDir,Slash,cdfpt],CDFPTDir),
-	load_intensional_rules(CDFPTDir),
-
-	init_component_info.
-
-%-----------
-
-init_component_info :-
-	newComponent(cid(cdf,cdf),cid('.',cdfpt),check,OCid),
-	newExtTerm(classHasAttr_ext(OCid,crid(componentDepends,cdf),OCid)).
 system_component(cdf).
 system_component(cdfpt).
 
@@ -662,6 +643,7 @@ newExtTerm(Term,Upd0,Upd):-
 	check_types(update,Term),
 	(check_implication(update,Term) -> 
 	    classify_if_necessary(Term,Upd0,Upd1),
+%	    write(cin(Term,Upd0,Upd1)),
 	    Upd1 = [asserta(Term)|Upd]
 	  ; Upd0 = Upd).
 

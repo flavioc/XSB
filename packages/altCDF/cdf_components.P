@@ -1,6 +1,11 @@
 :- compiler_options([ciao_directives]).
 
 :- export 
+  init_path_engine/0,
+	pe_canon_path/2,
+	pe_decanon_path/2,
+	get_full_path_and_loadname/7,
+              comp_depends_on/2,
 	  add_component_initializer/3,
               analyze_components/2,
 	  get_component_extensional/2,
@@ -14,6 +19,8 @@
 	retractallExtTerm/1, newExtTerm/1,
 	system_component/1 from cdf_init_cdf.
 
+:- import canonical_pathname/2 from directry.
+
 :- import 
 	hasAttr_ext/3, isa_ext/2, classHasAttr_ext/3, allAttr_ext/3
  	from usermod.
@@ -25,12 +32,16 @@
 :- import cdf_warning/2,cdf_error/2 from cdf_exceptions.
 
 :- import call_assert/1, file_latest_version/3 from cdf_utilities.
+:- import xsb_configuration/2 from xsb_configuration.
 
 %cdf_io
 :- import load_intensional_rules/1,load_extensional_facts/1 from cdf_io.
 
 :- import member/2,ground/1 from basics.
-:- import slash/1 from machine.
+
+:- import is_absolute_filename/1,slash/1,
+	machine_file_exists/1 from machine.
+
 :- import concat_atom/2 from string.
 :- import message/1 from standard.
 
@@ -254,7 +265,7 @@ component @em{C} to return a listF of components upon which @tt{C}
 depends.").
 
 analyze_components(Name,List):- 
-%	abolish_table_pred(analyze_component_table/2),
+	abolish_table_pred(analyze_component_table(_,_)),
 	analyze_component_1(Name,List).
 
 analyze_component_1(Name,List):-
@@ -265,7 +276,7 @@ analyze_component_1(Name,List):-
 
 analyze_component_table(Name,Dep):- 
 	analyze_extensional(Name,Dep1),
-	(Dep = Dep1 ; Dep = cdf).
+	(Dep = Dep1 ; Dep = cdf ; Dep = cdfpt).
 analyze_component_table(Name,Dep):- 
 	analyze_intensional(Name,Dep).
 
@@ -317,13 +328,22 @@ get_component_extensional(Term,Comp):-
 get_dependency_extensional(Term,Dep):- 
 	component_table_ext(Term,CompArg,Deps),
 	(    arg(CompArg,Term,CompId),
-	     comp_from_id(CompId,Dep) 
+	     dep_from_id(CompId,Dep) 
 	  ; 
 	     member(DepArg,Deps),
 	     arg(DepArg,Term,DepId),
-	     comp_from_id(DepId,Dep) ).
+	     dep_from_id(DepId,Dep) ).
 
 comp_from_id(CompId,Comp):-  arg(2,CompId,Comp).	
+
+dep_from_id(CompId,Comp):-  arg(2,CompId,Comp).	
+dep_from_id(CompId,Comp):-  
+	arg(1,CompId,Nid),
+	(structure(Nid) -> 
+	    Nid =.. [_|Arglist],
+	    member(NewNid,Arglist),
+	    dep_from_id(NewNid,Comp)
+	  ; fail).
 
 %------------------
  
@@ -404,20 +424,24 @@ version of a component.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 load_component(Name,Path,Arglist):-
+	load_component_setup(Name,Path,Arglist),
+	load_component_1(Name,Path,Arglist).
+
+load_component_setup(Name,Path,Arglist):- 
 	retractall(temp_depends(_,_,_,_)),
 	(atom(Path),atom(Name),ground(Arglist) -> 
 	    true
-	  ; cdf_error(load_component,['Component name, path and arglist must',
-			' be instantiated to load: ',Path,'/',Name,' ',
-			Arglist]) ),
-	load_component_1(Name,Path,Arglist).
+	  ; slash(Slash),
+	    cdf_error(load_component,['Component name, path and arglist must',
+			' be instantiated to load: ',Path,Slash,Name,' ',
+			Arglist]) ).
 
 load_component_1(Name,Path,Arglist):- 
 	split_arglist_on_version(Arglist,V,Arglist1),
 	(load_component_pass1(Name,Path,V,Arglist1) -> 
-	    message(['Merging in components.']),nl,
 	    load_component_pass2(Name,Path,V,[]) 
 	  ; true),
+	clean_up_dirty_bits,
 	retractall(temp_depends(_,_,_,_)).
 
 split_arglist_on_version([],null,[]).
@@ -425,33 +449,41 @@ split_arglist_on_version([version(V)|R],version(V),R):-!.
 split_arglist_on_version([H|T],V,[H|T1]):-
 	split_arglist_on_version(T,V,T1).
 
+clean_up_dirty_bits:- 
+	temp_depends(From,To,_,_),
+	retractall(oms_dirty(From)),
+	retractall(oms_dirty(To)),
+	fail.
+clean_up_dirty_bits.
+
 %----------
 
 load_component_pass1(Name,Path,Vin,Arglist):- 
-	get_full_path_and_loadname(Name,Path,Vin,Full,V,Loadname),
-	(check_component(Name,Full,V,Arglist) -> 
-  	    message(['Loading component: ',Full,'/',Loadname]),nl,
-                concat_atom([Full,'/',Loadname],Absname),
+	get_full_path_and_loadname(Name,Path,Vin,Rel,Abs,V,Loadname),
+	(check_component(Name,Rel,V,Arglist) -> 
+	    slash(Slash),
+  	    message(['Loading component: ',Abs,Slash,Loadname]),nl,
+                concat_atom([Abs,Slash,Loadname],Absname),
 	    load_extensional_facts(Absname),
-	    check_good_component(Name,Full),
-                load_component_dependencies_pass1(Name,Full,Arglist) 
+	    check_good_component(Name,Rel),
+                load_component_dependencies_pass1(Name,Rel,Arglist) 
 	  ; 
 	    fail ).
 
-load_component_dependencies_pass1(Name,Path,Arglist):- 
-	classHasAttr_ext(cid(component(cid(Name,Name),cid(Path,cdfpt),
+load_component_dependencies_pass1(Name,Rel,Arglist):- 
+	classHasAttr_ext(cid(component(cid(Name,Name),cid(Rel,cdfpt),
 				       cid(_V,cdfpt)),Name),
 			 crid(componentDepends,Name),
-			 cid(component(cid(New,New),cid(Pathnew,cdfpt),
+			 cid(component(cid(New,New),cid(Relnew,cdfpt),
 				       cid(Vnew,cdfpt)),New)),
-%        writeln(checking(dep(Name,New))),	
-        load_component_pass1(New,Pathnew,version(Vnew),Arglist),
-        assert_dependencies_for_path2(Name,New,Pathnew,Vnew),
+        writeln(checking(dep(Name,New))),	
+         load_component_pass1(New,Relnew,version(Vnew),Arglist),
+        assert_dependencies_for_path2(Name,New,Relnew,Vnew),
 	fail.
 load_component_dependencies_pass1(_,_,_).
 
 assert_dependencies_for_path2(Name,New,Pathnew,Vnew):- 
-	system_component(New),
+	\+ system_component(New),
 	New \== Name,
 	call_assert(temp_depends(Name,New,Pathnew,Vnew)).
 
@@ -461,24 +493,25 @@ assert_dependencies_for_path2(Name,New,Pathnew,Vnew):-
    Assume that all conflict checking has been done in pass2 */
 load_component_pass2(Name,Path,Vin,Anclist):- 
 	slash(Slash),
-	get_full_path_and_loadname(Name,Path,Vin,Full,_V,Loadname),
+	get_full_path_and_loadname(Name,Path,Vin,_Rel,Full,_V,Loadname),
 	message(['Loading int rules and initializing componen: ',
 			Full,Slash,Loadname]),nl,
-            load_component_dependencies_pass2(Name,Full,Anclist),
+            load_component_dependencies_pass2(Name,Anclist),
 	concat_atom([Full,Slash,Loadname],Dir),
 	load_intensional_rules(Dir),
 	initialize_component(Loadname,Full).
 
-load_component_dependencies_pass2(Name,_Path,Anclist):- 
+load_component_dependencies_pass2(Name,Anclist):- 
 	temp_depends(Name,New,Pathnew,Vnew),
 	(member(New,Anclist) -> true
 	  ; 
 	    load_component_pass2(New,Pathnew,Vnew,[Name|Anclist]) ),
 	fail.
-load_component_dependencies_pass2(_,_,_).
+load_component_dependencies_pass2(_,_).
 
 initialize_component(Name,Path):- 
-	concat_atom([Path,'/',Name,'/initialization_file.P'],File),
+	slash(Slash),
+	concat_atom([Path,Slash,Name,'/initialization_file.P'],File),
 	(file_exists(File) -> consult(File) ; true).
 
 %---------------
@@ -487,7 +520,7 @@ check_good_component(Name,Full):-
 	(component_exists(Name) -> 
 	    true
 	  ;
-	    cdf_error(component_load,['Pathname: ',Full,
+	    cdf_error(component_load,['Pathname: ',Full,Name,
 				      ' is not a component']) ).
 component_exists(Name):- 
 	classHasAttr(cid(Name,Name),crid(hasPath,Name),_).
@@ -495,7 +528,7 @@ component_exists(Name):-
 
 /* If check_component succeeds, we go ahead and do a pass 1 load. */
 check_component(Name,Path,V,Arglist):- 
-	\+ system_component(Name),
+%	\+ system_component(Name),
 	check_conflicting_path(Name,Path,Arglist),
 	check_conflicting_version(Name,Path,V),
 	\+ already_present(Name,Path,V,Arglist).
@@ -549,12 +582,14 @@ already_present(Name,Path,V,Arglist):-
    to a canonical path, and Loadname is the name, plus version if 
    applicable.
  */
-get_full_path_and_loadname(Name,Path,Vin,CanonPath,V,Loadname):- 
-	Path = CanonPath,
+get_full_path_and_loadname(Name,Path,Vin,Rel,Abs,V,Loadname):- 
+	pe_canon_path(Path,Abs),
+	pe_decanon_path(Abs,Rel),
+%	Path = CanonPath,
 	(Vin = version(V) -> 
-	    file_find_version_name(Path,Name,V,Loadname)
+	    file_find_version_name(Abs,Name,V,Loadname)
 	 ; 
-	    Loadname = Name,file_latest_version(Path,Name,V) ).
+	    Loadname = Name,file_latest_version(Abs,Name,V) ).
 
 file_find_version_name(Path,Name,Version,Loadname):- 
 	file_latest_version(Path,Name,V),
@@ -563,8 +598,9 @@ file_find_version_name(Path,Name,Version,Loadname):-
 	  ; (V > Version -> 
 	        concat_atom([Name,'_',Version],Loadname)
 	      ; 
+	            slash(Slash),
 		cdf_error(load_component,['Improper version number',Version,
-				' for ',Path,'/',Name]) ) ).
+				' for ',Path,Slash,Name]) ) ).
 	  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(update_all_components/2,
@@ -610,23 +646,26 @@ path information.
 
 :- dynamic temp_new_version/2.
 
-update_all_components(Dir,Options):- 
-	retractall(temp_new_version(_,_)),
-	(member(action(create),Options) -> 
-	    Action = create,initialize_for_create(Dir)
-	  ; Action = in_place,initialize_for_in_place(Dir) ),
-	((Action = in_place,merge_has_occurred) -> 
-	    cdf_error(update_components,['Cannot update in place: two ',
-		'components have been merged'])
-	    ; true ),
+update_all_components(In,Options):- 
+	update_setup(In,Options,Rel,Abs,Action),
 	analyze_component_1(Comp,Dep),
-	writeln((Comp,Dep)),
-	update_component_1(Action,Comp,Dep,Dir),
+	update_component_1(Action,Comp,Dep,Rel,Abs),
 	writeln(updated(Comp)),
 	fail.
 update_all_components(_Dir,_Options):- 
 	retractall(temp_new_version(_,_)).
 
+update_setup(In,Options,Rel,Abs,Action):- 
+	pe_canon_path(In,Abs),
+	pe_decanon_path(Abs,Rel),
+	retractall(temp_new_version(_,_)),
+	(member(action(create),Options) -> 
+	    Action = create,initialize_for_create(Abs)
+	  ; Action = in_place,initialize_for_in_place(Abs) ),
+	((Action = in_place,merge_has_occurred) -> 
+	    cdf_error(update_components,['Cannot update in place: two ',
+		'components have been merged'])
+	    ; true ).
 %----------
 
 /* In initialize for create, old versions don't matter -- the only
@@ -634,7 +673,8 @@ update_all_components(_Dir,_Options):-
 
 initialize_for_create(Dir):- 
 	analyze_components(Name,_),
-	concat_atom([Dir,'/',Name],File),
+	slash(Slash),
+	concat_atom([Dir,Slash,Name],File),
 	(file_exists(File) ->
   	     file_latest_version(Dir,Name,V),
 	     V1 is V + 1,
@@ -655,7 +695,7 @@ be unmarked.  While we do the pass, we assert the new version so we
 dont get confused when doing the dependencies.  */
 
 propagate_dirty_bits(Dir):- 
-	abolish_table_pred(comp_depends_on/2),
+	abolish_table_pred(comp_depends_on(_,_)),
 	analyze_components(Name,_List),
 	propagate_for_name(Name),
 	(component_exists(Name) -> 
@@ -665,7 +705,8 @@ propagate_dirty_bits(Dir):-
 propagate_dirty_bits(_Dir).
 
 versions_for_new_component(Dir,Name):- 
-	concat_atom([Dir,'/',Name],File),
+	slash(Slash),
+	concat_atom([Dir,Slash,Name],File),
 	(file_exists(File) ->
     	     file_latest_version(Dir,Name,V),
 	     V1 is V + 1,
@@ -676,18 +717,15 @@ versions_for_new_component(Dir,Name):-
 versions_for_existing_component(Name):- 
 	classHasAttr_ext(cid(compName(cid(Name,Name),cid(P,cdfpt)),Name),
 	                       crid(hasVersion,Name),cid(V,cdfpt)),
-        ((needs_update(Name),Name \== cdf) -> 
+        (needs_update(Name) -> 
 	      V1 is V + 1,
 	      call_assert(temp_new_version(Name,V1)),
 	      retractallExtTerm(classHasAttr_ext(
-			         cid(compName(cid(Name,Name),
+			            cid(compName(cid(Name,Name),
 					      cid(P,cdfpt)),Name),
-		                 crid(hasVersion,Name),cid(V,cdfpt))),
-	      retractallExtTerm(classHasAttr_ext(cid(compName(cid(Name,Name),
-						  cid(P,cdfpt)),Name),
-	                             crid(hasVersion,Name),cid(V,cdfpt))),
+		                        crid(hasVersion,Name),cid(V,cdfpt))),
 	      newExtTerm(classHasAttr_ext(cid(compName(cid(Name,Name),
-						  cid(P,cdfpt)),Name),
+						              cid(P,cdfpt)),Name),
 	                             crid(hasVersion,Name),cid(V,cdfpt)))
 	    ; call_assert(temp_new_version(Name,V))).
 
@@ -718,33 +756,28 @@ merge_has_occurred:-
    its dependencies not yet added. In addition, need to get right
    version. */
 
-update_component_1(create,Name,Dep,Dir):- 
-	Name \== cdf,
-	(classHasAttr_ext(
-  	                    cid(component(cid(Name,Name),
-	                                  cid(Oldp,_),_V),_),_,_) -> 
-               true
-	    ;  Oldp = nocopy),
-	newComponent(cid(Name,Name),cid(Dir,cdfpt),create,CompId),
-	writeln(newcomponent(cid(Name,Name),cid(Dir,cdfpt),create,CompId)),
-	CompId = cid(component(_Nameid,cid(Newpath,cdfpt),_V),_),
+update_component_1(create,Name,Dep,Rel,Abs):- 
+	\+ system_component(Name),
+	writeln((Name,Dep)),
+	newComponent(cid(Name,Name),cid(Rel,cdfpt),create,_CompId),
 	temp_new_version(Name,Version),
 	NewCompid = cid(component(cid(Name,Name),
-				  cid(Newpath,cdfpt),cid(Version,cdfpt)),Name),
-	create_dependencies_create(Dep,Name,NewCompid,Dir),
-	dump_component_1(Name,Newpath,Version,Oldp).
+				        cid(Rel,cdfpt),cid(Version,cdfpt)),Name),
+	create_dependencies_create(Dep,Name,NewCompid,Rel),
+	dump_component_1(Name,Abs,Version,nocopy).
 
-/* No copy for in_place: updates in place, and Dir is only for new comps.
+/* No copy for in_place: updates in place, and Abs is only for new comps.
    Note that we have already checked for merge, so Newpath is functional
    on Nameid. */
-update_component_1(in_place,Name,Dep,Dir):- 
-	Name \== cdf,needs_update(Name),
-	newComponent(cid(Name,Name),cid(Dir,cdfpt),in_place,CompId),
+update_component_1(in_place,Name,Dep,_Rel,Abs):- 
+	\+ system_component(Name),
+	needs_update(Name),
+	newComponent(cid(Name,Name),cid(Abs,cdfpt),in_place,CompId),
 	CompId = cid(component(_Nameid,cid(Newpath,cdfpt),_V),_),
 	temp_new_version(Name,Version),
 	NewCompid = cid(component(cid(Name,Name),
 				  cid(Newpath,cdfpt),cid(Version,cdfpt)),Name),
-	create_dependencies_in_place(Dep,Name,NewCompid,Dir),
+	create_dependencies_in_place(Dep,Name,NewCompid,Abs),
 	dump_component_1(Name,Newpath,Version,nocopy).
 
 %--------------------- 
@@ -776,6 +809,7 @@ information with current the path information is created if needed.
 create_dependencies_create([],_From,_Compid,_Dir).
 create_dependencies_create([ToName|T],FromName,Compid,Dir):- 
 	FromName \== ToName,!,
+%	writeln(cd_for(FromName,ToName)),
 	create_all_dependencies_create(ToName,Dir,Compid),
 	create_dependencies_create(T,FromName,Compid,Dir).
 create_dependencies_create([_|T],FromName,Compid,Dir):- 
@@ -784,25 +818,28 @@ create_dependencies_create([_|T],FromName,Compid,Dir):-
 /* TLS: in first clause, we are not necessarily creating a component: 
    we may be removing it so that it can be moved, so we need to
    retract all old dependencies, using the version we have previously found */
-create_all_dependencies_create(cdf,_Dir,FromCompid):- !,
+create_all_dependencies_create(Name,_Dir,FromCompid):- 
+	system_component(Name),!,
 	FromCompid = cid(_,FromName),
-	classHasAttr_ext(cid(component(cid(cdf,cdf),cid(Pcdf,cdfpt),
-					     cid(Vcdf,cdfpt)),cdf),
-			crid(componentDepends,cdf),_),	
+	classHasAttr_ext(cid(compName(cid(Name,Name),
+                                                             cid(Pcdf,cdfpt)),Name),
+	                          crid(hasVersion,Name),cid(Vcdf,cdfpt)),
 	retractallExtTerm(classHasAttr_ext(FromCompid,
-	                               crid(componentDepends,FromName),
-			               cid(component(cid(cdf,cdf),_,_V),cdf))),
-	newExtTerm(classHasAttr_ext(FromCompid,crid(componentDepends,FromName),
-		                cid(component(cid(cdf,cdf),
-	                                      cid(Pcdf,cdfpt),
-					      cid(Vcdf,cdfpt)),cdf))).
+                                       crid(componentDepends,FromName),
+		               cid(component(cid(Name,Name),_,_V),Name))),
+	newExtTerm(classHasAttr_ext(FromCompid,
+                                                          crid(componentDepends,FromName),
+ 	 	                                  cid(component(cid(Name,Name),
+	                                                                    cid(Pcdf,cdfpt),
+					                    cid(Vcdf,cdfpt)),Name))).
 create_all_dependencies_create(ToName,Dir,FromCompid):- !,
 	FromCompid = cid(_,FromName),
 	temp_new_version(ToName,V),
 	retractallExtTerm(classHasAttr_ext(FromCompid,
-				       crid(componentDepends,FromName),
-			               cid(component(ToName,_,_),_))),
-	newExtTerm(classHasAttr_ext(FromCompid,crid(componentDepends,FromName),
+				                crid(componentDepends,FromName),
+			                            cid(component(ToName,_,_),_))),
+	newExtTerm(classHasAttr_ext(FromCompid,
+                                                crid(componentDepends,FromName),
 				cid(component(cid(ToName,ToName),
 					      cid(Dir,cdfpt),
 					      cid(V,cdfpt)),ToName))).
@@ -840,7 +877,7 @@ create_all_dependencies_in_place(ToName,Dir,FromCompid):- !,
 %---------------------
 
 dump_component_1(Name,Dir,Version,Oldpath):- 
-	Name \== cdf,
+	\+ system_component(Name),
 	slash(Slash),
 	make_component_dir(Dir,Name,Version,NewDir),
 	concat_atom([NewDir,Slash,'cdf_extensional.P'],SchFile),
@@ -921,7 +958,9 @@ write_component_intensional(Name):-
 	fail.
 write_component_intensional(_).
 
-needs_update(Component):- cdf_dirty(Component).
+needs_update(Component):- 
+	cdf_dirty(Component),
+	\+ system_component(Component).
 
 /* New component initializes a new component, creating version,
 dependency and path information.  Given a previously existing component, 
@@ -975,10 +1014,11 @@ newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
 	                                           cid(compName(cid(Src,Src),Path),Src),
  	                                           crid(hasVersion,Src),cid(0,cdfpt))),
 	     Version = cid(0,cdfpt) ).
-newPathandVersion(create,cid(cdf,cdf),_Pathin,Path,V):- !,
-	classHasAttr_ext(cid(cdf,cdf),crid(hasPath,cdf),Path),
-	classHasAttr_ext(cid(compName(cid(cdf,cdf),Path),cdf),
-			crid(hasVersion,cdf),V).
+newPathandVersion(create,cid(Name,Name),_Pathin,Path,V):- 
+	system_component(Name),!,
+	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),Path),
+	classHasAttr_ext(cid(compName(cid(Name,Name),Path),Name),
+			crid(hasVersion,Name),V).
 /* On create, even if the component has been loaded from somewhere else,  
    it needs a new path and version, (obtained from the path). */
 newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
@@ -988,7 +1028,8 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
 			 	cid(hasVersion,Src),_Int)),
         newExtTerm(classHasAttr_ext(cid(Src,Src),
 				    crid(hasPath,Src),cid(Pathin,cdfpt))),
-        concat_atom([Pathin,'/',Src],File),
+        slash(Slash),
+        concat_atom([Pathin,Slash,Src],File),
         (file_exists(File) ->
   	     file_latest_version(Pathin,Src,Vold),
 	     V1 is Vold + 1
@@ -1005,7 +1046,8 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
   	     true
 	  ; 
     	     newExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),Path)),
-	     concat_atom([Pathin,'/',Name],File),
+	     slash(Slash),
+	     concat_atom([Pathin,Slash,Name],File),
   	     (file_exists(File) ->
   	         file_latest_version(Pathin,Name,Vold),
 	          V is Vold + 1
@@ -1015,6 +1057,62 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
 		classHasAttr_ext(cid(compName(cid(Src,Src),Pathin),Src),
  				 crid(hasVersion,Src),V)),
 	     Pathin = Path ).
+
+%%%% Path manipulation.
+:- dynamic pe_cwd/1, pe_dir_stack/1.
+
+%% initialize default path to CDF package dir
+:- init_path_engine.
+
+init_path_engine :-
+	xsb_configuration(install_dir,IDIR),
+	slash(Slash),
+	canonical_pathname([IDIR,Slash,'packages',Slash,'altCDF'],DefaultPath),
+	retractall(pe_cwd(_)),
+	asserta(pe_cwd(DefaultPath)),
+	retractall(pe_dir_stack(_)).
+
+pe_push_dir(Dir) :-
+	asserta(pe_dir_stack(Dir)),
+	retractall(pe_cwd(_)),
+	asserta(pe_cwd(Dir)),
+%	writeln(pe_push_dir(Dir)),
+	true.
+
+pe_pop_dir(Dir) :-
+	once(pe_dir_stack(Dir)),
+	retract(pe_dir_stack(Dir)),
+	retractall(pe_cwd(_)),
+	once(pe_dir_stack(NCwd)),
+	asserta(pe_cwd(NCwd)),
+%	writeln(pe_pop_dir(Dir)),
+	true.
+
+pe_decanon_path(Canon,Rel):- 
+	pe_cwd(Cwd),
+	atom_chars(Canon,Canonlist),
+	atom_chars(Cwd,Cwdlist),
+	strip_base(Cwdlist,Canonlist,Rellist),
+	atom_chars(Rel,Rellist).
+
+strip_base([],[],[]):- !.
+strip_base([],[H|L],L1):- 
+	((slash(S),S = H) -> L1 = L ; L1 = [H|L]).
+strip_base([H|T],[H|T1],L):- 
+	strip_base(T,T1,L).
+
+pe_canon_path(Path,CPath) :-
+	(   is_absolute_filename(Path)
+	->  canonical_pathname(Path,CPath)
+	;   pe_cwd(Cwd),
+	    slash(Slash),
+	    (	machine_file_exists([Cwd,Slash,Path])
+	    ->	canonical_pathname([Cwd,Slash,Path],CPath)
+	    ;	throw(file_not_found(Path,cwd(Cwd)))
+	    )
+	),
+%	writeln(pe_canon_path(Path,CPath)),
+	true.
 
 end_of_file.
 

@@ -15,7 +15,6 @@
     implication on insert
     classify on insert.
 */
-    
 
 % Type checking.	
 % TLS: should be turned on and off...
@@ -161,14 +160,14 @@ classify_if_necessary(isa_ext(First,Second),Upd1,Upd):-
 
 classify_if_necessary_list([],Upd,Upd).
 classify_if_necessary_list([Arg|R],Updin,Upd):- 
-%	writeln(cinl(Arg)),
+%	foo(Arg),
 	classify_arg(Arg,Updin,Updmid),
 	classify_if_necessary_list(R,Updmid,Upd).
 
 classify_arg(Id,Upd1,Upd):- 
 %	writeln(ca(Id)),
 	(in_hierarchy(Id) -> 
-	    Upd1 = Upd
+	    Upd1 = Updmid
 	  ; functor(Id,F,_),
 	    classification_type(F,Sup),
 	    Upd1 = [asserta(isa_ext(Id,Sup))|Updmid]),
