@@ -31,29 +31,32 @@
 :- import hide_this_show/2 from usermod.
 :- import slash/1 from machine.
 :- import trie_assert/1 from tables.
+:- import conget/2 from prof_sbp.
 :- dynamic hide_this_show(_,_).
 
 :- export bootstrap_flora/0, flora_shell/0.
 
 
-%% bootstrap_package will fail, if Flora is already loaded,
-%% so package_configuration won't be asserted twice.
+%% bootstrap_package fails, if Flora is already loaded.
+%% Then bootstrap_flora quietly succeeds without 
+%% so that package_configuration won't be asserted twice.
 bootstrap_flora :-
 	bootstrap_package([flora,lib,syslib,pkgs],flora),
+	!,
 	assert(package_configuration(version(flora),'0.93 of 06/25/1999')),
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(LibFlrDisplay,'%s%ssyslib%sflrdisplay',
 			 f(FloraDir,S,S)),
 	[tables, LibFlrDisplay, flrutils].
+bootstrap_flora.
 
 %% don't show flora_shell in trace
 :- trie_assert(hide_this_show(flora_shell,0)). 
 
 flora_shell :- notrace,  %% stop any tracing
-	( package_configuration(loaded(flora), yes) -> true
-	;   
-	    bootstrap_flora
-	),
-	[flrshell],
-	'_$_$_flora_shell'.
+	(   conget(flora_shell_loaded, 1), !
+	;   bootstrap_flora,
+	    [flrshell],
+	    '_$_$_flora_shell'
+	).

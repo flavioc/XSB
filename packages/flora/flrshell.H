@@ -42,6 +42,8 @@
 
 :- import consult/2, compile/1, compile/2 from consult.
 
+:- import conset/2, conset/2 from prof_sbp.
+
 :- import
 	bootstrap_package/2, package_configuration/2, unload_package/1
    from packaging.

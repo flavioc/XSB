@@ -68,12 +68,8 @@
 '_$_$_flora_tag'(noquery).
 
 ?- '_$_$_flora_tag'(query), !,
-   ( current_predicate('_$_$_flora_print_all'/2) -> true
-     ;
-       ( package_configuration(loaded(flora), yes) -> true
-	 ;
-	 bootstrap_flora
-       )
+   (   current_predicate('_$_$_flora_print_all'/2)
+   ;   bootstrap_flora
    ),
    !.
 

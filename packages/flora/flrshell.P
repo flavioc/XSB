@@ -28,13 +28,11 @@
 
 /*********************************************************************/
 '_$_$_flora_shell' :-
-	( package_configuration(loaded(flora), yes) -> true
-	  ;
-	    bootstrap_flora
-	),
+	bootstrap_flora,
 	'_$_$_flora_welcome_msg',
 	all,
 	push_abort_cutpoint,
+	conset(flora_shell_loaded, 1),
 	'_$_$_flora_shell_loop'.
 
 
@@ -226,6 +224,7 @@ flora_notrace :- ('_$_$_flora_debugger_data_loaded'
 /*********************************************************************/
 end :-
 	unload_package(flora),
+	conset(flora_shell_loaded,0),
 	nl, writeln('Ciao!'), nl,
 	pop_abort_cutpoint,
 	abort.
