@@ -112,6 +112,7 @@ seen :- seen@prolog().
 seeing(Stream) :- seeing(Stream)@prolog().
 
 Filename[#tell] :- tell(Filename)@prolog().
+tell(Filename) :- tell(Filename)@prolog().
 told :- told@prolog().
 telling(Stream) :- telling(Stream)@prolog().
 

@@ -51,3 +51,4 @@ libpath[#query(_Path)] :-
 
 tables[#abolish] :- abolish_all_tables@prolog().
 
+abort(X) :- flP2H(PX,X)@prolog(), abort(PX)@prolog().

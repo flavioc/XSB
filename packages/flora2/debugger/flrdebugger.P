@@ -542,6 +542,9 @@ write_hilog(Val) :-
 	;   print_item(Val)
 	).
 
+write_hilog(FLLIBMODLIT(Wrap,Args,Module)) :- !,
+	flora_write_goal(FLLIBMODLIT(Wrap,Args,Module)).
+
 write_hilog(Val) :-
 	is_commalist(Val),
 	!,
@@ -575,6 +578,7 @@ write_hilog(Val) :-
 	    ),
 	    (nonvar(WS) -> write_workspace(WS); true)
 	).
+
 write_hilog_args([]) :- true.
 write_hilog_args([Arg]) :- !, write_hilog(Arg).
 write_hilog_args([Arg|Rest]) :-
