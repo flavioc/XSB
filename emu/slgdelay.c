@@ -37,7 +37,7 @@
 #include "cell.h"
 #include "psc.h"
 #include "register.h"
-#include "tries.h"
+#include "trie_internals.h"
 #include "memory.h"
 #include "choice.h"
 #include "xmacro.h"
@@ -277,7 +277,8 @@ static DE intern_delay_element(Cell delay_elem)
 #endif
     return de;
   }
-  else return NULL;
+  else
+    return NULL;
 }
 
 /*
@@ -387,9 +388,9 @@ static void record_de_usage(DL dl)
  *
  * Function intern_delay_list() will be called to save the delay list
  * information in the Delay Info node of current call's answer leaf.  It
- * will call interned_delay_element(), which will call
- * delay_chk_insert().  A delay trie is created by delay_chk_insert() for
- * the corresponding delay element.
+ * will call intern_delay_element(), which will call delay_chk_insert().
+ * A delay trie is created by delay_chk_insert() for the corresponding
+ * delay element.
  *
  * When the delay trie has been created, and a pointer in the delay
  * element (saved in the answer trie) has been set, we can say the
@@ -711,7 +712,7 @@ static void simplify_neg_succeeds(SGFrame subgoal)
     nde = subg_nde_list(subgoal);
     dl = pnde_dl(nde); /* dl: to be removed */
     used_as_leaf = dl_asl(dl);
-    if (is_not_deleted(used_as_leaf) &&
+    if (IsValidNode(used_as_leaf) &&
 	(used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
       while (de) {
@@ -761,7 +762,7 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
     pde = asi_pdes(asi);
     dl = pnde_dl(pde); /* dl: to be removed */
     used_as_leaf = dl_asl(dl);
-    if (is_not_deleted(used_as_leaf) &&
+    if (IsValidNode(used_as_leaf) &&
 	(used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
       while (de) {

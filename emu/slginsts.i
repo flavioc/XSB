@@ -35,81 +35,93 @@
 #define COMPL_STK_FRAME	xtemp3
 #else
 #define PREV_CONSUMER	xtemp3
-#define GENERATOR_CP	xtemp3
 #endif
+#define GENERATOR_CP	xtemp3
 #define COMPL_SUSP_ENV	xtemp3
 #define VarsInCall	xtemp5
 #define SUBGOAL		xcurcall
 
 /*----------------------------------------------------------------------*/
 
-case tabletry:		/* cur_label arity label xcurcall	*/
-    xwammode = 1; ppad;
-    ARITY = (Cell)(*lpcreg++);	/* op1 */
-    pad64;
-    LABEL = (CPtr)(*(byte **) lpcreg);	/* op3 */
-    ADVANCE_PC;
-    xcurcall = (* (CPtr *) lpcreg);  /* pointer to cur call-tabinfoptr */
-    ADVANCE_PC;  /* lpcreg points to next instruction, e.g. tabretry */
-    /*
-     * contents of xcurcall point to the subgoal structure
-     * this will create the variables on top of stack (on VarPosReg)
-     * and initialize the # of vars in the subgoal (also on the stack)
-     * Hence, stack reallocation, which means CP Stack relocation,
-     * must occur first, or these variables will be left behind.
-     */
-    VarPosReg = top_of_cpstack;
-    check_tcpstack_overflow(VarPosReg);
-	check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
-    if (variant_call_search(ARITY, reg, &xcurcall)) { /* variant call exists */
-    /*
-     * After variant_call_search, VarPosReg sits on top of the
-     * substitution factor of the call and points to a cell which
-     * containins the number of variables in the call.  Under this cell
-     * are all the variables (still free) --- the SUBSF.
-     */
-      xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
-      if (is_completed(xcurcall)) {
-	if (has_answer_code(xcurcall)) goto return_table_code;
-	else { Fail1; goto contcase; }
-      }
-      else goto lay_down_consumer;
-    }
-    else {  /* there is no variant-subgoal */
-	    /* put subgoal in stack and init structure components */
-	    /* makes call structure point back to CallTableInfo-original call */
-	    /* compl_stack_ptr = openreg-COMPLFRAMESIZE+1 (all others=0) */
-      /*
-       * Here Paren is the leaf node in the subgoal trie for this call
-       * (result from variant_call_search()).
-       */
-      create_subgoal_frame(*xcurcall, Paren);
-      xcurcall = (CPtr) *xcurcall;
-      save_find_locx(ereg);
+/*
+ *  Instruction format:
+ *    1st word: opcode X X pred_arity
+ *    2nd word: prg_clause_label
+ *    3rd word: pointer to pred's TableInfo record
+ */
+case tabletry:
+  /*
+   *  Retrieve instruction arguments and test the CP stack for overflow.
+   *  (This latter operation should be performed first since the call
+   *  lookup operation will be pushing info there WITHOUT adjusting the
+   *  top of the CP stack.)  The local PCreg, "lpcreg", is incremented
+   *  to point to the instruction to be executed should this one fail.
+   */
+  xwammode = 1;
+  ppad;   ARITY = (Cell)(*lpcreg++);  pad64;		/* op1 */
+  LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;	/* op3 */
+  xcurcall = (* (CPtr *) lpcreg);		/* table info record */
+  ADVANCE_PC;  /* lpcreg points to next instruction, e.g. tabretry */
 
-      save_registers(VarPosReg, (int)ARITY, i, rreg);
-      /*
-       * Set a choice point generating node-the solution node is responsible
-       * for going through the different choices and for starting the check
-       * complete when it runs out of alternatives
-       * the variables in the call are stored right before this CP
-       * uses: bfreg,efreg,trfreg,hfreg,ereg,cpreg,trreg,hreg,ebreg,tbreg,
-       * prev=breg,lpcreg
-       */
+  VarPosReg = top_of_cpstack;
+  check_tcpstack_overflow(VarPosReg);
+  check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
+  /*
+   *  Perform a variant call-check/insert operation on the current call.
+   *  The variables of this call are pushed on top of the CP stack, along
+   *  with the number found (encoded as a Prolog INT) .  This forms the
+   *  call's answer template (AT).  A pointer to this size, followed by
+   *  the reverse template vector (as described above), is returned in
+   *  VarPosReg.
+   */
+  CallInfo_TableInfo(callInfo) = (tab_inf_ptr)xcurcall;
+  CallInfo_Arity(callInfo) = ARITY;
+  CallInfo_Arguments(callInfo) = reg;
+  variant_call_search(&callInfo,&lookupResults);
+
+  if ( CallLUR_VariantFound(lookupResults) ) {
+    xcurcall = (CPtr) CallLUR_Subsumer(lookupResults);  /* subgoal frame */
+    if (is_completed(xcurcall)) {
+      if (has_answer_code(xcurcall)) goto return_table_code;
+      else { Fail1; goto contcase; }
+    }
+    else goto lay_down_consumer;
+  }
+  else {
+    /*
+     *  A new call has been entered into the table.  Create, initialize,
+     *  and associate a subgoal frame -- pointed to by xcurcall -- with
+     *  this new call entry, represented by a ptr to a leaf BTN.  Create
+     *  a producer CPF, on top of the answer template, and begin program
+     *  clause resolution.
+     */
+    create_subgoal_frame(xcurcall, CallLUR_Leaf(lookupResults),
+			 CallInfo_TableInfo(callInfo));
+    save_find_locx(ereg);
+    save_registers(VarPosReg, (int)ARITY, i, rreg);
+    /*
+     * Set a choice point generating node-the solution node is responsible
+     * for going through the different choices and for starting the check
+     * complete when it runs out of alternatives
+     * the variables in the call are stored right before this CP
+     * uses: bfreg,efreg,trfreg,hfreg,ereg,cpreg,trreg,hreg,ebreg,tbreg,
+     * prev=breg,lpcreg
+     */
 #ifdef CHAT
-      save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg);
+    save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg);
 #else
-      save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
+    save_generator_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
 #endif
-      push_completion_frame((SGFrame)xcurcall);
-      ptcpreg = xcurcall;
-      subg_cp_ptr(xcurcall) = breg = VarPosReg;
-      delayreg = NULL;
-      if (root_address == 0) root_address = breg;
-      hbreg = hreg;
-      lpcreg = (byte *) LABEL;	/* branch to program clause */
-      goto contcase;
-    } 
+    push_completion_frame((SGFrame)xcurcall);
+    ptcpreg = xcurcall;
+    subg_cp_ptr(xcurcall) = breg = VarPosReg;
+    delayreg = NULL;
+    if (root_address == 0) root_address = breg;
+    hbreg = hreg;
+    lpcreg = (byte *) LABEL;	/* branch to program clause */
+    goto contcase;
+  } 
+
 
 /*----------------------------------------------------------------------*/
 /*  Returns answers to consumers.  This can happen either when the	*/
@@ -222,6 +234,7 @@ case old_new_answer_dealloc:
 #endif
 
     xflag = 0;
+    SUBGOAL = tcp_subgoal_ptr(GENERATOR_CP);
 
     /*
      * We want to save the substitution factor of the answer in the
@@ -467,44 +480,75 @@ case tabletrust:
 
 /*----------------------------------------------------------------------*/
 
+/*
+ *  Instruction format:
+ *    1st word: opcode X X pred_arity
+ *    2nd word: prg_clause_label
+ *    3rd word: pointer to pred's TableInfo record
+ */
 case tabletrysingle:
-    xwammode = 1;
-    ppad;
-    ARITY = (Cell)(*lpcreg++);
-    pad64;
-    LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;
-    xcurcall = * (CPtr *) lpcreg; ADVANCE_PC;
-    VarPosReg = top_of_cpstack;
-    check_tcpstack_overflow(VarPosReg);
-    if (variant_call_search(ARITY, reg, &xcurcall)) { /* variant call exists */
-      xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
-      if (is_completed(xcurcall)) {
-	if (has_answer_code(xcurcall)) goto return_table_code;
-	else { Fail1; goto contcase; }
-      }
-      else goto lay_down_consumer;
-    }
-    else {  /* create generator choice point */
-      create_subgoal_frame(*xcurcall, Paren);
-      xcurcall = (CPtr) *xcurcall;
-      save_find_locx(ereg);
+  /*
+   *  Retrieve instruction arguments and test the CP stack for overflow.
+   *  (This latter operation should be performed first since the call
+   *  lookup operation will be pushing info there WITHOUT adjusting the
+   *  top of the CP stack.)  The local PCreg, "lpcreg", is incremented
+   *  to point to the instruction to be executed should this one fail.
+   */
+  xwammode = 1;
+  ppad;   ARITY = (Cell)(*lpcreg++);  pad64;		/* op1 */
+  LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;	/* op3 */
+  xcurcall = * (CPtr *) lpcreg;		/* table info record */
+  ADVANCE_PC;
 
-      /* now lay down single clause choicepoint */
-      save_registers(VarPosReg, (int)ARITY, i, rreg);
-#ifdef CHAT
-      save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg);
-#else
-      save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
-#endif
-      push_completion_frame((SGFrame) xcurcall);
-      ptcpreg = xcurcall;
-      subg_cp_ptr(xcurcall) = breg = VarPosReg;
-      delayreg = NULL;
-      if (root_address == 0) root_address = breg;
-      hbreg = hreg;
-      lpcreg = (byte *) LABEL; /* go to clause ep */
-      goto contcase;
+  VarPosReg = top_of_cpstack;
+  check_tcpstack_overflow(VarPosReg);
+  /*
+   *  Perform a variant call-check/insert operation on the current call.
+   *  The variables of this call are pushed on top of the CP stack, along
+   *  with the number found (encoded as a Prolog INT) .  This forms the
+   *  call's answer template (AT).  A pointer to this size, followed by
+   *  the reverse template vector (as described above), is returned in
+   *  VarPosReg.
+   */
+  CallInfo_TableInfo(callInfo) = (tab_inf_ptr)xcurcall;
+  CallInfo_Arity(callInfo) = ARITY;
+  CallInfo_Arguments(callInfo) = reg;
+  variant_call_search(&callInfo,&lookupResults);
+
+  if ( CallLUR_VariantFound(lookupResults) ) {
+    xcurcall = (CPtr) CallLUR_Subsumer(lookupResults);  /* subgoal frame */
+    if (is_completed(xcurcall)) {
+      if (has_answer_code(xcurcall)) goto return_table_code;
+      else { Fail1; goto contcase; }
     }
+    else goto lay_down_consumer;
+  }
+  else {
+    /*
+     *  A new call has been entered into the table.  Create, initialize,
+     *  and associate a subgoal frame with this new call entry,
+     *  represented by a ptr to a leaf BTN.  Create a producer CPF, on
+     *  top of the answer template, and begin program clause resolution.
+     */
+    create_subgoal_frame(xcurcall, CallLUR_Leaf(lookupResults),
+			 CallInfo_TableInfo(callInfo));
+    save_find_locx(ereg);
+    save_registers(VarPosReg, (int)ARITY, i, rreg);
+#ifdef CHAT
+    save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg);
+#else
+    save_singleclause_choicepoint(VarPosReg, ereg, xcurcall, breg, ARITY);
+#endif
+    push_completion_frame((SGFrame) xcurcall);
+    ptcpreg = xcurcall;
+    subg_cp_ptr(xcurcall) = breg = VarPosReg;
+    delayreg = NULL;
+    if (root_address == 0) root_address = breg;
+    hbreg = hreg;
+    lpcreg = (byte *) LABEL; /* go to clause ep */
+    goto contcase;
+  }
+
 
 /*----------------------------------------------------------------------*/
 /* resume_compl_suspension                                		*/

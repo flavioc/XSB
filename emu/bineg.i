@@ -58,8 +58,7 @@
 	  if ((tip = get_tip(psc)) == NULL) {
 	    xsb_abort("Predicate %s/%d is not tabled", get_name(psc), arity);
 	  }
-	  subgoal_ptr = ti_call_trie_root(tip);
-	  get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
+	  subgoal_ptr = get_subgoal_ptr(term, tip);
 	}
 	ctop_int(4, (Integer)subgoal_ptr);
 #ifdef DEBUG_DELAY

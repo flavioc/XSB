@@ -25,15 +25,15 @@
 
 extern void breg_retskel(void);
 extern void construct_ret_for_call(void);
-extern void delete_table_trie(NODEptr);
+extern void delete_predicate_table(BTNptr);
 extern void reclaim_del_ret_list(SGFrame);
-extern void delete_return(NODEptr, SGFrame);
+extern void delete_return(BTNptr, SGFrame);
 extern void reclaim_ans_list_nodes(SGFrame);
-extern void variant_call_search_rdonly(int, CPtr, CPtr *, int *, byte *);
+extern CPtr get_subgoal_ptr(Cell, tab_inf_ptr);
 extern void init_newtrie(void);
-extern void delete_branch(NODEptr, NODEptr *);
-extern void safe_delete_branch(NODEptr);
-extern void undelete_branch(NODEptr);
+extern void delete_branch(BTNptr, BTNptr *);
+extern void safe_delete_branch(BTNptr);
+extern void undelete_branch(BTNptr);
 
 extern bool has_unconditional_answers(SGFrame);
 
@@ -41,9 +41,7 @@ extern void newtrie(void);
 extern void trie_intern(void);
 extern int  trie_interned(void);
 extern void trie_dispose(void);
-extern void delete_trie(NODEptr);
+extern void delete_trie(BTNptr);
 
-extern NODEptr *Set_ArrayPtr;
+extern BTNptr *Set_ArrayPtr;
 extern int first_free_set;
-
-extern void free_node_function(NODEptr);

@@ -34,10 +34,10 @@
 #include "inst.h"
 #include "memory.h"
 #include "register.h"
+#include "psc.h"
 #include "tries.h"
 #include "choice.h"
 #include "flags.h"
-#include "psc.h"
 #include "heap.h"
 #include "xmacro.h"
 

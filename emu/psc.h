@@ -122,6 +122,8 @@ extern char *list_dot;
 extern Psc ret_psc[];
 extern Psc get_ret_psc(int);
 
+extern Psc get_intern_psc();
+
 /*======================================================================*/
 /*  HiLog related macros.						*/
 /*======================================================================*/
@@ -134,4 +136,3 @@ extern Psc get_ret_psc(int);
 		((cell_tag(term) == CS) && (hilog_psc(get_str_psc(term))))
 
 /*----------------------------------------------------------------------*/
-

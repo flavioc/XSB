@@ -143,6 +143,7 @@ static void init_inst_table_2(void)
   set_inst(hash_opcode, "hash_opcode", X,X,X,X);
   set_inst(hash_handle, "hash_handle", X,X,X,X);
   set_inst(trie_assert_inst,"trie_assert_inst",X,X,X,X);
+  set_inst(trie_proceed, "trie_root", X,X,X,X);
   set_inst(trie_no_cp_numcon_succ, "trie_no_cp_numcon_succ", X, X, X,X);
   set_inst(trie_try_numcon_succ, "trie_try_numcon_succ", X, X, X,X);
   set_inst(trie_retry_numcon_succ, "trie_retry_numcon_succ", X,X,X,X);

@@ -49,10 +49,10 @@
 #include "cell.h"      /* CPtr */
 #include "memory.h"
 #include "register.h"  /* breg, trreg */
+#include "psc.h"       /* needed by "tries.h" and "xmacro.h" */
 #include "tries.h"     /* needed by "choice.h" */
 #include "choice.h"    /* choice point structures and macros */
 #include "xsberror.h"  /* xsb_exit() */
-#include "psc.h"       /* needed by "xmacro.h" */
 #include "xmacro.h"    /* Completion Stack and Subgoal Frame def's */
 
 #include "flags.h"

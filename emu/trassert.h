@@ -40,7 +40,7 @@ extern NODEptr bak_top_trie_space;
 extern char *trie_node_chunk_ptr;
 extern char *tra_trie_node_chunk_ptr;
 extern char *bak_trie_node_chunk_ptr;
-extern struct HASHhdr HASHroot, *HASHrootptr, tra_HASHroot; 
+extern BasicTrieHT HASHroot, *HASHrootptr, tra_HASHroot; 
 
 #define switch_to_trie_assert {\
    bak_free_trie_nodes = free_trie_nodes;\

@@ -216,6 +216,7 @@ extern Float getfloatval(Cell);
 #define makecs(str) (Cell)(enc_addr(str) | CS)
 #define clref_val(dcell) (CPtr)dec_addr(dcell)
 #define makelist(list) (Cell)(enc_addr(list) | LIST)
+#define trievar_val(dcell) (Integer)dec_int(dcell)
 #define maketrievar(val) (Cell)(enc_int(val) | TrieVar)
 
 #define addr_val(dcell) int_val(dcell)

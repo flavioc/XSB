@@ -43,7 +43,7 @@
 #include "register.h"
 #include "deref.h"
 #include "flags.h"
-#include "tries.h"
+#include "trie_internals.h"
 #if (!defined(WAM_TRAIL))
 #include "cut.h"
 #endif
@@ -95,116 +95,135 @@ bool has_unconditional_answers(SGFrame subg)
 /*----------------------------------------------------------------------*/
 
 static int ctr;
-static NODEptr  *GNodePtrPtr;
+static BTNptr  *GNodePtrPtr;
 
 /*----------------------------------------------------------------------*/
 
-#define IsInsibling_rdonly(wherefrom,Found,item)\
-{\
-  LocalNodePtr = wherefrom;\
-  while(LocalNodePtr && (Atom(LocalNodePtr) != item)) {\
-    LocalNodePtr = Sibl(LocalNodePtr);\
-  }\
-  if (!LocalNodePtr) {\
-    Found = 0;\
-  }  else Paren = LocalNodePtr;\
-}
+#define IsInsibling_rdonly(wherefrom,Found,item) {		\
+								\
+   LocalNodePtr = wherefrom;					\
+   while(LocalNodePtr && (BTN_Symbol(LocalNodePtr) != item))	\
+     LocalNodePtr = Sibl(LocalNodePtr);				\
+   if ( IsNULL(LocalNodePtr) )					\
+     Found = 0;							\
+   else {							\
+     Paren = LocalNodePtr;					\
+     GNodePtrPtr = &(Child(LocalNodePtr));  			\
+   }  								\
+ }
 
 /*************************************************/
-#define one_node_chk(Found,Item)\
-{\
-  NODEptr LocalNodePtr, *Cnodeptr;\
-  struct HASHhdr *hh;\
-  Cell item;\
-  char message[80];\
-  item = (Cell) Item;\
-  if (!(*GNodePtrPtr)) {\
-    Found = 0;\
-    sprintf(message, "Inconsistency in one_node_chk() (GNodePtrPtr = %p)",\
-		     GNodePtrPtr);\
-    xsb_exit(message);\
-  } else {\
-    if (Sibl(*GNodePtrPtr) == (NODEptr)-1) { \
-      Cnodeptr = (NODEptr *)Child(*GNodePtrPtr);\
-      hh = (struct HASHhdr *)Cnodeptr - 1;\
-      GNodePtrPtr = Cnodeptr + HASH(item,hh->HASHmask);\
-    }\
-    IsInsibling_rdonly(*GNodePtrPtr,Found,item);\
-    GNodePtrPtr = &(Child(LocalNodePtr)); \
-  }\
+#define one_node_chk(Found,Item) {					\
+									\
+  BTNptr LocalNodePtr;							\
+  Cell item;								\
+									\
+  item = (Cell) Item;							\
+  if ( IsNULL(*GNodePtrPtr) ) {						\
+    char message[80];							\
+    Found = 0;								\
+    sprintf(message,							\
+	    "Inconsistency in one_node_chk() (GNodePtrPtr = 0x%p)",	\
+	    GNodePtrPtr);				     		\
+    xsb_exit(message);							\
+  }									\
+  if ( IsHashHeader(*GNodePtrPtr) )					\
+    GNodePtrPtr =							\
+      Calculate_Bucket_for_Symbol(((BTHTptr)*GNodePtrPtr),item);	\
+  IsInsibling_rdonly(*GNodePtrPtr,Found,item);				\
 }
 /*********************************/
 
 
-#define recvariant_call_rdonly(flag,t_pcreg)\
-{\
-	CPtr  xtemp1;\
-	int j;\
-	while ((!pdlempty) && flag ) {\
-	  xtemp1 = (CPtr) pdlpop;\
-	  cptr_deref( xtemp1);\
-	  switch(cell_tag(xtemp1)) {\
-	    case FREE: case REF1: \
-	      if(is_VarEnumerator(xtemp1)){\
-	      *(--Temp_VarPosReg) =(Cell) xtemp1;\
-	      /*printf("var[%lx] at %lx is %d\n",ctr,Temp_VarPosReg -1, xtemp1);*/\
-	      dbind_ref_nth_var(xtemp1,ctr);\
-	      one_node_chk(flag,maketrievar((ctr | 0x10000)));\
-	      ctr++;\
-					  }\
-	    else{\
-              one_node_chk(flag,maketrievar(trie_var_num(xtemp1)));\
-	       }\
-              break;\
-	    case STRING: case INT:  case FLOAT: \
-	      one_node_chk(flag,xtemp1);\
-	      break;\
-	    case LIST:\
-	      one_node_chk(flag,LIST);\
-	      pdlpush( cell(clref_val(xtemp1)+1) );/* changed */\
-              pdlpush( cell(clref_val(xtemp1)) );\
-	      break;\
-	    case CS:\
-	      one_node_chk(flag,makecs(follow(cs_val(xtemp1)))); /*put root in trie */\
-	      for(j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--)\
-			{pdlpush(cell(clref_val(xtemp1) +j));}\
-	      break;\
-	    default: \
-              xsb_abort("Bad tag in recvariant_call_rdonly");\
-	  }\
-	  }\
-        resetpdl;\
+#define recvariant_call_rdonly(flag) {					      \
+									      \
+   CPtr  xtemp1;							      \
+   int j;								      \
+									      \
+   while ( (!pdlempty) && flag ) {					      \
+     xtemp1 = (CPtr) pdlpop;						      \
+     cptr_deref( xtemp1);						      \
+     switch(cell_tag(xtemp1)) {						      \
+     case FREE:								      \
+     case REF1: 							      \
+       if (! IsPtrIntoVarEnum(xtemp1)) {				      \
+	 *(--Temp_VarPosReg) =(Cell) xtemp1;				      \
+	 /*printf("var[%lx] at %lx is %d\n",ctr,Temp_VarPosReg -1, xtemp1);*/ \
+	 dbind_ref_nth_var(xtemp1,ctr);					      \
+	 one_node_chk(flag,TrieVar_EncodeFirstOccurrence(ctr));		      \
+	 ctr++;								      \
+       }								      \
+       else								      \
+	 one_node_chk(flag,						      \
+		      TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)));   \
+       break;								      \
+     case STRING:							      \
+     case INT:								      \
+     case FLOAT: 							      \
+       one_node_chk(flag,xtemp1);					      \
+       break;								      \
+     case LIST:								      \
+       one_node_chk(flag,LIST);						      \
+       pdlpush( cell(clref_val(xtemp1)+1) );				      \
+       pdlpush( cell(clref_val(xtemp1)) );				      \
+       break;								      \
+     case CS:								      \
+       /*put root in trie */						      \
+       one_node_chk(flag,makecs(follow(cs_val(xtemp1))));		      \
+       for(j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--)	      \
+	 {pdlpush(cell(clref_val(xtemp1) +j));}				      \
+       break;								      \
+     default: 								      \
+       xsb_abort("Bad tag in recvariant_call_rdonly");			      \
+     }									      \
+   }									      \
+   resetpdl;								      \
 }
 
 /*----------------------------------------------------------------------*/
 
-void variant_call_search_rdonly(int arity, CPtr cptr,
-				CPtr *curcallptr, int *flagptr, byte *t_pcreg)
-{
+/*
+ * Totally pirated from variant_call_search().  Notice how the place where
+ * the variables and number of them are pushed goes from high to low mem
+ * (`call_vars' is a static array).  And the fact that the pointer name is
+ * reminiscent of the one used in variant_call_search() (Temp_VarPosReg).
+ *
+ * `argVector' is a pointer to the argument vector, in low-to-high memory
+ * format, beginning with the pointer to the PSC record.
+ *
+ * `callTrie' is a ptr to the root of the call trie.
+ *
+ * If an entry is found in the call trie correspnding to the given
+ * argument vector, a pointer to the trie representation, in the form of a
+ * leaf, is returned.  Otherwise NULL is returned.
+ */
+
+static BTNptr variant_call_lookup(int arity, CPtr argVector, BTNptr callTrie) {
+
     CPtr *xtrbase,xtemp1;
     int i,j,flag = 1;
 
     xtrbase = trreg;                                
     ctr = 0;                                                    
     Temp_VarPosReg = (CPtr)call_vars + MAX_VAR_SIZE - 1;
-    Paren = NOPAR;
-    GNodePtrPtr = (NODEptr *)curcallptr;
-    if (*GNodePtrPtr == 0) {
+    Paren = callTrie;
+    if ( IsNonNULL(Paren) )
+      GNodePtrPtr = &BTN_Child(Paren);
+    else
       flag = 0;
-    }
 
     for (i = 1 ; (i<= arity) && flag ; i++) {                      
-      xtemp1 = (CPtr) (cptr + i);            /*Note! */                  
+      xtemp1 = (CPtr) (argVector + i);            /* Note! */                  
       cptr_deref(xtemp1);                           
       switch (cell_tag(xtemp1)) {                              
         case FREE: case REF1:
-	  if (is_VarEnumerator(xtemp1)) {
+	  if (! IsPtrIntoVarEnum(xtemp1)) {
 	    *(--Temp_VarPosReg) = (Cell) xtemp1;	
 	    dbind_ref_nth_var(xtemp1,ctr);                 
-	    one_node_chk(flag,maketrievar(ctr | 0x10000));           
+	    one_node_chk(flag,TrieVar_EncodeFirstOccurrence(ctr));           
 	    ctr++;
 	  } else {
-	    one_node_chk(flag,maketrievar(trie_var_num(xtemp1)));
+	    one_node_chk(flag,TrieVar_EncodeNum(ConvertVarEnumPtrToIndex(xtemp1)));
 	  }
 	  break;
 	case STRING: case INT: case FLOAT:            
@@ -214,7 +233,7 @@ void variant_call_search_rdonly(int arity, CPtr cptr,
 	  one_node_chk(flag,LIST);                       
 	  pdlpush(cell(clref_val(xtemp1)+1));  /* changed */
 	  pdlpush(cell(clref_val(xtemp1))) ;                 
-	  recvariant_call_rdonly(flag,t_pcreg);                      
+	  recvariant_call_rdonly(flag);                      
 	  break;                                              
 	case CS: 
 	  one_node_chk(flag,makecs(follow(cs_val(xtemp1))));     
@@ -222,27 +241,43 @@ void variant_call_search_rdonly(int arity, CPtr cptr,
 	  for (j=get_arity((Psc)follow(cs_val(xtemp1))); j>=1; j--) {
 	    pdlpush(cell(clref_val(xtemp1)+j));
 	  }
-	  recvariant_call_rdonly(flag,t_pcreg);                      
+	  recvariant_call_rdonly(flag);                      
 	  break;                                              
 	default:                                             
-	  xsb_exit("Bad tag in variant_call_search_rdonly()");
+	  xsb_exit("Bad tag in variant_call_lookup()");
 	}
     }                
+    if ( (arity == 0) && (flag) ) {
+      one_node_chk(flag,(Cell)0);
+    }
     resetpdl;
     *(--Temp_VarPosReg) = ctr;
     table_undo_bindings(xtrbase);
-    if (flag) {
-      if (arity == 0) {
-	one_node_chk(flag,(Cell)0);
-      }
-      *curcallptr = (CPtr) (&(Child(Paren)));
-    }
-    *flagptr = flag;
+    if ( flag )
+      return Paren;
+    else
+      return NULL;
+}
+
+
+CPtr get_subgoal_ptr(Cell callTerm, tab_inf_ptr pTIF) {
+
+  int arity;
+  BTNptr pTrieRepOfCall;
+  extern Psc term_psc(Cell);
+
+  arity = get_arity(term_psc(callTerm));
+  pTrieRepOfCall = variant_call_lookup(arity, (CPtr)cs_val(callTerm),
+				       (BTNptr)ti_call_trie_root(pTIF));
+  if ( IsNonNULL(pTrieRepOfCall) )
+    return (CPtr)BTN_GetSF(pTrieRepOfCall);
+  else
+    return NULL;
 }
 
 /*----------------------------------------------------------------------*/
 /* This function resembles an analogous function in tries.c.  It is
- * supposed to be used only after variant_call_search_rdonly() has been
+ * supposed to be used only after variant_call_lookup() has been
  * called and the variables in the substitution factor have been left in
  * the Temp_VarPosReg location (containing the arity) and in #arity
  * locations upwards.
@@ -268,24 +303,20 @@ void construct_ret_for_call(void)
     }
 }
 
-/*----------------------------------------------------------------------*/
+/*======================================================================*/
 
+/*
+ *                     D E L E T I N G   T R I E S
+ *                     ===========================
+ */
+
+
+/* Stack for top-down traversing and freeing components of a trie
+   -------------------------------------------------------------- */
 struct freeing_stack_node{
-  NODEptr item;
+  BTNptr item;
   struct freeing_stack_node *next;
 };
-
-#define free_node(node) {\
-     /*printf("Freeing node at %x\n",node);*/\
-     Sibl(node) = free_trie_nodes;\
-     free_trie_nodes = node;\
-}
-
-#define free_anslistnode(node) {\
-     /*printf("Freeing node at %x\n",node);*/\
-     aln_next_aln(node) = free_answer_list_nodes;\
-     free_answer_list_nodes = node;\
-}
 
 #define push_node(node){\
      struct freeing_stack_node *temp;\
@@ -311,213 +342,262 @@ struct freeing_stack_node{
     free(temp);\
 }
 
+/* Macros for freeing table-components
+   ----------------------------------- */
+#define free_node(node) {  /* basic trie nodes */	\
+     /*printf("Freeing node at %x\n",node);*/		\
+     Sibl(node) = free_trie_nodes;			\
+     free_trie_nodes = node;				\
+}
+
+#define free_anslistnode(node) {			\
+     /*printf("Freeing node at %x\n",node);*/		\
+     aln_next_aln(node) = free_answer_list_nodes;	\
+     free_answer_list_nodes = node;			\
+}
+
+#define free_answer_list(SubgoalFrame) {			\
+   if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
+     aln_next_aln(subg_ans_list_tail(SubgoalFrame)) =		\
+       free_answer_list_nodes;					\
+   else								\
+     aln_next_aln(subg_ans_list_ptr(SubgoalFrame)) =		\
+       free_answer_list_nodes;			       		\
+   free_answer_list_nodes = subg_ans_list_ptr(SubgoalFrame);	\
+}     
+
+static void free_trie_ht(BTHTptr ht) {
+  
+  BTHT_NextBTHT(BTHT_PrevBTHT(ht)) = BTHT_NextBTHT(ht);
+  if ( IsNonNULL(BTHT_NextBTHT(ht)) )
+    BTHT_PrevBTHT(BTHT_NextBTHT(ht)) = BTHT_PrevBTHT(ht);
+  free(BTHT_BucketArray(ht));
+  free(ht);
+}
+
 /*----------------------------------------------------------------------*/
 /* Given the address of a node, delete it and all nodes below it in the trie */
 /*----------------------------------------------------------------------*/
 
-void delete_table_trie(NODEptr x)
+/*
+ * Called only by builtin ABOLISH_TABLE_PREDICATE with the root of a
+ * Call Trie.
+ */
+
+void delete_predicate_table(BTNptr x)
 {
   struct freeing_stack_node *node_stk_top = 0, *call_nodes_top = 0;
-  NODEptr *Bkp;
-  struct HASHhdr *thdr;
-  NODEptr node, rnod; 
+  BTNptr node, rnod, *Bkp; 
+  BTHTptr ht;
 
-  if (x == NULL) return;
+  if (x == NULL)
+    return;
+
+  if ( ! ( IsTrieRoot(x) && IsInCallTrie(x) ) ) {
+    xsb_warn("delete_predicate_table(): object is not the root"
+	     " of a call trie");
+    return;
+  }
 
   push_node(x);
   while (node_stk_top != 0) {
     pop_node(node);
-    if (Sibl(node) == (NODEptr)-1) { /* hash node */
-      thdr = ((struct HASHhdr *)Child(node)) - 1;
-      for (Bkp = (NODEptr *)Child(node);
-	   Bkp <= (NODEptr *)Child(node)+(thdr->HASHmask); Bkp++) {
-	if (*Bkp) 
+    if ( IsHashHeader(node) ) {
+      ht = (BTHTptr) node;
+      for (Bkp = BTHT_BucketArray(ht);
+	   Bkp < BTHT_BucketArray(ht) + BTHT_NumBuckets(ht);
+	   Bkp++) {
+	if ( IsNonNULL(*Bkp) )
 	  push_node(*Bkp);
       }
-      thdr->prev->next = thdr->next;
-      if (thdr->next) 
-	thdr->next->prev = thdr->prev;
-      free(thdr);
+      free_trie_ht(ht);
     }
     else {
-      if (Sibl(node)) 
+      if ( IsNonNULL(Sibl(node)) )
 	push_node(Sibl(node));
-      if ((Instr(node) == trie_proceed) || ftagged(Parent(node))) {
-	/* free call str and return subtrie */
-	if(Child(node) != NULL){
-	  if (subg_ans_root_ptr((NODEptr *)Child(node))) {
+      if ( IsNonNULL(BTN_Child(node)) ) {
+	if ( IsLeafNode(node) ) {
+	  /*
+	   * Remove the subgoal frame and its dependent structures
+	   */
+	  SGFrame pSF = BTN_GetSF(node);
+	  if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
 	    call_nodes_top = node_stk_top;
-	    push_node((NODEptr)subg_ans_root_ptr((SGFrame)Child(node)));
-	    free_subgoal_frame((SGFrame)Child(node));
-	    /* Here the call structure should be freed, when possible */
+	    push_node((BTNptr)subg_ans_root_ptr(pSF));
 	    while (node_stk_top != call_nodes_top) {
 	      pop_node(rnod);
-	      if (Sibl(rnod) == (NODEptr)-1) {
-		thdr = ((struct HASHhdr *)(Child(rnod))) - 1;
-		for (Bkp=(NODEptr *)Child(rnod);
-		     Bkp <= (NODEptr *)Child(rnod)+(thdr->HASHmask); Bkp++) {
-		  if (*Bkp) 
+	      if ( IsHashHeader(rnod) ) {
+		ht = (BTHTptr) rnod;
+		for (Bkp = BTHT_BucketArray(ht);
+		     Bkp < BTHT_BucketArray(ht) + BTHT_NumBuckets(ht);
+		     Bkp++) {
+		  if ( IsNonNULL(*Bkp) )
 		    push_node(*Bkp);
 		}
-		thdr->prev->next = thdr->next;
-		if (thdr->next) 
-		  thdr->next->prev = thdr->prev;
-		free(thdr);
+		free_trie_ht(ht);
 	      }
 	      else {
 		if (Sibl(rnod)) 
 		  push_node(Sibl(rnod));
-		if ((Instr(rnod) != trie_proceed) && !ftagged(Parent(rnod)))
+		if ( ! IsLeafNode(rnod) )
 		  push_node(Child(rnod));
+		free_node(rnod);
 	      }
-	      free_node(rnod);
 	    }
-	  }
-	}
-      }
-      else 
-	push_node(Child(node));
+	  } /* free answer trie */
+	  free_answer_list(pSF);
+	  free_subgoal_frame(pSF);
+	} /* is leaf */
+	else 
+	  push_node(Child(node));
+      } /* there is a child of "node" */
+      free_node(node);
     }
-    free_node(node);
   }
 }
 
 /*----------------------------------------------------------------------*/
 
-static int is_hash(NODEptr x) 
+static int is_hash(BTNptr x) 
 {
   if( x == NULL)
     return(0);
   else
-    return((Sibl(x) == (NODEptr) -1));
+    return( IsHashHeader(x) );
 }
 
-/*----------------------------------------------------------------------*/
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static NODEptr gParent(NODEptr y)
-{
-  if(ftagged(Parent(y)))
-    return(unftag(Parent(y)));
-  else   
-    return(Parent(y));
-}
+/*
+ * Set values for "parent" -- the parent node of "current" -- and
+ * "cur_hook" -- an address containing a pointer into "current"'s level
+ * in the trie.  If there is no parent node, use the value of
+ * "root_hook" to find the level.  If the hook is actually contained in
+ * the parent of current (as its child field), then we've ascended as
+ * far as we need to go.  Set parent to NULL to indicate this.
+ */
 
-/*----------------------------------------------------------------------*/
+static void set_parent_and_node_hook(BTNptr current, BTNptr *root_hook,
+				     BTNptr *parent, BTNptr **cur_hook) {
 
-static NODEptr *parents_childptr(NODEptr y, NODEptr *hook)
-{
-  NODEptr x;
+  BTNptr par;
 
-  if ((x = gParent(y)) == NULL)
-    return((NODEptr *)hook);
-  else
-    return(&(Child(x)));
-}
-
-/*----------------------------------------------------------------------*/
-
-static NODEptr *get_headptr_of_list(NODEptr x, Cell Item)
-{
-  NODEptr *z;
-  struct HASHhdr *hh;
-
-  z = (NODEptr *)Child(x);
-  hh = (struct HASHhdr *)z -1;
-  return(z + HASH(Item,hh->HASHmask));
-}
-
-/*----------------------------------------------------------------------*/
-
-static int decr_num_in_hashhdr(NODEptr y)
-{
-  return((--  ((struct HASHhdr *)Child(y) -1)->numInHash) + 1);
-}
-
-/*----------------------------------------------------------------------*/
-
-static NODEptr get_prev_sibl(NODEptr y, NODEptr *hook)
-{
-  NODEptr x,tempx;
-
-  x = *parents_childptr(y,hook);
-  if(is_hash(x)){
-    tempx = *get_headptr_of_list(x,Atom(y));
-    decr_num_in_hashhdr(x);
-    x = tempx;
+  if ( IsTrieRoot(current) )  /* defend against root having a set parent field */
+    par = NULL;
+  else {
+    par = BTN_Parent(current);
+    if ( IsNonNULL(par) && (root_hook == &BTN_Child(par)) )
+      par = NULL;    /* stop ascent when hooking node is reached */
   }
-  while(x != NULL){
-    if(Sibl(x) == y)
-      return(x);
-    x = Sibl(x);
+  if ( IsNULL(par) )
+    *cur_hook = root_hook;
+  else
+    *cur_hook = &BTN_Child(par);
+  *parent = par;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ * Given some non-root node which is *not the first* (or only) sibling,
+ * find the node which precedes it in the chain.  Should ONLY be used
+ * when deleting trie components.  If a hash table is encountered, then
+ * its number of contents is decremented.
+ */
+static BTNptr get_prev_sibl(BTNptr node)
+{
+  BTNptr sibling_chain;
+
+  sibling_chain = BTN_Child(BTN_Parent(node));
+  if ( IsHashHeader(sibling_chain) ) {
+    BTHT_NumContents((BTHTptr)sibling_chain)--;
+    sibling_chain =
+      *(BTNptr *)Calculate_Bucket_for_Symbol(sibling_chain,Atom(node));
+  }
+  while(sibling_chain != NULL){
+    if(Sibl(sibling_chain) == node)
+      return(sibling_chain);
+    sibling_chain = Sibl(sibling_chain);
   }  
   xsb_abort("Error in get_previous_sibling");
   return(NULL);
 }
 
 /*----------------------------------------------------------------------*/
-
-static void free_hash_hdr(struct HASHhdr *hh)
-{
-  if(hh-> prev != NULL)
-    hh -> prev-> next = hh->next;
-  if(hh->next != NULL)
-    hh->next->prev = hh->prev;
-  free(hh);
-}
-
-/*----------------------------------------------------------------------*/
-
-static void free_pointed_hash_hdr(NODEptr x)
-{  
-  free_hash_hdr((struct HASHhdr *)Child(x) - 1);
-}
-
-/*----------------------------------------------------------------------*/
 /* deletes and reclaims a whole branch in the return trie               */
 /*----------------------------------------------------------------------*/
 
-void delete_branch(NODEptr lowest_node_in_branch, NODEptr *hook)
-{
+/*
+ * Delete a branch in the trie down from node `lowest_node_in_branch'
+ * up to the level pointed to by the hook location, as pointed to by
+ * `hook'.  Under normal use, the "hook" is either for the root of the
+ * trie, or for the first level of the trie (is a pointer to the child
+ * field of the root).
+ */
+
+void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
+
   int num_left_in_hash;
-  NODEptr prev, parent_ptr, *y1, *z;
-    
-  while((lowest_node_in_branch != NULL) && (is_no_cp(lowest_node_in_branch))){
-    parent_ptr = gParent(lowest_node_in_branch);   
-    y1 = parents_childptr(lowest_node_in_branch, hook);
+  BTNptr prev, parent_ptr, *y1, *z;
+
+  while ( IsNonNULL(lowest_node_in_branch) && 
+	  ( Contains_NOCP_Instr(lowest_node_in_branch) ||
+	    IsTrieRoot(lowest_node_in_branch) ) ) {
+    /*
+     *  Walk up a path with no branches, i.e., the nodes along this path
+     *  have no siblings.  We know this because the instruction in the
+     *  node is of the no_cp variety.
+     */
+    set_parent_and_node_hook(lowest_node_in_branch,hook,&parent_ptr,&y1);
     if (is_hash(*y1)) {
-      z = get_headptr_of_list(*y1,Atom(lowest_node_in_branch));
+      z = Calculate_Bucket_for_Symbol(*y1,Atom(lowest_node_in_branch));
+      if ( IsNULL(*z) || (*z != lowest_node_in_branch) )
+	xsb_exit("delete_branch: trie node not found in hash table\n");
       *z = NULL;
-      num_left_in_hash = decr_num_in_hashhdr(*y1);
+      num_left_in_hash = --BTHT_NumContents((BTHTptr)*y1);
       if (num_left_in_hash  > 0) {
-	mark_leaf_node_del(lowest_node_in_branch); /* mark node as deleted */
-	free_node(lowest_node_in_branch);
-	return; /* like a try or a retry or trust node with siblings */ 
+	/*
+	 * `lowest_node_in_branch' has siblings, even though they are not in
+	 * the same chain.  Therefore we cannot delete the parent, and so
+	 * we're done.
+	 */
+	                        /* mark node as deleted (is this necessary?) */
+	MakeStatusDeleted(lowest_node_in_branch);
+	free_node(lowest_node_in_branch);       /* place it on the free list */
+	return;
       }
       else
-	free_pointed_hash_hdr(*y1);
+	free_trie_ht((BTHTptr)(*y1));
     }
-    mark_leaf_node_del(lowest_node_in_branch); /* mark node as deleted */
+    /*
+     *  Remove this node and continue.
+     */
+	                        /* mark node as deleted (is this necessary?) */
+    MakeStatusDeleted(lowest_node_in_branch);
     free_node(lowest_node_in_branch);
     lowest_node_in_branch = parent_ptr;
   }
-  if (lowest_node_in_branch == NULL) {
+  if (lowest_node_in_branch == NULL)
     *hook = 0;
-  } else {
-    if(is_try(lowest_node_in_branch)){
-      Instr(Sibl(lowest_node_in_branch)) = Instr(Sibl(lowest_node_in_branch)) -1;/* trust -> no_cp  retry -> try */
-      y1 = parents_childptr(lowest_node_in_branch,hook);
+  else {
+    if (Contains_TRY_Instr(lowest_node_in_branch)) {
+      /* Alter sibling's instruction:  trust -> no_cp  retry -> try */
+      Instr(Sibl(lowest_node_in_branch)) =
+	Instr(Sibl(lowest_node_in_branch)) -1;
+      y1 = &BTN_Child(BTN_Parent(lowest_node_in_branch));
       if (is_hash(*y1)) {
-	z = get_headptr_of_list(*y1,Atom(lowest_node_in_branch));
-	num_left_in_hash =decr_num_in_hashhdr(*y1);
-      } else
+	z = Calculate_Bucket_for_Symbol(*y1,Atom(lowest_node_in_branch));
+	num_left_in_hash = --BTHT_NumContents((BTHTptr)*y1);
+      }
+      else
 	z = y1;
       *z =Sibl(lowest_node_in_branch);      
-    } else { 
-      prev = get_prev_sibl(lowest_node_in_branch,hook);      
+    }
+    else { /* not the first in the sibling chain */
+      prev = get_prev_sibl(lowest_node_in_branch);      
       Sibl(prev) = Sibl(lowest_node_in_branch);
-      if (is_trust(lowest_node_in_branch)){
+      if (Contains_TRUST_Instr(lowest_node_in_branch))
 	Instr(prev) -= 2; /* retry -> trust ; try -> nocp */
-      }
     }
     free_node(lowest_node_in_branch);
   }
@@ -525,14 +605,14 @@ void delete_branch(NODEptr lowest_node_in_branch, NODEptr *hook)
 
 /*----------------------------------------------------------------------*/
 
-void safe_delete_branch(NODEptr lowest_node_in_branch)
+void safe_delete_branch(BTNptr lowest_node_in_branch)
 {
   byte choicepttype;
 
-  mark_leaf_node_del(lowest_node_in_branch); /* mark node as deleted */
+  MakeStatusDeleted(lowest_node_in_branch); /* mark node as deleted */
   choicepttype = 0x3 & Instr(lowest_node_in_branch);
   Instr(lowest_node_in_branch) = choicepttype | 0x90; 
-  /*mark_leaf_node_del(lowest_node_in_branch);*/ /* mark node as deleted */
+  /*MakeStatusDeleted(lowest_node_in_branch);*/ /* mark node as deleted */
   /* The following is a hack and is not working --- Kostis
   Atom(lowest_node_in_branch) = Atom(lowest_node_in_branch) ^ 0x100000;
     */
@@ -542,16 +622,16 @@ void safe_delete_branch(NODEptr lowest_node_in_branch)
    in inappropriate behavior on deletion */
 }
 
-void undelete_branch(NODEptr lowest_node_in_branch){
+void undelete_branch(BTNptr lowest_node_in_branch){
    byte choicepttype; 
    byte typeofinstr;
- 
-   if(is_deleted(lowest_node_in_branch)){
+
+   if( IsDeletedNode(lowest_node_in_branch) ){
      choicepttype = 0x3 &  Instr(lowest_node_in_branch);
-     typeofinstr = (~0x3) & DelFlag(lowest_node_in_branch);
+     typeofinstr = (~0x3) & BTN_Status(lowest_node_in_branch);
 
      Instr(lowest_node_in_branch) = choicepttype | typeofinstr;
-     DelFlag(lowest_node_in_branch) = 0;
+     MakeStatusValid(lowest_node_in_branch);
      /*Atom(lowest_node_in_branch) = Atom(lowest_node_in_branch) ^ 0x100000;*/
    }
    else{
@@ -561,13 +641,53 @@ void undelete_branch(NODEptr lowest_node_in_branch){
 
 /*----------------------------------------------------------------------*/
 
+void delete_trie(BTNptr root) {
+  BTNptr sib, chil;  
+
+  if ( IsNonNULL(root) ) {
+    if ( IsHashHeader(root) ) {
+      BTHTptr hhdr;
+      BTNptr *base, *cur;
+
+      hhdr = (BTHTptr)root;
+      base = BTHT_BucketArray(hhdr);
+      for ( cur = base; cur < base + BTHT_NumBuckets(hhdr); cur++ )
+	delete_trie(*cur);
+      free_trie_ht(hhdr);
+    }
+    else {
+      sib  = Sibl(root);
+      chil = Child(root);      
+      /* Child nodes == NULL is not the correct test*/
+      if (IsLeafNode(root)) {
+	if (chil != NULL)
+	  xsb_exit("Anomaly in delete_trie !");
+      }
+      else
+	delete_trie(chil);
+      delete_trie(sib);
+      free_node(root);
+    }
+  }
+}
+
+
+/*======================================================================*/
+
+/*
+ *                  A N S W E R   O P E R A T I O N S
+ *                  =================================
+ */
+
+/*----------------------------------------------------------------------*/
+
 /* This does not reclaim space for deleted nodes, only marks
  * the node as deleted (setting the del_flag), and change the
  * try instruction to fail.
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
  */
-void delete_return(NODEptr l, SGFrame sg_frame) 
+void delete_return(BTNptr l, SGFrame sg_frame) 
 {
   ALPtr a, n, next;
   NLChoice c;
@@ -743,11 +863,17 @@ void breg_retskel(void)
     ctop_int(4, (Integer)sg_frame);
 }
 
-/*----------------------------------------------------------------------*/
+
+/*======================================================================*/
+
+/*
+ *                    I N T E R N E D   T R I E S
+ *                    ===========================
+ */
 
 #define ADJUST_SIZE 100
 
-NODEptr *Set_ArrayPtr = NULL;
+BTNptr *Set_ArrayPtr = NULL;
 /*
  * first_free_set is the index of the first deleted set.  The deleted
  * tries are deleted in builtin DELETE_TRIE, and the corresponding
@@ -767,12 +893,16 @@ int num_sets = 1;
 
 /*----------------------------------------------------------------------*/
 
+/* Allocate an array of handles to interned tries. */
+
 void init_newtrie(void)
 {
-  Set_ArrayPtr = (NODEptr *) calloc(Set_ArraySz,sizeof(NODEptr));
+  Set_ArrayPtr = (BTNptr *) calloc(Set_ArraySz,sizeof(BTNptr));
 }
 
 /*----------------------------------------------------------------------*/
+
+/* Returns a handle to an unused interned trie. */
 
 void newtrie(void)
 {
@@ -786,11 +916,11 @@ void newtrie(void)
   }
   else {
     if (num_sets == Set_ArraySz) { /* run out of elements */
-      NODEptr *temp_arrayptr;
+      BTNptr *temp_arrayptr;
 
       temp_arrayptr = Set_ArrayPtr;
       Set_ArraySz += ADJUST_SIZE;  /* adjust the array size */
-      Set_ArrayPtr = (NODEptr *) calloc(Set_ArraySz ,sizeof(NODEptr));
+      Set_ArrayPtr = (BTNptr *) calloc(Set_ArraySz ,sizeof(BTNptr));
       if (Set_ArrayPtr == NULL)
 	xsb_exit("Out of memory in new_trie/1");
       for (i = 0; i < num_sets; i++)
@@ -809,9 +939,8 @@ void trie_intern(void)
   prolog_term term;
   int RootIndex;
   int flag;
-  NODEptr Leaf;
+  BTNptr Leaf;
 
-  switch_to_trie_assert;
   term = ptoc_tag(1);
   RootIndex = ptoc_int(2);
 
@@ -820,14 +949,15 @@ void trie_intern(void)
   printterm(term,1,25);
   printf("In position %d\n", RootIndex);
 #endif
-  Leaf = whole_term_chk_ins(term,(CPtr) &(Set_ArrayPtr[RootIndex]),&flag);
+  switch_to_trie_assert;
+  Leaf = whole_term_chk_ins(term,&(Set_ArrayPtr[RootIndex]),&flag);
+  switch_from_trie_assert;
   
   ctop_int(3,(Integer)Leaf);
   ctop_int(4,flag);
 #ifdef DEBUG_INTERN
   printf("Exit flag %d\n",flag);
 #endif
-  switch_from_trie_assert;
 }
 
 /*----------------------------------------------------------------------*/
@@ -843,7 +973,7 @@ int trie_interned(void)
   Leafterm = ptoc_tag(3);
   
   /*
-   * Only if Set_ArrayPtr[RootIndex] is a valid NODEptr can we run this
+   * Only if Set_ArrayPtr[RootIndex] is a valid BTNptr can we run this
    * builtin.  That means Set_ArrayPtr[RootIndex] can neither be NULL,
    * nor a deleted set (deleted by builtin delete_trie/1).
    */
@@ -869,68 +999,17 @@ int trie_interned(void)
 
 /*
  * This is builtin #162: TRIE_DISPOSE(+ROOT, +LEAF), to dispose a branch
- * of the trie rooted at Set_Array[ROOT].
+ * of the trie rooted at Set_ArrayPtr[ROOT].
  */
 
 void trie_dispose(void)
 {
-  NODEptr Leaf;
+  BTNptr Leaf;
   long Rootidx;
 
-  switch_to_trie_assert;
   Rootidx = ptoc_int(1);
-  Leaf = (NODEptr)ptoc_int(2);
+  Leaf = (BTNptr)ptoc_int(2);
+  switch_to_trie_assert;
   delete_branch(Leaf, &(Set_ArrayPtr[Rootidx]));
   switch_from_trie_assert;
 }
-
-/*----------------------------------------------------------------------*/
-
-#define isleaf(x) ((Instr(x) == trie_proceed) || ftagged(Parent(x)))
-
-void delete_all_buckets(NODEptr hashnode){
-  NODEptr *Arrayptr;
-  struct HASHhdr *hh;
-  int i;
-    
-  Arrayptr = (NODEptr *)Child(hashnode);
-  hh       = (struct HASHhdr *)Arrayptr -1;
-  for (i = 0; i <= hh-> HASHmask; i++) {
-    delete_trie(Arrayptr[i]);
-  }
-  free_hash_hdr(hh);
-}
-
-/*----------------------------------------------------------------------*/
-
-void delete_trie(NODEptr root){
-  NODEptr sib, chil;  
-  
-  if (root != NULL) {
-    if (is_hash(root)) {
-      delete_all_buckets(root);
-    } else {
-      sib  = Sibl(root);
-      chil = Child(root);      
-    /* Child nodes == NULL is not the correct test*/
-      if (isleaf(root)) {
-	if (chil != NULL)
-	  xsb_exit("Anomaly in delete_trie !");
-      } else {
-	delete_trie(chil);
-      }
-      delete_trie(sib);
-    }
-    free_node(root);
-  }
-}
-
-/*----------------------------------------------------------------------*/
-/* defined here because used by biassert.                               */
-/*----------------------------------------------------------------------*/
-
-void free_node_function(NODEptr n)
-{
-   free_node(n); 
-}
-

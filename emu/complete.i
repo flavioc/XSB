@@ -46,9 +46,8 @@ case check_complete: {
   SUBGOAL = tcp_subgoal_ptr(breg);	/* get the subgoal that is checked */
 
 #ifdef DEBUG_DELAY
-  xcurcall = SUBGOAL;
   fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
-  print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
+  print_subgoal(stderr, (SGFrame)SUBGOAL); fprintf(stderr, "\n");
 #endif
 
   CC_CSPTR = subg_compl_stack_ptr(SUBGOAL);

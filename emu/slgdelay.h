@@ -179,7 +179,7 @@ struct pos_neg_de_list {
 #define is_failing_delay_element(SUBG, ANS)				\
     ((ANS == NULL) ? (is_completed(SUBG) && has_answer_code(SUBG) &&	\
 		      subgoal_unconditionally_succeeds(SUBG))		\
-		   : (is_deleted(ANS)))
+		   : (IsDeletedNode(ANS)))
 
 /*
  * mark_conditional_answer(ANS, SUBG, NEW_DL) will add a new delay list,
@@ -204,7 +204,7 @@ struct pos_neg_de_list {
 #define unmark_conditional_answer(ANS) /*-- NEEDS CHANGE --*/		\
     Child(ANS) = (NODEptr) ((word) (Child(ANS)) | UNCONDITIONAL_MARK)
 
-#define most_general_answer(ANS) is_escape_node(ANS)
+#define most_general_answer(ANS) IsEscapeNode(ANS)
 
 /*
  * Variables used in other parts of the system.

@@ -456,7 +456,7 @@ void print_subgoal(FILE *fp, SGFrame subg)
   int  i = 0;
   Psc  psc = ti_psc_ptr(subg_tip_ptr(subg));
 
-  for (leaf = subg_leaf_ptr(subg); leaf != NOPAR; leaf = unftag(Parent(leaf))) {
+  for (leaf = subg_leaf_ptr(subg); leaf != NULL; leaf = Parent(leaf)) {
     cell_array[i++] = Atom(leaf);
   }
   fprintf(fp, "%s", get_name(psc));

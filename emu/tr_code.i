@@ -35,54 +35,83 @@
 
 /*----------------------------------------------------------------------*/
 
-#define hash_size(x)	(((struct HASHhdr *) x) - 1)->HASHmask
+/* These are used only in instruction "hash_handle"
+   ------------------------------------------------ */
+/*
+ *  Calculate the bucket number in which Subterm would be located,
+ *  should it exist in the trie.
+ */
+#define hash_nonvar_subterm(Subterm, pBTHT, BucketNum) {	\
+								\
+   Cell symbol = 0;	/* eliminate compiler warning */	\
+								\
+   switch (cell_tag(Subterm)) {					\
+   case STRING:  case INT:  case FLOAT:				\
+     symbol = TrieEncodeConstant(Subterm);			\
+     break;							\
+   case LIST:							\
+     symbol = TrieEncodeList(Subterm);				\
+     break;							\
+   case CS:							\
+     symbol = TrieEncodeFunctor(Subterm);			\
+     break;							\
+   default:							\
+     fprintf(stderr,"Bad tag :Type %ld ",cell_tag(Subterm));	\
+     xsb_exit("In instruction hash_handle");			\
+     break;							\
+   }								\
+   BucketNum = TrieHash(symbol,BTHT_GetHashMask(pBTHT));	\
+ }
 
-#define trie_based_cell_hash(this_cell,y)\
-    switch(cell_tag(this_cell)){\
-      case STRING: case INT: case FLOAT:\
-	  y = HASH(this_cell,hash_size(hash_base));\
-	  break;\
-      case LIST:\
-	  y = HASH((Cell)LIST,hash_size(hash_base));\
-	  break;\
-      case CS:\
-          y = HASH(makecs(follow(cs_val(this_cell))),hash_size(hash_base));\
-	  break;\
-      default:\
-	  fprintf(stderr,"Bad tag :Type %d ", (int)cell_tag((Cell)this_cell));\
-	  xsb_exit("In instruction hash_handle");\
-      }
 
-#define get_next_nonempty_hash_offset(hash_base, hash_offset)	\
-    while (TRUE) {\
-	hash_offset++;\
-	if (hash_offset > (hash_size(hash_base))) {\
-	    hash_offset = NO_MORE_IN_HASH;\
-	    break;\
-	} else {\
-	    if ((*(hash_base + hash_offset)) != 0) break;\
-	}\
-    }
+#define find_next_nonempty_bucket(pBTHT, pTable, BucketNum) {	\
+   word TableSize = BTHT_NumBuckets(pBTHT);			\
+								\
+   while (TRUE) {						\
+     BucketNum++;						\
+     if (BucketNum >= TableSize) {				\
+       BucketNum = NO_MORE_IN_HASH;				\
+       break;							\
+     }								\
+     else if ( IsNonNULL(*(pTable + BucketNum)) )		\
+       break;							\
+   }								\
+ }
 
 /*----------------------------------------------------------------------*/
 
-#define proceed_lpcreg				\
-    if (is_answer_leaf(NodePtr) && delay_it) {	\
-      handle_conditional_answers;		\
-    }						\
-    global_num_vars = num_vars_in_var_regs;	\
-    num_vars_in_var_regs = -1;			\
-    Last_Nod_Sav = NodePtr;			\
-    lpcreg = cpreg
+/*
+ * Decide how to proceed from current node.  Used in variable-containing
+ * nodes since it is unclear from the context (embedded instruction)
+ * whether we are at a leaf node.  Only variables or constants can be
+ * leaves of the trie, but constants have special instructions when they
+ * appear as leaves.
+ */
+#define next_lpcreg {				\
+   if ( IsLeafNode(NodePtr) )			\
+     proceed_lpcreg				\
+   else						\
+     non_ftag_lpcreg;				\
+ }
 
-#define non_ftag_lpcreg	lpcreg = opsucc
+/*
+ * Use when current node is known to be a leaf of the trie.  If we're in
+ * an answer trie, then check for and handle conditional answers.
+ */
+#define proceed_lpcreg {			\
+   if( IsInAnswerTrie(NodePtr) && delay_it )	\
+     handle_conditional_answers;		\
+   global_num_vars = num_vars_in_var_regs;	\
+   num_vars_in_var_regs = -1;			\
+   Last_Nod_Sav = NodePtr;			\
+   lpcreg = cpreg;				\
+ }
 
-#define next_lpcreg	\
-    if (!ftagged(Parent(NodePtr))) {	/* If it is a success node */\
-      non_ftag_lpcreg;\
-    } else {	/* do a "proceed" */\
-      proceed_lpcreg; \
-    }
+/*
+ * Use when the current node is known NOT to be a leaf of the trie.
+ * Continue by going to the child of the current node.
+ */
+#define non_ftag_lpcreg		lpcreg = opsucc
 
 /*----------------------------------------------------------------------*/
 

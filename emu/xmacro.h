@@ -229,18 +229,19 @@ extern ALPtr empty_return();
  * so, in some sense making this macro independent of the number of fields.
  */
 
-#define create_subgoal_frame(storeptr,LeafPtr){\
+#define create_subgoal_frame(storeptr,LeafPtr,TableInfo){\
    SGFrame NewFrame; \
    if ((NewFrame = (SGFrame)calloc(1,sizeof(struct subgoal_frame))) == NULL){\
 	xsb_exit("Out of Memory\n");\
    } else {\
-	storeptr = (Cell) NewFrame;\
-	if (subg_structure_list != NULL)\
-	  subg_prev_subgoal(subg_structure_list) = NewFrame;\
-	subg_tip_ptr(NewFrame) = UglyHackForTip;\
+	storeptr = (CPtr) NewFrame;\
+	subg_tip_ptr(NewFrame) = TableInfo;\
 	subg_leaf_ptr(NewFrame) = LeafPtr; \
+        BTN_SetSF(LeafPtr,NewFrame);\
 	subg_compl_stack_ptr(NewFrame) = (CPtr)(openreg - COMPLFRAMESIZE); \
 	subg_ans_list_ptr(NewFrame) = (ALPtr) empty_return(); \
+	if (subg_structure_list != NULL)\
+	  subg_prev_subgoal(subg_structure_list) = NewFrame;\
 	subg_next_subgoal(NewFrame) = subg_structure_list;\
 	subg_structure_list = NewFrame;\
   }\
@@ -295,12 +296,16 @@ extern ALPtr empty_return();
 /* The following 5 macros should be used only for completed subgoals.	*/
 /*----------------------------------------------------------------------*/
 
-#define has_answer_code(SUBG_PTR)	\
-	(subg_ans_root_ptr(SUBG_PTR) != NULL)
-#define subgoal_fails(SUBG_PTR)		\
-	(subg_ans_root_ptr(SUBG_PTR) == NULL)
-#define subgoal_unconditionally_succeeds(SUBG_PTR)	\
-	(is_unconditional_answer(subg_ans_root_ptr(SUBG_PTR)))
+#define has_answer_code(SUBG_PTR)				\
+	( IsNonNULL(subg_ans_root_ptr(SUBG_PTR)) &&		\
+	  IsNonNULL(BTN_Child(subg_ans_root_ptr(SUBG_PTR))) )
+#define subgoal_fails(SUBG_PTR)			\
+	( ! has_answer_code(SUBG_PTR) )
+
+/* should only be used on ground subgoals (is for escape node inspection) */
+#define subgoal_unconditionally_succeeds(SUBG_PTR)			    \
+        ( has_answer_code(SUBG_PTR) &&					    \
+	  is_unconditional_answer(BTN_Child(subg_ans_root_ptr(SUBG_PTR))) )
 
 #define mark_subgoal_failed(SUBG_PTR)	\
 	(subg_ans_root_ptr(SUBG_PTR) = NULL)

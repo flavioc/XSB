@@ -49,7 +49,7 @@
 #include "token.h"
 #include "loader.h"
 #include "load_seg.h"
-#include "tries.h"
+#include "trie_internals.h"
 #include "choice.h"
 #include "xmacro.h"
 #include "tr_utils.h"
@@ -2056,16 +2056,16 @@ static inline int clref_trie_asserted(CPtr Clref) {
 }
 /*----------------------------------------------------------------------*/
 
-static void abolish_trie_asserted_stuff(CPtr b)
-{
-  NODEptr TNode;
+static void abolish_trie_asserted_stuff(CPtr b) {
+
+   NODEptr pRoot;
    
-  switch_to_trie_assert;
-  TNode = (NODEptr)*(b + 3);
-  delete_trie(Child(TNode));
-  free_node_function(TNode);
-  switch_from_trie_assert;
-  *(b + 3) = (Cell) 0;
+   pRoot = (NODEptr)*(b + 3);
+   switch_to_trie_assert;
+   delete_trie(pRoot);
+   switch_from_trie_assert;
+   *(b + 3) = (Cell) 0;
+   /* shouldn't we change one of the instr fields too? */
 }
 
 /*----------------------------------------------------------------------*/
@@ -2166,8 +2166,7 @@ int trie_assert(void)
   NODEptr inst_node_ptr;
   int  found = 1;
 
-  switch_to_trie_assert;
-  
+
   Clause = reg_term(1);
   psc    = (Psc)ptoc_int(2);
   Arity  = ptoc_int(3);
@@ -2176,9 +2175,6 @@ int trie_assert(void)
 #ifdef DEBUG_T
   printf("Prref bytes\n");
   print_bytes(Prref,-2,2);
-#endif
-
-#ifdef DEBUG_T
   printf("Clause :");
   printterm(Clause,1,24);
   printf(" Arity %d ", Arity);
@@ -2193,31 +2189,28 @@ int trie_assert(void)
   printf(" Trie_Asserted_Clref %p \n",Trie_Asserted_Clref);
 #endif
 
-  if (Trie_Asserted_Clref == NULL) {
-    /* Allocate the trie node as in old trie assert 
-       put it in a clref block and pray */
+  switch_to_trie_assert;
+  
+  if(Trie_Asserted_Clref == NULL){
+    /*
+     * Allocate the trie node as in old trie assert: put it in a clref
+     * block and pray.
+     */
     Trie_Asserted_Clref = ((CPtr)mem_alloc(6*sizeof(Cell))) + 2;
-    *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+2;
-
-    inst_node_ptr = (NODEptr)mem_alloc(sizeof(struct NODE));
-    if (inst_node_ptr == NULL){
-      xsb_abort("Out of memory in trie_assert()\n");
-    }   
+    *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+2; /* store size, encode type */
     *(byte *)(Trie_Asserted_Clref +2) = jump;
+
+    inst_node_ptr = newBasicTrie(psc,ASSERT_TRIE_TT);
+    Instr(inst_node_ptr) = trie_assert_inst;
+
     *(Trie_Asserted_Clref +3) = (Cell)inst_node_ptr;
-    Instr(inst_node_ptr)  = trie_assert_inst;
-    Sibl(inst_node_ptr)   =(NODEptr) psc; 
-    Parent(inst_node_ptr) = NULL;
-    Child(inst_node_ptr)  = NULL;
-    Atom(inst_node_ptr)   = 0;
 
     db_addbuff(get_arity(psc) + 1,(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,2);
   }
-  else{
+  else
     inst_node_ptr = (NODEptr)*(Trie_Asserted_Clref +3);
-  }
 
-  one_term_chk_ins((CPtr)Clause,(CPtr)&(Child(inst_node_ptr)),&found);
+  one_term_chk_ins((CPtr)Clause,inst_node_ptr,&found);
 
   switch_from_trie_assert;	
   ctop_int(5,found);
@@ -2230,38 +2223,40 @@ int trie_retract(void)
   CPtr Clref;
   NODEptr inst_node_ptr;
 
-  switch_to_trie_assert;
   Clref = (CPtr)ptoc_int(1);
   if (Clref == NULL) {
     Last_Nod_Sav = NULL;
+    return TRUE;
+  }
+  else if (Last_Nod_Sav == NULL) {
+    fprintf(stderr, "Last_Nod_Sav is NULL \n");
+    return FALSE;
   }
   else {
-    if (Last_Nod_Sav == NULL) {
-      fprintf(stderr, "Last_Nod_Sav is NULL \n");
-      switch_from_trie_assert;
-      return FALSE;
-    }
     inst_node_ptr = (NODEptr)*(Clref +3);
 #ifdef DEBUG_T
     printf(" Deleting from Instrn Node %p\n",  inst_node_ptr );
     printf(" Before: Child of Instrn Node %p\n", Child(inst_node_ptr));
 #endif
+    switch_to_trie_assert;
     delete_branch(Last_Nod_Sav, &(Child(inst_node_ptr)));
+    switch_from_trie_assert;
 #ifdef DEBUG_T
     printf(" After : Child of Instrn Node %p\n", Child(inst_node_ptr));
 #endif
+    return TRUE;
   }
-  switch_from_trie_assert;
-  return TRUE;
 }
 
 /*-----------------------------------------------------------------*/
+
+/* Only mark the nodes in the branch as deleted. */
 
 int trie_retract_safe(void)
 { 
   if (Last_Nod_Sav == NULL)
     return FALSE;
-  else{
+  else {
     safe_delete_branch(Last_Nod_Sav);
     return TRUE;
   }

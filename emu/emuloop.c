@@ -53,7 +53,7 @@
 #include "loader.h"
 #include "binding.h"
 #include "flags.h"
-#include "tries.h"
+#include "trie_internals.h"
 #include "choice.h"
 #include "sw_envs.h"
 #include "xmacro.h"
@@ -67,15 +67,13 @@
 
 CPtr	VarPosReg;
 /*
- * Variables ans_var_pos_reg is a pointer to substitution factor of an
+ * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
  * variant_trie_search().  The name of this variable is from VarPosReg, a
  * variable used in variant_call_search() to save the substitution factor
  * of the call.
  */
 CPtr	ans_var_pos_reg;
-
-extern tab_inf_ptr UglyHackForTip;
 
 /*----------------------------------------------------------------------*/
 
@@ -225,13 +223,18 @@ static int emuloop(byte *startaddr)
 #endif
   int   xflag;
   CPtr  xtemp1, xtemp2, xtemp3, xtemp5, xcurcall;
+  char  message[80];
+
+/* for slginsts.i
+   -------------- */
   Cell  CallNumVar;
   ALPtr OldRetPtr;
   NODEptr TrieRetPtr;
-  char  message[80];
+  CallInfoRecord callInfo;
+  CallLookupResults lookupResults;
+
 
   xsb_segfault_message = xsb_default_segfault_msg;
-
   rreg = reg; /* for SUN */
   op1 = op2 = (Cell) NULL;
   lpcreg = (pb)&reset_inst;  /* start by initializing abort handler */

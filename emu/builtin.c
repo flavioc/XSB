@@ -138,7 +138,6 @@ extern void print_subgoal(FILE *, SGFrame);
 
 static int  fast_ground(CPtr);
 static void abolish_table_info(void);
-static void get_subgoal_ptr(Cell, int, CPtr);
 static void write_quotedname(FILE *, char *);
 
 #ifdef DEBUG
@@ -254,7 +253,6 @@ DllExport char* call_conv ptoc_string(int regnum)
  *  creates an INT Cell containing `value', and binds the variable to it.
  */
 DllExport void call_conv ctop_int(int regnum, prolog_int value)
-     /* from int value form an int node */
 {
   register Cell addr = cell(reg+regnum);
   
@@ -1172,13 +1170,11 @@ int builtin_call(byte number)
       err_handle(TYPE, 1, "get_subgoal_ptr", 2, "callable term", term);
       return FALSE;	/* fail */
     }
-    arity = get_arity(psc);
     tip = get_tip(psc);
     if (tip == NULL) {
-      xsb_abort("Predicate %s/%d is not tabled", get_name(psc), arity);
+      xsb_abort("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
     }
-    subgoal_ptr = ti_call_trie_root(tip);
-    get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
+    subgoal_ptr = get_subgoal_ptr(term, tip);
     ctop_int(2, (Integer)subgoal_ptr);
     break;
 
@@ -1192,10 +1188,8 @@ int builtin_call(byte number)
 
     term = ptoc_tag(1);
     psc = term_psc(term);
-    arity = get_arity(psc);
     tip = get_tip(psc);
-    subgoal_ptr = ti_call_trie_root(tip);
-    get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
+    subgoal_ptr = get_subgoal_ptr(term, tip);
     compl_stack_ptr = subg_compl_stack_ptr(subgoal_ptr);
     if (prev_compl_frame(compl_stack_ptr) >= COMPLSTACKBOTTOM ||
 	is_leader(compl_stack_ptr)) {
@@ -1328,9 +1322,7 @@ int builtin_call(byte number)
     if (tip == NULL) {
       value = 0; /* undef */
     } else {
-      arity = get_arity(psc);
-      subgoal_ptr = ti_call_trie_root(tip);
-      get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
+      subgoal_ptr = get_subgoal_ptr(term, tip);
       if (subgoal_ptr == NULL) {
 	value = 1; /* no_call_yet */
       } else {
@@ -1354,7 +1346,7 @@ int builtin_call(byte number)
       NODEptr CallRoot = (NODEptr)ti_call_trie_root(tip);
 
       ti_call_trie_root(tip) = NULL;
-      delete_table_trie(CallRoot);
+      delete_predicate_table(CallRoot);
     }
     break;
   case TRIE_ASSERT:
@@ -1426,26 +1418,18 @@ int builtin_call(byte number)
   case TRIE_DISPOSE:
     trie_dispose();
     break;
-  case TRIE_DISPOSE_NR:{
-    NODEptr x = (NODEptr)ptoc_int(1); /* was 2 !*/
-    safe_delete_branch(x);
-  }
+  case TRIE_DISPOSE_NR:
+    safe_delete_branch((NODEptr)ptoc_int(1));
     break;
   case TRIE_UNDISPOSE:
     undelete_branch((NODEptr) ptoc_int(2));
     break;
   case BOTTOM_UP_UNIFY:
-    {
-      NODEptr x = (NODEptr) ptoc_int(3);
-      if(is_deleted(x))
-	return FALSE;
-      else
-	bottom_up_unify();
-    }
+    if ( ! bottom_up_unify() )
+      return FALSE;
     break;
   case DELETE_TRIE:
     if (strcmp(ptoc_string(2),"intern") == 0){
-      switch_to_trie_assert;
       tmpval = ptoc_int(1);
       /*
        * We can only delete a valid NODEptr, so that only those sets
@@ -1453,6 +1437,7 @@ int builtin_call(byte number)
        */
       if ((Set_ArrayPtr[tmpval] != NULL) &&
 	  (!((long) Set_ArrayPtr[tmpval] & 0x3))) {
+	switch_to_trie_assert;
 	delete_trie(Set_ArrayPtr[tmpval]);
 	switch_from_trie_assert;
         /*
@@ -1545,24 +1530,6 @@ static void abolish_table_info(void)
   openreg = COMPLSTACKBOTTOM;
   abolish_trie();
   abolish_wfs_space(); 
-}
-
-/* --------------------------------------------------------------------	*/
-
-static void get_subgoal_ptr(Cell term, int arity, CPtr call_trie_root)
-{
-  int flag;
-
-  /*  cptr_deref(term); --- Probably not needed --- Kostis. ---*/
-  term = (Cell) cs_val(term);
-  variant_call_search_rdonly(arity, (CPtr)term,
-			     (CPtr *)call_trie_root, &flag, pcreg);
-  if (flag) {
-    *call_trie_root = (Cell) *((CPtr)*call_trie_root);
-  }
-  else {
-    *call_trie_root = (Cell) 0;
-  }
 }
 
 /* --------------------------------------------------------------------	*/

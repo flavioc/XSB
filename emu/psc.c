@@ -33,8 +33,8 @@
 #include "auxlry.h"
 #include "cell.h"
 #include "xsberror.h"
-#include "tries.h"
 #include "psc.h"
+#include "tries.h"
 #include "hash.h"
 #include "xmacro.h"
 #include "loader.h"
@@ -304,11 +304,11 @@ Pair link_sym(Psc psc, Psc mod_psc)
     return found_pair;
 } /* link_sym */
 
+
 /*
  * Get the PSC for ret/n.  If it already exists, just return it.  Or
  * create one and save it in ret_psc[n].
  */
-
 Psc get_ret_psc(int n)
 {
   Pair temp;
@@ -319,4 +319,18 @@ Psc get_ret_psc(int n)
     ret_psc[n] = pair_psc(temp);
   }
   return ret_psc[n];
+}
+
+
+/*
+ * Get the PSC for intern/1, a generic functor for storing in the roots
+ * of interned tries.
+ */
+Psc get_intern_psc() {
+
+  Pair intern_handle;
+  int new_indicator;
+
+  intern_handle = insert("intern", 1, global_mod, &new_indicator);
+  return (pair_psc(intern_handle));
 }

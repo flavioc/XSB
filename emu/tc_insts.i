@@ -33,7 +33,7 @@ case trie_no_cp_str:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_str\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_str;
 	non_ftag_lpcreg;
 	goto contcase;
@@ -42,9 +42,9 @@ case trie_try_str:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_str\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
@@ -57,7 +57,7 @@ case trie_retry_str:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_str\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) =  (byte *)opfail;
@@ -69,7 +69,7 @@ case trie_trust_str:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_str\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
@@ -84,7 +84,7 @@ case trie_no_cp_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_numcon:\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	non_ftag_lpcreg;
@@ -94,9 +94,9 @@ case trie_try_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_numcon\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
@@ -110,7 +110,7 @@ case trie_retry_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_numcon\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
@@ -123,7 +123,7 @@ case trie_trust_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_numcon\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);
@@ -139,7 +139,7 @@ case trie_no_cp_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_numcon_succ\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_numcon;
 	reg_arrayptr--;
 	proceed_lpcreg;
@@ -149,9 +149,9 @@ case trie_try_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_numcon_succ\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
@@ -165,7 +165,7 @@ case trie_retry_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_numcon_succ\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
@@ -178,7 +178,7 @@ case trie_trust_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_numcon_succ\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);
@@ -194,8 +194,8 @@ case trie_no_cp_var:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_var\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
-	num_vars_in_var_regs = (int)int_val(opatom) & 0xffff;
+	NodePtr = (BTNptr) (lpcreg - 1);
+	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -213,15 +213,15 @@ case trie_try_var:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_var\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_find_locx(ereg);
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
 	hbreg = hreg;
-	num_vars_in_var_regs = (int)int_val(opatom) & 0xffff;
+	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -239,11 +239,11 @@ case trie_retry_var:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_var\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
-	num_vars_in_var_regs = (int)int_val(opatom) & 0xffff;
+	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -261,12 +261,12 @@ case trie_trust_var:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_var\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
 	restore_trail_condition_registers(breg);
-	num_vars_in_var_regs = (int)int_val(opatom) & 0xffff;
+	num_vars_in_var_regs = TrieVar_DecodeNum(opatom);
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
@@ -286,7 +286,7 @@ case trie_no_cp_val:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_val\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_val;
 	next_lpcreg;
 	goto contcase;
@@ -295,9 +295,9 @@ case trie_try_val:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_val\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
@@ -310,7 +310,7 @@ case trie_retry_val:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_val\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
@@ -322,7 +322,7 @@ case trie_trust_val:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_val\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
@@ -337,7 +337,7 @@ case trie_no_cp_list:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_list\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_list;
 	non_ftag_lpcreg;
 	goto contcase;
@@ -346,9 +346,9 @@ case trie_try_list:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_list\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
@@ -361,7 +361,7 @@ case trie_retry_list:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_list:\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
@@ -373,7 +373,7 @@ case trie_trust_list:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_list\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
@@ -382,7 +382,9 @@ case trie_trust_list:
 	non_ftag_lpcreg;
 	goto contcase;
 
-/* jf: fail insts for deleted nodes -  reclaim deleted returns at completion */
+/*----------------------------------------------------------------------*/
+
+/* jf: fail insts for deleted nodes - reclaim deleted returns at completion */
 case trie_no_cp_fail:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_no_cp_fail\n");
@@ -394,7 +396,7 @@ case trie_trust_fail:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_trust_fail\n");
 #endif	
-NodePtr = (NODEptr) (lpcreg - 1);
+NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);	/* Remove this CP */
@@ -406,9 +408,9 @@ case trie_try_fail:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_try_fail\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
+	tbreg = top_of_cpstack;
 	save_trie_registers(tbreg);
 	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
 	breg = tbreg;
@@ -420,7 +422,7 @@ case trie_retry_fail:
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_retry_fail\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
@@ -439,95 +441,157 @@ case trie_retry_fail:
 /* it as a reference either to a WAM stack or to a CHAT area.		*/
 /*----------------------------------------------------------------------*/
 
+/* Structure of the CPF created by hash_opcode:
+
+             +-------------+
+             |             |   LOW MEMORY
+             |    Trail    |
+             |             |
+             |      |      |
+             |      V      |
+             |             |
+             |             |
+             |      ^      |
+             |      |      |
+             |             |
+             |  CP Stack   |
+             |             |
+             |             |
+             |=============|
+             | Rest of CPF |--- Basic CPF (no argument registers)
+             |-------------|
+             | HASH index  | - last bucket explored
+             |  ht header  | - ptr to HashTable Header structure
+             | HASH_IS flag| - var/nonvar status of topmost term
+             |-------------|    (the next to be unified with the trie)
+             |     n+1     |_
+             |reg_array[n] | \
+             |      .      |  |
+             |      .      |  |- Subterms to be unified with trie
+             |      .      |  |
+             |reg_array[0] |_/
+             |-------------|
+             |      m      |_
+             | var_regs[m] | \
+             |      .      |  |
+             |      .      |  |- Variables encountered so far along trie path
+             |      .      |  |   (m is -1 if no variables were encountered)
+             | var_regs[0] |_/
+             |=============|
+             |      .      |
+             |      .      |
+             |      .      |    HIGH MEMORY
+             +-------------+
+*/
+
 case hash_opcode:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("hash_opcode\n");
+  printf("hash_opcode\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
-	save_find_locx(ereg);
-	set_min(tbreg,breg,bfreg);
-	save_trie_registers(tbreg);
-	temp_ptr_for_hash = (CPtr)*reg_arrayptr;
-	cptr_deref(temp_ptr_for_hash);
-	if (isref(temp_ptr_for_hash)) {
-	  cell(--tbreg) = makeint(HASH_IS_FREE);
-	} else {
-	  cell(--tbreg) = makeint(HASH_IS_NOT_FREE);
-	}
-	temp_ptr_for_hash = (CPtr) Child(NodePtr);
-	cell(--tbreg) = makestring(temp_ptr_for_hash);
-	cell(--tbreg) = makeint(FIRST_HASH_NODE);
-	save_choicepoint(tbreg,ereg,(byte *)&hash_handle_inst,breg);
-	breg = tbreg;
-	hbreg = hreg;
-	lpcreg = (byte *) &hash_handle_inst;
-	goto contcase;
+  /*
+   *  Under new trie structure, NodePtr is actually pointing at a
+   *  Hash Table Header struct.
+   */
+  NodePtr = (BTNptr) (lpcreg - 1);
+  save_find_locx(ereg);
+  tbreg = top_of_cpstack;
+  save_trie_registers(tbreg);
+  temp_ptr_for_hash = (CPtr)*reg_arrayptr;
+  cptr_deref(temp_ptr_for_hash);
+  if (isref(temp_ptr_for_hash))
+    cell(--tbreg) = makeint(HASH_IS_FREE);
+  else
+    cell(--tbreg) = makeint(HASH_IS_NOT_FREE);
+  /*
+   *  For normal trie nodes, this next CP value was given as the beginning
+   *  of the hash table (bucket array).  With the new trie structure, I
+   *  instead pass in the header, allowing access to all needed fields,
+   *  including the bucket array.
+   */
+  cell(--tbreg) = makestring(NodePtr);
+  cell(--tbreg) = makeint(FIRST_HASH_NODE);
+  save_choicepoint(tbreg,ereg,(byte *)&hash_handle_inst,breg);
+  breg = tbreg;
+  hbreg = hreg;
+  lpcreg = (byte *) &hash_handle_inst;
+  goto contcase;
 
+
+/*
+ *  Since this instruction is called immediately after 'hash_opcode' and
+ *  is also backtracked to while exploring a bucket chain, a mechanism is
+ *  needed to distinguish between the two cases.  Hence the use of the
+ *  FIRST_HASH_NODE flag in the CPS.
+ */
 case hash_handle:
+  {
+    BTHTptr hash_hdr;
+    
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("hash_handle\n");
+    printf("hash_handle\n");
 #endif
-	i = (int)cell(breg+CP_SIZE);
-	hash_offset = int_val(i);
-	hash_base = (NODEptr *) cell(breg+CP_SIZE+1);
-	hash_base = (NODEptr *) string_val(hash_base);
-	i = (int)cell(breg + CP_SIZE + 2);
-	i = int_val(i);
-	if (i == HASH_IS_NOT_FREE)
-	{
-	  if ((hash_offset != FIRST_HASH_NODE) &&
-	      (hash_offset != NO_MORE_IN_HASH)) {/* old hash_offset */
-	    tbreg = breg;
-	    restore_regs_and_vars(tbreg, CP_SIZE+3);
-	  }
-	  deref(*reg_arrayptr);
+    hash_offset = int_val(cell(breg+CP_SIZE));
+    hash_hdr = (BTHTptr) string_val(cell(breg+CP_SIZE+1));
+    hash_base = BTHT_BucketArray(hash_hdr);
+    if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
+      /* Unify with nonvar */
+      if ( (hash_offset != FIRST_HASH_NODE) &&
+	   (hash_offset != NO_MORE_IN_HASH) ) {
+	tbreg = breg;
+	restore_regs_and_vars(tbreg, CP_SIZE+3);
+      }
+      deref(*reg_arrayptr);
+      if (isref(*reg_arrayptr))   /* sanity check */
+	xsb_exit("error_condition in hash_handle\n");
 
-	  if (!isref(*reg_arrayptr)) {
-	    trie_based_cell_hash(*reg_arrayptr,hashed_hash_offset);
-	    if (hash_offset == FIRST_HASH_NODE) {
-	      if (*hash_base == NULL) { /* No Variables in hash */
-	        breg = cp_prevbreg(breg);	
-	        if (*(hash_base+hashed_hash_offset) == NULL) {/* hash bucket 0*/
-		  lpcreg = (byte *) cp_pcreg(breg);
-	        } else {
-		  lpcreg = (byte *) *(hash_base + hashed_hash_offset);
-	        }
-	      } else {
-	        if (((*(hash_base + hashed_hash_offset) == NULL)) ||
-		     (hashed_hash_offset == 0)) {
-		  breg = cp_prevbreg(breg);
-	        } else {
-		  cell(breg + CP_SIZE) = makeint(hashed_hash_offset);
-	        }
-	        lpcreg = (byte *) *hash_base;
-	      }
-	    } else 
-		 if (hash_offset == hashed_hash_offset) {
-		   lpcreg = (byte *)*(hash_base + hash_offset);
-		   breg = cp_prevbreg(breg);
-		 } else {
-		   fprintf(stderr,"Hash Offset %d, HHO %d\n",
-				  hash_offset,hashed_hash_offset);
-		   xsb_exit("error_condition in hash_handl\n");
-		 }
-	  } else { xsb_exit("error_condition in hash_handl\n"); }
-	} else {
-	  get_next_nonempty_hash_offset(hash_base,hash_offset);
-	  if (hash_offset == NO_MORE_IN_HASH) {
-	    breg = cp_prevbreg(breg);
+      hash_nonvar_subterm(*reg_arrayptr,hash_hdr,hashed_hash_offset);
+      if (hash_offset == FIRST_HASH_NODE) {
+	if (*hash_base == NULL) { /* No Variables in hash table */
+	  breg = cp_prevbreg(breg);   /* dealloc this CPF */
+	  if(*(hash_base + hashed_hash_offset) == NULL)
+	    /* fail to previous CPF */
 	    lpcreg = (byte *) cp_pcreg(breg);
-	  } else {
-	    i = cell(breg+CP_SIZE);
-	    i = int_val(i);	/* i now has the value of old hash_offset */
-	    if (i != FIRST_HASH_NODE) {
-	      tbreg = breg;
-	      restore_regs_and_vars(tbreg, CP_SIZE+3);
-	    }
-	    lpcreg = (byte *) *(hash_base + hash_offset);
-	    cell(breg+CP_SIZE) = makeint(hash_offset);
-	  }
+	  else
+	    /* execute code of tries in this bucket */
+	    lpcreg = (byte *) *(hash_base + hashed_hash_offset);
 	}
-	goto contcase;
+	else {   /* save hashed-to bucket, explore bucket 0 */
+	  if ( (*(hash_base + hashed_hash_offset) == NULL) ||
+	       (hashed_hash_offset == 0) )
+	    breg = cp_prevbreg(breg);   /* dealloc this CPF */
+	  else
+	    cell(breg + CP_SIZE) = makeint(hashed_hash_offset);
+	  lpcreg = (byte *) *hash_base;
+	}
+      }
+      else if (hash_offset == hashed_hash_offset) {
+	/* explore hashed-to bucket */
+	lpcreg = (byte *)*(hash_base + hash_offset);
+	breg = cp_prevbreg(breg);
+      }
+      else {
+	fprintf(stderr,"Hash Offset %d, HHO %d\n", hash_offset,
+		hashed_hash_offset);
+	xsb_exit("error_condition in hash_handle\n");
+      }
+    }
+    else {  /* unification of trie with variable term */
+      find_next_nonempty_bucket(hash_hdr,hash_base,hash_offset);
+      if (hash_offset == NO_MORE_IN_HASH) {
+	breg = cp_prevbreg(breg);
+	lpcreg = (byte *) cp_pcreg(breg);
+      }
+      else {
+	if ( int_val(cell(breg+CP_SIZE)) != FIRST_HASH_NODE ) {
+	  tbreg = breg;
+	  restore_regs_and_vars(tbreg, CP_SIZE+3);
+	}
+	lpcreg = (byte *) *(hash_base + hash_offset);
+	cell(breg+CP_SIZE) = makeint(hash_offset);
+      }
+    }
+    goto contcase;
+  }
 
 /*----------------------------------------------------------------------*/
 
@@ -535,26 +599,41 @@ case trie_proceed:	/* This is essentially a "proceed" */
 #ifdef PVR_DEBUG_TC_INSTS
 	printf("trie_proceed:\n");
 #endif
-	NodePtr = (NODEptr) (lpcreg - 1);
+	NodePtr = (BTNptr) (lpcreg - 1);
 	num_vars_in_var_regs = -1;
 	proceed_lpcreg;
 	goto contcase;
 
-case trie_assert_inst:{
-	Psc psc_ptr;
-	int i;
-
-	NodePtr = (NODEptr) (lpcreg - 1);
-	if (Child(NodePtr) != NULL) {
-	  psc_ptr = (Psc)Sibl(NodePtr);
-	  reg_arrayptr = reg_array -1;
-  	  num_vars_in_var_regs = -1;
-  	  save_find_locx(ereg);
-  	  for (i = get_arity(psc_ptr); i >= 1; i--) { pushreg(*(rreg+i)); }
-	  lpcreg = (byte *) Child(NodePtr);
-	} else lpcreg = (byte *) &fail_inst;
-	}
+case trie_root:      /* A no-op; begin processing with child */
+#ifdef PVR_DEBUG_TC_INSTS
+	printf("trie_root:\n");
+#endif
+	NodePtr = (BTNptr) (lpcreg - 1);
+	lpcreg = (byte *) BTN_Child(NodePtr);
 	goto contcase;
 
-/*----------------------------------------------------------------------*/
+/*
+ * This is the embedded-trie instruction which is placed in the root of
+ * asserted tries.  It looks a lot like both "return_table_code", which
+ * prepares the engine to walk an answer trie, and "get_calls", which
+ * prepares the engine to walk a call trie.  Maybe there's a way to
+ * "unify" these operations now that all tries contain root nodes.
+ */
+case trie_assert_inst:
+{
+  Psc psc_ptr;
+  int i;
 
+  NodePtr = (BTNptr) (lpcreg - 1);
+  if (Child(NodePtr) != NULL) {
+    psc_ptr = TrieDecodePSC(NodePtr);
+    reg_arrayptr = reg_array -1;
+    num_vars_in_var_regs = -1;
+    save_find_locx(ereg);
+    for (i = get_arity(psc_ptr); i >= 1; i--) { pushreg(*(rreg+i)); }
+    lpcreg = (byte *) Child(NodePtr);
+  }
+  else
+    lpcreg = (byte *) &fail_inst;
+  goto contcase;
+}	

@@ -1,5 +1,5 @@
 /* File:      tries.h
-** Author(s): Prasad Rao, Kostis Sagonas
+** Author(s): Ernie Johnson, Prasad Rao, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -23,57 +23,153 @@
 */
 
 
-/* mark node as deleted */
-#define mark_leaf_node_del(X)  DelFlag(X) = Instr(X)
-#define is_deleted(X)     DelFlag(X) != 0 
-#define is_not_deleted(X)      DelFlag(X) == 0
+#ifndef PUBLIC_TRIE_DEFS
 
-struct HASHhdr {
-  struct HASHhdr *next, *prev;
-  Integer numInHash;
-  Cell HASHmask;
-};
 
-/*----------------------------------------------------------------------*/
+#define PUBLIC_TRIE_DEFS
 
-typedef struct NODE *NODEptr;
-struct NODE {
-  byte instr;
-  byte nreg;
-  byte del_flag;
-  byte node_type;
+
+/* Temporary home
+   -------------- */
+#define IsNULL(ptr)      ( (ptr) == NULL )
+#define IsNonNULL(ptr)   ( (ptr) != NULL )
+
+
+/*===========================================================================*/
+
+/*
+ *                      Trie Component Info Field
+ *                      =========================
+ *
+ *  Defines a field one word in size which contains miscellaneous info
+ *  needed for maximizing trie use: An instruction field allows tries to
+ *  be traversed for term unification with speeds comparable to code
+ *  execution for facts.  A status field signifies whether a particular
+ *  node represents a valid subbranch of the trie.  Nodes (paths) may
+ *  temporarily be marked as deleted until such time they can be safely
+ *  removed from the trie.  Two type fields contain annotations which
+ *  describe the type of trie in which a structure resides and the role
+ *  the structure plays within this trie, respectively.
+ *
+ *  Each of the two main components of a trie contain this field: trie
+ *  nodes and hash table headers.
+ *
+ *  For valid trie-embedded instruction values, see file "inst.h".  */
+
+typedef struct InstructionPlusTypeFrame {
+  byte instr;		/* contains compiled trie code */
+  byte status;		/* whether the node has been deleted */
+  byte trie_type;	/* global info: what type of trie is this? */
+  byte node_type;	/* local info: what is the role of this struct? */
 #ifdef BITS64
   byte padding[4];
 #endif
-  NODEptr sibling;
-  NODEptr child;
-  NODEptr parent;
-  Cell atom;
-};
+} InstrPlusType;
 
-#define Instr(X)	((X)->instr)
-#define Nregs(X)	((X)->nregs)
-#define DelFlag(X)	((X)->del_flag)
-#define NodeType(X)     ((X)->node_type)
-#define Child(X)	((X)->child)
-#define Sibl(X)		((X)->sibling)
-#define Atom(X)		((X)->atom)
-#define Parent(X)	((X)->parent)
+#define IPT_Instr(IPT)		((IPT).instr)
+#define IPT_Status(IPT)		((IPT).status)
+#define IPT_TrieType(IPT)	((IPT).trie_type)
+#define IPT_NodeType(IPT)	((IPT).node_type)
 
-#define NODE_TYPE_UNKNOWN ((byte)0)
-#define NODE_TYPE_ANSWER_LEAF  ((byte)1)
-#define is_answer_leaf(x) (NodeType(x) == NODE_TYPE_ANSWER_LEAF)
+
+/*===========================================================================*/
+
+/*
+ *                         B A S I C   T R I E S
+ *                         =====================
+ *
+ *  Each symbol in a term is maintained in a separate node in a trie.
+ *  Paths from the root to the leaves trace out the terms stored in the
+ *  trie.  Sharing between terms takes place only high-up within a trie,
+ *  corresponding to left-to-right term factoring.
+ *
+ *  Children of a particular node are maintained in a linked-list pointed
+ *  to by the Child field.  This list is maintained through the Sibling
+ *  fields of the child nodes.  To facilitate rapid access when the
+ *  number of children becomes large, a hash table is employed.  In this
+ *  case, the parent node's Child field points to a header structure for
+ *  the hash table, rather than directly to one of the children.
+ *
+ *  When used to build Call Tries, the Child field of a leaf trie node
+ *  points to a SubgoalFrame which contains additional info for that call.
+ */
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *                          Basic Trie Node
+ *                          ---------------
+ */
+
+typedef struct Basic_Trie_Node *BTNptr;
+typedef struct Basic_Trie_Node {
+  InstrPlusType info;
+  BTNptr sibling;
+  BTNptr child;
+  BTNptr parent;
+  Cell symbol;
+} BasicTrieNode;
+
+/* - - Preferred macros - - - - */
+#define BTN_Instr(pBTN)		IPT_Instr((pBTN)->info)
+#define BTN_Status(pBTN)	IPT_Status((pBTN)->info)
+#define BTN_TrieType(pBTN)	IPT_TrieType((pBTN)->info)
+#define BTN_NodeType(pBTN)	IPT_NodeType((pBTN)->info)
+#define BTN_Parent(pBTN)	( (pBTN)->parent )
+#define BTN_Child(pBTN)		( (pBTN)->child )
+#define BTN_Sibling(pBTN)	( (pBTN)->sibling )
+#define BTN_Symbol(pBTN)	( (pBTN)->symbol )
+
+/* - - For backwards compatibility - - - - */
+typedef struct Basic_Trie_Node *NODEptr;
+#define Instr(X)	BTN_Instr(X)
+#define TrieType(X)     BTN_TrieType(X)
+#define NodeType(X)     BTN_NodeType(X)
+#define Parent(X)	BTN_Parent(X)
+#define Child(X)	BTN_Child(X)
+#define Sibl(X)		BTN_Sibling(X)
+#define Atom(X)		BTN_Symbol(X)
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *                      Basic Trie Hash Tables
+ *                      ----------------------
+ */
+
+typedef struct Basic_Trie_HashTable *BTHTptr;
+typedef struct Basic_Trie_HashTable {
+  InstrPlusType info;
+  unsigned long  numContents;      /* used to be numInHash */
+  unsigned long  numBuckets;       /* used to be (HASHmask + 1) */
+  BTNptr *pBucketArray;
+  BTHTptr prev, next;		   /* DLL needed for deletion */
+} BasicTrieHT;
+
+/* Field Access Macros
+   ------------------- */
+#define BTHT_Instr(pTHT)		IPT_Instr((pTHT)->info)
+#define BTHT_Status(pTHT)		IPT_Status((pTHT)->info)
+#define BTHT_TrieType(pTHT)		IPT_TrieType((pTHT)->info)
+#define BTHT_NodeType(pTHT)		IPT_NodeType((pTHT)->info)
+#define BTHT_NumBuckets(pTHT)		((pTHT)->numBuckets)
+#define BTHT_NumContents(pTHT)		((pTHT)->numContents)
+#define BTHT_BucketArray(pTHT)		((pTHT)->pBucketArray)
+#define BTHT_PrevBTHT(pTHT)		((pTHT)->prev)
+#define BTHT_NextBTHT(pTHT)		((pTHT)->next)
+
+#define BTHT_GetHashMask(pTHT)		( BTHT_NumBuckets(pTHT) - 1 )
+
+/*----------------------------------------------------------------------*/
 
 #define Delay(X) (ASI) ((word) (Child(X)) & ~UNCONDITIONAL_MARK)
-
-#define is_escape_node(X)	(Instr(X) == trie_proceed)
 
 /*----------------------------------------------------------------------*/
 
 typedef struct answer_list_node *ALPtr;
 struct answer_list_node {
-  NODEptr answer_ptr;
-  ALPtr   next_aln;
+  BTNptr answer_ptr;
+  ALPtr  next_aln;
 } ;
 
 #define aln_answer_ptr(ALN)	(ALN)->answer_ptr
@@ -81,23 +177,39 @@ struct answer_list_node {
 
 /*----------------------------------------------------------------------*/
 
-#define NOPAR NULL
+/*
+ *                         Call Lookup Structures
+ *                         ======================
+ *
+ *  Data structures for implementing better parameter passing to and from
+ *  the call check/insert routine.
+ */
 
-#define makeftag(X)	(NODEptr)(((Cell)(X)) | 0x1)
-#define ftagged(X)	((Cell)(X) & 0x1)
-#define unftag(X)	(NODEptr)(((Cell)(X)) & ~0x1)
+typedef struct Call_Info_For_Trie_Insertion {
+  struct tab_info *table_info_record;
+  int arity;
+  CPtr arg_ptr_array;
+} CallInfoRecord;
 
-/*----------------------------------------------------------------------*/
-/* when table chain exceeds LENGTHLIMIT, a hash table is made */
-#define LENGTHLIMIT 9
+#define CallInfo_TableInfo(CallInfo)	( (CallInfo).table_info_record )
+#define CallInfo_Arity(CallInfo)	( (CallInfo).arity )
+#define CallInfo_Arguments(CallInfo)	( (CallInfo).arg_ptr_array )
 
-/* initial hashtab size; must be power of 2 and > LENGTHLIMIT*/
-#define HASHLENGTH 64
 
-#define HASH(X,HASHMASK) ((cell_tag((Cell)X) == TrieVar)?0:((X>>4) & HASHMASK))
+typedef struct Call_Check_Insert_Results {
+  BTNptr call_trie_term;
+  struct subgoal_frame *subsumers_sgf;
+  int variant_found;
+} CallLookupResults;
+
+#define CallLUR_Leaf(CLUR)		( (CLUR).call_trie_term )
+#define CallLUR_Subsumer(CLUR)		( (CLUR).subsumers_sgf )
+#define CallLUR_VariantFound(CLUR)	( (CLUR).variant_found )
+
 
 /*-- exported trie functions ------------------------------------------*/
 
+extern BTNptr   newBasicTrie(Psc,int);
 extern byte *	trie_get_calls(void);
 extern int	free_trie_size(void);
 extern int	allocated_trie_size(void);
@@ -108,16 +220,16 @@ extern void	aux_call_info(void);
 extern void	remove_open_tries(CPtr);
 extern void     init_trie_aux_areas(void);
 extern void	get_lastnode_cs_retskel(void);
-extern void     load_solution_trie(int, CPtr, NODEptr);
-extern bool     variant_call_search(int, CPtr, CPtr *);
-extern NODEptr  one_term_chk_ins(CPtr,CPtr,int *);
-extern NODEptr  whole_term_chk_ins(Cell, CPtr, int *);
-extern NODEptr	get_next_trie_solution(ALPtr *);
-extern NODEptr	variant_trie_search(int, CPtr, CPtr, int *);
-extern NODEptr  delay_chk_insert(int, CPtr, CPtr *);
+extern void     load_solution_trie(int, CPtr, BTNptr);
+extern void     variant_call_search(CallInfoRecord *, CallLookupResults *);
+extern BTNptr   one_term_chk_ins(CPtr,BTNptr,int *);
+extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *);
+extern BTNptr	get_next_trie_solution(ALPtr *);
+extern BTNptr	variant_trie_search(int, CPtr, CPtr, int *);
+extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void     undo_answer_bindings(void);
-extern void	load_delay_trie(int, CPtr, NODEptr);
-extern void     bottom_up_unify(void);
+extern void	load_delay_trie(int, CPtr, BTNptr);
+extern bool     bottom_up_unify(void);
 
 /*---------------------------------------------------------------------*/
 
@@ -131,7 +243,7 @@ extern int  global_num_vars;
 extern long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
 /* trie routine variables */
-extern NODEptr free_trie_nodes, Last_Nod_Sav, Paren;
+extern BTNptr free_trie_nodes, Last_Nod_Sav, Paren;
 extern ALPtr   free_answer_list_nodes;
 
 /* registers for trie backtracking */
@@ -176,8 +288,8 @@ extern CPtr reg_arrayptr, var_regs[];
 }
 /*----------------------------------------------------------------------*/
 
-extern struct HASHhdr HASHroot;
-extern struct HASHhdr *HASHrootptr;
+extern BasicTrieHT HASHroot;
+extern BTHTptr HASHrootptr;
 
 extern CPtr *var_addr;
 extern int  var_addr_arraysz;
@@ -186,17 +298,8 @@ extern Cell VarEnumerator[];
 extern int  num_heap_term_vars;
 
 /*----------------------------------------------------------------------*/
-/* has to go into trie_code.i --- but for now */
-#define is_no_cp(x) (((Cell)Instr(x) & 0x3)== 0)
-#define is_trust(x) (((Cell)Instr(x) & 0x3)== 1)
-#define is_try(x)   (((Cell)Instr(x) & 0x3)== 2)
-#define is_retry(x) (((Cell)Instr(x) & 0x3)== 3)
-
-/*----------------------------------------------------------------------*/
 
 #define dbind_ref_nth_var(addr,n) dbind_ref(addr,VarEnumerator[n])
-#define trie_var_num(x)  ((((Cell) x) - VarEnumerator[0])/sizeof(Cell))
-#define is_VarEnumerator(x) (!((((Cell) x) >= VarEnumerator[0]) && (((Cell) x) <= VarEnumerator[NUM_TRIEVARS-1])) )
 
 extern Cell * reg_array;
 extern int reg_array_size;
@@ -207,3 +310,6 @@ extern int delay_it;
 
 extern CPtr *copy_of_var_addr;
 extern int  copy_of_num_heap_term_vars;
+
+
+#endif

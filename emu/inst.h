@@ -52,6 +52,8 @@ extern void init_inst_table(void);
 /*	Macros to fetch the instructions/operands.			*/
 /************************************************************************/
 
+#define inst_name(C)		((char *)inst_table[C][0])
+
 #define cell_opcode(C)		(*(pb)(C))
 
 #define cell_opregaddr1(C)	(rreg+((pb)(cell))[1])
@@ -235,6 +237,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define hash_opcode 		0x79
 #define hash_handle 		0x7a
 #define trie_assert_inst	0x7c
+#define trie_root		0x7d
 
 /* jf: reclaim deleted returns at completion */
 #define trie_no_cp_fail         0x90
