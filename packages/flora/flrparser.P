@@ -293,13 +293,6 @@ term(T,V) --> predicate_term(T,V), !.
 
 
 /**************************************************************/
-literal(literallist(L),V) -->
-	[atom('$(')],
-	literals(L,V),
-	white_space0,
-	[atom('$)')],
-	!.
-
 literal(not(T),V) -->
 	atom_name(not),
 	white_space0,
@@ -345,6 +338,14 @@ literal(fluniv(L,R),V) -->
 	!.
 
 literal(T,V)   --> term(T,V), !.
+
+literal(literallist(L),V) -->
+        [atom('$(')],
+        literals(L,V),
+        white_space0,
+        [atom('$)')],
+        !.
+
 
 /***************************************************************
   Cuts are currently not supported because of the problems with
