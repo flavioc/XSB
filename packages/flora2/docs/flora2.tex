@@ -990,10 +990,10 @@ operators are: {\tt fx}, {\tt fy}; and the possible types for postfix
 operators are: {\tt xf}, {\tt yf}. In each of these type expressions, {\tt
   f} stands for the operator, and {\tt x} and {\tt y} stand for the
 arguments.  The symbol {\tt x} in a type expression means that the
-precedence level of the corresponding argument should be \emph{smaller}
-than that of the operator, while {\tt y} means that the precedence level of
-the corresponding argument should be \emph{less or equal} than that of the
-operator.
+precedence level of the corresponding argument should be \emph{strictly
+  less} than that of the operator, while {\tt y} means that the precedence
+level of the corresponding argument should be \emph{less or equal} than
+that of the operator.
 
 The precedence level and the type together determine the way the operators
 are parsed. The general rule is that precedence of a constant or a functor
@@ -1177,7 +1177,8 @@ arithmetic operators $+$, $-$, etc.
 Even more interesting is the following example: {\tt 2.3.4}. Does it
 represent the path expression {\tt (2).(3).(4)}, or {\tt (2.3).4}, or {\tt
   2.(3.4)} (where in the latter two cases 2.3 and 3.4 are interpreted as
-decimal numbers)? The answer to this puzzle is {\tt (2.3).4}: when
+decimal numbers)? The answer to this puzzle (according to \FLORA conventions)
+is {\tt (2.3).4}: when
 tokenizing, \FLORA first tries to classify tokens into meaningful
 categories. Thus, when 2.3 is first found, it is identified as a
 decimal. Thus, the parser receives the expression (2.3).4, which it
@@ -1398,7 +1399,7 @@ The following rules apply when calling a literal defined in another module:
   \end{quote}
   is equivalent to
   \begin{quote}
-    \verb|foo(X) @ foomod, goo(b) @ goomod, hoo(c) @ foomod|
+    \verb|foo(a) @ foomod, goo(b) @ goomod, hoo(c) @ foomod|
   \end{quote}
   
 \item The module specification propogates to any F-molecule appearing
