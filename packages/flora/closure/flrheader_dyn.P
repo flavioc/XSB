@@ -1,5 +1,9 @@
 /** closure/flrheader_dyn.P: Prepended automatically by the FLORA compiler */
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+#include "char_defs.h"
+
 
 :- table '_$_$_flora_fd_dyn'/3.
 :- table '_$_$_flora_mvd_dyn'/3.
@@ -23,7 +27,9 @@
 :- dynamic '_$_$_flora_imvd_dyn'/2.
 :- dynamic '_$_$_flora_mvs_dyn'/2.
 
-:- import flora_loadlist/1, flora_dynloadlist/1 from flrutils.
+:- import flora_loadlist/1, flora_dynloadlist/1, 
+	flora_warning_nl/2
+   from flrutils.
 
 :- import member/2, ground/1 from basics.
 

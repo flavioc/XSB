@@ -33,6 +33,8 @@
 
 :- import findall/3, sort/2 from setof.
 
+:- import flora_warning_nl/1 from flrutils.
+
 
 /*****************************************************************************
   rules for aggregates
@@ -110,11 +112,7 @@
 	( var(Warning) ->
 	    true
 	  ;
-	    telling(F),
-	    tell(userout),
-	    nl,
-	    writeln('++FLORA Warning: discarding non-numeric objects while computing sum'),
-	    tell(F)
+	    flora_warning_nl('discarding non-numeric objects while computing sum')
 	).
 
 '_$_$_flora_sumaux1'([],X,X,_) :-
@@ -162,11 +160,7 @@
 	( var(Warning) ->
 	    true
 	  ;
-	    telling(F),
-	    tell(userout),
-	    nl,
-	    writeln('++FLORA Warning: discarding non-numeric objects while computing average'),
-	    tell(F)
+	    flora_warning_nl('discarding non-numeric objects while computing average')
 	).
 
 '_$_$_flora_avgaux1'([],S,N,Avg,_) :-

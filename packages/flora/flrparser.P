@@ -111,11 +111,7 @@ rule(null) --> white_space0, !.
 rule(_) -->
 	{ error(reserved_word),
 	  flora_prefix(P),
-	  fmt_write_string(Msg,
-			   'keywords that begin with `%s'' a reserved',
-			   f(P)),
-          displayln,
-          displayln_errmsg(Msg),
+          flora_error_nl('symbol prefix `%s'' is reserved', f(P)),
 	  fail
 	}.
 

@@ -35,7 +35,7 @@
 ****************************************************************************/
 set_load_mode(M) :-
 	( M \== static_mode, M \== dynamic_mode ->
-	    displayln_errmsg('invalid load mode'),
+	    flora_error_nl('invalid load mode'),
 	    fail
 	  ;
 	    true
@@ -124,7 +124,7 @@ compile_flogic(fact(Head,HeadVars),Facts,Opts) :-
 compile_flogic(query(_,_),[],Opts) :-
 	load_mode(dynamic_mode),
 	!,
-	displayln, displayln_warning('query ignored'),
+	flora_warning_nl('query ignored'),
 	retract_options(Opts).
 
 compile_flogic(query(Body,BodyVars),[query(BodyCode,NVs)],Opts) :-
@@ -146,7 +146,7 @@ compile_flogic(table_directive(X),[table_directive(X)],Opts) :-
 compile_flogic(export_directive(_,_),[],Opts) :-
 	load_mode(dynamic_mode),
 	!,
-	displayln, displayln_warning('export directive ignored'),
+	flora_warning_nl('export directive ignored'),
 	retract_options(Opts).
 
 compile_flogic(export_directive(PAs,Sigs),Rules,Opts) :-
@@ -422,18 +422,15 @@ rhs_flatten(aggregt(Op,var(N,V),GVs,Body),Obj,Code) :-
 	terminate_list(BVs),
 	subtract_vars(GVs,BVs,L),
 	( L \=[] ->
-	    displayln,
-	    displayln_errmsg('grouping variables must appear in aggregate body.'),
+	    flora_error_nl('grouping variables must appear in aggregate body.'),
 	    fail
 
 	  ; var_member(var(N,V),GVs) ->
-	    displayln,
-	    displayln_errmsg('conflict in use of aggregate and grouping variable'),
+	    flora_error_nl('conflict in use of aggregate and grouping variable'),
 	    fail
 
 	  ; not var_member(var(N,V),BVs) ->
-	    displayln,
-	    displayln_errmsg('aggregate variable must appear in the body.'),
+	    flora_error_nl('aggregate variable must appear in the body.'),
 	    fail
 
 	  ;
@@ -530,11 +527,8 @@ flatten_retract_term(objspec(O,Spec),W,Ps) :-
 	).
 
 flatten_retract_term(spterm(Op,E1,E2),_,Ps) :-
-	displayln,
-	fmt_write_string(Msg,
-			 '%s is compiled as a condition for retract operator',
-			 f(Op)),
-	displayln_warning(Msg),
+	flora_warning_nl('%S is compiled as a condition for retract operator',
+			 arg(Op)),
 	rhs_flatten(spterm(Op,E1,E2),_,Ps).
 
 
@@ -705,8 +699,7 @@ lhs_flatten(objmeth(O,M),Obj,Code,Aux,AVs) :-
 	lhs_flatten_mref(M,Arrow,MObj,C2,A2,AVs),
 	( flora_set(Arrow) ->
 	    !,
-	    displayln,
-	    displayln_errmsg('incorrect use of set path expression'),
+	    flora_error_nl('incorrect use of set path expression'),
 	    fail
 
 	  ;

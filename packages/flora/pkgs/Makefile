@@ -34,8 +34,6 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000 -e '[flora], bootstrap_flora.'
 #
 #-----------------------------------------------------------------------#
 
-# continue to the next when one error occurs
-.IGNORE:
 
 # suffix rules
 .SUFFIXES: .P .flr

@@ -26,33 +26,66 @@
 ALL = 	flrdisplay.O flrassert.O flrassert_dyn.O flraggregate.O \
 	flraggregate_dyn.O flrdebugger.O
 
-Option = [optimize]
+EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
+	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
+	../emu/system.h ../emu/xsbsocket.h 
+PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
+
+
+Option = [optimize,quit_on_error]
+
 
 #-----------------------------------------------------------------------#
 #
 # Self-make: Version 1.4.1
 #
 XSB=../../../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000 -e 'set_dcg_style(standard).'
+Prolog = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
 
-# continue to the next when one error occurs
-.IGNORE:
+# Make sure warnings are saved in a file.
+SVFILE = '/tmp/flora_syslib_warn'
+OWRITE = 1
+STDWARN = 3
+HDRMSG = "While compiling XSB/packages/flora/syslib:"
+
 
 # suffix rules
 .SUFFIXES: .P .O .H
+
+all: init $(ALL) finish
+	@touch cmd...
+	$(Prolog) < cmd...
+	@rm cmd...
+	@cat $(SVFILE)
+
+
+%.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
+	echo 'mc($*, $(Option)).' >> cmd...
+# The following is done because of brain damage in some make utilities
+# (notably Sun's), which don't take %.P %.H in the same dependency list
+%.P:   %.H
+	touch $@
+
+# These targets are obsolete. They are here just in case some 
+# obscure make utility doesn't understand patterns
+.H.P:
+	touch $@
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 
-all: $(ALL)
-	@touch cmd...
-	$(Prolog) < cmd...
-	/bin/rm cmd...
+init:
+	/bin/rm -f $(SVFILE)
+	@echo 'import file_reopen/4, fmt_write/3 from file_io.' >> cmd...
+	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg("-------------- Warnings --------------------")).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+
+finish:
+	@echo 'fmt_write($(STDWARN),"%s\n",arg("--------------------------------------------")).' >> cmd...
 
 
-# Unfortunately, this needs to be commented on the NeXT.
-# %.O:	%.H
 
 .DONE:
 	echo Done

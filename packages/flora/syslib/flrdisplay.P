@@ -24,6 +24,9 @@
 */
 
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+#include "char_defs.h"
 
 
 :- import
@@ -31,6 +34,7 @@
 	goal_cut_trans/3, call_c/1,
 	get0/1, functor/3, var/1
    from standard.
+:- import file_write/2, file_nl/1 from xsb_writ.
 
 :- import length/2 from basics.
 
@@ -38,11 +42,13 @@
 
 :- import stat_flag/2 from machine.
 
+:- import shell/5 from shell.
+
 :- import current_predicate/1 from curr_sym.
 
 :- import trie_assert/1, trie_retract_all/1 from tables.
 
-:- import write_flora_warnheader/0 from flrutils.
+:- import flora_warning_nl/2 from flrutils.
 
 :- dynamic '_$_$_flora_switch'/1.
 
@@ -69,9 +75,10 @@
 		('_$_$_flora_switch'(no_chatter) -> true
 		  ;
 		    '_$_$_flora_write_matches'(L), nl,
-		    write(N), write(' solution(s) in '),
-		    write(T), write(' seconds on '),
-		    shell(hostname)
+		    fmt_write(STDFDBK,
+			      '%d solution(s) in %S seconds on ',
+			      args(N,T)),
+		    shell(hostname,block,STDFDBK,block,_)
 		),
 	        '_$_$_flora_write_Yes'
 	    )
@@ -99,11 +106,11 @@
 
 '_$_$_flora_fail_unless_return' :- 
 	get0(C),
-	(C == 10 -> true ; get0(_)),
-	C=10, '_$_$_flora_write_Yes'.
+	(C == CH_NEWLINE -> true ; get0(_)),
+	C=CH_NEWLINE, '_$_$_flora_write_Yes'.
 
-'_$_$_flora_write_Yes' :- nl, writeln('Yes.').
-'_$_$_flora_write_No' :- nl, writeln('No.').
+'_$_$_flora_write_Yes' :- fmt_write(STDFDBK, "\nYes.\n",_).
+'_$_$_flora_write_No'  :- fmt_write(STDFDBK, "\nNo.\n",_).
 
 /********************************************************************/
 %% Hookup to the Flora debugger
@@ -135,7 +142,7 @@
 	).
 
 %% This turns off trace, so that flora internal stuff done after a
-%% subgoal call won't be traced. However, on backtracking, this turns
+%% subgoal call won''t be traced. However, on backtracking, this turns
 %% trace on and fails, thereby allowing to backtrack over the previous
 %% subgoal.
 '_$_$_flora_handle_end_of_call' :- '_$_$_flora_handle_notrace'.
@@ -149,9 +156,7 @@
 	    true
 
 	  ;
-	    nl, write_flora_warnheader,
-	    write(F/N),
-	    writeln(' is undefined'),
+	    flora_warning_nl('%S/%S is undefined', args(F,N)),
 	    fail
 	).
 
@@ -161,9 +166,7 @@
 	    '_$_$_flora_check_predicates'(Gs)
 
 	  ;
-	    nl, write_flora_warnheader,
-	    write(F/N),
-	    writeln(' undefined'),
+	    flora_warning_nl('%S/%S is undefined', args(F,N)),
 	    fail
 	).
 
@@ -173,15 +176,15 @@
 
 '_$_$_flora_write_matches'([M|Ms]) :-
 	'_$_$_flora_write_pairs'(M),
-	nl,
+	file_nl(STDFDBK),
 	'_$_$_flora_write_matches'(Ms).
 
 
 '_$_$_flora_write_pairs'([]).
 
 '_$_$_flora_write_pairs'([var(N,V)|NVs]) :-
-	nl, write(N),
-	write(' = '),
+	file_nl(STDFDBK), file_write(STDFDBK, N),
+	file_write(STDFDBK, ' = '),
 	'_$_$_flora_write'(V),
 	'_$_$_flora_write_pairs'(NVs).
 
@@ -189,18 +192,18 @@
 '_$_$_flora_write'(X) :-
 	var(X),
 	!,
-	write(X).
+	file_write(STDFDBK, X).
 
 '_$_$_flora_write'('_$_$_flora_objref_fd'(O1,O2)) :-
 	!,
 	'_$_$_flora_write'(O1),
-	write('.'),
+	file_write(STDFDBK, '.'),
 	'_$_$_flora_write'(O2).
 
 '_$_$_flora_write'('_$_$_flora_objref_ifd'(O1,O2)) :-
 	!,
 	'_$_$_flora_write'(O1),
-	write('!'),
+	file_write(STDFDBK, '!'),
 	'_$_$_flora_write'(O2).
 
 '_$_$_flora_write'(X) :-
@@ -210,13 +213,13 @@
 	( Args == [] ->
 	    true
 	  ;
-	    write('@('),
+	    file_write(STDFDBK, '@('),
 	    '_$_$_flora_write_list'(Args),
-	    write(')')
+	    file_write(STDFDBK, ')')
 	).
 
 '_$_$_flora_write'(X) :-
-	write(X).
+	file_write(STDFDBK, X).
 
 '_$_$_flora_write_list'([X]) :-
 	!,
@@ -224,7 +227,7 @@
 
 '_$_$_flora_write_list'([X1,X2|Xs]) :-
 	'_$_$_flora_write'(X1),
-	write(','),
+	file_write(STDFDBK, ','),
 	'_$_$_flora_write_list'([X2|Xs]).
 
 

@@ -25,7 +25,7 @@
 
 
 :- import
-	put/1, write/1, tab/1, writeln/1, write_canonical/1, display/1,
+	write/1, tab/1, writeln/1, write_canonical/1,
 	atom_codes/2, see/1, seen/0, tell/1, told/0, seeing/1, telling/1,
 	file_exists/1, cputime/1, var/1
    from standard.
@@ -46,9 +46,13 @@
 
 :- import trie_assert/1, trie_retract_all/1 from tables.
 
-:- import slash/1, is_absolute_filename/1, parse_filename/4 from machine.
+:- import slash/1, is_absolute_filename/1, parse_filename/4,
+	stat_set_flag/2 
+   from machine.
 
 :- import fmt_write_string/3, file_time/2 from file_io.
+
+:- import file_write/2, file_nl/1 from xsb_writ.
 
 :- import read_tokens/2 from flrtokens.
 
@@ -66,11 +70,13 @@
 	flora_loadlist/1,
 	flora_dynloadlist/1,
 	flora_check_filename/1,
-	write_flora_warnheader/0,
 	flora_discard_tokens/1,
 	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
 	dyncompile/2, dynconsult/1, dynconsult/2, flload/1, dynload/1,
 	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,
-	flora_member/2, displayln_errmsg/1, displayln_warning/1,
-	displayln/0, displayln/1, flora_msgheader/0.
+	flora_member/2,
+	flora_error_nl/1, flora_error_nl/2,
+	flora_warning_nl/1, flora_warning_nl/2,
+	flora_message_nl/1, flora_message_nl/2, flora_message/1,
+	flora_display_msg/1, flora_display_msg/2.
 

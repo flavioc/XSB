@@ -23,11 +23,15 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+
 
 :- import package_configuration/2 from packaging.
 :- import trie_assert/1, trie_retract_all/1 from tables.
-:- import fmt_write/2, file_open/3, file_close/1 from file_io.
+:- import fmt_write/3, file_open/3, file_close/1 from file_io.
 :- import file_read/2 from xsb_read.
+:- import file_write/2 from xsb_writ.
 :- import debug_display_call_hook/1,
 	'_$_$_flora_debugger_data_loaded'/0, '_$_$_flora_switch'/1
 	from usermod.
@@ -81,7 +85,7 @@ flora_write_debug_goal('=..'(V, L)) :-
 %%     	       	       '.'(var('Z',_h4761),[]))))).
 %% The problem here is =(_h4589,_h4970) which is going to be executed after
 %% '_$_$_flora_collectset'. '_$_$_flora_collectset' itself is hidden, 
-%% but "=" is not (and should not). We can't just avoid printing it, 
+%% but "=" is not (and should not). We can''t just avoid printing it, 
 %% because it is activated with call_c, which always enables printing.
 
 %% flora_print_all
@@ -89,14 +93,14 @@ flora_write_debug_goal(findall(X,Gs,_Res)) :-
 	is_list(X),
 	X = [var(_,_)|_],
 	!,
-	write('Query: { '),
+	file_write(STDDBG, 'Query: { '),
 	'_$_$_flora_write_vars'(X),
-	write(' | '),
+	file_write(STDDBG, ' | '),
 	flora_write_debug_goal(Gs),
-	write(' }').
+	file_write(STDDBG, ' }').
 
 %% Aggregates in the rule body, but not query.
-%% Can't determine the context. We need to change translation 
+%% Can''t determine the context. We need to change translation 
 %% from Flora into prolog to be able to determine the context.
 %% For instance, here is a translation that is handled by this case:
 %%
@@ -119,12 +123,10 @@ flora_write_debug_goal(findall(X,Gs,_Res)) :-
 	FirstGoal =.. [F|_],
 	str_sub('_$_$_flora_', F),
 	!,
-	%% We don't know which aggregate and whether there is grouping
-	write('Var = aggregate{'),
-	write(X),
-	write('; '),
+	%% We don''t know which aggregate and whether there is grouping
+	fmt_write(STDDBG, 'Var = aggregate{%S; ', arg(X)),
 	flora_write_debug_goal(Gs),
-	write(' }').
+	file_write(STDDBG, ' }').
 
 %% ','(Goal1,Goal2, ...). This comes from flora_print_all
 flora_write_debug_goal(Call) :- 
@@ -150,10 +152,10 @@ flora_write_debug_goal(Call) :-
 /*********************************************************************/
 %% Catch-all cases
 
-flora_write_debug_goal(Call) :- write(Call).
+flora_write_debug_goal(Call) :- file_write(STDDBG, Call).
 
 /*********************************************************************/
-%% Context-sensitive flora_write_debug_goal's
+%% Context-sensitive flora_write_debug_goal''s
 
 %% This handles aggregates
 flora_write_debug_goal(findall(AggrResult,Goal,_Result),
@@ -164,21 +166,25 @@ flora_write_debug_goal(findall(AggrResult,Goal,_Result),
 	    Grp =.. ['_$_$_flora_grp' | GrpVars]
 	),
 	!, 
-	(Context == collectset -> write('Set = collectset{ ') ;  true),
-	(Context == collectbag -> write('Set = collectbag{ ') ;  true),
-	(Context == min -> write('Res = min{ ') ;  true),
-	(Context == max -> write('Res = max{ ') ;  true),
-	(Context == avg -> write('Res = avg{ ') ;  true),
-	(Context == sum -> write('Res = sum{ ') ;  true),
-	write(CollectVar),
+	(Context == collectset
+    	-> file_write(STDDBG, 'Set = collectset{ ')
+    	;  true),
+	(Context == collectbag
+    	-> file_write(STDDBG, 'Set = collectbag{ ')
+    	;  true),
+	(Context == min -> file_write(STDDBG, 'Res = min{ ') ;  true),
+	(Context == max -> file_write(STDDBG, 'Res = max{ ') ;  true),
+	(Context == avg -> file_write(STDDBG, 'Res = avg{ ') ;  true),
+	(Context == sum -> file_write(STDDBG, 'Res = sum{ ') ;  true),
+	file_write(STDDBG, CollectVar),
 	(is_list(GrpVars) ->  % there are grouping vars
-	    write('['),
+	    file_write(STDDBG, '['),
 	    '_$_$_flora_write_vars'(GrpVars),
-	    write(']; ')
-	 ; write('; ')  % no grouping
+	    file_write(STDDBG, ']; ')
+	 ; file_write(STDDBG, '; ')  % no grouping
 	),
 	flora_write_debug_goal(Goal),
-	write(' }').
+	file_write(STDDBG, ' }').
 
 %% None of the above contexts: assume a list of independent goals
 flora_write_debug_goal(Goals, none) :-
@@ -188,7 +194,7 @@ flora_write_debug_goallist(G) :- G == [], !.
 flora_write_debug_goallist([G|Gs]) :-
 	flora_write_debug_goal(G),
 	!,
-	(Gs == [] ; write(', ')),
+	(Gs == [] ; file_write(STDDBG, ', ')),
 	flora_write_debug_goallist(Gs).
 
 %% Extract context out of the list of secondary goals
@@ -227,30 +233,30 @@ flora_write_debug_goallist([G|Gs]) :-
 
 flora_print_isa(X,Y) :- 
 	'_$_$_flora_debug_write_value'(X),
-	write(' : '),
+	file_write(STDDBG, ' : '),
 	'_$_$_flora_debug_write_value'(Y).
 flora_print_sub(X,Y) :-
 	'_$_$_flora_debug_write_value'(X),
-	write(' :: '),
+	file_write(STDDBG, ' :: '),
 	'_$_$_flora_debug_write_value'(Y).
 
 flora_print_fd(O,M,V) :-
 	'_$_$_flora_debug_write_value'(O),
-	write('['),
+	file_write(STDDBG, '['),
 	'_$_$_flora_debug_write_method_invocation'(M),
-	write(' -> '),
+	file_write(STDDBG, ' -> '),
 	'_$_$_flora_debug_write_value'(V),
-	write(']').
+	file_write(STDDBG, ']').
 flora_print_mvd(O,M,V) :-
 	'_$_$_flora_debug_write_value'(O),
-	write('['),
+	file_write(STDDBG, '['),
 	'_$_$_flora_debug_write_method_invocation'(M),
-	write(' ->> '),
+	file_write(STDDBG, ' ->> '),
 	'_$_$_flora_debug_write_value'(V),
-	write(']').
+	file_write(STDDBG, ']').
 
-flora_print_assert(L) :- write('assert('), flora_print_assert1(L).
-flora_print_assert1([]) :- !, write(')').
+flora_print_assert(L) :- file_write(STDDBG, 'assert('), flora_print_assert1(L).
+flora_print_assert1([]) :- !, file_write(STDDBG, ')').
 flora_print_assert1([A | R]) :-
 	( A = '_$_$_flora_isa_dyn'(X,Y) ->
 	    flora_print_isa(X,Y)
@@ -261,20 +267,23 @@ flora_print_assert1([A | R]) :-
 	; A = '_$_$_flora_mvd_dyn'(O,M,V) ->
 	    flora_print_mvd(O,M,V)
 	),
-	(R == [] ; write(', ')),
+	(R == [] ; file_write(STDDBG, ', ')),
 	flora_print_assert1(R).
 
-flora_print_retract(L,Cond) :- write('retract('), flora_print_retract1(L,Cond).
-flora_print_retractall(L,C) :- write('retractall('), flora_print_retract1(L,C).
-flora_print_erase(L,Cond) :- write('erase('), flora_print_retract1(L,Cond).
+flora_print_retract(L,Cond) :-
+	file_write(STDDBG, 'retract('), flora_print_retract1(L,Cond).
+flora_print_retractall(L,C) :-
+	file_write(STDDBG, 'retractall('), flora_print_retract1(L,C).
+flora_print_erase(L,Cond) :-
+	file_write(STDDBG, 'erase('), flora_print_retract1(L,Cond).
 
-flora_print_retract1([],[]) :- !, write(')').
+flora_print_retract1([],[]) :- !, file_write(STDDBG, ')').
 %% Need to do a better job printing L
-flora_print_retract1([],Cond) :- !, fmt_write('| %S )', arg(Cond)).
+flora_print_retract1([],Cond) :- !, fmt_write(STDDBG, '| %S )', arg(Cond)).
 flora_print_retract1([A | R],Cond) :-
 	flora_print_retract_molecule(A),
 	(R == [], !
-	 ;   write(', ')
+	 ;   file_write(STDDBG, ', ')
 	),
 	flora_print_retract1(R,Cond).
 
@@ -295,16 +304,16 @@ flora_print_univ(V,L) :-
 	L = [H|L1],
 	H == '_$_$_flora_@',
 	!,
-	(var(V) -> write('@'), write(V)
+	(var(V) -> file_write(STDDBG, '@'), file_write(STDDBG, V)
 	 ; V =.. [_Junk|MethodInvoc], 
 	    '_$_$_flora_debug_write_method_invocation'(MethodInvoc)
 	),
-	write(' =.. '),
+	file_write(STDDBG, ' =.. '),
 	'_$_$_flora_debug_write_value'(L1),
 	!.
 flora_print_univ(V,L) :-
 	'_$_$_flora_debug_write_value'(V),
-	write(' =.. '),
+	file_write(STDDBG, ' =.. '),
 	'_$_$_flora_debug_write_value'(L),
 	!.
 	
@@ -314,16 +323,17 @@ flora_print_univ(V,L) :-
 '_$_$_flora_debug_write_value'(Val) :-
 	atom(Val),
 	!,
-	fmt_write('''%s''', arg(Val)).
+	fmt_write(STDDBG, '''%s''', arg(Val)).
 '_$_$_flora_debug_write_value'(Val) :-
 	is_charlist(Val),
 	!,
-	fmt_write('"%s"', arg(Val)).
-'_$_$_flora_debug_write_value'(Val) :- var(Val), !, write(Val).
-'_$_$_flora_debug_write_value'(var(_N,Var)) :- !, write(Var).
-'_$_$_flora_debug_write_value'(Val) :- write(Val).
+	fmt_write(STDDBG, '"%s"', arg(Val)).
+'_$_$_flora_debug_write_value'(Val) :- var(Val), !, file_write(STDDBG, Val).
+'_$_$_flora_debug_write_value'(var(_N,Var)) :- !, file_write(STDDBG, Var).
+'_$_$_flora_debug_write_value'(Val) :- file_write(STDDBG, Val).
 
-'_$_$_flora_debug_write_method_invocation'(X) :- var(X), !, write(X).
+'_$_$_flora_debug_write_method_invocation'(X) :-
+	var(X), !, file_write(STDDBG, X).
 '_$_$_flora_debug_write_method_invocation'(X) :- X==[], !.
 '_$_$_flora_debug_write_method_invocation'(X) :-
     	nonvar(X), X = [Attr], !,
@@ -331,10 +341,10 @@ flora_print_univ(V,L) :-
 '_$_$_flora_debug_write_method_invocation'(X) :-
     	nonvar(X), X = [M, Arg |Args], !,
     	'_$_$_flora_debug_write_value'(M),
-	write('@('),
+	file_write(STDDBG, '@('),
 	'_$_$_flora_debug_write_value'(Arg),
 	'_$_$_flora_write_vars'(Args),
-	write(')').
+	file_write(STDDBG, ')').
 '_$_$_flora_debug_write_method_invocation'(M) :-
     	nonvar(M), M =.. [_Junk | MethArgs], !,
 	'_$_$_flora_debug_write_method_invocation'(MethArgs).
@@ -349,9 +359,9 @@ flora_print_univ(V,L) :-
     	!, '_$_$_flora_write_vars1'(V,Rest).
 
 '_$_$_flora_write_vars1'(V,Rest) :-
-	write(V),
+	file_write(STDDBG, V),
 	(Rest == [] -> true
-	 ; write(','), '_$_$_flora_write_vars'(Rest)
+	 ; file_write(STDDBG, ','), '_$_$_flora_write_vars'(Rest)
 	).
 
 

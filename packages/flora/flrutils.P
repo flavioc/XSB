@@ -25,6 +25,11 @@
 **
 */
 
+:- compiler_options([cpp_on]).
+#include "flag_defs.h"
+#include "standard.h"
+#include "char_defs.h"
+
 
 /********************************************************************/
 
@@ -53,39 +58,57 @@ flora_member(NV,[_|NVs]) :-
 
 
 /********************************************************************/
-displayln_errmsg(A) :-
-	flora_errheader,
-	displayln(A).
+%% Here M is a plain text message
+flora_error_nl(M) :-
+	fmt_write(STDERR, "\n++FLORA Error: %S\n", M).
+%% Here Fmt is format and Args should have the form args(A1,A2,...)
+flora_error_nl(Fmt, Args) :-
+	fmt_write(STDERR, "\n++FLORA Error: ", _),
+	fmt_write(STDERR, Fmt, Args),
+	file_nl(STDERR).
 
-displayln_warning(A) :-
-	flora_warnheader,
-	displayln(A).
+flora_warning_nl(M) :-
+	fmt_write(STDWARN, "++FLORA Warning: %S\n", M).
+flora_warning_nl(Fmt, Args) :-
+	fmt_write(STDWARN, '++FLORA Warning: ', _),
+	fmt_write(STDWARN, Fmt, Args),
+	file_nl(STDWARN).
+flora_warning(M) :-
+	fmt_write(STDWARN, '++FLORA Warning: %S', M).
 
 
-displayln :-
-	telling(F),
-	tell(userout),
-	put(10),
-	tell(F).
+%% Here M is a plain text message
+flora_message_nl(M) :-
+	fmt_write(STDMSG, "\n[FLORA: %S\n", M).
+%% Here Fmt is format and Args should have the form args(A1,A2,...)
+flora_message_nl(Fmt, Args) :-
+	fmt_write(STDMSG, "\n[FLORA: ", _),
+	fmt_write(STDMSG, Fmt, Args),
+	file_nl(STDMSG).
+%% Like flora_message_nl/1, but doesn''t put \n in front of the message
+flora_message_nl1(M) :-
+	fmt_write(STDMSG, "[FLORA: %S\n", M).
+%% Like flora_message_nl/2, but doesn''t put \n in front of the message
+flora_message_nl1(Fmt, Args) :-
+	fmt_write(STDMSG, '[FLORA: ', _),
+	fmt_write(STDMSG, Fmt, Args),
+	file_nl(STDMSG).
+%% Like flora_message_nl/1, but no \n at the end
+flora_message(M) :-
+	fmt_write(STDMSG, "\n[FLORA: %S", M).
+%% Like flora_message_nl/2, but no \n at the end
+flora_message(Fmt, Args) :-
+	fmt_write(STDMSG, "\n[FLORA: ", _),
+	fmt_write(STDMSG, Fmt, Args).
 
-displayln(A) :-
-	telling(F),
-	tell(userout),
-	write(A),
-	put(10),
-	tell(F).
-
-flora_errheader :-
-	display('++FLORA Error: ').
-
-flora_warnheader :-
-	display('++FLORA Warning: ').
-
-write_flora_warnheader :-
-	write('++FLORA Warning: ').
-
-flora_msgheader :-
-	display('[FLORA: ').
+%% Just puts out message with newline. Can be a list or an atom.
+%% Don''t put \n in front
+flora_display_msg(M) :-
+	fmt_write(STDMSG, M, _),
+	file_nl(STDMSG).
+flora_display_msg(Fmt, Args) :-
+	fmt_write(STDMSG, Fmt, Args),
+	file_nl(STDMSG).
 
 
 /*********************************************************************/
@@ -105,7 +128,8 @@ dyncompile(InFile) :-
 
 flora_compile_internal(InFile, Dtvs, Mode) :-
 	flora_flcompile(Mode,Dtvs,InFile,force,Module),
-	displayln, flora_msgheader, displayln('calling XSB compiler]'),
+	%% No \n in front
+	flora_message_nl1('calling XSB compiler]'),
 	compile(Module,[optimize,spec_repr]).
 
 /*********************************************************************/
@@ -125,15 +149,14 @@ dynconsult(File) :-
 
 flora_consult_internal(File, Dtvs, Mode) :-
 	flora_flcompile(Mode,Dtvs,File,noforce,Module),
-	displayln, flora_msgheader, 
-	(Mode = static_mode -> display('consulting ')
-    	    	;
-		display('dynamically loading ')
+	(   Mode = static_mode 
+	->  ModeMsg = 'consulting'
+	;   ModeMsg = 'dynamically loading'
 	),
-	display(Module), displayln(']'),
-	(Mode = static_mode -> consult(Module,[optimize,spec_repr])
-    	    	;
-		load_dyn(Module)
+	flora_message_nl('%s %S]', args(ModeMsg,Module)),
+	(   Mode = static_mode
+	->  consult(Module,[optimize,spec_repr])
+	;   load_dyn(Module)
 	).
 
 
@@ -157,52 +180,35 @@ flora_dynloadlist([X1,X2|Xs]) :-
 flload(File) :-
 	flora_check_filename(File),
 	parse_filename(File,D,B,E),
-	( E = 'flr' ->
-	    flconsult(File)
-
-	  ; (E = 'P'; E = 'O') ->
-	    flora_locate_file(File,TFile),
-	    ( file_exists(TFile) ->
-		displayln, flora_msgheader, display('consulting '),
-		display(TFile), displayln(']'),
+	(   E = 'flr'
+	->  flconsult(File)
+	;   (E = 'P'; E = 'O')
+	->  flora_locate_file(File,TFile),
+	    (	file_exists(TFile)
+	    ->	flora_message_nl('consulting %S]', arg(TFile)),
 		consult(File)
-
-	      ;
-	        fmt_write_string(Msg,'%s does NOT exist!',f(File)),
-		displayln, displayln_errmsg(Msg),
+	    ;	flora_error_nl('%s does NOT exist!', arg(File)),
 		fail
 	    )
 
-	  ; E \= '' ->
-	    displayln,
-	    displayln_errmsg('file extension must be flr, P or O!'),
+	;   E \= ''
+	->  flora_error_nl('file extension must be flr, P or O!'),
 	    fail
-
-	  ;
-	    fmt_write_string(FlrName,'%s%s.flr',f(D,B)),
+	;   fmt_write_string(FlrName,'%s%s.flr',f(D,B)),
 	    flora_locate_file(FlrName,FlrFile),
-	    ( file_exists(FlrFile) ->
-		flconsult(FlrFile)
-
-	      ;
-	        fmt_write_string(PName,'%s%s.P',f(D,B)),
+	    (	file_exists(FlrFile)
+	    ->	flconsult(FlrFile)
+	    ;	fmt_write_string(PName,'%s%s.P',f(D,B)),
 	        flora_locate_file(PName,PFile),
-		( file_exists(PFile) ->
-		    displayln, flora_msgheader, display('consulting '),
-		    display(PFile), displayln(']'),
+		(   file_exists(PFile)
+		->  flora_message_nl('consulting %S]', arg(PFile)),
 		    consult(PFile,[optimize,spec_repr])
-
-		  ;
-		    fmt_write_string(OName,'%s%s.O',f(D,B)),
+		;   fmt_write_string(OName,'%s%s.O',f(D,B)),
 	            flora_locate_file(OName,OFile),
-		    ( file_exists(OFile) ->
-			displayln, flora_msgheader, display('consulting '),
-			display(OFile), displayln(']'),
+		    (	file_exists(OFile) 
+		    ->	flora_message_nl('consulting %S]', arg(OFile)),
 			consult(OFile,[optimize,spec_repr])
-
-		      ;
-		        fmt_write_string(Msg,'%s does NOT exist!',f(File)),
-		        displayln, displayln_errmsg(Msg),
+		    ;	flora_error_nl('file %s not found', arg(File)),
 			fail
 		    )
 		)
@@ -214,44 +220,29 @@ flload(File) :-
 dynload(File) :-
 	flora_check_filename(File),
 	parse_filename(File,D,B,E),
-	( E = 'flr' ->
-	    dynconsult(File)
-
-	  ; E = 'P' ->
-	    flora_locate_file(File,TFile),
-	    ( file_exists(TFile) ->
-		displayln, flora_msgheader, display('dynamically loading '),
-		display(TFile), displayln(']'),
+	(   E = 'flr'
+	->  dynconsult(File)
+	;   E = 'P'
+	->  flora_locate_file(File,TFile),
+	    (	file_exists(TFile)
+	    ->	flora_message_nl("dynamically loading %s]\n", arg(TFile)),
 		load_dyn(File)
-
-	      ;
-	        fmt_write_string(Msg,'%s does NOT exist!',f(File)),
-		displayln, displayln_errmsg(Msg),
+	    ;	flora_error_nl('file %s not found', arg(File)),
 		fail
 	    )
-
-	  ; E \= '' ->
-	    displayln,
-	    displayln_errmsg('file extension must be flr or P!'),
+	;   E \= ''
+	->  flora_error_nl('file extension must be flr or P'),
 	    fail
-
-	  ;
-	    fmt_write_string(FlrName,'%s%s.flr',f(D,B)),
+	;   fmt_write_string(FlrName,'%s%s.flr',f(D,B)),
 	    flora_locate_file(FlrName,FlrFile),
-	    ( file_exists(FlrFile) ->
-		dynconsult(FlrFile)
-
-	      ;
-	        fmt_write_string(PName,'%s%s.P',f(D,B)),
+	    (	file_exists(FlrFile)
+	    ->	dynconsult(FlrFile)
+	    ;	fmt_write_string(PName,'%s%s.P',f(D,B)),
 	        flora_locate_file(PName,PFile),
-		( file_exists(PFile) ->
-		    displayln, flora_msgheader, display('dynamically loading '),
-		    display(PFile), displayln(']'),
+		(   file_exists(PFile)
+		->  flora_message_nl('dynamically loading %s]', arg(PFile)),
 		    load_dyn(PFile)
-
-		  ;
-		    fmt_write_string(Msg,'%s does NOT exist!',f(File)),
-		    displayln, displayln_errmsg(Msg),		    
+		;   flora_error_nl('file %s not found', arg(File)),	
 		    fail
 		)
 	    )
@@ -268,45 +259,35 @@ flora_flcompile(LoadMode,Directives,InFile,Force,OutFile) :-
 	flora_check_directives(Directives,Dtvs),
 	flora_check_filename(InFile),
 	parse_filename(InFile,_,_,E),
-	( E = 'flr' ->
-	    FullFileName=InFile
-	  ;
-	    fmt_write_string(FullFileName,'%s.flr',f(InFile))
+	(   E = 'flr'
+	->  FullFileName=InFile
+	;   fmt_write_string(FullFileName,'%s.flr',f(InFile))
 	),
 	flora_locate_file(FullFileName,FlrFile),
-	( not file_exists(FlrFile) ->
-	    displayln, flora_errheader,
-	    display(FlrFile),
-	    displayln(' does NOT exist!'),
+	( not file_exists(FlrFile)
+	->  flora_error_nl('file %s not found', arg(FlrFile)),
 	    fail
-
-	  ;
-	    parse_filename(FlrFile,D,B,_),
-	    ( LoadMode == static_mode ->
-	        fmt_write_string(PFile,'%s%s.P',f(D,B))
-	      ;
-	        fmt_write_string(PFile,'%s%s_dyn.P',f(D,B))
+	;   parse_filename(FlrFile,D,B,_),
+	    ( LoadMode == static_mode
+	    ->	fmt_write_string(PFile,'%s%s.P',f(D,B))
+	    ;	fmt_write_string(PFile,'%s%s_dyn.P',f(D,B))
 	    ),
-	    ( Force = force ->
-		generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
-	      ;
-	        ( LoadMode == static_mode ->
-		    fmt_write_string(OFile,'%s%s.O',f(D,B))
-		  ;
-		    OFile=PFile
+	    ( Force = force
+	    ->	generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
+	    ;	( LoadMode == static_mode 
+		->  fmt_write_string(OFile,'%s%s.O',f(D,B))
+		;   OFile=PFile
 		),
-		( file_older_than(OFile,FlrFile) ->
-		    generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
-		  ;
-		    Status=noneed
+		(   file_older_than(OFile,FlrFile)
+		->  generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
+		;   Status=noneed
 		)
 	    ),
-	    ( Status = failure ->	fail
-
-	      ; Status = noneed -> OutFile=OFile
-
-	      ;
-		OutFile=PFile
+	    (	Status = failure 
+	    ->	fail
+	    ;	Status = noneed
+	    ->	OutFile=OFile
+	    ;	OutFile=PFile
 	    )
 	),
 	!.
@@ -318,6 +299,15 @@ write_tokens(S,Ts) :-
 	tell(S),
 	write_tokens(Ts),
 	tell(F).
+
+%% Like write_tokens/2, but uses I/O port instead of a stream
+write_tokens_message(IOport,Ts) :-
+	current_output_fd(OldOutput),
+	stat_set_flag(CURRENT_OUTPUT, IOport),
+	write_tokens(Ts),
+	stat_set_flag(CURRENT_OUTPUT, OldOutput).
+
+	
 
 
 write_tokens([]).
@@ -383,7 +373,7 @@ write_rules(query(Body,NVs)) :-
 write_rules(unbound_warning(F,L)) :-
 	!,
 	write('%%% '),
-	unbound_warn(F,L).
+	issue_unsafe_var_warning(F,L).
 
 write_rules(import_directive(PAs,M)) :-
 	!,
@@ -440,128 +430,117 @@ write_PAs([pa(P,A)|PAs]) :-
 
 
 /********************************************************************/
-unbound_warn(_Form,L) :-
-	write_flora_warnheader,
-	write('unsafe variable(s) '),
-	write_list(L),
-	writeln(' in a rule head or a fact.').
+issue_unsafe_var_warning(_Form,L) :-
+	flora_warning('unsafe variable(s) '),
+	write_list(STDWARN, L),
+	file_write(STDWARN, ' in a fact/rule head.'),
+	file_nl(STDWARN).
 
 
 /********************************************************************/
 write_list([]).
-
 write_list([X]) :-
 	!,
 	write(X).
-
 write_list([X1,X2|Xs]) :-
 	!,
 	write(X1),
 	write(', '),
 	write_list([X2|Xs]).
 
+%% Like write_list/1 but writes to I/O port
+write_list(IOport,L) :-
+	current_output_fd(OldOut),
+	stat_set_flag(CURRENT_OUTPUT, IOport),
+	write_list(L),
+	stat_set_flag(CURRENT_OUTPUT,OldOut).
+
 
 /********************************************************************/
 generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
-	displayln, flora_msgheader,
-	display('compiling '), display(FlrFile),
 	(LoadMode == static_mode -> A = static ; A = (dynamic)),
-	display(' to '), display(A), display(' code with options: '),
-	telling(F), tell(userout), write_list(Directives), tell(F),
-	displayln(']'),
+	flora_message('compiling %s to %s code with options: ',
+		      arg(FlrFile,A)),
+	write_list(STDMSG, Directives),
+	fmt_write(STDMSG, "]\n", _),
 	cputime(T0),
 	seeing(PreInFile),
 	telling(PreOutFile),
 	tell(PFile),
-	( LoadMode == static_mode ->
-	    copy_flrfile(closure,'flrheader.P',S1)
-	  ;
-	    copy_flrfile(closure,'flrheader_dyn.P',S1)
+	(   LoadMode == static_mode 
+	->  copy_flrfile(closure,'flrheader.P',S1)
+	;   copy_flrfile(closure,'flrheader_dyn.P',S1)
 	),
-	( S1 = failure ->
-	    Status=failure
-	  ;
-	    see(FlrFile),
+	(   S1 = failure
+	->  Status=failure
+	;   see(FlrFile),
 	    set_load_mode(LoadMode),
 	    compile_flrfile(MaxErr,0,S2,[],Options),
 	    seen,
-	    ( S2 = failure ->
-		Status=failure
-	      ;
-	        directives_options(LoadMode,Directives,Options,Status)
+	    (	S2 = failure
+	    ->	Status=failure
+	    ;	directives_options(LoadMode,Directives,Options,Status)
 	    )
 	),
 	told,
 	see(PreInFile),
 	tell(PreOutFile),
 	cputime(T1),
-	( Status = failure ->
-	    true
-	  ;
-	    flora_msgheader, display('Done! CPU time used: '),
-	    T is T1-T0,
-	    display(T), displayln(' seconds]')
+	(   Status = failure
+	->  true
+	;   T is T1-T0,
+	    %% No \n in front
+	    flora_message_nl1('Done! CPU time used: %S seconds]', arg(T))
 	).
 
 
 /********************************************************************/
 directives_options(LoadMode,Directives,Options,Status) :-
-	( member(flraggregate,Options) ->
-	    ( LoadMode == static_mode ->
-		FlrAgg='flraggregate.P'
-	      ;
-	        FlrAgg='flraggregate_dyn.P'
+	( member(flraggregate,Options)
+	->  ( LoadMode == static_mode
+	    ->	FlrAgg='flraggregate.P'
+	    ;	FlrAgg='flraggregate_dyn.P'
 	    ),
 	    copy_flrfile(syslib,FlrAgg,S1)
-	  ;
-	    S1=success
+	;   S1=success
 	),
-	( member(flrassert,Options) ->
-	    ( LoadMode == static_mode ->
-		FlrAss='flrassert.P'
-	      ;
-	        FlrAss='flrassert_dyn.P'
+	(   member(flrassert,Options)
+	->  ( LoadMode == static_mode
+	    ->	FlrAss='flrassert.P'
+	    ;	FlrAss='flrassert_dyn.P'
 	    ),
 	    copy_flrfile(syslib,FlrAss,S2)
-	  ;
-	    S2=success
+	;   S2=success
 	),
 	(member(eqlevel(N1),Directives) -> true ; N1=0),
 	(member(skolem,Options) -> N2=1 ; N2=0),
-	( N2 == 1, N1 == 0 ->
-	    displayln,
-	    displayln_warning('skolemization in rule head performed')
-	  ;
-	    true
+	(   N2 == 1, N1 == 0
+	->  flora_warning_nl('skolemization in rule head performed')
+	;   true
 	),
 	external_options(Options,TempOpts),
 	flora_check_directives(TempOpts,Opts),
-	( member(eqlevel(N3),Opts) ->
-	    displayln, flora_msgheader, display('compiler option '),
-	    display(eqlevel(N3)), display(' detected in source code '),
-	    ( N3 > N1 ->
-		displayln('(overriding)]')
-
-	      ; N1 > N3 ->
-	        displayln('(overridden)]')
-	      ;
-	        displayln(']')
-	    )
-	  ;
-	    N3=0
+	( member(eqlevel(N3),Opts) 
+	->  ( N3 > N1
+	    ->	ActionMsg = ' (overriding)]'
+	    ;	N1 > N3
+	    ->	ActionMsg = ' (overridden)]'
+	    ;	ActionMsg = ']'
+	    ),
+	    flora_message_nl('compiler option eqlevel(%d) found in src file%s',
+			     args(N3, ActionMsg))
+	;   N3=0
 	),
 	(N1 < N2 -> N4=N2 ; N4=N1),
 	(N3 < N4 -> Level=N4 ; Level=N3),
-	( LoadMode == static_mode ->
-	    fmt_write_string(Trailer,'flrtrailer%d.P',f(Level))
-	  ;
-	    fmt_write_string(Trailer,'flrtrailer%d_dyn.P',f(Level))
+	(   LoadMode == static_mode
+	->  fmt_write_string(Trailer,'flrtrailer%d.P',f(Level))
+	;   fmt_write_string(Trailer,'flrtrailer%d_dyn.P',f(Level))
 	),
 	copy_flrfile(closure,Trailer,S3),
-	( S1=success, S2=success, S3=success ->
-	    Status=success
-	  ;
-	    Status=failure
+	(   S1=success, S2=success, S3=success
+	->  Status=success
+	;   Status=failure
 	).
 
 
@@ -586,21 +565,19 @@ copy_flrfile(Dir,File,Status) :-
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(FullName,'%s%s%s%s%s',f(FloraDir,S,Dir,S,File)),
-	( flora_file_exists(FullName) ->
-	    flora_output_file(FullName),
+	(   flora_file_exists(FullName)
+	->  flora_output_file(FullName),
 	    Status=success
-	  ;
-	    Status=failure
+	;   Status=failure
 	).
 
 
 /********************************************************************/
 flora_file_exists(File) :-
-	( file_exists(File) ->
-	    true
-	  ;
-	    displayln, flora_errheader, display(File),
-	    displayln(' does NOT exist!'), fail
+	(   file_exists(File)
+	->  true
+	;   flora_error_nl('file %s not found', arg(File)),
+	    fail
 	).
 
 
@@ -615,60 +592,46 @@ flora_output_file(File) :-
 /********************************************************************/
 compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 	read_parse_compile([],Tokens,FlattenedRules,S1,Opts),
-	( member(error(_),S1) ->
-	    NewCount is ErrorCount+1,
+	(   member(error(_),S1)
+	->  NewCount is ErrorCount+1,
 	    (MaxErr=all -> M is NewCount+1 ; M=MaxErr),
-	    ( M =< NewCount ->
-		Status=failure,
-		displayln, display('++aborted due to '),
-		display(NewCount),
-		displayln(' error(s) found'), displayln
-
-	      ; member(not_eof,S1),
-		member(atom(rule_delimeter),Tokens) ->
-		  compile_flrfile(MaxErr,NewCount,Status,_,_)
-
-	      ; member(not_eof,S1), flora_discard_tokens(S2),
-		member(not_eof,S2) ->
-		  compile_flrfile(MaxErr,NewCount,Status,_,_)
-	      ;
-		Status=failure,
-		displayln, display('++ '), display(NewCount),
-		displayln(' error(s) found'),
-		display('++compilation aborted'), displayln
+	    (	M =< NewCount
+	    ->	Status=failure,
+		fmt_write(STDERR, "\n++Aborted after %d error(s)\n\n",
+			  arg(NewCount))
+	    ;	member(not_eof,S1),
+		member(atom(rule_delimeter),Tokens)
+	    ->	compile_flrfile(MaxErr,NewCount,Status,_,_)
+	    ;	member(not_eof,S1), flora_discard_tokens(S2),
+		member(not_eof,S2)
+	    ->	compile_flrfile(MaxErr,NewCount,Status,_,_)
+	    ;	Status=failure,
+		fmt_write(STDERR,
+			  "\n++ %d error(s) found\n++compilation aborted\n\n",
+			  arg(NewCount))
 	    )
-
-	  ;
-	    ( member(unbound_warning(_Form,L),FlattenedRules) ->
-		displayln, flora_warnheader, display('unsafe variable(s) '),
-		telling(CurrStream), tell(userout),
-		write_list(L), tell(CurrStream),
-		displayln(' in a rule head or a fact.')
-	      ;
-		true
+	;   ( member(unbound_warning(Form,L),FlattenedRules)
+	    ->	issue_unsafe_var_warning(Form,L)
+	    ;	true
 	    ),
 	    write('%%% '),
 	    telling(File), write_tokens(File,Tokens), nl,
 	    write_rules(FlattenedRules), nl,
-	    ( ErrorCount > 0 ->
-		true
-	      ;
-		append(OldOpts,Opts,Temp1),
+	    (	ErrorCount > 0
+	    ->	true
+	    ;	append(OldOpts,Opts,Temp1),
 		sort(Temp1,Temp2)
 	    ),
-	    ( member(eof,S1) ->
-		( ErrorCount = 0 ->
-		    Status=success,
+	    (	member(eof,S1)
+	    ->	( ErrorCount = 0
+		->  Status=success,
 		    NewOpts=Temp2
-		  ;
-		    Status=failure,
-		    displayln, display('++'), display(ErrorCount),
-		    displayln(' error(s) found'),
-		    display('++compilation aborted'),
-		    displayln 
+		;   Status=failure,
+		    fmt_write(STDERR,
+			      "\n++%d error(s) found\n++compilation aborted\n",
+			      arg(ErrorCount))
 		)
-	      ;
-		compile_flrfile(MaxErr,ErrorCount,Status,Temp2,NewOpts)
+	    ;	compile_flrfile(MaxErr,ErrorCount,Status,Temp2,NewOpts)
 	    )
 	),
 	!.
@@ -683,34 +646,28 @@ flora_read_parse_compile(LoadMode,L,Tokens, FlattenedRules,Status,Opts) :-
 /********************************************************************/
 read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 	read_tokens(Tokens,ReadStatus),
-	( member(error(Msg),ReadStatus) ->
-	    Status=ReadStatus,
+	(   member(error(Msg),ReadStatus)
+	->  Status=ReadStatus,
 	    FlattenedRules=[null],
-	    displayln, display('>>>   '),
-	    write_tokens(userout,Tokens),
-	    displayln(' <--- here?'),
-	    displayln_errmsg(Msg)
-
-	  ; L = [atom('$?'),atom('$-')], rule(null,Tokens,[]) ->
-	    Status=[noop|ReadStatus]
-
-	  ;
-	    append(L,Tokens,Ts),
-	    ( rule(FlogicRule,Ts,[]) ->
-		( compile_flogic(FlogicRule,FlattenedRules,Opts) ->
-		    Status=ReadStatus
-		  ;
-		    FlattenedRules=[null],
-		    displayln, display('>>>   '),
-		    write_tokens(userout,Tokens), displayln,
-		    displayln_errmsg('compiling error'),
+	    fmt_write(STDERR, "\n>>>   ",_),
+	    write_tokens_message(STDERR,Tokens),
+	    file_write(STDERR, ' <--- here?'),
+	    flora_error_nl(Msg)
+	;   L = [atom('$?'),atom('$-')], rule(null,Tokens,[]) 
+	->  Status=[noop|ReadStatus]
+	;   append(L,Tokens,Ts),
+	    (	rule(FlogicRule,Ts,[])
+	    ->	( compile_flogic(FlogicRule,FlattenedRules,Opts)
+		-> Status=ReadStatus
+		;   FlattenedRules=[null],
+		    fmt_write(STDERR, "\n>>>   ",_),
+		    write_tokens_message(STDERR,Tokens),
+		    flora_error_nl('compiling error'),
 		    Status=[error('compiling error')|ReadStatus]
 		)
-
-	      ;
-		displayln, display('>>>   '),
-		write_tokens(userout,Tokens), displayln,
-		displayln_errmsg('parsing error'),
+	    ;	fmt_write(STDERR, "\n>>>   ",_),
+		write_tokens_message(STDERR,Tokens),
+		flora_error_nl('parsing error'),
 		FlogicRule=[null],
 		Status=[error('parsing error')|ReadStatus]
 	    )
@@ -719,13 +676,11 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 
 /********************************************************************/
 flora_discard_tokens(Status) :-
-	displayln,
 	repeat,
-	flora_msgheader, displayln('discarding tokens]'),
+	flora_warning_nl('discarding tokens]'),
 	read_tokens(Tokens,Status),
-	( member(atom(rule_delimeter),Tokens), !
-	 ;
-	  member(eof,Status), !
+	(   member(atom(rule_delimeter),Tokens), !
+	;   member(eof,Status), !
 	).
 
 
@@ -734,10 +689,9 @@ flora_check_directives(Original,Final) :-
 	flora_directives(Original,L1),
 	findall(X1,(member(X1,L1),X1\=eqlevel(_)),L2),
 	findall(eqlevel(X2),member(eqlevel(X2),L1),L3),
-	( L3 = [] ->
-	    L4=[]
-	  ;
-	    member(eqlevel(N1),L3),
+	(   L3 = []
+	->  L4=[]
+	;   member(eqlevel(N1),L3),
 	    not (member(eqlevel(N2),L3),N2>N1),
 	    L4=[eqlevel(N1)]
 	),
@@ -747,20 +701,18 @@ flora_check_directives(Original,Final) :-
 flora_directives([],[]) :- !.
 
 flora_directives([H|T],Opts) :-
-	( flora_directive(H) ->
-	    Opts=[H|R],
+	(   flora_directive(H)
+	->  Opts=[H|R],
 	    flora_directives(T,R)
-
-	  ;
-	    displayln, flora_warnheader, display('unknown compiler option `'),
-	    display(H), displayln(''' (discarded)'),
+	;   flora_warning_nl("unknown compiler option `%S' (discarded)\n",
+			     arg(H)),
 	    flora_directives(T,Opts)
 	),
 	!.
 
+%% Error, if incorrect directives format
 flora_directives(_,_) :-
-	displayln,
-	displayln_errmsg('compiler directive must be a LIST of options!'),
+	flora_error_nl('compiler directive must be a LIST of options!'),
 	fail.
 
 flora_directive(eqlevel(N)) :- 0 =< N, N =< 1, !.
@@ -770,12 +722,10 @@ flora_default_directives([eqlevel(0)]).
 
 /*********************************************************************/
 flora_check_filename(Name) :-
-	( not atom(Name) ->
-	    displayln, flora_errheader, displayln('invalid file name'),
+	(   not atom(Name)
+	->  flora_error_nl('invalid file name'),
 	    fail
-
-	  ;
-	    true
+	;   true
 	).
 
 
@@ -787,10 +737,9 @@ flora_locate_file(In,In) :-
 flora_locate_file(In,In) :-
 	parse_filename(In,_,F,E),
 	slash(S),
-	( E \= '' ->
-	    fmt_write_string(Str,'.%s%s.%s',f(S,F,E))
-	  ;
-	    fmt_write_string(Str,'.%s%s',f(S,F))
+	(   E \= ''
+	->  fmt_write_string(Str,'.%s%s.%s',f(S,F,E))
+	;   fmt_write_string(Str,'.%s%s',f(S,F))
 	),
 	In=Str,
 	file_exists(In),
@@ -829,13 +778,11 @@ flora_locate_file(In,In).
 
 /*********************************************************************/
 file_older_than(F1,F2) :-
-	( file_exists(F1) ->
-	    file_time(F1,time(F1Time1,F1Time2)),
+	(   file_exists(F1)
+	->  file_time(F1,time(F1Time1,F1Time2)),
 	    file_time(F2,time(F2Time1,F2Time2)),
 	    time(F1Time1,F1Time2) @< time(F2Time1,F2Time2)
-
-	  ;
-	    true
+	;   true
 	).
 
 
@@ -848,16 +795,13 @@ flora_library_directory(X) :- library_directory(X).
 :- maxerr(5).
 
 maxerr(X) :-
-	( var(X) ->
-	    flora_maxerr(X)
-
-	  ; X \== all, (not integer(X); X < 1) ->
-	    displayln,
-	    flora_errheader, displayln('invalid argument to maxerr'),
+	(   var(X)
+	->  flora_maxerr(X)
+	;   X \== all,
+	    (	not integer(X) ; X < 1)
+	->  flora_error_nl('invalid argument to maxerr'),
 	    fail
-
-	  ;
-	    trie_retract_all(flora_maxerr(_)),
+	;   trie_retract_all(flora_maxerr(_)),
 	    trie_assert(flora_maxerr(X))
 	).
 

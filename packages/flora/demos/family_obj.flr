@@ -100,7 +100,7 @@ X[ancestor->>{Y}] :- X..ancestor[ancestor->>{Y}].
 
 %?- sys.eval.	% uncomment for FLORID!
 
-X:illegitimate :- X[father->F; mother->M], not M.spouse=F.
+X:illegitimate :- X[father->F; mother->M], M[spouse -> S], S\=F.
 
 
 %?- sys.eval.	% uncomment for FLORID:

@@ -26,6 +26,10 @@
 */
 
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+
+
 /*********************************************************************/
 '_$_$_flora_shell' :-
 	bootstrap_flora,
@@ -38,17 +42,10 @@
 
 /*********************************************************************/
 '_$_$_flora_welcome_msg' :-
-	nl,
-	write('FLORA Version '),
 	package_configuration(version(flora),V),
-	write(V), writeln(' loaded.'), nl,
-	writeln('Type `help.'' to display the help message'),
-	nl,
-	writeln('Type `rundemo(demoName).'''),
-	write('     to run the demos in '),
-	slash(S),
-	package_configuration(dir(flora),FloraDir),
-	fmt_write("%s%sdemos\n\n",f(FloraDir,S)),
+	flora_display_msg("\nFLORA Version %S\n", arg(V)),
+	flora_display_msg('Type `help.'' to show the help message'),
+	flora_display_msg('Type `rundemo(demoName).'' to run demos in XSB/packages/flora/demos/'),
 	!.
 
 
@@ -63,7 +60,7 @@
 					Status,
 					Opts),
 	( member(noop,Status) ->
-	    nl, S=Status
+	    file_nl(STDMSG), S=Status
 
 	  ; member(error(_),Status) ->
 	    ( (member(eof,Status); member(atom(rule_delimeter),Tokens)) ->
@@ -87,7 +84,10 @@
 	see(userin),
 	told,
 	tell(userout),
-	nl, write('flora ?- ').
+	(conget('_$_deb_autopilot',2),!  % unless trace autopilot is permanent,
+	;   conset('_$_deb_autopilot',0) % reset debugger autopilot mode 
+	),
+	file_nl(STDFDBK), file_write(STDFDBK, 'flora ?- ').
 
 '_$_$_flora_loop_guard'(S) :- (member(eof,S) -> end ; fail).
 
@@ -117,8 +117,7 @@
 	    true
 	),
 	( member(skolem,Opts) ->
-	    nl,
-	    displayln_warning('skolemization may require equality checking')
+	    flora_warning_nl('skolemization may require equality checking')
 	  ;
 	   true
 	).
@@ -135,30 +134,30 @@
 
 /*********************************************************************/
 help :-
-	nl,
-	writeln('FLORA commands:'), nl,
-	writeln('  help                         : show this info'),
-	writeln('  compile(FILE[.P])            : compile FILE.P; create FILE.O'),
-	writeln('  flcompile(FILE.[flr])        : compile FILE.flr; create FILE.P and FILE.O'),
-	writeln('  flcompile(FILE.[flr],[...])  : flcompile(FILE) with options [...]'),
-	writeln('  flconsult(FILE.[flr])        : compile FILE.flr; consult FILE.P'),
-	writeln('  flconsult(FILE.[flr],[...])  : flconsult(FILE) with options [...]'),
-	writeln('  flload(FILE[.{P|O|flr}])     : consult FILE.flr, FILE.P or FILE.O'),
-	writeln('  [FILE[.{P|O|flr}],...]       : consult a list of .flr, .P, or .O files'),
-	writeln('  dyncompile(FILE[.flr])       : compile FILE.flr to dynamic code'),
-	writeln('  dyncompile(FILE[.flr],[...]) : dyncompile(FILE) with options [...]'),
-	writeln('  dynconsult(FILE[.flr])       : dyncompile FILE.flr; dynamically load FILE.P'),
-	writeln('  dynconsult(FILE[.flr],[...]) : dynconsult(FILE) with options [...]'),
-	writeln('  dynload(FILE[.flr])          : dynamically load FILE.flr or FILE.P'),
-	writeln('  <FILE[.EXT],...>             : dynload a list of .flr or .P files'),
-	writeln('  rundemo(FILE[.flr])          : flconsult a demo from FLORA demos directory'),
-	writeln('  rundemo(FILE[.flr],[...])    : rundemo(FILE) with options [...]'),
-	writeln('  abolish_all_tables           : flush all tabled data'),
-	writeln('  all                          : show all solutions (default)'),
-	writeln('  one                          : show solutions one by one'),
-	writeln('  maxerr(all/N)                : set/show the max number of errors FLORA reports'),
-	writeln('  end                          : say Ciao to FLORA'),
-	writeln('  halt                         : quit FLORA and XSB').
+	flora_display_msg("\nFLORA commands:\n"),
+	flora_display_msg('  help                         : show this info'),
+	flora_display_msg('  compile(FILE[.P])            : compile FILE.P; create FILE.O'),
+	flora_display_msg('  flcompile(FILE.[flr])        : compile FILE.flr; create FILE.P and FILE.O'),
+	flora_display_msg('  flcompile(FILE.[flr],[...])  : flcompile(FILE) with options [...]'),
+	flora_display_msg('  flconsult(FILE.[flr])        : compile FILE.flr; consult FILE.P'),
+	flora_display_msg('  flconsult(FILE.[flr],[...])  : flconsult(FILE) with options [...]'),
+	flora_display_msg('  flload(FILE[.{P|O|flr}])     : consult FILE.flr, FILE.P or FILE.O'),
+	flora_display_msg('  [FILE[.{P|O|flr}],...]       : consult a list of .flr, .P, or .O files'),
+	flora_display_msg('  dyncompile(FILE[.flr])       : compile FILE.flr to dynamic code'),
+	flora_display_msg('  dyncompile(FILE[.flr],[...]) : dyncompile(FILE) with options [...]'),
+	flora_display_msg('  dynconsult(FILE[.flr])       : dyncompile FILE.flr; dynamically load FILE.P'),
+	flora_display_msg('  dynconsult(FILE[.flr],[...]) : dynconsult(FILE) with options [...]'),
+	flora_display_msg('  dynload(FILE[.flr])          : dynamically load FILE.flr or FILE.P'),
+	flora_display_msg('  <FILE[.EXT],...>             : dynload a list of .flr or .P files'),
+	flora_display_msg('  rundemo(FILE[.flr])          : flconsult a demo from FLORA demos directory'),
+	flora_display_msg('  rundemo(FILE[.flr],[...])    : rundemo(FILE) with options [...]'),
+	flora_display_msg('  abolish_all_tables           : flush all tabled data'),
+	flora_display_msg('  all                          : show all solutions (default)'),
+	flora_display_msg('  one                          : show solutions one by one'),
+	flora_display_msg('  maxerr(all/N)                : set/show the error reporting threshold'),
+	flora_display_msg('  end                          : Ciao to FLORA'),
+	flora_display_msg('  halt                         : Ciao both to FLORA and XSB').
+
 
 
 /*********************************************************************/
@@ -225,7 +224,7 @@ flora_notrace :- ('_$_$_flora_debugger_data_loaded'
 end :-
 	unload_package(flora),
 	conset(flora_shell_loaded,0),
-	nl, writeln('Ciao!'), nl,
+	file_nl(STDMSG), flora_display_msg('Ciao!'),
 	pop_abort_cutpoint,
 	abort.
 
@@ -332,9 +331,8 @@ flcompile_demo([]).
 	'_$_$_flora_strict_subclass'(Z,Y),
 	%%(X \= Z -> true ; Z\=Y),
 	( X = Y ->
-	    write_flora_warnheader,
-	    write('cyclic subclass hierarchy: '),
-	    write(X), write('::'), write(Z), write('::'), write(Y), nl
+	    flora_warning_nl('cyclic subclass hierarchy: %S::%S::%S',
+			     args(X,Z,Y))
 	  ;
 	    true
 	).

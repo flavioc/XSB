@@ -25,6 +25,9 @@
 **
 */
 
+:- compiler_options([cpp_on]).
+#include "char_defs.h"
+
 
 /****************************************************************************
   read_tokens(-TokenList,-Status)
@@ -42,27 +45,27 @@ read_tokens(Char,TokenList,Status) :-
 	    TokenList=[atom(white_space)|Tokens],
 	    read_whitespace(Tokens,Status)
 
-	  ; Char >= 0'a, Char =< 0'z ->
+	  ; Char >= CH_a, Char =< CH_z ->
 	    read_identifier(Char,TokenList,Status)
 
-	  ; Char >= 0'A, Char =< 0'Z ->
+	  ; Char >= CH_A, Char =< CH_Z ->
 	    read_variable(Char,TokenList,Status)
 
-	  ; Char == 0'_ ->
+	  ; Char == CH_UNDERSCORE ->
 	    read_variable(Char,TokenList,Status)
 
-	  ; Char >= 0'0, Char =< 0'9 ->
+	  ; Char >= CH_0, Char =< CH_9 ->
 	    read_number(Char,TokenList,Status)
 
 	  ; Char == -1 ->
 	    TokenList=[],
 	    Status=[eof]
 
-	  ; Char < 32 ->
+	  ; Char < CH_SPACE ->
 	    TokenList=[],
 	    Status=[not_eof,error('unexpected unprintable character')]
 
-	  ; Char >= 127 ->
+	  ; Char >= CH_DELETE ->
 	    TokenList=[],
 	    Status=[not_eof,error('unexpected DEL or ISO character')]
 
@@ -82,10 +85,10 @@ read_whitespace(Tokens,Status) :-
 	!,
 	read_tokens(Char,Tokens,Status).
 
-whitespace(9).
-whitespace(10).
-whitespace(13).
-whitespace(32).
+whitespace(CH_TAB).
+whitespace(CH_NEWLINE).
+whitespace(CH_RETURN).
+whitespace(CH_SPACE).
 
 
 /****************************************************************************
@@ -108,16 +111,16 @@ read_identifier(Char,[identifier(Name)|Tokens],Status) :-
 ****************************************************************************/
 read_name(Ch,[Ch|Chars],LastCh) :-
 	get0(C),
-	( C >= 0'a, C =< 0'z ->
+	( C >= CH_a, C =< CH_z ->
 	    read_name(C,Chars,LastCh)
 
-	  ; C >=0'A, C =< 0'Z ->
+	  ; C >=CH_A, C =< CH_Z ->
 	    read_name(C,Chars,LastCh)
 
-	  ; C >=0'0, C =< 0'9 ->
+	  ; C >=CH_0, C =< CH_9 ->
 	    read_name(C,Chars,LastCh)
 
-	  ; C == 0'_ ->
+	  ; C == CH_UNDERSCORE ->
 	    read_name(C,Chars,LastCh)
 
 	  ;
@@ -142,13 +145,13 @@ read_variable(Char,[var(Name)|Tokens],Status) :-
   (1) from % or // until a LF character (10) or EOF;
   (2) from / * until * /.
 ****************************************************************************/
-read_special(0'/,Tokens,Status) :-
+read_special(CH_SLASH,Tokens,Status) :-
 	!,
 	get0(Ch),
-	( Ch == 0'/ ->
+	( Ch == CH_SLASH ->
 	    read_comment_line(Tokens,Status)
 
-	  ; Ch == 0'* ->
+	  ; Ch == CH_STAR ->
 	    read_comment_block(Tokens,Status)
 
 	  ;
@@ -174,9 +177,9 @@ read_comment_line(Tokens,Status) :-
 read_comment_block(Tokens,Status) :-
 	repeat,
 	get0(C1),
-	( C1 == 0'* ->
+	( C1 == CH_STAR ->
 	    get0(C2),
-	    ( C2 == 0'/ ->
+	    ( C2 == CH_SLASH ->
 		get0(C3),
 		read_tokens(C3,Tokens,Status)
 
@@ -193,74 +196,74 @@ read_comment_block(Tokens,Status) :-
 	),
 	!.
 
-read_special(0'%,Tokens,Status) :-
+read_special(CH_PERCENT,Tokens,Status) :-
 	!,
 	read_comment_line(Tokens,Status).
 
-read_special(0'(,[atom('$(')|Tokens],Status) :-
+read_special(CH_LPAREN,[atom('$(')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'),[atom('$)')|Tokens],Status) :-
+read_special(CH_RPAREN,[atom('$)')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'[,[atom('$[')|Tokens],Status) :-
+read_special(CH_LBRACKET,[atom('$[')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'],[atom('$]')|Tokens],Status) :-
+read_special(CH_RBRACKET,[atom('$]')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'{,[atom('${')|Tokens],Status) :-
+read_special(CH_LBRACE,[atom('${')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'},[atom('$}')|Tokens],Status) :-
+read_special(CH_RBRACE,[atom('$}')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'+,[atom('$+')|Tokens],Status) :-
+read_special(CH_PLUS,[atom('$+')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'-,[atom('$-')|Tokens],Status) :-
+read_special(CH_MINUS,[atom('$-')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0'.,Tokens,Status) :-
+read_special(CH_DOT,Tokens,Status) :-
 	!,
 	get0(NextCh),
 	read_fullstop(NextCh,Tokens,Status).
 
-read_special(0',,[atom('$,')|Tokens],Status) :-
+read_special(CH_COMMA,[atom('$,')|Tokens],Status) :-
 	!,
 	get0(NextCh),
 	read_tokens(NextCh,Tokens,Status).
 
-read_special(0';,[atom('$;')|Tokens],Status) :-
+read_special(CH_SEMICOL,[atom('$;')|Tokens],Status) :-
 	!,
 	get0(NextCh),				
 	read_tokens(NextCh,Tokens,Status).	
 
-read_special(0'",[string_list(Chars)|Tokens],Status) :-
+read_special(CH_DOUBLEQUOTE,[string_list(Chars)|Tokens],Status) :-
 	!,
 	get0(Ch),
-	read_string(Ch,0'",Chars,Tokens,Status).
+	read_string(Ch,CH_DOUBLEQUOTE,Chars,Tokens,Status).
 
-read_special(0'',[string_atom(Name)|Tokens],Status) :-
+read_special(CH_QUOTE,[string_atom(Name)|Tokens],Status) :-
 	!,
 	get0(Ch),
-	read_string(Ch,0'',Chars,Tokens,Status),
+	read_string(Ch,CH_QUOTE,Chars,Tokens,Status),
 	atom_codes(Name,Chars).
 
 read_special(Ch,Tokens,Status) :-
@@ -292,18 +295,18 @@ read_symbol(Ch,[Ch|Chars],NextCh) :-
 	    NextCh=C1
 	).
 
-symbol_char(0'*).
-symbol_char(0':).
-symbol_char(0'<).
-symbol_char(0'=).
-symbol_char(0'>).
-symbol_char(0'?).
-symbol_char(0'@).
-symbol_char(0'\).
-symbol_char(0'~).
-symbol_char(0'!).
-symbol_char(0'&).
-symbol_char(0'|).
+symbol_char(CH_STAR).
+symbol_char(CH_COLON).
+symbol_char(CH_LESS).
+symbol_char(CH_EQUAL).
+symbol_char(CH_GREATER).
+symbol_char(CH_QUESTION).
+symbol_char(CH_AT).
+symbol_char(CH_BACKSLASH).
+symbol_char(CH_TILDE).
+symbol_char(CH_EXCLAMATION).
+symbol_char(CH_AMPERSAND).
+symbol_char(CH_BAR).
 
 /****************************************************************************
   read_string(+Ch,+Quote,-Chars,-Tokens,-Status)
@@ -313,15 +316,15 @@ symbol_char(0'|).
   (3) anything else recognized as it is;
   (4) double quotes equal to single quote.
 ****************************************************************************/
-read_string(0'\,Quote,Chars,Tokens,Status) :-
+read_string(CH_BACKSLASH,Quote,Chars,Tokens,Status) :-
 	!,
 	get0(C1),
 	( C1 == -1 ->
-	    Chars=[0'\],
+	    Chars=[CH_BACKSLASH],
 	    Tokens=[],
 	    Status=[eof,error('unexpected end of file in string')]
 
-	  ; C1 \/ 32 =:= 0'x ->
+	  ; C1 \/ 32 =:= CH_x ->
 	    get0(C2),
 	    ( hex_symbol(C2,V2) ->
 		get0(C3),
@@ -337,7 +340,7 @@ read_string(0'\,Quote,Chars,Tokens,Status) :-
 		read_string(C4,Quote,Chs,Tokens,Status)
 
 	      ;
-		Chars=[0'\,C1],
+		Chars=[CH_BACKSLASH,C1],
 		Tokens=[],
 		( C2 == -1 ->
 		    Status=[eof,error('unexpected end of file')]
@@ -348,7 +351,7 @@ read_string(0'\,Quote,Chars,Tokens,Status) :-
 	    )
 
 	  ; 
-	    (escape_char(C1,V) -> Chars=[V|Chs] ; Chars=[0'\,C1|Chs]),
+	    (escape_char(C1,V) -> Chars=[V|Chs] ; Chars=[CH_BACKSLASH,C1|Chs]),
 	    get0(C2),
 	    read_string(C2,Quote,Chs,Tokens,Status)
 	).
@@ -374,39 +377,39 @@ read_string(Ch,Quote,[Ch|Chars],Tokens,Status) :-
 	read_string(C1,Quote,Chars,Tokens,Status).
 
 hex_symbol(Ch,Value) :-
-	( Ch >= 0'0, Ch =< 0'9 ->
-	    Value is Ch-0'0
+	( Ch >= CH_0, Ch =< CH_9 ->
+	    Value is Ch-CH_0
 
-	  ; Ch >= 0'a, Ch =< 0'f ->
-	    Value is Ch-0'a+10
+	  ; Ch >= CH_a, Ch =< CH_f ->
+	    Value is Ch-CH_a+10
 
-	  ; Ch >= 0'A, Ch =< 0'F ->
-	    Value is Ch-0'A+10
+	  ; Ch >= CH_A, Ch =< CH_F ->
+	    Value is Ch-CH_A+10
 	).
 
 
 /****************************************************************************
   This table is for ASCII.
 ****************************************************************************/
-escape_char(0'\, 92).
-%%% escape_char(0'n, 10).		% \n = NewLine
-%%% escape_char(0'N, 10).		% \N = NewLine
-escape_char(0't,  9).		% \t = Tab
-escape_char(0'T,  9).		% \T = Tab
-escape_char(0'r, 13).		% \r = Return
-escape_char(0'R, 13).		% \R = Return
-escape_char(0'v, 11).		% \v = Vertical tab
-escape_char(0'V, 11).		% \V = Vertical tab
-escape_char(0'b,  8).		% \b = Backspace
-escape_char(0'B,  8).		% \B = Backspace
-escape_char(0'f, 12).		% \f = FormFeed
-escape_char(0'F, 12).		% \F = FormFeed
-escape_char(0'e, 27).		% \e = Escape
-escape_char(0'E, 27).		% \E = Escape
-escape_char(0'd,127).		% \d = Delete
-escape_char(0'D,127).		% \D = Delete
-escape_char(0's, 32).		% \s = visible Space
-escape_char(0'S, 32).		% \S = visible Space
+escape_char(CH_BACKSLASH, CH_BACKSLASH).
+%%% escape_char(CH_n, CH_NEWLINE).		% \n = NewLine
+%%% escape_char(CH_N, CH_NEWLINE).		% \N = NewLine
+escape_char(CH_t,  CH_TAB).		% \t = Tab
+escape_char(CH_T,  CH_TAB).		% \T = Tab
+escape_char(CH_r, CH_RETURN).		% \r = Return
+escape_char(CH_R, CH_RETURN).		% \R = Return
+escape_char(CH_v, CH_VERTAB).		% \v = Vertical tab
+escape_char(CH_V, CH_VERTAB).		% \V = Vertical tab
+escape_char(CH_b,  CH_BACKSPACE).		% \b = Backspace
+escape_char(CH_B,  CH_BACKSPACE).		% \B = Backspace
+escape_char(CH_f, CH_FORMFEED).		% \f = FormFeed
+escape_char(CH_F, CH_FORMFEED).		% \F = FormFeed
+escape_char(CH_e, CH_ESC).		% \e = Escape
+escape_char(CH_E, CH_ESC).		% \E = Escape
+escape_char(CH_d, CH_DELETE).		% \d = Delete
+escape_char(CH_D, CH_DELETE).		% \D = Delete
+escape_char(CH_s, CH_SPACE).		% \s = visible Space
+escape_char(CH_S, CH_SPACE).		% \S = visible Space
 
 
 /****************************************************************************
@@ -422,7 +425,7 @@ read_fullstop(Ch,TokenList,Status) :-
 	    TokenList=[atom(rule_delimeter)],
 	    Status=[eof]
 
-	  ; Ch == 0'. ->
+	  ; Ch == CH_DOT ->
 	    TokenList=[atom('$..')|Tokens],
 	    get0(C1),
 	    read_tokens(C1,Tokens,Status)
@@ -440,7 +443,7 @@ read_fullstop(Ch,TokenList,Status) :-
 read_number(Char,TokenList,Status) :-
 	read_digits(Char,IntList,NextCh),
 	number_codes(N,IntList),
-	( NextCh == 0'' ->
+	( NextCh == CH_QUOTE ->
 	    ( N >= 2, N =< 36 ->
 		get0(C1),
 		( symbol_value(N,C1,_) ->
@@ -475,9 +478,9 @@ read_number(Char,TokenList,Status) :-
 		Status=[not_eof,error('invalid radix')]
 	    )
 
-	  ; NextCh == 0'. ->
+	  ; NextCh == CH_DOT ->
 	    get0(C1),
-	    ( C1 >= 0'0, C1 =< 0'9 ->
+	    ( C1 >= CH_0, C1 =< CH_9 ->
 		read_float(C1,IntList,TokenList,Status)
 
 	      ; 
@@ -496,12 +499,12 @@ read_number(Char,TokenList,Status) :-
   returns in Chars a list of digits.
 ****************************************************************************/
 read_digits(Ch,Chars,NextCh) :-
-	( Ch >= 0'0, Ch =< 0'9 ->
+	( Ch >= CH_0, Ch =< CH_9 ->
 	    Chars=[Ch|Rest],
 	    get0(C1),
 	    read_digits(C1,Rest,NextCh)
 
-	  ; Ch == 0'_ ->
+	  ; Ch == CH_UNDERSCORE ->
 	    get0(C1),
 	    read_digits(C1,Chars,NextCh)
 
@@ -521,7 +524,7 @@ read_based(Ch,NextCh,Base,N0,N) :-
 	    get0(C1),
 	    read_based(C1,NextCh,Base,N1,N)
 
-	  ; Ch == 0'_ ->
+	  ; Ch == CH_UNDERSCORE ->
 	    get0(C1),
 	    read_based(C1,NextCh,Base,N0,N)
 
@@ -537,14 +540,14 @@ read_based(Ch,NextCh,Base,N0,N) :-
   value in Digit.
 ****************************************************************************/
 symbol_value(Base,Char,Digit) :-
-	( Char >= 0'0, Char =< 0'9 ->
-	    Digit is Char-0'0
+	( Char >= CH_0, Char =< CH_9 ->
+	    Digit is Char-CH_0
 
-	  ; Char >= 0'A, Char =< 0'Z ->
-	    Digit is Char-0'A+10
+	  ; Char >= CH_A, Char =< CH_Z ->
+	    Digit is Char-CH_A+10
 
-	  ; Char >= 0'a, Char =< 0'z ->
-	    Digit is Char-0'a+10
+	  ; Char >= CH_a, Char =< CH_z ->
+	    Digit is Char-CH_a+10
 
 	  ;
 	    Digit=99
@@ -560,10 +563,10 @@ symbol_value(Base,Char,Digit) :-
 ****************************************************************************/
 read_float(Char,Integer,[num(Number)|Tokens],Status) :-
 	read_digits(Char,Fraction,C1),
-	append(Integer,[0'.|Fraction],L1),
-	( C1 \/ 32 =:= 0'e ->
+	append(Integer,[CH_DOT|Fraction],L1),
+	( C1 \/ 32 =:= CH_e ->
 	    get0(C2),
-	    ( C2 =\= 0'-, C2 =\= 0'+ ->
+	    ( C2 =\= CH_MINUS, C2 =\= CH_PLUS ->
 		Sign=[],
 		C3=C2
 
@@ -572,7 +575,7 @@ read_float(Char,Integer,[num(Number)|Tokens],Status) :-
 		get0(C3)
 	    ),
 	    append(L1,[C1|Sign],L2),
-	    ( C3 >= 0'0, C3 =< 0'9 ->
+	    ( C3 >= CH_0, C3 =< CH_9 ->
 		read_digits(C3,Exponent,NextCh),
 		append(L2,Exponent,L3),
 		number_codes(Number,L3),

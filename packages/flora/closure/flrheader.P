@@ -1,5 +1,8 @@
 /**** closure/flrheader.P: Prepended automatically by the FLORA compiler ****/
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+#include "char_defs.h"
 
 :- table '_$_$_flora_fd'/3.
 :- table '_$_$_flora_mvd'/3.
@@ -21,7 +24,9 @@
 
 :- import current_predicate/1 from curr_sym.
 
-:- import flora_loadlist/1, flora_dynloadlist/1 from flrutils.
+:- import flora_loadlist/1, flora_dynloadlist/1, 
+	flora_warning_nl/2
+   from flrutils.
 
 :- import bootstrap_flora/0 from flora.
 

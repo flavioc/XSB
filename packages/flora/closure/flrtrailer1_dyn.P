@@ -20,11 +20,10 @@
 	'_$_$_flora_strict_subclass_dyn'(X,Z), 
 	'_$_$_flora_strict_subclass_dyn'(Z,Y),
 	%%(X \= Z -> true ; Z\=Y),
-	( X = Y ->
-	    write('++FLORA Warning: cyclic subclass hierarchy, '),
-	    write(X), write('::'), write(Z), write('::'), write(Y), nl
-	  ;
-	    true
+	( X = Y
+	->  flora_warning_nl('cyclic subclass hierarchy, %S::%S::%S',
+			     args(X,Z,Y))
+	;   true
 	).
 
 
@@ -143,7 +142,7 @@
 
 /* Should we add '_$_$_flora_eql' everywhere? Why not make '_$_$_flora_isa',
     '_$_$_flora_subclass', '_$_$_flora_ifd', etc. friendly to eql, so that 
-   we won't need to check for equality everywhere?
+   we won''t need to check for equality everywhere?
 */
 '_$_$_flora_defined_fd_dyn'(Object,Method) :-
 	'_$_$_flora_fd_dyn'(Object,Method,_).
