@@ -777,7 +777,7 @@ reload_extensional(Dir,CPath):-
 reload_extensional(CPath) :-
 	repeat,
 	read_canonical(Term),
-	writeln(Term),
+%%	writeln(Term),
 	(Term == end_of_file
 	 ->	!
 	 ; Term = :-(_)
