@@ -38,6 +38,8 @@
 
 :- import unix/1 from unix.
 
+:- import stat_flag/2 from machine.
+
 :- import current_predicate/1 from curr_sym.
 
 :- import trie_assert/1, trie_retract_all/1 from tables.
@@ -58,7 +60,7 @@
 	    )
 
 	  ;
-	    findall(NVs,Gs,TempL),
+	    '_$_$_flora_findall'(NVs,Gs,TempL),
 	    sort(TempL,L),
 	    cputime(T1),
 	    T is T1-T0,
@@ -110,21 +112,36 @@
 
 %% flora_call essentially repeats the XSB call definition
 '_$_$_flora_call'(Goal) :- 
-	( callable(Goal) -> '_$savecp'(C), 
-	   goal_cut_trans(Goal, Trans_Goal, C), 
-	    %% Turn trace on, if requested.
-	   ( '_$_$_flora_switch'(trace) -> trace ;   true),
-	    %% Regardless of whether call succeeds, turn trace off
-	   ( call_c(Trans_Goal) ->
-	       ( '_$_$_flora_switch'(trace) -> notrace ; true)
-	      ;
-	       ( '_$_$_flora_switch'(trace) -> notrace ; true),
-	       fail
-	   )
-	;  var(Goal) -> 
-	   abort('Uninstantiated argument 1 of call/1')
-	;  abort('Wrong type in argument 1 of call/1 (callable term expected)')
+    	'_$_$_flora_handle_trace',
+    	call(Goal),
+	'_$_$_flora_handle_end_of_call'.
+'_$_$_flora_call'(_Goal) :- '_$_$_flora_handle_notrace', fail.
+
+'_$_$_flora_findall'(NVs,Gs,TempL) :-
+	'_$_$_flora_handle_trace',
+	findall(NVs,Gs,TempL),
+	'_$_$_flora_handle_notrace'.
+'_$_$_flora_findall'(_NVs,_Gs,_TempL) :- '_$_$_flora_handle_notrace', fail.
+
+'_$_$_flora_handle_trace' :-
+    	( '_$_$_flora_switch'(trace) -> (stat_flag(6, Trace), Trace = 0
+					 -> trace
+					 ;  true
+					)
+	    	    	    	     ; true
 	).
+'_$_$_flora_handle_notrace' :-
+    	(stat_flag(6, Trace), Trace > 0
+	  ->  notrace
+	  ;   true
+	).
+
+%% This turns off trace, so that flora internal stuff done after a
+%% subgoal call won't be traced. However, on backtracking, this turns
+%% trace on and fails, thereby allowing to backtrack over the previous
+%% subgoal.
+'_$_$_flora_handle_end_of_call' :- '_$_$_flora_handle_notrace'.
+'_$_$_flora_handle_end_of_call' :- '_$_$_flora_handle_trace', fail.
 
 
 /********************************************************************/

@@ -63,6 +63,8 @@
 
 :- import glob_directory/4 from wildmatch.
 
+:- import '_$_$_flora_debugger_data_loaded'/0 from usermod.
+
 %%:- import '_$_$_flora_trace'/0, '_$_$_flora_notrace'/0 from flrdebugger.
 
-:- dynamic '_$_$_flora_switch'/1.
+:- dynamic '_$_$_flora_switch'/1, '_$_$_flora_debugger_data_loaded'/0.

@@ -128,7 +128,7 @@ flora_pp_write_semicolon_maybe([_First| _Rest]) :- writeln(';').
 
 
 flora_pp_write_method_invocation([]).
-flora_pp_write_method_invocation([Attr]) :- 
+flora_pp_write_method_invocation([Attr]) :-
     	flora_pp_write_value(Attr).
 flora_pp_write_method_invocation([M, Arg |Args]) :-
     	flora_pp_write_value(M), write('@('), flora_pp_write_value(Arg),

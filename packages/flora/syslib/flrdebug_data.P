@@ -56,6 +56,24 @@ hide_this_hide('_$_$_flora_write_shell_prompt',0).
 hide_this_hide('_$_$_flora_loop_guard',1).
 hide_this_hide('_$_$_flora_write_No',0).
 hide_this_hide('_$_$_flora_write_Yes',0).
+hide_this_hide('_$_$_flora_handle_trace',0).
+hide_this_hide('_$_$_flora_handle_notrace',0).
+hide_this_hide('_$_$_flora_handle_end_of_call',0).
+
+hide_this_hide('_$_$_flora_collectset',3).
+hide_this_hide('_$_$_flora_collectbag',3).
+hide_this_hide('_$_$_flora_min',3).
+hide_this_hide('_$_$_flora_max',3).
+hide_this_hide('_$_$_flora_avg',3).
+hide_this_hide('_$_$_flora_sum',3).
+
+hide_this_hide('_$_$_flora_debug_get_context',2).
+hide_this_hide(flora_write_debug_goal,2).
+
+hide_this_hide(flora_trace,0).
+hide_this_hide(flora_notrace,0).
+hide_this_hide(one,0).
+hide_this_hide(all,0).
 
 hide_this_show('_$_$_flora_print_answers',2).
 
@@ -63,5 +81,7 @@ show_this_hide('_$_$_flora_assert', 1).
 show_this_hide('_$_$_flora_retract', 2).
 show_this_hide('_$_$_flora_retractall', 2).
 show_this_hide('_$_$_flora_erase', 2).
+
+
 
 '_$_$_flora_debugger_data_loaded'.

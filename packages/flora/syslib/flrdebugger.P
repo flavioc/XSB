@@ -33,13 +33,11 @@
 
 :- dynamic debug_display_call_hook(_).
 :- dynamic '_$_$_flora_switch'/1, '_$_$_flora_debugger_data_loaded'/0.
+:- dynamic '_$_$_flora_debug_context'/1.
 
 %%:- export '_$_$_flora_trace'/0, '_$_$_flora_notrace'/0.
 
 :- trie_assert(debug_display_call_hook(flora_write_debug_goal)).
-
-%% In the future, flrprettyprint will be a module
-:- [flrprettyprint].
 
 
 flora_write_debug_goal('_$_$_flora_isa_rhs'(X,Y)) :-
@@ -60,36 +58,122 @@ flora_write_debug_goal('_$_$_flora_retractall'(L,Cond)) :-
 flora_write_debug_goal('_$_$_flora_erase'(L,Cond)) :-
 	!, flora_print_erase(L,Cond).
 
-%% This one is complicated. To be figured out later
-flora_write_debug_goal('_$_$_flora_collectset'(nogrp,Y,Z)) :-
-	!, fmt_write('collectset{%S ; %S}', args(Y,Z)).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Findall-related calls
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% collectset (currently, this also handles collectbag, because it is 
+%% hard to distinguish the two without a lookahead).
+/*
+flora_write_debug_goal(findall('_$_$_flora_rslt'(CollectVar,Grp),Goal,_Result)) :-
+	Grp =.. ['_$_$_flora_grp' | GrpVars],
+	!, 
+	write('Set = collectset{ '),
+	write(CollectVar),
+	write(' [ '),
+	'_$_$_flora_write_vars'(GrpVars),
+	write(' ]; '),
+	flora_write_debug_goal(Goal),
+	write(' }').
+*/
+
+
+%% flora_print_all
+flora_write_debug_goal(findall(X,Gs,_Res)) :-
+	is_list(X),
+	X = [var(_,_)|_],
+	!,
+	write('Query: { '),
+	'_$_$_flora_write_vars'(X),
+	write(' | '),
+	flora_write_debug_goal(Gs),
+	write(' }').
+
+%% ','(Goal1,Goal2, ...). This comes from flora_print_all
+flora_write_debug_goal(Call) :- 
+	compound(Call),
+	Call =.. [',' , Call1 | Rest],
+	'_$_$_flora_debug_get_context'(Rest,Context),
+	!,
+	flora_write_debug_goal(Call1, Context).
+
+
+%% aggregates -- they come with context obtained from ','(Goal1,Goal2, ...)
+flora_write_debug_goal(Call) :- 
+	functor(Call, findall, 3),
+	'_$_$_flora_debug_context'(Context),
+	!,
+	flora_write_debug_goal(Call, Context).
+
+
+/*********************************************************************/
+%% Catch-all cases
 
 flora_write_debug_goal(Call) :- write(Call).
 
 /*********************************************************************/
+%% Context-sensitive flora_write_debug_goal's
+
+flora_write_debug_goal(findall('_$_$_flora_rslt'(CollectVar,Grp),Goal,_Result),
+		       Context) :-
+	Grp =.. ['_$_$_flora_grp' | GrpVars],
+	!, 
+	(Context == collectset -> write('Set = collectset{ ') ;  true),
+	(Context == collectbag -> write('Set = collectbag{ ') ;  true),
+	(Context == min -> write('Res = min{ ') ;  true),
+	(Context == max -> write('Res = max{ ') ;  true),
+	(Context == avg -> write('Res = avg{ ') ;  true),
+	(Context == sum -> write('Res = sum{ ') ;  true),
+	write(CollectVar),
+	write(' [ '),
+	'_$_$_flora_write_vars'(GrpVars),
+	write(' ]; '),
+	flora_write_debug_goal(Goal),
+	write(' }').
+%% None of the above contexts
+flora_write_debug_goal(Goal, none) :-
+	!, flora_write_debug_goal(Goal).
+
+'_$_$_flora_debug_get_context'([SecondaryGoals | _], Context) :-
+    	SecondaryGoals =.. [',' , Goal2 | _Rest],
+	nonvar(Goal2),
+	Goal2 =.. [ContextPred | _Rest1],
+	(ContextPred == '_$_$_flora_collectset' -> Context = collectset; true),
+	(ContextPred == '_$_$_flora_collectbag' -> Context = collectbag; true),
+	(ContextPred == '_$_$_flora_min' -> Context = min; true),
+	(ContextPred == '_$_$_flora_max' -> Context = max; true),
+	(ContextPred == '_$_$_flora_avg' -> Context = avg; true),
+	(ContextPred == '_$_$_flora_sum' -> Context = sum; true),
+	(var(ContextPred) -> Context = none; true),
+	!,
+	retractall('_$_$_flora_debug_context'(_)),
+	assert('_$_$_flora_debug_context'(Context)).
+	 
+
+/*********************************************************************/
 
 flora_print_isa(X,Y) :- 
-	flora_pp_write_value(X),
+	'_$_$_flora_debug_write_value'(X),
 	write(' : '),
-	flora_pp_write_value(Y).
+	'_$_$_flora_debug_write_value'(Y).
 flora_print_sub(X,Y) :-
-	flora_pp_write_value(X),
+	'_$_$_flora_debug_write_value'(X),
 	write(' :: '),
-	flora_pp_write_value(Y).
+	'_$_$_flora_debug_write_value'(Y).
 
 flora_print_fd(O,M,V) :-
-	flora_pp_write_value(O),
+	'_$_$_flora_debug_write_value'(O),
 	write('['),
-	flora_print_method(M),
+	'_$_$_flora_debug_write_method_invocation'(M),
 	write(' -> '),
-	flora_pp_write_value(V),
+	'_$_$_flora_debug_write_value'(V),
 	write(']').
 flora_print_mvd(O,M,V) :-
-	flora_pp_write_value(O),
+	'_$_$_flora_debug_write_value'(O),
 	write('['),
-	flora_print_method(M),
+	'_$_$_flora_debug_write_method_invocation'(M),
 	write(' ->> '),
-	flora_pp_write_value(V),
+	'_$_$_flora_debug_write_value'(V),
 	write(']').
 
 flora_print_assert(L) :- write('assert('), flora_print_assert1(L).
@@ -132,11 +216,49 @@ flora_print_retract_molecule('_$_$_flora_rtrct'(A)) :-
 	    flora_print_mvd(O,M,V)
 	).
 
-flora_print_method(M) :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+'_$_$_flora_debug_write_value'(Val) :-
+	atom(Val),
+	!,
+	fmt_write('''%s''', arg(Val)).
+'_$_$_flora_debug_write_value'(Val) :-
+	is_charlist(Val),
+	!,
+	fmt_write('"%s"', arg(Val)).
+'_$_$_flora_debug_write_value'(Val) :- var(Val), !, write(Val).
+'_$_$_flora_debug_write_value'(var(_N,Var)) :- !, write(Var).
+'_$_$_flora_debug_write_value'(Val) :- write(Val).
+
+'_$_$_flora_debug_write_method_invocation'([]).
+'_$_$_flora_debug_write_method_invocation'([Attr]) :-
+    	!, '_$_$_flora_debug_write_value'(Attr).
+'_$_$_flora_debug_write_method_invocation'([M, Arg |Args]) :-
+    	!, '_$_$_flora_debug_write_value'(M),
+	write('@('),
+	'_$_$_flora_debug_write_value'(Arg),
+	'_$_$_flora_write_vars'(Args),
+	write(')').
+'_$_$_flora_debug_write_method_invocation'(M) :-
+    	compound(M),
 	M =.. [_Junk | MethArgs],
-	flora_pp_write_method_invocation(MethArgs).
+	!,
+	'_$_$_flora_debug_write_method_invocation'(MethArgs).
 
 
+%% Extracts and writes variables from the list [var(name,internalVar), ...]
+%% or from the list [internalVar, internalVar, ...]
+'_$_$_flora_write_vars'([]) :- !.
+'_$_$_flora_write_vars'([V|Rest]) :- 
+	var(V), !, '_$_$_flora_write_vars1'(V,Rest).
+'_$_$_flora_write_vars'([var(_N,V)|Rest]) :- 
+    	!, '_$_$_flora_write_vars1'(V,Rest).
+
+'_$_$_flora_write_vars1'(V,Rest) :-
+	write(V),
+	(Rest = [] -> true
+	 ; write(','), '_$_$_flora_write_vars'(Rest)
+	).
 
 
 /*********************************************************************/

@@ -212,8 +212,16 @@ chatterbox(on) :- trie_retract_all('_$_$_flora_switch'(no_chatter)).
 
 /*********************************************************************/
 
-flora_trace :- [flrdebugger], '_$_$_flora_trace'.
-flora_notrace :- '_$_$_flora_notrace'.
+flora_trace :-   ('_$_$_flora_debugger_data_loaded'
+		  -> true
+		  ;  [flrdebugger]
+		 ),
+    	    	 '_$_$_flora_trace'.
+flora_notrace :- ('_$_$_flora_debugger_data_loaded'
+		  -> true
+		  ;  [flrdebugger]
+		 ),
+    	    	 '_$_$_flora_notrace'.
 
 /*********************************************************************/
 end :-
