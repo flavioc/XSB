@@ -97,6 +97,13 @@ f.  CVS maintains the main development trunk, but you can start side
 
 a. A version of CVS. Must be at least 1.8. Current version is 1.10.
 b. Secure shell (ssh) installed on your system.
+c. Local SBCS users whose machine is hooked up to the SBCS NFS don't need
+   to use ssh. Instead, ask Anne to be added to the group called "xsbgroup"
+   Also ask her to arrange that you will be logged onto this group when you 
+   log into the system. This way you won't need to type the newgrp command.
+
+   However, local users who want to work from home or on a machine that is
+   not on the SBCS NFS will need to use option (b).
 
 CVS runs under all Unices and Windows, and is free.
 If can be obtained from: http://www.loria.fr/~molli/cvs-index.html
@@ -108,7 +115,10 @@ Unix versions can be downloaded from:
 3. Getting down to work
 -----------------------
 
-Step 1:  Create and send me (kifer@cs.sunysb.edu) your SSH public key.
+Step 1 (SSH keys):  Create and send me (kifer@cs.sunysb.edu) your SSH
+	 public key. 
+	 Local users don't need this, but it is still useful, if you want
+	 to work from home.
 	 *** Make sure you remember the password you used to create this pair
 	     of keys!
          Make sure the environment variable CVS_RSH is set to point to ssh
@@ -121,15 +131,25 @@ Step 1:  Create and send me (kifer@cs.sunysb.edu) your SSH public key.
 	       CVS_RSH=/usr/local/bin/ssh
 	       export CVS_RSH=/usr/local/bin/ssh
 
-Step 2:  Decide where you want XSB to live. Let's assume you want it to
-	 live in ~/projects
+Step 2 (Choose directory): Decide where you want XSB to live. Let's assume
+	you want XSB to  be in ~/projects. I will be using ~/projects
+	throughout for the sake of an example.
 
-Step 3:  cd ~/projects and type:
+Step 3 (Checkout):  cd ~/projects and type:
 
-cvs -d :ext:sbprolog@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT checkout xsbdevel
+    cvs -d :ext:sbprolog@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT \
+					checkout xsbdevel
 
-*** You will be asked for the password that you used to create your
-    public/private key pair.
+    (Note: this command is split in two lines. You will type it on one line.)
+
+    *** You will be asked for the password that you used to create your
+	public/private key pair.
+
+    ***LOCAL USERS type:
+
+	cvs -d /home/u17/sbprolog/CVSROOT checkout xsbdevel
+
+	You won't need a password, if you are in the "xsbgroup" Unix group.
 
 Then you will see a lot of messages about files being copied. When the dust
 settles, XSB will be checked out into the directory ~/projects/XSB.
@@ -277,6 +297,14 @@ to fix a bug in the aforesaid version of pcl-cvs (patch available from me on
 request). So, you get the picture ;-(.
 (I myself usually use FSF Emacs -- this is how I know about all these
 troubles!)
+
+Please note that I placed a *better* version of pcl-cvs in
+~sbprolog/PCL-CVS.tar
+It is compiled for XEmacs (and probably doesn't run under FSF Emacs).
+It is a vastly improved version over that in the current XEmacs (it is what 
+you'll get when the next XEmacs comes out). 
+To install it, unpack it somewhere and put the files that end in *.elc
+on the library load path of your XEmacs.
 
 
 FSF's version of Emacs comes with another version control package, VC,
