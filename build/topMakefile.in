@@ -214,11 +214,17 @@ smodels:
 # C-drivers that pass queries to XSB
 module: prepare xsbmod do_cleaning inform_module
 
+dynmodule: prepare xsbdynmod 
+
 # if supporting Oracle, then emumake_goal=xsbora; else emumake_goal=xsb
 # This invokes xsboramod and xsbmod goals in emuMakefile, respectively
 xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; \
 	    make $(emumake_goal)mod
+
+xsbdynmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+	cd ${src_emudir}; \
+	    make $(emumake_goal)dynmod
 
 xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	cd ${src_emudir}; make dll

@@ -167,6 +167,8 @@ xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	   echo ""
 	@LD@ -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
+xsbdynmod::
 	echo "Making XSB Shared Library $(bindir)/libxsb.so"
 	@LD@ -o libxsb.so -shared $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp libxsb.so $(bindir) 2>/dev/null || echo ""
