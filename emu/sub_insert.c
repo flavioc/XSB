@@ -747,7 +747,7 @@ xsbBool are_identical_subterms(Cell term1, Cell term2) {
     if ( psc1 != (Psc)*cptr2 )
       return FALSE;
 
-    for ( cptr1++, cptr2++, i = 0;  i < get_arity(psc1);  i++ )
+    for ( cptr1++, cptr2++, i = 0;  i < (int)get_arity(psc1);  i++ )
       if ( ! are_identical_subterms(*cptr1,*cptr2) ) 
 	return FALSE;
 

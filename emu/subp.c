@@ -227,7 +227,7 @@ Pair build_call(Psc psc)
 
   callstr = (Pair)hreg;	/* save addr of new structure rec */
   new_heap_functor(hreg, psc); /* set str psc ptr */
-  for (i=1; i <= get_arity(psc); i++) {
+  for (i=1; i <= (int)get_arity(psc); i++) {
     arg = cell(reg+i);
     nbldval(arg);
   }

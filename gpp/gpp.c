@@ -79,10 +79,10 @@ struct MODE KMeta = {"\n#\002","\n", "\001","\001","\n","#",  0,   "",  ""  };
 struct MODE Tex   = {"\\",     "",   "{",   "}{",  "}", "#", '@',  "{", "}" };
 struct MODE Html  = {"<#",     ">",  "\003","|",   ">", "#", '\\', "<", ">" };
 
-#define DEFAULT_OP_STRING "+-*/\\^<>=`~:.?@#&!%|"
-#define PROLOG_OP_STRING  "+-*/\\^<>=`~:.?@#&"
-#define DEFAULT_OP_PLUS   "()[]{}"
-#define DEFAULT_ID_STRING "\005\007_" /* or equiv. "A-Za-z0-9_" */
+#define DEFAULT_OP_STRING (unsigned char *)"+-*/\\^<>=`~:.?@#&!%|"
+#define PROLOG_OP_STRING  (unsigned char *)"+-*/\\^<>=`~:.?@#&"
+#define DEFAULT_OP_PLUS   (unsigned char *)"()[]{}"
+#define DEFAULT_ID_STRING (unsigned char *)"\005\007_" /* or equiv. "A-Za-z0-9_" */
 
 /* here we assume that longs are at least 32 bit... if not, change this ! */
 #define LOG_LONG_BITS 5
@@ -1669,11 +1669,11 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
   else if (idequal(C->buf+p1start,p1end-p1start,"charset")) {
     if ((opt==NULL)||(nargs!=1)) bug("syntax error in #mode charset");
     if (!strcasecmp(opt,"op"))
-      S->stack_next->op_set=MakeCharsetSubset(args[0]);
+      S->stack_next->op_set=MakeCharsetSubset((unsigned char *)args[0]);
     else if (!strcasecmp(opt,"par"))
-      S->stack_next->ext_op_set=MakeCharsetSubset(args[0]);
+      S->stack_next->ext_op_set=MakeCharsetSubset((unsigned char *)args[0]);
     else if (!strcasecmp(opt,"id"))
-      S->stack_next->id_set=MakeCharsetSubset(args[0]);
+      S->stack_next->id_set=MakeCharsetSubset((unsigned char *)args[0]);
     else bug("unknown charset subset name in #mode charset");
   }
   else bug("unrecognized #mode command");

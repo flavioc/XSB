@@ -406,7 +406,8 @@ typedef struct compl_susp_choice_point {
  */
 #define save_registers(t_breg, arity, regbase) {\
     byte ii;\
-    for (ii = 1; ii <= arity; ii++) bld_copy(--t_breg, cell(regbase+ii));\
+    for (ii = 1; ((int)ii) <= arity; ii++) \
+        bld_copy(--t_breg, cell(regbase+ii));\
   }
 
 #define restore_registers(t_breg, arity, regbase) {\

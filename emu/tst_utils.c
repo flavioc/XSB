@@ -292,7 +292,7 @@ static void symstkPrintNextTerm() {
 
       psc = DecodeTrieFunctor(symbol);
       printf("%s(", get_name(psc));
-      for (i = 1; i < get_arity(psc); i++) {
+      for (i = 1; i < (int)get_arity(psc); i++) {
 	symstkPrintNextTerm();
 	printf(",");
       }
