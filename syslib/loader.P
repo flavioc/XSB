@@ -172,7 +172,7 @@ load_library_directories :-
 	fmt_write_string(SiteFileName,'%s%ssiteinitrc', f(SiteDir,Slash)),
 	str_cat(SiteFileName, '.P', SiteFileNameP),
 	str_cat(SiteFileName, '.O', SiteFileNameO),
-	%% Site init file isn''t mandatory
+	%% Site init file isn't mandatory
 	( (machine_file_exists(SiteFileNameP)
 	   ; machine_file_exists(SiteFileNameO)) ->
 		reconsult(SiteFileName)
@@ -184,7 +184,7 @@ load_library_directories :-
 	fmt_write_string(UsrFileN, '%s%s.xsb%sxsbrc', f(HomeDir,Slash,Slash)),
 	str_cat(UsrFileN, '.P', UserFileNameP),
 	str_cat(UsrFileN, '.O', UserFileNameO),
-	%% User init file isn''t mandatory
+	%% User init file isn't mandatory
 	( (machine_file_exists(UserFileNameP)
 	   ; machine_file_exists(UserFileNameO)) ->
 		reconsult(UsrFileN)
@@ -261,55 +261,60 @@ load_pred1(PSC) :-
 	psc_name(PSC, Name),
 	psc_arity(PSC, Arity),
 	psc_env(PSC, Env), 
-	( Env =:= 2 ->			% is "imported"
+	( Env =:= 2
+	->  % is "imported"
 	    psc_prop(PSC, ModPSC),
 	    psc_name(ModPSC, ModName),
 	    psc_type(ModPSC, ModType), 
 	    (	ModType =:= 4
 	    ;	ModType =\= 4,	% module is not loaded yet
-		load(ModName)	% can fail here <--- MAY BE A BUG HERE 
+		load(ModName)	% can abort here 
 	    ),
-		( psc_type(PSC, NType),
-		  ( NType =:= 2; NType =:= 13; NType =:= 1 ), 
-		    %% module loaded, and pred/foreign-pred is there
-		    '_$cutto'(B)
-		; %% module loaded, but pred/foreign-pred is not there
-		  fmt_write(STDERR,
-		   "! The predicate: %s/%d is not defined in the module %s\n",
-				arg(Name,Arity,ModName)),
-		  fmt_write(STDFDBK, "%s\n", arg('! Aborting...')),
-		  abort
-		)
-	; fmt_write(STDERR, "! Undefined predicate: %s/%d\n", arg(Name,Arity)),
-	  fmt_write(STDFDBK, "%s\n", arg('! Aborting...')),
-	  abort
+	    (	psc_type(PSC, NType),
+		(   NType =:= 2; NType =:= 13; NType =:= 1 ), 
+		%% module loaded, and pred/foreign-pred is there
+		'_$cutto'(B)
+		;
+		%% module loaded, but pred/foreign-pred is not there
+		abort(['The predicate: ', Name, '/', Arity,
+		      ' is not defined in the module ', ModName])
+	    )
+	;   abort(['Undefined predicate: ', Name, '/', Arity])
 	).
 
 
 /*
  *  Loads and executes the directives of a module.  The file containing
- *  the module is constructed using search_file/2, below.
+ *  the module is constructed using search_file/3, below.
  */
 
 load(ModName) :-
 	'_$savecp'(B),
 	stat_flag(DEBUG_ON, Debug_on),
-	( Debug_on =:= 1
+	(   Debug_on =:= 1
 	->  fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
 	;   true
 	),
-	( search_file(ModName, FileName),
-	  code_load(FileName, Init, 0),		% use the C loader
-	  ( Init =\= 0				% load succeeded
-	  ->  '_$cutto'(B),
-	      (	  Init =\= 4	% prolog byte-code succeeded
-	      ->  ll_code_call(Init, true, 2), % call '_$main'
-		  unload_seg(Init) % delete code for '_$main'
-	      ;	  true		% load foreign obj code succeeded
-	      )
-	  )
-	; fmt_write(STDERR, "! Cannot find the module: %s\n", arg(ModName)),
-	  fail
+	(   search_file(ModName, FileName_O, '.O'),
+	    code_load(FileName_O, Init, 0), % use the C loader
+	    (	Init =\= 0	% load succeeded
+	    ->	'_$cutto'(B),
+		(   Init =\= 4 % prolog byte-code succeeded
+		->  ll_code_call(Init, true, 2), % call '_$main'
+		    unload_seg(Init) % delete code for '_$main'
+		;   true	% load foreign obj code succeeded
+		)
+	    )
+	->  true
+	%% If .O file doesn't exist or doesn't load,
+	%% but .P file exists somewhere on the load path
+	%% then recompile the .P file and load it.
+	;   (   search_file(ModName, FileName_P, '.P'),
+		machine_file_exists(FileName_P)
+	    ->	reconsult(FileName_P)
+	    )
+	;   abort(['Module ', ModName,
+		   ' is not found in XSB library directories'])
 	).
 
 /*
@@ -323,18 +328,18 @@ ll_code_call(A,B,C) :- code_call(A,B,C).
 
 /*
  *  Takes a filename (INT or STRING encoded pointer) and returns an
- *  absolute filename (STRING) with the proper byte-code file extension.
+ *  absolute filename (STRING) with Extension (e.g., .P, .O) added to it.
  *  The extension should NOT already be a part of the incoming ModName.
  */
 
-search_file(ModName, AbsFileName) :- 
+search_file(ModName, AbsFileName, Extension) :- 
 	tilde_expand_filename(ModName,ExpandedModName),
 	( is_absolute_filename(ExpandedModName)
 	->  WholePath = ExpandedModName
 	;   libpath(LibPath),
 	    str_cat(LibPath, ExpandedModName, WholePath)
 	),
-	str_cat(WholePath, '.O', AbsFileName).
+	str_cat(WholePath, Extension, AbsFileName).
 
 
 /*

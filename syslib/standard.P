@@ -925,7 +925,7 @@ abort(Message) :-
         messageln('Aborting...', STDFDBK),
 	abort.
 
-abort_1([]) :- nl.
+abort_1([]) :- file_nl(STDERR).
 abort_1([H|T]):- message((H,' '), STDERR), abort_1(T).
 
 
