@@ -23,4 +23,6 @@ component_table_int(immediate_attribute_int(_,_,_,_,_,_),4,
 				[arg(2,warn),arg(6,no_warn)]).
 component_table_int(attribute_object_int(_,_,_,_,_,_),4,
 				[arg(2,warn),arg(6,no_warn)]).
+component_table_int(assert_oms_int(_),null,[]).
+component_table_int(retractall_oms_int(_),null,[]).
 

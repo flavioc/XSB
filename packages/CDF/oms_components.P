@@ -2,17 +2,15 @@
 
 :- document_export 
 	  analyze_components/2,
-	  update_components/1,
+	  update_components/2,
 	  update_all_components/2,
           load_component/3.
 
 :- import slash/1 from machine.
 :- import short_directory/2 from directry.
 
-:- import search_module/6 from consult.
 :- import concat_atom/2 from string.
 :- import message/1 from standard.
-:- import numbervars/3 from num_vars.
 :- import member/2,ground/1 from basics.
 :- import pretty_print/1 from newpp.
 
@@ -20,14 +18,42 @@
 :- ensure_loaded(oms_queries).
 :- ensure_loaded(oms_config).
 
+:- dynamic temp_depends/4.
 
-:- import class/4, class_ext/3, oms_at/3,oms_mo/2, oms_rln/3, oms_sc/2,
-	oms_schrel/3, oms_strel/3, oms_fix_dir/2, oms_primitive_class/4,
-	init_ext_data_index/0 from usermod.
-:- import oms_warning/2 from oms_exceptions.
-:- import q_strel/4, newStrel/3,newComponent/5 from usermod.
-:- import load_intensional_rules/2, fast_merge_omsext/0, merge_omsext/0
+/*
+% oms_init_oms
+:- import class/4, class_ext/3, class_cidbound/4, oms_cn/4,
+	object/4, oms_obj/4,
+	oms_ao/3, oms_at/3, oms_mo/2, oms_rln/3, oms_sc/2,
+	oms_schrel/3, oms_strel/3, 
+	immediate_strel/3,
+	oms_fix_dir/2, oms_primitive_class/4,
+	init_ext_data_index/0, init_ext_schema_index/0 from usermod.
+
+:- import newStrel/3,newComponent/5 from usermod.
+
+% oms_config.
+:- import component_table_ext/3,component_table_int/3 from usermod.
+
+% oms_queries.
+:- import q_strel/3 from usermod.
+
+:- import oms_warning/2,oms_error/2 from oms_exceptions.
+
+%oms_io
+:- import intensional_head/2,load_intensional_rules/2, 
+	  fast_merge_omsext/0, merge_omsext/0,
+	  retract_omsext/0,
+	  write_ext_term/1, write_hdr/1
 	from usermod.
+*/
+/*
+handle_load_component_error(Message):- 
+	retract_omsext,
+	retractall(temp_depends(_,_,_)),
+	write_oms_error_noxj(Message),
+	abort.
+*/
 
 :- comment(module,"Typically, an OMS instance can be partitioned into
 several separate cells, representing information that arises from
@@ -491,61 +517,45 @@ version of a component.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-load_component(Path,Name,Arglist):-
+load_component(Name,Path,Arglist):-
 	retractall(temp_depends(_,_,_,_)),
 	(atom(Path),atom(Name),ground(Arglist) -> 
 	    true
 	  ; oms_error(load_component,['Component name, path and arglist must',
 			' be instantiated to load: ',Path,'/',Name,' ',
 			Arglist]) ),
-	(top_level_needs_loading(Path,Name,Arglist) -> 
-	    load_component_1(Path,Name,Arglist)
-	  ; 
-	    true).
+	load_component_1(Name,Path,Arglist).
 
-load_component_1(Path,Name,Arglist):- 
+load_component_1(Name,Path,Arglist):- 
 	retract_omsext,
-	load_component_pass1(Path,Name,Arglist),
-	message(['Merging in components.']),nl,
-	(member(speed(slow),Arglist) -> 
-	    merge_omsext 
-	  ; fast_merge_omsext),
-	load_component_pass2(Path,Name,Arglist,[]),
-	retractall(temp_depends(_,_,_,_)).
+	split_arglist_on_version(Arglist,V,Arglist1),
+	(load_component_pass1(Name,Path,V,Arglist1) -> 
+	    message(['Merging in components.']),nl,
+	    (member(speed(slow),Arglist1) -> 
+	        merge_omsext 
+	      ; fast_merge_omsext),
+	    load_component_pass2(Name,Path,V,[]) 
+	  ; true),
+	retractall(temp_depends(_,_,_,_)),
+	retract_omsext.
 
-top_level_needs_loading(_Path,Name,Arglist):- 
-	\+ (Name = 'OMS'),
-	(member(force(yes),Arglist) -> 
-	    true
+split_arglist_on_version([],null,[]).
+split_arglist_on_version([version(V)|R],version(V),R):-!.
+split_arglist_on_version([H|T],V,[H|T1]):-
+	split_arglist_on_version(T,V,T1).
+
+%----------
+
+load_component_pass1(Name,Path,Vin,Arglist):- 
+	get_full_path_and_loadname(Name,Path,Vin,Full,V,Loadname),
+	(check_component(Name,Full,V,Arglist) -> 
+  	    message(['Loading component: ',Full,'/',Loadname]),nl,
+  	    concat_atom([Full,'/',Loadname],Absname),
+	    overload_omsext(Absname),
+	    check_good_component(Name,Full),
+            load_component_dependencies_pass1(Name,Full,Arglist) 
 	  ; 
-	    \+ class(_,Name,Name,Name) ).
-
-load_component_pass1(Path,Name,Arglist):- 
-	get_full_path_and_loadname(Path,Name,Arglist,Full,Loadname),
-	message(['Loading component: ',Full,'/',Loadname]),nl,
-	overload_omsext(Loadname),
-	is_component(Name),
-        load_component_dependencies_pass1(Name,Full,Arglist).
-
-load_component_pass2(Path,Name,Arglist,Anclist):- 
-	get_full_path_and_loadname(Path,Name,Arglist,Full,Loadname),
-	message(['Loading int rules and initializing componen: ',
-			Path,Loadname]),nl,
-        load_component_dependencies_pass2(Name,Full,Anclist),
-	load_intensional_rules(Path,Name),
-	initialize_component(Full,Loadname).
-
-/* here is where we may do something w. relative paths */
-get_full_path_and_loadname(Path,Name,Arglist,Path,Loadname):- 
-	(member(version(V),Arglist) -> 
-	    file_find_version_name(Path,Name,V,Loadname)
-	 ; 
-	    Loadname = Name).
-
-handle_load_component_error(Message):- 
-	retract_omsext,
-	write_oms_error_noxj(Message),
-	abort.
+	    fail ).
 
 load_component_dependencies_pass1(Name,Path,Arglist):- 
 	strel_ext(component(Name,Name,atom(Path),'OMS',
@@ -554,63 +564,138 @@ load_component_dependencies_pass1(Name,Path,Arglist):-
 			 component(New,New,atom(Pathnew),'OMS',
 					integer(Vnew),'OMS'),'OMS'),
 %	writeln(checking(dep(Name,New))),	
-	(dependency_needs_loading(New,Name,Arglist) -> 
-    	    asserta(temp_depends(Name,New,Path,Vnew)),
-	    load_component_pass1(Pathnew,New,[version(Vnew)])
-	  ; 
-	    true ),
+        load_component_pass1(New,Pathnew,version(Vnew),Arglist),
+        assert_dependencies_for_path2(Name,New,Pathnew,Vnew),
 	fail.
 load_component_dependencies_pass1(_,_,_).
 
-dependency_needs_loading(New,Name,Arglist):- 
-	New \== 'OMS',New \== Name,
-	\+ class_ext(New,New,New),
-	(member(force(yes),Arglist) ; \+ class(_,New,New,New) ).
+assert_dependencies_for_path2(Name,New,Pathnew,Vnew):- 
+	New \== 'OMS',
+	New \== Name,
+	call_assert(temp_depends(Name,New,Pathnew,Vnew)).
+
+call_assert(Term):- (call(Term) -> true ; asserta(Term)).
+
+%----------
+
+/* TLS: pass 2 is to load intensional rules and consult initialization file.
+   Assume that all conflict checking has been done in pass2 */
+load_component_pass2(Name,Path,Vin,Anclist):- 
+	get_full_path_and_loadname(Name,Path,Vin,Full,_V,Loadname),
+	message(['Loading int rules and initializing componen: ',
+			Full,'/',Loadname]),nl,
+        load_component_dependencies_pass2(Name,Full,Anclist),
+	load_intensional_rules(Full,Name),
+	initialize_component(Loadname,Full).
 
 load_component_dependencies_pass2(Name,_Path,Anclist):- 
 	temp_depends(Name,New,Pathnew,Vnew),
 	(member(New,Anclist) -> true
 	  ; 
-	    load_component_pass2(Pathnew,New,[version(Vnew)],[Name|Anclist]) ),
+	    load_component_pass2(New,Pathnew,Vnew,[Name|Anclist]) ),
 	fail.
 load_component_dependencies_pass2(_,_,_).
 
-initialize_component(Path,Newname):- 
-	concat_atom([Path,'/',Newname,'/initialization_file.P'],File),
+initialize_component(Name,Path):- 
+	concat_atom([Path,'/',Name,'/initialization_file.P'],File),
 	(file_exists(File) -> consult(File) ; true).
 
-/* To be used only by load_component.  The idea is that we have loaded
-_ext facts for an erstwhile component C, but have not merged them.  We
-check that C is indeed a component, and that its dependencies do not
-have a version conflict with other dependencies of loaded components
-(merged or unmerged).  */
+%---------------
 
-is_component('OMS').  
-is_component(Name):-
-	extract_file_name(Name,Comp),
-	class_ext(Comp,Comp,Comp),
-	(conflicting_version(Comp,New,V1,Comp2,V2) -> 
-	    oms_error(component_load,['component ',Comp,' depends on version ',
-	  	 V1,' of ',New,' while ',Comp2,' depends on version ',V2,
-	         ' of ',New])
+check_good_component(Name,Full):- 
+	(class_ext(Name,Name,Name) -> 
+	    true
+	  ;
+	    oms_error(component_load,['Pathname: ',Full,
+				      ' is not a component']) ).
+
+%---------------
+
+/* If check_component succeeds, we go ahead and do a pass 1 load. */
+check_component(Name,Path,V,Arglist):- 
+	Name \== 'OMS',
+	check_conflicting_path(Name,Path,Arglist),
+	check_conflicting_version(Name,Path,V),
+	\+ already_present(Name,Path,V,Arglist).
+
+check_conflicting_version(Name,Path,V):- 
+	(conflicting_version(Name,Path,V,V1) -> 
+	    oms_error(component_load,['Version ',V,' of ',Name,
+			' cannot be loaded, as version ',V1,
+			' is alreaty loaded '])
 	  ; true).
 
-conflicting_version(Name,New,V1,Name2,V2):- 
-	strel_ext(component(Name,Name,atom(_),'OMS',integer(_),'OMS'),'OMS',
-		    componentDepends,Name,
-		    component(New,New,atom(_),'OMS',integer(V1),'OMS'),'OMS'),
-	(    strel_ext(component(Name2,Name2,atom(_),'OMS',
-					     integer(_),'OMS'),'OMS',
-			 componentDepends,_,
-			 compVers(New,New,atom(_),'OMS',
-					  integer(V2),'OMS'),'OMS')
+%---------------
+
+/* TLS: For now, each component is taken to depend on some version of
+the OMS. */
+conflicting_version(Name,Path,V,V1):- 
+	(strel_ext(component(Name,Name,atom(Path),'OMS',integer(V1),'OMS'),
+			'OMS',componentDepends,Name,_,_)
 	 ; 
-	     class(Cid,New,New,New),
+	     class(Cid,Name,Name,Name),
 	     class(Rid,componentDepends,componentDepends,Name),
-	     immediate_strel(Sid,Rid,component(Cid,atom(_),integer(V2))),
-	     Sid = component(Sid2,_,_),class(Sid2,Name2,Name2,Name2)
+	     immediate_strel(component(Cid,atom(Path),integer(V1)),Rid,_)
 	),
-        V1 \== V2.
+        V \== V1,
+	!.
+
+check_conflicting_path(Name,Path,Arglist):- 
+	(\+ member(action(union),Arglist) -> 
+		(conflicting_path(Name,Path,Path1) -> 
+ 	            oms_error(component_load,['Component ',Name,' has ',
+			'conflicting paths in non-union merge: ',Path,
+			' and ',Path1])
+		  ; 
+		    true) 
+	      ;  true).
+
+conflicting_path(Name,P,P1):- 
+	(   strel_ext(Name,Name,hasPath,Name,atom(P1),'OMS')
+	 ; 
+	     class(Cid,Name,Name,Name),
+	     class(Rid,hasPath,hasPath,Name),
+	     immediate_strel(Cid,Rid,atom(P1))
+	),
+        P \== P1,
+	!.
+
+%---------------
+
+/* TLS: if component is in cache, it has  already scheduled been
+traversed in pass1.  Otherwise count merged components as traversed
+unless force is yes. */
+
+already_present(Name,Path,V,Arglist):- 
+	
+	(   strel_ext(Name,Name,hasVersion,Name,integer(V),'OMS'),
+	    strel_ext(Name,Name,hasPath,Name,atom(Path),'OMS')
+	 ; 
+  	     \+ member(force(yes),Arglist),
+	     class(Cid,New,New,New),
+	     class(Vid,hasVersion,hasVersion,Name),
+	     immediate_strel(Cid,Vid,integer(V)),
+	     class(Pid,hasPath,hasPath,Name),
+	     immediate_strel(Cid,Pid,atom(Path))
+	).
+
+
+%---------------
+
+/* here is where we may do something w. relative paths.
+   Name is the name part of a component, and Path its path-part, 
+   possibly input as a relative path name.  Upon success, V is
+   instantiated to the proper version of the component (which may
+   implicitly be the latest version), CanonPath is instantiated
+   to a canonical path, and Loadname is the name, plus version if 
+   applicable.
+ */
+get_full_path_and_loadname(Name,Path,Vin,CanonPath,V,Loadname):- 
+	Path = CanonPath,
+	(Vin = version(V) -> 
+	    file_find_version_name(Path,Name,V,Loadname)
+	 ; 
+	    Loadname = Name,file_latest_version(Path,Name,V) ).
 
 file_find_version_name(Path,Name,Version,Loadname):- 
 	file_latest_version(Path,Name,V),
@@ -622,7 +707,6 @@ file_find_version_name(Path,Name,Version,Loadname):-
 		oms_error(load_component,['Improper version number',Version,
 				' for ',Path,'/',Name]) ) ).
 	  
-
 file_latest_version(Dir,Name,Version):- 
 	findall(File,short_directory(Dir,File),Files),
 	atom_chars(Name,NameL),
@@ -1225,4 +1309,35 @@ find_component_dir(Name,Full):-
 	    true 
 	  ; 
 	     oms_error(component,['component name is not a directory',Full])).
+
+top_level_needs_loading(_Path,Name,Arglist):- 
+	\+ (Name = 'OMS'),
+	(member(force(yes),Arglist) -> 
+	    true
+	  ; 
+	    \+ class(_,Name,Name,Name) ).
+
+
+conflicting_version(Name,New,V1,Name2,V2):- 
+	strel_ext(component(Name,Name,atom(_),'OMS',integer(_),'OMS'),'OMS',
+		    componentDepends,Name,
+		    component(New,New,atom(_),'OMS',integer(V1),'OMS'),'OMS'),
+	(    strel_ext(component(Name2,Name2,atom(_),'OMS',
+					     integer(_),'OMS'),'OMS',
+			 componentDepends,_,
+			 compVers(New,New,atom(_),'OMS',
+					  integer(V2),'OMS'),'OMS')
+	 ; 
+	     class(Cid,New,New,New),
+	     class(Rid,componentDepends,componentDepends,Name),
+	     immediate_strel(Sid,Rid,component(Cid,atom(_),integer(V2))),
+	     Sid = component(Sid2,_,_),class(Sid2,Name2,Name2,Name2)
+	),
+        V1 \== V2.
+
+
+dependency_needs_loading(New,Name,Arglist):- 
+	New \== 'OMS',New \== Name,
+	\+ class_ext(New,New,New),
+	(member(force(yes),Arglist) ; \+ class(_,New,New,New) ).
 

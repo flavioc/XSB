@@ -1198,7 +1198,7 @@ load_intensional_rules(Path,Name):-
 	  ; true).
 
 retract_intensional_rules(Name):- 
-	intensional_head(Head,_Arg),
+	component_table_int(Head,_,_),
 	Head =.. [F|T],
 	concat_atom([F,'_',Name],NewF),
 	NewHead =.. [NewF|T],
@@ -1221,26 +1221,16 @@ read_intensional_rules_1(Name):-
 	!.
 
 transform_intensional_rules(Head,NewHead,Name):- 
-	intensional_head(Head,_Arg),
+	component_table_int(Head,_,_),
 	Head =.. [F|T],
 	concat_atom([F,'_',Name],NewF),
 	NewHead =.. [NewF|T].
 
 check_intensional_head(Head,Name):- 
-	(intensional_head(Head,_Arg) -> 
+	(component_table_int(Head,_,_) -> 
 	    true
 	  ; oms_warning(component,[Head,
 			' is not an intensional rule in component ',Name])).
-
-intensional_head(class_int(_,_,_),3).
-intensional_head(object_int(_,_,_),3).
-intensional_head(immediate_subclass_int(_,_,_,_),2).
-intensional_head(immediate_memberof_int(_,_,_,_),2).
-intensional_head(immediate_relationship_int(_,_,_,_,_,_),4).
-intensional_head(immediate_schrel_int(_,_,_,_,_,_),4).
-intensional_head(immediate_strel_int(_,_,_,_,_,_),4).
-intensional_head(immediate_attribute_int(_,_,_,_,_,_),4).
-intensional_head(attribute_object_int(_,_,_,_,_,_),4).
 
 end_of_file.
 

@@ -68,8 +68,8 @@
 :- dynamic immediate_relationship_int/6.
 :- dynamic immediate_strel_int/6.
 :- dynamic immediate_schrel_int/6.
-:- dynamic immediate_memberof_int/4.
 :- dynamic object_int/3.
+:- dynamic immediate_memberof_int/4.
 :- dynamic immediate_attribute_int/6.
 :- dynamic attribute_object_int/6.
 

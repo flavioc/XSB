@@ -27,35 +27,36 @@ make sure omsext can read relation and subrel.
 
 Need to allow different sources for product classes.
 
-
-
 ---------------------------------------------------
 
 Component changes.
 
-Test: version conflicts.
-
-In fast_merge, decode whether we need to do an OMS_update or just an
-assert.
-
-Components: 
-
 Probably need a component dirty for dump component or dump new version.
 
--- Renaming.  
+-- Renaming -- do we still need a function to actually rename 2
+versions.
 
 update_all inplace.
 
+Version conflicts for OMS version????
+
+Check on why self-replacements are present...
+
+Not checking consistency of lists in load or update.
+
+Replace catch in load...
+
 --------------------------------------------------------------
 Other: 
+
+In fast_merge, decode whether we need to do an OMS_update or just an
+assert.
 
 Updating intensional rules.
 
 Synthesize retractallXXX with obliterateXXX.
 
 Maybe get rid of schema + data files?
-
-strelschrels.  Constraints on strels?
 
 Need consistency checking in newRelName newStrelName.
 
@@ -74,6 +75,9 @@ Do I have an obj_nidbound?
 cp_product_object_extoms 
 
 -----------------------------
+
+load_omsext may not have the right behavior -- perhaps it shouldn't
+get rid of those things in the cache.
 
 Bug in dump_oms.P (save state).
 
