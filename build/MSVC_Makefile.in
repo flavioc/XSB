@@ -359,3 +359,6 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
    $(CPP) $(CPP_PROJ) $<  
 
 
+# Local Variables:
+# coding-system-for-write: iso-2022-7bit-dos
+# End:

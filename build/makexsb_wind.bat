@@ -28,3 +28,8 @@ del MSVC_Makefile.mak
 nmake /f "MSVC_Makefile.mak"
 
 @cd ..\build
+
+
+REM Local Variables:
+REM coding-system-for-write:  iso-2022-7bit-dos
+REM End:
