@@ -54,8 +54,9 @@ negative knowledge through negation.
 \section{Installation:}
 %======================
 
-Assuming Oracle is currently installed:
+The instructions below assume that Oracle is currently installed.
 
+\paragraph{Unix instructions:}
 \begin{enumerate}
 \item When running {\tt configure} durig XSB installation, add these
   options: {\tt --with-oracle} and {\tt
@@ -71,6 +72,26 @@ Assuming Oracle is currently installed:
   {\tt .../bin/xsb-ora}.
 \item after starting XSB, load {\tt ora\_call.P} by {\tt [ora\_call].}
 \end{enumerate}
+
+\paragraph{Windows instructions:}
+To build XSB with Oracle support, type the following in the {\tt emu}
+directory: 
+%%
+\begin{quote}
+ {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="release" ORACLE="yes" SITE\_LIBS="libraries"  }
+\end{quote}
+%%
+The {\tt SITE\_LIBS} parameter should include the list of necessary Oracle
+support libraries (per Oracle instructions). When the compiler is done, the 
+XSB executable is found in its usual place:
+%%
+\[
+ \tt
+ \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash bin
+ \backslash xsb.exe
+\]
+%%
+
 
 \section{Using the interface:}
 

@@ -241,12 +241,21 @@ To create an executable that includes calls to the above C functions,
 these routines, and the \ourprolog\ routines that they call, must be
 included in the link ({\tt ld}) step.
 
-First, you must create a relocatable file, named {\tt xsbmodule.o}, that
+\paragraph{Unix instructions:}
+First, you must create a relocatable file, named {\tt xsb.o}, that
 contains all the \ourprolog\ routines.  To do this, get into the
 {\tt XSB/build} subdirectory, and execute:
+%%
 \begin{verbatim}
     % makexsb module
 \end{verbatim}
+%%
+This will place the relocatable file in:
+%%
+\begin{verbatim}
+ $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o  
+\end{verbatim}
+%%$
 
 Second, you must compile your C program, which includes a main
 procedure.  You should include the file {\tt cinterf.h} located in the
@@ -256,7 +265,7 @@ that you will need to use.
 Third, to create your executable, after you have created the object
 file, say {\tt ruleproc.o}, for your C routine, you could execute:
 \begin{verbatim}
-    % gcc -o ruleproc ruleproc.o $XSB_DIR/emu/xsbmodule.o
+    % gcc -o ruleproc ruleproc.o $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o
 \end{verbatim}
 
 The file {\tt \$XSB\_DIR/config/your-system-architecture/modMakefile} is a
@@ -267,6 +276,23 @@ architecture, but you will have to fill in the name of your program, etc.
 There are simple examples of C programs calling \ourprolog\ in the
 {\tt \$XSB\_DIR/examples/c\_calling\_XSB} directory, in files {\tt cmain.c},
 {\tt ctest.P}, {\tt cmain2.c}.
+
+\paragraph{Windows instructions:}
+To call XSB from C, you must build it as a DLL. To do this, you specify
+DLL=''yes'' on command line. {\it E.g.}, 
+%%
+\begin{quote}
+ {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="release" DLL="yes"  }
+\end{quote}
+%%
+The DLL, which you can call dynamically from your program is then found in 
+%%
+\[
+ \tt
+ \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash
+ saved.o \backslash xsb.dll
+\]
+%%
 
 \section{Passing Data Between C and \ourprolog} \label{c2p_p2p_p2c}
 
