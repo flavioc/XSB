@@ -42,9 +42,9 @@
   follow(hreg++) = makecs(sreg);					\
   follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
   new_heap_functor(sreg, delay_psc);					\
-  cell(sreg) = makeint(SUBGOAL); sreg++;				\
-  cell(sreg) = makeint(NEG_DELAY); sreg++;				\
-  cell(sreg) = makeint(NEG_DELAY); sreg++;				\
+  cell(sreg) = makeaddr(SUBGOAL); sreg++;				\
+  cell(sreg) = makeaddr(NEG_DELAY); sreg++;				\
+  cell(sreg) = makeaddr(NEG_DELAY); sreg++;				\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
 }
@@ -68,8 +68,8 @@
   follow(hreg++) = makecs(sreg);					\
   follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
   new_heap_functor(sreg, delay_psc);					\
-  cell(sreg++) = makeint(SUBGOAL);					\
-  cell(sreg++) = makeint(ANSWER);					\
+  cell(sreg++) = makeaddr(SUBGOAL);					\
+  cell(sreg++) = makeaddr(ANSWER);					\
   follow(sreg++) = MAKE_SUBSF;						\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\

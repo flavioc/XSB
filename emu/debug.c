@@ -484,9 +484,9 @@ static void print_delay_element(FILE *fp, Cell del_elem)
       fprintf(fp, "%s(", get_name(psc));
       cptr = (CPtr)cs_val(del_elem);
       tmp_cell = cell(cptr + 1);
-      print_subgoal(fp, (SGFrame) int_val(tmp_cell)); fprintf(fp, ",");
+      print_subgoal(fp, (SGFrame) addr_val(tmp_cell)); fprintf(fp, ",");
       tmp_cell = cell(cptr + 2);
-      fprintf(fp, "%p", (NODEptr) int_val(tmp_cell)); fprintf(fp, ",");
+      fprintf(fp, "%p", (NODEptr) addr_val(tmp_cell)); fprintf(fp, ",");
       tmp_cell = cell(cptr + 3);
       if (isinteger(tmp_cell)) {
 	fprintf(fp, "NEG");

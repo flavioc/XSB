@@ -153,9 +153,9 @@ static DE intern_delay_element(Cell delay_elem)
 #endif
 
   tmp_cell = cell(cptr + 1);
-  subgoal = (SGFrame) int_val(tmp_cell);
+  subgoal = (SGFrame) addr_val(tmp_cell);
   tmp_cell = cell(cptr + 2);
-  ans_subst = (NODEptr) int_val(tmp_cell);
+  ans_subst = (NODEptr) addr_val(tmp_cell);
   tmp_cell = cell(cptr + 3);
   
   /*
@@ -369,9 +369,9 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
       dlist = clref_val(dlist);
       cptr = (CPtr) cs_val(cell(dlist));
       tmp_cell = cell(cptr + 1);
-      subgoal = (SGFrame) int_val(tmp_cell);
+      subgoal = (SGFrame) addr_val(tmp_cell);
       tmp_cell = cell(cptr + 2);
-      ans_subst = (NODEptr) int_val(tmp_cell);
+      ans_subst = (NODEptr) addr_val(tmp_cell);
       if (is_failing_delay_element(subgoal,ans_subst)) {
 	return TRUE;
       }

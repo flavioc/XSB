@@ -229,6 +229,9 @@ extern Float getfloatval(Cell);
 #define makelist(list) (Cell)(enc_addr(list) | LIST)
 #define maketrievar(val) (Cell)(enc_int(val) | TrieVar)
 
+#define addr_val(dcell) int_val(dcell)
+#define makeaddr(val) makeint(val)
+
 /* common representations */
 #define vptr(dcell) (CPtr)(dcell)
 #define float_val(dcell) getfloatval(dcell)
