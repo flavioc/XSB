@@ -78,7 +78,7 @@ DEPENDFLAGS = -m
 #
 
 
-SRCS =	auxlry.c biassert.c builtin.c \
+SRCS =	auxlry.c biassert.c xsbsocket.c builtin.c \
 	chat.c cinterf.c debug.c \
 	dis.c dynload.c emuloop.c \
 	findall.c function.c hash.c \
@@ -94,7 +94,7 @@ SRCS =	auxlry.c biassert.c builtin.c \
 ORASRCS = $(SRCS) orastuff.c
 
 
-OBJS = auxlry.o biassert.o builtin.o \
+OBJS = auxlry.o biassert.o xsbsocket.o builtin.o \
 	chat.o cinterf.o debug.o \
 	dis.o dynload.o emuloop.o \
 	findall.o function.o hash.o \

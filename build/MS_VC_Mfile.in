@@ -150,6 +150,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\xpathname.obj"
 	-@erase "$(OBJDIR)\xsb_odbc.obj"
 	-@erase "$(OBJDIR)\xsberror.obj"
+	-@erase "$(OBJDIR)\xsbsocket.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -192,7 +193,8 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/tr_utils.obj" \
 	"$(OBJDIR)/xpathname.obj" \
 	"$(OBJDIR)/xsb_odbc.obj" \
-	"$(OBJDIR)/xsberror.obj"
+	"$(OBJDIR)/xsberror.obj" \
+	"$(OBJDIR)/xsbsocket.obj"
 
 # DLLs don't use xmain.c
 !IF  "$(DLL)" == "no"
@@ -718,7 +720,6 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\io_builtins.h"\
 	{$(INTDIR)}"\io_builtins.i"\
-	{$(INTDIR)}"\xsbsocket.i"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\export.h"\
@@ -1091,7 +1092,6 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\oracle.h"\
 	{$(INTDIR)}"\xsb_odbc.h"\
 	{$(INTDIR)}"\bineg.i"\
-	{$(INTDIR)}"\xsbsocket.i"\
 	{$(INTDIR)}"\io_builtins.i"\
 	{$(INTDIR)}"\std_pred.i"\
 	{$(INTDIR)}"\oracle.i"\
@@ -1285,6 +1285,22 @@ DEP_CPP_CHAT_=\
 	".\..\emu\basictypes.h"\
 	".\..\emu\slgdelay.h"\
 	".\..\emu\debugs\debug_delay.h"\
+
+SOURCE=$(INTDIR)\xsbsocket.c
+DEP_CPP_BUILT=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INCLUDE)}"\sys\types.h"\
+	{$(INCLUDE)}"\sys\stat.h"\
+	{$(INTDIR)}"\configs\special.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\io_builtins.h"\
+	{$(INTDIR)}"\basictypes.h"\
+	{$(INTDIR)}"\xsbsocket.h"\
+	
 	
 
 "$(OBJDIR)\chat.obj" : $(SOURCE) $(DEP_CPP_CHAT_) "$(INTDIR)"
