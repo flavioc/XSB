@@ -27,6 +27,7 @@
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
+:- import rename/2 from shell.
 
 %% Construct the file cc/xsbpattern.H on the fly
 make_xsbpatternH(CC, CC_opts) :-
@@ -58,11 +59,12 @@ make_xsbpatternH(CC, CC_opts) :-
 
 :-  package_configuration(dir(perlmatch), PerlmatchDir),
     slash(Slash),
+    Basename = xsbpattern,
     fmt_write_string(Module,
-		     '%s%scc%sxsbpattern', f(PerlmatchDir, Slash, Slash)),
+		     '%s%scc%s%s', f(PerlmatchDir, Slash, Slash,Basename)),
     (  %% avoid recompilation: check if xsbpattern.O exists and 
        %% is newer than xsbpattern.c.
-       search_module('xsbpattern',Dir,_Mod,_Ext,_Base,ModuleO),
+       search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
        str_cat(Module, '.c', ModuleSourceFile),
        str_cat(Module, '.H', ModuleH),
        machine_file_exists(ModuleH),
@@ -70,10 +72,10 @@ make_xsbpatternH(CC, CC_opts) :-
        file_time(ModuleSourceFile, time(ST1,ST2)),
        time(ST1,ST2) @< time(CT1,CT2)
 	       %% module compiled and is current, so just load
-	       -> [xsbpattern]
+	       -> [Basename]
 
-      %% Module isn't compiled or is old, so recompile
-      ; xsb_configuration(perl_cc_compiler, CC),
+    %% Module isn't compiled or is old, so recompile
+    ;   xsb_configuration(perl_cc_compiler, CC),
 	xsb_configuration(perl_archlib, PerlArchlib),
 	xsb_configuration(perl_ccflags, CCflags),
 	fmt_write_string(CC_opts,
@@ -83,10 +85,12 @@ make_xsbpatternH(CC, CC_opts) :-
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	shell(['mv', ' -f ', Objfile, ' ', ConfigLibdir]),
+	fmt_write_string(LibObjFile,
+			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
+	rename(Objfile, LibObjFile),
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk
 	str_cat(Module, '.so', SharedLib),
-	shell(['cp', ' -f ', SharedLib, ' ', ConfigLibdir]),
-	shell(['rm', ' -f ', SharedLib])
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
+	rename(SharedLib,LibMod)
      ).

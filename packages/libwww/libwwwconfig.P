@@ -27,6 +27,7 @@
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
+:- import rename/2 from shell.
 
 %% Construct the file cc/xsb_libwww.H on the fly
 make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
@@ -49,32 +50,39 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
 
 :-  package_configuration(dir(libwww), LibwwwDir),
     slash(Slash),
-    fmt_write_string(Module, '%s%scc%sxsb_libwww', f(LibwwwDir, Slash, Slash)),
+    Basename = xsb_libwww,
+    fmt_write_string(Module, '%s%scc%s%s', f(LibwwwDir,Slash,Slash,Basename)),
+    %%fmt_write_string(Module1, '%s%scc%sxsb_libwww_util', f(LibwwwDir, Slash, Slash)),
     (  %% avoid recompilation: check if xsb_libwww.O exists and 
        %% is newer than xsb_libwww.c.
-       search_module('xsb_libwww',Dir,_Mod,_Ext,_Base,ModuleO),
+       search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
        str_cat(Module, '.c', ModuleSourceFile),
        str_cat(Module, '.H', ModuleH),
        machine_file_exists(ModuleH),
        file_time(ModuleO, time(CT1,CT2)),
        file_time(ModuleSourceFile, time(ST1,ST2)),
        time(ST1,ST2) @< time(CT1,CT2)
-       %% module compiled and is current, so just load
-     -> [xsb_libwww]
+    %% module compiled and is current, so just load
+    -> [Basename]
 
-      %% If Module isn't compiled or is old --- recompile
-     ;  xsb_configuration(compiler, CC),
+    %% If Module isn't compiled or is old --- recompile
+    ;   xsb_configuration(compiler, CC),
 	xsb_configuration(libwww_ldflags, LoaderFlags),
 	xsb_configuration(libwww_ccflags, CCflags),
 	fmt_write_string(CC_opts, ' %s', CCflags),
+	%%fmt_write_string(LoaderFlags1, '%s %s.so', a(LoaderFlags,Module1)),
+	%%make_xsb_libwwwH(CC, CC_opts, LoaderFlags1),
 	make_xsb_libwwwH(CC, CC_opts, LoaderFlags),
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
+	%%shell([CC, ' -s -o ' , Module1, '.so', ' -shared ', Module1, '.c', '', ' ', CC_opts, ' -I /home/users/kifer/XSB/XSB/emu ', ' ', LoaderFlags]),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	shell(['mv', ' -f ', Objfile, ' ', ConfigLibdir]),
+	fmt_write_string(LibObjFile,
+			 '%s%s%s.O', a(ConfigLibdir,Slash,Basename)),
+	rename(Objfile, LibObjFile),
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk
 	str_cat(Module, '.so', SharedLib),
-	shell(['cp', ' -f ', SharedLib, ' ', ConfigLibdir]),
-	shell(['rm', ' -f ', SharedLib])
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
+	rename(SharedLib,LibMod)
      ).
