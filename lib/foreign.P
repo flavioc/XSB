@@ -1,5 +1,5 @@
 /* File:      foreign.P
-** Author(s): Kostis Sagonas, Jiyang Xu
+** Author(s): Jiyang Xu, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -25,7 +25,6 @@
 
 :- compiler_options([xpp_on]).
 
-#include "char_defs.h"
 #include "flag_defs.h"
 
 compile_cH(Modname, Base, Options, ExList, Dir) :-
@@ -157,35 +156,26 @@ add_to_exlist((Pred, Preds), ListType) :- !,
         add_to_exlist(Preds, ListType).
 
 co_asmhead(Modname, LdOption, PSC_Count) :-
-	co_magic(8),
+	asm_magic(8),
 	str_len(Modname, Length),
 	put(Length),
 	write(Modname),
-	%% NEW
-	%%( LdOption == '' -> put(0)	 % No ldoption was specified.
-	( LdOption == '' -> put(CH_NULL) % No ldoption was specified.
+	( LdOption == '' -> put(0) % No ldoption was specified (length is 0).
 	; str_len(LdOption, LdoLen), put(LdoLen), write(LdOption)
 	),
 	write_int(PSC_Count).
 
 co_asmsym([]).
-co_asmsym([One|ExList]) :-
-	co_one(One),
-	co_asmsym(ExList).
+co_asmsym([One|ExList]) :- co_one(One), co_asmsym(ExList).
 
 co_one(P/A) :-
 	str_len(P, L),
-	%% NEW
-	put(CH_NULL),	% domain = ex(ported)
-	put(CH_RETURN),	% type = T_FORN
+	put(0),		% domain = ex(ported)
+	put(13),	% type = T_FORN (in psc.h)
 	put(A),		% arity = a
 	put(L),		% length
 	write(P).		
 
-%% NEW
-co_magic(N) :- put(CH_DC1), put(CH_DC2), put(CH_DC3), put(N).
-
-	
 /*======================================================================*/
 /* format: 
 		+-----------------------+

@@ -1,5 +1,5 @@
 /* File:      foreign.H
-** Author(s): Kostis Sagonas, Jiyang Xu
+** Author(s): Jiyang Xu, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -27,22 +27,20 @@
 :- export compile_cH/5.
 
 :- import shell/1 from shell.
+:- import asm_magic/1 from asm.
 :- import str_sub/2 from string.
 :- import memberchk/2 from basics.
+:- import file_close/1 from file_io.
 :- import write_int/1 from prof_sbp.
+:- import process_control/2 from shell.
+:- import open_or_xpp_file/2 from parse.
+:- import conset/2, conget/2 from prof_sbp.
 :- import attach/2, length/2 from listutil.
 :- import hdr_ext/1, obj_ext/1 from curr_sym.
-:- import message/1, warning/1, time_message/2 from auxlry.
-:- import str_len/2, str_cat/3 from machine.
-:- import read/1, see/1, seen/0, write/1, put/1, tell/1, told/0,
-	  atom/1, file_exists/1, cputime/1, abort/1, seeing/1,
-          telling/1
-     from standard.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import write_header/0, process_from/2 from wrapping.
-:- import file_close/1 from file_io.
-:- import stat_flag/2 from machine.
-:- import process_control/2 from shell.
-:- import conset/2, conget/2 from prof_sbp.
-:- import open_or_xpp_file/2 from parse.
-:- import repeat/0 from standard.
+:- import str_len/2, str_cat/3, stat_flag/2 from machine.
+:- import message/1, warning/1, time_message/2 from auxlry.
+:- import read/1, see/1, seen/0, write/1, put/1, tell/1, told/0, repeat/0,
+	  atom/1, file_exists/1, cputime/1, abort/1, seeing/1, telling/1
+     from standard.

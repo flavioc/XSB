@@ -24,7 +24,7 @@
 */
 
 
-:- export asm_genheader/4, asm_PIL/4.
+:- export asm_genheader/4, asm_PIL/4, asm_magic/1.
 
 :- import insert/2 from listutil.
 :- import asm_opt/5 from asm_opt.
