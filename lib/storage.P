@@ -202,3 +202,6 @@ triehandle_for_storage(StorageName,Handle,Snapshot) :-
 
 mark_storage_changed_bt(StorageName) :-
 	storage_builtin(MARK_STORAGE_CHANGED,StorageName,_,_,_).
+
+storage_show_table_state :-
+	storage_builtin(SHOW_TABLE_STATE,_StoreName,_Handle,_Snapshot,_Change).

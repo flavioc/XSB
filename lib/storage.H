@@ -31,7 +31,9 @@
 	storage_commit/1,
 	storage_insert_keypair_bt/4, storage_delete_keypair_bt/3,
 	storage_insert_keypair/4, storage_delete_keypair/3,
-	storage_find_keypair/3.
+	storage_find_keypair/3,
+	%% this is for debugging/profiling
+	storage_show_table_state/0.
 
 :- import trie_intern/5, trie_interned/4, trie_unintern_nr/2,
 	unmark_uninterned_nr/2,

@@ -74,6 +74,8 @@ inline_builtin(psc_set_ep, 2, PSC_SET_EP).
 inline_builtin(conget, 2, CONGET_TERM).
 inline_builtin(conset, 2, CONSET_TERM).
 
+inline_builtin(storage_builtin, 5, STORAGE_BUILTIN).
+
 inline_builtin(term_psc, 2, TERM_PSC).
 inline_builtin(term_type, 2, TERM_TYPE).
 inline_builtin(term_compare, 3, TERM_COMPARE).
