@@ -206,11 +206,15 @@ ALPtr free_answer_list_space = 0;
 ALPtr top_answer_list_space = 0;
 
 /*----------------------------------------------------------------------*/
+/* In the following, malloc() is used instead of mem_alloc() so that the
+ * size of permanent space is not affected - Kostis.
+ */
+/*----------------------------------------------------------------------*/
 
 static NODEptr alloc_more_trie_space(void)
 {
   char *t;
-  t = (char *)mem_alloc(trie_chunk_size+sizeof(Cell));
+  t = (char *)malloc(trie_chunk_size+sizeof(Cell));
   if (!t) xsb_abort("No room to expand Trie space");
   *(char **)t = trie_node_chunk_ptr;
   trie_node_chunk_ptr = t;
@@ -224,7 +228,7 @@ static NODEptr alloc_more_trie_space(void)
 static ALPtr alloc_more_answer_list_space(void)
 {
   char *t;
-  t = (char *)mem_alloc(answer_list_chunk_size+sizeof(Cell));
+  t = (char *)malloc(answer_list_chunk_size+sizeof(Cell));
   if (!t) xsb_abort("No room to expand Answer_List space");
   *(char **)t = answer_list_node_chunk_ptr;
   answer_list_node_chunk_ptr = t;
@@ -277,7 +281,8 @@ void abolish_trie(void)
   while (trie_node_chunk_ptr) {
     t = *(char **)trie_node_chunk_ptr;
 /*    printf("Freeing Trie chunk %x\n",trie_node_chunk_ptr);*/
-    mem_dealloc((byte *)trie_node_chunk_ptr,trie_chunk_size+sizeof(Cell));
+    free(trie_node_chunk_ptr);
+    /* mem_dealloc((byte *)trie_node_chunk_ptr,trie_chunk_size+sizeof(Cell));*/
     trie_node_chunk_ptr = t;
   }
   free_trie_nodes = 0;
@@ -294,7 +299,8 @@ void abolish_trie(void)
 
   while (answer_list_node_chunk_ptr) {
     t = *(char **)answer_list_node_chunk_ptr;
-    mem_dealloc((byte *)answer_list_node_chunk_ptr,answer_list_chunk_size+sizeof(Cell));
+    free(answer_list_node_chunk_ptr);
+    /*mem_dealloc((byte *)answer_list_node_chunk_ptr,answer_list_chunk_size+sizeof(Cell));*/
     answer_list_node_chunk_ptr = t;
   }
 

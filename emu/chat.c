@@ -963,11 +963,11 @@ void print_chat_statistics(void)
 {
   printf("  total size CHAT areas: %d b; high water mark: %d b; not freed: %d b\n",
 	  chat_total_malloced,chat_malloc_high_mark,chat_inuse);
-  printf("  consumers saved: %d; increments saved: %d; shared increments: %d\n",
+  printf("  suspensions saved: %d; increments saved: %d; shared increments: %d\n",
 	  chat_number_saved_consumers,
 	  chat_number_incremental_saves,
 	  chat_area_sharing);
-  printf("  number of restored consumers: %d; total restored memory: %d\n",
+  printf("  number of restored suspensions: %d; total restored memory: %d\n",
 	 chat_nr_of_restores,chat_restored_memory);
 }
 

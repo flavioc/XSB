@@ -84,7 +84,7 @@ void total_stat(double elapstime)
 {
   unsigned long lstktop, trie_alloc, trie_used,
                 total_alloc, total_used, gl_avail, tc_avail;
-  unsigned long subg_count, trie_hash_alloc;
+  unsigned long subg_count, subg_space, trie_hash_alloc;
 
   lstktop = (unsigned long)ereg;
 
@@ -92,15 +92,16 @@ void total_stat(double elapstime)
   trie_hash_alloc = allocated_trie_hash_size();
   trie_alloc = allocated_trie_size() + trie_hash_alloc;
   trie_used = trie_alloc - free_trie_size();
+  subg_space = sizeof(Cell)*CALLSTRUCTSIZE*subg_count;
 
-  total_alloc = pspacesize + trie_alloc +
-                sizeof(Cell)*CALLSTRUCTSIZE*subg_count +
+  total_alloc = pspacesize + trie_alloc + subg_space +
 		(pdl.size + glstack.size + tcpstack.size + complstack.size) * K;
 
   gl_avail    = lstktop-(unsigned long)hreg;
   tc_avail    = (unsigned long)breg-(unsigned long)trreg;
 
-  total_used  = pspacesize + trie_used + (glstack.size * K - gl_avail) +
+  total_used  = pspacesize + trie_used + subg_space +
+                (glstack.size * K - gl_avail) +
                 (tcpstack.size * K - tc_avail);
 
   printf("\n");
@@ -109,15 +110,15 @@ void total_stat(double elapstime)
   printf("  permanent space %12ld bytes\n", pspacesize);
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
 	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
-  printf("    global                         %12ld bytes\n",
+  printf("    global                            %12ld bytes\n",
 	 (unsigned long)hreg - (unsigned long)glstack.low);
-  printf("    local                          %12ld bytes\n",
+  printf("    local                             %12ld bytes\n",
 	 (unsigned long)glstack.high - lstktop);
   printf("  trail/cp space  %12ld bytes: %12ld in use, %12ld free\n",
 	 tcpstack.size * K, tcpstack.size * K - tc_avail, tc_avail);
-  printf("    trail                          %12ld bytes\n",
+  printf("    trail                             %12ld bytes\n",
 	 (unsigned long)trreg - (unsigned long)(tcpstack.low));
-  printf("    choice point                   %12ld bytes\n",
+  printf("    choice point                      %12ld bytes\n",
 	 (unsigned long)tcpstack.high - (unsigned long)breg);
   printf("  SLG subgoal space %10ld bytes: %12ld in use, %12ld free\n",
 	 sizeof(Cell)*subg_count*(unsigned long)CALLSTRUCTSIZE,
@@ -130,9 +131,9 @@ void total_stat(double elapstime)
 	 (unsigned long)COMPLSTACKBOTTOM - (unsigned long)openreg,
 	 (unsigned long)complstack.size * K -
 	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)openreg));
-  printf("   SLG trie space  %10ld bytes: %12ld in use, %12ld free\n",
+  printf("  SLG trie space    %10ld bytes: %12ld in use, %12ld free\n",
 	 trie_alloc, trie_used, trie_alloc - trie_used);
-  printf("   (call+ret. trie %12ld bytes,    trie hash tables %12ld bytes)\n",
+  printf("   (call+ret. trie%12ld bytes,     trie hash tables %12ld bytes)\n",
 	 (long)allocated_trie_size(), trie_hash_alloc);
   printf("\n");
 
@@ -161,9 +162,11 @@ void total_stat(double elapstime)
 /*     } else printf("\n"); */
 
 #ifdef CHAT
+  printf("\n");
   print_chat_statistics();
 #endif
-  printf(" %6ld subgoals,   %5d levels\n\n", subg_count, level_num);
+  printf("\n  currently active:   %6ld subgoals, %5d levels\n\n",
+	 subg_count, level_num);
 #ifdef GC
   print_gc_statistics();
 #endif
