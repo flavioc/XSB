@@ -1228,8 +1228,15 @@ void reclaim_uninterned_nr(long rootidx)
     switch_to_trie_assert;
     if(IsDeletedNode(leaf)) {
       delete_branch(leaf, &(Set_ArrayPtr[rootidx]));
-    } else
-      xsb_warn("Non deleted interned node in garbage list");
+    } else {
+      /* This is allowed:
+	 If we backtrack over a delete, the node that was marked for deletion
+	 and placed in the garbage list is unmarked, but isn't removed from
+	 the garbage list. So it is a non-deleted node on the garbage list.
+	 It is removed from there only when we reclaim space.
+      */
+      xsb_dbgmsg("Non deleted interned node in garbage list - ok");
+    }
 
     switch_from_trie_assert;
     l = p;
