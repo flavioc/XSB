@@ -3,8 +3,8 @@
 ** Contact: saikat@cs.sunysb.edu
 
 ** This file is the  middle layer for the interface to the drivers. 
-** This gets called from lib/db_interface.P and in turn calls the
-** driver specific files which are in the packages/dbdrivers/ directory.
+** This gets called from db_interface.P and in turn calls functions in
+** driver specific C files which are in the packages/dbdrivers/xxx/cc directory.
 */
 
 #include <stdio.h>
@@ -122,7 +122,7 @@ DllExport int call_conv closeConnection(void)
 	int (*closeStmtDriver)(struct xsb_queryHandle *);
 	char* (*errorMesgDriver)();
 	char* handle;
-	int val, i, j;
+	int val, i, j, k;
 
 	handle = ptoc_string(1);
 
@@ -135,6 +135,7 @@ DllExport int call_conv closeConnection(void)
 
 			if(val == FAILURE)
 			{
+				printf("disconnect failed\n");
 				errorMesgDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->errorMesgDriver;
 				errorMesg = errorMesgDriver();
 				return FALSE;
@@ -148,6 +149,7 @@ DllExport int call_conv closeConnection(void)
 					val = closeStmtDriver(QHandles[j]);
 					if (val == FAILURE)
 					{
+						printf("stmt closing failed\n");
 						errorMesgDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->errorMesgDriver;
 						errorMesg = errorMesgDriver();
 						return FALSE;
@@ -155,6 +157,11 @@ DllExport int call_conv closeConnection(void)
 					free(QHandles[j]->handle);
 					free(QHandles[j]->query);
 					free(QHandles[j]);
+					for (k = j + 1 ; k < numQHandles ; k++)
+						QHandles[k-1] = QHandles[k];
+					QHandles[numQHandles-1] = NULL;
+					numQHandles--;
+					break;
 				}
 			}
 
@@ -172,6 +179,7 @@ DllExport int call_conv closeConnection(void)
 			free(CHandles[i]);
 			for (j = i + 1 ; j < numCHandles ; j++)
 				CHandles[j-1] = CHandles[j];
+			CHandles[numCHandles-1] = NULL;
 			numCHandles--;
 			return TRUE;
 		}
@@ -221,9 +229,8 @@ DllExport int call_conv queryConnection(void)
 					free(QHandles[i]->query);
 					free(QHandles[i]);
 					for (j = i + 1 ; j < numQHandles ; j++)
-					{
 						QHandles[j-1] = QHandles[j];
-					}
+					QHandles[numQHandles-1] = NULL;
 					numQHandles--;
 					break;
 				}
@@ -251,6 +258,9 @@ DllExport int call_conv queryConnection(void)
 		return FALSE;		
 	}
 
+	if (is_nil(returnList) && result == NULL)
+		return TRUE;
+
 	i = 0;
 	while (!is_nil(returnList))
 	{
@@ -258,7 +268,12 @@ DllExport int call_conv queryConnection(void)
 		if (result == NULL)
 			c2p_nil(element);
 		else if (is_var(element) && result[i]->type == STRING_TYPE)
-			c2p_string(result[i]->val->str_val, element);
+		{
+			if (result[i]->val == NULL)
+				c2p_nil(element);
+			else
+				c2p_string(result[i]->val->str_val, element);
+		}
 		else if (is_var(element) && result[i]->type == INT_TYPE)
 			c2p_int(*(result[i]->val->i_val), element);
 		else if (is_var(element) && result[i]->type == FLOAT_TYPE)
@@ -269,6 +284,7 @@ DllExport int call_conv queryConnection(void)
 
 	if (result != NULL)
 		return TRUE;
+
 	if ((cHandle = isConnectionHandle(chandle)) != NULL)
 	{
 		errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
@@ -477,7 +493,7 @@ DllExport int call_conv exception(void)
 	
 	number = reg_term(1);
 	message = reg_term(2);
-	if (is_var(message) && errorMesg != NULL)
+	if (is_var(message) && errorMesg != NULL && errorNumber != NULL)
 	{
 		c2p_string(errorMesg, message);
 		c2p_string(errorNumber, number);
@@ -496,23 +512,24 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
 	char* temp;
 	char* sqlQuery;
 
-	sqlQuery = (char *)malloc(100 * sizeof(char));
+	sqlQuery = (char *)malloc(QUERY_SIZE * sizeof(char));
 	sqlQuery[0] = '\0';
 	while (!is_nil(sqlQueryList))
 	{
 		element = p2p_car(sqlQueryList);
 		if (is_string(element))		
+			
 			strcat(sqlQuery, p2c_string(element));
 		else if (is_int(element))
 		{
-			temp = (char *)malloc(100 * sizeof(char));
+			temp = (char *)malloc(200 * sizeof(char));
 			sprintf(temp, "%d", p2c_int(element));
 			strcat(sqlQuery, temp);
 			free(temp);
 		}
 		else if (is_float(element))
 		{
-			temp = (char *)malloc(100 * sizeof(char));
+			temp = (char *)malloc(200 * sizeof(char));
 			sprintf(temp, "%f", p2c_float(element));
 			strcat(sqlQuery, temp);
 			free(temp);

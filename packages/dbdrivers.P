@@ -11,6 +11,8 @@
 :- import xsb_configuration/2 from xsb_configuration.
 :- import initialise/0 from driver_manager.
 
+:- export load_driver/1.
+
 :- 
 	bootstrap_package([dbdrivers,cc], dbdrivers1),
 	[db_interface],
@@ -23,7 +25,9 @@
 	(xsb_configuration(architecture,A), str_sub(windows,A), !
 	;
 	    slash(Slash),
-	    package_configuration(dir(dbdrivers1), DriverManagerDir),
+		xsb_configuration(packagesdir, PackageDir),
+		fmt_write_string(DriverManagerDir, '%s%sdbdrivers', f(PackageDir, Slash)),
+		writeln(DriverManagerDir),
 	    fmt_write_string(SharedLibDriverManager,
 			     '%s%scc%s%s.so', 
 			     f(DriverManagerDir, Slash, Slash, Basename)),

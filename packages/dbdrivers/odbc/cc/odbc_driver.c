@@ -27,11 +27,8 @@ SQLHENV henv;
 
 DllExport int call_conv driverODBC_initialise()
 {
-	SQLRETURN val;
-
 	numHandles = numQueries = 0;
 	errorMesg = NULL;
-	val = SQLAllocEnv(&henv);
 
 	return TRUE;
 }
@@ -44,13 +41,17 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
 
 	odbcHandle = (struct driverODBC_connectionInfo *)malloc(sizeof(struct driverODBC_connectionInfo));
 
+	val = SQLAllocEnv(&henv);
+	if (val != SQL_SUCCESS)
+	{
+		errorMesg = "HENV allocation error\n";
+		return FAILURE;
+	}
+
 	val = SQLAllocConnect(henv, &(odbcHandle->hdbc));
 	if (val != SQL_SUCCESS)
 	{
 		driverODBC_error(SQL_HANDLE_ENV, henv);
-		val = SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		if (val != SQL_SUCCESS)
-			driverODBC_error(SQL_HANDLE_ENV, henv);
 		free(odbcHandle);
 		return FAILURE;
 	}
@@ -62,9 +63,6 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
 		val = SQLFreeHandle(SQL_HANDLE_DBC, odbcHandle->hdbc);
 		if (val != SQL_SUCCESS)
 			driverODBC_error(SQL_HANDLE_DBC, odbcHandle->hdbc);
-		val = SQLFreeHandle(SQL_HANDLE_ENV, henv);
-		if (val != SQL_SUCCESS)
-			driverODBC_error(SQL_HANDLE_ENV, henv);
 		free(odbcHandle);
 		return FAILURE;
 	}
@@ -100,18 +98,12 @@ int driverODBC_disconnect(struct xsb_connectionHandle* handle)
 				return FAILURE;
 			}
 			
-			val = SQLFreeHandle(SQL_HANDLE_ENV, henv);
-			if (val != SQL_SUCCESS)
-			{
-				driverODBC_error(SQL_HANDLE_ENV, henv);
-				return FAILURE;
-			}
-
 			free(odbcHandles[i]->handle);			
 			free(odbcHandles[i]);
 			
 			for (j = i + 1 ; j < numHandles ; j++)
 				odbcHandles[j-1] = odbcHandles[j];
+			odbcHandles[numHandles-1] = NULL;
 			numHandles--;
 			break;
 		}
@@ -208,20 +200,23 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* query, int direct)
 {
 	struct xsb_data** result;
+	SQLINTEGER** pcbValues;
 	SQLRETURN val;
 	int i, j;
 
 	result = (struct xsb_data **)malloc(query->resultmeta->numCols * sizeof(struct xsb_data *));
+	pcbValues = (SQLINTEGER **)malloc(query->resultmeta->numCols * sizeof(SQLINTEGER *));
 	for (i = 0 ; i < query->resultmeta->numCols ; i++)
 	{
 		result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
 		result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
+		pcbValues[i] = (SQLINTEGER *)malloc(sizeof(SQLINTEGER));
 		if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == STRING_TYPE)
 		{
 			result[i]->type = STRING_TYPE;
 			result[i]->length = query->resultmeta->types[i]->length + 1;
 			result[i]->val->str_val = (char *)malloc(result[i]->length * sizeof(char));
-			val = SQLBindCol(query->hstmt, i + 1, SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, NULL);
+			val = SQLBindCol(query->hstmt, i + 1, SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
 			if (val != SQL_SUCCESS)
 			{
 				driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -232,7 +227,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 		{
 			result[i]->type = INT_TYPE;
 			result[i]->val->i_val = (int *)malloc(sizeof(int));
-			val = SQLBindCol(query->hstmt, i + 1, SQL_C_SLONG, (SQLPOINTER *)result[i]->val->i_val, 0, NULL);
+			val = SQLBindCol(query->hstmt, i + 1, SQL_C_SLONG, (SQLPOINTER *)result[i]->val->i_val, 0, pcbValues[i]);
 			if (val != SQL_SUCCESS)
 			{
 				driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -243,7 +238,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 		{
 			result[i]->type = FLOAT_TYPE;
 			result[i]->val->f_val = (double *)malloc(sizeof(double));
-			val = SQLBindCol(query->hstmt, i + 1, SQL_C_DOUBLE, (SQLPOINTER *)result[i]->val->f_val, 0, NULL);
+			val = SQLBindCol(query->hstmt, i + 1, SQL_C_DOUBLE, (SQLPOINTER *)result[i]->val->f_val, 0, pcbValues[i]);
 			if (val != SQL_SUCCESS)
 			{
 				driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -253,6 +248,16 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 	}
 
 	val = SQLFetch(query->hstmt);
+
+	if (val == SQL_SUCCESS)
+	{
+		for (i = 0 ; i < query->resultmeta->numCols ; i++)
+		{
+			if (*(pcbValues[i]) == SQL_NULL_DATA)
+				result[i]->val = NULL;
+		}
+	}
+
 	if (val != SQL_SUCCESS)
 	{
 		if (direct == 1)
@@ -286,6 +291,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 		}
 		return NULL;
 	}
+
 	if (val != SQL_SUCCESS && val != SQL_NO_DATA)
 	{
 		driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
