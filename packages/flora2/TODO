@@ -149,16 +149,8 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 	trailer, we are safe from clashes with static predicates.
 
 	To enable the current parser parse the rules inside
-	insert{...} correctly, we have to give the following argument
-	definition for ':-'
-
-	:- arguments ':-'(hform,bform).
-
-	where "bform" is the existing argument type and "hform" needs to be
-	added. The effect of "hform" is to force the compiler to compile
-	the head of the rule as a list of formulas rather than an oid term.
-
-	Or, maybe, the compiler should just undertand that :- is a special
+	insert{...} correctly, we have to change the compiler so it would
+	undertand that :- is a special
 	predicate and its first argument is the rule head. So, things must
 	be translated differently there.
 	Right now if we have
@@ -168,7 +160,7 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 	bform in the rule head differently. We should extend this treatment
 	to the predicate ':-'.
 
-	Another idea: use `meta' instead of `bform'.
+	Also, change `bform' to `meta'.
 
 5. Metaprogramming
 
