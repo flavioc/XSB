@@ -1636,6 +1636,7 @@ agg\{X[Gs] $|$ body\}
 %%
 \index{aggregation!aggregate operator}
 \index{aggregation!grouping}
+%
 where {\sf agg} represents the aggregate operator, {\sf X} is called the
 aggregation variable, {\sf Gs} is a list of comma-separated grouping
 variables, and {\sf body} is a logical formula that specifies the
@@ -1666,6 +1667,7 @@ is applied the list of bindings for the aggregate variable.
 \index{aggregates!avg}
 \index{aggregates!collectset}
 \index{aggregates!collectbag}
+%
 The following aggregate operators are supported in \FLORA: {\sf min}, {\sf max},
 {\sf count}, {\sf sum}, {\sf avg}, {\sf collectset} and {\sf collectbag}.
 
@@ -1693,13 +1695,13 @@ illustrate the use of aggregates (some borrowed from the \FLORID manual):
 \end{verbatim}
 \end{quote}
 %%
-If an aggregate contains grouping variables that are \emph{not} bound by a
-preceding subgoal, then this aggregate would backtrack over such grouping
-variables (In other words, they are considered to be existentially
-quantified). For instance, in the last query above, the aggregate will
-backtrack over the variable {\sf Who}. Thus, if {\sf john}'s and
-{\sf mary}'s average salary is greater than 20000, this query will backtrack
-and return both {\sf john} and {\sf mary}.
+If an aggregate contains grouping variables that are \emph{not} bound
+by a preceding subgoal, then this aggregate would backtrack over such
+grouping variables (In other words, they are considered to be
+existentially quantified). For instance, in the last query above, the
+aggregate will backtrack over the variable {\sf Who}. Thus, if
+{\sf john}'s and {\sf mary}'s average salary is greater than {\sf 20000},
+this query will backtrack and return both {\sf john} and {\sf mary}.
 
 The following example is a query that for each employee asks for a list of
 years when this employee had salary less than 60. This illustrates the use
@@ -1716,6 +1718,26 @@ Who = john
 \end{verbatim}
 \end{quote}
 %%
+
+\index{aggregates!multi-valued methods}
+\index{multi-valued methods!aggregation}
+%
+To retrieve all the return values of multi-valued methods, \FLORA provides
+two new operators, {\tt ->->} and {\tt *->->}, for non-inheritable and
+inheritable multi-value methods, respectively. 
+
+In fact, {\tt ->->} and {\tt *->->} are just syntactic sugars and can be
+defined using the {\tt collectset} aggregate, as follows:
+\begin{quote}
+\begin{verbatim}
+O[M->->L] :- L=collectset{V|O[M->>V]}
+
+O[M*->->L] :- L=collectset{V|O[M*->>V]}
+\end{verbatim}
+\end{quote}
+
+The only restriction is that {\tt ->->} and {\tt *->->} cannot appear in
+the head of a rule.
 
 
 \subsection{Boolean Methods}
@@ -1989,6 +2011,50 @@ foo['_$_$_flora''newoid4'(X)->Y] :- foo(X,Y).
 \end{quote}
 
 
+\subsection{Loading Files}
+
+
+\index{loading files}
+%
+Like XSB, \FLORA also supports the list notation to load a list of
+files. For instance, the following command:
+\begin{quote}
+\verb|[myprog1, myprog2]|
+\end{quote}
+will try to load the two programs {\tt myprog1} and {\tt myprog2}.
+
+Both XSB files and \FLORA files can appear in the list. Note
+that the names of XSB source files have {\tt .P} as extension,
+while XSB byte code files have {\tt .O}, and \FLORA source files
+have {\tt .flr}. If a file name is not specified with an extension,
+\FLORA will search the follwing files in order until one is found
+or none: \FLORA source files, XSB source files, and XSB byte code
+files.
+
+For \FLORA programs, an optional module name can be specified using
+the syntax bellow:
+\begin{quote}
+\verb|[..., program >> module, ...]|
+\end{quote}
+For instance, the following command:
+\begin{quote}
+\verb|[myprog >> foomod]|
+\end{quote}
+will try to load the \FLORA program {\tt myprog} into the \FLORA
+module named {\tt foomod}.
+
+If a module name is specified using the {\tt >>} syntax, then
+\FLORA will only search for \FLORA programs. On the other hand,
+if a module name is not specified for a \FLORA program, then this
+program will be loaded into the default \FLORA module named
+{\tt main}. As an example, the following command:
+\begin{quote}
+\verb|['myprog.flr', mydb >> foomod]|
+\end{quote}
+will load the \FLORA file {\tt myprog.flr} into module {\tt main} and
+{\tt mydb.flr} into module {\tt foomod}.
+
+
 \section{\FLORA Modules} \label{sec:flora-modules}
 
 \index{module}
@@ -2200,6 +2266,7 @@ followed:
 \subsection{Calling XSB from \FLORA}
 
 
+\index{module!calling XSB}
 \index{module!import}
 \index{compiler directive!{\tt import}}
 %
@@ -2226,21 +2293,24 @@ compiler directives:
 \end{verbatim}
 \end{quote}
 
+
+\index{module!{\tt prologlib}}
+%
 To avoid the above mentioned side effect, the following syntax, which
 is an extension to the module name specification, can be exploited to
 make individual XSB calls in a \FLORA program:
 \begin{quote}
 \begin{verbatim}
-xsb_predicate @ plib xsb_module
+xsb_predicate @ prologlib xsb_module
 \end{verbatim}
 \end{quote}
-where {\tt xsb} is a fixed keyword, and \verb|xsb_predicate| is a
+where {\tt prologlib} is a fixed keyword, and \verb|xsb_predicate| is a
 predicate defined in the XSB module named \verb|xsb_module|. Note that
 the translation of other predicates that have the same functor and
 arity as \verb|xsb_predicate| will not be affected by this call. For
 example, the \FLORA query below:
 \begin{quote}
-\verb|?- member(a,[a]) @ plib basics, member(X,[a]).|
+\verb|?- member(a,[a]) @ prologlib basics, member(X,[a]).|
 \end{quote}
 will be compiled into the following XSB query:
 \begin{quote}
@@ -2250,63 +2320,61 @@ will be compiled into the following XSB query:
 \end{verbatim}
 \end{quote}
 
+Some XSB predicates, including those standard predicates like
+{\tt write/1}, can be called directly without being imported from a
+module. To call such XSB predicates in a \FLORA program, simply omit
+the XSB module name and replace it with a pair of parentheses {\tt ()},
+e.g,
+\begin{quote}
+\verb|write(X) @ prologlib ()|
+\end{quote}
+
 
 \subsection{Calling \FLORA from XSB}
 
-
-\index{module!export}
-\index{compiler directive!{\tt export}}
+\index{module!calling \FLORA}
 %
 The major problem with calling \FLORA from XSB is that XSB does not
 understand the \fl syntax. However, \FLORA supports the XSB syntax and
 since every \FLORA program is finally compiled into an XSB program, it
-can loaded and used like an XSB module, based on the
-{\tt import/export} mechanism from the underlying XSB system.
+can loaded and used like an XSB program.
 
-First, the \FLORA program needs to export the predicates of interest
-using the compiler directive \verb|export functor/arity|. If what
-needs to be exported directly involves \fl, then new predicates should
-be introduced to contain the relevant F-molecules. Once these new
-predicates are properly defined, all that is left to do is just to
-export them like any other predicates of interest.
-
-For example, the following program segment shows how to export course
-selection information about students:
+First, the \FLORA program needs to declare the predicates to be called
+as Prolog terms. If the calling XSB module needs to access \fl data,
+then new predicates should be introduced to contain the relevant
+F-molecules.  For example, the following program segment shows how to
+define a new Prolog predicate to carry course selection information
+about students:
 \begin{quote}
 \begin{verbatim}
-:- export studinfo/4.
+:- prolog studinfo/4.
 
 studinfo(SSN,Year,Semester,CourseCode) :-
         _Person:student[ssn->SSN,Year(Semester)->>CourseCode].
 \end{verbatim}
 \end{quote}
 
-Note that like the {\tt import} compiler directive, the side effect
-of {\tt export functor/arity} is also to define \emph{every} occurrence
-of the predicate {\tt functor/arity} as a Prolog term.
-
-When the predicates of interest have been exported from a \FLORA
+Once the predicates of interest have been properly defined in a \FLORA
 program, the calling XSB program needs to import them using the
-compiler directive \mbox{\tt import functor/arity from module}.
-The only thing that needs extra care is the name of the module.
-Here {\tt module} refers to the name of an XSB module, but not
-a \FLORA module.
+compiler directive \mbox{\tt import functor/arity from module}, where
+{\tt module} must be either {\tt usermod} or {\tt global}. This means
+that the calling XSB module must explicitly load the \FLORA program 
+at runtime by issuing the command {\tt consult/1}.
 
-\index{module!name}
+\index{module!file name}
 %
-As pointed out earlier at the beginning of
-Section~\ref{sec:flora-modules}, module names in XSB are associated
-with file names. Therefore, in the {\tt import} compiler directive the
-calling XSB program should use the name of the final byte code file of
-the \FLORA program. For instance, suppose the name of the \FLORA
-program is {\tt studentdb.flr}, and the byte code is generated using
-the \FLORA command {\tt flcompile(studentdb,studmod)}, then the XSB
-program calling predicates in it should use \verb|studentdb_studmod|
-as the module name in the {\tt import} compiler directive. However, if
-the byte code is generated using the command {\tt flcompile(studentdb)},
-which assumes {\tt main} as the default \FLORA module name, then
-\verb|studentdb_main| should be used as the module name in the calling
-XSB program.
+The only thing that needs extra care is the name of the file that
+should be passed to \mbox{\tt consult/1}. As pointed out earlier at
+the beginning of Section~\ref{sec:flora-modules}, module names are
+appended to \FLORA file names to generate the names for the byte code
+files. Therefore, the name of final byte code file, but not the
+original \FLORA file, should be used in {\tt consult/1}.
+
+For instance, suppose the name of the \FLORA program is
+{\tt studentdb.flr}, and the byte code is generated using the \FLORA
+command {\tt flcompile(studentdb,studmod)}, then the XSB program
+calling predicates in it should use the command
+\verb|consult(studentdb_studmod)| to load the file.
 
 
 \subsection{Including Files into \FLORA Programs}
@@ -2334,6 +2402,24 @@ preprocessing command that is recognized by {\sf gpp} can appear in
 a \FLORA program (refer to the XSB manual for more information on
 {\sf gpp}). The above mentioned \verb|#include "file_name"| is one
 of the preprocessing commands supported by {\sf gpp}.
+
+
+\subsection{This Module Name}
+
+
+\index{module!{\tt flthismod}}
+%
+Although a \FLORA program can be loaded into any arbitrary module, the
+program itself can call the predicate {\tt flthismod/1} to retrieve
+the name of the module into which it is loaded at runtime.
+
+By default, {\tt flthismod/1} is declared for each compiled \FLORA program
+as follows:
+\begin{quote}
+\verb|:- florapred flthismod/1.|
+\end{quote}
+It accepts one argument and will bind it to the name of the \FLORA
+module.
 
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
