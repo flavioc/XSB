@@ -136,13 +136,6 @@ arch_config_objlibdir=$(src_config_prefix)/saved.o
 # emuMakefile will be invoked through `xsbmod or `xsboramod' targets.
 emumake_goal=@emumake_goal@
 
-
-# Allow the user to specify the install program.
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
-INSTALL_DATA = @INSTALL_DATA@
-
-
 # Normal user
 all: prepare emu xsbmod gpp remake_dot_O_files configure_packages_src register emu_clean 
 
@@ -181,7 +174,7 @@ gpp:
 	@echo ""; echo "Making gpp"
 	@cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
 
-# Compiling the interface with SModels.
+# Compiling the interface with sModels.
 smodels:
 	@cd $(src_pkgdir)/sModels; \
 	  echo "Compiling smodels interface"; \
@@ -241,8 +234,8 @@ copy_files::
 	  ( echo "Installing XSB in ${prefix} ..." ; \
 	    umask 022 ; \
 	    echo "Copying executables..." ; \
-	    ${INSTALL} ${src_bindir}/* ${install_bindir}  ; \
-	    ${INSTALL} ${src_scriptdir}/xsb${config_tag} \
+	    cp -f ${src_bindir}/* ${install_bindir}  ; \
+	    cp -f ${src_scriptdir}/xsb${config_tag} \
 				${install_scriptdir}/xsb${config_tag}; \
 	    chmod 755 ${install_scriptdir}/* ${install_bindir}/* ; \
 	    cp -f ${srcdir}/build/config.sub \

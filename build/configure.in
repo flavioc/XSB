@@ -1104,7 +1104,7 @@ AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)
 
-#These are used to compile the interface with SModels
+#These are used to compile the interface with sModels
 if test "${with_smodels}" = "" ; then
 	smodels_goal=nope
 else

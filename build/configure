@@ -3037,7 +3037,7 @@ fi
 
 
 
-#These are used to compile the interface with SModels
+#These are used to compile the interface with sModels
 if test "${with_smodels}" = "" ; then
 	smodels_goal=nope
 else
