@@ -279,7 +279,7 @@ retract_index(Pred) :-
 fix_arg([],_,[]).
 fix_arg([Arg|Args],Arity,[Narg|Nargs]) :-
 	(integer(Arg)
-	 ->	((Arg > 0, Arg =< Arity)
+	 ->	((Arg > 256 ; Arg > 0, Arg =< Arity)
 		 ->	Narg = Arg
 		 ;	fail
 		)
