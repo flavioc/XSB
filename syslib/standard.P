@@ -403,7 +403,7 @@ hilog_functor(T, F, N) :-
 	;   Type =:= LIST -> F = '.', N = 2
 	;   atomic(T) -> F = T, N = 0
 	;   T =.. [apply, F, FirstArg|Args] -> % HiLog term found
-	    length([FirstArg|Args], N)
+	    length([FirstArg|Args], 0, N)
 	;   term_psc(T, PSC),
 	    psc_name(PSC, Name),
 	    psc_arity(PSC, Arity),
@@ -427,14 +427,14 @@ hilog_arg(I, T, A) :- hilog_arg(I, T, A).
 	\+ '_$hilog_symbol'(H),
 	is_list(T),
 	!,
-	length(T, N),
+	length(T, 0, N),
 	N > 0,
 	functor(X, H, N),
 	prolog_arglist(X, T, N, N).
 '^=..'(X, [H|T]) :-	% Here H is either a variable or a structure 
 	is_list(T),	% or an atom that is also a HiLog symbol.
 	!,
-	length(T, HiLogN),
+	length(T, 0, HiLogN),
 	HiLogN > 0,
 	PrologN is HiLogN + 1,
 	functor(X, apply, PrologN),
@@ -877,13 +877,13 @@ all_atoms([Atom|Atoms]) :- atom(Atom), all_atoms(Atoms).
 contains_var([H|_]) :- var(H), !.
 contains_var([_|T]) :- contains_var(T).
 
-%  length(+List, ?Length)
-%  Predicate length/2 returns the length of list List. This predicate
+%  length(+List, +LengthIn,  ?LengthOut)
+%  Predicate length/3 returns the length of list List. This predicate
 %  should be used with the first argument instantiated. For a predicate
 %  that works both ways use the length/2 in basics.
 
-length([], 0).
-length([_|R], N) :- length(R, N1), N is N1 + 1.
+length([], N, N).
+length([_|R], M, N) :- N1 is M+1, length(R, N1, N).
 
 :- dynamic('_$abort_cutpoint'(_)).
 
