@@ -49,7 +49,21 @@
 int total_number_of_requests;
 
 
-/* BOOL, PRIVATE, PUBLIC, etc., are defined in a header in libwww */
+/* BOOL, PRIVATE, PUBLIC, etc., are defined in a Libwww header */
+
+/* Calling sequence:
+       libwww_html_parse([req1,req2,...])
+
+   Each req: f(URL, FORM-Params, SELECTED-Tags, PARSED-Result, ERROR-Code)
+   SELECTED-Tags:
+       	     _ (all tags),
+	     f(chosen-tag-list,ignore-tag-list) means: parse only inside the
+	     	    tags on the chosen tag list. Stop parsing if an ignored tag
+		    is found. Resume if a chosen tag is found, etc.
+	     f(_,ignore-tag-list) means: parse all tags except those in the
+		    ignore list.
+	     f(chosen-tag-list,_) means: parse only inside the chosen tags.
+ */
 BOOL  libwww_html_parse(void)
 {
   prolog_term request_term_list = reg_term(1), request_list_tail;
