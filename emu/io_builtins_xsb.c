@@ -708,8 +708,7 @@ int read_canonical(void)
   FILE *filep;
   STRFILE *instr;
   int prevchar, arity, i, size;
-  /* findall_solution_list *p; */
-  CPtr h, this_term, prev_tail;
+  CPtr h;
   Cell op1, j, arg2;
 #define OPSTK_SIZE 1000
 #define FUNFUN 0
@@ -771,6 +770,7 @@ int read_canonical(void)
 	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
 	    if (token->type == TK_PUNC) {
 		if (*token->value == ')') {
+		  CPtr this_term;
 		  funtop--;
 		  if (funstk[funtop].funtyp != FUNFUN)	/* ending a list, oops */
 		    return read_can_error(filep,instr,prevchar);
@@ -806,6 +806,7 @@ int read_canonical(void)
 		  optop = op1;
 		  optop++;
 		} else if (*token->value == ']') {	/* end of list */
+		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN)
 			return read_can_error(filep,instr,prevchar);
@@ -984,6 +985,47 @@ int read_canonical(void)
 		optop++;
 		postopreq = TRUE;
 		break;
+      case TK_LIST:  /* "-list */
+	if (optop >= OPSTK_SIZE)
+	    xsb_abort("READ_CANONICAL: op stack overflow");
+	if ((token->value)[0] == 0) {
+	  opstk[optop].typ = TK_ATOM;
+	  opstk[optop].op = makenil;
+	  optop++;
+	  postopreq = TRUE;
+	  break;
+	} else {
+	  CPtr this_term, prev_tail;
+	  char *charptr = token->value;
+	  if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+	    if (!get_more_chunk()) return(0) ;
+	    h = current_findall->top_of_chunk ;
+	  }
+	  this_term = h;
+	  cell(h) = makeint((int)*charptr); charptr++;
+	  h++;
+	  prev_tail = h;
+	  h++;
+	  size += 2;
+	  while (*charptr != 0) {
+	    if ((h+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
+	      if (!get_more_chunk()) return(0) ;
+	      h = current_findall->top_of_chunk ;
+	    }
+	    cell(prev_tail) = makelist(h);
+	    cell(h) = makeint((int)*charptr); charptr++;
+	    h++;
+	    prev_tail = h;
+	    h++;
+	    size += 2;
+	  }
+	  cell(prev_tail) = makenil;
+	  opstk[optop].op = makelist(this_term);
+	  opstk[optop].typ = TK_FUNC;
+	  optop++;
+	  postopreq = TRUE;
+	  break;
+	}
       case TK_EOF:
 		ctop_string(2,string_find("end_of_file",1));
 		ctop_int(3,0);
