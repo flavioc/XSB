@@ -142,7 +142,7 @@ to and loading them from a component.
 	  newExtTerm/1,
 	  immed_hasAttr/3, isa/2,
 	  cdf_id_fields/4 from cdf_init_cdf.
-:- import get_component_extensional/2 from cdf_components.
+:- import get_component_extensional/2 from cdf_comps_share.
 
 :- import cdf_flags/2,component_table_ext/3 from usermod.
 

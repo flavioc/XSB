@@ -38,13 +38,12 @@
 
 :- import cdf_flag/1, initial_cdf_flag/2 from usermod.
 
-:- import load_component/3 from cdf_components.
+:- import get_component_extensional/2,
+	  load_component/3 from cdf_comps_share.
 
 %%:- import cdf_error/2 from cdf_exceptions.
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
-%%	from cdf_xj.
-	from cdf_cdf.
-:- import get_component_extensional/2 	from cdf_components.
+	from cdf_xj.
 
 :- import '_$index'/3 from file_op.
 %:- import conset/2, conget/2 from gensym.
