@@ -3,13 +3,46 @@
 :- [cdftp_cdfsc].
 :- [altCDF].
 
-:- import allAttr/3, classHasAttr/3, hasAttr/3, 
+:- import allAttr/3, immed_classHasAttr/3, hasAttr/3, 
 	   isa/2, maxAttr/4, minAttr/4 from cdf_init_cdf.
 :- import cdf_id_fields/4, system_component/1,abolish_cdf_tables/0
 	    from cdf_init_cdf.
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import message/1 from standard.
 
+classify(Expr):- 
+	cputime(Start),
+	conset(classify,0),
+	classify_1(Expr),
+	cputime(End),
+	Tot is End - Start,
+	conget(classify,N),
+	message(['Cputime ',Tot,' for ',N,' Classes.']).
+
+classify_1(Expr):- 
+	isa_ext(X,cid('CDF Classes',cdf)),
+	classify(Expr,X).
+classify_1(_Expr).
+
+:- table classify/2.
+classify(Expr,Class):- 
+	abolish_cdf_tables,
+	coninc(classify),
+	cdf_id_fields(Class,cid,_C,Comp),
+	\+ system_component(Comp),
+	findall(Conj,cdf_to_ce(Class,Conj),CEList),
+	tp_writeln(ce(Class,CEList)),
+	preprocess([Class|CEList],CEForm),
+	subsumes(CEForm,Expr),
+	(\+ isa_ext(cid(_,_),Class) -> 
+	      writeln(classifying(Expr,Class))
+	    ; findall(NewClass,(isa_ext(cid(NewClass,S),Class),
+	                                 classify(Expr,cid(NewClass,S))),Subclasses),
+	       (Subclasses = []  -> 
+		   writeln(classifying(Expr,Class))
+		; true) ).
+
+%--------------------------------------------------
 descend_all:- 
 	cputime(Start),
 	conset(descend,0),

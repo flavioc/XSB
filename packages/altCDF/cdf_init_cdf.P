@@ -532,8 +532,13 @@ immed_hasAttr(SCid,Rid,TCid) :-
 	immed_hasAttr1(SCid,Rid,TCid).
 	
 immed_hasAttr1(SCid,Rid,TCid) :- 
+	immed_hasAttr2(SCid,Rid,TCid).
+immed_hasAttr1(SCid,Rid,TCid) :- 
+	immed_minAttr2(SCid,Rid,TCid,_).
+
+immed_hasAttr2(SCid,Rid,TCid) :-
 	hasAttr_ext(SCid,Rid,TCid).
-immed_hasAttr1(SCid,Rid,TCid) :-
+immed_hasAttr2(SCid,Rid,TCid) :-
 	hasAttr_int(SCid,Rid,TCid).
 
 :- comment(hasAttr/3, "@tt{hasAttr(SCid,Rid,TCid)} defines the
@@ -576,7 +581,7 @@ hasAttr1(SCid,Rid,TCid) :-
 	gens_good_isas(TCid),!,
    	hasAttr_23fix(SCid,Rid,TCid).
 hasAttr1(SCid,Rid,TCid) :-
-	immed_hasAttr(SCidAb,RidAb,TCidAb),
+	immed_hasAttr1(SCidAb,RidAb,TCidAb),
 	once(explosive_isa(SCid,SCidAb)),
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)).
@@ -593,7 +598,7 @@ hasAttr_12fix(SCid,Rid,TCid) :-
 hasAttr_12fix_sub(SCid,Rid,TCid) :-
 	isa(SCid,SCidP), %\+ cdf_root(SCidP),
 	isa(RidC,Rid),
-	immed_hasAttr(SCidP,RidC,TCidC),
+	immed_hasAttr1(SCidP,RidC,TCidC),
 	once(explosive_isa(TCidC,TCid)).
 
 % Succeeds if Term is maximally implicative for binding pattern,
@@ -619,7 +624,7 @@ hasAttr_1fix(SCid,Rid,TCid) :-
 :- table hasAttr_1fix_sub/3.
 hasAttr_1fix_sub(SCid,Rid,TCid):- 
 	table_isa(SCid,SCidP), 
-	immed_hasAttr(SCidP,RidC,TCidC),
+	immed_hasAttr1(SCidP,RidC,TCidC),
 	once(explosive_isa(RidC,Rid)),
 	once(explosive_isa(TCidC,TCid)).
 
@@ -643,7 +648,7 @@ hasAttr_23fix(SCid,Rid,TCid) :-
 hasAttr_23fix_sub(SCid,Rid,TCid):- 
 	isa(RidC,Rid),
 	isa(TCidC,TCid),
-	immed_hasAttr(SCidP,RidC,TCidC),
+	immed_hasAttr1(SCidP,RidC,TCidC),
 	once(explosive_isa(SCid,SCidP)). %\+ cdf_root(SCidP).
 
 not_max_implicative_hasAttr_23fix(Term,BindPat) :-
@@ -665,9 +670,14 @@ immed_minAttr(SCid,Rid,TCid,N) :-
 	apply_checks(query,minAttr_ext(SCid,Rid,TCid,N)),
 	immed_minAttr1(SCid,Rid,TCid,N).
 
-immed_minAttr1(SCid,Rid,TCid,N) :- 
-	minAttr_ext(SCid,Rid,TCid,N).
 immed_minAttr1(SCid,Rid,TCid,N) :-
+	immed_minAttr2(SCid,Rid,TCid,N).
+immed_minAttr1(SCid,Rid,TCid,1) :-
+	hasAttr_int(SCid,Rid,TCid).
+
+immed_minAttr2(SCid,Rid,TCid,N) :- 
+	minAttr_ext(SCid,Rid,TCid,N).
+immed_minAttr2(SCid,Rid,TCid,N) :-
 	minAttr_int(SCid,Rid,TCid,N).
 
 :- comment(minAttr/4, "@tt{minAttr(SCid,Rid,TCid,N)} defines the
@@ -712,7 +722,7 @@ minAttr1(SCid,Rid,TCid,N) :-
 	gens_good_isas(TCid),!,
    	minAttr_23fix(SCid,Rid,TCid,N).
 minAttr1(SCid,Rid,TCid,N) :-
-	immed_minAttr(SCidAb,RidAb,TCidAb,Nab),
+	immed_minAttr1(SCidAb,RidAb,TCidAb,Nab),
 	once(explosive_isa(SCid,SCidAb)),
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)),
@@ -737,7 +747,7 @@ minAttr_12fix(SCid,Rid,TCid,N) :-
 minAttr_12fix_sub(SCid,Rid,TCid,N) :-
 	isa(SCid,SCidP), %\+ cdf_root(SCidP),
 	isa(RidC,Rid),
-	immed_minAttr(SCidP,RidC,TCidC,M),
+	immed_minAttr1(SCidP,RidC,TCidC,M),
 	once(explosive_isa(TCidC,TCid)),
 	varLTE(N,M).
 
@@ -765,7 +775,7 @@ minAttr_1fix(SCid,Rid,TCid,N) :-
 :- table minAttr_1fix_sub/4.
 minAttr_1fix_sub(SCid,Rid,TCid,N):- 
 	table_isa(SCid,SCidP), 
-	immed_minAttr(SCidP,RidC,TCidC,M),
+	immed_minAttr1(SCidP,RidC,TCidC,M),
 	once(explosive_isa(RidC,Rid)),
 	once(explosive_isa(TCidC,TCid)),
 	varLTE(N,M).
@@ -792,7 +802,7 @@ minAttr_23fix(SCid,Rid,TCid,N) :-
 minAttr_23fix_sub(SCid,Rid,TCid,N):- 
 	isa(RidC,Rid),
 	isa(TCidC,TCid),
-	immed_minAttr(SCidP,RidC,TCidC,M),
+	immed_minAttr1(SCidP,RidC,TCidC,M),
 	once(explosive_isa(SCid,SCidP)),
 	varLTE(N,M).
 
@@ -844,7 +854,7 @@ classHasAttr1(SCid,Rid,TCid) :-
 	gens_good_isas(TCid),!,
    	classHasAttr_23fix(SCid,Rid,TCid).
 classHasAttr1(SCid,Rid,TCid) :-
-	immed_classHasAttr(SCid,RidAb,TCidAb),
+	immed_classHasAttr1(SCid,RidAb,TCidAb),
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)).
 
@@ -859,7 +869,7 @@ classHasAttr_12fix(SCid,Rid,TCid) :-
 :- table classHasAttr_12fix_sub/3.
 classHasAttr_12fix_sub(SCid,Rid,TCid) :-
 	isa(RidC,Rid),
-	immed_classHasAttr(SCid,RidC,TCidC),
+	immed_classHasAttr1(SCid,RidC,TCidC),
 	once(explosive_isa(TCidC,TCid)).
 
 % Succeeds if Term is maximally implicative for binding pattern,
@@ -884,7 +894,7 @@ classHasAttr_1fix(SCid,Rid,TCid) :-
 
 :- table classHasAttr_1fix_sub/3.
 classHasAttr_1fix_sub(SCid,Rid,TCid):- 
-	immed_classHasAttr(SCid,RidC,TCidC),
+	immed_classHasAttr1(SCid,RidC,TCidC),
 	once(explosive_isa(RidC,Rid)),
 	once(explosive_isa(TCidC,TCid)).
 
@@ -909,7 +919,7 @@ classHasAttr_23fix(SCid,Rid,TCid) :-
 classHasAttr_23fix_sub(SCid,Rid,TCid):- 
 	isa(RidC,Rid),
 	isa(TCidC,TCid),
-	immed_classHasAttr(SCid,RidC,TCidC).
+	immed_classHasAttr1(SCid,RidC,TCidC).
 
 not_max_implicative_classHasAttr_23fix(Term,BindPat) :-
 	BindPat = rln(SCid,RidO,TCidO),
@@ -959,7 +969,7 @@ allAttr1(SCid,Rid,TCid) :-
 	gens_good_isas(TCid),!,
    	allAttr_23fix(SCid,Rid,TCid).
 allAttr1(SCid,Rid,TCid) :-
-	immed_allAttr(SCidAb,RidAb,TCidAb),
+	immed_allAttr1(SCidAb,RidAb,TCidAb),
 	once(explosive_isa(SCid,SCidAb)),
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)).
@@ -975,7 +985,7 @@ allAttr_12fix(SCid,Rid,TCid) :-
 allAttr_12fix_sub(SCid,Rid,TCid) :-
 	isa(SCid,SCidP), %\+ cdf_root(SCidP),
 	isa(Rid,RidC),
-	immed_allAttr(SCidP,RidC,TCidC),
+	immed_allAttr1(SCidP,RidC,TCidC),
 	once(explosive_isa(TCidC,TCid)).
 
 % Succeeds if Term is maximally implicative for binding pattern,
@@ -1001,7 +1011,7 @@ allAttr_1fix(SCid,Rid,TCid) :-
 :- table allAttr_1fix_sub/3.
 allAttr_1fix_sub(SCid,Rid,TCid):- 
 	table_isa(SCid,SCidP), %\+ cdf_root(SCidP),
-	immed_allAttr(SCidP,RidC,TCidC),
+	immed_allAttr1(SCidP,RidC,TCidC),
 	once(explosive_isa(Rid,RidC)),
 	once(explosive_isa(TCidC,TCid)).
 
@@ -1025,7 +1035,7 @@ allAttr_23fix(SCid,Rid,TCid) :-
 allAttr_23fix_sub(SCid,Rid,TCid):- 
 	isa(Rid,RidC),
 	isa(TCidC,TCid),
-	immed_allAttr(SCidP,RidC,TCidC),
+	immed_allAttr1(SCidP,RidC,TCidC),
 	once(explosive_isa(SCid,SCidP)). %\+ cdf_root(SCidP).
 
 not_max_implicative_allAttr_23fix(Term,BindPat) :-
@@ -1076,7 +1086,7 @@ maxAttr1(SCid,Rid,TCid,N) :-
 	gens_good_isas(TCid),!,
    	maxAttr_23fix(SCid,Rid,TCid,N).
 maxAttr1(SCid,Rid,TCid,N) :-
-	immed_maxAttr(SCidAb,RidAb,TCidAb,M),
+	immed_maxAttr1(SCidAb,RidAb,TCidAb,M),
 	once(explosive_isa(SCid,SCidAb)),
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)),
@@ -1093,7 +1103,7 @@ maxAttr_12fix(SCid,Rid,TCid,N) :-
 maxAttr_12fix_sub(SCid,Rid,TCid,N) :-
 	isa(SCid,SCidP), 
 	isa(Rid,RidC),
-	immed_maxAttr(SCidP,RidC,TCidC,M),
+	immed_maxAttr1(SCidP,RidC,TCidC,M),
 	once(explosive_isa(TCidC,TCid)),
 	varLTE(M,N).
 
@@ -1121,7 +1131,7 @@ maxAttr_1fix(SCid,Rid,TCid,N) :-
 :- table maxAttr_1fix_sub/4.
 maxAttr_1fix_sub(SCid,Rid,TCid,N):- 
 	table_isa(SCid,SCidP), 
-	immed_maxAttr(SCidP,RidC,TCidC,M),
+	immed_maxAttr1(SCidP,RidC,TCidC,M),
 	once(explosive_isa(Rid,RidC)),
 	once(explosive_isa(TCidC,TCid)),
 	varLTE(M,N).
@@ -1148,7 +1158,7 @@ maxAttr_23fix(SCid,Rid,TCid,N) :-
 maxAttr_23fix_sub(SCid,Rid,TCid,N):- 
 	isa(Rid,RidC),
 	isa(TCidC,TCid),
-	immed_maxAttr(SCidP,RidC,TCidC,M),
+	immed_maxAttr1(SCidP,RidC,TCidC,M),
 	once(explosive_isa(SCid,SCidP)),
 	varLTE(M,N).
 

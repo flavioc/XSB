@@ -271,8 +271,8 @@ check_ind_types_1([Id|T],[List|LT],Context,Term):-
 	(var(Id) -> 
 	    true
 	  ; 
-	    (List == int -> 
-	         cdfCheckInteger(Context,Id,Term)
+	    (List == posint -> 
+	         cdfCheckPosInt(Context,Id,Term)
 	       ; 
 	         (cdf_id_fields(Id,F,Nid,Src),memberchk(F,List) -> 
 	             check_arg_consist(Src,Nid,F,Id,Context,Term)
@@ -284,7 +284,7 @@ check_ind_types_1([Id|T],[List|LT],Context,Term):-
 % TLS: check gives an error here, because min and max will give an arithmetic
 % exception if not of the proper type.
 cdfCheckInteger(Context,Id,Term):- 
-	(integer(Id) -> 
+	(integer(Id),Id > 0 -> 
 	    true 
 	  ;
 	    cdf_error(Context,[Id,' in ',Term,' is not of proper type.']) ).
@@ -348,18 +348,18 @@ type_table(allAttr_int(A,B,C),check_ind_types(_,allAttr_int(A,B,C),
 				[ [cid,oid], [rid], [cid,oid] ] ) ).
 
 type_table(minAttr(A,B,C,N),check_ind_types(_,minAttr(A,B,C,N),
-				[ [cid,oid], [rid], [cid,oid] ] ,int) ).
+				[ [cid,oid], [rid], [cid,oid] ] ,posint) ).
 type_table(minAttr_ext(A,B,C,N),check_ind_types(_,minAttr_ext(A,B,C,N),
-				[ [cid,oid], [rid], [cid,oid], int ] ) ).
+				[ [cid,oid], [rid], [cid,oid], posint ] ) ).
 type_table(minAttr_int(A,B,C,N),check_ind_types(_,minAttr_int(A,B,C,N),
-				[ [cid,oid], [rid], [cid,oid], int ] ) ).
+				[ [cid,oid], [rid], [cid,oid], posint ] ) ).
 
 type_table(maxAttr(A,B,C,N),check_ind_types(_,maxAttr(A,B,C,N),
-				[ [cid,oid], [rid], [cid,oid], int] ) ).
+				[ [cid,oid], [rid], [cid,oid], posint] ) ).
 type_table(maxAttr_ext(A,B,C,N),check_ind_types(_,maxAttr_ext(A,B,C,N),
-				[ [cid,oid], [rid], [cid,oid], int ] ) ).
+				[ [cid,oid], [rid], [cid,oid], posint ] ) ).
 type_table(maxAttr_int(A,B,C,N),check_ind_types(_,maxAttr_int(A,B,C,N),
-				[ [cid,oid], [rid], [cid,oid], int ] ) ).
+				[ [cid,oid], [rid], [cid,oid], posint ] ) ).
 
 type_table(classHasAttr(A,B,C),check_ind_types(_,classHasAttr(A,B,C),
 			[ [cid,rid,crid], [crid,crrid,crcrid], [cid,oid] ] ) ).

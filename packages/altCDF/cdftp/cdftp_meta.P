@@ -5,8 +5,17 @@
 :- [cdftp_getObj].
 :- [cdftp_preproc].
 
+:- dynamic debugging/1.
 
-debugging(off).
+:- set_debug_off.
+
+set_debug_off:- 
+	retractall(debugging(_)),
+	assert(debugging(off)).
+
+set_debug_on:- 
+	retractall(debugging(_)),
+	assert(debugging(on)).
 
 %nonDetType(acyclic).
 nonDetType(all).
@@ -25,7 +34,7 @@ sat(Expr,AbdOut,ConstOut):-
 	meta(Expr,x,abd([],[x]),AbdOut,[],ConstOut),
 	checkFinalConstraints(ConstOut,AbdOut).
 
-subsumes(C1,C2):- \+ sat(C1,not(C2)).
+subsumes(Big,Little):- \+ sat((Little,not(Big))).
 
 meta(','(Class,B),Elt,AbdIn,AbdOut,ConstIn,ConstOut):- !, 
 	meta(Class,Elt,AbdIn,AbdMid,ConstIn,ConstMid),
