@@ -1,0 +1,204 @@
+\chapter{XSB-Database Interface} \label{db_interface}
+%====================================================
+
+\begin{center}
+{\Large {\bf By Saikat Mukherjee and Michael Kifer }}
+\end{center}
+
+\section{Introduction}
+%=====================
+
+The XSB-DB interface is a package that allows XSB users to access
+databases through various drivers. Using this interface, information
+in different DBMSs can be accessed by SQL queries. The interface defines
+Prolog predicates which makes it easy to connect to databases, 
+query them, and disconnect from the databases. Central to the 
+concept of a connection to a database is the notion of a \emph{handle}.
+A connection handle describes a particular connection to a database.
+Similar to a connection handle is the notion of a query handle which
+describes a particular query statement. As a consequence of the handles,
+it is possible to open multiple database connections (to the same or
+different databases) and keep alive multiple queries (again from the
+same or different connections). The interface also supports dynamic loading of
+drivers. As a result, it is possible to query databases using different drivers
+concurrently.
+
+We use the {\tt student} database as our example to illustrate 
+the usage of XSB-DB interface in this manual. The schema of the
+student database contains three columns viz. the student name, 
+the student id, and the name of the advisor of the student.
+
+\section{Using the Interface}
+%========================================
+
+The XSB-DB package has to be first loaded before using any of the
+predicates. This is done by the call:
+
+\begin{verbatim}
+| ?- [dbdrivers].
+\end{verbatim}
+
+Next, the driver to be used for connecting to the database has to 
+be loaded. Currently, the interface has support for a native MySQL driver
+(using the MySQL C API), and an ODBC driver. For example, to load 
+the ODBC driver call:
+
+\begin{verbatim}
+| ?- load_driver('odbc').
+\end{verbatim}
+
+Similarly, to load the mysql driver call:
+
+\begin{verbatim}
+| ?- load_driver('mysql').
+\end{verbatim}
+
+\subsection{Connecting to and Disconnecting from Databases}
+%=================================================
+
+There are two predicates for connecting to databases. 
+
+\begin{verbatim}
+| ?- db_connect(Handle, Driver, DSN, User, Password).
+\end{verbatim}
+
+This predicate assumes that an entry for a data source name (DSN) exists
+in the {\tt ODBC.INI} file. The {\tt Handle} is the handle name used for 
+the connection. The {\tt Driver} is the driver being used for the 
+connection.
+The {\tt User} and {\tt Password} are the user name and password 
+being used for the connection. 
+To connect to the data source mydb using the user name xsb and password xsb
+with the odbc driver, the call is as follows: 
+
+\begin{verbatim}
+| ?- db_connect(ha, odbc, mydb, xsb, xsb).
+\end{verbatim}
+
+where ha is the handle name for the connection.
+
+\begin{verbatim}
+| ?- db_connect(Handle, Driver, Server, Database, User, Password).
+\end{verbatim}
+
+This predicate is used for a direct connection to a database i.e.
+without the use of any dsn. The {\tt Handle}, {\tt Driver}, {\tt User},
+and {\tt Password} are the same as before. The {\tt Server} and 
+{\tt Database} arguments specify the server and database to connect to.
+For example, for a connection to a database called test in the server
+wolfe with the user name xsb, password xsb, and using the mysql
+driver, the call is:
+
+\begin{verbatim}
+| ?- db_connect(ha, mysql, wolfe, test, xsb, xsb).
+\end{verbatim}
+
+where ha is the handle name for the connection.
+
+If the connection is successfully made, the predicate invocation will
+succeed.  This step is necessary before anything can be done with the
+data sources since it gives XSB the opportunity to initialize system
+resources for the session.
+
+To close a database connection use:
+
+\begin{verbatim}
+| ?- db_disconnect(Handle).
+\end{verbatim}
+
+where handle is the handle name for the connection. For example, 
+to close the connection to above mysql database call:
+
+\begin{verbatim}
+| ?- db_disconnect(ha).
+\end{verbatim}
+
+and XSB will give all the resources it allocated for this session back
+to the system.
+
+
+\subsection{Querying the database}
+%=====================================
+
+The interface supports two types of querying. In direct querying, the
+query statement is not prepared while in prepared querying the query
+statement is prepared before being executed. The results from
+both types of querying are retrieved tuple at a time.
+Direct querying is done by the predicate:
+
+\begin{verbatim}
+| ?- db_sql(ConnectionHandle, QueryHandle, SQLQueryList, ReturnList).
+\end{verbatim}
+
+ConnectionHandle is the name of the handle used for the database connection.
+QueryHandle is the name of the handle for this particular query. 
+Currently, the query handle is being used only for prepared queries. 
+However, in future versions, the query handle can be used in direct
+queries to retrieve arbitrary tuples from a result set using cursors.
+Also, it will be possible to combine arbitrary tuples from different 
+queries to the same database using the query handle.
+The SQLQueryList is a list of terms which is used to build the SQL query.
+The terms in this list are ground atoms. ReturnList is a list of 
+variables each of which correspond to a return value in the query.
+It is upto the user to specify the correct number of return variables 
+corresponding to the query.
+For example, a query on the student database to select all the students
+for a given advisor is accomplished by the call:
+
+\begin{verbatim}
+| ?- X = adv, db_sql(ha, qa, ['select T.name from student T where 
+T.advisor = ', X], [P]), fail.
+\end{verbatim}
+
+Observe that the query list is composed of the sql string and a ground value
+for the advisor. The return list is made of one variable corresponding to
+the student name. The failure drive loop retrieves all the tuples.
+
+Preparing a  query is done by the call to the predicate:
+
+\begin{verbatim}
+| ?- db_prepare(ConnectionHandle, QueryHandle, SQLQueryList).
+\end{verbatim}
+
+As before, ConnectionHandle and QueryHandle specify the handles for
+the connection and the query. The SQLQueryList is a list of terms which
+build up the query string. The placeholder `?' is used for values which 
+have to be bound during the execution of the statement.
+For example, to prepare a query for selecting the advisor name for a student
+name using our student database:
+
+\begin{verbatim}
+| ?- db_prepare(ha, qa, ['select T.advisor from student T where T.name = ?']).
+\end{verbatim}
+
+A prepared statement is executed using the predicate:
+
+\begin{verbatim}
+| ?- db_prepare_execute(QueryHandle, BindList, ReturnList).
+\end{verbatim}
+
+The BindList contains the ground values corresponding to the `?' in
+the prepared statement. The ReturnList is a list of variables for
+each argument in a tuple of the result set.
+
+For direct querying, the statement handle is closed automatically when
+all the tuples in the result set have been retrieved. In order to explicitly
+close a statement handle, and free all the resources associated with
+the handle, a call is made to the predicate:
+
+\begin{verbatim}
+| ?- db_statement_close(QueryHandle).
+\end{verbatim}
+
+where QueryHandle is the query handle for the statement to be closed.
+
+\subsection{Error Handling}
+%============================
+
+Each predicate in the XSB-DB interface throws an exception with the functor name
+{\tt xsb\_error} which contains a single term with the error message.
+It is upto the user to catch this exception
+and proceed with error handling. This is done by the throw-catch error
+handling mechanism in XSB.
+
+
