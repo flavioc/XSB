@@ -45,7 +45,7 @@ globalvar(Name,Var) :-
 		( retract('$globalvarindex'(MaxIndex)) ->
 			Index is MaxIndex + 1
 		;
-			Index = 0
+			Index = 1  %% 0 reserved for dbclause
 		),
 		assert('$globalvarindex'(Index)),
 		assert('$globalvarmap'(Name,Index))
