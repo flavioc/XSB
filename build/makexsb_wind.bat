@@ -3,9 +3,16 @@ REM   Script for compiling XSB under Windows using VC++
 
 del ..\emu\configs\config.h
 del ..\emu\debugs\debug.h
-copy ..\config\x86-pc-windows\MS_VC_Mfile.mak  ..\emu
-copy ..\config\x86-pc-windows\config.h  ..\emu\configs
-copy ..\config\x86-pc-windows\debug.h   ..\emu\debugs
+
+set XSBCONFIGdir=..\config\x86-pc-windows
+
+copy %XSBCONFIGdir%\MS_VC_Mfile.mak  ..\emu
+copy %XSBCONFIGdir%\config.h  ..\emu\configs
+copy %XSBCONFIGdir%\debug.h   ..\emu\debugs
+
+mkdir %XSBCONFIGdir%\saved.o
+mkdir %XSBCONFIGdir%\bin
+mkdir %XSBCONFIGdir%\lib
 
 
 @cd ..\emu
