@@ -882,21 +882,22 @@ length([_|R], N) :- length(R, N1), N is N1 + 1.
 % add a new level for abort
 push_abort_cutpoint :-
 	'_$savecp'(Cp),
-	asserta('_$abort_cutpoint'(Cp)).
+	conpsc('_$abort_cutpoint', Psc), 
+	psc_prop(Psc, OldCp),
+	asserta('_$abort_cutpoint'(OldCp)),
+	conset('_$abort_cutpoint',Cp).
 
 % pop to previous level for abort.
 pop_abort_cutpoint :-
-	retract('_$abort_cutpoint'(_)),
+	retract('_$abort_cutpoint'(Cp)),
+	conset('_$abort_cutpoint',Cp),
 	!.
 
 %  abort/0
 abort :- 
-	('_$abort_cutpoint'(CP)
-	 -> 	true
-	 ;	conpsc('_$abort_cutpoint', PSC), 
-		psc_prop(PSC, CP)
-	),
-	'_$cutto'(CP), 
+	conpsc('_$abort_cutpoint', Psc), 
+	psc_prop(Psc, Cp),
+	'_$cutto'(Cp), 
         close_open_tables, fail.
 
 
