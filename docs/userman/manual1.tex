@@ -55,7 +55,7 @@
 \newcommand{\comment}[1]{}
 \newcommand{\ourprolog}{XSB}
 \newcommand{\smallourprolog}{xsb}
-\newcommand{\version}{Version 2.5}
+\newcommand{\version}{Version 2.6}
 \newcommand{\LRD}{LRD-stratified}
 
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
@@ -84,19 +84,19 @@
 
 % conditional pdf output stuff
 % ----------------------------
-\newif\ifpdf
-\ifx\pdfoutput\undefined
-   \pdffalse
-\else
-   \pdfoutput=1
-   \pdftrue
-\fi
-
-\ifpdf
-    \newcommand{\xsblogo}{\epsfbox{xsb-logo.pdf}}
-\else
+%\newif\ifpdf
+%\ifx\pdfoutput\undefined
+%   \pdffalse
+%\else
+%   \pdfoutput=1
+%   \pdftrue
+%\fi
+%
+%\ifpdf
+%    \newcommand{\xsblogo}{\epsfbox{xsb-logo.pdf}}
+%\else
     \newcommand{\xsblogo}{\epsfbox{xsb-logo.eps}}
-\fi
+%\fi
 
 
 %------------------------------------------------------------

@@ -123,14 +123,15 @@ specified.  A full listing can be obtained by typing {\tt
 
   If XSB is being built on a machine running Windows in which Cygwin
   is installed, Cygwin and Windows are treated as separate operating
-  systems, as their APIs are completely different.  The configure
-  script will attempt to use {\tt gcc} and other Unix facilities, and
-  therefore will compile the system under Cygwin.  If this behavior is
-  not desired, the option {\tt --with-wind} (equivalently, {\tt
-  --with-os=wind}) uses a Window compiler and API.  If a user wants to
-  ensure the Cygwin compiler is used (say after a previous
-  configuration for Windows), the option {\tt -without-wind} can be
-  used.  See Section~\ref{quick:DOS} for more details.
+  systems, as their APIs are completely different.  If no previous
+  configuration has been made, the configure script will attempt to
+  use {\tt gcc} and other Unix facilities, and therefore will compile
+  the system under Cygwin.  If this behavior is not desired, the
+  option {\tt --with-wind} (equivalently, {\tt --with-os=wind}) uses a
+  Window compiler and API.  If a user wants to ensure the Cygwin
+  compiler is used (say after a previous configuration for Windows),
+  the option {\tt -without-wind} can be used.  See
+  Section~\ref{quick:DOS} for more details.
 
 \index{cc} \index{gcc} \index{acc}  
 \item[Choice of the C Compiler and Other options] \label{cc} The {\tt
