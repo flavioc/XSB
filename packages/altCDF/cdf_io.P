@@ -5,10 +5,10 @@
 	load_intensional_rules/1,
 	merge_intensional_rules/0.
 
-:- import isa_ext/2, hasattr_ext/3, strel_ext/3, allattr_ext/3 
+:- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 
 		 from usermod.
 
-:- import isa_int/2, hasattr_int/3, strel_int/3, allattr_int/3
+:- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3
 		 from usermod.
 
 :- import component_table_int/3 from usermod.
@@ -51,7 +51,7 @@ dump_extensional_facts_1(Dir) :-
 	cdf_fix_dir(Dir,DirS),
   	concat_atom([DirS,'cdf_extensional.P'],File),
 	tell(File),
-	i2ie, hasattr2hasattre, strel2strele, allattr2allattre,
+	i2ie, hasAttr2hasAttre, strel2strele, allAttr2allAttre,
 	told.
 
 throw_cdf_writable(Dir):-
@@ -73,15 +73,15 @@ i2ie :-
 		SubClasses),
 	sort_and_write_terms(SubClasses).
 
-hasattr2hasattre :-
-	findall(hasattr_ext(NSCid,NRCid,NTCid),
-		hasattr_ext(NSCid,NRCid,NTCid),
+hasAttr2hasAttre :-
+	findall(hasAttr_ext(NSCid,NRCid,NTCid),
+		hasAttr_ext(NSCid,NRCid,NTCid),
 		Relationships),
 	sort_and_write_terms(Relationships).
 	
 strel2strele :-
-	findall(strel_ext(NSCid,NRCid,NTCid),
-		strel_ext(NSCid,NRCid,NTCid),
+	findall(classHasAttr_ext(NSCid,NRCid,NTCid),
+		classHasAttr_ext(NSCid,NRCid,NTCid),
 		Strels),
 	sort_and_write_terms(Strels).
 
@@ -146,17 +146,17 @@ merge_intensional_rules :-
 	 ;
 	 retractall(isa_int(_,_)),
 
-	 hasattr_int(SCid,RCid,TCid),  \+hasattr_ext(SCid,RCid,TCid),
-	 asserta(hasattr_ext(SCid,RCid,TCid)),
+	 hasAttr_int(SCid,RCid,TCid),  \+hasAttr_ext(SCid,RCid,TCid),
+	 asserta(hasAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
-	 retractall(hasattr_int(_,_,_)),
+	 retractall(hasAttr_int(_,_,_)),
 
-	 strel_int(SCid,RCid,TCid), \+strel_ext(SCid,RCid,TCid),
-	 asserta(strel_ext(SCid,RCid,TCid)),
+	 classHasAttr_int(SCid,RCid,TCid), \+classHasAttr_ext(SCid,RCid,TCid),
+	 asserta(classHasAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
-	 retractall(strel_int(_,_,_)),
+	 retractall(classHasAttr_int(_,_,_)),
 
 	 allattr_int(SCid,RCid,TCid), \+allattr_ext(SCid,RCid,TCid),
 	 asserta(allattr_ext(SCid,RCid,TCid)),
