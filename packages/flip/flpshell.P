@@ -95,24 +95,34 @@ conv([C|Cs],Name) :-
 conv(X,X).
 
 
-
 run(File) :- 
-	conv(File, FileN),
-	gen_code_verbose(FileN, noforce),
+	parse_internal(File, noforce, Module),
 	nl, writeln('Executing ...'),
-	consult(FileN, [optimize,auto_table,spec_repr]).
+	consult(Module, [optimize,auto_table,spec_repr]).
 
 load(File) :- 
 	conv(File,FileN),
 	flip_search_module(FileN, Module, 'flp'),
+        fmt_write_string(Msg, '*** FLIP: Loading module: %s.flp', f(Module)),
+	writeln(Msg),
+	fmt_write_string(ModDotO, '%s.O', f(Module)),
+	( machine_file_exists(ModDotO) 
+	  -> true
+	   ; fmt_write_string(Msg2,
+			      '+++ Error: %s.O: file doesn''t exist.',
+			      f(Module)),
+	     writeln(Msg2),
+	     fail
+	),
 	consult(Module,[optimize,auto_table,spec_repr]).
 
 
 
-%%% gen_code(+InFile, +Force): generate code for InFile
-%%% If Force=force, then force compilation, even if the .P file is newer
-gen_code(InFile, Force) :-
-	flip_search_module(InFile, Module, 'flp'),
+%%% gen_code(+Module, +Force): generate code for InFile
+%%% Module: name of module without the extension; must be atom.
+%%% If Force=force, then force compilation, even if Module.P is newer
+%%% than Module.flp
+gen_code(Module, Force) :-
 	%% check if .P is older
 	( Force \= force
 	 -> flip_need_gencode(Module)
@@ -134,12 +144,20 @@ gen_code(InFile, Force) :-
 	close_input.
 
 
-%% If .P is younger than .flp, then don't generate code.
-gen_code_verbose(InFile, Force) :-
-        fmt_write_string(Msg, '*** FLIP: Compiling module: %s.flp', f(InFile)),
+parse(InFile) :- parse_internal(InFile, force, _).
+
+%% Parse and write .P file even if .P is newer.
+%% +InFile: must be atom or ""-string.
+%% +Force: if = 'force' then generate code even
+%%        if InFile.P is younger than InFile.flp
+%% -Module: returns rectified module name as atom (without extension)
+parse_internal(InFile, Force, Module) :-
+	conv(InFile, FileAtom),
+	flip_search_module(FileAtom, Module, 'flp'),
+        fmt_write_string(Msg, '*** FLIP: Compiling module: %s.flp', f(Module)),
 	write(Msg),
 	cputime(T0),
-	gen_code(InFile, Force),
+	gen_code(Module, Force),
 	cputime(T1),
 	T is T1-T0,
 	writeln(' done.'),
@@ -148,13 +166,10 @@ gen_code_verbose(InFile, Force) :-
 	write('*** CPU time used: '), write(T), writeln(' seconds.'),
 	!.
 
-gen_code_verbose(_,_) :- 
+parse_internal(InFile, _, Module) :- 
+	conv(InFile, FileAtom),
+	flip_search_module(FileAtom, Module, 'flp'),
         nl, writeln('*** Compiled module already exists.').
-
-%% parse and write .P file even if .P is newer.
-parse(InFile) :- 
-	conv(InFile, FNatom),
-	gen_code_verbose(FNatom, force).
 
 
 comp_all :-
@@ -264,10 +279,11 @@ print_all(Gs,Match) :-
 	   sort(L,L1),
 	   nl, write_matches(L1), 
 	   length(L1,N),
-	   ( N=0 -> write('no! ') ; write('yes! ') ), 
+	   ( N=0 -> writeln('no') ; writeln('yes') ), 
 	   write(N)
 	;  cputime(T1), T is T1-T0,
-	   nl, write('no! 0')
+	   nl, writeln('no'),
+	   write('0')
 	),
 	%% fmt_write_string(Msg, ' solutions in %f seconds on ', f(T)),
 	%% write(Msg),

@@ -30,5 +30,5 @@
 :- import bootstrap_package/2, package_configuration/2 from packaging.
 
 :- bootstrap_package('flip', flip),
-   assert(package_configuration(version(flip), '1.5 of 1998/10/22')),
+   assert(package_configuration(version(flip), '1.5.1 of 1998/11/14')),
    [flpshell].
