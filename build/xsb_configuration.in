@@ -34,7 +34,7 @@
 
 :- import stat_flag/2, intern_string/2, slash/1
    from machine.
-:- import fmt_write_string/3, file_read_line_atom/3
+:- import fmt_write_string/3
    from file_io.
 
 windows_os :- fail.
@@ -56,17 +56,7 @@ xsb_configuration(perl_libs, '@perl_libs@').
 %% Stuff to be included with -I and -L options in .H files
 xsb_configuration(libwww_support, '@libwww_support@').
 xsb_configuration(libwww_ccflags, '@libwww_ccflags@').
-%%xsb_configuration(libwww_ldflags, '@libwww_ldflags@').
-%% Hack to sidestep xsb's limitation on the size of compiled atoms
-xsb_configuration(libwww_ldflags, X) :-
-	xsb_configuration(config_dir, ConfigDir),
-	slash(Slash),
-	fmt_write_string(Ldflags_file,
-	    	    	 '%s%slibwww_ldflags', args(ConfigDir, Slash)),
-        file_open(Ldflags_file, r, IOport),
-	file_read_line_atom(IOport,Y,_),
-	substring(Y,0,-1,X), % chop off the \n char
-	file_close(IOport).
+xsb_configuration(libwww_ldflags, '@libwww_ldflags@').
 
 /* Java compiler */
 xsb_configuration(javac, '@javac@').

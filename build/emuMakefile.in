@@ -65,8 +65,6 @@ emudir=$(srcdir)/emu
 # where the object code goes
 arch_config_objlibdir=$(arch_config_prefix)/saved.o
 
-emumake_goal=@emumake_goal@
-
 # Passed in from the top Makefile
 EXECUTABLE=xsb
 

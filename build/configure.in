@@ -1196,10 +1196,6 @@ echo ""
 echo ""
 ) | tee Installation_summary
      
-# hack to sidestep XSB limitation of the size of compiled atoms
-if test -n "$libwww_ldflags"; then
-   echo $libwww_ldflags > ${arch_config_prefix}/libwww_ldflags
-fi
 
 
 # Test if directories exist

@@ -43,8 +43,7 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
     write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
     writeln(':- export do_libwww_fetch_url___/3, do_libwww_form_request___/3.'),
-    fmt_write('%%:- ldoption('' %s'').', arg(LoaderFlags)), writeln(''),
-    fmt_write(':- ldoption('' -L/home/users/kifer/libwww/lib -lwwwxml -lxmltok -lwwwinit -lwwwapp -lwwwhtml -lwwwtelnet -lwwwnews -lwwwhttp -lwwwmime -lwwwgopher -lwwwftp -lwwwfile -lwwwdir -lwwwcache -lwwwstream -lwwwmux -lwwwtrans -lwwwcore -lwwwutils '').', _),
+    fmt_write(':- ldoption('' %s'').', arg(LoaderFlags)), writeln(''),
     told.
     
 
