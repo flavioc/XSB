@@ -33,8 +33,7 @@
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import file_read/3, vv/2 from xsb_read.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import call_expose/1, goal_cut_trans/3,
-          push_abort_cutpoint/0, pop_abort_cutpoint/0,
+:- import call_expose/1, goal_cut_trans/3, catch/3,
 	  is_most_general_term/1, (table)/1, repeat/0,
 	  (import)/1 
      from standard.
@@ -42,7 +41,6 @@
           term_psc/2, conname/2, stat_flag/2, stat_set_flag/2, 
 	  trimcore/0, intern_string/2, slash/1
    from machine.
-:- import set_inthandler/2 from loader.
 :- import file_get/2, file_flush/2, fmt_write_string/3, print_file_contents/2
    from file_io.
 :- import get_calls/3, get_returns/3, abolish_all_tables/0,
@@ -57,3 +55,5 @@
 :- import init_smodels/1, a_stable_model/0, print_current_stable_model/0,
 	in_all_stable_models/2, set_query_true/1
         from smodelsint.
+
+:- import retractall/1 from assert.

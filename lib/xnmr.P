@@ -42,23 +42,18 @@
 :- nmr.
 
 nmr :-
-        set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
         version_message,
         prompt('nmr| ?- ',[]),
         prompt(' ? ',[],'_$more_prompt'(_)),
         prompt(' ? ',[],'_$debug_prompt'(_)),
         fail.
 nmr :-
-	push_abort_cutpoint,
+	retractall('$$exception_ball'(_)),
 	repeat,
-	pop_abort_cutpoint,
-	push_abort_cutpoint, % reset abort cutpoint
-	nmr1,	% Protect varible state, so fail to this point
-		% doesnt require untrailing (when aborting or
-		% segfault handling)
-	pop_abort_cutpoint.  % reset for caller
+	catch(nmr1(_),Ball,default_error_handler(Ball)),
+	fail.
 
-nmr1 :-
+nmr1(_) :-
 	repeat,
 	trimcore,
 	stat_set_flag(HIDE_STATE, 0), %% hide call interceptions.
