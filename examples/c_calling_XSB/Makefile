@@ -34,16 +34,15 @@ arch_dir=$(HOME)/XSB/XSB/config/$(ARCH)
 
 CC=gcc
 CFLAGS= -O4 -ansi -pedantic -Wall
+# for debug:
 #CFLAGS= -ansi -pedantic -Wall -g
 LDFLAGS= -lm -ldl -Wl,-export-dynamic
-# For Soraris use:
+# For Solaris use:
 #LDFLAGS=  -lsocket -lm -lnsl -ldl -Wl,-export-dynamic
 
 ## DON'T EDIT BELOW THIS LINE
 ############################################################################
 
-# Where to install XSB binaries
-bindir=$(arch_dir)/bin
 # where the object code goes
 arch_config_objlibdir=$(arch_dir)/saved.o
 
@@ -55,20 +54,20 @@ SHELL=/bin/sh
 
 
 test1: cmain.o
-	gcc -o $(bindir)/xsbtest1 $(xsbmodule) cmain.o $(LDFLAGS)
+	gcc -o mytest1 $(xsbmodule) cmain.o $(LDFLAGS)
 	@echo ""
 	@echo "***************************************************"
 	@echo "The executable is in:"
-	@echo "     $(bindir)/xsbtest1"
+	@echo "     ./mytest1"
 	@echo ""
 	@echo ""
 
 test2: cmain2.o
-	gcc -o $(bindir)/xsbtest2 $(xsbmodule) cmain2.o $(LDFLAGS)
+	gcc -o mytest2 $(xsbmodule) cmain2.o $(LDFLAGS)
 	@echo ""
 	@echo "***************************************************"
 	@echo "The executable is in:"
-	@echo "     $(bindir)/xsbtest2"
+	@echo "     ./mytest2"
 	@echo ""
 	@echo ""
 

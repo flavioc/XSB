@@ -32,7 +32,7 @@ wf_examples	Examples for testing wfs.P
 		It is based on the XOLDTNF algorithm, which can be 
 		exponential (Chen-Warren IJCSLP'92).
 
-FOREIGN LANGUAGE EXAMPLES:
+FOREIGN LANGUAGE EXAMPLES (in XSB_calling_c):
 --------------------------
 hello		Outputs "hello XSB world".
 
@@ -55,3 +55,8 @@ file_expand	Expands the initial ~ of a Unix filename and returns the
 			F = /u15/sr/kostis/research;
 
 			no
+
+FOREIGN LANGUAGE EXAMPLES (in c_calling_XSB):
+---------------------------------------------
+
+Shows how one can submit queries to XSB from a C program.
