@@ -87,7 +87,7 @@ compile(Modname, Basename, Options, ExportList) :-
 	;   time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
 	),
 	!,
-	close_ti_file(TIFile),
+%	close_ti_file(TIFile),
 	retractall(current_compiled_module(_)),
 	tell(OldFile).
 
@@ -258,11 +258,13 @@ ti_transform(PredBlks, TIPredBlks, TIFile, SymTab) :-
 	; true
 	).
 
+/* TLS: this just erases the file created by tidump 
 close_ti_file(TIFile) :-
 	( option(ti_dump) ->
 		telling(F), tell(TIFile), told, tell(F)
 	; true
 	).
+*/
 
 compile_pred_block([], PilCode-PilCode, NCin, NCin).
 compile_pred_block([PredDef|PRest], PilCode-PilCodeR, NCin, NCout) :-

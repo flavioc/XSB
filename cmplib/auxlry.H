@@ -28,6 +28,7 @@
 	  setoptions/1, setoptions1/1, subsumes/2, dict_lookup/3, option/1,
 	  verbo_time_message/2, subsumed_member/2, ll_arg/3,
 	  freeze/1, melt/2, writetop/2, set_global_compiler_options/1,
+              check_file_compiler_options/1,
 	  numbervars_cmplib/3.
 
 :- import 'error occurred'/0 from compile.

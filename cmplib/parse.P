@@ -596,6 +596,7 @@ parse_directive(compiler_options(Options),_SymTab) :-
 	%% interest in restarting. It might turn into a restart 
 	%% request if xpp_on is subsequently set.
 	(conget(xpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
+	check_file_compiler_options(Options),
 	setoptions1(Options).
 parse_directive(comment(_,_),_SymTab).
 parse_directive(Directive,_SymTab) :-

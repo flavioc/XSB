@@ -90,6 +90,9 @@ setoptions1([Opt|Rest]) :-
 	;   setoptions1(Rest)
 	).
 
+
+
+
 setopt(Opt,Setting) :-
 	( current_option(Opt) -> conset(Opt, Setting),
 	   		 	 (Opt = ciao_directives -> 
@@ -97,6 +100,20 @@ setopt(Opt,Setting) :-
 	; current_option(Opt, NewOpt) -> conset(NewOpt, Setting)
 	; warning(('Unknown compiler option: ', Opt))
 	).
+
+/* TLS: just want to avoid any more goose chases w. ti_dump.  The
+proble is that the ti_dump option is checked before ti_dump is
+properly added to the pragma.  Its not that important an option so I
+added this.  Perhaps other options need to use this code? */
+
+check_file_compiler_options([]).
+check_file_compiler_options([H|T]):- 
+	(unsuitable_for_file_options(H) -> 
+	    warning(('Option: ', T,' must be passed in via list in compile/2'))
+	;   true),
+	check_file_compiler_options(T).
+
+unsuitable_for_file_options(ti_dump).
 
 /* Old PSB genes */
 current_option(sysmod).
@@ -119,6 +136,7 @@ current_option(spec_off).
 current_option(unfold_off).
 
 /* unification factoring */
+current_option(ti_all).
 current_option(ti_dump).
 current_option(ti_long_names).
 current_option(ti_opt1).
