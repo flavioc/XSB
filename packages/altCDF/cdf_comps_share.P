@@ -648,14 +648,19 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
  				crid(hasVersion,Src),V) -> 
   	     true
 	  ; 
-    	     newExtTerm(component_create,
-			classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),Path)),
+    	     /* newExtTerm(component_create,
+			classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),Pathin)), */
 	     slash(Slash),
-	     concat_atom([Pathin,Slash,Name],File),
+	     Pathin = cid(PathStr, cdfpt),
+	     concat_atom([PathStr,Slash,Src],File),
   	     (file_exists(File) ->
-  	         file_latest_version(Pathin,Name,Vold),
+  	         file_latest_version(PathStr,Src,Vold),
 	          V is Vold + 1
 	       ;  V = 0),
+	     newExtTerm(isa_ext(cid(Src,Src),cid(componentIDs,cdf))),
+	     newExtTerm(isa_ext(cid(compName(cid(Src,Src),cid(allAtoms,cdf)),Src),
+			   cid(compNames,cdf))),
+             retractallExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),_)),
 	     newExtTerm(component_create,
 		        classHasAttr_ext(cid(Src,Src),
 					 crid(hasPath,Src),Pathin)),
