@@ -187,6 +187,40 @@
 
 
 /****************************************************************************/
+'_$_$_flora_collectset_dyn'(G,Matches,Set) :-
+	( G = nogrp ->
+	    sort(Matches,Set)
+
+	  ; '_$_$_flora_var_exists_dyn'(G) ->
+	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
+	    sort(L,Groups),
+	    member(G,Groups),
+	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),DL),
+	    sort(DL,Set)
+
+	  ;
+	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),DL),
+	    sort(DL,Set)
+	).
+
+
+/****************************************************************************/
+'_$_$_flora_collectbag_dyn'(G,Matches,Bag) :-
+	( G = nogrp ->
+	    Bag=Matches
+
+	  ; '_$_$_flora_var_exists_dyn'(G) ->
+	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
+	    sort(L,Groups),
+	    member(G,Groups),
+	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),Bag)
+
+	  ;
+	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),Bag)
+	).
+
+
+/****************************************************************************/
 '_$_$_flora_var_exists_dyn'(X) :- var(X), !.
 
 '_$_$_flora_var_exists_dyn'(T) :-

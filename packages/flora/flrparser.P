@@ -769,11 +769,14 @@ aggregate(aggregt(Op,var(Name,Var),G,B),V) -->
 	[atom('$}')],
 	!.
 
-aggregate_operator(min)   --> atom_name(min), !.
-aggregate_operator(max)   --> atom_name(max), !.
-aggregate_operator(sum)   --> atom_name(sum), !.
-aggregate_operator(avg)   --> atom_name(avg), !.
-aggregate_operator(count) --> atom_name(count), !.
+aggregate_operator(min)        --> atom_name(min), !.
+aggregate_operator(max)        --> atom_name(max), !.
+aggregate_operator(sum)        --> atom_name(sum), !.
+aggregate_operator(avg)        --> atom_name(avg), !.
+aggregate_operator(count)      --> atom_name(count), !.
+aggregate_operator(collectset) --> atom_name(collectset), !.
+aggregate_operator(collectbag) --> atom_name(collectbag), !.
+
 
 grouping_variables(L,V) -->
 	white_space0,

@@ -967,6 +967,10 @@ flora_vars(var(N,V),Vs) :-
 	!,
 	flora_member(var(N,V),Vs).
 
+flora_vars(meta_meth(N,V),Vs) :-
+	!,
+	flora_member(var(N,V),Vs).
+
 flora_vars(Term,Vs) :-
 	functor(Term,_,A),
 	flora_vars(A,Term,Vs).
