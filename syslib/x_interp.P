@@ -256,6 +256,8 @@ version_message :-
 	->  GC_string = 'copy'
 	; GarbageType == SLIDING_GC
 	->  GC_string = 'slide'
+	; GarbageType == INDIRECTION_SLIDE_GC
+	->  GC_string = 'indirection'
 	; GC_string = 'none'
 	),
 	%% Read the banner file

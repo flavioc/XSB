@@ -477,6 +477,58 @@ xsb_flag(garbage_collection, GCmode) :-
 	( GCflag =:= NO_GC -> GCmode = none
 	; GCflag =:= SLIDING_GC -> GCmode = sliding
 	; GCflag =:= COPYING_GC -> GCmode = copying
+	; GCflag =:= INDIRECTION_SLIDE_GC -> GCmode = indirection
+	).
+xsb_flag(gc_verbose_level,Level) :-
+	(   var(Level)
+	->  stat_flag(VERBOSE_GC,VerboseGC),
+	    stat_flag(COUNT_CHAINS,CountYN),
+	    stat_flag(EXAMINE_DATA,Examine),
+	    Level is VerboseGC + CountYN + Examine
+	;   Level = 0
+	->  stat_set_flag(VERBOSE_GC,0),
+	    stat_set_flag(COUNT_CHAINS,0),
+	    stat_set_flag(EXAMINE_DATA,0)
+	;   Level = 1
+	->  stat_set_flag(VERBOSE_GC,1),
+	    stat_set_flag(COUNT_CHAINS,0),
+	    stat_set_flag(EXAMINE_DATA,0)
+	;   Level = 2
+	->  stat_set_flag(VERBOSE_GC,1),
+	    stat_set_flag(COUNT_CHAINS,0),
+	    stat_set_flag(EXAMINE_DATA,1)
+	;   Level = 3
+	->  stat_set_flag(VERBOSE_GC,1),
+	    stat_set_flag(COUNT_CHAINS,1),
+	    stat_set_flag(EXAMINE_DATA,1)
+	;   warning('xsb_flag(gc_verbose_level,X) -> X out of bounds.')
+	).
+xsb_flag(verbose_gc, VerboseGC) :-
+	(   var(VerboseGC)
+	->  stat_flag(VERBOSE_GC,VerboseGC)
+	;   VerboseGC = yes
+	->  stat_set_flag(VERBOSE_GC, 1)
+	;   VerboseGC = no
+	->  stat_set_flag(VERBOSE_GC, 0)
+	;   warning('xsb_flag(verbose_gc,X) -> X should be no, yes or unbound.')
+	).
+xsb_flag(count_chains, CountYN) :-
+	(   var(CountYN)
+	->  stat_flag(COUNT_CHAINS,CountYN)
+	;   CountYN = yes
+	->  stat_set_flag(COUNT_CHAINS, 1)
+	;   CountYN = no
+	->  stat_set_flag(COUNT_CHAINS, 0)
+	;   warning('xsb_flag(count_chains,X) -> X should be no, yes or unbound.')
+	).
+xsb_flag(examine_data, ExamineYN) :-
+	(var(ExamineYN)
+	->  stat_flag(EXAMINE_DATA, ExamineYN)
+	;   ExamineYN = yes
+	->  stat_set_flag(EXAMINE_DATA, 1)
+	;   ExamineYN = no
+	->  stat_set_flag(EXAMINE_DATA,0)
+	;   warning('xsb_flag(examine_data,X) -> X should be no, yes or unbound.')
 	).
 
 /* ==================================================================== */
@@ -486,6 +538,7 @@ garbage_collection(GC) :- var(GC), !,
 garbage_collection(none) :- !, stat_set_flag(GARBAGE_COLLECT, NO_GC).
 garbage_collection(sliding) :- !, stat_set_flag(GARBAGE_COLLECT, SLIDING_GC).
 garbage_collection(copying) :- !, stat_set_flag(GARBAGE_COLLECT, COPYING_GC).
+garbage_collection(indirection) :- !, stat_set_flag(GARBAGE_COLLECT, INDIRECTION_SLIDE_GC).
 garbage_collection(_) :-
 	abort('Wrong type in argument 1 of garbage_collection/1').
 
