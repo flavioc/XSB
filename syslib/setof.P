@@ -57,14 +57,14 @@ bagof(Template, Generator, Bag) :- bagof1(Template, Generator, Bag).
 %% after that until we hit the call to Generator.
 bagof1(Template, Generator, Bag) :-
 	excess_vars(Generator, Template, [], VarList), 
-	VarList \== [], !,
-	Key =.. ['$'|VarList],
-	findall(Key-Template, Generator, Bags0, []),
-	keysort(Bags0, Bags),	% This performs the groupby
-	pick(Bags, Key, Bag).
-bagof1(Template, Generator, Bag) :-
-	findall(Template, Generator, Bag, []),
-	Bag \== [].	% If Bag=[] then bagof/3 and setof/3 should fail.
+	(VarList \== []
+	 ->	Key =.. ['$'|VarList],
+		findall(Key-Template, Generator, Bags0, []),
+		keysort(Bags0, Bags), % This performs the groupby
+		pick(Bags, Key, Bag)
+	 ;	findall(Template, Generator, Bag, []),
+		Bag \== []	% If Bag=[] then bagof/3 and setof/3 should fail.
+	).
 
 tbagof(Template, Generator, Bag) :-
 	excess_vars(Generator, Template, [], VarList), 
@@ -92,8 +92,17 @@ pick(Bags,Key,Bag) :-
 parade([K-X|L1],K,[X|B],L) :- !, parade(L1,K,B,L).
 parade(L,_,[],L).
 
-decide(Key,Bag,Bags,Key,Bag) :- (Bags=[], ! ; true).
-decide(_,_,Bags,Key,Bag) :- pick(Bags,Key,Bag).
+/***decide(Key,Bag,Bags,Key,Bag) :- (Bags=[], ! ; true).
+decide(_,_,Bags,Key,Bag) :- pick(Bags,Key,Bag). ***/
+
+decide(Key0,Bag0,Bags,Key,Bag) :-
+	(Bags == []
+	 ->	Key = Key0, Bag = Bag0
+	 ;	(Key = Key0, Bag = Bag0
+		 ;
+		 pick(Bags,Key,Bag)
+		)
+	).
 
 excess_vars(T,X,L0,L) :- var(T), !,
    ( no_occurrence(T,X), !, introduce(T,L0,L)
