@@ -51,7 +51,6 @@
 :- import inline_predicate/2 from builtin.
 
 :- import findall/3 from setof.
-:- import decl_ext/1, hdr_ext/1 from curr_sym.
 :- import
 	append/3, copy_term/2, ith/3, length/2, member/2, memberchk/2,
 	select/3

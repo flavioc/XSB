@@ -1447,8 +1447,16 @@ AC_SUBST(mno_cyg_lib)
 AC_SUBST(DLLTYPE)
 AC_SUBST(java_win_site_includes)
 
+xsb_src_extension=.P
+xsb_hdr_extension=.H
 xsb_obj_extension=.xwam
+xsb_asm_extension=.A
+xsb_decl_extension=.D
+AC_SUBST(xsb_src_extension)
+AC_SUBST(xsb_hdr_extension)
 AC_SUBST(xsb_obj_extension)
+AC_SUBST(xsb_asm_extension)
+AC_SUBST(xsb_decl_extension)
 
 topdir_base=/`basename $topdir`
 topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`

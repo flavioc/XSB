@@ -27,7 +27,7 @@
 %% and loaded.
 
 :- compiler_options([xpp_on]).
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 
 :- import slash/1 from machine.

@@ -29,7 +29,7 @@
 #include "char_defs.h"
 #include "sig_xsb.h"
 #include "standard.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 :- set_inthandler('_$deb_spy'(_), MYSIG_SPY),
    set_inthandler('_$deb_trace'(_), MYSIG_TRACE).

@@ -54,7 +54,7 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "flags_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 /*=========================================================================*/
 

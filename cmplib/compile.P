@@ -26,7 +26,7 @@
 
 :- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
 #include "flag_defs_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 
 
@@ -95,10 +95,10 @@ compile(Modname, Basename, Options, ExportList) :-
 file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 	   SpecFile, TIFile, TableFile, OptFile) :-
 	str_cat(Basename, XSB_SRC_EXTENSION_ATOM, PFile),
-	hdr_ext(HExt), str_cat(Basename, HExt, HFile),
-	obj_ext(OExt), str_cat(Basename, OExt, OFile),
-	asm_ext(AExt), str_cat(Basename, AExt, AFile),
-	decl_ext(DExt), str_cat(Basename, DExt, DFile),
+	str_cat(Basename,XSB_HDR_EXTENSION_ATOM,HFile),
+	str_cat(Basename,XSB_OBJ_EXTENSION_ATOM,OFile),
+	str_cat(Basename,XSB_ASM_EXTENSION_ATOM,AFile),
+	str_cat(Basename,XSB_DECL_EXTENSION_ATOM,DFile),
 	str_cat(Basename, '.spec', SpecFile),
 	str_cat(Basename, '.ti', TIFile),
 	str_cat(Basename, '.table', TableFile),

@@ -27,7 +27,7 @@
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 compile(Path) :- compile(Path, []).	% compile with no options
 

@@ -45,7 +45,7 @@
 #include "io_defs_xsb.h"
 #include "celltags_xsb.h"
 #include "psc_defs.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 %% Provide tests for the respective OS.
 %% windows_os_loader is used only here and in parse.

@@ -28,7 +28,7 @@
 
 
 :- compiler_options([xpp_on]).
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 #include "flora_terms.flh"
 

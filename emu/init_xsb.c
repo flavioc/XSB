@@ -56,7 +56,7 @@
 #include "choice.h"
 #include "flags_xsb.h"
 #include "loader_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 #include "macro_xsb.h"
 #include "tr_utils.h"
 #include "export.h"

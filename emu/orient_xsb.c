@@ -47,7 +47,7 @@
 #include "basictypes.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 char executable[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
 

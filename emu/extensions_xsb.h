@@ -1,4 +1,4 @@
-/* File:      loader_defs.h
+/* File:      extensions_xsb.h
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -36,3 +36,6 @@
 #define XSB_OBJ_EXTENSION_ATOM_SANS_DOT    'xwam'
 #define XSB_SRC_EXTENSION_ATOM_SANS_DOT    'P'
 #define XSB_HDR_EXTENSION_ATOM_SANS_DOT    'H'
+
+#define XSB_ASM_EXTENSION_ATOM    '.A'
+#define XSB_DECL_EXTENSION_ATOM   '.D'

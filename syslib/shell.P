@@ -30,7 +30,7 @@
 #include "system_defs_xsb.h"
 #include "builtin.h"
 #include "syscall_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 
 /* Create subprocess. Redirect its standard input to StreamToProc

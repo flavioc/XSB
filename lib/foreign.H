@@ -36,7 +36,6 @@
 :- import open_or_xpp_file/2 from parse.
 :- import conset/2, conget/2 from gensym.
 :- import attach/2, length/2 from listutil.
-:- import hdr_ext/1, obj_ext/1 from curr_sym.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import write_header/0, process_from/2 from wrapping.
 :- import file_close/1, fmt_write_string/3 from file_io.

@@ -31,8 +31,7 @@
 	current_functor/1, current_functor/2, 
 	current_predicate/1, current_predicate/2,
 	predicate_property/2, module_property/2, 
-	xsb_flag/2, garbage_collection/1, hilog_symbol/1,
-	hdr_ext/1, obj_ext/1, asm_ext/1, decl_ext/1.
+	xsb_flag/2, garbage_collection/1, hilog_symbol/1.
 
 :- import '_$op'/3 from file_op.
 :- import '_$hilog_symbol'/1 from hilogsym.

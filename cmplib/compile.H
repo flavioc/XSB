@@ -70,7 +70,6 @@
 :- import sys_unlink/2 from shell.
 :- import member/2 from basics.
 :- import force_ti_mod_loaded/0, ti_pred_block/3 from ti_mod.
-:- import hdr_ext/1, obj_ext/1, asm_ext/1, decl_ext/1 from curr_sym.
 
 :- import modeanalyze/3 from modeinf.
 :- import assert/1, retractall/1, (dynamic)/1  from assert.

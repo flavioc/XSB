@@ -3630,7 +3630,15 @@ fi
 
 
 
+xsb_src_extension=.P
+xsb_hdr_extension=.H
 xsb_obj_extension=.xwam
+xsb_asm_extension=.A
+xsb_decl_extension=.D
+
+
+
+
 
 
 topdir_base=/`basename $topdir`
@@ -3857,7 +3865,11 @@ s%@mno_cyg_inclib@%$mno_cyg_inclib%g
 s%@mno_cyg_lib@%$mno_cyg_lib%g
 s%@DLLTYPE@%$DLLTYPE%g
 s%@java_win_site_includes@%$java_win_site_includes%g
+s%@xsb_src_extension@%$xsb_src_extension%g
+s%@xsb_hdr_extension@%$xsb_hdr_extension%g
 s%@xsb_obj_extension@%$xsb_obj_extension%g
+s%@xsb_asm_extension@%$xsb_asm_extension%g
+s%@xsb_decl_extension@%$xsb_decl_extension%g
 s%@topdir_wind@%$topdir_wind%g
 s%@smodels_goal@%$smodels_goal%g
 s%@with_smodels@%$with_smodels%g

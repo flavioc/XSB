@@ -24,7 +24,7 @@
 
 
 :- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
  
 /************************************************************************/
@@ -97,9 +97,7 @@ preprocess(File) :-
 	cputime(T0),
 	seeing(OldFile),
 
-	srcfilename_ext(SrcExt),
-	str_cat(File, SrcExt, SrcFileName),
-
+	str_cat(File, XSB_SRC_EXTENSION_ATOM, SrcFileName),
 	init_for_load(SrcFileName),
 
 	load_header_file(File),
@@ -118,8 +116,7 @@ preprocess(File) :-
 	list_asserted_code(File).
 
 load_header_file(File) :-
-	hdrfilename_ext(HdrExt),
-	str_cat(File, HdrExt, HdrFile),
+	str_cat(File, XSB_HDR_EXTENSION_ATOM, HdrFile),
 	(file_exists(HdrFile) ->
 		see(HdrFile),
 		flat_read_file
@@ -215,8 +212,7 @@ decl_exported(Exp) :- trie_assert('_$predprop'((export), Exp)).
 
 
 decl_imported(ImpList, FromMod) :-
-	declfilename_ext(ModeExt),
-	str_cat(FromMod, ModeExt, File),
+	str_cat(FromMod, XSB_DECL_EXTENSION_ATOM, File),
 	cvt_to_regular_list(ImpList, Imports),
 	(expand_incl_file_name(File, FileName)
 	  ->	seeing(OldFile),
@@ -616,19 +612,17 @@ cvt_ands_to_list(T, [T | L2], L2).
 mangle_file_names(File, Src, Decls) :-
 	strip_trailing_ext(File, Src),
 	prolog_file_exists(Src),
-		declfilename_ext(DeclExt),
-		str_cat(Src, DeclExt, Decls).
+		str_cat(Src, XSB_DECL_EXTENSION_ATOM, Decls).
 
 strip_trailing_ext(Name, TruncName) :-
 	atom_codes(Name, L),
-	srcfilename_ext(SrcExt), atom_codes(SrcExt, EL),
+	atom_codes(XSB_SRC_EXTENSION_ATOM, EL),
 	append(BL, EL, L), atom_codes(TruncName, BL),
 	!.
 strip_trailing_ext(Name, Name).
 
 prolog_file_exists(Name) :-
-	srcfilename_ext(SrcExt),
-	str_cat(Name, SrcExt, SrcName),
+	str_cat(Name, XSB_SRC_EXTENSION_ATOM, SrcName),
 	(file_exists(SrcName) -> true
 	; write('++ Unable to locate file: '), write(SrcName),nl, fail).
 	
@@ -749,10 +743,6 @@ remove_asserted_stuff :-
 	trie_retract_all('_$analyzer_flag'(_)),
 	retractall(':-'('_$call_user'(_), _)),
 	retractall('_$call_user'(_)).
-
-declfilename_ext('.D').
-srcfilename_ext(XSB_SRC_EXTENSION_ATOM).
-hdrfilename_ext(XSB_HDR_EXTENSION_ATOM).
 
 
 print_stats :-

@@ -42,7 +42,7 @@
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "string_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 #define BUFFEXTRA 1024
 

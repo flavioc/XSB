@@ -42,7 +42,7 @@
 #include "psc_xsb.h"
 #include "psc_defs.h"
 #include "loader_xsb.h"
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 #include "cell_xsb.h"
 #include "heap_xsb.h"
 #include "flags_xsb.h"

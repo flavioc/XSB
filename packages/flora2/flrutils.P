@@ -27,7 +27,7 @@
 
 
 :- compiler_options([xpp_on]).
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 
 #define FLORA_FILE_EXT		flr

@@ -166,7 +166,7 @@ cc_options(CC_Name, Options, CC_Opts) :-
 	).
 
 compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
-	hdr_ext(HExt),
+	xsb_configuration(header_extension,HExt),
 	str_cat(Base, HExt, HFile),
 	( file_exists(HFile) ->
 	    (	Options == [] 
@@ -196,7 +196,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    conset(xpp_on,0),
 %%%         seen,
 	    length(ExList, Count),
-	    obj_ext(OExt),
+	    xsb_configuration(object_extension,OExt),
 	    str_cat(Base, OExt, OFile),
 	    tell(OFile),
 	    co_asmhead(Modname, LdOption, Count),

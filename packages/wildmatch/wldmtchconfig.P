@@ -23,7 +23,7 @@
 */
 
 :- compiler_options([xpp_on]).
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.

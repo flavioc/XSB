@@ -22,6 +22,11 @@
 ** 
 */
 
+
+:- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
+#include "extensions_xsb.h"
+
+
 :- import standard_symbol/3 from std_xsb.
 
 :- import trie_assert/1, trie_retract_all/1 from tables.
@@ -35,8 +40,7 @@ imports_from_module(Mod, List) :-
 	bagof(Sym, standard_sym(Sym, ModVar), List), Mod = ModVar.
 
 decl_imported(Imports, FromMod) :-
-	declfilename_ext(ModeExt),
-	str_cat(FromMod, ModeExt, File),
+	str_cat(FromMod, XSB_DECL_EXTENSION_ATOM, File),
 	(expand_incl_file_name(File, FileName)
 	  ->	seeing(OldFile),
 		see(FileName),
@@ -104,8 +108,8 @@ make_modes :-
 	
 
 make_stdmodes :-
-	standard_file(StdFile),
+	standard_file_base(StdFileBase),
+	str_cat(StdFileBase,XSB_DECL_EXTENSION_ATOM,StdFile),
 	make_modes(StdFile).
 
-standard_file('stdmodes.D').
-declfilename_ext('.D').
+standard_file_base('stdmodes.D').

@@ -29,7 +29,7 @@
 
 
 :- compiler_options([xpp_on,sysmod]).
-#include "loader_defs.h"
+#include "extensions_xsb.h"
 
 
 :- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1.
