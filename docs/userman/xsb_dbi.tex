@@ -62,12 +62,14 @@ There are two predicates for connecting to databases.
 | ?- db_connect(Handle, Driver, DSN, User, Password).
 \end{verbatim}
 
+This predicate is specific for an ODBC connection only.
 This predicate assumes that an entry for a data source name (DSN) exists
 in the {\tt ODBC.INI} file. The {\tt Handle} is the handle name used for 
 the connection. The {\tt Driver} is the driver being used for the 
 connection.
 The {\tt User} and {\tt Password} are the user name and password 
-being used for the connection. 
+being used for the connection. The user is responsible for giving 
+the name to the handle.
 To connect to the data source mydb using the user name xsb and password xsb
 with the odbc driver, the call is as follows: 
 
@@ -75,12 +77,13 @@ with the odbc driver, the call is as follows:
 | ?- db_connect(ha, odbc, mydb, xsb, xsb).
 \end{verbatim}
 
-where ha is the handle name for the connection.
+where {\tt ha} is the handle name the user chose for the connection.
 
 \begin{verbatim}
 | ?- db_connect(Handle, Driver, Server, Database, User, Password).
 \end{verbatim}
 
+The above version of {\tt db\_connect} is for all non-ODBC connections.
 This predicate is used for a direct connection to a database i.e.
 without the use of any dsn. The {\tt Handle}, {\tt Driver}, {\tt User},
 and {\tt Password} are the same as before. The {\tt Server} and 
@@ -93,7 +96,7 @@ driver, the call is:
 | ?- db_connect(ha, mysql, wolfe, test, xsb, xsb).
 \end{verbatim}
 
-where ha is the handle name for the connection.
+where {\tt ha} is the handle name the user chose for the connection.
 
 If the connection is successfully made, the predicate invocation will
 succeed.  This step is necessary before anything can be done with the
@@ -117,7 +120,7 @@ and XSB will give all the resources it allocated for this session back
 to the system.
 
 
-\subsection{Querying the database}
+\subsection{Querying Databases}
 %=====================================
 
 The interface supports two types of querying. In direct querying, the
@@ -141,7 +144,8 @@ The SQLQueryList is a list of terms which is used to build the SQL query.
 The terms in this list are ground atoms. ReturnList is a list of 
 variables each of which correspond to a return value in the query.
 It is upto the user to specify the correct number of return variables 
-corresponding to the query.
+corresponding to the query. Also, as in the case of a connection handle, 
+the user is responsible for giving the name to the query handle.
 For example, a query on the student database to select all the students
 for a given advisor is accomplished by the call:
 
@@ -149,6 +153,9 @@ for a given advisor is accomplished by the call:
 | ?- X = adv, db_sql(ha, qa, ['select T.name from student T where 
 T.advisor = ', X], [P]), fail.
 \end{verbatim}
+
+where {\tt ha} and {\tt qa} are respectively the connection handle and query
+handle name the user chose.
 
 Observe that the query list is composed of the sql string and a ground value
 for the advisor. The return list is made of one variable corresponding to
@@ -192,15 +199,95 @@ the handle, a call is made to the predicate:
 
 where QueryHandle is the query handle for the statement to be closed.
 
-\subsection{Error Handling}
+\section{Error Handling}
 %============================
 
-Each predicate in the XSB-DB interface throws an exception with the functor name
-{\tt xsb\_error} which contains a single term with the error message.
+Each predicate in the XSB-DB interface throws an exception with the functor 
+{\tt xsb\_error(database(Number), Message)} where Number is a string with the 
+error number and Message is a string with a slightly detailed error message.
 It is upto the user to catch this exception
 and proceed with error handling. This is done by the throw-catch error
-handling mechanism in XSB.
+handling mechanism in XSB. For example, in order to catch the error which
+will be thrown when the user attempts to close a database connection for 
+a handle (ha) which does not exist:
 
+\begin{verbatim}
+| ?- catch(db_disconnect(ha), xsb_error(database(Number), Message), 
+handler(Number, Message)).
+\end{verbatim}
+
+It is the user's responsibility to define the handler predicate which can be as simple
+as printing out the error number and message or may involve more 
+complicated  processing.
+
+A list of error numbers and messages which are thrown by the XSB-DB interface
+is given below:
+
+\begin{itemize}
+
+\item {\bf XSB\_DBI\_001: XSB\_DBI ERROR: Driver already registered}\\
+This error is thrown when the user tries to load a driver, using the {\tt load\_driver} 
+predicate, which has already been loaded previously.
+
+\item {\bf XSB\_DBI\_002: XSB\_DBI ERROR: Driver does not exist}\\
+This error is thrown when the user tries to connect to a database, using
+{\tt db\_connect}, with a driver which has not been loaded.
+
+\item {\bf XSB\_DBI\_003: XSB\_DBI ERROR: Function does not exist in this driver}\\
+This error is thrown when the user tries to use a function support 
+for which does not exist in the corresponding driver. For example, 
+this error is generated if the user
+tries to use {\tt db\_prepare} for a connection established with the
+mysql driver.
+
+\item {\bf XSB\_DBI\_004: XSB\_DBI ERROR: No such connection handle}\\
+This error is thrown when the user tries to use a connection handle
+which has not been created.
+
+\item {\bf XSB\_DBI\_005: XSB\_DBI ERROR: No such query handle}\\
+This error is thrown when the user tries to use a query handle which has 
+not been created.
+
+\item {\bf XSB\_DBI\_006: XSB\_DBI ERROR: Connection handle already exists}\\
+This error is thrown when the user tries to create a connection handle in
+{\tt db\_connect} using a name which already exists as a connection handle.
+
+\item {\bf XSB\_DBI\_007: XSB\_DBI ERROR: Query handle already exists}\\
+This error is thrown when the user tries to create a query handle, in
+{\tt db\_sql} or {\tt db\_prepare}, using a name which already exists as
+a query handle for a different query.
+
+\item {\bf XSB\_DBI\_008: XSB\_DBI ERROR: Not all parameters supplied}\\
+This error is thrown when the user tries to execute a prepared statement,
+using {\tt db\_prepare\_execute}, without supplying values for all the
+parameters in the statement.
+
+\item {\bf XSB\_DBI\_009: XSB\_DBI ERROR: Unbound variable in parameter list}\\
+This error is thrown when the user tries to execute a prepared statement,
+using {\tt db\_prepare\_execute}, without binding all the parameters of the
+statement.
+
+\end{itemize}
+
+\section{Notes on specific drivers}
+%============================
+
+\subsubsection{ODBC Driver}
+
+The ODBC driver has been tested in Linux using the unixodbc driver manager.
+It currently supports the following functionalities: (a) connecting to a 
+database using a DSN, (b) direct querying of the database, (c) using 
+prepared statements to query the database, (d) closing a statement handle, and
+(d) disconnecting from the database. 
+
+\subsubsection{MySQL Driver}
+
+The MySQL driver has been implemented using the native MySQL C API. Currently, it
+has support for the following functionalities: (a) connecting to 
+a database using the non-DSN {\tt db\_connect}, (b) direct querying of
+the database, and (c) disconnecting from the database. Support for prepared
+statement functionality will be available from MySQL 4.1 version at which
+point the driver can be updated with such a feature.
 
 %%% Local Variables: 
 %%% mode: latex
