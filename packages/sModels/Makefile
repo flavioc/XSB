@@ -1,3 +1,4 @@
+# Generated automatically from smoMakefile.in by configure.
 ## File:      packages/SModels/Makefile
 ## Author(s): luis (adapted from packages/flora/Makefile)
 ## Contact:   xsb-contact@cs.sunysb.edu
@@ -24,13 +25,19 @@
 
 ALL = smodels.O smodelsops.O
 
-SMODELSOBJ = api.o atomrule.o dcl.o denant.o improve.o list.o main.o \
-	program.o queue.o read.o smodels.o stable.o stack.o timer.o tree.o
+SMODELS = /home/lfcastro/Programs/smodels-2.23/
 
-SMODELSHEADER= api.h atomrule.h dcl.h defines.h list.h print.h program.h \
-	queue.h read.h smodels.hh stable.h stack.h timer.h tree.h
+SMODELSOBJ = $(SMODELS)/api.o $(SMODELS)/atomrule.o $(SMODELS)/dcl.o \
+	$(SMODELS)/denant.o $(SMODELS)/improve.o $(SMODELS)/list.o \
+	$(SMODELS)/main.o $(SMODELS)/program.o $(SMODELS)/queue.o \
+	$(SMODELS)/read.o $(SMODELS)/smodels.o $(SMODELS)/stable.o \
+	$(SMODELS)/stack.o $(SMODELS)/timer.o $(SMODELS)/tree.o
 
-SMODELS = ~luis/Programs/smodels-2.23/
+SMODELSHEADER= $(SMODELS)/api.h $(SMODELS)/atomrule.h $(SMODELS)/dcl.h \
+	$(SMODELS)/defines.h $(SMODELS)/list.h $(SMODELS)/print.h \
+	$(SMODELS)/program.h $(SMODELS)/queue.h $(SMODELS)/read.h \
+	$(SMODELS)/smodels.h $(SMODELS)/stable.h $(SMODELS)/stack.h \
+	$(SMODELS)/timer.h $(SMODELS)/tree.h
 
 Option = [optimize]
 
@@ -49,13 +56,16 @@ Prolog = $(XSB)
 
 all: $(ALL)
 	@touch cmd...
-	/bin/ln -s $(SMODELS)/*.o .
-	/bin/ln -s $(SMODELS)/*.h .
+	/bin/ln -s $(SMODELSOBJ) .
+	/bin/ln -s $(SMODELSHEADER) .
 	$(Prolog) < cmd...
 	/bin/rm cmd...
 
 clean: 
 	/bin/rm *.o *.so *.O *.h
+
+nope:
+
 
 .DONE:
 	echo Done
