@@ -30,6 +30,7 @@
 
 :- compiler_options([sysmod, xpp_on]).
 
+#include "celltags.h"
 #include "flag_defs.h"
 #include "standard.h"
 #include "char_defs.h"
@@ -318,13 +319,13 @@ is_most_general_term(X) :- is_most_general_term(X).
 
 proper_hilog(X) :-
 	term_type(X, Type),
-	( Type =:= 1 ->		% compound term (but not list)
+	( Type =:= CS ->		% compound term (but not list)
 		term_psc(X, PSC), psc_name(PSC, Name), psc_arity(PSC, Arity),
 		( Name == apply, Arity > 1 -> true 
 		; prolog_arglist(X, ArgList, Arity, Arity),
 		  proper_hilog(ArgList)
 		)
-	; Type =:= 3 ->
+	; Type =:= LIST ->
 		X = [H|T], ( proper_hilog(H), !; proper_hilog(T) )
 	).
 
@@ -334,15 +335,15 @@ arg(I, T, A) :- arg(I, T, A).
 
 arg0(I, T, A) :- 
 	term_type(I, I_type),
-	( I_type =:= 2 ->	% integer
+	( I_type =:= INT ->	% integer
 		term_type(T, T_type),
-		( T_type =\= 0 ->
+		( T_type =\= FREE ->
 			( I =:= 0 -> functor(T, A, _)
 			; I > 0 -> arg(I, T, A)
 			)
 		; abort('Uninstantiated argument 2 of arg0/3')
 		)
-	; I_type =:= 0 ->	% variable
+	; (I_type =:= FREE; I_type =:= ATTV) ->		% variable
 		abort('Uninstantiated argument 1 of arg0/3')
 	; abort('Wrong type in argument 1 of arg0/3')
 	).
@@ -362,7 +363,7 @@ prolog_arglist(X, List, I, N) :-
 
 hilog_functor(T, F, N) :-
         term_type(T, Type),
-        ( Type =:= 0 ->
+        ( Type =:= FREE ->
 	    ( arity_integer(N) ->
 		( atomic(F) ->
 		    ( N =:= 0 ->
@@ -399,7 +400,7 @@ hilog_functor(T, F, N) :-
 		    )
 		)
 	    )
-	;   Type =:= 3 -> F = '.', N = 2
+	;   Type =:= LIST -> F = '.', N = 2
 	;   atomic(T) -> F = T, N = 0
 	;   T =.. [apply, F, FirstArg|Args] -> % HiLog term found
 	    length([FirstArg|Args], N)
@@ -461,16 +462,16 @@ number_digits(T, L) :- number_digits(T, L).
 
 name(T, L) :-
 	term_type(T, Type),
-	( Type =:= 0 -> 
+	( Type =:= FREE -> 
 		( var(L) -> abort('Uninstantiated argument 2 of name/2')
 		; ( ascii_list(L) -> 
 			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
 		  ; abort('Wrong type in argument 2 of name/2')
 		  )
 		)
-	; Type =:= 2 -> int_name(T, [], L)	% integer
-	; Type =:= 6 -> real_name(T, [], L)	% real
-	; Type =:= 5 -> atom_codes(T, L)
+	; Type =:= INT -> int_name(T, [], L)	% integer
+	; Type =:= FLOAT -> real_name(T, [], L)	% real
+	; Type =:= STRING -> atom_codes(T, L)
 	; abort('Wrong type in argument 1 of name/2')
 	).
 

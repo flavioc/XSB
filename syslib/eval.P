@@ -22,6 +22,9 @@
 ** 
 */
 
+:- compiler_options([xpp_on]).
+
+#include "celltags.h"
 
 %-------------------------------------------------------------------------
 % NOTE:	Predicate eval/2 is the one who is responsible for error checking
@@ -39,11 +42,12 @@
 
 eval(Arg, Res) :- 
 	term_type(Arg, T), 
-	( T =:= 0 -> abort('Unbound variable in arithmetic expression')
-	; T =:= 2 -> Res=Arg
-	; T =:= 6 -> Res=Arg
+	( (T =:= FREE; T =:= ATTV) ->
+	    abort('Unbound variable in arithmetic expression')
+	; T =:= INT -> Res=Arg
+	; T =:= FLOAT -> Res=Arg
 	; eval0(Arg, Res) -> true	/* system defined function */
-	; T =:= 1 -> eval1(Arg, Res)	/* user defined function */
+	; T =:= CS -> eval1(Arg, Res)	/* user defined function */
 	).
 
 eval0('+'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 + Res2.

@@ -22,6 +22,9 @@
 ** 
 */
 
+:- compiler_options([xpp_on]).
+
+#include "celltags.h"
 
 %   numbervars(+Term, +FirstN, ?LastN) 
 %   Each variable in the HiLog Term is instantiated to a term of the form 
@@ -33,12 +36,12 @@
 %   LastVar-1.
 
 numbervars(Y,I,J) :- term_type(Y,T),
-	(T =:= 0
+	((T =:= FREE; T =:= ATTV)
 	 ->	Y='$VAR'(I), J is I+1
-	 ; T =:= 3
+	 ; T =:= LIST
 	 ->	Y=[A1|A2],
 	 	numbervars(A1,I,I1), numbervars(A2,I1,J)
-	 ; T =:= 1
+	 ; T =:= CS
 	 ->	term_psc(Y,PSC), psc_arity(PSC,N),
 	 	numbervars(Y,I,J,1,N)
 	 ;	J=I

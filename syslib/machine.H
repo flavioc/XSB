@@ -133,7 +133,11 @@
 	'$$findall_init'/2,
 	'$$findall_add'/3,
 	'$$findall_get_solutions'/4,
-	socket_request/7.
+	socket_request/7,
+	put_attributes/2,
+	get_attributes/3,
+	delete_attributes/1,
+	attv_unify/2.
 
 :- export 
 	file_function/7, conname/2, conpsc/2, machine_file_exists/1,

@@ -39,6 +39,7 @@
 
 interpreter :-
         set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
+	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
         stat_flag(BANNER_CTL, BannerCtl), % no-banner flag on cmd line
 	(   HideBanner is BannerCtl mod NOBANNER, HideBanner =:= 0
 	->  true		% don't print banner
@@ -205,6 +206,22 @@ readl_brklp1 :-
 '_$keyboard_int'(Call) :- 
 	is_xwammode(Flag),
 	( Flag =:= 1 -> abort ; break, call_c(Call) ).
+
+'_$attv_int'(Intlist, Call) :-
+% 	file_write(1, '.... in _$attv_int/2'), file_nl(1),
+% 	file_write(1, '.... interrupt chain is : '),
+% 	file_write(1, Intlist), file_nl(1),
+	handle_interrupts(Intlist),
+%	file_write(1, '.... leaving _$attv_int/2'), file_nl(1),
+	call_c(Call).
+
+handle_interrupts([]) :- !.
+handle_interrupts([[Var|Value]|Ints]) :-
+% 	file_write(1, '.... [Var|Value] = '),
+% 	file_write(1, [Var|Value]), file_nl(1),
+	verify_attributes(Var, Value),
+	handle_interrupts(Ints).
+
 
 /* === version message ================================================= */
 

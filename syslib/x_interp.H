@@ -48,4 +48,4 @@
 	  print_file_contents/2, file_flush/2
     from file_io.
 :- import call_xsb_hook/1, xsb_exit_hook/1 from xsb_hook.
-
+:- import verify_attributes/2, ','/2 from usermod.
