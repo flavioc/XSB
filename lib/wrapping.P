@@ -442,7 +442,8 @@ out_precall(Var,'+',chars,InPos,_) :-
 	                                             args(Var,Var)),nl,
 	fmt_write('   %s = (char *) malloc((%ssize+1)*sizeof(char));',
                                                      args(Var,Var)),nl,
-	fmt_write('   p2c_chars(%sIn,%s,%ssize);',args(Var,Var,Var)),nl.
+	fmt_write('   p2c_chars(%sIn,%s,%ssize);',args(Var,Var,Var)),nl,
+	write('   printf("After call to p2c_chars\n");'),nl.
 out_precall(Var,'+',string,InPos,_) :- 
 	fmt_write('   %sIn = reg_term(%d);',args(Var,InPos)),nl,
         fmt_write('   if (!is_string(%sIn)) return FALSE;',args(Var)),nl,

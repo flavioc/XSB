@@ -135,8 +135,40 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
-	    ;	str_sub('windows', Configuration)
 	    ;	str_sub('cygwin', Configuration)
+	    ->  message(shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts])),
+		shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
+		concat_atom([Base,'.o'], Obj),
+		(  TempFile = ''
+		-> TempObj = ''
+		;  message(shell([CC_Name,' -c ',TempFile,' ',CC_Opts])),
+		   shell([CC_Name,' -c ',TempFile,' ',CC_Opts]),
+		   substring(TempFile,0,-3,TempRoot),
+		   concat_atom([TempRoot,'.o '],TempObj)
+		),
+		xsb_configuration(config_dir,ConfigDir),
+		message(shell(['sh ',ConfigDir,'/saved.o/makedef.sh ',
+			       TempObj])),
+		shell(['sh ',ConfigDir,'/makedef.sh ',TempObj]),
+		message(shell(['mv out.def ', Base,'.def'])),
+		shell(['mv out.def ', Base,'.def']),
+		xsb_configuration(loader_flags,LD_Options),
+		xsb_configuration(config_bindir,BINDIR),
+		message(shell([CC_Name,' ',CC_Opts,' ',LdOption,
+			       ' -L',BINDIR,' ',
+			       LD_Options,' -shared -s -o ',
+			       ' -Wl,--out-implib=',Base,'.a ',
+			       Base,'.dll ',Base,'.def ',
+			       Obj,' ', TempObj,' -lxsb'])),
+		shell([CC_Name,' ',CC_Opts,' ',LdOption,
+		       ' -L',BINDIR,
+		       ' -Wl,--out-implib=',Base,'.a ',
+		       LD_Options,' -shared -s -o ',
+		       Base,'.dll ',Base,'.def ',
+		       Obj,' ',TempObj,' -lxsb']),
+		message(shell(['cp ',Base,'.dll ',ConfigDir,'/bin'])),
+		shell(['cp ',Base,'.dll ',ConfigDir,'/bin'])
+	    ;	str_sub('windows', Configuration)
 	    ->	warning(('You must create the ', Modname,'.dll'))
 	    ;	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
 	        /* The following is here because C compilers usually put 
