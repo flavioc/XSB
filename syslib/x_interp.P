@@ -66,18 +66,23 @@ interpreter :-
 	x_interp_repeat,
 	pop_abort_cutpoint,
 	push_abort_cutpoint, % reset abort cutpoint
+	interpreter1.	% Protect varible state, so fail to this point
+			% doesn't require untrailing (when aborting or
+			% segfault handling)
+
+interpreter1 :-
 	x_interp_repeat,
-	    trimcore,
-	    stat_set_flag(5, 1), % hide call interceptions.
-	    stat_set_flag(7, 0), % reset trace number
-	    conset('_$break_level', 0),
-	    print_debug_state,
-	    prompt(Prompt,Prompt),
-	    file_write(1, Prompt),
-	    file_read(0, X, Vars),
-	    (	nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
-	    ;	process_query(X, Vars)
-	    ).
+	trimcore,
+	stat_set_flag(5, 1), % hide call interceptions.
+	stat_set_flag(7, 0), % reset trace number
+	conset('_$break_level', 0),
+	print_debug_state,
+	prompt(Prompt,Prompt),
+	file_write(1, Prompt),
+	file_read(0, X, Vars),
+	(nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
+	; process_query(X, Vars)
+	).
 
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
 read_in_stop(end_of_file).	% pop a break level, out if at top
