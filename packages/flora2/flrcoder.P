@@ -74,8 +74,10 @@ is_goallogic(PRAND(Goal1,Goal2),',',2,[Goal1,Goal2]) :- !.
 is_goallogic(PROR(Goal1,Goal2),';',2,[Goal1,Goal2]) :- !.
 is_goallogic(PRNOT(Goal),'not',1,[Goal]) :- !.
 is_goallogic(PRTNOT(Goal),'sk_not',1,[Goal]) :- !.
-is_goallogic(PRCALL(Var),'call',1,[Var]) :- !.
+%%is_goallogic(PRCALL(Var),'call',1,[Var]) :- !.
 is_goallogic(PRCUT,'!',0,[]) :- !.
+
+is_prcall(PRCALL(Var),Var) :- !.
 
 is_pratomlit(PRATOMLIT(A),A).
 is_prtermlit(PRTERMLIT(FObj,N,ObjList),FObj,N,ObjList).
@@ -326,6 +328,11 @@ flora_write_struct(Term,Prefix) :-
 	  flora_write_structlist(Args,Prefix),
 	  write(')')
         ).
+
+flora_write_struct(Term,Prefix) :-
+	is_prcall(Term,VarTerm),
+	!,
+	flora_write_struct(VarTerm,Prefix).
 
 flora_write_struct(Term,Prefix) :-
 	is_pratomlit(Term,A),
@@ -932,6 +939,11 @@ flora_build_struct(Term,DWS,Prefix,VarList,Code) :-
 	  flora_build_structlist(Args,DWS,Prefix,VarList,ACode),
 	  Code =.. [F|ACode]
         ).
+
+flora_build_struct(Term,DWS,Prefix,VarList,Code) :-
+	is_prcall(Term,VarTerm),
+	!,
+	flora_build_struct(VarTerm,DWS,Prefix,VarList,Code).
 
 flora_build_struct(Term,DWS,Prefix,_VarList,Code) :-
 	is_pratomlit(Term,A),
