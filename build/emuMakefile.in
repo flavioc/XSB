@@ -75,7 +75,7 @@ EXECUTABLE=xsb
 #=======================================================================
 #
 DEPEND = makedepend
-DEPENDFLAGS = -m
+#DEPENDFLAGS = -m
 #
 
 
