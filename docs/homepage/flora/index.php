@@ -75,7 +75,7 @@ visits since August 10, 2001.
 
 <hr>
 <address>
-Email:<a href="mailto:xsb-contact@cs.sunysb.edu">xsb-contact@cs.sunysb.edu</a>
+Email:<a href="mailto:xsb-contact@cs.stonybrook.edu">xsb-contact@cs.stonybrook.edu</a>
 </address>
 
 <hr>
