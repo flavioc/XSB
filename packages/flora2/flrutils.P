@@ -933,7 +933,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
 	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
 	append(SysLibOptionList,SysModOptionList,OptList),
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLINDEX_P|OptList],
+	flora_include_file([FLHEADER,FLDEFINITION,FLINDEX_P,FLPATCH|OptList],
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	;
