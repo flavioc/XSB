@@ -74,7 +74,7 @@ libxlp.a: driver.o xl.tab.o lex.yy.o
 	$(AR) r libxlp.a driver.o xl.tab.o lex.yy.o
 
 xlparse.so: xlparse.H xlparse.c libxlp.a
-	@$(XSB) -e 'compile(xlparse),halt.'
+	@$(XSB) -e 'compile(xlparse). halt.'
 
 xl.tab.h xl.tab.c: xl.y
 	bison -d xl.y
