@@ -1,3 +1,4 @@
+
 \begin{center}
 {\bf {\Large 
 		Credits
@@ -5,59 +6,23 @@
 }}
 \end{center}
 
-% Apologies to anyone I left out!  It wasn't intentional ... TLS.
+% Apologies to anyone I left out...  It wasn't intentional! TLS.
 
 \begin{quote}
-Day-to-day care and feeding of XSB including bug fixes and ports, was
-led by Kostis Sagonas, and aided by David Warren, Terrance Swift,
-Prasad Rao, Steve Dawson, Juliana Freire, and Baoqiu Cui.
-
-To date (\version), the core engine development of the SLG-WAM has
-been mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao
-and Juliana Freire.  The breakdown, roughly, was that Terrance Swift
-wrote the initial tabling engine, Prasad Rao wrote the trie-based
-table access routines, and Kostis Sagonas implemented most of tabled
-negation.  Juliana Freire revised the table scheduling mechanism
-starting from Version 1.5.0 to create a more efficient engine, and
-implemented the engine for local evaluation.  David Warren and Prasad
-Rao implemented the aggregate code.  The {\tt auto\_table} and {\tt
-suppl\_table} directives were written by Kostis Sagonas.  Memory
-management code and the command line execution interface were written
-by Ernie Johnson, Prasad Rao and Bart Demoen.  Rui Marques improved
-the trailing of the SLG-WAM and implemented the port for 64-bit
-architectures.  The safety check for tabling within the scope of cuts
-was written by Kate Dvortsova.
-
-Of other features in the system, Kostis Sagonas added HiLog
-compilation to XSB, along with the associated builtins.  Steve Dawson
-implemented Unification Factoring.  The DCG expansion module was
-written by Kostis Sagonas.  The multifile directive was written by
-Baoqiu Cui.  Assert and retract code was written by David Warren,
-significantly revised by Rui Marques, and based originally on code
-written by Jiyang Xu.  Trie assert code was written by Prasad Rao.
-The interface from C to Prolog was implemented by David Warren as was
-the DLL interface; the interface from Prolog to C (foreign language
+Interfaces have become an increasingly important part of XSB.  The
+interface from C to Prolog was implemented by David Warren as was the
+DLL interface; the interface from Prolog to C (foreign language
 interface) was developed by Jiyang Xu, Kostis Sagonas and Steve
-Dawson.  The Oracle interface was written by Hassan Davulcu and Ernie
-Johnson.  The ODBC interface was written by Lily Dong.
-The current version of {\tt findall/3} was written by Bart Demoen.
-C.R. Ramakrishnan wrote the mode analyzer for XSB.  The WFSX libraries
-were written by Luis Pereira and Jose Alferes.
+Dawson.  The XSB-Java interface was written by Miguel Calejo as was
+the InterProlog user interface.  The Oracle interface was written by
+Hassan Davulcu and Ernie Johnson.  The Interface to Perl pattern
+matching routines was written by Michael Kifer and Jin Yu.  The ODBC
+interface was written by Lily Dong and Baoqiu Cui.
 
-Harald Schroepfer helped the XSB group with the Solaris port, and
-Yiorgos Adamopoulos suggested the bits to use for the HP-700 series
-port.  Steven Dawson, Larry B. Daniel and Franklin Chen were
-responsible for the MkLinux and Solaris x86 ports.
-
-Thanks are also due to Weidong Chen for his early work on Prolog
-clause indexing and Richard O'Keefe, who contributed the Prolog
-code for the Prolog reader and the C code for the tokenizer.  
-
-The starting point of \ourprolog\ was PSB-Prolog 2.0 by Jiyang Xu.
-PSB-Prolog in its turn was based on SB-Prolog, primarily designed and
-written by Saumya Debray, David S. Warren, and Jiyang Xu.  This manual
-was mostly written by Kostis Sagonas and Terrance Swift except for the
-chapter on the Oracle interface written by Hassan Davulcu.
+David Warren and Prasad Rao implemented the aggregate library.  The
+SLX preprocessor was written by Jos\'e J\'ulio Alferes and Lu\'is
+Moniz Pereira.  The F-logic interpreter (FLIP) was written by Bertram
+Ludaescher.  Unix-style scripting libraries were written by
+Terrance Swift, and the ordset library was written by Richard O'Keefe.
 
 \end{quote}
-

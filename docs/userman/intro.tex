@@ -13,7 +13,12 @@ found in Logic Programming systems, including
       with a novel transformation technique called {\em unification
       factoring} that can improve program speed and indexing for
       compiled code;
-\item A number of interfaces to other software systems.
+\item A number of interfaces to other software systems, such a C,
+	Java, Perl and Oracle. 
+\item Preprosessors and Interpreters so that XSB can be used to
+evaluate various non-monotonic formalisms such as extended logic
+progams (according to the Well-Founded Semantics \cite{ADP94}) and
+F-Logic \cite{KLW93} 
 \item Source code availability for portability and extensibility.
 \end{itemize}
  
@@ -164,7 +169,7 @@ The general technique is described in \cite{DRRSSSW95}, and the XSB
 directives needed to use it are covered in Section
 \ref{the_compiler}.
 
-A number of interfaces are available to link XSB to embedded systems.
+A number of interfaces are available to link XSB to other systems.
 In UNIX systems XSB can be directly linked into C programs; in
 Windows-based system XSB can be linked into C programs through a DLL
 interface.  On either class of operating system, C functions can be
@@ -172,11 +177,18 @@ made callable from XSB either directly within a process, or using a
 socket library.  XSB can access external data in a variety of ways:
 through an Oracle interface, through an ODBC interface (documented in
 a separate manual), or through a variety of mechanisms to read data
-from flat files.
+from flat files.  These interfaces are described in Volume 2 of this manual.
+
+Another feature of XSB is its support for extensions of normal logic
+programs through preprocessing libraries.  These libraries are
+described in the section {\it Library Utilities} in Volume 2 of this
+manual. 
 
 Source code is provided for the whole of XSB, including the
 engine, interfaces and supporting functions written in C, along with
 the compiler, top-level interpreter and libraries written in Prolog.
+
+\comment{
 One reason for making everything available is to allow users to port
 XSB to new platforms --- which they have done.  The system can
 be compiled using most C compilers (though we recommend using the GNU
@@ -194,6 +206,7 @@ is new to Version 1.8 and our 64-bit port has been tested on Other
 ports are planned, particularly to 64 bit Silicon Graphics machines
 running IRIX.  Parties interested in doing other ports should contact
 us at {\tt xsb-contact@cs.sunysb.edu}.
+}
 
 \comment{
 Taken out for version 1.8

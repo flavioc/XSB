@@ -162,10 +162,11 @@ A foreign module can be {\tt compile}d or {\tt consult}ed just like a
 normal Prolog module.  Currently, predicates {\tt consult/[1,2]}
 recompile both the {\tt *.c} and the {\tt *.H} files of a foreign
 module when at least one of them has been changed from the time the
-corresponding object files have been created (see Section~\ref{Consulting}).
+corresponding object files have been created (see the section {\it
+Compiling and Consulting} in Volume 1. 
 The C compiler used to compile the {\tt *.c} files can be set as a
-compilation option or defaults to that used for the installation of
-\ourprolog\ (refer to Section~\ref{installation_options}).
+compilation option or defaults to that used for the configuration of
+XSB (refer to the section {\it Getting Started with XSB} in Volume 1.
 Moreover, the user can control the compiler options that can be passed
 to the C compiler.  To give an example, the following command will
 compile file {\tt file.c} using the Gnu C Compiler with optimization

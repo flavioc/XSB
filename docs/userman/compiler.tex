@@ -232,16 +232,14 @@ The following options are currently recognized by the compiler:
 	than the last modification time of the source files.
 
 % tls mention that the following are for hackers ...
-\item[{\tt sysmod}] Mainly used when compiling system modules. If specified,
-	standard predicates (listed in
+\item[{\tt sysmod}] Mainly used by developers when compiling system
+	modules. If specified, standard predicates (listed in
 	Appendix~\ref{standard_predicates}) are automatically
 	available for use only if they are primitive predicates (see
-	Appendix~\ref{primitive_predicates}).  When compiling in this
+	the file {\tt syslib/machine.P} for a current listing of such
+	predicates. When compiling in this
 	mode, non primitive standard predicates must be explicitly
 	imported from the appropriate system module.
-%	On the other hand, when compiling with this option all \ourprolog\
-%	primitive predicates (see Appendix~\ref{primitive_predicates}) are
-%	automatically available for use.
 \item[{\tt verbo}] Compiles the files (modules) specified in ``verbose'' mode, 
 	printing out information about the progress of the compilation of each 
 	predicate.

@@ -136,9 +136,6 @@ looking at the sources.
     Predicate {\tt closetail/1} closes the tail of an open-ended list.
     It succeeds only once.
 
-%\ouritem{remove\_dupls(+List1, ?List2)}\index{{\tt remove\_dupls/2}}
-%    There is no need to provide such a predicate.  If you need one use
-%    the {\tt sort/2} standard predicate (described in section~\ref{Comparison}).
 \end{description}
 
 
@@ -148,7 +145,7 @@ looking at the sources.
 
 The module {\tt consult} in directory {\tt lib} provides several handy
 library predicates that can assert the contents of a file into
-\ourprolog's database.  The use of these predicates may be necessary
+XSB's database.  The use of these predicates may be necessary
 when the code needs to be {\tt dynamic} (so that it is retractable),
 or when it contains atoms whose length is more than 255 that cannot be
 handled by the XSB compiler.
@@ -167,7 +164,7 @@ handled by the XSB compiler.
     All predicates are loaded into {\tt usermod}.  Module declarations
     such as {\tt :- export} are ignored and a warning is issued.
     Starting with Version 1.5.0, this predicate is a standard predicate
-    of \ourprolog.
+    of XSB.
 
 \ournewitem{ensure\_dyn\_loaded(+FileName)}{consult}
 \index{{\tt ensure\_dyn\_loaded/1}}
@@ -410,7 +407,7 @@ predicates are described here.
     then the string making up the atom {\tt FileName} is treated as
     the contents of the file, and a descriptor is returned that allows
     ``file'' access to that string.  This is how one can use
-    \ourprolog 's term I/O routines to build terms from atoms.
+    XSB's term I/O routines to build terms from atoms.
 
 \ournewitem{file\_close(+FileDes)}{machine}\index{{\tt file\_close/1}}
     Closes the file (or string) for descriptor {\tt FileDes}.
@@ -743,10 +740,11 @@ These predicates are available by loading the library through
 \begin{description}
 \ournewitem{measure(+Call)}{prof\_lib}\index{{\tt measure/1}}
 %\predindex{measure/1~(L)}\label{p:measure}
-     The same as {\tt once/1} (see section~\ref{meta_predicates}), 
+     The same as {\tt once/1} (see the section {\it Meta-Predicates}
+in Volume 1)
      but it also prints out statistical information about the call,
      that looks like the information printed out by predicate
-     {\tt statistics/0} (see section~\ref{environmental}).
+     {\tt statistics/0} (see the section {\it Execution State} in Volume 1).
 \end{description}
 
 %----------------------------------------------------------------------
@@ -762,14 +760,16 @@ These predicates are available by loading the library through
 
 In \version, trie asserted code has been merged with standard asserted
 code.  If the user wishes to use tries for dynamic code, the
-recommended programming practice is as outlined in Section
-\ref{sec:assert}.  For compatability with previous versions, the
+recommended programming practice is as outlined in the section {\it
+Modification of the Database} in Volume 1.
+For compatability with previous versions, the
 predicates {\tt trie\_assert/1}, {\tt trie\_retract/1}, {\tt
 trie\_retractall/1}, {\tt trie\_retract\_nr/1}, {\tt
 abolish\_trie\_asserted/1} and {\tt trie\_dynamic/1} can be imported
 from the module {\sf tables}.  However, if the current index
-specification of these predicates is {\tt trie} (see Section
-\ref{sec:assert}), the predicates are defined as {\tt assert/1}, {\tt
+specification of these predicates is {\tt trie} (again, see the
+section {\it Modification of the Database} in Volume 1, the predicates
+are defined as {\tt assert/1}, {\tt 
 retract/1}, {\tt retractall/1}, {\tt retract\_nr/1}, {\tt abolish/1}
 and {\tt dynamic/1} respectively.  If the index specification is other
 than {\tt tries}, the predicate will issue a warning message and have
@@ -778,8 +778,9 @@ no effect on the database.
 \section{Extended Logic Programs}  \label{library_utilities:wfsx}
 \index{WFSX}
 \index{negation!explicit negation}
-As explained in Section \ref{tabling_overview} XSB can compute normal
-logic programs according to the well-founded semantics.  In fact, XSB
+As explained in the section {\it Using Tabling in XSB}, XSB can
+compute normal logic programs according to the well-founded semantics.
+In fact, XSB 
 can also compute {\em Extended Logic Programs}, which contain an
 operator for explicit negation (written using the symbol {\tt -} in
 addition to the negation-by-failure of the well-founded semantics

@@ -49,7 +49,8 @@ XSB does not at this time fully support dynamic predicates defined
 within compiled code.  The only way to generate dynamic code is by
 explicitly asserting it, or by using the standard predicate {\tt
 load\_dyn/1} to read clauses from a file and assert them (see
-page~\pageref{load_dyn/1}).  There is a {\tt dynamic/1} predicate (see
+the section {\it Asserting Dynamic Code} in Volume 2).  There is a
+{\tt dynamic/1} predicate (see 
 page~\pageref{dynamic/1}) that declares a predicate within the system
 so that if the predicate is called when no clauses are presently
 defining it, the call will quietly fail instead of issuing an {\sf

@@ -15,17 +15,14 @@ fix it or to assist you to bypass it.
 \begin{itemize}
 \item	The maximum arity for predicate and function symbols is 255.
 %
-\item	Though the maximum length of the atoms that can be read by the 
-      reader is currently 1000, when the atoms are compiled, their
-      maximum length that can be stored in the byte code file is by
-      definition 255.  So, users should avoid compiling files
+\item	The maximum length of atoms that can be stored in an XSB
+	object code file is  255.  So, users should avoid compiling
+	files 
       containing atoms whose length is more than 255.  Instead, the
       files containing these atoms could be loaded into the system
       using the standard predicate {\tt load\_dyn/1} that asserts the
-      contents of a file in XSB's database (see
-      section~\ref{LoadDyn}). To increase this limit beyond 1000
-      requires a redefinition of MaxStrLen in file {\tt emu/token.c},
-      and recompilation.
+      contents of a file in XSB's database (see the section {\em
+	Library Utilities} in Volume 2.  
 %
 \item	In the current version, you should never try to rename a byte code 
       file generated for a module, though you can move it around in your 
@@ -33,21 +30,22 @@ fix it or to assist you to bypass it.
       causes the system to load it into wrong places.  However, byte code 
       files for non-modules can be renamed at will.
 %
-\item	XSB allows up to 1 Gigabyte of address space for SUNs and 512
-      Megabytes of address space for other platforms.  For SUNs the
+\item XSB allows up to 1 Gigabyte of address space for 32-bit SUNs and 512
+      Megabytes of address space for other 32-bit platforms.  For SUNs the
       address space for integers is $-2^{28}$---$(2^{28}-1)$.  For
       MIPS-based machines (e.g. Silicon Graphics machines), the
       address space for integers is $-2^{26}$---$(2^{26}-1)$.  For all
       other machines it is $-2^{27}$---$(2^{27}-1)$.  This restriction can
       cause unexpected results when numbers are computed.  The amount
       of space allowed for floating point numbers is similar for each
-      machine.
+      machine.  For 64-bit platforms, addresses, integers, and
+	floating point numbersare all stored in 60 bits.
 %
-\item	Indexing on floating-point numbers does not work, since the semantics
+\item	Indexing on floating-point numbers does not work, since, as
+implemented in XSB, the semantics
       of floating-point unification is murky in the best case. Therefore, it
-      is advisable that you avoid using floating point numbers in the first 
-      argument of a procedure, since the compiler generates index information 
-      for the first argument by default, or that you explicitly index the
+      is advisable that if you use floating point numbers in the first 
+      argument of a procedure,  that you explicitly index the
       predicate in some other argument.
 %
 \item	The XSB compiler cannot distinguish the occurrences of a
@@ -64,13 +62,13 @@ fix it or to assist you to bypass it.
 \section{Known Bugs}
 
 \begin{itemize}
-\item As mentioned in sectiom~\ref{memory_management} the heap and
-      local environment stacks are not dynamically expanded, and in
-      the current version, heap overflows are not adequately caught.
-      When stack overflows occur, you should try to enlarge the
-      appropriate stack space through the command line option (see
-      section~\ref{emulator_options}).  In addition \version\ contains
-      no garbage collector.
+\item The current version of XSB does not fully support dynamic code.
+In fact the declartion {\tt :- dynamic} essentially instructs XSB to
+fail on that code if it is undefined.
+%
+\item Currently the C foreign language interface does not work when
+XSB is {\em also} compiled with the Oracle interface on Solaris.
+\comment{
 \item When compiling a predicate such as
 \begin{verbatim}
 foo :- (X=1;Y=2),write(X),nl,write(Y),nl,fail.
@@ -92,16 +90,13 @@ effective rewrite.
 \begin{verbatim}
 foo :- (X=1,Y=Z;Y=2,X=Z),write(X),nl,write(Y),nl,fail.
 \end{verbatim}
-\item The current version of XSB does not fully support dynamic code.
-In fact the declartion {\tt :- dynamic} essentially instructs XSB to
-fail on that code if it is undefined.
-%
 \item When ``compiling'' of large files through {\tt consult/2}, many
       parts of the compiler are bypassed.  As a result compiler
       directives like {\tt auto-table} may not work with large files.
       To work around this, the files may be explicitly compiled
       through {\tt compile/2} to create an object file, and then
       loaded as usual through {\tt consult/2}.
+}
 % I think this is mostly fixed: tls
 %\item Explicit compilation (using {\tt compile/1}) of {\em very} large
 %      files {\em may} cause a core dump due to unfinished memory

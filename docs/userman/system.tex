@@ -19,8 +19,8 @@ or, if, after being built, XSB is later installed  at a central location,
 \end{verbatim}
 %%
 
-To invoke \ourprolog's top level interpreter (the usual way of
-using \ourprolog), simply issue the command:
+To invoke XSB's top level interpreter (the usual way of
+using XSB), simply issue the command:
 \begin{verbatim}
                        $XSB_DIR/bin/xsb -i
 \end{verbatim}
@@ -499,7 +499,7 @@ The order in which these options appear makes no difference.
 \item[{\tt -n}] used in conjunction with the {\tt -i} option, to
     indicate that the usual read-eval-print top-loop is not to be
     entered, but instead will interface to a calling C program.  See
-    Chapter~\ref{ccallingxsb} for details.
+the chapter {\it Calling XSB from C} in Volume 2  for details.
 \item[{\tt -d}] Produces a disassembled dump of {\tt byte\_code\_file} to 
     {\tt stdout} and exits.
 \item[{\tt -c} {\em size}] Allocates {\em initial  size\/} Kbytes of space
@@ -556,23 +556,13 @@ with the command.
 \section{Memory Management}\label{memory_management}
 \index{memory management}
 %===================================================
-The developers of XSB have gone to great effort to provide a useful,
-robust programming system.  However, we have not yet included many
-features that would be extremely useful to the system.  Foremost among
-these is better memory management for the heap and local stacks.  We
-hope to fix this deficiency in the near future.  In the meantime, the
-{\tt '-s'} option is provided for viewing the maximum amount of memory
-needed for program stacks.
-
-Both the trail/choice point region and the completion stack region are
-automatically expanded in \version .  These regions begin with an
+All execution stacks are automatically expenaded in \version\
+including the local stack/heap region, the trail/choice point region
+and the completion stack region.  Each of these regions begin with an
 initial value set by the user (or the default stated in Section
-\ref{emulator_options}), and doubles the size until it is not possible
+\ref{emulator_options}), and double their size until it is not possible
 to do so with available system memory.  At that point XSB tries to
 find the maximal amount of space that will still fit in system memory.
-%This algorithm for increasing space may be refined in future versions
-%of XSB, so we are interested in hearing about experiences in XSB's
-%memory management from our users.
 
 The program area (the area into which the code is loaded) is also
 dynamically expanded as needed, and the area occupied by dynamic code
@@ -658,7 +648,8 @@ size.  This default compile is set to be 20,000 bytes (in {\tt
 cmplib/config.P}), but can be reset by the user.  If the source file
 is larger than the default compile size, the file will be loaded using
 {\tt load\_dyn/1}, and otherwise it will be compiled ({\tt
-load\_dyn/1} can also be called separately, see \pageref{load_dyn/1}).
+load\_dyn/1} can also be called separately, see the section {\it
+Asserting Dynamic Code} for details.
 While {\tt load\_dyn} gives reasonibly good execution times,
 compilation can always be done by using {\tt compile/[1,2]}
 explicitly.  Currently (\version), a foreign language module is
@@ -793,7 +784,8 @@ Predicates {\tt compile/[1,2]} can also be used to compile foreign
 language modules.  In this case, the names of the source files should
 have the extension {\tt .c} and a {\tt .P} file must {\em not\/}
 exist.  A header file (with extension {\tt .H}) {\em must} be present
-for a foreign language module (see Chapter~\ref{foreign}).
+for a foreign language module (see the chapter {\it Foreign Language
+Interface} in Volume 2.
 
 
 \subsection{Compiler Options}\label{compiler_options}
@@ -899,7 +891,7 @@ The following options are currently recognized by the compiler:
 	Used in conjunction with {\tt ti\_dump}, generates names for
 	predicates created by unification factoring that reflect the
 	clause head factoring done by the transformation.
-
+\comment{
 \item[{\tt init\_var\_off}]\index{{\tt init\_var\_off}}
 	When specified, the compiler will give a warning (instead of an
 	error) upon finding that a potentially uninitialized variable is
@@ -918,7 +910,7 @@ The following options are currently recognized by the compiler:
 		option is used may not execute correctly (or even cause
 		XSB to core dump!) if the variable is indeed
 		uninitialized when used.
-
+}
 %---------------------------------------------
 \index{mode analysis!compiler options}
 %---------------------------------------------
@@ -950,16 +942,14 @@ The following options are currently recognized by the compiler:
 
 
 % tls mention that the following are for hackers ...
-\item[{\tt sysmod}] Mainly used when compiling system modules. If specified,
-	standard predicates (listed in
+\item[{\tt sysmod}] Mainly used by developers when compiling system
+	modules. If specified, standard predicates (listed in
 	Appendix~\ref{standard_predicates}) are automatically
 	available for use only if they are primitive predicates (see
-	Appendix~\ref{primitive_predicates}).  When compiling in this
+	the file {\tt syslib/machine.P} for a current listing of such
+	predicates. When compiling in this
 	mode, non primitive standard predicates must be explicitly
 	imported from the appropriate system module.
-%	On the other hand, when compiling with this option all XSB
-%	primitive predicates (see Appendix~\ref{primitive_predicates}) are
-%	automatically available for use.
 \item[{\tt verbo}] Compiles the files (modules) specified in ``verbose'' mode, 
 	printing out information about the progress of the compilation of each 
 	predicate.
@@ -1431,7 +1421,8 @@ XSB has other directives not found in other Prolog systems.
  	declaration.
 \desc{:- ldoption($Options$).}
         This directive is only recognized in the header file ({\tt .H} file) 
-	of a foreign module. See Chapter~\ref{foreign} for its explanation.
+	of a foreign module. See the chapter {\it Foreign Language
+Interface} in Volume 2 for its explanation.
 \desc{:- compiler\_options($OptionsList$).}
 	Indicates that the compiler options in the list $OptionsList$
 	should be used to compile this file.  This must appear at the

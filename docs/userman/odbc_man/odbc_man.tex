@@ -1,6 +1,10 @@
 \chapter{XSB-ODBC Interface} \label{odbc_interface}
 %====================================================
 
+\begin{center}
+{\Large {\bf By Baoqiu Cui and Lily Dong }}
+\end{center}
+
 \section{Introduction}
 %=====================
 
@@ -214,14 +218,14 @@ All arguments are standard Prolog terms.  {\tt ARG1}, {\tt ARG2}, ...,
 {\tt ARGn}defines the attributes to be retrieved from the database, while
 {\tt DatabaseGoal} defines the selection restrictions and join conditions.
 
-The compiler is a simple extension of \cite{draxler} which generates SQL
+The compiler is a simple extension of \cite{Dra92} which generates SQL
 queries with bind variables and handles NULL values as described in
 Section \ref{NULL-values}.  It allows negation, the expression
 of arithmetic functions, and higher-order constructs such as grouping,
 sorting, and aggregate functions.
 
 Database goals are translated according to the following rules
-from \cite{draxler}:
+from \cite{Dra92}:
 \begin{itemize}
 \item Disjunctive goals translate to distinct SQL queries
 	connected through the UNION operator.
@@ -235,7 +239,7 @@ from \cite{draxler}:
 	  the constant value.
 \item Nulls are translated to {\tt IS NULL} conditions.
 \end{itemize}
-For more examples and implementation details see \cite{draxler}.
+For more examples and implementation details see \cite{Dra92}.
  
 In the following, we show the definition of a simple join view between the 
 two database predicates {\it Room} and {\it Floor}.
@@ -601,7 +605,8 @@ platform, it inherits all limitations of the XSB-ORACLE interface, i.e. limited
 number of usable cursors, cursor leaking when using cuts and etc.  Hence 
 the guidelines for XSB-ORACLE interface application 
 developers are also for XSB-ODBC interface application developers.  
-Please refer to Sections 12.5 and 12.3 of \cite{xsb-manual} for datails.
+Please refer to Sections \ref{oracle:use} and \ref{oracle:limitations}
+for datails. 
 
 \section{Error messages}
 %============================
@@ -626,9 +631,8 @@ Please refer to Sections 12.5 and 12.3 of \cite{xsb-manual} for datails.
 	\end{itemize}
 
 \item[ERR - DB: No more cursors left] Interface run out of non-active
-                                               cursors either because of
-a leak (See Section 12.3 of \cite{xsb-manual}) 
-                                               or no more free cursors left.
+cursors either because of a leak (See Section \ref{oracle:use}) or no
+more free cursors left. 
 \begin{itemize}
 
 \item Diagnosis: System fails always with this error.  odbc\_transaction(rollback) or

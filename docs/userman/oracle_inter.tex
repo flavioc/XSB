@@ -1,6 +1,10 @@
 \chapter{XSB - Oracle Interface} \label{oracle_inter}
 %====================================================
 
+\begin{center}
+{\Large {\bf By Hassan Davulcu and Ernie Johnson }}
+\end{center}
+
 \section{Introduction}
 %=====================
 
@@ -795,7 +799,7 @@ ancestor(X,Z) :- ancestor(X,Y), db_parent(Y,Z).
 \end{verbatim}
 
 
-\subsection{Guidelines for application developers} \label{Guide}
+\subsection{Guidelines for application developers} \label{sec:Guide}
 %---------------------------------------------------------------
 \begin{enumerate}
 \item  Try to group your database predicates and use the view level interface
@@ -868,7 +872,7 @@ XSB\_DIR/emu/orastuff.pc we provide code for up to 100 cursors. The last
 	\end{itemize}
 
 \item[ERR - DB: No more cursors left] Interface run out of non-active
-cursors either because of a leak (See \ref{Guide}) or you have more then MAX\_OPEN\_CURSORS concurrently open
+cursors either because of a leak (See \ref{sec:Guide}) or you have more then MAX\_OPEN\_CURSORS concurrently open
 searches.
 \begin{itemize}
 
