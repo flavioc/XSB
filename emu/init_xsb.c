@@ -224,11 +224,14 @@ static void init_open_files(void)
      this is good or bad. Line-buffering _IOLBF is the coarsest that can be
      allowed. Without the buffering NT users won't see anything on the
      screen. -mk */
-  setvbuf(stdmsg, NULL, _IONBF, 0);
-  setvbuf(stdwarn, NULL, _IONBF, 0);
-  setvbuf(stddbg, NULL, _IONBF, 0);
-  setvbuf(stdfdbk, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
+  /* We should use setvbuf, but -no-cygwin doesn't seem to do the
+     right thing with it, but it does with setbuf.... go figure. -dsw */
+
+  setbuf(stdmsg, NULL);
+  setbuf(stdwarn, NULL);
+  setbuf(stddbg, NULL);
+  setbuf(stdfdbk, NULL);
+  setbuf(stderr, NULL);
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
 }
