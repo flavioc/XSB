@@ -119,11 +119,11 @@ static CPtr orig_ebreg;
  */
 
 typedef struct {
-  TSTNptr alt_node;      /* sibling of the TSTN whose child ptr we took */
-  int ts_top_offset;     /* current top-of-tstTermStack at CP creation */
-  pLogFrame log_top;     /* current top-of-tstTermStackLog at CP creation */
-  CPtr *trail_top;       /* current top-of-trail at CP creation */
-  CPtr heap_bktrk;       /* current hbreg at time of CP creation */
+  TSTNptr alt_node;	/* sibling of the TSTN whose child ptr we took */
+  int ts_top_index;	/* current top-of-tstTermStack at CP creation */
+  int log_top_index;	/* current top-of-tstTermStackLog at CP creation */
+  CPtr *trail_top;	/* current top-of-trail at CP creation */
+  CPtr heap_bktrk;	/* current hbreg at time of CP creation */
 } tstChoicePointFrame;
 
 #define TST_CPSTACK_SIZE   K
@@ -136,8 +136,8 @@ static struct {
 
 /* Use these to access the frame to which `top' points */
 #define tstCPF_AlternateNode    ((tstCPStack.top)->alt_node)
-#define tstCPF_TermStackTopOffset     ((tstCPStack.top)->ts_top_offset)
-#define tstCPF_TSLogTop         ((tstCPStack.top)->log_top)
+#define tstCPF_TermStackTopIndex     ((tstCPStack.top)->ts_top_index)
+#define tstCPF_TSLogTopIndex         ((tstCPStack.top)->log_top_index)
 #define tstCPF_TrailTop         ((tstCPStack.top)->trail_top)
 #define tstCPF_HBreg            ((tstCPStack.top)->heap_bktrk)
 
@@ -149,17 +149,16 @@ void initTSTRetrieve() {
   tstCPStack.ceiling = tstCPStack.base + TST_CPSTACK_SIZE;
 }
 
-#define CPStack_PushFrame(AlternateTSTN)	\
-   if ( IsNonNULL(AlternateTSTN) ) {		\
-     CPStack_OverflowCheck			\
-     tstCPF_AlternateNode = AlternateTSTN;	\
-     tstCPF_TermStackTopOffset =		\
-       TermStack_Top - TermStack_Base + 1;	\
-     tstCPF_TSLogTop = tstTermStackLog.top;	\
-     tstCPF_TrailTop = trreg;			\
-     tstCPF_HBreg = hbreg;			\
-     hbreg = hreg;				\
-     tstCPStack.top++;				\
+#define CPStack_PushFrame(AlternateTSTN)				\
+   if ( IsNonNULL(AlternateTSTN) ) {					\
+     CPStack_OverflowCheck						\
+     tstCPF_AlternateNode = AlternateTSTN;				\
+     tstCPF_TermStackTopIndex = TermStack_Top - TermStack_Base + 1;	\
+     tstCPF_TSLogTopIndex = TermStackLog_Top - TermStackLog_Base;	\
+     tstCPF_TrailTop = trreg;						\
+     tstCPF_HBreg = hbreg;						\
+     hbreg = hreg;							\
+     tstCPStack.top++;							\
    }
 
 #define CPStack_Pop     tstCPStack.top--
@@ -194,18 +193,10 @@ void initTSTRetrieve() {
    cur_chain = tstCPF_AlternateNode;		\
    parentTSTN = TSTN_Parent(cur_chain)
 
-/*
- *  Could replace the body of the while loop with the following to reduce
- *  the number of memory moves.  This only resets terms which will lie
- *  below the new top of the TermStack.
- *      tstTermStackLog.top--;
- *      if (LogFrame_Index < tstCPF_TermStackTopOffset)
- *        TermStack_Base[LogFrame_Index] = LogFrame_Value;
- */
-#define RestoreTermStack				\
-   while (tstTermStackLog.top > tstCPF_TSLogTop)	\
-     TermStackLog_PopAndReset;				\
-   TermStack_SetTOS(tstCPF_TermStackTopOffset)
+
+#define RestoreTermStack			\
+   TermStackLog_Unwind(tstCPF_TSLogTopIndex);	\
+   TermStack_SetTOS(tstCPF_TermStackTopIndex)
 
 
 #define ResetHeap_fromCPF	\
@@ -453,7 +444,7 @@ static void tstRetrievalError(char *string, xsbBool cleanup_needed) {
 	* resident structures and a deref of the trie symbol doesn't	
 	* tell you whether we have something in the trie or in the heap.
 	*/                                           			  \
-       if ( sym_tag == XSB_STRUCT ) {                        			  \
+       if ( sym_tag == XSB_STRUCT ) {                 			  \
 	 if ( get_str_psc(Subterm) == DecodeTrieFunctor(symbol) ) {	  \
 	   /*							
 	    *  We must process the rest of the term ourselves.

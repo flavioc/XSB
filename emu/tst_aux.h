@@ -70,28 +70,24 @@ extern DynamicStack tstTermStack;
 
 #define TermStack_Push(Term) {			\
    CPtr nextFrame;				\
-						\
    DynStk_Push(tstTermStack,nextFrame);		\
    *nextFrame = Term;				\
  }
 
 #define TermStack_BlindPush(Term) {		\
    CPtr nextFrame;				\
-						\
    DynStk_BlindPush(tstTermStack,nextFrame);	\
    *nextFrame = Term;				\
  }
 
 #define TermStack_Pop(Term) {			\
    CPtr curFrame;				\
-						\
    DynStk_BlindPop(tstTermStack,curFrame);	\
    Term = *curFrame;				\
  }
 
 #define TermStack_Peek(Term) {			\
    CPtr curFrame;				\
-						\
    DynStk_BlindPeek(tstTermStack,curFrame);	\
    Term = *curFrame;				\
  }
@@ -106,7 +102,6 @@ extern DynamicStack tstTermStack;
 
 #define TermStack_PushListArgs(LIST_Cell) {	\
    CPtr pListHeadCell = clref_val(LIST_Cell);	\
-						\
    DynStk_ExpandIfOverflow(tstTermStack,2);	\
    TermStack_BlindPush( *(pListHeadCell + 1) );	\
    TermStack_BlindPush( *(pListHeadCell) );	\
@@ -150,23 +145,12 @@ extern DynamicStack tstTermStack;
 
 #define TermStack_PushArray(Array,NumElements) {	\
    counter i;						\
-							\
    DynStk_ExpandIfOverflow(tstTermStack,NumElements);	\
    for ( i = 0;  i < NumElements;  i++ )		\
      TermStack_BlindPush(Array[i]);			\
  }
 
 /* ------------------------------------------------------------------------- */
-
-#ifdef DEBUG_TRIE_STACK
-#define Print_Overflow_Warning(StackName) {	\
-   xsb_warn("%s overflow!\n", StackName);	\
-   *(CPtr)0 = 0;				\
- }
-#else
-#define Print_Overflow_Warning(StackName)	\
-   xsb_abort("%s overflow!\n", StackName)
-#endif
 
 /*
  *  tstTermStackLog
@@ -177,8 +161,8 @@ extern DynamicStack tstTermStack;
  *  are logged.  Therefore, we only need record values popped from the
  *  tstTermStack.
  *
- *  Each frame of the log consists of the address of a tstTermStack
- *  location and the value that was stored there.  tstTermStack values
+ *  Each frame of the log consists of the index of a tstTermStack
+ *  frame and the value that was stored there.  tstTermStack values
  *  are reinstated as a side effect of a tstTermStackLog_Pop.
  */
 
@@ -188,49 +172,51 @@ typedef struct {
 } tstLogFrame;
 typedef tstLogFrame *pLogFrame;
 
-#define TST_TERMSTACKLOG_SIZE    K
-
-struct tstTermStackLog {
-  pLogFrame top;       /* next available location to place an entry */
-  pLogFrame ceiling;   /* overflow pointer: points to Cell beyond array end */
-  tstLogFrame base[TST_TERMSTACKLOG_SIZE];
-};
-
-extern struct tstTermStackLog    tstTermStackLog;
+#define LogFrame_Index(Frame)	( (Frame)->index )
+#define LogFrame_Value(Frame)	( (Frame)->value )
 
 
-#define TermStackLog_ResetTOS    tstTermStackLog.top = tstTermStackLog.base
-#define TermStackLog_IsFull   (tstTermStackLog.top == tstTermStackLog.ceiling)
-#define TermStackLog_Init  \
-   tstTermStackLog.ceiling  = tstTermStackLog.base + TST_TERMSTACKLOG_SIZE
+extern DynamicStack tstTermStackLog;
+#define TST_TERMSTACKLOG_INITSIZE    20
 
-#define TermStackLog_PushFrame {			\
-   TermStackLog_OverflowCheck;				\
-   LogFrame_Index = TermStack_Top - TermStack_Base;	\
-   LogFrame_Value = *(TermStack_Top);			\
-   tstTermStackLog.top++;				\
+#define TermStackLog_Top	((pLogFrame)DynStk_Top(tstTermStackLog))
+#define TermStackLog_Base	((pLogFrame)DynStk_Base(tstTermStackLog))
+#define TermStackLog_ResetTOS	DynStk_ResetTOS(tstTermStackLog)
+
+/*
+ * This doesn't always immediately follow a pop of the TermStack (see
+ * tst_retrv.c).  Therefore the subterm is obtained from the TermStack
+ * directly before more terms are pushed onto it.
+ */
+#define TermStackLog_PushFrame {				\
+   pLogFrame nextFrame;						\
+   DynStk_Push(tstTermStackLog,nextFrame);			\
+   LogFrame_Index(nextFrame) = TermStack_Top - TermStack_Base;	\
+   LogFrame_Value(nextFrame) = *(TermStack_Top);		\
  }
 
-#define TermStackLog_PopAndReset {			\
-   tstTermStackLog.top--;				\
-   TermStack_Base[LogFrame_Index] = LogFrame_Value;	\
+#define TermStackLog_PopAndReset {					\
+   pLogFrame curFrame;							\
+   DynStk_BlindPop(tstTermStackLog,curFrame)				\
+   TermStack_Base[LogFrame_Index(curFrame)] = LogFrame_Value(curFrame);	\
  }
 
-/* Use these to access the frame to which `top' points */
-#define LogFrame_Index		((tstTermStackLog.top)->index)
-#define LogFrame_Value		((tstTermStackLog.top)->value)
-
-
-#define TermStackLog_OverflowCheck     \
-   if (TermStackLog_IsFull)            \
-     Print_Overflow_Warning("tstTermStackLog")
+/*
+ * Reset the TermStack elements down to and including the Index-th
+ * entry in the Log.
+ */
+#define TermStackLog_Unwind(Index) {			\
+   pLogFrame unwindBase = TermStackLog_Base + Index;	\
+   while ( TermStackLog_Top > unwindBase )		\
+     TermStackLog_PopAndReset;				\
+ }
 
 /* ------------------------------------------------------------------------- */
 
 /*
  *  tstSymbolStack
  *  ---------------
- *  for constructing terms from the symbols stored along a path in the trie
+ *  For constructing terms from the symbols stored along a path in the trie.
  */
 
 extern DynamicStack tstSymbolStack;
@@ -244,28 +230,24 @@ extern DynamicStack tstSymbolStack;
 
 #define SymbolStack_Push(Symbol) {		\
    CPtr nextFrame;				\
-						\
    DynStk_Push(tstSymbolStack,nextFrame);	\
    *nextFrame = Symbol;				\
  }
 
 #define SymbolStack_Pop(Symbol) {		\
    CPtr curFrame;				\
-						\
    DynStk_BlindPop(tstSymbolStack,curFrame);	\
    Symbol = *curFrame;				\
 }
 
 #define SymbolStack_Peek(Symbol) {		\
    CPtr curFrame;				\
-						\
    DynStk_BlindPeek(tstSymbolStack,curFrame);	\
    Symbol = *curFrame;				\
 }
 
 #define SymbolStack_PushPathRoot(Leaf,Root) {	\
    BTNptr btn = (BTNptr)Leaf;			\
-						\
    while ( ! IsTrieRoot(btn) ) {		\
      SymbolStack_Push(BTN_Symbol(btn));		\
      btn = BTN_Parent(btn);			\
@@ -314,7 +296,7 @@ extern DynamicStack tstTrail;
  */
 #define Trail_Unwind(Index) {			\
    CPtr *unwindBase = Trail_Base + Index;	\
-   while(Trail_Top > unwindBase)		\
+   while ( Trail_Top > unwindBase )		\
      Trail_PopAndReset;				\
  }
 

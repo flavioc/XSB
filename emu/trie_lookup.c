@@ -243,7 +243,7 @@ typedef struct {
   BTNptr alt_node;	/* node from which to continue the search */
   BTNptr var_chain;	/* beginning of variable chain */
   int termstk_top_index;  /* current top-of-tstTermStack at CP creation */
-  pLogFrame log_top;	/* current top-of-tstTermStackLog at CP creation */
+  int log_top_index;	/* current top-of-tstTermStackLog at CP creation */
   int trail_top_index;	/* current top-of-tstTrail at CP creation */
 } tstChoicePointFrame;
 
@@ -260,10 +260,10 @@ static struct {
 #define CPF_AlternateNode	((tstCPStack.top)->alt_node)
 #define CPF_VariableChain	((tstCPStack.top)->var_chain)
 #define CPF_TermStackTopIndex	((tstCPStack.top)->termstk_top_index)
-#define CPF_TermStackLogTop	((tstCPStack.top)->log_top)
+#define CPF_TermStackLogTopIndex	((tstCPStack.top)->log_top_index)
 #define CPF_TrailTopIndex	((tstCPStack.top)->trail_top_index)
 
-/**** Stack Operations ****/
+/**** TST CP Stack Operations ****/
 #define CPStack_ResetTOS     tstCPStack.top = tstCPStack.base
 #define CPStack_IsEmpty      (tstCPStack.top == tstCPStack.base)
 #define CPStack_IsFull       (tstCPStack.top == tstCPStack.ceiling)
@@ -279,33 +279,27 @@ static struct {
  *  state is still accessible.
  */
 
-#define CPStack_PushFrame(AltNode, VarChain) {		\
-   CPStack_OverflowCheck;				\
-   CPF_AlternateNode = AltNode;				\
-   CPF_VariableChain = VarChain;			\
-   CPF_TermStackTopIndex =				\
-     TermStack_Top - TermStack_Base + 1;		\
-   CPF_TermStackLogTop = tstTermStackLog.top - 1;	\
-   CPF_TrailTopIndex = Trail_Top - Trail_Base;		\
-   tstCPStack.top++;					\
+#define CPStack_PushFrame(AltNode, VarChain) {	\
+   CPStack_OverflowCheck;			\
+   CPF_AlternateNode = AltNode;			\
+   CPF_VariableChain = VarChain;		\
+   CPF_TermStackTopIndex =			\
+     TermStack_Top - TermStack_Base + 1;	\
+   CPF_TermStackLogTopIndex =			\
+     TermStackLog_Top - TermStackLog_Base - 1;	\
+   CPF_TrailTopIndex = Trail_Top - Trail_Base;	\
+   tstCPStack.top++;				\
  }
 
 /*
  *  Resume the state of a saved point of choice.
- *  Reduce the number of memory moves by not blindly restoring all changes,
- *  but only those that will effect the soon-to-be active portion of the
- *  term stack.  Use the following to replace the body of the while loop:
- *      tstTermStackLog.top--;
- *      if (LogFrame_Index < CPF_TermStackTopIndex)
- *        TermStack_Base[LogFrame_Index] = LogFrame_Value;
  */
 
 #define CPStack_PopFrame(CurNode,VarChain) {		\
    tstCPStack.top--;					\
    CurNode = CPF_AlternateNode;				\
    VarChain = CPF_VariableChain;			\
-   while (tstTermStackLog.top > CPF_TermStackLogTop)	\
-     TermStackLog_PopAndReset;				\
+   TermStackLog_Unwind(CPF_TermStackLogTopIndex);	\
    TermStack_SetTOS(CPF_TermStackTopIndex);		\
    Trail_Unwind(CPF_TrailTopIndex);			\
  }
