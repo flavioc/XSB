@@ -1,0 +1,45 @@
+/* File:      flrundefhook.H
+**
+** Author(s): Guizhen Yang
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999-2000
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+**
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+**
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+:- import fmt_write_string/3 from file_io.
+
+:- import current_predicate/1 from curr_sym.
+
+:- import
+	flora_flogic_predicate/4,
+	flora_hilog_predicate/2,
+	flora_nohilog_predicate/3
+   from flrwrapper.
+
+:- import
+	flora_stderr_nl/0,
+	flora_error_line/2,
+	flora_warning_line/2
+   from flrprint.
+
+:- import flloadtrailer/2 from flrutils.
+
+:- export flora_undefined_predicate_hook/1.
