@@ -524,47 +524,76 @@ of the permanent space:
 \end{enumerate}
 
 
-\subsection{The Symbol Table}
+\subsection{The Symbol Table} (Updated Jan, 01)
 %============================
 
 \label{pg:symtab}
-The symbol table of XSB is a set of elements called {\it PSC records}
-or {\it symbols} organized in a form we will explain later in this subsection.
-A PSC record (symbol) is stored in the permanent space with the format
+The symbol table of XSB maintains predicate names, constants, module
+names and all other symbol information in {\em PSC records} that are
+organized in a form we will explain later in this subsection.  
 
-\begin{verbatim}
-    --------------------------------------------------------------
-    |env |type|arit|leng|  name pointer      |  entry point      |
-    --------------------------------------------------------------
-      1     1    1    1        4 bytes              4 bytes
-\end{verbatim}
+\paragraph*{PSC Records}
+A {\tt psc\_record} structure is stored in the permanent space with an
+exact format as specified in {\tt psc\_xsb.h}.  The structure contains
+the following information.
+%
+\begin{itemize}
+\item {\tt byte env}; The {\tt env} field is indeed used for two
+purposes. Its higher order 4 bits are used for debugging purpose
+(spying) and its value is accessed by {\tt get\_spy}.  The first of
+these higher order bits indicates conditional spying, and the second
+of them indicates any spying (including conditional) on the predicate.
+The lower order 4 bits of this field are accessed by {\tt get\_env}
+and are used for environment specifications as explained in Table
+\ref{t:env}.  The {\tt env} field is set at load time according to the
+environment of the existing entry (if it already exists) and the scope
+of the symbol in the byte code file.  Table \ref{t:envset} shows the
+setting.
+%
+\item {\tt byte entry\_type}; The {\tt entry\_type} field contains
+values as shown in Table \ref{t:ep} In general these valuse are
+derived from the entry type value of the symbol when it is loaded {\em
+except} that symbols representing modules are set to {\tt T\_ORDI} if
+unloaded, and then set to {\tt T\_MODU} when loaded.  This will not
+cause confusion due to module symbols are stored in a separate list
+(see below).
+%
+\item {\tt byte arity} --- of predicates and structures.
+%
+\item {\tt byte length}; The {\tt length} field seems no longer used.
+%
+\item   {\tt char *nameptr}; Ptr to the string name of the symbol.
+%
+\item {\tt struct psc\_rec *data}; If the symbol is a predicate name,
+this field points to the psc of its module (by default the global
+module).  Otherwise, the field may contain miscellaneous data accessed
+at the Prolog level by {\em psc\_prop/2} (e.g. a {\tt breg} value for
+{\tt abort\_cutpoint}).
+%
+\item {\tt byte *ep}; If a given psc record denotes a predicate name,
+its {\tt ep} field will denote its entry point; if the predicate has
+not been loaded, it points to the instruction {\tt load\_pred} which
+actually does the loading (by branching to an interrupt handler).  If
+the psc record denotes a module name, its {\tt ep} field will denote
+the head of the list of {\em psc pairs} of symbols in that module, as
+explained below.
+%
+\item {\tt word load\_inst}; If the symbol is a predicate name or
+foreign function, this field points to the {\tt load\_pred}
+instruction, used to load undefined predicates.  Why is this needed?
+To optimize calls.  For an undefined predicate, the {\tt ep} field,
+which is a (byte *) points to the {\tt load\_pred} instruction, stored
+in the next field.  This instruction loads code for this predicate.
+But why put this instruction into every psc record?  Because the first
+operand for the instruction is the psc record, kept in the {\tt
+this\_psc} field.  Although apparently necessary for a quick call that
+supports lazy loading of undefined predicates, one wonders whether
+these two fields are ever needed once a given predicate has been
+loaded into the system.
 
-The C structure representing the PSC records is
-
-\begin{verbatim}
-        typedef struct psc_rec {
-            byte env;
-            byte entry_type;
-            byte arity;
-            byte length;
-            char  *nameptr;
-            byte  *ep;
-        };
-\end{verbatim}
-
-The C macros for accessing the fields of PSC record are:
-
-\demo{ get\_env, get\_type, get\_arity, get\_name, get\_ep,  get\_spy.	}
-
-The length field seems no longer used, and the {\tt env} field is
-indeed used for two purposes. Its higher order 4 bits are used for
-debugging purpose (spying) and its value is accessed by {\tt
-get\_spy}; its lower order 4 bits are indeed used for environment
-specifications and is accessed by {\tt get\_env}. The first bit in the
-spy part indicates conditional spying, and the second bit indicates
-spying (including conditional) on the predicate.  The environment is an
-encoded number explained in Table \ref{t:env}.
-
+\item {\tt struct psc\_rec *this\_psc}; See {\tt load\_inst} above.
+\end{itemize}
+%
 \begin{table}\centering
 \begin{tabular}{l|l|l}
 \hline
@@ -575,48 +604,56 @@ Code	& Symbolic name	& Explanation				\\
  2	& T\_UNLOADED	& The module containing the symbol is not loaded \\
 \hline
 \end{tabular}
-\caption{Environment of Symbols in Memory}
+\caption{Possible Environment Types}
 \label{t:env}
 \end{table}
-
-The environment is said at the loading time according to the environment
-of the existing entry (if it already exists) and the scope of the
-symbol in the byte code file.  Table \ref{t:envset} shows the setting.
+%
 
 \begin{table}\centering
-\begin{tabular}{l|lllll}
+\begin{tabular}{l|llll}
 \hline
-Existing     & \multicolumn{5}{c}{Input category}	\\ \cline{2-6}
-environment  &  T\_EXPORT &  T\_LOCAL & T\_IMPORT   & T\_IMEX  &  T\_GLOBAL \\
+Existing     & \multicolumn{4}{c}{Input category}	\\ \cline{2-5}
+environment  &  T\_EXPORTED &  T\_LOCAL & T\_IMPORTED & T\_GLOBAL \\
 \hline
-T\_VISIBLE   & T\_VISIBLE & T\_HIDDEN & T\_VISIBLE  & not used & T\_VISIBLE \\
-T\_HIDDEN    & T\_HIDDEN  & T\_HIDDEN & error       & not used & T\_VISIBLE \\
-T\_UNLOADED  & T\_VISIBLE & error     & T\_UNLOADED & not used & T\_UNLOADED\\
-new          & T\_VISIBLE & T\_HIDDEN & T\_UNLOADED & not used & T\_VISIBLE \\
+T\_VISIBLE   & T\_VISIBLE & T\_HIDDEN & T\_VISIBLE  & T\_VISIBLE \\
+T\_HIDDEN    & T\_HIDDEN  & T\_HIDDEN & error       & T\_VISIBLE \\
+T\_UNLOADED  & T\_VISIBLE & error     & T\_UNLOADED & T\_UNLOADED\\
+new          & T\_VISIBLE & T\_HIDDEN & T\_UNLOADED & T\_VISIBLE \\
 \hline
 \end{tabular}
 \caption{Setting Environment of Symbols}
 \label{t:envset}
 \end{table}
+%
+\begin{table}\centering
+\begin{tabular}{l|l|l}
+\hline
+Name & Code	& Explanation				\\
+\hline
 
-The {\tt entry\_type} field is said to the category (sorry for using
-different terms. This is a historical problem and will be corrected)
-of the input symbol when loaded. The exception is that
-the module symbol will be set to T\_ORDI if that module is not 
-loaded or being loaded, and will be set to T\_MODU when it is loaded.
-This will not cause confusion due to module symbols are stored in a separate
-list (see below).
+T\_ORDI  & 0	& Constant-type: no ep definition, may be set later  \\
+T\_DYNA	& 1	& Constant-type: dynamic, code in assert buffer  \\
+T\_PRED  & 2	& Constant-type: ep points to compiled code  \\
+T\_MODU  & 4	& Ep field is used to hold psc-list  \\
+T\_FILE  & 5	& Ep field could be file descriptor (still relevant?)  \\
+T\_UDEF & 12	& Unloaded T\_PRED  \\
+T\_FORN & 13	& Predicate in foreign language  \\
+\hline
+\end{tabular}
+\caption{Possible Entry Point Types}
+\label{t:ep}
+\end{table}
+%
 
-The ep field stores the property of the symbol (another inconsistency of
-terminology -- ep stands for entry point, the property of a predicate).
 
-Now we come to the organization of the symbol table.
-First of all, the set of all module symbols are linked as a list and its
-head is pointed by a C variable {\tt mod\_list}. All the symbols
-in a single module is also linked as a list, whose head is pointed
-by the ep field of its module symbol (hence the property of the module).
-Therefore the symbol table looks like a bi-level tree as shown in Figure
-\ref{f:pscinmem}.
+\paragraph*{Symbol Table Organization}
+Now we come to the organization of the symbol table.  First of all,
+the set of all module symbols are linked as a list and its head is
+pointed by a C variable {\tt mod\_list}. All the symbols in a single
+module is also linked as a list, whose head is pointed by the {\tt ep}
+field of its module symbol (hence the property of the module).
+Therefore the symbol table looks like a bi-level tree as shown in
+Figure \ref{f:pscinmem}.
 
 \begin{figure}
 \begin{verbatim}
@@ -633,11 +670,11 @@ Therefore the symbol table looks like a bi-level tree as shown in Figure
               |
             (free)
 \end{verbatim}
-\caption{Symbol tables in the abstract machine}
+\caption{Symbol Table Organization}
 \label{f:pscinmem}
 \end{figure}
 
-The linking is done by using {\it link pairs} which have the form
+The linking is done by using {\it psc\_pairs} which have the form
 
 \begin{verbatim}
     -------------------------------------------
@@ -646,16 +683,6 @@ The linking is done by using {\it link pairs} which have the form
     -------------------------------------------
     Types: struct psc_rec *,  struct psc_pair *
 \end{verbatim}
-
-The C definition for link pairs is
-
-\begin{verbatim}
-        typedef struct psc_pair {
-                     Psc psc_ptr;
-                     struct psc_pair *next;
-        } Pair;
-\end{verbatim}
-
 
 
 \subsection{Program Segments}
