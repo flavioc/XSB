@@ -1,11 +1,11 @@
 \chapter{Getting Started with XSB} \label{quick_start}
-%============================================================
+%=====================================================
 
 This section describes the steps needed to install XSB under UNIX and
 under Windows.
 
 \section{Installing XSB under UNIX}
-%==========================================
+%==================================
 \label{installation_options}
 
 If you are installing on a UNIX platform, the version of XSB that you
@@ -222,7 +222,7 @@ the object files in {\tt syslib} and {\tt cmplib}.
 \[
   \tt
    \$XSB\_DIR \backslash config\backslash \mbox{\tt
-   x86-pc-pcdos}\backslash bin \backslash xsb~-i
+   x86-pc-pcdos}\backslash bin \backslash xsb
 \]
 If you decide to move XSB to some other place, make sure that the entire
    directory tree is moved --- XSB executable looks for the files it needs
@@ -290,18 +290,18 @@ in between.
 
 
 \section{Invoking XSB}
-%============================
+%=====================
 
 Under Unix, XSB can be invoked by the command:
 \begin{quote}
-       \tt \$XSB\_DIR/bin/xsb -i
+       \tt \$XSB\_DIR/bin/xsb
 \end{quote}
 %%$
 if you have installed XSB in your private directory.
 If XSB is instaled in a shared directory ({\it e.g.}, \$SHARED\_XSB
 for the entire site (UNIX only), then you should use
 \begin{quote}
-       \tt \$SHARED\_XSB/bin/xsb -i
+       \tt \$SHARED\_XSB/bin/xsb
 \end{quote}
 %%
 In both cases, you will find yourself in the top level interpreter.  
@@ -333,7 +333,7 @@ to test them for bugs now.  Details are in Chapter~\ref{standard}.
 
 
 \section{Compiling XSB programs}
-%=======================================
+%===============================
 
 All source programs should be in files whose names have the 
 suffix {\tt .P}.  One of the ways to compile a program from a file in 
@@ -356,7 +356,7 @@ terminates the input stream.
 
 
 \section{Sample XSB Programs}
-%====================================
+%============================
 
 If for some reason you don't feel like writing your own XSB programs, 
 there are several sample XSB programs in the directory: 
@@ -371,7 +371,7 @@ using comments after the \% character):
 {\footnotesize
  \begin{verbatim}
      my_favourite_prompt> cd $XSB_DIR/examples
-     my_favourite_prompt> ../emu/xsb -i -s
+     my_favourite_prompt> ../bin/xsb -s
      XSB Version 1.3.0 (93/9/13)
      [sequential, single word, optimal mode]
      | ?- [prof_lib].      % loads into the system predicate measure/1
@@ -431,7 +431,7 @@ using comments after the \% character):
 
 
 \section{Exiting XSB}
-%===========================
+%====================
 
 If you want to exit XSB, issue the command \verb'halt.' or
 simply type \verb'CTRL-d' at the XSB prompt. To exit XSB while it is
@@ -440,5 +440,5 @@ executing queries, strike \verb'CTRL-c' a number of times.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual1"
 %%% End: 

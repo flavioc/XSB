@@ -5,7 +5,7 @@ Throughout this chapter, we use \verb'$XSB_DIR' to refer to the
 directory in which XSB was installed.
 
 \section{Entering and Exiting XSB}
-%========================================
+%=================================
 
 After the system has been installed, the emulator's executable code appears 
 in the file:
@@ -17,27 +17,24 @@ or, if, after being built, XSB is later installed  at a central location,
 \begin{verbatim}
                      $SHARED_XSB/bin/xsb
 \end{verbatim}
+and indeed, using this command, invokes XSB's top level interpreter
+which is the usual way of
+using XSB
 
-To invoke XSB's top level interpreter (the usual way of
-using XSB), simply issue the command:
+\version{} of XSB can also directly execute object code files from the
+command line interface.  Suppose you have a top-level routine {\tt go}
+in a file {\tt foo.P} that you would like to run from the UNIX or
+Windows command line.  As long as {\tt foo.P} contains a directive
+{\tt :- go.}, and {\tt foo} has been compiled to an object file ({\tt
+foo.O}), then
 \begin{verbatim}
-                       $XSB_DIR/bin/xsb -i
-\end{verbatim}
-
-\version\ of XSB can also directly execute object code files
-from the command line interface.  Suppose you have a top-level routine
-{\tt go} in a file {\tt foo.P} that you would like to run from the
-UNIX or Windows command line.  As long as {\tt foo.P} contains a
-directive {\tt :- go.}, and {\tt foo} has been compiled to an object
-file ({\tt foo.O}), then
-\begin{verbatim}
-                       $XSB_DIR/bin/xsb foo
+                       $XSB_DIR/bin/xsb -B foo.O
 \end{verbatim}
 will execute {\tt go}, loading the appropriate files as needed.  In
-fact the command \verb'$XSB_DIR/bin/xsb -i' is equivalent to the
+fact the command \verb'$XSB_DIR/bin/xsb' is equivalent to the
 command:
 \begin{verbatim}
-             $XSB_DIR/bin/xsb $XSB_DIR/syslib/loader
+             $XSB_DIR/bin/xsb -B $XSB_DIR/syslib/loader.O
 \end{verbatim}
 %%$
 
@@ -46,9 +43,9 @@ command \verb'halt.' or \verb'end_of_file', or simply type
 \verb'CTRL-d' at the XSB prompt.  To interrupt XSB
 while it is executing a query, strike \verb'CTRL-c'.
 
+
 \section{The System and its Directories}
 %=======================================
-
 The XSB system, when installed, resides in a single directory that
 contains the following subdirectories:
 \begin{enumerate}
@@ -470,14 +467,16 @@ synopsis is:
 The order in which these options appear makes no difference.
 
 \begin{description}
-\item[{\tt -i}] Brings up the XSB interpreter.  This is the normal use.
+\item[{\tt -i}] Brings up the XSB interpreter.  This is the normal use
+        and because of this, use of this option is optional and is
+        only kept for backwards compatibility.
 \item[{\tt -l}] Forces the interpreter to print unbound variables as
 	letters, as opposed to the default setting which prints
 	variables as memory locations prefixed with an underscore.
 	For example, starting XSB's interpreter with this option will
 	print the following:
-\begin{verbatim} | ?- Y = X, Z = 3, W =
-	foo(X,Z).
+        \begin{verbatim}
+                  | ?- Y = X, Z = 3, W = foo(X,Z).
 
                   Y = A
                   X = A
@@ -496,7 +495,7 @@ The order in which these options appear makes no difference.
 \item[{\tt -n}] used in conjunction with the {\tt -i} option, to
     indicate that the usual read-eval-print top-loop is not to be
     entered, but instead will interface to a calling C program.  See
-the chapter {\it Calling XSB from C} in Volume 2  for details.
+    the chapter {\it Calling XSB from C} in Volume 2  for details.
 \item[{\tt -d}] Produces a disassembled dump of {\tt byte\_code\_file} to 
     {\tt stdout} and exits.
 \item[{\tt -c} {\em size}] Allocates {\em initial  size\/} Kbytes of space
@@ -543,10 +542,10 @@ the chapter {\it Calling XSB from C} in Volume 2  for details.
     will print a heart-warming message when XSB starts up.
 \end{description}
 
-As an example, a program which uses more heap than common might be run
-with the command.
+As an example, a program which uses more heap and local stack than the
+default configuration of XSB might be run by invoking XSB with the command.
 \begin{verbatim}
-         xsb -m 2000 -i
+         xsb -m 2000
 \end{verbatim}
 
 
@@ -554,15 +553,16 @@ with the command.
 \index{memory management}
 \index{garbage collection}
 %===================================================
-All execution stacks are automatically expenaded in \version\
+All execution stacks are automatically expenaded in \version{}
 including the local stack/heap region, the trail/choice point region
 and the completion stack region.  Each of these regions begin with an
-initial value set by the user (or the default stated in Section
-\ref{emulator_options}), and double their size until it is not
+initial value set by the user (or the default stated in
+Section~\ref{emulator_options}), and double their size until it is not
 possible to do so with available system memory.  At that point XSB
 tries to find the maximal amount of space that will still fit in
 system memory.  Garbage collection is automatically performed for
-retracted clauses, and for the heap, when the {\tt --enable-chat}
+retracted clauses.  In addition, heap garbage collection is
+automatically included when the {\tt --enable-chat} configuration
 option is used.
 
 The program area (the area into which the code is loaded) is also
@@ -571,11 +571,12 @@ dynamically expanded as needed, and the area occupied by dynamic code
 load\_dyn/1}) is reclaimed when that code is retracted.  Version 1.8
 improves memory management for retracted dynamic code.
 
-\version\ provides memory management for table space as well.  Space for
+\version{} provides memory management for table space as well.  Space for
 tables is dynamically allocated as needed and reclaimed through use of
 predicates {\tt abolish\_all\_tables/0}, {\tt, abolish\_table\_pred/1}
 and {\tt abolish\_table\_call/1}.  (see
 Section~\ref{tabling_predicates}).  
+
 
 \section{Compiling and Consulting} \label{Consulting}
 %====================================================
