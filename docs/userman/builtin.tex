@@ -1547,7 +1547,7 @@ predicate \verb|bagReduce/4|.
 \begin{description}
 
 \ournewitem{bagReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
-\ournewitem{filterReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
+\ournewitem{filterReduce(?SetPred,?Arg,+Op,+Id)}{Tabling}
 \index{{\tt bagReduce/4}} 
 \index{{\tt filterReduce/4}} 
 {\tt SetPred} must be a HiLog set specification, i.e., a unary HiLog
@@ -1570,9 +1570,9 @@ using a variance rather than unification.  An example of the use of
 {\tt filterReduce/4} is given in Chapter \ref{tabling_overview}.
 
 \ournewitem{bagPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
-\ournewitem{filterPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
-\index{{\tt bagPO/4}}
-\index{{\tt filterPO/4}}
+\ournewitem{filterPO(?SetPred,?Arg,+Order)}{Tabling}
+\index{{\tt bagPO/3}}
+\index{{\tt filterPO/3}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt Order} must be a binary Hilog relation that
     defines a partial order.  {\tt bagPO} returns nondeterministically
@@ -1584,9 +1584,37 @@ using a variance rather than unification.  An example of the use of
     See the {\tt bagMax} operator below to see an example of {\tt
     bagPO}'s use.
 
-{\tt filterPO/4} acts as {\tt bagPO/4} with the single difference that
-it does not depend on HiLog, so that {\tt filterPO/4} will be more
+{\tt filterPO/3} acts as {\tt bagPO/3} with the single difference that
+it does not depend on HiLog, so that {\tt filterPO/3} will be more
 robust especially when XSB's module system is used.
+
+\ournewitem{filterPO(\#Pred,+Order)}{Tabling} \index{{\tt
+filterPO/2}} 
+
+{\tt filterPO(\#Pred,+Order)} succeds only for a solution $Pred\theta$
+of {\tt Pred} for which there is no solution $Pred\eta$ to {\tt Pred}
+such that {\tt Order($Pred\eta$,$Pred\theta$)}.
+
+Example:
+
+For the following program
+     \begin{center}
+     {\tt
+     \begin{tabular}{l}
+          :- table p/2.	\\
+          b(1,2).       \\
+          p(1,3).       \\
+          b(1,1).       \\
+\\
+	  prefer(b(X,X),b(X,Y)):- X \== Y. 
+     \end{tabular}
+     }
+     \end{center}
+the query 
+\begin{center}
+{\tt ?- filterPO(b(X,Y)}
+\end{center}
+will succeed only with the binding {\em X = 1,Y = 1}.
 
 \ournewitem{bagMax(?SetPred,?Arg)}{HiLog,Tabling}
 \index{{\tt bagMax/2}}
@@ -1748,11 +1776,28 @@ bagAvg(Call,Avg) :-
     programming practice.  The use of a top level variable subgoal
     elicits a warning from the compiler.
 
-\ouritem{once(+X)}\index{{\tt once/1}}
-%\predindex{once/1~(P)}
-    The same as {\tt call(X), !}.
+\ouritem{once(+X)}
+\index{{\tt once/1}} 
+
+{\tt once/1} is defined as {\tt once(X):- call(X),!.}  {\tt once/1}
+should be used with care in tabled programs.  The compiler cannot
+determine whether a tabled predicate is called in the scope of {\tt
+once/1}, and such a call may lead to runtime errors.  If a tabled
+predicate may occur in the scope of {\tt once/1}, use {\tt
+table\_once/1} instead.
 
     Exceptions: The same as {\tt call/1}.
+
+\ouritem{table\_once(+X)}
+\index{{\tt table_once/1}} 
+
+{\tt table\_once/1} is a weaker form of {\tt once/1}, suitable for
+situations in which a single solution is desired for a subcomputation
+that may involve a call to a tabled predicate.  {\tt
+table\_once(?Pred)} succeeds only once even if there are many
+solutions to the subgoal {\tt Pred}.  However, it does not ``cut
+over'' the subcomputation started by the subgoal {\tt Pred}, thereby
+ensuring the correct evaluation of tabled subgoals.
 
 \end{description}
 
