@@ -18,11 +18,11 @@
 /***************************************************************************
   closure rules for X::Y
 ***************************************************************************/
-:- flpred base_sub/2.
-:- flpred derived_sub/2.
-:- flpred derived_sub_eql/2.
-:- flpred super_sub/2.
-:- flpred immediate_sub/2.
+:- florapred base_sub/2.
+:- florapred derived_sub/2.
+:- florapred derived_sub_eql/2.
+:- florapred super_sub/2.
+:- florapred immediate_sub/2.
 
 
 :- table derived_sub/2.
@@ -84,11 +84,11 @@ sub(X,Y) :-
 /***************************************************************************
   closure rules for O:C
 ***************************************************************************/
-:- flpred base_isa/2.
-:- flpred derived_isa/2.
-:- flpred derived_isa_eql/2.
-:- flpred super_isa/2.
-:- flpred ultimate_isa/2.
+:- florapred base_isa/2.
+:- florapred derived_isa/2.
+:- florapred derived_isa_eql/2.
+:- florapred super_isa/2.
+:- florapred ultimate_isa/2.
 
 
 :- table derived_isa/2.
@@ -144,11 +144,11 @@ ultimate_isa(O,C) :-
 /*****************************************************************************
   nonmonotonic inheritance of scalar attributes among classes
 *****************************************************************************/
-:- flpred base_ifd/3.
-:- flpred derived_ifd/3.
-:- flpred derived_ifd_eql/3.
-:- flpred defined_derived_ifd_eql/2.
-:- flpred conflict_ifd/2.
+:- florapred base_ifd/3.
+:- florapred derived_ifd/3.
+:- florapred derived_ifd_eql/3.
+:- florapred defined_derived_ifd_eql/2.
+:- florapred conflict_ifd/2.
 
 
 :- table derived_ifd/3.
@@ -209,14 +209,14 @@ conflict_ifd(C,A) :-
 /*****************************************************************************
   nonmonotonic inheritance of (defined) multivalued attributes among classes
 *****************************************************************************/
-:- flpred base_imvd/3.
-:- flpred derived_imvd/3.
-:- flpred derived_imvd_eql/3.
-:- flpred base_imvddef/2.
-:- flpred derived_imvddef/2.
-:- flpred derived_imvddef_eql/2.
-:- flpred defined_derived_imvd_eql/2.
-:- flpred conflict_imvd/2.
+:- florapred base_imvd/3.
+:- florapred derived_imvd/3.
+:- florapred derived_imvd_eql/3.
+:- florapred base_imvddef/2.
+:- florapred derived_imvddef/2.
+:- florapred derived_imvddef_eql/2.
+:- florapred defined_derived_imvd_eql/2.
+:- florapred conflict_imvd/2.
 
 
 :- table derived_imvd/3.
@@ -330,11 +330,11 @@ ifddef(C,A) :-
 /*****************************************************************************
   nonmonotonic inheritance of scalar attributes among objects
 *****************************************************************************/
-:- flpred base_fd/3.
-:- flpred derived_fd/3.
-:- flpred derived_fd_eql/3.
-:- flpred defined_derived_fd_eql/2.
-:- flpred conflict_obj_ifd/2.
+:- florapred base_fd/3.
+:- florapred derived_fd/3.
+:- florapred derived_fd_eql/3.
+:- florapred defined_derived_fd_eql/2.
+:- florapred conflict_obj_ifd/2.
 
 
 :- table derived_fd/3.
@@ -395,14 +395,14 @@ conflict_obj_ifd(O,A) :-
 /*****************************************************************************
   nonmonotonic inheritance of (defined) multivalued attributes among objects
 *****************************************************************************/
-:- flpred base_mvd/3.
-:- flpred derived_mvd/3.
-:- flpred derived_mvd_eql/3.
-:- flpred base_mvddef/2.
-:- flpred derived_mvddef/2.
-:- flpred derived_mvddef_eql/2.
-:- flpred defined_derived_mvd_eql/2.
-:- flpred conflict_obj_imvd/2.
+:- florapred base_mvd/3.
+:- florapred derived_mvd/3.
+:- florapred derived_mvd_eql/3.
+:- florapred base_mvddef/2.
+:- florapred derived_mvddef/2.
+:- florapred derived_mvddef_eql/2.
+:- florapred defined_derived_mvd_eql/2.
+:- florapred conflict_obj_imvd/2.
 
 
 :- table derived_mvd/3.
@@ -526,10 +526,10 @@ imvdtolist(O,M,L) :- findall(V,imvd(O,M,V),L).
 /*****************************************************************************
   monotonic inheritance of binary attributes (tabled methods)
 *****************************************************************************/
-:- flpred base_meth/2.
-:- flpred derived_meth/2.
-:- flpred base_imeth/2.
-:- flpred derived_imeth/2.
+:- florapred base_meth/2.
+:- florapred derived_meth/2.
+:- florapred base_imeth/2.
+:- florapred derived_imeth/2.
 
 
 :- table derived_meth/2.
@@ -573,8 +573,8 @@ imeth(C,M) :-
 /*****************************************************************************
   nontabled methods (transactions)
 *****************************************************************************/
-:- flpred base_tran/2.
-:- flpred derived_tran/2.
+:- florapred base_tran/2.
+:- florapred derived_tran/2.
 
 
 derived_tran(O,T) :-
@@ -591,14 +591,14 @@ tran(O,T) :-
 /*****************************************************************************
   monotonic inheritance of signatures
 *****************************************************************************/
-:- flpred base_fdsig/3.
-:- flpred derived_fdsig/3.
-:- flpred base_ifdsig/3.
-:- flpred derived_ifdsig/3.
-:- flpred base_mvdsig/3.
-:- flpred derived_mvdsig/3.
-:- flpred base_imvdsig/3.
-:- flpred derived_imvdsig/3.
+:- florapred base_fdsig/3.
+:- florapred derived_fdsig/3.
+:- florapred base_ifdsig/3.
+:- florapred derived_ifdsig/3.
+:- florapred base_mvdsig/3.
+:- florapred derived_mvdsig/3.
+:- florapred base_imvdsig/3.
+:- florapred derived_imvdsig/3.
 
 
 :- table fdsig/3.
@@ -710,8 +710,8 @@ imvdsig(S,MethodArgs,R) :-
 /*****************************************************************************
   object existence
 *****************************************************************************/
-:- flpred base_exists/1.
-:- flpred derived_exists/1.
+:- florapred base_exists/1.
+:- florapred derived_exists/1.
 
 
 :- table derived_exists/1.
@@ -748,9 +748,9 @@ exists(X) :- imeth(X,_).
 /*****************************************************************************
   equality maintenance
 *****************************************************************************/
-:- flpred base_objeql/2.
-:- flpred derived_objeql/2.
-:- flpred diffobjeql/2.
+:- florapred base_objeql/2.
+:- florapred derived_objeql/2.
+:- florapred diffobjeql/2.
 
 
 :- table derived_objeql/2.

@@ -10,7 +10,7 @@
   This is a template file to generate the FLORA include file for DB file.
 ***************************************************************************/
 
-:- flpred
+:- florapred
  	base_sub/2,
 	base_isa/2,
 	base_fd/3,

@@ -171,8 +171,8 @@
 #define FL_PROLOG		(prolog)
 #define FL_PROLOGALL		(prologall)
 #define FL_MODULE		(xlib)
-#define FL_NOHILOG		(flpred)
-#define FL_NOHILOGALL		(flpredall)
+#define FL_NOHILOG		(florapred)
+#define FL_NOHILOGALL		(florapredall)
 
 #define FL_MIN			min
 #define FL_MAX			max
