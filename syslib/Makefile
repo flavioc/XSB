@@ -96,7 +96,7 @@ init:
 	@echo "assert(xpp_include_dir('../prolog_includes'))." >> cmd...hdr
 
 finish:
-	@echo 'fmt_write($(STDWARN),"%s\n",arg("-------------------- End --------------------------")).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg("-------------------- End --------------------------\n")).' >> cmd...
 
 restore:
 	mv -f $(OBJFILESAVED)/*.O .
