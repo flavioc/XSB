@@ -1237,15 +1237,15 @@ void print_regs(int a,int add)
   fprintf(where,"ereg = %ld\n",(long)(ls_bot-ereg)) ;
 
 #if (!defined(CHAT))
-  fprintf(where,"trfreg = %ld\n",(long)(CPtr)(trfreg-tr_bot)) ;
+  fprintf(where,"trfreg = %ld\n",(long)((CPtr)trfreg-tr_bot)) ;
   fprintf(where,"bfreg = %ld\n",(long)(cp_bot-bfreg)) ;
   fprintf(where,"hfreg = %ld\n",(long)(hfreg-heap_bot)) ;
   fprintf(where,"efreg = %ld\n",(long)(ls_bot-efreg)) ;
 #endif
   fprintf(where,"ptcpreg = %ld\n",(Cell)ptcpreg) ;
 
-  fprintf(where,"ebreg = %d\n",ls_bot-ebreg) ;
-  fprintf(where,"hbreg = %d\n",hbreg-heap_bot) ;
+  fprintf(where,"ebreg = %ld\n",(long)(ls_bot-ebreg)) ;
+  fprintf(where,"hbreg = %ld\n",(long)(hbreg-heap_bot)) ;
 
   fprintf(where,"cpreg = %ld\n",(Cell)cpreg) ;
   fprintf(where,"pcreg = %ld\n",(Cell)pcreg) ;
