@@ -219,8 +219,8 @@ inline static xsbBool file_function(void)
     SET_FILEPTR(fptr, ptoc_int(2));
     XSB_StrSet(&VarBuf,"");
     XSB_StrEnsureSize(&VarBuf,size);
-    VarBuf.length = size;
     value = fread(VarBuf.string, 1, size, fptr);
+    VarBuf.length = value;
     XSB_StrNullTerminate(&VarBuf);
     ctop_string(4, string_find(VarBuf.string,1));
     ctop_int(5, value);
