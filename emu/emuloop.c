@@ -599,7 +599,9 @@ contcase:	/* the main loop */
   case test_heap: /* PPA-N */
     ppad ;
     op1 = op1byte ;
+    pad64;
     op2 = *(pw)lpcreg; lpcreg+=4;
+    pad64;
 #ifdef GC
     if (/* (infcounter++ > 1000) || */ (ereg - hreg) < op2)
       {
