@@ -143,12 +143,14 @@ canonical_form(FUNCTION(Funct,Arg),CanoniTerm,Index) :-
 	  CanoniTerm=CANOTERM(F,0,B,[],Index,I1)
 	).
 
+%% Peel off pairs of `(' and `)'.
 canonical_form(ARGUMENT(FL_PARENTHESIS,Arg,_I1,_I2),A,Index) :-
 	!,
 	canonical_form(Arg,A,Index).
 
 canonical_form(ARGUMENT(FL_BRACKET,Arg,I1,_I2),CANOLIST(AList,T,N,I1,Ib),I1) :-
 	!,
+	%% a list
 	( Arg = INFIX(FL_BAR,Left,Right,Ib) ->
 	    comma_separated_list(Left,AList,N),
 	    canonical_form(Right,T,_Ir)
@@ -169,6 +171,9 @@ canonical_form(ARGUMENT(FL_BRACE,I1,_I2),CANOBRACE([],0,I1),I1) :- !.
 canonical_form(OBJECT(T,I),OBJECT(T,I),I) :- !.
 
 
+%% This procedure is to produce a list of comma separated terms. Note
+%% that `,' is defined as right associative. Only the top level commas
+%% are considered as separating the list.
 comma_separated_list(INFIX(FL_COMMA,Left,Right,_I),[LL|RList],N) :-
 	!,
 	canonical_form(Left,LL,_Ileft),
@@ -180,6 +185,7 @@ comma_separated_list(ComposerTerm,[CanoniTerm],1) :-
 	canonical_form(ComposerTerm,CanoniTerm,_Index).
 
 
+%% This pro 
 functor_and_arguments(FUNCTION(Funct,Arg),F,AList) :-
 	!,
 	functor_and_arguments(Funct,F,L),
