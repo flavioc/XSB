@@ -108,10 +108,6 @@ static void init_inst_table_1(void)
   set_inst(putlist, "putlist",           PP, R, X,X);
   set_inst(bldpvar, "bldpvar",           PP, V, X,X);
   set_inst(bldpval, "bldpval",           PP, V, X,X);
-}
-
-static void init_inst_table_2(void)
-{
   set_inst(bldtvar, "bldtvar",           PP, R, X,X);
   set_inst(bldtval, "bldtval",           PP, R, X,X);
   set_inst(bldcon, "bldcon",             PPP,C, X,X);
@@ -119,9 +115,12 @@ static void init_inst_table_2(void)
   set_inst(uninumcon, "uninumcon",       PPP,N, X,X);
   set_inst(bldnumcon, "bldnumcon",       PPP,N, X,X);
   set_inst(getattv, "getattv",           PP, R, X,X);
-  set_inst(getattv, "putattv",           PP, R, X,X);
+  set_inst(putattv, "putattv",           PP, R, X,X);
   set_inst(getlist_tvar_tvar, "getlist_tvar_tvar", R, R, R,X);
+}
 
+static void init_inst_table_2(void)
+{
   /* the following are generated dynamically */
   set_inst(trie_root, "trie_root", X, X, X,X);
   set_inst(trie_no_cp_str, "trie_no_cp_str", X, X, X,X);
