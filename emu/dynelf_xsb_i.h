@@ -68,11 +68,13 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   char	sofilename[MAXPATHLEN];
   void	*handle;
   void	*funcep;
+  /*
   char  ldtemp; 
   char  *ldp1,*ldp2;
   static XSB_StrDefine(ldstring_oldenv);
   static XSB_StrDefine(ldstring_newenv);
   char  *libpath;
+  */
   
   /* (1) create filename.so */
   
@@ -92,6 +94,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
      appropriate loader flag, if possible.
   */
 
+#if 0 /* skip setting LD_LIBRARY_PATH -- many systems ignore runtime changes */
   libpath = getenv("LD_LIBRARY_PATH");
   if (libpath == NULL)
     libpath = "";
@@ -125,12 +128,15 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   if (putenv(ldstring_newenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
+#endif /* skipping LD_LIBRARY_PATH */
   
   /* (2) open the needed object */
   handle = dlopen(sofilename, RTLD_LAZY);
 
+  /*
   if (putenv(ldstring_oldenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't restore the value of LD_LIBRARY_PATH");
+  */
   
 
   if (handle == 0) {

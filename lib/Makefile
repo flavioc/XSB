@@ -59,8 +59,8 @@ all: init $(ALL) finish
 	/bin/rm -f cmd...
 	@cat $(SVFILE)
 
-%.O:   %.P $(PROLOG_INCLUDES) $(EMU_INCLUDES) ../cmplib/builtin.O
-	echo 'mc($*, $(Option)).' >> cmd...
+%.O:   %.P $(PROLOG_INCLUDES) $(EMU_INCLUDES) ../cmplib/builtin.P
+	echo "mc('$*', $(Option))." >> cmd...
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
 %.P:   %.H
