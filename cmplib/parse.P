@@ -650,7 +650,7 @@ trans_goals('$$var'(Vid), goal(Sym,[varocc(Vid)]), SymTab, VidIn, VidOut) :- !,
 trans_goals((A, True), Goal,SymTab,VidIn,VidOut) :-
 	True == true,  %% can't be a variable!
 	!,
-	trans_goal(A,Goal,SymTab,VidIn,VidOut).
+	trans_goals(A,Goal,SymTab,VidIn,VidOut).
 trans_goals((A, B), and(Goal1, Goal2), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
 	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
