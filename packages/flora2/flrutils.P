@@ -1098,3 +1098,81 @@ flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG).
 
 flHalt :- halt.
 
+
+/*************************************************************************
+%%  flCompileInclude(+File)
+%%  This is used only in the closure/Makefile
+%%  It takes a trailer template and wraps it with the workspace and 
+%%  flora prefixes. This way the trailer is easier to maintain and understand.
+%%
+%%  The included file is treated as a Flora program, so the compiler wraps it 
+%%  with the appropriate macros (e.g., WORKSPACE), as it would any other
+%%  Flora program.
+*************************************************************************/
+%%flCompileInclude(File) :-
+%%	flora_check_filename(File),
+%%	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
+%%	    flora_FLH_filename(FLIFile,FLHFile),
+%%	    flora_compile_incfile(FLIFile,FLHFile,Status),
+%%	    (Status == FLORA_FAILURE -> fail; true)
+%%
+%%	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_INCLUDE_EXT]),
+%%	    path_sysop(exists,File)
+%%	->
+%%	    flora_stderr_nl,
+%%	    flora_error_line("%s: Include filename extension must be %s!",
+%%			     args(File,FLORA_INCLUDE_EXT)),
+%%	    fail
+%%	;
+%%	  flora_stderr_nl,
+%%	  flora_error_line("File %s[.%s] does not exist!",
+%%			   args(File,FLORA_INCLUDE_EXT)),
+%%          fail
+%%        ),
+%%	!.
+
+
+/*************************************************************************
+%%  flora_compile_incfile(+InputFile,+OutputFile,-FileStatus) :-
+%%
+%%  This compiles the include file (it is called from flCompileInclude/1)
+%%  and adds the WORKSPACE and other macros to it.
+%%
+%%  Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
+*************************************************************************/
+%%flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
+%%	flora_stdmsg_nl,
+%%	flora_message_line("compiling template include file %s",args(InputFile)),
+%%	cputime(T0),
+%%	seeing(PreInFile),
+%%	flora_reset_modules_for_file,
+%%	flora_set_xpp_options,
+%%	xpp_process_file(InputFile,XPP_process,IOportFromProc),
+%%	stat_set_flag(CURRENT_INPUT,IOportFromProc),
+%%	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
+%%	%% Wait, not to leave zombies.
+%%	process_control(XPP_process,wait),
+%%	%% Release the file descriptor used to read from cpp.
+%%	file_close(IOportFromProc),
+%%	flora_clear_xpp_options,
+%%	see(PreInFile),
+%%	( CompileStatus == FLORA_FAILURE ->
+%%	    FileStatus=FLORA_FAILURE
+%%	;
+%%	  telling(PreOutFile),
+%%	  tell(OutputFile),
+%%	  flora_extern_code(CompiledRuleList,CoderStatus),
+%%	  ( CoderStatus == [] ->
+%%	      FileStatus=FLORA_SUCCESS
+%%	  ;
+%%	    flora_coder_error(CoderStatus),
+%%	    FileStatus=FLORA_FAILURE
+%%	  ),
+%%	  told,
+%%	  tell(PreOutFile),
+%%	  cputime(T1),
+%%	  T is T1-T0,
+%%	  flora_message_line("Done! CPU time used: %S seconds",args(T))
+%%	),
+%%	!.
+
