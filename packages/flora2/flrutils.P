@@ -304,21 +304,33 @@ flora_user_tmpfile(Filename) :-
 
 /*************************************************************************
   flora_flcompile(+FlrFile,+Workspace)
+
+  Need to make sure the GPP options are cleared when this procedure is
+  finished, whether it should fail or not. An extra GPP options may be
+  set before this procedure.
 *************************************************************************/
 flora_flcompile(FlrFile,Workspace) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
+	flora_set_xpp_options(Workspace),
 	flora_compile_file(FlrFile,MPFile,FDBFile,Status),
 	( Status == FLORA_FAILURE ->
+	    flora_clear_xpp_options,
+	    !,
 	    fail
 	;
-	    flora_mainO_filename(FlrFile,MOFile),
-	    flora_message_line('calling XSB compiler'),
-	    flora_set_xpp_options(Workspace),
-	    compile(MPFile,[optimize,spec_repr,ti_all]),
+	  flora_mainO_filename(FlrFile,MOFile),
+	  flora_message_line('calling XSB compiler'),
+	  ( compile(MPFile,[optimize,spec_repr,ti_all]) ->
+	      true
+	  ;
 	    flora_clear_xpp_options,
-	    flora_WSO_filename(FlrFile,Workspace,WSOFile),
-	    path_sysop(rename,MOFile,WSOFile)
+	    fail
+	  ),
+	  !,
+	  flora_clear_xpp_options,
+	  flora_WSO_filename(FlrFile,Workspace,WSOFile),
+	  path_sysop(rename,MOFile,WSOFile)
         ),
 	!.
 
@@ -420,6 +432,9 @@ flora_compile_system_module_by_ID(SysModID) :-
 
 /*************************************************************************
   flora_flload(+FlrFile,+Workspace)
+
+  Need to make sure the GPP options are cleared when this procedure is
+  finished.
 *************************************************************************/
 flora_flload(FlrFile,Workspace) :-
 	flora_mainP_filename(FlrFile,MPFile),
@@ -427,20 +442,31 @@ flora_flload(FlrFile,Workspace) :-
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_WSO_filename(FlrFile,Workspace,WSOFile),
 	!,
+	flora_set_xpp_options(Workspace),
         ( flora_file_newerthan(MPFile,FlrFile) ->
 	    flora_stdmsg_nl,
 	    true
 	;
 	  flora_compile_file(FlrFile,MPFile,FDBFile,Status),
-	  (Status == FLORA_FAILURE -> fail; true)
+	  ( Status == FLORA_FAILURE ->
+	      flora_clear_xpp_options,
+	      !,
+	      fail
+	  ;
+	    true
+	  )
 	),
 	!,
 	flora_message_line('loading %s into module %s',args(FlrFile,Workspace)),
-	flora_set_xpp_options(Workspace),
 	( flora_file_newerthan(WSOFile,MPFile) ->
 	    true
 	;
-	  compile(MPFile,[optimize,spec_repr,ti_all]),
+	  ( compile(MPFile,[optimize,spec_repr,ti_all]) ->
+	      true
+	  ;
+	    flora_clear_xpp_options,
+	    fail
+	  ),
 	  path_sysop(rename,MOFile,WSOFile)
         ),
         consult(WSOFile),
@@ -709,6 +735,8 @@ flora_reset_modules_for_shell :-
   flora_compile_file(+InputFile,+OutputPFile,+OutputDBFile,-FileStatus)
 
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
+
+        The appropriate GPP options must be set before this procedure is called.
 *************************************************************************/
 flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	flora_maxerr(MaxErrNum),
@@ -716,8 +744,9 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	flora_message_line('compiling %s',args(InputFile)),
 	cputime(T0),
 	seeing(PreInFile),
+	%% Disable the compilation for FLORA template include file.
+	conset(flora_compile_include_file,0),
 	flora_reset_modules_for_file,
-	flora_set_xpp_options,
 	xpp_process_file(InputFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
@@ -725,7 +754,6 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	process_control(XPP_process,wait),
 	%% Release the file descriptor used to read from cpp.
 	file_close(IOportFromProc),
-	flora_clear_xpp_options,
 	see(PreInFile),
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -740,6 +768,9 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 	  flora_message_line('Done! CPU time used: %S seconds',args(T))
 	),
 	!.
+
+%% Catch a failure situation.
+flora_compile_file(_InputFile,_PFile,_DBFile,FLORA_FAILURE).
 
 
 /*************************************************************************
@@ -1408,78 +1439,84 @@ flora_gpp_dumpfile(FileName,_DumpFileName,_Workspace) :-
 
 
 /*************************************************************************
-%%  flCompileInclude(+File)
-%%  This is used only in the closure/Makefile
-%%  It takes a trailer template and wraps it with the workspace and 
-%%  flora prefixes. This way the trailer is easier to maintain and understand.
-%%
-%%  The included file is treated as a Flora program, so the compiler wraps it 
-%%  with the appropriate macros (e.g., WORKSPACE), as it would any other
-%%  Flora program.
+  flCompileInclude(+File)
+
+  This is used only in the closure/Makefile
+  It takes a trailer template and wraps it with the workspace and 
+  flora prefixes. This way the trailer is easier to maintain and understand.
+
+  The included file is treated as a Flora program, so the compiler wraps it 
+  with the appropriate macros (e.g., WORKSPACE), as it would any other
+  Flora program.
 *************************************************************************/
-%%flCompileInclude(File) :-
-%%	flora_check_filename(File),
-%%	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
-%%	    flora_FLH_filename(FLIFile,FLHFile),
-%%	    flora_compile_incfile(FLIFile,FLHFile,Status),
-%%	    (Status == FLORA_FAILURE -> fail; true)
-%%
-%%	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_INCLUDE_EXT]),
-%%	    path_sysop(exists,File)
-%%	->
-%%	    flora_stderr_nl,
-%%	    flora_error_line('%s: Include filename extension must be %s!',
-%%			     args(File,FLORA_INCLUDE_EXT)),
-%%	    fail
-%%	;
-%%	  flora_stderr_nl,
-%%	  flora_error_line('File %s[.%s] does not exist!',
-%%			   args(File,FLORA_INCLUDE_EXT)),
-%%          fail
-%%        ),
-%%	!.
+flCompileInclude(File) :-
+	flora_check_filename(File),
+	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
+	    flora_FLH_filename(FLIFile,FLHFile),
+	    flora_compile_incfile(FLIFile,FLHFile,Status),
+	    (Status == FLORA_FAILURE -> fail; true)
+
+	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_INCLUDE_EXT,
+	  path_sysop(exists,File)
+	->
+	    flora_stderr_nl,
+	    flora_error_line('%s: Include filename extension must be %s!',
+			     args(File,FLORA_INCLUDE_EXT)),
+	    fail
+	;
+	  flora_stderr_nl,
+	  flora_error_line('File %s[.%s] does not exist!',
+			   args(File,FLORA_INCLUDE_EXT)),
+          fail
+        ),
+	!.
 
 
 /*************************************************************************
-%%  flora_compile_incfile(+InputFile,+OutputFile,-FileStatus) :-
-%%
-%%  This compiles the include file (it is called from flCompileInclude/1)
-%%  and adds the WORKSPACE and other macros to it.
-%%
-%%  Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
+  flora_compile_incfile(+InputFile,+OutputFile,-FileStatus) :-
+
+  This compiles the include file (it is called from flCompileInclude/1)
+  and adds the WORKSPACE and other macros to it.
+
+  Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
-%%flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
-%%	flora_stdmsg_nl,
-%%	flora_message_line('compiling template include file %s',args(InputFile)),
-%%	cputime(T0),
-%%	seeing(PreInFile),
-%%	flora_reset_modules_for_file,
-%%	flora_set_xpp_options,
-%%	xpp_process_file(InputFile,XPP_process,IOportFromProc),
-%%	stat_set_flag(CURRENT_INPUT,IOportFromProc),
-%%	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
-%%	%% Wait, not to leave zombies.
-%%	process_control(XPP_process,wait),
-%%	%% Release the file descriptor used to read from cpp.
-%%	file_close(IOportFromProc),
-%%	flora_clear_xpp_options,
-%%	see(PreInFile),
-%%	( CompileStatus == FLORA_FAILURE ->
-%%	    FileStatus=FLORA_FAILURE
-%%	;
-%%	  telling(PreOutFile),
-%%	  tell(OutputFile),
-%%	  flora_extern_code(CompiledRuleList,CoderStatus),
-%%	  ( CoderStatus == [] ->
-%%	      FileStatus=FLORA_SUCCESS
-%%	  ;
-%%	    flora_coder_error(CoderStatus),
-%%	    FileStatus=FLORA_FAILURE
-%%	  ),
-%%	  told,
-%%	  tell(PreOutFile),
-%%	  cputime(T1),
-%%	  T is T1-T0,
-%%	  flora_message_line('Done! CPU time used: %S seconds',args(T))
-%%	),
-%%	!.
+flora_compile_incfile(InputFile,OutputFile,FileStatus) :-
+	flora_stdmsg_nl,
+	flora_message_line('compiling FLORA template include file %s',args(InputFile)),
+	cputime(T0),
+	seeing(PreInFile),
+	%% Enable the compilation for FLORA template include files.
+	conset(flora_compile_include_file,1),
+	flora_reset_modules_for_file,
+	flora_set_xpp_options,
+	xpp_process_file(InputFile,XPP_process,IOportFromProc),
+	stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	flora_rpc_file(FLORA_ALL,0,0,CompiledRuleList,_FileOptionList,CompileStatus),
+	%% Wait, not to leave zombies.
+	process_control(XPP_process,wait),
+	%% Release the file descriptor used to read from cpp.
+	file_close(IOportFromProc),
+	flora_clear_xpp_options,
+	%% Disable the compilation for FLORA template include files.
+	conset(flora_compile_include_file,0),
+	see(PreInFile),
+	!,
+	( CompileStatus == FLORA_FAILURE ->
+	    FileStatus=FLORA_FAILURE
+	;
+	  telling(PreOutFile),
+	  tell(OutputFile),
+	  flora_extern_code(CompiledRuleList,CoderStatus),
+	  ( CoderStatus == [] ->
+	      FileStatus=FLORA_SUCCESS
+	  ;
+	    flora_coder_error(CoderStatus),
+	    FileStatus=FLORA_FAILURE
+	  ),
+	  told,
+	  tell(PreOutFile),
+	  cputime(T1),
+	  T is T1-T0,
+	  flora_message_line('Done! CPU time used: %S seconds',args(T))
+	),
+	!.

@@ -59,7 +59,7 @@ is_fltable(FLTABLE(P,A),P,A).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
-%%is_flfonostorage(FLFONOSTORAGE(F,N),F,N).
+is_flstaticfo(FLSTATICFO(F,N),F,N).
 is_flfirstorder(FLFIRSTORDER(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
@@ -67,6 +67,8 @@ is_flequality(FLEQUALITY(A),A).
 is_flequality(FLEQUALITY(A,M),A,M).
 is_flexpunge(FLEXPUNGE(FAList),FAList).
 is_flexpunge(FLEXPUNGE(FAList,M),FAList,M).
+is_flflogicstatic(FLFLOGICSTATIC(F,N),F,N).
+is_flflorapatch(FLFLORAPATCH(F,N),F,N).
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
@@ -790,7 +792,8 @@ flora_compile(ParserTerm,CodeList,OptionList,Status) :-
 
 	; is_flquery(ParserTerm,Body) ->
 	    compile_query(Body,CodeList,Status)
-	; is_fldirective(ParserTerm,DirectList),
+
+	; is_fldirective(ParserTerm,DirectList) ->
 	    compile_directive(DirectList,CodeList,Status)
         ),
 	!,
@@ -873,10 +876,10 @@ compile_direct(DirectTerm,[Code],[]) :-
 	),
 	!.
 
-%%compile_direct(DirectTerm,[],[]) :-
-%%	is_flfonostorage(DirectTerm,P,N),
-%%	flora_define_firstorder(P,N),
-%%	!.
+compile_direct(DirectTerm,[],[]) :-
+	is_flstaticfo(DirectTerm,P,N),
+	flora_define_firstorder(P,N),
+	!.
 
 compile_direct(DirectTerm,CodeList,[]) :-
 	( is_flequality(DirectTerm,A) ->
@@ -907,6 +910,41 @@ compile_direct(DirectTerm,[Code],[]) :-
 	list_struct(FACodeList,[],FAListCode),
 	florasyslib_struct(FLLIBEXPUNGE,2,[FAListCode,M],CCode),
 	query_struct(CCode,Code),
+	!.
+
+compile_direct(DirectTerm,[],[]) :-
+	is_flflogicstatic(DirectTerm,P,N),
+	flora_define_flogicstatic(P,N),
+	!.
+
+compile_direct(DirectTerm,[Code],[]) :-
+	is_flflorapatch(DirectTerm,P,N),
+	%% Generate the patch rule for F-logic and others. The F-logic
+	%% head should be prepended with FLHEADPREFIX while the storage
+	%% fact should be prepended with FLBODYPREFIX.
+	( flora_is_dynamic_flogic_base(P,N) ->
+	    str_cat(FLFACTPREFIX,P,HP),
+	    str_cat(FLBODYPREFIX,P,BP),
+	    flora_define_flogicstatic(HP,N),
+	    flora_define_flogicstatic(BP,N),
+	    atomobj_struct(HP,HPCode),
+	    atomobj_struct(BP,BPCode),
+	    new_varobjlist(N,ArgsCode),
+	    termlit_struct(HPCode,N,ArgsCode,HCode),
+	    termlit_struct(BPCode,N,ArgsCode,BodyFactCode),
+	    thisstorage_struct(SCode),
+	    prologterm_struct(storage_find_fact,2,[SCode,BodyFactCode],BCode),
+	    rule_struct(HCode,BCode,Code)
+	;
+	  %% a HiLog predicate
+	  flora_define_flogicstatic(P,N),
+	  atomobj_struct(P,PCode),
+	  new_varobjlist(N,ArgsCode),
+	  termlit_struct(PCode,N,ArgsCode,HCode),
+	  thisstorage_struct(SCode),
+	  prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
+	  rule_struct(HCode,BCode,Code)
+	),
 	!.
 
 
@@ -1635,13 +1673,36 @@ compile_flobjeql(Obj1,Obj2,Code,Status) :-
   compile_head_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-CodeList,-Status)
 ****************************************************************************/
 compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_argdef(FAtom,N,ArgTypes),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_head_argpathexplist(Args,ArgTypes,AObj,CodeList,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
 	compile_head_pathexplist([Funct|Args],[FObj|AObj],CodeList,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
 
 /****************************************************************************
   compile_head_fltermlit(+FunctorTerm,+Arity,+ArgList,-CodeList,-Status)
+
+  This procedure compiles a term in a rule head.
 ****************************************************************************/
+compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_argdef(FAtom,N,ArgTypes),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_head_argpathexplist(Args,ArgTypes,AObj,ObjCodeList,Status),
+	( Status == [] ->
+	    termlit_struct(FObj,N,AObj,TObj),
+	    append(ObjCodeList,[TObj],CodeList)
+	;
+	  true
+        ).
+
 compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
 	compile_head_pathexplist([Funct|Args],[FObj|AObj],ObjCodeList,Status),
 	( Status == [] ->
@@ -1671,6 +1732,32 @@ compile_head_fllist(ObjTermList,ObjTerm,Object,CodeList,Status) :-
 	    ;
 	      true
 	    )
+	;
+	  Status=S
+        ).
+
+
+
+/****************************************************************************
+  compile_head_argpathexplist(+ParserTermList,+ArgTypeList,-ObjectList,-CodeList,-Status)
+****************************************************************************/
+compile_head_argpathexplist([],[],[],[],[]).
+
+compile_head_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],CodeList,Status) :-
+	!,
+	compile_head_pathexp(T,TObj,TCodeList,S),
+	( S == [] ->
+	    compile_head_argpathexplist(L,ArgTypeList,LObj,LCodeList,Status),
+	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+compile_head_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],CodeList,Status) :-
+	!,
+	compile_body(T,TCode,S),
+	( S == [] ->
+	    compile_head_argpathexplist(L,ArgTypeList,LObj,CodeList,Status)
 	;
 	  Status=S
         ).
@@ -2514,6 +2601,9 @@ compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
 
 /****************************************************************************
   compile_head_wspathexp(+ParserTerm,+Workspace,-Object,-CodeList,-Status)
+
+  This procedure is called from compile_head_pathexp/4 and compile_head_wsflpathexp/5
+  when a workspace is explicitly specified.
 ****************************************************************************/
 compile_head_wspathexp(ParserTerm,WS,Object,CodeList,Status) :-
 	( is_flatom(ParserTerm,Atom) ->
@@ -2558,6 +2648,32 @@ compile_head_wsliteral(ParserTerm,WS,CodeList,Status) :-
 	  CodeList=[WSCode],
 	  Status=[]
 	).
+
+
+/****************************************************************************
+  compile_head_wsflpathexplist(+ParserTermList,+ArgTypeList,+WS,-ObjectList,-CodeList,-Status)
+****************************************************************************/
+compile_head_wsflargpathexplist([],[],_WS,[],[],[]) :- !.
+
+compile_head_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],CodeList,Status) :-
+	!,
+	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
+	( S == [] ->
+	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,LCodeList,Status),
+	    (Status == [] -> append(TCodeList,LCodeList,CodeList); true)
+	;
+	  Status=S
+        ).
+
+compile_head_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,[TCode|LObj],CodeList,Status) :-
+	!,
+	%% workspace not distributive over nested "form"
+	compile_body(T,TCode,S),
+	( S == [] ->
+	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,CodeList,Status)
+	;
+	  Status=S
+        ).
 
 
 /****************************************************************************
@@ -2608,12 +2724,36 @@ compile_head_wsflpathexp(ParserTerm,WS,Object,CodeList,Status) :-
 /****************************************************************************
   compile_head_wstermobj(+FunctorTerm,+Arity,+ArgList,+WS,-Object,-CodeList,-Status)
 ****************************************************************************/
+compile_head_wstermobj(_Funct,_N,_Args,WS,_Object,_CodeList,Status) :-
+	is_flvar(WS,_Name,VarIndex),
+	!,
+	%% Workspace in the rule head is not bound at compile time. Currently
+	%% this will generate an error. However, this might be solve by moving
+	%% the code that generates the workspace predicate to the body of the rule.
+	compiling_error(VarIndex,VARWSINHEAD,Status).
+
 compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
-	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],TCodeList,Status),
+	is_flatom(Funct,FAtom),
+	flora_argdef(FAtom,N,ArgTypes),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,CodeList,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
-	    workspaceobj_struct(O,WS,Object,WCode),
-	    (WCode == NULL -> CodeList=TCodeList; append(TCodeList,[WCode],CodeList))
+	    %% WCode should be NULL here since it is already checked by the rule
+	    %% that the workspace is not a variable.
+	    workspaceobj_struct(O,WS,Object,_WCodeIsNULL)
+	;
+	  true
+	).
+
+compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
+	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],CodeList,Status),
+	( Status == [] ->
+	    termlit_struct(FObj,N,AObj,O),
+	    %% WCode should be NULL here since it is already checked by the rule
+	    %% that the workspace is not a variable.
+	    workspaceobj_struct(O,WS,Object,_WCodeIsNULL)
 	;
 	  true
         ).
@@ -2627,6 +2767,14 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
         constructs.
 ****************************************************************************/
 compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_argdef(FAtom,N,ArgTypes),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,CodeList,Status),
+	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
+
+compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],CodeList,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
@@ -2634,6 +2782,20 @@ compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 /****************************************************************************
   compile_head_wstermlit(+FunctorTerm,+Arity,+ArgList,+WS,-CodeList,-Status)
 ****************************************************************************/
+compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
+	is_flatom(Funct,FAtom),
+	flora_argdef(FAtom,N,ArgTypes),
+	!,
+	atomobj_struct(FAtom,FObj),
+	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCodeList,Status),
+	( Status == [] ->
+	    termlit_struct(FObj,N,AObj,TCode),
+	    workspacelit_struct(TCode,WS,WSCode),
+	    append(ObjCodeList,[WSCode],CodeList)
+	;
+	  true
+        ).
+
 compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
 	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCodeList,Status),
 	( Status == [] ->

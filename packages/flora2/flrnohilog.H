@@ -30,16 +30,23 @@
 
 :- dynamic flora_shfirstorder(_,_).
 
+:- dynamic flora_dynflogicstatic(_,_).
+
 :- index(flora_dynfirstorder/2,trie).
 
 :- index(flora_shfirstorder/2,trie).
+
+:- index(flora_dynflogicstatic/2,trie).
 
 :- import assert/1, retractall/1 from assert.
 
 :- import conget/2 from gensym.
 
-:- export flora_firstorderdef/2,
-          flora_reset_firstorder/0,
-	  flora_define_firstorder/2,
-          flora_shreset_firstorder/0,
-	  flora_shdefine_firstorder/2.
+:- export
+	flora_firstorderdef/2,
+	flora_reset_firstorder/0,
+	flora_define_firstorder/2,
+	flora_shreset_firstorder/0,
+	flora_shdefine_firstorder/2,
+	flora_flogicstaticdef/2,
+	flora_define_flogicstatic/2.

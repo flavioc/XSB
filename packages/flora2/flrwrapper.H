@@ -28,11 +28,9 @@
 
 :- import fmt_write_string/3 from file_io.
 
-:- import str_sub/3, substring/4, str_length/2 from string.
+:- import str_sub/3, substring/4 from string.
 
 :- import eval/2 from eval.
-
-:- import reverse/2 from basics.
 
 :- dynamic flora_flogic_fact_wrapper(_,_).
 :- dynamic flora_current_flogic_module(_).
@@ -76,4 +74,6 @@
 
 	flora_decode_predicate/6,
 	flora_decode_module_name/2,
-	flora_is_flogic_wrapper/3.
+	flora_is_flogic_wrapper/3,
+
+	flora_is_dynamic_flogic_base/2.

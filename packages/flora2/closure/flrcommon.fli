@@ -150,5 +150,5 @@ exists(X) :- imeth(X,_).
 ****************************************************************************/
 
 
-objeql(X,Y) :- (nonvar(X); nonvar(Y)), X=Y.
+objeql(X,Y) :- (nonvar(X)@prolog(); nonvar(Y)@prolog()), X=Y.
 objeql(X,Y) :- diffobjeql(X,Y).

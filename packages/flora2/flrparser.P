@@ -340,7 +340,7 @@ fltbldirect_struct(F,A,FLTABLE(F,A)).
 %%flimptdirect_struct(F,A,M,FLIMPORT(F,A,M)).
 flargumentsdirect_struct(F,N,Args,FLARGUMENTS(F,N,Args)).
 %%flprlgdirect_struct(F,A,FLPROLOG(F,A)).
-%%flfonostoragedirect_struct(F,A,FLFONOSTORAGE(F,A)).
+flstaticfodirect_struct(F,A,FLSTATICFO(F,A)).
 flfirstorderdirect_struct(F,A,FLFIRSTORDER(F,A)).
 flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
@@ -349,6 +349,8 @@ fleqldirect_struct(A,FLEQUALITY(A)).
 fleqldirect_struct(A,M,FLEQUALITY(A,M)).
 flexpungedirect_struct(FAList,FLEXPUNGE(FAList)).
 flexpungedirect_struct(FAList,M,FLEXPUNGE(FAList,M)).
+flflogicstaticdirect_struct(F,A,FLFLOGICSTATIC(F,A)).
+flflorapatchdirect_struct(F,A,FLFLORAPATCH(F,A)).
 
 flatom_struct(Atom,FLATOM(Atom)).
 
@@ -493,29 +495,38 @@ flora_parse(_ComposerTerm,_Code,[error(UNKNOWN_ERROR)]).
   Code: FLDIRECTIVE([directives])
 ****************************************************************************/
 flora_parse_directive(CanoniTerm,Code,Status) :-
-	fldirective_struct(CodeList,Code),
-	( 
-	%%  flora_prologall_directive(CanoniTerm,CodeList,Status)
-	%%;
-	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
-	%%; flora_import_directive(CanoniTerm,CodeList,Status)
-	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
-	%%; flora_fonostorage_directive(CanoniTerm,CodeList,Status)
-	%%; flora_fonostorageall_directive(CanoniTerm,CodeList,Status)
-	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
-	; flora_arguments_directive(CanoniTerm,CodeList,Status)
+	( flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
-	%%; flora_export_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
-	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_command_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_equality_directive(CanoniTerm,CodeList,Status)
 	; flora_expunge_directive(CanoniTerm,CodeList,Status)
-	; parsing_error(CanoniTerm,UNKNOWN_DIRECT,Status)
+	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
+	; flora_firstorderall_directive(CanoniTerm,CodeList,Status)
+	; flora_staticfo_directive(CanoniTerm,CodeList,Status)
+	; flora_staticfoall_directive(CanoniTerm,CodeList,Status)
+	%%; flora_import_directive(CanoniTerm,CodeList,Status)
+	%%; flora_export_directive(CanoniTerm,CodeList,Status)
+	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
+	%%;  flora_prologall_directive(CanoniTerm,CodeList,Status)
+	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
         ),
+	fldirective_struct(CodeList,Code),
 	!.
+
+flora_parse_directive(CanoniTerm,Code,Status) :-
+	%% The following directives are only used for compiling .fli files.
+	conget(flora_compile_include_file,1),
+	( flora_flogicstatic_directive(CanoniTerm,CodeList,Status)
+	; flora_florapatch_directive(CanoniTerm,CodeList,Status)
+	),
+	fldirective_struct(CodeList,Code),
+	!.
+
+flora_parse_directive(CanoniTerm,_Code,Status) :-
+	parsing_error(CanoniTerm,UNKNOWN_DIRECT,Status).
 
 
 /****************************************************************************
@@ -785,30 +796,29 @@ flora_firstorder_directlist([F/A|L],[Code|CL]) :-
 
 
 /****************************************************************************
-  flora_fonostorageall_directive(+CanoniTerm,-CodeList,-Status)
+  flora_staticfoall_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-%%flora_fonostorageall_directive(CanoniTerm,[Code],[]) :-
-%%	get_name(CanoniTerm,FL_FONOSTORAGEALL),
-%%	flfirstorderdirect_struct(_Funct,_Arity,Code).
-
+flora_staticfoall_directive(CanoniTerm,[Code],[]) :-
+	get_name(CanoniTerm,FL_STATICFIRSTORDERALL),
+	flfirstorderdirect_struct(_Funct,_Arity,Code).
 
 
 /****************************************************************************
-  flora_fonostorage_directive(+CanoniTerm,-CodeList,-Status)
+  flora_staticfo_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-%%flora_fonostorage_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-%%	get_name(Funct,FL_FONOSTORAGE),
-%%	flora_commasep_falist(T,FAList,Status),
-%%	(Status == [] -> flora_fonostorage_directlist(FAList,CodeList); true).
-%%
-%%
-%%flora_fonostorage_directlist([],[]) :- !.
-%%
-%%flora_fonostorage_directlist([F/A|L],[Code|CL]) :-
-%%	!,
-%%	flfonostoragedirect_struct(F,A,Code),
-%%	flora_fonostorage_directlist(L,CL).
-%%
+flora_staticfo_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_STATICFIRSTORDER),
+	flora_commasep_falist(T,FAList,Status),
+	(Status == [] -> flora_staticfo_directlist(FAList,CodeList); true).
+
+
+flora_staticfo_directlist([],[]) :- !.
+
+flora_staticfo_directlist([F/A|L],[Code|CL]) :-
+	!,
+	flstaticfodirect_struct(F,A,Code),
+	flora_staticfo_directlist(L,CL).
+
 
 /****************************************************************************
   flora_arguments_directive(+CanoniTerm,-CodeList,-Status)
@@ -1075,6 +1085,40 @@ flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
 	get_name(Funct,FL_EXPUNGE),
 	flora_commasep_var_falist(T,FAList,Status),
 	(Status == [] -> flexpungedirect_struct(FAList,Code); true).
+
+
+/****************************************************************************
+  flora_flogicstatic_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_flogicstatic_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_FLOGICSTATIC),
+	flora_commasep_falist(T,FAList,Status),
+	(Status == [] -> flora_flogicstatic_directlist(FAList,CodeList); true).
+
+
+flora_flogicstatic_directlist([],[]) :- !.
+
+flora_flogicstatic_directlist([F/A|L],[Code|CL]) :-
+	!,
+	flflogicstaticdirect_struct(F,A,Code),
+	flora_flogicstatic_directlist(L,CL).
+
+
+/****************************************************************************
+  flora_florapatch_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_florapatch_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
+	get_name(Funct,FL_FLORAPATCH),
+	flora_commasep_falist(T,FAList,Status),
+	(Status == [] -> flora_florapatch_directlist(FAList,CodeList); true).
+
+
+flora_florapatch_directlist([],[]) :- !.
+
+flora_florapatch_directlist([F/A|L],[Code|CL]) :-
+	!,
+	flflorapatchdirect_struct(F,A,Code),
+	flora_florapatch_directlist(L,CL).
 
 
 /****************************************************************************
@@ -1979,7 +2023,18 @@ var_list(CanoniTerm,[Var],Status) :-
 
 /****************************************************************************
   flora_head_term(+Funct,+Arity,+Args,-Code,-Status)
+
+  This predicate is called to parse a term in a rule head. Parsing of its
+  arguments should be adjusted according to its arguments mode definition.
 ****************************************************************************/
+flora_head_term(Funct,N,Args,Code,Status) :-
+	get_atom(Funct,FAtom),
+	flora_argdef(FAtom,N,ArgTypes),
+	!,
+	flatom_struct(FAtom,F),
+	flora_head_argpathexplist(Args,ArgTypes,AList,Status),
+	(Status == [] -> flterm_struct(F,N,AList,Code); true).
+
 flora_head_term(Funct,N,Args,Code,Status) :-
 	flora_head_pathexp(Funct,F,S),
 	( S == [] ->
@@ -2007,6 +2062,28 @@ flora_head_list(L,T,Code,Status) :-
 	      flora_head_pathexp(T,TCode,Status)
 	    ),
 	    (Status == [] -> fllist_struct(LCode,TCode,Code); true)
+	;
+	  Status=S
+        ).
+
+
+/****************************************************************************
+  flora_head_argpathexplist(+Terms,+ArgumentTypes,-PathExpressions,-Status)
+****************************************************************************/
+flora_head_argpathexplist([],[],[],[]) :- !.
+
+flora_head_argpathexplist([T|L],[FL_OID|Arguments],[TCode|LCode],Status) :-
+	flora_head_pathexp(T,TCode,S),
+	( S == [] ->
+	    flora_head_argpathexplist(L,Arguments,LCode,Status)
+	;
+	  Status=S
+        ).
+
+flora_head_argpathexplist([T|L],[FL_BODYFORMULA|Arguments],[TCode|LCode],Status) :-
+	flora_body(T,TCode,S),
+	( S == [] ->
+	    flora_head_argpathexplist(L,Arguments,LCode,Status)
 	;
 	  Status=S
         ).
@@ -2048,6 +2125,10 @@ flora_head_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	    parsing_error(If,NO_MULTIATT,Status)
 
 	; F == FL_AT ->
+	    %% Workspace specification for F-logic modules should not be allowed.
+	    %% However, workspace specification ofr a term should be OK, since it
+	    %% might be a useful meta-programming feature. But this requires more
+	    %% checking.
 	    parsing_error(If,NO_WSINRULEHEAD,Status)
 	;
 	  flora_head_term(Funct,2,Args,Code,Status)

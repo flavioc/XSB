@@ -180,4 +180,5 @@
 	flora_check_workspace/1,
 	flora_load_dyn/2,
 	flora_compile_system_module_by_ID/1,
-	flora_load_system_module_internal/1.
+	flora_load_system_module_internal/1,
+	flCompileInclude/1.

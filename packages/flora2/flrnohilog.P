@@ -51,7 +51,9 @@ flora_firstorderdef(X,Y) :-
 /****************************************************************************
   flora_reset_firstorder/0
 ****************************************************************************/
-flora_reset_firstorder :- retractall(flora_dynfirstorder(_,_)).
+flora_reset_firstorder :-
+	retractall(flora_dynfirstorder(_,_)),
+	retractall(flora_dynflogicstatic(_,_)).
 
 
 /****************************************************************************
@@ -90,3 +92,26 @@ flora_shdefine_firstorder(Functor,Arity) :-
 	;
 	  assert(flora_shfirstorder(Functor,Arity))
 	).
+
+
+/****************************************************************************
+  flora_define_flogicstatic(+Functor,+Arity)
+****************************************************************************/
+flora_define_flogicstatic(Functor,Arity) :-
+	(var(Functor); var(Arity)),
+	!,
+	assert(flora_dynflogicstatic(Functor,Arity)).
+
+flora_define_flogicstatic(Functor,Arity) :-
+	( flora_flogicstaticdef(Functor,Arity) ->
+	    true
+	;
+	  assert(flora_dynflogicstatic(Functor,Arity))
+	).
+
+
+/****************************************************************************
+  flora_flogicstaticdef(+Functor,+Arity)
+****************************************************************************/
+flora_flogicstaticdef(F,A) :-
+	flora_dynflogicstatic(F,A).

@@ -343,29 +343,16 @@ flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_p
 
 
 /*****************************************************************************
-  flora_decode_flogic_wrapper(+Wrapper,-WrapPrefix,-BaseSymbol)
-
-  It decodes an F-logic wrapper predicate.
+  flora_is_flogic_wrapper(+WrapPrefix,+Base)
 *****************************************************************************/
-flora_decode_flogic_wrapper(Wrapper,WrapPrefix,BaseSymbol) :-
-	( str_sub(FLFACTPREFIX,Wrapper,1) ->
-	    WrapPrefix=FLFACTPREFIX,
-	    substring(Wrapper,FLFACTPREFIX_LEN,_,BaseSymbol)
-
-	; str_sub(FLHEADPREFIX,Wrapper,1) ->
-	    WrapPrefix=FLHEADPREFIX,
-	    substring(Wrapper,FLHEADPREFIX_LEN,_,BaseSymbol)
-
-	; str_sub(FLBODYPREFIX,Wrapper,1) ->
-	    WrapPrefix=FLBODYPREFIX,
-	    substring(Wrapper,FLBODYPREFIX_LEN,_,BaseSymbol)
-
-	; str_sub(FLTRAILERPREFIX,Wrapper,1) ->
-	    WrapPrefix=FLTRAILERPREFIX,
-	    substring(Wrapper,FLTRAILERPREFIX_LEN,_,BaseSymbol)
+flora_is_flogic_wrapper(WrapPrefix,Base) :-
+	( WrapPrefix=FLBODYPREFIX
+	; WrapPrefix=FLHEADPREFIX
+	; WrapPrefix=FLFACTPREFIX
+	; WrapPrefix=FLTRAILERPREFIX
 	),
-	flora_is_flogic_base(BaseSymbol),
-	!.
+	!,
+	flora_is_flogic_base(Base).
 
 
 /*****************************************************************************
@@ -408,23 +395,36 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
       prefix of the wrapper (e.g., base_, derived_). PredicateSymbol specifies
       the type of the F-logic wrapper, e.g., fd, mvd, imvd, etc.
 
+  (2) PredicateType=flora, if the predicate is encoded as:
+	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''flora_predicate'.
+      This encoding is for Flora builtin predicates like those in the trailers
+      that are used to implement F-logic, e.g., immediate_sub. If the predicate
+      contains an `_' sign, then it is split into two parts: WrapPrefix is
+      the prefix up until the last `_' while PredicateSymbol is the remaining
+      string. For example, if the predicate is immediate_sub, then
+      WrapPrefix='immediate_', PredicateSymbol='sub'. Otherwise, WrapPrefix=''
+      and PredicateSymbol=flora_predicate.
 
-  (2) PredicateType=hilog, if the predicate is encoded as:
+  (3) PredicateType=hilog, if the predicate is encoded as:
 	'FLORA_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''WRAP_HILOG'.
       ModuleName is the Flora user/system module name. WrapPrefix is undefined.
       PredicateSymbol is the functor of the HiLog predicate.
 
-  (3) PredicateType=prolog, if the predicate is encoded other than (1) and (2).
-      ModuleName and WrapPrefix will be undefined.
+  (4) PredicateType=firstorder, if the predicate is encoded as:
+	'FLORA_FO_PREFIX''FLORA_(USER/SYSTEM)_MODULE''workspace''predicate'.
+      In this case, PredicateSymbol=predicate. WrapPrefix is undefined.
+
+  (4) PredicateType=prolog, if the predicate is encoded other than all of the
+      above. ModuleName and WrapPrefix will be undefined.
 
   Note: This procedure can also be used to decode a predicate symbol (without
-        any argument). In (1) and (3), PredicateSymbol is defined and
-        ArgsList=[]. In (2), PredicateSymbol=[] and ArgsList=[].
+        any argument). In (1), (2) and (4), PredicateSymbol is defined and
+        ArgsList=[]. In (3), PredicateSymbol=[] and ArgsList=[].
 
 *****************************************************************************/
 flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	               WrapPrefix,PredicateSymbol,ArgsList) :-
-	%% This branch is to decode either an F-logic or a HiLog predicate.
+	%% This branch is to decode an F-logic, a HiLog, or a Flora predicate.
 	Predicate =.. [Funct|Args],
 	%% Check if it begins with a module predicate prefix.
 	flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1),
@@ -434,15 +434,19 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	; ModuleType == usermodule ->
 	    ModuleName=FL_FLORALIB(Workspace)
 	),
-	%% Locate the last ' and extract the following wrapper.
-	atom_codes(Funct,FunctList),
-	reverse(FunctList,RevFunctList),
-	atom_codes(RevFunct,RevFunctList),
-	str_sub('''',RevFunct,N),
-	str_length(Funct,FunctLen),
-	eval(FunctLen-N+1,S),
-	substring(Funct,S,_,Wrapper),
+	%% Locate the end of workspace name, assuming the next quote after
+	%% the prefix marks the end of the workspace. This will not work
+	%% correctly if the workspace contains the quote symbol.
+	substring(Funct,Flora_module_prefix_len_plus1,_,RestFunct),
+	str_sub('''',RestFunct,N),
+	%% Extract the workspace name.
+	eval(N-1,M),
+	substring(RestFunct,0,M,Workspace),
+	%% Extract the predicate name.
+	substring(RestFunct,N,_,Wrapper),
+	!,
 	( Wrapper == WRAP_HILOG ->
+	    %% a HiLog Predicate
 	    PredicateType=hilog,
 	    ( Args=[PredicateSymbol|ArgsList] ->
 		true
@@ -451,15 +455,24 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	      ArgsList=[]
 	    )
 
-	; flora_decode_flogic_wrapper(Wrapper,WrapPrefix,PredicateSymbol) ->
-	    PredicateType=flogic,
+	; str_sub('_',Wrapper,S) ->
+	    %% The predicate consists of a prefix and a base.
+	    substring(Wrapper,0,S,WrapPrefix),
+	    substring(Wrapper,S,_,PredicateSymbol),
+	    ( flora_is_flogic_wrapper(WrapPrefix,PredicateSymbol) ->
+		PredicateType=flogic
+	    ;
+	      PredicateType=flora
+	    ),
 	    ArgsList=Args
+	;
+	  %% a Flora builtin predicate
+	  PredicateType=flora,
+	  WrapPrefix='',
+	  PredicateSymbol=Wrapper,
+	  ArgsList=Args
 	),
-	%% Extract the workspace name.
-	eval(S-1,T),
-	substring(Funct,Flora_module_prefix_len_plus1,T,Workspace),
 	!.
-
 
 flora_decode_predicate(Predicate,firstorder,ModuleName,
 		       _WrapPrefix,PredicateSymbol,ArgsList) :-
@@ -516,3 +529,27 @@ flora_decode_module_name(Predicate,ModuleName) :-
 flora_is_flogic_wrapper(Predicate,ModuleName,Base) :-
 	flora_decode_predicate(Predicate,flogic,ModuleName,_WrapPrefix,Base,_ArgsList),
 	!.
+
+
+/*****************************************************************************
+  flora_is_dynamic_flogic_base(+Base,+Arity)
+
+  These predicates are wrappers for dynamic F-logic atoms which allow updates.
+*****************************************************************************/
+flora_is_dynamic_flogic_base(WRAP_SUB,2)     :- !.
+flora_is_dynamic_flogic_base(WRAP_ISA,2)     :- !.
+flora_is_dynamic_flogic_base(WRAP_IFD,3)     :- !.
+flora_is_dynamic_flogic_base(WRAP_IMVD,3)    :- !.
+flora_is_dynamic_flogic_base(WRAP_IMVDDEF,2) :- !.
+flora_is_dynamic_flogic_base(WRAP_FD,3)      :- !.
+flora_is_dynamic_flogic_base(WRAP_MVD,3)     :- !.
+flora_is_dynamic_flogic_base(WRAP_MVDDEF,2)  :- !.
+flora_is_dynamic_flogic_base(WRAP_METH,2)    :- !.
+flora_is_dynamic_flogic_base(WRAP_IMETH,2)   :- !.
+flora_is_dynamic_flogic_base(WRAP_TRAN,2)    :- !.
+flora_is_dynamic_flogic_base(WRAP_FDSIG,3)   :- !.
+flora_is_dynamic_flogic_base(WRAP_IFDSIG,3)  :- !.
+flora_is_dynamic_flogic_base(WRAP_MVDSIG,3)  :- !.
+flora_is_dynamic_flogic_base(WRAP_IMVDSIG,3) :- !.
+flora_is_dynamic_flogic_base(WRAP_EXISTS,1)  :- !.
+flora_is_dynamic_flogic_base(WRAP_OBJEQL,2)  :- !.

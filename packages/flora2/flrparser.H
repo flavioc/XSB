@@ -28,6 +28,8 @@
 
 :- import append/3 from basics.
 
+:- import conget/2 from gensym.
+
 :- import flora_conflict_operator/3 from flroperator.
 
 :- import flora_nodefp/2 from flrnodefp.

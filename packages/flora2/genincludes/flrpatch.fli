@@ -18,30 +18,30 @@
 /**************************************************************************
   F-logic
 ***************************************************************************/
-:- FL_FIRSTORDER
-	base_sub/2,
-	base_isa/2,
-	base_ifd/3,
-	base_imvd/3,
-	base_imvddef/2,
-	base_fd/3,
-	base_mvd/3,
-	base_mvddef/2,
-	base_meth/2,
-	base_imeth/2,
-	base_tran/2,
-	base_fdsig/3,
-	base_ifdsig/3,
-	base_mvdsig/3,
-	base_imvdsig/3,
-	base_exists/1,
-	base_objeql/2.
+:- FL_FLORAPATCH
+	sub/2,
+	isa/2,
+	ifd/3,
+	imvd/3,
+	imvddef/2,
+	fd/3,
+	mvd/3,
+	mvddef/2,
+	meth/2,
+	imeth/2,
+	tran/2,
+	fdsig/3,
+	ifdsig/3,
+	mvdsig/3,
+	imvdsig/3,
+	exists/1,
+	objeql/2.
 
 
 /**************************************************************************
   HiLog
 ***************************************************************************/
-:- FL_FIRSTORDER
+:- FL_FLORAPATCH
 	WRAP_HILOG/1,
 	WRAP_HILOG/2,
 	WRAP_HILOG/3,
@@ -68,7 +68,7 @@
 /**************************************************************************
   bridge to storage trie
 ***************************************************************************/
-:- wraparound
+:- FL_FLOGICSTATIC
 	derived_sub/2,
 	derived_isa/2,
 	derived_ifd/3,
@@ -88,20 +88,20 @@
 	derived_objeql/2.
 
 
-derived_sub(X,Y) :- base_sub(X,Y).
-derived_isa(O,C) :- base_isa(O,C).
-derived_ifd(C,A,V) :- base_ifd(C,A,V).
-derived_imvd(C,A,V) :- base_imvd(C,A,V).
-derived_imvddef(C,A) :- base_imvddef(C,A).
-derived_fd(O,A,V) :- base_fd(O,A,V).
-derived_mvd(O,A,V) :- base_mvd(O,A,V).
-derived_mvddef(O,A) :- base_mvddef(O,A).
-derived_meth(O,M) :- base_meth(O,M).
-derived_imeth(C,M) :- base_imeth(C,M).
-derived_tran(O,T) :- base_tran(O,T).
-derived_fdsig(O,MethodArgs,R) :- base_fdsig(O,MethodArgs,R).
-derived_ifdsig(O,MethodArgs,R) :- base_ifdsig(O,MethodArgs,R).
-derived_mvdsig(O,MethodArgs,R) :- base_mvdsig(O,MethodArgs,R).
+derived_sub(X,Y)                :- base_sub(X,Y).
+derived_isa(O,C)                :- base_isa(O,C).
+derived_ifd(C,A,V)              :- base_ifd(C,A,V).
+derived_imvd(C,A,V)             :- base_imvd(C,A,V).
+derived_imvddef(C,A)            :- base_imvddef(C,A).
+derived_fd(O,A,V)               :- base_fd(O,A,V).
+derived_mvd(O,A,V)              :- base_mvd(O,A,V).
+derived_mvddef(O,A)             :- base_mvddef(O,A).
+derived_meth(O,M)               :- base_meth(O,M).
+derived_imeth(C,M)              :- base_imeth(C,M).
+derived_tran(O,T)               :- base_tran(O,T).
+derived_fdsig(O,MethodArgs,R)   :- base_fdsig(O,MethodArgs,R).
+derived_ifdsig(O,MethodArgs,R)  :- base_ifdsig(O,MethodArgs,R).
+derived_mvdsig(O,MethodArgs,R)  :- base_mvdsig(O,MethodArgs,R).
 derived_imvdsig(O,MethodArgs,R) :- base_imvdsig(O,MethodArgs,R).
-derived_exists(X) :- base_exists(X).
-derived_objeql(X,Y) :- base_objeql(X,Y).
+derived_exists(X)               :- base_exists(X).
+derived_objeql(X,Y)             :- base_objeql(X,Y).

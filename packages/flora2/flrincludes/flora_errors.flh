@@ -151,3 +151,4 @@
 #define ERROR_GVAR	'invalid grouping variable'
 #define ERROR_AVAR	'invalid aggregate variable'
 #define AVAR_ASGVAR	'aggregate variable not allowed as grouping variable'
+#define VARWSINHEAD	'unbound module name in rule head'

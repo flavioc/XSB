@@ -37,11 +37,18 @@
 
 :- import flora_define_operator/3 from flroperator.
 
-:- import flora_argdef/3, flora_define_arguments/3 from flrsignature.
+:- import
+	flora_argdef/3,
+	flora_define_arguments/3
+   from flrsignature.
 
 :- import flora_define_prolog/2 from flrprolog.
 
-:- import flora_define_firstorder/2 from flrnohilog.
+:- import
+	flora_define_firstorder/2,
+	flora_define_flogicstatic/2
+   from flrnohilog.
+
+:- import flora_is_dynamic_flogic_base/2 from flrwrapper.
 
 :- export flora_reset_compiler/0, flora_compile/4.
-

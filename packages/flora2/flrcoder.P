@@ -215,7 +215,7 @@ flora_write_direct(Term) :-
   flora_write_fact(+Term)
 ****************************************************************************/
 flora_write_fact(Term) :-
-	flora_write_struct(Term,FLFACTPREFIX),
+	flora_write_struct(Term,FLBODYPREFIX),
 	writeln('.').
 
 
@@ -417,18 +417,11 @@ flora_write_struct(Term,_Prefix) :-
 flora_write_struct(Term,_Prefix) :-
 	is_prtable(Term,P,A),
 	!,
-	( flora_prlgdef(P,A) ->
-	    write_canonical(table(P/A))
-
-	; flora_firstorderdef(P,A) ->
-	    write('table(/('),
-	    flora_write_workspace(FOTHISMODULE,_WS,P),
-	    write(','),
-	    write(A),
-	    writeln('))')
-	;
-	  write_canonical(table(P/A))
-	).
+	write('table(/('),
+	flora_write_predicate_symbol(P,A),
+	write(','),
+	write(A),
+	writeln('))').
 
 flora_write_struct(Term,_Prefix) :-
 	is_prhilogtable(Term,A),
@@ -443,41 +436,47 @@ flora_write_struct(Term,_Prefix) :-
 %%flora_write_struct(Term,_Prefix) :-
 %%	is_prdynamic(Term,P,A),
 %%	!,
-%%	( flora_prlgdef(P,A) ->
-%%	    write_canonical(dynamic(P/A))
-%%
-%%	; flora_firstorderdef(P,A) ->
-%%	    write('dynamic(/('),
-%%	    flora_write_workspace(FOTHISMODULE,_WS,P),
-%%	    write(','),
-%%	    write(A),
-%%	    writeln('))')
-%%	;
-%%	  write_canonical(dynamic(P/A))
-%%	).
+%%	write('dynamic(/('),
+%%	flora_write_predicate_symbol(P,A),
+%%	write(','),
+%%	write(A),
+%%	writeln('))').
 
 flora_write_struct(Term,_Prefix) :-
 	is_prindex(Term,P,A,N),
 	!,
-	( flora_prlgdef(P,A) ->
-	    write_canonical(index(P/A,N))
-
-	; flora_firstorderdef(P,A) ->
-	    write('index(/('),
-	    flora_write_workspace(FOTHISMODULE,_WS,P),
-	    write(','),
-	    write(A),
-	    write('),'),
-	    write(N),
-	    writeln(')')
-	;
-	  write_canonical(index(P/A,N))
-	).
+	write('index(/('),
+	flora_write_predicate_symbol(P,A),
+	write(','),
+	write(A),
+	write('),'),
+	write(N),
+	writeln(')').
 
 flora_write_struct(Term,_Prefix) :-
 	atomic(Term),
 	!,
 	write_canonical(Term).
+
+
+/****************************************************************************
+  flora_write_predicate_symbol(+Funct,+Arity)
+
+  It writes out a workspace Macro depending on Funct/Arity is defined
+  as Prolog, first order, or F-logic static.
+****************************************************************************/
+flora_write_predicate_symbol(P,A) :-
+	( flora_prlgdef(P,A) ->
+	    write_canonical(P)
+
+	; flora_flogicstaticdef(P,A) ->
+	    flora_write_workspace(THISMODULE,_WS,P)
+
+	; flora_firstorderdef(P,A) ->
+	    flora_write_workspace(FOTHISMODULE,_WS,P)
+	;
+	  write_canonical(P)
+	).
 
 
 /****************************************************************************
@@ -543,6 +542,11 @@ flora_write_atomlit(Mode,WS,A,Prefix) :-
 	flora_write_wsliteral(NewMode,WS,A,0,[],Prefix).
 
 flora_write_atomlit(Mode,WS,A,Prefix) :-
+	flora_flogicstaticdef(A,0),
+	!,
+	flora_write_wsliteral(Mode,WS,A,0,[],Prefix).
+
+flora_write_atomlit(Mode,WS,A,Prefix) :-
 	flora_write_wsliteral(Mode,WS,WRAP_HILOG,1,[A],Prefix).
 
 
@@ -555,6 +559,12 @@ flora_write_termlit(Mode,WS,Funct,N,Args,Prefix) :-
 	!,
 	flora_switch_firstorder_mode(Mode,NewMode),
 	flora_write_wsliteral(NewMode,WS,FAtom,N,Args,Prefix).
+
+flora_write_termlit(Mode,WS,Funct,N,Args,Prefix) :-
+	is_pratom(Funct,FAtom),
+	flora_flogicstaticdef(FAtom,N),
+	!,
+	flora_write_wsliteral(Mode,WS,FAtom,N,Args,Prefix).
 
 flora_write_termlit(Mode,WS,Funct,N,Args,Prefix) :-
 	M is N+1,
@@ -839,7 +849,7 @@ flora_build_directive(Term,DWS,Code) :-
   flora_build_fact(+Term,+DefaultWorkspace,-Code)
 ****************************************************************************/
 flora_build_fact(Term,DWS,Code) :-
-	flora_build_struct(Term,DWS,FLFACTPREFIX,_VarList,Code).
+	flora_build_struct(Term,DWS,FLBODYPREFIX,_VarList,Code).
 
 
 /****************************************************************************
@@ -988,15 +998,8 @@ flora_build_struct(Term,_DWS,_Prefix,_VarList,Code) :-
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prtable(Term,P,A),
 	!,
-	( flora_prlgdef(P,A) ->
-	    Code=table(P/A)
-
-	; flora_firstorderdef(P,A) ->
-	    flora_firstorder_user_module_predicate_symbol(P,DWS,NewP),
-	    Code=table(NewP/A)
-	;
-	  Code=table(P/A)
-	).
+	flora_build_predicate_symbol(P,A,DWS,NewP),
+	Code=table(NewP/A).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prhilogtable(Term,A),
@@ -1008,28 +1011,14 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 %%flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 %%	is_prdynamic(Term,P,A),
 %%	!,
-%%	( flora_prlgdef(P,A) ->
-%%	    Code=dynamic(P/A)
-%%
-%%	; flora_firstorderdef(P,A) ->
-%%	    flora_firstorder_user_module_predicate_symbol(P,DWS,NewP),
-%%	    Code=dynamic(NewP/A)
-%%	;
-%%	  Code=dynamic(P/A)
-%%	).
+%%	flora_build_predicate_symbol(P,A,DWS,NewP),
+%%	Code=dynamic(NewP/A).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prindex(Term,P,A,N),
 	!,
-	( flora_prlgdef(P,A) ->
-	    Code=index(P/A,N)
-
-	; flora_firstorderdef(P,A) ->
-	    flora_firstorder_user_module_predicate_symbol(P,DWS,NewP),
-	    Code=index(NewP/A,N)
-	;
-	  Code=index(P/A,N)
-	).
+	flora_build_predicate_symbol(P,A,DWS,NewP),
+	Code=index(NewP/A,N).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,DWS) :-
 	is_prthismodule(Term),
@@ -1048,6 +1037,23 @@ flora_build_struct(Term,_DWS,_Prefix,_VarList,Code) :-
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Term) :-
 	atomic(Term),
 	!.
+
+
+/****************************************************************************
+  flora_build_predicate_symbol(+Funct,+Arity,+WS,-Code)
+****************************************************************************/
+flora_build_predicate_symbol(P,A,WS,Code) :-
+	( flora_prlgdef(P,A) ->
+	    Code=P
+
+	; flora_flogicstaticdef(P,A) ->
+	    flora_user_module_predicate_symbol(P,WS,Code)
+
+	; flora_firstorderdef(P,A) ->
+	    flora_firstorder_user_module_predicate_symbol(P,WS,Code)
+	;
+	  Code=P
+	).
 
 
 /****************************************************************************
@@ -1131,6 +1137,11 @@ flora_build_atomlit(Mode,A,WS,Prefix,Code) :-
 	flora_build_wsliteral(NewMode,A,0,[],WS,WS,Prefix,_VarList,Code).
 
 flora_build_atomlit(Mode,A,WS,Prefix,Code) :-
+	flora_flogicstaticdef(A,0),
+	!,
+	flora_build_wsliteral(Mode,A,0,[],WS,WS,Prefix,_VarList,Code).
+
+flora_build_atomlit(Mode,A,WS,Prefix,Code) :-
 	flora_build_wsliteral(Mode,WRAP_HILOG,1,[A],WS,WS,Prefix,_VarList,Code).
 
 
@@ -1143,6 +1154,12 @@ flora_build_termlit(Mode,Funct,N,Args,WS,DWS,Prefix,VarList,Code) :-
 	!,
 	flora_switch_firstorder_mode(Mode,NewMode),
 	flora_build_wsliteral(NewMode,FAtom,N,Args,WS,DWS,Prefix,VarList,Code).
+
+flora_build_termlit(Mode,Funct,N,Args,WS,DWS,Prefix,VarList,Code) :-
+	is_pratom(Funct,FAtom),
+	flora_flogicstaticdef(FAtom,N),
+	!,
+	flora_build_wsliteral(Mode,FAtom,N,Args,WS,DWS,Prefix,VarList,Code).
 
 flora_build_termlit(Mode,Funct,N,Args,WS,DWS,Prefix,VarList,Code) :-
 	M is N+1,

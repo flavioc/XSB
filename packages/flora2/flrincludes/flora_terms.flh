@@ -169,10 +169,13 @@
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
 #define FL_WRAPAROUND	        wraparound
-%%#define FL_FONOSTORAGE	wraparound
-%%#define FL_FONOSTORAGEALL 	wraparoundall
+#define FL_STATICFIRSTORDER	static
+#define FL_STATICFIRSTORDERALL 	staticall
 #define FL_FIRSTORDER		firstorder
 #define FL_FIRSTORDERALL	firstorderall
+#define FL_FLOGICSTATIC		flogic
+#define FL_FLORAPATCH		patch
+
 #define FL_HILOGTABLE		hilogtable
 #define FL_EQUALITY		equality
 #define FL_EXPUNGE		expunge
@@ -270,12 +273,14 @@
 #define FLARGUMENTS		flarguments
 #define FLPROLOG		flprolog
 #define FLOPDEF			flopdef
-%%#define FONOSTORAGE		flfonostorage
+#define FLSTATICFO		flstaticfo
 #define FLFIRSTORDER		flfirstorder
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
 #define FLEQUALITY		flequality
 #define FLEXPUNGE		flexpunge
+#define FLFLOGICSTATIC		flflogicstatic
+#define FLFLORAPATCH		flflorapatch
 
 #define FLATOM			flatom
 #define FLNUMBER		flnumber
