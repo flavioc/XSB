@@ -89,5 +89,6 @@ make_xsbpatternH(CC, CC_opts) :-
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk
 	str_cat(Module, '.so', SharedLib),
-	unix(['mv', ' -f ', SharedLib, ' ', ConfigLibdir])
+	unix(['cp', ' -f ', SharedLib, ' ', ConfigLibdir]),
+	unix(['rm', ' -f ', SharedLib])
      ).
