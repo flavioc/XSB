@@ -2,15 +2,15 @@
 %=============================================================
 In addition to Prolog's SLD resolution, XSB has the ability to use SLG
 resolution, which uses a type of {\em tabling}.  The difference in
-evaluation strategy means that, with appropriate declarations, XSB is
-complete under the well-founded semantics \cite{VGRS91} for
-non-floundering normal programs (those with negation), and terminates
-when these programs have the bounded term-depth property, as will be
-explained below.  This use of tabling allows a different, more
-declarative programming style than Prolog that can be of use for a
-number of problems.  The following sections provide a brief
-introduction to SLG resolution as it is implemented in XSB.  For
-interested users, the ftp directory and web site contain papers
+resolution strategy means that, with appropriate declarations, XSB can
+compute queries to non-floundering normal programs under the
+well-founded semantics \cite{VGRS91} for non-floundering normal
+programs, and is guarenteed to terminate when these programs have the
+bounded term-depth property, as will be explained below.  This use of
+tabling allows a different, more declarative programming style than
+Prolog that can be of use for a number of problems.  The following
+sections provide a brief introduction to SLG resolution as it is
+implemented in XSB.  For interested users, eb site contain papers
 covering in detail various aspects of tabling.  An overview of SLG
 resolution, and a practical evaluation strategy for it are provided in
 \cite{ChWa96,SaSW95a,FSW98}. \cite{SaSw98,RRSSW98,JFLP-Scheduling,ChSW95}
@@ -25,65 +25,58 @@ Consider the Prolog program
 \begin{center}
 \begin{minipage}{3.8in}
 \begin{verbatim}
-ancestor(X,Y) :- parent(X,Y).
 ancestor(X,Y) :- ancestor(X,Z), parent(Z,Y).
+ancestor(X,Y) :- parent(X,Y).
 \end{verbatim}						       
 \end{minipage}
 \end{center}
 together with the query {\tt ?-ancestor(1,Y)}.  This program has a
 simple, declarative meaning: {\tt Y} is an ancestor of {\tt X} if {\tt
-Y} is a parent of {\tt X} or if {\tt Y} is a parent of an ancestor of
-{\tt X}.  Prolog, however cannot compute the answer to this query.  It
-enters an infinite loop.  The inability of Prolog to answer such
-queries, which arise frequently, comprises one of its major
+Y} is a parent of an ancestor of {\tt X}, or if {\tt Y} is a parent of
+{\tt X}.  Prolog, however enters into an infinte loop when
+computing an answer to this query.  The inability of Prolog to answer
+such queries, which arise frequently, comprises one of its major
 limitations as an implementation of logic.
 
-A number of approaches have been developed to solve programs like
-ancestor by reusing partial answers to the query {\tt ancestor(1,Y)}
+A number of approaches have been developed to address this problem by
+reusing partial answers to the query {\tt ancestor(1,Y)}
 \cite{Diet87,TaSa86,BMSU86,Viei89,Walk93}. Briefly, the ideas behind
 these algorithms can be described in the following manner.  First, the
 program keeps track of places where calls to {\tt ancestor(1,Y)} have
 been made.  By maintaining this information, the repeated call to {\tt
-ancestor(1,Y)} in the body of the second clause can be detected.  The
+ancestor(1,Y)} in the body of the first clause can be detected.  The
 next idea is to store partial solutions to the call in a {\em table},
-which consists of calls associated with their answers.  These answers
-are substituted into the call to {\tt ancestor(1,Y)} in the body of
-the second clause.  Once they are joined to the second literal of the
-second clause these substitutions will in general produce new
-solutions to the query, and these new solutions in their turn are fed
-into the body of the second clause until a fixpoint (if any) is
-reached.  In the language of
-\cite{ChWa96}, the first call of a (leftmost) goal is called a
-$generator$ node, and is expanded using program clauses as in SLD
-resolution (Prolog).  Correct answer substitutions to the solution
-node are interned in the {\em table entry} (call plus returns) for a
-call.  Subsequent calls (that is, subsequent variant or subsumed
-calls) are referred to as $active$ nodes
-%
-\footnote{Sometimes the term {\em consuming} nodes is also used in
-this case.}, 
-%
-and are expanded using answers derived for that goal instead of
-program clauses.  The computation ends when all possible program
-clauses have been used to expand all $generator$ nodes, and when all
-answers have been returned to all $active$ nodes.
+and to associate these partial solutions with their calls.  Later,
+these answers are substituted into the call to {\tt ancestor(1,Y)} in
+the body of the first clause.  Once the answers are substituted new
+solutions may be derived, and these new solutions in their turn are
+also fed into the body of the first clause until a fixpoint (if any)
+is reached.  
 
-Because $active$ nodes are expanded using answers rather than program
-clauses, tabling will terminate whenever the set of answers to all
-queries in a derivation is finite -- a situation which occurs when the
-program has a finite model, for instance.  Indeed, it can be proven
-that for any program with the {\em bounded term depth property} where
-all terms have a maximum depth, SLG computation will terminate.  These
-programs include the important class of {\em Datalog} programs.
+
+In the language of tabling, the first instance of a tabled subgoal $S$
+is called a $generator$ subgoal, and is expanded using program clauses
+as in SLD resolution (Prolog).  $S$ is interned in the table along
+with (unique) correct answer substitutions derived for it.  Subsequent
+subgoals that are variants of $S$ are referred to as $consuming$
+subgoals and are expanded using answers in the table for $S$ instead
+of program clauses.  Because $consuming$ subgoals resolve against
+unique answers rather than repeatedly against program clauses, tabling
+will terminate whenever a finite number of subgoals are encountered in
+query evaluation, and each of these sobgoals have a finite number of
+answers.  Indeed, it can be proven that for any program with the {\em
+bounded term depth property} (roughly, where all terms have a maximum
+depth), SLG computation will terminate.  These programs include the
+important class of {\em Datalog} programs.
 
 It is important to notice two differences between tabling and SLD
 resolution beyond termination properties.  First, termination requires
 that each solution to a call be returned only once.  Second, because
-of the way that solutions are stored and returned to $active$ nodes in
-XSB, answers may be returned to the user in an unaccustomed order.
+of the way that solutions are stored and returned to $consuming$ nodes
+in XSB, answers may be returned to the user in an unaccustomed order.
 
-In XSB, predicates are executed Prolog style by default, and execute
-by SLG resolution only if they are declared as tabled at compile time
+In XSB, predicates are executed using SLG by default, and execute by
+SLG resolution only if they are declared as tabled at compile time
 using declarations like
 \begin{center}
 {\tt :- table(<Predicate>/<Arity>).}
@@ -92,18 +85,19 @@ The user can either make these declarations explicitly, or can get the
 system to make them using the {\tt auto\_table} directive (see
 Section~\ref{tabling_directives}).
 
-The SLG-WAM overhead for SLD resolution is minimal.  Thus when XSB is
-used simply as a Prolog system (i.e., no tabling is used), it is
-reasonably competitive with other Prolog implementations based on a
-WAM emulator written in C or assembly.  For example, XSB Version 1.6
-is about two to three times slower than Quintus 3.1.1 or emulated
-SICStus Prolog 3.1.
+XSB is based on a memory-copying version of a virtual machine called
+the SLG-WAM.  The overhead for SLD resolution ising this machine is
+minimal.  Thus when XSB is used simply as a Prolog system (i.e., no
+tabling is used), it is reasonably competitive with other Prolog
+implementations based on a WAM emulator written in C or assembly.  For
+example, XSB Version 1.6 is about two to three times slower than
+Quintus 3.1.1 or emulated SICStus Prolog 3.1.
 
-The bottom-up aspect of tabling in SLG aids in filtering out redundant
-computations -- indeed it is this property which makes SLG complete
-for non-floundering Datalog programs.  The same generation program
-furnishes a case of the usefulness of tabling for optimizing a Prolog
-program.
+The return of answers in tabling aids in filtering out redundant
+computations -- indeed it is this property which makes tabling
+complete for non-floundering Datalog programs.  The {\em same
+generation} program furnishes a case of the usefulness of tabling for
+optimizing a Prolog program.
 %---------------------------------------------------------------------()
 \begin{example} \label{ex:same-gen} {\rm
 The query {\tt ?- sg(1,X),fail.}\ was executed against the program
@@ -124,8 +118,7 @@ faster than under SLD, since SLD will search a complete binary tree of
 depth 24.  }
 \end{example}
 %---------------------------------------------------------------------()
-
-Tabling can generally be useful for optimizing data-oriented queries.
+Tabling can also be useful for optimizing data-oriented queries.
 Section \ref{tabling_directives} illustrates how the {\tt
 suppl\_table} directive can be used to aid in optimizing such queries.
 
@@ -144,8 +137,8 @@ can, in the worst case, copy $N$ sublists of the first and third
 arguments into the table, transforming a linear algorithm into a
 quadratic one.
 
-A non-trivial program that uses tabling can be found as part of the
-XSB compiler, in {\tt \$XSB\_DIR/cmplib/mode.P}.
+Examples of large-scale applications that use tabling are overviewed
+in \cite{Swif99a}.
 
 \section{Left-to-Right Dynamically Stratified Negation}
 \index{negation!stratified}
