@@ -28,11 +28,9 @@
 
 XSBDIR = ../../..
 
-ALLOBJS = flrcommon.flh \
-          flrtrailer.flh \
-	  flreqltrailer.flh \
-          flrscalareql.flh \
-          flrdbdyn.flh
+ALLOBJS = flrheader.flh \
+	  flrdefinition.flh \
+	  flrpatch.flh
 
 XSB = $(XSBDIR)/bin/xsb
 
@@ -46,7 +44,7 @@ FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
 STDWARN = 3
 STDERR = 2
-HDRMSG = "While compiling XSB/packages/flora2/closure:"
+HDRMSG = "While compiling XSB/packages/flora2/includes:"
 
 
 all: init $(ALLOBJS) finish
@@ -56,24 +54,16 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flrcommon.flh : flrcommon.fli flrpred.fli
-	@echo 'flCompileInclude(flrcommon).' >> cmd...
+flrheader.flh: flrheader.h
+	@cp flrheader.h flrheader.flh
 
 
-flrtrailer.flh : flrtrailer.fli flrpred.fli
-	@echo 'flCompileInclude(flrtrailer).' >> cmd...
+flrdefinition.flh: flrdefinition.h
+	@cp flrdefinition.h flrdefinition.flh
 
 
-flreqltrailer.flh : flreqltrailer.fli flrpred.fli
-	@echo 'flCompileInclude(flreqltrailer).' >> cmd...
-
-
-flrscalareql.flh : flrscalareql.fli flrpred.fli
-	@echo 'flCompileInclude(flrscalareql).' >> cmd...
-
-
-flrdbdyn.flh : flrdbdyn.fli flrpred.fli
-	@echo 'flCompileInclude(flrdbdyn).' >> cmd...
+flrpatch.flh : flrpatch.fli $(FLORA_TERMS)
+	@echo 'flCompileInclude(flrpatch).' >> cmd...
 
 
 init:

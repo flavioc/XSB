@@ -176,25 +176,25 @@ flora_include(FLLIBABOLISH,IncFile) :- !,
 
 flora_include(FLHEADER,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflrheader_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflrheader_inc.flh',arg(S)).
 flora_include(FLDBDYN,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflrdbdyn_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflrdbdyn_inc.flh',arg(S)).
 flora_include(FLDEFINITION,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflrdefinition_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflrdefinition_inc.flh',arg(S)).
 flora_include(FLPATCH,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflrpatch_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflrpatch_inc.flh',arg(S)).
 flora_include(FLTRAILER,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflrtrailer_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflrtrailer_inc.flh',arg(S)).
 flora_include(FLEQLTRAILER,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflreqltrailer_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflreqltrailer_inc.flh',arg(S)).
 flora_include(FLSCALAREQL,IncFile) :- !,
 	slash(S),
-	fmt_write_string(IncFile,'closureinc%sflrscalareql_inc.flh',arg(S)).
+	fmt_write_string(IncFile,'headerinc%sflrscalareql_inc.flh',arg(S)).
 
 
 /********************************************************************

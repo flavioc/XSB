@@ -57,7 +57,7 @@ XSB_CHAR_DEFS = $(XSBDIR)/prolog_includes/char_defs.h
 XSB_STANDARD = $(XSBDIR)/prolog_includes/standard.h
 XSB_EMU_FLAG_DEFS = $(XSBDIR)/emu/flag_defs_xsb.h
 
-FLORA_INCLUDES_DIR = ../includes
+FLORA_INCLUDES_DIR = ../flrincludes
 
 FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh

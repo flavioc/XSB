@@ -30,7 +30,9 @@ XSBDIR = ../../..
 
 CLOSURE = ../closure
 
-CLOSUREINC = ../closureinc
+HEADERINC = ../headerinc
+
+INCLUDES = ../includes
 
 ALLOBJS = standard.P \
 	  eqlbasic.P \
@@ -41,7 +43,9 @@ XSB = $(XSBDIR)/bin/xsb
 
 PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 
-FLORA_TERMS = ../includes/flora_terms.flh
+FLORA_INCLUDES_DIR = ../flrincludes
+
+FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
@@ -58,26 +62,26 @@ all: init $(ALLOBJS) finish
 
 
 standard.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
-             $(CLOSURE)/flrtrailer.flh $(CLOSUREINC)/flrheader_inc.flh \
-             $(CLOSUREINC)/flrdbdyn_inc.flh $(CLOSUREINC)/flrtrailer_inc.flh
+             $(CLOSURE)/flrtrailer.flh $(HEADERINC)/flrheader_inc.flh \
+             $(HEADERINC)/flrdbdyn_inc.flh $(HEADERINC)/flrtrailer_inc.flh
 	@echo 'flsetuptrailer(none).' >> cmd...
 
 
 eqlbasic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
-             $(CLOSURE)/flreqltrailer.flh $(CLOSUREINC)/flrheader_inc.flh \
-             $(CLOSUREINC)/flrdbdyn_inc.flh $(CLOSUREINC)/flreqltrailer_inc.flh
+             $(CLOSURE)/flreqltrailer.flh $(HEADERINC)/flrheader_inc.flh \
+             $(HEADERINC)/flrdbdyn_inc.flh $(HEADERINC)/flreqltrailer_inc.flh
 	@echo 'flsetuptrailer(basic).' >> cmd...
 
 
 eqlflogic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
               $(CLOSURE)/flreqltrailer.flh $(CLOSURE)/flrscalareql.flh \
-              $(CLOSUREINC)/flrheader_inc.flh $(CLOSUREINC)/flrdbdyn_inc.flh \
-              $(CLOSUREINC)/flreqltrailer_inc.flh $(CLOSUREINC)/flrscalareql_inc.flh
+              $(HEADERINC)/flrheader_inc.flh $(HEADERINC)/flrdbdyn_inc.flh \
+              $(HEADERINC)/flreqltrailer_inc.flh $(HEADERINC)/flrscalareql_inc.flh
 	@echo 'flsetuptrailer(flogic).' >> cmd...
 
 
-patch.P : $(CLOSURE)/flrpatch.flh $(CLOSUREINC)/flrheader_inc.flh \
-          $(CLOSUREINC)/flrdefinition_inc.flh
+patch.P : $(INCLUDES)/flrpatch.flh $(HEADERINC)/flrheader_inc.flh \
+          $(HEADERINC)/flrdefinition_inc.flh
 	@echo 'flsetuppatch.' >> cmd...
 
 
@@ -101,8 +105,8 @@ $(CLOSURE)/flrscalareql.flh : $(CLOSURE)/flrscalareql.fli $(CLOSURE)/flrpred.fli
 	@cd $(CLOSURE); make
 
 
-$(CLOSURE)/flrpatch.flh : $(CLOSURE)/flrpatch.fli $(CLOSURE)/flrpred.fli $(FLORA_TERMS)
-	@cd $(CLOSURE); make
+$(INCLUDES)/flrpatch.flh : $(INCLUDES)/flrpatch.fli $(FLORA_TERMS)
+	@cd $(INCLUDES); make
 
 
 init:
