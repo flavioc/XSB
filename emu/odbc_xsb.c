@@ -27,8 +27,8 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#include <SQL.H>
-#include <SQLEXT.H>
+#include <sql.h>
+#include <sqlext.h>
 #include <string.h>
 #else
 #define FAR
