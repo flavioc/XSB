@@ -412,6 +412,28 @@ predicates are described here.
 \ournewitem{file\_close(+FileDes)}{machine}\index{{\tt file\_close/1}}
     Closes the file (or string) for descriptor {\tt FileDes}.
 
+\ournewitem{file\_flush(+FileDes, -Return)}{machine}\index{{\tt file\_flush/2}}
+    Any buffered data gets delivered. If the call is successful, {\tt Return}
+    is zero; otherwise {\tt EOF} is returned.
+
+\ournewitem{file\_seek(+FileDes, +Offset, +Place, -Return)}{machine}\index{{\tt file\_seek/4}}
+    Sets the file position indicator for the next input or output
+    operation. The position is {\tt Offset} bytes from {\tt Place}.
+    The value of {\tt Place} can be 0, 1, or 2, which correspond to
+    the beginning of the file, the current position in the file, or
+    the end of the file, respectively. If the call is successful,
+    {\tt Return} is set to zero.
+
+\ournewitem{file\_truncate(+FileDes, +Length, -Return)}{machine}\index{{\tt file\_truncate/3}}
+    The regular file  referenced by file descriptor {\tt FileDes}
+    is chopped to have a size of {\tt Length} bytes. Upon successful
+    completion {\tt Return} is set to zero.
+
+\ournewitem{file\_write(+FileDes,+Term)}{xsb\_writ}
+\index{{\tt file\_write/2}}
+    Writes the term {\tt Term} to the file (or string) with descriptor {\tt
+    FileDes}.
+
 \ournewitem{file\_read(+FileDes,-Term)}{xsb\_read}
 \index{{\tt file\_read/2}}
     Reads a term from the file (or string) with descriptor {\tt
@@ -623,7 +645,13 @@ Port). Sockfptr is a stream on which items can be both read and written.
 Length pending connections.
 
 \ouritem{socket\_accept(+Sockfd,-Sockfptr)}\index{{\tt socket\_accept/2}}
-\emph{Not implemented.}
+    Block the caller until a connection attempt arrives. If the incoming 
+    queue is not empty, the first connection request is accepted, the call
+    succeeds and binds Sockfptr to a stream that can be used for this new
+    connection.
+
+\ouritem{socket\_flush(+Sockfptr)}\index{{\tt socket\_flush/1}}
+    Any buffered data in stream Sockfptr gets delivered.
 
 \ouritem{socket\_select} \index{{\tt socket\_select}} \emph{Not implemented.}
 
