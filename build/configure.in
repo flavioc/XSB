@@ -1447,16 +1447,27 @@ AC_SUBST(mno_cyg_lib)
 AC_SUBST(DLLTYPE)
 AC_SUBST(java_win_site_includes)
 
-xsb_src_extension=.P
-xsb_hdr_extension=.H
-xsb_obj_extension=.xwam
-xsb_asm_extension=.A
-xsb_decl_extension=.D
+## XSB file extensions
+xsb_src_extension_sans_dot=P
+xsb_hdr_extension_sans_dot=H
+xsb_obj_extension_sans_dot=xwam
+xsb_asm_extension_sans_dot=A
+xsb_dcl_extension_sans_dot=D
+AC_SUBST(xsb_src_extension_sans_dot)
+AC_SUBST(xsb_hdr_extension_sans_dot)
+AC_SUBST(xsb_obj_extension_sans_dot)
+AC_SUBST(xsb_asm_extension_sans_dot)
+AC_SUBST(xsb_dcl_extension_sans_dot)
+xsb_src_extension=.$xsb_src_extension_sans_dot
+xsb_hdr_extension=.$xsb_hdr_extension_sans_dot
+xsb_obj_extension=.$xsb_obj_extension_sans_dot
+xsb_asm_extension=.$xsb_asm_extension_sans_dot
+xsb_dcl_extension=.$xsb_dcl_extension_sans_dot
 AC_SUBST(xsb_src_extension)
 AC_SUBST(xsb_hdr_extension)
 AC_SUBST(xsb_obj_extension)
 AC_SUBST(xsb_asm_extension)
-AC_SUBST(xsb_decl_extension)
+AC_SUBST(xsb_dcl_extension)
 
 topdir_base=/`basename $topdir`
 topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
@@ -1478,6 +1489,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
+	    ${emudir}/extensions_xsb.h:extensions_xsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in

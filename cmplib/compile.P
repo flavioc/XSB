@@ -94,11 +94,11 @@ compile(Modname, Basename, Options, ExportList) :-
 
 file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 	   SpecFile, TIFile, TableFile, OptFile) :-
-	str_cat(Basename, XSB_SRC_EXTENSION_ATOM, PFile),
+	str_cat(Basename,XSB_SRC_EXTENSION_ATOM,PFile),
 	str_cat(Basename,XSB_HDR_EXTENSION_ATOM,HFile),
 	str_cat(Basename,XSB_OBJ_EXTENSION_ATOM,OFile),
 	str_cat(Basename,XSB_ASM_EXTENSION_ATOM,AFile),
-	str_cat(Basename,XSB_DECL_EXTENSION_ATOM,DFile),
+	str_cat(Basename,XSB_DCL_EXTENSION_ATOM,DFile),
 	str_cat(Basename, '.spec', SpecFile),
 	str_cat(Basename, '.ti', TIFile),
 	str_cat(Basename, '.table', TableFile),

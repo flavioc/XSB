@@ -40,7 +40,7 @@ imports_from_module(Mod, List) :-
 	bagof(Sym, standard_sym(Sym, ModVar), List), Mod = ModVar.
 
 decl_imported(Imports, FromMod) :-
-	str_cat(FromMod, XSB_DECL_EXTENSION_ATOM, File),
+	str_cat(FromMod, XSB_DCL_EXTENSION_ATOM, File),
 	(expand_incl_file_name(File, FileName)
 	  ->	seeing(OldFile),
 		see(FileName),
@@ -109,7 +109,7 @@ make_modes :-
 
 make_stdmodes :-
 	standard_file_base(StdFileBase),
-	str_cat(StdFileBase,XSB_DECL_EXTENSION_ATOM,StdFile),
+	str_cat(StdFileBase,XSB_DCL_EXTENSION_ATOM,StdFile),
 	make_modes(StdFile).
 
 standard_file_base('stdmodes.D').

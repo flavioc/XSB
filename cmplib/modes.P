@@ -212,7 +212,7 @@ decl_exported(Exp) :- trie_assert('_$predprop'((export), Exp)).
 
 
 decl_imported(ImpList, FromMod) :-
-	str_cat(FromMod, XSB_DECL_EXTENSION_ATOM, File),
+	str_cat(FromMod, XSB_DCL_EXTENSION_ATOM, File),
 	cvt_to_regular_list(ImpList, Imports),
 	(expand_incl_file_name(File, FileName)
 	  ->	seeing(OldFile),
@@ -612,7 +612,7 @@ cvt_ands_to_list(T, [T | L2], L2).
 mangle_file_names(File, Src, Decls) :-
 	strip_trailing_ext(File, Src),
 	prolog_file_exists(Src),
-		str_cat(Src, XSB_DECL_EXTENSION_ATOM, Decls).
+		str_cat(Src, XSB_DCL_EXTENSION_ATOM, Decls).
 
 strip_trailing_ext(Name, TruncName) :-
 	atom_codes(Name, L),

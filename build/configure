@@ -3630,11 +3630,22 @@ fi
 
 
 
-xsb_src_extension=.P
-xsb_hdr_extension=.H
-xsb_obj_extension=.xwam
-xsb_asm_extension=.A
-xsb_decl_extension=.D
+## XSB file extensions
+xsb_src_extension_sans_dot=P
+xsb_hdr_extension_sans_dot=H
+xsb_obj_extension_sans_dot=xwam
+xsb_asm_extension_sans_dot=A
+xsb_dcl_extension_sans_dot=D
+
+
+
+
+
+xsb_src_extension=.$xsb_src_extension_sans_dot
+xsb_hdr_extension=.$xsb_hdr_extension_sans_dot
+xsb_obj_extension=.$xsb_obj_extension_sans_dot
+xsb_asm_extension=.$xsb_asm_extension_sans_dot
+xsb_dcl_extension=.$xsb_dcl_extension_sans_dot
 
 
 
@@ -3762,6 +3773,7 @@ trap 'rm -fr `echo " ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
+	    ${emudir}/extensions_xsb.h:extensions_xsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
@@ -3865,11 +3877,16 @@ s%@mno_cyg_inclib@%$mno_cyg_inclib%g
 s%@mno_cyg_lib@%$mno_cyg_lib%g
 s%@DLLTYPE@%$DLLTYPE%g
 s%@java_win_site_includes@%$java_win_site_includes%g
+s%@xsb_src_extension_sans_dot@%$xsb_src_extension_sans_dot%g
+s%@xsb_hdr_extension_sans_dot@%$xsb_hdr_extension_sans_dot%g
+s%@xsb_obj_extension_sans_dot@%$xsb_obj_extension_sans_dot%g
+s%@xsb_asm_extension_sans_dot@%$xsb_asm_extension_sans_dot%g
+s%@xsb_dcl_extension_sans_dot@%$xsb_dcl_extension_sans_dot%g
 s%@xsb_src_extension@%$xsb_src_extension%g
 s%@xsb_hdr_extension@%$xsb_hdr_extension%g
 s%@xsb_obj_extension@%$xsb_obj_extension%g
 s%@xsb_asm_extension@%$xsb_asm_extension%g
-s%@xsb_decl_extension@%$xsb_decl_extension%g
+s%@xsb_dcl_extension@%$xsb_dcl_extension%g
 s%@topdir_wind@%$topdir_wind%g
 s%@smodels_goal@%$smodels_goal%g
 s%@with_smodels@%$with_smodels%g
@@ -3921,6 +3938,7 @@ CONFIG_FILES=\${CONFIG_FILES-"${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
+	    ${emudir}/extensions_xsb.h:extensions_xsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
