@@ -81,6 +81,11 @@ flora_prlg(fail,0) :- !.
 flora_prlg(findall,3) :- !.
 flora_prlg(true,0) :- !.
 flora_prlg(throw,1) :- !.
+flora_prlg(var,1) :- !.
+flora_prlg(nonvar,1) :- !.
+flora_prlg(atom,1) :- !.
+flora_prlg(is_list,1) :- !.
+flora_prlg(is_charlist,1) :- !.
 
 
 /****************************************************************************
