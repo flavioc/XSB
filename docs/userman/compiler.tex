@@ -31,15 +31,11 @@ the parameter for {\tt compile/[1,2]}.  In this case the compiler will
 compile all the files in {\tt FileList} with the compiler
 options specified in {\tt OptionList}.
 
-% JF:
-%\demo{\verb+|+ ?- compile(Files).} 
 \demo{$|$ ?- compile(Files).} 
 
 \noindent
 is just a notational shorthand for the query:
 
-% JF:
-%\demo{\verb+|+ ?- compile(Files, []).}
 \demo{$|$ ?- compile(Files, []).}
 
 The standard predicates {\tt consult/[1,2]} call {\tt compile/1} (if
@@ -122,6 +118,54 @@ The following options are currently recognized by the compiler:
 	longer.  For these reasons, the use of the {\tt optimize} option may
 	not be suitable for the development phase, but is
 	recommended once the code has been debugged.
+
+\item[{\tt cpp\_on}]\index{{\tt cpp_on}}
+  Pass the program through the C preprocessor before sending it to the XSB
+  compiler. In this case, the source code can include the usual C
+  preprocessor directives, such as \#define, \#ifdef, and \#include.
+
+  Because Prolog syntax is often at odds with the C syntax, the
+  following must be kept in mind:
+  %%
+  \begin{itemize}
+    \item  {\bf Quotes:} C requires that quotes come in pairs, which is a
+      problem if your program has statements like {\tt 0'x}. While this is
+      not fatal, the C preprocessor issues anoying warnings. On top of
+      this, it might refuse to apply \#define macros to anything between
+      this single quote and the next one (say, another {\tt 0'p} hundred
+      lines below). It is recommended to pacify the preprocessor by putting
+      a comment of the following form at the end of the line: 
+      \mbox{ \%  ' }. For instance, 
+      %%
+\begin{verbatim}
+            put(0'p),       %  '
+\end{verbatim}
+      %%
+      Another way to circumvent the problem is to use \#define, {\it e.g.}, 
+      %%
+\begin{verbatim}
+    #define CH_P  80
+         .......
+         .......
+         put(CH_P),
+         .......
+\end{verbatim}
+      %%
+    \item {\bf Comments:} The C preprocessor does not understand Prolog
+      syntax (yet). In particular, it does not know that ``\%'' starts a
+      comment. Therefore, it treats anything it finds in such Prolog
+      comments seriously. One particularly annoying problem is related to
+      the previous one: if your program has a line like:
+      %%
+\begin{verbatim}
+         %%  Don't do it!!!
+\end{verbatim}
+      %%
+      then you will see a complaint about unterminated quote. In such a
+      case, either double the quote ({\it e.g.}, {\tt Don''t do it!!!} or
+      use C-style comments.
+  \end{itemize}
+  %%
 
 %-------------------------------
 \index{tabling!compiler options}
@@ -761,5 +805,5 @@ by the \ourprolog\ compiler.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual1"
 %%% End: 
