@@ -115,7 +115,7 @@
         formatted_io/5,
 	file_read_canonical/3,
 	gen_retract_all/1,
-	db_get_clause/9,
+	db_get_clause/11,
 	db_retract0/2,
 	db_build_prref/3,
 	db_remove_prref/1,

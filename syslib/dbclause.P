@@ -211,7 +211,7 @@ db_do_call(Entry, Head) :-
 %%	Failed means fetch retract(ed)_nr clauses.
 
 db_get_clauses( PrRef, _Index1, Head, Failed, ClRef, Typ, EntryP ) :-
-	db_get_clauses0( 0, _, _, PrRef, Head, Failed, ClRef, Typ, EntryP ).
+	db_get_clauses0( PrRef, Head, Failed, ClRef, Typ, EntryP ).
 	
 
 %% db_get_clauses0 calls the builtin, db_get_clause, to get the next ClRef.  It
@@ -219,23 +219,24 @@ db_get_clauses( PrRef, _Index1, Head, Failed, ClRef, Typ, EntryP ) :-
 %%	deterministic retract doesn''t lay down a choice point.  This makes
 %%	the semantics of the new C retract more consistent with the old.
 
-db_get_clauses0(CurrCls0,CurrInd0,CurrILvl0,PrRef,Head,Failed,ClRef,Typ,EntryP) :-
-	db_get_clause(CurrCls0,CurrInd0,CurrILvl0,PrRef,Head,Failed,ClRef0,Typ0,EntryP0),
+db_get_clauses0(PrRef,Head,Failed,ClRef,Typ,EntryP) :-
+	db_get_clause(0,0,0,PrRef,Head,Failed,ClRef0,Typ0,EntryP0,NLev,NInd),
 	(ClRef0 =:= 0
 	 ->	!,fail
-	 ;	db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,Failed,
+	 ;	db_get_clauses1(ClRef0,NLev,NInd,PrRef,Head,Failed,
 			ClRef,Typ,EntryP,Typ0,EntryP0)
 	).
 
-db_get_clauses1(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,Failed,
+db_get_clauses1(ClRef0,CurrILvl0,CurrInd0,PrRef,Head,Failed,
 			ClRef,Typ,EntryP,Typ0,EntryP0) :-
-	db_get_clause(ClRef0,CurrInd0,CurrILvl0,PrRef,Head,Failed,ClRef1,Typ1,EntryP1),
+	db_get_clause(ClRef0,CurrILvl0,CurrInd0,PrRef,Head,Failed,
+		      ClRef1,Typ1,EntryP1,NLev,NInd),
 	(ClRef1 =:= 0
 	 ->	!,
 		ClRef = ClRef0, Typ = Typ0, EntryP = EntryP0
 	 ;	(ClRef = ClRef0, Typ = Typ0, EntryP = EntryP0
 		 ;
-		 db_get_clauses1(ClRef1,CurrInd0,CurrILvl0,PrRef,Head,Failed,
+		 db_get_clauses1(ClRef1,NLev,NInd,PrRef,Head,Failed,
 			ClRef,Typ,EntryP,Typ1,EntryP1)
 		)
 	).
