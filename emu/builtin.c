@@ -1166,11 +1166,11 @@ int builtin_call(byte number)
     break;
   }
   case TERM_SET_ARG: {	/* R1: +term; R2: index (+int) */
-			/* R3: newarg (+term); R4: +perm(not used) */
+			/* R3: newarg (+term); */
     /* used in file_read.P, array.P, array1.P */
     int  disp = ptoc_int(2);
     Cell term = ptoc_tag(1);
-    if (ptoc_int(4) > 0) {
+    if (ptoc_int(4) == 0) {
       pushtrail(clref_val(term)+disp,cell(reg+3));
     } else if (ptoc_int(4) < 0) {
       push_pre_image_trail(clref_val(term)+disp, cell(reg+3));
