@@ -84,6 +84,8 @@
 #define UNLOAD_SEG	51
 #define LOAD_OBJ	52
 
+#define WH_RANDOM	53
+
 #define GETENV			 54
 #define SYS_SYSCALL		 55
 #define SYS_SYSTEM		 56

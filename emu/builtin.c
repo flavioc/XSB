@@ -105,6 +105,7 @@
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
 #include "system_xsb.h"
+#include "random_xsb.h"
 
 /*======================================================================*/
 
@@ -1344,6 +1345,23 @@ int builtin_call(byte number)
     xsb_abort("Loading foreign object files is not implemented for this configuration");
 #endif
     break;
+
+  case WH_RANDOM:		/* R1: +Type of operation */
+    switch (ptoc_int(1)) {
+    case RET_RANDOM:		/* return a random float in [0.0, 1.0) */
+      if (ret_random() == -1)
+	return FALSE;
+      break;
+    case GET_RAND:		/* getrand */
+      if (getrand() == -1)
+	return FALSE;
+      break;
+    case SET_RAND:		/* setrand */
+      setrand();
+      break;
+    }
+    break;
+
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
     ctop_string(2, string_find(expand_filename(ptoc_string(1)), 1));
     break;
