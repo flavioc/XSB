@@ -3907,7 +3907,7 @@ we refer the reader to the XSB manual.
 
 
 
-\section{Debugging}\label{sec-debugging}
+\section{Debugging User Programs}\label{sec-debugging}
 \index{debugging}
 
 \FLORA comes with an interactive, Prolog-style debugger, which is described
@@ -4460,7 +4460,7 @@ rules:
 %%
 
 
-\section{Bugs and How to Report Them}
+\section{Bugs in XSB and \FLORA: How to Report}
 
 The \FLORA system includes a compiler and runtime libraries, but for
 execution it relies on XSB. Thus, some bugs that you might encounter are
@@ -4469,20 +4469,21 @@ violation that occurs during the execution is in all likelihood an internal
 XSB bug. (\FLORA is like a stress test for XSB --- all bugs come to the
 surface.)
 
-An incorrect result during the execution can be equally blamed on XSB and
+An incorrect result during the execution can be equally blamed on XSB or
 on \FLORA --- it requires a close look at the program. A compiler or
 a runtime error for a perfectly valid program is probably a bug in the
 \FLORA system.
 
-Bugs that are the fault of XSB are particularly hard to fix, because
-\FLORA programs are translated into an unreadable Prolog code. To make
-things worse, this code might contain calls to \FLORA system libraries.
+Bugs that are the fault of XSB are particularly hard to fix, because \FLORA
+programs are translated into mangled, unreadable to humans Prolog code.
+To make things worse, this code might contain calls to \FLORA system
+libraries.
 
 \index{flDump/1}
 %%
-To simplify bug reporting, \FLORA provides utilities and make the compiled
+To simplify bug reporting, \FLORA provides a utility that makes the compiled
 XSB program more readable. The flDump/1 predicate can be used to strip the
-macros from the code, making it much more palatable. If you issue the
+macros from the code, making it much easier to understand. If you issue the
 following command
 %%
 \begin{verbatim}
@@ -4490,31 +4491,29 @@ following command
 \end{verbatim}
 %%
 the program {\tt foo.flr} will be compiled without the macros and dump the
-result in the file {\tt foo\_dump.P}. This file is still not very readable,
-because the program clauses are not properly indented and, to add insult to
-injury, are represented using the \emph{canonical} Prolog form. For
-instance, the clause
+result in the file {\tt foo\_dump.P}. This file is pretty-printed to make
+it easier to read. Similarly,
 %%
 \begin{verbatim}
-   p :- q,r,s.
+  flora2 ?- flDump(foo,bar)  
 \end{verbatim}
 %%
-will look as follows:
-%%
-\begin{verbatim}
-  ':-'(p,','(q,','(r,s))).  
-\end{verbatim}
-%%
-{\bf Unimplemented}: In a future release, a pretty-printing program will be
-provided to cope with this difficulty.
+will compile {\tt foo.flr} for module {\tt bar} and will dump the result to
+the file {\tt foo\_dump.P}.
 
-\paragraph{Reporting XSB bugs.}
+Unfortunately, this more readable version of the translated \FLORA program
+might still not be executable on its own because it might contain calls to
+\FLORA libraries or other modules.  The set of guidelines, below, can help
+cope with these problems.
+
+\paragraph{Reporting \FLORA-related XSB bugs.}
 If you find an XSB bug triggered by a \FLORA program, here is a set of
 guidelines that can simplify the job of the XSB developers and increase the
-chances that the bug will be fixed speedily:
+chances that the bug will be fixed promptly:
 %%
 \begin{enumerate}
-  \item  Reduce the size of your \FLORA program as much as possible.
+  \item  Reduce the size of your \FLORA program as much as possible, while
+    still being able to reproduce the bug.
   \item  Eliminate all calls to the system modules that use the
     {\tt @flora(lib)} syntax. (Prolog modules that are accessible
     through the {\tt @prolog(modname)} syntax are OK, but the more you can
@@ -4523,9 +4522,6 @@ chances that the bug will be fixed speedily:
     file and use just one module. 
   \item  Use {\tt flDump/1} to strip \FLORA macros from the output of the
     \FLORA compiler.
-  \item  Use a pretty printing utility to produce a human-readable 
-    version of the compiler output. ({\bf Unimplemented}: such a utility
-    will be provided in the future.)
   \item  See if the resulting program runs under plain XSB system (without
     the \FLORA shell). If it does not, it means that the program contains
     calls to \FLORA runtime libraries. Try to eliminate such calls.
@@ -4536,12 +4532,32 @@ chances that the bug will be fixed speedily:
     program and removing it while preserving the subgoal (the first
     argument) and renaming the variables (as indicated by the second argument).
     Make sure the resulting program is still syntactically correct!
-    
+
+    Other calls that are often no longer needed in the dumped code are
+    those that load \FLORA runtime libraries (which we are trying to
+    eliminate!). These calls have the form
+    %%
+    \begin{verbatim}
+    ?- flora_load_library(...).      
+    \end{verbatim}
+    %%
     If there are other calls to \FLORA runtime libraries, try to delete
-    them, provided that the bug is still reproducible.
+    them, but make sure that the bug is still reproducible.
+  \item If the program still does not run because of the hard-to-get-rid-of
+    calls to \FLORA runtime libraries, then see if it runs after you
+    execute the command
+    %%
+    \begin{quote}
+       {\tt ?- bootstrap\_flora.}      
+    \end{quote}
+    %%
+    in the XSB shell. If the program runs after this (and reproduces the
+    bug) --- it is better than nothing. If it does not, then something went
+    wrong during the above process: start anew.
   \item Try to reduce the size of the resulting program as much as possible.
-    Even eliminating the numerous comment blocks in the dumped {\tt .P}
-    file would be useful.
+  \item Tell the XSB developers how to reproduce the bug. Make sure you
+    include all the steps (including such gory details as whether it is
+    necessary to call {\tt bootstrap\_flora/0}).
 \end{enumerate}
 %%
 Finally, remember to include the details of your OS and other relevant
@@ -4549,7 +4565,7 @@ information. Some bugs might be architecture-dependent.
 
 \paragraph{Reporting \FLORA bugs.}
 If you believe that the bug is in the \FLORA system rather than in XSB,
-the algorithm is much more simple: 
+the algorithm is much simpler: 
 %%
 \begin{enumerate}
   \item Reduce the size of the program as much as possible by deleting 
@@ -4557,6 +4573,7 @@ the algorithm is much more simple:
     just one file.
   \item Remove all the calls to system modules, unless such a call that is
     the essence of the bug.
+  \item Tell \FLORA developers how to reproduce the bug.
 \end{enumerate}
 %%
 
@@ -4589,15 +4606,15 @@ fact that certain features are yet to be implemented:
 %%
 
 \section{Authors}
-\FLORA was designed and implemented by Guizhen Yang, but its origins trace
-back to the \FLIP compiler developed by Bertram Lud\"aescher. In
-particular, certain ideas, such as the use of trailer files, originates
-with \FLIP.
+\FLORA was designed and implemented by Guizhen Yang. Some architectural
+ideas, such as the use of trailer files to implement the F-logic semantics,
+trace back to the \FLIP compiler developed by Bertram Lud\"aescher.
 
 Michael Kifer helped design \FLORA, implemented the debugger, and some
 other features. Chang Zhao added a number of enhancements, such as run-time
 undefinedness checks and the checker for dependency among tabled predicates
-and updates. Bin Tang added support for numbered anonymous oids.
+and updates. Bin Tang added support for numbered anonymous oids and wrote the
+pretty-printer for dumped Prolog code.
 
 
 \appendix
@@ -4701,6 +4718,7 @@ are not in the original program. In the future, it will be possible to turn
 these optimizations off for debugging.
 
 
+\newpage
 \section{Emacs Support}
 
 Editing and debugging \FLORA programs can be greatly simplified with the
@@ -4853,6 +4871,7 @@ indented automatically.
 
 
 
+\newpage
 \section{Inside \FLORA}
 
 \subsection{How \FLORA Works}
@@ -5297,6 +5316,7 @@ implements conversion of Prolog terms to HiLog and back. Finally, the {\tt
 as Internet access, etc.
 
 
+\newpage
 
 \bibliography{../../../docs/userman/manual}
 

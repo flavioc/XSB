@@ -45,6 +45,7 @@ ALLOBJS = flroperator.O \
 	  flrutils.O \
 	  flrwrapper.O \
 	  flrwraparound.O \
+	  flrprettyprint.O \
 	  flrundefhook.O \
 	  flrshell.O
 
@@ -164,6 +165,9 @@ flrshell.O : flrshell.P flrshell.H $(FLORA_TERMS)
 
 flrwraparound.O : flrwraparound.P flrwraparound.H $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrwraparound,$(OPTION)).' >> cmd...
+
+flrprettyprint.O : flrprettyprint.P $(FLORA_TERMS)
+	@echo 'mc(flrprettyprint,$(OPTION)).' >> cmd...
 
 
 init:

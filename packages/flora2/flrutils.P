@@ -691,6 +691,7 @@ is_alphanumericL([Ch|Rest]) :-
 *************************************************************************/
 %% standard gpp options used by Flora.
 flora_xpp_standard_options_for_compile('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
+flora_xpp_standard_options_for_dump('-P -m -nostdinc -curdirinclast').
 flora_xpp_standard_options_for_read('-P -m -nostdinc -curdirinclast').
 
 
@@ -698,6 +699,13 @@ flora_set_xpp_options_for_compile :- flora_set_xpp_options(compile).
 flora_set_xpp_options_for_compile(Module) :- flora_set_xpp_options(compile,Module).
 flora_set_xpp_options_for_compile(Module,ExtraOpts) :-
 	flora_set_xpp_options(compile,Module,ExtraOpts).
+
+%%flora_set_xpp_options_for_dump :- flora_set_xpp_options(dump).
+%%flora_set_xpp_options_for_dump(Module) :- flora_set_xpp_options(dump,Module).
+flora_set_xpp_options_for_dump(Module,ExtraOpts) :-
+	flora_set_xpp_options(dump,Module,ExtraOpts).
+
+
 flora_set_xpp_options_for_read :- flora_set_xpp_options(read).
 flora_set_xpp_options_for_read(Module) :- flora_set_xpp_options(read,Module).
 flora_set_xpp_options_for_read(Module,ExtraOpts) :-
@@ -707,6 +715,7 @@ flora_set_xpp_options_for_read(Module,ExtraOpts) :-
 flora_set_xpp_options(Purpose) :-
 	retractall(xpp_options(_)),
 	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
+	; Purpose==dump -> flora_xpp_standard_options_for_dump(StandardOpt)
 	; flora_xpp_standard_options_for_compile(StandardOpt)
 	),
 	assert(xpp_options(StandardOpt)).
@@ -732,6 +741,7 @@ flora_set_xpp_options(Purpose,ModuleName) :-
 	    abort
 	),
 	(Purpose==read -> flora_xpp_standard_options_for_read(StandardOpt)
+	; Purpose==dump -> flora_xpp_standard_options_for_dump(StandardOpt)
 	; flora_xpp_standard_options_for_compile(StandardOpt)
 	),
 	fmt_write_string(Opt,
@@ -1742,15 +1752,24 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
   for existence.
 *************************************************************************/
 flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
-	flora_message_line('Making dump file %s from %s',args(DumpFileName,FileName)),
+	flora_message_line('Making dump file %s from %s',
+			   args(DumpFileName,FileName)),
 	parse_filename(DumpFileName,_,Base,_),
 	fmt_write_string(ExtraOptions,
 			 '-D FLORA_DUMP -D FLORA_FDB_FILENAME="''%s.%s''" -D FLORA_FLD_FILENAME="''%s.%s''"',
 			 arg(Base,FLORA_FDB_EXT,Base,FLORA_FLD_EXT)),
-	flora_set_xpp_options_for_compile(Workspace,ExtraOptions),
-	file_open(DumpFileName,w,DumpPort),
+	flora_set_xpp_options_for_dump(Workspace,ExtraOptions),
 	xpp_process_file(FileName,XPP_process,IOportFromGPP),
-	copyIOport(IOportFromGPP,DumpPort),
+	%% Save standard input and output ports
+	stat_flag(CURRENT_INPUT, StdIn), stat_flag(CURRENT_OUTPUT, StdOut),
+	%% Pipe gpp output to standard input
+	stat_set_flag(CURRENT_INPUT,IOportFromGPP),
+	%% Pipe standard output to the dump file
+	file_open(DumpFileName,w,DumpPort),
+	stat_set_flag(CURRENT_OUTPUT,DumpPort),
+	%% do prettyprinting; gpp output is now piped through
+	%% this predicate to the dumpfile
+	prettyprint_stdin,
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
 	; flora_error_line('Error while preprocessing %s', FileName)
@@ -1758,6 +1777,9 @@ flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
 	flora_clear_xpp_options,
 	file_close(IOportFromGPP),
 	file_close(DumpPort),
+	%% Restore the old stdin and stdout
+	stat_set_flag(CURRENT_INPUT,StdIn),
+	stat_set_flag(CURRENT_OUTPUT,StdOut),
 	!.
 
 flora_gpp_dumpfile(FileName,_DumpFileName,_Workspace) :-
