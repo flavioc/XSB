@@ -53,15 +53,23 @@
 
 /*----------------------------------------------------------------------*/
 
-struct NODE dummy_ans_node = {0,0,1,0,NULL,NULL,NULL,0};
-
-static CPtr *trie_tr_base, *temp_trreg;
-int AnsVarCtr;
-
-/*----------------------------------------------------------------------*/
-
 extern tab_inf_ptr get_tip(Psc);
 extern Psc term_psc(Cell);
+
+/*----------------------------------------------------------------------*/
+/* The following variables are used in other parts of the system        */
+/*----------------------------------------------------------------------*/
+
+NODEptr Paren;
+
+tab_inf_ptr  UglyHackForTip;
+
+long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
+
+int  num_heap_term_vars;
+CPtr *var_addr;
+int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
+Cell VarEnumerator[NUM_TRIEVARS];
 
 /*----------------------------------------------------------------------*/
 
@@ -70,8 +78,26 @@ struct HASHhdr *HASHrootptr;
 
 struct HASHhdr tra_HASHroot = {0,0,0,0};
 
+/*****************Addr Stack*************/
+int addr_stack_pointer = 0;
+int addr_stack_size    = DEFAULT_ARRAYSIZ;
+
+CPtr *Addr_Stack;
+#define push_addr(X) {\
+    if(addr_stack_pointer == addr_stack_size){\
+       xpand_array(CPtr, Addr_Stack ,addr_stack_size,"Addr_Stack");\
+    }\
+    Addr_Stack[addr_stack_pointer++] = ((CPtr) X);\
+}
+
+#define pop_addr Addr_Stack[--addr_stack_pointer]
+
+/*****************Term Stack*************/
+int term_stackptr = -1;
+long term_stacksize = DEFAULT_ARRAYSIZ;
+
 /*----------------------------------------------------------------------*/
-/*********Simpler trails ********/
+/*********Simpler trails ****************/
 
 #define simple_dbind_ref(addr,val) \
     bld_ref(addr,val);\
@@ -144,41 +170,19 @@ struct HASHhdr tra_HASHroot = {0,0,0,0};
 #define lay_no_cp_in_bucket(X)		Instr(X) = ((Instr(X)) & ~3 )
 
 /*----------------------------------------------------------------------*/
-/*****************Addr Stack************/
-int addr_stack_pointer = 0;
-int addr_stack_size    = DEFAULT_ARRAYSIZ;
+/* Variables used only in this file                                     */
+/*----------------------------------------------------------------------*/
 
-CPtr *Addr_Stack;
-#define push_addr(X) {\
-    if(addr_stack_pointer == addr_stack_size){\
-       xpand_array(CPtr, Addr_Stack ,addr_stack_size,"Addr_Stack");\
-    }\
-    Addr_Stack[addr_stack_pointer++] = ((CPtr) X);\
-}
+static struct NODE dummy_ans_node = {0,0,1,0,NULL,NULL,NULL,0};
 
-#define pop_addr Addr_Stack[--addr_stack_pointer]
+static CPtr *trie_tr_base, *temp_trreg;
+static int AnsVarCtr, ctr;
 
-/*****************Term Stack*************/
-int term_stackptr = -1;
-long term_stacksize = DEFAULT_ARRAYSIZ;
-/****************************************/
-
-int ctr;
-
-long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
-
-int  num_heap_term_vars;
-CPtr *var_addr;
-int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
-Cell VarEnumerator[NUM_TRIEVARS];
-
-struct NODE *TrieArray;
-NODEptr	Paren, *GNodePtrPtr;
-tab_inf_ptr  UglyHackForTip;
+static NODEptr *GNodePtrPtr;
 
 /*----------------------------------------------------------------------*/
 
-int trie_chunk_size = 2048 * sizeof(struct NODE);
+static int trie_chunk_size = 2048 * sizeof(struct NODE);
 
 char *trie_node_chunk_ptr = 0;
 
@@ -197,13 +201,13 @@ NODEptr bak_free_trie_space = 0;
 NODEptr bak_top_trie_space = 0;
 char    *bak_trie_node_chunk_ptr = 0;
 
-int answer_list_chunk_size = 512 * sizeof(struct answer_list_node);
+static int answer_list_chunk_size = 512 * sizeof(struct answer_list_node);
 
-char *answer_list_node_chunk_ptr = 0;
+static char *answer_list_node_chunk_ptr = 0;
 
 ALPtr free_answer_list_nodes = 0;
-ALPtr free_answer_list_space = 0;
-ALPtr top_answer_list_space = 0;
+static ALPtr free_answer_list_space = 0;
+static ALPtr top_answer_list_space = 0;
 
 /*----------------------------------------------------------------------*/
 /* In the following, malloc() is used instead of mem_alloc() so that the
@@ -282,7 +286,6 @@ void abolish_trie(void)
     t = *(char **)trie_node_chunk_ptr;
 /*    printf("Freeing Trie chunk %x\n",trie_node_chunk_ptr);*/
     free(trie_node_chunk_ptr);
-    /* mem_dealloc((byte *)trie_node_chunk_ptr,trie_chunk_size+sizeof(Cell));*/
     trie_node_chunk_ptr = t;
   }
   free_trie_nodes = 0;
@@ -300,7 +303,6 @@ void abolish_trie(void)
   while (answer_list_node_chunk_ptr) {
     t = *(char **)answer_list_node_chunk_ptr;
     free(answer_list_node_chunk_ptr);
-    /*mem_dealloc((byte *)answer_list_node_chunk_ptr,answer_list_chunk_size+sizeof(Cell));*/
     answer_list_node_chunk_ptr = t;
   }
 
@@ -983,7 +985,7 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
           ctr++;
         }
         else {
-          one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
+          one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
         }
         break;
       case STRING: case INT:  case FLOAT:
@@ -1108,6 +1110,7 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
 }
 
 /*----------------------------------------------------------------------*/
+
 void bottom_up_unify(void)
 {
   Cell    term;
@@ -1588,7 +1591,7 @@ static void construct_ret(void)
       term = ptoc_tag(3);
       sreg = hreg;
       bind_cs((CPtr)term, sreg);
-      sym = (Pair)insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
+      sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
       new_heap_functor(sreg, sym->psc_ptr);
       for (i = 0; i < arity; i++) {
 	bind_copy(sreg, (Cell)var_regs[i]);
