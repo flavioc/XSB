@@ -153,7 +153,7 @@ Explanations:
     module, because of its size. To checkout the testsuite
     type the following in the ~/projects/XSB directory:
 
-    cvs checkout xsbtests
+	cvs checkout xsbtests
 
     This will create the tests directory in ~/projects/XSB and will put the
     testsuite there.
@@ -207,18 +207,6 @@ NOTE: modules provide a convenient way of grouping files and directories
 
 Step 4: Working with the checked out version.
 --------------------------------------------
-
-    First, after checking out a copy, please run something like this:
-
-	   chmod 644 *.O */*.O */*/*.O */*/*/*.O
-
-    to make all .O files writable. Otherwise, you might get an error
-    of the kind "File doesn't exist or isn't writable, can't tell"
-    from XSB. This is because all files are checked out read-only, and XSB
-    would fail to write to such .O files when it needs to.
-
-    The reason why all files are checked out read-only is explained at the
-    end (the section about monitoring who edits which files).
 
     After you checked out a copy of XSB (or some of its CVS modules) you
     can configure it, modify, etc., as you please.  Periodically, people
@@ -278,14 +266,18 @@ Once you created a checked out version, you can do most of the other things
 using a graphical interface.
 
 I strongly recommend the use of XEmacs, because it has an integrated CVS
-interface, called pcl-cvs.  Or you can use Emacs, but then you will have to
-download pcl-cvs http://www.cyclic.com/cvs/soft-pcl.html (but then you also
-need another package, elib:
-ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz, and you get the
-picture).
+interface, called pcl-cvs.  
 
-Pcl-cvs now also comes with the latest CVS distribution, and they took it
-off of the CVS site.
+You can also use FSF Emacs, but then you will have to
+download pcl-cvs (which is now part of the official CVS distribution) from:
+http://www.cyclic.com/cvs/soft-pcl.html
+But then you also need another package, elib:
+ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz, and then you also need
+to fix a bug in the aforesaid version of pcl-cvs (patch available from me on
+request). So, you get the picture ;-(.
+(I myself usually use FSF Emacs -- this is how I know about all these
+troubles!)
+
 
 FSF's version of Emacs comes with another version control package, VC,
 which can do certain things with CVS, but it is very limited, and I
@@ -392,3 +384,34 @@ You can see who's watching/editing specific files with:
         cvs editors  <files>
 
 
+Notes on the testsuite
+======================
+
+As I mentioned above, to run tests, you check out the CVS module xsbtests.
+There are several things to look out for, though. (I don't know why this
+happens, but it does.)
+
+    1. I recommend to run make in the syslib directories before
+	running the testsuite.
+	What I noticed is that sometimes (usually on Linux), some test in
+	the testsuite recompiles syslib/tables.P with a wrong compiler option.
+	Then your testsuite would fail.
+	This seems to be some problem with getting the right file
+	modification time for tables.O. Although David has largely fixed
+	this timing problem, it still shows its ugly face sometimes.
+
+    2. For some reason, the test suite always fails when I run it
+	immediately after the checkout. The second time I do this, the
+	testsuite passes. Again, I don't know what causes this.
+	It might be a timing problem with some file, or it could be that I
+	didn't include certain data files in the cleaned up version of the
+	suite. 
+
+    3. On top of this, there seems to be a bug in some tests or in XSB.
+       When you run sem16 on Linux, the test fails. If you configure XSB
+       with --enable-debug, then the test passes with a warning that the
+       program cuts across tabled predicates.
+       This bug doesn't seem to affect Solaris.
+
+If somebody figures out the causes of anyone of these problems, please
+fix them.

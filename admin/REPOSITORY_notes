@@ -63,11 +63,34 @@ xsbrelease   -a !XSB/tests !XSB/admin !XSB/docs XSB
 Tell CVS to watch XSB directory
 ===============================
 
-Do this in some checked out user copy. Counterintuitive, but this is how it
-seems to be done:
+Do this in a CHECKED OUT USER copy (of someone who created the
+repository). Counterintuitive, but this is how it is done.
 
-cd XSB (after checking out)
-cvs on .
+    cd XSB
+    cvs watch on .
+
+However, we must unwatch `tests' and all the .O files to avoid errors
+during testsuite runs and various compilations. In particular, the
+repository is not set up to watch the testsuite. (Somebody wants to
+tinker with tests/ to ensure that it will be watched and there won't be any 
+errors?)
+
+To un-watch the .O files, type:
+
+   cvs watch off tests
+
+   Then type the following (this will need to be repeated, if new files are
+   added):
+
+   cvs watch off cmplib/*.O
+   cvs watch off syslib/*.O
+   cvs watch off lib/*.O
+   cvs watch off lib/*/*.O    
+   cvs watch off packages/*.O
+   cvs watch off packages/*/*.O
+   cvs watch off packages/*/*/*.O
+
+Please suggest a better way to set watches, if you know it.
 
 
 Users must run cvs edit <file>, NOT chmod to make files rw.
