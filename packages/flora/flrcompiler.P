@@ -305,13 +305,14 @@ rhs_flatten(not(R),null,[not(Code)]) :-
 
 rhs_flatten(loadlist(L),null,Code) :-
 	!,
-	flora_word(loadlist,F),
+	F=flora_loadlist,
 	P =.. [F,L],
 	Code=[P].
 
 rhs_flatten(dynloadlist(L),null,Code) :-
 	!,
-	flora_word(dynloadlist,F),
+	%%flora_word(dynloadlist,F),
+	F=flora_dynloadlist,
 	P =.. [F,L],
 	Code=[P].
 
