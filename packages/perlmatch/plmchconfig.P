@@ -28,7 +28,8 @@
 :- import xsb_configuration/2 from configuration.
 
 %% Construct the file cc/xsbpattern.H on the fly
-:- slash(Slash),
+make_xsbpatternH :-
+   slash(Slash),
     xsb_configuration(perl_archlib, PerlArchlib),
     xsb_configuration(perl_libs, Libs),
     fmt_write_string(LD_flags,
@@ -71,6 +72,7 @@
 	fmt_write_string(CC_opts,
 			 ' %s -I%s%sCORE -I%s',
 			 f(CCflags,PerlArchlib,Slash,EmuDir)),
+	make_xsbpatternH,
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
