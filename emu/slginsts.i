@@ -1,5 +1,5 @@
 /* File:      slginsts.i
-** Author(s): Swift, Rao, Sagonas, Juliana Freire
+** Author(s): Swift, Rao, Sagonas, Juliana Freire, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -63,6 +63,12 @@ case tabletry:		/* cur_label arity label xcurcall	*/
     check_tcpstack_overflow(VarPosReg);
 	check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
     variant_call_search(ARITY, reg, &xcurcall, &xflag);
+    /*
+     * After variant_call_search, VarPosReg sits on top of the
+     * substitution factor of the call and points to a cell which
+     * containins the number of variables in the call.  Under this cell
+     * are all the variables (still free) --- the SUBSF.
+     */
     if (xflag) {		    /* xflag = 1 if a variant-subgoal exists */
       xcurcall = (CPtr) *xcurcall;	/* point xcurcall to the call_struct */
       if (is_completed(xcurcall)) {
@@ -75,13 +81,17 @@ case tabletry:		/* cur_label arity label xcurcall	*/
 	    /* put subgoal in stack and init structure components */
 	    /* makes call structure point back to CallTableInfo-original call */
 	    /* compl_stack_ptr = openreg-COMPLFRAMESIZE+1 (all others=0) */
+      /*
+       * Here Paren is the leaf node in the subgoal trie for this call
+       * (result from variant_call_search()).
+       */
       create_subgoal_frame(*xcurcall, Paren);
 
       save_find_locx(ereg);
 
       save_registers(VarPosReg, (int)ARITY, i, rreg);
       /*
-       * set a choice point generating node-the solution node is responsible
+       * Set a choice point generating node-the solution node is responsible
        * for going through the different choices and for starting the check
        * complete when it runs out of alternatives
        * the variables in the call are stored right before this CP
@@ -137,13 +147,37 @@ case retry_active:
     /* jf: skip the deleted answers */
     if (OldRetPtr){
 /*----------------------------------------------------------------------*/
-      if (is_conditional_answer(aln_answer_ptr(OldRetPtr))) {
+      nlcp_trie_return(breg) = OldRetPtr; /* last answer consumed */
+      TrieRetPtr = get_next_trie_solution(&OldRetPtr);
+#ifdef DEBUG_REV
+      fprintf(stderr,"new_lookup-breg=%d: getting next trie solution %d. \n",
+	      (int)breg,(int)TrieRetPtr);
+#endif      
+      load_solution_trie(CallNumVar,op3,TrieRetPtr);
+
+      if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
 #ifdef DEBUG_DELAY
 	fprintf(stderr,
 		"! POSITIVELY DELAYING in retry active (delayreg = %p)\n",
 		delayreg);
+	fprintf(stderr, "\n>>>> delay_positively in retry_active\n");
 #endif
-	delay_positively(SUBGOAL, aln_answer_ptr(OldRetPtr));
+	{
+	  int i;
+	  CPtr temp_hreg;
+	  /*
+	   * After load_solution_trie(), the substitution factor of the
+	   * answer is left in array var_addr[], and its arity is in
+	   * num_heap_term_vars.  We have to put it into a term ret/n (on 
+	   * the heap) and pass it to delay_positively().
+	   */
+	  temp_hreg = hreg;
+	  new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	  for (i = 0; i < num_heap_term_vars; i++)
+	    cell(hreg++) = (Cell) var_addr[i];
+	  delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
+			   temp_hreg);
+	}
 #ifdef DEBUG_DELAY
 	fprintf(stderr, "Returning a conditional answer...\n");
 #endif
@@ -154,13 +188,6 @@ case retry_active:
       }
 #endif
 /*----------------------------------------------------------------------*/
-      nlcp_trie_return(breg) = OldRetPtr; /* last answer consumed */
-      TrieRetPtr = get_next_trie_solution(&OldRetPtr);
-#ifdef DEBUG_REV
-      fprintf(stderr,"new_lookup-breg=%d: getting next trie solution %d. \n",
-	      (int)breg,(int)TrieRetPtr);
-#endif      
-      load_solution_trie(CallNumVar,op3,TrieRetPtr);
       lpcreg = cpreg;
     }
     else {
@@ -179,6 +206,10 @@ case retry_active:
 /*----------------------------------------------------------------------*/
 
 case new_answer_dealloc: {
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> (starting new_answer_dealloc) delayreg =%p\n",
+	    delayreg);
+#endif
     if (delayreg != NULL && answer_is_junk(delayreg)) {
       Fail1; goto contcase;
     }
@@ -189,12 +220,25 @@ case new_answer_dealloc: {
     pad64;
     xtemp4 = (CPtr) *(ereg-Yn);
     /*
-     * breg (saved in local stack as an offset) -- first permanent var
+     * All the information from the choice point stack, including
+     * CallNumVar, VarsInCall, and ARITY's registers, was set in
+     * tabletry.
+     *
+     * ARITY      : arity of the call predicate
+     * CallNumVar : number of variables in the call
+     * VarsInCall : answer substitution (binding results of the variables
+     *              in the call)
+     * breg       : first permanent var (saved in local stack as an offset) 
      */
     SOLUTIONCP = (CPtr)(tcpstack.high - int_val(xtemp4));
     CallNumVar = *(SOLUTIONCP + TCP_SIZE + (Cell) ARITY);
     VarsInCall = SOLUTIONCP + TCP_SIZE + (Cell) ARITY + CallNumVar;
     SUBGOAL = tcp_subgoal_ptr(SOLUTIONCP);
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> ARITY = %d; Yn = %d\n", (int)ARITY, (int)Yn);
+#endif
+
 /*----------------------------------------------------------------------*/
 #ifdef DEBUG_DELAY
     fprintf(stderr, "\t--> This answer for ");
@@ -208,8 +252,35 @@ case new_answer_dealloc: {
 #endif
 /*----------------------------------------------------------------------*/
     xflag = 0;
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, "\n>>>> (before variant_trie_search) CallNumVar = %d\n",
+	    (int)CallNumVar);
+    {
+      int i;
+      for (i = 0; i < CallNumVar; i++) {
+	fprintf(stderr, ">>>> VarsInCall[%d] = ", i);
+	printterm((Cell)(VarsInCall - i), 1, 25);
+	fprintf(stderr, "\n");
+      }
+    }
+#endif
+
+    /*
+     * We want to save the substitution factor of the answer in the
+     * heap, so we have to change variant_trie_search().
+     */
+    ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
     TrieRetPtr = variant_trie_search(CallNumVar,VarsInCall,SUBGOAL,&xflag);
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> ans_var_pos_reg = ");
+    fprintf(stderr, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
+	   get_arity((Psc)(cell(ans_var_pos_reg))));
+#endif
+
     do_delay_stuff(TrieRetPtr, (SGFrame)SUBGOAL, xflag);
+    undo_answer_bindings();
 
 #ifdef LOCAL_EVAL
     if(xflag) {
@@ -268,7 +339,21 @@ case new_answer_dealloc: {
 #endif
 /*----------------------------------------------------------------------*/
       if (is_conditional_answer(TrieRetPtr)) {	/* positive delay */
-	delay_positively(SUBGOAL, TrieRetPtr);
+#ifdef DEBUG_DELAYVAR
+	fprintf(stderr, "\n>>>> delay_positively in new_answer_dealloc\n");
+#endif
+	/*
+	 * The new answer for this call is a conditional one, so add it
+	 * into the delay list for the parent predicate.  Notice that
+	 * delayreg has already been restored to the delayreg of parent.
+	 *
+	 * This is the new version of delay_positively().  Here,
+	 * ans_var_pos_reg is passed from variant_trie_search().  It is a
+	 * pointer to the heap where the substitution factor of the
+	 * answer was saved as a term ret/n (in variant_trie_search()).
+	 */
+	delay_positively(SUBGOAL, TrieRetPtr, ans_var_pos_reg);
+
 #ifdef DEBUG_DELAY
 	fprintf(stderr, "conditionally)\n");
 #endif
@@ -285,7 +370,7 @@ case new_answer_dealloc: {
       ptcpreg = tcp_ptcp(SOLUTIONCP);
       cpreg = *((byte **)ereg-1);
       ereg = *(CPtr *)ereg;
-      lpcreg = cpreg; 
+      lpcreg = cpreg;
     }
 #endif /* LOCAL_EVAL */
     goto contcase;
@@ -388,6 +473,9 @@ case tabletrysingle:
 /*----------------------------------------------------------------------*/
 
 case completion_suspension:
+#ifdef DEBUG_DELAYVAR
+      fprintf(stderr, ">>>> completion_suspension is called\n");
+#endif
       check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN) ;
       COMPL_SUSP_ENV = cs_compsuspptr(breg);
       freeze_and_switch_envs(COMPL_SUSP_ENV, COMPL_SUSP_CP_SIZE);
@@ -395,6 +483,7 @@ case completion_suspension:
       neg_delay = csf_neg_loop(COMPL_SUSP_ENV);
       delayreg = csf_pdreg(COMPL_SUSP_ENV);
 #ifdef DEBUG_DELAY
+      fprintf(stderr, ">>>> delayreg = %p\n", delayreg);
       fprintf(stderr, "... Executing a Completion Suspension for subgoal ");
       print_subgoal(stderr, (SGFrame)csf_subgoal_ptr(COMPL_SUSP_ENV));
       fprintf(stderr, " in the body of ");
@@ -462,14 +551,40 @@ lay_down_active:
 	OldRetPtr = subg_answers(xcurcall);
 	/* jf: skip the deleted answers */
         if (OldRetPtr)	{
+	  nlcp_trie_return(breg) = OldRetPtr; 
+	  TrieRetPtr = get_next_trie_solution(&OldRetPtr);
+          CallNumVar = *(bfreg+NLCPSIZE);
+          op3 = bfreg + NLCPSIZE + CallNumVar;
+          xtemp14 = hbreg;
+	  hbreg = hreg;
+	  load_solution_trie(CallNumVar,op3,TrieRetPtr);
 /*----------------------------------------------------------------------*/
-	  if (is_conditional_answer(aln_answer_ptr(OldRetPtr))) {
+	  if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
 #ifdef DEBUG_DELAY
 	    fprintf(stderr,
 		    "! POSITIVELY DELAYING in lay active (delayreg = %p)\n",
 		    delayreg);
+	    fprintf(stderr, "\n>>>> delay_positively in lay_down_active\n");
+	    fprintf(stderr, ">>>> subgoal = ");
+	    print_subgoal(stderr, (SGFrame) xcurcall); fprintf(stderr, "\n");
 #endif
-	    delay_positively(xcurcall, aln_answer_ptr(OldRetPtr));
+	    {
+	      int i;
+	      CPtr temp_hreg;
+	      /*
+	       * Similar to delay_positively() in retry_active, we also
+	       * need to put the substitution factor of the answer,
+	       * var_addr[], into a term ret/n and pass it to
+	       * delay_positively().
+	       */
+	      temp_hreg = hreg;
+	      new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	      for (i = 0; i < num_heap_term_vars; i++)
+		cell(hreg++) = (Cell) var_addr[i];
+	      delay_positively(xcurcall, aln_answer_ptr(nlcp_trie_return(breg)),
+			       temp_hreg);
+	    }
+
 #ifdef DEBUG_DELAY
 	    fprintf(stderr, "! Returning a conditional answer...\n");
 #endif
@@ -480,13 +595,6 @@ lay_down_active:
 	  }
 #endif
 /*----------------------------------------------------------------------*/
-	  nlcp_trie_return(breg) = OldRetPtr; 
-	  TrieRetPtr = get_next_trie_solution(&OldRetPtr);
-          CallNumVar = *(bfreg+NLCPSIZE);
-          op3 = bfreg + NLCPSIZE + CallNumVar;
-          xtemp14 = hbreg;
-	  hbreg = hreg;
-	  load_solution_trie(CallNumVar,op3,TrieRetPtr);
 	  lpcreg = cpreg;
 	}
 	else {
