@@ -83,6 +83,9 @@ switch (ptoc_int(1)) {
  case ODBC_GET_INFO:
    ODBCGetInfo();
    break;
+ case ODBC_ROW_COUNT:
+   ODBCRowCount();
+   break;
  default:
    xsb_error("Unknown or unimplemented ODBC request type");
    /* Put an error message here */

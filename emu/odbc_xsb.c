@@ -60,7 +60,7 @@
 #include "heap_xsb.h"
 
 #define MAXCURSORNUM                    25
-#define MAXVARSTRLEN                    2000
+#define MAXVARSTRLEN                    65000
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
 static Psc     nullFctPsc;
@@ -101,6 +101,19 @@ struct NumberofCursors{
 };
 
 struct NumberofCursors *FCurNum; /* First in the list of Number of Cursors */
+
+/* for debugging: just dumps memory... */
+void print_hdbc(char *msg, HDBC hdbc) {
+  int *ptr;
+  int wds = 48;
+
+  printf("\n%s\nhdbc: %p",msg,hdbc);
+  for(ptr = (int *)(((int)hdbc / 32) * 32); ptr < (int *)hdbc+wds ; ptr++) {
+    if (((int)ptr % 32) == 0) printf("\n%p: ",ptr);
+    printf(" %08x",*ptr);
+  }
+  printf("\n\n");
+}
 
 SWORD ODBCToXSBType(SWORD odbcType)
 {
@@ -505,6 +518,12 @@ void ODBCDisconnect()
   struct Cursor *tcur;
   struct NumberofCursors *numi = FCurNum, *numj = FCurNum;
   HDBC hdbc = (HDBC)ptoc_int(2);
+  RETCODE rc;
+
+  rc = SQLTransact(henv,hdbc,SQL_COMMIT);
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+    xsb_abort("[ODBC] Error committing transactions");
+  }
 
   if (hdbc == NULL) {  /* close entire connection*/
     if (FCursor != NULL)
@@ -528,7 +547,9 @@ void ODBCDisconnect()
   while (cur != NULL) {
     if (cur->hdbc == hdbc) {
       tcur = cur->NCursor;
-      if (cur->Status != 0) SetCursorClose(cur);
+      if (cur->Status != 0) {
+	SetCursorClose(cur);
+      }
       SQLFreeStmt(cur->hstmt,SQL_DROP);
       if (cur->PCursor) (cur->PCursor)->NCursor = cur->NCursor;
       else FCursor = cur->NCursor;
@@ -1485,6 +1506,8 @@ int GetColumn()
 	STRFILE strfile;
 	
 	strfile.strcnt = strlen(cur->Data[ColCurNum]);
+	if (strfile.strcnt >= MAXVARSTRLEN-1)
+	  xsb_warn("[ODBC] Likely overflow of data in column of PROLOG_TERM type\n");
 	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
 	read_canonical_term(NULL,&strfile,2); /* terminating '.'? */
 	return TRUE;
@@ -1597,4 +1620,34 @@ void ODBCGetInfo()
   } else {
 	  ctop_int(5,-2);
   }
+}
+/*------------------------------------------------------------------------------*/
+/*  FUNCTION NAME:								*/
+/*     ODBCRowCount()								*/
+/*  PARAMETERS:									*/
+/*     R1: 19									*/
+/*     R2: Cursor								*/
+/*     R3: returned count							*/
+/*     R4: Return Code								*/
+/*  NOTES:									*/
+/*     Returns the row-count value returned by the ODBC call to SQLRowCount.	*/
+/*     This value is the count of rows affected by the immediately preceding	*/
+/*     executed UPDATE, INSERT, or DELETE statement.				*/
+/*     Return Code is 0 for success, 1 error, ...				*/
+/*------------------------------------------------------------------------------*/
+void ODBCRowCount() {
+  struct Cursor *cur = (struct Cursor *)ptoc_int(2);
+  SQLINTEGER count;
+  RETCODE rc;
+
+  rc = SQLRowCount(cur->hstmt, &count);
+  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
+    ctop_int(3, 0);
+    ctop_int(4, PrintErrorMsg(cur));
+    return;
+  }
+
+  ctop_int(3,count);
+  ctop_int(4,0);
+  return;
 }

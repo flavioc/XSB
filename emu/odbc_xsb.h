@@ -43,6 +43,7 @@ extern void ODBCDescribeSelect();
 extern void ODBCConnectOption();
 extern void ODBCDataSources();
 extern void ODBCGetInfo();
+extern void ODBCRowCount();
 
 #define ODBC_CONNECT             1
 #define ODBC_PARSE               2
@@ -61,7 +62,8 @@ extern void ODBCGetInfo();
 #define ODBC_DESCRIBE_SELECT    15
 #define ODBC_CONNECT_OPTION     16
 #define ODBC_DATA_SOURCES       17
-#define ODBC_GET_INFO		    18
+#define ODBC_GET_INFO		18
+#define ODBC_ROW_COUNT		19
 
 #endif
 
