@@ -37,7 +37,7 @@ Usage:	xsb [flags] [-l] [-i]
             -d : disassemble the loader and exit
           -c N : allocate N KB for the trail/choice-point stack
           -m N : allocate N KB for the local/global stack
-          -o N : allocate N KB for the SLG completion stackof
+          -o N : allocate N KB for the SLG completion stack
           -u N : allocate N KB for the SLG unification (table copy) stack
             -r : turn off automatic stack expansion
     -g gc_type : choose the garbage collection ("none", "sliding", or "copying")
