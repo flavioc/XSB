@@ -98,6 +98,7 @@
 :- '_$mode_pattern'(integer(g)).
 :- '_$mode_pattern'(is(g,g)).
 :- '_$mode_pattern'(is_list(_687096)).
+:- '_$mode_pattern'(is_most_general_term(_687096)).
 :- '_$mode_pattern'(listing).
 :- '_$mode_pattern'(listing(_687096)).
 :- '_$mode_pattern'(name(g,g)).

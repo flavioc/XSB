@@ -178,6 +178,7 @@
 #define FUNCTOR			200
 #define ARG			201
 #define UNIV			202
+#define IS_MOST_GENERAL_TERM    203
 
 #define HiLog_ARG		204
 #define HiLog_UNIV		205

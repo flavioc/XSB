@@ -177,6 +177,7 @@ inline_builtin(is_list, 1, IS_LIST).
 inline_builtin(functor, 3, FUNCTOR).
 inline_builtin(arg, 3, ARG).
 inline_builtin(=.., 2, UNIV).
+inline_builtin(is_most_general_term, 1, IS_MOST_GENERAL_TERM).
 
 inline_builtin(hilog_arg, 3, HiLog_ARG).
 % inline_builtin(hilog_univ, 2, HiLog_UNIV).

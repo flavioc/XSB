@@ -323,7 +323,8 @@ parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList)) :-
 	( Cl = (':-'(H, B)) ->		parse_preddef(H, B, ClList, SymTab)
 	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
 						QrList, SymTab)
-	; Cl = (':-'(Directive)) ->	( parse_spec_directive(Directive,
+	; Cl = (':-'(PDirective)) ->	transform_directive(PDirective,Directive),
+	                                ( parse_spec_directive(Directive,
 					     VariableList, SymTab, DcList), !
 					; parse_directive(Directive, SymTab), !
 					; parse_query(Directive, QrList,SymTab)
@@ -331,6 +332,18 @@ parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList)) :-
 	; Cl = ('?-'(Q)) -> 		parse_query(Q,QrList,SymTab)
 	; parse_preddef(Cl, true, ClList, SymTab)
 	).
+
+/*======================================================================*/
+/* transform_directive(+Directive, -TDirective)                  	*/
+/*======================================================================*/
+
+transform_directive(dynamic(P/A),dynamic(Skel)) :-
+	atom(P),integer(A),!,
+	functor(Skel,P,A).
+transform_directive(table(P/A),table(Skel)) :-
+	atom(P),integer(A),!,
+	functor(Skel,P,A).
+transform_directive(Directive,Directive).
 
 /*======================================================================*/
 /* parse_spec_directive(+Directive, +VariableList, #SymTab, #DcList)	*/
@@ -390,12 +403,12 @@ parse_directive(local(X), SymTab) :-
 parse_directive(index(X), SymTab) :-	% for compiled-code indexing
 	parse_index(X, SymTab).
 parse_directive(index(Ps,Arg,Size), SymTab) :-
-	Ps = Pname/Arity,
+	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
 	index(Ps,Arg,Size), 
 	fail.
 parse_directive(index(Ps,Arg), SymTab) :-
-	Ps = Pname/Arity,
+	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
 	index(Ps,Arg,0),
 	fail.
@@ -468,19 +481,19 @@ parse_query(B, List, SymTab) :-
 /*	parallel/table lists.						*/
 /*======================================================================*/
 
-parse_list(P/A, SymTab, SymbolProp, _Directive) :- 
-	nonvar(P), integer(A), 
-	!,
-%	(
-%	Directive = (table)
-%	->	add_table(P/A)
-%	;	true
-%       ),	 
-	sym_insert(P, A, SymbolProp, SymTab, _).
 parse_list((Pred, Preds), SymTab, SymbolProp, Directive) :- 
 	!,
 	parse_list(Pred, SymTab, SymbolProp, Directive),
 	parse_list(Preds, SymTab, SymbolProp, Directive).
+parse_list(P/A, SymTab, SymbolProp, _Directive) :- 
+	nonvar(P), integer(A), 
+	!,
+	sym_insert(P, A, SymbolProp, SymTab, _).
+parse_list(Spec, SymTab, SymbolProp, _Directive) :- 
+	is_most_general_term(Spec),
+	!,
+	functor(Spec,P,A),
+	sym_insert(P, A, SymbolProp, SymTab, _).
 parse_list(X, _, _, Directive) :-
 	warning(('Non predicate specification "', X, 
 		 '" found in ', Directive, ' directive')),

@@ -379,13 +379,56 @@ static int is_proper_list(Cell term)	/* for standard preds */
 {
 	register Cell addr;
 
-	if (islist(term)) {
-	     addr = cell(clref_val(term)+1);
+	addr = term;
+	deref(addr);
+	while (islist(addr)) {
+	     addr = cell(clref_val(addr)+1);
 	     deref(addr);
-	     return is_proper_list(addr);
 	}
-	else return isnil(term);
+	return isnil(addr);
 }
+
+/* --------------------------------------------------------------------	*/
+
+static CPtr mini_trail[MAX_ARITY];
+static CPtr *mini_trail_top;
+
+#define mini_undo_bindings		        \
+    while (mini_trail_top >= mini_trail) {	\
+	untrail(*mini_trail_top);		\
+	mini_trail_top--;			\
+    }	
+
+#define mini_bind_variable(addr)                \
+   follow(addr) = makenil;			\
+   *(++mini_trail_top) = (CPtr)addr;
+
+static int is_most_general_term(Cell term)
+{
+  register Cell addr;
+  CPtr taddr;
+  int i;
+  Psc psc;
+
+  deref(term);
+  if (isconstr(term)) {
+    mini_trail_top = (CPtr *)(& mini_trail[0]) - 1;
+    psc = get_str_psc(term);
+    taddr = clref_val(term);
+    for (i = 1; i <= (int)get_arity(psc); ++i) {
+      addr = cell(taddr+i);
+      deref(addr);
+      if (isnonvar(addr)) {
+	mini_undo_bindings;
+	return FALSE;
+      } else {
+	mini_bind_variable(addr);
+      }
+    }
+    mini_undo_bindings;
+    return TRUE;
+  } else return isstring(term);
+}    
 
 /* --------------------------------------------------------------------	*/
 
@@ -571,6 +614,7 @@ void init_builtin_table(void)
   set_builtin_table(FUNCTOR, "functor");
   set_builtin_table(ARG, "arg");
   set_builtin_table(UNIV, "univ");
+  set_builtin_table(IS_MOST_GENERAL_TERM, "is_most_general_term");
   set_builtin_table(HiLog_ARG, "hilog_arg");
   set_builtin_table(HiLog_UNIV, "hilog_univ");
   set_builtin_table(ATOM_CODES, "atom_codes");

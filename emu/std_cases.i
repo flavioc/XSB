@@ -59,6 +59,9 @@
   case IS_LIST:	/* r1: ?term */
     return is_proper_list(ptoc_tag(1));
     
+  case IS_MOST_GENERAL_TERM: /* r1: ?term */
+    return is_most_general_term(ptoc_tag(1)); 
+
   case FUNCTOR:	/* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
     return functor_builtin();
     

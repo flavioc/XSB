@@ -344,6 +344,8 @@ callable(X) :- callable(X).
 
 is_list(X) :- is_list(X).
 
+is_most_general_term(X) :- is_most_general_term(X).
+
 % A term X is a proper hilog term if it somewhere 
 % contains a subterm that is not a prolog term.
 
