@@ -129,6 +129,7 @@ case answer_return:
       CallNumVar = *(breg + NLCPSIZE);
       CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
       op3 = breg + NLCPSIZE + CallNumVar;
+      SUBGOAL = nlcp_subgoal_ptr(breg);
       nlcp_trie_return(breg) = OldRetPtr; /* last answer consumed */
       TrieRetPtr = get_next_trie_solution(&OldRetPtr);
       load_solution_trie(CallNumVar,op3,TrieRetPtr);
@@ -151,7 +152,6 @@ case answer_return:
 	  for (i = 0; i < num_heap_term_vars; i++) {
 	    cell(hreg++) = (Cell) var_addr[i];
 	  }
-	  SUBGOAL = nlcp_subgoal_ptr(breg);
 	  delay_positively(SUBGOAL, aln_answer_ptr(nlcp_trie_return(breg)),
 			   makecs(temp_hreg));
 	}
