@@ -165,7 +165,7 @@ static int xsb_thread_create(th_context *th)
 	int rc ;
 	Cell goal ;
 	th_context *new_th ;
-	pthread_t_p thr ;
+	pthread_t thr ;
 	Integer id ;
 
 	goal = ptoc_tag(th, 2) ;
@@ -175,10 +175,15 @@ static int xsb_thread_create(th_context *th)
 	new_th->_reg[1] = copy_term_from_thread(new_th, th, goal) ;
 
 	flags[NUM_THREADS]++ ;
+
 	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th ) ;
 
 	pthread_mutex_lock( &th_mutex );
+#ifdef WIN_NT
+	id = th_new( &thr ) ;
+#else
 	id = th_new( thr ) ;
+#endif
 	pthread_mutex_unlock( &th_mutex );
 
 	ctop_int( th, 3, id ) ;
@@ -244,7 +249,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 			tid = th_get( id ) ;
 			pthread_mutex_unlock( &th_mutex );
 			if( tid == (pthread_t_p)0 )
-				xsb_abort( "thread join - invalid thread id" );
+			        xsb_abort( "thread join - invalid thread id" );
 			rc = pthread_join(P_PTHREAD_T, (void **)&rval ) ;
 			pthread_mutex_lock( &th_mutex );
 			th_delete(id);
