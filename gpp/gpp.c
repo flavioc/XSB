@@ -168,6 +168,7 @@ int autoswitch;
    #include and whether the current dir is to be searched. */
 int NoStdInc = 0;
 int NoCurInc = 0;
+int file_and_stdout = 0;
 
 typedef struct OUTPUTCONTEXT {
   char *buf;
@@ -264,10 +265,12 @@ void PopSpecs()
 
 void usage() {
   fprintf(stderr,"GPP Version 2.0 - Generic Preprocessor - (c) Denis Auroux 1996-99\n");
-  fprintf(stderr,"Usage : gpp [-o outfile] [-I/include/path] [-Dname=val ...] [-z] [-x] [-m]\n");
+  fprintf(stderr,"Usage : gpp [-{o|O} outfile] [-I/include/path] [-Dname=val ...] [-z] [-x] [-m]\n");
   fprintf(stderr,"            [-n] [-C | -T | -H | -P | -U ... [-M ...]] [+c<n> str1 str2]\n");
   fprintf(stderr,"            [+s<n> str1 str2 c] [infile]\n\n");
   fprintf(stderr,"      default:    #define x y           macro(arg,...)\n");
+  fprintf(stderr," -o : output goes to outfile\n");
+  fprintf(stderr," -O : output goes to outfile and stdout\n");
   fprintf(stderr," -C : maximum cpp compatibility (includes -n, +c, +s, ...)\n");
   fprintf(stderr," -T : tex-like    \\define{x}{y}         \\macro{arg}{...}\n");
   fprintf(stderr," -H : html-like   <#define x|y>         <#macro arg|...>\n");
@@ -563,8 +566,16 @@ void outchar(char c)
     C->out->buf[C->out->len++]=c;
   }
   else {
-    if (dosmode&&(c==10)) fputc(13,C->out->f);
-    if (c!=13) fputc(c,C->out->f);
+    if (dosmode&&(c==10)) {
+      fputc(13,C->out->f);
+      if (file_and_stdout)
+	fputc(13,stdout);
+    }
+    if (c!=13) {
+      fputc(c,C->out->f);
+      if (file_and_stdout)
+	fputc(c,stdout);
+    }
   }
 }
 
@@ -997,6 +1008,7 @@ void initthings(int argc,char **argv)
                 if (!readModeDescription(arg,&(S->Meta),1)) usage();
                 arg+=7;
                 break;
+      case 'O': file_and_stdout = 1;
       case 'o': if (!(*(++arg))) usage();
                 ishelp|=isoutput; isoutput=1;
                 C->out->f=fopen(*arg,"w");
