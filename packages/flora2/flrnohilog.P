@@ -30,30 +30,6 @@
 #include "flora_terms.flh"
 
 
-flora_nohilog(WRAP_ISA,2) :- !.
-flora_nohilog(WRAP_SUB,2) :- !.
-flora_nohilog(WRAP_METH,2) :- !.
-flora_nohilog(WRAP_IMETH,2) :- !.
-flora_nohilog(WRAP_TRAN,2) :- !.
-flora_nohilog(WRAP_FD,3) :- !.
-flora_nohilog(WRAP_IFD,3) :- !.
-flora_nohilog(WRAP_FDSIG,3) :- !.
-flora_nohilog(WRAP_IFDSIG,3) :- !.
-flora_nohilog(WRAP_MVD,3) :- !.
-flora_nohilog(WRAP_IMVD,3) :- !.
-flora_nohilog(WRAP_MVDSIG,3) :- !.
-flora_nohilog(WRAP_IMVDSIG,3) :- !.
-flora_nohilog(WRAP_MVDINC,3) :- !.
-flora_nohilog(WRAP_IMVDINC,3) :- !.
-flora_nohilog(WRAP_MVDTOLIST,3) :- !.
-flora_nohilog(WRAP_IMVDTOLIST,3) :- !.
-flora_nohilog(WRAP_EXISTS,1) :- !.
-flora_nohilog(WRAP_FDDEF,2) :- !.
-flora_nohilog(WRAP_IFDDEF,2) :- !.
-flora_nohilog(WRAP_MVDDEF,2) :- !.
-flora_nohilog(WRAP_IMVDDEF,2) :- !.
-flora_nohilog(WRAP_OBJEQL,2) :- !.
-
 flora_nohilog(FLORA_THIS_MODULE,1) :- !.
 
 

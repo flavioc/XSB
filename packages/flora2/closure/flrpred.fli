@@ -14,7 +14,7 @@
 /***************************************************************************
   F-logic facts
 ***************************************************************************/
-:- florapred
+:- flPredicate
  	base_sub/2,
 	base_isa/2,
 	base_fd/3,
@@ -37,7 +37,7 @@
 /***************************************************************************
   F-logic predicates that appear in a rule head
 ***************************************************************************/
-:- florapred
+:- flPredicate
 	derived_sub/2,
 	derived_isa/2,
 	derived_fd/3,
@@ -60,7 +60,7 @@
 /***************************************************************************
   F-logic predicates that appear in the trailer
 ***************************************************************************/
-:- florapred
+:- flPredicate
 	inferred_sub/2,
 	inferred_isa/2,
 	inferred_ifd/3,
@@ -87,7 +87,7 @@
 /***************************************************************************
   F-logic predicates that appear in a rule body
 ***************************************************************************/
-:- florapred
+:- flPredicate
 	sub/2,
 	isa/2,
 	fd/3,
@@ -116,7 +116,7 @@
 /***************************************************************************
   intermediate F-logic predicates that appear in the trailer
 ***************************************************************************/
-:- florapred
+:- flPredicate
 	super_sub/2,
 	immediate_sub/2,
 	super_isa/2,
@@ -131,7 +131,7 @@
 /***************************************************************************
   F-logic predicates that appear only in the trailer with equality maintenance
 ***************************************************************************/
-:- florapred
+:- flPredicate
 	inferred_sub_eql/2,
 	inferred_isa_eql/2,
 	inferred_ifd_eql/3,

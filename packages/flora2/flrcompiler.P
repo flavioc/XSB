@@ -2281,17 +2281,27 @@ compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
 	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
-	    (Status == [] -> conjunct_code(ACode,TCode,Code); true)
+	    prologterm_struct(FAtom,N,ArgsCode,TCode)
 	;
 	  is_flatom(ParserTerm,FAtom),
 	  N=0,
-	  prologterm_struct(FAtom,0,[],Code),
+	  ArgsCode=[],
+	  ACode=NULL,
 	  Status=[]
 	),
-	!,
-	import_struct(FAtom,N,Module,ICode),
-	directive_struct(ICode,DCode),
-	report_directive(DCode).
+	( Status == [] ->
+	    new_varobj(Call),
+	    list_struct([FAtom|ArgsCode],[],LCode),
+	    prologterm_struct(FL_METAUNIV,2,[Call,LCode],CCode),
+	    conjunct_code(ACode,CCode,XCode),
+	    conjunct_code(XCode,Call,Code),
+	    import_struct(FAtom,N,Module,ICode),
+	    directive_struct(ICode,DCode),
+	    report_directive(DCode)
+	;
+	  true
+	),
+	!.
 
 
 /****************************************************************************
@@ -2317,18 +2327,28 @@ compile_prlgtermobj(ParserTerm,Object,Code,Status) :-
 compile_prlgtermobj(ParserTerm,Module,Object,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(FAtom,N,Args,Object,Code,Status)
+	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
+	    prologterm_struct(FAtom,N,ArgsCode,TCode)
 	;
 	  is_flatom(ParserTerm,FAtom),
 	  N=0,
-	  prologterm_struct(FAtom,0,[],Object),
-	  Code=NULL,
+	  ArgsCode=[],
+	  ACode=NULL,
 	  Status=[]
 	),
-	!,
-	import_struct(FAtom,N,Module,ICode),
-	directive_struct(ICode,DCode),
-	report_directive(DCode).
+	( Status == [] ->
+	    new_varobj(Object),
+	    list_struct([FAtom|ArgsCode],[],LCode),
+	    prologterm_struct(FL_METAUNIV,2,[Object,LCode],CCode),
+	    conjunct_code(ACode,CCode,Code),
+	    import_struct(FAtom,N,Module,ICode),
+	    directive_struct(ICode,DCode),
+	    report_directive(DCode)
+	;
+	  true
+	),
+	!.
+
 
 
 /****************************************************************************

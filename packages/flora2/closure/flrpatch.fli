@@ -20,7 +20,7 @@
   F-logic
 ***************************************************************************/
 :- import storage_find_fact/2 from storage.
-:- sign storage_find_fact(oid,form).
+:- flSign storage_find_fact(oid,form).
 
 
 derived_sub(X,Y) :- storage_find_fact(FLORA_STORAGE_NAME,base_sub(X,Y)).
@@ -45,17 +45,17 @@ derived_objeql(X,Y) :- storage_find_fact(FLORA_STORAGE_NAME,base_objeql(X,Y)).
 /**************************************************************************
   HiLog
 ***************************************************************************/
-:- florapred WRAP_HILOG/1.
-:- florapred WRAP_HILOG/2.
-:- florapred WRAP_HILOG/3.
-:- florapred WRAP_HILOG/4.
-:- florapred WRAP_HILOG/5.
-:- florapred WRAP_HILOG/6.
-:- florapred WRAP_HILOG/7.
-:- florapred WRAP_HILOG/8.
-:- florapred WRAP_HILOG/9.
-:- florapred WRAP_HILOG/10.
-:- florapred WRAP_HILOG/11.
+:- flPredicate WRAP_HILOG/1.
+:- flPredicate WRAP_HILOG/2.
+:- flPredicate WRAP_HILOG/3.
+:- flPredicate WRAP_HILOG/4.
+:- flPredicate WRAP_HILOG/5.
+:- flPredicate WRAP_HILOG/6.
+:- flPredicate WRAP_HILOG/7.
+:- flPredicate WRAP_HILOG/8.
+:- flPredicate WRAP_HILOG/9.
+:- flPredicate WRAP_HILOG/10.
+:- flPredicate WRAP_HILOG/11.
 
 
 WRAP_HILOG(A1) :- storage_find_fact(FLORA_STORAGE_NAME,WRAP_HILOG(A1)).

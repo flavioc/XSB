@@ -67,7 +67,7 @@ flora_init_shell :-
 	FL_EQUALITY(NONE),
 	flora_welcome_msg,
 	all,
-	chatter,
+	flChatter,
 	conset(flora_shell_loaded,1),
 	!.
 
@@ -108,47 +108,45 @@ help :-
 	flora_stdmsg_line('    show this info'),
 	flora_stdmsg_line('o compile(FILE[.P])'),
 	flora_stdmsg_line('    compile FILE.P; create FILE.O'),
-	flora_stdmsg_line('o flcompile(FILE[.flr])'),
+	flora_stdmsg_line('o flCompile(FILE[.flr])'),
 	flora_stdmsg_line('    compile FILE.flr for the default module `main'''),
-	flora_stdmsg_line('o flcompile(FILE[.flr],Module)'),
+	flora_stdmsg_line('o flCompile(FILE[.flr],Module)'),
 	flora_stdmsg_line('    compile FILE.flr for the module `Module'''),
-	flora_stdmsg_line('o flcompinc(FILE[.fli])'),
-	flora_stdmsg_line('    compile FLORA template include file'),
-	flora_stdmsg_line('o flconsult(FILE[.flr])'),
+	flora_stdmsg_line('o flConsult(FILE[.flr])'),
 	flora_stdmsg_line('    load FILE.flr into the default module `main'''),
-	flora_stdmsg_line('o flload(FILE[.flr],Module)'),
+	flora_stdmsg_line('o flLoad(FILE[.flr],Module)'),
 	flora_stdmsg_line('    load FILE.flr into the module `Module'''),
-	flora_stdmsg_line('o flload(FILE[.{P|O|flr}])'),
+	flora_stdmsg_line('o flLoad(FILE[.{P|O|flr}])'),
 	flora_stdmsg_line('    load FILE.flr (into the default module `main''), or FILE.P or FILE.O'),
 	flora_stdmsg_line('o [FILE[.{P|O|flr}][>> Module],...]'),
 	flora_stdmsg_line('    load a list of .flr (into the module `Module''), .P, or .O files'),
 	flora_stdmsg_line('o rundemo(FILE)'),
 	flora_stdmsg_line('    flconsult a demo from FLORA demos directory'),
-	flora_stdmsg_line('o flloadtrailer({standard|equality},Module)'),
-	flora_stdmsg_line('    load the standard/equality trailer into the module `Module'''),
-	flora_stdmsg_line('o flloadtrailer({standard|equality})'),
-	flora_stdmsg_line('    load the standard/equality trailer into the default module `main'''),
+	flora_stdmsg_line('o flEquality({none|basic|flogic},Module)'),
+	flora_stdmsg_line('    load the standard/basic equality/F-logic equality trailer into the module `Module'''),
+	flora_stdmsg_line('o flEquality {none|basic|flogic}'),
+	flora_stdmsg_line('    load the standard/basic equality/F-logic equality trailer into the default module `main'''),
 	flora_stdmsg_line('o abolish_all_tables'),
 	flora_stdmsg_line('    flush all tabled data'),
-	flora_stdmsg_line('o prolog Functor/Arity'),
+	flora_stdmsg_line('o flProlog Functor/Arity'),
 	flora_stdmsg_line('    define Functor/Arity as Prolog in shell mode'),
-	flora_stdmsg_line('o florapred Functor/Arity'),
+	flora_stdmsg_line('o flPredicate Functor/Arity'),
 	flora_stdmsg_line('    define Functor/Arity as non-HiLog flora predicate in shell mode'),
-	flora_stdmsg_line('o sign Functor({oid|form}[,{oid|form}]*)'),
+	flora_stdmsg_line('o flSign Functor({oid|form}[,{oid|form}]*)'),
 	flora_stdmsg_line('    define predicate signature in shell mode'),
 	flora_stdmsg_line('o op(Precedence,Associativity,Operator)'),
 	flora_stdmsg_line('    define an operator in shell mode'),
-	flora_stdmsg_line('o reset(prolog|florapred|sign|op)'),
-	flora_stdmsg_line('    clear all dynamic prolog/florapred/sign/op definitions in shell mode'),
+	flora_stdmsg_line('o reset(flProlog|flPredicate|flSign|op)'),
+	flora_stdmsg_line('    clear all dynamic flProlog/flPredicate/flSign/op definitions in shell mode'),
 	flora_stdmsg_line('o all'),
 	flora_stdmsg_line('    show all solutions (default)'),
 	flora_stdmsg_line('o one'),
 	flora_stdmsg_line('    show solutions one by one'),
 	flora_stdmsg_line('o maxerr(all|N)'),
 	flora_stdmsg_line('    set/show the maximum number of errors FLORA reports'),
-	flora_stdmsg_line('o fltrace/flrnotrace'),
+	flora_stdmsg_line('o flTrace/flrNoTrace'),
 	flora_stdmsg_line('    turn on/off FLORA trace'),
-	flora_stdmsg_line('o chatter/nochatter'),
+	flora_stdmsg_line('o flChatter/flNoChatter'),
 	flora_stdmsg_line('    turn on/off FLORA chatter'),
 	flora_stdmsg_line('o end'),
 	flora_stdmsg_line('    say Ciao to FLORA'),
@@ -196,7 +194,7 @@ end :-
 
 
 /*********************************************************************/
-fltrace :-
+flTrace :-
 	( flora_debugger_data_loaded ->
 	    true
 	;
@@ -204,7 +202,7 @@ fltrace :-
 	),
 	flora_trace.
 
-flnotrace :-
+flNoTrace :-
 	( flora_debugger_data_loaded ->
 	    true
 	;
@@ -214,8 +212,8 @@ flnotrace :-
 
 
 /*********************************************************************/
-chatter :- assert(flora_switch(chatter)).
-nochatter :- retractall(flora_switch(chatter)).
+flChatter :- assert(flora_switch(chatter)).
+flNoChatter :- retractall(flora_switch(chatter)).
 
 
 /*********************************************************************/

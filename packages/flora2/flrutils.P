@@ -48,15 +48,15 @@
 
 
 /*************************************************************************
-  flcompile(+File)
+  flCompile(+File)
 *************************************************************************/
-flcompile(File) :- flcompile(File,FLORA_DEFAULT_WORKSPACE).
+flCompile(File) :- flCompile(File,FLORA_DEFAULT_WORKSPACE).
 
 
 /*************************************************************************
-  flcompile(+File,+Workspace)
+  flCompile(+File,+Workspace)
 *************************************************************************/
-flcompile(File,Workspace) :-
+flCompile(File,Workspace) :-
 	flora_check_filename(File),
 	flora_check_workspace(Workspace),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
@@ -75,16 +75,16 @@ flcompile(File,Workspace) :-
 
 
 /*************************************************************************
-  flconsult(+File)
+  flConsult(+File)
 *************************************************************************/
-flconsult(File) :- flload(File).
+flConsult(File) :- flLoad(File).
 
 
 /**********************************************************************
-  flload(+File,+Workspace)
+  flLoad(+File,+Workspace)
   File must be a FLORA file.
 **********************************************************************/
-flload(File,Workspace) :-
+flLoad(File,Workspace) :-
 	flora_check_filename(File),
 	flora_check_workspace(Workspace),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
@@ -103,10 +103,10 @@ flload(File,Workspace) :-
 
 
 /**********************************************************************
-  flload(+File)
+  flLoad(+File)
   File may be a FLORA file, .P file, or .O file.
 **********************************************************************/
-flload(File) :-
+flLoad(File) :-
 	flora_check_filename(File),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,FLORA_DEFAULT_WORKSPACE)
@@ -135,9 +135,9 @@ flload(File) :-
 
 
 /*************************************************************************
-  flcompinc(+File)
+  flCompileInclude(+File)
 *************************************************************************/
-flcompinc(File) :-
+flCompileInclude(File) :-
 	flora_check_filename(File),
 	( flora_locate_file(File,FLORA_INCLUDE_EXT,FLIFile) ->
 	    flora_set_xpp_options,

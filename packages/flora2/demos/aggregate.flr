@@ -21,20 +21,20 @@ mary[salary(1996) -> 70].
 mary[salary(1997) -> 80].
 mary[salary(1998) -> unknown].
 
-?- Z=max{X|john[salary(Year)->X] }.
+?- Z=flMax{X|john[salary(Year)->X] }.
 
-?- Z=max{X|john[salary(Year) ->X], Year < 1996}.
+?- Z=flMax{X|john[salary(Year) ->X], Year < 1996}.
 
-?- Z=count{Year|john.salary(Year) < max{ X | john[salary(Y2)->X], Y2<Year}}.
+?- Z=flCount{Year|john.salary(Year) < flMax{ X | john[salary(Y2)->X], Y2<Year}}.
 
-?- Z=count{Year|john.salary(Year) < mary.salary(Year)}.
+?- Z=flCount{Year|john.salary(Year) < mary.salary(Year)}.
 
-?- Z=avg{X[Who]|Who[salary(Year)->X]}.
+?- Z=flAverage{X[Who]|Who[salary(Year)->X]}.
 
-?- Z=collectset{Year[Who]|Who[salary(Year) -> X], X < 60}.
+?- Z=flCollectSet{Year[Who]|Who[salary(Year) -> X], X < 60}.
 
-?- retract(mary[salary(Y)->unknown]).
+?- flDelete{mary[salary(Y)->unknown]}.
 
-?- retract(john[salary(Y)->S1], mary[salary(Y)->S2]|S1<S2).
+?- flDelete{john[salary(Y)->S1], mary[salary(Y)->S2]|S1<S2}.
 
-?- retract(john[salary(Y)->S1]|mary[salary(Y)->S2], S1<S2).
+?- flDelete{john[salary(Y)->S1]|mary[salary(Y)->S2], S1<S2}.

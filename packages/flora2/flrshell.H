@@ -85,12 +85,12 @@
 
 :- import
 	maxerr/1,
-	flcompile/1,
-	flcompile/2,
-	flload/1,
-	flload/2,
-	flconsult/1,
-	flcompinc/1,
+	flCompile/1,
+	flCompile/2,
+	flLoad/1,
+	flLoad/2,
+	flConsult/1,
+	flCompileInclude/1,
 	flloadtrailer/1,
 	flloadtrailer/2,
 	flora_shell_command_line/3,

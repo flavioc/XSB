@@ -83,12 +83,12 @@ flora_prlg(abolish_all_tables,0) :- !.
 /****************************************************************************
   FLORA shell predicates
 ****************************************************************************/
-flora_prlg(flcompile,1) :- !.
-flora_prlg(flcompile,2) :- !.
-flora_prlg(flload,1) :- !.
-flora_prlg(flload,2) :- !.
-flora_prlg(flconsult,1) :- !.
-flora_prlg(flcompinc,1) :- !.
+flora_prlg(flCompile,1) :- !.
+flora_prlg(flCompile,2) :- !.
+flora_prlg(flLoad,1) :- !.
+flora_prlg(flLoad,2) :- !.
+flora_prlg(flConsult,1) :- !.
+flora_prlg(flCompileInclude,1) :- !.
 flora_prlg(FL_EQUALITY,1) :- !.
 flora_prlg(FL_EQUALITY,2) :- !.
 flora_prlg(help,0) :- !.
@@ -99,10 +99,10 @@ flora_prlg(end,0) :- !.
 flora_prlg(halt,0) :- !.
 flora_prlg(maxerr,1) :- !.
 flora_prlg(rundemo,1) :- !.
-flora_prlg(fltrace,0) :- !.
-flora_prlg(flnotrace,0) :- !.
-flora_prlg(chatter,0) :- !.
-flora_prlg(nochatter,0) :- !.
+flora_prlg(flTrace,0) :- !.
+flora_prlg(flNoTrace,0) :- !.
+flora_prlg(flChatter,0) :- !.
+flora_prlg(flNoChatter,0) :- !.
 
 
 /****************************************************************************
