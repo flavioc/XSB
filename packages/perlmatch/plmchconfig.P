@@ -82,9 +82,9 @@ make_xsbpatternH(CC, CC_opts) :-
 			 ' %s -I%s%sCORE -I%s',
 			 f(CCflags,PerlArchlib,Slash,EmuDir)),
 	make_xsbpatternH(CC, CC_opts),
-	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
+	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	unix(['mv', ' -f ', Objfile, ' ', ConfigLibdir]),
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk
