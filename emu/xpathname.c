@@ -273,7 +273,10 @@ char *get_file_basename(char *path) {
    E.g., a/b/.././c --> a/ (even if c is a directory itself)
    a/b/ --> a/b/ 
    Doesn't expand the directory name.
-   Always leaves trailing slash at the end. */
+   Always leaves trailing slash at the end. 
+
+   Expects a string storage as 2nd arg, returns second arg.
+*/
 char *get_file_dirname(char *path, char *dir) {
   char *ptr;
   ptr = strrchr(rectify_pathname(path,dir), SLASH);
@@ -303,7 +306,11 @@ char *get_file_extension(char *path) {
 
 #define MAXPATHNAMES 256 /* max number of file names in a path name */
 
-/* go over path name and get rid of `..', `.', and multiple slashes */
+/* 
+** Go over path name and get rid of `..', `.', and multiple slashes 
+** Expects two strings (with allocated storage) as params: the input path and
+** the output path. Returns the second argument.
+*/
 static char *rectify_pathname(char *inpath, char *outpath) {
   char names[MAXPATHNAMES][MAXNAME];  /* array of filenames in inpath.
 					 1st index: enumerates names in inpath;
@@ -403,13 +410,15 @@ static char *rectify_pathname(char *inpath, char *outpath) {
  */
 void parse_filename(char *filename, char **dir, char **base, char **extension)
 {
-  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
+  static char absolute_dirname[MAXPATHLEN]; /* abs dirname composed here */
+  static char basename[MAXNAME];    	    /* the rest of the filename  */
 
-  *dir = get_file_dirname(filename, absolute_filename);
-  *base = get_file_basename(filename);
-  *extension = get_file_extension(filename);
+  *base = strcpy(basename, get_file_basename(filename));
+  *dir = get_file_dirname(filename, absolute_dirname);
+  *extension = get_file_extension(basename);
+  /* cut off the extension from the base */
   if (*extension > *base)
-    *(*extension-1) = '\0'; /* Careful: we modify the input filename param! */
+    *(*extension-1) = '\0'; 
 }
 
 
