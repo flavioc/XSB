@@ -88,6 +88,8 @@ unstrap_flora :-
 	(retract(xpp_include_dir(FloraIncludesDir)); true),
 	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
 	(retract(xpp_include_dir(FloraClosureDir)); true),
+	fmt_write_string(FloraFlrIncludesDir,"%s%sflrincludes",args(FloraDir,S)),
+	(retract(xpp_include_dir(FloraFlrIncludesDir)); true),
 	unload_package(flora),
 	conset(flora_shell_loaded,0).
 
