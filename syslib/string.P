@@ -182,7 +182,7 @@ codes_to_term(Rest0,Rest,ST0,ST,Term) :-
 		codes_to_term_list(Rest3,Rest,Terms,[],ST2,ST),
 		Term =.. [Tok0,Tok1|Terms]
 	 ;	Rest = Rest1,
-		ST = ST0,
+		ST = ST1,
 		Term = Tok0
 	).
 
@@ -202,13 +202,16 @@ next_token(Rest0,Rest,ST0,ST,Tok) :-
 	Rest0 = [C|Rest1],
 	(C >= 0'0, C =< 0'9
 	 ->	Val is C - 0'0,
+		ST = ST0,
 		scan_number(Rest1,Rest,Val,Tok)
 	 ; C =:= 0'_
 	 ->	scan_variable(Rest1,Rest,ST0,ST,Tok)
 	 ; C =:= 0''
-	 ->	scan_quoted_con(Rest1,Rest,Codes,[]),
+	 ->	ST = ST0,
+		scan_quoted_con(Rest1,Rest,Codes,[]),
 		atom_codes(Tok,Codes)
-	 ;	scan_to_delim(Rest0,Rest,Codes,[]),
+	 ;	ST = ST0,
+		scan_to_delim(Rest0,Rest,Codes,[]),
 		atom_codes(Tok,Codes)
 	).
 
