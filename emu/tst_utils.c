@@ -185,6 +185,8 @@ void printTrieSymbol(FILE *fp, Cell symbol) {
 void printTrieNode(FILE *fp, BTNptr pTN) {
 
   fprintf(fp, "Trie Node: Addr(%p)", pTN);
+  if ( IsDeletedNode(pTN) )
+    fprintf(fp, "  (DELETED)");
   fprintf(fp, "\n\tInstr(%s), Status(%s), NodeType(%s),\n"
 	  "\tTrieType(%s), Symbol(",
 	  inst_name(TN_Instr(pTN)),
@@ -252,7 +254,7 @@ static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
       Psc psc;
       int i;
 
-      if ( list_recursion )
+b      if ( list_recursion )
 	fprintf(fp, "|");
       psc = DecodeTrieFunctor(symbol);
       fprintf(fp, "%s(", get_name(psc));
