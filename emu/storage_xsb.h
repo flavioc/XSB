@@ -37,19 +37,12 @@
 typedef struct storage_handle STORAGE_HANDLE;
 struct storage_handle {
   Cell             name;
+  STORAGE_HANDLE  *next;
   Integer          handle;
   Integer          snapshot_number;
   xsbBool          changed;
-  STORAGE_HANDLE  *next;
-  STORAGE_HANDLE  *prev;
 };
 
 
 extern STORAGE_HANDLE *storage_builtin(int builtin_number, Cell storage_name);
 
-/* 127 is a prime that is close to 2^7 */
-#define STORAGE_HASH_SIZE  127
-
-#define storage_hash(val, size)    (word)(val) % (size)
-
-#define isfree_storage_handle(handle_cell)  (handle_cell->name == (Cell)0)
