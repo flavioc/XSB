@@ -1402,17 +1402,19 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
 	flora_dump_filename(PFile,DumpPFile),
 	flora_dump_filename(FDBFile,DumpFDBFile),
 	!,
-	( path_sysop(exists,PFile) ->
-	    %% Dump the main .P file.
-	    (flora_gpp_dumpfile(PFile,DumpPFile,NewWorkspace) -> true; !, fail)
+	( path_sysop(exists,PFile)
+	-> %% Dump the main .P file.
+	    flora_gpp_dumpfile(PFile,DumpPFile,NewWorkspace)
+	; flora_error_line('Failed to create the main dumpfile %s',
+			   arg(PFile))
+	),
 
-	; path_sysop(exists,FDBFile) ->
-	    %% Dump the .fdb file if it exists.
-	    (flora_gpp_dumpfile(FDBFile,DumpFDBFile,NewWorkspace) -> true; !, fail)
+	( path_sysop(exists,FDBFile)
+	-> %% Dump the .fdb file if it exists.
+	    flora_gpp_dumpfile(FDBFile,DumpFDBFile,NewWorkspace)
 	;
 	  true
-	),
-	!.
+	).
 
 
 /*************************************************************************
@@ -1422,6 +1424,8 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
   for existence.
 *************************************************************************/
 flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
+	flora_message_line('Making dump file %s from %s',
+			   args(FileName, DumpFileName)),
 	flora_set_xpp_extra_options(' -D FLORA_DUMP '),
 	flora_set_xpp_options(Workspace),
 	file_open(DumpFileName,w,DumpPort),

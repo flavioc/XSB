@@ -192,6 +192,10 @@ flora_write_goal(Call) :-
 	print_items((' ', FL_UNIVEQFORM, ' ')),
 	flora_write_goal(Right).
 
+flora_write_goal(FL_IF(IfCall)) :-
+	!,
+	flora_print_if_statement(IfCall).
+
 %% catch all
 flora_write_goal(Call) :- print_item(Call).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,6 +290,29 @@ flora_write_firstorder(Basename,ArgList,Workspace) :-
 	write_hilog_args(ArgList),
 	print_item(')'),
 	write_workspace(Workspace).
+
+
+%%%%%%%%%%%%%%%%%%%%%% IF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+flora_print_if_statement(FL_THEN(Cond,Action)) :-
+	!,
+	print_item('IF ('),
+	flora_write_goal(Cond),
+	write_if_body(Action).
+flora_print_if_statement(_) :-
+	abort('Ill-formed IF statement').
+
+write_if_body(FL_ELSE(Then,Else)) :-
+	!,
+	print_item(') THEN ('),
+	flora_write_goal(Then),
+	print_item(') ELSE ('),
+	flora_write_goal(Else),
+	print_item(')').
+write_if_body(Then) :-
+	print_item(') THEN ('),
+	flora_write_goal(Then),
+	print_item(')').
 
 %%%%%%%%%%%%%%%%%%%%% Updates %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
