@@ -33,6 +33,7 @@
 
 :- import
 	flora_error_line/1,
+	flora_error_line/2,
 	flora_error_heading/0,
 	flora_stderr_string/1,
 	flora_stderr_nl/0
@@ -43,6 +44,7 @@
 :- import
 	flora_module_name/3,
 	flora_module_name_error/1,
+	flora_storage_name/2,
 	flora_decode_module_name/2,
 	flora_module_predicate/4,
 	flora_firstorder_module_predicate/4
@@ -156,7 +158,7 @@ flora_storage_convertlist([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|Fs],
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,Obj)|Fs],
+flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,O)|Fs],
                           [( flora_check_module_name(ModuleName) ->
 			       flora_module_predicate(F,Args,ModuleName,O)
 			   ;
@@ -166,7 +168,7 @@ flora_storage_convertlist([FLLIBMODOBJ(F,Args,ModuleName,Obj)|Fs],
 	!,
 	flora_storage_convertlist(Fs,CL,FL).
 
-flora_storage_convertlist([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,Obj)|Fs],
+flora_storage_convertlist([FLLIBMODOBJ(FL_FIRSTORDER,F,Args,ModuleName,O)|Fs],
                           [( flora_check_module_name(ModuleName) ->
 			       flora_firstorder_module_predicate(F,Args,ModuleName,O)
 			   ;

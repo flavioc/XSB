@@ -60,7 +60,7 @@ fllibmodlit(F,Args,ModuleName) :-
 *********************************************************************/
 fllibmodobj(F,Args,ModuleName,P) :-
 	( flora_check_module_name(ModuleName) ->
-	    flora_module_predicate(F,Args,ModuleName,P),
+	    flora_module_predicate(F,Args,ModuleName,P)
 	;
 	  abort
 	),
@@ -85,7 +85,7 @@ fllibmodlit(FL_FIRSTORDER,F,Args,ModuleName) :-
 *********************************************************************/
 fllibmodobj(FL_FIRSTORDER,F,Args,ModuleName,P) :-
 	( flora_check_module_name(ModuleName) ->
-	    flora_firstorder_module_predicate(F,Args,ModuleName,P),
+	    flora_firstorder_module_predicate(F,Args,ModuleName,P)
 	;
 	  abort
 	),
