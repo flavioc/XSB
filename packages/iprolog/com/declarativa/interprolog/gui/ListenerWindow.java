@@ -33,7 +33,8 @@ public abstract class ListenerWindow extends JFrame implements WindowListener{
 		super("PrologEngine listener (Swing)");		
 		if (e!=null) engine=e;
 		else throw new IPException("missing Prolog engine");		
-		engine.consultFromPackage("visualization.O",ListenerWindow.class);	
+		//engine.consultFromPackage("visualization.O",ListenerWindow.class);	
+		engine.consultFromPackage("visualization.xwam",ListenerWindow.class);	
 		engine.teachMoreObjects(guiExamples());
 		engine.command("write('Welcome to an InterProlog/XSB top level!')");
 		engine.command("xsb_configuration(version,_V), write('XSB version '), writeln(_V)");
