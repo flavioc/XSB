@@ -165,7 +165,8 @@ flloadtrailer(TrailerName,Workspace) :-
 	      true
 	  ;
 	    flora_set_xpp_options(Workspace),
-	    compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
+	    %%compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
+	    compile(UserTrailerPFile,[optimize,ti_all]),
 	    flora_rename_file(UserTrailerOFile,UserTrailerWSOFile),
 	    flora_clear_xpp_options
 	  ),
@@ -200,7 +201,8 @@ flsetuptrailer(TrailerName) :-
 	    fail
 	;
 	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
-	  compile(TrailerFullName,[optimize,spec_repr,ti_all]),
+	  %%compile(TrailerFullName,[optimize,spec_repr,ti_all]),
+	  compile(TrailerFullName,[optimize,ti_all]),
 	  flora_clear_xpp_options
 	),
 	!.
@@ -237,7 +239,8 @@ flloadpatch(Workspace) :-
 	    true
 	;
 	  flora_set_xpp_options(Workspace),
-	  compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
+	  %%compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
+	  compile(UserPatchPFile,[optimize,ti_all]),
 	  flora_rename_file(UserPatchOFile,UserPatchWSOFile),
 	  flora_clear_xpp_options
         ),
@@ -263,7 +266,8 @@ flsetuppatch :-
 	    fail
 	;
 	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
-	  compile(PatchFullName,[optimize,spec_repr,ti_all]),
+	  %%compile(PatchFullName,[optimize,spec_repr,ti_all]),
+	  compile(PatchFullName,[optimize,ti_all]),
 	  flora_clear_xpp_options
 	),
 	!.
@@ -341,7 +345,10 @@ flora_flcompile(FlrFile,Workspace) :-
 	;
 	  flora_mainO_filename(FlrFile,MOFile),
 	  flora_message_line('calling XSB compiler'),
-	  ( compile(MPFile,[optimize,spec_repr,ti_all]) ->
+	  (
+	    %%compile(MPFile,[optimize,spec_repr,ti_all])
+	    compile(MPFile,[optimize,ti_all])
+	  ->
 	      true
 	  ;
 	    flora_clear_xpp_options,
@@ -481,8 +488,11 @@ flora_flload(FlrFile,Workspace) :-
 	( flora_file_newerthan(WSOFile,MPFile) ->
 	    true
 	;
-	  ( compile(MPFile,[optimize,spec_repr,ti_all]) ->
-	      true
+	  (
+	    %%compile(MPFile,[optimize,spec_repr,ti_all])
+	    compile(MPFile,[optimize,ti_all])
+	  ->
+	    true
 	  ;
 	    flora_clear_xpp_options,
 	    fail

@@ -171,8 +171,7 @@ flReset(_) :-
 
 /*********************************************************************/
 flAll :-
-	( flora_switch(all) ->
-	    true
+	( flora_switch(all) -> true
 	;
 	  assert(flora_switch(all))
 	).
