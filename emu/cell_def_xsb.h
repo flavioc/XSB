@@ -23,8 +23,12 @@
 */
 
 
+#ifndef CELL_DEF_XSB_INCL 
+#define CELL_DEF_XSB_INCL 
+
 /* CELL and PROLOG_TERM are defined identically.
    However, CELL is used to refer to elements of (slg-)WAM stacks, while
    PROLOG_TERM is used in the interface to point to a cell containing 
    the outer functor of a prolog term. */
 typedef unsigned long Cell;
+#endif
