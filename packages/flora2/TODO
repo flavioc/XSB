@@ -348,3 +348,31 @@
 
 22.  Make the compiler dump the original source in comments right
      in front of the translated code block.
+
+23.  Implement a richer anonymous oid syntax.
+     In addition to _#, allow _#1, _#2, etc. Tokenizer needs to be updated
+     to allow that.
+     
+     The idea is that two occurrences of, say, _#2 within the same rule
+     would be assigned the same oid and _#1,_#2, _# would be different.
+     Also, occurrences of _#1 across different rules would be different as
+     well.
+
+     The schema is simple. First, numbered (_#1, _#2) etc and unnumbered
+     (_#) oids should use difference naming schemas. The numbered oids can
+     use, say, _$_$_flora_newoid<rule-number>|<oid-number>.
+     For instance, _#345 that appears in the clause number 9876 would be
+     replaced with _$_$_flora_newoid9876|345.
+
+     We should also check that each numbered oid that occurs inside a rule
+     is referenced there at least twice and issue a warning if not.
+     This can be done by asserting
+     ruleoid(345,1)
+     when the compiler sees _#345 within the clause 9876 the first time.
+     While processing that rule, the compiler would increment the count.
+     For instance, in our case it would retract the above fact and assert
+     ruleoid(345,2)
+
+     When it is done with the rule, it should check if there are facts of
+     the form ruleoid(_,1) and issue an error if there are.  The ruleoid/2
+     relation is reset by the compiler at the beginning of each new rule.

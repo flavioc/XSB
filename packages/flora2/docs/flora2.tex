@@ -2864,7 +2864,7 @@ The syntax for aggregates is similar to that in \FLORID. An
 aggregate has the following form:
 %%
 \begin{qrules}
-agg\{X[Gs] $|$ {\it body}\}
+agg\{X[Gs] $|$ {\it query}\}
 \end{qrules}
 %%
 \index{aggregation!aggregate operator}
@@ -2872,22 +2872,22 @@ agg\{X[Gs] $|$ {\it body}\}
 %
 where {\tt agg} represents the aggregate operator, {\tt X} is called the
 aggregation variable, {\tt Gs} is a list of comma-separated grouping
-variables, and {\it body} is a logical formula that specifies the
-query conditions. The grouping variables, {\tt Gs}, are optional. {\it body}
+variables, and {\it query} is a logical formula that specifies the
+query conditions. The grouping variables, {\tt Gs}, are optional. {\it query}
 can be any combination of conjunction, disjunction, and negation of literals.
 
-All the variables appearing in {\it body} but not in {\tt X} or {\tt Gs} are
+All the variables appearing in {\it query} but not in {\tt X} or {\tt Gs} are
 considered to be existentially quantified. Furthermore, the syntax of an
 aggregate must satisfy the following conditions:
 %%
 \begin{enumerate}
 \item All names of variables in both {\tt X} and {\tt Gs} must
-appear in {\it body};
+appear in {\it query};
 \item {\tt Gs} should not contain {\tt X}.
 \end{enumerate}
 
 Aggregates are evaluated as follows: First, the query
-condition specified in {\it body} is evaluated to obtain all the bindings
+condition specified in {\it query} is evaluated to obtain all the bindings
 for the template of the form {\tt \texttt{<}X, Gs\texttt{>}}. Then, these
 tuples are grouped according to each distinct binding for
 {\tt \texttt{<}Gs\texttt{>}}. Finally, for each group, the aggregate operator
@@ -2902,8 +2902,9 @@ is applied to the list of bindings for the aggregate variable $\tt X$.
 \index{aggregates!collectset}
 \index{aggregates!collectbag}
 %
-The following aggregate operators are supported in \FLORA: {\tt min}, {\tt max},
-{\tt count}, {\tt sum}, {\tt avg}, {\tt collectset} and {\tt collectbag}.
+The following aggregate operators are supported in \FLORA: {\tt min}, {\tt
+  max}, {\tt count}, {\tt sum}, {\tt avg}, {\tt collectset} and {\tt
+  collectbag}.
 
 The operators {\tt min} and {\tt max} can apply to any list of
 terms. The order among terms is defined by the XSB operator {\tt @=<}.  In
@@ -2916,6 +2917,13 @@ For each group, the operator {\tt collectbag} collects all the bindings of
 the aggregation variable into a list. The operator {\tt collectset} works
 similarly to {\tt collectbag}, except that all the duplicates are removed
 from the result list.
+
+
+The aggregates {\tt min}, {\tt max}, {\tt sum}, {\tt count}, and {\tt avg}
+fail if {\tt query} fails.
+In contrast, {\tt collectbag} and {\tt collectset} succeed even if {\tt
+  query} returns no binding. In this case, these aggregates return the
+empty list.
 
 In general, aggregates can appear wherever a number or a list is
 allowed. Therefore, aggregates can be nested. The following examples
