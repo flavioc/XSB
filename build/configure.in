@@ -45,7 +45,7 @@ fi
 SHELL=/bin/sh
 
 ./touch.sh buildxsb.lock
-trap 'rm buildxsb.lock; exit 1' 0 1 2 3 15
+trap 'rm buildxsb.lock; exit 1' 1 2 3 15
 
 build_dir="`pwd`"
 # strip the last directory and possibly trailing slashes
@@ -777,7 +777,7 @@ if test "${perl_support}" = "yes"; then
 fi
 
 # Need to re-state the trap since configure resets it occasionally
-trap 'rm buildxsb.lock; exit 1' 0 1 2 3 15
+trap 'rm buildxsb.lock; exit 1' 1 2 3 15
 
 AC_SUBST(regmatch_support)
 AC_SUBST(wildmatch_support)
@@ -1160,7 +1160,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 chmod 644 ${arch_config_file}
 
 # Need to re-state the trap since configure resets it occasionally
-trap 'rm buildxsb.lock; exit 1' 0 1 2 3 15
+trap 'rm buildxsb.lock; exit 1' 1 2 3 15
 
 ############ End of configuration -- the rest is mostly cosmetic ##############
 ###############################################################################
