@@ -1,6 +1,6 @@
 /*  @configure_input@ 
 **
-**   This file contains definitions for NT
+**   This file contains definitions for Windows
 **
 **   Some variable may have to be changed manually.
 */
