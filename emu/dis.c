@@ -31,14 +31,14 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "hash_xsb.h"
 #include "loader_xsb.h"
-#include "cell.h"
-#include "inst.h"
+#include "cell_xsb.h"
+#include "inst_xsb.h"
 #include "builtin.h"
 #include "memory_xsb.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "tries.h"
 #include "macro_xsb.h"
 

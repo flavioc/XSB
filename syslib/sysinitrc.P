@@ -27,7 +27,7 @@
 
 :- compiler_options([xpp_on]).
 
-#include "flag_defs.h"
+#include "flag_defs_xsb.h"
 
 
 :- import stat_set_flag/2 from machine.

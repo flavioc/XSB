@@ -32,7 +32,7 @@ ALL =	asm.O asm_inst.O asm_opt.O asmpass2.O auxlry.O builtin.O \
 	tp_comp.O tp_cond.O tp_eval.O tp_goal.O tp_index.O tp_var.O \
 	tpinline.O tprog.O useinfer.O varproc.O writeasm.O
 
-EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
+EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
 	../emu/system_defs_xsb.h ../emu/socket_xsb.h 
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h

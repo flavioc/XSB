@@ -42,21 +42,21 @@
 #endif
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
 #include "heap_xsb.h"
 #include "deref.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "binding.h"
 #include "trie_internals.h"
 #include "trassert.h"
 #include "choice.h"
 #include "token_xsb.h"
 #include "sig_xsb.h"
-#include "inst.h"
+#include "inst_xsb.h"
 #include "macro_xsb.h"
 
 /*======================================================================*/

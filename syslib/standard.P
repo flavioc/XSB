@@ -30,8 +30,8 @@
 
 :- compiler_options([sysmod, xpp_on]).
 
-#include "celltags.h"
-#include "flag_defs.h"
+#include "celltags_xsb.h"
+#include "flag_defs_xsb.h"
 #include "standard.h"
 #include "char_defs.h"
 

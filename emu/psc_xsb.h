@@ -1,4 +1,4 @@
-/* File:      psc.h
+/* File:      psc_xsb.h
 ** Author(s): Jiyang Xu, Terry Swift, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

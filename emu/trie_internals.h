@@ -35,7 +35,7 @@
  * components which simply use tries through normal channels.
  */
 
-#include "inst.h"
+#include "inst_xsb.h"
 #include "struct_manager.h"
 #include "tries.h"
 
@@ -470,7 +470,7 @@ extern Cell TrieVarBindings[];
 /*
  *  Hashing function for symbols
  */
-#define CELL_TAG_SIZE	4	/* should go into cell.h for each machine */
+#define CELL_TAG_SIZE	4     /* should go into cell_xsb.h for each machine */
 #define TRIEVAR_BUCKET	0
 
 #define TrieHash(Symbol, HashSeed)			\

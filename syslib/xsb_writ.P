@@ -25,7 +25,7 @@
 
 :- compiler_options([xpp_on]).
 
-#include "celltags.h"
+#include "celltags_xsb.h"
 #include "char_defs.h"
 
 

@@ -1,4 +1,4 @@
-/* File:      flag_defs.h
+/* File:      flag_defs_xsb.h
 ** Author(s): Jiyang Xu, Kostis Sagonas, Ernie Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

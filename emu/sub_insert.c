@@ -31,17 +31,17 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "register.h"
 #include "error_xsb.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "deref.h"
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
 #include "macro_xsb.h"
 #include "binding.h"
-#include "inst.h"
+#include "inst_xsb.h"
 
 
 #define _DEBUG_CALL_CHK_INS

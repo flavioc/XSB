@@ -29,9 +29,9 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "register.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "tries.h"
 #include "macro_xsb.h"
 

@@ -34,11 +34,11 @@
 #include <stdio.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "memory_xsb.h"
-#include "inst.h"
-#include "psc.h"
-#include "flags.h"
+#include "inst_xsb.h"
+#include "psc_xsb.h"
+#include "flags_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 

@@ -33,9 +33,9 @@
 #include "debugs/debug_residual.h"
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "memory_xsb.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "register.h"
 #include "heap_xsb.h"
 #include "binding.h"

@@ -28,7 +28,7 @@
 :- compiler_options([xpp_on]).
 #include "standard.h"
 #include "char_defs.h"
-#include "flag_defs.h"
+#include "flag_defs_xsb.h"
 
 
 %   file_read(+File, -Answer).

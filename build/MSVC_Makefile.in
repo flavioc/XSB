@@ -125,14 +125,14 @@ CLEAN :
 	-@erase "$(OBJDIR)\function.obj"
 	-@erase "$(OBJDIR)\hash_xsb.obj"
 	-@erase "$(OBJDIR)\heap_xsb.obj"
-	-@erase "$(OBJDIR)\inst.obj"
+	-@erase "$(OBJDIR)\inst_xsb.obj"
 	-@erase "$(OBJDIR)\init_xsb.obj"
 	-@erase "$(OBJDIR)\io_builtins_xsb.obj"
 	-@erase "$(OBJDIR)\loader_xsb.obj"
 	-@erase "$(OBJDIR)\chat.obj
 	-@erase "$(OBJDIR)\memory_xsb.obj"
 	-@erase "$(OBJDIR)\orastuff.obj"
-	-@erase "$(OBJDIR)\psc.obj"
+	-@erase "$(OBJDIR)\psc_xsb.obj"
 	-@erase "$(OBJDIR)\private_builtin.obj"
 	-@erase "$(OBJDIR)\residual.obj"
 	-@erase "$(OBJDIR)\scc_xsb.obj"
@@ -180,11 +180,11 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/hash_xsb.obj" \
 	"$(OBJDIR)/heap_xsb.obj" \
 	"$(OBJDIR)/init_xsb.obj" \
-	"$(OBJDIR)/inst.obj" \
+	"$(OBJDIR)/inst_xsb.obj" \
 	"$(OBJDIR)/io_builtins_xsb.obj" \
 	"$(OBJDIR)/loader_xsb.obj" \
 	"$(OBJDIR)/memory_xsb.obj" \
-	"$(OBJDIR)/psc.obj" \
+	"$(OBJDIR)/psc_xsb.obj" \
 	"$(OBJDIR)/private_builtin.obj" \
 	"$(OBJDIR)/residual.obj" \
 	"$(OBJDIR)/orient_xsb.obj" \

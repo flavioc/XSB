@@ -1,4 +1,4 @@
-/* File:      cut.h
+/* File:      cut_xsb.h
 ** Author(s): Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

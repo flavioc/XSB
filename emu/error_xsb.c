@@ -31,8 +31,8 @@
 #include "configs/config.h"
 
 #include "auxlry.h"
-#include "cell.h"
-#include "psc.h"
+#include "cell_xsb.h"
+#include "psc_xsb.h"
 #include "subp.h"
 #include "register.h"
 #include "error_xsb.h"

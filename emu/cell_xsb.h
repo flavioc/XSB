@@ -1,4 +1,4 @@
-/* File:      cell.h
+/* File:      cell_xsb.h
 ** Author(s): David S. Warren, Jiyang Xu, Terrance Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -68,7 +68,7 @@
 
 /* ==== types of cells =================================================*/
 
-#include "celltags.h"
+#include "celltags_xsb.h"
 
 #define TrieVar 0x0
 

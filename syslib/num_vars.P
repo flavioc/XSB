@@ -24,7 +24,7 @@
 
 :- compiler_options([xpp_on]).
 
-#include "celltags.h"
+#include "celltags_xsb.h"
 
 %   numbervars(+Term, +FirstN, ?LastN) 
 %   Each variable in the HiLog Term is instantiated to a term of the form 

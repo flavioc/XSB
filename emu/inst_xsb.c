@@ -1,4 +1,4 @@
-/* File:      inst.c
+/* File:      inst_xsb.c
 ** Author(s): Warren, Swift, Xu, Sagonas, Freire, Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -28,8 +28,8 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "cell.h"
-#include "inst.h"
+#include "cell_xsb.h"
+#include "inst_xsb.h"
 #include "subinst.h"
 
 extern void init_builtin_table(void);

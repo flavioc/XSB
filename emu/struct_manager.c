@@ -32,7 +32,7 @@
 
 #include "auxlry.h"
 #include "struct_manager.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
 
 

@@ -41,11 +41,11 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "register.h"
 #include "error_xsb.h"
-#include "inst.h"
-#include "psc.h"
+#include "inst_xsb.h"
+#include "psc_xsb.h"
 #include "deref.h"
 #include "memory_xsb.h"
 #include "heap_xsb.h"
@@ -53,7 +53,7 @@
 #include "emudef.h"
 #include "loader_xsb.h"
 #include "binding.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "trie_internals.h"
 #include "choice.h"
 #include "sw_envs.h"
@@ -63,7 +63,7 @@
 #include "scc_xsb.h"
 #include "subp.h"
 #include "tr_utils.h"
-#include "cut.h"
+#include "cut_xsb.h"
 #include "export.h"
 #include "orient_xsb.h"
 #include "io_builtins_xsb.h"
@@ -188,7 +188,7 @@ jmp_buf xsb_abort_fallback_environment;
  * take one word, and the longest ones take three words (like
  * switchon3bound).  If an instruction takes more than one word, then the
  * 2nd (or 3rd) word always contains an operand that takes one word.  The
- * one-word operands can be (see file emu/inst.h):
+ * one-word operands can be (see file emu/inst_xsb.h):
  *
  * 	L - label
  * 	S - structure symbol

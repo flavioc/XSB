@@ -29,8 +29,8 @@
 #include <stdio.h>
 
 #include "auxlry.h"
-#include "cell.h"
-#include "psc.h"
+#include "cell_xsb.h"
+#include "psc_xsb.h"
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "macro_xsb.h"

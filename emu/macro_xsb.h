@@ -33,7 +33,7 @@
  *  allowing access to its calls and their associated answers.
  */
 
-#include "flags.h"
+#include "flags_xsb.h"
 
 typedef enum Tabled_Evaluation_Method {
   VARIANT_TEM      = VARIANT_EVAL_METHOD,

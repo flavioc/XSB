@@ -57,9 +57,9 @@
 #include <fcntl.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "hash_xsb.h"
 #include "tries.h"
 #include "choice.h"
@@ -67,7 +67,7 @@
 #include "memory_xsb.h"
 #include "heap_xsb.h"
 #include "register.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "loader_xsb.h"
 #include "binding.h"
 #include "macro_xsb.h"
@@ -94,7 +94,7 @@
 #endif
 
 #ifdef PROFILE
-#include "inst.h"
+#include "inst_xsb.h"
 #include "subinst.h"
 #endif
 
@@ -883,33 +883,33 @@ int builtin_call(byte number)
 #endif
   
   switch (number) {
-  case PSC_NAME:		/* R1: +PSC; R2: -String */
+  case PSC_NAME:	/* R1: +PSC; R2: -String */
     psc = (Psc)ptoc_addr(1);
     ctop_string(2, get_name(psc));
     break;
-  case PSC_ARITY:		/* R1: +PSC; R2: -int */
+  case PSC_ARITY:	/* R1: +PSC; R2: -int */
     psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_arity(psc));
     break;
-  case PSC_TYPE:		/* R1: +PSC; R2: -int */
-				/* type: see psc.h, `entry_type' field defs */
+  case PSC_TYPE:	/* R1: +PSC; R2: -int */
+			/* type: see psc_xsb.h, `entry_type' field defs */
     psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_type(psc));
     break;
-  case PSC_SET_TYPE:	/* R1: +PSC; R2: +type (int): see psc.h */
+  case PSC_SET_TYPE:	/* R1: +PSC; R2: +type (int): see psc_xsb.h */
     psc = (Psc)ptoc_addr(1);
     set_type(psc, ptoc_int(2));
     break;
-  case PSC_PROP:		/* R1: +PSC; R2: -term */
-				/* prop: as a buffer pointer */
+  case PSC_PROP:	/* R1: +PSC; R2: -term */
+			/* prop: as a buffer pointer */
     psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_ep(psc));
     break;
-  case PSC_SET_PROP:	        /* R1: +PSC; R2: +int */
+  case PSC_SET_PROP:	       /* R1: +PSC; R2: +int */
     psc = (Psc)ptoc_addr(1);
     set_ep(psc, (pb)ptoc_int(2));
     break;
-  case PSC_SET_SPY: 	        /* R1: +PSC; R2: +int */
+  case PSC_SET_SPY: 	       /* R1: +PSC; R2: +int */
     psc = (Psc)ptoc_addr(1);
     set_spy(psc, ptoc_int(2));
     break;

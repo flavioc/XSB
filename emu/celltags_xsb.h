@@ -1,9 +1,8 @@
-/* File:      flags.h
-** Author(s): Jiyang Xu, Kostis F. Sagonas, Ernie Johnson
+/* File:      celltags_xsb.h
+** Author(s): David S. Warren, Jiyang Xu, Terrance Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
-** Copyright (C) ECRC, Germany, 1990
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -24,11 +23,15 @@
 */
 
 
-#ifndef SYSTEM_FLAGS
 
-#define SYSTEM_FLAGS
-extern Cell flags[];		/* System flags + user flags */
+/* ==== types of cells =================================================*/
 
-#include "flag_defs.h"
-
-#endif
+#define FREE	0	/* Free variable */
+#define REF	0	/* Reference */
+#define CS	1	/* Structure */
+#define INT     2	/* integer */
+#define LIST	3	/* List */
+#define REF1	4	/* REF */
+#define STRING  5	/* Non-Numeric Constant (Atom) */
+#define FLOAT	6	/* Floating point number */
+#define ATTV	7	/* Attributed variable */

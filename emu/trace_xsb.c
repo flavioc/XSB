@@ -30,15 +30,15 @@
 #include <stdio.h>
 
 #include "auxlry.h"
-#include "cell.h"
-#include "inst.h"
+#include "cell_xsb.h"
+#include "inst_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "table_stats.h"
 #include "tries.h"
 #include "choice.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "heap_xsb.h"
 #include "macro_xsb.h"
 

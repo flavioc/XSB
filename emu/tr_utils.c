@@ -34,23 +34,23 @@
 
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "cinterf.h"
 #include "binding.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "heap_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
 #include "deref.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "trie_internals.h"
 #if (!defined(WAM_TRAIL))
-#include "cut.h"
+#include "cut_xsb.h"
 #endif
 #include "macro_xsb.h"
 #include "sw_envs.h"
 #include "choice.h"
-#include "inst.h"
+#include "inst_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "trassert.h"

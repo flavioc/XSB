@@ -33,12 +33,12 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "heap_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
 #include "binding.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "macro_xsb.h"

@@ -1,4 +1,4 @@
-/* File:      inst.h
+/* File:      inst_xsb.h
 ** Author(s): Warren, Swift, Xu, Sagonas, Freire, Johnson, Rao
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

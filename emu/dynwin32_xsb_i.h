@@ -33,10 +33,10 @@
 #include <errno.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "memory_xsb.h"
-#include "inst.h"
-#include "psc.h"
+#include "inst_xsb.h"
+#include "psc_xsb.h"
 
 #define BUFFEXTRA 1024
 

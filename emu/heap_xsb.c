@@ -96,23 +96,23 @@ Todo:
 #include <sys/stat.h>
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "memory_xsb.h"
-#include "inst.h"
+#include "inst_xsb.h"
 
 /* For Reallocation Routines
    ------------------------- */
 #include <stdio.h>     /* printf */
 
 #include "register.h"  /* breg, trreg */
-#include "psc.h"       /* needed by "tries.h" and "macro_xsb.h" */
+#include "psc_xsb.h"       /* needed by "tries.h" and "macro_xsb.h" */
 #include "tries.h"     /* needed by "choice.h" */
 #include "choice.h"    /* choice point structures and macros */
 #include "error_xsb.h"  /* xsb_exit() and friends */
 #include "macro_xsb.h"    /* Completion Stack and Subgoal Frame def's */
 #include "realloc.h"   /* Heap - ls reallocation macros */
 #include "chat.h"      /* CHAT related declarations */
-#include "flags.h"     /* for checking whether functionality is enabled */
+#include "flags_xsb.h"     /* for checking whether functionality is enabled */
 #include "heap_xsb.h"
 #include "io_builtins_xsb.h"
 

@@ -26,10 +26,10 @@ XSBDIR=../../..
 
 ALL = 	
 
-EMU_INCLUDES = $(XSBDIR)/emu/builtin.h $(XSBDIR)/emu/celltags.h \
-	$(XSBDIR)/emu/flag_defs.h \
-	$(XSBDIR)/emu/io_defs.h $(XSBDIR)/emu/msyscall.h $(XSBDIR)/emu/sig.h \
-	$(XSBDIR)/emu/system.h $(XSBDIR)/emu/xsbsocket.h 
+EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
+	$(XSBDIR)/emu/flag_defs_xsb.h \
+	$(XSBDIR)/emu/io_defs_xsb.h $(XSBDIR)/emu/syscall_xsb.h \
+	$(XSBDIR)/emu/system_defs_xsb.h $(XSBDIR)/emu/socket_xsb.h 
 PROLOG_INCLUDES = $(XSBDIR)/prolog_includes/char_defs.h \
 	$(XSBDIR)/prolog_includes/standard.h
 

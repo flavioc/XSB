@@ -31,12 +31,12 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
-#include "cell.h"
-#include "inst.h"
+#include "cell_xsb.h"
+#include "inst_xsb.h"
 #include "register.h"
 #include "memory_xsb.h"
 #include "error_xsb.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "deref.h"
 #include "subp.h"          /* bool unify(Cell, Cell) */
 #include "table_stats.h"

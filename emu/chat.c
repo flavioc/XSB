@@ -31,9 +31,9 @@
 #ifdef CHAT	/* have this here so that gcc is silent with -ansi */
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "register.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "tries.h"
 #include "choice.h"
 #include "macro_xsb.h"
@@ -43,7 +43,7 @@
 #include "sw_envs.h"
 #include "binding.h"
 #include "realloc.h"
-#include "inst.h"
+#include "inst_xsb.h"
 #include "io_builtins_xsb.h"
 
 static unsigned long chat_total_malloced = 0;

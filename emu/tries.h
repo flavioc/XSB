@@ -98,7 +98,7 @@
  *  Each of the two main components of a trie contain this field: trie
  *  nodes and hash table headers.
  *
- *  For valid trie-embedded instruction values, see file "inst.h".  */
+ *  For valid trie-embedded instruction values, see file "inst_xsb.h".  */
 
 typedef struct InstructionPlusTypeFrame {
   byte instr;		/* contains compiled trie code */

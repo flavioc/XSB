@@ -26,7 +26,7 @@
 
 :- compiler_options([xpp_on,sysmod]).
 
-#include "celltags.h"
+#include "celltags_xsb.h"
 #include "system_defs_xsb.h"
 #include "builtin.h"
 #include "syscall_xsb.h"

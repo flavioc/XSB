@@ -486,8 +486,8 @@ case trie_retry_fail: {
 /* The first and third of these fields are predefined integers and are	*/
 /* now encoded as such.  The second field contains a malloc-ed address	*/
 /* which is encoded as a STRING (that's how addresses are encoded in	*/
-/* XSB -- see file cell.h) to prevent garbage collection from treating	*/
-/* it as a reference either to a WAM stack or to a CHAT area.		*/
+/* XSB -- see file cell_xsb.h) to prevent garbage collection from       */
+/* treating it as a reference either to a WAM stack or to a CHAT area.	*/
 /*----------------------------------------------------------------------*/
 
 /* Structure of the CPF created by hash_opcode:

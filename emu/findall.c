@@ -31,16 +31,16 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "cell.h"    	     	 /* cell.h must be included before deref.h */
+#include "cell_xsb.h"  	     /* cell_xsb.h must be included before deref.h */
 #include "deref.h"
 #include "register.h"
 #include "memory_xsb.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "error_xsb.h"
 #include "heap_xsb.h"
 #include "binding.h"
 #include "subp.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "loader_xsb.h"
 
 #include "findall.h"

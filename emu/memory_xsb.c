@@ -37,7 +37,7 @@
 /*======================================================================*/
 
 /* config.h must be the first #include.  Please don't move it. */
-#include "configs/config.h"    /* needed by "cell.h" */
+#include "configs/config.h"    /* needed by "cell_xsb.h" */
 #include "debugs/debug.h"
 
 
@@ -46,16 +46,16 @@
 #include <string.h>
 
 #include "auxlry.h"
-#include "cell.h"      /* CPtr */
+#include "cell_xsb.h"      /* CPtr */
 #include "memory_xsb.h"
 #include "register.h"  /* breg, trreg */
-#include "psc.h"       /* needed by "tries.h" and "macro_xsb.h" */
+#include "psc_xsb.h"       /* needed by "tries.h" and "macro_xsb.h" */
 #include "tries.h"     /* needed by "choice.h" */
 #include "choice.h"    /* choice point structures and macros */
 #include "error_xsb.h"  /* xsb_exit() */
 #include "macro_xsb.h"    /* Completion Stack and Subgoal Frame def's */
 
-#include "flags.h"
+#include "flags_xsb.h"
 #include "subp.h"
 
 /* === alloc permanent memory ============================================== */

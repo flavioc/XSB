@@ -30,18 +30,18 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
 #include "binding.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "memory_xsb.h"
-#include "flags.h"
+#include "flags_xsb.h"
 #include "register.h"
 #include "deref.h"
 #include "trie_internals.h"
 #include "choice.h"
 #include "macro_xsb.h"
-#include "inst.h"
+#include "inst_xsb.h"
 
 #ifdef DEBUG
 #include "subp.h"

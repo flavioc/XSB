@@ -30,10 +30,10 @@
 #include "debugs/debug.h"
 
 #include "auxlry.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "hash_xsb.h"
-#include "psc.h"
-#include "flags.h"
+#include "psc_xsb.h"
+#include "flags_xsb.h"
 
 
 /*

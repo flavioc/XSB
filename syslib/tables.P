@@ -30,7 +30,7 @@
 :- compiler_options([sysmod,xpp_on]).
 
 #include "builtin.h"
-#include "flag_defs.h"
+#include "flag_defs_xsb.h"
 
 /*----------------------------------------------------------------------*/
 

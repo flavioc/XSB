@@ -24,8 +24,8 @@
 
 
 :- compiler_options([xpp_on]).
-#include "flag_defs.h"
-#include "celltags.h"
+#include "flag_defs_xsb.h"
+#include "celltags_xsb.h"
 #include "char_defs.h"
 #include "standard.h"
 

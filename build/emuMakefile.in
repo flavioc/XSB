@@ -82,8 +82,8 @@ DEPEND = makedepend
 SRCS =	auxlry.c biassert.c builtin.c \
 	chat.c cinterf.c debug_xsb.c dis.c dynload.c \
 	emuloop.c findall.c function.c \
-	hash_xsb.c heap_xsb.c init_xsb.c inst.c io_builtins_xsb.c \
-	loader_xsb.c psc.c residual.c \
+	hash_xsb.c heap_xsb.c init_xsb.c inst_xsb.c io_builtins_xsb.c \
+	loader_xsb.c psc_xsb.c residual.c \
 	scc_xsb.c orient_xsb.c slgdelay.c \
 	struct_manager.c sub_insert.c subp.c system_xsb.c \
 	table_stats.c tables.c token_xsb.c tr_utils.c \
@@ -98,8 +98,8 @@ ORASRCS = $(SRCS) orastuff.c
 OBJS =	auxlry.o biassert.o builtin.o \
 	chat.o cinterf.o debug_xsb.o dis.o dynload.o \
 	emuloop.o findall.o function.o \
-	hash_xsb.o heap_xsb.o init_xsb.o inst.o io_builtins_xsb.o \
-	loader_xsb.o private_builtin.o psc.o \
+	hash_xsb.o heap_xsb.o init_xsb.o inst_xsb.o io_builtins_xsb.o \
+	loader_xsb.o private_builtin.o psc_xsb.o \
 	residual.o scc_xsb.o orient_xsb.o slgdelay.o \
 	struct_manager.o sub_insert.o subp.o system_xsb.o \
 	table_stats.o tables.o token_xsb.o tr_utils.o \

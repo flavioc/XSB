@@ -30,8 +30,8 @@
 #include <stdarg.h>
 
 #include "configs/config.h"
-#include "cell.h"
-#include "flags.h"
+#include "cell_xsb.h"
+#include "flags_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 
@@ -1212,7 +1212,7 @@ static int resume_cursor(CursorHandle cursorHandle) {
  *  aborting currently isn't the way we want to go.
  *
  *  The alternative is to write routines ourselves. To do this, we'd need
- *  config.h, cell.h, deref.h, and register.h (at least).  But if we want
+ *  config.h, cell_xsb.h, deref.h, and register.h (at least).  But if we want
  *  this stuff bullet-proof, it'll have to be done.  Until then, be VERY
  *  careful when calling these primitives...
  */

@@ -30,7 +30,7 @@ ALL = 	aggregs.O array.O array1.O directry.O foreign.O \
 	packaging.O scrptutl.O socket.O wrapping.O \
 	xnmr.O
 
-EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
+EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
 	../emu/system_xsb.h ../emu/socket_defs_xsb.h 
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h

@@ -49,9 +49,9 @@
 #endif
 
 #include "auxlry.h"
-#include "psc.h"
+#include "psc_xsb.h"
 #include "cinterf.h"
-#include "cell.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
 
 /*=========================================================================*/
