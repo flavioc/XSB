@@ -344,4 +344,8 @@
     Also, call(p) should convert to call(apply(p)), because Flora treats
     propositional constants like p as p().
 
-19. Implement support for the directive :- index a/2-1.
+19. Implement support for the full directive :- index/2 directive.
+
+20. Fix the bug that prevents a[b=>>{c,d}] and a[b*=>{c,d}].
+
+21. Allow inheritance of procedural methods: a[*#p(...)].
