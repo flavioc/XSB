@@ -27,6 +27,8 @@
 #include "standard.h"
 
 
+:- import conget/2, conset/2 from gensym.
+
 :- c_callloop.
 
 
@@ -34,6 +36,11 @@ c_callloop :-
 	repeat,
 	'_$savecp'(Cp),			% to set abort cut point
 	conset('_$abort_cutpoint', Cp),
+	(conget('_$c_calls_xsb_first_time',0)
+	->  conset('_$c_calls_xsb_first_time',1),
+	    eval_cmdline_goal
+	;   true
+	),
 	get_from_caller(Par,VarTerm,Command),
 	(\+integer(Command)
 	 ->	file_write(STDERR,'C command error; must be an integer; is '),
@@ -77,3 +84,16 @@ string_to_term(Atom,Goal) :-
 	file_open(Atom,sr,Fp),
 	file_read_foe(Fp,Goal,_),
 	file_close(Fp).
+
+
+eval_cmdline_goal :-
+	xsb_flag(goal, CmdGoal),
+	  file_open(CmdGoal, sr, FileDes),
+	    eval_cmdline_goal(FileDes).
+
+eval_cmdline_goal(FileDes) :-
+	file_read(FileDes, Goal),
+	Goal \= end_of_file,
+	(call((Goal,!)) -> true ; true),
+	eval_cmdline_goal(FileDes).
+eval_cmdline_goal(FileDes) :- file_close(FileDes).
