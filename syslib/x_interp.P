@@ -184,11 +184,11 @@ readl_brklp1 :-
 version_message :-
 	file_nl(2),
 	slash(Slash),
-	xsb_configuration(etcdir, EtcDir),
-	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(EtcDir,Slash)),
+	xsb_configuration(config_dir, ConfigDir),
+	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(ConfigDir,Slash)),
 	%% print_file_contents(CopyingMsg),
 	%% file_nl(2),
-	fmt_write_string(ConfMsg, '%s%sconfig.msg', f(EtcDir,Slash)),
+	fmt_write_string(ConfMsg, '%s%sconfig.msg', f(ConfigDir,Slash)),
 	print_file_contents(ConfMsg).
 
 /* === utilities ======================================================= */
