@@ -132,11 +132,6 @@ state.
 
 @begin{itemize}
 
-@item @tt{id(CDF Root,cdf)} @cindex{CDF Root}: Root node of the
-Ontology.  Includes all objects and relation tuples.  As a result, all
-classes are subclasses of @tt{cid('CDF Root',cdf)} and all relations
-are subrelations of @tt{cid('CDF Root',cdf)}.
-
 As mentioned in previous sections, CDF relations can define
 inheritable attributes which hold for isaes and objects, inheritable
 constraints on attributes, and non-inheritable properties of sets.
@@ -144,26 +139,28 @@ constraints on attributes, and non-inheritable properties of sets.
 @item @tt{cid('CDF Classes',cdf)}: 
 @cindex{CDF Classes}
 
-Includes every object of any class.  Defined as an immediate
-subclass of @tt{id('CDF Root',cdf)}.
+Includes every object of any class.  Defined as a root.
 
 @item @tt{rid('CDF Object-Object Relations',cdf)}: 
 @cindex{CDF Object-Object Relations}
 
-Includes all inheritable relation tuples.  Defined as an immediate
-subrelation of @tt{id('CDF Root',cdf)}.
+Includes all inheritable relation tuples.  Defined as a root
 
 @item @tt{crid('CDF Class-Object Relations',cdf)}: 
 @cindex{CDF Class-Object Relations}
 
-Includes all non-inheritable class-object relation tuples.
-Defined as an immediate subrelation of @tt{id('CDF Root',cdf)}.
+Includes all non-inheritable class-object relation tuples.  Defined as
+a root.
 
-@item @tt{crid('CDF Higher-Order Class-Object Relations',cdf)}: 
-@cindex{CDF Higher-Order Class-Object Relations}
+@item @tt{crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)}:
+@cindex{CDF Higher-Order (Object-Object)-Object Relations}
 
-Includes all higher-order class-object relations on relations.
-Defined as an immediate subrelation of @tt{id('CDF Root',cdf)}.
+Includes all relations on object-object relations.  Defined as a root.
+
+@item @tt{crcrid('CDF Higher-Order (Class-Object)-Object Relations',cdf)}:
+@cindex{CDF Higher-Order (Class-Object)-Object Relations}
+
+Includes all relations on class-object relations.  Defined as a root.
 
 @item @tt{id('CDF Primitive Types',cdfpt)}: 
 @cindex{CDF Primitive Types}
@@ -222,13 +219,17 @@ init_index_std.
 system_component(cdf).
 system_component(cdfpt).
 
-:-
-comment(cdf_id_fields/4,"@tt{cdf_id_fields(ID,Functor,NatId,Component)}
-is true if ID is a legal cdf identifier term, and Functor is its main
-functor symbol, NatId is its first field and Component is its second
-field.").
+cdf_root(cid('CDF Classes',cdf)).
+cdf_root(rid('CDF Object-Object Relations',cdf)).
+cdf_root(crid('CDF Class-Object Relations',cdf)).
+cdf_root(crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
+cdf_root(crcrid('CDF Higher-Order (Classt-Object)-Object Relations',cdf)).
 
-cdf_id_fields(id(N,S),id,N,S).
+:- comment(cdf_id_fields/4,
+"@tt{cdf_id_fields(ID,Functor,NatId,Component)} is true if ID is a
+legal cdf identifier term, and Functor is its main functor symbol,
+NatId is its first field and Component is its second field.").
+
 cdf_id_fields(cid(N,S),cid,N,S).
 cdf_id_fields(oid(N,S),oid,N,S).
 cdf_id_fields(rid(N,S),rid,N,S).
@@ -241,7 +242,7 @@ cdf_id_fields(crcrid(N,S),crid,N,S).
 in_hierarchy(Term):- 
 	(  immed_isa(Term,_) 
              ; implicit_isa(Term,_) 
-	 ; Term = id('CDF Root',cdf) ),
+	 ; cdf_root(Term) ),
 	!.
 
 :- comment(implicit_isa/2,"@tt{implicit_isa(Id1,Id2)} forms a partial
@@ -454,7 +455,7 @@ hasAttr_gen13(SCid,RCid,TCid) :-
 		 ;	isa(TCidP,TCid),
 			immed_hasAttr(SCid,RCid,TCidP)
 		)
-	 ;      isa(SCid,SCidP), SCidP \== id('CDF Root',cdf),
+	 ;      isa(SCid,SCidP), \+ cdf_root(SCidP),
 		immed_hasAttr(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
@@ -615,7 +616,7 @@ allAttr_gen13(SCid,RCid,TCid) :-
 		 ;	isa(TCidP,TCid),
 			immed_allAttr(SCid,RCid,TCidP)
 		)
-	 ;      isa(SCid,SCidP), SCidP \== id('CDF Root',cdf),
+	 ;      isa(SCid,SCidP),  \+ cdf_root(SCidP),
 		immed_allAttr(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP

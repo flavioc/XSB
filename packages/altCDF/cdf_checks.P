@@ -80,8 +80,7 @@ check_isa_arg_1(First,Term,Context,F1):-
 
 check_isa_arg_2(Second,Term,Context,F1):- 
 	arg(2,Term,Second),
-	((Second = id('CDF Root',cdf) 
-	    ; functor(Second,F2,2),isa_consist(F1,F2)) -> 
+	((functor(Second,F2,2),isa_consist(F1,F2)) -> 
 	    true
 	  ; cdf_warning(Context,['Arguments in ',Term,
 				' are not of proper type.']),
