@@ -763,13 +763,13 @@ void init_symbols(void)
   /* create code for true/0 */
   {
     CPtr p;
-    int Loc;
     set_env(true_psc, T_VISIBLE);
     set_type(true_psc, T_PRED);
     p = (CPtr) mem_alloc(sizeof(PrRefData));
-    Loc = 0;
-    *(CPtr)((pb)p) = (Cell) 0;
-    *(CPtr)((pb)p) = (byte)proceed;
+    *(pb)((pb)p) = (byte)proceed;
+    *(pb)((pb)p+1) = (byte)0;
+    *(pb)((pb)p+2) = (byte)0;
+    *(pb)((pb)p+3) = (byte)0;
     p[2] = (Cell) p;
     set_ep(true_psc,(pb)p);
   }
