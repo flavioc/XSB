@@ -77,6 +77,14 @@ make_xpathH(CC, CC_opts) :-
     xsb_configuration(config_dir, ConfigDir),
     xsb_configuration(config_bindir, ConfigBinDir),
     xpath_info(ccflags, CCflags),
+
+    %% These construct the files where the included Windows copy of
+    %% libxml2, iconv, etc., is sitting
+    fmt_write_string(WindXML2Dlls,
+		     '%s%scc%sbin%s*.dll', f(XPathDir,Slash,Slash,Slash)),
+    fmt_write_string(WindXML2Libs,
+		     '%s%scc%sbin%s*.lib', f(XPathDir,Slash,Slash,Slash)),
+
     fmt_write_string(Module, '%s%scc%s%s', f(XPathDir,Slash,Slash,Basename)),
     fmt_write_string(LibObjFile,
 		     '%s%s%s%s',
@@ -103,12 +111,19 @@ make_xpathH(CC, CC_opts) :-
     ;
 	make_xpathH(CC, CC_opts),
 	(running_under(windows) ->
+	    %% Copy libxml2, iconv, zlib libraries from xpath/cc/bin
+	    shell(['copy /B /Y ', WindXML2Dlls, ' ', ConfigBinDir]),
+	    shell(['copy /B /Y ', WindXML2Libs, ' ', ConfigBinDir]),
 	    [Basename],
 	    (path_sysop(exists,Objfile) -> force_rename(Objfile, LibObjFile)
 	    ; true
 	    )
 
 	; running_under(cygwin) ->
+	    %% Copy libxml2, iconv, zlib libraries from xpath/cc/bin
+	    shell(['copy /B /Y ', WindXML2Dlls, ' ', ConfigBinDir]),
+	    shell(['copy /B /Y ', WindXML2Libs, ' ', ConfigBinDir]),
+
 	    str_cat(Module, '.dll', SharedLib),
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	    force_rename(SharedLib, ConfigSharedMod),
@@ -149,4 +164,6 @@ running_under(windows) :-
 	xsb_configuration(architecture, A),
 	str_sub(windows, A),
 	!.
-running_under(unix).
+running_under(unix) :-
+	\+ running_under(cygwin),
+        \+ running_under(windows).

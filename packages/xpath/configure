@@ -592,20 +592,30 @@ umask 022
 ccflags=
 ldflags=
 
-xpath_config_prog="./xml2-config"
+case "$canonical" in
+     *-cygwin*)
+        pkg_src_dir=$build_dir/cc
+	pkg_libxml_include_dir=$pkg_src_dir/libxml
+	pkg_bin_dir=$pkg_src_dir/bin
+	xmllib_ccflags=" -I$pkg_libxml_include_dir -I$pkg_src_dir "
+	ldflags=" -L$pkg_bin_dir -lxml2 -lz -liconv -lm "
+	;;
+     *)  # Unix
+	xpath_config_prog="./xml2-config"  # we keep our own copy for Unix
+	
+	if test "$exec_prefix" != "NONE" ; then
+    	   exec_prefix_option="--exec-prefix=$exec_prefix"
+	fi
+	if test "$prefix" != "NONE" ; then
+    	   prefix_option="--prefix=$prefix"
+        fi
 
-test "${enable_debug+yes}" = "yes" && xpath_debug=" -g"
-if test "$exec_prefix" != "NONE" ; then
-    exec_prefix_option="--exec-prefix=$exec_prefix"
-fi
-if test "$prefix" != "NONE" ; then
-    prefix_option="--prefix=$prefix"
-fi
+	xmllib_ccflags=`sh $xpath_config_prog $exec_prefix_option $prefix_option --cflags`
+	ldflags="`sh $xpath_config_prog $exec_prefix_option $prefix_option --libs`"
+	;;
+esac
 
-xmllib_ccflags=`sh $xpath_config_prog $exec_prefix_option $prefix_option --cflags`
-ccflags="$xpath_debug $xmllib_ccflags"	
-ldflags="`sh $xpath_config_prog $exec_prefix_option $prefix_option --libs`"
-
+ccflags="$xmllib_ccflags"	
 if test  "$xmllib_ccflags" != "ERROR" && test "$ldflags" != "ERROR"  ; then
    support=yes
 else
@@ -618,7 +628,7 @@ fi
 
 (
 echo ""
-echo "  Xpath support: 				  $support"
+echo "    Xpath support:			  $support"
 if test "$support" = "yes"; then
    cat <<EOT
     Xpath C flags:			  $ccflags

@@ -141,4 +141,6 @@ running_under(windows) :-
 	xsb_configuration(architecture, A),
 	str_sub(windows, A),
 	!.
-running_under(unix).
+running_under(unix) :-
+	\+ running_under(cygwin),
+        \+ running_under(windows).

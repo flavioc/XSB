@@ -19,7 +19,7 @@
 	slash(Slash),
 	Basename = driver_manager,
 	[Basename],	
-	(dbdrivers_running_under(cygwin) -> 
+	(running_under(cygwin) -> 
 		% cygwin specific stuff
 			
 		xsb_configuration(packagesdir, PackageDir),
@@ -47,7 +47,7 @@
 			f(ConfigBinDir, Slash)),
 		rename(DriverManagerDef, ConfigBinDef)
 	;
-	(dbdrivers_running_under(windows) -> true
+	(running_under(windows) -> true
 		% windows specific stuff
 	;
 		% else unix specific stuff 
@@ -68,17 +68,17 @@
 	initialise.
 
 
-dbdrivers_running_under(cygwin) :-
+running_under(cygwin) :-
 	xsb_configuration(architecture, A),
 	str_sub(cygwin, A),
 	!.
-
-dbdrivers_running_under(windows) :-
+running_under(windows) :-
 	xsb_configuration(architecture, A),
 	str_sub(windows, A),
 	!.
-
-dbdrivers_running_under(unix).
+running_under(unix) :-
+	\+ running_under(cygwin),
+        \+ running_under(windows).
 
 
 load_driver(Driver) :-

@@ -164,13 +164,13 @@ running_under(cygwin) :-
 	xsb_configuration(architecture, A),
 	str_sub(cygwin, A),
 	!.
-
 running_under(windows) :-
 	xsb_configuration(architecture, A),
 	str_sub(windows, A),
 	!.
-
-running_under(unix).
+running_under(unix) :-
+	\+ running_under(cygwin),
+        \+ running_under(windows).
 
 %% Windows semantics for renaming is such that the op fails, 
 %% if the target exists
