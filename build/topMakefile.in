@@ -123,9 +123,10 @@ EXECUTABLE=$(src_bindir)/xsb
 # where the object code is found
 arch_config_objlibdir=$(src_config_prefix)/saved.o
 
-# If building with Oracle, `configure' will set this to xsbora target.
-# Otherwise, it'll be the emu target. The right target is dispatched 
-# out of the `all' target.
+# If building with Oracle, `configure' will set this to `xsbora' target.
+# Otherwise, it'll be the `xsb' target. 
+# If this (topMakefile) is invoked through the `module' goal, then
+# emuMakefile will be invoked through `xsbmod or `xsboramod' targets.
 emumake_goal=@emumake_goal@
 
 
@@ -167,9 +168,11 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 # C-drivers that pass queries to XSB
 module: prepare xsbmod do_cleaning inform_module
 
+# if supporting Oracle, then emumake_goal=xsbora; else emumake_goal=xsb
+# This invokes xsboramod and xsbmod goals in emuMakefile, respectively
 xsbmod: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	cd ${src_emudir}; \
-	    make xsbmod
+	    make $(emumake_goal)mod
 
 emu_clean: do_cleaning inform_executable
 

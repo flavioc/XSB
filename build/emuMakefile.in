@@ -67,7 +67,7 @@ arch_config_objlibdir=$(arch_config_prefix)/saved.o
 emumake_goal=@emumake_goal@
 
 # Passed in from the top Makefile
-EXECUTABLE=
+EXECUTABLE=xsb
 
 #=======================================================================
 # Stuff to automatically make the dependencies.
@@ -115,8 +115,6 @@ ORAOBJS = $(OBJS) orastuff.o
 
 allORAOBJS = $(allOBJS) orastuff.o
 
-all:: $(emumake_goal)
-
 xsb:: $(allOBJS)
 	@echo ""; echo "Making XSB executable $(EXECUTABLE) "; echo ""
 	cd $(emudir); \
@@ -133,10 +131,19 @@ xsbora:: $(allORAOBJS)
 # C-drivers that pass queries to XSB
 xsbmod:: $(OBJS)
 	@echo ""; \
-	   echo "Making a C-callable XSB module $(bindir)/xsbmod.o"; \
+	   echo "Making a C-callable XSB module $(bindir)/xsbmodule.o"; \
 	   echo ""
 	ld -o xsbmodule.o -r $(OBJS)
 	@cp xsbmodule.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
+# same as xsbmod, but with oracle support
+xsboramod:: $(ORAOBJS)
+	@echo ""; \
+	   echo "Making a C-callable XSB module $(bindir)/xsboramodule.o with support for Oracle"; \
+	   echo ""
+	ld -o xsboramodule.o -r $(ORAOBJS)
+	@cp xsboramodule.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
 
 depend::
 	@$(DEPEND) $(DEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
