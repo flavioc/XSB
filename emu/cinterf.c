@@ -471,10 +471,18 @@ DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
 /* the following two functions were introduced by Luis Castro */
 /* they extend the c interface to allow for an easy interface for 
 lists of characters */
-    
-DllExport char *call_conv p2c_chars(prolog_term term, VarString *buf)
+
+DllExport char *call_conv p2c_chars(prolog_term term, char *buf, int bsize)
 {
-  return p_charlist_to_c_string(term, buf, "p2c_chars", "list -> char*");
+  XSB_StrDefine(bufvar);
+
+  p_charlist_to_c_string(term, &bufvar, "p2c_chars", "list -> char*");
+  
+  if (strlen(bufvar.string) > bsize) {
+    xsb_abort("Buffer overflow in p2c_chars");
+  } else {
+    strcpy(buf,bufvar.string);
+  }
 }
 
 DllExport void call_conv c2p_chars(char *str, prolog_term term)
