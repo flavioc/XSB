@@ -81,6 +81,8 @@ install_libdir=$(prefix)/lib
 install_syslibdir=$(prefix)/syslib
 # where XSB cmplib directory lives
 install_cmplibdir=$(prefix)/cmplib
+# where prolog includes go
+install_prolog_includes=$(prefix)/prolog_includes
 # where packages are installed
 install_pkgdir=$(prefix)/packages
 # where etc are installed
@@ -92,6 +94,8 @@ install_emudir=$(prefix)/emu
 # Like `prefix', but used for architecture-specific files.
 src_config_prefix=@arch_config_prefix@
 install_config_prefix=@arch_install_config_prefix@
+# we copy the xsb.o module here
+install_config_objlibdir=$(install_config_prefix)/saved.o
 
 src_emudir=$(srcdir)/emu
 
@@ -101,6 +105,9 @@ src_libdir=$(srcdir)/lib
 src_syslibdir=$(srcdir)/syslib
 # where source cmplib directory lives
 src_cmplibdir=$(srcdir)/cmplib
+# where source prolog includes live
+src_prolog_includes=$(srcdir)/prolog_includes
+# where source packages live
 src_pkgdir=$(srcdir)/packages
 src_etcdir=$(srcdir)/etc
 
@@ -235,7 +242,6 @@ copy_files::
 	    umask 022 ; \
 	    echo "Copying executables..." ; \
 	    ${INSTALL} ${src_bindir}/* ${install_bindir}  ; \
-	    ${INSTALL} ${srcdir}/gpp/gpp ${install_bindir}  ; \
 	    ${INSTALL} ${src_scriptdir}/xsb${config_tag} \
 				${install_scriptdir}/xsb${config_tag}; \
 	    chmod 755 ${install_scriptdir}/* ${install_bindir}/* ; \
@@ -254,9 +260,15 @@ copy_files::
 	    cp -f ${src_config_libdir}/* \
 	          ${install_config_libdir} 2> /dev/null || echo ""; \
 	    chmod 644 ${install_config_libdir}/* 2> /dev/null || echo ""; \
+	    echo "Copying xsb.o" ; \
+	    cp -f ${src_config_objlibdir}/xsb.o ${install_config_objlibdir} ; \
+	    chmod 644 ${install_config_objlibdir}/*.o ; \
 	    echo "Copying .h files from emu dir..." ; \
-	    cp -f ${src_emudir}/cinterf.h ${src_emudir}/basictypes.h \
-	          ${install_emudir} ; \
+	    cp -f ${src_emudir}/*.h ${install_emudir} ; \
+	    chmod 644 ${install_emudir}/*.h ; \
+	    echo "Copying prolog_includes..." ; \
+	    cp -f ${src_prolog_includes}/*.h ${install_prolog_includes} ; \
+	    chmod 644 ${install_prolog_includes}/*.h ; \
 	    echo "Copying lib..." ; \
 	    cp -f ${src_libdir}/*.O ${install_libdir} ; \
 	    chmod 644 ${install_libdir}/*.O ; \
@@ -278,14 +290,16 @@ copy_files::
 	    ./copysubdirs.sh ${src_pkgdir} ${install_pkgdir} ; \
 	    echo "Copying etc..."; \
 	    cp -fr ${src_etcdir}/* ${install_etcdir}; \
-	    echo "Installed!" \
+	    echo ""; echo "Installed!" \
 	  )
 
+# When compiling source, don't compile flora demos -- give people a break!
 configure_packages_src: smodels
-	./pkg_config.sh $(src_scriptdir)/xsb$(config_tag) | \
+	./pkg_config.sh -skip-flora-demos $(src_scriptdir)/xsb$(config_tag) | \
 	    	    	    	    	    tee -a Installation_summary ; \
 	  chmod 644  $(src_config_libdir)/xsb_configuration.O
 
+# Compile flora demos only when installing
 configure_packages_install:
 	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(install_config_libdir)/xsb_configuration.O

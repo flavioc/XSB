@@ -35,6 +35,19 @@ if test ! -d "$2" ; then
   exit
 fi
 
+# Test if element is a member of exclude list
+# $1 - element
+# $2 - exclude list
+member ()
+{
+    for elt in $2 ; do
+	if test "$1" = "$elt" ; then
+	    return 0
+	fi
+    done
+    return 1
+}
+
 cur_dir=`pwd`
 
 cd $1
@@ -43,12 +56,19 @@ files=`ls`
 cd $cur_dir
 umask 022
 
+subdir_exclude_list="CVS objfiles.saved"
+
 for f in $files ; do
-  if test -d "$1/$f" && test ! "$f" = "CVS" ; then
-    echo "Copying $1/$f to $2"
-    cp -rpf $1/$f  $2
+  if test -d "$1/$f" ; then
+    if member "$f" "$subdir_exclude_list" ; then
+       continue
+    else
+       echo "Copying $1/$f to $2"
+       cp -rpf $1/$f  $2
+    fi
   fi
 done
 
 # This also makes plain files executable. Any easy way to add x to dirs only? 
 chmod -R a+rx,u+w $2
+

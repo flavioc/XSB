@@ -282,7 +282,7 @@ scriptdir=${topdir}/bin   # where the xsb invocationscripts go
 pkgdir=${topdir}/packages
 etcdir=${topdir}/etc
 
-prolog_includes=${topdir}/prolog_includes
+src_prolog_includes=${topdir}/prolog_includes
 
 # config-specific stuff
 full_config_name=${canonical}${config_tag}
@@ -333,12 +333,14 @@ install_cmplibdir=${prefix}/cmplib
 install_emudir=${prefix}/emu
 install_scriptdir=${prefix}/bin     # where the xsb invocation script goes
 install_builddir=${prefix}/build    # where the config detection scripts go
+install_prolog_includes=${prefix}/prolog_includes
 install_pkgdir=${prefix}/packages
 install_etcdir=${prefix}/etc
 
 arch_install_config_prefix=${install_config_prefix}/${full_config_name}
 arch_install_bindir=${arch_install_config_prefix}/bin
 arch_install_config_libdir=${arch_install_config_prefix}/lib
+arch_install_objdir=${arch_install_config_prefix}/saved.o
 
 
 dnl When running autoheader, uncoment thse 2 lines and comment the next 2.
@@ -1069,8 +1071,6 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/modMakefile:modMakefile.in
 	    ${arch_config_prefix}/gppMakefile:gppMakefile.in
 	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
-dnl prolog_includes/config.h makes .O files system-dependent -- don't want this
-dnl	    ${prolog_includes}/config.h:def_prolog_config.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
@@ -1237,11 +1237,17 @@ AC_MSG_CHECKING($arch_install_bindir) && \
 AC_MSG_CHECKING($arch_install_config_libdir) && \
      ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && AC_MSG_RESULT(OK)) \
         || AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($arch_install_objdir) && \
+     ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && AC_MSG_RESULT(OK)) \
+        || AC_MSG_RESULT(FAILED)
 AC_MSG_CHECKING($install_etcdir) && \
      ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && AC_MSG_RESULT(OK)) \
         || AC_MSG_RESULT(FAILED)
 AC_MSG_CHECKING($install_pkgdir) && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && AC_MSG_RESULT(OK)) \
+        || AC_MSG_RESULT(FAILED)
+AC_MSG_CHECKING($install_prolog_includes) && \
+     ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && AC_MSG_RESULT(OK)) \
         || AC_MSG_RESULT(FAILED)
 ) 2> /dev/null
 echo "Checking installation directories ... Done"
