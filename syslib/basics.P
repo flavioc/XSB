@@ -197,6 +197,43 @@ bintree3(K,[L|R],E,N) :-
 	 K is K1 + N2
 	).
 
+/* logk_ith(+KBase,+Index,?ListStr,?Element) is similar log_ith/3
+except it uses a user specified bake of KBase, which must be between 2
+and 255.  log_ith uses binary trees with a list cons at each node;
+logk_ith uses a term of arity KBase at each node.  KBase and Index
+must be bound to integers. */
+
+logk_ith(K,I,T,E) :- 
+	integer(K),
+	integer(I),	% integer
+	logk_ith0(K,I,T,E,K).
+
+% I is bound
+logk_ith0(K,I,[L|R],E,N) :-
+	(I < N
+	 ->	ktree0(K,I,L,E,N)
+	 ;	I1 is I - N,
+		N2 is K*N,
+		logk_ith0(K,I1,R,E,N2)
+	).
+
+% First arg (I) is bound
+ktree0(K,I,T,E,N) :- 
+	(var(T)
+	 ->	functor(T,n,K)
+	 ;	true
+	),
+	(N > K
+	 ->	N2 is N // K,
+		N3 is I // N2 + 1,
+		I1 is I rem N2,  %  mod overflows?
+		arg(N3,T,T1),
+		ktree0(K,I1,T1,E,N2)
+	 ;	I1 is I+1,
+		arg(I1,T,E)
+	).
+
+
 %---
 % length/2 that works both ways
 length(L,N) :-
