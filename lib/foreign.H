@@ -44,5 +44,5 @@
 :- import stat_flag/2 from machine.
 :- import process_control/2 from shell.
 :- import conset/2, conget/2 from prof_sbp.
-:- import open_or_cpp_file/2 from parse.
+:- import open_or_xpp_file/2 from parse.
 :- import repeat/0 from standard.

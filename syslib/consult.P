@@ -273,7 +273,7 @@ dotted_ext(Ext,DExt) :- str_cat('.',Ext,DExt).
 load_dyn1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
-	open_or_cpp_file(Rfname, CPP_process),
+	open_or_xpp_file(Rfname, CPP_process),
 	current_input_port(CPPport), % port from process, if it was launched
 	(   read_and_assert
 	%% If needs restart, close old file and skip to the second load_dyn1
@@ -409,7 +409,7 @@ load_dync0(SExt,Base,Mod) :-
 load_dync1(Rfname) :-
 	cputime(T0),
 	seeing(OldFile),
-	open_or_cpp_file(Rfname, CPP_process),
+	open_or_xpp_file(Rfname, CPP_process),
 	current_input_port(CPPport),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
 	(   read_and_assert(CPPport)

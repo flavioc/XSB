@@ -88,7 +88,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 		telling(OldTell),
 %		see(HFile),
 		repeat,
-		open_or_cpp_file(HFile,CPPprocess),
+		open_or_xpp_file(HFile,CPPprocess),
 		read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile), !,
 		( CPPprocess = none, ! 
 	        ; 

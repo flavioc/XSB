@@ -60,7 +60,7 @@
 :- import append/3, memberchk/2 from basics.
 :- import '_$index'/3, '_$trie_asserted'/1 from file_op.
 :- import add_hilog_symbol/1 from hilogsym.
-:- import get_p_mod/3, change_multifile_directive/3, open_or_cpp_file/2,
+:- import get_p_mod/3, change_multifile_directive/3, open_or_xpp_file/2,
 	  '_$multifile'/1, '_$multifile1'/1,
 	  '_$multifile2'/3, '_$apply_arity'/1
      from parse.

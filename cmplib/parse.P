@@ -37,7 +37,8 @@
 :- dynamic '_$apply_arity'(_).
 :- dynamic '_$multifile_retract'(_,_,_).
 
-:- dynamic xsb_cpp_include_dir(_).
+:- dynamic xpp_include_dir(_).
+:- dynamic xpp_program(_).
 
 % '_$multifile'/1 and '_$multifile2'/3 will be retractd in useinfer/3.
 % '_$multifile1'/1 and '_$apply_arity'/1 will be retracted in parse/4
@@ -62,7 +63,7 @@ parse(Modname, PFile, HFile, Module) :-
 
 parse1(Modname, File, Module) :-
 	seeing(OldFile),
-	open_or_cpp_file(File,CPP_process),
+	open_or_xpp_file(File,CPP_process),
 	(parse_clauses(Modname, Module), ! 
 	%% check if must restart
 	->  (conget(needs_restart,1)
@@ -106,17 +107,23 @@ parse1(Modname, File, Module) :-
 
 %% If cpp_on option is not set, just open the file.
 %% Otherwise, pass it through the C preprocessor
-open_or_cpp_file(File, CPP_process) :-
+open_or_xpp_file(File, CPP_process) :-
 	(conget(cpp_on,0), ! -> see(File), CPP_process = none
 	; 
 	    %% cpp_on is set: use preprocessor
-	    cpp_file(File, CPP_process, IOportFromProc),
+	    xpp_process_file(File, CPP_process, IOportFromProc),
 	    stat_set_flag(10, IOportFromProc)
 	).
 
-cpp_file(File, CPP_process, IOportFromProc) :-
-	xsb_configuration(cpp, CPP),
-	xsb_configuration(install_dir, InstalDir),
+xpp_process_file(FileName, CPP_process, IOportFromProc) :-
+	(xpp_program(CPP_command), !
+	;   make_cpp_command(CPP_command, FileName)),
+	fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
+	message(CPP_command1),
+	%% Redirect cpp''s stderr to XSB''s STDWARN
+	spawn_process(CPP_command, block, IOportFromProc, 3, CPP_process).
+
+make_cpp_command(CPP_command, FileName) :-
 	%% Construct the -Include directories
 	(   windows_os_loader
 	->  IncludeFlag = '/I'
@@ -124,23 +131,21 @@ cpp_file(File, CPP_process, IOportFromProc) :-
 	),
 	make_include_directive(Directive, IncludeFlag),
 	slash(Slash),
+	xsb_configuration(install_dir, InstalDir),
 	fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
 			 args(IncludeFlag,InstalDir,Slash,
 			      IncludeFlag,InstalDir,Slash,
 			      Directive)),
 	%% Constract the cpp command
+	xsb_configuration(cpp, CPP),
 	fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG %s',
-			 args(CPP, IncludeDirs, File)),
-	fmt_write_string(CPP_command1, '[%s]', arg(CPP_command)),
-	message(CPP_command1),
-	%% Redirect cpp''s stderr to XSB''s STDWARN
-	spawn_process(CPP_command, block, IOportFromProc, 3, CPP_process).
+			 args(CPP, IncludeDirs, FileName)).
 
-%% Make an include directive out of the dirs in xsb_cpp_include_dir/1
+%% Make an include directive out of the dirs in xpp_include_dir/1
 %% The dirs are supplied by applications that keep include files
 %% in special places
 make_include_directive(Directive, Flag) :-
-	findall(X, xsb_cpp_include_dir(X), L),
+	findall(X, xpp_include_dir(X), L),
 	make_include_directive1(Directive, Flag, L).
 make_include_directive1(Directive, Flag, [H|Tail]) :-
 	make_include_directive1(Directive1, Flag, Tail),
