@@ -233,6 +233,75 @@ DllExport char* call_conv ptoc_string(int regnum)
   return "";
 }
 
+#define MAXSBUFFS 30
+VarString **LSBuff;
+int LSBuffInitted = 0;
+/*static XSB_StrDefine(lsbuff);*/
+
+/* construct a long string from prolog... concatenates atoms,
+flattening lists and comma-lists, and treating small ints as ascii
+codes.  Puts result in a fixed buffer (if nec.) automatically extended */
+
+void constructString(Cell addr, int ivstr)
+{
+  int val;
+  static char *charstr = "x";
+
+  XSB_Deref(addr);
+  switch (cell_tag(addr)) {
+  case XSB_FREE:
+  case XSB_REF1:
+  case XSB_ATTV:
+  case XSB_FLOAT:
+    xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+  case XSB_STRUCT:  
+    if (get_str_psc(addr) == comma_psc) {
+      constructString(cell(clref_val(addr)+1),ivstr);
+      constructString(cell(clref_val(addr)+2),ivstr);
+      return;
+    } else xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+  case XSB_LIST:
+    constructString(cell(clref_val(addr)),ivstr);
+    constructString(cell(clref_val(addr)+1),ivstr);
+    return;
+  case XSB_INT: 
+    val = int_val(addr);
+    if (val < 256 && val >= 0) {
+      charstr[0] = val;
+      XSB_StrAppend(LSBuff[ivstr],charstr);
+      return;
+    } else xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+  case XSB_STRING: 
+    if (isnil(addr)) return;
+    XSB_StrAppend(LSBuff[ivstr],string_val(addr));
+    return;
+  default:
+    xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
+  }
+}
+
+DllExport char* call_conv ptoc_longstring(int regnum)
+{
+  /* reg is global array in register.h */
+  register Cell addr = cell(reg+regnum);
+  XSB_Deref(addr);
+  if (isstring(addr)) return string_val(addr);
+  
+  if (!LSBuffInitted) 
+    LSBuff = calloc(MAXSBUFFS,4);
+  if (!LSBuff[regnum]) {
+    LSBuff[regnum] = (VarString *) malloc(sizeof(VarString));
+    LSBuff[regnum]->size = 0;
+    LSBuff[regnum]->increment = 0;
+    LSBuff[regnum]->length = 0;
+    LSBuff[regnum]->string = NULL;
+    LSBuff[regnum]->op = &VarStrOps;
+  }
+  XSB_StrShrink(LSBuff[regnum],100);
+  XSB_StrSet(LSBuff[regnum],"");
+  constructString(addr,regnum);
+  return(LSBuff[regnum]->string);
+}
 
 /*
  *  For decoding object pointers, like PSC, PSC-PAIR and Subgoal frames.

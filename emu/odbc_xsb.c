@@ -75,7 +75,7 @@ struct Cursor {
   UDWORD *ColLen;        // pointer to array of column lengths
   UDWORD *OutLen;        // pointer to array of actual column lenghts
   UCHAR **Data;          // pointer to array of pointers to data
-  SWORD ColCurNum;       // the cloumn number that's already fetched by xsb
+  SWORD ColCurNum;       // the column number that's already fetched by xsb
 };
 
 // global cursor table
@@ -338,14 +338,14 @@ void FindFreeCursor()
 //     SetBindVarNum() 
 //  NOTES:
 //      set the number of different bind variables and their total number of
-//      occurrances in the sql statement to VarListNum and BListMum
-//      respectively and allocate memory for furture use, i.e. for holding the
-//      bind variables' types and array of pointers to their value.  note that
+//      occurrences in the sql statement to VarListNum and BListMum
+//      respectively and allocate memory for future use, i.e. for holding the
+//      bind variables' types and array of pointers to their value.  Note that
 //      the memory to store their values is not allocated here since we don't
 //      know their type: 
-//  	no information on how much memory is needed.  if we're reusing an old
-//  	statement handler we don't have to worry about these things.  all we
-//  	need to do is to make sure that the statement is in deed the same
+//  	no information on how much memory is needed.  If we're reusing an old
+//  	statement handler we don't have to worry about these things.  All we
+//  	need to do is to make sure that the statement is indeed the same
 //  	statement w/ the same bind variable number. 
 //-----------------------------------------------------------------------------
 void SetBindVarNum()
@@ -388,6 +388,8 @@ void SetVar()
 {
   int i = ptoc_int(2);
   int j = atoi(ptoc_string(3)+4);
+  //  int j = atoi(ptoc_string(3));
+  //  int j = ptoc_int(3);
 
   if (!((j > 0) && (j <= CursorTable[i].VarListNum)))
     xsb_exit("Abnormal argument in SetVar!");
@@ -431,7 +433,7 @@ void SetVar()
     CursorTable[i].VarList[j-1] = (UCHAR *)malloc(sizeof(char) * MAXBINDVALLEN);
     if (!CursorTable[i].VarList[j-1])
       xsb_exit("Not enough memory for MAXBINDVALLEN chars in SetVar!");
-    strncpy(CursorTable[i].VarList[j-1], ptoc_string(4), MAXBINDVALLEN);
+    strncpy(CursorTable[i].VarList[j-1], ptoc_longstring(4), MAXBINDVALLEN);
     CursorTable[i].VarList[j-1][MAXBINDVALLEN - 1] = 0;
     break;
   default:
@@ -443,13 +445,15 @@ void SetVar()
 //  FUNCTION NAME:
 //      SetBind()
 //  NOTES:
-//      set the bind variables' values for each occurrance of the bind
+//      set the bind variables' values for each occurrence of the bind
 //      variables in the sql statement.
 //-----------------------------------------------------------------------------
 void SetBind()
 {
   int i = ptoc_int(2);
   int j = atoi(ptoc_string(3)+4);
+  //  int j = atoi(ptoc_string(3));
+  //  int j = ptoc_int(3);
   
   if (!((j > 0) && (j <= CursorTable[i].VarListNum)))
     xsb_exit("Abnormal argument in SetBind!");
@@ -508,7 +512,7 @@ void Parse()
       ctop_int(4,PrintErrorMsg(-1));
     return;
   case (-1):          // index = -1; special case for odbc_sql; no return rows
-    if (((rc=SQLExecDirect(hstmt,ptoc_string(3),SQL_NTS)) == SQL_SUCCESS) ||
+    if (((rc=SQLExecDirect(hstmt,ptoc_longstring(3),SQL_NTS)) == SQL_SUCCESS) ||
 	(rc == SQL_SUCCESS_WITH_INFO)) 
       ctop_int(4,0);
     else
@@ -573,7 +577,7 @@ void Parse()
       return;
     }
   } else {
-    CursorTable[i].Sql = (UCHAR *)strdup(ptoc_string(3));
+    CursorTable[i].Sql = (UCHAR *)strdup(ptoc_longstring(3));
     if (!CursorTable[i].Sql)
       xsb_exit("Not enough memory for strdup in Parse!");
 
@@ -630,7 +634,8 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
   switch (coltype) {
   case SQL_CHAR:
   case SQL_VARCHAR:
-    return(MAXI(collen, strlen((char *) colname)));
+    // extra 1 for space for end-of-string marker
+    return(MAXI(collen+1, strlen((char *) colname)));
   case SQL_SMALLINT:
     return(MAXI(6, strlen((char *)colname)));
   case SQL_INTEGER:
