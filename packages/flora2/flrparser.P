@@ -401,6 +401,7 @@ is_flaggregt_struct(FLAGGREGATE(_Op,_Var,_GroupVars,_Conds)).
 
 flobjspec_struct(Object,Spec,FLOBJSPEC(Object,Spec)).
 
+%% Spec represents the arrow type: ->, *->, ->, =>>, ...
 flfdattspec_struct(Attribute,Spec,Value,FLFDATTSPEC(Attribute,Spec,Value)).
 flmvdattspec_struct(Attribute,Spec,Value,FLMVDATTSPEC(Attribute,Spec,Value)).
 flincattspec_struct(Attribute,Spec,Value,FLINCATTSPEC(Attribute,Spec,Value)).
@@ -439,12 +440,14 @@ flmodule_struct(Literal,Module,FLORASYSMOD,FLFLORALIB(Literal,Module)). :- !.
 flmodule_struct(Goal,Name,PROLOGMODULE,FLPLIB(Goal,Name)). :- !.
 
 %% Encoding module specs of the form: @prolog()
+%% Takes a goal and protects it against hilog conversion
 flplib_struct(Goal,FLPLIB(Goal)) :- !.
 
 %% Given module spec, get back module type and module name
 get_module_from_spec(FLORAUSERMOD(Mod),FLORAUSERMOD,Mod) :- !.
 get_module_from_spec(FLORASYSMOD(Mod),FLORASYSMOD,Mod) :- !.
 get_module_from_spec(PROLOGMODULE(Mod),PROLOGMODULE,Mod) :- !.
+get_module_from_spec(PROLOGMODULE,NULL) :- !.
 
 
 is_flmodulespec_struct(FLWORKSPACE(_G,_N)) :- !.
@@ -476,9 +479,18 @@ fldelete_struct(Op,List,FLDELETE(Op,List)).
 flifthenelse_struct(Cond,Then,Else,FLIFTHENELSE(Cond,Then,Else)).
 flifthen_struct(Cond,Then,FLIFTHEN(Cond,Then)).
 
-%% the meta ~
+%% struct for meta ~
 fluniveqform_struct(Left,Right,FLUNIVEQFORM(Left,Right)).
+%% struct for =..
 flmetauniv_struct(Left,Right,FLMETAUNIV(Left,Right)).
+%% struct for ~..
+flmetaunivform_struct(Left,Right,FLMETAUNIVFORM(Left,Right)).
+
+flcontrolconstruct_struct(Cond,Action,FLWHILEDO,FLWHILEDO(Cond,Action)).
+flcontrolconstruct_struct(Cond,Action,FLWHILELOOP,FLWHILELOOP(Cond,Action)).
+flcontrolconstruct_struct(Cond,Action,FLDOUNTIL,FLDOUNTIL(Cond,Action)).
+flcontrolconstruct_struct(Cond,Action,FLLOOPUNTIL,FLLOOPUNTIL(Cond,Action)).
+flcontrolconstruct_struct(Cond,Action,FLUNLESSDO,FLUNLESSDO(Cond,Action)).
 
 
 /****************************************************************************
@@ -1418,6 +1430,27 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
 	!,
         flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
 
+%% Parse the ~.. meta predicate
+%% Workspace as in (A~..B)@foo is illegal.  But (A@foo =.. B) is fine.
+flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
+	get_name(Funct,FL_METAUNIVFORM),
+	!,
+        flora_body_metaunivform(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status).
+
+%% Process the control constructs while-do/loop, loop/do-until, unless-do
+flora_body(CANOTERM(TopWrapper,1,FL_PARENTHESIS,Args,_If,_Ip), WS,Code,Status) :-
+	get_name(TopWrapper,TopName),
+	(TopName==FL_WHILE;TopName==FL_DO;TopName==FL_LOOP;TopName==FL_UNLESS),
+	!,
+	%% Args should be [CanonTerm]. If not, issue a syntax error
+	flora_body_controlconstruct(Args,WS,TopName,Code,Status).
+
+flora_body(CANOTERM(TopWrapper,2,_Paren,_Args,If,_Ip), _WS,_Code,Status) :-
+	get_name(TopWrapper,TopName),
+	(TopName==FL_DO ; TopName==FL_LOOP ; TopName==FL_UNTIL),
+	!,
+	parsing_error(If,UNEXPECTED_CONTROL,Status).
+
 %% At this point, CanoniTerm is neither a logical formula nor a 
 %% if-then-else statement, nor some other special builtin 
 %% (like while-loops or meta operators)
@@ -1602,6 +1635,7 @@ flora_body_univeqform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Sta
   (_ =.. _)@prolog() is.
 ****************************************************************************/
 flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
+	%% only @prolog() are allowed; this doesn't match get_module_from_spec
 	get_module_from_spec(WS,_,_),
 	!,
 	parsing_error(If,NO_WORKSPACE,Status).
@@ -1617,23 +1651,102 @@ flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),PROLOGMODULE,C
 	),
 	%% put together parsed terms using =.. (=Funct)
 	(Status == [] ->
+	    %% FCode is parsed functor code
 	    flobject_struct(Funct,FCode),
-	    flterm_struct(FCode,2,[LCodeParsed,RCodeParsed],Code)
+	    flterm_struct(FCode,2,[LCodeParsed,RCodeParsed],Code1),
+	    %% protect predicate code against hilog conversion
+	    flplib_struct(Code1,Code)
 	%% failed to parse the second term
 	; true
 	).
 
 flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Status) :-
-	Args = [LCode,RCode],
-	flora_body(LCode,_LhsWS,LCodeParsed,S1),
-	(S1 == [] -> flora_pathexp(RCode,RCodeParsed,Status)
+	Args = [Left,Right],
+	flora_pathexp(Left,LeftParsed,S1),
+	(S1 == [] -> flora_pathexp(Right,RightParsed,Status)
 	%% failed to parse the first term
 	; Status=S1
 	),
-	(Status == [] -> flmetauniv_struct(LCodeParsed,RCodeParsed,Code)
+	(Status == [] -> flmetauniv_struct(LeftParsed,RightParsed,Code)
 	%% failed to parse the second term
 	; true
 	).
+
+
+/****************************************************************************
+  flora_body_metaunivform(+CanoniTerm,+WS,-Code,-Status)
+
+  Parse the meta op ~..
+  This is like =.. but is compiled differently: the left arg is meta.
+  Also, all module specs are illegal:
+      (_~.. _)@floramodule, (_ ~.. _)@prolog(mod), (_ ~.. _)@prolog()
+****************************************************************************/
+flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
+	(get_module_from_spec(WS,_,_) ; get_module_from_spec(WS,null)),
+	!,
+	parsing_error(If,NO_WORKSPACE,Status).
+
+flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Status) :-
+	Args = [Left,Right],
+	flora_body(Left,LeftParsed,S1),
+	(S1 == [] -> flora_pathexp(Right,RightParsed,Status)
+	%% failed to parse the first term
+	; Status=S1
+	),
+	(Status == [] -> flmetaunivform_struct(LeftParsed,RightParsed,Code)
+	%% failed to parse the second term
+	; true
+	).
+
+/****************************************************************************
+  flora_body_controlconstruct(+CanoniTermList1,+WS,+TopWrapper,-Code,-Status).
+   Process control constructs while-do/loop, loop/do-until, unless-do
+   CanoniTermList1 represents the inner part of the control construct,
+   e.g., the do-part in while(do(Cond,Action)).
+   It should be a singleton list that contains a canonic term.
+   TopWrapper is the unary wrapper (whole,do,loop,unless) for the construct
+****************************************************************************/
+flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],WS,TopWrapper,Code,Status) :-
+	get_name(InnerFunct,InnerName),
+	!,
+	(TopWrapper==FL_WHILE,InnerName==FL_DO -> StructType=FLWHILEDO
+	; TopWrapper==FL_WHILE,InnerName==FL_LOOP -> StructType=FLWHILELOOP
+	; TopWrapper==FL_DO,InnerName==FL_UNTIL -> StructType=FLDOUNTIL
+	; TopWrapper==FL_LOOP,InnerName==FL_UNTIL -> StructType=FLLOOPUNTIL
+	; TopWrapper==FL_UNLESS,InnerName==FL_DO -> StructType=FLUNLESSDO
+	; fmt_write_string(ErrMsg,
+			   'Illegal connective `%s'' in `%s'' construct',
+			   args(InnerName, TopWrapper)),
+	    parsing_error(If,ErrMsg,Status)
+	),
+	(var(Status)
+	-> Args=[Cond,Action],
+	    flora_body(Cond,WS,CondCode,S1),
+	    (S1== [] -> flora_body(Action,WS,ActionCode,Status)
+	    ; Status = S1
+	    ),
+	    (Status==[]
+	    -> flcontrolconstruct_struct(CondCode,ActionCode,StructType,Code)
+	    ; true
+	    )
+	; true % error
+	).
+
+%% If wrong number of args or wrong parenthesis - issue an error
+flora_body_controlconstruct([CANOTERM(_InnerFunct,_Arity,_Parenthesis,_Args,If,_Ip)],_WS,TopWrapper,_Code,Status) :-
+	fmt_write_string(ErrMsg,
+			 'Illegal syntax in `%s'' construct',
+			 arg(TopWrapper)),
+	parsing_error(If,ErrMsg,Status).
+
+
+flora_body_controlconstruct([SomethingElse],_WS,TopWrapper,_Code,Status) :-
+	get_index(SomethingElse,Idx),
+	fmt_write_string(ErrMsg,
+			 'Illegal syntax in `%s'' construct',
+			 arg(TopWrapper)),
+	parsing_error(Idx,ErrMsg,Status).
+
 
 
 /****************************************************************************

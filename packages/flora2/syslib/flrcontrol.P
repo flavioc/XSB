@@ -60,8 +60,8 @@ FLLIBIFTHEN(Cond,_Then) :-
 
 
 %% UNLESS ... DO ... is like IF...THEN true ELSE ...
-FL_UNLESS(FL_DO(Cond,_Action)) :- call(Cond).
-FL_UNLESS(FL_DO(Cond,Action)) :- sk_not(Cond), call(Action).
+FLLIBUNLESSDO(Cond,_Action) :- call(Cond).
+FLLIBUNLESSDO(Cond,Action) :- sk_not(Cond), call(Action).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,7 +73,7 @@ FL_UNLESS(FL_DO(Cond,Action)) :- sk_not(Cond), call(Action).
 
 %% This should fail ONLY if Cond is true, but Action fails.
 %% We use catch/throw to achieve this
-FL_WHILE(FL_DO(Cond,Action)) :- 
+FLLIBWHILEDO(Cond,Action) :- 
 	FLORA_SYMBOL('catch')((call(Cond),
 			       (call(Action) -> flora_commit_storage, fail
 			       ; throw(quitLoop)
@@ -84,26 +84,26 @@ FL_WHILE(FL_DO(Cond,Action)) :-
 			      fail). % fail, if condition was thrown
 
 %% Fails only if Action becomes false before Cond becomes true
-FL_DO(FL_UNTIL(Action,Cond)) :-
+FLLIBDOUNTIL(Action,Cond) :-
 	call(Action),
 	flora_commit_storage,
 	call(Cond).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% while-loop and loop-while
+%%% while-loop and loop-until
 %%% These loops are fully backtrackable, but they are more expensive, 
 %%% since they are recursive.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-FL_WHILE(FL_LOOP(Cond,Action)) :- 
+FLLIBWHILELOOP(Cond,Action) :- 
 	call(Cond),
 	call(Action),
-	FL_WHILE(FL_LOOP(Cond,Action)).
+	FLLIBWHILELOOP(Cond,Action).
 
-FL_LOOP(FL_UNTIL(Action,Cond)) :-
+FLLIBLOOPUNTIL(Action,Cond) :-
 	call(Action),
 	call(Cond),
-	FL_LOOP(FL_UNTIL(Action,Cond)).
+	FLLIBLOOPUNTIL(Action,Cond).
 
 
 %% These exist in order to be able to hide the calls 

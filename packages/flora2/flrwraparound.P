@@ -44,7 +44,7 @@
 
   The predicates listed in the other directives are wrapped with
   FLORA_THIS_WORKSPACE(predicate), FLORA_FO_THIS_WORKSPACE(predicate),
-  or FLORA_THIS_STORAGE(predicate), respectively, for further processing 
+  or FLORA_THIS_FDB_STORAGE(predicate), respectively, for further processing 
   by the gpp preprocessor.
   The
   
@@ -279,7 +279,7 @@ dump_storage_rule(rule(HeadSpec,TailPred,Storage)) :-
 	    write('storage_find_fact(FLORA_THIS_FLD_STORAGE,')
 	;
 	  Storage=normal,
-	    write('storage_find_fact(FLORA_THIS_STORAGE,')
+	    write('storage_find_fact(FLORA_THIS_FDB_STORAGE,')
 	),
 	%% attach tail's functor to Head's variables
 	HeadSkeleton =.. [_|HeadVars], BodySkeleton =.. [TailPred|HeadVars],

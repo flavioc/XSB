@@ -560,12 +560,12 @@ build_struct(Term,_VarList,thismodule,(thismodule,NO_INDEX)) :-
 	is_prthismodule(Term),
 	!.
 
-build_struct(Term,_VarList,thisstorage,(thisstorage,NO_INDEX)) :-
-	is_prthisstorage(Term),
+build_struct(Term,_VarList,thisfdbstorage,(thisfdbstorage,NO_INDEX)) :-
+	is_prthisfdbstorage(Term),
 	!.
 
 build_struct(Term,_VarList,WS,(WS,Index)) :-
-	is_prstorage(Term,WS,Index),
+	is_prfdbstorage(Term,WS,Index),
 	!.
 
 build_struct(Term,_VarList,Term,(Term,NO_INDEX)) :-

@@ -183,6 +183,7 @@ flora_library_file(FLLIBLOOPUNTIL,flrcontrol,syslib) :- !.
 
 flora_library_file(FLLIBMETAOPS,flrmetaops,syslib) :- !.
 flora_library_file(FLLIBUNIVEQFORM,flrmetaops,syslib) :- !.
+%% This handles both =.. and ~..
 flora_library_file(FLLIBMETAUNIV,flrmetaops,syslib) :- !.
 
 
@@ -225,6 +226,6 @@ flora_library_file(S,F,_) :-
 flora_sysmod_file(FLSYSMODPP,flrprettyprint,lib) :- !.
 flora_sysmod_file(FLSYSMODIO,flrio,lib) :- !.
 flora_sysmod_file(FLSYSMODSYSTEM,flrsystem,lib) :- !.
-flora_sysmod_file(FLSYSMODSTORAGE,flrstorage,lib) :- !.
+flora_sysmod_file(FLSYSMODDATABASE,flrstorage,lib) :- !.
 
 flora_system_module(SysModID) :- flora_sysmod_file(SysModID,_BaseFileName,_SubDir).

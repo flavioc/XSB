@@ -787,7 +787,7 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 	writeln('?- flora_load_dyn_fdb(FLORA_FDB_FILENAME,FLORA_THIS_MODULE_NAME).'),
 	writeln('#else'),
 	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
-	writeln('?- flora_read_canonical_and_insert(FLORA_FDB_FILENAME,FLORA_THIS_STORAGE).'),
+	writeln('?- flora_read_canonical_and_insert(FLORA_FDB_FILENAME,FLORA_THIS_FDB_STORAGE).'),
 	writeln('#endif'),
 	nl.
 
@@ -960,13 +960,9 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),SysLibOptionList),
 	findall(ModOption,member(FLSYSMOD(ModOption),FileOptionList),SysModOptionList),
 	append(SysLibOptionList,SysModOptionList,OptList),
-	%% FLLIBCONTROL in (sylibinc) should really be
-	%% included by the compiler.
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,
-			    FLLIBCONTROL,FLINDEX_P|OptList],
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLINDEX_P|OptList],
                            HeaderStatus),
-	( HeaderStatus == FLORA_FAILURE ->
-	    FileStatus=FLORA_FAILURE
+	( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	;
 	  (FactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
 	  flora_loaddyn_FLD_filename(FLDFile),

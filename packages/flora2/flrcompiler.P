@@ -95,6 +95,15 @@ is_flifthen(FLIFTHEN(Cond,Then),Cond,Then).
 is_fluniveqform(FLUNIVEQFORM(Left,Right),Left,Right).
 %% Meta =..
 is_flmetauniv(FLMETAUNIV(Left,Right),Left,Right).
+%% Meta ~..
+is_flmetaunivform(FLMETAUNIVFORM(Left,Right),Left,Right).
+
+%% Control constructs while-do, while-loop, loop-until, do-until,unless-do
+is_flcontrolconstruct(FLWHILEDO(Cond,Action),FLLIBWHILEDO,Cond,Action).
+is_flcontrolconstruct(FLWHILELOOP(Cond,Action),FLLIBWHILELOOP,Cond,Action).
+is_flcontrolconstruct(FLDOUNTIL(Cond,Action),FLLIBDOUNTIL,Cond,Action).
+is_flcontrolconstruct(FLLOOPUNTIL(Cond,Action),FLLIBLOOPUNTIL,Cond,Action).
+is_flcontrolconstruct(FLUNLESSDO(Cond,Action),FLLIBUNLESSDO,Cond,Action).
 
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
 is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
@@ -106,7 +115,9 @@ is_flaggregate(FLAGGREGATE(Op,V,GV,Goal),Op,V,GV,Goal).
 %% Binary relationship, like : or ::
 is_flbirelate(FLBIRELATE(Obj1,RelType,Obj2),Obj1,RelType,Obj2).
 is_flobjspec(FLOBJSPEC(Obj,Spec),Obj,Spec).
+%% Represents object reference: O.M, O..M, O!M, O!!M. RefType is ->, ->>, ...
 is_flobjref(FLOBJREF(Obj,RefType,Att),Obj,RefType,Att).
+%% RefType represents the arrow type: ->, *->, ->, =>>, ...
 is_flfdattspec(FLFDATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flmvdattspec(FLMVDATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flincattspec(FLINCATTSPEC(Att,RefType,Val),Att,RefType,Val).
@@ -268,13 +279,13 @@ list_struct(List,Term,PRLIST(List,Term,NO_INDEX)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
-thisstorage_struct(PRTHISSTORAGE(PRTHISSTORAGE)).
+thisfdbstorage_struct(PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 
 %% support for checking undefinedness
 thisfldstorage_struct(PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
 
 floralib_struct(WS,PRFLORALIB(WS)).
-storage_struct(WS,PRSTORAGE(WS)).
+storage_struct(WS,PRFDBSTORAGE(WS)).
 
 call_struct(VarName,Index,PRCALL(Var)) :- varobj_struct(VarName,Index,Var).
 termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
@@ -472,6 +483,7 @@ mvdattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 mvdspec_struct(Object,AttObj,ValObj,PRMVD(Object,AttObj,ValObj)).
 imvdspec_struct(Object,AttObj,ValObj,PRIMVD(Object,AttObj,ValObj)).
 
+%% for +>> and *+>>
 incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	( is_mvdincspecop(RefType) ->
 	    mvdincspec_struct(Object,AttObj,ValObj,Code)
@@ -480,9 +492,12 @@ incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	  imvdincspec_struct(Object,AttObj,ValObj,Code)
         ).
 
+%% +>>
 mvdincspec_struct(Object,AttObj,ValObj,PRMVDINC(Object,AttObj,ValObj)).
+%% *+>>
 imvdincspec_struct(Object,AttObj,ValObj,PRIMVDINC(Object,AttObj,ValObj)).
 
+%% ->->
 tolistattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 	( is_mvdtolistspecop(RefType) ->
 	    mvdtolistspec_struct(Object,AttObj,ValObj,Code)
@@ -541,8 +556,15 @@ ifthen_struct(Cond,Then,Code) :-
 univeqform_struct(Left,Right,Code) :-
 	florasyslib_struct(FLLIBUNIVEQFORM,2,[Left,Right],Code).
 
+%% This handles both ~.. and =..
+%% These predicates are defined identically. The only difference is that
+%% the LHS arg of ~.. is compiled as meta, while in =.. it is compiled as oid
 metauniv_struct(Left,Right,Code) :-
 	florasyslib_struct(FLLIBMETAUNIV,2,[Left,Right],Code).
+
+%% encoding for control constructs
+controlconstruct_struct(CondCode,ActionCode,Wrapper,Code) :-
+	florasyslib_struct(Wrapper,2,[CondCode,ActionCode],Code).
 
 
 /****************************************************************************
@@ -1047,7 +1069,7 @@ compile_direct(DirectTerm,CodeList,[]) :-
 	  atomobj_struct(P,PCode),
 	  new_varobjlist(N,ArgsCode),
 	  termlit_struct(PCode,N,ArgsCode,HCode),
-	  thisstorage_struct(SCode),
+	  thisfdbstorage_struct(SCode),
 	  atomobj_struct(storage_find_fact,FCode),
 	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
 	  patchrule_struct(HCode,BCode,Code),
@@ -1127,7 +1149,7 @@ compile_direct(DirectTerm,[Code],[]) :-
 	    new_varobjlist(N,ArgsCode),
 	    termlit_struct(HPCode,N,ArgsCode,HCode),
 	    termlit_struct(BPCode,N,ArgsCode,BodyFactCode),
-	    thisstorage_struct(SCode),
+	    thisfdbstorage_struct(SCode),
 	    atomobj_struct(storage_find_fact,FCode),
 	    prologterm_struct(FCode,2,[SCode,BodyFactCode],BCode),
 	    rule_struct(HCode,BCode,Code)
@@ -1137,7 +1159,7 @@ compile_direct(DirectTerm,[Code],[]) :-
 	  atomobj_struct(P,PCode),
 	  new_varobjlist(N,ArgsCode),
 	  termlit_struct(PCode,N,ArgsCode,HCode),
-	  thisstorage_struct(SCode),
+	  thisfdbstorage_struct(SCode),
 	  atomobj_struct(storage_find_fact,FCode),
 	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
 	  rule_struct(HCode,BCode,Code)
@@ -1355,6 +1377,12 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_flmetauniv(ParserTerm,Left,Right) ->
 	    compile_flmetauniv(Left,Right,Code,Status)
 	
+	; is_flmetaunivform(ParserTerm,Left,Right) ->
+	    compile_flmetaunivform(Left,Right,Code,Status)
+	
+	; is_flcontrolconstruct(ParserTerm,Wrapper,Cond,Action) ->
+	    compile_flcontrolconstruct(Cond,Action,Wrapper,Code,Status)
+	
 	; is_flcut(ParserTerm,I) ->
 	    cut_struct(I,Code),
 	    Status=[]
@@ -1424,19 +1452,57 @@ compile_fluniveqform(Left,Right,Code,Status) :-
   Compiling =..
 ****************************************************************************/
 compile_flmetauniv(Left,Right,Code,Status) :-
-	%%compile_body(Left,LeftCode,S1),
 	%% Use pathexp translation instead of body translation, because we
 	%% don't want module name to be tacked on unless requested
-	compile_pathexp(Left,Obj,ObjCode,S1),
-	%% if it is a term (ObjCode==NULL) then use its translation
-	%% otherwise use the object code part
-	(ObjCode==NULL -> LeftCode=Obj ; LeftCode=ObjCode),
-	( S1 == [] ->
-	    %%compile_body(Right,RightCode,Status),
-	    compile_pathexp(Right,RightCode,_RightObjCode,Status),
-	    (Status == [] -> metauniv_struct(LeftCode,RightCode,Code); true)
+	%% LeftCode becomes bound to the OID code of Left
+	%% ObjCode is later conjuncted with the result
+	compile_pathexp(Left,LeftCode,ObjCode,S1),
+	( S1 == []
+	-> compile_pathexp(Right,RightCode,_RightObjCode,Status),
+	    (Status == []
+	    -> metauniv_struct(LeftCode,RightCode,UnivCode),
+		( ObjCode==NULL -> UnivCode=Code
+		%% Conjoin ObjCode to the right
+		; conjunct_struct(UnivCode,ObjCode,Code)
+		)
+	    ; true
+	    )
 	;
-	  Status=S1
+	    Status=S1
+	).
+
+
+
+/****************************************************************************
+  compile_flmetaunivform(+Left,+Right,-Code,-Status)
+  Compiling ~..
+****************************************************************************/
+compile_flmetaunivform(Left,Right,Code,Status) :-
+	compile_body(Left,LeftCode,S1),
+	( S1 == []
+	-> compile_pathexp(Right,RightCode,_RightObjCode,Status),
+	    (Status == []
+	    -> metauniv_struct(LeftCode,RightCode,Code)
+	    ; true
+	    )
+	; Status=S1
+	).
+
+
+/****************************************************************************
+  compile_flcontrolconstruct(+Cond,+Action,+Wrapper,-Code,-Status)
+
+  Handle control stmts while-do,do-until,while-loop,loop-until,unless-do
+****************************************************************************/
+compile_flcontrolconstruct(Cond,Action,Wrapper,Code,Status) :-
+	compile_body(Cond,CondCode,S1),
+	(S1 == []
+	-> compile_body(Action,ActionCode,Status),
+	    (Status==[]
+	    -> controlconstruct_struct(CondCode,ActionCode,Wrapper,Code)
+	    ; true
+	    )
+	; Status = S1
 	).
 
 
@@ -1583,6 +1649,9 @@ compile_fltermlit(Funct,N,Args,Code,Status) :-
 	compile_argpathexplist(Args,ArgTypes,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
+	    %% We need to change the order:
+	    %%     the code needed to produce the oid should come before TCode
+	    %%     and the rest of the code in ObjCode should come after TCode
 	    conjunct_code(ObjCode,TCode,Code)
 	;
 	  true
@@ -1592,6 +1661,9 @@ compile_fltermlit(Funct,N,Args,Code,Status) :-
 	compile_pathexplist([Funct|Args],[FObj|AObj],ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
+	    %% We need to change the order:
+	    %%     the code needed to produce the oid should come before TCode
+	    %%     and the rest of the code in ObjCode should come after TCode
 	    conjunct_code(ObjCode,TCode,Code)
 	;
 	  true
@@ -1647,6 +1719,9 @@ compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
 	compile_pathexplist([ObjTerm1,ObjTerm2],[Obj1,Obj2],OCode,Status),
 	( Status == [] ->
 	    birelate_struct(Obj1,RelType,Obj2,TCode),
+	    %% We need to change the order:
+	    %%     the code needed to produce the oid should come before TCode
+	    %%     and the rest of the code in ObjCode should come after TCode
 	    conjunct_code(OCode,TCode,Code)
 	;
 	  true
@@ -1722,6 +1797,8 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	compile_flspecbody(Object,G,GCode,Status),
 	(Status == [] -> tnot_struct(GCode,Code); true).
 
+%% F-molecule with attribute specification.
+%% Can be O[M->V], where O,M,V can be any complex F-molecule
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
@@ -1733,6 +1810,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	  true
         ).
 
+%% Same for ->>
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flmvdattspec(SpecTerm,AttTerm,RefType,ValTermList),
 	!,
@@ -1750,6 +1828,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	  Status=S
         ).
 
+%% +>>, *+>>
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flincattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
@@ -1761,6 +1840,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	  true
         ).
 
+%% same for ->->
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_fltolistattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
@@ -1772,6 +1852,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	  true
         ).
 
+%% for O[BoolMeth]
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
@@ -1783,6 +1864,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	  true
         ).
 
+%% for O[*BoolMeth]
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flimethspec(SpecTerm,IMethTerm),
 	!,
@@ -1794,6 +1876,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	  true
         ).
 
+%% O[#M]
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_fltranspec(SpecTerm,TranTerm),
 	!,
@@ -3431,7 +3514,7 @@ compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
 	    %% The name of the module is known.
 	    storage_struct(WS,SCode)
 	;
-	  thisstorage_struct(SCode)
+	  thisfdbstorage_struct(SCode)
 	),
 	atomobj_struct(FLSYSDBUPDATE,FCode),
 	prologterm_struct(FCode,2,[C,SCode],DBCode),

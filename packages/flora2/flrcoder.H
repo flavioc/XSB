@@ -47,7 +47,7 @@
 	flora_firstorder_user_module_predicate_symbol/3,
 	flora_firstorder_user_module_predicate/4,
 	flora_firstorder_system_module_predicate/4,
-	flora_user_storage_name/2,
+	flora_user_fdb_storage_name/2,
 	%% Storage for skeletons of defined predicates
 	flora_user_fld_storage_name/2
    from flrwrapper.
@@ -67,13 +67,13 @@
 	is_prtable/3,
 	is_prhilogtable/2,
 	is_prthismodule/1,
-	is_prthisstorage/1,
+	is_prthisfdbstorage/1,
 	is_pratom/3,
 	is_prnumber/3,
 	is_prvariable/3,
 	is_prstring/3,
 	is_prlist/4,
-	is_prstorage/3,
+	is_prfdbstorage/3,
 	is_skolem/5,
 	is_prterm/4,
 	is_goallogic/4,

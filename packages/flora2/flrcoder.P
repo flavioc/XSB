@@ -60,7 +60,7 @@ is_prindex(PRINDEX(P,A,N),P,A,N).
 is_prhilogtable(PRHILOGTABLE(A),A).
 
 is_prthismodule(PRTHISMODULE(PRTHISMODULE)).
-is_prthisstorage(PRTHISSTORAGE(PRTHISSTORAGE)).
+is_prthisfdbstorage(PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 %% debug trie
 is_prthisfldstorage(PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
 
@@ -70,7 +70,7 @@ is_prnumber(PRNUMBER(Number,I),Number,I).
 is_prvariable(PRVARIABLE(Name,I),Name,I).
 is_prstring(PRSTRING(String,I),String,I).
 is_prlist(PRLIST(L,T,I),L,T,I).
-is_prstorage(PRSTORAGE(PRATOM(WS,I)),WS,I).
+is_prfdbstorage(PRFDBSTORAGE(PRATOM(WS,I)),WS,I).
 
 %% with textual information
 is_skolem(PRFDSKOLEM(Obj,Att,I),WRAP_FDSKOLEM,2,[Obj,Att],I) :- !.
@@ -501,10 +501,10 @@ flora_write_struct(Term,_Prefix) :-
 	write('FLORA_THIS_MODULE_NAME').
 
 flora_write_struct(Term,_Prefix) :-
-	is_prthisstorage(Term),
+	is_prthisfdbstorage(Term),
 	!,
 	%% This is an encoded storage name.
-	write('FLORA_THIS_STORAGE').
+	write('FLORA_THIS_FDB_STORAGE').
 
 flora_write_struct(Term,_Prefix) :-
 	is_prthisfldstorage(Term),
@@ -513,10 +513,10 @@ flora_write_struct(Term,_Prefix) :-
 	write('FLORA_THIS_FLD_STORAGE').
 
 flora_write_struct(Term,_Prefix) :-
-	is_prstorage(Term,WSName,_Index),
+	is_prfdbstorage(Term,WSName,_Index),
 	!,
 	%% This refers to a Flora user module storage.
-	write('FLORA_USER_STORAGE('),
+	write('FLORA_USER_FDB_STORAGE('),
 	flora_write_functor(WSName),
 	write(')').
 
@@ -1174,9 +1174,9 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,DWS) :-
 	!.
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
-	is_prthisstorage(Term),
+	is_prthisfdbstorage(Term),
 	!,
-	flora_user_storage_name(DWS,Code).
+	flora_user_fdb_storage_name(DWS,Code).
 
 flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	is_prthisfldstorage(Term),
@@ -1185,9 +1185,9 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	flora_user_fld_storage_name(DWS,Code).
 
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Code) :-
-	is_prstorage(Term,WSName,_Index),
+	is_prfdbstorage(Term,WSName,_Index),
 	!,
-	flora_user_storage_name(WSName,Code).
+	flora_user_fdb_storage_name(WSName,Code).
 
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Term) :-
 	atomic(Term),

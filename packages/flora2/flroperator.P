@@ -64,13 +64,13 @@ flora_op(1300,fy,FL_IF).
 flora_op(1300,xfy,FL_THEN).
 flora_op(1300,xfy,FL_ELSE).
 
-flora_op(1250,fy,FL_DO).       % do... until...
-flora_op(1250,fy,FL_LOOP).       % loop... until...
-flora_op(1250,xfy,FL_UNTIL).
-flora_op(1250,xfy,FL_DO).      % while... do...  or unless ... do...
-flora_op(1250,xfy,FL_LOOP).      % while... loop...
-flora_op(1250,fy,FL_WHILE).
-flora_op(1250,fy,FL_UNLESS).
+flora_op(1300,fy,FL_DO).       % do... until...
+flora_op(1300,fy,FL_LOOP).       % loop... until...
+flora_op(1300,xfy,FL_UNTIL).
+flora_op(1300,xfy,FL_DO).      % while... do...  or unless ... do...
+flora_op(1300,xfy,FL_LOOP).      % while... loop...
+flora_op(1300,fy,FL_WHILE).
+flora_op(1300,fy,FL_UNLESS).
 
 flora_op(1200,fy,FL_TNOT).
 flora_op(1200,fy,FL_NEG).
@@ -100,6 +100,7 @@ flora_op(1000,xfx,FL_ORDEREQLT).
 flora_op(1000,xfx,FL_ORDERGT).
 flora_op(1000,xfx,FL_ORDEREQGT).
 flora_op(1000,xfx,FL_METAUNIV).
+flora_op(1000,xfx,FL_METAUNIVFORM).
 flora_op(1000,xfx,FL_OBJEQL).
 flora_op(1000,xfx,FL_IS).
 flora_op(1000,xfx,FL_MATHEQ).

@@ -148,6 +148,7 @@
 #define FL_ORDEREQGT		'@>='
 #define FL_METAUNIV		'=..'
 #define FL_UNIVEQFORM		'~'
+#define FL_METAUNIVFORM		'~..'
 #define FL_IS			(is)
 #define FL_MATHEQ		'=:='
 #define FL_OBJEQL		':=:'
@@ -273,7 +274,8 @@
   FLWHILELOOP(WhileCondition,Action)
   FLLOOPUNTIL(Action,UntilCondition)
 
-  FLMETAUNIV(LeftTerm,RightList)
+  FLMETAUNIV(LeftTerm,RightList)      % handles and =..
+  FLMETAUNIVFORM(LeftTerm,RightList)  % handles both ~..
   FLUNIVEQFORM(LeftFormula,RightFormula)
 ****************************************************************************/
 #define FLRULE			flrule
@@ -333,13 +335,18 @@
 #define FLIFTHEN		flifthen
 #define FLIFTHENELSE		flifthenelse
 
-#define FLUNLESS		flunless
-#define FLUNTIL			fluntil
-#define FLWHILE			flwhile
-#define FLLOOP			flloop
+#define FLUNLESSDO		flunlessdo
+#define FLDOUNTIL		fldountil
+#define FLWHILEDO		flwhiledo
+#define FLWHILELOOP		flwhileloop
+#define FLLOOPUNTIL		flloopuntil
 
+%% Parser functor for ~
 #define FLUNIVEQFORM            fluniveqform
+%% Parser functor for =..
 #define FLMETAUNIV              flmetauniv
+%% Parser functor for ~..
+#define FLMETAUNIVFORM          flmetaunivform
 
 
 /****************************************************************************
@@ -358,10 +365,11 @@
 #define PRIMPORT		primport
 #define PRINDEX			prindex
 #define PRHILOGTABLE		prhilogtable
+
 #define PRTHISMODULE		prthismodule
-#define PRTHISSTORAGE		prthisstorage
-#define PRTHISFLDSTORAGE	prthisfldstorage
-#define PRSTORAGE		prstorage
+%% For the trie that keeps database facts
+#define PRTHISFDBSTORAGE	prthisfdbstorage
+#define PRFDBSTORAGE		prfdbstorage
 %% For the trie that keeps track of defined predicate skeletons
 #define PRTHISFLDSTORAGE	prthisfldstorage
 
@@ -526,21 +534,21 @@
 #define FLLIBLOOPUNTIL		fllibloopuntil
 
 #define FLLIBMETAOPS		fllibmetaops
-%% The meta ~
+%% The library predicate name for meta ~
 #define FLLIBUNIVEQFORM		fllibuniveqform
-%% the meta =..
+%% The library predicate name for meta =.. and ~..
 #define FLLIBMETAUNIV  		fllibmetauniv
 
 
 /*****************************************************************************
    Flora system modules IDs
 *****************************************************************************/
-%% This is the functor used by the compiler.
+%% This functor is used by the compiler.
 #define FLSYSMOD		flsysmod
 
 #define FLSYSMODPP		pp
 #define FLSYSMODIO		io
-#define FLSYSMODSTORAGE		db
+#define FLSYSMODDATABASE	db
 #define FLSYSMODSYSTEM		sys
 
 

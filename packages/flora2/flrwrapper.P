@@ -201,7 +201,7 @@ flora_module_name_error(ModuleName) :-
   flora_user_fdb_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
 flora_user_fdb_storage_name(WS,StorageName) :-
-	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_TRIE_PREFIX,WS)).
+	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_FDB_TRIE_PREFIX,WS)).
 
 /***************************************************************************
   flora_user_fld_storage_name(+Workspace,-StorageName)
@@ -213,7 +213,7 @@ flora_user_fld_storage_name(WS,StorageName) :-
   flora_system_fdb_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
 flora_system_fdb_storage_name(WS,StorageName) :-
-	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_TRIE_PREFIX,WS)).
+	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_FDB_TRIE_PREFIX,WS)).
 
 /***************************************************************************
   flora_system_fld_storage_name(+Workspace,-StorageName)

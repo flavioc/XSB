@@ -36,12 +36,8 @@ flora_prlg(FL_IMPLYOP,2) :- !.
 flora_prlg(FL_IMPLYOP,1) :- !.
 flora_prlg(FL_QUERYOP,1) :- !.
 
-%% Keep these even though they are Flora builtins, because they can occur
-%% under (..)@prolog(), in which case they would be translated as Prolog terms
 flora_prlg(FL_UNIVEQ,2) :- !.
 flora_prlg(FL_UNIVNOTEQ,2) :- !.
-flora_prlg(FL_METAUNIV,2) :- !.
-
 flora_prlg(FL_EQ,2) :- !.
 flora_prlg(FL_NOTEQ,2) :- !.
 flora_prlg(FL_ORDERLT,2) :- !.
@@ -119,18 +115,6 @@ flora_prlg(flTraceLow,1) :- !.
 flora_prlg(flNoTraceLow,0) :- !.
 flora_prlg(flChatter,0) :- !.
 flora_prlg(flNoChatter,0) :- !.
-
-
-/****************************************************************************
-   control
-****************************************************************************/
-flora_prlg(FL_UNLESS,1) :- !.
-flora_prlg(FL_WHILE,1) :- !.
-flora_prlg(FL_DO,2) :- !.
-flora_prlg(FL_LOOP,2) :- !.
-flora_prlg(FL_UNTIL,2) :- !.
-flora_prlg(FL_DO,1) :- !.
-flora_prlg(FL_LOOP,1) :- !.
 
 
 /****************************************************************************

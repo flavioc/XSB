@@ -65,9 +65,6 @@ flora_init_shell :-
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
-	%% This 2 should be loaded by the compiler (in the future)
-	%% FLLIBCONTROL is pending on the compiling of while-loop.
-	flora_load_library(FLLIBCONTROL),
 	flloadtrailer(NONE),
 	flora_welcome_msg,
 	flAll,

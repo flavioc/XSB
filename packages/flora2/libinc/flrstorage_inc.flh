@@ -16,7 +16,7 @@
 #endif
 
 :- import flora_load_system_module/1 from flrlibman.
-?- flora_load_system_module(FLSYSMODSTORAGE).
+?- flora_load_system_module(FLSYSMODDATABASE).
 
 /***********************************************************************/
 

@@ -145,6 +145,7 @@
 #define MISSING_THEN	'missing then-statement in if-then-else'
 #define UNEXPECTED_THEN	'unexpected then-statement'
 #define UNEXPECTED_ELSE	'unexpected else-statement'
+#define UNEXPECTED_CONTROL 'unexpected control statement'
 #define NO_UPDATEIF	'updating if-statement is not allowed'
 #define NO_UPDATETHEN	'updating then-statement is not allowed'
 #define NO_UPDATEELSE	'updating else-statement is not allowed'
