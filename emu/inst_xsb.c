@@ -44,6 +44,7 @@ int max_subgoals = 0;
 int max_completed = 0;
 int max_consumers_in_ascc = 0;
 int max_compl_susps_in_ascc = 0;
+int trapped_prolog_cps = 0;
 
 #define XSB_INST(inum, inst, label, op1type, op2type, op3type, op4type) \
         inst_table[inst][0] = (Cell)( #inst ); \

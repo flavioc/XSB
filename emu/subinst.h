@@ -38,6 +38,8 @@ extern int max_completed;
 extern int max_consumers_in_ascc;
 extern int max_compl_susps_in_ascc;
 
+extern int trapped_prolog_cps;
+
 extern Cell subinst_table[256][2];
 
 

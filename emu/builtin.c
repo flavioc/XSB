@@ -858,6 +858,8 @@ static void write_out_profile(void)
     rat1 = isum / tot;
     rat2 = ssum / tot;
     fprintf(stdout,
+	    "trapped Prolog choice point memory (%d bytes).\n",trapped_prolog_cps);
+    fprintf(stdout,
 	    "summary(total(%d),inst(%d),pct(%f),subinst(%d),pct(%f)).\n",
 	    tot,isum,rat1,ssum,rat2);
     for (i = 0; i < BUILTIN_TBL_SZ; i++) {
