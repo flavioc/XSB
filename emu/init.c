@@ -646,7 +646,7 @@ void init_symbols(void)
   int i;
 
   /* insert mod name global */
-  tp = (Pair)insert_module(T_MODU, "global");	/* loaded */
+  tp = insert_module(T_MODU, "global");	/* loaded */
   set_ep(pair_psc(tp), (byte *)1);	/* 1 stands for global mod */
   global_mod = pair_psc(tp);
 
@@ -664,7 +664,7 @@ void init_symbols(void)
   comma_psc = pair_psc(temp);
 
   /* insert symbol tnot/1 into module tables */
-  tp = (Pair)insert_module(0, "tables");		/* unloaded */
+  tp = insert_module(0, "tables");		/* unloaded */
   tables_psc = pair_psc(tp);
   temp = insert("tnot", 1, tables_psc, &new_indicator);
   tnot_psc = pair_psc(temp);
@@ -675,10 +675,10 @@ void init_symbols(void)
   delay_psc = pair_psc(temp);
 
   /* Initialize ret PSCs */
-  for (i = 0; i < 255; i++) ret_psc[i] = NULL;
+  for (i = 0; i < MAX_ARITY; i++) ret_psc[i] = NULL;
 
   /* make another reference to global module -- "usermod" */
-  tp = (Pair)insert_module(T_MODU, "usermod");	/* loaded */
+  tp = insert_module(T_MODU, "usermod");	/* loaded */
   set_ep(pair_psc(tp), get_ep(global_mod));
 }
 

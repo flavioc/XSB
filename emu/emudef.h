@@ -72,7 +72,7 @@ Psc tnot_psc, delay_psc;
  * Ret PSC's are used to store substitution factors for subgoal calls or
  * answers.  A psc with a new arity will be created when needed.
  */
-Psc ret_psc[255];
+Psc ret_psc[MAX_ARITY];
 
 char *list_dot;
 
@@ -195,9 +195,8 @@ int *asynint_ptr = &asynint_val;
           !(flags[DEBUG_ON] && !flags[HIDE_STATE] && \
                (get_spy(psc) || flags[TRACE]) \
          ) ) \
-      {   if (dyn_pred()) \
-               lpcreg = cpreg;  /* "proceed" */ \
-          else lpcreg = (pb)&fail_inst; \
+      { dyn_pred(); \
+        lpcreg = cpreg;  /* "proceed" */ \
       } \
       break; \
     case T_UDEF: \
@@ -205,7 +204,7 @@ int *asynint_ptr = &asynint_val;
     default: \
       PSC = synint_proc(PSC, MYSIG_UNDEF, lpcreg-2*sizeof(Cell)); \
       if (!PSC) \
-	lpcreg=pcreg; \
+	lpcreg = pcreg; \
       else \
 	lpcreg = get_ep(PSC); \
       break; \

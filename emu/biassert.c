@@ -555,8 +555,8 @@ typedef int *RegStat;
 #define RVAR -1
 #define TVAR -2
 
-static int RegArray[256];
-static int RegArrayInit[256];
+static int RegArray[MAX_REGS];
+static int RegArrayInit[MAX_REGS];
 static int FreeReg;
 
 static RegStat reg_init(int Size)
@@ -577,8 +577,8 @@ static int reg_get(RegStat Reg, int Type)
     new_reg = FreeReg;
     if (RegArray[FreeReg]==0) {
 	FreeReg++;
-	if (FreeReg > 255) {
-	    assertcmp_throw(ERR_REGISTER);
+	if (FreeReg >= MAX_REGS) {
+	  assertcmp_throw(ERR_REGISTER);
 	}
 	RegArray[FreeReg] = 0;
     } else FreeReg = RegArray[FreeReg];
@@ -661,7 +661,7 @@ int assert_code_to_buff(/* Clause, Size */)
 	fprintf(stderr,"***Error: [] cannot be body of assert\n");
 	return FALSE;
       }
-      sym = (Pair)insert(string_val(Body),0,(Psc)flags[CURRENT_MODULE],&v);
+      sym = insert(string_val(Body),0,(Psc)flags[CURRENT_MODULE],&v);
       Body = makecs(hreg);
       new_heap_functor(hreg,sym->psc_ptr);
     }
@@ -1389,7 +1389,7 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
     int Loc ;
 
     if ((pb)OldInd == (pb)&fail_inst) { /* empty bucket, add first clause */
-      *Bucketaddr =  NewInd ;
+      *Bucketaddr = NewInd ;
       IndRefPrev(NewInd) = (CPtr) Bucketaddr ;
       IndRefNext(NewInd) = (CPtr) SOBrec ;
     } else if (AZ == 0) { /* add at beginning */
