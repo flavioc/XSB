@@ -884,7 +884,6 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	    Tdep is T22 - T11,
 	    writeln(dependencycheck=Tdep),
 	    */
-	    flora_stderr_nl,
 	    flora_errorwarn_count(0,DepWarnNum),
 
 	    flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)

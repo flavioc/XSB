@@ -31,14 +31,19 @@
 
 :- import eval/2 from eval.
 
-:- import str_cat/3 from string.
-
 :- import
 	flora_firstorderdef/2,
 	flora_flogicstaticdef/2
    from flrfirstorder.
 
 :- import flora_prlgdef/2 from flrprolog.
+
+:- import flora_write_quoted_atom/1,
+	flora_write_atom/1,
+	flora_get_counter/2,
+	flora_set_counter/2,
+	flora_concat_atoms/2
+   from flrporting.
 
 :- import
 	flora_user_module_predicate/4,

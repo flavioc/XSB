@@ -28,11 +28,13 @@
 :- compiler_options([xpp_on]).
 #include "flag_defs_xsb.h"
 #include "flora_characters.flh"
+#include "token_defs_xsb.h"
 
 :- import conget/2, conset/2 from gensym.
 :- import eval/2 from eval.
 :- import
-	slash/1, stat_flag/2
+	slash/1, stat_flag/2,
+	file_puttoken/3, file_writequoted/2
    from machine.
 :- import substring/4 from string.
 :- import library_directory/1 from usermod.
@@ -41,6 +43,8 @@
 
 
 :- export
+	flora_write_quoted_atom/1,
+	flora_write_atom/1,
 	flora_slash/1,
 	flora_file_op/2,
 	flora_file_op/3,
@@ -72,7 +76,7 @@ flora_concat_items([Item|ItemList],Atom) :-
 	fmt_write_string(Atom1, '%S', arg(Item)),
 	flora_concat_items(ItemList,Atom2),
 	str_cat(Atom1,Atom2,Atom).
-flora_concat_atoms([],'').
+flora_concat_items([],'').
 
 %% If all members are atoms, this is more efficient
 %% Make the most common case fast!
@@ -143,10 +147,18 @@ flora_copy_input :-
 	stat_flag(CURRENT_INPUT, StdIn),
 	stat_flag(CURRENT_OUTPUT, StdOut),
 	copyIOport(StdIn,StdOut).
-	/*
+/*
 	repeat,
 	  get0(Ch),
 	  (Ch =:= CH_EOF_P, !
 	  ; put(Ch), fail
 	  ).
-	*/
+*/
+
+
+flora_write_quoted_atom(Atom) :-
+	stat_flag(CURRENT_OUTPUT, StdOut),
+	file_writequoted(StdOut,Atom).
+flora_write_atom(Atom) :-
+	stat_flag(CURRENT_OUTPUT, StdOut),
+	file_puttoken(StdOut,TK_ATOM,Atom).
