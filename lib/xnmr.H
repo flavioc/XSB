@@ -48,7 +48,7 @@
 :- import consult/1 from consult.
 :- consult(sModels).
 
-:- import init_smodels/2, a_stable_model/0, print_current_stable_model/0,
+:- import init_smodels/1, a_stable_model/0, print_current_stable_model/0,
 	in_all_stable_models/2
         from smodelsint.
 

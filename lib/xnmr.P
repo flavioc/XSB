@@ -207,7 +207,7 @@ process_stable_models(Query) :-
          ->     true
          ;      Q = Query
         ),
-	init_smodels(Q,0),
+	init_smodels(Q),
 	file_nl(STDFDBK),
 	file_write(STDFDBK,'Stable Models: '), 
 	a_stable_model,
@@ -231,7 +231,7 @@ process_answerset_semantics(Query) :-
          ->     Neg = 1
          ;      Q = Query, Neg = 0
         ),
-	init_smodels(Q,0),
+	init_smodels(Q),
 	(in_all_stable_models(1,Neg)
 	 ->     file_write(STDFDBK,'  yes')
 	 ;      file_write(STDFDBK,'  no')
@@ -276,10 +276,6 @@ print_debug_state :-
 version_message :-
 	file_nl(STDMSG),
 	slash(Slash),
-	%% xsb_configuration(etcdir, EtcDir),
-	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(EtcDir,Slash)),
-	%% print_file_contents(CopyingMsg, STDMSG),
-	%% file_nl(STDMSG),
 	xsb_configuration(config_dir, ConfigDir),
 	fmt_write_string(ConfMsg, '%s%sbanner.msg', f(ConfigDir,Slash)),
 	print_file_contents(ConfMsg, STDMSG).

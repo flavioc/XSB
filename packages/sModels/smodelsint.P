@@ -1,9 +1,8 @@
 /* 
 
-init_smodels(+Query,+Flag): initializes smodels with the residual
-program for Query.  Query must be a call to a tabled predicate that is
-currently completely evaluated (and should have a delay list).  If
-Flag is 1, then the program will be printed out on STDFDBK.
+init_smodels(+Query): initializes smodels with the residual program
+for Query.  Query must be a call to a tabled predicate that is
+currently completely evaluated (and should have a delay list).
 
 atom_handle(?Atom,?AtomHandle): is set by init_smodels to be true of
 the set of atoms in the residual program (and thus the herbrand base
@@ -28,6 +27,9 @@ the current stable model (set by an invocation of a_stable_model/0.)
 current_stable_model(-AtomList) returns the list of atoms true in the
 current stable model.
 
+answer_set(+Query) true if Query is true in all partial stable models
+total on the subgoals relevant to Query.
+
 print_current_stable_model: prints the current stable model on STDFDBK.
 
 */
@@ -47,7 +49,7 @@ print_current_stable_model: prints the current stable model on STDFDBK.
 :- index(atomhandle(_,_),[1,2],1001).
 
 
-init_smodels(Query,PrintFlag) :-
+init_smodels(Query) :-
 	(atomtrie(_)
          ->     close_smodels
          ;      true
@@ -61,15 +63,9 @@ init_smodels(Query,PrintFlag) :-
 	num_resid(Query,Handle,AtomTrie,Rules,[]),
 	conget('_$smctr',NumAtoms),
 	assert(atomtrie(AtomTrie)),
-	(PrintFlag == 1
-         ->     file_nl(STDFDBK), file_write(STDFDBK,'Num Atoms: '), 
-	        file_write(STDFDBK,NumAtoms), file_nl(STDFDBK),
-	        write_rules(Rules)
-	 ;      true
-        ),
 	send_pgm_to_smodels(Rules,NumAtoms),
 	fail.   % fail in order to reclaim space.
-init_smodels(_,_).   % init_smodels has only side-effects.
+init_smodels(_).   % init_smodels has only side-effects.
 
 give_atom_handle(Handle,Leaf) :-
 	coninc('_$smctr'), conget('_$smctr',Handle),
@@ -105,10 +101,22 @@ get_the_delay_lists(Query,DLs) :-
 	is_most_general_list(Vars),
 	table_state(S,complete),
 	!,
-	get_returns(S,R,Leaf),
-	get_delay_lists(Leaf,DLs).
+	% combine delay lists of subsuming answers.
+	findall(DLS,get_DLs(R,S,DLS),DLsList),
+	append_lists(DLsList,DLs).
 get_the_delay_lists(Query, _) :-
 	abort(('init_smodels: Query not completly evaluated: ',Query)).
+
+get_DLs(R,S,DLs) :-
+	copy_term(R,R1),
+	get_returns(S,R1,Leaf),
+	subsumes_chk(R,R1),subsumes_chk(R1,R),
+	get_delay_lists(Leaf,DLs).
+
+append_lists([],[]) :- !.
+append_lists([X],X) :- !.
+append_lists([X|Xs],Xss) :-
+	append_lists(Xs,TXs), append(X,TXs,Xss).
 
 get_delay_lists(A,B) :- get_delay_lists(A,B).  % inline
 
@@ -150,7 +158,6 @@ is_most_general_list(L) :- \+ \+ imgl(L).
 imgl([]).
 imgl([L|Ls]) :- var(L), L=[], imgl(Ls).
 
-% How about neg?
 in_all_stable_models(Handle,Neg) :-
 	smodels_initted,
 	conget('_$smctr',NumAtoms),
@@ -158,6 +165,9 @@ in_all_stable_models(Handle,Neg) :-
          ->     true
          ;      abort(('in_all_stable_models: illegal atom number: ',Handle))
         ),
+	in_all_stable_models1(Handle,Neg).
+
+in_all_stable_models1(Handle,Neg) :-
 	(Neg == 0
          ->     smodelsSetNegCompute(Handle)
 	 ;      smodelsSetPosCompute(Handle)
@@ -166,6 +176,38 @@ in_all_stable_models(Handle,Neg) :-
 	!,
 	close_smodels,
 	Ret =:= 0.         
+
+answer_set(Query0) :-
+	excess_vars(Query0,[],[],QueryVars),
+	(Query0 = tnot(Query1)
+         ->     (QueryVars \== []
+                 ->     abort(('answer_set: variables in scope of tnot/1: ',Query0))
+	         ;      Neg = 1
+	        )
+         ;      Query1 = Query0, Neg = 0
+        ),
+	table_state(Query1,State),
+	(State == undef
+         ->     Query = table_call(Query1),
+                (table_call(Query1),fail ; true)
+         ; State \== complete
+         ->     Query = Query1,
+	        (call(Query1),fail ; true)
+	 ;      true
+        ),
+	get_calls(Query, S, R),
+	is_most_general_term(R),
+	is_most_general_list(QueryVars),
+	get_returns(S,R,Leaf),
+	get_delay_lists(Leaf,DLs),
+	(DLs == []
+         ->     true
+	 ;      init_smodels(Query),
+	        in_all_stable_models1(1,Neg)
+	).
+
+:- table table_call/1.
+table_call(Q) :- call(Q).
 
 a_stable_model :-
 	smodels_initted,
@@ -227,37 +269,6 @@ write_list_tail([Atom|Atoms],Port) :-
 	file_write(Port,'; '),
 	file_write(Port,Atom),
 	write_list_tail(Atoms,Port).
-
-
-write_rules([]).
-write_rules([[Head|Body]|Rules]) :-
-	atom_handle(HAtom,Head),
-	file_write(STDFDBK,HAtom),
-	(Body == []
-         ->     true
-	 ;      file_write(STDFDBK,' <- '),
-	        write_body(Body)
-	),
-	file_write(STDFDBK,'.'),
-	file_nl(STDFDBK),
-	write_rules(Rules).
-
-write_body([tnot(Handle)]) :- !,
-	atom_handle(Atom,Handle),
-	file_write(STDFDBK,tnot(Atom)).
-write_body([Handle]) :- !,
-	atom_handle(Atom,Handle),
-	file_write(STDFDBK,Atom).
-write_body([tnot(Handle)|Rest]) :- !,
-	atom_handle(Atom,Handle),
-	file_write(STDFDBK,tnot(Atom)),
-	file_write(STDFDBK,', '),
-	write_body(Rest).
-write_body([Handle|Rest]) :- !,
-	atom_handle(Atom,Handle),
-	file_write(STDFDBK,Atom),
-	file_write(STDFDBK,', '),
-	write_body(Rest).
 
 for(L,L,H) :- L =< H.
 for(I,L,H) :- L < H, L1 is L+1, for(I,L1,H).
