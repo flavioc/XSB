@@ -1337,7 +1337,7 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
 }
 
 static int hash_val(int Ind, prolog_term Head, int TabSize )
-/* assumes we can hash to this Ind */
+/* return -1 if cannot hash to this Ind (var) */
 {
   int Hashval = 0 ;
   int i, j ;
@@ -1356,7 +1356,8 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
       if (j > 0) {
 	if (j <= 0x80) {
 	  Arg = p2p_arg(Head,j);
-	  Hashval += Hashval + ihash(val_to_hash(Arg), TabSize);
+	  if (isref(Arg) || isattv(Arg)) return -1;
+	  else Hashval += Hashval + ihash(val_to_hash(Arg), TabSize);
 	} else {
 	  prolog_term *stk[MAXTOINDEX], term;
 	  int k, depth = 0, argsleft[MAXTOINDEX];
