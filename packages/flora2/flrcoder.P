@@ -763,14 +763,18 @@ flora_write_workspace(FOSYSTEMMODULE,WS,Funct) :-
 
 /****************************************************************************
   flora_write_functor(+Atom)
+
+  It is for outputting a module name. For efficiency reasons, quotes are
+  note allowed in module names. Otherwise, flora_write_funct/1 should be
+  called to output module names so that macros cannot be broken.
 ****************************************************************************/
 flora_write_functor(A) :-
 	flora_write_quoted_atom(A).
-/*
-	atom_codes(A,Chars),
-	flora_write_funct(Chars).
+	%%atom_codes(A,Chars),
+	%%flora_write_funct(Chars).
 
 
+/****************************************************************************
 flora_write_funct([]).
 
 flora_write_funct([H|T]) :-
@@ -785,7 +789,7 @@ flora_write_funct([H|T]) :-
 	  put(H)
         ),
 	flora_write_funct(T).
-*/
+****************************************************************************/
 
 
 /****************************************************************************
