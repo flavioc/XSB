@@ -27,17 +27,30 @@
 :- compiler_options([xpp_on]).
 
 /*
-  This simple wrapper understands the directive :- wrap predicate-list.
+  This simple wrapper understands the directives
+  :- FL_DUMP 'string'                (dump)
+  :- FL_FLOGICSTATIC predicate-list. (flogic)
+  :- FL_FIRSTORDER predicate-list.   (firstorder)
+  :- FL_STORAGE predicate-list.      (storage)
 
-  Predicates mentioned in the directives :-wrap predicate-list are 
+  Predicates mentioned in these directives are 
   recorded and whenever they occur in other directives or rules
-  they are wrapped as FLORA_THIS_WORKSPACE(predicate)
-  or FLORA_FO_THIS_WORKSPACE(predicate)
-  for further processing by the gpp preprocessor.
-  The include(file) directive causes this wrapper to read the file and 
-  process it similarly. When the file is finished, it resumes reading
-  the current file.
-  The dump directive causes the argument to be dumped into the output as is.
+  they are wrapped accordingly.
+
+  :- dump 'whatever'
+
+  causes the argument to be dumped into the output as is.
+
+  The predicates listed in the other directives are wrapped with
+  FLORA_THIS_WORKSPACE(predicate), FLORA_FO_THIS_WORKSPACE(predicate),
+  or FLORA_THIS_STORAGE(predicate), respectively, for further processing 
+  by the gpp preprocessor.
+  The
+  
+  :- include(file)
+	  
+  directive causes this wrapper to read the file and process it similarly.
+  When the file is finished, it resumes reading the current file.
 */
 
 
