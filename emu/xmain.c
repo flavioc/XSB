@@ -152,12 +152,14 @@ int main(int argc, char *argv[])
   if ( user_home == NULL )
     user_home = install_dir;
 
+  xsb(0, argc, argv);  /* init xsb */
+
+  /* do it after initialization, so that typing xsb -v or xsb -h won't create
+     .xsb directory */
   set_xsbinfo_dir ();
 
-
-  xsb(0, argc, argv);  /* init xsb */
-  xsb(1, 0, 0);  /* */
-  xsb(2, 0, 0);  /* when halts, exit */
+  xsb(1, 0, 0);        /* normal execution */
+  xsb(2, 0, 0);        /* when halts, exit */
   return 0;
 }
 
