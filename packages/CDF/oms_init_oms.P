@@ -2425,11 +2425,12 @@ assert_oms(Term) :-
 
 assert_oms_term(Term) :-
 	assert_oms_int(Term),
-	get_component_intensional(Term,Name),
-	(oms_dirty(Name)
-	 ->	true
-	 ;	make_oms_dirty(Name)
-	),	!.
+	!.
+%	get_component_intensional(Term,Name),
+%	(oms_dirty(Name)
+%	 ->	true
+%	 ;	make_oms_dirty(Name)
+%	),	!.
 assert_oms_term(Term) :-
 	asserta(Term),
 	get_component_extensional(Term,Name),
