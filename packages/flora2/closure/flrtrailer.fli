@@ -15,8 +15,6 @@
 #include "flora_terms.flh"
 
 
-:- prolog flora_warning_line/1.
-
 :- import flora_warning_line/1 from flrprint.
 
 

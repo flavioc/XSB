@@ -30,7 +30,6 @@
 
 
 flora_sign((findall),3,[FL_OID,FL_FORMULAR,FL_OID]) :- !.
-flora_sign(FL_UNIVEQ,2,[FL_FORMULAR,FL_FORMULAR]) :- !.
 flora_sign((assert),1,[FL_FORMULAR]) :- !.
 flora_sign((retract),1,[FL_FORMULAR]) :- !.
 flora_sign((retractall),1,[FL_FORMULAR]) :- !.

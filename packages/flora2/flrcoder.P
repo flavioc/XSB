@@ -248,11 +248,6 @@ flora_write_structlist([T|L],Prefix) :-
   Prefix is only prepended to F-logic wrappers.
 ****************************************************************************/
 flora_write_struct(Term,_Prefix) :-
-	atomic(Term),
-	!,
-	write_canonical(Term).
-
-flora_write_struct(Term,_Prefix) :-
 	is_pratom(Term,Atom),
 	!,
 	write_canonical(Atom).
@@ -409,6 +404,11 @@ flora_write_struct(Term,_Prefix) :-
 	;
 	  write_canonical(index(P/A,N))
 	).
+
+flora_write_struct(Term,_Prefix) :-
+	atomic(Term),
+	!,
+	write_canonical(Term).
 
 
 /****************************************************************************
@@ -727,10 +727,6 @@ flora_build_structlist([T|L],DWS,Prefix,VarList,[TCode|LCode]) :-
 /****************************************************************************
   flora_build_struct(+Term,+Workspace,+Prefix,?VarList,-Code)
 ****************************************************************************/
-flora_build_struct(Term,_DWS,_Prefix,_VarList,Term) :-
-	atomic(Term),
-	!.
-
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Code) :-
 	is_pratom(Term,Code),
 	!.
@@ -862,6 +858,10 @@ flora_build_struct(Term,DWS,_Prefix,_VarList,Code) :-
 	;
 	  Code=index(P/A,N)
 	).
+
+flora_build_struct(Term,_DWS,_Prefix,_VarList,Term) :-
+	atomic(Term),
+	!.
 
 
 /****************************************************************************

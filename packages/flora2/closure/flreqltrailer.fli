@@ -15,8 +15,6 @@
 #include "flora_terms.flh"
 
 
-:- prolog flora_warning_line/1.
-
 :- import flora_warning_line/1 from flrprint.
 
 
@@ -55,16 +53,16 @@ derived_sub_eql(X,Y) :-
 	derived_sub(X,Y).
 
 derived_sub_eql(X,Y) :-
-	objeql(X,OX),
+	diffobjeql(X,OX),
 	derived_sub(OX,Y).
 
 derived_sub_eql(X,Y) :-
-	objeql(Y,OY),
+	diffobjeql(Y,OY),
 	derived_sub(X,OY).
 
 derived_sub_eql(X,Y) :-
-	objeql(X,OX),
-	objeql(Y,OY),
+	diffobjeql(X,OX),
+	diffobjeql(Y,OY),
 	derived_sub(OX,OY).
 
 
@@ -121,16 +119,16 @@ derived_isa_eql(O,C) :-
 	derived_isa(O,C).
 
 derived_isa_eql(O,C) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_isa(OX,C).
 
 derived_isa_eql(O,C) :-
-	objeql(C,CX),
+	diffobjeql(C,CX),
 	derived_isa(O,CX).
 
 derived_isa_eql(O,C) :-
-	objeql(O,OX),
-	objeql(C,CX),
+	diffobjeql(O,OX),
+	diffobjeql(C,CX),
 	derived_isa(OX,CX).
 
 
@@ -181,16 +179,16 @@ derived_ifd_eql(C,A,V) :-
 	derived_ifd(C,A,V).
 
 derived_ifd_eql(C,A,V) :-
-	objeql(C,CX),
+	diffobjeql(C,CX),
 	derived_ifd(CX,A,V).
 
 derived_ifd_eql(C,A,V) :-
-	objeql(V,VX),
+	diffobjeql(V,VX),
 	derived_ifd(C,A,VX).
 
 derived_ifd_eql(C,A,V) :-
-	objeql(C,CX),
-	objeql(V,VX),
+	diffobjeql(C,CX),
+	diffobjeql(V,VX),
 	derived_ifd(CX,A,VX).
 
 
@@ -252,16 +250,16 @@ derived_imvd_eql(C,A,V) :-
 	derived_imvd(C,A,V).
 
 derived_imvd_eql(C,A,V) :-
-	objeql(C,CX),
+	diffobjeql(C,CX),
 	derived_imvd(CX,A,V).
 
 derived_imvd_eql(C,A,V) :-
-	objeql(V,VX),
+	diffobjeql(V,VX),
 	derived_imvd(C,A,VX).
 
 derived_imvd_eql(C,A,V) :-
-	objeql(C,CX),
-	objeql(V,VX),
+	diffobjeql(C,CX),
+	diffobjeql(V,VX),
 	derived_imvd(CX,A,VX).
 
 
@@ -286,7 +284,7 @@ derived_imvddef_eql(C,A) :-
 	derived_imvddef(C,A).
 
 derived_imvddef_eql(C,A) :-
-	objeql(C,CX),
+	diffobjeql(C,CX),
 	derived_imvddef(CX,A).
 
 
@@ -367,16 +365,16 @@ derived_fd_eql(O,A,V) :-
 	derived_fd(O,A,V).
 
 derived_fd_eql(O,A,V) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_fd(OX,A,V).
 
 derived_fd_eql(O,A,V) :-
-	objeql(V,VX),
+	diffobjeql(V,VX),
 	derived_fd(O,A,VX).
 
 derived_fd_eql(O,A,V) :-
-	objeql(O,OX),
-	objeql(V,VX),
+	diffobjeql(O,OX),
+	diffobjeql(V,VX),
 	derived_fd(OX,A,VX).
 
 
@@ -438,16 +436,16 @@ derived_mvd_eql(O,A,V) :-
 	derived_mvd(O,A,V).
 
 derived_mvd_eql(O,A,V) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_mvd(OX,A,V).
 
 derived_mvd_eql(O,A,V) :-
-	objeql(V,VX),
+	diffobjeql(V,VX),
 	derived_mvd(O,A,VX).
 
 derived_mvd_eql(O,A,V) :-
-	objeql(O,OX),
-	objeql(V,VX),
+	diffobjeql(O,OX),
+	diffobjeql(V,VX),
 	derived_mvd(OX,A,VX).
 
 
@@ -472,7 +470,7 @@ derived_mvddef_eql(O,A) :-
 	derived_mvddef(O,A).
 
 derived_mvddef_eql(O,A) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_mvddef(OX,A).
 
 
@@ -547,7 +545,7 @@ meth(O,M) :-
 	derived_meth(O,M).
 
 meth(O,M) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_meth(OX,M).
 
 meth(O,M) :-
@@ -563,7 +561,7 @@ imeth(C,M) :-
 	derived_imeth(C,M).
 
 imeth(C,M) :-
-	objeql(C,CX),
+	diffobjeql(C,CX),
 	derived_imeth(CX,M).
 
 imeth(C,M) :-
@@ -585,7 +583,7 @@ tran(O,T) :-
 	derived_tran(O,T).
 
 tran(O,T) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_tran(OX,T).
 
 
@@ -616,16 +614,16 @@ fdsig(O,MethodArgs,R) :-
 	derived_fdsig(O,MethodArgs,R).
 
 fdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_fdsig(OX,MethodArgs,R).
 
 fdsig(O,MethodArgs,R) :-
-	objeql(R,RX),
+	diffobjeql(R,RX),
 	derived_fdsig(O,MethodArgs,RX).
 
 fdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
-	objeql(R,RX),
+	diffobjeql(O,OX),
+	diffobjeql(R,RX),
 	derived_fdsig(OX,MethodArgs,RX).
 
 fdsig(O,MethodArgs,R) :-
@@ -641,16 +639,16 @@ ifdsig(O,MethodArgs,R) :-
 	derived_ifdsig(O,MethodArgs,R).
 
 ifdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_ifdsig(OX,MethodArgs,R).
 
 ifdsig(O,MethodArgs,R) :-
-	objeql(R,RX),
+	diffobjeql(R,RX),
 	derived_ifdsig(O,MethodArgs,RX).
 
 ifdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
-	objeql(R,RX),
+	diffobjeql(O,OX),
+	diffobjeql(R,RX),
 	derived_ifdsig(OX,MethodArgs,RX).
 
 ifdsig(S,MethodArgs,R) :-
@@ -666,16 +664,16 @@ mvdsig(O,MethodArgs,R) :-
 	derived_mvdsig(O,MethodArgs,R).
 
 mvdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_mvdsig(OX,MethodArgs,R).
 
 mvdsig(O,MethodArgs,R) :-
-	objeql(R,RX),
+	diffobjeql(R,RX),
 	derived_mvdsig(O,MethodArgs,RX).
 
 mvdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
-	objeql(R,RX),
+	diffobjeql(O,OX),
+	diffobjeql(R,RX),
 	derived_mvdsig(OX,MethodArgs,RX).
 
 mvdsig(O,MethodArgs,R) :-
@@ -691,16 +689,16 @@ imvdsig(O,MethodArgs,R) :-
 	derived_imvdsig(O,MethodArgs,R).
 
 imvdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
+	diffobjeql(O,OX),
 	derived_imvdsig(OX,MethodArgs,R).
 
 imvdsig(O,MethodArgs,R) :-
-	objeql(R,RX),
+	diffobjeql(R,RX),
 	derived_imvdsig(O,MethodArgs,RX).
 
 imvdsig(O,MethodArgs,R) :-
-	objeql(O,OX),
-	objeql(R,RX),
+	diffobjeql(O,OX),
+	diffobjeql(R,RX),
 	derived_imvdsig(OX,MethodArgs,RX).
 
 imvdsig(S,MethodArgs,R) :-
@@ -727,7 +725,7 @@ exists(X) :-
 	derived_exists(X).
 
 exists(X) :-
-	objeql(X,OX),
+	diffobjeql(X,OX),
 	derived_exists(OX).
 
 exists(X) :- fd(X,_,_).
@@ -751,10 +749,11 @@ exists(X) :- imeth(X,_).
 *****************************************************************************/
 :- nohilog base_objeql/2.
 :- nohilog derived_objeql/2.
+:- nohilog diffobjeql/2.
 
 
 :- table derived_objeql/2.
-:- table objeql/2.
+:- table diffobjeql/2.
 
 
 derived_objeql(X,Y) :-
@@ -764,27 +763,40 @@ derived_objeql(X,Y) :-
 	derived_objeql(Y,X).
 
 
-objeql(X,Y) :-
+diffobjeql(X,Y) :-
 	derived_objeql(X,Y),
 	X \= Y.
 
-objeql(X,Y) :-
-	objeql(X,Z),
-	objeql(Z,Y),
+diffobjeql(X,Y) :-
+	diffobjeql(X,Z),
+	diffobjeql(Z,Y),
 	X \= Y.
 
-objeql(X,Y) :- derived_fd(O,M,X), derived_fd(O,M,Y), X \= Y.
+diffobjeql(X,Y) :- derived_fd(O,M,X), derived_fd(O,M,Y), X \= Y.
 
-objeql(X,Y) :- derived_ifd(O,M,X), derived_ifd(O,M,Y), X \= Y.
+diffobjeql(X,Y) :- derived_ifd(O,M,X), derived_ifd(O,M,Y), X \= Y.
 
-objeql(X,Y) :-
-	objeql(O1,O2),
+diffobjeql(X,Y) :-
+	diffobjeql(O1,O2),
 	derived_fd(O1,M,X),
 	derived_fd(O2,M,Y),
 	X \= Y.
 
-objeql(X,Y) :-
-	objeql(O1,O2),
+diffobjeql(X,Y) :-
+	diffobjeql(O1,O2),
 	derived_ifd(O1,M,X),
 	derived_ifd(O2,M,Y),
 	X \= Y.
+
+
+/*****************************************************************************
+  objeql/2
+*****************************************************************************/
+:- prolog nonvar/1.
+
+
+objeql(X,Y) :-
+	(nonvar(X); nonvar(Y)),
+	X=Y.
+
+objeql(X,Y) :- diffobjeql(X,Y).
