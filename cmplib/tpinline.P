@@ -54,6 +54,10 @@ geninline('_$cutto', [Arg], _, Pil, Pilr, Tin, Tout, _, _) :-
 
 geninline(is, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
 	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, PredSym, NC).
+geninline(@=, [Arg1,Arg2], _HoldR, Pil, Pilr, Tin, Tout, _PredSym, _NC) :-
+	geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
+	geninl_load_lhs(Arg2, R2, Pilm,
+			[fun_test_ne(R1,R2,abs(-1))|Pilr], Tmid, Tout, _).
 geninline(=, [Lhs,Rhs], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
 	geninl_load_lhs(Lhs, R, Pil, Pil1, Tin, Tmid0, SaveReg),
 	release_if_tvar_if_done(Rhs, R, HoldR, Tmid0, Tmid1),
