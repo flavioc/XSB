@@ -50,6 +50,9 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "tr_utils.h"
+#ifdef CHAT
+#include "chat.h"
+#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -1361,7 +1364,6 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
 {
   ALNptr pALN;
 
-
   /* Delete the call entry
      --------------------- */
   delete_branch(subg_leaf_ptr(CallStrPtr),
@@ -1393,6 +1395,10 @@ void remove_open_tries(CPtr bottom_parameter)
 	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }
+#ifdef CHAT
+      chat_free_cons_chat_areas(CallStrPtr);
+      chat_free_compl_susp_chat_areas(CallStrPtr);
+#endif
       remove_calls_and_returns(CallStrPtr);
     }
     openreg += COMPLFRAMESIZE;
