@@ -1,4 +1,5 @@
 
+:- [cdf].
 :- ensure_loaded(oms_io).
 
 load_test_file(File):- 

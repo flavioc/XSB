@@ -3,9 +3,9 @@
 :- import abolish_table_pred/1 from tables.
 
 oms_dont_use_cache.
-oms_use_cache
+oms_use_cache.
 
-:- assert (caching_oms(0)).
+:- assert(caching_oms(0)).
 
 :- dynamic oms_dirty/1.
 :- index(oms_dirty/1,0,0).
