@@ -183,10 +183,10 @@
 	  }
 	}
 	bind_nil(dls_tail);
+	free(copy_of_var_addr);
       } else {
 	bind_nil((CPtr)delay_lists);
       }
-      free(copy_of_var_addr);
       break;
 
 /*----------------------------------------------------------------------*/
