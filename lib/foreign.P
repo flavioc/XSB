@@ -145,6 +145,7 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
 #endif
+
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts])),
 		concat_atom([Base,'.o'], Obj),
@@ -176,15 +177,16 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		message(shell([CC_Name,' ',CC_Opts,' ',LdOption,
 			       ' -L',BINDIR,' ',
 			       ' -Wl,--out-implib=',Base,'.a ',
-			       LD_Options,' -shared -s -o ',
+			       ' -shared -s -o ',
 			       Base,'.dll ',Base,'.def ',
-			       Obj,' ', TempObj,' -lxsb'])),
+			       Obj,' ', TempObj, ' ', LD_Options, ' -lxsb'])),
 		shell([CC_Name,' ',CC_Opts,' ',LdOption,
 		       ' -L',BINDIR,
 		       ' -Wl,--out-implib=',Base,'.a ',
-		       LD_Options,' -shared -s -o ',
+		       ' -shared -s -o ',
 		       Base,'.dll ',Base,'.def ',
-		       Obj,' ',TempObj,' -lxsb'])
+		       %% NOTE: It is IMPORTANT that LD_Options are at the end!
+		       Obj,' ',TempObj, ' ', LD_Options,' -lxsb'])
 	    ;	str_sub('windows', Configuration)
 	    ->  %% check if Module.dll exists in the bindir or current dir
 		%% If not - issue a warning
