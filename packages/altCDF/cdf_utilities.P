@@ -71,10 +71,6 @@ cdf_clean(attribute_function(RelCid),Fix) :-
 :- dynamic(bc_node(_,_)).
 :- index(bc_node(_,_),trie).
 
-%%build_taxonomy(DataAccessor,HookCid,RootID,Source) :-
-%%	cdf_warning(unimplemented,['build_taxonomy/4 has not ',
-%%	  ' yet been updated to CDF.']).
-
 build_taxonomy(DataAccessor,_HookCid,_RootID,_Source) :-
 	retractall(bc_node(_,_)),
 	apply_lambda_fast(DataAccessor,ID,Label),
@@ -82,7 +78,6 @@ build_taxonomy(DataAccessor,_HookCid,_RootID,_Source) :-
 	assert(bc_node(IDC,Label)),
 	fail.
 build_taxonomy(_DataAccessor,HookCid,RootID,Source) :-
-%%?	init_cdf_rels,
 	bc_node(IDC,Label),
 	find_parent(IDC,HookCid,RootID,Source,PCid),
 	atom_codes(ID,IDC),
