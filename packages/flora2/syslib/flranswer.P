@@ -42,7 +42,7 @@
    from standard.
 
 :- import length/2 from basics.
-:- import storage_reclaim_space/0 from storage.
+:- import storage_reclaim_space/1, storage_commit/1 from storage.
 
 :- import findall/3, sort/2 from setof.
 
@@ -58,6 +58,8 @@
 	flora_stdfdbk_nl/0,
 	flora_stdfdbk_line/1
    from flrprint.
+
+:- import flora_commit_storage/0, flora_reclaim_storage_space/0 from flrutils.
 
 :- import windows_os/0 from xsb_configuration.
 
@@ -123,13 +125,13 @@ flora_print_all(Gs,NVs) :-
 	      flora_write_Yes
 	  )
 	),
-	storage_reclaim_space.
+	flora_reclaim_storage_space.
 
 
 /********************************************************************/
 flora_print_one(Gs,NVs) :-
 	( NVs == [] ->
-	    flora_if_then_else(flora_call(Gs),flora_write_Yes,flora_write_No)
+	    flora_if_then_else(flora_call(Gs), flora_write_Yes,flora_write_No)
 	;
 	  ( flora_call(Gs),
 	    flora_write_pairs(NVs),
@@ -138,7 +140,7 @@ flora_print_one(Gs,NVs) :-
 	    flora_write_No
 	  )
 	),
-	storage_reclaim_space.
+	flora_reclaim_storage_space.
 
 
 /********************************************************************/
@@ -172,6 +174,7 @@ flora_write_No  :- flora_stdfdbk_line("\nNo.\n").
 flora_call(Goal) :- 
     	flora_handle_trace,
     	call(Goal),
+	flora_commit_storage,
 	flora_handle_end_of_call.
 
 flora_call(_Goal) :-

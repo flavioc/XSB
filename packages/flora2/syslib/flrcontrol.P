@@ -36,3 +36,23 @@ FL_IF(FL_THEN(Cond,FL_ELSE(Then,_Else))) :- call(Cond), call(Then).
 %% This cut prevents `if' with the `else' clause from matching the third clause
 FL_IF(FL_THEN(Cond,FL_ELSE(_Then,Else))) :- !, sk_not(Cond), call(Else).
 FL_IF(FL_THEN(Cond,Then)) :- call(Cond), call(Then).
+
+
+%% This should fail ONLY if Cond is true, but Action fails.
+%% We use catch/throw to achieve this
+FL_WHILE(FL_DO(Cond,Action)) :- 
+	catch((call(Cond),
+	       (call(Action) -> flora_commit_storage, fail
+	       ; throw(quitLoop)
+	       )
+	      ; true
+	      ),
+	      quitLoop, % catcher
+	      fail).    % fail, if condition was thrown
+
+%% Fails only is Action becomes false before Cond becomes true
+FL_DO(FL_UNTIL(Action,Cond)) :-
+	call(Action),
+	flora_commit_storage,
+	call(Cond).
+

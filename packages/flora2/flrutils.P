@@ -603,8 +603,11 @@ flora_mainO_filename(File,MOFile) :-
 	fmt_write_string(MOFile,'%s%s.%s',args(Dir,Base,XSB_OFILE_EXT)).
 
 flora_FDB_filename(File,FDBFile) :-
-	parse_filename(File,Dir,Base,_),
-	fmt_write_string(FDBFile,'%s%s.%s',args(Dir,Base,FLORA_FDB_EXT)).
+	path_sysop(basename,File,Base),
+	%% Keep just the base name
+	%% The directory will be attached dynamically during the load time
+	fmt_write_string(FDBFile,'%s.%s',args(Base,FLORA_FDB_EXT)).
+	%%fmt_write_string(FDBFile,'%s%s.%s',args(Dir,Base,FLORA_FDB_EXT)).
 
 flora_FLH_filename(File,FLHFile) :-
 	parse_filename(File,Dir,Base,_),
@@ -929,9 +932,15 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 *************************************************************************/
 flora_load_dyn(InDBFile,ModuleName) :-
 	flora_check_filename(InDBFile),
-	( flora_locate_file(InDBFile,DBFile) ->
-	    flora_message_line('dynamically loading %s into storage trie',
-			       args(DBFile)),
+	(path_sysop(isabsolute,InDBFile), InDBFileAbs = InDBFile, !
+	;
+	    current_loaded_file(LoadedFile),
+	    path_sysop(dirname,LoadedFile,FileDir),
+	    fmt_write_string(InDBFileAbs, '%s%s', args(FileDir,InDBFile))
+	),
+	( flora_locate_file(InDBFileAbs,DBFile) ->
+	    flora_message_line('dynamically loading %s into module %s',
+			       args(DBFile, ModuleName)),
 	    cputime(T0),
 	    seeing(PreInFile),
 	    flora_set_xpp_options(ModuleName),
@@ -949,8 +958,8 @@ flora_load_dyn(InDBFile,ModuleName) :-
 	    T is T1-T0,
 	    flora_message_line('Done! CPU time used: %S seconds',args(T))
 	;
-	  flora_error_line('File %s does not exist!', args(InDBFile)),
-	  fail
+	    flora_error_line('File %s does not exist!', args(InDBFileAbs)),
+	    fail
 	),
 	!.
 
@@ -971,6 +980,26 @@ flora_read_canonical_and_insert(StorageName) :-
 	  fail
 	).
 
+
+/*************************************************************************
+ Commit all backtrackable updates to Flora storage
+**************************************************************************/
+
+flora_commit_storage :-
+	(flora_storage_registry(StorageName),
+	    storage_commit(StorageName),
+	    fail
+	; true).
+
+/*************************************************************************
+ Collect garbage in Flora storage tries
+**************************************************************************/
+
+flora_reclaim_storage_space :-
+	(flora_storage_registry(StorageName),
+	    storage_reclaim_space(StorageName),
+	    fail
+	; true).
 
 /*************************************************************************
   flora_rpc_file(+MaxErr,+ErrNum,+WarnNum,-CompiledRuleList,-FileOptionList,-FileStatus)

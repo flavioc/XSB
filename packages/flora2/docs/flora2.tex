@@ -3604,32 +3604,6 @@ work (will leave the database unchanged) for obvious reasons. The {\tt
 
 {\bf Unimplemented}:  This release does not support the {\tt while}-loops.
 
-{\bf Unimplemented}: There are certain less obvious pitfalls in using backtrackable predicates
-in \FLORA. For instance, the query
-%%
-\begin{quote}
- {\tt flora2 ?- p(X), btinsert\{q(X)\}}  
-\end{quote}
-%%
-will succeed (if {\tt p(X)} is true for some {\tt X}), but will leave the
-database unchanged! The reason has to do with the fact that, by default,
-\FLORA returns all answers to a query.  In the current release, this
-involves a {\tt fail}-loop and, obviously, hurts backtrackable updates
-badly. In a future release, these updates will be integrated with the query
-answering machinery much better. For now, we recommend using the {\tt
-  flOne} primitive, which turns the all-answer mode off:
-%%
-{\tt
-\begin{quote}
-  flora2 ?- flOne.\\
-  flora2 ?- p(X), btinsert\{q(X)\}.
-\end{quote}
-}
-%%
-\noindent
-(Note: {\tt flOne,p(X),btinsert\{q(X)\}} will not work: {\tt flOne} must be
-issued in a separate query.)
-
 
 {\bf Unimplemented}: In the current release, arithmetic expressions in the
 query part of an update must have their variables be bound by the subgoals

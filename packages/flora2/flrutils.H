@@ -35,7 +35,9 @@
 
 :- import assert/1, retractall/1 from assert.
 
-:- import compile/2, consult/1, read_canonical/1 from consult.
+:- import compile/2, consult/1,
+	read_canonical/1, current_loaded_file/1
+    from consult.
 
 :- import library_directory/1 from usermod.
 
@@ -74,7 +76,10 @@
 
 :- import xpp_process_file/3 from parse.
 
-:- import storage_insert_fact/3 from storage.
+:- import storage_insert_fact/3,
+	storage_commit/1,
+	storage_reclaim_space/1
+    from storage.
 
 :- import bootstrap_flora/0 from flora2.
 :- bootstrap_flora.
@@ -148,6 +153,7 @@
 :- dynamic flora_maxerr(_).
 :- dynamic flora_xpp_extra_options/1.
 :- dynamic flora_module_registry/1.
+:- dynamic flora_storage_registry/1.
 
 :- index(flora_maxerr/1,trie).
 
@@ -180,6 +186,9 @@
 	flora_list2conjunct/2,
 	flora_check_workspace/1,
 	flora_module_registry/1,
+	flora_storage_registry/1,
+	flora_reclaim_storage_space/0,
+	flora_commit_storage/0,
 	flora_load_dyn/2,
 	flora_compile_system_module_by_ID/1,
 	flora_load_system_module_internal/1,

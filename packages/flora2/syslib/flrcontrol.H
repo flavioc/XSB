@@ -29,4 +29,6 @@
 #include "flora_terms.flh"
 
 
-:- export FL_IF/1, FL_ELSE/2.
+:- export FL_IF/1, FL_WHILE/1, FL_DO/1.
+
+:- import flora_commit_storage/0 from flrutils.

@@ -585,3 +585,7 @@
 #define FL_IF			if
 #define FL_THEN			then
 #define FL_ELSE			else
+
+#define FL_WHILE		while
+#define FL_UNTIL		until
+#define FL_DO			do
