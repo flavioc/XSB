@@ -69,7 +69,7 @@ static inline int prolog_call0(Cell term)
       break;
     case T_UDEF:
     default:
-      psc = synint_proc(psc, MYSIG_UNDEF, NULL);
+      psc = synint_proc(psc, MYSIG_UNDEF);
       if (psc) pcreg = get_ep(psc);
       break;
 *****/

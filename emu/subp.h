@@ -41,6 +41,6 @@ extern int key_compare( const void *, const void * );
 
 extern byte *exception_handler(char *);
 
-extern Psc synint_proc(Psc, int, byte *);
+extern Psc synint_proc(Psc, int);
 extern void add_interrupt(Cell, Cell);
 extern Cell build_interrupt_chain(void);

@@ -267,7 +267,7 @@ void print_statistics(int amount) {
 /*======================================================================*/
 /*======================================================================*/
 
-static void default_inthandler(int intcode, byte *cur_inst)
+static void default_inthandler(int intcode)
 {
   char message[80];
 
@@ -316,11 +316,11 @@ Pair build_call(Psc psc)
 /* are set up on the Prolog side via set_inthandler/2                   */
 /*======================================================================*/
 
-Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
+Psc synint_proc(Psc psc, int intcode)
 {
   if (flags[intcode+INT_HANDLERS_FLAGS_START]==(Cell)0) {
     /* default hard handler */
-    default_inthandler(intcode, cur_inst);
+    default_inthandler(intcode);
     psc = 0;
   } else {				/* call Prolog handler */
     switch (intcode) {
@@ -403,14 +403,14 @@ void init_interrupt(void)
 void intercept(Psc psc) {
 
   if (flags[CLAUSE_INT])
-    synint_proc(psc, MYSIG_CLAUSE, pcreg-2*sizeof(Cell));
+    synint_proc(psc, MYSIG_CLAUSE);
   else if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
     if (get_spy(psc)) { /* spy'ed pred, interrupted */
-      synint_proc(psc, MYSIG_SPY, pcreg-2*sizeof(Cell));
+      synint_proc(psc, MYSIG_SPY);
       flags[HIDE_STATE]++; /* hide interrupt handler */
     }
     else if (flags[TRACE]) {
-      synint_proc(psc, MYSIG_TRACE, pcreg-2*sizeof(Cell));
+      synint_proc(psc, MYSIG_TRACE);
       flags[HIDE_STATE]++; /* hide interrupt handler */
     }
   }

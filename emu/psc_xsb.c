@@ -45,7 +45,7 @@
 #include "register.h"
 
 
-extern Psc synint_proc(Psc, int, byte *);
+extern Psc synint_proc(Psc, int);
 
 /* === String Table manipulation ======================================	*/
 
