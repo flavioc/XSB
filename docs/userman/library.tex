@@ -1385,6 +1385,20 @@ corresponding system call succeeds.
   \ournewitem{path\_sysop(tmpfilename, -Name)}{file\_io}
   Returns the name of a new temporary file. This is useful when the
   application needs to open a completely new temporary file.
+  \ournewitem{path\_sysop(extension, +Name, -Ext)}{file\_io}
+  Returns file name extension.
+  \ournewitem{path\_sysop(basename, +Name, -Base)}{file\_io}
+  Returns the base name of the file name ({\it i.e.}, the name sans the
+  directory and the extension).
+  \ournewitem{path\_sysop(dirname, +Name, -Dir)}{file\_io}
+  Returns the directory portion of the filename. The directory is slash or
+  backslash terminated.
+  \ournewitem{path\_sysop(isabsolute, +Name)}{file\_io}
+  Succeeds if {\tt Name} is an absolute path name. File does not need to exist.
+  \ournewitem{path\_sysop(expand, +Name, -ExpandedName)}{file\_io}
+  Binds {\tt ExpandedName} to the expanded absolute path name of {\tt Name}.
+  The file does not need to exist. Duplicate slashes, references to the
+  current and parent directories are factored out.
 \end{description}
 %%
 

@@ -281,6 +281,16 @@ path_sysop(size,Path,Size) :- !,
 	sys_system(STAT_FILE_SIZE,Path,Size, _,_,_,_).
 path_sysop(tmpfilename,TmpName) :- !,
 	sys_system(GET_TMP_FILENAME,TmpName,_,_,_,_,_).
-path_sysop(X,_,_) :- abort(('[PATH_SYSOP]: Invalid request, ', X)).
-path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request, ', X)).
+path_sysop(extension,Filename,Extension) :- !,
+	parse_filename(Filename,_,_,Extension).
+path_sysop(basename,Filename,Basename) :- !,
+	parse_filename(Filename,_,Basename,_).
+path_sysop(dirname,Filename,Dirname) :- !,
+	parse_filename(Filename,Dirname,_,_).
+path_sysop(isabsolute,Filename) :- !,
+	is_absolute_filename(Filename).
+path_sysop(expand,Filename,ExpandedName) :- !,
+	expand_filename(Filename,ExpandedName).
+path_sysop(X,_,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/3, ', X)).
+path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/2, ', X)).
 
