@@ -85,7 +85,8 @@ AC_ARG_ENABLE(oracle-debug,
 AC_ARG_ENABLE(profile,
 [  --enable-profile           compile with profiling turned on])
 AC_ARG_ENABLE(optimization,
-[  --disable-optimization     compile with no optimization (default: enabled)])
+[  --disable-optimization     compile with no optimization (default: enabled)],
+			     disable_optimization=yes)
 
 
 if test "${with_debug}" = "yes" ; then

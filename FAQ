@@ -6,15 +6,17 @@ XSB Frequently Asked Questions
 A postscript version of the XSB manual is distributed together
 with the system. An HTML version is available online at
 
-	http://www.cs.sunysb.edu/~sbprolog/manual/manual.html
+	http://xsb.sourceforge.net/
 
-and you can also download a tar-compressed version of the 
-HTML version of the manual at:
-
-	http://www.cs.sunysb.edu/~sbprolog/manual/man.tar.Z
 
 ----------------------------------------------------------------------
 
-- Linux: XSB can't be compiled  due to a missing header file.
+- XSB can't be compiled due to a missing header file.
 
-This is a known problem with some Linux distributions.
+Send us a report at xsb-development@sourceforge.net
+
+
+- Virtual memory exhausted error duting compilation.
+
+This is a known problem with some compilers on some systems.
+Try to disable optimization by configuring with --disable optimization

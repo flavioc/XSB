@@ -564,7 +564,7 @@ fi
 # Check whether --enable-optimization or --disable-optimization was given.
 if test "${enable_optimization+set}" = set; then
   enableval="$enable_optimization"
-  :
+  disable_optimization=yes
 fi
 
 
