@@ -50,6 +50,7 @@
 
 /* the following really belongs somewhere else */
 extern char *expand_filename(char *);
+extern void xsb_sprint_variable(char *sptr, CPtr var);
 
 
 char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
@@ -1050,7 +1051,7 @@ void print_pterm(prolog_term term, int toplevel, char *straddr, int *ind)
   int i;
 
   if (is_var(term)) {
-      sprintf(tempstring,"_%p",(char *)term);
+      xsb_sprint_variable(tempstring, (CPtr) term);
       strcpy(straddr+*ind,tempstring);
       *ind += strlen(tempstring);
   } else if (is_int(term)) {

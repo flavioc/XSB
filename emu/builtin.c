@@ -400,7 +400,7 @@ Psc term_psc(Cell term)
 
 /* -------------------------------------------------------------------- */
 
-static void fprint_variable(FILE *fptr, CPtr var)
+void xsb_fprint_variable(FILE *fptr, CPtr var)
 {
   if (var >= (CPtr)glstack.low && var <= top_of_heap)
     fprintf(fptr, "_h%ld", ((Cell)var-(Cell)glstack.low+1)/sizeof(CPtr));
@@ -408,6 +408,17 @@ static void fprint_variable(FILE *fptr, CPtr var)
     if (var >= top_of_localstk && var <= (CPtr)glstack.high)
       fprintf(fptr, "_l%ld", ((Cell)glstack.high-(Cell)var+1)/sizeof(CPtr));
     else fprintf(fptr, "_%p", var);   /* Should never happen */
+  }
+}
+
+void xsb_sprint_variable(char *sptr, CPtr var)
+{
+  if (var >= (CPtr)glstack.low && var <= top_of_heap)
+    sprintf(sptr, "_h%ld", ((Cell)var-(Cell)glstack.low+1)/sizeof(CPtr));
+  else {
+    if (var >= top_of_localstk && var <= (CPtr)glstack.high)
+      sprintf(sptr, "_l%ld", ((Cell)glstack.high-(Cell)var+1)/sizeof(CPtr));
+    else sprintf(sptr, "_%p", var);   /* Should never happen */
   }
 }
 
@@ -1008,7 +1019,7 @@ int builtin_call(byte number)
     SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(2)) {
     case FREE   : var = (CPtr)ptoc_tag(3);
-      fprint_variable(fptr, var);
+      xsb_fprint_variable(fptr, var);
       break;
     case INT    : fprintf(fptr, "%ld", (long)ptoc_int(3)); break;
     case STRING : fprintf(fptr, "%s", ptoc_string(3)); break;
