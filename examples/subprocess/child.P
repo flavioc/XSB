@@ -9,7 +9,7 @@
    %% pipe and process were asserted by child XSB before it consulted this file
    process(Pr),
    %% Acknowledge receipt of the pipe
-   fmt_write("\nPipe %d received from Process %d\n", arg(P,Pr)),
+   fmt_write("\nProcess %d got pipe %d\n", arg(Pr,P)),
    %% Get a message from the parent and print it to stdout
    file_read_line_atom(F, Line,_), write('Mesage was: '), writeln(Line).
 

@@ -57,8 +57,8 @@
 	  psc_prop/2, psc_tabled/2, psc_type/2, psc_name/2,
 	  psc_arity/2, slash/1
      from machine.
-:- import file_time/2
-     from file_io.
+
+:- import file_time/2, file_close/1 from file_io.
 
 :- import asserta/1, (dynamic)/1, retractall/1, assert/1, retract/1, t_assert/2
 	 from assert.

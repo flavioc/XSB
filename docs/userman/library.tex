@@ -1034,24 +1034,32 @@ following shell command:
 \end{verbatim}
 %%
 
-{\em Important note about spawned processes\/}: Asynchronous processes
-spawned by XSB do not disappear (at least on Unix) when they terminate,
-\emph{unless} the XSB program executes a \emph{wait} on them (see {\tt
-  process\_control} below). Instead, such processes become defunct
-\emph{zombies} (in Unix terminology); they do not do anything, but consume
-resources (such as file descriptors). So, when a subprocess is known to
-terminate, it must be waited on.
-
-Also, the XSB parent process must know how to terminate the asynchronous
-subprocesses it spawns. The drastic way is to kill it (see
-{\tt process\_control} below). Sometimes a subprocess might terminate by itself
-({\it e.g.}, having finished reading a file). In other cases, the parent
-and the child programs must agree on a protocol by which the parent can
-tell the child to exit. The programs in the XSB subdirectory
-{\tt examples/subprocess} illustrate this idea. If the child subprocess is
-another XSB process, then it can be terminated by sending the atom
-{\tt end\_of\_file} or {\tt halt} to the standard input of the child. (For
-this to work, the child XSB must waiting at the prompt).
+\paragraph{\em Important notes about spawned processes\/}:
+\begin{enumerate}
+\item Asynchronous processes spawned by XSB do not disappear (at least on
+  Unix) when they terminate, \emph{unless} the XSB program executes a
+  \emph{wait} on them (see {\tt process\_control} below). Instead, such
+  processes become defunct \emph{zombies} (in Unix terminology); they do
+  not do anything, but consume resources (such as file descriptors). So,
+  when a subprocess is known to terminate, it must be waited on.
+  
+\item The XSB parent process must know how to terminate the asynchronous
+  subprocesses it spawns. The drastic way is to kill it (see {\tt
+    process\_control} below). Sometimes a subprocess might terminate by
+  itself ({\it e.g.}, having finished reading a file). In other cases, the
+  parent and the child programs must agree on a protocol by which the
+  parent can tell the child to exit. The programs in the XSB subdirectory
+  {\tt examples/subprocess} illustrate this idea. If the child subprocess
+  is another XSB process, then it can be terminated by sending the atom
+  {\tt end\_of\_file} or {\tt halt} to the standard input of the child.
+  (For this to work, the child XSB must waiting at the prompt).
+\item It is very important to not forget to close the I/O ports that the
+  parent uses to communicate with the child. These are the ports that are
+  provided in arguments 2,3,4 of {\tt spawn\_process}. The reason
+  is that the child might terminate, but these ports will remain open,
+  since they belong to the parent process. As a result, the parent will own
+  defunct I/O ports and might eventually run out of file descriptors.
+\end{enumerate}
 
 \begin{description}
 \ouritem{process\_status(+Pid,-Status)}\index{{\tt process\_status/2}} 
@@ -1153,11 +1161,19 @@ As seen from this example, the same rules for blocking I/O streams
 apply to {\tt shell/5}. Finally, we should note that the already familiar
 standard predicates {\tt shell/1} and {\tt shell/2} are implemented using
 shell/5.
-\ouritem{sys\_exit(-ExitCode)}\index{{\tt sys\_exit/1}} 
-This predicate causes XSB subprocess to exit unconditionally with the exit
-code {\tt ExitCode}. Normally {\tt 0} is considered to indicate normal
-termination, while other exit codes are used to report various degrees of
-abnormality.
+
+\paragraph{\em Notes:}
+%%
+\begin{enumerate}
+  \item  With {\tt shell/5}, you do not have to worry about terminating
+    child processes: XSB waits until the child exits automatically.
+    However, since communication pipes have limited capacity, this method
+    can be used only for exchanging small amounts of information between
+    parent and child.
+  \item The earlier remark about the need to close I/O streams to the child
+    \emph{does} apply.
+\end{enumerate}
+%%
 
 \ouritem{pipe\_open(-ReadPipe, -WritePipe)}\index{{\tt pipe\_open/2}} 
   Open a new pipe and return the read end and the write end of that pipe.
@@ -1206,6 +1222,9 @@ abnormality.
 ?- pipe_open(RP,WP),
    %% WF is now the XSB I/O port bound to the write part of the pipe
    fd2ioport(WP,WF),
+   %% We aren't going to read from child, so let's close the pipe coming 
+   %% from it -- we don't want to run out of file descriptors!!!
+   fd2ioport(RP,RF), file_close(RF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
    spawn_process(xsb, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is
@@ -1214,7 +1233,16 @@ abnormality.
    file_flush(ProcInput, _),
    %% Pass a message through the pipe
    fmt_write(WF, "Hello!\n", _),
-   file_flush(WF, _).
+   file_flush(WF, _),
+   fmt_write(ProcInput, "end_of_file.\n",_), % send end_of_file atom to child
+   file_flush(ProcInput, _),
+   %% wait for child (so as to not leave zombies around; 
+   %% zombies quit when the parent finishes, but they consume resources)
+   process_control(Process, wait),
+   %% Close the ports used to commuicate with the process
+   %% Otherwise, the parent might run out of file descriptors 
+   %% (if many processes were spawned)
+   file_close(ProcInput), file_close(WF).
     \end{verbatim}
     %%
     %%
@@ -1252,6 +1280,10 @@ yes
     \end{verbatim}
     %%
     
+    Observe that the parent process is very careful about making sure that
+    the child terminates and also about closing the I/O ports after they
+    are no longer needed.
+    
     Finally, we should note that this mechanism can be used to communicate
     through pipes with non-XSB processes as well. Indeed, an XSB process
     can create a pipe using {\tt pipe\_open} (\emph{before} spawning a
@@ -1260,9 +1292,14 @@ yes
     the pipe to an XSB file. The C program, of course, does not need {\tt
       fd2ioport}, since it can use the pipe file handle directly. Likewise,
     a C program can spawn off an XSB process and pass it one end of a pipe.
-    The XSB child-process can then convert this pipe fd to a file using {\tt
-      fd2ioport} and then talk to the paren C program.
+    The XSB child-process can then convert this pipe fd to a file using
+    {\tt fd2ioport} and then talk to the paren C program.
 
+\ouritem{sys\_exit(-ExitCode)}\index{{\tt sys\_exit/1}} 
+This predicate causes XSB subprocess to exit unconditionally with the exit
+code {\tt ExitCode}. Normally {\tt 0} is considered to indicate normal
+termination, while other exit codes are used to report various degrees of
+abnormality.
 \end{description}
 
 

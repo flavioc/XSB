@@ -23,7 +23,7 @@
 */
 
 
-/* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
+:- compiler_options([sysmod]).
 
 
 /*======================================================================*/

@@ -61,15 +61,20 @@ parse(Modname, PFile, HFile, Module) :-
 	module_close(Module0,Module), !.
 
 parse1(Modname, File, Module) :-
-	seeing(OldFile),	% added by Baoqiu (1/16/1997)
+	seeing(OldFile),
 	open_or_cpp_file(File,CPP_process),
-	(parse_clauses(Modname, Module) 
-				% check if must restart
+	(parse_clauses(Modname, Module), ! 
+	%% check if must restart
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   true
 	),
-	%% Wait, if cpp was spawned
-	(CPP_process = none, ! ; process_control(CPP_process, wait)),
+	(
+	    CPP_process = none, ! 
+	;   %% Wait, if cpp was spawned so as to not leave zombies
+	    process_control(CPP_process, wait),
+	    %% Also, release the file descriptor used to read from cpp
+	    stat_flag(10, FromPort), file_close(FromPort)
+	),
 	multifile_query(Modname, Module),
 	('_$apply_arity'(_)
 	 ->	assert('_$multifile'(apply/0)),
@@ -97,7 +102,7 @@ parse1(Modname, File, Module) :-
 %% If cpp_on option is not set, just open the file.
 %% Otherwise, pass it through the C preprocessor
 open_or_cpp_file(File, CPP_process) :-
-	(conget(cpp_on,0) -> see(File), CPP_process = none
+	(conget(cpp_on,0), ! -> see(File), CPP_process = none
 	; 
 	    %% cpp_on is set: use preprocessor
 	    xsb_configuration(cpp, CPP),
@@ -444,7 +449,7 @@ parse_directive(edb(X), SymTab) :-
 parse_directive(compiler_options(Options),_SymTab) :-
 	%% Found compiler_options directive in the file,
 	%% but cpp_on is currently off.
-	%% We might need to restart parsing, if one of the encontered
+	%% We might need to restart parsing, if one of the encountered
 	%% compiler options turns cpp_on on. So, we indicate 
 	%% interest in restarting. It might turn into a restart 
 	%% request if cpp_on is subsequently set.

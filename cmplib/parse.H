@@ -52,7 +52,7 @@
 :- import spawn_process/5, process_control/2 from shell.
 :- import xsb_configuration/2 from xsb_configuration.
 
-:- import fmt_write_string/3 from file_io.
+:- import fmt_write_string/3, file_close/1 from file_io.
 :- import windows_os_loader/0 from loader.
 
 :- import findall/3 from setof.

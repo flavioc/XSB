@@ -5,13 +5,16 @@
    that stdin had end of file, and terminates.
 */
 
-:- import pipe_open/2, fd2ioport/2, fmt_write/3, file_flush/2 from file_io.
+:- import pipe_open/2, fd2ioport/2, fmt_write/3, file_flush/2, file_close/1 from file_io.
 :- import process_control/2 from shell.
 
 %% Create the pipe and pass it to the child process
 ?- pipe_open(RP,WP),
    %% WF is now the XSB file descriptor bound to the write part of the pipe
    fd2ioport(WP,WF),
+   %% We aren't going to read from child, so let's close the pipe coming 
+   %% from it -- we don't want to run out of file descriptors!!!
+   fd2ioport(RP,RF), file_close(RF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
    spawn_process(xsb, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is
@@ -27,4 +30,8 @@
    file_flush(ProcInput, _),
    %% wait for child (so as to not leave zombies around; 
    %% zombies quit when the parent finishes, but they consume resources)
-   process_control(Process, wait).    
+   process_control(Process, wait),
+   %% Close the ports used to commuicate with the process
+   %% Otherwise, the parent might run out of file descriptors 
+   %% (if many processes were spawned)
+   file_close(ProcInput), file_close(WF).

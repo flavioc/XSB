@@ -346,8 +346,13 @@ load_dyn1(Rfname) :-
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(cpp_on,0)
 	),
-	%% Wait, if cpp was spawned
-	(CPP_process = none, ! ; process_control(CPP_process, wait)),
+	(
+	    CPP_process = none, ! 
+	;   %% Wait, if cpp was spawned so as to not leave zombies
+	    process_control(CPP_process, wait),
+	    %% Also, release the file descriptor used to read from cpp
+	    stat_flag(CURRENT_INPUT, FromPort), file_close(FromPort)
+	),
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
 load_dyn1(Rfname) :- 
@@ -485,8 +490,13 @@ load_dync1(Rfname) :-
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(cpp_on,0)
 	),
-	%% Wait, if cpp was spawned
-	(CPP_process = none, ! ; process_control(CPP_process, wait)),
+	(
+	    CPP_process = none, ! 
+	;   %% Wait, if cpp was spawned so as to not leave zombies
+	    process_control(CPP_process, wait),
+	    %% Also, release the file descriptor used to read from cpp
+	    stat_flag(CURRENT_INPUT, FromPort), file_close(FromPort)
+	),
 	see(OldFile),
 	time_message(T0,(Rfname,' dynamically loaded')).
 load_dync1(Rfname) :- 
