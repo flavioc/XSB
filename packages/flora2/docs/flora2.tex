@@ -1537,10 +1537,15 @@ compilation.
 
 \subsection{Calling XSB from \FLORA}
 
+\index{static module}
+\index{module!static}
+%%
 XSB predicates can be called from \FLORA through the \FLORA module system
 \FLORA models XSB programs as collections of static modules, {\it i.e.},
-from \FLORA's point of view, XSB modules are always available
-and do not need to be loaded. The syntax to call XSB predicates is
+from \FLORA's point of view, XSB modules are always available and do not
+need to be loaded explicitly. Because the association between Prolog
+programs and modules is fixed, these modules are called \emph{static prolog
+  modules}.  The syntax to call XSB predicates is
 %%
 \index{module!{\tt @prolog(module)}}
 %%
@@ -1666,13 +1671,17 @@ loaded using the following call:
 \end{quote}
 %%
 
-\subsection{Flora Service Libraries}
+\subsection{Flora Static Modules}
 
-\FLORA provides a special set of modules that are preloaded with useful
-utilities, such as prettyprinting or I/O. These modules have special
-syntax, {\tt @flora(modname)}, and cannot be loaded into by the user. For
+\index{static module}
+\index{module!static}
+%%
+\FLORA provides a special set of modules that are \emph{preloaded} with
+useful utilities, such as prettyprinting or I/O. These modules have special
+syntax, {\tt @flora(modname)}, and cannot be loaded by the user. For this
+reason, these modules are called \emph{static \FLORA modules}.  For
 instance, to prettyprint all the attributes and methods of an object, the
-following method, defined in the special {\tt pp} module, can be used:
+following method, defined in the static {\tt pp} module, can be used:
 %%
 \begin{quote}
  \tt   ?- obj[\#pp\_self(foo)]@flora(pp).
@@ -1681,7 +1690,7 @@ following method, defined in the special {\tt pp} module, can be used:
 Here, the method {\tt \#pp\_self} is applied to the object {\tt obj}.
 Since {\tt obj} can have completely different methods in different modules,
 we have to tell the prettyprinting method which module to look at.  For
-more details on the existing \FLORA service libraries, see
+more details on the existing \FLORA static modules, see
 Section~\ref{sec-service-libs}.
 
 
@@ -3775,17 +3784,23 @@ compiler directives:
 \end{itemize}
 
 
-\section{\FLORA Service Libraries}\label{sec-service-libs}
+\section{\FLORA Static Modules}\label{sec-service-libs}
 
-\FLORA provides a number of useful libraries that other programs can
-use. We describe the functionality of these libraries below.
+\index{module!static}
+\index{static module}
+%%
+\FLORA provides a number of useful libraries that other programs can use.
+These libraries are statically preloaded into modules that are accessible
+through the special {\tt @flora(modname)} syntax, and they are called
+\emph{static \FLORA modules}.  We describe the functionality of these
+modules below.
 
 \subsection{Pretty Printing}
 
 This library provides methods for pretty printing the information about an
 object or about all objects in a given class. This information can be saved
 in a file or printed on the screen. This library is preloaded in the
-special module {\tt pp} and is accessible using the {\tt @flora(pp)}
+static module {\tt pp} and is accessible using the {\tt @flora(pp)}
 syntax.
 
 To pretty print information about an object, the following calls can be
@@ -3818,8 +3833,8 @@ The following example illustrates the use of this library:
 
 \subsection{Input and Output}
 
-This library simplifies the access to the most common XSB I/O facilities.
-This library is preloaded into the special service module {\tt io} and
+This library simplifies access to the most common XSB I/O facilities.
+This library is preloaded into the static module {\tt io} and
 can be accessed using the {\tt @flora(io)} syntax.
 
 The purpose of the I/O library is not to replace the standard I/O predicates
@@ -4017,8 +4032,10 @@ chances that the bug will be fixed speedily:
 %%
 \begin{enumerate}
   \item  Reduce the size of your \FLORA program as much as possible.
-  \item  Eliminate all the calls to the system services (that use the
-    {\tt @flora(lib)} syntax).
+  \item  Eliminate all the calls to the static modules that use the
+    {\tt @flora(lib)} syntax. (Prolog static modules that are accessible
+    through the {\tt @prolog(modname)} syntax are OK, but the more you can
+    reduce the size of the program the better.)
   \item  If the program has several modules, try to put them into one file
     and use just one module.
   \item  Use {\tt flDump/1} to strip \FLORA macros from the output of the
@@ -4055,8 +4072,8 @@ the algorithm is much more simple:
   \item Reduce the size of the program as much as possible by deleting 
     unrelated program clauses and squeezing a multi-module program into
     just one file.
-  \item Remove all the calls to service libraries (that use {\tt
-      @flora(lib)} syntax), unless such a call that is the essence of the
+  \item Remove all the calls to static modules (that use {\tt
+      @flora(mod)} syntax), unless such a call that is the essence of the
     bug.
 \end{enumerate}
 %%
