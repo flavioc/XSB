@@ -284,7 +284,7 @@ void print_help(void)
  * input scan which doesn't take the whole input line (ie. which isn't a
  * `scanf("%s", &array);').
  */
-void skip_to_nl(void)
+static void skip_to_nl(void)
 {
   char c;
 
@@ -544,33 +544,6 @@ void debug_inst(byte *lpcreg, CPtr le_reg)
   if (pil_step && debug_ctr == 0) {
     print_hide = 0;
     pcreg = lpcreg; ereg = le_reg;
-    debug_interact();
-  } else { 
-    if (debug_ctr > 0) debug_ctr--;
-    else 
-      if (call_step == 1 && *lpcreg == call) {
-	pil_step = 1; debug_interact();
-      }
-    if (compl_step == 1 && *lpcreg == check_complete) {
-      pil_step = 1; debug_interact();
-    }
-  }
-}
-
-/*----------------------------------------------------------------------*/
-
-void debug_subinst(byte *lpcreg, CPtr le_reg, char *Inst, CPtr arg1, CPtr arg2)
-{
-  if (!print_hide) {
-    printf("xctr %d ",xctr);
-    printf("%s, %p, %p\n", Inst, arg1, arg2);
-  }
-  if (register_watch_flag) monitor_register_watch();
-  if (memory_watch_flag) monitor_memory_watch();
-  if (pil_step && debug_ctr == 0) {
-    print_hide = 0;
-    pcreg = lpcreg; 
-    ereg = le_reg;
     debug_interact();
   } else { 
     if (debug_ctr > 0) debug_ctr--;
@@ -1215,8 +1188,8 @@ static void debug_interact(void)
   case 'b':
     scanf("%s %s %d", mod, name, &num);
     skip_to_nl();
-    sym = (Pair)insert_module(0, mod);
-    sym = (Pair)insert(name, num, sym->psc_ptr, &num);
+    sym = insert_module(0, mod);
+    sym = insert(name, num, sym->psc_ptr, &num);
     set_spy(sym->psc_ptr, 0x80);
     goto again;
   case 'B':
@@ -1355,8 +1328,8 @@ static void debug_interact(void)
   case 'u':
     scanf("%s %s %d", mod, name, &num);
     skip_to_nl();
-    sym = (Pair)insert_module(0, mod);
-    sym = (Pair)insert(name,num, sym->psc_ptr, &num);
+    sym = insert_module(0, mod);
+    sym = insert(name, num, sym->psc_ptr, &num);
     set_spy(sym->psc_ptr, 0x00);
     goto again;
   case 'v':
