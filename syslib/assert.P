@@ -549,14 +549,16 @@ clause0(Head, Body) :-
 
 check_clause(Head) :-
 	( var(Head) ->
-		abort('Uninstantiated argument 1 of clause/2')
-	; callable(Head) -> 
-		( functor(Head, F, A), standard_symbol(F, A, _Prop) ->
-			abort(('Not permitted to access clauses of built-in predicate ', F/A))
-		; true
-		)
-	; abort(('Wrong type in argument 1 of clause/2', 
-			 ' (callable term expected)'))
+	    abort('Uninstantiated argument 1 of clause/2')
+	;   callable(Head) -> 
+	    (	functor(Head, F, A),
+		standard_symbol(F, A, _Prop),
+		\+ standard_dynamic_symbol(F, A)
+	    ->	abort(('Not permitted to access clauses of built-in predicate ', F/A))
+	    ;	true
+	    )
+	;   abort(('Wrong type in argument 1 of clause/2', 
+		   ' (callable term expected)'))
 	).
 
 /*======================================================================*/
