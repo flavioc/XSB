@@ -164,7 +164,7 @@ static void sub_call_error(char *string) {
  * have to insert the call) and bindings made to the trie variables during
  * processing (to find the answer template in case of subsumption).
  * Therefore we take the following approach.  Call variables are bound to
- * cells of the CallVarEnum array, just as is done during term
+ * cells of the VarEnumerator array, just as is done during term
  * interning.  For noting the bindings made to variables appearing in the
  * trie, we employ another array, called TrieVarBindings[], which will
  * maintain pointers to dereferenced subterms of the call.  The Ith
@@ -175,7 +175,7 @@ static void sub_call_error(char *string) {
  * at least as many variables in a subsuming path of the trie as in the
  * call itself.  Therefore, given that I is the ID of the next unique
  * trievar, when a never-before seen variable is encountered in the call,
- * we bind it to the Ith cell of CallVarEnum, thusly standardizing it.
+ * we bind it to the Ith cell of VarEnumerator, thusly standardizing it.
  * Likewise, TrieVarBindings[I] gets the address of the call variable.  By
  * using the same array indexer, I, we can determine from a standardized
  * call variable the first trievar that has been bound to it, and this
@@ -186,7 +186,7 @@ static void sub_call_error(char *string) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *  Given a trievar number and a prolog subterm (not a CallVarEnum addr),
+ *  Given a trievar number and a prolog subterm (not a VarEnumerator addr),
  *  bind the trievar to that subterm and trail the trievar.
  */
 #define TrieVar_BindToSubterm(TrieVarNum,Subterm)	\
@@ -194,7 +194,7 @@ static void sub_call_error(char *string) {
    Trail_Push(&TrieVarBindings[TrieVarNum])
 
 /*
- *  Given a trievar number and a marked callvar (bound to a CallVarEnum
+ *  Given a trievar number and a marked callvar (bound to a VarEnumerator
  *  cell), bind the trievar to the variable subterm represented by the
  *  marked callvar, and trail the trievar.
  */
@@ -208,7 +208,7 @@ static void sub_call_error(char *string) {
 /*
  *  Given an unmarked, dereferenced call variable and a trievar number,
  *  mark the variable with this number by setting it to point to the
- *  Index-th cell of the CallVarEnum array, and trail the call variable.
+ *  Index-th cell of the VarEnumerator array, and trail the call variable.
  */
 #define CallVar_MarkIt(DerefedVar,Index)	\
    StandardizeVariable(DerefedVar,Index);	\
@@ -217,17 +217,17 @@ static void sub_call_error(char *string) {
 /*
  *  Given a dereferenced call variable, determine whether it has already
  *  been marked, i.e. seen during prior processing and hence bound to a
- *  CallVarEnum cell.
+ *  VarEnumerator cell.
  */
 #define CallVar_IsMarked(pDerefedCallVar)	\
    IsStandardizedVariable(pDerefedCallVar)
 
 /*
- *  Given an address into CallVarEnum, determine its index in this array.
+ *  Given an address into VarEnumerator, determine its index in this array.
  *  (This index will also correspond to the first trie variable that bound
  *   itself to it.)
  */
-#define CallVar_Index(VarEnumAddr)  IndexOfStandardizedVariable(VarEnumAddr)
+#define CallVar_Index(VarEnumAddr)  IndexOfStdVar(VarEnumAddr)
 
 
 /* ========================================================================= */
@@ -1034,17 +1034,17 @@ void subsumptive_call_search(TabledCallInfo *callStruct,
        *  be the index of this trievar variable.  Then we bind
        *  TrieVarBindings[Num] to 'subterm', the address of the deref'ed
        *  unbound call variable.  We also bind the call variable to
-       *  CallVarEnum[Num] so that we can recognize that the call variable
+       *  VarEnumerator[Num] so that we can recognize that the call variable
        *  has already been seen.
        *
        *  When such a call variable is re-encountered, we know which
        *  trievar was the first to bind itself to this call variable: we
        *  used its index in marking the call variable when we bound it to
-       *  CallVarEnum[Num].  This tagging scheme allows us to match
+       *  VarEnumerator[Num].  This tagging scheme allows us to match
        *  additional unbound trie variables to it.  Recall that the
        *  TrieVarBindings array should contain *real* subterms, and not the
        *  callvar tags that we've constructed (the pointers into the
-       *  CallVarEnum array).  So we must reconstruct a previously-seen
+       *  VarEnumerator array).  So we must reconstruct a previously-seen
        *  variable's *real* address in order to bind a new trievar to it.
        *  We can do this by computing the index of the trievar that first
        *  bound itself to it, and look in that cell of the TrieVarBindings

@@ -486,7 +486,7 @@ TSTNptr subsumptive_answer_search(int nTerms, CPtr termVector,
 	std_var_num++;
       }
       else
-	symbol = EncodeTrieVar(IndexOfStandardizedVariable(subterm));
+	symbol = EncodeTrieVar(IndexOfStdVar(subterm));
       break;
 
     case STRING: case INT: case FLOAT:

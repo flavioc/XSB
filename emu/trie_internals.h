@@ -108,6 +108,8 @@
    case TrieVar:						\
      if (IsNewTrieVar(Symbol))					\
        TN_Instr(pTN) = (byte)trie_try_var;			\
+     else if (IsNewTrieAttv(Symbol))				\
+       TN_Instr(pTN) = (byte)trie_try_attv;			\
      else							\
        TN_Instr(pTN) = (byte)trie_try_val;			\
      break;							\
@@ -337,7 +339,7 @@ enum Types_of_Trie_Nodes {
  *  When interning a term into a trie, variables in the term must be
  *  marked as they are encountered (to handle nonlinearity).  Marking of
  *  (or standardizing) these variables is performed by binding them to a
- *  special array of self-referential pointers, CallVarEnum[].  After
+ *  special array of self-referential pointers, VarEnumerator[].  After
  *  dereferencing the variable, we can check to see whether the pointer
  *  lies within the array; if so, the variable has already been
  *  encountered.  The integer assigned to a trievar is the index into this
@@ -350,36 +352,39 @@ enum Types_of_Trie_Nodes {
  *  in TrieVarBindings[I].
  */
 
-extern Cell CallVarEnum[];
+extern Cell VarEnumerator[];
 extern Cell TrieVarBindings[];
 
-#define NEW_TRIEVAR_TAG      0x10000
+#define NEW_TRIEVAR_TAG		0x10000
+#define NEW_TRIEATTV_TAG	0x20000
+#define TRIEVAR_INDEX_MASK	 0xffff
 
 #define EncodeNewTrieVar(Index)		maketrievar(Index | NEW_TRIEVAR_TAG)
+#define EncodeNewTrieAttv(Index)	maketrievar(Index | NEW_TRIEATTV_TAG)
 #define EncodeTrieVar(Index)		maketrievar(Index)
 
-#define DecodeTrieVar(Symbol)	  ( trievar_val(Symbol) & ~NEW_TRIEVAR_TAG )
+#define DecodeTrieVar(Symbol)	  ( trievar_val(Symbol) & TRIEVAR_INDEX_MASK )
 
 /* Use this test only after determining the Symbol to be a TrieVar */
 #define IsNewTrieVar(Symbol)	  ( trievar_val(Symbol) & NEW_TRIEVAR_TAG )
-
+#define IsNewTrieAttv(Symbol)	  ( trievar_val(Symbol) & NEW_TRIEATTV_TAG)
 
 #define StandardizeVariable(dFreeVar,Index)	\
-   bld_ref((CPtr)dFreeVar,CallVarEnum[Index])
+   bld_ref((CPtr)dFreeVar,VarEnumerator[Index])
 
 #define IsStandardizedVariable(dFreeVar)			\
-   ( ((CPtr)(dFreeVar) >= CallVarEnum) &&			\
-     ((CPtr)(dFreeVar) <= (CallVarEnum + NUM_TRIEVARS - 1)) )
+   ( ((CPtr)(dFreeVar) >= VarEnumerator) &&			\
+     ((CPtr)(dFreeVar) <= (VarEnumerator + NUM_TRIEVARS - 1)) )
 
 #define ResetStandardizedVariable(VarAddr)	\
    bld_free( ((CPtr)VarAddr) )
 
 /*
  *  Given an address that has been determined to lie within the
- *  CallVarEnum array, determine its index within this array.
+ *  VarEnumerator array, determine its index within this array.
  */
-#define IndexOfStandardizedVariable(pVarEnumCell)	\
-   ( (CPtr)(pVarEnumCell) - CallVarEnum )
+#define IndexOfStdVar(pVarEnumCell)	\
+   ( (CPtr)(pVarEnumCell) - VarEnumerator )
 
 
 /*

@@ -72,7 +72,7 @@ long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
 int  num_heap_term_vars;
 CPtr *var_addr;
 int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
-Cell CallVarEnum[NUM_TRIEVARS];
+Cell VarEnumerator[NUM_TRIEVARS];
 Cell TrieVarBindings[NUM_TRIEVARS];
 
 /*
@@ -84,7 +84,7 @@ int global_num_vars;
 /*
  * Array mini_trail[] is used to trail the variable bindings when we
  * copy terms into tries.  The variables trailed using mini_trail are
- * those that are bound to elements in CallVarEnum[].
+ * those that are bound to elements in VarEnumerator[].
  */
 static CPtr mini_trail[NUM_TRIEVARS];
 static CPtr *mini_trail_top;
@@ -146,7 +146,7 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 
 static BasicTrieNode dummy_ans_node = {{0,1,0,0},NULL,NULL,NULL,0};
 
-static int AnsVarCtr, ctr;
+static int AnsVarCtr, ctr, attv_ctr;
 
 static BTNptr *GNodePtrPtr;
 
@@ -195,7 +195,7 @@ void init_trie_aux_areas(void)
   reg_arrayptr = reg_array -1;
 
   for (i = 0; i < NUM_TRIEVARS; i++)
-    CallVarEnum[i] = (Cell) & (CallVarEnum[i]);
+    VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -441,100 +441,114 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 
 /*----------------------------------------------------------------------*/
 
-#define rec_macro_make_heap_term(Macro_addr)\
-{int rj,rArity;\
-   while(addr_stack_pointer)\
-   {\
-     Macro_addr = (CPtr)pop_addr;\
-     xtemp2 = pop_term;\
-     switch( TrieSymbolType(xtemp2) )\
-     {\
-      case TrieVar: {\
-	int index = DecodeTrieVar(xtemp2);\
-	if (IsNewTrieVar(xtemp2)) {\
-          safe_assign(var_addr,index,Macro_addr,var_addr_arraysz);\
-	  *Macro_addr = (Cell)var_addr[index];\
-	  num_heap_term_vars++;\
-	}\
-	else\
-	  *Macro_addr = (Cell) var_addr[index];\
-	}\
-	break;\
-      case STRING:\
-      case INT:\
-      case FLOAT:\
-	*Macro_addr = DecodeTrieConstant(xtemp2);\
-	break;\
-      case LIST: \
-	*Macro_addr = (Cell) makelist(hreg);\
-	hreg += 2;\
-	push_addr(hreg-1);\
-	push_addr(hreg-2);\
-	break;\
-      case CS:\
-	*Macro_addr = (Cell) makecs(hreg);\
-	xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);\
-	*hreg = xtemp2;\
-	rArity = (int) get_arity((Psc) xtemp2);\
-	for (rj= rArity; rj >= 1; rj --) {\
-	  push_addr(hreg+rj);\
-	}\
-	hreg += rArity;\
-	hreg++;\
-	break;\
-      default:\
-        xsb_abort("Bad tag in macro_make_heap_term");\
-	return;\
-   }\
-  }\
+#define rec_macro_make_heap_term(Macro_addr) {				\
+  int rj,rArity;							\
+  while(addr_stack_pointer) {						\
+    Macro_addr = (CPtr)pop_addr;					\
+    xtemp2 = pop_term;							\
+    switch( TrieSymbolType(xtemp2) ) {					\
+    case TrieVar: {							\
+      int index = DecodeTrieVar(xtemp2);				\
+      if (IsNewTrieVar(xtemp2)) {					\
+	safe_assign(var_addr,index,Macro_addr,var_addr_arraysz);	\
+	*Macro_addr = (Cell)var_addr[index];				\
+	num_heap_term_vars++;						\
+      }									\
+      else if (IsNewTrieAttv(xtemp2)) {					\
+        safe_assign(var_addr,index,					\
+		    (CPtr) makeattv(hreg),var_addr_arraysz);		\
+        num_heap_term_vars++;						\
+        new_heap_free(hreg);						\
+        push_addr(hreg);						\
+        hreg++;								\
+      }									\
+      else								\
+	*Macro_addr = (Cell) var_addr[index];				\
+    }									\
+    break;								\
+    case STRING:							\
+    case INT:								\
+    case FLOAT:								\
+      *Macro_addr = DecodeTrieConstant(xtemp2);				\
+      break;								\
+    case LIST:								\
+      *Macro_addr = (Cell) makelist(hreg);				\
+      hreg += 2;							\
+      push_addr(hreg-1);						\
+      push_addr(hreg-2);						\
+      break;								\
+    case CS:								\
+      *Macro_addr = (Cell) makecs(hreg);				\
+      xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);			\
+      *hreg = xtemp2;							\
+      rArity = (int) get_arity((Psc) xtemp2);				\
+      for (rj= rArity; rj >= 1; rj --) {				\
+	push_addr(hreg+rj);						\
+      }									\
+      hreg += rArity;							\
+      hreg++;								\
+      break;								\
+    default:								\
+      xsb_abort("Bad tag in macro_make_heap_term");			\
+      return;								\
+    }									\
+  }									\
 }
 
 /*----------------------------------------------------------------------*/
 
-#define macro_make_heap_term(ataddr,ret_val,dummy_addr)\
-{ int mArity,mj;\
-  xtemp2 = pop_term;\
-  switch( TrieSymbolType(xtemp2) )\
-   {\
-    case TrieVar: {\
-        int index = DecodeTrieVar(xtemp2);\
-	if (IsNewTrieVar(xtemp2)) { /* diff with CHAT - Kostis */\
-          safe_assign(var_addr,index,ataddr,var_addr_arraysz);\
-	  ret_val = (Cell)var_addr[index];\
-	  num_heap_term_vars++;\
-	}\
-	else\
-	  ret_val = (Cell) var_addr[index];\
-      }\
-      break;\
-    case STRING:\
-    case INT:\
-    case FLOAT:\
-	ret_val = DecodeTrieConstant(xtemp2);\
-	break;\
-    case LIST: \
-	ret_val = (Cell) makelist(hreg) ;\
-	hreg += 2;\
-	push_addr(hreg-1);\
-	push_addr(hreg-2);\
-	rec_macro_make_heap_term(dummy_addr);\
-	break;\
-    case CS:\
-	ret_val = (Cell) makecs(hreg);\
-	xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);\
-	*hreg = xtemp2;\
-	mArity = (int) get_arity((Psc) xtemp2);\
-	for (mj= mArity; mj >= 1; mj--) {\
-	  push_addr(hreg+mj);\
-	}\
-	hreg += mArity;\
-	hreg++;\
-	rec_macro_make_heap_term(dummy_addr);\
-	break;\
-     default: \
-        xsb_abort("Bad tag in macro_make_heap_term");\
-	return;\
-   }\
+#define macro_make_heap_term(ataddr,ret_val,dummy_addr) {		\
+  int mArity,mj;							\
+  xtemp2 = pop_term;							\
+  switch( TrieSymbolType(xtemp2) ) {					\
+  case TrieVar: {							\
+    int index = DecodeTrieVar(xtemp2);					\
+    if (IsNewTrieVar(xtemp2)) { /* diff with CHAT - Kostis */		\
+      safe_assign(var_addr,index,ataddr,var_addr_arraysz);		\
+      ret_val = (Cell)var_addr[index];					\
+      num_heap_term_vars++;						\
+    }									\
+    else if (IsNewTrieAttv(xtemp2)) {					\
+      ret_val = makeattv(hreg);						\
+      safe_assign(var_addr, index, (CPtr) ret_val,var_addr_arraysz);	\
+      num_heap_term_vars++;						\
+      new_heap_free(hreg);						\
+      push_addr(hreg);							\
+      hreg++;								\
+      rec_macro_make_heap_term(dummy_addr);				\
+    }									\
+    else								\
+      ret_val = (Cell) var_addr[index];					\
+  }									\
+  break;								\
+  case STRING:								\
+  case INT:								\
+  case FLOAT:								\
+    ret_val = DecodeTrieConstant(xtemp2);				\
+    break;								\
+  case LIST:								\
+    ret_val = (Cell) makelist(hreg) ;					\
+    hreg += 2;								\
+    push_addr(hreg-1);							\
+    push_addr(hreg-2);							\
+    rec_macro_make_heap_term(dummy_addr);				\
+    break;								\
+  case CS:								\
+    ret_val = (Cell) makecs(hreg);					\
+    xtemp2 = (Cell) DecodeTrieFunctor(xtemp2);				\
+    *hreg = xtemp2;							\
+    mArity = (int) get_arity((Psc) xtemp2);				\
+    for (mj= mArity; mj >= 1; mj--) {					\
+      push_addr(hreg+mj);						\
+    }									\
+    hreg += mArity;							\
+    hreg++;								\
+    rec_macro_make_heap_term(dummy_addr);				\
+    break;								\
+  default:								\
+    xsb_abort("Bad tag in macro_make_heap_term");			\
+    return;								\
+  }									\
 }
 
 /*----------------------------------------------------------------------*/
@@ -555,7 +569,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 	        one_node_chk_ins(flag, item, TrieType);\
 	        ctr++;\
 	      } else {\
-	        item = IndexOfStandardizedVariable(xtemp1);\
+	        item = IndexOfStdVar(xtemp1);\
 	        item = EncodeTrieVar(item);\
                 one_node_chk_ins(flag, item, TrieType);\
 	      }\
@@ -614,7 +628,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 	        one_node_chk_ins(flag,EncodeNewTrieVar(ctr),TrieType);\
 	        ctr++;\
 	      } else {\
-                one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),TrieType);\
+                one_node_chk_ins(flag,EncodeTrieVar(IndexOfStdVar(xtemp1)),TrieType);\
 	      }\
               break;\
 	    case STRING: case INT: case FLOAT:\
@@ -689,12 +703,12 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
 	   *
 	   * 	StandardizeAndTrailVariable(xtemp1, ctr)
 	   * 			||
-	   * 	bld_ref(xtemp1, CallVarEnum[ctr]);
+	   * 	bld_ref(xtemp1, VarEnumerator[ctr]);
 	   * 	*(++mini_trail_top) = xtemp1
 	   *
 	   * Notice that all the variables appear in the answer are bound
-	   * to elements in CallVarEnum[], and each element in
-	   * CallVarEnum[] is a free variable itself.  Besides, all
+	   * to elements in VarEnumerator[], and each element in
+	   * VarEnumerator[] is a free variable itself.  Besides, all
 	   * these variables are trailed (saved in mini_trail[]) and they
 	   * will be used in delay_chk_insert() (in function
 	   * do_delay_stuff()).
@@ -711,7 +725,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
 	  one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
 	  ctr++;
 	} else {
-	  item = IndexOfStandardizedVariable(xtemp1);
+	  item = IndexOfStdVar(xtemp1);
 	  item = EncodeTrieVar(item);
 	  one_node_chk_ins(flag, item, BASIC_ANSWER_TRIE_TT);
 	}
@@ -838,12 +852,12 @@ void undo_answer_bindings() {
  * will be dynamically increased as more and more delay elements for p/2
  * are interned.
  *
- * After variant_answer_search() is finished, CallVarEnum[] contains the
+ * After variant_answer_search() is finished, VarEnumerator[] contains the
  * variables in the head of the corresponding clause for p/2.  When we call
- * delay_chk_insert() to intern the delay list for p/2, CallVarEnum[]
+ * delay_chk_insert() to intern the delay list for p/2, VarEnumerator[]
  * will be used again to bind the variables that appear in the body.
  * Because we have to check if a variable in a delay element of p/2 is
- * already in the head, the old bindings of variables to CallVarEnum[]
+ * already in the head, the old bindings of variables to VarEnumerator[]
  * are still needed.  So undo_answer_bindings has to be delayed.
  *
  * In the arguments, `arity' is the arity of the the answer substitution
@@ -901,7 +915,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
         }
         else {
           one_node_chk_ins(flag,
-			   EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),
+			   EncodeTrieVar(IndexOfStdVar(xtemp1)),
 			   DELAY_TRIE_TT);
         }
         break;
@@ -1069,45 +1083,54 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
  
 /*----------------------------------------------------------------------*/
 
-#define recvariant_call(flag,TrieType,xtemp1)\
-{\
-  int  j;\
-\
-  while (!pdlempty) {\
-    xtemp1 = (CPtr) pdlpop;\
-    cptr_deref(xtemp1);\
-    switch(tag = cell_tag(xtemp1)) {\
-      case FREE: case REF1: \
-        if (! IsStandardizedVariable(xtemp1)) {\
-	  *(--VarPosReg) = (Cell) xtemp1;\
-	  StandardizeVariable(xtemp1,ctr);\
-	  one_node_chk_ins(flag,EncodeNewTrieVar(ctr),TrieType);\
-	  ctr++;\
-        } else{\
-	  one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),TrieType);\
-        }\
-        break;\
-      case STRING: case INT: case FLOAT:\
-	one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);\
-	break;\
-      case LIST:\
-	one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);\
-	pdlpush( cell(clref_val(xtemp1)+1) );\
-        pdlpush( cell(clref_val(xtemp1)) );\
-	break;\
-      case CS:\
-        psc = (Psc) follow(cs_val(xtemp1));\
-	item = makecs(psc);\
-	one_node_chk_ins(flag, item, TrieType);\
-	for (j=get_arity(psc); j>=1; j--) {\
-	  pdlpush(cell(clref_val(xtemp1)+j));\
-	}\
-	break;\
-      default: \
-        xsb_abort("Bad type tag in recvariant_call...\n");\
-    }\
-  }\
-  resetpdl;\
+#define recvariant_call(flag,TrieType,xtemp1) {				\
+  int  j;								\
+									\
+  while (!pdlempty) {							\
+    xtemp1 = (CPtr) pdlpop;						\
+    cptr_deref(xtemp1);							\
+    switch(tag = cell_tag(xtemp1)) {					\
+    case FREE: case REF1:						\
+      if (! IsStandardizedVariable(xtemp1)) {				\
+	*(--VarPosReg) = (Cell) xtemp1;					\
+	StandardizeVariable(xtemp1,ctr);				\
+	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),TrieType);		\
+	ctr++;								\
+      } else{								\
+	one_node_chk_ins(flag, EncodeTrieVar(IndexOfStdVar(xtemp1)),	\
+			 TrieType);					\
+      }									\
+      break;								\
+    case STRING: case INT: case FLOAT:					\
+      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
+      break;								\
+    case LIST:								\
+      one_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
+      pdlpush( cell(clref_val(xtemp1)+1) );				\
+      pdlpush( cell(clref_val(xtemp1)) );				\
+      break;								\
+    case CS:								\
+      psc = (Psc) follow(cs_val(xtemp1));				\
+      item = makecs(psc);						\
+      one_node_chk_ins(flag, item, TrieType);				\
+      for (j=get_arity(psc); j>=1; j--) {				\
+	pdlpush(cell(clref_val(xtemp1)+j));				\
+      }									\
+      break;								\
+    case ATTV:								\
+      /* Now xtemp1 can only be the first occurrence of an attv */	\
+      *(--VarPosReg) = (Cell) xtemp1;					\
+      xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
+      StandardizeVariable(xtemp1, ctr);					\
+      one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), TrieType);		\
+      attv_ctr++; ctr++;						\
+      pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */		\
+      break;								\
+    default:								\
+      xsb_abort("Bad type tag in recvariant_call...\n");		\
+    }									\
+  }									\
+  resetpdl;								\
 }
 
 /*----------------------------------------------------------------------*/
@@ -1136,94 +1159,113 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
 
 void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
 {
-    Psc  psc;
-    CPtr call_arg;
-    int  arity, i, j, flag = 1;
-    Cell tag = FREE, item;
-    CPtr cptr, VarPosReg, tVarPosReg;
-    TIFptr pTIF;
+  Psc  psc;
+  CPtr call_arg;
+  int  arity, i, j, flag = 1;
+  Cell tag = FREE, item;
+  CPtr cptr, VarPosReg, tVarPosReg;
+  TIFptr pTIF;
 
 
-    subg_chk_ins++;
-    pTIF = CallInfo_TableInfo(*call_info);
-    if ( IsNULL(TIF_CallTrie(pTIF)) )
-      TIF_CallTrie(pTIF) = newBasicTrie(TIF_PSC(pTIF),CALL_TRIE_TT);
-    Paren = TIF_CallTrie(pTIF);
-    GNodePtrPtr = &BTN_Child(Paren);
-    arity = CallInfo_CallArity(*call_info);
-    cptr = CallInfo_Arguments(*call_info);
-    tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
-    ctr = 0;
+  subg_chk_ins++;
+  pTIF = CallInfo_TableInfo(*call_info);
+  if ( IsNULL(TIF_CallTrie(pTIF)) )
+    TIF_CallTrie(pTIF) = newBasicTrie(TIF_PSC(pTIF),CALL_TRIE_TT);
+  Paren = TIF_CallTrie(pTIF);
+  GNodePtrPtr = &BTN_Child(Paren);
+  arity = CallInfo_CallArity(*call_info);
+  cptr = CallInfo_Arguments(*call_info);
+  tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
+  ctr = attv_ctr = 0;
 
-    for (i = 0; i < arity; i++) {
-      call_arg = (CPtr) (cptr + i);            /* Note! */
-      cptr_deref(call_arg);
-      tag = cell_tag(call_arg);
-      switch (tag) {
-        case FREE: case REF1:
-	  if (! IsStandardizedVariable(call_arg)) {
-	    /*
-	     * Save pointers of the substitution factor of the call
-	     * into CP stack.  Each pointer points to a variable in 
-	     * the heap.  The variables may get bound in the later
-	     * computation.
-	     */
-	    *(--VarPosReg) = (Cell) call_arg;
-	    StandardizeVariable(call_arg,ctr);
-	    one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
-			     CALL_TRIE_TT);
-	    ctr++;
-	  } else {
-	    one_node_chk_ins(flag,EncodeTrieVar(IndexOfStandardizedVariable(call_arg)),CALL_TRIE_TT);
-	  }
-	  break;
-	case STRING: case INT: case FLOAT:
-	  one_node_chk_ins(flag, EncodeTrieConstant(call_arg), CALL_TRIE_TT);
-	  break;
-	case LIST:
-	  one_node_chk_ins(flag, EncodeTrieList(call_arg), CALL_TRIE_TT);
-	  pdlpush(cell(clref_val(call_arg)+1));
-	  pdlpush(cell(clref_val(call_arg)));
-	  recvariant_call(flag,CALL_TRIE_TT,call_arg);
-	  break;
-	case CS:
-	  psc = (Psc)follow(cs_val(call_arg));
-	  item = makecs(psc);
-	  one_node_chk_ins(flag, item, CALL_TRIE_TT);
-	  for (j=get_arity(psc); j>=1 ; j--) {
-	    pdlpush(cell(clref_val(call_arg)+j));
-	  }
-	  recvariant_call(flag,CALL_TRIE_TT,call_arg);
-	  break;
-	default:
-	  xsb_abort("Bad type tag in variant_call_search...\n");
-	}
+  for (i = 0; i < arity; i++) {
+    call_arg = (CPtr) (cptr + i);            /* Note! */
+    cptr_deref(call_arg);
+    tag = cell_tag(call_arg);
+    switch (tag) {
+    case FREE: case REF1:
+      if (! IsStandardizedVariable(call_arg)) {
+	/*
+	 * Save pointers of the substitution factor of the call
+	 * into CP stack.  Each pointer points to a variable in 
+	 * the heap.  The variables may get bound in the later
+	 * computation.
+	 */
+	*(--VarPosReg) = (Cell) call_arg;
+	StandardizeVariable(call_arg,ctr);
+	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
+			 CALL_TRIE_TT);
+	ctr++;
+      } else {
+	one_node_chk_ins(flag,EncodeTrieVar(IndexOfStdVar(call_arg)),CALL_TRIE_TT);
+      }
+      break;
+    case STRING: case INT: case FLOAT:
+      one_node_chk_ins(flag, EncodeTrieConstant(call_arg), CALL_TRIE_TT);
+      break;
+    case LIST:
+      one_node_chk_ins(flag, EncodeTrieList(call_arg), CALL_TRIE_TT);
+      pdlpush(cell(clref_val(call_arg)+1));
+      pdlpush(cell(clref_val(call_arg)));
+      recvariant_call(flag,CALL_TRIE_TT,call_arg);
+      break;
+    case CS:
+      psc = (Psc)follow(cs_val(call_arg));
+      item = makecs(psc);
+      one_node_chk_ins(flag, item, CALL_TRIE_TT);
+      for (j=get_arity(psc); j>=1 ; j--) {
+	pdlpush(cell(clref_val(call_arg)+j));
+      }
+      recvariant_call(flag,CALL_TRIE_TT,call_arg);
+      break;
+    case ATTV:
+      /* Now xtemp1 can only be the first occurrence of an attv */
+      *(--VarPosReg) = (Cell) call_arg;
+      call_arg = clref_val(call_arg); /* the VAR part of the attv */
+      /*
+       * Bind the VAR part of this attv to VarEnumerator[ctr], so all the
+       * later occurrences of this attv will look like a regular variable
+       * (after dereferencing).
+       */
+      StandardizeVariable(call_arg, ctr);	
+      one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), CALL_TRIE_TT);
+      attv_ctr++; ctr++;
+      pdlpush(cell(call_arg+1));	/* the ATTR part of the attv */
+      recvariant_call(flag, CALL_TRIE_TT, call_arg);
+      break;
+    default:
+      xsb_abort("Bad type tag in variant_call_search...\n");
     }
-    resetpdl;
+  }
+  resetpdl;
     
-    if (arity == 0) {
-      one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, CALL_TRIE_TT);
-      Instr(Paren) = trie_proceed;
-    }
+  if (arity == 0) {
+    one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, CALL_TRIE_TT);
+    Instr(Paren) = trie_proceed;
+  }
 
-    /*
-     *  If an insertion was performed, do some maintenance on the new leaf.
-     */
-    if ( flag == 0 ) {
-      subg_inserts++;
-      MakeLeafNode(Paren);
-      TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
-    }
+  /*
+   *  If an insertion was performed, do some maintenance on the new leaf.
+   */
+  if ( flag == 0 ) {
+    subg_inserts++;
+    MakeLeafNode(Paren);
+    TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
+  }
 
-    cell(--VarPosReg) = makeint(ctr); /* tag the # of subs fact vars */
-    while (--tVarPosReg > VarPosReg)
+  cell(--VarPosReg) = makeint(attv_ctr << 16 | ctr);
+  while (--tVarPosReg > VarPosReg) {
+    if (isref(*tVarPosReg))	/* a regular variable */
       ResetStandardizedVariable(*tVarPosReg);
+    else			/* an ATTV */
+      ResetStandardizedVariable(clref_val(*tVarPosReg));
+  }
 
-    CallLUR_Leaf(*results) = Paren;
-    CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
-    CallLUR_VariantFound(*results) = flag;
-    CallLUR_VarVector(*results) = VarPosReg;
-    return;
+  CallLUR_Leaf(*results) = Paren;
+  CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
+  CallLUR_VariantFound(*results) = flag;
+  CallLUR_VarVector(*results) = VarPosReg;
+  return;
 }
 
 /*----------------------------------------------------------------------*/
@@ -1304,7 +1346,7 @@ BTNptr whole_term_chk_ins(Cell term, BTNptr *hook, int *flagptr)
 	ctr++;
       } else {
 	one_node_chk_ins(flag,
-			 EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),
+			 EncodeTrieVar(IndexOfStdVar(xtemp1)),
 			 INTERN_TRIE_TT);
       }
       break;
@@ -1393,7 +1435,7 @@ BTNptr one_term_chk_ins(CPtr termptr, BTNptr root, int *flagptr)
 	    ctr++;
 	  } else {
 	    one_node_chk_ins(flag,
-			     EncodeTrieVar(IndexOfStandardizedVariable(xtemp1)),
+			     EncodeTrieVar(IndexOfStdVar(xtemp1)),
 			     ASSERT_TRIE_TT);
 	  }
           break;
