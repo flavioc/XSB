@@ -275,6 +275,10 @@ literal_list([],_) --> [], !.
 /**************************************************************/
 term(T,V) --> flogic_molecule(T,V), !.
 term(T,V) --> predicate_term(T,V), !.
+term(vterm(Name,Var),V) -->
+	[var(Name)],
+	{flora_member(var(Name,Var),V)},
+	!.
 
 
 /**************************************************************/

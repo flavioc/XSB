@@ -318,6 +318,8 @@ rhs_flatten(dynloadlist(L),null,Code) :-
 	P =.. [F,L],
 	Code=[P].
 
+rhs_flatten(vterm(_,V),null,[V]) :- !.
+
 rhs_flatten(pterm(assert,Args),null,Code) :-
 	!,
 	lhs_flatten_list(Args,TempC1,A1,_),
@@ -658,6 +660,8 @@ lhs_flatten_list([T|Ts],Code,Aux,AVs) :-
 
 
 /***************************************************************************/
+lhs_flatten(vterm(_,V),null,[V],[],_) :- !.
+
 lhs_flatten(pterm(F,Args),null,Code,Aux,AVs) :-
 	!,
 	lhs_flatten_pathlist(Args,AObjs,C,Aux,AVs),
@@ -1019,6 +1023,11 @@ dynword(A1,A2) :-
   is for flattening the arguments of assert.
 ***************************************************************************/
 dynlist([],[]).
+
+dynlist([P|Ps],[P|DynPs]) :-
+	var(P),
+	!,
+	dynlist(Ps,DynPs).
 
 dynlist([P|Ps],[DynP|DynPs]) :-
 	P =.. [F|L],
