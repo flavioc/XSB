@@ -1872,7 +1872,7 @@ queries_atom([Query],QueryList,Diff):-
 queries_atom([Query|Queries],QueryList,Diff):-
    Queries \= [],
    query_atom(Query,QueryList,X1),
-   column_atom('UNION',X1,X2),
+   column_atom('UNION ',X1,X2),
    queries_atom(Queries,X2,Diff).
 
 
