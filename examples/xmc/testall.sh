@@ -41,15 +41,15 @@ done
 
 if test -z "$1" -o $# -gt 1; then
   echo "Usage: testall.sh [-opts opts] [-exclude \"excl_list\"] [-add \"added_tests\"] [-only \"test-list\"] executable"
-  echo "where: opts       -- options to pass to XMC executable"
+  echo "where: opts       -- options to pass to XSB executable"
   echo "       excl_list  -- quoted, space-separated list of tests to NOT run"
   echo "       add_list   -- list of additional tests to run"
   echo "       only_list  -- run only this list of tests"
-  echo "       executable -- full path name of the XMC executable"
+  echo "       executable -- full path name of the XSB executable"
   exit
 fi
 
-XMC=$1
+XSB=$1
 
 # Test if element is a member of exclude list
 # $1 - element
@@ -82,7 +82,7 @@ for tst in $testlist ; do
     if test -f core ; then
 	rm -f core
     fi
-    ./test.sh "$XMC" "$options"
+    ./test.sh "$XSB" "$options"
     cd ..
   fi
 done

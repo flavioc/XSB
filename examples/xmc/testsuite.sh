@@ -7,7 +7,7 @@
 
 #Usage: testsuite.sh [-opts opts] [-exclude exclude_list] \
 #    	     	     [-add add_list] [-only only_list] path
-# where: opts         -- options to pass to XMC
+# where: opts         -- options to pass to XSB
 #        exclude_list -- the list of tests (in quotes) to NOT run
 #        add_list     -- the list of test directories to adds
 #    	     	     	 (which are normally not tested)
@@ -59,25 +59,26 @@ done
 # install dir argument
 if test -z "$1" -o $# -gt 1; then
     echo "Usage: testsuite.sh [-opts opts] [-tag tag] [-exclude \"excl_list\"] [-add \"add_list\"] [-only \"only_list\"] [-mswin] path"
-    echo "where: opts      -- options to pass to XMC"
+    echo "where: opts      -- options to pass to XSB"
     echo "       excl_list -- the list of tests to NOT run"
     echo "       add_list  -- the list of additional tests to run"
     echo "       only_list -- run only these tests"
-    echo "       path      -- full path name of the XMC installation directory"
+    echo "       path      -- full path name of the XSB installation directory"
     exit
 fi
 
-XMC=$1
+XSB=$1
+XMC="xmc"
 
 GREP="grep -i"
 MSG_FILE=/tmp/xmc_test_msg.$USER
 LOG_FILE=/tmp/xmc_test_log.$USER
 RES_FILE=/tmp/xmc_test_res.$USER
 
-if test ! -x "$XMC"; then
-    echo "Can't execute $XMC"
+if test ! -x "$XSB"; then
+    echo "Can't execute $XSB"
     echo "aborting..."
-    echo "Can't execute $XMC" >$MSG_FILE
+    echo "Can't execute $XSB" >$MSG_FILE
     HOSTNAME=`hostname`
     echo "Aborted XMC testsuite on $HOSTNAME..." >> $MSG_FILE
 #   mail -s "XMC testsuite failed!" $USER < $MSG_FILE
@@ -136,7 +137,7 @@ else
 fi
 
 testall.sh -opts "$options" -exclude "$excluded_tests" -add "$added_tests"\
-	   -only "$only_tests" $XMC  >> $LOG_FILE 2>&1
+	   -only "$only_tests" $XSB  >> $LOG_FILE 2>&1
 
 touch $RES_FILE
 coredumps=`find . -name core -print`
