@@ -197,7 +197,7 @@ open(F,write,F):-!,
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_input, CurinPsc),
+	conpsc(current_output, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 open(F,append,F):-!, 
@@ -212,7 +212,7 @@ open(F,append,F):-!,
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_input, CurinPsc),
+	conpsc(current_output, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 
