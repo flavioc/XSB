@@ -57,8 +57,9 @@
 #define CC "cl.exe"
 #define RELEASE_DATE @xsb_release_date@
 #define XSB_VERSION "@xsb_full_version_name@"
-
-
+#if (defined(XSB_DLL) || defined(XSB_DLL_C))
+#define FOREIGN_WIN32
+#endif
 
 /* this is used by many to check if config.h was included in proper order */
 #ifndef CONFIG_INCLUDED
@@ -75,7 +76,8 @@
 /* Define if XSB is built with support for ODBC */
 #undef XSB_ODBC
 
-#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF))
+#if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_COFF) \
+	|| defined(FOREIGN_WIN32))
 #define FOREIGN
 #endif
 

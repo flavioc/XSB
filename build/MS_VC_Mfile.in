@@ -82,12 +82,13 @@ NULL=nul
 CPP=cl.exe
 
 # Assume we are running NMAKE in the emu directory
-!IF  "$(DLL)" == "yes"
+#!IF  "$(DLL)" == "yes"
 # Put DLL in the saved.o directory
-OUTDIR=..\config\@canonical@@config_tag@\saved.o
-!ELSE
+DLLDIR=..\config\@canonical@@config_tag@\saved.o
 OUTDIR=..\config\@canonical@@config_tag@\bin
-!ENDIF
+#!ELSE
+#OUTDIR=..\config\@canonical@@config_tag@\bin
+#!ENDIF
 
 INTDIR=.
 
@@ -102,7 +103,7 @@ ORACLE_MSG=with Oracle support
 !ENDIF
 
 !IF "$(DLL)" == "yes"
-ALL : "$(OUTDIR)\xsb.dll"
+ALL : "$(DLLDIR)\xsb.dll" "$(OUTDIR)\xsb.exe"
 !ELSE
 ALL : "$(OUTDIR)\xsb.exe"
 !ENDIF
@@ -153,7 +154,7 @@ CLEAN :
 CPP_OBJS=$(INTDIR)/
 CPP_SBRS=
 LINK32=link.exe
-LINK32_OBJS= \
+DLL_LINK32_OBJS= \
 	"$(INTDIR)/auxlry.obj" \
 	"$(INTDIR)/builtin.obj" \
 	"$(INTDIR)/biassert.obj" \
@@ -191,7 +192,9 @@ LINK32_OBJS= \
 
 # DLLs don't use xmain.c
 !IF  "$(DLL)" == "no"
-LINK32_OBJS=$(LINK32_OBJS) $(INTDIR)/xmain.obj
+LINK32_OBJS=$(DLL_LINK32_OBJS) $(INTDIR)/xmain.obj
+!ELSE
+LINK32_OBJS=$(INTDIR)/xmain.obj
 !ENDIF
 
 # Oracle requires one additional file
@@ -228,27 +231,45 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF "$(CFG)" == "release" && "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG)
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
+CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+ /D "XSB_DLL" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+DLL_CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
   /D "XSB_DLL" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:no\
- /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 /out:"$(OUTDIR)/xsb.dll"\
- /implib:"$(OUTDIR)/xsb.lib" 
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
+ /nologo /subsystem:console /incremental:no\
+ /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
+ /out:"$(OUTDIR)/xsb.exe" 
+DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" \
+ /nologo /subsystem:windows /dll /incremental:no\
+ /pdb:"$(DLLDIR)/xsb.pdb" /machine:I386 /out:"$(DLLDIR)/xsb.dll"\
+ /implib:"$(DLLDIR)/xsb.lib" 
 
 !ELSEIF "$(CFG)" == "debug" &&  "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Debug mode $(ORACLE_MSG)
 
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
+DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
  /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL" /Fp"$(INTDIR)/xsb.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:windows /dll /incremental:yes\
+ /pdb:"$(DLLDIR)/xsb.pdb" /debug /machine:I386\
+ /out:"$(DLLDIR)\xsb.dll"\
+ /implib:"$(DLLDIR)/xsb.lib"	 
+CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
+ /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL" \
+  /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
+ /nologo /subsystem:console /incremental:yes\
  /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
- /out:"$(OUTDIR)\xsb.dll"\
- /implib:"$(OUTDIR)/xsb.lib"	 
+ /out:"$(OUTDIR)\xsb.exe" 
 
 !ENDIF 
 
@@ -258,9 +279,9 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-"$(OUTDIR)\xsb.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(DLLDIR)\xsb.dll" : "$(DLLDIR)" $(DEF_FILE) $(DLL_LINK32_OBJS)
     $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
+  $(DLL_LINK32_FLAGS) $(DLL_LINK32_OBJS)
 <<
 
 .c{$(CPP_OBJS)}.obj:
@@ -308,6 +329,7 @@ DEP_CPP_XSBER=\
 SOURCE=$(INTDIR)\xsb_odbc.c
 DEP_CPP_XSB_O=\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\basictypes.h"\
 	
 
@@ -328,6 +350,7 @@ DEP_CPP_XPATH=\
 	{$(INTDIR)}"\configs\special.h"\
 	{$(INTDIR)}"\auxlry.h"\
 	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\xsberror.h"\
@@ -358,6 +381,7 @@ DEP_CPP_TRIES=\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\tr_utils.h"\
 	{$(INTDIR)}"\basictypes.h"\
@@ -409,6 +433,7 @@ DEP_CPP_TR_UT=\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\chat.h"\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\binding.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\register.h"\
@@ -439,6 +464,7 @@ DEP_CPP_SYSTE=\
 	{$(INTDIR)}"\basictypes.h"\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\msyscall.h"\
 	{$(INCLUDE)}"\sys\types.h"\
 	{$(INCLUDE)}"\sys\stat.h"\
@@ -519,6 +545,7 @@ SOURCE=$(INTDIR)\self_orientation.c
 DEP_CPP_SELF_=\
 	{$(INTDIR)}"\configs\config.h"\
 	{$(INTDIR)}"\basictypes.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INCLUDE)}"\sys\types.h"\
 	{$(INCLUDE)}"\sys\stat.h"\
 	{$(INTDIR)}"\configs\special.h"\
@@ -668,6 +695,7 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\io_builtins.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\flags.h"\
@@ -723,6 +751,7 @@ DEP_CPP_INIT_=\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\hash.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\tries.h"\
 	{$(INTDIR)}"\choice.h"\
@@ -851,6 +880,7 @@ DEP_CPP_EMULO=\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\deref.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\sig.h"\
 	{$(INTDIR)}"\emudef.h"\
 	{$(INTDIR)}"\loader.h"\
@@ -984,6 +1014,7 @@ DEP_CPP_CINTE=\
 	{$(INTDIR)}"\emuloop.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\basictypes.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\self_orientation.h"\
 	
 
@@ -1028,6 +1059,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\trassert.h"\
 	{$(INTDIR)}"\dynload.h"\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\residual.h"\
 	{$(INTDIR)}"\oracle.h"\
 	{$(INTDIR)}"\xsb_odbc.h"\
@@ -1058,6 +1090,7 @@ DEP_CPP_BIASS=\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\psc.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\flags.h"\
@@ -1148,6 +1181,7 @@ DEP_CPP_XMAIN=\
 	{$(INCLUDE)}"\sys\STAT.H"\
 	{$(INTDIR)}"\configs\special.h"\
 	{$(INTDIR)}"\emuloop.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\self_orientation.h"\
 	
 
@@ -1187,6 +1221,7 @@ DEP_CPP_PRIVA=\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\flags.h"\
 	{$(INCLUDE)}"\SYS\TYPES.H"\
