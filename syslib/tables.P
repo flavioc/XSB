@@ -98,11 +98,12 @@ answer_set_status_code(INCOMPLETE_ANSWER_SET, incomplete).
 
 table_state(Call, State) :-
 	table_state(Call, PredType, _CallType, AnsSetStatus),
-	PredType == variant
-        -> ( AnsSetStatus == undefined
-	     -> State = no_call_yet
+	(PredType == variant
+         -> ( AnsSetStatus == undefined
+             -> State = no_call_yet
 	     ;  State = AnsSetStatus )
-	; PredType == undefined -> State = undef.
+	 ; PredType == undefined -> State = undef
+        ).
 
 /*----------------------------------------------------------------------*/
 
