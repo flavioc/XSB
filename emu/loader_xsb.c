@@ -186,7 +186,8 @@ inline static void inserth(CPtr label, struct hrec *bucket)
   if (bucket->l > 1) {
     temp = (CPtr)*temp;
     while ((CPtr)*temp != temp) 
-      temp = (CPtr)*(++temp);
+      /*temp = (CPtr)*(++temp); */
+      temp = (CPtr)*(temp+1);
   }
   *temp = (Cell)hptr;
   cell(hptr) = (Cell) label; hptr++;
