@@ -25,7 +25,7 @@
 
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
-:- import real_search_module/4 from consult.
+:- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
 
 %% Construct the file cc/xsb_wildmatch.H on the fly
@@ -55,12 +55,11 @@ make_xsb_wildmatchH(CC, CC_opts, LoaderFlags) :-
 		     '%s%scc%sxsb_wildmatch', f(WildMatchDir, Slash, Slash)),
     (  %% avoid recompilation: check if xsb_wildmatch.O exists and 
        %% is newer than xsb_wildmatch.c.
-       real_search_module('xsb_wildmatch', Dir, Base, Ext),
+       search_module('xsb_wildmatch',Dir,_Mod,_Ext,_Base,ModuleO),
        str_cat(Module, '.c', ModuleSourceFile),
-       str_cat(Base, Ext, CompiledModuleFilename),
        str_cat(Module, '.H', ModuleH),
        machine_file_exists(ModuleH),
-       file_time(CompiledModuleFilename, time(CT1,CT2)),
+       file_time(ModuleO, time(CT1,CT2)),
        file_time(ModuleSourceFile, time(ST1,ST2)),
        time(ST1,ST2) @< time(CT1,CT2)
 	       %% module compiled and is current, so just load
