@@ -30,7 +30,7 @@
 
 :- compiler_options([sysmod,xpp_on]).
 
-#include "../emu/builtin.h"
+#include "builtin.h"
 #include "celltags_xsb.h"
 #include "flag_defs_xsb.h"
 #include "syscall_xsb.h"
@@ -49,7 +49,7 @@
 /* where BUILTIN_NAME is supposed to exist in emu/builtin.h.            */
 /* We should make sure that we have as little as possible in the later  */
 /* category by updating cmplib/builtin.P appropriately.  Currently, we  */
-/* have more such defintions than needed, probably because builtin.P    */
+/* have more such definitions than needed, probably because builtin.P   */
 /* needs an update.                                        - Kostis.    */
 /*======================================================================*/
 
@@ -60,11 +60,8 @@ psc_prop(PSC, Term) :- psc_prop(PSC, Term).
 psc_set_type(PSC, Type) :- psc_set_type(PSC, Type).
 psc_set_prop(PSC, Term) :- psc_set_prop(PSC, Term).
 psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
-/**psc_ep(PSC, Term) :- psc_ep(PSC, Term).
+psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
- for later **/
-psc_ep(_PSC, _Term) :- '_$builtin'(PSC_EP).
-psc_set_ep(_PSC, _Term) :- '_$builtin'(PSC_SET_EP).
 
 term_psc(Term, PSC) :- term_psc(Term, PSC).
 term_type(Term, Type) :- term_type(Term, Type).
