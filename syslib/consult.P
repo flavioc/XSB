@@ -508,8 +508,12 @@ do_assert_and_fail(Term) :-	% Now Term is the output of
 	 ->	conpsc(Origin_Head, OPsc), conpsc(Head, Psc)
 	 ;	conpsc(Head, Psc), OPsc = Psc
 	),
-	('_$trie_asserted'(Term) 
-	 ->
+	('_$trie_asserted'(Head) 
+	 ->     (Term = (_ :- _)
+                 ->     warning('Trying to assert nonfact into a trie, ignored'(Term)),
+		        fail
+		 ;      true
+	        ),
 		(load_dyn_trie_retracted(OPsc) 
 		-> true
 		;       psc_arity(Psc,Arity),

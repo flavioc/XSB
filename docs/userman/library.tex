@@ -280,11 +280,12 @@ handled by the XSB compiler.
     {\tt Term2}; that is, when {\tt Term2} is already an instance of
     {\tt Term1}.  This predicate simply checks for subsumption and 
     does not bind any variables either in {\tt Term1} or in {\tt Term2}.
+    {\tt Term1} and {\tt Term2} should not share any variables.
 
     Examples:
     {\footnotesize
      \begin{verbatim}
-            | ?- subsumes_chk(a(X,f,Y,X),a(U,X,b,S)).
+            | ?- subsumes_chk(a(X,f,Y,X),a(U,V,b,S)).
 
             no
             | ?- subsumes_chk(a(X,Y,X),a(b,b,b)).
@@ -310,8 +311,7 @@ handled by the XSB compiler.
     but the actual implementation of {\tt variant/2} is considerably more
     efficient.  However, in general, it does not work for terms that share
     variables; an assumption that holds for most (reasonable) uses of
-    {\tt variant/2}.  Whenever the terms may share variables, the above
-    definition of variant (via {\tt subsumes\_chk/2}) should be used.
+    {\tt variant/2}.
 \end{description}
 
 
