@@ -122,7 +122,7 @@ CPtr	ans_var_pos_reg;
 
 #define handle_xsb_profile_interrupt 				\
     if (asynint_val && (asynint_val & PROFINT_MARK)) {		\
-      asynint_val &= PROFINT_MARK;				\
+      asynint_val &= ~PROFINT_MARK;				\
       log_prog_ctr(lpcreg);					\
     }								\
 
