@@ -192,11 +192,11 @@ is not a variant of $t_1$.  Under subsumption-based tabling, when a
 tabled call $C$ is issued, a search is performed for a table entry
 containing a subsuming subgoal $S$\@.  Notice that, if such an entry
 exists, then its answer set $\cA$ logically contains all the solutions
-to satisfy $C$\@.  The subset of answers $\cA' \in \cA$ which unify with
-$C$ are said to be \emph{relevant to} $C$\@.  Likewise, upon the
-derivation of an answer $A$ for a producing subgoal $S$, $A$ is inserted
-into the answer set $\cA$ of $S$ if and only if $A$ is not subsumed by
-some answer $A'$ already present in $\cA$\@.
+to satisfy $C$\@.  The subset of answers $\cA' \subseteq \cA$ which
+unify with $C$ are said to be \emph{relevant to} $C$\@.  Likewise, upon
+the derivation of an answer $A$ for a producing subgoal $S$, $A$ is
+inserted into the answer set $\cA$ of $S$ if and only if $A$ is not
+subsumed by some answer $A'$ already present in $\cA$\@.
 
 Notice that subsumption-based tabling permits greater reuse of computed
 results, thus avoiding even more program resolution, and thereby can
