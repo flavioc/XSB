@@ -109,6 +109,33 @@ code) files contain SLG-WAM instructions that can be executed by the
 emulator.  These byte-coded instructions are machine-independent, so
 usually no installation procedure is needed for the byte code files.
 
+\section{File Names and XSB}  \label{sec:filenames}
+%
+\index{base file name}
+\index{file designator}
+Three files are associated with Prolog source code in
+XSB~\footnote{Other types of files may be associated with foreign code
+--- see Volume 2.}.
+\begin{itemize}
+\item A single {\it source} file, whose name is the {\em base file name} plus 
+      the suffix ``{\tt .P}''.  
+\item An {\it object (byte-code)} file, whose name consists of the
+base file name plus the suffix ``{\tt .xwam}''.
+\item An optional {\it header} file, whose name is the base file name plus 
+      the suffix ``{\tt .H}''.  When used, the header file normally
+      contains file-level declarations and directives while the source
+      file usually contains the actual definitions of the predicates
+      defined in that module.
+\end{itemize}
+%
+Most of the XSB system predicates, such as {\tt consult/\{1,2\}}, {\tt
+compile/\{1,2\}} and others are somewhat flexible in how they allow
+file designation.  A file may be designated by a {\em file designator}
+which can be a base file name, a source file name; or the relative or
+absolute paths to a base or source file name.  Unfortunately, the
+exact semantics of a file designator differs among system predicates
+in \version, as well as among platforms.
+
 \section{The Module System of XSB} \label{Modules}
 %========================================================
 XSB has been designed as a module-oriented Prolog system.  Modules
@@ -124,33 +151,20 @@ only for predicate symbols~\footnote{Operator symbols can be exported
 as any other symbols, but their precedence must be redeclared in the
 importing module.}.
 
-The following three files may be associated with a particular module:
-\begin{itemize}
-\item A single {\it source} file, whose name is the module name plus 
-      the suffix ``{\tt .P}''.  
-\item An {\it object (byte-code)} file, whose name consists of the module 
-      name plus the suffix ``{\tt .xwam}''.
-\item An optional {\it header} file, whose name is the module name plus 
-      the suffix ``{\tt .H}''.  When used, the header file normally
-      contains file-level declarations and directives while the source
-      file usually contains the actual definitions of the predicates
-      defined in that module.
-\end{itemize}
-The module hierarchy of XSB is {\em flat} --- nested modules are not
-possible.
-
+\index{module name}
 By default, files are not treated as modules.  In order for a file to
 be treated as a module, it must contain one or more {\it export
 declarations}, which specify that a set of symbols appearing in that
-module is visible and therefore can be used by any other module.  Any
-file (either module or not) may also contain {\it import
-declarations}, which allow symbols defined in and exported by other
-modules to be used in the current module.  In addition, a module can
-also contain {\it local declarations}, which specify that a set of
-symbols are {\it visible by this module only}, and therefore cannot be
-accessed by any other module.  Export, local, and import declarations
-can appear anywhere in the source or header files and have the
-following forms:
+module is visible and therefore can be used by any other module.  In
+XSB, the {\em module name} is equal to the base file name in which the
+module is defined.  Any file (either module or not) may also contain
+{\it import declarations}, which allow symbols defined in and exported
+by other modules to be used in the current module.  In addition, a
+module can also contain {\it local declarations}, which specify that a
+set of symbols are {\it visible by this module only}, and therefore
+cannot be accessed by any other module.  Export, local, and import
+declarations can appear anywhere in the source or header files and
+have the following forms:
 
 \demo{:- export $sym_1$, \ldots, $sym_l$. }
 
@@ -159,7 +173,8 @@ following forms:
 \demo{:- import $sym_1$, \ldots, $sym_n$ from $module$. }
 
 \noindent
-where $sym_i$ has the form $functor/arity$.
+where $sym_i$ has the form $functor/arity$, and $module$ is a module
+name.
 
 We note that only exported symbols can be imported; for example
 importing a local symbol will cause an {\tt environment conflict
@@ -169,19 +184,19 @@ loaded into the module {\tt usermod}, which is the working module of
 the XSB interpreter.  Dynamically asserted code is also loaded into
 {\tt usermod}.
 
-Currently the module name is stored in its byte code file, which means
-that if the byte code file is renamed, the module name is not altered,
-and hence may cause confusion to the user and/or the system.  So, it
-is advisable that the user not rename byte code files generated for
-modules by the XSB compiler.  However, byte code files generated for
-non-modules can be safely renamed.
+For modules, the base file name is stored in its byte code file, which
+means that if the byte code file is renamed, the base file name is not
+altered, and hence may cause confusion to the user and/or the system.
+However, byte code files generated for non-modules can be safely
+renamed.
 
-In order to understand the semantics of modules, the user should keep in
-mind that in a module oriented system, the name of each symbol is identified
-as if it were prefixed with its module name, hence two symbols of the same
-$functor/arity$ but different module prefixes are distinct symbols.  
-Currently the following set of rules is used to determine the module 
-prefix of a symbol:
+In order to understand the semantics of modules, the user should keep
+in mind that in a module oriented system, the name of each symbol is
+identified as if it were prefixed with its module name (equivalently
+its base file name), hence two symbols of the same $functor/arity$ but
+different module prefixes are distinct symbols.  Currently the
+following set of rules is used to determine the module prefix of a
+symbol:
 \begin{itemize}
 \item	Every predicate symbol appearing in a module (i.e. that appears as
 	the head of some clause) is assumed by default to be {\em
@@ -195,7 +210,8 @@ prefix of a symbol:
 	declaration), the module prefix of the symbol is the module it
 	is imported from; any other symbol takes the module where the
 	symbol occurs as its module prefix.
-\item	The XSB interpreter treats {\tt usermod} as its working module.
+\item	The XSB command-line interpreter treats {\tt usermod} as its
+working module. 
 \item	Symbols that are either defined in non-modules loaded into the
 	system or that are dynamically created (by the use of standard
 	predicates such as {\tt read/1, functor/3, '=..'/2}, etc) are
@@ -688,41 +704,49 @@ and {\tt abolish\_table\_pred/1}
 
 \section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================
-In XSB, both interpreted (i.e. asserted) and compiled code are
-transformed into SLG-WAM instructions.  Compiled code may be more
-optimized than interpreted code, and compilation produces an object
-code file, but certain types of indexing, such as trie and star
-indexing are (currently) available only for intperpreted predicates
-(see {\tt index/2}).
+Like other Prologs, XSB provides for both statically compiled code and
+dynamically asserted code.  Unlike some Prologs, however, there is no
+difference between compiled and consulted code.  Abstractly,
+``Compiling'' in XSB means creation of a file containing SLG-WAM
+byte-code; ``Consulting'' means loading such a byte-code file, (and
+perhaps creating the file itsef, via compilation).  Compiled code may
+be more optimized than asserted code, but certain types of indexing,
+such as trie and star indexing are (currently) available only for
+dynamically asserted predicates (see {\tt index/2}).
 
 \index{\texttt{consult/[1,2]}}
 The standard predicate {\tt consult/[1,2]} is the most convenient
-method for entering rules into XSB's database~\footnote{In XSB, {\tt
-reconsult/[1,2]} is defined to have the same actions as {\tt
-consult/[1,2]}.}.  Though {\tt consult} comes in many flavors, the
-most general form is:
+method for entering static source code rules into XSB's
+database~\footnote{In XSB, {\tt reconsult/[1,2]} is defined to have
+the same actions as {\tt consult/\{1,2\}}.}.  {\tt consult/1} has the
+form: 
+%
+\begin{center}
+{\tt consult(+Files)}
+\end{center}
+%
+in which {\tt Files} is either a file designator (see
+Section~\ref{sec:filenames}) or a list of file designators.  {\tt
+consult/1} compiles any files specified in {\tt Files} that have been
+touched later than their byte-code files, and loads them into XSB.  In
+addition the form
+%
 \begin{center}{\tt
-	consult(+FileList, +CompilerOptionList) }
-\end{center} 
-At the time of the call both of its arguments must be instantiated
-(ground).  {\tt FileList} is a list of filenames or module names (see
-Section~\ref{Modules}) and {\tt CompilerOptionList} is a list of
-options that are to be passed to the compiler when (and if) it should
-be invoked.  For a detailed description of the format and the options
-that can appear in this list see Section~\ref{the_compiler}.
+	    [Files]. 
+}\end{center}
+%
+Is an alternative syntax for {\tt consult(Files)}.
 
-If the user wants to consult one module (file) only, she can provide
-an atom instead of a list for the first argument of {\tt consult/2}.
-Furthermore, if there isn't any need for special compilation options
-the following two forms:
+{\tt consult/2} has the form.
 \begin{center}{\tt
-	    [FileName]. \\
-	consult(FileName).
-}\end{center}
-are just notational shorthands for:
-\begin{center}{\tt
-	consult(FileName, []).
-}\end{center}
+	consult(+Files, +CompilerOptionList) }
+\end{center} 
+{\tt Files} is as in {\tt consult/1} and {\tt CompilerOptionList}
+is a list of options that are to be passed to the compiler if it is
+invoked (alternatively, these compiler options can be declared in the
+files themselves, as in Section~\ref{the_compiler}.  {\tt consult/2}
+is more general than {\tt consult/1}, and {\tt consult(Files)} is
+defined as {\tt 	consult(FileName, [])}.
 
 Consulting a file (module) conceptually consists of the following five
 steps which are described in detail in the following paragraphs.
@@ -779,29 +803,42 @@ Currently (\version), a foreign language module is compiled when at
 least one of files {\tt *.c} or {\tt *.H} has been changed from the
 time the corresponding object files have been created.
 
-\index{\texttt{multifile/2}}
 Once the file is compiled into byte-code, the byte-code for the file
-is loaded into XSB's database.  The default action upon loading is to
-delete any previous byte-code for predicates defined in the file.  If
-this is not the desired behavior, the user may add to the file a
-declaration
-\begin{center}
-{\tt :- multifile <Predicate\_List> .} \\
-\end{center}
-where {\tt Predicate\_List} is a list of predicates in {\em
-functor/arity\/} form.  The effect of this declaration is to delete {\em
-only\/} those clauses of {\tt predicate/arity} that were defined in the
-file itself.
-
-After loading the file all exported predicates of that module are
-imported into the current environment (the current working module {\tt
-usermod}) if the file is a module.  For non-modules, all predicates
-are imported into the current working module.
+is loaded into XSB's database.  After loading the file all exported
+predicates of that module are imported into the current environment
+(the current working module {\tt usermod}) if the file is a module.
+For non-modules, all predicates are imported into the current working
+module.
 
 Finally any queries --- that is, any terms with principal functor {\tt
 '?-'/1}, or with the principal functor {\tt ':-'/1} and that are not
 directives like the ones described in Section~\ref{the_compiler} 
 are executed in the order that they are encountered.
+
+\index{\texttt{multifile/2}}
+The default action upon loading a file or module is to delete all
+previous byte-code for predicates defined in the file.  If this is not
+the desired behavior, the user may add to the file a declaration
+\begin{center}
+{\tt :- multifile Predicate\_List .} \\
+\end{center}
+where {\tt Predicate\_List} is a list of predicates in {\em
+functor/arity\/} form.  The effect of this declaration is to delete
+{\em only\/} those clauses of {\tt predicate/arity} that were defined
+in the file itself.  Issues to remember when using {\tt multifile} in
+XSB \version{} are:
+%
+\begin{itemize}
+\item If a predicate {\tt p/n} is to be defined in more than one file,
+{\tt p/n} must be declared as multifile in each file in which it is
+defined. 
+%
+\item The {\tt multifile} declaration should be trusted only for
+static code.  Multifile declarations are not supported for code that
+is dynamically loaded (via {\tt load\_dyn/\{1,2\}} or {\tt
+load\_dync/\{1,2\}}).
+%
+\end{itemize}
 
 Other predicates for loading files are {\tt ensure\_loaded/\{1,2\}}.  
 
@@ -851,19 +888,17 @@ The compiler is invoked directly at the interpreter level (or in a
 program) through the Prolog predicates {\tt compile/[1,2]}.  
 
 \index{\texttt{compile/[1,2]}}
-The general forms of predicate {\tt compile/2} are:
+ {\tt compile/2} has the form: 
 \begin{center}{\tt	
-	compile(+File, +OptionList) \\
-	compile(+FileList, +OptionList)
+	compile(+Files, +OptionList)
 }
 \end{center}
-and at the time of the call both of its arguments should be ground.
-
-The second form allows the user to supply a proper list of file names as
-the parameter for {\tt compile/[1,2]}.  In this case the compiler will
-compile all the files in {\tt FileList} with the compiler
-options specified in {\tt OptionList} (but see
-Section~\ref{sec:CompilerOptions} below for the precise details.)
+in which {\tt Files} is either an absolute or relative filename or a
+ground list of absolute or relative file names; and {\tt OptionList}
+is a ground list of compiler options.  {\tt compile/2} compiles all
+files specified, using the compiler options specified in {\tt
+OptionList} (see Section~\ref{sec:CompilerOptions} below for the
+precise details.)
 
 \demo{$|$ ?- compile(Files).} 
 
@@ -873,9 +908,7 @@ is just a notational shorthand for the query:
 \demo{$|$ ?- compile(Files, []).}
 
 The standard predicates {\tt consult/[1,2]} call {\tt compile/1} (if
-necessary).  Argument {\tt File} can be any syntactically valid UNIX
-or Windows file name (in the form of a Prolog atom), but the user can also
-supply a module name.
+necessary).  
 
 The list of compiler options {\tt OptionList}, if specified, 
 should be a proper Prolog list, i.e.\ a term of the form:

@@ -93,11 +93,11 @@ for loaded user or system predicates.  If {\tt Predicate\_Indicator}
 unifies with {\tt Module:F/A} all loaded predicates unifying with this
 indicator is returned.  If {\tt Predicate\_indicator} is {\tt F/A},
 {\tt current\_predicate/1} behaves as if it were called with the form
-{\tt usermod:F/A} (or {\tt global:F/A}).  Unlike {\tt
-current\_functor/1} {\tt current\_predicate/1}does not return
-indicators for predicates that have been imported but not actually
-loaded into code space.  For more detailed analysis of predicate
-properties, the predicate {\tt predicate\_property/2} can be used.
+{\tt usermod:F/A}.  Unlike {\tt current\_functor/1} {\tt
+current\_predicate/1}does not return indicators for predicates that
+have been imported but not actually loaded into code space.  For more
+detailed analysis of predicate properties, the predicate {\tt
+predicate\_property/2} can be used.
 
 As an example to backtrack through all of the predicates defined and loaded in
 module {\tt blah}, regardless of whether {\tt blah} is a system or a
@@ -119,8 +119,8 @@ user defined module, use:
     This succeeds once for every predicate that is loaded in \ourprolog's 
     database.
 
-    To find the predicates having arity 3 that are loaded in the global 
-    modules of the system, use: 
+    To find the predicates having arity 3 that are loaded in {\tt
+    usermod}, use:
 
     \stuff{
     \> \>	| ?- current\_predicate(usermod:Functor/3).
@@ -144,115 +144,115 @@ user defined module, use:
 
 %-----------------------------------------------------------------------------------------------
 \comment{
-TLS: I don't see that this gives us anything useful over
-current_predicate/1, so why confuse the user?
-\ouritem{current\_predicate(?Name, ?Term\_Indicator)}
-\index{\texttt{current\_predicate/2}}
-    Succeeds iff {\tt Term\_Indicator} is the most general term 
-    corresponding to one of the predicates having functor {\tt Name} that are 
-    defined and loaded in a particular module in the database. 
-    (The module can be either system or user defined).
-    Or procedurally, {\tt current\_predicate/2}
-    unifies {\tt Name} with the name of a loaded predicate, and 
-    {\tt Term\_Indicator} with the most general term corresponding to that
-    predicate.  The flavours of this predicate are analogous to those of 
-    {\tt current\_predicate/1} and behave according to whether 
-    {\tt Term\_Indicator} has one of the following two forms:
-    \begin{enumerate}
-    \item{\tt Module:Term.}
-    \item{\tt Term} (module is assumed to be global or usermod).
-    \end{enumerate}
-    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
-    only for global modules. Like {\tt current\_predicate/1} only 
-    predicates that have a property in the following set:
-    \begin{center}
-    {\tt $\{$ loaded, dynamic, foreign $\}$ }
-    \end{center}
-    (see {\tt predicate\_property/2} below) are reported.
-
-    For example, if predicates {\tt foo/1} and {\tt foo/3} are defined and
-    loaded into module {\tt blah}, the following query will return:
-
-    \stuff{
-    \>	\>	| ?- current\_predicate(foo, blah:Term).\\
-    \>  \>						\\
-    \>	\>      Term = foo(\_638788,\_638792,\_638796);	\\
-    \>  \>						\\
-    \>	\>	Term = foo(\_638788);			\\
-    \>  \>						\\
-    \>	\>	no
-    }
-
-    If a module is specified, {\tt current\_predicate/2} succeeds only for
-    those predicates which are defined and loaded in that module. Unless 
-    the module is one of the global modules, {\tt current\_predicate/2} fails
-    for those predicates which are imported into that module.
-
-    On the other hand, the goal:
-
-    \stuff{
-    \>	\>	| ?- current\_predicate(Name, Term).
-    }
-
-    can be used to backtrack through every predicate that is loaded in the
-    global modules of \ourprolog's database.
-
-    Note that the order of term generation is undetermined. Once again, 
-    there are no error conditions associated with this predicate; if its
-    argument is not what it should be, the predicate simply fails.
-
-\ouritem{current\_functor(?Name, ?Term\_Indicator)}
-\index{\texttt{current\_functor/2}}
-    Succeeds iff {\tt Term\_Indicator} is the most general term 
-    corresponding to one of the currently known terms having {\tt Name} 
-    as their functor appearing in a current module.  (Both system and user 
-    defined modules are checked).  Or procedurally, 
-    {\tt current\_functor/2} unifies {\tt Name} with the name of a functor 
-    known to the database, and {\tt Term\_Indicator} with the most 
-    general term corresponding to that functor. The flavours of this predicate 
-    are analogous to the ones of {\tt current\_functor/1} according to 
-    whether {\tt Term\_Indicator} has one of the following two forms:
-    \begin{enumerate}
-    \item{\tt Module:Term.}
-    \item{\tt Term} (for global modules).
-    \end{enumerate}
-    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
-    only for global modules.  
-    As in {\tt current\_functor/1} even unloaded predicates are reported
-    (if they have been imported and are are known to the database).
-
-    For example, if a predicate {\tt foo/2} and and a function symbol 
-    {\tt foo/1} are defined into module {\tt blah}, the following query 
-    will return:
-
-    \stuff{
-    \>	\>	| ?- current\_functor(foo, blah:Term).	\\
-    \>  \>						\\
-    \>	\>      Term = foo(\_638788,\_638792);		\\
-    \>  \>						\\
-    \>	\>	Term = foo(\_638788);			\\
-    \>  \>						\\
-    \>	\>	no
-    }
-
-    If a module is specified, {\tt current\_functor/2} succeeds only for
-    those functors (function and predicate symbols) which are defined in 
-    that module. Unless the module is one of the global modules, 
-    {\tt current\_functor/2} fails for the predicates which are imported 
-    into that module.
-
-    On the other hand, the goal:
-
-    \stuff{
-    \>	\>	| ?- current\_functor(Name, Term).
-    }
-
-    can be used to backtrack through every known term {\tt Term} in the global
-    modules of \ourprolog's database that has {\tt Name} as its functor.
-
-    Note that the order of term generation is undetermined. Once again, 
-    there are no error conditions associated with this predicate; if its
-    arguments are inappropriate, the predicate simply fails.
+%TLS: I don't see that this gives us anything useful over
+%current_predicate/1, so why confuse the user?
+%\ouritem{current\_predicate(?Name, ?Term\_Indicator)}
+%\index{\texttt{current\_predicate/2}}
+%    Succeeds iff {\tt Term\_Indicator} is the most general term 
+%    corresponding to one of the predicates having functor {\tt Name} that are 
+%    defined and loaded in a particular module in the database. 
+%    (The module can be either system or user defined).
+%    Or procedurally, {\tt current\_predicate/2}
+%    unifies {\tt Name} with the name of a loaded predicate, and 
+%    {\tt Term\_Indicator} with the most general term corresponding to that
+%   predicate.  The flavours of this predicate are analogous to those of 
+%    {\tt current\_predicate/1} and behave according to whether 
+%    {\tt Term\_Indicator} has one of the following two forms:
+%    \begin{enumerate}
+%    \item{\tt Module:Term.}
+%    \item{\tt Term} (module is assumed to be usermod).
+%    \end{enumerate}
+%    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+%    only for {\tt usermod}. Like {\tt current\_predicate/1} only 
+%    predicates that have a property in the following set:
+%    \begin{center}
+%    {\tt $\{$ loaded, dynamic, foreign $\}$ }
+%    \end{center}
+%    (see {\tt predicate\_property/2} below) are reported.
+%
+%    For example, if predicates {\tt foo/1} and {\tt foo/3} are defined and
+%    loaded into module {\tt blah}, the following query will return:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_predicate(foo, blah:Term).\\
+%    \>  \>						\\
+%    \>	\>      Term = foo(\_638788,\_638792,\_638796);	\\
+%    \>  \>						\\
+%    \>	\>	Term = foo(\_638788);			\\
+%    \>  \>						\\
+%    \>	\>	no
+%    }
+%
+%    If a module is specified, {\tt current\_predicate/2} succeeds only for
+%    those predicates which are defined and loaded in that module. Unless 
+%    the module is one of the global modules, {\tt current\_predicate/2} fails
+%    for those predicates which are imported into that module.
+%
+%    On the other hand, the goal:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_predicate(Name, Term).
+%    }
+%
+%    can be used to backtrack through every predicate that is loaded in the
+%    global modules of \ourprolog's database.
+%
+%    Note that the order of term generation is undetermined. Once again, 
+%    there are no error conditions associated with this predicate; if its
+%    argument is not what it should be, the predicate simply fails.
+%
+%\ouritem{current\_functor(?Name, ?Term\_Indicator)}
+%\index{\texttt{current\_functor/2}}
+%    Succeeds iff {\tt Term\_Indicator} is the most general term 
+%    corresponding to one of the currently known terms having {\tt Name} 
+%    as their functor appearing in a current module.  (Both system and user 
+%    defined modules are checked).  Or procedurally, 
+%    {\tt current\_functor/2} unifies {\tt Name} with the name of a functor 
+%    known to the database, and {\tt Term\_Indicator} with the most 
+%    general term corresponding to that functor. The flavours of this predicate 
+%    are analogous to the ones of {\tt current\_functor/1} according to 
+%    whether {\tt Term\_Indicator} has one of the following two forms:
+%    \begin{enumerate}
+%    \item{\tt Module:Term.}
+%    \item{\tt Term} (for global modules).
+%    \end{enumerate}
+%    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+%    only for global modules.  
+%    As in {\tt current\_functor/1} even unloaded predicates are reported
+%    (if they have been imported and are are known to the database).
+%
+%    For example, if a predicate {\tt foo/2} and and a function symbol 
+%    {\tt foo/1} are defined into module {\tt blah}, the following query 
+%    will return:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_functor(foo, blah:Term).	\\
+%    \>  \>						\\
+%    \>	\>      Term = foo(\_638788,\_638792);		\\
+%    \>  \>						\\
+%    \>	\>	Term = foo(\_638788);			\\
+%    \>  \>						\\
+%    \>	\>	no
+%    }
+%
+%    If a module is specified, {\tt current\_functor/2} succeeds only for
+%    those functors (function and predicate symbols) which are defined in 
+%    that module. Unless the module is one of the global modules, 
+%    {\tt current\_functor/2} fails for the predicates which are imported 
+%    into that module.
+%
+%    On the other hand, the goal:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_functor(Name, Term).
+%    }
+%
+%    can be used to backtrack through every known term {\tt Term} in the global
+%    modules of \ourprolog's database that has {\tt Name} as its functor.
+%
+%    Note that the order of term generation is undetermined. Once again, 
+%    there are no error conditions associated with this predicate; if its
+%    arguments are inappropriate, the predicate simply fails.
 }
 %--------------------------------------------------------------------------------------------------
 
@@ -277,16 +277,17 @@ current_predicate/1, so why confuse the user?
     {\tt ObjectFile} must be absolute and end with the object file
     extension for the system (by default, {\tt .xwam}).
 %
-    It is possible for a current module to have no associated file name 
-    (as is the case for modules like {\tt "usermod"} and {\tt "global"}), 
-    or for the system to be unable to determine the file name of a current
-    module. In both cases, predicate {\tt current\_module/1} will succeed
-    for this module, while {\tt current\_module/2} will fail. The system is
-    unable to determine the file name of a given module if that module is not
-    in one of the directories of the search path (see Section~\ref{LibPath}).
-    Once again, there are no error conditions associated with this predicate;
-    if the arguments of {\tt current\_module/2} are not correct, or 
-    {\tt Module} has no associated {\tt File}, the predicate will simply fail.
+    It is possible for a current module to have no associated file
+    name (as is the case for {\tt "usermod"}), or for the system to be
+    unable to determine the file name of a current module. In both
+    cases, predicate {\tt current\_module/1} will succeed for this
+    module, while {\tt current\_module/2} will fail. The system is
+    unable to determine the file name of a given module if that module
+    is not in one of the directories of the search path (see
+    Section~\ref{LibPath}).  Once again, there are no error conditions
+    associated with this predicate; if the arguments of {\tt
+    current\_module/2} are not correct, or {\tt Module} has no
+    associated {\tt File}, the predicate will simply fail.
 
 \ouritem{current\_functor(?Predicate\_Indicator)}
 \index{\texttt{current\_functor/1}}
@@ -296,10 +297,10 @@ Predicate\_Indicator} unifies with {\tt Module:F/A} all term
 indicators unifying with {\tt F/A} in a module unifying with {\tt
 Module} are returned.  If {\tt Predicate\_indicator} is {\tt F/A},
 {\tt current\_predicate/1} behaves as if it were called with the form
-{\tt usermod:F/A} (or {\tt global:F/A}).  Unlike {\tt
-current\_predicate/1} {\tt current\_functor/1} returns not only
-structures occurring in predicates but predicates that are imported
-into loaded modules but are not yet themselves loaded.
+{\tt usermod:F/A}.  Unlike {\tt current\_predicate/1} {\tt
+current\_functor/1} returns not only structures occurring in
+predicates but predicates that are imported into loaded modules but
+are not yet themselves loaded.
 
 As an example, to backtrack through all of the functors of positive
 arity (function and predicate symbols) that appear in the global
@@ -391,7 +392,7 @@ module {\tt "usermod"} may be enumerated using:
 	&	Usually for exported predicate symbols in system or   \\
 	&	user defined modules it means that the predicate is   \\
 	&	yet unloaded (because it has not been used).	      \\
-	&	In global modules it usually means that the predicate \\
+	&	In {\tt usermod} it usually means that the predicate \\
 	&	is either a function symbol, or an unloaded predicate \\
 	&	symbol (including constants). \\ \hline
 	{\tt dynamic}	& 
@@ -399,7 +400,7 @@ module {\tt "usermod"} may be enumerated using:
 	{\tt loaded}		& 
 		The predicate (including internal predicates) is a \\ 
 	&	Prolog predicate loaded into the module in question; \\
-	&	this is always the case for predicates in global modules.\\ 
+	&	this is always the case for predicates in {\tt usermod}.\\ 
 		\hline
 	{\tt unloaded}		& 
 		The predicate is yet unloaded into the module \\
@@ -473,7 +474,7 @@ module {\tt "usermod"} may be enumerated using:
 	&	current, is yet unloaded in the system. \\ \hline
 	{\tt loaded}		& 
 		The module (including system modules) is loaded in the \\
-	&	system; this is always the case for global modules.\\ \hline
+	&	system; this is always the case for {\tt usermod}.\\ \hline
     \end{tabular}
     \end{center}
 

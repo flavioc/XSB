@@ -2356,13 +2356,41 @@ Deletes all the terms in the trie pointed to by Root.
 %%
 \end{description}
 
+\section{Gensym}
+%================================
 
+The Gensym library provides a convenient way to generate unique
+integers or constants.  
+
+\begin{description}
+\ournewitem{prepare(+Index)}{gensym} \index{\texttt{prepare/1}}
+%
+Sets the initial integer to be used for generation to {\tt Index}.
+Thus, the command {\tt ?- prepare(0)} would cause the first call to
+{\tt gennum/1} to return {\tt 1}.  {\tt Index} must be a non-negative
+integer.
+
+\ournewitem{gennum(-Var)}{gensym} \index{\texttt{gennum/1}}
+%
+Unifies {\tt Var} with a new integer.
+
+\ournewitem{gensym(+Atom,-Var)}{gensym} \index{\texttt{gensym/2}}
+%
+Generates a new integer, and concatenates this integer with {\tt
+Atom}, unifying the result with {\tt Var}.  For instance a call {\tt
+?- gensym(foo,Var)} might unify {\tt Var} with {\tt foo32}.
+\end{description}
 
 \section{Random Number Generator}
 %================================
 
 The following predicates are provided in module \texttt{random} to
-generate random numbers (both integers and floating numbers):
+generate random numbers (both integers and floating numbers), based on
+the Wichmann-Hill Algorithm \cite{WicH82,McLe85}.  The random number
+generator is entirely portable, and does not require any calls to the
+operating system.  As noted below, it does require 3 seeds, each of
+which must be an integer in a given range.
+
 
 \begin{description}
 
