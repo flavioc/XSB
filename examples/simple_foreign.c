@@ -4,15 +4,16 @@
 
 #include "../emu/cinterf.h"
 
-void minus_one(void)
+int minus_one(void)
 {
    int	i;
 
 	i = ptoc_int(1);
 	ctop_int(2, i-1);
+	return TRUE;
 }
 
-void change_char(void)
+int change_char(void)
 {
    char	*str_in; 
    int	pos;
@@ -34,5 +35,9 @@ void change_char(void)
 	 */
 
 	ctop_string(4, (char *) string_find(str_out,4));
+
+	return TRUE;
 }
+
+
 

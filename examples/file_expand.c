@@ -3,12 +3,13 @@
 #include <alloca.h>
 #include <pwd.h>
 
+#define TRUE 1
 /* 
  * Expands the initial ~ of a Unix filename and returns the absolute 
  * file name.  Otherwise it returns the file name unchanged.
  */
 
-expand_file()
+int expand_file()
 {
    unsigned char *file_name;
    unsigned char *expanded_file_name;
@@ -40,7 +41,7 @@ expand_file()
 	if (!lose)
 	{
 	    ctop_string(2, file_name);
-	    return;
+	    return TRUE;
 	}
    }
 
@@ -66,7 +67,7 @@ expand_file()
 	{
 	    fprintf(stderr, "++Error: \"%s\" is not a registered user\n", user_name + 1);
 	    ctop_string(2, file_name); /* return the input file name unchanged */
-	    return;
+	    return TRUE;
 	}
  
 	file_name = p;
@@ -85,4 +86,9 @@ expand_file()
 
    ctop_string(2, (unsigned char *) string_find(expanded_file_name, 1));
 
+   return TRUE;
 }
+
+
+
+
