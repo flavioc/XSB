@@ -29,6 +29,55 @@
 #define PUBLIC_TRIE_DEFS
 
 
+/*===========================================================================*/
+
+/*
+ *	A B S T R A C T E D   T R I E   R E P R E S E N T A T I O N
+ *	===========================================================
+ *
+ *  There are several types of operations which are common to any trie,
+ *  either to the structure as a whole, or to its components.  Likewise,
+ *  there are places in the engine where it won't be apparent what type
+ *  of trie (respectively, component) one is inspecting.  Although this
+ *  can be ascertained, adherence to the following guidelines will make
+ *  this unnecessary, as well as the need for any type-dependent special
+ *  processing.  A set of macros are supplied for use in these "don't
+ *  know" or "don't care" situations.
+ *
+ *  All types of trie nodes must be laid out in the same fashion, with
+ *  common fields appearing in the same order.  Fields which point to
+ *  like-component records may have different types, but the others
+ *  (Info and Symbol) are fixed.  Currently, the layout is as indicated
+ *  below.  Except for the Info field which MUST be first, the ordering
+ *  of the other fields is arbitrary.  Field names have also been
+ *  standardized to help ensure conformity.
+ *
+ *  We use the following notation:
+ *    TN_*         Trie Node operation
+ *    TrieHT_*     Trie Hash Table operation  (see trie_internals.h)
+ *    TSC_*        Trie SubComponent operation (applicable to a TN or THT)
+ *    pTN          pointer to a Trie Node
+ *    pTHT         pointer to a Trie Hash Table
+ *    pTSC pointer to a Trie SubComponent
+ */
+
+#define TN_Instr(pTN)		TSC_Instr(pTN)
+#define TN_Status(pTN)		TSC_Status(pTN)
+#define TN_TrieType(pTN)	TSC_TrieType(pTN)
+#define TN_NodeType(pTN)	TSC_NodeType(pTN)
+#define TN_Parent(pTN)		( (pTN)->parent )
+#define TN_Child(pTN)		( (pTN)->child )
+#define TN_Sibling(pTN)		( (pTN)->sibling )
+#define TN_Symbol(pTN)		( (pTN)->symbol )
+
+#define TSC_Instr(pTSC)		IPT_Instr((pTSC)->info)
+#define TSC_Status(pTSC)	IPT_Status((pTSC)->info)
+#define TSC_TrieType(pTSC)	IPT_TrieType((pTSC)->info)
+#define TSC_NodeType(pTSC)	IPT_NodeType((pTSC)->info)
+
+
+#define TN_SetHashHdr(pTN,pTHT)		TN_Child(pTN) = (void *)(pTHT)
+#define TN_GetHashHdr(pTN)		TN_Child(pTN)
 
 /*===========================================================================*/
 
@@ -66,7 +115,6 @@ typedef struct InstructionPlusTypeFrame {
 #define IPT_TrieType(IPT)	((IPT).trie_type)
 #define IPT_NodeType(IPT)	((IPT).node_type)
 
-
 /*===========================================================================*/
 
 /*
@@ -89,13 +137,6 @@ typedef struct InstructionPlusTypeFrame {
  *  points to a SubgoalFrame which contains additional info for that call.
  */
 
-/*----------------------------------------------------------------------*/
-
-/*
- *                          Basic Trie Node
- *                          ---------------
- */
-
 typedef struct Basic_Trie_Node *BTNptr;
 typedef struct Basic_Trie_Node {
   InstrPlusType info;
@@ -106,14 +147,14 @@ typedef struct Basic_Trie_Node {
 } BasicTrieNode;
 
 /* - - Preferred macros - - - - */
-#define BTN_Instr(pBTN)		IPT_Instr((pBTN)->info)
-#define BTN_Status(pBTN)	IPT_Status((pBTN)->info)
-#define BTN_TrieType(pBTN)	IPT_TrieType((pBTN)->info)
-#define BTN_NodeType(pBTN)	IPT_NodeType((pBTN)->info)
-#define BTN_Parent(pBTN)	( (pBTN)->parent )
-#define BTN_Child(pBTN)		( (pBTN)->child )
-#define BTN_Sibling(pBTN)	( (pBTN)->sibling )
-#define BTN_Symbol(pBTN)	( (pBTN)->symbol )
+#define BTN_Instr(pBTN)		TN_Instr(pBTN)
+#define BTN_Status(pBTN)	TN_Status(pBTN)
+#define BTN_TrieType(pBTN)	TN_TrieType(pBTN)
+#define BTN_NodeType(pBTN)	TN_NodeType(pBTN)
+#define BTN_Parent(pBTN)	TN_Parent(pBTN)
+#define BTN_Child(pBTN)		TN_Child(pBTN)
+#define BTN_Sibling(pBTN)	TN_Sibling(pBTN)
+#define BTN_Symbol(pBTN)	TN_Symbol(pBTN)
 
 /* - - For backwards compatibility - - - - */
 typedef struct Basic_Trie_Node *NODEptr;
@@ -125,53 +166,77 @@ typedef struct Basic_Trie_Node *NODEptr;
 #define Sibl(X)		BTN_Sibling(X)
 #define Atom(X)		BTN_Symbol(X)
 
-
-#define Delay(X) (ASI) ((word) (BTN_Child(X)) & ~UNCONDITIONAL_MARK)
-
-/*----------------------------------------------------------------------*/
+/*===========================================================================*/
 
 /*
- *                      Basic Trie Hash Tables
- *                      ----------------------
+ *                  T I M E - S T A M P E D   T R I E S
+ *                  ===================================
+ *
+ *  Similar in construction and maintenance to normal tries, these extend
+ *  the basic design in order to support answer subsumption.  Conditions
+ *  under which hash tables are created and the way symbols are stored in
+ *  the nodes are identical.  (See the file tries_priv.h for details.)
+ *
+ *  A timestamp is maintained in each node of the Time-Stamped Trie (TST).
+ *  When used for Answer Tables, the timestamp kept in each node is the
+ *  maximum of the timestamps of its children.  Since timestamps
+ *  monotonically increase as terms are entered, this property can be
+ *  easily maintained by propagating the timestamp of a newly interned
+ *  term from the leaf to the root.  Hence, the root ALWAYS contains the
+ *  timestamp of the largest-timestamped answer contained in the Answer
+ *  Table.
+ *
+ *  For facilitating certain subsumptive operations, it is important to
+ *  quickly identify nodes having a timestamp greater than a given one.
+ *  When a sibling chain becomes long, it is no longer acceptable to
+ *  perform a linear scan in order to identify these timestamp-valid
+ *  nodes.  Therefore, when we create a hash table for a group of nodes,
+ *  we also create an auxiliary structure which maintains the nodes in
+ *  decreasing timestamp order.  Each node's TimeStamp field is then used
+ *  for pointing to an associated frame in this structure, where the
+ *  timestamp is now kept.  The hash header is extended -- over the basic
+ *  trie hash header -- to contain fields for maintaining these frames in
+ *  a doubly linked list.  Once the Answer Table is completed, these
+ *  structures can be disposed.  To facilitate this, hash tables, within
+ *  a particular TST, are chained together from the root, accessible from
+ *  its Sibling field.  Lazy evaluation...
  */
 
-typedef struct Basic_Trie_HashTable *BTHTptr;
-typedef struct Basic_Trie_HashTable {
+typedef unsigned long  TimeStamp;
+
+typedef struct Time_Stamped_Trie_Node *TSTNptr;
+typedef struct Time_Stamped_Trie_Node {
   InstrPlusType info;
-  unsigned long  numContents;      /* used to be numInHash */
-  unsigned long  numBuckets;       /* used to be (HASHmask + 1) */
-  BTNptr *pBucketArray;
-  BTHTptr prev, next;		   /* DLL needed for deletion */
-} BasicTrieHT;
+  TSTNptr sibling;
+  TSTNptr child;
+  TSTNptr parent;
+  Cell symbol;
+  TimeStamp ts;
+} TS_TrieNode;
 
 /* Field Access Macros
    ------------------- */
-#define BTHT_Instr(pTHT)		IPT_Instr((pTHT)->info)
-#define BTHT_Status(pTHT)		IPT_Status((pTHT)->info)
-#define BTHT_TrieType(pTHT)		IPT_TrieType((pTHT)->info)
-#define BTHT_NodeType(pTHT)		IPT_NodeType((pTHT)->info)
-#define BTHT_NumBuckets(pTHT)		((pTHT)->numBuckets)
-#define BTHT_NumContents(pTHT)		((pTHT)->numContents)
-#define BTHT_BucketArray(pTHT)		((pTHT)->pBucketArray)
-#define BTHT_PrevBTHT(pTHT)		((pTHT)->prev)
-#define BTHT_NextBTHT(pTHT)		((pTHT)->next)
-
-#define BTHT_GetHashMask(pTHT)		( BTHT_NumBuckets(pTHT) - 1 )
+#define TSTN_Instr(pTSTN)	TN_Instr(pTSTN)
+#define TSTN_Status(pTSTN)	TN_Status(pTSTN)
+#define TSTN_TrieType(pTSTN)	TN_TrieType(pTSTN)
+#define TSTN_NodeType(pTSTN)	TN_NodeType(pTSTN)
+#define TSTN_Parent(pTSTN)	TN_Parent(pTSTN)
+#define TSTN_Child(pTSTN)	TN_Child(pTSTN)
+#define TSTN_Sibling(pTSTN)	TN_Sibling(pTSTN)
+#define TSTN_Symbol(pTSTN)	TN_Symbol(pTSTN)
+#define TSTN_TimeStamp(pTSTN)	( (pTSTN)->ts )
 
 /*===========================================================================*/
 
 /*
  *                             Answer List Node
- *                             ----------------
+ *                             ================
  *
- *  A global resource for ALNs is currently implemented.  Blocks of
- *  memory for ALN storage are allocated whenever this resource is
- *  depleted.  All ALNs are allocated from this resource.  An "ALN
- *  Structure Manager" maintains the list of unused ALNs and the list
- *  of blocks of memory allocated for them.  To allow rapid deallocation
- *  of these block-malloc'ed structures, the first word in the structure
- *  must contain the field used to link them into a chain when in
- *  use.
+ *  A global resource for ALNs is currently implemented.  Blocks of memory
+ *  for ALN storage are allocated whenever this resource is depleted.  All
+ *  ALNs are allocated from this resource.  To allow rapid deallocation of
+ *  these block-malloc'ed structures, the first word in the structure must
+ *  contain the field used to link them into a chain when in use.
  */
 
 typedef struct Answer_List_Node *ALNptr;
@@ -188,22 +253,22 @@ typedef struct Answer_List_Node {
 #define aln_answer_ptr(ALN)	ALN_Answer(ALN)
 #define aln_next_aln(ALN)	ALN_Next(ALN)
 
-/*----------------------------------------------------------------------*/
+/*===========================================================================*/
 
 /*
- *                         Call Lookup Structures
- *                         ======================
+ *                      Tabled-Call Lookup Structures
+ *                      =============================
  *
  *  Data structures for parameter passing to and from the call
  *  check/insert routines.
  */
 
-typedef struct Call_Info_For_Trie_Insertion {
+typedef struct Tabled_Call_Info_Record {
   struct Table_Info_Frame *table_info_record;
   int call_arity;
   CPtr arg_vector;
   CPtr var_vector_loc;     /* location to store the call var vector */
-} CallInfoRecord;
+} TabledCallInfo;
 
 #define CallInfo_TableInfo(CallInfo)	( (CallInfo).table_info_record )
 #define CallInfo_CallArity(CallInfo)	( (CallInfo).call_arity )
@@ -223,30 +288,34 @@ typedef struct Call_Check_Insert_Results {
 #define CallLUR_VariantFound(CLUR)	( (CLUR).variant_found )
 #define CallLUR_VarVector(CLUR)		( (CLUR).var_vector )
 
+/*===========================================================================*/
+
 
 /*-- exported trie functions ------------------------------------------*/
 
-extern BTNptr newBasicTrie(Psc,int);
-extern byte * trie_get_calls(void);
-extern int    free_trie_size(void);
-extern int    allocated_trie_size(void);
-extern int    allocated_trie_hash_size(void);
-extern byte * trie_get_returns_for_call(void);
-extern void   abolish_trie(void);
-extern void   aux_call_info(void);
-extern void   remove_open_tries(CPtr);
-extern void   init_trie_aux_areas(void);
-extern void   get_lastnode_cs_retskel(void);
-extern void   load_solution_trie(int, CPtr, BTNptr);
-extern void   variant_call_search(CallInfoRecord *, CallLookupResults *);
-extern BTNptr one_term_chk_ins(CPtr,BTNptr,int *);
-extern BTNptr whole_term_chk_ins(Cell, BTNptr *, int *);
-extern BTNptr get_next_trie_solution(ALNptr *);
-extern BTNptr variant_trie_search(int, CPtr, CPtr, int *);
-extern BTNptr delay_chk_insert(int, CPtr, CPtr *);
-extern void   undo_answer_bindings(void);
-extern void   load_delay_trie(int, CPtr, BTNptr);
-extern bool   bottom_up_unify(void);
+extern BTNptr   newBasicTrie(Psc,int);
+extern byte *	trie_get_calls(void);
+extern byte *	trie_get_returns_for_call(void);
+extern void	aux_call_info(void);
+extern void	remove_open_tries(CPtr);
+extern void     init_trie_aux_areas(void);
+extern void	get_lastnode_cs_retskel(void);
+extern void     load_solution_trie(int, CPtr, BTNptr);
+extern void     variant_call_search(TabledCallInfo *, CallLookupResults *);
+extern BTNptr   one_term_chk_ins(CPtr, BTNptr, int *);
+extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *);
+extern BTNptr	get_next_trie_solution(ALNptr *);
+extern BTNptr	variant_answer_search(int, CPtr, struct subgoal_frame *,
+				      bool *);
+extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
+extern void     undo_answer_bindings(void);
+extern void	load_delay_trie(int, CPtr, BTNptr);
+extern bool     bottom_up_unify(void);
+
+void	subsumptive_call_search(TabledCallInfo *, CallLookupResults *);
+TSTNptr	subsumptive_answer_search(int,CPtr,struct subgoal_frame *,bool *);
+void	consume_subsumptive_answer(BTNptr,int,CPtr);
+ALNptr	retrieve_unifying_answers(TSTNptr,TimeStamp,int,CPtr);
 
 /*---------------------------------------------------------------------*/
 
@@ -265,6 +334,7 @@ extern BTNptr Last_Nod_Sav, Paren;
 extern CPtr reg_arrayptr, var_regs[];
 
 /*----------------------------------------------------------------------*/
+
 /* allocate an array for easy expansion */ 
 #define alloc_arr(AArrType,AArrayNam,AArraySz){\
     AArrayNam = (AArrType *)malloc(sizeof(AArrType) * AArraySz);\
@@ -303,11 +373,9 @@ extern CPtr reg_arrayptr, var_regs[];
 }
 /*----------------------------------------------------------------------*/
 
+extern int  num_heap_term_vars;
 extern CPtr *var_addr;
 extern int  var_addr_arraysz;
-
-extern Cell VarEnumerator[];
-extern int  num_heap_term_vars;
 
 /*----------------------------------------------------------------------*/
 
@@ -320,6 +388,8 @@ extern int delay_it;
 
 extern CPtr *copy_of_var_addr;
 extern int  copy_of_num_heap_term_vars;
+
+/*=========================================================================*/
 
 
 #endif

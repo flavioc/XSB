@@ -66,25 +66,21 @@ extern void printterm(Cell, byte, int);
 /*----------------------------------------------------------------------*/
 
 BTNptr Paren;
-SGFrame subg_structure_list;
 
 long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
 
 int  num_heap_term_vars;
 CPtr *var_addr;
 int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
-Cell VarEnumerator[NUM_TRIEVARS];
-/*
- * global_num_vars is a new variable to save the value of variable
- * num_vars_in_var_regs temporarily.
- */
+Cell CallVarEnum[NUM_TRIEVARS];
+Cell TrieVarBindings[NUM_TRIEVARS];
+
 int global_num_vars;
 
-/*----------------------------------------------------------------------*/
 /*
- * Array mini_trail[] is used to trail the variable bindings when we copy
- * terms into tries.  The variables trailed using mini_trail are those
- * that are bound to elements in VarEnumerator[].
+ * Array mini_trail[] is used to trail the variable bindings when we
+ * copy terms into tries.  The variables trailed using mini_trail are
+ * those that are bound to elements in CallVarEnum[].
  */
 static CPtr mini_trail[NUM_TRIEVARS];
 static CPtr *mini_trail_top;
@@ -163,6 +159,12 @@ Structure_Manager smTableBTN  = SM_InitDecl(BasicTrieNode, BTNs_PER_BLOCK,
 					    "Basic Trie Node");
 Structure_Manager smTableBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
 					    "Basic Trie Hash Table");
+Structure_Manager smTSTN      = SM_InitDecl(TS_TrieNode, TSTNs_PER_BLOCK,
+					    "Time-Stamped Trie Node");
+Structure_Manager smTSTHT     = SM_InitDecl(TST_HashTable, TSTHTs_PER_BLOCK,
+					    "Time-Stamped Trie Hash Table");
+Structure_Manager smEntry     = SM_InitDecl(TSI_Entry, TSI_ENTRIES_PER_BLOCK,
+					    "TST Aux Node");
 
 /* For Assert & Intern Tries
    ------------------------- */
@@ -175,13 +177,6 @@ Structure_Manager smAssertBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
    --------------------------------- */
 Structure_Manager *smBTN = &smTableBTN,
                   *smBTHT = &smTableBTHT;
-
-
-/* Table Components
-   ---------------- */
-Structure_Manager smALN = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
-				      "Answer List Node");
-
 
 /*----------------------------------------------------------------------*/
 
@@ -196,10 +191,35 @@ void init_trie_aux_areas(void)
   reg_arrayptr = reg_array -1;
 
   for (i = 0; i < NUM_TRIEVARS; i++)
-    VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
+    CallVarEnum[i] = (Cell) & (CallVarEnum[i]);
 }
 
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
+
+BTNptr new_btn(int trie_t, int node_t, Cell symbol, BTNptr parent,
+	       BTNptr sibling) {
+
+  BTNptr btn;
+
+  SM_AllocateStruct(*smBTN,btn);
+  TN_Init(btn,trie_t,node_t,symbol,parent,sibling);
+  return btn;
+}
+
+/*-------------------------------------------------------------------------*/
+
+TSTNptr new_tstn(int trie_t, int node_t, Cell symbol, TSTNptr parent,
+		TSTNptr sibling) {
+
+  TSTNptr tstn;
+
+  SM_AllocateStruct(smTSTN,tstn);
+  TN_Init(tstn,trie_t,node_t,symbol,parent,sibling);
+  TSTN_TimeStamp(tstn) = TSTN_DEFAULT_TIMESTAMP;
+  return tstn;
+}
+
+/*-------------------------------------------------------------------------*/
 
 /*
  * Creates a root node for a given type of trie.
@@ -211,69 +231,7 @@ BTNptr newBasicTrie(Psc predicate, int trie_type) {
 
   New_BTN( pRoot, trie_type, TRIE_ROOT_NT, EncodeTriePSC(predicate),
 	   NULL, NULL );
-  BTN_Instr(pRoot) = trie_root;
   return pRoot;
-}
-
-/*----------------------------------------------------------------------*/
-
-/*
- * Frees all the trie space for the current set of resource descriptors
- * (either tabling -- call and answer tries -- or auxiliary tries --
- *  asserted and interned).
- */
-
-void abolish_trie(void) {
-
-  SGFrame pSF;
-
-
-  SM_ReleaseResources(*smBTN);
-
-  BTHT_FreeAllocatedBuckets;
-  SM_ReleaseResources(*smBTHT);
-
-  SM_ReleaseResources(smALN);
-
-  while(subg_structure_list != NULL){
-    pSF = subg_structure_list;
-    subg_structure_list = subg_next_subgoal(subg_structure_list);
-    free(pSF);
-  }
-}
-
-/*----------------------------------------------------------------------*/
-/* The following exported routines are mainly used for statistics.	*/
-/*----------------------------------------------------------------------*/
-
-int allocated_trie_size(void) {
-
-  unsigned int  byte_usage;
-
-  SM_RawUsage(*smBTN,byte_usage);
-  return byte_usage;
-}
-
-
-int free_trie_size(void) {
-
-  unsigned int  nFreeStructs;
-
-  SM_CountFreeStructs(*smBTN,nFreeStructs)
-  return ( nFreeStructs * sizeof(BasicTrieNode) );
-}
-
-
-int allocated_trie_hash_size(void)
-{
-  int size = 0;
-  BTHTptr th = SM_AllocList(*smBTHT);
-
-  while (th) {
-    size = size + BTHT_NumContents(th);
-    th = BTHT_NextBTHT(th);
-  }
-  return size;
 }
 
 /*----------------------------------------------------------------------*/
@@ -342,7 +300,7 @@ int allocated_trie_hash_size(void)
    }									\
    else if ( IsHashHeader(*GNodePtrPtr) ) {				\
      BTHTptr ht = (BTHTptr)*GNodePtrPtr;				\
-     GNodePtrPtr = Calculate_Bucket_for_Symbol(ht,item);		\
+     GNodePtrPtr = CalculateBucketForSymbol(ht,item);			\
      IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		\
      if (!Found) {							\
        MakeHashedNode(LocalNodePtr);					\
@@ -369,23 +327,23 @@ int allocated_trie_hash_size(void)
    of trie nodes whose length has become "too long."
 */
 
-static void hashify_children(BTNptr parent, int trieType) {
+void hashify_children(BTNptr parent, int trieType) {
 
-  BTNptr children;	/* child list of the parent */
-  BTNptr btn;		/* current child for processing */
-  BTHTptr ht;		/* HT header struct */
-  BTNptr *tablebase;	/* first bucket of allocated HT */
-  unsigned long  hashmask;     /* needed for hashing of BTNs */
+  BTNptr children;		/* child list of the parent */
+  BTNptr btn;			/* current child for processing */
+  BTHTptr ht;			/* HT header struct */
+  BTNptr *tablebase;		/* first bucket of allocated HT */
+  unsigned long  hashseed;	/* needed for hashing of BTNs */
 
 
   New_BTHT(ht,trieType);
   children = BTN_Child(parent);
   BTN_SetHashHdr(parent,ht);
   tablebase = BTHT_BucketArray(ht);
-  hashmask = BTHT_GetHashMask(ht);
+  hashseed = BTHT_GetHashSeed(ht);
   for (btn = children;  IsNonNULL(btn);  btn = children) {
     children = BTN_Sibling(btn);
-    TrieHT_InsertNode(tablebase, hashmask, btn);
+    TrieHT_InsertNode(tablebase, hashseed, btn);
     MakeHashedNode(btn);
   }
 }
@@ -625,7 +583,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 
 /*
  * This is a special version of recvariant_trie(), and it is only used by 
- * variant_trie_search().  The only difference between this and
+ * variant_answer_search().  The only difference between this and
  * recvariant_trie() is that this version will save the answer
  * substitution factor into the heap (see the following lines):
  *
@@ -679,9 +637,9 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 }
 
 /*----------------------------------------------------------------------
- * variant_trie_search(NumVarsInCall, VarsInCall, SubgoalPtr, Ptrflag)
+ * variant_answer_search(NumVarsInCall, VarsInCall, SubgoalPtr, Ptrflag)
  *
- * Called in SLG instruction `new_answer_dealloc', variant_trie_search()
+ * Called in SLG instruction `new_answer_dealloc', variant_answer_search()
  * checks if the answer has been returned before and, if not, inserts it
  * into the answer trie.  Here, `arity' is the number of variables in the
  * call (arity of the answer substitution), `cptr' is the pointer to
@@ -693,9 +651,9 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  * The returned value of this function is the leaf of the answer trie.  
  *----------------------------------------------------------------------*/
 
-BTNptr variant_trie_search(int arity, CPtr cptr,
-			   CPtr subgoal_ptr, int *flagptr)
-{
+BTNptr variant_answer_search(int arity, CPtr cptr, SGFrame subgoal_ptr,
+			     bool *flagptr) {
+
     Psc   psc;
     CPtr  xtemp1;
     int   i, j, flag = 1;
@@ -712,7 +670,7 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 	newBasicTrie(get_ret_psc(arity),BASIC_ANSWER_TRIE_TT);
     Paren = subg_ans_root_ptr(subgoal_ptr);
     GNodePtrPtr = &BTN_Child(Paren);
-    for (i = 0; i<arity; i++) {
+    for (i = 0; i < arity; i++) {
       xtemp1 = (CPtr) (cptr - i); /* One element of VarsInCall.  It might
 				   * have been bound in the answer for
 				   * the call.
@@ -727,12 +685,12 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 	   *
 	   * 	StandardizeAndTrailVariable(xtemp1, ctr)
 	   * 			||
-	   * 	bld_ref(xtemp1, VarEnumerator[ctr]);
+	   * 	bld_ref(xtemp1, CallVarEnum[ctr]);
 	   * 	*(++mini_trail_top) = xtemp1
 	   *
 	   * Notice that all the variables appear in the answer are bound
-	   * to elements in VarEnumerator[], and each element in
-	   * VarEnumerator[] is a free variable itself.  Besides, all
+	   * to elements in CallVarEnum[], and each element in
+	   * CallVarEnum[] is a free variable itself.  Besides, all
 	   * these variables are trailed (saved in mini_trail[]) and they
 	   * will be used in delay_chk_insert() (in function
 	   * do_delay_stuff()).
@@ -782,7 +740,7 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 #endif
 	break;
       default:
-	xsb_abort("Bad type tag in variant_trie_search()");
+	xsb_abort("Bad type tag in variant_answer_search()");
       }                                                       
     }
     resetpdl;                                                   
@@ -833,14 +791,7 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
       ans_inserts++;
 
       New_ALN(answer_node,Paren,NULL);
-      if(subg_ans_list_tail(subgoal_ptr) == NULL) { 
-	subg_answers(subgoal_ptr) = answer_node;
-	subg_ans_list_tail(subgoal_ptr) = answer_node;
-      }
-      else {
-	aln_next_aln(subg_ans_list_tail(subgoal_ptr)) = answer_node; 
-	subg_ans_list_tail(subgoal_ptr) = answer_node;
-      }
+      SF_AppendNewAnswer(subgoal_ptr,answer_node);
     }
 
     *flagptr = flag;	
@@ -850,14 +801,14 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
 /*
  * undo_answer_bindings() has the same functionality of
  * simple_table_undo_bindings.  It is called just after do_delay_stuff(),
- * and do_delay_stuff() is called after variant_trie_search (in
+ * and do_delay_stuff() is called after variant_answer_search (in
  * new_answer_dealloc)
  *
  * In XSB 1.8.1, simple_table_undo_bindings is called in
- * variant_trie_search().  But to handle variables in delay list in
+ * variant_answer_search().  But to handle variables in delay list in
  * do_delay_stuff() , we need the variable binding information got from
- * variant_trie_search().  So we have to take simple_table_undo_bindings
- * out of variant_trie_search() and call it after do_delay_stuff() is
+ * variant_answer_search().  So we have to take simple_table_undo_bindings
+ * out of variant_answer_search() and call it after do_delay_stuff() is
  * done.
  */
 
@@ -872,23 +823,23 @@ void undo_answer_bindings() {
  * call of this delay element.  Its leaf node will be saved as a field,
  * de_subs_fact_leaf, in the delay element.
  *
- * This function is closely related to variant_trie_search(), because it
- * uses the value of AnsVarCtr that is set in variant_trie_search().  The
+ * This function is closely related to variant_answer_search(), because it
+ * uses the value of AnsVarCtr that is set in variant_answer_search().  The
  * body of this function is almost the same as the core part of
- * variant_trie_search(), except that `ctr', the counter of the variables
+ * variant_answer_search(), except that `ctr', the counter of the variables
  * in the answer, starts from AnsVarCtr.  Initially, before the first delay
  * element in the delay list of a subgoal (say p/2), is interned, AnsVarCtr
  * is the number of variables in the answer for p/2 and it was set in
- * variant_trie_search() when this answer was returned.  Then, AnsVarCtr
+ * variant_answer_search() when this answer was returned.  Then, AnsVarCtr
  * will be dynamically increased as more and more delay elements for p/2
  * are interned.
  *
- * After variant_trie_search() is finished, VarEnumerator[] contains the
+ * After variant_answer_search() is finished, CallVarEnum[] contains the
  * variables in the head of the corresponding clause for p/2.  When we call
- * delay_chk_insert() to intern the delay list for p/2, VarEnumerator[]
+ * delay_chk_insert() to intern the delay list for p/2, CallVarEnum[]
  * will be used again to bind the variables that appear in the body.
  * Because we have to check if a variable in a delay element of p/2 is
- * already in the head, the old bindings of variables to VarEnumerator[]
+ * already in the head, the old bindings of variables to CallVarEnum[]
  * are still needed.  So undo_answer_bindings has to be delayed.
  *
  * In the arguments, `arity' is the arity of the the answer substitution
@@ -1153,9 +1104,13 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
  * During search/insertion, the variables of the subgoal call are pushed
  *   on top of the CP stack (through VarPosReg), along with the # of
  *   variables that were pushed.  This forms the substitution factor.
+ * Prolog variables are standardized during this process to recognize
+ *   multiple (nonlinear) occurences.  They must be reset to an unbound
+ *   state before termination.
  * Many global variables:
  * Paren - to be set to point to inserted term's leaf
- * VarPosReg - pointer to top of CPS; place to put the substitution factor.
+ * VarPosReg - pointer to top of CPS; place to put the substitution factor
+ *    in high-to-low memory format.
  * GNodePtrPtr - local to file?  Points to the parent-internal-structure's
  *    "child" or "NODE_link" field.  It's a place to anchor any newly
  *    created NODEs.
@@ -1166,7 +1121,7 @@ void load_delay_trie(int arity, CPtr cptr, BTNptr TriePtr)
  * the treatment of "cptr" as these terms are inspected.
  */
 
-void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
+void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
 {
     Psc  psc;
     CPtr call_arg;
@@ -1187,7 +1142,7 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
     tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
     ctr = 0;
 
-    for (i=1; i<=arity; i++) {
+    for (i = 0; i < arity; i++) {
       call_arg = (CPtr) (cptr + i);            /* Note! */
       cptr_deref(call_arg);
       tag = cell_tag(call_arg);
@@ -1242,54 +1197,17 @@ void variant_call_search(CallInfoRecord *call_info, CallLookupResults *results)
      *  If an insertion was performed, do some maintenance on the new leaf.
      */
     if ( flag == 0 ) {
+      subg_inserts++;
       MakeLeafNode(Paren);
       TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
     }
 
-#ifdef CHAT
-    if (!flag) { /* generator is found */
-      CPtr ls_top, ls_bot;
-
-      subg_inserts++;
-
-      ls_top = top_of_localstk;
-      ls_bot = (CPtr)glstack.high - 1;
-      for (j=ctr-1; j >= 0; j--) { /* put the subst. factor in heap */
-	/* heap grows in the opposite direction than the CP stack */
-	CPtr sf_var_addr;
-	CPtr h_addr = hreg+j;
-
-	tVarPosReg--;
-	sf_var_addr = (CPtr)*tVarPosReg;
-	bld_free(sf_var_addr);
-	/* preserve WAM invariants: no vars from heap to local stack ! */
-	if ((ls_top <= sf_var_addr) && (sf_var_addr <= ls_bot)) {
-	  bld_free(h_addr);
-	  /* globalize the variable: trailing is needed -- below CP */
-	  bind_ref(sf_var_addr, (Cell)(h_addr));
-	} else {
-	  bld_copy(h_addr, (Cell)(sf_var_addr));
-	}
-      }
-      hreg += ctr;
-      new_heap_num(hreg, ctr);
-      VarPosReg = tVarPosReg;
-    } else { /* consumer is found */
-      /* for consumers the substitution factor is stored in CP stack */
-      cell(--VarPosReg) = makeint(ctr); /* tag the # of SF vars */
-      while (--tVarPosReg > VarPosReg) { bld_free(((CPtr)(*tVarPosReg))); }
-    }
-#else
-    if (!flag) { /* generator is found */
-      subg_inserts++;
-    }
-    /* the SLG-WAM always stores the substitution factor in the CP stack */
-    cell(--VarPosReg) = makeint(ctr); /* tag the # of SF vars */
-    while (--tVarPosReg > VarPosReg) { bld_free(((CPtr)(*tVarPosReg))); }
-#endif
+    cell(--VarPosReg) = makeint(ctr); /* tag the # of subs fact vars */
+    while (--tVarPosReg > VarPosReg)
+      ResetStandardizedVariable(*tVarPosReg);
 
     CallLUR_Leaf(*results) = Paren;
-    CallLUR_Subsumer(*results) = BTN_GetSF(Paren);
+    CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
     CallLUR_VariantFound(*results) = flag;
     CallLUR_VarVector(*results) = VarPosReg;
     return;
@@ -1305,7 +1223,7 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
   /* Delete the call entry
      --------------------- */
   delete_branch(subg_leaf_ptr(CallStrPtr),
-		&TIF_CallTrie(subg_tip_ptr(CallStrPtr)));
+		&TIF_CallTrie(subg_tif_ptr(CallStrPtr)));
 
   /* Delete its answers
      ------------------ */
@@ -1316,7 +1234,7 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
   /* Delete the table entry
      ---------------------- */
   free_answer_list(CallStrPtr);
-  free_subgoal_frame(CallStrPtr);
+  FreeProducerSF(CallStrPtr);
 }
 
 
