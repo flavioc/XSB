@@ -54,7 +54,7 @@
 
 
 #define WIN_NT 1
-#define CC "cc"
+#define CC "cl.exe"
 #define RELEASE_DATE @xsb_release_date@
 #define XSB_VERSION "@xsb_full_version_name@"
 

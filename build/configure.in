@@ -874,6 +874,7 @@ test -f "$cache_file" ||  \
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/emuMakefile:emuMakefile.in
+	    ${arch_config_prefix}/modMakefile:modMakefile.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in

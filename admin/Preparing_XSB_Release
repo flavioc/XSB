@@ -28,26 +28,11 @@ NOTE: Autoconf must be installed.
        DOS:
 	   config/x86-pc-pcdos
 
-   NOTE: If you want to configure with Oracle, ODBC, debugging support or
-         if you want local scheduling, you must use these options to the
-	 configure script:
-
-	--enable-local-scheduling   to set LOCAL_EVAL
-	--enable-debug	      	    to set DEBUG
-	--with-oracle               to set ORACLE
-	--enable-oracle-debug       to set both ORACLE and ORACLE_DEBUG
-	--with-odbc                 to set XSB_ODBC
-
-   Do not specify the above variables in the C++ studio or whatever studio 
-   you are using! For instance: 
-
-       ./configure --with-os=windows --enable-local-scheduling --enable-oracle
-
 
 2. Unix:
 
    cd build
-   autoconf
+   autoconf  (just to make sure that `configure' is up-to-date)
 
    NOTE: don't run ./configure! Unix users must run it by themselves!
 
@@ -61,8 +46,7 @@ NOTE: Autoconf must be installed.
 
 4. ALL:
 
-   Make whatever is needed to include the XSB documentation:
-       doc?????????
+   Make whatever is needed to include the XSB documentation.
 
    Tar up these directories (in addition to those indicated above):
 
@@ -73,7 +57,7 @@ NOTE: Autoconf must be installed.
        cmplib
        packages
        examples
-       build
+       build  	      (not necessary for Windows)
 
    Add these top level files to the distribution tarball:
 

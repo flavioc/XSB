@@ -254,14 +254,19 @@ procedure.  You should include the file {\tt cinterf.h} located in the
 that you will need to use.
 
 Third, to create your executable, after you have created the object
-file, say ruleproc.o, for your C routine, you could execute:
+file, say {\tt ruleproc.o}, for your C routine, you could execute:
 \begin{verbatim}
     % gcc -o ruleproc ruleproc.o $XSB_DIR/emu/xsbmodule.o
 \end{verbatim}
 
-There is a simple example of a C program calling \ourprolog\ in the
-{\tt XSB/examples/c\_calling\_XSB} directory, in files {\tt cmain.c}, {\tt
-  ctest.P}, cmain2.c {\tt and},  {\tt Makefile}.
+The file {\tt \$XSB\_DIR/config/your-system-architecture/modMakefile} is a
+makefile you can use to build your programs and link them with XSB.  It is
+generated automatically and contains all the right settings for your
+architecture, but you will have to fill in the name of your program, etc.
+
+There are simple examples of C programs calling \ourprolog\ in the
+{\tt \$XSB\_DIR/examples/c\_calling\_XSB} directory, in files {\tt cmain.c},
+{\tt ctest.P}, {\tt cmain2.c}.
 
 \section{Passing Data Between C and \ourprolog} \label{c2p_p2p_p2c}
 
