@@ -168,6 +168,7 @@
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
+#define FL_FLORALIB		flora
 #define FL_WRAPAROUND	        wraparound
 %%#define FL_FIRSTORDERNOSTORAGE	fl_firstorder_nostorage
 %%#define FL_FIRSTORDERNOSTORAGEALL fl_firstorder_nostorage_all
@@ -248,6 +249,7 @@
   FLWORKSPACE(FLTERM|FLOBJSPEC|FLBIRELATE,Name)
   FLPLIB(FLTERM,Name)
   FLPLIB(FLTERM)
+  FLFLORALIB(FLTERM,NAME)
   FLCONJUNCT(Goal,Goal)
   FLDISJUNCT(Goal,Goal)
   FLNOT(Goal)
@@ -299,6 +301,7 @@
 #define FLLOAD			flload
 #define FLWORKSPACE		flworkspace
 #define FLPLIB			flplib
+#define FLFLORALIB		flfloralib
 #define FLCONJUNCT		flconjunct
 #define FLDISJUNCT		fldisjunct
 #define FLNOT			flnot
@@ -344,6 +347,7 @@
 #define PRCALL			prcall
 #define PRCUT			prcut
 #define PRWORKSPACE		prworkspace
+#define PRFLORALIB		prfloralib
 #define PRNEWPRED		prnewpred
 #define PROLOGTERM		prologterm
 #define FLORASYSLIB		florasyslib
@@ -502,6 +506,8 @@
 #define FLORA_THIS_MODULE	flThisModule
 
 #define FLORA_STORAGE_PREFIX	'_$_$_flora_storage'
+
+#define FLORA_SYSTEM_PREFIX	'_$_$_flora_system'
 
 
 /****************************************************************************

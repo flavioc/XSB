@@ -8,13 +8,15 @@
 
 #mode standard Prolog
 
-#define	FLORA_PREFIX		'_$_$_flora'
-#define FLORA_STORAGE_PREFIX	'_$_$_flora_storage'
+#define	FLORA_PREFIX			'_$_$_flora'
+#define FLORA_SYSTEM_PREFIX		'_$_$_flora_system'
+#define FLORA_STORAGE_PREFIX		'_$_$_flora_storage'
 
 #mode save
 #mode nostring "\!#'"
-#define FLORA_WORKSPACE(X,Y)	FLORA_PREFIX'X''Y'
-#define FLORA_WSSTORAGE(X)	FLORA_STORAGE_PREFIX'X'
+#define FLORA_WORKSPACE(X,Y)		FLORA_PREFIX'X''Y'
+#define FLORA_SYSTEM_WORKSPACE(X,Y)	FLORA_SYSTEM_PREFIX'X''Y'
+#define FLORA_WSSTORAGE(X)		FLORA_STORAGE_PREFIX'X'
 #mode restore
 
 

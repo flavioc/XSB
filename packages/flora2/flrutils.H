@@ -67,7 +67,8 @@
 	file_close/1,
 	print_file_contents/1,
 	copyIOport/2,
-	path_sysop/2
+	path_sysop/2,
+	path_sysop/3
    from file_io.
 
 :- import process_control/2 from shell.

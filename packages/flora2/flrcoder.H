@@ -37,7 +37,11 @@
 
 :- import flora_prlgdef/2 from flrprolog.
 
-:- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
+:- import
+	flora_wspredicate/4,
+	flora_storage_name/2,
+	flora_sysmod_predicate/4
+   from flrwrapper.
 
 :- export
 	flora_divide_program/3,

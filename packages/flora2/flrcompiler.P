@@ -75,8 +75,9 @@ is_fltnot(FLTNOT(Goal),Goal).
 
 is_flload(FLLOAD(LoadList),LoadList).
 is_flworkspace(FLWORKSPACE(P,WS),P,WS).
-is_flplib(FLPLIB(P,MD),P,MD).
+is_flplib(FLPLIB(P,M),P,M).
 is_flplib(FLPLIB(P),P).
+is_flfloralib(FLFLORALIB(P,M),P,M).
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
 is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
 is_flinsert(FLINSERT(Op,List),Op,List).
@@ -189,26 +190,34 @@ list_struct(List,Term,PRLIST(List,Term)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
+floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRSTORAGE(WS)).
 
 workspacelit_struct(P,WS,Code) :-
 	( is_flatom(WS,WSAtom) ->
 	    workspace_struct(P,WSAtom,Code)
+
+	; is_flvar(WS,WSVarName,_I) ->
+	    varobj_struct(WSVarName,WSVarCode),
+	    florasyslib_struct(FLLIBMODLIT,2,[P,WSVarCode],Code)
 	;
-	  is_flvar(WS,WSVarName,_I),
-	  varobj_struct(WSVarName,WSVarCode),
-	  florasyslib_struct(FLLIBMODLIT,2,[P,WSVarCode],Code)
+	  %% a Flora system module
+	  workspace_struct(P,WS,Code)
 	).
 
 workspaceobj_struct(P,WS,Object,Code) :-
 	( is_flatom(WS,WSAtom) ->
 	    Code=NULL,
 	    workspace_struct(P,WSAtom,Object)
+
+	; is_flvar(WS,WSVarName,_I) ->
+	    varobj_struct(WSVarName,WSVarCode),
+	    new_varobj(Object),
+	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSVarCode,Object],Code)
 	;
-	  is_flvar(WS,WSVarName,_I),
-	  varobj_struct(WSVarName,WSVarCode),
-	  new_varobj(Object),
-	  florasyslib_struct(FLLIBMODOBJ,3,[P,WSVarCode,Object],Code)
+	  %% a Flora system module
+	  Code=NULL,
+	  workspace_struct(P,WS,Object)
 	).
 
 prologterm_struct(FL_ASSIGN,2,Args,PROLOGTERM(FL_IS,2,Args)) :- !.
@@ -1081,6 +1090,9 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prlgtermlit(P,Module,Code,Status)
 
+	; is_flfloralib(ParserTerm,P,Module) ->
+	    compile_floraliblit(P,Module,Code,Status)
+
 	; is_flinsert(ParserTerm,Op,List,Cond) ->
 	    compile_flinsert(Op,List,Cond,Code,Status)
 
@@ -1155,6 +1167,9 @@ compile_pathexp(ParserTerm,Object,Code,Status) :-
 
 	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prlgtermobj(P,Module,Object,Code,Status)
+
+	; is_flfloralib(ParserTerm,P,Module) ->
+	    compile_floralibobj(P,Module,Object,Code,Status)
 	;
 	  is_flworkspace(ParserTerm,P,WS),
 	  compile_wspathexp(P,WS,Object,Code,Status)
@@ -1889,6 +1904,19 @@ compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
 
 
 /****************************************************************************
+  compile_floraliblit(+ParserTerm,+Workspace,-Code,-Status)
+
+  This procedure compiles a literal that is associated with a Flora system
+  module specification.
+****************************************************************************/
+compile_floraliblit(ParserTerm,WS,Code,Status) :-
+	%% Flora system modules are like normal users modules except that
+	%% users cannot load into those areas.
+	floralib_struct(WS,WSCode),
+	compile_wsliteral(ParserTerm,WSCode,Code,Status).
+
+
+/****************************************************************************
   compile_wsliteral(+ParserTerm,+Workspace,-Code,-Status)
 ****************************************************************************/
 compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
@@ -1909,6 +1937,14 @@ compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
 	  workspacelit_struct(Code,WS,WSCode),
 	  Status=[]
 	).
+
+
+/****************************************************************************
+  compile_floralibobj(+ParserTerm,+Workspace,-Object,-Code,-Status)
+****************************************************************************/
+compile_floralibobj(ParserTerm,WS,Object,Code,Status) :-
+	floralib_struct(WS,WSCode),
+	compile_wspathexp(ParserTerm,WSCode,Object,Code,Status).
 
 
 /****************************************************************************

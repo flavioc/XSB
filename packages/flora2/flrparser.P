@@ -33,6 +33,10 @@
 #define FLINS		flins
 #define FLDEL		fldel
 
+#define FLORASYSMOD	florasysmod
+#define PROLOGMODULE	prologmodule
+#define FLORAUSERMOD	florausermod
+
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 
@@ -403,11 +407,18 @@ fltnot_struct(Goal,FLTNOT(Goal)).
 
 flload_struct(List,FLLOAD(List)).
 
-flworkspace_struct(Literal,Name,FLWORKSPACE(Literal,Name)).
+flworkspace_struct(Literal,WSName,FLWORKSPACE(Literal,WSName)).
 is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
 flplib_struct(Goal,Name,FLPLIB(Goal,Name)).
 flplib_struct(Goal,FLPLIB(Goal)).
+
+flfloralib_struct(Literal,Module,FLFLORALIB(Literal,Module)).
+
+is_flmodulespec_struct(FLWORKSPACE(_G,_N)) :- !.
+is_flmodulespec_struct(FLPLIB(_G)) :- !.
+is_flmodulespec_struct(FLPLIB(_G,_N)) :- !.
+is_flmodulespec_struct(FLFLORALIB(_L,_M)) :- !.
 
 is_dbinsertop(FL_INSERT) :- !.
 is_dbinsertop(FL_INSERTALL) :- !.
@@ -1092,29 +1103,33 @@ flora_parse_rule(Head,Body,Code,Status) :-
 /****************************************************************************
   flora_head(+CanoniTerm,-CodeList,-Status)
 
+  This predicate is called to parse the head of a rule, which is a canonical
+  term. Since only conjunction is allowed in a rule head, the result of parsing
+  it is a list of intermidiate terms.
+
   Note: Workspace is not allowed in rule head.
 ****************************************************************************/
 flora_head(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),CodeList,Status) :-
 	get_atom(Funct,F),
 	( F == FL_COMMA ->
 	    flora_head(L,LCodeList,S),
-	    ( S == []
-	    ->  flora_head(R,RCodeList,Status),
-		(Status == []
-		-> append(LCodeList,RCodeList,CodeList)
-		; true
+	    ( S == [] ->
+		flora_head(R,RCodeList,Status),
+		( Status == [] ->
+		    append(LCodeList,RCodeList,CodeList)
+		;
+		  true
 		)
 	    ;
-		Status=S
+	      Status=S
 	    )
 
-	; F == FL_SEMICOLON
-	->			% Disjunction is prohibited.
+	; F == FL_SEMICOLON -> % Disjunction is prohibited.
 	    parsing_error(If,NO_DISJUNCTION,Status)
 
-	;		       % Workspace in rule head is prohibited.
-	    F == FL_AT,
-	    parsing_error(If,NO_WSINRULEHEAD,Status)
+	; % Workspace in rule head is prohibited.
+	  F == FL_AT,
+	  parsing_error(If,NO_WSINRULEHEAD,Status)
 	),
 	!.
 
@@ -1182,6 +1197,14 @@ flora_head_literal(CanoniTerm,_Code,Status) :-
 
 /****************************************************************************
   flora_body(+CanoniTerm,-Goal,-Status)
+
+  This predicate is called to parse the *entire* body of a rule. It takes a
+  canonical term as input and parses it into an intermediate term to be
+  compiled further. "CanoniTerm" can represent any logical formula of
+  conjunction, disjunction, and negation. "Goal" is parsed accordingly. If
+  success, "Status" is bound to [], or some warning message; otherwise, it
+  is a list containing some error message.
+
   flora_body(+CanoniTerm,+WorkSpace,-Goal,-Status)
 
   Note: Workspace specification is distributive over negation, conjunction
@@ -1227,37 +1250,90 @@ flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,[G],_If,_Ip),WS,Code,Status) :-
 flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!, % nesting of workspace scope
-	( flora_name_or_normvar(R,RCode) ->  % Path expr needs runtime support
-	    flora_body(L,RCode,Code,Status)
+	%% The module name needs to be parsed early; otherwise, some
+        %% incorrect syntax may be overridden by nesting module specification.
+	flora_workspace(R,RCode,S),
+	(S == [] -> flora_body(L,RCode,Code,Status); Status=S).
 
-	;  R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),
-	    get_name(Mod,FL_PLIB)
-	->  flora_prlgterm(L,LCode,Status),
-	    (Status == [] -> flplib_struct(LCode,Code); true)
-
-	;  R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),
-	    get_name(Mod,FL_PLIB)
-	->  ( get_name(M,MCode) ->
-		flora_prlgterm(L,LCode,Status),
-		(Status == [] -> flplib_struct(LCode,MCode,Code); true)
-	    ;
-		parsing_error(M,ERROR_WSNAME,Status)
-	    )
-	;
-	    parsing_error(R,ERROR_WSNAME,Status)
-        ).
-
+%% At this point, the scoping of all module specifications has been resolved.
 flora_body(CanoniTerm,NULL,Code,Status) :-
 	!,
+	%% no module name
 	flora_body_literal(CanoniTerm,Code,Status).
 
-flora_body(CanoniTerm,WS,Code,Status) :-	
-	flora_body_wsliteral(CanoniTerm,C,Status),
-	(Status == [] -> flworkspace_struct(C,WS,Code); true).
+flora_body(CanoniTerm,FLORAUSERMOD(WS),Code,Status) :-
+	!,
+	%% Flora user module
+	flora_body_wsliteral(CanoniTerm,TCode,Status),
+	(Status == [] -> flworkspace_struct(TCode,WS,Code); true).
+
+flora_body(CanoniTerm,PROLOGMODULE,Code,Status) :-
+	!,
+	%% Prolog builtin
+	flora_prlgterm(CanoniTerm,TCode,Status),
+	(Status == [] -> flplib_struct(TCode,Code); true).
+
+flora_body(CanoniTerm,PROLOGMODULE(Mod),Code,Status) :-
+	!,
+	%% Prolog module
+	flora_prlgterm(CanoniTerm,TCode,Status),
+	(Status == [] -> flplib_struct(TCode,Mod,Code); true).
+
+flora_body(CanoniTerm,FLORASYSMOD(Mod),Code,Status) :-
+	!,
+	%% Flora system module
+	%% The literals that are allowed to be associated with Flora system
+	%% module specification are those that are allowed to be associated
+	%% with Flora user module specification.
+	flora_body_wsliteral(CanoniTerm,TCode,Status),
+	(Status == [] -> flfloralib_struct(TCode,Mod,Code); true).
+
+
+/****************************************************************************
+  flora_workspace(+CanoniTerm,-WSCode,-Status)
+
+  This predicate is called to parse the module name of a workspace specification.
+  Three types of module names are allowed:
+  (1) Prolog module, e.g., @prolog(basics), @prolog().
+      WSCode=PROLOGMODULE(name), or PROLOGMODULE
+  (2) Flora system module, e.g., @flora(io), @flora(pp). Unlike prolog module,
+      @flora() is not allowed.
+      WSCode=FLORASYSMOD(name)
+  (3) Flora user module, which could be either an atom or a variable.
+      WSCode=FLORAUSERMOD(name), or FLORAUSERMOD(var)
+****************************************************************************/
+flora_workspace(CanoniTerm,FLORAUSERMOD(NVCode),[]) :-
+	%% Check if it is a Flora user module specification. (@ M)
+	flora_name_or_normvar(CanoniTerm,NVCode),
+	!.
+
+flora_workspace(CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),PROLOGMODULE,[]) :-
+	%% Check if it is a Prolog module. (@ prolog())
+	get_name(Mod,FL_PLIB),
+	!.
+
+flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),PROLOGMODULE(MCode),Status) :-
+	%% Check if it is a Prolog module. (@prolog(xsbmod))
+	get_name(Mod,FL_PLIB),
+	!,
+	(get_name(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
+
+flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MCode),Status) :-
+	%% Check if it is a Prolog module. (@prolog(xsbmod))
+	get_name(Mod,FL_FLORALIB),
+	!,
+	%% Ideally, it could be checked whether a Flora system module is registered.
+	(get_name(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
+
+flora_workspace(CanoniTerm,_WSCode,Status) :-
+	parsing_error(CanoniTerm,ERROR_WSNAME,Status).
 
 
 /****************************************************************************
   flora_body_literal(+CanoniTerm,-Code,-Status)
+
+  This predicate is called to parse a literal in a rule body, which does
+  not associate to any workspace specification.
 ****************************************************************************/
 flora_body_literal(CanoniTerm,Code,Status) :-
 	flora_exec_directive(CanoniTerm,Code,Status),
@@ -1338,6 +1414,12 @@ flora_body_literal(CanoniTerm,_Code,Status) :-
 
 /****************************************************************************
   flora_body_wsliteral(+CanoniTerm,-WorkspaceLiteral,-Status)
+
+  This predicate is called to parse a literal in a rule body, which is
+  associated with some workspace specification.
+
+  Note: Most builtin FLORA operators are allowed to be associated with
+        workspace specification.
 ****************************************************************************/
 flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	get_atom(Funct,F),
@@ -1460,11 +1542,14 @@ flora_name_or_normvar(CanoniTerm,Code) :-
 
 /****************************************************************************
   flora_prlgterm(+CanoniTerm,-Code,-Status)
+
+  This predicate is called to parse a Prolog predicate. Its arguments are
+  not parsed as Prolog terms.
 ****************************************************************************/
 flora_prlgterm(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	!,
 	( get_atom(Funct,FAtom) ->
-	    ( FAtom == FL_AT, N == 1 ->
+	    ( FAtom == FL_AT, N == 2 ->
 		parsing_error(If,NO_WSNESTING,Status)
 	    ;
 	      flora_term(Funct,N,Args,Code,Status)
@@ -1579,37 +1664,48 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	  true
         ).
 
+%% This procedure is to handle module specification in the argument position.
+%% It might be useful to support meta-programming feature. The distribution
+%% and nesting rule for literals in rule body does not apply to arguments. For
+%% instance, f((a[b],c[d])@mod) is not allowed.
 flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( flora_name_or_normvar(R,RCode)
-	->  flora_pathexp(L,LCode,S),
-	    ( S == [] ->
-		( is_flworkspace_struct(LCode)
-		->  parsing_error(If,NO_WSNESTING,Status)
-		;   nowspathexp(LCode)
-		->  parsing_error(L,NO_WORKSPACE,Status)
+	flora_workspace(R,WSCode,S1),
+	( S1 == [] ->
+	    ( (WSCode = PROLOGMODULE; WSCode = PROLOGMODULE(Mod)) ->
+		flora_prlgterm(L,LCode,S2)
+
+	    ; (WSCode = FLORAUSERMOD(Mod); WSCode = FLORASYSMOD(Mod)) ->
+	        flora_pathexp(L,LCode,S2)
+	    ),
+	    %% Check if the module specification is valid.
+	    ( S2 == [] ->
+		( nowspathexp(LCode) ->
+		    parsing_error(L,NO_WORKSPACE,Status)
+
+		; is_flmodulespec_struct(LCode) ->
+	            parsing_error(If,NO_WSNESTING,Status)
 		;
-		    flworkspace_struct(LCode,RCode,Code),
-		    Status=[]
+		  Status=[],
+		  ( WSCode = PROLOGMODULE ->
+		      flplib_struct(LCode,Code)
+
+		  ; WSCode = PROLOGMODULE(Mod) ->
+		      flplib_struct(LCode,Mod,Code)
+
+		  ; WSCode = FLORAUSERMOD(Mod) ->
+		      flworkspace_struct(LCode,Mod,Code)
+		  
+		  ; WSCode = FLORASYSMOD(Mod) ->
+		      flfloralib_struct(LCode,Mod,Code)
+		  )
 	        )
 	    ;
-		Status=S
-	    )
-
-	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB)
-	->  flora_prlgterm(L,LCode,Status),
-	    (Status == [] -> flplib_struct(LCode,Code); true)
-
-	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_PLIB)
-	->  ( get_name(M,MCode) ->
-		flora_prlgterm(L,LCode,Status),
-		(Status == [] -> flplib_struct(LCode,MCode,Code); true)
-	    ;
-		parsing_error(M,ERROR_WSNAME,Status)
+	      Status=S2
 	    )
 	;
-	    parsing_error(R,ERROR_WSNAME,Status)
+	  Status=S1
         ).
 
 flora_pathexp(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
@@ -1642,11 +1738,23 @@ flora_pathexp(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_PATHEXP,Status).
 
 
+%% Define which type of arguemnts should not have module specification.
 nowspathexp(S) :- is_fllist_struct(S), !.
 nowspathexp(S) :- is_flvar_struct(S), !.
 nowspathexp(S) :- is_flaggregt_struct(S), !.
 nowspathexp(S) :- is_flnumber_struct(S), !.
 nowspathexp(S) :- is_flstring_struct(S), !.
+
+nowspathexp(S) :-
+	flatom_struct(FAtom,S),
+	flora_nowsp(FAtom,0),
+	!.
+
+nowspathexp(S) :-
+	flterm_struct(Funct,N,_Args,S),
+	flatom_struct(FAtom,Funct),
+	flora_nowsp(FAtom,N),
+	!.
 
 
 /****************************************************************************

@@ -31,6 +31,10 @@
 
 :- index flora_nowsp/2-1.
 
+flora_nowsp(FL_SEMICOLON,2).
+flora_nowsp(FL_COMMA,2).
+flora_nowsp(FL_TNOT,1).
+flora_nowsp(FL_NEG,1).
 
 flora_nowsp(FL_UNIVEQ,2) :- !.
 flora_nowsp(FL_UNIVNOTEQ,2) :- !.

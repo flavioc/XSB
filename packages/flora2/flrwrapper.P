@@ -213,7 +213,17 @@ flora_firstorder_predicate(Funct,Predicate,Workspace) :-
 
 /*****************************************************************************
   Take a predicate name, args, and workspace and return a Florified call
-  (dith workspace attached)
+  (with workspace attached) for Flora system module.
+  flora_sysmod_predicate(+Functor,+Args,+Workspace,-Predicate)
+*****************************************************************************/
+flora_sysmod_predicate(Functor,Args,WS,Predicate) :-
+	fmt_write_string(PF,"%s'%s'%s",args(FLORA_SYSTEM_PREFIX,WS,Functor)),
+	Predicate =.. [PF|Args].
+
+
+/*****************************************************************************
+  Take a predicate name, args, and workspace and return a Florified call
+  (with workspace attached)
   flora_wspredicate(+Functor,+Args,+Workspace,-Predicate)
 *****************************************************************************/
 flora_wspredicate(Functor,Args,WS,Predicate) :-
