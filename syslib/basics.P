@@ -23,54 +23,32 @@
 */
 
 
+% append! ta-da!
+append([],L,L).
+append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
+
+%---
+/* copy_term0 is defined on machine.P */
+copy_term(A,B) :- copy_term0(A,C), B = C.
+
+%---
+flatten([H|T],Flatlist):-
+	flatten1([H|T],Flatlist,[]).
+
+flatten1([],Var,Var).
+flatten1([H|T],Flatlist,Flatout):-
+	is_list(H) -> flatten1(H,Flatlist,Flatmid),
+		      flatten1(T,Flatmid,Flatout)
+		; 	Flatlist = [H|Flatmid],
+			flatten1(T,Flatmid,Flatout).
+
+
+%---
 % ground/1 checks for ground term (Prolog version at end of file).
 % This version uses function calls, and could be made somewhat more 
 % efficient via macros, if necessary.
 
 ground(T) :- fast_ground(T).
-
-
-% good ole member
-member(X,[X|_]).
-member(X,[_|L]) :- member(X,L).
-
-memberchk(X,[X|_]) :- !.
-memberchk(X,[_|L]) :- memberchk(X,L).
-
-
-% append! ta-da!
-append([],L,L).
-append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
-
-
-% A not so naive reverse
-reverse(L, R) :- reverse_acc(L, [], R).
-
-reverse_acc([], Acc, Acc).
-reverse_acc([Head|Tail], Acc, Reversed) :-
-	reverse_acc(Tail, [Head|Acc], Reversed).
-
-
-% Some Prologs like to call this delete!
-select(Element, [Element|Rest_Elements], Rest_Elements).
-select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
-	select(Element, Rest_L1, Rest_L2).
-
-
-% length/2 that works both ways
-length(L,N) :-
-	var(N)
-	 ->	length1(L,N)
-	 ;	length2(L,N).
-
-length1([], 0).
-length1([_|R], N) :- length1(R, N1), N is N1 + 1.
-
-length2(L,N) :-
-	N =< 0
-	 ->	L=[]
-	 ;	N1 is N-1, L=[_|L1],
-		length2(L1,N1).
 
 
 % ith/3 that works both ways
@@ -93,7 +71,45 @@ ith0(I,[X|L],Y) :-
 ith1([X|_],I,I,X).
 ith1([_|L],I1,I,X) :- I2 is I1+1, ith1(L,I2,I,X).
 
-/* copy_term0 is defined on machine.P */
-copy_term(A,B) :- copy_term0(A,C), B = C.
+%---
+% length/2 that works both ways
+length(L,N) :-
+	var(N)
+	 ->	length1(L,N)
+	 ;	length2(L,N).
+
+length1([], 0).
+length1([_|R], N) :- length1(R, N1), N is N1 + 1.
+
+length2(L,N) :-
+	N =< 0
+	 ->	L=[]
+	 ;	N1 is N-1, L=[_|L1],
+		length2(L1,N1).
+
+
+%---
+% good ole member
+member(X,[X|_]).
+member(X,[_|L]) :- member(X,L).
+
+%---
+memberchk(X,[X|_]) :- !.
+memberchk(X,[_|L]) :- memberchk(X,L).
+
+%---
+% A not so naive reverse
+reverse(L, R) :- reverse_acc(L, [], R).
+
+reverse_acc([], Acc, Acc).
+reverse_acc([Head|Tail], Acc, Reversed) :-
+	reverse_acc(Tail, [Head|Acc], Reversed).
+
+
+% Some Prologs like to call this delete!
+select(Element, [Element|Rest_Elements], Rest_Elements).
+select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
+	select(Element, Rest_L1, Rest_L2).
+
 
 /* --------------------- end of file basics.P ------------------------- */
