@@ -2,8 +2,11 @@
 
 # run configure scripts for individual drivers
 
-\rm ./Installation_summary
+/bin/rm -f ./Installation_summary
 
+curdir=`pwd`
 cd odbc; ./configure $*; cat Installation_summary >> ../Installation_summary
+cd $curdir
 
 cd mysql; ./configure $*; cat Installation_summary >> ../Installation_summary
+cd $curdir

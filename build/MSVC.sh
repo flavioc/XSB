@@ -18,7 +18,7 @@ configdir=../config/x86-pc-windows
 makedepend -w1000 -f ../build/.makedepend.tmp -o.obj -p@@@ -Y -- -I$configdir -- *c 2>&1 \
 	| grep -v "cannot find include" | grep -v "not in"
 
-# Convert Unix Makefile dependencies to NMAKE format, ass ^M at the end
+# Convert Unix Makefile dependencies to NMAKE format, add ^M at the end
 cat ../build/.makedepend.tmp \
         | sed  -f ../build/MSVC.sed \
         | sed 's/$//'  > ../build/MSVC.dep
