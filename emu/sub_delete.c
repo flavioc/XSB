@@ -36,6 +36,7 @@
 #include "macro_xsb.h"
 #include "error_xsb.h"
 
+extern BTHTptr hhadded;
 
 
 /* Freeing Individual Structures
@@ -159,26 +160,28 @@ void delete_call_index(BTNptr root) {
   BTHTptr hash_hdr;
   unsigned int i;
 
-
   if ( IsNULL(root) )
     return;
 
-  if ( IsHashHeader(BTN_Child(root)) ) {
-    hash_hdr = BTN_GetHashHdr(root);
-    for ( i = 0;  i < BTHT_NumBuckets(hash_hdr);  i++ )
-      for ( current = BTHT_BucketArray(hash_hdr)[i];
-	    IsNonNULL(current);  current = sibling ) {
+  if ( ! IsLeafNode(root) ) {
+    if ( IsHashHeader(BTN_Child(root)) ) {
+
+      hash_hdr = BTN_GetHashHdr(root);
+      for ( i = 0;  i < BTHT_NumBuckets(hash_hdr);  i++ )
+	for ( current = BTHT_BucketArray(hash_hdr)[i];
+	      IsNonNULL(current);  current = sibling ) {
+	  sibling = BTN_Sibling(current);
+	  delete_call_index(current);
+	}
+      delete_btht(hash_hdr);
+    }
+    else 
+      for ( current = BTN_Child(root);  IsNonNULL(current);
+	    current = sibling ) {
 	sibling = BTN_Sibling(current);
 	delete_call_index(current);
       }
-    delete_btht(hash_hdr);
   }
-  else if ( ! IsLeafNode(root) )
-    for ( current = BTN_Child(root);  IsNonNULL(current);
-	  current = sibling ) {
-      sibling = BTN_Sibling(current);
-      delete_call_index(current);
-    }
   free_btn(root);
 }
 
