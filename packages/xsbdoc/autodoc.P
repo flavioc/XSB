@@ -440,13 +440,10 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 	findall(op(P,Prec,PredNames),
                    clause_read(1,op(P,Prec,PredNames),_),Ops),
 
-	write(here2),
 	get_file_level_declarations(NDecls),
-	write(here3),
 
         format_module_usage(Format,Name,RModuleType,Exports,
 	 	                UFiles,SysFiles,Ops,NDecls,Idxs,OS),
-write(here4),
 %        optional_message("Documenting (new) declarations...",Opts),
 %	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
 %        optional_message("Documenting (new) mode definitions...",Opts),
@@ -775,7 +772,8 @@ document_table_type(tabled(X),Format,OS):-
 
 get_native_declaration(Pred,dynamic):- 
 	functor(Pred,F,A),
-	'_#clause'(directive(dynamic(F/A)),_).
+	'_#clause'(directive(dynamic(Comma_list)),_),
+	comma_member(F/A,Comma_list),
 
 %% ---------------------------------------------------------------------------
 :- pred doc_usages/9 # "Generates documentation for each ``usage'' of
