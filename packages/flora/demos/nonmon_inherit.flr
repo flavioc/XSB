@@ -5,14 +5,15 @@
     aa:a.
     aa[b->d].
 
-    aaa::a.
-    aaaa:a.
-    bbb::a.
-    bbb[b *->cc].
+    ?- aa[b->X].      % X=d
 
-    ?- aa[b->X].
-    ?- aaa[@U*->Y].
-    ?- aaaa[@U1->Y1].
+    aaa::a.
+    ?- aaa[@U*->Y].   % @U=b, Y=c; @U=b1, Y=c1
+
+    a1[b *-> d].
+    aaaa:a1.
+    aaaa:a.
+    ?- aaaa[@U1->Y1]. % @U1=b undef; @U1=b1,Y1=c1
 
 %%------------------
 
@@ -22,18 +23,21 @@
 
     abb:ab.
     abb[b ->> tt].
-    abbb::ab.
+    ?- abb[@M ->> K].	     % @M=b, K=tt; @M=b2, K={cc2,dd2}
 
     aabb:ab.
-    aabb1::ab.
+    ?- aabb[@N ->> L].	     % @N=b, L={cc,dd}; @M=b2, L={cc2,dd2}
 
+    abbb::ab.
     abbb[b *->> e].
+    ?- abbb[@M *->> Z].	     % @M=b,Z=e; @M=b2, Z={cc2,dd2}
 
-    ?- abb[@M ->> K].
+    ab1[b *->> ttt].
+    ab1::ab.
+    bbb[b2 *->> {e}].
+    aabb1:bbb.
+    aabb1:ab1.
 
-    ?- aabb[@N ->> L].
-    ?- aabb1[@N1 *->> L1].
-
-    ?- abbb[@M *->> Z].
+    ?- aabb1[@N1 ->> L1].   % @N1=b,L1=ttt; @N1=b2 undefined
 
 
