@@ -7,8 +7,6 @@
 
 \usepackage[colorlinks]{hyperref}
 
-
-
 \pagestyle{headings}
 
 % LaTeX Size Stuff
@@ -46,10 +44,12 @@
 % TLS couldnt get this to work?!?
 \newcommand{\myindex}[1]{\index{ #1}}
 
+\newcommand{\mtsection}[1]{#1}
+
 \newcommand{\comment}[1]{}
 \newcommand{\ourprolog}{XSB}
 \newcommand{\smallourprolog}{xsb}
-\newcommand{\version}{Version 2.7}
+\newcommand{\version}{Version 2.7.1}
 \newcommand{\LRD}{LRD-stratified}
 
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
@@ -109,6 +109,7 @@ Interfaces and Packages}
 \input{library}
 \input{foreign}
 \input{ccallingxsb}
+\mtsection{\input{multithreading}}
 %\input{oracle_inter}
 \input{odbc_man/odbc_man}
 \input{xsb_dbi}
