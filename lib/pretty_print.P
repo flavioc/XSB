@@ -57,7 +57,7 @@ givenames(T,Dict) :-
 	givenames(Vars,Dict,0).
 
 givenames([],_,_).
-givenames([V/N|R],Dict,I) :-
+givenames([V/_N|R],Dict,I) :-
 	( spec_lookup(Dict,V,Name) ->
 		V = '$VAR'(Name),
 		givenames(R,Dict,I)

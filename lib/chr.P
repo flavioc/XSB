@@ -114,7 +114,8 @@
 	  arg/3,
 	  (=..)/2,
 	  compound/1,
-	  functor/3
+	  functor/3,
+	  ','/2
    from standard.
 
 :- import findall/3, sort/2 from setof.
