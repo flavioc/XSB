@@ -346,8 +346,7 @@ flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_p
   flora_is_flogic_wrapper(+WrapPrefix,+Base)
 *****************************************************************************/
 flora_is_flogic_wrapper(WrapPrefix,Base) :-
-	( WrapPrefix=FLBODYPREFIX
-	; WrapPrefix=FLHEADPREFIX
+	( WrapPrefix=FLHEADPREFIX
 	; WrapPrefix=FLFACTPREFIX
 	; WrapPrefix=FLTRAILERPREFIX
 	),
@@ -454,6 +453,12 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	      PredicateSymbol=[],
 	      ArgsList=[]
 	    )
+
+	; flora_is_flogic_base(Wrapper) ->
+	    %% WrapPrefix could be ''=FLBODYPREFIX.
+	    PredicateType=flogic,
+	    PredicateSymbol=Wrapper,
+	    WrapPrefix=''
 
 	; str_sub('_',Wrapper,S) ->
 	    %% The predicate consists of a prefix and a base.
