@@ -24,6 +24,9 @@
 */
 
 
+#include "configs/config.h"
+#include "debugs/debug.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,9 +42,6 @@
 #include <stddef.h>
 #include <sys/wait.h>
 #endif
-
-#include "configs/config.h"
-#include "debugs/debug.h"
 
 #include "auxlry.h"
 #include "cell.h"
@@ -625,6 +625,18 @@ void init_machine(void)
      xsb_exit("Can't open the standard stream for XSB feedback messages\n");
   stdfdbk = fdopen(fdbk_fd, "w");
   open_files[6] = stdfdbk;
+
+#ifdef WIN_NT
+  /* NT doesn't seem to think that dup should preserve the buffering mode of
+     the source file. Here we make all new descriptors unbuffered -- dunno if
+     this is good or bad. Line-buffering _IOLBF is the most that can be
+     allowed. Otherwise one won't see anything on the screen. -mk */
+  setvbuf(stdmsg, NULL, _IONBF, 0);
+#endif
+  /* for these, unbuffered I/O might be a good idea -- NT or not */
+  setvbuf(stdwarn, NULL, _IONBF, 0);
+  setvbuf(stddbg, NULL, _IONBF, 0);
+  setvbuf(stdfdbk, NULL, _IONBF, 0);
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
 }
