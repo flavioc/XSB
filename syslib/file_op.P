@@ -193,17 +193,17 @@ op_type(yf,pos).
 
 
 /* add_index allows declaration of indexing for dynamic (and static) code.
-Informaiton is kept in a table '_$index'/3 which stores a most-general
+Information is kept in a table '_$index1'/3 which stores a most-general
 call to a predicate, the argument to index on, and the size of the hash
 table to use. */
 
 
 '_$index'(A,B,C) :-
-	conpsc('_$table1'(_,_,_),Psc),
+	conpsc('_$index1'(_,_,_),Psc),
 	psc_type(Psc, Type),
 	(Type =:= 1				% DYNA so exists 
-	 ->     '_$table1'(A,B,C)
-         ;      fail     % table doesn't exist yet, so it is empty
+	 ->     '_$index1'(A,B,C)
+         ;      fail     % index1 doesn't exist yet, so it is empty
         ).
 
 :- assert('_$index1'(dyn_op(_,_,_),3,17)),
