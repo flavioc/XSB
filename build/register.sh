@@ -16,7 +16,7 @@ EOF
 
 read sendlog
 
-if test "$sendlog" != "n" -a "$sendlog" != "no" ; then
+if test "$sendlog" != "n" -a "$sendlog" != "no" -a "$sendlog" != "N" ; then
     (cat sendlog.msg Installation_summary \
 	| mail xsb-contact@cs.sunysb.edu) \
     && echo "" ; echo "Thank you!"; echo ""
