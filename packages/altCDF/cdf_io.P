@@ -91,6 +91,16 @@ sort_and_write_terms(Terms) :-
 	fail.
 sort_and_write_terms(_Terms).
 
+sort_and_write_cha_terms(Terms) :-
+	sort(Terms,STerms),
+	member(Term,STerms),
+	(Term = classHasAttr_ext(cid(compName(cid(N,N),_),N), crid(hasVersion,N),  Version)
+	 ->	write_canonical(classHasAttr_ext(cid(N,N),crid(hasVersion,N),Version)),writeln('.')
+	 ;	write_canonical(Term),writeln('.')
+	),
+	fail.
+sort_and_write_cha_terms(_Terms).
+
 cdf_ext_inst(Term):-
 	(Term = isa_ext(_,_) ; Term = allAttr_ext(_,_,_) ; 
 	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
@@ -100,7 +110,10 @@ cdf_ext_inst(Term):-
 dump_extensional_facts_2:- 
 	cdf_ext_inst(Term),
 	findall(Term,Term,Set),
-	sort_and_write_terms(Set),
+	(Term = classHasAttr_ext(_,_,_)
+	 ->	sort_and_write_cha_terms(Set)
+	 ;	sort_and_write_terms(Set)
+	),
 	fail.
 dump_extensional_facts_2.
 %-----------------------------------------------------------------
@@ -283,29 +296,25 @@ load_intensional_rules(Dir):-
 extract_file_name(File,Name):- 
 	atom_chars(File,Flist),
 	reverse(Flist,Rlist),
-	strip_extension(Rlist,Rl1),
+	strip_closing_slash_if_any(Rlist,Rl1),
 	read_till_slash(Rl1,Rn2),
 	reverse(Rn2,Nl),
 	atom_chars(Name,Nl).
 
-strip_extension(Rlist,Rl1):- 
-	(member('.',Rlist) -> 
-	    strip_extension_1(Rlist,Rl1) 
-	  ; Rl1 = Rlist).
+strip_closing_slash_if_any(['\'|L],L) :- !.
+strip_closing_slash_if_any(['/'|L],L) :- !.
+strip_closing_slash_if_any(L,L).
 
-strip_extension_1(['.'|T],T):- !.
-strip_extension_1([_|T],Tnew):- 
-	strip_extension_1(T,Tnew).
-
+% Windows allows slashes in both directions
 read_till_slash(L,L1):- 
-	slash(S),
-	(member(S,L) -> 	
-	    read_till_slash_1(L,L1,S)
+	((member('\',L) ; member('/',L)) -> 	
+	    read_till_slash_1(L,L1)
 	  ; L = L1).
 
-read_till_slash_1([S|_R],[],S):- !.
-read_till_slash_1([H|R],[H|R1],S):- 
-	read_till_slash_1(R,R1,S).
+read_till_slash_1(['\'|_R],[]):- !.
+read_till_slash_1(['/'|_R],[]):- !.
+read_till_slash_1([H|R],[H|R1]):- 
+	read_till_slash_1(R,R1).
 
 %TLS: dont know if permission error is right here.	   :	
 load_intensional_rules(Path,Name):- 

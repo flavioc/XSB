@@ -11,7 +11,7 @@
 	newComponent/4.
 
 :- import 
-	classHasAttr/3,
+	classHasAttr/3, immed_classHasAttr/3,
 	retractallExtTerm/1, newExtTerm/1, newExtTerm/2,
 	cdf_id_fields/4,
 	system_component/1 from cdf_init_cdf.
@@ -191,7 +191,7 @@ classHasAttr(cid(compName(cid(N,N),cid(Path,cdfpt)),N),
 
 @item Dependency information of @tt{C} is maintained via 
 @begin{verbatim}
-classHasAttr(cid(component(cid(N,N),cid(Path,cdfpt),cid(V,cdfpt)),N),
+classHasAttr(cid(N,N),
              crid(componentDepends,N),
              cid(component(cid(N2,N2),cid(P2,cdfpt),cid(V2,cdfpt)),N))
 @end{verbatim}
@@ -376,7 +376,7 @@ perform_component_level_checks:-
 % when loading a dependency.
 
 load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):- 
-	writeln(loading_pass1(Name)),write_cha,nl,
+%	writeln(loading_pass1(Name)), /* write_cha, */ nl,
 	get_full_path_and_loadname(Name,PathIn,Vin,AbsPath,V,Loadname),
 	(check_component(Name,AbsPath,V,Arglist,Flag) -> 
 	    slash(Slash),
@@ -384,7 +384,7 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):-
 				nl,
                 concat_atom([AbsPath,Slash,Loadname],Absname),
 	    cdf_load_extensional_facts(Absname,AbsPath),
-	    writeln(just_loaded(Name)),write_cha,nl,
+%	    writeln(just_loaded(Name)), /* write_cha, */ nl,
 	    check_good_component(Name,AbsPath),
 	    (	pe_push_dir(AbsPath),
                 load_component_dependencies_pass1(Name,AbsPath,Arglist)
@@ -393,55 +393,47 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist,Flag):-
 	  ; 
 	    fail ).
 
-
+/*
 write_cha:- 
 	classHasAttr_ext(_,crid(hasPath,Name),F),
 	writeln(paths(Name,F)),
 	fail.
 write_cha.
+*/
 
 
-
-load_component_dependencies_pass1(Name,Abs,Arglist):-
-	writeln(loading_deps(Name)),write_cha,nl,
- 	findall((V,New,Relnew,Vnew,DepType),
+load_component_dependencies_pass1(Name,_Abs,Arglist):-
+%	writeln(loading_deps(Name)), /* write_cha, */ nl,
+ 	findall((New,Relnew,Vnew,DepType),
 		( (   DepType = componentDepends
 		   ;  DepType = staticComponentDepends
 		  ),
-		    classHasAttr_ext(cid(component(cid(Name,Name),
-						   cid(Abs,cdfpt),
-						   cid(V,cdfpt)),Name),
+		    classHasAttr_ext(cid(Name,Name),
 				     crid(DepType,Name),
 				     cid(component(cid(New,New),
 						   cid(Relnew,cdfpt),
 						   cid(Vnew,cdfpt)),New))
 		),
  		List),
-	member((V,New,Relnew,Vnew,DepType),List),
+	member((New,Relnew,Vnew,DepType),List),
 %%%            writeln(checking(dep(Name,New))),	
 	load_component_pass1(New,Relnew,AbsNew,
 	                                   version(Vnew),Arglist,depends),
            assert_dependencies_for_path2(Name,New,AbsNew,Vnew),
            %% make sure dependencies store absolute filenames
-	retractallExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
-							 cid(Abs,cdfpt),
-							 cid(V,cdfpt)),Name),
+	retractallExtTerm(classHasAttr_ext(cid(Name,Name),
 					   crid(DepType,Name),
 					   cid(component(cid(New,New),
 							 cid(Relnew,cdfpt),
 							 cid(Vnew,cdfpt)),
 					       New))),
-	newExtTerm(isa_ext(cid(component(cid(Name,Name),
-                                                                  cid(allAtoms,cdf),
-                                                                  cid(allIntegers,cdf)),Name),
-			        cid(components,cdf))),
+/*	newExtTerm(isa_ext(cid(Name,Name),
+			        cid(componentIDs,cdf))), */
 	newExtTerm(isa_ext(cid(component(cid(New,New),
 	                                                      cid(allAtoms,cdf),
                                                                   cid(allIntegers,cdf)),New),
-			        cid(components,cdf))),
-	newExtTerm(classHasAttr_ext(cid(component(cid(Name,Name),
-						  cid(Abs,cdfpt),
-						  cid(V,cdfpt)),Name),
+			        cid(components,cdf))), 
+	newExtTerm(classHasAttr_ext(cid(Name,Name),
 				    crid(DepType,Name),
 				    cid(component(cid(New,New),
 						  cid(AbsNew,cdfpt),
@@ -496,8 +488,10 @@ check_good_component(Name,Full):-
 	  ;
 	    throw(error(component_load,['Pathname: ',Full,Name,
 				      ' is not a component'])) ).
-component_exists(Name):- 
-	classHasAttr(cid(Name,Name),crid(hasPath,Name),_).
+component_exists(Name):-
+	immed_classHasAttr(cid(compName(cid(Name,Name), _),Name),
+			 crid(hasVersion,Name),_).
+
 %---------------
 
 /* If check_component succeeds, we go ahead and do a pass 1 load. */
@@ -540,8 +534,10 @@ check_conflicting_path(Name,Path,Arglist):-
 		    true) 
 	      ;  true).
 
-conflicting_path(Name,P,P1):- 
-	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),cid(P1,cdfpt)),
+conflicting_path(Name,P,P1):-
+	classHasAttr_ext(cid(compName(cid(Name,Name),
+				      cid(P1,cdfpt)),Name),
+			 crid(hasVersion,Name),_),
 	P \== P1.
 
 %---------------
@@ -628,14 +624,14 @@ cdfcreated with filepath PATH and version 0.
 The latter two should just be used in component updates. */
 
 newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
-	((classHasAttr(cid(Src,Src),crid(hasPath,Src),Path1),Path1 \= Path) ->
+	((immed_classHasAttr(cid(compName(cid(Src,Src),
+				      Path1),Src),
+			 crid(hasVersion,Src),_), Path1 \= Path) ->
 	      throw(cdf_error(component,['Creating a component path ',Path,
 			' for ',Src,' which has path ',Path1])) 
 	    ; 
-	      newExtTerm(isa_ext(crid(hasPath,Src),
-	                                     crid('CDF Class-Object Relations',cdf))),
-	      newExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),
-						Path)) ),
+	      newExtTerm(isa_ext(crid(hasVersion,Src),
+	                                     crid('CDF Class-Object Relations',cdf)))),
 
 	(classHasAttr(cid(compName(cid(Src,Src),Path),Src),
 			crid(hasVersion,Src),Version) -> 
@@ -650,13 +646,12 @@ newPathandVersion(create,cid(Name,Name),_Pathin,Path,V):-
 	                               crid('CDF Class-Object Relations',cdf))),
 	newExtTerm(isa_ext(crid(hasVersion,Name),
 	                               crid('CDF Class-Object Relations',cdf))),
-	newExtTerm(isa_ext(crid(hasPath,Name),
-	                               crid('CDF Class-Object Relations',cdf))),
-            newExtTerm(isa_ext(cid(Name,Name),cid(componentIDs,cdf))),
+	newExtTerm(isa_ext(cid(Name,Name),cid(componentIDs,cdf))),
 	newExtTerm(isa_ext(cid(compName(cid(Name,Name),
 	                                                      cid(allAtoms,cdf)),Name),
 			       cid(compNames,cdf))),
-	classHasAttr_ext(cid(Name,Name),crid(hasPath,Name),Path),
+	newExtTerm(isa_ext(cid(component(cid(Name,Name), cid(allAtoms,cdf), cid(allIntegers,cdf)),Name),
+			   cid(components,cdf))),
 	classHasAttr_ext(cid(compName(cid(Name,Name),Path),Name),
 			crid(hasVersion,Name),V).
 /* On create, even if the component has been loaded from somewhere else,  
@@ -667,19 +662,14 @@ newPathandVersion(create,cid(Src,Src),cid(Pathin,cdfpt),cid(Pathin,cdfpt),
 	                               crid('CDF Class-Object Relations',cdf))),
 	newExtTerm(isa_ext(crid(hasVersion,Src),
 	                               crid('CDF Class-Object Relations',cdf))),
-	newExtTerm(isa_ext(crid(hasPath,Src),
-	                               crid('CDF Class-Object Relations',cdf))),
-            newExtTerm(isa_ext(cid(Src,Src),cid(componentIDs,cdf))),
+	newExtTerm(isa_ext(cid(Src,Src),cid(componentIDs,cdf))),
 	newExtTerm(isa_ext(cid(compName(cid(Src,Src),cid(allAtoms,cdf)),Src),
 			   cid(compNames,cdf))),
-	retractallExtTerm(classHasAttr_ext(cid(Src,Src),crid(hasPath,Src),_)),
+	newExtTerm(isa_ext(cid(component(cid(Src,Src), cid(allAtoms,cdf), cid(allIntegers,cdf)), Src),
+			   cid(components,cdf))),
 	retractallExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),_),Src),
 			 	crid(hasVersion,Src),_Int)),
-	newExtTerm(isa_ext(crid(hasPath,Src),
-	                               crid('CDF Class-Object Relations',cdf))),
-            newExtTerm(classHasAttr_ext(cid(Src,Src),
-				    crid(hasPath,Src),cid(Pathin,cdfpt))),
-        slash(Slash),
+	slash(Slash),
         concat_atom([Pathin,Slash,Src],File),
         (file_exists(File) ->
   	     file_latest_version(Pathin,Src,Vold),
@@ -709,12 +699,10 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,cid(V,cdfpt)):-
 	     newExtTerm(isa_ext(cid(compName(cid(Src,Src),
 	                                                           cid(allAtoms,cdf)),Src),
 			   cid(compNames,cdf))),
-	     retractallExtTerm(classHasAttr_ext(cid(Src,Src),
-	                                                          crid(hasPath,Src),_)),
-	     newExtTerm(isa_ext(crid(hasPath,Src),
-	                                    crid('CDF Class-Object Relations',cdf))),
-	     newExtTerm(classHasAttr_ext(cid(Src,Src),
-					 crid(hasPath,Src),Pathin)),
+	     newExtTerm(isa_ext(cid(component(cid(Src,Src), cid(allAtoms,cdf), cid(allIntegers,cdf)), Src),
+				cid(components,cdf))),
+	     newExtTerm(isa_ext(crid(hasVersion,Src),
+		                               crid('CDF Class-Object Relations',cdf))),
   	     newExtTerm(classHasAttr_ext(cid(compName(cid(Src,Src),Pathin),Src),
  				 crid(hasVersion,Src),cid(V,cdfpt))),
 	     Pathin = Path ).
@@ -806,35 +794,31 @@ reload_extensional(CPath) :-
 	        newExtTerm(newExtTermBatch,CanonTerm),
 	  	fail).
 
-use_canonical_path(classHasAttr_ext(cid(N,N),crid(hasPath,N),cid(_,cdfpt)),
+
+use_canonical_path(classHasAttr_ext(cid(N,N),
+				crid(hasVersion,N),Version),
 		   CPath,
-		   classHasAttr_ext(cid(N,N),crid(hasPath,N),
-				cid(CPath,cdfpt))) :- !.
+		   classHasAttr_ext(cid(compName(cid(N,N),cid(CPath,cdfpt)),N),
+				 crid(hasVersion,N),Version)) :- !.
+% for backward compatibility - such facts should not be present in the new system
+use_canonical_path(classHasAttr_ext(cid(N,N),crid(hasPath,N),cid(_,cdfpt)),
+		   _, _) :- !, fail.
 use_canonical_path(classHasAttr_ext(cid(compName(cid(N,N),cid(_,cdfpt)),N),
 				crid(hasVersion,N),Version),
 		   CPath,
 		   classHasAttr_ext(cid(compName(cid(N,N),cid(CPath,cdfpt)),N),
 				 crid(hasVersion,N),Version)) :- !.
-use_canonical_path(classHasAttr_ext(cid(component(cid(N,N),cid(_,cdfpt),
-					      cid(V,cdfpt)),N),
+use_canonical_path(classHasAttr_ext(cid(component(cid(N,N),cid(_,cdfpt), cid(_,cdfpt)),N),
 				crid(componentDepends,N),
 				Dependency),
-		   CPath,
-		   classHasAttr_ext(cid(component(cid(N,N),cid(CPath,cdfpt),
-					      cid(V,cdfpt)),N),
-				crid(componentDepends,N),
-				Dependency)) :- !.
-/*****
-use_canonical_path(isa_ext(cid(compName(SrcCid,cid(_,cdfpt)),Src),ParCid),
-	               CPath,
-		   isa_ext(cid(compName(SrcCid,cid(CPath,cdfpt)),Src),
-		                   ParCid)):- !.
-use_canonical_path(isa_ext(cid(component(SrcCid,cid(_,cdfpt),VCid),Src),
-	                              ParCid),
-	               CPath,
-		   isa_ext(cid(component(SrcCid,cid(CPath,cdfpt),VCid),Src),
-		                   ParCid)):- !.
-********/
+		   _,
+		   classHasAttr_ext(cid(N,N), crid(componentDepends,N),Dependency)) :- !.
+use_canonical_path(classHasAttr_ext(cid(component(cid(N,N),cid(_,cdfpt), cid(_,cdfpt)),N),
+				crid(staticComponentDepends,N),
+				Dependency),
+		   _,
+		   classHasAttr_ext(cid(N,N), crid(componentDepends,N),Dependency)) :- !.
+% end backward compatibility
 use_canonical_path(Term,_,Term).
 
 /****************************************************************/
@@ -864,11 +848,19 @@ read_dependencies(CComp,CPath,comp(Comp,Path,Ver)) :-
 	read_canonical(Term),
 	(Term == end_of_file
 	 ->	!,fail
-	 ;	Term = classHasAttr_ext(cid(component(cid(CComp,CComp),_,_),CComp),
+	 ;	(Term = classHasAttr_ext(cid(CComp,CComp),
 					crid(componentDepends,CComp),
 					cid(component(cid(Comp,Comp),
 						      cid(RPath,cdfpt),
-						      cid(Ver,cdfpt)),Comp)),
+						      cid(Ver,cdfpt)),Comp))
+		 ;
+		 % old way
+		 Term = classHasAttr_ext(cid(component(cid(CComp,CComp),_,_),CComp),
+					crid(componentDepends,CComp),
+					cid(component(cid(Comp,Comp),
+						      cid(RPath,cdfpt),
+						      cid(Ver,cdfpt)),Comp))
+		),
 		(RPath == ''
 		 ->	Path = RPath
 		 ; is_absolute_filename(RPath)
