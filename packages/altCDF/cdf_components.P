@@ -71,22 +71,19 @@ applications can update them and incorporate their information.  The
 CDF components system attempts to address this need by allowing
 ontologies to be built from discrete @em{components}.
 
-One method of partitioning facts in an CDF instance (whether it be a
+One method of partitioning facts in a CDF instance (whether it be a
 loaded state or set of external files) is to choose a @em{component
 argument} for each predicate type, and to set as the component of each
 fact the source of the identifier in the component argument.  (If the
 identifier is a product identifier, the source is the source of the
-outer function symbol).  Using this method, the facts in an CDF
+outer function symbol).  Using this method, the facts in a CDF
 instance may be partitioned in various ways.
 
 A @em{class-based component system} chooses as component arguments:
 
 @begin{itemize}
 
-@item the second-argument of all @em{class/2} and @pred{object/2}
-facts.
-
-@item the first-argument of all other facts.
+@item the first-argument of all facts.
 
 @end{itemize} 
 @noindent Class-based components thus form a collection
@@ -96,15 +93,12 @@ and objects.
 
 A @em{relation-based component system} chooses as argument identifiers
 
-@begin{itemize} @item the second-argument of all @pred{class/2} and
-@pred{object/2} facts.
+@begin{itemize}
 
-@item the first-argument of all @pred{memberof/2} and
-@pred{subclass/2} facts.
+@item the first-argument of all @pred{isa/2} facts.
 
-@item the second-argument of all @pred{irel/3}, @pred{classHasAttr/3},
-@pred{schrel/3}, @pred{attribute/3}, and @pred{attribute_object/3}
-facts.
+@item the second-argument of all @pred{hasAttr/3} and
+@pred{classHasAttr/3}, facts.
 
 @end{itemize}
 
@@ -124,7 +118,7 @@ fact in @em{C1}, @em{Nid1} is a product identifier, and
 definition, it is easy to see that component dependency need not be
 hierarchical so that two components may directly depend on one
 another; furthermore each component must directly depend on itself.
-In addition, each component always derectly depends on the component
+In addition, each component always directly depends on the component
 cdf by fiat.  Component dependency is defined as the transitive
 closure of direct dependency.
 
@@ -140,7 +134,7 @@ under-approximation of the dependencies.
 
 @section{Components, Paths, and Versions}
 
-Given the notions that components partition an CDF instance, and give
+Given the notions that components partition a CDF instance, and give
 rise to dependency information, the component system must interace
 with file systems and databases in order to allow users to manage
 components as separate entities.
@@ -161,16 +155,12 @@ implicitly asserting an axiom of equality for the two (structured)
 component names.
 
 A component name corresponds to a directory containing files with data
-in external form (e.g. @tt{schema_cdfext.P} and @tt{data_cdfext.P}
-files), or in external intensional form @tt{cdf_intensional.P}.  In
+in external form (e.g. the @tt{cdf_extensional.P} file), or in
+external intensional form, as stored in @tt{cdf_intensional.P}.  In
 addition, the directory may contain an initialization file,
-@tt{component_init.P}.  whose actions are taken to be transparent to
-the CDF (unless they explicitly call CDF routines).  The CDF cannot
-load as a component information in internal format (i.e. data in
-@tt{schema_cdf.P} and @tt{data_cdf.P} files) as ambiguity arises if
-one attempts to combine internal identifiers from different files.  It
-does however provide tools to create components from a current loaded
-CDF state.
+@tt{component_init.P}, whose actions are taken to be transparent to
+the CDF (unless they explicitly call CDF routines).  The CDF provide
+tools to create components from a current loaded CDF state.
 
 The same component name can have multiple @em{versions}.  An CDF state
 can contain only one version for each component name, and an attempt
@@ -180,22 +170,22 @@ version @tt{V} is to be found in a directory named @tt{Name_V}.  On
 the other hand, if two component names @em{C1} and @em{C2} have the
 same source and different paths, they do not have the same name.  If
 they are loaded so that their information is unioned together an error
-does not occur if @em{C1} and @em{C2} have different versions.
+is not raised if @em{C1} and @em{C2} have different versions.
 
 @section{Representing Component Information}
 
 Information about a component resides in the CDF data itself and is
 viewable by the user.  When a component with name @tt{C} is loaded,
-the class @tt{id(N,N)} (where @tt{N} is the source of @tt{C})
-is created as an immed subclass of @tt{id('CDF Component',cdf)}.
-Since components are not expected to have members, information about
-them is maintained through @pred{classHasAttr/3} facts.
+the class @tt{id(N,N)} (where @tt{N} is the source of @tt{C}) is
+created as an immed_isa of @tt{id('CDF Component',cdf)}.  Since
+components are not expected to have members, information about them is
+maintained through @pred{classHasAttr/3} facts.
 
 @begin{itemize} 
 
 @item The path of component @tt{C} is kept via 
 @begin{verbatim}
-classHasAttr(cid(N,N),crid(hasPath,N),oid(Path,cdfpt))
+classHasAttr(cid(N,N),crid(hasPath,N),cid(Path,cdfpt))
 @end{verbatim}
 
 @item The version of component @tt{C} is kept via 
@@ -215,13 +205,13 @@ classHasAttr(cid(component(cid(N,N),cid(Path,cdfpt),cid(V,cdfpt)),N),
 
 @section{Major Functionality}
 
-Given an CDF state, a user may want to do several things.  
+Given a CDF state, a user may want to do several things: 
 @begin{enumerate}
 
-@item A user may wish to create components from an CDF state, or to
-update components used by an CDF state.  One way to do this is by the
+@item A user may wish to create components from a CDF state, or to
+update components used by a CDF state.  One way to do this is by the
 predicate @tt{update_all_components(Dir,Options)} which determines a
-class or relation based partition of the CDF instance, and computes
+class- or relation-based partition of the CDF instance, and computes
 all dependencies between these cells.  Cells that are not components
 are made into components (with version 0), and those that are already
 components have their version number updated if necessary (by checking
@@ -229,9 +219,9 @@ components have their version number updated if necessary (by checking
 specified by various options.
 
 Alternately, if a part of a loaded CDF instance is to be saved as a
-component the predicate @tt{update_components(List,Dir)} can be used.
+component, the predicate @tt{update_components(List,Dir)} can be used.
 @tt{List} is a list of component names, and for each @tt{Name} in
-@tt{List}, @pred{update_components/2} writes ou the component
+@tt{List}, @pred{update_components/2} writes out the component
 @tt{Name} as a subdirectory of @tt{Dir} whose version is either 0 if
 the component is new, or incremented if the component is updated.  The
 predicate gives an error if a component @tt{Name} in @tt{List} depends
@@ -239,7 +229,7 @@ on an updated component not in @tt{List}, or if it depends on a cell
 that has not been made into a component.
 
 @item A user may wish to load a component, along with all of its
-dependencies.  Loads may be parameterized by
+dependencies.  Loads may be parameterized by:
 @begin{itemize}
 @item Whether it is considered an error to try to load two components
 with different path parts and the same name parts.
@@ -267,7 +257,7 @@ versions need to be created.}
 :- comment(analyze_components/2,
 "@tt{analyze_components(-Component,-Dependency_list)} examines a
 loaded CDF instance to partition it into components and for each
-component @em{C} to return a listF of components upon which @tt{C}
+component @em{C} to return a list of components upon which @tt{C}
 depends.").
 
 analyze_components(Name,List):- 
@@ -1323,7 +1313,7 @@ that it will be written out on update.  ").
 "@tt{add_component_initializer(Source,Path,File)} can be used to add
 @tt{File} as an initialization file for the component whose source is
 @tt{Source}, and whose path is @tt{Path}.  The component must already
-exist and be loaded into an CDF state, otherwise a warning is given
+exist and be loaded into a CDF state, otherwise a warning is given
 and the predicate fails.").
 
 find_component_dir(Name,Full):- 
