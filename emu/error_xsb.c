@@ -37,9 +37,9 @@
 #include "register.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
+#include "cinterf.h"
 
 extern void exit(int status);
-extern void print_pterm(Cell, int, char *, int *);
 
 FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
 FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
@@ -103,44 +103,47 @@ void xsb_bug(char *description, ...)
 
 void arithmetic_abort(Cell op1, char *OP, Cell op2)
 {
-  int  index;
-  char str_op1[MAXBUFSIZE], str_op2[MAXBUFSIZE];
+  vstrDEFINE(str_op1);
+  vstrDEFINE(str_op2);
 
-  index = 0; print_pterm(op1, 1, str_op1, &index);
-  index = 0; print_pterm(op2, 1, str_op2, &index);
+  print_pterm(op1, TRUE, &str_op1);
+  print_pterm(op2, TRUE, &str_op2);
   if (isref(op1) || isref(op2)) {
     xsb_abort("Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
 	      OP, "   Goal:",
-	      (isref(op1)? "_Var": str_op1), OP, (isref(op2)? "_Var": str_op2),
+	      (isref(op1)? "_Var": str_op1.string),
+	      OP,
+	      (isref(op2)? "_Var": str_op2.string),
 	      ", probably as 2nd arg of is/2");
   }
   else {
     xsb_abort("Wrong domain in evaluable function %s/2\n%s %s %s %s found",
 	      OP, "         Arithmetic expression expected, but",
-	      str_op1, OP, str_op2);
+	      str_op1.string, OP, str_op2.string);
   }
 }
 
 void arithmetic_abort1(char *OP, Cell op)
 {
-  int  index = 0;
-  char str_op[MAXBUFSIZE] = "_Var";
+  vstrDEFINE(str_op);
+  vstrSET(&str_op,"_Var");
   
-  if (! isref(op)) print_pterm(op, 1, str_op, &index);
+  if (! isref(op)) print_pterm(op, TRUE, &str_op);
   xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
 	    (isref(op) ? "Uninstantiated argument of" : "Wrong domain in"),
-	    OP, "   Goal:", OP, str_op, ", probably as 2nd arg of is/2");  
+	    OP, "   Goal:", OP, str_op.string,
+	    ", probably as 2nd arg of is/2");  
 }
 
 void arithmetic_comp_abort(Cell op1, char *OP, int op2)
 {
-  int  index = 0;
-  char str_op1[MAXBUFSIZE] = "_Var";
+  static vstrDEFINE(str_op1);
+  vstrSET(&str_op1,"_Var");
 
-  if (! isref(op1)) print_pterm(op1, 1, str_op1, &index);
+  if (! isref(op1)) print_pterm(op1, TRUE, &str_op1);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
 	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),
-	    OP, "   Goal:", str_op1, OP, op2);
+	    OP, "   Goal:", str_op1.string, OP, op2);
 }
 
 /*----------------------------------------------------------------------*/

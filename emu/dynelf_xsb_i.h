@@ -42,6 +42,7 @@
 #include "psc_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
+#include "varstring_xsb.h"
 
 #define BUFFEXTRA 1024
 
@@ -69,7 +70,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*handle;
   void	*funcep;
   char  *ldp1,*ldp2;
-  static char *ldstring_oldenv, *ldstring_newenv;
+  static vstrDEFINE(ldstring_oldenv);
+  static vstrDEFINE(ldstring_newenv);
   char  *libpath;
   char  ldtemp; 
   int   slibpath;
@@ -88,24 +90,9 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     libpath = "";
   slibpath = strlen(libpath);
 
-  ldstring_newenv = (char *) malloc(sizeof(char)*(strlen(ld_option)
-						  +slibpath
-						  +sizeof("LD_LIBRARY_PATH=")
-						  +1));
-  ldstring_oldenv = (char *) malloc(sizeof(char)*(strlen(ld_option)
-						  +slibpath
-						  +sizeof("LD_LIBRARY_PATH=")
-						  +1));
-  
-  if (ldstring_newenv == NULL)
-    xsb_abort("Could not allocate memory for ld_options manipulation");
-  
-  *ldstring_oldenv = '\0';
-  ldstring_oldenv = strcpy(ldstring_oldenv,"LD_LIBRARY_PATH=");
-  ldstring_oldenv = strcat(ldstring_oldenv,libpath);
-  *ldstring_newenv = '\0';
-  ldstring_newenv = strcpy(ldstring_newenv,"LD_LIBRARY_PATH=");
-  ldstring_newenv = strcat(ldstring_newenv,libpath);
+  vstrSET(&ldstring_oldenv,"LD_LIBRARY_PATH=");
+  vstrAPPEND(&ldstring_oldenv, libpath);
+  vstrSETV(&ldstring_newenv,&ldstring_oldenv);
   
   /* search for -Lpath, -L"paths" or -L'paths' */
   for (ldp1=ld_option; (*ldp1); ldp1++) {
@@ -117,7 +104,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
       *ldp1 = '\0';
       ldtemp = *(ldp2-1);
       *(ldp2-1) = ':';
-      ldstring_newenv = strcat(ldstring_newenv,ldp2-1);
+      vstrAPPEND(&ldstring_newenv, ldp2-1);
       *ldp1 = ' ';
       *(ldp2-1) = ldtemp;
     } else if (*ldp1 == '\'') {
@@ -131,8 +118,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     }
   }
   
-  if (putenv(ldstring_newenv) != 0)
-    xsb_abort("LOAD_OBJ_DYN: couldn't change the environment variable LD_LIBRARY_PATH");
+  if (putenv(ldstring_newenv.string) != 0)
+    xsb_abort("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
   
   /* (2) open the needed object */
   
@@ -141,11 +128,9 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     return FALSE;
   }
 
-  if (putenv(ldstring_oldenv) != 0)
-    xsb_abort("LOAD_OBJ_DYN: couldn't change the environment variable LD_LIBRARY_PATH");
+  if (putenv(ldstring_oldenv.string) != 0)
+    xsb_abort("LOAD_OBJ_DYN: can't restore te value of LD_LIBRARY_PATH");
   
-  free(ldstring_oldenv);
-  free(ldstring_newenv);
   
   /* (3) find address of function and data objects
   **

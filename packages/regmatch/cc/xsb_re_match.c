@@ -36,8 +36,7 @@
 #include "cinterf.h"
 #include "heap_xsb.h"
 
-extern char *p_charlist_to_c_string(prolog_term term, char *outstring, 
-				    int outstring_size,
+extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
@@ -70,10 +69,10 @@ static void initialize_regexp_tbl(void);
 static int first_call = TRUE; /* whether this is the first call to the regexp
 				 matcher. Used to initialize the regexp tbl */
 
-/* output buffer should be large enough to include the input string and the
-   substitution string <= sizeof(subst_buf) */
-static char output_buffer[5*MAXBUFSIZE], input_buffer[4*MAXBUFSIZE];
-static char temp_buffer[4*MAXBUFSIZE];
+static vstrDEFINE(input_buffer);
+static vstrDEFINE(subst_buf);
+static vstrDEFINE(output_buffer);
+static vstrDEFINE(regexp_buffer);
 
 
 /* XSB regular expression matcher entry point
@@ -102,8 +101,6 @@ bool do_regmatch__(void)
   int ignorecase=FALSE;
   int return_code, paren_number, offset;
   regmatch_t *match_array;
-  char regexp_buffer[MAXBUFSIZE];
-
 
   if (first_call)
     initialize_regexp_tbl();
@@ -112,9 +109,8 @@ bool do_regmatch__(void)
   if (is_string(regexp_term)) /* check it */
     regexp_ptr = string_val(regexp_term);
   else if (is_list(regexp_term))
-    regexp_ptr =
-      p_charlist_to_c_string(regexp_term, regexp_buffer, sizeof(regexp_buffer),
-			     "RE_MATCH", "regular expression");
+    regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
+					"RE_MATCH", "regular expression");
   else
     xsb_abort("RE_MATCH: Arg 1 (the regular expression) must be an atom or a character list");
 
@@ -122,9 +118,8 @@ bool do_regmatch__(void)
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string =
-      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
-			     "RE_MATCH", "input string");
+    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+					  "RE_MATCH", "input string");
   } else
     xsb_abort("RE_MATCH: Arg 2 (the input string) must be an atom or a character list");
   
@@ -194,9 +189,7 @@ bool do_bulkmatch__(void)
   int return_code, paren_number, offset;
   regmatch_t *match_array;
   int last_pos=0, input_len;
-  char regexp_buffer[MAXBUFSIZE];
-
-
+  
   if (first_call)
     initialize_regexp_tbl();
 
@@ -204,9 +197,8 @@ bool do_bulkmatch__(void)
   if (is_string(regexp_term)) /* check it */
     regexp_ptr = string_val(regexp_term);
   else if (is_list(regexp_term))
-    regexp_ptr =
-      p_charlist_to_c_string(regexp_term, regexp_buffer, sizeof(regexp_buffer),
-			     "RE_MATCH", "regular expression");
+    regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
+					"RE_MATCH", "regular expression");
   else
     xsb_abort("RE_MATCH: Arg 1 (the regular expression) must be an atom or a character list");
 
@@ -214,9 +206,8 @@ bool do_bulkmatch__(void)
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string =
-      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
-			     "RE_MATCH", "input string");
+    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+					  "RE_MATCH", "input string");
   } else
     xsb_abort("RE_MATCH: Arg 2 (the input string) must be an atom or a character list");
 
@@ -288,17 +279,16 @@ bool do_regsubstitute__(void)
   int last_pos = 0; /* last scanned pos in input string */
   /* the output buffer is made large enough to include the input string and the
      substitution string. */
-  char subst_buf[MAXBUFSIZE];
-  char *output_ptr;
   int conversion_required=FALSE; /* from C string to Prolog char list */
+  
+  vstrSET(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string =
-      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
-			     "RE_SUBSTITUTE", "input string");
+    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+					  "RE_SUBSTITUTE", "input string");
     conversion_required = TRUE;
   } else
     xsb_abort("RE_SUBSTITUTE: Arg 1 (the input string) must be an atom or a character list");
@@ -323,14 +313,11 @@ bool do_regsubstitute__(void)
   subst_str_list_term1 = subst_str_list_term;
 
   if (is_nil(subst_spec_list_term1)) {
-    strncpy(output_buffer, input_string, sizeof(output_buffer));
+    vstrSET(&output_buffer, input_string);
     goto EXIT;
   }
   if (is_nil(subst_str_list_term1))
     xsb_abort("RE_SUBSTITUTE: Arg 3 must not be an empty list");
-
-  /* initialize output buf */
-  output_ptr = output_buffer;
 
   do {
     subst_reg_term = p2p_car(subst_spec_list_term1);
@@ -343,9 +330,9 @@ bool do_regsubstitute__(void)
       if (is_string(subst_str_term)) {
 	subst_string = string_val(subst_str_term);
       } else if (is_list(subst_str_term)) {
-	subst_string =
-	  p_charlist_to_c_string(subst_str_term, subst_buf, sizeof(subst_buf),
-				 "RE_SUBSTITUTE", "substitution string");
+	subst_string = p_charlist_to_c_string(subst_str_term, &subst_buf,
+					      "RE_SUBSTITUTE",
+					      "substitution string");
       } else 
 	xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
     }
@@ -366,28 +353,20 @@ bool do_regsubstitute__(void)
       xsb_abort("RE_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
 
     /* do the actual replacement */
-    strncpy(output_ptr, input_string + last_pos, beg_offset - last_pos);
-    output_ptr = output_ptr + beg_offset - last_pos;
-    if (sizeof(output_buffer)
-	> (output_ptr - output_buffer + strlen(subst_string)))
-      strcpy(output_ptr, subst_string);
-    else
-      xsb_abort("RE_SUBSTITUTE: Substitution result size %d > maximum %d",
-		beg_offset + strlen(subst_string),
-		sizeof(output_buffer));
+    vstrAPPENDBLK(&output_buffer, input_string+last_pos, beg_offset-last_pos);
+    vstrAPPEND(&output_buffer, subst_string);
     
     last_pos = end_offset;
-    output_ptr = output_ptr + strlen(subst_string);
 
   } while (!is_nil(subst_spec_list_term1));
 
-  if (sizeof(output_buffer) > (output_ptr-output_buffer+input_len-end_offset))
-    strcat(output_ptr, input_string+end_offset);
+  vstrAPPEND(&output_buffer, input_string+end_offset);
 
  EXIT:
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer,output_term,"RE_SUBSTITUTE","Arg 4");
+    c_string_to_p_charlist(output_buffer.string, output_term,
+			   "RE_SUBSTITUTE", "Arg 4");
   else
     /* DO NOT intern. When atom table garbage collection is in place, then
        replace the instruction with this:
@@ -396,7 +375,7 @@ bool do_regsubstitute__(void)
        manipulation it is often necessary to process the same string many
        times. This can cause atom table overflow. Not interning allws us to
        circumvent the problem.  */
-    ctop_string(4, output_buffer);
+    ctop_string(4, output_buffer.string);
   
   return(TRUE);
 }
@@ -421,14 +400,15 @@ bool do_regsubstring__(void)
   char *input_string=NULL;    /* string where matches are to be found */
   int beg_offset, end_offset, input_len, substring_len;
   int conversion_required=FALSE;
+  
+  vstrSET(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string =
-      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
-			     "RE_SUBSTRING", "input string");
+    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+					  "RE_SUBSTRING", "input string");
     conversion_required = TRUE;
   } else
     xsb_abort("RE_SUBSTRING: Arg 1 (the input string) must be an atom or a character list");
@@ -461,12 +441,12 @@ bool do_regsubstring__(void)
 
   /* do the actual replacement */
   substring_len = end_offset-beg_offset;
-  strncpy(output_buffer, input_string+beg_offset, substring_len);
-  *(output_buffer+substring_len) = '\0';
+  vstrAPPENDBLK(&output_buffer, input_string+beg_offset, substring_len);
+  vstrNULL_TERMINATE(&output_buffer);
   
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer, output_term,
+    c_string_to_p_charlist(output_buffer.string, output_term,
 			   "RE_SUBSTITUTE", "Arg 4");
   else
     /* DO NOT intern. When atom table garbage collection is in place, then
@@ -476,7 +456,7 @@ bool do_regsubstring__(void)
        manipulation it is often necessary to process the same string many
        times. This can cause atom table overflow. Not interning allws us to
        circumvent the problem.  */
-    ctop_string(4, output_buffer);
+    ctop_string(4, output_buffer.string);
   
   return(TRUE);
 }
@@ -484,13 +464,15 @@ bool do_regsubstring__(void)
 
 /* should be removed when XSB gets garbage collector */
 /* converts charlist to string, but doesn't intern */
+static vstrDEFINE(temp_buffer);
 bool do_regcharlist_to_string__(void)
 {
+
   prolog_term input_term = reg_term(1);
 
-  p_charlist_to_c_string(input_term, temp_buffer, sizeof(temp_buffer),
+  p_charlist_to_c_string(input_term, &temp_buffer,
 			 "RE_CHARLIST_TO_STRING", "input string");
-  ctop_string(2, temp_buffer);
+  ctop_string(2, temp_buffer.string);
   return TRUE;
 }
 

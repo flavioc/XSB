@@ -517,7 +517,8 @@ if test -n "$with_libwww" ; then
    fi
 fi
 if test "$libwww_support" = "yes" ; then
-   libwww_ccflags="`sh $libwww_config_prog --cflags`"
+   test "${enable_debug+yes}" = "yes" && libwww_debug=" -g"
+   libwww_ccflags="$libwww_debug `sh $libwww_config_prog --cflags`"
    libwww_ldflags="`sh $libwww_config_prog --libs`"
 fi
 

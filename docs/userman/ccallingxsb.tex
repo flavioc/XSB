@@ -29,10 +29,10 @@ interface provided.  The highest level interface uses strings to
 communicate queries to \ourprolog\ and to get answers back.  The {\tt
 xsb\_command\_string(cmd)} function allows you to pass a command as a
 (period-terminated) string to \ourprolog .  The {\tt
-xsb\_query\_string\_string(query,buff,sizeof(buff),sep)} function allows
+xsb\_query\_string\_string(query,buff,sep)} function allows
 you to pass a query to XSB as a string, and have its (first) answer
 returned as a string.  Subsequent answers can be calculated and
-retrieved using {\tt xsb\_next\_string(buff,sizeof(buff),sep)}.
+retrieved using {\tt xsb\_next\_string(buff,sep)}.
 
 There are lower-level interfaces that allow you to manipulate directly
 the \ourprolog\ data structures (both to construct queries and to
@@ -161,17 +161,17 @@ is similar to xsb\_query, except the only way to retrieve answers is
 through Register 2.  The ability to create the return structure and
 bind variables in it is particularly useful in this function.
 
-\ouritem{int xsb\_query\_string\_string(char *query,char *buff,int
-len,char *sep)} \index{{\tt xsb\_query\_string\_string}} This function
+\ouritem{int xsb\_query\_string\_string(char *query, VarString *buff
+char *sep)} \index{{\tt xsb\_query\_string\_string}} This function
 is a variant of {\tt xsb\_query\_string} that returns its answer (if
 there is one) as a string.  An example call is:
 \begin{verbatim}
-rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,sizeof(buff),";");
+rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
 The first argument is the period-terminated query string.  The second
-argument is a string buffer in which the subroutine returns the answer
-(if any.)  The third argument is provided by the caller and is the
-length of the buffer (to avoid overflow).  The last argument is a string
+argument is a variable string buffer in which the subroutine returns the answer
+(if any.) The variable string data type {\tt VarString}  is explained in
+Section~\ref{sec-varstring}. The last argument is a string
 provided by the caller, which is used to separate fields in the returned
 answer.  For the example query, buff would be set to the string:
 \begin{verbatim}
@@ -198,13 +198,13 @@ no more answers and no answer is returned. On a return of 1, the query
 has been closed.  After a query is closed, another {\tt xsb\_command}
 or {\tt xsb\_query} invocation can be made.
 
-\ouritem{int xsb\_next\_string(char *buff,int len,char *sep)} \index{{\tt
+\ouritem{int xsb\_next\_string(VarString *buff,char *sep)} \index{{\tt
 xsb\_next\_string}}  This routine is a variant of {\tt xsb\_next} that
 returns its answer (if there is one) as a string.  Its treatment of
 answers is just as {\tt xsb\_query\_string\_string}.  For example after
 the example call 
 \begin{verbatim}
-rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,sizeof(buff),";");
+rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
 which returns with buff set to 
 \begin{verbatim}
@@ -212,7 +212,7 @@ which returns with buff set to
 \end{verbatim}
 Then a call:
 \begin{verbatim}
-rc = xsb_next_string(buff,sizeof(buff),";");
+rc = xsb_next_string(buff,";");
 \end{verbatim}
 returns with buff set to 
 \begin{verbatim}
@@ -234,6 +234,102 @@ calling {\tt xsb\_close\_query} to close it.
 This routine closes the entire connection to \ourprolog .  After this,
 no more calls can be made (including calls to {\tt xsb\_init}.)
 \end{description}
+
+\section{The Variable-length String Data Type}\label{sec-varstring}
+
+\index{VarString} XSB uses variable-length strings to communicate with
+certain C subroutines when the size of the output that needs to be passed
+from the Prolog side to the C side is not known. Variable-length strings
+adjust themselves depending on the size of the data they must hold and are
+ideal for this situation. For instance, as we have seem the two subroutines
+{\tt xsb\_query\_string\_string(query,buff,sep)} and {\tt
+  xsb\_next\_string(buff,sep)} use the variable string data type, {\tt
+  VarString}, for their second argument.  To use this data type, make sure
+that
+%%
+\begin{verbatim}
+#include "cinterf.h"  
+\end{verbatim}
+%%
+appears at the top of the program file.  Variables of the {\tt VarString}
+type are declared using a macro that must appear in the declaration section
+of the program:
+%%
+\begin{verbatim}
+vstrDEFINE(buf);  
+\end{verbatim}
+%%
+There is one important consideration concerning VarString with the
+\emph{automatic} storage class: they must be
+\emph{destroyed} on exit (see {\tt vstrDESTROY}, below) from the procedure
+that defines them, or else there will be a memory leak. 
+It is not necessary to destroy static {\tt VarString}'s.
+
+The public attributes of the type are {\tt int length} and {\tt char *string}.
+Thus, {\tt buf.string} represents the actual contents of the buffer and
+{\tt buf.length} is the length of that data. Although the length and the
+contents of a {\tt VarString} string is readily accessible, the user {\bf must
+not} modify these items directly. Instead, he should use the macros
+provided for that purpose:
+%%
+\begin{itemize}
+  \item {\tt vstrSET(VarString *vstr, char *str)}:~
+    Assign the value of the regular null-terminated C string to the
+    {\tt VarString} {\tt vstr}. The size of {\tt vstr} is adjusted
+    automatically.
+  \item {\tt vstrSETV(VarString *vstr1, VarString *vstr2)}:~
+    Like {\tt vstrSET}, but the second argument is a variable-length
+    string, not a regular C string.
+  \item {\tt vstrAPPEND(VarString *vstr, char *str)}:~
+    Append the null-terminated string {\tt str} to the {\tt VarString} {\tt
+      vstr}. The size of {\tt vstr} is adjusted.
+  \item {\tt vstrPREPEND(VarString *vstr, char *str)}:~
+    Like {\tt vstrAPPEND}, except that {\tt str} is prepended.
+  \item {\tt vstrAPPENDV(VarString *vstr1, VarString *vstr2)}:~
+    Like {\tt vstrAPPEND}, except that the second string is also a
+    {\tt VarString}.
+  \item {\tt vstrPREPENDV(VarString *vstr1, VarString *vstr2)}:~
+    Like {\tt vstrAPPENDV}, except that the second string is prepended.
+  \item {\tt vstrCOMPARE(VarString *vstr1, VarString *vstr2)}:~
+    Compares two {\tt VarString}. If the first one is lexicographically
+    larger, then the result is positive; if the first string is smaller,
+    than the result is negative; if the two strings have the same content
+    ({\it i.e.}, {\tt vstr1->string} equals {\tt vstr2->string} then the
+    result is zero.
+  \item {\tt vstrSTRCMP(VarString *vstr, char *str)}:~
+    Like {\tt vstrCOMPARE} but the second argument is a regular,
+    null-terminated string.
+  \item {\tt vstrAPPENDBLK(VarString *vstr, char *blk, int size)}:~
+    This is like {\tt vstrAPPEND}, but the second argument is not assumed
+    to be null-terminated. Instead, {\tt size} characters pointed to by
+    {\tt blk} are appended to {\tt vstr}. The size of {\tt vstr} is
+    adjusted, but the content is \emph{not} null terminated.
+  \item {\tt vstrPREPENDBLK(VarString *vstr, char *blk, int size)}:~
+    Like {\tt vstrPREPEND}, but {\tt blk} is not assumed to point to a
+    null-terminated string. Instead, {\tt size} characters from the region
+    pointed to by {\tt blk} are prepended to {\tt vstr}.
+  \item {\tt vstrNULL\_TERMINATE(VarString *vstr)}:~
+    Null-terminates the {\tt VarString}  string {\tt vstr}. This is used in
+    conjunction with {\tt vstrAPPENDBLK}, because the latter does not
+    null-terminate variable-length strings.
+  \item {\tt vstrENSURE_SIZE(VarString *vstr, int minsize)}:~
+    Ensure that the string has room for at least {\tt minsize} bytes.
+    This is a low-level routine, which is used to interface to procedures
+    that do not use {\tt VarString} internally.
+  \item {\tt vstrSHRINK(VarString *vstr, int increment)}:~
+    Shrink the size of {\tt vstr} to the minimum necessary to hold the
+    data. {\tt increment} becomes the new increment by which {\tt vstr} is
+    adjusted. Since {\tt VarString} is automatically shrunk by {\tt
+      vstrSET}, it is rarely necessary to shrink a {\tt VarString} explicitly.
+    However, one might want to change the adustment increment using this
+    macro (the default increment is 128).
+  \item {\tt vstrDESTROY(VarString *vstr)}:~
+    Destroys a {\tt VarString}.  Explicit destruction is necessary for
+    {\tt VarString}'s with the automatic storage class. Otherwise, memory
+    leak is possible.
+\end{itemize}
+%%
+
 
 \section{Passing Data into an XSB Module}
 

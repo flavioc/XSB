@@ -1,6 +1,7 @@
 ChangeLog
 MS_VC_Mfile.mak
 Makefile
+a.out
 ms_vc_mfile.mak
 msvc_makefile.mak
 orastuff.c

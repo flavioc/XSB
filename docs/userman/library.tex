@@ -466,9 +466,13 @@ a file using {\tt consult} and such.)
 \ournewitem{file\_close(+IOport)}{file\_io}\index{{\tt file\_close/1}}
     Closes the file (or string) for descriptor {\tt IOport}.
 
+    \newpage
+    \samepage{
 \ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/3}}
-%\predindex{fmt\_read/4~(L)}
-    This predicate provides a low-level routine for reading data from
+\vspace{-7mm}
+\ournewitem{fmt\_read(+IOport,+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/4}}
+}
+    These predicates provides a routine for reading data from
     the current input file (which must have been already opened by using
     {\tt see/1}) according to a C format, as used in the C function
     {\tt scanf}. To use it, it must be imported from the module {\tt
@@ -503,9 +507,19 @@ a file using {\tt consult} and such.)
   variable and it will be assigned a return value by the predicate: a
   negative integer if end-of-file is encountered; otherwise the number of
   fields read (as returned by {\tt scanf}.)
+  
+  {\tt fmt\_read} cannot read strings (that correspond to the {\tt \%s}
+  format specifier) that are longer than 16K. Attempting to read longer
+  strings will cause buffer overflow. It is therefore recommended that one
+  should use size modifiers in format strings ({\it e.g.}, {\tt \%2000s}),
+  if such long strings might occur in the input.
 
+  \samepage{
 \ournewitem{fmt\_write(+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write/2}}
-    This predicate provides a low-level routine for writing data to
+\vspace{-7mm}
+\ournewitem{fmt\_write(+IOport,+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write/3}}
+}
+    This predicate provides a routine for writing data to
     the current output file (which must have been already opened by using
     {\tt tell/1}) according to a C format, as used in the C function
     {\tt printf}.
@@ -543,7 +557,8 @@ a file using {\tt consult} and such.)
     arguments to be printed, an error is issued. If the number of arguments
     is greater, then a warning is issued.
 
-\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write\_string/2}}
+\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{file\_io}
+\index{{\tt fmt\_write\_string/2}}
     This predicate works like the C function {\tt sprintf}. It takes the
     format string and substitutes the values from the arguments of {\tt
       Term} ({\it e.g.}, {\tt args(X,Y,Z)}) for the formatting instructions
@@ -555,6 +570,12 @@ a file using {\tt consult} and such.)
     If the number of format specifiers is greater than the number of
     arguments to be printed, an error is issued. If the number of arguments
     is greater, then a warning is issued.
+
+    {\tt fmt\_write\_string} requires that the printed size of each
+    argument ({\it e.g.}, X,Y,and Z above) must be less than 16K. Longer
+    arguments are cut to that size, so some loss of information is possible.
+    However, there is no limit on the total size of the output (apart from
+    the maximum atom size imposed by XSB).
 
 \ournewitem{file\_flush(+IOport, -Return)}{file\_io}
 \index{{\tt file\_flush/2}}
@@ -600,7 +621,7 @@ a file using {\tt consult} and such.)
     appear in Term.  For example, reading a term {\tt f(a,X,Y,X)}
     would result in {\tt term} being bound to {\tt
     f(a,\_25,\_26,\_25)} (for some internal variables) and {\tt Vars}
-    being bound to {[vv('X',\_25),vv('Y',\_26)|\_83]}.  Note that the
+    being bound to {[vv('X',\_25) vv('Y',\_26) $\mid$ \_83]}.  Note that the
     pairing functor symbol is {\tt vv/2} and it must be imported from
     {\tt xsb\_read} along with this read predicate.  Also note that 
     {\tt Vars} is not a proper list, but has a free variable instead 
@@ -679,8 +700,8 @@ a file using {\tt consult} and such.)
     characters in the line, and {\tt Next} to the line terminator, either
     a newline ({\tt 10}) or EOF ({\tt-1}).
     
-    This predicate exists for backward compatibility. It is very
-    inefficient compared to \verb|file_read_line_list|.
+    This predicate is obsolete and
+    \verb|file_read_line_list| should be used instead.
 
 \ournewitem{file\_write\_line(+IOport, +String, +Offset)}{file\_io}
 \index{{\tt file\_write\_line/3}}

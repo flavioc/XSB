@@ -47,8 +47,7 @@
 
 #include "sp_unify_xsb_i.h"
 
-extern char *p_charlist_to_c_string(prolog_term term, char *outstring, 
-				    int outstring_size,
+extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
@@ -56,7 +55,11 @@ extern void c_string_to_p_charlist(char *name, prolog_term list,
 extern Cell ptoc_tag(int regnum);
 
 static Cell term, term2;
-static char output_buffer[5*MAXBUFSIZE], input_buffer[4*MAXBUFSIZE];
+
+static vstrDEFINE(input_buffer);
+static vstrDEFINE(subst_buf);
+static vstrDEFINE(output_buffer);
+
 
 
 /* R1: +Substring; R2: +String; R3: ?Pos
@@ -122,13 +125,14 @@ bool substring(void)
   int beg_offset=0, end_offset=0, input_len=0, substring_len=0;
   int conversion_required=FALSE;
 
+  vstrSET(&output_buffer,"");
+
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string =
-      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
-			     "SUBSTRING", "input string");
+    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+					  "SUBSTRING", "input string");
     conversion_required = TRUE;
   } else
     xsb_abort("SUBSTRING: Arg 1 (the input string) must be an atom or a character list");
@@ -166,15 +170,15 @@ bool substring(void)
 
   /* do the actual replacement */
   substring_len = end_offset-beg_offset;
-  strncpy(output_buffer, input_string+beg_offset, substring_len);
-  *(output_buffer+substring_len) = '\0';
+  vstrAPPENDBLK(&output_buffer, input_string+beg_offset, substring_len);
+  vstrNULL_TERMINATE(&output_buffer);
   
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer, output_term,
+    c_string_to_p_charlist(output_buffer.string, output_term,
 			   "SUBSTRING", "Arg 4");
   else
-    c2p_string(output_buffer, output_term);
+    c2p_string(output_buffer.string, output_term);
   
   return(TRUE);
 }
@@ -205,17 +209,16 @@ bool string_substitute(void)
   int last_pos = 0; /* last scanned pos in input string */
   /* the output buffer is made large enough to include the input string and the
      substitution string. */
-  char subst_buf[MAXBUFSIZE];
-  char *output_ptr;
   int conversion_required=FALSE; /* from C string to Prolog char list */
+
+  vstrSET(&output_buffer,"");
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string =
-      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
-			     "STRING_SUBSTITUTE", "input string");
+    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+					  "STRING_SUBSTITUTE", "input string");
     conversion_required = TRUE;
   } else
     xsb_abort("STRING_SUBSTITUTE: Arg 1 (the input string) must be an atom or a character list");
@@ -240,14 +243,11 @@ bool string_substitute(void)
   subst_str_list_term1 = subst_str_list_term;
 
   if (is_nil(subst_spec_list_term1)) {
-    strncpy(output_buffer, input_string, sizeof(output_buffer));
+    vstrSET(&output_buffer, input_string);
     goto EXIT;
   }
   if (is_nil(subst_str_list_term1))
     xsb_abort("STRING_SUBSTITUTE: Arg 3 must not be an empty list");
-
-  /* initialize output buf */
-  output_ptr = output_buffer;
 
   do {
     subst_reg_term = p2p_car(subst_spec_list_term1);
@@ -260,9 +260,9 @@ bool string_substitute(void)
       if (is_string(subst_str_term)) {
 	subst_string = string_val(subst_str_term);
       } else if (is_list(subst_str_term)) {
-	subst_string =
-	  p_charlist_to_c_string(subst_str_term, subst_buf, sizeof(subst_buf),
-				 "STRING_SUBSTITUTE", "substitution string");
+	subst_string = p_charlist_to_c_string(subst_str_term, &subst_buf,
+					      "STRING_SUBSTITUTE",
+					      "substitution string");
       } else 
 	xsb_abort("STRING_SUBSTITUTE: Arg 3 must be a list of strings");
     }
@@ -283,30 +283,22 @@ bool string_substitute(void)
       xsb_abort("STRING_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
 
     /* do the actual replacement */
-    strncpy(output_ptr, input_string + last_pos, beg_offset - last_pos);
-    output_ptr = output_ptr + beg_offset - last_pos;
-    if (sizeof(output_buffer)
-	> (output_ptr - output_buffer + strlen(subst_string)))
-      strcpy(output_ptr, subst_string);
-    else
-      xsb_abort("STRING_SUBSTITUTE: Substitution result size %d > maximum %d",
-		beg_offset + strlen(subst_string),
-		sizeof(output_buffer));
+    vstrAPPENDBLK(&output_buffer, input_string+last_pos, beg_offset-last_pos);
+    vstrAPPEND(&output_buffer, subst_string);
     
     last_pos = end_offset;
-    output_ptr = output_ptr + strlen(subst_string);
 
   } while (!is_nil(subst_spec_list_term1));
 
-  if (sizeof(output_buffer) > (output_ptr-output_buffer+input_len-end_offset))
-    strcat(output_ptr, input_string+end_offset);
+  vstrAPPEND(&output_buffer, input_string+end_offset);
 
  EXIT:
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer,output_term,"STRING_SUBSTITUTE","Arg 4");
+    c_string_to_p_charlist(output_buffer.string, output_term,
+			   "STRING_SUBSTITUTE", "Arg 4");
   else
-    c2p_string(output_buffer, output_term);
+    c2p_string(output_buffer.string, output_term);
   
   return(TRUE);
 }

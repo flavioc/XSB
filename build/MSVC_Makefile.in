@@ -141,6 +141,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\biassert.obj"
 	-@erase "$(OBJDIR)\builtin.obj"
 	-@erase "$(OBJDIR)\cinterf.obj"
+	-@erase "$(OBJDIR)\chat.obj"
 	-@erase "$(OBJDIR)\debug_xsb.obj"
 	-@erase "$(OBJDIR)\dis.obj"
 	-@erase "$(OBJDIR)\dynload.obj"
@@ -153,14 +154,14 @@ CLEAN :
 	-@erase "$(OBJDIR)\init_xsb.obj"
 	-@erase "$(OBJDIR)\io_builtins_xsb.obj"
 	-@erase "$(OBJDIR)\loader_xsb.obj"
-	-@erase "$(OBJDIR)\chat.obj
+	-@erase "$(OBJDIR)\main_xsb.obj"
 	-@erase "$(OBJDIR)\memory_xsb.obj"
 	-@erase "$(OBJDIR)\orastuff.obj"
+	-@erase "$(OBJDIR)\orient_xsb.obj"
 	-@erase "$(OBJDIR)\psc_xsb.obj"
 	-@erase "$(OBJDIR)\private_builtin.obj"
 	-@erase "$(OBJDIR)\residual.obj"
 	-@erase "$(OBJDIR)\scc_xsb.obj"
-	-@erase "$(OBJDIR)\orient_xsb.obj"
 	-@erase "$(OBJDIR)\slgdelay.obj"
 	-@erase "$(OBJDIR)\struct_manager.obj"
 	-@erase "$(OBJDIR)\sub_insert.obj"
@@ -177,12 +178,12 @@ CLEAN :
 	-@erase "$(OBJDIR)\tst_retrv.obj"
 	-@erase "$(OBJDIR)\tst_unify.obj"
 	-@erase "$(OBJDIR)\tst_utils.obj"
-	-@erase "$(OBJDIR)\main_xsb.obj"
 	-@erase "$(OBJDIR)\pathname_xsb.obj"
 	-@erase "$(OBJDIR)\odbc_xsb.obj"
 	-@erase "$(OBJDIR)\error_xsb.obj"
 	-@erase "$(OBJDIR)\socket_xsb.obj"
 	-@erase "$(OBJDIR)\string_xsb.obj"
+	-@erase "$(OBJDIR)\varstring.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -200,6 +201,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/dis.obj" \
 	"$(OBJDIR)/dynload.obj" \
 	"$(OBJDIR)/emuloop.obj" \
+	"$(OBJDIR)/error_xsb.obj" \
 	"$(OBJDIR)/findall.obj" \
 	"$(OBJDIR)/function.obj" \
 	"$(OBJDIR)/hash_xsb.obj" \
@@ -209,10 +211,12 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/io_builtins_xsb.obj" \
 	"$(OBJDIR)/loader_xsb.obj" \
 	"$(OBJDIR)/memory_xsb.obj" \
+	"$(OBJDIR)/odbc_xsb.obj" \
+	"$(OBJDIR)/orient_xsb.obj" \
+	"$(OBJDIR)/pathname_xsb.obj" \
 	"$(OBJDIR)/psc_xsb.obj" \
 	"$(OBJDIR)/private_builtin.obj" \
 	"$(OBJDIR)/residual.obj" \
-	"$(OBJDIR)/orient_xsb.obj" \
 	"$(OBJDIR)/slgdelay.obj" \
 	"$(OBJDIR)/subp.obj" \
 	"$(OBJDIR)/struct_manager.obj" \
@@ -230,11 +234,9 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/tst_retrv.obj" \
 	"$(OBJDIR)/tst_unify.obj" \
 	"$(OBJDIR)/tst_utils.obj" \
-	"$(OBJDIR)/pathname_xsb.obj" \
-	"$(OBJDIR)/odbc_xsb.obj" \
-	"$(OBJDIR)/error_xsb.obj" \
 	"$(OBJDIR)/socket_xsb.obj" \
-	"$(OBJDIR)/string_xsb.obj"
+	"$(OBJDIR)/string_xsb.obj" \
+	"$(OBJDIR)/varstring.obj"
 
 # DLLs don't use main_xsb.c
 !IF  "$(DLL)" == "no"

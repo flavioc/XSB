@@ -48,15 +48,17 @@
 #define CASEFOLD_UNSUPPORTED 0
 #endif
 
-extern char *p_charlist_to_c_string(prolog_term term, char *outstring,
-				    int outstring_size,
+extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring,
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
-static char wild_buffer[MAXBUFSIZE], input_string_buffer[4*MAXBUFSIZE];
 static prolog_term wild_term, input_string_term;
 
 static char *lowercase_string(char *str);
+
+static vstrDEFINE(wild_buffer);
+static vstrDEFINE(input_string_buffer);
+
 
 /* XSB wildcard matcher entry point 
 ** Arg1: wildcard, Arg2: string to be matched, Arg3: IgnoreCase flag */
@@ -79,8 +81,7 @@ bool do_wildmatch__(void)
   if (is_string(wild_term))
     wild_ptr = string_val(wild_term);
   else if (is_list(wild_term))
-    wild_ptr = p_charlist_to_c_string(wild_term, wild_buffer,
-				      sizeof(wild_buffer),
+    wild_ptr = p_charlist_to_c_string(wild_term, &wild_buffer,
 				      "WILDMATCH", "wildcard");
   else
     xsb_abort("WILDMATCH: Wildcard (Arg 1) must be an atom or a character list");
@@ -90,8 +91,7 @@ bool do_wildmatch__(void)
     input_string = string_val(input_string_term);
   else if (is_list(input_string_term)) {
     input_string = p_charlist_to_c_string(input_string_term,
-					  input_string_buffer,
-					  sizeof(wild_buffer),
+					  &input_string_buffer,
 					  "WILDMATCH", "input string");
   } else
     xsb_abort("WILDMATCH: Input string (Arg 2) must be an atom or a character list");
@@ -142,8 +142,7 @@ bool do_glob_directory__(void)
   if (is_string(wild_term))
     wild_ptr = string_val(wild_term);
   else if (is_list(wild_term)) {
-    wild_ptr = p_charlist_to_c_string(wild_term, wild_buffer,
-				      sizeof(wild_buffer),
+    wild_ptr = p_charlist_to_c_string(wild_term, &wild_buffer,
 				      "GLOB_DIRECTORY", "wildcard");
   }
   else
@@ -236,8 +235,7 @@ bool do_convert_string__(void)
     input_string = string_val(input_string_term);
   else if (is_list(input_string_term)) {
     input_string = p_charlist_to_c_string(input_string_term,
-					  input_string_buffer,
-					  sizeof(wild_buffer),
+					  &input_string_buffer,
 					  "STRING_CONVERT", "input string");
     to_string_conversion_required = TRUE;
   } else

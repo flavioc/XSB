@@ -53,7 +53,7 @@ extern char *expand_filename(char *);
 extern void xsb_sprint_variable(char *sptr, CPtr var);
 
 
-char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
+char *p_charlist_to_c_string(prolog_term term, VarString *buf,
 			     char *in_func, char *where);
 void c_string_to_p_charlist(char *name, prolog_term list,
 			    char *in_func, char *where);
@@ -288,10 +288,11 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
    This function converts escape sequences in the Prolog string
    (except octal/hexadecimal escapes) into the corresponding real characters.
 */
-char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
+char *p_charlist_to_c_string(prolog_term term, VarString *buf,
 			     char *in_func, char *where)
 {
-  int i = 0, head_val;
+  int head_val;
+  char head_char[1];
   int escape_mode=FALSE;
   prolog_term list = term, list_head;
 
@@ -299,7 +300,9 @@ char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
     xsb_abort("%s: %s is not a list of characters", in_func, where);
   }
 
-  while (is_list(list) && i < buf_size) {
+  vstrSET(buf, "");
+
+  while (is_list(list)) {
     if (is_nil(list)) break;
     list_head = p2p_car(list);
     if (!is_int(list_head)) {
@@ -312,53 +315,50 @@ char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
 		in_func, where);
     }
 
-    head_val = (char) head_val;
+    *head_char = (char) head_val;
     /* convert ecape sequences */
     if (escape_mode)
-      switch (head_val) {
+      switch (*head_char) {
       case 'a':
-	buf[i] = '\a';
+	vstrAPPENDBLK(buf, "\a", 1);
 	break;
       case 'b':
-	buf[i] = '\b';
+	vstrAPPENDBLK(buf, "\b", 1);
 	break;
       case 'f':
-	buf[i] = '\f';
+	vstrAPPENDBLK(buf, "\f", 1);
 	break;
       case 'n':
-	buf[i] = '\n';
+	vstrAPPENDBLK(buf, "\n", 1);
 	break;
       case 'r':
-	buf[i] = '\r';
+	vstrAPPENDBLK(buf, "\r", 1);
 	break;
       case 't':
-	buf[i] = '\t';
+	vstrAPPENDBLK(buf, "\t", 1);
 	break;
       case 'v':
-	buf[i] = '\v';
+	vstrAPPENDBLK(buf, "\v", 1);
 	break;
       default:
-	buf[i] = head_val;
+	vstrAPPENDBLK(buf, head_char, 1);
       }
     else
-      buf[i] = head_val;
+      vstrAPPENDBLK(buf, head_char, 1);
 
-    if (buf[i] == '\\' && !escape_mode)
+    if (*head_char == '\\' && !escape_mode) {
       escape_mode = TRUE;
+      buf->length--; /* backout the last char */
+    }
     else {
-      i++;
       escape_mode = FALSE;
     }
     list = p2p_cdr(list);
   } /* while */
 
-  buf[i] = '\0';
+  vstrNULL_TERMINATE(buf);
 
-  if (!is_nil(list))
-    xsb_warn("%s: %s is larger than the maximum allowed (%d)",
-	     in_func, where,buf_size);
-
-  return (buf);
+  return (buf->string);
 }
 
 
@@ -398,7 +398,7 @@ void c_string_to_p_charlist(char *name, prolog_term list,
 
 DllExport bool call_conv is_charlist(prolog_term term, int *size)
 {
-  int escape_mode=FALSE, head_val;
+  int escape_mode=FALSE, head_char;
   prolog_term list, head;
 
   list = term;
@@ -418,12 +418,12 @@ DllExport bool call_conv is_charlist(prolog_term term, int *size)
     if (!is_int(head)) 
       return FALSE;
     
-    head_val = int_val(head);
-    if (head_val < 0 || head_val > 255) 
+    head_char = (char) int_val(head);
+    if (head_char < 0 || head_char > 255) 
       return FALSE;
 
     if (escape_mode)
-      switch (head_val) {
+      switch (head_char) {
       case 'a':
       case 'b':
       case 'f':
@@ -438,7 +438,7 @@ DllExport bool call_conv is_charlist(prolog_term term, int *size)
 	(*size) += 2;
       }
     else
-      if (head_val == '\\') 
+      if (head_char == '\\') 
 	escape_mode = TRUE;
       else
 	(*size)++;
@@ -451,9 +451,9 @@ DllExport bool call_conv is_charlist(prolog_term term, int *size)
 /* they extend the c interface to allow for an easy interface for 
 lists of characters */
     
-DllExport void call_conv p2c_chars(prolog_term term, char *buf, int bsize)
+DllExport char *call_conv p2c_chars(prolog_term term, VarString *buf)
 {
-  buf = p_charlist_to_c_string(term, buf, bsize, "p2c_chars", "list -> char*");
+  return p_charlist_to_c_string(term, buf, "p2c_chars", "list -> char*");
 }
 
 DllExport void call_conv c2p_chars(char *str, prolog_term term)
@@ -989,20 +989,21 @@ int mustquote(char *atom)
 }
 
 /* copy a string (quoted if !toplevel and necessary) into a buffer.  */
-void printpstring(char *atom, int toplevel, char *straddr, int *ind)
+void printpstring(char *atom, int toplevel, VarString *straddr)
 {
     int i;
    
     if (toplevel || !mustquote(atom)) {
-        strcpy(straddr+*ind,atom);
-        *ind += strlen(atom);
+      vstrAPPEND(straddr,atom);
     } else {
-        straddr[(*ind)++] = '\'';
-        for (i = 0; atom[i] != '\0'; i++) {
-            straddr[(*ind)++] = atom[i];
-            if (atom[i] == '\'') straddr[(*ind)++] = '\'';
-        }
-        straddr[(*ind)++] = '\'';
+      vstrAPPENDBLK(straddr, "'", 1);
+      for (i = 0; atom[i] != '\0'; i++) {
+	vstrAPPENDBLK(straddr, atom+i, 1);
+	if (atom[i] == '\'')
+	  /* double the quotes in a quoted string */
+	  vstrAPPENDBLK(straddr, "'", 1);
+      }
+      vstrAPPEND(straddr, "'");
     }
 }
     
@@ -1045,60 +1046,52 @@ int clenpterm(prolog_term term)
 char tempstring[MAXBUFSIZE];
 
 /* print a prolog_term into a buffer.
-   Atoms are quoted if !toplevel -- necessary for Prolog reading */
-void print_pterm(prolog_term term, int toplevel, char *straddr, int *ind)
+   Atoms are quoted if !toplevel -- necessary for Prolog reading 
+   Buffer is a VarString. If the VarString is non-empty, the term is appended
+   to the current contents of the VarString.
+*/
+void print_pterm(prolog_term term, int toplevel, VarString *straddr)
 {
   int i;
 
   if (is_var(term)) {
-      xsb_sprint_variable(tempstring, (CPtr) term);
-      strcpy(straddr+*ind,tempstring);
-      *ind += strlen(tempstring);
+    xsb_sprint_variable(tempstring, (CPtr) term);
+    vstrAPPEND(straddr,tempstring);
   } else if (is_int(term)) {
-      sprintf(tempstring,"%d", (int) p2c_int(term));
-      strcpy(straddr+*ind,tempstring);
-      *ind += strlen(tempstring);
+    sprintf(tempstring,"%d", (int) p2c_int(term));
+    vstrAPPEND(straddr,tempstring);
   } else if (is_float(term)) {
-      sprintf(tempstring,"%f", (float) p2c_float(term));
-      strcpy(straddr+*ind,tempstring);
-      *ind += strlen(tempstring);
+    sprintf(tempstring,"%f", (float) p2c_float(term));
+    vstrAPPEND(straddr,tempstring);
   } else if (is_nil(term)) {
-      strcpy(straddr+*ind,"[]");
-      *ind += 2;
+    vstrAPPEND(straddr,"[]");
   } else if (is_string(term)) {
-      printpstring(p2c_string(term),toplevel,straddr,ind);
+    printpstring(p2c_string(term),toplevel,straddr);
   } else if (is_list(term)) {
-      strcpy(straddr+*ind,"[");
-      *ind += 1;
-      print_pterm(p2p_car(term),FALSE,straddr,ind);
+    vstrAPPEND(straddr, "[");
+    print_pterm(p2p_car(term),FALSE,straddr);
+    term = p2p_cdr(term);
+    while (is_list(term)) {
+      vstrAPPEND(straddr, ",");
+      print_pterm(p2p_car(term),FALSE,straddr);
       term = p2p_cdr(term);
-      while (is_list(term)) {
-          strcpy(straddr+*ind,",");
-          *ind += 1;
-          print_pterm(p2p_car(term),FALSE,straddr,ind);
-          term = p2p_cdr(term);
-      }
-      if (!is_nil(term)) {
-          strcpy(straddr+*ind,"|");
-          *ind += 1;
-          print_pterm(term,FALSE,straddr,ind);
-      }
-      strcpy(straddr+*ind,"]");
-      *ind += 1;
+    }
+    if (!is_nil(term)) {
+      vstrAPPEND(straddr, "|");
+      print_pterm(term,FALSE,straddr);
+    }
+    vstrAPPEND(straddr, "]");
   } else if (is_functor(term)) {
-      printpstring(p2c_functor(term),FALSE,straddr,ind);
-      if (p2c_arity(term) > 0) {
-          strcpy(straddr+*ind,"(");
-          *ind += 1;
-          print_pterm(p2p_arg(term,1),FALSE,straddr,ind);
-          for (i = 2; i <= p2c_arity(term); i++) {
-              strcpy(straddr+*ind,",");
-              *ind += 1;
-              print_pterm(p2p_arg(term,i),FALSE,straddr,ind);
-          }
-          strcpy(straddr+*ind,")");
-          *ind += 1;
+    printpstring(p2c_functor(term),FALSE,straddr);
+    if (p2c_arity(term) > 0) {
+      vstrAPPEND(straddr, "(");
+      print_pterm(p2p_arg(term,1),FALSE,straddr);
+      for (i = 2; i <= p2c_arity(term); i++) {
+	vstrAPPEND(straddr, ",");
+	print_pterm(p2p_arg(term,i),FALSE,straddr);
       }
+      vstrAPPEND(straddr, ")");
+    }
   } else xsb_warn("PRINT_PTERM: Unrecognized prolog term type");
 }
 
@@ -1107,18 +1100,15 @@ void print_pterm(prolog_term term, int toplevel, char *straddr, int *ind)
 /*	xsb_answer_string copies an answer from reg 2 into ans.		*/
 /*                                                                      */
 /************************************************************************/
-int xsb_answer_string(char *ans, int anslen, char *sep) {
-	int ind = 0;
-	int i;
-
-    if (anslen < clenpterm(reg_term(2)) + 10) return 3;
-	for (i=1; i<p2c_arity(reg_term(2)); i++) {
-		print_pterm(p2p_arg(reg_term(2),i),TRUE,ans,&ind);
-        strcpy(ans+ind,sep);
-        ind += strlen(sep);
-	}
-	print_pterm(p2p_arg(reg_term(2),p2c_arity(reg_term(2))),TRUE,ans,&ind);
-	return 0;
+int xsb_answer_string(VarString *ans, char *sep) {
+  int i;
+  
+  for (i=1; i<p2c_arity(reg_term(2)); i++) {
+    print_pterm(p2p_arg(reg_term(2),i),TRUE,ans);
+    vstrAPPEND(ans,sep);
+  }
+  print_pterm(p2p_arg(reg_term(2),p2c_arity(reg_term(2))),TRUE,ans);
+  return 0;
 }
 
 
@@ -1311,18 +1301,19 @@ DllExport int call_conv xsb_query_string(char *goal)
 /************************************************************************/
 /*                                                                      */
 /*  xsb_query_string_string calls xsb_query_string and returns          */
-/*	the answer in a string.  The answer is copied into ans, a string*/
-/*	provided by the caller, which is of length anslen.  Variable	*/
+/*	the answer in a string.  The answer is copied into ans,	        */
+/*	a VarString provided by the caller.  Variable	    	    	*/
 /*	values are separated by the string sep.				*/
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_query_string_string(char *goal, char *ans, int anslen, char *sep) {
-	int rc;
-
-	rc = xsb_query_string(goal);
-	if (rc > 0) return rc;
-	return xsb_answer_string(ans,anslen,sep);
+DllExport
+int call_conv xsb_query_string_string(char *goal, VarString *ans, char *sep) {
+  int rc;
+  
+  rc = xsb_query_string(goal);
+  if (rc > 0) return rc;
+  return xsb_answer_string(ans,sep);
 }
 
 /************************************************************************/
@@ -1353,19 +1344,16 @@ DllExport int call_conv xsb_next()
 
 /************************************************************************/
 /*                                                                      */
-/*	xsb_next_string(ans,anslen,sep) calls xsb_next() and returns the*/
-/*	answer returned in the string ans, provided by the caller.  Anslen*/
-/*	is the length of the area provided for the answer, and sep is a	*/
-/*	string that will be used to separate the fields of the answer.	*/
+/*	xsb_next_string(ans,sep) calls xsb_next() and returns the       */
+/*	answer in the VarString ans, provided by the caller.            */
+/*	sep is a separator for the fields of the answer.        	*/
 /*                                                                      */
 /************************************************************************/
 
-DllExport int call_conv xsb_next_string(char *ans, int anslen, char *sep) {
-	int rc;
-
-	rc = xsb_next();
-	if (rc > 0) return rc;
-	return xsb_answer_string(ans,anslen,sep);
+DllExport int call_conv xsb_next_string(VarString *ans, char *sep) {
+  int rc = xsb_next();
+  if (rc > 0) return rc;
+  return xsb_answer_string(ans,sep);
 }
 
 

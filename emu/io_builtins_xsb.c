@@ -60,7 +60,7 @@
 
 FILE *open_files[MAX_OPEN_FILES]; /* open file table */
 
-extern void print_pterm(prolog_term term,int toplevel,char *straddr,int *ind);
+extern void print_pterm(prolog_term term,int toplevel,VarString* saddr);
 
 static FILE *fptr;			/* working variable */
     
@@ -74,16 +74,20 @@ static FILE *fptr;			/* working variable */
 
 struct fmt_spec {
   char type; 	     	     	 /* i(nteger), f(loat), s(tring) */
-  /* in case of a print op and the specifiers *, this number is 1, 2, or 3,
-     depending the number of *'s. This tells how manu arguments to expect. In
-     case of a read operation, size can be 0, since here '*' means assignment
-     suppression. */
+  /* size: in case of a write op a the * format specifier (e.g., %*.*d), size
+     is 1, 2, or 3, depending the number of *'s in that particular format.
+     If there are no *'s, then this format correspnds to exactly one argument,
+     so size=1. If there is one "*", then this format corresponds to 2
+     arguments, etc.
+     This tells how manu arguments to expect.
+     In case of a read operation, size can be 0, since here '*' means
+     assignment suppression. */
   char size;
   char *fmt;
 };
 
-struct fmt_spec *next_format_substr(char *, int, int);
-char *p_charlist_to_c_string(prolog_term, char *, int, char *, char *);
+struct fmt_spec *next_format_substr(char*, int, int);
+char *p_charlist_to_c_string(prolog_term, VarString*, char*, char*);
 
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
@@ -105,47 +109,57 @@ char *p_charlist_to_c_string(prolog_term, char *, int, char *, char *);
 
 #ifdef HAVE_SNPRINTF
 /* like PRINT_ARG, but uses snprintf */
-#define SPRINT_ARG(arg) switch (current_fmt_spec->size) { \
-        case 1: bytes_formatted=snprintf(ptr_OutString, safe_outstring_bytes, \
+#define SPRINT_ARG(arg) \
+        vstrENSURE_SIZE(&OutString, OutString.length+SAFE_OUT_SIZE); \
+        switch (current_fmt_spec->size) { \
+        case 1: bytes_formatted=snprintf(OutString.string+OutString.length, \
+					 SAFE_OUT_SIZE, \
 					 current_fmt_spec->fmt, arg); \
 	        break; \
-	case 2: bytes_formatted=snprintf(ptr_OutString, safe_outstring_bytes, \
+	case 2: bytes_formatted=snprintf(OutString.string+OutString.length, \
+					 SAFE_OUT_SIZE, \
 					 current_fmt_spec->fmt, width, arg); \
 	        break; \
-	case 3: bytes_formatted=snprintf(ptr_OutString, safe_outstring_bytes, \
+	case 3: bytes_formatted=snprintf(OutString.string+OutString.length, \
+					 SAFE_OUT_SIZE, \
 					 current_fmt_spec->fmt, \
 					 width, precision, arg); \
 	        break; \
-	}
+	} \
+        OutString.length += bytes_formatted; \
+        vstrNULL_TERMINATE(&OutString);
 
 #else
-/* like PRINT_ARG, but uses sprintf -- used with compilers that don't have
-   snprintf. 
+/* like PRINT_ARG, but uses sprintf -- used with old compilers that don't have
+   snprintf.  This is error-prone: don't use broken compilers!!!
    In some systems sprintf returns it's first argument, so have to use
-   strlen for portability.
+   strlen to count bytes formatted, for portability.
    */
-#define SPRINT_ARG(arg) switch (current_fmt_spec->size) { \
-        case 1: sprintf(ptr_OutString, current_fmt_spec->fmt, arg); \
-		bytes_formatted = strlen(ptr_OutString); \
+#define SPRINT_ARG(arg) \
+    	vstrENSURE_SIZE(&OutString, OutString.length+SAFE_OUT_SIZE); \
+     	switch (current_fmt_spec->size) { \
+        case 1: sprintf(OutString.string+OutString.length, \
+			current_fmt_spec->fmt, arg); \
+		bytes_formatted = strlen(OutString.string+OutString.length); \
 	        break; \
-	case 2: sprintf(ptr_OutString, current_fmt_spec->fmt, width, arg); \
-		bytes_formatted = strlen(ptr_OutString); \
+	case 2: sprintf(OutString.string+OutString.length, \
+			current_fmt_spec->fmt, width, arg); \
+		bytes_formatted = strlen(OutString.string+OutString.length); \
 	        break; \
-	case 3: sprintf(ptr_OutString, current_fmt_spec->fmt, \
-					width, precision, arg); \
-		bytes_formatted = strlen(ptr_OutString); \
+	case 3: sprintf(OutString.string+OutString.length, \
+			current_fmt_spec->fmt, \
+			width, precision, arg); \
+		bytes_formatted = strlen(OutString.string+OutString.length); \
 	        break; \
-	}
+	} \
+        OutString.length += bytes_formatted; \
+        vstrNULL_TERMINATE(&OutString);
 #endif
 
-#define CHECK_OUTPUT_SIZE \
-    	if ((bytes_formatted < 0) || (bytes_formatted > safe_outstring_bytes)) { \
-	    xsb_abort("FMT_WRITE_STRING: Output exceeds max size; trailing bytes might be lost"); \
-	} else { /* advance string pointer, adjust safe_outstring_bytes */  \
-      	    safe_outstring_bytes -= bytes_formatted; \
-	    ptr_OutString += bytes_formatted; \
-    	    *ptr_OutString = '\0'; \
-        }
+
+/* these are static & global, to save on alloc overhead and large footprint  */
+static vstrDEFINE(FmtBuf);    	       	      /* holder of format            */
+static vstrDEFINE(StrArgBuf);      	      /* holder for string arguments */
 
 bool fmt_write(void);
 bool fmt_write_string(void);
@@ -177,26 +191,25 @@ bool formatted_io (void)
 bool fmt_write(void)
 {
   char *Fmt=NULL, *str_arg;
-  static char Fmt_buf[MAXBUFSIZE+1];
-  static char str_arg_buf[MAXBUFSIZE+1];      /* holder for string arguments */
   static char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity=0;
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
-  int offset;	       	       	       	      /* used in print_term 	     */
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
+  vstrSET(&StrArgBuf,"");
+
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
+    Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
 				 "FMT_WRITE", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE: Format must be an atom or a character string");
+    xsb_abort("FMT_WRITE: format must be an atom or a character string");
 
   ValTerm = reg_term(4);
   if (is_functor(ValTerm))
@@ -257,9 +270,8 @@ bool fmt_write(void)
 
     if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
-      offset = 0;
-      print_pterm(Arg, 1, str_arg_buf, &offset);
-      PRINT_ARG(str_arg_buf);
+      print_pterm(Arg, TRUE, &StrArgBuf);
+      PRINT_ARG(StrArgBuf.string);
     } else if (is_string(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       str_arg = string_val(Arg);
@@ -267,7 +279,7 @@ bool fmt_write(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, str_arg_buf, sizeof(str_arg_buf),
+      str_arg = p_charlist_to_c_string(Arg, &StrArgBuf,
 				       "FMT_WRITE", aux_msg);
       PRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
@@ -279,10 +291,10 @@ bool fmt_write(void)
       float_arg = float_val(Arg);
       PRINT_ARG(float_arg);
     } else {
-      xsb_abort("FMT_WRITE: Argument %d has illegal type\n", i);
+      xsb_abort("FMT_WRITE: argument %d has illegal type", i);
     }
     current_fmt_spec = next_format_substr(Fmt,
-					  0 /* no initialize */,
+					  0 /* don't initialize */,
 					  0 /* write */ );
   }
 
@@ -321,36 +333,31 @@ int sprintf(char *s, const char *format, /* args */ ...);
 bool fmt_write_string(void)
 {
   char *Fmt=NULL, *str_arg;
-  static char Fmt_buf[MAXBUFSIZE+1];
-  static char str_arg_buf[MAXBUFSIZE+1];    /* holder for string arguments  */
-  static char OutString[MAX_SPRINTF_STRING_SIZE+1];
+  static vstrDEFINE(OutString);
   static char aux_msg[50];
-  char *ptr_OutString = OutString;
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity;
   long int_arg;     	     	     	    /* holder for int args     	    */
   float float_arg;     	     	     	    /* holder for float args   	    */
   struct fmt_spec *current_fmt_spec;
-  int offset;	       	       	       	    /* used in print_term 	    */
   int width=0, precision=0;      	    /* these are used in conjunction
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
 					       returned by sprintf/snprintf */
-  int safe_outstring_bytes = SAFE_OUT_SIZE; /* safe number of bytes to write
-					       to OutString 	    	    */
+  vstrSET(&StrArgBuf,"");
+  vstrSET(&OutString,"");
 
   if (isnonvar(reg_term(2)))
-    xsb_abort("Usage: fmt_write_string(-OutStr, +FmtStr, +args(A1,A2,...))");
+    xsb_abort("FMT_WRITE_STRING: Arg 1 must be an unbound variable");
   
-  OutString[0] = '\0'; 	       	            /* anull the output string 	    */
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
+    Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
 				 "FMT_WRITE_STRING", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE_STRING: Format must be an atom or a character string");
+    xsb_abort("FMT_WRITE_STRING: format must be an atom or a character string");
 
   ValTerm = reg_term(4);
   if (is_functor(ValTerm))
@@ -390,7 +397,6 @@ bool fmt_write_string(void)
       SPRINT_ARG("");
       if (i < Arity)
 	xsb_warn("FMT_WRITE_STRING: More arguments than format specifiers");
-      CHECK_OUTPUT_SIZE; /* might xsb_abort */
       goto EXIT_WRITE_STRING;
     }
 
@@ -412,9 +418,8 @@ bool fmt_write_string(void)
 
     if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
-      offset = 0;
-      print_pterm(Arg, 1, str_arg_buf, &offset);
-      SPRINT_ARG(str_arg_buf);
+      print_pterm(Arg, TRUE, &StrArgBuf);
+      SPRINT_ARG(StrArgBuf.string);
     } else if (is_string(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       str_arg = string_val(Arg);
@@ -422,7 +427,7 @@ bool fmt_write_string(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, str_arg_buf, sizeof(str_arg_buf),
+      str_arg = p_charlist_to_c_string(Arg, &StrArgBuf,
 				       "FMT_WRITE_STRING", aux_msg);
       SPRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
@@ -434,18 +439,16 @@ bool fmt_write_string(void)
       float_arg = float_val(Arg);
       SPRINT_ARG(float_arg);
     } else {
-      xsb_abort("FMT_WRITE_STRING: Argument %d has illegal type\n", i);
+      xsb_abort("FMT_WRITE_STRING: argument %d has illegal type", i);
     }
     current_fmt_spec = next_format_substr(Fmt,
-					  0 /* no initialize */,
+					  0 /* don't initialize */,
 					  0 /* write */ );
-    CHECK_OUTPUT_SIZE; /* might xsb_abort */
   }
 
   /* print the remainder of the format string, if it exists */
   if (current_fmt_spec->type == '.') {
       SPRINT_ARG("");
-      CHECK_OUTPUT_SIZE; /* might xsb_abort */
   }
 
  EXIT_WRITE_STRING:
@@ -455,7 +458,7 @@ bool fmt_write_string(void)
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
      Therefore, must use string_find(..., 1). */
-  ctop_string(2, string_find(OutString,1));
+  ctop_string(2, string_find(OutString.string,1));
   
   return TRUE;
 }
@@ -475,11 +478,9 @@ bool fmt_write_string(void)
 bool fmt_read(void)
 {
   char *Fmt=NULL;
-  static char Fmt_buf[MAXBUFSIZE+1];
   prolog_term AnsTerm, Arg, Fmt_term;
   Integer i ;
-  static char str_arg[MAXBUFSIZE];     	      /* holder for string arguments */
-  static char aux_fmt[MAXBUFSIZE];     	      /* auxiliary fmt holder 	     */
+  static vstrDEFINE(aux_fmt);     	      /* auxiliary fmt holder 	     */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -487,16 +488,16 @@ bool fmt_read(void)
   int number_of_successes=0, curr_assignment=0;
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
-  
+
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
+    Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
 				 "FMT_READ", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_READ: Format must be an atom or a character string");
+    xsb_abort("FMT_READ: format must be an atom or a character string");
 
   AnsTerm = reg_term(4);
   if (is_functor(AnsTerm))
@@ -517,17 +518,17 @@ bool fmt_read(void)
     p2p_unify(TmpArg, AnsTerm);
     AnsTerm = TmpAnsTerm;
   } else
-    xsb_abort("Usage: fmt_read([IOport,] FmtStr, args(A1,A2,...), RetCode");
+    xsb_abort("Usage: fmt_read([IOport,] FmtStr, args(A1,A2,...), Feedback)");
 
   /* status variable */
   if (isnonvar(reg_term(5)))
-    xsb_abort("Usage: fmt_read([IOport,] FmtStr, args(A1,A2,...), RetCode");
+    xsb_abort("FMT_READ: Arg 4 must be an unbound variable");
 
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */
 					1);  /* read    	      	     */
-  strncpy(aux_fmt, current_fmt_spec->fmt, MAXBUFSIZE-4);
-  strcat(aux_fmt,"%n");
+  vstrSET(&aux_fmt, current_fmt_spec->fmt);
+  vstrAPPEND(&aux_fmt,"%n");
 
   for (i = 1; (i <= Arity); i++) {
     Arg = p2p_arg(AnsTerm,i);
@@ -542,7 +543,7 @@ bool fmt_read(void)
     case '-':
       /* we had an assignment suppression character: just count how 
 	 many chars were scanned, don't skip to the next scan variable */
-      fscanf(fptr, aux_fmt, &curr_chars_consumed);
+      fscanf(fptr, aux_fmt.string, &curr_chars_consumed);
       curr_assignment = 0;
       i--; /* don't skip scan variable */
       cont = 1; /* don't leave the loop */
@@ -553,8 +554,10 @@ bool fmt_read(void)
 	xsb_warn("FMT_READ: More arguments than format specifiers");
       goto EXIT_READ;
     case 's':
-      curr_assignment = fscanf(fptr, aux_fmt,
-			       str_arg, &curr_chars_consumed);
+      vstrENSURE_SIZE(&StrArgBuf, MAX_IO_BUFSIZE);
+      curr_assignment = fscanf(fptr, aux_fmt.string,
+			       StrArgBuf.string,
+			       &curr_chars_consumed);
       /* if no match, leave prolog variable uninstantiated;
 	 if it is a prolog constant, then return FALSE (no unification) */
       if (curr_assignment <= 0) {
@@ -562,8 +565,9 @@ bool fmt_read(void)
 	else return FALSE;
       }
       if (is_var(Arg))
-	c2p_string(str_arg,Arg);
-      else if (strcmp(str_arg,string_val(Arg))) return FALSE;
+	c2p_string(StrArgBuf.string,Arg);
+      else if (strcmp(StrArgBuf.string, string_val(Arg)))
+	return FALSE;
       break;
     case 'n':
       int_arg = -1;
@@ -574,10 +578,10 @@ bool fmt_read(void)
       int_arg += chars_accumulator;
       if (is_var(Arg))
 	c2p_int(int_arg,Arg);
-      else xsb_abort("FMT_READ: Argument %i must be a variable", i);
+      else xsb_abort("FMT_READ: argument %i must be a variable", i);
       break;
     case 'i':
-      curr_assignment = fscanf(fptr, aux_fmt,
+      curr_assignment = fscanf(fptr, aux_fmt.string,
 			       &int_arg, &curr_chars_consumed);
       /* if no match, leave prolog variable uninstantiated;
 	 if it is a prolog constant, then return FALSE (no unification) */
@@ -590,7 +594,7 @@ bool fmt_read(void)
       else if (int_arg != int_val(Arg)) return FALSE;
       break;
     case 'f':
-      curr_assignment = fscanf(fptr, aux_fmt,
+      curr_assignment = fscanf(fptr, aux_fmt.string,
 			       &float_arg, &curr_chars_consumed);
       /* floats never unify with anything */
       if (!is_var(Arg)) return FALSE;
@@ -599,7 +603,7 @@ bool fmt_read(void)
       c2p_float(float_arg, Arg);
       break;
     default:
-      xsb_abort("FMT_READ: Unsupported format specifier for argument %d\n", i);
+      xsb_abort("FMT_READ: unsupported format specifier for argument %d", i);
     }
 
     chars_accumulator +=curr_chars_consumed;
@@ -612,10 +616,10 @@ bool fmt_read(void)
       break;
 
     current_fmt_spec = next_format_substr(Fmt,
-					  0 /* no initialize */,
+					  0 /* don't initialize */,
 					  1 /* read */ );
-    strcpy(aux_fmt, current_fmt_spec->fmt);
-    strcat(aux_fmt,"%n");
+    vstrSET(&aux_fmt, current_fmt_spec->fmt);
+    vstrAPPEND(&aux_fmt,"%n");
   }
 
   /* if there are format specifiers beyond what corresponds to the last
@@ -626,7 +630,7 @@ bool fmt_read(void)
     curr_assignment = fscanf(fptr, current_fmt_spec->fmt);
   /* last format substr with assignment suppression (spec size=0) */
   if (current_fmt_spec->size == 0)
-    fscanf(fptr, aux_fmt, &curr_chars_consumed);
+    fscanf(fptr, aux_fmt.string, &curr_chars_consumed);
 
   /* check for end of file */
   if ((number_of_successes == 0) && (curr_assignment < 0))
@@ -882,7 +886,7 @@ int read_canonical(void)
 		if (*token->value == '[') {
 		  if(token->nextch == ']') {
 			if (optop >= OPSTK_SIZE)
-			  xsb_abort("read_canonical op stack overflow");
+			  xsb_abort("READ_CANONICAL: op stack overflow");
 			token = GetToken(filep,instr,prevchar);
 			/* print_token(token->type,token->value); */
 			prevchar = token->nextch;
@@ -892,7 +896,7 @@ int read_canonical(void)
 			postopreq = TRUE;
 		  } else {	/* beginning of a list */
 			if (funtop >= OPSTK_SIZE)
-			  xsb_abort("read_canonical fun stack overflow");
+			  xsb_abort("READ_CANONICAL: fun stack overflow");
 			funstk[funtop].funop = optop;
 			funstk[funtop].funtyp = FUNLIST;	/* assume regular list */
 			funtop++;
@@ -902,7 +906,7 @@ int read_canonical(void)
 	  /* let a punctuation mark be a functor symbol */
       case TK_FUNC:
 	        if (funtop >= OPSTK_SIZE)
-		  xsb_abort("read_canonical op stack overflow");
+		  xsb_abort("READ_CANONICAL: op stack overflow");
 		funstk[funtop].fun = (char *)string_find(token->value,1);
 		funstk[funtop].funop = optop;
 		funstk[funtop].funtyp = FUNFUN;	/* functor */
@@ -917,13 +921,13 @@ int read_canonical(void)
       case TK_VVAR:
 	        if ((token->value)[1] == 0) { /* anonymous var */
 		  if (cvarbot < 0)
-		    xsb_abort("Too many variables in read_canonical term");
+		    xsb_abort("READ_CANONICAL: too many variables in term");
 		  i = cvarbot;
 		  vars[cvarbot].varid = (Cell) "_";
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
 		  if (optop >= OPSTK_SIZE)
-		    xsb_abort("read_canonical op stack overflow");
+		    xsb_abort("READ_CANONICAL: op stack overflow");
 		  opstk[optop].typ = TK_VAR;
 		  opstk[optop].op = (prolog_term) i;
 		  optop++;
@@ -940,13 +944,13 @@ int read_canonical(void)
 		}
 		if (i == cvarbot) {
 		  if (cvarbot < 0)
-		    xsb_abort("Too many variables in read_canonical term");
+		    xsb_abort("READ_CANONICAL: too many variables in term");
 		  vars[cvarbot].varid = (Cell) cvar;
 		  vars[cvarbot].varval = 0;
 		  cvarbot--;
 		}
 		if (optop >= OPSTK_SIZE)
-		  xsb_abort("read_canonical op stack overflow");
+		  xsb_abort("READ_CANONICAL: op stack overflow");
 		opstk[optop].typ = TK_VAR;
 		opstk[optop].op = (prolog_term) i;
 		optop++;
@@ -954,7 +958,7 @@ int read_canonical(void)
 		break;
       case TK_REAL:
 	        if (optop >= OPSTK_SIZE)
-		  xsb_abort("read_canonical op stack overflow");
+		  xsb_abort("READ_CANONICAL: op stack overflow");
 		opstk[optop].typ = TK_REAL;
 		float_temp = (float) *(double *)(token->value);
 		opstk[optop].op = makefloat(float_temp);
@@ -963,7 +967,7 @@ int read_canonical(void)
 		break;
       case TK_INT:
 	        if (optop >= OPSTK_SIZE)
-		  xsb_abort("read_canonical op stack overflow");
+		  xsb_abort("READ_CANONICAL: op stack overflow");
 		opstk[optop].typ = TK_INT;
 		opstk[optop].op = makeint(*(long *)token->value);
 		optop++;
@@ -971,7 +975,7 @@ int read_canonical(void)
 		break;
       case TK_ATOM:
 	        if (optop >= OPSTK_SIZE)
-		  xsb_abort("read_canonical op stack overflow");
+		  xsb_abort("READ_CANONICAL: op stack overflow");
 		opstk[optop].typ = TK_ATOM;
 		opstk[optop].op = makestring((char *)string_find(token->value,1));
 		optop++;
@@ -998,7 +1002,7 @@ int read_canonical(void)
 	arg2 = (Cell)Areg(2);
 	deref(arg2);
 	if (isnonvar(arg2)) 
-	  xsb_abort("read_canonical argument must be a variable\n");
+	  xsb_abort("READ_CANONICAL: argument must be a variable");
 	bind_ref((CPtr)arg2,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
 	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /*??*/
@@ -1046,10 +1050,9 @@ contcase:
 struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 {
   static int current_substr_start;   /* current substr pointer */
-  static char workspace[MAXBUFSIZE]; /* copy of format used as workspace */
+  static vstrDEFINE(workspace);      /* copy of format used as workspace */
   static char saved_char;    	     /* place to save char that we
 				        temporarily replace with '\0' */
-  static int length;	    	     /* length of format string */
   int pos, keep_going;
   char *ptr;
   static struct fmt_spec result;
@@ -1057,12 +1060,10 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 
   if (initialize) {
     current_substr_start = 0;
-    length = strlen(format);
-    strncpy(workspace, format, MAXBUFSIZE);
-    workspace[length] = '\0';
+    vstrSET(&workspace,format);
   } else {
     /* restore char that was replaced with \0 */
-    workspace[current_substr_start] = saved_char;
+    workspace.string[current_substr_start] = saved_char;
   }
 
   pos = current_substr_start;
@@ -1070,24 +1071,24 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
   result.size = 1;
 
   /* done scanning format string */
-  if (current_substr_start >= length) {
+  if (current_substr_start >= workspace.length) {
     result.type = '.'; /* last substring (and has no conversion spec) */
-    result.fmt = "";
+    result.fmt  = "";
     return(&result);
   }
 
   /* find format specification: % not followed by % */
   do {
     /* last substring (and has no conversion spec) */
-    if ((ptr=strchr(workspace+pos, '%')) == NULL) {
-      current_substr_start = length;
+    if ((ptr=strchr(workspace.string+pos, '%')) == NULL) {
+      current_substr_start = workspace.length;
       result.type = '.';  /* last substring with no type specifier */
-      result.fmt = workspace+pos;
+      result.fmt  = workspace.string+pos;
       return(&result);
     }
 
-    pos = (ptr - workspace) + 1;
-    if (workspace[pos] == '%')
+    pos = (ptr - workspace.string) + 1;
+    if (workspace.string[pos] == '%')
       pos++;
     else break;
   } while (1);
@@ -1096,19 +1097,21 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
      ends at a valid conversion character is a conversion specifier. */ 
   keep_going = TRUE;
   expect = exclude = "";
-  while ((pos < length) && keep_going) {
-    if (strchr(exclude, workspace[pos]) != NULL) {
-      xsb_abort("Illegal format specifier `%c' in: %s",
-		workspace[pos], workspace+current_substr_start);
+  while ((pos < workspace.length) && keep_going) {
+    if (strchr(exclude, workspace.string[pos]) != NULL) {
+      xsb_abort("FMT_READ/WRITE: illegal format specifier `%c' in: %s",
+		workspace.string[pos],
+		workspace.string+current_substr_start);
     }
-    if (strlen(expect) && strchr(expect, workspace[pos]) == NULL) {
-      xsb_abort("Illegal format specifier `%c' in: %s",
-		workspace[pos], workspace+current_substr_start);
+    if (strlen(expect) && strchr(expect, workspace.string[pos]) == NULL) {
+      xsb_abort("FMT_READ/WRITE: illegal format specifier `%c' in: %s",
+		workspace.string[pos],
+		workspace.string+current_substr_start);
     }
 
     expect = exclude = "";
 
-    switch (workspace[pos++]) {
+    switch (workspace.string[pos++]) {
     case '1': /* flags, precision, etc. */
     case '2':
     case '3':
@@ -1173,11 +1176,11 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
     case 'S':
       keep_going = FALSE;
       result.type = 'S'; /* string */
-      workspace[pos-1] = 's';
+      workspace.string[pos-1] = 's';
       break;
     case 'p':
-      xsb_abort("Format specifier %%p not supported: %s",
-		workspace+current_substr_start);
+      xsb_abort("FMT_READ/WRITE: format specifier %%p not supported: %s",
+		workspace.string+current_substr_start);
     case 'n':
       if (read_op) {
 	result.type = 'n'; /* %n is like integer, but in fmt_read we treat it
@@ -1185,18 +1188,18 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 	keep_going = FALSE;
 	break;
       }
-      xsb_abort("Format specifier %%n not supported: %s",
-		workspace+current_substr_start);
+      xsb_abort("FMT_WRITE: format specifier %%n not supported: %s",
+		workspace.string+current_substr_start);
     case '[':
       /* scanf feature: [...] */
       if (!read_op) {
-	xsb_abort("Format specifier [ is invalid for output: %s",
-		  workspace+current_substr_start);
+	xsb_abort("FMT_WRITE: format specifier [ is invalid for output: %s",
+		  workspace.string+current_substr_start);
       }
-      while ((pos < length) && (workspace[pos++] != ']'));
-      if (workspace[pos-1] != ']') {
-	xsb_abort("Format specifier [ has no matching ] in: %s",
-		  workspace+current_substr_start);
+      while ((pos < workspace.length) && (workspace.string[pos++] != ']'));
+      if (workspace.string[pos-1] != ']') {
+	xsb_abort("FMT_READ: format specifier [ has no matching ] in: %s",
+		  workspace.string+current_substr_start);
       }
       result.type = 's';
       keep_going = FALSE;
@@ -1207,11 +1210,11 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 	result.size = 0;
 	break;
       }
-      if (strncmp(workspace+pos, ".*", 2) == 0) {
+      if (strncmp(workspace.string+pos, ".*", 2) == 0) {
 	pos = pos+2;
 	expect = "feEgEscdiuoxX";
 	result.size = 3;
-      } else if (workspace[pos] == '.') {
+      } else if (workspace.string[pos] == '.') {
 	pos++;
 	expect = "0123456789";
 	result.size = 2;
@@ -1222,14 +1225,15 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       break;
 
     default:
-      xsb_abort("Character `%c' in illegal format context: %s",
-		workspace[pos-1], workspace+current_substr_start);
+      xsb_abort("FMT_READ/WRITE: character `%c' in illegal format context: %s",
+		workspace.string[pos-1],
+		workspace.string+current_substr_start);
     }
   }
 
-  saved_char = workspace[pos];
-  workspace[pos] = '\0';
-  result.fmt = workspace+current_substr_start;
+  saved_char = workspace.string[pos];
+  workspace.string[pos] = '\0';
+  result.fmt = workspace.string+current_substr_start;
   current_substr_start = pos;
   return(&result);
 }

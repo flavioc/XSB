@@ -50,8 +50,8 @@
 #include "setjmp_xsb.h"
 #include "auxlry.h"
 #include "psc_xsb.h"
-#include "cinterf.h"
 #include "cell_xsb.h"
+#include "cinterf.h"
 #include "error_xsb.h"
 
 /*=========================================================================*/
