@@ -714,10 +714,6 @@ Example:
 \end{description}
 
 
-\comment{
-The following section about socket is provided by Juliana.
-- Baoqiu (1/16/1999)
-}
 
 \section{Socket I/O}
 
@@ -739,6 +735,14 @@ Examples can be found in the examples directory in the XSB source tree.
 \ouritem{socket(-Sockfd)}\index{{\tt socket/1}}
     A socket Sockfd in the AF\_INET domain is created (AF\_UNIX is not
 implemented). 
+
+\ouritem{socket\_set\_option(+Sockfd,+OptionName,+Value)}\index{{\tt socket\_set\_option/3}}
+    Set socket option. At present, only the {\tt linger} option is
+    supported. ``Lingering'' is a situation when a socket continues to live
+    after it was shut down by the owner. This is used in order to let the
+    client program that uses the socket to finish reading or writing
+    from/to the socket. {\tt Value} represents the number of seconds to linger.
+    The value -1 means do not linger at all.
 
 \ouritem{socket\_close(+Sockfd)}\index{{\tt socket\_close/1}}
     Sockfd is closed. Sockets used in socket\_connect/2 should not be
@@ -812,6 +816,15 @@ socket(-Sockfd) :
 Creates a new TCP communication end point of type AF_INET. Succeeds with
 binding Sockfd to a small integer called a socket descriptor.
 
+socket\_set\_option(+Sockfd,+OptionName,Value) :
+    Set socket option. At present, only the {\tt linger} option is
+    supported. ``Lingering'' is a situation when a socket continues to live
+    after it was shut down by the owner. This is used in order to let the
+    client program that uses the socket to finish reading or writing
+    from/to the socket. {\tt Value} represents the number of seconds to linger.
+    The value -1 means do not linger at all.
+
+
 socket_bind(+Sockfd, +Port) :
 Used for attaching a specific local (integer) Port for the socket with
 descriptor Sockfd.
@@ -861,6 +874,12 @@ The above calls can be used for sending/flushing and receiving Data over a
 Unix file descriptor Sockfileptr associated with a socket. Sockfileptr can be
 either obtained from the socket_accept(+Sockfd, -Sockfileptr) in server mode
 or from socket_connect(+Sockfd, +Port, +Hostname, -Sockfileptr) in client mode.
+
+socket_get0(+Sockfd, -Char, -ErrorCode):
+The equivalent of {\tt get0} for sockets.
+
+socket_put(+Sockfd, -Char):
+Similar to put/1, but works on sockets.
 
 }
 
