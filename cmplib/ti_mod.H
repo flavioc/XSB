@@ -25,11 +25,11 @@
 
 :- export ti_pred_block/3, force_ti_mod_loaded/0.
 
-:- import integer/1, number/1, name/2 from standard.
-:- import sym_name/3, sym_insert/5, sym_pass_thru/1 from symtab.
+:- import option/1 from auxlry.
+:- import str_cat/3 from string.
 :- import gensym/2 from prof_sbp.
 :- import gensym_pred/2 from preproc.
-:- import str_cat/3, str_fromlist/2 from string.
-:- import option/1 from auxlry.
 :- import membercheck/2 from listutil.
+:- import sym_name/3, sym_insert/5, sym_pass_thru/1 from symtab.
+:- import integer/1, number/1, atom_codes/2, number_codes/2 from standard.
 

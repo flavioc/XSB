@@ -220,12 +220,12 @@ compare_args(Arg1,Arg2,Arg1,Name1,Arity1,SubArgs1,SubArgs2) :-
 
 make_name(ArgName,ArgArity,OutName) :-
 	( integer(ArgName) ->
-		name(ArgName,L), str_fromlist(OutName,L)
+		number_codes(ArgName,L), atom_codes(OutName,L)
 	; number(ArgName) ->
 		OutName = 'F'
 	; ArgArity > 0 ->
 		str_cat(ArgName,'/',Temp0),
-		name(ArgArity,L), str_fromlist(Temp1,L),
+		number_codes(ArgArity,L), atom_codes(Temp1,L),
 		str_cat(Temp0,Temp1,OutName)
 	;
 		OutName = ArgName
