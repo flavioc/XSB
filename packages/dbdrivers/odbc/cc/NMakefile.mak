@@ -2,10 +2,10 @@
 
 XSBDIR=..\..\..\..
 MYPROGRAM=odbc_driver
-DRIVER_MANAGER_LIB="$(XSBDIR)\packages\dbdrivers\cc\driver_manager.lib"
+DRIVER_MANAGER_LIB="$(XSBDIR)\config\x86-pc-windows\bin\driver_manager.lib"
 
 CPP=cl.exe
-OUTDIR=.
+OUTDIR=$(XSBDIR)\config\x86-pc-windows\bin
 INTDIR=.
 
 ALL : "$(OUTDIR)\$(MYPROGRAM).dll"

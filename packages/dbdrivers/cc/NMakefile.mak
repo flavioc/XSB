@@ -4,7 +4,7 @@ XSBDIR=..\..\..
 MYPROGRAM=driver_manager
 
 CPP=cl.exe
-OUTDIR=.
+OUTDIR=$(XSBDIR)\config\x86-pc-windows\bin
 INTDIR=.
 
 ALL : "$(OUTDIR)\$(MYPROGRAM).dll"
