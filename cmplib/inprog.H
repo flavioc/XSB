@@ -24,7 +24,7 @@
 */
 
 
-:- export force_inprog_loaded/0, inprog/4.
+:- export force_inprog_loaded/0, inprog/3.
 
 :- import member1/2 from auxlry.
 :- import gennum/1 from prof_sbp.

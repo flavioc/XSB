@@ -28,7 +28,7 @@
 :- export force_tprog_loaded/0.
 
 :- import option/1 from auxlry.
-:- import inprog/4 from inprog.
+:- import inprog/3 from inprog.
 :- import merge/3 from listutil.
 :- import flatten/2 from flatten.
 :- import gennum/1 from prof_sbp.

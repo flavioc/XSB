@@ -26,7 +26,7 @@
 
 
 /*======================================================================*/
-/* inprog(+Sym, +Clause, -InClause, +NC)				*/
+/* inprog(+Sym, +Clause, -InClause,)					*/
 /*	Transforms a flattened internal source program clause into	*/
 /*	the intermediate form (the top level structures are both	*/
 /*	clause(Args,Body,Prag)).					*/
@@ -40,7 +40,7 @@
 /*		varocc (VPrag):	See end of file 'varproc.P'		*/
 /*======================================================================*/
 
-inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag), NC) :- 
+inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag)) :- 
     CPrag = crec(ARSize,_),
     VarTab = [head(VOList)|VarTab1],
     ( Body = inlinegoal(true,0,_) -> 

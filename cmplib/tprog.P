@@ -28,7 +28,7 @@
 /* compile_clause(+Sym, +Clause, -PilCode, -PilCodeR, +NC)      	*/
 /*	This procedure takes a clause in internal source form		*/
 /*	clause(_,_,_), translates it into the intermediate form		*/
-/*	clause(_,_,_) (done by the predicate inprog/4), and then	*/
+/*	clause(_,_,_) (done by the predicate inprog/3), and then	*/
 /*	produces the list of PIL instructions for that clause.		*/
 /*	- PilCode-PilCodeR is the difference list of the resulting	*/
 /*			   translation of the clause.			*/
@@ -39,7 +39,7 @@
 
 compile_clause(Sym, Clause, PilCode, PilCodeR, NC) :-
 	flatten(Clause, FlatClause),
-	inprog(Sym, FlatClause, InClause, NC),
+	inprog(Sym, FlatClause, InClause),
 	tclause(Sym, InClause, PilCode, PilCodeR, NC).
 
 % In tclause/2 Arsize1 is wordsize of local env (if needed),
