@@ -116,7 +116,6 @@
 	slg_not/1,
 	is_xwammode/1, 
 	close_open_tables/0, 
-	call_hash/5,
 	print_predicate_table/1, 
 	abolish_table_info/0,
 	zero_out_profile/0, 

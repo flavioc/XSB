@@ -132,7 +132,6 @@ slg_not(_SubgoalPtr) :- '_$builtin'(114).
 
 is_xwammode(_Flag) :- '_$builtin'(117).
 close_open_tables :- '_$builtin'(118).
-call_hash(_Term,_Ht_base,_Ar,_Chs,_Call_str):- '_$builtin'(119).
 print_predicate_table(_Psc):- '_$builtin'(120).
 
 file_read_line(_File, _String, _IsFullLine) :- '_$builtin'(123).
