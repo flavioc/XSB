@@ -1269,7 +1269,7 @@ contcase:     /* the main loop */
   Op1(get_xxa);
   ADVANCE_PC(size_xxx);
     pcreg=lpcreg; 
-    if (builtin_call((int)(op1))) {lpcreg=pcreg;}
+    if (builtin_call((byte)(op1))) {lpcreg=pcreg;}
     else Fail1;
     XSB_Next_Instr();
 
