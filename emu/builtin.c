@@ -371,7 +371,7 @@ DllExport char* call_conv ptoc_longstring(int regnum)
  *  For decoding object pointers, like PSC, PSC-PAIR and Subgoal frames.
  */
 #define ptoc_addr(regnum)	(void *)ptoc_int(regnum)
-#define is_encoded_addr(term)	isinteger(term)
+#define is_encoded_addr(term)	(isinteger(term) || isboxedinteger(term))
 #define decode_addr(term)	(void *)oint_val(term)
 
 
