@@ -317,7 +317,11 @@ load_dyn1(Rfname,Dir) :-
 	),
 	(   XPP_process = none, ! 
 	;   %% Wait, if gpp was spawned so as to not leave zombies
-	    process_control(XPP_process, wait),
+	    process_control(XPP_process, wait(ExitCode)),
+	    (ExitCode==0,!
+	    ; abort(('Error while preprocessing ', Rfname,
+		     '. Dynamic loading aborted.'))
+	    ),
 	    %% Also, release the file descriptor used to read from gpp
 	    file_close(XPPport)
 	),
@@ -446,7 +450,11 @@ load_dync1(Rfname,Dir) :-
 	),
 	(   XPP_process = none, ! 
 	;   %% Wait, if gpp was spawned so as to not leave zombies
-	    process_control(XPP_process, wait),
+	    process_control(XPP_process, wait(ExitCode)),
+	    (  ExitCode==0,!
+	    ; abort(('Error while preprocessing ', Rfname,
+		     '. Dynamic loading aborted.'))
+	    ),
 	    %% Also, release the file descriptor used to read from gpp
 	    file_close(XPPport)
 	),

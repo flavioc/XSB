@@ -182,7 +182,12 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    open_or_xpp_file(HFile,CPPprocess),
 	    read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile), !,
 	    (	CPPprocess = none, ! 
-	    ;	process_control(CPPprocess,wait),
+	    ;	
+		process_control(CPPprocess, wait(ExitCode)),
+		(ExitCode==0,!
+		; abort(('Error while preprocessing ', HFile,
+			 '. Dynamic loading aborted.'))
+		),
 		stat_flag(CURRENT_INPUT,FromPort),
 		file_close(FromPort)
 	    ),

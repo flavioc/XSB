@@ -1654,28 +1654,31 @@ following shell command:
 \end{enumerate}
 
 \begin{description}
-\ouritem{process\_status(+Pid,-Status)}\index{{\tt process\_status/2}} 
-    This predicate always succeeds. Given a process id, it binds the second
-    argument (which must be an unbound variable) to one of the following
-    atoms: {\tt running}, {\tt stopped}, {\tt exited} (normally), {\tt
-      aborted} (abnormally), {\tt invalid}, and {\tt unknown}.
-    The {\tt invalid} status is given to processes that never existed or
-    that are not children of the parent XSB process. The {\tt unknown}
-    status is assigned when none of the other statuses can be assigned.
+  \ouritem{process\_status(+Pid,-Status)}\index{{\tt process\_status/2}}
+  This predicate always succeeds. Given a process id, it binds the second
+  argument (which must be an unbound variable) to one of the following
+  atoms: {\tt running}, {\tt stopped}, {\tt exited\_normaly}, {\tt
+    exited\_abnormally}, {\tt aborted}, {\tt invalid}, and {\tt unknown}.
+  The {\tt invalid} status is given to processes that never existed or that
+  are not children of the parent XSB process. The {\tt unknown} status is
+  assigned when none of the other statuses can be assigned.
+  
+  Note: process status (other than {\tt running}) is system dependent.
+  Windows does not seem to support {\tt stopped} and {\tt aborted}.  Also,
+  processes killed using the \verb|process_control| predicate (described
+  next) are often marked as {\tt invalid} rather than {\tt exited}, because
+  Windows seems to lose all information about such processes. Process
+  status might be inaccurate in some Unix systems as well, if the process
+  has terminated and {\tt wait()} has been executed on that process.
 
-    Note: process status (other than {\tt running}) is system dependent.
-    Windows does not seem to support {\tt stopped} and {\tt aborted}.
-    Also, processes killed using the \verb|process_control| predicate
-    (described next) are often marked as {\tt invalid} rather than {\tt
-    exited}, because Windows seems to lose all information about such
-    processes.
 \ouritem{process\_control(+Pid,+Operation)}\index{{\tt process\_control/2}} 
     Perform a process control {\tt operation} on the process with the given
     {\tt Pid}. 
-    Currently, the only supported operations are {\tt kill} and {\tt wait}
-    (both must be atoms).
+    Currently, the only supported operations are {\tt kill} (an atom) and {\tt
+    wait(Code)} (a term).
     The former causes the process to exit unconditionally, and the latter
-    waits for process completion.
+    waits for process completion. When the process exits, {\tt Code} is
+    bound to the process exit code. The code for normal termination is 0.
 
     This predicate succeeds, if the operation was performed successfully.
     Otherwise, it fails. The {\tt wait} operation fails if the process

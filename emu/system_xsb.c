@@ -411,7 +411,7 @@ xsbBool sys_system(int callno)
     pid = int_val(pid_term);
 
     if (!is_var(status_term))
-      xsb_abort("[PROCESS_STATUS] Arg 2 (process staus) must be a variable");
+      xsb_abort("[PROCESS_STATUS] Arg 2 (process status) must be a variable");
     
     switch (process_status(pid)) {
     case RUNNING:
@@ -420,8 +420,11 @@ xsbBool sys_system(int callno)
     case STOPPED:
       c2p_string("stopped", status_term);
       break;
-    case EXITED:
-      c2p_string("exited", status_term);
+    case EXITED_NORMALLY:
+      c2p_string("exited_normally", status_term);
+      break;
+    case EXITED_ABNORMALLY:
+      c2p_string("exited_abnormally", status_term);
       break;
     case ABORTED:
       c2p_string("aborted", status_term);
@@ -437,7 +440,6 @@ xsbBool sys_system(int callno)
 
   case PROCESS_CONTROL: {
     /* sys_system(PROCESS_CONTROL, +Pid, +Signal). Signal: wait, kill */
-    char *signal;
     int status;
     prolog_term pid_term=reg_term(2), signal_term=reg_term(3);
 
@@ -447,11 +449,7 @@ xsbBool sys_system(int callno)
       xsb_abort("[PROCESS_CONTROL] Arg 1 (process id) must be an integer");
     pid = int_val(pid_term);
 
-    if (!is_string(signal_term))
-      xsb_abort("[PROCESS_CONTROL] Arg 2 (process status) must be a variable");
-    signal = string_val(signal_term);
-
-    if (strcmp(signal, "kill")==0) {
+    if (is_string(signal_term) && strcmp(string_val(signal_term), "kill")==0) {
       if (KILL_FAILED(pid))
 	return FALSE;
 #ifdef WIN_NT
@@ -459,13 +457,28 @@ xsbBool sys_system(int callno)
 #endif
       return TRUE;
     }
-    if (strcmp(signal, "wait")==0) {
+    if (is_functor(signal_term)
+	&& strcmp(p2c_functor(signal_term),"wait") == 0
+	&& p2c_arity(signal_term)==1) {
+      int exit_status;
+
       if (WAIT(pid, status) < 0)
 	return FALSE;
+
+#ifdef WIN_NT
+      exit_status = status;
+#else
+      if (WIFEXITED(status))
+	exit_status = WEXITSTATUS(status);
+      else
+	exit_status = -1;
+#endif
+
+      p2p_unify(p2p_arg(signal_term,1), makeint(exit_status));
       return TRUE;
     }
 
-    xsb_warn("[PROCESS_CONTROL] Invalid signal, %s", signal);
+    xsb_warn("[PROCESS_CONTROL] Arg 2: Invalid signal specification. Must be `kill' or `wait(Var)'");
     return FALSE;
   }
 
@@ -706,8 +719,10 @@ int process_status(int pid)
   if (GetExitCodeProcess((HANDLE) pid, &status)) {
     if (status == STILL_ACTIVE)
       return RUNNING;
+    else if (status == 0)
+      return EXITED_NORMALLY;
     else
-      return EXITED;
+      return EXITED_ABNORMALLY;
   } else
     return INVALID;
 #else
@@ -716,11 +731,16 @@ int process_status(int pid)
   /* don't wait for children that run or are stopped */
   retcode = waitpid(pid, &status, WNOHANG | WUNTRACED);
 
-  if (retcode == 0)    	   return RUNNING; /* running	       */
+  if (retcode == 0)    	   return RUNNING; /* running	                     */
   if (retcode < 0)         return INVALID; /* doesn't exist or isn't a child */
-  if (WIFSTOPPED(status))  return STOPPED; /* stopped	       */
-  if (WIFEXITED(status))   return EXITED;  /* exited normally  */
-  if (WIFSIGNALED(status)) return ABORTED; /* aborted	       */
+  if (WIFSTOPPED(status))  return STOPPED; /* stopped	                     */
+  if (WIFEXITED(status)) {  	    	   /* exited by an exit(code) stmt   */
+    if (WEXITSTATUS(status))
+      return EXITED_ABNORMALLY;
+    else
+      return EXITED_NORMALLY;
+  }
+  if (WIFSIGNALED(status)) return ABORTED; /* aborted	                     */
 
   return UNKNOWN; /*  unknown status */
 #endif

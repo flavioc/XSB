@@ -69,9 +69,10 @@ extern int kill(pid_t pid, int sig);
 #define MAX_SUBPROC_NUMBER 40  /* max number of subrocesses allowed       */
 
 
-#define RUNNING	       1
-#define STOPPED	       2
-#define EXITED	       3
-#define ABORTED	       4
-#define INVALID	       5
-#define UNKNOWN	       6
+#define RUNNING	               1
+#define STOPPED	      	       2
+#define EXITED_NORMALLY	       3
+#define EXITED_ABNORMALLY      4
+#define ABORTED	       	       5
+#define INVALID	       	       6
+#define UNKNOWN	       	       7
