@@ -1,6 +1,7 @@
 :- compiler_options([ciao_directives]).
 
 :- export
+	cdf_id_fields/4,
 	isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
 	hasAttr/3, immed_hasAttr/3, 
 	allAttr/3, immed_allAttr/3, 
@@ -210,6 +211,20 @@ init_index_std.
 
 system_component(cdf).
 system_component(cdfpt).
+
+:-
+comment(cdf_id_fields/4,"@tt{cdf_id_fields(ID,Functor,NatId,Component)}
+is true if ID is a legal cdf identifier term, and Functor is its main
+functor symbol, NatId is its first field and Component is its second
+field.").
+
+cdf_id_fields(id(N,S),id,N,S).
+cdf_id_fields(cid(N,S),cid,N,S).
+cdf_id_fields(oid(N,S),oid,N,S).
+cdf_id_fields(rid(N,S),rid,N,S).
+cdf_id_fields(crid(N,S),crid,N,S).
+cdf_id_fields(crrid(N,S),crid,N,S).
+cdf_id_fields(crcrid(N,S),crid,N,S).
 
 %%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -429,7 +444,7 @@ hasAttr_gen13(SCid,RCid,TCid) :-
 		 ;	isa(TCidP,TCid),
 			immed_hasAttr(SCid,RCid,TCidP)
 		)
-	 ;      isa(SCid,SCidP),
+	 ;      isa(SCid,SCidP), SCidP \== id('CDF Root',cdf),
 		immed_hasAttr(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
