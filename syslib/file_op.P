@@ -116,6 +116,7 @@ deactivate_op(T, S) :-
 '_$op1'(1100,fy,(ti)).		% Added for transformational indexing
 '_$op1'(1100,fy,(ti_off)).	% Added for transformational indexing
 '_$op1'(1100,fx,(mode)).	% Not in the Prolog standard
+'_$op1'(1100,fx,(document_export)).	% Not in the Prolog standard
 '_$op1'(1100,fx,(export)).	% Not in the Prolog standard
 '_$op1'(1100,fx,(parallel)).	% Not in the Prolog standard
 '_$op1'(1100,fx,(local)).	% Not in the Prolog standard
@@ -123,6 +124,7 @@ deactivate_op(T, S) :-
 '_$op1'(1100,fx,(compile_command)). % Not in the Prolog standard
 '_$op1'(1100,fx,(attribute)).	% Not in the Prolog standard
 '_$op1'(1050,fy,(import)).	% Not in the Prolog standard
+'_$op1'(1050,fy,(document_import)).	% Not in the Prolog standard
 '_$op1'(1050,xfx,(from)).	% Not in the Prolog standard
 '_$op1'(1050,xfy,'->').
 '_$op1'(1000,xfy,',').

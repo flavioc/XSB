@@ -24,3 +24,4 @@
 */
 
 :- export standard_symbol/3.
+:- export standard_metapredicate/3.

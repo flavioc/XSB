@@ -27,10 +27,17 @@
 % the ISO standard.  Unfortunately, it does not mean that the
 % semantics of the predicate exactly *follows* that of the standard. 
 
+% TLS: just did first pass at metapredicates.  In addition, need to do
+% bagofs, setofs and phrases.
+
 standard_symbol(abolish, 1, assert).
+standard_metapredicate(abolish,1,1).
+
 standard_symbol(abolish, 2, assert).			% Not ISO (Dec-10)
 standard_symbol(abolish_all_tables, 0, tables).		% Not ISO
 standard_symbol(abolish_table_call, 1, tables).		% Not ISO
+standard_metapredicate(abolish_table_call,1,1).
+
 standard_symbol(abolish_table_pred, 1, tables).		% Not ISO
 standard_symbol(abort, 0, standard).
 standard_symbol(abort, 1, standard).
@@ -38,8 +45,14 @@ standard_symbol(analyze_table, 1, tables).		% Not ISO
 standard_symbol(arg, 3, standard).
 standard_symbol(arg0, 3, standard).
 standard_symbol(assert, 1, assert).
+standard_metapredicate(assert,1,1).
+
 standard_symbol(asserta, 1, assert).
+standard_metapredicate(asserta,1,1).
+
 standard_symbol(assertz, 1, assert).
+standard_metapredicate(assertz,1,1).
+
 standard_symbol(atom, 1, standard).
 standard_symbol(atomic, 1, standard).
 standard_symbol(atom_chars, 2, standard).
@@ -48,12 +61,18 @@ standard_symbol(bagof, 3, setof).			% ISO
 standard_symbol(break, 0, x_interp).
 standard_symbol('C', 3, dcg).
 standard_symbol(call, 1, standard).
+standard_metapredicate(call,1,1).
+
 standard_symbol(callable, 1, standard).
+standard_metapredicate(callable,1,1).
+
 standard_symbol(catch, 3, standard).
 standard_symbol(throw, 1, standard).
 standard_symbol(cd, 1, shell).
 standard_symbol(cwd, 1, shell).
 standard_symbol(clause, 2, assert).
+standard_metapredicate(clause,2,1).
+
 standard_symbol(close, 1, standard).
 standard_symbol(compare, 3, standard).
 standard_symbol(compound, 1, standard).
@@ -113,6 +132,8 @@ standard_symbol(file_read_line_atom, 2, file_io).
 standard_symbol(file_reopen, 4, file_io).
 standard_symbol(file_write, 2, xsb_writ).
 standard_symbol(findall, 3, setof).
+standard_metapredicate(findall,3,2).
+
 standard_symbol(float, 1, standard).
 
 standard_symbol(path_sysop,2,file_io).
@@ -183,6 +204,8 @@ standard_symbol(number_digits, 2, standard).    % not ISO
 
 standard_symbol(obsolete, 2, obsolete).
 standard_symbol(once, 1, standard).
+standard_metapredicate(once,1,1).
+
 standard_symbol(op, 3, standard).
 standard_symbol(open, 3, standard).
 standard_symbol(otherwise, 0, standard).
@@ -208,7 +231,10 @@ standard_symbol(rename, 2, shell).		% obsolecent
 standard_symbol(repeat, 0, standard).
 standard_symbol(reset_dcg_mode,0,dcg).
 standard_symbol(retract, 1, assert).
+standard_metapredicate(retract,1,1).
+
 standard_symbol(retractall, 1, assert).
+standard_metapredicate(retractall,1,1).
 
 standard_symbol(see, 1, standard).
 standard_symbol(seeing, 1, standard).
@@ -251,8 +277,12 @@ standard_symbol(table_state, 4, tables).
 standard_symbol(tell, 1, standard).
 standard_symbol(telling, 1, standard).
 standard_symbol(tfindall, 3, tables).
+standard_metapredicate(tfindall,3,2).
+
 standard_symbol(tmpfile_open, 1, file_io).
 standard_symbol(tnot, 1, tables).
+standard_metapredicate(tnot,1,1).
+
 standard_symbol(told, 0, standard).
 standard_symbol(tphrase, 1, dcg).
 standard_symbol(tphrase, 2, dcg).
