@@ -28,14 +28,14 @@
 	expand_filename/2,
 	sys_system/7, formatted_io/5 
       from machine.
-:- import conpsc/2, psc_set_type/2, psc_set_prop/2 from machine.
+%%%:- import conpsc/2, psc_set_type/2, psc_set_prop/2 from machine.
 
 :- import
 	abort/1, atom_codes/2, '\='/2, repeat/0,
 	file_exists/1
       from standard.
 
-:- import gensym/2 from gensym.
+%%%:- import gensym/2 from gensym.
 
 :- import is_plain_file/1, is_directory/1, rename/2, rm/1, rmdir_rec/1, cwd/1,
 	sys_filecopy/3,

@@ -150,7 +150,7 @@
 	globalvar/1,
 	xsb_backtrace/0, xsb_backtrace/1.
 
-:- import assert/1, retract/1 from assert.
+:- import assert/1, retract/1, (dynamic)/1 from assert.
 :- import write/1, writeln/1, is_attv/1 from standard.
 
 :- export 

@@ -235,7 +235,7 @@ cut_transform(Head,Head). /* leave unchanged, Arity is one less */
 /*	If it is already a dynamic pred, simply return its Prref.	*/
 /*======================================================================*/
 
-dynamic((P1,P2)) :- dynamic(P1), dynamic(P2).
+dynamic((P1,P2)) :- !, dynamic(P1), dynamic(P2).
 dynamic(Spec) :- mpa_to_skel(Spec,Head), convert_to_dyna(Head,_).
 
 convert_to_dyna(PHead,Prref) :-

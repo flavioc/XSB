@@ -49,17 +49,23 @@ default_error_handler(Error) :-
 	fail.
 
 /* messages are handled via abort/1.  */
-default_sys_error_handler('_$abort_ball'(_BackTrace)):- 
+default_sys_error_handler('_$abort_ball'(Backtrace)):- 
 	% here is where we may do something abt backtraces.
-	get_sys_error_description('_$abort_ball'(_BackTrace),NewMsg),
+	get_sys_error_description('_$abort_ball'(Backtrace),NewMsg),
+	xsb_flag(backtrace_on_error,BT),
+	(BT == on
+	 ->	print_backtrace(Backtrace)
+	 ;	true
+	),
 	messageln(NewMsg,STDERR).
-default_sys_error_handler('_$abort_ball'(Msg,_BackTrace)) :-
+default_sys_error_handler('_$abort_ball'(Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
-%	xsb_flag(backtrace_on_error,BT),
-%	(BT == on -> 
-%                print_backtrace(BackTrace)
-%	  ; true),
-	get_sys_error_description('_$abort_ball'(Msg, _BackTrace),NewMsg),
+	get_sys_error_description('_$abort_ball'(Msg, Backtrace),NewMsg),
+	xsb_flag(backtrace_on_error,BT),
+	(BT == on
+	 ->	print_backtrace(Backtrace)
+	 ;	true
+	),
 	messageln(NewMsg,STDERR).
 default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.

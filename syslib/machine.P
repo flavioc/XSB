@@ -252,6 +252,7 @@ del_attr(Var,Mod) :-
               '$del_attr'(R,Mod,NR)
       ).
  
+:- dynamic verify_attribute_handler(_,_,_,_).
 install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
       ( retract(verify_attribute_handler(Mod,_,_,_)) ->
               write('Warning: replacing previous verify_attribute_handler for module '),write(Mod),writeln('.')

@@ -108,11 +108,11 @@
 :- import '_$load_undef'/1 from loader.
 :- import windows_os_loader/0 from loader.
 
-:- import call0/1, conname/2, conpsc/2, 
+:- import call0/1, conname/2,
 	  expand_filename/2, machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
-	  psc_name/2, psc_set_prop/2, psc_prop/2, psc_type/2,
-	  stat_set_flag/2, stat_flag/2, psc_set_type/2, term_compare/3,
+	  psc_name/2, psc_type/2,
+	  stat_set_flag/2, stat_flag/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, stat_walltime/1,
           term_psc/2, term_new/2, term_new_mod/3, term_type/2  %%, close_open_tables/0
 	  from machine.

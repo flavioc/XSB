@@ -46,7 +46,7 @@
 	  slash/1, term_psc/2, trimcore/0
      from machine.
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
-	  file_flush/2, ioport2iostream/2,
+          file_flush/2, /*ioport2iostream/2,*/
 	  fmt_write/3, file_getbuf_atom/4
     from file_io.
 :- import push_stdin/2, pop_stdin/1 from push_io.
