@@ -35,6 +35,11 @@ make_odbc_driverH(CC, CC_opts) :-
 	    %% fmt_write_string(ODBCDriverO, '%s%scc%sodbc_driver.o', 
 	    %%  	     f(ODBCDriverDir, Slash, Slash)),
 	
+	    /*
+	    fmt_write_string(LD_flags,
+			     ' %s%sdriver_manager.dll -lodbc -lodbccp32" ',
+			     f(ConfigBindir, Slash, MSVCPath, MSVCPath))
+	    */
 	    %% Change MSVCPath if Visual Studio is installed in a different dir
 	    MSVCPath = 'C:\program files\microsoft visual studio\vc98\lib',
 	    fmt_write_string(LD_flags,
@@ -46,15 +51,15 @@ make_odbc_driverH(CC, CC_opts) :-
 	;
 				% unix specific stuff
 	
-	fmt_write_string(LD_flags,
-		' %s %s %s%sdriver_manager.so %s%sodbc_driver.so -lodbc -ldl',
-		f(OdbcRunpathFlag, ODBC_libdir_flag, 
-		ConfigLibdir, Slash, ConfigLibdir, Slash))
+	    fmt_write_string(LD_flags,
+			     ' %s %s %s%sdriver_manager.so %s%sodbc_driver.so -lodbc -ldl',
+			     f(OdbcRunpathFlag, ODBC_libdir_flag, 
+			       ConfigLibdir, Slash, ConfigLibdir, Slash))
 	),
 	package_configuration(dir(odbc_driver), ODBCDriverDir),
 	fmt_write_string(LD_directives_file,
-		'%s%scc%sodbc_driver.H', f(ODBCDriverDir, 
-		Slash, Slash)),
+			 '%s%scc%sodbc_driver.H',
+			 f(ODBCDriverDir, Slash, Slash)),
 	telling(OldTell),
 	tell(LD_directives_file),
 	writeln('%% This file is generated on-the-fly by odbc_driver_config.P'),
@@ -70,7 +75,7 @@ make_odbc_driverH(CC, CC_opts) :-
 	writeln(''').'),
 	told,
 	tell(OldTell).
-    
+
 
 :-  package_configuration(dir(odbc_driver), ODBCDriverDir),
     slash(Slash),
