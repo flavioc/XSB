@@ -25,7 +25,7 @@
 /* 
 ** The user can define these things:
 **    hide_this_show(Pred,Arity): calls to hide, but show embedded calls
-**    hide_this_show(Pred,Arity): calls to hide along with embedded code
+**    hide_this_hide(Pred,Arity): calls to hide along with embedded code
 **    show_this_hide(Pred,Arity): calls to show, but hide embedded ones
 **
 **    trace_standard_predicate(Pred,Arity): normally trace doesn't go inside

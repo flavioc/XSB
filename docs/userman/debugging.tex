@@ -7,7 +7,7 @@
 \index{high-level tracing}
 \index{tracing!high-level}
 
-\ourprolog\ supports a version of the Byrd four-port debugger for debugging
+\ourprolog~ supports a version of the Byrd four-port debugger for debugging
 Prolog code.  In this release (\version), it does not work very well
 when debugging code involving tabled predicates.  If one only creeps
 (see below), the tracing can provide some useful information.  We do
@@ -95,7 +95,7 @@ Other standard predicates that are useful in debugging are:
     which case it refers to all predicates of any arity currently
     defined in {\tt usermod}.  It may optionally may be prefixed by a
     module name, e.g.  $ModName$:$P$/$N$. (Again, if the arity is
-    omitted, the specifaction refers to all predicates of any arity
+    omitted, the specification refers to all predicates of any arity
     with the given name currently defined in the given module.)  A spy
     specification may also indicate a conditional spy point. A
     conditional spy specification is a Prolog rule, the head
@@ -188,7 +188,7 @@ Other standard predicates that are useful in debugging are:
       if {\tt PredArityPairList} is a variable, all predicates previously
       placed on the ``untraceable''-list will be taken off.
     \item {\tt debug\_ctl(hidden, -List)}
-      This returns the list of preducates that the user said should not be
+      This returns the list of predicates that the user said should not be
       traced.
    \end{enumerate}
    %%
@@ -207,6 +207,39 @@ It causes trace information to be printed out at every call (including
 those to system trap handlers).  The volume of such trace information
 can very become large very quickly, so this method of tracing is not
 recommended in general.
+
+XSB debugger also provides means for the low-level control of what must be
+traced. Normally, various low-level predicates are masked out from the
+trace, since these predicates do not make sense to the application programmer.
+However, if tracing below the application level is needed, you can retract
+some of the facts specified in the file {\tt syslib/debugger\_data.P}
+(and in some cases assert into them). All these predicates are documented
+in the header of that file. Here we only mention the four predicates that an
+XSB developer is more likely to need. To get more trace, you should retract
+from the first three predicates and asert into the last one.
+%%
+\begin{itemize}
+\item {\tt hide\_this\_show(Pred,Arity)}: specifies calls (predicate name and
+  arity) that the debugger should {\tt not} show at the prompt. However,
+  the evaluation of this hidden call {\tt is} traced.
+\item {\tt hide\_this\_hide(Pred,Arity)}: specifies calls to hide. Trace
+  remains off while evaluating those predicates. Once trace is off, there
+  is no way to resume it until the hidden predicate exits or fails.
+\item  {\tt show\_this\_hide(Pred,Arity)}: calls to show at the
+  prompt. However, trace is switched off right after that.
+\item  {\tt trace\_standard\_predicate(Pred,Arity)}: Normally trace doesn't
+  go inside standard predicates ({\it i.e.}, those specified in
+  {\tt syslib/std\_xsb.P}. If you need to trace some of those, you must
+  {\tt assert} into this predicate.
+\end{itemize}
+%%
+In principle, by retracting all facts from the first three predicates and
+asserting enough facts into the last one, it is possible to achieve the
+behavior that approximates the {\tt -T} option. However, unlike {\tt -T},
+debugging can be done interactively. This does not obviate {\tt -T},
+however. First, it is easier to use {\tt -T} than to issue multiple asserts
+and retracts. Second, {\tt -T} can be used when the error occurs early on,
+before the moment when XSB shows its first prompt.
 
 
 %%% Local Variables: 
