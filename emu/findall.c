@@ -316,7 +316,8 @@ copy_again : /* for tail recursion optimisation */
        * are shared in the `to area'.
        */
       bld_attv(var, to);
-      cell(to) = (Cell) to++;
+      cell(to) = (Cell) to;
+      to++;
       goto copy_again;
     }
   } /* case ATTV */
@@ -560,7 +561,8 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
        */
       findall_trail(var,(Cell)var);
       bld_attv(var, to);
-      cell(to) = (Cell) to++;
+      cell(to) = (Cell) to;
+      to++;
       goto copy_again;
     }
     else {		  /* is a new attv in the `to area' */
@@ -969,7 +971,8 @@ copy_again : /* for tail recursion optimisation */
 	   */
 	  findall_trail(var,(Cell)var);
 	  bld_attv(var, to);
-	  cell(to) = (Cell) to++;
+	  cell(to) = (Cell) to;
+	  to++;
 	  goto copy_again;
 	} else			/* is a new attv in the `to area' */
 	  bld_attv(to, var);
