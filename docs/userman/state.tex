@@ -631,22 +631,28 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     The flag names currently supported are:
 
     \begin{center}
-    \begin{tabular}{||l|l||}               \hline
+    \begin{tabular}{||l|p{11cm}||}               \hline
 	{\em Flag Name}		& {\em Purpose} \\ \hline \hline
 	{\tt debugging}		& 
 		{\tt "on"} iff debug mode is on; {\tt "off"} otherwise.\\ \hline
 	{\tt tracing}		& 
 		{\tt "on"} iff trace mode is on; {\tt "off"} otherwise.\\ \hline
 	{\tt goal}		& 
-		the goal passed to XSB on command line; `{\tt true.}' if
-                nothing passed.\\ \hline
+		the goal passed to XSB on command line with the `-e'
+                switch; `{\tt true.}' if nothing is passed.
+                \\ \hline
+        {\tt dcg\_style}        &
+                the DCG style currently used; {\tt xsb} or {\tt standard}
+                (standard is used in Quintus, SICSTUS, etc.).
+                See Section~\ref{sec-dcg-differences} for more details.
+                \\ \hline
     \end{tabular}
     \end{center}
     
     Note that {\tt xsb\_flag} is used only for dynamic XSB settings, {\it
       i.e.}, settings that might change between sessions or within the same
-    session. For static configuration information, use {\tt
-      xsb\_configuration/2}. \index{{\tt xsb\_configuration/2}} 
+    session. For static configuration information, the predicate {\tt
+      xsb\_configuration/2} is used. \index{{\tt xsb\_configuration/2}} 
 
 \ouritem{hilog\_symbol(?Symbol)}\index{{\tt hilog\_symbol/1}}
     Succeeds iff {\tt Symbol} has been declared as a HiLog symbol, or 
@@ -697,5 +703,5 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual1"
 %%% End: 
