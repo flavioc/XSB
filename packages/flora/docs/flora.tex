@@ -141,7 +141,7 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\title{\FLORA's Secrets: An Object-Oriented Logic Programming and Deductive Database System}
+\title{\FLORA: The Secret of Object-Oriented Logic Programming}
 
 \author{
   Bertram Lud\"ascher
@@ -167,10 +167,10 @@ program. This program is then passed to XSB for compilation (yielding {\tt
   file.O}) and execution.
 
 \index{FLIP}
-The current version of \FLORA is implemented by Guizhen Yang under the
-supervision of Michael Kifer, and its  origins trace back to the \FLIP compiler
-developed by Bertram Lud\"aescher. The basic architectures of the two compilers
-are similar. However, unlike \FLIP, \FLORA is a complete application development
+The current version of \FLORA was implemented by Guizhen Yang, but its 
+origins trace back to the \FLIP compiler developed by Bertram
+Lud\"aescher, and the basic architectures of the two compilers are similar.
+However, unlike \FLIP, \FLORA is a complete application development
 platform with many features not found in \FLIP. It has a much more
 optimized compiler, and its tokenizer and parser are very different from
 \FLIP's.
@@ -329,7 +329,7 @@ tutorial are also valid \FLORA programs.
 
 
 
-\section{Insides of \FLORA}
+\section{Inside \FLORA}
 
 
 \FLORA consists of the following modules:
@@ -519,6 +519,8 @@ The following is adopted from \cite{ludaescher-himmeroeder-IS-98}.
     %%
     }
   %%
+\medskip
+  
   \index{object identifier}
     First-order terms over \funcs\ and \vars\ are called \emph{id-terms},
     and are used to name objects, methods, and classes.  Ground id-terms
@@ -745,7 +747,7 @@ path expressions are not allowed because the semantics is not always clear
 in such cases.
 
 \index{path expression!in rule head}
-The following is an example of a path expression in rule head. It demotes
+The following is an example of a path expression in rule head. It says
 that the mother of person X. The rule defines the grandsons of $X$'s
 mother.
 \begin{qrules}
@@ -1031,6 +1033,13 @@ aggregate must satisfy the following conditions:\\
 (1) Both $X$ and $Gs$ must
 appear in ${\it body}$; (2) $Gs$ should not contain $X$.
 
+\index{aggregates!min}
+\index{aggregates!max}
+\index{aggregates!count}
+\index{aggregates!sum}
+\index{aggregates!avg}
+\index{aggregates!collectset}
+\index{aggregates!collectbag}
 The following aggregate operators are supported: {\it min}, {\it max},
 {\it count}, {\it sum}, {\it avg}, {\it collectset} and {\it collectbag}.
 
@@ -1041,18 +1050,17 @@ instantiated to a non-number, {\it sum} and {\it avg} will discard it and
 generate a runtime warning message.
 
 For each group, the operator {\it collectbag} collects all the bindings of
-the aggregation variable into a list. The operator {\it collectset} works similarly
-to {\it collectbag}, except that all the duplicates are removed from the
-result list.
+the aggregation variable into a list. The operator {\it collectset} works
+similarly to {\it collectbag}, except that all the duplicates are removed
+from the result list.
 
-In general, aggregates can appear wherever a number or a list is allowed. Therefore,
-aggregates can be nested. The following examples illustrate the use of
-aggregates (some borrowed from the \FLORID manual):
-\begin{qrules}
-?- Z = min\{S; john[salary@(Year){\fd}S]\}. \\
-?- Z = count\{Year; john.salary@(Year) $<$ max\{S; john[salary@(Y){\fd}S], Y$<$Year\}\}. \\
-?- avg\{S[Who]; Who{\isa}employee[salary@(Year){\fd}S]\} $>$ 20000.
-\end{qrules}
+In general, aggregates can appear wherever a number or a list is
+allowed. Therefore, aggregates can be nested. The following examples
+illustrate the use of aggregates (some borrowed from the \FLORID manual):
+\begin{qrules} ?- Z = min\{S; john[salary@(Year){\fd}S]\}. \\ ?- Z =
+count\{Year; john.salary@(Year) $<$ max\{S; john[salary@(Y){\fd}S],
+Y$<$Year\}\}. \\ ?- avg\{S[Who]; Who{\isa}employee[salary@(Year){\fd}S]\}
+$>$ 20000.  \end{qrules}
 
 If an aggregate contains grouping variables that are \emph{not} bound by a
 preceding subgoal, then this aggregate would backtrack over such grouping
@@ -1342,7 +1350,7 @@ obj!!attr             means: some Y, such that obj[attr *->> Y].
 
 Although \FLORA allows the user to specify object types through signatures,
 type correctness is not being checked automatically. So, what are the
-signatures goof for then? One answer is that future versions of \FLORA
+signatures good for then? One answer is that future versions of \FLORA
 might support some forms of type checking. However, because F-logic can
 natively support powerful meta-programming, even the current level
 of support for signatures is useful. For instance, the programmer can write
@@ -1410,19 +1418,21 @@ These primitives are described in the XSB manual. However, \FLORA provides
 one primitive of its own: a {\em meta variable\/} that can range over methods of
 any arity.
 
-A meta variable is specified by a normal variable immediately following a ``@''
-sign, {\it e.g.}, @Method, @\_var, @\_. Note that @\_ represents a \emph{don't care}
-meta variable. The ``@'' sign is always considered as part of a meta variable's name.
-Thus, @M and M represent two different variables.
+A meta variable is specified by a normal variable immediately following a
+``@'' sign, {\it e.g.}, @Method, @\_var, @\_. Note that @\_ represents a
+\emph{don't care} meta variable. The ``@'' sign is always considered as
+part of a meta variable's name.  Thus, @M and M represent two different
+variables.
 
 Currently, a meta variable can only appear where a method together with its arguments
 is allowed. For instance, $\mathtt{john[@M{\fd}Salary], o_1.@M1.o_2[@M2{\mvd}r]}$.
 
-Note that a meta (method) variable does not represents an \fl object, but a method
-invocation expression instead, {\it i.e.}, a method together with its arguments.
-The =.. operator (like that of XSB) is used to obtain a method and its arguments from
-a method invocation expression (that is bound to a meta variable), or on the other hand,
-to build a method invocation expression out of a method and its arguments. For example,
+Note that a meta (method) variable does not represent an \fl object, but a
+method invocation expression instead, {\it i.e.}, a method together with
+its arguments.  The =.. operator (like that of XSB) is used to obtain a
+method and its arguments from a method invocation expression (that is bound
+to a meta variable), or on the other hand, to build a method invocation
+expression out of a method and its arguments. For example,
 \begin{verbatim}
 FLORA> ?- @M =.. [m,a1,a2].
 
@@ -1431,10 +1441,11 @@ FLORA> ?- @M =.. [m,a1,a2].
 Yes.
 \end{verbatim}
 
-The left hand side of =.. can be either a normal Prolog term or a meta variable. In the
-former case, =.. just works exactly the same as that of XSB, whereas in the latter case,
-the right hand side of =.. would try to unify with a list of \fl objects containing the
-method object as the first element followed by its argument objects.
+The left hand side of =.. can be either a normal Prolog term or a meta
+variable. In the former case, =.. just works exactly the same as that of
+XSB, whereas in the latter case, the right hand side of =.. would try to
+unify with a list of \fl objects containing the method object as the first
+element followed by its argument objects.
 
 Consider the example in Figure~\ref{fig:fig-metavar}:
 %%
