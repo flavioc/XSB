@@ -42,7 +42,7 @@
        stat_flag/2, stat_set_flag/3, str_insert/2, is_xwammode/1,
        close_open_tables/0, trimcore/0, 
        file_read_line/2, slash/1, fmt_write_string/3,
-       intern_string/2, file_open/3, file_close/1
+       file_open/3, file_close/1
    from machine.
 
 :- import file_write/2, file_nl/1 from xsb_writ.
@@ -52,3 +52,5 @@
 
 :- import xsb_configuration/2 from configuration.
 :- import [] / 0 from usermod.	       % just to make usermod typed "module"
+
+:- import xsb_flag/2 from curr_sym.

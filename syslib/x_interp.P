@@ -35,44 +35,49 @@
 :- interpreter.
 
 interpreter :-
-	set_inthandler('_$keyboard_int'(_), 1),         % MYSIG_KEYB
-	set_inthandler('_$calltonum'(_), 3),            % MYSIG_SPY
-	version_message,
-	prompt('| ?- ',[]),
-	prompt('',[],'_$more_prompt'(_)),
-	prompt(' ? ',[],'_$debug_prompt'(_)),
-	%% Execute command line goal passed to XSB with the -e option
-	stat_flag(21, CmdGoalUninterned),
-	intern_string(CmdGoalUninterned, CmdGoal),
-	%% If Goal is a command loop interpreter, like Flip, then abort/0
-	%% in that command loop will terminate XSB.
-	%% I couldn't manage to intercept abort/0    --mk
-	(CmdGoal == 'true.' -> true
-	  ; file_nl(1),
-	    file_write(1, 'Evaluating command line goal:  '),
-	    file_nl(1),
-	    file_write(1, '| ?- '),
-	    file_write(1, CmdGoal), file_nl(1),
-	    file_open(CmdGoal, 3, FileDes),
-	    file_read(FileDes, Goal),
-	    file_close(FileDes),
-	    call(Goal),
-	    file_nl(1)
-	),
+        set_inthandler('_$keyboard_int'(_), 1),         % MYSIG_KEYB
+        set_inthandler('_$calltonum'(_), 3),            % MYSIG_SPY
+        version_message,
+        prompt('| ?- ',[]),
+        prompt('',[],'_$more_prompt'(_)),
+        prompt(' ? ',[],'_$debug_prompt'(_)),
+        fail.
+
+interpreter :-
+        '_$savecp'(Cp),                    % to set abort cut point
+        conset('_$abort_cutpoint', Cp),
+        %% Execute command line goal passed to XSB with the -e option
+        xsb_flag(goal, CmdGoal),
+        (CmdGoal == 'true.' ->
+            true
+        ;   file_nl(1),
+            file_write(1, 'Evaluating command line goal:  '),
+            file_nl(1),
+            file_write(1, '| ?- '),
+            file_write(1, CmdGoal), file_nl(1),
+            file_open(CmdGoal, 3, FileDes),
+            file_read(FileDes, Goal),
+            file_close(FileDes),
+            call((Goal,!)),
+            file_nl(1)
+        ),
+        fail.
+
+interpreter :-
 	repeat,
-	    trimcore,
-	    '_$savecp'(Cp),			% to set abort cut point
-	    conset('_$abort_cutpoint', Cp),
-	    stat_set_flag(5, 1, 1),		% hide call interceptions.  
-	    stat_set_flag(7, 0,1),		% reset trace number
-	    conset('_$break_level', 0),
-	    print_debug_state,
-	    prompt(Prompt,Prompt),
-	    file_write(1, Prompt),
-	    file_read(0, X, Vars),
-	    ( nonvar(X), read_in_stop(X), halt, !	% end of top loop; halt
-	    ; process_query(X, Vars)
-	    ).
+	trimcore,
+	'_$savecp'(Cp),		% to set abort cut point
+	conset('_$abort_cutpoint', Cp),
+	stat_set_flag(5, 1, 1),	% hide call interceptions.
+	stat_set_flag(7, 0, 1),	% reset trace number
+	conset('_$break_level', 0),
+	print_debug_state,
+	prompt(Prompt,Prompt),
+	file_write(1, Prompt),
+	file_read(0, X, Vars),
+	(   nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
+	;   process_query(X, Vars)
+	).
 
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
 read_in_stop(end_of_file).	% pop a break level, out if at top
