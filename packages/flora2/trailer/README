@@ -1,0 +1,4 @@
+
+    This directory contains the trailers, which are generated at Flora
+    build time by combining the templates in headerinc/
+    This dir contains only .P files, which are all cleaned up by make clean.

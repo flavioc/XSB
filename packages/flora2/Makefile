@@ -86,6 +86,7 @@ all: init $(ALLOBJS) finish
 	cd trailer; $(MAKE)
 	cd lib; $(MAKE)
 	cd pkgs; $(MAKE)
+	cd demos; $(MAKE)
 
 
 flroperator.O : flroperator.P flroperator.H $(FLORA_TERMS)
@@ -176,7 +177,10 @@ clean:
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean
+	cd lib; $(MAKE) clean
+	cd p2h; $(MAKE) clean
 	cd trailer; $(MAKE) clean
+	cd demos; $(MAKE) clean
 	/bin/rm -f headerinc/*~
 	/bin/rm -f syslibinc/*~
 	/bin/rm -f includes/*~

@@ -1,4 +1,4 @@
-## File:      packages/flora2/lib/Makefile
+## File:      packages/flora2/demos/Makefile
 ## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
@@ -24,7 +24,9 @@
 
 XSBDIR=../../..
 
-ALL = 	flrprettyprint.P
+ALL = 	aggregate.P benchmark.P default.P family_obj.P \
+	family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \
+	mono_inherit.P rel_ops.P tree_traversal.P
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	$(XSBDIR)/emu/flag_defs_xsb.h \
@@ -56,9 +58,9 @@ HDRMSG = "While compiling XSB/packages/flora2/lib:"
 # suffix rules
 .SUFFIXES: .P .flr
 
-all: clean init recompile
+all: init recompile
 
-recompile: $(ALL) finish
+recompile: clean $(ALL) finish
 	@touch cmd...
 	$(Prolog) < cmd...
 	@rm cmd...

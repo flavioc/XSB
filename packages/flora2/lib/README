@@ -1,0 +1,3 @@
+This directory is for programs written in Flora that are integral 
+part of the Flora system.
+All the .P, .flh, .fdb files here are removed by the cleaning process.
