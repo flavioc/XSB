@@ -36,9 +36,7 @@ standard_symbol(arg, 3, standard).
 standard_symbol(arg0, 3, standard).
 standard_symbol(assert, 1, assert).
 standard_symbol(asserta, 1, assert).
-/* standard_symbol(asserta, 2, assert). */
 standard_symbol(assertz, 1, assert).
-/* standard_symbol(assertz, 2, assert). */
 standard_symbol(atom, 1, standard).
 standard_symbol(atomic, 1, standard).
 standard_symbol(atom_chars, 2, standard).
@@ -50,7 +48,6 @@ standard_symbol(call, 1, standard).
 standard_symbol(callable, 1, standard).
 standard_symbol(cd, 1, shell).
 standard_symbol(clause, 2, assert).
-/* standard_symbol(clause, 3, assert). */
 standard_symbol(close, 1, standard).
 standard_symbol(compare, 3, standard).
 standard_symbol(compound, 1, standard).
@@ -108,6 +105,7 @@ standard_symbol(file_write, 2, xsb_writ).
 standard_symbol(file_nl, 1, xsb_writ).
 standard_symbol(file_read, 2, xsb_read).
 
+standard_symbol(garbage_collection, 1, curr_sym).
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
 standard_symbol(get_call, 3, tables).
@@ -185,7 +183,6 @@ standard_symbol(repeat, 0, standard).
 standard_symbol(reset_dcg_mode,0,dcg).
 standard_symbol(retract, 1, assert).
 standard_symbol(retractall, 1, assert).
-/* standard_symbol(save, 1, standard). */
 standard_symbol(see, 1, standard).
 standard_symbol(seeing, 1, standard).
 standard_symbol(seen, 0, standard).
@@ -196,7 +193,7 @@ standard_symbol(set_timer, 1, standard).
 standard_symbol(setof, 3, setof).
 standard_symbol(sleep, 1, shell).
 standard_symbol(skip, 1, standard).
-standard_symbol((sort), 2, setof).
+standard_symbol(sort, 2, setof).
 standard_symbol((spy), 1, debugger).
 standard_symbol(statistics, 0, standard).
 standard_symbol(statistics, 1, standard).
@@ -223,10 +220,10 @@ standard_symbol(tfindall, 3, tables).
 standard_symbol(tmpfile_open, 1, file_io).
 standard_symbol(tnot, 1, tables).
 standard_symbol(told, 0, standard).
-standard_symbol(tphrase,1,dcg).
-standard_symbol(tphrase,2,dcg).
-standard_symbol(tphrase_set_string,1,dcg).
-standard_symbol(tphrase_string_length,1,dcg).
+standard_symbol(tphrase, 1, dcg).
+standard_symbol(tphrase, 2, dcg).
+standard_symbol(tphrase_set_string, 1, dcg).
+standard_symbol(tphrase_string_length, 1, dcg).
 standard_symbol(true, 0, standard).
 standard_symbol(trace, 0, debugger).
 standard_symbol(debug_ctl, 2, debugger).

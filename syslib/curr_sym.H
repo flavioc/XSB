@@ -31,7 +31,7 @@
 	current_functor/1, current_functor/2, 
 	current_predicate/1, current_predicate/2,
 	predicate_property/2, module_property/2, 
-	xsb_flag/2, hilog_symbol/1,
+	xsb_flag/2, garbage_collection/1, hilog_symbol/1,
 	hdr_ext/1, obj_ext/1, asm_ext/1, decl_ext/1.
 
 :- import '_$op'/3 from file_op.
@@ -40,7 +40,7 @@
 :- import functor/3, warning/1 from standard.
 :- import standard_symbol/3 from std_xsb.
 :- import psc_name/2, psc_arity/2, psc_prop/2, psc_type/2, term_psc/2,
-	  term_type/2, stat_flag/2, machine_file_exists/1, 
+	  term_type/2, stat_flag/2, stat_set_flag/2, machine_file_exists/1, 
 	  psc_env/2, psc_spy/2, psc_tabled/2, dereference_the_bucket/2,
 	  pair_psc/2, pair_next/2, next_bucket/2, conpsc/2,
 	  str_cat/3, intern_string/2, slash/1
