@@ -486,11 +486,200 @@ documentation in Manual 2
 \end{description}
 }
 
-%%\section{Arithmetic} \label{Arithmetic}
+\section{Evaluating Arithmetic Expressions through {\tt is/2}}
+\label{Arithmetic} 
 
-%--- Need a very cursory description of arithmetic operations. \\
-%--- Descriptions and of how we handle floats. \\
+As do most Prologs, XSB supports evaluation of arithmetic expressions
+in two ways.  First, XSB supports evaluation of ground arithmetic
+expressions throught the {\tt is/2} operator.  Support of comparisons
+of non-ground arithmetic expressions is provided through the port to
+XSB of the CLPQR constraint handling interface.  In this section we
+describe how arithmetic expressions can be evaluated through {\tt
+is/2}, while the CLPQR interface is described in Volume 2 of this
+manual.
 
+Before describing {\tt is/2} and the expressions that it can evaluate,
+we note that in \version{} of XSB, integers and floats in XSB are
+represented using a single word of 32 or 64 bits, depending on the
+machine architecture.  Since type tags constitute part of this word,
+this means that there may be as little as 28 bits available to
+represent a floating point number.  In addition, evaluation of
+arithmetic expressions through {\tt is/2} does not check for overflow
+or underflow.  As a result, XSB's floating point operations do not
+conform to IEEE floating point standards, and deviates in this regard
+from the ISO Prolog standard (see \cite{ISO-Prolog} Section 9).  We
+hope to fix these problems in a future release \footnote{We also note
+that the ISO Prolog evaluable functors {\tt sign/1}, {\tt
+float\_round/1}, {\tt float\_truncate/1}, {\tt float\_integer\_part/1}
+and {\tt float\_fractional\_part/1} are not implemented in \version .}
+
+All of the evaluable functors describe below throw a type error if
+their evaluated input is not numeric.  We describe below only their
+behavior on correctly typed input.
+
+\begin{description}
+\ouritem{is(?Result,+Expression)}\index{{\tt is/2}} 
+{\tt is(Result,Expression)} is true iff the result of evaluating {\tt
+Expression} as a sequence of evaluable functors unifies with {\tt
+Result}.  As mentioned in Section~\ref{inline_predicates}, {\tt is/2}
+is an inline predicate, so calls to {\tt is/2} within compiled code
+will not be visible during a trace of program execution.
+\end{description}
+
+\subsection{Evaluable Functors for Arithmetic Expressions}
+
+\begin{description}
+\ournewitem{+(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt +/2}} 
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns {\tt Number1 + Number2}, performing any
+necessary type conversions.
+
+\ournewitem{-(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt -/2}} 
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns {\tt Number1 - Number2}, performing any
+necessary type conversions.
+
+\ournewitem{*(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt */2}} 
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns {\tt Number1 * Number2} (i.e. multiplies
+them), performing any necessary type conversions.
+
+\ournewitem{/(+Expr1,Expr2)}{Evaluable Functor}\index{{\tt '/'/2}}
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns {\tt Number1 / Number2} (i.e. divides
+them), performing any necessary type conversions.
+
+\ournewitem{//(+Expr1,Expr2)}{Evaluable Functor}\index{{\tt '//'/2}}
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns {\tt Number1 // Number2} (i.e. integer
+division), performing any necessary type conversions, and rounding to
+0 if necessary.  
+
+    Example:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- X is 3/2.
+
+                X = 1.5000
+
+                yes
+                | ?- X is 3 // 2.
+
+                X = 1
+
+                yes
+                | ?- X is -3 // 2.
+
+                X = -1
+
+                yes
+  \end{verbatim}}
+
+\ournewitem{-(+Expr1)}{Evaluable Functor}\index{{\tt -/1}} If {\tt
++Expr} evaluates to {\tt Number}, returns {\tt -Number1},
+performing any necessary type conversions.
+
+\ournewitem{'/\'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
+'/\'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+evaluates to {\tt Number2}, returns the bitwise conjunction of {\tt
+Number1} and {\tt Number2}.
+
+\ournewitem{'\/'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
+'\/'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+evaluates to {\tt Number2}, returns the bitwise disjunction {\tt
+Number1} and {\tt Number2}.
+
+\ournewitem{'>>'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
+'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+evaluates to {\tt Number2}, returns the logical shift right of 
+{\tt Number1}, {\tt Number2} places.
+
+\ournewitem{'<<'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
+'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+evaluates to {\tt Number2}, returns the logical shift left of 
+{\tt Number1}, {\tt Number2} places.
+
+\ournewitem{ceiling(+Expr)}{Evaluable Functor}\index{{\tt ceiling/1}}
+If {\tt +Expr} evaluates to {\tt Number}, {\tt ceiling(Number)}
+returns the integer ceiling of {\tt Number} if {\tt Number} is a
+float, and {\tt Number} itself if {\tt Number} is an integer.
+
+\ournewitem{float(+Expr)}{Evaluable Functor}\index{{\tt float/1}} If
+{\tt +Expr} evaluates to {\tt Number}, {\tt float(Number)} converts 
+{\tt Number} to a float if {\tt Number} is an integer, and returns {\tt
+Number} itself if {\tt Number} is a float.
+
+\ournewitem{floor(+Expr)}{Evaluable Functor}\index{{\tt floor/1}} If
+{\tt +Expr} evaluates to {\tt Number}, {\tt floor(Number)} returns the
+integer floor of {\tt Number} if {\tt Number} is a float, and {\tt
+Number} itself if {\tt Number} is an integer.
+
+\ournewitem{mod(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt mod/2}}
+If {\tt +Expr1} evaluates to {\tt Number1} and {\tt Expr2} evaluates
+to {\tt Number2} where {\tt Number2} is not 0, {\tt
+mod(Number1,Number2)} returns
+\[
+	Number1 - (\lfloor (Number1 / Number2) \rfloor) \times Number2)
+\]
+
+\ournewitem{rem(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt rem/2}}
+If {\tt +Expr1} evaluates to {\tt Number1} and {\tt Expr2} evaluates
+to {\tt Number2} where {\tt Number2} is not 0, {\tt
+rem(Number1,Number2)} returns
+\[
+	Number1 - ({Number1} // {Number2}) \times Number2)
+\]
+
+    Example:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- X is 5 mod 2.
+
+                X = 1
+
+                yes
+                | ?- X is 5 rem 2.
+
+                X = 1
+
+                yes
+                | ?- X is 5 mod -2.
+
+                X = -1
+
+                yes
+                | ?- X is 5 rem -2.
+
+                X = 1
+
+                yes
+  \end{verbatim}}
+
+\ournewitem{round(+Expr)}{Evaluable Functor}\index{{\tt round/1}} If
+{\tt +Expr} evaluates to {\tt Number}, {\tt round(Number)} returns the
+nearest integer to {\tt Number} if {\tt Number} is a float, and {\tt
+Number} itself if {\tt Number} is an integer.
+
+\ournewitem{sqrt(+Expr)}{Evaluable Functor}\index{{\tt sqrt/1}}
+If {\tt +Expr} evaluates to {\tt Number}, {\tt sqrt(Number)}
+returns the square root of {\tt Number}.
+
+\ournewitem{truncate(+Expr)}{Evaluable Functor}\index{{\tt
+truncate/1}} If {\tt +Expr} evaluates to {\tt Number}, {\tt
+truncate(Number)} truncates {\tt Number} if {\tt Number} is a float,
+and returns {\tt Number} itself if {\tt Number} is an integer.
+\end{description}
+
+\subsubsection{Mathematical Functions from {\tt math.h}}
+\index{{\tt cos/1}} \index{{\tt sin/1}} \index{{\tt tan/1}}
+\index{{\tt acos/1}} \index{{\tt asin/1}} \index{{\tt atan/1}}
+\index{{\tt log/1}} \index{{\tt log10/1}}
+
+XSB also allows as evaluable functors, many of the functions form the
+C library {\tt math.h}.  Functions included in XSB \version{} are {\tt
+cos/1}, {\tt sin/1}, {\tt tan/1}, {\tt acos/1}, {\tt asin/1}, {\tt
+atan/1}. {\tt log/1}, and {\tt log10/1}.  For their semantics, see
+documentation to {\tt math.h}.
 
 \section{Convenience} \label{Convenience}
 These predicates are standard and often self-explanatory, so they are 
@@ -519,7 +708,6 @@ described only briefly.
     Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
     fails if~{\tt X} and~{\tt Y} are unifiable.
     It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
-
 \end{description}
 
 
@@ -1701,8 +1889,8 @@ findall/3}.
 %-------------------------------------------------------------------------
 
 HiLog provides an elegant way to introduce aggregate operations into
-\ourprolog.  HiLog allows a user to define named (and parameterized)
-sets (or bags).  For example, say we have a simple database-like predicate,
+XSB.  HiLog allows a user to define named (and parameterized) sets (or
+bags).  For example, say we have a simple database-like predicate,
 \verb|employee(Name,Dept,Sal)|, which contains a tuple for each
 employee in our concern and contains the employee's name, department,
 and salary.  From this predicate we can construct a set, or bag
@@ -1714,7 +1902,7 @@ really, that contains all the salaries of employees in the relation:
 So \verb|salaries| is the name of a unary predicate that is true of
 all salaries, or rather is the name of a {\em bag} of all salaries.
 It is a bag since it may contain the same salary multiple times.
-\ourprolog\ provides a predicate \verb|bagSum| which can be used to
+XSB provides a predicate \verb|bagSum| which can be used to
 sum up the elements in a named bag.  So given the definition of the
 HiLog predicate \verb|salaries/1| above, we can get the sum of all the
 salaries with:
@@ -1742,7 +1930,7 @@ all the salaries of employees in that department:
     deptPayroll(Dept,Payroll) :- bagSum(sals(Dept),Payroll).
 \end{verbatim}
 
-\ourprolog\ provides analogous aggregate operators, described below, to
+XSB provides analogous aggregate operators, described below, to
 compute the minimum, maximum, count, and average, of a bag,
 respectively.  These predicates are all defined using a more basic
 predicate \verb|bagReduce/4|.

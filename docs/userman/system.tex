@@ -1632,16 +1632,18 @@ Interface} in Volume 2 for its explanation.
 \index{Compiler!inlines}\index{inlines!Compiler}
 %======================================================
 
-{\em Inline predicates} represent ``primitive'' operations in the
-WAM.  Calls to inline predicates are compiled into a sequence of WAM
+{\em Inline predicates} represent ``primitive'' operations in the WAM.
+Calls to inline predicates are compiled into a sequence of WAM
 instructions in-line, i.e. without actually making a call to the
 predicate.  Thus, for example, relational predicates (like {\tt >/2},
-{\tt >=/2}, etc.) compile to, essentially, a subtraction followed by
-a conditional branch.  Inline predicates are expanded specially by
-the compiler and thus {\em cannot be redefined by the user without
-changing the compiler}.  The user does not need to import these
-predicates from anywhere.  There are available no matter what options
-are specified during compiling.
+{\tt >=/2}, etc.) compile to, essentially, a subtraction followed by a
+conditional branch.  As a resut, calls to inline predicates will not
+be trapped by the debugger, and their evaluation will not be visible
+during a trace of program execution.  Inline predicates are expanded
+specially by the compiler and thus {\em cannot be redefined by the
+user without changing the compiler}.  The user does not need to import
+these predicates from anywhere.  There are available no matter what
+options are specified during compiling.
 
 Table~\ref{inlinepredicatetable} lists the inline predicates of
 XSB \version.  Those predicates that start with \verb|_$|
