@@ -1,0 +1,133 @@
+/* File:      flrprettyprint.flr
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 1999
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+/* To pretty print object:
+	?- flora_prettyprint(obj).
+   To pretty print class:
+        ?- X:class, flora_prettyprint(X), fail.
+*/
+
+
+%%:- export flora_prettyprint/1.
+
+
+%% Methods to ignore during pretty printing
+flora_print_ignore(print(pretty)).
+flora_print_ignore(ignore(pretty)).
+
+flora_prettyprint(X) :-
+	flora_pp_write_header(X),
+	!,
+	flora_pp_write_body_scalar(X),
+	flora_pp_write_body_set(X),
+	writeln('].'), nl.
+
+flora_pp_write_header(X) :-
+    	atom(X),
+	!,
+    	fmt_write('''%s''[', f(X)),
+    	nl.
+flora_pp_write_header(X) :-
+    	is_string(X),
+	!,
+    	fmt_write('"%s"[',arg(X)),
+    	nl.
+flora_pp_write_header(X) :- write(X), writeln('[').
+
+%% Print out scalar methods
+flora_pp_write_body_scalar(Obj) :-
+    	MethLst1 = collectset{ML ; Obj[@M -> _], @M =.. ML},
+	sort(MethLst1, MethLst2),
+	flora_pp_write_body_scalar1(Obj, MethLst2).
+
+%% Test if method is to be ignored and either skip it or print it.
+flora_pp_write_body_scalar1(Obj, []).
+flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs]) :-
+        MethInv = [M|Args],
+	%%printable_object[ignore(pretty) ->> {M}],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_scalar1(Obj, MethInvs).
+flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs]) :-
+        MethInv = [M|Args],
+	@M =.. MethInv,
+	Obj[@M -> Val],
+	write('    '), flora_pp_write_method_invocation(MethInv),
+	write(' -> '), write(Val),
+	flora_pp_write_semicolon_maybe(MethInvs),
+	flora_pp_write_body_scalar1(Obj, MethInvs).
+
+flora_pp_write_body_set(Obj) :-
+    	MethLst1 = collectset{ML ; Obj[@M ->> _], @M =.. ML},
+	sort(MethLst1, MethLst2),
+	flora_pp_write_body_set1(Obj, MethLst2).
+
+flora_pp_write_body_set1(Obj, []).
+flora_pp_write_body_set1(Obj, [MethInv|MethInvs]) :-
+        MethInv = [M|Args],
+	%%printable_object[ignore(pretty) ->> {M}],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_set1(Obj, MethInvs).
+flora_pp_write_body_set1(Obj, [MethInv|MethInvs]) :-
+        MethInv = [M|Args],
+	@M =.. MethInv,
+	Vals = collectset{V; Obj[@M ->> V]},
+	write('    '), flora_pp_write_method_invocation(MethInv),
+	write(' ->> '), flora_pp_write_set(Vals),
+	flora_pp_write_semicolon_maybe(MethInvs),
+	flora_pp_write_body_set1(Obj, MethInvs).
+
+%% Write semicolon, if List is not an empty list
+flora_pp_write_semicolon_maybe([]) :- nl.
+flora_pp_write_semicolon_maybe([First| Rest]) :- writeln(';').
+
+
+flora_pp_write_method_invocation([]).
+flora_pp_write_method_invocation([Attr]) :- 
+    	write(Attr).
+flora_pp_write_method_invocation([M, Arg |Args]) :-
+    	write(M), write('@('), write(Arg),
+	flora_pp_write_arglist(Args),
+	write(')').
+
+flora_pp_write_arglist([]).
+flora_pp_write_arglist([Arg|Rest]) :-
+    	write(','), write(Arg),
+	flora_write_list(Rest).
+
+flora_pp_write_set(L) :-
+    	write('{'),
+	flora_pp_write_set1(L),
+	write('}').
+
+flora_pp_write_set1([]).
+flora_pp_write_set1([Elt]) :- write(Elt).
+flora_pp_write_set1([Elt, Elt2 | Rest]) :-
+    	write(Elt), write(','),
+	flora_pp_write_set1([Elt2|Rest]).
+        
