@@ -1,4 +1,4 @@
-/* File:      flrtokens.P
+/* File:      flrtokens.P  -- The Flora tokenizer
 **
 ** Author(s): Guizhen Yang       (Flora)
 **    	      Bertram Ludaescher (Flip, the Flora precursor)
@@ -24,14 +24,6 @@
 ** $Id$
 **
 */
-
-
-
-:- import repeat/0, get0/1 from standard.
-
-:- import append/3 from basics.
-
-:- export read_tokens/2.
 
 
 /****************************************************************************

@@ -1,7 +1,7 @@
-/* File:      flrparser.P
+/* File:      flrparser.P  -- The Flora parser
 **
 ** Author(s): Guizhen Yang       (Flora)
-**    	      Bertram Ludaescher (Flip, the Flora precursor)
+**    	      Bertram Ludaescher (Flip, the Flora spiritual father)
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
 ** Copyright (C) Bertram Ludaescher, 1998
@@ -24,31 +24,6 @@
 ** $Id$
 **
 */
-
-
-
-:- import
-	atom_chars/2, integer/1
-   from standard.
-
-:- import append/3 from basics.
-
-:- import fmt_write_string/3 from file_io.
-
-:- import
-	flora_prefix/1, flora_word/2, terminate_list/1,
-	flora_member/2, displayln_errmsg/1, displayln/0
-   from flrutils.
-
-:- import
-	trie_dynamic/1, trie_retract_all/1, trie_assert/1
-   from tables.
-
-:- dynamic error/1.
-
-:- trie_dynamic(error/1).
-
-:- export rule/3, flora_set/1.
 
 
 /**************************************************************/

@@ -49,6 +49,8 @@ all: $(ALL)
 	$(Prolog) < cmd...
 	/bin/rm cmd...
 	cd syslib; make
+	cd lib; make
+	cd pkgs; make
 
 
 .DONE:
