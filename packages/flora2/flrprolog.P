@@ -119,9 +119,10 @@ flora_prlgdef(X,Y) :-
 	!.
 
 flora_prlgdef(X,Y) :-
-	( conget(flora_shell_mode,1) ->
-	    flora_shprlg(X,Y)
-	;
+	(
+	%%  conget(flora_shell_mode,1) ->
+	%%    flora_shprlg(X,Y)
+	%%;
 	  flora_dynprlg(X,Y)
 	).
 
@@ -152,20 +153,20 @@ flora_define_prolog(Op,Arity) :-
 /****************************************************************************
   flora_shreset_prolog/0
 ****************************************************************************/
-flora_shreset_prolog :- retractall(flora_shprlg(_,_)).
+%%flora_shreset_prolog :- retractall(flora_shprlg(_,_)).
 
 
 /****************************************************************************
   flora_shdefine_prolog(+Op,+Arity)
 ****************************************************************************/
-flora_shdefine_prolog(Op,Arity) :-
-	(var(Op); var(Arity)),
-	!,
-	assert(flora_shprlg(Op,Arity)).
-
-flora_shdefine_prolog(Op,Arity) :-
-	( flora_prlg(Op,Arity) ->
-	    true
-	;
-	  assert(flora_shprlg(Op,Arity))
-	).
+%%flora_shdefine_prolog(Op,Arity) :-
+%%	(var(Op); var(Arity)),
+%%	!,
+%%	assert(flora_shprlg(Op,Arity)).
+%%
+%%flora_shdefine_prolog(Op,Arity) :-
+%%	( flora_prlg(Op,Arity) ->
+%%	    true
+%%	;
+%%	  assert(flora_shprlg(Op,Arity))
+%%	).

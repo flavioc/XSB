@@ -571,18 +571,18 @@ that are needed to build practical applications.
   warning message from \FLORA.
 
   %%
-  \index{id-term}
+  \index{Id-term}
   \index{oid}
   \index{object identifier}
 \item \emph{Id-Terms/Oids}:
-    First-order terms over \funcs\ and \vars\ are called \emph{id-terms},
-    and are used to name objects, methods, and classes.  Ground id-terms
+    First-order terms over \funcs\ and \vars\ are called \emph{Id-terms},
+    and are used to name objects, methods, and classes.  Ground Id-terms
     (i.e., terms with no variables) correspond to \emph{logical
       object identifiers} (\emph{oid}s), also called object \emph{names}.
-    Numbers (including integers and floats) can also be used as id-terms,
+    Numbers (including integers and floats) can also be used as Id-terms,
     but such use might be confusing and is not recommended.
   \index{atomic formula!in \fl}
-\item \emph{Atomic formulas}: Let $\tt O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
+\item \emph{Atomic formulas}: Let $\tt O,M,R_{i},X_{i},C,D,T$ be Id-terms.  In
   addition to the usual first-order atomic formulas, like
   $p(X_1,\dots,X_n)$, there are the following basic types of formulas:
   \medskip
@@ -1690,7 +1690,7 @@ In addition to the basic \fl syntax, the \FLORA  system also supports
 single-valued and multi-valued method applications, and to avoid
 explicit join conditions \cite{frohn-lausen-uphoff-VLDB-94}.  The
 basic idea is to allow the following \emph{path expressions} wherever
-id-terms are allowed:
+Id-terms are allowed:
 %%
 
   \medskip
@@ -1704,82 +1704,95 @@ id-terms are allowed:
 The path expression in (7) is \emph{single-valued}; it refers to the unique
 object $\tt R_0$ for which $\tt O[M\fd R_0]$ holds; (8) is a
 \emph{multi-valued} path expression; it refers to each $R_i$ for which $\tt
-O[M\mvd\{R_i\}]$ holds.  The symbols $\tt O$ and $\tt M$ stand for an id-term
-or path a expression.  Moreover, $\tt M$ can be a method that takes arguments,
-i.e., $\tt O..M(P_1,\dots,P_k)$ is a valid path expression.
+O[M\mvd\{R_i\}]$ holds.  The symbols $\tt O$ and $\tt M$ stand for an
+Id-term or path a expression.  Moreover, $\tt M$ can be a method that takes
+arguments, in which case $\tt O.M(P_1,\dots,P_k)$ and $\tt
+O..M(P_1,\dots,P_k)$ are a valid path expressions.
   
-In order to obtain a unique syntax and to specify different orders of
+In order to disambiguate the syntax and to specify the desired order of
 method applications, parentheses can be used. By default, path expressions
-associate to the left, so $\tt a.b.c$ is equivalent to $\tt (a.b).c$ and
-specifies the unique object $\tt o$ such that $\tt a[b\fd x] \land x[c\fd
-o]$ holds (note that $\tt x=a.b$). In contrast, $\tt a.(b.c)$ is the object
-$\tt o1$ such that $b[c\fd x1] \land a[x1\fd o1]$ holds (here, $\tt
-x1=b.c$). In general, these can be different objects. Note that in $\tt
-(a.b).c$, $\tt b$ is a method name, whereas in $\tt a.(b.c)$ it is used as
-an object name.  Observe that function symbols can also be applied to path
-expressions, since path expressions (like id-terms) are used to refer
-objects. Thus, $\tt f(a.b)$ is valid.
+associate to the left, so $\tt a.b.c$ is equivalent to $\tt (a.b).c$, which
+specifies the object $\tt o$ such that $\tt a[b\fd x] \land x[c\fd o]$
+holds (note that $\tt x=a.b$). In contrast, $\tt a.(b.c)$ is the object
+$\tt o1$ such that $b[c\fd x1] \land a[x1\fd o1]$ holds (note that in this
+case, $\tt x1=b.c$). In general, $o$ and $o1$ can be different objects.
+Note also that in $\tt (a.b).c$, $\tt b$ is a method name, whereas in $\tt
+a.(b.c)$ it is used as an object name and {\tt b.c} as a method.  Observe
+that function symbols can also be applied to path expressions, since path
+expressions, like Id-terms, represent objects. Thus, $\tt f(a.b)$
+is a valid expression.
 
 As path expressions and F-molecules can be arbitrarily nested, this leads
-to a concise and very flexible specification language for object
-properties, as illustrated in the following example.
+to a concise and flexible specification language for object properties, as
+illustrated in the following example.
 
 \begin{example}[Path Expressions]\label{Ex:PathExpr}
-  \rm
-  Consider again the schema given in Figure~\ref{fig-flogic-model}.
-  Given the name $n$ of a person, the following path expression
-  references all editors of conferences in which $n$ had a
-  paper:\footnote{Each occurrence of ``\_'' denotes a distinct
-    don't-care variable (existentially quantified at the
-    innermost level).}
-\begin{qrules}
-  \anon\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors
-\end{qrules}
-Therefore, the answer to the \emph{query}
-\begin{qrules}
-  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
-  $n$]\}].at\_conf[editors\mvd\{E\}].
-\end{qrules}
-is the set of all pairs (\textsf{P},\textsf{E}) such that \textsf{P}
-is (the logical oid of) a paper written by $n$, and \textsf{E} is the
-corresponding proceedings editor.  If one is also interested in the
-affiliations of the above editors when the papers were published, we only
-need to slightly modify our query:
-\begin{qrules}
-  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
-  $n$]\}].at\_conf[year\fd Y]..editors[affil(Y)\fd A].
-\end{qrules}
+  \rm Consider again the schema given in Figure~\ref{fig-flogic-model}.  If
+  $n$ is the name of a person, the following path expression is a query
+  that returns all editors of conferences in which $n$ had a paper:
+  %%
+  \begin{qrules}
+    ?- P\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors
+  \end{qrules}
+  %%
+  Likewise, the answer to the query
+  %%
+  \begin{qrules}
+    ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+    $n$]\}].at\_conf[editors\mvd\{E\}].
+  \end{qrules}
+  %%
+  is the set of all pairs (\textsf{P},\textsf{E}) such that \textsf{P} is
+  (the logical oid of) a paper written by $n$, and \textsf{E} is the
+  corresponding proceedings editor.  If we also want to see the
+  affiliations of the above editors, we only need to modify our query
+  slightly:
+  %%
+  \begin{qrules}
+    ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+    $n$]\}].at\_conf[year\fd Y]..editors[affil(Y)\fd A].
+  \end{qrules}
 \end{example}
+%%
 Thus, \FLORA path expressions support navigation 
 along the method application dimension using the operators
 ``.''  and
 ``..''. In addition, intermediate objects through which such navigation
 takes place can be selected by specifying the properties of such objects
-inside square brackets.
-
-\index{method!self}
-To access intermediate objects that arise implicitly in the middle
-of a path expression, one can define the method \textsf{self} as
-{\tt X[self{\fd}X]} and then simply
-write $\dots${\tt [self{\fd}O]}$\dots$ anywhere in a complex
-path expression. This would bind the id of the current object to the
-variable {\tt O}.\footnote{
+inside square brackets.\footnote{
   %%
   A similar feature is used in other languages, e.g., XSQL \cite{xsql-92}.
   %%
   }
 %%
 
+\index{method!self}
+To access intermediate objects that arise implicitly in the middle
+of a path expression, one can define the method \textsf{self} as
+%%
+\begin{quote}
+  {\tt X[self{\fd}X].} 
+\end{quote}
+%%
+and then simply write $\dots${\tt [self{\fd}O]}$\dots$ anywhere in a
+complex path expression. This would bind the Id of the current object to
+the variable {\tt O}.
+
 \begin{example}[Path Expressions with \textsf{self}]\label{ex-path-self}
-  \rm
-  Recall the second query in Example~\ref{Ex:PathExpr}. If the user is
-  also interested in the respective conferences, the query can be
-  reformulated as follows:
-\begin{qrules}
-  X[self\fd X].\\
-   ?- P\isa conf\_p[authors\mvd\anon [name\fd
-   $n$]].at\_conf[self\fd C, year\fd Y]..editors[affil(Y)\fd A]. 
-\end{qrules}
+  \rm{
+    %%
+    To illustrate convenience afforded by the use of the {\tt self}
+    attribute in path expressions, consider the second query in
+    Example~\ref{Ex:PathExpr}. If, in addition, we want to obtain the names
+    of the conferences where the respective papers were published, that
+    query can be reformulated as follows:
+    %%
+    }
+  \begin{qrules}
+    X[self\fd X].\\
+    ?- P\isa conf\_p[authors\mvd\anon [name\fd
+    $n$]].at\_conf[self\fd C, year\fd Y]..editors[affil(Y)\fd A]. 
+  \end{qrules}
 \end{example}
 
 
@@ -1792,33 +1805,33 @@ in such cases.
 
 \index{path expression!in rule head}
 The following is an example of a path expression in rule head. For any
-person X, this rule defines the grand children for X's mother.
+person X, this rule defines the grandchildren for X's mother.
 \begin{qrules}
 X.mother[grandson{\mvd}Y] :- X{\isa}person[son{\mvd}Y].
 \end{qrules}
 %%
-Complications arise if we specify the following facts later on:
+Here X's mother is treated as an unknown object. Should this object become
+known in the future, complications may arise. For instance, suppose that
+later on the following facts were added or derived:
 %%
 \begin{qrules}
-john[mother{\fd}mary]. \\
-john[son{\mvd}david].
-\end{qrules}
-and ask the following query:
-\begin{qrules}
-?- mary[grandson{\mvd}S].
+  john[mother{\fd}mary]. \\
+  john[son{\mvd}david].
 \end{qrules}
 
-Here, we should be able to identify ${\tt mary}$ and ${\tt john.mother}$,
-since the attribute {\tt mother} is scalar. To deal with single-valued path
+Because John's mother is now identified as {\tt mary}, it follows that
+${\tt mary}$ and ${\tt john.mother}$ represent the same things, since the
+attribute {\tt mother} is scalar. To deal with single-valued path
 expressions in rule heads, \FLORA \emph{skolemizes} ${\tt john.mother}$ and
-derives the requisite equalities.  All this is done by the \FLORA compiler
-transparently to the user: if a path expression in rule head is detected,
-\FLORA replaces this expression with a Skolem function.  The problem here
-is that maintenance of such equalities is costly (sometimes causing a
-slowdown by the factor of 2--10 times). Since the user often
-knows that equations of the above kind will never be derived, \FLORA leaves
-it to the user to tell the compiler whether equality maintenance is needed.
-Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
+adds the requisite equalities to record that the Skolem function that
+corresponds to {\tt john.mother} equals {\tt mary}.  All this is done by
+the \FLORA compiler transparently to the user: if a path expression in rule
+head is detected, \FLORA replaces this expression with a Skolem function.
+The problem here is that maintenance of such equalities is costly
+(sometimes causing a slowdown by the factor of 2--10 times). Since the user
+often knows that equations of the above kind will never be derived, \FLORA
+leaves it to the user to tell the compiler whether equality maintenance is
+needed.  Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
 
 
 \section{Truth Values, Object Values, and Predicate Meta Signatures}
@@ -1826,7 +1839,7 @@ Equality maintenance is discussed in Section~\ref{sec-eqmaintain}.
 
 
 Id-terms, \fl atoms, and path expressions can all be used as objects. This
-is obvious for id-terms and path expressions of the form (7) and (8),
+is obvious for Id-terms and path expressions of the form (7) and (8),
 page~\pageref{eq-path-fun}. The \fl atoms (1) through (6) on
 pages~\pageref{eq-scalar-atom} through~\pageref{eq-subclass} are typically
 viewed as formulas and, thus, they are assumed to have a truth value only.
@@ -1886,7 +1899,7 @@ to sets of ground oids:
 \begin{displaymath}
   \begin{array}{cll@{\hspace{4em}}c}
     \obj(t) & := & \{t \mid  \db I\models t[] \}, 
-     \textrm{ for a ground id-term $t$}  \\   
+     \textrm{ for a ground Id-term $t$}  \\   
                                 %
     \obj(o[\dots]) & := & \{o1 \mid o1\in\obj(o), \db I \models o1[\dots]
     \} \\  
@@ -1922,7 +1935,7 @@ single-valued or multi-valued:
 \item in all other cases, $r$ is \emph{single-valued}.
 \end{itemize}
 
-In \FLORA, path expressions can appear wherever id-terms are
+In \FLORA, path expressions can appear wherever Id-terms are
 allowed. Consequently, the question arises whether a path expression
 is intended to indicate a truth value or an object value. For
 instance, we may want to call the XSB aggregate predicate {\tt findall/3}
@@ -2002,7 +2015,7 @@ HiLog \cite{hilog-jlp} is the default syntax that \FLORA uses to represent
 functor terms (including object Ids) and predicates.  In HiLog, complex
 terms can appear wherever a function symbol is allowed, e.g., {\tt
   group(X)(Y,Z)}, where the functor is the complex term {\tt group(X)}. In
-\FLORA, any id-term, including function symbols, predicate symbols, and
+\FLORA, any Id-term, including function symbols, predicate symbols, and
 their arguments, can be a HiLog term.
 
 \index{HiLog!translation}
@@ -2029,14 +2042,14 @@ Should {\tt foo} unify with {\tt foo()}, which both seem like 0-ary
 terms? Moreover, if the answer is yes, then should {\tt foo} unify
 with {\tt foo()()}, which is also a valid HiLog term?  In \FLORA, the
 answers depend on whether these 0-ary terms appear as predicate calls
-in rule heads and bodies, or just as id-terms, i.e., arguments.
+in rule heads and bodies, or just as Id-terms, i.e., arguments.
 
 In general, the presence of a pair of parentheses in a term would imply
 one application of the HiLog translation during
 compilation. Therefore, {\tt foo()} would be represented as
 {\tt flapply(foo)}, {\tt foo()()} as {\tt flapply(flapply(foo))},
 and {\tt foo} as it is, i.e, {\tt foo}.  So {\tt foo} does not unify
-with {\tt foo()} or {\tt foo()()} while they all act as id-terms. One
+with {\tt foo()} or {\tt foo()()} while they all act as Id-terms. One
 of the advantages of keeping them differently is to make a \FLORA module
 communicate easily with normal XSB modules, which do not fully support
 HiLog. Refer to Section~\ref{sec:flora-modules} for more information
@@ -2662,7 +2675,7 @@ they cannot appear in a fact or the head of a rule.
 %
 For applications where oids are not important, \FLORA provides the
 compiler directive \verb|_#| to automatically generate a new
-oid. \verb|_#| can be used wherever an id-term is allowed. Like the
+oid. \verb|_#| can be used wherever an Id-term is allowed. Like the
 anonymous variable \verb|_|, each occurrence of \verb|_#| represents
 an anonymous oid. The difference is that such an oid is not only
 ``unique'' in each rule, but in the source program as well.

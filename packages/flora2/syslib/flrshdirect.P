@@ -31,7 +31,7 @@
 
 :- import flora_register_syslib/1 from flrlibman.
 
-:- import flora_shdefine_prolog/2 from flrprolog.
+%%:- import flora_shdefine_prolog/2 from flrprolog.
 
 :- import flora_shdefine_firstorder/2 from flrnohilog.
 
@@ -49,8 +49,8 @@
 /*****************************************************************************
   fllibshdirect
 *****************************************************************************/
-fllibshdirect(FL_PROLOG,Funct,Arity) :-
-	flora_shdefine_prolog(Funct,Arity).
+%%fllibshdirect(FL_PROLOG,Funct,Arity) :-
+%%	flora_shdefine_prolog(Funct,Arity).
 
 fllibshdirect(FL_FIRSTORDER,Funct,Arity) :-
 	flora_shdefine_firstorder(Funct,Arity).

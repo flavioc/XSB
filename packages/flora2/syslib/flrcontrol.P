@@ -29,7 +29,7 @@
 #include "flora_terms.flh"
 
 %% IF THEN ELSE
-FL_IF(FL_THEN(Cond,FL_ELSE(Then,Else))) :- call(Cond), call(Then).
+FL_IF(FL_THEN(Cond,FL_ELSE(Then,_Else))) :- call(Cond), call(Then).
 %% This cut prevents `if' with the `else' clause from matching the third clause
-FL_IF(FL_THEN(Cond,FL_ELSE(Then,Else))) :- !, sk_not(Cond), call(Else).
+FL_IF(FL_THEN(Cond,FL_ELSE(_Then,Else))) :- !, sk_not(Cond), call(Else).
 FL_IF(FL_THEN(Cond,Then)) :- call(Cond), call(Then).
