@@ -50,6 +50,14 @@ findall_odbc_sql(Input,Statement,Output,Term):-
 	    ; mode_warning(Term)).
 */
 
+/* str_prefix(String,Char,Prefix)
+   Prefix is the prefix of String up to the first appearance of Char
+*/
+str_prefix([],_,[]) :- !.
+str_prefix([Char|_],Char,[]) :- !.
+str_prefix([H|T],Char,[H|ST]) :-
+	str_prefix(T,Char,ST).
+
 % uppercase
 upper_case(Ci,Co) :-
 	(Ci >= 0'a, Ci =< 122
@@ -126,7 +134,11 @@ check_index_3([],_Selection,In,Statement):-
 	    warning(['No indices in place for ',Statement])
 	;   warning(['Indices used in ',Statement,' are non-clustered:  ',In]) ).
 check_index_3([[_,Type,Column]|R],Selection,In,Statement):-
-	upper_case_atom(Column, UColumn),
+	atom_codes(Column,CColumn),
+	str_prefix(CColumn,0',,SColumn), % gets the first key on
+				         % multiple-key indexes
+	upper_case_codes(SColumn,USColumn),
+	atom_codes(UColumn,USColumn),
 	( memberchk(UColumn,Selection) -> 
 	    (is_clustered(Type) -> 
 		true
