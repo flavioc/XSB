@@ -38,6 +38,7 @@
 #define PSC_EP   	 8
 #define PSC_SET_EP	 9
 
+#define TERM_NEW_MOD    10
 #define TERM_PSC	11
 #define TERM_TYPE	12
 #define TERM_COMPARE	13

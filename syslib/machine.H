@@ -40,6 +40,7 @@
 	psc_set_spy/2,
 	psc_ep/2,
 	psc_set_ep/2,
+	term_new_mod/3,
 	term_psc/2, 
 	term_type/2, 
 	term_compare/3, 

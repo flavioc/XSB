@@ -397,7 +397,8 @@ inline static xsbBool number_to_list(int call_type)
   int i, tmpval;
   long c;
   char tmpstr[2], *tmpstr_interned;
-  char *numberAsString, str[256];	
+  char str[256];	
+  int StringLoc = 0;
   Cell heap_addr, term, term2;
   Cell list, new_list;
   char hack_char;	
@@ -414,11 +415,11 @@ inline static xsbBool number_to_list(int call_type)
   term = ptoc_tag(1);
   list = ptoc_tag(2);
   if (!isnonvar(term)) {	/* use is: CHARS/CODES --> NUMBER */
-    numberAsString = str; term2 = list;
+    term2 = list;
     do {
       XSB_Deref(term2);
       if (isnil(term2)) {
-	*numberAsString++ = '\0';
+	str[StringLoc++] = '\0';
 	break;
       }
       if (islist(term2)) {
@@ -453,7 +454,8 @@ inline static xsbBool number_to_list(int call_type)
 	  err_handle(RANGE, 2, call_name, 2, "ASCII code", heap_addr);
 	  return FALSE;	/* fail */
 	}
-	*numberAsString++ = (char)c;
+	if (StringLoc > 200) return FALSE;
+	str[StringLoc++] = (char)c;
 	term2 = cell(clref_val(term2)+1);
       } else {
 	if (isref(term2))

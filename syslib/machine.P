@@ -63,6 +63,7 @@ psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
 psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 
+term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
 term_psc(Term, PSC) :- term_psc(Term, PSC).
 term_type(Term, Type) :- term_type(Term, Type).
 term_compare(Term1, Term2, Res) :- term_compare(Term1, Term2, Res).

@@ -645,6 +645,7 @@ void init_builtin_table(void)
   set_builtin_table(PSC_EP, "psc_ep");
   set_builtin_table(PSC_SET_EP, "psc_set_ep");
 
+  set_builtin_table(TERM_NEW_MOD, "term_new_mod");
   set_builtin_table(TERM_PSC, "term_psc");
   set_builtin_table(TERM_TYPE, "term_type");
   set_builtin_table(TERM_COMPARE, "term_compare");
@@ -1130,6 +1131,22 @@ int builtin_call(byte number)
   case TERM_COMPARE:	/* R1, R2: +term; R3: res (-int) */
     ctop_int(3, compare((void *)ptoc_tag(1), (void *)ptoc_tag(2)));
     break;
+  case TERM_NEW_MOD: {  /* R1: +ModName, R2: +Term, R3: -NewTerm */
+    int new, disp;
+    Cell arg, term = ptoc_tag(2);
+    Psc termpsc = term_psc(term);
+    Psc modpsc = pair_psc(insert_module(0,ptoc_string(1)));
+    Psc newtermpsc = pair_psc(insert(get_name(termpsc),get_arity(termpsc),modpsc,&new));
+    if (new) set_data(newtermpsc, modpsc);
+    env_type_set(newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
+    ctop_constr(3, (Pair)hreg);
+    new_heap_functor(hreg, newtermpsc);
+    for (disp=1; disp <= get_arity(newtermpsc); disp++) {
+      arg = cell(clref_val(term)+disp);
+      nbldval(arg);
+    }
+  }
+  break;
   case TERM_NEW: {		/* R1: +PSC, R2: -term */
     int disp;
     Psc psc = (Psc)ptoc_addr(1);
@@ -2133,7 +2150,7 @@ int builtin_call(byte number)
     reclaim_uninterned_nr(ptoc_int(1));
     break;
   case GLOBALVAR:
-    ctop_tag(1, ((CPtr)glstack.low));
+    ctop_tag(1, ((int)glstack.low));
     break;
 
   case STORAGE_BUILTIN: {
