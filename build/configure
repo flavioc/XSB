@@ -209,7 +209,7 @@ EOF
   -config-tag | --config-tag | --config-ta | --config-t)
     ac_prev=config_tag ;;
   -config-tag=* | --config-tag=* | --config-ta=* | --config-t=*)
-    if test -n "`echo $ac_optarg| sed 's/[-a-z0-9.]//g'`"; then
+    if test -n "`echo $ac_optarg| sed 's/[-a-zA-Z0-9]//g'`"; then
       echo "configure: warning: $ac_optarg: config-tag must be alphanumeric with optional dashes" 1>&2
     fi
     config_tag="$ac_optarg" ;;

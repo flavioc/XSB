@@ -190,7 +190,7 @@ EOF
     ac_prev=config_tag ;;
   -config-tag=* | --config-tag=* | --config-ta=* | --config-t=*)
 changequote(, )dnl
-    if test -n "`echo $ac_optarg| sed 's/[-a-z0-9.]//g'`"; then
+    if test -n "`echo $ac_optarg| sed 's/[-a-zA-Z0-9]//g'`"; then
 changequote([, ])dnl
       AC_MSG_WARN($ac_optarg: config-tag must be alphanumeric with optional dashes)
     fi
