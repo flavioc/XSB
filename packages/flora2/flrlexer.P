@@ -118,6 +118,10 @@ flora_current_compile_filename(Name) :-
   flora_quoted_atom_struct(+AtomStr,+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
   flora_ascii_string_struct(+ASCII,+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
   flora_symbol_token_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
+  
+  %% ********Added by Bin Tang for richer anonymouse oid syntax ************
+  flora_special_token_struct(+TextStr,+Num,+LN1,+CN1,+LN2,+CN2,-Token)
+  
   flora_whitespace_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
   flora_comment_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
   flora_rule_delimeter_struct(+TextStr,+LN1,+CN1,+LN2,+CN2,-Token)
@@ -147,6 +151,15 @@ flora_symbol_token_struct(TextStr,LN1,CN1,LN2,CN2,SYMBOL_TOKEN(A,Text)) :-
 flora_special_token_struct(TextStr,LN1,CN1,LN2,CN2,SPECIAL_TOKEN(A,Text)) :-
 	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
 	atom_codes(A,TextStr).
+
+/***************************************************************************
+	Added by Bin Tang for richer anonymous oid
+****************************************************************************/
+flora_special_token_struct(TextStr, Num, LN1,CN1,LN2,CN2,SPECIAL_TOKEN(A,B,Text)) :-
+        TextStr=[Underscore, Hash],
+	text_info(LN1,CN1,LN2,CN2,[Underscore|[Hash|Num]],Text),
+        atom_codes(A,TextStr),
+	atom_codes(B, Num).
 
 flora_whitespace_struct(TextStr,LN1,CN1,LN2,CN2,WHITESPACE(Text)) :-
 	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
@@ -180,6 +193,12 @@ flora_token_text(SYMBOL_TOKEN(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
 	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
 
 flora_token_text(SPECIAL_TOKEN(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
+	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
+	
+/***************************************************************************
+Added by Bin Tang for richer anonymous oid syntax
+***************************************************************************/
+flora_token_text(SPECIAL_TOKEN(_A,_Num,Text),TextStr,BLN,BCN,ELN,ECN) :-
 	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
 
 flora_token_text(WHITESPACE(Text),TextStr,BLN,BCN,ELN,ECN) :-
@@ -421,46 +440,83 @@ read_variable(C1,LN1,CN1,LN,CN,TokenList,Status) :-
 	!,
 	read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status).
 
+/**********************************************************************
+Added by Bin Tang for richer anonymous oid syntax
+get_number(+PrevLN, +PrevCN, +LN1, +CN1, -LN2, -CN2,  -Num, -NLN, -NCN, 
+-NCh, -NNLN, -NNCN) 
+reads a number Num starting at position (LN1, CN1) and ending at (LN2, CN2),  
+the character right before Num is at (PrevLN,  PrevCN),  
+the first non-digit character NCh is at (NLN, NCN), 
+(NNLN, NNCN) is the position of the char following NCh.
+**********************************************************************/
+
+get_number(PrevLN,PrevCN,LN1,CN1,LN2,CN2,Num,NLN,NCN,NCh,NNLN,NNCN) :-
+	get_char(LN1, CN1, Ch, NextLN, NextCN),
+	( Ch >= CH_0, Ch =< CH_9 ->
+	    Num = [Ch|Chs],
+	    get_number(LN1,CN1,NextLN,NextCN,LN2,CN2,Chs,NLN,NCN,NCh,NNLN,NNCN)
+         ;
+	  LN2 = PrevLN,
+          CN2 = PrevCN,
+	  Num = [],
+	  NLN = LN1,
+	  NCN = CN1,
+	  NCh = Ch,
+	  NNLN = NextLN, 
+	  NNCN = NextCN
+	).
+
 
 /****************************************************************************
-  read_underscore_variable(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
+Modified by Bin Tang for richer anonymous oid syntax
+read_underscore_variable(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
   reads a varialbe beginning with an underscore. Char is the beginning
   underscore. This function handles the special token _# whose only purpose
   is to generate new oids in rule head. Its use in places other than rule head
   should generate an error.
 ****************************************************************************/
 read_underscore_variable(C1,LN1,CN1,LN,CN,TokenList,Status) :-
-	get_char(LN,CN,Ch,NextLN,NextCN),
-	( Ch == CH_HASH ->
-	    %% The special token _# is read
-	    NLN=NextLN,
-	    NCN=NextCN,
-	    get_char(NLN,NCN,NCh,NNLN,NNCN),
-	    flora_special_token_struct([C1,Ch],LN1,CN1,LN,CN,Tk)
-	;
-	  %% To read the rest of a variable name.
-	  ( Ch >= CH_a, Ch =< CH_z ->
-	      read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
-
-	  ; Ch >= CH_A, Ch =< CH_Z ->
-	      read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
-
-	  ; Ch >= CH_0, Ch =< CH_9 ->
-	      read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
-
-	  ; Ch == CH_UNDERSCORE ->
-	      read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
-	  ;
-	    Chars=[],
-	    LN2=LN1,
-	    CN2=CN1,
-	    NCh=Ch,
-	    NLN=LN,
-	    NCN=CN,
-	    NNLN=NextLN,
-	    NNCN=NextCN
-	  ),
-	  flora_variable_struct([C1|Chars],LN1,CN1,LN2,CN2,Tk)
+        get_char(LN,CN,Ch,NextLN,NextCN), 
+        ( Ch == CH_HASH ->
+          get_char(NextLN,NextCN,NextCh,LNN,CNN),
+          ( NextCh >=CH_0, NextCh =< CH_9 ->
+	     %%  Modified by Bin Tang for richer anonymous oid syntax
+	     %%  Numbered anonymous oid is read
+	     get_number(NextLN,NextCN,LNN,CNN,LN2,CN2,Num,NLN,NCN,NCh,NNLN,NNCN),
+	     flora_special_token_struct([C1,Ch],[NextCh|Num],LN1,CN1,LN2,CN2,Tk)
+          ;
+             %% The special token _# is read
+              NLN=NextLN,
+              NCN=NextCN,
+	      NCh=NextCh,
+	      NNLN=LNN,
+	      CNN=NNCN,
+	      flora_special_token_struct([C1,Ch],LN1,CN1,LN,CN,Tk)
+	  ) 
+        ;   
+          %% To read the rest of a variable name.
+          ( Ch >= CH_a, Ch =< CH_z ->
+              read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+              
+          ; Ch >= CH_A, Ch =< CH_Z ->
+              read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+              
+          ; Ch >= CH_0, Ch =< CH_9 ->
+              read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+              
+          ; Ch == CH_UNDERSCORE ->
+              read_name(Ch,LN,CN,NextLN,NextCN,Chars,LN2,CN2,NCh,NLN,NCN,NNLN,NNCN)
+          ;
+            Chars=[],
+            LN2=LN1, 
+            CN2=CN1, 
+            NCh=Ch, 
+            NLN=LN, 
+            NCN=CN,
+            NNLN=NextLN,
+            NNCN=NextCN 
+          ),
+          flora_variable_struct([C1|Chars],LN1,CN1,LN2,CN2,Tk)
         ),
 	TokenList=[Tk|Tokens],
 	!,

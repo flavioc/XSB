@@ -104,7 +104,7 @@
 #define ERROR_EXPINSERT 'invalid path expression in insert'
 #define ERROR_EXPDELETE 'invalid path expression in delete'
 #define ERROR_INDXDIREC	'invalid trie indexing directive'
-#define ERROR_NEWOID	'invalid use of new oid directive'
+#define ERROR_NEWOID	'invalid use of anonymous oid directive'
 #define ERROR_FUNCTOR	'invalid functor (atoms or variables expected)'
 #define ERROR_ARITY	'invalid arity (non-negative integers or variables expected)'
 #define ERROR_EQLSPEC	'invalid equality specification'
@@ -144,6 +144,10 @@
 #define SINGLETON_VAR	'singleton variable'
 #define UNBOUND_VAR	'unbound variable in rule head'
 
+/****************************************
+  Added by Bin Tang for richer anonymous oid syntax
+*****************************************/
+#define SINGLETON_ANON_OID      'singleton numbered anonymous oid in clause'
 
 /**************************************
   errors reported by Flora Compiler

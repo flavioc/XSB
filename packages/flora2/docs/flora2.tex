@@ -3062,7 +3062,7 @@ it follows that John is also a vegetarian, i.e.,
 \verb|john[is_vegetarian]|.
 
 
-\section{Anonymous Oid}
+\section{Anonymous Oids}
 
 
 \index{anonymous oid}
@@ -3070,12 +3070,13 @@ it follows that John is also a vegetarian, i.e.,
 %
 For applications where oids are not important, \FLORA provides the
 compiler directive \verb|_#| to automatically generate a new
-oid. \verb|_#| can be used wherever an Id-term is allowed. Like the
+oid. \verb|_#| can be used wherever an Id-term is allowed, \emph{except in the
+rule body}, where such oids make no sense. Like the
 anonymous variable \verb|_|, each occurrence of \verb|_#| represents
-an anonymous oid. The difference is that such an oid is not only
+an \emph{anonymous oid}. The difference is that such an oid is not only
 unique in each rule, but in the source program as well.
 
-Of course, uniqueness is achieved through the use of special weird naming
+Of course, uniqueness is achieved through the use of special ``weird'' naming
 schema for such oids. However, as long as the user does not use a similar
 naming convention (who, on earth, would give names that begin with lots of
 {\tt ``\_\$''}s?), uniqueness is guaranteed.
@@ -3093,6 +3094,32 @@ foo[_#(X)->Y] :- foo(X,Y).
 the compiler will generate unique oids for each occurrence of {\tt \_\#}.
 Note that, in the second clause, only one oid is generated and it serves as
 a method name.
+
+\index{numbered anonymous oid}
+\index{oid!anonymous!numbered}
+%%
+In some situations, it is needed to be able to create a new oid and use it
+within the same rule head or a fact. Since such an oid 
+needs to be referenced inside the same program clause, it is no longer
+possible to use \verb|_#|, because each occurrence of \verb|_#| causes the
+compiler to generate a new oid. To solve this problem, \FLORA allows 
+\emph{numbered anonymous oids}, which are of the form \verb|_#132|, {\it
+  i.e.}, \verb|_#| with a number attached to it. For instance, 
+%%
+\begin{quote}
+\begin{verbatim}
+_#1[ssn->123, father->f(_#1)[name->john, spouse->_#[name->mary]]].
+_#1[self->_#1].
+\end{verbatim}
+\end{quote}
+%%
+The first time the compiler finds \verb|_#1| in the first clause above,
+it will generate a new oid. However, the second occurrence of \verb|_#1|
+in the \emph{same} clause ({\it i.e.}, \verb|f(_#1)|)  will use the oid
+previously generated for the first occurrence. On the other hand,
+occurrences of \verb|_#1| in \emph{different} clauses are substituted with
+different oids. Thus, the occurrences of \verb|_#1| in the first and second
+clauses above refer to different objects.
 
 
 

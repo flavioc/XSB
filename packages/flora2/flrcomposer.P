@@ -116,6 +116,12 @@ is_sole_operand(VARIABLE(_,_)) :- !.
 is_sole_operand(NUMBER(_,_)) :- !.
 is_sole_operand(ASCII_STRING(_,_)) :- !.
 is_sole_operand(SPECIAL_TOKEN(_,_)) :- !.
+
+/*********************************************************************
+	Added by Bin Tang for richer anonymous oid syntax.
+**********************************************************************/
+is_sole_operand(SPECIAL_TOKEN(_,_,_)) :- !.
+
 is_sole_operand(IDENTIFIER(I,_)) :- \+ flora_opdef(_,_,I), !.
 is_sole_operand(QUOTED_ATOM(QA,_)) :- \+ flora_opdef(_,_,QA), !.
 is_sole_operand(SYMBOL_TOKEN(ST,_)) :- \+ flora_opdef(_,_,ST), !.
@@ -187,10 +193,16 @@ argument_struct(S,I1,I2,ARGUMENT(S,I1,I2)).
 
 function_struct(F,A,FUNCTION(F,A)).
 
+/************************************************************
+     Modified by Bin Tang for richer anonymous oid syntax
+*************************************************************/
 object_struct(O,I,OBJECT(T,I)) :-
 	%% Strip textual information.
 	O =.. [F,N,_],
-	T =.. [F,N].
+	T =.. [F,N]
+       ;
+	O =.. [F,N,Num,_],
+	T =.. [F,N,Num].
 
 
 /**************************************************************************/

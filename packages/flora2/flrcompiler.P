@@ -30,6 +30,7 @@
 #define NEWVAR		newvar
 #define NEWPREDICATE	newpredicate
 #define NEWOID          newoid
+#define RULE_NUM        rule_num
 #mode save
 #mode nostring "\!#'"
 #define NEWOID_COUNT	FLORA_SYMBOL('NEWOID')
@@ -40,6 +41,7 @@
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 
+:- dynamic already_met(_), ruleoid(_,_).
 :- dynamic TMPDIRECT(_).
 :- dynamic TMPOPTION(_).
 
@@ -110,6 +112,12 @@ is_flatom(FLATOM(Atom,Index),Atom,Index).
 is_flnumber(FLNUMBER(Number,_I),Number).
 is_flstring(FLSTRING(String,_I),String).
 is_fltoken(FLTOKEN(Token,I),Token,I).
+
+/****************************************************************
+	Added by Bin Tang for richer anonymous oid syntax
+****************************************************************/
+is_fltoken(FLTOKEN(Token, Num, I),Token,Num,I). 
+
 is_flvar(FLVAR(Name,Index),Name,Index).
 is_fllist(FLLIST(L,T,I),L,T,I).
 
@@ -151,6 +159,7 @@ approximate_index(FLATOM(_Atom,I),I)              :- !.
 approximate_index(FLNUMBER(_Number,I),I)          :- !.
 approximate_index(FLSTRING(_String,I),I)          :- !.
 approximate_index(FLTOKEN(_Token,I),I)            :- !.
+approximate_index(FLTOKEN(_Token,_Num,I),I)       :- !. % Handle rich anon oid.
 approximate_index(FLVAR(_Name,I),I)               :- !.
 approximate_index(FLLIST(_List,_T,I),I)           :- !.
 approximate_index(FLTERM(F,_A,_Args),I)           :- !, approximate_index(F,I).
@@ -558,6 +567,21 @@ new_oidobj(Index,OidObject) :-
 	fmt_write_string(Name,'%s%d',args(NEWOID,N)),
 	newoid_struct(Name,Index,OidObject).
 
+/*************************************************************************
+Modified by Bin Tang for richer anonymous oid syntax
+*************************************************************************/
+new_oidobj(Rule_num, Num,Index,OidObject) :-
+	(
+	already_met(Num)
+	-> ruleoid(Num, Count), Count_new is Count+1,
+	   retract(ruleoid(Num, Count)),
+	   assert(ruleoid(Num,Count_new))
+	;  assert(ruleoid(Num, 1)), assert(already_met(Num))
+	), 
+        fmt_write_string(Name,'%s%d|%s',args(NEWOID,Rule_num,Num)),
+	newoid_struct(Name,Index,OidObject).
+
+
 
 /****************************************************************************
   allvars(+CompilerTerm,-Vars)
@@ -649,7 +673,6 @@ compiling_warning(Index,Msg,warning(Index,Msg)).
 collect_vars(ParserTermOrList,Vars) :-
 	collect_vars(ParserTermOrList,Vars,[]).
 
-
 collect_vars(ParserTerm,Vars,Vars) :-
 	(var(ParserTerm); atomic(ParserTerm)),
 	!.
@@ -669,7 +692,12 @@ collect_vars(ParserTerm,Vars,Vars) :-
 	( is_flatom(ParserTerm,_Atom);
 	  is_flnumber(ParserTerm,_Number);
 	  is_flstring(ParserTerm,_String);
-	  is_fltoken(ParserTerm,_Token,_I)
+	  is_fltoken(ParserTerm,_Token,_I);
+	  
+	  /****************************************************
+	  Added by Bin Tang for richer anonymous oid syntax
+	  ****************************************************/
+	  is_fltoken(ParserTerm,_Token,_Num,_I) 
         ),
 	!.
 
@@ -677,6 +705,43 @@ collect_vars(ParserTerm,Vars,TVars) :-
 	ParserTerm =.. [_F|L],
 	collect_vars(L,Vars,TVars).
 
+/********************************************************************************
+Added by Bin Tang for richer anonymous oid syntax
+
+collect_anonymous(+ParserTermOrList,-Vars)
+collects all occurrences of anonymous oid with number following it(ex. _#123) 
+in a parser term(or a list of parser terms) into Vars.
+
+collect_anonymous((+ParserTermOrList,-Vars,-TailVars)
+*******************************************************************************/
+
+collect_anonymous(ParserTermOrList,Vars) :-
+	collect_anonymous(ParserTermOrList,Vars,[]).
+
+collect_anonymous(ParserTerm,Vars,Vars) :-
+	(var(ParserTerm); atomic(ParserTerm)),
+	!.
+
+collect_anonymous([],Vars,Vars) :- !.
+
+collect_anonymous([H|L],Vars,TVars) :-
+	!,
+	collect_anonymous(H,Vars,LVars),
+	collect_anonymous(L,LVars,TVars).
+
+collect_anonymous(ParserTerm,[ParserTerm|Vars],Vars) :-
+	is_fltoken(ParserTerm,_Token,_Num,_Index),
+	!.
+collect_anonymous(ParserTerm,Vars,Vars) :-
+	( is_flatom(ParserTerm,_Atom);
+	  is_flnumber(ParserTerm,_Number);
+	  is_flstring(ParserTerm,_String);
+	  is_flvar(ParserTerm,_Token,_I)
+        ),
+	!.
+collect_anonymous(ParserTerm,Vars,TVars) :-
+	ParserTerm =.. [_F|L],
+	collect_anonymous(L,Vars,TVars).
 
 /****************************************************************************
   subtract_vars(+VarsList1,+VarsList2,-VarsList)
@@ -861,18 +926,31 @@ flora_reset_compiler :-
 
 
 /****************************************************************************
+  Modified by Bin Tang for richer anonymous oid syntax
   flora_compile(+ParserTerm,-CodeList,-OptionList,-Status)
 ****************************************************************************/
 flora_compile(NULL,[],[],[]) :- !.
 
 flora_compile(ParserTerm,CodeList,OptionList,Status) :-
+	%% extract the rule number
+	conget(RULE_NUM, N),
+	M is N+1,
+	conset(RULE_NUM, M), 
+	
 	initialize_work,
 	( is_flrule(ParserTerm,Head,Body) ->
-	    compile_rule(Head,Body,CodeList,Status)
-
+	    compile_rule(Head,Body,CodeList,Status_rule),
+	%% check whether singleton numbered anon oid exists
+	    ( ruleoid(_,1) 
+	      -> referenced_once(Head, Status_rule, Status)
+	      ;  Status_rule=Status
+	    )
 	; is_flfact(ParserTerm,Head) ->
-	    compile_fact(Head,CodeList,Status)
-
+	    compile_fact(Head,CodeList,Status_fact),
+	    ( ruleoid(_,1) 
+	      -> referenced_once(Head, Status_fact, Status)
+	      ;  Status_fact=Status
+	    )
 	; is_flquery(ParserTerm,Body) ->
 	    compile_query(Body,CodeList,Status)
 
@@ -880,8 +958,40 @@ flora_compile(ParserTerm,CodeList,OptionList,Status) :-
 	    compile_directive(DirectList,CodeList,Status)
         ),
 	!,
-	get_option(OptionList).
+	get_option(OptionList),
+	retractall(already_met(_)),
+	retractall(ruleoid(_,_)). 
+	
+/***************************************************************************
+Added by Bin Tang for richer anonymous oid syntax
+referenced_once(+Head,+Status_rf,-Status)
+finds those anonymous oids which are only referenced once and put the
+corresponding warning message in Status
+***************************************************************************/
+referenced_once(Head, Status_rf, Status) :-
+	findall(A, ruleoid(A,1), SingleOidList),
+	collect_anonymous(Head,AnonymousList),
+	singleton_oid_warning(SingleOidList, AnonymousList, WarnList,[]),
+	append(Status_rf, WarnList, Status).
 
+/*************************************************************************
+singleton_oid_warning(+SingleOidList, +AnonymousList,-WarnList,-WarnTail)
+***********************************************************************/
+singleton_oid_warning([],_AnonymousList,WarnList,WarnList).
+singleton_oid_warning([V|L], AnonymousList, WarnList, WarnTail) :-
+	find_index(V, AnonymousList, Index),
+	compiling_warning(Index, SINGLETON_ANON_OID, W),
+	WarnList=[W|T],
+	singleton_oid_warning(L,AnonymousList,T,WarnTail).
+
+/**************************************************************************
+find_index(+Num,+AnonymousList,-Index
+finds Index for Num
+**************************************************************************/
+find_index(Num,[fltoken(_Token,Num,Index)|_],Index) :- !.
+find_index(Num,[_|Tail],Index) :-
+	find_index(Num,Tail,Index).
+	
 %% This rule is for debugging.
 flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
 
@@ -1892,6 +2002,13 @@ compile_head_pathexp(ParserTerm,Object,[],[]) :-
 
 	; is_fltoken(ParserTerm,Token,Index) ->
 	    compile_head_fltoken(Token,Index,Object)
+
+	/************************************************************
+		Added by Bin Tang for richer anonymous oid syntax
+	*************************************************************/
+	
+	; is_fltoken(ParserTerm,Token,Num,Index) ->      
+	    compile_head_fltoken(Token,Num,Index,Object) 
 	),
 	!.
 
@@ -1924,6 +2041,18 @@ compile_head_fltoken(Token,Index,Object) :-
 	    new_oidobj(Index,Object)
 	;
 	  atomobj_struct(Token,Index,Object)
+        ).
+
+/****************************************************************************
+  Added by Bin Tang for richer oid anonymous syntax
+  compile_head_fltoken(+Token,+Num,+Index,-Object)
+****************************************************************************/
+compile_head_fltoken(Token,Num,Index,Object) :-
+        ( Token == FL_NEWOID ->
+            conget(RULE_NUM, Rule_num), 
+	    new_oidobj(Rule_num,Num,Index,Object)
+        ;
+          atomobj_struct(Token,Index,Object)
         ).
 
 
