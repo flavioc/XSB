@@ -27,53 +27,126 @@
 #include "extensions_xsb.h"
 
 
-:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
+:- import slash/1, str_cat/3 from machine.
 :- import search_module/6 from consult.
 :- import compile_so/3, runtime_loader_flag/3 from foreign.
 :- import path_sysop/3, path_sysop/2, fmt_write_string/3 from file_io.
 :- import xpath_info/2 from xpath_init.
 :- import xsb_configuration/2 from xsb_configuration.
 
-:-  package_configuration(dir(xpath), XpathDir),
+make_xpathH(CC, CC_opts) :-
+	slash(Slash),
+	xsb_configuration(configuration, XSBconfiguration),
+	xpath_info(ldflags, LoaderFlags),
+	(running_under(unix) ->
+	    LD_flags = LoaderFlags
+	; %% Cygwin. Under Windows loader options are ignored
+	    str_cat(' -lwsock32 ', LoaderFlags, LD_flags)
+	),
+
+	package_configuration(dir(xpath), XPathDir),
+	fmt_write_string(LD_directives_file,
+			 '%s%scc%sxpathparser.H', f(XPathDir, Slash, Slash)),
+	telling(OldTell),
+	tell(LD_directives_file),
+	writeln('%% This file is generated on-the-fly by xpathconfig.P'),
+	writeln('%% Do not edit--any changes will be written over.'),
+	write('%% config:    '), writeln(XSBconfiguration),
+	write('%% CC:        '), writeln(CC),
+	write('%% CC Opts: '), writeln(CC_opts), 
+	writeln(':- export parse_xpath__/4, allocate_xpath_error_term__/1.'),
+	write(':- ldoption('''),
+	write(LD_flags),
+	writeln(''').'),
+	told,
+	tell(OldTell).
+
+
+:-
+    [xpath_init],
+    xpath_info(support,'no'),
+    abort('++Error[XPATH]> The xpath package is not configured. Please configure it first.').
+
+
+:-
+    package_configuration(dir(xpath), XPathDir),  
     slash(Slash),
     Basename = xpathparser,
-    xsb_configuration(config_libdir, ConfigLibdir),
-    fmt_write_string(Module, '%s%scc%s%s', f(XpathDir,Slash,Slash,Basename)),
+    xsb_configuration(config_libdir, ConfigLibDir),
+    xsb_configuration(compiler, CC),
+    xsb_configuration(config_dir, ConfigDir),
+    xsb_configuration(config_bindir, ConfigBinDir),
+    xpath_info(ccflags, CCflags),
+    fmt_write_string(Module, '%s%scc%s%s', f(XPathDir,Slash,Slash,Basename)),
     fmt_write_string(LibObjFile,
 		     '%s%s%s%s',
-		     args(ConfigLibdir,Slash, Basename, XSB_OBJ_EXTENSION_ATOM)),
+		     args(ConfigLibDir,Slash,Basename,XSB_OBJ_EXTENSION_ATOM)),
+    fmt_write_string(CC_opts, ' %s -I %s', f(CCflags, ConfigDir)),
     str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
-    ( 
-      search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO),
-      str_cat(Module, '.c', ModuleSourceFile),
-      path_sysop(newerthan,ModuleO,ModuleSourceFile)
+    ((running_under(windows) ; running_under(cygwin))
+    ->
+	fmt_write_string(ConfigSharedMod,
+			 '%s%s%s.dll', f(ConfigBinDir, Slash, Basename))
+    ;
+	fmt_write_string(ConfigSharedMod,
+			 '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))
+    ),
+    (   %% avoid recompilation
+	search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO),
+	str_cat(Module, '.c', ModuleSourceFile),
+	path_sysop(newerthan,ModuleO,ModuleSourceFile),
+	path_sysop(newerthan,ConfigSharedMod,ModuleSourceFile)
     %% module compiled and is current, so just load
     -> [Basename]
-
-    ;
-      xsb_configuration(host_os, 'windows')
-    ->
-      [Basename],
-      force_rename(Objfile, LibObjFile)
-
+    
     %% If Module isn't compiled or is old --- recompile
-    ;   
-	xsb_configuration(compiler, CC),
-	xpath_info(ldflags, LoaderFlags),
-	xpath_info(ccflags, CCflags),
-	fmt_write_string(CC_opts,
-                         ' %s %s ',
-                         f(CCflags,LoaderFlags)),
+    ;
+	make_xpathH(CC, CC_opts),
+	(running_under(windows) ->
+	    [Basename],
+	    (path_sysop(exists,Objfile) -> force_rename(Objfile, LibObjFile)
+	    ; true
+	    )
 
-	consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	force_rename(Objfile, LibObjFile),
-	str_cat(Module, '.so', SharedLib),
-	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
-	force_rename(SharedLib,LibMod)
-     ).
+	; running_under(cygwin) ->
+	    str_cat(Module, '.dll', SharedLib),
+	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	    force_rename(SharedLib, ConfigSharedMod),
+	    force_rename(Objfile, LibObjFile),
+	    str_cat(Module, '.o', ObjfileO),
+	    fmt_write_string(LibObjFileO,
+			     '%s%s%s.o', f(ConfigBinDir, Slash, Basename)),
+	    force_rename(ObjfileO, LibObjFileO),
+	    str_cat(Module, '.a', ObjfileA),
+	    fmt_write_string(LibObjFileA,
+			     '%s%s%s.a', f(ConfigBinDir, Slash, Basename)),
+	    force_rename(ObjfileA, LibObjFileA),
+	    str_cat(Module, '.def', ObjfileDef),
+	    fmt_write_string(LibObjFileDef,
+			     '%s%s%s.def', f(ConfigBinDir, Slash, Basename)),
+	    force_rename(ObjfileDef, LibObjFileDef)
+
+	;
+	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	    force_rename(Objfile, LibObjFile),
+	    str_cat(Module, '.so', SharedLib),
+	    force_rename(SharedLib,ConfigSharedMod)
+	)
+    ).
 
 %% Windows semantics for renaming is such that the op fails, 
 %% if the target exists
 force_rename(Orig,Target) :-
 	(path_sysop(unlink,Target), !; true),
 	path_sysop(rename,Orig,Target).
+
+
+running_under(cygwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(cygwin, A),
+	!.
+running_under(windows) :-
+	xsb_configuration(architecture, A),
+	str_sub(windows, A),
+	!.
+running_under(unix).

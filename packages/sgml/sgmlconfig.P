@@ -47,7 +47,7 @@ make_sgmlH(CC, CC_opts) :-
 			 '%s%scc%ssgml2pl.H', f(SgmlDir, Slash, Slash)),
 	telling(OldTell),
 	tell(LD_directives_file),
-	writeln('%% This file is generated on-the-fly by plmchconfig.P'),
+	writeln('%% This file is generated on-the-fly by sgmlconfig.P'),
 	writeln('%% Do not edit--any changes will be written over.'),
 	write('%% config:    '), writeln(XSBconfiguration),
 	write('%% CC:        '), writeln(CC),
@@ -66,7 +66,6 @@ make_sgmlH(CC, CC_opts) :-
     Basename = sgml2pl,
     xsb_configuration(config_libdir, ConfigLibDir),
     xsb_configuration(compiler, CC),
-    %%xsb_configuration(loader_flags, LoaderFlags),
     xsb_configuration(config_dir, ConfigDir),
     xsb_configuration(compiler_flags, CCflags),
     xsb_configuration(config_bindir, ConfigBinDir),
@@ -120,7 +119,6 @@ make_sgmlH(CC, CC_opts) :-
 	    force_rename(ObjfileDef, LibObjFileDef)
 
 	;
-	    %%fmt_write_string(CC_opts, ' %s %s ', f(CCflags,LoaderFlags)),
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	    force_rename(Objfile, LibObjFile),
 	    str_cat(Module, '.so', SharedLib),
