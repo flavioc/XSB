@@ -177,6 +177,35 @@ jmp_buf xsb_abort_fallback_environment;
 /* the main emulator loop.						*/
 /*======================================================================*/
 
+/*
+ * The WAM instructions are aligned with word (4 bytes on 32-bit machines,
+ * or 8-byte on 64-bit machines), the shortest instructions (like fail)
+ * take one word, and the longest ones take three words (like
+ * switchon3bound).  If an instruction takes more than one word, then the
+ * 2nd (or 3rd) word always contains an operand that takes one word.  The
+ * one-word operands can be (see file emu/inst.h):
+ *
+ * 	L - label
+ * 	S - structure symbol
+ * 	C - constant symbol
+ * 	N - number
+ * 	G - string
+ * 	I - 2nd & 3rd arguments of switchonbound
+ * 	F - floating point number
+ *
+ * The opcode of all instructions takes the first byte in the first word.
+ * The rest 3 bytes contain operands that needs only one byte.  These
+ * one-byte operands can be:
+ *
+ * 	P - pad, not used
+ * 	A - one byte number
+ * 	V - variable offset
+ * 	R - register number
+ *
+ * (Notice that on 64-bit machines the space taken by these one-byte
+ * operands is doubled)
+ */
+
 static int emuloop(byte *startaddr)
 {
   Psc psc;
