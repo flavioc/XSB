@@ -355,6 +355,7 @@ DllExport char* call_conv ptoc_longstring(CTXTdeclc int regnum)
   register Cell addr = cell(reg+regnum);
   XSB_Deref(addr);
   if (isstring(addr)) return string_val(addr);
+  if (isinteger(addr)) return (char *)int_val(addr);
   
   /*
   if (!LSBuffInitted) 
@@ -1612,16 +1613,16 @@ int builtin_call(CTXTdeclc byte number)
     break;
 
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
-    ctop_string(CTXTc 2, string_find(expand_filename(ptoc_string(CTXTc 1)), 1));
+    ctop_string(CTXTc 2, string_find(expand_filename(ptoc_longstring(CTXTc 1)), 1));
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
-    ctop_string(CTXTc 2, string_find(tilde_expand_filename(ptoc_string(CTXTc 1)), 1));
+    ctop_string(CTXTc 2, string_find(tilde_expand_filename(ptoc_longstring(CTXTc 1)), 1));
     break;
   case IS_ABSOLUTE_FILENAME: /* R1: +FN. Ret 1 if name is absolute, 0 else */
-    return is_absolute_filename(ptoc_string(CTXTc 1));
+    return is_absolute_filename(ptoc_longstring(CTXTc 1));
   case PARSE_FILENAME: {    /* R1: +FN, R2: -Dir, R3: -Basename, R4: -Ext */
     char *dir, *basename, *extension;
-    parse_filename(ptoc_string(CTXTc 1), &dir, &basename, &extension);
+    parse_filename(ptoc_longstring(CTXTc 1), &dir, &basename, &extension);
     ctop_string(CTXTc 2, string_find(dir, 1));
     ctop_string(CTXTc 3, string_find(basename, 1));
     ctop_string(CTXTc 4, string_find(extension, 1));
@@ -1629,9 +1630,9 @@ int builtin_call(CTXTdeclc byte number)
   }
   case ALMOST_SEARCH_MODULE: /* R1: +FileName, R2: -Dir, R3: -Mod,
 				R4: -Ext, R5: -BaseName */
-    return almost_search_module(CTXTc ptoc_string(CTXTc 1));
+    return almost_search_module(CTXTc ptoc_longstring(CTXTc 1));
   case EXISTING_FILE_EXTENSION: { /* R1: +FileN, R2: ?Ext */
-    char *extension = existing_file_extension(ptoc_string(CTXTc 1));
+    char *extension = existing_file_extension(ptoc_longstring(CTXTc 1));
     if (extension == NULL) return FALSE;
     else {
       extension = string_find(extension,1);
@@ -1649,7 +1650,7 @@ int builtin_call(CTXTdeclc byte number)
   }
   case GETENV:  {	/* R1: +environment variable */
 			/* R2: -value of that environment variable */
-    char *env = getenv(ptoc_string(CTXTc 1));
+    char *env = getenv(ptoc_longstring(CTXTc 1));
     if (env == NULL)
       /* otherwise, string_find dumps core */
       return FALSE;
@@ -1672,8 +1673,8 @@ int builtin_call(CTXTdeclc byte number)
     /* +R2: a buffer (of length 16) for returned structure */
 #ifdef HAVE_GETHOSTBYNAME
     static struct hostent *hostptr;
-    hostptr = gethostbyname(ptoc_string(CTXTc 1));
-    memmove(ptoc_string(CTXTc 2), hostptr->h_addr, hostptr->h_length);
+    hostptr = gethostbyname(ptoc_longstring(CTXTc 1));
+    memmove(ptoc_longstring(CTXTc 2), hostptr->h_addr, hostptr->h_length);
 #else
     xsb_abort("[SYS_GETHOST] Operation not available for this configuration");
 #endif
@@ -1821,7 +1822,7 @@ int builtin_call(CTXTdeclc byte number)
 			   If file is a directory, add trailing slash and
 			   rectify filename (delete multiple slashes, '..' and
 			   '.'. */
-    ctop_string(CTXTc 2, string_find(dirname_canonic(ptoc_string(CTXTc 1)), 1));
+    ctop_string(CTXTc 2, string_find(dirname_canonic(ptoc_longstring(CTXTc 1)), 1));
     break;
   case SLASH_BUILTIN: {  /* R1: -Slash. Tells what kind of slash the OS uses */
     static char slash_string[2];
