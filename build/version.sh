@@ -1,7 +1,7 @@
 #! /bin/sh
 
 xsb_major_version=2
-xsb_minor_version=02
+xsb_minor_version=1
 #xsb_beta_version=0
 xsb_codename="Skol"
 
