@@ -2,7 +2,6 @@ ChangeLog
 MS_VC_Mfile.mak
 Makefile
 a.out
-com_xsb_interprolog_NativeEngine.h
 ms_vc_mfile.mak
 msvc_makefile.mak
 orastuff.c
