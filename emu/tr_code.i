@@ -65,12 +65,13 @@
 
 /*----------------------------------------------------------------------*/
 
-#define proceed_lpcreg	\
-    if (is_answer_leaf(NodePtr)) {\
-      handle_conditional_answers; \
-      num_vars_in_var_regs = -1;  \
-    } \
-    Last_Nod_Sav = NodePtr;	  \
+#define proceed_lpcreg				\
+    if (is_answer_leaf(NodePtr) && delay_it) {	\
+      handle_conditional_answers;		\
+    }						\
+    global_num_vars = num_vars_in_var_regs;	\
+    num_vars_in_var_regs = -1;			\
+    Last_Nod_Sav = NodePtr;			\
     lpcreg = cpreg
 
 #define non_ftag_lpcreg	lpcreg = opsucc
@@ -91,11 +92,16 @@ Cell *reg_array;
 CPtr cptr;
 #endif
 CPtr reg_arrayptr;
-int  reg_array_size = DEFAULT_ARRAYSIZ;
+int reg_array_size = DEFAULT_ARRAYSIZ;
 
 #define MaxTrieRegs 500
 CPtr var_regs[MaxTrieRegs];
-int  num_vars_in_var_regs = -1;
+int num_vars_in_var_regs = -1;
+/*
+ * global_num_vars is a new variable to save the value of variable
+ * num_vars_in_var_regs temporarily.
+ */
+int global_num_vars;
 
 /*----------------------------------------------------------------------*/
 
@@ -107,6 +113,16 @@ NODEptr NodePtr,Last_Nod_Sav;
 NODEptr *hash_base; 
 CPtr    temp_ptr_for_hash;
 int     hash_offset, hashed_hash_offset;
+/*
+ * Variable delay_it decides whether we should delay an answer after we
+ * have gone though a branch of an answer trie and reached the answer
+ * leaf.  If delay_it == 1, then macro handle_conditional_answers() will
+ * be called (in proceed_lpcreg).
+ *
+ * In return_table_code, we need to set delay_it to 1. But in
+ * get_returns/2, we need to set it to 0.
+ */
+int     delay_it;
 
 #define restore_regs_and_vars(tbreg,offset)	\
     undo_bindings(tbreg);			\
