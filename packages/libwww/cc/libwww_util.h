@@ -52,8 +52,8 @@
 
 /* definitions and macros included in all files */
 
-int total_number_of_requests;
-int event_loop_runnung;
+extern int total_number_of_requests;
+extern int event_loop_runnung;
 HTList *XML_converter=NULL, *RDF_converter=NULL, *HTML_converter=NULL;
 
 /*

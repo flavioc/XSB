@@ -114,6 +114,11 @@ int do_wildmatch__(void)
   return FALSE;
 }
 
+#define	GLOB_ABORTED	(-2)	/* Unignored error. */
+#define	GLOB_NOMATCH	(-3)	/* No match and GLOB_NOCHECK not set. */
+#define	GLOB_NOSYS	(-4)	/* Function not supported. */
+#define GLOB_ABEND	GLOB_ABORTED
+
 
 /* XSB glob matcher: match files in current directory according to a wildcard.
 ** Arg1: wildcard, Arg2: Mark directories with `/' flag, Arg3: variable that
@@ -151,6 +156,21 @@ int do_glob_directory__(void)
 			     file_vector */
   return_code = glob(wild_ptr, flags, NULL, &file_vector);
 
+#if defined(__APPLE__)
+
+  if (0 != return_code)
+  	{
+    globfree(&file_vector);
+    xsb_abort("[GLOB_DIRECTORY] Can't read directory or out of memory");
+  	}
+  else if (0 == file_vector.gl_matchc)	// Case GLOB_NOMATCH:
+  	{
+    globfree(&file_vector); /* glob allocates a long string, which must be freed to avoid memory leak */
+    return FALSE;
+  	}
+
+#else
+
   switch (return_code) {
   case GLOB_NOMATCH:
     globfree(&file_vector); /* glob allocates a long string, which must be
@@ -161,6 +181,8 @@ int do_glob_directory__(void)
     globfree(&file_vector);
     xsb_abort("[GLOB_DIRECTORY] Can't read directory or out of memory");
   }
+
+#endif
 
   /* matched successfully: now retrieve results */
   listTail = listOfMatches = reg_term(3);

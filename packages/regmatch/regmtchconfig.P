@@ -90,7 +90,14 @@ make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
 	rename(Objfile, LibObjFile),
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk
+	(
+	(xsb_configuration(architecture,A),str_sub(darwin,A))
+	->
+	str_cat(Module, '.dylib', SharedLib),
+	fmt_write_string(LibMod, '%s%s%s.dylib', a(ConfigLibdir,Slash,Basename))
+	;
 	str_cat(Module, '.so', SharedLib),
-	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename))
+	),
 	rename(SharedLib,LibMod)
      ).

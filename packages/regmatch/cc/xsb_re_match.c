@@ -59,7 +59,7 @@ struct regexp_tbl_entry {
   regex_t compiled;	    	    	/* the compiled regexp */
 };
 
-struct regexp_tbl_entry regexp_tbl[REGEXP_TBL_SIZE];
+static struct regexp_tbl_entry regexp_tbl[REGEXP_TBL_SIZE];
 
 static int xsb_re_match(char *regexp_ptr, char* match_str, int match_flags,
 			 regmatch_t **match_array, int *paren_number,
