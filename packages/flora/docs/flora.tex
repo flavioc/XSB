@@ -1351,20 +1351,31 @@ non-monotonic behavioral inheritance.  However, this semantics is very hard
 to implement efficiently, especially using a top-down deductive engine
 provided by XSB. Thus, \FLORA uses a different, more cautious semantics for
 inheritance, which favors the first interpretation above.  The idea can be
-summarized using the following rules:
+summarized using the following rules, which define how class instances
+inherit from the classes they belong to. Similar rules are needed to
+describe how classes inherit from superclasses.
 %%
 \begin{verbatim}
 // Inheritance rules for scalar attributes
 :- table defined/2, overwritten/3.
-X[A -> V] <- tnot(defined(X,A)) & X:Y & Y[A *-> V] & tnot(overwritten(X,Y,A))
-overwritten(X,Y,A) <- X:Z & Z::Y & Z[A *-> W] & Z \= Y
-defined(X,A) <- X[A -> V]
+Obj[A -> V] <- not defined(Obj,A) & Obj:Class & Class[A *-> V]
+               & not overwritten(Obj,Class,A) & not conflict(Obj,Class,A).
+overwritten(Obj,Class,A) <- Obj:Class1 & Class1::Class 
+                            & Class1[A *-> W] & Class1 \= Class
+defined(Obj,A) <- Obj[A -> V]
+conflict(Obj,Class,A) <- defined(Super,A) & Obj:Super
+                         & not Super::Class & not Class::Super.
 
 // Inheritance rules for set attributes
 :- table definedSet/2, overwrittenSet/3.
-X[A ->> V] <- tnot(definedSet(X,A)) & X:Y & Y[A *->> V] & tnot(overwrittenSet(X,Y,A))
-overwrittenSet(X,Y,A) <- X:Z & Z::Y & Z[A *->> W] & Z \= Y
-definedSet(X,A) <- X[A ->> V]
+Obj[A ->> V] <- not definedSet(Obj,A) & Obj:Class & Class[A *->> V]
+                & not overwrittenSet(Obj,Class,A)
+                & not conflictSet(Obj,Class,A).
+overwrittenSet(Obj,Class,A) <- Obj:Class1 & Class1::Class
+                               & Class1[A *->> W] & Class1 \= Class
+definedSet(Obj,A) <- Obj[A ->> V]
+conflictSet(Obj,Class,A) <- definedSet(Super,A) & Obj:Super
+                            & not Super::Class & not Class::Super.
 \end{verbatim}
 %%
 \index{well-founded semantics}
@@ -1376,7 +1387,8 @@ One problem with the current implementation of behavioral inheritance is
 that the well-founded semantics for negation in the presence of equality is
 not sufficiently developed yet. For this reason, inheritance is turned off
 if \FLORA compiler is instructed to compile a \FLORA module with equality
-maintenance enabled.
+maintenance enabled. This restriction will be eliminated in a future
+release.
 
 \paragraph{Inheritable attributes and path expressions.}
 In the previous examples, path expressions used only non-inheritable
@@ -2038,6 +2050,13 @@ from {\tt flrutils}, that can be used in conjunction with \FLORA:
     to write F-molecules without worrying about the semicolon, {\it i.e.}, 
     {\tt a[m->b;;c->d;]}. It will be also possible to have extraneous commas:
     {\tt head :- b1,,b2,.}
+  \item[Inheritance and equality:] In a future release, equality will be
+    defined using a separate equality theory, which does not utilize
+    negation or inheritance. Any other equalities derived
+    by the program will be treated as errors. This also opens the door for
+    extending the well-founded semantics with such a separate equality
+    theory. In turn, this will let us handle inheritance when equality is
+    present.
   \item[Aggregates:] \FLORA will provide builtin functions that will
     directly apply to the outcome of the aggregates {\tt collectbag} and
     {\tt collectset}. This will make it possible to do grouping once and
