@@ -1,0 +1,85 @@
+/* File:      error_handler.P
+** Author(s): Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- compiler_options([xpp_on,sysmod,optimize]).
+
+#include "sig_xsb.h"
+#include "flag_defs_xsb.h"
+#include "heap_defs_xsb.h"
+#include "standard.h"
+#include "char_defs.h"
+
+:- dynamic default_user_error_handler/1.
+
+/* Types of errors are taken from Section 7.12 of the ISO Standard */
+
+default_error_handler(Error):- 
+	default_user_error_handler(Error),
+	!.
+
+default_error_handler(error(instantiation_error,Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Instantiation] ', Msg), 
+	           STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+default_error_handler(error(type_error(Valid_type,Culprit),Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Type (',
+		    Culprit,' in place of ',Valid_type,')] ', Msg),STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+default_error_handler(error(domain_error(Valid_type,Culprit),Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Domain (',
+		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+default_error_handler(error(existence_error(Object_type,Culprit),Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Existence (',
+	           Object_type,Culprit,' does not exist)] ', Msg), STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+default_error_handler(error(permission_error(Op,Obj_type,Culprit),Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Permission (Operation',Culprit,
+	           ' of type ',Op,' on ',Obj_type,')] ', Msg), STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+default_error_handler(error(representation_error(Flag),Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Representation (',Flag,
+	            ')] ', Msg), STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+default_error_handler(error(calculation_error(Flag),Msg)):- 
+	messageln(('++Error[XSB/Runtime/P]: [Calculation (',Flag,
+	            ')] ', Msg), STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+
+default_error_handler(Msg):- 
+	messageln(('++Error[XSB/Runtime/P] uncaught exception: ', Msg), 
+	           STDERR),
+        messageln('Aborting...', STDFDBK),
+	abort.
+
+
