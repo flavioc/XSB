@@ -88,8 +88,12 @@ else
    echo ""
    echo "XSB might not have have been compiled for the following machine configuration:"
    echo "             " ${canonical}${suffix}
-   echo "This installation seems to have the following configurations available:"
-   ls -1  $topdir/config 2> /dev/null
+   echo "***This installation seems to have the following configurations available:"
+   # First drop files that don't have "-".
+   # Then drop the configuration that we just said doesn't exist.
+   ls -1  $topdir/config | egrep "-" \
+    	    	    	    | egrep -v "^${canonical}${suffix}\$" 2> /dev/null
+   echo "***configuration list end"
    echo ""
    echo "Please contact your system administrator, if you can't rebuild XSB."
 fi
