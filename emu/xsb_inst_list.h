@@ -271,7 +271,7 @@ XSB_INST(0xf8, fail, _fail, PPP,X, X,X);
 XSB_INST(0xf9, noop, _noop, PP, A, X,X);
 XSB_INST(0xfa, halt, _halt, PPP,X, X,X);
 XSB_INST(0xfb, builtin, _builtin, PP, A, X,X);
-XSB_INST(0xfc, unifunc, _unifunc, PPP,X, X,X);
+XSB_INST(0xfc, unifunc, _unifunc, P,X, A,R);
 XSB_INST(0xfd, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xfe, reset, _reset, PPP,X, X,X);
 XSB_INST(0xff, no_inst, _no_inst, PPP,X,X,X);
