@@ -1844,13 +1844,13 @@ check_odbc_show_query(Val):-
 
 % Obsolescent -- they still work (buggily), but dont support throw.
 odbc_flag(fail_on_error,_on,off) :-
-	retract(odbc_error_flg(on)), assert(odbc_error_flg(off)).
+	retractall(odbc_error_flg(on)), assert(odbc_error_flg(off)).
 odbc_flag(fail_on_error, _off, on) :-
-	retract(odbc_error_flg(off)), assert(odbc_error_flg(on)).
+	retractall(odbc_error_flg(off)), assert(odbc_error_flg(on)).
 odbc_flag(show_query, _off, on) :-
-	retract(odbc_show_query(off)), assert(odbc_show_query(on)).
+	retractall(odbc_show_query(off)), assert(odbc_show_query(on)).
 odbc_flag(show_query, _on, off) :-
-	retract(odbc_show_query(on)), assert(odbc_show_query(off)).
+	retractall(odbc_show_query(on)), assert(odbc_show_query(off)).
 
 %--------------------------------------------------
 
