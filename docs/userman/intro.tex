@@ -18,8 +18,8 @@ found in Logic Programming systems, including
   Web applications.
 \item Preprosessors and Interpreters so that XSB can be used to evaluate
   programs that are based on advanced formalisms, such as extended logic
-  progams (according to the Well-Founded Semantics \cite{ADP94}) and
-  F-Logic \cite{KLW95}.
+  progams (according to the Well-Founded Semantics \cite{ADP94});
+Generalized Annotated Programs \cite{KiSu92}; and F-Logic \cite{KLW95}.
 \item Source code availability for portability and extensibility.
 \end{itemize}
  
@@ -33,8 +33,9 @@ system. We feel that these capabilities justify viewing XSB as a new
 paradigm for Logic Programming.
 
 To understand the implications of SLG resolution \cite{ChWa96}, recall
-that Prolog is based on a depth-first search strategy (SLD) which uses
-program clause resolution.  As such, Prolog is susceptible to getting
+that Prolog is based on a depth-first search through trees that are
+built using program clause resolution (SLD).  As such, Prolog is
+susceptible to getting 
 lost in an infinite branch of a search tree, where it may loop
 infinitely.  SLG evaluation, available in XSB, can correctly evaluate
 many such logic programs.  To take the simplest of examples, any query
@@ -44,8 +45,8 @@ to the program:
 \begin{verbatim}
 :- table ancestor/2.
 
-ancestor(X,Y) :- parent(X,Y).
 ancestor(X,Y) :- ancestor(X,Z), parent(Z,Y).
+ancestor(X,Y) :- parent(X,Y).
 \end{verbatim}
 \end{minipage}
 \end{center}
@@ -68,8 +69,10 @@ Chapter
 \ref{tabling_overview} for details).
 
 The use of tabling also makes possible the evaluation of programs with
-negation.  When logic programming rules have negation, paradoxes
-become possible.  As an example consider one of Russel's paradoxes ---
+non-stratified negation through its implementation of the {\em
+well-founded semantics} \cite{VGRS91}.  When logic programming rules
+have negation, paradoxes become possible.  As an example consider one
+of Russel's paradoxes --- 
 the barber in a town shaves every person who does not shave himself ---
 written as a logic program.
 \begin{center}
@@ -81,10 +84,15 @@ person(barber).
 person(mayor).
 \end{verbatim} 
 \end{center}
-Logically speaking, however it should deduce that the barber shaves
-the mayor, while in a skeptical semantics it is undefined whether the
-barber shaves himself or not.  The well-founded semantics, does not
-treat this conclusion as either true or false, but as {\em undefined}.
+Logically speaking, the meaning of this progam should be that the
+barber shaves 
+the mayor, but the case of the barber is trickier.  If we conclude
+that the barber does not have himself our meaning does not reflect the 
+first rule in the program.  If we conclude that the barber does shave
+himself, we have reached that conclusion using information beyond what 
+is provided in the progra.  The well-founded semantics, does not
+treat{\tt shaves(barber,barber)} as either true or false, but as {\em
+undefined}. 
 Prolog, of course, would enter an infinite loop.  XSB's treatment of
 negation is discussed further in Chapter \ref{tabling_overview}.
 
@@ -104,7 +112,7 @@ closure(R)(X,Y) :- R(X,Z), closure(R)(Z,Y).
 \end{center}
 where {\tt closure(R)/2} is (syntactically) a second-order predicate
 which, given any relation {\tt R}, returns its transitive closure
-relation {\tt closure(R)}.  Support is provided for reading and
+relation {\tt closure(R)}.  With XSB, support is provided for reading and
 writing HiLog terms, converting them to or from internal format as
 necessary (see Section~\ref{HiLog2Prolog}).  Special meta-logical
 standard predicates (see Section~\ref{MetaLogical}) are also provided
@@ -128,16 +136,16 @@ closure(R)(X,Y) :- closure(R)(X,Z), R(Z,Y).
 \end{minipage}
 \end{center}
 
-A goal of XSB is to provide in implementation engine for both logic
+A further goal of XSB is to provide in implementation engine for both logic
 programming and for data-oriented applications such as in-memory
 deductive database queries and data mining \cite{SaSw94}.  One
 prerequisite for this functionality is the ability to load a large
 amount of data very quickly.  We have taken care to code in C a
 compiler for asserted clauses.  The result is that the speed of
 asserting and retracting code is faster in XSB than in any
-other Prolog system that we know of.  At the same time, because
+other Prolog system of which we are aware.  At the same time, because
 asserted code is compiled into SLG-WAM code, the speed of executing
-asserted code in XSB is faster than that of other Prologs as
+asserted code in XSB is faster than that of many other Prologs as
 well.  We note however, that XSB does not follow the semantics
 of assert specified in \cite{LiOk87}.
 
@@ -146,14 +154,14 @@ Prolog's first argument indexing.  XSB offers a variety of indexing
 techniques for asserted code.  Clauses can be indexed on a groups of
 arguments or on alternative arguments.  For instance, the executable
 directive {\tt index(p/4,[3,2+1])} specifies indexes on the (outer
-functor symbol of) the third argument and on a combination of (the
-outer function symbol of) a combination of the second and first
+functor symbol of) the third argument {\em or} on a combination of (the
+outer function symbol of) the second and first
 arguments.  If data is expected to be structured within function
 symbols and is in unit clauses, the directive {\tt index(p/4,trie)}
 constructs an indexing trie of the {\tt p/4} clauses using a
-left-to-right traversal through each clausennm.  Representing data in
+left-to-right traversal through each clause.  Representing data in
 this way allows discrimination of information nested arbitrarily deep
-within clauses.  These modes of indexing can becombined: {\tt
+within clauses.  These modes of indexing can be combined: {\tt
 index(p/4,[3,2+1],trie)} creates alternative trie indices beginning
 with the third argument and with the second and first argument.  Using
 such indexing XSB can efficiently perform intensive analyses of
@@ -176,13 +184,15 @@ Windows-based system XSB can be linked into C programs through a DLL
 interface.  On either class of operating system, C functions can be
 made callable from XSB either directly within a process, or using a
 socket library.  XSB can access external data in a variety of ways:
-through an Oracle interface, through an ODBC interface (documented in
-a separate manual), or through a variety of mechanisms to read data
-from flat files.  These interfaces are described in Volume 2 of this manual.
+through an Oracle interface, through an ODBC interface, or through a
+variety of mechanisms to read data from flat files.  These interfaces
+are all described in Volume 2 of this manual. 
 
 Another feature of XSB is its support for extensions of normal logic
-programs through preprocessing libraries.  These libraries are
-described in the section {\it Library Utilities} in Volume 2 of this
+programs through preprocessing libraries.  Currently supported are
+Extended logic programs (under the well-founded semantics), F-Logic,
+and Annotated Logic Programs.  These libraries are
+described in Volume 2 of this
 manual. 
 
 Source code is provided for the whole of XSB, including the
