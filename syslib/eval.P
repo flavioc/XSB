@@ -1,5 +1,5 @@
 /* File:      eval.P
-** Author(s): David S. Warren, Kostis F. Sagonas
+** Author(s): Warren, Xu, Sagonas, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** *
 ** Copyright (C) The Research Foundation of SUNY, 1993-1998
@@ -26,25 +26,37 @@
 
 #include "celltags_xsb.h"
 
-%-------------------------------------------------------------------------
-% NOTE:	Predicate eval/2 is the one who is responsible for error checking
-%	of arithmetic comparisons and evaluations. According to the Prolog
-%	standard, arithmetic comparisons and evaluations can cause overflow
-%       and
-%	instantiation errors ONLY. Everything else should simply fail as
-%	far as evaluation is concerned.
-%-------------------------------------------------------------------------
-% NOTE: According to the Prolog standard, predicate eval/2 should perform 
-%	type conversion between integers and reals when necessary. 
-%	Our eval/2, does NOT. (mainly because at the moment when this is
-%	written it is not clear whether we will support reals in the first
-%	XSB version).
-%-------------------------------------------------------------------------
-% TLS: 7/02: added min/2 and max/2 as evaluable functions to support the 
-% clpr package.  I have not yet added these functions to the compiler
-% or engine. 
-%-------------------------------------------------------------------------
+/*-------------------------------------------------------------------------
 
+NOTE: In XSB, evaluable functions within is/2 or arithmetic comparison
+literals (e.g. =<) are handled in one of two ways.  First, they may be
+compiled (via tp_eval.P in cmplib); if so, no functions from this file
+are used.  eval/2 and associated predicates are only used when
+"dynamic" arithmetic expressions are to be evaluated -- from the
+command line or from dynamic code.  In addition, eval/2 is called when
+a constraint such as {X = 2+3} in static or dynamic code to evaluated
+via the clpqr library package.
+
+With the exception of min/2, max/2 and exp/2 below, all functions here
+are also compiled as evaluable functions.  These exceptional functions
+are not (as I recall) part of the ISO standard, but are used by clpqr.
+Thus if min/2, max/2 and exp/2 are in an arithmetic expression in is/2
+or an arithmetic comparison operator within static code, they will be
+treated as terms and not evaluable functions.  If they occur within a
+constraint, they will be evaluated via a call by clpqr to eval/2, and
+all will work out.  You'll also be able to use them from the command
+line.
+
+Currently, min/2 and max/2 are written directly in prolog, while exp/2
+calls a builtin.  One fine day, we might make them compilable into
+instructions, but this doesnt seem a high priority in 08/02.
+
+According to the Prolog standard, arithmetic comparisons and
+evaluations can cause overflow and instantiation errors
+ONLY. Everything else should simply fail as far as evaluation is
+concerned.
+
+-------------------------------------------------------------------------*/
 
 eval(Expr, Res) :- 
 	eval(Expr,Res,Expr).
@@ -90,6 +102,8 @@ eval0(min(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     (Res1 =< Res2 -> Res = Res1 ; Res = Res2).
 eval0(max(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     (Res1 >= Res2 -> Res = Res1 ; Res = Res2).
+eval0(exp(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+			     pow(Res1,Res2,Res).
 
 eval0('-'(X), Res,Expr) :- eval(X, Res1,Expr), Res is -(Res1).
 eval0('\'(X), Res,Expr) :- eval(X, Res1,Expr), Res is '\'(Res1).  
