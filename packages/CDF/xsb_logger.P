@@ -4,7 +4,7 @@
 #include "flag_defs_xsb.h"
 #include "standard.h"
 
-:- import messageln/2, datime/1 from standard.
+:- import messagelist/2, messageln/2, datime/1 from standard.
 :- import concat_atom/2 from string.
 
 
@@ -23,15 +23,17 @@ and for the logger itself. Log levels have precedence, of the default levels the
 DEBUG level has the lowest and the SYS level has the highest precedence. Only 
 messages at or above the set log level are logged. Calls to log messages at lower 
 levels result only in unification of the top most predicate. The system allows 
-for custom levels to be added in addition to the default levels.
+for custom levels to be added in addition to the default levels, using 
+log_add_log_level/2.
 
 Logging occurs at the module level, i.e. it is possible for to set module A to 
 log at INFO level and module B at WARN level and all other modules at DEBUG level. 
-At startup the user sets the default log level, this level applies to all modules
-unless specified otherwise and cannot be changed afterwards. As designed it is 
-possible for the logger to be used for predicate level logging by replacing 
-predicate with module in the calls. This is discouraged since for each 
-module/predicate the logger asserts several facts.
+When this file is loaded the default log level is set to INFO and applies to all
+modules. This can be changed by calling log_set_default_level/1, this predicate
+should be called before setting any module specific levels as it removes them.
+As designed it is possible for the logger to be used for predicate level logging 
+by replacing predicate names with module names in the calls. This is discouraged 
+since for each module the logger asserts several facts.
 
 To log messages at a particular level the user simply calls the pertinent log 
 predicate, e.g. for the DEBUG level the predicate is log_debug, for warn level 
@@ -46,11 +48,11 @@ log writer must follow these rules (assuming the name of the writer is
 myLogWriter) :
    1. The main predicate must have an arity of 5. 
       myLogWriter(+ErrorLevel, +ModuleName, +PredicateName, +Message, +List)
-   2. The log writer must also have predicates to start and stop the writer of
-      the form myLogWriter_stop(+List), myLogWriter_start(+List) 
+   2. The log writer must also have predicates to start and stop the writer,
+      myLogWriter_stop(+List), myLogWriter_start(+List) 
    3. Log writer should take into account the fact that XSB has only one thread
       and should ensure that all log messages are preserved.
-   4. Even if a log writer has been stopped, the predicate should not fail.
+   4. Even if a log writer has been stopped, the main predicate should not fail.
    5. Log writer should also be efficient, since they will be called repeatedly
       during the execution of a program.
    6. Log writer should possibly use xsb_exit_hook to ensure all log messages 
@@ -66,7 +68,7 @@ config_logger :-
    [xsb_logger],                             %initiates default level to WARN
    [odbc_log_writer],                        %my custom log writer                            
    
-   log_set_default_level(info),              %change the default level
+   log_set_default_level(debug),             %change the default level
 
    %custom log level
    log_add_log_level(enter,201),
@@ -80,7 +82,6 @@ config_logger :-
    
    log_sys(config_logger,'config_logger/0','Logger initialized'),
    log_exit(config_logger,'config_logger/0','exiting').
-
 ").
 
 %$Id$
@@ -93,16 +94,18 @@ default_log_level(warn, 600,'WARN',  log_warn).
 default_log_level(error,800,'ERROR', log_error).
 default_log_level(sys,  999,'SYS',   log_sys).
 
-log_default_log_level(warn).
+log_default_log_level(info).
 log_default_timestamp('[%d-%02d-%02d %02d:%02d:%02d GMT]').
 log_default_writer(default_log_writer).
 log_default_writer_props([]).
 
 %---------------------------------------------------------------------%
 
-:- comment(log_init/1,"Entry point for logger. Assumes debug log level if
-none is provided. (?LogLevel) ").
 :- log_default_log_level(Default_level), log_init(Default_level).
+
+
+:- comment(log_init/1,"Initializes the logger with the default log writer at the 
+default level. Is called when this file is loaded by the fact above. (?Log_level) ").
 
 log_init(DefaultLevel) :-
    '_$log_add_default_log_levels',
@@ -113,7 +116,7 @@ log_init(DefaultLevel) :-
    log_default_timestamp(Format),
    assert(log_timestamp_format(Format)),
 
-   log_default_writer(Writer),    % default log writer
+   log_default_writer(Writer),                          % default log writer
    log_default_writer_props(Props),
    log_set_writer(Writer,Props).
 
@@ -309,9 +312,8 @@ log_set_timestamp_format(_Format) :-
    writeln(userout,'NOT IMPLEMENTED').
    %retractall(log_timestamp_format(_)),
    %assert(log_timestamp_format(Format)).
-log_get_timestamp_format(_Format) :-
-   writeln(userout,'NOT IMPLEMENTED').
-   %log_timestamp_format(Format).
+log_get_timestamp_format(Format) :-
+   log_timestamp_format(Format).
 
 
 :- comment(log_get_timestamp/1,"Uses the current format to build and return the 
@@ -320,26 +322,9 @@ timestamp. (-TimeStamp) ").
 log_get_timestamp(TimeStamp) :-
    datime(Time),
    log_timestamp_format(Format),
-   fmt_write_string(TimeStamp,Format,Time).
+   fmt_write_string(TimeStamp, Format, Time).
 
 %-Log Predicates------------------------------------------------------%
-/* log_debug(PredicateName, Message) :-
-   log_msg(debug, PredicateName, Message).
-log_debug(PredicateName, Message, List) :-
-   log_msg(debug, PredicateName, Message, List).
-log_info(PredicateName, Message) :-
-   log_msg(info, PredicateName, Message).
-log_info(PredicateName, Message, List) :-
-   log_msg(info, PredicateName, Message, List).
-log_warn(PredicateName, Message) :-
-   log_msg(warn, PredicateName, Message).
-log_warn(PredicateName, Message, List) :-
-   log_msg(warn, PredicateName, Message, List).
-log_error(PredicateName, Message) :-
-   log_msg(error, PredicateName, Message).
-log_error(PredicateName, Message, List) :-
-   log_msg(error, PredicateName, Message, List). */
-
 
 log_msg(Level, Module, Predicate,  Message) :-
    (log_get_level(Module, Level, _)
@@ -355,6 +340,7 @@ log_msg(Level, Module, Predicate, Message, List) :-
       Call =..[Appender, Level, Module, Predicate, Message, List],
       call(Call)
    ;  true).
+
 %-utils---------------------------------------------------------------%
 upper_code(Lower, Upper) :-
 	(Lower >= 0'a, Lower =< 122
@@ -391,7 +377,9 @@ then STDOUT. (+Level_num, ?Stream) ").
 '_$get_log_stream'(Level_num, STDOUT) :-
    default_log_level(sys, Level_num, _, _).
 
-:- comment(default_log_writer/5,"Writes log messages the current stream.  Flushes 
+
+:- comment(default_log_writer/5,"Writes log messages to a stream.  Uses 
+get_log_stream/2 to find the correct stream to send the message to. Flushes 
 the stream after each write.").
 
 default_log_writer(Error_level, Module, Pred, Message, List) :-
@@ -400,13 +388,14 @@ default_log_writer(Error_level, Module, Pred, Message, List) :-
       log_get_timestamp(TimeStamp),
       log_get_level(Module, Error_level, Error_label),
       log_level(Error_level, Error_num, Error_label, _),
-      concat_atom([TimeStamp, ' ', Error_label, ' [', Module, ':', Pred, '] :: ', Message], Log_msg),
+ 
+      '_$get_log_stream'(Error_num, Log_port),
+      '_$log_eol'(EOL),
+      messagelist([TimeStamp, ' ', Error_label, ' [', Module, ':', Pred, '] :: ', Message, EOL], Log_port),
       
-      '_$get_log_stream'(Error_num, Log_port), 
-      messageln(Log_msg, Log_port),
       log_writelist(List, Log_port),      
-   
       file_flush(Log_port, _)
+
    ;  true).
 
 default_log_writer_stop(Arg) :-
@@ -414,9 +403,11 @@ default_log_writer_stop(Arg) :-
    assert(default_log_writer_state(stopped)),
    default_log_writer(sys, 'xsb_logger','default_log_writer_stop/1', 
       'default log writer stopped.', Arg).
+
 default_log_writer_start(Arg) :-
    retractall(default_log_writer_state(_)),
    assert(default_log_writer_state(started)),
+   atom_codes(EOL,[10]), assert('_$log_eol'(EOL)), 
    default_log_writer(sys, 'xsb_logger','default_log_writer_start/1', 
       'default log writer started.', Arg).
 
@@ -429,8 +420,9 @@ log_writelist([], _Log_port).
 log_writelist(List, Log_port) :-
    log_writelist(List, 1, Log_port).   
 log_writelist([A|B], Count, Log_port) :-
-   concat_atom(['     ',Count,':',A], Log_msg),
-   messageln(Log_msg, Log_port),
+   '_$log_eol'(EOL),
+   messagelist(['     ', Count, ':', A, EOL], Log_port),
+
    Count1 is Count + 1,
    log_writelist(B, Count1, Log_port).
 log_writelist([], _Count, _Log_port).
