@@ -42,16 +42,19 @@ typedef enum Tabled_Evaluation_Method {
 
 typedef struct Table_Info_Frame *TIFptr;
 typedef struct Table_Info_Frame {
-  TIFptr next_tif;	/* pointer to next table info frame */
-  BTNptr call_trie;	/* pointer to the root of the call trie */
-  Psc  psc_ptr;		/* pointer to the PSC record of the subgoal */
-  TabledEvalMethod method;
+  Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
+  TabledEvalMethod method;	/* eval pred using variant or subsumption? */
+  BTNptr call_trie;		/* pointer to the root of the call trie */
+  struct subgoal_frame *subgoals;  /* chain of predicate's subgoals */
+  TIFptr next_tif;		/* pointer to next table info frame */
 } TableInfoFrame;
 
-#define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
-#define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
 #define TIF_PSC(pTIF)		   ( (pTIF)->psc_ptr )
 #define TIF_EvalMethod(pTIF)	   ( (pTIF)->method )
+#define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
+#define TIF_Subgoals(pTIF)	   ( (pTIF)->subgoals )
+#define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
+
 
 #define IsVariantPredicate(pTIF)		\
    ( TIF_EvalMethod(pTIF) == VARIANT_TEM )
@@ -60,14 +63,26 @@ typedef struct Table_Info_Frame {
    ( TIF_EvalMethod(pTIF) == SUBSUMPTIVE_TEM )
 
 
+struct tif_list {
+  TIFptr first;
+  TIFptr last;
+};
+extern struct tif_list  tif_list;
+
 #define New_TIF(pTIF,pPSC) {						\
-   pTIF = malloc(sizeof(TableInfoFrame));				\
+   pTIF = (TIFptr)mem_alloc(sizeof(TableInfoFrame));			\
    if ( IsNULL(pTIF) )							\
      xsb_abort("Ran out of memory in allocation of TableInfoFrame");	\
-   TIF_NextTIF(pTIF) = NULL;						\
-   TIF_CallTrie(pTIF) = NULL;						\
    TIF_PSC(pTIF) = pPSC;						\
    TIF_EvalMethod(pTIF) = (TabledEvalMethod)flags[TABLING_METHOD];	\
+   TIF_CallTrie(pTIF) = NULL;						\
+   TIF_Subgoals(pTIF) = NULL;						\
+   TIF_NextTIF(pTIF) = NULL;						\
+   if ( IsNonNULL(tif_list.last) )					\
+     TIF_NextTIF(tif_list.last) = pTIF;					\
+   else									\
+     tif_list.first = pTIF;						\
+   tif_list.last = pTIF;						\
  }
 
 /*===========================================================================*/
@@ -233,16 +248,13 @@ struct completion_stack_frame {
 
 /*----------------------------------------------------------------------*/
 
-     /* should not change the order - unless tables.P is updated accordingly
-      * also, if adding fields, add to the end! 
-      */
 struct subgoal_frame {
   SGFrame next_subgoal;
   BTNptr ans_root_ptr;	/* Root of the return trie */
 #if (!defined(CHAT))
   CPtr asf_list_ptr;	/* Pointer to list of (CP) active subgoal frames */
 #endif
-  TIFptr tif_ptr;	/* Used only in remove_open_tries */
+  TIFptr tif_ptr;	
   CPtr compl_stack_ptr;	/* Pointer to subgoal's completion stack frame */
 #ifdef CHAT
   CPtr compl_suspens_ptr; /* pointer to CHAT area; type is chat_init_pheader */
@@ -291,6 +303,34 @@ struct subgoal_frame {
 #define subg_consumers(b)	((SGFrame)(b))->consumers
 #define subg_timestamp(b)	((SGFrame)(b))->ts
 #define subg_structs_are_reclaimed(b)	((SGFrame)(b))->reclaimed_structs
+
+
+/* Doubly-linked lists of Subgoal Frames
+ * -------------------------------------
+ * Manipulating a doubly-linked list maintained through fields
+ * `prev' and `next'
+ */
+
+#define subg_dll_add_sf(pSF,Chain,NewChain) {	\
+   subg_prev_subgoal(pSF) = NULL;		\
+   subg_next_subgoal(pSF) = Chain;		\
+   if ( IsNonNULL(Chain) )			\
+     subg_prev_subgoal(Chain) = pSF;		\
+   NewChain = pSF;				\
+ }
+
+#define subg_dll_remove_sf(pSF,Chain,NewChain) {			 \
+   if ( IsNonNULL(subg_prev_subgoal(pSF)) ) {				 \
+     subg_next_subgoal(subg_prev_subgoal(pSF)) = subg_next_subgoal(pSF); \
+     NewChain = Chain;							 \
+   }									 \
+   else									 \
+     NewChain = subg_next_subgoal(pSF);					 \
+   if ( IsNonNULL(subg_next_subgoal(pSF)) )				 \
+     subg_prev_subgoal(subg_next_subgoal(pSF)) = subg_prev_subgoal(pSF); \
+   subg_prev_subgoal(pSF) = subg_next_subgoal(pSF) = NULL;		 \
+ }
+
 
 /* beginning of REAL answers in the answer list */
 #define subg_answers(subg)	aln_next_aln(subg_ans_list_ptr(subg))
@@ -353,67 +393,56 @@ extern ALNptr empty_return();
 extern struct Structure_Manager smSF;
 
 
-/* Subgoal Frames (De)Allocation
-   ----------------------------- */
+/* Subgoal Frame (De)Allocation
+   ---------------------------- */
 /*
- * Allocated Subgoal Frames are maintained on a list to facilitate
- * deallocation of specific calls and answer sets.
- */
-#define SF_AddNewToAllocList(SF)	\
-   SM_AddToAllocList_DL(smSF,SF,subg_prev_subgoal,subg_next_subgoal)
-
-#define SF_RemoveFromAllocList(SF)	\
-   SM_RemoveFromAllocList_DL(smSF,SF,subg_prev_subgoal,subg_next_subgoal)
-
-/*
- * Allocates and initializes a subgoal frame for a producer subgoal.  It
- * is inserted at the head of the global subgoal list, located in the
- * structure manager, smSF.  The TIP field is initialized, fields of the
- * call trie leaf and this subgoal are set to point to one another, while
- * the completion stack frame pointer is set to the next available
- * location (frame) on the stack (but the space is not yet allocated from
- * the stack).  Also, an answer-list node is allocated for pointing to a
- * dummy answer node and inserted into the answer list.  Note that answer
- * sets (answer tries, roots) are lazily created -- not until an answer
- * is generated.  Therefore this field may potentially be NULL, as it is
- * initialized here.  memset() is used so that the remaining fields are
- * initialized to 0/NULL so, in some sense making this macro independent
- * of the number of fields.
+ * Allocates and initializes a subgoal frame for a producer subgoal.
+ * The TIP field is initialized, fields of the call trie leaf and this
+ * subgoal are set to point to one another, while the completion stack
+ * frame pointer is set to the next available location (frame) on the
+ * stack (but the space is not yet allocated from the stack).  Also, an
+ * answer-list node is allocated for pointing to a dummy answer node and
+ * inserted into the answer list.  Note that answer sets (answer tries,
+ * roots) are lazily created -- not until an answer is generated.
+ * Therefore this field may potentially be NULL, as it is initialized
+ * here.  memset() is used so that the remaining fields are initialized
+ * to 0/NULL so, in some sense making this macro independent of the
+ * number of fields.
  */
 
-#define NewProducerSF(SF,Leaf,TableInfo) {			\
-								\
-   SGFrame pNewSF;						\
-								\
-   SM_AllocateStruct(smSF,pNewSF);				\
-   pNewSF = memset(pNewSF,0,sizeof(struct subgoal_frame));	\
-   subg_tif_ptr(pNewSF) = TableInfo;				\
-   subg_leaf_ptr(pNewSF) = Leaf;				\
-   CallTrieLeaf_SetSF(Leaf,pNewSF);				\
-   subg_ans_list_ptr(pNewSF) = empty_return();			\
-   subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;	\
-   subg_producer(pNewSF) = pNewSF;				\
-   subg_timestamp(pNewSF) = PRODUCER_SF_INITIAL_TS;		\
-   SF_AddNewToAllocList(pNewSF);				\
-   SF = pNewSF;							\
+#define NewProducerSF(SF,Leaf,TableInfo) {				    \
+									    \
+   SGFrame pNewSF;							    \
+									    \
+   SM_AllocateStruct(smSF,pNewSF);					    \
+   pNewSF = memset(pNewSF,0,sizeof(struct subgoal_frame));		    \
+   subg_tif_ptr(pNewSF) = TableInfo;					    \
+   subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); \
+   subg_leaf_ptr(pNewSF) = Leaf;					    \
+   CallTrieLeaf_SetSF(Leaf,pNewSF);					    \
+   subg_ans_list_ptr(pNewSF) = empty_return();				    \
+   subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    \
+   subg_producer(pNewSF) = pNewSF;					    \
+   subg_timestamp(pNewSF) = PRODUCER_SF_INITIAL_TS;			    \
+   SF = pNewSF;								    \
 }
 
-
-#define FreeProducerSF(SF)			\
-   SF_RemoveFromAllocList(SF);			\
-   SM_DeallocateStruct(smSF,SF)
-
+#define FreeProducerSF(SF) {					\
+   subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
+		      TIF_Subgoals(subg_tif_ptr(SF)));		\
+   SM_DeallocateStruct(smSF,SF);				\
+ }
 
 /*
  *  Allocates and initializes a subgoal frame for a consuming subgoal: a
  *  properly subsumed call consuming from an incomplete producer.
- *  Consuming subgoals are NOT inserted into the global subgoal list but
- *  instead are maintained by the producer in a private linked list.
- *  Many fields of a consumer SF are left blank since it won't be used in
- *  the same way as those for producers.  Its main purpose is to maintain
- *  the answer list and the call form.  Just as for the producer, an
- *  answer-list node is allocated for pointing to a dummy answer node and
- *  inserted into the answer list.
+ *  Consuming subgoals are NOT inserted into the subgoal chain
+ *  maintained by the TIF, but instead are maintained by the producer in
+ *  a private linked list.  Many fields of a consumer SF are left blank
+ *  since it won't be used in the same way as those for producers.  Its
+ *  main purpose is to maintain the answer list and the call form.  Just
+ *  as for the producer, an answer-list node is allocated for pointing
+ *  to a dummy answer node and inserted into the answer list.
  *
  *  Finally, some housekeeping is needed to support lazy creation of the
  *  auxiliary structures in the producer's answer TST.  If this is the

@@ -133,18 +133,20 @@ SubgStats subgoal_statistics() {
 
   SubgStats sg_stats;
   SGFrame pProdSF, pSubSF;
+  TIFptr tif;
 
 
   sg_stats.sf = node_statistics(&smSF);
 
   SubgStats_NumProducers(sg_stats) = SubgStats_NumConsumers(sg_stats) = 0;
-  for ( pProdSF = SM_AllocList(smSF);  IsNonNULL(pProdSF);
-        pProdSF = subg_next_subgoal(pProdSF) ) {
-    SubgStats_NumProducers(sg_stats)++;
-    for ( pSubSF = subg_consumers(pProdSF);  IsNonNULL(pSubSF); 
-	  pSubSF = subg_consumers(pSubSF) )
-      SubgStats_NumConsumers(sg_stats)++;
-  }
+  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+    for ( pProdSF = TIF_Subgoals(tif);  IsNonNULL(pProdSF);
+	  pProdSF = subg_next_subgoal(pProdSF) ) {
+      SubgStats_NumProducers(sg_stats)++;
+      for ( pSubSF = subg_consumers(pProdSF);  IsNonNULL(pSubSF); 
+	    pSubSF = subg_consumers(pSubSF) )
+	SubgStats_NumConsumers(sg_stats)++;
+    }
   if ( SubgStats_NumAllocFrames(sg_stats) !=
        (SubgStats_NumProducers(sg_stats) + SubgStats_NumConsumers(sg_stats)
 	+ SubgStats_NumFreeFrames(sg_stats)) )

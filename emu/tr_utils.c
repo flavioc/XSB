@@ -861,6 +861,7 @@ void delete_predicate_table(TIFptr tif) {
   else
     delete_subsumptive_table(TIF_CallTrie(tif));
   TIF_CallTrie(tif) = NULL;
+  TIF_Subgoals(tif) = NULL;
 }
 
 /*----------------------------------------------------------------------*/

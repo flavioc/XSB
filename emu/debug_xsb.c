@@ -89,14 +89,14 @@ extern int  xctr;
 static int count_producer_subgoals(void)
 {
   int i;
+  TIFptr tif;
   SGFrame temp_ptr;
 
   i = 0;
-  temp_ptr = SM_AllocList(smSF);
-  while(temp_ptr != NULL){
-    i ++;
-    temp_ptr = subg_next_subgoal(temp_ptr);
-  }
+  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+    for ( temp_ptr = TIF_Subgoals(tif);  IsNonNULL(temp_ptr);
+	  temp_ptr = subg_next_subgoal(temp_ptr) )
+      i ++;
   return(i);
 }
 
@@ -1088,46 +1088,123 @@ static void print_pdlstack(void)
   }
 }
  
+/*-------------------------------------------------------------------------*/
+
+/*
+ *			TableInfoFrame Printing
+ *			-----------------------
+ */
+
+char *stringTabledEvalMethod(TabledEvalMethod method) {
+
+  switch(method) {
+  case VARIANT_TEM:
+    return ("variant");
+    break;
+  case SUBSUMPTIVE_TEM:
+    return ("subsumption");
+    break;
+  default:
+    return ("unknown");
+    break;
+  }
+}
+
+/*
+ * Run the doubly-linked list of Subgoal Frames to the end, then back to
+ * the beginning -- which may lie beyond `dll' -- counting the number of
+ * frames encountered in each direction.
+ */
+
+void subg_dll_length(SGFrame dll, counter *forward, counter *back) {
+
+  SGFrame cur, prev;
+  counter f, b;
+
+  /* Count the number of frames on the chain from `dll' forward. */
+  f = 0;
+  for ( prev = NULL, cur = dll;
+	IsNonNULL(cur);
+	prev = cur, cur = subg_next_subgoal(cur) )
+    f++;
+
+  /* Count the number of frames on the chain from the end to the beginning */
+  b = 0;
+  for ( cur = prev;  IsNonNULL(cur);  cur = subg_prev_subgoal(cur) )
+    b++;
+
+  *forward = f;
+  *back = b;
+}
+
+
+void printTIF(TIFptr tif) {
+
+  counter forward, back;
+
+  printf("TableInfoFrame  %p\n"
+	 "{ psc_ptr = %p  (%s/%d)\n"
+	 "  method = %s\n"
+	 "  call_trie = %p\n"
+	 "  subgoals = %p  ",
+	 tif,
+	 TIF_PSC(tif), get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)),
+	 stringTabledEvalMethod(TIF_EvalMethod(tif)),
+	 TIF_CallTrie(tif),
+	 TIF_Subgoals(tif));
+  subg_dll_length(TIF_Subgoals(tif),&forward,&back);
+  if ( forward == back )
+    printf("(%d total)", forward);
+  else
+    printf("(chain length mismatch: %d forward, %d back)", forward, back);
+  printf("\n  next_tif = %p }\n", TIF_NextTIF(tif));
+}
+
 /*----------------------------------------------------------------------*/ 
 
-static void print_tables(void)
+void print_tables(void)
 {
   int i = 0;
   char ans = 'y';
+  TIFptr tif;
   SGFrame subg;
 
   i = count_producer_subgoals();
   xsb_dbgmsg("\t There are %d producer subgoal structures...", i);
-  if (i)
-    fprintf(stddbg,EOSUBG);
-  subg = SM_AllocList(smSF);
+
   i = 0;
-  while ((subg != NULL) && (ans == 'y')) {
-    i++;
-    print_subg_header(subg);
-    fprintf(stddbg, "%p:", subg);
+  for ( tif = tif_list.first;  IsNonNULL(tif) && (ans == 'y');
+	tif = TIF_NextTIF(tif) ) {
+    fprintf(stddbg,EOSUBG);
+    printTIF(tif);
+    subg = TIF_Subgoals(tif);
+    while ( IsNonNULL(subg) && (ans == 'y') ) {
+      i++;
+      print_subg_header(subg);
+      fprintf(stddbg, "%p:\n", subg);
 #ifdef CHAT
-    xsb_dbgmsg("\tnext_subg = %6p,   ans_root_ptr = %6p,",
-	       subg_next_subgoal(subg), subg_ans_root_ptr(subg));
+      xsb_dbgmsg("  next_subg = %6p,  ans_root_ptr = %6p,",
+		 subg_next_subgoal(subg), subg_ans_root_ptr(subg));
 #else
-    xsb_dbgmsg("\tnext_subg = %6p,   ans_root_ptr = %6p,    asf_list_ptr = %p,",
-	       subg_next_subgoal(subg), subg_ans_root_ptr(subg),
-	       subg_asf_list_ptr(subg));
+      xsb_dbgmsg("  next_subg = %6p,  ans_root_ptr = %6p,   asf_list_ptr = %p,",
+		 subg_next_subgoal(subg), subg_ans_root_ptr(subg),
+		 subg_asf_list_ptr(subg));
 #endif
-    xsb_dbgmsg("\t  tif_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,",
-	       subg_tif_ptr(subg), subg_compl_stack_ptr(subg),
-	       subg_compl_susp_ptr(subg));
-    xsb_dbgmsg("\t ans_list = %6p,       leaf_ptr = %6p,          cp_ptr = %p",
-	       subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
-    xsb_dbgmsg("\t     nide = %p", subg_nde_list(subg));
-    subg = subg_next_subgoal(subg);
-    if (subg != NULL)
-      fprintf(stddbg, EOSUBG);
-    if (i == 10) {
-      fprintf(stddbg, "more (y/n)?  ");
-      scanf("%c", &ans);
-      skip_to_nl();
-      i = 0;
+      xsb_dbgmsg("  tif_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,",
+		 subg_tif_ptr(subg), subg_compl_stack_ptr(subg),
+		 subg_compl_susp_ptr(subg));
+      xsb_dbgmsg("  ans_list = %6p,    leaf_ptr = %6p,        cp_ptr = %p",
+		 subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
+      xsb_dbgmsg("      nide = %p", subg_nde_list(subg));
+      subg = subg_next_subgoal(subg);
+      if (subg != NULL)
+	fprintf(stddbg, EOSUBG);
+      if (i == 10) {
+	fprintf(stddbg, "more (y/n)?  ");
+	scanf("%c", &ans);
+	skip_to_nl();
+	i = 0;
+      }
     }
   }
   fprintf(stddbg, EOS);

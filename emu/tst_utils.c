@@ -23,11 +23,11 @@
 */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "configs/xsb_config.h"
 #include "debugs/xsb_debug.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -181,7 +181,7 @@ void printTrieSymbol(Cell symbol) {
 
 void printTrieNode(BTNptr pTN) {
 
-  printf("Trie Node: Addr(0x%p)", pTN);
+  printf("Trie Node: Addr(%p)", pTN);
   if ( IsDeletedNode(pTN) )
     printf("  (DELETED)");
   printf("\n\tInstr(%s), NodeType(", inst_name(TN_Instr(pTN)));
@@ -191,43 +191,23 @@ void printTrieNode(BTNptr pTN) {
   printf("), Symbol(");
   printTrieSymbol(TN_Symbol(pTN));
   printf(")");
-  /*  if ( IsInTimeStampedTrie(pTN) )
-      printf(", TimeStamp(%ld)", TSTN_TimeStamp((TSTNptr)pTN)); */
-  printf("\n\tParent(0x%p), Child(0x%p), Sibling(0x%p)\n",
+  if ( IsInTimeStampedTrie(pTN) )
+    printf(", TimeStamp(%ld)", TSTN_TimeStamp((TSTNptr)pTN));
+  printf("\n\tParent(%p), Child(%p), Sibling(%p)\n",
 	 TN_Parent(pTN), TN_Child(pTN), TN_Sibling(pTN));
 }
 
-/*
-void thtPrintSymbols(BTHTptr btht) {
-
-  int i;
-  BTNptr pBTN;
-
-  for (i = 0; i < BTHT_NumBuckets(btht); i++) {
-    printf("Bucket %d:\t", i);
-    pBTN = *(BTHT_BucketArray(btht) + i);
-    while ( IsNonNULL(pBTN) ) {
-      printTrieSymbol(BTN_Symbol(pBTN));
-      pBTN = BTN_Sibling(pBTN);
-      if ( IsNonNULL(pBTN) )
-	printf(", ");
-    }
-    printf("\n");
-  }
-}
-*/
-
-/* printterm() writes to stdout, therefore, so should this. */
 
 void printTabledCall(TabledCallInfo callInfo) {
 
   int arity, i;
   Psc pPSC;
   
+  /* printterm() writes to stdout, therefore, so should this. */
   pPSC = TIF_PSC(CallInfo_TableInfo(callInfo));
   printf( "%s(", get_name(pPSC) );
-  arity = CallInfo_CallArity(callInfo);   /*get_arity(pPSC);*/
-  for (i = 1; i <= arity; i++) {  /* to conform to variant_call_search expectation */
+  arity = CallInfo_CallArity(callInfo);
+  for (i = 1; i <= arity; i++) {
     printterm( (Cell)(CallInfo_Arguments(callInfo)+i), 1, 8 );
     if (i < arity)
       printf( "," );
@@ -251,42 +231,17 @@ int decode_tag(Cell cell) {
 }
 
 /*
-SGFrame findSF_forAnswerRoot(TSTNptr pTST) {
+SGFrame findSF_forAnswerRoot(TSTNptr tst) {
 
-  SGFrame pSF;
+  TIFptr pTIF;
+  SGFrame sf;
 
-  for ( pSF = SM_AllocList(smSF);  IsNonNULL(pSF);
-        pSF = subg_next_subgoal(pSF) )
-    if ( subg_ans_root_ptr(pSF) == pTST )
-      return pSF;
+  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+    for ( sf = TIF_Subgoals(tif);  IsNonNULL(sf);
+	  sf = subg_next_subgoal(sf) )
+      if ( subg_ans_root_ptr(sf) == tst )
+	return sf;
   return NULL;
-}
-*/
-
-/*
- * Shouldn't we also compare this to producer link stored in the ConsSF?
- *
-SGFrame findProdSF_for_ConsSF(SGFrame pConsumerSF) {
-
-  SGFrame pProdSF, pSF;
-  int pos, ttl;
-
-  pos = ttl = 0;
-  for ( pProdSF = SM_AllocList(smSF);  IsNonNULL(pProdSF);
-        pProdSF = subg_next_subgoal(pProdSF) )
-    for ( pSF = subg_Consumers(pProdSF), ttl = 0;  IsNonNULL(pSF);
-	  pSF = subg_Consumers(pSF), ttl++ )
-      if ( pSF == pConsumerSF ) {
-	pos = ttl + 1;
-	break;
-      }
-
-  if ( IsNonNULL(pProdSF) )
-    printf("Consumer is %dth one out of %d in chain of Producer 0x%p\n",
-	   pos, ttl, pProdSF);
-  else
-    printf("Consumer 0x%p not found!\n", pConsumerSF);
-  return pProdSF;
 }
 */
 
@@ -296,10 +251,10 @@ int containsSF(SGFrame pProducerSF, SGFrame pConsumerSF) {
   SGFrame pSF;
   int consFound = 0;
 
-  printf("Chained Consumers of Producer 0x%p:\n", pProducerSF);
+  printf("Chained Consumers of Producer %p:\n", pProducerSF);
   for ( pSF = subg_Consumers(pProducerSF);  IsNonNULL(pSF);
         pSF = subg_Consumers(pSF) ) {
-    printf("0x%p\n", pSF);
+    printf("%p\n", pSF);
     if ( pSF == pConsumerSF )
       consFound = 1;
   }
@@ -390,7 +345,7 @@ void triePrintPath(BTNptr pLeaf, xsbBool printLeafAddr) {
   }
 
   if ( printLeafAddr )
-    printf("Leaf 0x%p:", pLeaf);
+    printf("Leaf %p:", pLeaf);
 
   if ( ! IsLeafNode(pLeaf) ) {
     fprintf(stderr, "triePrintPath() called with non-Leaf Node!\n");
@@ -453,7 +408,7 @@ void sfPrintGoal(SGFrame pSF, xsbBool printAddr) {
 
   pPSC = TIF_PSC(subg_tif_ptr(pSF));
   if ( printAddr )
-    printf("SF 0x%p  ", pSF);
+    printf("SF %p  ", pSF);
   printf("%s", get_name(pPSC));
   triePrintPath(subg_leaf_ptr(pSF),NO);
 }
@@ -481,7 +436,7 @@ void sfPrintConsGoals(SGFrame pProd) {
    ------------------------------- */
 void printAnswerList(ALNptr pALN) {
 
-  printf("Answer List 0x%p:\n", pALN);
+  printf("Answer List %p:\n", pALN);
   while ( IsNonNULL(pALN) ) {
     printf("  ");
     triePrintPath(aln_answer_ptr(pALN),YES);
