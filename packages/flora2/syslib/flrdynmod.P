@@ -39,6 +39,11 @@
 /*********************************************************************
   This file is for the following dynamic module references:
   FLLIBMODLIT and FLLIBMODOBJ.
+
+  FLLIBMODLIT is used when the compiler encounters literal@Variable
+  where literal is F-logic, HiLog, or Firstorder
+  FLLIBMODOBJ is used when compiler finds term@Variable inside a predicate,
+  e.g., f(g@V)
 *********************************************************************/
 
 

@@ -42,6 +42,8 @@
 
 /*****************************************************************************
   fllibshdirect
+
+  Processes directives in the flora shell (like firstorder, op, etc.)
 *****************************************************************************/
 %%fllibshdirect(FL_PROLOG,Funct,Arity) :-
 %%	flora_shdefine_prolog(Funct,Arity).
