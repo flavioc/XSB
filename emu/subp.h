@@ -28,6 +28,7 @@ extern void intercept(Psc);
 extern void init_interrupt(void);
 extern void print_statistics(int);
 extern void print_qatom(FILE *, char *);
+extern void print_dqatom(FILE *, char *);
 extern void print_op(FILE *, char *, int);
 extern void remove_open_tables_reset_freezes(void);
 

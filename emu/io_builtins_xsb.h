@@ -46,7 +46,7 @@ extern int xsb_intern_file(char *c1,char *c2,int *i,char *strmode);
 
 extern void write_quotedname(FILE *file, char *string);
 extern void double_quotes(char *string, char *new_string);
-extern xsbBool no_quotes_needed(char *string);
+extern xsbBool quotes_are_needed(char *string);
 
 int read_canonical_term(FILE *, STRFILE *, int);
 

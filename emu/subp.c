@@ -74,6 +74,8 @@
 #include "hash_xsb.h"
 
 /*======================================================================*/
+extern xsbBool quotes_are_needed(char *string);
+
 /*======================================================================*/
 
 /* attv_dbgmsg() is used in unify_xsb_i.h */
@@ -649,22 +651,34 @@ int key_compare(const void * t1, const void * t2)
 
 void print_qatom(FILE *file, char *string)
 {
-  char *s;
-  int need_quote = 0, type;
+  int loc;
 
-  if (intype(*string) != LOWER) need_quote = 1;
-  else {
-    s = string;    
-    while (*s) {
-      type = intype(*s);
-      if (type != LOWER && type != UPPER && type != DIGIT && type != BREAK) {
-	need_quote = 1; break; 
-      }
-      s++;
+  if (quotes_are_needed(string)) {
+    loc = 0;
+    fprintf(file,"'");
+    while (string[loc] != '\0') {
+      if (string[loc] == '\'') fprintf(file,"'");
+      fprintf(file,"%c",string[loc++]);
     }
+    fprintf(file,"'");
+  } else fprintf(file, "%s", string);
+}
+
+/*======================================================================*/
+/* print a double quoted string, doubling internal double quotes 	*/
+/* if necessary.							*/
+/*======================================================================*/
+
+void print_dqatom(FILE *file, char *string)
+{
+  int loc = 0;
+
+  fprintf(file,"\"");
+  while (string[loc] != '\0') {
+    if (string[loc] == '"') fprintf(file,"\"");
+    fprintf(file,"%c",string[loc++]);
   }
-  if (need_quote) fprintf(file, "'%s'", string);
-  else fprintf(file, "%s", string);
+  fprintf(file,"\"");
 }
 
 /*======================================================================*/
