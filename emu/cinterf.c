@@ -274,15 +274,16 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
 
 /* convert Arg 1 -- prolog list of characters (a.k.a. prolog string) into C
    string and return this string.
-   Arg 2: which function was called from.
-   Arg 3: where in the call this happened.
-   Args 2 and 3 are used for error reporting.
+   Arg 2: ptr to string buffer where the result is to be returned.
+   Arg 3: which function was called from.
+   Arg 4: where in the call this happened.
+   Args 3 and 4 are used for error reporting.
    This function converts escape sequences in the Prolog string
-   (except octal/hexadecimal) into the corresponding real characters.
+   (except octal/hexadecimal escapes) into the corresponding real characters.
 */
-char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
+char *p_charlist_to_c_string(prolog_term term, char *str,
+			     char *in_func, char *where)
 {
-  char str[MAXBUFSIZE+1];
   int i = 0, head_val;
   int escape_mode=FALSE;
   prolog_term list = term, list_head;
@@ -345,7 +346,7 @@ char *p_charlist_to_c_string (prolog_term term, char *in_func, char *where)
   } /* while */
 
   str[i] = '\0';
-  return(string_find(str,1));
+  return (str);
 }
 
 

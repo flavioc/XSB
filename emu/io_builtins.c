@@ -77,7 +77,7 @@ struct fmt_spec {
 };
 
 struct fmt_spec *next_format_substr(char *, int, int);
-char *p_charlist_to_c_string(prolog_term, char *, char *);
+char *p_charlist_to_c_string(prolog_term, char *, char *, char *);
 
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
@@ -170,11 +170,12 @@ bool formatted_io (void)
 
 bool fmt_write(void)
 {
-  char *Fmt=NULL;
+  char *Fmt=NULL, *str_arg;
+  static char Fmt_buf[MAXBUFSIZE+1];
+  static char str_arg_buf[MAXBUFSIZE+1];      /* holder for string arguments */
   static char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity;
-  char *str_arg;     	     	     	      /* holder for string arguments */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -183,7 +184,8 @@ bool fmt_write(void)
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, "FMT_WRITE", "format string");
+    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf,
+				 "FMT_WRITE", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
@@ -230,7 +232,7 @@ bool fmt_write(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, "FMT_WRITE", aux_msg);
+      str_arg = p_charlist_to_c_string(Arg, str_arg_buf, "FMT_WRITE", aux_msg);
       PRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE");
@@ -281,13 +283,14 @@ bool fmt_write(void)
 
 bool fmt_write_string(void)
 {
-  char *Fmt=NULL;
+  char *Fmt=NULL, *str_arg;
+  static char Fmt_buf[MAXBUFSIZE+1];
+  static char str_arg_buf[MAXBUFSIZE+1];    /* holder for string arguments  */
   static char OutString[MAX_SPRINTF_STRING_SIZE+1];
   static char aux_msg[50];
   char *ptr_OutString = OutString;
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity;
-  char *str_arg;     	     	     	    /* holder for string arguments  */
   long int_arg;     	     	     	    /* holder for int args     	    */
   float float_arg;     	     	     	    /* holder for float args   	    */
   struct fmt_spec *current_fmt_spec;
@@ -300,7 +303,7 @@ bool fmt_write_string(void)
   OutString[0] = '\0'; 	       	            /* anull the output string 	     */
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term,
+    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf,
 				 "FMT_WRITE_STRING", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
@@ -350,7 +353,8 @@ bool fmt_write_string(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, "FMT_WRITE_STRING", aux_msg);
+      str_arg = p_charlist_to_c_string(Arg, str_arg_buf,
+				       "FMT_WRITE_STRING", aux_msg);
       SPRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE_STRING");
@@ -402,10 +406,11 @@ bool fmt_write_string(void)
 bool fmt_read(void)
 {
   char *Fmt=NULL;
+  static char Fmt_buf[MAXBUFSIZE+1];
   prolog_term AnsTerm, Arg, Fmt_term;
   Integer i ;
-  char str_arg[MAXBUFSIZE],    	       	      /* holder for string arguments */
-    aux_fmt[MAXBUFSIZE];    	    	      /* auxiliary fmt holder 	     */
+  static char str_arg[MAXBUFSIZE];     	      /* holder for string arguments */
+  static char aux_fmt[MAXBUFSIZE];     	      /* auxiliary fmt holder 	     */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -417,7 +422,8 @@ bool fmt_read(void)
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, "FMT_READ", "format string");
+    Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf,
+				 "FMT_READ", "format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
@@ -462,7 +468,7 @@ bool fmt_read(void)
 			       str_arg, &curr_chars_consumed);
       /* if no match, leave prolog variable uninstantiated;
 	 if it is a prolog constant, then return FALSE (no unification) */
-      if (curr_assignment == 0) {
+      if (curr_assignment <= 0) {
 	if (is_var(Arg)) break;
 	else return FALSE;
       }
@@ -486,7 +492,7 @@ bool fmt_read(void)
 			       &int_arg, &curr_chars_consumed);
       /* if no match, leave prolog variable uninstantiated;
 	 if it is a prolog constant, then return FALSE (no unification) */
-      if (curr_assignment == 0) {
+      if (curr_assignment <= 0) {
 	if (is_var(Arg)) break;
 	else return FALSE;
       }
@@ -500,7 +506,7 @@ bool fmt_read(void)
       /* floats never unify with anything */
       if (!is_var(Arg)) return FALSE;
       /* if no match, leave prolog variable uninstantiated */
-      if (curr_assignment == 0) break;
+      if (curr_assignment <= 0) break;
       c2p_float(float_arg, Arg);
       break;
     default:

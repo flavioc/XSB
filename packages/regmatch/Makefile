@@ -1,8 +1,8 @@
-## File:      packages/Makefile
-## Author(s): kifer (adapted from lib/Makefile)
+## File:      packages/regmatch/Makefile
+## Author(s): kifer
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 1998
+## Copyright (C) The Research Foundation of SUNY, 1999
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
@@ -23,9 +23,7 @@
 ##
 
 
-ALL = 	flip.O slx.O perlmatch.O gap.O regmatch.O
-
-SUBDIR = flip slx perlmatch gap regmatch
+ALL = 	regmtchconfig.O regmtchshell.O
 
 Option = [optimize]
 
@@ -33,7 +31,7 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-XSB=../bin/xsb
+XSB=../../bin/xsb
 Prolog = $(XSB) -i -s -m 2000 -c 2000
 #
 #-----------------------------------------------------------------------#
@@ -43,42 +41,18 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 
 # suffix rules
 .SUFFIXES: .P .O .H
-
-.H.P:
-	echo 'mc($*, $(Option)).' >> cmd...
-
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 
-
-all: $(ALL) $(SUBDIR)
+all: $(ALL)
 	@touch cmd...
 	$(Prolog) < cmd...
 	/bin/rm cmd...
 
-slx::
-	@echo ""
-	cd slx; make
-
-flip::
-	@echo ""
-	cd flip; make
-
-perlmatch::
-	@echo ""
-	cd perlmatch; make
-
-gap::
-	@echo ""
-	cd gap; make
-
-regmatch::
-	@echo ""
-	cd regmatch; make
 
 
 # Unfortunately, this needs to be commented on the NeXT.
 # %.O:	%.H
 
 .DONE:
-	@echo Done
+	echo Done

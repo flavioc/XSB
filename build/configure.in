@@ -524,6 +524,9 @@ dnl defines HAVE_GETHOSTBYNAME, HAVE_GETTIMEOFDAY, HAVE_SOCKET,
 dnl and HAVE_SNPRINTF if avail
 AC_CHECK_FUNCS(gethostbyname gettimeofday socket snprintf)
 
+AC_CHECK_FUNCS(regexec regerror regcomp, regmatch_support="yes" ,
+regmatch_support="no")
+
 
 dnl Checking for libraries that are NOT in standard places,
 dnl so they require --site-libraries
@@ -668,6 +671,7 @@ if test "${perl_support}" = "yes"; then
    fi
 fi
 
+AC_SUBST(regmatch_support)
 
 AC_SUBST(perl_archlib)
 AC_SUBST(perl_cc_compiler)
@@ -1041,6 +1045,7 @@ if test -n "$site_dynamic_libraries" ; then
    done
 fi
 
+echo "  POSIX regexp matching libraries:                $regmatch_support"
 echo "  Perl support:                                   $perl_support"
 
 if test "$perl_support" = "yes"; then

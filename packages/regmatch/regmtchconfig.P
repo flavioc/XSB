@@ -1,8 +1,8 @@
-/* File:      plmchconfig.P -- loader for the xsbpattern foreign module
+/* File:      regmtchconfig.P -- loader for the regmatch foreign module
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -28,41 +28,34 @@
 :- import real_search_module/4 from consult.
 :- import xsb_configuration/2 from configuration.
 
-%% Construct the file cc/xsbpattern.H on the fly
-make_xsbpatternH(CC, CC_opts) :-
+%% Construct the file cc/xsb_re_match.H on the fly
+make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
    slash(Slash),
-    xsb_configuration(perl_archlib, PerlArchlib),
-    xsb_configuration(perl_libs, Libs),
-    xsb_configuration(compiler, XCC),
     xsb_configuration(configuration, XSBconfiguration),
-    fmt_write_string(LD_flags,
-		     ' -L%s%sCORE -lperl %s',
-		     f(PerlArchlib, Slash, Libs)),
-    package_configuration(dir(perlmatch), PerlmatchDir),
+    package_configuration(dir(regmatch), RegMatchDir),
     fmt_write_string(LD_directives_file,
-		     '%s%scc%sxsbpattern.H', f(PerlmatchDir, Slash, Slash)),
+		     '%s%scc%sxsb_re_match.H', f(RegMatchDir, Slash, Slash)),
     tell(LD_directives_file),
-    writeln('%% This file is generated on-the-fly by plmchconfig.P'),
+    writeln('%% This file is generated on-the-fly by regmtchconfig.P'),
     writeln('%% Do not edit--any changes will be written over.'),
-    write('%% XSB config:    '), writeln(XSBconfiguration),
-    write('%% XSB CC:        '), writeln(XCC),
-    write('%% Perl CC:       '), writeln(CC),
-    write('%% Perl CC Opts: '), writeln(CC_opts),
+    write('%% XSB config:     '), writeln(XSBconfiguration),
+    write('%% XSB CC:         '), writeln(CC),
+    write('%% Compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
-    writeln(':- export try_match__/2, next_match__/0, do_bulk_match__/3, load_perl__/0, unload_perl__/0, get_match_resultC__/2, string_substitute__/3, get_bulk_match_result__/3.'),
+    writeln(':- export do_regmatch__/7.'),
     write(':- ldoption('''),
-    write(LD_flags),
+    write(LoaderFlags),
     writeln(''').'),
     told.
     
 
-:-  package_configuration(dir(perlmatch), PerlmatchDir),
+:-  package_configuration(dir(regmatch), RegMatchDir),
     slash(Slash),
     fmt_write_string(Module,
-		     '%s%scc%sxsbpattern', f(PerlmatchDir, Slash, Slash)),
-    (  %% avoid recompilation: check if xsbpattern.O exists and 
-       %% is newer than xsbpattern.c.
-       real_search_module('xsbpattern', Dir, Base, Ext),
+		     '%s%scc%sxsb_re_match', f(RegMatchDir, Slash, Slash)),
+    (  %% avoid recompilation: check if xsb_re_match.O exists and 
+       %% is newer than xsb_re_match.c.
+       real_search_module('xsb_re_match', Dir, Base, Ext),
        str_cat(Module, '.c', ModuleSourceFile),
        str_cat(Base, Ext, CompiledModuleFilename),
        str_cat(Module, '.H', ModuleH),
@@ -71,17 +64,17 @@ make_xsbpatternH(CC, CC_opts) :-
        file_time(ModuleSourceFile, time(ST1,ST2)),
        time(ST1,ST2) @< time(CT1,CT2)
 	       %% module compiled and is current, so just load
-	       -> [xsbpattern]
+	       -> [xsb_re_match]
 
-      %% Module isn't compiled or is old, so recompile
-      ; xsb_configuration(perl_cc_compiler, CC),
-	xsb_configuration(perl_archlib, PerlArchlib),
-	xsb_configuration(perl_ccflags, CCflags),
+      %% If Module isn't compiled or is old --- recompile
+      ; xsb_configuration(compiler, CC),
+	xsb_configuration(loader_flags, LoaderFlags),
+	xsb_configuration(compiler_flags, CCflags),
 	xsb_configuration(emudir, EmuDir),
 	fmt_write_string(CC_opts,
-			 ' %s -I%s%sCORE -I%s',
-			 f(CCflags,PerlArchlib,Slash,EmuDir)),
-	make_xsbpatternH(CC, CC_opts),
+			 ' %s %s -I%s',
+			 f(CCflags,LoaderFlags,EmuDir)),
+	make_xsb_re_matchH(CC, CC_opts, LoaderFlags),
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),

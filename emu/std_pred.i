@@ -340,7 +340,7 @@ inline static bool atom_codes(void)
   return TRUE;
 }
 
-inline static bool number_chars(void)
+inline static bool number_codes(void)
 {
   int i;
   long c;

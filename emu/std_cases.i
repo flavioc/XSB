@@ -83,7 +83,7 @@
   /* number_chars should be redefined to return digit-atoms */
   case NUMBER_CHARS:	/* r1: ?term; r2: ?character list	*/
   case NUMBER_CODES:	/* r1: ?term; r2: ?character list	*/
-    return number_chars();
+    return number_codes();
     
   case PUT:	/* r1: +integer	*/
     term = ptoc_tag(1);

@@ -47,6 +47,8 @@ xsb_configuration(compiler, 'cc').
 xsb_configuration(compiler_flags, '').
 xsb_configuration(loader_flags, '').
 
+xsb_configuration(regmatch_support, 'no').
+
 xsb_configuration(perl_support, 'no').
 %% The folowing two must not be set, if perl_support=no
 xsb_configuration(perl_archlib, '').

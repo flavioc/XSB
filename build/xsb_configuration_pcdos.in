@@ -47,6 +47,8 @@ xsb_configuration(compiler, 'gcc').
 xsb_configuration(compiler_flags, ' -O4 -ansi -pedantic -Wall').
 xsb_configuration(loader_flags, ' -lsocket -lm -lnsl -ldl').
 
+xsb_configuration(regmatch_support, 'no').
+
 xsb_configuration(perl_support, 'no').
 %% The folowing two must not be set, if perl_support=no
 xsb_configuration(perl_archlib, '').
