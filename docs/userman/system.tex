@@ -17,14 +17,12 @@ or, if, after being built, XSB is later installed  at a central location,
 \begin{verbatim}
                      $SHARED_XSB/bin/xsb
 \end{verbatim}
-%%
 
 To invoke XSB's top level interpreter (the usual way of
 using XSB), simply issue the command:
 \begin{verbatim}
                        $XSB_DIR/bin/xsb -i
 \end{verbatim}
-%%$
 
 \version\ of XSB can also directly execute object code files
 from the command line interface.  Suppose you have a top-level routine
@@ -35,13 +33,13 @@ file ({\tt foo.O}), then
 \begin{verbatim}
                        $XSB_DIR/bin/xsb foo
 \end{verbatim}
-%%$
 will execute {\tt go}, loading the appropriate files as needed.  In
-fact the command \verb'$XSB_DIR/bin/xsb -i' is equivalent to the command:
-%%$
+fact the command \verb'$XSB_DIR/bin/xsb -i' is equivalent to the
+command:
 \begin{verbatim}
              $XSB_DIR/bin/xsb $XSB_DIR/syslib/loader
 \end{verbatim}
+%%$
 
 There are several ways to exit XSB.  A user may issue the
 command \verb'halt.' or \verb'end_of_file', or simply type
@@ -184,18 +182,18 @@ prefix of a symbol:
 \item	Symbols that are either defined in non-modules loaded into the
 	system or that are dynamically created (by the use of standard
 	predicates such as {\tt read/1, functor/3, '=..'/2}, etc) are
-	contained in usermod.
+	contained in {\tt usermod}.
 \end{itemize}
-
+%
 The following facts about the module system of XSB may not be
 immediately obvious:
 \begin{itemize}
 \item   If users want to use a symbol from another module, they must
         explicitly import it otherwise the two symbols are different
         even if they are of the same $functor/arity$ form.
-\item	A module can only export symbols that are defined in that module.  
-	As a consequence, a module {\em cannot} export symbols that are
-	imported from other modules.
+\item	A module can only export predicate symbols that are defined in
+        that module.  As a consequence, a module {\em cannot} export
+        predicate symbols that are imported from other modules.
         This happens because an {\tt import} declaration is just a
         request for permission to use a symbol from a module where
         its definition and an {\tt export} declaration appear.
@@ -271,12 +269,12 @@ The {\verb|.xsb/xsbrc.P|} file, which is automatically consulted by the
              :- assert(library_directory('~my_friend')).
              :- assert(library_directory('/usr/lib/sbprolog')).
 \end{verbatim}
- After loading the module of the above example, the current working
- directory is searched first (as opposed to the default action of searching
- it last).  Also, \ourprolog's system library directories ({\tt lib,
-   syslib}, and {\tt cmplib}), will now be searched {\em after} searching
- the user's, {\tt my\_friend}'s and the {\tt "/usr/lib/sbprolog/"}
- directory.
+After loading the module of the above example, the current working
+directory is searched first (as opposed to the default action of
+searching it last).  Also, \ourprolog's system library directories
+({\tt lib, syslib}, and {\tt cmplib}), will now be searched {\em
+after} searching the user's, {\tt my\_friend}'s and the {\tt
+"/usr/lib/sbprolog/"} directory.
 
  In fact, XSB also uses {\tt library\_directory/1} for internal purposes.
  For instance, before the user's {\verb|.xsb/xsbrc.P|} is consulted,
@@ -292,10 +290,9 @@ The {\verb|.xsb/xsbrc.P|} file, which is automatically consulted by the
  machine is something that looks like {\tt sparc-sun-solaris2.6} or
  {\tt pc-linux-gnu}, and is selected by XSB automatically at run time).  
  %%$
- 
- 
- Note that the file {\verb|.xsb/xsbrc.P|} is not limited to setting the
- library search path.  In fact, arbitrary Prolog code can go there.
+
+Note that the file {\verb|.xsb/xsbrc.P|} is not limited to setting the
+library search path.  In fact, arbitrary Prolog code can go there.
 
 We emphasize that in the presense of a {\verb|.xsb/xsbrc.P|} file
 {\em it is the user's responsibility to avoid module name clashes 
