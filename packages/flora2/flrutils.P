@@ -175,7 +175,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	  ( flora_file_newerthan(UserTrailerPFile,TrailerFullName) ->
 	      true
 	  ;
-	    flora_copy_file(TrailerFullName,UserTrailerPFile)
+	    path_sysop(copy,TrailerFullName,UserTrailerPFile)
 	  ),
 	  ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
 	      true
@@ -247,7 +247,7 @@ flloadpatch(Workspace) :-
 	( flora_file_newerthan(UserPatchPFile,PatchFullName) ->
 	    true
 	;
-	  flora_copy_file(PatchFullName,UserPatchPFile)
+	  path_sysop(copy,PatchFullName,UserPatchPFile)
 	),
 	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) ->
 	    true
@@ -335,15 +335,15 @@ flora_flcompile(FlrFile,Workspace) :-
 
 
 /*************************************************************************
-  flora_flload(+File,+Workspace)
+  flora_flload(+FlrFile,+Workspace)
 *************************************************************************/
-flora_flload(File,Workspace) :-
-	flora_mainP_filename(File,MPFile),
-	flora_mainO_filename(File,MOFile),
-	flora_FDB_filename(File,FDBFile),
-	flora_WSO_filename(File,Workspace,WSOFile),
+flora_flload(FlrFile,Workspace) :-
+	flora_mainP_filename(FlrFile,MPFile),
+	flora_mainO_filename(FlrFile,MOFile),
+	flora_FDB_filename(FlrFile,FDBFile),
+	flora_WSO_filename(FlrFile,Workspace,WSOFile),
 	!,
-        ( flora_file_newerthan(MPFile,File) ->
+        ( flora_file_newerthan(MPFile,FlrFile) ->
 	    flora_stdmsg_nl,
 	    true
 	;
@@ -432,7 +432,7 @@ flora_file_newerthan(File1,File2) :-
 	file_exists(File1),
 	file_time(File1,time(F1Time1,F1Time2)),
 	file_time(File2,time(F2Time1,F2Time2)),
-	time(F1Time1,F1Time2) @> time(F2Time1,F2Time2).
+	time(F1Time1,F1Time2) @>= time(F2Time1,F2Time2).
 
 
 /*************************************************************************
@@ -504,10 +504,6 @@ flora_check_workspace(Name) :-
 	;
 	  true
 	).
-
-
-flora_copy_file(Source,Dest) :-
-	path_sysop(copy,Source,Dest).
 
 
 /*************************************************************************
