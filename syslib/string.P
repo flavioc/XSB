@@ -286,6 +286,11 @@ next_token(Rest0,Rest,ST0,ST,Tok) :-
 	 ; C =:= 0'.
 	 ->	ST = ST0,
 		scan_decimal(Rest1,Rest,1.0,0.0,Tok)
+	 ; (C =:= 0'- , Rest1 = [C1|Rest2], C1 >= 0'0, C1 =< 0'9)
+	 ->	Val is C1 - 0'0,
+		scan_number(Rest2,Rest,Val,MTok),
+		ST = ST0,
+		Tok is -MTok
 	 ;	ST = ST0,
 		scan_to_delim(Rest0,Rest,Codes,[]),
 		atom_codes(Tok,Codes)
