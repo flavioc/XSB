@@ -469,18 +469,30 @@ Gotchas and experience
 3. If your copy of XSB is using the remote facilities of CVS (i.e., you
     aren't on the local NFS), you will notice that you are being asked for your
     RSA pass phrase more often than you'd like. Eventually, you might earn
-    carpal (sp?) syndrom.
+    carpal tunnel syndrom.
 
-    You might want to get around this by using 
-	ssh-keygen -p
+    Here is a good way around it (and a general way to work with SSH):
 
-    to change your passphrase to a null string.
-    Disadvantage: if somebody hacks your account and gets your ./ssh/identity
-    file, you might find yourself in a difficult situation.
-    That person would be able to masquerade as you and log into any repote
-    site where you placed your public key. Your judgement call.
+	 when you start X, instead of typing
 
-    Of course, this doesn't affect local SBCS users.
+	      startx
+
+	 type
+	      ssh-agent startx
+
+    Ssh-agent is a program that acts on your behalf and authenticates with ssh
+    servers. The above will start ssh-agent and X as the agent's subprocess.
+
+    How does the agent know how to authenticate you to the server?
+    Open an xterm and type 'ssh-add'. It will ask you for your passphrase
+    and then communicate this info to the agent. Now the agent (which runs
+    on your local machine) knows your passphrase, and it knows your private
+    key (~/.ssh/identity). So, it can talk to the servers on your behalf.
+
+    You will not be asked about your password again (until you kill X).
+    This is handy not only for CVS, but also for loggin into the various
+    remote sites: any site that has your public key will securely log you
+    into that site without asking for your password.
 
 4. The checkout/commit process is fairly slow, even when using NFS.
    This is because our NFS is slow. At home I achieve much faster speeds.
@@ -517,8 +529,8 @@ Gotchas and experience
 
 6. XEmacs 20.4 (the latest stable release of Jan 98) has a bug *on Linux*,
    which precludes it from asking you for a pass phrase. So, you won't be
-   able to use pcl-cvs with XEmacs *remotedly*, unless you set your
-   pass phrase to a null string, as explained in (3).
+   able to use pcl-cvs with XEmacs *remotedly*, unless you use the SSH
+   agent as explained in (3).
 
 7. When you do "cvs update" either on command line or from within X/Emacs
    using the pcl-cvs front end, it takes 2-3 minutes for CVS to go to the
