@@ -156,7 +156,7 @@
 	   * answer for the head predicate.
 	   */
 	  int i;
-	  copy_of_var_addr = calloc(var_addr_arraysz, sizeof(CPtr));
+	  copy_of_var_addr = (CPtr *)calloc(var_addr_arraysz, sizeof(CPtr));
 	  if(copy_of_var_addr == NULL){
 	    xsb_exit("No enough memory to calloc copy_of_var_addr!\nBye");
 	  }
