@@ -26,7 +26,6 @@
 
 :- compiler_options([xpp_on]).
 
-#include "standard.h"
 #include "flora_terms.flh"
 
 
@@ -212,17 +211,9 @@ flora_nohilog_predicate(Funct,Predicate,Workspace) :-
   flora_wspredicate(+Functor,+Args,+Workspace,-Predicate)
 *****************************************************************************/
 flora_wspredicate(Functor,Args,WS,Predicate) :-
-	( var(WS) ->
-	    flora_error_line('uninstantiated module name'),
-	    abort
-
-	; not atom(WS) ->
-	    flora_error_heading,
-	    flora_stderr_string('invalid module name: '),
-	    flora_write(STDERR,WS),
-	    flora_stderr_nl,
-	    abort
+	( flora_check_workspace(WS) ->
+	    fmt_write_string(PF,"%s'%s'%s",args(FLORA_PREFIX,WS,Functor)),
+	    Predicate =.. [PF|Args]
 	;
-	  fmt_write_string(PF,"%s'%s'%s",args(FLORA_PREFIX,WS,Functor)),
-	  Predicate =.. [PF|Args]
+	  abort
 	).

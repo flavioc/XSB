@@ -114,6 +114,10 @@ flora_include(FLLIBSHDIRECT,'syslibinc/flrshdirect_inc.flh') :- !.
 flora_include(FLLIBMODLIT,'syslibinc/flrdynmod_inc.flh') :- !.
 flora_include(FLLIBMODOBJ,'syslibinc/flrdynmod_inc.flh') :- !.
 
+flora_include(FLLIBEQUALITY,'syslibinc/flrequality_inc.flh') :- !.
+
+flora_include(FLLIBABOLISH,'syslibinc/flrabolish_inc.flh') :- !.
+
 flora_include(FLHEADER,'closureinc/flrheader_inc.flh') :- !.
 flora_include(FLDBDYN,'closureinc/flrdbdyn_inc.flh') :- !.
 flora_include(FLDEFINITION,'closureinc/flrdefinition_inc.flh') :- !.
@@ -160,6 +164,10 @@ flora_library(FLLIBBTERASE,'syslib/flrbtdbop.P') :- !.
 flora_library(FLLIBBTERASEALL,'syslib/flrbtdbop.P') :- !.
 
 flora_library(FLLIBSHDIRECT,'syslib/flrshdirect.P') :- !.
+
+flora_library(FLLIBEQUALITY,'syslib/flrequality.P') :- !.
+
+flora_library(FLLIBABOLISH,'syslib/flrabolish.P') :- !.
 
 flora_library(FLLIBDYNMOD,'syslib/flrdynmod.P') :- !.
 flora_library(FLLIBMODLIT,'syslib/flrdynmod.P') :- !.

@@ -44,6 +44,7 @@
 
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
+#include "standard.h"
 #include "flora_terms.flh"
 
 
@@ -434,8 +435,15 @@ flora_check_filename(Name) :-
 
 
 flora_check_workspace(Name) :-
-	( not atom(Name) ->
-	    flora_error_line("invalid workspace name"),
+	( var(Name) ->
+	    flora_error_line('uninstantiated module name'),
+	    fail
+
+	; not atom(Name) ->
+	    flora_error_heading,
+	    flora_stderr_string('invalid module name: '),
+	    flora_write(STDERR,Name),
+	    flora_stderr_nl,
 	    fail
 	;
 	  true
@@ -489,7 +497,7 @@ flora_include_file([Opt|OptList],Status) :-
 	    print_file_contents(FullName),
 	    flora_include_file(OptList,Status)
 	;
-	  flora_error_line("The FLORA system file %s not found!",args(FullName)),
+	  flora_error_line("The FLORA system file %s cannot be found!",args(FullName)),
           Status=FLORA_FAILURE
 	).
 

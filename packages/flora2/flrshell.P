@@ -64,7 +64,7 @@ flora_init_shell :-
 	flora_load_library(FLLIBSHELLANS),
 	flora_load_library(FLLIBLOAD),
 	flora_load_library(FLLIBDISPLAY),
-	FL_EQUALITY(NONE),
+	flloadtrailer(NONE),
 	flora_welcome_msg,
 	all,
 	flChatter,
@@ -124,12 +124,16 @@ help :-
 	flora_stdmsg_line('    load the files in the given list into the default module `main'''),
 	flora_stdmsg_line('o rundemo(FILE)'),
 	flora_stdmsg_line('    flConsult a demo from FLORA demos directory'),
-	flora_stdmsg_line('o flEquality({none|basic|flogic},Module)'),
+	flora_stdmsg_line('o flEquality {none|basic|flogic} in Module'),
 	flora_stdmsg_line('    set support for the equality predicate in `Module'' to'),
 	flora_stdmsg_line('    none, standard first-order, or F-logic style'),
 	flora_stdmsg_line('o flEquality {none|basic|flogic}'),
 	flora_stdmsg_line('    set support for the equality predicate in the default module `main'' to'),
 	flora_stdmsg_line('    none, standard first-order, or F-logic style'),
+	flora_stdmsg_line('o flAbolish Functor/Arity [, Functor/Arity]* in Module'),
+	flora_stdmsg_line('    abolish predicate Functor/Arity in the module `Module'''),
+	flora_stdmsg_line('o flAbolish Functor/Arity [, Functor/Arity]*'),
+	flora_stdmsg_line('    abolish predicate Functor/Arity in the the default module `main'''),
 	flora_stdmsg_line('o abolish_all_tables'),
 	flora_stdmsg_line('    flush all tabled data'),
 	flora_stdmsg_line('o flProlog Functor/Arity'),
@@ -238,8 +242,3 @@ rundemo(File) :-
 	flConsult(File),
 	cd(CurrWorkingDir),
 	retractall(library_directory(DemoDir)).
-
-
-/*********************************************************************/
-FL_EQUALITY(X) :- flloadtrailer(X).
-FL_EQUALITY(X,Y) :- flloadtrailer(X,Y).

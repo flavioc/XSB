@@ -118,6 +118,7 @@
 	flora_stdwarn_string/1,
 	flora_stdwarn_string/2,
 	flora_stdmsg_nl/0,
+	flora_error_heading/0,
 	flora_error_indentline/0,
 	flora_warning_indentline/0,
 	flora_error_line/1,
@@ -127,6 +128,8 @@
 	flora_message_line/1,
 	flora_message_line/2
    from flrprint.
+
+:- import flora_write/2 from flrdisplay.
 
 :- import flora_include/2 from flrlibman.
 
@@ -157,4 +160,5 @@
 	flora_noop_command/1,
 	flora_check_filename/1,
 	flora_set_xpp_options/0,
-	flora_list2conjunct/2.
+	flora_list2conjunct/2,
+	flora_check_workspace/1.

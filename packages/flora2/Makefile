@@ -139,7 +139,7 @@ flrcoder.O : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERROR
 	@echo 'mc(flrcoder,$(OPTION)).' >> cmd...
 
 
-flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(XSB_STANDARD) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
 
 

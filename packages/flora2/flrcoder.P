@@ -48,6 +48,7 @@ is_primport(PRIMPORT(P,A,M),P,A,M).
 is_prindex(PRINDEX(P,A,N),P,A,N).
 is_prhilogtable(PRHILOGTABLE(A),A).
 
+is_prthismodule(PRTHISMODULE(PRTHISMODULE)).
 is_pratom(PRATOM(Atom),Atom).
 is_prnumber(PRNUMBER(Number),Number).
 is_prvariable(PRVARIABLE(Name),Name).
@@ -431,6 +432,11 @@ flora_write_struct(Term,_Prefix) :-
 	;
 	  write_canonical(index(P/A,N))
 	).
+
+flora_write_struct(Term,_Prefix) :-
+	is_prthismodule(Term),
+	!,
+	write('VAR_WORKSPACE').
 
 flora_write_struct(Term,_Prefix) :-
 	atomic(Term),

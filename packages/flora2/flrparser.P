@@ -337,6 +337,9 @@ flopdef_struct(P,A,O,FLOPDEF(P,A,O)).
 flindxdirect_struct(F,A,Name,FLINDEX(F,A,Name)).
 flhilogtbldirect_struct(A,FLHILOGTABLE(A)).
 fleqldirect_struct(A,FLEQUALITY(A)).
+fleqldirect_struct(A,M,FLEQUALITY(A,M)).
+flabolishdirect_struct(FAList,FLABOLISH(FAList)).
+flabolishdirect_struct(FAList,M,FLABOLISH(FAList,M)).
 
 flatom_struct(Atom,FLATOM(Atom)).
 
@@ -489,6 +492,7 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	; flora_command_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_equality_directive(CanoniTerm,CodeList,Status)
+	; flora_abolish_directive(CanoniTerm,CodeList,Status)
 	; parsing_error(CanoniTerm,UNKNOWN_DIRECT,Status)
         ),
 	!.
@@ -516,6 +520,8 @@ flora_exec_directive(CanoniTerm,Code,Status) :-
 	; flora_index_directive(CanoniTerm,CodeList,Status)
 	; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
+	; flora_exec_equality_directive(CanoniTerm,CodeList,Status)
+	; flora_exec_abolish_directive(CanoniTerm,CodeList,Status)
         ),
 	!.
 
@@ -568,11 +574,39 @@ flora_fapair(CanoniTerm,_F,_A,Status) :-
 
 
 /****************************************************************************
+  flora_var_fapair(+Term,?Functor,?Arity,-Status)
+****************************************************************************/
+flora_var_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
+	get_atom(T,FL_SLASH),
+	!,
+	( (get_atom(Funct,F); get_flvar_struct(Funct,F)) ->
+	    ( (get_integer(Arity,A), A >= 0; get_flvar_struct(Arity,A)) ->
+		Status=[]
+	    ;
+	      parsing_error(Arity,ERROR_ARITY,Status)
+	    )
+	;
+	  parsing_error(Funct,ERROR_FUNCTOR,Status)
+        ).
+
+flora_var_fapair(CanoniTerm,_F,_A,Status) :-
+	parsing_error(CanoniTerm,ERROR_FAPAIR,Status).
+
+
+/****************************************************************************
   flora_commasep_falist(+CanoniTerm,-FAList,-Status)
 ****************************************************************************/
 flora_commasep_falist(CanoniTerm,FAList,Status) :-
 	flora_comma_separated_list(CanoniTerm,TermList),
 	flora_falist(TermList,FAList,Status).
+
+
+/****************************************************************************
+  flora_commasep_var_falist(+CanoniTerm,-FAList,-Status)
+****************************************************************************/
+flora_commasep_var_falist(CanoniTerm,FAList,Status) :-
+	flora_comma_separated_list(CanoniTerm,TermList),
+	flora_var_falist(TermList,FAList,Status).
 
 
 /****************************************************************************
@@ -584,6 +618,17 @@ flora_falist([T|TList],[Funct/Arity|FAList],Status) :-
 	!,
 	flora_fapair(T,Funct,Arity,S),
 	(S == [] -> flora_falist(TList,FAList,Status); Status=S).
+
+
+/****************************************************************************
+  flora_var_falist(+CanoniTermList,-FAList,-Status)
+****************************************************************************/
+flora_var_falist([],[],[]) :- !.
+
+flora_var_falist([T|TList],[Funct/Arity|FAList],Status) :-
+	!,
+	flora_var_fapair(T,Funct,Arity,S),
+	(S == [] -> flora_var_falist(TList,FAList,Status); Status=S).
 
 
 /****************************************************************************
@@ -875,11 +920,103 @@ flora_hilogtable_directlist([Arity|L],[Code|CL],Status) :-
 /****************************************************************************
   flora_equality_directive(+CanoniTerm,-CodeList,-Status)
 ****************************************************************************/
-flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],[]) :-
+flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
 	get_name(Funct,FL_EQUALITY),
-	get_name(T,A),
-        (A == NONE; A == BASIC; A == flogic),
-	fleqldirect_struct(A,Code).
+	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
+	get_name(F,FL_IN),
+	!,
+	( get_name(R,M) ->
+	    ( get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC) ->
+		fleqldirect_struct(A,M,Code),
+		Status=[]
+	    ;
+	      parsing_error(L,ERROR_EQLSPEC,Status)
+	    )
+	;
+	  parsing_error(R,ERROR_WSNAME,Status)
+        ).
+
+flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EQUALITY),
+	!,
+	( get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC) ->
+	    fleqldirect_struct(A,Code),
+	    Status=[]
+	;
+	  parsing_error(T,ERROR_EQLSPEC,Status)
+	).
+
+
+/****************************************************************************
+  flora_exec_equality_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EQUALITY),
+	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
+	get_name(F,FL_IN),
+	!,
+	( flora_name_or_normvar(R,M) ->
+	    ( (get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC); get_flvar_struct(L,A)) ->
+		fleqldirect_struct(A,M,Code),
+		Status=[]
+	    ;
+	      parsing_error(L,ERROR_EQLSPEC,Status)
+	    )
+	;
+	  parsing_error(R,ERROR_WSNAME,Status)
+        ).
+
+flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_EQUALITY),
+	!,
+	( (get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC); get_flvar_struct(T,A)) ->
+	    fleqldirect_struct(A,Code),
+	    Status=[]
+	;
+	  parsing_error(T,ERROR_EQLSPEC,Status)
+	).
+
+
+/****************************************************************************
+  flora_abolish_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_ABOLISH),
+	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
+	get_name(F,FL_IN),
+	!,
+	( get_name(R,M) ->
+	    flora_commasep_falist(L,FAList,Status),
+	    (Status == [] -> flabolishdirect_struct(FAList,M,Code); true)
+	;
+	  parsing_error(R,ERROR_WSNAME,Status)
+        ).
+
+flora_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_ABOLISH),
+	flora_commasep_falist(T,FAList,Status),
+	(Status == [] -> flabolishdirect_struct(FAList,Code); true).
+
+
+/****************************************************************************
+  flora_exec_abolish_directive(+CanoniTerm,-CodeList,-Status)
+****************************************************************************/
+flora_exec_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_ABOLISH),
+	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
+	get_name(F,FL_IN),
+	!,
+	( flora_name_or_normvar(R,M) ->
+	    flora_commasep_var_falist(L,FAList,Status),
+	    (Status == [] -> flabolishdirect_struct(FAList,M,Code); true)
+	;
+	  parsing_error(R,ERROR_WSNAME,Status)
+        ).
+
+flora_exec_abolish_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
+	get_name(Funct,FL_ABOLISH),
+	flora_commasep_var_falist(T,FAList,Status),
+	(Status == [] -> flabolishdirect_struct(FAList,Code); true).
 
 
 /****************************************************************************
@@ -1268,7 +1405,7 @@ flora_loaditem(CanoniTerm,_Code,Status) :-
 flora_name_or_normvar(CanoniTerm,Code) :-
 	( get_name(CanoniTerm,A), flatom_struct(A,Code)
         ;
-	  get_flvar_struct(CanoniTerm,Code), \+ is_anonymous_flvar_struct(Code)
+	  get_flvar_struct(CanoniTerm,Code), not is_anonymous_flvar_struct(Code)
         ),
 	!.
 

@@ -40,14 +40,7 @@
 :- index(flora_flogic_bswrapper/2,trie).
 :- index(flora_flogic_workspace/1,trie).
 
-:- import
-	flora_error_line/1,
-	flora_error_heading/0,
-	flora_stderr_string/1,
-	flora_stderr_nl/0
-   from flrprint.
-
-:- import flora_write/2 from flrdisplay.
+:- import flora_check_workspace/1 from flrutils.
 
 :- export
 	flora_setup_flogic_bswrapper/1,

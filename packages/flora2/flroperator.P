@@ -46,8 +46,10 @@ flora_op(1500,fx,FL_PROLOG).
 flora_op(1500,fx,FL_NOHILOG).
 flora_op(1500,fx,FL_HILOGTABLE).
 flora_op(1500,fx,FL_EQUALITY).
+flora_op(1500,fx,FL_ABOLISH).
 
 flora_op(1400,xfx,FL_FROM).
+flora_op(1400,xfx,FL_IN).
 flora_op(1400,xfy,FL_SEMICOLON).
 
 flora_op(1300,xfy,FL_COMMA).

@@ -90,8 +90,6 @@ flora_prlg(flLoad,1) :- !.
 flora_prlg(flLoad,2) :- !.
 flora_prlg(flConsult,1) :- !.
 flora_prlg(flCompileInclude,1) :- !.
-flora_prlg(FL_EQUALITY,1) :- !.
-flora_prlg(FL_EQUALITY,2) :- !.
 flora_prlg(help,0) :- !.
 flora_prlg(reset,1) :- !.
 flora_prlg(all,0) :- !.

@@ -63,6 +63,9 @@ is_flnohilog(FLNOHILOG(F,N),F,N).
 is_flindex(FLINDEX(F,A,Name),F,A,Name).
 is_flhilogtable(FLHILOGTABLE(A),A).
 is_flequality(FLEQUALITY(A),A).
+is_flequality(FLEQUALITY(A,M),A,M).
+is_flabolish(FLABOLISH(FAList),FAList).
+is_flabolish(FLABOLISH(FAList,M),FAList,M).
 
 is_flconjunct(FLCONJUNCT(L,R),L,R).
 is_fldisjunct(FLDISJUNCT(L,R),L,R).
@@ -183,6 +186,7 @@ strobj_struct(String,PRSTRING(String)).
 list_struct(List,Term,PRLIST(List,Term)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
+thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
 
 workspacelit_struct(P,WS,Code) :-
 	( is_flatom(WS,WSAtom) ->
@@ -830,17 +834,63 @@ compile_direct(DirectTerm,[],[]) :-
 	flora_define_nohilog(P,N),
 	!.
 
-compile_direct(DirectTerm,[],[]) :-
-	is_flequality(DirectTerm,A),
-	( A == BASIC ->
-	    report_option(FLEQLBASIC)
+compile_direct(DirectTerm,CodeList,[]) :-
+	( is_flequality(DirectTerm,A) ->
+	    ( A == BASIC ->
+		report_option(FLEQLBASIC)
 
-	; A == FLOGIC ->
-	    report_option(FLEQLFLOGIC)
-	;
-	  true
+	    ; A == FLOGIC ->
+	        report_option(FLEQLFLOGIC)
+	    ;
+	      true
+	    ),
+	    CodeList=[]
+
+	; is_flequality(DirectTerm,A,M) ->
+	    florasyslib_struct(FLLIBEQUALITY,2,[A,M],CCode),
+	    query_struct(CCode,Code),
+	    CodeList=[Code]
 	),
 	!.
+
+compile_direct(DirectTerm,[Code],[]) :-
+	( is_flabolish(DirectTerm,FAList) ->
+	    thismodule_struct(M)
+	;
+	  is_flabolish(DirectTerm,FAList,M)
+	),
+	compile_falist(FAList,FACodeList),
+	list_struct(FACodeList,[],FAListCode),
+	florasyslib_struct(FLLIBABOLISH,2,[FAListCode,M],CCode),
+	query_struct(CCode,Code),
+	!.
+
+
+/****************************************************************************
+  compile_flatomvar(+T,-Code)
+****************************************************************************/
+compile_flatomvar(T,Code) :-
+	    ( is_flvar(T,TName,_I) ->
+		varobj_struct(TName,Code)
+
+	    ; is_flatom(T,TAtom) ->
+	        atomobj_struct(TAtom,Code)
+	    ;
+	      Code=T
+	    ).
+
+
+/****************************************************************************
+  compile_falist(+FAList,-FACodeList)
+****************************************************************************/
+compile_falist([],[]) :- !.
+
+compile_falist([F/A|L],[Code|CL]) :-
+	!,
+	compile_flatomvar(F,FObj),
+	(is_flvar(A,AName,_I) -> varobj_struct(AName,AObj); AObj=A),
+	prologterm_struct('/',2,[FObj,AObj],Code),
+	compile_falist(L,CL).
 
 
 /****************************************************************************
@@ -2881,5 +2931,31 @@ compile_execdirect(DirectTerm,Code) :-
 	; is_flsignature(DirectTerm,Funct,Arity,Args) ->
 	    list_struct(Args,[],ArgsCode),
 	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_SIGNATURE,Funct,Arity,ArgsCode],Code)
+	),
+	!.
+
+compile_execdirect(DirectTerm,Code) :-
+	( is_flabolish(DirectTerm,FAList) ->
+	    compile_falist(FAList,FACodeList),
+	    list_struct(FACodeList,[],FAListCode),
+	    florasyslib_struct(FLLIBABOLISH,1,[FAListCode],Code)
+
+	; is_flabolish(DirectTerm,FAList,M) ->
+	    compile_falist(FAList,FACodeList),
+	    list_struct(FACodeList,[],FAListCode),
+	    compile_flatomvar(M,MObj),
+	    florasyslib_struct(FLLIBABOLISH,2,[FAListCode,MObj],Code)
+	),
+	!.
+
+compile_execdirect(DirectTerm,Code) :-
+	( is_flequality(DirectTerm,T) ->
+	    compile_flatomvar(T,TObj),
+	    florasyslib_struct(FLLIBEQUALITY,1,[TObj],Code)
+
+	; is_flequality(DirectTerm,T,M) ->
+	    compile_flatomvar(T,TObj),
+	    compile_flatomvar(M,MObj),
+	    florasyslib_struct(FLLIBEQUALITY,2,[TObj,MObj],Code)
 	),
 	!.
