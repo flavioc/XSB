@@ -1,75 +1,63 @@
 :- compiler_options([ciao_directives]).
 
 :- document_export
-	class/4, 
-	newClass/5, retractallClass/4,
+	class/4, newClass/5, retractallClass/4,
 	updateClass/4, updateObject/4,
 	subclass/2, proper_subclass/2,
 	immediate_subclass/2, % if_subclass/2,
-%	assert_subclass/2, 
 	newSubclass/2, retractallSubclass/2,
-	is_a_relation/1,
-	relationship/3, 
+	is_a_relation/1,	relationship/3, 
 	immediate_relationship/3,immediate_irel/3, 
 	is_an_inheritable_relationship/1,
-%	assert_relationship/3, 
 	newRelationship/3, newRelationshipClass/3,
 	retractallRelationship/3,
-	strel/3,
-	is_a_strel/1,
-%	assert_strel/3, 
-	newStrel/3, newStrelClass/3, retractallStrel/3,
-		schrel/3,
+	strel/3,	is_a_strel/1,
+	newStrel/3, newStrelClass/3, retractallStrel/3,	schrel/3,
 	immediate_schrel/3, is_a_schrel/1,
-%	assert_schrel/3, 
 	newSchrel/3, 	newSchrelClass/3, retractallSchrel/3,
-		object/4, 
-%	assert_object/4, newObject/3, 
-	newObject/5,retractallObject/4,
-	memberof/2,
-	immediate_memberof/2, 
-%	assert_memberof/2, 
+	object/4, newObject/5,retractallObject/4,
+	memberof/2,immediate_memberof/2, 
 	newMemberof/2,retractallMemberof/2,
-	(attribute)/3,
-	immediate_attribute/3, 
-%	assert_attribute/3, 
+	(attribute)/3,immediate_attribute/3, 
 	newAttribute/3,retractallAttribute/3,
-        updateAttribute/5,
+            updateAttribute/5,
 	attribute_object/3,
-%	assert_attribute_object/3, 
 	newAttribute_object/3, retractallAttribute_object/3,
-
 	new_oms/0,
-
-/*	oms_use_cache/0, oms_dont_use_cache/0,*/
-
-	set_chk_index/0.
+	set_chk_index/0,
+	show_oms_size/0.
 
 :- import conset/2, conget/2 from gensym.
 :- import variant/2, subsumes/2 from subsumes.
 :- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
-:- import concat_atom/2 from string.
+:- import search_module/6 from consult.
 
-:- dynamic oms_checking/1.
-:- call_assert(oms_checking(partial)).
-:- [oms_constraints].
-:- [oms_exceptions].
-:- [oms_oblivion].
+%%%%%%%%%%%%% Core Declarations 
 
-:- (library_directory(Dir),
-    (concat_atom([Dir,'/oms_xj.xwam'],XJXWAM),
-     file_exists(XJXWAM)
-     ->	    consult(oms_xj)
-     ;	(concat_atom([Dir,'/oms_xj.xwam'],XJP),
-	 file_exists(XJP))
-     ->	    consult(oms_xj)
-     ;	    fail
-    ),
-    !
-    ;	   
-    consult(oms_cdf)
-   ).
+:- dynamic oms_cn/4.
+:- dynamic oms_sc/2.
+:- dynamic oms_rln/3.
+:- dynamic oms_strel/3.
+:- dynamic oms_schrel/3.
+:- dynamic oms_obj/4.
+:- dynamic oms_mo/2.
+:- dynamic oms_at/3.
+:- dynamic oms_ao/3.
+
+%%%%%%%%%%%%% Declarations for External View
+
+:- dynamic class_ext/3.
+:- dynamic subclass_ext/4.
+:- dynamic relationship_ext/6.
+:- dynamic strel_ext/6.
+:- dynamic schrel_ext/6. 
+:- dynamic object_ext/3.
+:- dynamic memberof_ext/4.
+:- dynamic attribute_ext/6.
+:- dynamic attribute_object_ext/6. 
+
+%%%%%%%%%%%%% Declarations for External Intensional View
 
 :- dynamic class_int/3.
 :- dynamic immediate_subclass_int/4.
@@ -81,44 +69,71 @@
 :- dynamic immediate_attribute_int/6.
 :- dynamic attribute_object_int/6.
 
-:- ensure_loaded(oms_db_updatable).
-:- dynamic assert_oms_int/1.
-:- dynamic retractall_oms_int/1.
-
 :- dynamic cn_id_map/4.
 :- index(cn_id_map/4,[1,3+4],5001).
 
 :- dynamic ob_id_map/4.
 :- index(ob_id_map/4,[1,3+4],5001).
 
-:- dynamic last_checked/1.
+%%%%%%%%%%%%% Declarations for caching and XJ interface
+:- ensure_loaded(oms_oblivion).
 
-:- init_ext_dynamic,
-   init_oms_dynamic,
-   init_oms_rels,
-   init_index_std.
+:- (search_module(oms_xj,_,_,_,_,_) -> 
+	    consult(oms_xj)
+     ;	    consult(oms_cdf)
+   ).
+
+%%%%%%%%%%%%% Declarations for exception handling
+:- ensure_loaded(oms_exceptions).
+
+%%%%%%%%%%%%% Declarations for updatable DB
+:- ensure_loaded(oms_db_updatable).
+
+:- dynamic oms_extint_updatable/1.
+:- dynamic retractall_object_int/4.
+:- dynamic newObject_int/5.
+:- dynamic retractall_memberof_int/2.
+:- dynamic retractall_attribute_int/3.
+:- dynamic newAttribute_int/3.
+
+:- dynamic assert_oms_int/1.
+:- dynamic retractall_oms_int/1.
+
+%%%%%%%%%%%%% Declarations for constraint checking
+:- ensure_loaded(oms_constraints).
+:- dynamic oms_checking/1.
+:- call_assert(oms_checking(partial)).
+
+:- init_oms_rels, init_index_std.
 
 %--------------------------------------------------------------------
 /* TLS: these should be used only when checking dead code.  They
 include superceded predicate names and "imports" from other files.
 
-:- export assert_attribute/3,assert_attribute_object/3,
+:- document_export assert_attribute/3,assert_attribute_object/3,
 	assert_memberof/2,
 	assert_object/4, 
 	assert_relationship/3,assert_schrel/3,assert_strel/3,
 	assert_subclass/2, 
 
-	irel/3, newIrel/3,
+	irel/3, newIrel/3,newRelationship_omsext/3,
+
+	table_subclass/2, 
 
 	retractall_attribute/3, retractall_attribute_object/3,
 	retractall_class/4, retractall_memberof/2,
 	retractall_object/4,  retractall_relationship/3,
 	retractall_schrel/3, retractall_strel/3,  retractall_subclass/2,
 
+% Needed for updates in oms_xj/oms_cdf.
+	assert_oms/1,
+
 % used by oms_io:
 	oms_initialize_ctrs/0.
 
 :- import check_incremental_constraints/1 from oms_constraints.
+:- import oms_update_list/1 from oms_cdf.
+:- import oms_error/2, oms_warning/2 from oms_exceptions.
 */
 %--------------------------------------------------------------------
 
@@ -126,13 +141,13 @@ include superceded predicate names and "imports" from other files.
 "
 @section{Using the OMS}
 
-Both the OMS Internal Format (@ref{OMS: Internal Format} and the OMS
-Programmer's View (@ref{Programmer's View of the OMS}) are defined in
-this file.  Both of these views use generated identifiers, which means
-that data in External Format must be transformed into Internal Format
-by one of the predicates in @ref{oms_io (library)}.  The user of the
-OMS will normally access data in the OMS's Internal Format through
-the Programmer's View, which supports a semantics of inheritance (see
+The OMS Programmer's View (@ref{Programmer's View of the OMS}) is
+defined in this file, along with the (@ref{OMS: Internal Format}.
+Both of these views use generated identifiers, which means that data
+in External Format must be transformed into Internal Format by one of
+the predicates in @ref{oms_io (library)}.  The user of the OMS will
+normally access data in the OMS's Internal Format through the
+Programmer's View, which supports a semantics of inheritance (see
 @ref{Semantic Axioms for the Programmer's View}) and accesses External
 Intensional Data.  Predicates defined at the Programmer's View include
 @pred{class/4}, @pred{subclass/2}, @pred{relationship/3}, and others
@@ -141,15 +156,15 @@ defined below.  Predicates that support the Internal Format include
 
 @section{Builtin Classes and Relations}
 
-The following classs and relations are defined for @em{every}
+The following classes and relations are defined for @em{every}
 instance of the OMS.  In other words, any ontology definable via the
-OMS includes these classs and relations.
+OMS includes these classes and relations.
 
 @begin{itemize}
 
-@item @index{OMS Root}: 
-	Class that is the root node of the Ontology.  All classes are
-subclasses of @tt{OMS Root}. 
+@item @index{OMS Root}: Class that is the root node of the Ontology.
+All classes are subclasses of @tt{OMS Root}, and all objects are
+members of @tt{OMS Root}.
 
 @item @index{OMS Relations}:
 	Class that includes all relations --- inheritable or not.
@@ -162,8 +177,8 @@ newClass('OMS Relations',RootCid,'OMS',RelCid)
 
 As mentioned in @ref{A Quick Tour of the OMS}, OMS relations can
 define inheritable attributes which hold for subclasses and objects,
-inheritable schema attributes, and non-inheritable attributes.
-Subclasses of @tt{OMS Relations} define inheritable attributes.
+inheritable schema constraints, and non-inheritable properties of
+sets.  Subclasses of @tt{OMS Relations} define inheritable attributes.
 
 @item @index{OMS Inheritable Relationships}:
 	Class that includes all inheritable relationships.
@@ -206,7 +221,7 @@ newClass('OMS Primitive Types',RootCid,'OMS',_PTypesCid),
 
 The primitive types supplied by the OMS are: 
 @begin{verbatim}
-        oms_cn(integer(X),'INTEGER/1',integer(X),'OMS').
+            oms_cn(integer(X),'INTEGER/1',integer(X),'OMS').
   	oms_cn(float(X),'FLOAT/1',float(X),'OMS').
   	oms_cn(atom(X),'ATOM/1',atom(X),'OMS').
   	oms_cn(cardinal(X),'CARDINAL/1',cardinal(X),'OMS').
@@ -218,26 +233,26 @@ The primitive types supplied by the OMS are:
 @noindent The data structures represented by first three are
 self-explanatory; @tt{aint(_)} is used to represent integers that have
 the form of Prolog atoms, such as @tt{'01968'}; while @tt{obj(_)} is
-used to represent the set of all object IDs.
+used to represent the set of all object IDs.  To store a Prolog clause
+@em{C}, it is regarded as a term and stored using the (and terms) are
+stored @em{say something more abt. clause/2}.
 
 Each of the primitive types can be seen as constituting a rather flat
 hierarchy.  A given integer, say @tt{integer(7)} is a leaf of the
 integer hierarchy.  Its immediate parent is @tt{integer(_)}, in which
 the underscore signifies an anonymous Prolog variable.
 @tt{integer(_)} can be thought of as standing for the expression
-@em{(all X).integer(X)}.  Thus, @tt{integer(_)} is the 
-parent of each
+@em{(all X).integer(X)}.  Thus, @tt{integer(_)} is the parent of each
 instanitated integer, so that the usual ordering of integers is not
 maintained within the OMS.  Similarly, @tt{atom(_)} is the parent of
 each instantiated atom and so on.
 
 @end{itemize}
-").
+"). 
 
-%--------------------------------------------------------------------
-/* Basic code that declares and initializes a basic OMS */
+%%% (Re-)Initialization %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% TLS: this predicate may not get used heavily, but I think its useful
+% TLS: new_oms/0 may not get used heavily, but I think its useful
 % to have all the re-initialization stuff here in one place, to record
 % what the state consists of and to make future maintenance easier. 
 
@@ -262,8 +277,6 @@ new_oms:-
 	retractall(oms_at(_,_,_)),
 	retractall(oms_ao(_,_,_)),
 
-	retractall(last_checked(_)),
-
 	retractall(class_int(_,_,_)),
 	retractall(immediate_subclass_int(_,_,_,_)),
 	retractall(immediate_relationship_int(_,_,_,_,_,_)),
@@ -279,16 +292,7 @@ new_oms:-
 
 	init_oms_rels.
 
-init_oms_dynamic :-
-	dynamic(oms_cn(_,_,_,_)),
-	dynamic(oms_sc(_,_)),
-	dynamic(oms_rln(_,_,_)),
-	dynamic(oms_strel(_,_,_)),
-	dynamic(oms_schrel(_,_,_)),
-	dynamic(oms_obj(_,_,_,_)),
-	dynamic(oms_mo(_,_)),
-	dynamic(oms_at(_,_,_)),
-	dynamic(oms_ao(_,_,_)).
+%-------
 
 init_index_std :-
 	init_schema_index_std,
@@ -320,22 +324,7 @@ init_data_index_std :-
 	%% oms_ao(Oid,RCid,TOid)
 	index(oms_ao(_,_,_),[1+2]).
 
-init_ext_dynamic :-
-	dynamic(class_ext/3), %% class_ext(Label,NatCId,Sou)
-	dynamic(subclass_ext/4), 
-	%% subclass_ext(SubNatCid,SubSource,SupNatCid,SupSource)
-	dynamic(relationship_ext/6), 
-	%% relationship_ext(SNCId,SSrc,RNCId,RSrc,TNCId,TSrc)
-	dynamic(strel_ext/6), 
-	%% strel_ext(SNCId,SSrc,RNCId,RSrc,TNCId,TSrc)
-	dynamic(schrel_ext/6), 
-	%% schrel_ext(SNCId,SSrc,RNCId,RSrc,TNCId,TSrc)
-	dynamic(object_ext/3), %% object_ext(Name,Native_Id,Src)
-	dynamic(memberof_ext/4), %% memberof_ext(NOId,NCId,Source)
-	dynamic(attribute_ext/6) ,
-        %% attribute_ext(OId,Osrc,RNCId,RSrc,TNCId,TSrc)
-	dynamic(attribute_object_ext/6). 
-        %% attribute_object_ext(OId,Osrc,RNCId,RSrc,TOId,Tsrc)
+%-------
 
 init_oms_rels :-
 	(oms_cn(_,_,_,_) -> true ; conset('_cid_ctr',0)),
@@ -359,33 +348,13 @@ init_oms_rels :-
 
 	newClass('OMS Primitive Types',RootCid,'OMS',TypesCid),
 	newClass([],TypesCid,'OMS',_Nullid),
-	assert_basic_types(TypesCid),
+	assert_primitive_types(TypesCid),
 	init_component_info.
-
-init_component_info :-
-            class(RootCid,'OMS Root','OMS Root','OMS'),
-	newClass(component,RootCid,'OMS',CompCid),
-	newClass('OMS',CompCid,'OMS',_),
-	class(Inhid,'OMS Inheritable Relationships',_,'OMS'),
-	newClass(component_depends,Inhid,'OMS',_Depid).
-
-oms_primitive_type(aint(_)).
-oms_primitive_type(atom(_)).
-oms_primitive_type(cardinal(_)).
-oms_primitive_type(float(_)).
-oms_primitive_type(integer(_)).
-oms_primitive_type(object(_)).
-oms_primitive_type(clause(_,_)).
-
-assert_basic_types:- 
- 	newClass('OMS Root',unk,'OMS',RootCid),
-	newClass('OMS Primitive Types',RootCid,'OMS',TypesCid),
-	assert_basic_types(TypesCid).
 
 /* Note: Cid must be unified with Native ID for external dumping to
  work.  Do NOT use newClass for these -- variable handling has been
  taken out of that predicate.  */
-assert_basic_types(TypsCid):- 
+assert_primitive_types(TypsCid):- 
 	newPrimitiveClass('AINT/1',TypsCid,aint(X),'OMS',aint(X)),
 	newPrimitiveClass('ATOM/1',TypsCid,atom(X),'OMS',atom(X)),
 	newPrimitiveClass('CARDINAL/1',TypsCid,cardinal(X),'OMS',cardinal(X)),
@@ -401,6 +370,15 @@ newPrimitiveClass(Name,ParentCid,NewCid,Source,NativeID):-
 		      asserta(oms_sc(NewCid,ParentCid))],
            oms_update_list(UpdateList)).
 
+init_component_info :-
+            class(RootCid,'OMS Root','OMS Root','OMS'),
+	newClass(component,RootCid,'OMS',CompCid),
+	newClass('OMS',CompCid,'OMS',_),
+	class(Inhid,'OMS Inheritable Relationships',_,'OMS'),
+	newClass(component_depends,Inhid,'OMS',_Depid).
+
+oms_primitive_type(X):- oms_primitive_class(X,_,_,_).
+
 oms_primitive_class(aint(X),'AINT/1',aint(X),'OMS').
 oms_primitive_class(atom(X),'ATOM/1',atom(X),'OMS').
 oms_primitive_class(cardinal(X),'CARDINAL/1',cardinal(X),'OMS').
@@ -414,6 +392,8 @@ oms_primitive_class(object(X),'OBJECT/1',object(Y,Z),'OMS') :-
 	 ->	object(X,_,Y,Z)
 	 ;	true
 	).
+
+%-------
 
 %% Given a OMS in memory, initialize ID counters to max used.
 oms_initialize_ctrs :-
@@ -439,15 +419,6 @@ oms_initialize_ctrs :-
 	 conset('_oid_ctr',OCnt)
 	).
 
-newcid(NatCid,Source,Cid):- 
-	(atomic(NatCid) -> atomic_newcid(Cid) ; 
-	    parameterized_ext_int(NatCid,Cid,Source)).
-
-atomic_newcid(Cid) :-
-	conget('_cid_ctr',OCid),
-	Cid is OCid+1,
-	conset('_cid_ctr',Cid).
-
 %%% CLASS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(class/4,"@tt{class(Cid,Name,NatCid,Source)} retrieves a
@@ -458,9 +429,9 @@ In the case in which @tt{Cid} or @tt{NatCid} are instantiated to
 parameterized classes, and they do not unify with a currently loaded
 class, a check will be made to see if they are subsumed by a currently
 loaded class, returning the name and/or source of the subsuming class.
-The @tt{Cid} and @tt{NatCid}, are those of the subsued class -- there
-is always a 1-1 relation between the @tt{NatCid} and @tt{Cid} of any
-fact in any OMS.
+The @tt{Cid} and @tt{NatCid}, are those of the subsumed class -- there
+is always a 1-1 relation between the @tt{NatCid}X@tt{Source} and
+@tt{Cid} of any fact in any OMS.
 
 Finally, @tt{class/4} will access either Internal or External
 Intensional facts as needed.
@@ -620,6 +591,15 @@ parameterized_ext_int_1([Nid,Sou|T],[Cid|T1],Term):-
 class_or_abort(Nid,Source,Cid,_Term):- class(Cid,_,Nid,Source),!.
 class_or_abort(H,S,_N,Term):-
 	oms_error(update,('Cannot find class for',H,S,'in',Term)).
+
+newcid(NatCid,Source,Cid):- 
+	(atomic(NatCid) -> atomic_newcid(Cid) ; 
+	    parameterized_ext_int(NatCid,Cid,Source)).
+
+atomic_newcid(Cid) :-
+	conget('_cid_ctr',OCid),
+	Cid is OCid+1,
+	conset('_cid_ctr',Cid).
 
 %-------------------------------------------------------------
 
@@ -1215,46 +1195,19 @@ relationship_target_class_exists(SCid):-
 %%%%%%%%%%%%%%%
 /* To be used ONLY when loading from an external file.
      In this case, it is known that SCid, RCid, and TCid are all proper class ids. 
-newRelationship_omsext(SCid,RCid,TCid) :-
-	(relationship(SCid,RCid,TCid)
-	 ->   true
-	 ;    (is_an_inheritable_relationship(RCid) -> 
-	           assert_oms(oms_rln(SCid,RCid,TCid))
-%   	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
-	        ;  oms_warning(update,('attempt to add an inheritable ',
-		    ' relationship for class that is not a ',
-		    ' relationship: ',RCid)),
-	            fail) ).
 */
 
 newRelationship_omsext(SCid,RCid,TCid) :-
 	(relationship_inh_gen(SCid,RCid,TCid)
 	 ->   true
 	 ;    (is_an_inheritable_relationship(RCid) -> 
-%	           assert_oms(oms_rln(SCid,RCid,TCid))
    	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
 	        ;  oms_warning(update,('attempt to add an inheritable ',
 		    ' relationship for class that is not a ',
 		    ' relationship: ',RCid)),
 	            fail) ).
 
-/*  TLS: taken out 1/03
-standardize_value(X,X) :- var(X), !.
-standardize_value(integer(X),integer(Y)) :-
-	(var(X)
-	 ->	Y = X
-	 ; integer(X)
-	 ->	Y = X
-	 ;	friendly_atom_codes(X,XC),
-		number_codes(Y,XC),
-		number_codes(Y,YC),
-		YC = XC
-	),
-	!.
-standardize_value(X,X).
-*/
-
-%%% SET-VALUED RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% SET-VALUED RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(is_a_strel/1, "@tt{is_a_strel(RCid)} checks that @tt{RCid}
 is the class ID of a subclass of @tt{OMS Set-Valued Relations}.  If
@@ -1695,11 +1648,13 @@ newoid(NatOid,Oid,Rootid,Source,Upd0,Upd1) :-
 	
 %	Oid =.. [Functor|New_Oid_list].
 
+/* TLS: dont know if this is still being used.
 check_class_for_prod_obj(NatOid,Sou):- 
 	functor(NatOid,F,A),
 	functor(Skel,F,A),
 	(oms_cn(_Cid,_Label,Skel,Sou) ;
                    get_class_int(_Cid,_,Skel,Sou)).
+*/
 
 newoid_list([],[],_Rootid,_Term,Upd,Upd).
 newoid_list([Nid,Src|OT],[Oid|NT],Rootid,Term,Updin,Updout):- !,
@@ -2031,7 +1986,7 @@ newAttribute(SOid,RCid,TCid,Upd0,Upd) :-
 		) 
 	).
 
-%%% ATTRIBUTE_OBJECT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% ATTRIBUTE_OBJECT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(attribute_object/3,"@tt{attribute_object(Oid,RCid,TOid)}
 accesses facts stored in @pred{oms_ao/3}, and from the external
@@ -2176,10 +2131,9 @@ newSchrelClass(Name,Source,NewCid) :-
  * coverage.  stuff with primitive types is an attempt at optimization
  * (other than object, which is special).  */
 
-/* changed to partially reflect ext_int.
-   make explicit calls to oms_primitive_class.  Am not sure
-   if we can always assume that Cid + , but I'm preserving the
-   semantics we had for param_int_ext */
+/* changed to partially reflect ext_int.  make explicit calls to
+oms_primitive_class.  Am not sure if we can always assume that Cid + ,
+but I'm preserving the semantics we had for param_int_ext 
 
 int_ext(Cid,NatCid,Sou):- 
 	oms_primitive_class(Cid,_Label,NatCid,Sou),!.
@@ -2190,6 +2144,7 @@ int_ext(Cid,NatCid,Sou):-
 int_ext(Cid,NatCid,Sou):- 
 %	\+ oms_primitive_class(Cid,Label,NatCid,Sou),
 	parameterized_int_ext(Cid,NatCid,Sou).
+*/
 
 parameterized_int_ext(Term,Newterm,Sou):- 
 	oms_primitive_class(Term,_Label,Newterm,Sou).
@@ -2271,15 +2226,18 @@ check_new_source(Source,Term):-
 			 'non-atomic source: ',Term))
 	).
 
+%%%%%%%%%%  Retract tables as appropriate upon update.
 
 assert_oms(Term) :-
 	assert_oms_term(Term),
 	abolish_nec_tables(Term).
 
 assert_oms_term(Term) :-
+	oms_log(Term),
 	assert_oms_int(Term),
 	!.
 assert_oms_term(Term) :-
+	oms_log(Term),
 	asserta(Term),
 	oms_dirty(DFlg),
 	(DFlg =:= 1
@@ -2311,6 +2269,39 @@ abolish_nec_tables(oms_sc(_,_)) :- !,
 	abolish_schrel_inherits.
 abolish_nec_tables(_).
 
+%% Needed for updates in oms_xj/oms_cdf.
+retractall_oms(oms_rln(A,B,C)) :- !,
+	abolish_relationship_inherits,
+	retractall_oms_1(oms_rln(A,B,C)).
+retractall_oms(oms_schrel(A,B,C)) :- !,
+	abolish_schrel_inherits,
+	retractall_oms_1(oms_schrel(A,B,C)).
+retractall_oms(oms_sc(A,B)) :- !,
+	abolish_relationship_inherits,
+	abolish_schrel_inherits,
+	retractall_oms_1(oms_sc(A,B)).
+retractall_oms(Term) :- !,
+	retractall_oms_1(Term).
+
+%% Actual retraction done in oms_xj/oms_cdf because retraction may
+%% Require cache invalidation.
+retractall_oms_1(Term):- 
+	oms_log(Term),
+	oms_dirty(DFlg),
+	(DFlg =:= 1
+	 ->	true
+	 ;	make_oms_dirty
+	).
+
+%% For updates to external DB's, where the update has already been done
+ext_update_oms(oms_rln(_,_,_)) :- !,
+	abolish_relationship_inherits.
+ext_update_oms(oms_schrel(_,_,_)) :- !,
+	abolish_schrel_inherits.
+ext_update_oms(oms_sc(_,_)) :- !,
+	abolish_relationship_inherits,
+	abolish_schrel_inherits.
+ext_update_oms(_).
 
 abolish_relationship_inherits :-
 	abolish_table_pred(relationship_inh_gen(_,_,_)),
@@ -2324,7 +2315,11 @@ abolish_schrel_inherits :-
 	abolish_table_pred(schrel_inh(_,_,_)),
 	abolish_table_pred(schrel_inh_fr(_,_,_)).
 
-%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Logging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+oms_log(_).
+
+%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- import '_$index'/3 from file_op.
 %% performance testing predicate
@@ -2368,11 +2363,6 @@ bound_on_all(ArgNo,Goal) :-
 	 ;	ArgNoM is ArgNo >> 8,
 		bound_on_all(ArgNoM,Goal)
 	).
-
-friendly_atom_codes(A,Codes):- 
-	(atom(A) ; var(A)) -> atom_codes(A,Codes)
-	   ; writeln(non_atomic(A)),
-	     atom_codes(A,Codes) . 	% and so abort.
 
 create_new_para_cid_for_int(NatCid,Cid,Sou,Label):- 
 	create_new_para_cid_for_int_1(NatCid,Cid,Sou,NatCid),
@@ -2433,6 +2423,7 @@ inc_count:-
 	N1 is N + 1,
 	conset('_$size_matters',N1).
 
+/*
 time_call(Call,Time):- 
 	cputime(T),
 	time_call_1(Call),
@@ -2443,21 +2434,8 @@ time_call_1(Call):-
 	call(Call),
 	fail.
 time_call_1(_).
-
+*/
 end_of_file.
-
-/**paramType(VID):-
-	class(CID,_,'OMS Parameterized Types','OMS'),
-	proper_subclass(VID,CID).**/
-
-vars_to_all(Var) :- var(Var), !, Var = 'All'.
-vars_to_all(Atom) :- atomic(Atom), !.
-vars_to_all(Term) :- Term =.. TermList, vars_to_all_map(TermList).
-
-vars_to_all_map([]).
-vars_to_all_map([Term|Terms]) :-
-	vars_to_all(Term),
-	vars_to_all_map(Terms).
 
 %%% delete_subsumed_relationships(+SCid,+RCid,+TCid) deletes all
 %%% relationships that are redundant due to being inherited from this
@@ -2689,3 +2667,33 @@ schrel_inh_gen_fr(SCid,RCid,TCid) :-
 	 ;	subclass(TCidP,TCid)	% was if_
 	).
 ****/
+
+:- (library_directory(Dir),
+    (concat_atom([Dir,'/oms_xj.xwam'],XJXWAM),
+     file_exists(XJXWAM)
+     ->	    consult(oms_xj)
+     ;	(concat_atom([Dir,'/oms_xj.P'],XJP),
+	 file_exists(XJP))
+     ->	    consult(oms_xj)
+     ;	    fail
+    ),
+    !
+    ;	   
+    consult(oms_cdf)
+   ).
+
+/*  TLS: taken out 1/03
+standardize_value(X,X) :- var(X), !.
+standardize_value(integer(X),integer(Y)) :-
+	(var(X)
+	 ->	Y = X
+	 ; integer(X)
+	 ->	Y = X
+	 ;	friendly_atom_codes(X,XC),
+		number_codes(Y,XC),
+		number_codes(Y,YC),
+		YC = XC
+	),
+	!.
+standardize_value(X,X).
+*/

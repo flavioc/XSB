@@ -242,6 +242,11 @@ oms_fix_dir(Dir,DirS) :-
 		)
 	).
 
+friendly_atom_codes(A,Codes):- 
+	(atom(A) ; var(A)) -> atom_codes(A,Codes)
+	   ; writeln(non_atomic(A)),
+	     atom_codes(A,Codes) . 	% and so abort.
+
 %-----------------------------------------------------------------
 
 :- comment(dump_oms/1, "@tt{dump_oms(Directory)}: Writes in-memory
