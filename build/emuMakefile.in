@@ -130,7 +130,7 @@ xsbmod:: $(OBJS)
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o"; \
 	   echo ""
-	ld $(LINKFLAGS) -o xsb.o -r $(OBJS)
+	ld -o xsb.o $(LINKFLAGS) -r $(OBJS)
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # same as xsbmod, but with oracle support
@@ -138,7 +138,7 @@ xsboramod:: $(ORAOBJS)
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o with support for Oracle"; \
 	   echo ""
-	ld -o xsb.o -r $(ORAOBJS)
+	ld -o xsb.o $(LINKFLAGS) -r $(ORAOBJS)
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 
