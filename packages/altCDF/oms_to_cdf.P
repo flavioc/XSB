@@ -1,5 +1,5 @@
 :- ensure_loaded(altcdf).
-:- import newExtTerm/1, initialize_state/0 from cdf_init_cdf.
+:- import initialize_state/0 from cdf_init_cdf.
 
 % loads internal OMS facts into memory and converts them into CDF facts that can be dumped using dump_extensional_facts/1 after that.
 oms_to_cdf(OMSDir):-
@@ -7,8 +7,8 @@ oms_to_cdf(OMSDir):-
 	oms_fix_dir(OMSDir,OMSDirS),
 	dir_load_dync(OMSDirS,schema_oms),
 	dir_load_dync(OMSDirS,data_oms),
-	newExtTerm(isa_ext(crid('Name',cdf), crid('CDF Class-Object Relations', cdf))),
-	newExtTerm(isa_ext(crrid('Name',cdf), crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf))),
+	modifiedNewExtTerm(isa_ext(crid('Name',cdf), crid('CDF Class-Object Relations', cdf))),
+	modifiedNewExtTerm(isa_ext(crrid('Name',cdf), crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf))),
 	writeln('converting subclasses'),
 	oms_to_cdf_subclass,
 	writeln('converting classes'),
@@ -53,7 +53,7 @@ oms_to_cdf_subclass:-
 	),
 	get_cdf_id(TypedSubCid,CDFSubId),
 	get_cdf_id(TypedSupCid,CDFSupId),
-	newExtTerm(isa_ext(CDFSubId, CDFSupId)),
+	modifiedNewExtTerm(isa_ext(CDFSubId, CDFSupId)),
 	fail.
 oms_to_cdf_subclass.
 
@@ -67,11 +67,11 @@ oms_to_cdf_class:-
 	\+(Name = NatId),
 	atomic(NatId), % do not keep names for product types
 	(convert_system_name(cid(NatId, Source), cid(NewId,NewSource)), isa_ext(cid(NewId,NewSource),_)
-	 ->	newExtTerm(isa_ext(crid('Name', NewSource), crid('Name', cdf))),
-		newExtTerm(classHasAttr_ext(cid(NewId,NewSource), crid('Name', NewSource), cid(Name, cdfpt)))
+	 ->	modifiedNewExtTerm(isa_ext(crid('Name', NewSource), crid('Name', cdf))),
+		modifiedNewExtTerm(classHasAttr_ext(cid(NewId,NewSource), crid('Name', NewSource), cid(Name, cdfpt)))
 	 ;	convert_system_name(rid(NatId, Source), rid(NewId,NewSource)), isa_ext(rid(NewId,NewSource),_), 
-		newExtTerm(isa_ext(crrid('Name', NewSource), crrid('Name', cdf))),
-		newExtTerm(classHasAttr_ext(rid(NewId,NewSource), crrid('Name',NewSource), cid(Name, cdfpt)))
+		modifiedNewExtTerm(isa_ext(crrid('Name', NewSource), crrid('Name', cdf))),
+		modifiedNewExtTerm(classHasAttr_ext(rid(NewId,NewSource), crrid('Name',NewSource), cid(Name, cdfpt)))
 	),
 	fail.
 oms_to_cdf_class.
@@ -81,7 +81,7 @@ oms_to_cdf_irel:-
 	get_cdf_id(cid(Cid),Source),
 	get_cdf_id(rid(Rid),Rel),
 	get_cdf_id(cid(Tid),Target),
-	newExtTerm(hasAttr_ext(Source, Rel, Target)),
+	modifiedNewExtTerm(hasAttr_ext(Source, Rel, Target)),
 	fail.
 oms_to_cdf_irel.
 
@@ -90,7 +90,7 @@ oms_to_cdf_schrel:-
 	get_cdf_id(cid(Cid),Source),
 	get_cdf_id(rid(Rid),Rel),
 	get_cdf_id(cid(Tid),Target),
-	newExtTerm(allAttr_ext(Source, Rel, Target)),
+	modifiedNewExtTerm(allAttr_ext(Source, Rel, Target)),
 	fail.
 oms_to_cdf_schrel.
 
@@ -104,7 +104,7 @@ oms_to_cdf_strel:-
 		isa_ext(Source,_),
 		get_cdf_id(crrid(Rid),Rel)
 	),
-	newExtTerm(classHasAttr_ext(Source, Rel, Target)),
+	modifiedNewExtTerm(classHasAttr_ext(Source, Rel, Target)),
 	fail.
 oms_to_cdf_strel.
 
@@ -118,7 +118,7 @@ oms_to_cdf_memberof:-
 	oms_obj(SubOid,_,SubNatId,SubSource),
 	convert_system_name(oid(SubNatId, SubSource), CDFSubId),
 	get_cdf_id(cid(SupCid),CDFSupId),
-	newExtTerm(isa_ext(CDFSubId, CDFSupId)),
+	modifiedNewExtTerm(isa_ext(CDFSubId, CDFSupId)),
 	fail.
 oms_to_cdf_memberof.
 
@@ -128,7 +128,7 @@ oms_to_cdf_attribute:-
 	convert_system_name(oid(ONatId,OSource), CDFOId),
 	get_cdf_id(rid(Rid),CDFRId),
 	get_cdf_id(cid(Tid),CDFTId),
-	newExtTerm(hasAttr_ext(CDFOId, CDFRId, CDFTId)),
+	modifiedNewExtTerm(hasAttr_ext(CDFOId, CDFRId, CDFTId)),
 	fail.
 oms_to_cdf_attribute.
 
@@ -139,7 +139,7 @@ oms_to_cdf_attribute_object:-
 	get_cdf_id(rid(Rid),CDFRId),
 	oms_obj(TOid,_,TONatId,TOSource),
 	convert_system_name(oid(TONatId,TOSource), CDFTId),
-	newExtTerm(hasAttr_ext(CDFOId, CDFRId, CDFTId)),
+	modifiedNewExtTerm(hasAttr_ext(CDFOId, CDFRId, CDFTId)),
 	fail.
 oms_to_cdf_attribute_object.
 
@@ -244,7 +244,7 @@ convert_system_name(rid('OMS Inheritable Relationships', 'OMS'), rid('CDF Object
 convert_system_name(crid('OMS Set-Valued Relations', 'OMS'), crid('CDF Class-Object Relations', cdf)):- !.
 convert_system_name(cid('OMS Primitive Types', 'OMS'), cid('CDF Primitive Types', cdf)):- !.
 convert_system_name(cid('[]', 'OMS'), cid('[]', cdf)):- !.
-convert_system_name(cid('OMS Relations', 'OMS'), _, _):- !, fail. % no such class anymore
+convert_system_name(cid('OMS Relations', 'OMS'), _):- !, fail. % no such class anymore
 convert_system_name(cid('OMS', 'OMS'), cid(cdf, cdf)):- !.
 convert_system_name(cid('OMS Component', 'OMS'), cid('CDF Component', cdf)):- !. % is it there?
 convert_system_name(crid('componentDepends', 'OMS'), crid('componentDepends', cdf)):- !.
@@ -265,3 +265,17 @@ convert_system_name_list([Id, S |Args], [Id1 |NewArgs]):-
 	convert_system_name(cid(Id, S), Id1),
 	convert_system_name_list(Args, NewArgs).
 
+:- import check_types/2, check_implication/2 from cdf_checks.
+:- import make_cdf_dirty/1, cdf_update_list/1 from cdf_cdf.
+% like NewExtTerm/1 from cdf_init_cdf.
+% But does not do classify_if_necessary/3, since parent may be asserted later
+% and classify_if_necessary will put explicit isa to cid('CDF Classes', cdf) for a parent if isa for parent does not exist.
+modifiedNewExtTerm(Term):- 
+	modifiedNewExtTerm(Term,Upd0,[]),
+	sort(Upd0,Upds),
+	cdf_update_list(Upds).
+modifiedNewExtTerm(Term,Upd0,Upd):- 
+	check_types(update,Term),
+	(check_implication(update,Term) -> 
+	    Upd0 = [asserta(Term)|Upd]
+	  ; Upd0 = Upd).
