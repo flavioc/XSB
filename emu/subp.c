@@ -106,23 +106,23 @@ bool unify(Cell rop1, Cell rop2)
 
 void print_statistics(int amount)
 {
-    switch (amount) {
-      case 0:			/* reset parameters */
-	realtime_count = real_time();
-	perproc_reset_stat();
-	reset_stat_total();
-	printf("Statistics is reset.\n");
-	break;
-      case 1:			/* print stack usage and cputime */
-	perproc_stat();
-	total_stat(real_time()-realtime_count);
-	reset_stat_total();
-	break;
-      case 5:
-	dis(0); break;		/* output memory image; for debugging */
-      case 6:
-	dis(1); break;		/* output memory image; for debugging */
-    }
+  switch (amount) {
+  case 0:			/* reset parameters */
+    realtime_count = real_time();
+    perproc_reset_stat();
+    reset_stat_total();
+    printf("Statistics is reset.\n");
+    break;
+  case 1:			/* print stack usage and cputime */
+    perproc_stat();
+    total_stat(real_time()-realtime_count);
+    reset_stat_total();
+    break;
+  case 5:
+    dis(0); break;		/* output memory image; for debugging */
+  case 6:
+    dis(1); break;		/* output memory image; for debugging */
+  }
 }
 
 /*======================================================================*/
@@ -130,22 +130,22 @@ void print_statistics(int amount)
 
 static void default_inthandler(int intcode, byte *cur_inst)
 {
-    char message[80];
+  char message[80];
 
-    switch (intcode) {
-      case MYSIG_UNDEF:
-	xsb_exit("Undefined predicate, quit by the default handler.");
-	break;
-      case MYSIG_KEYB:
-	xsb_exit("Keyboard interrupt, quit by the default handler.");
-	break;
-      default:
-	sprintf(message,
-		"Unknown interrupt (%d) occured, quit by the default handler", 
-		intcode);
-	xsb_exit(message);
-	break;
-    }
+  switch (intcode) {
+  case MYSIG_UNDEF:
+    xsb_exit("Undefined predicate, quit by the default handler.");
+    break;
+  case MYSIG_KEYB:
+    xsb_exit("Keyboard interrupt, quit by the default handler.");
+    break;
+  default:
+    sprintf(message,
+	    "Unknown interrupt (%d) occured, quit by the default handler", 
+	    intcode);
+    xsb_exit(message);
+    break;
+  }
 }
 
 /*======================================================================*/
@@ -154,17 +154,17 @@ static void default_inthandler(int intcode, byte *cur_inst)
 
 static Pair build_call(Psc psc)
 {
-    register Cell arg;
-    register Pair callstr;
-    register int i;
+  register Cell arg;
+  register Pair callstr;
+  register int i;
 
-    callstr = (Pair)hreg;	/* save addr of new structure rec */
-    new_heap_functor(hreg, psc); /* set str psc ptr */
-    for (i=1; i <= (int)get_arity(psc); i++) {
-	arg = cell(reg+i);
-	nbldval(arg);
-    }
-    return callstr;
+  callstr = (Pair)hreg;	/* save addr of new structure rec */
+  new_heap_functor(hreg, psc); /* set str psc ptr */
+  for (i=1; i <= (int)get_arity(psc); i++) {
+    arg = cell(reg+i);
+    nbldval(arg);
+  }
+  return callstr;
 }
 
 /*======================================================================*/
@@ -176,13 +176,13 @@ static Pair build_call(Psc psc)
 Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
 {
   if (!flags[intcode+32]) {		/* default hard handler */
-	default_inthandler(intcode, cur_inst);
-	psc = 0;
+    default_inthandler(intcode, cur_inst);
+    psc = 0;
   } else {				/* call Prolog handler */
-	if (psc) { bld_cs(reg+1, build_call(psc)); }
-	psc = (Psc)flags[intcode+32];
-	bld_int(reg+2, intcode);
-	pcreg = get_ep(psc);
+    if (psc) { bld_cs(reg+1, build_call(psc)); }
+    psc = (Psc)flags[intcode+32];
+    bld_int(reg+2, intcode);
+    pcreg = get_ep(psc);
   }
   return psc;
 }
@@ -194,7 +194,7 @@ void keyint_proc(int sig)
 }
 
 /* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
-void xsb_segfault_catcher (int err)
+void xsb_segfault_catcher(int err)
 {
   longjmp(xsb_segfault_fallback_environment, 1);
 }
@@ -216,69 +216,52 @@ void init_interrupt(void)
 #else 
   xsb_default_segfault_handler = xsb_segfault_catcher;
 #endif
-
+  signal(SIGBUS, xsb_default_segfault_handler);
   signal(SIGSEGV, xsb_default_segfault_handler);
 }
 
-
 void intercept(Psc psc)
 {
-      unsigned long byte_size;
+  unsigned long byte_size;
 
-      if (flags[CLAUSE_INT])
-	synint_proc(psc, MYSIG_CLAUSE, pcreg-2*sizeof(Cell));
-      else
-      if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
-	    if (get_spy(psc)) {	/* spy'ed pred, interrupted */
-		synint_proc(psc, MYSIG_SPY, pcreg-2*sizeof(Cell));
-		flags[HIDE_STATE]++;		/* hide interrupt handler */
-	    } else if (flags[TRACE]) {
-		synint_proc(psc, MYSIG_TRACE, pcreg-2*sizeof(Cell));
-		flags[HIDE_STATE]++;		/* hide interrupt handler */
-	    }
+  if (flags[CLAUSE_INT])
+    synint_proc(psc, MYSIG_CLAUSE, pcreg-2*sizeof(Cell));
+  else
+    if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
+      if (get_spy(psc)) {	/* spy'ed pred, interrupted */
+	synint_proc(psc, MYSIG_SPY, pcreg-2*sizeof(Cell));
+	flags[HIDE_STATE]++;		/* hide interrupt handler */
+      } else if (flags[TRACE]) {
+	synint_proc(psc, MYSIG_TRACE, pcreg-2*sizeof(Cell));
+	flags[HIDE_STATE]++;		/* hide interrupt handler */
       }
-      if (flags[HITRACE]) debug_call(psc);
-      if (flags[TRACE_STA]) {
-        byte_size = (top_of_heap - (CPtr)(glstack.low) + 1) * sizeof(Cell);
-        if ( byte_size > tds.maxgstack_count )
-          tds.maxgstack_count = byte_size;
+    }
+  if (flags[HITRACE]) debug_call(psc);
 
-        byte_size = ((CPtr)glstack.high - top_of_localstk) * sizeof(Cell);
-        if ( byte_size > tds.maxlstack_count )
-          tds.maxlstack_count = byte_size;
+  if (flags[TRACE_STA]) {
+    byte_size = (top_of_heap - (CPtr)(glstack.low) + 1) * sizeof(Cell);
+    if ( byte_size > tds.maxgstack_count )
+      tds.maxgstack_count = byte_size;
+    
+    byte_size = ((CPtr)glstack.high - top_of_localstk) * sizeof(Cell);
+    if ( byte_size > tds.maxlstack_count )
+      tds.maxlstack_count = byte_size;
+    
+    byte_size = (top_of_trail - (CPtr *)tcpstack.low + 1) * sizeof(CPtr);
+    if ( byte_size > tds.maxtrail_count )
+      tds.maxtrail_count = byte_size;
 
-        byte_size = (top_of_trail - (CPtr *)tcpstack.low + 1) * sizeof(CPtr);
-        if ( byte_size > tds.maxtrail_count )
-          tds.maxtrail_count = byte_size;
+    byte_size = ((CPtr)tcpstack.high - top_of_cpstack) * sizeof(Cell);
+    if ( byte_size > tds.maxcpstack_count )
+      tds.maxcpstack_count = byte_size;
 
-        byte_size = ((CPtr)tcpstack.high - top_of_cpstack) * sizeof(Cell);
-        if ( byte_size > tds.maxcpstack_count )
-          tds.maxcpstack_count = byte_size;
+    byte_size = ((CPtr)complstack.high - openreg) * sizeof(Cell);
+    if ( byte_size > tds.maxopenstack_count )
+      tds.maxopenstack_count = byte_size;
 
-        byte_size = ((CPtr)complstack.high - openreg) * sizeof(Cell);
-        if ( byte_size > tds.maxopenstack_count )
-          tds.maxopenstack_count = byte_size;
-
-        if (level_num > tds.maxlevel_num)
-          tds.maxlevel_num = level_num;
-
-/* Kostis (with Ernie's mods) replaced this with previous:
-	if ((pb)hreg-(pb)(glstack.low) > tds.maxgstack_count)
-	  tds.maxgstack_count = (pb)hreg-(pb)glstack.low;
-	if (ereg < (CPtr)(glstack.high)
-	    && ereg > (CPtr)pdl.low
-	    && (pb)glstack.high-(pb)ereg > tds.maxlstack_count)
-	  tds.maxlstack_count = (pb)glstack.high - (pb)ereg;
-	if ((pb)trreg - (pb)tcpstack.low > tds.maxtrail_count)
-	  tds.maxtrail_count = (pb)trreg - (pb)tcpstack.low;
-	if ((pb)tcpstack.high-(pb)breg > tds.maxcpstack_count)
-	  tds.maxcpstack_count = (pb)tcpstack.high - (pb)breg;
-	if ((pb)(COMPLSTACKBOTTOM)-(pb)openreg > tds.maxopenstack_count)
-	  tds.maxopenstack_count = (pb)(COMPLSTACKBOTTOM) - (pb)openreg;
-	if (level_num > tds.maxlevel_num)
-	  tds.maxlevel_num = level_num;
-***/
-      }
+    if (level_num > tds.maxlevel_num)
+      tds.maxlevel_num = level_num;
+  }
 }
 
 /*======================================================================*/
@@ -293,8 +276,8 @@ void intercept(Psc psc)
 #endif
 
 static union float_conv {
-    Float f;
-    Cell i;
+  Float f;
+  Cell i;
 } float_conv;
 
 Float getfloatval(Cell w)
@@ -342,97 +325,93 @@ static int sign(Float num)
 
 int compare(Cell val1, Cell val2)
 {
-	int arity1, arity2, comp;
-	struct psc_rec *ptr1, *ptr2;
-	CPtr cptr1, cptr2;
-	char message[80];
+  int arity1, arity2, comp;
+  struct psc_rec *ptr1, *ptr2;
+  CPtr cptr1, cptr2;
 
-	deref(val2);		/* val2 is not in register! */
-	deref(val1);		/* val1 is not in register! */
-	if (val1 == val2) return 0;
-	switch(cell_tag(val1)) {
-	  case FREE:
-	  case REF1:
-	    if (isnonvar(val2)) return -1;
-	    else { /* in case there exist local stack variables in the    */
-		   /* comparison, globalize them to guarantee that their  */
-		   /* order is retained as long as nobody "touches" them  */
-		   /* in the future -- without copying garbage collection */
-		if ((top_of_localstk <= vptr(val1)) &&
-		    (vptr(val1) <= (CPtr)glstack.high-1)) {
-		  bld_free(hreg);
-		  bind_ref(vptr(val1), hreg);
-		  hreg++;
-		  val1 = follow(val1);	/* deref again */
-		}
-		if ((top_of_localstk <= vptr(val2)) &&
-		    (vptr(val2) <= (CPtr)glstack.high-1)) {
-		  bld_free(hreg);
-		  bind_ref(vptr(val2), hreg);
-		  hreg++;
-		  val2 = follow(val2);	/* deref again */
-		}
-		return vptr(val1) - vptr(val2);
-	    }
-	  case FLOAT:
-	    if (!isnonvar(val2)) return 1;
-	    else if (isfloat(val2)) 
-	           return sign(float_val(val1) - float_val(val2));
-	    else return -1;
-	  case INT:
-	    if (!isnonvar(val2) || isfloat(val2)) return 1;
-	    else if (isinteger(val2)) 
-		   return int_val(val1) - int_val(val2);
-	    else return -1;
-	  case STRING:
-	    if (!isnonvar(val2) || isfloat(val2) || isinteger(val2)) 
-		 return 1;
-	    else if (isstring(val2)) {
-		     return strcmp(string_val(val1), string_val(val2));
-		 }
-	    else return -1;
-	  case CS:
-	    if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
-	    else { 
-		   ptr1 = get_str_psc(val1);
-		   ptr2 = get_str_psc(val2);
-	           arity1 = get_arity(ptr1);
-	           if (islist(val2)) arity2 = 2; 
-		   else arity2 = get_arity(ptr2);
-		   if (arity1 != arity2) return arity1-arity2;
-		   if (islist(val2)) comp = strcmp(get_name(ptr1), ".");
-		   else comp = strcmp(get_name(ptr1), get_name(ptr2));
-		   if (comp || (arity1 == 0)) return comp;
-		   cptr1 = clref_val(val1);
-		   cptr2 = clref_val(val2);
-		   for (arity2 = 1; arity2 <= arity1; arity2++) {
-		      if (islist(val2))
-			comp = compare(cell(cptr1+arity2), cell(cptr2+arity2-1));  
-		      else
-			comp = compare(cell(cptr1+arity2), cell(cptr2+arity2));
-		      if (comp) break;
-		   }
-		   return comp;
-	    }
-	    break;
-	  case LIST:
-	    if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
-	    else if (isconstr(val2)) return -(compare(val2, val1));
-	    else {	/* Here we are comparing two list structures. */
-		   cptr1 = clref_val(val1);
-		   cptr2 = clref_val(val2);
-		   comp = compare(cell(cptr1), cell(cptr2));
-		   if (comp) return comp;
-		   return compare(cell(cptr1+1), cell(cptr2+1));
-	    }
-	    break;
-	  default:
-	    sprintf(message,
-		    "Compare (unknown tag %ld); returning 0",
-		    cell_tag(val1));
-	    xsb_abort(message);
-	    return 0;
-	}
+  deref(val2);		/* val2 is not in register! */
+  deref(val1);		/* val1 is not in register! */
+  if (val1 == val2) return 0;
+  switch(cell_tag(val1)) {
+  case FREE:
+  case REF1:
+    if (isnonvar(val2)) return -1;
+    else { /* in case there exist local stack variables in the    */
+           /* comparison, globalize them to guarantee that their  */
+           /* order is retained as long as nobody "touches" them  */
+	   /* in the future -- without copying garbage collection */
+      if ((top_of_localstk <= vptr(val1)) &&
+	  (vptr(val1) <= (CPtr)glstack.high-1)) {
+	bld_free(hreg);
+	bind_ref(vptr(val1), hreg);
+	hreg++;
+	val1 = follow(val1);	/* deref again */
+      }
+      if ((top_of_localstk <= vptr(val2)) &&
+	  (vptr(val2) <= (CPtr)glstack.high-1)) {
+	bld_free(hreg);
+	bind_ref(vptr(val2), hreg);
+	hreg++;
+	val2 = follow(val2);	/* deref again */
+      }
+      return vptr(val1) - vptr(val2);
+    }
+  case FLOAT:
+    if (!isnonvar(val2)) return 1;
+    else if (isfloat(val2)) 
+      return sign(float_val(val1) - float_val(val2));
+    else return -1;
+  case INT:
+    if (!isnonvar(val2) || isfloat(val2)) return 1;
+    else if (isinteger(val2)) 
+      return int_val(val1) - int_val(val2);
+    else return -1;
+  case STRING:
+    if (!isnonvar(val2) || isfloat(val2) || isinteger(val2)) 
+      return 1;
+    else if (isstring(val2)) {
+      return strcmp(string_val(val1), string_val(val2));
+    }
+    else return -1;
+  case CS:
+    if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
+    else { 
+      ptr1 = get_str_psc(val1);
+      ptr2 = get_str_psc(val2);
+      arity1 = get_arity(ptr1);
+      if (islist(val2)) arity2 = 2; 
+      else arity2 = get_arity(ptr2);
+      if (arity1 != arity2) return arity1-arity2;
+      if (islist(val2)) comp = strcmp(get_name(ptr1), ".");
+      else comp = strcmp(get_name(ptr1), get_name(ptr2));
+      if (comp || (arity1 == 0)) return comp;
+      cptr1 = clref_val(val1);
+      cptr2 = clref_val(val2);
+      for (arity2 = 1; arity2 <= arity1; arity2++) {
+	if (islist(val2))
+	  comp = compare(cell(cptr1+arity2), cell(cptr2+arity2-1));  
+	else
+	  comp = compare(cell(cptr1+arity2), cell(cptr2+arity2));
+	if (comp) break;
+      }
+      return comp;
+    }
+    break;
+  case LIST:
+    if (cell_tag(val2) != CS && cell_tag(val2) != LIST) return 1;
+    else if (isconstr(val2)) return -(compare(val2, val1));
+    else {	/* Here we are comparing two list structures. */
+      cptr1 = clref_val(val1);
+      cptr2 = clref_val(val2);
+      comp = compare(cell(cptr1), cell(cptr2));
+      if (comp) return comp;
+      return compare(cell(cptr1+1), cell(cptr2+1));
+    }
+    break;
+  default:
+    xsb_abort("Compare (unknown tag %ld); returning 0", cell_tag(val1));
+    return 0;
+  }
 }
 
 /*======================================================================*/
@@ -445,9 +424,9 @@ int compare(Cell val1, Cell val2)
 
 int key_compare(Cell term1, Cell term2)
 {
-    deref(term1);		/* term1 is not in register! */
-    deref(term2);		/* term2 is not in register! */
-    return compare(cell(clref_val(term1)+1), cell(clref_val(term2)+1));
+  deref(term1);		/* term1 is not in register! */
+  deref(term2);		/* term2 is not in register! */
+  return compare(cell(clref_val(term1)+1), cell(clref_val(term2)+1));
 }
 
 /*======================================================================*/
@@ -538,33 +517,30 @@ byte *exception_handler(char *string)
 }
 
 #ifdef WIN_NT
-
-/* Interrupt handling for InterProlog/XSB on Win32 */
-
-extern void keyint_proc(int); /* cf. subp.c */
-
 /* Our separate thread */
-void checkJavaInterrupt(void *info ){
-        char ch;
-        SOCKET intSocket = (SOCKET)info;
+void checkJavaInterrupt(void *info)
+{
+  char ch;
+  SOCKET intSocket = (SOCKET)info;
 #ifdef DEBUG
-        printf("Thread started on socket %ld\n",(int)intSocket);
+  fprintf(stderr,"Thread started on socket %ld\n",(int)intSocket);
 #endif
-        while(1){
-                if (1!=recv(intSocket,&ch,1,0)) {
-                        printf("Problem handling interrupt from Java\n");
-                }
-                else printf("--- Java interrupt detected\n");
-                fflush(stdout); fflush(stderr); /* Avoid those annoying
-lags? */
-                keyint_proc(SIGINT); /* Do XSB's "interrupt" thing */
-        }
+  while(1){
+    if (1!=recv(intSocket,&ch,1,0)) {
+      fprintf(stderr,"Problem handling interrupt from Java\n");
+    }
+    else fprintf(stderr,"--- Java interrupt detected\n");
+    fflush(stdout); fflush(stderr); /* Avoid those annoying lags? */
+    keyint_proc(SIGINT); /* Do XSB's "interrupt" thing */
+  }
 }
-boolean startInterruptThread(SOCKET intSocket){
-        printf("Beginning interrupt thread on socket %ld\n",(int)intSocket);
+
+boolean startInterruptThread(SOCKET intSocket)
+{
+  fprintf(stderr,"Beginning interrupt thread on socket %ld\n",(int)intSocket);
 #ifdef _MT
-        _beginthread( checkJavaInterrupt, 0, (void*)intSocket );
+  _beginthread( checkJavaInterrupt, 0, (void*)intSocket );
 #endif
-        return 1;
+  return 1;
 }
 #endif
