@@ -81,8 +81,7 @@
         goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
 	message/1,      message/2, messageln/2,
-        warning/1,	push_abort_cutpoint/0,  pop_abort_cutpoint/0,
-        abort/1,	abort/0,
+        warning/1,      abort/1,	abort/0,
 	set_timer/1,
 	(import)/1,	(multifile)/1.
 
@@ -92,7 +91,7 @@
 	  psc_name/2, psc_set_prop/2, psc_prop/2, psc_type/2,
 	  stat_set_flag/2, stat_flag/2, psc_set_type/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, 
-	  term_psc/2, term_new/2, term_type/2
+          term_psc/2, term_new/2, term_type/2, close_open_tables/0
 	  from machine.
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
           '$$clean_up_block'/0 
@@ -116,7 +115,6 @@
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
 :- import numbervars/1 from num_vars.
 :- import predicate_property/2 from curr_sym.
-:- import (dynamic)/1, asserta/1, retract/1 from assert.
-:- import conset/2 from gensym.
+:- import (dynamic)/1, asserta/1 from assert.
 
 /* --------------------- end of file standard.H ----------------------- */

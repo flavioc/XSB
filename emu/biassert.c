@@ -639,6 +639,7 @@ int assert_code_to_buff_p(prolog_term Clause)
   } else dbgen_instB_ppp(proceed);
   Size = *Loc;
   write_word(Buff,&Loc_size,(Size/sizeof(Cell)));  /* backpatch max heap needed*/
+
   return TRUE;
 }
 
@@ -1061,23 +1062,9 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*									*/
 /*======================================================================*/
 
-/* Predicate References */
-
-typedef struct
-{	Cell	Instr ;
-	struct ClRefHdr *FirstClRef ;
-	struct ClRefHdr *LastClRef ;
-}	*PrRef, PrRefData ;
+/* Predicate References and Clause References defined in xsb_error.h   */
 
 #define PredOpCode(P)		(cell_opcode(&(P)->Instr))
-
-/* Clause References */
-
-typedef struct ClRefHdr
-{	unsigned long buflen ;
-	struct ClRefHdr *prev ;
-/*	Cell Data[];	*/
-}	*ClRef, ClRefData, ClRefHdr ;
 
 typedef ClRef SOBRef ;
 

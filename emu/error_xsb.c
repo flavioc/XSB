@@ -40,6 +40,7 @@
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "cinterf.h"
+#include "memory_xsb.h"
 #include "tries.h"
 #include "choice.h"
 #include "inst_xsb.h"
@@ -47,6 +48,7 @@
 #include "tr_utils.h"
 #include "cut_xsb.h"
 #include "flags_xsb.h"
+#include "term_psc_xsb_i.h"
 
 extern void exit(int status);
 
@@ -66,12 +68,67 @@ static char *err_msg[] = {
 
 /*----------------------------------------------------------------------*/
 
-/* you can pass either 1 argument---a full description (a string),
-   or a variable number of arguments -- a format followed by arguments.
-*/
 #if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
 extern void print_cp_backtrace();
 #endif
+
+static Cell *space_for_ball_assert = 0;
+
+DllExport void call_conv xsb_throw(prolog_term Ball)
+{
+  Psc exceptballpsc;
+  PrRef Prref;
+  int isnew;
+  ClRef clause;
+  Cell *tptr;
+  prolog_term term_to_assert;
+
+  if (!space_for_ball_assert) {
+    /* 2 cells needed for term */
+    space_for_ball_assert = (Cell *) malloc(2*sizeof(Cell));
+    if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
+  }
+
+  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)1, 
+					pair_psc(insert_module(0,"standard")), 
+					&isnew));
+  tptr = space_for_ball_assert;
+  term_to_assert = makecs(tptr);
+  bld_functor(tptr, exceptballpsc); tptr++;
+  cell(tptr) = Ball;
+
+  assert_code_to_buff_p(term_to_assert);
+  /* need arity of 2, for extra cut_to arg */
+  Prref = (PrRef)get_ep(exceptballpsc);
+  assert_buff_to_clref_p(term_to_assert,2,Prref,0,makeint(0),0,&clause);
+
+  /* reset WAM emulator state to Prolog catcher */
+  if (unwind_stack()) xsb_exit("Unwind_stack failed in xsb_throw!");
+
+  /* Resume main emulator instruction loop */
+  longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
+}
+
+static Cell *space_for_ball = 0;
+
+void call_conv xsb_basic_abort(char *message)
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr;
+
+  if (!space_for_ball) {
+    space_for_ball = (Cell *) malloc(2*sizeof(Cell)); /* 2 cells needed for term */
+    if (!space_for_ball) xsb_exit("out of memory in xsb_basic_abort!");
+  }
+  tptr = space_for_ball;
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("_$abort_ball",1,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  xsb_throw(ball_to_throw);
+}
 
 DllExport void call_conv xsb_abort(char *description, ...)
 {
@@ -79,23 +136,14 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_list args;
 
   va_start(args, description);
-
   strcpy(message, "++Error[XSB]: [Runtime/C] ");
   vsprintf(message+strlen(message), description, args);
-  if (message[strlen(message)-1] != '\n')
-    strcat(message, "\n");
-
+  if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
   va_end(args);
-  pcreg = exception_handler(message);
-
-#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
-  print_cp_backtrace();
-#endif
-  /* this allows xsb_abort to jump out even from nested loops */
-  longjmp(xsb_abort_fallback_environment, (Integer) pcreg);
+  xsb_basic_abort(message);
 }
 
-
+/* could give this a different ball to throw */
 DllExport void call_conv xsb_bug(char *description, ...)
 {
   char message[MAXBUFSIZE];
@@ -109,10 +157,7 @@ DllExport void call_conv xsb_bug(char *description, ...)
     strcat(message, "\n");
 
   va_end(args);
-  pcreg = exception_handler(message);
-
-  /* this allows xsb_abort to jump out even from nested loops */
-  longjmp(xsb_abort_fallback_environment, (Integer) pcreg);
+  xsb_basic_abort(message);
 }
 
 /*----------------------------------------------------------------------*/
@@ -122,6 +167,8 @@ void arithmetic_abort(Cell op1, char *OP, Cell op2)
   static XSB_StrDefine(str_op1);
   static XSB_StrDefine(str_op2);
 
+  XSB_StrSet(&str_op1,"");
+  XSB_StrSet(&str_op2,"");
   print_pterm(op1, TRUE, &str_op1);
   print_pterm(op2, TRUE, &str_op2);
   if (isref(op1) || isref(op2)) {
@@ -242,40 +289,40 @@ void err_handle(int description, int arg, char *f,
   switch (description) {
   case INSTANTIATION:
     sprintf(message, 
-	    "! %s error in argument %d of %s/%d\n",
+	    "! %s error in argument %d of %s/%d",
 	    err_msg[description], arg, f, ar);
     break;
   case RANGE:	/* I assume expected != NULL */
     sprintf
       (message,
-       "! %s error: in argument %d of %s/%d\n! %s expected, but %d found\n",
+       "! %s error: in argument %d of %s/%d\n! %s expected, but %d found",
        err_msg[description], arg, f, 
        ar, expected, (int) int_val(found));
     break;
   case TYPE:
     if (expected == NULL) {
       sprintf(message, 
-	      "! %s error in argument %d of %s/%d\n",
+	      "! %s error in argument %d of %s/%d",
 	      err_msg[description], arg, f, ar);
     } else  
       sprintf
 	(message,
-	 "! %s error: in argument %d of %s/%d\n! %s expected, but %s found\n",
+	 "! %s error: in argument %d of %s/%d\n! %s expected, but %s found",
 	 err_msg[description], arg, f, ar, expected,
 	 "something else");
     break;
   case ZERO_DIVIDE:
     sprintf(message,
-	    "! %s error in %s\n! %s expected, but %lx found\n",
+	    "! %s error in %s\n! %s expected, but %lx found",
 	    err_msg[description], f, expected, found);
     break;
   default:
     sprintf(message, 
-	    "! %s error (not completely handled yet): %s\n",
+	    "! %s error (not completely handled yet): %s",
 	    err_msg[description], expected);
     break;
   }
-  pcreg = exception_handler(message);
+  xsb_basic_abort(message);
 #if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
 #endif
@@ -309,13 +356,10 @@ int set_scope_marker()
    return(TRUE);
 } /* set_scope_marker */
 
-/* TLS: slightly modified to abort if throwing over an open table.
-   Im not positive if this is right */
 int unwind_stack()
 {
    byte *cp, *cpmark;
    CPtr e,b;
-   byte inst_cut_over;
 
    cpmark = scope_marker;
    /*   printf("sm 2 %d  x%x\n",scope_marker,scope_marker);*/
@@ -335,12 +379,8 @@ int unwind_stack()
    /* now find the corresponding breg */
    b = breg;
    while (cp_ereg(b) <= e) {
-     inst_cut_over = *cp_pcreg(b); 
-     CHECK_TABLE_CUT(inst_cut_over) ;      
      b = cp_prevbreg(b);
    }
-   inst_cut_over = *cp_pcreg(b); 
-   CHECK_TABLE_CUT(inst_cut_over) ;      
    breg = b;
    return(FALSE);
 
@@ -349,11 +389,8 @@ int unwind_stack()
 
 int clean_up_block()
 {
-   byte inst_cut_over;
    if (cp_ereg(breg) > ereg) {
      /*     printf("%x %x\n",cp_ereg(breg),ereg); */
-     inst_cut_over = *cp_pcreg(breg); 
-     CHECK_TABLE_CUT(inst_cut_over) ;      
      breg = (CPtr)cp_prevbreg(breg);
    }
    return(TRUE);

@@ -44,21 +44,11 @@ extern struct trace_str tds;
 
 extern int asynint_val;
 
-#define local_global_exception(t_pcreg) \
- t_pcreg = exception_handler("! Local/Global Stack Overflow Exception\n")
+#define local_global_exception "! Local/Global Stack Overflow Exception\n"
 
-#define float_unification_exception(t_pcreg) \
- t_pcreg = exception_handler("! Float Unification Exception\n")
+#define complstack_exception "! Completion Stack Overflow Exception\n"
 
-#define unify_float_unification_exception \
-  exception_handler("! Float Unification Exception\n")
-
-#define complstack_exception(t_pcreg) \
- t_pcreg = exception_handler("! Completion Stack Overflow Exception\n")
-
-#define trail_cp_exception(t_pcreg) \
- t_pcreg = exception_handler("! Trail/CP Stack Overflow Exception\n")
-
+#define trail_cp_exception "! Trail/CP Stack Overflow Exception\n"
 
 /*
  *  Mode in which XSB is run.

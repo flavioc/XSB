@@ -148,8 +148,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      if ((pb)cps_top < (pb)top_of_trail) {				\
        xsb_error("Trail clobbered Choice Point Stack");			\
        print_statistics(1);						\
-       trail_cp_exception(lpcreg);					\
-       XSB_Next_Instr();						\
+       xsb_basic_abort(trail_cp_exception);				\
      }									\
      else {								\
        fprintf(stdwarn,							\
@@ -161,19 +160,17 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
        else {								\
          fprintf(stdwarn, "Reallocation turned OFF!\n");		\
          print_statistics(1);						\
-         trail_cp_exception(lpcreg);					\
-         XSB_Next_Instr();						\
+         xsb_basic_abort(trail_cp_exception);				\
        }								\
      }									\
    }									\
  }
 
-#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)	   \
+#define check_glstack_overflow(arity,PCREG,EXTRA)			   \
    if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {  \
      if ((pb)top_of_localstk < (pb)top_of_heap) {			   \
-       PCREG = exception_handler("\nFatal ERROR:  -- "			   \
+       xsb_basic_abort("\nFatal ERROR:  -- "				   \
 				 "Local Stack clobbered Heap --\n");	   \
-       {todo_on_exception;}						   \
      }									   \
      else {								   \
        fprintf(stdwarn, "\n++Warning: Heap / Local Stack overflow:   ");   \
@@ -185,8 +182,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
        else {								   \
 	 fprintf(stdwarn, "Reallocation turned OFF!\n");		   \
 	 print_statistics(1);						   \
-	 local_global_exception(PCREG);					   \
-	 {todo_on_exception;}						   \
+	 xsb_basic_abort(local_global_exception);					   \
        }								   \
      }									   \
    }
@@ -201,8 +197,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      else {								\
        fprintf(stdwarn, "Reallocation turned OFF!\n");			\
        print_statistics(1);						\
-       complstack_exception(lpcreg);					\
-       XSB_Next_Instr();						\
+       xsb_basic_abort(complstack_exception);				\
      }									\
    }
 
@@ -216,34 +211,30 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 									\
    if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		\
      if ((pb)cps_top < (pb)top_of_trail) {				\
-       lpcreg = exception_handler("\nFatal ERROR:  -- Trail "		\
+       xsb_basic_abort("\nFatal ERROR:  -- Trail "			\
 				  "clobbered Choice Point Stack --\n");	\
-       XSB_Next_Instr();       						\
      }									\
      else {								\
        if (flags[STACK_REALLOC])					\
          tcpstack_realloc(resize_stack(tcpstack.size,0));		\
        else {								\
-         trail_cp_exception(lpcreg);					\
-         XSB_Next_Instr();	       					\
+         xsb_basic_abort(trail_cp_exception);				\
        }								\
      }									\
    }									\
  }
 
-#define check_glstack_overflow(arity,PCREG,EXTRA,todo_on_exception)	      \
+#define check_glstack_overflow(arity,PCREG,EXTRA)			      \
    if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {     \
      if ((pb)top_of_localstk < (pb)top_of_heap) {			      \
-       PCREG = exception_handler("\nFatal ERROR:  -- "			      \
+       xsb_basic_abort("\nFatal ERROR:  -- "			      	      \
 				 "Local Stack clobbered Heap --\n");	      \
-       todo_on_exception;						      \
      }									      \
      else {								      \
        if ((flags[STACK_REALLOC] == FALSE) ||				      \
 	   (glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN), \
 			    arity) != 0)) {				      \
-	 local_global_exception(PCREG);					      \
-	 todo_on_exception;						      \
+	 xsb_basic_abort(local_global_exception);					      \
        }								      \
      }									      \
    }
@@ -253,8 +244,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      if (flags[STACK_REALLOC])					\
        complstack_realloc(resize_stack(complstack.size,0));	\
      else {							\
-       complstack_exception(lpcreg);				\
-       XSB_Next_Instr();					\
+       xsb_basic_abort(complstack_exception);		        \
      }								\
    }
 

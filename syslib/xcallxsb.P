@@ -34,14 +34,18 @@
 
 c_callloop :-
         set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
+	catch(c_callloop_cmd_goal([]),Ball,default_error_handler(Ball)),
+	fail.
+c_callloop :-
 	repeat,
-	'_$savecp'(Cp),			% to set abort cut point
-	conset('_$abort_cutpoint', Cp),
-	(conget('_$c_calls_xsb_first_time',0)
-	->  conset('_$c_calls_xsb_first_time',1),
-	    eval_cmdline_goal
-	;   true
-	),
+	catch(c_callloop_query_loop([]),Ball,default_error_handler(Ball)),
+	fail.
+
+c_callloop_cmd_goal(_) :-
+	eval_cmdline_goal.
+
+c_callloop_query_loop(_) :-
+	repeat,
 	get_from_caller(Par,VarTerm,Command),
 	(\+integer(Command)
 	 ->	file_write(STDERR,'C command error; must be an integer; is '),
@@ -95,7 +99,7 @@ eval_cmdline_goal :-
 eval_cmdline_goal(FileDes) :-
 	file_read(FileDes, Goal),
 	Goal \= end_of_file,
-	(catch(call((Goal,!)),Msg,default_error_handler(Msg)) -> true ; true),
+	(call(Goal) -> true ; true),
 	eval_cmdline_goal(FileDes).
 eval_cmdline_goal(FileDes) :- file_close(FileDes).
 

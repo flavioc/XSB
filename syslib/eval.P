@@ -134,7 +134,7 @@ eval_instantiation_abort(Expr):-
               ('Error: Uninstantiated Arithmetic Expression'))).
 eval_instantiation_abort(Expr):- 
 	throw(error(instantiation_error,
-	      ('Unbound variable in arithmetic expression',Expr))).
+	      ('Unbound variable in arithmetic expression: ',Expr))).
 
 
 /* ---------------------- end of file eval.P --------------------------	*/

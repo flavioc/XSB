@@ -51,7 +51,17 @@ interpreter :-
         fail.
 
 interpreter :-
-	push_abort_cutpoint,         %% set abort cutpoint to this cp
+	retractall('$$exception_ball'(_)),
+	catch(interpreter_cmd_goal([]),Ball,default_error_handler(Ball)),
+	fail.
+interpreter :-
+	retractall('$$exception_ball'(_)),
+	x_interp_repeat,
+	catch(interpreter_readloop([]),Ball,default_error_handler(Ball)),
+	fail.
+
+%% dummy arg to circumvent string flaw with module system, for catch
+interpreter_cmd_goal(_) :-
         %% Execute command line goal passed to XSB with the -e option
         xsb_flag(goal, CmdGoal),
         (CmdGoal == '' ->
@@ -84,20 +94,12 @@ interpreter :-
         ),
         fail.
 
-interpreter :-
-	x_interp_repeat,
-	pop_abort_cutpoint,
-	push_abort_cutpoint, %% reset abort cutpoint
-	interpreter1.	%% Protect varible state, so fail to this point
-			%% does not require untrailing (when aborting or
-			%% segfault handling)
-
-interpreter1 :-
+%% dummy arg to circumvent string flaw with module system, for catch
+interpreter_readloop(_) :-
 	%% don't set MYSIG_PSC earlier, because XSB will start calling 
 	%% the handler when it starts up, which will cause a lot of grief
 	x_interp_repeat,
 	trimcore,
-	retractall('$$exception_ball'(_)),
 	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
 	stat_set_flag(INVOKE_NUM, 0),
 	conset('_$break_level', 0),
@@ -131,14 +133,14 @@ process_query(X, Vars) :-
 
 process_query1(X, []) :-	%% no printable variables appeared in the input
 	!,
-	call_with_default_catcher(X),
+	call_query(X),
 	close_open_tables,
 	!,
 	file_nl(STDFDBK), file_write(STDFDBK, yes), file_nl(STDFDBK),
 	fail.
 process_query1(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
-	call_with_default_catcher(X),
+	call_query(X),
 	stat_flag(LETTER_VARS, LetterVars),
 	( LetterVars =:= 0 -> print_answer(Vars)
 	; ( numbervars(Vars), print_answer(Vars), fail ; true )
@@ -155,9 +157,6 @@ no_more :-
 	file_get(0, X),
 	( X =:= CH_EOF_P /* end_of_file */ ; X =:= CH_NEWLINE ), !.
 no_more :- no_more, fail.
-
-call_with_default_catcher(X):- 
-	catch(call_query(X),Msg,default_error_handler(Msg)).
 
 call_query(X) :- 
 %%	'_$savecp'(C),			%% moved into call/1, affect trace?

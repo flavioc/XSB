@@ -658,7 +658,7 @@ int findall_get_solutions()
   
   p = findall_solutions + cur_f ;
   
-  check_glstack_overflow(4, pcreg, p->size*sizeof(Cell), return TRUE) ;
+  check_glstack_overflow(4, pcreg, p->size*sizeof(Cell)) ;
   
   arg1 = ptoc_tag(1);  /* only after enough space is ensured */
   arg2 = ptoc_tag(2);  /* only after enough space is ensured */
@@ -1004,7 +1004,7 @@ int copy_term()
   size = term_size(arg1) ;
   findall_untrail() ;
 
-  check_glstack_overflow( 2, pcreg, size*sizeof(Cell), return FALSE ) ;
+  check_glstack_overflow( 2, pcreg, size*sizeof(Cell)) ;
   
   /* again because stack might have been reallocated */
   arg1 = ptoc_tag(1);

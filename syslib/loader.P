@@ -28,12 +28,11 @@
 /*
  *  System Startup
  *  --------------
- *  Two things to notice: We need to set _$abort_cutpoint so that abort/0
- *  has a place to _$cutto during an execution where (when) the x_interp
- *  is not (not yet) loaded.  But most importantly, we must set the
- *  interrupt handler of the dynamic loader BEFORE any undefined
- *  predicate is encountered -- the first being conset/2, used to set
- *  _$abort_cutpoint.
+ *  Notice:  We must set the interrupt handler of the dynamic
+ *  loader BEFORE any undefined predicate is encountered.
+ *  We do initially run without a catcher for aborts etc. but
+ *  one could be added early on, if we knew what to do if we
+ *  got thrown at that early.
  */
 
 :- compiler_options([sysmod,xpp_on]).
@@ -69,13 +68,14 @@ fmt_write(File,Fmt,A) :- formatted_io(FMT_WRITE, File,Fmt,A,_).
 
 
 
-:-	'_$savecp'(CP),
-	set_inthandler('_$load_undef'(_), MYSIG_UNDEF),		% MYSIG_UNDEF
-        conset('_$abort_cutpoint', CP),
+:-	set_inthandler('_$load_undef'(_), MYSIG_UNDEF),		% MYSIG_UNDEF
 	set_current_module,
 	set_current_input,
 	set_current_output,
 	import_standard_predicates,
+	catch(loader_init([]),Ball,default_error_handler(Ball)).  % will print and exit xsb
+
+loader_init(_) :-
 	%% Load the xsb_configuration predicate
 	stat_flag(CONFIG_FILE, ConfigFileC),
 	intern_string(ConfigFileC, ConfigFile), % convert C string to Prolog
@@ -360,7 +360,8 @@ load(ModName) :-
 		machine_file_exists(FileName_P)
 	    ->	reconsult(FileName_P)
 	    )
-	;   abort(['Module ', ModName,
+	;   tilde_expand_filename(ModName,ExpandedModName),
+	    abort(['Module ', ExpandedModName,
 		   ' is not found in XSB library directories'])
 	).
 

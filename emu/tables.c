@@ -46,7 +46,7 @@
 #include "flags_xsb.h"
 #include "tst_utils.h"
 #include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
-#include "subp.h" /* for exception_handler, used in stack expansion */
+/*#include "subp.h"  for exception_handler, used in stack expansion */
 
 #include "sub_tables_xsb_i.h"
 #include "debug_xsb.h"

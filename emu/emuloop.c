@@ -894,13 +894,11 @@ contcase:     /* the main loop */
 	  if ((ereg - hreg) < (long)op2) {
 	    if (flags[STACK_REALLOC]) {
 	      if (glstack_realloc(resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {
-		local_global_exception(lpcreg);
-		XSB_Next_Instr();
+		xsb_basic_abort(local_global_exception);
 	      }
 	    } else {
 	      xsb_warn("Reallocation is turned OFF !");
-	      local_global_exception(lpcreg);
-	      XSB_Next_Instr();
+              xsb_basic_abort(local_global_exception);
 	    }
 	  }
 	}
@@ -1635,7 +1633,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(calld,_calld)   /* PPA-L */
     ADVANCE_PC(size_xxx); /* this is ok */
     cpreg = lpcreg+sizeof(Cell); 
-    check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN,XSB_Next_Instr());
+    check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN);
     lpcreg = *(pb *)lpcreg;
   XSB_End_Instr()
 

@@ -81,7 +81,7 @@ Java_com_xsb_interprolog_NativeEngine_put_1bytes
 	jbyte *bytes; char *argString;
 	
 	//printf("C:Entering put_bytes - %d mS",T0);
-	check_glstack_overflow(3, pcreg, (size+4)*8*sizeof(Cell), xsb_abort("[interprolog_callback] Failure to expand heap")) ;
+	check_glstack_overflow(3, pcreg, (size+4)*8*sizeof(Cell)) ;
 	
 	bytes = (*env)->GetByteArrayElements(env, b, 0);
 	
@@ -227,7 +227,7 @@ xsbBool interprolog_callback() {
 	newBytes = (*env)->CallObjectMethod(env, obj, mid, bytes);
 	size = (*env)->GetArrayLength(env, newBytes);
 	b = (*env)->GetByteArrayElements(env, newBytes, 0);
-	check_glstack_overflow(3, pcreg, size*8*sizeof(Cell), xsb_abort("[interprolog_callback] Failure to expand heap")) ;
+	check_glstack_overflow(3, pcreg, size*8*sizeof(Cell)) ;
 
 	c2p_list(reg_term(3));
 	newHead = p2p_car(reg_term(3));

@@ -197,7 +197,7 @@ open(F,write,F):-!,
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_output, CurinPsc),
+	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 open(F,append,F):-!, 
@@ -212,7 +212,7 @@ open(F,append,F):-!,
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(CURRENT_OUTPUT, File0),
-	conpsc(current_output, CurinPsc),
+	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 
@@ -967,39 +967,10 @@ contains_var([_|T]) :- contains_var(T).
 length([], N, N).
 length([_|R], M, N) :- N1 is M+1, length(R, N1, N).
 
-:- dynamic('_$abort_cutpoint'(_)).
-
-% add a new level for abort
-push_abort_cutpoint :-
-	'_$savecp'(Cp),
-	conpsc('_$abort_cutpoint', Psc), 
-	psc_prop(Psc, OldCp),
-	asserta('_$abort_cutpoint'(OldCp)),
-	conset('_$abort_cutpoint',Cp).
-
-% pop to previous level for abort.
-pop_abort_cutpoint :-
-	retract('_$abort_cutpoint'(Cp)),
-	conset('_$abort_cutpoint',Cp),
-	!.
-pop_abort_cutpoint.
-
 abort :- throw('_$abort_ball').
 
 %  abort/1
-abort([H|T]) :- !,
-	message('++Error[XSB]: [Runtime/P] ', STDERR),
-	abort_1([H|T]),
-        messageln('Aborting...', STDFDBK),
-	abort.
-abort(Message) :- 
-	messageln(('++Error[XSB]: [Runtime/P] ', Message), STDERR),
-        messageln('Aborting...', STDFDBK),
-	abort.
-
-abort_1([]) :- file_nl(STDERR).
-abort_1([H|T]):- message((H,' '), STDERR), abort_1(T).
-
+abort(Msg) :- throw('_$abort_ball'(Msg)).
 
 %  warning/1
 warning(Message) :- 
@@ -1017,6 +988,10 @@ message((M1,M2), File) :-
 	!,
 	message(M1, File),
 	message(M2, File).
+message([M|ML], File) :-
+	!,
+	message(M),
+	messagelist(ML, File).
 message(P/N, File) :-		% temp solution till we fix operators
 	!,
 	message(P, File),
@@ -1024,6 +999,11 @@ message(P/N, File) :-		% temp solution till we fix operators
 	file_write0(File, N).
 message(Message, File) :- 
 	file_write0(File, Message). 
+
+messagelist([],_File).
+messagelist([M1|ML],File) :-
+	message(M1,File),
+	messagelist(ML,File).
 
 %%messageln(Message) :- messageln(Message, STDMSG).
 messageln(Message, File) :- 
@@ -1110,6 +1090,7 @@ catch(_Goal,Catcher,Handler) :-
         (
             Ball = Catcher ->
             retractall('$$exception_ball'(_)),
+	    close_open_tables,
             call(Handler)
         ;
             '$$unwind_stack'  % unwind_stack xsb_exits if no catcher was found

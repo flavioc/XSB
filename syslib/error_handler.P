@@ -34,65 +34,45 @@
 
 :- dynamic default_user_error_handler/1.
 
-% this used to be abort/0 -- now is called only via catching a throw.
-'_$abort':- 
-	conpsc('_$abort_cutpoint', Psc), 
-	psc_prop(Psc, Cp),
-        close_open_tables, 
-	'_$cutto'(Cp), 
-	reset_undef_pred_handlers,
-	fail.
-
 /* Types of errors are taken from Section 7.12 of the ISO Standard */
 
-default_error_handler(Error):- 
+default_error_handler(Error) :- 
 	default_user_error_handler(Error),
+        close_open_tables,
 	!.
+default_error_handler(Error) :-
+	default_sys_error_handler(Error),
+	!,
+	messageln('Aborting...', STDFDBK),
+        close_open_tables,
+	reset_undef_pred_handlers, 
+	fail.
 
 /* messages are handled via abort/1.  */
-default_error_handler('_$abort_ball'):- 
-	'_$abort'.
-	
-default_error_handler(error(instantiation_error,Msg)):- 
+default_sys_error_handler('_$abort_ball').
+default_sys_error_handler('_$abort_ball'(Msg)) :-
+	messageln(Msg,STDERR).
+default_sys_error_handler(error(instantiation_error,Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Instantiation] ', Msg), 
-	           STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-default_error_handler(error(type_error(Valid_type,Culprit),Msg)):- 
+	           STDERR).
+default_sys_error_handler(error(type_error(Valid_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Type (',
-		    Culprit,' in place of ',Valid_type,')] ', Msg),STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-default_error_handler(error(domain_error(Valid_type,Culprit),Msg)):- 
+		    Culprit,' in place of ',Valid_type,')] ', Msg),STDERR).
+default_sys_error_handler(error(domain_error(Valid_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Domain (',
-		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-default_error_handler(error(existence_error(Object_type,Culprit),Msg)):- 
+		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR).
+default_sys_error_handler(error(existence_error(Object_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Existence (',
-	           Object_type,Culprit,' does not exist)] ', Msg), STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-default_error_handler(error(permission_error(Op,Obj_type,Culprit),Msg)):- 
+	           Object_type,Culprit,' does not exist)] ', Msg), STDERR).
+default_sys_error_handler(error(permission_error(Op,Obj_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Permission (Operation',Culprit,
-	           ' of type ',Op,' on ',Obj_type,')] ', Msg), STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-default_error_handler(error(representation_error(Flag),Msg)):- 
+	           ' of type ',Op,' on ',Obj_type,')] ', Msg), STDERR).
+default_sys_error_handler(error(representation_error(Flag),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Representation (',Flag,
-	            ')] ', Msg), STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-default_error_handler(error(calculation_error(Flag),Msg)):- 
+	            ')] ', Msg), STDERR).
+default_sys_error_handler(error(calculation_error(Flag),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Calculation (',Flag,
-	            ')] ', Msg), STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-
-default_error_handler(Msg):- 
+	            ')] ', Msg), STDERR).
+default_sys_error_handler(Msg) :-
 	messageln(('++Error[XSB/Runtime/P] uncaught exception: ', Msg), 
-	           STDERR),
-        messageln('Aborting...', STDFDBK),
-	'_$abort'.
-
-
+	           STDERR).

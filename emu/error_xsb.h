@@ -22,6 +22,7 @@
 ** 
 */
 
+#include "basictypes.h"
 #include "setjmp_xsb.h"
 #include "export.h"
 
@@ -99,3 +100,25 @@ extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
 extern void xsb_segfault_catcher (int);
 extern void xsb_segfault_quitter(int);
 
+int unwind_stack(void);
+
+void call_conv xsb_basic_abort(char *);
+
+/* should include these from whereever they are.... split out from biassert **/
+typedef struct
+{	Cell	Instr ;
+	struct ClRefHdr *FirstClRef ;
+	struct ClRefHdr *LastClRef ;
+}	*PrRef, PrRefData ;
+
+typedef struct ClRefHdr
+{	unsigned long buflen ;
+	struct ClRefHdr *prev ;
+}	*ClRef, ClRefData, ClRefHdr ;
+
+xsbBool assert_buff_to_clref_p(prolog_term, byte, PrRef, int,
+			       prolog_term, int, ClRef *);
+
+int assert_code_to_buff_p(prolog_term);
+
+DllExport void call_conv xsb_throw(prolog_term);
