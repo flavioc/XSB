@@ -23,8 +23,8 @@
 */
 
 
-#ifndef bool
-#define bool  int
+#ifndef WIN_NT
+typedef short bool;
 #endif
 
 #ifndef FALSE

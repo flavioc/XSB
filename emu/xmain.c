@@ -213,7 +213,11 @@ static void check_create_dir(char *path) {
   }
 
   if (retcode != 0) 
+#ifdef WIN_NT
+    retcode = mkdir(path);
+#else
     retcode = mkdir(path, 0755);
+#endif
 
   if (retcode != 0) {
     fprintf(stderr,

@@ -25,5 +25,9 @@
 
 /* This stuff isn't defined in NT */
 #ifndef S_ISDIR
-#define S_ISDIR(fileinfo) ((fileinfo.st_mode & S_IFMT) == S_IFDIR)
+#define S_ISDIR(mode) ((mode & S_IFMT) == S_IFDIR)
+#endif
+
+#ifdef WIN_NT
+#define snprintf _snprintf
 #endif
