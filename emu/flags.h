@@ -32,7 +32,7 @@ extern Cell flags[];		/* System flags + user flags */
 
 #define PIL_TRACE 	 0	/* 0 = pil trace off, 1 = on		YW */
 #define HITRACE		 1	/* 0 = hitrace off, 1 = on		YW */
-#define STACK_REALLOC    2      /* 1=allow realloc of stacks on Oflow   YW */
+#define STACK_REALLOC    2      /* 1 = allow realloc of stacks on Oflow YW */
 #define TRACE_STA	 3	/* 1 = keep max stack size stats	YW */
 #define DEBUG_ON	 4	/* 1 = debug on; 0 = off 		YW */
 #define HIDE_STATE	 5	/* 0 = no hide, >0 = hide level 	YW */
@@ -46,16 +46,18 @@ extern Cell flags[];		/* System flags + user flags */
 #define MOD_LIST	13	/* the list of module (Psc) entries	YR */
 #define RELOC_TABLE	14	/* relocation table			YR */
 
+#define GARBAGE_COLLECT 20      /* type of garbage collecion employed:     */
+                                /* 0 = none; 1 = sliding; 2 = copying.  NW */
 #define CMD_LINE_GOAL  	21	/* The Prolog goal passd on cmd 
-				   line with -e	       	       	        MK */
-#define USER_HOME  	22	/* $HOME, if not null. Else INSTALL_DIR MK */
-#define INSTALL_DIR	23	/* determined dynamically in xmain.c   	MK */
+				   line with -e	       	       	           */
+#define USER_HOME  	22	/* $HOME, if not null. Else INSTALL_DIR    */
+#define INSTALL_DIR	23	/* determined dynamically in xmain.c   	   */
 
 #define CLAUSE_INT	24	/* for clause interrupt			YW */
 
-#define CONFIG_FILE	26	/* Where xsb_configuration.P lives	MK */
+#define CONFIG_FILE	26	/* Where xsb_configuration.P lives	   */
 /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
-#define CONFIG_NAME	28	/* this looks like this: cpu-vendor-os	MK */
+#define CONFIG_NAME	28	/* this looks like this: cpu-vendor-os	   */
 
 
 /*

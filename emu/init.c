@@ -1,5 +1,5 @@
 /* File:      init.c
-** Author(s): Warren, Swift, Xu, Sagonas, Johnson, Prasad
+** Author(s): Warren, Swift, Xu, Sagonas, Johnson, Rao
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -37,6 +37,7 @@
 #include "inst.h"
 #include "psc.h"
 #include "hash.h"
+#include "heap.h"
 #include "memory.h"
 #include "register.h"
 #include "tries.h"
@@ -46,7 +47,6 @@
 #include "load_seg.h"
 #include "xmacro.h"
 #include "tr_utils.h"
-
 
 /*-----------------------------------------------------------------------*/
 
@@ -125,8 +125,8 @@ void static display_file(char *infile_name)
 }
 
 
-void static version_message(void) {
-
+void static version_message(void)
+{
   char licensemsg[MAXPATHLEN], configmsg[MAXPATHLEN];
 
   sprintf(licensemsg, "%s%cetc%ccopying.msg", install_dir, SLASH, SLASH);
@@ -140,7 +140,8 @@ void static version_message(void) {
   exit(0);
 }
 
-static void help_message(void) {
+static void help_message(void)
+{
   char helpmsg[MAXPATHLEN];
 
   sprintf(helpmsg, "%s%cetc%chelp.msg", install_dir, SLASH, SLASH);
@@ -179,7 +180,7 @@ char *init_para(int argc, char *argv[])
 
 
   flags[STACK_REALLOC] = TRUE;
-
+  flags[GARBAGE_COLLECT] = SLIDING_GC;  /* sliding made default */
 
   /* Set default Prolog files.
      ------------------------- */
@@ -213,11 +214,24 @@ char *init_para(int argc, char *argv[])
       continue;
     }
 
-    /* Otherwise, get command-line switch (and arg).  Will dump core
-       if the accompanying argument is omitted. */
+    /* Otherwise, get command-line switch (and arg).
+       Will dump core if the accompanying argument is omitted. */
     switch((c = argv[i][1])) {
     case 'r':
       flags[STACK_REALLOC] = FALSE;
+      break;
+    case 'g':
+      i++;
+      if (i < argc) {
+	if (!strcmp(argv[i],"sliding")) flags[GARBAGE_COLLECT] = SLIDING_GC;
+	else
+	if (!strcmp(argv[i],"copying")) flags[GARBAGE_COLLECT] = COPYING_GC;
+	else
+	if (!strcmp(argv[i],"none")) flags[GARBAGE_COLLECT] = NO_GC;
+	else
+	xsb_warn("Unrecognized garbage collection type");
+      } else
+        xsb_warn("Missing garbage collection type");
       break;
     case 'u':
       if (argv[i][2] != '\0')
@@ -225,9 +239,9 @@ char *init_para(int argc, char *argv[])
       else {
 	i++;
 	if (i < argc)
-	   sscanf(argv[i], "%ld", &pdl.init_size);
-	 else
-	   xsb_warn("Missing size value");
+	  sscanf(argv[i], "%ld", &pdl.init_size);
+	else
+	  xsb_warn("Missing size value");
       }
       break;
     case 'm':
@@ -236,9 +250,9 @@ char *init_para(int argc, char *argv[])
       else {
 	i++;
 	if (i < argc)
-	   sscanf(argv[i], "%ld", &glstack.init_size);
-	 else
-	   xsb_warn("Missing size value");
+	  sscanf(argv[i], "%ld", &glstack.init_size);
+	else
+	  xsb_warn("Missing size value");
       }
       break;
     case 'c':
@@ -247,9 +261,9 @@ char *init_para(int argc, char *argv[])
       else {
 	i++;
 	if (i < argc)
-	   sscanf(argv[i], "%ld", &tcpstack.init_size);
-	 else
-	   xsb_warn("Missing size value");
+	  sscanf(argv[i], "%ld", &tcpstack.init_size);
+	else
+	  xsb_warn("Missing size value");
       }
       break;
     case 'o':
@@ -405,7 +419,7 @@ char *init_para(int argc, char *argv[])
     flags[CMD_LOOP_DRIVER] = (Cell)malloc(strlen_instdir + strlen_2ndfile + 1);
     sprintf( (char *)flags[BOOT_MODULE], "%s%s", install_dir,
 	     boot_module );
-    sprintf( (char *)flags[CMD_LOOP_DRIVER ], "%s%s", install_dir,
+    sprintf( (char *)flags[CMD_LOOP_DRIVER], "%s%s", install_dir,
 	     cmd_loop_driver );
     break;
   case CUSTOM_BOOT_MODULE:
@@ -419,7 +433,7 @@ char *init_para(int argc, char *argv[])
     flags[BOOT_MODULE] = (Cell) malloc(strlen_initfile + 1);
     flags[CMD_LOOP_DRIVER ] = (Cell) malloc(strlen_2ndfile + 1);
     strcpy( (char *)flags[BOOT_MODULE], boot_module );
-    strcpy( (char *)flags[CMD_LOOP_DRIVER ], cmd_loop_driver );
+    strcpy( (char *)flags[CMD_LOOP_DRIVER], cmd_loop_driver );
     break;
   case CUSTOM_CMD_LOOP_DRIVER:
     /*
@@ -452,7 +466,8 @@ char *init_para(int argc, char *argv[])
 
 /* Initialize Memory Regions and Related Variables
    ----------------------------------------------- */
-void init_machine(void) {
+void init_machine(void)
+{
   int i;
 
   /* set special SLG_WAM instruction addresses */
@@ -468,7 +483,7 @@ void init_machine(void) {
      ------------------------------------------------- */
   pdl.low = (byte *)real_alloc(pdl.init_size * K);
   if (!pdl.low)
-    xsb_exit("Not enough core for the PDL!");
+    xsb_exit("Not enough core for the PDL Stack!");
   pdl.high = pdl.low + pdl.init_size * K;
   pdl.size = pdl.init_size;
 
