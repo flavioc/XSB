@@ -299,7 +299,7 @@ static CPtr slide_heap(int num_marked)
 	  q = hp_pointer_from_cell(contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot))
-	    { xsb_dbgmsg(LOG_DEBUG, "not marked from cp(%p)",p); continue ; }
+	    { xsb_dbgmsg((LOG_DEBUG, "not marked from cp(%p)",p)); continue ; }
 	  if (h_is_chained(q)) cp_set_chained(p) ;
 	  h_set_chained(q) ;
 	  swap_with_tag(p,q,tag) ;
@@ -461,8 +461,8 @@ static CPtr slide_heap(int num_marked)
 	}
       }
       if (destination != (heap_bot+num_marked))
-	xsb_dbgmsg(LOG_DEBUG, "bad size %p  %p",
-		   destination,heap_bot+num_marked);
+	xsb_dbgmsg((LOG_DEBUG, "bad size %p  %p",
+		   destination,heap_bot+num_marked));
 #ifdef INDIRECTION_SLIDE
     }  
 #endif
@@ -490,7 +490,7 @@ static void check_zero(char *b, int l, char *s)
   while (l--)
   {
     if (*b++)
-      xsb_dbgmsg(LOG_DEBUG, "%s - left marker - %d - %d - %d", s,*(b-1),i,l) ;
+      xsb_dbgmsg((LOG_DEBUG, "%s - left marker - %d - %d - %d", s,*(b-1),i,l));
     i++ ;
   }
 #endif

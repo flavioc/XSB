@@ -83,16 +83,16 @@ static inline void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
 {
   switch (Opcode) {
   case getlist_tvar_tvar:
-    xsb_dbgmsg(LOG_ASSERT,"getlist_tvar_tvar - %ld %ld %ld",
-	       (long)Arg1,(long)Arg2,(long)Arg3); break;
+    xsb_dbgmsg((LOG_ASSERT,"getlist_tvar_tvar - %ld %ld %ld",
+	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   case switchonbound:
-    xsb_dbgmsg(LOG_ASSERT,"switchonbound - %ld %ld %ld",
-	       (long)Arg1,(long)Arg2,(long)Arg3); break;
+    xsb_dbgmsg((LOG_ASSERT,"switchonbound - %ld %ld %ld",
+	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   case switchon3bound:
-    xsb_dbgmsg(LOG_ASSERT,"switchon3bound - %ld %ld %ld",
-	       (long)Arg1,(long)Arg2,(long)Arg3); break;
-  default: xsb_dbgmsg(LOG_ASSERT,"Unknown instruction in assert %d",
-		      Opcode);
+    xsb_dbgmsg((LOG_ASSERT,"switchon3bound - %ld %ld %ld",
+	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
+  default: xsb_dbgmsg((LOG_ASSERT,"Unknown instruction in assert %d",
+		      Opcode));
   }
 }
 
@@ -100,102 +100,102 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 {
   switch (Opcode) {
   case getpvar:	/* PRV */
-    xsb_dbgmsg(LOG_ASSERT,"getpvar - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"getpvar - %d %d\n", Arg1, Arg2)); break;
   case getpval:	/* PRV */
-    xsb_dbgmsg(LOG_ASSERT,"getpval - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"getpval - %d %d\n", Arg1, Arg2)); break;
   case putpvar:	/* PRV */
-    xsb_dbgmsg(LOG_ASSERT,"putpvar - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"putpvar - %d %d\n", Arg1, Arg2)); break;
   case putpval:	/* PRV */
-    xsb_dbgmsg(LOG_ASSERT,"putpval - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"putpval - %d %d\n", Arg1, Arg2)); break;
   case gettval:	/* PRR */
-    xsb_dbgmsg(LOG_ASSERT,"gettval - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"gettval - %d %d\n", Arg1, Arg2)); break;
   case puttvar:	/* PRR */
-    xsb_dbgmsg(LOG_ASSERT,"puttvar - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"puttvar - %d %d\n", Arg1, Arg2)); break;
   case movreg:	/* PRR */
-    xsb_dbgmsg(LOG_ASSERT,"movreg - %d %d\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"movreg - %d %d\n", Arg1, Arg2)); break;
   case unipvar:	/* PPV */
-    xsb_dbgmsg(LOG_ASSERT,"unipvar - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"unipvar - - %d\n", Arg1)); break;
   case unipval:	/* PPV */
-    xsb_dbgmsg(LOG_ASSERT,"unipval - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"unipval - - %d\n", Arg1)); break;
   case bldpvar:	/* PPV */
-    xsb_dbgmsg(LOG_ASSERT,"bldpvar - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldpvar - - %d\n", Arg1)); break;
   case bldpval:	/* PPV */
-    xsb_dbgmsg(LOG_ASSERT,"bldpval - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldpval - - %d\n", Arg1)); break;
   case unitvar:	/* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"unitvar - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"unitvar - - %d\n", Arg1)); break;
   case unitval:	/* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"unitval - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"unitval - - %d\n", Arg1)); break;
   case bldtvar:	/* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"bldtvar - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldtvar - - %d\n", Arg1)); break;
   case bldtval:	/* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"bldtval - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldtval - - %d\n", Arg1)); break;
   case putlist:	/* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"putlist - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"putlist - - %d\n", Arg1)); break;
   case getlist:	/* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"getlist - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"getlist - - %d\n", Arg1)); break;
   case getattv: /* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"getattv - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"getattv - - %d\n", Arg1)); break;
   case putattv: /* PPR */
-    xsb_dbgmsg(LOG_ASSERT,"putattv - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"putattv - - %d\n", Arg1)); break;
   case putcon:
-    xsb_dbgmsg(LOG_ASSERT,"putcon - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"putcon - - %d 0x%x\n", Arg1, Arg2)); break;
   case putnumcon:
-    xsb_dbgmsg(LOG_ASSERT,"putnumcon - - %d 0x%x\n", Arg1, int_val(Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putnumcon - - %d 0x%x\n", Arg1, int_val(Arg2))); break;
   case putfloat:
-    xsb_dbgmsg(LOG_ASSERT,"putfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2))); break;
   case getcon:
-    xsb_dbgmsg(LOG_ASSERT,"getcon - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"getcon - - %d 0x%x\n", Arg1, Arg2)); break;
   case getnumcon:
-    xsb_dbgmsg(LOG_ASSERT,"getnumcon - - %d 0x%x\n", Arg1, int_val(Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getnumcon - - %d 0x%x\n", Arg1, int_val(Arg2))); break;
   case getfloat:
-    xsb_dbgmsg(LOG_ASSERT,"getfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2))); break;
   case putstr:
-    xsb_dbgmsg(LOG_ASSERT,"putstr - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"putstr - - %d 0x%x\n", Arg1, Arg2)); break;
   case getstr:
-    xsb_dbgmsg(LOG_ASSERT,"getstr - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"getstr - - %d 0x%x\n", Arg1, Arg2)); break;
   case putnil:
-    xsb_dbgmsg(LOG_ASSERT,"putnil - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"putnil - - %d\n", Arg1)); break;
   case getnil:
-    xsb_dbgmsg(LOG_ASSERT,"getnil - - %d\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"getnil - - %d\n", Arg1)); break;
   case bldcon:
-    xsb_dbgmsg(LOG_ASSERT,"bldcon - - - 0x%x\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldcon - - - 0x%x\n", Arg1)); break;
   case bldnumcon:
-    xsb_dbgmsg(LOG_ASSERT,"bldnumcon - - - 0x%x\n", int_val(Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldnumcon - - - 0x%x\n", int_val(Arg1))); break;
   case bldfloat:
-    xsb_dbgmsg(LOG_ASSERT,"bldfloat - - - %f\n", float_val(Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldfloat - - - %f\n", float_val(Arg1))); break;
   case unicon:
-    xsb_dbgmsg(LOG_ASSERT,"unicon - - - 0x%x\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"unicon - - - 0x%x\n", Arg1)); break;
   case uninumcon:
-    xsb_dbgmsg(LOG_ASSERT,"uninumcon - - - 0x%x\n", int_val(Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"uninumcon - - - 0x%x\n", int_val(Arg1))); break;
   case unifloat:
-    xsb_dbgmsg(LOG_ASSERT,"unifloat - - - %f\n", float_val(Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"unifloat - - - %f\n", float_val(Arg1))); break;
   case execute:
-    xsb_dbgmsg(LOG_ASSERT,"execute - - - 0x%x\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"execute - - - 0x%x\n", Arg1)); break;
   case bldnil:
-    xsb_dbgmsg(LOG_ASSERT,"bldnil - - -\n"); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldnil - - -\n")); break;
   case uninil:
-    xsb_dbgmsg(LOG_ASSERT,"uninil - - -\n"); break;
+    xsb_dbgmsg((LOG_ASSERT,"uninil - - -\n")); break;
   case proceed:
-    xsb_dbgmsg(LOG_ASSERT,"proceed - - -\n"); break;
+    xsb_dbgmsg((LOG_ASSERT,"proceed - - -\n")); break;
   case noop:
-    xsb_dbgmsg(LOG_ASSERT,"noop - - -\n"); break;
+    xsb_dbgmsg((LOG_ASSERT,"noop - - -\n")); break;
   case jumptbreg:
-    xsb_dbgmsg(LOG_ASSERT,"jumptbreg - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"jumptbreg - - %d 0x%x\n", Arg1, Arg2)); break;
   case test_heap:
-    xsb_dbgmsg(LOG_ASSERT,"test_heap - - %d %d\n", Arg1, int_val(Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"test_heap - - %d %d\n", Arg1, int_val(Arg2))); break;
   case dyntrustmeelsefail:
-    xsb_dbgmsg(LOG_ASSERT,"dyntrustmeelsefail - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"dyntrustmeelsefail - - %d 0x%x\n", Arg1, Arg2)); break;
   case retrymeelse:
-    xsb_dbgmsg(LOG_ASSERT,"retrymeelse - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"retrymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
   case trymeelse:
-    xsb_dbgmsg(LOG_ASSERT,"trymeelse - - %d 0x%x\n", Arg1, Arg2); break;
+    xsb_dbgmsg((LOG_ASSERT,"trymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
   case jump:
-    xsb_dbgmsg(LOG_ASSERT,"jump - - - 0x%x\n", Arg1); break;
+    xsb_dbgmsg((LOG_ASSERT,"jump - - - 0x%x\n", Arg1)); break;
   case fail:
-    xsb_dbgmsg(LOG_ASSERT,"fail - - -\n"); break;
+    xsb_dbgmsg((LOG_ASSERT,"fail - - -\n")); break;
   default: 
-    xsb_dbgmsg(LOG_DEBUG, "Unknown instruction in assert %d",
-		      Opcode);
+    xsb_dbgmsg((LOG_DEBUG, "Unknown instruction in assert %d",
+		      Opcode));
   }
 }
 
@@ -551,12 +551,12 @@ static int Size;
 
 static char *buff_realloc(void)
 {
-  /*  xsb_dbgmsg(LOG_DEBUG,"Enter buff_realloc(%d) %X", Buff_size,Buff); */
+  /*  xsb_dbgmsg((LOG_DEBUG,"Enter buff_realloc(%d) %X", Buff_size,Buff)); */
   Buff_size = Buff_size + Buff_size;
   if (Buff == NULL) Buff = (char *)malloc(Buff_size);
   else Buff = (char *)realloc(Buff,Buff_size);
   BLim = Buff_size-16;
-  /*  xsb_dbgmsg(LOG_DEBUG,"Leave buff_realloc(%d) %X", Buff_size,Buff); */
+  /*  xsb_dbgmsg((LOG_DEBUG,"Leave buff_realloc(%d) %X", Buff_size,Buff)); */
   return(Buff);
 }
 
@@ -860,8 +860,8 @@ static void db_putterm(int Rt, prolog_term T0,
     case bldnil:
       dbgen_instB_ppp(bldnil); break;
     default: 
-      xsb_dbgmsg(LOG_DEBUG,"Incorrect bld instruction in assert %d", 
-			BldOpcode);
+      xsb_dbgmsg((LOG_DEBUG,"Incorrect bld instruction in assert %d", 
+			BldOpcode));
     }
   }
 }
@@ -1199,7 +1199,7 @@ xsbBool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
   get_indexes( reg_term(5) ) ;
   HashTabSize = ptoc_int(6);
 
-  xsb_dbgmsg(LOG_ASSERT,"Now add clref to chain:");
+  xsb_dbgmsg((LOG_ASSERT,"Now add clref to chain:"));
 
   MakeClRef( Clause,
 	     (NI>0) ? INDEXED_CL : UNINDEXED_CL,
@@ -1238,8 +1238,8 @@ static void prefix_to_chain(byte Arity, ClRef FirstClause, ClRef NewClause)
   else if (ClRefTryOpCode(FirstClause) == trymeelse)
   {  dbgen_inst_ppvw(retrymeelse,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc);}
-  else xsb_dbgmsg(LOG_DEBUG,"***Error 1 in assert: 0x%x",
-		  ClRefTryOpCode(FirstClause));
+  else xsb_dbgmsg((LOG_DEBUG,"***Error 1 in assert: 0x%x",
+		  ClRefTryOpCode(FirstClause)));
 
   ClRefPrev(NewClause)   = ClRefPrev(FirstClause);
   ClRefPrev(FirstClause) = NewClause;
@@ -1262,8 +1262,8 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
   else if (ClRefTryOpCode(LastClause) == dyntrustmeelsefail)
   {  dbgen_inst_ppvw(retrymeelse,Arity,NewClause,
 		     LastClause,&Loc);  }
-  else xsb_dbgmsg(LOG_DEBUG,"***Error 2 in assert: 0x%x",
-		  ClRefTryOpCode(LastClause));
+  else xsb_dbgmsg((LOG_DEBUG,"***Error 2 in assert: 0x%x",
+		  ClRefTryOpCode(LastClause)));
 
   SetClRefPrev(NewClause, LastClause);
 }
@@ -1292,7 +1292,7 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int Inum)
       append_to_chain(Arity,LastClause,Clause);
       Pred->LastClRef = Clause ;
     }
-  } else xsb_dbgmsg(LOG_DEBUG,"***Error 3 in assert");
+  } else xsb_dbgmsg((LOG_DEBUG,"***Error 3 in assert"));
 }
 
 static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
@@ -1364,7 +1364,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind )
 
    /* get NEW SOB block */
    MakeClRef(NewSOB,SOB_RECORD,9+ThisTabSize);
-/*   xsb_dbgmsg(LOG_DEBUG,"New SOB %p, size = %d", NewSOB, ThisTabSize); */
+/*   xsb_dbgmsg((LOG_DEBUG,"New SOB %p, size = %d", NewSOB, ThisTabSize)); */
    Loc = 0 ;
    dbgen_inst3_sob( Ind>255 ? switchon3bound : switchonbound,
  	  Ind,ClRefHashTable(NewSOB),ThisTabSize,&ClRefSOBInstr(NewSOB),&Loc);
@@ -1759,9 +1759,9 @@ ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
 
 static int really_delete_clause(ClRef Clause)
 {
-  xsb_dbgmsg(LOG_RETRACT,
+  xsb_dbgmsg((LOG_RETRACT,
 	     "Really deleting clause(%p) op(%x) type(%d)",
-	     Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+	     Clause, ClRefTryOpCode(Clause), ClRefType(Clause) )) ;
     switch( ClRefType(Clause) )
     {
         case UNINDEXED_CL:
@@ -1774,9 +1774,9 @@ static int really_delete_clause(ClRef Clause)
             CPtr IP ;
 
             NI = ClRefNumInds(Clause) ;
-            xsb_dbgmsg(LOG_RETRACT,
+            xsb_dbgmsg((LOG_RETRACT,
 		       "Really deleting clause (%p) size %d indexes %d",
-		       Clause, ClRefSize(Clause), NI ) ;
+		       Clause, ClRefSize(Clause), NI )) ;
             delete_from_allchain(Clause) ;
 
             /* remove it from index chains */
@@ -1787,16 +1787,16 @@ static int really_delete_clause(ClRef Clause)
                 	IP = IndRefNext(IP) ;
                 /* last pointer in index chain points to indexing SOB */
                 sob = (SOBRef)IndRefNext(IP) ;
-                xsb_dbgmsg(LOG_RETRACT,
+                xsb_dbgmsg((LOG_RETRACT,
 			   "SOB(%d) - hash size %d - %d clauses",
-			   i, ClRefHashSize(sob), ClRefNumClauses(sob) ) ;
-                xsb_dbgmsg(LOG_RETRACT,
+			   i, ClRefHashSize(sob), ClRefNumClauses(sob) ));
+                xsb_dbgmsg((LOG_RETRACT,
 			   "Addr %p : prev %p : next %p",
-			   sob, ClRefNext(sob), ClRefPrev(sob) ) ;
+			   sob, ClRefNext(sob), ClRefPrev(sob) ));
                 delete_from_hashchain(Clause,i,NI) ;
                 if( --ClRefNumClauses(sob) == 0 )
                 {
-                    xsb_dbgmsg(LOG_RETRACT,"deleting sob - %p", sob ) ;
+                    xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
                     delete_from_sobchain(sob) ;
                 }
             }
@@ -1822,8 +1822,8 @@ static int force_retract_buffers()
 
 static int retract_clause( ClRef Clause, int retract_nr )
 {
-  xsb_dbgmsg(LOG_RETRACT,"Retract clause(%p) op(%x) type(%d)",
-	     Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+  xsb_dbgmsg((LOG_RETRACT,"Retract clause(%p) op(%x) type(%d)",
+	     Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ));
     switch( ClRefType(Clause) )
     {
         case UNINDEXED_CL:
@@ -1853,9 +1853,9 @@ static int retract_clause( ClRef Clause, int retract_nr )
 	  break ;
     }
     if (!retract_nr) {
-      xsb_dbgmsg(LOG_RETRACT,
+      xsb_dbgmsg((LOG_RETRACT,
 		 "Inserting clause in delete buffer(%p) op(%x) type(%d)",
-		 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+		 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ));
       delete_clause(Clause) ;
     }
     return TRUE ;
@@ -1889,11 +1889,11 @@ xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type,
   CPtr EntryPoint = 0;
   Integer failed = ptoc_int(6) ;
 
-    xsb_dbgmsg(LOG_RETRACT_GC,
+    xsb_dbgmsg((LOG_RETRACT_GC,
 	       "GET CLAUSE P-%p(%x) C-%p(%x) F-%p L-%p",
 	       Pred, *(pb)Pred, ptoc_int(1),
 	       ptoc_int(1) ? *(pb)(ptoc_int(1)) : 0,
-	       Pred->FirstClRef, Pred->LastClRef ) ;
+	       Pred->FirstClRef, Pred->LastClRef ));
 
     if( cell_opcode((CPtr)Pred) == tabletrysingle )
 	/* Tabled pred, fetch real prref */
@@ -1934,8 +1934,8 @@ set_outputs:
     else
       EntryPoint = 0 ;
 
-    xsb_dbgmsg(LOG_RETRACT_GC,
-	       "GOT CLAUSE C-%p(%x)", Clause, Clause ? *(pb)Clause : 0 ) ;
+    xsb_dbgmsg((LOG_RETRACT_GC,
+	       "GOT CLAUSE C-%p(%x)", Clause, Clause ? *(pb)Clause : 0 ));
 
     ctop_int( 7, (Integer)Clause ) ;
     ctop_int( 8, Clause != 0 ? (Integer)ClRefType(Clause) : 4 ) ;
@@ -2006,7 +2006,7 @@ xsbBool db_remove_prref( /* PrRef */ )
 {
   CPtr *p = (CPtr *)ptoc_int(1) ;
 
-  xsb_dbgmsg(LOG_RETRACT_GC, "DEL Prref %p", p ) ;
+  xsb_dbgmsg((LOG_RETRACT_GC, "DEL Prref %p", p ));
 
   if ( *(pb)p == tabletrysingle )
     {
@@ -2127,13 +2127,13 @@ static inline void print_bytes(CPtr x, int lo, int hi)
 {
   int i;
 
-  xsb_dbgmsg(LOG_DEBUG, "addr %p ---------------------------------",x);
+  xsb_dbgmsg((LOG_DEBUG, "addr %p ---------------------------------",x));
   for (i = lo; i <= hi ; i++) {
-    xsb_dbgmsg(LOG_DEBUG," i = %d 4*i = %d  x[i] = %x ",i,4*i, (int)*(x+i));
+    xsb_dbgmsg((LOG_DEBUG," i = %d 4*i = %d  x[i] = %x ",i,4*i, (int)*(x+i)));
   }
-  xsb_dbgmsg(LOG_DEBUG, "Instr = %s ---code to run %s----",
+  xsb_dbgmsg((LOG_DEBUG, "Instr = %s ---code to run %s----",
 	     (char *)inst_table[try_type_instr_fld(x)][0],
-	     (char *)inst_table[code_to_run(x)][0] );
+	     (char *)inst_table[code_to_run(x)][0] ));
 }
 
 /*----------------------------------------------------------------*/
@@ -2157,20 +2157,20 @@ int trie_assert(void)
 
 #ifdef DEBUG_VERBOSE
   Arity  = ptoc_int(3);
-  xsb_dbgmsg(LOG_DEBUG,"Prref bytes\n");
+  xsb_dbgmsg((LOG_DEBUG,"Prref bytes\n"));
   if (cur_log_level >= LOG_DEBUG)
     print_bytes(Prref,-2,2);
-  xsb_dbgmsg(LOG_DEBUG,"Clause :");
+  xsb_dbgmsg((LOG_DEBUG,"Clause :"));
   dbg_printterm(LOG_DEBUG,stddbg,Clause,24);
-  xsb_dbgmsg(LOG_DEBUG," Arity %d ", Arity);
-  xsb_dbgmsg(LOG_DEBUG," Psc   %d ",(int)psc);
-  xsb_dbgmsg(LOG_DEBUG," Prref %d ",(int)Prref);
-  xsb_dbgmsg(LOG_DEBUG,"\n");
+  xsb_dbgmsg((LOG_DEBUG," Arity %d ", Arity));
+  xsb_dbgmsg((LOG_DEBUG," Psc   %d ",(int)psc));
+  xsb_dbgmsg((LOG_DEBUG," Prref %d ",(int)Prref));
+  xsb_dbgmsg((LOG_DEBUG,"\n"));
 #endif
 
   Trie_Asserted_Clref = trie_asserted_clref(Prref);
 
-  xsb_dbgmsg(LOG_ASSERT, " Trie_Asserted_Clref %p",Trie_Asserted_Clref);
+  xsb_dbgmsg((LOG_ASSERT, " Trie_Asserted_Clref %p",Trie_Asserted_Clref));
 
   switch_to_trie_assert;
   
@@ -2212,19 +2212,19 @@ int trie_retract(void)
     return TRUE;
   }
   else if (Last_Nod_Sav == NULL) {
-    xsb_dbgmsg(LOG_DEBUG,"Last_Nod_Sav is NULL ");
+    xsb_dbgmsg((LOG_DEBUG,"Last_Nod_Sav is NULL "));
     return FALSE;
   }
   else {
     inst_node_ptr = (BTNptr)*(Clref +3);
-    xsb_dbgmsg(LOG_DEBUG, " Deleting from Instrn Node %p",  inst_node_ptr );
-    xsb_dbgmsg(LOG_DEBUG, 
-	       " Before: Child of Instrn Node %p", Child(inst_node_ptr));
+    xsb_dbgmsg((LOG_DEBUG, " Deleting from Instrn Node %p",  inst_node_ptr ));
+    xsb_dbgmsg((LOG_DEBUG, 
+	       " Before: Child of Instrn Node %p", Child(inst_node_ptr)));
     switch_to_trie_assert;
     delete_branch(Last_Nod_Sav, &(Child(inst_node_ptr)));
     switch_from_trie_assert;
-    xsb_dbgmsg(LOG_DEBUG,
-	       " After : Child of Instrn Node %p", Child(inst_node_ptr));
+    xsb_dbgmsg((LOG_DEBUG,
+	       " After : Child of Instrn Node %p", Child(inst_node_ptr)));
     return TRUE;
   }
 }

@@ -107,7 +107,7 @@ int asynint_val = 0;
   }									\
   else if (isnil(op)) {XSB_Next_Instr();} /* op == [] */		\
   else if (isattv(op)) {						\
-    xsb_dbgmsg(LOG_ATTV,">>>> ATTV nunify_with_nil, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_nil, interrupt needed\n"));	\
     add_interrupt(op, makenil);						\
   }									\
   else Fail1;	/* op is LIST, INT, or FLOAT */
@@ -124,7 +124,7 @@ int asynint_val = 0;
     if (string_val(OP1) == (char *)OP2) {XSB_Next_Instr();} else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
-    xsb_dbgmsg(LOG_ATTV,">>>> ATTV nunify_with_con, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_con, interrupt needed\n"));	\
     add_interrupt(OP1, makestring((char *)OP2));			\
   }									\
   else Fail1;
@@ -143,7 +143,7 @@ int asynint_val = 0;
     if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
   }									\
   else if (isattv(OP1)) {						\
-    xsb_dbgmsg(LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n"));	\
     add_interrupt(OP1, OP2);					        \
   }									\
   else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
@@ -160,7 +160,7 @@ int asynint_val = 0;
     if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
   }									\
   else if (isattv(OP1)) {						\
-    xsb_dbgmsg(LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
     add_interrupt(OP1, OP2);			                        \
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
@@ -185,7 +185,7 @@ int asynint_val = 0;
     else Fail1;								\
   }									\
   else if (isattv(OP1)) {						\
-    xsb_dbgmsg(LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));	\
     add_interrupt(OP1, makecs(hreg));					\
     new_heap_functor(hreg, (Psc)OP2);					\
     flag = WRITE;							\
@@ -206,7 +206,7 @@ int asynint_val = 0;
     flag = READFLAG;							\
   }									\
   else if (isattv(OP1)) {						\
-    xsb_dbgmsg(LOG_ATTV,">>>> ATTV nunify_with_list_sym, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_list_sym, interrupt needed\n"));	\
     add_interrupt(OP1, makelist(hreg));					\
     flag = WRITE;							\
   }									\
@@ -224,7 +224,7 @@ int asynint_val = 0;
     bind_attv((CPtr)(OP1), hreg);				\
   }								\
   else {							\
-    xsb_dbgmsg(LOG_ATTV,">>>> nunify_with_attv, interrupt needed\n");	\
+    xsb_dbgmsg((LOG_ATTV,">>>> nunify_with_attv, interrupt needed\n"));	\
     add_interrupt(makeattv(hreg), OP1);				\
   }								\
   new_heap_free(hreg);		/* the VAR part of the attv */	\

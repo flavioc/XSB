@@ -213,9 +213,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
        --------------------------- */
     if (has_answer_code(producer_sf)) {
       int i;
-      xsb_dbgmsg(LOG_DELAY, "++Returning answers from COMPLETED table: ");
+      xsb_dbgmsg((LOG_DELAY, "++Returning answers from COMPLETED table: "));
       dbg_print_subgoal(LOG_DELAY, stddbg, producer_sf);
-      xsb_dbgmsg(LOG_DELAY, "\n");
+      xsb_dbgmsg((LOG_DELAY, "\n"));
       answer_template = hreg - 1; 
 
       tmp = int_val(cell(answer_template));
@@ -319,13 +319,13 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 			   CallInfo_TableInfo(callInfo));
 
       if (is_conditional_answer(first_answer)) {
-	xsb_dbgmsg(LOG_DELAY,
+	xsb_dbgmsg((LOG_DELAY,
 		"! POSITIVELY DELAYING in lay active (delayreg = %p)\n",
-		delayreg);
-	xsb_dbgmsg(LOG_DELAY, "\n>>>> delay_positively in lay_down_active\n");
-	xsb_dbgmsg(LOG_DELAY, ">>>> subgoal = ");
+		delayreg));
+	xsb_dbgmsg((LOG_DELAY, "\n>>>> delay_positively in lay_down_active\n"));
+	xsb_dbgmsg((LOG_DELAY, ">>>> subgoal = "));
 	dbg_print_subgoal(LOG_DELAY, stddbg, producer_sf);
-	xsb_dbgmsg(LOG_DELAY, "\n");
+	xsb_dbgmsg((LOG_DELAY, "\n"));
 	{
 	  /*
 	   * Similar to delay_positively() in retry_active, we also
@@ -505,11 +505,11 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   producer_cpf = subg_cp_ptr(producer_sf);
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(LOG_DEBUG,">>>> New answer for %s subgoal: ",
-	     (is_completed(producer_sf) ? "completed" : "incomplete"));
+  xsb_dbgmsg((LOG_DEBUG,">>>> New answer for %s subgoal: ",
+	     (is_completed(producer_sf) ? "completed" : "incomplete")));
   fprintf(stddbg, ">>>> ");
   dbg_print_subgoal(LOG_DEBUG, stddbg, producer_sf);
-  xsb_dbgmsg(LOG_DEBUG,">>>> has delayreg = %p", delayreg);
+  xsb_dbgmsg((LOG_DEBUG,">>>> has delayreg = %p", delayreg));
 #endif
 
   producer_csf = subg_compl_stack_ptr(producer_sf);
@@ -535,7 +535,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   xsb_dbgmsg(LOG_DEBUG,">>>> ARITY = %d; Yn = %d", (int)ARITY, (int)Yn);
 #endif
 
-  xsb_dbgmsg(LOG_DELAY, "\t--> This answer for ");
+  xsb_dbgmsg((LOG_DELAY, "\t--> This answer for "));
   dbg_print_subgoal(LOG_DELAY, stddbg, producer_sf);
 #ifdef DEBUG_VERBOSE
   if (LOG_DELAY <= cur_log_level) {

@@ -738,7 +738,7 @@ void checkJavaInterrupt(void *info)
 {
   char ch;
   SOCKET intSocket = (SOCKET)info;
-  xsb_dbgmsg(LOG_DEBUG, "Thread started on socket %ld",(int)intSocket);
+  xsb_dbgmsg((LOG_DEBUG, "Thread started on socket %ld",(int)intSocket));
   while(1){
     if (1!=recv(intSocket,&ch,1,0)) {
       xsb_warn("Problem handling interrupt from Java");

@@ -55,8 +55,8 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 
   /**** The producer has answers and consuming calls ****/  
   if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) ) {
-    xsb_dbgmsg(LOG_SCHED, "SchedAnswers: consumer_cpf=%d,producer_sf=%d",
-	       (int)consumer_cpf,(int)producer_sf);
+    xsb_dbgmsg((LOG_SCHED, "SchedAnswers: consumer_cpf=%d,producer_sf=%d",
+	       (int)consumer_cpf,(int)producer_sf));
     /**** Check each consumer for unresolved answers ****/
     if ( IsSubsumptiveProducer(producer_sf) )
       while ( IsNonNULL(consumer_cpf) ) {
@@ -91,10 +91,10 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
       nlcp_prevbreg(last_sched_cons) = breg;
   } /* if any answers and active nodes */
 
-  xsb_dbgmsg(LOG_SCHED, "schedule active nodes: ccbreg=%d, breg=%d", 
-	     (int)producer_cpf,(int)breg);
-  xsb_dbgmsg(LOG_SCHED, "first active =%d, last=%d",
-	     (int)first_sched_cons,(int)last_sched_cons);
+  xsb_dbgmsg((LOG_SCHED, "schedule active nodes: ccbreg=%d, breg=%d", 
+	     (int)producer_cpf,(int)breg));
+  xsb_dbgmsg((LOG_SCHED, "first active =%d, last=%d",
+	     (int)first_sched_cons,(int)last_sched_cons));
   return first_sched_cons;
 }
 

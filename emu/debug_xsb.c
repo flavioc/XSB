@@ -246,43 +246,43 @@ static int count_producer_subgoals(void)
 
 void print_help(void)
 {
-  xsb_dbgmsg(LOG_DEBUG,"      a r/v/d/a <addr>: inspect the content of the address");
-  xsb_dbgmsg(LOG_DEBUG,"      b <module> <name> <arity>: spy the predicate");
-  xsb_dbgmsg(LOG_DEBUG,"      B <num>: print detailed Prolog choice points from the top");
-  xsb_dbgmsg(LOG_DEBUG,"\tof the choice point stack with <num>-Cell overlap");
-  xsb_dbgmsg(LOG_DEBUG,"      c <num>: print top of choice point stack with <num> overlap");
-  xsb_dbgmsg(LOG_DEBUG,"      C <num>: print choice point stack (around bfreg) with <num> overlap");
-  xsb_dbgmsg(LOG_DEBUG,"      d: print disassembled code for module");
-  xsb_dbgmsg(LOG_DEBUG,"      D: print current value of delay list (pointed by delayreg)");
-  xsb_dbgmsg(LOG_DEBUG,"      e <size>: expand trail/cp stack to <size> K-byte blocks");
-  xsb_dbgmsg(LOG_DEBUG,"      E <num>: print top of environment (local) stack with <num> overlap");
-  xsb_dbgmsg(LOG_DEBUG,"      g: leap to the next check_complete instruction");
-  xsb_dbgmsg(LOG_DEBUG,"      G: same as 'g', but does not print intermediate info");
-  xsb_dbgmsg(LOG_DEBUG,"      h: help");
-  xsb_dbgmsg(LOG_DEBUG,"      H <num>: print top of heap with <num> overlap");
-  xsb_dbgmsg(LOG_DEBUG,"      k <int>: print and skip <int> instructions");
-  xsb_dbgmsg(LOG_DEBUG,"      K <int>: skip <int> instructions");
-  xsb_dbgmsg(LOG_DEBUG,"      l: leap to the next spy point");
-  xsb_dbgmsg(LOG_DEBUG,"      L: same as 'l', but does not print intermediate info");
-  xsb_dbgmsg(LOG_DEBUG,"      M: print statistics");
-  xsb_dbgmsg(LOG_DEBUG,"      n: leap to the next call");
-  xsb_dbgmsg(LOG_DEBUG,"      N: nodebugging, continue to the end");
-  xsb_dbgmsg(LOG_DEBUG,"      o: print completion stack");
-  xsb_dbgmsg(LOG_DEBUG,"      P: print PDLSTK");
-  xsb_dbgmsg(LOG_DEBUG,"      q: quit XSB");
-  xsb_dbgmsg(LOG_DEBUG,"      r <num>: print register <num> as term");
-  xsb_dbgmsg(LOG_DEBUG,"      R <num>: print register <num> as ptr");
-  xsb_dbgmsg(LOG_DEBUG,"      s: step (execute a single instruction)");
-  xsb_dbgmsg(LOG_DEBUG,"      S: print status registers");
-  xsb_dbgmsg(LOG_DEBUG,"      T <num>: print top of trail with <num> overlap");
-  xsb_dbgmsg(LOG_DEBUG,"      u <name> <arity>: unspy the predicate");
-  xsb_dbgmsg(LOG_DEBUG,"      v <num>: print variable <num>");
-  xsb_dbgmsg(LOG_DEBUG,"      w <stack> <val>: watch <stack> register for <val>");
-  xsb_dbgmsg(LOG_DEBUG,"      W <stack> <val>: watch memory area of <stack> for <val>");
-  xsb_dbgmsg(LOG_DEBUG,"      x: exit XSB");
-  xsb_dbgmsg(LOG_DEBUG,"      1: print top of (persistent) subgoal stack");
-  xsb_dbgmsg(LOG_DEBUG,"      2 <num>: print val of table pointer");
-  xsb_dbgmsg(LOG_DEBUG,"      ?: help");
+  xsb_dbgmsg((LOG_DEBUG,"      a r/v/d/a <addr>: inspect the content of the address"));
+  xsb_dbgmsg((LOG_DEBUG,"      b <module> <name> <arity>: spy the predicate"));
+  xsb_dbgmsg((LOG_DEBUG,"      B <num>: print detailed Prolog choice points from the top"));
+  xsb_dbgmsg((LOG_DEBUG,"\tof the choice point stack with <num>-Cell overlap"));
+  xsb_dbgmsg((LOG_DEBUG,"      c <num>: print top of choice point stack with <num> overlap"));
+  xsb_dbgmsg((LOG_DEBUG,"      C <num>: print choice point stack (around bfreg) with <num> overlap"));
+  xsb_dbgmsg((LOG_DEBUG,"      d: print disassembled code for module"));
+  xsb_dbgmsg((LOG_DEBUG,"      D: print current value of delay list (pointed by delayreg)"));
+  xsb_dbgmsg((LOG_DEBUG,"      e <size>: expand trail/cp stack to <size> K-byte blocks"));
+  xsb_dbgmsg((LOG_DEBUG,"      E <num>: print top of environment (local) stack with <num> overlap"));
+  xsb_dbgmsg((LOG_DEBUG,"      g: leap to the next check_complete instruction"));
+  xsb_dbgmsg((LOG_DEBUG,"      G: same as 'g', but does not print intermediate info"));
+  xsb_dbgmsg((LOG_DEBUG,"      h: help"));
+  xsb_dbgmsg((LOG_DEBUG,"      H <num>: print top of heap with <num> overlap"));
+  xsb_dbgmsg((LOG_DEBUG,"      k <int>: print and skip <int> instructions"));
+  xsb_dbgmsg((LOG_DEBUG,"      K <int>: skip <int> instructions"));
+  xsb_dbgmsg((LOG_DEBUG,"      l: leap to the next spy point"));
+  xsb_dbgmsg((LOG_DEBUG,"      L: same as 'l', but does not print intermediate info"));
+  xsb_dbgmsg((LOG_DEBUG,"      M: print statistics"));
+  xsb_dbgmsg((LOG_DEBUG,"      n: leap to the next call"));
+  xsb_dbgmsg((LOG_DEBUG,"      N: nodebugging, continue to the end"));
+  xsb_dbgmsg((LOG_DEBUG,"      o: print completion stack"));
+  xsb_dbgmsg((LOG_DEBUG,"      P: print PDLSTK"));
+  xsb_dbgmsg((LOG_DEBUG,"      q: quit XSB"));
+  xsb_dbgmsg((LOG_DEBUG,"      r <num>: print register <num> as term"));
+  xsb_dbgmsg((LOG_DEBUG,"      R <num>: print register <num> as ptr"));
+  xsb_dbgmsg((LOG_DEBUG,"      s: step (execute a single instruction)"));
+  xsb_dbgmsg((LOG_DEBUG,"      S: print status registers"));
+  xsb_dbgmsg((LOG_DEBUG,"      T <num>: print top of trail with <num> overlap"));
+  xsb_dbgmsg((LOG_DEBUG,"      u <name> <arity>: unspy the predicate"));
+  xsb_dbgmsg((LOG_DEBUG,"      v <num>: print variable <num>"));
+  xsb_dbgmsg((LOG_DEBUG,"      w <stack> <val>: watch <stack> register for <val>"));
+  xsb_dbgmsg((LOG_DEBUG,"      W <stack> <val>: watch memory area of <stack> for <val>"));
+  xsb_dbgmsg((LOG_DEBUG,"      x: exit XSB"));
+  xsb_dbgmsg((LOG_DEBUG,"      1: print top of (persistent) subgoal stack"));
+  xsb_dbgmsg((LOG_DEBUG,"      2 <num>: print val of table pointer"));
+  xsb_dbgmsg((LOG_DEBUG,"      ?: help"));
 }
 
 /*--------------------------------------------------------------------------*/
@@ -505,7 +505,7 @@ static void print_pdlstack(void)
   CPtr temp = pdlreg;
 
   while (temp <= (CPtr)(pdl.high) - 1) {
-    xsb_dbgmsg(LOG_DEBUG,"pdlstk %p: %lx", temp, *temp);
+    xsb_dbgmsg((LOG_DEBUG,"pdlstk %p: %lx", temp, *temp));
     temp++;
   }
 }
@@ -616,7 +616,7 @@ void print_tables(void)
   SubConsSF cons;
 
   i = count_producer_subgoals();
-  xsb_dbgmsg(LOG_DEBUG,"\t There are %d producer subgoal structures...", i);
+  xsb_dbgmsg((LOG_DEBUG,"\t There are %d producer subgoal structures...", i));
 
   i = 0;
   for ( tif = tif_list.first;  IsNonNULL(tif) && (ans == 'y');
@@ -628,28 +628,28 @@ void print_tables(void)
       i++;
       print_subg_header(subg);
       fprintf(stddbg, "%p:\n", subg);
-      xsb_dbgmsg(LOG_DEBUG,"  sf_type = %s,  is_complete = %s,  is_reclaimed = %s,",
+      xsb_dbgmsg((LOG_DEBUG,"  sf_type = %s,  is_complete = %s,  is_reclaimed = %s,",
 		 stringSubgoalFrameType(subg_sf_type(subg)),
 		 (subg_is_complete(subg) ? "YES" : "NO"),
-		 (subg_is_reclaimed(subg) ? "YES" : "NO"));
-      xsb_dbgmsg(LOG_DEBUG,"  tif_ptr = %p,  leaf_ptr = %p,  ans_root_ptr = %p,\n"
+		 (subg_is_reclaimed(subg) ? "YES" : "NO")));
+      xsb_dbgmsg((LOG_DEBUG,"  tif_ptr = %p,  leaf_ptr = %p,  ans_root_ptr = %p,\n"
 		 "  ans_list_ptr = %p,   ans_list_tail = %p,\n"
 		 "  next_subgoal = %p,  prev_subgoal = %p,  cp_ptr = %p",
 		 subg_tif_ptr(subg), subg_leaf_ptr(subg),
 		 subg_ans_root_ptr(subg),
 		 subg_ans_list_ptr(subg), subg_ans_list_tail(subg),
 		 subg_next_subgoal(subg), subg_prev_subgoal(subg), 
-		 subg_cp_ptr(subg));
-      xsb_dbgmsg(LOG_DEBUG,"  asf_list_ptr = %p,", subg_asf_list_ptr(subg));
-      xsb_dbgmsg(LOG_DEBUG,"  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
+		 subg_cp_ptr(subg)));
+      xsb_dbgmsg((LOG_DEBUG,"  asf_list_ptr = %p,", subg_asf_list_ptr(subg)));
+      xsb_dbgmsg((LOG_DEBUG,"  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
 		 "  nde_list = %p",
 		 subg_compl_stack_ptr(subg), subg_compl_susp_ptr(subg),
-		 subg_nde_list(subg));
+		 subg_nde_list(subg)));
       if ( IsSubProdSF(subg) ) {
-	xsb_dbgmsg(LOG_DEBUG,"  consumers = %p", subg_consumers(subg));
+	xsb_dbgmsg((LOG_DEBUG,"  consumers = %p", subg_consumers(subg)));
 	for ( cons = subg_consumers(subg);  IsNonNULL(cons);
 	      cons = conssf_consumers(cons) )
-	  xsb_dbgmsg(LOG_DEBUG,"Consumer  %p\n"
+	  xsb_dbgmsg((LOG_DEBUG,"Consumer  %p\n"
 		     "  sf_type = %11s,  tif_ptr = %p,         leaf_ptr = %p\n"
 		     "  producer = %10p,  ans_list_ptr = %p,"
 		     "  ans_list_tail = %p\n"
@@ -657,7 +657,7 @@ void print_tables(void)
 		     cons, subg_sf_type(cons), subg_tif_ptr(cons),
 		     subg_leaf_ptr(cons), conssf_producer(cons),
 		     subg_ans_list_ptr(cons), subg_ans_list_tail(cons),
-		     conssf_timestamp(cons), conssf_consumers(cons));
+		     conssf_timestamp(cons), conssf_consumers(cons)));
       }
       subg = subg_next_subgoal(subg);
       if (subg != NULL)
@@ -810,16 +810,16 @@ static void monitor_register_watch(void)
 {
   if (reg_watch.heap_flag) 
     if (reg_watch.heap_val == hreg)
-      xsb_dbgmsg(LOG_DEBUG,"!!! hreg == %p, %d", hreg, xctr);
+      xsb_dbgmsg((LOG_DEBUG,"!!! hreg == %p, %d", hreg, xctr));
   if (reg_watch.stack_flag) 
     if (reg_watch.stack_val == ereg)
-      xsb_dbgmsg(LOG_DEBUG,"!!! ereg == %p, %d", ereg, xctr);
+      xsb_dbgmsg((LOG_DEBUG,"!!! ereg == %p, %d", ereg, xctr));
   if (reg_watch.choice_flag) 
     if (reg_watch.choice_val == breg)
-      xsb_dbgmsg(LOG_DEBUG,"!!! breg == %p, %d", breg, xctr);
+      xsb_dbgmsg((LOG_DEBUG,"!!! breg == %p, %d", breg, xctr));
   if (reg_watch.trail_flag) 
     if ((CPtr *) reg_watch.trail_val == trreg)
-      xsb_dbgmsg(LOG_DEBUG,"!!! trreg == %p, %d", trreg, xctr);
+      xsb_dbgmsg((LOG_DEBUG,"!!! trreg == %p, %d", trreg, xctr));
 }
 
 /*----------------------------------------------------------------------*/
@@ -828,33 +828,33 @@ static void monitor_memory_watch(void)
 {
   if (mem_watch.heap_flag)
     if (*(CPtr *) mem_watch.heap_flag != mem_watch.heap_val) {
-      xsb_dbgmsg(LOG_DEBUG,"Heap watch val %x was %p is now %lx, xctr %d",
+      xsb_dbgmsg((LOG_DEBUG,"Heap watch val %x was %p is now %lx, xctr %d",
 		 mem_watch.heap_flag, mem_watch.heap_val,
-		 *(CPtr) mem_watch.heap_flag, xctr);
+		 *(CPtr) mem_watch.heap_flag, xctr));
       debug_ctr = 0;
       mem_watch.heap_val = *(CPtr *) mem_watch.heap_flag;
     }
   if (mem_watch.stack_flag)
     if (*(CPtr *) mem_watch.stack_flag != mem_watch.stack_val) {
-      xsb_dbgmsg(LOG_DEBUG,"Stack watch val %x was %p is now %lx, xctr %d",
+      xsb_dbgmsg((LOG_DEBUG,"Stack watch val %x was %p is now %lx, xctr %d",
 		 mem_watch.stack_flag,mem_watch.stack_val,
-		 *(CPtr) mem_watch.stack_flag,xctr);
+		 *(CPtr) mem_watch.stack_flag,xctr));
       debug_ctr = 0;
       mem_watch.stack_val = *(CPtr *) mem_watch.stack_flag;
     }
   if (mem_watch.choice_flag)
     if (*(CPtr *) mem_watch.choice_flag != mem_watch.choice_val) {
-      xsb_dbgmsg(LOG_DEBUG,"Choice watch val %x was %p is now %lx, xctr %d",
+      xsb_dbgmsg((LOG_DEBUG,"Choice watch val %x was %p is now %lx, xctr %d",
 		 mem_watch.choice_flag,mem_watch.choice_val,
-		 *(CPtr) mem_watch.choice_flag,xctr);
+		 *(CPtr) mem_watch.choice_flag,xctr));
       debug_ctr = 0;
       mem_watch.choice_val = *(CPtr *) mem_watch.choice_flag;
     }
   if (mem_watch.trail_flag)
     if (*(CPtr *) mem_watch.trail_flag != mem_watch.trail_val) {
-      xsb_dbgmsg(LOG_DEBUG,"Trail watch val %x was %p is now %lx, xctr %d",
+      xsb_dbgmsg((LOG_DEBUG,"Trail watch val %x was %p is now %lx, xctr %d",
 		 mem_watch.trail_flag,mem_watch.trail_val,
-		 *(CPtr) mem_watch.trail_flag,xctr);
+		 *(CPtr) mem_watch.trail_flag,xctr));
       debug_ctr = 0;
       mem_watch.trail_val = *(CPtr *) mem_watch.trail_flag;
     }
@@ -1044,20 +1044,20 @@ static void print_trail(int overlap)		/* trail grows up */
   if (trfreg > trreg) temp = trfreg;  else temp = trreg;
   for (i = overlap; (i > 0); i--)
     {
-      if ( (temp + i) == trreg ) xsb_dbgmsg(LOG_DEBUG,"trreg");
-      if ( (temp + i) == trfreg ) xsb_dbgmsg(LOG_DEBUG,"trfreg");
+      if ( (temp + i) == trreg ) xsb_dbgmsg((LOG_DEBUG,"trreg"));
+      if ( (temp + i) == trfreg ) xsb_dbgmsg((LOG_DEBUG,"trfreg"));
       print_cell("Trail", (CPtr)(temp+i), cell((CPtr)(temp+i)), NULL);
     }
   while (ans == 'y' && temp-offset >= (CPtr *) tcpstack.low) { 
     for (i = 0
 	   ; (i <= STRIDESIZE && temp-(offset+i) >= (CPtr *)tcpstack.low)
 	   ; i++ )      {
-      if ( (temp - (offset+i)) == trreg ) xsb_dbgmsg(LOG_DEBUG,"trreg");
-      if ( (temp - (offset+i)) == trfreg ) xsb_dbgmsg(LOG_DEBUG,"trfreg");
+      if ( (temp - (offset+i)) == trreg ) xsb_dbgmsg((LOG_DEBUG,"trreg"));
+      if ( (temp - (offset+i)) == trfreg ) xsb_dbgmsg((LOG_DEBUG,"trfreg"));
       print_cell("Trail", (CPtr)(temp-(offset+i)),
 		 cell((CPtr)(temp-(offset+i))), NULL);
       if ( (temp-(offset+i)) == (CPtr *) tcpstack.low ) 
-	xsb_dbgmsg(LOG_DEBUG,"bottom");
+	xsb_dbgmsg((LOG_DEBUG,"bottom"));
     }
     offset += STRIDESIZE;
     fprintf(stddbg, "more (y/n)?  ");
@@ -1075,11 +1075,11 @@ static void print_trail(int overlap)		/* trail grows up */
  
   for (i = -overlap; i < 0 ; i++) {
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
-    if ( (bfreg + i) == breg ) xsb_dbgmsg(LOG_DEBUG,"breg");
+    if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG,"breg"));
   }
-  xsb_dbgmsg(LOG_DEBUG,"bfreg");
+  xsb_dbgmsg((LOG_DEBUG,"bfreg"));
   for (i = 0; (i <= STRIDESIZE && bfreg+i<=(CPtr)tcpstack.high); i++){
-    if ( (bfreg + i) == breg ) xsb_dbgmsg(LOG_DEBUG,"breg");
+    if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG,"breg"));
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
     if ( (bfreg + i) == (CPtr) tcpstack.high ) fprintf(stddbg, EOS);
   }
@@ -1094,11 +1094,11 @@ static void print_freeze_choice_points(int overlap)	/* CPs grow down */
  
   for (i = -overlap; i < 0 ; i++) {
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
-    if ( (bfreg + i) == breg ) xsb_dbgmsg(LOG_DEBUG,"breg");
+    if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG,"breg"));
   }
-  xsb_dbgmsg(LOG_DEBUG, "bfreg");
+  xsb_dbgmsg((LOG_DEBUG, "bfreg"));
   for (i = 0; (i <= STRIDESIZE && bfreg+i<=(CPtr)tcpstack.high); i++){
-    if ( (bfreg + i) == breg ) xsb_dbgmsg(LOG_DEBUG, "breg");
+    if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG, "breg"));
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
     if ( (bfreg + i) == (CPtr) tcpstack.high ) fprintf(stddbg, EOS);
   }
@@ -1110,7 +1110,7 @@ static void print_freeze_choice_points(int overlap)	/* CPs grow down */
     for ( i = last
 	    ; (i <= last+STRIDESIZE && bfreg+i <= (CPtr) tcpstack.high) 
 	    ; i++ ) {
-      if ( (bfreg + i) == breg ) xsb_dbgmsg(LOG_DEBUG, "breg");
+      if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG, "breg"));
       print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
       if ( (bfreg + i) == (CPtr) tcpstack.high ) fprintf(stddbg, EOS);
     }
@@ -1152,22 +1152,22 @@ static void analyze_cpf(CPtr cpf_addr, int *length, int *cpf_type)
 static void print_common_cpf_part(CPtr cpf_addr) {
   char *s = "   CP stack ";
 
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\tptr to next clause:\t0x%p", s,
-	     &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\tprev env cap (ebreg):\t0x%p", s,
-	     &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\ttop of heap:\t\t0x%p", s,
-	     &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\ttop of trail:\t\t0x%p", s,
-	     &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\tcontinuation pointer:\t0x%p", s,
-	     &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\ttop of local stack:\t0x%p", s,
-	     &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\tdynamic link:\t\t0x%p", s,
-	     &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr));
-  xsb_dbgmsg(LOG_DEBUG,"%s%p:\tparent subgoal dreg:\t0x%p", s,
-	     &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tptr to next clause:\t0x%p", s,
+	     &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tprev env cap (ebreg):\t0x%p", s,
+	     &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\ttop of heap:\t\t0x%p", s,
+	     &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\ttop of trail:\t\t0x%p", s,
+	     &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tcontinuation pointer:\t0x%p", s,
+	     &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\ttop of local stack:\t0x%p", s,
+	     &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tdynamic link:\t\t0x%p", s,
+	     &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr)));
+  xsb_dbgmsg((LOG_DEBUG,"%s%p:\tparent subgoal dreg:\t0x%p", s,
+	     &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr)));
 }
 
 static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
@@ -1178,37 +1178,37 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 
   switch (cpf_type) {
   case STANDARD_CP_FRAME:
-    xsb_dbgmsg(LOG_DEBUG,"Standard Choice Point Frame:");
+    xsb_dbgmsg((LOG_DEBUG,"Standard Choice Point Frame:"));
     print_common_cpf_part(cpf_addr);
 
     num_of_args = length - CP_SIZE;
     for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
-      xsb_dbgmsg(LOG_DEBUG,"%s%p:\tpredicate arg #%d:\t0x%p",
-		 s, arg, i, ref_val(*arg));
+      xsb_dbgmsg((LOG_DEBUG,"%s%p:\tpredicate arg #%d:\t0x%p",
+		 s, arg, i, ref_val(*arg)));
     break;
   case GENERATOR_CP_FRAME:
-    xsb_dbgmsg(LOG_DEBUG,"Generator Choice Point Frame:");
+    xsb_dbgmsg((LOG_DEBUG,"Generator Choice Point Frame:"));
     print_common_cpf_part(cpf_addr);
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tparent tabled CP:\t0x%p", s,
-	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr));
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tsubgoal frame ptr:\t0x%p", s,
-	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tCh P  freeze register:\t0x%p", s,
-	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tHeap  freeze register:\t0x%p", s,
-	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr));
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tTrail freeze register:\t0x%p", s,
-	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr));
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tLo St freeze register:\t0x%p", s,
-	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tparent tabled CP:\t0x%p", s,
+	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr)));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tsubgoal frame ptr:\t0x%p", s,
+	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr)));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tCh P  freeze register:\t0x%p", s,
+	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr)));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tHeap  freeze register:\t0x%p", s,
+	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr)));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tTrail freeze register:\t0x%p", s,
+	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr)));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tLo St freeze register:\t0x%p", s,
+	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr)));
 #ifdef LOCAL_EVAL
-    xsb_dbgmsg(LOG_DEBUG,"%s%p:\tlocal eval trie_return:\t0x%p", s,
-	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
+    xsb_dbgmsg((LOG_DEBUG,"%s%p:\tlocal eval trie_return:\t0x%p", s,
+	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr)));
 #endif
     num_of_args = length - TCP_SIZE;
     for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
-      xsb_dbgmsg(LOG_DEBUG,"%s%p:\tpredicate arg #%d:\t0x%p",
-		 s, arg, i, ref_val(*arg));
+      xsb_dbgmsg((LOG_DEBUG,"%s%p:\tpredicate arg #%d:\t0x%p",
+		 s, arg, i, ref_val(*arg)));
     break;
   default:
     xsb_error("CP Type %d not handled yet...", cpf_type);
@@ -1233,15 +1233,15 @@ static void print_cpfs(int overlap)
     type;
 
   for (i = -overlap ; (i < 0) ; i++) {
-    if ((breg+i) == bfreg) xsb_dbgmsg(LOG_DEBUG,"bfreg");
+    if ((breg+i) == bfreg) xsb_dbgmsg((LOG_DEBUG,"bfreg"));
     print_cp_cell("   CP stack", breg+i, cell(breg+i));
   }
-  xsb_dbgmsg(LOG_DEBUG,"breg");
+  xsb_dbgmsg((LOG_DEBUG,"breg"));
   cpf = breg;
   do {
     for (i = 0; (i < frames) && (cpf < cp_stack_bottom); i++) {
       if ( cpf == bfreg )
-	xsb_dbgmsg(LOG_DEBUG,"bfreg");
+	xsb_dbgmsg((LOG_DEBUG,"bfreg"));
       analyze_cpf(cpf, &length, &type);
       print_cpf(cpf, length, type);
       cpf = cpf + length;
@@ -1267,15 +1267,15 @@ static void print_choice_points(int overlap)
   CPtr cp_stack_bottom = (CPtr)tcpstack.high;
  
   for (i = -overlap ; (i < 0) ; i++) {
-    if ((breg+i) == bfreg) xsb_dbgmsg(LOG_DEBUG,"bfreg");
+    if ((breg+i) == bfreg) xsb_dbgmsg((LOG_DEBUG,"bfreg"));
     print_cp_cell("CP stack", breg+i, cell(breg+i));
   }
-  xsb_dbgmsg(LOG_DEBUG,"breg");
+  xsb_dbgmsg((LOG_DEBUG,"breg"));
   do {
     for (i = last;
 	 (i <= last + STRIDESIZE) && (breg+i <= cp_stack_bottom);
 	 i++) {
-      if ( (breg + i) == bfreg ) xsb_dbgmsg(LOG_DEBUG,"bfreg");
+      if ( (breg + i) == bfreg ) xsb_dbgmsg((LOG_DEBUG,"bfreg"));
       print_cp_cell("CP stack", breg+i, cell(breg+i));
       if ( (breg + i) == cp_stack_bottom ) fprintf(stddbg, EOS);
     }
@@ -1301,16 +1301,16 @@ static void print_heap(int overlap)	/* Heap grows up */
   for (i = overlap; (i > 0); i--) {
     print_cell("Heap", hreg+i, cell(hreg+i), NULL);
   }
-  xsb_dbgmsg(LOG_DEBUG,"hreg");
+  xsb_dbgmsg((LOG_DEBUG,"hreg"));
   while (ans == 'y' && hreg-i > (CPtr) glstack.low) {
     for (i = 0
 	   ;(i <= STRIDESIZE && hreg-(offset+i) >= (CPtr) glstack.low) 
 	   ; i++) {
-      if ( (hreg - (offset+i)) == hfreg ) xsb_dbgmsg(LOG_DEBUG,"hfreg");
-      if ( (hreg - (offset+i)) == hbreg ) xsb_dbgmsg(LOG_DEBUG,"hbreg");
+      if ( (hreg - (offset+i)) == hfreg ) xsb_dbgmsg((LOG_DEBUG,"hfreg"));
+      if ( (hreg - (offset+i)) == hbreg ) xsb_dbgmsg((LOG_DEBUG,"hbreg"));
       print_cell("Heap", hreg-(offset+i), cell(hreg-(offset+i)), NULL);
       if ( (hreg-(offset+i)) == (CPtr) glstack.low ) 
-	xsb_dbgmsg(LOG_DEBUG,"bottom");
+	xsb_dbgmsg((LOG_DEBUG,"bottom"));
     }
     if ( (hreg-(offset+i)) != (CPtr) glstack.low ) {
       offset += STRIDESIZE;
@@ -1323,48 +1323,48 @@ static void print_heap(int overlap)	/* Heap grows up */
 
 static void print_status(void)
 {
-  xsb_dbgmsg(LOG_DEBUG,"     ereg: 0x%p", ereg);
-  xsb_dbgmsg(LOG_DEBUG,"    ebreg: 0x%p", ebreg);
-  xsb_dbgmsg(LOG_DEBUG,"     breg: 0x%p", breg);
-  xsb_dbgmsg(LOG_DEBUG,"     hreg: 0x%p", hreg);
-  xsb_dbgmsg(LOG_DEBUG,"    hbreg: 0x%p", hbreg);
-  xsb_dbgmsg(LOG_DEBUG,"    trreg: 0x%p", trreg);
-  xsb_dbgmsg(LOG_DEBUG,"    cpreg: 0x%p", cpreg);
-  xsb_dbgmsg(LOG_DEBUG,"    pcreg: 0x%p", pcreg);
+  xsb_dbgmsg((LOG_DEBUG,"     ereg: 0x%p", ereg));
+  xsb_dbgmsg((LOG_DEBUG,"    ebreg: 0x%p", ebreg));
+  xsb_dbgmsg((LOG_DEBUG,"     breg: 0x%p", breg));
+  xsb_dbgmsg((LOG_DEBUG,"     hreg: 0x%p", hreg));
+  xsb_dbgmsg((LOG_DEBUG,"    hbreg: 0x%p", hbreg));
+  xsb_dbgmsg((LOG_DEBUG,"    trreg: 0x%p", trreg));
+  xsb_dbgmsg((LOG_DEBUG,"    cpreg: 0x%p", cpreg));
+  xsb_dbgmsg((LOG_DEBUG,"    pcreg: 0x%p", pcreg));
 
-  xsb_dbgmsg(LOG_DEBUG,"    efreg: 0x%p", efreg);
-  xsb_dbgmsg(LOG_DEBUG,"    bfreg: 0x%p", bfreg);
-  xsb_dbgmsg(LOG_DEBUG,"    hfreg: 0x%p", hfreg);
-  xsb_dbgmsg(LOG_DEBUG,"   trfreg: 0x%p", trfreg);
-  xsb_dbgmsg(LOG_DEBUG,"   pdlreg: 0x%p", pdlreg);
-  xsb_dbgmsg(LOG_DEBUG,"  ptcpreg: 0x%p", ptcpreg);
-  xsb_dbgmsg(LOG_DEBUG," delayreg: 0x%p", delayreg);
-  xsb_dbgmsg(LOG_DEBUG,"neg_delay: %s", (neg_delay == FALSE) ? "False" : "True");
-  xsb_dbgmsg(LOG_DEBUG,"   level#: %d", level_num);
+  xsb_dbgmsg((LOG_DEBUG,"    efreg: 0x%p", efreg));
+  xsb_dbgmsg((LOG_DEBUG,"    bfreg: 0x%p", bfreg));
+  xsb_dbgmsg((LOG_DEBUG,"    hfreg: 0x%p", hfreg));
+  xsb_dbgmsg((LOG_DEBUG,"   trfreg: 0x%p", trfreg));
+  xsb_dbgmsg((LOG_DEBUG,"   pdlreg: 0x%p", pdlreg));
+  xsb_dbgmsg((LOG_DEBUG,"  ptcpreg: 0x%p", ptcpreg));
+  xsb_dbgmsg((LOG_DEBUG," delayreg: 0x%p", delayreg));
+  xsb_dbgmsg((LOG_DEBUG,"neg_delay: %s", (neg_delay == FALSE) ? "False" : "True"));
+  xsb_dbgmsg((LOG_DEBUG,"   level#: %d", level_num));
 
-  xsb_dbgmsg(LOG_DEBUG,"\nPDL");
-  xsb_dbgmsg(LOG_DEBUG,"\tlow:       %p", pdl.low);
-  xsb_dbgmsg(LOG_DEBUG,"\thigh:      %p", pdl.high);
-  xsb_dbgmsg(LOG_DEBUG,"\tsize:      %ld", pdl.size); /* JF: long */
-  xsb_dbgmsg(LOG_DEBUG,"\tinit size: %ld", pdl.init_size); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\nPDL"));
+  xsb_dbgmsg((LOG_DEBUG,"\tlow:       %p", pdl.low));
+  xsb_dbgmsg((LOG_DEBUG,"\thigh:      %p", pdl.high));
+  xsb_dbgmsg((LOG_DEBUG,"\tsize:      %ld", pdl.size)); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\tinit size: %ld", pdl.init_size)); /* JF: long */
 
-  xsb_dbgmsg(LOG_DEBUG,"\nGlobal / Local Stack");
-  xsb_dbgmsg(LOG_DEBUG,"\tlow:       %p", glstack.low);
-  xsb_dbgmsg(LOG_DEBUG,"\thigh:      %p", glstack.high);
-  xsb_dbgmsg(LOG_DEBUG,"\tsize:      %ld", glstack.size); /* JF: long */
-  xsb_dbgmsg(LOG_DEBUG,"\tinit size: %ld", glstack.init_size); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\nGlobal / Local Stack"));
+  xsb_dbgmsg((LOG_DEBUG,"\tlow:       %p", glstack.low));
+  xsb_dbgmsg((LOG_DEBUG,"\thigh:      %p", glstack.high));
+  xsb_dbgmsg((LOG_DEBUG,"\tsize:      %ld", glstack.size)); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\tinit size: %ld", glstack.init_size)); /* JF: long */
 
-  xsb_dbgmsg(LOG_DEBUG,"\nTrail / Choice Point Stack");
-  xsb_dbgmsg(LOG_DEBUG,"\tlow:       %p", tcpstack.low);
-  xsb_dbgmsg(LOG_DEBUG,"\thigh:      %p", tcpstack.high);
-  xsb_dbgmsg(LOG_DEBUG,"\tsize:      %ld", tcpstack.size); /* JF: long */
-  xsb_dbgmsg(LOG_DEBUG,"\tinit size: %ld", tcpstack.init_size); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\nTrail / Choice Point Stack"));
+  xsb_dbgmsg((LOG_DEBUG,"\tlow:       %p", tcpstack.low));
+  xsb_dbgmsg((LOG_DEBUG,"\thigh:      %p", tcpstack.high));
+  xsb_dbgmsg((LOG_DEBUG,"\tsize:      %ld", tcpstack.size)); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\tinit size: %ld", tcpstack.init_size)); /* JF: long */
 
-  xsb_dbgmsg(LOG_DEBUG,"\nCompletion Stack");
-  xsb_dbgmsg(LOG_DEBUG,"\tlow:       %p", complstack.low);
-  xsb_dbgmsg(LOG_DEBUG,"\thigh:      %p", complstack.high);
-  xsb_dbgmsg(LOG_DEBUG,"\tsize:      %ld", complstack.size); /* JF: long */
-  xsb_dbgmsg(LOG_DEBUG,"\tinit size: %ld", complstack.init_size); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\nCompletion Stack"));
+  xsb_dbgmsg((LOG_DEBUG,"\tlow:       %p", complstack.low));
+  xsb_dbgmsg((LOG_DEBUG,"\thigh:      %p", complstack.high));
+  xsb_dbgmsg((LOG_DEBUG,"\tsize:      %ld", complstack.size)); /* JF: long */
+  xsb_dbgmsg((LOG_DEBUG,"\tinit size: %ld", complstack.init_size)); /* JF: long */
 }
 
 static void debug_interact(void)
@@ -1383,7 +1383,7 @@ static void debug_interact(void)
     skip_to_nl();
     switch (name[0]) {
     case 'a':
-      xsb_dbgmsg(LOG_DEBUG,"0x%x: 0x%x", num, *(int *)num);
+      xsb_dbgmsg((LOG_DEBUG,"0x%x: 0x%x", num, *(int *)num));
       break;
     case 'r':
       print_cell("Reg", (CPtr)num, cell(reg+num), NULL);

@@ -310,14 +310,14 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   if (new_size <= glstack.size) return 0;
 
-  xsb_dbgmsg(LOG_REALLOC, 
-	     "Reallocating the Heap and Local Stack data area") ;
+  xsb_dbgmsg((LOG_REALLOC, 
+	     "Reallocating the Heap and Local Stack data area"));
 #ifdef DEBUG_VERBOSE
   if (LOG_REALLOC <= cur_log_level) {
     if (glstack.size == glstack.init_size) {
-      xsb_dbgmsg(LOG_REALLOC,"\tBottom:\t\t%p\t\tInitial Size: %ldK",
-		 glstack.low, glstack.size);
-      xsb_dbgmsg(LOG_REALLOC,"\tTop:\t\t%p", glstack.high);
+      xsb_dbgmsg((LOG_REALLOC,"\tBottom:\t\t%p\t\tInitial Size: %ldK",
+		 glstack.low, glstack.size));
+      xsb_dbgmsg((LOG_REALLOC,"\tTop:\t\t%p", glstack.high));
     }
   }
 #endif
@@ -398,12 +398,12 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   expandtime = (long)(1000*cpu_time()) - expandtime;
 
-  xsb_dbgmsg(LOG_REALLOC,"\tNew Bottom:\t%p\t\tNew Size: %ldK",
-	     glstack.low, glstack.size) ;
-  xsb_dbgmsg(LOG_REALLOC,"\tNew Top:\t%p", glstack.high) ;
-  xsb_dbgmsg(LOG_REALLOC,
+  xsb_dbgmsg((LOG_REALLOC,"\tNew Bottom:\t%p\t\tNew Size: %ldK",
+	     glstack.low, glstack.size));
+  xsb_dbgmsg((LOG_REALLOC,"\tNew Top:\t%p", glstack.high));
+  xsb_dbgmsg((LOG_REALLOC,
 	     "Heap/Local Stack data area expansion - finished in %ld msecs\n",
-	     expandtime) ;
+	     expandtime));
 
   return 0;
 } /* glstack_realloc */
@@ -483,9 +483,9 @@ int gc_heap(int arity)
       /* fragmentation is expressed as ratio not-marked/total heap in use
 	 this is internal fragmentation only.  we print marked and total,
 	 so that postprocessing can do what it wants with this info. */
-      xsb_dbgmsg(LOG_GC, "marked_used_missed(%d,%d,%d,%d).",
+      xsb_dbgmsg((LOG_GC, "marked_used_missed(%d,%d,%d,%d).",
 		 marked,hreg+1-(CPtr)glstack.low,
-		 heap_early_reset,ls_early_reset);
+		 heap_early_reset,ls_early_reset));
     free_marks:
       /* get rid of the marking areas - if they exist */
       if (heap_marks)  { free((heap_marks-1)); heap_marks = NULL; }
@@ -520,7 +520,7 @@ int gc_heap(int arity)
 	hreg = slide_heap(marked) ;
 
 	if (hreg != (heap_bot+marked))
-	  xsb_dbgmsg(LOG_GC, "heap sliding gc - inconsistent hreg");
+	  xsb_dbgmsg((LOG_GC, "heap sliding gc - inconsistent hreg"));
 #ifdef SLG_GC
 	/* copy hfreg back from the heap */
 	hreg--;

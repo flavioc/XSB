@@ -192,12 +192,12 @@ TSTNptr subsumptive_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
 #ifdef DEBUG_VERBOSE
   if (LOG_INTERN <= cur_log_level) {
     int i;
-    xsb_dbgmsg(LOG_INTERN, 
-	       "Entered subsumptive_tst_search() with the following terms:");
+    xsb_dbgmsg((LOG_INTERN, 
+	       "Entered subsumptive_tst_search() with the following terms:"));
     for (i = 0; i < nTerms; i++) {
-      xsb_dbgmsg(LOG_INTERN,"\t");
+      xsb_dbgmsg((LOG_INTERN,"\t"));
       dbg_printterm(LOG_INTERN,stddbg, (Cell)(termVector - i),25);
-      xsb_dbgmsg(LOG_INTERN,"\n");
+      xsb_dbgmsg((LOG_INTERN,"\n"));
     }
   }
 #endif

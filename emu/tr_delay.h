@@ -49,15 +49,15 @@
     VariantSF subgoal;                                                  \
                                                                         \
     if (is_conditional_answer(NodePtr)) {				\
-      xsb_dbgmsg(LOG_DELAY,                                             \
-                 "Trie-Code returning a conditional answer for ");	\
+      xsb_dbgmsg((LOG_DELAY,                                             \
+                 "Trie-Code returning a conditional answer for "));	\
       subgoal = asi_subgoal(Delay(NodePtr));	        		\
       dbg_print_subgoal(LOG_DELAY, stddbg, subgoal);                    \
-      xsb_dbgmsg(LOG_DELAY, " (positively delaying)\n");		\
-      xsb_dbgmsg(LOG_DELAY,                                             \
-                      ">>>> In handle_conditional_answers macro: \n");  \
-      xsb_dbgmsg(LOG_DELAY, ">>>>     num_vars_in_var_regs = %d\n",     \
-                      num_vars_in_var_regs);			        \
+      xsb_dbgmsg((LOG_DELAY, " (positively delaying)\n"));		\
+      xsb_dbgmsg((LOG_DELAY,                                             \
+                      ">>>> In handle_conditional_answers macro: \n"));  \
+      xsb_dbgmsg((LOG_DELAY, ">>>>     num_vars_in_var_regs = %d\n",     \
+                      num_vars_in_var_regs));			        \
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(subgoal, NodePtr,				\
 			 makestring(get_ret_string()));			\
@@ -70,9 +70,9 @@
 	  int i;							\
 	  for (i = 0; i < num_vars_in_var_regs + 1; i++) {		\
 	    cell(hreg++) = (Cell) var_regs[i]; /* new */		\
-	    xsb_dbgmsg(LOG_DELAY, ">>>>     var_regs[%d] = ", i);	\
+	    xsb_dbgmsg((LOG_DELAY, ">>>>     var_regs[%d] = ", i));	\
 	    dbg_printterm(LOG_DELAY, stddbg, cell(var_regs[i]), 25);	\
-	    xsb_dbgmsg(LOG_DELAY, "\n");				\
+	    xsb_dbgmsg((LOG_DELAY, "\n"));				\
 	  }								\
 	}								\
 	delay_positively(subgoal, NodePtr, makecs(temp_hreg));		\

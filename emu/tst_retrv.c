@@ -898,13 +898,13 @@ ALNptr tst_collect_relevant_answers(TSTNptr tstRoot, TimeStamp ts,
   if ( ! IsLeafNode(parentTSTN) ) {
     xsb_warn("During collection of relevant answers for subsumed subgoal\n"
 	     "TermStack is empty but a leaf node was not reached");
-    xsb_dbgmsg(LOG_DEBUG, "Root ");
+    xsb_dbgmsg((LOG_DEBUG, "Root "));
     dbg_printTrieNode(LOG_DEBUG, stddbg, (BTNptr)tstRoot);
-    xsb_dbgmsg(LOG_DEBUG, "Last ");
+    xsb_dbgmsg((LOG_DEBUG, "Last "));
     dbg_printTrieNode(LOG_DEBUG, stddbg, (BTNptr)parentTSTN);
     dbg_printAnswerTemplate(LOG_DEBUG, stddbg, termsRev,numTerms);
-    xsb_dbgmsg(LOG_DEBUG,
-	    "(* Note: this template may be partially instantiated *)\n");
+    xsb_dbgmsg((LOG_DEBUG,
+	    "(* Note: this template may be partially instantiated *)\n"));
     fprintf(stdwarn, "Attempting to continue...\n");
   }
   else

@@ -165,8 +165,8 @@ NodeStats subgoal_statistics(Structure_Manager *sm) {
 	    nSubgoals++;
   }
   else {
-    xsb_dbgmsg(LOG_DEBUG, "Incorrect use of subgoal_statistics()\n"
-	       "SM does not contain subgoal frames");
+    xsb_dbgmsg((LOG_DEBUG, "Incorrect use of subgoal_statistics()\n"
+	       "SM does not contain subgoal frames"));
     return sg_stats;
   }
 

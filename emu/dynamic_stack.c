@@ -47,14 +47,14 @@
 
 void dsPrint(DynamicStack ds, char *comment) {
 
-  xsb_dbgmsg(LOG_DEBUG, "Dynamic Stack: %s (%s)\n"
+  xsb_dbgmsg((LOG_DEBUG, "Dynamic Stack: %s (%s)\n"
 	     "  Stack Base:    %8p\tFrame Size:   %u bytes\n"
 	     "  Stack Top:     %8p\tCurrent Size: %u frames\n"
 	     "  Stack Ceiling: %8p\tInitial Size: %u frames",
 	     DynStk_Name(ds), comment,
 	     DynStk_Base(ds), DynStk_FrameSize(ds),
 	     DynStk_Top(ds), DynStk_CurSize(ds),
-	     DynStk_Ceiling(ds), DynStk_InitSize(ds));
+	     DynStk_Ceiling(ds), DynStk_InitSize(ds)));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -69,7 +69,7 @@ void dsInit(DynamicStack *ds, size_t stack_size, size_t frame_size,
 
   size_t total_bytes;
 
-  xsb_dbgmsg(LOG_TRIE_STACK, "Initializing %s", name);
+  xsb_dbgmsg((LOG_TRIE_STACK, "Initializing %s", name));
 
   total_bytes = stack_size * frame_size;
   DynStk_Base(*ds) = malloc(total_bytes);
@@ -103,8 +103,8 @@ void dsExpand(DynamicStack *ds, int num_frames) {
   if ( new_size < DynStk_CurSize(*ds) + num_frames )
     new_size = new_size + num_frames;
 
-  xsb_dbgmsg(LOG_TRIE_STACK, "Expanding %s: %d -> %d", DynStk_Name(*ds),
-	     DynStk_CurSize(*ds), new_size);
+  xsb_dbgmsg((LOG_TRIE_STACK, "Expanding %s: %d -> %d", DynStk_Name(*ds),
+	     DynStk_CurSize(*ds), new_size));
   dbg_dsPrint(LOG_TRIE_STACK, *ds, "Before expansion");
 
   total_bytes = new_size * DynStk_FrameSize(*ds);
@@ -137,8 +137,8 @@ void dsShrink(DynamicStack *ds) {
   total_bytes = DynStk_InitSize(*ds) * DynStk_FrameSize(*ds);
   new_base = realloc(DynStk_Base(*ds),total_bytes);
 
-  xsb_dbgmsg(LOG_TRIE_STACK, "Shrinking %s: %d -> %d", DynStk_Name(*ds),
-	     DynStk_CurSize(*ds), DynStk_InitSize(*ds));
+  xsb_dbgmsg((LOG_TRIE_STACK, "Shrinking %s: %d -> %d", DynStk_Name(*ds),
+	     DynStk_CurSize(*ds), DynStk_InitSize(*ds)));
 
   if ( IsNULL(new_base) )
     xsb_abort("Ran out of memory during expansion of %s", DynStk_Name(*ds));

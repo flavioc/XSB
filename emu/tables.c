@@ -352,7 +352,7 @@ void table_complete_entry(VariantSF producerSF) {
   TSINptr tsi_entry;
 
   dbg_print_subgoal(LOG_STRUCT_MANAGER, stddbg, producerSF);
-  xsb_dbgmsg(LOG_STRUCT_MANAGER, " complete... reclaiming structures.\n");
+  xsb_dbgmsg((LOG_STRUCT_MANAGER, " complete... reclaiming structures.\n"));
 
   if (flags[TRACE_STA])
     compute_maximum_tablespace_stats();
@@ -377,7 +377,7 @@ void table_complete_entry(VariantSF producerSF) {
 	   IsNonNULL(TSIN_Prev(TSTHT_IndexHead(ht))) )
 	xsb_warn("Malconstructed TSI");
 
-      xsb_dbgmsg(LOG_STRUCT_MANAGER, "  Reclaiming TS Index\n");
+      xsb_dbgmsg((LOG_STRUCT_MANAGER, "  Reclaiming TS Index\n"));
       dbg_smPrint(LOG_STRUCT_MANAGER, smTSIN, "  before chain reclamation");
 
       /*** Because 'prev' field is first, the tail becomes the list head ***/
@@ -401,7 +401,7 @@ void table_complete_entry(VariantSF producerSF) {
     } while ( IsNonNULL(pALN) );
     subg_answers(producerSF) = tag;
 
-      xsb_dbgmsg(LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for subgoal\n");
+      xsb_dbgmsg((LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for subgoal\n"));
       dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  before chain reclamation");
 
     if ( IsNULL(subg_ans_list_tail(producerSF)) ||
@@ -420,15 +420,15 @@ void table_complete_entry(VariantSF producerSF) {
 
 
     if (IsNonNULL(pSF)) {
-      xsb_dbgmsg(LOG_STRUCT_MANAGER, 
-		 "Reclaiming structures from consumers of ");
+      xsb_dbgmsg((LOG_STRUCT_MANAGER, 
+		 "Reclaiming structures from consumers of "));
       dbg_print_subgoal(LOG_STRUCT_MANAGER, stddbg, producerSF);
-      xsb_dbgmsg(LOG_STRUCT_MANAGER, "\n");
+      xsb_dbgmsg((LOG_STRUCT_MANAGER, "\n"));
     }
 
     while ( IsNonNULL(pSF) ) {
 
-      xsb_dbgmsg(LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for consumer\n");
+      xsb_dbgmsg((LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for consumer\n"));
       dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  before chain reclamation");
 
       if ( has_answers(pSF) )    /* real answers exist */
@@ -444,7 +444,7 @@ void table_complete_entry(VariantSF producerSF) {
     }
   }
 
-  xsb_dbgmsg(LOG_STRUCT_MANAGER, "Subgoal structure-reclamation complete!\n");
+  xsb_dbgmsg((LOG_STRUCT_MANAGER, "Subgoal structure-reclamation complete!\n"));
 }
 
 /*-------------------------------------------------------------------------*/

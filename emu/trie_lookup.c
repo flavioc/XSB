@@ -1176,7 +1176,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 #ifdef DEBUG_ASSERTIONS
     if ( ! IsLeafNode(parent) )
       TrieError_TooFewTerms("rec_sub_trie_lookup");
-    xsb_dbgmsg(LOG_TRIE, "Base case: empty TermStack");
+    xsb_dbgmsg((LOG_TRIE, "Base case: empty TermStack"));
 #endif
     return parent;
   }
@@ -1194,7 +1194,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
    * Otherwise, signal the failure of the exploration of this branch
    * by returning NULL.
    */
-  xsb_dbgmsg(LOG_TRIE, "Recursive case:");
+  xsb_dbgmsg((LOG_TRIE, "Recursive case:"));
   TermStack_Pop(subterm);
   TermStackLog_PushFrame;
   XSB_Deref(subterm);
@@ -1209,7 +1209,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
       var = BTN_Child(parent);
 
     if ( ! IsStandardizedVariable(subterm) ) {
-      xsb_dbgmsg(LOG_TRIE,"  Found new call variable: ");
+      xsb_dbgmsg((LOG_TRIE,"  Found new call variable: "));
 
       /*
        * Pair this free call variable with a new trie variable (there is at
@@ -1220,7 +1220,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
        */
       for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
 	if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
-	  xsb_dbgmsg(LOG_TRIE, "  Binding it to free trievar");
+	  xsb_dbgmsg((LOG_TRIE, "  Binding it to free trievar"));
 	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	  /*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
 	  TrieVarBindings[trievar_index] = subterm;
@@ -1235,18 +1235,18 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	    return leaf;
 	  }
 	  else {
-	  xsb_dbgmsg(LOG_TRIE, 
-		     " Binding to free trievar didn't lead to valid path");
+	  xsb_dbgmsg((LOG_TRIE, 
+		     " Binding to free trievar didn't lead to valid path"));
 	    Trail_PopAndReset;
 	    Trail_PopAndReset;
 	    break;
 	  }
 	}
-      xsb_dbgmsg(LOG_TRIE, "No free trievar here");
+      xsb_dbgmsg((LOG_TRIE, "No free trievar here"));
     }
     else {
-      xsb_dbgmsg(LOG_TRIE, "  Found repeat call variable\n"
-		 "  Option #1: Look to pair with repeat trie var");
+      xsb_dbgmsg((LOG_TRIE, "  Found repeat call variable\n"
+		 "  Option #1: Look to pair with repeat trie var"));
       /*
        * Option 1: Look for a nonlinear trie variable which has already been
        * --------  bound to this nonlinear call variable earlier in the
@@ -1265,7 +1265,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  ***********************************************/
 	  if ( are_identical_terms(TrieVarBindings[trievar_index],
 				   subterm) ) {
-	    xsb_dbgmsg(LOG_TRIE, "  Found trivar with identical binding");
+	    xsb_dbgmsg((LOG_TRIE, "  Found trivar with identical binding"));
 	    leaf = rec_sub_trie_lookup(cur,pathType);
 	    if ( IsNonNULL(leaf) ) {
 	      /*
@@ -1279,20 +1279,20 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	      return leaf;
 	    }
 	    else
-	      xsb_dbgmsg(LOG_TRIE, 
+	      xsb_dbgmsg((LOG_TRIE, 
 			 "  Pairing with identically bound trievar didn't lead"
-			 " to valid path");
+			 " to valid path"));
 	  }
 	}
       /*
        * Option 2: Bind the nonlinear call variable with an unbound trie
        * --------  variable.  There is only one of these in a sibling set.
        */    
-      xsb_dbgmsg(LOG_TRIE, 
-		 "  Option #2: Bind new trievar to repeat call var");
+      xsb_dbgmsg((LOG_TRIE, 
+		 "  Option #2: Bind new trievar to repeat call var"));
       for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
 	if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
-	  xsb_dbgmsg(LOG_TRIE, "    Found new trievar; binding it");
+	  xsb_dbgmsg((LOG_TRIE, "    Found new trievar; binding it"));
 	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	  /*** TrieVar_BindToMarkedCallVar(trievar_index,subterm); ***/
 	  TrieVarBindings[trievar_index] =
@@ -1304,9 +1304,9 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	    return leaf;
 	  }
 	  else {
-      xsb_dbgmsg(LOG_TRIE, 
+      xsb_dbgmsg((LOG_TRIE, 
 		 "    Binding new trievar to repeat callvar didn't lead to"
-		 " valid path");
+		 " valid path"));
 	    Trail_PopAndReset;
 	    break;
 	  }
@@ -1323,19 +1323,19 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * if needed).
      */
     if ( isconstant(subterm) ) {      /* XSB_INT, XSB_FLOAT, XSB_STRING */
-      xsb_dbgmsg(LOG_TRIE, "  Found constant");
+      xsb_dbgmsg((LOG_TRIE, "  Found constant"));
       symbol = EncodeTrieConstant(subterm);
       arity = 0;
       args = NULL;
     }
     else if ( isconstr(subterm) ) {   /* XSB_STRUCT */
-      xsb_dbgmsg(LOG_TRIE, "  Found structure");
+      xsb_dbgmsg((LOG_TRIE, "  Found structure"));
       symbol = EncodeTrieFunctor(subterm);
       arity = get_arity((Psc)*clref_val(subterm));
       args = clref_val(subterm) + 1;
     }
     else if ( islist(subterm) ) {     /* XSB_LIST */
-      xsb_dbgmsg(LOG_TRIE, "  Found list");
+      xsb_dbgmsg((LOG_TRIE, "  Found list"));
       symbol = EncodeTrieList(subterm);
       arity = 2;
       args = clref_val(subterm);
@@ -1367,11 +1367,11 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * Option 1: Look for an identical symbol in the trie.  There is at most
      * --------  one of these among a set of child nodes.
      */
-    xsb_dbgmsg(LOG_TRIE, "  Nonvar Option #1: Find matching symbol in trie");
+    xsb_dbgmsg((LOG_TRIE, "  Nonvar Option #1: Find matching symbol in trie"));
     for ( cur = match;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( symbol == BTN_Symbol(cur) ) {
 	int origTermStackTopIndex = TermStack_Top - TermStack_Base;
-	xsb_dbgmsg(LOG_TRIE, "  Found matching trie symbol");
+	xsb_dbgmsg((LOG_TRIE, "  Found matching trie symbol"));
 	TermStack_PushLowToHighVector(args,arity);
 	leaf = rec_sub_trie_lookup(cur,pathType);
 	if ( IsNonNULL(leaf) ) {
@@ -1383,8 +1383,8 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  /* Could not successfully continue from this match, so try another
 	     pairing, performed below.  Throw away whatever was pushed onto
 	     the TermStack above by resetting the top-of-stack pointer. */
-	  xsb_dbgmsg(LOG_TRIE, 
-		     "  Matching trie symbol didn't lead to valid path");
+	  xsb_dbgmsg((LOG_TRIE, 
+		     "  Matching trie symbol didn't lead to valid path"));
 	  TermStack_SetTOS(origTermStackTopIndex);
 	  break;
 	}
@@ -1394,21 +1394,21 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * Option 2: Look for a trie variable which has already been bound to
      * --------  an identical symbol during this process.
      */
-    xsb_dbgmsg(LOG_TRIE, 
-	       "  Nonvar Option #2: Match with previously bound trievar");
+    xsb_dbgmsg((LOG_TRIE, 
+	       "  Nonvar Option #2: Match with previously bound trievar"));
     for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( IsTrieVar(BTN_Symbol(cur)) && ! IsNewTrieVar(BTN_Symbol(cur)) ) {
 	trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	if ( are_identical_terms(TrieVarBindings[trievar_index],
 				    subterm) ) {
-	  xsb_dbgmsg(LOG_TRIE, "  Found trievar bound to matching symbol");
+	  xsb_dbgmsg((LOG_TRIE, "  Found trievar bound to matching symbol"));
 	  leaf = rec_sub_trie_lookup(cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
 	    *pathType = SUBSUMPTIVE_PATH;
 	    return leaf;
 	  }
 	  else
-	    xsb_dbgmsg(LOG_TRIE, "  Bound trievar didn't lead to valid path");
+	    xsb_dbgmsg((LOG_TRIE, "  Bound trievar didn't lead to valid path"));
 	}
       }
 
@@ -1416,10 +1416,10 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
      * Option 3: Bind the symbol with an unbound trie variable.
      * --------
      */
-    xsb_dbgmsg(LOG_TRIE, "  Nonvar Option #3: Bind free trievar to symbol");
+    xsb_dbgmsg((LOG_TRIE, "  Nonvar Option #3: Bind free trievar to symbol"));
     for ( cur = var;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( IsTrieVar(BTN_Symbol(cur)) && IsNewTrieVar(BTN_Symbol(cur)) ) {
-	xsb_dbgmsg(LOG_TRIE, "  Binding free trievar to symbol");
+	xsb_dbgmsg((LOG_TRIE, "  Binding free trievar to symbol"));
 	trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	/*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
 	TrieVarBindings[trievar_index] = subterm;
@@ -1433,9 +1433,9 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 	  /* Remove the binding from the variable created above, exit the
              loop, and drop through to fail; this was our last option.  Note
              that there is only one unbound trie variable per sibling set. */
-	  xsb_dbgmsg(LOG_TRIE, 
+	  xsb_dbgmsg((LOG_TRIE, 
 		     "Binding free trievar to symbol didn't lead to "
-		     "valid path");
+		     "valid path"));
 	  Trail_PopAndReset;
 	  break;
 	}
@@ -1443,7 +1443,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
   }
 
   /* Nothing worked, so fail.  Make stacks same as when this was called. */
-  xsb_dbgmsg(LOG_TRIE, "All options failed!");
+  xsb_dbgmsg((LOG_TRIE, "All options failed!"));
   TermStackLog_PopAndReset;
   *pathType = NO_PATH;
   return NULL;

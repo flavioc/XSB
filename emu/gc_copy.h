@@ -49,9 +49,9 @@ static void CHECK(CPtr p)
 { CPtr q;
   q = (CPtr)(*p);
   if (((heap_bot - offset) <= q) && (q < next)) return;
-  xsb_dbgmsg(LOG_GC, "really bad thing discovered");
+  xsb_dbgmsg((LOG_GC, "really bad thing discovered"));
 } /* CHECK */
-#define GCDBG(mes,val) /*if (num_gc == 61)*/ xsb_dbgmsg(LOG_GC,mes,val)
+#define GCDBG(mes,val) /*if (num_gc == 61)*/ xsb_dbgmsg((LOG_GC,mes,val))
 #else
 #define CHECK(p)
 #define GCDBG(mes,val)
@@ -99,8 +99,8 @@ static void find_and_copy_block(CPtr hp)
 	if (points_into_heap(q)) {
 	  GCDBG("Reference to heap with tag %d\n", tag);
 
-	  xsb_dbgmsg(LOG_GC, "In adapting case for %p with %p (%lx)...",
-		     scan, q, cell(q));
+	  xsb_dbgmsg((LOG_GC, "In adapting case for %p with %p (%lx)...",
+		     scan, q, cell(q)));
 
 	  if (h_marked(q-heap_bot)) {
 	    copy_block(q,next);
@@ -203,8 +203,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     offset = heap_bot-begin_new_h;
     scan = next = begin_new_h; 
 
-    xsb_dbgmsg(LOG_GC, 
-	       "New heap space between %p and %p", begin_new_h,end_new_h);
+    xsb_dbgmsg((LOG_GC, 
+	       "New heap space between %p and %p", begin_new_h,end_new_h));
 
   /* the order in which stuff is copied might be important                 */
   /* but like the price of a ticket from Seattle to New York: nobody knows */
@@ -289,7 +289,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  contents = cell(p) ;
           q = hp_pointer_from_cell(contents,&tag) ;
           if (!q)
-	    xsb_dbgmsg(LOG_GC, "non null delayreg points not in heap");
+	    xsb_dbgmsg((LOG_GC, "non null delayreg points not in heap"));
           else
 	    {
 	      if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
@@ -299,8 +299,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     }
 
     if (next != end_new_h) { 
-      xsb_dbgmsg(LOG_GC, "heap copy gc - inconsistent hreg: %d cells not copied. (num_gc=%d)\n",
-		 (end_new_h-next),num_gc);
+      xsb_dbgmsg((LOG_GC, "heap copy gc - inconsistent hreg: %d cells not copied. (num_gc=%d)\n",
+		 (end_new_h-next),num_gc));
     }
 
     memcpy((void *)heap_bot, (void *)begin_new_h, marked*sizeof(Cell));

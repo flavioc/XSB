@@ -87,12 +87,12 @@ xsbBucket *search_bucket(Cell name,
 	    free(bucket);
 	  } else {
 	    mark_bucket_free(prev,table->bucket_size);
-	    xsb_dbgmsg(LOG_HASHTABLE,
+	    xsb_dbgmsg((LOG_HASHTABLE,
 		       "SEARCH_BUCKET: Destroying storage handle for %s\n",
-		       string_val(name));
-	    xsb_dbgmsg(LOG_HASHTABLE, 
+		       string_val(name)));
+	    xsb_dbgmsg((LOG_HASHTABLE, 
 		       "SEARCH_BUCKET: Bucket nameptr is %p, next bucket %p\n",
-		       prev->name, prev->next);
+		       prev->name, prev->next));
 	  }
 	} else {
 	  /* Not top bucket: rearrange pointers & free space */
@@ -156,12 +156,12 @@ void show_table_state(xsbHashTable *table)
   xsbBucket *bucket;
   int i;
 
-  xsb_dbgmsg(LOG_DEBUG,"\nCell Status\tOverflow Count\n");
+  xsb_dbgmsg((LOG_DEBUG,"\nCell Status\tOverflow Count\n"));
   for (i=0; i < table->length; i++) {
     bucket = get_top_bucket(table,i);
     if (is_free_bucket(bucket)) {
       /* free cell */
-      xsb_dbgmsg(LOG_DEBUG, "   ---\t\t   ---");
+      xsb_dbgmsg((LOG_DEBUG, "   ---\t\t   ---"));
     } else {
       int overflow_count=0;
 
@@ -171,7 +171,7 @@ void show_table_state(xsbHashTable *table)
 	overflow_count++;
 	bucket = bucket->next;
       }
-      xsb_dbgmsg(LOG_DEBUG,"   %d", overflow_count);
+      xsb_dbgmsg((LOG_DEBUG,"   %d", overflow_count));
     }
   }
 }

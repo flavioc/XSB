@@ -417,7 +417,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
     } /* for */
   }
   if (inst_addr != end_addr) {
-    xsb_dbgmsg(LOG_DEBUG, "inst_addr %p, end_addr %p", inst_addr, end_addr);
+    xsb_dbgmsg((LOG_DEBUG, "inst_addr %p, end_addr %p", inst_addr, end_addr));
     return FALSE;
   }
   else return TRUE;
@@ -569,7 +569,7 @@ inline static void get_obj_atom(FILE *fd, VarString *atom)
      In this case, the length is stored in 4 bytes & we use get_obj_word_bb */
   if (x > SHORT_LDOPTIONLEN) { /* handle unusual case specially */
     get_obj_word_bb(&len);
-    /* xsb_dbgmsg("get_obj_len = %d... Case is not handled yet!\n",len); */
+    /* xsb_dbgmsg(("get_obj_len = %d... Case is not handled yet!\n",len)); */
   } else
     len = x;
 
@@ -618,7 +618,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     env_type_set(temp_pair->psc_ptr, t_env, t_type, (xsbBool)is_new);
     /* dsw added following, maybe wrongly */
     if (exp && t_env == T_EXPORTED) {
-      /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr); */
+      /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
       if (is_new) set_data(temp_pair->psc_ptr, mod);
       link_sym(temp_pair->psc_ptr, (Psc)flags[CURRENT_MODULE]);
     }
@@ -626,7 +626,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   if (!temp_pair) return FALSE;
   
   /*	if (count >= REL_TAB_SIZE) {
-	xsb_dbgmsg("Reloc_table overflow");
+	xsb_dbgmsg(("Reloc_table overflow"));
 	return FALSE;
 	}  */
   
@@ -651,7 +651,7 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
   int i;
   
   reloc_table = (pw *) calloc((psc_count), sizeof(pw));
-  /* xsb_dbgmsg("reloc_table %x,psc_count %d",reloc_table,psc_count); */
+  /* xsb_dbgmsg(("reloc_table %x,psc_count %d",reloc_table,psc_count)); */
 
   for (i = count; i < psc_count; i++) {
     if (!load_one_sym(fd, cur_mod, i, exp)) return FALSE;
@@ -689,12 +689,12 @@ static byte *loader1(FILE *fd, int exp)
   get_obj_word_bb(&psc_count);
   if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) 
     return FALSE;
-  /*	xsb_dbgmsg("symbol table of module %s loaded", name);	*/
+  /*	xsb_dbgmsg(("symbol table of module %s loaded", name));	*/
   do {
-    /*		xsb_dbgmsg("Seg count: %d",seg_count); */
+    /*		xsb_dbgmsg(("Seg count: %d",seg_count)); */
     if (read_magic(fd) != 0x11121306) break;
     seg_count++;
-    /*		xsb_dbgmsg("Seg count: %d",seg_count); */
+    /*		xsb_dbgmsg(("Seg count: %d",seg_count)); */
     /* get the header of the segment */
     get_obj_byte(&arity);
     get_obj_byte(&name_len);
@@ -705,7 +705,7 @@ static byte *loader1(FILE *fd, int exp)
     get_obj_string(name, name_len);
     name[(int)name_len] = 0;
     get_obj_word_bb(&text_bytes);
-    /*		xsb_dbgmsg("Text Bytes %x %d",text_bytes,text_bytes);*/
+    /*		xsb_dbgmsg(("Text Bytes %x %d",text_bytes,text_bytes));*/
     get_obj_word_bb(&index_bytes);
     /* load the text-index segment */
     seg_first_inst = load_seg(fd,seg_count,text_bytes,index_bytes);
@@ -746,8 +746,8 @@ static byte *loader1(FILE *fd, int exp)
     }
   } while (1==1);
   /*
-    xsb_dbgmsg("The first instruction of module %s is %x",
-    get_name(cur_mod), first_inst);
+    xsb_dbgmsg(("The first instruction of module %s is %x",
+    get_name(cur_mod), first_inst));
   */
   return (pb)first_inst;
 } /* loader1 */

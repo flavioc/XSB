@@ -67,9 +67,9 @@ static inline STORAGE_HANDLE *get_storage_handle(Cell name)
   /* new buckets are filled out with 0's by the calloc in hashtable_xsb.c */
   if (handle_cell->handle==(Cell)0) {
     /* initialize new handle */
-    xsb_dbgmsg(LOG_STORAGE,
+    xsb_dbgmsg((LOG_STORAGE,
 	       "GET_STORAGE_HANDLE: New trie created for %s\n", 
-	       string_val(name));
+	       string_val(name)));
     handle_cell->handle= newtrie();
     /* Note: not necessary to initialize snapshot_number&changed: handle_cell
        was calloc()'ed 
@@ -78,9 +78,9 @@ static inline STORAGE_HANDLE *get_storage_handle(Cell name)
     */
   }
   else
-    xsb_dbgmsg(LOG_STORAGE,
+    xsb_dbgmsg((LOG_STORAGE,
 	       "GET_STORAGE_HANDLE: Using existing trie for %s\n",
-	       string_val(name));
+	       string_val(name)));
   return handle_cell;
 }
 
@@ -94,9 +94,9 @@ STORAGE_HANDLE *storage_builtin(int builtin_number, Cell name)
   case MARK_STORAGE_CHANGED:
     return mark_storage_changed(name);
   case DESTROY_STORAGE_HANDLE: {
-    xsb_dbgmsg(LOG_STORAGE,
+    xsb_dbgmsg((LOG_STORAGE,
 	       "STORAGE_BUILTIN: Destroying storage handle for %s\n",
-	       string_val(name));
+	       string_val(name)));
     destroy_storage_handle(name);
     return NULL;
   }

@@ -261,11 +261,11 @@ static DE intern_delay_element(Cell delay_elem)
   }
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(LOG_DEBUG,">>>> ");
+  xsb_dbgmsg((LOG_DEBUG,">>>> "));
   dbg_print_delay_list(LOG_DEBUG,stddbg, delayreg);
-  xsb_dbgmsg(LOG_DEBUG, "\n");
-  xsb_dbgmsg(LOG_DEBUG, ">>>> (Intern ONE de) arity of answer subsf = %d\n", 
-	     arity);
+  xsb_dbgmsg((LOG_DEBUG, "\n"));
+  xsb_dbgmsg((LOG_DEBUG, ">>>> (Intern ONE de) arity of answer subsf = %d\n", 
+	     arity));
 #endif
 
   if (!was_simplifiable(subgoal, ans_subst)) {
@@ -439,11 +439,11 @@ void do_delay_stuff(NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
     DL dl = NULL;
 
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(LOG_DEBUG, ">>>> Start do_delay_stuff ...\n");
-    xsb_dbgmsg(LOG_DEBUG, ">>>> The delay list for this subgoal itself is:\n");
-    xsb_dbgmsg(LOG_DEBUG, ">>>> "); 
+    xsb_dbgmsg((LOG_DEBUG, ">>>> Start do_delay_stuff ...\n"));
+    xsb_dbgmsg((LOG_DEBUG, ">>>> The delay list for this subgoal itself is:\n"));
+    xsb_dbgmsg((LOG_DEBUG, ">>>> ")); 
     dbg_print_delay_list(LOG_DEBUG,stddbg, delayreg);
-    xsb_dbgmsg(LOG_DEBUG, "\n");
+    xsb_dbgmsg((LOG_DEBUG, "\n"));
 #endif
 
     if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
@@ -578,9 +578,9 @@ static void handle_empty_dl_creation(DL dl)
     remove_dl_from_dl_list(dl, asi);
     subgoal = asi_subgoal(Delay(as_leaf));
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(LOG_DEBUG, ">>>> the subgoal is:");
+    xsb_dbgmsg((LOG_DEBUG, ">>>> the subgoal is:"));
     dbg_print_subgoal(LOG_DEBUG,stddbg, subgoal); 
-    xsb_dbgmsg(LOG_DEBUG, "\n");
+    xsb_dbgmsg((LOG_DEBUG, "\n"));
 #endif
     /*
      * simplify_pos_unconditional(as_leaf) will release all other DLs for
@@ -701,10 +701,10 @@ void simplify_neg_fails(VariantSF subgoal)
   DL dl;
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(LOG_DEBUG, ">>>> start simplify_neg_fails()\n");
-  xsb_dbgmsg(LOG_DEBUG, ">>>> the subgoal is: ");
+  xsb_dbgmsg((LOG_DEBUG, ">>>> start simplify_neg_fails()\n"));
+  xsb_dbgmsg((LOG_DEBUG, ">>>> the subgoal is: "));
   dbg_print_subgoal(LOG_DEBUG,stddbg, subgoal); 
-  xsb_dbgmsg(LOG_DEBUG, "\n");
+  xsb_dbgmsg((LOG_DEBUG, "\n"));
 #endif
 
   while ((nde = subg_nde_list(subgoal))) {

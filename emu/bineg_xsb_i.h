@@ -106,9 +106,9 @@ case IS_INCOMPLETE: {
     xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
 #endif
-  xsb_dbgmsg(LOG_DELAY, "Is incomplete for ");
+  xsb_dbgmsg((LOG_DELAY, "Is incomplete for "));
   dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);
-  xsb_dbgmsg(LOG_DELAY, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF));
+  xsb_dbgmsg((LOG_DELAY, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF)));
 
   if (is_completed(producerSF)) {
     neg_delay = FALSE;
@@ -120,12 +120,12 @@ case IS_INCOMPLETE: {
     CPtr old_cptop;
 #endif
 
-    xsb_dbgmsg(LOG_DELAY, "... Saving a completion suspension (~");
+    xsb_dbgmsg((LOG_DELAY, "... Saving a completion suspension (~"));
     dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);
-    xsb_dbgmsg(LOG_DELAY, " in the body of ");
+    xsb_dbgmsg((LOG_DELAY, " in the body of "));
     dbg_print_subgoal(LOG_DELAY, stddbg, (VariantSF)t_ptcp);
-    xsb_dbgmsg(LOG_DELAY,"an UNTABLED predicate");
-    xsb_dbgmsg(LOG_DELAY, ")\n");
+    xsb_dbgmsg((LOG_DELAY,"an UNTABLED predicate"));
+    xsb_dbgmsg((LOG_DELAY, ")\n"));
 
     adjust_level(subg_compl_stack_ptr(producerSF));
     save_find_locx(ereg);
@@ -217,9 +217,9 @@ case IS_INCOMPLETE: {
 	  new_heap_free(hreg);
 	  de = dl_de_list(dl);
 
-	  xsb_dbgmsg(LOG_DELAY, "orig_delayed_term(");
+	  xsb_dbgmsg((LOG_DELAY, "orig_delayed_term("));
 	  dbg_print_subgoal(LOG_DELAY, stddbg, de_subgoal(de)); 
-	  xsb_dbgmsg(LOG_DELAY, ").\n");
+	  xsb_dbgmsg((LOG_DELAY, ").\n"));
 	  /*
 	   * This answer may have more than one delay list.  We have to
 	   * restore copy_of_num_heap_term_vars for each of them.  But,
