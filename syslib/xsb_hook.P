@@ -29,6 +29,8 @@
 %% Hooks
 :- dynamic
 	xsb_exit_hook(_),
+	xsb_assert_hook(_),
+	xsb_retract_hook(_),
 	xsb_before_prompt_hook(_),
 	xsb_undefined_predicate_hook(_).
 
@@ -49,7 +51,7 @@ add_xsb_hook(Hook) :-
 add_xsb_hook(Hook) :-
 	(   callable(Hook),
 	    Hook =.. [HookName, Call]
-	->  ( conpsc(Call,Psc),
+	->  ( term_psc(Call,Psc),
 		psc_type(Psc,Type),
 		Type > T_ORDI
 	    ->    assert(Hook)
@@ -71,7 +73,7 @@ call_one_hook(Hook) :-
 	Hook =.. [HookName, HookPredicate],
 	(   atom(HookName)
 	->  (   callable(HookPredicate)
-	    ->  (   conpsc(HookPredicate,Psc),
+	    ->  (   term_psc(HookPredicate,Psc),
 		    psc_type(Psc,Type),
 		    Type > T_ORDI
 		->	call_c(HookPredicate)
@@ -115,7 +117,7 @@ call_xsb_hook(Hook,ArgList,until_true) :-
 %% Substitute ArgList for the first arg of the hook predicate to be called.
 %% Do all the necessary checks for arity and such
 substituteArgs(HookName,HookPredicate,ArgList,HookedUpCall) :-
-	conpsc(HookPredicate,Psc),
+	term_psc(HookPredicate,Psc),
 	(   psc_type(Psc,Type),
 	    Type =< T_ORDI
 	->  abort(['CALL_XSB_HOOK: undefined hook, ',HookPredicate])

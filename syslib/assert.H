@@ -35,9 +35,10 @@
 
 
 :- import append/3 from basics.
-:- import (=..)/2, functor/3, integer/1, callable/1, call_c/1,
+:- import (=..)/2, functor/3, integer/1, callable/1, 
 	  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1
      from standard.
+%%:- import call_c/1 from standard.
 :- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,
 	  db_retract_nr/3, db_reclaim_space/2
      from dbclause.
@@ -45,12 +46,13 @@
 	  retract_index/1 from file_op.
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2, buff_byte/3,
 	  buff_word/3, conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
-	  psc_tabled/2, psc_set_ep/2, unload_seg/1, term_psc/2,
-	  db_build_prref/3
+	  psc_tabled/2, psc_set_ep/2, unload_seg/1, db_build_prref/3
      from machine.
+%%:- import term_psc/2 from machine.
 :- import '_$table'/1 from file_op.
 :- import standard_symbol/3 from std_xsb.
 :- import default_assert_size/1 from config.
 :- import '_$multifile_retract'/3 from parse.
-:- import assert_hook/1, retract_hook/2 from usermod.
+%%:- import assert_hook/1, retract_hook/2 from usermod.
+:- import call_xsb_hook/3, xsb_assert_hook/1, xsb_retract_hook/1 from xsb_hook.
 
