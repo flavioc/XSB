@@ -348,8 +348,10 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
 }
 
 void init_interrupt(void);
-/* change from Jiyangs way of doing things. */
-inline static void keyint_proc(int sig)
+
+/* TLS: 2/02 removed "inline static" modifiers so that this function
+   can be called from interprolog_callback.c */
+void keyint_proc(int sig)
 {
 #ifndef LINUX
   init_interrupt();  /* reset interrupt, if using signal */

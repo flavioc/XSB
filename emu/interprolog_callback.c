@@ -1,3 +1,13 @@
+/* 
+** Author(s): Miguel Calejo, Vera Pereira
+** Contact:   interprolog@declarativa.com, http://www.declarativa.com, http://www.xsb.com
+** Copyright (C) XSB Inc., USA, 2001
+** Use and distribution, without any warranties, under the terms of the 
+** GNU Library General Public License, readable in http://www.fsf.org/copyleft/lgpl.html
+*/
+
+/* This file provides the implementation for the native methods of NativeEngine.java, 
+as well as the XSB Prolog built-in used by InterProlog */
 #include <jni.h>
 #include "com_xsb_interprolog_NativeEngine.h"
 #include <stdio.h>
@@ -6,7 +16,9 @@
 #include <time.h>
 // for interrupts:
 #include "sig_xsb.h"
-extern int *asynint_ptr;
+#include <signal.h>
+// extern int *asynint_ptr;
+extern void keyint_proc(int);
 
 /* The following include is necessary to get the macros and routine
    headers */
@@ -148,8 +160,10 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal
 
 JNIEXPORT void JNICALL 
 Java_com_xsb_interprolog_NativeEngine_xsb_1interrupt (JNIEnv *env, jobject obj){
+	/* Do XSB's "interrupt" thing, by simulating a ctrl-C: */
 	// cf. keyint_proc(SIGINT) in subp.c; 
-	*asynint_ptr |= KEYINT_MARK; /* Do XSB's "interrupt" thing */
+	// *asynint_ptr |= KEYINT_MARK; 
+	keyint_proc(SIGINT);
 }
 
 JNIEXPORT void JNICALL Java_com_xsb_interprolog_NativeEngine_xsb_1setDebug
@@ -158,8 +172,9 @@ JNIEXPORT void JNICALL Java_com_xsb_interprolog_NativeEngine_xsb_1setDebug
 }
 
   
+// the XSB Prolog built-in used in interprolog.P
 // arguments: +length, +byte list, -new byte list
-xsbBool do_callback() {
+xsbBool interprolog_callback() {
 	JNIEnv *env = theEnv;
 	jobject obj = theObj;
 	jclass cls;

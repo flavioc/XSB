@@ -31,12 +31,14 @@
 
 #include "basictypes.h"
 
+/*
 xsbBool interprolog_callback() {
   printf("found interprolog_callback()\n");
   return TRUE;
 }
+*/
 
-/* extern xsbBool interprolog_callback();*/
+extern xsbBool interprolog_callback();
 
 #endif
 
