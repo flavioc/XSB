@@ -28,9 +28,12 @@
 
 :- import log_ith/3 from basics.
 
-:- import assert/1, retract/1 from assert.
+:- import (dynamic)/1, assert/1, retract/1 from assert.
 
 :- local '$globalvarmap'/2, '$globalvarindex'/1.
+
+
+
 :- dynamic '$globalvarmap'/2.
 :- dynamic '$globalvarindex'/1.
 

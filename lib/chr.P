@@ -110,9 +110,17 @@
 	del_attr/2,
 	put_attr/3 from machine.
 
-:- import call/1 from standard.
+:- import call/1,
+	  arg/3,
+	  (=..)/2,
+	  compound/1,
+	  functor/3,
+	  ','/2
+   from standard.
 
-:- import member/2 from basics.
+:- import findall/3, sort/2 from setof.
+
+:- import copy_term/2, member/2 from basics.
 
 :- import append_lists/2, take/3 from lists.
 

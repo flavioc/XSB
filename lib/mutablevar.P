@@ -29,7 +29,6 @@
 	is_mutable/1.
 
 :- import get_attr/3, put_attr/3 from machine.
-:- import verify_attribute_handler/4 from usermod.
 
 :- import install_verify_attribute_handler/4 from machine.
 

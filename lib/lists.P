@@ -114,6 +114,8 @@
          min_list/2,
          sum_list/2.
 
+:- import integer/1 from standard.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % written by Bart Demoen
 is_list(L) :-

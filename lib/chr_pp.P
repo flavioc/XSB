@@ -54,6 +54,24 @@
 
 :- import pretty_print/1 from pretty_print.
 
+:- import copy_term/2 from basics.
+
+:- import
+	nl/0,
+	write/1,
+	told/0,
+	tell/1,
+	(=..)/2,
+	name/2,
+	functor/3,
+	sort/2,
+	atomic/1,
+	seen/0,
+	see/1,
+	read/1
+   from standard.
+
+:- import bagof/3 from setof.
 
 :- op(1200,xfx,@).
 :- op(1190,xfx,pragma).
