@@ -278,17 +278,27 @@ load_pred1(PSC) :-
 		%% module loaded, and pred/foreign-pred is there
 		'_$cutto'(B)
 		;
+		throw(error(undefined_predicate(Name,Arity,ModName),
+			    ['The predicate: ', Name, '/', Arity,
+			     ' is not defined in module ', ModName]))
+	    /*
 		call_undef_pred_handlers(PSC, ['The predicate: ',
 					       Name, '/', Arity,
 					       ' is not defined in module ',
 					       ModName])
+	    */
 	    )
 	;
+	    throw(error(undefined_predicate(Name,Arity,usermod),
+			['Undefined predicate: ', Name, '/', Arity]))
+	/*
 	    call_undef_pred_handlers(PSC, ['Undefined predicate: ',
 					   Name, '/', Arity])
+	*/
 	).
 
 
+/*
 %% Invoke undefined pred handlers until one succeeds.
 %% If the successful handler sets the 4th arg to true, then succeed
 %% else fail.
@@ -329,6 +339,7 @@ call_undef_pred_handlers(PSC,AbortMsg) :-
 reset_undef_pred_handlers :- conset('_$_$_undefhook',0).
 set_undef_pred_handling :- conset('_$_$_undefhook',1).
 not_handling_undef_pred :- conget('_$_$_undefhook',0).
+*/
 
 /*
  *  Loads and executes the directives of a module.  The file containing
@@ -361,9 +372,9 @@ load(ModName) :-
 	    ->	reconsult(FileName_P)
 	    )
 	;   tilde_expand_filename(ModName,ExpandedModName),
-	    throw(error(existence_error(file,ExpandedModName),['Module ', 
-			     ExpandedModName,
-	                     ' is not found in XSB library directories']))
+	    throw(error(existence_error(module,ExpandedModName),
+			['Module ', ExpandedModName,
+			 ' is not found in XSB library directories']))
 	).
 
 /*

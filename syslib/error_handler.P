@@ -45,7 +45,7 @@ default_error_handler(Error) :-
 	!,
 	messageln('Aborting...', STDFDBK),
         close_open_tables,
-	reset_undef_pred_handlers, 
+	%%reset_undef_pred_handlers, 
 	fail.
 
 /* messages are handled via abort/1.  */
@@ -61,9 +61,10 @@ default_sys_error_handler(error(type_error(Valid_type,Culprit),Msg)) :-
 default_sys_error_handler(error(domain_error(Valid_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Domain (',
 		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR).
-default_sys_error_handler(error(existence_error(Object_type,Culprit),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: [Existence (',
-	           Object_type,Culprit,' does not exist)] ', Msg), STDERR).
+default_sys_error_handler(error(existence_error(_Object_type,_Culprit),Msg)) :-
+	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
+default_sys_error_handler(error(undefined_predicate(_Name,_Arity,_Module),Msg)) :-
+	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
 default_sys_error_handler(error(permission_error(Op,Obj_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Permission (Operation',Culprit,
 	           ' of type ',Op,' on ',Obj_type,')] ', Msg), STDERR).

@@ -26,7 +26,7 @@
 
 :- export load_pred/1, load/1, libpath/1, set_inthandler/2,
 	'_$load_undef'/1,
-	reset_undef_pred_handlers/0,
+	%%reset_undef_pred_handlers/0,
 	windows_os_loader/0.
 
 :- import abort/1, catch/3,throw/1 from standard.
@@ -46,5 +46,5 @@
 	  unload_seg/1, machine_file_exists/1, call0/1,
 	  formatted_io/5, slash/1, dirname_canonic/2
    from machine.
-:- import call_xsb_hook/3, xsb_undefined_predicate_hook/1 from xsb_hook.
+%%:- import call_xsb_hook/3, xsb_undefined_predicate_hook/1 from xsb_hook.
 

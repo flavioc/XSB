@@ -27,7 +27,7 @@
 :- export default_error_handler/1.
 
 :- import (dynamic)/1 from assert.
-:- import reset_undef_pred_handlers/0 from loader.
+%%:- import reset_undef_pred_handlers/0 from loader.
 :- import close_open_tables/0 from machine.
 :- import messageln/2 from standard.
 
