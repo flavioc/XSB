@@ -272,7 +272,7 @@ void construct_ret_for_call(void)
       term = ptoc_tag(1);
       sreg = hreg;
       bind_cs((CPtr)term, sreg);
-      sym = (Pair)insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
+      sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
       new_heap_functor(sreg, sym->psc_ptr);
       for (i = arity; 0 < i; i--) {
 	var = cell(Temp_VarPosReg+i);
@@ -687,13 +687,14 @@ void breg_retskel(void)
     Cell    term; /* the function assumes that term is free on call ! */
     SGFrame sg_frame;
     CPtr    tcp, cptr, where, sreg;
+    int     new, i;
 #ifndef CHAT
     int     arity;
 #endif
-    int     breg_offset, Nvars, new, i;
+    Integer breg_offset, Nvars;
 
     breg_offset = ptoc_int(1);
-    tcp = (CPtr)((int)(tcpstack.high) - breg_offset);
+    tcp = (CPtr)((Integer)(tcpstack.high) - breg_offset);
     sg_frame = (SGFrame)(tcp_subgoal_ptr(tcp));
 #ifdef CHAT
     where = compl_hreg(subg_compl_stack_ptr(sg_frame));
@@ -711,7 +712,7 @@ void breg_retskel(void)
       term = ptoc_tag(3);
       sreg = hreg;
       bind_cs((CPtr)term, sreg);
-      sym = (Pair)insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &new);
+      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &new);
       new_heap_functor(sreg, sym->psc_ptr);
 #ifdef CHAT
       for (i = Nvars; i > 0; i--) {
