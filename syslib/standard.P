@@ -908,9 +908,24 @@ statistics :- stat_sta(1).
 
 statistics(X) :- stat_sta(X).
 
-get_date(_Year,_Month,_Day,_Hour,_Minute) :-
+get_date(_Year,_Month,_Day,_Hour,_Minute,_Second) :-
 	'_$builtin'(GET_DATE).
 
+now(When) :-
+	(   var(When)
+	->  get_date(Y,Mo,D,H,Mi,S),
+	    concat_atom([Y,'/',Mo,'/',D,' ',H,':',Mi,':',S],When)
+	;   throw(error(instantiation_error,
+			('Error: now(-When) called with bound var: ',When)))
+	).
+
+datime(Datime) :-
+	(   var(When)
+	->  get_date(Y,Mo,D,H,Mi,S),
+	    Datime = datime(Y,Mo,D,H,Mi,S)
+	;   throw(error(instantiation_error,
+		('Error: datime(-Datime) called with bound var: ',When)))
+	).
 
 %-----------------------------------------------------------------------------%
 

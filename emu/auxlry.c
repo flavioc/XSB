@@ -94,7 +94,7 @@ double cpu_time(void)
 /*----------------------------------------------------------------------*/
 
 void get_date(int *year, int *month, int *day,
-	     int *hour, int *minute)
+	     int *hour, int *minute, int *second)
 {
 #ifdef WIN_NT
     SYSTEMTIME SystemTime;
@@ -105,6 +105,7 @@ void get_date(int *year, int *month, int *day,
     *day = SystemTime.wDay;
     *hour = SystemTime.wHour;
     *minute = SystemTime.wMinute;
+    *second = SystemTime.wSecond;
     GetTimeZoneInformation(&tz);
     *hour = *hour + tz.Bias/60;
     *minute = *minute + tz.Bias % 60;
@@ -122,6 +123,7 @@ void get_date(int *year, int *month, int *day,
     *day = tm->tm_mday;
     *hour = tm->tm_hour;
     *minute = tm->tm_min;
+    *second = tm->tm_sec;
 #endif
 #endif
 }

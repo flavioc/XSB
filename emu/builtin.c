@@ -1241,13 +1241,14 @@ int builtin_call(byte number)
     break;
   }
   case GET_DATE: {
-    int year=0, month=0, day=0, hour=0, minute=0;
-    get_date(&year,&month,&day,&hour,&minute);
+    int year=0, month=0, day=0, hour=0, minute=0, second=0;
+    get_date(&year,&month,&day,&hour,&minute,&second);
     ctop_int(1,year);
     ctop_int(2,month);
     ctop_int(3,day);
     ctop_int(4,hour);
     ctop_int(5,minute);
+    ctop_int(6,second);
     break;
   }
   case CODE_LOAD:		/* R1: +FileName, bytecode file to be loaded */
