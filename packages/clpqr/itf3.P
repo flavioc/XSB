@@ -67,7 +67,7 @@ verify_attributes(X, Y) :-
 	numbers_only(Y, X),
 	put_atts(X, forward(Y)),
 	verify_nonzero(X, Y),
-	verify_type(X, Y, Later, []),
+	verify_type(X, Y, _Later, []),
 %	verify_type(X, Y, [], []),
 %	write('.... Later = '), writeln(Later),
 	verify_lin(X, Y),
