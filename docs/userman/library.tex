@@ -366,14 +366,20 @@ following symbolic definitions:
     #define STDDBG           5    /* output for debugging info       */
     #define STDFDBK          6    /* output for XSB feedback
                                      (prompt/yes/no/Aborting/answers) */
-    #define OREAD            0    /* open for read        */
-    #define OWRITE           1    /* open for write       */
-    #define OAPPEND          2    /* open for append      */
-    #define OSTRINGR         3    /* open string for reading */
-    #define OSTRINGW         4    /* open string for writing (not implemented) */
 
     #define AF_INET     0     /* XSB-side socket request for Internet domain */
     #define AF_UNIX     1     /* XSB-side socket request for UNIX domain */
+\end{verbatim}
+%%
+In addition, the file \verb|emu/file_modes_xsb.h| provides the definitions
+for the file opening modes:
+%%
+\begin{verbatim}
+    #define OREAD          0    /* open for read           */
+    #define OWRITE         1    /* open for write          */
+    #define OAPPEND        2    /* open for append         */
+    #define OSTRINGR       3    /* open string for reading */
+    #define OSTRINGW       4    /* open string for writing (not implemented) */
 \end{verbatim}
 %%
 These definitions can be used in user programs, if the following is
@@ -382,6 +388,7 @@ provided at the top of the source file:
 \begin{verbatim}
     compiler_options([xpp_on]).
     #include "standard.h"
+    #include "file_modes_xsb.h"
 \end{verbatim}
 %%
 (Note: the XSB preprocessor is not invoked on clauses typed into an
