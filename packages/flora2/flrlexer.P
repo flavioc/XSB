@@ -26,12 +26,35 @@
 
 :- compiler_options([xpp_on]).
 
-#define	LINE_NO	line_no
-#define CHAR_NO	char_no
+#define	LINE_NO		flora_lexer_line_no
+#define CHAR_NO		flora_lexer_char_no
+#define CURR_FILE	flora_lexer_current_file
 
 #include "char_defs.h"
 #include "flora_errors.flh"
 #include "flora_terms.flh"
+
+
+/****************************************************************************
+  flora_reset_lexer/0
+  flora_reset_lexer(+FileName)
+****************************************************************************/
+flora_reset_lexer :-
+	reset_file_stack,
+	reset_charpos.
+
+
+flora_reset_lexer(FileName) :-
+	reset_file_stack,
+	flora_begin_file(FileName).
+
+
+/****************************************************************************
+  reset_charpos
+  resets the line number counter and character number counter. They together
+  denote the position of the next character to be read.
+****************************************************************************/
+reset_charpos :- set_charpos(1,1).
 
 
 /****************************************************************************
@@ -41,6 +64,51 @@
 set_charpos(LN,CN) :-
 	conset(LINE_NO,LN),
 	conset(CHAR_NO,CN).
+
+
+/****************************************************************************
+  reset_file_stack/0
+****************************************************************************/
+reset_file_stack :-
+	%% Set the top of stack to 0.
+	conset(CURR_FILE,0),
+	retractall(flora_file_stack(_,_)).
+
+
+/****************************************************************************
+  flora_begin_file(+FileName)
+****************************************************************************/
+flora_begin_file(FileName) :-
+	conget(CURR_FILE,N),
+	M is N + 1,
+	conset(CURR_FILE,M),
+	assert(flora_file_stack(M,FileName)),
+	reset_charpos.
+
+
+/****************************************************************************
+  flora_end_file(+LineNumber)
+****************************************************************************/
+flora_end_file(LineNumber) :-
+	conget(CURR_FILE,N),
+	M is N - 1,
+	conset(CURR_FILE,M),
+	retractall(flora_file_stack(N,_)),
+	set_charpos(LineNumber,1).
+
+
+/****************************************************************************
+  flora_current_compile_filename(+FileName)
+
+  This procedure returns the name of  the current file being processed.
+  It fails if a shell command is being processed.
+****************************************************************************/
+flora_current_compile_filename(Name) :-
+	conget(CURR_FILE,N),
+	flora_file_stack(N,FileName),
+	parse_filename(FileName,_,Base,Ext),
+	(Ext == '' -> Name=Base; fmt_write_string(Name,'%s.%s',args(Base,Ext))),
+	!.
 
 
 /****************************************************************************
@@ -134,14 +202,6 @@ get_charpos(LN,CN) :-
 
 
 /****************************************************************************
-  reset_charpos
-  resets the line number counter and character number counter. They together
-  denote the position of the next character to be read.
-****************************************************************************/
-reset_charpos :- set_charpos(1,1).
-
-
-/****************************************************************************
   text_info(+BeginLineNo,+BeginCharNo,+EndLineNo,+EndCharNo,+String,-TextInfo)
 ****************************************************************************/
 text_info(LN1,CN1,LN2,CN2,Str,TEXT(LN1,CN1,LN2,CN2,Str)) :- !.
@@ -167,12 +227,6 @@ get_char(LN,CN,Char,NextLN,NextCN) :-
 	  NextCN is CN+1
         ),
 	!.
-
-
-/****************************************************************************
-  flora_reset_lexer/0
-****************************************************************************/
-flora_reset_lexer :- reset_charpos.
 
 
 /****************************************************************************

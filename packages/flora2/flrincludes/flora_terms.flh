@@ -594,3 +594,9 @@
 #define FL_UNTIL		until
 #define FL_DO			do
 #define FL_LOOP			loop
+
+
+/****************************************************************************
+  markups for include files
+****************************************************************************/
+#define FLORA_GPP_MARKUP	'_$_$_flora_gpp_markup'

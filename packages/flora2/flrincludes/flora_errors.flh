@@ -108,6 +108,7 @@
 #define ERROR_ARITY	'invalid arity (non-negative integers or variables expected)'
 #define ERROR_EQLSPEC	'invalid equality specification'
 #define ERROR_UPDATEOP	'invalid use of update operator where an oid is expected'
+#define ERROR_GPP	'error while parsing the output from the gpp preprocessor'
 #define EXP_POSINTEGER	'positive integer (including 0) expected'
 #define EXP_VARIABLE	'variable expected'
 #define EXP_ATOMICFUNCT	'atomic functor expected'

@@ -30,11 +30,23 @@
 
 :- import conget/2, conset/2 from gensym.
 
+:- import fmt_write_string/3 from file_io.
+
+:- import parse_filename/4 from machine.
+
+:- dynamic flora_file_stack/2.
+:- index(flora_file_stack/2,trie).
+
+
 :- export
 	flora_reset_lexer/0,
+	flora_reset_lexer/1,
 	flora_tokens/2,
 	flora_token_text/6,
 	flora_symbol_token_struct/6,
 	flora_rule_delimeter_struct/6,
-	flora_blank_line/1.
+	flora_blank_line/1,
+	flora_begin_file/1,
+	flora_end_file/1,
+	flora_current_compile_filename/1.
 
