@@ -36,6 +36,10 @@
 %% * ported to XSB
 
 :- export 
+		delete/3,
+		delete_all/3,
+		delete_eq/3,
+		delete_all_eq/3,
 		lookup/3,
 		lookup_any/3,
 		lookup_eq/3,
