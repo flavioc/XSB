@@ -151,7 +151,6 @@ debug :- stat_flag(DEBUG_ON, D),
 /* -- check debugging status -------------------------------------------*/
 
 debugging :- 
-    stat_flag(HIDE_STATE, H0), H1 is H0+1, stat_set_flag(HIDE_STATE, H1),
     ll_write('  Debugging:   '), stat_flag(DEBUG_ON,X1), ll_write(X1), ll_nl,
     ll_write('  Tracing:     '), stat_flag(TRACE,X2), ll_write(X2), ll_nl,
     ll_write('  Hi Tracing:  '), stat_flag(HITRACE,X3), ll_write(X3), ll_nl,
@@ -160,17 +159,14 @@ debugging :-
     ll_write('  Skipping:    '), stat_flag(SKIPPING,X6), ll_write(X6), ll_nl,
     ll_write('  Q-Skipping:  '),
     stat_flag(QUASI_SKIPPING,X7), ll_write(X7), ll_nl,
-    ll_write('  Hide level:  '), ll_write(H0), ll_nl,
-    stat_set_flag(HIDE_STATE, H0).
+    ll_write('  Hide level:  '), stat_flag(HIDE_STATE,H0), ll_write(H0), ll_nl.
 
 /* -- trace interrupt handler ------------------------------------------ */
 
 '_$deb_trace'(Call) :-
 	%%ll_write(trace(Call)),ll_nl,
-	stat_flag(HIDE_STATE, L),			% L = hide_state;
 	stat_flag(QUASI_SKIPPING, S),		 	% S = quasi_skipping
-	%% P-pred name, A- arity
-	get_psc_info(Call, PSC, P, A),
+	get_psc_info(Call, PSC, P, A),  % P-pred name, A- arity
 	%% set_print_control is needed here too, if is_xpar_call 
 	%% predicates are used to control printing
 	set_print_control(P,A,_),
@@ -189,13 +185,13 @@ debugging :-
 	    N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
 	    (	S=\=0
 	    ->	basic_call(1,PSC,Call) % skipping/quasi_skipping, notrace
-	    ;	deb_enterpred(N, PSC, Call, intrace, L, 1)
+	    ;	deb_enterpred(N, PSC, Call, intrace, 1)
 	    )
 	;   stat_flag(INVOKE_NUM,N),
 	    N1 is N+1,stat_set_flag(INVOKE_NUM,N1), % invoke_num++
 	    (	S=\=0
 	    ->	basic_call(0,PSC,Call) % skipping or quasi_skipping 
-	    ;	deb_enterpred(N, PSC, Call, intrace, L, 0)
+	    ;	deb_enterpred(N, PSC, Call, intrace, 0)
 	    )
 	).
 
@@ -204,9 +200,9 @@ debugging :-
 %% Standard preds, except those in trace_standard_predicate
 %% Also, user-specified preds in show_this_hide/2.
 show_this_hide_call(P,A) :- trace_standard_predicate(P,A), !, fail.
-show_this_hide_call(P,A) :- standard_symbol(P,A,_).
+show_this_hide_call(P,A) :- standard_symbol(P,A,_), !.
 %% show_this_hide is constructed dynamically
-show_this_hide_call(P,A) :- show_this_hide(P,A).
+show_this_hide_call(P,A) :- show_this_hide(P,A), !.
 %% Preds hidden by the user
 show_this_hide_call(P,A) :- '_$_deb_user_hidden'(P,A).
 
@@ -229,15 +225,14 @@ must_load(PSC) :-
 	get_psc_info(Call, PSC, _P, _A),
 	(must_load(PSC)
 	->  '_$deb_spy'(Call)
-	;   stat_flag(HIDE_STATE, L), % L = hide_state
-	    stat_flag(INVOKE_NUM,N),N1 is N+1,
+	;   stat_flag(INVOKE_NUM,N),N1 is N+1,
 	    stat_set_flag(INVOKE_NUM,N1), % invoke_num++
 	    stat_flag(SKIPPING, S),	% S = skipping
 	    psc_spy(PSC, K),
 	    (	S =:= 0, (K=:=128 ; K=:=192, indeed_spy(Call))
 	    ->	%% Not skipping
 		stat_set_flag(TRACE, 1),
-		deb_enterpred(N,PSC,Call,inspy, L, 0)
+		deb_enterpred(N,PSC,Call,inspy, 0)
 	    ;	basic_call(0,PSC,Call) % skipping
 	    )
 	).
@@ -272,40 +267,38 @@ indeed_spy(Call) :- \+ (\+ ('_b_SPY_condition'(Call))).
 
 /* main tracing interpreter-------------------------------------------*/
 
-deb_enterpred(N,PSC,Call,Spy,L,Tr) :- 		   % L = 1
-	%%ll_write('in debugger'),ll_nl,
+deb_enterpred(N,PSC,Call,Spy,Tr) :-
+	%%ll_write('enterpred'(Call)),ll_nl,
 	conset('_$_verbose_skip_current_callno', N),
 	deb_traceget(N,Spy,'Call',Call,_),
 	push_cputime,		% push cpu time on the stack, if on
 	(   basic_call(Tr,PSC,Call),
 	    %% Call succeded
-	    (	stat_flag(HIDE_STATE,OV), NV is OV+1,
-		stat_set_flag(HIDE_STATE,NV),      % hide_state ++
+	    (	stat_set_flag(HIDE_STATE,1),      % hide_state
 		stat_set_flag(QUASI_SKIPPING, 0),  % quasi_skipping = 0
 		stat_set_flag(SKIPPING, 0),        % skipping = 0
+		%%ll_write(exit_call_hs(OV)),ll_nl,
 		(   still_displaying(Spy)
 		->  conset('_$_verbose_skip_current_callno', N),
 		    deb_traceget(N,Spy,'Exit',Call,_),
 		    restore_leash % restore old leash after Exit
 		;   true
 		),
-		stat_set_flag(HIDE_STATE,OV)       % hide_state --
+		stat_set_flag(HIDE_STATE,0)       % un-hide_state
 	    ;	%% Redo
-		stat_flag(HIDE_STATE,OV), NV is OV+1,
-		stat_set_flag(HIDE_STATE,NV),      % hide_state++
+		stat_set_flag(HIDE_STATE,1),      % hide_state
 		(   still_displaying(Spy)
 		->  conset('_$_verbose_skip_current_callno', N),
 		    deb_traceget(N,Spy,'Redo',Call,_),
 		    push_cputime   % push cpu time on the stack, if on
 		;   true
 		),
-		stat_set_flag(HIDE_STATE,OV),      % hide_state --
+		stat_set_flag(HIDE_STATE,0),      % un-hide_state
 		fail
 	    )
 	;   
 	    %% Call failed
-	    stat_flag(HIDE_STATE,OV), NV is OV+1,
-	    stat_set_flag(HIDE_STATE,NV),     	   % hide_state ++
+	    stat_set_flag(HIDE_STATE,1),     	   % hide_state
 	    stat_set_flag(QUASI_SKIPPING, 0), 	   % skipping = 0
 	    stat_set_flag(SKIPPING, 0),     	   % quasi_skipping=0
 	    (	still_displaying(Spy) 	           % if still tracing/debugging
@@ -315,9 +308,9 @@ deb_enterpred(N,PSC,Call,Spy,L,Tr) :- 		   % L = 1
 		(   C2=:=CH_r	    	    	   % r: retry; else just fail 
 		->  stat_set_flag(INVOKE_NUM, N),  % reset call number  
 		    deb_retry(Call,Spy)
-		;   L1 is L - 1, stat_set_flag(HIDE_STATE, L1), fail
+		;   stat_set_flag(HIDE_STATE, 0), fail
 		)
-	    ;	L1 is L - 1, stat_set_flag(HIDE_STATE, L1), fail
+	    ;	stat_set_flag(HIDE_STATE, 0), fail
 	    )
 	).
 
@@ -458,8 +451,7 @@ deb_ug(CH_b) :- !, stat_set_flag(SKIPPING, 0),	   %  b: break,
 		break,stat_set_flag(TRACE,1).
 deb_ug(CH_c) :- !,stat_set_flag(TRACE,1).	%  c: creep 	(trace = 1)
 deb_ug(CH_e) :- !,halt.				%  e: exit Prolog %
-deb_ug(CH_f) :- !,stat_flag(HIDE_STATE,L),L1 is L-1,
-		stat_set_flag(HIDE_STATE,L1),fail.	%  f: fail
+deb_ug(CH_f) :- !,stat_set_flag(HIDE_STATE,0), fail.	%  f: fail
 deb_ug(CH_l) :- !,stat_set_flag(TRACE, 0).		%  l: leap (trace = 0)
 deb_ug(CH_n) :- !,notrace.			%  n: notrace
 deb_ug(CH_q) :- !,stat_set_flag(QUASI_SKIPPING, 1).	%  q: quasi-skip 
@@ -588,18 +580,19 @@ term_mod(Mod:Term,Psc,Newterm) :-
 basic_call(I,PSC,Call) :-
 	psc_prop(PSC, Code),
 	psc_type(PSC, Nt),
-	stat_flag(HIDE_STATE,V), V1 is V-1,	% calc hide_state-1
+	%%stat_flag(HIDE_STATE,V), V1 is V-1,	% calc hide_state-1
+	%%ll_write(call_hs_i(V,I)),ll_nl,
 	(I =:= 0	% turn tracing back on
-	 ->	stat_set_flag(HIDE_STATE,V1), % hide_state--
+	 ->	stat_set_flag(HIDE_STATE,0/*V1*/), % hide_state--
 		code_call(Code,Call,Nt)
 	 ;	(code_call_h(Code,Call,Nt), % leave tracing off
-		  (stat_set_flag(HIDE_STATE,V1) % hide_state--
+		  (stat_set_flag(HIDE_STATE,0/*V1*/) % hide_state--
 		   ;
 				% restore hide state when failing in
-		   stat_set_flag(HIDE_STATE,V),fail
+		   stat_set_flag(HIDE_STATE,1/*V*/),fail
 		  )
 		;
-		 stat_set_flag(HIDE_STATE,V1),fail     % reset when failing out
+		 stat_set_flag(HIDE_STATE,0/*V1*/),fail     % reset when failing out
 		)
 	).
 
