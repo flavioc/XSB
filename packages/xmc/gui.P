@@ -59,8 +59,7 @@ get_models(Process, Formula, Models) :-
 	start(Process, StartState),
 	Models = rec_models(StartState, Formula).
 
-%%------------------------------------------------------------------
-%% for justifier GUI
+%%----------------------------------------------------------------%% for justifier GUI
 
 begin_justification :-
 	resolve_file_name('mucalculus.P', MCFile),
@@ -84,14 +83,16 @@ get_process_list(InNode, Process, Line,Char, VarbindingsString) :-
 	(InNode = {Node}
 	-> true
 	; InNode = Node
-	),
-	node(Node, Goal, _),
+        ),
+	'$justifier_trie'(T),
+	nb_asserted(seen(Node, Goal, Child), T),
 	(  (Goal =.. [models, IState, _];
 		Goal =.. [rec_models, IState, _]) ->
 		intern(State, IState),
 		symlookup(State, Process, (Line,Char), Varbindings)
-	 ; (Goal =.. [ancestor, NodeNum] ->
-	        get_process_list(NodeNum, Process, Line,Char, Varbindings)
+	 ; (Child = ancestor ->
+		nb_asserted(num(NodeNum), Goal, _),
+	        get_process_list(num(NodeNum), Process, Line,Char, Varbindings)
 	   ;
 		(functor(Goal, transition, 3);
 		functor(Goal, trans_member, 3);
@@ -160,8 +161,8 @@ translate_node(Pred, Display) :-
 		;      fmt_write_string(Display, "State#%d --%s--> X",
 					args(SN1, Act))
 	    )
-	 ; Pred =.. [ancestor, AID] ->
-		node(AID, P, _),
+	 ; Pred =.. [ancestor, P] ->
+%		node(AID, P, _),
 		translate_node(P, D),
 		fmt_write_string(Display, "Ancestor:   %S", args(D))
 
@@ -230,7 +231,7 @@ convert_formula(fBoxMinus(A,X), Form) :-
 	convert_formula(X, F),
 	fmt_write_string(Form, "[-%S] %s", args(B,F)).
 
-convert_formula(fBoxSet(A,X), Form) :-
+convert_formula(fBoxSet(Au,X), Form) :-
 	convert_set(A, B),
 	convert_formula(X, F),
 	fmt_write_string(Form, "[%S] %s", args(B,F)).

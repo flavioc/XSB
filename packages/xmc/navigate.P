@@ -27,18 +27,48 @@
 % justification_root(+Q, -RootNode)
 % ---- Evaluates query Q and returns the rootnode of the tree.
 
-justification_root(Q, RootNode) :-
-	justify(Q, TV, RootNodeId), close_open_tables, !,
-	node(RootNodeId, Q, TV),
-	RootNode = node(RootNodeId, Q, TV).
+justification_root(Q, node(RootNodeId, Q, TV)) :-
+	justify(Q, TV, RootNodeId), close_open_tables, !.
+%	node(RootNodeId, Q, TV),
+%	RootNode = node(RootNodeId, Q, TV).
+
+
+%get_child((G, TV, tabled, _), Child) :- !, 
+%	'$justifier_trie'(T),
+%	NodeId = num(_),
+%	nb_asserted(seen(NodeId, G, (_, _, R, _)), T),
+%	get_child1(R, Child).
 
 get_child(NodeId, Child) :- 
-	arc(NodeId, CId),
-	node(CId, G, TV),
-	( (show(G) ; (allowed(G), \+ single_child(CId)))
-		-> Child = node(CId, G, TV)
-	;  \+ builtin(G)
-		-> get_child(CId, Child)
+	'$justifier_trie'(T),
+	nb_asserted(seen(NodeId, PG, R), T),
+	get_child1(R, Child).
+
+get_child1(L, Child) :- arc(L, L1), get_child2(L1, Child).
+
+get_child2((G, TV, loop1, _), Child) :- !,
+	G =.. [rec_models, IState, FName],
+	intern(State, IState),
+	(trie_interned(state(State,Number),_,_) ->
+	    Child = node(loop, loop(G), TV)
+	 ;  '$justifier_trie'(T),
+	    nb_asserted(seen(num(CId), G, _), T),
+	    Child = node(num(CId), G, TV)
+	).
+
+get_child2((G, TV, L, _), Child) :-
+	(show(G) -> '$justifier_trie'(T),
+		    nb_asserted(seen(num(CId), G, _), T),
+		    Child = node(num(CId), G, TV)
+%		    (L = ancestor 
+%			-> Child = node(ancestor, ancestor(G), TV)
+%			; Child = node(num(CId), G, TV)
+%		    )
+		 ; ((allowed(G), \+ single_child((G, TV, L, _))) 
+			-> Child = node((G, TV, L, nil), G, TV)
+			; \+ builtin(G)
+				-> get_child1(L, Child)
+		   )
 	).
 
 get_children(NodeId, Children) :- 
@@ -46,7 +76,9 @@ get_children(NodeId, Children) :-
 
 single_child(NId) :- get_children(NId, [_1child]).
 
-arc(S, D) :- edge(S, Cs), member(D, Cs).
+arc((leaf(A), B, C, D), S) :- !, arc((A, B, C, D), S).
+arc((A, B, C, D), (A, B, C, D)).
+arc((_, _, _, S), S1) :- arc(S, S1). 
 
 %-------------------------------------------------------------------------
 

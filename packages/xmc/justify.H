@@ -33,5 +33,5 @@
 :- import get_residual/2, get_calls_for_table/2 from tables.
 :- import variant/2 from subsumes.
 :- import close_open_tables/0 from machine.
-:- import trie_intern/4, trie_interned/4, trie_unintern/2, 
+:- import trie_intern/5, trie_intern/4, trie_interned/4, trie_unintern/2, 
 		new_trie/1, delete_trie/1 from intern.
