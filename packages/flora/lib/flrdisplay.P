@@ -135,11 +135,7 @@
 '_$_$_flora_write_pairs'([var(N,V)|NVs]) :-
 	nl, write(N),
 	write(' = '),
-	( var(V) ->
-	    write(N), write(' (unbound)')
-	  ;
-	    '_$_$_flora_write'(V)
-	),
+	'_$_$_flora_write'(V),
 	'_$_$_flora_write_pairs'(NVs).
 
 
@@ -167,7 +163,7 @@
 	( Args = [] ->
 	    true
 	  ;
-	    write('('),
+	    write('@('),
 	    '_$_$_flora_write_list'(Args),
 	    write(')')
 	).
