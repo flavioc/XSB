@@ -160,28 +160,29 @@ Some further predicates involving comparison of terms are:
 \ouritem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}
 \index{{\tt parsort/4}}
 
-    The list {\tt L1} may consist of elements of any form.  {\tt
-    SortSpec} is the atom ``asc'', the atom ``desc'', or a list of
-    terms of the form {\tt asc(I)} or {\tt desc(I)} where {\tt I} is
-    an integer indicating a sort argument position.  The elements of
-    list {\tt L1} are sorted into order according to the sort
-    specification.  ``asc'' indicates ascending order based on the
-    entire term; ``desc'' indicates descending order.  For a sort
-    specification that is a list, the individual elements indicate
-    subfields of the source terms on which to sort.  For example, a
-    specification of {\tt [asc(1)]} sorts the list in ascending order
-    on the first subfields of the terms in the list.  {\tt
-    [desc(1),asc(2)]} sorts into descending order on the first
-    subfield and within equal first subfields into ascending order on
-    the second subfield.  The order is determined by the builtin {\tt
-    compare}.  If {\tt ElimDupl} is nonzero, merging of multiple
-    occurring elements takes place (i.e., duplicate (whole) terms are
-    eliminated in the output).  If {\tt ElimDupl} is zero, then no
-    merging takes place.  A {\tt SortSpec} of {\tt []} is equivalent
-    to ``asc''.  The time to perform the sorting is $O(n log n)$ where
-    $n$ is the length of list {\tt L1}.  The sorting of elements in
-    {\tt L1} is not guaranteed to be stable. {\tt parsort/4} must be
-    imported from module {\tt machine}.
+    {\tt parsort/4} is a very general sorting routine.  The list {\tt
+    L1} may consist of elements of any form.  {\tt SortSpec} is the
+    atom {\tt asc}, the atom {\tt desc}, or a list of terms of the
+    form {\tt asc(I)} or {\tt desc(I)} where {\tt I} is an integer
+    indicating a sort argument position.  The elements of list {\tt
+    L1} are sorted into order according to the sort specification.
+    {\tt asc} indicates ascending order based on the entire term; {\tt
+    desc} indicates descending order.  For a sort specification that
+    is a list, the individual elements indicate subfields of the
+    source terms on which to sort.  For example, a specification of
+    {\tt [asc(1)]} sorts the list in ascending order on the first
+    subfields of the terms in the list.  {\tt [desc(1),asc(2)]} sorts
+    into descending order on the first subfield and within equal first
+    subfields into ascending order on the second subfield.  The order
+    is determined by the standard predicate {\tt compare}.  If {\tt
+    ElimDupl} is nonzero, merging of multiple occurring elements takes
+    place (i.e., duplicate (whole) terms are eliminated in the
+    output).  If {\tt ElimDupl} is zero, then no merging takes place.
+    A {\tt SortSpec} of {\tt []} is equivalent to ``asc''.  The time
+    to perform the sorting is $O(n log n)$ where $n$ is the length of
+    list {\tt L1}.  The sorting of elements in {\tt L1} is not
+    guaranteed to be stable. {\tt parsort/4} must be imported from
+    module {\tt machine}.
 
     Examples:
     {\footnotesize

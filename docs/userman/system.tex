@@ -310,7 +310,7 @@ than for subsequent compilations.
 
 
 \subsection{Changing the Default Search Path and the Packaging System}
-%=================================================================
+%=========================================================
 
 The default search path of the dynamic loader can easily be changed by
 having a file named {\verb|.xsb/xsbrc.P|} in the user's home
@@ -607,7 +607,7 @@ collectors, and \cite{CaSC01} for a description of the third).
     (both system and user-defined).  This option is available mainly
     for people who want to modify and/or extend XSB, and it is
     {\em not\/} the normal way to trace XSB programs.  For the
-    latter, the builtin predicates {\tt trace/0} or {\tt debug/0}
+    latter, the standard predicates {\tt trace/0} or {\tt debug/0}
     should be used (see Chapter~\ref{debugging}).
 
     Note: This option is not available when the system is being used
@@ -1334,6 +1334,42 @@ created by the transformation do appear during tracing.
 \subsection{Compiler Directives}\label{compiler_directives}
 \index{Compiler!directives}\index{directives!Compiler}
 %=====================================================
+
+Consider a directive
+\begin{verbatim}
+:- foo(a).
+\end{verbatim}
+That occurs in a file that is to be compiled.  There are two logical
+interpretations of such a directive.
+\begin{enumerate}
+\item {\tt foo(a)} is to be executed upon loading the file; or
+%
+\item{\tt foo(a)} provides information used by the compiler in
+compiling the file. 
+\end{enumerate}
+
+By default, the interpretation of a directive is as in case (1) {\em
+except} in the case of the compiler directives listed in this section,
+which as their name implies, are taken to provide information to the
+compiler.  Some of the directives, such as the {\tt mode/1} directive,
+have no meaning as an executable directive, while others, such as {\tt
+import/2} do.  In fact as an executable directive {\tt import/2}
+imports predicates into {\tt usermod}.  For such a directive, a 
+statement beginning with {\tt ?-}, such as 
+\begin{verbatim}
+?- import foo/1 from myfile.
+\end{verbatim}
+indicates that the directive should be executed upon loading the file,
+and should have no meaning to the compiler.  On the other hand, the
+statement
+\begin{verbatim}
+:- import foo/1 from myfile.
+\end{verbatim}
+Indicates that {\tt foo/1} terms in the file to be compiled are to be
+understood as {\tt myfile:foo/1}.  In other words, the statement is
+used by the compiler and will not be executed upon loading.  For
+non-compiler directives the use of {\tt ?-} and {\tt :-} has no effect
+--- in both cases the directive is executed upon loading the file.
 
 The following compiler directives are recognized in \version\ of XSB
 \footnote{Any parallelisation directives ({\tt parallel}) are simply

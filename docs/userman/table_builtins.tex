@@ -1,4 +1,4 @@
-%=====================================================================
+%========================================================
 
 \newcommand{\retn}{\code{ret/n}}
 
@@ -251,11 +251,6 @@ entry is assigned to the second argument, while in the third, its
 return template is constructed.  These latter two arguments should be
 given as variables.
 
-\comment{Currently, this builtin fails if CallSkeleton is not a
-compound term, but yields an error if either CallSkeleton is not a
-tabled predicate or either of TableEntryHandle or ReturnSkeleton are
-non-variables.}
-
 \begin{minipage}{6in}
 \begin{example}\ \\
 \\
@@ -339,11 +334,6 @@ unifies with \code{CallTerm}.  For those that do, the handle to the
 table entry is assigned to the second argument, and its return
 skeleton is constructed in the third.  These latter two arguments
 should be given as variables.
-
-\comment{Currently, this builtin fails if CallTerm is not a
-compound term, but yields an error if either CallTerm is not a
-tabled predicate or either of TableEntryHandle or ReturnSkeleton are
-non-variables.}
 
 \begin{minipage}{6in}
 \begin{example}\ \\
@@ -613,15 +603,6 @@ no
 %
 Functions identically to \code{get\_returns/2}, but also obtains a
 handle to the return given in the second argument.
-
-\comment{Currently, this builtin fails if \code{ReturnSkeleton} is not
-of the form ret(t1,...,tk) or if either k is too small or
-\code{ReturnSkeleton} does not unify with any answer.  However, an error
-results if (1) \code{TableEntryHandle} is not a valid pointer (memory
-violation); (2) \code{ReturnSkeleton} contains too many terms (if k is
-too big, then the extra terms are ignored, but this gives the illusion
-of a larger than actual substitution); or (3) \code{ReturnHandle} is
-already instantiated.}
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1005,19 +986,19 @@ properties such as subgoal subsumption.
 
 \comment{
 
-\ournewitem{breg\_retskel(+Breg,+Arity,-ReturnSkeleton,-SubgoalStructurePtr)}
-\index{{\tt breg\_retskel/4}}
-If Breg is bound to a pointer to the tabling choice point and 
-Arity is bound to the arity of the predicate corresponding to 
-the choice point, {\tt breg\_retskel} succeeds after binding 
-{\tt ReturnSkeleton} to ret/n as in {\tt get\_calls/3} and 
-{\tt SubgoalStructurePtr} to the pointer to the subgoal structure.
+%\ournewitem{breg\_retskel(+Breg,+Arity,-ReturnSkeleton,-SubgoalStructurePtr)}
+%\index{{\tt breg\_retskel/4}}
+%If Breg is bound to a pointer to the tabling choice point and 
+%Arity is bound to the arity of the predicate corresponding to 
+%the choice point, {\tt breg\_retskel} succeeds after binding 
+%{\tt ReturnSkeleton} to ret/n as in {\tt get\_calls/3} and 
+%{\tt SubgoalStructurePtr} to the pointer to the subgoal structure.
 
-Warning:This builtin works for tabling predicates only.
+%Warning:This builtin works for tabling predicates only.
 
 }
 
-%==========================================================================
+%========================================================
 
 \end{description}
 

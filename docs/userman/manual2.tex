@@ -71,20 +71,7 @@
 
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
 
-% conditional pdf output stuff
-\newif\ifpdf
-\ifx\pdfoutput\undefined
-   \pdffalse
-\else
-   \pdfoutput=1
-   \pdftrue
-\fi
-
-\ifpdf
-    \newcommand{\xsblogo}{\epsfbox{xsb-logo.pdf}}
-\else
     \newcommand{\xsblogo}{\epsfbox{xsb-logo.eps}}
-\fi
 
 %------------------------------------------------------------
 \input{predindex.sty}

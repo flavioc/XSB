@@ -283,9 +283,10 @@ show_domain(X) :-                            % print out the domain of X
 The module {\tt consult} in directory {\tt lib} provides several handy
 library predicates that can assert the contents of a file into XSB's
 database.  The use of these predicates may be necessary when the code
-needs to be {\tt dynamic} (so that it is retractable), or when it
-contains atoms whose length is more than 255 that cannot be handled by
-the XSB compiler.
+needs to be {\tt dynamic} (so that it is retractable), when the code
+size is too large for the XSB compiler (if a file has hundreds of
+thousands or more clauses), or when it contains atoms whose length is
+more than 255 that cannot be handled by the XSB compiler.
 
 \begin{description}
 \ournewitem{load\_dyn(+FileName)}{consult}
@@ -314,6 +315,12 @@ the XSB compiler.
     use the same directive both for compiling and loading, in case the same
     source file is used both ways.
 
+    Exceptions:
+    \begin{description}
+    \item[{\tt type\_error}]
+	{\tt FileName} is not an atom at the time of call.
+    \end{description}
+
 \ournewitem{ensure\_dyn\_loaded(+FileName)}{consult}
 \index{{\tt ensure\_dyn\_loaded/1}}
     Is similar to {\tt load\_dyn/1} except that it does nothing if the
@@ -322,20 +329,20 @@ the XSB compiler.
     any predicate in that file has changed to require more indexing, or a
     larger hash table.
 
+
 \ournewitem{load\_dync(+FileName)}{consult}\index{{\tt load\_dync/1}}
-%\predindex{load\_dync/1~(L)}
-    Asserts the contents of file {\tt FileName} into the database.
-    All existing clauses of the predicates in the file that already appear
-    in the database, are retracted unless there is a {\tt multifile/1}
-    directive for them.  The terms in the file {\tt FileName} must be in
-    ``canonical'' format; that is, they must not use any operators (or
-    list notation.) This is the format produced by the predicate {\tt
-    write\_canonical/1}. (See {\tt cvt\_canonical/2} to convert a file from
-    the usual {\tt read/1} format to {\tt read\_canonical} format.)  As
-    usual, clauses of predicates are not retracted if they are compiled
-    instead of dynamically asserted. All predicates are loaded into {\tt
-    usermod}.  {\tt :- export} declarations are ignored and a warning is
-    issued.
+\index{canonical forma}
+    Acts as {\tt load\_dyn/1}, but assumes that facts are in
+    ``canonical'' format and is much faster as a result.  In XSB, a
+    term is in canonical format if it does not use any operators other
+    than list notation and comma-list notation.  This is the format
+    produced by the predicate {\tt write\_canonical/1}. (See {\tt
+    cvt\_canonical/2} to convert a file from the usual {\tt read/1}
+    format to {\tt read\_canonical} format.)  As usual, clauses of
+    predicates are not retracted if they are compiled instead of
+    dynamically asserted. All predicates are loaded into {\tt
+    usermod}.  {\tt :- export} declarations are ignored and a warning
+    is issued.
 
     Notice that this predicate can be used to load files of Datalog facts
     (since they will be in canonical format).  This predicate is
@@ -483,6 +490,359 @@ the XSB compiler.
     variables; an assumption that holds for most (reasonable) uses of
     {\tt variant/2}.
 \end{description}
+
+\section{Formatted Output}
+
+\begin{description}
+\ournewitem{format(+String,+Control)}{format}\index{{\tt format/2}}
+\ournewitem{format(+Stream,+String,+Control)}{format}\index{{\tt format/3}}
+
+{\tt format/2} and {\tt format/3} act as a Prolog analog to the C {\tt
+stdio} function {\tt printf()}, allowing formatted
+output~\footnote{The {\tt format} family of predicates is due to
+Quintus Prolog, by way of Ciao.}.
+
+Output is formatted according to {\tt String} which can contain either
+a format control sequence, or any other character which will appear
+verbatim in the output. Control sequences act as place-holders for the
+actual terms that will be output.  Thus
+\begin{verbatim}
+        ?- format("Hello ~q!",world).
+\end{verbatim}
+
+\noindent
+will print {\tt Hello world!}.
+
+If there is only one control sequence, the corresponding element may
+be supplied alone in {\tt Control}.  If there are more, {\tt Contol}
+must be a list of these elements. If there are none then {\tt Control}
+must be an empty list. There have to be as many elements in {\tt
+Control} as control sequences in {\tt String}.
+
+The character \verb|~| introduces a control sequence. To print 
+        a \verb|~| just repeat it:  
+        \begin{verbatim}
+        ?- format("Hello ~~world!", []).
+        \end{verbatim}
+      \noindent
+        will output  \verb|Hello ~world!|.
+
+%--------------------------------------------------------------------------------------------------
+\comment{
+% TLS: the \\c does not work properly.
+
+A format may be spread over several lines. The control
+        sequence {\tt \\c} followed by a @key{LFD} will translate to the 
+        empty string:  
+        \begin{verbatim}
+        ?- format("Hello \\c
+        world!", []).
+        \end{verbatim}
+        \noindent
+        will result in {\tt Hello world!}.
+}
+%--------------------------------------------------------------------------------------------------
+
+The general format of a control sequence is \verb|~NC|.  The character
+{\tt C} determines the type of the control sequence.  {\tt N} is an
+optional numeric argument.  An alternative form of {\tt N} is {\tt
+*}. {\tt *} implies that the next argument in {\tt Arguments} should
+be used as a numeric argument in the control sequence.  For example:
+
+\begin{verbatim}
+?- format("Hello~4cworld!", [0'x]).
+\end{verbatim}
+
+\noindent
+and
+
+\begin{verbatim}
+?- format("Hello~*cworld!", [4,0'x]).
+\end{verbatim}
+
+\noindent
+both produce
+
+\begin{verbatim}
+Helloxxxxworld!
+\end{verbatim}
+
+The following control sequences are available in XSB.
+
+%TLS: printf-style integers and floats are not currently supported in XSB!
+
+\begin{itemize}
+
+\item \verb|~a|
+The argument is an atom.  The atom is printed without quoting.  
+
+\item \verb|~Nc|
+(Print character.)  The argument is a number that will be interpreted as an
+ASCII code. {\tt N} defaults to one and is interpreted as the number of
+times to print the character.  
+
+\item \verb|~f|
+(Print float).  The argument is a float.  The float will be printed out by XSB.
+
+\item \verb|~d|
+(Print integer).  The argument is an integer, and will be printed out by XSB.
+
+%-------------------------------------------------------------------------
+\comment{
+Various shadings dont work -- TLS
+\item \verb|~Ne|
+\item \verb|~NE|
+\item \verb|~Nf|
+\item \verb|~Ng|
+\item \verb|~NG|
+\begin{verbatim}
+printf("%.@var{N}e", @var{Arg})
+printf("%.@var{N}E", @var{Arg})
+printf("%.@var{N}f", @var{Arg})
+printf("%.@var{N}g", @var{Arg})
+printf("%.@var{N}G", @var{Arg})
+\end{verbatim}
+
+If @var{N} is not supplied the action defaults to
+
+\begin{verbatim}
+printf("%e", @var{Arg})
+printf("%E", @var{Arg})
+printf("%f", @var{Arg})
+printf("%g", @var{Arg})
+printf("%G", @var{Arg})
+\end{verbatim}
+
+\item ~@var{N}d
+(Print decimal.) The argument is an integer. @var{N} is interpreted as the
+number of digits after the decimal point.  If @var{N} is 0 or missing, no
+decimal point will be printed.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~1d world!", [42]).
+?- format("Hello ~d world!", [42]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello 4.2 world!
+Hello 42 world!
+\end{verbatim}
+
+\noindent
+respectively.
+
+\item ~@var{N}D
+(Print decimal.) The argument is an integer.  Identical to @tt{~@var{N}d}
+except that @tt{,} will separate groups of three digits to the left of the
+decimal point.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~1D world!", [12345]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello 1,234.5 world!
+\end{verbatim}
+
+\item ~@var{N}r
+(Print radix.) The argument is an integer. @var{N} is interpreted as a radix.
+@var{N} should be >= 2 and <= 36.  If @var{N} is missing the radix defaults to
+8.  The letters @tt{a-z} will denote digits larger than 9.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~2r world!", [15]).
+?- format("Hello ~16r world!", [15]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello 1111 world!
+Hello f world!V
+\end{verbatim}
+
+\noindent
+respectively.
+
+\item ~@var{N}R
+(Print radix.) The argument is an integer.  Identical to @tt{~@var{N}r} except
+that the letters @tt{A-Z} will denote digits larger than 9.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~16R world!", [15]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello F world!
+\end{verbatim}
+
+}
+%-------------------------------------------------------------------------
+
+\item \verb|~Ns|
+(Print string.) The argument is a list of ASCII codes.  Exactly {\tt
+N} characters will be printed. {\tt N} defaults to the length of the
+string.  Example:
+
+\begin{verbatim}
+?- format("Hello ~4s ~4s!", ["new","world"]).
+?- format("Hello ~s world!", ["new"]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello new worl!
+Hello new world!
+\end{verbatim}
+
+\noindent
+respectively.
+
+\item \verb|~i|
+(Ignore argument.) The argument may be of any type.  The argument will be
+ignored.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~i~s world!", ["old","new"]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello new world!
+\end{verbatim}
+
+\item \verb|~k|
+(Print canonical.) The argument may be of any type.  The argument will be
+passed to {\tt write\_canonical/2} ).  Example:  
+
+\begin{verbatim}
+?- format("Hello ~k world!", a+b+c).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello +(+(a,b),c) world!
+\end{verbatim}
+
+%------------------------------------------------------------------------------------------
+\comment{
+\item ~p
+(print.) The argument may be of any type.  The argument will be passed to
+{\tt print/2}.  Example:
+
+\noindent
+suposing the user has defined the predicate
+
+\begin{verbatim}
+portray([X|Y]) :- print(cons(X,Y)).
+\end{verbatim}
+
+\noindent
+then
+
+\begin{verbatim}
+?- format("Hello ~p world!", [[a,b,c]]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello cons(a,cons(b,cons(c,[]))) world!
+\end{verbatim}
+}
+%------------------------------------------------------------------------------------------
+
+\item \verb|~q|
+(Print quoted.) The argument may be of any type.  The argument will be
+passed to {\tt writeq/2}.  Example:
+
+\begin{verbatim}
+?- format("Hello ~q world!", [['A','B']]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello ['A','B'] world!
+\end{verbatim}
+
+\item \verb|~w|
+(write.) The argument may be of any type.  The argument will be passed
+to {\tt write/2}.  Example:
+
+\begin{verbatim}
+?- format("Hello ~w world!", [['A','B']]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello [A,B] world!
+\end{verbatim}
+
+\item \verb|~Nn|
+(Print newline.) Print {\tt N} newlines. {\tt N} defaults to 1.
+Example:
+
+\begin{verbatim}
+?- format("Hello ~n world!", []).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello
+ world!
+\end{verbatim}
+
+\end{itemize}
+
+%-------------------------------------------------------------------------------------------------------
+\comment{
+\item ~N
+(Fresh line.) Print a newline, if not already at the beginning of a line.
+
+% TLS: dont keep track of line_position.
+The following control sequences are also available for compatibility,
+but do not perform any useful functions.
+
+\begin{itemize}
+\item ~@var{N}|
+(Set tab.) Set a tab stop at position @var{N}, where @var{N} defaults to
+the current position, and advance the current position there.
+
+\item ~@var{N}+
+(Advance tab.) Set a tab stop at @var{N} positions past the current
+position, where @var{N} defaults to 8, and advance the current position
+there.
+
+\item ~@var{N}t
+(Set fill character.) Set the fill character to be used in the next
+position movement to @var{N}, where @var{N} defaults to @key{SPC}.
+\end{itemize}
+}
+\end{description}
+%-------------------------------------------------------------------------------------------------------
 
 
 \section{Lower-Level I/O}
@@ -640,7 +1000,7 @@ a file using {\tt consult} and such.)
     the current input file (which must have been already opened by using
     {\tt see/1}) according to a C format, as used in the C function
     {\tt scanf}. To use it, it must be imported from the module {\tt
-    file\_io}.  {\tt Fmt} must be a string of characters (enclosed in "")
+    file\_io}.  {\tt Fmt} must be a string of characters (enclosed in ")
     representing the format that 
     will be passed to the C call to {\tt scanf}.  See the C
     documentation for {\tt scanf} for the meaning of this string.
@@ -686,7 +1046,7 @@ a file using {\tt consult} and such.)
     {\tt tell/1}) according to a C format, as used in the C function
     {\tt printf}.
     To use it, it must be imported from the module {\tt file\_io}.
-    {\tt Fmt} must be a string of characters (enclosed in "")
+    {\tt Fmt} must be a string of characters (enclosed in ")
     representing the format that 
     will be passed to the C call to {\tt printf}.  See the C
     documentation for {\tt printf} for the meaning of this string.
@@ -921,10 +1281,10 @@ such as \verb|_$newstream_#123|.
 \section{String Manipulation}
 \label{sec-strings}
 
-        XSB has a number of powerful builtins that simplify the job of string
-manipulation. These builting are especially powerful when they are combined
-with pattern-matching facilities provided by the {\tt regmatch} package
-described in Chapter~\ref{chap-posix}.
+XSB has a number of powerful predicates that simplify the job of
+string manipulation. These predicates are especially powerful when
+they are combined with pattern-matching facilities provided by the
+{\tt regmatch} package described in Chapter~\ref{chap-posix}.
 
 \begin{description}
 \ournewitem{str\_sub(+Sub, +Str, ?Pos)}{string}
@@ -2335,13 +2695,13 @@ Interns {\tt Term} into the default trie. Does not return the new/old flag.
 
 \ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}\index{{\tt trie\_interned/4}}
 %%
-This builtin will backtrack through the terms interned into the trie
+This predicate will backtrack through the terms interned into the trie
 represented by the handle {\tt Root} if {\tt Leaf} is a free variable.
-Otherwise, if {\tt Leaf} is bound, it will backtrack over the terms in the
-trie that unify with the term pointed to by Leaf {\tt to}.  {\tt Term} is
-the term to be retrieved; it can be either (partially) bound or free.  {\tt
-  Skel} is the collection of all the variables in {\tt Term}; it has the
-form {\tt ret(V1,...,Vn)}.
+Otherwise, if {\tt Leaf} is bound, it will backtrack over the terms in
+the trie that unify with the term pointed to by Leaf {\tt to}.  {\tt
+Term} is the term to be retrieved; it can be either (partially) bound
+or free.  {\tt Skel} is the collection of all the variables in {\tt
+Term}; it has the form {\tt ret(V1,...,Vn)}.
 
 \ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{{\tt trie\_interned/3}}
 %%

@@ -34,8 +34,8 @@ or not.  An overview of DCG syntax
  supported by XSB is as follows:
 \begin{enumerate}
 \item A non-terminal symbol may be any HiLog term other than a variable
-      or a number. A variable which appears in the body of a rule is 
-      equivalent to the appearance of a call to the built-in predicate 
+      or a number. A variable which appears in the body of a rule is
+      equivalent to the appearance of a call to the standard predicate
       {\tt phrase/3} as it is described below.
 \item A terminal symbol may be any HiLog term. In order to distinguish 
       terminals from nonterminals, a sequence of one or more terminal
@@ -121,7 +121,7 @@ translating into:
 \> \> \> s(Y, L2, Lo).
 }
 
-Terminals are translated using the built-in predicate {\tt 'C'/3} (See 
+Terminals are translated using the predicate {\tt 'C'/3} (See 
 section~\ref{DCG_builtins} for its description).  For instance:
 
 \stuff{\> \> p(X) --> [go, to], q(X), [stop].}

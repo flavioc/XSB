@@ -1,15 +1,16 @@
-\section{Information about the State of the Program} \label{State}
-%=================================================================
-\index{state of the program} \index{program, state of}
+\section{Information about the System State} \label{State}
+%========================================================
+\index{state of the system} \index{system, state of}
 
-In XSB  various aspects of the program state --- information about 
-predicates, modules, clauses, and their object files can all be inspected 
-in ways similar to many Prolog systems.  However, because the atom-based 
-module system of XSB  may associate structures with particular 
-modules, predicates are provided to inspect these elements as well.  
-The following descriptions of {\em state} predicates use the terms 
-{\em predicate indicator}, {\em term indicator} and {\em current module}
-to mean the following:
+Various aspects of the state of an instance of XSB --- information
+about what predicates, modules, or dynamic clauses have been loaded,
+their object files, along with other information can be inspected in
+ways similar to many Prolog systems.  However, because the atom-based
+module system of XSB may associate structures with particular modules,
+predicates are provided to inspect these elements as well.  The
+following descriptions of {\em state} predicates use the terms {\em
+predicate indicator}, {\em term indicator} and {\em current module} to
+mean the following:
 \begin{itemize}
 \item By {\em predicate indicator} \index{predicate indicator} we mean a
       {\em compound term} of the form {\tt M:F/A} or simply {\tt F/A}.
@@ -335,7 +336,7 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 \ouritem{predicate\_property(?Term\_Indicator, ?Property)}
 \index{{\tt predicate\_property/2}}
     The standard predicate {\tt predicate\_property/2} can be used to find 
-    the properties of any predicate which is visible to a particular module.
+    the properties of any predicate that is visible to a particular module.
     Succeeds iff {\tt Term\_Indicator} is a term indicator for a current 
     predicate whose principal functor is a predicate having {\tt Property} 
     as one of its properties. Or procedurally, {\tt Property} is unified 
@@ -343,23 +344,30 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     {\tt Term\_Indicator} as its skeletal specification.
     
     A brief description of {\tt predicate\_property/2} is as follows:
-    \begin{itemize}
-    \item If {\tt Term\_Indicator} is instantiated, then {\tt Property}
-          is successively unified with the various properties associated 
-          with {\tt Term\_Indicator}.
-    \item If {\tt Property} is bound to a valid predicate property, then
-          {\tt predicate\_property/2} successively unifies 
-          {\tt Term\_Indicator} with the skeletal specifications of all 
-          known to the system predicates having the specified {\tt Property}.
-    \item If {\tt Term\_Indicator} is a variable, then it is unified
-          (successively through backtracking) with the most general term for a
-          predicate whose known properties are unified with {\tt Property}.
-    \item If {\tt Term\_Indicator} is a skeletal specification not a known to 
-          the system, or {\tt Property} is not a valid predicate 
-	  property, the call simply fails.
-    \end{itemize} 
-    For example, all the loaded predicate skeletal specifications in module 
-    {\tt "usermod"} may be enumerated using:
+    \begin{itemize} 
+\item If {\tt Term\_Indicator} is not a variable, and is a structure
+	or atom, then {\tt Property} is successively unified with the
+	various properties associated with {\tt Term\_Indicator}.  If
+	{\tt Term\_Indicator} is not a known to the system, the call
+	succeeds with {\tt Property} successively unified to {\tt
+	exported} and {\tt unclassified}.  These properties can be
+	considered as a default for any structure or atom.
+\item If {\tt Property} is bound to a valid predicate property, then {\tt
+	predicate\_property/2} successively unifies {\tt
+	Term\_Indicator} with the skeletal specifications of all
+	predicates known to the system having the specified {\tt
+	Property}.  
+\item If {\tt Term\_Indicator} is a variable, then
+	it is unified (successively through backtracking) with the
+	most general term for a predicate whose known properties are
+	unified with {\tt Property}.  
+\item If {\tt Term\_Indicator}
+	is not a term indicator, or if {\tt Property} is not a valid
+	predicate property, the call fails.  
+\end{itemize} 
+\noindent
+For example, all the loaded predicate skeletal specifications in
+module {\tt "usermod"} may be enumerated using:
 
     \stuff{
     \>   \>	| ?- predicate\_property(Pred, loaded).
@@ -373,9 +381,9 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     }
 
     Currently, the following properties are associated with predicates 
-    either implicitly or by declaration (where double lines show property
+    either implicitly or by declaration.  Double lines show property
     categories, and a predicate can have at most one property of each
-    category).
+    category.
 
     \begin{center}
     \begin{tabular}{||l|l||}               \hline 
@@ -426,9 +434,11 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 	{\tt tabled}	& 
 		The predicate has been declared tabled. \\ \hline
 	\hline
-	{\tt built\_in}	& 
-		The predicate symbol has the same Functor and Arity \\
-	&	as one of \ourprolog's builtin (standard) predicates. \\ \hline
+	{\tt xsb\_standard\_pred}	& 
+		The predicate symbol has the same Functor and Arity as  \\
+	&	one of XSB's standard predicates, and is available to \\
+	&	the user without needing to load a file or import the \\
+	&	predicate from a module. \\ \hline
     \end{tabular}
     \end{center}
 
