@@ -228,7 +228,7 @@ $t_3$ \emph{properly subsumes}~$t_4$.\fillBox
 \label{sec:TablingDirAndDecl}
 
 Predicates can be declared tabled in a variety of ways.  A common form
-is the compiler directive\index{{\tt table/1}}
+is the compiler directive\index{\texttt{table/1}}
 \[
 	\verb|:- table | p_1/n_1, \ldots, p_k/n_k.
 \]
@@ -238,10 +238,11 @@ containing the predicate(s) to be tabled, a consultation of which
 recompiles the predicates to employ tabling.  Often it is tedious to
 decide which predicates must be tabled.  To address this, XSB can
 automatically table predicates in files.  The declaration {\tt
-auto\_table}\index{{\tt auto\_table}} chooses predicates to table to
-assist in termination, while {\tt suppl\_table}\index{{\tt
-suppl\_table}} chooses predicates to table to optimize data-oriented
-queries.  Both are explained in \refsec{sec:CompilerOptions}.
+auto\_table}\index{\texttt{auto\_table}} chooses predicates to table
+to assist in termination, while {\tt
+suppl\_table}\index{\texttt{suppl\_table}} chooses predicates to table
+to optimize data-oriented queries.  Both are explained in
+\refsec{sec:CompilerOptions}.
 
 \index{tabling!strategy selection} As mentioned in
 \refsec{sec:TablingStrategies}, the default tabling strategy used by
@@ -250,9 +251,10 @@ the default by giving XSB the \verb|-S| option at invocation (refer to
 \refsec{sec:EmuOptions}).  More versatile constructs are provided by
 XSB so that the tabling method can be selected on a \emph{per
 predicate} basis.  Use of either directive
-\texttt{use\_variant\_tabling/1}\index{{\tt use\_variant\_tabling/1}}
-or \texttt{use\_subsumptive\_tabling/1},\index{{\tt
-use\_subsumptive\_tabling/1}} described in
+\texttt{use\_variant\_tabling/1}\index{\texttt{use\_variant\_tabling/1}}
+or
+\texttt{use\_subsumptive\_tabling/1},\index{\texttt{use\_subsumptive\_tabling/1}}
+described in
 \refsec{sec:TablePred:Decl&Mod}, ensures that a tabled predicate is
 evaluated using the desired strategy regardless of the default tabling
 strategy.
@@ -715,8 +717,8 @@ may produce behavior unexpected by the user.
 
 
 \paragraph*{{\tt tnot/1} vs. \not }
-\index{{\tt tnot/1}}
-\index{{\tt $\backslash$+/1}}
+\index{\texttt{tnot/1}}
+\index{\texttt{$\backslash$+/1}}
 
 Subject to some semantic restrictions, an XSB programmer can intermix
 the use of tabled negation ({\tt tnot/1}) with Prolog's negation
@@ -1114,8 +1116,8 @@ systems that is 10-20 times faster than competing systems
 
 \section{Tabled Aggregation} \label{sec:table-aggregation}
 \index{tabled aggregation}
-\index{{\tt filterReduce/4}}
-\index{{\tt filterPO/4}}
+\index{\texttt{filterReduce/4}}
+\index{\texttt{filterPO/4}}
 
 The following shortest path predicate is a modification of the {\tt
 path/2} predicate of Section \ref{sec:def}:

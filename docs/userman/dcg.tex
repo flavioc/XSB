@@ -26,7 +26,7 @@ are not written explicitly in the DCG rule, but are added when the
 rule is translated (expanded) into an ordinary normal rule during
 parsing.  Extra conditions, in the form of explicit Prolog literals or
 control constructs such as {\em if-then-elses} ({\tt '->'/2}) or {\em
-cuts}\index{cut} (\cut)\index{{\tt "!/0}}, may be included in the {\em
+cuts}\index{cut} (\cut)\index{\texttt{"!/0}}, may be included in the {\em
 Body} of the DCG rule and they work exactly as one would expect.
 
 The syntax of DCGs is orthogonal to whether tabling is used for DCGs
@@ -67,7 +67,7 @@ or not.  An overview of DCG syntax
       using the usual BNF disjunction operator {\tt '|'}. 
 \item The Prolog control primitives {\em if-then-else} ({\tt '->'/2}),
       {\em nots} ({\tt not/1, fail\_if/1}, \not\ or {\tt tnot/1}) and 
-      {\em cut}\index{cut} (\cut)\index{{\tt "!/0}} may also be included in the 
+      {\em cut}\index{cut} (\cut)\index{\texttt{"!/0}} may also be included in the 
       right hand side of a DCG rule. These symbols need not be enclosed in 
       curly brackets. 
       \footnote{Readers familiar with Quintus Prolog may notice the difference
@@ -87,7 +87,7 @@ In this section we informally describe the translation of DCG rules
 into normal rules in XSB.  Each grammar rule is translated into a
 Prolog clause as it is consulted or compiled.  This is accomplished
 through a general mechanism of defining the hook predicate {\tt
-term\_expansion/2}, \index{{\tt term\_expansion/2}} by means of which
+term\_expansion/2}, \index{\texttt{term\_expansion/2}} by means of which
 a user can specify any desired transformation to be done as clauses
 are read by the reader of XSB's parser.  This DCG term expansion is as
 follows:
@@ -263,7 +263,7 @@ tabled, the need to copy sequences into or out of a table can lead to
 behavior quadratic in the length of the input sequence (See Section
 \ref{sec:TablingPitfalls}).  As an alternative, XSB allows a mode of
 DCGs that defines {\tt 'C'/3} as a call to a Datalog predicte {\tt
-word/3} \index{{\tt word/3}}:
+word/3} \index{\texttt{word/3}}:
 
 \stuff{\> \> 'C'(Pos,Token,Next\_pos):- word(Pos,Token,Next\_pos).}
 
@@ -319,7 +319,7 @@ The library predicates of XSB that support DCGs are the following:
 
 \begin{description}
 
-\ouritem{phrase(+Phrase, ?List)}\index{{\tt phrase/2}}
+\ouritem{phrase(+Phrase, ?List)}\index{\texttt{phrase/2}}
     This predicate is true iff the list {\tt List} can be parsed as a phrase 
     (i.e. sequence of terminals) of type {\tt Phrase}.  {\tt Phrase} can be 
     any term which would
@@ -334,7 +334,7 @@ The library predicates of XSB that support DCGs are the following:
     {\tt Phrase}; otherwise if {\tt List} is unbound, then the grammar
     is being used for generation.
 
-\ouritem{tphrase(+Phrase)}\index{{\tt tphrase/1}} This predicate is
+\ouritem{tphrase(+Phrase)}\index{\texttt{tphrase/1}} This predicate is
     succeeds if the current database of {\tt word/3} facts can be
     parsed via a call to the term expansion of {\tt +Phrase} whose
     input argument is set to {\tt 0} and whose output argument is set
@@ -348,7 +348,7 @@ The library predicates of XSB that support DCGs are the following:
 
 % TLS: handle error condition better in predicate.
 
-\ouritem{phrase(+Phrase, ?List, ?Rest)}\index{{\tt phrase/3}}
+\ouritem{phrase(+Phrase, ?List, ?Rest)}\index{\texttt{phrase/3}}
     This predicate is true iff the segment between the start of list 
     {\tt List} and the start of list {\tt Rest} can be parsed as a phrase 
     (i.e. sequence of terminals) of type {\tt Phrase} . In other words, if 
@@ -367,7 +367,7 @@ The library predicates of XSB that support DCGs are the following:
     as though {\tt phrase(X)} appeared instead, {\tt X} would expand into 
     a call to {\tt phrase(X, L, R)} for some lists {\tt L} and {\tt R}.  
 
-\ouritem{expand\_term(+Term1, ?Term2)}\index{{\tt expand\_term/2}}
+\ouritem{expand\_term(+Term1, ?Term2)}\index{\texttt{expand\_term/2}}
     This predicate is used to transform terms that appear in a Prolog program
     before the program is compiled or consulted.
     The standard transformation performed by {\tt expand\_term/2} is that 
@@ -379,7 +379,7 @@ The library predicates of XSB that support DCGs are the following:
     Users may override the standard transformations performed by predicate
     {\tt expand\_term/2} by defining their own compile-time transformations.
     This can be done by defining clauses for the predicate
-    {\tt term\_expansion/2}\index{{\tt term\_expansion/2}}.
+    {\tt term\_expansion/2}\index{\texttt{term\_expansion/2}}.
     When a term {\tt Term1} is read in when a file is being compiled or 
     consulted, {\tt expand\_term/2} calls {\tt term\_expansion/2} first;
     if the expansion succeeds, the transformed term so obtained is used and 
@@ -390,14 +390,14 @@ The library predicates of XSB that support DCGs are the following:
     module ({\tt usermod}) and should be loaded there before the compilation
     begins.
 
-\ouritem{'C'(?L1, ?Terminal, ?L2)}\index{{\tt `C'/3}}
+\ouritem{'C'(?L1, ?Terminal, ?L2)}\index{\texttt{`C'/3}}
 This predicate generally is of no concern to the user.  Rather it is used 
     in the transformation of terminal symbols in 
     grammar rules and expresses the fact that {\tt L1} is connected 
     to {\tt L2} by the terminal {\tt Terminal}. This predicate is
     needed to avoid problems due to source-level
     transformations in the presence of control primitives such as
-    {\em cuts}\index{cut} (\cut)\index{{\tt "!/0}}, or {\em if-then-elses} 
+    {\em cuts}\index{cut} (\cut)\index{\texttt{"!/0}}, or {\em if-then-elses} 
     ({\tt '->'/2}) and is defined by the single clause:
     \begin{center}
                 {\tt 'C'([Token|Tokens], Token, Tokens).}
@@ -405,7 +405,7 @@ This predicate generally is of no concern to the user.  Rather it is used
     The name 'C' was chosen for this predicate so that another useful
     name might not be preempted.
 
-\ouritem{tphrase\_set\_string(+List)}\index{{\tt tphrase\_set\_string/1}}
+\ouritem{tphrase\_set\_string(+List)}\index{\texttt{tphrase\_set\_string/1}}
 This predicate 
 
 \begin{enumerate}
@@ -418,17 +418,17 @@ described in Section \ref{sec:dcg_tabling}.
 \noindent
 implicitly changing the DCG mode from list to datalog.
 
-\ouritem{tphrase\_set\_string\_keeping\_tables(+List)}\index{{\tt tphrase\_set\_string\_keeping\_tables/1}}
+\ouritem{tphrase\_set\_string\_keeping\_tables(+List)}\index{\texttt{tphrase\_set\_string\_keeping\_tables/1}}
 This predicate is the same as {\tt tphrase\_set\_string}, except
 it does not abolish any tables.  When using this predicate, the
 user is responsible for explicitly abolishing the necessary tables.
 
-\ouritem{tphrase\_set\_string\_auto\_abolish(+List)}\index{{\tt tphrase\_set\_string\_auto\_abolish/1}}
+\ouritem{tphrase\_set\_string\_auto\_abolish(+List)}\index{\texttt{tphrase\_set\_string\_auto\_abolish/1}}
 This predicate is the same as {\tt tphrase\_set\_string}, except
 it abolishes tables that have been indicated as dcg-supported tables
 by a previous call to {\tt set\_dcg\_supported\_table/1}.
 
-\ouritem{set\_dcg\_supported\_table(+TabSkel)}\index{{\tt set\_dcg\_supported\_table/1}}
+\ouritem{set\_dcg\_supported\_table(+TabSkel)}\index{\texttt{set\_dcg\_supported\_table/1}}
 This predicate is used to indicate to the DCG subsystem that a
 particular tabled predicate is part of a DCG grammar, and thus the
 contents of its table depends on the string being parsed.  {\tt
@@ -438,7 +438,7 @@ been indicated as DCG-supported by a call to this predicate will be
 abolished.
 
 \ournewitem{dcg(+DCG\_Rule, ?Prolog\_Clause)}{dcg}
-\index{{\tt dcg/2}}
+\index{\texttt{dcg/2}}
     Succeeds iff the DCG rule {\tt DCG\_Rule} translates to the Prolog
     clause {\tt Prolog\_Clause}.  At the time of call, {\tt DCG\_Rule}
     must be bound to a term whose principal functor is {\tt '-->'/2}
@@ -488,7 +488,7 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       However, to obtain the standard expansion provided by the other Prolog
       systems, the user can simply execute:
       
-      \index{{\tt set\_dcg\_style/1}}
+      \index{\texttt{set\_dcg\_style/1}}
       \stuff{
         \>\> set\_dcg\_style(standard).
       }

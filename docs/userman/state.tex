@@ -41,17 +41,17 @@ mean the following:
 
 \begin{description}
 
-\ournewitem{current\_input(?Stream)}{ISO}\index{{\tt current\_input/1}}
+\ournewitem{current\_input(?Stream)}{ISO}\index{\texttt{current\_input/1}}
     Succeeds iff stream {\tt Stream} is the current input stream, or 
     procedurally unifies {\tt Stream} with the current input stream.
     There are no error conditions for this predicate.
 
-\ournewitem{current\_output(?Stream)}{ISO}\index{{\tt current\_output/1}}
+\ournewitem{current\_output(?Stream)}{ISO}\index{\texttt{current\_output/1}}
     Succeeds iff stream {\tt Stream} is the current output stream, or 
     procedurally unifies {\tt Stream} with the current output stream.
     There are no error conditions for this predicate.
 
-\ouritem{current\_module(?Module)}\index{{\tt current\_module/1}}
+\ouritem{current\_module(?Module)}\index{\texttt{current\_module/1}}
     The standard predicate {\tt current\_module/1} allows the user to check 
     whether a given module is {\em current} or to generate (through 
     backtracking) all currently known modules.
@@ -64,7 +64,7 @@ mean the following:
     with this predicate; if its argument does not unify with one of the 
     current modules, {\tt current\_module/1} simply fails.
 
-\ouritem{current\_module(?Module, ?ObjectFile)}\index{{\tt current\_module/2}}
+\ouritem{current\_module(?Module, ?ObjectFile)}\index{\texttt{current\_module/2}}
     Predicate {\tt current\_module/2} gives the relationship between the
     modules and their associated object file names. The file name 
     {\tt ObjectFile} must be absolute and always ends with {\tt '.O'}.
@@ -80,11 +80,11 @@ mean the following:
     if the arguments of {\tt current\_module/2} are not correct, or 
     {\tt Module} has no associated {\tt File}, the predicate will simply fail.
 
-\ouritem{current\_atom(?Atom\_Indicator)}\index{{\tt current\_atom/1}}
+\ouritem{current\_atom(?Atom\_Indicator)}\index{\texttt{current\_atom/1}}
     Generates (through backtracking) all currently known atoms, and unifies
     each in turn with {\tt Atom\_Indicator}. 
 
-%\ouritem{current\_atom(?Atom)}\index{{\tt current\_atom/2}}
+%\ouritem{current\_atom(?Atom)}\index{\texttt{current\_atom/2}}
 %\predindex{\$current\_atom/2~(B)}
 %    However, atoms considered ``internal'' symbols,
 %    i.e.\ those whose names begin with {\bf \$} or {\bf \_\$} are not returned.
@@ -95,7 +95,7 @@ mean the following:
 %    \end{center}
 
 \ouritem{current\_functor(?Predicate\_Indicator)}
-\index{{\tt current\_functor/1}}
+\index{\texttt{current\_functor/1}}
     The standard predicate {\tt current\_functor/1} can be used to find all
     the currently known terms appearing in a particular current module. 
     It succeeds iff {\tt Predicate\_Indicator} is a predicate 
@@ -142,7 +142,7 @@ mean the following:
     }
 
 \ouritem{current\_functor(?Name, ?Term\_Indicator)}
-\index{{\tt current\_functor/2}}
+\index{\texttt{current\_functor/2}}
     Succeeds iff {\tt Term\_Indicator} is the most general term 
     corresponding to one of the currently known terms having {\tt Name} 
     as their functor appearing in a current module.  (Both system and user 
@@ -195,7 +195,7 @@ mean the following:
     arguments are inappropriate, the predicate simply fails.
 
 \ouritem{current\_predicate(?Predicate\_Indicator)}
-\index{{\tt current\_predicate/1}}
+\index{\texttt{current\_predicate/1}}
     The predicate {\tt current\_predicate/1} can be used to find all
     the predicates that are defined and loaded in a particular current module. 
     The module can be either a Prolog or a foreign module (see the
@@ -277,7 +277,7 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 
 
 \ouritem{current\_predicate(?Name, ?Term\_Indicator)}
-\index{{\tt current\_predicate/2}}
+\index{\texttt{current\_predicate/2}}
     Succeeds iff {\tt Term\_Indicator} is the most general term 
     corresponding to one of the predicates having functor {\tt Name} that are 
     defined and loaded in a particular module in the database. 
@@ -334,7 +334,7 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 %??? need to define visible.
 \label{PredProp}
 \ouritem{predicate\_property(?Term\_Indicator, ?Property)}
-\index{{\tt predicate\_property/2}}
+\index{\texttt{predicate\_property/2}}
     The standard predicate {\tt predicate\_property/2} can be used to find 
     the properties of any predicate that is visible to a particular module.
     Succeeds iff {\tt Term\_Indicator} is a term indicator for a current 
@@ -457,7 +457,7 @@ module {\tt "usermod"} may be enumerated using:
     }
 
 
-\ouritem{module\_property(?Module, ?Property)}\index{{\tt module\_property/2}}
+\ouritem{module\_property(?Module, ?Property)}\index{\texttt{module\_property/2}}
     The standard predicate {\tt module\_property/2} can be used to find the
     properties of any current module.
     Succeeds iff {\tt Module} is the name of a current module having 
@@ -480,7 +480,7 @@ module {\tt "usermod"} may be enumerated using:
     \end{tabular}
     \end{center}
 
-\ouritem{listing}\index{{\tt listing/0}}
+\ouritem{listing}\index{\texttt{listing/0}}
     Lists in the current output stream the clauses for all dynamic
     predicates found in module {\tt usermod}.  Note that {\tt listing/0}
     does not list any compiled predicates unless they have the
@@ -528,7 +528,7 @@ module {\tt "usermod"} may be enumerated using:
     \>   \>     | ?- listing(X).
     }
 
-\ouritem{listing(+Predicate\_Indicator)}\index{{\tt listing/1}}
+\ouritem{listing(+Predicate\_Indicator)}\index{\texttt{listing/1}}
     If {\tt Predicate\_Indicator} is a variable then {\tt listing/1} is
     equivalent to {\tt listing/0}.
     If {\tt Predicate\_Indicator} is an atom, then {\tt listing/1} 
@@ -553,7 +553,7 @@ module {\tt "usermod"} may be enumerated using:
     as argument of {\tt listing/1}.
 
 \ouritem{xsb\_configuration(Feature\_Name, ?Value)}
-\index{{\tt xsb\_configuration/2}}
+\index{\texttt{xsb\_configuration/2}}
     Succeeds iff the current value of the XSB  feature {\tt
     Feature\_Name} is {\tt Value}.
 
@@ -629,7 +629,7 @@ module {\tt "usermod"} may be enumerated using:
     xsb_configuration(user_config_libdir, UserConfigLibdir) :- ...
 \end{verbatim}
 
-\ouritem{xsb\_flag(?Flag\_Name, ?Value)}\index{{\tt xsb\_flag/2}}
+\ouritem{xsb\_flag(?Flag\_Name, ?Value)}\index{\texttt{xsb\_flag/2}}
     Succeeds iff the current value of the XSB flag {\tt Flag\_Name} is 
     {\tt Value}. So, one can enumerate all the flag names which the system
     currently understands, together with their current values by using the
@@ -670,9 +670,9 @@ module {\tt "usermod"} may be enumerated using:
     Note that {\tt xsb\_flag} is used only for dynamic XSB settings, {\it
       i.e.}, settings that might change between sessions or within the same
     session. For static configuration information, the predicate {\tt
-      xsb\_configuration/2} is used. \index{{\tt xsb\_configuration/2}} 
+      xsb\_configuration/2} is used. \index{\texttt{xsb\_configuration/2}} 
 
-\ouritem{hilog\_symbol(?Symbol)}\index{{\tt hilog\_symbol/1}}
+\ouritem{hilog\_symbol(?Symbol)}\index{\texttt{hilog\_symbol/1}}
     Succeeds iff {\tt Symbol} has been declared as a HiLog symbol, or 
     procedurally unifies {\tt Symbol} with one of the currently known 
     (because of a prior declaration) HiLog symbols. The HiLog symbols
@@ -685,7 +685,7 @@ module {\tt "usermod"} may be enumerated using:
     \>   \>	| ?- hilog\_symbol(X).
     }
 
-\ouritem{current\_op(?Precedence, ?Type, ?Name)}\index{{\tt current\_op/3}}
+\ouritem{current\_op(?Precedence, ?Type, ?Name)}\index{\texttt{current\_op/3}}
     This predicate is used to examine the set of operators currently in force.
     It succeeds when the atom {\tt Name} is currently an operator of type 
     {\tt Type} and precedence {\tt Precedence}.  None of the arguments of
@@ -712,7 +712,7 @@ module {\tt "usermod"} may be enumerated using:
 	{\tt Name} is not an atom.
     \end{description}
 
-\ouritem{hilog\_op(?Precedence, ?Type, ?Name)}\index{{\tt hilog\_op/3}}
+\ouritem{hilog\_op(?Precedence, ?Type, ?Name)}\index{\texttt{hilog\_op/3}}
     This predicate has exactly the same behaviour as {\tt current\_op/3}
     with the only difference that {\tt Type} can only have the values
     {\tt hx} and {\tt hy}.

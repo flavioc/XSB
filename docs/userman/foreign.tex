@@ -151,7 +151,7 @@ be specified using a loader flag in {\tt ldoption}.  The problem here is
 that different systems use a different flag!  To circumvent this, XSB
 provides a predicate that tries to guess the right flag for your system:
 %%
-\index{{\tt runtime\_loader\_flag/2}}
+\index{\texttt{runtime\_loader\_flag/2}}
 %%
 \begin{verbatim}
 runtime_loader_flag(+Hint,-Flag)  
@@ -377,35 +377,35 @@ The first set of functions is typically used to check the type of
 Prolog terms passed into the C program. 
 %%
 \begin{description}
-\ouritem{xsbBool is\_attv((prolog\_term) T)} \index{{\tt is\_attv}}
+\ouritem{xsbBool is\_attv((prolog\_term) T)} \index{\texttt{is\_attv}}
     {\tt is\_attv(T)} returns TRUE if {\tt T} represents an XSB
     attributed variable,  and FALSE otherwise.
 
-\ouritem{xsbBool is\_float((prolog\_term) T)} \index{{\tt is\_float}}
+\ouritem{xsbBool is\_float((prolog\_term) T)} \index{\texttt{is\_float}}
     {\tt is\_float(T)} returns TRUE if {\tt T} represents an XSB
     float value, and FALSE otherwise.
 
-\ouritem{xsbBool is\_functor((prolog\_term) T)} \index{{\tt is\_functor}}
+\ouritem{xsbBool is\_functor((prolog\_term) T)} \index{\texttt{is\_functor}}
     {\tt is\_functor(T)} returns TRUE if {\tt T} represents an
     XSB structure value (not a list), and FALSE otherwise.
 
-\ouritem{xsbBool is\_int((prolog\_term) T)} \index{{\tt is\_int}}
+\ouritem{xsbBool is\_int((prolog\_term) T)} \index{\texttt{is\_int}}
     {\tt is\_int(T)} returns TRUE if {\tt T} represents an XSB
     integer value, and FALSE otherwise.
 
-\ouritem{xsbBool is\_list((prolog\_term) T)} \index{{\tt is\_list}}
+\ouritem{xsbBool is\_list((prolog\_term) T)} \index{\texttt{is\_list}}
     {\tt is\_list(T)} returns TRUE if {\tt T} represents an
     XSB list value (not nil), and FALSE otherwise.
 
-\ouritem{xsbBool is\_nil((prolog\_term) T)} \index{{\tt is\_nil}}
+\ouritem{xsbBool is\_nil((prolog\_term) T)} \index{\texttt{is\_nil}}
     {\tt is\_nil(T)} returns TRUE if {\tt T} represents an XSB
     \verb|[]| (nil) value, and FALSE otherwise.
 
-\ouritem{xsbBool is\_string((prolog\_term) T)} \index{{\tt is\_string}}
+\ouritem{xsbBool is\_string((prolog\_term) T)} \index{\texttt{is\_string}}
     {\tt is\_string(T)} returns TRUE if {\tt T} represents an XSB
     atom value, and FALSE otherwise.
 
-\ouritem{xsbBool is\_var((prolog\_term) T)} \index{{\tt is\_var}}
+\ouritem{xsbBool is\_var((prolog\_term) T)} \index{\texttt{is\_var}}
     {\tt is\_var(T)} returns TRUE if {\tt T} represents an XSB
     variable, and FALSE otherwise.
 
@@ -420,28 +420,28 @@ arity.  Extraction of the components of a list and the arguments of a
 structured term is explained later.
 
 \begin{description}
-\ouritem{int p2c\_int((prolog\_term) V)} \index{{\tt p2c\_int}}
+\ouritem{int p2c\_int((prolog\_term) V)} \index{\texttt{p2c\_int}}
     The prolog\_term argument must represent an integer, and {\tt
     p2c\_int} returns the value of that integer.
 
-\ouritem{double p2c\_float((prolog\_term) V)} \index{{\tt p2c\_float}}
+\ouritem{double p2c\_float((prolog\_term) V)} \index{\texttt{p2c\_float}}
     The prolog\_term argument must represent a floating point number,
     and {\tt p2c\_float} returns the value of that floating point
     number.
 
-\ouritem{char *p2c\_string((prolog\_term) V)} \index{{\tt p2c\_string}}
+\ouritem{char *p2c\_string((prolog\_term) V)} \index{\texttt{p2c\_string}}
     The prolog\_term argument must represent an atom, and {\tt
     p2c\_string} returns the name of that atom as a string. The
     pointer returned points to the actual atom name in \ourprolog 's
     space, and thus it must NOT be modified by the calling program.
-\ouritem{char *p2c\_functor((prolog\_term) V)} \index{{\tt p2c\_functor}}
+\ouritem{char *p2c\_functor((prolog\_term) V)} \index{\texttt{p2c\_functor}}
     The prolog\_term argument must represent a structured term (not a
     list).  {\tt p2c\_functor} returns the name of the main functor
     symbol of that term as a string. The pointer returned points to
     the actual functor name in \ourprolog 's space, and thus it must
     NOT be modified by the calling program.
 
-\ouritem{int p2c\_arity((prolog\_term) V)} \index{{\tt p2c\_arity}}
+\ouritem{int p2c\_arity((prolog\_term) V)} \index{\texttt{p2c\_arity}}
     The prolog\_term argument must represent a structured term (not a
     list).  {\tt p2c\_arity} returns the arity of the main functor
     symbol of that term as an integer.
@@ -456,15 +456,15 @@ XSB variable, which will be bound to the indicated value as a side
 effect of the function call.
 
 \begin{description}
-\ouritem{xsbBool c2p\_int((int) N, (prolog\_term) V)} \index{{\tt c2p\_int}}
+\ouritem{xsbBool c2p\_int((int) N, (prolog\_term) V)} \index{\texttt{c2p\_int}}
     {\tt c2p\_int} binds the prolog\_term V (which must be a variable)
     to the integer value N.
 
-\ouritem{xsbBool c2p\_float((double) F, (prolog\_term) V)} \index{{\tt c2p\_float}}
+\ouritem{xsbBool c2p\_float((double) F, (prolog\_term) V)} \index{\texttt{c2p\_float}}
     {\tt c2p\_float} binds the prolog\_term V (which must be a variable)
     to the (double) float value F.
 
-\ouritem{xsbBool c2p\_string((char *) S, (prolog\_term) V)} \index{{\tt c2p\_string}}
+\ouritem{xsbBool c2p\_string((char *) S, (prolog\_term) V)} \index{\texttt{c2p\_string}}
     {\tt c2p\_string} binds the prolog\_term V (which must be a
     variable) to the atom whose name is the value of S, which must be
     of type char *.
@@ -476,22 +476,22 @@ program. This is usually done in order to pass these structures back to
 the Prolog side.
 %%
 \begin{description}
-\ouritem{xsbBool c2p\_functor((char *) S, (int) N, (prolog\_term) V)} \index{{\tt c2p\_functor}}
+\ouritem{xsbBool c2p\_functor((char *) S, (int) N, (prolog\_term) V)} \index{\texttt{c2p\_functor}}
     {\tt c2p\_functor} binds the prolog\_term V (which must be a
     variable) to an open term whose main functor symbol is given by S
     (of type char *) and whose arity is N.  An open term is one with
     all arguments as new distinct variables.
 
-\ouritem{xsbBool c2p\_list((prolog\_term) V)} \index{{\tt c2p\_list}}
+\ouritem{xsbBool c2p\_list((prolog\_term) V)} \index{\texttt{c2p\_list}}
     {\tt c2p\_list} binds the prolog\_term V (which must be a variable)
     to an open list term, i.e., a list term with both car and cdr as
     new distinct variables. Note: to create an empty list use the function
     {\tt c2p\_nil} described below.
 
-\ouritem{xsbBool c2p\_nil((prolog\_term) V)} \index{{\tt c2p\_nil}}
+\ouritem{xsbBool c2p\_nil((prolog\_term) V)} \index{\texttt{c2p\_nil}}
     {\tt c2p\_nil} binds the prolog\_term V (which must be a
     variable) to the atom \verb|[]| (nil).
-\ouritem{prolog\_term p2p\_new()} \index{{\tt p2p\_new}}
+\ouritem{prolog\_term p2p\_new()} \index{\texttt{p2p\_new}}
     Create a new Prolog variable. This is sometimes needed when you want to
     create a Prolog term on the C side and pass it to the Prolog side.
 \end{description}
@@ -504,18 +504,18 @@ components of the structured Prolog terms.
 This is done with the help of the following functions:
 
 \begin{description}
-\ouritem{prolog\_term p2p\_arg((prolog\_term) T, (int) A)} \index{{\tt p2p\_arg}}
+\ouritem{prolog\_term p2p\_arg((prolog\_term) T, (int) A)} \index{\texttt{p2p\_arg}}
     Argument T must be a prolog\_term that is a structured term (but
     not a list).  A is a positive integer (no larger than the arity of
     the term) that specifies an argument position of the term {\tt T}.  {\tt
     p2p\_arg} returns the A$^{th}$ subfield of the term {\tt T}.
 
-\ouritem{prolog\_term p2p\_car((prolog\_term) T)} \index{{\tt p2p\_car}}
+\ouritem{prolog\_term p2p\_car((prolog\_term) T)} \index{\texttt{p2p\_car}}
     Argument T must be a prolog\_term that is a list (not nil).  {\tt
     p2p\_car} returns the car (i.e., head of the list) of the
     term T.
 
-\ouritem{prolog\_term p2p\_cdr((prolog\_term) T)} \index{{\tt p2p\_cdr}}
+\ouritem{prolog\_term p2p\_cdr((prolog\_term) T)} \index{\texttt{p2p\_cdr}}
     Argument T must be a prolog\_term that is a list (not nil).  {\tt
     p2p\_car} returns the cdr (i.e., tail of the list) of the
     term T.
@@ -562,12 +562,12 @@ Prolog side of XSB. The first function is the only way to get a
 sometimes needed in order to pass complex structures from C into Prolog.
 %%
 \begin{description}
-  \ouritem{prolog\_term reg\_term((int) R)} \index{{\tt reg\_term}}
+  \ouritem{prolog\_term reg\_term((int) R)} \index{\texttt{reg\_term}}
     Argument R is an argument number of the Prolog predicate implemented by
     this C function (range 1 to 255). The function {\tt
     reg\_term} returns the prolog\_term in that predicate argument.
 \ouritem{xsbBool p2p\_unify(prolog\_term T1, prolog\_term T2)}
-    \index{{\tt p2p\_unify}}
+    \index{\texttt{p2p\_unify}}
     Unify the two Prolog terms. This is useful when an argument of the
     Prolog predicate (implemented in C) is a structured term or a list,
     which acts both as input and output parameter.

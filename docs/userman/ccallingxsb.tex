@@ -59,7 +59,7 @@ xsb\_close\_query()}, before trying to evaluate another.  The
 routines to perform all these functions are described below:
 
 \begin{description}
-\ouritem{int xsb\_init(int argc, char *argv[])} \index{{\tt xsb\_init}}
+\ouritem{int xsb\_init(int argc, char *argv[])} \index{\texttt{xsb\_init}}
 This is a C-callable function that initializes \ourprolog . It must be
 called before any other calls can be made.  {\tt argc} is the count of
 the number of arguments in the {\tt argv} vector.  The {\tt argv}
@@ -96,7 +96,7 @@ Other flags are optional, but can be used to modify sizes of the various
 spaces used in \ourprolog.  {\tt xsb\_init} returns 0 if initialization is
 completed, and 1 if an error is encountered.
 
-\ouritem{int xsb\_init\_string(char *options)} \index{{\tt xsb\_init\_string}}
+\ouritem{int xsb\_init\_string(char *options)} \index{\texttt{xsb\_init\_string}}
 This is a variant of {\tt xsb\_init} which takes the command line as a
 string argument (rather than as a argc/argv pair.)  For example, a call
 could be
@@ -112,7 +112,7 @@ parameters following the file name are just as those that could appear on a
 command line.  The function of this subroutine is exactly the same as {\tt
   xsb\_init}, and its return codes are the same.
 
-\ouritem{int xsb\_command()} \index{{\tt xsb\_command}}
+\ouritem{int xsb\_command()} \index{\texttt{xsb\_command}}
 This function passes a command to \ourprolog .  No query can be active
 when this command is called.  Before calling {\tt xsb\_command}, the
 calling program must construct the \ourprolog\ term representing the
@@ -127,14 +127,14 @@ represented in register 1 and returns 0 if the command succeeds and 1
 if it fails. In either case it resets register 1 back to a free
 variable. If there is an error, it returns 2.
 
-\ouritem{int xsb\_command\_string(char *cmd)} \index{{\tt xsb\_command\_string}}
+\ouritem{int xsb\_command\_string(char *cmd)} \index{\texttt{xsb\_command\_string}}
 This function passes a command to \ourprolog .  The command is a
 string consisting of a term that can be read by the \ourprolog\
 reader.  The string must be terminated by a period (.).  Any previous
 query must have already been closed.  In all other respects, {\tt
 xsb\_command\_string} is similar to {\tt xsb\_command}.
 
-\ouritem{int xsb\_query()} \index{{\tt xsb\_query}}
+\ouritem{int xsb\_query()} \index{\texttt{xsb\_query}}
 This function passes a query to \ourprolog .  Any previous query must
 have already been closed.  A query is expected to return possibly
 multiple data answers.  The first is found and made available to the
@@ -159,7 +159,7 @@ xsb\_make\_vars(int)} and {\tt xsb\_set\_var\_*()}) in which case any
 variables set to values in the {\tt ret/n} term will be so bound in
 the call to the goal.
 
-\ouritem{int xsb\_query\_string(char *query)} \index{{\tt xsb\_query\_string}}
+\ouritem{int xsb\_query\_string(char *query)} \index{\texttt{xsb\_query\_string}}
 This function passes a query to \ourprolog .  The query is a string
 consisting of a term that can be read by the \ourprolog\ reader.  The
 string must be terminated with a period (.).  Any previous query must
@@ -169,7 +169,7 @@ through Register 2.  The ability to create the return structure and
 bind variables in it is particularly useful in this function.
 
 \ouritem{int xsb\_query\_string\_string(char *query, VarString *buff,
-char *sep)} \index{{\tt xsb\_query\_string\_string}} This function
+char *sep)} \index{\texttt{xsb\_query\_string\_string}} This function
 is a variant of {\tt xsb\_query\_string} that returns its answer (if
 there is one) as a string.  An example call is:
 \begin{verbatim}
@@ -197,15 +197,16 @@ quotes).  Complex terms are printed in a canonical form, with atoms
 quoted if necessary, and lists produced in the normal list notation.
 
 \ouritem{int xsb\_query\_string\_string\_b(char *query, char *buff,
-int bufflen, int *anslen, char *sep)} \index{{\tt
-xsb\_query\_string\_string\_b}} This function provides a lower-level
-interface to {\tt xsb\_query\_string\_string} (not using the {\tt
-VarString} type), which makes it easier for non-C callers (such as
-Visual Basic or Delphi) to access XSB functionality.  The first and
-last arguments are the same as in {\tt xsb\_query\_string\_string}.
-The \verb|buff|, \verb|bufflen|, and \verb|anslen| parameters are used
-to pass the answer (if any) back to the caller.  \verb|buff| is a
-buffer provided by the caller in which the answer is returned.
+int bufflen, int *anslen, char *sep)}
+\index{\texttt{xsb\_query\_string\_string\_b}} This function provides a
+lower-level interface to {\tt xsb\_query\_string\_string} (not using
+the {\tt VarString} type), which makes it easier for non-C callers
+(such as Visual Basic or Delphi) to access XSB functionality.  The
+first and last arguments are the same as in {\tt
+xsb\_query\_string\_string}.  The \verb|buff|, \verb|bufflen|, and
+\verb|anslen| parameters are used to pass the answer (if any) back to
+the caller.  \verb|buff| is a buffer provided by the caller in which
+the answer is returned.
 \verb|bufflen| is the length of the buffer (\verb|buff|) and is
 provided by the caller.  \verb|anslen| is returned by this routine and
 is the length of the computed answer.  If that length is less than
@@ -217,7 +218,7 @@ answer by providing a bigger buffer (of size greater than the returned
 \verb|anslen|) in a call to {\tt xsb\_get\_last\_answer\_string}.
 
 \ouritem{int xsb\_get\_last\_answer\_string(char *buff, int bufflen,
-int *anslen)} \index{{\tt xsb\_get\_last\_answer\_string\_b}} This
+int *anslen)} \index{\texttt{xsb\_get\_last\_answer\_string\_b}} This
 function is used only when a call to {\tt
 xsb\_query\_string\_string\_b} or to {\tt xsb\_next\_string\_b}
 returns a 3, indicating that the buffer provided was not big enough to
@@ -228,7 +229,7 @@ called immediately after the failing call in order to get the right
 answer.  The parameters are the same as the 2nd through 4th parameters
 of {\tt xsb\_query\_string\_string\_b}.
 
-\ouritem{int xsb\_next()} \index{{\tt xsb\_next}}
+\ouritem{int xsb\_next()} \index{\texttt{xsb\_next}}
 This routine is called after {\tt xsb\_query} (which must have
 returned 0) to retrieve more answers.  It rebinds the query variables
 in the term in register 1 and rebinds the argument fields of the {\tt
@@ -238,11 +239,10 @@ no more answers and no answer is returned. On a return of 1, the query
 has been closed.  After a query is closed, another {\tt xsb\_command}
 or {\tt xsb\_query} invocation can be made.
 
-\ouritem{int xsb\_next\_string(VarString *buff,char *sep)} \index{{\tt
-xsb\_next\_string}}  This routine is a variant of {\tt xsb\_next} that
+\ouritem{int xsb\_next\_string(VarString *buff,char *sep)} \index{\texttt{xsb\_next\_string}}  This routine is a variant of {\tt xsb\_next} that
 returns its answer (if there is one) as a string.  Its treatment of
-answers is just as {\tt xsb\_query\_string\_string}.  For example after
-the example call 
+answers is just as {\tt xsb\_query\_string\_string}.  For example
+after the example call
 \begin{verbatim}
 rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
@@ -262,7 +262,7 @@ the second answer to the indicated query. {\tt xsb\_next\_string}
 returns codes just as {\tt xsb\_next}.
 
 \ouritem{int xsb\_next\_string\_b(char *buff, int bufflen, int
-*anslen, char *sep)} \index{{\tt xsb\_next\_string}} This routine is a
+*anslen, char *sep)} \index{\texttt{xsb\_next\_string}} This routine is a
 variant of {\tt xsb\_next\_string} that does not use the {\tt
 VarString} type.  Its parameters are the same as the 2nd through 5th
 parameters of {\tt xsb\_query\_string\_string\_b}.  The next answer to
@@ -272,7 +272,7 @@ answer can be retrieved by providing a larger buffer in a call to {\tt
 xsb\_get\_last\_answer\_string\_b}.  In any case, the length of the
 answer is returned in \verb|anslen|.
 
-\ouritem{int xsb\_close\_query()} \index{{\tt xsb\_close\_query}}
+\ouritem{int xsb\_close\_query()} \index{\texttt{xsb\_close\_query}}
 This routine closes a query, before all its answers have been
 retrieved.  Since \ourprolog\ is (usually) a tuple-at-a-time system,
 answers that are not retrieved are not computed.
@@ -280,7 +280,7 @@ It is an error to call {\tt xsb\_query} again without
 first either retrieving all the answers to the previous query or
 calling {\tt xsb\_close\_query} to close it.
 
-\ouritem{int xsb\_close()} \index{{\tt xsb\_close}}
+\ouritem{int xsb\_close()} \index{\texttt{xsb\_close}}
 This routine closes the entire connection to \ourprolog .  After this,
 no more calls can be made (including calls to {\tt xsb\_init}.)
 \end{description}
@@ -396,7 +396,7 @@ into \ourprolog 's register 1, which is necessary before calling {\tt
 
 
 \begin{description}
-\ouritem{void xsb\_make\_vars((int) N)} \index{{\tt xsb\_make\_vars}}
+\ouritem{void xsb\_make\_vars((int) N)} \index{\texttt{xsb\_make\_vars}}
     {\tt xsb\_make\_vars} creates a return structure of arity {\tt N}
 in Register 2.  So this routine may called before calling any of {\tt
 xsb\_query}, {\tt xsb\_query\_string}, {\tt xsb\_command}, or {\tt
@@ -406,7 +406,7 @@ xsb\_set\_var\_*} routines can be called. {\tt N} must be the number
 of variables in the query that is to be evaluated.
 
 \ouritem{void xsb\_set\_var\_int((int) Val, (int) N)} 
-\index{{\tt xsb\_set\_var\_int}}
+\index{\texttt{xsb\_set\_var\_int}}
     {\tt set\_and\_int} sets the {\tt N}$^{th}$ field in the return
 structure to the integer value {\tt Val}.  It is used to set the value of
 the {\tt N}$^{th}$ variable in a query before calling {\tt xsb\_query} or
@@ -414,7 +414,7 @@ the {\tt N}$^{th}$ variable in a query before calling {\tt xsb\_query} or
 have the {\tt N}$^{th}$ variable set to this value.
 
 \ouritem{void xsb\_set\_var\_string((char *) Val, (int) N)} 
-\index{{\tt xsb\_set\_var\_string}}
+\index{\texttt{xsb\_set\_var\_string}}
     {\tt set\_and\_string} sets the {\tt N}$^{th}$ field in the return
 structure to the atom with name {\tt Val}.  It is used to set the
 value of the {\tt N}$^{th}$ variable in a query before calling {\tt
@@ -422,7 +422,7 @@ xsb\_query} or {\tt xsb\_query\_string}.  When called in \ourprolog,
 the query will have the {\tt N}$^{th}$ variable set to this value.
 
 \ouritem{void xsb\_set\_var\_float((float) Val, (int) N)} 
-\index{{\tt xsb\_set\_var\_float}}
+\index{\texttt{xsb\_set\_var\_float}}
     {\tt set\_and\_float} sets the {\tt N}$^{th}$ field in the return
 structure to the floating point number with value {\tt Val}.  It is
 used to set the value of the {\tt N}$^{th}$ variable in a query before
@@ -430,20 +430,20 @@ calling {\tt xsb\_query} or {\tt xsb\_query\_string}.  When called in
 \ourprolog, the query will have the {\tt N}$^{th}$ variable set to this
 value.
 
-\ouritem{prolog\_int xsb\_var\_int((int) N)} \index{{\tt xsb\_var\_int}} 
+\ouritem{prolog\_int xsb\_var\_int((int) N)} \index{\texttt{xsb\_var\_int}} 
 {\tt xsb\_var\_int} is called after {\tt xsb\_query} or {\tt
 xsb\_query\_string} returns an answer.  It returns the value of the
 {\tt N}$^{th}$ variable in the query as set in the returned answer.
 This variable must have an integer value (which is cast to {\tt
 long} in a 64-bit architecture).
 
-\ouritem{char* xsb\_var\_string((int) N)} \index{{\tt xsb\_var\_string}}
+\ouritem{char* xsb\_var\_string((int) N)} \index{\texttt{xsb\_var\_string}}
     {\tt xsb\_var\_string} is called after {\tt xsb\_query} or {\tt
 xsb\_query\_string} returns an answer.  It returns the value of the
 {\tt N}$^{th}$ variable in the query as set in the returned answer.
 This variable must have an atom value.
 
-\ouritem{prolog\_float xsb\_var\_float((int) N)} \index{{\tt xsb\_var\_float}}
+\ouritem{prolog\_float xsb\_var\_float((int) N)} \index{\texttt{xsb\_var\_float}}
     {\tt xsb\_var\_float} is called after {\tt xsb\_query} or {\tt
     xsb\_query\_string} returns an answer.  It returns the value of
     the {\tt N}$^{th}$ variable in the query as set in the returned

@@ -299,14 +299,14 @@ but does not succeed, although {\tt und r} will succeed.
 
 We note in passing that programs under WFSX can be paraconsistent.
 For instance in the program.
-{\small
+
 \begin{verbatim}
               p:- q.
 
               q:- not q.
               -q.
 \end{verbatim}
-}
+
 both {\tt p} and {\tt q} will be true {\em and} false in the WFSX
 model.  Accordingly, under SLX preprocessing, both {\tt p} and {\tt
 naf p} will succeed.

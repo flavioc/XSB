@@ -207,7 +207,7 @@ object of type {\tt Obj\_type}, where {\tt Culprit} was observed.
 \section{Error Handling Predicates}
 
 \begin{description}
-\ouritem{throw(ErrorTermt}\index{{\tt throw/1}} 
+\ouritem{throw(ErrorTermt}\index{\texttt{throw/1}} 
 Throws the error {\tt ErrorTerm}.  Execution traverses up the choice
 point stack until a goal of the form {\tt catch(Goal,Term,Handler)} is
 found such that {\tt Term} unifies with {\tt ErrorTerm}.  In this
@@ -216,7 +216,7 @@ looks for a clause of {\tt default\_user\_error\_handler(Term)} such
 that {\tt Term} unifies with {\tt ErrorTerm}.  Finally, if no such
 clause is found the default system error handler is called.
 %
-\ouritem{catch(Goal,CatchTerm,Handler)} \index{{\tt catch/3}} 
+\ouritem{catch(Goal,CatchTerm,Handler)} \index{\texttt{catch/3}} 
 Calls {\tt Goal}, and sets up information so that future throws will
 be able to access {\tt CatchTerm} under the mechanism mentioned
 above. {\tt catch/3} does not attempt to clean up system level
@@ -225,13 +225,13 @@ resources.   Thus, it is left up to the handler to close open tables
 input and output, and so on.
 %
 \ouritem{default\_user\_error\_handler(CatchTerm)}
-\index{{\tt default\_user\_error\_handler/1}}
+\index{\texttt{default\_user\_error\_handler/1}}
 Handles any error terms that unify with {\tt CatchTerm} that are not
 caught by invocations of {\tt catch/3}.  This predicate {\em does}
 close open tables, but does not attempt to clean up other system level
 resources, which is left to the handler.
 %
-\ouritem{abort}\index{{\tt abort/0}}
+\ouritem{abort}\index{\texttt{abort/0}}
     Abandons the current execution and returns to the top level.  This
     predicate should normally normally be used: 
  \begin{itemize} 
@@ -253,13 +253,13 @@ program development, or in small-special purpose programs.
 default behavior of {\tt abort/0} must call a top-level goal via {\tt
 catch/1} and ensure that {\tt '\_\$abort\_ball'/0} is handled.
 
-\ouritem{abort(+Message)}\index{{\tt abort/1}} \index{{\tt STDERR}}
+\ouritem{abort(+Message)}\index{\texttt{abort/1}} \index{\texttt{STDERR}}
     Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
     before aborting.
 
-\ournewitem{error\_write(Message)}{standard}\index{{\tt errror\_write/1}}
+\ournewitem{error\_write(Message)}{standard}\index{\texttt{errror\_write/1}}
 \vspace{-0.3in}
-\ournewitem{error\_writeln(Message)}{standard}\index{{\tt errror\_writeln/1}}
+\ournewitem{error\_writeln(Message)}{standard}\index{\texttt{errror\_writeln/1}}
 
 Utility routines for user-defined error catching.  These predicates
 output {\tt Message} to XSB's {\tt STDERR} stream, rather than to
@@ -269,7 +269,7 @@ comma list are output as if they were concatenated together.  Each of
 these predicates must be implicitly imported from the module {\tt
 standard}.
 
-\ournewitem{close\_open\_tables}{machine}\index{{\tt close\_open\_tables/0}}
+\ournewitem{close\_open\_tables}{machine}\index{\texttt{close\_open\_tables/0}}
 %
 Removes table data structures for all incomplete tables, but does not
 affect any incomplete tables.  In \version{} this predicate should
@@ -287,7 +287,7 @@ from the module {\tt error\_handler}.
 
 \begin{description}
 \ournewitem{instantiation\_error(Predicate,Arg,State)}{error\_handler}
-\index{{\tt instantiation\_error/4}}
+\index{\texttt{instantiation\_error/4}}
 Throws an instantiation error.  Using the default system error
 handler, an example is 
 {\small 
@@ -299,7 +299,7 @@ Aborting...
 }
 
 \ournewitem{type\_error(Valid\_type,Culprit,Predicate,Arg)}{error\_handler}
-\index{{\tt type\_error/4}}
+\index{\texttt{type\_error/4}}
 Throws a type error.  Using the default system error
 handler, an example is 
 {\small 
@@ -311,7 +311,7 @@ Aborting...
 }
 
 \ournewitem{domain\_error(Valid\_type,Culprit,Predicate,Arg)}{error\_handler}
-\index{{\tt domain\_error/4}}
+\index{\texttt{domain\_error/4}}
 Throws a domain error.  Using the default system error
 handler, an example is 
 {\small 
@@ -323,7 +323,7 @@ Aborting...
 }
 
 \ournewitem{existence\_error(Object\_type,Culprit,Predicate,Arg)}{error\_handler}
-\index{{\tt existence\_error/4}}
+\index{\texttt{existence\_error/4}}
 Throws an existence error.  Using the default system error
 handler, an example is 
 {\small 
@@ -334,7 +334,7 @@ existence_error(file,'myfile.P','load_intensional_rules/2',2).
 }
 
 \ournewitem{permission\_error(Op,Obj\_type,Culprit,Predicate)}{error\_handler}
-\index{{\tt permission\_error/4}}
+\index{\texttt{permission\_error/4}}
 Throws a permission error.  Using the default system error
 handler, an example is 
 {\small 
@@ -347,33 +347,33 @@ Aborting...
 
 
 \ournewitem{check\_var(Term,Predicate,Arg)}{error\_handler}
-\index{{\tt check\_var/3}}
+\index{\texttt{check\_var/3}}
 Checks that {\tt Term} is a variable.  If so, the predicate succeeds;
 if not it throws an instantiation error.
 
 \ournewitem{check\_nonvar(Term,Predicate,Arg)}{error\_handler}
-\index{{\tt check\_nonvar/3}}
+\index{\texttt{check\_nonvar/3}}
 Checks that {\tt Term} is not a variable.  If not, the predicate succeeds;
 if {\tt Term} is a variable,  it throws an instantiation error.
 
 \ournewitem{check\_ground(Term,Predicate,Arg)}{error\_handler}
-\index{{\tt check\_ground/3}}
+\index{\texttt{check\_ground/3}}
 Checks that {\tt Term} is ground.  If so, the predicate succeeds;
 if not it throws an instantiation error.
 
 \ournewitem{check\_nonvar\_list(Term,Predicate,Arg)}{error\_handler}
-\index{{\tt check\_nonvar\_list/3}}
+\index{\texttt{check\_nonvar\_list/3}}
 Checks that {\tt Term} is a list, each of whose elements is ground.
 If so, the predicate succeeds; if not it throws an instantiation
 error.
 	    
 \ournewitem{check\_atom(Term,Predicate,Arg)}{error\_handler}
-\index{{\tt check\_atom/3}}
+\index{\texttt{check\_atom/3}}
 Checks that {\tt Term} is an atom.  If so, the predicate succeeds;
 if not it throws an instantiation error.
 
 \ournewitem{check\_stream(Stream,Predicate,Arg)}{error\_handler}
-\index{{\tt check\_stream/3}}
+\index{\texttt{check\_stream/3}}
 Checks that {\tt Stream} is a stream.  If so, the predicate succeeds;
 if not it throws an instantiation error~\footnote{The representation
 of streams in XSB is subject to change.}.

@@ -60,14 +60,14 @@ defining it, the call will quietly fail instead of issuing an {\sf
 
 \begin{description}
 
-\ouritem{assert(+Clause)}\index{{\tt assert/1}}
+\ouritem{assert(+Clause)}\index{\texttt{assert/1}}
 adds a dynamic clause, {\tt Clause}, to the database. {\tt Clause}
 must be of one of the forms: {\tt Head} or {\tt Head :- Body}. Note
 that because of the precedence of {\tt :-/2}, using the second form
 requires an extra set of parentheses: {\tt assert((Head :- Body))}.
 Default: first-argument indexing.
 
-\ouritem{asserta(+Clause)}\index{{\tt asserta/1}}
+\ouritem{asserta(+Clause)}\index{\texttt{asserta/1}}
 If the index specification for the preicate is not {\tt tries}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
 before} any other clauses for the same predicate currently in the
@@ -76,7 +76,7 @@ the clause is asserted arbitrarily within the trie, and a warning
 message sent to {\tt stderr}.
 
 
-\ouritem{assertz(+Clause)}\index{{\tt assertz/1}}
+\ouritem{assertz(+Clause)}\index{\texttt{assertz/1}}
 If the index specification for the predicate is not {\tt tries}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
 after} any other clauses for the same predicate currently in the
@@ -84,7 +84,7 @@ database.  If the index specification for the predicate is {\tt trie},
 the clause is asserted arbitrarily within the trie, and a warning
 message sent to {\tt stderr}.
 
-\ouritem{retract(+Clause)}\index{{\tt retract/1}}
+\ouritem{retract(+Clause)}\index{\texttt{retract/1}}
 removes through backtracking all clauses in the database that match with
 {\tt Clause}.  {\tt Clause} must be of one of the forms:  {\tt Head} or
 {\tt Head :- Body}.  Note, that because of the precedence of {\tt :-/2},
@@ -92,7 +92,7 @@ using the second form requires an extra set of parentheses:
 {\tt retract((Head :- Body))}.  Space is reclaimed when a 
 clause is retracted.
 
-\ouritem{retractall(+Head)}\index{{\tt retractall/1}}
+\ouritem{retractall(+Head)}\index{\texttt{retractall/1}}
 removes every clause in the database whose head matches with {\tt Head}.
 The predicate whose clauses have been retracted retains the {\tt dynamic}
 property (contrast this behavior with that of predicates 
@@ -100,19 +100,19 @@ property (contrast this behavior with that of predicates
 Predicate {\tt retractall/1} is determinate and always succeeds.
 The term {\tt Head} is not further instantiated by this call.
 
-\ouritem{abolish(+PredSpec)}\index{{\tt abolish/1}}
+\ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}}
 Removes the definition of the specified predicate.  {\tt PredSpec}
 is of the form {\tt Pred/Arity}.  Everything about the abolished
 predicate is completely forgotten by the system (including the
 {\tt dynamic} property).  There is also an {\tt abolish/2} which
 takes {\tt Pred} and {\tt Arity} as its two arguments.
 
-\ouritem{clause(+Head,?Body)}\index{{\tt clause/2}}
+\ouritem{clause(+Head,?Body)}\index{\texttt{clause/2}}
 Returns through backtracking all dynamic clauses in the database whose head
 matches {\tt Head} and Body matches {\tt Body}.  For facts the {\tt Body} is
 {\tt true}.  
 
-\ouritem{retract\_nr(+Clause)}\index{{\tt retract\_nr/1}}
+\ouritem{retract\_nr(+Clause)}\index{\texttt{retract\_nr/1}}
 Performs just as {\tt retract/1} does, except that it does not reclaim the
 space used by the retracted clause. This is provided to allow programmers
 to modify dynamic clauses while executing them (a practice that is 
@@ -136,7 +136,7 @@ compatibility with the {\tt retract/1} predicate of SB-Prolog.
 %compatibility with the {\tt retract/1} predicate provided by SB-Prolog that
 %did not reclaim space.
 
-\ouritem{reclaim\_space(+Head)}\index{{\tt reclaim\_space/1}}
+\ouritem{reclaim\_space(+Head)}\index{\texttt{reclaim\_space/1}}
 Runs through the dynamic code for the predicate indicated by {\tt Head}, and
 reclaims space for any clauses that have been deleted from that predicate by
 {\tt retract\_nr/1}.  This cannot safely be used when execution is still
@@ -159,7 +159,7 @@ it is provided for (partial) compatibility with SB-Prolog.
 TLS: I dont think we need hashtable size given that we use dynamic
 hashing.  We still are supporting it, but we dont need to encourage it
 \vspace{-.35in}
-\ouritem{index(+PredSpec, +IndexSpec, +HashTableSize)}\index{{\tt index/3}}
+\ouritem{index(+PredSpec, +IndexSpec, +HashTableSize)}\index{\texttt{index/3}}
 
 If {\tt index/3} is used, then the predicate indicated by {\tt
 PredSpec} is declared to be indexed according to {\tt IndexSpec} using
@@ -188,7 +188,7 @@ that case the joint index would never be used.)
 
 }
 
-\ouritem{index(+PredSpec, +IndexSpec)}\index{{\tt index/2}}
+\ouritem{index(+PredSpec, +IndexSpec)}\index{\texttt{index/2}}
 \label{index_dynamic} \index{indexing!dynamic predicates}
 
 In general, XSB supports hash-based indexing on various arguments or
@@ -297,7 +297,7 @@ current version of XSB only allows trie indexing for unit clauses.
 Trie-based indexing is available only for dynamic predicates.
 \end{itemize}
 
-\ouritem{dynamic(+PredSpec)}\index{{\tt dynamic/1}}\label{dynamic/1}
+\ouritem{dynamic(+PredSpec)}\index{\texttt{dynamic/1}}\label{dynamic/1}
 is an executable predicate which converts a predicate specified as
 (Predicate/Arity) to a dynamic predicate. If {\tt Predicate} is not
 previously defined, it will be initialized to empty (so that calls to
@@ -312,7 +312,7 @@ however, that the semantics is different from that of the standard
 \cite{ISO-Prolog} when the file contains clauses defining the
 so-specified predicate.
 
-\ouritem{table(+PredSpec)}\index{{\tt table/1}}
+\ouritem{table(+PredSpec)}\index{\texttt{table/1}}
 is an executable predicate, where PredSpec is a predicate
 specification for a dynamic predicate. (This is also a compiler
 directive when {\tt PredSpec} specifies a compiled predicate. See the
@@ -349,7 +349,7 @@ module {\tt storage}.
 \subsubsection{Non-backtrackable Storage}
 
 \begin{description}
-\ouritem{storage\_insert\_keypair(+StorageName,+Key, +Value, ?Inserted)}\index{{\tt storage\_insert\_keypair/4}}
+\ouritem{storage\_insert\_keypair(+StorageName,+Key, +Value, ?Inserted)}\index{\texttt{storage\_insert\_keypair/4}}
 %%
 Insert the given Key-Value pair into the database. If the pair is new, then
 {\tt Inserted} unifies with 1. If the pair is already in the database, then
@@ -361,7 +361,7 @@ used. Different names denote different storages.
 In both cases the predicate succeeds.
 
 \ouritem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}
-\index{{\tt storage\_delete\_keypair/3}}
+\index{\texttt{storage\_delete\_keypair/3}}
 %%
 Delete the key-value pair with the given key from the databases. If
 the pair was in the database then {\tt Deleted} unifies with 1.
@@ -371,7 +371,7 @@ used. Different names denote different storages.
 In both cases the predicate succeeds.
 
 \ouritem{storage\_find\_keypair(+StorageName, +Key, ?Value)}
-\index{{\tt storage\_find\_keypair/3}}
+\index{\texttt{storage\_find\_keypair/3}}
 %%
 If the database has a key pair with the given key, then {\tt Value} unifies
 with the value stored in the database. If no such pair exists in the
@@ -380,15 +380,15 @@ database, then the goal fails.
 Note that this predicate works with non-backtrackable associative arrays
 described above as well as with the backtrackable ones, described below.
 
-\ouritem{storage\_insert\_fact(+StorageName, +Fact, ?Inserted)}\index{{\tt storage\_insert\_fact/3}}
+\ouritem{storage\_insert\_fact(+StorageName, +Fact, ?Inserted)}\index{\texttt{storage\_insert\_fact/3}}
 Similar to keypair insertion, but this primitive inserts facts rather than
 key pairs.
 
-\ouritem{storage\_delete\_fact(+StorageName, +Fact, ?Inserted)}\index{{\tt storage\_delete\_fact/3}}
+\ouritem{storage\_delete\_fact(+StorageName, +Fact, ?Inserted)}\index{\texttt{storage\_delete\_fact/3}}
 Similar to keypair deletion, but this primitive deletes facts rather than
 key pairs.
 
-\ouritem{storage\_find\_fact(+StorageName, +Fact)}\index{{\tt storage\_find\_fact/2}}
+\ouritem{storage\_find\_fact(+StorageName, +Fact)}\index{\texttt{storage\_find\_fact/2}}
 Similar to keypair finding, but this primitive finds facts facts rather than
 key pairs.
 %%
@@ -399,7 +399,7 @@ key pairs.
 
 \begin{description}
 \ouritem{storage\_insert\_keypair\_bt(+StorageName, +Key, +Value, ?Inserted)}
-\index{{\tt storage\_insert\_keypair\_bt/4}}
+\index{\texttt{storage\_insert\_keypair\_bt/4}}
 This predicate works exactly as its non-backtrackable counterpart,
 {\tt storage\_insert\_keypair/4}, when the top-level goal succeeds.
 However, if the top-level goal fails, then the result of the insertion is
@@ -412,21 +412,21 @@ non-backtrackable pairs and are queried through the same predicate
 {\tt keypair\_find/2}.
 
 \ouritem{storage\_delete\_keypair\_bt(+StorageName, +Key, ?Deleted)}
-\index{{\tt storage\_delete\_keypair\_bt/3}}
+\index{\texttt{storage\_delete\_keypair\_bt/3}}
 %%
 Like {\tt storage\_delete\_keypair/3}, but backtrackable.
 
 
-\ouritem{storage\_insert\_fact\_bt(+StorageName, +Goal)} \index{{\tt storage\_insert\_fact\_bt/2}}
+\ouritem{storage\_insert\_fact\_bt(+StorageName, +Goal)} \index{\texttt{storage\_insert\_fact\_bt/2}}
 %%
 Like {\tt storage\_insert\_fact/2}, but backtrackable.
 
 \ouritem{storage\_delete\_fact\_bt(+StorageName, +Goal)} 
-\index{{\tt storage\_delete\_fact\_bt/2}}
+\index{\texttt{storage\_delete\_fact\_bt/2}}
 %%
 This is a backtrackable version of {\tt storage\_delete\_fact/2}.
 
-\ouritem{storage\_reclaim\_space(+StorageName)} \index{{\tt storage\_reclaim\_space/1}}
+\ouritem{storage\_reclaim\_space(+StorageName)} \index{\texttt{storage\_reclaim\_space/1}}
 %%
 This is similar to {\tt reclaim\_space/1} for {\tt assert} and {\tt
   retract}, but it is used for storage managed by the primitives defined in
@@ -442,7 +442,7 @@ typically called just before returning to the top level.
 
 \begin{description}
 
-\ouritem{break}\index{{\tt break/0}}
+\ouritem{break}\index{\texttt{break/0}}
     Causes the current execution to be suspended at the beginning of the next 
     call.  The interpreter then enters break level 1 and is ready to accept
     input as if it were at top level.  If another call to {\tt break/0} is 
@@ -477,11 +477,11 @@ typically called just before returning to the top level.
     the tables were created during the computation for which the break was
     entered.
 
-\ouritem{halt}\index{{\tt halt/0}}
+\ouritem{halt}\index{\texttt{halt/0}}
     Exits the \ourprolog\ session regardless of the break level.  On exiting
     the system cpu and elapsed time information is displayed.
 
-\ouritem{prompt(+NewPrompt, ?OldPrompt)}\index{{\tt prompt/2}}
+\ouritem{prompt(+NewPrompt, ?OldPrompt)}\index{\texttt{prompt/2}}
     Sets the prompt of the top level interpreter to {\tt NewPrompt} and 
     returns the old prompt in {\tt OldPrompt}.
 
@@ -499,27 +499,27 @@ typically called just before returning to the top level.
         \>   \>     Yes master >
     }
 
-\ouritem{garbage\_collection(+Option)}\index{{\tt
-    garbage\_collection/1}} Sets the system so that subsequent heap
-    garbage collecting will be done according to the specified {\tt
-    Option}.  {\tt Option} may be the atom \verb|none| indicating that
-    heap garbage collection is turned off; it may be the atom
-    \verb|sliding| indicating that sliding garbage collection will be
-    done; the atom \verb|copying| indicating that the copying garbage
-    collector will be used; or it may be the atom \verb|indirection|
-    indicating that the indirect-sliding garbage collector will be
-    used.  
+\ouritem{garbage\_collection(+Option)}\index{texttt{garbage\_collection/1}} 
+   Sets the system so that subsequent heap garbage collecting will be
+   done according to the specified {\tt Option}.  {\tt Option} may be
+   the atom \verb|none| indicating that heap garbage collection is
+   turned off; it may be the atom \verb|sliding| indicating that
+   sliding garbage collection will be done; the atom \verb|copying|
+   indicating that the copying garbage collector will be used; or it
+   may be the atom
+\verb|indirection| indicating that the indirect-sliding garbage
+collector will be used.
  
-\ouritem{cputime(-CPU\_Time)}\index{{\tt cputime/1}}
+\ouritem{cputime(-CPU\_Time)}\index{\texttt{cputime/1}}
     Returns the {\tt CPU\_Time} at the time of the call in seconds.
     The difference between results of successive calls to this
     predicate can measure the time spent in specific predicates.
 
-\ouritem{walltime(-Time)}\index{{\tt cputime/1}}
+\ouritem{walltime(-Time)}\index{\texttt{cputime/1}}
     Returns the \texttt{Time}, in seconds, since execution started, or
     since the last call to \texttt{statistics(0)}. 
 
-\ouritem{statistics}\index{{\tt statistics/0}} Prints on the current
+\ouritem{statistics}\index{\texttt{statistics/0}} Prints on the current
     output stream: 
 \begin{itemize} 
 \item Information about allocation of memory  containing the 
@@ -647,7 +647,7 @@ Tabling Operations
      required by the system can be obtained through the non-supported
      predicate {\tt statistics/1} in {\tt \$XSB\_DIR/emu/trace.c}.
 
-%\ouritem{analyze\_table(+Pred\_indicator)}\index{{\tt analyze\_table/1}}
+%\ouritem{analyze\_table(+Pred\_indicator)}\index{\texttt{analyze\_table/1}}
 %    This predicate provides additional means for the user to profile
 %    execution of tabled predicates.  Given a predicate indicator for a 
 %    tabled predicate, {\tt analyze\_table/1} prints the following information.
@@ -693,7 +693,7 @@ Tabling Operations
 %    return hash table has no effect on the speed of queries which use completed
 %    tables.
 
-\ouritem{shell(+SystemCall)}\index{{\tt shell/1}}
+\ouritem{shell(+SystemCall)}\index{\texttt{shell/1}}
     Calls the operating system with the atom {\tt SystemCall} as argument.
     It succeeds if {\tt SystemCall} is executed successfully, otherwise it
     fails.  As a notational convenience, the user can supply {\tt SystemCall} 
@@ -720,7 +720,7 @@ Tabling Operations
 %    {\em Note to DOS users.} \index{DOS}  The {\tt shell/1} command works
 %    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
 
-\ouritem{shell(+SystemCall, -Result)}\index{{\tt shell/2}}
+\ouritem{shell(+SystemCall, -Result)}\index{\texttt{shell/2}}
     Calls the operating system with the atom {\tt SystemCall} as argument
     and returns the result of the call in {\tt Result}.  In comparison with
     {\tt shell/1} this predicate always succeeds, even if the {\tt SystemCall} 
@@ -729,12 +729,12 @@ Tabling Operations
 %    {\em Note to DOS users.} \index{DOS}  The {\tt shell/2} command works
 %    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
 
-\ouritem{ls}\index{{\tt ls/0}} 
+\ouritem{ls}\index{\texttt{ls/0}} 
     Under UNIX, this command lists in the current output stream the files 
     in the system's current directory if it can do so.  If so, it succeeds.
     It is the same as {\tt shell('ls -F', 0)}.  
 
-\ouritem{cd(+Dir)}\index{{\tt cd/1}}
+\ouritem{cd(+Dir)}\index{\texttt{cd/1}}
     Under UNIX and Windows, this predicate changes the interpreter's
     working directory to {\tt Dir}.  If the directory specified does
     not exist or is not a directory, or the user does not have execute
@@ -749,7 +749,7 @@ Tabling Operations
         {\tt Dir} is not an atom.
     \end{description}
 
-\ouritem{edit(+Module)}\index{{\tt edit/1}}
+\ouritem{edit(+Module)}\index{\texttt{edit/1}}
     Provided that the environment variable {\tt EDITOR} has been set,
     and the system is executing under UNIX, 
     a call to {\tt edit(foo)} will call the default editor on the file

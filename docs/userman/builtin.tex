@@ -32,9 +32,9 @@ streams).
 
 \subsection{File Handling}
 \begin{description}
-\ournewitem{set\_input(+F)}{ISO}\index{{\tt set\_input/1}}
+\ournewitem{set\_input(+F)}{ISO}\index{\texttt{set\_input/1}}
 \vspace{-7mm} 
-\ouritem{see(+F)}\index{{\tt see/1}}
+\ouritem{see(+F)}\index{\texttt{see/1}}
     Makes file {\tt F} the current input stream. 
     \begin{itemize}
     \item If there is an open input stream associated with the file that 
@@ -63,19 +63,19 @@ streams).
     	{\tt F} is not an atomic file identifier
     \end{description}
 
-\ouritem{seeing(?F)}\index{{\tt seeing/1}}
+\ouritem{seeing(?F)}\index{\texttt{seeing/1}}
     {\tt F} is unified with the name of the current input stream.
     This is exactly the same with predicate {\tt current\_input/1}
     described in Section~\ref{State}, and it is only provided for
     upwards compatibility reasons.
 
-\ouritem{seen}\index{{\tt seen/0}}
+\ouritem{seen}\index{\texttt{seen/0}}
     Closes the current input stream. 
     Current input reverts to {\tt ``userin''} (the standard input stream).
 
-\ournewitem{set\_output(+F)}{ISO}\index{{\tt set\_output/1}}
+\ournewitem{set\_output(+F)}{ISO}\index{\texttt{set\_output/1}}
 \vspace{-7mm} 
-\ouritem{tell(+F)}\index{{\tt tell/1}}
+\ouritem{tell(+F)}\index{\texttt{tell/1}}
     Makes file {\tt F} the current output stream. 
     \begin{itemize}
     \item If there is an open output stream associated with {\em F}  
@@ -103,17 +103,17 @@ streams).
     	{\tt F} is not an atomic file identifier
     \end{description}
 
-\ouritem{telling(?F)}\index{{\tt telling/1}}
+\ouritem{telling(?F)}\index{\texttt{telling/1}}
     {\tt F} is unified with the name of the current output stream.
     This predicate is exactly the same with predicate {\tt current\_output/1}
     described in Section~\ref{State}, and it is only provided for
     upwards compatibility reasons.
 
-\ouritem{told}\index{{\tt told/0}}
+\ouritem{told}\index{\texttt{told/0}}
     Closes the current output stream. 
     Current output stream reverts to ``userout'' (the standard output stream).
 
-\ournewitem{open(+File,+Mode,-Stream)}{ISO}\index{{\tt open/3}}
+\ournewitem{open(+File,+Mode,-Stream)}{ISO}\index{\texttt{open/3}}
     {\tt open/1} creates a stream for the file designated in {\em
     File}, and binds {\em Stream} to a structure representing that
     stream.  {\em Mode} can be one of either {\tt read} to create an
@@ -141,7 +141,7 @@ streams).
 	{\tt F} is uninstantiated.
     \end{description}
 
-\ournewitem{open(+File,+Mode,-Stream.+Options)}{ISO}\index{{\tt open/4}}
+\ournewitem{open(+File,+Mode,-Stream.+Options)}{ISO}\index{\texttt{open/4}}
 
 	This predicate is implemented in XSB for partial ISO
 	compatability.  In the case where {\tt Options} is equal to {\tt
@@ -149,17 +149,17 @@ streams).
 	aborts.
 
 
-\ournewitem{close(+Stream)}{ISO}\index{{\tt close/1}}
+\ournewitem{close(+Stream)}{ISO}\index{\texttt{close/1}}
 	{\tt close/1} closes the stream {\em Stream}.
 
-\ournewitem{close(+Stream.+Options)}{ISO}\index{{\tt close/2}}
+\ournewitem{close(+Stream.+Options)}{ISO}\index{\texttt{close/2}}
 
 	This predicate is implemented in XSB for partial ISO
 	compatability.  In the case where {\tt Options} is equal to
 	{\tt []}, {\tt close/2} is defined as {\tt close/1}, otherwise
 	it aborts.
 
-\ouritem{file\_exists(+F)}\index{{\tt file\_exists/1}}
+\ouritem{file\_exists(+F)}\index{\texttt{file\_exists/1}}
     Succeeds if file {\tt F} exists. {\tt F} must be instantiated to
     an atom at the time of the call, or an error message is displayed on
     the standard error stream and the predicate aborts.
@@ -175,13 +175,13 @@ streams).
 
 \subsection{Character I/O}
 \begin{description}
-\ouritem{nl}\index{{\tt nl/0}}
+\ouritem{nl}\index{\texttt{nl/0}}
     A new line character is sent to the current output stream.
 
-\ouritem{nl(+Stream)}\index{{\tt nl/1}}
+\ouritem{nl(+Stream)}\index{\texttt{nl/1}}
     A new line character is sent to the designated output stream.
 
-\ouritem{get0(?N)}\index{{\tt get0/1}} 
+\ouritem{get0(?N)}\index{\texttt{get0/1}} 
     {\tt N} is the ASCII code of the next character read from the
     current input stream (regarded as a text stream). If the current
     input stream reaches its end of file, a {\tt -1} is returned.
@@ -189,7 +189,7 @@ streams).
     Compatibility Note:  Unlike other Prologs, such as C-Prolog, the input 
     stream is not closed on encountering the end-of-file character.
 
-\ouritem{get(?N)}\index{{\tt get/1}} 
+\ouritem{get(?N)}\index{\texttt{get/1}} 
     {\tt N} is the ASCII code of the next non-blank printable
     character from the current input stream (regarded as a text
     stream).  If the current input stream reaches its end of file, a
@@ -198,23 +198,23 @@ streams).
     Compatibility Note:  Unlike other Prologs, such as C-Prolog, the input 
     stream is not closed on encountering the end-of-file character.
 
-\ouritem{get\_code(?N)}\index{{\tt get\_code/1}}
+\ouritem{get\_code(?N)}\index{\texttt{get\_code/1}}
 \vspace{-7mm} 
-\ouritem{get\_code(+Stream,?N)}\index{{\tt get\_code/2}}
+\ouritem{get\_code(+Stream,?N)}\index{\texttt{get\_code/2}}
    {\tt N} is the ASCII code of the next character from the current
    input stream or from {\tt Stream}.  The semantics of these
    predicates are based on that of {\tt get0/1} and do not conform in
    all cases to the ISO standard.
 
-\ouritem{get\_char(?Char)}\index{{\tt get\_char/1}}
+\ouritem{get\_char(?Char)}\index{\texttt{get\_char/1}}
 \vspace{-7mm} 
-\ouritem{get\_char(+Stream,?Char)}\index{{\tt get\_char/2}}
+\ouritem{get\_char(+Stream,?Char)}\index{\texttt{get\_char/2}}
    {\tt Char} is the next ASCII character from the current input stream
    or from {\tt Stream}.  The semantics of these predicates are based
    on that of {\tt get0/1} and do not conform in all cases to the ISO
    standard.
 
-\ouritem{put(+N)}\index{{\tt put/1}}
+\ouritem{put(+N)}\index{\texttt{put/1}}
     Puts the ASCII character code {\tt N} to the current output stream.
 
     Exceptions:
@@ -225,24 +225,24 @@ streams).
 	{\tt N} is not an integer at the time of the call.
     \end{description}
 
-\ouritem{put\_code(+N)}\index{{\tt put\_code/1}}
+\ouritem{put\_code(+N)}\index{\texttt{put\_code/1}}
 \vspace{-7mm} 
-\ouritem{put\_code(+Stream,+N)}\index{{\tt put\_code/2}}
+\ouritem{put\_code(+Stream,+N)}\index{\texttt{put\_code/2}}
     Puts the ASCII character code {\tt N} to the current output stream
     or to {\tt Stream}.  The semantics of these predicates are based
     on that of {\tt put/1} and do not conform in all cases to the ISO
     standard.
 
-\ouritem{put\_char(+Char)}\index{{\tt put\_char/1}}
+\ouritem{put\_char(+Char)}\index{\texttt{put\_char/1}}
 \vspace{-7mm} 
-\ouritem{put\_char(+Stream,+Char)}\index{{\tt put\_char/2}}
+\ouritem{put\_char(+Stream,+Char)}\index{\texttt{put\_char/2}}
     Puts the ASCII code of the character {\tt Char} to the current
     output stream or to {\tt Stream}.  The semantics of these
     predicates are based on that of {\tt put/1} and do not conform in
     all cases to the ISO standard.
 
 
-\ouritem{tab(+N)}\index{{\tt tab/1}}
+\ouritem{tab(+N)}\index{\texttt{tab/1}}
     Puts {\tt N} spaces to the current output stream. 
 
     Exceptions:
@@ -256,7 +256,7 @@ streams).
 
 \subsection{Term I/O}
 \begin{description}
-\ouritem{read(?Term)}\index{{\tt read/1}}
+\ouritem{read(?Term)}\index{\texttt{read/1}}
     A HiLog term is read from the current or designated input stream,
     and unified with {\tt Term} according to the operator declarations
     in force.  (See Section~\ref{TermSyntax} for the definition and
@@ -279,12 +279,12 @@ streams).
 
 %--------
 
-\ouritem{read(+Stream, ?Term)}\index{{\tt read/2}}
+\ouritem{read(+Stream, ?Term)}\index{\texttt{read/2}}
 	{\tt read/2} has the same behavior as {\tt read/1} but the
 	input stream is explicitly designated using the first argument.
 
 %--------
-\ouritem{read\_term(?Term,?OptionsList)}\index{{\tt read\_term/2}}
+\ouritem{read\_term(?Term,?OptionsList)}\index{\texttt{read\_term/2}}
 %
 A term is read from the current input stream as in {\tt read/1}; but
 {\tt OptionsList} is a (possibly empty) list of {\em read options}
@@ -320,7 +320,7 @@ string used to denote the variable in the input stream.
 
 %--------
 
-\ouritem{read\_term(+Stream, ?Term,?OptionsList)}\index{{\tt read\_term/3}}
+\ouritem{read\_term(+Stream, ?Term,?OptionsList)}\index{\texttt{read\_term/3}}
 %
 {\tt read\_term/3} has the same behavior as {\tt read\_term/2} but
 the input stream is explicitly designated using the first argument.
@@ -333,7 +333,7 @@ Exceptions are the same as {\tt read\_term/2}, but with the addition:
 	{\tt Stream} is not an XSB stream (currently an atom).
     \end{description}
 
-\ouritem{write(?Term)}\index{{\tt write/1}}
+\ouritem{write(?Term)}\index{\texttt{write/1}}
     The HiLog term {\tt Term} is written to the current output stream, 
     according to the operator declarations in force.  Any uninstantiated 
     subterm of term {\tt Term} is written as an anonymous variable (an 
@@ -363,13 +363,13 @@ Exceptions are the same as {\tt read\_term/2}, but with the addition:
     {\tt numbervars/[1,3]} described in the section {\it Library Utilities} in Volume 2.
 %% $
 
-\ouritem{write(+Stream, ?Term)}\index{{\tt write/2}}
+\ouritem{write(+Stream, ?Term)}\index{\texttt{write/2}}
 	{\tt write/2} has the same behavior as {\tt write/1} but the
 	output stream is explicitly designated using the first argument.
 
-\ouritem{write\_term(?Term,+Options)}\index{{\tt write\_term/2}}
+\ouritem{write\_term(?Term,+Options)}\index{\texttt{write\_term/2}}
 \vspace{-7mm} 
-\ouritem{write\_term(+Stream, ?Term,+Options)}\index{{\tt write\_term/3}}
+\ouritem{write\_term(+Stream, ?Term,+Options)}\index{\texttt{write\_term/3}}
 
     Outputs {\tt +Term} to the current output ({\tt write\_term/2}) or
     to {\tt Stream} ({\tt write\_term/3}) according to the list of
@@ -458,14 +458,14 @@ yes
 \end{verbatim}
 }
 
-\ouritem{writeln(?Term)}\index{{\tt writeln/1}}
+\ouritem{writeln(?Term)}\index{\texttt{writeln/1}}
     {\tt writeln(Term)} can be defined as {\tt write(Term), nl}.
 
-\ouritem{writeln(+Stream,?Term)}\index{{\tt writeln/2}}
+\ouritem{writeln(+Stream,?Term)}\index{\texttt{writeln/2}}
     {\tt writeln(Term)} can be defined as {\tt write(Stream,Term),
     nl(Stream)}.
 
-\ouritem{display(?Term)}\index{{\tt display/1}}
+\ouritem{display(?Term)}\index{\texttt{display/1}}
     The HiLog term {\tt Term} is displayed on the terminal (standard output 
     stream), according to the operator declarations in force. In other words,
     {\tt display/1} is similar to {\tt write/1} but the result is always
@@ -473,7 +473,7 @@ yes
     always succeeds without producing an error. After returning from a call 
     to this predicate, the current output stream remains unchanged.
 
-\ournewitem{write\_prolog(?Term)}{HiLog}\index{{\tt write\_prolog/1}}
+\ournewitem{write\_prolog(?Term)}{HiLog}\index{\texttt{write\_prolog/1}}
     This predicate acts as does {\tt write/1} except that
     any HiLog term {\tt Term} is written as a Prolog term. 
     {\tt write\_prolog/1} outputs {\tt Term} according to the operator 
@@ -482,12 +482,12 @@ yes
     described below, despite the fact that both predicates write HiLog terms
     as Prolog terms.
 
-\ournewitem{write\_prolog(+Stream,?Term)}{HiLog}\index{{\tt write\_prolog/2}}
+\ournewitem{write\_prolog(+Stream,?Term)}{HiLog}\index{\texttt{write\_prolog/2}}
 	{\tt write\_prolog/2} has the same behavior as {\tt
 	write\_prolog/1} but the output stream is explicitly
 	designated using the first argument.
 
-\ouritem{writeq(?Term)}\index{{\tt writeq/1}}
+\ouritem{writeq(?Term)}\index{\texttt{writeq/1}}
     Acts as {\tt write(Term)}, but atoms and functors are quoted
     whenever necessary to make the result acceptable as input to 
     {\tt read/1}\@. {\tt writeq/1} treats treats terms of the form 
@@ -497,11 +497,11 @@ yes
 
     {\tt writeq/1} always succeeds without producing an error.
 
-\ouritem{writeq(+Stream, ?Term)}\index{{\tt writeq/2}}
+\ouritem{writeq(+Stream, ?Term)}\index{\texttt{writeq/2}}
 	{\tt writeq/2} has the same behavior as {\tt writeq/1} but the
 	output stream is explicitly designated using the first argument.
 
-\ouritem{write\_canonical(?Term)}\index{{\tt write\_canonical/1}}
+\ouritem{write\_canonical(?Term)}\index{\texttt{write\_canonical/1}}
     This predicate is provided so that the HiLog term {\tt Term}, 
     if written to a file, can be read back using {\tt read/1} regardless of 
     special characters appearing in {\tt Term} or prevailing operator 
@@ -523,8 +523,8 @@ yes
     as \verb|'.'(foo,'.'(bar,[]))|).
 %% $
 
-\ournewitem{read\_canonical(-Term)}{basics} \index{{\tt
-read\_canonical/1}} 
+\ournewitem{read\_canonical(-Term)}{basics} 
+\index{\texttt{read\_canonical/1}} 
 Reads a term that is in canonical format from the
 current input stream and returns it in {\tt Term}. On end-of-file, it
 returns the atom {\tt end\_of\_file}.  If it encounters an error, it
@@ -532,12 +532,12 @@ prints an error message on stderr and returns the atom {\tt
 read\_canonical\_error}. This is significantly faster than {\tt
 read/1}, but requires the input to be in canonical form.
 
-\ouritem{write\_canonical(+Stream, ?Term)}\index{{\tt write\_canonical/2}}
+\ouritem{write\_canonical(+Stream, ?Term)}\index{\texttt{write\_canonical/2}}
 	{\tt write\_canonical/2} has the same behavior as {\tt
 	write\_canonical/1} but the output stream is explicitly
 	designated using the first argument.
 
-\ouritem{print(?Term)}\index{{\tt print/1}}
+\ouritem{print(?Term)}\index{\texttt{print/1}}
     This predicate is intended to provide a handle for user-defined 
     pretty-printing.  Currently it is defined as {\em write/1}.
 
@@ -549,7 +549,7 @@ documentation in Manual 2
 \section{Special I/O}
 
 \begin{description}
-\ouritem{fmt\_read(+Format, types(+T1,+T2,...), args(-A1,-A2,...), -RetCode)}\index{{\tt fmt\_read/4}} 
+\ouritem{fmt\_read(+Format, types(+T1,+T2,...), args(-A1,-A2,...), -RetCode)}\index{\texttt{fmt\_read/4}} 
  This predicate implements C-style formatted input. It reads the current
  input according to the {\tt Format} string.  {\tt Format} has the
  same syntax as the input format in C. The term {\tt types(...)} lists the
@@ -558,17 +558,17 @@ documentation in Manual 2
  The term {\tt args()} specifies the variables for the input. {\tt RetCode}
  specifies the return code: 0 -- ok; -1 -- end of file.
 
-\ouritem{read\_line(-Line, -Status)}\index{{\tt read\_line/2}} 
+\ouritem{read\_line(-Line, -Status)}\index{\texttt{read\_line/2}} 
  Reads the next line from the current input and puts it in {\tt Line}.
  If the line is larger than the available buffer, then {\tt Status} is 0.
  If the line was read in full, up to and including the newline character,
  then {\tt Status} is 1. 
 
-\ouritem{fmt\_write(+Format, args(-A1,-A2,...))}\index{{\tt fmt\_write/2}} 
+\ouritem{fmt\_write(+Format, args(-A1,-A2,...))}\index{\texttt{fmt\_write/2}} 
  Similar to formatted write in C. The semantics of the arguments is the
  same as for {\tt fmt\_read/4}.
 
-\ouritem{fmt\_write\_string(-String, +Format, args(-A1,-A2,...))}\index{{\tt fmt\_write/2}} 
+\ouritem{fmt\_write\_string(-String, +Format, args(-A1,-A2,...))}\index{\texttt{fmt\_write/2}} 
  Like {\tt fmt\_write/2}, but the output string is placed in {\tt String}.
 
 \end{description}
@@ -606,7 +606,7 @@ their evaluated input is not numeric.  We describe below only their
 behavior on correctly typed input.
 
 \begin{description}
-\ouritem{is(?Result,+Expression)}\index{{\tt is/2}} 
+\ouritem{is(?Result,+Expression)}\index{\texttt{is/2}} 
 {\tt is(Result,Expression)} is true iff the result of evaluating {\tt
 Expression} as a sequence of evaluable functors unifies with {\tt
 Result}.  As mentioned in Section~\ref{inline_predicates}, {\tt is/2}
@@ -617,27 +617,27 @@ will not be visible during a trace of program execution.
 \subsection{Evaluable Functors for Arithmetic Expressions}
 
 \begin{description}
-\ournewitem{+(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt +/2}} 
+\ournewitem{+(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{+/2}} 
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 + Number2}, performing any
 necessary type conversions.
 
-\ournewitem{-(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt -/2}} 
+\ournewitem{-(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{-/2}} 
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 - Number2}, performing any
 necessary type conversions.
 
-\ournewitem{*(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt */2}} 
+\ournewitem{*(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{*/2}} 
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 * Number2} (i.e. multiplies
 them), performing any necessary type conversions.
 
-\ournewitem{/(+Expr1,Expr2)}{Evaluable Functor}\index{{\tt '/'/2}}
+\ournewitem{/(+Expr1,Expr2)}{Evaluable Functor}\index{\texttt{'/'/2}}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 / Number2} (i.e. divides
 them), performing any necessary type conversions.
 
-\ournewitem{//(+Expr1,Expr2)}{Evaluable Functor}\index{{\tt '//'/2}}
+\ournewitem{//(+Expr1,Expr2)}{Evaluable Functor}\index{\texttt{'//'/2}}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 // Number2} (i.e. integer
 division), performing any necessary type conversions, and rounding to
@@ -663,46 +663,46 @@ division), performing any necessary type conversions, and rounding to
                 yes
   \end{verbatim}}
 
-\ournewitem{-(+Expr1)}{Evaluable Functor}\index{{\tt -/1}} If {\tt
+\ournewitem{-(+Expr1)}{Evaluable Functor}\index{\texttt{-/1}} If {\tt
 +Expr} evaluates to {\tt Number}, returns {\tt -Number1},
 performing any necessary type conversions.
 
-\ournewitem{'/\'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
-'/\'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ournewitem{'/\'(+Expr1,+Expr2)}{Evaluable Functor}
+\index{\texttt{'/\'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the bitwise conjunction of {\tt
 Number1} and {\tt Number2}.
 
-\ournewitem{'\/'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
-'\/'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ournewitem{'\/'(+Expr1,+Expr2)}{Evaluable Functor}
+\index{\texttt{'\/'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the bitwise disjunction {\tt
 Number1} and {\tt Number2}.
 
-\ournewitem{'>>'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
-'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ournewitem{'>>'(+Expr1,+Expr2)}{Evaluable Functor}
+\index{\texttt{'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the logical shift right of 
 {\tt Number1}, {\tt Number2} places.
 
-\ournewitem{'<<'(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt
-'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ournewitem{'<<'(+Expr1,+Expr2)}{Evaluable Functor}
+\index{\texttt{'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the logical shift left of 
 {\tt Number1}, {\tt Number2} places.
 
-\ournewitem{ceiling(+Expr)}{Evaluable Functor}\index{{\tt ceiling/1}}
+\ournewitem{ceiling(+Expr)}{Evaluable Functor}\index{\texttt{ceiling/1}}
 If {\tt +Expr} evaluates to {\tt Number}, {\tt ceiling(Number)}
 returns the integer ceiling of {\tt Number} if {\tt Number} is a
 float, and {\tt Number} itself if {\tt Number} is an integer.
 
-\ournewitem{float(+Expr)}{Evaluable Functor}\index{{\tt float/1}} If
+\ournewitem{float(+Expr)}{Evaluable Functor}\index{\texttt{float/1}} If
 {\tt +Expr} evaluates to {\tt Number}, {\tt float(Number)} converts 
 {\tt Number} to a float if {\tt Number} is an integer, and returns {\tt
 Number} itself if {\tt Number} is a float.
 
-\ournewitem{floor(+Expr)}{Evaluable Functor}\index{{\tt floor/1}} If
+\ournewitem{floor(+Expr)}{Evaluable Functor}\index{\texttt{floor/1}} If
 {\tt +Expr} evaluates to {\tt Number}, {\tt floor(Number)} returns the
 integer floor of {\tt Number} if {\tt Number} is a float, and {\tt
 Number} itself if {\tt Number} is an integer.
 
-\ournewitem{mod(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt mod/2}}
+\ournewitem{mod(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{mod/2}}
 If {\tt +Expr1} evaluates to {\tt Number1} and {\tt Expr2} evaluates
 to {\tt Number2} where {\tt Number2} is not 0, {\tt
 mod(Number1,Number2)} returns
@@ -710,7 +710,7 @@ mod(Number1,Number2)} returns
 	Number1 - (\lfloor (Number1 / Number2) \rfloor) \times Number2)
 \]
 
-\ournewitem{rem(+Expr1,+Expr2)}{Evaluable Functor}\index{{\tt rem/2}}
+\ournewitem{rem(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{rem/2}}
 If {\tt +Expr1} evaluates to {\tt Number1} and {\tt Expr2} evaluates
 to {\tt Number2} where {\tt Number2} is not 0, {\tt
 rem(Number1,Number2)} returns
@@ -743,25 +743,25 @@ rem(Number1,Number2)} returns
                 yes
   \end{verbatim}}
 
-\ournewitem{round(+Expr)}{Evaluable Functor}\index{{\tt round/1}} If
+\ournewitem{round(+Expr)}{Evaluable Functor}\index{\texttt{round/1}} If
 {\tt +Expr} evaluates to {\tt Number}, {\tt round(Number)} returns the
 nearest integer to {\tt Number} if {\tt Number} is a float, and {\tt
 Number} itself if {\tt Number} is an integer.
 
-\ournewitem{sqrt(+Expr)}{Evaluable Functor}\index{{\tt sqrt/1}}
+\ournewitem{sqrt(+Expr)}{Evaluable Functor}\index{\texttt{sqrt/1}}
 If {\tt +Expr} evaluates to {\tt Number}, {\tt sqrt(Number)}
 returns the square root of {\tt Number}.
 
-\ournewitem{truncate(+Expr)}{Evaluable Functor}\index{{\tt
-truncate/1}} If {\tt +Expr} evaluates to {\tt Number}, {\tt
+\ournewitem{truncate(+Expr)}{Evaluable Functor}
+\index{\texttt{truncate/1}} If {\tt +Expr} evaluates to {\tt Number}, {\tt
 truncate(Number)} truncates {\tt Number} if {\tt Number} is a float,
 and returns {\tt Number} itself if {\tt Number} is an integer.
 \end{description}
 
 \subsubsection{Mathematical Functions from {\tt math.h}}
-\index{{\tt cos/1}} \index{{\tt sin/1}} \index{{\tt tan/1}}
-\index{{\tt acos/1}} \index{{\tt asin/1}} \index{{\tt atan/1}}
-\index{{\tt log/1}} \index{{\tt log10/1}}
+\index{\texttt{cos/1}} \index{\texttt{sin/1}} \index{\texttt{tan/1}}
+\index{\texttt{acos/1}} \index{\texttt{asin/1}} \index{\texttt{atan/1}}
+\index{\texttt{log/1}} \index{\texttt{log10/1}}
 
 XSB also allows as evaluable functors, many of the functions form the
 C library {\tt math.h}.  Functions included in XSB \version{} are {\tt
@@ -774,25 +774,23 @@ These predicates are standard and often self-explanatory, so they are
 described only briefly.
 \begin{description}
 
-\ouritem{true}\index{{\tt true/0}} 
+\ouritem{true}\index{\texttt{true/0}} 
 %\predindex{true/0~(I)}
     Always succeeds.
 
-\ouritem{otherwise}\index{{\tt otherwise/0}} 
+\ouritem{otherwise}\index{\texttt{otherwise/0}} 
 %\predindex{otherwise/0~(B)}
     Same as {\tt true/0}.
 
-\ouritem{fail}\index{{\tt fail/0}}
+\ouritem{fail}\index{\texttt{fail/0}}
 %\predindex{fail/0~(I)}
     Always fails.
 
-\ouritem{X = Y}\index{{\tt =/2}} 
+\ouritem{X = Y}\index{\texttt{=/2}} 
 %\predindex{=/2~(I)}
     Defined as if by the clause ``Z=Z'', i.e.~{\tt X} and~{\tt Y} are unified.
 
-\ouritem{X $\backslash$\,= Y}\index{{\tt $\backslash$=/2}}
-%\predindex{$\backslash$ =/2~$(I)}
-%\index{not unifiable|see{$\backslash$=/2}}
+\ouritem{X $\backslash$\,= Y}\index{\texttt{$\backslash$=/2}}
     Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
     fails if~{\tt X} and~{\tt Y} are unifiable.
     It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
@@ -803,7 +801,7 @@ described only briefly.
 \index{control}
 
 \begin{description}
-\ouritem{\cut}\index{{\tt "!/0}}  \index{cut} 
+\ouritem{\cut}\index{\texttt{"!/0}}  \index{cut} 
     Cut (discard) all choice points made since the parent goal
     started execution.
     Cuts across tabled predicates are not valid.  The compiler checks for
@@ -813,7 +811,7 @@ described only briefly.
     Further discussion of conditions allowing cuts and of their actions 
     can be found in Section~\ref{tabling_env}.
 
-\ouritem{fail\_if(+P)}\index{{\tt fail\_if/1}}
+\ouritem{fail\_if(+P)}\index{\texttt{fail\_if/1}}
     If the goal {\tt P} has a solution, fails, otherwise it succeeds.
     Equivalently, it is true iff {\tt call(P)} 
     (see Section~\ref{meta_predicates}) is false. Argument {\tt P} 
@@ -832,11 +830,11 @@ described only briefly.
     \end{description}
 
 
-\ouritem{$\backslash$+ +P}\index{{\tt $\backslash$+/1}}
+\ouritem{$\backslash$+ +P}\index{$\backslash$\texttt{+/1}}
     Exactly the same as {\tt fail\_if/1}.  Its existence is only 
     for compatibility with other Prolog systems.
 
-\ouritem{not +P}\index{{\tt not/1}} 
+\ouritem{not +P}\index{\texttt{not/1}} 
     If the goal {\tt P} has a solution, fails, otherwise it succeeds.
     It is defined by:
     \begin{center}
@@ -858,7 +856,7 @@ described only briefly.
     Exceptions: The same as {\tt call/1} 
 		(see Section~\ref{meta_predicates}).
 
-\ournewitem{tnot(+P)}{Tabling}\index{{\tt tnot/1}}\label{tnot/1}
+\ournewitem{tnot(+P)}{Tabling}\index{\texttt{tnot/1}}\label{tnot/1}
     The semantics of {\tt tnot/1} allows for correct execution of
     programs with according to the well-founded semantics.  {\tt P}
     must be a tabled predicate, 
@@ -884,7 +882,7 @@ described only briefly.
     \end{description}
 
 
-    \ournewitem{sk\_not(+P)}{Tabling}\index{{\tt sk\_not/1}} 
+    \ournewitem{sk\_not(+P)}{Tabling}\index{\texttt{sk\_not/1}} 
 %% 
 If {\tt +P} is a tabled predicate, {\tt sk\_not/1} acts as {\tt tnot/1}
     but permits variables in its subgoal argument.  This replaces the
@@ -909,7 +907,7 @@ and called via a tabled predicate so that {\tt sk\_not/1} can be used
 with non-tabled predicates as well, regardless of whether {\tt +P} is
 ground or not.
 
-\ouritem{P -> Q ; R}\index{{\tt ->/2}} 
+\ouritem{P -> Q ; R}\index{\texttt{->/2}} 
     Analogous to if {\tt P} then {\tt Q} else {\tt R}, i.e.\ defined as 
     if by
 	\begin{center}
@@ -921,14 +919,14 @@ ground or not.
 	\end{minipage}
 	\end{center}
 
-\ouritem{P -> Q} \index{{\tt ->/2}} 
+\ouritem{P -> Q} \index{\texttt{->/2}} 
     When occurring other than as one of the alternatives of a disjunction,
     is equivalent to:
 	\begin{center}
 	{\tt P -> Q ; fail.}
 	\end{center}
 
-\ouritem{repeat} \index{{\tt repeat/2}} 
+\ouritem{repeat} \index{\texttt{repeat/2}} 
     Generates an infinite sequence of choice points (in other words it 
     provides a very convenient way of executing a loop). It is defined 
     by the clauses:
@@ -954,7 +952,7 @@ which provide special operations on HiLog terms.  For a full
 discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
 
 \begin{description}
-\ouritem{var(?X)}\index{{\tt var/1}} 
+\ouritem{var(?X)}\index{\texttt{var/1}} 
     Succeeds if {\tt X} is currently uninstantiated (i.e.\ is still a 
     variable); otherwise it fails.  
 
@@ -979,12 +977,12 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
      \end{verbatim}}
 
 
-\ouritem{nonvar(?X)}\index{{\tt nonvar/1}} 
+\ouritem{nonvar(?X)}\index{\texttt{nonvar/1}} 
     Succeeds if {\tt X} is currently instantiated to a non-variable term;
     otherwise it fails. This has exactly the opposite behaviour of 
     {\tt var/1}\@.
 
-\ouritem{atom(?X)}\index{{\tt atom/1}} 
+\ouritem{atom(?X)}\index{\texttt{atom/1}} 
     Succeeds only if the {\tt X} is currently instantiated to an atom, that
     is to a Prolog or HiLog non-numeric constant.
 
@@ -1007,24 +1005,24 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 yes
      \end{verbatim}}
 
-\ouritem{integer(?X)}\index{{\tt integer/1}}
+\ouritem{integer(?X)}\index{\texttt{integer/1}}
     Succeeds if {\tt X} is currently instantiated to an integer; 
     otherwise it fails. 
 
-\ouritem{real(?X)}\index{{\tt real/1}} 
+\ouritem{real(?X)}\index{\texttt{real/1}} 
     Succeeds if {\tt X} is currently instantiated to a floating point number;
     otherwise it fails. 
 
-\ouritem{float(?X)}\index{{\tt float/1}} 
+\ouritem{float(?X)}\index{\texttt{float/1}} 
     Same as {\tt real/1}. Succeeds if {\tt X} is currently instantiated 
     to a floating point number; otherwise it fails.  This predicate is 
     included for compatibility with earlier versions of SBProlog.
 	
-\ouritem{number(?X)}\index{{\tt number/1}} 
+\ouritem{number(?X)}\index{\texttt{number/1}} 
     Succeeds if {\tt X} is currently instantiated to either an integer or 
     a floating point number (real); otherwise it fails.
 
-\ouritem{atomic(?X)}\index{{\tt atomic/1}} 
+\ouritem{atomic(?X)}\index{\texttt{atomic/1}} 
     Succeeds if {\tt X} is currently instantiated to an atom or a number;
     otherwise it fails.
 
@@ -1049,7 +1047,7 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 no
      \end{verbatim}}
 
-\ouritem{compound(?X)}\index{{\tt compound/1}} 
+\ouritem{compound(?X)}\index{\texttt{compound/1}} 
     Succeeds if {\tt X} is currently instantiated to a compound term (with 
     arity greater that zero), i.e.\ to a nonvariable term that is not atomic;
     otherwise it fails.
@@ -1073,11 +1071,11 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 yes	
      \end{verbatim}}
 
-\ouritem{structure(?X)}\index{{\tt structure/1}} 
+\ouritem{structure(?X)}\index{\texttt{structure/1}} 
     Same as {\tt compound/1}\@. Its existence is only for compatibility 
     with SB-Prolog version 3.1.
 
-\ouritem{is\_list(?X)}\index{{\tt is\_list/1}}
+\ouritem{is\_list(?X)}\index{\texttt{is\_list/1}}
     Succeeds if {\tt X} is a {\em proper list}. In other words if it is 
     either the atom {\tt []} or {\tt [H|T]} where H is any Prolog or HiLog
     term and T is a proper list; otherwise it fails.
@@ -1095,7 +1093,7 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 no
      \end{verbatim}}
 
-\ouritem{is\_charlist(+X)}\index{{\tt is\_charlist/1}}
+\ouritem{is\_charlist(+X)}\index{\texttt{is\_charlist/1}}
     Succeeds if {\tt X} is a Prolog string, {\it i.e.}, a list of
     characters.
     Examples:
@@ -1107,15 +1105,15 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 no
      \end{verbatim}}
 
-\ouritem{is\_charlist(+X,-Size)}\index{{\tt is\_charlist/2}}
+\ouritem{is\_charlist(+X,-Size)}\index{\texttt{is\_charlist/2}}
     Works as above, but also returns the length of that string in the second
     argument, which must be a variable.
 
-\ouritem{is\_attv(+Term)}\index{{\tt is\_attv/1}}
+\ouritem{is\_attv(+Term)}\index{\texttt{is\_attv/1}}
     Succeeds is {\tt Term} is an attributed variable, and fails otherwise.
 
-\ouritem{is\_most\_general\_term(?X)}\index{{\tt
-is\_most\_general\_term/1}}
+\ouritem{is\_most\_general\_term(?X)}
+\index{\texttt{is\_most\_general\_term/1}}
     Succeeds if {\tt X} is compound term with all distinct variables
 as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
     {\footnotesize
@@ -1132,7 +1130,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 no
      \end{verbatim}}
 
-\ouritem{callable(?X)}\index{{\tt callable/1}}
+\ouritem{callable(?X)}\index{\texttt{callable/1}}
     Succeeds if {\tt X} is currently instantiated to a term that standard
     predicate {\tt call/1} could take as an argument and not give an 
     instantiation or type error.  Note that it only checks for errors of
@@ -1155,7 +1153,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 no
      \end{verbatim}}
 
-\ournewitem{proper\_hilog(?X)}{HiLog}\index{{\tt proper\_hilog/1}}
+\ournewitem{proper\_hilog(?X)}{HiLog}\index{\texttt{proper\_hilog/1}}
     Succeeds if {\tt X} is a proper HiLog term; otherwise it fails.
 
     Examples:
@@ -1181,7 +1179,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 yes
      \end{verbatim}}
 
-\ouritem{functor(?Term, ?Functor, ?Arity)}\index{{\tt functor/3}}
+\ouritem{functor(?Term, ?Functor, ?Arity)}\index{\texttt{functor/3}}
     Succeeds if the {\em functor} of the Prolog term {\tt Term} is 
     {\tt Functor} and the {\em arity} (number of arguments) of {\tt Term} is
     {\tt Arity}\@.  {\tt Functor} can be used in either the following two 
@@ -1278,7 +1276,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
      \end{verbatim}}
 
 \ournewitem{hilog\_functor(?Term, ?F, ?Arity)}{HiLog}
-\index{{\tt hilog\_functor/3}}
+\index{\texttt{hilog\_functor/3}}
     The XSB standard predicate {\tt hilog\_functor/3} succeeds 
     \begin{itemize}
     \item when {\tt Term} is a Prolog term and the principal function 
@@ -1369,7 +1367,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                T = apply(a+b,_595820,_595824,_595828)
      \end{verbatim}}
 
-\ouritem{arg(+Index, +Term, ?Argument)}\index{{\tt arg/3}}
+\ouritem{arg(+Index, +Term, ?Argument)}\index{\texttt{arg/3}}
     Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of 
     {\tt Term}\@, where the index is taken to start at $1$.
     Initially, {\tt Index} must be instantiated to any integer and {\tt Term} 
@@ -1413,11 +1411,11 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                    A = a+b
      \end{verbatim}}
 
-\ouritem{arg0(+Index, +Term, ?Argument)}\index{{\tt arg0/3}}
+\ouritem{arg0(+Index, +Term, ?Argument)}\index{\texttt{arg0/3}}
     Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt Term}
     if {\tt Index} $>$ 0, or with the functor of {\tt Term} if {\tt Index} = 0.
 
-\ournewitem{hilog\_arg(+Index, +Term, ?Argument)}{HiLog}\index{{\tt hilog\_arg/3}}
+\ournewitem{hilog\_arg(+Index, +Term, ?Argument)}{HiLog}\index{\texttt{hilog\_arg/3}}
     If {\tt Term} is a Prolog term, it has the same behaviour as {\tt arg/3},
     but if {\tt Term} is a proper HiLog term, {\tt hilog\_arg/3} unifies 
     {\tt Argument} with the 
@@ -1466,7 +1464,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
     due to the fact that {\tt apply/1} is a Prolog term, while 
     {\tt apply/2} is a proper HiLog term.
 
-\ouritem{?Term =.. [?Functor |?ArgList]}\index{{\tt =../2}} 
+\ouritem{?Term =.. [?Functor |?ArgList]}\index{\texttt{=../2}} 
     Succeeds when {\tt Term} is any (Prolog or) HiLog term, {\tt Functor} is 
     its Prolog functor and {\tt ArgList} is the list of its arguments. 
     The use of {\tt =../2} (pronounced {\em univ}) although convenient, 
@@ -1534,7 +1532,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 
 %in the following line I used a very ``dirty'' LaTeX hack! -- Kostis.
 
-\ournewitem{?Term \^{ }=.. [?F |?ArgList]}{HiLog}\index{{\tt \^{ }=../2}} 
+\ournewitem{?Term \^{ }=.. [?F |?ArgList]}{HiLog}\index{\texttt{\^{ }=../2}} 
     When {\tt Term} is a Prolog term, this predicate behaves exactly like
     the Prolog {\tt =../2}. However when {\tt Term} is a proper HiLog term, 
     {\tt \verb|^|=../2} 
@@ -1585,7 +1583,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	Argument 2 of {\tt \verb|^|=../2} is not a proper list.
      \end{description}
 
-\ouritem{copy\_term(+Term, -Copy)}\index{{\tt copy\_term/2}}
+\ouritem{copy\_term(+Term, -Copy)}\index{\texttt{copy\_term/2}}
     Makes a {\tt Copy} of {\tt Term} in which all variables have been
     replaced by brand new variables which occur nowhere else. It can
     be very handy when writing (meta-)interpreters for logic-based
@@ -1607,7 +1605,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                    Y = f(a,_599112)
      \end{verbatim}}
 
-\ouritem{name(?Constant, ?CharList)}\index{{\tt name/2}} 
+\ouritem{name(?Constant, ?CharList)}\index{\texttt{name/2}} 
     The standard predicate {\tt name/2} performs the conversion 
     between a constant and its character list representation. 
     If {\tt Constant} is supplied (and is any atom or number), {\tt CharList} 
@@ -1683,7 +1681,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	character list representation is not implemented yet).
      \end{description}
 
-\ouritem{atom\_codes(?Atom, ?CharCodeList)}\index{{\tt atom\_codes/2}} 
+\ouritem{atom\_codes(?Atom, ?CharCodeList)}\index{\texttt{atom\_codes/2}} 
     The standard predicate {\tt atom\_codes/2} performs the conversion 
     between an atom and its character list representation. 
     If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
@@ -1751,13 +1749,13 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ouritem{atom\_chars(?Number, ?CharAtomList)}\index{{\tt atom\_chars/2}} 
+\ouritem{atom\_chars(?Number, ?CharAtomList)}\index{\texttt{atom\_chars/2}} 
     Like \verb|atom_codes|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|atom_chars(abc,X)| binds {\tt X} to the list {\tt [a,b,c]}
     instead of {\tt [97,98,99]}.
 
-\ouritem{number\_codes(?Number, ?CharCodeList)}\index{{\tt number\_codes/2}} 
+\ouritem{number\_codes(?Number, ?CharCodeList)}\index{\texttt{number\_codes/2}} 
     The standard predicate {\tt number\_codes/2} performs the conversion 
     between a number and its character list representation. 
     If {\tt Number} is supplied (and is a number), {\tt CharList} is
@@ -1805,12 +1803,12 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ouritem{number\_chars(?Number, ?CharAtomList)}\index{{\tt number\_chars/2}} 
+\ouritem{number\_chars(?Number, ?CharAtomList)}\index{\texttt{number\_chars/2}} 
     Like \verb|number_codes|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|number_chars(123,X)| binds {\tt X} to the list {\tt ['1','2','3']}
     instead of {\tt [49,50,51]}.
-\ouritem{number\_digits(?Number, ?DigitList)}\index{{\tt number\_digits/2}} 
+\ouritem{number\_digits(?Number, ?DigitList)}\index{\texttt{number\_digits/2}} 
     Like \verb|number_chars|, but the list returned (or input) is a list of
     digits \emph{as numbers} rather than ASCII codes (for floats, the atom
     '.', '+' or '-', and 'e' will also be present in the list). For instance, 
@@ -1838,7 +1836,7 @@ powerful aggregation facility as discussed in Section
 \ref{tabling_aggregate_predicates}.
 
 \begin{description}
-\ouritem{setof(?X, +Goal, ?Set)}\index{{\tt setof/3}}
+\ouritem{setof(?X, +Goal, ?Set)}\index{\texttt{setof/3}}
     This predicate may be read as ``{\tt Set} is the set of all instances 
     of {\tt X} such that {\tt Goal} is provable''.
     If~{\tt Goal} is not provable, {\tt setof/3} fails.
@@ -1862,14 +1860,14 @@ powerful aggregation facility as discussed in Section
     Exceptions: Same as predicate {\tt call/1}
 		(see Section~\ref{meta_predicates}).
 
-\ouritem{bagof(?X, +Goal, ?Bag)} \index{{\tt bagof/3}}
+\ouritem{bagof(?X, +Goal, ?Bag)} \index{\texttt{bagof/3}}
     This predicate has the same semantics as {\tt setof/3} except that the 
     third argument returns an unordered list that may contain duplicates.
 
     Exceptions: Same as predicate {\tt call/1}
 		(see Section~\ref{meta_predicates}).
 
-\ouritem{findall(?X, +Goal, ?List)} \index{{\tt findall/3}}
+\ouritem{findall(?X, +Goal, ?List)} \index{\texttt{findall/3}}
     Similar to predicate {\tt bagof/3}, except that variables in {\tt Goal}
     that do not occur in {\tt X} are treated as existential, and alternative
     lists are not returned for different bindings of such variables.  This
@@ -1881,7 +1879,7 @@ powerful aggregation facility as discussed in Section
 		(see Section~\ref{meta_predicates}).
 
 \ournewitem{tfindall(?X, +Goal, ?List)}{Tabling}
-\index{{\tt tfindall/3}}
+\index{\texttt{tfindall/3}}
 %\predindex{tfindall/3~(L)}
 \label{tfindall/3}
 
@@ -1951,8 +1949,8 @@ powerful aggregation facility as discussed in Section
     \end{description}
 
 \ournewitem{tbagof(?X, +Goal, ?List) / tsetof(?X, +Goal, ?List)}{Tabling}
-\index{{\tt tsetof/3}}
-\index{{\tt tbagof/3}}
+\index{\texttt{tsetof/3}}
+\index{\texttt{tbagof/3}}
 
     {\em Note: {\tt tbagof/3} and {\tt tsetof/3} may be deprecated in
     current versions.  Please use the predicates described in
@@ -2027,8 +2025,8 @@ predicate \verb|bagReduce/4|.
 
 \ournewitem{bagReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
 \ournewitem{filterReduce(?SetPred,?Arg,+Op,+Id)}{Tabling}
-\index{{\tt bagReduce/4}} 
-\index{{\tt filterReduce/4}} 
+\index{\texttt{bagReduce/4}} 
+\index{\texttt{filterReduce/4}} 
 {\tt SetPred} must be a HiLog set specification, i.e., a unary HiLog
 predicate.  {\tt Op} must be a Hilog operation, i.e., a 3-ary HiLog
 predicate that defines an associative operator.  The predicate must
@@ -2050,8 +2048,8 @@ using a variance rather than unification.  An example of the use of
 
 \ournewitem{bagPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
 \ournewitem{filterPO(?SetPred,?Arg,+Order)}{Tabling}
-\index{{\tt bagPO/3}}
-\index{{\tt filterPO/3}}
+\index{\texttt{bagPO/3}}
+\index{\texttt{filterPO/3}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt Order} must be a binary Hilog relation that
     defines a partial order.  {\tt bagPO} returns nondeterministically
@@ -2067,8 +2065,8 @@ using a variance rather than unification.  An example of the use of
 it does not depend on HiLog, so that {\tt filterPO/3} will be more
 robust especially when XSB's module system is used.
 
-\ournewitem{filterPO(\#Pred,+Order)}{Tabling} \index{{\tt
-filterPO/2}} 
+\ournewitem{filterPO(\#Pred,+Order)}{Tabling} 
+\index{\texttt{filterPO/2}} 
 
 {\tt filterPO(\#Pred,+Order)} succeds only for a solution $Pred\theta$
 of {\tt Pred} for which there is no solution $Pred\eta$ to {\tt Pred}
@@ -2096,7 +2094,7 @@ the query
 will succeed only with the binding {\em X = 1,Y = 1}.
 
 \ournewitem{bagMax(?SetPred,?Arg)}{HiLog,Tabling}
-\index{{\tt bagMax/2}}
+\index{\texttt{bagMax/2}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagMax} returns with {\tt Arg} bound to the
     maximum element (under the Prolog term ordering) of the set {\tt
@@ -2128,7 +2126,7 @@ previous definition since it is known that {\tt bagMax} is
 deterministic.
 
 \ournewitem{bagMin(?SetPred,?Arg)}{HiLog,Tabling}
-\index{{\tt bagMin/2}}
+\index{\texttt{bagMin/2}}
 
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagMin} returns with {\tt Arg} bound to the
@@ -2150,7 +2148,7 @@ bagMin(Call,Var) :- bagReduce(Call,Var,minimum,zz(zz)).
     (where structures are the largest elements in the term ordering.)
 
 \ournewitem{bagSum(?SetPred,?Arg)}{HiLog,Tabling}
-\index{{\tt bagSum/2}}
+\index{\texttt{bagSum/2}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagSum} returns with {\tt Arg} bound to the sum
     of the elements of the set {\tt SetPred}.  To use this predicate, it
@@ -2169,7 +2167,7 @@ bagSum(Call,Var) :- bagReduce(Call,Var,sum,0).
 \end{verbatim}
 
 \ouritem{bagCount(?SetPred,?Arg)}{HiLog,Tabling}
-\index{{\tt bagCount/2}}
+\index{\texttt{bagCount/2}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagCount} returns with {\tt Arg} bound to the
     count (i.e., number) of elements of the set {\tt SetPred}.  To use
@@ -2188,7 +2186,7 @@ bagCount(Call,Var) :- bagReduce(Call,Var,successor,0).
 \end{verbatim}
 
 \ournewitem{bagAvg(?SetPred,?Arg)}{HiLog,Tabling}
-\index{{\tt bagAvg/2}}
+\index{\texttt{bagAvg/2}}
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagAvg} returns with {\tt Arg} bound to the
     average (i.e., mean) of elements of the set {\tt SetPred}.  To use
@@ -2217,7 +2215,7 @@ bagAvg(Call,Avg) :-
 
 \section{Meta-Predicates} \label{meta_predicates}
 \begin{description}
-\ouritem{call(\#X)}\index{{\tt call/1}} 
+\ouritem{call(\#X)}\index{\texttt{call/1}} 
 %\predindex{call/1~(P)}
     If {\tt X} is a nonvariable term in the program text, then it is 
     executed exactly as if {\tt X} appeared in the program text instead 
@@ -2235,7 +2233,7 @@ bagAvg(Call,Avg) :-
     would be acceptable as the body of a clause, the goal 
     {\tt call(X)} is executed as if that
     term appeared textually in place of the {\tt call(X)},
-    {\em except that} any cut (`!')\index{{\tt "!/0}}\index{cut}
+    {\em except that} any cut (`!')\index{\texttt{"!/0}}\index{cut}
     occurring in {\tt X} will remove only those choice points in~{\tt X}.
     If~{\tt X} is not instantiated as described above,
     an error message is printed and {\tt call/1} fails.
@@ -2256,7 +2254,7 @@ bagAvg(Call,Avg) :-
     elicits a warning from the compiler.
 
 \ouritem{once(\#X)}
-\index{{\tt once/1}} 
+\index{\texttt{once/1}} 
     {\tt once/1} is defined as {\tt once(X):- call(X),!.}  {\tt
     once/1} should be used with care in tabled programs.  The compiler
     can not determine whether a tabled predicate is called in the
@@ -2267,7 +2265,7 @@ bagAvg(Call,Avg) :-
     Exceptions: The same as {\tt call/1}.
 
 \ouritem{table\_once(\#X)}
-\index{{\tt table\_once/1}} 
+\index{\texttt{table\_once/1}} 
     {\tt table\_once/1} is a weaker form of {\tt once/1}, suitable for
     situations in which a single solution is desired for a
     subcomputation that may involve a call to a tabled predicate.  {\tt

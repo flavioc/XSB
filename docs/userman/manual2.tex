@@ -1,13 +1,13 @@
 \documentclass[11pt]{report}
 
-%\documentstyle[11pt,epsf]{report}
-\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb}
+\usepackage{epsf,epsfig,subfigure,latexsym,xspace,amssymb}
 \usepackage{alltt}
 \usepackage{graphicx,makeidx}
 %\usepackage{hyperref}
 
-
 \usepackage[colorlinks]{hyperref}
+
+
 
 \pagestyle{headings}
 
@@ -33,22 +33,23 @@
 \setlength{\footskip}{50pt}
 \setlength{\parskip}{2mm}
 
-% JF: not allowed in Latex2e
-%\setlength{\footheight}{24pt}
-
 \setlength{\parskip}{2mm}               % space between paragraphs
 
 \def\cut{\mbox{\tt '!'/0}}
 \def\not{\mbox{${\tt '\backslash+'/1}$}}
 
+
 \newtheorem{example}{Example}[section]
 
 \newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
 
+% TLS couldnt get this to work?!?
+\newcommand{\myindex}[1]{\index{ #1}}
+
 \newcommand{\comment}[1]{}
 \newcommand{\ourprolog}{XSB}
 \newcommand{\smallourprolog}{xsb}
-\newcommand{\version}{Version 2.5}
+\newcommand{\version}{Version 2.6}
 \newcommand{\LRD}{LRD-stratified}
 
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
@@ -107,7 +108,7 @@ Interfaces and Packages}
 \input{library}
 \input{foreign}
 \input{ccallingxsb}
-\input{oracle_inter}
+%\input{oracle_inter}
 \input{odbc_man/odbc_man}
 \input{xsb_dbi}
 \input{packages}

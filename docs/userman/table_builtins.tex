@@ -131,14 +131,14 @@ Exceptions caught by the following predicates include:
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{table\ \ +P$_1$/N$_1$, \ldots, +P$_k$/N$_k$.}{Tabling}
-\index{{\tt table/1}}
+\index{\texttt{table/1}}
 %
 Declares each predicate denoted by \code{P$_i$/N$_i$} to be tabled.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{use\_subsumptive\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{Tabling}
-\index{{\tt use\_subsumptive\_tabling/1}}
+\index{\texttt{use\_subsumptive\_tabling/1}}
 %
 Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
 to use subsumption-based tabling, thus overriding the current system
@@ -149,7 +149,7 @@ the table for the predicate must be empty at the time of the change.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{use\_variant\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{Tabling}
-\index{{\tt use\_variant\_tabling/1}}
+\index{\texttt{use\_variant\_tabling/1}}
 %
 Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
 to use variant-based tabling, thus overriding the current system
@@ -243,7 +243,7 @@ the subgoal \code{q(X,Y)}\@.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_call(+CallTerm,-TableEntryHandle,-ReturnTemplate)}{Tabling}
-\index{{\tt get\_call/3}}
+\index{\texttt{get\_call/3}}
 %
 Searches the table for an entry whose subgoal is a \emph{variant} of
 \code{CallTerm}.  Should the subgoal exist, then the handle to this
@@ -327,7 +327,7 @@ no
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_calls(\#CallTerm,-TableEntryHandle,-ReturnSkeleton)}{Tabling}
-\index{{\tt get\_calls/3}}
+\index{\texttt{get\_calls/3}}
 %
 Identifies through backtracking each subgoal in the table which
 unifies with \code{CallTerm}.  For those that do, the handle to the
@@ -435,7 +435,7 @@ no
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_calls\_for\_table(+PredSpec,?Call)}{Tabling}
-\index{{\tt get\_calls\_for\_table/2}}
+\index{\texttt{get\_calls\_for\_table/2}}
 %
 Identifies through backtracking all the subgoals whose predicate is
 that of \code{PredSpec} and which unify with \code{Call}.
@@ -515,7 +515,7 @@ only skeletal information is used from the first argument.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_returns(+TableEntryHandle,\#ReturnSkeleton)}{Tabling}
-\index{{\tt get\_returns/2}}
+\index{\texttt{get\_returns/2}}
 %
 Backtracks through the answers for the subgoal whose table entry is
 referenced through the first argument, \code{TableEntryHandle}, and
@@ -599,7 +599,7 @@ no
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_returns(+TableEntryHandle,\#ReturnSkeleton,-ReturnHandle)}{Tabling}
-\index{{\tt get\_returns/3}}
+\index{\texttt{get\_returns/3}}
 %
 Functions identically to \code{get\_returns/2}, but also obtains a
 handle to the return given in the second argument.
@@ -607,7 +607,7 @@ handle to the return given in the second argument.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_returns\_for\_call(+CallTerm,?AnswerTerm)}{Tabling}
-\index{{\tt get\_returns\_for\_call/2}}
+\index{\texttt{get\_returns\_for\_call/2}}
 %
 Succeeds through backtracking for each answer of the subgoal
 \code{CallTerm} which unifies with \code{AnswerTerm}.  Fails if
@@ -696,7 +696,7 @@ no
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{get\_residual(\#CallTerm,?DelayList)}{Tabling}
-\index{{\tt get\_residual/2}}
+\index{\texttt{get\_residual/2}}
 %
 Backtracks through the answer set of each \emph{completed} subgoal in
 the table which unifies with \code{CallTerm}.  With each successful
@@ -769,7 +769,7 @@ useful when extensions of the well-founded model are desired.
 \vspace{-5ex}
 
 \ournewitem{table\_state(+TableEntryHandle,?PredType,?CallType,?AnsSetStatus)}{Tabling}
-\index{{\tt table\_state/4}}
+\index{\texttt{table\_state/4}}
 %
 Succeeds whenever \code{CallTerm} is a subgoal in the table, or
 \code{TableEntryHandle} is a valid reference to a table entry, and its
@@ -825,7 +825,7 @@ called at that moment.
 
 \comment{
 \ournewitem{table\_state(+CallTerm,?State)}{Tabling}
-\index{{\tt table\_state/2}}
+\index{\texttt{table\_state/2}}
 %
 Functions similarly to, and is superseded by, \code{table\_state/4}.
 The value of \code{State} may be one of the following atoms with the
@@ -868,7 +868,7 @@ when the interpreter level is resumed.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_all\_tables}{Tabling}\index{{\tt abolish\_all\_tables/0}}
+\ournewitem{abolish\_all\_tables}{Tabling}\index{\texttt{abolish\_all\_tables/0}}
 %
 Removes the tables presently in the system and frees all the memory
 held by XSB for these structures.  Predicates which have been declared
@@ -878,7 +878,7 @@ tabled remain so, but their table entries, if any, are deleted.
 
 
 \ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
-\index{{\tt abolish\_table\_call/1}}
+\index{\texttt{abolish\_table\_call/1}}
 %
 Removes all table entries for the subgoals that unify with
 \code{CallTerm}, should any exist. The predicate remains tabled and
@@ -888,7 +888,7 @@ all of its other table entries remain intact. Throws a
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{abolish\_table\_pred(+PredSpec)}{Tabling}
-\index{{\tt abolish\_table\_pred/1}}
+\index{\texttt{abolish\_table\_pred/1}}
 %
 Removes all entries from the table for the predicate denoted by
 \code{PredSpec}.  The predicate remains tabled but the memory held by
@@ -897,7 +897,7 @@ its former table entries is returned to XSB for future entry creation.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{delete\_return(+TableEntryHandle,+ReturnHandle)}{Tabling}
-\index{{\tt delete\_returns/2}}
+\index{\texttt{delete\_returns/2}}
 %
 Removes the answer indicated by \code{ReturnHandle} from the table
 entry referenced by \code{TableEntryHandle}.  The value of each
@@ -907,7 +907,7 @@ table-inspection predicate.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{invalidate\_tables\_for(+DynamicPredGoal,+Mode)}{Tabling}
-\index{{\tt invalidate\_tables\_for/2}}
+\index{\texttt{invalidate\_tables\_for/2}}
 
 This predicate supports invalidation of tables.  Tables may become
 invalid if dynamic predicates on which they depend change, due to
@@ -962,11 +962,11 @@ and/or {\tt retract} is called.
 
 
 \ournewitem{table\_prop(?Pred\_indicator,+Type,?Old\_val,+New\_val)}{Tabling}
-\index{{\tt table\_prop/4}}
+\index{\texttt{table\_prop/4}}
 This predicate is described together with the following one.
 
 
-\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{{\tt table\_prop/3}}
+\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{\texttt{table\_prop/3}}
 This predicate is used either to provide information about a table
 property, or to reset one of properties to a particular value.  These
 values can also be set by the table declarations in the source code.
@@ -1016,7 +1016,7 @@ properties such as subgoal subsumption.
     \end{description}
 
 }
-%\ounewitem{table\_copy(+From,-To)} \index{{\tt table\_copy/2}}
+%\ounewitem{table\_copy(+From,-To)} \index{\texttt{table\_copy/2}}
 %Table copy provides an explicit mechanism for the user to reduce the
 %amount of copying into and out of a table.  {\tt table\_copy/2}
 %succeeds when {\tt From} is ground, and returns a copy of that
@@ -1030,7 +1030,7 @@ properties such as subgoal subsumption.
 \comment{
 
 %\ournewitem{breg\_retskel(+Breg,+Arity,-ReturnSkeleton,-SubgoalStructurePtr)}
-%\index{{\tt breg\_retskel/4}}
+%\index{\texttt{breg\_retskel/4}}
 %If Breg is bound to a pointer to the tabling choice point and 
 %Arity is bound to the arity of the predicate corresponding to 
 %the choice point, {\tt breg\_retskel} succeeds after binding 

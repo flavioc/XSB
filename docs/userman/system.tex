@@ -264,8 +264,8 @@ inference algorithm has no way of checking whether a predicate
 imported from a given module is actually exported by that module.
 
 \index{xsbdoc}
-\index{{\tt document\_export/1}}
-\index{{\tt document\_import/1}}
+\index{\texttt{document\_export/1}}
+\index{\texttt{document\_import/1}}
 Usage inference can be highly useful during code development for
 ensuring that all predicates are defined within a set of files, for
 eliminating dead code, etc.  In addition, import and export
@@ -316,7 +316,7 @@ The default search path of the dynamic loader can easily be changed by
 having a file named {\verb|.xsb/xsbrc.P|} in the user's home
 directory.  User-supplied library directories are searched by the
 dynamic loader {\em before} searching the default library directories.
-\index{{\tt library\_directory/1}}  The {\verb|.xsb/xsbrc.P|} file,
+\index{\texttt{library\_directory/1}}  The {\verb|.xsb/xsbrc.P|} file,
 which is automatically consulted by the XSB interpreter, might look
 like the following:
 \begin{verbatim}
@@ -364,7 +364,7 @@ implemented through the predicate
      bootstrap_userpackage(+LibraryDir, +PackageDir, +PackageName).
 \end{verbatim}
 %%
-\index{{\tt bootstrap\_userpackage/3}}
+\index{\texttt{bootstrap\_userpackage/3}}
 which must be imported from the {\tt packaging} module. 
 
 To illustrate, suppose you wanted to create a package, {\tt foobar}, inside
@@ -412,8 +412,8 @@ Packages can also be unloaded using the predicate
 %%
 removes the directory \verb|~/my_lib/foobar| from the library search path
 and deletes the associated information from \verb|package_configuration/3|.
-\index{{\tt unload\_package/1}}
-\index{{\tt package\_configuration/2}}
+\index{\texttt{unload\_package/1}}
+\index{\texttt{package\_configuration/2}}
 
 Finally, if you have developed and tested a package that you think is
 generally useful and you would like to distribute it with XSB, please
@@ -425,7 +425,7 @@ contact {\tt xsb-development@sourceforge.net}.
 Modules are usually loaded into an environment when they are consulted
 (see Section~\ref{Consulting}).  Specific predicates from a module can
 also be imported into the run-time environment through the standard
-predicate {\tt import PredList from Module}\index{{\tt import/1}}.
+predicate {\tt import PredList from Module}\index{\texttt{import/1}}.
 Here, {\tt PredList} can either be a Prolog list or a comma list.
 (The {\tt import/1} can also be used as a directive in a source module
 (see Section~\ref{Modules}). \index{standard predicates}
@@ -677,7 +677,7 @@ code file, but certain types of indexing, such as trie and star
 indexing are (currently) available only for intperpreted predicates
 (see {\tt index/2}).
 
-\index{{\tt consult/[1,2]}}
+\index{\texttt{consult/[1,2]}}
 The standard predicate {\tt consult/[1,2]} is the most convenient
 method for entering rules into XSB's database~\footnote{In XSB, {\tt
 reconsult/[1,2]} is defined to have the same actions as {\tt
@@ -759,7 +759,7 @@ Currently (\version), a foreign language module is compiled when at
 least one of files {\tt *.c} or {\tt *.H} has been changed from the
 time the corresponding object files have been created.
 
-\index{{\tt multifile/2}}
+\index{\texttt{multifile/2}}
 Once the file is compiled into byte-code, the byte-code for the file
 is loaded into XSB's database.  The default action upon loading is to
 delete any previous byte-code for predicates defined in the file.  If
@@ -790,7 +790,7 @@ The XSB compiler translates XSB source files into
 byte-code object files.  It is written entirely in Prolog.
 Both the sources and the byte code\index{byte code!files!compiler}
 for the compiler can be found in the XSB system directory
-{\tt cmplib}\index{cmplib@{\tt cmplib}}.
+{\tt cmplib}\index{Compiler!\texttt{cmplib}}.
 %
 \index{GPP}
 Prior to compiling, XSB filters the programs through \emph{GPP}, a 
@@ -816,7 +816,7 @@ in more detail.
 The compiler is invoked directly at the interpreter level (or in a 
 program) through the Prolog predicates {\tt compile/[1,2]}.  
 
-\index{{\tt compile/[1,2]}}
+\index{\texttt{compile/[1,2]}}
 The general forms of predicate {\tt compile/2} are:
 \begin{center}{\tt	
 	compile(+File, +OptionList) \\
@@ -914,8 +914,8 @@ from a directive in the file to be compiled (see compiler directive
 {\tt compiler\_options/1}).
 
 \begin{description}
-\ouritem{set\_global\_compiler\_options(+OptionsList)}\index{{\tt
-set\_global\_compiler\_options/1}} 
+\ouritem{set\_global\_compiler\_options(+OptionsList)}
+\index{\texttt{set\_global\_compiler\_options/1}} 
     {\tt OptionsList} is a list of compiler options (described below).
     Each can optionally be prefixed by \verb|+| or \verb|-|,
     indicating that the option is to be turned on, or off,
@@ -930,7 +930,7 @@ set\_global\_compiler\_options/1}}
 
 The following options are currently recognized by the compiler:
 \begin{description}
-\item[{\tt optimize}]\index{{\tt optimize}}
+\item[{\tt optimize}]\index{\texttt{optimize}}
 	When specified, the compiler tries to optimize the object code.
 	In \version, this option optimizes predicate calls, among other
 	features, so execution may be considerably faster for recursive
@@ -950,7 +950,7 @@ The following options are currently recognized by the compiler:
 	recommended once the code has been debugged.
 
 
-\item[{\tt xpp\_on}]\index{{\tt xpp\_on}}\index{GPP}
+\item[{\tt xpp\_on}]\index{\texttt{xpp\_on}}\index{GPP}
   Filter the program through a preprocessor  before sending it to the XSB 
   compiler. By default (and for the XSB code itself), XSB uses GPP, a
   preprocessor developed by Denis Auroux (auroux@math.polytechnique.fr)
@@ -968,7 +968,7 @@ The following options are currently recognized by the compiler:
   %%$
   and \verb|$XSB_DIR/prolog_includes|.
   %%$
-  \index{\tt xpp\_include\_dir}
+  \index{\texttt{xpp\_include\_dir}}
   %%
   However, additional directories can be added to this search path by
   asserting into the predicate \verb|xpp_include_dir/1|, {\bf which must
@@ -1031,7 +1031,7 @@ The following options are currently recognized by the compiler:
   non-standard preprocessor then you must specify that non-standard
   preprocessor each time the program is compiled.
   
-\item[{\tt xpp\_options}] \index{{\tt xpp\_options}} This dynamic predicate
+\item[{\tt xpp\_options}] \index{\texttt{xpp\_options}} This dynamic predicate
   must be imported from module {\tt parse}.  If some atom is asserted into
   {\tt xpp\_options} then this atom is assumed to be the list of command
   line options to be used by the preprocessor (only the first asserted atom
@@ -1050,7 +1050,7 @@ The following options are currently recognized by the compiler:
     retractall(xpp\_options(\_))} after that or else subsequent Prolog
   compilations might not work correctly.
   
-\item[{\tt xpp\_dump}] \index{{\tt xpp\_dump}}
+\item[{\tt xpp\_dump}] \index{\texttt{xpp\_dump}}
   %%
   This causes XSB to dump the output from the GPP preprocessor into a file.
   If the file being compiled is named {\tt file.P} then the dump file is
@@ -1061,7 +1061,7 @@ The following options are currently recognized by the compiler:
     compiler\_options/1} directive, then it should \emph{not} follow the
   {\tt gpp\_on} option in the list (or else it will be ignored).
 
-\item[{\tt quit\_on\_error}] \index{{\tt quit\_on\_error}}
+\item[{\tt quit\_on\_error}] \index{\texttt{quit\_on\_error}}
   This causes XSB to exit if compilation of a program end with an error.
   This option is useful when running XSB from a makefile, when it is
   necessary to stop the build process after an error has been detected. For
@@ -1071,14 +1071,14 @@ The following options are currently recognized by the compiler:
 %-------------------------------
 \index{tabling!compiler options}
 %-------------------------------
-\item[{\tt auto\_table}]\index{{\tt auto\_table}} When specified as a
+\item[{\tt auto\_table}]\index{\texttt{auto\_table}} When specified as a
   compiler option, the effect is as described in
   Section~\ref{tabling_directives}.  Briefly, a static analysis is made to
   determine which predicates may loop under Prolog's SLD evaluation.  These
   predicates are compiled as tabled predicates, and SLG evaluation is used
   instead.
 %qkostis
-\item[{\tt suppl\_table}]\index{{\tt suppl\_table}} The intention of this
+\item[{\tt suppl\_table}]\index{\texttt{suppl\_table}} The intention of this
   option is to direct the system to table for efficiency rather than
   termination.  When specified, the compiler uses tabling to ensure that no
   predicate will depend on more than three tables or EDB facts (as
@@ -1091,7 +1091,7 @@ The following options are currently recognized by the compiler:
 %--------------------------------------
 \index{specialization!compiler options}
 %--------------------------------------
-\item[{\tt spec\_repr}]\index{{\tt spec\_repr}}
+\item[{\tt spec\_repr}]\index{\texttt{spec\_repr}}
 	When specified, the compiler performs specialization of partially
 	instantiated calls by replacing their selected clauses with the
 	representative of these clauses, i.e. it performs {\em folding\/}
@@ -1102,16 +1102,16 @@ The following options are currently recognized by the compiler:
 	not necessary) conditions that guarantee computational equivalence.
 	If these conditions are not met, specialization is not performed
 	for the violating calls.
-\item[{\tt spec\_off}]\index{{\tt spec\_off}}
+\item[{\tt spec\_off}]\index{\texttt{spec\_off}}
 	When specified, the compiler does not perform specialization of
 	partially instantiated calls.
-\item[{\tt unfold\_off}]\index{{\tt unfold\_off}}
+\item[{\tt unfold\_off}]\index{\texttt{unfold\_off}}
 	When specified, singleton sets optimizations are not performed
 	during specialization.  This option is necessary in \version\
 	for the specialization of {\tt table} declarations that select
 	only a single chain rule of the predicate.
 %qtls ??
-\item[{\tt spec\_dump}]\index{{\tt spec\_dump}}
+\item[{\tt spec\_dump}]\index{\texttt{spec\_dump}}
 	Generates a {\tt module.spec} file, containing the result of
 	specializing partially instantiated calls to predicates defined
 	in the {\tt module} under compilation.  The result is in Prolog
@@ -1120,18 +1120,18 @@ The following options are currently recognized by the compiler:
 %---------------------------------------------
 \index{unification factoring!compiler options}
 %---------------------------------------------
-\item[{\tt ti\_dump}]\index{{\tt ti\_dump}}
+\item[{\tt ti\_dump}]\index{\texttt{ti\_dump}}
 	Generates a {\tt module.ti} file containing the result of applying
 	unification factoring to predicates defined in the {\tt module}
 	under compilation.  The result is in Prolog source code form.
 	See page~\pageref{transformational_indexing} for more information
 	on unification factoring.
-\item[{\tt ti\_long\_names}]\index{{\tt ti\_long\_names}}
+\item[{\tt ti\_long\_names}]\index{\texttt{ti\_long\_names}}
 	Used in conjunction with {\tt ti\_dump}, generates names for
 	predicates created by unification factoring that reflect the
 	clause head factoring done by the transformation.
 \comment{
-\item[{\tt init\_var\_off}]\index{{\tt init\_var\_off}}
+\item[{\tt init\_var\_off}]\index{\texttt{init\_var\_off}}
 	When specified, the compiler will give a warning (instead of an
 	error) upon finding that a potentially uninitialized variable is
 	being used.  {\em Potentially uninitialized variables\/} are
@@ -1153,7 +1153,7 @@ The following options are currently recognized by the compiler:
 %---------------------------------------------
 \index{mode analysis!compiler options}
 %---------------------------------------------
-\item[{\tt modeinfer}]\index{{\tt modeinfer}}
+\item[{\tt modeinfer}]\index{\texttt{modeinfer}}
 	This option is used to trigger mode analysis. For each module
 	compiled,  the mode analyzer creates a  {\tt {\em module}.D} file
 	that contains the mode information.
@@ -1167,7 +1167,7 @@ The following options are currently recognized by the compiler:
 	(say, more than 4 times as long as the rest of the compilation)
 	you may want to abort and restart compilation without {\tt modeinfer}.
 	
-\item[{\tt mi\_warn}]\index{{\tt mi\_warn}}
+\item[{\tt mi\_warn}]\index{\texttt{mi\_warn}}
 	During mode analysis, the {\tt .D} files corresponding to the
 	imported modules are read in. The option {\tt mi\_warn} is used
 	to generate warning messages if these {\tt .D} files are 
@@ -1462,7 +1462,7 @@ intention of data flow in the program.
 \subsubsection{Tabling Directives}\label{tabling_directives}
 \index{tabling!directives}\index{directives!tabling}
 %-----------------------------------------------------
-\index{{\tt auto\_table}}
+\index{\texttt{auto\_table}}
 Memoization is often necessary to ensure that programs terminate, and
 can be useful as an optimization strategy as well.  The underlying
 engine of XSB is based on SLG, a memoization strategy, which,
@@ -1554,7 +1554,7 @@ form
 where {\tt F} is the functor of the predicate to be tabled, and {\tt A} its
 arity.  
 
-\index{{\tt suppl\_table}}
+\index{\texttt{suppl\_table}}
 Another use of tabling is to filter out redundant solutions for
 efficiency rather than termination.  In this case, suppose that the
 directive {\tt edb/1} were used to indicate that certain predicates were
@@ -1602,7 +1602,7 @@ One may also use the form:
 
 \demo{:- index(Functor/Arity, IndexArg, HashTableSize).}
 
-\index{{\tt index/2}}
+\index{\texttt{index/2}}
 \noindent
 which allows further specification of the size of the hash table to use for
 indexing this predicate if it is a {\em dynamic} (i.e., asserted) predicate.
