@@ -53,32 +53,8 @@
 #include <winsock.h>
 #include <wsipx.h>
 #else
-#if defined(HAVE_SOCKET) || defined(HAVE_GETHOSTBYNAME)
-#include <sys/socket.h>
-#include <sys/uio.h>
 #include <unistd.h> 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#endif /* HAVE_SOCKET */
 #endif /* WIN_NT */
-
-#ifdef HAVE_SOCKET
-/* socket macros */
-#define SOCKET_ROOT        0
-#define SOCKET_BIND        1
-#define SOCKET_LISTEN      2
-#define SOCKET_ACCEPT      3
-#define SOCKET_CONNECT     4
-#define SOCKET_FLUSH       5
-#define SOCKET_CLOSE       6
-#define SOCKET_RECV	   7
-#define SOCKET_SEND	   8
-#define SOCKET_SEND_EOF	   9
-#define SOCKET_SEND_ASCI   10
-#define SOCKET_GET0        11
-#define SOCKET_PUT         12
-#endif /* HAVE_SOCKET */
 
 #include "auxlry.h"
 #include "cell.h"
@@ -183,42 +159,6 @@ extern char *user_home;    	  /* from self_orientation.c */
 
 static FILE* fptr;			/* working variable */
 static Float float_temp;		/* working variable */
-
-/* ------- utility for sockets ---------------------------------------- */
-
-#ifdef HAVE_SOCKET
-#ifdef WIN_NT
-int readmsg(SOCKET sockfd, char *buff, int maxbuff)
-{
-  int n, rc;
-  char c;
-
-  for (n=1; n < maxbuff; n++) {
-    rc = recv(sockfd, &c, 1, 0);
-    if (rc == 1) {
-	        
-      if (c == '`') {
-	break;
-      } else if (c == EOF) {
-	return (-2);
-      } else {
-	*buff++=c;
-      }
-    } else if (rc == 0) {
-      if (n == 1) {
-	return(0);    
-      } else {
-	break;         
-      }
-    } else  {
-      return (-1); 
-    }
-  }
-  *buff = 0;
-  return (n);
-}
-#endif
-#endif
 
 
 /* ------- utility routines -------------------------------------------	*/
@@ -650,6 +590,11 @@ void init_builtin_table(void)
 /* inlined definition of file_function */
 #include "io_builtins.i"
 
+#ifdef HAVE_SOCKET
+#include "xsbsocket.i"
+#endif /* HAVE_SOCKET */
+
+
 /* --- built in predicates --------------------------------------------	*/
 
 int builtin_call(byte number)
@@ -681,23 +626,6 @@ int builtin_call(byte number)
 #ifdef FOREIGN
   static int (*proc_ptr)(void);		/* working variable */
 #endif
-#ifdef HAVE_SOCKET
-  FILE *sockptr;
-  struct hostent *hostptr;
-  int rc, domain, portnum;
-  char ch;
-#ifdef WIN_NT
-  char Endtxt=3;
-  SOCKET sockfd, sockfd_in;
-  int  err, in;
-  SOCKADDR_IN localAddr;
-  SOCKADDR_IN remoteAddr;
-  char *sock_msg, ci, last[1];
-#else
-  int  sockfd, sockfd_in;
-  struct sockaddr_in socket_addr;
-#endif
-#endif /* HAVE_SOCKET */
   
   switch (number) {
   case PSC_NAME:		/* R1: +PSC; R2: -String */
@@ -1170,16 +1098,18 @@ int builtin_call(byte number)
   case SYS_SYSTEM:	/* R1: +String (of command), R2: -Int (res) */
     ctop_int(2, system(ptoc_string(1)));
     break;
-  case SYS_GETHOST:
+  case SYS_GETHOST: {
     /* +R1: a string indicating the host name  */
     /* +R2: a buffer (of length 16) for returned structure */
 #ifdef HAVE_GETHOSTBYNAME
+    static struct hostent *hostptr;
     hostptr = gethostbyname(ptoc_string(1));
     memmove(ptoc_string(2), hostptr->h_addr, hostptr->h_length);
 #else
     xsb_abort("SYS_GETHOST: Operation not available for this configuration");
 #endif
     break;
+  }
   case SYS_ERRNO:			/* R1: -Int (errno) */
     ctop_int(1, errno);
     break;
@@ -1545,336 +1475,8 @@ int builtin_call(byte number)
   case FINDALL_GET_SOLS: return(findall_get_solutions()) ;
 
 #ifdef HAVE_SOCKET
-#ifdef WIN_NT
-    /* in order to save builtin numbers, create a single
-     * socket function with options 
-     * socket_request(SockOperation,....)
-     */
-  case SOCKET_REQUEST: {
-    switch (ptoc_int(1)) {
-    case SOCKET_ROOT: /* socket_request(0,+domain,-socket_fd) */
-      /* jf: for now only support AF_INET */
-      domain = ptoc_int(2); 
-      if (domain == 0) domain = AF_INET;
-      else if (domain == 1){
-	/* domain = AF_UNIX; */
-	domain = AF_INET;
-	xsb_warn("SOCKET_REQUEST: default domain is AF_INET");
-      }
-      else  {
-	xsb_warn("SOCKET_REQUEST: Invalid domain value. Valid domains: 0 - AF_INET, 1 - AF_UNIX");           
-	return FALSE;
-      }
-
-      sockfd = socket(domain, SOCK_STREAM, 0);
-      if (sockfd == INVALID_SOCKET)
-	{
-	  xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
-	  return FALSE;
-	}
-
-		  
-      ctop_int(3, (int) sockfd);
-      break;
-    case SOCKET_BIND: /* socket_request(1,+domain,+sockfd,+port) */
-      /* jf: for now only support AF_INET, ignore param */
-      /* domain = ptoc_int(2); */
-      sockfd = (SOCKET) ptoc_int(3);
-      portnum = ptoc_int(4);
-
-      //
-      // Bind our server to the agreed upon port number.  See
-      // commdef.h for the actual port number.
-      //
-      ZeroMemory (&localAddr, sizeof (localAddr));
-      localAddr.sin_port = htons (portnum);
-      localAddr.sin_family = AF_INET;
-
-	      
-      /*socket_addr.sin_addr.s_addr = htonl(INADDR_ANY);*/
-      err = bind (sockfd, (PSOCKADDR) & localAddr, sizeof (localAddr));
-      if (err == SOCKET_ERROR)
-	{
-	  xsb_warn("SOCKET_BIND: Socket bind failed");
-	  return FALSE;
-	}
-	      
-      break;
-    case SOCKET_LISTEN:  /* socket_request(2,+sockfd,+length) */
-      sockfd = (SOCKET) ptoc_int(2);
-      err = listen (sockfd, ptoc_int(3));
-      if (err == SOCKET_ERROR)
-	{
-	  xsb_warn("SOCKET_LISTEN: Socket listen failed");
-	  return FALSE;
-	}
-
-      break;
-    case SOCKET_ACCEPT: { /* socket_request(3,+sockfd,+sockfptr) */
-      sockfd_in = (SOCKET) ptoc_int(2);
-
-      sockfd = accept (sockfd_in, NULL, NULL);
-      if (sockfd == INVALID_SOCKET)
-	{
-	  xsb_warn("SOCKET_ACCEPT: Accept failed");
-	  return FALSE;
-	}
-	
-      ctop_int(3, (int) sockfd);
-	      
-      break;
-    }
-    case SOCKET_CONNECT: {
-      /* socket_request(4,+domain,+sockfd,+port,+hostname,-sockfptr) 
-       * jf: domain is ignored for now
-       */
-      int con;
-
-      sockfd = (SOCKET) ptoc_int(3);
-      portnum = ptoc_int(4);
-
-      ZeroMemory (&remoteAddr, sizeof (remoteAddr));
-
-      remoteAddr.sin_family = AF_INET;
-      remoteAddr.sin_port = htons(portnum);
-      remoteAddr.sin_addr.s_addr = inet_addr(ptoc_string(5));
-
-      err = connect (sockfd, (PSOCKADDR) & remoteAddr, sizeof (remoteAddr));
-      if (err == SOCKET_ERROR)
-	{
-	  printf ("DoEcho: connect failed: %ld\n", GetLastError ());
-	  closesocket (sockfd);
-	  return FALSE;
-	}
-	      
-      ctop_int(6, 0);
-	      
-      break;
-    }
-    case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
-      tmpval = ptoc_int(2);
-      SET_FILEPTR(fptr,tmpval);   
-      fflush(fptr);
-      break;
-    case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
-      closesocket((SOCKET)ptoc_int(2));
-      break;
-    case SOCKET_RECV:
-      sockfd = (SOCKET) ptoc_int(2);
-      sock_msg = calloc(1024, sizeof(char));
-      rc = readmsg(sockfd, sock_msg,1024);
-      ctop_string(3, (char*) string_find((char*) sock_msg,1));
-      free(sock_msg);
-      break;
-    case SOCKET_SEND:
-      sockfd = (SOCKET) ptoc_int(2);
-      sock_msg = calloc(1024, sizeof(char));
-      strcpy((char*) sock_msg, (char*) ptoc_string(3));
-      send(sockfd, sock_msg, strlen(sock_msg), 0);
-      send(sockfd, "`", strlen("`"), 0);
-      /*send(sockfd, "\n", strlen("\n"),0),*/
-      free(sock_msg);
-      break;
-    case SOCKET_SEND_ASCI:
-      sockfd = (SOCKET) ptoc_int(2);
-      rc = ptoc_int(3);
-      sock_msg = calloc(1024, sizeof(char));
-      ci = (char) rc;
-      sprintf(sock_msg,"%c",ci);
-      /*printf("XSB2: str:%s.\n", sock_msg);*/
-      send(sockfd, sock_msg, strlen(sock_msg), 0);
-      send(sockfd, "`", strlen("`"), 0);
-      /*send(sockfd, "\n", strlen("\n"),0);*/
-      free(sock_msg);
-      break;
-    case SOCKET_SEND_EOF:
-      sockfd = (SOCKET) ptoc_int(2);
-      last[0] = EOF;
-      send(sockfd, last, 1, 0);
-      send(sockfd, "`", strlen("`"),0);
-      break;
-    case SOCKET_GET0: /* socket_request(11,+Sockfd,-C,-Error,_,_) */
-      sockfd = (SOCKET) ptoc_int(2);
-      /*JPS: rc = readmsg(socketfd, &ch, 1);*/
-      rc = recv (sockfd,&ch,1,0);
-      if (rc == 1)
-	ctop_int(3,(unsigned char)ch);
-      else { ctop_int(3,-1); ctop_int(4,WSAGetLastError());}
-      break;
-    case SOCKET_PUT: /* socket_request(12,+Sockfd,+C,_,_,_) */
-      { /* We should fail on error...*/
-	static char tmpch[4];
-	sockfd = (SOCKET) ptoc_int(2);
-	/* JPS: sprintf(tmpch,"%c",ptoc_int(3));*/
-	tmpch[0] = (char)ptoc_int(3);
-	send(sockfd, tmpch, 1, 0);
-      }
-      break;
-
-    default:
-      xsb_warn("SOCKET_REQUEST: Invalid socket request %d",ptoc_int(1));
-      return FALSE;
-    }
-    break;
-  }
-#else
-  /* in order to save builtin numbers, create a single
-   * socket function with options 
-   * socket_request(SockOperation,....)
-   */
-  case SOCKET_REQUEST: {
-    switch (ptoc_int(1)) {
-    case SOCKET_ROOT: /* socket_request(0,+domain,-socket_fd) */
-      /* jf: for now only support AF_INET */
-      domain = ptoc_int(2); 
-      if (domain == 0) domain = AF_INET;
-      else if (domain == 1){
-	/* domain = AF_UNIX; */
-	domain = AF_INET;
-	xsb_warn("SOCKET_REQUEST: default domain is AF_INET");
-      }
-      else  {
-	xsb_warn("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
-	return FALSE;
-      }
-	      
-      if ((sockfd = socket(domain, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-	xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
-	return FALSE;
-      }
-      ctop_int(3, (Integer) sockfd);
-      break;
-    case SOCKET_BIND: /* socket_request(1,+domain,+sockfd,+port) */
-      /* jf: for now only support AF_INET, ignore param */
-      /* domain = ptoc_int(2); */
-      sockfd = ptoc_int(3);
-      portnum = ptoc_int(4);
-
-      memset((char *)&socket_addr,(int) 0, sizeof(socket_addr));
-	      
-      socket_addr.sin_family = AF_INET;
-      socket_addr.sin_port = htons(portnum); 
-      socket_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-      /*
-	for (i = 0; i < sizeof(socket_addr.sin_zero); i++)
-	socket_addr.sin_zero[i] = 0;
-      */
-      if (bind(sockfd, (struct sockaddr *) &socket_addr, sizeof(socket_addr)) < 0){ 
-	xsb_warn("SOCKET_BIND: Cannot bind address");
-	return FALSE;
-      }
-      break;
-    case SOCKET_LISTEN:  /* socket_request(2,+sockfd,+length) */
-      sockfd = ptoc_int(2);
-      if (listen(sockfd, ptoc_int(3)) < 0) {
-	xsb_warn("SOCKET_LISTEN: Cannot listen");
-	return FALSE;
-      } 
-      break;
-    case SOCKET_ACCEPT: { /* socket_request(3,+sockfd,+sockfptr) */
-      sockfd_in = ptoc_int(2);
-
-      sockfd = accept(sockfd_in, NULL, NULL);
-      sockptr = fdopen(sockfd, "r+");
-      if (sockptr == NULL) {
-	xsb_warn("SOCKET_ACCEPT: Cannot accept");
-	return FALSE;
-      }
-
-      for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
-      if (i == MAX_OPEN_FILES) {
-	xsb_warn("SOCKET_ACCEPT: Cannot accept -- too many open files");
-	return FALSE;
-      }
-      else {
-	open_files[i] = sockptr;
-	ctop_int(3, i);
-      }
-      break;
-    }
-
-    case SOCKET_CONNECT: {
-      /* socket_request(4,+domain,+sockfd,+port,+hostname,-sockfptr) 
-       * jf: domain is ignored for now
-       */
-      int con;
-
-      sockfd = ptoc_int(3);
-      portnum = ptoc_int(4);
-
-      /*** prepare to connect ***/
-      memset((char *)&socket_addr,(int) 0, sizeof(socket_addr));
-      socket_addr.sin_family = AF_INET;
-      /*
-	for (i = 0; i < sizeof(dest.sin_zero); i++)
-	dest.sin_zero[i] = 0;
-      */
-      socket_addr.sin_port = htons(portnum);
-      socket_addr.sin_addr.s_addr = inet_addr(ptoc_string(5));
-
-
-      while( ((con =
-	       connect(sockfd, (struct sockaddr *)&socket_addr, 
-		       sizeof(socket_addr))) == -1)
-	     && (errno == EINTR) );
-      if (con==-1) {
-	close(sockfd);
-	xsb_warn("SOCKET_CONNECT: connect failed");
-      }
-
-      sockptr = fdopen(sockfd, "r+");
-      if (sockptr == NULL) {
-	xsb_warn("SOCKET_CONNECT: fdopen failed");
-	return FALSE;
-      }
-
-      for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
-      if (i == MAX_OPEN_FILES) {
-	xsb_warn("SOCKET_CONNECT: failed - too many open files");
-	return FALSE;
-      }
-      else {
-	open_files[i] = sockptr;
-	ctop_int(6, i);
-      }
-      break;
-    }
-    case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
-      tmpval = ptoc_int(2);
-      SET_FILEPTR(fptr, tmpval);   
-      fflush(fptr);
-      break;
-    case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
-      close(ptoc_int(2));
-      break;
-
-    case SOCKET_GET0: { /* socket_request(11,+Sockfd,-C,-Error,_,_) */
-      sockfd = ptoc_int(2);
-      /*JPS: rc = readmsg(socketfd, &ch, 1);*/
-      rc = recv (sockfd,&ch,1,0);
-      if (rc == 1)
-	ctop_int(3,(unsigned char)ch);
-      else { ctop_int(3,-1); ctop_int(4,1);}  /* error msg constant 1 */
-    }
-    break;
-
-    case SOCKET_PUT: /* socket_request(12,+Sockfd,+C,_,_,_) */
-      { /* We should fail on error...*/
-	char tmpch[4];
-	sockfd = ptoc_int(2);
-	/* JPS: sprintf(tmpch,"%c",ptoc_int(3));*/
-	tmpch[0] = (char)ptoc_int(3);
-	send(sockfd, tmpch, 1, 0);
-      }
-      break;
-
-    default:
-      xsb_warn("Invalid socket request %d", (int) ptoc_int(1));
-      return FALSE;
-    }
-    break;
-  }
-#endif
+  case SOCKET_REQUEST:
+    return xsb_socket_request();
 #endif /* HAVE_SOCKET */	    
 
 #ifdef WIN_NT
