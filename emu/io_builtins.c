@@ -31,7 +31,9 @@
 #include <string.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#ifndef WIN_NT
 #include <unistd.h> 
+#endif
 #include <sys/stat.h>
 
 #include "auxlry.h"
