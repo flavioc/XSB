@@ -1,6 +1,6 @@
 /*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      slginsts.i
-** Author(s): Swift, Rao, Sagonas, Freire, Cui
+** Author(s): Swift, Rao, Sagonas, Freire, Cui, Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -32,31 +32,96 @@
 #define Yn	op2	/* register Cell */
 #define LABEL	op3	/* CPtr */
 
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
+
+/*
+ *  Organization of Tabling Choice Points:
+ *
+ *             +-------------+
+ *             |             |   LOW MEMORY
+ *             |    Trail    |
+ *             |             |
+ *             |      |      |
+ *             |      V      |
+ *             |             |
+ *             |             |
+ *             |      ^      |
+ *             |      |      |
+ *             |             |
+ *             |  CP Stack   |
+ *             |             |
+ *             |             |
+ *             |=============|
+ *             | Rest of CPF |--- Different for Generator and Consumer
+ *             |-------------|_
+ *             |   INT: m    | \
+ *             |   Term-m    |  |
+ *             |      .      |  |- Answer Template
+ *             |      .      |  |
+ *             |      .      |  |
+ *             |   Term-1    |_/
+ *             |=============|
+ *             |      .      |
+ *             |      .      |
+ *             |      .      |    HIGH MEMORY
+ *             +-------------+
+ *
+ *
+ *  Under CHAT, Answer Templates for producer calls are stored in the Heap:
+ *
+ *             +-------------+
+ *             |      .      |   LOW MEMORY
+ *             |      .      |
+ *             |      .      |
+ *             |-------------|_
+ *             |   Term-m    | \
+ *             |      .      |  |
+ *             |      .      |  |- Answer Template
+ *             |      .      |  |
+ *             |   Term-1    |  |
+ *             |   INT: m    |_/
+ *             |-------------|
+ *             |             |
+ *             |    Heap     |
+ *             |             |
+ *             |      |      |
+ *             |      V      |
+ *             |             |
+ *             |             |
+ *             |      ^      |
+ *             |      |      |
+ *             |             |
+ *             |    Local    |
+ *             |             |    HIGH MEMORY
+ *             +-------------+
+ */
+
+/*-------------------------------------------------------------------------*/
 
 /*
  *  Instruction format:
  *    1st word: opcode X X pred_arity
- *    2nd word: program_clause_label
- *    3rd word: pointer to pred's TableInfo record
+ *    2nd word: pred_first_clause_label
+ *    3rd word: preds_TableInfo_record
  */
+
 case tabletry:
 case tabletrysingle: {
   /*
-   *  Retrieve instruction arguments and test the CP stack for overflow.
-   *  (This latter operation should be performed first since the call
-   *  lookup operation will be pushing info there WITHOUT adjusting the
-   *  top of the CP stack.)  The local PCreg, "lpcreg", is incremented
-   *  to point to the instruction to be executed should this one fail.
+   *  Retrieve instruction arguments and test the system stacks for
+   *  overflow.  The local PCreg, "lpcreg", is incremented to point to
+   *  the instruction to be executed should this one fail.
    */
   byte this_instr = *(lpcreg - 1);
   byte *continuation;
-  CallInfoRecord callInfo;
-  CPtr producerCPF;
+  TabledCallInfo callInfo;
   CallLookupResults lookupResults;
+  SGFrame producer_sf, consumer_sf;
+  CPtr answer_template;
+  int template_size;
 
   xwammode = 1;
-  CallInfo_Arguments(callInfo) = reg;
+  CallInfo_Arguments(callInfo) = reg + 1;
   ppad;   CallInfo_CallArity(callInfo) = (Cell)(*lpcreg++);  pad64;
   LABEL = (CPtr)(*(byte **) lpcreg);  ADVANCE_PC;
   CallInfo_TableInfo(callInfo) = (* (TIFptr *) lpcreg);  ADVANCE_PC;
@@ -71,59 +136,68 @@ case tabletrysingle: {
   }
   else
     continuation = (pb) &check_complete_inst;
-  /*
-   *  Perform a variant call-check/insert operation on the current call.
-   *  The variables of this call are pushed on top of the CP stack, along
-   *  with the number found (encoded as a Prolog INT) .  This forms the
-   *  call's answer template (AT).  A pointer to this size, followed by
-   *  the reverse template vector (as described above), is returned in
-   *  CallLUR_VarVector(lookupResults).
-   */
-  if ( IsVariantPredicate(CallInfo_TableInfo(callInfo)) )
-    variant_call_search(&callInfo,&lookupResults);
-  else
-    xsb_exit("Subsumptive predicates not supported yet!");
 
-  if ( IsNULL(CallLUR_Subsumer(lookupResults)) ) {
+  /*
+   *  Perform a call-check/insert operation on the current call.  The
+   *  subterms of this call which form the answer template are computed
+   *  and pushed on top of the CP stack, along with its size (encoded as
+   *  a Prolog INT) .  A pointer to this size, followed by the reverse
+   *  template vector (as depicted above), is returned in
+   *  CallLUR_VarVector(lookupResults).
+   *  NOTE: ONLY if we find a new producer and ONLY if we are computing
+   *    under CHAT, the answer template is pushed on the Heap rather than
+   *    the CPS.  In that case, (heap - 1) points to the A.T. and
+   *    CallLUR_VarVector(lookupResults) has the same value as
+   *    CallInfo_VarVectorLoc(callInfo).
+   */
+
+  table_call_search(&callInfo,&lookupResults);
+
+  producer_sf = CallLUR_Subsumer(lookupResults);
+  answer_template = CallLUR_VarVector(lookupResults);
+
+  if ( IsNULL(producer_sf) ) {
+
     /* New Producer
        ------------ */
-    create_subgoal_frame( CallLUR_Subsumer(lookupResults),
-			  CallLUR_Leaf(lookupResults),
-			  CallInfo_TableInfo(callInfo) );
-    producerCPF = CallLUR_VarVector(lookupResults);
+    CPtr producer_cpf;
+    NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
+		  CallInfo_TableInfo(callInfo));
+    producer_cpf = answer_template;
     save_find_locx(ereg);
-    save_registers(producerCPF, CallInfo_CallArity(callInfo), rreg);
-    SaveProducerCPF(producerCPF, continuation, CallLUR_Subsumer(lookupResults),
+    save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
+    SaveProducerCPF(producer_cpf, continuation, producer_sf,
 		    CallInfo_CallArity(callInfo));
-
-    push_completion_frame(CallLUR_Subsumer(lookupResults));
-    ptcpreg = (CPtr)CallLUR_Subsumer(lookupResults);
-    subg_cp_ptr(CallLUR_Subsumer(lookupResults)) = breg = producerCPF;
+    push_completion_frame(producer_sf);
+    ptcpreg = (CPtr)producer_sf;
+    subg_cp_ptr(producer_sf) = breg = producer_cpf;
     delayreg = NULL;
-    if (root_address == 0) root_address = breg;
+    if (root_address == 0)
+      root_address = breg;
     hbreg = hreg;
     lpcreg = (byte *) LABEL;	/* branch to program clause */
     goto contcase;
   }
-  else if ( is_completed(CallLUR_Subsumer(lookupResults)) ) {
+
+  else if ( is_completed(producer_sf) ) {
+
     /* Unify Call with Answer Trie
        --------------------------- */
-    if (has_answer_code(CallLUR_Subsumer(lookupResults))) {
+    if (has_answer_code(producer_sf)) {
       int i;
-      Cell  CallNumVar;
 #ifdef DEBUG_DELAY
       fprintf(stddbg, "++Returning answers from COMPLETED table: ");
-      print_subgoal(stddbg, (SGFrame)CallLUR_Subsumer(lookupResults));
+      print_subgoal(stddbg, producer_sf);
       fprintf(stddbg, "\n");
 #endif
-      CallNumVar = int_val(cell(CallLUR_VarVector(lookupResults)));
+      template_size = int_val(cell(answer_template));
       num_vars_in_var_regs = -1;
       reg_arrayptr = reg_array-1;
-      for (i = 1; i <= CallNumVar; i++) {
-	pushreg(cell(CallLUR_VarVector(lookupResults)+i));
+      for (i = 1; i <= template_size; i++) {
+	pushreg(cell(answer_template+i));
       }
       delay_it = 1;
-      lpcreg = (byte *)subg_ans_root_ptr(CallLUR_Subsumer(lookupResults));
+      lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
       goto contcase;
     }
     else {
@@ -131,58 +205,79 @@ case tabletrysingle: {
       goto contcase;
     }
   }
-  else if ( CallLUR_VariantFound(lookupResults) ) {
-    /* Previously Seen Call: was lay_down_consumer label
-       ------------------------------------------------- */
-    ALNptr  OldRetPtr;
-    NODEptr TrieRetPtr;
-    CPtr    prev_consumer_cpf;
 
-    adjust_level(subg_compl_stack_ptr(CallLUR_Subsumer(lookupResults)));
+  else if ( CallLUR_VariantFound(lookupResults) )
+
+    /* Previously Seen Subsumed Call
+       ----------------------------- */
+    consumer_sf = CallTrieLeaf_GetSF(CallLUR_Leaf(lookupResults));
+
+  else
+
+    /* New Subsumed Call
+       ----------------- */
+    NewConsumerSF( consumer_sf, CallLUR_Leaf(lookupResults),
+		   CallInfo_TableInfo(callInfo), producer_sf );
+
+  /*
+   * The call, represented by "consumer_sf", will consume from an
+   * incomplete producer, represented by "producer_sf".
+   */
+  {
+    CPtr consumer_cpf;
+    ALNptr answer_set;
+    BTNptr first_answer;
+
+    /* Create Consumer Choice Point
+       ---------------------------- */
+    adjust_level(subg_compl_stack_ptr(producer_sf));
     save_find_locx(ereg);
+
+    consumer_cpf = answer_template;
 #if (!defined(CHAT))
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
-    prev_consumer_cpf = subg_asf_list_ptr(CallLUR_Subsumer(lookupResults));
+    SaveConsumerCPF( consumer_cpf, consumer_sf,
+		     subg_asf_list_ptr(producer_sf) );
+    subg_asf_list_ptr(producer_sf) = breg = bfreg = consumer_cpf;
 #else
-    prev_consumer_cpf = NULL;
+    SaveConsumerCPF( consumer_cpf, consumer_sf );
+    breg = consumer_cpf;   /* save_a_consumer_copy() needs this update */
+    compl_cons_copy_list(subg_compl_stack_ptr(producer_sf)) =
+      nlcp_chat_area(consumer_cpf) =
+        (CPtr) save_a_consumer_copy(producer_sf, CHAT_CONS_AREA);
 #endif
-    SaveConsumerCPF( CallLUR_VarVector(lookupResults),
-		     CallLUR_Subsumer(lookupResults),
-		     prev_consumer_cpf );
-#if (!defined(CHAT))
-    /* new consumer into front */
-    subg_asf_list_ptr(CallLUR_Subsumer(lookupResults)) = bfreg =
-#endif
-    breg = CallLUR_VarVector(lookupResults);
 
-#ifdef CHAT
-    compl_cons_copy_list(subg_compl_stack_ptr(CallLUR_Subsumer(lookupResults))) =
-	nlcp_chat_area(breg) = (CPtr) save_a_consumer_copy((SGFrame)CallLUR_Subsumer(lookupResults),
-							   CHAT_CONS_AREA);
-#endif
-    OldRetPtr = subg_answers(CallLUR_Subsumer(lookupResults));
-    if (OldRetPtr) {
-      Cell CallNumVar;
+    /* Consume First Answer or Suspend
+       ------------------------------- */
+    answer_set = subg_answers(consumer_sf);
+    if ( IsNULL(answer_set) &&
+	 ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) )
+      answer_set =
+	table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+
+    if ( IsNonNULL(answer_set) ) {
 #ifdef CHAT      /* for the time being let's update consumed answers eagerly */
-      nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
+      nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(consumer_cpf)))) =
 #endif
-	nlcp_trie_return(breg) = OldRetPtr; 
-      TrieRetPtr = get_next_trie_solution(&OldRetPtr);
-      CallNumVar = *(breg+NLCPSIZE);
-      CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
-      op3 = breg + NLCPSIZE + CallNumVar;
+      nlcp_trie_return(consumer_cpf) = answer_set; 
       hbreg = hreg;
-      load_solution_trie(CallNumVar,op3,TrieRetPtr);
-      if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
+      first_answer = ALN_Answer(answer_set);
+      template_size = int_val(cell(answer_template));
+      answer_template += template_size;
+
+      table_consume_answer(first_answer,template_size,answer_template,
+			   CallInfo_TableInfo(callInfo));
+
+      if (is_conditional_answer(first_answer)) {
 #ifdef DEBUG_DELAY
 	fprintf(stddbg,
 		"! POSITIVELY DELAYING in lay active (delayreg = %p)\n",
 		delayreg);
 	fprintf(stddbg, "\n>>>> delay_positively in lay_down_active\n");
 	fprintf(stddbg, ">>>> subgoal = ");
-	print_subgoal(stddbg, (SGFrame) CallLUR_Subsumer(lookupResults));
+	print_subgoal(stddbg, producer_sf);
 	fprintf(stddbg, "\n");
 #endif
 	{
@@ -193,181 +288,208 @@ case tabletrysingle: {
 	   * delay_positively().
 	   */
 	  if (num_heap_term_vars == 0) {
-	    delay_positively(CallLUR_Subsumer(lookupResults),
-			     aln_answer_ptr(nlcp_trie_return(breg)),
+	    delay_positively(producer_sf, first_answer,
 			     makestring((char *) ret_psc[0]));
 	  }
 	  else {
 #ifndef IGNORE_DELAYVAR
 	    int i;
 	    CPtr temp_hreg = hreg;
+	    temp_hreg = hreg;
 	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	    for (i = 0; i < num_heap_term_vars; i++)
 	      cell(hreg++) = (Cell) var_addr[i];
-	    delay_positively(CallLUR_Subsumer(lookupResults),
-			     aln_answer_ptr(nlcp_trie_return(breg)),
-			     makecs(temp_hreg));
+	    delay_positively(producer_sf, first_answer, makecs(temp_hreg));
 #else
-	    delay_positively(CallLUR_Subsumer(lookupResults),
-			     aln_answer_ptr(nlcp_trie_return(breg)),
+	    delay_positively(producer_sf, first_answer,
 			     makestring((char *) ret_psc[0]));
 #endif /* IGNORE_DELAYVAR */
 	  }
 	}
       }
       lpcreg = cpreg;
-    } else {
-      breg = nlcp_prevbreg(breg);
+    }
+    else {
+      breg = nlcp_prevbreg(consumer_cpf);
 #ifdef CHAT
       hreg = cp_hreg(breg);
       ereg = cp_ereg(breg);
 #endif
       Fail1;
     }
-    goto contcase;
   }
-  else {
-    /* New Subsumed Call
-       ----------------- */
-    xsb_exit("New Subsumed Call: Should not yet reach this block");
-  }
+  goto contcase;
 }
 
-/*----------------------------------------------------------------------*/
-/*  Returns answers to consumers.  This can happen either when the	*/
-/*  consumer is created and the generator has some answers, or when	*/
-/*  the consumer is scheduled through a check-complete instruction.	*/
-/*  Note that nlcp-trie-return points to the last answer which has	*/
-/*  been consumed.							*/
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 
-case answer_return:
-{
-    ALNptr  OldRetPtr;
-    NODEptr TrieRetPtr;
+/*
+ *  Instruction format:
+ *    1st word: opcode X X X
+ *
+ *  Description:
+ *    Returns to a consumer an answer if one is available, otherwise it
+ *    suspends.  Answer consumption is effected by unifying the consumer's
+ *    answer template with an answer.  This instruction is encountered only
+ *    by backtracking into a consumer choice point frame, either as a
+ *    result of WAM- style backtracking or having been resumed via a
+ *    check-complete instruction.  The CPF field "nlcp-trie-return" points
+ *    to the last answer consumed.  If none have yet been consumed, then it
+ *    points to the dummy answer.
+ */
 
-    OldRetPtr = aln_next_aln(nlcp_trie_return(breg)); /* get next answer */
-    if (OldRetPtr) {
-      Cell CallNumVar;
-      SGFrame subgoal;
+case answer_return: {
+  SGFrame consumer_sf, producer_sf;
+  ALNptr answer_set;
+  BTNptr answer_leaf;
+  CPtr answer_template;
+  int template_size;
 
-      switch_envs(breg);
-      ptcpreg = nlcp_ptcp(breg);
-      delayreg = nlcp_pdreg(breg);
-      restore_some_wamregs(breg, ereg);
-      /* An extra computation in the interest of clarity */
-      CallNumVar = *(breg + NLCPSIZE);
-      CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
-      op3 = breg + NLCPSIZE + CallNumVar;
-      subgoal = (SGFrame)nlcp_subgoal_ptr(breg);
-      nlcp_trie_return(breg) = OldRetPtr; /* last answer consumed */
-      TrieRetPtr = get_next_trie_solution(&OldRetPtr);
-      load_solution_trie(CallNumVar,op3,TrieRetPtr);
-      if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
-	/*
-	 * After load_solution_trie(), the substitution factor of the
-	 * answer is left in array var_addr[], and its arity is in
-	 * num_heap_term_vars.  We have to put it into a term ret/n (on 
-	 * the heap) and pass it to delay_positively().
-	 */
-	if (num_heap_term_vars == 0) {
-	  delay_positively(subgoal, aln_answer_ptr(nlcp_trie_return(breg)),
-			   makestring((char *) ret_psc[0]));
-	}
-	else {
-#ifndef IGNORE_DELAYVAR
-	  int i;
-	  CPtr temp_hreg = hreg;
-	  new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
-	  for (i = 0; i < num_heap_term_vars; i++) {
-	    cell(hreg++) = (Cell) var_addr[i];
-	  }
-	  delay_positively(subgoal, aln_answer_ptr(nlcp_trie_return(breg)),
-			   makecs(temp_hreg));
-#else
-	  delay_positively(subgoal, aln_answer_ptr(nlcp_trie_return(breg)),
-			   makestring((char *) ret_psc[0]));
-#endif /* IGNORE_DELAYVAR */
-	}
+  /* Locate relevant answers
+     ----------------------- */
+  answer_set = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
+  consumer_sf = (SGFrame)nlcp_subgoal_ptr(breg);
+  producer_sf = subg_producer(consumer_sf);
+  answer_template = breg + NLCPSIZE;
+  if ( IsNULL(answer_set) &&
+       ConsumerCacheNeedsUpdating(consumer_sf,producer_sf) ) {
+    switch_envs(breg);
+    answer_set =
+      table_retrieve_answers(producer_sf,consumer_sf,answer_template);
+  }
+
+  if ( IsNonNULL(answer_set) ) {
+
+    /* Restore Consumer's state
+       ------------------------ */
+    switch_envs(breg);
+    ptcpreg = nlcp_ptcp(breg);
+    delayreg = nlcp_pdreg(breg);
+    restore_some_wamregs(breg, ereg);
+
+    /* Consume the next answer
+       ----------------------- */
+    nlcp_trie_return(breg) = answer_set;   /* update answer continuation */
+    answer_leaf = ALN_Answer(answer_set);
+    template_size = int_val(cell(answer_template));
+    answer_template += template_size;
+
+    table_consume_answer(answer_leaf,template_size,answer_template,
+			 subg_tif_ptr(consumer_sf));
+
+    if (is_conditional_answer(answer_leaf)) {
+      /*
+       * After load_solution_trie(), the substitution factor of the
+       * answer is left in array var_addr[], and its arity is in
+       * num_heap_term_vars.  We have to put it into a term ret/n (on 
+       * the heap) and pass it to delay_positively().
+       */
+      if (num_heap_term_vars == 0) {
+	delay_positively(consumer_sf, answer_leaf,
+			 makestring((char *) ret_psc[0]));
       }
-      lpcreg = cpreg;
-    } else {
-#ifdef CHAT	/* update consumed answers in CHAT-area before failing out */
-      nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
-	nlcp_trie_return(breg);	/* last answer consumed */
-#endif
-      breg = nlcp_prevbreg(breg); /* in semi-naive this execs next active */
-#ifdef CHAT
-      hreg = cp_hreg(breg);
-      restore_trail_condition_registers(breg);
+      else {
+#ifndef IGNORE_DELAYVAR
+	int i;
+	CPtr temp_hreg = hreg;
+	new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	for (i = 0; i < num_heap_term_vars; i++) {
+	  cell(hreg++) = (Cell) var_addr[i];
+	}
+	delay_positively(consumer_sf, answer_leaf, makecs(temp_hreg));
 #else
-      restore_trail_condition_registers(breg);
-      if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg;
-#endif
-      Fail1;
+	delay_positively(consumer_sf, answer_leaf,
+			 makestring((char *) ret_psc[0]));
+#endif /* IGNORE_DELAYVAR */
+      }
     }
-    goto contcase;
+    lpcreg = cpreg;
+  }
+
+  else {
+
+    /* Suspend this Consumer
+       --------------------- */
+#ifdef CHAT	/* update consumed answers in CHAT-area before failing out */
+    nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
+      nlcp_trie_return(breg);	/* last answer consumed */
+#endif
+    breg = nlcp_prevbreg(breg); /* in semi-naive this execs next active */
+#ifdef CHAT
+    hreg = cp_hreg(breg);
+    restore_trail_condition_registers(breg);
+#else
+    restore_trail_condition_registers(breg);
+    if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg;
+#endif
+    Fail1;
+  }
+  goto contcase;
 }
 
-/*----------------------------------------------------------------------*/
-/*  New answers are added to the tail of the answer list of a subgoal	*/
-/*  structure.  Upon the derivation of the first answer for a subgoal,	*/
-/*  all negation suspensions of the subgoal are abolished.		*/
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 
-case new_answer_dealloc:
-{
-    int     xflag;
-    CPtr    cs_frame;
-    CPtr    VarsInCall;
-    Cell    CallNumVar;
-    NODEptr TrieRetPtr;
-    SGFrame subgoal;
-#if (!defined(CHAT))
-    CPtr    generator_cp;
-#endif
+/*
+ *  Instruction format:
+ *    1st word: opcode X pred_arity perm_var_index
+ *
+ *  Description:
+ *    Last instruction in each clause of a tabled predicate.  Is executed
+ *    by a producing call to record a computed answer.  Two notations are
+ *    made in the answer set: (1) the variable substitutions are saved in
+ *    the answer trie, and (2) a new entry is made at the end of the answer
+ *    list which points to the answer trie entry of (1).  All the
+ *    information necessary to perform this Answer Check/Insert operation
+ *    is saved in the producer's choice point frame.  This structure can be
+ *    reached through the subgoal frame, which is noted in the first
+ *    environment variable.  Upon derivation of the first answer, all
+ *    negation suspensions of the subgoal are abolished.
+ */
 
-    pad;
-    ARITY = (Cell) (*lpcreg++);
-    Yn = (Cell) (*lpcreg++);
-    pad64;
-    subgoal = (SGFrame)cell(ereg-Yn);
+case new_answer_dealloc: {
+
+  CPtr producer_cpf, producer_csf, answer_template;
+  int template_size;
+  SGFrame producer_sf;
+  bool isNewAnswer = FALSE;
+  BTNptr answer_leaf;
+
+  pad;
+  ARITY = (Cell) (*lpcreg++);
+  Yn = (Cell) (*lpcreg++);
+  pad64;
+  producer_sf = (SGFrame)cell(ereg-Yn);
+  producer_cpf = subg_cp_ptr(producer_sf);
+
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(">>>> New answer for %s subgoal: ",
-	       (is_completed(subgoal) ? "completed" : "incomplete"));
-    print_subgoal(stddbg, subgoal);
-    xsb_dbgmsg("\n");
-    xsb_dbgmsg(">>>>              has delayreg = %p", delayreg);
+  xsb_dbgmsg(">>>> New answer for %s subgoal: ",
+	     (is_completed(producer_sf) ? "completed" : "incomplete"));
+  print_subgoal(stddbg, producer_sf);
+  xsb_dbgmsg("\n");
+  xsb_dbgmsg(">>>>              has delayreg = %p", delayreg);
 #endif
-    cs_frame = subg_compl_stack_ptr(subgoal);
-    /* if the subgoal has been early completed and its space reclaimed
-     * from the stacks, access to its relevant information (e.g. to its
-     * substitution factor) in the stacks is not safe, so better not
-     * try to add this answer; it is a redundant one anyway...
-     */
-    if ((subgoal_space_has_been_reclaimed(subgoal,cs_frame)) ||
-	(delayreg != NULL && answer_is_junk(delayreg))) {
-      Fail1; goto contcase;
-    }
+
+  producer_csf = subg_compl_stack_ptr(producer_sf);
+
+  /* if the subgoal has been early completed and its space reclaimed
+   * from the stacks, access to its relevant information (e.g. to its
+   * substitution factor) in the stacks is not safe, so better not
+   * try to add this answer; it is a redundant one anyway...
+   */
+  if ((subgoal_space_has_been_reclaimed(producer_sf,producer_csf)) ||
+      (IsNonNULL(delayreg) && answer_is_junk(delayreg))) {
+    Fail1;
+    goto contcase;
+  }
 
 #ifdef CHAT
-    /* in CHAT, substitution factor is in the heap for generators */
-    CallNumVar = int_val(cell(compl_hreg(cs_frame)));
-    VarsInCall = compl_hreg(cs_frame)-1;
+  /* answer template is now in the heap for generators */
+  template_size = int_val(cell(compl_hreg(producer_csf)));
+  answer_template = compl_hreg(producer_csf)-1;
 #else
-    /*
-     * All the information from the choice point stack, including
-     * CallNumVar, VarsInCall, and ARITY's registers, was set in tabletry.
-     *
-     * ARITY      : arity of the call predicate
-     * CallNumVar : number of variables in the call
-     * VarsInCall : answer substitution (binding results of the variables
-     *              in the call)
-     */
-    generator_cp = subg_cp_ptr(subgoal);
-    CallNumVar = *(generator_cp + TCP_SIZE + (Cell) ARITY);
-    CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
-    VarsInCall = generator_cp + TCP_SIZE + (Cell) ARITY + CallNumVar;
+  answer_template = producer_cpf + TCP_SIZE + (Cell) ARITY;
+  template_size = int_val(*answer_template);
+  answer_template += template_size;
 #endif
 
 #ifdef DEBUG_DELAYVAR
@@ -375,131 +497,138 @@ case new_answer_dealloc:
 #endif
 
 #ifdef DEBUG_DELAY
-    fprintf(stddbg, "\t--> This answer for ");
-    print_subgoal(stddbg, subgoal);
-    if (delayreg != NULL) {
-      fprintf(stddbg, " has delay list = ");
-      print_delay_list(stddbg, delayreg);
-    } else {
-      fprintf(stddbg, " has no delay list");
-    }
+  fprintf(stddbg, "\t--> This answer for ");
+  print_subgoal(stddbg, producer_sf);
+  if (delayreg != NULL) {
+    fprintf(stddbg, " has delay list = ");
+    print_delay_list(stddbg, delayreg);
+  }
+  else
+    fprintf(stddbg, " has no delay list");
 #endif
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stddbg, "\n>>>> (before variant_trie_search) CallNumVar = %d\n",
-	    (int)CallNumVar);
-    {
-      int i;
-      for (i = 0; i < CallNumVar; i++) {
-	fprintf(stddbg, ">>>> VarsInCall[%d] = ", i);
-	printterm((Cell)(VarsInCall - i), 1, 25);
-	fprintf(stddbg, "\n");
-      }
+  fprintf(stddbg, "\n>>>> (before variant_answer_search) template_size = %d\n",
+	  (int)template_size);
+  {
+    int i;
+    for (i = 0; i < template_size; i++) {
+      fprintf(stddbg, ">>>> answer_template[%d] = ", i);
+      printterm((Cell)(answer_template - i), 1, 25);
+      fprintf(stddbg, "\n");
     }
+  }
 #endif
 
-    /*
-     * We want to save the substitution factor of the answer in the
-     * heap, so we have to change variant_trie_search().
-     */
-#ifndef IGNORE_DELAYVAR
-    ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
-#endif /* IGNORE_DELAYVAR */
-    xflag = 0;
-    TrieRetPtr = variant_trie_search(CallNumVar,VarsInCall,(CPtr)subgoal,&xflag);
+  answer_leaf = table_answer_search( producer_sf, template_size,
+				     answer_template, &isNewAnswer );
 
-#ifdef DEBUG_DELAYVAR
-#ifndef IGNORE_DELAYVAR
-    fprintf(stddbg, ">>>> ans_var_pos_reg = ");
-    if (isinteger(cell(ans_var_pos_reg)))
-      fprintf(stddbg, "\"ret\"\n");
-    else 
-      fprintf(stddbg, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
-	      get_arity((Psc)(cell(ans_var_pos_reg))));
-#endif /* IGNORE_DELAYVAR */
-#endif /* DEBUG_DELAYVAR */
-
-    do_delay_stuff(TrieRetPtr, subgoal, xflag);
-#ifndef IGNORE_DELAYVAR
-    undo_answer_bindings();
-#endif /* IGNORE_DELAYVAR */
-    if (xflag) {
-      Fail1;  /* do not return repeated answer to generator */
-    }
-    else { /* go ahead -- look for more answers */
-/*----------------------------------------------------------------------*/
+  if ( isNewAnswer ) {   /* go ahead -- look for more answers */
 #ifdef CHAT
-      delayreg = compl_pdreg(cs_frame); /* restore delayreg of parent */
+    delayreg = compl_pdreg(producer_csf); /* restore delayreg of parent */
 #else
-      delayreg = tcp_pdreg(generator_cp);      /* restore delayreg of parent */
+    delayreg = tcp_pdreg(producer_cpf);      /* restore delayreg of parent */
 #endif
-      if (is_conditional_answer(TrieRetPtr)) {	/* positive delay */
+    if (is_conditional_answer(answer_leaf)) {	/* positive delay */
 #ifndef LOCAL_EVAL
 #ifdef DEBUG_DELAYVAR
-	fprintf(stddbg, "\n>>>> delay_positively in new_answer_dealloc\n");
+      fprintf(stddbg, "\n>>>> delay_positively in new_answer_dealloc\n");
 #endif
-	/*
-	 * The new answer for this call is a conditional one, so add it
-	 * into the delay list for the parent predicate.  Notice that
-	 * delayreg has already been restored to the delayreg of parent.
-	 *
-	 * This is the new version of delay_positively().  Here,
-	 * ans_var_pos_reg is passed from variant_trie_search().  It is a
-	 * pointer to the heap where the substitution factor of the
-	 * answer was saved as a term ret/n (in variant_trie_search()).
-	 */
+      /*
+       * The new answer for this call is a conditional one, so add it
+       * into the delay list for the parent predicate.  Notice that
+       * delayreg has already been restored to the delayreg of parent.
+       *
+       * This is the new version of delay_positively().  Here,
+       * ans_var_pos_reg is passed from variant_answer_search().  It is a
+       * pointer to the heap where the substitution factor of the
+       * answer was saved as a term ret/n (in variant_answer_search()).
+       */
 #ifndef IGNORE_DELAYVAR
-	if (isinteger(cell(ans_var_pos_reg))) {
-	  delay_positively(subgoal, TrieRetPtr,
-			   makestring((char *) ret_psc[0]));
-	}
-	else 
-	  delay_positively(subgoal, TrieRetPtr, makecs(ans_var_pos_reg));
-#else
-	delay_positively(subgoal, TrieRetPtr, makestring((char *) ret_psc[0]));
-#endif /* IGNORE_DELAYVAR */
-
-#endif /* LOCAL_EVAL */
-      } else {
-	if (CallNumVar == 0) {	/* perform early completion */
-	  perform_early_completion(subgoal, generator_cp);
-#if (defined(LOCAL_EVAL) && !defined(CHAT))
-	  breg = generator_cp;
-#endif
-	}
+      if (isinteger(cell(ans_var_pos_reg))) {
+	delay_positively(producer_sf, answer_leaf,
+			 makestring((char *) ret_psc[0]));
       }
-/*----------------------------------------------------------------------*/
+      else 
+	delay_positively(producer_sf, answer_leaf, makecs(ans_var_pos_reg));
+#else
+	delay_positively(producer_sf, answer_leaf,
+			 makestring((char *) ret_psc[0]));
+#endif /* IGNORE_DELAYVAR */
+#endif /* LOCAL_EVAL */
+    }
+    else {
+      if (template_size == 0) {
+	/*
+	 *  The table is for a ground call which we just proved true.
+	 *  (We entered an ESCAPE Node, above, to note this fact in the
+	 *  table.)  As we only need to do this once, we perform "early
+	 *  completion" by ignoring the other clauses of the predicate
+	 *  and setting the failure continuation (next_clause) field of
+	 *  the CPF to a check_complete instr.
+	 */
+	perform_early_completion(producer_sf, producer_cpf);
+#if (defined(LOCAL_EVAL) && !defined(CHAT))
+	breg = producer_cpf;
+#endif
+      }
+    }
 #ifdef LOCAL_EVAL
-      Fail1;	/* and do not return answer to the generator */
+    Fail1;	/* and do not return answer to the generator */
 #else
 #ifdef CHAT
-      ptcpreg = compl_ptcp(cs_frame);
+    ptcpreg = compl_ptcp(producer_csf);
 #else
-      ptcpreg = tcp_ptcp(generator_cp);
+    ptcpreg = tcp_ptcp(producer_cpf);
 #endif
-      cpreg = *((byte **)ereg-1);
-      ereg = *(CPtr *)ereg;
-      lpcreg = cpreg; 
+    cpreg = *((byte **)ereg-1);
+    ereg = *(CPtr *)ereg;
+    lpcreg = cpreg; 
 #endif
-    }
-    goto contcase;
+  }
+  else     /* repeat answer -- ignore */
+    Fail1;
+  goto contcase;
 }
 
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 
- case tableretry: /* PPA-L */
-    ppad; op1byte;
-    pad64;
-    tcp_pcreg(breg) = lpcreg+sizeof(Cell);
-    lpcreg = *(pb *)lpcreg;
-    restore_type = 0;
-    goto table_restore_sub;
-
-/*----------------------------------------------------------------------*/
-/* resets breg, sets up a completion instruction in the generator choice point
- * through the next clause cell (whose contents are executed upon failure)
+/*
+ *  Instruction format:
+ *    1st word: opcode X X pred_arity
+ *    2nd word: pred_next_clause_label
+ *
+ *  Description:
+ *    Store the predicate's arity in "op1", update the failure continuation
+ *    to the instruction following this one, and set the program counter to
+ *    the predicate's next code subblock to be executed, as pointed to by
+ *    the second argument to this instruction.  Finally, restore the state
+ *    at the point of choice and continue execution using the predicate's
+ *    next code subblock.
  */
-/*----------------------------------------------------------------------*/
+
+case tableretry:
+  ppad; op1byte;
+  pad64;
+  tcp_pcreg(breg) = lpcreg+sizeof(Cell);
+  lpcreg = *(pb *)lpcreg;
+  restore_type = 0;
+  goto table_restore_sub;
+
+/*-------------------------------------------------------------------------*/
+
+/*
+ *  Instruction format:
+ *    1st word: opcode X X pred_arity
+ *
+ *  Description:
+ *    Store the predicate's arity in "op1", update the failure continuation
+ *    to a check_complete instruction, and set the program counter to the
+ *    predicate's last code subblock to be executed, as pointed to by the
+ *    second argument to this instruction.  Finally, restore the state at
+ *    the point of choice and continue execution with this last code
+ *    subblock.
+ */
 
 case tabletrust:
     ppad; op1byte;
@@ -514,13 +643,11 @@ case tabletrust:
 #endif
     goto table_restore_sub;
 
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 
 #include "complete.i"
 
-/*----------------------------------------------------------------------*/
-/* resume_compl_suspension                                		*/
-/*----------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
 
 case resume_compl_suspension:
 #ifdef DEBUG_DELAYVAR
