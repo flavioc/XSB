@@ -2,6 +2,7 @@
 
 :- import member/2, length/2, append/3 from basics.
 :- import odbc_sql/4, odbc_open/2, odbc_open/4 from odbc_call.
+:- import term_to_atom/2 from string.
 :- ensure_loaded(oms_utilities).
 
 :- document_export coerce_db_type/5, oms_db_open/3.
@@ -252,14 +253,16 @@ object_int_udb(Name,NatId,Source) :-
 				       ['select ',NameAttr,
 					' from ',TableName,
 					' where ',NOidAttr,' = ?'],
-				       [Name])
+				       [NameDB])
 		)
 	 ;	odbc_sql_local(Source,
 			       [],
 			       ['select ',NOidAttr,',',NameAttr,
 				' from ',TableName],
-			       [NatId,Name])
-	).
+			       [NatId,NameDB])
+	),
+	% NameDB could be integer or atom in DB
+	term_to_atom(NameDB,Name).
 
 retractall_oms_int_udb(object_ext(Name,NatId,Source)) :-
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,_MC,_MS),
@@ -292,7 +295,12 @@ assert_oms_int_udb(object_ext(Name,NatId,Source)) :-
 				' values (?)'
 				],
 			       [])
-	 ;	odbc_sql_local(Source,
+	 ;	(atom(Name)
+		 ->	true
+		 ;	oms_warning(update,('Name of asserted object is not an atom', Name)),
+			fail
+		),
+		odbc_sql_local(Source,
 			       [NatId,Name],
 			       ['insert into ',TableName,
 				'(',NOidAttr,',',NameAttr,')',
@@ -460,16 +468,15 @@ immediate_attribute_int_udb(SNOid,Source,RNCid,RSou,TNCid,TSou) :-
 					       ['select ',NOidAttr,
 						' from ',TableName,
 						' where ',TarAttr,' = ?'],
-					       Results)
+					       [SNOid])
 			 ;	
 			 db_build_sets(TarAttr,Sets,[]),
 			 odbc_sql_local(Source,
 					DBTVal,
 					['select ',NOidAttr,
 					 ' from ',TableName,' where ',Sets],
-					Results)
-			),
-			member(SNOid,Results)
+					[SNOid])
+			)
 		 ;	writeln('ERROR: Attribute_int must have NatOId or (RNCid,RSou,TNCid,TSou) bound'),
 			fail
 		)
