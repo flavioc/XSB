@@ -151,6 +151,7 @@ CLEAN :
 	-@erase "$(OBJDIR)\xsb_odbc.obj"
 	-@erase "$(OBJDIR)\xsberror.obj"
 	-@erase "$(OBJDIR)\xsbsocket.obj"
+	-@erase "$(OBJDIR)\xsb_string.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -194,7 +195,8 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/xpathname.obj" \
 	"$(OBJDIR)/xsb_odbc.obj" \
 	"$(OBJDIR)/xsberror.obj" \
-	"$(OBJDIR)/xsbsocket.obj"
+	"$(OBJDIR)/xsbsocket.obj" \
+	"$(OBJDIR)/xsb_string.obj"
 
 # DLLs don't use xmain.c
 !IF  "$(DLL)" == "no"
@@ -1316,4 +1318,36 @@ DEP_CPP_XSBSOCK=\
 
 
 # End Source File
+################################################################################
+# Begin Source File
 
+
+SOURCE=$(INTDIR)\xsb_string.c
+DEP_CPP_XSB_STR=\
+	{$(INTDIR)}"\configs\config.h"\
+	{$(INTDIR)}"\debugs\debug.h"\
+	{$(INTDIR)}"\auxlry.h"\
+	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\xsberror.h"\
+	{$(INTDIR)}"\cinterf.h"\
+	{$(INTDIR)}"\psc.h"\
+	{$(INTDIR)}"\register.h"\
+	{$(INTDIR)}"\flags.h"\
+	{$(INTDIR)}"\inst.h"\
+	{$(INTDIR)}"\token.h"\
+	{$(INTDIR)}"\loader.h"\
+	{$(INTDIR)}"\load_seg.h"\
+	{$(INTDIR)}"\tries.h"\
+	{$(INTDIR)}"\choice.h"\
+	{$(INTDIR)}"\xsb_memory.h"\
+	{$(INTDIR)}"\heap.h"\
+	{$(INTDIR)}"\flags.h"\
+	{$(INTDIR)}"\builtin.h"\
+	{$(INTDIR)}"\hash.h"\
+
+
+"$(OBJDIR)\xsb_string.obj" : $(SOURCE) $(DEP_CPP_XSB_STR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
