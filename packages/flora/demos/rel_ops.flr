@@ -1,0 +1,89 @@
+/* File:      rel_ops.flp
+** Author(s): Bertram Ludaescher
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+%%% ==================================================================
+%%% So you're familiar with RELATIONAL OPERATORS and want to know the 
+%%% corresponding rules? Here are some illustrative EXAMPLES:
+%%% ==================================================================
+
+%%% SELECT some tuples from p(X,Y):
+ans_sel(X,Y) :- p(X,Y), not X=Y.
+
+%%% PROJECT on the first argument of p(X,Y):
+ans_proj(X) :- p(X,Y).		
+
+%%% JOIN p(A,B), q(C,D) wrt. B and C: 
+ans_join(X,Y,Z) :- p(X,Y), q(Y,Z).
+
+%%% PRODUCT of p(X) and q(Y):
+ans_prod(X,Y) :- p(X), q(Y).
+
+%%% UNION of p(X), q(X): 
+ans_union(X) :- p(X).
+ans_union(X) :- q(X).
+
+%%% INTERSECTION of p(X), q(X):
+ans_intersect(X) :- p(X), q(X).
+
+%%% SET-DIFFERENCE p(X) \ q(X):
+ans_diff(X) :- p(X), not q(X).
+
+
+%%% ==================================================================
+%%% Here are some base facts.
+%%% (put these BEFORE the rules when using FLORID instead of FLIP)
+%%% ==================================================================
+
+%%% p(X,Y):
+p(a,a).
+p(a,b).
+p(b,c).
+
+%%% q(X,Y).
+q(a,e).
+q(b,f).
+
+%%% p(X):
+p(a). p(b). p(c).
+
+%%% q(X):
+q(b). q(d).
+
+
+%%% ==================================================================
+%%% now you may ask:
+%%% ==================================================================
+
+
+    ?- ans_sel(X,Y).
+    ?- ans_proj(X).
+    ?- ans_join(X,Y,Z).
+    ?- ans_prod(X,Y).
+    ?- ans_union(X).
+    ?- ans_intersect(X).
+    ?- ans_diff(X).
+
+
+
+
