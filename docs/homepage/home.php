@@ -64,6 +64,14 @@ Other Documentation:
 	<li><a href="vb_dll.html">How to Use XSB DLL from Visual Basic</a></li>
 	</ul>
 </li>
+<li>
+Interfaces to Java (distributed separately):
+        <ul>
+	<li><a href="http://www-db.stanford.edu/~stefan/rdf/yajxb/">
+	      YAJXB</a>
+	<li><a href="http://www.declarativa.com/interprolog">Interprolog</a>
+	</ul>
+</li>
 
 <li>
 <a href="nsf-acks.html">Acknowledgement of Support</a></li>
