@@ -87,7 +87,7 @@
 
 #define FILE_STAT		 60
 #define FILE_WRITEQUOTED	 61
-#define FAST_GROUND		 62
+#define GROUND  		 62
 
 #define INTERN_STRING            65
 #define EXPAND_FILENAME 	 66
@@ -100,8 +100,7 @@
 #define PSC_TABLED	        102
 
 #define IS_INCOMPLETE           104
-#define GET_OSP_BREG            105
-#define CUT_IF_LEADER           106
+
 #define GET_PTCP	        107
 #define GET_SUBGOAL_PTR	        108
 #define DEREFERENCE_THE_BUCKET	109

@@ -23,10 +23,6 @@
 ** 
 */
 
-
-/* for XWAM, term_set_args, buff_assign_word not implemented; */
-
-
 #include "configs/config.h"
 #include "debugs/debug.h"
 /* Private debugs */
@@ -145,10 +141,8 @@ extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, SGFrame);
 #endif
 
-
 /* ------- definitions of procedures used in "builtin_call" -----------	*/
 
-static int  fast_ground(CPtr);
 static void abolish_table_info(void);
 static void write_quotedname(FILE *, char *);
 
@@ -373,19 +367,46 @@ Cell  val_to_hash(Cell term)
   return value;
 }
 
+/* -------------------------------------------------------------------- */
+
+static int ground(CPtr temp)
+{
+  int j, flag = 1;
+
+  cptr_deref(temp);
+  switch(cell_tag(temp)) {
+  case FREE: case REF1:
+    return FALSE;
+  case STRING: case INT: case FLOAT:
+    return TRUE;
+  case LIST:
+    flag = flag * ground(clref_val(temp));
+    return flag * ground(clref_val(temp)+1);
+  case CS:
+    for (j=1; j <= (int)get_arity(get_str_psc(temp)) ; j++) {
+      flag = flag * ground(clref_val(temp)+j);
+    }
+    return flag;
+  default:
+    xsb_abort("In ground/1: Term with unknown tag (%d)",
+	      (int)cell_tag(temp));
+    return -1;	/* so that g++ does not complain */
+  }
+}
+
 /* --------------------------------------------------------------------	*/
 
-static int is_proper_list(Cell term)	/* for standard preds */
+static inline int is_proper_list(Cell term)	/* for standard preds */
 {
-	register Cell addr;
+  register Cell addr;
 
-	addr = term;
-	deref(addr);
-	while (islist(addr)) {
-	     addr = cell(clref_val(addr)+1);
-	     deref(addr);
-	}
-	return isnil(addr);
+  addr = term;
+  deref(addr);
+  while (islist(addr)) {
+    addr = cell(clref_val(addr)+1);
+    deref(addr);
+  }
+  return isnil(addr);
 }
 
 /* --------------------------------------------------------------------	*/
@@ -452,7 +473,7 @@ Psc term_psc(Cell term)
 
 /* -------------------------------------------------------------------- */
 
-void xsb_fprint_variable(FILE *fptr, CPtr var)
+static inline void xsb_fprint_variable(FILE *fptr, CPtr var)
 {
   if (var >= (CPtr)glstack.low && var <= top_of_heap)
     fprintf(fptr, "_h%ld", ((Cell)var-(Cell)glstack.low+1)/sizeof(CPtr));
@@ -541,7 +562,7 @@ void init_builtin_table(void)
   set_builtin_table(SYS_ERRNO, "sys_errno");
   set_builtin_table(FILE_STAT, "file_stat");
   set_builtin_table(FILE_WRITEQUOTED, "file_writequoted");
-  set_builtin_table(FAST_GROUND, "fast_ground");
+  set_builtin_table(GROUND, "ground");
 
   set_builtin_table(INTERN_STRING, "intern_string");
   set_builtin_table(EXPAND_FILENAME, "expand_filename");
@@ -554,8 +575,7 @@ void init_builtin_table(void)
   set_builtin_table(PSC_TABLED, "psc_tabled");
 
   set_builtin_table(IS_INCOMPLETE, "is_incomplete");
-  set_builtin_table(GET_OSP_BREG, "get_osp_breg");
-  set_builtin_table(CUT_IF_LEADER, "cut_if_leader");
+
   set_builtin_table(GET_PTCP, "get_ptcp");
   set_builtin_table(GET_SUBGOAL_PTR, "get_subgoal_ptr");
   set_builtin_table(DEREFERENCE_THE_BUCKET, "dereference_the_bucket");
@@ -1172,8 +1192,8 @@ int builtin_call(byte number)
     SET_FILEPTR(fptr, tmpval);
     write_quotedname(fptr ,ptoc_string(2));
     break;
-  case FAST_GROUND:
-    return fast_ground((CPtr)ptoc_tag(1));
+  case GROUND:
+    return ground((CPtr)ptoc_tag(1));
 
   case PSC_ENV:	       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
@@ -1194,16 +1214,6 @@ int builtin_call(byte number)
 #include "bineg.i"
 
 /*----------------------------------------------------------------------*/
-    /*
-     * Used together with CUT_IF_LEADER in tables.P for negation.
-     * Revised to pass offsets into the respective stacks to Prolog
-     *  instead of absolute addresses--needed for stack shifting.
-     */
-  case GET_OSP_BREG:
-    ctop_int(1, (Integer)complstack.high - (Integer)openreg);
-    ctop_int(2, (Integer)tcpstack.high - (Integer)breg);
-    break;
-
   case GET_SUBGOAL_PTR: 	/* reg1: +term; reg2: -subgoal_ptr */
     term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
@@ -1218,37 +1228,6 @@ int builtin_call(byte number)
     ctop_int(2, (Integer)subgoal_ptr);
     break;
 
-    /*
-     * Revised to accept offsets into the respective stacks from Prolog
-     *  instead of absolute addresses--needed for stack shifting.
-     */
-  case CUT_IF_LEADER:
-#ifdef EXISTENTIAL_NEGATION
-    { CPtr compl_stack_ptr, next_breg, next_openreg;
-
-    term = ptoc_tag(1);
-    psc = term_psc(term);
-    tip = get_tip(psc);
-    subgoal_ptr = get_subgoal_ptr(term, tip);
-    compl_stack_ptr = subg_compl_stack_ptr(subgoal_ptr);
-    if (prev_compl_frame(compl_stack_ptr) >= COMPLSTACKBOTTOM ||
-	is_leader(compl_stack_ptr)) {
-      next_openreg = (CPtr) ((Integer)complstack.high - ptoc_int(2));
-      next_breg = (CPtr)(tcpstack.high - ptoc_int(3));
-      /*	      printf("nb %x no %x\n",next_breg, next_openreg);*/
-      breg = next_breg;
-      
-      /* BUG? the following may be using xtemp1 unitialised -- kostis */
-      cut_restore_trail_condition_registers(breg);
-      
-      openreg = next_openreg;
-      remove_open_tables_loop(openreg);
-    }
-    }
-#else
-    xsb_abort("Existential negation is not supported");
-#endif
-    break;
   case DEREFERENCE_THE_BUCKET:
     /*
      * Given an index into the symbol table, return the first Pair
@@ -1707,33 +1686,6 @@ static void write_quotedname(FILE *file, char *string)
   }
  
   free(new_string);
-}
-
-/*----------------------------------------------------------------------*/
-
-static int fast_ground(CPtr temp)
-{
-  int j, flag = 1;
-
-  cptr_deref(temp);
-  switch(cell_tag(temp)) {
-  case FREE: case REF1:
-    return FALSE;
-  case STRING: case INT: case FLOAT:
-    return TRUE;
-  case LIST:
-    flag = flag * fast_ground(clref_val(temp));
-    return flag * fast_ground(clref_val(temp)+1);
-  case CS:
-    for (j=1; j <= (int)get_arity(get_str_psc(temp)) ; j++) {
-      flag = flag * fast_ground(clref_val(temp)+j);
-    }
-    return flag;
-  default:
-    xsb_abort("FAST_GROUND: Term with unknown tag (%d)",
-	      (int)cell_tag(temp));
-    return -1;	/* so that g++ does not complain */
-  }
 }
 
 /*----------------------------------------------------------------------*/
