@@ -40,6 +40,7 @@ append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
 copy_term(Term, Result) :- copy_term(Term, Result).
 
 %---
+flatten([],[]).
 flatten([H|T],Flatlist):-
 	flatten1([H|T],Flatlist,[]).
 
