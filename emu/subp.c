@@ -35,7 +35,7 @@
 
 #ifdef WIN_NT
 #include <windows.h>
-#include <process.h>    /* _beginthread, _endthread */
+#include <process.h>	/* _beginthread, _endthread */
 #include <stddef.h>
 #include <stdlib.h>
 #include <winsock.h>
@@ -229,13 +229,13 @@ void print_statistics(int amount) {
     realtime_count = real_time();
     perproc_reset_stat();	/* reset op-counts, starting time, and 'tds'
 				   struct variable (all 0's) */
-    reset_stat_total();		/* reset 'ttt' struct variable (all 0's) */
+    reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     xsb_mesg("Statistics is reset.");
     break;
   case 1:		    /* Print Stack Usage and CPUtime: */
     perproc_stat();		/* move max usage into 'ttt' struct variable */
     total_stat(real_time()-realtime_count);   /* print */
-    reset_stat_total();		/* reset 'ttt' struct variable (all 0's) */
+    reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     break;
   case 2:		    /* Print Detailed Table Usage */
     print_detailed_tablespace_stats();
@@ -289,7 +289,7 @@ Pair build_call(Psc psc)
   register Pair callstr;
   register int i;
 
-  callstr = (Pair)hreg;	/* save addr of new structure rec */
+  callstr = (Pair)hreg; /* save addr of new structure rec */
   new_heap_functor(hreg, psc); /* set str psc ptr */
   for (i=1; i <= (int)get_arity(psc); i++) {
     arg = cell(reg+i);
@@ -498,9 +498,9 @@ int compare(const void * v1, const void * v2)
     if (isattv(val2))
       return vptr(val1) - (CPtr)dec_addr(val2);
     else if (isnonvar(val2)) return -1;
-    else { /* in case there exist local stack variables in the    */
-           /* comparison, globalize them to guarantee that their  */
-           /* order is retained as long as nobody "touches" them  */
+    else { /* in case there exist local stack variables in the	  */
+	   /* comparison, globalize them to guarantee that their  */
+	   /* order is retained as long as nobody "touches" them  */
 	   /* in the future -- without copying garbage collection */
       if ((top_of_localstk <= vptr(val1)) &&
 	  (vptr(val1) <= (CPtr)glstack.high-1)) {
@@ -588,7 +588,7 @@ int compare(const void * v1, const void * v2)
 /*======================================================================*/
 /* key_compare(V1, V2)							*/
 /*	compares the keys of two terms of the form Key-Value; returns	*/
-/*	zero if Key1=Key2, a positive value if Key1>Key2 and a negative	*/
+/*	zero if Key1=Key2, a positive value if Key1>Key2 and a negative */
 /*	value if Key1<Key2.  Term comparison is done according to the	*/
 /*	standard total order of Prolog terms (see compare()).		*/
 /*======================================================================*/
@@ -651,7 +651,7 @@ void print_op(FILE *file, char *string, int pos)
   } else fprintf(file, "%s", string);
 }
 
-/* ----- The following is also called from the Prolog level -----------	*/
+/* ----- The following is also called from the Prolog level ----------- */
 
 void remove_open_tables_reset_freezes(void)
 {
@@ -661,7 +661,7 @@ void remove_open_tables_reset_freezes(void)
   }
 }
 
-/* ----- C level exception handlers -----------------------------------	*/
+/* ----- C level exception handlers ----------------------------------- */
 
 /*
  * Returns the Breg offset stored in the Psc record of "_$abort_cutpoint"
@@ -686,7 +686,7 @@ byte *exception_handler(char *string)
   breg = (CPtr)(tcpstack.high - abort_cp_offset());
   hbreg = cp_hreg(breg);
   ebreg = cp_ebreg(breg);
-  switch_from_trie_assert;      /* ensure table-trie space is default */
+  switch_from_trie_assert;	/* ensure table-trie space is default */
   remove_open_tables_reset_freezes();
   return cp_pcreg(breg); 
 }

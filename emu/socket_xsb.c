@@ -48,7 +48,7 @@
 #include <io.h>
 #include <stdarg.h>
 #include <winsock.h>
-#include <wsipx.h>
+#include "wsipx.h"
 #else /* UNIX */
 #include <sys/time.h>
 #include <sys/socket.h>

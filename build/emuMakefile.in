@@ -1,9 +1,9 @@
 ##############################################################################
 #									     #
 # This is a Makefile for making the XSB emu directory.			     #
-# It has two main entries: xsb and xsbora. The latter for generating         #
+# It has two main entries: xsb and xsbora. The latter for generating	     #
 # executables with oracle support.					     #
-# The EXECUTABLE variable is set by the top make file, build/Makefile        #
+# The EXECUTABLE variable is set by the top make file, build/Makefile	     #
 #									     #
 ##############################################################################
 
@@ -41,6 +41,12 @@ CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
 ODBCSRC=@ODBCSRC@
 ODBCOBJ=@ODBCOBJ@
+
+
+#For mno-cygwin
+mno_cyg_inclib=@mno_cyg_inclib@
+mno_cyg_lib=@mno_cyg_lib@
+
 
 # This one is used for SGI only
 LINKFLAGS=@LINKFLAGS@
@@ -147,7 +153,7 @@ xsboramod:: $(ORAOBJS)
 
 
 depend::
-	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) $(CFLAGS) -- $(SRCS) $(ODBCSRC)
+	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC)
 
 
 #=======================================================================
@@ -155,28 +161,28 @@ depend::
 #=======================================================================
 
 init_xsb.o: init_xsb.c
-	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) init_xsb.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) init_xsb.c
 	@cp init_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 dynload.o: dynload.c
-	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dynload.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) dynload.c
 	@cp dynload.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 emuloop.o: emuloop.c
-	$(CC) -I$(arch_config_prefix) -c $(emuloopCFLAGS) emuloop.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(emuloopCFLAGS) emuloop.c
 	@cp emuloop.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # Higher optimization level has problem with some versions of gcc
 tr_utils.o: tr_utils.c
-	$(CC) -I$(arch_config_prefix) -c $(trutilsCFLAGS) tr_utils.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(trutilsCFLAGS) tr_utils.c
 	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 builtin.o: builtin.c
-	$(CC) -I$(arch_config_prefix) -c $(builtinsCFLAGS) builtin.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(builtinsCFLAGS) builtin.c
 	@cp builtin.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
-	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) $*.c
+	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) $*.c
 	@cp $*.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 

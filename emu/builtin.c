@@ -43,7 +43,7 @@
 #include <process.h>
 #include <stdarg.h>
 #include <winsock.h>
-#include <wsipx.h>
+#include "wsipx.h"
 #include <tchar.h>
 #else /* Unix */
 #include <unistd.h> 
