@@ -824,29 +824,27 @@ if test "${enable_gc_test}" = "yes" ; then
 fi
 
 AC_ARG_ENABLE(jumptable,
-[  --enable-jumptable         Implements a jumptable-based emulator loop])
-if test "${with_jumptable}" = "yes" ; then
-   enable_jumptable=yes
-fi
+[  --disable-jumptable         Disables the jumptable-based emulator loop],
+			       disable_jumptable=yes)
 jumptable=no
-if test "${enable_jumptable}" = "yes"; then
-  if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
-    AC_DEFINE(JUMPTABLE_EMULOOP)
-    jumptable=yes
-    CFLAGS=`echo ${CFLAGS} | sed "s/-ansi//" -`
-    CFLAGS=`echo ${CFLAGS} | sed "s/-pedantic//" -`
-  else
-    AC_MSG_ERROR(Jumptable is only possible with gcc)
-  fi
+if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
+   if test "${disable_jumptable}" != "yes"; then
+     AC_DEFINE(JUMPTABLE_EMULOOP)
+     jumptable=yes
+     CFLAGS=`echo ${CFLAGS} | sed "s/-ansi//" -`
+     CFLAGS=`echo ${CFLAGS} | sed "s/-pedantic//" -`
+   fi
 fi
 
-AC_ARG_ENABLE(insn-blocks,
-[  --enable-insn-blocks       Make temp variables local to wam insns])
-insn_blocks=no
-if test "${enable_insn_blocks}" = "yes" ; then
-	AC_DEFINE(INSN_BLOCKS)
-	insn_blocks=yes
-fi
+AC_DEFINE(INSN_BLOCKS)
+
+#AC_ARG_ENABLE(insn-blocks,
+#[  --enable-insn-blocks       Make temp variables local to wam insns])
+#insn_blocks=no
+#if test "${enable_insn_blocks}" = "yes" ; then
+#	AC_DEFINE(INSN_BLOCKS)
+#	insn_blocks=yes
+#fi
 
 AC_ARG_ENABLE(profiling,
 [  --enable-profiling        Forces gcc to generate information for profiling])
@@ -880,18 +878,18 @@ fi
 
 dnl experimental: use bp register for lpcreg
 dnl lfcastro
-AC_ARG_ENABLE(bp-lpcreg,
-[  --enable-bp-lpcreg		put local pcreg into BP register on x86s])
-bp_free=no
-if test "${enable_bp_lpcreg}" = "yes" ; then
-   bp_free=`echo ${emuloop_opt_level} | \
-	sed 's/.*\(-fomit-frame-pointer\).*/yes/'`
-   if test "${bp_free}" = "yes" ; then
-	AC_DEFINE(USE_BP_LPCREG)
-  else
-    AC_MSG_ERROR(Cannot use BP without -fomit-frame-pointer)
-   fi
-fi
+#AC_ARG_ENABLE(bp-lpcreg,
+#[  --enable-bp-lpcreg		put local pcreg into BP register on x86s])
+#bp_free=no
+#if test "${enable_bp_lpcreg}" = "yes" ; then
+#   bp_free=`echo ${emuloop_opt_level} | \
+#	sed 's/.*\(-fomit-frame-pointer\).*/yes/'`
+#   if test "${bp_free}" = "yes" ; then
+#	AC_DEFINE(USE_BP_LPCREG)
+#  else
+#    AC_MSG_ERROR(Cannot use BP without -fomit-frame-pointer)
+#   fi
+#fi
 
 dnl Take care of the scheduling strategy
 xsb_scheduling_strategy=batched
@@ -1244,9 +1242,8 @@ Installation date: ${install_date}
   XSB abstract machine: 			  ${engine_mode}
   XSB scheduling strategy:                        ${xsb_scheduling_strategy}
   Garbage Collection Stress-Test:                 ${gc_test}
-  Jumptable-based emulator loop:                  ${jumptable}
-  Local temp vars:                                ${insn_blocks}
-  Local pcreg in BP register                      ${bp_free}"
+  Jumptable-based emulator loop:                  ${jumptable}"
+
 
 
 case "$with_oracle" in
