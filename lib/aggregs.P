@@ -185,7 +185,7 @@ bagPO(Templ,Call,Res,PO) :- bagPO1(Templ,Call,Res1,PO), Res=Res1.
 :- use_variant_tabling bagPO1(_,_,_,_).
 bagPO1(Templ,Call,Res,PO) :- 
 	'_$savecp'(Breg),
-	breg_retskel(Breg,3,Skel,Cs),
+	breg_retskel(Breg,4,Skel,Cs),
 	excess_vars(Call,Templ,[],VarList),
 	copy_term(p(Call,VarList,Templ,Res,Skel),
 		  p(OCall,VarList,OTempl,Ores,Oskel)),
