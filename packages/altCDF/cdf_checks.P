@@ -1,13 +1,20 @@
 :- compiler_options([ciao_directives]).
 
-:- export check_types/2, check_implication/2,classify_if_necessary/3.
+:- export check_types/2, 
+          check_implication/2,
+	  classify_if_necessary/2.
 
 % fool that module system... 
 :- export check_isa_types/4, check_ind_types/3.
 
-:- import ground/1,memberchk/2  from basics.
 :- import cdf_error/2, cdf_warning/2 from cdf_exceptions.
-:- import in_hierarchy/1 from cdf_init_cdf.
+:- import in_hierarchy/1,newExtTerm/1 from cdf_init_cdf.
+
+:- import cdf_flags/2 from usermod.
+
+:- import ground/1, member/2, memberchk/2  from basics.
+
+:- import get_component_extensional/2 from cdf_components.
 
 /*
    TLS: right now need to check: 
@@ -18,19 +25,25 @@
 
 % Type checking.	
 % TLS: should be turned on and off...
-check_types(update,Term):- 
+check_types(Context,Term):- 
+	(cdf_flags(check_types,Context) -> 
+	    check_types_no_checkflag(Context,Term)
+	  ; true).	
+
+check_types_no_checkflag(term_update,Term):- 
 	(ground(Term) -> 
 	    true
-	  ; cdf_error(update,[Term,' must be bound in newExtTerm/1']),
+	  ; cdf_error(term_update,[Term,' must be bound in newExtTerm/1']),
 	    fail ),
 	(type_table(Term,Typecall) -> 
-	    arg(1,Typecall,update),
+	    arg(1,Typecall,term_update),
 	    call(Typecall)
-	  ; cdf_warning(update,[Term,' is not an extensional fact and cannot ',
+	  ; cdf_warning(term_update,[Term,
+				' is not an extensional fact and cannot ',
 				'be added.']),
 	    fail ).
 
-check_types(query,Term):- 
+check_types_no_checkflag(query,Term):- 
 	(var(Term) -> 
 	    true
 	  ; 
@@ -45,7 +58,7 @@ check_types(query,Term):-
 %------
 :- comment(hide,check_isa_types/2).
 
-check_isa_types(update,First,Second,Term):- 
+check_isa_types(term_update,First,Second,Term):- 
 	check_isa_arg_1(First,Term,Context,F1),
 	check_isa_arg_2(Second,Term,Context,F1).
 
@@ -142,16 +155,47 @@ type_table(classHasAttr_int(A,B,C),check_ind_types(_,classHasAttr(A,B,C),
 			[ [cid,rid,crid], [crid,crrid,crcrid], [cid,oid] ] ) ).
 
 % want to change so that it checks for implication also.
-check_implication(update,Term):- 
-	(call(Term) -> fail ; true).
+check_implication(Context,Term):- 
+	(cdf_flags(check_implication,Context) -> 
+	    check_implication_no_checkflag(Term)
+	  ; (call(Term) -> fail ; true) ).
+
+check_implication_no_checkflag(Term):- 
+	remove_ext(Term,Term1),
+	(call(Term1) -> fail ; true).
+	
+remove_ext(isa_ext(A,B),isa(A,B)).
+remove_ext(hasAttr_ext(A,B,C),hasAttr(A,B,C)).
+remove_ext(classHasAttr_ext(A,B,C),classHasAttr(A,B,C)).
+remove_ext(allAttr_ext(A,B,C),allAttr(A,B,C)).
 
 %----------------------------------------------------------------------
 
-classify_if_necessary(Term,Upd1,Upd):-
+classify_if_necessary(component_load,Name):-
+	(cdf_flags(classify_if_necessary,component_load) -> 
+	    classify_if_necessary_no_checkflag(Name)
+	  ; true).
+	    
+classify_if_necessary_no_checkflag(Name):- 
+	get_component_fact(Name,Term),
+	classify_if_necessary_term(Term,Upd1,[]),
+	member(Term1,Upd1),
+	newExtTerm(Term1),
+	fail.
+classify_if_necessary_no_checkflag(_Term).
+
+get_component_fact(Name,Fact):- 
+	(  Fact = isa_ext(One,Two) ; Fact = classHasAttr_ext(One,Two,Three)
+	   ; Fact = allAttr_ext(One,Two,Three) 
+	   ; Fact = hasAttr_ext(One,Two,Three) ),
+	call(Fact),
+	get_component_extensional(Fact,Name).
+
+classify_if_necessary_term(Term,Upd1,Upd):-
 	\+ (Term = isa_ext(_,_)),!,
 	Term =.. [_|L],
 	classify_if_necessary_list(L,Upd1,Upd).
-classify_if_necessary(isa_ext(First,Second),Upd1,Upd):-
+classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-
 	arg(1,First,Arg),
 	(structure(Arg) -> 
 	    Arg =.. [_|L],
@@ -170,7 +214,7 @@ classify_arg(Id,Upd1,Upd):-
 	    Upd1 = Updmid
 	  ; functor(Id,F,_),
 	    classification_type(F,Sup),
-	    Upd1 = [asserta(isa_ext(Id,Sup))|Updmid]),
+	    Upd1 = [isa_ext(Id,Sup)|Updmid]),
 	  arg(1,Id,Nid),
 	   (structure(Nid) -> 
 	       Nid =.. [_|L],
@@ -185,4 +229,4 @@ classification_type(crid,crid('CDF Class-Object Relations',cdf)).
 %classification_type(crrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
 %classification_type(crcrid,crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf)).
 
-
+end_of_file.

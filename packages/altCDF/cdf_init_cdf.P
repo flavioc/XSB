@@ -19,8 +19,7 @@
     ;	   consult(cdf_cdf)
    ).
 
-:- import check_implication/2, check_types/2,
-	classify_if_necessary/3
+:- import check_implication/2, check_types/2
 	from cdf_checks.
 
 :- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 
@@ -30,6 +29,8 @@
 							from  usermod.
 :- import cdf_flags/2, cdf_log_trie/1, 
 	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
+
+:- import initial_cdf_flag/2 from usermod.
 
 :- import load_component/3 from cdf_components.
 
@@ -59,8 +60,8 @@ cdf_index(classHasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_dynamic(allAttr_ext/3). 
 cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
 
-cdf_dynamic(cdf_logging_state/1).
 cdf_dynamic(cdf_log_trie/1).
+cdf_dynamic(cdf_logging_state/1).
 
 %%%%%%%%%%%%% Declarations for External Intensional View
 
@@ -98,6 +99,7 @@ initialize_cdf:-
 	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
+	initialize_cdf_flags,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
@@ -107,6 +109,13 @@ init_dynamic_code:-
 	dynamic(F/A),
 	fail.
 init_dynamic_code.
+
+initialize_cdf_flags:- 
+	retractall(cdf_flags(_,_)),
+	initial_cdf_flag(A,B),
+	assert(cdf_flags(A,B)),
+	fail.
+initialize_cdf_flags.
 
 %--------------------------------------------------------------------
 
@@ -656,11 +665,9 @@ newExtTerm(Term):-
 	cdf_update_list(Upds).
 
 newExtTerm(Term,Upd0,Upd):- 
-	check_types(update,Term),
-	(check_implication(update,Term) -> 
-	    classify_if_necessary(Term,Upd0,Upd1),
-%	    write(cin(Term,Upd0,Upd1)),
-	    Upd1 = [asserta(Term)|Upd]
+	check_types(term_update,Term),
+	(check_implication(term_update,Term) -> 
+	    Upd0 = [asserta(Term)|Upd]
 	  ; Upd0 = Upd).
 
 %-----------------------------------------------------------
@@ -901,63 +908,6 @@ updateExtTermMerge([],[],_ArgsVars,Updates,Updates).
 
 
 end_of_file.
-
-assert_primitive_types(TypsCid):- 
-	newPrimitiveClass(aint(X)),
-	newPrimitiveClass(atom(X)),
-	newPrimitiveClass(cardinal(X)),
-	newPrimitiveClass(float(X)),
-	newPrimitiveClass(integer(X)),
-	newPrimitiveClass(object(_)),
-	newPrimitiveClass(clause(X,Y)),
-
-/* 
-check_class_conformability(Nid,Cid):- (atomic(Nid) ; atomic(Cid)),!.
-check_class_conformability(Nid,Cid):- 
-	get_product_skeleton(Nid,Nidskel),
-	get_product_skeleton(Cid,Cidskel),
-	Nidskel = Cidskel,!.
-check_class_conformability(Nid,Cid):- 
-	cdf_error(update,('Cannot create new object ',Nid,
-	          'as member of ',Cid,'due to non-conformability.')).
-
-get_product_skeleton(Cid,_):- atomic(Cid),!.
-get_product_skeleton(Cid,Skel):- 
-	structure(Cid),!,
-	Cid =..[Functor|List],
-	get_product_skeleton_list(List,NewList),
-	Skel =..[Functor|NewList].
-get_product_skeleton(Cid,_Skel):- 
-	cdf_error(update,('Improper Cid: ',Cid)).
-	
-get_product_skeleton_list([],[]).
-get_product_skeleton_list([H|T],[NH|NT]):- 
-	get_product_skeleton(H,NH),
-	get_product_skeleton_list(T,NT).
-
-add_member_if_nec(_Oid,unk,Upd,Upd) :- !.
-add_member_if_nec(Oid,Cid,Upd,Upd) :-
-	immed_memberof(Oid,Cid), !.
-add_member_if_nec(Oid,Cid,Upd0,Upd) :-
-	Upd0 = [asserta(memberof_ext(Oid,Cid))|Upd].
-
-*/
-
-/* To be used with class and object creation, and with
-   merging from external files. 
-check_source(id(_,Source),Term):- 
-	(nonvar(Source)
-	 ->	true
-	 ;	cdf_warning(update,('cannot create CDF fact ',
-                         'source unbound: ',Term)),
-		fail
-	),
-	(atomic(Source)
-	 ->	true
-	 ;	cdf_warning(update,('creating CDF fact with',
-			 'non-atomic source: ',Term))
-	).
-*/
 
 /* check_attribute(+,+,+).  This predicate should be used *only* in
 newAttribute. The idea is that newAttribute should add a new attribute

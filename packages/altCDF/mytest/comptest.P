@@ -7,13 +7,13 @@
 
 updtest1:- 
 	load_extensional_facts('cdftest1'),
-	update_all_components('mytest\cdfcomp1',[action(create)]).
+	update_all_components('mytest/cdfcomp1',[action(create)]).
 
 loadtest1:- 
-      load_component(testo1,'mytest\cdfcomp1',[]).
+      load_component(testo1,'mytest/cdfcomp1',[]).
 
 loadtest2:- 
-      load_component(testo1,'mytest\cdfcomp1',[force(yes)]).
+      load_component(testo1,'mytest/cdfcomp1',[force(yes)]).
 
 
 end_of_file.

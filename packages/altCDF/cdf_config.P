@@ -2,9 +2,13 @@
 
 /* cdf flags: 
 caching
-dirty
 logging
 */
+
+%initial_cdf_flag(dirty,<component>).
+%initial_cdf_flag(check_implication,<context>).
+initial_cdf_flag(check_types,term_update).
+initial_cdf_flag(classify_if_necessary,component_load).
 
 :- dynamic cdf_flags/2.
 :- index(cdf_flags/2,trie).

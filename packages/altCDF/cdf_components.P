@@ -21,6 +21,8 @@
 
 :- import canonical_pathname/2, rel_path/3 from directry.
 
+:- import classify_if_necessary/2 from cdf_checks.
+
 :- import 
 	hasAttr_ext/3, isa_ext/2, classHasAttr_ext/3, allAttr_ext/3
  	from usermod.
@@ -428,7 +430,8 @@ version of a component.
 
 load_component(Name,Path,Arglist):-
 	load_component_setup(Name,Path,Arglist),
-	load_component_1(Name,Path,Arglist).
+	load_component_1(Name,Path,Arglist),
+	perform_component_level_checks(Name).
 
 load_component_setup(Name,Path,Arglist):-
 	init_path_engine,
@@ -459,6 +462,9 @@ clean_up_dirty_bits:-
 	retractall(cdf_flags(dirty,To)),
 	fail.
 clean_up_dirty_bits.
+
+perform_component_level_checks(Name):- 
+	classify_if_necessary(component_load,Name).
 
 %----------
 

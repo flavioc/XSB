@@ -107,7 +107,7 @@ medical supply companies.
 
 The fragment
 @begin{verbatim}
-isa(cid(medicalEquipment),id('CDF Root'))  
+isa(cid(medicalEquipment),id(cdfRoot))  
   isa(cid(woundCareProducts),cid(medicalEquipment)) 
     isa(cid(suturesAndRelatedProducts)),cid(woundCareProducts))
       isa(cid(sutures),cid(suturesandRelatedProducts) 
@@ -117,7 +117,7 @@ isa(cid(medicalEquipment),id('CDF Root'))
 @end{verbatim}
 
 @noindent denotes a hierarchy of classes.  Note that the top of the
-hierarchy is called @tt{'CDF Root'}, and has a special identifier
+hierarchy is called @tt{cdfRoot}, and has a special identifier
 functor, @em{id/1} as it includes both objects and relations.
 
 Next, we add the facts 
@@ -233,7 +233,7 @@ be used to relate identifier functions with the sorts mentioned above.
 }
 
 @em{
-((isObj(Id1) @bf{and} isObj(Id2)) @bf{=>} memof(Id1,Id2)) @bf{and}
+((isObj(Id1) @bf{and} isCls(Id2)) @bf{=>} memof(Id1,Id2)) @bf{and}
 }
 
 @em{((isRel(Id1) @bf{and} isRel(Id2)) @bf{=>}
@@ -247,6 +247,7 @@ be used to relate identifier functions with the sorts mentioned above.
 @noindent
 denoted as @em{Int(@tt{isa(Id1,Id2)})}.
 
+
 It is important for the semantics of relations that each class have at
 least one member.
 
@@ -256,12 +257,11 @@ least one member.
 @end{itemize}
 
 Our last core axiom for these predicates ensures is that each class is
-a subclass of @tt{id('CDF Root')}.
+a subclass of @tt{id(cdfRoot)}.
 
-@bf{Core Axiom} @em{[Domain Containment]}
-@begin{itemize}
-@item @em{(@bf{forall} X).(isObj(X) @bf{=>} memof(X,id('CDF Root')))}
-@end{itemize} 
+@bf{Core Axiom} @em{[Domain Containment]} @begin{itemize} @item
+@em{(@bf{forall} X).(isObj(X) @bf{=>} memof(X,id(cdfRoot)))}
+@end{itemize}
 
 @subsection{General Relations between Objects}
 
@@ -316,7 +316,7 @@ inheritance in CDF.  To explain its semantics we use the
 predicate @em{memof=(X,Y)} which is defined as
 
 @em{
-((isCls(X) @bf{and} memof(X,Y)) @bf{or} (isObj(X) @bf{and} X=Y))
+((isCls(Y) @bf{and} memof(X,Y)) @bf{or} (isObj(Y) @bf{and} X=Y))
 }
 
 @bf{Instance Axiom} [hasAttr/3]

@@ -8,6 +8,9 @@ isa_int(cid(Float,cdfpt),cid(allFloats,cdf)):- float(Float).
 isa_int(oid(Atom,cdfpt),cid(allAtoms,cdf)):- atom(Atom).
 isa_int(cid(Atom,cdfpt),cid(allAtoms,cdf)):- atom(Atom).
 
+isa_int(oid(Term,cdfpt),cid(allStructures,cdf)):- structure(Term).
+isa_int(cid(Term,cdfpt),cid(allStructures,cdf)):- structure(Term).
+
 end_of_file.
 
 isa_int(oid(Integer,cdfpt),cid(allIntegers,cdf)):- 
