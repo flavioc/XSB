@@ -63,7 +63,7 @@ bootstrap1(SysdirPath, PackageDir, PackageName) :-
 	fmt_write_string(FullPackageDirname,
 			 '%s%s%s', f(SysdirPath, Slash, PackageDir)),
 	( package_configuration(loaded(PackageName), yes)
-	    -> abort([PackageName,  ': package already loaded'])
+	    -> fail
 		;
 		assert(package_configuration(dir(PackageName),
 					     FullPackageDirname)),
