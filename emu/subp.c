@@ -104,7 +104,7 @@ void add_interrupt(Cell op1, Cell op2) {
 }
 
 
-static Cell build_interrupt_chain(void) {
+Cell build_interrupt_chain(void) {
   Cell head;
   CPtr tmp = &head;
   int num, i;
@@ -123,6 +123,15 @@ static Cell build_interrupt_chain(void) {
     bld_copy(sreg, attv_interrupts[i][1]); sreg++;
     hreg = sreg;
   }
+
+#ifndef PRE_IMAGE_TRAIL
+#error "PRE_IMAGE_TRAIL has to be defined for synint_proc() !"
+#else
+  /* Reset the interrupt counter to 0 for further attv interrupts. */
+  push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(0));
+#endif
+  bld_int(interrupt_reg, 0);
+  
   return head;
 }
 
@@ -247,12 +256,6 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
        * to 0 (note: this has to be trailed using pre-image trail).
        */
       bld_copy(reg + 1, build_interrupt_chain());
-#ifndef PRE_IMAGE_TRAIL
-#error "PRE_IMAGE_TRAIL has to be defined for synint_proc() !"
-#else
-      push_pre_image_trail(interrupt_reg, cell(interrupt_reg), makeint(0));
-#endif
-      bld_int(interrupt_reg, 0);
       /* bld_int(reg + 3, intcode); */	/* Not really needed */
       pcreg = get_ep(psc);
       break;
