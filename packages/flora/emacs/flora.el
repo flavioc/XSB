@@ -123,6 +123,10 @@
     ["Consult buffer"  flora-consult-buffer t]
     ["Consult region"  flora-consult-region t]
     "---"
+    ["Consult file dynamically"    flora-consult-file-dynamically   t]
+    ["Consult buffer dynamically"  flora-consult-buffer-dynamically t]
+    ["Consult region dynamically"  flora-consult-region-dynamically t]
+    "---"
     ["Start Flora process"     run-flora    	    t]
     ["Restart Flora process"   flora-restart	    t]
     "---"
@@ -541,7 +545,9 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
     (if (not (stringp file))
 	(setq file
 	      (read-file-name
-	       (format "File name to consult (%s): " default-file)
+	       (format "File name to consult %s(%s): "
+		       (if dynamically "dynamically " "")
+		       default-file)
 	       nil default-file)))
     (if flora-offer-save
 	(save-some-buffers))
@@ -551,6 +557,18 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
 			     (format "<'%s'>.\n" file)
 			   (format "['%s'].\n" file)))
     (show-flora-buffer)))
+
+(defun flora-consult-file-dynamically ()
+  (interactive)
+  (flora-consult-file t))
+
+(defun flora-consult-buffer-dynamically ()
+  (interactive)
+  (flora-consult-buffer t))
+
+(defun flora-consult-region-dynamically (beg end)
+  (interactive "r")
+  (flora-consult-region t beg end))
 
 (defun flora-interrupt()
   (interactive)
