@@ -53,5 +53,5 @@
 
 #include <setjmp.h> 
 
-#endif /* SETJMP_XSB_INCLUDED *
+#endif /* SETJMP_XSB_INCLUDED */
 
