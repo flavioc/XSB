@@ -1,0 +1,56 @@
+/* File:      debugger_data.P
+** Author(s): David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+/* 
+** The user can define these things:
+**    hide_this_show(Pred,Arity): calls to hide, but show embedded calls
+**    hide_this_show(Pred,Arity): calls to hide along with embedded code
+**    show_this_hide(Pred,Arity): calls to show, but hide embedded ones
+**
+** The user must assert these facts in usermod.
+*/
+
+
+% hide only this call, leave show on
+hide_this_show(call_expose,1).
+hide_this_show(',',2).
+hide_this_show(';',2).
+hide_this_show('->',2).
+
+% hide this call and all embedded calls
+hide_this_hide('_$call',1).
+hide_this_hide(trace,0).
+hide_this_hide(notrace,0).
+hide_this_hide(debug,0).
+hide_this_hide(nodebug,0).
+hide_this_hide(halt,0).
+hide_this_hide(debugging,0).
+hide_this_hide(spy,1).
+hide_this_hide(nospy,1).
+hide_this_hide(consult,1).
+hide_this_hide(reconsult,1).
+hide_this_hide(compile,1).
+
+
+'_$_debugger_data_loaded'.

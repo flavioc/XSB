@@ -51,5 +51,17 @@
 
 % := hide debug/0.
 
+:- import read/1 from standard.
+:- import hide_this_show/2, hide_this_hide/2, show_this_hide/2,
+	debug_display_call_hook/1, '_$_debugger_data_loaded'/0
+   from usermod.
+:- import call/1, see/1, seen/0, repeat/0 from standard.
+:- import xsb_configuration/2 from configuration.
+:- import fmt_write_string/3 from file_io.
+:- import assert/1 from assert.
+:- dynamic debug_display_call_hook(_), '_$_debugger_data_loaded'/0.
+:- dynamic hide_this_hide(_,_), hide_this_show(_,_), show_this_hide(_,_).
+
+
 
 /* --------------------- end of file debugger.H ----------------------- */

@@ -26,6 +26,21 @@
 :- set_inthandler('_$deb_spy'(_), 3),
    set_inthandler('_$deb_trace'(_), 4).
 
+
+:- read_debugger_data.
+
+read_debugger_data :- '_$_debugger_data_loaded', !.
+read_debugger_data :- 
+	xsb_configuration(syslibdir, SysLib),
+	fmt_write_string(DebugDataFile, '%s/debugger_data.P', arg(SysLib)),
+	see(DebugDataFile),
+	repeat,
+	    read(T),
+	    (T = end_of_file -> true
+	    	    	     ;  assert(T), fail
+	    ),
+	seen.
+
 /* -- tracing flags setting  -------------------------------------- */
 
 nodebug :- stat_set_flag(4,0).		        % debug_on = 0
@@ -72,7 +87,7 @@ debugging :-
 '_$deb_trace'(Call) :-
 %	ll_write(trace(Call)),ll_nl,
 	stat_flag(5, L),			% L = hide_state;
-	stat_flag(9, S),		 	% S = qusi_skipping
+	stat_flag(9, S),		 	% S = quasi_skipping
 	term_type(Call,Type),
 	(Type =:= 5
 	 ->	psc_insert(Call, 0, PSC, 0), P = Call, A = 0
@@ -89,7 +104,7 @@ debugging :-
 	 ->	basic_call(0,PSC,Call)	% and turn tracing back on
 	 ; hide_this_hide(P,A)
 	 ->	basic_call(1,PSC,Call)	% and leave tracing off
-	 ; show_this_hide(P,A)
+	 ; show_this_hide_call(P,A)
 	 ->	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1),	% invoke_num++
 		( S=\=0
 		 ->	basic_call(1,PSC,Call)	% skipping or quasi_skipping 
@@ -102,28 +117,11 @@ debugging :-
 		)
 	).
 
-% hide only this call, leave show on
-hide_this_show(call_expose,1).
-hide_this_show(',',2).
-hide_this_show(';',2).
-hide_this_show('->',2).
-
-% hide this call and all embedded calls
-hide_this_hide('_$call',1).
-hide_this_hide(trace,0).
-hide_this_hide(notrace,0).
-hide_this_hide(debug,0).
-hide_this_hide(nodebug,0).
-hide_this_hide(halt,0).
-hide_this_hide(debugging,0).
-hide_this_hide(spy,1).
-hide_this_hide(nospy,1).
-hide_this_hide(consult,1).
-hide_this_hide(reconsult,1).
-hide_this_hide(compile,1).
 
 % trace this call, but hide all embedded calls
-show_this_hide(P,A) :- standard_symbol(P,A,_).
+show_this_hide_call(P,A) :- standard_symbol(P,A,_).
+%% show_this_hide is constructed dynamically
+show_this_hide_call(P,A) :- show_this_hide(P,A).
 
 
 % call_c is eliminated, so what is called is traced.
@@ -223,10 +221,18 @@ deb_traceget(N,Spy,Type,Call,C) :-
 	 ->	deb_writepref(Spy),
 		ll_write(' ('),ll_write(N),ll_write(') '),
 		ll_write(Type),ll_write(': '),
-		ll_write(Call),
+%% CHANGE
+		debug_display_call(Call),
 		deb_prompt(Type,Spy,C)
 	 ;	C = 10
 	).
+
+debug_display_call(Call) :- (debug_display_call_hook(Hook)
+			    	-> Invocation =.. [Hook, Call],
+				   call(Invocation)
+			    	; ll_write(Call)
+			    ).
+%% END CHANGE
 
 leashable('Call').
 leashable('Exit').
