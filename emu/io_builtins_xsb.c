@@ -1635,7 +1635,8 @@ DllExport void write_canonical_term(Cell prologterm)
       wcan_append_string_chk(string_val(prologterm));
     break;
     case XSB_FLOAT:
-      sprintf(wcan_buff,"%2.4f",float_val(prologterm));
+      /*      sprintf(wcan_buff,"%2.4f",float_val(prologterm)); */
+      sprintf(wcan_buff,"%f",float_val(prologterm));
       wcan_append_string(wcan_buff);
       break;
     case XSB_REF:
