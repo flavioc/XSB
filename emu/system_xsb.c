@@ -71,7 +71,7 @@ static void concat_array(char *array[], char *separator,
 static int get_free_process_cell(void);
 static void init_process_table(void);
 static int process_status(int pid);
-static void split_string(char *string, char *params[], char *callname);
+static void split_command_arguments(char *string, char *params[], char *callname);
 static char *get_next_command_argument(char **buffptr, char **cmdlineprt);
 
 
@@ -215,7 +215,7 @@ xsbBool sys_system(int callno)
       params[index] = NULL;
     } else if (is_string(cmdspec_term)) {
       char *string = string_val(cmdspec_term);
-      split_string(string, params, "exec");
+      split_command_arguments(string, params, "exec");
     } else
       xsb_abort("[exec] 1st argument should be term or list of strings.");
 
@@ -315,7 +315,7 @@ xsbBool sys_system(int callno)
 
     } else { /* params are in a string */
       if (callno == SPAWN_PROCESS)
-	split_string(shell_cmd, params, callname);
+	split_command_arguments(shell_cmd, params, callname);
       else {
 	/* if callno==SHELL => call system() => don't split shell_cmd */
 	params[0] = shell_cmd;
@@ -757,7 +757,7 @@ int process_status(int pid)
           these params are all sitting in a static variable, buffer.
    CALLNAME - the name of the system call. Used in error messages.
 */
-static void split_string(char *string, char *params[], char *callname)
+static void split_command_arguments(char *string, char *params[], char *callname)
 {
   int buflen = strlen(string);
   int idx = 0;

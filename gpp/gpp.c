@@ -46,6 +46,8 @@
 #define MAXARGS 100
 #define MAXINCL 10   /* max # of include dirs */
 
+#define MAX_GPP_NUM_SIZE 15
+
 typedef struct MODE {
   char *mStart;		/* before macro name */
   char *mEnd;		/* end macro without arg */
@@ -210,6 +212,9 @@ char *ArithmEval(int pos1,int pos2);
 void replace_definition_with_blank_lines(char *start, char *end);
 void replace_directive_with_blank_line(FILE *file);
 void write_include_marker(FILE *f, int lineno, char *filename, char *marker);
+void construct_include_directive_marker(char **include_directive_marker,
+					char *includemarker_input);
+void escape_backslashes(char *instr, char **outstr);
 
 void bug(char *s)
 {
@@ -1040,38 +1045,7 @@ void initthings(int argc,char **argv)
     }
     if (strcmp(*arg, "-includemarker") == 0) {
       /* assume that the include marker string is correct, i.e., has 3 ?'s */
-      /* We use a temporary hack: @@ is replaced with space. 
-	 This is needed because of brain damage in Windows,
-	 which can break a single argument at spaces */
-      int len = strlen(*(++arg));
-      char *index1 = *arg, *index2, *spacer;
-      include_directive_marker = malloc(len+7);
-      include_directive_marker[0] = '\0';
-      /* replace the first ? with %d */
-      index2 = strchr(index1,'?');
-      strncat(include_directive_marker,index1, index2-index1);
-      strcat(include_directive_marker,"%d");
-      /* replace the second ? with "%s" */
-      index1 = index2+1;
-      index2 = strchr(index1,'?');
-      strncat(include_directive_marker,index1, index2-index1);
-      strcat(include_directive_marker,"%s");
-      /* replace the third ? with %s */
-      index1 = index2+1;
-      index2 = strchr(index1,'?');
-      strncat(include_directive_marker,index1, index2-index1);
-      strcat(include_directive_marker,"%s");
-      /* append the rest of *arg and terminate with the newline */
-      index1 = index2+1;
-      strcat(include_directive_marker,index1);
-      strcat(include_directive_marker,"\n");
-
-      /* replace @@ with space -- temporary hack */
-      spacer = strstr(include_directive_marker,"@@");
-      if (spacer != NULL) {
-	*spacer=' ';
-	*(++spacer)=' ';
-      }
+      construct_include_directive_marker(&include_directive_marker, *(++arg));
       continue;
     }
 
@@ -1663,7 +1637,7 @@ char *ArithmEval(int pos1,int pos2)
   }
 
   if (!DoArithmEval(s,0,strlen(s),&i)) return s; /* couldn't compute */
-  t=malloc(15);
+  t=malloc(MAX_GPP_NUM_SIZE);
   sprintf(t,"%d",i);
   free(s);
   return t;
@@ -2462,11 +2436,96 @@ void replace_directive_with_blank_line(FILE *f)
 }
 
 
+/* If lineno is > 15 digits - the number won't be printed correctly */
 void write_include_marker(FILE *f, int lineno, char *filename, char *marker)
 {
+  static char lineno_buf[MAX_GPP_NUM_SIZE];
+  static char *escapedfilename = NULL;
+
   if (include_directive_marker != NULL) {
-    fprintf(f, include_directive_marker, lineno, filename, marker);
+#ifdef WIN_NT
+    escape_backslashes(filename,&escapedfilename);
+#else
+    escapedfilename = filename;
+#endif
+    sprintf(lineno_buf,"%d", lineno);
+    fprintf(f, include_directive_marker, lineno_buf, escapedfilename, marker);
   }
+}
+
+
+/* Under windows, files can have backslashes in them. 
+   These should be escaped.
+*/
+void escape_backslashes(char *instr, char **outstr)
+{
+  int out_idx=0;
+
+  if (*outstr != NULL) free(*outstr);
+  *outstr = malloc(2*strlen(instr));
+
+  while (*instr != '\0') {
+    if (*instr=='\\') {
+      *(*outstr+out_idx) = '\\';
+      out_idx++;
+    }
+    *(*outstr+out_idx) = *instr;
+    out_idx++;
+    instr++;
+  }
+  *(*outstr+out_idx) = '\0';
+}
+
+
+/* includemarker_input should have 3 ?-marks, which are replaced with %s.
+   Also, @ is replaced with a space. These symbols can be escaped with a
+   backslash.
+*/
+void construct_include_directive_marker(char **include_directive_marker,
+					char *includemarker_input)
+{
+  int len = strlen(includemarker_input);
+  char ch;
+  int in_idx=0, out_idx=0;
+  int quoted = 0;
+
+  /* only 6 extra chars are needed: 3 for the three %'s, 2 for \n, 1 for \0 */
+  *include_directive_marker = malloc(len+18);
+
+  ch = *includemarker_input;
+  while (ch != '\0' && in_idx < len) {
+    if (quoted) {
+      *(*include_directive_marker+out_idx) = ch;
+      out_idx++;
+      quoted = 0;
+    } else {
+      switch (ch) {
+      case '\\':
+	quoted = 1;
+	break;
+      case '@':
+	*(*include_directive_marker+out_idx) = ' ';
+	out_idx++;
+	break;
+      case '?':
+	*(*include_directive_marker+out_idx) = '%';
+	out_idx++;
+	*(*include_directive_marker+out_idx) = 's';
+	out_idx++;
+	break;
+      default:
+	*(*include_directive_marker+out_idx) = ch;
+	out_idx++;
+      }
+    }
+
+    in_idx++;
+    ch = *(includemarker_input+in_idx);
+  }
+
+  *(*include_directive_marker+out_idx) = '\n';
+  out_idx++;
+  *(*include_directive_marker+out_idx) = '\0';
 }
 
 
