@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <math.h>
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -234,6 +235,54 @@ DllExport char* call_conv ptoc_string(int regnum)
   return "";
 }
 
+
+/* Arg1: op type: ceiling, floor, round; Arg 2: the float to convert; Arg3:
+   result */
+DllExport xsbBool call_conv floatop()
+{
+  /* reg is global array in register.h */
+  register Cell addr = cell(reg+2); /* address of the 2nd arg */
+
+  /* XSB_Deref and then check the type */
+  XSB_Deref( addr );
+  switch (cell_tag(addr)) {
+  case XSB_INT: {
+    double result = int_val(addr) + 0.0;
+    ctop_float(3,result);
+    break;
+  }
+  case XSB_FLOAT: {
+    Cell optype = (Cell)ptoc_tag(1);
+    double val = (double) float_val(addr);
+    if (!isstring(optype))
+      xsb_abort("[FLOATOP] Argument 1 must be a string");
+    switch(*string_val(optype)) {
+    case 'c': /* ceiling */
+      ctop_int(3,ceil(val));
+      break;
+    case 'f': /* floor */
+      ctop_int(3,floor(val));
+      break;
+    case 'r': { /* round */
+      Integer ceilval = ceil(val);
+      if ((ceilval - val) > 0.5)
+	ctop_int(3,floor(val));
+      else
+	ctop_int(3,ceilval);
+      break;
+    }
+    default:
+      xsb_abort("[FLOATOP] Argument 1 must be ceil, floor, or round");
+    }
+    break;
+  }
+  default:
+    xsb_abort("[CEIL/FLOOR/ROUND] Argument 1 must be a number");
+  }
+  return TRUE;
+}
+
+
 #define MAXSBUFFS 30
 static VarString *LSBuff[MAXSBUFFS] = {NULL};
 /*
@@ -340,7 +389,8 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
 }
 
 
-DllExport void call_conv ctop_float(int regnum, prolog_float value) /* from float value form an int node */
+/* from float value form an int node */
+DllExport void call_conv ctop_float(int regnum, prolog_float value)
 {
   /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
@@ -660,6 +710,8 @@ void init_builtin_table(void)
   set_builtin_table(SYS_ERRNO, "sys_errno");
   set_builtin_table(FILE_WRITEQUOTED, "file_writequoted");
   set_builtin_table(GROUND, "ground");
+
+  set_builtin_table(FLOATOP, "floatop");
 
   set_builtin_table(INTERN_STRING, "intern_string");
   set_builtin_table(EXPAND_FILENAME, "expand_filename");
@@ -1510,6 +1562,9 @@ int builtin_call(byte number)
   }
   case GROUND:
     return ground((CPtr)ptoc_tag(1));
+
+  case FLOATOP:
+    return floatop();
 
   case PSC_ENV:	{       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */

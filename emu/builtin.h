@@ -215,6 +215,8 @@
 #define IS_CHARLIST		213
 #define NUMBER_DIGITS		214
 
+#define FLOATOP  		215
+
 #define SORT			220
 #define KEYSORT			221
 

@@ -40,6 +40,7 @@
 	get/1,		get0/1,		
         get_char/1,	get_char/2,     get_code/1,	get_code/2,
         halt/0,		
+	ceil/2, floor/2, round/2,
 	(hilog)/1,	hilog_arg/3,	hilog_functor/3,
 	(index)/3,	(index)/2,      (table)/1,
 	integer/1,	is/2,		is_attv/1,	is_list/1,

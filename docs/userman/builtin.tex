@@ -485,10 +485,28 @@ documentation in Manual 2
 
 \end{description}
 }
-% tls \section{Arithmetic} \label{Arithmetic}
+
+\section{Arithmetic} \label{Arithmetic}
 
 %--- Need a very cursory description of arithmetic operations. \\
 %--- Descriptions and of how we handle floats. \\
+
+\begin{description}
+\ouritem{round(+Float,-Res)}\index{{\tt round/2}} 
+    Rounds {\tt Float} to the nearest integer and binds {\tt Res} to it.
+    If {\tt Float} is bound to an integer, then {\tt Res} is bound to the
+    floating point representation of that integer.
+\ouritem{ceil(+Float,-Res)}\index{{\tt ceil/2}} 
+    Computes the smallest integer greater or equal to {\tt Float} and binds
+    {\tt Res} to it.
+    If {\tt Float} is bound to an integer, then {\tt Res} is bound to the
+    floating point representation of that integer.
+\ouritem{floor(+Float,-Res)}\index{{\tt floor/2}} 
+    Computes the greatest integer smaller or equal to {\tt Float} and binds
+    {\tt Res} to it.
+    If {\tt Float} is bound to an integer, then {\tt Res} is bound to the
+    floating point representation of that integer.
+\end{description}
 
 
 \section{Convenience} \label{Convenience}
