@@ -1671,6 +1671,10 @@ int builtin_call(byte number)
     
 #ifdef XSB_ODBC
 #include "odbc_xsb_i.h"
+#else
+  case ODBC_EXEC_QUERY: {
+    xsb_exit("XSB not compiled with ODBC support.\nRecompile using the option --with-odbc.\n");
+  }
 #endif
 
 #ifdef XSB_INTERPROLOG
