@@ -88,8 +88,8 @@ void total_stat(double elapstime)
   unsigned long lstktop, trie_alloc, trie_used, chat_alloc, chat_used,
                 total_alloc, total_used, gl_avail, tc_avail;
   unsigned long subg_count, subg_space, trie_hash_alloc;
-  unsigned long de_space_allocated, de_space_used;
-  unsigned long dl_space_allocated, dl_space_used;
+  unsigned long de_space_alloc, de_space_used;
+  unsigned long dl_space_alloc, dl_space_used;
   int num_de_blocks, num_dl_blocks;
   int de_count, dl_count;
 
@@ -101,13 +101,13 @@ void total_stat(double elapstime)
   trie_used = trie_alloc - free_trie_size();
   subg_space = sizeof(Cell)*CALLSTRUCTSIZE*subg_count;
 
-  de_space_allocated = allocated_de_space(& num_de_blocks);
-  de_space_used = de_space_allocated - unused_de_space();
+  de_space_alloc = allocated_de_space(& num_de_blocks);
+  de_space_used = de_space_alloc - unused_de_space();
   de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_element);
 
-  dl_space_allocated = allocated_dl_space(& num_dl_blocks);
-  dl_space_used = dl_space_allocated - unused_dl_space();
+  dl_space_alloc = allocated_dl_space(& num_dl_blocks);
+  dl_space_used = dl_space_alloc - unused_dl_space();
   dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_list);
 
@@ -119,12 +119,14 @@ void total_stat(double elapstime)
 #endif
 
   total_alloc = pspacesize + trie_alloc + subg_space + chat_alloc +
-		(pdl.size + glstack.size + tcpstack.size + complstack.size) * K;
+                de_space_alloc + dl_space_alloc +
+		(pdl.size + glstack.size + tcpstack.size + complstack.size) *K;
 
   gl_avail    = lstktop-(unsigned long)hreg;
   tc_avail    = (unsigned long)breg-(unsigned long)trreg;
 
   total_used  = pspacesize + trie_used + subg_space + chat_used +
+                de_space_used + dl_space_used +
                 (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail);
 
   printf("\n");
@@ -167,8 +169,10 @@ void total_stat(double elapstime)
     total_used = ttt.maxgstack_count + ttt.maxlstack_count +
                  ttt.maxtrail_count + ttt.maxcpstack_count +
 		 ttt.maxopenstack_count;
-    printf("   Maximum stack use: SLG completion %ld, Total %ld.  Max level: %ld\n",
-	   ttt.maxopenstack_count, total_used, ttt.maxlevel_num);
+    printf("   Maximum stack use: SLG completion %ld (%ld subgoals).",
+	   ttt.maxopenstack_count,
+	   (ttt.maxopenstack_count/sizeof(struct completion_stack_frame)));
+    printf("  Total %ld b.\n", total_used);
     printf("\n");
   }
 
@@ -181,9 +185,9 @@ void total_stat(double elapstime)
   if (de_count > 0) {
     printf("\n");
     printf(" %6d DEs in the tables (space: %5ld bytes allocated, %5ld in use)\n",
-	   de_count, de_space_allocated, de_space_used);
+	   de_count, de_space_alloc, de_space_used);
     printf(" %6d DLs in the tables (space: %5ld bytes allocated, %5ld in use)\n",
-	   dl_count, dl_space_allocated, dl_space_used);
+	   dl_count, dl_space_alloc, dl_space_used);
   }
 
   printf("\n");
@@ -205,7 +209,6 @@ void total_stat(double elapstime)
 void perproc_reset_stat(void)
 {
    tds = trace_init;
-/*    ide_chk_ins = idl_chk_ins = 0; */
    ans_chk_ins = ans_inserts = 0;
    subg_chk_ins = subg_inserts = 0;
 #ifdef CHAT
