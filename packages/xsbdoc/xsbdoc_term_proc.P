@@ -20,11 +20,11 @@
 
 %:- import file_time/2 from file_io.
 
-:- index('_#clause'/3,trie).
+:- index('_#clause'/2,trie).
 
 :- dynamic '_#processed'/2.
 :- dynamic '_#ctr'/1.
-:- dynamic '_#clause'/3.
+:- dynamic '_#clause'/2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,6 +68,7 @@ process_file_from(File) :-
 	    read_record_file(Full),
             asserta('_#processed'(Full, IsLib))).
 
+/* corrected_search_module(main,Dir,main,main.P,<true/false>) */
 corrected_search_module(Input,Dir,Base,Source,IsLib):- 
 	(search_module(Input, Dir, Base, SExt, _Full, _Obj) -> 
 	   concat_atom([Base,'.',SExt],Source)
@@ -108,15 +109,15 @@ assert_term(File,Term):-
 	expand_term(Term,ETerm),
 	assert_term_1(ETerm,File).
 	
-assert_term_1((H :- T),File):- !,
+assert_term_1((H :- T),_File):- !,
 	inc_ctr(N),
-	assert('_#clause'(File,rule(H,T),N)).
-assert_term_1((':-'(T)),File):- !,
+	assert('_#clause'(rule(H,T),N)).
+assert_term_1((':-'(T)),_File):- !,
 	inc_ctr(N),
-	assert('_#clause'(File,directive(T),N)).
-assert_term_1(Term,File):- 
+	assert('_#clause'(directive(T),N)).
+assert_term_1(Term,_File):- 
 	inc_ctr(N),
-	assert('_#clause'(File,rule(Term,true),N)).
+	assert('_#clause'(rule(Term,true),N)).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -148,7 +149,7 @@ messageln(X):- message(X),message('
 ').
 
 read_file_reset:- 
-	retractall('_#clause'(_,_,_)),
+	retractall('_#clause'(_,_)),
 	retractall('_#ctr'(_)),
 	retractall('_#processed'(_,_)).
 
@@ -167,10 +168,10 @@ comma_memberchk_eq(','(_,R),A1):-
 	comma_memberchk_eq(R,A1).
 
 % warning: may bind variables.
-comma_member(A,A).
-comma_member(','(A,_),A).
-comma_member(','(_,R),A1):- 
-	comma_member(R,A1).
+comma_member(A,','(A,_)).
+comma_member(A,','(_,R)):- 
+	comma_member(A,R).
+comma_member(A,A):- \+ (functor(A,',',_)).
 
 comma_length(','(_L,R),N1):- !,
 	comma_length(R,N),

@@ -3,29 +3,15 @@ lpdoc -help
 
   Print this help message.
 
-lpdoc [MiscOpts] [-l <path1> ... <pathN> ] 
-        [-s <path1> ... <pathN> ] 
-        [-i <i1> ... <iN> ] 
-        [-u path_aliases_file ] 
-        [-p start_page ] 
-        [-t paper_type ] 
+xsbdoc [MiscOpts] [-p start_page ] 
+	[-t paper_type ] 
         -main <main> [ <f1.texic> ... <fN.texic> ] 
 
   Generate    the main    .texic   file  for  main
   application  file   <file> and   whose component
   .texic files are <file1.texic>... <fileN.texic>.
-  The optional   arguments preceded by  -l are the
-  directory   paths   where   files    used   (via
-  use_module/1) by the file being documented (main
-  in this case) can  be found (-s is similar,  but
-  putting paths in     the -s  list   flags   that
-  such paths are 'system' paths). They are treated
-  in the same way as 'library paths'. The optional
-  arguments preceded  by -i are  the names  of the
-  indices which  should be generated.  The special
-  index name  'all'  results in all  indices being
-  generated. -u indicates a Prolog file with defi-
-  nitions to be loaded. 
+  The special index name 'all' results in all indices 
+  being  generated. 
 
 lpdoc [MiscOpts] [-l <path1> ... <pathN> ] 
                    [-s <path1> ... <pathN> ] 
@@ -43,13 +29,6 @@ lpdoc [MiscOpts] [-l <path1> ... <pathN> ]
 
   Generate  (part of  an) html   file suitable for
   including in an html page.
-
-lpdoc [MiscOpts] [-l <path1> ... <pathN> ] 
-                   [-s <path1> ... <pathN> ] 
-                   [-u path_aliases_file ] 
-                   -man <main> 
-
-  Generate a man page.
 
 lpdoc [MiscOpts] [-l <path1> ... <pathN> ] 
                    [-s <path1> ... <pathN> ] 

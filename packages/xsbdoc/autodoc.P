@@ -1,20 +1,23 @@
 :- compiler_options([ciao_directives,spec_off]).
 
+:- export classify_import_files/4.
+
 :- export   autodoc/7,
 	    generate_description/3,
 	    generate_info_dir_entry/2,
-	    generate_man_page/2,
+%	    generate_man_page/2,
 	    rewrite_docstring/4,
-	    detect_filetypes/6,
+	    detect_filetypes/4,
 	    modtype/1.
 
-:- import supported_format/1, % Used in assertions
+:- import 
+%	  supported_format/1, % Used in assertions
           format_description/3,
 	  format_front_matter/19,
 	  format_head_descriptor/5,
 	  format_includes_and_end_matter/6,
 	  format_intro/10,
-	  format_module_usage/14,
+	  format_module_usage/10,
 	  format_multiple_usage_header/3,
 	  format_native_declaration/3,
 	  format_other_assrt_header/2,
@@ -33,24 +36,25 @@
 	  supported_format_suffix/2,
 	  verbatimize_string/3 from autodocformats.
 
-:- import messageln/1, process_a_file/5, 
+:- import comma_member/2, corrected_search_module/5,
+	  process_a_file/5, 
 	  read_file_reset/0 from xsbdoc_term_proc.
 
 :- import  rewrite_command/4 from rewrite_command.
 
 :- import set_libs/1,
 	  atom_concat/2, atom_concat/3, 
-	  cleanup_c_itf_data/0, (data)/1, 
-	  error_message/1, error_message/2, 
-	  list_concat/2, 
-	  note_message/1,note_message/2,
+	  cleanup_c_itf_data/0, 
+	  error_message/2, 
+	  list_concat/2, note_message/1,
 	  optional_message/2, 
-          warning_message/1, warning_message/2, warning_message/3
+	  xsbdoc_error/1,
+	  xsbdoc_warning/1
 		from ciaoaux.
 
 :- import base_name/2, message/1, ttyflush/0 from xsb_ciao.
 :- import current_prolog_flag/2, set_prolog_flag/2 from isopreds.
-:- import '_#clause'/3 from usermod.
+:- import '_#clause'/2 from usermod.
 
 :- import format/3 from format.
 :- import append/3, length/2, member/2, reverse/2,copy_term/2 from basics.
@@ -58,19 +62,74 @@
 :- import pretty_print/3 from pretty_print.
 :- import list/1, string/1 from basic_props.
 
-defines(Base,Goal):- 
-	'_#clause'(Base,rule(Goal,_),_Ctr).
 
-clause_read(Base, Head, Body, Ctr):- 
-	'_#clause'(Base,rule(Head,Body),Ctr).
-clause_read(Base, 1, Body, Ctr):- 
-	'_#clause'(Base,directive(Body),Ctr).
+defines(Goal):- 
+	'_#clause'(rule(Goal,_),_Ctr).
+
+/*
+:- pred clause_read(Base, Head, Body, VarNames, Source, Line0, Line1)
+*/
+
+clause_read(Head, Body, Ctr):- 
+	'_#clause'(rule(Head,Body),Ctr).
+clause_read(1, Body, Ctr):- 
+	'_#clause'(directive(Body),Ctr).
+
+exports(F,A):- 
+	'_#clause'(directive(document_export(Es)),_Ctr),
+	comma_member(T,Es),
+	T = F/ A.
+exports(F,A):- 
+	'_#clause'(directive(export(Es)),_Ctr),
+	comma_member(T,Es),
+	T = F/ A.
+
+imports(File,F,A):-
+	'_#clause'(directive(import(from(Preds,File))),_Ctr),
+	comma_member(T,Preds),T = F / A.
+imports(File,F,A):-
+	'_#clause'(directive(document_import(from(Preds,File))),_Ctr),
+	comma_member(T,Preds),T = F / A.
+
+assertion_read(Goal,_Status,F,Body):- 
+	'_#clause'(directive(Term),_Ctr),
+	functor(Term,F,1),
+	assertion_functor(F),
+	arg(1,Term,A),
+	A = (Goal :: Body).
+
+assertion_functor(pred).
+
+get_assert_prop(compat_prop,Body,D):- 
+	(member(compat_prop(D),Body) -> true ; D = [] ).
+get_assert_prop(call_prop,Body,D):- 
+	(member(callprop(D),Body) -> true ; D = [] ).
+get_assert_prop(success_prop,Body,D):- 
+	(member(success_prop(D),Body) -> true ; D = [] ).
+get_assert_prop(global_prop,Body,D):- 
+	(member(global_prop(D),Body) -> true ; D = [] ).
+get_assert_prop(comment,Body,D):- 
+	(member(comment(D),Body) -> true ; D = [] ).
+
+/*
+assertion_read(Goal,_Status,F,Body,Source):- 
+
+:- pred assertion_read(Goal,M,Status,Type,Body,Dict,Source,LB,LE) 
+
+assertion_body(Pred,Compat,Call,Succ,Comp,Comm,
+	      (Pred::Compat:Call=>Succ+Comp#Comm)).
+
+compat_prop(),
+call_prop()
+success_prop()
+global_prop()
+comment()
+*/
 
 %% ---------------------------------------------------------------------------
 %% Intro
 %% ---------------------------------------------------------------------------
 
-/*
 :- comment(title,"Documentation generation library").
 
 :- comment(author,"Manuel Hermenegildo").
@@ -116,15 +175,15 @@ clause_read(Base, 1, Body, Ctr):-
    themselves).
 
 ").
-*/
+
 %% ---------------------------------------------------------------------------
 :- comment(modtype/1,"@includedef{modtype/1}").
 
  :- regtype modtype/1 # "Represents the type of file being documented.".
 
 modtype(application).
-modtype(use_module).
-modtype(include).
+modtype(module).
+modtype(file).
 modtype(part).
 
 :- comment(filetype/1,"@includedef{filetype/1}").
@@ -143,11 +202,13 @@ filetype(component).
 maintype(standalone).
 maintype(withcomponents).
 
+/*
 %% Should really use sourcename, but not really supported until we eliminate 
 %% the makefile completely
 :- regtype filename(X) # "@var{X} is the name of a file.".
 
 filename(X) :- atom(X).
+*/
 
 %% ---------------------------------------------------------------------------
 
@@ -190,55 +251,55 @@ filename(X) :- atom(X).
 %% ---------------------------------------------------------------------------
 
 /*
-file_processing(main.P,texic,_h590,_h591,_h592,_h593,_h594,_h595,_h596,_h597,[-main,-nosysmods,-noengmods,-propmods]) 
+file_processing(main.P,texic,_h590,_h591,_h592,_h593,_h594,_h595,_h596,_h597,[-main,-nosysmods,-propmods]) 
 
-file_processing(main.P,texic,main,main,_h592,_h593,./,main.texic,main.texic,main.refs,[-main,-nosysmods,-noengmods,-propmods]) 
+file_processing(main.P,texic,main,main,_h592,_h593,./,main.texic,main.texic,main.refs,[-main,-nosysmods,-propmods]) 
 
 Format is texic,man,html,ascii
 
-What is I, Base, CS?
 */
 
-autodoc(IFormat,Main,Idxs,Components,StartPage,PaperType,Opts) :-
+/* filetype = part, application, module, file */
+/* filelevel = component, main(_) */
+autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
         check_format(IFormat,Format,FormatSuffix),
-        file_processing(Main,FormatSuffix,Name,NDName,
-                        I,Base,Dir,O,OS,CS,Opts),
-	concat_atom([Dir,Main],MainIdx),
-  	  trace,
-	detect_filetypes(MainIdx,Base,Opts,Components,ModuleType,FileType),
+        file_processing(InputFile,FormatSuffix,Name,NDName,
+                        _I,_Base,Dir,O,OS,CitStr,Opts),
+	concat_atom([Dir,InputFile],MainIdx),
+	detect_filetypes(Opts,Components,FileType,FileLevel),
 
-	(ModuleType=part ->
+	(FileType=part ->
 	     Version=[] 
-	  ;  get_last_version(Main,Version,GVers,Dir,Opts) ),
+	  ;  get_last_version(Version,GVers,Dir,Opts) ),
 
-	get_comment(MainIdx,title,single,warning_message(_,_),
+	get_comment(title,single,xsbdoc_warning(_),
 	                                 Format,Idxs,Opts,Title),
 	(  member('-noauthors',Opts) 
 	-> Authors=[]
 	; 
-         get_comment(MainIdx,author,multiple,warning_message(_,_),
+         get_comment(author,multiple,xsbdoc_warning(_),
 					Format,Idxs,Opts,Authors)
 	),
-	(  FileType=component
-	-> ErrorType=ignore(_,_)
-	;  ErrorType=note_message(_,_) ),
-	get_comment(MainIdx,subtitle,multiple,ErrorType,
+	(  FileLevel=component
+	-> ErrorType=ignore(_)
+	;  ErrorType=note_message(_) ),
+	get_comment(subtitle,multiple,ErrorType,
 					Format,Idxs,Opts,SubtitleLines),
-	get_comment(MainIdx,copyright,single,ErrorType,
+	get_comment(copyright,single,ErrorType,
 					Format,Idxs,Opts,Copyright),
-	get_comment(MainIdx,summary,single,ErrorType,
+	get_comment(summary,single,ErrorType,
 					Format,Idxs,Opts,Summary),
 
-%	optional_message("Generating front matter...",Opts),
-	format_front_matter(Format,ModuleType,FileType,Name,NDName,
+	optional_message('Generating front matter...',Opts),
+	format_front_matter(Format,FileType,FileLevel,Name,NDName,
 	                    Version,GVers,
 	                    Title,Authors,
                             SubtitleLines,Copyright,
 	                    Summary,Idxs,StartPage,PaperType,
-			    Opts,I,O,OS),
+			    Opts,InputFile,O,OS),
 
-%	optional_message("Generating intro...",Opts),
-	get_comment(MainIdx,module,single,note_message(_,_),
+	optional_message('Generating intro...',Opts),
+	get_comment(module,single,note_message(_),
 			Format,Idxs,Opts,Comment),
 
 	(  member('-nochangelog',Opts) 
@@ -247,68 +308,71 @@ autodoc(IFormat,Main,Idxs,Components,StartPage,PaperType,Opts) :-
 	   -> VPatch = 0
 	   ;  true ),
 	   (  setof(Change,
-	         VPatch^change_field(MainIdx,VPatch,Format,Idxs,Change),
+	         VPatch^change_field(VPatch,Format,Idxs,Change),
 		 RChanges)
 	   -> reverse(RChanges,Changes) 
 	   ;  Changes = [] )
 	),
 
-        format_intro(Format,FileType,ModuleType,Name,NDName,Summary,
+        format_intro(Format,FileLevel,FileType,Name,NDName,Summary,
 	             GVers,Comment,OS,IntroOS),
 
 
-
-	doc_interface(Format,FileType,ModuleType,M,Base,NDName,
+	optional_message('Generating interface...',Opts),
+	doc_interface(MainIdx,Format,FileLevel,FileType,MainIdx,NDName,
 	              Idxs,OS,IntroOS,Opts),
 
 % TLS possibly replace by interface file.
-	get_comment(_Appfile,appendix,single,ignore(_,_),Format,Idxs,
+	get_comment(appendix,single,ignore(_),Format,Idxs,
 							Opts,Appendix),
 
 % TLS possibly replace by acl file.
-	get_comment(_Ackfile,ack,single,ignore(_,_),Format,Idxs,Opts,Ack),
+	get_comment(ack,single,ignore(_),Format,Idxs,Opts,Ack),
 
 	(  member('-nobugs',Opts) 
 	-> Bugs=[]
-	;  get_comment(_File,bug,multiple,ignore(_,_),Format,Idxs,Opts,Bugs) ),
+	;  get_comment(bug,multiple,ignore(_),Format,Idxs,Opts,Bugs) ),
 
-	format_other_info(Format,FileType,Name,NDName,Appendix,Ack,Changes,
+	optional_message('Generating acs, apps...',Opts),
+	format_other_info(Format,FileLevel,Name,NDName,Appendix,Ack,Changes,
 	                  Bugs,OS,IntroOS),
 
 
-	(  FileType = main(_)
+	(  FileLevel = main(_)
 	-> 
 %	   main_filenames(Components,PComponents),
+	   optional_message('Generating includes, end matter...',Opts),
 	   format_includes_and_end_matter(Format,Name,Components,
 	                                  Idxs,Opts,OS)
 	;  true ),
 
-	close(CS),
+	close(CitStr),
 	retract(refs_stream(_)),
 	close(OS),
 	retract(main_name(_)),
+	close(IntroOS),
 
 	read_file_reset,
 	message('}'),
-	ttyflush.
+	ttyflush,!.
 autodoc(_Format,_Main,_Idxs,_Components,_StartPage,_PaperType,_Opts) :-
-	error_message("formatting could not be completed",[]).
+	xsbdoc_error('formatting could not be completed').
 
-change_field(File,VPatch,Format,Idxs,change(Version,RC)) :-
+change_field(VPatch,Format,Idxs,change(Version,RC)) :-
 	version_format(V,_,_,VPatch,_,_,_,_,_,_,_),
-	get_comment_field(File,V,C),
+	get_comment_field(V,C),
 	(  V = version(Ver,Date) 
 	-> Version = version(Ver,Date,[]) 
 	;  Version = V ),
 	rewrite_docstring(Format,Idxs,C,RC).
 
-get_last_version(File,Version,GVers,Dir,Opts) :-
+get_last_version(Version,GVers,Dir,Opts) :-
 	(  member('-noversion',Opts) 
 	-> Version = [],GVers = []
-	;  do_get_last_version(File,Version,GVers,Dir,Opts) ).
+	;  do_get_last_version(Version,GVers,Dir,Opts) ).
 
-do_get_last_version(File,Version,GVers,Dir,Opts) :-
-	get_comment_field(File,version_maintenance,dir(VDir)),
+do_get_last_version(Version,GVers,Dir,Opts) :-
+	get_comment_field(version_maintenance,dir(VDir)),
 	!,
 	%% version maintained in dir (computed relative to .pl file Dir!)
  	atom_concat([Dir,'/',VDir,'/','GlobalChangeLog'],ChangeLogFile),
@@ -321,32 +385,29 @@ do_get_last_version(File,Version,GVers,Dir,Opts) :-
 	   FirstTerm = (':-'(comment(GVers,_))),
 	   close(CLFS)
 	; 
-	   error_message(
-                 "Version file ~w not found, using version comments in file",
-	         [ChangeLogFile]),
+	   xsbdoc_error(['Version file ',ChangeLogFile,
+			 'not found, using version comments in file']),
 	   GVers = Version ),
-        do_get_last_local_version(File,Version,Opts).
-do_get_last_version(File,Version,Version,_Dir,Opts) :-
+        do_get_last_local_version(Version,Opts).
+do_get_last_version(Version,Version,_Dir,Opts) :-
 	%% else, component or version maintained in comment/2 decls in file
-        do_get_last_local_version(File,Version,Opts).
+        do_get_last_local_version(Version,Opts).
 
-do_get_last_local_version(File,Version,Opts) :-
+do_get_last_local_version(Version,Opts) :-
 	%% get last version in comment/2 decls in file
-%	optional_message(
-%	   "Getting local version from file...",Opts),
-	(  setof(VTerm,version_field(File,VTerm),Versions), 
+	optional_message('Getting local version from file...',Opts),
+	(  setof(VTerm,version_field(VTerm),Versions), 
 	   %% Leaves most recent one last...
 	   append(_, [LVersion], Versions)
 	-> Version = LVersion
-	;  note_message(
-               "no "":- comment(version(...),...)"" declaration found~n"),
+	;  note_message('no ":- comment(version(...),...)" declaration found'),
 	   Version = [] ).
 
-version_field(File,VTerm) :-
-	get_comment_field(File,version(Version,Date),_Comment), 
+version_field(VTerm) :-
+	get_comment_field(version(Version,Date),_Comment), 
 	VTerm=version(Version,Date,[]).
-version_field(File,VTerm) :-
-	get_comment_field(File,version(Version,Date,Time),_Comment),
+version_field(VTerm) :-
+	get_comment_field(version(Version,Date,Time),_Comment),
 	VTerm=version(Version,Date,Time).
 
 version_format( version(V*SV+P, Y/M/D),          V,SV,P,Y,M,D,[],[],[],[]).
@@ -354,499 +415,133 @@ version_format( version(V*SV+P, Y/M/D, []),      V,SV,P,Y,M,D,[],[],[],[]).
 version_format( version(V*SV+P, Y/M/D, H:N*S+Z), V,SV,P,Y,M,D, H, N, S, Z).
 
 %% ---------------------------------------------------------------------------
-:- pred generate_man_page(Main,Opts) 
-   : filename * list(miscopt)
-
-   # "Generates a brief description of the application or library in
-      @concept{unix man format}. @var{Main} is the name of a the
-      source file which is the main file of the
-      application.  ".
-%% ---------------------------------------------------------------------------
-
-generate_man_page(Main,Opts) :- 
-	Format=man,
-	Idxs=[],
-	supported_format_suffix(Format,FormatSuffix),
-
-        file_processing(Main,FormatSuffix,
-                        _Name,NDName,_M,I,_Base,Dir,O,OS,CS,[]),
-	message(['{Converting ',I,' into ',O]),
-	get_last_version(Main,_LVersion,Version,Dir,Opts),
-	get_comment(Main,author,multiple,warning_message,Format,Idxs,Opts,Authors),
-	get_comment(Main,title,single,note_message,Format,Idxs,Opts,Title),
-	get_comment(Main,summary,single,note_message,Format,Idxs,Opts,Summary),
-	get_comment(Main,copyright,single,note_message,Format,Idxs,Opts,Copyright),
-
-	(  version_format(Version,Ver,Sub,Patch,Y,M,D,_,_,_,_)
-	-> Date = Y/M/D
-	;  Date = ' ' ),
-	format(OS,".TH ~w l ""~w""~n~n.SH NAME~n.B ~w~n",[NDName,Date,NDName]),
-	(  Title = []
-	-> true 
-	;  format(OS,"\\- ~s.~n",[Title]) ),
-	format(OS,".IX ~w~n",[NDName]),
-
-	format(OS,"~n~n.SH DESCRIPTION~n~s~n",[Summary]),
-	(  Version = []
-	-> true
-	;  format(OS,
-	          "~n~n.SH VERSION~nThis man page corresponds to version ",[]),
-           format(OS,"~w.~w#~w (~w).~n",[Ver,Sub,Patch,Date]) ),
-
-	(  functor(Pattern,usage_message,1),
-	   clause_read(_,Pattern,true,_,_,_,_) 
-	-> rewrite_docstring_opts(man,[],Opts,
-	       "@begin{verbatim}@includefact{usage_message/1}@end{verbatim}",
-               Usage),
-	   format(OS,"~n~n.SH SYNOPSIS~n~s~n",[Usage])
-	;  note_message("No usage_message/1 fact found for application~n") ),
-
-	format(OS,"~n~n.SH MORE INFO~nThis man page has been generated ~n",[]),
-	format(OS,"automatically by the lpdoc autodocumenter. ~n",[]),
-	format(OS,"The ~w reference manual ~n",[NDName]),
-	format(OS,"provides further information. Versions of the ~n",[]),
-	format(OS,"manual are available on-line and in printable form ~n",[]),
-	format(OS,"(info/html/dvi/ps/...) - see the source or your ~n",[]),
-	format(OS,"local installation information.",[]),
-
-	format(OS,"~n.SH COPYRIGHT~n~s~n",[Copyright]),
-
-	format(OS,"~n.SH AUTHOR~n",[]),
-	write_man_authors(Authors,OS),
-	
-	close(CS),
-	retract(refs_stream(_)),
-	close(OS),
-	retract(main_name(_)),
-	cleanup_c_itf_data,
-	cleanup_code_and_related_assertions,
-	message('}'),
-	ttyflush.
-generate_man_page(_I,_Opts) :-
-	error_message("formatting could not be completed",[]).
-
-write_man_authors([],_OS).
-write_man_authors([Author|Authors],OS) :-
-	format(OS,".br~n~s~n",[Author]),
-	write_man_authors(Authors,OS).
-
-
-%% ---------------------------------------------------------------------------
-/*
-:- pred generate_description(Format,Main,Opts) 
-   : supported_format * filename * list(miscopt)
-
-   # "Generates a @concept{brief description of the application or
-      library} in a file. This file is intended for inclusion in a
-      larger file that is a catalog of aplications or libraries. The
-      file is produced in the format given by @var{Format}. @var{Main}
-      is the name of a the source file which is the main file of the
-      application. The name of the output file depends on @var{Format}
-      -- see see @pred{supported_format/1} in library
-      @lib{autodocformats}. ".
-*/
-%% ---------------------------------------------------------------------------
-
-generate_description(Format,Main,Opts) :-
-	%% For now, only html supported
-	Format=html,
-	Idxs=[],
-
-	%% Special suffixes for parts of an index in html
-	(  member('-nobullet',Opts) 
-	-> true
-	;  BltFormatSuffix=htmlbullet,
-           file_processing(Main,BltFormatSuffix,
-                   _Name,_NDName,_M,_I,_Base,_,BltO,BltOS,_,[]) ),
-
-	IdxFormatSuffix=htmlindex,
-        file_processing(Main,IdxFormatSuffix,
-                   Name,NDName,_M,I,_Base,Dir,IdxO,IdxOS,CS,[]),
-
-	get_last_version(_LVersion,Version,Dir,Opts),
-	get_comment(title,single,note_message,Format,Idxs,Opts,Title),
-	get_comment(summary,single,note_message,Format,Idxs,Opts,Summary),
-
-
-	(  member('-nobullet',Opts) 
-	-> true
-	;  message(['{Converting ',I,' into ',BltO]),
-	   format(BltOS,"<UL><LI><A HREF=""#~w""><B class=applname>",[Name]),
-	   format(BltOS,"~w",[NDName]),
-	   (  Title \== [] 
-	   -> format(BltOS,":</B> <B><em>~s</em></B></A></UL>~n~n",
-	          [Title])
-	   ;  format(BltOS,"</B></A></UL>~n~n",[]) ),
-	      
-	   close(BltOS),
-	   message('}') ),
-
-	message(['{Converting ',I,' into ',IdxO]),
-	format(IdxOS,"<A NAME=""~w""></A><HR>~n<H1 class=appltitle>",[Name]),
-        format(IdxOS,"<B class=applname>~w",[NDName]),
-	(  Title \== [] 
-	-> format(IdxOS,":</B> <em>~s</em></H1>~n~n",[Title]) 
-	;  format(IdxOS,"</B></H1>~n~n",[])),
-	format(IdxOS,"~s~n~n",[Summary]),
-
-	(  version_format(Version,Ver,Sub,Patch,Y,M,D,_,_,_,_)
-	-> Date = Y/M/D,
-	   format(IdxOS,"<H2>Current version (~w.~w#~w of ~w):</H2>~n~n",
-	             [Ver,Sub,Patch,Date]) 
-	;  true ),
-
-	close(IdxOS),
-	close(CS),
-	retract(refs_stream(_)),
-	cleanup_c_itf_data,
-	cleanup_code_and_related_assertions,
-	message('}'),
-	ttyflush.
-generate_description(_Format,_Main,_Opts) :-
-	error_message("formatting could not be completed",[]).
-
-%% ---------------------------------------------------------------------------
-:- pred generate_info_dir_entry(Main,Opts) 
-   : filename * list(miscopt)
-
-   # "Generates a one line description of the application or library
-      in a file. This file is intended for inclusion in a larger file
-      that is a directory of @tt{emacs info} manuals. The file is
-      produced in ascii. @var{Main} is the name of a the source file
-      which is the main file of the application. The name of the
-      output file is @var{Main}@tt{.infoindex}. ".
-%% ---------------------------------------------------------------------------
-
-generate_info_dir_entry(Main,Opts) :-
-	Idxs=[],
-	%% Special suffix for parts of an info directory
-	FormatSuffix=infoindex,
-
-        file_processing(Main,FormatSuffix,
-                        Name,NDName,_M,I,_Base,Dir,O,OS,CS,[]),
-	message(['{Converting ',I,' into ',O]),
-	get_last_version(_LVersion,Version,Dir,Opts),
-	get_comment(title,single,note_message,ascii,Idxs,Opts,Title),
-
-	format(OS,"* ~w: (~w.info).~n\t",[NDName,Name]),
-	( Title \== []
-	-> format(OS,"~s",[Title])
-	;  format(OS,"~w Reference Manual",[NDName]) ),
-	(  version_format(Version,Ver,Sub,Patch,Y,M,D,_,_,_,_)
-	-> Date = Y/M/D,
-	   format(OS," (version ~w.~w#~w of ~w)",[Ver,Sub,Patch,Date]) 
-	;  true ),
-	format(OS,"~n",[]),
-
-	close(CS),
-	retract(refs_stream(_)),
-	close(OS),
-	retract(main_name(_)),
-	cleanup_c_itf_data,
-	cleanup_code_and_related_assertions,
-	message('}'),
-	ttyflush.
-generate_info_dir_entry(_Main,_Opts) :-
-	error_message("formatting could not be completed",[]).
-
-%% ---------------------------------------------------------------------------
 :- pred doc_interface/10
    # "Generates the documentation for the interface of a module.".
 %% ---------------------------------------------------------------------------
 
-doc_interface(_,_FileType,ModuleType,_M,_Base,_Name,
+doc_interface(_,_,_FileLevel,FileType,_Base,_Name,
              _Idxs,_NOS,_IntroOS,_Opts):-
-        ( ModuleType = application; ModuleType = part ),
+        ( FileType = application; FileType = part ),
 	!.
-doc_interface(Format,FileType,ModuleType,M,Base,Name,Idxs,NOS,IntroOS,Opts) :-
-	(  FileType = main(_)
-	-> OS = IntroOS 
-	;  OS = NOS ),
+doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
+						NOS,IntroOS,Opts) :-
+	(  FileLevel = main(_) 	-> OS = IntroOS ;  OS = NOS ),
 
-%	optional_message("Generating library header...",Opts),
+	optional_message('Generating library header...',Opts),
 
 	% Exported predicates
-	export_list(ModuleType,Base,Opts,AllExports),
-	eliminate_hidden(AllExports,Exports),
-	% Multifiles
-	findall(F/A,def_multifile(Base,F,A,_),RMultifiles),
-	eliminate_hidden(RMultifiles,Multifiles),
-        (  ( Exports=[],Multifiles=[],
-	     \+ ( ModuleType=include ; ModuleType=use_package ) )
-	-> warning_message("no exported predicates to be documented")
-	;  true ),
+%	trace,
+	export_list(FileType,Opts,AllExports),
+	eliminate_hidden(AllExports,Exports,File),
 
-	% Imported modules
-	findall(IFile,uses_file(Base,IFile),IFiles),
-	% Other user files loaded
-	findall(IUFile,adds(Base,IUFile),IUFiles),
+	/* TLS: should handle multifile declarations with interface */
 
 	% Source files whose contents should not be documented
-        get_comment(nodoc,multiple,ignore,_Format,_Idxs,Opts,NoDocS),
-%	optional_message("Not documenting: ~w",[NoDocS],Opts),
-
-	% The ops (only "exported" if package or include)
-	(  ( ModuleType=include ; ModuleType=use_package )
-	-> findall(op(P,Prec,PredNames),
-                   ( clause_read(_,1,op(P,Prec,PredNames),_,S,_,_),
-		     no_path_file_name(S,FN),
-		     basename(FN,BN),
-		     \+ member(BN,NoDocS) ),
-		   Ops),
-	   normalize_ops(Ops,SOps)
-	;  SOps=[] ),
-	
-        % The modes (only "exported" if package or include)
-	( ( ModuleType=include ; ModuleType=use_package )
-	-> findall(F/A, ( assertion_read(ModeP,M,_,modedef,_,_,S,_,_),
-		          no_path_file_name(S,FN),
-			  basename(FN,BN),
-			  \+ member(BN,NoDocS),
-			  functor(ModeP,F,A) ), 
-                   CModes),
-	    eliminate_duplicates(CModes,NModes)
-	;   NModes = [] ),
-
-        % Gather all decls to be documented. 
-        % ??? Not a good idea???
-        ( ( ModuleType=include ; ModuleType=use_package )
-	-> % document all having an explicit comment in the module:
-	   findall(F/A, ( assertion_read(DeclP,M,_,decl,_,_,S,_,_),
-			  no_path_file_name(S,FN),
-			  basename(FN,BN),
-			  \+ member(BN,NoDocS),
-			  functor(DeclP,F,A) ), 
-                   CDecls),
-           % also those having a new_declaration in the module
-	   findall(NDP,
-                   ( clause_read(Base,1,new_declaration(NDP),_,S,_,_),
-		     no_path_file_name(S,FN),
-		     basename(FN,BN),
-		     \+ member(BN,NoDocS)
-		   ),
-                   NDDecls),
-	   append(CDecls,NDDecls,PDupDecls),
-	   % E.g., in case of being in both cases above
-	   eliminate_duplicates(PDupDecls,NDecls)
-	;  NDecls=[] ),
+        get_comment(nodoc,multiple,ignore(_),_Format,_Idxs,Opts,NoDocS),
+	optional_message('Not documenting'(NoDocS),Opts),
 
 	% Usage comment to override automatic one
-	get_comment(usage,single,ignore,Format,Idxs,Opts,Usage),
+	get_comment(usage,single,ignore(_),Format,Idxs,Opts,Usage),
 	(  Usage = []
-	-> RModuleType = ModuleType
+	-> RModuleType = FileType
 	;  RModuleType = comment(Usage)
 	),
 
-	classify_exports(Exports,M,Base,CExports),
-	classify_files(
-                    IFiles,UFiles,SysFiles,EngFiles,Opts),
-        format_module_usage(Format,Name,RModuleType,CExports,Multifiles,
-	                UFiles,IUFiles,SysFiles,EngFiles,SOps,NDecls,
-			NModes,Idxs,OS),
+	classify_import_files(SysFiles,UFiles,Opts),
+
+	% TLS: Multifiles, IUFiles (inc user), Modes, engfiles are empty.
+
+
+        format_module_usage(Format,Name,RModuleType,Exports,
+	 	                UFiles,SysFiles,[],NDecls,Idxs,OS),
 
 %        optional_message("Documenting (new) declarations...",Opts),
-	doc_decls(Name,NDecls,M,Base,Idxs,OS,Format,Opts),
+	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
 %        optional_message("Documenting (new) mode definitions...",Opts),
-	doc_modes(Name,NModes,M,Base,Idxs,OS,Format,Opts),
+%	doc_modes(Name,NModes,M,Base,Idxs,OS,Format,Opts),
 %        optional_message("Documenting exported predicates...",Opts),
-	doc_exports(Name,Exports,M,Base,Idxs,OS,Format,Opts),
+	doc_exports(Name,Exports,File,Idxs,OS,Format,Opts),
 %        optional_message("Documenting multifile predicates...",Opts),
-	doc_multifiles(Name,Multifiles,M,Base,Idxs,OS,Format,Opts),
+%	doc_multifiles(Name,Multifiles,M,Base,Idxs,OS,Format,Opts),
 %	optional_message("Documenting internal preds, etc. ...",Opts),
-	doc_internals(Name,Exports,M,Base,Idxs,OS,Format,Opts).
+	doc_internals(Name,Exports,Base,Idxs,OS,Format,Opts).
 
 
 %% ---------------------------------------------------------------------------
-:- pred export_list/4 # "Builds the list of exported
-   predicates. Handles the special case of @tt{user} files.".
+:- pred export_list/3 # "Builds the list of exported
+   predicates. Handles the @pred{document_export} directive. ".
 %% ---------------------------------------------------------------------------
 
-export_list(use_module,Base,_Opts,AllExports) :-
+export_list(module,_Opts,AllExports) :-
 	!,
-	findall(F/A,exports(Base,F,A,_,_),AllExports).
+	findall(F/A,exports(F,A),AllExports).
 %% We may need to add here the case of predicates which are not defined 
 %% but for which there is an assertion?
-export_list(_ModuleType,Base,Opts,AllExports) :-
-	findall(F/A,defines(Base,F,A,_,_),DupAllExports),
-	eliminate_duplicates(DupAllExports,AllExports).
-%	optional_message("Documenting all defined predicates: ~w",
-%	                 [AllExports],Opts).
-
-user_export(Base,_M,F,A) :-
-	defines(Base,F,A,_,_).
-user_export(_Base,M,F,A) :-
-	assertion_read(AssrtP,M,_Status,Type,_NAss,_Dict,_S,_LB,_LE),
-	predfunctor(Type),
-	functor(AssrtP,F,A).
+export_list(_ModuleType,Opts,AllExports) :-
+	findall(F/A,(defines(Goal),
+	             functor(Goal,F,A)),DupAllExports),
+	eliminate_duplicates(DupAllExports,AllExports),
+	optional_message('Documenting all defined predicates'(AllExports),
+								Opts).
 
 %% ---------------------------------------------------------------------------
 :- pred eliminate_hidden/2 # "Eliminates from the export list those
-   predicates affected by a comment with @tt{hide} in the second
+   predicates affected by a comment with @tt{hide} in the first
    argument.".
 %% ---------------------------------------------------------------------------
 
-eliminate_hidden([],[]).
-eliminate_hidden([Pred|Preds],EPreds) :-
+eliminate_hidden([],[],_Base).
+eliminate_hidden([Pred|Preds],EPreds,Base) :-
 	get_comment_field(hide,Pred),
 	!,
-	eliminate_hidden(Preds,EPreds).
-eliminate_hidden([Pred|Preds],EPreds) :-
+	eliminate_hidden(Preds,EPreds,Base).
+eliminate_hidden([Pred|Preds],EPreds,Base) :-
 	get_comment_field(hide,PredList),
 	list(PredList),
 	member(Pred,PredList),
 	!,
-	eliminate_hidden(Preds,EPreds).
-eliminate_hidden([Pred|Preds],[Pred|EPreds]) :-
-	eliminate_hidden(Preds,EPreds).
+	eliminate_hidden(Preds,EPreds,Base).
+eliminate_hidden([Pred|Preds],[Pred|EPreds],Base) :-
+	eliminate_hidden(Preds,EPreds,Base).
+
 
 %% ---------------------------------------------------------------------------
-:- pred normalize_ops/2 # "Flattens out the cases where several ops
-   are defined in the same declaration.".
+:- pred classify_import_files/3 # "Classifies file references,
+   according to whether they are System, Engine, User, etc.".
 %% ---------------------------------------------------------------------------
 
-normalize_ops([],[]).
-normalize_ops([Op|Ops],[Op|NOps]) :-
-	Op = op(_,_,L),
-	atom(L),
-	!,
-	normalize_ops(Ops,NOps).
-normalize_ops([Op|Ops],[Op|NOps]) :-
-	Op = op(_,_,[Op]),
-	!,
-	normalize_ops(Ops,NOps).
-normalize_ops([Op|Ops],TNOps) :-
-	Op = op(Prec,Style,LPred),
-	normalize_ops_list(LPred,Prec,Style,TNOps,TNOpsE),
-	!,
-	normalize_ops(Ops,TNOpsE).
-	
-normalize_ops_list([],_Prec,_Style,NOpsE,NOpsE).
-normalize_ops_list([Pred|Preds],Prec,Style,[op(Prec,Style,Pred)|NOps],NOpsE) :-
-	normalize_ops_list(Preds,Prec,Style,NOps,NOpsE).
-
-%% ---------------------------------------------------------------------------
-:- pred classify_exports/3 # "Classifies exported predicates as
-   predicates, declarations, etc. according to the declared type in
-   associated assertions. Also captures the special case of regular
-   types (by detecting the corresponding property in the comp part).".
-%% ---------------------------------------------------------------------------
-
-classify_exports([],_M,_Base,[]).
-% if local, look in local assertions
-classify_exports([F/A|Exps],M,Base,AllExps) :-
- 	functor(P,F,A),
-	check_types_in_assertions(P,F,A,M,Exports),
-	Exports \== [],
-	!,
-	append(Exports,CExps,AllExps),
-	classify_exports(Exps,M,Base,CExps).
-% if imported, look in assertions from that module
-classify_exports([F/A|Exps],M,Base,AllExps) :-
- 	functor(P,F,A),
-	imports_pred(Base,UM,F,A,_,_,_),
-	check_types_in_assertions(P,F,A,UM,Exports),
-	!,
-	append(Exports,CExps,AllExps),
-	classify_exports(Exps,M,Base,CExps).
-% else, assume pred.
-classify_exports([F/A|Exps],M,Base,[export(F/A,pred)|CExps]) :-
-	classify_exports(Exps,M,Base,CExps).
-
-%% Includes special case for regular types.
-check_types_in_assertions(P,F,A,M,Exports) :-
-	findall(export(F/A,PType),
-	      ( assertion_read(P,M,_Status,Type,NAss,_Dict,_S,_LB,_LE),
-	        predfunctor(Type),
-		patch_special_prop(Type,NAss,PType) ),
-	      DExports),
-	eliminate_duplicates(DExports,Exports).
-
-patch_special_prop(Type,NAss,NewType) :- 
-	Type == prop, 
-	assertion_body(_,_,_,_,GP,_,NAss),
-	special_prop(IdentifyingProp,NewType),
-	member(IdentifyingProp,GP),
-	!.
-patch_special_prop(Type,_NAss,Type).
-
-%% ---------------------------------------------------------------------------
-:- pred special_prop(CProp,Type) # "If a property definition has
-   @var{CProp} in its comp (+) field, then it is a special property of
-   type @var{Type}.".
-%% ---------------------------------------------------------------------------
-
-%% Native properties should be added here also? Perhaps dynamically?
-
-special_prop(regtype(_),regtype).
-
-%% ---------------------------------------------------------------------------
-:- pred classify_files/5 # "Classifies file references, such as
-   library(aggregates), into separate lists according to whether they
-   are System, Engine, User, etc.".
-%% ---------------------------------------------------------------------------
+classify_import_files(Lib,User,Opts):- 
+	setof(File,F^A^imports(File,F,A),Files),
+	classify_files_1(Files,Lib,User,Opts).
 
 /* TLS: need to rewrite to find the true system and library paths */
-classify_files([],[],[],[],_).
-classify_files([File|Files],UFiles,SFiles,OEFiles,Opts):-
-	File =.. [engine,EFile],
-	!,
-	(  member('-noengmods',Opts)
-	-> OEFiles = EFiles
-	;  OEFiles = [EFile|EFiles] ),
-	classify_files(Files,UFiles,SFiles,EFiles,Opts).
-classify_files([RFile|Files],UFiles,OSFiles,EFiles,Opts):-
-	base_name(RFile,Base), % Daniel says, this is the way to do it
-	atom_concat(Path,LongFileName,Base),
-	atom_concat('/',FullFile,LongFileName), % Eliminate leading /
-	!,
-	(  member('-nosysmods',Opts)
-	-> OSFiles = NSM
-	;  OSFiles = [FullFile|NSM] ),
-	classify_files(Files,UFiles,NSM,EFiles,Opts).
-classify_files(
-	[File|Files],[File|UFiles],SysFiles,EFiles,Opts):-
-	classify_files(Files,UFiles,SysFiles,EFiles,Opts).
-
-only_last_part(LFile,File) :-
-	atom_codes(LFile,LFileS),
-	eliminate_to_last_bar(LFileS,L-L,FileS),
-	atom_codes(File,FileS).
-	
-eliminate_to_last_bar([],R-[],R).
-eliminate_to_last_bar([H|T],_,Rest) :-
-	H == 0'/,
-	eliminate_to_last_bar(T,L-L,Rest).
-eliminate_to_last_bar([H|T],AH-AT,Rest) :-
-	H \== 0'/,
-	AT = [H|NAT],
-	eliminate_to_last_bar(T,AH-NAT,Rest).
-
- 
+classify_files_1([],[],[],_).
+classify_files_1([File|Files],Lfiles,Ufiles,Opts):-
+	corrected_search_module(File,_Dir,_Base,_Source,IsLib),!,
+	(IsLib == true -> 
+	     (member('-nosysmods',Opts) -> 
+		 classify_files_1(Files,Lfiles,Ufiles,Opts)
+	      ; 	
+		 Lfiles = [File|LfilesNew],
+		 classify_files_1(Files,LfilesNew,Ufiles,Opts))
+	  ; 		
+		Ufiles = [File|UfilesNew],
+		classify_files_1(Files,Lfiles,UfilesNew,Opts) ).
+classify_files_1([File|Files],Lfiles,Ufiles,Opts):-
+	xsbdoc_warning(['Could not find import file ',File]),
+	classify_files_1(Files,Lfiles,Ufiles,Opts) .
 
 %% ---------------------------------------------------------------------------
-:- pred doc_decls/8
+:- pred doc_decls/7
    # "Generates documentation for the new declarations.".
 %% ---------------------------------------------------------------------------
 
-doc_decls(Name,Decls,M,Base,Idxs,OS,Format,Opts) :-
+doc_decls(Name,Decls,Base,Idxs,OS,Format,Opts) :-
 	(  Decls = [] 
 	-> true
         ;  format_predicates_begin(Format,Name,
 	                           "Documentation on new declarations",OS),
-	   doc_predicates(Decls,decl,M,Base,Idxs,OS,Format,Opts),
-	   format_predicates_end(Format,OS) ).
-
-%% ---------------------------------------------------------------------------
-:- pred doc_modes/8
-   # "Generates documentation for any modes defined.".
-%% ---------------------------------------------------------------------------
-
-doc_modes(Name,Modes,M,Base,Idxs,OS,Format,Opts) :-
-	(  Modes = [] 
-	-> true
-        ;  format_predicates_begin(Format,Name,
-	                           "Documentation on new modes",OS),
-	   doc_predicates(Modes,modedef,M,Base,Idxs,OS,Format,Opts),
+	   doc_predicates(Decls,decl,Base,Idxs,OS,Format,Opts),
 	   format_predicates_end(Format,OS) ).
 
 %% ---------------------------------------------------------------------------
@@ -854,41 +549,28 @@ doc_modes(Name,Modes,M,Base,Idxs,OS,Format,Opts) :-
    # "Generates documentation for the exported predicates, props, etc.".
 %% ---------------------------------------------------------------------------
 
-doc_exports(Name,Preds,M,Base,Idxs,OS,Format,Opts) :-
+doc_exports(Name,Preds,File,Idxs,OS,Format,Opts) :-
 	(  Preds = [] 
 	-> true
         ;  format_predicates_begin(Format,Name,
 	                           "Documentation on exports",OS),
-	   doc_predicates(Preds,nodecl,M,Base,Idxs,OS,Format,Opts),
+	   doc_predicates(Preds,nodecl,File,Idxs,OS,Format,Opts),
 	   format_predicates_end(Format,OS) ).
 
 %% ---------------------------------------------------------------------------
-:- pred doc_multifiles/8
-   # "Generates documentation for the multifile predicates.".
-%% ---------------------------------------------------------------------------
-
-doc_multifiles(Name,Preds,M,Base,Idxs,OS,Format,Opts) :-
-	(  Preds = [] 
-	-> true
-        ;  format_predicates_begin(Format,Name,
-	                           "Documentation on multifiles",OS),
-	   doc_predicates(Preds,nodecl,M,Base,Idxs,OS,Format,Opts),
-	   format_predicates_end(Format,OS) ).
-
-%% ---------------------------------------------------------------------------
-:- pred doc_internals/8 # "Generates documentation for predicates
-   for which it is explicitly requested (via a
+:- pred doc_internals/7 # "generates documentation for a predicate
+   when  it is explicitly requested (via a
    @tt{:- comment(doinclude,<PredName>)} directive).".
 %% ---------------------------------------------------------------------------
 
-doc_internals(Name,Exports,M,Base,Idxs,OS,Format,Opts) :-
-	get_comment(doinclude,multiple,ignore,Format,Idxs,Opts,Preds),
+doc_internals(Name,Exports,Base,Idxs,OS,Format,Opts) :-
+	get_comment(doinclude,multiple,ignore(_),Format,Idxs,Opts,Preds),
 	filter_out_exports(Preds,Exports,FPreds),
 	(  FPreds = [] 
 	-> true
         ;  format_predicates_begin(Format,Name,
 	                           "Documentation on internals",OS),
-	   doc_predicates(FPreds,_IsDecl,M,Base,Idxs,OS,Format,Opts),
+	   doc_predicates(FPreds,_IsDecl,Base,Idxs,OS,Format,Opts),
 	   format_predicates_end(Format,OS) ).
 
 %% ---------------------------------------------------------------------------
@@ -913,7 +595,7 @@ filter_out_exports([Pred|Preds],Exports,[Pred|FPreds]) :-
 	
 
 %% ---------------------------------------------------------------------------
-:- pred doc_predicates/8
+:- pred doc_predicates/7
    # "Generates documentation for a list of predicates.
 
       One issue here, given that there may be reexports, is which
@@ -927,34 +609,32 @@ filter_out_exports([Pred|Preds],Exports,[Pred|FPreds]) :-
       Otherwise, we follow import chain.  ".
 %% ---------------------------------------------------------------------------
 
-doc_predicates([],_,_,_,_,_,_,_).
-doc_predicates([P|Ps],IsDecl,M,Base,Idxs,OS,Format,Opts) :-
-	doc_predicate(P,IsDecl,M,Base,Idxs,OS,Format,Opts),
-	doc_predicates(Ps,IsDecl,M,Base,Idxs,OS,Format,Opts).
+doc_predicates([],_,_,_,_,_,_).
+doc_predicates([P|Ps],IsDecl,File,Idxs,OS,Format,Opts) :-
+	doc_predicate(P,IsDecl,File,Idxs,OS,Format,Opts),
+	doc_predicates(Ps,IsDecl,File,Idxs,OS,Format,Opts).
 
 %%% BUG: NEED to check for loops!
 
 %% General case:
-doc_predicate(F/A,IsDecl,M,Base,Idxs,OS,Format,Opts):-
-%        optional_message("Generating documentation for ~w:~w/~w",
-%			[M,F,A],Opts),
- 	functor(P,F,A),
-	predicate_usages(P,IsDecl,M,Usages,N,Multiple),
+doc_predicate(F/A,IsDecl,File,Idxs,OS,Format,Opts):-
+        optional_message(['Generating documentation for ',File,':',F/A],Opts),
+ 	functor(Pred,F,A),
+	predicate_usages(Pred,IsDecl,Usages,N,Multiple),
         predicate_level_comment(F/A,Format,Idxs,Opts,Comment,CommentHead),
-        other_assertions(P,IsDecl,M,OtherAssrt,ON),
-	(  ( IsDecl == (decl) ; IsDecl == (modedef) )
-	-> PType = IsDecl
+        other_assertions(Pred,IsDecl,OtherAssrt,ON),
+	(  IsDecl == (decl)
+	-> PType = (decl)
 	;  look_for_pred_type(Usages,F/A,PType) ),
 	% Check that there are assertions, get assertion type
 	(  ( Usages \== [] ; OtherAssrt \== [] ; Comment \== [] ) 
 	-> %% If there are any assertions, then succeed and thus 
 	   %% definitely document with them.
 	   NComment = Comment
-        ;  ( (\+ imports_pred(Base,_,F,A,_,_,_) ; defines(Base,F,A,_,_))
+        ;  (  defines(Pred)
 	   -> %% No assertions, and predicate is not imported: too bad
              NComment="No further documentation available for this predicate.",
-             warning_message(
-                   "no assertions or comments found for ~w ~w", [PType,F/A])
+             xsbdoc_warning(['no assertions or comments found for ',PType,F/A])
 	   ; %% Else, probably imported (otherwise, fail globally)
 	     fail
 	   ) 
@@ -962,32 +642,26 @@ doc_predicate(F/A,IsDecl,M,Base,Idxs,OS,Format,Opts):-
 	!,
 	format_predicate_begin(Format,PType,F/A,Idxs,Opts,OS),
 	%% In case of explicit arguments, CP should also be included...
-        (  member(TmpAssrt,OtherAssrt), 
-	   TmpAssrt = assertion_read(_,_,_,_,TmpNAss,_,_,_,_),
-	   assertion_body(_,_,_,_,TGP,_,TmpNAss),
-	   member(iso(_),TGP) 
-	-> format_head_descriptor(Format,CommentHead,PType,iso,OS)
-	;  format_head_descriptor(Format,CommentHead,PType,non_iso,OS) ),
+
 	%% Trying to catch props that are just declared with no comment:
 	(  NComment = [], 
-	   Usages = [assertion_read(_,_,_,_,NAss,_,_,_,_)], %% N=1,
-	   assertion_body(_,_,_,_,_,[],NAss), %% I.e., no comment
-           ( PType=prop,PropText="property" 
-           ; PType=regtype,PropText="regular type" )
+	   Usages = [assertion_read(_,_,_,Body)], %% N=1,
+	   \+ member(comment(_),Body),
+           ( PType=prop,PropText="property"  )
         -> atom_codes(F,FS),
 	   number_codes(A,AS),
 	   list_concat(["A ",PropText,
                        ", defined as follows:@begin{verbatim}@includedef{",
 		       FS,"/",AS,
 		       "}@end{verbatim}"],TNComment),
-	   note_message("no comment text for ~s ~w, including definition~n",
-                        [PropText,F/A]),
+	   note_message(['no comment text for ',PropText,
+			 F/A,' including definition']),
 	   rewrite_docstring_opts(Format,Idxs,Opts,TNComment,NNComment)
 	;  NNComment = NComment ),
 	(  (CommentHead = _/_ ; NNComment=[])
 	-> format_predicate_comment(Format,NNComment,OS)
 	;  format_predicate_comment(Format,[0'\n,0'\n|NNComment],OS) ),
-	doc_native_declarations(F/A,M,Base,OS,Format),
+	doc_native_declarations(Pred,OS,Format),
 	doc_other_assertions(OtherAssrt,ON,N,F/A,Idxs,PType,OS,Format,Opts),
 	doc_usages(Usages,        1,Multiple,F/A,Idxs,PType,OS,Format,Opts),
 	format_predicate_end(Format,OS).
@@ -1016,26 +690,25 @@ doc_predicate(F/A,IsDecl,M,Base,Idxs,OS,Format,Opts):-
 	   %	"~w reexported from ~w (not documented)",[F/A,UM],Opts),
            format_predicate_end(Format,OS)
 	).
-doc_predicate(P,_IsDecl,_M,_Base,_Idxs,_OS,_Format,_Opts):-
-	error_message("could not document predicate ~w", [P]).
+doc_predicate(F/A,_IsDecl,_M,_Base,_Idxs,_OS,_Format,_Opts):-
+	xsbdoc_error(['could not document predicate ',F/A]).
 
-%TLS here.
 %% ---------------------------------------------------------------------------
 %% Abstracted out parts of doc_predicate:
 
 %% Get the assertions that describe usages (predfunctor type):
 %% (do not get decl or modedef assrts; if documenting decl or modedef, 
 %% then get only decl or modedef  assrts)
-predicate_usages(P,IsDecl,M,Usages,N,Multiple) :-
-	findall(assertion_read(P,M,Status,Type,NAss,Dict,S,LB,LE),
-	        ( assertion_read(P,M,Status,Type,NAss,Dict,S,LB,LE),
+
+predicate_usages(P,IsDecl,Usages,N,Multiple) :-
+	findall(assertion_read(P,Status,Type,NAss),
+	        ( assertion_read(P,Status,Type,NAss),
 		  (  nonvar(IsDecl)
-		  -> (  ( IsDecl = (decl) ; IsDecl = (modedef) )
+		  -> ( IsDecl = (decl) 
 		     -> Type = IsDecl
-		     ;  ( (\+ Type = (decl)) , (\+ Type = (modedef)) ) )
+		     ;  (\+ Type = (decl)) )
 		  ;  true ),
-		  predfunctor(Type),
-		  bind_dict_varnames(Dict)
+		  predfunctor(Type)
 		  ),
 		Usages),
 	length(Usages,N), (N>1 -> Multiple=1; Multiple=0).
@@ -1043,24 +716,22 @@ predicate_usages(P,IsDecl,M,Usages,N,Multiple) :-
 %% Get any comment declarations, compute CommentHead:
 predicate_level_comment(F/A,Format,Idxs,Opts,Comment,CommentHead) :-
  	functor(CP,F,A),
-	( get_comment(F/A,single,dofail,Format,Idxs,Opts,Comment),
+	( get_comment(F/A,single,dofail(_),Format,Idxs,Opts,Comment),
 	  CommentHead = F/A
-	; get_comment(CP,single,dofail,Format,Idxs,Opts,Comment),
+	; get_comment(CP,single,dofail(_),Format,Idxs,Opts,Comment),
 	  CommentHead = CP
 	; CommentHead = F/A, Comment=[]).
 
 
 %% Get any other assertions:
 %% (except for decls)
-other_assertions(_P,IsDecl,_M,[],0) :-
+other_assertions(_P,IsDecl,[],0) :-
 	IsDecl == (decl),
 	!.
-other_assertions(P,_IsDecl,M,OtherAssrt,ON) :-
-	findall(assertion_read(P,M,Status,Type,NAss,Dict,S,LB,LE),
-	        ( assertion_read(P,M,Status,Type,NAss,Dict,S,LB,LE),
-		  \+ (predfunctor(Type) ),
-		  bind_dict_varnames(Dict) ),
-		OtherAssrt),
+other_assertions(P,_IsDecl,OtherAssrt,ON) :-
+	findall(assertion_read(P,Status,Type,NAss),
+	        ( assertion_read(P,Status,Type,NAss),
+		  \+ predfunctor(Type)  ),OtherAssrt),
 	length(OtherAssrt,ON).
 
 %% ---------------------------------------------------------------------------
@@ -1069,62 +740,70 @@ other_assertions(P,_IsDecl,M,OtherAssrt,ON) :-
    in @var{L} for predicate @var{predname}.".
 %% ---------------------------------------------------------------------------
 
-
 %% If no explicit type found (e.g., only basic assertions) then assume pred
 %% (unless explicitly declared as a new_declaration)
 look_for_pred_type([],_,Type) :-
 	nonvar(Type),
 	!.
+/*
+TLS: not allowing definition of new declarations per se.
 look_for_pred_type([],F/A,Type) :-
 	var(Type),
-	clause_read(_,1,new_declaration(F/A),_,_,_,_),
+	clause_read(1,new_declaration(F/A),_,_,_,_),
 	!,
 	Type = (decl).
+*/
 look_for_pred_type([],_,Type) :-
 	var(Type),
 	!,
 	Type = (pred).
 look_for_pred_type(
-  	     [assertion_read(_P,_M,_S,RType,NAss,_Dict,S,LB,LE)|R],_,Type):-
-	patch_special_prop(RType,NAss,AType), %% Special case for regtypes
-	handle_pred_type(AType,R,Type,loc(S,LB,LE)).
+  	     [assertion_read(_P,_S,RType,_NAss)|R],_,Type):-
+	handle_pred_type(RType,R,Type).
 
-handle_pred_type(AType,R,Type,_Loc) :-
+handle_pred_type(AType,R,Type) :-
 	var(Type),
-	( predfunctor(AType) ; special_prop(_,AType) ),
+%	( predfunctor(AType) ; special_prop(_,AType) ),
+	predfunctor(AType),
 	!,
 	%% We assume that this is the type.
 	Type = AType,
 	look_for_pred_type(R,_,Type).
-handle_pred_type(AType,R,Type,Loc) :-
+handle_pred_type(AType,R,Type) :-
 	nonvar(Type),
 	predfunctor(AType),
 	!,
 	%% Must be identical to previously found type.
 	( Type == AType
-	; warning_message(Loc,"incompatible assertion types ~w and ~w",
-	                  [Type,AType]),
+	; xsbdoc_warning(['incompatible assertion types ',Type,
+				' and ',AType]),
           fail),
 	look_for_pred_type(R,_,Type).
-handle_pred_type(_AType,R,Type,_Loc) :-
+handle_pred_type(_AType,R,Type) :-
 	%% Else, we continue looking.
 	look_for_pred_type(R,_,Type).
 
+predfunctor(pred).
+predfunctor(prop).
+predfunctor(decl). %% ??
+predfunctor(func). %% ??
+predfunctor(modedef).
+
 %% ---------------------------------------------------------------------------
-:- pred doc_native_declarations/5 # "Generates documentation for the
-   native declarations, such as @decl{dynamic/1}, @decl{multifile/1},
-   etc. Implicit is a special case.".
+:- pred doc_native_declarations/4 # "Generates documentation for the
+   native declarations, such as @decl{dynamic/1}, etc.".
 %% ---------------------------------------------------------------------------
 
-doc_native_declarations(F/A,_M,Base,OS,Format) :-
-	(  defines(Base,F,A,Type,Meta)
+doc_native_declarations(Pred,OS,Format) :-
+	(  defines(Pred)
 	-> format_native_declaration(Format,normal(Type,Meta),OS)
-	;  true ),
+	;  true ).
+
+/*
 	(  def_multifile(Base,F,A,Mode) % (static, dynamic, concurrent)
 	-> format_native_declaration(Format,multifile(Mode),OS)
         ;  true ).
-
-
+*/
 %% ---------------------------------------------------------------------------
 :- pred doc_other_assertions/9 # "Generates documentation for assertions 
    other than @tt{pred} assertions.".
@@ -1169,15 +848,21 @@ doc_usages([Usage|Usages],N,Multiple,_P,Idxs,Type,OS,Format,Opts) :-
 
 %% If no info, then don't document!
 doc_usage(Assrt,_N,_Multiple,_Idxs,_Type,_OS,_Format,_Opts):-
-	Assrt = assertion_read(CP,_M,_Status,_Type,NAss,_,_,_,_),
-	assertion_body(_,[],[],[],[],[],NAss),
+	Assrt = assertion_read(CP,_Status,_Type,NAss),
+	NAss = [],
 	CP =.. [_|Args],
 	allvars(Args),
 	!.
 doc_usage(Assrt,N,Multiple,Idxs,Type,OS,Format,Opts):-
-	Assrt = assertion_read(_P,_M,Status,AType,NAss,_,_,_,_),
-	assertion_body(P,DP,CP,AP,GP,CO,NAss),
-	fix_var_arg_names(P,NP),
+	Assrt = assertion_read(_P,Status,AType,Body),
+%	assertion_body(P,DP,CP,AP,GP,CO,NAss),
+	get_assert_prop(compat_prop,Body,DP),
+	get_assert_prop(call_prop,Body,CP),
+	get_assert_prop(success_prop,Body,AP),
+	get_assert_prop(global_prop,Body,GP),
+	get_assert_prop(comment,Body,CO),
+
+%	fix_var_arg_names(P,NP),
 	(  member(iso(_),GP), Multiple \== -1 %% Done differently for gen props
 	-> Standard=iso
 	;  Standard=non_iso 
@@ -1185,9 +870,11 @@ doc_usage(Assrt,N,Multiple,Idxs,Type,OS,Format,Opts):-
 	(  member('-noisoline',Opts), select(iso(_), GP, NNGP)
 	-> true
 	;  NNGP = GP ),
+/*
 	(  (\+ member('-regtypeprops',Opts)), select(regtype(_), NNGP, NGP)
 	-> true
 	;  NNGP = NGP ),
+*/
 
 	(  CO=[], DP=[], CP=[], AP=[], NGP=[]
 	-> true % No info
@@ -1228,9 +915,8 @@ doc_site(T,Cond,Props,P,Type,Status,Idxs,OS,Format,Opts) :-
 	doc_properties(Props,P,Idxs,OS,Format,Opts),
 	format_site_end(Format,OS).
 doc_site(T,_Cond,Props,P,_Type,_Status,_Idxs,_OS,_Format,_Opts) :-
-	warning_message(
-            "error while formatting ~w properties ~w for predicate ~w",
-            [T,Props,P]).
+	xsbdoc_warning([' error while formatting ',T,' properties ',Props,
+			 ' for predicate ',P]).
 
 site_text(compat,_Cond,pred,Status,Text,bullet) :-
 	%% Special case for true/trust pred, compat properties:
@@ -1254,10 +940,10 @@ status_text_infix(false,  " are not ").
 status_text_infix(check,  " should be ").
 status_text_infix(checked," are ").
 
-status_text_prefix(modedef, _,     _,"The following properties",bullet) :- !.
+%status_text_prefix(modedef, _,     _,"The following properties",bullet) :- !.
 status_text_prefix(pred, _,     _,"The following properties",bullet) :- !.
-status_text_prefix(calls,_,     _,"The following properties",bullet) :- !.
-status_text_prefix(decl,_,     _,"The following properties",bullet)  :- !.
+%status_text_prefix(calls,_,     _,"The following properties",bullet) :- !.
+%status_text_prefix(decl,_,     _,"The following properties",bullet)  :- !.
 status_text_prefix(_   , call,  _,"If the following properties",bullet).
 status_text_prefix(_   , answer,full,"then the following properties",nobullet).
 status_text_prefix(_   , answer,empty,"The following properties",bullet).
@@ -1298,7 +984,7 @@ doc_properties(Prop,P,Idxs,OS,Format,Opts) :-
 doc_property(true,_P,_Idxs,_OS,_Format,_Opts) :-
 	!.
 doc_property(Prop,_P,Idxs,OS,Format,Opts) :-
-	prop_format(Prop,PM,BasicFormat,VarNames),
+	prop_format(Prop,BasicFormat,VarNames),
 	(  member('-literalprops',Opts)
 	-> RDocString=[]
 	;  rewrite_docstring_opts(Format,Idxs,Opts,BasicFormat,RDocString) ),
@@ -1309,7 +995,7 @@ doc_property(Prop,_P,Idxs,OS,Format,Opts) :-
 	;  NPM = PM ),
 	format_property(Format,Prop,NPM,RDocString,VarNames,Opts,OS).
 doc_property(Prop,P,_Idxs,OS,Format,Opts) :-
-	warning_message("unknown property ~w in assertion for ~w",[Prop,P]),
+	xsbdoc_warning(['unknown property ',Prop,' in assertion for ',P]),
 	ttyflush,
 	%% following lines only for debugging...
 %% 	  prolog_flag(write_strings, Old, on),
@@ -1329,13 +1015,12 @@ doc_description(Desc,P,_Idxs,_OS,_Format,_Opts) :-
 	-> true
 	;  functor(P,F,A) ),
 	!.
-%%	note_message("no comment found for usage in ~w/~w",[F,A]).
 doc_description(Desc,_P,Idxs,OS,Format,Opts) :- 
 	rewrite_docstring_opts(Format,Idxs,Opts,Desc,RDesc),
 	format_description(Format,RDesc,OS).
 
 %% ---------------------------------------------------------------------------
-:- pred prop_format(Prop,PM,BasicFormat,VarNames)
+:- pred prop_format(Prop,BasicFormat,VarNames)
 
 # "Given a property @var{Prop} (which appears in an assertion), a
    string is generated which expresses in words the meaning of the
@@ -1351,50 +1036,34 @@ doc_description(Desc,_P,Idxs,OS,Format,Opts) :-
    in the places where the variables names should appear) and a list
    of (possibly repeated) variable names @var{VarNames}.  Note that
    this is suitable for use as arguments for a call to
-   @pred{format/2}. @var{PM} is the module in which the property is defined.".
+   @pred{format/2}. ".
 %% ---------------------------------------------------------------------------
 
-prop_format(Prop,PM,BasicFormat,VarNames) :-
+prop_format(Prop,BasicFormat,VarNames) :-
 	nonvar(Prop),
 	% Get assertion
-	assertion_read(Prop,PM,_PStatus,PType,NAss,PDict,_,_,_),
+	assertion_read(Prop,_PStatus,PType,NAss),
+	/* want dictionary */
 	propfunctor(PType), %% prop, ...
-	%% Should add also ~imports(M,AM,F,A), but, since this is flagged 
+	%% Should add also ~imports(AM,F,A), but, since this is flagged 
         %% during normalization, here we use whatever we can find.
 	% Get comment field
 	assertion_body(Prop,_DP,_CP,_AP,_GP,Comment,NAss),
 	% Rewrite the comment
-	mod_comment(Comment,PDict,BasicFormat,VarNames).
+	mod_comment(Comment,[],BasicFormat,VarNames).
+%%	mod_comment(Comment,PDict,BasicFormat,VarNames).
 %%	set_prolog_flag(write_strings, on),
 %%	simple_message("*** BF: ~w, VN: ~w",[BasicFormat,VarNames]).
 
 
 %% prop_db(integer(A),   "~w is of type integer.",[A]).
 
-make_dict_headvars(0,_PropPatt,_NewPropPatt,Dict,Dict).
-make_dict_headvars(N,PropPatt,NewPropPatt,CDict,FDict) :-
-	N>0,
-	arg(N,PropPatt,'$VAR'(Name)),
-	member(Name=Var,CDict),
-	!,
-	arg(N,NewPropPatt,Var),
-	N1 is N-1,
-	make_dict_headvars(N1,PropPatt,NewPropPatt,CDict,FDict).
-make_dict_headvars(N,PropPatt,NewPropPatt,CDict,FDict) :-
-	N>0,
-	arg(N,PropPatt,'$VAR'(Name)),
-	% \+ member(Name=Var,CDict),
-	NDict = [Name=NewVar|CDict],
-	arg(N,NewPropPatt,NewVar),
-	N1 is N-1,
-	make_dict_headvars(N1,PropPatt,NewPropPatt,NDict,FDict).
-
 mod_comment([0'@,0'v,0'a,0'r,0'{ | RI],Dict,
-	    [0'@,0'v,0'a,0'r,0'{,0'~,0'w,0'} |RO],[Var| Vars]) :-
+	    [0'@,0'v,0'a,0'r,0'{,0'~,0'w,0'} |RO],[VarName| Vars]) :-
 	!,
 	getvarname(RI,NRI,VarName),
-	atom_codes(VarNameA,VarName),
-	member(VarNameA=Var,Dict),
+%	atom_codes(VarNameA,VarName),
+%	member(VarNameA=Var,Dict),
 	mod_comment(NRI,Dict,RO,Vars).
 mod_comment([C|RI],Dict,[C|O],Vars) :-
 	mod_comment(RI,Dict,O,Vars).
@@ -1405,61 +1074,6 @@ getvarname([0'}|RI],RI,[]) :-
 getvarname([C|RI],NRI,[C|RVarName]) :-
 	getvarname(RI,NRI,RVarName). 
 
-%% ---------------------------------------------------------------------------
-:- pred fix_var_arg_names(H,NH) # "In both @var{NH} and @var{H} the
-   arguments of @var{H} which are vars are replaced with the name of
-   their argument position, i.e.,
-   @tt{fix_var_arg_names(p(X,a),p('Arg1',a)}. However, if all
-   arguments of @var{H} are originally free variables, then @var{NH}
-   is of the form @tt{F/A}, where @tt{F} is the principal functor of
-   @var{H} and @tt{A} its arity. An exception to this occurs when
-   there is a @pred{comment/2} declaration whose first argument is a
-   predicate descriptor specifying argument names: these names are
-   used in this case instead of 'ArgN'.".
-%% ---------------------------------------------------------------------------
-
-
-fix_var_arg_names(H,NH) :-
-	functor(H,F,A),
-	functor(CH,F,A),
-	get_comment_field_dict(CH,_,Dict),
-	CH =.. [_|Args],
-	(  all_var_args(Args)
-	-> bind_dict_varnames(Dict),
-	   do_fix_var_arg_names(H,NH,CH)
-	;  warning_message("nonvariable argument(s) in comment head ~w, variable names ignored",[CH]),
-	   do_fix_var_arg_names(H,NH,[]) ).
-fix_var_arg_names(H,NH) :-
-	do_fix_var_arg_names(H,NH,[]).
-
-all_var_args([]).
-all_var_args([H|T]) :-
-	var(H),
-	all_var_args(T).
-
-do_fix_var_arg_names(H,NH,CH) :-
-	functor(H,F,A),
-	fix_A_var_arg_names(A,H,Allvars,CH),
-	(  Allvars == false 
-	-> NH=H
-	;  NH=F/A).
-
-fix_A_var_arg_names(0,_H,_Allvars,_CH).
-fix_A_var_arg_names(A,H,Allvars,CH) :-
-	A > 0,
-	NA is A-1,
-	arg(A,H,Arg),
-	(  var(Arg) 
-	-> (  CH == []
-	   -> number_codes(A,AS),
-	      atom_codes(AA,AS),
-	      atom_concat(['Arg',AA],Arg)
-	   ;  arg(A,CH,Arg)
-	      %% Allvars=false 
-	   )
-	;  Allvars=false ),
-	fix_A_var_arg_names(NA,H,Allvars,CH).
-	
 
 %% ---------------------------------------------------------------------------
 %% Information access...
@@ -1469,8 +1083,8 @@ check_format(Format,Format,FormatSuffix) :-
 	supported_format_suffix(Format,FormatSuffix),
 	!.
 check_format(Format,texinfo,FormatSuffix) :-
-	error_message(
-             "format ~w not available, using texinfo instead",[Format]),
+	xsbdoc_error(['format ',Format,
+	              'not available, using texinfo instead']),
 	supported_format_suffix(texinfo,FormatSuffix).
 
 %% ---------------------------------------------------------------------------
@@ -1533,7 +1147,7 @@ do_the_file_processing(RMain,FormatSuffix,_AssrtOps,_AssrtNDPs,
 	process_filename(Name,FormatSuffix,NDName,O),
 	concat_atom([Name,'.refs'],RefsName),
 
-	messageln(['Processing ',RMain,' into ',O,' and ',RefsName]),
+	note_message(['Processing ',RMain,' into ',O,' and ',RefsName]),
 	( refs_stream(CS) % Avoid reopening if called twice...
 	-> true
 	;  open(RefsName,write,CS),
@@ -1581,42 +1195,26 @@ process_filename(Name,Suffix,NDName,O) :-
 	;  NDName=Name),
 	atom_codes(O,OS).
 
+/* In XSB the type can be part, application, module, or file */
+
 %% Part - document specially
-detect_filetypes(File,_Base,Opts,Components,part,Level) :-
-	get_comment(File,filetype,single,dofail,texinfo,[],Opts,part),
+detect_filetypes(Opts,Components,part,Level) :-
+	get_comment(filetype,single,dofail(_),texinfo,[],Opts,part),
 	!,
 	optional_message('File being documented as a major part intro',Opts),
 	detect_filelevel(Opts,Components,Level).
 %% Application - no interface, so no complication
-detect_filetypes(_File,Base,Opts,Components,application,Level) :-
-	( defines(Base,main)
-	; defines(Base,main(_)) ),
+detect_filetypes(Opts,Components,application,Level) :-
+	( defines(main)
+	; defines(main(_)) ),
 	!,
 	optional_message('File being documented as an application',Opts),
 	detect_filelevel(Opts,Components,Level).
-%% Type declared in source - we trust it
-detect_filetypes(File,_Base,Opts,Components,Type,Level) :-
-	get_comment(File,filetype,single,dofail,texinfo,[],Opts,FileType),
-	(  filetype_usage_command(FileType,Type)
-	-> true
-	;  error_message("unrecognized type in comment/filetype declaration")),
-	!,
-	optional_message('File being documented as a library'(Type),Opts),
-	detect_filelevel(Opts,Components,Level).
 %% Else, we need to infer the type
-detect_filetypes(M,_Base,Opts,Components,Type,Level) :-
-	% \+ defines M, main, ...
-	!,
-	(  M = user(_)
-	-> Type = use_package
-        ;  Type = use_module ),
+detect_filetypes(Opts,Components,Type,Level) :-
+	(exports(_,_) -> Type = module ; Type = file),
 	optional_message('File being documented as a library'(Type),Opts),
 	detect_filelevel(Opts,Components,Level).
-
-filetype_usage_command(module, use_module).
-filetype_usage_command(user, ensure_loaded).
-filetype_usage_command(include, include).
-filetype_usage_command(package, use_package).
 
 detect_filelevel(Opts,[],component) :-
 	member('-component',Opts),
@@ -1637,25 +1235,24 @@ detect_filelevel(Opts,Components,main(withcomponents)) :-
                     in(Opts,list(miscopts)),go(Title)).
 
 /* TLS: Format is texic, html, etc...*/
-get_comment(File,Id,single,_ErrorLevel,Format,Idxs,Opts,Content) :-
-	get_comment_field(File,Id,RContent),
+get_comment(Id,single,_ErrorLevel,Format,Idxs,Opts,Content) :-
+	get_comment_field(Id,RContent),
 	!,
 	process_content(Format,Idxs,RContent,Opts,Content).
-get_comment(File,Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
+get_comment(Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
 	findall(Content,
-	        ( get_comment_field(File,Id,RContent),
+	        ( get_comment_field(Id,RContent),
                 process_content(Format,Idxs,RContent,Opts,Content)),
 		Contents ),
 	Contents \== [],
 	!.
-get_comment(_File,Id,_,ErrorLevel,_Format,_Idxs,_Opts,[]) :-
+get_comment(Id,_,ErrorLevel,_Format,_Idxs,_Opts,[]) :-
 	copy_term(ErrorLevel,El),
-	arg(1,El,"no "":- comment(~w,...)"" declaration found"),
-	arg(2,El,[Id]),
+	arg(1,El,['no ":- comment(',Id,',,...)" declaration found']),
         call(El).
 
-get_comment_field(Base,Id,Field) :-
-	'_#clause'(Base, directive(comment(Id,Field)), _Ctr).
+get_comment_field(Id,Field) :-
+	'_#clause'(directive(comment(Id,Field)), _Ctr).
 
 process_content(Format,Idxs,RContent,Opts,Content) :-
 	string(RContent),
@@ -1664,8 +1261,8 @@ process_content(Format,Idxs,RContent,Opts,Content) :-
 process_content(_Format,_Idxs,Content,_Opts,Content).
 
 %% The lowest message levels (for the options in get_comment_field)
-ignore(_,_).
-dofail(_,_) :-  fail.
+ignore(_).
+dofail(_) :-  fail.
 
 %% ---------------------------------------------------------------------------
 :- pred rewrite_docstring(Format,Idxs,S,RS) 
@@ -1699,8 +1296,9 @@ rewrite_docstring_verb(Format,Idxs,Verb,NewVerb,Opts,S,RS) :-
 	parse_commands(Format,Idxs,Verb,NewVerb,nonl,Opts,RS,TRS,[]),
 	!.
 rewrite_docstring_verb(Format,_Idxs,Verb,Verb,_Opts,S,S) :- 
-	error_message("format ~w not supported, while parsing string: ``~s''",
-	       [Format,S]).
+	atom_codes(Satom,S),
+	xsbdoc_error(['format ',Format,'not supported, while parsing string:',
+	  	      Satom]).
 
 %% ---------------------------------------------------------------------------
 
@@ -1784,7 +1382,8 @@ parse_commands(Format,Idxs,Verb,NewVerb,_NL,Opts,[X|T]) -->
  	parse_commands(Format,Idxs,Verb,NewVerb,nonl,Opts,T).
 %% Else error
 parse_commands(_Format,_Idxs,Verb,Verb,_NL,_Opts,NStr,B,_E) :-
-	error_message("while parsing docstring:~n* HERE *~n~s",[B]),
+	xsbdoc_error(['while parsing docstring:']),
+	xsbdoc_error(['* HERE *',B]),
 	NStr = [].
 	
 %% ---------------------------------------------------------------------------
@@ -1881,8 +1480,9 @@ parse_predname(Functor,Arity,PredNameS) :-
 	atom_codes(Functor,FunctorS),
 	number_codes(Arity,ArityS).
 parse_predname(0,0,PredNameS) :-
-	error_message("illegal predicate name ~s in code inclusion command",
-	      [PredNameS]).
+	atom_codes(PredName,PredNameS),
+	xsbdoc_error(['illegal predicate name ',PredName,
+		      ' in code inclusion command']).
 
 predname_g(FunctorS,ArityS) -->
 	all_chars(FunctorS),
@@ -1931,7 +1531,7 @@ handle_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr) :-
 	!.
 handle_command(Struct,_SP,_Format,_Idxs,Verb,Verb,NL,NL,_Opts,NStr,NStr) :-
 	functor(Struct,F,_),
-	error_message("could not process @~w command",[F]).
+	xsbdoc_error(['could not process ',F,' command']).
 
 try_command(comment(_),_SP,_Format,_Idxs,Verb,Verb,NL,NL,_Opts,NStr,NStr) :-
         !.
@@ -1942,11 +1542,11 @@ try_command(include(FileS),
 %	error_protect(absolute_file_name(library(RelFile),File)),
 	absolute_file_name(library(RelFile),File),
 	%% These are not turned off for now...
-%	optional_message(
-%	   "{-> Including file ~w in documentation string",[File],Opts),
+	optional_message(['{-> Including file ',File,
+                          'in documentation string'],Opts),
 	read_file(File,Content),
 	rewrite_docstring_verb(Format,Idxs,Verb,NewVerb,Opts,Content,RContent),
-%	optional_message("}",[Opts]),
+	optional_message('}',Opts),
 	append(RContent,Tail,NStr).
 try_command(includeverbatim(FileS),
             SP,Format,Idxs,Verb,Verb,NL,NNL,Opts,NStr,Tail) :-
@@ -1954,14 +1554,13 @@ try_command(includeverbatim(FileS),
 	atom_codes(RelFile,FileS),
 %	error_protect(absolute_file_name(library(RelFile),File)),
 	absolute_file_name(library(RelFile),File),
-%	optional_message(
-%         "{-> Including file ~w verbatim in documentation string",
-%	[File],Opts),
+	optional_message(['{-> Including file ',File,
+		          ' verbatim in documentation string'],Opts),
         read_file(File,Content),
         rewrite_command(Format,includeverbatim(Content),Idxs,XNewComm),
 	last_char_newline(NL,XNewComm,RNewComm),
 	add_space_after_command(SP,RNewComm,NewComm,NNL),
-%	optional_message("}",Opts),
+	optional_message('}',Opts),
 	append(NewComm,Tail,NStr).
 try_command(includefact(PredS),
 	    _SP,Format,Idxs,Verb,NewVerb,_NL,nonl,Opts,NStr,Tail) :-
@@ -1969,13 +1568,12 @@ try_command(includefact(PredS),
         !,
 	(  Functor \== 0,
 	   functor(Pattern,Functor,Arity),
-	   clause_read(_,Pattern,true,_,_,_,_) 
-	-> %optional_message("-> Including fact ~w in documentation string",
-           %               [Functor],Opts),
+	   clause_read(Pattern,true,_) 
+	-> optional_message(['-> Including fact ',Functor,
+			     ' in documentation string'],Opts),
 	   (  Arity = 1 
 	   -> true
-	   ;  warning_message(
-              "Arity different from 1 -- will take first argument") ),
+	   ;  xsbdoc_warning('Arity different from 1 -- taking first arg') ),
 	   arg(1,Pattern,Content),
 	   rewrite_docstring_verb(
                   Format,Idxs,Verb,NewVerb,Opts,Content,RContent),
@@ -1989,15 +1587,15 @@ try_command(includedef(PredS),
 	(  Functor \== 0,
 	   functor(Pattern,Functor,Arity),
 	   copy_term(Pattern,TmpPattern),
-	   %optional_message("-> Including code for ~w in documentation string",
-	    %       [Functor/Arity],Opts),
-	   clause_read(_,TmpPattern,_,_,_,_,_)
+	   optional_message(['-> Including code for ',Functor/Arity,
+			     'in documentation string'],Opts),
+	   clause_read(TmpPattern,_,_)
 	-> telling(Old),
 	   mktemp(autodocXXXXXX,Tmp),
 	   tell(Tmp),
 	   current_prolog_flag(write_strings,X),
 	   set_prolog_flag(write_strings,on),
-	   ( clause_read(_,Pattern,Body,Dict,_,_,_),
+	   ( clause_read(Pattern,Body,_Ctr),
 	     Clause = clause(Pattern,Body),
 	     varnamesl2dict(Dict,ICiaoDict),
 	     complete_dict(ICiaoDict,Clause,CiaoDict),
@@ -2024,7 +1622,9 @@ try_command(cite(Ref),
         list_concat([ "[BibRef: ", Ref, "]" ], RNewComm),
 	%% Refs stream should really be passed, but messes up too much
 	refs_stream(CS),
-	format(CS,"\\citation{~s}\n",[Ref]),
+/*	format(CS,"\citation{~s}\n",[Ref]), */
+	atom_codes(Ratom,Ref),
+	write(CS,'\citation{'),write(CS,Ratom),writeln(CS,'}'),
 	add_space_after_command(SP,RNewComm,NewComm,NNL),
 	append(NewComm,Tail,NStr).
 try_command(ImageCommand,
@@ -2040,8 +1640,8 @@ try_command(ImageCommand,
 %	error_protect(absolute_file_name(library(EpsRelFile),EpsFile)),
 	absolute_file_name(library(EpsRelFile),EpsFile),
 	atom_concat(NameRelFile,'.eps',NameEpsRelFile),
-	%optional_message("-> Including image ~w in documentation as ~w",
-	%        [EpsFile,NameEpsRelFile],Opts),
+	optional_message(['-> Including image ',EpsFile,
+			  'in documentation as ',NameEpsRelFile],Opts),
 	atom_concat(['cp -f ', EpsFile, ' ', NameEpsRelFile],Command),
 	(  shell(Command)
 	-> true
@@ -2120,905 +1720,136 @@ eliminate_duplicates_([H|T],Seen,[H|NT]) :-
 	eliminate_duplicates_(T,[H|Seen],NT).
 
 end_of_file.
-
 %% ---------------------------------------------------------------------------
-%% ---------------------------------------------------------------------------
-%%% KNOWN BUGS AND PLANNED IMPROVEMENTS
-
-%%% 0. Necessary for reference manuals!!
-
-:- comment(bug,"documentation of exceptions.").
-
-:- comment(bug,"Actually, texi, dvi, etc. should all be generated in 
-   subdirectories, containing their figures (as well as generating 
-   a tar file)."). 
-
-:- comment(bug,"When an index is empty, texi2html leaves a funny 'Jump
-   to' message.").
-
-:- comment(bug,"convert-texinfo.el in ciao/emacs should probably go to
-   the lpdoc library.").
-
-:- comment(bug,"Separate emacs mode from ciao.").
-
-:- comment(bug,"Compression, generation of tar, etc., should be switchable 
-   by format (easy now!).").
-
-:- comment(bug,"Types and props should have a link to their
-   definitions (also in pdf!). This would be a mess in info, but in
-   info it is not necessary: you can go with C-c tab or search... ").
-
-:- comment(bug,"/usr/local/bin/pstogif (actually pstoppm) failed: put it in the
-   library.").
-
-:- comment(bug,"C-u M-x info a INSTALL y modo emacs (also in ciao)").
-
-:- comment(bug,"single-sided versus double-sided").
-
-:- comment(bug,"Document classes: see mess from Angel").
-
-:- comment(bug,"This is sort of a FAQ... You should not put
-   directories in the @image command. Instead, you should include the
-   directory in the SETTINGS file. If you do this, everything should
-   work.").
-
-:- comment(bug,"BTW: Now that you've installed a new version of
-   pl2texi, why don't I get messages like:
-
-   VERY DEPRECATED: @@begin@{verbatim@}, use @@begin@{pre@} instead
-   ").
-
-:- comment(bug,"&Hay alguna manera de NO generar los ficheros
-	Introduction_html.htmlindex
-	Introduction_ps.htmlindex
-   cuando hago 'make install'? He quitado todos los formatos (solo queda html
-   y ps), pero siguen escribiendose en /public_html/radioweb/last...
-   ").
-
-:- comment(bug,"uninstall needs to be debugged (the ifs in Makefile.skel)").
-
-:- comment(bug,"fix problems because of eps figures in pdf").
-
-:- comment(bug,"lpdoc should sign its manuals").
-
-:- comment(bug,"Reexported global predicate + assertions: only the
-   assertions are documented...").
-
-:- comment(bug,"Find a way that one can specify that a given assertion
-   should not appear in the documentation (nodoc/1 a global
-   property?). Also, the other way around.").
-
-:- comment(bug,"Eliminate from nodes characters: ' , : -
-   but leave them in in sections!").
-
-:- comment(bug,"Apparently parts cannot be referenced").
-
-:- comment(bug,"The first paragraph (module comment) should be an
-   'introduction' section, at least when there is going to be an
-   interface description.").
-
-:- comment(bug,"The ciao manual should have the version name in the
-   file name! (i.e., ciao-0.9.info) ??? Yes, so that you can have
-   several versions installed.").
-
-:- comment(bug,"Estos dos son de las aserciones:
-
-* Distinguir propiedades ""+"" (que tienen un argumento implícito de la
-  computación) de el resto, ya que en la documentación ese argumento no
-  se nombra.
-
-* Hacer que el chequeador de tipos no se queje de las definiciones de
-  los tipos predefinidos (term, int, ...) en el engine. (Mediante
-  declaración?)
-
-Específicos de lpdoc:
-
-* Hacer que lpdoc pueda leer al principio un fichero de
-  inicialización, por ejemplo para definir operadores (y así los modos
-  salen bonitos).
-
-* En vez de que haya un comando @iso, que haya uno @sign{} (o como se
-  llame) tal que @sign{ISO} haga lo que ahora hace @iso (para que tenga
-  más utilidad).
-
-* Es necesario que un módulo pueda definir declaraciones para que, por
-  ejemplo, data_facts pueda documentar :- data.
-
-* Cambiar lpdoc para que los títulos de los índices no estén
-  _capitalizados_: ""Library index"", etc.
-
-* Hacer un comando @flag{Flag} para nombrar prolog flags.  Interpretar
-  el multifile define_flag/3 para documentar flags definidos en módulos.
-
-* Bugs: en engine(atomic_basic) no aparecen los usos sin ningun campo (pero
-  tienen modos).  Tambien pasa en engine(io_basic), donde ademas el uso
-  de nl/0 no aparece.
-
-").
-
-:- comment(bug,"if an assertion is present for p, even if the
-   predicate is reexported, it should be documented (no need for
-   doinclude). See sockets.pl").
-
-:- comment(bug,"if an imported type is redefined locally and then
-   listed, all clauses appear").
-
-:- comment(bug,"underscores in file names result in problems when
-   including figures (a texinfo bug). Possible fix:
-
-   \newcommand{\fichero}[1]{\catcode\`\~=11%
-            \catcode\`\_=11%
-            \emph{#1}}
-
-   ").
-
-:- comment(bug,"putting props in a prop should give errors?").
-
-:- comment(bug,"Es esto un bug o yo no me entero?  Dada la declaracion 
-   (en system.pl):  
-
-   :- true pred umask(OldMask, NewMask)
-        : (var(OldMask), var(NewMask), OldMask == NewMask)
-       => (int(OldMask), int(NewMask))
-        # ""Gets the process file creation mask without changing it."".
-
-   {WARNING (autodoc): unknown property int(OldMask) in assertion for 
-   umask(OldMask,NewMask)} 
-
-   Tampoco funciona si pongo int * int.
-
-   "). 
-
-:- comment(bug,"El fichero m_ciaopp.pl tiene:
-   :- comment(doinclude,lub/1).
-   y la documentacion de lub/1 tiene:
-   :- comment(lub/1,
-	""This predicate handles a flag that indicates
-	 whether to lub abstract substitutions computed for each clause 
-         during analysis."").
-   :- pred lub/1 : var => ok_ans 
-	# ""Mode for querying the current flag value"" .
-   :- pred lub/1 : {ground,ok_ans} => ok_ans 
-	# ""Mode for setting the current flag value"" .
-
-   pero el texto de comment(lub/1,...
-   no sale en el manual. 
-   Salen solo los usages correspondientes a las dos preds ...").
-
-:- comment(bug,"Change granularity: generate one section 
-   for a given library (at least in HTML)."). 
-
-:- comment(bug,"Check that @@pred etc. state arity!"). 
-
-:- comment(bug,"Warning: '@verbatim' is deprecated, use '@pre' instead.
-   In the new latex it is 'alltt'.").
-
-:- comment(bug,"Una solucion posible es que lpdoc cambie
-   automaticamente : @subsection{My section} por @subsection{My
-   section (current_doc)}.").
-
-:- comment(bug,"usage,nil or something like that so no usage section
-   is generated.").
-
-:- comment(bug,"List of local opts: :- comment(localopts,['-nochangelog']).").
-
-:- comment(bug,"if an imported predicate is redefined, the local
-   version should always be the one documented!!!!").
-
-:- comment(bug,"we need macros").
-
-:- comment(bug,"ops and decls from assertions should not be documented").
-
-:- comment(bug,"Conditional inclusion, in order to make several types
-   of manuals from a single file, e.g., :-  comment(doinclude(refmanual),p/3)
-   and 'refmanual' is an option passed to lpdoc (in SETTINGS).  ").
-
-:- comment(bug,"assrt_lib Make sure .asr file has same permissions as 
-   .pl file!!!!"). 
-
-:- comment(bug,"Another list (in another Makefile variable) called
-   APPENDICES lists files that should go in appendices").
-
-:- comment(bug,"prolog flag definitions should be documented").
-
-:- comment(bug,"Documentation needs to be completed: assertions,
-   etc.").
-
-:- comment(bug,"Should install in more standard places (info, man, etc.)").
-
-:- comment(bug,"Should support texinfo @dircategory and the
-   install-info method.").
-
-:- comment(bug,"Probar a poner abstract donde ahora va module, despues
-   interface y despues module como introduccion.  En info, interface va
-   despues de abstract. Ah, y que en info el summary y el interface van
-   en el mismo nodo.").
-
-:- comment(bug,"local properties (not exported) used in a predicate
-   which is exported: documented correctly, but an error message is
-   issued. CHECK!").
-
-:- comment(bug,"ppm/jpg conversion fails for certain eps files").
-
-:- comment(bug,"Documentation for main file should produce *global*
-   changelog.").
-
-:- comment(bug,"Arithmetic vs. term typing (but only if -nomodes)").
-
-:- comment(bug,"(Implementation defined ?)").
-
-:- comment(bug,"The '@{' and '@}' characters must be eliminated from
-   the files generated by bibtex. Also check out what is best:
-   '@@dotless@{i@}' or '@@dotless i'.").
-
-:- comment(bug,"Authors should go into the index. The global/concept
-   index, or a separate 'authors' index. This may require identifying
-   author address lines separately. Subauthor (or address): these
-   lines would not be included when documenting chapters.").
-
-%%% 1. Relatively easy and nice (i.e., good for having a good time):
-
-:- comment(bug,"How about using comment(+/2,""), where + is an
-   operator (?) ").
-
-:- comment(bug,"Local options in file -- something like :-
-   comment(options,...).").
-
-:- comment(bug,"Assertions should describe which database predicates are read
-   and written by a given predicate.").
-
-:- comment(bug,"SICStus compatibility library!").
-
-:- comment(bug,"HTML indices based on templates?").
-
-:- comment(bug,"Could generate automatically a 'changes' section for
-   the htmlindex... (nice for people to know if they want to download
-   a new version).").
-
-:- comment(bug,"in assrt_lib: avoid reloading assertions from
-   libraries (or put a switch). ").
-
-:- comment(bug,"figures should not be in the doc directory?!? If not,
-   put warning in manual.").
-
-:- comment(bug,"when including support.pl in bibutils doc,
-   line_count/2 fails instead of aborting... CHECK").
-
-:- comment(bug,"Add commands to change chapter number?").
-
-:- comment(bug,"'.' still appears sometimes as first character of a
-   line in man format: problematic!").
-
-:- comment(bug,"Esto no es realmente importante, pero resulta que los
-   predicados cuyo nombre se compone de simbolos (e.g (=:=)/2 ),
-   deberian aparecer en el indice como '=:= /2' (el nombre separado
-   del '/'), ya que unido se parsea de otra forma en Prolog (asi
-   tambien aparece en el manual de SICStus).").
-
-:- comment(bug,"Check out haskell_doc.el!.").
-
-%%% 2. More complicated (i.e., real work):
-
-:- comment(bug,"Almost all error messages should give line numbers...").
-
-:- comment(bug,"Add 'INCLUDES' to settings: creates dependencies from
-   included files. But complex: has to be done for each
-   component... => lpdoc generates a file listing 
-   the includes!...").
-
-:- comment(bug,"Module usages should say: 'assertions/assrt_lib', but this 
-   is too hard to do until we get rid of the Makefile.").
-
-:- comment(bug,"Include a directory 'ciaolib', in which, every now and
-   then (on demand?, when compiling?, when installing?) the ciao
-   libraries used by lpdoc are copied (this makes it
-   standalone). This can now be done quite well with the new
-   distribution method. Also, do autoload depending on format?").
-
-:- comment(bug,"Should have @includedoc{predname/arity} command, which
-   includes inline the documentation of a predicate. Also, a command
-   to prevent the automatic generation of the standard sections with
-   exported predicates, etc., so that it can all be done by hand.").
-
-:- comment(bug,"Should have a real intermediate language from which
-    all the backend stuff is done.").
-
-:- comment(bug,"Disjunctions in properties not supported yet.").
-
-%%% 3. Not really easy to fix (e.g., it is a bug in another tool):
-
-:- comment(bug,"in basic_props, properties appear twice -- why?
-   Because it includes itself!!! Discuss with Daniel...").
-
-:- comment(bug,"In HTML, @index{patata} should be a hyperlink to where
-   @concept{patata} appears.").
-
-:- comment(bug,"Could also generate SGML and use sgml-tools in Linux
-   to generate the other formats, but the format looks somewhat
-   limited. There is a converter to rtf (windows help) though.").
-
-:- comment(bug,"Should somehow generate rtf").
-
-:- comment(bug,"Resulting info files (on-line versions) are still not
-   very good regarding references (but not so easy to fix, because of
-   limitations of info).").
-
-:- comment(bug,"@@includedef should do a real verbatim... (pity that
-   texinfo is so weird with this...").
-
-:- comment(bug,"Idea: for each <module>.pl, produce a <module>_help.pl
-   which extends a multifile predicate help/2 which defined help text
-   for each predicate and module. <module>_help.pl would be loaded in
-   the top level, but not in the executables. BUT This is covered
-   however nicely now by word-help, and would slow down loading in the
-   top level.").
-
-%----------------------------------------------------------------
-
-
-:- comment(version_maintenance,dir('../version')).
-
-:- comment(version(1*9+35,1999/12/09,00:29*07+'CET'), "New option
-   @tt{-regtypeprops} allows eliminating in the documentation for
-   regtypes the global property stating that they are indeed regtypes.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*9+31,1999/12/05,20:49*20+'CET'), "Now processing
-   @tt{appendix} and @tt{ack} comment types.  (Manuel Hermenegildo)").
-
-:- comment(version(1*9+28,1999/11/23,01:36*55+'MET'), "No exports
-   warning now not given for include files and packages.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*9+27,1999/11/23,01:36*21+'MET'), "New
-   declarations ops etc. in modules and user files not documented by
-   default, since they are not exported.  (Manuel Hermenegildo)").
-
-:- comment(version(1*9+26,1999/11/23,00:39*30+'MET'), "Added
-   @tt{nodoc} option to @decl{pred/2}.  (Manuel Hermenegildo)").
-
-:- comment(version(1*9+17,1999/11/18,23:56*05+'MET'), "Now all native
-   assertions (including conditional ones) are documented properly.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*9+16,1999/11/18,22:21*15+'MET'), "Special case
-   for @tt{true pred} (where the calls is really a check) now
-   documeted correctly.  (Manuel Hermenegildo)").
-
-:- comment(version(1*9+14,1999/11/18,13:45*47+'MET'), "Exported
-   @pred{modtype} (used in @lib{autodocformats}).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*9+13,1999/11/18,13:30*54+'MET'), "Fixed types in
-   assertions (@pred{filename/1}, @pred{suported_format/1},
-   @pred{predname/1}) to avoid warnings from the documenter.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*9+5,1999/08/03,19:57*21+'MEST'), "Adapted to new
-   @tt{c_itf} (@tt{imports_pred/7). Reexports now documented properly
-   again. (Manuel Hermenegildo)").
-
-:- comment(version(1*9+4,1999/07/29,19:14*29+'MEST'), "Moved
-   documentation of native declarations of a predicate to after the
-   textual comment.  (Manuel Hermenegildo)").
-
-:- comment(version(1*9+2,1999/07/12,14:55*46+'MEST'), "Adapted
-   reexportation from autodocformats.pl.  (Francisco Bueno
-   Carrillo)").
-
-:- comment(version(1*9+1,1999/07/12,14:15*39+'MEST'), "imports_pred/5
-   redefined to imports_pred/6.  (Francisco Bueno Carrillo)").
-
-:- comment(version(1*8+43,1999/07/06,13:51*33+'MEST'), "Added support
-   for changing page numbering (in @file{SETTINGS} file).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*8+37,1999/06/01,14:29*00+'MEST'), "Fixed typo
-   which made undefined properties not appear in documenation.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*8+35,1999/05/26,19:03*20+'MEST'), "Version
-   numbers not included any more in parts.  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+34,1999/04/26,22:27*21+'MEST'), "Imported files
-   from module @tt{user} now documented separately.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*8+33,1999/04/26,22:26*42+'MEST'), "Now fully
-   consistent behaviour with compiler regarding exports, etc. (using
-   new @lib{c_itf} version).  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+32,1999/04/22,03:10*55+'CEST'), "Fixed
-   @tt{-modes}, which was broken since going to the new normalizer
-   (was normalizer problem).  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+31,1999/04/22,03:10*19+'CEST'), "Fixed problem
-   with no documentation when only modes given.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*8+30,1999/04/21,13:13*08+'CEST'), "Fixed
-   duplication of internals when also exported.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*8+29,1999/04/21,12:42*32+'CEST'), "Several
-   improvements in the behaviour for user files. Still, this really
-   needs to be fixed in @lib{c_itf}.  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+25,1999/04/08,21:53*35+'MEST'), "Made more
-   silent in normal conditions: file inclusion is muted now unless
-   @tt{-v} option is selected.  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+24,1999/04/08,21:18*27+'MEST'), "Changed a bit
-   the format of bullets.  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+13,1999/03/31,12:40*04+'CEST'), "The second
-   argument of @tt{:- comment(hide,...).} and @tt{:-
-   comment(doinclude,...).} declarations can now be a list of
-   predicate names.  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+5,1999/03/30,19:28*51+'CEST'), "Minor
-   formatting problem when no documentation nor definition found for a
-   regtype fixed.  (Manuel Hermenegildo)").
-
-:- comment(version(1*8+2,1999/03/26,18:15*16+'MET'), "Now,
-   declarations are always documented as long as there is a @tt{decl}
-   assertion.  Also, they are now documented in a separate section.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*7+38,1999/03/23,09:05*49+'CET'), "Now, if the
-   name of a file being documented ends in @tt{_doc}, the @tt{_doc}
-   part is left out when referring to the file in the documentation
-   (useful if one would like to place the documentation declarations
-   in different file). (Manuel Hermenegildo)").
-
-:- comment(version(1*7+37,1999/03/23,07:55*55+'CET'), "Added support
-   for declaration of file types.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+35,1999/03/22,17:48*00+'CET'), "It is now
-   possible to declare (via a @decl{comment/2} declaration) the
-   intended use of a file which is not a module (i.e. a package, user,
-   or include file), which results in correct documentation of
-   operator definitions, new declarations, etc.).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*7+33,1999/03/22,16:38*59+'CET'), "Shortened the
-   module name of user files to @tt{user(.../}@em{filename}@tt{)} when
-   using a property.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+32,1999/03/22,01:44*11+'CET'), "New option
-   @tt{-propmods} makes the name of the module in which a property is
-   defined appear in front of the property in the places where the
-   property is used.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+31,1999/03/22,00:48*02+'CET'), "Now, if a
-   property or regtype declaration has no textual comment, the actual
-   definition is given (first level only) in the place where it is
-   documented, and a simple generic message where it is used.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*7+30,1999/03/21,21:41*15+'CET'), "Added @@iso
-   command.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+29,1999/03/21,21:07*49+'CET'), "New option
-   @tt{-noisoline} makes the textual explanation of the @prop{iso/1}
-   property not appear in the description of the usage (but the @iso
-   symbol does appear) (Manuel Hermenegildo)").
-
-:- comment(version(1*7+27,1999/03/21,19:15*53+'CET'), "Nicer spacing
-   now when printing predicate names which are operators, as well as
-   modes, etc.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+26,1999/03/18,22:06*11+'CET'), "Fixed
-   documentation of reexports, which was broken since the port to 0.8.
-   Minor improvements in error reporting.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+25,1999/03/18,20:38*02+'CET'), "If there is no
-   declaration for a predicate, now a line is output with the name and
-   arity and a simple comment saying that there is no further
-   documentation available (this has the great advantage that then it
-   goes in the index!). (Manuel Hermenegildo)").
-
-:- comment(version(1*7+23,1999/03/07,19:02*13+'CET'), "Reporting of
-   versions in libraries improved: now both the global version and the
-   last version in which the library itself was changed are reported.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*7+22,1999/03/06,20:40*21+'CET'), "Two new
-   options, '-nosysmods' and '-noengmods', selectively avoid listing
-   used system libraries.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+21,1999/03/06,20:12*13+'CET'), "Exported new
-   declarations also documented now for include-type files.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*7+17,1999/03/03,20:52*30+'MET'), "In components,
-   version of last change is reported now.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+8,1999/01/12,21:43*25+'MET'), "Tex is now run
-   in 'nonstopmode' which means it will typically not stop if there
-   are minor errors (but some errors may go unnoticed...).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*7+7,1998/12/30,19:35*03+'MET'), "Version
-   maintenance directory now computed (correctly) using the directory
-   of the @tt{.pl} file being documented as base.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*7+6,1998/12/26,23:31*23+'MET'), "Notices for
-   missing subtitle, copyright, and summary now only given from main
-   file and not for components.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+5,1998/12/04,19:15*51+'MET'), "New @tt{-v}
-   option allows using quieter by default operation when not
-   debugging.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+3,1998/12/04,09:21*56+'MET'), "Added special
-   handling of regtype and generalized it to handle some props
-   specially if there is a certain comp property present.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*7+2,1998/12/03,22:33*39+'MET'), "Bug in text
-   generation for trusts fixed.  (Manuel Hermenegildo)").
-
-:- comment(version(1*7+1,1998/12/03,22:33*03+'MET'), "Assertion
-   handling and c_itf facts adapted to CIAO 0.8.  (Manuel Hermenegildo)").
-
-:- comment(version(1*6+22,1998/09/25,17:14*50+'MEST'), "Formatting
-   commands can now be nested.  (Manuel Hermenegildo)").
-
-:- comment(version(1*6+10,1998/09/22,14:23*24+'MEST'), "Repaired error
-   handling of files not found and failing commands.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*6+6,1998/09/11,17:52*55+'MEST'), "'gmake dvi',
-   'gmake ps', are now sufficient (i.e., it is no longer needed to
-   type the name of the main file as in 'gmake main.dvi', 'gmake
-   main.dvi') in order to generate a manual in a given format.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*6+5,1998/09/11,17:19*51+'MEST'), "Added new
-   '-nopropseln' option: do not put properties in separate lines.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*6+3,1998/09/09,19:07*29+'MEST'), "Atoms which are
-   defined as operators are now correctly indexed (without
-   parenthesis).  (Manuel Hermenegildo)").
-
-:- comment(version(1*6+2,1998/09/09,19:05*53+'MEST'), "Improved
-   @@comment command: other commands can be nested within it and the
-   comment extends until the matching closing brace (@}).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*5+14,1998/09/08,12:25*55+'MEST'), "Added simple
-   minded ascii format manual (basically, an info file without
-   pointers). (Manuel Hermenegildo)").
-
-:- comment(version(1*5+13,1998/09/07,20:12*08+'MEST'), "Added support
-   for inserting images (.eps files) in text.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*5+12,1998/09/06,12:42*08+'EST'), "Added support
-   for inserting email addresses in text.  (Manuel Hermenegildo)").
-
-:- comment(version(1*5+11,1998/09/06,10:39*26+'EST'), "Added support
-   for inserting pointers to URLs in text.  (Manuel Hermenegildo)").
-
-:- comment(version(1*5+10,1998/09/03,15:31*28+'MEST'), "Improved
-   handling of files not found.  (Manuel Hermenegildo)").
-
-:- comment(version(1*5+9,1998/09/03,11:07*40+'MEST'), "Faster parsing
-   of documentation strings.  (Manuel Hermenegildo)").
-
-:- comment(version(1*5+8,1998/09/02,17:44*08+'MEST'), "Improved
-   treatment of newlines (leading newlines treated now too).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*5+5,1998/08/29,11:39*52+'EST'), "Unix 'man'
-   output now includes usage if defined in a string contained in a
-   fact of the @pred{usage_message/1} predicate.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*5+3,1998/08/29,05:38*09+'EST'), "Multiple .texi
-   files (for indices, etc.) are now generated in all cases. This is
-   because the references must be in an independent file and emacs
-   cannot generate menus and pointers automatically unless the include
-   structure is flat, i.e., all chapters an unnumbered with nodes are
-   in separate files (!).  (Manuel Hermenegildo)").
-
-:- comment(version(1*5+1,1998/08/25,07:25*34+'EST'), "Sped up
-   generation of citations (file opened and closed only once).
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*4+9,1998/08/23,19:08*25+'EST'), "Added proper
-   @cite command (first shot).  (Manuel Hermenegildo)").
-
-:- comment(version(1*4+8,1998/08/21,09:10*08+'EST'), "Added @@ref
-   command.  (Manuel Hermenegildo)").
-
-:- comment(version(1*4+7,1998/08/20,13:55*29+'EST'), "Version
-   maintenance method now maintained through @decl{commment/2}
-   declarations.  (Manuel Hermenegildo)").
-
-:- comment(version(1*4+6,1998/08/20,12:32*42+'EST'), "Uniquified temp
-   file(s).  (Manuel Hermenegildo)").
-
-:- comment(version(1*4+4,1998/08/11,19:17*46+'MET DST'), "htmlindex
-   now also generates a .htmlbullet entry for a bullet list of
-   manuals.  (Manuel Hermenegildo)").
-
-:- comment(version(1*4+2,1998/08/07,12:20*24+'MET DST'), "htmlindex:
-   title now included, plus other minor cosmetic changes.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*4+1,1998/08/06,12:02*31+'MET DST'), "Paths now
-   also used while reading included files.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+12,1998/08/04,18:06*21+'MET DST'), "Improved
-   handling of iso property when placed in a comp assertion.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*3+11,1998/08/04,11:16*03+'MET DST'), "Does not
-   complain any more if a usage (i.e., a pred) does not contain a
-   comment.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+10,1998/08/03,19:43*50+'MET DST'), "Now
-   documenting also case of predicate for which there is a comment but
-   no assertions.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+9,1998/07/27,14:24*18+'EST'), "Fixed bug in
-   documentation of general properties.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+8,1998/07/24,19:35*42+'MET DST'), "Changed
-   comments and assertions to support new format(s).  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*3+7,1998/07/23,17:35*35+'MET DST'), "A 'check
-   pred' now is correctly documented as 'check calls' + 'trust
-   success' etc.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+6,1998/07/20,15:24*17+'EST'), "Separated engine
-   modules in usage section.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+5,1998/07/14,14:17*02+'MET DST'), "Included
-   @tt{hide} option in @decl{comment/2}.  (Manuel Hermenegildo)").
-
-:- comment(version(1*3+3,1998/07/14,11:29*29+'MET DST'), "User and
-   system modules used now separated in the documentation.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*3+1,1998/07/10,17:24*42+'MET DST'), "Separated
-   documentation of multifiles into another section of the module
-   interface description (since they cannot be ordered with the
-   exports).  (Manuel Hermenegildo)").
-
-:- comment(version(1*2+7,1998/07/03,10:37*14+'MET DST'), "Removed all
-   leading blanks in lines, which results in better looking info
-   documents.  (Manuel Hermenegildo)").
-
-:- comment(version(1*2+4,1998/07/02,19:54*30+'MET DST'), "Multifile
-   predicates now included in exports automatically.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*2+2,1998/06/23,19:49*27+'MET DST'), "Fixed bug in
-   @@includedef: not all clauses were included.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*1+28,1998/05/31,10:17*40+'EST'), "@@includedef
-   command now automatically implies verbatim.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*1+25,1998/05/06,09:19*24+'MET DST'), "Improved
-   documentation of reexported predicates. Some problems remain,
-   because it is difficult to read the other module with c_itf. For
-   now, only the assertions (but not the comments) of other modules
-   are included in documentation.  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+22,1998/05/01,06:34*23+'EST'), "Added support
-   for comment(usage,...).  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+19,1998/04/16,20:25*38+'MET DST'), "Type (pred,
-   type, prop, etc.) of reexported predicates now documented.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*1+18,1998/04/16,19:26*27+'MET DST'), "Now
-   documenting dynamic, data, concurrent, etc.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(1*1+16,1998/04/15,09:46*01+'MET DST'), "Changed
-   format of version comments to include time (changed also ciao.el to
-   supply it).  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+15,1998/4/15), "Documentation text now reflects
-   the status of the assertions.  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+14,1998/4/15), "Enhanced treatment of general
-   properties.  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+13,1998/4/14), "Now documenting multifile and
-   meta_predicate.  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+12,1998/4/14), "Fixed several bugs reported by
-   local users, e.g., problems with use of underscore in names.
-   (Manuel Hermenegildo)").
-
-:- comment(version(1*1+11,1998/4/14), "Moved description field to
-   beginning.  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+6,1998/4/9), "Changed general properties to
-   appear first.  (Manuel Hermenegildo)").
-
-:- comment(version(1*1+5,1998/4/7), "Several improvements (e.g.,
-   treatment of newlines) to formatting of unix man files.  (Manuel
-   Hermenegildo)").
-
-:- comment(version(0*9+1,1998/2/24), "File version is now global
-   lpdoc version.  (Manuel Hermenegildo)").
-
-:- comment(version(0*4+6,1998/2/25), "Fixed format of version in
-   htmlindex and infoindex.  (Manuel Hermenegildo)").
-
-:- comment(version(0*4+1,1998/2/24), "File version is now global CIAO
-   version.  (Manuel Hermenegildo)").
-
-:- comment(version(0*3+6,1998/2/13), "Fixed minor bug in reexported
-   predicates. (Manuel Hermenegildo)").
-
-:- comment(version(0*3+5,1998/2/12), "Added better error checking for
-   includefact/includedef. (Manuel Hermenegildo)").
-
-:- comment(version(0*3+4,1998/2/12), "Fixed bug when documenting
-   properties which had no comment. (Manuel Hermenegildo)").
-
-:- comment(version(0*3+3,1998/2/12), "Fixed presentation when there
-   are multiple kinds of assertions. (Manuel Hermenegildo)").
-
-:- comment(version(0*3+2,1998/2/11), "Added -modes and -headprops
-   options. (Manuel Hermenegildo)").
-
-:- comment(version(0*3+1,1998/2/10), "Added more option handling:
-   -nobugs -noauthors -noversion -nochangelog -nopatches
-   -literalprops. (Manuel Hermenegildo)").
-
-:- comment(version(0*2+8,1998/2/6), "Added/fixed doinclude. (Manuel
-   Hermenegildo)").
-
-:- comment(version(0*2+7,1998/2/6), "Unified old document_application
-   and document_component into single one. (Manuel Hermenegildo)").
-
-:- comment(version(0*2+6,1998/2/6), "Used libraries (modules only:
-   include files are not interesting) now precisely detected. (Manuel
-   Hermenegildo)").
-
-:- comment(version(0*2+5,1998/2/6), "Added 'includedef' command
-   (allows including definitions of predicates in
-   documentation). (Manuel Hermenegildo)").
-
-:- comment(version(0*2+4,1998/2/5), "Added better detection of
-   predicate type (pred, type, prop, func, etc.). (Manuel
-   Hermenegildo)").
-
-:- comment(version(0*2+3,1998/2/5), "Added 'includefact'
-   command. (Manuel Hermenegildo)").
-
-:- comment(version(0*2+2,1998/1/16), "Changed all reading to use ciao
-   reader. As a result, complex files with syntax changes are dealt
-   with correctly now. (Manuel Hermenegildo)").
-
-:- comment(version(0*2+1,1998/1/8), "Changed variable dictionary
-   representation to ISO. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+13,1997/11/28), "Added support for documenting
-   declarations (defined via a @tt{decl} assertion). (Manuel
-   Hermenegildo)").
-
-:- comment(version(0*1+12,1997/11/28), "Added support for include
-   files as components: usage is correctly reported as using include/1
-   and all defined predicates are assumed exported and
-   documented. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+11,1997/11/27), "Fixed obscure bug in
-   processing of bugs and version documentation: commands related to
-   indeces were not supported correctly. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+10,1997/11/18), "Added support for the include
-   declaration (Francisco Bueno Carrillo)").
-
-:- comment(version(0*1+9,1997/9/17), "Added special documentation for
-   reexported predicates. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+8,1997/9/17), "Simple support for library
-   directories. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+7,1997/8/20), "Added version file
-   generation. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+6,1997/8/20), "Version number automatically
-   included in files if available. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+5,1997/07/29), "Added support for optional
-   selection of indices to be generated. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+4,1997/07/26), "Improved handling of leading
-   blanks in man pages. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+3,1997/07/25), "Added unix manual page
-   generation. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+2,1997/07/25), "Added generation of an html
-   brief description for a global index. (Manuel Hermenegildo)").
-
-:- comment(version(0*1+1,1997/07/25), "Added version handling:
-   included it in cover. (Manuel Hermenegildo)").
-
-:- comment(version(0*0+0,1996/10/10),"First prototype. (Manuel
-   Hermenegildo)").
-
+:- pred generate_info_dir_entry(Main,Opts) 
+   : filename * list(miscopt)
+
+   # "Generates a one line description of the application or library
+      in a file. This file is intended for inclusion in a larger file
+      that is a directory of @tt{emacs info} manuals. The file is
+      produced in ascii. @var{Main} is the name of a the source file
+      which is the main file of the application. The name of the
+      output file is @var{Main}@tt{.infoindex}. ".
 %% ---------------------------------------------------------------------------
 
+generate_info_dir_entry(Main,Opts) :-
+	Idxs=[],
+	%% Special suffix for parts of an info directory
+	FormatSuffix=infoindex,
+
+        file_processing(Main,FormatSuffix,
+                        Name,NDName,_M,I,_Base,Dir,O,OS,CS,[]),
+	message(['{Converting ',I,' into ',O]),
+	get_last_version(_LVersion,Version,Dir,Opts),
+	get_comment(title,single,note_message(_),ascii,Idxs,Opts,Title),
+
+	format(OS,"* ~w: (~w.info).~n\t",[NDName,Name]),
+	( Title \== []
+	-> format(OS,"~s",[Title])
+	;  format(OS,"~w Reference Manual",[NDName]) ),
+	(  version_format(Version,Ver,Sub,Patch,Y,M,D,_,_,_,_)
+	-> Date = Y/M/D,
+	   format(OS," (version ~w.~w#~w of ~w)",[Ver,Sub,Patch,Date]) 
+	;  true ),
+	format(OS,"~n",[]),
+
+	close(CS),
+	retract(refs_stream(_)),
+	close(OS),
+	retract(main_name(_)),
+	cleanup_c_itf_data,
+	cleanup_code_and_related_assertions,
+	message('}'),
+	ttyflush.
+generate_info_dir_entry(_Main,_Opts) :-
+	error_message("formatting could not be completed",[]).
+
+%% Type declared in source - we trust it
+detect_filetypes(Opts,Components,Type,Level) :-
+	get_comment(filetype,single,dofail(_),texinfo,[],Opts,FileType),
+	(  filetype_usage_command(FileType,Type)
+	-> true
+	;  error_message("unrecognized type in comment/filetype declaration")),
+	!,
+	optional_message('File being documented as a library'(Type),Opts),
+	detect_filelevel(Opts,Components,Level).
+
+filetype_usage_command(module, use_module).
+filetype_usage_command(user, ensure_loaded).
+filetype_usage_command(include, include).
+filetype_usage_command(package, use_package).
 
 %% ---------------------------------------------------------------------------
-:- pred bind_dict_varnames(Dict) # "Binds the variables in @var{Dict}
-   to the corresponding names (i.e., the names that appeared in the
-   source during read.".
+/*
+:- pred generate_description(Format,Main,Opts) 
+   : supported_format * filename * list(miscopt)
+
+   # "Generates a @concept{brief description of the application or
+      library} in a file. This file is intended for inclusion in a
+      larger file that is a catalog of aplications or libraries. The
+      file is produced in the format given by @var{Format}. @var{Main}
+      is the name of a the source file which is the main file of the
+      application. The name of the output file depends on @var{Format}
+      -- see see @pred{supported_format/1} in library
+      @lib{autodocformats}. ".
+*/
 %% ---------------------------------------------------------------------------
 
+generate_description(Format,Main,Opts) :-
+	%% For now, only html supported
+	Format=html,
+	Idxs=[],
 
-bind_dict_varnames([]).
-bind_dict_varnames([VarName=Var|Rest]) :-
-	VarName=Var,
-	bind_dict_varnames(Rest).
+	%% Special suffixes for parts of an index in html
+	(  member('-nobullet',Opts) 
+	-> true
+	;  BltFormatSuffix=htmlbullet,
+           file_processing(Main,BltFormatSuffix,
+                   _Name,_NDName,_M,_I,_Base,_,BltO,BltOS,_,[]) ),
 
+	IdxFormatSuffix=htmlindex,
+        file_processing(Main,IdxFormatSuffix,
+                   Name,NDName,_M,I,_Base,Dir,IdxO,IdxOS,CS,[]),
 
-%% ---------------------------------------------------------------------------
-:- pred main_filenames(LongNames,ShortNames) 
-	:: list(filename) * list(filename) 
-
-         # "@var{ShortNames} contains the version without library path
-            of the elements of @var{LongNames}.".
-%% ---------------------------------------------------------------------------
-
-main_filenames([],[]).
-main_filenames([C|Cs],[NC|NCs]) :-
-	atom_codes(C,CS),
-	main_filename(CS,NCS),
-	atom_codes(NC,NCS),
-	main_filenames(Cs,NCs).
-
-%% ---------------------------------------------------------------------------
-:- comment( main_filename(LongName,ShortName), "@var{ShortName} is the
-	filename of @var{LongName}, without library path.").
-
-:- pred main_filename(LongName,ShortName) 
-	:: string * string
-
-         # "@var{ShortName} is the filename of @var{LongName}, without
-            library path.".
-%% ---------------------------------------------------------------------------
-
-main_filename(IS,NamePLS) :-
-	filename_minus_libpath(IS,NamePLS),
-	!.
-main_filename(IS,NamePLS) :-
-	name_after_last_slash(IS,NamePLS).
-
-filename_minus_libpath(IS,NamePLS) :-
-	library_directory(L),
-	atom_codes(L,LS),
-	append(LS,[0'/,NamePLS],IS).
-
-name_after_last_slash(IS,NamePLS) :-
-	reverse(IS,RIS),
-	to_bar_or_end(RIS,RNamePLS),
-	reverse(RNamePLS,NamePLS).
+	get_last_version(_LVersion,Version,Dir,Opts),
+	get_comment(title,single,note_message(_),Format,Idxs,Opts,Title),
+	get_comment(summary,single,note_message(_),Format,Idxs,Opts,Summary),
 
 
-to_bar_or_end([],[]) :-
-	!.
-to_bar_or_end([0'/|_],[]) :-
-	!.
-to_bar_or_end([C|Cs],[C|Ss]) :-
-	to_bar_or_end(Cs,Ss).
+	(  member('-nobullet',Opts) 
+	-> true
+	;  message(['{Converting ',I,' into ',BltO]),
+	   format(BltOS,"<UL><LI><A HREF=""#~w""><B class=applname>",[Name]),
+	   format(BltOS,"~w",[NDName]),
+	   (  Title \== [] 
+	   -> format(BltOS,":</B> <B><em>~s</em></B></A></UL>~n~n",
+	          [Title])
+	   ;  format(BltOS,"</B></A></UL>~n~n",[]) ),
+	      
+	   close(BltOS),
+	   message('}') ),
 
-get_comment_field_dict(Id,Field,Dict) :-
-	clause_read(_,1,comment(Id,Field),Dict,_,_,_).
+	message(['{Converting ',I,' into ',IdxO]),
+	format(IdxOS,"<A NAME=""~w""></A><HR>~n<H1 class=appltitle>",[Name]),
+        format(IdxOS,"<B class=applname>~w",[NDName]),
+	(  Title \== [] 
+	-> format(IdxOS,":</B> <em>~s</em></H1>~n~n",[Title]) 
+	;  format(IdxOS,"</B></H1>~n~n",[])),
+	format(IdxOS,"~s~n~n",[Summary]),
+
+	(  version_format(Version,Ver,Sub,Patch,Y,M,D,_,_,_,_)
+	-> Date = Y/M/D,
+	   format(IdxOS,"<H2>Current version (~w.~w#~w of ~w):</H2>~n~n",
+	             [Ver,Sub,Patch,Date]) 
+	;  true ),
+
+	close(IdxOS),
+	close(CS),
+	retract(refs_stream(_)),
+	cleanup_c_itf_data,
+	cleanup_code_and_related_assertions,
+	message('}'),
+	ttyflush.
+generate_description(_Format,_Main,_Opts) :-
+	xsbdoc_error(['formatting could not be completed']).
 

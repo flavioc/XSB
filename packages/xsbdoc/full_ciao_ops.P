@@ -43,3 +43,6 @@
 :- op(1150, fx,(discontiguous)). 
 :- op(1150,xfx,(discontiguous)). 
 
+:- 	op(500,yfx,#).
+:- 	op(1100,fx,(document_export)).
+:- 	op(1100,fx,(document_import)).
