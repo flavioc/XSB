@@ -86,9 +86,9 @@ perlmatch::
 	@echo ""
 	cd perlmatch; make
 
-#sModels::
-#	@echo ""
-#	cd sModels; make
+sModels::
+	@echo ""
+	cd sModels; make
 
 gap::
 	@echo ""

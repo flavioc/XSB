@@ -36,3 +36,4 @@
 :- export smReturnModel/2, smEnd/0.
 :- export smInit/1, smAddRule/3, smGetModel/2.
 
+:- import is/2, '=\='/2	from standard.

@@ -46,7 +46,7 @@ GCC=@CC@
 CFLAGS=@CFLAGS@ -I@arch_config_prefix@
 GMM=g++
 XSB=../../bin/xsb
-Prolog = "@CROSS_SIMULATOR@ $(XSB) "
+Prolog = $(XSB)
 
 .IGNORE:
 
@@ -59,9 +59,13 @@ Prolog = "@CROSS_SIMULATOR@ $(XSB) "
 	echo 'mc($*,$(Option)).' >> cmd...
 
 all: $(ALL)
-	@../../build/touch.sh cmd...
-	$(Prolog) < cmd...
-	@rm -f cmd...
+	if [ "${SMODELS}nop" = "nop" ] ; then \
+		echo "SMODELS not configure"; \
+	else \
+		../../build/touch.sh cmd... ; \
+		$(Prolog) < cmd... ; \
+		rm -f cmd... ;\
+	fi\
 
 clean: 
 	/bin/rm -f *.o *.so *${OBJEXT} *.h

@@ -88,6 +88,8 @@ AC_ARG_ENABLE(no-cygwin,
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug	      compile with debugging turned on])
+AC_ARG_ENABLE(dwarf-debug,
+[  --enable-dwarf-debug	      compile with extra (macro) debugging turned on])
 AC_ARG_ENABLE(oracle-debug,
 [  --enable-oracle-debug      compile with Oracle debugging turned on])
 AC_ARG_ENABLE(profile,
@@ -101,6 +103,15 @@ if test "${with_debug}" = "yes" ; then
 fi
 if test "${with_debugging}" = "yes" ; then
    enable_debug=yes
+fi
+
+if test "${enable_dwarf_debug}" = "yes" ; then
+   with_dwarf_debug=yes
+fi
+
+if test "${with_dwarf_debug}" = "yes" ; then
+   enable_debug=yes
+   enable_dwarf_debug=yes
 fi
 
 if test "${with_wind+set}" = "set" ; then
@@ -1309,11 +1320,11 @@ if test "${do_debugging}" = "yes"  -o "${disable_optimization}" = "yes" ; then
    c_inline_level=
 fi
 if test "${do_debugging}" = "yes" ; then
-#    if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
-#	CFLAGS="${CFLAGS} -ggdb3"
-#    else
+   if test "${enable_dwarf_debug}" = "yes" ; then
+        CFLAGS="${CFLAGS} -gdwarf-2 -g3"
+   else
 	CFLAGS="${CFLAGS} -g"
-#    fi
+   fi
 fi
 
 LD=ld
@@ -1476,6 +1487,8 @@ topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
 AC_SUBST(topdir_wind)
 
 #These are used to compile the interface with sModels
+AC_ARG_WITH(smodels,
+[  --with-smodels		   use SMODELS for the XNMR module])
 if test "${with_smodels}" = "" ; then
 	smodels_goal=nope
 else
