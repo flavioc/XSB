@@ -109,9 +109,12 @@
 	  ;
 	    '_$_$_flora_isa_dyn'(Object,Class),
 	    '_$_$_flora_ifd_dyn'(Class,Method,Value),
+	    ground(Object), ground(Method),
 	    tnot('_$_$_flora_defined_fd_dyn'(Object,Method))
 	),
+	ground(Class),
 	tnot('_$_$_flora_overwritten_fd_dyn'(Object,Class,Method)),
+	ground(Class),
 	tnot('_$_$_flora_conflict_fd_dyn'(Object,Class,Method)).
 
 '_$_$_flora_defined_fd_dyn'(Object,Method) :-
@@ -126,6 +129,7 @@
 %% When this is called, Object always belongs to Class
 '_$_$_flora_conflict_fd_dyn'(Object,Class,Method) :-
 	'_$_$_flora_defined_ifd_dyn'(Class1,Method),
+	ground(Class1), ground(Class),
 	Class \= Class1,
 	'_$_$_flora_isa_dyn'(Object,Class1),
 	tnot('_$_$_flora_strict_subclass_dyn'(Class1,Class)),
@@ -140,9 +144,12 @@
 	  ;
 	    '_$_$_flora_isa_dyn'(Object,Class),
 	    '_$_$_flora_imvd_dyn'(Class,Method,Value),
+	    ground(Object), ground(Method),
 	    tnot('_$_$_flora_defined_mvd_dyn'(Object,Method))
 	),
+	ground(Class),
 	tnot('_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method)),
+	ground(Class),
 	tnot('_$_$_flora_conflict_mvd_dyn'(Object,Class,Method)).
 
 '_$_$_flora_defined_mvd_dyn'(Object,Method) :-
@@ -155,6 +162,7 @@
 
 '_$_$_flora_conflict_mvd_dyn'(Object,Class,Method) :-
 	'_$_$_flora_defined_imvd_dyn'(Class1,Method),
+	ground(Class1), ground(Class),
 	Class \= Class1,
 	'_$_$_flora_isa_dyn'(Object,Class1),
 	tnot('_$_$_flora_strict_subclass_dyn'(Class1,Class)),
@@ -169,9 +177,12 @@
 	  ;
 	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
 	    '_$_$_flora_ifd_dyn'(Super,Method,Value),
+	    ground(Class), ground(Method),
 	    tnot('_$_$_flora_defined_ifd_dyn'(Class,Method))
 	),
+	ground(Super),
 	tnot('_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method)),
+	ground(Super),
 	tnot('_$_$_flora_conflict_ifd_dyn'(Class,Super,Method)).
 
 '_$_$_flora_defined_ifd_dyn'(Class,Method) :-
@@ -185,6 +196,7 @@
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_ifd_dyn'(Class,Super,Method) :-
 	'_$_$_flora_defined_ifd_dyn'(Super1,Method),
+	ground(Super1), ground(Super),
 	Super1 \= Super,
 	'_$_$_flora_strict_subclass_dyn'(Class,Super1),
 	tnot('_$_$_flora_strict_subclass_dyn'(Super1,Super)),
@@ -199,9 +211,12 @@
 	  ;
 	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
 	    '_$_$_flora_imvd_dyn'(Super,Method,Value),
+	    ground(Class), ground(Method),
 	    tnot('_$_$_flora_defined_imvd_dyn'(Class,Method))
 	),
+	ground(Super),
 	tnot('_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method)),
+	ground(Super),
 	tnot('_$_$_flora_conflict_ifd_dyn'(Class,Super,Method)).
 
 '_$_$_flora_defined_imvd_dyn'(Class,Method) :-
@@ -215,6 +230,7 @@
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_imvd_dyn'(Class,Super,Method) :-
 	'_$_$_flora_defined_imvd_dyn'(Super1,Method),
+	ground(Super1), ground(Super),
 	Super1 \= Super,
 	'_$_$_flora_strict_subclass_dyn'(Class,Super1),
 	tnot('_$_$_flora_strict_subclass_dyn'(Super1,Super)),

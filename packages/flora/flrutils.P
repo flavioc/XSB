@@ -654,7 +654,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		displayln, flora_warnheader, display('unsafe variable(s) '),
 		telling(CurrStream), tell(userout),
 		write_list(L), tell(CurrStream),
-		displayln(' in a rule head of a fact.')
+		displayln(' in a rule head or a fact.')
 	      ;
 		true
 	    ),

@@ -132,9 +132,12 @@
 	  ;
 	    '_$_$_flora_isa'(Object,Class),
 	    '_$_$_flora_ifd'(Class,Method,Value),
+	    ground(Object), ground(Method),
 	    tnot('_$_$_flora_defined_fd'(Object,Method))
 	),
+	ground(Class),
 	tnot('_$_$_flora_overwritten_fd'(Object,Class,Method)),
+	ground(Class),
 	tnot('_$_$_flora_conflict_fd'(Object,Class,Method)).
 
 /* Should we add '_$_$_flora_eql' everywhere? Why not make '_$_$_flora_isa',
@@ -152,6 +155,7 @@
 %% When this is called, Object always belongs to Class
 '_$_$_flora_conflict_fd'(Object,Class,Method) :-
 	'_$_$_flora_defined_ifd'(Class1,Method),
+	ground(Class1), ground(Class),
 	Class \= Class1,
 	'_$_$_flora_isa'(Object,Class1),
 	tnot('_$_$_flora_strict_subclass'(Class1,Class)),
@@ -166,9 +170,12 @@
 	  ;
 	    '_$_$_flora_isa'(Object,Class),
 	    '_$_$_flora_imvd'(Class,Method,Value),
+	    ground(Object), ground(Method),
 	    tnot('_$_$_flora_defined_mvd'(Object,Method))
 	),
+	ground(Class),
 	tnot('_$_$_flora_overwritten_mvd'(Object,Class,Method)),
+	ground(Class),
 	tnot('_$_$_flora_conflict_mvd'(Object,Class,Method)).
 
 '_$_$_flora_defined_mvd'(Object,Method) :- '_$_$_flora_mvd'(Object,Method,_).
@@ -180,6 +187,7 @@
 
 '_$_$_flora_conflict_mvd'(Object,Class,Method) :-
 	'_$_$_flora_defined_imvd'(Class1,Method),
+	ground(Class1), ground(Class),
 	Class \= Class1,
 	'_$_$_flora_isa'(Object,Class1),
 	tnot('_$_$_flora_strict_subclass'(Class1,Class)),
@@ -194,9 +202,12 @@
 	  ;
 	    '_$_$_flora_strict_subclass'(Class,Super),
 	    '_$_$_flora_ifd'(Super,Method,Value),
+	    ground(Class), ground(Method),
 	    tnot('_$_$_flora_defined_ifd'(Class,Method))
 	),
+	ground(Super),
 	tnot('_$_$_flora_overwritten_ifd'(Class,Super,Method)),
+	ground(Super),
 	tnot('_$_$_flora_conflict_ifd'(Class,Super,Method)).
 
 '_$_$_flora_defined_ifd'(Class,Method) :- '_$_$_flora_ifd'(Class,Method,_).
@@ -209,6 +220,7 @@
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_ifd'(Class,Super,Method) :-
 	'_$_$_flora_defined_ifd'(Super1,Method),
+	ground(Super1), ground(Super),
 	Super1 \= Super,
 	'_$_$_flora_strict_subclass'(Class,Super1),
 	tnot('_$_$_flora_strict_subclass'(Super1,Super)),
@@ -223,9 +235,12 @@
 	  ;
 	    '_$_$_flora_strict_subclass'(Class,Super),
 	    '_$_$_flora_imvd'(Super,Method,Value),
+	    ground(Class), ground(Method),
 	    tnot('_$_$_flora_defined_imvd'(Class,Method))
 	),
+	ground(Super),
 	tnot('_$_$_flora_overwritten_imvd'(Class,Super,Method)),
+	ground(Super),
 	tnot('_$_$_flora_conflict_imvd'(Class,Super,Method)).
 
 '_$_$_flora_defined_imvd'(Class,Method) :- '_$_$_flora_imvd'(Class,Method,_).
@@ -238,6 +253,7 @@
 %% Note: when this is called, Class is always a subclass of Super
 '_$_$_flora_conflict_imvd'(Class,Super,Method) :-
 	'_$_$_flora_defined_imvd'(Super1,Method),
+	ground(Super1), ground(Super),
 	Super1 \= Super,
 	'_$_$_flora_strict_subclass'(Class,Super1),
 	tnot('_$_$_flora_strict_subclass'(Super1,Super)),
