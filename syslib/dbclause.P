@@ -166,7 +166,11 @@ db_clause_match(Head,Body,Entry) :-
 	 	db_body_save(Buff),
 		buff_cell(Buff,0,Body0),
 		goal_cut_trans_a(Body0, Body1, _),
-		Body = Body1
+		(atom(Body)
+		 ->	conname(Body1,Body2),
+		 	Body = Body2
+		 ;	Body = Body1
+		)
 	 ;	stat_set_flag(CLAUSE_INT,0),
 	 	fail
 	).
