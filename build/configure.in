@@ -1069,11 +1069,14 @@ AC_SUBST(javac)
 AC_SUBST(java_support)
 
 AC_PATH_PROG(java_path,javac,no)
-java_path=`echo $java_path | sed 's,bin/javac,include,' `
+java_path=`dirname $java_path`
+java_path=`dirname $java_path`
+java_path=$java_path/include
+#java_path=`echo $java_path | sed 's,bin/javac,include,' `
 
 if test "${with_interprolog}" = "yes"; then
   if test "${java_support}" != "yes"; then
-    echo "Interpolog not supported due to failure to find Java"
+    echo "Interprolog not supported due to failure to find Java"
     with_interprolog=""    
     JAVA_HEADER_PATH=""
     JAVA_PLATFORM_HEADER_PATH=""

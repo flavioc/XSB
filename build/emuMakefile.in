@@ -166,6 +166,9 @@ xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	   echo ""
 	@LD@ -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+	echo "Making XSB Shared Library $(bindir)/libxsb.so"
+	@LD@ -o libxsb.so -shared $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
+	@cp libxsb.so $(bindir) 2>/dev/null || echo ""
 
 # same as xsbmod, but with oracle support
 xsboramod:: $(ORAOBJS)
@@ -177,7 +180,7 @@ xsboramod:: $(ORAOBJS)
 
 
 depend::
-	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
+	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix)  -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
 
 #
 # create a new DLL library in cygwin (compiled with -mno-cygwin) environment
@@ -213,7 +216,7 @@ cygdll: $(HEADERS) $(DEF_FILE) xsb.o
 #=======================================================================
 
 interprolog_callback.o: interprolog_callback.c
-	$(CC) -I$(arch_config_prefix) -I$(JAVA_HEADER_PATH) -I$(JAVA_PLATFORM_HEADER_PATH) -c $(CFLAGS) interprolog_callback.c
+	$(CC) -c -I$(arch_config_prefix) -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) interprolog_callback.c
 	@cp callback.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 init_xsb.o: init_xsb.c
