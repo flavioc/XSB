@@ -1661,7 +1661,7 @@ object(Oid,Name,NatId,Source) :-
 		 ->	true
 		 ;	ob_id_map(Oid,Name,NatId,Source)
 		)
-	 ; nonvar(NatId),nonvar(Source)
+	 ; ground(NatId),nonvar(Source)
 	 ->	(oms_obj(Oid,Name,NatId,Source)
 		 ->	true
 		 ;	get_object_int_b(Oid,Name,NatId,Source)
@@ -1809,7 +1809,7 @@ check_class_for_prod_obj(NatOid,Sou):-
                    get_class_int(_Cid,_,Skel,Sou)).
 */
 
-newoid_list([],[],_Rootid,_Term,Upd,Upd).
+newoid_list([],[],_Rootid,_Term,Upd,Upd):- !.
 newoid_list([Nid,Src|OT],[Oid|NT],Rootid,Term,Updin,Updout):- !,
 	newObject_oidunbound_1(Oid,Rootid,Nid,Src,Updin,Updmid),
 	newoid_list(OT,NT,Rootid,Term,Updmid,Updout).
