@@ -1,8 +1,12 @@
 %-header--------------------------------------------------------------%
-:- compiler_options([ciao_directives]).
+:- compiler_options([xpp_on,ciao_directives]).
 
-:- import datime/1 from standard.
+#include "flag_defs_xsb.h"
+#include "standard.h"
+
+:- import messageln/2, datime/1 from standard.
 :- import concat_atom/2 from string.
+
 
 :- dynamic current_log_level/3.
 :- dynamic current_log_writer/2.
@@ -59,12 +63,11 @@ The following is a sample config file for the logger :
 :- config_logger.
 
 config_logger :-
-   [xsb_logger_v1],
-   [odbc_log_writer],                        %my custom log writer
+   [xsb_logger],                             %initiates default level to WARN
+   [odbc_log_writer],                        %my custom log writer                            
    
-   %default level for all my modules.
-   log_init(warn),                            
-   
+   log_set_default_level(info),              %change the default level
+
    %custom log level
    log_add_log_level(enter,201),
    log_add_log_level(exit,202),     
@@ -99,18 +102,16 @@ log_default_writer_props([]).
 
 :- comment(log_init/1,"Entry point for logger. Assumes debug log level if
 none is provided. (?LogLevel) ").
+:- log_default_log_level(Default_level), log_init(Default_level).
 
 log_init(DefaultLevel) :-
    '_$log_add_default_log_levels',
 
    log_level(DefaultLevel, _, _, _),
-   '_$log_set_default_level'(DefaultLevel),
+   log_set_default_level(DefaultLevel),
    
    log_default_timestamp(Format),
    assert(log_timestamp_format(Format)),
-
-   log_default_port(Port),        % default log writer specific
-   log_set_port(Port),
 
    log_default_writer(Writer),    % default log writer
    log_default_writer_props(Props),
@@ -133,11 +134,10 @@ log_writer_start :-
    call(StartWriter).
 
 %-Log Level-----------------------------------------------------------%
-:- comment('_$log_set_default_level'/1, "Sets the default level of the logger. 
-All modules log at this level unless otherwise specified. This predicate should 
-not be called from outside the logger. (+Default_level) ").
+:- comment(log_set_default_level/1, "Sets the default level of the logger. 
+Calling this predicate will remove all module level rules.  (+Default_level) ").
 
-'_$log_set_default_level'(Default_level) :-
+log_set_default_level(Default_level) :-
    log_level(Default_level, Default_num, _, _),
    log_level(sys, Sys_num, _, _),
    Default_num =\= Sys_num,
@@ -148,7 +148,8 @@ not be called from outside the logger. (+Default_level) ").
    (log_level(Level, Level_num, _Level_label, Level_pred),
    Log_pred3 =..[Level_pred, _AllModules, B, C],
    Log_pred4 =..[Level_pred, _AllModules, E, F, G],
-   
+   retractall(Log_pred3),
+   retractall(Log_pred4),
    (Level_num >= Default_num
    -> assertz( (Log_pred3 :- log_msg(Level, _AllModules, B, C)) ),
       assertz( (Log_pred4 :- log_msg(Level, _AllModules, E, F, G)) )
@@ -159,6 +160,30 @@ not be called from outside the logger. (+Default_level) ").
    ;  
    true).
 
+:- comment(log_reassert_default_level/1,"Reasserts the default level rules for 
+logger. Does not remove any of the old default rules. (+Default_level) ").
+
+log_reassert_default_level(Default_level) :-
+   log_level(Default_level, Default_num, _, _),
+   log_level(sys, Sys_num, _, _),
+   Default_num =\= Sys_num,
+
+   retractall(default_log_level(_)),
+   assert(default_log_level(Default_level)),
+   
+   (log_level(Level, Level_num, _Level_label, Level_pred),
+   Log_pred3 =..[Level_pred, _AllModules, B, C],
+   Log_pred4 =..[Level_pred, _AllModules, E, F, G],
+
+   (Level_num >= Default_num
+   -> assertz( (Log_pred3 :- log_msg(Level, _AllModules, B, C)) ),
+      assertz( (Log_pred4 :- log_msg(Level, _AllModules, E, F, G)) )
+   
+   ;  assertz(Log_pred3),
+      assertz(Log_pred4) ),
+   fail
+   ;  
+   true).
 
 :- comment(log_set_level/1,"Changes the log level to any level lower than the
 system level. All log messages at or above this level will be displayed, all 
@@ -175,8 +200,8 @@ log_set_level(Module, Log_level) :-
    (log_level(Level, Level_num, Level_label, Level_pred),
    Log_pred3 =..[Level_pred, Module, B, C],
    Log_pred4 =..[Level_pred, Module, E, F, G],
-   retract(Log_pred3),
-   retract(Log_pred4),
+   retractall(Log_pred3),
+   retractall(Log_pred4),
    
    (Level_num >= Log_num
    -> assert(current_log_level(Module, Level, Level_label)),
@@ -188,7 +213,7 @@ log_set_level(Module, Log_level) :-
    fail
    ;  
    default_log_level(Default_level),
-   '_$log_set_default_level'(Default_level) ).
+   log_reassert_default_level(Default_level) ).
 
 
 :- comment(log_at_default_level/1,"Changes the log level for this module to 
@@ -201,12 +226,12 @@ log_at_default_level(Module) :-
    (log_level(_Level, _Level_num, _Level_label, Level_pred),
    Log_pred3 =..[Level_pred, Module, _, _],
    Log_pred4 =..[Level_pred, Module, _, _, _],
-   retract(Log_pred3),
-   retract(Log_pred4),
+   retractall(Log_pred3),
+   retractall(Log_pred4),
    fail
    ;
    default_log_level(Default_level),
-   '_$log_set_default_level'(Default_level) ).
+   log_reassert_default_level(Default_level) ).
 
 
 :- comment(log_get_level/3,"Returns all the the log levels that are currently
@@ -347,40 +372,41 @@ upper_case(Lower, Upper) :-
 	atom_codes(Upper, Upper_c).
 
 %-Default Logger------------------------------------------------------%
-:- import ioport2iostream/2, file_flush/2  from file_io.
-
-log_default_stream(userout).
-log_default_port(1).  
-
-:- comment(log_set_port/1,"Changes the port to which the default logger writes 
-to. (+Port)").
-
-log_set_port(Port) :-
-   ioport2iostream(Port, Stream),
-
-   retractall(log_stream(_)),
-   assert(log_stream(Stream)),
-   retractall(log_port(_)),
-   assert(log_port(Port)).
-log_get_port(Port) :-
-   log_port(Port).
-
+:- comment(get_log_stream/2, "Depending on the error level writes to different 
+streams. If error_level < INFO then STDMSG, if INFO < error_level < ERROR
+then STDWARN, if ERROR =< error_level < SYS then STDERR, if SYS = error_level 
+then STDOUT. (+Level_num, ?Stream) ").
+ 
+'_$get_log_stream'(Level_num, STDMSG) :-
+   default_log_level(info, Info_num, _, _),
+   Level_num =< Info_num.
+'_$get_log_stream'(Level_num, STDWARN) :-
+   default_log_level(error, Err_num, _, _),
+   default_log_level(info, Info_num, _, _),
+   Level_num < Err_num , Level_num > Info_num.
+'_$get_log_stream'(Level_num, STDERR) :-
+   default_log_level(error, Err_num, _, _),
+   default_log_level(sys, Sys_num, _, _),
+   Level_num >= Err_num , Level_num < Sys_num.
+'_$get_log_stream'(Level_num, STDOUT) :-
+   default_log_level(sys, Level_num, _, _).
 
 :- comment(default_log_writer/5,"Writes log messages the current stream.  Flushes 
 the stream after each write.").
 
-default_log_writer(ErrorLevel, Module, Pred, Message, List) :-
+default_log_writer(Error_level, Module, Pred, Message, List) :-
    (default_log_writer_state(started)
-   -> nonvar(ErrorLevel),
+   -> nonvar(Error_level),
       log_get_timestamp(TimeStamp),
-      log_get_level(Module, ErrorLevel, ErrorLabel),
+      log_get_level(Module, Error_level, Error_label),
+      log_level(Error_level, Error_num, Error_label, _),
+      concat_atom([TimeStamp, ' ', Error_label, ' [', Module, ':', Pred, '] :: ', Message], Log_msg),
+      
+      '_$get_log_stream'(Error_num, Log_port), 
+      messageln(Log_msg, Log_port),
+      log_writelist(List, Log_port),      
    
-      concat_atom([TimeStamp, ' ', ErrorLabel, ' [', Module, ':', Pred, '] :: ', Message], Log_msg),
-      log_writeln(Log_msg),
-      log_writelist(List),
-   
-      log_port(Port),
-      file_flush(Port, _)
+      file_flush(Log_port, _)
    ;  true).
 
 default_log_writer_stop(Arg) :-
@@ -396,27 +422,18 @@ default_log_writer_start(Arg) :-
 
 %-Default Log Writer utils--------------------------------------------%
 
-:- comment(log_write/1,"Wraps write and writeln to write to the current 
-log_stream. (+Msg) "). 
-log_write(Msg) :-
-   log_stream(Stream),
-   write(Stream,Msg).
-log_writeln(Msg) :-
-   log_stream(Stream),
-   writeln(Stream,Msg).
+:- comment(log_writelist/2,"Writes list to the stream with one element
+on each line. (+List, +Log_port) ").
 
-
-:- comment(log_writelist/1,"Writes list to the current stream with one element
-on each line. (+List) ").
-
-log_writelist([]).
-log_writelist(List) :-
-   log_writelist(List,1).   
-log_writelist([A|B],Count) :-
-   log_write('     '), log_write(Count), log_write(':'), log_writeln(A),
+log_writelist([], _Log_port).
+log_writelist(List, Log_port) :-
+   log_writelist(List, 1, Log_port).   
+log_writelist([A|B], Count, Log_port) :-
+   concat_atom(['     ',Count,':',A], Log_msg),
+   messageln(Log_msg, Log_port),
    Count1 is Count + 1,
-   log_writelist(B,Count1).
-log_writelist([],_).
+   log_writelist(B, Count1, Log_port).
+log_writelist([], _Count, _Log_port).
 
 %---------------------------------------------------------------------%
    
