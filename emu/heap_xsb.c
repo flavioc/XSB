@@ -209,8 +209,8 @@ static CPtr heap_bot,heap_top,
 #define points_into_cp(p)    ((cp_top <= p) && (p <= cp_bot))
 #define points_into_tr(p)    ((tr_bot <= p) && (p <= tr_top))
 #define points_into_compl(p) ((compl_top <= p) && (p <= compl_bot))
-#define points_into_attv_array(p) \
-  (((CPtr)attv_interrupts <= p) && (p <= (CPtr)(attv_interrupts + (20480*2*sizeof(Cell)))))
+/*  #define points_into_attv_array(p) \ */
+/*    (((CPtr)attv_interrupts <= p) && (p <= (CPtr)(attv_interrupts + (20480*2*sizeof(Cell))))) */
 
 /*----------------------------------------------------------------------*/
 /* marker bits in different areas: the mark bit for the CHAT areas is   */
@@ -277,7 +277,8 @@ inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
     if (t == ATTV)
       {
 	*tag = ATTV;
-	xsb_abort("case ATTV in hp_pointer_from_cell() is not implemented yet");
+	retp = clref_val(cell);
+	testreturnit(retp);
       }
 
     return NULL;
@@ -291,10 +292,10 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
   *tag = t = cell_tag(cell) ;
   switch (t)
     {
-    case REF: case REF1: case ATTV:
+    case REF: case REF1: 
       retp = (CPtr)cell ;
       break ;
-    case LIST:
+    case LIST: case ATTV:
       retp = clref_val(cell) ;
       break ;
     case CS:
@@ -393,7 +394,7 @@ safe_mark_more:
   cell_val = *cell_ptr;
   tag = cell_tag(cell_val);
 
-  if (tag == LIST)
+  if (tag == LIST || tag == ATTV)
     { cell_ptr = clref_val(cell_val) ;
       if (mark_overflow)
 	{ m += mark_cell(cell_ptr+1) ; }
@@ -486,7 +487,7 @@ static int mark_root(Cell cell_val)
       while (arity--) m += mark_cell(++cell_ptr) ;
       return(m) ;
 
-    case LIST :
+    case LIST : case ATTV:
       /* the 2 cells will be marked iff neither of them is a Psc */
       cell_ptr = clref_val(cell_val) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
@@ -744,6 +745,27 @@ static int chat_mark_region(CPtr b, int len)
   return m; 
 } /* chat_mark_region */
 
+/**
+ * mark_from_attv_array: marks reachable cells from the attributed variables 
+ *                       interrupt chain.
+ * 
+ * 
+ * Return value: number of marked cells.
+ **/
+static int mark_from_attv_array()
+{
+  int i,max;
+  int m=0;
+
+  max = int_val(cell(interrupt_reg));
+
+  for (i=0; i<max; i++) {
+    m += mark_cell(attv_interrupts[i][0]);
+    m += mark_cell(attv_interrupts[i][1]);
+  }
+  return m;
+}
+
 /*-------------------------------------------------------------------------
 chat_mark_frozen_parts: see ISMM'98 paper for more understanding
 for CHAT it means:
@@ -987,6 +1009,8 @@ int mark_heap(int arity, int *marked_dregs)
   marked += chat_mark_frozen_parts(&avail_dreg_marks);
   if (slide) *marked_dregs = MAX_DREG_MARKS - avail_dreg_marks;
 #endif
+
+  marked += mark_from_attv_array();
 
   marked += mark_hreg_from_choicepoints();
 
@@ -1790,6 +1814,9 @@ static void unchain(CPtr hptr, CPtr destination)
 	  case LIST :
 	    *pointsto = makelist((Cell)destination) ;
 	    break ;
+	  case ATTV :
+	    *pointsto = makeattv((Cell)destination);
+	    break;
 	  default :
 	    xsb_exit("tag error during unchaining") ;
 	}
@@ -1816,6 +1843,9 @@ inline static void swap_with_tag(CPtr p, CPtr q, int tag)
       case LIST :
 	*q = makelist((Cell)p) ;
 	break ;
+      case ATTV :
+	*q = makeattv((Cell)p);
+	break;
       default : xsb_exit("error during swap_with_tag") ;
     }
 } /* swap_with_tag */
@@ -2263,6 +2293,16 @@ static void find_and_copy_block(CPtr hp)
 	  addr = (CPtr)((CPtr)(cell(addr))+offset);
 	  bld_list(scan, addr);
           break;
+        case ATTV:
+	  addr = clref_val(q);
+	  GCDBG("Attv %p found... \n", addr);
+	  if (h_marked(addr-heap_bot)) {
+	    copy_block(addr,next);
+	  }
+	  CHECK(addr);
+	  addr = (CPtr)((CPtr)(cell(addr))+offset);
+	  bld_attv(scan, addr);
+	  break;
         default :
 	  break;
       }
