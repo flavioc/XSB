@@ -43,6 +43,7 @@
 %	display/1, 
 	writeq/1, number/1, functor/3, atom/1, atom_codes/2,
 	set_output/1, current_output/1 from  usermod.
+:- import portray/1 from usermod.
 
 display(Term):- write(Term).
 %---------------------------------------------------------------% 
