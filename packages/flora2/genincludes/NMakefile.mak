@@ -6,7 +6,9 @@ ALLOBJS = flrpatch.flh flrpreddef.flh flrindex_P.flh \
 	  flrtable.flh flrhilogtable.flh \
 	  flrrefreshtable.flh
 
-!include ..\.prolog_path_wind
+!IF EXISTS (..\.prolog_path_wind) 
+!INCLUDE ..\.prolog_path_wind
+!ENDIF
 
 .SUFFIXES: .fli .flh
 

@@ -5,7 +5,9 @@ ALLOBJS = flrcommon.flh \
 	  flreqltrailer.flh \
           flrscalareql.flh
 
-!include ..\.prolog_path_wind
+!IF EXISTS (..\.prolog_path_wind) 
+!INCLUDE ..\.prolog_path_wind
+!ENDIF
 
 .SUFFIXES: .flh .fli
 

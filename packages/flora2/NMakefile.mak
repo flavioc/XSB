@@ -55,7 +55,9 @@ ALLOBJS = flrarguments$(OBJEXT) \
 
 OPTIONS = [optimize]
 
+!IF EXISTS (.prolog_path_wind) 
 !INCLUDE .prolog_path_wind
+!ENDIF
 
 .SUFFIXES: $(PROLOGEXT) $(OBJEXT)
 

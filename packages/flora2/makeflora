@@ -13,7 +13,7 @@ fi
 # Generates runflora file that can be used to run flora
 rm -fr .makeflora.tmp
 (echo "['flrconfig.P']." | $PROLOG) \
-    || (echo "Usage:  runflora all full-path-to-prolog"; touch .makeflora.tmp)
+    || (echo "Usage:  makeflora all full-path-to-prolog"; touch .makeflora.tmp)
 if test -f .makeflora.tmp ; then
     rm -rf .makeflora.tmp
     exit 1

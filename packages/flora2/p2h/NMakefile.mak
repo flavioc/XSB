@@ -1,7 +1,9 @@
 # Make file for prolog2hilog.dll
 
 
-!include ..\.prolog_path_wind
+!IF EXISTS (..\.prolog_path_wind) 
+!INCLUDE ..\.prolog_path_wind
+!ENDIF
 
 MYPROGRAM = prolog2hilog
 

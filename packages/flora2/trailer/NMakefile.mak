@@ -1,6 +1,8 @@
 # Make file for Microsoft NMAKE
 
-!include ..\.prolog_path_wind
+!IF EXISTS (..\.prolog_path_wind) 
+!INCLUDE ..\.prolog_path_wind
+!ENDIF
 
 OBJEXT = .O
 PROLOGEXT = .P

@@ -6,7 +6,9 @@ PROLOGEXT = .P
 ALLOBJS = flrprettyprint$(PROLOGEXT) flrio$(PROLOGEXT) \
 	  flrstorage$(PROLOGEXT) flrsystem$(PROLOGEXT)
 
-!include ..\.prolog_path_wind
+!IF EXISTS (..\.prolog_path_wind) 
+!INCLUDE ..\.prolog_path_wind
+!ENDIF
 
 OPTIONS = [optimize]
 
