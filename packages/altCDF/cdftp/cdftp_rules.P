@@ -2,7 +2,7 @@
 :- [cdftp_meta].
 :- [cdftp_cdfsc].
 
-:- export check_rule/1, dlrule_to_cdf/2, body_ce_to_formula/3.
+:- export check_rule/1, dlrule_to_cdf/2, dlrule_to_cdf/3, body_ce_to_formula/3.
 
 :- import allAttr/3, hasAttr/3, 
 	   isa/2, maxAttr/4, minAttr/4,
@@ -13,7 +13,10 @@
 :- import compdltrans/3 from usermod.
 :- import member/2 from basics.
 
-dlrule_to_cdf('<='(Head,Body),CDFList):- 
+dlrule_to_cdf('<='(Head,Body),CDFList):-
+	dlrule_to_cdf('<='(Head,Body),CDFList,_).
+
+dlrule_to_cdf('<='(Head,Body),CDFList,Cmpt):- 
 	head_ce_to_formula(Head,V,HeadList,[],Cmpt),
 %	(var(Cmpt) -> 
 %	    cdf_warning(rule,('No component info given in rule: ',
