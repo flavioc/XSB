@@ -84,9 +84,14 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   strcpy(sofilename, pofilename);
   
   file_extension_ptr = xsb_strrstr(sofilename, XSB_OBJ_EXTENSION_STRING);
+#if (defined(__APPLE__))
+  /* replace the OBJ file suffix with the dylib suffix */
+ strcpy(file_extension_ptr+1, "dylib");
+#else
   /* replace the OBJ file suffix with the so suffix */
-  strcpy(file_extension_ptr+1, "so");
-  
+ strcpy(file_extension_ptr+1, "so");
+#endif
+
   /* (1.5) include necessary paths into LD_LIBRARY_PATH
      so that the right libraries would be consulted at loading time.
      NOTE: Some systems (Solaris) ignore runtime changes of LD_LIBRARY_PATH,
