@@ -480,9 +480,13 @@ xsb_flag(garbage_collection, GCmode) :-
 
 /* ==================================================================== */
 
-garbage_collection(none) :- stat_set_flag(GARBAGE_COLLECT, NO_GC).
-garbage_collection(sliding) :- stat_set_flag(GARBAGE_COLLECT, SLIDING_GC).
-garbage_collection(copying) :- stat_set_flag(GARBAGE_COLLECT, COPYING_GC).
+garbage_collection(GC) :- var(GC), !,
+	abort('Uninstantiated argument 1 of garbage_collection/1').
+garbage_collection(none) :- !, stat_set_flag(GARBAGE_COLLECT, NO_GC).
+garbage_collection(sliding) :- !, stat_set_flag(GARBAGE_COLLECT, SLIDING_GC).
+garbage_collection(copying) :- !, stat_set_flag(GARBAGE_COLLECT, COPYING_GC).
+garbage_collection(_) :-
+	abort('Wrong type in argument 1 of garbage_collection/1').
 
 /* ==================================================================== */
 
