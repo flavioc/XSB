@@ -55,8 +55,7 @@
 :- [oms_constraints].
 :- [oms_exceptions].
 :- [oms_oblivion].
-:- [oms_cdf].
-%%:- [oms_xj].
+:- (file_exists('oms_xj.P') -> [oms_xj] ; [oms_cdf]).
 
 :- dynamic class_int/3.
 :- dynamic immediate_subclass_int/4.
@@ -288,7 +287,7 @@ init_schema_index_std :-
 	%% oms_strel(SCid,RCid,TCid)
 	index(oms_strel(_,_,_),[1+2,1]),
 	%% oms_schrel(SCid,RCid,TCid)
-	index(oms_schrel(_,_,_),[1+2,1]).
+	index(oms_schrel(_,_,_),[1+2,1,2+3]).
 
 init_data_index_std :-
 	%% oms_obj(Oid,Name,Native_Id,Src)
@@ -452,10 +451,10 @@ class(Cid,Label,NatCid,Sou) :-
 	nonvar(Cid) ->
 	%%	(ground(Cid) ; nonvar(Cid),oms_primitive_type(Cid)) -> %% did not take care of param classes with non-ground primitive classes as arguments or of param classes with some arguments being variables
 	        class_cidbound(Cid,Label,NatCid,Sou) 
-          ; (nonvar(NatCid) ->
+          ; (nonvar(NatCid),nonvar(Sou) ->
                    class_nidbound(Cid,Label,NatCid,Sou) 
                ;
-       (           oms_cn(Cid,Label,NatCid,Sou) ;
+	       (           oms_cn(Cid,Label,NatCid,Sou) ;
                    get_class_int(Cid,Label,NatCid,Sou))).
 
 /* Succeed if you can unify with an internal CID or external
@@ -502,19 +501,19 @@ class_cidbound(Cid,Label,NatCid,Sou):-
 
 */
 
-/* TLS: the following could be optimized more. */
+/* TLS: I am assumnig that if we get to here, nid and source
+    are both bound -- therefore CID must be functional, and we
+    don't need non-determinism. */
 class_nidbound(Cid,Label,NatCid,Sou):- 	
-	oms_primitive_class(Cid,Label,NatCid,Sou).
-class_nidbound(Cid,Label,NatCid,Sou):- 
-%	atomic(NatCid),!,
-	\+ oms_primitive_class(Cid,Label,NatCid,Sou),
-        (oms_cn(Cid,Label,NatCid,Sou)
-         ; get_class_int(Cid,Label,NatCid,Sou)).
-class_nidbound(Cid,Label,NatCid,Sou):- 
-	\+ oms_primitive_class(Cid,Label,NatCid,Sou),
-	\+ oms_cn(Cid,Label,NatCid,Sou),
-	/* TLS: use cn_id_map rather than get_class_int for efficiency  */
-            \+ cn_id_map(Cid,Label,NatCid,Sou),
+	(oms_primitive_class(Cid,Label,NatCid,Sou) -> 
+	      true
+	    ; (oms_cn(Cid,Label,NatCid,Sou) -> 
+	            true
+	          ; (get_class_int(Cid,Label,NatCid,Sou) -> 
+		     true
+		   ; class_nidbound_param(Cid,Label,NatCid,Sou) ) ) ).
+
+class_nidbound_param(Cid,Label,NatCid,Sou):- 
 	NatCid =.. [Functor|List],
 	class_nidbound_1(List,NewList,NatCid),
 	Cid =.. [Functor|NewList],
@@ -562,12 +561,12 @@ term_get_class_int(GoalCid,Label,NatCid,Sou) :-
 	).	
 
 get_class_int(Cid,Label,NatCid,Sou) :-
-	class_int(Label,NatCid,Sou),
-	(cn_id_map(Cid,Label,NatCid,Sou)
-	 ->	true
-	 ;	atomic_newcid(Cid),
-		asserta(cn_id_map(Cid,Label,NatCid,Sou))
-	).	
+	(cn_id_map(Cid,Label,NatCid,Sou) -> 
+	      true 
+	    ; class_int(Label,NatCid,Sou),
+	       atomic_newcid(Cid),
+	       asserta(cn_id_map(Cid,Label,NatCid,Sou))
+	).
 
 ext_int(Cid,Label,NatCid,Sou):- 
 	atomic(NatCid),!,
@@ -648,7 +647,7 @@ newClass(Name,ParentCid,NativeId,Source,NewCid,UpdateList0,UpdateList) :-
 	check_new_nid(NativeId,class(Name,NativeId,Source)),
 	check_new_source(Source,class(Name,NativeId,Source)),
 	(var(NewCid)
-	 ->	(class(NewCid,Name0,NativeId,Source)  % old class
+	 ->	(class_nidbound(NewCid,Name0,NativeId,Source)  % old class
 		 ->	add_parent_if_nec(NewCid,Name,ParentCid,UpdateList0,UpdateList),
 			(Name \== Name0
 			 ->	oms_warning(update,('newClass called with old NativeId and Source [',
@@ -748,19 +747,30 @@ generated (not all their instances), but for testing (i.e. a
 bound/bound call), subsumed terms are handled.  ").
 
 %%%:- table subclass/2.
+:- table table_subclass/2.
+:- use_subsumptive_tabling table_subclass/2.
+table_subclass(One,Two):- subclass(One,Two).
 
 subclass(One,Two):- 
 	nonvar(One),var(Two),!,
 	subclass_bf(One,Two).
-subclass(One,Two):- 
+subclass(One,Two):- 	
 	nonvar(One),nonvar(Two),!,
-	subclass_bb(One,Two).
+	subclass_bb_nv(One,Two).
 subclass(One,Two):- 
 	var(One),nonvar(Two),!,
 	subclass_fb(One,Two).
 subclass(One,Two):- 
 	inner_subclass_ff(One,Two).
 
+/* one and two are nonvars */
+subclass_bb_nv(One,Two):- 
+    (integer(One),integer(Two) -> 
+	         det_subclass_bb(One,Two)
+	       ; 
+	          subclass_bb(One,Two)).
+
+/* One and Two are nonvars, but at least one is not an integer */
 /* Primitive types are handled separately in 3rd clause
  * because variables must be handled */
 subclass_bb(One,Two):- 
@@ -825,11 +835,17 @@ inner_subclass_ff(Sub,Sup) :-
 	inner_immediate_subclass(Sub,Par),
 	inner_subclass_bf(Par,Sup).
 
-%%% subclass(+,+).
+%%% wpc: subclass(+,+), and sub is integer.
 inner_subclass_bb(Sub,Sub).
 inner_subclass_bb(Sub,Sup) :-
 	inner_immediate_subclass(Sub,Par),
 	inner_subclass_bf(Par,Sup).
+
+det_subclass_bb(Sub,Sub):-!.
+det_subclass_bb(Sub,Sup) :-
+	inner_immediate_subclass(Sub,Par),
+	inner_subclass_bf(Par,Sup),
+	!.
 
 %%% subclass(+,-).
 inner_subclass_bf(Sub,Sub).
@@ -881,7 +897,7 @@ inner_immediate_subclass(CCid,PCid) :-
 
 immediate_subclass(SubCid,SupCid) :- 
 	nonvar(SubCid),
-        skeleton(SubCid,SubSkel), 
+            skeleton(SubCid,SubSkel), 
 	oms_cn(SubSkel,_Label,_Natid1,_Sou),
 	term_subclass(SubCid,SubSkel),
 	SubCid \== SubSkel,
@@ -893,16 +909,16 @@ immediate_subclass(CCid,PCid) :-
 
 immediate_subclass_int(CCid,PCid) :-
 	(nonvar(CCid)
-	 ->	class(CCid,_,CNatId,CSou),
+	 ->	class_cidbound(CCid,_,CNatId,CSou),
 		immediate_subclass_int(CNatId,CSou,PNatId,PSou),
-		class(PCid,_,PNatId,PSou)
+		class_nidbound(PCid,_,PNatId,PSou)
 	 ; nonvar(PCid)
-	 ->	class(PCid,_,PNatId,PSou),
+	 ->	class_cidbound(PCid,_,PNatId,PSou),
 		immediate_subclass_int(CNatId,CSou,PNatId,PSou),
-		class(CCid,_,CNatId,CSou)
+		class_nidbound(CCid,_,CNatId,CSou)
 	 ;	immediate_subclass_int(CNatId,CSou,PNatId,PSou),
-		class(CCid,_,CNatId,CSou),
-		class(PCid,_,PNatId,PSou)
+		class_nidbound(CCid,_,CNatId,CSou),
+		class_nidbound(PCid,_,PNatId,PSou)
 	).
 
 :- comment(assert_subclass/2, "@tt{assert_subclass(SubCid,SupCid)}
@@ -958,7 +974,7 @@ sc_child_exists(SCid):-
 %%% RELATIONSHIP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(is_a_relation/1, "@pred{is_a_relation/1} is
-the disjunction of @pred{is_an_inheritable_relationship/1},
+the disjunction of @pred{is_an_inheritabele_relationship/1},
 @pred{is_a_schrel/1} and @pred{is_a_strel/1}.").
 
 is_a_relation(RCid) :-
@@ -968,7 +984,7 @@ is_a_relation(RCid) :-
 is_a_relation(RCid) :-
 	is_a_schrel(RCid).
 
-%%% (Inheritable) RELATIONSHIP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% (Inheritable) RELATIONSHIP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(is_an_inheritable_relationship/1,
 "@tt{is_an_inheritable__relationship(RCid)} checks that @tt{RCid} is
@@ -977,10 +993,10 @@ the class ID of a subclass of @tt{OMS Inheritable Relationships}.  If
 nondeterministically.").
 
 is_an_inheritable_relationship(RCid) :-
-	class(RelsCid,'OMS Inheritable Relationships',
+	class_nidbound(RelsCid,'OMS Inheritable Relationships',
 	              'OMS Inheritable Relationships','OMS'),
 	(nonvar(RCid)
-	 ->	subclass(RCid,RelsCid), RCid \== RelsCid	% was if_
+	 ->	subclass(RCid,RelsCid), RCid \== RelsCid	
 	 ;	findall(RCid,(subclass_fb(RCid,RelsCid), RCid \== RelsCid),URCids),
 		sort(URCids,RCids), % eliminate duplicates from multiple parents
 		member(RCid,RCids)
@@ -1007,23 +1023,30 @@ immediate_relationship(SCid,RCid,TCid) :-
 immediate_relationship_int(SCid,RCid,TCid) :-
 	(nonvar(SCid)
 	 ->	(nonvar(RCid)
-		 ->	class(SCid,_,SNatId,SSou),
-			class(RCid,_,RNatId,RSou),
+		 ->	class_cidbound(SCid,_,SNatId,SSou),
+			class_cidbound(RCid,_,RNatId,RSou),
 			immediate_relationship_int(SNatId,SSou,
                                                    RNatId,RSou,TNatId,TSou),
-			class(TCid,_,TNatId,TSou)
-		 ;	class(SCid,_,SNatId,SSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+		 ;	class_cidbound(SCid,_,SNatId,SSou),
 			immediate_relationship_int(SNatId,SSou,
                                          RNatId,RSou,TNatId,TSou),
-			class(RCid,_,RNatId,RSou),
-			class(TCid,_,TNatId,TSou)
+			class_nidbound(RCid,_,RNatId,RSou),
+			class_nidbound(TCid,_,TNatId,TSou)
 		)
-	 ;	immediate_relationship_int(SNatId,SSou,
+	 ;	(nonvar(RCid) 
+		 ->	class_cidbound(RCid,_,RNatId,RSou),
+			immediate_relationship_int(SNatId,SSou,
+                                                   RNatId,RSou,TNatId,TSou),
+			class_nidbound(SCid,_,SNatId,SSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+		    ; 
+		            immediate_relationship_int(SNatId,SSou,
 	                                   RNatId,RSou,TNatId,TSou),
-		class(SCid,_,SNatId,SSou),
-		class(RCid,_,RNatId,RSou),
-		class(TCid,_,TNatId,TSou)
-	).
+			class_nidbound(SCid,_,SNatId,SSou),
+			class_nidbound(RCid,_,RNatId,RSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+	) ).
 
 irel(SCid,RCid,TCid) :-
 	relationship(SCid,RCid,TCid).
@@ -1043,7 +1066,8 @@ relationship(SCid,RCid,TCid) :-
 	is_an_inheritable_relationship(RCid),
 	relationship_inh_fr(SCid,RCid,TCid).
 relationship(SCid,RCid,TCid) :-
-	%%is_an_inheritable_relationship(RCid),  %% should be error if this is false
+	%%is_an_inheritable_relationship(RCid),  
+            %% should be error if this is false
 	relationship_inh(SCid,RCid,TCid).
 
 :- table relationship_inh_fr/3.
@@ -1077,40 +1101,18 @@ relationship_inh_gen_fr(SCid,RCid,TCid) :-
 		immediate_relationship(SCidP,RCid,TCidP),
 		(var(TCid)
 		 ->	TCid = TCidP
-		 ;	subclass(TCidP,TCid) % was if_
+		 ;	subclass(TCidP,TCid) 
 		)
 	).
-
-/*** old definitions, without reverse indexing:
-relationship_inh_gen(SCid,RCid,TCid) :-
-%%	subclass(RCid,RCidP),
-	subclass(RCidP,RCid),
-	subclass(SCid,SCidP),
-	immediate_relationship(SCidP,RCidP,TCidP),
-	(var(TCid)
-	 ->	TCid = TCidP
-	 ;	subclass(TCidP,TCid)	% was if_
-	).
-:- table relationship_inh_gen_fr/3.
-relationship_inh_gen_fr(SCid,RCid,TCid) :-
-	subclass(SCid,SCidP),
-	immediate_relationship(SCidP,RCid,TCidP),
-	(var(TCid)
-	 ->	TCid = TCidP
-	 ;	subclass(TCidP,TCid)	% was if_
-	).
-****/
-
 
 more_specific_relationship(OutTerm,CopyTerm) :-
 	CopyTerm = rln(SCidO,RCidO,TCidO),
 	OutTerm = rln(SCid,RCid,TCid),
 	relationship_inh_gen(SCidO,RCidO,TCidO),
 	\+ variant(OutTerm,CopyTerm),	
-%%	if_subclass(RCid,RCidO),
-	subclass(RCidO,RCid),	% was if_
-	subclass(SCid,SCidO),	% was if_
-	subclass(TCidO,TCid).	% was if_
+	subclass(RCidO,RCid),	
+	subclass(SCid,SCidO),	
+	subclass(TCidO,TCid).	
 
 :- comment(assert_relationship/3,
 "@tt{assert_relationship(SCid,RCid,TCid)} adds a new inheritable
@@ -1137,7 +1139,8 @@ retractallRelationship(SCid,RCid,TCid) :-
 	oms_update_list([retractall(oms_rln(SCid,RCid,TCid))]).
 
 :- comment(newRelationship/3, "@tt{newRelationship(SCid,RCid,TCidA)}
-adds a new inheritable relationship to the ontology if it is not
+adds a new inheritable relationship to the ontology if it is n
+ot
 already implied (through inheritance, if applicable) by the
 relationships already in the ontology.").
 newRelationship(SCid,RCid,TCidA) :-
@@ -1149,12 +1152,12 @@ newIrel(SCid,RCid,TCidA):-
 
 /* TLS main change is that I now also check that RCid is a class of
    relation */
-newRelationship(SCid,RCid,TCidA,Upd0,Upd) :-
-	standardize_value(TCidA,TCid),
-	check_incremental_constraints(relationship(SCid,RCid,TCid)),
+newRelationship(SCid,RCid,TCid,Upd0,Upd) :-
+%	standardize_value(TCidA,TCid),
+%	check_incremental_constraints(relationship(SCid,RCid,TCid)),
 	(relationship(SCid,RCid,TCid)
 	 ->	Upd0 = Upd
-	 ; insert_new_relationship(SCid,RCid,TCidA,Upd0,Upd)).
+	 ; insert_new_relationship(SCid,RCid,TCid,Upd0,Upd)).
 
 insert_new_relationship(SCid,RCid,TCidA,Upd0,Upd):- 
 	relationship_source_class_exists(SCid),
@@ -1183,6 +1186,33 @@ relationship_target_class_exists(SCid):-
 		    ' relationship where target is missing: ',SCid)),
 	   fail).
 
+%%%%%%%%%%%%%%%
+/* To be used ONLY when loading from an external file.
+     In this case, it is known that SCid, RCid, and TCid are all proper class ids. 
+newRelationship_omsext(SCid,RCid,TCid) :-
+	(relationship(SCid,RCid,TCid)
+	 ->   true
+	 ;    (is_an_inheritable_relationship(RCid) -> 
+	           assert_oms(oms_rln(SCid,RCid,TCid))
+%   	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
+	        ;  oms_warning(update,('attempt to add an inheritable ',
+		    ' relationship for class that is not a ',
+		    ' relationship: ',RCid)),
+	            fail) ).
+*/
+
+newRelationship_omsext(SCid,RCid,TCid) :-
+	(relationship_inh_gen(SCid,RCid,TCid)
+	 ->   true
+	 ;    (is_an_inheritable_relationship(RCid) -> 
+%	           assert_oms(oms_rln(SCid,RCid,TCid))
+   	           oms_update_list([asserta(oms_rln(SCid,RCid,TCid))])
+	        ;  oms_warning(update,('attempt to add an inheritable ',
+		    ' relationship for class that is not a ',
+		    ' relationship: ',RCid)),
+	            fail) ).
+
+/*  TLS: taken out 1/03
 standardize_value(X,X) :- var(X), !.
 standardize_value(integer(X),integer(Y)) :-
 	(var(X)
@@ -1196,6 +1226,7 @@ standardize_value(integer(X),integer(Y)) :-
 	),
 	!.
 standardize_value(X,X).
+*/
 
 %%% SET-VALUED RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
@@ -1268,12 +1299,12 @@ newStrel(SCid,RCid,TCidA) :-
 
 /* TLS main change is that I now also check that RCid is a subclass of
    relation */
-newStrel(SCid,RCid,TCidA,Upd0,Upd) :-
-	standardize_value(TCidA,TCid),
+newStrel(SCid,RCid,TCid,Upd0,Upd) :-
+%	standardize_value(TCidA,TCid),
 	check_incremental_constraints(strel(SCid,RCid,TCid)),
 	(strel(SCid,RCid,TCid)
 	 ->	Upd0 = Upd
-	 ; insert_new_strel(SCid,RCid,TCidA,Upd0,Upd)).
+	 ; insert_new_strel(SCid,RCid,TCid,Upd0,Upd)).
 
 insert_new_strel(SCid,RCid,TCidA,Upd0,Upd):- 
 	strel_source_class_exists(SCid),
@@ -1325,23 +1356,29 @@ immediate_schrel(SCid,RCid,TCid) :- immediate_schrel_int(SCid,RCid,TCid).
 
 immediate_schrel_int(SCid,RCid,TCid) :-
 	(nonvar(SCid)
-	 ->	(nonvar(RCid)
-		 ->	class(SCid,_,SNatId,SSou),
-			class(RCid,_,RNatId,RSou),
+	 ->	(nonvar(RCid) ->	
+	                        class_cidbound(SCid,_,SNatId,SSou),
+			class_cidbound(RCid,_,RNatId,RSou),
 			immediate_schrel_int(SNatId,SSou,
 			                     RNatId,RSou,TNatId,TSou),
-			class(TCid,_,TNatId,TSou)
-		 ;	class(SCid,_,SNatId,SSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+		 ;	class_cidbound(SCid,_,SNatId,SSou),
 			immediate_schrel_int(SNatId,SSou,
 			                     RNatId,RSou,TNatId,TSou),
-			class(RCid,_,RNatId,RSou),
-			class(TCid,_,TNatId,TSou)
+			class_nidbound(RCid,_,RNatId,RSou),
+			class_nidbound(TCid,_,TNatId,TSou)
 		)
-	 ;	immediate_schrel_int(SNatId,SSou,RNatId,RSou,TNatId,TSou),
-		class(SCid,_,SNatId,SSou),
-		class(RCid,_,RNatId,RSou),
-		class(TCid,_,TNatId,TSou)
-	).
+	 ;	(nonvar(RCid) -> 
+			class_cidbound(RCid,_,RNatId,RSou),
+	                        immediate_schrel_int(SNatId,SSou,
+				RNatId,RSou,TNatId,TSou),
+			class_cidbound(RCid,_,RNatId,RSou),
+			class_nidbound(TCid,_,TNatId,TSou)
+		; 	immediate_schrel_int(SNatId,SSou,
+		                                    RNatId,RSou,TNatId,TSou),
+			class(SCid,_,SNatId,SSou),
+			class(RCid,_,RNatId,RSou),
+			class(TCid,_,TNatId,TSou) ) ).
 
 :- comment(schrel/3, "@tt{schrel(SCid,RCid,TCid)} defines the semantic
 schema relation predicate, where @tt{SCid} is the source Class ID,
@@ -1396,39 +1433,16 @@ schrel_inh_gen_fr(SCid,RCid,TCid) :-
 		)
 	).
 
-/**** old def without reverse indexing
-:- table schrel_inh_gen/3.
-schrel_inh_gen(SCid,RCid,TCid) :-
-%%	subclass(RCid,RCidP),
-	subclass(RCidP,RCid),
-	subclass(SCid,SCidP),
-	immediate_schrel(SCidP,RCidP,TCidP),
-	(var(TCid)
-	 ->	TCid = TCidP
-	 ;	subclass(TCidP,TCid)	% was if_
-	).
-
-:- table schrel_inh_gen_fr/3.
-schrel_inh_gen_fr(SCid,RCid,TCid) :-
-	subclass(SCid,SCidP),
-	immediate_schrel(SCidP,RCid,TCidP),
-	(var(TCid)
-	 ->	TCid = TCidP
-	 ;	subclass(TCidP,TCid)	% was if_
-	).
-****/
-
 more_specific_schrel(OutTerm,CopyTerm) :-
 	CopyTerm = schrel(SCidO,RCidO,TCidO),
 	OutTerm = schrel(SCid,RCid,TCid),
 	schrel_inh_gen(SCidO,RCidO,TCidO),
 	\+ variant(OutTerm,CopyTerm),	
-%%	if_subclass(RCid,RCidO),
-	subclass(RCidO,RCid),	% was if_
-	subclass(SCid,SCidO),	% was if_
-	subclass(TCidO,TCid).	% was if_
+	subclass(RCidO,RCid),	
+	subclass(SCid,SCidO),	
+	subclass(TCidO,TCid).
 
-:- comment(assert_schrel/3, "@tt{assert_schrel(SCid,RCid,TCid)} adds a
+:- comment(assert_scassert_schrelhrel/3, "@tt{assert_schrel(SCid,RCid,TCid)} adds a
 new schema relation tuple to the ontology, if it is not already
 implied (using inheritance if applicable) by the schema relations
 already in the ontology.").
@@ -1459,12 +1473,12 @@ newSchrel(SCid,RCid,TCidA) :-
 
 /* TLS main change is that I now also check that RCid is a subclass of
    relation */
-newSchrel(SCid,RCid,TCidA,Upd0,Upd) :-
-	standardize_value(TCidA,TCid),
+newSchrel(SCid,RCid,TCid,Upd0,Upd) :-
+%	standardize_value(TCidA,TCid),
 	check_incremental_constraints(schrel(SCid,RCid,TCid)),
 	(schrel(SCid,RCid,TCid)
 	 ->	Upd0 = Upd
-	 ; insert_new_schrel(SCid,RCid,TCidA,Upd0,Upd)).
+	 ; insert_new_schrel(SCid,RCid,TCid,Upd0,Upd)).
 
 insert_new_schrel(SCid,RCid,TCidA,Upd0,Upd):- 
 	schrel_source_class_exists(SCid),
@@ -1679,7 +1693,6 @@ true if there is a fact in @pred{oms_mo/2} or information directly
 derivable from a @pred{immediate_memberof_int/4} rule indicating that
 @tt{Oid} is an object in the class with ID @tt{Cid}.").
 
-%%immediate_memberof(Oid,Cid) :- writeln(oms_mo(Oid,Cid)),fail.
 immediate_memberof(Oid,Cid) :- oms_mo(Oid,Cid).
 immediate_memberof(Oid,object(Oid)):- nonvar(Oid).
 immediate_memberof(Oid,Cid):- 
@@ -1691,7 +1704,6 @@ immediate_memberof(Oid,Cid):-
 	        \+ oms_primitive_type(Cid)) 
 	    -> 
 		immediate_memberof_struct_fb(Oid,Cid) ) ).
-
 immediate_memberof(Oid,Cid) :-
 	immediate_memberof_int(Oid,Cid).
 
@@ -1971,8 +1983,8 @@ newAttribute(SOid,RCid,TCid) :-
 		oms_update_list(Updates)
 	).
 
-newAttribute(SOid,RCid,TCidA,Upd0,Upd) :-
-	standardize_value(TCidA,TCid),
+newAttribute(SOid,RCid,TCid,Upd0,Upd) :-
+%	standardize_value(TCidA,TCid),
 	check_incremental_constraints(attribute(SOid,RCid,TCid)),
 	(check_attribute(SOid,RCid,TCid)
 	 ->	Upd0 = Upd
@@ -2327,6 +2339,48 @@ intern_if_necessary(Cid,NativeId,Sou):-
           class_int(Label,NativeId,Sou),	
           call_assert(cn_id_map(Cid,Label,NativeId,Sou))).
 
+show_oms_size:- 
+	count_success(oms_cn(_,_,_,_)),
+	count_success(oms_sc(_,_)),
+	count_success(oms_obj(_,_,_,_)),
+	count_success(oms_mo(_,_)),
+	count_success(oms_rln(_,_,_)),
+	count_success(oms_strel(_,_,_)),
+	count_success(oms_schrel(_,_,_)),
+	count_success(oms_ao(_,_,_)),
+	count_success(oms_at(_,_,_)),
+	count_success(cn_id_map(_,_,_,_)),
+	count_success(ob_id_map(_,_,_,_)).
+	
+count_success(Term):- 
+	conset('_$size_matters',0),
+	count_success_1(Term),
+	conget('_$size_matters',N),
+	functor(Term,F,A),
+	writeln(('There are ',N,' ',F,'/',A,' successes')).
+	
+count_success_1(Term):- 
+	call(Term),
+	inc_count,
+	fail.
+count_success_1(_).
+
+inc_count:- 
+	conget('_$size_matters',N),
+	N1 is N + 1,
+	conset('_$size_matters',N1).
+
+time_call(Call,Time):- 
+	cputime(T),
+	time_call_1(Call),
+	cputime(T1),
+	Time is T1 - T.
+
+time_call_1(Call):- 
+	call(Call),
+	fail.
+time_call_1(_).
+
 end_of_file.
 
 /**paramType(VID):-
@@ -2370,20 +2424,6 @@ properly_subsumed_relationship(SCid,RCid,TCid,SSCid,SRCid,STCid) :-
 		)
 	).
 	
-
-if_inherited_relationship(RCid) :-
-	(class(RTCid,'OMS Relationship Type','OMS Relationship Type','OMS')
-	 ->	(RCid == RTCid  % type relationship is itself inherited
-		 ->	true
-		 ;	relationship_inh(RCid,RTCid,Type)
-		 ->	(Type = integer(0)
-			 ->	true
-			 ;	fail
-			)
-		 ;	true
-		)
-	 ;	true
-	).
 
 
 create_new_para_cid_for_int(NatCid,Cid,Sou):- 
@@ -2515,3 +2555,74 @@ way.  In the OMS, this property is declared by the pragma @em{OMS
 partition Class}.
 
 @end{itemize}
+
+/*
+class_nidbound(Cid,Label,NatCid,Sou):- 
+	\+ oms_primitive_class(Cid,Label,NatCid,Sou),
+        (oms_cn(Cid,Label,NatCid,Sou)
+         ; get_class_int(Cid,Label,NatCid,Sou)).
+class_nidbound(Cid,Label,NatCid,Sou):- 
+	\+ oms_primitive_class(Cid,Label,NatCid,Sou),
+	\+ oms_cn(Cid,Label,NatCid,Sou),
+	 TLS: use cn_id_map rather than get_class_int for efficiency  
+            \+ cn_id_map(Cid,Label,NatCid,Sou),
+	NatCid =.. [Functor|List],
+	class_nidbound_1(List,NewList,NatCid),
+	Cid =.. [Functor|NewList],
+	skeleton(Cid,CidSkel),
+	        (oms_cn(CidSkel,Label,_NatSkel,Sou),
+	         term_subclass(Cid,CidSkel)
+	         ;
+	         term_get_class_int(Cid,Label,NatCid,Sou)).
+*/
+/*
+get_class_int(Cid,Label,NatCid,Sou) :-
+	class_int(Label,NatCid,Sou),
+	(cn_id_map(Cid,Label,NatCid,Sou)
+	 ->	true
+	 ;	atomic_newcid(Cid),
+		asserta(cn_id_map(Cid,Label,NatCid,Sou))
+	).	
+*/
+
+/*** old definitions, without reverse indexing:
+relationship_inh_gen(SCid,RCid,TCid) :-
+%%	subclass(RCid,RCidP),
+	subclass(RCidP,RCid),
+	subclass(SCid,SCidP),
+	immediate_relationship(SCidP,RCidP,TCidP),
+	(var(TCid)
+	 ->	TCid = TCidP
+	 ;	subclass(TCidP,TCid)	% was if_
+	).
+:- table relationship_inh_gen_fr/3.
+relationship_inh_gen_fr(SCid,RCid,TCid) :-
+	subclass(SCid,SCidP),
+	immediate_relationship(SCidP,RCid,TCidP),
+	(var(TCid)
+	 ->	TCid = TCidP
+	 ;	subclass(TCidP,TCid)	% was if_
+	).
+****/
+
+/**** old def without reverse indexing
+:- table schrel_inh_gen/3.
+schrel_inh_gen(SCid,RCid,TCid) :-
+%%	subclass(RCid,RCidP),
+	subclass(RCidP,RCid),
+	subclass(SCid,SCidP),
+	immediate_schrel(SCidP,RCidP,TCidP),
+	(var(TCid)
+	 ->	TCid = TCidP
+	 ;	subclass(TCidP,TCid)	% was if_
+	).
+
+:- table schrel_inh_gen_fr/3.
+schrel_inh_gen_fr(SCid,RCid,TCid) :-
+	subclass(SCid,SCidP),
+	immediate_schrel(SCidP,RCid,TCidP),
+	(var(TCid)
+	 ->	TCid = TCidP
+	 ;	subclass(TCidP,TCid)	% was if_
+	).
+****/

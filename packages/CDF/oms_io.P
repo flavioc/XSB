@@ -6,6 +6,7 @@
 	merge_omsext/0,
 	merge_intensional_oms/0, oms_exists/1.
 
+:- import time_message/2 from auxlry.
 :- import append/3, ground/1, member/2 from basics.
 :- import concat_atom/2 from string.
 :- import numbervars/3 from num_vars.
@@ -440,6 +441,7 @@ For now, oms_caching is turned off for the extent of merge_omsext,
 so that newXXX routines can be used.").
 
 merge_omsext :-
+	cputime(Begin),
 	caching_oms(Cache),
 	oms_dont_use_cache,
 	cp_atomic_class_extoms,
@@ -453,21 +455,17 @@ merge_omsext :-
 	cp_attribute_extoms,
 	cp_attribute_object_extoms,
 	(oms_checking(partial) -> true ; check_consistency),
-	(Cache =:= 1 -> oms_use_cache ; true).
-
-% warning: this should be used ONLY by merge_omsext/0!
-
-assert_class(Cid,Name,NativeID,Source) :-
-	newClass(Name,unk,NativeID,Source,Cid).
+	(Cache =:= 1 -> oms_use_cache ; true),
+	time_message(Begin,('external OMS(s) merged')).
 
 /* Checks for Name,Nid,Sou are pefromed
-   in newClass (called by assert_class) */
+   in newClass  */
 cp_atomic_class_extoms :-
 	class_ext(Name,Nid,Sou),
 	atomic(Nid),
-	Term = 	class_ext(Name,Nid,Sou),
-	check_new_source(Sou,Term),
-	assert_class(_Cid,Name,Nid,Sou),
+%	Term = 	class_ext(Name,Nid,Sou),
+%	check_new_source(Sou,Term),  (not needed -- done in new class)
+	newClass(Name,unk,Nid,Sou,_Cid),
 	fail.
 cp_atomic_class_extoms.
 
@@ -485,7 +483,7 @@ cp_parameterized_class_extoms :-
 	check_new_source(Sou,Term),
 	check_not_primitive_type(NCid),
 	check_source_consistency(NCid,Sou),
-	assert_class(_Id,Lab,NCid,Sou),
+	newClass(Lab,unk,NCid,Sou,_Cid),
 	fail.
 cp_parameterized_class_extoms.
 
@@ -498,7 +496,7 @@ cp_subclass_extoms :-
 	get_atomic_class(SupNatCid,SupSource,SupCid,Term),
 	(immediate_subclass(SubCid,SupCid)
 	 ->	fail
-	 ;	assert_subclass(SubCid,SupCid),
+	 ;	newSubclass(SubCid,SupCid),
 		fail
 	).
 cp_subclass_extoms.
@@ -510,7 +508,8 @@ cp_relationship_extoms :-
 	get_cid_from_nid_src(SNCid,SSrc,Term,SCid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
-	newRelationship(SCid,RCid,TCid),
+	newRelationship_omsext(SCid,RCid,TCid),
+%	newRelationship(SCid,RCid,TCid),
 	fail.
 cp_relationship_extoms.
 
@@ -561,7 +560,7 @@ cp_memberof_extoms :-
 	get_oid_from_nid_src(NOid,OSrc,Term,Oid),
 	get_cid_from_nid_src(NCid,Src,Term,Cid),
 %	get_atomic_class(NCid,Src,Cid,Term),
-	assert_memberof(Oid,Cid),
+	newMemberof(Oid,Cid),
 	fail.
 cp_memberof_extoms.
 
@@ -572,7 +571,7 @@ cp_attribute_extoms :-
 	get_oid_from_nid_src(NOid,Osrc,Term,Oid),
 	get_cid_from_nid_src(RNCid,RSrc,Term,RCid),
 	get_cid_from_nid_src(TNCid,TSrc,Term,TCid),
-	assert_attribute(Oid,RCid,TCid),
+	newAttribute(Oid,RCid,TCid),
 	fail.
 cp_attribute_extoms.
 
@@ -584,11 +583,10 @@ cp_attribute_object_extoms :-
 	get_oid_from_nid_src(TNOid,Osrc2,Term,TOid),
 	(attribute_object(SOid,RCid,TOid)
 	 ->	fail
-	 ;	assert_attribute_object(SOid,RCid,TOid),
+	 ;	newAttributeObject(SOid,RCid,TOid),
 		fail
 	).
 cp_attribute_object_extoms.
-
 
 :- comment(load_mergeomsext/1, "@tt{load_mergeomsext(DirectoryList)}:
 loads and merges information in External Format from
@@ -601,8 +599,8 @@ internal or External Intensional Format will persist after the new
 files have been loaded and merged.").
 
 load_mergeomsext :-
-	oms_initialize_ctrs,
 	load_mergeomsext1('').
+
 load_mergeomsext(Dirs) :-
 	oms_initialize_ctrs,
 	load_mergeomsext1(Dirs).
@@ -616,7 +614,7 @@ load_mergeomsext1(Dir) :-
 
 	dir_load_dync(DirS,schema_omsext),
 	dir_load_dync(DirS,data_omsext),
-	writeln(calling_merge_omsext),
+%	writeln(calling_merge_omsext),
 	merge_omsext,
 	retractall(class_ext(_,_,_)),
 	retractall(subclass_ext(_,_,_,_)),
@@ -695,7 +693,8 @@ reload_schema_file :-
 	 ->	fail
 	 ; Term = oms_cn(OCID,Name,NID,Source)
 	 ->	(atomic(OCID)
-		 ->	assert_class(CID,Name,NID,Source),
+		 ->	% assert_class(CID,Name,NID,Source),
+		            newClass(Name,unk,NID,Source,CID),
 			asserta(a_oldnewCid(OCID,CID)),
 			fail
 		 ;	asserta(saved_parameterized_class(Name,NID,Source)),
@@ -730,7 +729,7 @@ reload_schema_file :-
 assert_saved_parameterized_classes :-
 	(saved_parameterized_class(_,_,_)
 	 ->	(saved_parameterized_class(Name,NatId,Sou),
-		 assert_class(_,Name,NatId,Sou),
+	             newClass(Name,unk,NatId,Sou,_Cid),
 		 fail
 		 ;
 		 retractall(saved_parameterized_class(_,_,_))
@@ -861,7 +860,6 @@ get_oid_from_nid_src(NOid,Src,Term,Oid) :-
 		fail
 	).
 
-/* for use in loads.  Can probably eliminate when I have the time */
 get_cid_from_nid_src(Nid,Sou,Term,Cid) :-
 	(class_nidbound(Cid,_,Nid,Sou) -> 
 	    true

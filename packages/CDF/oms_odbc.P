@@ -5,8 +5,8 @@
 	  odbc_insert/2,
 	  odbc_sql/3  from odbc_call.
 
-init_odbc_connection:- 
-	odbc_open('LocalServer','XSB-TSWIFT\tswift','').
+:- import member/2 from basics.
+:- import warning/1 from standard.
 
 init(Name,Pwd):- 
 	odbc_open(sqlserver,Name,Pwd),
@@ -44,3 +44,26 @@ include_ei_view1:-
 	assert((Head :- Body)),
 	fail.
 attach_to_dbmodule1.
+
+findall_odbc_sql(Input,Statement,Output,Term):- 
+	(ground_list(Input),var_list(Output) -> 
+	      findall(O,odbc_sql(Input,Statement,O),Outputs1),
+ 	      sort(Outputs1,Outputs),
+	      member(Output,Outputs)
+	    ; mode_warning(Term)).
+
+findall_odbc_sql_1(Input,Statement,Output):- 
+%	writeln(findall_odbc_sql_1(Input,Statement,Output)),
+	    findall(O,odbc_sql(Input,Statement,O),Outputs1),
+	    sort(Outputs1,Outputs),
+            member(Output,Outputs).
+
+mode_warning(Term):- 
+	warning(['DB calling modes not implemented for',Term]),
+	fail.
+
+ground_list([]).
+ground_list([H|T]):- 
+	ground(H),
+	ground_list(T).
+

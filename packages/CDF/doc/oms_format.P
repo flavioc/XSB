@@ -37,7 +37,7 @@ xsbdoc_index(global).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Verbose output (good for debugging).   
-xsbdoc_option('-v').
+% xsbdoc_option('-v').
 
 % Do not include author names.          
 % xsbdoc_option('-noauthors').
@@ -47,7 +47,7 @@ xsbdoc_option('-onesided').
 
 % Produce shorter table of contents (no entries for individual defs of 
 % preds).').
-% xsbdoc_option('-shorttoc').
+xsbdoc_option('-shorttoc').
 
 % Do not include version information.       
 % xsbdoc_option('-noversion').

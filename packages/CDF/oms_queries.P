@@ -1,4 +1,6 @@
-:- compiler_options([ciao_directives]).
+:- compiler_options([ciao_directives,spec_off]).
+
+/* spec turned off to avoid double tabling message */
 
 :- document_export
     attr/3,isa/2,immediate_attr/3,
@@ -325,7 +327,7 @@ q_cvt_cid(Cls,Csrc,Cid) :-
 	(nonvar(Cid)
 	 ->	(ground(Cls)
 		 ->	true
-		 ;	class(Cid,_,Cls,Csrc)
+		 ;	class_cidbound(Cid,_,Cls,Csrc)
 		)
 	 ; ground(Cls)
 	 ->	class(Cid,_,Cls,Csrc)
