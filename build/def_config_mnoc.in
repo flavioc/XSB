@@ -383,3 +383,6 @@
 the local program counter */
 #undef USE_BP_LPCREG
 
+/* GC on SLG-WAM! ;) */
+#undef SLG_GC
+

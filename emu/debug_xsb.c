@@ -933,12 +933,10 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
     xsb_dbgmsg("%s%p:\tLo St freeze register:\t0x%p", s,
 	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
 #ifdef LOCAL_EVAL
-    xsb_dbgmsg("%s%p:\ttag used for local eval:\t0x%d", s,
-	       &(tcp_tag(cpf_addr)), tcp_tag(cpf_addr));
     xsb_dbgmsg("%s%p:\tlocal eval trie_return:\t0x%p", s,
 	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
-    xsb_dbgmsg("%s%p:\tsubst factor arity:\t0x%d", s,
-	       &(tcp_arity(cpf_addr)), tcp_arity(cpf_addr));
+/*     xsb_dbgmsg("%s%p:\tsubst factor arity:\t0x%d", s, */
+/* 	       &(tcp_arity(cpf_addr)), int_val(tcp_arity(cpf_addr))); */
 #endif
 #endif
     num_of_args = length - TCP_SIZE;

@@ -87,7 +87,6 @@ Type definitions are in chat.h
   ----------------------------------------------------------------------*/
 
 #define chat_set_tr_length(phead,p)         chat_get_tr_length(phead) = p
-#define chat_set_cons_length(phead,p)       chat_get_cons_length(phead) = p
 
 #define chat_set_tr_start(phead,p)          chat_get_tr_start(phead) = p
 #define chat_set_cons_start(phead,p)        chat_get_cons_start(phead) = p
@@ -180,13 +179,13 @@ static CRPtr alloc_more_cr_space(void)
 /*    consumers now... perhaps more errors.                             */
 /*----------------------------------------------------------------------*/
 
-static void chat_update_stats(int incremental, int nrarguments, long size_tr)
+static void chat_update_stats(int incremental, long size_tr)
 {
     int i = 0;
     
     i = sizeof(incr_chat_header) + sizeof(CPtr)*needed_size(size_tr);
     if (!incremental)
-      i += sizeof(init_chat_header) + sizeof(CPtr)*(needed_size(nrarguments));
+      i += sizeof(init_chat_header);
     chat_total_malloced += i;
     chat_inuse += i;
     if (chat_inuse > chat_malloc_high_mark)
@@ -211,10 +210,8 @@ static void chat_free_chat_area(chat_init_pheader phead, xsbBool mode)
 {
   chat_incr_pheader p,q;
 
-  chat_inuse -=  sizeof(init_chat_header)
-                 + needed_size(chat_get_nrargs(phead))*sizeof(CPtr);
+  chat_inuse -=  sizeof(init_chat_header);
   p = chat_get_father(phead);
-  myfree(chat_get_malloc_start(phead));
 
   if (phead == chat_link_headers)
     chat_link_headers = phead->next_header;
@@ -384,29 +381,10 @@ static CPtr *chat_reinstall_oldbindings(chat_incr_pheader pheader,
 
 static void chat_restore_init_area(CPtr destination, int type,
 				   chat_init_pheader phead)
-{ int len, i;
-  CPtr from; 
-
+{
   *((NLChoice)destination) = chat_get_cons_start(phead);
-  destination += NLCPSIZE;
-  len = chat_get_nrargs(phead);
-  if (type == CONSUMER_TYPE) {
-    *destination = makeint(len); /* put it tagged */
-    destination++;
-    chat_restored_memory += sizeof(CPtr) * (NLCPSIZE+len+1);
-  } else {
-    chat_restored_memory += sizeof(CPtr) * NLCPSIZE;
-  }
-  from = (CPtr)chat_get_args_start(phead);
-  while (len)
-    { if (len > sizeof(CPtr))
-           { i = sizeof(CPtr); len -= sizeof(CPtr); }
-      else { i = len; len = 0; }
-      while (i--)
-	*destination++ = *from++;
-      from++; /* skipping the chain bit */
-    }
-
+  destination += NLCP_SIZE;
+  chat_restored_memory += sizeof(CPtr) * NLCP_SIZE;
 } /* chat_restore_init_area */
 
 /*----------------------------------------------------------------------*/
@@ -430,7 +408,6 @@ static void chat_reinstall_all_oldbindings(chat_incr_pheader pheader)
 
 CPtr chat_restore_consumer(chat_init_pheader pheader)
 {
-    int nrarguments;
     CPtr consumer_breg;
     chat_incr_pheader father;
 
@@ -441,8 +418,7 @@ CPtr chat_restore_consumer(chat_init_pheader pheader)
     /* the consumer is installed just below this leader */
 
     chat_fill_prevb(pheader, breg);
-    nrarguments = chat_get_nrargs(pheader);
-    consumer_breg = breg - NLCPSIZE - 1 - nrarguments;
+    consumer_breg = breg - NLCP_SIZE;
     chat_restore_init_area(consumer_breg, CONSUMER_TYPE, pheader);
     nlcp_trreg(consumer_breg) = trreg;
 
@@ -484,7 +460,7 @@ CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
 	fprintf(stddbg, "\n");
     }
 #endif
-    compl_susp_breg = breg - NLCPSIZE;  /* nrarguments is always 0 here */
+    compl_susp_breg = breg - NLCP_SIZE;
     chat_restore_init_area(compl_susp_breg, COMPL_SUSP_TYPE, pheader);
 
     /* propagate trreg of leader */
@@ -545,9 +521,10 @@ CPtr restore_answer_template(chat_init_pheader pheader, CPtr **baseTR) {
   *baseTR = tcp_trreg(breg);   /* base chosen by the following function */
   chat_reinstall_all_oldbindings(chat_get_father(pheader));
 
-  answer_template = breg - 1 - chat_get_nrargs(pheader);
-  consumer_cpf = answer_template - NLCPSIZE;
+  consumer_cpf = breg - NLCP_SIZE;
   chat_restore_init_area(consumer_cpf, CONSUMER_TYPE, pheader);
+  answer_template = nlcp_template(consumer_cpf);
+
   return answer_template;
 }
 
@@ -564,40 +541,6 @@ void undo_template_restoration(CPtr *baseTR) {
 /* Routines that save states in CHAT areas.                             */
 /*----------------------------------------------------------------------*/
 
-static void chat_save_cons_arguments(chat_init_pheader pheader,
-				     int nrarguments,
-				     CPtr *startargs)
-{ 
-    int  j;
-    long i;
-    CPtr *p;
-
-    i = needed_size(nrarguments);
-    p = (CPtr*)malloc(i*sizeof(CPtr));
-    if (p == NULL)
-      xsb_exit("chat_save_cons_arguments - malloc failed\n");
-    chat_get_malloc_start(pheader) = p;
-    chat_set_nrargs(pheader,nrarguments);
-
-    i = (((long)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
-    if (i != 0)
-      p += sizeof(CPtr) + 1 - i; /* now p should be aligned properly */
-    chat_get_args_start(pheader) = p;
-
-    while (nrarguments) {
-      p[sizeof(CPtr)] = 0;
-
-      if (sizeof(CPtr) >= nrarguments)
-	   { j = nrarguments; nrarguments = 0; }
-      else { j = sizeof(CPtr); nrarguments -= sizeof(CPtr); }
-
-      while (j--)
-	*(p++) = *(startargs++);
-      p++;
-    }
-} /* chat_save_cons_arguments */
-
-/*----------------------------------------------------------------------*/
 /*
 static void test_finiteness()
 {
@@ -692,10 +635,8 @@ static chat_init_pheader chat_save_consumer_state(int incremental,
 						  long size_tr, long size_cons,
 						  CPtr *dest_tr,CPtr dest_cons)
 {
-    CPtr *startargs;
     chat_init_pheader pheader, p;
     chat_incr_pheader incr_phead;
-    int nrarguments;
 
     /* we need space for the chainbits - let sizecptr = sizeof(CPtr)    */
     /* for each CPtr we take one byte and we pack sizecptr such bytes   */
@@ -728,17 +669,14 @@ static chat_init_pheader chat_save_consumer_state(int incremental,
 	prev->next_header = pheader; pheader->prev_header = prev;
       }
 
-      nrarguments = size_cons - NLCPSIZE - 1;
-      startargs = (CPtr *)(breg + NLCPSIZE + 1);
-      chat_get_cons_start(pheader) = *(NLChoice)breg; /* copy the cons CP */
-      chat_save_cons_arguments(pheader,nrarguments,startargs);
+      chat_get_cons_start(pheader) = *(NLChoice)breg;
     } else {
-      pheader = NULL; nrarguments = 0;
+      pheader = NULL; 
     }
 
     incr_phead = chat_save_trail(pheader, size_tr, dest_tr);
 
-    chat_update_stats(incremental, nrarguments, size_tr);
+    chat_update_stats(incremental, size_tr);
 
     if (! incremental)
       return pheader;
@@ -796,11 +734,9 @@ chat_init_pheader save_a_consumer_copy(VariantSF subg_ptr, int incremental)
     /* only one choicepoint needs to be saved: the     	*/
     /* consumer and the substitution factor below it	*/
     if (incremental)
-         size_cons = 0;
-    else {
-      int tagged_sf_var_num = *(breg+NLCPSIZE);
-      size_cons = NLCPSIZE + int_val(tagged_sf_var_num) + 1;
-    }
+      size_cons = 0;
+    else
+      size_cons = NLCP_SIZE;
 
 #ifdef Chat_DEBUG
     xsb_dbgmsg("Trail to be copied from %p to %p (%ld cells)",
@@ -852,7 +788,7 @@ chat_init_pheader save_a_consumer_for_generator(VariantSF subg_ptr)
 {
     TChoice prev_tcp;
     int     subst_fact_var_num;
-    CPtr    consumer, *cptr, compl_fr;
+    CPtr    consumer, compl_fr;
     chat_incr_pheader ip;
     chat_init_pheader pheader;
     long size_tr, size_cons;
@@ -874,8 +810,8 @@ chat_init_pheader save_a_consumer_for_generator(VariantSF subg_ptr)
     compl_fr = subg_compl_stack_ptr(subg_ptr);
   /* only one choicepoint needs to be saved: 		*/
   /* the generator and the substitution factor for it	*/
-    subst_fact_var_num = int_val(cell(compl_hreg(compl_fr))) & 0xffff;
-    size_cons = NLCPSIZE + subst_fact_var_num + 1;
+    subst_fact_var_num = 0;
+    size_cons = NLCP_SIZE;
 
 #ifdef Chat_DEBUG
     xsb_dbgmsg("Trail to be copied from %p to %p (%ld cells)",
@@ -895,9 +831,6 @@ chat_init_pheader save_a_consumer_for_generator(VariantSF subg_ptr)
     consumer = (CPtr)(&chat_get_cons_start(pheader));
     nlcp_pcreg(consumer) = (pb) &answer_return_inst;
     nlcp_trie_return(consumer) = subg_ans_list_ptr(subg_ptr);
-
-    cptr = (CPtr *)(compl_hreg(compl_fr)-subst_fact_var_num);
-    chat_save_cons_arguments(pheader,subst_fact_var_num,cptr);
 
     chat_fill_chat_area(pheader);
     chat_fill_prevcons(pheader,compl_cons_copy_list(compl_fr));
@@ -972,12 +905,14 @@ chat_init_pheader save_a_chat_compl_susp(VariantSF subg_ptr, CPtr ptcp, byte *cp
       prev->next_header = pheader; pheader->prev_header = prev;
     }
 
-    /* only a choice point needs to be saved: the completion suspension */
-    chat_get_malloc_start(pheader) = NULL;
     /* argument registers do not make sense in this case */
-    chat_set_nrargs(pheader,0);
     where = (CPtr)(&chat_get_cons_start(pheader));
     save_compl_susp_frame(where, subg_ptr, ptcp, cp);
+    /* create a 0-vars answer template for the sake of GC --lfcastro */
+    *hreg = makeint(0);
+    nlcp_template(where) = hreg;
+    hreg++;
+
     chat_fill_chat_area(pheader);
 
     dest_tr = tcp_trreg(prev_tcp);
@@ -988,7 +923,7 @@ chat_init_pheader save_a_chat_compl_susp(VariantSF subg_ptr, CPtr ptcp, byte *cp
 #endif
     chat_save_trail(pheader, size_tr, dest_tr);
 
-    chat_update_stats(CHAT_CONS_AREA, 0, size_tr);
+    chat_update_stats(CHAT_CONS_AREA, size_tr);
 
     ip = chat_get_father(pheader);
     New_CR(cr, tcp_chat_roots(prev_tcp), ip);

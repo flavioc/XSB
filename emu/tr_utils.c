@@ -894,9 +894,6 @@ void breg_retskel(void)
     VariantSF sg_frame;
     CPtr    tcp, cptr, where;
     int     is_new, i;
-#ifndef CHAT
-    int     arity;
-#endif
     Integer breg_offset, Nvars;
 
     breg_offset = ptoc_int(1);
@@ -907,40 +904,18 @@ void breg_retskel(void)
     Nvars = int_val(cell(where)) & 0xffff; /* See get_var_and_attv_nums() */
     cptr = where - Nvars - 1;
 #else
-    arity = ptoc_int(2);
-    where = tcp + TCP_SIZE + (Cell)arity;
-    Nvars = int_val(cell(where)) & 0xffff; /* See get_var_and_attv_nums() */
-    cptr = where + Nvars;
+    where = tcp_template(tcp);
+    Nvars = int_val(cell(where)) & 0xffff;
+    cptr = where - Nvars - 1;
 #endif
     if (Nvars == 0) {
       ctop_string(3, get_ret_string());
     } else {
-/*
-      sreg = hreg;
-      bind_cs((CPtr)term, sreg);
-      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &is_new);
-      new_heap_functor(sreg, sym->psc_ptr);
-#ifdef CHAT
-      for (i = Nvars; i > 0; i--) {
-	bind_copy(sreg, (Cell)(*(CPtr)(cptr+i)));
-#else
-      for (i = 0; i < Nvars; i++) {
-	bind_copy(sreg, (Cell)(*(CPtr)(cptr-i)));
-#endif
-	sreg++;
-      }
-      hreg = sreg;
-*/
       bind_cs((CPtr)ptoc_tag(3), hreg);
       sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &is_new);
       new_heap_functor(hreg, sym->psc_ptr);
-#ifdef CHAT
       for (i = Nvars; i > 0; i--) {
 	term = (Cell)(*(CPtr)(cptr+i));
-#else
-      for (i = 0; i < Nvars; i++) {
-	term = (Cell)(*(CPtr)(cptr-i));
-#endif
         nbldval(term);
       }
     }

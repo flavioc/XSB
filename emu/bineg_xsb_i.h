@@ -117,6 +117,9 @@ case IS_INCOMPLETE: {
     return TRUE;	/* succeed */
   }
   else {	/* subgoal is not completed; save a completion suspension */
+#ifdef SLG_GC
+    CPtr old_cptop;
+#endif
 #ifdef DEBUG_DELAY
     fprintf(stddbg, "... Saving a completion suspension (~");
     print_subgoal(stddbg, producerSF);
@@ -137,7 +140,13 @@ case IS_INCOMPLETE: {
     if (hfreg < hreg) hfreg = hreg;
     if (bfreg > breg) bfreg = breg;
     /* check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
+#ifdef SLG_GC
+    old_cptop = bfreg;
+#endif
     save_compl_susp_frame(bfreg, ereg, (CPtr)producerSF, t_ptcp, cpreg);
+#ifdef SLG_GC
+    csf_prevtop(bfreg) = old_cptop;
+#endif
     subg_compl_susp_ptr(producerSF) = bfreg;
 #endif
     return FALSE;

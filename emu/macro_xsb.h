@@ -178,54 +178,46 @@ struct completion_stack_frame {
  *  link can be updated if an expansion is required.  This was the simplest
  *  solution to not leaving any dangling pointers to the old area.
  */
+
+#define push_completion_frame_common(subgoal) \
+  level_num++; \
+  openreg -= COMPLFRAMESIZE; \
+  compl_subgoal_ptr(openreg) = subgoal; \
+  compl_level(openreg) = level_num; \
+  compl_del_ret_list(openreg) = NULL; \
+  compl_visited(openreg) = FALSE
+
+#define push_completion_frame_chat(subgoal) \
+  compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
+  compl_pdreg(openreg) = delayreg; \
+  compl_cons_copy_list(openreg) = NULL; \
+  compl_ptcp(openreg) = ptcpreg
+
+#define push_completion_frame_batched(subgoal) \
+  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL
+
 #ifdef CHAT
 #ifdef LOCAL_EVAL
 #define	push_completion_frame(subgoal)	\
-  level_num++; \
-  openreg -= COMPLFRAMESIZE; \
-  compl_subgoal_ptr(openreg) = subgoal; \
-  compl_level(openreg) = level_num; \
-  compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
-  compl_pdreg(openreg) = delayreg; \
-  compl_ptcp(openreg) = ptcpreg; \
-  compl_cons_copy_list(openreg) = NULL; \
-  compl_del_ret_list(openreg) = NULL; \
-  compl_visited(openreg) = FALSE; \
+  push_completion_frame_common(subgoal); \
+  push_completion_frame_chat(subgoal); \
   check_completion_stack_overflow
 #else
 #define	push_completion_frame(subgoal)	\
-  level_num++; \
-  openreg -= COMPLFRAMESIZE; \
-  compl_subgoal_ptr(openreg) = subgoal; \
-  compl_level(openreg) = level_num; \
-  compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
-  compl_pdreg(openreg) = delayreg; \
-  compl_ptcp(openreg) = ptcpreg; \
-  compl_cons_copy_list(openreg) = NULL; \
-  compl_del_ret_list(openreg) = NULL; \
-  compl_visited(openreg) = FALSE; \
-  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL; \
+  push_completion_frame_common(subgoal); \
+  push_completion_frame_chat(subgoal); \
+  push_completion_frame_batched(subgoal); \
   check_completion_stack_overflow
 #endif
 #else  /* Regular SLG-WAM */
 #ifdef LOCAL_EVAL
 #define	push_completion_frame(subgoal)	\
-  level_num++; \
-  openreg -= COMPLFRAMESIZE; \
-  compl_subgoal_ptr(openreg) = subgoal; \
-  compl_level(openreg) = level_num; \
-  compl_del_ret_list(openreg) = NULL; \
-  compl_visited(openreg) = FALSE; \
+  push_completion_frame_common(subgoal); \
   check_completion_stack_overflow
 #else
 #define	push_completion_frame(subgoal)	\
-  level_num++; \
-  openreg -= COMPLFRAMESIZE; \
-  compl_subgoal_ptr(openreg) = subgoal; \
-  compl_level(openreg) = level_num; \
-  compl_del_ret_list(openreg) = NULL; \
-  compl_visited(openreg) = FALSE; \
-  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL; \
+  push_completion_frame_common(subgoal); \
+  push_completion_frame_batched(subgoal); \
   check_completion_stack_overflow
 #endif
 #endif
@@ -284,11 +276,8 @@ typedef struct subgoal_frame {
   CPtr asf_list_ptr;	  /* Pointer to list of (CP) active subgoal frames */
 #endif
   CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
-#ifdef CHAT
-  CPtr compl_suspens_ptr; /* pointer to CHAT area; type is chat_init_pheader */
-#else
-  CPtr compl_suspens_ptr; /* CP Stack ptr */
-#endif
+  CPtr compl_suspens_ptr; /* CHAT: points to CHAT area; type chat_init_pheader
+			     SLGWAM: CP stack ptr */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
 } variant_subgoal_frame;
 
@@ -606,7 +595,7 @@ void tstCreateTSIs(TSTNptr);
 #define mark_as_completed(SUBG_PTR) {		\
           subg_is_complete(SUBG_PTR) = TRUE;	\
           reclaim_del_ret_list(SUBG_PTR);	\
-        } 
+        }
 #endif
 
 #define subgoal_space_has_been_reclaimed(SUBG_PTR,CS_FRAME) \

@@ -45,7 +45,8 @@
 #include "error_xsb.h"
 #include "flags_xsb.h"
 #include "tst_utils.h"
-
+#include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
+#include "subp.h" /* for exception_handler, used in stack expansion */
 
 #include "sub_tables_xsb_i.h"
 
@@ -119,19 +120,25 @@ void table_call_search(TabledCallInfo *call_info,
     variant_call_search(call_info,results);
   else
     subsumptive_call_search(call_info,results);
-#ifdef CHAT
-  if ( IsNULL(CallLUR_Subsumer(*results)) ) {
+/* #ifdef CHAT */
+/*   if (IsNULL(CallLUR_Subsumer(*results))) */
+/* #endif */
+  {
     /*
      * A New Producer: Move answer template from CPS to Heap.  The
      * arrangement of this vector is similar to that in the CPS: the
      * size of the vector is now at the high end, but the components
      * are still arranged from high mem (first) to low (last).
      */
-    CPtr tmplt_component, tmplt_var_addr, h_addr;
+    CPtr tmplt_component, tmplt_var_addr, h_addr, dummy;
     int size, j;
 
     tmplt_component = CallLUR_VarVector(*results);
     size = int_val(*tmplt_component) & 0xffff;
+
+    /* expand heap if there's not enough space */
+    check_glstack_overflow(call_info->call_arity, dummy, size, 
+			   xsb_exit("Heap/Local overflow\n"));
 
     for ( j = size - 1, tmplt_component = tmplt_component + size;
 	  j >= 0;
@@ -147,7 +154,6 @@ void table_call_search(TabledCallInfo *call_info,
     /* orig version in tries.c had VarPosReg pointing at Var_{m} */
     CallLUR_VarVector(*results) = CallLUR_VarVector(*results) + size + 1;
   }
-#endif
 }
 
 /*=========================================================================*/
@@ -295,7 +301,7 @@ ALNptr table_identify_relevant_answers(SubProdSF prodSF, SubConsSF consSF,
 	      "variant!\nPerhaps SF type is corrupt?");
 #endif
   size = int_val(*templ);
-  templ = templ + size;
+  templ--;  /* all templates on the heap, now --lfcastro */
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
   NumSubOps_IdentifyRelevantAnswers++;

@@ -153,6 +153,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    *    CallInfo_VarVectorLoc(callInfo).
    */
 
+/* the above about the answer template is true for all CPs in SLGWAM
+   now.                                                   --lfcastro */
+
   table_call_search(&callInfo,&lookupResults);
 
   producer_sf = CallLUR_Subsumer(lookupResults);
@@ -169,7 +172,12 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     save_find_locx(ereg);
     save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
     SaveProducerCPF(producer_cpf, continuation, producer_sf,
-		    CallInfo_CallArity(callInfo));
+		    CallInfo_CallArity(callInfo), (hreg - 1));
+#ifdef SLG_GC
+    tcp_prevtop(producer_cpf) = answer_template; 
+    /* answer_template points to the previous top, since the A.T. proper
+       is now always copied to the heap */
+#endif
     push_completion_frame(producer_sf);
     ptcpreg = (CPtr)producer_sf;
     subg_cp_ptr(producer_sf) = breg = producer_cpf;
@@ -192,6 +200,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       print_subgoal(stddbg, producer_sf);
       fprintf(stddbg, "\n");
 #endif
+      answer_template = hreg - 1; 
+
       tmp = int_val(cell(answer_template));
       get_var_and_attv_nums(template_size, attv_num, tmp);
       num_vars_in_var_regs = -1;
@@ -199,8 +209,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       /* Initialize var_regs[] as the attvs in the call. */
       if (attv_num > 0) {
 	CPtr cptr;
-	for (cptr = answer_template + template_size;
-	     cptr > answer_template; cptr--) {
+	for (cptr = answer_template - 1;
+	     cptr >= answer_template + template_size; cptr++) {
 	  if (isattv(cell(cptr)))
 	    var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
 	}
@@ -208,8 +218,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       }
 
       reg_arrayptr = reg_array-1;
-      for (i = 1; i <= template_size; i++) {
-	pushreg(cell(answer_template+i));
+      for (i = 0; i < template_size; i++) {
+	pushreg(cell(answer_template-template_size+i));
       }
       delay_it = 1;
       lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
@@ -240,6 +250,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    */
   {
     CPtr consumer_cpf;
+#ifdef SLG_GC
+    CPtr prev_cptop;
+#endif
     ALNptr answer_continuation;
     BTNptr first_answer;
 
@@ -249,15 +262,25 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     save_find_locx(ereg);
 
     consumer_cpf = answer_template;
+#ifdef SLG_GC
+    prev_cptop = consumer_cpf;
+#endif
+
+    answer_template = hreg-1;
+
 #if (!defined(CHAT))
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
     SaveConsumerCPF( consumer_cpf, consumer_sf,
-		     subg_asf_list_ptr(producer_sf) );
+		     subg_asf_list_ptr(producer_sf), 
+		     answer_template);
+#ifdef SLG_GC
+    nlcp_prevtop(consumer_cpf) = prev_cptop;
+#endif
     subg_asf_list_ptr(producer_sf) = breg = bfreg = consumer_cpf;
 #else
-    SaveConsumerCPF( consumer_cpf, consumer_sf );
+    SaveConsumerCPF( consumer_cpf, consumer_sf, answer_template );
     breg = consumer_cpf;   /* save_a_consumer_copy() needs this update */
     compl_cons_copy_list(subg_compl_stack_ptr(producer_sf)) =
       nlcp_chat_area(consumer_cpf) =
@@ -288,7 +311,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
       tmp = int_val(cell(answer_template));
       get_var_and_attv_nums(template_size, attv_num, tmp);
-      answer_template += template_size;
+      answer_template--;
 
       table_consume_answer(first_answer,template_size,attv_num,answer_template,
 			   CallInfo_TableInfo(callInfo));
@@ -370,7 +393,7 @@ XSB_Start_Instr(answer_return,_answer_return)
      ----------------------- */
   answer_continuation = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
   consumer_sf = (VariantSF)nlcp_subgoal_ptr(breg);
-  answer_template = breg + NLCPSIZE;
+  answer_template = nlcp_template(breg);
   table_pending_answer( nlcp_trie_return(breg),
 			answer_continuation,
 			next_answer,
@@ -395,7 +418,7 @@ XSB_Start_Instr(answer_return,_answer_return)
     nlcp_trie_return(breg) = answer_continuation;   /* update */
     tmp = int_val(cell(answer_template));
     get_var_and_attv_nums(template_size, attv_num, tmp);
-    answer_template += template_size;
+    answer_template--;
 
     table_consume_answer(next_answer,template_size,attv_num,answer_template,
 			 subg_tif_ptr(consumer_sf));
@@ -515,17 +538,15 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
     XSB_Next_Instr();
   }
 
-#ifdef CHAT
   /* answer template is now in the heap for generators */
-  tmp = int_val(cell(compl_hreg(producer_csf)));
-  get_var_and_attv_nums(template_size, attv_num, tmp);
-  answer_template = compl_hreg(producer_csf)-1;
+#if defined(CHAT)
+  answer_template = compl_hreg(producer_csf);
 #else
-  answer_template = producer_cpf + TCP_SIZE + (Cell) ARITY;
-  tmp = int_val(*answer_template);
-  get_var_and_attv_nums(template_size, attv_num, tmp);
-  answer_template += template_size;
+  answer_template = tcp_template(subg_cp_ptr(producer_sf));
 #endif
+  tmp = int_val(cell(answer_template));
+  get_var_and_attv_nums(template_size, attv_num, tmp);
+  answer_template--;
 
 #ifdef DEBUG_DELAYVAR
     xsb_dbgmsg(">>>> ARITY = %d; Yn = %d", (int)ARITY, (int)Yn);
@@ -559,7 +580,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 				     answer_template, &isNewAnswer );
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */
-#ifdef CHAT
+#if defined(CHAT)
     delayreg = compl_pdreg(producer_csf); /* restore delayreg of parent */
 #else
     delayreg = tcp_pdreg(producer_cpf);      /* restore delayreg of parent */
@@ -611,7 +632,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 #ifdef LOCAL_EVAL
     Fail1;	/* and do not return answer to the generator */
 #else
-#ifdef CHAT
+#if defined(CHAT) 
     ptcpreg = compl_ptcp(producer_csf);
 #else
     ptcpreg = tcp_ptcp(producer_cpf);
@@ -698,7 +719,7 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
     delayreg = csf_pdreg(breg);
     neg_delay = (csf_neg_loop(breg) != FALSE);
     restore_some_wamregs(breg, ereg); /* this also restores cpreg */
-    chat_area = (chat_init_pheader)csf_chat_area(breg);
+    chat_area = (chat_init_pheader)nlcp_chat_area(breg);
     chat_restore_compl_susp_trail(chat_area); /* the chat area is freed here */
     if ((chat_area = (chat_init_pheader)csf_prevcsf(breg)) != NULL) {
       chat_update_compl_susp(chat_area);
@@ -709,23 +730,46 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 }
 #else
 {
-  CPtr csf = breg;
-
-  /* Switches the environment to a frame of a subgoal that was	*/
-  /* suspended on completion, and sets the continuation pointer.	*/
-  check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
-  freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
-  ptcpreg = csf_ptcp(csf);
-  neg_delay = (csf_neg_loop(csf) != FALSE);
-  delayreg = csf_pdreg(csf);
-  cpreg = csf_cpreg(csf); 
-  ereg = csf_ereg(csf);
-  ebreg = csf_ebreg(csf);
-  hbreg = csf_hreg(csf);
-  save_find_locx(ereg);
-  hbreg = hreg;
-  breg = csf_prevcsf(csf);
-  lpcreg = cpreg;
+  if (csf_pcreg(breg) == &resume_compl_suspension_inst) {
+    CPtr csf = breg;
+    
+    /* Switches the environment to a frame of a subgoal that was	*/
+    /* suspended on completion, and sets the continuation pointer.	*/
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
+    freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
+    ptcpreg = csf_ptcp(csf);
+    neg_delay = (csf_neg_loop(csf) != FALSE);
+    delayreg = csf_pdreg(csf);
+    cpreg = csf_cpreg(csf); 
+    ereg = csf_ereg(csf);
+    ebreg = csf_ebreg(csf);
+    hbreg = csf_hreg(csf);
+    save_find_locx(ereg);
+    hbreg = hreg;
+    breg = csf_prevcsf(csf);
+    lpcreg = cpreg;
+  } else {
+    CPtr csf = cs_compsuspptr(breg);
+    /* Switches the environment to a frame of a subgoal that was	*/
+    /* suspended on completion, and sets the continuation pointer.	*/
+    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
+    freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
+    ptcpreg = csf_ptcp(csf);
+    neg_delay = (csf_neg_loop(csf) != FALSE);
+    delayreg = csf_pdreg(csf);
+    cpreg = csf_cpreg(csf); 
+    ereg = csf_ereg(csf);
+    ebreg = csf_ebreg(csf);
+    hbreg = csf_hreg(csf);
+    save_find_locx(ereg);
+    hbreg = hreg;
+    if (csf_prevcsf(csf) != NULL) {
+      cs_compsuspptr(breg) = csf_prevcsf(csf);
+    } else {
+      breg = cs_prevbreg(breg);
+    }
+    lpcreg = cpreg;
+  }
 }
 #endif
 XSB_End_Instr()

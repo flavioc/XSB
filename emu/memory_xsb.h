@@ -139,6 +139,7 @@ extern byte *inst_begin;       /* ptr to beginning of instruction array. */
 
 extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 	    resume_compl_suspension_inst, fail_inst, halt_inst, proceed_inst,
+  resume_compl_suspension_inst2,
 	    reset_inst;
 
 
@@ -149,7 +150,8 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 #define check_tcpstack_overflow {					\
 									\
-   CPtr cps_top = top_of_cpstack;					\
+   CPtr cps_top;                                                        \
+   cps_top = top_of_cpstack;					        \
 									\
    if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		\
      if ((pb)cps_top < (pb)top_of_trail) {				\

@@ -109,6 +109,7 @@ DllExport extern char * call_conv strip_names_from_path(char*, int);
 
 Cell answer_return_inst;
 Cell resume_compl_suspension_inst;
+Cell resume_compl_suspension_inst2;
 Cell check_complete_inst;
 Cell hash_handle_inst;
 Cell fail_inst;
@@ -300,7 +301,7 @@ char *init_para(int argc, char *argv[])
 
   flags[STACK_REALLOC] = TRUE;
 #ifdef GC
-  flags[GARBAGE_COLLECT] = COPYING_GC;
+  flags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
 #else
   flags[GARBAGE_COLLECT] = NO_GC;
 #endif
@@ -621,6 +622,7 @@ void init_machine(void)
   /* set special SLG_WAM instruction addresses */
   cell_opcode(&answer_return_inst) = answer_return;
   cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
+  cell_opcode(&resume_compl_suspension_inst2) = resume_compl_suspension;
   cell_opcode(&check_complete_inst) = check_complete;
   cell_opcode(&hash_handle_inst) = hash_handle;
   cell_opcode(&fail_inst) = fail;

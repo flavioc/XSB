@@ -327,82 +327,84 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     }
     
     /*--- Now complete the subgoals of the chosen SCC ---*/
-    for (ComplStkFrame = leader_compl_frame; ComplStkFrame >= openreg;
-	 ComplStkFrame = next_compl_frame(ComplStkFrame)) {
-      if (compl_visited(ComplStkFrame) != FALSE) {
-	curr_subg = compl_subgoal_ptr(ComplStkFrame);
-	if (compl_visited(ComplStkFrame) != DELAYED) {
-	  mark_as_completed(curr_subg);
-	  reclaim_incomplete_table_structs(curr_subg);
-	  if (neg_simplif_possible(curr_subg)) {
-	    simplify_neg_fails(curr_subg);
-	  }
-	}
-	
-	/* If there are any completion suspensions for this subgoal. */
-	if ((nsf = subg_compl_susp_ptr(curr_subg)) != NULL) {
+ {
+   for (ComplStkFrame = leader_compl_frame; ComplStkFrame >= openreg;
+	ComplStkFrame = next_compl_frame(ComplStkFrame)) {
+     if (compl_visited(ComplStkFrame) != FALSE) {
+       curr_subg = compl_subgoal_ptr(ComplStkFrame);
+       if (compl_visited(ComplStkFrame) != DELAYED) {
+	 mark_as_completed(curr_subg);
+	 reclaim_incomplete_table_structs(curr_subg);
+	 if (neg_simplif_possible(curr_subg)) {
+	   simplify_neg_fails(curr_subg);
+	 }
+       }
+       
+       /* If there are any completion suspensions for this subgoal. */
+       if ((nsf = subg_compl_susp_ptr(curr_subg)) != NULL) {
 #ifdef CHAT
-	  CPtr H, EB;
-
-	  H = cp_hreg(breg);
-	  EB = cp_ebreg(breg);
+	 CPtr H, EB;
+	 
+	 H = cp_hreg(breg);
+	 EB = cp_ebreg(breg);
 #ifdef Chat_DEBUG
-	  xsb_dbgmsg("leader_cp = %p, subgoal = %p, eb = %d",
-		     breg, tcp_subgoal_ptr(breg),
-		     ((CPtr)glstack.high - 1) - EB);
+	 xsb_dbgmsg("leader_cp = %p, subgoal = %p, eb = %d",
+		    breg, tcp_subgoal_ptr(breg),
+		    ((CPtr)glstack.high - 1) - EB);
 #endif
 #else
-	  CPtr min_breg;
-	  
-	  set_min(min_breg, breg, bfreg);
+	 CPtr min_breg;
+	 
+	 set_min(min_breg, breg, bfreg);
 #endif
-	  if (compl_visited(ComplStkFrame) != DELAYED) {
+	 if (compl_visited(ComplStkFrame) != DELAYED) {
 #ifdef CHAT
-	    breg = chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
+	   breg = chat_restore_compl_susp((chat_init_pheader)nsf, H, EB);
 #else
-	    save_compl_susp_cp(min_breg, cont_breg, nsf);
-	    breg = min_breg;
+	   save_compl_susp_cp(min_breg, cont_breg, nsf);
+	   breg = min_breg;
 #endif
-	    /*-- forget these completion suspensions --*/
-	    subg_compl_susp_ptr(curr_subg) = NULL;
+	   /*-- forget these completion suspensions --*/
+	   subg_compl_susp_ptr(curr_subg) = NULL;
 #ifdef VERBOSE_COMPLETION
-	    xsb_dbgmsg("------ Setting Breg to %p...", breg);
+	   xsb_dbgmsg("------ Setting Breg to %p...", breg);
 #endif
-	  } else {	/* unsuspend only those suspensions that are delayed */
-	    CPtr dnsf = NULL, ndnsf = NULL;
-	    CPtr head_dnsf = NULL, head_ndnsf = NULL;
-	    while (nsf != NULL) {	/* partition into two lists */
-	      if (csf_neg_loop(nsf) == FALSE) {
-		if (ndnsf == NULL) head_ndnsf = nsf; 
-		else csf_prevcsf(ndnsf) = nsf;
-		ndnsf = nsf;
-		nsf = csf_prevcsf(nsf);
-		csf_prevcsf(ndnsf) = NULL;
-	      } else {
-		if (dnsf == NULL) head_dnsf = nsf; 
-		else csf_prevcsf(dnsf) = nsf;
-		dnsf = nsf;
-		nsf = csf_prevcsf(nsf);
-		csf_prevcsf(dnsf) = NULL;
-	      }
-	    }
-	    if (head_dnsf != NULL) {
+	 } else {	/* unsuspend only those suspensions that are delayed */
+	   CPtr dnsf = NULL, ndnsf = NULL;
+	   CPtr head_dnsf = NULL, head_ndnsf = NULL;
+	   while (nsf != NULL) {	/* partition into two lists */
+	     if (csf_neg_loop(nsf) == FALSE) {
+	       if (ndnsf == NULL) head_ndnsf = nsf; 
+	       else csf_prevcsf(ndnsf) = nsf;
+	       ndnsf = nsf;
+	       nsf = csf_prevcsf(nsf);
+	       csf_prevcsf(ndnsf) = NULL;
+	     } else {
+	       if (dnsf == NULL) head_dnsf = nsf; 
+	       else csf_prevcsf(dnsf) = nsf;
+	       dnsf = nsf;
+	       nsf = csf_prevcsf(nsf);
+	       csf_prevcsf(dnsf) = NULL;
+	     }
+	   }
+	   if (head_dnsf != NULL) {
 #ifdef CHAT
-	      breg = chat_restore_compl_susp((chat_init_pheader)head_dnsf, H, EB);
+	     breg = chat_restore_compl_susp((chat_init_pheader)head_dnsf, H, EB);
 #else
-	      save_compl_susp_cp(min_breg, cont_breg, head_dnsf);
-	      breg = min_breg;
+	     save_compl_susp_cp(min_breg, cont_breg, head_dnsf);
+	     breg = min_breg;
 #endif
-	    }
-	    subg_compl_susp_ptr(curr_subg) = head_ndnsf;
-	  }
+	   }
+	   subg_compl_susp_ptr(curr_subg) = head_ndnsf;
+	 }
 #if (!defined(CHAT))
-	  cont_breg = breg; /* So that other Compl_Susp_CPs can be saved. */
+	 cont_breg = breg; /* So that other Compl_Susp_CPs can be saved. */
 #endif
-	}
-      }
-    }
-#ifdef COMPLETION_DEBUG
+       }
+     }
+   }
+ }
+ #ifdef COMPLETION_DEBUG
     xsb_dbgmsg("------ Completed the chosen SCC...");
 #endif
 /*----------------------------------------------------------------------*/

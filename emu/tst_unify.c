@@ -123,7 +123,7 @@ static void consumption_error(char *string) {
     VariantSF pSF;
     CPtr pCPF;
 
-    pCPF = gAnsTmplt - gSizeTmplt - NLCPSIZE;
+    pCPF = gAnsTmplt - gSizeTmplt - NLCP_SIZE;
     pSF = (VariantSF)nlcp_subgoal_ptr(pCPF);
     printAnswerList(stderr,subg_answers(pSF));
   }

@@ -67,13 +67,20 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 	ALNptr answer_continuation;
 	BTNptr next_answer;
 
+#ifdef CHAT
+#define ANSWER_TEMPLATE consumer_cpf+NLCP_SIZE
+#else
+#define ANSWER_TEMPLATE nlcp_template(consumer_cpf)
+#endif
+
 	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
+
 	table_pending_answer( nlcp_trie_return(consumer_cpf),
 			      answer_continuation,
 			      next_answer,
 			      consumer_sf,
 			      (SubProdSF)producer_sf,
-			      consumer_cpf + NLCPSIZE,
+			      ANSWER_TEMPLATE,
 			      switch_envs(consumer_cpf),
 			      TPA_NoOp );
 	if ( IsNonNULL(answer_continuation) )
@@ -87,36 +94,16 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
     
+#ifdef CHAT
     /**** The last consumer always backtracks to the producer ****/
     if ( IsNonNULL(last_sched_cons) )
       nlcp_prevbreg(last_sched_cons) = producer_cpf;
+#else /* --lfcastro */
+    if ( IsNonNULL(last_sched_cons))
+      nlcp_prevbreg(last_sched_cons) = breg;
+#endif
   } /* if any answers and active nodes */
 
-
-#ifdef LOCAL_EVAL /*-----------------------------------------------------*/
-  /* if leader, nothing needs to be done -- its answers will only be 
-   * returned after the SCC is completed 
-   * ow, schedules answers to the generator node, changing 
-   * the flag of the TCP
-   */
-  if ( ! is_leader ) {
-    /* if not leader and gen has not been scheduled before */
-    if(tcp_trie_return(producer_cpf)==NULL) {
-#ifdef DEBUG_REV
-      xsb_dbgmsg("-----> LEADER became NON_LEADER, sched gen %d",
-		 (int)producer_cpf);
-#endif
-      tcp_trie_return(producer_cpf) = subg_ans_list_ptr(producer_sf);
-    }
-    if(ALN_Next(tcp_trie_return(producer_cpf))) {
-      /*so that checkcompl will ret ans*/
-      tcp_tag(producer_cpf) = (int)RETRY_GEN_ACTIVE_TAG;
-      if (!last_sched_cons)
-	last_sched_cons = first_sched_cons = producer_cpf;
-    }
-  } /* if not leader */
-#endif /* LOCAL_EVAL ----------------------------------------------------*/
-  
 #ifdef DEBUG_REV
   xsb_dbgmsg("schedule active nodes: ccbreg=%d, breg=%d", 
 	     (int)producer_cpf,(int)breg);

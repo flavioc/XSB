@@ -38,17 +38,20 @@
 
 typedef struct choice_point {
     byte *next_clause;	/* the entry of next choice */
+#ifdef SLG_GC
+  CPtr prev_top;        /* previous top of CP stack */
+#endif
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
     byte *cpreg;	/* return point of the call to the procedure	*/
     CPtr ereg;		/* current top of stack */
-    CPtr prev;		/* dynamic link */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;          /* pointer to parent tabled CP (subgoal) */
+    CPtr prev;		/* dynamic link */
 #ifdef CP_DEBUG
   Psc  psc;             /* PSC of predicate that created this CP */
-#endif    
+#endif
 } *Choice;
 
 #define CP_SIZE	(sizeof(struct choice_point)/sizeof(CPtr))
@@ -63,6 +66,10 @@ typedef struct choice_point {
 #define cp_pdreg(b)		((Choice)(b))->pdreg
 #define cp_ptcp(b)              ((Choice)(b))->ptcp
 
+
+#ifdef SLG_GC
+#define cp_prevtop(b)              ((Choice)(b))->prev_top
+#endif
 #ifdef CP_DEBUG
 #define cp_psc(b)               ((Choice)(b))->psc
 #define SAVE_PSC(b) cp_psc(b) = pscreg
@@ -80,16 +87,10 @@ typedef struct choice_point {
     cp_trreg(t_breg) = trreg; \
     cp_hreg(t_breg) = hreg; \
     cp_ebreg(t_breg) = ebreg; \
-    SAVE_PSC(t_breg);          \
+    SAVE_PSC(t_breg); \
     cp_pcreg(t_breg) = next_clause
 
 /*----------------------------------------------------------------------*/
-
-#if (defined(LOCAL_EVAL) && !defined(CHAT))
-#define CHECK_COMPLETE_TAG   0
-#define RETRY_GEN_ACTIVE_TAG 1
-#define RETURN_ANSWERS_TAG   2
-#endif
 
 /*----------------------------------------------------------------------*/
 /* Table-Producer Choice Point						*/
@@ -97,18 +98,25 @@ typedef struct choice_point {
 
 typedef struct tabled_choice_point {
     byte *next_clause;	/* the entry of next choice */
+#if defined(SLG_GC)
+  CPtr prev_top;
+#endif
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
     byte *cpreg;	/* return point of the call to the procedure */
     CPtr ereg;		/* current top of stack */
-    CPtr prev;		/* previous choicepoint */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
-#ifdef CP_DEBUG
-  Psc  psc;             /* PSC of predicate that created this CP */
-#endif    
+    CPtr prev;		/* previous choicepoint */
+    CPtr answer_template;
     CPtr subgoal_ptr;	/* pointer to the subgoal frame */
+#ifdef CP_DEBUG
+    Psc  psc;             /* PSC of predicate that created this CP */
+#endif    
+#if defined(LOCAL_EVAL) && !defined(SLG_GC)
+  CPtr prev_top;
+#endif
 #if (!defined(CHAT))
 /* The following are needed to reclaim frozen space at SCC completion time */
     CPtr bfreg;
@@ -116,9 +124,7 @@ typedef struct tabled_choice_point {
     CPtr *trfreg;
     CPtr efreg;
 #ifdef LOCAL_EVAL
-    int tag;
     ALNptr trie_return;
-    int arity;
 #endif
 #else
     CPtr chat_roots;
@@ -145,6 +151,12 @@ typedef struct tabled_choice_point {
 #define SAVE_TPSC(b)
 #endif
 
+#if defined(SLG_GC) || defined(LOCAL_EVAL)
+#define tcp_prevtop(b)          ((TChoice)(b))->prev_top
+#endif
+
+#define tcp_template(b)         ((TChoice)(b))->answer_template
+
 #if (!defined(CHAT))
 #define tcp_bfreg(b)		((TChoice)(b))->bfreg
 #define tcp_hfreg(b)		((TChoice)(b))->hfreg
@@ -152,9 +164,7 @@ typedef struct tabled_choice_point {
 #define tcp_efreg(b)		((TChoice)(b))->efreg
 
 #ifdef LOCAL_EVAL
-#define tcp_tag(b)		((TChoice)(b))->tag
 #define tcp_trie_return(b)	((TChoice)(b))->trie_return
-#define tcp_arity(b)		((TChoice)(b))->arity
 #endif
 #else
 #define tcp_chat_roots(b)       ((TChoice)(b))->chat_roots
@@ -172,13 +182,14 @@ typedef struct tabled_choice_point {
       tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;	\
     mark_as_completed(ProdSF)
 #else
-#define perform_early_completion(ProdSF,ProdCPF)	\
-    tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;	\
+#define perform_early_completion(ProdSF,ProdCPF)	    \
+    if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) \
+      tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   \
     mark_as_completed(ProdSF)
 #endif
 
 
-#define _SaveProducerCPF_common(TopCPS, Cont, pSF) {	\
+#define _SaveProducerCPF_common(TopCPS, Cont, pSF) {    \
    TopCPS -= TCP_SIZE;					\
    tcp_ptcp(TopCPS) = ptcpreg;				\
    tcp_pdreg(TopCPS) = delayreg;			\
@@ -195,31 +206,31 @@ typedef struct tabled_choice_point {
 
 #ifdef CHAT
 
-#define SaveProducerCPF(TopCPS, Cont, pSF, Arity) {	\
+#define SaveProducerCPF(TopCPS, Cont, pSF, Arity, AT) {	\
    _SaveProducerCPF_common(TopCPS, Cont, pSF);		\
+   tcp_template(TopCPS) = AT;                           \
    tcp_chat_roots(TopCPS) = NULL;			\
  }
 
 #else	/* !defined(CHAT) */
 
-#define _SaveProducerCPF_slg(TopCPS, Cont, pSF) {	\
+#define _SaveProducerCPF_slg(TopCPS, Cont, pSF, AT) {	\
    _SaveProducerCPF_common(TopCPS, Cont, pSF);		\
    tcp_bfreg(TopCPS) = bfreg;				\
    tcp_efreg(TopCPS) = efreg;				\
    tcp_trfreg(TopCPS) = trfreg;				\
    tcp_hfreg(TopCPS) = hfreg;				\
+   tcp_template(TopCPS) = AT;                           \
  }
 
 #ifdef LOCAL_EVAL
-#define SaveProducerCPF(TopCPS, Cont, pSF, Arity) {	\
-   _SaveProducerCPF_slg(TopCPS, Cont, pSF);		\
-   tcp_tag(TopCPS) = CHECK_COMPLETE_TAG;		\
-   tcp_arity(TopCPS) = (int) Arity;			\
+#define SaveProducerCPF(TopCPS, Cont, pSF, Arity, AT) {	\
+   _SaveProducerCPF_slg(TopCPS, Cont, pSF, AT);		\
    tcp_trie_return(TopCPS) = NULL;			\
  }
 #else
-#define SaveProducerCPF(TopCPS, Cont, pSF, Arity)	\
-   _SaveProducerCPF_slg(TopCPS, Cont, pSF)
+#define SaveProducerCPF(TopCPS, Cont, pSF, Arity, AT)	\
+   _SaveProducerCPF_slg(TopCPS, Cont, pSF, AT)
 #endif
 
 #endif	/* of CHAT */
@@ -231,26 +242,30 @@ typedef struct tabled_choice_point {
 
 typedef struct consumer_choice_point {
     byte *next_clause;	/* the entry of next choice */
+#ifdef SLG_GC
+  CPtr prev_top;
+#endif
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
     CPtr *trreg;	/* current top of trail stack */
     byte *cpreg;	/* return point of the call to the procedure */
     CPtr ereg;		/* current top of local stack */
-    CPtr prev;		/* prev top of choice point stack */
     CPtr pdreg;		/* value of delay register for the parent subgoal */
     CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
+    CPtr prev;		/* prev top of choice point stack */
+    CPtr answer_template;
+    CPtr subgoal_ptr;	/* where the answer list lives */
 #ifdef CP_DEBUG
   Psc  psc;             /* PSC of predicate that created this CP */
 #endif    
-    CPtr subgoal_ptr;	/* where the answer list lives */
-    CPtr prevlookup;	/* link for chain of consumer CPFs */
-    ALNptr trie_return;	/* last answer consumed by this consumer */
 #ifdef CHAT
     CPtr chat_area;	/* temporarily */
 #endif
-} *NLChoice;
-
-#define NLCPSIZE	(sizeof(struct consumer_choice_point)/sizeof(CPtr))
+    CPtr prevlookup;	/* link for chain of consumer CPFs */
+    ALNptr trie_return;	/* last answer consumed by this consumer */
+}
+*NLChoice;
+#define NLCP_SIZE	(sizeof(struct consumer_choice_point)/sizeof(CPtr))
 
 #define nlcp_pcreg(b)		((NLChoice)(b))->next_clause
 #define nlcp_ebreg(b)		((NLChoice)(b))->ebreg
@@ -264,6 +279,10 @@ typedef struct consumer_choice_point {
 #define nlcp_prevbreg(b)	((NLChoice)(b))->prev
 #define nlcp_prevlookup(b)	((NLChoice)(b))->prevlookup
 #define nlcp_trie_return(b)	((NLChoice)(b))->trie_return
+#define nlcp_template(b)        ((NLChoice)(b))->answer_template
+#ifdef SLG_GC
+#define nlcp_prevtop(b)         ((NLChoice)(b))->prev_top
+#endif
 #ifdef CHAT
 #define nlcp_chat_area(b)	((NLChoice)(b))->chat_area
 #endif
@@ -279,7 +298,7 @@ typedef struct consumer_choice_point {
 #endif
 
 #define _SaveConsumerCPF_common(TopCPS,SF,PrevConsumer) {	\
-   TopCPS -= NLCPSIZE; 						\
+   TopCPS -= NLCP_SIZE;						\
    nlcp_trie_return(TopCPS) = subg_ans_list_ptr(SF); 		\
    nlcp_subgoal_ptr(TopCPS) = (CPtr)SF;				\
    nlcp_prevlookup(TopCPS) = PrevConsumer;			\
@@ -296,13 +315,15 @@ typedef struct consumer_choice_point {
  }
 
 #ifdef CHAT
-#define SaveConsumerCPF(TopCPS,ConsSF) {		\
+#define SaveConsumerCPF(TopCPS,ConsSF,AT) {		\
    _SaveConsumerCPF_common(TopCPS,ConsSF,NULL);		\
+    nlcp_template(TopCPS) = AT;                         \
     nlcp_chat_area(TopCPS) = NULL;			\
  }
 #else
-#define SaveConsumerCPF(TopCPS,ConsSF,PrevConsumer)	\
-   _SaveConsumerCPF_common(TopCPS,ConsSF,PrevConsumer)
+#define SaveConsumerCPF(TopCPS,ConsSF,PrevConsumer, AT)	\
+   _SaveConsumerCPF_common(TopCPS,ConsSF,PrevConsumer); \
+   nlcp_template(TopCPS) = AT
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -317,25 +338,30 @@ typedef struct consumer_choice_point {
 
 typedef struct compl_susp_frame {
   byte *next_clause;	/* the completion suspension instruction */
+#ifdef SLG_GC
+  CPtr prev_top;
+#endif
   CPtr ebreg;		/* environment backtrack -- top of env stack */
   CPtr hreg;		/* current top of heap */
   CPtr *trreg;	/* current top of trail stack */
   byte *cpreg;	/* return point of the call to the procedure */
   CPtr ereg;		/* current top of stack */
+  CPtr pdreg;		/* value of delay register for the parent subgoal */
+  CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
 #ifdef CHAT
   CPtr prev;		/* previous CP -- not used in the SLG-WAM */
   		    /* although for garbage collection it probably should */
+  CPtr answer_template; /* not really used, but kept as placeholder to 
+			   guarantee assumption below for neg_loop */
 #endif
-  CPtr pdreg;		/* value of delay register for the parent subgoal */
-  CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
   CPtr subgoal_ptr;	/* pointer to the call structure */
+#ifdef CHAT
+    CPtr chat_area;	/* this field is needed for compl susp frames */
+#endif
   CPtr prevcsf;	/* previous completion suspension frame */
   Cell neg_loop;	/* !0 if the suspension is not LRD stratified */
   /* for CHAT this field appears in the place of nlcp_trie_return */
   /* so please make sure that it has the same size as ALNptr */
-#ifdef CHAT
-    CPtr chat_area;	/* this field is needed for compl susp frames */
-#endif
 } *ComplSuspFrame;
 
 #define CSF_SIZE	(sizeof(struct compl_susp_frame)/sizeof(CPtr))
@@ -357,11 +383,16 @@ typedef struct compl_susp_frame {
 #ifdef CHAT
 #define csf_chat_area(b)	((ComplSuspFrame)(b))->chat_area
 #endif
-
-#ifdef CHAT
-#define is_compl_susp_frame(b) \
-    (cp_pcreg(b) == (byte *) &resume_compl_suspension_inst)
+#ifdef SLG_GC
+#define csf_prevtop(b)          ((ComplSuspFrame)(b))->prev_top
 #endif
+/* #ifdef CHAT  this is valid for both! --lfcastro */
+#define is_compl_susp_frame(b) \
+    ((cp_pcreg(b) == (byte *) &resume_compl_suspension_inst) || \
+    (cp_pcreg(b) == (byte *) &resume_compl_suspension_inst2))
+      
+     
+/* #endif */
 
 #ifdef CHAT
 #define save_compl_susp_frame(WHERE,SUBG,T_PTCP,CPREG) \
@@ -391,7 +422,7 @@ typedef struct compl_susp_frame {
     csf_trreg(t_breg) = trreg; \
     csf_hreg(t_breg) = hreg; \
     csf_ebreg(t_breg) = ebreg; \
-    csf_pcreg(t_breg) = (pb) NULL
+    csf_pcreg(t_breg) = (pb) &resume_compl_suspension_inst
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -403,10 +434,20 @@ typedef struct compl_susp_frame {
 
 typedef struct compl_susp_choice_point {
     byte *next_clause;	/* the completion suspension instruction */
+#ifdef SLG_GC
+  CPtr prev_top;
+#endif
     CPtr ebreg;		/* environment backtrack -- top of env stack */
     CPtr hreg;		/* current top of heap */
-    CPtr compsuspptr;	/* pointer to the completion_suspension_frame */
+#ifdef SLG_GC
+  CPtr *trreg;	/* current top of trail stack */
+  byte *cpreg;	/* return point of the call to the procedure */
+  CPtr ereg;		/* current top of stack */
+  CPtr pdreg;		/* value of delay register for the parent subgoal */
+  CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
+#endif
     CPtr prev;		/* lookup: previous choicepoint */
+    CPtr compsuspptr;	/* pointer to the completion_suspension_frame */
 } *ComplSuspChoice;
 
 #define COMPL_SUSP_CP_SIZE	\
@@ -417,14 +458,26 @@ typedef struct compl_susp_choice_point {
 #define cs_hreg(b)		((ComplSuspChoice)(b))->hreg
 #define cs_compsuspptr(b)	((ComplSuspChoice)(b))->compsuspptr
 #define cs_prevbreg(b)		((ComplSuspChoice)(b))->prev
+#ifdef SLG_GC
+#define SAVE_CSCP_EXTRA(t_breg) \
+((ComplSuspChoice)(t_breg))->prev_top = t_breg + COMPL_SUSP_CP_SIZE; \
+((ComplSuspChoice)(t_breg))->trreg = trreg; \
+((ComplSuspChoice)(t_breg))->cpreg = cpreg; \
+((ComplSuspChoice)(t_breg))->ereg = ereg; \
+((ComplSuspChoice)(t_breg))->pdreg = delayreg; \
+((ComplSuspChoice)(t_breg))->ptcp = ptcpreg
+#else
+#define SAVE_CSCP_EXTRA(t_breg)
+#endif
 
 #define save_compl_susp_cp(t_breg,prev,compsuspptr) \
     t_breg -= COMPL_SUSP_CP_SIZE; \
     cs_prevbreg(t_breg) = prev; \
+    SAVE_CSCP_EXTRA(t_breg); \
     cs_compsuspptr(t_breg) = compsuspptr;\
     cs_hreg(t_breg) = hreg; \
     cs_ebreg(t_breg) = ebreg; \
-    cs_pcreg(t_breg) = (pb) &resume_compl_suspension_inst
+    cs_pcreg(t_breg) = (pb) &resume_compl_suspension_inst2
 #endif
 
 /* --------------------------------------------------------------------	*/

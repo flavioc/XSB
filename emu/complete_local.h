@@ -26,75 +26,12 @@
 
 #ifdef LOCAL_EVAL
 #ifndef CHAT
-static inline int  ScheduleNonLeaderGenerator(VariantSF subgoal) 
+void makeConsumerFromGenerator(VariantSF producer_sf)
 {
-  int i;
-  Cell ARITY;
-
-  if (tcp_trie_return(breg) == NULL) { 
-    /* this can only happen if answers are deleted */ 
-    tcp_tag(breg) = CHECK_COMPLETE_TAG; 
-  }
-  else { /* This code mimics the answer_return code */
-    CPtr answer_template;
-    int template_size, attv_num, tmp;
-    ALNptr answer_set;
-    BTNptr answer_leaf;
-    
-    restore_some_wamregs(breg,ereg); 
-    answer_set = ALN_Next(tcp_trie_return(breg));   /* get next answer */ 
-    if ( IsNonNULL(answer_set) ) {
-      tcp_trie_return(breg) = answer_set;   /* update answer continuation */
-      ARITY = tcp_arity(breg); 
-      answer_template = breg + TCP_SIZE + ARITY;
-      
-      tmp = int_val(cell(answer_template));
-      get_var_and_attv_nums(template_size, attv_num, tmp);
-      answer_template += template_size;
-      answer_leaf = ALN_Answer(answer_set);
-      table_consume_answer(answer_leaf,template_size,attv_num,answer_template,
-			   subg_tif_ptr(subgoal));
-      
-      /*
-       * This piece of code was added in (version 1.8.1) to handle
-       * properly variables in delay lists.  Itworks in a manner
-       * similar to answer_return (and lay down consumer, for that
-       * matter).  In order to save the
-       * substitution factor of a conditional answer into the delay list 
-       * for the root subgoal, we have to get it from var_addr[] and
-       * num_heap_term_vars (both set by table_consume_answer()).
-       */
-      if (is_conditional_answer(ALN_Answer(tcp_trie_return(breg)))) { 
-#ifdef DEBUG_DELAYVAR
-	fprintf(stderr, ">>>> delay_positively in check_complete\n");
-#endif
-	{
-	  if (num_heap_term_vars == 0) {
-	    delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
-			     makestring(get_ret_string()));
-	  }
-	  else {
-#ifndef IGNORE_DELAYVAR
-	    CPtr temp_hreg = hreg;
-	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
-	    for (i = 0; i < num_heap_term_vars; i++)
-	      cell(hreg++) = (Cell) var_addr[i];
-	    delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
-			     makecs(temp_hreg));
-#else
-	    delay_positively(subgoal, ALN_Answer(tcp_trie_return(breg)),
-			     makestring(get_ret_string()));
-#endif /* IGNORE_DELAYVAR */
-	  }
-	}
-      }
-      return 1;
-    } 
-    else { 
-      tcp_tag(breg) = CHECK_COMPLETE_TAG;      
-    }
-  } 
-  return 0;
+  nlcp_trie_return(breg) = subg_ans_list_ptr(producer_sf);
+  nlcp_pcreg(breg) = (pb) &answer_return_inst;
+  nlcp_prevlookup(breg) = subg_asf_list_ptr(producer_sf);
+  subg_asf_list_ptr(producer_sf) = breg;
 }
 #endif /* CHAT */
 #endif /* LOCAL */
@@ -284,14 +221,8 @@ static inline void CompleteSimplifyAndReclaim(CPtr cs_ptr)
 static inline void SetupReturnFromLeader(CPtr orig_breg, CPtr cs_ptr, VariantSF subgoal)
 {
   CPtr answer_template;
-#ifndef CHAT
-  Cell ARITY;
-#endif
   int template_size, attv_num, tmp;
 
-#if (!defined(CHAT))
-  tcp_tag(orig_breg) = CHECK_COMPLETE_TAG; 
-#endif
   switch_envs(orig_breg); 
   /* check where this brings the stacks, that will determine how
      much can be reclaimed if there are answers to be returned */
@@ -312,17 +243,11 @@ static inline void SetupReturnFromLeader(CPtr orig_breg, CPtr cs_ptr, VariantSF 
   /* reclaim stacks, including leader */
   openreg = prev_compl_frame(cs_ptr);
   reclaim_stacks(orig_breg);
-#ifdef CHAT
-  tmp = int_val(cell(compl_hreg(cs_ptr)));
-  get_var_and_attv_nums(template_size, attv_num, tmp);
-  answer_template = compl_hreg(cs_ptr) - template_size;
-#else
-  ARITY = tcp_arity(orig_breg);
-  answer_template = orig_breg + TCP_SIZE + ARITY;
+  answer_template = tcp_template(breg);
   tmp = int_val(cell(answer_template));
   get_var_and_attv_nums(template_size, attv_num, tmp);
-  answer_template++;
-#endif
+  answer_template = answer_template - template_size;
+
   /* Now `answer_template' points to the mth term */
   /* Initialize var_regs[] as the attvs in the call. */
   num_vars_in_var_regs = -1;
