@@ -64,8 +64,10 @@ b.  No need to lock the common XSB directory. You must have figured out why
 c.  You can set a watch on the files you are interested in, and CVS will
     notify you by email if somebody starts editing them (in their own
     space! -- no one will be editing the common dir any more).
-    *** Unfortunately, I was unable to set this one properly.
-    *** any takers?
+    (mk: this feature *seems* to work, but I'd not rely on it too much.
+    First, it requires certain discipline from the users. Second, it didn't 
+    work the first time I tried. Then it started to work, but I don't know
+    why!)
 
 d.  Automatic tracking of who changed what. This was possible with RCS as
     well, but for some reason wasn't done.
@@ -332,3 +334,41 @@ trunk. When you are done, CVS provides support for merging your branch into
 the main trunk.
 
 CVS manual gives many more details on that.
+
+
+Monitoring changes to files
+===========================
+
+CVS allows the users to set watches on verious files or directories.
+I set the XSB repository to enable this feature.
+
+The idea is that when you check out XSB modules, all files are made READ
+ONLY. To edit them, you have to make them writable, of course, but CVS
+manual says that YOU MUST NOT USE chmod!!
+
+Instead, use 
+	 cvs edit <file>
+
+(This is done automatically, if you use x/emacs and type C-x C-q -- the
+normal way of toggling read-only.)
+
+The purpose of `cvs edit' is to tell the XSB repository that you have
+started editing <file>, and it would send email to all the users who said
+they want to watch this particular file (or the entire directory where this 
+file lives).
+
+This is how you add yourself to the list of people who watch files:
+-------------------------------------------------------------------
+
+    cvs watch add -a all  <files-or-dirs-you-are-interested-in>
+
+Note, you must be in the ~/projects/XSB directory or its subdirectory
+for the above to work, or else you must specify the repository with the -d
+option.
+
+You can see who's watching/editing specific files with:
+
+        cvs watchers <files>
+        cvs editors  <files>
+
+

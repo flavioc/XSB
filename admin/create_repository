@@ -13,6 +13,3 @@ EOT
 cvs -d $REPO import -W "*.O -k 'b'" -m "Imported sources" XSB  xsb start \
     	    > admin/import.log
 
-cvs -d $REPO watch on
-
-

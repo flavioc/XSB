@@ -66,7 +66,8 @@ Tell CVS to watch XSB directory
 Do this in some checked out user copy. Counterintuitive, but this is how it
 seems to be done:
 
-cvs -d /home/u17/sbprolog/CVSROOT watch on XSB
+cd XSB (after checking out)
+cvs on .
 
 
 Users must run cvs edit <file>, NOT chmod to make files rw.
@@ -84,7 +85,7 @@ CVSROOT/notify
 
 Uncoment the line to enable watchlist notification:
 
-ALL mail %s -s "CVS notification"
+DEFAULT mail %s -s "CVS notification"
 
 
 CVSROOT/loginfo
