@@ -30,14 +30,31 @@
 :- compiler_options([sysmod,xpp_on]).
 
 #include "builtin.h"
+#include "flag_defs.h"
 
 /*----------------------------------------------------------------------*/
 
-subsumptive( [] ) :- !.
-subsumptive([ P/N | Preds ]) :-
+/* Change Evaluation Method for Tabled Predicate
+   --------------------------------------------- */
+variant(PredSpecList) :-
+	is_list(PredSpecList),
+	( member(PredSpec,PredSpecList),
+	  set_tabled_eval_for_pred(PredSpec,VARIANT_EVAL_METHOD),
+	  fail;
+	  true ).
+
+subsumptive(PredSpecList) :-
+	is_list(PredSpecList),
+	( member(PredSpec,PredSpecList),
+	  set_tabled_eval_for_pred(PredSpec,SUBSUMPTIVE_EVAL_METHOD),
+	  fail;
+	  true ).
+
+set_tabled_eval_for_pred(P/N,Method) :-
 	functor(Term,P,N),
-	(set_subsumptive_eval(Term); true),
-	subsumptive(Preds).
+	set_tabled_eval(Term,Method).
+
+set_tabled_eval(_Term,_Method) :- '_$builtin'(SET_TABLED_EVAL).
 
 /*----------------------------------------------------------------------*/
 
@@ -166,7 +183,6 @@ trie_retract_all(X) :- retractall(X).
 /* builtins to get (and change) trie nodes - they belong somewhere else */
 /*======================================================================*/
 
-set_subsumptive_eval(_Term) :- '_$builtin'(SET_SUBSUMPTIVE_EVAL).
 table_status(_Call,_Status) :- '_$builtin'(TABLE_STATUS).
 abolish_table_predicate(_Term) :- '_$builtin'(ABOLISH_TABLE_PREDICATE).
 trie_delete_branch_ret(_LeafNode,_Hook,_BranchOrRet) :-

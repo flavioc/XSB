@@ -200,7 +200,9 @@ standard_symbol(str_length, 2, string).
 standard_symbol(substring, 4, string).
 standard_symbol(string_substitute, 4, string).
 
+standard_symbol(variant, 1, tables).
 standard_symbol(subsumptive, 1, tables).
+
 standard_symbol(tab, 1, standard).
 standard_symbol(table_prop, 3, tables).
 standard_symbol(table_prop, 4, tables).

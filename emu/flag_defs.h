@@ -88,15 +88,17 @@ As best as I can tell, only the following exist/are used:
 
 #define LETTER_VARS	  55      /* For printing vars in the interpreter */
 #define BOOT_MODULE       56      /* First file loaded; usually loader.P  */
-#define CMD_LOOP_DRIVER   57      /* File that contains top-level command loop
-				     driver  */
+#define CMD_LOOP_DRIVER   57      /* File that contains top-level command
+				     loop driver */
 
 #define ORA_INPUTARRAY_LENGTH     58   /* max # simultaneous input tuples */
 #define ORA_INPUTARRAY_WIDTH      59   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    60   /* max # simultaneous output tuples */
 
-#define TABLING_METHOD	  61      /* Method used to evaluate tabled calls:
-				     variant or subsumption */
+#define TABLING_METHOD	  61      /* Default method used to evaluate tabled
+				     calls:  variant or subsumptive */
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* Banner control values recognized on the Prolog side. 
    MUST BE PRIME NUMBERS */
@@ -104,3 +106,13 @@ As best as I can tell, only the following exist/are used:
 #define QUIETLOAD    	  3   /* don't display "module loaded" msgs */
 #define NOPROMPT    	  5   /* display no prompt--useful in spawned
 				 subprocesses */
+
+/*
+ * Defines tag values for indicating the type of tabled evaluation to
+ * use on a given predicate.  These values are shared with Prolog
+ * builtins which allow users to select and change the evaluation
+ * method.
+ */
+
+#define VARIANT_EVAL_METHOD	  0
+#define SUBSUMPTIVE_EVAL_METHOD	  1

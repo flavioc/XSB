@@ -161,7 +161,7 @@
 #define TRIE_DISPOSE_NR         165
 #define TRIE_UNDISPOSE          166
 
-#define SET_SUBSUMPTIVE_EVAL	170
+#define SET_TABLED_EVAL		170
 
 #define PUT_ATTRIBUTES		172
 #define GET_ATTRIBUTES		173

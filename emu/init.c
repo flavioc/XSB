@@ -291,7 +291,7 @@ char *init_para(int argc, char *argv[])
 
 
   xsb_mode = DEFAULT;
-  flags[TABLING_METHOD] = VARIANT_TCM;
+  flags[TABLING_METHOD] = VARIANT_TEM;
 
 
   /* Modify Parameters Using Command Line Options
@@ -377,7 +377,7 @@ char *init_para(int argc, char *argv[])
       break;
     case 'S':
 #ifndef CHAT
-      flags[TABLING_METHOD] = SUBSUMPTIVE_TCM;
+      flags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
 #else
       {
 	void print_chat_sub_warning();

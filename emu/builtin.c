@@ -1632,7 +1632,7 @@ int builtin_call(byte number)
     }
     break;
 
-  case SET_SUBSUMPTIVE_EVAL: {    /* R1: +Term */
+  case SET_TABLED_EVAL: {    /* R1: +Term */
 #ifndef CHAT
     Psc psc;
     TIFptr tif;
@@ -1641,12 +1641,12 @@ int builtin_call(byte number)
     tif = get_tip(psc);
     if ( IsNonNULL(tif) ) {
       if ( IsNULL(TIF_CallTrie(tif)) ) {
-	TIF_TablingMethod(tif) = SUBSUMPTIVE_TCM;
+	TIF_EvalMethod(tif) = ptoc_int(2);
 	return TRUE;
       }
       else {
 	xsb_warn("Cannot change tabling method for tabled predicate %s/%d\n"
-		  "\t    Calls to %s/%d have already been issued\n",
+		  "\t   Calls to %s/%d have already been issued\n",
 		  get_name(psc), get_arity(psc),
 		  get_name(psc), get_arity(psc));
 	return FALSE;
@@ -1657,13 +1657,13 @@ int builtin_call(byte number)
       return FALSE;
     }
 #else
-    {
-      void print_chat_sub_warning();
-      print_chat_sub_warning();
-      return FALSE;
-    }
+    void print_chat_sub_warning();
+
+    print_chat_sub_warning();
+    return FALSE;
 #endif
   }
+
   case PRINT_CHAT: print_chat(1) ; return TRUE ;
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
