@@ -3,19 +3,23 @@
 :- import member/2, length/2, append/3 from basics.
 :- import odbc_sql/4 from odbc_call.
 
+:- document_export coerce_db_type/5.
+
 :- comment(module,
 "
-@section(Updatable External Object Data Sources)
+@section{Updatable External Object Data Sources}
 
-OMS object data (objects and their attributes) can be stored and
-retrieved from external tables within a relational database,
-accessible through the ODBC interface.  Objects can be created and
-deleted and their attributes can be added, deleted and updated.  The
-table(s) in the external relational database are updated to reflect
-such changes.
+@em{Updatable External Object Data Sources} provide a way for OMS object
+data (objects and their attributes) to be stored and retrieved from
+external tables within a relational database that is accessible
+through the ODBC interface.  Objects can be created and deleted and
+their attributes can be added, deleted and updated.  The table(s) in
+the (external) relational database are updated to reflect such
+changes.
 
-An Updatable External Object Data Source is stored as a ""component"",
-which is identified by a particular, unique, Source.
+An Updatable External Object Data Source is stored as a ""component""
+@ref{library (oms_components)}, which is identified by a particular,
+unique, @em{Source}.
 
 The external database table(s) of an Updatable External Object Data
 Source must be of specific form(s), and represent objects and their
@@ -24,10 +28,10 @@ general enough to allow reasonably natural external data
 representations.
 
 The main table in an Updatable External OMS Object Data Source is
-called the Object Table.  An object table is a database table whose
-rows represent objects to be seen within an OMS.  Such a set of
+called the @em{Object Table}.  An object table is a database table
+whose rows represent objects to be seen within an OMS.  Such a set of
 objects will share the same ""source"" in the OMS, indicating their
-""component"".  
+""component"".
 
 An Object Table contains a column which is the OMS object Native ID,
 and that column must be a key for the object table.  The table may
@@ -39,148 +43,158 @@ attribute for the object.  These attributes need not be functional.
 
 An Object Table must be declared with the following fact.
 
+@begin{verbatim}
 ext_object_table(Source,TableName,NOidAttr,NameAttr,
-		 con,MemberofNCid,MemberofSou).
+                     con,MemberofNCid,MemberofSou).
+@end{verbatim}
 
 where:
 
 @begin{itemize}
 @item
-Source is the component identifier for this object table.
+@tt{Source} is the component identifier for this object table.
 @item
-TableName is the name of the object table in the database.
+@tt{TableName} is the name of the object table in the database.
 @item
-NOidAttr is the column name of the key column of the object table.
+@tt{NOidAttr} is the column name of the key column of the object table.
 @item
-NameAttr is the column name of field that contains the name field
+@tt{NameAttr} is the column name of field that contains the name field
   for the object.  (If there is no special one, it should be the same
-  as NOidAttr.)
+  as @tt{NOidAttr}.)
+@item 
+@tt{con} is the constant '@tt{con}' (for now), meaning that the class
+containing all the objects in the object table is a single fixed class.
+@item 
+@tt{MemberofNCid} is the Native ID of the class @em{C} of which all
+these objects are members.
 @item
-con is the constant 'con' (for now), meaning that the class containing
-  all the objects in the object table is a single fixed class.
-@item
-MemberofNCid is the Native ID of the class of which all these objects
-  are members.
-@item
-MemberofSou is the Source of this memberof class.
+@tt{MemberofSou} is the Source of @em{C}.
 @end{itemize}
 
 The caller must have previously opened an ODBC connection, named
-Source, by using odbc_open/4, before these routines will work.
+Source, by using @pred{odbc_open/4} @footnote{See Volume 2 of the XSB
+manual.}, before these routines will work.
 
 For each functional attribute represented in an Object Table, there
 must be a fact of the following form:
 
-ext_functional_attribute_table(Source,RelationNatCid,RelationSou,TarAttr,Trans).
+@begin{verbatim}
+ext_functional_attribute_table(Source,RelNatCid,RelSou,
+                                      TarAttr,Trans).
+@end{verbatim}
 
 where:
 
-@begin{itemize}
+@begin{itemize} 
+@item 
+@tt{Source} is the component identifier for this object table.  
+@item 
+@tt{RelNatCid} is the Native ID of the OMS relationship for this
+attribute.  
+@item 
+@tt{RelSou} is the Source of the OMS relationship for this attribute.
+@item 
+@tt{TarAttr} is the name of the column(s) in the table containing the
+value of this attribute.  If the internal target type is a product
+type, then this is a list of the column names of the columns that
+contain the product values.  The predicate @pred{coerce_db_type/5}
+converts from internal Native Ids to (and from) (lists of) data field
+values.  Rules for @pred{coerce_db_type/5} are provided to do standard
+(Trans = std) conversion between primitive OMS and database types.
+Product types are unfolded to be a list of primitive OMS and database
+types and are converted as such.  If desired, @tt{coerce_db_type/5}
+could be extended to include special-purpose conversion methods
+(probably only of interest for special product types.)  
 @item
-Source is the component identifier for this object table.
-@item
-RelationsNatCid is the Native ID of the OMS relationship for this
-  attribute.
-@item
-RelationSou is the Source of the OMS relationship for this attribute.
-@item
+@tt{Trans} is an atom that indicates the type of translation from
+internal to external format.  Normally it is '@tt{std}', unless
+@pred{coerce_db_type/5} has been extended to include special
+translation capabilities.  @end{itemize}
 
-TarAttr is the name of the column(s) in the table containing the value
-of this attribute.  If the internal target type is a product type,
-then this is a list of the column names of the columns that contain
-the product values.  The predicate @tt{coerce_db_type/5} converts from
-internal Native Ids to (and from) (lists of) data field values.  Rules
-for @tt{db_coerce_type/5} are provided to do standard (Trans = std)
-conversion between primitive OMS and database types.  Product types
-are unfolded to be a list of primitive OMS and database types and are
-converted as such.  If desired, @tt{db_coerce_type/5} could be
-extended to include special-purpose conversion methods (probably only
-of interest for special product types.)
-@item
-Trans is an atom that indicates the type of translation from internal to
-external format.  Normally it is 'std', unless @tt{db_coerce_type/5} has
-been extended to include special translation capabilities.
-@end{itemize}
-
-There must be a schrel in the OMS for each of these OMS relationships
-indicating the OMS type of the attribute value.
+There must be a @tt{schrel} in the OMS for each of these OMS
+relationships indicating the OMS type of the attribute value.
 
 For each attribute table, there must be a fact of the following form:
 
+@begin{verbatim}
 ext_attribute_table(Source,TableName,NOidAttr,
-		    RelationNatCid,RelationSou,TarAttr,Trans)
+                    RelationNatCid,RelationSou,TarAttr,Trans)
+@end{verbatim}
 
 where:
 @begin{itemize}
 @item
-Source is the component identifier for this object table.
+@tt{Source} is the component identifier for this object table.
 @item
-TableName is the name of the attribute table in the database.
+@tt{TableName} is the name of the attribute table in the database.
 @item
-NOidAttr is the column name of the column of the attribute table which
+@tt{NOidAttr} is the column name of the column of the attribute table which
   is a foreign key to the object table.
 @item
-RelationsNatCid is the Native ID of the OMS relationship for this
+@tt{RelationsNatCid} is the Native ID of the OMS relationship for this
   attribute.
 @item
-RelationSou is the Source of the OMS relationship for this attribute.
+@tt{RelationSou} is the Source of the OMS relationship for this attribute.
 @item
-TarAttr is the name(s) of the column(s) in the table containing the
+@tt{TarAttr} is the name(s) of the column(s) in the table containing the
 value(s) of this attribute.  It is an atomic name if the value is of a
 primitive OMS type; it is a list of names if the value of this
 attribute is of a product type.
 @item
-Trans is an atom that indicates the type of translation from internal to
-external format.  Normally it is 'std'.
+@tt{Trans} is an atom that indicates the type of translation from internal to
+external format.  Normally it is '@tt{std}'.
 @end{itemize}
 
-For each functional attribute_object, there must be a fact of the
+For each functional @tt{attribute_object}, there must be a fact of the
 following form:
 
+@begin{verbatim}
 ext_functional_attribute_object_table(Source,RelationNatCid,RelationSou,
-				      TarAttr,TarSource)
+                                            TarAttr,TarSource)
+@end{verbatim}
 
-where
+where, as above
 
 @begin{itemize}
 @item
-Source is the component identifier for this object table.
+@tt{Source} is the component identifier for this object table.
 @item
-RelationsNatCid is the Native ID of the OMS relationship for this
+@tt{RelationsNatCid} is the Native ID of the OMS relationship for this
   attribute.
 @item
-RelationSou is the Source of the OMS relationship for this attribute.
+@tt{RelationSou} is the Source of the OMS relationship for this attribute.
 @item
-TarAttr is the name of the column in the table containing the value of
+@tt{TarAttr} is the name of the column in the table containing the value of
   a native object ID.
 @item
-TarSource is the Source of the native Oids in the TarAttr field.
+@tt{TarSource} is the Source of the native Oids in the TarAttr field.
 @end{itemize}
 
 For each attribute_object table, there must be a fact of the following form:
 
+@begin{verbatim}
 ext_attribute_object_table(Source,TableName,NOidAttr,
-			   RelationNatCid,RelationSou,TarAttr,TarSource)
-
-where:
+                    RelationNatCid,RelationSou,TarAttr,TarSource)
+@end{verbatim}
+where, once again:
 @begin{itemize}
 @item
-Source is the component identifier for this object table.
+@tt{Source} is the component identifier for this object table.
 @item
-TableName is the name of the attribute table in the database.
+@tt{TableName} is the name of the attribute table in the database.
 @item
-NOidAttr is the column name of the column of the attribute table which
+@tt{NOidAttr} is the column name of the column of the attribute table which
   is a foreign key to the object table.
 @item
-RelationsNatCid is the Native ID of the OMS relationship for this
+@tt{RelationsNatCid} is the Native ID of the OMS relationship for this
   attribute.
 @item
-RelationSou is the Source of the OMS relationship for this attribute.
+@tt{RelationSou} is the Source of the OMS relationship for this attribute.
 @item
-TarAttr is the name of the column in the table containing the value of
+@tt{TarAttr} is the name of the column in the table containing the value of
   a native object ID.
 @item
-TarSource is the Source of the native Oids in the TarAttr field.
+@tt{TarSource} is the Source of the native Oids in the TarAttr field.
 @end{itemize}
 
 ").

@@ -1,4 +1,5 @@
 
+:- comment(module,"
 The @tt{oms_rules} module (which currently exists only as
 documentation) proposes a format for rules whose semantics accords
 with that of the OMS, so that the rules can be manipulated and applied
@@ -44,7 +45,7 @@ information may need to be associated with the rule.
                 class(exists(has_material aluminum))
 
 Note that the support and precision are located in a separate argument
-from the ""pre-condition"" and the ""post-condition".  This is because
+from the ""pre-condition"" and the ""post-condition"".  This is because
 these elements are associated with the inference itself and so these
 elements cannot be manipulated within an algebra of class expressions.
 
@@ -117,3 +118,5 @@ Thus, Prolog rules are more powerful than class expression rules, but
 their semantics is hidden from the OMS.  Class expression rules form a
 mechanism that can be used for many relatively simple inferences
 required by standardization, extraction and classification.
+ 
+").

@@ -9,6 +9,8 @@
 :- comment(copyright,"Copyright XSB, Inc; Medicine Rules, Inc, 2001.
 This document produced via the XSBDOC system.").
 
+:- comment(summary,"@include{README.cdf}").
+
 :- comment(module,"
 
 Two leading paradigms for formal knowledge representation are
