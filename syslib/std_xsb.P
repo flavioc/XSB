@@ -337,6 +337,7 @@ standard_symbol(write_prolog, 1, standard).
 standard_symbol(write_prolog, 2, standard).
 standard_symbol(write_term, 1, write_term).	% ISO
 standard_symbol(write_term, 2, write_term).	% ISO
+standard_symbol(write_term, 3, write_term).	% ISO
 standard_symbol(writeln, 1, standard).		% Not ISO
 standard_symbol(writeln, 2, standard).		% Not ISO
 standard_symbol(writeq, 1, standard).
