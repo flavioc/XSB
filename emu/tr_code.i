@@ -1,6 +1,6 @@
 /*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      tr_code.i
-** Author(s): Prasad Rao, Kostis Sagonas
+** Author(s): Prasad Rao, Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -150,132 +150,184 @@ int     delay_it;
 /*       PLEASE PRESERVE THIS IVNARIANT --- Kostis & Bart !             */
 /*----------------------------------------------------------------------*/
 
-#define save_trie_registers(tbreg) {\
-    CPtr temp_arrayptr;\
-    int reg_count = 0, i;\
-    \
-    i = num_vars_in_var_regs;\
-    while (i >= 0) {\
-      *(--tbreg) = (Cell)var_regs[i];\
-      i--;\
-    }\
-    *(--tbreg) = makeint(num_vars_in_var_regs);\
-    temp_arrayptr = reg_arrayptr;\
-    while (temp_arrayptr >= reg_array) {\
-      /* INV: temp_array_ptr + reg_count == reg_arrayptr */\
-      *(--tbreg) = *temp_arrayptr;\
-      reg_count++;\
-      temp_arrayptr--;\
-    }\
-    (*--tbreg) = makeint(reg_count);\
+#define save_trie_registers(tbreg) {				\
+  CPtr temp_arrayptr;						\
+  int reg_count = 0, i;						\
+								\
+  i = num_vars_in_var_regs;					\
+  while (i >= 0) {						\
+    *(--tbreg) = (Cell)var_regs[i];				\
+    i--;							\
+  }								\
+  *(--tbreg) = makeint(num_vars_in_var_regs);			\
+  temp_arrayptr = reg_arrayptr;					\
+  while (temp_arrayptr >= reg_array) {				\
+    /* INV: temp_array_ptr + reg_count == reg_arrayptr */	\
+    *(--tbreg) = *temp_arrayptr;				\
+    reg_count++;						\
+    temp_arrayptr--;						\
+  }								\
+  (*--tbreg) = makeint(reg_count);				\
 }
 
-#define restore_trie_registers(temp) {\
-    int i;\
-    CPtr treg = temp;\
-    \
-    reg_arrayptr = reg_array - 1;\
-    i = cell(treg);\
-    i = int_val(i);\
-    while (i > 0) {\
-      reg_arrayptr++;\
-      *reg_arrayptr = *(++treg);\
-      i--;\
-    }\
-    i = *(++treg);\
-    num_vars_in_var_regs = int_val(i);\
-    for (i = 0; i <= num_vars_in_var_regs; i++) {\
-      var_regs[i] = (CPtr)*(++treg);\
-    }\
+#define restore_trie_registers(temp) {			\
+    int i;						\
+    CPtr treg = temp;					\
+							\
+    reg_arrayptr = reg_array - 1;			\
+    i = cell(treg);					\
+    i = int_val(i);					\
+    while (i > 0) {					\
+      reg_arrayptr++;					\
+      *reg_arrayptr = *(++treg);			\
+      i--;						\
+    }							\
+    i = *(++treg);					\
+    num_vars_in_var_regs = int_val(i);			\
+    for (i = 0; i <= num_vars_in_var_regs; i++) {	\
+      var_regs[i] = (CPtr)*(++treg);			\
+    }							\
 }
 
 /*----------------------------------------------------------------------*/
 
-#define unify_with_trie_numcon {\
-    deref(*reg_arrayptr);\
-    if (isref(*reg_arrayptr)) {\
-      bind_ref((CPtr)*reg_arrayptr, opatom);\
-    } else {\
-      if (*reg_arrayptr != opatom) {\
-        Fail1;\
-        goto contcase;\
-      }\
-    }\
+#define unify_with_trie_numcon {			\
+  deref(*reg_arrayptr);					\
+  if (isref(*reg_arrayptr)) {				\
+    bind_ref((CPtr)*reg_arrayptr, opatom);		\
+  }							\
+  else if (isattv(*reg_arrayptr)) {			\
+    bind_copy((CPtr) dec_addr(*reg_arrayptr), opatom);	\
+  }							\
+  else {						\
+    if (*reg_arrayptr != opatom) {			\
+      Fail1;						\
+      goto contcase;					\
+    }							\
+  }							\
 }
 
-#define unify_with_trie_str {\
-    Psc psc;\
-    int i, arity;\
-    \
-    deref(*reg_arrayptr);\
-    psc = (Psc) cs_val(opatom);\
-    arity = (int) get_arity(psc);\
-    will_overflow_reg_array(reg_arrayptr + arity);\
-    if (isref(*reg_arrayptr)) {\
-      bind_ref((CPtr) *reg_arrayptr, makecs(hreg));\
-      reg_arrayptr--;\
-      *(hreg++) = (Cell) psc;\
-      for (i = arity; i >= 1; i--) {\
-        *(reg_arrayptr + i) = (Cell) hreg;\
-        new_heap_free(hreg);\
-      }\
-      reg_arrayptr += arity;\
-     } else {\
-      CPtr temp = (CPtr)*reg_arrayptr;\
-      if ((isconstr(temp)) && (psc == get_str_psc(temp))) {\
-        reg_arrayptr--;\
-        temp = (CPtr)cs_val(temp);\
-        for (i = arity; i >= 1; i--) {\
-          *(reg_arrayptr+i) = *(temp+arity-i+1);\
-        }\
-        reg_arrayptr += arity;\
-      }\
-      else {\
-        Fail1;\
-        goto contcase;\
-      }\
-    }\
+#define unify_with_trie_str {					\
+  Psc psc;							\
+  int i, arity;							\
+								\
+  deref(*reg_arrayptr);						\
+  psc = (Psc) cs_val(opatom);					\
+  arity = (int) get_arity(psc);					\
+  will_overflow_reg_array(reg_arrayptr + arity);		\
+  if (isref(*reg_arrayptr)) {					\
+    bind_ref((CPtr) *reg_arrayptr, makecs(hreg));		\
+    reg_arrayptr--;						\
+    *(hreg++) = (Cell) psc;					\
+    for (i = arity; i >= 1; i--) {				\
+      *(reg_arrayptr + i) = (Cell) hreg;			\
+      new_heap_free(hreg);					\
+    }								\
+    reg_arrayptr += arity;					\
+  }								\
+  else if (isattv(*reg_arrayptr)) {				\
+    bind_copy((CPtr) dec_addr(*reg_arrayptr), makecs(hreg));	\
+    reg_arrayptr--;						\
+    *(hreg++) = (Cell) psc;					\
+    for (i = arity; i >= 1; i--) {				\
+      *(reg_arrayptr + i) = (Cell) hreg;			\
+      new_heap_free(hreg);					\
+    }								\
+    reg_arrayptr += arity;					\
+  }   								\
+  else {							\
+    CPtr temp = (CPtr)*reg_arrayptr;				\
+    if ((isconstr(temp)) && (psc == get_str_psc(temp))) {	\
+      reg_arrayptr--;						\
+      temp = (CPtr)cs_val(temp);				\
+      for (i = arity; i >= 1; i--) {				\
+	*(reg_arrayptr+i) = *(temp+arity-i+1);			\
+      }								\
+      reg_arrayptr += arity;					\
+    }								\
+    else {							\
+      Fail1;							\
+      goto contcase;						\
+    }								\
+  }								\
 }
 
-#define unify_with_trie_list {\
-    deref(*reg_arrayptr);\
-    if (isref(*reg_arrayptr)) {\
-      bind_ref((CPtr) *reg_arrayptr, (Cell) makelist(hreg));\
-      *reg_arrayptr = (Cell)(hreg+1);         /* head of list */\
-      will_overflow_reg_array(reg_arrayptr + 1);\
-      *(++reg_arrayptr) = (Cell) hreg;        /* tail of list */\
-      new_heap_free(hreg);\
-      new_heap_free(hreg);\
-    } else {\
-     CPtr temp = (CPtr)*reg_arrayptr;\
-     if (islist(temp)) {\
-       will_overflow_reg_array(reg_arrayptr + 1);\
-       *reg_arrayptr++ = (Cell)(clref_val(temp)+1);\
-       *reg_arrayptr = (Cell)(clref_val(temp));\
-     } else {\
-       Fail1;\
-       goto contcase;\
-     }\
-   }\
+#define unify_with_trie_list {					\
+  deref(*reg_arrayptr);						\
+  if (isref(*reg_arrayptr)) {					\
+    bind_ref((CPtr) *reg_arrayptr, (Cell) makelist(hreg));	\
+    *reg_arrayptr = (Cell)(hreg+1);         /* head of list */	\
+    will_overflow_reg_array(reg_arrayptr + 1);			\
+    *(++reg_arrayptr) = (Cell) hreg;        /* tail of list */	\
+    new_heap_free(hreg);					\
+    new_heap_free(hreg);					\
+  }								\
+  else if (isattv(*reg_arrayptr)) {				\
+    bind_copy((CPtr) dec_addr(*reg_arrayptr), makelist(hreg));	\
+    *reg_arrayptr = (Cell)(hreg+1);         /* tail of list */	\
+    will_overflow_reg_array(reg_arrayptr + 1);			\
+    *(++reg_arrayptr) = (Cell) hreg;        /* head of list */	\
+    new_heap_free(hreg);					\
+    new_heap_free(hreg);					\
+  }								\
+  else {							\
+    CPtr temp = (CPtr)*reg_arrayptr;				\
+    if (islist(temp)) {						\
+      will_overflow_reg_array(reg_arrayptr + 1);		\
+      *reg_arrayptr++ = (Cell)(clref_val(temp)+1);		\
+      *reg_arrayptr = (Cell)(clref_val(temp));			\
+    } else {							\
+      Fail1;							\
+      goto contcase;						\
+    }								\
+  }								\
 }
 
-#define unify_with_trie_val {\
-    Cell cell2deref;\
-    deref(*reg_arrayptr);\
-    if (isref(*reg_arrayptr)) {\
-      cell2deref = (Cell)var_regs[(int)int_val(opatom)];\
-      deref(cell2deref);\
-      if (cell2deref != *reg_arrayptr)\
-        bind_ref((CPtr) *reg_arrayptr, cell2deref);\
-    } else {\
-     op1 = (Cell)*reg_arrayptr;\
-     op2 = (Cell) var_regs[(int)int_val(opatom)];\
-     if (unify(op1,op2) == FALSE) {\
-       Fail1;\
-       goto contcase;\
-     }\
-   }\
-   reg_arrayptr--;\
+#define unify_with_trie_val {					\
+  Cell cell2deref;						\
+  deref(*reg_arrayptr);						\
+  if (isref(*reg_arrayptr)) {					\
+    cell2deref = (Cell)var_regs[(int)int_val(opatom)];		\
+    deref(cell2deref);						\
+    if (cell2deref != *reg_arrayptr)				\
+      bind_ref((CPtr) *reg_arrayptr, cell2deref);		\
+  }								\
+  else if (isattv(*reg_arrayptr)) {				\
+    cell2deref = (Cell) var_regs[(int)int_val(opatom)];		\
+    deref(cell2deref);						\
+    if (*reg_arrayptr != cell2deref) {				\
+      bind_copy((CPtr)dec_addr(*reg_arrayptr), cell2deref);	\
+    }								\
+    else {							\
+      /* printf(".... keeping the old attribute\n"); */		\
+    }								\
+  }								\
+  else {							\
+    op1 = (Cell)*reg_arrayptr;					\
+    op2 = (Cell) var_regs[(int)int_val(opatom)];		\
+    if (unify(op1,op2) == FALSE) {				\
+      Fail1;							\
+      goto contcase;						\
+    }								\
+  }								\
+  reg_arrayptr--;						\
+}
+
+#define unify_with_trie_attv {					\
+  CPtr temp;							\
+  deref(*reg_arrayptr);						\
+  num_vars_in_var_regs = (int)int_val(opatom) &0xffff;		\
+  if (isref(*reg_arrayptr)) {					\
+    bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));		\
+  }								\
+  else { /* isattv(*reg_arrayptr) */				\
+    temp = clref_val(*reg_arrayptr);				\
+    bind_ref(temp, makeattv(hreg));				\
+  }								\
+  var_regs[num_vars_in_var_regs] = (CPtr) makeattv(hreg);	\
+  new_heap_free(hreg);						\
+  *reg_arrayptr = (Cell) hreg;					\
+  new_heap_free(hreg);						\
 }
 
 /*----------------------------------------------------------------------*/

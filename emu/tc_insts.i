@@ -690,3 +690,34 @@ case trie_assert_inst:
     lpcreg = (byte *) &fail_inst;
   goto contcase;
 }	
+
+case trie_no_cp_attv:
+{
+#ifdef PVR_DEBUG_TC_INSTS
+  xsb_dbgmsg("trie_no_cp_attv");
+#endif
+  NodePtr = (BTNptr) (lpcreg - 1);
+  unify_with_trie_attv;
+  next_lpcreg
+  goto contcase;
+}
+
+case trie_try_attv:
+{
+  CPtr tbreg;
+#ifdef PVR_DEBUG_TC_INSTS
+  xsb_dbgmsg("trie_try_attv");
+#endif
+  NodePtr = (BTNptr) (lpcreg - 1);
+  save_find_locx(ereg);
+  tbreg = top_of_cpstack;
+  save_trie_registers(tbreg);
+  save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
+  breg = tbreg;
+  hbreg = hreg;
+  unify_with_trie_attv;
+  next_lpcreg;
+  goto contcase;
+}
+
+/*----------------------------------------------------------------------*/
