@@ -14,10 +14,10 @@
 
 dlrule_to_cdf('<='(Head,Body),CDFList):- 
 	head_ce_to_formula(Head,V,HeadList,[],Cmpt),
-	(var(Cmpt) -> 
-	    cdf_warning(rule,('No component info given in rule: ',
-	                           '<='(Head,Body)))
-	;  asserta(compdlrule(Cmpt,Head,Body)) ),
+%	(var(Cmpt) -> 
+%	    cdf_warning(rule,('No component info given in rule: ',
+%	                           '<='(Head,Body)))
+%	;  asserta(compdlrule(Cmpt,Head,Body)) ),
 	body_ce_to_formula(Body,V,BodyF),
 	add_cmpt_check_to_body(BodyF,V,Cmpt,BodyCF),	
 	distribute_heads_to_bodies(HeadList,BodyCF,CDFList),
