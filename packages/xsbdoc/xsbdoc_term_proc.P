@@ -7,6 +7,7 @@
 	  messageln/1,
 	  prettyprint/2, 
 	  process_a_file/5,
+	  postproc_newlines/2,
 	  read_file_as_string/2,
 	  read_file_reset/0.
 
@@ -29,9 +30,23 @@
 
 read_file_as_string(File,List):- 
 	open(File,read,FStr),
-	read_file_as_string_1(FStr,List),
+	read_file_as_string_1(FStr,List_in),
+	postproc_newlines(List_in,List),
 	close(FStr).
 	
+postproc_newlines(H,T):- 
+	xsb_configuration(host_os,Type),
+	(Type == windows -> 
+	    postproc_newlines1(H,T)
+	  ;   
+	    H = T).
+
+postproc_newlines1([H],[H]):-!.
+postproc_newlines1([13|Tin],Tout):- !,
+	postproc_newlines1(Tin,Tout).
+postproc_newlines1([H|Tin],[H|Tout]):- 
+	postproc_newlines1(Tin,Tout).
+
 read_file_as_string_1(FStr,List):- 
 	get_code(FStr,Char),
 	(Char < 0 -> 

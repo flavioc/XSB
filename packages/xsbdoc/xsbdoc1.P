@@ -84,13 +84,22 @@ xsbdoc(Format_file,Generation_type):-
 	             StartPage,PaperType,['-main'|Opts]),
 	xsbdoc_components(Components,Indices,Opts),
 	make_bibfiles(Base),	/* dont want main.P */
-	shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
-	shell_list(['texindex ',Base,'.?? ']),
-	shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
+            tex_commands(Base),
 	perform_generation_type(Generation_type,Base,Components),
 	!.
 xsbdoc(Format_file,_):- 
 	format("~nCould not process: ~w",[Format_file]).
+
+tex_commands(Base):-
+	xsb_configuration(host_os,Type),
+	(Type == windows -> 
+	  shell_list(['tex -interaction=nonstopmode ',Base,'.texic']),
+	  shell_list(['texindex ',Base,'.?? ']),
+	  shell_list(['tex -interaction=nonstopmode ',Base,'.texic']) 
+	;
+	  shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']),
+	  shell_list(['texindex ',Base,'.?? ']),
+	  shell_list(['tex \\\nonstopmode\\\input ',Base,'.texic']) ).
 
 perform_generation_type(ascii,Main,List):- 
 	component_ascii([Main|List]),

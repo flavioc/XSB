@@ -39,6 +39,7 @@
 	  verbatimize_string/3 from autodocformats.
 
 :- import comma_member/2, corrected_search_module/5,
+	  postproc_newlines/2, 
 	  process_a_file/5, 
 	  read_file_as_string/2,
 	  read_file_reset/0 from xsbdoc_term_proc.
@@ -320,6 +321,7 @@ document_front_matter(Format,FileType,FileLevel,Name,NDName,Dir,
 	;  ErrorType=note_message(_) ),
 	get_comment(subtitle,multiple,ErrorType,
 					Format,Idxs,Opts,SubtitleLines),
+
 	get_comment(copyright,single,ErrorType,
 					Format,Idxs,Opts,Copyright),
 	get_comment(summary,single,ErrorType,
@@ -1092,16 +1094,6 @@ get_comment(Id,single,_ErrorLevel,Format,Idxs,Opts,Content) :-
 	get_comment_field(Id,RContent),
 	!,
 	process_content(Format,Idxs,RContent,Opts,Content).
-/*
-get_comment(Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
-	findall(Content,
-	        ( '_#clause'(directive(comment(Id,Field)), _Ctr),
-		  writeln(RContent),
-                process_content(Format,Idxs,RContent,Opts,Content)),
-		Contents ),
-	Contents \== [],
-	!.
-*/
 get_comment(Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
    setof([Ctr,Content],
 	 Format^Idxs^Opts^process_comment_content(Ctr,Id,Format,
@@ -1119,11 +1111,13 @@ eliminate_counters([[_Ctr,String]|R],[String|R1]):-
 	eliminate_counters(R,R1).
 
 process_comment_content(Ctr,Id,Format,Idxs,Opts,Content):- 
-	         '_#clause'(directive(comment(Id,Field)), Ctr),
-                process_content(Format,Idxs,Field,Opts,Content).
+	     '_#clause'(directive(comment(Id,Field_in)), Ctr),
+	     postproc_newlines(Field_in,Field),
+	     process_content(Format,Idxs,Field,Opts,Content).
 
 get_comment_field(Id,Field) :-
-	'_#clause'(directive(comment(Id,Field)), _Ctr).
+	'_#clause'(directive(comment(Id,Field_in)), _Ctr),
+	postproc_newlines(Field_in,Field).
 
 process_content(Format,Idxs,RContent,Opts,Content) :-
 	string(RContent),
@@ -1525,7 +1519,7 @@ try_command(ImageCommand,
 	append(NewComm,Tail,NStr).
 try_command(begin("verbatim"),
 	    SP,Format,Idxs,_Verb,verb,NL,NNL,_Opts,NStr,Tail) :-
-	rewrite_command(Format,begin("verbatim"),Idxs,XNewComm),
+ 	rewrite_command(Format,begin("verbatim"),Idxs,XNewComm),
         !,
 	last_char_newline(NL,XNewComm,RNewComm),
 	add_space_after_command(SP,RNewComm,NewComm,NNL),

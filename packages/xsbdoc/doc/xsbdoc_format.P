@@ -30,7 +30,7 @@ xsbdoc_index(all).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Verbose output (good for debugging).   
-% xsbdoc_option('-v').
+xsbdoc_option('-v').
 
 % Do not include author names.          
 % xsbdoc_option('-noauthors').

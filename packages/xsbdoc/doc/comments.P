@@ -746,10 +746,10 @@ escapeseq --> "@{"
    @item{@tt{@@!}}         @result  @cindex{@@! command}          @!{} 
    @item{@tt{@@i}}         @result  @cindex{@@i command}          @i{} 
    @item{@tt{@@j}}         @result  @cindex{@@j command}          @j{}
-   @item{@tt{@@copyright}} @result  @cindex{@@copyright command}  @copyright
-   @item{@tt{@@iso}}       @result  @cindex{@@iso command}        @iso
-   @item{@tt{@@bullet}}    @result  @cindex{@@bullet command}     @bullet
-   @item{@tt{@@result}}    @result  @cindex{@@result command}     @result
+   @item{@tt{@@copyright}} @result  @cindex{@@copyright command}  @copyright{}
+   @item{@tt{@@iso}}       @result  @cindex{@@iso command}        @iso{}
+   @item{@tt{@@bullet}}    @result  @cindex{@@bullet command}     @bullet{}
+   @item{@tt{@@result}}    @result  @cindex{@@result command}     @result{}
 
    @end{description}
 
