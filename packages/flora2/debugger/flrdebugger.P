@@ -48,8 +48,8 @@
     from flrwrapper.
 :- import flora_prlgdef/2 from flrprolog.
 :- import flora_opdef/3 from flroperator.
-:- import flora_set_xpp_options/1,
-	flora_set_xpp_options/0,
+:- import flora_set_xpp_options_for_read/1,
+	flora_set_xpp_options_for_read/0,
 	flora_clear_xpp_options/0 from flrutils.
 :- import flora_message_line/1, flora_message_line/2 from flrprint.
 :- import flLoadedModule/1 from flora2.
@@ -713,8 +713,8 @@ flora_read_debugger_data(WS,_Datafile) :-
 	!.
 flora_read_debugger_data(WS,Datafile) :- 
 	(var(WS)
-	-> flora_set_xpp_options
-	; flora_set_xpp_options(WS)
+	-> flora_set_xpp_options_for_read
+	; flora_set_xpp_options_for_read(WS)
 	),
 	xpp_process_file(Datafile, CPP_process, IOportFromCPP),
 	repeat,

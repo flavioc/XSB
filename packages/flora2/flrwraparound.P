@@ -105,7 +105,7 @@ wrapWorkspace(InFile,OutFile) :-
 %% this one just writes to stdout
 wrapWorkspace(InFile) :- 
 	seeing(PreInFile),
-	flora_set_xpp_options,
+	flora_set_xpp_options_for_read,
 	xpp_process_file(InFile,XPP_process,IOportFromProc),
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	process_fli_file,
