@@ -22,8 +22,7 @@
 ** 
 */
 
-:- export put_atts/2, get_atts/2,
-	  attribute/1.
+:- export put_atts/2, get_atts/2, (attribute)/1.
 
 :- import put_attributes/2, get_attributes/3,
 	  delete_attributes/1 from machine.

@@ -22,7 +22,7 @@
 ** 
 */
 
-:- dynamic attribute/4.
+:- dynamic (attribute)/4.
 
 % --- for projection goal, we are to use bind variables for those constants. 
 
