@@ -580,6 +580,61 @@ Example:
 
 \end{description}
 
+
+\comment{
+The following section about socket is provided by Juliana.
+- Baoqiu (1/16/1999)
+}
+
+\section{Socket I/O}
+
+The XSB socket library defines a number of predicates manipulating
+sockets. They are all rather straight-forward interfaces to the
+corresponding BSD-type socket functions with the same name. For detailed
+information on sockets, the reader is referred to the Unix man pages
+(another good source is \emph{Unix Network Programming}, by W. Richard
+Stevens).
+
+To load the package, enter the query 
+\begin{verbatim}
+| ?- [sockets].
+\end{verbatim}
+
+Examples can be found in the examples directory in the XSB source tree.
+
+\begin{description}
+\ouritem{socket(-Sockfd)}\index{{\tt socket/1}}
+    A socket Sockfd in the AF\_INET domain is created (AF\_UNIX is not
+implemented). 
+
+\ouritem{socket\_close(+Sockfd)}\index{{\tt socket\_close/1}}
+    Sockfd is closed. Sockets used in socket\_connect/2 should not be
+closed by socket\_close/1 as they will be closed when the corresponding
+stream is closed.
+
+\ouritem{socket\_bind(+Sockfd,+Port)}\index{{\tt socket\_bind/2}}
+   The socket Sockfd is bound to the address (Port is the port number).
+
+\ouritem{socket\_connect(+Sockfd,+Port,+Hostname,Sockfptr)}\index{{\tt socket\_connect/4}}
+    The socket Sockfd is connected to the address (Hostname and
+Port). Sockfptr is a stream on which items can be both read and written.
+
+\ouritem{socket\_listen(+Socket, +Length)}\index{{\tt socket\_listen/2}}
+    The socket Sockfd is defined to have a maximum backlog queue of
+Length pending connections.
+
+\ouritem{socket\_accept(+Sockfd,-Sockfptr)}\index{{\tt socket\_accept/2}}
+\emph{Not implemented.}
+
+\ouritem{socket\_select} \index{{\tt socket\_select}} \emph{Not implemented.}
+
+\end{description}
+
+All streams above can be both read from and written on. All
+I/O-predicates operating on streams can be used, for example
+file\_read/2, file\_write/2, etc.
+
+
 \comment{
 
 TLS --- Im not quite sure that the sockets are ready for prime time.
