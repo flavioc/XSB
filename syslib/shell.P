@@ -83,7 +83,12 @@ cd(Path) :-
 
 rename(Old, New) :- sys_rename(Old, New, Res), Res =:= 0.
 
-ls :- shell('ls -F', Res), Res =:= 0.
+ls :-
+	(   xsb_configuration(host_os,windows)
+	->  shell('dir', Res)
+	;   shell('ls -F',Res)
+	),
+	Res =:= 0.
 
 rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
 
