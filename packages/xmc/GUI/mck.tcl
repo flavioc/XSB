@@ -17,6 +17,11 @@ catch {namespace import mclistbox::*}
 
 # ----------------------------------------------------------------------
 global process_name formula_name
+global node_num node_childs
+global node_exist node_info node_pred node_truth
+set node_num 1
+set node_childs(0) 0
+set node_exist(0) 0
 set process_name ""
 set formula_name ""
 
@@ -111,14 +116,15 @@ proc mck_start {} {
     # initialize XSB and XMC
     $w.mb issue "Initializing XMC ..." INFO
     update
-    xsb_init "$xsb_exec" "\['$xmc_path/GUI/tcl_interface'\]"
+    xsb_init "$xsb_exec" "\['$xmc_path/System/tcl_interface'\]"
     xsb_command "\['$xmc_path/System/xmc'\]"
     xsb_command {[gui]}
 
     # Compile the .xl file & start on XMC checking
     $w.mb issue "Compiling the source file ..." INFO
     update
-    set xlfile [string trimright $source_name ".xl"]
+    set xl_index [string last ".xl" $source_name]
+    set xlfile [string range $source_name 0 [expr $xl_index -1]]
     xsb_query xmc_compile(\'$xlfile\',ErrorFile) result
     set errfile $result(1,1)
     if {$result(1,1) != "true"} {
@@ -258,7 +264,12 @@ proc justify {} {
 
 proc query_node {node_id} {
     global process_name formula_name
-    global mckProofTree
+    global mckProofTree 
+    global node_num node_childs
+    global node_exist node_info node_pred node_truth
+
+    puts stdout "enter..."
+    puts stdout $node_id
 
     if {$node_id == ""} {
 	# root node: get models predicate
@@ -266,9 +277,48 @@ proc query_node {node_id} {
 	set models $result(1,1)
 	xsb_query getroot($models,Id,Pred,Truth) childlist
 #	xsb_query getroot(mck($process_name,$formula_name),Id,Pred,Truth) childlist
-	set node_root $childlist(1,1)
+	set node_root 1
+	set node_info($node_num) $childlist(1,1)
+	set node_pred($node_num) $childlist(1,2)
+	set node_truth($node_num) $childlist(1,3)
+	set node_exist($childlist(1,1)) $node_num
+	set childlist(1,1) $node_num
     } else {
-	xsb_query getchild($node_id,Id,Pred,Truth) childlist
+	if [info exists node_childs($node_id)] {
+	    set j [llength $node_childs($node_id)]
+	    for {set i 0} {$i < $j} {incr i} {
+#		set child_id $node_info([lindex $node_childs($node_id) $i])
+#		xsb_query getroot($child_id,Id,Pred,Truth) childlist1
+		set child_id [lindex $node_childs($node_id) $i]
+		set childlist([expr $i + 1],1) $child_id
+		set childlist([expr $i + 1],2) $node_pred($child_id)
+		set childlist([expr $i + 1],3) $node_truth($child_id)
+	    }
+	    set childlist(ntuples) $j
+	    
+	} else {
+	    set node_id1 $node_info($node_id)
+	    xsb_query getchild($node_id1,Id,Pred,Truth) childlist
+	    set node_childs($node_id) {}
+	    puts stdout [format "entering %s" $node_id]
+	    for {set i 1} {$i <= $childlist(ntuples)} {incr i} {
+		incr node_num
+		if [info exists node_exist($childlist($i,1))] {
+		    set node_info($node_num) [format "anc(%s)" $childlist($i,1)]
+		    set node_pred($node_num) [format "Loop: %s" $childlist($i,2)]
+		} else {
+		    set node_info($node_num) $childlist($i,1)
+		    set node_exist($childlist($i,1)) 1
+		    set node_pred($node_num) $childlist($i,2)
+		}
+		set childlist($i,1) $node_num
+		set node_truth($node_num) $childlist($i,3)
+		lappend node_childs($node_id) $node_num
+		set childlist($i,1) $node_num
+		puts stdout [format "info : %s" $node_info($node_num)]
+		puts stdout [format "pred : %s" $node_pred($node_num)]
+	    }
+	}
     }
 
     set rlist {}
@@ -358,6 +408,7 @@ proc highlight_bright {{what ""}} {
 
 proc select_node {node_id} {
     global mckProofTree mckProcList
+    global node_info
 
     # set current selection & show it
     $mckProofTree selection clear
@@ -367,7 +418,8 @@ proc select_node {node_id} {
     catch { $mckProcList delete 0 end }
 
     # get the symbol table
-    xsb_query get_process_list($node_id,Proc,Line,Char,Vars) result
+    set node_id1 $node_info($node_id)
+    xsb_query get_process_list($node_id1,Proc,Line,Char,Vars) result
 
     # fill the process list
     for {set x 1} {$x <= $result(ntuples)} {incr x } {
