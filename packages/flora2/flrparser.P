@@ -375,7 +375,7 @@ flobject_struct(OBJECT(SPECIAL_TOKEN(Atom),I),FLTOKEN(Atom,I)) :- !.
 /*************************************************************
         Added by Bin Tang for richer anonymouse oid syntax
 *************************************************************/
-flobject_struct(OBJECT(SPECIAL_TOKEN(Atom, Num),I),FLTOKEN(Atom,Num,I)) :- !.  
+flobject_struct(OBJECT(SPECIAL_TOKEN(Atom,Num),I),FLTOKEN(Atom,Num,I)) :- !.
 
 is_flatom_struct(FLATOM(Atom,_I),Atom).
 is_flnumber_struct(FLNUMBER(_Num,_I)).

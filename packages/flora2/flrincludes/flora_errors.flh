@@ -147,7 +147,8 @@
 /****************************************
   Added by Bin Tang for richer anonymous oid syntax
 *****************************************/
-#define SINGLETON_ANON_OID      'singleton numbered anonymous oid in clause'
+#define SINGLETON_OID	'singleton numbered anonymous oid in clause'
+
 
 /**************************************
   errors reported by Flora Compiler

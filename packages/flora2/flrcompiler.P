@@ -116,7 +116,7 @@ is_fltoken(FLTOKEN(Token,I),Token,I).
 /****************************************************************
 	Added by Bin Tang for richer anonymous oid syntax
 ****************************************************************/
-is_fltoken(FLTOKEN(Token, Num, I),Token,Num,I). 
+is_fltoken(FLTOKEN(Token,Num,I),Token,Num,I). 
 
 is_flvar(FLVAR(Name,Index),Name,Index).
 is_fllist(FLLIST(L,T,I),L,T,I).
@@ -159,7 +159,7 @@ approximate_index(FLATOM(_Atom,I),I)              :- !.
 approximate_index(FLNUMBER(_Number,I),I)          :- !.
 approximate_index(FLSTRING(_String,I),I)          :- !.
 approximate_index(FLTOKEN(_Token,I),I)            :- !.
-approximate_index(FLTOKEN(_Token,_Num,I),I)       :- !. % Handle rich anon oid.
+approximate_index(FLTOKEN(_Token,_Num,I),I)       :- !.
 approximate_index(FLVAR(_Name,I),I)               :- !.
 approximate_index(FLLIST(_List,_T,I),I)           :- !.
 approximate_index(FLTERM(F,_A,_Args),I)           :- !, approximate_index(F,I).
@@ -895,24 +895,25 @@ flora_compile(NULL,[],[],[]) :- !.
 
 flora_compile(ParserTerm,CodeList,OptionList,Status) :-
 	%% extract the rule number
-	conget(RULE_NUM, N),
+	conget(RULE_NUM,N),
 	M is N+1,
-	conset(RULE_NUM, M), 
-	
+	conset(RULE_NUM,M),
 	initialize_work,
 	( is_flrule(ParserTerm,Head,Body) ->
 	    compile_rule(Head,Body,CodeList,Status_rule),
-	%% check whether singleton numbered anon oid exists
+	    %% check whether singleton numbered anon oid exists
 	    ( ruleoid(_,_,1) 
-	      -> referenced_once(Status_rule, Status)
+	      -> referenced_once(Status_rule,Status)
 	      ;  Status_rule=Status
 	    )
+
 	; is_flfact(ParserTerm,Head) ->
 	    compile_fact(Head,CodeList,Status_fact),
 	    ( ruleoid(_,_,1) 
-	      -> referenced_once(Status_fact, Status)
+	      -> referenced_once(Status_fact,Status)
 	      ;  Status_fact=Status
 	    )
+
 	; is_flquery(ParserTerm,Body) ->
 	    compile_query(Body,CodeList,Status)
 
@@ -921,29 +922,32 @@ flora_compile(ParserTerm,CodeList,OptionList,Status) :-
         ),
 	!,
 	get_option(OptionList),
-	retractall(ruleoid(_,_,_)). 
+	retractall(ruleoid(_,_,_)).
 	
+%% This rule is for debugging.
+flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
+
+
 /***************************************************************************
   Added by Bin Tang for richer anonymous oid syntax
   referenced_once(+Status_rf,-Status)
   finds singleton numbered anon oid and puts warning message in Status
 ***************************************************************************/
-referenced_once(Status_rf, Status) :-
-	findall(Index, ruleoid(_,Index,1), IndexList),
-	singleton_oid_warning(IndexList, WarnList,[]),
-	append(Status_rf, WarnList, Status).
+referenced_once(Status_rf,Status) :-
+	findall(Index,ruleoid(_,Index,1),IndexList),
+	singleton_oid_warning(IndexList,WarnList,[]),
+	append(Status_rf,WarnList,Status).
+
 
 /*************************************************************************
 singleton_oid_warning(+SingleOidList,-WarnList,-WarnTail)
 ***********************************************************************/
 singleton_oid_warning([],WarnList,WarnList).
-singleton_oid_warning([Index|L], WarnList, WarnTail) :-
-	compiling_warning(Index, SINGLETON_ANON_OID, W),
+
+singleton_oid_warning([Index|L],WarnList,WarnTail) :-
+	compiling_warning(Index,SINGLETON_OID,W),
 	WarnList=[W|T],
 	singleton_oid_warning(L,T,WarnTail).
-
-%% This rule is for debugging.
-flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
 
 
 /****************************************************************************
@@ -1602,7 +1606,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
 	( Status == [] ->
 	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    conjunct_code(OCode,SCode,Code)
+	    conjunct_code(SCode,OCode,Code)
 	;
 	  true
         ).
@@ -1630,7 +1634,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
 	( Status == [] ->
 	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    conjunct_code(OCode,SCode,Code)
+	    conjunct_code(SCode,OCode,Code)
 	;
 	  true
         ).
@@ -1641,7 +1645,7 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
 	( Status == [] ->
 	    tolistattspec_struct(Object,AttObj,RefType,ValObj,SCode),
-	    conjunct_code(OCode,SCode,Code)
+	    conjunct_code(SCode,OCode,Code)
 	;
 	  true
         ).
@@ -1685,7 +1689,7 @@ compile_mvdattspec(Object,AttObj,RefType,[T],Code,Status) :-
 	compile_pathexp(T,TObj,TCode,Status),
 	( Status == [] ->
 	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
-	    conjunct_code(TCode,SCode,Code)
+	    conjunct_code(SCode,TCode,Code)
 	;
 	  true
         ).
@@ -1991,7 +1995,7 @@ compile_head_fltoken(Token,Index,Object) :-
 	    new_oidobj(Index,Object)
 	;
 	  atomobj_struct(Token,Index,Object)
-        ).
+	).
 
 /****************************************************************************
   Added by Bin Tang for richer oid anonymous syntax
@@ -2522,7 +2526,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	( Status == [] ->
 	    fdattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(OCode,WSCode,Code)
+	    conjunct_code(WSCode,OCode,Code)
 	;
 	  true
         ).
@@ -2552,7 +2556,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	( Status == [] ->
 	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(OCode,WSCode,Code)
+	    conjunct_code(WSCode,OCode,Code)
 	;
 	  true
         ).
@@ -2564,7 +2568,7 @@ compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	( Status == [] ->
 	    tolistattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(OCode,WSCode,Code)
+	    conjunct_code(WSCode,OCode,Code)
 	;
 	  true
         ).
@@ -2612,7 +2616,7 @@ compile_wsmvdattspec(Object,AttObj,RefType,[T],WS,Code,Status) :-
 	( Status == [] ->
 	    mvdattspec_struct(Object,AttObj,RefType,TObj,SCode),
 	    workspacelit_struct(SCode,WS,WSCode),
-	    conjunct_code(TCode,WSCode,Code)
+	    conjunct_code(WSCode,TCode,Code)
 	;
 	  true
         ).
