@@ -16,8 +16,8 @@
    So, you might have to use -bits-dbg with makexsb. When configure script
    finishes, it tells you which tag to use.)
 
-3. Installing for MS DOS and Windows NT is a whole bew ball game.
-   See the files INSTALL_DOS and INSTALL_NT.
+3. Installing for MS DOS and Windows is a whole bew ball game.
+   See the files INSTALL_DOS and INSTALL_WINDOWS.
 
 4. If your system doesn't have `makedepend', you will get an error message
    when you type `makexsb', but the compilation will proceed.

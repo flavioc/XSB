@@ -45,6 +45,6 @@
 6. Compile the ./emu directory.
 
    Windows:
-	Load into C++ studio.
-	Define the DEBUG variable (???)
+	Load the files in the emu\ directory into C++ studio.
+	Add the files in emu\debugs and emu\configs directories.
 	Add winsoc32.lib library to the list of libraries to be linked with.
