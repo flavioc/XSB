@@ -408,8 +408,6 @@ is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
 flplib_struct(Goal,Name,FLPLIB(Goal,Name)).
 flplib_struct(Goal,FLPLIB(Goal)).
-flflib_struct(Goal,Name,FLFLIB(Goal,Name)).
-flflib_struct(Goal,FLFLIB(Goal)).
 
 is_dbinsertop(FL_INSERT) :- !.
 is_dbinsertop(FL_INSERTALL) :- !.

@@ -475,7 +475,6 @@ flora_check_workspace(Name) :-
 	( var(Name) ->
 	    flora_error_line('uninstantiated module name'),
 	    fail
-
 	; not atom(Name) ->
 	    flora_error_heading,
 	    flora_stderr_string('invalid module name: '),
