@@ -23,6 +23,17 @@ extern void keyint_proc(int);
 /* The following include is necessary to get the macros and routine
    headers */
 
+#include "xsb_config.h"
+#include "auxlry.h"
+#include "cell_xsb.h"
+#include "memory_xsb.h"
+#include "register.h"
+#include "flags_xsb.h"
+#include "heap_xsb.h"
+#include "subp.h"
+#include "cinterf.h"
+#include "error_xsb.h"
+#include "loader_xsb.h"
 #include "cinterf.h"
 
 
@@ -197,7 +208,7 @@ xsbBool interprolog_callback() {
 	//printf("Got the method\n");
 	
 	size = p2c_int(reg_term(1));
-	
+
 	b = (jbyte *) malloc(size);
 	newHead = p2p_car(reg_term(2));
 	newTail = p2p_cdr(reg_term(2));
@@ -215,6 +226,8 @@ xsbBool interprolog_callback() {
 	newBytes = (*env)->CallObjectMethod(env, obj, mid, bytes);
 	size = (*env)->GetArrayLength(env, newBytes);
 	b = (*env)->GetByteArrayElements(env, newBytes, 0);
+	check_glstack_overflow(3, pcreg, size*8*sizeof(Cell), xsb_abort("[interprolog_callback] Failure to expand heap")) ;
+
 	c2p_list(reg_term(3));
 	newHead = p2p_car(reg_term(3));
 	newTail = p2p_cdr(reg_term(3));
