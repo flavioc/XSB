@@ -239,7 +239,7 @@ XSB_INST(0xdb, idivreg, _idivreg, P, R, R,X);
 /*  XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, N, L); */
 XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, B, L);
 XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, B, L);
-XSB_INST(0xde, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xde, fun_test_ne, _fun_test_ne, PRR, L,X,X);
 XSB_INST(0xdf, no_inst, _no_inst, PPP,X,X,X);
 
 XSB_INST(0xe0, putdval, _putdval, P, V, R,X);

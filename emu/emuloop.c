@@ -1360,6 +1360,22 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+  XSB_Start_Instr(fun_test_ne,_fun_test_ne)   /* PRR-L */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op2(Register(get_xxr));
+    Op3(get_xxxl);
+    ADVANCE_PC(size_xxxX);
+    XSB_Deref(op1);
+    XSB_Deref(op2);
+    if (isconstr(op1)) {
+      if (!isconstr(op2) || get_str_psc(op1) != get_str_psc(op2)) 
+        lpcreg = (byte *) op3;
+    } else if (islist(op1)) {
+      if (!islist(op2)) lpcreg = (byte *) op3;
+    } else if (op1 != op2) lpcreg = (byte *) op3;
+  XSB_End_Instr()
+
   XSB_Start_Instr(putdval,_putdval) /* PVR */
     Def2ops
     Op1(Variable(get_xvx));

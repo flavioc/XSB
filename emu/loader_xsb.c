@@ -352,6 +352,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
       case PP:
       case PPP:
       case PPR:
+      case PRR:
       case RRR:
 	break;
       case S:
