@@ -32,13 +32,15 @@
 /*  messages and such							*/
 /*============================================================*/
 
-:- dynamic(current_compiled_module(_)).
-:- dynamic(load_dyn_module(_)).
-
 message(Message) :- ttywritenl(Message, STDMSG).
 
 warning(Message) :-
-	(current_compiled_module(Module), !; load_dyn_module(Module)),
+	(current_compiled_module(Module)
+	 ->	true
+	 ; load_dyn_module(Module)
+	 ->	true
+	 ;	Module = '**Unknown**'
+	),
 	ttywritenl(('++Warning[XSB]: [Compiler] ', Module, ': ', Message), STDWARN).
 
 error(Message) :- 
