@@ -1,4 +1,5 @@
 % An example Look Up DGC
+% Changed this one on November thr 7th.
 
 :- start( example/1 ).
 :- end( -1 ).
