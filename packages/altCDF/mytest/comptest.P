@@ -2,11 +2,11 @@
 :- [altcdf].
 
 :- import load_extensional_facts/1 from cdf_io.
-:- import update_all_components/2 ,
-	   load_component/3 from cdf_components.
+:- import update_all_components/2 from cdf_comps_noshare.
+:- import  load_component/3 from cdf_comps_share.
 
 reset:- 
-	shell('\rm -r cdfcomp1/*').
+	shell('rm -rf cdfcomp*').
 
 updtest1:- 
 	load_extensional_facts('cdftest1'),

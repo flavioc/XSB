@@ -92,8 +92,8 @@ A @em{relation-based component system} chooses as argument identifiers
 
 @item the first-argument of all @pred{isa/2} facts.
 
-@item the second-argument of all @pred{hasAttr/3} and
-@pred{classHasAttr/3}, facts.
+@item the second-argument of all @pred{hasAttr/3}, @pred{allAttr/3}
+and @pred{classHasAttr/3}, facts.
 
 @end{itemize}
 
@@ -106,22 +106,22 @@ relation-based component system by default, but can be repartitioned
 by adjusting the tables in @module{cdf_config.P}.
 
 In either case, one component @em{C1} directly depends on another
-component @em{C2} if @em{id(NID2,C2)} is an argument in a fact in
+component @em{C2} if @em{id(Nid2,C2)} is an argument in a fact in
 component @em{C1}; or if @em{id(Nid1,C1)} is a component argument of a
 fact in @em{C1}, @em{Nid1} is a product identifier, and
-@em{id(NID2,C2)} occurs as a direct constituent in @em{C1}.  By this
+@em{id(Nid2,C2)} occurs as a direct constituent in @em{C1}.  By this
 definition, it is easy to see that component dependency need not be
 hierarchical so that two components may directly depend on one
 another; furthermore each component must directly depend on itself.
 In addition, each component always directly depends on the component
-cdf by fiat.  Component dependency is defined as the transitive
+@tt{cdf} by fiat.  Component dependency is defined as the transitive
 closure of direct dependency.
 
 Dependency information is used to determine how to load a component
-and when to update it and is usually computed by the CDF.  Computing
-dependency information is easy for extensional facts, but computing
-dependency information for intensional rules is harder, as the
-component system would need to compute all answer substitutions to
+and when to update it and is usually computed by the CDF system.
+Computing dependency information is easy for extensional facts, but
+computing dependency information for intensional rules is harder, as
+the component system would need to compute all answer substitutions to
 determine all dependencies, and this in impractical for some sets of
 intensional rules.  Rather, dependencies are computed by checking the
 top-level arguments of intensional rules, which leads to an
@@ -139,41 +139,43 @@ which consists of a @em{path} and a @em{source}.  For example,
 information in the directory @tt{/home/tswift/unspsc} would have a
 path of @tt{/home/tswift} and source @tt{unspsc}.  Inside the CDF,
 only the source is used as a source argument for identifiers; The path
-is maintained separately.  The structuring of component tags has
+is maintained separately.  The structuring of component names has
 implications for the behavioral of the component system.  If two
-components with the same names and different paths are loaded, facts
+components with the same sources and different paths are loaded, facts
 and rules from the two different components cannot be distinguished,
-as only the source is maintained in their identifiers.  The attempt to
-load two such components can be treated as an error; or the load can
-be allowed to succeed unioning the information from both components,
-implicitly asserting an axiom of equality for the two (structured)
-component names.
+as only the source is maintained in identifiers.  The attempt to load
+two such components with the same source and different paths can be
+treated as an error; or the load can be allowed to succeed unioning
+the information from both components, implicitly asserting an axiom of
+equality for the two (structured) component names.
 
 A component name corresponds to a directory containing files with data
 in external form (e.g. the @tt{cdf_extensional.P} file), or in
 external intensional form, as stored in @tt{cdf_intensional.P}.  In
 addition, the directory may contain an initialization file,
 @tt{component_init.P}, whose actions are taken to be transparent to
-the CDF (unless they explicitly call CDF routines).  The CDF provide
-tools to create components from a current loaded CDF state.
+the CDF (unless they explicitly call CDF routines).  The CDF also
+provides tools to create components from a current loaded CDF state.
 
 The same component name can have multiple @em{versions}.  An CDF state
 can contain only one version for each component name, and an attempt
 to load two different versions for the same name always gives rise to
-an error.  A convention is made that a component @tt{Name} with
-version @tt{V} is to be found in a directory named @tt{Name_V}.  On
-the other hand, if two component names @em{C1} and @em{C2} have the
-same source and different paths, they do not have the same name.  If
-they are loaded so that their information is unioned together an error
-is not raised if @em{C1} and @em{C2} have different versions.
+an error.  A convention is made that a component with souce
+@tt{Source}, path @tt{Path} and version @tt{V} is to be found in a
+directory named @tt{Path/Source} if @tt{V} is the latest version of
+@tt{Source} in @tt{Path}, and in @tt{Path/Source_V} otherwise.  On the
+other hand, if two component names @em{C1} and @em{C2} have the same
+source and different paths, they do not have the same name.  If they
+are loaded so that their information is unioned together an error is
+not raised if @em{C1} and @em{C2} have different versions.
 
 @section{Representing Component Information}
 
 Information about a component resides in the CDF data itself and is
 viewable by the user.  When a component with name @tt{C} is loaded,
-the class @tt{id(N,N)} (where @tt{N} is the source of @tt{C}) is
+the class @tt{id(S,S)} (where @tt{S} is the source of @tt{C}) is
 created as an immed_isa of @tt{id('CDF Component',cdf)}.  Since
-components are not expected to have members, information about them is
+components are not designed to have members, information about them is
 maintained through @pred{classHasAttr/3} facts.
 
 @begin{itemize} 
@@ -213,6 +215,7 @@ components have their version number updated if necessary (by checking
 @tt{dirty} entries of @tt{cdf_flags/2}).  Other aspects may be
 specified by various options.
 
+@comment{
 Alternately, if a part of a loaded CDF instance is to be saved as a
 component, the predicate @tt{update_components(List,Dir)} can be used.
 @tt{List} is a list of component names, and for each @tt{Name} in
@@ -222,6 +225,7 @@ the component is new, or incremented if the component is updated.  The
 predicate gives an error if a component @tt{Name} in @tt{List} depends
 on an updated component not in @tt{List}, or if it depends on a cell
 that has not been made into a component.
+}
 
 @item A user may wish to load a component, along with all of its
 dependencies.  Loads may be parameterized by:
@@ -241,13 +245,9 @@ backtracking through @tt{analyze_components/2}, which neither affects
 the CDF state, nor saves component information to files.
 @end{enumerate}
 
-@em{
-This version does not yet use dirty bits to determine when new
-versions need to be created.}
-
 ").
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_component_extensional(Term,Comp):- 
 	component_table_ext(Term,Compid,_),
@@ -265,7 +265,7 @@ get_component_intensional(Term,Body,Component):-
 			  (:-(Term,Body))]),
 	    fail).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(load_component/3,
 "@tt{load_component(Name,Path,Parameter_list)} loads the component
 @tt{Name}, from path @tt{Path} and recursively, all other components
@@ -549,16 +549,16 @@ file_find_version_name(Path,Name,Version,Loadname):-
 		cdf_error(load_component,['Improper version number',Version,
 				' for ',Path,Slash,Name]) ) ).
 	  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- dynamic temp_new_version(_,_).
 :- dynamic concurrency_conflict(_).
 
 %-----------------
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Utilities
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /* New component initializes a new component, creating version,
 dependency and path information.  Given a previously existing component, 
