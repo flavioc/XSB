@@ -33,10 +33,10 @@ foo.xwam}), then
                        $XSB_DIR/bin/xsb -B foo.xwam
 \end{verbatim}
 will execute {\tt go}, loading the appropriate files as
-needed~\footnote{In XSB, all extensions --- (default '.P', '.H',
-'.xwam', '.D' (output by mode inferencing), and '.A' (assembly dump)
---- are defined in C and Prolog code using macros in {\tt
-\$XSB\_DIR/emu/extensions\_xsb.h} and can be changed by a user if
+needed~\footnote{In XSB, all extensions except '.pl' --- (default
+'.P', '.H', '.xwam', '.D' (output by mode inferencing), and '.A'
+(assembly dump) --- are defined in C and Prolog code using macros in
+{\tt \$XSB\_DIR/emu/extensions\_xsb.h} and can be changed by a user if
 desired.  Of course, such a step should not be taken lightly, as it
 can cause severe compatability problems.}.
 %
@@ -51,7 +51,6 @@ There are several ways to exit XSB.  A user may issue the
 command \verb'halt.' or \verb'end_of_file', or simply type
 \verb'CTRL-d' at the XSB prompt.  To interrupt XSB
 while it is executing a query, strike \verb'CTRL-c'.
-
 
 \section{The System and its Directories}
 %=======================================
@@ -118,7 +117,7 @@ XSB~\footnote{Other types of files may be associated with foreign code
 --- see Volume 2.}.
 \begin{itemize}
 \item A single {\it source} file, whose name is the {\em base file name} plus 
-      the suffix ``{\tt .P}''.  
+      the an extension suffix ``{\tt .P}'' or if a {\tt .P} file cannot be found , {\tt .pl}.  
 \item An {\it object (byte-code)} file, whose name consists of the
 base file name plus the suffix ``{\tt .xwam}''.
 \item An optional {\it header} file, whose name is the base file name plus 
@@ -334,7 +333,7 @@ is invoked automatically if the module is not yet loaded into the
 system, The default action of the dynamic loader is to search for the
 byte code file of the module first in the system library directories
 (in the order {\tt lib, syslib}, and then {\tt cmplib}), and finally
-in the current working directory.  If the module is found in one of
+in the current working directory.  If the module is found in one of*sh
 these directories, then it will be loaded ({\em on a first-found
 basis}). Otherwise, an error message will be displayed on the current
 error stream reporting that the module was not found.  Because system
@@ -776,14 +775,15 @@ Section~\ref{LibPath}) where the source file exists.  Once the
 directory prefix is determined, the file name is checked for an
 extension.  If there is no extension the loader first checks for a
 file in the directory with the {\tt .P} extension, (or {\tt .c} for
-foreign modules) before searching for a file without the extension.
-Note that since directories in the dynamic loader path are searched in
-a predetermined order (see Section~\ref{LibPath}), if the same file
-name appears in more than one of these directories, the compiler will
-consult the first one it encounters.
+foreign modules) before searching for a file without the extension,
+and finally for a file with a {\tt .pl} extension.  Note that since
+directories in the dynamic loader path are searched in a predetermined
+order (see Section~\ref{LibPath}), if the same file name appears in
+more than one of these directories, the compiler will consult the
+first one it encounters.
 
 Compilation is performed if the update date of a source file ({\tt
-*.P} or {\tt *.H}) is later than that of the the object file ({\tt
+*.P/.pl} or {\tt *.H}) is later than that of the the object file ({\tt
 *.xwam}).
 %%
 %----------------------------------------------------------------------
