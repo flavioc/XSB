@@ -974,12 +974,12 @@ abort :-
 
 %  abort/1
 abort([H|T]) :- !,
-	message('++Error: ', STDERR),
+	message('++Error[XSB]: [Runtime/P] ', STDERR),
 	abort_1([H|T]),
         messageln('Aborting...', STDFDBK),
 	abort.
 abort(Message) :- 
-	messageln(('++Error: ', Message), STDERR),
+	messageln(('++Error[XSB]: [Runtime/P] ', Message), STDERR),
         messageln('Aborting...', STDFDBK),
 	abort.
 
@@ -989,7 +989,7 @@ abort_1([H|T]):- message((H,' '), STDERR), abort_1(T).
 
 %  warning/1
 warning(Message) :- 
-	message('++Warning: ', STDWARN),
+	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
 	messageln(Message, STDWARN).
 
 

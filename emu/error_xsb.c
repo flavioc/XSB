@@ -82,7 +82,7 @@ DllExport void call_conv xsb_abort(char *description, ...)
 
   va_start(args, description);
 
-  strcpy(message, "++Error: ");
+  strcpy(message, "++Error[XSB]: [Runtime/C] ");
   vsprintf(message+strlen(message), description, args);
   if (message[strlen(message)-1] != '\n')
     strcat(message, "\n");
@@ -173,7 +173,7 @@ DllExport void call_conv xsb_error (char *description, ...)
   va_list args;
 
   va_start(args, description);
-  fprintf(stderr, "\n++Error: ");
+  fprintf(stderr, "\n++Error[XSB]: [Runtime/C] ");
   vfprintf(stderr, description, args);
   va_end(args);
   fprintf(stderr, "\n");
@@ -184,7 +184,7 @@ DllExport void call_conv xsb_warn(char *description, ...)
   va_list args;
 
   va_start(args, description);
-  fprintf(stdwarn, "\n++Warning: ");
+  fprintf(stdwarn, "\n++Warning[XSB]: [Runtime/C] ");
   vfprintf(stdwarn, description, args);
   va_end(args);
   fprintf(stdwarn, "\n");

@@ -40,7 +40,7 @@ current_atom(Module:Atom) :-
 	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
 						% of this module
 	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
-	    warning(('++Warning: Predicate current_atom/1 for module "',
+	    warning(('Predicate current_atom/1 for module "',
 		     ModuleName,
 		     '" is not yet implemented !')),
 	    fail

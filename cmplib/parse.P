@@ -82,7 +82,7 @@ parse1(Modname, File, Module) :-
 	;   %% Wait, if cpp was spawned so as to not leave zombies
 	    process_control(XPP_process, wait(XPP_status)),
 	    (XPP_status == 0, !
-	    ; error(('Error while preprocessing ', File,
+	    ; error(('While preprocessing ', File,
 		     '. Compilation aborted.')),
 		fail
 	    ),
@@ -145,6 +145,9 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	%% Redirect cpp's stderr to XSB's STDWARN
 	spawn_process(FullXPP_command, block, IOportFromProc, STDWARN, XPP_process),
 	!,
+#ifdef DEBUG_GPP
+	message('[Preprocessing done]'),
+#endif
 	retractall(xpp_program(_)).
 
 
