@@ -383,7 +383,7 @@ static char *xsb_strrstr(char *str, char *pat)
   
   if (patlen > len)
     return NULL;
-  for (p = str + (len - patlen); p > str; --p)
+  for (p = str + (len - patlen); p >= str; --p)
     if (*p == *pat && strncmp(p, pat, patlen) == 0)
       return (char *) p;
   return NULL;
