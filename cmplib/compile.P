@@ -36,7 +36,8 @@ mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 %% For better warnings, we need to know the currently compiled module
 :- dynamic(current_compiled_module(_)).
 
-compile(Modname, Basename, Options, ExportList) :- 
+compile(Modname, Basename, Options, ExportList) :-
+	telling(OldFile),
 	file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, OptFile),
 	setoptions(Options), initialize,
@@ -68,7 +69,8 @@ compile(Modname, Basename, Options, ExportList) :-
 	), !,
 	( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
 	time_message(TimeStart, (IsModuleMsg, Modname, ' compiled')), !,
-	close_ti_file(TIFile).
+	close_ti_file(TIFile),
+	tell(OldFile).
 
 
 file_names(Basename, PFile, HFile, OFile, AFile, DFile,
@@ -226,8 +228,11 @@ compile_predicate(PredDef, GenAsm, AFile, OFile, TIFile, IsModule, SymTab) :-
 ti_transform(PredBlks, TIPredBlks, TIFile, SymTab) :-
 	ti_pred_block(PredBlks, TIPredBlks, SymTab),
 	( option(ti_dump) ->
-		telling(F), tell(TIFile),
-		write_preds(TIPredBlks), tell(F)
+		telling(F),
+		tell(TIFile),
+		write_preds(TIPredBlks),
+		told,
+		tell(F)
 	; true
 	).
 
