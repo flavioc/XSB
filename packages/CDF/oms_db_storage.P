@@ -1153,6 +1153,8 @@ retractall_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
 			(var(TCid) -> true ; class(TCid,_,TNatCid,TSource))
 		),
 
+		retractall(cache_immediate_attribute(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource)),
+		
 		db_table_attrs(oms_attribute,AttrList),
 		split_on_bound([SNatOid,SSource,RNatCid,RSource,TNatCid,TSource], AttrList,
 			       BindNames,BindVars,_,_,_),
