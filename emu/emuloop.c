@@ -344,26 +344,8 @@ static int emuloop(byte *startaddr)
         instr_addr[INum] = && Label
 #include "xsb_inst_list.h"
 
-#else
-
-contcase:     /* the main loop */
-
 #endif
 
-#ifdef DEBUG_VM
-  if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
-  xctr++;
-#endif
-#ifdef PROFILE
-  if (flags[PROFFLAG]) {
-    inst_table[(int) *(lpcreg)][sizeof(Cell)+1]
-      = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1;
-    if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin) 
-      builtin_table[(int) *(lpcreg+3)][1] = 
-	builtin_table[(int) *(lpcreg+3)][1] + 1;
-  }
-#endif
-  
   if ((lpcreg = (byte *) setjmp(xsb_abort_fallback_environment))) {
     /*
     * Short circuit untrailing to avoid possible seg faults in
@@ -379,6 +361,22 @@ contcase:     /* the main loop */
   XSB_Next_Instr();
 #else
 
+contcase:     /* the main loop */
+
+#ifdef DEBUG_VM
+  if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
+  xctr++;
+#endif
+#ifdef PROFILE
+  if (flags[PROFFLAG]) {
+    inst_table[(int) *(lpcreg)][sizeof(Cell)+1]
+      = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1;
+    if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin) 
+      builtin_table[(int) *(lpcreg+3)][1] = 
+	builtin_table[(int) *(lpcreg+3)][1] + 1;
+  }
+#endif
+  
   switch (*lpcreg) {
 #endif
     
