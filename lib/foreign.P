@@ -29,6 +29,7 @@
 
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
+#include "extensions_xsb.h"
 
 
 /* need ldoption at compile time for ELF systems, so compile_H is done 1st. */
@@ -166,8 +167,7 @@ cc_options(CC_Name, Options, CC_Opts) :-
 	).
 
 compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
-	xsb_configuration(header_extension,HExt),
-	str_cat(Base, HExt, HFile),
+	str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFile),
 	( file_exists(HFile) ->
 	    (	Options == [] 
 	    ->	M = ''
@@ -196,8 +196,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    conset(xpp_on,0),
 %%%         seen,
 	    length(ExList, Count),
-	    xsb_configuration(object_extension,OExt),
-	    str_cat(Base, OExt, OFile),
+	    str_cat(Base, XSB_OBJ_EXTENSION_ATOM, OFile),
 	    tell(OFile),
 	    co_asmhead(Modname, LdOption, Count),
 	    co_asmsym(ExList),

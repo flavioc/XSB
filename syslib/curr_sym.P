@@ -349,8 +349,7 @@ module_file('xsbrc', File) :-
 			 arg(HomeDir, Slash, Slash,XSB_OBJ_EXTENSION_ATOM)),
 	FileName = File.
 module_file(ModuleName, File) :-
-	xsb_configuration(object_extension,Suffix),
-	str_cat(ModuleName, Suffix, OFile),
+	str_cat(ModuleName, XSB_OBJ_EXTENSION_ATOM, OFile),
 	libpath(Lib),
 	str_cat(Lib, OFile, FileName),
 	machine_file_exists(FileName),
