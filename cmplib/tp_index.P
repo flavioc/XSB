@@ -48,8 +48,7 @@ makeindex(Sym, Clauses, Pil, Pilr, _Prag, Tabled) :-
 	sym_name(Sym, _, Arity),
 	Arity =:= 0,
 	!,
-	index_label_list(Clauses, LabelList),
-	index_gentrys(Arity, LabelList, Pil, Pilr, Tabled).
+	makeNOindex(Clauses, Arity, Pil, Pilr, Tabled).
 
 /*----------------------------------------------------------------------*
  * all other cases                                                      *
@@ -58,16 +57,24 @@ makeindex(Sym, Clauses, Pil, Pilr, _Prag, Tabled) :-
 makeindex(Sym, Clauses, Pil, Pilr, Prag, Tabled) :-
 	sym_name(Sym, _, Arity),
 	( member(index(Narg), Prag), nonvar(Narg), !
-	; Narg = 1 ),				% Default index on arg 1
-	index_argpats(Clauses, Narg, ArgList),
-	index_split(ArgList, ArgListGroup),
-	( ArgListGroup = [_One] -> NeedLabel = 0, Pil2 = Pil
-	; index_extract_label_list(ArgListGroup, LabelList),
-	  index_gentrys(Arity, LabelList, Pil, Pil2, Tabled),
-	  NeedLabel = 1
+	; Narg = 1				% Default index on arg 1
 	),
-	index_groups(ArgListGroup, Narg, Pil2, Pilr,
-		     NeedLabel, Arity, Tabled).
+	( Narg =:= 0 ->
+	    makeNOindex(Clauses, Arity, Pil, Pilr, Tabled)
+	; index_argpats(Clauses, Narg, ArgList),
+	  index_split(ArgList, ArgListGroup),
+	  ( ArgListGroup = [_One] -> NeedLabel = 0, Pil2 = Pil
+          ; index_extract_label_list(ArgListGroup, LabelList),
+	    index_gentrys(Arity, LabelList, Pil, Pil2, Tabled),
+	    NeedLabel = 1
+	  ),
+	  index_groups(ArgListGroup, Narg, Pil2, Pilr,
+		       NeedLabel, Arity, Tabled)
+	).
+
+makeNOindex(Clauses, Arity, Pil, Pilr, Tabled) :-
+	index_label_list(Clauses, LabelList),
+	index_gentrys(Arity, LabelList, Pil, Pilr, Tabled).
 
 /*======================================================================*/
 /* index_groups(+ArgListGroup, +ArgNum, -Pil, -PilRest, +NeedLabel,	*/
@@ -158,7 +165,6 @@ index_sot_inst(s,c,N,L1,L2,switchonterm(N,L2,L1)).
 index_label_list([],[]).
 index_label_list([clause(_,_,crec(_,Label))|ClRest],[Label|LRest]) :-
 	index_label_list(ClRest,LRest).
-
 
 /*======================================================================*/
 /* index_extract_label_list(+ArgPatterns, -LabelList)			*/
