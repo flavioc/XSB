@@ -22,7 +22,7 @@
 ** 
 */
 
-:- dynamic (attribute)/4.
+:- dynamic (attribute)/4, odbc_add_record/2, odbc_delete_record/2.
 
 % --- for projection goal, we are to use bind variables for those constants. 
 
@@ -1890,21 +1890,25 @@ odbc_delete_index(TableName,Index) :-
     odbc_sql(Query).
 
 %--------------------------------
-odbc_add_record(Table,VList) :-
-    conset(col,1),
-    assert_attributes_info(Table),
-    conget(col,N), N1 is N - 1,
-    name(Table, Tl), 
-    append([105,110,115,95],Tl, Tl1), 
-    name(Table1,Tl1),
-    assert(relation(Table,N1,Table)),
-    functor(Head1, Table1, N1),
-    Head1 =..[Table1|Tail],
-    Head =..[Table|Tail],
-    odbc_insert(Head1, (Head)),
-    asserta((odbc_add_record(Table,Values) :- Query =..[Table1|Values] ',' ! ',' Query)), 
-    Query =.. [Table1|VList],!,
-    Query.
+:- assert(':-'(odbc_add_record(Table,VList),
+	       (conset(col,1),
+		assert_attributes_info(Table),
+		conget(col,N), N1 is N - 1,
+		name(Table, Tl), 
+		append([105,110,115,95],Tl, Tl1), 
+		name(Table1,Tl1),
+		assert(relation(Table,N1,Table)),
+		functor(Head1, Table1, N1),
+		Head1 =..[Table1|Tail],
+		Head =..[Table|Tail],
+		odbc_insert(Head1, (Head)),
+		asserta(':-'(odbc_add_record(Table,Values),
+			     (Query =.. [Table1|Values],
+			      !,
+			      Query))),
+		Query =.. [Table1|VList],
+		!,
+		Query))).
 
 %--------------------------------
 odbc_delete_record(Table,VList) :-
@@ -1922,6 +1926,27 @@ odbc_delete_record(Table,VList) :-
     asserta((odbc_delete_record(Table,Values) :- Query =..[Table1|Values] ',' ! ',' Query)), 
     Query =.. [Table1|VList],!,
     Query.
+
+:- assert(':-'(odbc_delete_record(Table,VList),
+	       (conset(col,1),
+		assert_attributes_info(Table),
+		conget(col,N), N1 is N - 1,
+		name(Table, Tl), 
+		append([100,101,108,95],Tl,Tl1), 
+		name(Table1,Tl1),
+		assert(relation(Table,N1,Table)),
+		functor(Head1, Table1, N1),
+		Head1 =..[Table1|Tail],
+		Head =..[Table|Tail],
+		odbc_delete(Head1, (Head)),
+		asserta(':-'(odbc_delete_record(Table,Values),
+			     (Query =.. [Table1|Values],
+			      !,
+			      Query))),
+		Query =.. [Table1|VList],
+		!,
+		Query))).
+
         
 odbc_flag(fail_on_error,on,off) :-
     retract('$ora_err$'(on)), assert('$ora_err$'(off)).
