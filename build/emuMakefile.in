@@ -32,7 +32,9 @@
 CC=@CC@
 CPP=@CPP@
 CFLAGS=@CFLAGS@
-# Flags for files requiring lower optimization level (emuloop.c)
+# Compilation flags for files requiring lower optimization level
+# (builtin.c,emuloop.c,tr_utils.c)
+builtinsCFLAGS=@builtinsCFLAGS@
 emuloopCFLAGS=@emuloopCFLAGS@
 trutilsCFLAGS=@trutilsCFLAGS@
 CPPFLAGS=@CPPFLAGS@
@@ -166,6 +168,10 @@ emuloop.o: emuloop.c
 tr_utils.o: tr_utils.c
 	$(CC) -I$(arch_config_prefix) -c $(trutilsCFLAGS) tr_utils.c
 	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
+builtin.o: builtin.c
+	$(CC) -I$(arch_config_prefix) -c $(builtinsCFLAGS) builtin.c
+	@cp builtin.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
 	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) $*.c
