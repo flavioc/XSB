@@ -27,6 +27,13 @@
 
 :- firstorder florify_arguments/2, florify_arglist/2.
 
+%% The purpose of this library is to provide optimal conversion from
+%% HiLog to Prolog and back before passing the arguments to the I/O predicates.
+%% In addition, it passes the result through flora_write_string in order 
+%% to ensure that all the FLORA module info and encoding is stripped.
+%%
+%% This all is ued for user-level output. For file I/O one should use
+%% @prolog() instead of @flora(io), i.e., use Prolog I/O primitives directly.
 
 %%%%%%%%%%%%%%%%%%%%%%
 %% I/O port based ops
@@ -134,6 +141,8 @@ telling(Stream) :- telling(Stream)@prolog().
 %% of the form 
 %% _(arg1,...,argn) and returns _(arg1',..., argn'), where arg_i=arg_i'
 %% if arg_i is not compound. Otherwise we apply flora_write_string/2
+%% This is needed in order make sure that arguments like f(a) are printed 
+%% as f(a) and not _flora'main'f(a) or something like that.
 florify_arguments(Term,OutTerm) :-
 	Term =.. [Fun|Args],
 	florify_arglist(Args,OutList),
