@@ -3348,8 +3348,12 @@ if test "${with_odbc}" = yes ; then
    esac
 fi
 
+# this is needed for -mno-cygwin dll compilation
+DLLTYPE=nodll
+
 if test "${enable_no_cygwin+set}" = "set"; then
    CC="${CC} -mno-cygwin"
+   DLLTYPE=cygdll
 fi
 
 builtinsCFLAGS="${c_site_includes} ${builtins_opt_level} ${c_inline_level} ${CFLAGS}"
@@ -3415,6 +3419,7 @@ fi
 
 
 # These are used in xsb_configuration.in
+
 
 
 
@@ -3656,6 +3661,7 @@ s%@ODBCSRC@%$ODBCSRC%g
 s%@ODBCOBJ@%$ODBCOBJ%g
 s%@mno_cyg_inclib@%$mno_cyg_inclib%g
 s%@mno_cyg_lib@%$mno_cyg_lib%g
+s%@DLLTYPE@%$DLLTYPE%g
 s%@topdir_wind@%$topdir_wind%g
 s%@smodels_goal@%$smodels_goal%g
 s%@with_smodels@%$with_smodels%g

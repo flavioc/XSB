@@ -41,18 +41,16 @@ CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
 ODBCSRC=@ODBCSRC@
 ODBCOBJ=@ODBCOBJ@
-
+DLLTYPE=@DLLTYPE@
 
 # For mno-cygwin 
 # -mdll option is needed so that MSVC files could link to dll
 # however for old cygwin versions -dll option is used  
 mno_cyg_inclib=@mno_cyg_inclib@
 mno_cyg_lib=@mno_cyg_lib@
-ifneq ($(strip $(mno_cyg_inclib)),)
 #cygconf=`(uname -m) 2>/dev/null` || cygconf=unknown
 cygconf=i686
 cygdirname=${cygconf}-cygwin
-endif
 DLLTOOL=dlltool
 DLLNAME=xsb.dll
 DLL_LIBS=$(LDFLAGS) -L /usr/$(cygdirname)/lib -lmingw32 -lmoldname -lcrtdll -lkernel32 -L /usr/lib/gcc-lib/$(cygdirname)/2.9-cygwin-990830 -lgcc
@@ -185,8 +183,11 @@ depend::
 # EXPFILE  temporary
 # ENTRY is the entry point  int WINAPI startup (HINSTANCE, DWORD, LPVOID)
 
-dll: $(HEADERS) $(DEF_FILE) xsb.o
-ifneq ($(strip $(mno_cyg_inclib)),)
+dll: $(DLLTYPE)
+
+nodll:
+
+cygdll: $(HEADERS) $(DEF_FILE) xsb.o
 	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) dllinit_xsb.cc
 	@cp dllinit_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 	$(LD) -s --base-file $(BASE_FILE) --dll -o $(DLLNAME) $(LIB_OBJECTS) $(DLL_LIBS) -e $(ENTRY_FUNCTION)
@@ -199,8 +200,6 @@ ifneq ($(strip $(mno_cyg_inclib)),)
 	@mv $(LIB_FILE) $(bindir) 2> /dev/null || echo ""
 	@rm -f $(BASE_FILE) 2> /dev/null || echo ""
 	@rm -f $(EXP_FILE) 2> /dev/null || echo ""
-endif
-
 
 
 #=======================================================================
