@@ -54,10 +54,17 @@ extern void xsb_exit(char *, ...);
 extern void xsb_abort(char *, ...);
 extern void xsb_warn(char *, ...);
 extern void xsb_mesg(char *, ...);
+extern void xsb_error(char *, ...);
+extern void xsb_dbgmsg(char *, ...);
 extern void arithmetic_abort1(char *, Cell);
 extern void arithmetic_abort(Cell, char *, Cell);
 extern void arithmetic_comp_abort(Cell, char *, int);
 extern void err_handle(int, int, char *, int, char *, Cell);
+
+extern FILE *stdmsg;	    	/* Stream for XSB messages     	         */
+extern FILE *stdwarn;	    	/* Stream for XSB warnings     	         */
+extern FILE *stddbg;	    	/* Stream for XSB debugging msgs         */
+extern FILE *stdfdbk;	    	/* Stream for XSB feedback msgs         */
 
 #define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
 

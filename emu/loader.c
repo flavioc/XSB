@@ -50,6 +50,7 @@
 #include "tries.h"
 #include "xmacro.h"
 #include "xsberror.h"
+#include "io_builtins.h"
 
 /* #define V2_OBJECT_FORMAT 1 */
 
@@ -108,8 +109,7 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
     } else {
 	env = env_check[get_env(psc)][t_env];
 	if (env < 0) {
-	    fprintf(stderr,
-		    "++Error: Environment conflict in the use of %s/%d !\n", 
+	    xsb_error("Environment conflict in the use of %s/%d !", 
 		    get_name(psc), get_arity(psc));
 	/* In the following I am not sure whether setting the environment */
 	/* in the presense of an environment conflict error is the right  */
@@ -123,7 +123,7 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
 		    set_env(psc, T_LOCAL);	
 		else /* We are trying to load a module
 			that imports sth not exported. */
-		    fprintf(stderr, "module imports something not exported\n");
+		    xsb_error("module imports something that is not exported");
 	    }
 	}
 	else set_env(psc, env);
@@ -132,8 +132,7 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
 	  if (t_type==T_UDEF && (type==T_PRED || type==T_DYNA || type==T_FORN)) ;
 	  else if (t_type==T_UFUN && type==T_FUNC) ;
 	  else if (t_type==T_FORN && type==T_UDEF) set_type(psc, T_FORN);
-	  else fprintf(stderr, 
-		       "++Error: incompatible types in the use of %s (%x with %x)\n",
+	  else xsb_error("incompatible types in the use of %s (%x with %x)",
 		       get_name(psc), type, t_type);
 	} else set_type(psc, type | t_type);
 	
@@ -171,7 +170,7 @@ byte *loader(char *file, int exp)
 
     fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
     if (!fd) return 0;
-    if (flags[HITRACE]) printf("\n     ...... loading file %s\n", file);
+    if (flags[HITRACE]) xsb_mesg("\n     ...... loading file %s", file);
     magic_num = read_magic();
 
     if (magic_num == 0x11121304) {
@@ -244,12 +243,12 @@ static byte *loader1(FILE *fd, int exp)
     	get_obj_word_bb(&psc_count);
 	if (!load_syms(fd, (int)psc_count, 0, cur_mod, exp)) 
 	  return 0;
-/*	fprintf(stderr, "symbol table of module %s loaded\n", name);	*/
+/*	xsb_dbgmsg("symbol table of module %s loaded", name);	*/
         do {
-/*		printf("Seg count: %d\n",seg_count); */
+/*		xsb_dbgmsg("Seg count: %d",seg_count); */
 		if (read_magic() != 0x11121306) break;
 		seg_count++;
-/*		printf("Seg count: %d",seg_count); */
+/*		fprintf(stddbg, "Seg count: %d",seg_count); */
            /* get the header of the segment */
 		get_obj_byte(&arity);
 		get_obj_byte(&name_len);
@@ -258,7 +257,7 @@ static byte *loader1(FILE *fd, int exp)
                 else xsb_exit("name %s too long");
 		name[(int)name_len] = 0;
 		get_obj_word_bb(&text_bytes);
-/*		printf("Text Bytes %x %d\n",text_bytes,text_bytes);*/
+/*		xsb_dbgmsg("Text Bytes %x %d",text_bytes,text_bytes);*/
 		get_obj_word_bb(&index_bytes);
            /* load the text-index segment */
 		seg_first_inst = load_seg(seg_count,text_bytes,index_bytes,fd);
@@ -295,15 +294,16 @@ static byte *loader1(FILE *fd, int exp)
 		    }
 		    break;
 		  default:
-		    fprintf(stderr,
-			    "Error: the predicate %s/%d cannot be loaded\n", 
+		    xsb_error("the predicate %s/%d cannot be loaded", 
 			    name, arity);
 		    unload_seg(seg_first_inst);
 		    return NULL;
 		  }
 	} while (1==1);
-/*	fprintf(stderr, "The first instruction of module %s is %x\n",
-			get_name(cur_mod), first_inst); */
+	/*
+	  xsb_dbgmsg("The first instruction of module %s is %x",
+		     get_name(cur_mod), first_inst);
+	*/
 	return (pb)first_inst;
 } /* loader1 */
 
@@ -324,7 +324,7 @@ static bool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int exp)
     int i;
 
     reloc_table = (pw *) calloc((psc_count), sizeof(pw));
-/*        printf("reloc_table %x,psc_count %d\n",reloc_table,psc_count);*/
+/*        xsb_dbgmsg("reloc_table %x,psc_count %d",reloc_table,psc_count);*/
 
     for (i = count; i < psc_count; i++) {
 	if (!load_one_sym(fd, cur_mod, i, exp)) return 0;
@@ -368,7 +368,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	  env_type_set(temp_pair->psc_ptr, t_env, t_type, is_new);
 	  /* dsw added following */
 	  if (exp && t_env == T_EXPORTED) {
-	    /* printf("exporting: %s from: %s\n",name,cur_mod->nameptr);*/
+	    /* xsb_dbgmsg("exporting: %s from: %s",name,cur_mod->nameptr);*/
 	    if (is_new) set_ep(temp_pair->psc_ptr, (byte*)(mod));
 	    link_sym(temp_pair->psc_ptr, (Psc)flags[CURRENT_MODULE]);
 	  }
@@ -376,12 +376,12 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	if (!temp_pair) return 0;
 
 /*	if (count >= REL_TAB_SIZE) {
-	    printf("Reloc_table overflow\n");
+	    xsb_dbgmsg("Reloc_table overflow");
 	    return 0;
 	}  */
 
 	reloc_table[count] = (pw)temp_pair;
-/*        printf("reloc_tab %d acc\n",count);*/
+/*        xsb_dbgmsg("reloc_tab %d acc",count);*/
 	return 1;
 }  /* load_one_sym */
 
@@ -406,9 +406,8 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 	get_obj_byte(&ldoption_len);
 	get_obj_string(ldoption, ldoption_len);
 	if (ldoption_len >= 255) {
-	    fprintf(stderr, 
-		    "++Error: ldoption is too long for foreign module %s\n",
-		    name);
+	    xsb_error("ldoption is too long for foreign module %s",
+		      name);
 	    return 0;
 	}
 	ldoption[ldoption_len] = 0;

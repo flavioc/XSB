@@ -39,6 +39,8 @@
 #include "loader.h"
 #include "tries.h"
 #include "xmacro.h"
+#include "xsberror.h"
+#include "io_builtins.h"
 
 /************************************************************************
 *                                                                       *
@@ -350,7 +352,7 @@ static int load_text(int seg_num, int text_bytes, int *current_tab)
 	       index_reloc = (CPtr *)realloc(index_reloc,NUM_INDEX_BLKS*
 					   num_index_reloc*sizeof(CPtr));
 	       if (!index_reloc) {
-		 fprintf(stderr, "ERROR: couldn't allocate index relocation space.\n");
+		 xsb_error("Couldn't allocate index relocation space");
 		 return 0;
 	       }
 	     }
@@ -436,7 +438,7 @@ pseg load_seg(int seg_num, int text_bytes, int index_bytes, FILE *file)
 /* Allocate first chunk of index_reloc */
    index_reloc = (CPtr *)malloc(NUM_INDEX_BLKS*sizeof(CPtr));
    if (!index_reloc) {
-     fprintf(stderr, "ERROR: couldn't allocate index relocation space.\n");
+     xsb_error("Couldn't allocate index relocation space");
      return NULL;
    }
    num_index_reloc = 1;

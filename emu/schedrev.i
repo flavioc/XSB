@@ -44,8 +44,8 @@ CPtr sched_answers(CPtr subg_struct, CPtr orig_breg, int leader) {
   if(subg_answers(subg_struct) && 
      (active_node = subg_asf_list_ptr(subg_struct))) {
 #ifdef DEBUG_REV
-    fprintf(stderr,"SchedAnswers: active_node=%d,subg_struct=%d\n",
-	    (int)active_node,(int)subg_struct);
+    xsb_dbgmsg("SchedAnswers: active_node=%d,subg_struct=%d",
+	       (int)active_node,(int)subg_struct);
 #endif
     /* check if any suspended node still has unresolved answers */
     while(active_node) {
@@ -78,8 +78,8 @@ CPtr sched_answers(CPtr subg_struct, CPtr orig_breg, int leader) {
     /* if not leader and gen has not been scheduled before */
     if(tcp_trie_return(orig_breg)==NULL) {
 #ifdef DEBUG_REV
-      fprintf(stderr,"-----> LEADER became NON_LEADER, sched gen %d\n",
-	      (int)orig_breg);
+      xsb_dbgmsg("-----> LEADER became NON_LEADER, sched gen %d",
+		 (int)orig_breg);
 #endif
       tcp_trie_return(orig_breg) = subg_ans_list_ptr(subg_struct);
     }
@@ -93,10 +93,10 @@ CPtr sched_answers(CPtr subg_struct, CPtr orig_breg, int leader) {
 #endif /* LOCAL_EVAL */
   
 #ifdef DEBUG_REV
-  fprintf(stderr,"schedule active nodes: ccbreg=%d, breg=%d\n", 
-	  (int)orig_breg,(int)breg);
-  fprintf(stderr,"first active =%d, last=%d\n",
-	  (int)first_sched_node,(int)prev_node);
+  xsb_dbgmsg("schedule active nodes: ccbreg=%d, breg=%d", 
+	     (int)orig_breg,(int)breg);
+  xsb_dbgmsg("first active =%d, last=%d",
+	     (int)first_sched_node,(int)prev_node);
 #endif
   return first_sched_node;
 }

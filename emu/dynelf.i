@@ -39,6 +39,8 @@
 #include "memory.h"
 #include "inst.h"
 #include "psc.h"
+#include "xsberror.h"
+#include "io_builtins.h"
 
 #define BUFFEXTRA 1024
 
@@ -46,7 +48,7 @@
 
 bool dummy()
 {
-    fprintf(stderr, "++Error: trying to use an undefined foreign procedure\n");
+    xsb_error("Trying to use an undefined foreign procedure");
     return FALSE;
 }
 
@@ -72,7 +74,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* (2) open the needed object */
   
   if (( handle = dlopen(sofilename, RTLD_LAZY)) == 0 ) {
-    fprintf(stderr, "%s\n", dlerror());
+    xsb_mesg("%s", dlerror());
     return 0;
   }
   
@@ -88,8 +90,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int (*)) dlsym(handle, name)) == NULL) {
-	fprintf(stderr, "%s\n", dlerror());
-	fprintf(stderr, "++Warning: cannot find foreign procedure %s\n", name);
+	fprintf(stdwarn, "%s\n", dlerror());
+	xsb_warn("Cannot find foreign procedure %s", name);
 	set_ep(search_ptr->psc_ptr, (byte *)(dummy));
       } else { 
 	set_ep(search_ptr->psc_ptr, (byte *)(funcep));

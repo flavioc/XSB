@@ -287,8 +287,8 @@ void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
     printf("switchonbound - %ld %ld %ld\n",(long)Arg1,(long)Arg2,(long)Arg3); break;
   case switchon3bound:
     printf("switchon3bound - %ld %ld %ld\n",(long)Arg1,(long)Arg2,(long)Arg3); break;
-  default: fprintf(stderr, "Unknown instruction in assert %d\n",
-		   Opcode);
+  default: xsb_dbgmsg("Unknown instruction in assert %d",
+		      Opcode);
   }
 }
 
@@ -385,8 +385,8 @@ void dbgen_printinst(Opcode, Arg1, Arg2)
     printf("jump - - - 0x%x\n", Arg1); break;
   case fail:
     printf("fail - - -\n"); break;
-  default: fprintf(stderr, "Unknown instruction in assert %d\n",
-		   Opcode);
+  default: xsb_dbgmsg("Unknown instruction in assert %d",
+		      Opcode);
   }
 }
 #endif /* ASSERTDEBUG */
@@ -615,12 +615,12 @@ static int Size;
 
 static char *buff_realloc(void)
 {
-  /*  fprintf(stderr,"Enter buff_realloc(%d) %X\n",Buff_size,Buff); */
+  /*  xsb_dbgmsg("Enter buff_realloc(%d) %X", Buff_size,Buff); */
   Buff_size = Buff_size + Buff_size;
   if (Buff == NULL) Buff = malloc(Buff_size);
   else Buff = realloc(Buff,Buff_size);
   BLim = Buff_size-16;
-  /*  fprintf(stderr,"Leave buff_realloc(%d) %X\n",Buff_size,Buff); */
+  /*  xsb_dbgmsg("Leave buff_realloc(%d) %X", Buff_size,Buff); */
   return(Buff);
 }
 
@@ -878,8 +878,8 @@ static void db_putterm(int Rt, prolog_term T0,
       dbgen_instB_pppw(bldfloat, Arg1); break;
     case bldnil:
       dbgen_instB_ppp(bldnil); break;
-    default: fprintf(stderr, "Incorrect bld instruction in assert %d\n", 
-		     BldOpcode);
+    default: xsb_dbgmsg("Incorrect bld instruction in assert %d", 
+			BldOpcode);
     }
   }
 }
@@ -1253,8 +1253,8 @@ static void prefix_to_chain(byte Arity, ClRef FirstClause, ClRef NewClause)
   else if (ClRefTryOpCode(FirstClause) == trymeelse)
   {  dbgen_inst_ppvw(retrymeelse,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc);}
-  else fprintf(stderr,"***Error 1 in assert: 0x%x\n",
-				ClRefTryOpCode(FirstClause));
+  else xsb_dbgmsg("***Error 1 in assert: 0x%x",
+		  ClRefTryOpCode(FirstClause));
 
   ClRefPrev(NewClause)   = ClRefPrev(FirstClause);
   ClRefPrev(FirstClause) = NewClause;
@@ -1277,8 +1277,8 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
   else if (ClRefTryOpCode(LastClause) == dyntrustmeelsefail)
   {  dbgen_inst_ppvw(retrymeelse,Arity,NewClause,
 		     LastClause,&Loc);  }
-  else fprintf(stderr,"***Error 2 in assert: 0x%x\n",
-				ClRefTryOpCode(LastClause));
+  else xsb_dbgmsg("***Error 2 in assert: 0x%x",
+		  ClRefTryOpCode(LastClause));
 
   SetClRefPrev(NewClause, LastClause);
 }
@@ -1307,15 +1307,15 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int Inum)
       append_to_chain(Arity,LastClause,Clause);
       Pred->LastClRef = Clause ;
     }
-  } else fprintf(stderr,"***Error 3 in assert\n");
+  } else xsb_dbgmsg("***Error 3 in assert");
 }
 
 static int hash_resize( PrRef Pred, SOBRef SOBrec, int OldTabSize )
 {
    int ThisTabSize ;
 
-/* fprintf( stderr, "SOB - %p, with %d cls\n",
-	    SOBrec, ClRefNumClauses(SOBrec) ) ;
+/* xsb_dbgmsg("SOB - %p, with %d cls",
+	      SOBrec, ClRefNumClauses(SOBrec) ) ;
 */
    /* Compute number of clauses */
    if( PredOpCode(Pred) != fail && ClRefType(SOBrec) == SOB_RECORD )
@@ -1373,7 +1373,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind )
 
    /* get NEW SOB block */
    MakeClRef(NewSOB,SOB_RECORD,9+ThisTabSize);
-/*   fprintf(stderr,"New SOB %p, size = %d\n", NewSOB, ThisTabSize); */
+/*   xsb_dbgmsg("New SOB %p, size = %d", NewSOB, ThisTabSize); */
    Loc = 0 ;
    dbgen_inst3_sob( Ind>255 ? switchon3bound : switchonbound,
  	  Ind,ClRefHashTable(NewSOB),ThisTabSize,&ClRefSOBInstr(NewSOB),&Loc);
@@ -1776,8 +1776,8 @@ ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
 static int retract_clause( ClRef Clause, int retract_nr )
 {
 #ifdef RETRACT_DEBUG
-            fprintf( stderr, "Retract clause(%p) op(%x) type(%d)\n",
-                      Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+            xsb_dbgmsg("Retract clause(%p) op(%x) type(%d)",
+		       Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
 #endif
     switch( ClRefType(Clause) )
     {
@@ -1805,8 +1805,8 @@ static int retract_clause( ClRef Clause, int retract_nr )
 	    if( retract_nr )
 		break ;
 #ifdef RETRACT_DEBUG
-            fprintf( stderr, "deleting clause (%p) size %d indexes %d\n",
-                     Clause, ClRefSize(Clause), NI ) ;
+            xsb_dbgmsg("deleting clause (%p) size %d indexes %d",
+		       Clause, ClRefSize(Clause), NI ) ;
 #endif
             delete_from_allchain(Clause) ;
 
@@ -1819,16 +1819,16 @@ static int retract_clause( ClRef Clause, int retract_nr )
                 /* last pointer in index chain points to indexing SOB */
                 sob = (SOBRef)IndRefNext(IP) ;
 #ifdef RETRACT_DEBUG
-                fprintf( stderr, "SOB(%d) - hash size %d - %d clauses\n",
-                         i, ClRefHashSize(sob), ClRefNumClauses(sob) ) ;
-                fprintf( stderr, "Addr %p : prev %p : next %p\n",
-                         sob, ClRefNext(sob), ClRefPrev(sob) ) ;
+                xsb_dbgmsg("SOB(%d) - hash size %d - %d clauses",
+			   i, ClRefHashSize(sob), ClRefNumClauses(sob) ) ;
+                xsb_dbgmsg("Addr %p : prev %p : next %p",
+			   sob, ClRefNext(sob), ClRefPrev(sob) ) ;
 #endif
                 delete_from_hashchain(Clause,i,NI) ;
                 if( --ClRefNumClauses(sob) == 0 )
                 {
 #ifdef RETRACT_DEBUG
-                    fprintf( stderr, "deleting sob - %p\n", sob ) ;
+                    xsb_dbgmsg("deleting sob - %p", sob ) ;
 #endif
                     delete_from_sobchain(sob) ;
     		    delete_clause(sob) ;
@@ -1880,7 +1880,10 @@ bool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -E
   Integer failed = ptoc_int(6) ;
 
 #ifdef RETRACT_GC_DEBUG
-    fprintf( stderr, "GET CLAUSE P-%p(%x) C-%p(%x) F-%p L-%p\n", Pred, *(pb)Pred, ptoc_int(1), ptoc_int(1) ? *(pb)(ptoc_int(1)) : 0, Pred->FirstClRef, Pred->LastClRef ) ;
+    xsb_dbgmsg("GET CLAUSE P-%p(%x) C-%p(%x) F-%p L-%p",
+	       Pred, *(pb)Pred, ptoc_int(1),
+	       ptoc_int(1) ? *(pb)(ptoc_int(1)) : 0,
+	       Pred->FirstClRef, Pred->LastClRef ) ;
 #endif
 
     if( cell_opcode((CPtr)Pred) == tabletrysingle )
@@ -1923,7 +1926,7 @@ set_outputs:
       EntryPoint = 0 ;
 
 #ifdef RETRACT_GC_DEBUG
-    fprintf( stderr, "GOT CLAUSE C-%p(%x)\n", Clause, Clause ? *(pb)Clause : 0 ) ;
+    xsb_dbgmsg("GOT CLAUSE C-%p(%x)", Clause, Clause ? *(pb)Clause : 0 ) ;
 #endif
 
     ctop_int( 7, (Integer)Clause ) ;
@@ -2029,7 +2032,7 @@ bool db_remove_prref( /* PrRef */ )
   CPtr *p = (CPtr *)ptoc_int(1) ;
 
 #ifdef RETRACT_GC_DEBUG
-  fprintf( stderr, "DEL Prref %p\n", p ) ;
+  xsb_dbgmsg("DEL Prref %p", p ) ;
 #endif
 
   if ( *(pb)p == tabletrysingle )
@@ -2233,7 +2236,7 @@ int trie_retract(void)
     return TRUE;
   }
   else if (Last_Nod_Sav == NULL) {
-    fprintf(stderr, "Last_Nod_Sav is NULL \n");
+    xsb_dbgmsg("Last_Nod_Sav is NULL ");
     return FALSE;
   }
   else {

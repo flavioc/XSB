@@ -36,9 +36,15 @@
 #include "subp.h"
 #include "register.h"
 #include "xsberror.h"
+#include "io_builtins.h"
 
 extern void exit(int status);
 extern void print_pterm(Cell, int, char *, int *);
+
+FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
+FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
+FILE *stdwarn;	     	     	  /* stream for XSB warnings */
+FILE *stdfdbk;	     	     	  /* stream for XSB feedback messages */
 
 /*----------------------------------------------------------------------*/
 
@@ -119,15 +125,28 @@ void arithmetic_comp_abort(Cell op1, char *OP, int op2)
 
 /*----------------------------------------------------------------------*/
 
+/* this is a soft type of error msg compared to xsb_abort. It doesn't abort the
+   computation, but sends stuff to stderr */
+void xsb_error (char *description, ...)
+{
+  va_list args;
+
+  va_start(args, description);
+  fprintf(stderr, "\n++Error: ");
+  vfprintf(stderr, description, args);
+  va_end(args);
+  fprintf(stderr, "\n");
+}
+
 void xsb_warn(char *description, ...)
 {
   va_list args;
 
   va_start(args, description);
-  fprintf(stderr, "\n++Warning: ");
-  vfprintf(stderr, description, args);
+  fprintf(stdwarn, "\n++Warning: ");
+  vfprintf(stdwarn, description, args);
   va_end(args);
-  fprintf(stderr, "\n");
+  fprintf(stdwarn, "\n");
 }
 
 void xsb_mesg(char *description, ...)
@@ -135,9 +154,19 @@ void xsb_mesg(char *description, ...)
   va_list args;
 
   va_start(args, description);
-  vfprintf(stderr, description, args);
+  vfprintf(stdmsg, description, args);
   va_end(args);
-  fprintf(stderr, "\n");
+  fprintf(stdmsg, "\n");
+}
+
+void xsb_dbgmsg(char *description, ...)
+{
+  va_list args;
+
+  va_start(args, description);
+  vfprintf(stddbg, description, args);
+  va_end(args);
+  fprintf(stddbg, "\n");
 }
 
 /*----------------------------------------------------------------------*/
@@ -150,7 +179,7 @@ void xsb_exit(char *description, ...)
   vfprintf(stderr, description, args);
   va_end(args);
 
-  fprintf(stderr, "\nExiting XSB abnormally...\n");
+  fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
   exit(1);
 }
 

@@ -56,7 +56,7 @@ case ODBC_EXEC_QUERY:
          SetBind();
          break; 
       default:
-        fprintf(stderr, "undefined yet.\n");
+        xsb_error("Unknown or unimplemented ODBC request type");
          /* Put an error message here */
          break; 
    }

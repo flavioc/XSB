@@ -26,15 +26,18 @@
 
 :- export member1/2, message/1, warning/1, error/1, time_message/2, 
 	  setoptions/1, setoptions1/1, subsumes/2, dict_lookup/3, option/1,
-	  debug_writenl/1, verbo_time_message/2, subsumed_member/2,
+	  verbo_time_message/2, subsumed_member/2,
 	  freeze/1, melt/2, writetop/2, set_global_compiler_options/1.
 
 :- import numbervars/3 from num_vars.
 :- import 'error occurred'/0 from compile.
+:- import current_compiled_module/1 from compile.
 :- import member/2, conget/2, conset/2 from prof_sbp.
-:- import ttywritenl/1, cputime/1, arg/3, functor/3, atomic/1,
+:- import ttywritenl/2, cputime/1, arg/3, functor/3, atomic/1,
 	  tell/1, nl/0, write/1, '=..'/2, telling/1
      from standard.
 :- import assert/1, retractall/1, (dynamic)/1 from assert.
+:- import sys_exit/1 from shell.
 
 /* ------------------------ end of file auxlry.H ---------------------- */
+

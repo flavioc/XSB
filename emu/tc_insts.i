@@ -31,7 +31,7 @@
 
 case trie_no_cp_str:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_str\n");
+	xsb_dbgmsg("trie_no_cp_str");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_str;
@@ -40,7 +40,7 @@ case trie_no_cp_str:
 
 case trie_try_str:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_str\n");
+	xsb_dbgmsg("trie_try_str");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -55,7 +55,7 @@ case trie_try_str:
 
 case trie_retry_str:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_str\n");
+	xsb_dbgmsg("trie_retry_str");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -67,7 +67,7 @@ case trie_retry_str:
 
 case trie_trust_str:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_str\n");
+	xsb_dbgmsg("trie_trust_str");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -82,7 +82,7 @@ case trie_trust_str:
 
 case trie_no_cp_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_numcon:\n");
+	xsb_dbgmsg("trie_no_cp_numcon:");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_numcon;
@@ -92,7 +92,7 @@ case trie_no_cp_numcon:
 
 case trie_try_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_numcon\n");
+	xsb_dbgmsg("trie_try_numcon");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -108,7 +108,7 @@ case trie_try_numcon:
 
 case trie_retry_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_numcon\n");
+	xsb_dbgmsg("trie_retry_numcon");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -121,7 +121,7 @@ case trie_retry_numcon:
 
 case trie_trust_numcon:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_numcon\n");
+	xsb_dbgmsg("trie_trust_numcon");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -137,7 +137,7 @@ case trie_trust_numcon:
 
 case trie_no_cp_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_numcon_succ\n");
+	xsb_dbgmsg("trie_no_cp_numcon_succ");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_numcon;
@@ -147,7 +147,7 @@ case trie_no_cp_numcon_succ:
 
 case trie_try_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_numcon_succ\n");
+	xsb_dbgmsg("trie_try_numcon_succ");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -163,7 +163,7 @@ case trie_try_numcon_succ:
 
 case trie_retry_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_numcon_succ\n");
+	xsb_dbgmsg("trie_retry_numcon_succ");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -176,7 +176,7 @@ case trie_retry_numcon_succ:
 
 case trie_trust_numcon_succ:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_numcon_succ\n");
+	xsb_dbgmsg("trie_trust_numcon_succ");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -192,7 +192,7 @@ case trie_trust_numcon_succ:
 
 case trie_no_cp_var:		
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_var\n");
+	xsb_dbgmsg("trie_no_cp_var");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	num_vars_in_var_regs = DecodeTrieVar(opatom);
@@ -200,10 +200,9 @@ case trie_no_cp_var:
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
             ((var_regs[i] < (CPtr)glstack.low) || (var_regs[i] >= hreg)) &&
-	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high)))
-	  { fprintf(stderr,
-		    "tc_insts.i (no_cp): var reg assigned bad 0x%p %d 0x%p\n",
-		    hreg, i, var_regs[i]); }
+	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high))) {
+	    xsb_dbgmsg("tc_insts.i (no_cp): var reg assigned bad 0x%p %d 0x%p",
+		       hreg, i, var_regs[i]); }
 	} 
 	reg_arrayptr--;
 	next_lpcreg;
@@ -211,7 +210,7 @@ case trie_no_cp_var:
 
 case trie_try_var:		
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_var\n");
+	xsb_dbgmsg("trie_try_var");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -226,10 +225,10 @@ case trie_try_var:
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
             ((var_regs[i] < (CPtr)glstack.low) || (var_regs[i] >= hreg)) &&
-	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high)))
-	  { fprintf(stderr,
-		    "tc_insts.i (try): var reg assigned bad 0x%p %d 0x%p\n",
-		    hreg, i, var_regs[i]); }
+	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high))) {
+	    xsb_dbgmsg("tc_insts.i (try): var reg assigned bad 0x%p %d 0x%p",
+		       hreg, i, var_regs[i]);
+	  }
 	} 
 	reg_arrayptr--;
 	next_lpcreg;
@@ -237,7 +236,7 @@ case trie_try_var:
 
 case trie_retry_var:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_var\n");
+	xsb_dbgmsg("trie_retry_var");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -248,10 +247,10 @@ case trie_retry_var:
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
             ((var_regs[i] < (CPtr)glstack.low) || (var_regs[i] >= hreg)) &&
-	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high)))
-	  { fprintf(stderr,
-		    "tc_insts.i (retry): var reg assigned bad 0x%p %d 0x%p\n",
-		    hreg, i, var_regs[i]); }
+	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high))) {
+	    xsb_dbgmsg("tc_insts.i (retry): var reg assigned bad 0x%p %d 0x%p",
+		       hreg, i, var_regs[i]);
+	  }
 	} 
 	reg_arrayptr--;
 	next_lpcreg;
@@ -259,7 +258,7 @@ case trie_retry_var:
 
 case trie_trust_var:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_var\n");
+	xsb_dbgmsg("trie_trust_var");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -271,10 +270,10 @@ case trie_trust_var:
         { int i = num_vars_in_var_regs;
 	  if ((isref(var_regs[i])) &&
             ((var_regs[i] < (CPtr)glstack.low) || (var_regs[i] >= hreg)) &&
-	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high)))
-	  { fprintf(stderr,
-		    "tc_insts.i (trust): var reg assigned bad 0x%p %d 0x%p\n",
-		    hreg, i, var_regs[i]); }
+	    ((var_regs[i] < top_of_localstk) || (var_regs[i] >= (CPtr) glstack.high))) {
+	     xsb_dbgmsg("tc_insts.i (trust): var reg assigned bad 0x%p %d 0x%p",
+			hreg, i, var_regs[i]);
+	  }
 	} 
 	reg_arrayptr--;
 	next_lpcreg;
@@ -284,7 +283,7 @@ case trie_trust_var:
 
 case trie_no_cp_val:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_val\n");
+	xsb_dbgmsg("trie_no_cp_val");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_val;
@@ -293,7 +292,7 @@ case trie_no_cp_val:
 
 case trie_try_val:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_val\n");
+	xsb_dbgmsg("trie_try_val");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -308,7 +307,7 @@ case trie_try_val:
 
 case trie_retry_val:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_val\n");
+	xsb_dbgmsg("trie_retry_val");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -320,7 +319,7 @@ case trie_retry_val:
 
 case trie_trust_val:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_val\n");
+	xsb_dbgmsg("trie_trust_val");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -335,7 +334,7 @@ case trie_trust_val:
 
 case trie_no_cp_list:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_list\n");
+	xsb_dbgmsg("trie_no_cp_list");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	unify_with_trie_list;
@@ -344,7 +343,7 @@ case trie_no_cp_list:
 
 case trie_try_list:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_list\n");
+	xsb_dbgmsg("trie_try_list");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -359,7 +358,7 @@ case trie_try_list:
 
 case trie_retry_list:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_list:\n");
+	xsb_dbgmsg("trie_retry_list:");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -371,7 +370,7 @@ case trie_retry_list:
 
 case trie_trust_list:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_list\n");
+	xsb_dbgmsg("trie_trust_list");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -387,14 +386,14 @@ case trie_trust_list:
 /* jf: fail insts for deleted nodes - reclaim deleted returns at completion */
 case trie_no_cp_fail:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_no_cp_fail\n");
+	xsb_dbgmsg("trie_no_cp_fail");
 #endif	
 	lpcreg = (byte *) & fail_inst;
 	goto contcase;
 
 case trie_trust_fail:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_trust_fail\n");
+	xsb_dbgmsg("trie_trust_fail");
 #endif	
 NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -406,7 +405,7 @@ NodePtr = (BTNptr) (lpcreg - 1);
 
 case trie_try_fail:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_try_fail\n");
+	xsb_dbgmsg("trie_try_fail");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	save_find_locx(ereg);
@@ -420,7 +419,7 @@ case trie_try_fail:
 
 case trie_retry_fail:
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_retry_fail\n");
+	xsb_dbgmsg("trie_retry_fail");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	tbreg = breg;
@@ -486,7 +485,7 @@ case trie_retry_fail:
 
 case hash_opcode:
 #ifdef PVR_DEBUG_TC_INSTS
-  printf("hash_opcode\n");
+  xsb_dbgmsg("hash_opcode");
 #endif
   /*
    *  Under new trie structure, NodePtr is actually pointing at a
@@ -528,7 +527,7 @@ case hash_handle:
     BTHTptr hash_hdr;
     
 #ifdef PVR_DEBUG_TC_INSTS
-    printf("hash_handle\n");
+    xsb_dbgmsg("hash_handle");
 #endif
     hash_offset = int_val(cell(breg+CP_SIZE));
     hash_hdr = (BTHTptr) string_val(cell(breg+CP_SIZE+1));
@@ -570,8 +569,8 @@ case hash_handle:
 	breg = cp_prevbreg(breg);
       }
       else {
-	fprintf(stderr,"Hash Offset %d, HHO %d\n", hash_offset,
-		hashed_hash_offset);
+	xsb_error("Hash Offset %d, HHO %d",
+		  hash_offset, hashed_hash_offset);
 	xsb_exit("error_condition in hash_handle\n");
       }
     }
@@ -597,7 +596,7 @@ case hash_handle:
 
 case trie_proceed:	/* This is essentially a "proceed" */
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_proceed:\n");
+	xsb_dbgmsg("trie_proceed:");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	num_vars_in_var_regs = -1;
@@ -606,7 +605,7 @@ case trie_proceed:	/* This is essentially a "proceed" */
 
 case trie_root:      /* A no-op; begin processing with child */
 #ifdef PVR_DEBUG_TC_INSTS
-	printf("trie_root:\n");
+	xsb_dbgmsg("trie_root:");
 #endif
 	NodePtr = (BTNptr) (lpcreg - 1);
 	lpcreg = (byte *) BTN_Child(NodePtr);

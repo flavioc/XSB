@@ -35,14 +35,13 @@
 #include "psc.h"
 #include "subp.h"
 #include "register.h"
+#include "xsberror.h"
 
-extern void xsb_exit(char *);
 
 #define exit_if_null(x) {\
-  if( x == NULL){\
-   fprintf(stderr, "Malloc Failed !\n");\
-   xsb_exit("Bye");\
-}\
+  if(x == NULL){\
+   xsb_exit("Malloc Failed !\n");\
+  }\
 }
 
 #define Char unsigned char
@@ -532,8 +531,7 @@ void realloc_strbuff(char **pstrbuff, char **ps, int *pn)
   exit_if_null(newbuff);
   if (token_too_long_warning)
     {
-      fprintf(stderr, 
-	      "++Warning: Extra-long token. Runaway string?\n");
+      xsb_warn("Extra-long token. Runaway string?");
 	  token_too_long_warning = 0;
     }
 
@@ -606,8 +604,7 @@ START:
 			    oldv = newv;
 			    newv = newv*d + DigVal(c);
 			    if (newv < oldv || newv > MY_MAXINT) {
-				fprintf(stderr, 
-				       "++Error: overflow in radix notation\n");
+				xsb_error("Overflow in radix notation");
 			        double_v = oldv*1.0*d + DigVal(c);
 				while (c = GetC(card,instr), DigVal(c) < 99)
                         	    if (c != '_') 
@@ -897,9 +894,10 @@ case deleted ****/
                 return token;
 
         }
-        fprintf(stderr, "Internal error: InType(%d)==%d\n", c, InType(c));
-        abort();                /* There is no way we can get here */
+        /* There is no way we can get here */
+        xsb_abort("Internal error: InType(%d)==%d\n", c, InType(c));
         /*NOTREACHED*/
+	return FALSE; /* to pacify the compiler */
 }
 
 /* --- Testing routines (usually commented) ---  

@@ -24,6 +24,7 @@
 */
 
 
+
 mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 
 /*======================================================================*/
@@ -32,11 +33,16 @@ mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 /*	returns the list of exported predicates.			*/
 /*======================================================================*/
 
+%% For better warnings, we need to know the currently compiled module
+:- dynamic(current_compiled_module(_)).
+
 compile(Modname, Basename, Options, ExportList) :- 
 	file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, OptFile),
 	setoptions(Options), initialize,
 	message(('[Compiling ', Basename, ']')), cputime(TimeStart),
+	retractall(current_compiled_module(_)),
+	assert(current_compiled_module(Basename)),
 	db_preprocess(PFile, HFile, OptFile, SourceFile),
 	parse(Modname, SourceFile, HFile, Module_0),
     ( option(profile) -> 
@@ -88,11 +94,11 @@ initialize :-
 abort_if_syntax_errors(Modname) :-
 	conget('syntax errors', N),
 	( N =\= 0, Modname \== user -> 
-		% Forget about syntax errors when compiling module user
-	 	message(('Aborting compilation of module ', 
-			 Modname, ' due to ', N, ' syntax error(s).')), 
-		abort
-	; true
+	    %% Forget about syntax errors when compiling module user
+	    error(('Aborting compilation of module ', 
+		   Modname, ' due to ', N, ' syntax error(s).')), 
+	    abort
+	;   true
 	).
 
 /*======================================================================*/
@@ -161,8 +167,8 @@ compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
       ( option(compile_off) ->		%  generate *.A file
 	  write_asmheader(AFile, Modname, SymTab, IsModule), myclose(AFile)
       ; conget('error occurred', 1) ->
-		message(('Aborting compilation of module ', Modname,
-			 ' due to errors')), abort
+	  error(('Aborting compilation of module ',Modname,' due to errors')),
+	  abort
       ; option(asm_dump) -> 
 	  write_asmheader(AFile,Modname,SymTab, IsModule), % generate .A header
 	  asm_genheader(OFile, Modname, SymTab, IsModule), % generate .O header

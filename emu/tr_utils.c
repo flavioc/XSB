@@ -52,6 +52,7 @@
 #include "choice.h"
 #include "inst.h"
 #include "xsberror.h"
+#include "io_builtins.h"
 #include "trassert.h"
 #include "tr_utils.h"
 #ifdef CHAT
@@ -332,7 +333,7 @@ struct freeing_stack_node{
 #define pop_node(node){\
     struct freeing_stack_node *temp;\
     if (node_stk_top == NULL) {\
-       fprintf(stderr,"pop attempted from NULL\n");\
+       xsb_dbgmsg("DELETE_PREDICATE_TABLE: pop attempted from NULL");\
        return;\
     }\
     node         = node_stk_top->item;\
@@ -368,8 +369,7 @@ void delete_predicate_table(BTNptr x)
     return;
 
   if ( ! ( IsTrieRoot(x) && IsInCallTrie(x) ) ) {
-    xsb_warn("delete_predicate_table(): object is not the root"
-	     " of a call trie");
+    xsb_dbgmsg("DELETE_PREDICATE_TABLE: object is not the root of a call trie");
     return;
   }
 
@@ -527,7 +527,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
     if (is_hash(*y1)) {
       z = Calculate_Bucket_for_Symbol(*y1,Atom(lowest_node_in_branch));
       if ( *z != lowest_node_in_branch )
-	xsb_warn("delete_branch: trie node not found in hash table\n");
+	xsb_dbgmsg("DELETE_BRANCH: trie node not found in hash table");
       *z = NULL;
       num_left_in_hash = --BTHT_NumContents((BTHTptr)*y1);
       if (num_left_in_hash  > 0) {
@@ -598,8 +598,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
      MakeStatusValid(lowest_node_in_branch);
    }
    else
-     fprintf(stderr,"system warning: Attempt to undelete a node that"
-	     " is not deleted\n");
+     xsb_dbgmsg("Attempt to undelete a node that is not deleted");
  }
 
 /*----------------------------------------------------------------------*/
@@ -663,7 +662,7 @@ void delete_return(BTNptr l, SGFrame sg_frame)
 #endif
 
 #ifdef DEBUG_RECLAIM_DEL_RET
-    fprintf(stderr,"Delete node: %d - Par: %d\n", l, Parent(l));
+    xsb_dbgmsg("DELETE_NODE: %d - Par: %d", l, Parent(l));
 #endif
   safe_delete_branch(l);
   if (!is_completed(sg_frame)) {

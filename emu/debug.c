@@ -70,8 +70,6 @@ extern int  xctr;
 #define CAR		1
 #define CDR		0
 
-#define outfile stdout
-
 #ifdef DEBUG
 #define STRIDESIZE     30
 #define SG_STRIDESIZE	7*CALLSTRUCTSIZE
@@ -81,9 +79,9 @@ extern int  xctr;
 #define EOSUBG	"------------------------------------------------------------\n"
 
 #define print_subg_header(SUBG) { \
-    fprintf(outfile, "=== Frame for "); print_subgoal(outfile, SUBG); \
-    if (is_completed(SUBG)) fprintf(outfile, " (completed) ===\n"); \
-    else fprintf(outfile, " (incomplete) ===\n"); }
+    fprintf(stddbg, "=== Frame for "); print_subgoal(stddbg, SUBG); \
+    if (is_completed(SUBG)) fprintf(stddbg, " (completed) ===\n"); \
+    else fprintf(stddbg, " (incomplete) ===\n"); }
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -120,40 +118,40 @@ void printterm(Cell term, byte car, int level)
     struct psc_rec *psc_ptr1;
     CPtr cptr1;
 
-    if (level-- < 0) { fprintf(outfile, "..."); return; }
+    if (level-- < 0) { fprintf(stddbg, "..."); return; }
     printderef(term);
     switch (cell_tag(term)) {
       case FREE:  case REF1:
-	fprintf(outfile, "_%p", vptr(term));
+	fprintf(stddbg, "_%p", vptr(term));
 	return;
       case CS:
 	psc_ptr1 = get_str_psc(term);
-	fflush(outfile); 
-	fprintf(outfile, "%s", get_name(psc_ptr1));
+	fflush(stddbg); 
+	fprintf(stddbg, "%s", get_name(psc_ptr1));
 	if ( get_arity(psc_ptr1) == 0 ) return;   /* constant */
 	/* structure */
-	fprintf(outfile, "(");
+	fprintf(stddbg, "(");
 	arity1 = get_arity(psc_ptr1);
 	    cptr1 = (CPtr)cs_val(term);
 	    for ( i = 1; i <= arity1; i++ ) {
 		printterm(cell(cptr1+i), CAR, level);
-                if (i<arity1) fprintf(outfile, ",");
+                if (i<arity1) fprintf(stddbg, ",");
 	    }
-	    fprintf(outfile, ")");
-            /* fflush(outfile); */
+	    fprintf(stddbg, ")");
+            /* fflush(stddbg); */
             return;
       case STRING:
-	fprintf(outfile, "\"%s\"", string_val(term));
+	fprintf(stddbg, "\"%s\"", string_val(term));
 	break;
       case INT:
-	fprintf(outfile, "%ld", (long)int_val(term));
+	fprintf(stddbg, "%ld", (long)int_val(term));
 	return;
       case FLOAT:
-	fprintf(outfile, "%f", float_val(term));
+	fprintf(stddbg, "%f", float_val(term));
 	return;
       case LIST:
 	cptr1 = clref_val(term);
-	if ( car ) fprintf(outfile, "[");
+	if ( car ) fprintf(stddbg, "[");
 	printterm(cell(cptr1), CAR, level);
 	term = cell(cptr1+1);
 	deref(term);
@@ -162,20 +160,20 @@ void printterm(Cell term, byte car, int level)
 	        case REF1: 
 	            goto vertbar;
                 case LIST:
-		    fprintf(outfile, ",");
+		    fprintf(stddbg, ",");
 		    printterm(term, CDR, level);
 		    return;
 	        case STRING:
 		    if (string_val(term) != nil_sym) goto vertbar;
-		    else { fprintf(outfile, "]"); return; }
+		    else { fprintf(stddbg, "]"); return; }
                 case CS:
 	        case INT:
 		case FLOAT:
 		    vertbar:
-		    fprintf(outfile, "|");
+		    fprintf(stddbg, "|");
 		    printterm(term, CAR, level);
-		    fprintf(outfile, "]");
-		    /* fflush(outfile); */
+		    fprintf(stddbg, "]");
+		    /* fflush(stddbg); */
 		    return;
 	}
     }
@@ -188,14 +186,14 @@ static void print_call(Psc psc)
   int i, arity;
 
   arity = (int)get_arity(psc);
-  fprintf(outfile, "(w1) call: %s", get_name(psc));
-  if (arity != 0) fprintf(outfile, "(");
+  fprintf(stddbg, "(w1) call: %s", get_name(psc));
+  if (arity != 0) fprintf(stddbg, "(");
   for (i=1; i <= arity; i++) {
     printterm(cell(reg+i), 1, 3);
-    if (i < arity) fprintf(outfile, ",");
+    if (i < arity) fprintf(stddbg, ",");
   }
-  if (arity != 0) fprintf(outfile, ")\n"); else fprintf(outfile, "\n");
-  fflush(outfile);
+  if (arity != 0) fprintf(stddbg, ")\n"); else fprintf(stddbg, "\n");
+  fflush(stddbg);
 }
 
 /*----------------------------------------------------------------------*/
@@ -235,45 +233,45 @@ struct watch_struct {
 
 void print_help(void)
 {
-  printf("      a r/v/d/a <addr>: inspect the content of the address\n");
-  printf("      b <module> <name> <arity>: spy the predicate\n");
-  printf("      B <num>: print detailed Prolog choice points from the top\n");
-  printf("\tof the choice point stack with <num>-Cell overlap\n");
-  printf("      c <num>: print top of choice point stack with <num> overlap\n");
+  xsb_dbgmsg("      a r/v/d/a <addr>: inspect the content of the address");
+  xsb_dbgmsg("      b <module> <name> <arity>: spy the predicate");
+  xsb_dbgmsg("      B <num>: print detailed Prolog choice points from the top");
+  xsb_dbgmsg("\tof the choice point stack with <num>-Cell overlap");
+  xsb_dbgmsg("      c <num>: print top of choice point stack with <num> overlap");
 #if (!defined(CHAT))
-  printf("      C <num>: print choice point stack (around bfreg) with <num> overlap\n");
+  xsb_dbgmsg("      C <num>: print choice point stack (around bfreg) with <num> overlap");
 #endif
-  printf("      d: print disassembled code for module\n");
-  printf("      D: print current value of delay list (pointed by delayreg)\n");
-  printf("      e <size>: expand trail/cp stack to <size> K-byte blocks\n");
-  printf("      E <num>: print top of environment (local) stack with <num> overlap\n");
-  printf("      g: leap to the next check_complete instruction\n");
-  printf("      G: same as 'g', but does not print intermediate info\n");
-  printf("      h: help\n");
-  printf("      H <num>: print top of heap with <num> overlap\n");
-  printf("      k <int>: print and skip <int> instructions\n");
-  printf("      K <int>: skip <int> instructions\n");
-  printf("      l: leap to the next spy point\n");
-  printf("      L: same as 'l', but does not print intermediate info\n");
-  printf("      M: print statistics\n");
-  printf("      n: leap to the next call\n");
-  printf("      N: nodebugging, continue to the end\n");
-  printf("      o: print completion stack\n");
-  printf("      P: print PDLSTK\n");
-  printf("      q: quit XSB\n");
-  printf("      r <num>: print register <num> as term\n");
-  printf("      R <num>: print register <num> as ptr\n");
-  printf("      s: step (execute a single instruction)\n");
-  printf("      S: print status registers\n");
-  printf("      T <num>: print top of trail with <num> overlap\n");
-  printf("      u <name> <arity>: unspy the predicate\n");
-  printf("      v <num>: print variable <num>\n");
-  printf("      w <stack> <val>: watch <stack> register for <val>\n");
-  printf("      W <stack> <val>: watch memory area of <stack> for <val>\n");
-  printf("      x: exit XSB\n");
-  printf("      1: print top of (persistent) subgoal stack\n");
-  printf("      2 <num>: print val of table pointer\n");
-  printf("      ?: help\n");
+  xsb_dbgmsg("      d: print disassembled code for module");
+  xsb_dbgmsg("      D: print current value of delay list (pointed by delayreg)");
+  xsb_dbgmsg("      e <size>: expand trail/cp stack to <size> K-byte blocks");
+  xsb_dbgmsg("      E <num>: print top of environment (local) stack with <num> overlap");
+  xsb_dbgmsg("      g: leap to the next check_complete instruction");
+  xsb_dbgmsg("      G: same as 'g', but does not print intermediate info");
+  xsb_dbgmsg("      h: help");
+  xsb_dbgmsg("      H <num>: print top of heap with <num> overlap");
+  xsb_dbgmsg("      k <int>: print and skip <int> instructions");
+  xsb_dbgmsg("      K <int>: skip <int> instructions");
+  xsb_dbgmsg("      l: leap to the next spy point");
+  xsb_dbgmsg("      L: same as 'l', but does not print intermediate info");
+  xsb_dbgmsg("      M: print statistics");
+  xsb_dbgmsg("      n: leap to the next call");
+  xsb_dbgmsg("      N: nodebugging, continue to the end");
+  xsb_dbgmsg("      o: print completion stack");
+  xsb_dbgmsg("      P: print PDLSTK");
+  xsb_dbgmsg("      q: quit XSB");
+  xsb_dbgmsg("      r <num>: print register <num> as term");
+  xsb_dbgmsg("      R <num>: print register <num> as ptr");
+  xsb_dbgmsg("      s: step (execute a single instruction)");
+  xsb_dbgmsg("      S: print status registers");
+  xsb_dbgmsg("      T <num>: print top of trail with <num> overlap");
+  xsb_dbgmsg("      u <name> <arity>: unspy the predicate");
+  xsb_dbgmsg("      v <num>: print variable <num>");
+  xsb_dbgmsg("      w <stack> <val>: watch <stack> register for <val>");
+  xsb_dbgmsg("      W <stack> <val>: watch memory area of <stack> for <val>");
+  xsb_dbgmsg("      x: exit XSB");
+  xsb_dbgmsg("      1: print top of (persistent) subgoal stack");
+  xsb_dbgmsg("      2 <num>: print val of table pointer");
+  xsb_dbgmsg("      ?: help");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -349,16 +347,16 @@ static void monitor_register_watch(void)
 {
   if (reg_watch.heap_flag) 
     if (reg_watch.heap_val == hreg)
-      printf("!!! hreg == %p, %d\n", hreg, xctr);
+     xsb_dbgmsgprintf("!!! hreg == %p, %d", hreg, xctr);
   if (reg_watch.stack_flag) 
     if (reg_watch.stack_val == ereg)
-      printf("!!! ereg == %p, %d\n", ereg, xctr);
+      xsb_dbgmsg("!!! ereg == %p, %d", ereg, xctr);
   if (reg_watch.choice_flag) 
     if (reg_watch.choice_val == breg)
-      printf("!!! breg == %p, %d\n", breg, xctr);
+     xsb_dbgmsgprintf("!!! breg == %p, %d", breg, xctr);
   if (reg_watch.trail_flag) 
     if ((CPtr *) reg_watch.trail_val == trreg)
-      printf("!!! trreg == %p, %d\n", trreg, xctr);
+     xsb_dbgmsgprintf("!!! trreg == %p, %d", trreg, xctr);
 }
 
 /*----------------------------------------------------------------------*/
@@ -367,7 +365,7 @@ static void monitor_memory_watch(void)
 {
   if (mem_watch.heap_flag)
     if (*(CPtr *) mem_watch.heap_flag != mem_watch.heap_val) {
-      printf("Heap watch val %x was %p is now %lx, xctr %d\n",
+      xsb_dbgmsg("Heap watch val %x was %p is now %lx, xctr %d",
 	     mem_watch.heap_flag, mem_watch.heap_val,
 	     *(CPtr) mem_watch.heap_flag, xctr);
       debug_ctr = 0;
@@ -375,7 +373,7 @@ static void monitor_memory_watch(void)
     }
   if (mem_watch.stack_flag)
     if (*(CPtr *) mem_watch.stack_flag != mem_watch.stack_val) {
-      printf("Stack watch val %x was %p is now %lx, xctr %d\n",
+      xsb_dbgmsg("Stack watch val %x was %p is now %lx, xctr %d",
 	     mem_watch.stack_flag,mem_watch.stack_val,
 	     *(CPtr) mem_watch.stack_flag,xctr);
       debug_ctr = 0;
@@ -383,7 +381,7 @@ static void monitor_memory_watch(void)
     }
   if (mem_watch.choice_flag)
     if (*(CPtr *) mem_watch.choice_flag != mem_watch.choice_val) {
-      printf("Choice watch val %x was %p is now %lx, xctr %d\n",
+      xsb_dbgmsg("Choice watch val %x was %p is now %lx, xctr %d",
 	     mem_watch.choice_flag,mem_watch.choice_val,
 	     *(CPtr) mem_watch.choice_flag,xctr);
       debug_ctr = 0;
@@ -391,7 +389,7 @@ static void monitor_memory_watch(void)
     }
   if (mem_watch.trail_flag)
     if (*(CPtr *) mem_watch.trail_flag != mem_watch.trail_val) {
-      printf("Trail watch val %x was %p is now %lx, xctr %d\n",
+      xsb_dbgmsg("Trail watch val %x was %p is now %lx, xctr %d",
 	     mem_watch.trail_flag,mem_watch.trail_val,
 	     *(CPtr) mem_watch.trail_flag,xctr);
       debug_ctr = 0;
@@ -430,7 +428,7 @@ static void print_term_of_subgoal(FILE *fp, int *i)
 	  (*i) -= 2;
 	  print_term_of_subgoal(fp, i);
 	  fprintf(fp, "]");
-	} else fprintf(stderr, "Non-single element list in print_subgoal()\n");
+	} else xsb_error("Non-single element list in print_subgoal()");
 	break;
       case STRING:
 	fprintf(fp, "%s", string_val(term));
@@ -442,8 +440,8 @@ static void print_term_of_subgoal(FILE *fp, int *i)
 	fprintf(fp, "%.5g", float_val(term));
 	break;
       default:
-	fprintf(stderr, "Term with unknown tag (%d) in print_subgoal()\n",
-			(int)cell_tag(term));
+	xsb_error("Term with unknown tag (%d) in print_subgoal()",
+		  (int)cell_tag(term));
 	break;
     }
 }
@@ -548,8 +546,8 @@ void print_delay_list(FILE *fp, CPtr dlist)
 void debug_inst(byte *lpcreg, CPtr le_reg)
 {
   if (!print_hide) {
-    printf("xctr %d ",xctr);
-    print_inst(outfile, lpcreg);
+    fprintf(stddbg, "xctr %d ",xctr);
+    print_inst(stddbg, lpcreg);
   }
   if (register_watch_flag) monitor_register_watch();
   if (memory_watch_flag) monitor_memory_watch();
@@ -574,49 +572,51 @@ void debug_inst(byte *lpcreg, CPtr le_reg)
 static void print_cell(char *addrtype, CPtr addr, Cell term, char *more_info)
 {
   switch (cell_tag(term)) {
-    case REF: case REF1:
-      printf("%s %p: REF (tag=%ld), value=0x%p",
-	     addrtype, addr, cell_tag(term), ref_val(term));
-      break;
-    case CS: 
-      if (addr == (CPtr)dec_addr(term) || (CPtr)dec_addr(term) == NULL) {
-	printf("Possible source of core dump\n");
-	printf("%s %p: CS, value=0x%p, hexval=0x%p", 
-	   addrtype, addr, cs_val(term), ref_val(term));
+  case REF: case REF1:
+    fprintf("%s %p: REF (tag=%ld), value=0x%p",
+	    addrtype, addr, cell_tag(term), ref_val(term));
+    break;
+  case CS: 
+    if (addr == (CPtr)dec_addr(term) || (CPtr)dec_addr(term) == NULL) {
+      fprintf(stddbg, "Possible source of core dump\n");
+      fprintf(stddbg, "%s %p: CS, value=0x%p, hexval=0x%p", 
+	      addrtype, addr, cs_val(term), ref_val(term));
       }	else {
-	printf("%s %p: CS, value=0x%p, hexval=0x%p (%s/%d)", 
-	       addrtype, addr, cs_val(term), ref_val(term),
-	       get_name((struct psc_rec *) follow(cs_val(term))),
-	       get_arity((struct psc_rec *) follow(cs_val(term))));
+	fprintf(stddbg, "%s %p: CS, value=0x%p, hexval=0x%p (%s/%d)", 
+		addrtype, addr, cs_val(term), ref_val(term),
+		get_name((struct psc_rec *) follow(cs_val(term))),
+		get_arity((struct psc_rec *) follow(cs_val(term))));
       }
-      break;
-    case INT:
-      printf("%s %p: INT, value=%d  hexval=0x%p",
-	     addrtype, addr, int_val(term), ref_val(term));
-      break;
-    case STRING:
-      if (isnil(term)) 
-	printf("%s %p: STRING, hexval=0x%p\t ([])", 
-	       addrtype, addr, ref_val(term));
-      else
-	printf("%s %p: STRING, hexval=0x%p\t (%s)", 
-	       addrtype, addr, ref_val(term), string_val(term));
-      break;
-    case FLOAT:
-      printf("%s %p: FLOAT, value=%f, hexval=0x%lx", 
-	     addrtype, addr, float_val(term), dec_addr(term));
-      break;
-    case LIST:
-      printf("%s %p: LIST, clref=%p, hex=%p",
-	     addrtype, addr, clref_val(term), ref_val(term));
-      break;
-    default:
-      printf("%s %p: tag=%ld, hex=0x%p, cval=%d", 
-	     addrtype, addr, cell_tag(term), ref_val(term), int_val(term));
-      break;
+    break;
+  case INT:
+    fprintf(stddbg, "%s %p: INT, value=%d  hexval=0x%p",
+	    addrtype, addr, int_val(term), ref_val(term));
+    break;
+  case STRING:
+    if (isnil(term)) 
+      fprintf(stddbg, "%s %p: STRING, hexval=0x%p\t ([])", 
+	      addrtype, addr, ref_val(term));
+    else
+      fprintf(stddbg, "%s %p: STRING, hexval=0x%p\t (%s)", 
+	      addrtype, addr, ref_val(term), string_val(term));
+    break;
+  case FLOAT:
+    fprintf(stddbg, "%s %p: FLOAT, value=%f, hexval=0x%lx", 
+	   addrtype, addr, float_val(term), dec_addr(term));
+    break;
+  case LIST:
+    fprintf(stddbg, "%s %p: LIST, clref=%p, hex=%p",
+	   addrtype, addr, clref_val(term), ref_val(term));
+    break;
+  default:
+    fprintf(stddbg, "%s %p: tag=%ld, hex=0x%p, cval=%d", 
+	   addrtype, addr, cell_tag(term), ref_val(term), int_val(term));
+    break;
   }
-
-  if (more_info != NULL) printf(",\t(%s)\n", more_info); else printf("\n");
+  
+  if (more_info != NULL)
+    fprintf(stddbg, ",\t(%s)\n", more_info);
+  else fprintf(stddbg, "\n");
 }
 
 /*----------------------------------------------------------------------*/ 
@@ -624,39 +624,40 @@ static void print_cell(char *addrtype, CPtr addr, Cell term, char *more_info)
 static void print_cp_cell(char *addrtype, CPtr addr, Cell term)
 {
   if ((ref_val(term) != NULL) && (cell_tag(term) == term)) {
-    printf("NULL cell in %s %p: tag=%ld, value=0x%p\n",
-	   addrtype, addr, cell_tag(term), ref_val(term));
+    fprintf(stddbg, "NULL cell in %s %p: tag=%ld, value=0x%p\n",
+	    addrtype, addr, cell_tag(term), ref_val(term));
   } else {  
     switch (cell_tag(term)) {
-      case REF: case REF1:
-	printf("%s %p: REF (tag=%ld), value=0x%p\n",
-	       addrtype, addr, cell_tag(term), ref_val(term));
-	break;
-      case CS:
-	printf("%s %p: CS, value=0x%p, hexval=0x%p (%s/%d)\n", 
-	       addrtype, addr, cs_val(term), ref_val(term),
-	       get_name((struct psc_rec *) follow(cs_val(term))),
-	       get_arity((struct psc_rec *) follow(cs_val(term))));
-	break;
-      case INT:
-	printf("%s %p: INT, value=%d, hexval=0x%p\n",
-	       addrtype, addr, int_val(term), ref_val(term));
-	break;
-      case STRING:
-	printf("%s %p: STRING, hexval=0x%p (%s)\n", 
-	       addrtype, addr, ref_val(term), string_val(term));
-	break;
-      case FLOAT:
-	printf("%s %p: FLOAT, value=%f, hexval=0x%lx\n", 
-	       addrtype, addr, float_val(term), dec_addr(term));
-	break;
-      case LIST:
-	printf("%s %p: LIST, value=%p\n", addrtype, addr, ref_val(term));
-	break;
-      default:
-	printf("%s %p: tag=%ld, value=0x%p\n", 
-	       addrtype, addr, cell_tag(term), ref_val(term));
-	break;
+    case REF: case REF1:
+      fprintf(stddbg, "%s %p: REF (tag=%ld), value=0x%p\n",
+	      addrtype, addr, cell_tag(term), ref_val(term));
+      break;
+    case CS:
+      fprintf(stddbg, "%s %p: CS, value=0x%p, hexval=0x%p (%s/%d)\n", 
+	      addrtype, addr, cs_val(term), ref_val(term),
+	      get_name((struct psc_rec *) follow(cs_val(term))),
+	      get_arity((struct psc_rec *) follow(cs_val(term))));
+      break;
+    case INT:
+      fprintf(stddbg, "%s %p: INT, value=%d, hexval=0x%p\n",
+	      addrtype, addr, int_val(term), ref_val(term));
+      break;
+    case STRING:
+      fprintf(stddbg, "%s %p: STRING, hexval=0x%p (%s)\n", 
+	      addrtype, addr, ref_val(term), string_val(term));
+      break;
+    case FLOAT:
+      fprintf(stddbg, "%s %p: FLOAT, value=%f, hexval=0x%lx\n", 
+	      addrtype, addr, float_val(term), dec_addr(term));
+      break;
+    case LIST:
+      fprintf(stddbg, "%s %p: LIST, value=%p\n",
+	      addrtype, addr, ref_val(term));
+      break;
+    default:
+      fprintf(stddbg, "%s %p: tag=%ld, value=0x%p\n", 
+	      addrtype, addr, cell_tag(term), ref_val(term));
+      break;
     }
   }
 }
@@ -675,38 +676,38 @@ static void print_local_stack(int overlap)
 
   if (ereg_on_top(ereg)) {
     cell_ptr = ereg;
-    printf("ereg on top\n");
+    fprintf(stddbg, "ereg on top\n");
   }
   else {
     cell_ptr = ebreg;
-    printf("ebreg on top\n");
+    fprintf(stddbg, "ebreg on top\n");
   }
   for (i = -overlap; i < 0; i++) {
 #if (!defined(CHAT))
-    if ( cell_ptr+i == efreg ) printf("efreg\n");
+    if ( cell_ptr+i == efreg ) fprintf(stddbg, "efreg\n");
 #endif
     print_cp_cell("Local Stack", cell_ptr+i, cell(cell_ptr+i));
   }
-  printf("top\n");
+  fprintf(stddbg, "top\n");
   do {
     for (i=0; (i < STRIDESIZE) && (cell_ptr < local_stack_bottom); i++) {
       if (cell_ptr == ebreg)
-	printf("ebreg\n");
+	fprintf(stddbg, "ebreg\n");
       if (cell_ptr == ereg)
-	printf("ereg\n");
+	fprintf(stddbg, "ereg\n");
 #if (!defined(CHAT))
-      if (cell_ptr == efreg) printf("efreg\n");
+      if (cell_ptr == efreg) fprintf(stddbg, "efreg\n");
 #endif
       print_cp_cell("Local Stack", cell_ptr, cell(cell_ptr));
       cell_ptr++;
     }
     if (cell_ptr < local_stack_bottom) {
-      printf("more (y/n)?  ");
+      fprintf(stddbg, "more (y/n)?  ");
       scanf("%c", &ans);
       skip_to_nl();
     }
     else {
-      printf(EOS);
+      fprintf(stddbg, EOS);
       ans = 'n';
     }
   } while (ans == 'y');
@@ -727,9 +728,9 @@ static void print_trail(int overlap)		/* trail grows up */
 #endif
     for (i = overlap; (i > 0); i--)
       {
-	if ( (temp + i) == trreg ) printf("trreg\n");
+	if ( (temp + i) == trreg ) xsb_dbgmsg("trreg");
 #if (!defined(CHAT))
-	if ( (temp + i) == trfreg ) printf("trfreg\n");
+	if ( (temp + i) == trfreg ) xsb_dbgmsg("trfreg");
 #endif
 	print_cell("Trail", (CPtr)(temp+i), cell((CPtr)(temp+i)), NULL);
        }
@@ -737,17 +738,17 @@ static void print_trail(int overlap)		/* trail grows up */
       for (i = 0
 	   ; (i <= STRIDESIZE && temp-(offset+i) >= (CPtr *)tcpstack.low)
 	   ; i++ )      {
-	if ( (temp - (offset+i)) == trreg ) printf("trreg\n");
+	if ( (temp - (offset+i)) == trreg ) xsb_dbgmsg("trreg");
 #if (!defined(CHAT))
-	if ( (temp - (offset+i)) == trfreg ) printf("trfreg\n");
+	if ( (temp - (offset+i)) == trfreg ) xsb_dbgmsg("trfreg");
 #endif
 	print_cell("Trail", (CPtr)(temp-(offset+i)),
 		   cell((CPtr)(temp-(offset+i))), NULL);
 	if ( (temp-(offset+i)) == (CPtr *) tcpstack.low ) 
-	  printf("bottom\n");
+	  xsb_dbgmsg("bottom");
       }
       offset += STRIDESIZE;
-      printf("more (y/n)?  ");
+      fprintf(stddbg, "more (y/n)?  ");
       scanf("%c", &ans);
       skip_to_nl();
     }
@@ -764,15 +765,15 @@ static void print_freeze_choice_points(int overlap)	/* CPs grow down */
  
   for (i = -overlap; i < 0 ; i++) {
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
-    if ( (bfreg + i) == breg ) printf("breg\n");
+    if ( (bfreg + i) == breg ) xsb_dbgmsg("breg");
   }
-  printf("bfreg\n");
+  xsb_dbgmsg("bfreg");
   for (i = 0; (i <= STRIDESIZE && bfreg+i<=(CPtr)tcpstack.high); i++){
-    if ( (bfreg + i) == breg ) printf("breg\n");
+    if ( (bfreg + i) == breg ) xsb_dbgmsg("breg");
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
-    if ( (bfreg + i) == (CPtr) tcpstack.high ) printf(EOS);
+    if ( (bfreg + i) == (CPtr) tcpstack.high ) fprintf(stddbg, EOS);
   }
-  printf("more (y/n)?  ");
+  fprintf(stddbg, "more (y/n)?  ");
   scanf("%c", &ans);
   skip_to_nl();
   while (ans == 'y' && bfreg+last < (CPtr) tcpstack.high ) { 
@@ -780,11 +781,11 @@ static void print_freeze_choice_points(int overlap)	/* CPs grow down */
     for ( i = last
 	    ; (i <= last+STRIDESIZE && bfreg+i <= (CPtr) tcpstack.high) 
 	    ; i++ ) {
-      if ( (bfreg + i) == breg ) printf("breg\n");
+      if ( (bfreg + i) == breg ) xsb_dbgmsg("breg");
       print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
-      if ( (bfreg + i) == (CPtr) tcpstack.high ) printf(EOS);
+      if ( (bfreg + i) == (CPtr) tcpstack.high ) fprintf(stddbg, EOS);
     }
-    printf("more (y/n)?  ");
+    fprintf(stddbg, "more (y/n)?  ");
     scanf("%c", &ans);
     skip_to_nl();
   }
@@ -825,22 +826,22 @@ static void analyze_cpf(CPtr cpf_addr, int *length, int *cpf_type)
 static void print_common_cpf_part(CPtr cpf_addr) {
     char *s = "   CP stack ";
 
-    printf("%s%p:\tptr to next clause:\t0x%p\n", s,
-	   &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr));
-    printf("%s%p:\tprev env cap (ebreg):\t0x%p\n", s,
-	   &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr));
-    printf("%s%p:\ttop of heap:\t\t0x%p\n", s,
-	   &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr));
-    printf("%s%p:\ttop of trail:\t\t0x%p\n", s,
-	   &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr));
-    printf("%s%p:\tcontinuation pointer:\t0x%p\n", s,
-	   &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr));
-    printf("%s%p:\ttop of local stack:\t0x%p\n", s,
-	   &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr));
-    printf("%s%p:\tdynamic link:\t\t0x%p\n", s,
-	   &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr));
-    printf("%s%p:\tparent subgoal dreg:\t0x%p\n", s,
-	   &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\tptr to next clause:\t0x%p", s,
+	       &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\tprev env cap (ebreg):\t0x%p", s,
+	       &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\ttop of heap:\t\t0x%p", s,
+	       &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\ttop of trail:\t\t0x%p", s,
+	       &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\tcontinuation pointer:\t0x%p", s,
+	       &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\ttop of local stack:\t0x%p", s,
+	       &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr));
+    xsb_dbgmsg("%s%p:\tdynamic link:\t\t0x%p", s,
+	       &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr));
+    xsb_dbgmsg("%s%p:\tparent subgoal dreg:\t0x%p", s,
+	       &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr));
 }
 
 static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
@@ -851,44 +852,46 @@ static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
 
     switch (cpf_type) {
       case STANDARD_CP_FRAME:
-	printf("Standard Choice Point Frame:\n");
+	xsb_dbgmsg("Standard Choice Point Frame:");
 	print_common_cpf_part(cpf_addr);
 
 	num_of_args = length - CP_SIZE;
 	for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
-	  printf("%s%p:\tpredicate arg #%d:\t0x%p\n", s, arg, i, ref_val(*arg));
+	  xsb_dbgmsg("%s%p:\tpredicate arg #%d:\t0x%p",
+		     s, arg, i, ref_val(*arg));
 	break;
       case GENERATOR_CP_FRAME:
-	printf("Generator Choice Point Frame:\n");
+	xsb_dbgmsg("Generator Choice Point Frame:");
 	print_common_cpf_part(cpf_addr);
-	printf("%s%p:\tparent tabled CP:\t0x%p\n", s,
-	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr));
-	printf("%s%p:\tsubgoal frame ptr:\t0x%p\n", s,
-	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
+	xsb_dbgmsg("%s%p:\tparent tabled CP:\t0x%p", s,
+		   &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr));
+	xsb_dbgmsg("%s%p:\tsubgoal frame ptr:\t0x%p", s,
+		   &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
 #if (!defined(CHAT))
-	printf("%s%p:\tCh P  freeze register:\t0x%p\n", s,
-	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
-	printf("%s%p:\tHeap  freeze register:\t0x%p\n", s,
-	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr));
-	printf("%s%p:\tTrail freeze register:\t0x%p\n", s,
-	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr));
-	printf("%s%p:\tLo St freeze register:\t0x%p\n", s,
-	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
+	xsb_dbgmsg("%s%p:\tCh P  freeze register:\t0x%p", s,
+		   &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
+	xsb_dbgmsg("%s%p:\tHeap  freeze register:\t0x%p", s,
+		   &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr));
+	xsb_dbgmsg("%s%p:\tTrail freeze register:\t0x%p", s,
+		   &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr));
+	xsb_dbgmsg("%s%p:\tLo St freeze register:\t0x%p", s,
+		   &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
 #ifdef LOCAL_EVAL
-	printf("%s%p:\ttag used for local eval:\t0x%d\n", s,
-	       &(tcp_tag(cpf_addr)), tcp_tag(cpf_addr));
-	printf("%s%p:\tlocal eval trie_return:\t0x%p\n", s,
-	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
-	printf("%s%p:\tsubst factor arity:\t0x%d\n", s,
-	       &(tcp_arity(cpf_addr)), tcp_arity(cpf_addr));
+	xsb_dbgmsg("%s%p:\ttag used for local eval:\t0x%d", s,
+		   &(tcp_tag(cpf_addr)), tcp_tag(cpf_addr));
+	xsb_dbgmsg("%s%p:\tlocal eval trie_return:\t0x%p", s,
+		   &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
+	xsb_dbgmsg("%s%p:\tsubst factor arity:\t0x%d", s,
+		   &(tcp_arity(cpf_addr)), tcp_arity(cpf_addr));
 #endif
 #endif
 	num_of_args = length - TCP_SIZE;
 	for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
-	  printf("%s%p:\tpredicate arg #%d:\t0x%p\n", s, arg, i, ref_val(*arg));
+	  xsb_dbgmsg("%s%p:\tpredicate arg #%d:\t0x%p",
+		     s, arg, i, ref_val(*arg));
 	break;
     default:
-	fprintf(stderr, "CP Type %d not handled yet...\n", cpf_type);
+	xsb_error("CP Type %d not handled yet...", cpf_type);
 	break;
       }
 }
@@ -911,29 +914,29 @@ static void print_cpfs(int overlap)
 
   for (i = -overlap ; (i < 0) ; i++) {
 #if (!defined(CHAT))
-    if ((breg+i) == bfreg) printf("bfreg\n");
+    if ((breg+i) == bfreg) xsb_dbgmsg("bfreg");
 #endif
     print_cp_cell("   CP stack", breg+i, cell(breg+i));
   }
-  printf("breg\n");
+  xsb_dbgmsg("breg");
   cpf = breg;
   do {
     for (i = 0; (i < frames) && (cpf < cp_stack_bottom); i++) {
 #if (!defined(CHAT))
       if ( cpf == bfreg )
-	printf("bfreg\n");
+	xsb_dbgmsg("bfreg");
 #endif
       analyze_cpf(cpf, &length, &type);
       print_cpf(cpf, length, type);
       cpf = cpf + length;
     }
     if (cpf < cp_stack_bottom) {
-      printf("more (y/n)?  ");
+      fprintf(stddbg, "more (y/n)?  ");
       scanf("%c", &ans);
       skip_to_nl();
     }
     else {
-      printf(EOS);
+      fprintf(stddbg, EOS);
       ans = 'n';
     }
   } while (ans == 'y');
@@ -949,24 +952,24 @@ static void print_choice_points(int overlap)
  
   for (i = -overlap ; (i < 0) ; i++) {
 #if (!defined(CHAT))
-    if ((breg+i) == bfreg) printf("bfreg\n");
+    if ((breg+i) == bfreg) xsb_dbgmsg("bfreg");
 #endif
     print_cp_cell("CP stack", breg+i, cell(breg+i));
   }
-  printf("breg\n");
+  xsb_dbgmsg("breg");
   do {
     for (i = last;
 	 (i <= last + STRIDESIZE) && (breg+i <= cp_stack_bottom);
 	 i++) {
 #if (!defined(CHAT))
-      if ( (breg + i) == bfreg ) printf("bfreg\n");
+      if ( (breg + i) == bfreg ) xsb_dbgmsg("bfreg");
 #endif
       print_cp_cell("CP stack", breg+i, cell(breg+i));
-      if ( (breg + i) == cp_stack_bottom ) printf(EOS);
+      if ( (breg + i) == cp_stack_bottom ) fprintf(stddbg, EOS);
     }
     if (breg+i < cp_stack_bottom) {
       last = last + STRIDESIZE;
-      printf("more (y/n)?  ");
+      fprintf(stddbg, "more (y/n)?  ");
       scanf("%c", &ans);
       skip_to_nl();
     }
@@ -986,22 +989,22 @@ static void print_heap(int overlap)	/* Heap grows up */
   for (i = overlap; (i > 0); i--) {
     print_cell("Heap", hreg+i, cell(hreg+i), NULL);
   }
-  printf("hreg\n");
+  xsb_dbgmsg("hreg");
   while (ans == 'y' && hreg-i > (CPtr) glstack.low) {
     for (i = 0
 	   ;(i <= STRIDESIZE && hreg-(offset+i) >= (CPtr) glstack.low) 
 	   ; i++) {
 #if (!defined(CHAT))
-      if ( (hreg - (offset+i)) == hfreg ) printf("hfreg\n");
+      if ( (hreg - (offset+i)) == hfreg ) xsb_dbgmsg("hfreg");
 #endif
-      if ( (hreg - (offset+i)) == hbreg ) printf("hbreg\n");
+      if ( (hreg - (offset+i)) == hbreg ) xsb_dbgmsg("hbreg");
       print_cell("Heap", hreg-(offset+i), cell(hreg-(offset+i)), NULL);
       if ( (hreg-(offset+i)) == (CPtr) glstack.low ) 
-	printf("bottom\n");
+	xsb_dbgmsg("bottom");
     }
     if ( (hreg-(offset+i)) != (CPtr) glstack.low ) {
       offset += STRIDESIZE;
-      printf("more (y/n)?  ");
+      fprintf(stddbg, "more (y/n)?  ");
       scanf("%c", &ans);
       skip_to_nl();
     }
@@ -1027,24 +1030,24 @@ void print_completion_stack(void)
   SGFrame subg;
   CPtr temp = openreg;
 
-  printf("openreg -> ");
+  fprintf(stddbg,"openreg -> ");
   while (temp < COMPLSTACKBOTTOM) {
     if ((i % COMPLFRAMESIZE) == 0) {
-      printf(EOFR);	/* end of frame */
+      fprintf(stddbg,EOFR);	/* end of frame */
       subg = (SGFrame) *temp;
       print_subg_header(subg);
     }
-    printf("Completion Stack %p: %lx\t(%s)",
+    fprintf(stddbg,"Completion Stack %p: %lx\t(%s)",
 	   temp, *temp, compl_stk_frame_field[(i % COMPLFRAMESIZE)]);
     if ((i % COMPLFRAMESIZE) >= COMPLFRAMESIZE-2) {
       for (eptr = (EPtr)*temp; eptr != NULL; eptr = next_edge(eptr)) {
-	printf(" --> %p", edge_to_node(eptr));
+	fprintf(stddbg," --> %p", edge_to_node(eptr));
       }
     }
-    printf("\n");
+    fprintf(stddbg,"\n");
     temp++; i++;
   }
-  printf(EOS);
+  fprintf(stddbg, EOS);
 }
 
 /*----------------------------------------------------------------------*/
@@ -1054,7 +1057,7 @@ static void print_pdlstack(void)
   CPtr temp = pdlreg;
 
   while (temp <= (CPtr)(pdl.high) - 1) {
-    printf("pdlstk %p: %lx\n", temp, *temp);
+    xsb_dbgmsg("pdlstk %p: %lx", temp, *temp);
     temp++;
   }
 }
@@ -1068,87 +1071,90 @@ static void print_tables(void)
   SGFrame subg;
 
   i = count_subgoals();
-  printf("\t There are %d subgoal structures...\n", i); if (i) printf(EOSUBG);
+  xsb_dbgmsg("\t There are %d subgoal structures...", i);
+  if (i)
+    fprintf(stddbg,EOSUBG);
   subg = subg_structure_list;
   i = 0;
   while ((subg != NULL) && (ans == 'y')) {
     i++;
     print_subg_header(subg);
-    printf("%p:", subg);
+    fprintf(stddbg, "%p:", subg);
 #ifdef CHAT
-    printf("\tnext_subg = %6p,   ans_root_ptr = %6p,\n",
-	   subg_next_subgoal(subg), subg_ans_root_ptr(subg));
+    xsb_dbgmsg("\tnext_subg = %6p,   ans_root_ptr = %6p,",
+	       subg_next_subgoal(subg), subg_ans_root_ptr(subg));
 #else
-    printf("\tnext_subg = %6p,   ans_root_ptr = %6p,    asf_list_ptr = %p,\n",
-	   subg_next_subgoal(subg), subg_ans_root_ptr(subg),
+    xsb_dbgmsg("\tnext_subg = %6p,   ans_root_ptr = %6p,    asf_list_ptr = %p,",
+	       subg_next_subgoal(subg), subg_ans_root_ptr(subg),
 	   subg_asf_list_ptr(subg));
 #endif
-    printf("\t  tip_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,\n",
-	   subg_tip_ptr(subg), subg_compl_stack_ptr(subg),
-	   subg_compl_susp_ptr(subg));
-    printf("\t ans_list = %6p,       leaf_ptr = %6p,          cp_ptr = %p\n",
-	   subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
-    printf("\t     nide = %p\n", subg_nde_list(subg));
+    xsb_dbgmsg("\t  tip_ptr = %6p,  compl_stk_ptr = %6p,  compl_susp_ptr = %p,",
+	       subg_tip_ptr(subg), subg_compl_stack_ptr(subg),
+	       subg_compl_susp_ptr(subg));
+    xsb_dbgmsg("\t ans_list = %6p,       leaf_ptr = %6p,          cp_ptr = %p",
+	       subg_answers(subg), subg_leaf_ptr(subg), subg_cp_ptr(subg));
+    xsb_dbgmsg("\t     nide = %p", subg_nde_list(subg));
     subg = subg_next_subgoal(subg);
-    if (subg != NULL) printf(EOSUBG);
+    if (subg != NULL)
+      fprintf(stddbg, EOSUBG);
     if (i == 10) {
-      printf("more (y/n)?  ");
+      fprintf(stddbg, "more (y/n)?  ");
       scanf("%c", &ans);
       skip_to_nl();
       i = 0;
     }
   }
-  printf(EOS);
+  fprintf(stddbg, EOS);
 }
 
 /*----------------------------------------------------------------------*/ 
 
 static void print_status(void)
 {
-  printf("     ereg: 0x%p\n", ereg);
-  printf("    ebreg: 0x%p\n", ebreg);
-  printf("     breg: 0x%p\n", breg);
-  printf("     hreg: 0x%p\n", hreg);
-  printf("    hbreg: 0x%p\n", hbreg);
-  printf("    trreg: 0x%p\n", trreg);
-  printf("    cpreg: 0x%p\n", cpreg);
-  printf("    pcreg: 0x%p\n", pcreg);
+  xsb_dbgmsg("     ereg: 0x%p", ereg);
+  xsb_dbgmsg("    ebreg: 0x%p", ebreg);
+  xsb_dbgmsg("     breg: 0x%p", breg);
+  xsb_dbgmsg("     hreg: 0x%p", hreg);
+  xsb_dbgmsg("    hbreg: 0x%p", hbreg);
+  xsb_dbgmsg("    trreg: 0x%p", trreg);
+  xsb_dbgmsg("    cpreg: 0x%p", cpreg);
+  xsb_dbgmsg("    pcreg: 0x%p", pcreg);
 
 #if (!defined(CHAT))
-  printf("    efreg: 0x%p\n", efreg);
-  printf("    bfreg: 0x%p\n", bfreg);
-  printf("    hfreg: 0x%p\n", hfreg);
-  printf("   trfreg: 0x%p\n", trfreg);
+  xsb_dbgmsg("    efreg: 0x%p", efreg);
+  xsb_dbgmsg("    bfreg: 0x%p", bfreg);
+  xsb_dbgmsg("    hfreg: 0x%p", hfreg);
+  xsb_dbgmsg("   trfreg: 0x%p", trfreg);
 #endif
-  printf("   pdlreg: 0x%p\n", pdlreg);
-  printf("  ptcpreg: 0x%p\n", ptcpreg);
-  printf(" delayreg: 0x%p\n", delayreg);
-  printf("neg_delay: %s\n", (neg_delay == FALSE) ? "False" : "True");
-  printf("   level#: %d\n", level_num);
+  xsb_dbgmsg("   pdlreg: 0x%p", pdlreg);
+  xsb_dbgmsg("  ptcpreg: 0x%p", ptcpreg);
+  xsb_dbgmsg(" delayreg: 0x%p", delayreg);
+  xsb_dbgmsg("neg_delay: %s", (neg_delay == FALSE) ? "False" : "True");
+  xsb_dbgmsg("   level#: %d", level_num);
 
-  printf("\nPDL\n");
-  printf("\tlow:       %p\n", pdl.low);
-  printf("\thigh:      %p\n", pdl.high);
-  printf("\tsize:      %ld\n", pdl.size); /* JF: long */
-  printf("\tinit size: %ld\n", pdl.init_size); /* JF: long */
+  xsb_dbgmsg("\nPDL");
+  xsb_dbgmsg("\tlow:       %p", pdl.low);
+  xsb_dbgmsg("\thigh:      %p", pdl.high);
+  xsb_dbgmsg("\tsize:      %ld", pdl.size); /* JF: long */
+  xsb_dbgmsg("\tinit size: %ld", pdl.init_size); /* JF: long */
 
-  printf("\nGlobal / Local Stack\n");
-  printf("\tlow:       %p\n", glstack.low);
-  printf("\thigh:      %p\n", glstack.high);
-  printf("\tsize:      %ld\n", glstack.size); /* JF: long */
-  printf("\tinit size: %ld\n", glstack.init_size); /* JF: long */
+  xsb_dbgmsg("\nGlobal / Local Stack");
+  xsb_dbgmsg("\tlow:       %p", glstack.low);
+  xsb_dbgmsg("\thigh:      %p", glstack.high);
+  xsb_dbgmsg("\tsize:      %ld", glstack.size); /* JF: long */
+  xsb_dbgmsg("\tinit size: %ld", glstack.init_size); /* JF: long */
 
-  printf("\nTrail / Choice Point Stack\n");
-  printf("\tlow:       %p\n", tcpstack.low);
-  printf("\thigh:      %p\n", tcpstack.high);
-  printf("\tsize:      %ld\n", tcpstack.size); /* JF: long */
-  printf("\tinit size: %ld\n", tcpstack.init_size); /* JF: long */
+  xsb_dbgmsg("\nTrail / Choice Point Stack");
+  xsb_dbgmsg("\tlow:       %p", tcpstack.low);
+  xsb_dbgmsg("\thigh:      %p", tcpstack.high);
+  xsb_dbgmsg("\tsize:      %ld", tcpstack.size); /* JF: long */
+  xsb_dbgmsg("\tinit size: %ld", tcpstack.init_size); /* JF: long */
 
-  printf("\nCompletion Stack\n");
-  printf("\tlow:       %p\n", complstack.low);
-  printf("\thigh:      %p\n", complstack.high);
-  printf("\tsize:      %ld\n", complstack.size); /* JF: long */
-  printf("\tinit size: %ld\n", complstack.init_size); /* JF: long */
+  xsb_dbgmsg("\nCompletion Stack");
+  xsb_dbgmsg("\tlow:       %p", complstack.low);
+  xsb_dbgmsg("\thigh:      %p", complstack.high);
+  xsb_dbgmsg("\tsize:      %ld", complstack.size); /* JF: long */
+  xsb_dbgmsg("\tinit size: %ld", complstack.init_size); /* JF: long */
 }
 
 /*----------------------------------------------------------------------*/ 
@@ -1157,13 +1163,13 @@ void pofsprint(CPtr base, int arity)
 {     
   CPtr arg_ptr = base;
 
-  printf("( ");
+  fprintf(stddbg, "( ");
   for (arg_ptr = base - 1; arg_ptr >= base - arity; arg_ptr--) {
     printterm((Cell) arg_ptr, (byte) 1, 8);
     if (arg_ptr != base - arity)
-      printf(",");
+      fprintf(stddbg, ",");
   }
-  printf(")\n");
+  fprintf(stddbg, ")\n");
 }
 
 /*----------------------------------------------------------------------*/ 
@@ -1175,8 +1181,8 @@ static void debug_interact(void)
   Pair sym;
 
  again:
-  printf("\n > ");  
-  fflush(outfile);
+  fprintf(stddbg, "\n > ");  
+  fflush(stddbg);
   scanf("%c", &command);
   switch (command) {
   case 'a':
@@ -1184,7 +1190,7 @@ static void debug_interact(void)
     skip_to_nl();
     switch (name[0]) {
     case 'a':
-      printf("0x%x: 0x%x\n", num, *(int *)num);
+      xsb_dbgmsg("0x%x: 0x%x", num, *(int *)num);
       break;
     case 'r':
       print_cell("Reg", (CPtr)num, cell(reg+num), NULL);
@@ -1228,9 +1234,9 @@ static void debug_interact(void)
     goto again;
   case 'D':
     skip_to_nl();
-    fprintf(outfile, "Delay List = ");
-    print_delay_list(outfile, delayreg);
-    fprintf(outfile, "\n");
+    fprintf(stddbg, "Delay List = ");
+    print_delay_list(stddbg, delayreg);
+    fprintf(stddbg, "\n");
     goto again;
   case 'e':
     scanf("%d", &num);
@@ -1312,15 +1318,15 @@ static void debug_interact(void)
   case 'r':
     scanf("%d", &num);
     skip_to_nl();
-    printf("Reg[%d] = ", num);
+    fprintf(stddbg, "Reg[%d] = ", num);
     printterm(cell(reg+num), 1, 8);
-    printf("\n"); 
-    printf("%lx\n",*(reg+num));
+    fprintf(stddbg, "\n"); 
+    fprintf(stddbg, "%lx\n",*(reg+num));
     goto again;
   case 'R':
     scanf("%d", &num);
     skip_to_nl(); 
-    printf("Reg[%d] = %lx\n",num,*(reg+num));
+    fprintf(stddbg, "Reg[%d] = %lx\n",num,*(reg+num));
     goto again;
   case 's':
     skip_to_nl();
@@ -1347,9 +1353,9 @@ static void debug_interact(void)
   case 'v':
     scanf("%d", &num);
     skip_to_nl();
-    printf("Var[%d] = ", num);
+    fprintf(stddbg, "Var[%d] = ", num);
     printterm(cell(ereg-num), 1, 8);
-    printf("\n");
+    fprintf(stddbg, "\n");
     goto again;
   case 'w':
     scanf("%d %x", &num1, &num);
@@ -1368,7 +1374,7 @@ static void debug_interact(void)
   case '2':
     scanf("%d",&num);
     skip_to_nl();
-    printf("tabptr: 0x%p tabptrval: 0x%lx\n",
+    fprintf(stddbg, "tabptr: 0x%p tabptrval: 0x%lx\n",
 	   ((CPtr) (pdl.low)) + num,
 	   *(((CPtr) (pdl.low)) + num));
     goto again;
@@ -1376,7 +1382,7 @@ static void debug_interact(void)
     break;
   default:
     skip_to_nl();
-    printf("Unknown command\n");
+    fprintf(stddbg, "Unknown command\n");
     goto again;
   }
   return;

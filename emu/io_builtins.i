@@ -111,7 +111,7 @@ bool file_stat(void)
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static bool file_function(void)
 {
-  static int file_des, value, size, offset, length;
+  static int file_des, value, size, offset, length, mode;
   static STRFILE *sfptr;
   static char buf[MAX_IO_BUFSIZE+1];
   static char *addr, *tmpstr;
@@ -162,10 +162,10 @@ inline static bool file_function(void)
        when append, mode = 2, when opening a 
        string for read mode = 3 */
     tmpstr = ptoc_string(2);
-    file_des = ptoc_int(3);
-    if (file_des<3) {
+    mode = ptoc_int(3);
+    if (mode<3) {
       addr = expand_filename(tmpstr);
-      switch (file_des) {
+      switch (mode) {
 	/* "b"'s needed for DOS. -smd */
       case 0: fptr = fopen(addr, "rb"); break; /* READ_MODE */
       case 1: fptr = fopen(addr, "wb"); break; /* WRITE_MODE */
@@ -175,10 +175,12 @@ inline static bool file_function(void)
 	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
 	  /* file exists and isn't a dir */
 	  ctop_int(4, xsb_intern_file(fptr, "FILE_OPEN"));
-	else
-	  xsb_abort("File %s is a directory, cannot open!", tmpstr);
+	else {
+	  xsb_warn("File %s is a directory, cannot open!", tmpstr);
+	  ctop_int(4, -1);
+	}
       } else ctop_int(4, -1);
-    } else if (file_des==3) {  /* open string! */
+    } else if (mode==3) {  /* open string! */
       if ((fptr = stropen(tmpstr))) ctop_int(4, (Integer)fptr);
       else ctop_int(4, -1000);
     } else {
@@ -287,6 +289,88 @@ inline static bool file_function(void)
     fwrite(addr+offset, 1, size, fptr);
     break;
 
+  case FILE_REOPEN: 
+    /* file_function(FILE_REOPEN, +Filename,+Mode,+FileDes,-ErrorCode) */
+    tmpstr = ptoc_string(2);
+    mode = ptoc_int(3);
+    if (mode<3) {
+      addr = expand_filename(tmpstr);
+      SET_FILEPTR(fptr, ptoc_int(4));
+      fflush(fptr);
+      switch (mode) {
+	/* "b"'s needed for DOS. -smd */
+      case 0: fptr = freopen(addr, "rb", fptr); break; /* READ_MODE */
+      case 1: fptr = freopen(addr, "wb", fptr); break; /* WRITE_MODE */
+      case 2: fptr = freopen(addr, "ab", fptr); break; /* APPEND_MODE */
+      }
+      if (fptr) {
+	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
+	  /* file exists and isn't a dir */
+	  ctop_int(5, 0);
+	else {
+	  xsb_warn("File %s is a directory, cannot open!", tmpstr);
+	  ctop_int(5, -2);
+	}
+      } else ctop_int(5, -1);
+    } 
+    /* Whoever knows how to str-reopen a file --- please fix this. mk
+    else if (mode==3) {
+      if ((fptr = stropen(tmpstr))) ctop_int(5, (Integer)fptr);
+      else ctop_int(5, -1000);
+    } 
+    */
+    else {
+      xsb_warn("Unknown open file mode");
+      ctop_int(5, -1000);
+    }
+    break;
+
+  case FILE_CLONE: {
+    /* file_function(FILE_CLONE,SrcFileDes,DestFileDes,ErrorCode) */
+    FILE *src_fptr, *dest_fptr;
+    int src_fd, dest_fd, dest_xsb_fileno, errcode, fd_flags;
+    char *mode = NULL;
+    prolog_term dest_fptr_term;
+
+    SET_FILEPTR(src_fptr, ptoc_int(2));
+    fflush(src_fptr);
+    src_fd = fileno(src_fptr);
+
+    dest_fptr_term = reg_term(3);
+    if (isnonvar(dest_fptr_term)) {
+      /* assume the user wants dup2-like functionality */
+      SET_FILEPTR(dest_fptr, int_val(dest_fptr_term));
+      dest_fd = fileno(dest_fptr);
+      errcode = dup2(src_fd,dest_fd);
+    } else {
+      /* user wanted dup-like functionality */
+      dest_fd = dup(src_fd);
+      errcode = dest_fd;
+      if (dest_fd >= 0) {
+	/* get the flags that open has set for this file descriptor */
+	fd_flags = fcntl(dest_fd, F_GETFL); 
+	if (fd_flags == (O_APPEND | O_WRONLY))
+	  mode = "ab";
+	else if (fd_flags == O_RDONLY)
+	  mode = "rb";
+	else if (fd_flags == O_WRONLY)
+	  mode = "wb";
+	else {
+	  /* can't determine the r/w/a mode of dest_fd 
+	     This usually happens for stdin/out/err and their clones.
+	     However, the mode r+ seems to work well for them. */
+	  mode = "r+";
+	}
+	dest_fptr = fdopen(dest_fd, mode);
+	dest_xsb_fileno = xsb_intern_file(dest_fptr, "FILE_CLONE");
+	c2p_int(dest_xsb_fileno, dest_fptr_term);
+      }
+    }
+    ctop_int(4, errcode);
+
+    break;
+  }
+    
   default:
     xsb_abort("Invalid file function request %d\n", ptoc_int(1));
   }

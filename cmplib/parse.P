@@ -151,9 +151,9 @@ parse_clauses(ModName, Module) :-
 	    %% stop parsing clauses, if needs_restart parsing
 	    (conget(needs_restart, 1) 
 	    -> (ModName = user
-	       ->  warning('Module user cannot be C preprocessed')
+	       ->  warning('Module "user" cannot be C preprocessed')
 	       ;   ModName = xsb_configuration
-	       ->  warning('Module xsb_configuration cannot be C preprocessed')
+	       ->  warning('Module "xsb_configuration" cannot be C preprocessed')
 	       ;   true
 	       )
 	    ; parse_clauses(ModName, Module)

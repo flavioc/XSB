@@ -36,7 +36,7 @@ EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
 
-Option = [sysmod,optimize]
+Option = [sysmod,optimize,quit_on_error]
 
 #-------------------------------------------------------------------#
 #
@@ -45,17 +45,25 @@ Prolog = $(XSB)
 #
 #-------------------------------------------------------------------#
 
+# Make sure warnings are saved in a file.
+SVFILE = '/tmp/xsb_syslib_warn'
+OWRITE = 1
+STDWARN = 3
+HDRMSG = "While compiling XSB/syslib:"
+
+
 # suffix rules
 .SUFFIXES: .P .H .O
 
-all: $(ALL)
+all: init $(ALL) finish
 	@touch cmd...
 	$(Prolog) < cmd...
-	/bin/rm cmd...
+	@rm cmd...
+	@cat $(SVFILE)
 
-%.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
+%.O:   %.P %.H  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
 	echo 'mc($*, $(Option)).' >> cmd...
-%.O:   %.H
+%.O:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
 	echo 'mc($*, $(Option)).' >> cmd...
 
 # These targets are obsolete
@@ -63,6 +71,17 @@ all: $(ALL)
 	echo 'mc($*, $(Option)).' >> cmd...
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
+
+init:
+	/bin/rm -f $(SVFILE)
+	@echo 'import file_reopen/4, fmt_write/3 from file_io.' >> cmd...
+	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg("-------------- Warnings --------------------")).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+
+finish:
+	@echo 'fmt_write($(STDWARN),"%s\n",arg("--------------------------------------------")).' >> cmd...
+
 
 
 .DONE:

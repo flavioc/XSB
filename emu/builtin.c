@@ -62,6 +62,8 @@
 #include <arpa/inet.h>
 #endif /* WIN_NT */
 
+#include <fcntl.h>
+
 #include "auxlry.h"
 #include "cell.h"
 #include "xsberror.h"

@@ -23,7 +23,9 @@
 */
 
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+
 %% Insert this in obsolete predicates.
 obsolete(Msg1, Msg2) :-
-	fmt_write(2, "++Warning: %s: Obsolete predicate. Use: %s instead\n",
-    	    	  args(Msg1, Msg2)).
+	warning((Msg1, ': Obsolete predicate. Use: ', Msg2, ' instead')).

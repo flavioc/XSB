@@ -62,9 +62,9 @@
 	}
 	ctop_int(4, (Integer)subgoal_ptr);
 #ifdef DEBUG_DELAY
-	fprintf(stderr, "Is incomplete for ");
-	print_subgoal(stderr, (SGFrame)subgoal_ptr);
-	fprintf(stderr, ", (%x)\n", (int)&subg_ans_root_ptr(subgoal_ptr));
+	fprintf(stddbg, "Is incomplete for ");
+	print_subgoal(stddbg, (SGFrame)subgoal_ptr);
+	fprintf(stddbg, ", (%x)\n", (int)&subg_ans_root_ptr(subgoal_ptr));
 #endif
 	if (is_completed(subgoal_ptr)) {
 	  neg_delay = FALSE;
@@ -73,13 +73,13 @@
 	}
 	else {	/* subgoal is not completed; save a completion suspension */
 #ifdef DEBUG_DELAY
-	  fprintf(stderr, "... Saving a completion suspension (~");
-	  print_subgoal(stderr, (SGFrame)subgoal_ptr);
-	  fprintf(stderr, " in the body of ");
+	  fprintf(stddbg, "... Saving a completion suspension (~");
+	  print_subgoal(stddbg, (SGFrame)subgoal_ptr);
+	  fprintf(stddbg, " in the body of ");
 	  if (t_ptcp != NULL) {
-	    print_subgoal(stderr, (SGFrame)t_ptcp);
-	  } else fprintf(stderr, "an UNTABLED predicate");
-	  fprintf(stderr, ")\n");
+	    print_subgoal(stddbg, (SGFrame)t_ptcp);
+	  } else fprintf(stddbg, "an UNTABLED predicate");
+	  fprintf(stddbg, ")\n");
 #endif
 	  adjust_level(subg_compl_stack_ptr(subgoal_ptr));
 	  save_find_locx(ereg);
@@ -129,11 +129,11 @@
 	int i;
 	for (i = 0; i <= global_num_vars; i++) {
 	  Cell x;
-	  fprintf(stderr, ">>>> var_regs[%d] =",i);
+	  fprintf(stddbg, ">>>> var_regs[%d] =",i);
 	  x = (Cell)var_regs[i];
 	  deref(x);
 	  printterm(x,1,25);
-	  fprintf(stderr, "\n");
+	  fprintf(stddbg, "\n");
 	}
       }
 #endif /* DEBUG_DELAYVAR */

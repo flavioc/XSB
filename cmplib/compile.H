@@ -26,7 +26,7 @@
 
 
 :- export compile/4, mc/2, abort_if_syntax_errors/1. 
-:- export 'table #'/0, 'error occurred'/0.
+:- export 'table #'/0, 'error occurred'/0, current_compiled_module/1.
 
 :- import spec/2 from spec.
 :- import cp_opt/2 from cp_opt.
@@ -66,9 +66,11 @@
 :- import message/1, warning/1, error/1, time_message/2,
 	  setoptions/1, option/1
      from auxlry.
-:- import prepare/0, member/2, gennum/1, myclose/1, conget/2, conset/2, system/1
+:- import prepare/0, member/2, gennum/1,
+	myclose/1, conget/2, conset/2, system/1
      from prof_sbp.
 :- import force_ti_mod_loaded/0, ti_pred_block/3 from ti_mod.
 :- import hdr_ext/1, obj_ext/1, asm_ext/1, decl_ext/1 from curr_sym.
 
- :- import modeanalyze/3 from modeinf.
+:- import modeanalyze/3 from modeinf.
+:- import assert/1, retractall/1, (dynamic)/1  from assert.

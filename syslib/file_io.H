@@ -48,4 +48,5 @@
 	  file_write_line/2, file_write_line/3,
       	  file_read_line/3,
 	  file_read_line_atom/2, file_read_line_atom/3,
-	  file_read_line_list/2, file_read_line_list/3.
+	  file_read_line_list/2, file_read_line_list/3,
+	  file_reopen/4, file_clone/3.

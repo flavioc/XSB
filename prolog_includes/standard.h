@@ -26,11 +26,16 @@
 #define STDIN	     0
 #define STDOUT	     1
 #define STDERR	     2
+#define STDWARN	     3    /* output stream for xsb warnings  */
+#define STDMSG	     4    /* output for regular xsb messages */
+#define STDDBG	     5    /* output for debugging info       */
+#define STDFDBK	     6    /* output for XSB feedback
+			     (prompt/yes/no/Aborting/answers) */
 
 #define OREAD	     0	  /* open for read        */
 #define OWRITE	     1	  /* open for write       */
 #define OAPPEND	     2	  /* open for append      */
 #define OSTRING	     3	  /* open for as a string */
 
-#define AF_INET     0	  /* XSB-side request for Internet domain */
-#define AF_UNIX     1     /* XSB-side request for UNIX domain */
+#define AF_INET     0	  /* XSB-side socket request for Internet domain */
+#define AF_UNIX     1     /* XSB-side socket request for UNIX domain */

@@ -311,8 +311,8 @@ case old_new_answer_dealloc:
 
 case new_answer_dealloc:
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> (starting new_answer_dealloc) delayreg =%p\n",
-	    delayreg);
+    xsb_dbgmsg(">>>> (starting new_answer_dealloc) delayreg =%p",
+	       delayreg);
 #endif
     if (delayreg != NULL && answer_is_junk(delayreg)) {
       Fail1; goto contcase;
@@ -345,31 +345,31 @@ case new_answer_dealloc:
 #endif
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> ARITY = %d; Yn = %d\n", (int)ARITY, (int)Yn);
+    xsb_dbgmsg(">>>> ARITY = %d; Yn = %d", (int)ARITY, (int)Yn);
 #endif
 
 #ifdef DEBUG_DELAY
-    fprintf(stderr, "\t--> This answer for ");
-    print_subgoal(stderr, (SGFrame)SUBGOAL);
+    fprintf(stddbg, "\t--> This answer for ");
+    print_subgoal(stddbg, (SGFrame)SUBGOAL);
     if (delayreg != NULL) {
-      fprintf(stderr, " has delay list = ");
-      print_delay_list(stderr, delayreg);
+      fprintf(stddbg, " has delay list = ");
+      print_delay_list(stddbg, delayreg);
     } else {
-      fprintf(stderr, " has no delay list");
+      fprintf(stddbg, " has no delay list");
     }
 #endif
 
     xflag = 0;
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, "\n>>>> (before variant_trie_search) CallNumVar = %d\n",
+    fprintf(stddbg, "\n>>>> (before variant_trie_search) CallNumVar = %d\n",
 	    (int)CallNumVar);
     {
       int i;
       for (i = 0; i < CallNumVar; i++) {
-	fprintf(stderr, ">>>> VarsInCall[%d] = ", i);
+	fprintf(stddbg, ">>>> VarsInCall[%d] = ", i);
 	printterm((Cell)(VarsInCall - i), 1, 25);
-	fprintf(stderr, "\n");
+	fprintf(stddbg, "\n");
       }
     }
 #endif
@@ -382,11 +382,11 @@ case new_answer_dealloc:
     TrieRetPtr = variant_trie_search(CallNumVar,VarsInCall,SUBGOAL,&xflag);
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> ans_var_pos_reg = ");
+    fprintf(stddbg, ">>>> ans_var_pos_reg = ");
     if (isinteger(cell(ans_var_pos_reg)))
-      fprintf(stderr, "\"ret\"\n");
+      fprintf(stddbg, "\"ret\"\n");
     else 
-      fprintf(stderr, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
+      fprintf(stddbg, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
 	      get_arity((Psc)(cell(ans_var_pos_reg))));
 #endif
 
@@ -406,7 +406,7 @@ case new_answer_dealloc:
       if (is_conditional_answer(TrieRetPtr)) {	/* positive delay */
 #ifndef LOCAL_EVAL
 #ifdef DEBUG_DELAYVAR
-	fprintf(stderr, "\n>>>> delay_positively in new_answer_dealloc\n");
+	fprintf(stddbg, "\n>>>> delay_positively in new_answer_dealloc\n");
 #endif
 	/*
 	 * The new answer for this call is a conditional one, so add it
@@ -488,7 +488,7 @@ case tabletrust:
 
 case resume_compl_suspension:
 #ifdef DEBUG_DELAYVAR
-      fprintf(stderr, ">>>> resume_compl_suspension is called\n");
+      fprintf(stddbg, ">>>> resume_compl_suspension is called\n");
 #endif
 #ifdef CHAT
 {
@@ -577,13 +577,13 @@ lay_down_consumer: {
       load_solution_trie(CallNumVar,op3,TrieRetPtr);
       if (is_conditional_answer(aln_answer_ptr(nlcp_trie_return(breg)))) {
 #ifdef DEBUG_DELAY
-	fprintf(stderr,
+	fprintf(stddbg,
 		"! POSITIVELY DELAYING in lay active (delayreg = %p)\n",
 		delayreg);
-	fprintf(stderr, "\n>>>> delay_positively in lay_down_active\n");
-	fprintf(stderr, ">>>> subgoal = ");
-	print_subgoal(stderr, (SGFrame) CallLUR_Subsumer(lookupResults));
-	fprintf(stderr, "\n");
+	fprintf(stddbg, "\n>>>> delay_positively in lay_down_active\n");
+	fprintf(stddbg, ">>>> subgoal = ");
+	print_subgoal(stddbg, (SGFrame) CallLUR_Subsumer(lookupResults));
+	fprintf(stddbg, "\n");
 #endif
 	{
 	  int i;

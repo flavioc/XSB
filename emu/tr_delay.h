@@ -47,11 +47,11 @@
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
     if (is_conditional_answer(NodePtr)) {				\
-      fprintf(stderr, "Trie-Code returning a conditional answer for ");	\
+      fprintf(stddbg, "Trie-Code returning a conditional answer for ");	\
       SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));			\
-      print_subgoal(stderr, (SGFrame) SUBGOAL);				\
-      fprintf(stderr, " (positively delaying)\n");			\
-      fprintf(stderr, ">>>> (in handle_conditional_answers)\
+      print_subgoal(stddbg, (SGFrame) SUBGOAL);				\
+      fprintf(stddbg, " (positively delaying)\n");			\
+      fprintf(stddbg, ">>>> (in handle_conditional_answers)\
 num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(SUBGOAL, NodePtr,				\
@@ -65,9 +65,9 @@ num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
 	  int i;							\
 	  for (i = 0; i < num_vars_in_var_regs + 1; i++) {		\
 	    cell(hreg++) = (Cell) var_regs[i]; /* new */		\
-	    fprintf(stderr, ">>>> var_regs[%d] = ", i);			\
+	    fprintf(stddbg, ">>>> var_regs[%d] = ", i);			\
 	    printterm(cell(var_regs[i]), 1, 25);			\
-	    printf("\n");						\
+	    fprintf(stddbg, "\n");					\
 	  }								\
 	}								\
 	delay_positively(SUBGOAL, NodePtr, makecs(temp_hreg));		\

@@ -25,7 +25,10 @@
 
 #include "io_defs.h"
 
-#define MAX_OPEN_FILES  50
+#define MAX_OPEN_FILES    55
+#define MIN_USR_OPEN_FILE 7     /* Where user files start in the XSB
+				   open files table */
 
 extern FILE *open_files[];      /* Table of file pointers for open files */
+
 extern int xsb_intern_file(FILE *f, char *c);

@@ -44,6 +44,7 @@
 #include "binding.h"
 #include "realloc.h"
 #include "inst.h"
+#include "io_builtins.h"
 
 static unsigned long chat_total_malloced = 0;
 static unsigned long chat_inuse = 0;
@@ -127,7 +128,7 @@ Type definitions are in chat.h
         theCR = alloc_more_cr_space(); \
       } \
     } \
-    /* fprintf(stderr,"NewCR(%p, %p, %p)\n",theCR,theOldRoots,theNewRoot);*/\
+    /* xsb_dbgmsg("NewCR(%p, %p, %p)", theCR,theOldRoots,theNewRoot);*/\
     cr_root_area(theCR) = theNewRoot; \
     cr_next(theCR) = (CRPtr)theOldRoots; \
     theOldRoots = (CPtr)theCR
@@ -448,17 +449,18 @@ CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
     CPtr compl_susp_breg;
 
 #ifdef Chat_DEBUG
-    fprintf(stderr, "called with eb = %d\n", ((CPtr)glstack.high - 1) - eb);
+    xsb_dbgmsg("called with eb = %d", ((CPtr)glstack.high - 1) - eb);
 #endif
     chat_fill_prevb(pheader, breg);
 #ifdef Chat_DEBUG
     if (is_generator_choicepoint(breg)) {
       SGFrame subg = (SGFrame)tcp_subgoal_ptr(breg);
-      fprintf(stderr, "Subgoal = %p", subg);
+      fprintf(stddbg, "Subgoal = %p", subg);
       if (is_completed(subg)) {
-	fprintf(stderr, " is completed; clobbering its TCP[next_clause]\n");
+	xsb_dbgmsg(" is completed; clobbering its TCP[next_clause]");
 	/* tcp_pcreg(breg) = (pb)&fail_inst; --- causes infinite loop */
-      } else fprintf(stderr, "\n");
+      } else
+	fprintf(stddbg, "\n");
     }
 #endif
     compl_susp_breg = breg - NLCPSIZE;  /* nrarguments is always 0 here */
@@ -736,7 +738,7 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
        resets from hbreg and not from cp_hreg(top_cp) */
     hbreg = h;
 #ifdef Chat_DEBUG
-    fprintf(stderr, "In save_a_cons_copy: leader tcp = %p\n", prev_tcp);
+    xsb_dbgmsg("In save_a_cons_copy: leader tcp = %p", prev_tcp);
 #endif
 
     dest_tr = tcp_trreg(prev_tcp);
@@ -756,10 +758,10 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
     }
 
 #ifdef Chat_DEBUG
-    fprintf(stderr, "Trail to be copied from %p to %p (%ld cells)\n",
-                    dest_tr,trreg-1, size_tr);
-    fprintf(stderr, "Consumer to be copied from %p (%ld cells)\n",
-                    breg, size_cons);
+    xsb_dbgmsg("Trail to be copied from %p to %p (%ld cells)",
+	       dest_tr,trreg-1, size_tr);
+    xsb_dbgmsg("Consumer to be copied from %p (%ld cells)",
+	       breg, size_cons);
 #endif
 
     pheader = chat_save_consumer_state(incremental,
@@ -772,18 +774,18 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
 
 #ifdef Chat_DEBUG
     if (!incremental) {
-      fprintf(stderr, "Found consumer of ");
-      print_subgoal(stderr, subg_ptr); 
-      fprintf(stderr, " Chat-saved in %p\n", pheader);
+      fprintf(stddbg, "Found consumer of ");
+      print_subgoal(stddbg, subg_ptr); 
+      fprintf(stddbg, " Chat-saved in %p\n", pheader);
     }
 #endif
 
     if (! incremental) {
       chat_fill_chat_area(pheader);
 #ifdef Chat_DEBUG
-      fprintf(stderr, "...Filling cons-copy-list of %p %p %p\n", subg_ptr,
-		subg_compl_stack_ptr(subg_ptr),
-		compl_cons_copy_list(subg_compl_stack_ptr(subg_ptr)));
+      xsb_dbgmsg("...Filling cons-copy-list of %p %p %p", subg_ptr,
+		 subg_compl_stack_ptr(subg_ptr),
+		 compl_cons_copy_list(subg_compl_stack_ptr(subg_ptr)));
 #endif
       chat_fill_prevcons(pheader,compl_cons_copy_list(subg_compl_stack_ptr(subg_ptr)));
     }
@@ -816,7 +818,7 @@ chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
 	 !(is_generator_choicepoint(prev_tcp));
 	 prev_tcp = (TChoice)cp_prevbreg(prev_tcp)) ;
 #ifdef Chat_DEBUG
-    fprintf(stderr, "In save_a_cons_4_gen: leader tcp = %p\n", prev_tcp);
+    xsb_dbgmsg("In save_a_cons_4_gen: leader tcp = %p", prev_tcp);
 #endif
 
     dest_tr = tcp_trreg(prev_tcp);
@@ -831,10 +833,10 @@ chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
     size_cons = NLCPSIZE + subst_fact_var_num + 1;
 
 #ifdef Chat_DEBUG
-    fprintf(stderr, "Trail to be copied from %p to %p (%ld cells)\n",
-                    dest_tr,trreg-1, size_tr);
-    fprintf(stderr, "Consumer to be copied from %p (%ld cells)\n",
-                    breg, size_cons);
+    xsb_dbgmsg("Trail to be copied from %p to %p (%ld cells)",
+	       dest_tr,trreg-1, size_tr);
+    xsb_dbgmsg("Consumer to be copied from %p (%ld cells)",
+	       breg, size_cons);
 #endif
 
     pheader = chat_save_consumer_state(CHAT_CONS_AREA,	/* hack */
@@ -905,8 +907,9 @@ chat_init_pheader save_a_chat_compl_susp(SGFrame subg_ptr, CPtr ptcp, byte *cp)
        resets from hbreg and not from cp_hreg(top_cp) */
     hbreg = h;
 #ifdef Chat_DEBUG
-    fprintf(stderr, "In save_compl_susp: leader tcp = %p, tcp[eb] = %d\n",
-	    prev_tcp, (((CPtr)glstack.high - 1) - (CPtr)(tcp_ebreg(prev_tcp))));
+    xsb_dbgmsg("In save_compl_susp: leader tcp = %p, tcp[eb] = %d",
+	       prev_tcp,
+	       (((CPtr)glstack.high - 1) - (CPtr)(tcp_ebreg(prev_tcp))));
 #endif
 
     p = chat_link_headers;
@@ -935,8 +938,8 @@ chat_init_pheader save_a_chat_compl_susp(SGFrame subg_ptr, CPtr ptcp, byte *cp)
     dest_tr = tcp_trreg(prev_tcp);
     size_tr = 2 * (trreg - (CPtr *)dest_tr) ;
 #ifdef Chat_DEBUG
-    fprintf(stderr, "Trail to be copied from %p to %p (%ld cells)\n",
-                    dest_tr,trreg-1, size_tr);
+    xsb_dbgmsg("Trail to be copied from %p to %p (%ld cells)",
+	       dest_tr,trreg-1, size_tr);
 #endif
     chat_save_trail(pheader, size_tr, dest_tr);
 
@@ -972,14 +975,14 @@ void reset_chat_statistics(void)
 
 void print_chat_statistics(void)
 {
-  printf("  total size CHAT areas: %ld b; high water mark: %ld b; not freed: %ld b\n",
-	  chat_total_malloced,chat_malloc_high_mark,chat_inuse);
-  printf("  suspensions saved: %ld; increments saved: %ld; shared increments: %ld\n",
-	  chat_number_saved_consumers,
-	  chat_number_incremental_saves,
-	  chat_area_sharing);
-  printf("  number of restored suspensions: %ld; total restored memory: %ld b\n",
-	 chat_nr_of_restores,chat_restored_memory);
+  xsb_dbgmsg("  total size CHAT areas: %ld b; high water mark: %ld b; not freed: %ld b",
+	     chat_total_malloced,chat_malloc_high_mark,chat_inuse);
+  xsb_dbgmsg("  suspensions saved: %ld; increments saved: %ld; shared increments: %ld",
+	     chat_number_saved_consumers,
+	     chat_number_incremental_saves,
+	     chat_area_sharing);
+  xsb_dbgmsg("  number of restored suspensions: %ld; total restored memory: %ld b",
+	     chat_nr_of_restores,chat_restored_memory);
 }
 
 /*----------------------------------------------------------------------*/
@@ -992,7 +995,7 @@ void chat_set_chained(CPtr p)
 
   i = (((int)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
   if (i >= sizeof(CPtr))
-    fprintf(stderr,"alignment error during chat_set_chained\n");
+    xsb_dbgmsg("Alignment error during chat_set_chained");
   p += sizeof(CPtr)-i;
   pc = ((char *)p) + i;
   *pc = 1;
@@ -1004,7 +1007,7 @@ void chat_set_unchained(CPtr p)
 
   i = (((int)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
   if (i >= sizeof(CPtr))
-    fprintf(stderr,"alignment error during chat_set_unchained\n");
+    xsb_dbgmsg("Alignment error during chat_set_unchained");
   p += sizeof(CPtr)-i;
   pc = ((char *)p) + i;
   *pc = 0;
@@ -1016,7 +1019,7 @@ int chat_is_chained(CPtr p)
 
   i = (((int)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
   if (i >= sizeof(CPtr))
-    fprintf(stderr,"alignment error during chat_is_chained\n");
+    xsb_dbgmsg("Alignment error during chat_is_chained");
   p += sizeof(CPtr)-i;
   pc = ((char *)p) + i;
   return(((int)*pc));

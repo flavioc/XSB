@@ -339,10 +339,116 @@ handled by the XSB compiler.
 %======================
 
 XSB  has various low-level routines that support input and output, 
-at both the term level and the character level.  The supporting
-predicates are described here.
+at both the term level and the character level.  Unlike the standard Prolog
+stream I/O, the low-level routines use \emph{XSB file descriptors} (or I/O
+ports) to refer to files. XSB file descriptors should not be confused with
+the file descriptors used by the OS ({\it e.g.}, the numberd returned by
+the C {\tt open} function). XSB file descriptors are indices into the XSB
+table of open files. Typically XSB opens files for buffered I/O (whether
+using the stream I/O predicates or the predicates described here), so XSB
+file descriptors actually correspond to {\tt FILE} data structures like
+those returned by the C {\tt fopen} function.
+
+When it starts, XSB opens a number of standard file descriptors that it uses to
+print results, errors, debugging info, etc. The descriptors are described
+in the file {\tt prolog\_includes/standard.h}. This file provides the
+following symbolic definitions:
+%%
+\begin{verbatim}
+    #define STDIN            0
+    #define STDOUT           1
+    #define STDERR           2
+    #define STDWARN          3    /* output stream for xsb warnings  */
+    #define STDMSG           4    /* output for regular xsb messages */
+    #define STDDBG           5    /* output for debugging info       */
+    #define STDFDBK          6    /* output for XSB feedback
+                                     (prompt/yes/no/Aborting/answers) */
+    #define OREAD            0    /* open for read        */
+    #define OWRITE           1    /* open for write       */
+    #define OAPPEND          2    /* open for append      */
+    #define OSTRING          3    /* open for as a string */
+
+    #define AF_INET     0     /* XSB-side socket request for Internet domain */
+    #define AF_UNIX     1     /* XSB-side socket request for UNIX domain */
+\end{verbatim}
+%%
+These definitions can be used in user programs, if the following is
+provided at the top of the source file:
+%%
+\begin{verbatim}
+    compiler_options([cpp_on]).
+    #include "standard.h"
+\end{verbatim}
+%%
+(Note: the C preprocessor is not invoked on clauses typed into an
+interactive XSB session, so the above applies only to programs loaded from
+a file using {\tt consult} and such.)
 
 \begin{description}
+
+\ournewitem{current\_input\_fd(-FileDes)}{curr\_sym} \index{{\tt current\_input\_fd/}}
+   See {\tt current\_output\_fd/1}.
+\ournewitem{current\_output\_fd(-FileDes)}{curr\_sym} \index{{\tt current\_output\_fd/}}
+   The above two predicates instantiate {\tt FileDes} to the XSB file
+   descriptor for the current user input and output ({\it i.e.}, the things
+   that are manipulated through {\tt see/seen} and {\tt tell/told} predicates).
+   Once the file descriptor is obtained, it is possible to safely use the
+   lower-level I/O predicates described below interchangeably with stream
+   I/O. 
+    
+\ournewitem{file\_open(+FileName,+Mode,-FileDes)}{file\_io} \index{{\tt file\_open/3}}
+    Opens a file with name {\tt FileName} to be accessed
+    in mode {\tt Mode} and returns a file-descriptor in {\tt FileDes} that
+    can be used to access the file.  If {\tt Mode} is 0 ({\tt OREAD}), the
+    the file is opened for reading; if it is 1 ({\tt OWRITE}), the file is
+    opened for writing; if it is 2 ({\tt OAPPEND}), the file is opened for
+    appending.  If {\tt Mode} is 3 ({\tt OAPPEND}), then the string making
+    up the atom {\tt FileName} is treated as the contents of the file, and
+    a descriptor is returned that allows ``file'' access to that string.
+    This is how one can use XSB's term I/O routines to build terms from
+    atoms.
+
+\ournewitem{file\_reopen(+FileName,+Mode,+FileDes,-RetCode)}{file\_io}\index{{\tt file\_reopen/1}}
+    Takes an existing file descriptor, closes it, then opens it and
+    attaches it to a file. This can be used to redirect I/O from any of the
+    standard streams to a file. For instance, 
+%%
+\begin{verbatim}
+    | ?- file_reopen('/dev/null', 1, 3, Error).
+\end{verbatim}
+%%
+    redirects all warnings to the Unix black hole.
+
+\ournewitem{file\_clone(+SrcFileDes,?DestFileDes,-RetCode)}{file\_io}\index{{\tt file\__clone/1}}
+    This is yet another way to redirect I/O. It is a prolog interface to
+    the C {\tt dup} and {\tt dup2} system calls. If {\tt DestFileDes} is a
+    variable, then this call creates a new XSB file descriptor that is a
+    clone of {\tt SrcFileDes}. This means that I/O sent to either
+    descriptor goes to the same place. If {\tt DestFileDes} is not a
+    variable, then it must be a number corresponding to a valid file
+    descriptor. In this case, XSB closes {\tt DestFileDes} and makes it
+    into a clone on {\tt SrcFileDes}. For instance, suppose that 10 is a
+    file descriptor that is currently open for writing to file {\tt foo.bar}.
+    Then
+    %%
+    \begin{verbatim}
+    | ?- file_clone(10,3,_).      
+    \end{verbatim}
+    %%
+    causes all messages sent to XSB standard warnings port to go to file
+    {\tt foo.bar}. While this could be also done with {\tt file\_reopen},
+    there are things that only {\tt file\_clone} can do:
+    %%
+    \begin{verbatim}
+    | ?- file_clone(1,10,_).      
+    \end{verbatim}
+    %%
+    This means that file descriptor 10 now becomes clone of standard
+    output. So, all subsequent I/O will now go to standard output instead
+    of {\tt foo.bar}. 
+
+\ournewitem{file\_close(+FileDes)}{file\_io}\index{{\tt file\_close/1}}
+    Closes the file (or string) for descriptor {\tt FileDes}.
 
 \ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/3}}
 %\predindex{fmt\_read/4~(L)}
@@ -407,21 +513,6 @@ predicates are described here.
     \%s, \%d, etc. The result is available in {\tt String}. {\tt Fmt} is a
     string or an atom that represents the format, as in
     {\tt fmt\_write}.
-
-\ournewitem{file\_open(+FileName,+Mode,-FileDes)}{file\_io}
-\index{{\tt file\_open/3}}
-    Opens a file with name {\tt FileName} to be accessed in mode {\tt
-    Mode} and returns a file-descriptor in {\tt FileDes} that can be
-    used to access the file.  If {\tt Mode} is 0, the the file is
-    opened for reading; if it is 1, the file is opened for writing; if
-    it is 2, the file is opened for appending.  If {\tt Mode} is 3,
-    then the string making up the atom {\tt FileName} is treated as
-    the contents of the file, and a descriptor is returned that allows
-    ``file'' access to that string.  This is how one can use
-    XSB's term I/O routines to build terms from atoms.
-
-\ournewitem{file\_close(+FileDes)}{file\_io}\index{{\tt file\_close/1}}
-    Closes the file (or string) for descriptor {\tt FileDes}.
 
 \ournewitem{file\_flush(+FileDes, -Return)}{file\_io}
 \index{{\tt file\_flush/2}}
@@ -632,7 +723,7 @@ be in the Beta test stage.
 \begin{description}
 \ournewitem{date(?Date)}{scrptutl}
 \index{{\tt date/1}}
-	Unifies {\tt Date} to the current date, returned as a Prolog
+       Unifies {\tt Date} to the current date, returned as a Prolog
 term, suitable for term comparison.
 
 Example:

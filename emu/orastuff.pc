@@ -32,6 +32,8 @@
 #include "configs/config.h"
 #include "cell.h"
 #include "flags.h"
+#include "xsberror.h"
+#include "io_builtins.h"
 
 EXEC SQL INCLUDE "orastuff.h";
 
@@ -86,29 +88,6 @@ static void oracle_error(char *formatStr, ... ) {
   /* Oracle already rolls back the work of the failed statement. */
 }  
 
-
-static void interface_error(char *formatStr, ... ) {
-
-  va_list args;
-
-  va_start(args, formatStr);
-  fprintf(stderr,"\nError in Oracle Interface\n");
-  vfprintf(stderr, formatStr, args);
-  fprintf(stderr,"\n\n");
-  va_end(args);
-}
-
-
-static void interface_warning(char *formatStr, ... ) {
-
-  va_list args;
-
-  va_start(args, formatStr);
-  fprintf(stderr,"\nOracle Interface Warning\n");
-  vfprintf(stderr, formatStr, args);
-  fprintf(stderr,"\n\n");
-  va_end(args);
-}
 
 /* ------------------------------------------------------------------------ */
 
@@ -364,21 +343,24 @@ static int validateArrayDimension(int arrayType) {
   if ( (int)flags[arrayType] <= 0 )
     switch ( arrayType ) {
     case ORA_INPUTARRAY_LENGTH:
-      interface_warning("Invalid input array length (%d) -> "
-			"Using default value (%d)", (int)flags[arrayType],
-			DEFAULT_INPUTARRAY_LENGTH);
+      xsb_warn("Oracle: Invalid input array length (%d) -> "
+	       "Using default value (%d)",
+	       (int)flags[arrayType],
+	       DEFAULT_INPUTARRAY_LENGTH);
       flags[arrayType] = DEFAULT_INPUTARRAY_LENGTH;
       break;
     case ORA_INPUTARRAY_WIDTH:
-      interface_warning("Invalid input array width (%d) -> "
-			"Using default value (%d)", (int)flags[arrayType],
-			DEFAULT_INPUTARRAY_WIDTH);
+      xsb_warn("Oracle: Invalid input array width (%d) -> "
+	       "Using default value (%d)",
+	       (int)flags[arrayType],
+	       DEFAULT_INPUTARRAY_WIDTH);
       flags[arrayType] = DEFAULT_INPUTARRAY_WIDTH;
       break;
     case ORA_OUTPUTARRAY_LENGTH:
-      interface_warning("Invalid output array length (%d) -> "
-			"Using default value (%d)", (int)flags[arrayType],
-			DEFAULT_OUTPUTARRAY_LENGTH);
+      xsb_warn("Oracle: Invalid output array length (%d) -> "
+	       "Using default value (%d)",
+	       (int)flags[arrayType],
+	       DEFAULT_OUTPUTARRAY_LENGTH);
       flags[arrayType] = DEFAULT_OUTPUTARRAY_LENGTH;
       break;
     default:
@@ -421,8 +403,8 @@ static int oracleCursor_prepare_and_declare(CursorHandle cursorHandle,
   return SUCCESS;
 
  error_handler:
-  oracle_error("Parse error, cursor %d, at character offset %li in SQL stateme"
-	       "nt\n\n\t%s", cursorHandle, sqlca.sqlerrd[4] + 1, stmtString);
+  oracle_error("Parse error, cursor %d, at character offset %li in SQL statement\n\n\t%s",
+	       cursorHandle, sqlca.sqlerrd[4] + 1, stmtString);
   return ORACLE_ERROR;
 }
 
@@ -461,7 +443,7 @@ static int oracleCursor_describe_BVs(CursorHandle cursorHandle, int numBVs) {
     successful_describe = TRUE;
     descriptor = sqlald(numBVs,BINDVAR_NAME_BUFFER_SIZE,0);
     if ( IsNULL(descriptor) ) {
-      interface_error("Cannot allocate Bind Descriptor!");
+      xsb_error("Oracle: Cannot allocate Bind Descriptor!");
       return INTERFACE_ERROR;
     }
 
@@ -527,7 +509,7 @@ static int oracleCursor_describe_SLIs(CursorHandle cursorHandle, int numSLIs) {
     successful_describe = TRUE;
     descriptor = sqlald(numSLIs,SLI_NAME_BUFFER_SIZE,0);
     if ( IsNULL(descriptor) ) {
-      interface_error("Cannot allocate Select Descriptor!");
+      xsb_error("Oracle: Cannot allocate Select Descriptor!");
       return INTERFACE_ERROR;
     }
 
@@ -919,8 +901,9 @@ static int init_input_specification(CursorHandle cursorHandle,
       (short *) malloc( arrayLength * sizeof(short) );
     if ( IsNULL(SQLDA_ItemValueArrayBase(descriptor,ithBV)) ||
 	 IsNULL(SQLDA_IndValueArrayBase(descriptor,ithBV)) ) {
-      interface_error("Ran out of memory while allocating buffers for\n"
-		      "Bind Descriptor of cursor %d.", cursorHandle);
+      xsb_error("Oracle: Out of memory while allocating buffers for\n"
+		"Bind Descriptor of cursor %d.",
+		cursorHandle);
       return INTERFACE_ERROR;
     }
   }
@@ -965,7 +948,7 @@ static int init_output_specification(CursorHandle cursorHandle, int numSLIs) {
   cursors[cursorHandle].sli.column_specs = (ColumnSpec *)
     malloc(SQLDA_NumEntriesFound(descriptor) * sizeof(ColumnSpec) );
   if ( IsNULL(cursors[cursorHandle].sli.column_specs) ) {
-    interface_error("Allocation of internal structure failed");
+    xsb_error("Oracle: Allocation of internal structure failed");
     return INTERFACE_ERROR;
   }
 
@@ -1045,9 +1028,9 @@ static int init_output_specification(CursorHandle cursorHandle, int numSLIs) {
       {
 	short datatype = SQLDA_ItemValueArrayType(descriptor,ithSLI);
 
-	interface_error("Cursor %d, SLI %d: datatype %s not supported by "
-			"interface\n", cursorHandle, ithSLI,
-			oracle_datatype_as_string(datatype));
+	xsb_error("Oracle: Cursor %d, SLI %d: datatype %s not supported by interface",
+		  cursorHandle, ithSLI,
+		  oracle_datatype_as_string(datatype));
 	return INTERFACE_ERROR;
       }
       break;
@@ -1061,8 +1044,8 @@ static int init_output_specification(CursorHandle cursorHandle, int numSLIs) {
 
     if ( IsNULL(SQLDA_ItemValueArrayBase(descriptor,ithSLI)) ||
 	 IsNULL(SQLDA_IndValueArrayBase(descriptor,ithSLI)) ) {
-      interface_error("Allocation of %dth SLI buffer for cursor %d failed!\n",
-		   ithSLI, cursorHandle);
+      xsb_error("Oracle: Allocation of %dth SLI buffer for cursor %d failed!",
+		ithSLI, cursorHandle);
       return INTERFACE_ERROR;
     }
   }
@@ -1103,8 +1086,8 @@ static int resume_cursor(CursorHandle cursorHandle) {
 
   descriptor = cursors[cursorHandle].bv.descriptor;
   if ( IsNULL(descriptor) ) {
-    interface_error("Resuming cursor (%d) with NULL bind descriptor",
-		    cursorHandle);
+    xsb_error("Oracle: Resuming cursor (%d) with NULL bind descriptor",
+	      cursorHandle);
     return INTERFACE_ERROR;
   }
   cursors[cursorHandle].bv.cur_entry_index = 0;
@@ -1133,8 +1116,9 @@ static int resume_cursor(CursorHandle cursorHandle) {
 	  (short *) realloc( SQLDA_IndValueArrayBase(descriptor,ithItem),
 			     (newLength * sizeof(short)) );
 	if ( IsNULL(SQLDA_IndValueArrayBase(descriptor,ithItem)) ) {
-	  interface_error("Ran out of memory while reallocating buffers for\n"
-			  "Bind Descriptor of cursor %d.", cursorHandle);
+	  xsb_error("Oracle: Ran out of memory while reallocating buffers for\n"
+		    "Bind Descriptor of cursor %d.",
+		    cursorHandle);
 	  return INTERFACE_ERROR;
 	}
       }
@@ -1146,8 +1130,9 @@ static int resume_cursor(CursorHandle cursorHandle) {
 	realloc( SQLDA_ItemValueArrayBase(descriptor,ithItem), newSize );
 
       if ( IsNULL(SQLDA_ItemValueArrayBase(descriptor,ithItem)) ) {
-	interface_error("Ran out of memory while reallocating buffers for\n"
-			"Bind Descriptor of cursor %d.", cursorHandle);
+	xsb_error("Oracle: Out of memory while reallocating buffers for\n"
+		  "Bind Descriptor of cursor %d.",
+		  cursorHandle);
 	return INTERFACE_ERROR;
       }
     }
@@ -1192,8 +1177,9 @@ static int resume_cursor(CursorHandle cursorHandle) {
 
 	  if ( (SQLDA_ItemValueArrayBase(descriptor,ithItem) == NULL) ||
 	      (SQLDA_IndValueArrayBase(descriptor,ithItem) == NULL) ) {
-	    interface_error("Ran out of memory while reallocating buffers for"
-			    "\nSelect Descriptor of cursor %d.", cursorHandle);
+	    xsb_error("Oracle: Ran out of memory while reallocating buffers for"
+		      "\nSelect Descriptor of cursor %d.",
+		      cursorHandle);
 	    return INTERFACE_ERROR;
 	  }
 	}
@@ -1237,11 +1223,11 @@ static bool isValidArg_CursorHandle(CursorHandle ch, int status_reg) {
     if (cursors[ch].status == ACTIVE_CURSOR_STATUS)
       return TRUE;
     else
-      interface_error("Cursor %d is not currently active (status: %s)", ch,
-		      cursor_status_as_string(cursors[ch].status));
+      xsb_error("Oracle: Cursor %d is not currently active (status: %s)",
+		ch, cursor_status_as_string(cursors[ch].status));
   }
   else
-    interface_error("Invalid cursor handle: %d", ch);
+    xsb_error("Oracle: Invalid cursor handle: %d", ch);
 
   ctop_int(status_reg,INTERFACE_ERROR);
   return FALSE;
@@ -1254,7 +1240,7 @@ static bool isValidArg_TemplateNumber(TemplateNumber template,
   if (template >= 0)
     return TRUE;
   else {
-    interface_error("Invalid template number: %d", template);
+    xsb_error("Oracle: Invalid template number: %d", template);
     ctop_int(status_reg,INTERFACE_ERROR);
     return FALSE;
   }
@@ -1272,7 +1258,7 @@ static bool isValidArg_String(char *inputString, char stringDesc[],
   if ( strcmp(inputString,"") != 0 )    /* ptoc_string returns "" on error */
     return TRUE;
   else {
-    interface_error("Empty argument string: %s", stringDesc);
+    xsb_error("Oracle: Empty argument string: %s", stringDesc);
     ctop_int(status_reg,INTERFACE_ERROR);
     return FALSE;
   }
@@ -1290,8 +1276,8 @@ static bool isValidArg_IOCount(int io_count, char countDesc[],
   if ( (io_count >= 0) && (io_count <= MAX_NUM_IOVALUES) )
     return TRUE;
   else {
-    interface_error("Invalid number of %s: %d\n(Valid range: %d - %d)",
-		    countDesc, io_count, 0, MAX_NUM_IOVALUES);
+    xsb_error("Oracle: Invalid number of %s: %d\n(Valid range: %d - %d)",
+	      countDesc, io_count, 0, MAX_NUM_IOVALUES);
     ctop_int(status_reg,INTERFACE_ERROR);
     return FALSE;
   }
@@ -1381,8 +1367,8 @@ void allocate_cursor() {
 
   cursorHandle = locate_cursor(templateNumber);
   if (cursorHandle == INVALID_CURSOR_HANDLE) {
-    interface_error("Cannot find a suitable Cursor for template %d",
-		    templateNumber);
+    xsb_error("Oracle: Cannot find a suitable Cursor for template %d",
+	      templateNumber);
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
@@ -1397,11 +1383,12 @@ void allocate_cursor() {
 	validateArrayDimension(ORA_OUTPUTARRAY_LENGTH);      
       break;
     case CURSOR_DAMAGING_SQL_STMT:
-      interface_warning("Cursor-damaging SQL Statement detected in cursor "
-			"processing!\n\n\t%s", stmtString);
+      xsb_warn("Oracle: Cursor-damaging SQL Statement detected in cursor "
+	       "processing!\n\n\t%s",
+	       stmtString);
       break;
     case OTHER_SQL_STMT:
-      interface_warning("Statement not needing a cursor?\n\n\t%s", stmtString);
+      xsb_warn("Oracle: Statement not needing a cursor?\n\n\t%s", stmtString);
       break;
     default:
       break;
@@ -1459,9 +1446,10 @@ void set_input_value() {
 
   descriptor = cursors[cursorHandle].bv.descriptor;
   if ( SQLDA_NumEntriesFound(descriptor) == 0 ) {
-    interface_error("Attempting to set input value for statement without "
-		    "bind variables (cursor %d)\n\n\t%s", cursorHandle,
-		    cursors[cursorHandle].stmt.string);
+    xsb_error("Oracle: Attempting to set input value for statement without "
+	      "bind variables (cursor %d)\n\n\t%s",
+	      cursorHandle,
+	      cursors[cursorHandle].stmt.string);
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
@@ -1476,8 +1464,8 @@ void set_input_value() {
       break;
 
   if (ithBV == SQLDA_NumEntriesFound(descriptor)) {
-    interface_error("Cursor %d:  Cannot find bind variable %s\n",
-		    cursorHandle, bindvarName);
+    xsb_error("Oracle: Cursor %d:  Cannot find bind variable %s\n",
+	      cursorHandle, bindvarName);
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
@@ -1619,14 +1607,14 @@ void execute_immediate() {
 
   stmtType = statement_type(stmtString);
   if (stmtType == SELECT_SQL_STMT) {
-    interface_error("SELECT stmts cannot be executed without a cursor!");
+    xsb_error("Oracle: SELECT stmts cannot be executed without a cursor!");
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
   else if (stmtType == CURSOR_DAMAGING_SQL_STMT) {
 /*    count = invalidate_active_cursors();
     if (count > 0) */
-      interface_warning("Executing cursor-damaging SQL statement... ");
+      xsb_warn("Oracle: Executing cursor-damaging SQL statement... ");
 /*	      "Invalidating %d active cursors\n", count); */
   }
 
@@ -1667,9 +1655,10 @@ void fetch_from_cursor() {
     return;
 
   if (cursors[cursorHandle].stmt.type != SELECT_SQL_STMT) {
-    interface_error("Attempting to fetch from non-SELECT statement "
-		    "(cursor %d)\n\n\t%s", cursorHandle,
-		    cursors[cursorHandle].stmt.string);
+    xsb_error("Oracle: Attempting to fetch from non-SELECT statement "
+	      "(cursor %d)\n\n\t%s",
+	      cursorHandle,
+	      cursors[cursorHandle].stmt.string);
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
@@ -1742,15 +1731,15 @@ void get_output_value() {
   if ( ! isValidArg_CursorHandle(cursorHandle,regReturnStatus) )
     return;
   else if ( cursors[cursorHandle].stmt.type != SELECT_SQL_STMT ) {
-    interface_error("Attempting to retrieve output values from non-SELECT "
-		    "statement (cursor %d)\n\n\t%s", cursorHandle,
-		    cursors[cursorHandle].stmt.string);
+    xsb_error("Oracle: Attempting to retrieve output values from non-SELECT "
+	      "statement (cursor %d)\n\n\t%s",
+	      cursorHandle,
+	      cursors[cursorHandle].stmt.string);
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
   else if ( cursors[cursorHandle].sli.total_rows_recvd == 0 ) {
-    interface_error("Attempting to retrieve output values before they "
-		    "are FETCHed!");
+    xsb_error("Oracle: Attempting to retrieve output values before they are FETCHed!");
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }
@@ -1808,9 +1797,9 @@ void get_output_value() {
       ctop_string(regSLI_Value, string_find(pColumnValue,1));
       break;
     default:
-      interface_error("Cursor %d: Retrieval of SLI %d\nColumn with unexpected"
-		      " datatype: %s.\n", cursorHandle, iCurColumn,
-		      oracle_datatype_as_string(valueDataType));
+      xsb_error("Oracle: Cursor %d: Retrieval of SLI %d\nColumn with unexpected datatype: %s.",
+		cursorHandle, iCurColumn,
+		oracle_datatype_as_string(valueDataType));
       status = INTERFACE_ERROR;
       break;
     }
@@ -1895,8 +1884,9 @@ void flush_cursor() {
     return;
 
   if (cursors[cursorHandle].stmt.type != INSERT_SQL_STMT) {
-    interface_error("Attempting to flush non-INSERT statement (cursor %d)\n\n"
-		    "\t%s", cursorHandle, cursors[cursorHandle].stmt.string);
+    xsb_error("Oracle: Attempting to flush non-INSERT statement (cursor %d)\n\n"
+	      "\t%s",
+	      cursorHandle, cursors[cursorHandle].stmt.string);
     ctop_int(regReturnStatus,INTERFACE_ERROR);
     return;
   }

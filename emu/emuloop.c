@@ -64,6 +64,7 @@
 #include "cut.h"
 #include "export.h"
 #include "self_orientation.h"
+#include "io_builtins.h"
 
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
@@ -640,7 +641,7 @@ contcase:     /* the main loop */
     if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < op2))
       {
 	infcounter = 0;
-        fprintf(stderr,".");
+        fprintf(stddbg, ".");
 #else
     if ((ereg - hreg) < op2)
       {
@@ -757,7 +758,7 @@ contcase:     /* the main loop */
 	  op1 = (Cell)string_val(op1);
 	  break;
 	default:
-	  fprintf(stderr,"Illegal operand in switchon3bound\n");
+	  xsb_error("Illegal operand in switchon3bound");
 	  break;
 	}
 	j = (j<<1) + ihash((Cell)op1, (Cell)op3);
@@ -1135,7 +1136,7 @@ contcase:     /* the main loop */
     pad;
     op1byte;
     if (unifunc_call((int)(op1), opregaddr) == 0) {
-      fprintf(stderr, "Error in unary function call\n");
+      xsb_error("Error in unary function call");
       Fail1;
     }
     pad64;
@@ -1410,12 +1411,12 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
      if ( xsb_mode != C_CALLING_XSB ) {
        realtime = real_time() - realtime;
-       fprintf(stderr, "\nEnd XSB (cputime %.2f secs, elapsetime ",
+       fprintf(stdmsg, "\nEnd XSB (cputime %.2f secs, elapsetime ",
 	       cpu_time());
        if (realtime < 600.0)
-	 fprintf(stderr, "%.2f secs)\n", realtime);
+	 fprintf(stdmsg, "%.2f secs)\n", realtime);
        else
-	 fprintf(stderr, "%.2f mins)\n", realtime/60.0);
+	 fprintf(stdmsg, "%.2f mins)\n", realtime/60.0);
      }
      return(0);
    }

@@ -35,13 +35,13 @@ static CPtr schedule_subgoal(SGFrame subg_ptr, CPtr compl_fr)
   chat_init_pheader chat_ptr = NULL;
 
 #ifdef Chat_DEBUG
-   fprintf(stderr,"scheduling answers for ");
+   fprintf(stddbg,"scheduling answers for ");
 #ifdef DEBUG
-   print_subgoal(stderr, subg_ptr);
+   print_subgoal(stddbg, subg_ptr);
 #endif
-   fprintf(stderr, " (in %p) ",subg_ptr);
-   if (has_answers(subg_ptr)) fprintf(stderr, "has answers");
-   else fprintf(stderr, "NO answers\n");
+   fprintf(stddbg, " (in %p) ",subg_ptr);
+   if (has_answers(subg_ptr)) fprintf(stddbg, "has answers");
+   else fprintf(stddbg, "NO answers\n");
 #endif
 
   /* there are consumers and answers */  
@@ -57,11 +57,11 @@ static CPtr schedule_subgoal(SGFrame subg_ptr, CPtr compl_fr)
     if (chat_ptr != NULL) {
       /* Reinstall the consumer and return the value of breg */
 #ifdef Chat_DEBUG
-      fprintf(stderr,"restoring consumer...");
+      fprintf(stddbg,"restoring consumer...");
 #endif
       consumer = chat_restore_consumer(chat_ptr);
 #ifdef Chat_DEBUG
-      fprintf(stderr,"done\n");
+      fprintf(stddbg,"done\n");
 #endif
     } else {
       consumer = NULL;
@@ -80,7 +80,7 @@ static CPtr chat_fixpoint(SGFrame subg_ptr, TChoice leader_tcp)
   CPtr sched_breg;
 
 #ifdef Chat_DEBUG
-  fprintf(stderr, "fixpoint subg_ptr = %p\n",subg_ptr);
+  fprintf(stddbg, "fixpoint subg_ptr = %p\n",subg_ptr);
 #endif
 
   complFrame = openreg;
@@ -91,7 +91,7 @@ static CPtr chat_fixpoint(SGFrame subg_ptr, TChoice leader_tcp)
     /* if there are unresolved answers for currSubg */
     if ((sched_breg = schedule_subgoal(currSubg, complFrame))) {
 /*
-	fprintf(stderr, "returning %p\n", sched_breg);
+	fprintf(stddbg, "returning %p\n", sched_breg);
 */
 	return sched_breg;	/* very crude */
     } else { /* nothing to schedule for currSubg */
@@ -100,7 +100,7 @@ static CPtr chat_fixpoint(SGFrame subg_ptr, TChoice leader_tcp)
   }  /* while */
 
 #ifdef Chat_DEBUG
-  fprintf(stderr,"fixpoint returning null\n");
+  fprintf(stddbg,"fixpoint returning null\n");
 #endif
 
   return NULL;
@@ -121,10 +121,10 @@ static void chat_incremental_copy(SGFrame subg_ptr)
 
 #ifdef Chat_DEBUG
     tcp_ptr = (TChoice)subg_cp_ptr(subg_ptr);
-    fprintf(stderr, "**** for %p: ", tcp_ptr);
+    fprintf(stddbg, "**** for %p: ", tcp_ptr);
     for (cr = (CRPtr)tcp_chat_roots(tcp_ptr); cr != NULL; cr = cr_next(cr)) {
-      fprintf(stderr, "CRarea = %p --> ", cr_root_area(cr));
-    } fprintf(stderr, "\n");
+      fprintf(stddbg, "CRarea = %p --> ", cr_root_area(cr));
+    } fprintf(stddbg, "\n");
 #endif
 
     chat_4_gen = save_a_consumer_for_generator(subg_ptr);
@@ -151,7 +151,7 @@ static void chat_incremental_copy(SGFrame subg_ptr)
 #ifdef DEBUG
 	} else {
 	  xsb_warn("Oh, oh: again we are in a loop...");
-	  fprintf(stderr, "chat_area = %p, subgoal = %p\n",chat_area,subg_ptr);
+	  fprintf(stddbg, "chat_area = %p, subgoal = %p\n",chat_area,subg_ptr);
 	}
 #endif
 	cr = cr_next(cr);

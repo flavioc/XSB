@@ -414,11 +414,11 @@ extern ALNptr empty_return();
 #define reclaim_stacks(tcp) \
   if (tcp == root_address) { \
     reset_freeze_registers; \
-    /* fprintf(stderr,"reset registers.... \n"); */ \
+    /* xsb_dbgmsg("reset registers...."); */ \
   } \
   else { \
     adjust_freeze_registers(tcp); \
-    /* fprintf(stderr,"adjust registers.... \n"); */ \
+    /* xsb_dbgmsg(adjust registers...."); */ \
   }
 #endif
 

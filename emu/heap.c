@@ -114,6 +114,7 @@ Todo:
 #include "chat.h"      /* CHAT related declarations */
 #include "flags.h"     /* for checking whether functionality is enabled */
 #include "heap.h"
+#include "io_builtins.h"
 
 /*=========================================================================*/
 
@@ -405,7 +406,7 @@ safe_mark_more:
       }
 
     /*    if (tag == STRUCT)
-      { fprintf(stderr,"Unknown tag on heap during marking %ld\n",cell_val) ;
+      { xsb_dbgmsg("Unknown tag on heap during marking %ld", cell_val) ;
         return(0) ;
       } */
 
@@ -1096,7 +1097,7 @@ void print_heap(int start, int end, int add)
   printnum += add ;
   where = fopen(buf,"w") ;
   if (! where)
-    { fprintf(stderr,"could not open HEAP%d\n",printnum);
+    { xsb_dbgmsg("could not open HEAP%d",printnum);
       return;
     }
   stack_boundaries ;
@@ -1126,7 +1127,7 @@ void print_ls(int add)
   printnum += add ;
   where = fopen(buf,"w") ;
   if (! where)
-    { fprintf(stderr,"could not open LS%d\n",printnum);
+    { xsb_dbgmsg("could not open LS%d", printnum);
       return;
     }
   stack_boundaries ;
@@ -1155,7 +1156,7 @@ void print_cp(int add)
   printnum += add ;
   where = fopen(buf,"w") ;
   if (! where)
-    { fprintf(stderr,"could not open CP%d\n",printnum);
+    { xsb_dbgmsg("could not open CP%d", printnum);
       return;
     }
   stack_boundaries ;
@@ -1185,7 +1186,7 @@ void print_tr(int add)
   printnum += add ;
   where = fopen(buf,"w") ;
   if (! where)
-    { fprintf(stderr,"could not open TRAIL%d\n",printnum);
+    { xsb_dbgmsg("could not open TRAIL%d",printnum);
       return;
     }
   stack_boundaries ;
@@ -1214,7 +1215,7 @@ void print_regs(int a,int add)
   printnum += add ;
   where = fopen(buf,"w") ;
   if (! where)
-    { fprintf(stderr,"could not open REGS%d\n",printnum);
+    { xsb_dbgmsg("could not open REGS%d",printnum);
       return;
     }
   stack_boundaries ;      
@@ -1273,7 +1274,7 @@ void print_chat(int add)
   printnum += add ;
   where = fopen(buf,"w") ;                                                
   if (! where)
-    { fprintf(stderr,"could not open CHAT%d\n",printnum);
+    { xsb_dbgmsg("could not open CHAT%d",printnum);
       return;
     }
   stack_boundaries ;      
@@ -1509,7 +1510,8 @@ bool glstack_realloc(int new_size, int arity)
 
   if (new_size <= glstack.size) return 0;
 #ifdef STACKS_DEBUG
-  fprintf(stderr,"Heap/Local Stack expansion - new size = %d  arity = %d\n",new_size,arity) ;
+  xsb_dbgmsg("Heap/Local Stack expansion - new size = %d  arity = %d",
+	     new_size,arity) ;
 #endif
 
   expandtime = 1000*cpu_time() ;
@@ -1607,8 +1609,8 @@ bool glstack_realloc(int new_size, int arity)
   expandtime = 1000*cpu_time() - expandtime;
 
 #ifdef STACKS_DEBUG
-  fprintf(stderr,"Heap/Local Stack expansion - finished in %ld msecs\n\n",
-	expandtime) ;
+  xsb_dbgmsg("Heap/Local Stack expansion - finished in %ld msecs\n",
+	     expandtime) ;
 #endif
 
   return 0;
@@ -1767,7 +1769,7 @@ static void chat_check_zero_region(CPtr b, int len)
       while (j--)
 	{
 	  if (chat_is_chained(b))
-	    fprintf(stderr,"chain bit left in chat area\n");
+	    xsb_dbgmsg("chain bit left in chat area");
 	  b++;
 	}
       b++; /* skipping the chain bits */
@@ -1881,7 +1883,7 @@ static CPtr slide_heap(int num_marked)
 	  q = hp_pointer_from_cell(contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot))
-	    { fprintf(stderr,"not marked from cp\n"); continue ; }
+	    { xsb_dbgmsg("not marked from cp"); continue ; }
 	  if (h_is_chained(q)) cp_set_chained(p) ;
 	  h_set_chained(q) ;
 	  swap_with_tag(p,q,tag) ;
@@ -1902,8 +1904,8 @@ static CPtr slide_heap(int num_marked)
 	  p = (CPtr)(&compl_hreg(compl_fr));
 	  contents = cell(p);
 	  q = hp_pointer_from_cell(contents,&tag);
-	  if (!q) fprintf(stderr,"bad heap pointer during chaining SF\n");
-	  if (! h_marked(q-heap_bot)) fprintf(stderr,"chain SF problem\n");
+	  if (!q) xsb_dbgmsg("bad heap pointer during chaining SF");
+	  if (! h_marked(q-heap_bot)) xsb_dbgmsg("chain SF problem");
 	  if (h_is_chained(q)) compl_set_chained(p);
 	  h_set_chained(q);
 	  swap_with_tag(p,q,tag);
@@ -1913,8 +1915,10 @@ static CPtr slide_heap(int num_marked)
 	    p = (CPtr)(&(compl_pdreg(compl_fr)));
 	    contents = cell(p);
 	    q = hp_pointer_from_cell(contents,&tag);
-	    if (!q) fprintf(stderr,"bad heap pointer during chaining Dreg\n");
-	    if (! h_marked(q-heap_bot)) fprintf(stderr,"chain SF problem\n");
+	    if (!q)
+	      xsb_dbgmsg("bad heap pointer during chaining Dreg");
+	    if (! h_marked(q-heap_bot))
+	      xsb_dbgmsg("chain SF problem");
 	    if (h_is_chained(q)) compl_set_chained(p);
 	    h_set_chained(q);
 	    swap_with_tag(p,q,tag);
@@ -2057,7 +2061,8 @@ static CPtr slide_heap(int num_marked)
 	}
       }
     if (destination != (heap_bot+num_marked))
-      fprintf(stderr,"bad size %p  %p\n",destination,heap_bot+num_marked);
+      xsb_dbgmsg("bad size %p  %p",
+		 destination,heap_bot+num_marked);
   }
 
     return(heap_bot + num_marked) ;
@@ -2071,7 +2076,7 @@ static void check_zero(char *b, int l, char *s)
   while (l--)
   {
     if (*b++)
-      fprintf(stderr,"%s - left marker - %d - %d - %d\n",s,*(b-1),i,l) ;
+      xsb_dbgmsg("%s - left marker - %d - %d - %d", s,*(b-1),i,l) ;
     i++ ;
   }
 #endif
@@ -2100,9 +2105,9 @@ static void CHECK(CPtr p)
 { CPtr q;
   q = (CPtr)(*p);
   if (((heap_bot - offset) <= q) && (q < next)) return;
-  fprintf(stderr,"really bad thing discovered\n");
+  xsb_dbgmsg("really bad thing discovered");
 } /* CHECK */
-#define GCDBG(mes,val) /*if (num_gc == 61)*/ fprintf(stderr,mes,val)
+#define GCDBG(mes,val) /*if (num_gc == 61)*/ fprintf(stddbg,mes,val)
 #else
 #define CHECK(p)
 #define GCDBG(mes,val)
@@ -2155,7 +2160,7 @@ static void find_and_copy_block(CPtr hp)
 	  if (points_into_heap(q)) {
 	    GCDBG("Reference to heap with tag %d\n", tag);
 #ifdef GC_DEBUG
-	    fprintf(stderr, "In adapting case for %p with %p (%lx)...",
+	    fprintf(stddbg, "In adapting case for %p with %p (%lx)...",
 		    scan, q, cell(q));
 #endif
 	   if (h_marked(q-heap_bot)) {
@@ -2238,7 +2243,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     scan = next = begin_new_h; 
 
 #ifdef GC_DEBUG
-    fprintf(stderr,"New heap space between %p and %p\n",begin_new_h,end_new_h);
+    xsb_dbgmsg("New heap space between %p and %p", begin_new_h,end_new_h);
 #endif
 
   /* the order in which stuff is copied might be important                 */
@@ -2285,7 +2290,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  contents = cell(p) ;
 	  q = hp_pointer_from_cell(contents,&tag) ;
 	  if (!q)
-	    fprintf(stderr,"bad heap pointer during copying SF\n");
+	    xsb_dbgmsg("bad heap pointer during copying SF");
 	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
 	  adapt_external_heap_pointer(p,q,tag);
 
@@ -2401,7 +2406,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  contents = cell(p) ;
           q = hp_pointer_from_cell(contents,&tag) ;
           if (!q)
-	    fprintf(stderr,"non null delayreg points not in heap\n");
+	    xsb_dbgmsg("non null delayreg points not in heap");
           else
 	    {
 	      if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
@@ -2411,9 +2416,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     }
 
     if (next != end_new_h)
-      fprintf(stderr,
-	      "heap copy gc - inconsistent hreg: %d cells not copied...\n",
-	      (end_new_h-next));
+      xsb_dbgmsg("heap copy gc - inconsistent hreg: %d cells not copied...",
+		 (end_new_h-next));
 
     memcpy((void *)heap_bot, (void *)begin_new_h, marked*sizeof(Cell));
 
@@ -2455,8 +2459,8 @@ int gc_heap(int arity)
     heap_early_reset = ls_early_reset = 0;
 
 #ifdef VERBOSE_GC
-    fprintf(stderr,"Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n",
-	           arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
+    xsb_dbgmsg("Heap gc - arity = %d - used = %d - left = %d - #gc = %d",
+	       arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ;
 
 #endif
     begin_marktime = 1000*cpu_time() ;
@@ -2495,10 +2499,9 @@ int gc_heap(int arity)
 	/* fragmentation is expressed as ratio not-marked/total heap in use
 	   this is internal fragmentation only.  we print marked and total,
 	   so that postprocessing can do what it wants with this info. */
-	fprintf(stderr,
-		"marked_used_missed(%d,%d,%d,%d).\n",
-		marked,hreg+1-(CPtr)glstack.low,
-		heap_early_reset,ls_early_reset);
+	xsb_dbgmsg("marked_used_missed(%d,%d,%d,%d).",
+		   marked,hreg+1-(CPtr)glstack.low,
+		   heap_early_reset,ls_early_reset);
 
 	/* get rid of the marking areas - if they exist */
 	if (heap_marks)  { free((heap_marks-1)); heap_marks = NULL; }
@@ -2512,9 +2515,8 @@ int gc_heap(int arity)
       }
 
 #ifdef VERBOSE_GC
-    fprintf(stderr,
-	    "Heap gc - marking finished - #marked = %d - start compact\n",
-	    marked);
+    xsb_dbgmsg("Heap gc - marking finished - #marked = %d - start compact",
+	       marked);
 #endif
 
     total_collected -= marked;
@@ -2525,7 +2527,7 @@ int gc_heap(int arity)
 #endif
 	hreg = slide_heap(marked) ;
 	if (hreg != (heap_bot+marked))
-	  fprintf(stderr,"heap sliding gc - inconsistent hreg\n");
+	  xsb_dbgmsg("heap sliding gc - inconsistent hreg");
 #ifdef CHAT
 	hreg -= marked_dregs;
 	{
@@ -2558,11 +2560,10 @@ int gc_heap(int arity)
 
 	total_time_gc += (end_slidetime - begin_marktime);
 #ifdef VERBOSE_GC
-	fprintf(stderr,
-		"Heap gc end - mark time = %d; slide time = %d; total = %d\n\n",
-		(end_marktime - begin_marktime),
-		(end_slidetime - begin_slidetime),
-		total_time_gc) ;
+	xsb_dbgmsg("Heap gc end - mark time = %d; slide time = %d; total = %d\n",
+		   (end_marktime - begin_marktime),
+		   (end_slidetime - begin_slidetime),
+		   total_time_gc) ;
 #endif
       }
     else
@@ -2584,11 +2585,10 @@ int gc_heap(int arity)
 
 	total_time_gc += (end_copy_time - begin_marktime);
 #ifdef VERBOSE_GC
-	fprintf(stderr,
-		"Heap gc end - mark time = %d; copy_time = %d; total = %d\n\n",
-		(end_marktime - begin_marktime),
-		(end_copy_time - begin_copy_time),
-		total_time_gc) ;
+	xsb_dbgmsg("Heap gc end - mark time = %d; copy_time = %d; total = %d\n",
+		   (end_marktime - begin_marktime),
+		   (end_copy_time - begin_copy_time),
+		   total_time_gc) ;
 #endif
       }
 

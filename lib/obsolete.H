@@ -23,6 +23,6 @@
 */
 
 
-:- import fmt_write/3 from file_io.
+:- import warning/1 from standard.
 
 :- export obsolete/2.

@@ -187,6 +187,8 @@ do_cleaning:
 	@echo "    ----------------- End of Build ------------------------" >> ./Installation_summary
 	@echo "" >> ./Installation_summary
 	@cp ./Installation_summary $(src_config_prefix)
+	@echo ""
+	@cat /tmp/xsb_*lib_warn 2> /dev/null || echo ""
 
 inform_executable:
 	@echo "" ; \

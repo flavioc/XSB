@@ -23,6 +23,9 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+#include "standard.h"
+
 
 /*======================================================================*/
 /* member1: This is basically membercheck/2.				*/
@@ -35,15 +38,24 @@ member1(X, [_|L]) :- member1(X, L).
 /*  messages and such							*/
 /*======================================================================*/
 
-message(Message) :- ttywritenl(Message).
+:- dynamic(current_compiled_module(_)).
 
-warning(Message) :- message(('++Warning: ', Message)).
+message(Message) :- ttywritenl(Message, STDMSG).
+
+warning(Message) :-
+	current_compiled_module(Module),
+	ttywritenl(('++Warning: ', Module, ': ', Message), STDWARN).
 
 error(Message) :- 
-	( conget('error occurred', 1) -> true
-	; conset('error occurred', 1)
+	( conget('error occurred', 1)
+	->  true
+	;   conset('error occurred', 1)
 	),
-	message(('++Error: ', Message)).
+	ttywritenl(('++Error: ', Message), STDERR),
+	(conget(quit_on_error,1)
+	->  sys_exit(1)
+	;   true
+	).
 
 
 :- dynamic('_$global_compiler_options'(_)).
@@ -113,6 +125,9 @@ current_option(reorder).
 
 /* preprocessor */
 current_option(cpp_on).
+
+/* parse */
+current_option(quit_on_error).
 
 /* need to test out optimizations -- tls */
 current_option(no_check).
@@ -192,12 +207,6 @@ dict_lookup(Key, Value, ['@'(Y, Value) | _]) :-
 	Key == Y, !.
 dict_lookup(Key, Value, [_|Dict]) :- dict_lookup(Key, Value, Dict).
 
-/*======================================================================*/
-/* debug_writenl(A) : 							*/
-/*======================================================================*/
-
-debug_writenl(A) :- 
-	( option(d1) ->  ttywritenl(('       ', A)) ; true ).
 
 /*----freeze------------------------------------------------------------*/
 

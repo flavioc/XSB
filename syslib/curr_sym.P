@@ -23,6 +23,10 @@
 */
 
 
+:- compiler_options([cpp_on]).
+#include "flag_defs.h"
+#include "standard.h"
+
 /* ===== current_atom/1 =============================================== */
 
 %current_atom(Atom) :- true.
@@ -33,10 +37,10 @@ current_atom(Module:Atom) :-
 	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
 						% of this module
 	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
-		write('Predicate current_atom/1 for module "'),
-		write(ModuleName),
-		writeln('" is not yet implemented !'),
-		fail
+	    warning(('++Warning: Predicate current_atom/1 for module "',
+		     ModuleName,
+		     '" is not yet implemented !')),
+	    fail
         ; psc_scan_in_module(First_PSC_Pair, PSC), 
 	  psc_arity(PSC, Arity), 
 	  0 = Arity,
@@ -158,6 +162,8 @@ current_input(Stream) :-
 	psc_name(Curin, Name),
 	Name = Stream.
 
+current_input_fd(FileDes) :- stat_flag(CURRENT_INPUT, FileDes).
+
 
 /* ===== current_op/3 ================================================= */
 
@@ -180,6 +186,8 @@ current_output(Stream) :-
 	psc_prop(CuroutPsc, Curout), 
 	psc_name(Curout, Name), 
 	Name = Stream.
+
+current_output_fd(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
 
 
 /* ===== current_predicate/1 ========================================== */
@@ -332,17 +340,18 @@ current_module(Module, ObjectFile) :-
 	current_module(Module),
 	module_file(Module, ObjectFile).
 
-module_file('.xsbrc', File) :-
+module_file('xsbrc', File) :-
 	!,
-	current_predicate('.xsbrc':_),	% module .xsbrc is indeed loaded
+	current_predicate('xsbrc':_),	% module .xsbrc is indeed loaded
 	!,
 	xsb_configuration(user_home, HomeDir),
 	/* don''t support DOS any more 
 	( dos_os -> conname('/.xsbrc.OX', OFile)
 		    ; conname('/.xsbrc.O', OFile) ),
 	*/
-	OFile = '/.xsbrc.O',
-	str_cat(HomeDir, OFile, FileName),
+	slash(Slash),
+	fmt_write_string(FileName, '%s%s.xsb%sxsbrc.O',
+			 arg(HomeDir, Slash, Slash)),
 	FileName = File.
 module_file(ModuleName, File) :-
 	/*
@@ -429,9 +438,9 @@ psc_properties(PSC, Property) :-
 	( Tabled =\= 0 -> Property = tabled ).
 psc_properties(PSC, Property) :-
 	psc_name(PSC, Functor),		% Finding the Functor and the Arity
-	psc_arity(PSC, Arity),		% twice is silly, isn't it?
+	psc_arity(PSC, Arity),		% twice is silly, isn''t it?
 	( standard_symbol(Functor, Arity, _) -> Property = built_in ).
-		 % Unfortunately this doesn't take the Module into account.
+		 % Unfortunately this doesn''t take the Module into account.
 
 
 /* ===== module_property/2 ============================================ */
@@ -462,20 +471,20 @@ module_properties(PSC, Property) :-
 %%   same for different sessions and are fixed at XSB build time.
 
 xsb_flag(debugging, Debug) :-
-	stat_flag(4, Value), 
+	stat_flag(DEBUG_ON, Value), 
 	( Value =:= 0 -> Debug = off
 		       ; Debug = on ).
 xsb_flag(tracing, Trace) :-
-	stat_flag(6, Value), 
+	stat_flag(TRACE, Value), 
 	( Value =:= 0 -> Trace = off
 		       ; Trace = on ).
 %% Goal passed on cmd line
 xsb_flag(goal, Goal) :-
-	stat_flag(21, GoalUninterned),
+	stat_flag(CMD_LINE_GOAL, GoalUninterned),
 	intern_string(GoalUninterned, Goal).      	
 
 xsb_flag(dcg_style, DcgMode) :-
-	stat_flag(18, Dcg_flag),
+	stat_flag(DCG_MODE, Dcg_flag),
 	(Dcg_flag = 0 -> DcgMode = xsb
     	    ;
 	  DcgMode = standard
@@ -521,7 +530,8 @@ get_first_psc_pair(PSC_Pair) :-
 
 /*************************************************/
 
-%  This doesn't do what it is supposed to do yet!
+%  This doesn''t do what it is supposed to do yet!
+%% MK: what is it supposed to do? See expand_file_name and friends
 expand_lib(X, X) :- !.
 expand_lib('./', CWD) :- getenv('cwd', CWD).
 

@@ -133,9 +133,8 @@
      TN_Instr(pTN) = (byte)trie_try_list;		\
      break;						\
    default:						\
-     fprintf(stderr, "Trie Node creation: Bad tag"	\
-	     " in symbol %lx\n", Symbol);		\
-     xsb_abort("Bye");					\
+     xsb_abort("Trie Node creation: Bad tag in symbol %lx", \
+               Symbol);	    	    	    		\
    }
 
 

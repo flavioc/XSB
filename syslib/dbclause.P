@@ -327,5 +327,3 @@ call_trie_retract_nr(Head,Body,NodeAddr) :-
 		\+(Body = true),
 		fail
 	).	
-			
-%% reclaim_some_space :- writeln('Warning: Space not reclaimed for trie_retracted_nr  now').

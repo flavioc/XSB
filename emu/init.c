@@ -28,6 +28,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WIN_NT
+#include <windows.h>
+#include <direct.h>
+#include <io.h>
+#include <fcntl.h>
+#include <process.h>
+#else
+#include <unistd.h>	
+#include <stddef.h>
+#include <sys/wait.h>
+#endif
+
 #include "configs/config.h"
 #include "debugs/debug.h"
 
@@ -65,6 +77,13 @@
 #define TCPSTACK_DEFAULT_SIZE   768
 #define COMPLSTACK_DEFAULT_SIZE  64
 #endif
+
+#ifndef fileno				/* fileno may be a  macro */
+extern int    fileno(FILE *f);	        /* this is defined in POSIX */
+#endif
+/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
+extern FILE *fdopen(int fildes, const char *type);
+
 
 long pspacesize = 0;	/* actual space dynamically allocated by loader.c */
 
@@ -114,9 +133,8 @@ void static display_file(char *infile_name)
   char buffer[MAXBUFSIZE];
 
   if ((infile = fopen(infile_name, "r")) == NULL) {
-    fprintf(stderr,
-	    "\nCan't open `%s'; XSB installation might be corrupted\n\n",
-	    infile_name);
+    xsb_error("\nCan't open `%s'; XSB installation might be corrupted\n",
+	      infile_name);
     exit(1);
   }
 
@@ -472,6 +490,7 @@ char *init_para(int argc, char *argv[])
 void init_machine(void)
 {
   int i;
+  int msg_fd, dbg_fd, warn_fd, fdbk_fd;
 
   /* set special SLG_WAM instruction addresses */
   cell_opcode(&answer_return_inst) = answer_return;
@@ -582,7 +601,32 @@ void init_machine(void)
   open_files[0] = stdin;
   open_files[1] = stdout;
   open_files[2] = stderr;
-  for (i=3; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
+
+  /* stream for xsb warning msgs */
+  if ((warn_fd = dup(fileno(stderr))) < 0)
+    xsb_exit("Can't open the standard stream for warnings\n");
+  stdwarn = fdopen(warn_fd, "w");
+  open_files[3] = stdwarn;
+
+  /* stream for xsb normal msgs */
+  if ((msg_fd = dup(fileno(stderr))) < 0)
+     xsb_exit("Can't open the standard stream for messages\n");
+  stdmsg = fdopen(msg_fd, "w");
+  open_files[4] = stdmsg;
+
+  /* stream for xsb debugging msgs */
+  if ((dbg_fd = dup(fileno(stderr))) < 0)
+     xsb_exit("Can't open the standard stream for debugging messages\n");
+  stddbg = fdopen(dbg_fd, "w");
+  open_files[5] = stddbg;
+
+  /* stream for xsb debugging msgs */
+  if ((fdbk_fd = dup(fileno(stdout))) < 0)
+     xsb_exit("Can't open the standard stream for XSB feedback messages\n");
+  stdfdbk = fdopen(fdbk_fd, "w");
+  open_files[6] = stdfdbk;
+
+  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) open_files[i] = NULL;
 }
 
 /*==========================================================================*/

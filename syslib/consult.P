@@ -254,8 +254,8 @@ load_exec(File, ModName) :-
 		file_nl(STDERR), fail
 	),
 	!,
-	file_write0(STDERR, '['), file_write0(STDERR, ModName),
-	file_write0(STDERR, ' loaded]'), file_nl(STDERR),
+	file_write0(STDMSG, '['), file_write0(STDMSG, ModName),
+	file_write0(STDMSG, ' loaded]'), file_nl(STDMSG),
 	(Init > 4			% Prolog byte code loaded
 	 ->	co_code_call(Init, true, 2),	% call '_$main'
 		unload_seg(Init)		% free space for '_$main'

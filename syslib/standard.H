@@ -49,7 +49,7 @@
 	see/1,		seeing/1,	seen/0,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	told/0,
-	ttywrite/1,	ttywritenl/1,
+	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
 	true/0, 	var/1,		
 	write/1,	write/2,	write_prolog/1,	write_prolog/2,
 	writeln/1,	writeln/2,	writeq/1,	writeq/2,
@@ -69,6 +69,7 @@
 :- export
 	call_c/1,	goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
+	message/1,      message/2,
         warning/1,	push_abort_cutpoint/0,  pop_abort_cutpoint/0,
         abort/1,	abort/0,
 	(import)/1,	(multifile)/1.
@@ -104,5 +105,8 @@
 :- import predicate_property/2 from curr_sym.
 :- import (dynamic)/1, asserta/1, retract/1 from assert.
 :- import conset/2 from prof_sbp.
+
+:- import sys_exit/1 from shell.
+:- import conget/2 from prof_sbp.
 
 /* --------------------- end of file standard.H ----------------------- */

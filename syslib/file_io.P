@@ -187,6 +187,16 @@ file_write_line(Str, Offset) :-
 	file_function(FILE_WRITE_LINE, FileDes, Str, Offset, _,_,_).
 
 
+/* Fancy stuff */
+%% Like freopen
+file_reopen(FileName, Mode, FileDes,ErrCode) :-
+	file_function(FILE_REOPEN, FileName,  Mode, FileDes, ErrCode,_,_).
+
+%% Like dup2: make DestFileDes into the same file descriptor as SrcFileDes
+file_clone(SrcFileDes, DestFileDes, ErrorCode) :-
+	file_function(FILE_CLONE, SrcFileDes, DestFileDes, ErrorCode,_,_,_).
+
+
 /***************************************************************/
 /*    	      	      	      	      	      	      	       */
 /*       file_stat, file_size 	      	   	     	       */

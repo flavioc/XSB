@@ -167,7 +167,7 @@ static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
       csf1 = (ComplStackFrame)next_compl_frame(csf1);
     }
 #ifdef VERBOSE_COMPLETION
-    fprintf(stderr, "! Constructed the edges of the DepGraph\n");
+    xsb_dbgmsg("! Constructed the edges of the DepGraph");
 #endif
 }
 
@@ -220,9 +220,8 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     /**********************************************************************/
 
 #ifdef VERBOSE_COMPLETION
-    fprintf(stderr,
-	    "\t===> SCC detection is needed...(%d subgoals in ASCC)...\n",
-	    (int)((leader_compl_frame-openreg)/COMPLFRAMESIZE+1));
+    xsb_dbgmsg("\t===> SCC detection is needed...(%d subgoals in ASCC)...",
+	       (int)((leader_compl_frame-openreg)/COMPLFRAMESIZE+1));
     print_completion_stack();
 #endif
 
@@ -233,7 +232,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 
     max_finish_csf = DFS_DGT((ComplStackFrame)leader_compl_frame);
 #ifdef COMPLETION_DEBUG
-    fprintf(stderr,"! MAX FINISH_SUBGOAL AT COMPL STACK: %p\n",max_finish_csf);
+    xsb_dbgmsg("! MAX FINISH_SUBGOAL AT COMPL STACK: %p",max_finish_csf);
 #endif
     /* mark as not visited all subgoals in the completion stack
      * below leader_compl_frame */
@@ -271,11 +270,11 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 		mark_delayed(ComplStkFrame, susp_csf, nsf);
 		non_lrd_stratified = TRUE;
 #ifdef DELAY_DEBUG
-		fprintf(stderr, "\t   Subgoal ");
-		print_subgoal(stderr, (SGFrame)susp_subgoal);
-		fprintf(stderr, " depends negatively on subgoal ");
-		print_subgoal(stderr, curr_subg);
-		fprintf(stderr, "\n");
+		fprintf(stddbg, "\t   Subgoal ");
+		print_subgoal(stddbg, (SGFrame)susp_subgoal);
+		fprintf(stddbg, " depends negatively on subgoal ");
+		print_subgoal(stddbg, curr_subg);
+		fprintf(stddbg, "\n");
 #endif
 	      } /*  no completed susp_subg */
 	    }
@@ -303,7 +302,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	  cont_breg = subg_cp_ptr(compl_subgoal_ptr(ComplStkFrame));
 	  breg = cont_breg;
 #ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
-	  fprintf(stderr, "------ Setting TBreg to %p...\n", cont_breg);
+	  xsb_dbgmsg("------ Setting TBreg to %p...", cont_breg);
 #endif
 	  found = TRUE;
 	}
@@ -323,7 +322,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       cont_breg = subg_cp_ptr(compl_subgoal_ptr(leader_compl_frame));
       breg = cont_breg;
 #ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
-      fprintf(stderr, "------ Setting TBreg to %p...\n", cont_breg);
+      xsb_dbgmsg("------ Setting TBreg to %p...", cont_breg);
 #endif
 #endif
     }
@@ -349,8 +348,9 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	  H = cp_hreg(breg);
 	  EB = cp_ebreg(breg);
 #ifdef Chat_DEBUG
-fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
-	breg, tcp_subgoal_ptr(breg), ((CPtr)glstack.high - 1) - EB);
+	  xsb_dbgmsg("leader_cp = %p, subgoal = %p, eb = %d",
+		     breg, tcp_subgoal_ptr(breg),
+		     ((CPtr)glstack.high - 1) - EB);
 #endif
 #else
 	  CPtr min_breg;
@@ -367,7 +367,7 @@ fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
 	    /*-- forget these completion suspensions --*/
 	    subg_compl_susp_ptr(curr_subg) = NULL;
 #ifdef VERBOSE_COMPLETION
-	    fprintf(stderr, "------ Setting Breg to %p...\n", breg);
+	    xsb_dbgmsg("------ Setting Breg to %p...", breg);
 #endif
 	  } else {	/* unsuspend only those suspensions that are delayed */
 	    CPtr dnsf = NULL, ndnsf = NULL;
@@ -404,7 +404,7 @@ fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
       }
     }
 #ifdef COMPLETION_DEBUG
-    fprintf(stderr, "------ Completed the chosen SCC...\n");
+    xsb_dbgmsg("------ Completed the chosen SCC...");
 #endif
 /*----------------------------------------------------------------------*/
     
@@ -458,7 +458,7 @@ fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
   }
   
 #ifdef COMPLETION_DEBUG
-  fprintf(stderr, "------ Completed an ASCC...\n");
+  xsb_dbgmsg("------ Completed an ASCC...");
 #endif
 } /* compute_wfs() */
 

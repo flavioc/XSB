@@ -62,8 +62,9 @@ windows_os_loader :-  stat_flag(CONFIG_NAME, ConfigurationC),
 	;   str_sub('w95', Configuration, _)
 	;   str_sub('wnt', Configuration, _) ).
 
-%% must duplicate fmt_write_string here: it is used early on, in libpath()
+%% we duplicate fmt_write_* here because they are used early on, in libpath()
 fmt_write_string(S,Fmt,A) :- formatted_io(FMT_WRITE_STRING, S,Fmt,A,_).
+fmt_write(File,Fmt,A) :- formatted_io(FMT_WRITE, File,Fmt,A,_).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -325,18 +326,20 @@ load_pred1(PSC) :-
 		),
 		( psc_type(PSC, NType),
 		  ( NType =:= 2; NType =:= 13; NType =:= 14; NType =:= 1 ), 
-		 % module loaded, and pred/func/foreign-pred is there
-		  '_$cutto'(B)
-		 % module loaded, but pred/func/foreign-pred is not there
-	 	; ll_prompt('The predicate/function '),
-		  ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity),
-		  ll_prompt(' is not defined in the module '),
-		  ll_prompt(ModName), ll_nl, ll_prompt('Aborting...'), ll_nl,
-		  abort
+		    %% module loaded, and pred/func/foreign-pred is there
+		    '_$cutto'(B)
+		    %% module loaded, but pred/func/foreign-pred is not there
+		    ; ll_prompt('The predicate/function '),
+		      ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity),
+		      ll_prompt(' is not defined in the module '),
+		      ll_prompt(ModName), ll_nl,
+		      fmt_write(STDFDBK, "%s\n", arg('Aborting...')),
+		      abort
 		)
-	; ll_prompt('Undefined predicate/function: '),  % no module or no pred
-	  ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity), ll_nl, 
-	  ll_prompt('Aborting...'), ll_nl, abort
+	;   ll_prompt('Undefined predicate/function: '), % no module or no pred
+	    ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity), ll_nl, 
+	    fmt_write(STDFDBK, "%s\n", arg('Aborting...')),
+	    abort
 	).
 
 
@@ -349,9 +352,7 @@ load(ModName) :-
 	'_$savecp'(B),
 	stat_flag(DEBUG_ON, Debug_on),
 	( Debug_on =:= 1
-	  ->	ll_prompt('[ load module '),
-		ll_prompt(ModName), 
-		ll_prompt(' ]'), ll_nl
+	  ->	fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
 	   ;	Debug_on =\= 1
 	),
 	( search_file(ModName, FileName),
@@ -462,16 +463,10 @@ ll_nl :- (windows_os_loader
 /*
  *  Print a string.
  */
-ll_prompt(String) :- ll_prompt(STDIN, String).
+ll_prompt(String) :- ll_prompt(0, String).
 
 ll_prompt(N, String) :-
 	term_type(String, T), 
-	/* OLD
-	( T =:= 5 -> String0 = String
-	; T =:= 1 -> term_psc(String, PSC), psc_name(PSC, String0)
-	; T =:= 2 -> str_insert(String, String0)	% INT encoded string
-	),						% eg, from stat_flag
-	*/
 	( T =:= STRING -> String0 = String
 	; T =:= CS -> term_psc(String, PSC), psc_name(PSC, String0)
 	; T =:= INT -> str_insert(String, String0)	% INT encoded string

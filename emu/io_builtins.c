@@ -577,7 +577,7 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
 {
   char *ptr;
 
-  xsb_mesg("READ_CAN_ERROR: illegal format. Next tokens:");
+  xsb_error("READ_CAN_ERROR: illegal format. Next tokens:");
   while ((token->type != TK_EOC) && (token->type != TK_EOF)) {
     ptr = token->value;
     switch (token->type) {
@@ -599,8 +599,10 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar)
     token = GetToken(filep,NULL,prevchar);
     prevchar = token-> nextch;
   }
-  if (token->type == TK_EOC) fprintf(stderr,".\n");
-  else fprintf(stderr,"\n");
+  if (token->type == TK_EOC)
+    fprintf(stderr,".\n");
+  else
+    fprintf(stderr,"\n");
   ctop_string(2,(char *)string_find("read_canonical_error",1));
   ctop_int(3,0);
   return TRUE;
@@ -1054,7 +1056,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 int xsb_intern_file(FILE *fptr, char *context)
 {
   int i;
-  for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
+  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i] != NULL; i++);
   if (i == MAX_OPEN_FILES) {
     xsb_warn("%s: Too many open files", context);
     return -1;

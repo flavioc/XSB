@@ -793,7 +793,7 @@ BTNptr variant_trie_search(int arity, CPtr cptr,
     AnsVarCtr = ctr;		
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> [V] AnsVarCtr = %d\n", AnsVarCtr);
+    xsb_dbgmsg(">>>> [V] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     /* if there is no term to insert, an ESCAPE node has to be created/found */
@@ -886,7 +886,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     int  i, j, tag = FREE, flag = 1;
  
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> start delay_chk_insert()\n");
+    xsb_dbemsg(">>>> start delay_chk_insert()");
 #endif
 
     Paren = NULL;
@@ -895,7 +895,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     ctr = AnsVarCtr;
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> [D1] AnsVarCtr = %d\n", AnsVarCtr);
+    xsb_dbemsg(">>>> [D1] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     for (i = 0; i<arity; i++) {
@@ -908,12 +908,12 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
        */
       xtemp1 = (CPtr) (cptr + i);
 #ifdef DPVR_DEBUG_BD
-      printf("arg[%d] =  %x ",i, xtemp1);
+      fprintf(stddbg, "arg[%d] =  %x ",i, xtemp1);
 #endif
       cptr_deref(xtemp1);
 #ifdef DPVR_DEBUG_BD
       printterm(xtemp1,1,25);
-      printf("\n");
+      fprintf(stddbg, "\n");
 #endif
       tag = cell_tag(xtemp1);
       switch (tag) {
@@ -954,7 +954,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     AnsVarCtr = ctr;
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> [D2] AnsVarCtr = %d\n", AnsVarCtr);
+    xsb_dbemsg(">>>> [D2] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     /*
@@ -966,7 +966,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     }
  
 #ifdef DPVR_DEBUG_BD
-    printf("----------------------------- Exit\n");
+    fprintf(stddbg, "----------------------------- Exit\n");
 #endif
     return Paren;
 }
@@ -1506,8 +1506,8 @@ byte * trie_get_returns_for_call(void)
   CPtr cptr;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> (at the beginning of trie_get_returns_for_call\n");
-  fprintf(stderr, ">>>> num_vars_in_var_regs = %d)\n", num_vars_in_var_regs);
+  xsb_dbemsg(">>>> (at the beginning of trie_get_returns_for_call");
+  xsb_dbemsg(">>>> num_vars_in_var_regs = %d)", num_vars_in_var_regs);
 #endif
 
   call_str_ptr = (SGFrame) ptoc_int(1);
@@ -1527,7 +1527,7 @@ byte * trie_get_returns_for_call(void)
       }
     }
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> The end of trie_get_returns_for_call ==> go to answer trie\n");
+    xsb_dbemsg(">>>> The end of trie_get_returns_for_call ==> go to answer trie");
 #endif
     delay_it = 0;  /* Don't delay the answer. */
     return (byte *)ans_root_ptr;
@@ -1561,7 +1561,7 @@ byte * trie_get_calls(void)
        num_vars_in_var_regs = -1;
        for (i = get_arity(psc_ptr); i>=1; i--) {
 #ifdef DEBUG_DELAYVAR
-	 fprintf(stderr, ">>>> push one cell\n");
+	 xsb_dbemsg(">>>> push one cell");
 #endif
 	 pushreg(cell(cptr+i));
        }

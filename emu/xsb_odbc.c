@@ -178,7 +178,7 @@ void ODBCConnect()
 
   // if we already have a session open, then ... 
   if (serverConnected) {
-    fprintf(stderr, "You already have a session open.\n");
+    xsb_error("A session is already open");
     ctop_int(5, 1);
     return;
   }
@@ -186,7 +186,7 @@ void ODBCConnect()
   // allocated environment handler
   rc = SQLAllocEnv(&henv);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-    fprintf(stderr, "Environment Allocation Failed\n");   
+    xsb_error("Environment allocation failed");   
     ctop_int(5, 1);
     return;
   }
@@ -195,7 +195,7 @@ void ODBCConnect()
   rc = SQLAllocConnect(henv, &hdbc);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
     SQLFreeEnv(henv);
-    fprintf(stderr, "Connection Resources Allocation Failed\n");
+    xsb_error("Connection Resources Allocation Failed");
     ctop_int(5, 1);
     return;
   }
@@ -210,7 +210,7 @@ void ODBCConnect()
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
     SQLFreeConnect(hdbc);
     SQLFreeEnv(henv);
-    fprintf(stderr, "Connecting to server %s failed\n", server);   
+    xsb_error("Connection to server %s failed", server);   
     ctop_int(5, 1);
     return;
   }
@@ -387,7 +387,7 @@ void SetVar()
       (CursorTable[i].VarList[j-1])[MAXBINDVALLEN - 1] = 0;
       break;
     default:
-      fprintf(stderr, " No such bind variable type\n");
+      xsb_error("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
       assert(0);
     }
     return;
@@ -409,7 +409,7 @@ void SetVar()
     CursorTable[i].VarList[j-1][MAXBINDVALLEN - 1] = 0;
     break;
   default:
-    fprintf(stderr, " No such bind variable type\n");
+    xsb_error("Unknown bind variable type, %d", CursorTable[i].VarTypes[j-1]);
     assert(0);
   }
 }

@@ -153,28 +153,27 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 									    \
    if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		    \
      if ((pb)cps_top < (pb)top_of_trail) {				    \
-       fprintf(stderr,							    \
-	       "\nFatal ERROR:  --Trail clobbered Choice Point Stack--\n"); \
+       xsb_error("Trail clobbered Choice Point Stack");	       	       	    \
        print_statistics(1);						    \
        trail_cp_exception(lpcreg);					    \
        goto contcase;							    \
      }									    \
      else {								    \
-       fprintf(stderr, "\nTrail / Choice Point Stack overflow:   ");	    \
+       fprintf(stdwarn, "\nTrail / Choice Point Stack overflow:   ");	    \
        if (flags[STACK_REALLOC]) {					    \
-         fprintf(stderr, "Expanding ...\n");				    \
+         fprintf(stdwarn, "Expanding ...\n");				    \
          if (tcpstack.size == tcpstack.init_size) {			    \
-           fprintf(stderr, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n",	    \
+           fprintf(stdwarn, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n",    \
                    tcpstack.low, tcpstack.size);			    \
-           fprintf(stderr, "\tTop:\t\t0x%p\n", tcpstack.high);		    \
+           fprintf(stdwarn, "\tTop:\t\t0x%p\n", tcpstack.high);		    \
          }								    \
          tcpstack_realloc(resize_stack(tcpstack.size,0));		    \
-         fprintf(stderr, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",	    \
+         fprintf(stdwarn, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",	    \
                  tcpstack.low, tcpstack.size);				    \
-         fprintf(stderr, "\tNew Top:\t0x%p\n", tcpstack.high);		    \
+         fprintf(stdwarn, "\tNew Top:\t0x%p\n", tcpstack.high);		    \
        }								    \
        else {								    \
-         fprintf(stderr, "Reallocation turned OFF!\n");			    \
+         fprintf(stdwarn, "Reallocation turned OFF!\n");		    \
          print_statistics(1);						    \
          trail_cp_exception(lpcreg);					    \
          goto contcase;							    \
@@ -190,22 +189,22 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
         goto contcase;                                                       \
       }                                                                      \
       else {                                                                 \
-        fprintf(stderr, "\nHeap / Local Stack overflow:   ");            \
+        fprintf(stdwarn, "\nHeap / Local Stack overflow:   ");            \
         if (flags[STACK_REALLOC]) {                                          \
-          fprintf(stderr, "Expanding ...\n");                                \
+          fprintf(stdwarn, "Expanding ...\n");                                \
           if (glstack.size == glstack.init_size) {                           \
-            fprintf(stderr, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n",     \
+            fprintf(stdwarn, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n",     \
                     glstack.low, glstack.size);                              \
-            fprintf(stderr, "\tTop:\t\t0x%p\n", glstack.high);               \
+            fprintf(stdwarn, "\tTop:\t\t0x%p\n", glstack.high);               \
           }                                                                  \
           glstack_realloc(resize_stack(glstack.size,EXTRA+OVERFLOW_MARGIN),  \
                        arity);                       \
-          fprintf(stderr, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",         \
+          fprintf(stdwarn, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",         \
                   glstack.low, glstack.size);                                \
-          fprintf(stderr, "\tNew Top:\t0x%p\n", glstack.high);               \
+          fprintf(stdwarn, "\tNew Top:\t0x%p\n", glstack.high);               \
         }                                                                    \
         else {                                                               \
-          fprintf(stderr, "Reallocation turned OFF!\n");                     \
+          fprintf(stdwarn, "Reallocation turned OFF!\n");                     \
           print_statistics(1);                                               \
           local_global_exception(PCREG);                                     \
           goto contcase;                                                     \
@@ -215,26 +214,26 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 #define check_completion_stack_overflow                               	\
    if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {        	\
-     fprintf(stderr, "\nCompletion Stack overflow:   ");              	\
+     fprintf(stdwarn, "\nCompletion Stack overflow:   ");              	\
      if (flags[STACK_REALLOC]) {                                      	\
-       fprintf(stderr, "Expanding ...\n");                            	\
+       fprintf(stdwarn, "Expanding ...\n");                            	\
        if (complstack.size == complstack.init_size) {                 	\
-         fprintf(stderr, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n", 	\
+         fprintf(stdwarn, "\tBottom:\t\t0x%p\t\tInitial Size: %ldK\n", 	\
                  complstack.low, complstack.size);                    	\
-         fprintf(stderr, "\tTop:\t\t0x%p\n", complstack.high);        	\
+         fprintf(stdwarn, "\tTop:\t\t0x%p\n", complstack.high);        	\
        }                                                              	\
        complstack_realloc(resize_stack(complstack.size,0));           	\
-       fprintf(stderr, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",     	\
+       fprintf(stdwarn, "\tNew Bottom:\t0x%p\t\tNew Size: %ldK\n",     	\
 	       complstack.low, complstack.size);                      	\
-       fprintf(stderr, "\tNew Top:\t0x%p\n", complstack.high);        	\
+       fprintf(stdwarn, "\tNew Top:\t0x%p\n", complstack.high);        	\
      }                                                                	\
      else {                                                           	\
-       fprintf(stderr, "Reallocation turned OFF!\n");                 	\
+       fprintf(stdwarn, "Reallocation turned OFF!\n");                 	\
        print_statistics(1);                                        	\
        complstack_exception(lpcreg);                               	\
        goto contcase;                                              	\
      }                                                      		\
-     fflush(stderr);                                        		\
+     fflush(stdwarn);                                        		\
    }
 
 

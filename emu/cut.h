@@ -57,16 +57,16 @@
 #if (defined(DEBUG) && !defined(CHAT))
 #define CHECK_TABLE_CUT()\
     if( *breg == (Cell) &answer_return_inst ||                              \
-        *breg == (Cell) &resume_compl_suspension_inst || *breg <= 2 )         \
-    {   fprintf( stderr, "warning: cutting over non prolog CP: @inst %d: ", \
+        *breg == (Cell) &resume_compl_suspension_inst || *breg <= 2 ) {     \
+       fprintf(stdwarn, "++Warning: Cutting over non Prolog CP: @inst %d: ", \
                  xctr ) ;                                                   \
         if( *breg == (Cell) &answer_return_inst )                           \
-            fprintf( stderr, "consumer choice point\n" );                   \
+            fprintf(stdwarn, "consumer choice point\n" );                   \
         else if( *breg == (Cell) &resume_compl_suspension_inst )              \
-            fprintf( stderr, "negation suspension choice point\n" );        \
+            fprintf(stdwarn, "negation suspension choice point\n" );        \
         else if( *breg <= 2 )                                               \
-            fprintf( stderr, "negation stuff\n" );                          \
-        fprintf( stderr, "b=%p bf=%p tr=%p trf=%p, cut to %p\n",            \
+            fprintf(stdwarn, "negation stuff\n" );                          \
+        fprintf( stdwarn, "b=%p bf=%p tr=%p trf=%p, cut to %p\n",            \
                  breg, bfreg, trreg, trfreg, cut_breg ) ;                   \
                 break ;                                                     \
     }
@@ -81,8 +81,7 @@
      cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		\
      cut_restore_trail_condition_registers(cut_breg);		\
      if (breg != cut_breg) { /* not cutting back to the current CP */\
-/*      fprintf(stderr,						\
-           "Tidying trail (cutbreg = %p, breg = %p)\n", cut_breg,breg); */\
+/*      xsb_dbgmsg("Tidying trail (cutbreg = %p, breg = %p)", cut_breg,breg); */\
 	while (cp_prevbreg(breg) != cut_breg) {			\
            CHECK_TABLE_CUT() ;                                  \
 	   breg = cp_prevbreg(breg);				\

@@ -867,13 +867,16 @@ nofileerrors :- stat_set_flag(fileerrors, 0).
 
 % save(_C) :- write('Not implemented'), nl, fail.
 
-ttywrite(T) :- file_write(STDERR, T).
+ttywrite(T) :- ttywrite(T, STDMSG).
+ttywritenl(T) :- ttywritenl(T, STDMSG).
 
-ttywritenl(T) :- ttywritenl0(T), file_nl(STDERR).
+ttywrite(T, File) :- file_write(File, T).
 
-ttywritenl0(T) :- var(T), !, file_write(STDERR, T).
-ttywritenl0((X,Y)) :- !, ttywritenl0(X), ttywritenl0(Y).
-ttywritenl0(T) :- file_write(STDERR, T).
+ttywritenl(T, File) :- ttywritenl0(T, File), file_nl(File).
+
+ttywritenl0(T, File) :- var(T), !, file_write(File, T).
+ttywritenl0((X,Y), File) :- !, ttywritenl0(X, File), ttywritenl0(Y, File).
+ttywritenl0(T, File) :- file_write(File, T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -932,48 +935,61 @@ abort :-
 	conpsc('_$abort_cutpoint', Psc), 
 	psc_prop(Psc, Cp),
 	'_$cutto'(Cp), 
-        close_open_tables, fail.
+        close_open_tables, 
+	(conget(quit_on_error,1) 
+	->  sys_exit(1)
+	; fail
+	).
 
 
 %  abort/1
 abort([H|T]) :- !,
-	message('++Error: '),
+	message('++Error: ', STDERR),
 	abort_1([H|T]),
-        messageln('Aborting...'),
+        messageln('Aborting...', STDFDBK),
 	abort.
 abort(Message) :- 
-	messageln(('++Error: ', Message)),
-        messageln('Aborting...'),
+	messageln(('++Error: ', Message), STDERR),
+        messageln('Aborting...', STDFDBK),
 	abort.
 
 abort_1([]) :- nl.
-abort_1([H|T]):- message((H,' ')), abort_1(T).
+abort_1([H|T]):- message((H,' '), STDERR), abort_1(T).
 
 
 %  warning/1
 warning(Message) :- 
-	message('++Warning: '),
-	messageln(Message).
+	message('++Warning: ', STDWARN),
+	messageln(Message, STDWARN).
 
 
 %  message/1
-message((M1,M2)) :-
-	!,
-	message(M1),
-	message(M2).
-message(P/N) :-		% temp solution till we fix operators
-	!,
-	message(P),
-	%% NEW
-	%%file_put(STDERR, 47),	% '/' = 47
-	file_put(STDERR, CH_SLASH),
-	file_write0(STDERR, N).
-message(Message) :- 
-	file_write0(STDERR, Message). % 2 denotes stderr
+message(X) :- message(X, STDMSG).
 
-messageln(Message) :- 
-	message(Message),
-	file_nl(STDERR).
+message((M1,M2), File) :-
+	!,
+	((var(M1); var(M2))
+	->  abort('Uninstantiated message variable')
+	;   true
+	),
+	message(M1, File),
+	message(M2, File).
+message(P/N, File) :-		% temp solution till we fix operators
+	!,
+	(var(P)
+	->  abort('Uninstantiated message variable')
+	;   true
+	),
+	message(P, File),
+	file_put(File, CH_SLASH),
+	file_write0(File, N).
+message(Message, File) :- 
+	file_write0(File, Message). 
+
+%%messageln(Message) :- messageln(Message, STDMSG).
+messageln(Message, File) :- 
+	message(Message, File),
+	file_nl(File).
 
 
 /* === expose a goal for tracing ====================================== */

@@ -36,6 +36,8 @@
 #define FILE_PUTBUF    	   9
 #define FILE_READ_LINE 	   10
 #define FILE_WRITE_LINE	   11
+#define FILE_REOPEN    	   12
+#define FILE_CLONE     	   13
 
 /* OP numbers for formatted_io */
 #define FMT_WRITE    	   1

@@ -92,7 +92,7 @@ static char *get_host_IP(char *host_name_or_IP) {
   listptr = host_struct->h_addr_list;
 
   if ((ptr = (struct in_addr *) *listptr++) != NULL) {
-	  fprintf(stderr," Int. address: %s \n", inet_ntoa(*ptr));
+	  xsb_mesg(" Int. address: %s", inet_ntoa(*ptr));
 	  return(inet_ntoa(*ptr));
   }
   return NULL;

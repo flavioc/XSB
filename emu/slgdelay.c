@@ -45,6 +45,7 @@
 #include "inst.h"
 #include "chat.h"
 #include "xsberror.h"
+#include "io_builtins.h"
 
 static void simplify_neg_succeeds(SGFrame);
 static void simplify_pos_unsupported(NODEptr);
@@ -246,9 +247,9 @@ static DE intern_delay_element(Cell delay_elem)
   }
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> "); print_delay_list(stderr, delayreg);
-  fprintf(stderr, "\n");
-  fprintf(stderr, ">>>> (Intern ONE de) arity of answer subsf = %d\n", arity);
+  fprintf(stddbg, ">>>> "); print_delay_list(stddbg, delayreg);
+  fprintf(stddbg, "\n");
+  fprintf(stddbg, ">>>> (Intern ONE de) arity of answer subsf = %d\n", arity);
 #endif
 
   if (!was_simplifiable(subgoal, ans_subst)) {
@@ -403,10 +404,10 @@ void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, bool sf_exists)
     DL dl = NULL;
 
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> Start do_delay_stuff ...\n");
-    fprintf(stderr, ">>>> The delay list for this subgoal itself is:\n");
-    fprintf(stderr, ">>>> "); print_delay_list(stderr, delayreg);
-    fprintf(stderr, "\n");
+    fprintf(stddbg, ">>>> Start do_delay_stuff ...\n");
+    fprintf(stddbg, ">>>> The delay list for this subgoal itself is:\n");
+    fprintf(stddbg, ">>>> "); print_delay_list(stddbg, delayreg);
+    fprintf(stddbg, "\n");
 #endif
 
     if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
@@ -467,7 +468,7 @@ static bool remove_de_from_dl(DE de, DL dl)
   DE prev_de = NULL;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start remove_de_from_dl()\n");
+  fprintf(stddbg, ">>>> start remove_de_from_dl()\n");
 #endif
 
   while (current != de) {
@@ -495,7 +496,7 @@ static bool remove_dl_from_dl_list(DL dl, ASI asi)
   DL prev_dl = NULL;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start remove_dl_from_dl_list()\n");
+  fprintf(stddbg, ">>>> start remove_dl_from_dl_list()\n");
 #endif
 
   while (current != dl) {
@@ -524,7 +525,7 @@ static void handle_empty_dl_creation(DL dl)
   SGFrame subgoal;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start handle_empty_dl_creation()\n");
+  fprintf(stddbg, ">>>> start handle_empty_dl_creation()\n");
 #endif
   /*
    * Only when `as_leaf' is still a conditional answer can we do
@@ -541,8 +542,8 @@ static void handle_empty_dl_creation(DL dl)
     remove_dl_from_dl_list(dl, asi);
     subgoal = asi_subgoal(Delay(as_leaf));
 #ifdef DEBUG_DELAYVAR
-    fprintf(stderr, ">>>> the subgoal is:");
-    print_subgoal(stderr, subgoal); fprintf(stderr, "\n");
+    fprintf(stddbg, ">>>> the subgoal is:");
+    print_subgoal(stddbg, subgoal); fprintf(stddbg, "\n");
 #endif
     /*
      * simplify_pos_unconditional(as_leaf) will release all other DLs for
@@ -574,7 +575,7 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
   SGFrame unsup_subgoal = asi_subgoal(unsup_asi);
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start handle_unsupported_answer_subst()\n");
+  fprintf(stddbg, ">>>> start handle_unsupported_answer_subst()\n");
 #endif
 
   delete_branch(as_leaf, &subg_ans_root_ptr(unsup_subgoal));
@@ -632,7 +633,7 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
   DL dl;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start simplify_pos_unconditional()\n");
+  fprintf(stddbg, ">>>> start simplify_pos_unconditional()\n");
 #endif
 
   release_all_dls(asi);
@@ -670,9 +671,9 @@ void simplify_neg_fails(SGFrame subgoal)
   DL dl;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start simplify_neg_fails()\n");
-  fprintf(stderr, ">>>> the subgoal is: ");
-  print_subgoal(stderr, subgoal); fprintf(stderr, "\n");
+  fprintf(stddbg, ">>>> start simplify_neg_fails()\n");
+  fprintf(stddbg, ">>>> the subgoal is: ");
+  print_subgoal(stddbg, subgoal); fprintf(stddbg, "\n");
 #endif
 
   subg_nde_list(subgoal) = NULL; /* forget this NDE list */
@@ -705,7 +706,7 @@ static void simplify_neg_succeeds(SGFrame subgoal)
   NODEptr used_as_leaf;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start simplify_neg_succeeds()\n");
+  fprintf(stddbg, ">>>> start simplify_neg_succeeds()\n");
 #endif
 
   while (subg_nde_list(subgoal) != NULL) {
@@ -725,7 +726,7 @@ static void simplify_neg_succeeds(SGFrame subgoal)
 	  remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	}
 #ifdef DEBUG_DELAYVAR
-	fprintf(stderr, ">>>> release DE (in simplify_neg_succeeds)");
+	fprintf(stddbg, ">>>> release DE (in simplify_neg_succeeds)");
 #endif
 	release_entry(de, released_des, de_next);
 	de = tmp_de; /* next DE */
@@ -755,7 +756,7 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
   NODEptr used_as_leaf;
 
 #ifdef DEBUG_DELAYVAR
-  fprintf(stderr, ">>>> start simplify_pos_unsupported()\n");
+  fprintf(stddbg, ">>>> start simplify_pos_unsupported()\n");
 #endif
 
   while (asi_pdes(asi)) {
@@ -775,7 +776,7 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
 	  remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	}
 #ifdef DEBUG_DELAYVAR
-	fprintf(stderr, ">>>> release DE (in simplify_pos_unsupported)");
+	fprintf(stddbg, ">>>> release DE (in simplify_pos_unsupported)");
 #endif
 	release_entry(de, released_des, de_next);
 	de = tmp_de; /* next DE */

@@ -109,7 +109,7 @@ void print_statistics(int amount)
     realtime_count = real_time();
     perproc_reset_stat();
     reset_stat_total();
-    fprintf(stderr, "Statistics is reset.\n");
+    xsb_mesg("Statistics is reset.");
     break;
   case 1:			/* print stack usage and cputime */
     perproc_stat();
@@ -503,7 +503,7 @@ static Cell abort_cp_offset(void)
 
 byte *exception_handler(char *string)
 {
-  fprintf(stderr, "%s! Aborting...\n", string);
+  fprintf(stdfdbk, "%s! Aborting...\n", string);
   breg = (CPtr)(tcpstack.high - abort_cp_offset());
   hbreg = cp_hreg(breg);
   ebreg = cp_ebreg(breg);
@@ -529,21 +529,27 @@ void checkJavaInterrupt(void *info)
   char ch;
   SOCKET intSocket = (SOCKET)info;
 #ifdef DEBUG
-  fprintf(stderr,"Thread started on socket %ld\n",(int)intSocket);
+  xsb_dbgmsg("Thread started on socket %ld",(int)intSocket);
 #endif
   while(1){
     if (1!=recv(intSocket,&ch,1,0)) {
-      fprintf(stderr,"Problem handling interrupt from Java\n");
+      xsb_warn("Problem handling interrupt from Java");
     }
-    else fprintf(stderr,"--- Java interrupt detected\n");
-    fflush(stdout); fflush(stderr); /* Avoid those annoying lags? */
+    else 
+      xsb_mesg("--- Java interrupt detected");
+    /* Avoid those annoying lags? */
+    fflush(stdout);
+    fflush(stderr);
+    fflush(stdmgs);
+    fflush(stdwarn);
+    fflush(stddbg);
     keyint_proc(SIGINT); /* Do XSB's "interrupt" thing */
   }
 }
 
 boolean startInterruptThread(SOCKET intSocket)
 {
-  fprintf(stderr,"Beginning interrupt thread on socket %ld\n",(int)intSocket);
+  xsb_mesg("Beginning interrupt thread on socket %ld",(int)intSocket);
 #ifdef _MT
   _beginthread( checkJavaInterrupt, 0, (void*)intSocket );
 #endif

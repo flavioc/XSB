@@ -38,7 +38,7 @@
 
 void smPrint(Structure_Manager smRecord, char *string) {
 
-  fprintf(stderr,
+  fprintf(stddbg,
 	  "  Structure Manager for %s (%s)\n"
 	  "\tBlock:    %p\t\tFree List:  %p\n"
 	  "\tNextStr:  %p\t\tAlloc List: %p\n"
@@ -61,9 +61,8 @@ void smAllocateBlock(Structure_Manager *pSM) {
 #endif
   pNewBlock = malloc(SM_NewBlockSize(*pSM));
   if ( IsNULL(pNewBlock) ) {
-    fprintf(stderr, "Ran out of memory in allocation of %s block\n",
-	    SM_StructName(*pSM));
-    xsb_abort("");
+    xsb_abort("Ran out of memory in allocation of %s block\n",
+	      SM_StructName(*pSM));
   }
   SMBlk_NextBlock(pNewBlock) = SM_CurBlock(*pSM);
   SM_CurBlock(*pSM) = pNewBlock;
