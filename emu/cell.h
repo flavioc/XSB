@@ -76,11 +76,10 @@
 #define REF1	0x4	/* REF */
 #define STRING  0x5	/* Non-Numeric Constant (Atom) */
 #define FLOAT	0x6	/* Floating point number */
-#define STRUCT	0x7	/* Structure tag, not used yet */
+         /* Tag 0x7 is unused */
 
 #define TrieVar 0x0
 
-/* cell_sw.i */
 /*======================================================================*/
 /* CELL: an element in the local stack or global stack (heap).		*/
 /*======================================================================*/
@@ -104,19 +103,18 @@ typedef float Float ;
 #define follow(cell) (*(CPtr)(cell))
 
 extern Float asfloat(Cell);
-extern Cell   makefloat(Float);
+extern Cell  makefloat(Float);
 extern Float getfloatval(Cell);
 
-#define isref(cell) (!((word)(cell)&0x3))
-
-#define isnonvar(dcell) ((word)(dcell)&0x3)		/* dcell -> bool */
+#define isref(cell)  (!((word)(cell)&0x3))
+#define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> bool */
 
 #define cell_tag(cell) ((word)(cell)&0x7)
 
 /*======================================================================*/
 /*======================================================================*/
 
-/* for HP Snakes take bits 0-1, 28, 29, 31 */
+/* for HP machines (works for HP700 & 9000 series) take bits 0-1, 28, 29, 31 */
 #if (defined(HP700) || (defined(LINUX_ELF))) 
 #define enc_int(val) ( ((Integer)(val) & 0xb0000003) ?\
 			(((Integer)(val) << 5) | 0x10) :\
@@ -133,7 +131,8 @@ extern Float getfloatval(Cell);
 #define dec_addr(dcell) (((Cell)(dcell) & 0xc0000000) |\
 			 (((Cell)(dcell) >> 2) & 0x0ffffffc))
 
-#elif defined(IBM)  /* for IBM machines (like RS-6000) take bits 0-1, 27, 30-31 */
+#elif defined(IBM)
+/* for IBM machines (like RS-6000) take bits 0-1, 27, 30-31 */
 #define enc_int(val) ( ((Integer)(val) & 0xc8000003) ?\
 			(((Integer)(val) << 5) | 0x10) :\
 			(((Integer)(val) << 2) & 0xc0000000) |\
@@ -174,17 +173,6 @@ extern Float getfloatval(Cell);
 #define enc_addr(addr) ((Cell)(addr) << 2)
 #define dec_addr(dcell) (((Cell)(dcell) >> 2) & 0x3ffffffc)
 #endif
-
-/* On Win95 and WinNT, this doesn't seem to work.  Was dev for Win32,
-   Now use BIG_MEM
-#elif defined(WIN_NT)
-    standard representation of integers
-#define enc_int(val) ((Integer)(val) << 4)
-#define dec_int(val) ((Integer)(val) >> 4)
-
-#define enc_addr(addr) ((Integer)(addr) << 4)
-#define dec_addr(dcell) ((Integer)(dcell) >> 4)
-*/
 
 #elif (defined(BIG_MEM) || defined(WIN_NT))  /* take bits 0-1, 30-31 */
 /* BIG_MEM will allow Solaris/Sun machines to use 1 gig of memory */
