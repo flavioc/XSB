@@ -184,27 +184,25 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
   SGFrame curr_subg;
   CPtr cont_breg = leader_breg;
   
-/*----------------------------------------------------------------------*/
-#ifdef EXACT_COMPLETION_NEEDED
-  sccs_needed = TRUE;
-#else
-  sccs_needed = FALSE; ComplStkFrame = leader_compl_frame;
+  /* Perform a check whether exact completion is needed.  For subgoals
+     that are already marked as (early) completed, make sure their
+     completion suspension frames are not taken into account and the
+     memory occupied by their chat areas is properly reclaimed. */
+  sccs_needed = FALSE;
+  ComplStkFrame = leader_compl_frame;
   while (ComplStkFrame >= openreg) {
-#ifdef COMPACT_COMPL_STACK
-    if (subg_compl_susp_ptr(compl_subgoal_ptr(ComplStkFrame)) != NULL) 
-#else
     curr_subg = compl_subgoal_ptr(ComplStkFrame);
-    if ((subg_compl_susp_ptr(compl_subgoal_ptr(ComplStkFrame)) != NULL)
-	&& (!is_completed(curr_subg)))
-#endif /* COMPACT_COMPL_STACK */
-    {
-      sccs_needed = TRUE; break;
-    }
-    else {
-      ComplStkFrame = next_compl_frame(ComplStkFrame);
-    }
-  }
+    if (is_completed(curr_subg)) {
+#ifdef CHAT
+      chat_free_compl_susp_chat_areas(curr_subg);
+#else
+      subg_compl_susp_ptr(curr_subg) = NULL;
 #endif
+    } else {
+      if (subg_compl_susp_ptr(curr_subg) != NULL) sccs_needed = TRUE;
+    }
+    ComplStkFrame = next_compl_frame(ComplStkFrame);
+  }
 
   if (sccs_needed) {
 #if (!defined(CHAT))
@@ -236,7 +234,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     fprintf(stderr, "! MAX FINISH_SUBGOAL = %p\n", max_finish_csf);
 #endif
     /* mark as not visited all subgoals in the completion stack
-     *  below leader_compl_frame */
+     * below leader_compl_frame */
     unvisit((ComplStackFrame)leader_compl_frame);
 
     /* mark as visited all subgoals in the same SCC as max_finish_csf 
@@ -255,12 +253,9 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     while (ComplStkFrame >= openreg) {
       TChoice p;
       CPtr susp_subgoal, susp_csf;
-#ifndef COMPACT_COMPL_STACK
       curr_subg = compl_subgoal_ptr(ComplStkFrame);
-#endif
-      /* JF: if not COMPACTing stack, check if completed */
+
       if (!is_completed(curr_subg)) {
-	
 	if (compl_visited(ComplStkFrame) != FALSE) {
 	  curr_subg = compl_subgoal_ptr(ComplStkFrame);  
 	  for (nsf = subg_compl_susp_ptr(curr_subg);
