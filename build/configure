@@ -1214,7 +1214,7 @@ case $CC in
 	else
 	   # c_low_opt_level is the optimization level for emuloop.c
     	   # Using xO4 would take SunPro more than an hour, hence xO2.
-	   c_low_opt_level=-${optimization_level-"xO4"}
+	   c_low_opt_level=-${optimization_level-"xO2"}
         fi
 	CFLAGS=""
 	;;
