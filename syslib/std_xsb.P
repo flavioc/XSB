@@ -116,8 +116,6 @@ standard_symbol(bootstrap_flora, 0, flora2).
 standard_symbol(flora_shell, 0, flora2).
 standard_symbol(unstrap_flora, 0, flora2).
 standard_symbol((flImport), 1, flora2).
-standard_symbol((flCompile), 1, flora2).
-standard_symbol((flLoad), 1, flora2).
 %%%%%%%%%%%%%%%%%%%%%%
 
 standard_symbol(fmt_read, 3, file_io).
