@@ -225,9 +225,9 @@ co_code_call(A,B,C) :- code_call(A,B,C).
 
 compile_load_user(Options) :-
 	compile(user, user, Options, _), !,
-	str_cat(user,XSB_OBJ_EXTENSION_ATOM,user_obj_file),
-	load_exec(user_obj_file, user),
-	rm(user_obj_file).
+	str_cat(user,XSB_OBJ_EXTENSION_ATOM,UserObjFile),
+	load_exec(UserObjFile, user),
+	rm(UserObjFile).
 
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
