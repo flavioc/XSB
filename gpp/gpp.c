@@ -1137,8 +1137,8 @@ void initthings(int argc, char **argv)
       add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
       add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
       add_comment(S,"css",strdup("//"),strdup("\n"),0,0);
-      add_comment(S,"sss",strdup("\""),strdup("\""),0,'\n');
-      add_comment(S,"sss",strdup("\207'"),strdup("'"),0,'\n'); /* \!# */
+      add_comment(S,"sss",strdup("\""),strdup("\""),'\\','\n');
+      add_comment(S,"sss",strdup("\207'"),strdup("'"),'\\','\n'); /* \!# */
       break;
     case 'T':
       ishelp|=ismode|hasmeta|usrmode; ismode=1;
