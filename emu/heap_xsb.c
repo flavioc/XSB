@@ -365,7 +365,18 @@ xsbBool glstack_realloc(int new_size, int arity)
     /* now the address */
     cell_ptr-- ;
     cell_val = (Cell)*cell_ptr ;
-    realloc_ref(cell_ptr,(CPtr)cell_val) ;
+#ifdef PRE_IMAGE_TRAIL
+    if ((unsigned long) cell_val & PRE_IMAGE_MARK) {
+      /* remove tag */
+      cell_val = (Cell) ((Cell) cell_val & ~PRE_IMAGE_MARK);
+      /* realloc and tag */
+      realloc_ref_pre_image(cell_ptr,(CPtr)cell_val) ;
+      cell_ptr--;
+      /* realoc pre-image */
+      reallocate_heap_or_ls_pointer(cell_ptr);
+    } else
+#endif
+      realloc_ref(cell_ptr,(CPtr)cell_val) ;
   }
 
   /* Update the CP Stack pointers */
@@ -379,6 +390,16 @@ xsbBool glstack_realloc(int new_size, int arity)
   { cell_ptr = (CPtr *)(reg+arity) ;
     reallocate_heap_or_ls_pointer(cell_ptr) ;
     arity-- ;  
+  }
+
+  /* Update the attributed variables interrupt list --lfcastro */
+  { 
+    int size = int_val(cell(interrupt_reg));
+    int i;
+    for (i=0; i<size; i++) {
+      reallocate_heap_or_ls_pointer(&(attv_interrupts[i][0]));
+      reallocate_heap_or_ls_pointer(&(attv_interrupts[i][1]));
+    }
   }
 
   /* Update the system variables */
