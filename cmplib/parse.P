@@ -231,7 +231,7 @@ parse_clauses(ModName, Module) :-
 	(Expanded_Clause == end_of_file
 	 ->	true
 	 ;	!,
-	    parse_clause(Expanded_Clause, VariableList, Module),
+	    parse_clause(Expanded_Clause, VariableList, Module,ModName),
 	    %% stop parsing clauses, if needs_restart parsing
 	    (conget(needs_restart, 1) 
 	    -> (ModName = user
@@ -402,7 +402,7 @@ multifile_apply(ModName, Module) :-
 		TT1 =.. [apply|Args],
 		TT2 =.. [P_Mod|Args],
 		Clause = (:-multifile([apply/A, TT1, TT2])),
-		parse_clause(Clause, _VariableList, Module),
+		parse_clause(Clause, _VariableList, Module,ModName),
 		% Note: _VariableList is not used in parse_clause/3 for Clause
 		multifile_apply(ModName, Module)
 	;	true).
@@ -422,28 +422,28 @@ multifile_query(ModName, Module) :-
 		TT1 =.. [P|Args],
 		TT2 =.. [P_Mod|Args],
 		Clause = (:-multifile([P/A, TT1, TT2])),
-		parse_clause(Clause, _VariableList, Module),
+		parse_clause(Clause, _VariableList, Module,ModName),
 		multifile_query(ModName, Module)
 	;	true).
 
 
 /*======================================================================*/
 /* parse_clause(+Clause, +VariableList,					*/
-/*		#module(#SymTab,#DcList,#ClList,#QrList))		*/
+/*		#module(#SymTab,#DcList,#ClList,#QrList),ModName)	*/
 /*======================================================================*/
 
-parse_clause([], _, _) :- !.
-parse_clause([Cl|Cls], VariableList, Module) :- !,
-	parse_clause(Cl, VariableList, Module),
-	parse_clause(Cls, VariableList, Module).
-parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList)) :-
+parse_clause([], _, _,_) :- !.
+parse_clause([Cl|Cls], VariableList, Module,ModName) :- !,
+	parse_clause(Cl, VariableList, Module,ModName),
+	parse_clause(Cls, VariableList, Module,ModName).
+parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList),ModName) :-
 	( Cl = (':-'(H, B)) ->		parse_preddef(H, B, ClList, SymTab)
 	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
 						QrList, SymTab)
 	; Cl = (':-'(PDirective)) ->	transform_directive(PDirective,Directive),
 	                                ( parse_spec_directive(Directive,
 					     VariableList, SymTab, DcList), !
-					; parse_directive(Directive, SymTab), !
+					; parse_directive(Directive, SymTab,ModName), !
 					; parse_query(Directive, QrList,SymTab)
 					)
 	; Cl = ('?-'(Q)) -> 		parse_query(Q,QrList,SymTab)
@@ -461,8 +461,10 @@ transform_directive(table(Args),table(TArgs)) :- !,
 transform_directive(index(Args),index(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
 transform_directive(index(Spec,X),index(Skel,X)) :-
+%	mpa_to_skel(Spec,Skel,transform_directive/2), !.
 	mpa_to_skel(Spec,Skel), !.
 transform_directive(index(Spec,X,Y),index(Skel,X,Y)) :-
+%	mpa_to_skel(Spec,Skel,transform_directive/2), !.
 	mpa_to_skel(Spec,Skel), !.
 transform_directive(Directive,Directive).
 
@@ -471,6 +473,7 @@ transform_slash_to_skel((A1,A2),(T1,T2)) :-
 	transform_slash_to_skel(A1,T1),
 	transform_slash_to_skel(A2,T2).
 transform_slash_to_skel(Spec,Skel) :-
+%	mpa_to_skel(Spec,Skel,transform_directive/2).
 	mpa_to_skel(Spec,Skel).
 
 /*======================================================================*/
@@ -512,7 +515,7 @@ parse_table_directive(Skel, QrList, SymTab) :-
 	parse_query(table(P/A), QrList, SymTab).
 
 /*======================================================================*/
-/* parse_directive(+Directive, #Symbol_Table)				*/
+/* parse_directive(+Directive, #Symbol_Table,ModName)			*/
 /*	Processes the given directive and updates the symbol table	*/
 /*	accordingly.  However, since the symbol table uses buffers to	*/
 /*	record the number of symbols that have been found, we should	*/
@@ -521,69 +524,79 @@ parse_table_directive(Skel, QrList, SymTab) :-
 /*	insert).							*/
 /*======================================================================*/
 
-parse_directive(export(X), SymTab) :- 	
-	parse_list(X, SymTab, [ex], (export)).
-parse_directive(document_export(X), SymTab) :- 	
-	parse_list(X, SymTab, [docex], (document_export)).
-parse_directive(import(from(P/A, _Mod)), _SymTab) :-
+parse_directive(module(ModIn,X), SymTab,ModName) :- 	
+	(ModIn == ModName -> 
+	    parse_list(X, SymTab, [ex], (export))
+	  ; misc_error(('Declared module name (',ModIn,') must be the same as file base (',ModName,').')) ).
+parse_directive(export(X), SymTab,_ModName) :- 	
+	parse_comma_list(X, SymTab, [ex], (export)).
+parse_directive(document_export(X), SymTab,_ModName) :- 	
+	parse_comma_list(X, SymTab, [docex], (document_export)).
+parse_directive(import(from(P/A, _Mod)), _SymTab,_ModName) :-
 	inline_predicate(P, A), !,
 	error((P,'/',A,' is an inline predicate, cannot be imported !')).
-parse_directive(document_import(from(P/A, _Mod)), _SymTab) :-
+parse_directive(document_import(from(P/A, _Mod)), _SymTab,_ModName) :-
 	inline_predicate(P, A), !,
 	error((P,'/',A,' is an inline predicate, cannot be doc-imported !')).
-parse_directive(import(from(X, Mod)), SymTab) :-
+parse_directive(import(from(X, Mod)), SymTab,_ModName) :-
+	(var(Mod)
+	 ->	error(('Module cannot be a variable. Importing: ',X))
+	 ;	parse_comma_list(X, SymTab, [im(Mod)], (import)),
+		sym_insert(Mod, 0, [module], SymTab, _)
+	).
+parse_directive(use_module(Mod,X), SymTab,_ModName) :-
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Importing: ',X))
 	 ;	parse_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
-parse_directive(document_import(from(X, Mod)), SymTab) :-
+parse_directive(document_import(from(X, Mod)), SymTab,_ModName) :-
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Document_importing: ',X))
-	 ;	parse_list(X, SymTab, [docim(Mod)], (document_import))
+	 ;	parse_comma_list(X, SymTab, [docim(Mod)], (document_import))
 	).
-parse_directive(local(X), SymTab) :-
-	parse_list(X, SymTab, [(local)], (local)).
-parse_directive(index(X), SymTab) :-	% for compiled-code indexing
+parse_directive(local(X), SymTab,_ModName) :-
+	parse_comma_list(X, SymTab, [(local)], (local)).
+parse_directive(index(X), SymTab,_ModName) :-	% for compiled-code indexing
 	parse_index(X, SymTab).
-parse_directive(index(Ps,Arg,Size), SymTab) :-
+parse_directive(index(Ps,Arg,Size), SymTab,_ModName) :-
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
 	index(Ps,Arg,Size), 
 	fail.
-parse_directive(index(Ps,Arg), SymTab) :-
+parse_directive(index(Ps,Arg), SymTab,_ModName) :-
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
-	index(Ps,Arg,0),
+	index(Ps,Arg),
 	fail.
-parse_directive(mode(X), SymTab) :- 
+parse_directive(mode(X), SymTab,_ModName) :- 
 	parse_mode(X, SymTab).
-parse_directive(parallel(X), SymTab) :-
-	parse_list(X, SymTab, [(parallel)], (parallel)).
-parse_directive(auto_table, _SymTab) :-	% This is quite dirty!
+parse_directive(parallel(X), SymTab,_ModName) :-
+	parse_comma_list(X, SymTab, [(parallel)], (parallel)).
+parse_directive(auto_table, _SymTab,_ModName) :-	% This is quite dirty!
 	conset(auto_table, 1).
-parse_directive(suppl_table, _SymTab) :-	% This is quite dirty!
+parse_directive(suppl_table, _SymTab,_ModName) :-	% This is quite dirty!
 	conset(suppl_table, 1).
-parse_directive(suppl_table(EDB_Dep), _SymTab) :-	% This is quite dirty!
+parse_directive(suppl_table(EDB_Dep), _SymTab,_ModName) :-	% This is quite dirty!
 	conset('EDB Dep #', EDB_Dep),
 	conset(suppl_table, 1).
-parse_directive(op(P,T,S), _SymTab) :-
+parse_directive(op(P,T,S), _SymTab,_ModName) :-
 	op(P,T,S), 
 	fail.
-parse_directive(hilog(X), _SymTab) :-
+parse_directive(hilog(X), _SymTab,_ModName) :-
 	add_hilog_symbol(X), 
 	fail.
-parse_directive(ti(X), SymTab) :-
+parse_directive(ti(X), SymTab,_ModName) :-
 	parse_ti(X, (ti), SymTab).
-parse_directive(ti_all, _SymTab) :-
+parse_directive(ti_all, _SymTab,_ModName) :-
 	conset(ti_all, 1).
-parse_directive(ti_off(X), SymTab) :-
+parse_directive(ti_off(X), SymTab,_ModName) :-
 	parse_ti(X, (ti_off), SymTab).
-parse_directive(ti_off_all, _SymTab) :-
+parse_directive(ti_off_all, _SymTab,_ModName) :-
 	conset(ti_off_all, 1).
-parse_directive(edb(X), SymTab) :-
-	parse_list(X, SymTab, [(edb)], (edb)).
-parse_directive(compiler_options(Options),_SymTab) :-
+parse_directive(edb(X), SymTab,_ModName) :-
+	parse_comma_list(X, SymTab, [(edb)], (edb)).
+parse_directive(compiler_options(Options),_SymTab,_ModName) :-
 	%% Found compiler_options directive in the file,
 	%% but xpp_on is currently off.
 	%% We might need to restart parsing, if one of the encountered
@@ -593,8 +606,8 @@ parse_directive(compiler_options(Options),_SymTab) :-
 	(conget(xpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
 	check_file_compiler_options(Options),
 	setoptions1(Options).
-parse_directive(comment(_,_),_SymTab).
-parse_directive(Directive,_SymTab) :-
+parse_directive(comment(_,_),_SymTab,_ModName).
+parse_directive(Directive,_SymTab,_ModName) :-
 	option(ciao_directives),
 	included_ciao_directive(Directive).
 
@@ -625,29 +638,46 @@ parse_query(B, List, SymTab) :-
 	parse_preddef('_$main', (B->fail), List, SymTab).
 
 /*======================================================================*/
-/* parse_list(+PredList, #SymTab, +SymbolProp, +Directive) 		*/
+/* parse_comma_list(+PredList, #SymTab, +SymbolProp, +Directive) 		*/
 /*	Processes export/import/local lists (records the appropriate	*/
 /*	information in symbol table).  It also does the same for	*/
 /*	parallel/table lists.						*/
 /*======================================================================*/
 
-parse_list((Pred, Preds), SymTab, SymbolProp, Directive) :- 
+parse_comma_list((Pred, Preds), SymTab, SymbolProp, Directive) :- 
 	!,
-	parse_list(Pred, SymTab, SymbolProp, Directive),
-	parse_list(Preds, SymTab, SymbolProp, Directive).
-parse_list(P/A, SymTab, SymbolProp, _Directive) :- 
+	parse_comma_list(Pred, SymTab, SymbolProp, Directive),
+	parse_comma_list(Preds, SymTab, SymbolProp, Directive).
+parse_comma_list(P/A, SymTab, SymbolProp, _Directive) :- 
 	atom(P), integer(A), 
 	!,
 	sym_insert(P, A, SymbolProp, SymTab, _).
-parse_list(Spec, SymTab, SymbolProp, _Directive) :- 
+parse_comma_list(Spec, SymTab, SymbolProp, _Directive) :- 
 	is_most_general_term(Spec),
 	!,
 	functor(Spec,P,A),
 	sym_insert(P, A, SymbolProp, SymTab, _).
-parse_list(X, _, _, Directive) :-
+parse_comma_list(X, _, _, Directive) :-
 	warning(('Non predicate specification "', X, 
 		 '" found in ', Directive, ' directive. Ignored!')).
 
+parse_list([], _SymTab, _SymbolProp, _Directive).
+parse_list([Pred|Preds], SymTab, SymbolProp, Directive) :- 
+	parse_list_element(Pred, SymTab, SymbolProp, Directive),
+	parse_list(Preds, SymTab, SymbolProp, Directive).
+
+parse_list_element(P/A, SymTab, SymbolProp, _Directive) :- 
+	atom(P), integer(A), 
+	!,
+	sym_insert(P, A, SymbolProp, SymTab, _).
+parse_list_element(Spec, SymTab, SymbolProp, _Directive) :- 
+	is_most_general_term(Spec),
+	!,
+	functor(Spec,P,A),
+	sym_insert(P, A, SymbolProp, SymTab, _).
+parse_list_element(X, _, _, Directive) :-
+	warning(('Non predicate specification "', X, 
+		 '" found in ', Directive, ' directive. Ignored!')).
 /*======================================================================*/
 /* module_close(+ModuleIn, -ModuleOut)					*/
 /*	Closes the lists in the completed module description and	*/
