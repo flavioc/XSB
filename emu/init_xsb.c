@@ -197,32 +197,41 @@ static void init_open_files(void)
   int i, msg_fd, dbg_fd, warn_fd, fdbk_fd;
 
   open_files[0].file_ptr = stdin;
+  open_files[0].io_mode = 'r';
+
   open_files[1].file_ptr = stdout;
+  open_files[1].io_mode = 'w';
+
   open_files[2].file_ptr = stderr;
+  open_files[2].io_mode = 'w';
 
   /* stream for xsb warning msgs */
   if ((warn_fd = dup(fileno(stderr))) < 0)
     xsb_exit("Can't open the standard stream for warnings\n");
   stdwarn = fdopen(warn_fd, "w");
   open_files[3].file_ptr = stdwarn;
+  open_files[3].io_mode = 'w';
 
   /* stream for xsb normal msgs */
   if ((msg_fd = dup(fileno(stderr))) < 0)
      xsb_exit("Can't open the standard stream for messages\n");
   stdmsg = fdopen(msg_fd, "w");
   open_files[4].file_ptr = stdmsg;
+  open_files[4].io_mode = 'w';
 
   /* stream for xsb debugging msgs */
   if ((dbg_fd = dup(fileno(stderr))) < 0)
      xsb_exit("Can't open the standard stream for debugging messages\n");
   stddbg = fdopen(dbg_fd, "w");
   open_files[5].file_ptr = stddbg;
+  open_files[5].io_mode = 'w';
 
   /* stream for xsb debugging msgs */
   if ((fdbk_fd = dup(fileno(stdout))) < 0)
      xsb_exit("Can't open the standard stream for XSB feedback messages\n");
   stdfdbk = fdopen(fdbk_fd, "w");
   open_files[6].file_ptr = stdfdbk;
+  open_files[6].io_mode = 'w';
 
   /* NT doesn't seem to think that dup should preserve the buffering mode of
      the original file. So we make all new descriptors unbuffered -- dunno if

@@ -156,7 +156,7 @@ current_functor(Name, Term_Indicator) :-
 current_input(Stream) :- 
 	((var(Stream) ; integer(Stream)) -> 
 	    true
-	 ;  domain_error(variable_or_stream,Stream,current_input/1,1) ),
+	 ;  domain_error(stream_or_variable,Stream,current_input/1,1) ),
 	stat_flag(CURRENT_INPUT, S),
 	S = Stream.
 
@@ -188,6 +188,8 @@ check_operator_type(Type):-
 
 is_operator_type(fx).
 is_operator_type(fy).
+is_operator_type(hx).
+is_operator_type(hy).
 is_operator_type(xf).
 is_operator_type(yf).
 is_operator_type(xfx).
@@ -197,7 +199,7 @@ is_operator_type(yfx).
 check_operator_name(Name):-
 	((var(Name) ; atom(Name)) -> 
 	    true 
-	  ; type_error(atom_or_variable,Name,current_op/3,3) ).
+	  ; domain_error(atom_or_variable,Name,current_op/3,3) ).
 
 
 /* ===== current_output/1 ===================================== */
@@ -487,7 +489,7 @@ module_properties(PSC, Property) :-
 current_prolog_flag(Flag,Value):- 
 	((var(Flag) ; atom(Flag)) -> 
 	    true
-	  ; type_error(variable_or_atom,Flag,current_prolog_flag/2,1) ),
+	  ; domain_error(atom_or_variable,Flag,current_prolog_flag/2,1) ),
 	  (iso_flag(Flag,Value) ; xsb_flag(Flag,Value)).
 
 iso_flag(bounded,false).

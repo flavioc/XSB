@@ -140,6 +140,8 @@ standard_symbol(findall, 3, setof).
 standard_metapredicate(findall,3,2).
 
 standard_symbol(float, 1, standard).
+standard_symbol(flush_output,1,file_io).
+standard_symbol(flush_output,0,file_io).
 
 standard_symbol(path_sysop,2,file_io).
 standard_symbol(path_sysop,3,file_io).
@@ -213,6 +215,7 @@ standard_metapredicate(once,1,1).
 
 standard_symbol(op, 3, standard).
 standard_symbol(open, 3, standard).
+standard_symbol(open, 4, standard).
 standard_symbol(otherwise, 0, standard).
 
 standard_symbol(parse_filename, 4, machine).
@@ -269,6 +272,7 @@ standard_symbol(str_length, 2, string).
 standard_symbol(str_match, 5, string).
 standard_symbol(str_sub, 3, string).
 standard_symbol(str_sub, 2, string).
+standard_symbol(stream_property,2,file_io).
 standard_symbol(string_substitute, 4, string).
 standard_symbol(structure, 1, standard).
 standard_symbol(substring, 4, string).

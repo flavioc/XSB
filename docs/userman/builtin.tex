@@ -12,28 +12,383 @@ in the standard release. See the section on Customizing XSB.
 
 \section{Input and Output}
 
-XSB has two levels of I/O: a higher level that supports DEC-10 and
-ISO-like file and stream handling; and a lower level that is based in
-XSB I/O ports.  This section describes higher-level I/O, while the
-lower-level is described in Volume 2 Section 1.5 of this manual.
-Presently, higher-level input and output operations bind a file
-identifier to the current input or output stream.  The semantics of
-the operations here is basically that of Edinbourough Prolog's {\tt
-see/1} and {\tt tell/1}.  However, this interface has been extended to
-provide portability for programs written using the ISO standard, and
-includes predicates such as {\tt open/3}, {\tt close/1}, {\tt write/2}
-and so on.
+XSBs I/O is based on ISO-style streams, although it also supports
+older DEC-10 style file handling.  XSB's I/O streams are small
+integers, but should not be confused with the file descriptors used by
+the OS.  The OS file descriptors are objects returned by the C {\tt
+open} function; XSB I/O streams indices into the internal XSB table of
+open files and associated information. The OS does not know about XSB
+I/O streams, while XSB (obviously) does know about the OS file
+descriptors. An OS file descriptor may be returned by certain
+predicates (e.g.  {\tt pipe\_open/2} or user-defined I/O).  In such a
+file descriptor can be promoted to XSB stream using the predicate {\tt
+fd2iostream/2}.
 
-The default input and output streams are internally denoted by userin
-and userout 
-and they refer to the process'es standard input and standard output
-streams).
+% TLS: refer to it in Manual 2.
 
+The default input and output streams can be denoted by {\tt user\_in}
+and {\tt user\_out} and they refer to the process'es standard input
+and standard output streams) \footnote{For backwards compatability,
+the default input stream can also be aliased by {\tt user} or {\tt
+userin}, and the default output stream by {\tt user} or {\tt
+userout}.}.
 
-\subsection{File Handling}
+\subsection{I/O Stream Implementation}
+
+Typically XSB opens files for buffered I/O, so XSB streams internally
+refer to {\tt FILE} data structures (those returned by the C {\tt
+fopen} function).  When it starts, XSB opens a number of standard I/O
+streams that it uses to print results, errors, debugging info, etc. The
+descriptors are described in the file {\tt
+prolog\_includes/standard.h}. This file provides the following
+symbolic definitions:
+%%
+\begin{verbatim}
+    #define STDIN            0
+    #define STDOUT           1
+    #define STDERR           2
+    #define STDWARN          3    /* output stream for xsb warnings  */
+    #define STDMSG           4    /* output for regular xsb messages */
+    #define STDDBG           5    /* output for debugging info       */
+    #define STDFDBK          6    /* output for XSB feedback
+                                     (prompt/yes/no/Aborting/answers) */
+
+    #define AF_INET     0     /* XSB-side socket request for Internet domain */
+    #define AF_UNIX     1     /* XSB-side socket request for UNIX domain */
+\end{verbatim}
+%%
+%------------------------------------------------------------------------------------------
+\comment{
+In addition, the file \verb|emu/file_modes_xsb.h| provides the definitions
+for the file opening modes:
+%%
+\begin{verbatim}
+    #define OREAD          0    /* open for read           */
+    #define OWRITE         1    /* open for write          */
+    #define OAPPEND        2    /* open for append         */
+    #define OSTRINGR       3    /* open string for reading */
+    #define OSTRINGW       4    /* open string for writing (not implemented) */
+\end{verbatim}
+%%
+}
+%------------------------------------------------------------------------------------------
+These definitions can be used in user programs, if the following is
+provided at the top of the source file:
+%%
+\begin{verbatim}
+    compiler_options([xpp_on]).
+    #include "standard.h"
+\end{verbatim}
+%%
+(Note: the XSB preprocessor is not invoked on clauses typed into an
+interactive XSB session, so the above applies only to programs loaded from
+a file using {\tt consult} and such.)
+
+\subsection{ISO Streams}
+
 \begin{description}
-\ournewitem{set\_input(+F)}{ISO}\index{\texttt{set\_input/1}}
-\vspace{-7mm} 
+
+\ournewitem{open(+File,+Mode,-Stream)}{ISO}\index{\texttt{open/3}}
+    {\tt open/1} creates a stream for the file designated in {\em
+    File}, and binds {\em Stream} to a structure representing that
+    stream.  {\em Mode} can be one of either {\tt read} to create an
+    input stream or {\tt write} or {\tt append} to create an output
+    stream.  If the mode is {\tt write}, the contents of {\em File}
+    are removed and {\em File} becomes a record of the output stream.
+    If the mode is {\tt append} the output stream is appended to the
+    contents of {\em File}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt File} or {\tt Mode} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Mode} is not a valid I/O mode
+\bi
+\item 	{\tt domain\_error(io\_mode,Mode)}
+\ei
+%
+\item 	{\tt File} cannot be opened, or opened in the desired mode
+\bi
+\item 	{\tt permission\_error(open,file,File)}
+\ei
+\ei
+
+\ournewitem{open(+File,+Mode,-Stream.+Options)}{ISO}\index{\texttt{open/4}}
+%
+{\tt open/4} behaves as does {\tt open/3}, but allows a list of
+options to be given.  The only effective option in \version{} of XSB
+is {\tt alias(A)} which allows the stream to be aliased to an atom.
+The ISO option {\tt reposition(Boolean)} currently has no effect on
+file streams, which are always repositionable.  The ISO option {\tt
+type(T)} currently has no effect on file streams, which are always
+textual.  And finally, the ISO option {\tt eof\_action(Action)}
+currently has no effect on file streams.  Appropriate warnings are
+given if an option list includes these option types.
+
+{\bf Error Cases}  Error cases are the same as {\tt open/3} but with
+the addition: 
+\bi
+\item {\tt Option\_list} contains an option {\tt O} that is not a stream
+option.
+\bi
+\item {\tt domain\_error(stream\_option,O)}
+\ei
+\ei
+
+\ournewitem{close(+Stream\_or\_alias)}{ISO}\index{\texttt{close/1}}
+	{\tt close/1} closes the stream or alias {\tt Stream\_or\_alias}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\item 	Closing the stream produces an error.
+\bi
+\item 	{\tt permission\_error(close,stream,Stream\_or\_alias)}
+\ei
+\ei
+
+\ournewitem{close(+Stream\_or\_alias.+Options)}{ISO}\index{\texttt{close/2}}
+
+	This predicate is implemented in XSB for partial ISO
+	compatability.  In the case where {\tt Options} is equal to
+	{\tt []}, {\tt close/2} is defined as {\tt close/1}, otherwise
+	it aborts.
+
+\ournewitem{set\_input(+Stream\_or\_alias)}{ISO}\index{\texttt{set\_input/1}}
+    Makes file {\tt Stream\_or\_alias} the current input stream. 
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
+or alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not an open input stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\ei
+
+\ournewitem{set\_output(+Stream\_or\_alias)}{ISO}\index{\texttt{set\_output/1}}
+    Makes file {\tt Stream\_or\_alias} the current output stream. 
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
+or alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open output stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\ei
+
+\ournewitem{stream\_property(?Stream\_or\_alias,?Property)}{ISO}
+\index{\texttt{stream\_property/2}}
+%
+This predicate backtracks through the various stream properties that
+unifiy with {\tt Property} for the stream {\tt Stream\_or\_alias}.  Currently,
+the following properties are defined.
+
+\bi
+\item {\tt file\_name(F)} is a property of {\tt Stream\_or\_alias}, if {\tt F} is
+the file name associate with {\tt Stream\_or\_alias}.  The full operating system
+path is used.
+%
+\item {\tt mode(M)} is a property of {\tt Stream\_or\_alias}, if {\tt M} represents the
+I/O mode: {\tt read}, {\tt write}, {\tt append}, {\tt read\_plus},
+{\tt write\_plus}, or {\tt append\_plus} with which {\tt Stream\_or\_alias} was
+opened.
+%
+\item {\tt input}  is a property of {\tt Stream\_or\_alias}, if {\tt
+Stream\_or\_alias} was opened in the I/O mode: {\tt read}, {\tt
+read\_plus}, {\tt write\_plus}, or {\tt append\_plus}.
+% 
+\item {\tt output}  is a property of {\tt Stream\_or\_alias}, if {\tt
+Stream\_or\_alias} was opened in the I/O mode: {\tt write}, {\tt
+append}, {\tt read\_plus}, {\tt write\_plus}, or {\tt append\_plus}.
+%
+\item {\tt alias(A)}  is a property of {\tt Stream\_or\_alias}, if
+{\tt Stream\_or\_alias} was opened with alias {\tt A}.
+%
+\item {\tt reposition(Bool)} is true, if {\tt Stream\_or\_alias} is
+repositionable, and false otherwise.  In XSB \version, user streams
+are always repositionable, although system streams may not be.
+%
+\item {\tt type(Type)} is true, if {\tt Stream\_or\_alias} is of type
+{\tt text} or {\tt binary}.  In XSB \version{} all streams are text
+streams.
+%
+% end_of_stream.
+\end{itemize}
+
+\ournewitem{flush\_output(+Stream\_or\_alias)}{ISO}
+\index{\texttt{flush\_output/1}}
+    Any buffered data in {\tt Stream\_or\_aias}  gets flushed.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open output stream 
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\item 	Flushing (i.e. {\tt fflush()}) returns an error.
+\bi
+\item 	{\tt permission\_error(flush,stream,Stream\_or\_alias)}
+\ei
+\ei
+
+\ournewitem{flush\_output}{ISO}
+\index{\texttt{flush\_output/0}}
+    Any buffered data in the current output stream gets flushed.
+
+\ournewitem{set\_stream\_position(+Stream\_or\_alias,+Position)}{ISO}
+\index{\texttt{set\_stream\_position/2}}
+    Sets the stream position indicator for the next input or output
+    operation. Position is a term {\tt position(Place,Offset)}.  The
+    value of {\tt Place} can be {\tt start\_of\_file}, {\tt
+    current\_pos}, or {\tt end\_of\_file}, which correspond to the
+    beginning of the file, the current position in the file, or the
+    end of the file, respectively. {\tt Offset} is a positive or
+    negative integer denoting the offset from {\tt Place}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
+or alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Position} is not instantiated to a position term as described above.
+\bi
+\item 	{\tt domain\_error(stream\_position,Position)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\item 	Repositioning returns an error.
+\bi
+\item 	{\tt permission\_error(resposition,stream,Stream\_or\_alias)}
+\ei
+\ei
+
+\ournewitem{at\_end\_of\_stream(+Stream\_or\_alias)}{ISO}
+\index{\texttt{at\_end\_of\_stream/1}}
+%
+Succeeds if {\tt Stream\_or\_alias} has position at or past the end of stream.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
+or aliasl
+\bi
+\item 	{\tt domain\_error(stream,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not an open stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\ei
+
+\ournewitem{at\_end\_of\_stream}{ISO}
+\index{\texttt{at\_end\_of\_stream/0}}
+%
+Succeeds if the current stream has position at or past the end of stream.
+
+\end{description}
+
+\subsubsection{Other Predicates using ISO Streams}
+
+\begin{description}
+
+\ouritem{file\_reopen(+FileName,+Mode,+Stream,-RetCode)}
+\index{\texttt{file\_reopen/1}}
+    Takes an existing I/O stream, closes it, then opens it and
+    attaches it to a file. This can be used to redirect I/O from any of the
+    standard streams to a file. For instance, 
+%%
+\begin{verbatim}
+    | ?- file_reopen('/dev/null', w, 3, Error).
+\end{verbatim}
+%%
+    redirects all warnings to the Unix black hole. 
+
+    On success, {\tt RetCode} is 0; on error, the return code is negative.
+
+%-----------------------------------------------------------------------------
+\comment{
+% will be superceded by stream_property.
+\ournewitem{file\_pos(+Stream, -Position)}{file\_io}
+\index{\texttt{file\_pos/2}}
+    Unifies {\tt Position} with the position inside the file indicated by
+    {\tt IOport}.
+}
+%-----------------------------------------------------------------------------
+
+\ournewitem{file\_truncate(+Stream, +Length, -Return)}{file\_io}
+\index{\texttt{file\_truncate/3}}
+    The regular file  referenced by the Stream{\tt Stream}
+    is chopped to have the size of {\tt Length} bytes. Upon successful
+    completion {\tt Return} is set to zero.
+
+\ouritem{tmpfile\_open(-Stream)}\index{\texttt{tmpfile\_open/1}}
+    Opens a temporary file with a unique filename. The file is deleted when
+    it is closed or when the program terminates.
+
+\ouritem{file\_clone(+SrcStream,?DestStream,-RetCode)}
+\index{\texttt{file\_clone/1}}
+    This is yet another way to redirect I/O. It is a prolog interface to
+    the C {\tt dup} and {\tt dup2} system calls. If {\tt DestStream} is a
+    variable, then this call creates a new XSB I/O stream that is a
+    clone of {\tt SrcStream}. This means that I/O sent to either
+    descriptor goes to the same place. If {\tt DestStream} is not a
+    variable, then it must be a number corresponding to a valid I/O
+    stream. In this case, XSB closes {\tt DestStream} and makes it 
+    into a clone on {\tt SrcStream}. For instance, suppose that 10 is a
+    I/O Stream that is currently open for writing to file {\tt foo.bar}.
+    Then
+    %%
+    \begin{verbatim}
+    | ?- file_clone(10,3,_).      
+    \end{verbatim}
+    %%
+    causes all messages sent to XSB standard warnings stream to go to file
+    {\tt foo.bar}. While this could be also done with {\tt file\_reopen},
+    there are things that only {\tt file\_clone} can do:
+    %%
+    \begin{verbatim}
+    | ?- file_clone(1,10,_).      
+    \end{verbatim}
+    %%
+    This means that I/O stream 10 now becomes clone of standard
+    output. So, all subsequent I/O will now go to standard output instead
+    of {\tt foo.bar}. 
+
+    On success, {\tt RetCode} is 0; on error, the return code is negative.
+
+\end{description}
+
+\subsection{DEC-IO Style File Handling}
+
+\begin{description}
 \ouritem{see(+F)}\index{\texttt{see/1}}
     Makes file {\tt F} the current input stream. 
     \begin{itemize}
@@ -47,9 +402,6 @@ streams).
     Also note that different file names (that is, names which do not unify) 
     represent different input streams (even if these different file names 
     correspond to the same file).
-
-    The implementation of the ISO preducate {\tt set\_input/1}, is
-    essentially that of {\tt see/1}.
 
     Exceptions:
     \begin{description}
@@ -73,8 +425,6 @@ streams).
     Closes the current input stream. 
     Current input reverts to {\tt ``userin''} (the standard input stream).
 
-\ournewitem{set\_output(+F)}{ISO}\index{\texttt{set\_output/1}}
-\vspace{-7mm} 
 \ouritem{tell(+F)}\index{\texttt{tell/1}}
     Makes file {\tt F} the current output stream. 
     \begin{itemize}
@@ -112,52 +462,6 @@ streams).
 \ouritem{told}\index{\texttt{told/0}}
     Closes the current output stream. 
     Current output stream reverts to ``userout'' (the standard output stream).
-
-\ournewitem{open(+File,+Mode,-Stream)}{ISO}\index{\texttt{open/3}}
-    {\tt open/1} creates a stream for the file designated in {\em
-    File}, and binds {\em Stream} to a structure representing that
-    stream.  {\em Mode} can be one of either {\tt read} to create an
-    input stream or {\tt write} or {\tt append} to create an output
-    stream.  If the mode is {\tt write}, the contents of {\em File}
-    are removed and {\em File} becomes a record of the output stream.
-    If the mode is {\tt append} the output stream is appended to the
-    contents of {\em File}.
-
-    Exceptions ({\tt read} mode)
-    \begin{description}
-    \item[{\tt permission\_error}]
-    	File {\tt F} is directory or file is not readable. 
-    \item[{\tt instantiation\_error}]
-    	{\tt F} is not instantiated at the time of call. 
-    \item[{\tt existence\_error}]
-    	File {\tt F} does not exist. 
-    \end{description}
-
-    Exceptions ({\tt write} mode)
-    \begin {description}
-    \item[{\tt permission\_error}]
-	File {\tt F} does not have write permission, or is a directory.
-    \item[{\tt instantiation\_error}]
-	{\tt F} is uninstantiated.
-    \end{description}
-
-\ournewitem{open(+File,+Mode,-Stream.+Options)}{ISO}\index{\texttt{open/4}}
-
-	This predicate is implemented in XSB for partial ISO
-	compatability.  In the case where {\tt Options} is equal to {\tt
-	[]}, {\tt open/4} is defined as {\tt open/3}, otherwise it
-	aborts.
-
-
-\ournewitem{close(+Stream)}{ISO}\index{\texttt{close/1}}
-	{\tt close/1} closes the stream {\em Stream}.
-
-\ournewitem{close(+Stream.+Options)}{ISO}\index{\texttt{close/2}}
-
-	This predicate is implemented in XSB for partial ISO
-	compatability.  In the case where {\tt Options} is equal to
-	{\tt []}, {\tt close/2} is defined as {\tt close/1}, otherwise
-	it aborts.
 
 \ouritem{file\_exists(+F)}\index{\texttt{file\_exists/1}}
     Succeeds if file {\tt F} exists. {\tt F} must be instantiated to
@@ -543,12 +847,214 @@ read/1}, but requires the input to be in canonical form.
 
 \end{description}
 
-\comment{ TLS: Taken out because this appears to be superceded by
-documentation in Manual 2
-
-\section{Special I/O}
+\subsection{Special I/O}
 
 \begin{description}
+\ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{\texttt{fmt\_read/3}}
+\vspace{-7mm}
+\ournewitem{fmt\_read(+IOport,+Fmt,-Term,-Ret)}{file\_io}\index{\texttt{fmt\_read/4}}
+    These predicates provides a routine for reading data from
+    the current input file (which must have been already opened by using
+    {\tt see/1}) according to a C format, as used in the C function
+    {\tt scanf}. To use it, it must be imported from the module {\tt
+    file\_io}.  {\tt Fmt} must be a string of characters (enclosed in ")
+    representing the format that 
+    will be passed to the C call to {\tt scanf}.  See the C
+    documentation for {\tt scanf} for the meaning of this string.
+    The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
+    are recognized, but not the octal or the hexadecimal ones.
+    Another difference with C is that, unlike most C compilers, XSB insists
+    that a single {\tt \%} in the format string signifies format conversion
+    specification. (Some C compilers might output {\tt \%} if it is not
+    followed by a valid type conversion spec.) So, to output {\tt \%}
+    you must type {\tt \%\%}.
+    Format can also be an atom enclosed in single quotes. However, in that
+    case, escape sequences are not recognized and are printed as is.
+
+    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
+    will be unified with the field values read in.  (The functor symbol of {\tt
+    Term} is ignored.)  Special syntactic sugar is provided for the case
+    when the format string contains only one format specifier: If {\tt
+    Term} is a variable, {\tt X}, then the predicate behaves as if {\tt
+    Term} were {\tt arg(X)}.
+
+  If the number of arguments exceeds the number of format specifiers, a
+  warning is produced and the extra arguments remain uninstantiated.
+  If the number of format specifiers exceeds the number of arguments, then
+  the remainder of the format string (after the last matching specifier) is
+  ignored.
+  
+  Note that floats do not unify with anything.  {\tt Ret} must be a
+  variable and it will be assigned a return value by the predicate: a
+  negative integer if end-of-file is encountered; otherwise the number of
+  fields read (as returned by {\tt scanf}.)
+  
+  {\tt fmt\_read} cannot read strings (that correspond to the {\tt \%s}
+  format specifier) that are longer than 16K. Attempting to read longer
+  strings will cause buffer overflow. It is therefore recommended that one
+  should use size modifiers in format strings ({\it e.g.}, {\tt \%2000s}),
+  if such long strings might occur in the input.
+
+\ournewitem{fmt\_write(+Fmt,+Term)}{file\_io}\index{\texttt{fmt\_write/2}}
+\vspace{-7mm}
+\ournewitem{fmt\_write(+IOport,+Fmt,+Term)}{file\_io}\index{\texttt{fmt\_write/3}}
+    This predicate provides a routine for writing data to
+    the current output file (which must have been already opened by using
+    {\tt tell/1}) according to a C format, as used in the C function
+    {\tt printf}.
+    To use it, it must be imported from the module {\tt file\_io}.
+    {\tt Fmt} must be a string of characters (enclosed in ")
+    representing the format that 
+    will be passed to the C call to {\tt printf}.  See the C
+    documentation for {\tt printf} for the meaning of this string.
+    The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
+    are recognized, but not the octal or the hexadecimal ones.
+
+    In addition to the usual C conversion specifiers, {\tt \%S} is also
+    allowed. The corresponding argument can be any Prolog term. This
+    provides an easy way to print the values of Prolog variables, etc.  
+    Also {\tt \%!} is supported and indicates that the corresponding argument
+    is to be ignored and will generate nothing in the output.
+
+    Another difference with C is that, unlike most C compilers, XSB insists
+    that a single {\tt \%} in the format string signifies format conversion
+    specification. (Some C compilers might output {\tt \%} if it is not
+    followed by a valid type conversion spec.) So, to output {\tt \%}
+    you must type {\tt \%\%}.
+    
+    Format can also be an atom, but then escape sequences are not
+    recognized.
+
+    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
+    will be output. The functor symbol of {\tt Term} is ignored.
+    
+    Special syntactic sugar is provided for the following cases: If {\tt
+      Term} is a variable, {\tt X}, then it is ignored and only the format
+    string is printed. If {\tt Term} is a string, integer or a float, then
+    it is assumed that this is the only argument to be printed, {\it i.e.},
+    it is equivalent to specifying {\tt arg(Term)}.
+
+    If the number of format specifiers is greater than the number of
+    arguments to be printed, an error is issued. If the number of arguments
+    is greater, then a warning is issued.
+
+\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{file\_io}
+\index{\texttt{fmt\_write\_string/2}}
+    This predicate works like the C function {\tt sprintf}. It takes the
+    format string and substitutes the values from the arguments of {\tt
+      Term} ({\it e.g.}, {\tt args(X,Y,Z)}) for the formatting instructions
+    \%s, \%d, etc. Additional syntactic sugar, as in \verb|fmt_write|, is
+    recognized. The result is available in {\tt String}. {\tt Fmt} is a
+    string or an atom that represents the format, as in
+    {\tt fmt\_write}.
+    
+    If the number of format specifiers is greater than the number of
+    arguments to be printed, an error is issued. If the number of arguments
+    is greater, then a warning is issued.
+
+    {\tt fmt\_write\_string} requires that the printed size of each
+    argument ({\it e.g.}, X,Y,and Z above) must be less than 16K. Longer
+    arguments are cut to that size, so some loss of information is possible.
+    However, there is no limit on the total size of the output (apart from
+    the maximum atom size imposed by XSB).
+
+\ournewitem{file\_read\_line(+IOport,-String)}{file\_io}
+\index{\texttt{file\_read\_line/2}}
+    This is a low-level predicate that allows XSB to read input files
+    efficiently, line by line. It returns the string read from {\tt
+      IOport} using the variable {\tt String}.
+
+    This predicate fails on reaching the end of file.
+    
+\ournewitem{file\_read\_line\_atom(+IOport,-String)}{file\_io}
+\index{\texttt{file\_read\_line\_atom/2}}
+    This predicate is synonymous with \verb|file_read_line|.
+    
+\ournewitem{file\_read\_line\_atom(-String)}{file\_io}
+\index{\texttt{file\_read\_line\_atom/1}}
+   Like \verb|file_read_line_atom/2|, but {\tt IOport} is not required.
+   The file being read is the one previously opened with {\tt see/1}.
+
+\ournewitem{file\_read\_line\_list(+IOport,-CharList)}{file\_io}
+\index{\texttt{file\_read\_line\_list/2}}
+    This predicate is like \verb|file_read_line_atom|, but the line read from
+    the input is converted into a list of characters.
+    This predicate is \emph{much} more efficient than {{\tt fget\_line/3}}
+    (see below), and is recommended when speed is important.
+    This predicate fails on reaching the end of file.
+
+\ournewitem{file\_read\_line\_list(-String)}{file\_io}
+\index{\texttt{file\_read\_line\_list/1}}
+   Like \verb|file_read_line_list/3|, but {\tt IOport} is not required.
+   The file being read is the one previously opened with {\tt see/1}.
+
+\ournewitem{file\_write\_line(+IOport, +String, +Offset)}{file\_io}
+\index{\texttt{file\_write\_line/3}}
+   Write {\tt String} beginning with character {\tt Offset}  to the output
+   file represented by the I/O port {\tt IOport}. {\tt String} can
+   be an atom or a list of ASCII characters. This does \emph{not} put the
+   newline character at the end of the string (unless {\tt String} already
+   had this character). Note that escape sequences, like \verb|\n|, are
+   recognized if {\tt String} is a character list, but are output as is if
+   {\tt String} is an atom.
+   
+\ournewitem{file\_write\_line(+String, +Offset)}{file\_io}
+\index{\texttt{file\_write\_line/2}}
+   Like \verb|file_write_line/3|, but output goes to the currently open
+   output stream.
+
+\ournewitem{file\_getbuf(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf/4}}
+Read {\tt BytesRequested} bytes from file represented by I/O port {\tt
+  IOport} (which must already be open for reading) into variable {\tt
+  String}. This is analogous to {\tt fread} in C.  This predicate always
+succeeds. It does not distinguish between a file error and end of file.
+        You can determine if either of these conditions has happened by verifying
+that $\tt BytesRead < BytesRequested$.
+
+
+\ournewitem{file\_getbuf\_atom(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf\_atom/4}}
+This is synonymous with \verb|file_getbuf|.
+
+Note: because XSB does not have an atom table garbage collector yet, this
+predicate should not be used to read large files.
+
+\ournewitem{file\_getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf\_atom/3}}
+Like \verb|file_getbuf_atom/4|, but reads from the currently open input stream
+(using {\tt see/1}). This predicate always
+succeeds. It does not distinguish between a file error and end of file.
+You can determine if either of these conditions has happened by verifying
+that $\tt BytesRead < BytesRequested$.
+
+\ournewitem{file\_getbuf\_list(+IOport, +BytesRequested, -CharList, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf\_list/4}}
+Like \verb|file_getbuf_atom/4|, but {\tt CharList} is instantiated to a list
+of characters that represent the string read from the input.
+
+\ournewitem{file\_getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf\_list/3}}
+Like \verb|file_getbuf_list/3|, but reads from the currently open input stream
+({\it i.e.}, with {\tt see/1}).
+
+
+\ournewitem{file\_putbuf(+IOport, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
+\index{\texttt{file\_putbuf/5}}
+Write {\tt BytesRequested} bytes into file represented by I/O port {\tt
+  IOport} (which must already be open for writing) from variable {\tt
+  String} at position {\tt Offset}. This is analogous to C {\tt fwrite}.
+The value of {\tt String} can be an atom or a list of ASCII characters.
+
+\ournewitem{file\_putbuf(+BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
+\index{\texttt{file\_putbuf/4}}
+Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
+
+
+\end{description}
+
+%-------------------------------------------------------------------
+\comment{
 \ouritem{fmt\_read(+Format, types(+T1,+T2,...), args(-A1,-A2,...), -RetCode)}\index{\texttt{fmt\_read/4}} 
  This predicate implements C-style formatted input. It reads the current
  input according to the {\tt Format} string.  {\tt Format} has the
@@ -570,9 +1076,8 @@ documentation in Manual 2
 
 \ouritem{fmt\_write\_string(-String, +Format, args(-A1,-A2,...))}\index{\texttt{fmt\_write/2}} 
  Like {\tt fmt\_write/2}, but the output string is placed in {\tt String}.
-
-\end{description}
 }
+%--------------------------------------------------------------------------------------------------
 
 \section{Evaluating Arithmetic Expressions through {\tt is/2}}
 \label{Arithmetic} 

@@ -877,76 +877,12 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 \end{description}
 %-------------------------------------------------------------------------------------------------------
 
+%-------------------------------------------------------------------------------------
+\comment{
 
 \section{Lower-Level I/O}
 \label{sec-low-level-io}
 %======================
-
-XSB has various low-level routines that support input and output, at both
-the term level and the character level.  Unlike the standard Prolog stream
-I/O, the low-level routines use \emph{XSB I/O ports} to refer to files. XSB
-I/O ports should not be confused with the file descriptors used by the OS
-Both are small integers, but they refer to different things. However, the
-OS file descriptors are objects returned by the C {\tt open} function; XSB
-I/O ports indices into the internal XSB table of open files. The OS does
-not know about XSB I/O ports, while XSB (obviously) does know about the OS
-file descriptors. An OS file descriptor (which can be returned by some
-predicates, such as {\tt pipe\_open/2}, can be promoted to XSB I/O port
-using the predicate {\tt fd2ioport/2}.
-
-Typically XSB opens files for buffered I/O (whether using the standard
-stream I/O predicates or the predicates described here), so XSB I/O ports
-internally refer to {\tt FILE} data structures (those returned by the C
-{\tt fopen} function).
-
-XSB I/O ports should not be confused with I/O streams used by the standard
-Prolog predicates, like see/1, tell/1, etc. The streams are higher-level
-objects associated with atom constants and which use I/O ports underneath.
-An I/O port can be promoted to an I/O stream using the predicate
-{\tt ioport2iostream/2}, described below.
-
-When it starts, XSB opens a number of standard I/O ports that it uses to
-print results, errors, debugging info, etc. The descriptors are described
-in the file {\tt prolog\_includes/standard.h}. This file provides the
-following symbolic definitions:
-%%
-\begin{verbatim}
-    #define STDIN            0
-    #define STDOUT           1
-    #define STDERR           2
-    #define STDWARN          3    /* output stream for xsb warnings  */
-    #define STDMSG           4    /* output for regular xsb messages */
-    #define STDDBG           5    /* output for debugging info       */
-    #define STDFDBK          6    /* output for XSB feedback
-                                     (prompt/yes/no/Aborting/answers) */
-
-    #define AF_INET     0     /* XSB-side socket request for Internet domain */
-    #define AF_UNIX     1     /* XSB-side socket request for UNIX domain */
-\end{verbatim}
-%%
-In addition, the file \verb|emu/file_modes_xsb.h| provides the definitions
-for the file opening modes:
-%%
-\begin{verbatim}
-    #define OREAD          0    /* open for read           */
-    #define OWRITE         1    /* open for write          */
-    #define OAPPEND        2    /* open for append         */
-    #define OSTRINGR       3    /* open string for reading */
-    #define OSTRINGW       4    /* open string for writing (not implemented) */
-\end{verbatim}
-%%
-These definitions can be used in user programs, if the following is
-provided at the top of the source file:
-%%
-\begin{verbatim}
-    compiler_options([xpp_on]).
-    #include "standard.h"
-    #include "file_modes_xsb.h"
-\end{verbatim}
-%%
-(Note: the XSB preprocessor is not invoked on clauses typed into an
-interactive XSB session, so the above applies only to programs loaded from
-a file using {\tt consult} and such.)
 
 \begin{description}
 
@@ -976,188 +912,15 @@ a file using {\tt consult} and such.)
     The old-style mode specification, 0 ({\tt OREAD}), 1 ({\tt OWRITE}), 2
     ({\tt OAPPEND}), or 3 ({\tt OSTRING}), is also supported.
 
-\ournewitem{file\_reopen(+FileName,+Mode,+IOport,-RetCode)}{file\_io}\index{\texttt{file\_reopen/1}}
-    Takes an existing I/O port, closes it, then opens it and
-    attaches it to a file. This can be used to redirect I/O from any of the
-    standard streams to a file. For instance, 
-%%
-\begin{verbatim}
-    | ?- file_reopen('/dev/null', w, 3, Error).
-\end{verbatim}
-%%
-    redirects all warnings to the Unix black hole. 
-
-    On success, {\tt RetCode} is 0; on error, the return code is negative.
-
-\ournewitem{tmpfile\_open(-IOport)}{file\_io}\index{\texttt{tmpfile\_open/1}}
-    Opens a temporary file with a unique filename. The file is deleted when
-    it is closed or when the program terminates.
-
-\ournewitem{file\_clone(+SrcIOport,?DestIOport,-RetCode)}{file\_io}\index{\texttt{file\_clone/1}}
-    This is yet another way to redirect I/O. It is a prolog interface to
-    the C {\tt dup} and {\tt dup2} system calls. If {\tt DestIOport} is a
-    variable, then this call creates a new XSB I/O port that is a
-    clone of {\tt SrcIOport}. This means that I/O sent to either
-    descriptor goes to the same place. If {\tt DestIOport} is not a
-    variable, then it must be a number corresponding to a valid I/O
-    port. In this case, XSB closes {\tt DestIOport} and makes it 
-    into a clone on {\tt SrcIOport}. For instance, suppose that 10 is a
-    I/O port that is currently open for writing to file {\tt foo.bar}.
-    Then
-    %%
-    \begin{verbatim}
-    | ?- file_clone(10,3,_).      
-    \end{verbatim}
-    %%
-    causes all messages sent to XSB standard warnings port to go to file
-    {\tt foo.bar}. While this could be also done with {\tt file\_reopen},
-    there are things that only {\tt file\_clone} can do:
-    %%
-    \begin{verbatim}
-    | ?- file_clone(1,10,_).      
-    \end{verbatim}
-    %%
-    This means that I/O port 10 now becomes clone of standard
-    output. So, all subsequent I/O will now go to standard output instead
-    of {\tt foo.bar}. 
-
-    On success, {\tt RetCode} is 0; on error, the return code is negative.
-
 \ournewitem{file\_close(+IOport)}{file\_io}\index{\texttt{file\_close/1}}
     Closes the file (or string) for descriptor {\tt IOport}.
 
-\ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{\texttt{fmt\_read/3}}
-\vspace{-7mm}
-\ournewitem{fmt\_read(+IOport,+Fmt,-Term,-Ret)}{file\_io}\index{\texttt{fmt\_read/4}}
-    These predicates provides a routine for reading data from
-    the current input file (which must have been already opened by using
-    {\tt see/1}) according to a C format, as used in the C function
-    {\tt scanf}. To use it, it must be imported from the module {\tt
-    file\_io}.  {\tt Fmt} must be a string of characters (enclosed in ")
-    representing the format that 
-    will be passed to the C call to {\tt scanf}.  See the C
-    documentation for {\tt scanf} for the meaning of this string.
-    The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
-    are recognized, but not the octal or the hexadecimal ones.
-    Another difference with C is that, unlike most C compilers, XSB insists
-    that a single {\tt \%} in the format string signifies format conversion
-    specification. (Some C compilers might output {\tt \%} if it is not
-    followed by a valid type conversion spec.) So, to output {\tt \%}
-    you must type {\tt \%\%}.
-    Format can also be an atom enclosed in single quotes. However, in that
-    case, escape sequences are not recognized and are printed as is.
-
-    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
-    will be unified with the field values read in.  (The functor symbol of {\tt
-    Term} is ignored.)  Special syntactic sugar is provided for the case
-    when the format string contains only one format specifier: If {\tt
-    Term} is a variable, {\tt X}, then the predicate behaves as if {\tt
-    Term} were {\tt arg(X)}.
-
-  If the number of arguments exceeds the number of format specifiers, a
-  warning is produced and the extra arguments remain uninstantiated.
-  If the number of format specifiers exceeds the number of arguments, then
-  the remainder of the format string (after the last matching specifier) is
-  ignored.
-  
-  Note that floats do not unify with anything.  {\tt Ret} must be a
-  variable and it will be assigned a return value by the predicate: a
-  negative integer if end-of-file is encountered; otherwise the number of
-  fields read (as returned by {\tt scanf}.)
-  
-  {\tt fmt\_read} cannot read strings (that correspond to the {\tt \%s}
-  format specifier) that are longer than 16K. Attempting to read longer
-  strings will cause buffer overflow. It is therefore recommended that one
-  should use size modifiers in format strings ({\it e.g.}, {\tt \%2000s}),
-  if such long strings might occur in the input.
-
-\ournewitem{fmt\_write(+Fmt,+Term)}{file\_io}\index{\texttt{fmt\_write/2}}
-\vspace{-7mm}
-\ournewitem{fmt\_write(+IOport,+Fmt,+Term)}{file\_io}\index{\texttt{fmt\_write/3}}
-    This predicate provides a routine for writing data to
-    the current output file (which must have been already opened by using
-    {\tt tell/1}) according to a C format, as used in the C function
-    {\tt printf}.
-    To use it, it must be imported from the module {\tt file\_io}.
-    {\tt Fmt} must be a string of characters (enclosed in ")
-    representing the format that 
-    will be passed to the C call to {\tt printf}.  See the C
-    documentation for {\tt printf} for the meaning of this string.
-    The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
-    are recognized, but not the octal or the hexadecimal ones.
-
-    In addition to the usual C conversion specifiers, {\tt \%S} is also
-    allowed. The corresponding argument can be any Prolog term. This
-    provides an easy way to print the values of Prolog variables, etc.  
-    Also {\tt \%!} is supported and indicates that the corresponding argument
-    is to be ignored and will generate nothing in the output.
-
-    Another difference with C is that, unlike most C compilers, XSB insists
-    that a single {\tt \%} in the format string signifies format conversion
-    specification. (Some C compilers might output {\tt \%} if it is not
-    followed by a valid type conversion spec.) So, to output {\tt \%}
-    you must type {\tt \%\%}.
-    
-    Format can also be an atom, but then escape sequences are not
-    recognized.
-
-    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
-    will be output. The functor symbol of {\tt Term} is ignored.
-    
-    Special syntactic sugar is provided for the following cases: If {\tt
-      Term} is a variable, {\tt X}, then it is ignored and only the format
-    string is printed. If {\tt Term} is a string, integer or a float, then
-    it is assumed that this is the only argument to be printed, {\it i.e.},
-    it is equivalent to specifying {\tt arg(Term)}.
-
-    If the number of format specifiers is greater than the number of
-    arguments to be printed, an error is issued. If the number of arguments
-    is greater, then a warning is issued.
-
-\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{file\_io}
-\index{\texttt{fmt\_write\_string/2}}
-    This predicate works like the C function {\tt sprintf}. It takes the
-    format string and substitutes the values from the arguments of {\tt
-      Term} ({\it e.g.}, {\tt args(X,Y,Z)}) for the formatting instructions
-    \%s, \%d, etc. Additional syntactic sugar, as in \verb|fmt_write|, is
-    recognized. The result is available in {\tt String}. {\tt Fmt} is a
-    string or an atom that represents the format, as in
-    {\tt fmt\_write}.
-    
-    If the number of format specifiers is greater than the number of
-    arguments to be printed, an error is issued. If the number of arguments
-    is greater, then a warning is issued.
-
-    {\tt fmt\_write\_string} requires that the printed size of each
-    argument ({\it e.g.}, X,Y,and Z above) must be less than 16K. Longer
-    arguments are cut to that size, so some loss of information is possible.
-    However, there is no limit on the total size of the output (apart from
-    the maximum atom size imposed by XSB).
-
-\ournewitem{file\_flush(+IOport, -Return)}{file\_io}
-\index{\texttt{file\_flush/2}}
-    Any buffered data gets delivered. If the call is successful, {\tt Return}
-    is zero; otherwise {\tt EOF} is returned.
-
-\ournewitem{file\_seek(+IOport, +Offset, +Place, -Return)}{file\_io}
-\index{\texttt{file\_seek/4}}
-    Sets the file position indicator for the next input or output
-    operation. The position is {\tt Offset} bytes from {\tt Place}.
-    The value of {\tt Place} can be 0, 1, or 2, which correspond to
-    the beginning of the file, the current position in the file, or
-    the end of the file, respectively. If the call is successful,
-    {\tt Return} is set to zero.
-
-\ournewitem{file\_pos(+IOport, -Position)}{file\_io}
-\index{\texttt{file\_pos/2}}
-    Unifies {\tt Position} with the position inside the file indicated by
-    {\tt IOport}.
-
-\ournewitem{file\_truncate(+IOport, +Length, -Return)}{file\_io}
-\index{\texttt{file\_truncate/3}}
-    The regular file  referenced by the I/O port {\tt IOport}
-    is chopped to have the size of {\tt Length} bytes. Upon successful
-    completion {\tt Return} is set to zero.
+\ournewitem{ioport2iostream(+IOport, -Stream)}{file\_io}
+\index{\texttt{ioport2iostream/2}}
+Takes a valid open I/O port and returns an I/O stream. This stream can then
+be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
+The stream returns by this predicate is identified by a newly created atom,
+such as \verb|_$newstream_#123|. 
 
 \ournewitem{file\_write(+IOport,+Term)}{xsb\_writ}
 \index{\texttt{file\_write/2}}
@@ -1197,36 +960,6 @@ a file using {\tt consult} and such.)
     its previous psc value to zero, this predicate can be called with
     {\tt IOport} of -1000.
 
-\ournewitem{file\_read\_line(+IOport,-String)}{file\_io}
-\index{\texttt{file\_read\_line/2}}
-    This is a low-level predicate that allows XSB to read input files
-    efficiently, line by line. It returns the string read from {\tt
-      IOport} using the variable {\tt String}.
-
-    This predicate fails on reaching the end of file.
-    
-\ournewitem{file\_read\_line\_atom(+IOport,-String)}{file\_io}
-\index{\texttt{file\_read\_line\_atom/2}}
-    This predicate is synonymous with \verb|file_read_line|.
-    
-\ournewitem{file\_read\_line\_atom(-String)}{file\_io}
-\index{\texttt{file\_read\_line\_atom/1}}
-   Like \verb|file_read_line_atom/2|, but {\tt IOport} is not required.
-   The file being read is the one previously opened with {\tt see/1}.
-
-\ournewitem{file\_read\_line\_list(+IOport,-CharList)}{file\_io}
-\index{\texttt{file\_read\_line\_list/2}}
-    This predicate is like \verb|file_read_line_atom|, but the line read from
-    the input is converted into a list of characters.
-    This predicate is \emph{much} more efficient than {{\tt fget\_line/3}}
-    (see below), and is recommended when speed is important.
-    This predicate fails on reaching the end of file.
-
-\ournewitem{file\_read\_line\_list(-String)}{file\_io}
-\index{\texttt{file\_read\_line\_list/1}}
-   Like \verb|file_read_line_list/3|, but {\tt IOport} is not required.
-   The file being read is the one previously opened with {\tt see/1}.
-
 \ournewitem{fget\_line(+Str,-Inlist,-Next)}{scrptutl}
 \index{\texttt{fget\_line/3}}
     {\tt fget\_line/3} reads one line from the input stream {\tt Str} and
@@ -1237,79 +970,12 @@ a file using {\tt consult} and such.)
     This predicate is obsolete and
     \verb|file_read_line_list| should be used instead.
 
-\ournewitem{file\_write\_line(+IOport, +String, +Offset)}{file\_io}
-\index{\texttt{file\_write\_line/3}}
-   Write {\tt String} beginning with character {\tt Offset}  to the output
-   file represented by the I/O port {\tt IOport}. {\tt String} can
-   be an atom or a list of ASCII characters. This does \emph{not} put the
-   newline character at the end of the string (unless {\tt String} already
-   had this character). Note that escape sequences, like \verb|\n|, are
-   recognized if {\tt String} is a character list, but are output as is if
-   {\tt String} is an atom.
-   
-\ournewitem{file\_write\_line(+String, +Offset)}{file\_io}
-\index{\texttt{file\_write\_line/2}}
-   Like \verb|file_write_line/3|, but output goes to the currently open
-   output stream.
+\end{description}
 
-
-\ournewitem{file\_getbuf(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf/4}}
-Read {\tt BytesRequested} bytes from file represented by I/O port {\tt
-  IOport} (which must already be open for reading) into variable {\tt
-  String}. This is analogous to {\tt fread} in C.  This predicate always
-succeeds. It does not distinguish between a file error and end of file.
-        You can determine if either of these conditions has happened by verifying
-that $\tt BytesRead < BytesRequested$.
-
-
-\ournewitem{file\_getbuf\_atom(+IOport, +BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_atom/4}}
-This is synonymous with \verb|file_getbuf|.
-
-Note: because XSB does not have an atom table garbage collector yet, this
-predicate should not be used to read large files.
-
-\ournewitem{file\_getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_atom/3}}
-Like \verb|file_getbuf_atom/4|, but reads from the currently open input stream
-(using {\tt see/1}). This predicate always
-succeeds. It does not distinguish between a file error and end of file.
-You can determine if either of these conditions has happened by verifying
-that $\tt BytesRead < BytesRequested$.
-
-\ournewitem{file\_getbuf\_list(+IOport, +BytesRequested, -CharList, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_list/4}}
-Like \verb|file_getbuf_atom/4|, but {\tt CharList} is instantiated to a list
-of characters that represent the string read from the input.
-
-\ournewitem{file\_getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_list/3}}
-Like \verb|file_getbuf_list/3|, but reads from the currently open input stream
-({\it i.e.}, with {\tt see/1}).
-
-
-\ournewitem{file\_putbuf(+IOport, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
-\index{\texttt{file\_putbuf/5}}
-Write {\tt BytesRequested} bytes into file represented by I/O port {\tt
-  IOport} (which must already be open for writing) from variable {\tt
-  String} at position {\tt Offset}. This is analogous to C {\tt fwrite}.
-The value of {\tt String} can be an atom or a list of ASCII characters.
-
-\ournewitem{file\_putbuf(+BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
-\index{\texttt{file\_putbuf/4}}
-Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
-
-\ournewitem{ioport2iostream(+IOport, -Stream)}{file\_io}
-\index{\texttt{ioport2iostream/2}}
-Takes a valid open I/O port and returns an I/O stream. This stream can then
-be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
-The stream returns by this predicate is identified by a newly created atom,
-such as \verb|_$newstream_#123|. 
+}
+%-------------------------------------------------------------------------------------
 
 %%$ -- so that font-lock-mode works in Emacs
-
-\end{description}
 
 \section{String Manipulation}
 \label{sec-strings}

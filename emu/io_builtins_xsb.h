@@ -26,10 +26,6 @@
 #include "io_defs_xsb.h"
 #include "token_xsb.h"
 
-#define MAX_OPEN_FILES    55
-#define MIN_USR_OPEN_FILE 7     /* Where user files start in the XSB
-				   open files table */
-
 /* TLS: The following data structure holds all info abt. streams that
    we might eventually want to access from Prolog.  Names, etc come
    from the definition of stream properties in "Prolog: the standard",

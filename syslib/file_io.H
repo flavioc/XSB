@@ -22,6 +22,7 @@
 ** 
 */
 
+:- import (dynamic)/1,asserta/1 from assert.
 
 :- import stat_flag/2, file_function/7,
 	parse_filename/4, is_absolute_filename/1,
@@ -30,9 +31,10 @@
       from machine.
 %%%:- import conpsc/2, psc_set_type/2, psc_set_prop/2 from machine.
 
-:- import
-	abort/1, atom_codes/2, '\='/2, repeat/0,
-	file_exists/1
+:- import for/3 from basics.
+
+:- import  abort/1, atom_codes/2, '\='/2, repeat/0, integer/1,
+               file_exists/1, atom/1
       from standard.
 
 %%%:- import gensym/2 from gensym.
@@ -44,14 +46,17 @@
 
 :- import file_write/2 from xsb_writ.
 
+:- import domain_error/4,existence_error/4, 
+             permission_error/4 from error_handler.
+
 :- export fmt_write_string/3, fmt_write/2, fmt_read/3,
 	  fmt_write/3, fmt_read/4,
 	  print_file_contents/1,
 	  print_file_contents/2,
 	  path_sysop/2, path_sysop/3,
 	  copyIOport/2,
-	  file_flush/2, file_seek/4, file_truncate/3,
-	  file_pos/2, file_size/2, file_time/2,
+  file_seek/4, file_truncate/3,
+  file_pos/2, file_size/2, file_time/2,
 	  file_open/3, file_close/1, file_get/2, file_put/2,
 	  file_getbuf/4,
 	  file_getbuf_atom/4, file_getbuf_atom/3,
@@ -62,7 +67,14 @@
 	  file_read_line_atom/1, file_read_line_atom/2,
 	  file_read_line_list/1, file_read_line_list/2,
 	  file_reopen/4, file_clone/3,
-	  pipe_open/2, fd2ioport/2, ioport2iostream/2,
+	  pipe_open/2, fd2ioport/2, 
 	  file_clearerr/1, tmpfile_open/1,
-  is_valid_ioport/1,
-print_openfiles/0.
+  print_openfiles/0, check_enumerate_stream_or_alias/4, 
+  check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/2,
+  is_valid_stream/2.
+
+% ISO predicates (sometimes rewrites of earlier predicates w. more checking).
+:- export stream_property/2, flush_output/1, flush_output/0.
+
+% Obsolescent?
+:- export  file_flush/2.

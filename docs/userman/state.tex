@@ -11,6 +11,8 @@ predicates are provided to inspect these elements as well.  The
 following descriptions of {\em state} predicates use the terms {\em
 predicate indicator}, {\em term indicator} and {\em current module} to
 mean the following:
+\index{predicate indicator}
+\index{term indicator}
 \begin{itemize}
 \item By {\em predicate indicator} \index{predicate indicator} we mean a
       {\em compound term} of the form {\tt M:F/A} or simply {\tt F/A}.
@@ -44,12 +46,26 @@ mean the following:
 \ournewitem{current\_input(?Stream)}{ISO}\index{\texttt{current\_input/1}}
     Succeeds iff stream {\tt Stream} is the current input stream, or 
     procedurally unifies {\tt Stream} with the current input stream.
-    There are no error conditions for this predicate.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream} is neither a variable nor a stream identifier
+\bi
+\item 	{\tt domain\_error(stream\_or\_variable,Stream))}
+\ei
+\ei
 
 \ournewitem{current\_output(?Stream)}{ISO}\index{\texttt{current\_output/1}}
     Succeeds iff stream {\tt Stream} is the current output stream, or 
     procedurally unifies {\tt Stream} with the current output stream.
-    There are no error conditions for this predicate.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream} is neither a variable nor a stream identifier
+\bi
+\item 	{\tt domain\_error(stream\_or\_variable,Stream))}
+\ei
+\ei
 
 \ouritem{current\_module(?Module)}\index{\texttt{current\_module/1}}
     The standard predicate {\tt current\_module/1} allows the user to check 
@@ -194,7 +210,7 @@ mean the following:
     there are no error conditions associated with this predicate; if its
     arguments are inappropriate, the predicate simply fails.
 
-\ouritem{current\_predicate(?Predicate\_Indicator)}
+\ournewitem{current\_predicate(?Predicate\_Indicator)}{ISO}
 \index{\texttt{current\_predicate/1}}
     The predicate {\tt current\_predicate/1} can be used to find all
     the predicates that are defined and loaded in a particular current module. 
@@ -275,6 +291,14 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     \> \>	| ?- current\_predicate(Predicate). \\
     }
 
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Predicate\_indicator} is neither a variable nor a predicate indicator
+\bi
+\item 	{\tt type\_error(predicate\_indicator,Predicate\_indicator))}
+\ei
+\ei
 
 \ouritem{current\_predicate(?Name, ?Term\_Indicator)}
 \index{\texttt{current\_predicate/2}}
@@ -629,6 +653,22 @@ module {\tt "usermod"} may be enumerated using:
     xsb_configuration(user_config_libdir, UserConfigLibdir) :- ...
 \end{verbatim}
 
+\ournewitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
+\index{\texttt{current\_prolog\_flag/2}}
+	{\tt current\_prolog\_flag/2} allows the user to examine both
+	dynamic aspects of XSB along with certain non-changable ISO
+	flags~\footnote{The ISO flags {\tt
+integer\_rounding\_function}, {\tt char\_conversion}, {\tt
+double\_quotes}, and {\tt unknown} are not yet implemented.}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Flag\_Name} is neither a variable nor an atom.
+\bi
+\item 	{\tt domain\_error(atom\_or\_variable,Flag\_Name)}
+\ei
+\ei
+
 \ouritem{xsb\_flag(?Flag\_Name, ?Value)}\index{\texttt{xsb\_flag/2}}
     Succeeds iff the current value of the XSB flag {\tt Flag\_Name} is 
     {\tt Value}. So, one can enumerate all the flag names which the system
@@ -641,14 +681,19 @@ module {\tt "usermod"} may be enumerated using:
 
     The flag names currently supported are:
 
-    \begin{center}
-    \begin{tabular}{||l|p{11cm}||}               \hline
-	{\em Flag Name}		& {\em Purpose} \\ \hline \hline
+    \begin{center} 
+\begin{tabular}{||l|p{11cm}||} \hline 
+	{\em Flag Name} & {\em Purpose} \\ \hline \hline 
+	{\tt backtrace\_on\_error} & 
+		{\tt on} iff system-handled errors automatically
+		print out the trace of the execution stack where the
+		error arose, {\tt off} otherwise. Default is {\tt off}.\\ 
+		\hline
 	{\tt debugging}		& 
-		{\tt "on"} iff debug mode is on; {\tt "off"} otherwise.\\
+		{\tt on} iff debug mode is on; {\tt off} otherwise.\\
 		\hline
 	{\tt tracing}		& 
-		{\tt "on"} iff trace mode is on; {\tt "off"} otherwise.\\
+		{\tt on} iff trace mode is on; {\tt off} otherwise.\\
 		\hline
 	{\tt goal}		& 
 		the goal passed to XSB on command line with the `-e'
@@ -657,12 +702,15 @@ module {\tt "usermod"} may be enumerated using:
         {\tt dcg\_style}        &
                 the DCG style currently used; {\tt xsb} or {\tt standard}
                 (standard is used in Quintus, SICSTUS, etc.).
-                See Section~\ref{sec-dcg-differences} for more details.
+                See Section~\ref{sec-dcg-differences} for more
+	    details. Default is {\tt xsb}.
+	
                 \\ \hline
 	{\tt garbage\_collection} &
-		{\tt "none", "sliding"}, or {\tt "copying"} depending
+		{\tt indirection}, {\tt none}, {\tt sliding}, or {\tt copying} depending
 		on the garbage collection strategy that is currently
-		being employed (see also Section~\ref{sec:EmuOptions}).
+		being employed (see also
+		Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}. 
                 \\ \hline
     \end{tabular}
     \end{center}
@@ -685,32 +733,40 @@ module {\tt "usermod"} may be enumerated using:
     \>   \>	| ?- hilog\_symbol(X).
     }
 
-\ouritem{current\_op(?Precedence, ?Type, ?Name)}\index{\texttt{current\_op/3}}
-    This predicate is used to examine the set of operators currently in force.
-    It succeeds when the atom {\tt Name} is currently an operator of type 
-    {\tt Type} and precedence {\tt Precedence}.  None of the arguments of
-    {\tt current\_op/3} need to be instantiated at the time of the call, 
-    but if they are, they must be of the following types:
-    \begin{description}
-    \item[{\tt Precedence}] 
-	it must be an integer in the range from 1 to 1200.
-    \item[{\tt Type}]
-	it must be one of the atoms:
-	\begin{verbatim}
-	        xfx  xfy  yfx  fx  fy  hx  hy  xf  yf
-	\end{verbatim}
-    \item[{\tt Name}]
-	it must be either an atom or a list of atoms.
-    \end{description}
+\ournewitem{current\_op(?Precedence, ?Specifier, ?Name)}{ISO}
+\index{\texttt{current\_op/3}}
+    This predicate is used to examine the set of operators currently
+    in force.  It succeeds when the atom {\tt Name} is currently an
+    operator of type {\tt Specifier} and precedence {\tt Precedence}.  None
+    of the arguments of {\tt current\_op/3} need to be instantiated at
+    the time of the call, but if they are, they must be of the
+    following types: 
+\begin{description}
+\item[{\tt Precedence}] must be an integer in the range from 1 to 1200.  
+\item[{\tt Specifier}] must be one of the atoms: 
+\begin{verbatim} 
+xfx xfy yfx fx fy hx hy xf yf 
+\end{verbatim} 
+\item[{\tt Name}] it must be an atom.
+\end{description}
 
-    Exceptions (not yet implemented):
-    \begin{description}
-    \item[{\tt domain\_error}]
-	{\tt Precedence} is not between 1--1200, or {\tt Type} is not one
-	of the listed atoms.
-    \item[{\tt type\_error}]
-	{\tt Name} is not an atom.
-    \end{description}
+{\bf Error Cases}
+\bi
+\item 	{\tt Precedence} is neither a variable nor an integer in the
+range from 1 to 1200. 
+\bi
+\item 	{\tt domain\_error(operator\_priority,Precedence)}
+\ei
+\item 	{\tt Specifier} is neither a variable nor an operator
+specifier of the types above.
+\bi
+\item 	{\tt domain\_error(operator\_specifier,Specifier)}
+\ei
+\item 	{\tt Name} is neither a variable nor an atom.
+\bi
+\item 	{\tt domain\_error(atom\_or\_variable,Name)}
+\ei
+\ei
 
 \ouritem{hilog\_op(?Precedence, ?Type, ?Name)}\index{\texttt{hilog\_op/3}}
     This predicate has exactly the same behaviour as {\tt current\_op/3}

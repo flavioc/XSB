@@ -577,23 +577,58 @@ inline static xsbBool file_function(void)
     break;
   }
     
-  case IS_VALID_IOPORT: {
-    io_port = ptoc_int(2);
-    if (io_port >= MAX_OPEN_FILES)
+  case STREAM_PROPERTY: {
+    int stream;
+    stream = ptoc_int(2);
+    switch (ptoc_int(3)) {
+    case STREAM_FILE_NAME:  
+      ctop_string(4, open_files[stream].file_name);
+      break;
+
+    case STREAM_MODE: 
+    case STREAM_INPUT: 
+    case STREAM_OUTPUT: {
+
+      mode = open_files[stream].io_mode; 
+      if (mode == 'r' || mode == 's') {
+	ctop_int(4,READ_MODE);
+      } else if (mode == 'w' || mode == 'x') {
+	ctop_int(4,WRITE_MODE);
+      } else if (mode == 'a' || mode == 'b') {
+	ctop_int(4,APPEND_MODE);
+      }
+      break;
+    }
+    }
+    break;
+  }
+
+  case IS_VALID_STREAM: {
+    int stream;
+    char iomode;
+
+    stream = ptoc_int(2);
+    if (stream >= MAX_OPEN_FILES)
 	return FALSE;
-    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
+    if ((stream < 0) && (stream >= -MAXIOSTRS)) {
       /* port for reading from string */
-      sfptr = strfileptr(io_port);
+      sfptr = strfileptr(stream);
       if (sfptr == NULL)
 	return FALSE;
-      return TRUE;
+      else return TRUE;
     }
-    if (io_port < -MAXIOSTRS)
+    if (stream < -MAXIOSTRS)
       return FALSE;
-    fptr = fileptr(io_port); \
-    if ((fptr==NULL) && (io_port != 0))
+    fptr = fileptr(stream); \
+    if ((fptr==NULL) && (stream != 0))
 	return FALSE;
-    return TRUE;
+    else {
+	iomode = open_files[stream].io_mode; 
+	if (iomode == 'r' || iomode == 's') {
+	  ctop_int(3,READ_MODE);
+	} else ctop_int(3,WRITE_MODE);
+	return TRUE;
+      }  
   }
 
   default:

@@ -70,10 +70,10 @@ default_sys_error_handler('_$abort_ball'(Msg,Backtrace)) :-
 default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	xsb_flag(backtrace_on_error,BT),
+	default_sys_error_handler(error(Error,Msg)),
 	(BT == on -> 
                 print_backtrace(Backtrace)
-	  ; true),
-	default_sys_error_handler(error(Error,Msg)).
+	  ; true).
 default_sys_error_handler(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
 	messageln(NewMsg,STDERR).
@@ -270,16 +270,6 @@ check_nonvar_list1([H|T],Predicate,Arg):-
 	    instantiation_error(Predicate,Arg)).
 
 %-------------
-
-% Checks that a given Term is a "stream.
-% Should make stream a term for better checking.  
-check_stream(Stream,Predicate,Arg) :- 
-	check_nonvar(Stream,Predicate,Arg),
-	(integer(Stream) -> 
-	    true
-	;
-	    type_error(stream,Stream,Predicate,Arg)).
-
 end_of_file.
 
 get_sys_error_description(error(Error,Msg,_Backtrace), ExceptionDesc) :-

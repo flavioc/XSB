@@ -23,7 +23,6 @@
 ** 
 */
 
-
 /*----------------------------------------------------------------------*/
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
@@ -47,7 +46,9 @@
 % File Handling Predicates %
 %--------------------------%
 
-set_input(Stream):- stat_set_flag(CURRENT_INPUT, Stream).
+set_input(Stream):- 
+	check_open_stream_or_alias(Stream,set_input/1,1,input,Stream1),
+	stat_set_flag(CURRENT_INPUT, Stream1).
 
 see(userin):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
 see(user):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
@@ -67,7 +68,9 @@ seen :- stat_flag(CURRENT_INPUT, Str),
 
 %--------------------------%
 
-set_output(Stream):- stat_set_flag(CURRENT_OUTPUT, Stream).
+set_output(Stream):- 
+	check_open_stream_or_alias(Stream,set_output/1,1,output,Stream1),
+	stat_set_flag(CURRENT_OUTPUT, Stream1).
 
 tell(userout):- !,	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 tell(user):- !,	stat_set_flag(CURRENT_OUTPUT, STDOUT).
@@ -85,38 +88,82 @@ told :-    stat_flag(CURRENT_OUTPUT, Str),
 	(Str > 6 -> close(Str) ; true),
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 
+%-------------------------------------------------
+
 open(File,_,_):-
 	var(File), !, 
-	abort('Uninstantiated argument 1 of open/3').
+	instantiation_error(open/3,1,bound).
 open(user,read, STDIN):-!,
 	stat_set_flag(CURRENT_INPUT, STDIN).
 open(userin,read,STDIN):-!,
+	stat_set_flag(CURRENT_INPUT, STDIN).
+open(user_in,read,STDIN):-!,   % ISO
 	stat_set_flag(CURRENT_INPUT, STDIN).
 open(user,write,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 open(userout,write,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+open(user_out,write,STDOUT):-!,  % ISO
+	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 open(F,Mode,Stream):-
+	check_nonvar(Mode,open/3,2),
 	translate(Mode,M),
 	file_open(F,M,Stream),
 	(Stream < 0 -> 
 	    permission_error(open,file,F,open/3)
 	 ;  true).
 
-translate(read,r).
-translate(write,w).
-translate(append,a).
+translate(read,r):- !.
+translate(write,w):- !.
+translate(append,a):- !.
+translate(Mode,_):- 
+	domain_error(io_mode,Mode,open/3,2).
 
+%-------------------------------------------------
+
+open(F,Mode,Stream,Options):-
+	examine_options(Options,Aliases,_Eof),
+	open(F,Mode,Stream),
+	writeln(open(F,Mode,Stream)),
+	add_aliases(Aliases,Stream).
+
+examine_options([],[],[]).
+examine_options([reposition(_Bool)|T],Aliases,Eof):- !,
+	warning('Reposition option ignored -- see manual.'),
+	examine_options(T,Aliases,Eof).
+examine_options([type(_Type)|T],Aliases,Eof):- !,
+	warning('Type option ignored -- see manual.'),
+	examine_options(T,Aliases,Eof).
+examine_options([eof_action(Action)|T],Aliases,[eof_action(Action)|Eof]):- !,
+	warning('Eof actions are currently ignored in XSB.'),
+	examine_options(T,Aliases,Eof).
+examine_options([alias(A)|T],[A|Aliases],Eof):- !,
+	examine_options(T,Aliases,Eof).
+examine_options([Option|_],_,_):- 
+	domain_error(open_options,Option,open/4,3).
+
+add_aliases([],_Stream).
+add_aliases([H|T],Stream):- 
+	add_alias(H,Stream),
+	add_aliases(T,Stream).
+
+%------------------------------------------------
 close(user) :- !.
 close(userin) :- !.
 close(userout) :- !.
-close(Str) :- file_close(Str).
+close(user_in) :- !.
+close(user_out) :- !.
+close(S_or_A) :- 
+	check_stream_or_alias(S_or_A,close/1,1,Str),
+	file_close(Str).
 
 %--------------------------%
 % Character I/O Predicates %
 %--------------------------%
 
-nl(Ostr) :-  file_nl(Ostr).
+nl(S_or_A) :-  
+	check_open_stream_or_alias(S_or_A,nl/1,1,output,Str),
+	file_nl(Str).
 
 nl :- (windows_os_loader 
       ->  put(CH_RETURN), put(CH_NEWLINE)
@@ -128,13 +175,17 @@ are. Note that most error-checking is assumed ot take place in
 atom_codes/2 or in get/1. */
 
 %ISO 
-get_char(Str,Char):- get_code(Str,Code),atom_codes(Char,[Code]).
+get_char(S_or_A,Char):- 
+	check_open_stream_or_alias(S_or_A,get_char/2,1,input,Str),
+	get_code(Str,Code),atom_codes(Char,[Code]).
 
 %ISO
 get_char(Char):- get_code(Code),atom_codes(Char,[Code]).
 
 %ISO
-get_code(Str,C) :- file_get(Str,C).
+get_code(S_or_A,C) :- 
+	check_open_stream_or_alias(S_or_A,get_code/2,1,input,Str),
+	file_get(Str,C).
 
 %ISO
 get_code(C) :- get0(C).
@@ -150,10 +201,9 @@ get0(C) :- stat_flag(CURRENT_INPUT, Str), file_get(Str, C0), C = C0.
 % Not in manual.
 skip(C) :- get0(C0), (C0=C ; skip(C)).
 
-% TLS: most error checking assumed to happen in atom_codes or put.
-
 %ISO
-put_char(Str,C):- 
+put_char(S_or_A,C):- 
+	check_open_stream_or_alias(S_or_A,get_char/2,1,output,Str),
 	atom_codes(C,L),
 	(L = [L1] -> true ; 
 		abort('Type error in argument 1 of put_char/1')),
@@ -167,7 +217,9 @@ put_char(C):-
 	put(L1).
 
 %ISO
-put_code(Str,C):- file_put(Str,C).
+put_code(S_or_A,C):- 
+	check_open_stream_or_alias(S_or_A,get_char/2,1,output,Str),
+	file_put(Str,C).
 
 %ISO
 put_code(C):- put(C).		
@@ -199,13 +251,13 @@ read_term(T,List):-
 	file_read(File, T,Vlist),
 	process_variable_list(List,T,Vlist),!.
 
-read_term(Istr,T,List):- 
+read_term(S_or_A,T,List):- 
+	check_open_stream_or_alias(S_or_A,read_term/3,1,input,Istr),
 	read_term_check(Istr,List,read_term/3),
 	file_read(Istr, T,Vlist),
 	process_variable_list(List,T,Vlist),!.
 
-read_term_check(Istr,List,Predvers):- 
-	check_stream(Istr,Predvers,1),
+read_term_check(_Istr,List,Predvers):- 
 	check_nonvar_list(List,Predvers,3),
 	check_read_options(List,Predvers,3).
 
@@ -244,30 +296,42 @@ isoify([vv(A,V)|R],[A = V|R1]):-
 	isoify(R,R1).
 
 %-------------
-read(Istr,T) :- file_read(Istr,T).
+read(S_or_A,T) :- 
+	check_open_stream_or_alias(S_or_A,read/2,1,input,Istr),
+	file_read(Istr,T).
 
 read(T) :- stat_flag(CURRENT_INPUT, Str), file_read(Str, T).
 
-write(Ostr,Term):- file_write(Ostr,Term).
+write(S_or_A,Term):- 
+	check_open_stream_or_alias(S_or_A,write/2,1,output,Ostr),
+	file_write(Ostr,Term).
 
 write(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write(Str, T).
 
-writeln(Str,Term):- file_write(Str,Term),file_nl(Str).
+writeln(S_or_A,Term):- 
+	check_open_stream_or_alias(S_or_A,writeln/2,1,output,Ostr),
+	file_write(Ostr,Term),file_nl(Ostr).
 
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
 % yes, according to the manual this is what it should do.
-display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
+display(T) :- telling(F), tell(user_out), write(T), told, tell(F).	
 
-write_prolog(Ostr,Term):- file_write_prolog(Ostr,Term).
+write_prolog(S_or_A,Term):- 
+	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
+	file_write_prolog(Ostr,Term).
 
 write_prolog(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write_prolog(Str, T).
 
-writeq(Ostr,Term):- file_write_quoted(Ostr, Term).
+writeq(S_or_A,Term):-
+	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
+	file_write_quoted(Ostr, Term).
 
 writeq(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write_quoted(Str, T).
 
-write_canonical(Ostr,Term):- file_write_canonical(Ostr,Term).
+write_canonical(S_or_A,Term):- 
+	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
+	file_write_canonical(Ostr,Term).
 
 write_canonical(T) :-  
 	stat_flag(CURRENT_OUTPUT,Str),

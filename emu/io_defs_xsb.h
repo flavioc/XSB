@@ -42,8 +42,23 @@
 #define FD2IOPORT   	   15
 #define FILE_CLEARERR      16
 #define TMPFILE_OPEN       17
-#define IS_VALID_IOPORT    18
+#define IS_VALID_STREAM    18
 #define FILE_READ_LINE_LIST 19
+#define STREAM_PROPERTY 20
+
+/* This sequence is for stream properties */
+#define STREAM_FILE_NAME              0
+#define STREAM_MODE                      1
+#define STREAM_INPUT                       2
+#define STREAM_OUTPUT                   3
+#define STREAM_POSITION                 4
+#define STREAM_END_OF_STREAM    5
+#define STREAM_REPOSITIONABLE    6
+
+/* Need in here for stream_property/2 */
+#define MAX_OPEN_FILES    55
+#define MIN_USR_OPEN_FILE 7     /* Where user files start in the XSB
+				   open files table */
 
 
 /* OP numbers for formatted_io */
@@ -51,3 +66,6 @@
 #define FMT_WRITE_STRING   2
 #define FMT_READ       	   3
 
+#define READ_MODE 0
+#define WRITE_MODE 1
+#define APPEND_MODE 2

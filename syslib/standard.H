@@ -48,9 +48,9 @@
 	listing/0,	listing/1,	name/2,		nl/0, nl/1,
 	nofileerrors/0, nonvar/1,	(not)/1,	number/1,
 	number_chars/2, number_codes/2, number_digits/2,
-	once/1,		op/3,		open/3,		otherwise/0,
+  once/1,		op/3,		open/3,		open/4,
 %	print/1,	
-            proper_hilog/1,	
+            otherwise/0,  proper_hilog/1,	
             put/1,          put_char/1,     put_char/2,     put_code/1,
             put_code/2,
             read/1,		read/2,             read_term/3,    read_term/2,
@@ -78,7 +78,7 @@
 /* --------------------------------------------------------------- */
 
 :- export
-        call_c/1,	
+        call_c/1,	        
         catch/3,                throw/1,        '$$exception_ball'/1,
         goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
@@ -94,7 +94,8 @@
 :- import predicate_property/2 from curr_sym.
 :- import dcg/2 from dcg.
 :- import eval/2 from eval.
-:- import file_open/3, file_close/1, file_get/2, file_put/2
+:- import file_open/3, file_close/1, file_get/2, file_put/2,
+  check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/2
      from file_io.
 :- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
           add_trie_index/1, add_table/1
@@ -102,9 +103,9 @@
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
 :- import domain_error/4, check_atom/3, check_nonvar/3,type_error/4,
-  permission_error/4
+  permission_error/4, instantiation_error/3
      from error_handler.
-:- import  check_stream/3, check_nonvar_list/3 from error_handler.
+:- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
 :- import windows_os_loader/0 from loader.
 
@@ -127,5 +128,7 @@
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
+
+
 
 /* --------------------- end of file standard.H ----------------------- */
