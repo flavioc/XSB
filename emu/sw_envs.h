@@ -1,22 +1,26 @@
-/************************************************************************/
-/*                                                                      */
-/* XSB System                                                           */
-/* Copyright (C) SUNY at Stony Brook, 1993                              */
-/*                                                                      */
-/* Everyone is granted permission to copy, modify and redistribute XSB, */
-/* but only under the conditions described in the XSB Licence Agreement.*/
-/* A copy of this licence is supposed to have been given to you along   */
-/* with XSB so you can know your rights and responsibilities.           */
-/* It should be in a file named LICENCE.                                */
-/* Among other things, this notice must be preserved on all copies.     */
-/*                                                                      */
-/************************************************************************/
-
-/*======================================================================
-  File                  :  sw_envs.h
-  Author(s)		:  Kostis Sagonas
-  Last modification	:  October 13, 1998
-========================================================================*/
+/* File:      sw_envs.h
+** Author(s): Kostis Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
 
 
 #define STARTTRREG xtemp1
@@ -38,16 +42,12 @@
 #define switch_envs(tbreg)	undo_bindings(tbreg)
 #else
 #define switch_envs(tbreg)	{\
-/*    swenv_num++; */\
     STARTTRREG = (CPtr) trreg;\
     ENDTRREG = (CPtr) cp_trreg(tbreg);\
     trreg = cp_trreg(tbreg);\
     if (STARTTRREG != ENDTRREG) {\
       do {\
-/*	while_num++; */\
 	while (STARTTRREG > ENDTRREG) {\
-/*	  btr_num++; */\
-/*	  fprintf(stderr, "Untrailing: %p\n", trail_variable(STARTTRREG)); */\
 	  untrail((CPtr) trail_variable(STARTTRREG));\
 	  STARTTRREG = (CPtr) trail_parent(STARTTRREG);\
 	}\
@@ -57,8 +57,6 @@
       } while (STARTTRREG != ENDTRREG);\
       ENDTRREG = (CPtr) trreg;\
       while (ENDTRREG > STARTTRREG) {\
-/*	ftr_num++; */\
-/*	fprintf(stderr, "Forward trailing: %p\n", trail_variable(ENDTRREG)); */\
 	cell((CPtr) trail_variable(ENDTRREG)) = (Cell) trail_value(ENDTRREG);\
 	ENDTRREG = (CPtr) trail_parent(ENDTRREG);\
       }\
@@ -78,11 +76,9 @@
 #endif
 
 #ifdef WAM_TRAIL
-extern CPtr temp_trreg;
-
 #define table_undo_bindings(old_trreg) \
     while (trreg > (CPtr *) old_trreg) {\
-      temp_trreg = *(--trreg); \
+      CPtr temp_trreg = *(--trreg); \
       untrail(temp_trreg); \
     }
 #else
