@@ -3712,8 +3712,10 @@ future release.
 
 \index{updates!and tabling}
 %%
+\paragraph{Updating tabled predicates or predicates on which tabled
+predicates depend.}
 We have earlier remarked in Section~\ref{sec-proc-methods} that tabling and
-database updates do not mix well.  The problem is that the results from
+database updates do not mix well.  One problem is that the results from
 previous queries are stored in XSB tables, and database updates do not
 modify XSB tables.  Thus, a user might get the following counterintuitive
 result:
@@ -3766,21 +3768,39 @@ One other temporal solution could be to design your program in such a way
 that tabled predicates and F-molecules will not depend on the facts that
 are dynamically inserted or deleted.
 
+\paragraph{Tabled predicates that depend on update operations.}
 A related issue is that a tabled predicate (or an F-logic molecule)
-might occur in the head of a rule that has an update in its body, or it may
-be transitively dependent on such an update. In this case, the update will
-be executed the first time the predicate is evaluated. Subsequent calls
-will return the predicate truth value from the tables, without invoking the
-predicate definition.  Moreover, if the update statement is non-logical
-({\it i.e.}, non-backtrackable), then it is hard to predict how many times
-it will be executed (due to backtracking) before it will start being
-ignored due to tabling.
+might occur in the head of a rule that has an update operation in its body,
+or it may be transitively dependent on such an update. Note that this is
+different from the previous issue, where tabled predicates did not
+necessarily depend on update operations but rather on other predicates that
+were modified by these update operations.
+
+In this case, the update operation will be executed the first time the
+tabled predicate is evaluated. Subsequent calls will return the predicate truth
+value from the tables, without invoking the predicate definition.
+Moreover, if the update statement is non-logical ({\it i.e.},
+non-backtrackable), then it is hard to predict how many times it will be
+executed (due to backtracking) before it will start being ignored due to
+tabling.
 
 If \FLORA compiler detects that a tabled literal depends on an update
 statement, a warning is issued, because such a dependency is most likely a
 mistake. This warning is issued also for procedural methods ({\it i.e.},
 Boolean methods of the form {\tt \#foo(...)}) when a tabled literal depends
 on them.
+
+There are situations, however, when dependency on an update makes perfect
+sense. For instance, we might be computing a histogram of some function
+by computing its values at every point and then adding it to the
+histogram. When a value, $f(a)$, is computed first, the histogram is
+updated. However, subsequent calls to $f(a)$ (which might be made during
+the computation of other values for $f$) should not update the histogram.
+In this case it makes sense to make $f/1$ into a tabled predicate, whose
+definition will include an update operator. At present, the compiler will
+issue a warning even in such a benign case. A future release will provide
+means to exempt certain predicates and methods from such dependency checks.
+
 
 \subsection{Updates and Meta-programming}
 
