@@ -237,13 +237,15 @@
 
 /* --- for building vals on the heap ---------------------------------- */
 
-#define nbldval(OP1)\
-    deref(OP1);\
-    if (isnonvar(OP1) ||\
-	(/*(CPtr)OP1 >= glstack.low &&*/ (CPtr)OP1 <= top_of_heap)) {\
-      new_heap_node(hreg, OP1);\
-    }\
-    else {	/* local stack vars point to heap vars and not vice-versa! */\
-      bind_ref((CPtr)(OP1), hreg);\
-      new_heap_free(hreg);\
-    }
+#define nbldval(OP1) {							  \
+   deref(OP1);								  \
+   if ( isnonvar(OP1) ||						  \
+	( /* (CPtr)(OP1) >= glstack.low && */				  \
+	  (CPtr)(OP1) <= top_of_heap ) ) {			 	  \
+     new_heap_node(hreg, OP1);						  \
+   }									  \
+   else {  /* local stack vars point to heap vars and not vice-versa! */  \
+     bind_ref((CPtr)(OP1), hreg);					  \
+     new_heap_free(hreg);						  \
+   }									  \
+}
