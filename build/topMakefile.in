@@ -434,6 +434,8 @@ distclean: clean
 
 # clean only the object code for this architecture
 clean:
+	@echo "Cleaning up ${src_config_libdir}"
+	@rm -f ${src_config_libdir}/*$(xsb_obj_extension) ${src_config_libdir}/*.so
 	@echo "Cleaning up ${src_config_objlibdir}"
 	@-rm -f ${src_config_objlibdir}/*
 	@echo "Cleaning up ${src_emudir}"
