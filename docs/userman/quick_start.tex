@@ -93,8 +93,6 @@ Here are some ways that are guaranteed to not work in some or all cases:
 %%
 \begin{enumerate}
 \item  creating a hard link to either \verb|bin/xsb| or the executable.
-\item creating a symbolic link to either \verb|bin/xsb| or the
-  executable.
 \item changing the relative position of either \verb|bin/xsb| or the
   XSB executable with respect to the rest of the XSB directory tree.
 \end{enumerate}
@@ -294,7 +292,7 @@ You may want to make an alias such as {\tt \smallourprolog} to the above
 commands, for convenience, or you might want to put the directory where the
 XSB command is found in the {\tt \$PATH} environment variable. However, you
 should {\bf not} make hard links to this script or to the XSB executable.
-If you invoke XSB via such a hard link, XSB wil likely be confused and will
+If you invoke XSB via such a hard link, XSB will likely be confused and will
 not find its libraries.  That said, you {\bf can} create other scripts and
 cal the above script from there.
 

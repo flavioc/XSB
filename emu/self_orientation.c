@@ -132,11 +132,19 @@ char *xsb_executable_full_path(char *myname)
 {
   struct stat fileinfo;
   char *path = getenv("PATH");
-  int len, found = 0;
+  int link_len, len, found = 0;
   char *pathcounter, save;
   static char myname_augmented[MAXPATHLEN];
 
-  strcpy(myname_augmented, myname);
+  
+  /* if we can read symlink, then it is a symlink */
+  if ( (link_len = readlink(myname, myname_augmented, MAXPATHLEN)) > 0 ) {
+    /* we can't assume that the value of the link is null-terminated */
+    if ( *(myname_augmented+link_len) != '\0' )
+      *(myname_augmented+link_len+1) = '\0';
+  } else
+    strcpy(myname_augmented, myname);
+
 #ifdef WIN_NT
   /* if executable doesn't end with .exe, then add it */
   if (strcmp(myname + strlen(myname) - 4, ".exe") != 0)
