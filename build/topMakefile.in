@@ -165,7 +165,7 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	    make depend; \
 	    rm -f $(srcdir)/build/.xsb_build_failed; \
 	    (make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
-	                touch $(srcdir)/build/.xsb_build_failed) \
+	                ./touch.sh $(srcdir)/build/.xsb_build_failed) \
 		2>&1 | tee -a ../build/Installation_summary; \
 	    (test ! -f $(srcdir)/build/.xsb_build_failed || \
 	                    (rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
@@ -246,7 +246,7 @@ copy_files::
 	    cp -f ${src_config_libdir}/xsb_configuration.* \
 	          ${install_config_libdir} ; \
 	    chmod 644 ${install_config_libdir}/xsb_configuration.* ; \
-	    touch ${install_config_libdir}/xsb_configuration.O ; \
+	    ./touch.sh ${install_config_libdir}/xsb_configuration.O ; \
 	    cp -f ${src_config_prefix}/banner.msg \
 	          ${install_config_prefix} ; \
 	    chmod 644 ${install_config_prefix}/banner.msg ; \
@@ -273,7 +273,7 @@ copy_files::
 	    echo "Copying packages..."; \
 	    cp -f ${src_pkgdir}/*.O ${install_pkgdir}; \
 	    cp -f ${src_pkgdir}/*.P ${install_pkgdir}; \
-	    touch ${install_pkgdir}/*.O; \
+	    ./touch.sh ${install_pkgdir}/*.O; \
 	    ./copysubdirs.sh ${src_pkgdir} ${install_pkgdir} ; \
 	    echo "Copying etc..."; \
 	    cp -fr ${src_etcdir}/* ${install_etcdir}; \

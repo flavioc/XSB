@@ -834,7 +834,7 @@ if test -r "$cache_file" -a "$ac_caching" = "yes" ; then
 elif test ! -r "$cache_file" ; then
   echo "creating cache $cache_file"
     (test -d $arch_config_prefix || mkdir -p ${arch_config_prefix}) 2> /dev/null
-  touch $cache_file
+  ./touch.sh $cache_file
   chmod 644 "$cache_file"
 fi
 
@@ -3613,7 +3613,7 @@ if test -n "$site_dynamic_libraries"; then
   done
   echo ""
 
-    test -f ${site_prefix}/siteinitrc.P || touch ${site_prefix}/siteinitrc.P
+    test -f ${site_prefix}/siteinitrc.P || ./touch.sh ${site_prefix}/siteinitrc.P
   
     sed '/%%[ \t]*-[-]*[ \t]*DO NOT EDIT THIS LINE/,$ d' \
 	${site_prefix}/siteinitrc.P | \

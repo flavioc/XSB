@@ -56,7 +56,7 @@ HDRMSG = "While compiling XSB/packages/flora/syslib:"
 .SUFFIXES: .P .O .H
 
 all: init $(ALL) finish
-	@touch cmd...
+	@../../../touch.sh cmd...
 	$(Prolog) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
@@ -67,12 +67,12 @@ all: init $(ALL) finish
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
 %.P:   %.H
-	touch $@
+	@../../../touch.sh $@
 
 # These targets are obsolete. They are here just in case some 
 # obscure make utility doesn't understand patterns
 .H.P:
-	touch $@
+	@../../../touch.sh $@
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 

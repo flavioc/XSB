@@ -26,7 +26,7 @@
 ALL = 	flora.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O \
 	sModels.O libwww.O
 
-SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww
+SUBDIR = flora slx perlmatch gap regmatch wildmatch libwww sModels
 
 Option = [optimize]
 
@@ -58,7 +58,7 @@ HDRMSG = "While compiling XSB/packages:"
 
 
 all:  init $(ALL) finish $(SUBDIR)
-	@touch cmd...
+	@../build/touch.sh cmd...
 	$(Prolog) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
@@ -79,6 +79,9 @@ perlmatch::
 	@echo ""
 	cd perlmatch; make
 
+#sModels::
+#	@echo ""
+#	cd sModels; make
 gap::
 	@echo ""
 	cd gap; make

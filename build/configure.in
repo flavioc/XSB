@@ -310,7 +310,7 @@ elif test ! -r "$cache_file" ; then
   echo "creating cache $cache_file"
   dnl If this fails, the user'll see a msg later that cache file isn't found
   (test -d $arch_config_prefix || mkdir -p ${arch_config_prefix}) 2> /dev/null
-  touch $cache_file
+  ./touch.sh $cache_file
   chmod 644 "$cache_file"
 fi
 
@@ -1292,7 +1292,7 @@ if test -n "$site_dynamic_libraries"; then
   echo ""
 
   dnl Append to siteinitrc.P and create it, if necessary
-  test -f ${site_prefix}/siteinitrc.P || touch ${site_prefix}/siteinitrc.P
+  test -f ${site_prefix}/siteinitrc.P || ./touch.sh ${site_prefix}/siteinitrc.P
   
   dnl delete below the magic line
   sed '/%%[[ \t]]*-[[-]]*[[ \t]]*DO NOT EDIT THIS LINE/,$ d' \

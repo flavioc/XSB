@@ -54,14 +54,14 @@ Prolog = $(XSB)
 	echo 'mc($*,$(Option)).' >> cmd...
 
 all: $(ALL)
-	@touch cmd...
-	/bin/ln -s $(SMODELSOBJ) .
-	/bin/ln -s $(SMODELSHEADER) .
+	@../../build/touch.sh cmd...
+	ln -s $(SMODELSOBJ) .
+	ln -s $(SMODELSHEADER) .
 	$(Prolog) < cmd...
-	/bin/rm cmd...
+	@rm cmd...
 
 clean: 
-	/bin/rm *.o *.so *.O *.h
+	rm *.o *.so *.O *.h
 
 nope:
 
