@@ -2,24 +2,25 @@
     This directory contains the XSB compiler code.
 
 
-PLEASE NOTICE:
+PLEASE NOTE:
 
-If you change any of the files here (such as adding a new in-lined
-builtin), you must follow this procedure:
+If you change any of the files here (such as adding a new in-lined 
+builtin), you must follow this procedure: 
+ 
+          1. Recompile with the old, working XSB compiler. 
+          2. ***Important*** Recompile again with a new compiler 
+             obtained in Step 1. 
+ 
+If you are adding a builtin to be used in the loader at an early stage, the 
+procedure is more cumbersome. 
+ 
+First, compile the ./cmp/*.P files with an old, working compiler. 
+Then get a version of the loader (loader.O) that doesn't use the new builtin 
+(pity you if you haven't saved the old one ;-). 
+ 
+Now, compile ./cmp/*.P with the new compiler and the old loader.O. 
+Finally, put the new loader.O in place and recompile ./syslib/*.P and 
+./lib/*.P with the new compiler.  Easy, eh? 
+ 
+mk 
 
-	  1. Recompile with the old, working XSB compiler.
-	  2. ***Important*** Recompile again with a new compiler
-	     obtained in Step 1.
-
-If you are adding a builtin to be used in the loader at an early stage, the
-procedure is more cumbersome.
-
-First, compile ./cmp/*.P files with an old, working compiler.
-Then get a version of the loader that doesn't use the new builtin
-(hopefully you saved the old one ;-).
-
-Now, compile ./cmp/*.P with the new compiler and the old loader.
-Finally, put the new loader in place and recompile ./syslib/*.P and
-./lib/*.P with the new compiler.  Easy, heh?
-
-mk

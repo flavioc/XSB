@@ -79,6 +79,14 @@ To un-watch the tests directory type:
 
    cvs watch off tests
 
+Un-watch build/configure
+
+   cvs watch off build/configure
+
+Configure is in the repository for those who don't have autoconf
+installed. However, it makes no sense to watch it, because it is generated
+by autoconf.
+
 To un-watch the .O files, type:
 
    cvs watch off cmplib/*.O
