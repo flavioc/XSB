@@ -954,7 +954,7 @@ case "$canonical" in
 		    CFLAGS="${CFLAGS} -OPT:Olimit=7500"
 	     	fi
 	     fi
-	     trutils_opt_level=c_opt_level
+	     trutils_opt_level=${c_opt_level}
 	    ;;
       *-solaris* | *-sunos5* ) AC_DEFINE(SOLARIS)
 		 LDFLAGS="${LDFLAGS} -lnsl -ldl"
