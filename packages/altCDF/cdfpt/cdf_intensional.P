@@ -1,4 +1,15 @@
 
+isa_int(oid(Integer,cdfpt),cid(allIntegers,cdf)):- integer(Integer).
+isa_int(cid(Integer,cdfpt),cid(allIntegers,cdf)):- integer(Integer).
+
+isa_int(oid(Float,cdfpt),cid(allFloats,cdf)):- float(Float).
+isa_int(cid(Float,cdfpt),cid(allFloats,cdf)):- float(Float).
+
+isa_int(oid(Atom,cdfpt),cid(allAtoms,cdf)):- atom(Atom).
+isa_int(cid(Atom,cdfpt),cid(allAtoms,cdf)):- atom(Atom).
+
+end_of_file.
+
 isa_int(oid(Integer,cdfpt),cid(allIntegers,cdf)):- 
     (integer(Integer) -> 
         true
