@@ -26,16 +26,39 @@
 /* To pretty print object:
 	?- flora_prettyprint(obj).
    To pretty print class:
-        ?- X:class, flora_prettyprint(X), fail.
+        ?- flora_prettyprint_class(class).
+   To save result in a file:
+        ?- flora_prettyprint(obj,outfile).
+        ?- flora_prettyprint_class(class,outfile).
 */
 
 
 %%:- export flora_prettyprint/1.
 
+Class :: flora_metaclass.
+
 
 %% Methods to ignore during pretty printing
 flora_print_ignore(print(pretty)).
 flora_print_ignore(ignore(pretty)).
+
+%% flora_prettyprint_class(+Class,+File)
+flora_prettyprint_class(Class, OutFile) :-
+	tell(OutFile),
+    	flora_prettyprint_class(Class),
+	told.
+
+flora_prettyprint_class(Class) :-
+    	flora_prettyprint(Class),
+	X : Class,
+	flora_prettyprint(X),
+	fail.
+
+%% flora_prettyprint(+Obj,+File)
+flora_prettyprint(X,OutFile) :-
+        tell(OutFile),
+	flora_prettyprint(X),
+	told.
 
 flora_prettyprint(X) :-
 	flora_pp_write_header(X),
@@ -76,7 +99,7 @@ flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs]) :-
 	@M =.. MethInv,
 	Obj[@M -> Val],
 	write('    '), flora_pp_write_method_invocation(MethInv),
-	write(' -> '), write(Val),
+	write(' -> '), flora_pp_write_value(Val),
 	flora_pp_write_semicolon_maybe(MethInvs),
 	flora_pp_write_body_scalar1(Obj, MethInvs).
 
@@ -117,7 +140,7 @@ flora_pp_write_method_invocation([M, Arg |Args]) :-
 
 flora_pp_write_arglist([]).
 flora_pp_write_arglist([Arg|Rest]) :-
-    	write(','), write(Arg),
+    	write(','), flora_pp_write_value(Arg),
 	flora_write_list(Rest).
 
 flora_pp_write_set(L) :-
@@ -128,6 +151,15 @@ flora_pp_write_set(L) :-
 flora_pp_write_set1([]).
 flora_pp_write_set1([Elt]) :- write(Elt).
 flora_pp_write_set1([Elt, Elt2 | Rest]) :-
-    	write(Elt), write(','),
+    	flora_pp_write_value(Elt), write(','),
 	flora_pp_write_set1([Elt2|Rest]).
         
+flora_pp_write_value(Val) :-
+	atom(Val),
+	!,
+	fmt_write('''%s''', arg(Val)).
+flora_pp_write_value(Val) :-
+	is_string(Val),
+	!,
+	fmt_write('"%s"', arg(Val)).
+flora_pp_write_value(Val) :- write(Val).
