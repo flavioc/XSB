@@ -183,9 +183,6 @@ compile_popt3([Inst|Rest], Pil) :- compile_popt31(Inst, Rest, Pil).
 compile_popt31(getlist(R0), [unitvar(R1),unitvar(R2)|Rest],
       			    [getlist_tvar_tvar(R0,R1,R2)|OptRest]) :-
 	compile_popt3(Rest, OptRest).
-compile_popt31(getcomma(R0), [unitvar(R1),unitvar(R2)|Rest],
-      			     [getcomma_tvar_tvar(R0,R1,R2)|OptRest]) :-
-	compile_popt3(Rest, OptRest).
 compile_popt31(Inst, Rest, [Inst|OptRest]) :- 
 	compile_popt3(Rest, OptRest).
 

@@ -58,8 +58,7 @@ asm_inst(bldnil,		4,	29,	[ppp]		).
 asm_inst(uninumcon(N),		8,	30,	[ppp, n(N)]	). 
 asm_inst(bldnumcon(N),		8,	31,	[ppp, n(N)]	).
 asm_inst(getlist_tvar_tvar(R0,R1,R2), 4,72,	[r(R0), r(R1), r(R2)]	).
-asm_inst(getcomma(R),		4,	73,	[pp, r(R)]	).
-asm_inst(getcomma_tvar_tvar(R0,R1,R2),4,74,	[r(R0), r(R1), r(R2)]	).
+
 asm_inst(getfloat(R,Float),	8,	128,	[pp, r(R), n(Float)]	).
 asm_inst(putfloat(R,Float),	8,	129,	[pp, r(R), n(Float)]	).
 asm_inst(unifloat(Float),	8,	130,	[ppp, n(Float)]	).
@@ -148,7 +147,6 @@ asm_inst(arglabel(T, I, L),	9,	-3,	[t(T), n(I), l(L)]	).
 	% only used in index block
 asm_inst(arglabel(T, L),	5,	-3,	[t(T), l(L)]	).
 	% only used in index block
-%  asm_inst(modname(_p), 	0,	-1,	[]).
 asm_inst(endfile(_P,_A),	8,	255,	[ppp, n(0)]	).
 
 force_asm_inst_loaded.
