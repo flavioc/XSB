@@ -26,6 +26,11 @@
 
 #mode standard Prolog
 
+/****************************************************************************
+  Include prefixes for output Macros
+****************************************************************************/
+#include "flora_prefix.flh"
+
 
 /**************************************************************************
   The following are the types of tokens returned by the FLORA Lexer:
@@ -456,27 +461,27 @@
 
 %% Wrapper names that occur in the body of the compiled rules that come
 %% from the user program
-#defeval WRAP_D_ISA		FLDEBUGPREFIX(isa)
-#defeval WRAP_D_SUB		FLDEBUGPREFIX(sub)
-#defeval WRAP_D_METH		FLDEBUGPREFIX(meth)
-#defeval WRAP_D_IMETH		FLDEBUGPREFIX(imeth)
-#defeval WRAP_D_TRAN		FLDEBUGPREFIX(tran)
-#defeval WRAP_D_FD		FLDEBUGPREFIX(fd)
-#defeval WRAP_D_IFD		FLDEBUGPREFIX(ifd)
-#defeval WRAP_D_FDSIG		FLDEBUGPREFIX(fdsig)
-#defeval WRAP_D_IFDSIG		FLDEBUGPREFIX(ifdsig)
-#defeval WRAP_D_MVD		FLDEBUGPREFIX(mvd)
-#defeval WRAP_D_IMVD		FLDEBUGPREFIX(imvd)
-#defeval WRAP_D_MVDSIG		FLDEBUGPREFIX(mvdsig)
-#defeval WRAP_D_IMVDSIG		FLDEBUGPREFIX(imvdsig)
-#defeval WRAP_D_MVDINC		FLDEBUGPREFIX(mvdinc)
-#defeval WRAP_D_IMVDINC		FLDEBUGPREFIX(imvdinc)
-#defeval WRAP_D_MVDTOLIST	FLDEBUGPREFIX(mvdtolist)
-#defeval WRAP_D_IMVDTOLIST	FLDEBUGPREFIX(imvdtolist)
-#defeval WRAP_D_FDDEF		FLDEBUGPREFIX(fddef)
-#defeval WRAP_D_IFDDEF		FLDEBUGPREFIX(ifddef)
-#defeval WRAP_D_MVDDEF		FLDEBUGPREFIX(mvddef)
-#defeval WRAP_D_IMVDDEF		FLDEBUGPREFIX(imvddef)
+#deffast WRAP_D_ISA		FLDEBUGPREFIX(isa)
+#deffast WRAP_D_SUB		FLDEBUGPREFIX(sub)
+#deffast WRAP_D_METH		FLDEBUGPREFIX(meth)
+#deffast WRAP_D_IMETH		FLDEBUGPREFIX(imeth)
+#deffast WRAP_D_TRAN		FLDEBUGPREFIX(tran)
+#deffast WRAP_D_FD		FLDEBUGPREFIX(fd)
+#deffast WRAP_D_IFD		FLDEBUGPREFIX(ifd)
+#deffast WRAP_D_FDSIG		FLDEBUGPREFIX(fdsig)
+#deffast WRAP_D_IFDSIG		FLDEBUGPREFIX(ifdsig)
+#deffast WRAP_D_MVD		FLDEBUGPREFIX(mvd)
+#deffast WRAP_D_IMVD		FLDEBUGPREFIX(imvd)
+#deffast WRAP_D_MVDSIG		FLDEBUGPREFIX(mvdsig)
+#deffast WRAP_D_IMVDSIG		FLDEBUGPREFIX(imvdsig)
+#deffast WRAP_D_MVDINC		FLDEBUGPREFIX(mvdinc)
+#deffast WRAP_D_IMVDINC		FLDEBUGPREFIX(imvdinc)
+#deffast WRAP_D_MVDTOLIST	FLDEBUGPREFIX(mvdtolist)
+#deffast WRAP_D_IMVDTOLIST	FLDEBUGPREFIX(imvdtolist)
+#deffast WRAP_D_FDDEF		FLDEBUGPREFIX(fddef)
+#deffast WRAP_D_IFDDEF		FLDEBUGPREFIX(ifddef)
+#deffast WRAP_D_MVDDEF		FLDEBUGPREFIX(mvddef)
+#deffast WRAP_D_IMVDDEF		FLDEBUGPREFIX(imvddef)
 
 
 /****************************************************************************
@@ -596,56 +601,6 @@
 #define FLSYSDBUPDATE		flsysdbupdate
 
 #define FLORA_THIS_MODULE	flThisModule
-
-
-/****************************************************************************
-  prefixes for output Macro
-****************************************************************************/
-#include "flora_prefix.flh"
-
-
-/****************************************************************************
-  F-logic atom prefixes
-****************************************************************************/
-#define FLFACTPREFIX		'base_'
-#define FLHEADPREFIX		'derived_'
-#define FLBODYPREFIX		''
-#define FLTRAILERPREFIX		'inferred_'
-
-#define FLDEBUGPREFIX		'd_'
-%% This is a 1-argument macro
-#mode save
-#mode nostring "\!#'"
-#define FLDEBUGPREFIX(X)        'd_#1'
-#mode restore
-
-
-/******************************************************************************
-  lengths of prefixes
-
-  Note: We need to account for the quotes. The length is for the Prolog
-        atom, but not the text string.
-******************************************************************************/
-
-#defeval FLORA_PREFIX_LEN_PLUS1	     #eval length(FLORA_PREFIX)-1
-#defeval FLORA_FO_PREFIX_LEN_PLUS1   #eval length(FLORA_FO_PREFIX)-1
-
-%% length of FLORA_PREFIX'FLORA_USER_MODULE
-#defeval FLORA_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_USER_MODULE_PREFIX)-2
-
-%% length of FLORA_PREFIX'FLORA_SYSTEM_MODULE
-#defeval FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_SYSTEM_MODULE_PREFIX)-2
-
-%% length of FLORA_FO_PREFIX'FLORA_USER_MODULE
-#defeval FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_USER_MODULE_PREFIX)-2
-
-%% length of FLORA_FO_PREFIX'FLORA_SYSTEM_MODULE
-#defeval FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1  #eval length(FLORA_FO_SYSTEM_MODULE_PREFIX)-2
-
-#defeval FLFACTPREFIX_LEN		#eval length(FLFACTPREFIX)-2
-#defeval FLHEADPREFIX_LEN		#eval length(FLHEADPREFIX)-2
-#defeval FLBODYPREFIX_LEN		#eval length(FLBODYPREFIX)-2
-#defeval FLTRAILERPREFIX_LEN		#eval length(FLTRAILERPREFIX)-2
 
 
 /****************************************************************************

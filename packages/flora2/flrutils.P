@@ -1080,7 +1080,7 @@ flora_load_dyn_fdb(InDBFile,ModuleName) :-
 			       args(DBFile,ModuleName)),
 	    cputime(T0),
 	    seeing(PreInFile),
-	    flora_set_xpp_options_for_compile(ModuleName),
+	    flora_set_xpp_options_for_read(ModuleName),
 	    %% Don't issue irrelevant warnings
 	    flora_add_xpp_options('-warninglevel 1 '),
 	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
@@ -1128,7 +1128,7 @@ flora_load_dyn_fld(InFLDFile,ModuleName) :-
 			       args(FLDFile,ModuleName)),
 	    cputime(T0),
 	    seeing(PreInFile),
-	    flora_set_xpp_options_for_compile(ModuleName),
+	    flora_set_xpp_options_for_read(ModuleName),
 	    %% Don't issue irrelevant warnings
 	    flora_add_xpp_options('-warninglevel 1 '),
 	    xpp_process_file(FLDFile,XPP_process,IOportFromProc),

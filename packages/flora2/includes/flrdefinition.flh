@@ -28,6 +28,7 @@ FLORA_FO_THIS_WORKSPACE(flThisModule)(FLORA_THIS_MODULE_NAME).
 ?- (flora_storage_registry(FLORA_THIS_FDB_STORAGE), !
     ; assert(flora_storage_registry(FLORA_THIS_FDB_STORAGE))
     ).
+
 ?- (flora_module_registry(FLORA_THIS_MODULE_NAME) -> true
     ; assert(flora_module_registry(FLORA_THIS_MODULE_NAME)),
       %% If debugger is loaded, read debugger data for this module

@@ -1,3 +1,33 @@
+/* File:      flrdependency.P  -- the dependency checker
+**
+** Author(s): Chang Zhao
+**
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2002
+** 
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+
+%%%% Check dependency of tabled predicates on updates or procedural methods.
+%%%% Such dependency is considered a likely error and warning is issued.
+%%%%
 %%%% Usage: check_for_dependencies(+CodeList,-ErrWarnList)
 %%%%        generate_rules(+CodeList)
 %%%%        depend(+Sk1,+Sk2,+Option).
@@ -97,8 +127,8 @@ is_agg(FLLIBCOLLECTSET(Var,Group,Cond,Result),collectset,Var,Group,Cond,Result)
 is_agg(FLLIBCOLLECTBAG(Var,Group,Cond,Result),collectbag,Var,Group,Cond,Result)
 	:- !.
 
-is_if_then(FLLIBIFTHEN(If,Then),If,Then).
-is_if_then_else(FLLIBIFTHENELSE(If,Then,Else),If,Then,Else).
+is_fllibifthen(FLLIBIFTHEN(If,Then),If,Then).
+is_fllibifthenelse(FLLIBIFTHENELSE(If,Then,Else),If,Then,Else).
 
 /****************************************************************************
   cut_off(+Term_before_cutoff,-Term_after_cutoff)
@@ -386,14 +416,14 @@ assert_rule(HeadCode,BodyCode,(BCI,Index),anu(_,N,U)) :-
 	assert_rule(HeadCode,Condition,ConditionI,anu(a,N,U)).
 
 assert_rule(HeadCode,BodyCode,(BCI,_I),anu(_,N,U)) :-
-	is_if_then(BodyCode,If,Then),
+	is_fllibifthen(BodyCode,If,Then),
 	!,
 	BCI =.. [_Control,IfI,ThenI],
 	assert_rule(HeadCode,If,IfI,anu(a,N,U)),
 	assert_rule(HeadCode,Then,ThenI,anu(a,N,U)).
 
 assert_rule(HeadCode,BodyCode,(BCI,_I),anu(_,N,U)) :-
-	is_if_then_else(BodyCode,If,Then,Else),
+	is_fllibifthenelse(BodyCode,If,Then,Else),
 	!,
 	BCI =.. [_Control,IfI,ThenI,ElseI],
 	assert_rule(HeadCode,If,IfI,anu(a,N,U)),
@@ -436,7 +466,7 @@ build_struct(Term,_VarList,Code,(Code,Index)) :-
 	is_prnumber(Term,Code,Index),
 	!.
 
-build_struct(Term,VarList,Code,(Code,Index)) :-
+build_struct(Term,VarList,Code,(_V,Index)) :-
 	is_prvariable(Term,Name,Index),
 	!,
 	build_variable(Name,VarList,Code).
@@ -872,8 +902,8 @@ retrieve_program_tabled([H|T]) :-
  rebuild_text(+Term,+IndexdTerm,-Text)
  return a string for the given term to construct warning message
  ****************************************************************************/
-rebuild_text(Term,(_T,Index),Text) :-
-	(atomic(Term);var(Term)),
+rebuild_text(_Term,(T,Index),Text) :-
+	(atomic(T);var(T)),
 	!,
 	conget(min_ind,MinInd),
 	conget(next_min_ind,NextMinInd),

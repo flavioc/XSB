@@ -1,4 +1,4 @@
-/* File:      flrundefined.P  -- The additional info. for undefined predicates
+/* File:      flrundefined.P  -- Catcher of undefined predicates and methods
 **
 ** Author(s): Chang Zhao
 **
