@@ -85,6 +85,9 @@ initial_cdf_flag(newExtTermBatch,check(A,B,[%cdf_check_ground(B),
 :- dynamic cdf_flags/2.
 :- index(cdf_flags/2,trie).
 
+:- dynamic user_cdf_flag/2.
+:- dynamic cdf_configuration/2.
+
 :- dynamic caching_cdf/1.
 :- dynamic cdf_dirty/1.
 :- dynamic using_xj/0.

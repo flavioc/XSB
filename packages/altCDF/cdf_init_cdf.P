@@ -20,19 +20,12 @@
 	initialize_state_nl/0, 
 	set_chk_index/0,
 	assert_cdf/1, retractall_cdf/1,
+	make_cdf_clean/0, make_cdf_clean/1,
 	updateExtTerm/3.
 
 #include "./cdf_definitions.h"
 
-:- (search_module(cdf_xj,_,_,_,_,_)
-    ->	   consult(cdf_xj)
-    ;	   consult(cdf_cdf)
-   ).
-
-%:- import (:-)/2 from usermod.
-
-:- import apply_checks/2 
-	from cdf_checks.
+:- import apply_checks/2 from cdf_checks.
 
 :- import  isa_ext/2, allAttr_ext/3, hasAttr_ext/3,
 	classHasAttr_ext/3, 
@@ -41,8 +34,7 @@
 
 :- import  isa_int/2, hasAttr_int/3, minAttr_int/4,
 	  classHasAttr_int/3, allAttr_int/3,maxAttr_int/4,
-	  necessCond_int/2, coversAttr_int/3                   from
-      usermod.
+	  necessCond_int/2, coversAttr_int/3                   from usermod.
 
 :- import cdf_index/3,cdf_index/4 from usermod.
 
@@ -51,17 +43,16 @@
 :- import cdf_set_log_off/0, cdf_log/1, cdf_reset_log/0
 	from cdf_concurrency.	
 
-:- import cdf_flags/2, 
-	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
+:- import assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
-:- import cdf_flag/1, initial_cdf_flag/2 from usermod.
+% From cdf_config.
+:- import cdf_flags/2, user_cdf_flag/2, caching_cdf/1,
+	  cdf_flag/1, initial_cdf_flag/2, cdf_configuration/2 from usermod.
 
 :- import get_component_extensional/2,
 	  get_intensional_mfile_expansion/2,
 	  load_component/3 from cdf_comps_share.
 
-:- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
-	from cdf_xj.
 :- import cdf_message/1 from cdf_exceptions.
 
 :- import check_var/3 from error_handler.
@@ -71,16 +62,29 @@
 :- import ground/1 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
-:- dynamic user_cdf_flag/2.
-:- import user_cdf_flag/2 from usermod.
 
 :- ensure_loaded(cdf_config).
 
 #if TABLEDISA
 ?- cdf_message('Using tabled isa').
+:- assert(cdf_configuration(tabled_isa,on)).
 #else
 ?- cdf_message('Using non-tabled isa').
+:- assert(cdf_configuration(tabled_isa,off)).
 #endif
+
+:- import cdf_update_term/2 from usermod.
+:- import call_assert/1 from cdf_utilities.
+
+:- (search_module(cdf_xj,_,_,_,_,_)
+    ->	   consult(cdf_xj),
+	   cdf_message('Using proprietary cdf_xj'),
+	   assert(cdf_configuration(proprietary_features,on))
+    ;	   consult(cdf_cdf),
+	   cdf_message('Using non-proprietary cdf_cdf'),
+	   assert(cdf_configuration(proprietary_features,off))
+   ).
+
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -776,7 +780,7 @@ immed_minAttr(SCid,Rid,TCid,N) :-
 immed_minAttr1(SCid,Rid,TCid,N) :-
 	immed_minAttr2(SCid,Rid,TCid,N).
 immed_minAttr1(SCid,Rid,TCid,1) :-
-	hasAttr_int(SCid,Rid,TCid).
+	immed_hasAttr(SCid,Rid,TCid).
 
 immed_minAttr2(SCid,Rid,TCid,N) :- 
 	minAttr_ext(SCid,Rid,TCid,N).
@@ -865,9 +869,9 @@ not_max_implicative_minAttr_12fix(Term,BindPat) :-
 	once(explosive_isa(RidO,Rid)),	
 	once(explosive_isa(SCid,SCidO)),	
 	once(explosive_isa(TCidO,TCid)),
-	varLTE(N,M).
+	varLTE(M,N).
 
-%----------
+%----------,
 :- table minAttr_1fix/4.
 minAttr_1fix(SCid,Rid,TCid,N) :-
 	OutTerm = rln(SCid,Rid,TCid,N),
@@ -891,7 +895,7 @@ not_max_implicative_minAttr_1fix(Term,BindPat) :-
 	once(explosive_isa(RidO,Rid)),	
 	once(explosive_isa(SCid,SCidO)),	
 	once(explosive_isa(TCidO,TCid)),
-	varLTE(N,M).
+	varLTE(M,N).
 
 %----------
 :- table minAttr_23fix/4.
@@ -917,7 +921,7 @@ not_max_implicative_minAttr_23fix(Term,BindPat) :-
 	once(explosive_isa(RidO,Rid)),	
 	once(explosive_isa(SCid,SCidO)),	
 	once(explosive_isa(TCidO,TCid)),
-	varLTE(N,M).
+	varLTE(M,N).
 
 %%% ClassHasAttr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -961,7 +965,7 @@ classHasAttr1(SCid,Rid,TCid) :-
 	once(explosive_isa(RidAb,Rid)),
 	once(explosive_isa(TCidAb,TCid)).
 
-%%:- table classHasAttr_12fix/3.
+:- table classHasAttr_12fix/3.
 classHasAttr_12fix(SCid,Rid,TCid) :-
 	OutTerm = rln(SCid,Rid,TCid),
 	copy_term(OutTerm,BindPat),
@@ -969,7 +973,7 @@ classHasAttr_12fix(SCid,Rid,TCid) :-
 	(not_max_implicative_classHasAttr_12fix(OutTerm,BindPat) -> 
 	    fail ; true).
 
-%%:- table classHasAttr_12fix_sub/3.
+:- table classHasAttr_12fix_sub/3.
 classHasAttr_12fix_sub(SCid,Rid,TCid) :-
 	isa(RidC,Rid),
 	immed_classHasAttr1(SCid,RidC,TCidC),
@@ -1507,6 +1511,21 @@ newExtTerm(Context,Term,Upd0,Upd):-
 	    Upd0 = [asserta(Term)|Upd]
 	  ; Upd0 = Upd).		
 
+:- comment(cdf_update_list/1, "cdf_update_list takes a list of
+assert/retracts to stored CDF relations and executes them.  All
+updates to any CDF relation should go through here.  This will allow
+us to keep XJ notified of changes, and to keep the external DB
+consistent, when we get to it.").
+
+cdf_update_list(List) :-
+	caching_cdf(Flg),
+	cdf_do_update_list(List,Flg).
+
+cdf_do_update_list([],_).
+cdf_do_update_list([Term|Terms],CFlg) :-
+	cdf_update_term(Term,CFlg),
+	cdf_do_update_list(Terms,CFlg).
+
 %-----------------------------------------------------------
 %%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
 
@@ -1609,13 +1628,13 @@ abolish_coversAttr_inherits :-
 	abolish_table_pred(coversAttr_12fix_sub(_,_,_)),
 	abolish_table_pred(coversAttr_23fix_sub(_,_,_)).
 
-abolish_classHasAttr_inherits :- true.
-/*	abolish_table_pred(classHasAttr_1fix(_,_,_)),
+abolish_classHasAttr_inherits :- 
+	abolish_table_pred(classHasAttr_1fix(_,_,_)),
 	abolish_table_pred(classHasAttr_12fix(_,_,_)),
 	abolish_table_pred(classHasAttr_23fix(_,_,_)),
 	abolish_table_pred(classHasAttr_1fix_sub(_,_,_)),
 	abolish_table_pred(classHasAttr_12fix_sub(_,_,_)),
-	abolish_table_pred(classHasAttr_23fix_sub(_,_,_)). */
+	abolish_table_pred(classHasAttr_23fix_sub(_,_,_)).
 
 abolish_allAttr_inherits :-
 	abolish_table_pred(allAttr_1fix(_,_,_)),
@@ -1644,6 +1663,20 @@ abolish_minAttr_inherits :-
 abolish_necessCond_inherits :-
 	abolish_coversAttr_inherits.
 
+% Moved here from cdf_xj/cdf  TLS
+
+:- make_cdf_clean.
+
+make_cdf_dirty(Name) :- 
+	(Name == 'cdf' -> 
+	    true
+	  ; 
+	 call_assert(cdf_flags(dirty,Name)) ).
+
+make_cdf_clean(Name) :- retractall(cdf_flags(dirty,Name)).
+
+make_cdf_clean :- retractall(cdf_flags(dirty,_)).
+
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% performance testing predicate
@@ -1669,7 +1702,7 @@ chk_index(Goal) :-
 		)
 	 ;	\+ bound_on([1],Goal)
 	),
-	telling(OF),tell(user),writeln('Non-indexed call '(Goal)),
+	telling(OF),tell(user),cdf_message('Non-indexed call '(Goal)),
 	tell(OF),
 	fail.
 
@@ -1742,40 +1775,3 @@ updateExtTermMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
 updateExtTermMerge([],[],_ArgsVars,Updates,Updates).
 
 end_of_file.
-
-/* check_attribute(+,+,+).  This predicate should be used *only* in
-newAttribute. The idea is that newAttribute should add a new attribute
-only if that new attribute is not implied by the ontology.  But using
-attribute as a check in newAttribute is 1) inefficient and 2) not
-quite right.  The not-quite-right part is be cause newAttribute seeks
-to backtrack through all *maximal" attribtues implied by the ontology
-(last ifthenelse of attribute/3) and we want newAttribute to add only
-if the attribute is not implied, regardless if it is maximally implied
-or not. */
-
-check_attribute(Oid,Rid,TCid) :-
-	(immed_attribute(Oid,Rid,TCid) 
-         ->	true
-	 ;	immed_isa(Oid,SCid),
-		irel(SCid,Rid,TCid)
-	).
-
-show_cdf_size:- 
-	count_success(isa_ext(_,_)),
-	count_success(hasAttr_ext(_,_,_)),
-	count_success(classHasAttr_ext(_,_,_)),
-	count_success(allAttr_ext(_,_,_)).
-	
-count_success(Term):- 
-	conset('_$size_matters',0),
-	count_success_1(Term),
-	conget('_$size_matters',N),
-	functor(Term,F,A),
-	writeln(('There are ',N,' ',F,'/',A,' successes')).
-	
-count_success_1(Term):- 
-	call0(Term),
-	conget('_$size_matters'),
-	fail.
-count_success_1(_).
-
