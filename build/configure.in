@@ -1209,12 +1209,9 @@ case "$canonical" in
 		   ;;
 	      esac
 	      ;;
-      *freebsd*)
+      *freebsd* )
 	AC_DEFINE(FREEBSD)
 	AC_DEFINE(FOREIGN_ELF)
-#	if test "$CC" = "gcc" ; then
-#		CFLAGS="-m486 ${CFLAGS}"
-#	fi
 	if test "$__export_dynamic" = "yes" ; then
 		LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
 	fi
@@ -1222,7 +1219,12 @@ case "$canonical" in
 		LDFLAGS="${LDFLAGS} -ldl"
 	fi
 	;;
-      *sgi*) 
+      *-rhapsody* | *-darwin* )
+        AC_DEFINE(DARWIN)
+	# Darwin uses its own format for shared libraries and doesn't
+	# support the dlopen() interface. We need to find a wrapper for that.
+	;;
+      *sgi* ) 
 	     AC_DEFINE(FOREIGN_ELF)
 	     if test "${machine64bit}" = yes ; then
 		AC_DEFINE(SGI64)

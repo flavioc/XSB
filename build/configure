@@ -3309,7 +3309,7 @@ EOF
 		   ;;
 	      esac
 	      ;;
-      *freebsd*)
+      *freebsd* )
 	cat >> confdefs.h <<\EOF
 #define FREEBSD 1
 EOF
@@ -3318,9 +3318,6 @@ EOF
 #define FOREIGN_ELF 1
 EOF
 
-#	if test "$CC" = "gcc" ; then
-#		CFLAGS="-m486 ${CFLAGS}"
-#	fi
 	if test "$__export_dynamic" = "yes" ; then
 		LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
 	fi
@@ -3328,7 +3325,15 @@ EOF
 		LDFLAGS="${LDFLAGS} -ldl"
 	fi
 	;;
-      *sgi*) 
+      *-rhapsody* | *-darwin* )
+        cat >> confdefs.h <<\EOF
+#define DARWIN 1
+EOF
+
+	# Darwin uses its own format for shared libraries and doesn't
+	# support the dlopen() interface. We need to find a wrapper for that.
+	;;
+      *sgi* ) 
 	     cat >> confdefs.h <<\EOF
 #define FOREIGN_ELF 1
 EOF
@@ -3433,21 +3438,21 @@ esac
 
 if test -z "$with_os" ; then
             echo $ac_n "checking for inline""... $ac_c" 1>&6
-echo "configure:3437: checking for inline" >&5
+echo "configure:3442: checking for inline" >&5
 if eval "test \"`echo '$''{'ac_cv_c_inline'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_cv_c_inline=no
 for ac_kw in inline __inline__ __inline; do
   cat > conftest.$ac_ext <<EOF
-#line 3444 "configure"
+#line 3449 "configure"
 #include "confdefs.h"
 
 int main() {
 } $ac_kw foo() {
 ; return 0; }
 EOF
-if { (eval echo configure:3451: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:3456: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_inline=$ac_kw; break
 else
