@@ -1027,7 +1027,7 @@ message((M1,M2), File) :-
 	message(M2, File).
 message([M|ML], File) :-
 	!,
-	message(M),
+	message(M, File),
 	messagelist(ML, File).
 message(P/N, File) :-		% temp solution till we fix operators
 	!,
