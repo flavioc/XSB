@@ -316,23 +316,23 @@ typedef struct consumer_choice_point {
 /*----------------------------------------------------------------------*/
 
 typedef struct compl_susp_frame {
-    byte *next_clause;	/* the completion suspension instruction */
-    CPtr ebreg;		/* environment backtrack -- top of env stack */
-    CPtr hreg;		/* current top of heap */
-    CPtr *trreg;	/* current top of trail stack */
-    byte *cpreg;	/* return point of the call to the procedure */
-    CPtr ereg;		/* current top of stack */
+  byte *next_clause;	/* the completion suspension instruction */
+  CPtr ebreg;		/* environment backtrack -- top of env stack */
+  CPtr hreg;		/* current top of heap */
+  CPtr *trreg;	/* current top of trail stack */
+  byte *cpreg;	/* return point of the call to the procedure */
+  CPtr ereg;		/* current top of stack */
 #ifdef CHAT
-    CPtr prev;		/* previous CP -- not used in the SLG-WAM */
-		    /* although for garbage collection it probably should */
+  CPtr prev;		/* previous CP -- not used in the SLG-WAM */
+  		    /* although for garbage collection it probably should */
 #endif
-    CPtr pdreg;		/* value of delay register for the parent subgoal */
-    CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
-    CPtr subgoal_ptr;	/* pointer to the call structure */
-    CPtr prevcsf;	/* previous completion suspension frame */
-    Cell neg_loop;	/* !0 if the suspension is not LRD stratified */
-	     /* for CHAT this field appears in the place of nlcp_trie_return */
-             /* so please make sure that it has the same size as ALNptr */
+  CPtr pdreg;		/* value of delay register for the parent subgoal */
+  CPtr ptcp;		/* pointer to parent tabled CP (subgoal) */
+  CPtr subgoal_ptr;	/* pointer to the call structure */
+  CPtr prevcsf;	/* previous completion suspension frame */
+  Cell neg_loop;	/* !0 if the suspension is not LRD stratified */
+  /* for CHAT this field appears in the place of nlcp_trie_return */
+  /* so please make sure that it has the same size as ALNptr */
 #ifdef CHAT
     CPtr chat_area;	/* this field is needed for compl susp frames */
 #endif

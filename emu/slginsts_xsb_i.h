@@ -709,26 +709,23 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
 }
 #else
 {
-    CPtr csf = cs_compsuspptr(breg);
-    /* Switches the environment to a frame of a subgoal that was	*/
-    /* suspended on completion, and sets the continuation pointer.	*/
-    check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
-    freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
-    ptcpreg = csf_ptcp(csf);
-    neg_delay = (csf_neg_loop(csf) != FALSE);
-    delayreg = csf_pdreg(csf);
-    cpreg = csf_cpreg(csf); 
-    ereg = csf_ereg(csf);
-    ebreg = csf_ebreg(csf);
-    hbreg = csf_hreg(csf);
-    save_find_locx(ereg);
-    hbreg = hreg;
-    if (csf_prevcsf(csf) != NULL) {
-      cs_compsuspptr(breg) = csf_prevcsf(csf);
-    } else {
-      breg = cs_prevbreg(breg);
-    }
-    lpcreg = cpreg;
+  CPtr csf = breg;
+
+  /* Switches the environment to a frame of a subgoal that was	*/
+  /* suspended on completion, and sets the continuation pointer.	*/
+  check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN, XSB_Next_Instr());
+  freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
+  ptcpreg = csf_ptcp(csf);
+  neg_delay = (csf_neg_loop(csf) != FALSE);
+  delayreg = csf_pdreg(csf);
+  cpreg = csf_cpreg(csf); 
+  ereg = csf_ereg(csf);
+  ebreg = csf_ebreg(csf);
+  hbreg = csf_hreg(csf);
+  save_find_locx(ereg);
+  hbreg = hreg;
+  breg = csf_prevcsf(csf);
+  lpcreg = cpreg;
 }
 #endif
 XSB_End_Instr()
