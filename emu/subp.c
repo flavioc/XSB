@@ -175,6 +175,7 @@ xsbBool unify(Cell rop1, Cell rop2)
 
 xsbBool are_identical_terms(Cell term1, Cell term2) {
 
+ begin_are_identical_terms:
   XSB_Deref(term1);
   XSB_Deref(term2);
   
@@ -193,24 +194,25 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
     if ( psc1 != (Psc)*cptr2 )
       return FALSE;
 
-    for ( cptr1++, cptr2++, i = 0;  i < (int)get_arity(psc1);  i++ )
+    for ( cptr1++, cptr2++, i = 0;  i < (int)get_arity(psc1)-1;  cptr1++, cptr2++, i++ )
       if ( ! are_identical_terms(*cptr1,*cptr2) ) 
 	return FALSE;
-
-    return TRUE;
+    term1 = *cptr1;
+    term2 = *cptr2;
+    goto begin_are_identical_terms;
   }
   else if ( cell_tag(term1) == XSB_LIST ) {
     CPtr cptr1 = clref_val(term1);
     CPtr cptr2 = clref_val(term2);
 
-    if ( are_identical_terms(*cptr1, *cptr2) &&
-	 are_identical_terms(*(cptr1 + 1), *(cptr2 + 1)) )
-      return TRUE;
-    else
-      return FALSE;
+    if ( are_identical_terms(*cptr1, *cptr2) ) {
+      term1 = *(cptr1 + 1);
+      term2 = *(cptr2 + 1);
+      goto begin_are_identical_terms;
+    }
+    else return FALSE;
   }
-  else
-    return FALSE;
+  else return FALSE;
 }
 
 /*======================================================================*/
