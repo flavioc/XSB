@@ -27,9 +27,6 @@
 %%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
 %%% ===========================================================================
 
-
-// 03/1999, modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
-
 // new
 :- table tc/2.
 
@@ -70,7 +67,7 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 
 
 %%% ===========================================================================
-%%% now ask some QUERIES here (or INTERACTIVELY from the FLIP SHELL)
+%%% now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
 %%% ===========================================================================
 
 ?- times_flies_like_an_arrow.	% ==> `yes'
@@ -100,6 +97,6 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ?- nl, write('mary..kids[] ??'), mary..kids[].
 
 // new
-?- nl, write('Thanks '), unix(whoami), writeln('for using FLIP!').
+?- nl, write('Thanks to '), unix(whoami), writeln('for using FLORA!').
 
 

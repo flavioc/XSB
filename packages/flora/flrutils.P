@@ -1,12 +1,11 @@
 /* File:      flrutils.P
 **
-** Author(s): Bertram Ludaescher (V 1.2, 11/13/1998)
-**
-**            Guizhen Yang       (V 2.0, 04/12/1999)
-**            Guizhen Yang	 (V 2.5, 05/06/1999)
-**              supervised by Michael Kifer
-**
+** Author(s): Guizhen Yang       (Flora)
+**    	      Bertram Ludaescher (Flip, the Flora precursor)
 ** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) Bertram Ludaescher, 1998
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -21,6 +20,8 @@
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
 **
 */
 
@@ -482,9 +483,9 @@ write_PAs([pa(P,A)|PAs]) :-
 unbound_warning(S,Form,L) :-
 	telling(F),
 	tell(S),
-	write('*** Warning: '),
+	write('*** Warning: variable '),
 	write_list(L),
-	write(' unbound in '),
+	write(' is unbound in '),
 	writeln(Form),
 	tell(F).
 

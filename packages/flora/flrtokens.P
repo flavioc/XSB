@@ -1,12 +1,11 @@
 /* File:      flrtokens.P
 **
-** Author(s): Bertram Ludaescher (V 1.2, 11/13/1998)
-**
-**            Guizhen Yang       (V 2.0, 04/12/1999)
-**            Guizhen Yang	 (V 2.5, 05/06/1999)
-**              supervised by Michael Kifer
-**
+** Author(s): Guizhen Yang       (Flora)
+**    	      Bertram Ludaescher (Flip, the Flora precursor)
 ** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) Bertram Ludaescher, 1998
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -22,12 +21,10 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
+** $Id$
+**
 */
 
-
-/****************************************************************************
-  03/1999, extensively modified by Guizhen Yang (guizyang@CS.SunySB.EDU)
-****************************************************************************/
 
 
 :- import repeat/0, get0/1 from standard.

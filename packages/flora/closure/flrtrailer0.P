@@ -23,7 +23,7 @@
 
 
 /*****************************************************************************
-  closure rules for X:Y
+  closure rules for X:Y, X::Z implies X:Z
 *****************************************************************************/
 :- table '_$_$_flora_isa'/2.
 
@@ -33,7 +33,7 @@
 
 
 /*****************************************************************************
-  rules for monotonic behavior inheritance
+  rules for monotonic inheritance of behavior
 *****************************************************************************/
 :- table '_$_$_flora_fd'/3.
 :- table '_$_$_flora_mvd'/3.
@@ -58,7 +58,7 @@
 
 
 /*****************************************************************************
-  rules for nonmonotonic behavior inheritance
+  rules for nonmonotonic inheritance of behavior
 
 :- table '_$_$_flora_fd'/3.
 :- table '_$_$_flora_mvd'/3.
