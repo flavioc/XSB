@@ -73,7 +73,7 @@ runtime_loader_flag(Compiler,LibraryDir,Flag):-
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;   Flag = '-rpath '
 	).
-	
+
 
 
 %% Options: C options
@@ -87,26 +87,30 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = ''; true),
+	( str_sub(' -g', CC_Opts)
+	->  SymbolTableFlag = ' '
+	;   SymbolTableFlag = ' -s'  % if not debugging: strip the symbol table
+	),
 	(   var(CompComm)
 	->  (	str_sub('solaris', Configuration)
-	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -G ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
 	    ;	str_sub('linux', Configuration)
-	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
-	    /*	   
-	    , message((CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+	    /*
+	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
-	    */	   
+	    */
 	    ; str_sub('bsd-', Configuration)
-	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
 	    /*	   
-	    , message((CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
 	    */ 
 	    ;	str_sub('sgi', Configuration)
-	    ->	shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -shared ',
 		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
 	    ;	str_sub('alpha', Configuration)
 	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
