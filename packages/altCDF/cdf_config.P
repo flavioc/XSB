@@ -7,18 +7,25 @@ logging
 
 % keep a table with all possible flags here.
 cdf_flag(dirty).
-cdf_flag(check_implication).
-cdf_flag(check_types).
-cdf_flag(classify_if_necessary).
+cdf_flag(componentUpdate).
+cdf_flag(componentLoad).
+cdf_flag(newExtTermSingle).
+cdf_flag(newExtTermBatch).
+cdf_flag(retractallExtTermSingle).
 
 
 % initial_cdf_flag/2 facts can be overridden by declaring
 % corresponding user_cdf_flag/2 facts in $(HOME)/.xsb/xsbrc.P
 
 %initial_cdf_flag(dirty,<component>).
-%initial_cdf_flag(check_implication,<context>).
-initial_cdf_flag(check_types,term_update).
-initial_cdf_flag(classify_if_necessary,component_load).
+initial_cdf_flag(componentUpdate,check(A,B,[classify_if_necessary(A,B)])).
+initial_cdf_flag(newExtTermSingle,check(A,B,[check_ground(A,B),
+				   	     check_types(A,B),
+					     check_identity(A,B)])).
+initial_cdf_flag(newExtTermBatch,check(A,B,[check_ground(A,B),
+				   	     check_types(A,B),
+					     check_identity(A,B)])).
+
 
 :- dynamic cdf_flags/2.
 :- index(cdf_flags/2,trie).
@@ -27,10 +34,10 @@ initial_cdf_flag(classify_if_necessary,component_load).
 :- dynamic cdf_dirty/1.
 :- dynamic using_xj/0.
 
-component_table_ext(isa_ext(_,_),1,[2]).
-component_table_ext(hasAttr_ext(_,_,_),2,[1,3]).
-component_table_ext(allAttr_ext(_,_,_),2,[1,3]).
-component_table_ext(classHasAttr_ext(_,_,_),2,[1,3]).
+component_table_ext(isa_ext(A,B),A,[B]).
+component_table_ext(hasAttr_ext(A,B,C),B,[A,C]).
+component_table_ext(allAttr_ext(A,B,C),B,[A,C]).
+component_table_ext(classHasAttr_ext(A,B,C),B,[A,C]).
 
 component_table_int(isa_int(_,_),1,[arg(2,warn)]).
 component_table_int(hasAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).

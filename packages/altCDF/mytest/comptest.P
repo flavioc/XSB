@@ -5,12 +5,18 @@
 :- import update_all_components/2 ,
 	   load_component/3 from cdf_components.
 
+reset:- 
+	shell('\rm -r cdfcomp1/*').
+
 updtest1:- 
 	load_extensional_facts('cdftest1'),
 	update_all_components('mytest/cdfcomp1',[action(create)]).
 
 loadtest1:- 
 	load_component(testo1,'mytest/cdfcomp1',[]).
+
+loadtest1a:- 
+	load_component(test,'mytest/cdfcomp1',[]).
 
 loadtest2:- 
 	load_component(testo1,'mytest/cdfcomp1',[force(yes)]).

@@ -13,7 +13,7 @@
 
 :- import component_table_int/3 from usermod.
 
-:- import newExtTerm/1 from cdf_init_cdf.
+:- import newExtTerm/2 from cdf_init_cdf.
 
 :- import cdf_error/2 from cdf_exceptions.
 
@@ -127,7 +127,7 @@ reload_extensional :-
 	 ->	!
 	 ; Term = :-(_)
 	 ->	fail
-	 ; 	newExtTerm(Term),
+	 ; 	newExtTerm(newExtTermBatch,Term),
 	  	fail).
 
 %-------------------------------------------------------------- 

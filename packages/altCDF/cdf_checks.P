@@ -1,9 +1,137 @@
 :- compiler_options([ciao_directives]).
 
-:- export check_types/2, 
-          check_implication/2,
-	  classify_if_necessary/2,
-	  classify_if_necessary_no_checkflag/2,
+:- comment(module,"
+
+The CDF checking system is based on the ability to dynamically specify
+any checks thet need to be applied at various stages of execution (or
+@em{contexts}) during the course of managing an ontology.  A check has
+two arguments that must be ground on call, the first argument being
+the context, and the second context-specific.  The check may succeed,
+fail, or throw an error; and may also execute side-effects
+(e.g. printing warning messages, automatically classifying facts).  By
+making restrictions on the framework we use, it becomes easier for a
+given user to omit or add checks for a given context and even code new
+checks and / or new contexts.
+
+Checks are called in two ways: 
+
+@begin{enumerate} 
+@item Based on the Context.  This is done by calling
+@tt{apply_checks(Context,Argument)}
+
+as in 
+
+newExtTerm(Context,Term):- 
+	apply_checks(Context,Term),
+	cdf_update_list([asserta(Term)]).
+
+apply_checks/2 (defined below) backtracks through all of the checks
+defined for a context and calls them in a specified order.
+apply_checks/2 checks the global table @tt{cdf_flags/2} to determine
+the checks to be done in a particular context.  Note that since checks
+depend on cdf_flags/2, they can be dynamically changed, or overridden
+by flag definitions in a .xsbrc file.  As indicated by the code, the
+checks must all be imported to usermod to be called.
+
+In order for apply_checks/2 to work efficiently, the flags must be set
+up using a particular convention.  An example is
+
+cdf_flags(newExtTermSingle,check(A,B,[check_ground(A,B),
+	  			      check_types(A,B),
+				      check_identity(A,B)]))).
+
+The first argument is the context, and the second two argument
+variables, along with a list of checks, each of which uses the
+argument variables.  Checks are called using the order in the list.
+Using this mechanism, a user can add her own checks by importing a
+predicate, setting the flags appropriately, and adding an
+apply_checks/2 goal to user code (if necessary).  Note that, a user
+can also write new checks for existing CDF contexts without changing
+the files in the CDF directory.
+
+@item The other way to call a check is by xxx_checkflag/2, where xxx
+is the name of a check.  These calls check whether a check is turned
+on for a given component, and calls it if so... otherwise the check is
+avoided and the predicate succeeds.
+
+The first argument of a checking routine is called the @em{context
+argument}, and the second the @em{checking argument}..  Right now, the
+checking argument can be an extensional cdf fact or a component name,
+but you could imagine others -- like intensional rules.  Thus, some
+contexts serve to check facts, and others a component.  The code wont
+run well if you put, say, a fact check in a component context, but I
+dont think I'll check the checks for now.  Here are some examples:
+
+
+-- newExtTermSingle.  This context designates the action of calling
+newExtTerm/2 to add an extensional fact to the CDF store.
+
+	Checking Argument: Extensional CDF Fact
+	Default Setting: 
+cdf_flags(newExtTermSingle,check(A,B,[check_ground(A,B),
+	  			      check_types(A,B),
+				      check_identity(A,B)]))).
+
+-- retractallExtTermSingle  This context designates the action of calling
+retractallExtTerm/2 to delete an extensional fact from the CDF store.
+
+	Checking Argument: Extensional CDF Fact
+	Default Setting: None (probably some consist. checks in the future).
+
+-- newExtTermBatch.  This context designates calling newExtTerm/2
+repeatedly, as in loading a file.
+
+	Checking Argument: Extensional CDF Fact
+	Default Setting: 
+cdf_flags(newExtTermBatch,check(A,B,[check_ground(A,B),
+	  			      check_types(A,B),
+				      check_identity(A,B)]))).
+
+-- componentUpdate.  This context designates the action of saving a
+component.
+
+	Checking Argument: component
+	Default Setting: 
+initial_cdf_flag(component_update,check(A,B,[classify_if_necessary(A,B)])).
+  	  cdf_flag(checks(componentLoad,1),classify_if_necessary(Comp))
+  	  cdf_flag(checks(componentLoad,1),check_implication(Comp))
+
+-- componentLoad.  This context designates the action of loading a
+component.
+
+	Checking Argument: component
+	Default Setting: None (but you can turn on checks for this
+			       context if you like) 
+			 
+
+There may be other contexts such as  obliterate_xxx.
+
+As a first pass, I think the component checks should check a flag
+
+cdf_flag(component_check,Component)
+
+before actually checking the component within a context.  This means
+that newExtTerm, and retractallExtTerm will need to set this flag
+along with 
+
+cdf_flag(cdf_dirty,Component)
+
+(Im not doing this yet).
+So with this, by default we check each check once in ""normal""
+evaluation -- loading or adding extensional terms and then saving them
+to and loading them from a component.
+
+").
+
+%-----------------------------------------------------------------
+
+:- export apply_checks/2,
+%	  check_dummy/2,
+	  check_ground_checkflag/2, check_ground/2, 
+	  check_types_checkflag/2, check_types/2,
+          check_identity_checkflag/2, check_identity/2,
+	  check_implication_checkflag/2, check_implication/2,
+	  classify_if_necessary_checkflag/2, classify_if_necessary/2,
 	  hasAttr_redundancy_check/0.
 
 % fool that module system... 
@@ -20,6 +148,7 @@
 :- import ground/1, member/2, memberchk/2  from basics.
 
 :- import get_component_extensional/2 from cdf_components.
+:- import call0/1 from machine.
 
 /*
    TLS: right now need to check: 
@@ -28,39 +157,52 @@
     classify on insert.
 */
 
+apply_checks(Context,Term):- 
+	cdf_flags(Context,check(Context,Term,Chklist)),
+	member(Check,Chklist),
+%	arg(1,Check,Context),
+%	arg(2,Check,Arg),
+	call0(Check),
+	fail.
+apply_checks(_,_).
+
+% check_dummy(_,_).
+
+check_ground_checkflag(Context,Term):- 
+	((cdf_flags(check(Context),List),
+	  member(check_ground(_,_),List)) -> 
+	    check_ground(Context,Term)
+	  ; true).
+
+check_ground(Context,Term):- 
+        get_component_extensional(Term,Comp),
+	(Comp \== cdfpt-> 
+	   (ground(Term) -> 
+	       true
+	     ; cdf_error(Context,[Term,' is not ground ']),fail)
+	   ; true).
+
+%-----------------
+
 % Type checking.	
 % TLS: should be turned on and off...
-check_types(Context,Term):- 
-	((cdf_flags(check_types,Context),
-               get_component_extensional(Term,Comp),
-	   Comp \== cdfpt)-> 
-	    check_types_no_checkflag(Context,Term)
+check_types_checkflag(Context,Term):- 
+	((cdf_flags(check(Context),List),
+	  member(check_ground(_,_),List)) -> 
+	    check_types(Context,Term)
 	  ; true).	
 
-check_types_no_checkflag(term_update,Term):- 
-	(ground(Term) -> 
-	    true
-	  ; cdf_error(term_update,[Term,' must be bound in newExtTerm/1']),
-	    fail ),
-	(type_table(Term,Typecall) -> 
-	    arg(1,Typecall,term_update),
-	    call(Typecall)
-	  ; cdf_warning(term_update,[Term,
+check_types(Context,Term):- 
+        ((get_component_extensional(Term,Comp),
+	  Comp \== cdfpt)-> 
+  	    (type_table(Term,Typecall) -> 
+	        arg(1,Typecall,Context),
+	        call0(Typecall)
+	        ; cdf_warning(Context,[Term,
 				' is not an extensional fact and cannot ',
 				'be added.']),
-	    fail ).
-
-check_types_no_checkflag(query,Term):- 
-	(var(Term) -> 
-	    true
-	  ; 
-	    (type_table(Term,Typecall) -> 
-  	        arg(1,Typecall,query),
-		call(Typecall)
-	      ; cdf_warning(query,[Term,
-				    ' is not an extensional fact and cannot ',
-				    'be added.']),
-	        fail ) ).
+	           fail)
+ 	   ;  true).
 
 %------
 :- comment(hide,check_isa_types/2).
@@ -179,17 +321,31 @@ type_table(classHasAttr_ext(A,B,C),check_ind_types(_,classHasAttr_ext(A,B,C),
 type_table(classHasAttr_int(A,B,C),check_ind_types(_,classHasAttr(A,B,C),
 			[ [cid,rid,crid], [crid,crrid,crcrid], [cid,oid] ] ) ).
 
+
 %----------------------------------------------------------------------
 
 % want to change so that it checks for implication also.
-check_implication(Context,Term):- 
-	(cdf_flags(check_implication,Context) -> 
-	    check_implication_no_checkflag(Term)
-	  ; (call(Term) -> fail ; true) ).
+check_identity_checkflag(Context,Term):- 
+	((cdf_flags(check(Context),List),
+	  member(check_identity(_,_),List)) -> 
+	    check_identity(_,Term)
+	  ; true).
 
-check_implication_no_checkflag(Term):- 
+check_identity(_,Term):- 
+	(call0(Term) -> fail ; true).
+	
+%----------------------------------------------------------------------
+
+% want to change so that it checks for implication also.
+check_implication_checkflag(Context,Term):- 
+	((cdf_flags(check(Context),List),
+	  member(check_impliction(_,_),List)) -> 
+	    check_implication(Context,Term)
+	  ; true).
+
+check_implication(_Context,Term):- 
 	remove_ext(Term,Term1),
-	(call(Term1) -> fail ; true).
+	(call0(Term1) -> fail ; true).
 	
 remove_ext(isa_ext(A,B),isa(A,B)).
 remove_ext(hasAttr_ext(A,B,C),hasAttr(A,B,C)).
@@ -198,30 +354,28 @@ remove_ext(allAttr_ext(A,B,C),allAttr(A,B,C)).
 
 %----------------------------------------------------------------------
 
-classify_if_necessary(component_load,Name):-
-%	writeln(cin(Name)),
-	(cdf_flags(classify_if_necessary,component_load) -> 
-%	    writeln(cin(Name)),
-	    classify_if_necessary_no_checkflag(Name)
+classify_if_necessary_checkflag(Context,Name):-
+	(cdf_flags(classify_if_necessary,Context) -> 
+	    classify_if_necessary(_Context,Name)
 	  ; true).
 	    
-classify_if_necessary_no_checkflag(Name):- 
+classify_if_necessary(_Context,Name):- 
 	get_component_fact(Name,Term),
 	classify_if_necessary_term(Term,Upd1,[]),
 	member(Term1,Upd1),
 	newExtTerm(Term1),
 	fail.
-classify_if_necessary_no_checkflag(_Term).
+classify_if_necessary(_,_Term).
 
 get_component_fact(Name,Fact):- 
 	(  Fact = isa_ext(One,Two) ; Fact = classHasAttr_ext(One,Two,Three)
 	   ; Fact = allAttr_ext(One,Two,Three) 
 	   ; Fact = hasAttr_ext(One,Two,Three) ),
-	call(Fact),
+	call0(Fact),
 	get_component_extensional(Fact,Name).
 
 classify_if_necessary_term(Term,Upd1,Upd):-
-	\+ (Term = isa_ext(_,_)),!,
+	\+ (Term = isa_ext(_)),!,
 	Term =.. [_|L],
 	classify_if_necessary_list(L,Upd1,Upd).
 classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-
@@ -311,3 +465,4 @@ hasAttr_redundancy_check :-
 
 
 end_of_file.
+

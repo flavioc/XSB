@@ -1,27 +1,28 @@
 :- compiler_options([ciao_directives]).
 
 :- export 
-  init_path_engine/0,
-	pe_canon_path/2,
+	add_component_initializer/3,
+        analyze_components/2,
+        comp_depends_on/2,
+	get_component_extensional/2,
+	get_full_path_and_loadname/6,
+	init_path_engine/0,
+        load_component/3,
+	newComponent/4,
+ 	pe_canon_path/2,
 	pe_decanon_path/2,
-	get_full_path_and_loadname/7,
-              comp_depends_on/2,
-	  add_component_initializer/3,
-              analyze_components/2,
-	  get_component_extensional/2,
-	  newComponent/4,
-	  update_components/2,
-	  update_all_components/2,
-              load_component/3.
+	update_components/2,
+	update_all_components/2.
 
 :- import 
 	classHasAttr/3,
 	retractallExtTerm/1, newExtTerm/2, newExtTerm/1,
+	cdf_id_fields/4,
 	system_component/1 from cdf_init_cdf.
 
 :- import canonical_pathname/2, rel_path/3 from directry.
 
-:- import classify_if_necessary/2 from cdf_checks.
+:- import apply_checks/2 from cdf_checks.
 
 :- import 
 	hasAttr_ext/3, isa_ext/2, classHasAttr_ext/3, allAttr_ext/3
@@ -317,21 +318,17 @@ analyze_intensional(Name,Dep):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_component_extensional(Term,Comp):- 
-	component_table_ext(Term,Arg,_),
-	arg(Arg,Term,CompId),
-	comp_from_id(CompId,Comp).
+	component_table_ext(Term,Compid,_),
+	cdf_id_fields(Compid,_,_N,Comp).
 
 get_dependency_extensional(Term,Dep):- 
 %	writeln(dep(Term)),
-	component_table_ext(Term,CompArg,Deps),
-	(    arg(CompArg,Term,CompId),
-	     dep_from_id(CompId,Dep) 
+	component_table_ext(Term,CompId,Deps),
+	(    dep_from_id(CompId,Dep) 
 	  ; 
-	     member(DepArg,Deps),
-	     arg(DepArg,Term,DepId),
+	     member(DepId,Deps),
 	     dep_from_id(DepId,Dep) ).
 
-comp_from_id(CompId,Comp):-  arg(2,CompId,Comp).	
 
 dep_from_id(CompId,Comp):-  arg(2,CompId,Comp).	
 dep_from_id(CompId,Comp):-  
@@ -455,10 +452,14 @@ clean_up_dirty_bits:-
 	fail.
 clean_up_dirty_bits.
 
+/* TLS: intend to put a apply_checks here */
 perform_component_level_checks:- 
 	loaded_component(Name),
-	writeln(Name),
-	classify_if_necessary(component_load,Name),
+	retractall(cdf_flags(dirty,Name)),
+	fail.
+perform_component_level_checks:- 
+	loaded_component(Name),
+	apply_checks(componentLoad,Name),
 	fail.
 perform_component_level_checks:- 
 	retractall(temp_depends(_,_,_,_)),
@@ -475,7 +476,8 @@ load_component_pass1(Name,PathIn,AbsPath,Vin,Arglist):-
 	get_full_path_and_loadname(Name,PathIn,Vin,AbsPath,V,Loadname),
 	(check_component(Name,AbsPath,V,Arglist) -> 
 	    slash(Slash),
-  	    message(['Loading component: ',AbsPath,Slash,Loadname]),nl,
+  	    message(['Loading component: ',AbsPath,Slash,Loadname,' v. ', V]),
+				nl,
                 concat_atom([AbsPath,Slash,Loadname],Absname),
 	    cdf_load_extensional_facts(Absname,AbsPath),
 	    check_good_component(Name,AbsPath),
@@ -580,7 +582,7 @@ check_conflicting_version(Name,Path,V):-
 	(conflicting_version(Name,Path,V,V1) -> 
 	    cdf_error(component_load,['Version ',V,' of ',Name,
 			' cannot be loaded, as version ',V1,
-			' is halreaty loaded '])
+			' is already loaded '])
 	  ; true).
 
 /* TLS: For now, each component is taken to depend on some version of
@@ -610,7 +612,7 @@ conflicting_path(Name,P,P1):-
 %---------------
 
 already_present(Name,Path,V,Arglist):- 
-	\+ member(force(yes),Arglist),
+	(\+ member(force(yes),Arglist) ; loaded_component(Name)),
 	classHasAttr_ext(cid(compName(cid(Name,Name),
 	                                                cid(Path,cdfpt)),Name),
 	                          crid(hasVersion,Name),cid(V,cdfpt)).
@@ -690,8 +692,13 @@ path information.
 update_all_components(In,Options):- 
 	update_setup(In,Options,Abs,Action),
 	analyze_component_1(Comp,Dep),
+	apply_checks(componentUpdate,Comp),
 	update_component_1(Action,Comp,Dep,Abs),
 	writeln(updated(Comp)),
+	fail.
+update_all_components(_Dir,_Options):- 
+	temp_new_version(Name,_),
+	retractall(cdf_flags(dirty,Name)),
 	fail.
 update_all_components(_Dir,_Options):- 
 	retractall(temp_new_version(_,_)).
@@ -727,14 +734,21 @@ initialize_for_create(_Dir).
 
 %----------
 
-initialize_for_in_place(Dir):- 
-	propagate_dirty_bits(Dir).
-
 /* TLS: this pass is needed becasue we dont know the order in which
 the name/list pairs will be returned. Thus if c is dirty, and a
 depends on b depends on c, we might get a,[b] back first, and b will
 be unmarked.  While we do the pass, we assert the new version so we
 dont get confused when doing the dependencies.  */
+
+initialize_for_in_place(Dir):- 
+	propagate_dirty_bits(Dir).
+
+/* TLS: We need dependencies so that versioning will work correctly.
+This pass is needed becasue we dont know the order in which the
+name/list pairs will be returned. Thus if c is dirty, and a depends on
+b depends on c, we might get a,[b] back first, and b will be unmarked.
+While we do the pass, we assert the new version so we dont get
+confused when doing the dependencies.  */
 
 propagate_dirty_bits(Dir):- 
 	abolish_table_pred(comp_depends_on(_,_)),
@@ -1328,5 +1342,6 @@ find_component_dir(Name,Full):-
 	    true 
 	  ; 
 	     cdf_error(component,['component name is not a directory',Full])).
+
 
 
