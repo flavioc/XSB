@@ -49,8 +49,8 @@ models where the give query is true
 
 :- compiler_options([xpp_on]).
 
-#include "sig.h"
-#include "flag_defs.h"
+#include "sig_xsb.h"
+#include "flag_defs_xsb.h"
 #include "standard.h"
 #include "char_defs.h"
 
