@@ -199,17 +199,13 @@ static FILE* fptr;			/* working variable */
 static Float float_temp;		/* working variable */
 static STRFILE *sfptr;
 
-#ifndef FOREIGN_ELF
-static int (*proc_ptr)();		/* working variable */
-#endif
-
 static struct stat stat_buff;
 
 /* ------- utility for sockets ---------------------------------------- */
 
 #ifdef HAVE_SOCKET
 #ifdef WIN_NT
-int readmsg(SOCKET sockfd, char * buff, int maxbuff)
+int readmsg(SOCKET sockfd, char *buff, int maxbuff)
 {
   int n, rc;
   char c;
@@ -262,7 +258,7 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   register Cell addr = cell(reg+regnum);
 
   /* deref and then check the type */
-  deref( addr );
+  deref(addr);
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
@@ -302,7 +298,7 @@ DllExport char* call_conv ptoc_string(int regnum)
   register Cell addr = cell(reg+regnum);
   
   /* deref and then check the type */
-  deref( addr );
+  deref(addr);
   switch (cell_tag(addr)) {
   case FREE:
   case REF1: 
@@ -333,7 +329,7 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)	/* from int valu
 {
   register Cell addr = cell(reg+regnum);
   
-  deref( addr);
+  deref(addr);
   if (isref(addr)) {
     bind_int(vptr(addr), value);
   }
@@ -357,7 +353,7 @@ DllExport void call_conv ctop_string(int regnum, char *value) /* from string for
 {
   register Cell addr = cell(reg+regnum);
 
-  deref( addr);
+  deref(addr);
   if (isref(addr)) {
     bind_string(vptr(addr), value);
   }
@@ -379,7 +375,7 @@ void ctop_constr(int regnum, Pair psc_pair)
 {				/* from psc_pair ptr form an constr node */
   register Cell addr = cell(reg+regnum);
 
-  deref( addr);
+  deref(addr);
   if (isref(addr)) {
     bind_cs(vptr(addr), psc_pair);
   }
@@ -394,7 +390,7 @@ void ctop_tag(int regnum, Cell term)
 {
   register Cell addr = cell(reg+regnum);
 
-  deref( addr);
+  deref(addr);
   if (isref(addr)) {
     bind_copy(vptr(addr), term);
   }
@@ -407,6 +403,7 @@ void ctop_tag(int regnum, Cell term)
  */
 #define ctop_addr(regnum, val)    ctop_int(regnum, (prolog_int)val)
 
+/* --------------------------------------------------------------------	*/
 
 Cell  val_to_hash(Cell term)
 {
@@ -435,6 +432,8 @@ Cell  val_to_hash(Cell term)
   return value;
 }
 
+/* --------------------------------------------------------------------	*/
+
 static int is_proper_list(Cell term)	/* for standard preds */
 {
 	register Cell addr;
@@ -460,7 +459,7 @@ Psc term_psc(Cell term)
   else {
     if (isstring(term)) {
       psc = (Psc)flags[CURRENT_MODULE];
-      sym = (Pair)insert(string_val(term), 0, psc, &value);
+      sym = insert(string_val(term), 0, psc, &value);
       return pair_psc(sym);
     }
     else return NULL;
@@ -510,8 +509,7 @@ static void strclose(int i)
 
 /* --- built in predicates --------------------------------------------	*/
 
-
-int  builtin_call(byte number)
+int builtin_call(byte number)
 {
   CPtr var, reg_base;
   char message[80];
@@ -532,16 +530,14 @@ int  builtin_call(byte number)
   NODEptr as_leaf;			/* for residual program */
   Cell delay_lists;			/* for residual program */
   CPtr dls_head, dls_tail = NULL;	/* for residual program */
-  
   tab_inf_ptr tip;
-  struct psc_rec *psc;
+  Psc psc;
   struct psc_pair *sym;
   CPtr subgoal_ptr, t_ptcp;
   register CPtr xtemp1, xtemp2;
-#ifdef FOREIGN_ELF
-  int (*my_fptr)(void);
+#ifdef FOREIGN
+  static int (*proc_ptr)(void);		/* working variable */
 #endif
-  
 #ifdef HAVE_SOCKET
   FILE *sockptr;
   struct hostent *hostptr;
@@ -553,9 +549,7 @@ int  builtin_call(byte number)
   int  err, in;
   SOCKADDR_IN localAddr;
   SOCKADDR_IN remoteAddr;
-  char *sock_msg;
-  char ci;
-  char last[1];
+  char *sock_msg, ci, last[1];
 #else
   int  sockfd, sockfd_in;
   struct sockaddr_in socket_addr;
@@ -816,8 +810,7 @@ int  builtin_call(byte number)
 	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
       }
     } else if (isstring(term)) {
-      sym = (Pair)insert(string_val(term),0,
-			 (Psc)flags[CURRENT_MODULE],&value);
+      sym = insert(string_val(term),0,(Psc)flags[CURRENT_MODULE],&value);
       psc = pair_psc(sym);
     } else {
       if (isnonvar(term))
@@ -833,14 +826,13 @@ int  builtin_call(byte number)
       pcreg = get_ep(psc);
       break;
     case T_FORN:
-#ifdef FOREIGN_ELF
-      my_fptr = (PFI) get_ep(psc);
-      if ((*my_fptr)()) pcreg = cpreg;
-#else
+#ifdef FOREIGN
       proc_ptr = (PFI) get_ep(psc);
-      if (proc_ptr()) pcreg = cpreg;		/* "proceed" */
+      proc_ptr();
+      pcreg = cpreg;  /* always "proceed" -- unless somebody aborts/exits */
+#else
+      xsb_exit("Foreign call in configuration that does not support it !");
 #endif
-      else pcreg = (pb)&fail_inst;		/* "fail" */
       break;
     case T_UDEF:
     case T_UFUN:
@@ -869,19 +861,13 @@ int  builtin_call(byte number)
       }
       bld_int(reg+get_arity(psc)+1, value);
     } else psc = NULL; 
-    if (value==T_FORN) {
-#ifdef FOREIGN_ELF
-      if (isconstr(term)) {
-	my_fptr = (PFI) get_ep(psc);
-	if ((*my_fptr)()) pcreg = cpreg;	/* "proceed" */
-	else pcreg = (pb) &fail_inst;		/* "fail" */
-      } else {
-	xsb_abort("Using foreign predicate that is not a structure");
-      }
+    if (value == T_FORN) {
+#ifdef FOREIGN
+      proc_ptr = (PFI) get_ep(psc);
+      proc_ptr();
+      pcreg = cpreg;		/* always "proceed" */
 #else
-      proc_ptr = (PFI) pcreg;
-      if (proc_ptr()) pcreg = cpreg;		/* "proceed" */
-      else pcreg = (pb)&fail_inst;		/* "fail" */
+      xsb_exit("Foreign call in configuration that does not support it !");
 #endif
     }
     break;
@@ -949,7 +935,7 @@ int  builtin_call(byte number)
       psc = pair_psc(insert_module(0, addr));
     else
       psc = (Psc)flags[CURRENT_MODULE];
-    sym = (Pair)insert(ptoc_string(1), ptoc_int(2), psc, &value);
+    sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
     ctop_addr(3, pair_psc(sym));
     break;
 
@@ -961,7 +947,7 @@ int  builtin_call(byte number)
      * don't already exist) and links the predicate into usermod.
      */
     psc = pair_psc(insert_module(0, ptoc_string(3)));
-    sym = (Pair)insert(ptoc_string(1), ptoc_int(2), psc, &value);
+    sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
       set_ep(pair_psc(sym), (byte *)(psc));
     env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, value);
@@ -1028,14 +1014,15 @@ int  builtin_call(byte number)
     case INT    : fprintf(fptr, "%ld", (long)ptoc_int(3)); break;
     case STRING : fprintf(fptr, "%s", ptoc_string(3)); break;
     case FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(3)); break;
-    case TK_INT_0  : 
-      {   int tmp = (int) ptoc_int(3);
+    case TK_INT_0  : {
+      int tmp = (int) ptoc_int(3);
       fix_bb4((byte *)&tmp);
       fwrite(&tmp, 4, 1, fptr); break;
-      }
-    case TK_FLOAT_0: {  float ftmp = (float)ptoc_float(3);
-    fix_bb4((byte *)&ftmp);
-    fwrite(&ftmp, 4, 1, fptr); break;
+    }
+    case TK_FLOAT_0: {
+      float ftmp = (float)ptoc_float(3);
+      fix_bb4((byte *)&ftmp);
+      fwrite(&ftmp, 4, 1, fptr); break;
     }
     case TK_PREOP  : print_op(fptr, ptoc_string(3), 1); break;
     case TK_INOP   : print_op(fptr, ptoc_string(3), 2); break;
@@ -1048,7 +1035,7 @@ int  builtin_call(byte number)
   case PSC_INSERTMOD:   /* R1: +String, Module name */
     /* R2: +Def (4 - is a definition; 0 -not) */
     /* R3: -PSC of the Module entry */
-    sym = (Pair)insert_module(ptoc_int(2), ptoc_string(1));
+    sym = insert_module(ptoc_int(2), ptoc_string(1));
     ctop_addr(3, pair_psc(sym));
     break;
   case LOAD_SEG:		/* R1: +segment number */
@@ -1089,13 +1076,13 @@ int  builtin_call(byte number)
     return is_absolute_filename(ptoc_string(1));
 
   case PARSE_FILENAME: {    /* R1: +FN, R2: -Dir, R3: -Basename, R4: -Ext */
-      char *dir, *basename, *extension;
-      parse_filename(ptoc_string(1), &dir, &basename, &extension);
-      ctop_string(2, string_find(dir, 1));
-      ctop_string(3, string_find(basename, 1));
-      ctop_string(4, string_find(extension, 1));
-      break;
-    }
+    char *dir, *basename, *extension;
+    parse_filename(ptoc_string(1), &dir, &basename, &extension);
+    ctop_string(2, string_find(dir, 1));
+    ctop_string(3, string_find(basename, 1));
+    ctop_string(4, string_find(extension, 1));
+    break;
+  }
   case GETENV:  {	/* R1: +environment variable */
 			/* R2: -value of that environment variable */
     char *env = getenv(ptoc_string(1));
@@ -1196,32 +1183,22 @@ int  builtin_call(byte number)
     }
     break;
     
-  case BUFF_ASSIGN_WORD:	/* R1: +buffer; r2: displacement(+integer); */
-				/* R3: value (+integer) */
-    /* backtrackable version of buff_set_word */
-    /* used in delaylib.P change tls */
-    addr = ptoc_string(1);
-    disp = ptoc_int(2);
-    /* back to pushtrail -- tls */
-    pushtrail((CPtr)(addr+disp),ptoc_int(3));
-    *(pw)(addr+disp) = ptoc_int(3);
-    break;
   case PSC_ENV:	       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_env(psc));
     break;
   case PSC_SPY:		/* reg 1: +PSC; reg 2: -int */
 				/* env: 0 = non-spied else spied */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_spy(psc));
     break;
   case PSC_TABLED:	/* reg 1: +PSC; reg 2: -int */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_tip(psc));
     break; 
   case TIP_PROP: /*reg1: +TIP; reg2: +field; reg3: +get/set; reg4: ?val*/
-    tip = (tab_inf_ptr) ptoc_string(1);
+    tip = (tab_inf_ptr) ptoc_addr(1);
     disp = ptoc_int(3);
     switch (ptoc_int(2)) {
     case CALL_NEXT_TIP:
@@ -1342,18 +1319,9 @@ int  builtin_call(byte number)
   case CLOSE_OPEN_TABLES:	/* No registers needed */
     remove_open_tables_reset_freezes();
     break;
-  case CALL_HASH:       /* R1: +ptr to call on heap */
-    /* R2: +ptr to call hash table */
-    /* R3: +arity */
-    /* R5: -ptr to call str in table */
-    addr = (char *)ptoc_int(2);	
-    arity = ptoc_int(3);
-    get_subgoal_ptr(*(reg+1),arity,(CPtr)&addr);
-    ctop_int(5,(Integer)addr);
-    break;
   case PRINT_PREDICATE_TABLE:		/* reg 1: +PSC;*/
 #ifdef DEBUG
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     if ((Integer) get_tip(psc) == 0) 
       printf("%s/%d is not tabled\n", get_name(psc), get_arity(psc));
     else {
@@ -1471,19 +1439,19 @@ int  builtin_call(byte number)
     delete_predicate_table();
     break;
   case TRIE_ASSERT:
-    if(trie_assert())
+    if (trie_assert())
       return TRUE;
     else
       xsb_exit("Failure of trie_assert/1");
   case TRIE_RETRACT:
-    if(trie_retract())
+    if (trie_retract())
       return TRUE;
     else
       xsb_exit("Failure of trie_retract/1");
   case TRIE_RETRACT_SAFE:
     return trie_retract_safe();
   case TRIE_DELETE_TERM:
-    if(ptoc_int(3) == 0)
+    if (ptoc_int(3) == 0)
       delete_branch((NODEptr)ptoc_int(1),(CPtr)ptoc_int(2)); 
     else
       delete_return((NODEptr)ptoc_int(1),(SGFrame)ptoc_int(2)); 
@@ -1505,8 +1473,7 @@ int  builtin_call(byte number)
     break;
   case GET_EMU_DEPENDENT_CONST:	/* r1: +name; r2: -int */
     tmpstr = ptoc_string(1);
-    if (!strcmp(tmpstr, "call_hash_addr")) ctop_int(2, 1);
-    else if (!strcmp(tmpstr, "escape")) ctop_int(2, 0);
+    if (!strcmp(tmpstr, "escape")) ctop_int(2, 0);
     else {
       xsb_abort("Unknown first arg in get_emu_dependent_const/2");
       return FALSE;
@@ -1549,12 +1516,10 @@ int  builtin_call(byte number)
     trie_dispose();
     break;
   case BOTTOM_UP_UNIFY:
-    /*	    if(bottom_up_unify() == FALSE)
-	    return FALSE; */
     bottom_up_unify();
     break;
   case DELETE_TRIE:
-    if(strcmp(ptoc_string(2),"intern") == 0){
+    if (strcmp(ptoc_string(2),"intern") == 0){
       switch_to_trie_assert;
       tmpval = ptoc_int(1);
       /*
@@ -1702,7 +1667,6 @@ int  builtin_call(byte number)
       break;
     }
     case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
-
       tmpval = ptoc_int(2);
       fptr = fileptr(tmpval);   
       fflush(fptr);
@@ -1885,14 +1849,13 @@ int  builtin_call(byte number)
 	fprintf(stderr, "Cannot connect - too many open files.\n");
 	return FALSE;
       }
-      else  {
+      else {
 	open_files[i] = sockptr;
 	ctop_int(6, i);
       }
       break;
     }
     case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
-
       tmpval = ptoc_int(2);
       fptr = fileptr(tmpval);   
       fflush(fptr);
@@ -1948,13 +1911,10 @@ int  builtin_call(byte number)
 
 /*------------------------- Auxiliary functions -----------------------------*/
 
-
-
 #ifdef DEBUG
-
 static void print_predicate_table(char *name, int arity, tab_inf_ptr tip)
 {
-  printf("Printing predicate tables has not yet been implemented \n");
+  fprintf(stderr,"Printing predicate tables has not yet been implemented\n");
 }
 #endif /* DEBUG */
 
@@ -2039,7 +1999,6 @@ static void write_out_profile(void)
 }
 #endif
 
-
 /*----------------------- write_quotedname/2 ---------------------------*/
 
 static bool no_quotes_needed(char *string)
@@ -2122,8 +2081,6 @@ static void write_quotedname(FILE *file, char *string)
  
   free(new_string);
 }
-
-
 
 /*----------------------------------------------------------------------*/
 

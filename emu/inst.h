@@ -427,15 +427,11 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 #define FILE_WRITEQUOTED	61
 #define FAST_GROUND		62
 #define FILE_POS                64
-
 #define INTERN_STRING           65
-
 #define EXPAND_FILENAME 	66
 #define TILDE_EXPAND_FILENAME   67
 #define IS_ABSOLUTE_FILENAME    68
 #define PARSE_FILENAME        	69
-
-#define BUFF_ASSIGN_WORD 96
 
 #define PSC_ENV		100
 #define PSC_SPY		101
@@ -456,7 +452,7 @@ extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 
 #define IS_XWAMMODE             117
 #define CLOSE_OPEN_TABLES       118
-#define CALL_HASH               119
+
 #define PRINT_PREDICATE_TABLE   120
 
 #define FILE_READ_LINE          123
