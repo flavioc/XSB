@@ -507,11 +507,11 @@ flora_copy_file(Source,Dest) :-
 *************************************************************************/
 flora_set_xpp_options :-
 	retractall(xpp_options(_)),
-	assert(xpp_options('-P -m -nostdinc')).
+	assert(xpp_options('-P -m -nostdinc -curdirinclast')).
 
 
 flora_set_xpp_options(WS) :-
-	fmt_write_string(Opt,'-P -m -nostdinc -D FLORA_VAR_WORKSPACE=%s',args(WS)),
+	fmt_write_string(Opt,'-P -m -nostdinc -curdirinclast -D FLORA_VAR_WORKSPACE=%s',args(WS)),
 	retractall(xpp_options(_)),
 	assert(xpp_options(Opt)).
 
