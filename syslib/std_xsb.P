@@ -116,14 +116,6 @@ standard_symbol(float, 1, standard).
 standard_symbol(path_sysop,2,file_io).
 standard_symbol(path_sysop,3,file_io).
 
-
-%%%%%%% Flora %%%%%%%%
-standard_symbol(bootstrap_flora, 0, flora2).
-standard_symbol(flora_shell, 0, flora2).
-standard_symbol(unstrap_flora, 0, flora2).
-standard_symbol((flImport), 1, flora2).
-%%%%%%%%%%%%%%%%%%%%%%
-
 standard_symbol(fmt_read, 3, file_io).
 standard_symbol(fmt_read, 4, file_io).
 standard_symbol(fmt_write, 2, file_io).
