@@ -32,7 +32,7 @@
 :- import '_$op'/3 from file_op.
 :- import str_tolist/2 from string.
 :- import file_write0/2, file_nl/1 from xsb_writ.
-:- import atom/1, repeat/0, abort/1, abort/0, callable/1, compound/1
+:- import atom/1, repeat/0, abort/1, callable/1, compound/1
     	  from standard.
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import file_put/2, term_new/2, term_set_arg/4, term_type/2, 
