@@ -569,7 +569,7 @@ void undelete_branch(NODEptr lowest_node_in_branch){
    byte choicepttype; 
    byte typeofinstr;
  
-   if(DelFlag(lowest_node_in_branch) != 0){
+   if(is_deleted(lowest_node_in_branch)){
      choicepttype = 0x3 &  Instr(lowest_node_in_branch);
      typeofinstr = (~0x3) & DelFlag(lowest_node_in_branch);
 

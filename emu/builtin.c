@@ -80,6 +80,10 @@
 #define SOCKET_PUT         12
 #endif /* HAVE_SOCKET */
 
+#define FILE_FLUSH         0
+#define FILE_SEEK          1
+#define FILE_TRUNCATE      2
+
 #include "auxlry.h"
 #include "cell.h"
 #include "xsberror.h"
@@ -523,6 +527,7 @@ void init_builtin_table(void)
   set_builtin_table(PSC_PROP, "psc_prop");
   set_builtin_table(PSC_SET_TYPE, "psc_set_type");
   set_builtin_table(PSC_SET_PROP, "psc_set_prop");
+  set_builtin_table(FILE_FUNCTION, "file_function");
   set_builtin_table(FILE_OPEN, "file_open");
   set_builtin_table(FILE_CLOSE, "file_close");
   set_builtin_table(FILE_GET, "file_get");
@@ -768,6 +773,32 @@ int builtin_call(byte number)
     if (get_type(psc)==T_ALIA) set_ep(psc, (pb)ptoc_tag(2));
     else set_ep(psc, (pb)ptoc_int(2));
     break;
+  case FILE_FUNCTION: {
+    switch (ptoc_int(1)) {
+    case FILE_FLUSH: /* file_function(0,+file,-ret,-dontcare, -dontcare) */
+      tmpval = ptoc_int(2);
+      fptr = fileptr(tmpval);   
+      value = fflush(fptr);
+      ctop_int(3, (int) value);
+      break;
+    case FILE_SEEK: /* file_function(1,+file, +offset, +place, -ret) */
+      tmpval = ptoc_int(2);
+      fptr = fileptr(tmpval);
+      value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
+      ctop_int(5, (int) value);
+      break;
+    case FILE_TRUNCATE: /* file_function(2,+file, +length, -ret, -dontcare) */
+      tmpval = ptoc_int(2);
+      fptr = fileptr(tmpval);
+      value = ftruncate((int) fptr -> _file, (off_t) ptoc_int(3));
+      ctop_int(4, (int) value);
+      break;
+    default:
+      fprintf(stderr, "Invalid file function request %d\n",ptoc_int(1));
+      return FALSE;
+    }
+    break;
+  }
   case FILE_OPEN:		/* r1: file name (+string);   */
 				/* r2: mode (+int); r3: -file */
 				/* When read, mode = 0; when write, mode = 1, 
@@ -1697,7 +1728,7 @@ int builtin_call(byte number)
   case BOTTOM_UP_UNIFY:
     {
       NODEptr x = (NODEptr) ptoc_int(3);
-      if(DelFlag(x) !=  0)
+      if(is_deleted(x))
 	return FALSE;
       else
 	bottom_up_unify();

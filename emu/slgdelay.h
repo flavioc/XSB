@@ -179,7 +179,7 @@ struct pos_neg_de_list {
 #define is_failing_delay_element(SUBG, ANS)				\
     ((ANS == NULL) ? (is_completed(SUBG) && has_answer_code(SUBG) &&	\
 		      subgoal_unconditionally_succeeds(SUBG))		\
-		   : (DelFlag(ANS) == 1))
+		   : (is_deleted(ANS)))
 
 /*
  * mark_conditional_answer(ANS, SUBG, NEW_DL) will add a new delay list,

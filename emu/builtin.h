@@ -127,6 +127,7 @@ extern void init_builtin_table(void);
 #define IS_XWAMMODE             117
 #define CLOSE_OPEN_TABLES       118
 
+#define FILE_FUNCTION           122
 #define FILE_READ_LINE          123
 #define SLASH_BUILTIN           124
 #define FMT_WRITE_STRING        125
