@@ -44,7 +44,7 @@
 
 :- import package_configuration/2 from packaging.
 
-:- import bootstrap_flora/0 from flora.
+:- import bootstrap_flora1/0 from flora.
 
 :- import library_directory/1 from usermod.
 

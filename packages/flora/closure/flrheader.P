@@ -22,7 +22,7 @@
 	STD_FPREFIX(warning_nl)/2
    from flrutils.
 
-:- import bootstrap_flora/0 from flora.
+:- import bootstrap_flora1/0 from flora.
 
 
 /****************************************************************************/
@@ -77,7 +77,7 @@ STD_FPREFIX(tag)(noquery).
 
 ?- STD_FPREFIX(tag)(query), !,
    (   current_predicate(STD_FPREFIX(print_all)/2)
-   ;   bootstrap_flora
+   ;   bootstrap_flora1
    ),
    !.
 

@@ -35,7 +35,7 @@
 
 /*********************************************************************/
 STD_FPREFIX(shell) :-
-	bootstrap_flora,
+	bootstrap_flora1,
 	STD_FPREFIX(welcome_msg),
 	all,
 	push_abort_cutpoint,

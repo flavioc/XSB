@@ -571,7 +571,7 @@ internal_option(skolem)       :- !.
 
 /********************************************************************/
 copy_flrfile(Dir,File,Status) :-
-	bootstrap_flora,
+	bootstrap_flora1,
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(FullName,'%s%s%s%s%s',f(FloraDir,S,Dir,S,File)),

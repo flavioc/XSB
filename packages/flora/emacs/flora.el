@@ -481,7 +481,7 @@ Return not at end copies rest of line to end and sends it.
 		      flora-program-name
 		      nil
 		      "-e"
-		      "[flora], flora_shell."))
+		      "[flora], flora_shell1."))
 	(inferior-flora-mode))))
 
 

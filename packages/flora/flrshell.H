@@ -56,7 +56,7 @@
 
 :- import xpp_include_dir/1 from parse.
 
-:- import bootstrap_flora/0 from flora.
+:- import bootstrap_flora1/0 from flora.
 
 :- import
 	flora_read_parse_compile/6,

@@ -42,13 +42,13 @@
 :- import xpp_include_dir/1 from parse.
 :- dynamic hide_this_show(_,_).
 
-:- export bootstrap_flora/0, flora_shell/0.
+:- export bootstrap_flora1/0, flora_shell1/0.
 
 
 %% bootstrap_package fails, if Flora is already loaded.
 %% Then bootstrap_flora quietly succeeds without 
 %% so that package_configuration won''t be asserted twice.
-bootstrap_flora :-
+bootstrap_flora1 :-
 	bootstrap_package([flora,lib,syslib,pkgs,p2h],flora),
 	!,
 	assert(package_configuration(version(flora),'0.94 of 1999/11/21')),
@@ -59,14 +59,14 @@ bootstrap_flora :-
 	fmt_write_string(LibFlrDisplay,'%s%ssyslib%sflrdisplay',
 			 f(FlDir,S,S)),
 	[tables, LibFlrDisplay, flrutils, p2h_config].
-bootstrap_flora.
+bootstrap_flora1.
 
 %% don''t show flora_shell in trace
-:- trie_assert(hide_this_show(flora_shell,0)). 
+:- trie_assert(hide_this_show(flora_shell1,0)). 
 
-flora_shell :- notrace,  %% stop any tracing
+flora_shell1 :- notrace,  %% stop any tracing
 	(   conget(flora_shell_loaded, 1), !
-	;   bootstrap_flora,
+	;   bootstrap_flora1,
 	    [flrshell],
 	    STD_FPREFIX(shell)
 	).

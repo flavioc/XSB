@@ -22,7 +22,7 @@
 ** 
 */
 
-%% bootstrap_flora/0 adds this directory to the library search path.
+%% bootstrap_flora1/0 adds this directory to the library search path.
 %% Loading p2h_config.P ensures that the module prolog2hilog is compiled 
 %% and loaded.
 
