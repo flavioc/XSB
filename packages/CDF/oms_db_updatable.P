@@ -452,8 +452,27 @@ immediate_attribute_int_udb(SNOid,Source,RNCid,RSou,TNCid,TSou) :-
 		memberof(SOid,SCid), 
 		class(Type,_,NType,TSou),
 		coerce_db_type(NType,Tran,TNCid,Results,[])
-	 ;	writeln('ERROR: Attribute_int must have NatOId bound'),
-		fail
+	 ;	(nonvar(RNCid),nonvar(RSou),nonvar(TNCid),nonvar(TSou)
+		 ->	coerce_db_type(TNCid,Tran,TNCid,DBTVal,[]),
+			(atom(TarAttr)
+			 ->	odbc_sql_local(Source,
+					       DBTVal,
+					       ['select ',NOidAttr,
+						' from ',TableName,
+						' where ',TarAttr,' = ?'],
+					       Results)
+			 ;	
+			 db_build_sets(TarAttr,Sets,[]),
+			 odbc_sql_local(Source,
+					DBTVal,
+					['select ',NOidAttr,
+					 ' from ',TableName,' where ',Sets],
+					Results)
+			),
+			member(SNOid,Results)
+		 ;	writeln('ERROR: Attribute_int must have NatOId or (RNCid,RSou,TNCid,TSou) bound'),
+			fail
+		)
 	)
 	%%,writeln(im_attr(SNOid,RNCid,TNCid))
 	.
@@ -631,7 +650,7 @@ assert_oms_int_udb(attribute_object_ext(NatId,Source,RNCid,RSou,TVal,TSou)) :-
 %%% coerce_db_type(Type,Tran,NativeId,ExtVals0,ExtVals)
 coerce_db_type(atom(_),std,atom('NULL'),['NULL'|X],X) :- !, fail.
 coerce_db_type(atom(_),std,atom(Atom),[Atom|X],X) :- atom(Atom), !.
-coerce_db_type(integer(_),std,integer(Int),[Int|X],X) :- integer(Int), !.
+coerce_db_type(integer(_),std,integer(Int),[Int|X],X) :- (integer(Int); atom(Int),atom_codes(Int,IntC), number_codes(_,IntC)), !.
 coerce_db_type(atom(_),std,aint(Atom),[Atom|X],X) :- atom(Atom), !.
 coerce_db_type(float(_),std,float(Flt),[Flt|X],X) :- float(Flt), !.
 coerce_db_type(Type,Tran,NativeValue,ExtVals0,ExtVals) :-
