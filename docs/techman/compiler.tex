@@ -1,0 +1,640 @@
+\section{Compiler}
+%=================
+
+The compiler of XSB is written in (XSB)-Prolog. It transforms
+a source program module into an object code (byte code) module.
+We begin by presenting the various phases of the compilation
+process, the major modules of the compiler and their functionality
+(in approximate order of use) and we finally describe the various
+data structures that the modules of the compiler operate on.
+
+\subsection{The Compilation Process and its Phases}
+%==================================================
+The compiler accomplishes the compilation process roughly in the
+following three major phases:
+\begin{enumerate}
+\item	Module (global) level compilation phase.
+\item	Predicate level compilation phase.
+\item	Clause level compilation phase.
+\end{enumerate}
+
+Each of these phases is further divided in steps (subphases) 
+which we describe in detail below.
+
+\subsubsection{Module level compilation phase}
+%---------------------------------------------
+The module level compilation phase is the front-end of the XSB
+compiler, where various global analyses and compilation techniques
+take place.  All steps of this phase operate on the module as a whole
+(encoded in the {\it internal source form} that is introduced later).
+The following list describes possible steps of this phase.  We note
+that some of the described steps are currently not implemented but their
+position in the following list reflects various dependencies between them.
+\begin{description}
+\item[parsing]
+	Reads in the source program files (in {\it external source form})
+	and stores the information in the {\it internal source form}.
+	A symbol table is included in the internal source form.
+\item[use inference]
+	Performs necessary inference such as detecting undefined predicates,
+	implicit exported/global/local symbols, symbols that are never
+	used, etc.  This step should return the list of exported
+	predicates (symbols) of the module, so that they are used in
+	the following steps.
+\item[mode inference]
+	Performs mode inference, annotating predicates with mode declarations
+	(pragmatic information).  This step is currently not implemented,
+	but should be of considerable use in (some of) the following steps.
+\item[determinacy analysis]
+	Performs determinacy analysis.  Currently not implemented.
+\item[call specialisation]
+	Specialises predicates according to (partially instantiated)
+	call patterns that appear in the module.  One instance of this
+	specialisation is for HiLog predicates.
+\item[table declaration]
+	Provided that the {\tt table\_all} option of the compiler is
+	on, this step automatically chooses a subset of predicates that
+	should be tabled so that all possible cycles that cannot be proven
+	terminating contain at least one tabled predicate.  This step
+	currently employs a very simple termination checker to infer
+	termination proofs for immediately recursive predicates for which
+	mode information is known.
+	A related step with the declaration of tabled predicates is a step
+	that checks for semantic violations in the use of tabling
+	(i.e. uses of cuts or nots accross tabled predicates).
+\end{description}
+By the end of the module level compilation phase, the symbol table
+should be complete and it could be dumped into the byte code and the
+optional assembly file.  All symbols introduced by the following
+phases should be {\em internal\/} to the module under compilation.
+
+\subsubsection{Predicate level compilation phase}
+%------------------------------------------------
+The various steps in this phase share the property that they operate
+on individual predicates, rather than on the whole module.  Some of
+the operations performed in this phase, however, may produce a
+predicate block (set of related predicates) out of a single predicate. 
+\begin{description}
+\item[cut transformation]
+	Mimics a source-level transformation that cut-transforms predicates
+	that contain cuts, nots and conditional statements.
+\item[transformational indexing]
+	Performs transformational indexing (unification factoring).
+\item[index]
+	Generates indexing instructions in {\it internal byte code
+	form}, the Prolog representation of byte code (XWAM instructions).
+\item[clause compilation]
+	Performs the clause level compilation phase, returning a list of
+	XWAM instructions in internal byte code form.
+\item[peephole optimisation]
+	Performs peephole optimisation on the internal byte code form.
+\item[assemble]
+	If the compiler option {\tt dumpasm} is on, outputs the byte code
+	to the assembly file, in the {\it assembly form}.
+\item[object code generation]
+	Converts the internal byte code form into {\it byte code form} which 
+	is written into the object file.
+\end{description}
+
+\subsubsection{Clause level compilation phase}
+%---------------------------------------------
+This phase is essentially the back-end of the XSB compiler and its
+purpose is to generate (optimal) XWAM code for each clause.  The
+substeps of this phase are (very roughly) the following:
+\begin{description}
+\item[clause flattening]
+	Flattens each clause so that no nested structures occur in it.
+\item[clause processing]
+	Transforms each clause into an {\it intermediate form}, where
+	pragmatic information for its variables is collected.
+\item[XWAM code generation]
+	Translates the intermediate form into the {\it internal byte 
+	code form}.
+\end{description}
+
+As we have seen, a Prolog program can be in following forms:
+\begin{itemize}
+\item	external source form, (usually in {\tt *.P} and {\tt *.H} files);
+\item	internal source form;
+\item	intermediate form;
+\item	internal byte code form;
+\item	assembly form, in {\tt *.A} files;
+\item	byte code, in {\tt *.O} files.
+\end{itemize}
+Finally, there is yet another form:
+\begin{itemize}
+\item	memory form, the memory image after loading.
+\end{itemize}
+
+
+\subsection{Compiler modules and their functionality}
+%====================================================
+\begin{description}
+\item[compile.P] The top-level driver of the compiler.
+\item[parse.P]	Uses Prolog's builtin predicate {\tt read/2} to parse
+		the source module and performs initial symbol table registry.
+		Uses {\bf singleton.P} to check for singleton variables in
+		clauses, and the methods of {\bf symtab.P} (the symbol table
+		manipulation module).
+\item[useinfer.P]
+		Performs inference of exported predicates/structures/constants
+		marking them as exported/local/global.  It also prints out
+		warnings for unused/undefined predicates.
+\item[spec.P]	Specialises predicates according to partially instantiated
+		call patterns that appear in the module.  One instance of this
+		specialisation is for calls to HiLog predicates.  Calls to
+		these predicates are usually partially instantiated.
+\item[tabdef.P] Builds the call graph for the module and automatically chooses
+		a subset of predicates that will be tabled.
+\item[build\_graph.P]
+		Checks for semantic violations in the use of cuts,
+		if-then-elses, or nots in combination with tabled predicates.
+\item[preprocess.P]
+		Preprocesses predicate definitions that contain cuts, nots,
+		or conditional statements.  It essentially performs
+		a source to source cut transformation.  It uses the
+		following module:
+	\begin{description}
+	\item[pre\_cond.P] Handles conditional statements (with inline tests)
+		that need no choice points.  Currently, it is limited to
+		branches of a disjunction with mutually exclusive inline
+		tests, e.g. {\tt '>='/2} and {\tt '<'/2} with the same
+		arguments.
+	\end{description}
+\item[tp\_index.P] Indexes a predicate, generating {\tt try/retry/trust}
+		and {\tt switchon*} instructions for the predicate's clauses.
+\item[tprog.P]	Translates clauses into XWAM code.  It is the ``heart''
+		of the clause-level compilation phase. Calls in approximately
+		the following order:
+	\begin{description}
+	\item[flatten.P] Flattens out structures in clauses along the lines of
+		{\tt p(f(g(D))) => p(f(Y)),Y = g(D)}.  The code in that module 
+		is much more general since it can flatten to any level by
+		simply redefining the predicate {\tt level\_allowed/1}.
+	\item[inprog.P] Transforms a clause in internal source form into the
+		intermediate form, collecting pragmatic information
+		about the clause.
+	\item[varproc.P] Processes the variables of the clause collecting
+		pragmatic information about their occurrences.
+	\item[tp\_geninline.P] Generates code for inline predicates.
+	\item[tp\_cond.P] Generates special code for conditionals with
+		inline test parts.  Uses {\bf tp\_comp.P} and {\bf
+		tp\_eval.P}.
+	\item[tp\_goal.P] Generates {\tt get*/put*/bld*/uni*} XWAM instructions
+ 		for each goal (including the head).  Uses {\bf tp\_var.P}.
+	\item[tp\_eval.P] Generates code for arithmetic expressions.
+	\end{description}
+\item[peephole.P]
+		Performs peephole optimisation for one predicate at a time.
+\item[asm.P, asm\_pass2.P]
+		Generates XWAM byte code from internal byte code
+		representation.  Use information in the instruction table 
+		found in module {\bf asm\_inst.P}.
+\item[asm\_opt.P] Further optimises the byte code for a predicate block
+		by changing some {\tt call} and {\tt excute} XWAM instructions
+		to {\tt calld} and {\tt executed} instructions respectively.
+\end{description}
+
+\subsection{Internal Source Form}
+%================================
+
+The internal source form is represented by the following Prolog data structure:
+
+\demo{    Module = module(SymTab, DcList, ClList, QrList) }
+
+{\sf SymTab} is the symbol table. Because of the complexity of its
+structure, and the fact that the symbol entry is also used in
+several other program forms, its form will be introduced in the
+next subsection.
+
+{\sf DcList} is currently not used, but it might be used for storing
+directives found in the module, so that they can be easily dumped out.
+
+{\sf ClList} represents the normal clauses and is a list of:
+
+\demo{   pred(Symbol, [Clause1, Clause2, \ldots, ClauseN], Pragma)        }
+
+which represents all the clauses of the predicate {\tt Symbol}
+(a symbol table entry, see next subsection).
+
+Each {\sf Clause} has the form:
+
+\demo{	clause(Arguments, Body, Pragma)				}
+
+where {\sf Arguments} is a list of {\tt Term}s (see below) and {\sf Body}
+is a {\tt Goal} which can be one of the following:
+
+\begin{description}
+\desc{and(Goal1, Goal2)}
+	Represents a conjunction of two goals {\tt Goal1} and {\tt Goal2}.
+\desc{or(Goal1, Goal2)}
+	Represents a disjunction of two goals {\tt Goal1} and {\tt Goal2}.
+\desc{if(Goal1, Goal2)}
+	Represents the conditional execution of {\tt Goal2} provided
+	that {\tt Goal1} succeeds.
+\desc{not(Goal)}
+	Represents the {\em compiled} negation of a {\tt Goal}.
+ 	For maximal developer's confusion, compiled negations are calls
+	to the standard predicates \not\ and {\tt fail\_if/1}, but not
+	to the {\tt not/1} standard predicate.
+\desc{goal(Symbol, Arguments)}
+	{\tt Symbol} is a symbol table entry representing the predicate
+	symbol of the atomic goal, and {\tt Arguments} is a list of
+	{\tt Term}s.
+\desc{inlinegoal(Name, Arity, Arguments)}
+	Represents an atomic goal whose predicate, {\tt Name/Arity},
+	is a predicate that is expanded inline when compiled;
+	{\tt Arguments} is a list of {\tt Term}s, representing the
+	arguments of the goal.  The inline predicates of XSB are given
+	in table~\ref{inlinepredicatetable}.
+\end{description}
+
+\begin{table}[htbp]\centering{\tt
+\begin{tabular}{lllll}
+\verb|'='/2|	&\verb|'<'/2|	&\verb|'=<'/2|	&\verb|'>='/2| &\verb|'>'/2| \\
+\verb|'=:='/2|	&\verb|'=\='/2|	&is/2		&\verb|'@<'/2| &\verb|'@=<'/2|\\
+\verb|'@>'/2|	&\verb|'@>='/2|	&\verb|'=='/2|	&\verb|'\=='/2|&fail/0 \\
+true/0		&var/1		&nonvar/1	&halt/0        &'!'/0 \\
+'\_\$cutto'/1	&'\_\$savecp'/1	&'\_\$builtin'/1
+\end{tabular}}
+\caption{The Inline Predicates of XSB}\label{inlinepredicatetable}
+\end{table}
+
+A {\tt Term} can be one of the following:
+
+\begin{description}
+\desc{varocc(Vid)}
+	A variable; {\tt Vid} is an integer or a constant that identifies
+	the variable.  Different variables of the same clause have distinct
+	identifiers.  The XSB parser assigns integers as variable identifiers,
+	while modules like {\tt spec} and {\tt preprocess} assign atoms of
+	the forms {\tt '\_v\#'} as variable identifiers.
+\desc{constant(Symbol)}
+	A constant symbol represented by the symbol table entry {\tt Symbol}.
+\desc{integer(Int)}
+	An integer having value {\tt Int}.
+\desc{real(Real)}
+	A floating number having value {\tt Real}.
+\desc{structure(Symbol, Arguments)}
+	A structure whose primary functor is {\tt Symbol} and whose
+	arguments are elements in the list {\tt Arguments}.
+\end{description}
+
+{\sf QrList} represents queries (commands) of the module and has the
+same form as {\sf ClList} except that it contains only one predicate
+definition, and the predicate has the system supplied name \verb+'_$main'/0+.
+
+
+\subsection{Symbol Table Format}
+%===============================
+
+The symbol table is implemented as an {\em abstract data type} by the
+module {\tt symtab}.
+
+Abstractly, the symbol table is a table of symbols. A symbol
+is an abstract object that {\em can be accessed only by the methods
+(interface routines)} introduced later.  It is considered a bad
+programming habit to access the symbol table by any other means. 
+The structure of the table and symbols are hidden from the users
+of the module.  To put more emphasis on our argument, we avoid
+presenting the internal structure of the symbol table and we only
+do so for the symbol table entries.
+
+\subsubsection{Internal structure of the entries}
+%------------------------------------------------
+
+Each symbol table entry is internally represented as:
+
+\demo{		sym(Name, Arity, Properties, Index)		}
+
+where {\sf Properties} has the form:
+
+\demo{     prop(Category, Scope, Defined, Used, EP, PragmaList)	}
+
+{\sf Category} is either undetermined (free variable) or one of the
+category properties.  {\sf Scope} is one of the scope properties.
+{\sf Defined} is either {\tt defined} or {\tt undef}. 
+Similarly {\sf Used} is either {\tt used} or {\tt unused}.
+{\sf EP} is {\tt ep(Offset)}, and finally {\sf PragmaList} is a
+list of other pragma properties.  All of these are described below.
+
+\subsubsection{Symbol properties}
+%--------------------------------
+As mentioned, each symbol has a {\sf Name} attribute and an {\sf Arity}
+attribute that can be accessed through methods.  A symbol is
+also associated with a unique ordinal number called {\sf Index} that
+represents the location of the symbol in the output assembly and
+object files.  In addition, a symbol can have one or more of the
+following optional attributes called {\sf Properties}:
+
+\begin{enumerate}
+\item	Category (or type) of the symbol (a symbol can have at most one
+	property in this group). This attribute tells the type of usage
+	of the symbols, namely, as a predicate symbol, a module name, etc.
+	\begin{description}
+	\item[{\tt pred}]	The symbol is a predicate.
+	\item[{\tt module}]	The symbol is a module name.
+	\item[{\tt dynamic}]	The symbol is a dynamic predicate, currently
+				not used (though it should be).
+	\end{description}
+	Such information will be passed into byte code files and then to the
+	emulator when the files are loaded. See Table \ref{t:symcat} on page
+	\pageref{t:symcat} for the corresponding categories of symbols
+	in the emulator.
+
+\item	Scope.  A symbol can have at most one property in this group,
+	and this is ensured by the {\tt sym\_propin/2} method described below.
+	\begin{description}
+	\item[{\tt ex}]		The symbol is exported by this module.
+	\item[{\tt im(Module)}]	The symbol is imported from the module
+				{\tt Module}.
+	\item[{\tt global}]	A global symbol that can be accessed
+				(is visible) by any module.
+	\item[{\tt local}]	The symbol is local to the module.
+	\item[{\tt internal}]	The symbol is generated internally
+				during compilation.
+	\end{description}
+\item	Defined checking.  The following properties are only used during usage 
+	checking, and have meaning only for predicate symbols.
+	\begin{description}
+	\item[{\tt defined}]	The symbol is a predicate that is defined in
+				this module.
+	\item[{\tt undef}]	A predicate symbol that is not defined in
+				this module, or imported from another module.
+	\end{description}
+\item	Usage checking.  The following properties are only used during usage 
+	checking, but are applicable to all symbols.
+	\begin{description}
+	\item[{\tt used}]	A symbol that is used by some predicate
+				definitions in this module.
+	\item[{\tt unused}]	A symbol that is not {\tt used}.
+	\end{description}
+\item	Entry point of predicate (used by the assembler):
+	\begin{description}
+	\item[{\tt ep(Location)}]
+		{\tt Location} is an offset of the starting point of the
+		code to the beginning of the entire text segment.
+	\end{description}
+\item	Pragmatic information
+	\begin{description}
+	\item[{\tt index(Position)}]
+		Indicates the fact that the predicate will be indexed on
+		its {\tt Position}-th argument.  The default position is 1.
+	\item[{\tt tabled(Tabind,Chs,Rhs,Arity)}]
+		Used for tabled predicates.  {\tt Tabind} is the table
+		identification number, {\tt Chs} and {\tt Rhs} are the call
+		and return hash sizes for the table, while {\tt Arity} is
+		the arity of the predicate symbol.
+	\item[{\tt mode(p(+,.,?,..,-))}]
+		Indicates mode usage of the predicate {\tt p/N}.  A predicate
+		can have several different instances of this information.
+	\end{description}
+\end{enumerate}
+
+
+\subsubsection{Methods for accessing the Symbol Table}
+%-----------------------------------------------------
+The following are all the methods implemented:
+
+\begin{description}
+\desc{sym\_insert(+Name, +Arity, +PropList, $\pm$SymTab, -Sym)}
+	Inserts a symbol with name {\tt Name} and arity {\tt Arity} into 
+	the symbol table {\tt SymTab}, and returns the symbol entry (the
+	abstract object) in {\tt Sym}.  {\tt PropList} is a list of
+	properties that are associated with the symbol.  If the symbol
+	already exists in the symbol table, only the properties are
+	added, and the symbol entry is returned.
+\desc{sym\_count(+SymTab, -Number\_of\_Entries)}
+	Returns the number of symbol entries in the symbol table.
+\desc{sym\_scan(-Sym, +SymTab, -SymTabRest)}
+	Gets an (arbitrary) symbol entry {\tt Sym} from the symbol table 
+	{\tt SymTab}, and returns the rest of the symbol table in 
+	{\tt SymTabRest}.  This procedure can be used to obtain
+	all the symbols through backtracking, though we recommend the
+	use of the more efficient {\tt sym\_gen/2} method, below.
+\desc{sym\_gen(-Sym, +SymTab)}
+	Gets an (arbitrary) symbol entry {\tt Sym} from the symbol table 
+	{\tt SymTab}.  Best used to generate all symbols through
+	backtracking.
+\desc{sym\_empty(+SymTab)}
+	Succeeds iff the symbol table is empty.
+\desc{sym\_propin(+PropList, +Sym)}
+	Inserts a list of additional properties into the symbol table
+	entry, while checking for errors (inconsistencies).
+	{\tt PropList} can either be a list or a single property.
+\desc{sym\_prop(+Prop, +Sym)}
+	Succeeds when the symbol table entry {\tt Sym} possesses the
+	given property.
+\desc{extract\_symlist(+Prop, -SymList, +SymTab)}
+	{\tt Prop} is a single or a list of properties.
+	The predicate returns a list of symbols ({\tt SymList}) that
+	have the property {\tt Prop} (or have all the properties listed
+	in {\tt Prop}).
+\desc{sym\_name(+Sym, -Name, -Arity)}
+	Returns the name and the arity of the symbol.
+\desc{sym\_offset(+Sym, -Index)}
+	Returns the index number of the symbol.
+\desc{sym\_category(+Sym, -Category)}
+	Returns the category of the symbol.
+\desc{sym\_env(+Sym, -Scope)}
+	Returns the scope of the symbol.
+\desc{sym\_type(+Sym, -Tabled)}
+	Returns the tabled properties of the symbol, or alternatively
+	succeeds iff the symbol is a tabled predicate symbol.
+\desc{sort\_by\_index(+SymTab, -Sorted\_SymList)}
+	Sorts the symbols in the symbol table {\tt SymTab} based on their
+	index field, returning them in the list {\tt Sorted\_SymList}.
+\desc{sym\_complete($\pm$SymTab)}
+	Completes the symbol table.
+\end{description}
+
+
+
+\subsection{Intermediate Program Form}
+%=====================================
+
+The intermediate program form is generated mainly by the {\tt
+preprocess} module that performs cut and not transformations, and by
+the predicate {\tt inprog/2} (in module {\tt inprog}).  The intermediate
+program form is only used in the last two phases of the compiler.
+After the gradual evolution of the XSB compiler, the intermediate program
+form is not much different from the internal source form, except
+pragma information being added to variable occurrences.  Also, {\tt if}
+and {\tt not} constructs are changed by the cut-transformation.
+
+The form of predicates is the same as the one of the internal source
+form, while each {\tt Clause} has the form
+
+\demo{	clause(Arguments, Body, CPrag)				}
+
+where {\sf Arguments} is a list of {\tt Term}s (see below), {\sf CPrag}
+is a clause-pragma structure (whose form will given later), and
+{\sf Body} is a {\tt Goal} which can be one of the following:
+
+\begin{description}
+\desc{nil}
+	An empty body.  Used when the clause is a fact that needs no
+	flattening.
+\desc{and(Goal1, Goal2)}
+	Represents a conjunction of two goals {\tt Goal1} and {\tt Goal2}.
+\desc{or(Goal1, Goal2)}
+	Represents a disjunction of two goals {\tt Goal1} and {\tt Goal2}.
+\desc{if\_then\_else(TestGoal, TrueGoal, FalseGoal)}
+	Represents an if-then-else construct (maybe constructed by analysis),
+	in which {\tt TestGoal} is a goal that contains only inline tests,
+	while {\tt TrueGoal} and {\tt FalseGoal} are {\tt Goal}s.
+\desc{goal(Symbol, Arguments)}
+	{\tt Symbol} is a symbol table entry representing the predicate
+	symbol of the atomic goal, and {\tt Arguments} is a list of
+	{\tt Term}s.
+\desc{inlinegoal(Name, Arity, Arguments)}
+	Represents an atomic goal whose predicate is a predicate
+	{\tt Name/Arity} that is expanded inline when compiled;
+	{\tt Arguments} is a list of {\tt Term}s, representing the
+	arguments of the goal.
+\end{description}
+
+A {\tt Term} can be one of the following:
+
+\begin{description}
+\desc{varocc(Vid, VPrag)}
+	A variable; {\tt Vid} is an integer or a constant that identifies
+	the variable. Different variables of the same clause have distinct ids.
+	{\tt VPrag} is a variable-pragma structure whose form is given below.
+\desc{constant(Symbol)}
+	A constant symbol represented by the symbol table entry {\tt Symbol}.
+\desc{integer(Int)}
+	An integer having value {\tt Int}.
+\desc{real(Real)}
+	A floating number having value {\tt Real}.
+\desc{structure(Symbol, Arguments)}
+	A structure whose primary functor is {\tt Symbol} and whose
+	arguments are elements in the list {\tt Arguments}.
+\end{description}
+
+The variable-pragma structure is now implemented by an abstract datatype.
+The attributes and their accessing methods are given in Table~\ref{t:vprag}.
+
+\begin{table}\centering
+\begin{tabular}{|l|l|l|}
+\hline
+Attribute	& Value			& Access method			\\
+\hline \hline
+{\sf type}	& {\tt p} - permanent	& vprag\_type(VPrag, Type)	\\
+		& {\tt t} - temporary	&				\\
+		& {\tt vh} - void head	&				\\
+{\sf location}	& an integer		& vprag\_loc(VPrag, Loc)	\\
+{\sf use}	& see below		& vprag\_use(VPrag, Use)	\\
+{\sf nouse}	& see below		& vprag\_nouse(VPrag, NoUse)	\\
+\hline
+{\sf context}	& {\tt h} - head	& vprag\_context(VPrag, Context)\\
+		& {\tt i} - inline goal &				\\
+		& {\tt b} - other goal	&				\\
+{\sf level}	& {\tt t} - top	level	& vprag\_level(VPrag, Level)	\\
+		& {\tt s} - second level&				\\
+{\sf argument
+     position}	& an integer		& vprag\_argno(VPrag, Argno)	\\
+{\sf occurrence}& {\tt f} - first	& vprag\_occ(VPrag, Occ)	\\
+		& {\tt l} - last	& 				\\
+		& {\tt v} - void	& 				\\
+		& {\tt s} - other	& 				\\
+{\sf in last
+     chunk}	& {\tt 1} - yes		& vprag\_lastchunk(VPrag, Yes)	\\
+		& {\tt 0} - no		&				\\
+\hline
+{\sf type1}	& see below		& vprag\_type1(VPrag, Type)     \\
+\hline
+\end{tabular}
+\caption{Variable Pragma Access Methods}
+\label{t:vprag}
+\end{table}
+
+The attributes {\sf type, location, use} and {\sf nouse} are shared
+by all occurrences of the same variable, while the other attributes
+depend on the specific occurence.
+
+For temporary variables, the {\sf location} attribute records the
+register number, while for permanent variables it is the offset in
+the activation record (the first variable has offset 1).
+
+For temporary variables, the {\sf use} attribute stores a list of
+integers that represent the register numbers the variable is preferred
+to be allocated, and the {\sf nouse} attribute stores a list of 
+registers that the variable should not be allocated.
+
+For permanent variables, occurrences in the last chunk may be
+{\it unsafe} (first occurrence of a variable that does not appear in
+the head), or may need to be {\it dereferenced} (all subsequent
+occurrences).  This information is stored in the {\sf use} attribute
+as {\tt u} and {\tt d} respectively, or {\tt p} when neither case
+applies (variables that appear in the head).  The attribute
+{\sf type1} is a derived attribute that is the same as the attribute
+{\sf type} except when the variable is permanent and occurs in the
+last chunk, in which case {\sf type1} is the same as the {\sf use}
+attribute.  {\sf nouse} attributes are not used for permanent
+variables.
+
+The internal structure of variable-pragmas has the form:
+
+\demo{	vrec(Context,Level,Argno,Occ,v(Type,Loc,Use,NoUse),LastChunk)	}
+
+where the {\sf v(\ldots)} part is shared by all occurrences of
+the variable.
+
+The clause-pragma structure takes the following form
+
+\demo{		crec(ARSize, Label)		}
+
+where {\sf ARSize} is the size of the activation record, and {\sf Label}
+is the label of the clause.
+
+%and {\sf VarList} is a list of {\sf variable(Vid, VCPrag)}, one
+%for each variable (not each occurrence).  {\sf VCPrag} is the shared
+%portion of the variable-pragmas of all occurrences of the variable.
+
+
+\subsection{Compiler Options}
+%============================
+
+Besides the compiler options introduced in the {\it XSB Programmer's Manual},
+there are some other options that exist mainly for debugging and profiling
+purposes.  Here is a list of compiler options.
+
+\begin{itemize}
+\item   Inference Options:
+	\begin{description}
+        \item[nocompile] Do not compile, but do inferencing only.
+	\item[spec\_off] Do not perform specialisation of partially
+			 instantiated calls.
+        \item[modeinfer] Performs mode inferencing (currently not implemented).
+	\end{description}
+\item   Debugging Options:
+	\begin{description}
+        \item[verbo]	Prints out intermediate information during compiling.
+        \item[dump\_asm] Generates a {\tt *.A} file.  Known to {\em not\/}
+			work when predicates are cut-transformed.
+	\item[dump\_spec] Generates a {\tt *.spec} file, containing the result
+			of specialising partially instantiated calls to
+			predicates defined in the module.  The result is in
+			Prolog source code form.
+	\item[dump\_ti] Generates a {\tt *.ti} file, containing the result
+			of applying transformational indexing (unification
+			factoring) to some subset of the predicates defined
+			in the module.  The result is in Prolog source code
+			form.
+	\end{description}
+\item   Pragma Options:
+	\begin{description}
+        \item[sysmod]	Mainly used for the compilation of system modules.
+			Standard predicates are not assumed to be automatically
+			imported, and the compiler does not generate warnings
+			for the redefinition of standard predicates.
+			Also, all primitive predicates are compiled inline
+			(calling {\tt '\_\$builtin'/1}).  Because of that,
+			there are some modules (like {\tt syslib/standard.P},
+			or {\tt lib/setof.P}) that {\em must\/} be compiled
+			with this option.
+        \item[index\_off] The compilation phase will not generate indices.
+	\end{description}
+\end{itemize}
+

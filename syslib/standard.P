@@ -1,0 +1,981 @@
+/* File:      standard.P
+** Author(s): Sagonas, Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*----------------------------------------------------------------------*/
+/* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
+/*----------------------------------------------------------------------*/
+
+
+			/************************/
+			/*   INPUT and OUTPUT   */
+			/************************/
+
+%--------------------------%
+% File Handling Predicates %
+%--------------------------%
+
+see(Var) :- 
+	var(Var), !, 
+	abort('Uninstantiated argument 1 of see/1, cannot see!').
+see(user) :- 
+	!, 
+	see0(userin).
+see(F) :- 
+	see0(F).	% Note that this captures ``see(userin)''
+
+see0(F) :- 
+	conpsc(F, PSC),
+	psc_type(PSC, Type), 
+	( Type =:= 5, !				% already opened
+	; Type =:= 0, 
+	  psc_name(PSC, Name),
+	  file_open(Name, 0, File),		% 0: "r"
+	  File > 0,                             % file F exists and
+	  !,					% is readable.
+	  psc_set_prop(PSC, File, 1),
+	  psc_set_type(PSC, 5, 1)
+	; abort([F,'not a file or file not readable, cannot see!'])
+	),
+	psc_prop(PSC, File0),
+	stat_set_flag(10, File0, 1),
+	conpsc(current_input, CurinPsc),
+	psc_set_prop(CurinPsc, PSC, 1).
+
+seeing(F) :- 
+	conpsc(current_input, CurinPsc), 
+	psc_prop(CurinPsc, Curin),
+	psc_name(Curin, Con), 
+	Con = F.
+
+seen :- conpsc(current_input, CurinPsc), 
+	psc_prop(CurinPsc, FilePSC),
+	psc_type(FilePSC, Type), 
+	Type =:= 5,
+	psc_prop(FilePSC, File),
+	( File > 1 ->
+		file_close(File),
+		psc_set_type(FilePSC, 0, 1)
+	; true
+	),
+	stat_set_flag(10, 0, 1),
+	conpsc(userin, UserPsc),
+	psc_set_prop(CurinPsc, UserPsc, 1).
+
+tell(Var) :- 
+        var(Var), !,
+        abort('Uninstantiated argument 1 of tell/1, cannot tell!').
+tell(user) :- 
+	!, 
+	tell0(userout).
+tell(F) :- 
+	tell0(F).	% Note that this captures ``tell(userout)''
+
+tell0(F) :- 
+	conpsc(F, PSC),
+	psc_type(PSC, Type), 
+	( Type =:= 5, !				% already opened
+	; Type =:= 0,
+	  psc_name(PSC, Name),
+	  file_open(Name, 1, File), 		% 1: "w"
+	  File > 0,                             % file F exists and
+	  !,					% is writable.
+	  psc_set_prop(PSC, File, 1),
+	  psc_set_type(PSC, 5, 1)
+	; abort([F,': Not a file or file not writable, cannot tell!'])
+	),
+	psc_prop(PSC, File0),
+	stat_set_flag(11, File0, 1),
+	conpsc(current_output, CuroutPsc),
+	psc_set_prop(CuroutPsc, PSC, 1).
+
+telling(F) :- 
+	conpsc(current_output, CuroutPsc), 
+	psc_prop(CuroutPsc, Curout),
+	psc_name(Curout, Con), 
+	Con = F.
+
+told :- conpsc(current_output, CuroutPsc), 
+	psc_prop(CuroutPsc, FilePSC),
+	psc_type(FilePSC, Type), 
+	Type =:= 5,
+	psc_prop(FilePSC, File),
+	( File > 1 ->
+		file_close(File),
+		psc_set_type(FilePSC, 0, 1)
+	; true
+	),
+	stat_set_flag(11, 1, 1),
+	conpsc(userout, UserPsc),
+	psc_set_prop(CuroutPsc, UserPsc, 1).
+
+file_exists(F) :- 
+	( atom(F) ->
+		expand_filename(F, EF),
+		conname(EF, Name), 
+		machine_file_exists(Name)
+	; var(F) ->
+		abort('Uninstantiated argument 1 of file_exists/1')
+	; abort('Wrong type in argument 1 of file_exists/1')
+	).
+
+
+open(File,_,_):-
+	var(File), !, 
+	abort('Uninstantiated argument 1 of open/3').
+open(user,write,userin):-!, 
+	tell0(userin).
+open(user,read,userin):-!, 
+	see0(userin).
+open(F,read,F):-!, 
+	conpsc(F, PSC),
+	psc_name(PSC, Name),
+	(file_open(Name, 0, File),		% 0: "r"
+	File > 0,                             % file F exists and
+	!,					% is readable.
+	psc_set_prop(PSC, File, 1),
+	psc_set_type(PSC, 5, 1)
+	; abort([F,'not a file or not readable, cannot open'])
+	),
+	psc_prop(PSC, File0),
+	stat_set_flag(10, File0, 1),
+	conpsc(current_input, CurinPsc),
+	psc_set_prop(CurinPsc, PSC, 1),
+	see0(userin).
+open(F,write,F):-!, 
+	conpsc(F, PSC),
+	psc_name(PSC, Name),
+	(file_open(Name, 1, File),		% 0: "w"
+	File > 0,                             % file F exists and
+	!,					% is readable.
+	psc_set_prop(PSC, File, 1),
+	psc_set_type(PSC, 5, 1)
+	; abort([F,'not a file or not writable, cannot open'])
+	),
+	psc_prop(PSC, File0),
+	stat_set_flag(11, File0, 1),
+	conpsc(current_input, CurinPsc),
+	psc_set_prop(CurinPsc, PSC, 1),
+	tell0(userout).
+open(F,append,F):-!, 
+	conpsc(F, PSC),
+	psc_name(PSC, Name),
+	(file_open(Name, 2, File),		% 0: "a"
+	File > 0,                             % file F exists and
+	!,					% is readable.
+	psc_set_prop(PSC, File, 1),
+	psc_set_type(PSC, 5, 1)
+	; abort([F,'not a file or not writable, cannot open'])
+	),
+	psc_prop(PSC, File0),
+	stat_set_flag(11, File0, 1),
+	conpsc(current_input, CurinPsc),
+	psc_set_prop(CurinPsc, PSC, 1),
+	tell0(userout).
+
+close(user) :- !.
+close(userin) :- !.
+close(userout) :- !.
+close(F) :- 
+	conpsc(F, PSC),
+	psc_type(PSC, Type), Type=5,
+	psc_prop(PSC, File), file_close(File),
+	psc_set_type(PSC, 0, 1).
+
+
+%--------------------------%
+% Character I/O Predicates %
+%--------------------------%
+
+nl(Ostr) :- tell(Ostr),nl,tell(userout).
+
+nl :- (is_backslashing_os -> put(13), put(10)
+			  ; put(10) ).
+
+
+get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
+
+get0(C) :- stat_flag(10, File),	file_get(File, C0), C = C0.
+
+skip(C) :- get0(C0), (C0=C ; skip(C)).
+
+put(C) :- put(C).
+
+tab(N) :- tab(N).
+
+%---------------------%
+% Term I/O Predicates %
+%---------------------%
+
+read(Istr,T) :- see(Istr),read(T),see(userin).
+
+read(T) :- stat_flag(10, File),	file_read(File, T).
+
+write(Ostr,Term):- tell(Ostr),	write(Term),tell(userout).
+
+write(T) :- stat_flag(11, File), file_write(File, T).
+
+
+writeln(Ostr,Term):- tell(Ostr),writeln(Term),tell(userout).
+
+writeln(T) :- stat_flag(11, File), file_write(File, T), file_nl(File).
+
+display(T) :- telling(F), tell(userin), write(T), told, tell(F).	
+
+
+write_prolog(Ostr,Term):- tell(Ostr),write_prolog(Term),tell(userout).
+
+write_prolog(T) :- stat_flag(11, File), file_write_prolog(File, T).
+
+
+writeq(Ostr,Term):- tell(Ostr),	writeq(Term),tell(userout).
+
+writeq(T) :- stat_flag(11, File), file_write_quoted(File, T).
+
+
+write_canonical(Ostr,Term):- tell(Ostr),
+			     file_write_canonical(Ostr,Term),
+			     tell(userout).
+
+write_canonical(T) :- stat_flag(11, File), file_write_canonical(File, T).
+
+
+alt_write_canonical(T):- stat_flag(11,File), alt_file_write_canonical(File, T).
+
+print(T) :-	% Not what is supposed 2 B
+	telling(F), tell(userout), write(T), told, tell(F).
+
+
+
+			/**********************/
+			/*    META-LOGICAL    */
+			/**********************/
+
+%---------------------------------------------------------------%
+% Prolog Meta-Logical Predicates (now most of them are in C)	%
+%---------------------------------------------------------------%
+
+var(X) :- var(X).
+
+nonvar(X) :- nonvar(X).
+
+atom(X) :- atom(X).
+
+integer(X) :- integer(X).
+
+real(X) :- real(X).
+
+float(X) :- real(X).
+
+number(X) :- number(X).
+
+atomic(X) :- atomic(X).
+
+compound(X) :- compound(X).
+
+structure(X) :- compound(X).
+
+callable(X) :- callable(X).
+
+is_list(X) :- is_list(X).
+
+%% Check if  the argument is a string of characters
+is_string([]). 
+is_string([C|Cs]) :- C >= 0, C =< 255, is_string(Cs). 
+
+% A term X is a proper hilog term if it somewhere 
+% contains a subterm that is not a prolog term.
+
+proper_hilog(X) :-
+	term_type(X, Type),
+	( Type =:= 1 ->		% compound term (but not list)
+		term_psc(X, PSC), psc_name(PSC, Name), psc_arity(PSC, Arity),
+		( Name == apply, Arity > 1 -> true 
+		; prolog_arglist(X, ArgList, Arity, Arity),
+		  proper_hilog(ArgList)
+		)
+	; Type =:= 3 ->
+		X = [H|T], ( proper_hilog(H), !; proper_hilog(T) )
+	).
+
+functor(T, F, N) :- functor(T, F, N).
+
+arg(I, T, A) :- arg(I, T, A).
+
+arg0(I, T, A) :- 
+	term_type(I, I_type),
+	( I_type =:= 2 ->	% integer
+		term_type(T, T_type),
+		( T_type =\= 0 ->
+			( I =:= 0 -> functor(T, A, _)
+			; I > 0 -> arg(I, T, A)
+			)
+		; abort('Uninstantiated argument 2 of arg0/3')
+		)
+	; I_type =:= 0 ->	% variable
+		abort('Uninstantiated argument 1 of arg0/3')
+	; abort('Wrong type in argument 1 of arg0/3')
+	).
+
+X =.. L :- X =.. L.
+
+prolog_arglist(X, List, I, N) :-
+	( I =:= 0 -> List = []
+	; List = [Y|Z], K is I - 1, J is N - K,
+	  arg(J, X, Y), prolog_arglist(X, Z, K, N)
+	).
+
+
+%-------------------------------%
+% HiLog Meta-Logical Predicates %
+%-------------------------------%
+
+hilog_functor(T, F, N) :-
+        term_type(T, Type),
+        ( Type =:= 0 ->
+		( arity_integer(N) ->
+			( atomic(F) ->
+				( N =:= 0 ->
+					T = F
+				; ( '_$hilog_symbol'(F) ->
+					conname(apply, Name),
+					NewN is N + 1,
+					psc_insert(Name, NewN, PSC2),
+					term_new(PSC2, T),
+					arg(1, T, F)
+				  ; ( F == '.', N =:= 2 ->
+					T = [_|_]
+				    ; conname(F, Name),
+				      psc_insert(Name, N, PSC2),
+				      term_new(PSC2, T)
+				    )
+				  )
+				)
+			% Here F is either a variable or a compound term.
+			; ( N =:= 0 ->
+				abort('Wrong type in argument 2 of hilog_functor/3')
+			  ; conname(apply, Name),
+			    NewN is N + 1,
+			    psc_insert(Name, NewN, PSC2),
+			    term_new(PSC2, T),
+			    arg(1, T, F)
+			  )
+			)
+		; ( var(N) ->
+			abort('Uninstantiated argument 3 of hilog_functor/3')
+		  ; ( integer(N) ->
+			abort('Argument 3 of hilog_functor/3 must be in the range 0..255')
+		    ; abort('Wrong type in argument 3 of hilog_functor/3')
+		    )
+		  )
+		)
+	; Type =:= 3 -> F = '.', N = 2
+	; atomic(T) -> F = T, N = 0
+	; T =.. [apply, F, FirstArg|Args] ->	% HiLog term found
+		length([FirstArg|Args], N)
+	; term_psc(T, PSC),
+	  psc_name(PSC, Name),
+	  psc_arity(PSC, Arity),
+	  F = Name,
+	  N = Arity
+	).
+
+hilog_arg(I, T, A) :- hilog_arg(I, T, A).
+
+'^=..'(X, [H|T]) :- 
+	nonvar(X), 
+	!, 
+	hilog_functor(X, H, N), 
+	hilog_arglist(X, T, N, N).
+'^=..'(X, [X|T]) :- 
+	T == [], 
+	atomic(X), 
+	!.
+'^=..'(X, [H|T]) :-		%Same action as the Prolog =../2
+	atom(H),
+	\+ '_$hilog_symbol'(H),
+	is_list(T),
+	!,
+	length(T, N),
+	N > 0,
+	functor(X, H, N),
+	prolog_arglist(X, T, N, N).
+'^=..'(X, [H|T]) :-	% Here H is either a variable or a structure 
+	is_list(T),	% or an atom that is also a HiLog symbol.
+	!,
+	length(T, HiLogN),
+	HiLogN > 0,
+	PrologN is HiLogN + 1,
+	functor(X, apply, PrologN),
+	hilog_functor(X, H, HiLogN),
+	hilog_arglist(X, T, HiLogN, HiLogN).
+'^=..'(_, L) :-  
+	var(L), !, abort('Uninstantiated argument 2 of ^=../2').
+'^=..'(_, _) :- abort('Argument 2 of ^=../2 is not a proper list').
+
+hilog_arglist(_, [], 0, _) :- !.
+hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
+	hilog_arg(J, X, Y), hilog_arglist(X, Z, K, N).
+
+
+hilog_op(Prec, Type, Name) :- 
+	'_$op'(Prec, Type, Name), 
+	( Type == hx 
+	; Type == hy).
+
+
+%----------------------------%
+% Type conversion Predicates %
+%----------------------------%
+
+atom_chars(A, L) :- atom_chars(A, L).
+
+number_chars(T, L) :- number_chars(T, L).
+
+name(T, L) :-
+	term_type(T, Type),
+	( Type =:= 0 -> 
+		( var(L) -> abort('Uninstantiated argument 2 of name/2')
+		; ( ascii_list(L) -> 
+			( int_fromlist(L, T) -> true ; str_fromlist(T, L) )
+		  ; abort('Wrong type in argument 2 of name/2')
+		  )
+		)
+	; Type =:= 2 -> int_name(T, [], L)	% integer
+	; Type =:= 6 -> real_name(T, [], L)	% real
+	; Type =:= 5 -> str_tolist(T, List), L=List
+	; abort('Wrong type in argument 1 of name/2')
+	).
+/*	; Type =:= 0 -> str_fromlist(Name, L),
+		psc_insert(Name, 0, PSC), term_new(PSC, T)
+	; Type =:= 1 -> term_psc(T, PSC),	% con, structure
+	  psc_name(PSC, Name), str_tolist(Name, List), L=List */
+
+ascii_list([]).
+ascii_list([H|T]) :- check(H), ascii_list(T).	%was l_ascii_list
+
+check(N) :- 
+	var(N), !, abort('Uninstantiated argument 2 of name/2').
+check(N) :- 
+	( integer(N) -> N >= 0, N =< 255
+	; abort([N, ': Non ASCII integer in argument 2 of name/2'])
+	).
+
+int_fromlist([45,H|Rest], I) :-	% It can start with a minus but 
+	!,			% it shouldn't be empty. 
+	'can be integer'([H|Rest], 0, Pos),
+	I is - Pos.
+int_fromlist([H|T], I) :- 	% It shouldn't be empty.
+	'can be integer'([H|T], 0, I).
+
+'can be integer'([], I, I).
+'can be integer'([H|T], SoFar, NewI) :- 
+	H >= 48, H =< 57,
+	I is (SoFar*10) + (H-48),
+	'can be integer'(T, I, NewI).
+
+int_name(N, L1, L2) :- 
+	( N < 0 -> NewN is -N, L2 = [45|RestL2]		% 0'- = 45
+	; NewN = N, RestL2 = L2
+	),
+	l_intname(NewN, L1, RestL2).
+
+l_intname(N, L1, L2) :- 
+	N<10, D is N+48, L2=[D|L1].
+l_intname(N, L1, L2) :- 
+	N>=10, M is N//10, D is N-M*10+48, l_intname(M, [D|L1], L2).
+
+real_name(_R, _L1, _L2) :-
+	abort('Predicate name/2 for reals is not implemented yet').
+
+
+			/********************/
+			/*   TERM READING   */
+			/********************/
+
+%----------------%
+% Term expansion %
+%----------------%
+
+expand_term(Term, Expanded_Term) :- 
+	term_psc(term_expansion(_,_), PSC), psc_type(PSC, TYPE),
+	TYPE > 0,	% defined as something, so call it
+	call_c(term_expansion(Term, Expanded_Term)), % in usermod!
+	!.
+expand_term(Term, Expanded_Term) :-
+	nonvar(Term), functor(Term, '-->', 2), 
+	!, 
+	dcg(Term, Expanded_Term).	% dcg/2 does the error checking.
+expand_term(Term, Term).
+
+%-----------------------------%
+% Reader-Modifying Predicates % 
+%-----------------------------%
+
+hilog(HS) :- 
+	add_hilog_symbol(HS).
+
+
+op(Priority, Specifier, OPs) :- 
+	( (op_priority(Priority), op_specifier(Specifier)) ->
+		( ok_op(OPs) -> add_ops(Priority, Specifier, [OPs])
+		; ok_ops(OPs) -> add_ops(Priority, Specifier, OPs)
+	%--- From here on start the error conditions of this predicate ---
+		; ( atom(OPs) -> L = [OPs] ; OPs = [_|_] -> L = OPs ) ->
+			%--- From here on we deal only with lists (proper or improper) ---
+			( is_list(L) ->
+				( all_atoms(L) -> 
+					abort('Not permitted to change the meaning of the "," operator')
+				; contains_var(L) ->
+					abort('Uninstantiated argument 3 of op/3')
+				; abort('Wrong type(s) in argument 3 of op/3 (atom or atom list expected)')
+				)
+			; abort('Uninstantiated argument 3 of op/3')
+			)
+		; abort('Wrong type(s) in argument 3 of op/3 (atom or atom list expected)')
+		)
+	; var(Priority) -> 
+		abort('Uninstantiated argument 1 of op/3')
+	; var(Specifier) -> 
+		abort('Uninstantiated argument 2 of op/3')
+	; \+ integer(Priority) ->
+		abort('Wrong type in argument 1 of op/3 (integer expected)')
+	; \+ atom(Specifier) ->
+		abort('Wrong type in argument 2 of op/3 (atom expected)')
+	; integer(Priority), (Priority < 0 ; Priority > 1200) ->
+		abort('Argument 1 of op/3 must be in the range 0..1200')
+	; \+ op_specifier(Specifier) ->
+		abort('Argument 2 of op/3 is not a valid operator specifier')
+	; abort('Argument 2 of op/3 is not compatible with current set of operators')
+	).
+
+ok_ops(L) :-
+	var(L), !, fail.	% This captures improper lists
+ok_ops([]).
+ok_ops([OP|OPs]) :-		% This captures lists containing 
+	ok_op(OP), ok_ops(OPs).	% ',' or a non-atom (i.e variables)
+
+ok_op(OP) :- atom(OP), OP \== ','.
+
+/* add index declaration */
+index(Ps,Arg,S) :- 
+	nonvar(Ps), nonvar(Arg), nonvar(S),
+	add_index(Ps,Arg,S).
+
+index(Ps,trie) :-
+	add_trie_index(Ps).
+
+/* add tabling declaration */
+table(Ps) :- 
+	nonvar(Ps), Ps=_/_,
+	add_table(Ps).
+
+
+			/***********************/
+			/*  LOGIC and CONTROL  */
+			/***********************/
+
+call(Goal) :- 
+	( callable(Goal) ->
+		'_$savecp'(C), 
+		goal_cut_trans(Goal, Trans_Goal, C), 
+		call_c(Trans_Goal)
+	; var(Goal) -> 
+		abort('Uninstantiated argument 1 of call/1')
+	; abort('Wrong type in argument 1 of call/1 (callable term expected)')
+	).
+
+%  call_c(X)
+%  calls X when it is known that X contains no cuts!
+
+call_c(X) :- call0(X).
+
+%  tcall(TabledPred)
+%  Fast version of call/1 for calling a single TabledPred (assumes no cuts, no errors)!
+
+tcall(X) :- call0(X).
+
+%  transforms a goal to turn its cuts (!) into '_$cutto's.
+
+goal_cut_trans(X,call(X),_) :- var(X), !.
+goal_cut_trans([X|Y],Z,_) :- !, hack_consult([X|Y],Z).	% a HACK!
+goal_cut_trans(!,'_$cutto'(Cutpoint),Cutpoint) :- !.
+goal_cut_trans('_$load_undef'(X),Y,_) :- !,
+	(atom(X) -> conname(X,Y1),Y=Y1 ; Y=X).
+goal_cut_trans((A,B),(Na,Nb),Cutpoint) :- !,
+	goal_cut_trans(A,Na,Cutpoint),
+	goal_cut_trans(B,Nb,Cutpoint).
+goal_cut_trans((A;B),(Na;Nb),Cutpoint) :- !,
+	goal_cut_trans(A,Na,Cutpoint),
+	goal_cut_trans(B,Nb,Cutpoint).
+goal_cut_trans((A->B),(Na->Nb),Cutpoint) :- !,
+	'_$savecp'(Condcutpoint),
+	goal_cut_trans(A,Na,Condcutpoint),
+	goal_cut_trans(B,Nb,Cutpoint).
+goal_cut_trans(X,X,_).
+
+hack_consult([-X],reconsult(X)) :- !.
+hack_consult([X],consult(X)) :- !.
+hack_consult([-X|Y],(reconsult(X),Z)) :- !,hack_consult(Y,Z).
+hack_consult([X|Y],(consult(X),Z)) :- !,hack_consult(Y,Z).
+
+goal_cut_untrans(X,Y) :- var(X), !, X=Y.
+goal_cut_untrans('_$cutto'(_),!) :- !.
+goal_cut_untrans('_$load_undef'(X),Y) :- !,
+	(atom(X) -> conname(X,Y1),Y=Y1 ; Y=X).
+goal_cut_untrans((A,B),(Na,Nb)) :- !,
+	goal_cut_untrans(A,Na),
+	goal_cut_untrans(B,Nb).
+goal_cut_untrans((A;B),(Na;Nb)) :- !,
+	goal_cut_untrans(A,Na),
+	goal_cut_untrans(B,Nb).
+goal_cut_untrans((A->B),(Na->Nb)) :- !,
+	goal_cut_untrans(A,Na),
+	goal_cut_untrans(B,Nb).
+goal_cut_untrans(X,Y) :- atom(X) -> conname(X,Y1),Y=Y1 ; Y=X.
+
+once(Term) :- call(Term), !.
+
+repeat :- true; repeat.
+
+(A,B) :- call_c(A), call_c(B).	% must have no cuts
+
+(A->B;C) :- !,(call_c(A) -> call_c(B) ; call_c(C)).
+
+(A;_B) :- call_c(A).
+(_A;B) :- call_c(B).
+
+(A->B) :- call_c(A) -> call_c(B).
+
+%  The following two predicates are added after David's request (they
+%  are really inline predicates) but they better be exported by this
+%  module and imported in global (user) module.
+
+'_$cutto'(X) :- '_$cutto'(X).
+
+'_$savecp'(X) :- '_$savecp'(X).
+
+%-------------------------------%
+%  Various flavors of Negation  %
+%-------------------------------%
+
+fail_if(Term) :- fail_if(Term).
+
+not(Term) :-  (call(Term), !, fail) ; true.
+
+\+ Term :- \+ Term.
+
+%---------------------%
+%  Inline predicates  %
+%---------------------%
+
+true. 		% including this used to cause compiling error, now not
+
+otherwise.	% same as true
+
+fail :- fail.
+
+halt :- halt.
+
+
+			/***********************/
+			/*   TERM COMPARISON   */
+			/***********************/
+
+%---------------%
+%  Unification  %
+%---------------%
+
+X = X.
+X \= Y :- ( X = Y, !, fail) ; true.
+
+%-------------------%
+%  Term comparison  %
+%-------------------%
+
+compare(Op, T1, T2) :-	% Pred compare/3 has no associated error conditions.
+	term_compare(T1, T2, Res),
+	( Res =:= 0 ->	Op = ('=')
+	; Res < 0   ->	Op = ('<')
+	;		Op = ('>')
+	).
+
+X ==  Y :- X == Y.
+X \== Y :- X \== Y.
+X @<  Y :- X @< Y.
+X @=< Y :- X @=< Y.
+X @>  Y :- X @> Y.
+X @>= Y :- X @>= Y.
+
+%-------------------------%
+%  Arithmetic comparison  %
+%-------------------------%
+
+% NOTE:	Errors in arithmetic comparisons are handled by predicate eval/2.
+%	According to the Prolog standard, arithmetic comparison can cause
+%	only instantiation errors. For example the following should simply
+%	fail 4+a =< foo(1,3)
+
+  '<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 < Y1.
+ '=<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =< Y1.
+ '>='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 >= Y1.
+  '>'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 > Y1.
+'=:='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =:= Y1.
+'=\='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =\= Y1.
+
+
+			/*****************************/
+			/*   ARITHMETIC EVALUATION   */
+			/*****************************/
+
+is(Head, Expr) :- eval(Expr, Head).	% Pred eval/2 handles errors in is/2
+
+
+			/***************/
+			/*   LISTING   */
+			/***************/
+
+listing :- 
+	predicate_property(Head, (dynamic)),
+	nl,listing0(Head).
+listing.
+
+listing(X) :- var(X), !, listing.
+listing([]) :- !.
+listing([Spec|Specs]) :- !, listing(Spec), listing(Specs).
+listing(Head) :- 
+	(Head = (P/A)
+	 ->	functor(Head0,P,A)
+	 ; atom(Head)
+	 ->	predicate_property(Head0, (dynamic)),
+		functor(Head0,Head,A), nl
+	 ;	Head0 = Head
+	),
+	listing0(Head0).
+listing(_).
+
+listing0(Head) :-
+	clause(Head,Bod),
+	numbervars(clause(Head,Bod)),
+	write(Head),
+	pp_clause(Bod),
+	fail.
+
+pp_clause(true) :- !,write('.'),nl.
+pp_clause(Bod) :- write(' :-'), nl, I=4, tab(I), 
+	pp_body0(Bod,I), write('.'), nl.
+
+pp_body0((F,R),I) :- !,
+	pp_body0(F,I), write(','), nl,
+	pp_body(R,I).
+pp_body0((B->T;E),I) :- !,
+	write('('), I1 is I+1, pp_body0(B,I1), nl,
+	tab(I1),write('-> '), I2 is I1+3, pp_body0(T,I2), nl,
+	tab(I1),write(';  '), pp_body0(E,I2), nl,
+	tab(I), write(')').
+pp_body0((B->T),I) :- !,
+	write('('), I1 is I+1, pp_body0(B,I1), nl,
+	tab(I1),write('-> '), I2 is I1+3, pp_body0(T,I2), nl,
+	tab(I), write(')').
+pp_body0((F;R),I) :- !,		% doesn't handle a;b;c nicely.
+	write('('), I1 is I+1, pp_body0(F,I1), nl,
+	tab(I1), write(';'), nl,
+	pp_body(R,I1), nl,
+	tab(I), write(')').
+pp_body0(F,_I) :- write(F).
+
+
+pp_body(F,I) :-
+	tab(I), pp_body0(F,I).
+
+
+			/*****************/
+			/*   PROFILING   */
+			/*****************/
+
+cputime(X) :- stat_cputime(X0), X is X0/1000.
+
+statistics :- stat_sta(1).
+
+statistics(X) :- stat_sta(X).
+
+
+%-----------------------------------------------------------------------------%
+
+			/***************/
+			/*   BAROQUE   */
+			/***************/
+
+fileerrors :- stat_set_flag(fileerrors, 1, 1).
+
+fun((X,Y)) :- fun(X), fun(Y), !.
+fun(P/A) :- atom(P), integer(A), psc_insert(P, A, Psc),
+	psc_set_type(Psc, 14, 1).
+
+nofileerrors :- stat_set_flag(fileerrors, 0, 1).
+
+% rename(F, G) :- OS INTERFACE
+
+% save(_C) :- write('Not implemented'), nl, fail.
+
+ttywrite(T) :- file_write(1, T).
+
+ttywritenl(T) :- ttywritenl0(T), file_nl(1).
+
+ttywritenl0(T) :- var(T), !, file_write(1, T).
+ttywritenl0((X,Y)) :- !, ttywritenl0(X), ttywritenl0(Y).
+ttywritenl0(T) :- file_write(1, T).
+
+%-----------------------------------------------------------------------------%
+%-----------------------------------------------------------------------------%
+
+
+			/************************/
+			/*  Auxiliary routines  */
+			/************************/
+
+%  arity_integer(+N)
+%  true iff N is an integer describing a valid arity of a predicate
+%  in the system.
+
+arity_integer(N) :-
+	integer(N),
+	N >= 0, N =< 255.
+
+%  all_atoms(+List)
+%  Given a proper list List determines whether it contains atoms only.
+
+all_atoms([]).
+all_atoms([Atom|Atoms]) :- atom(Atom), all_atoms(Atoms).
+
+%  contains_var(+List)
+%  Given a proper list List determines whether it contains a variable
+
+contains_var([H|_]) :- var(H), !.
+contains_var([_|T]) :- contains_var(T).
+
+%  length(+List, ?Length)
+%  Predicate length/2 returns the length of list List. This predicate
+%  should be used with the first argument instantiated. For a predicate
+%  that works both ways use the length/2 in basics.
+
+length([], 0).
+length([_|R], N) :- length(R, N1), N is N1 + 1.
+
+
+%  abort/0
+abort :- conpsc('_$abort_cutpoint', PSC), psc_prop(PSC, CP), '_$cutto'(CP), 
+        close_open_tables, fail.
+
+
+%  abort/1
+abort([H|T]) :- !,
+	message('++Error: '),
+	abort_1([H|T]),
+        messageln('Aborting...'),
+	abort.
+abort(Message) :- 
+	messageln(('++Error: ', Message)),
+        messageln('Aborting...'),
+	abort.
+
+abort_1([]) :- nl.
+abort_1([H|T]):- message((H,' ')), abort_1(T).
+
+
+%  warning/1
+warning(Message) :- 
+	message('++Warning: '),
+	messageln(Message).
+
+
+%  message/1
+message((M1,M2)) :-
+	!,
+	message(M1),
+	message(M2).
+message(P/N) :-		% temp solution
+	!,
+	message(P),
+	file_put(2, 47),	% 0'/ = 47
+	file_write0(2, N).
+message(Message) :- 
+	conname(Message, String),
+	file_write0(2, String). % 2 denotes stderr
+
+messageln(Message) :- 
+	message(Message),
+	file_nl(2).
+
+
+/* === expose a goal for tracing ====================================== */
+ 
+call_expose(Goal) :-
+	stat_flag(5,N),
+	(N =:= 0
+	 ->     call_c(Goal)
+	 ;      N1 is N-1,
+		(stat_set_flag(5,N1,1)
+		 ;
+		 stat_set_flag(5,N,1),fail
+		),
+		call_c(Goal),
+		(stat_set_flag(5,N,1)
+		 ;
+		 stat_set_flag(5,N1,1),fail
+		)
+	).
+
+
+multifile([P/A, _T1, T2]) :-	% T1 is not used
+	functor(TT1, P, A),	% TT1 is in usermod
+	TT1 =.. [_|Args],
+	T2 =.. [_|Args],	% T2 still belongs to the original module
+	(retract0(:-(TT1, T2)); true),
+	% Here the original retract (retract0/1) must be used, because
+	% '_$multifile_retract'(TT1,_,TT2) is true and retract/1 will change
+	% TT1 to TT2.
+	assertz(:-(TT1, T2)).
+ 
+
+% import(+from(Symbols, Module))
+%
+% import(Mod) :- import all preds in that module. not implemented yet.
+
+import(from(Syms, Mod)) :- !, 
+	conname(Mod, MName),
+	import(Syms, MName).
+
+import([], _) :- !.
+import((One,Rest), MName) :- !,
+	import(One, MName), import(Rest, MName).
+import([One|Rest], MName) :- !,
+	import(One, MName), import(Rest, MName).
+import(P/A, MName) :-
+	conname(P, PName),
+	integer(A),
+	psc_import(PName, A, MName).
+
+/* --------------------- end of file standard.P ----------------------- */

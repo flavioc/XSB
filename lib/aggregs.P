@@ -1,0 +1,123 @@
+/* File:      aggregs.P
+** Author(s): David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+% To use some of these predicates, the indicated hilog predicates must
+% be defined in usermod
+
+:- export 
+	bagReduce/4,
+	bagPO/3,
+	bagPO1/3,
+	bagOf/2,
+% to use bagMin, must define in usermod: 
+%	:- hilog minimum.  minimum(X,Y,Z) :- X @< Y -> Z=X ; Z=Y.
+	bagMin/2,
+% to use bagMax, must define in usermod: 
+%	:- hilog maximum.  maximum(X,Y,Z) :- X @< Y -> Z=Y ; Z=X.
+	bagMax/2,
+% to use bagSum, must define in usermod: 
+%	:- hilog sum.  sum(X,Y,Z) :- Z is X+Y.
+	bagSum/2,
+% to use bagCount, must define in usermod: 
+%	:- hilog successor.  successor(X,_Y,Z) :- Z is X+1.
+	bagCount/2,
+% to use bagAvg, must define in usermod: 
+%	:- hilog sumcount.  sumcount([S|C],X,[S1|C1]) :- S1 is S+X, C1 is C+1.
+	bagAvg/2.
+
+:- import apply/2,apply/3,apply/4 from usermod.
+
+/* 
+bagReduce(+UnaryPred,?Result,+BinOp,+OpId) reduces all values that
+	(HiLog) UnaryPred is true of using BinOp with identity OpId.
+	So, for example, bagReduce(p,Sum,plus,0) binds Sum to the sum
+	of all values X such that p(X) is true (assuming a definition
+	of: plus(X,Y,Z) :- Z is X+Y. and plus is declared a hilog
+	symbol.) bagSum, bagCount, and bagAvg are defined using this
+	meta-predicate.
+
+bagPO(+UnaryPred,?Result,+PO) finds all the maximal elements (under
+	the partial order PO) that unify with Result and that
+	UnaryPred is true of.
+*/
+
+:- import member/2, copy_term/2  from basics.
+:- import findall/3, bagof/3 from setof.
+:- import get_returns/3, delete_return/2, breg_retskel/4 from tables.
+:- import (table)/1 from usermod.
+
+bagMin(Call,Var) :- bagReduce(Call,Var,minimum,zzz(zzz)).
+
+bagMax(Call,Var) :- bagReduce(Call,Var,maximum,_).
+
+bagSum(Call,Var) :- bagReduce(Call,Var,sum,0).
+
+bagCount(Call,Var) :- bagReduce(Call,Var,successor,0).
+
+bagAvg(Call,Avg) :- 
+	bagReduce(Call,[Sum|Count],sumcount,[0|0]),
+	Avg is Sum/Count.
+
+
+% Keep all lubs in a partial order (HiLog) PO(/2).
+bagPO(Call,Var,PO) :- bagPO1(Call,Var,PO), fail.
+bagPO(Call,Var,PO) :- bagPO1(Call,Var,PO).
+:- table bagPO1/3.
+bagPO1(Call,Var,PO) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,3,Skel,Cs),
+	copy_term(p(Call,Var,Skel),p(Call,Ovar,Oskel)),
+	Call(Var),
+	((get_returns(Cs,Oskel,Leaf),(Ovar==Var -> true;PO(Var,Ovar)))
+	 ->	fail
+	 ;	(findall(p(Cs,Ovar,Leaf),
+			 (get_returns(Cs,Oskel,Leaf), PO(Ovar,Var)),
+			 Rets),
+		 member(p(Cs,Ovar,Leaf),Rets),
+		 delete_return(Cs,Leaf),
+		 fail
+		;
+		 true
+		)
+	).
+
+% Reduce elements using associative Op with identity Id.
+bagReduce(Call,_Res,Op,Id) :- bagReduce1(Call,_,Op,Id), fail.
+bagReduce(Call,Res,Op,Id) :- bagReduce1(Call,Res0,Op,Id), Res=Res0.
+:- table bagReduce1/4.
+bagReduce1(Call,Res,Op,Id) :-
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+	copy_term(p(Call,Res,Skel),p(Call,Ovar,Oskel)),
+	Call(Nvar),
+	(get_returns(Cs,Oskel,Leaf)
+	 ->	Op(Ovar,Nvar,Res),
+		Res \== Ovar,
+		delete_return(Cs,Leaf)
+	 ;	Op(Id,Nvar,Res)
+	).
+
+% Define HiLog bagOf in terms of Prolog bagof. 
+bagOf(Call,List) :- bagof(Var,Call(Var),List).

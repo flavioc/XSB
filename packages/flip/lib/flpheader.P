@@ -1,0 +1,8 @@
+/*** lib/header:    Prepended automatically using etc/header.P   ************/
+
+%:- table_all.  
+%:- auto_table.
+%:- ti_all.
+
+/************************* End of Header ************************************/
+

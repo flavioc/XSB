@@ -1,0 +1,451 @@
+/* File:      loader.P
+** Author(s): Ernie Johnson, Jiyang Xu, Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+/*
+ *  System Startup
+ *  --------------
+ *  Two things to notice: We need to set _$abort_cutpoint so that abort/0
+ *  has a place to _$cutto during an execution where (when) the x_interp
+ *  is not (not yet) loaded.  But most importantly, we must set the
+ *  interrupt handler of the dynamic loader BEFORE any undefined
+ *  predicate is encountered -- the first being conset/2, used to set
+ *  _$abort_cutpoint.
+ */
+
+
+%% Copied from machine.P, since this is used early on, when the loader
+%% doesn't know how to load machine.P
+is_pcdos :- stat_flag(28, ConfigurationC),
+	  %% convert C string to Prolog
+	  intern_string(ConfigurationC, Configuration),
+	  str_sub('pc-dos', Configuration, _).
+is_backslashing_os :-  stat_flag(28, ConfigurationC),
+		    %% convert C string to Prolog
+		    intern_string(ConfigurationC, Configuration),
+		    ( str_sub('win', Configuration, _)
+		      ; str_sub('-nt', Configuration, _)
+		      ; str_sub('w95', Configuration, _)
+		      ; str_sub('wnt', Configuration, _) ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+:-	'_$savecp'(CP),
+	set_inthandler('_$load_undef'(_), 0),		% MYSIG_UNDEF
+        conset('_$abort_cutpoint', CP),
+	set_current_module,
+	set_current_input,
+	set_current_output,
+	import_standard_predicates,
+	%% Load the xsb_configuration predicate
+	stat_flag(26, ConfigFileC),
+	intern_string(ConfigFileC, ConfigFile), % convert C string to Prolog
+	reconsult(ConfigFile),
+	%%
+	load_library_directories,
+	execute_command_module.
+
+
+/*
+ *  Interrupt Handlers are currently stored in flags[32-48] of the
+ *  emulator.
+ */
+
+set_inthandler(Handler, Number) :-
+	Flag is Number + 32,
+	term_psc(Handler, PSC),
+	stat_set_flag(Flag, PSC, 1).
+
+
+/*
+ *  Set the current module to usermod (a.k.a. global_mod).  Do this by
+ *  creating a PSC record for the symbol current_module/0, and
+ *  associating the PSC record of usermod/0 with that of
+ *  current_module/0 (it's stored in current_module's `ep' field.)
+ *  Reflect this setting in the emulator by setting
+ *  flags[CURRENT_MODULE] to 0.
+ */
+
+set_current_module :-
+	conpsc(current_module, CURMOD_PSC),
+	conpsc(usermod, USERMOD_PSC),
+	psc_set_prop(CURMOD_PSC, USERMOD_PSC, 1),
+	stat_set_flag(12, 0, 1).
+
+
+/*
+ *  Create PSCs for userin/0 and current_input/0, associate userin/0
+ *  with stdin and associate current_input/0 with userin/0.  Set
+ *  emulator flag flags[CURRENT_INPUT] to stdin.
+ */
+
+set_current_input :-
+	conpsc(userin, UserInPSC),
+	psc_set_type(UserInPSC, 5, 1),        % `ep' field contains file desc
+	psc_set_prop(UserInPSC, 0, 1),        % `ep' field set to stdin
+	conset(current_input, UserInPSC),
+	stat_set_flag(10, 0, 1).
+
+
+/*
+ *  Create PSCs for userout/0 and current_output/0, associate
+ *  userout/0 with stdout and associate current_output/0 with
+ *  userout/0.  Set emulator flag flags[CURRENT_OUTPUT] to stdout.
+ */
+
+set_current_output :-
+	conpsc(userout, UserOutPSC),
+	psc_set_type(UserOutPSC, 5, 1),       % `ep' field contains file desc
+	psc_set_prop(UserOutPSC, 1, 1),       % `ep' field set to stdout
+	conset(current_output, UserOutPSC),
+	stat_set_flag(11, 1, 1).
+
+
+/*
+ *  Imports into usermod a bunch of basic-to-operation predicates, those
+ *  listed in the file std_sbp.P using the predicate standard_symbol/3.
+ */
+
+import_standard_predicates :-
+	standard_symbol(P, A, Mod),
+	psc_import(P, A, Mod),
+	fail.
+import_standard_predicates.
+
+
+/*
+ *  Loads syslib/sysinitrc.P and site/siteinitrc.P, .xsb/xsbrc.P,
+ *  if they are present.
+ *  The emulator flag 50 is set to indicate that library_directory/1
+ *  should be used for finding file paths rather than the default.
+ */
+
+load_library_directories :-
+	slash(Slash),
+	%%
+	%% Construct system init file name
+	xsb_configuration(syslibdir, SyslibDir),
+	fmt_write_string(SysFileName, '%s%ssysinitrc', f(SyslibDir, Slash)),
+	reconsult(SysFileName),	        % SysFileName is mandatory.
+					% It is compiled if a .O file does
+					% not exist or is obsolete.
+	%%
+	%% Construct site init file name
+	xsb_configuration(site_dir, SiteDir),
+	fmt_write_string(SiteFileName,'%s%ssiteinitrc', f(SiteDir,Slash)),
+	str_cat(SiteFileName, '.P', SiteFileNameP),
+	str_cat(SiteFileName, '.O', SiteFileNameO),
+	%% Site init file isn't mandatory
+	( (machine_file_exists(SiteFileNameP)
+	   ; machine_file_exists(SiteFileNameO)) ->
+		reconsult(SiteFileName)
+	        ; true
+	),
+	%%
+	%% Construct user's .xsb/xsbrc.P
+	xsb_configuration(user_home, HomeDir),
+	fmt_write_string(UserFileName, '%s%s.xsb%sxsbrc',
+				       f(HomeDir, Slash, Slash)),
+	str_cat(UserFileName, '.P', UserFileNameP),
+	str_cat(UserFileName, '.O', UserFileNameO),
+	%% User init file isn't mandatory
+	( (machine_file_exists(UserFileNameP)
+	   ; machine_file_exists(UserFileNameO)) ->
+		reconsult(UserFileName)
+		; true
+        ).
+
+load_library_directories.
+
+
+/*****************************************************************************
+** In the future, we'll add a modifier "standard", so the user could indicate
+** more precisely where predicates are imported from. E.g.,
+**
+** :- import file_write/2 from xsb_writ(standard)
+**
+*****************************************************************************/
+
+/*****************************************************************************
+The following comment is probably no longer relevant and/or accurate. - mk
+
+At the time this comment is written, the following modules are loaded
+automatically as a result of execution up to and including the
+reconsult/1-ing of a pre-existing .xsbrc.O file:
+
+	1) loader	2) prof_sbp	3) machine
+	4) std_sbp	5) consult	6) assert
+	7) db		8) dbcmpl	9) asm_inst
+	10) file_op	11) standard	12) basics
+	13) string	14) config	15) curr_sym
+	16) xsb_writ
+
+However, if the .O file is missing, the following modules are loaded:
+
+	1) loader	2) prof_sbp	3) machine
+	4) std_sbp	5) curr_sym	6) consult
+	7) assert	8) db		9) dbcmpl
+	10) asm_inst	11) file_op	12) standard
+	13) basics	14) string	15) config
+	16) compile	17) auxlry	18) xsb_writ
+	19) parse	20) xsb_read	21) singleton
+	22) dbclause	23) listutil	24) symtab
+	25) builtin	26) useinfer	27) spec
+	28) tprog	29) inprog	30) tp_var
+	31) flatten	32) varproc	33) tp_eval
+	34) tp_comp	35) tp_cond	36) tp_goal
+	37) asm_opt	38) tp_index	39) peephole
+	40) asmpass2	41) preproc	42) tpinline
+	43) ti_mod	44) asm
+
+Currently, xsb_read stands as the only essential module which may not
+be loaded at the time the emulator flag must be set.
+
+NOTE that x_interp will be loaded correctly because the emu passes the
+entire path to our interpreter to the loader.
+******************************************************************************/
+
+
+/*
+ *  Load and execute the module specified on the command line.
+ */
+
+execute_command_module :-
+	stat_flag(57, InputFilePtr_INT),
+	load(InputFilePtr_INT).
+
+
+
+
+/*************************************************************************
+
+		The XSB Dynamic Loader
+		======================
+
+The following code should be self-contained since it would be impossible
+to load a predicate on demand if the mechanism by which it is loaded
+requires the use of another unloaded predicate.  Therefore we are not
+allowed imports and so cannot rely on code defined elsewhere in the
+system.  This explains the use of some `strange' predicates like
+ll_prompt/1, ll_writearity/1, etc.
+
+In fact, the only predicates that can be used in this part of the file
+are those that are explicitly defined or expanded (in-lined) by the
+compiler as calls to C functions.  See the file cmplib/builtin.P for
+XSB's in-lined predicates, builtins, and functions.
+
+*************************************************************************/
+
+/*
+ *  Undefined Predicate Interrupt Handler
+ *  -------------------------------------
+ *  This is the starting point for resolving an undefined symbol.
+ *  The module containing that symbol is loaded and its directives
+ *  are executed.  Processing continues with the re-execution of
+ *  the goal which triggered the interrupt.
+ */
+
+'_$load_undef'(Term) :-
+	term_type(Term, Type),
+	( Type =:= 1 -> term_psc(Term, PSC)
+	; Type =:= 5 -> psc_insert(Term, 0, PSC, 0)
+	),
+	load_pred(PSC),
+	call0(Term).
+
+
+load_pred(PSC) :- \+ (\+ (load_pred0(PSC))).
+
+load_pred0(PSC) :- 
+	stat_flag(1, Hitrace), 	
+	stat_set_flag(1, 0, 1),			% turn off hitrace
+	load_pred1(PSC),
+	stat_set_flag(1, Hitrace, 1).		% resume hitrace status if 
+						% successful
+load_pred1(PSC) :-
+	'_$savecp'(B),
+	psc_name(PSC, Name),
+	psc_arity(PSC, Arity),
+	psc_env(PSC, Env), 
+	( Env =:= 2 ->			% is "imported"
+		psc_prop(PSC, ModPSC),
+		psc_name(ModPSC, ModName),
+		psc_type(ModPSC, ModType), 
+		( ModType =:= 4
+		; ModType =\= 4,	% module is not loaded yet
+		  load(ModName)		% can fail here <--- MAY BE A BUG HERE 
+		),
+		( psc_type(PSC, NType),
+		  ( NType =:= 2; NType =:= 13; NType =:= 14; NType =:= 1 ), 
+		 % module loaded, and pred/func/foreign-pred is there
+		  '_$cutto'(B)
+		 % module loaded, but pred/func/foreign-pred is not there
+	 	; ll_prompt('The predicate/function '),
+		  ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity),
+		  ll_prompt(' is not defined in the module '),
+		  ll_prompt(ModName), ll_nl, ll_prompt('Aborting...'), ll_nl,
+		  abort
+		)
+	; ll_prompt('Undefined predicate/function: '),  % no module or no pred
+	  ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity), ll_nl, 
+	  ll_prompt('Aborting...'), ll_nl, abort
+	).
+
+
+/*
+ *  Loads and executes the directives of a module.  The file containing
+ *  the module is constructed using search_file/2, below.
+ */
+
+load(ModName) :-
+	'_$savecp'(B),
+	stat_flag(4, Debug_on),
+	( Debug_on =:= 1
+	  ->	ll_prompt('[ load module '),
+		ll_prompt(ModName), 
+		ll_prompt(' ]'), ll_nl
+	   ;	Debug_on =\= 1
+	),
+	( search_file(ModName, FileName),
+	  code_load(FileName, Init, 0),		% use the C loader
+	  (Init =\= 0				% load succeeded
+	   ->	'_$cutto'(B),
+		( Init =\= 4 			% prolog byte-code succeeded
+		  ->	ll_code_call(Init, true, 2),	% call '_$main'
+			unload_seg(Init)	% delete code for '_$main'
+	   	   ;	true		% load foreign obj code succeeded
+		)
+	  )
+	; ll_prompt('Cannot find the module '), ll_prompt(ModName), ll_nl,
+	  fail
+	).
+
+/*
+ *  To use code_call/3, it must be the last clause in a rule.
+ *  Here we force the issue.
+ */
+
+ll_code_call(A,B,C) :- code_call(A,B,C).
+
+
+
+/*
+ *  Takes a filename (INT or STRING encoded pointer) and returns an
+ *  absolute filename (STRING) with the proper byte-code file extension.
+ *  The extension should NOT already be a part of the incoming ModName.
+ */
+
+search_file(ModName, AbsFileName) :- 
+	tilde_expand_filename(ModName,ExpandedModName),
+	( is_absolute_filename(ExpandedModName)
+	  -> WholePath = ExpandedModName
+	 ;  libpath(LibPath),
+	    str_cat(LibPath, ExpandedModName, WholePath)
+	),
+	( is_pcdos -> Extension = '.OX'
+		      ;  Extension = '.O'
+	),
+	str_cat(WholePath, Extension, AbsFileName).
+
+
+
+/*
+ *  Used in searching for a file.  Directory paths are returned in the
+ *  following manner:
+ *
+ *      Return in the order specified through the predicate
+ *	library_directory/1, followed by the default paths
+ *      in this default order:
+ *	  lib/   syslib/   cmplib/   ./
+ */
+
+libpath(P) :- libraries_loaded, 
+	      library_directory(Dir), 
+	      expand_filename(Dir, P1),
+	      dirname_canonic(P1, P).
+libpath(P) :- stat_flag(23, InstallDir),  %% get the installation directory
+	      slash(Slash),
+	      %% <installdir>/lib/  (slash type depends on the OS)
+	      fmt_write_string(P, '%s%slib%s', f(InstallDir, Slash, Slash)).
+libpath(P) :- stat_flag(23, InstallDir),
+	      slash(Slash),
+	      %% <installdir>/syslib/  (slash type depends on the OS)
+	      fmt_write_string(P, '%s%ssyslib%s', f(InstallDir, Slash, Slash)).
+libpath(P) :- stat_flag(23, InstallDir),
+	      slash(Slash),
+	      %% <installdir>/cmplib/  (slash type depends on the OS)
+	      fmt_write_string(P, '%s%scmplib%s', f(InstallDir, Slash, Slash)).
+libpath(P) :- slash(Slash), str_cat('.', Slash,P).
+
+/*
+ *  Determine whether the ~/.xsbrc module has been loaded.
+ */
+
+libraries_loaded :- 
+	stat_flag(50, Lib_Loaded),
+	Lib_Loaded =:= 1.
+
+
+
+/*======================================================================*/
+/* Auxiliary predicates.						*/
+/*	Many of them already appear somewhere else in the system, but	*/
+/*	they also appear here due to the fact that they	cannot be	*/
+/*	imported in this module (the loader should be self-contained).	*/
+/*======================================================================*/
+
+/*
+ *  Print a new line
+ */
+ll_nl :- 
+	 ( is_backslashing_os -> file_put(1, 13), file_put(1, 10)
+			      ; file_put(1, 10) ).
+
+/*
+ *  Print a string.
+ */
+ll_prompt(String) :- ll_prompt(0, String).
+
+ll_prompt(N, String) :-
+	term_type(String, T), 
+	( T =:= 5 -> String0 = String
+	; T =:= 1 -> term_psc(String, PSC), psc_name(PSC, String0)
+	; T =:= 2 -> str_insert(String, String0)	% INT encoded string
+	),						% eg, from stat_flag
+	buff_byte(String0, N, Char),
+	( Char =:= 0 -> true
+	; file_put(1, Char), N1 is N+1, ll_prompt(N1, String0)
+	).
+
+/*
+ *  Print a small integer
+ */
+ll_writearity(Int) :- 
+	( Int < 10 -> Char is Int + 48, file_put(1, Char)
+	; file_put(1, 42)	% when arity > 9, write an asterisk *
+	).	

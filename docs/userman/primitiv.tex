@@ -1,0 +1,95 @@
+\chapter{List of Primitive Predicates} \label{primitive_predicates}
+%==================================================================
+
+\begin{tabbing}
+12 \= 12345678901234567890123456789012 \=	\kill
+ \> {\tt psc\_name(PSC, String)}		\>		\\
+ \> {\tt psc\_arity(PSC, Arity)}		\>		\\
+ \> {\tt psc\_type(PSC, Type)}			\>		\\
+ \> {\tt psc\_prop(PSC, Term)}			\>		\\
+ \> {\tt psc\_set\_type(PSC, Type, Perm)}	\>		\\
+ \> {\tt psc\_set\_prop(PSC, Term, Perm)}	\>		\\
+ \> {\tt file\_open(FileName, RWAMode, File)}	\>		\\
+ \> {\tt file\_close(File)}			\>		\\
+ \> {\tt file\_get(File, Char)}			\>		\\
+ \> {\tt file\_put(File, Char)}			\>		\\
+ \> {\tt term\_psc(Term, PSC)}			\>		\\
+ \> {\tt term\_type(Term, Type)}		\>		\\
+ \> {\tt term\_compare(Term1, Term2, Res)}	\>		\\
+ \> {\tt term\_new(PSC, Term)}			\>		\\
+ \> {\tt term\_arg(Term, Index, Arg)}		\>		\\
+ \> {\tt term\_set\_arg(Term, Index, Arg, Perm)}\>		\\
+ \> {\tt stat\_flag(Flag, Value)}		\>		\\
+ \> {\tt stat\_set\_flag(Flag, Value, Perm)}	\>		\\
+ \> {\tt buff\_alloc(Size, Buffer, Perm)}	\>		\\
+ \> {\tt buff\_dealloc(Buffer, OldSize, NewSize, Perm)}	\>	\\
+ \> {\tt buff\_word(Buffer, Displacement, Value)}	\>	\\
+ \> {\tt buff\_set\_word(Buffer, Displacement, Value)}	\>	\\
+ \> {\tt buff\_byte(Buffer, Displacement, Value)}	\>	\\
+ \> {\tt buff\_set\_byte(Buffer, Displacement, Value)}	\>	\\
+ \> {\tt buff\_cell(Buffer, Displacement, Term)}	\>	\\
+ \> {\tt buff\_set\_cell(Buffer, Displacement, Type, Term)} \>	\\
+ \> {\tt buff\_set\_var(Buffer, Displacement, BufferSize, Var)}	\>	\\
+ \> {\tt code\_call(CodeAddr, Term, CodeType)}	\>		\\
+ \> {\tt str\_len(String, Length)}		\>		\\
+ \> {\tt str\_cat(String1, String2, String3)}	\>		\\
+ \> {\tt str\_cmp(String1, String2, Res)}	\>		\\
+ \> {\tt str\_hsh(String, Arity, HashSize, HashVal)} \>		\\
+ \> {\tt str\_insert(InString, OutString)}	\>		\\
+ \> {\tt str\_sub(Substring, Superstring, Pos)}	\>		\\
+ \> {\tt stat\_sta(Amount)}			\>		\\
+ \> {\tt stat\_cputime(CPUTime)}		\>		\\
+ \> {\tt code\_load(ByteCodeFileName, InitAddr, ExportCode)} \>	\\
+ \> {\tt file\_getword(File, Word)}		\>		\\
+ \> {\tt file\_putword(File, Word)}		\>		\\
+ \> {\tt psc\_insert(Name, Arity, PSC, ModuleName)} \>		\\
+ \> {\tt psc\_import(Pname, Arity, ModuleName)}	\>		\\
+ \> {\tt file\_getbuf(File, Bytes, Buffer, Offset)} \>		\\
+ \> {\tt file\_putbuf(File, Bytes, Buffer, Offset)} \>		\\
+ \> {\tt file\_gettoken(File, Char, Type, Value, NextChar)} \>	\\
+ \> {\tt file\_puttoken(File, Type, Value)}	\>		\\
+ \> {\tt psc\_insertmod(ModName, Def, PSC)}	\>		\\
+ \> {\tt load\_seg(SegNo, TextBytes, IndexBytes, File, InitAddr)} \> \\
+ \> {\tt term\_hash(Term, HashSize, HashVal)}	\>		\\
+ \> {\tt unload\_seg(CodeBuffer)}		\>		\\
+ \> {\tt load\_obj(FileName, ModulePSC, LD\_Option, InitAddr)} \> \\
+ \> {\tt expand\_filename(FileName, ExpandedFileName)} \>	\\
+ \> {\tt tilde\_expand\_filename(FileName, ExpandedFileName)} \>	\\
+ \> {\tt is\_absolute\_filename(FileName)} \>	\\
+ \> {\tt parse\_filename(FileName, Dir, Base, Ext)} \>	\\
+ \> {\tt getenv(EnvVariable, EnvValue)}		\>		\\
+ \> {\tt sys\_syscall(CallNo, Result)}		\>		\\
+ \> {\tt sys\_system(Command, Result)}		\>		\\
+ \> {\tt sys\_gethost(HostName, Result)}	\>		\\
+ \> {\tt sys\_errno(ErrorNumber)}		\>		\\
+ \> {\tt file\_time(File, Time)}		\>		\\
+ \> {\tt buff\_assign\_word(Buf, Displacement, Value)}	\>	\\
+ \> {\tt psc\_env(PSC, Environment)}		\>		\\
+ \> {\tt psc\_spy(PSC, Spied)}			\>		\\
+ \> {\tt psc\_tabled(PSC, Tabled)}		\>		\\
+ \> {\tt tip\_prop(Tip, Field, Get/Set, Value)}	\>		\\
+ \> {\tt dereference\_the\_bucket(Pair\_Pointer, Pair)} \>	\\
+ \> {\tt pair\_psc(PSC\_Pair, PSC)}		\>		\\
+ \> {\tt pair\_next(PSC\_Pair, Next\_PSC\_Pair)} \>		\\
+ \> {\tt next\_bucket(HashTablePair, NextHashTablePair)} \>	\\
+ \> {\tt heap\_copyarg(From, To)}		\>              \\
+ \> {\tt table\_intern(Pointer, Internal\_Pointer)} \>		\\
+ \> {\tt is\_xwammode(Flag)}			\>		\\
+ \> {\tt close\_open\_tables}			\>		\\
+ \> {\tt call\_hash(CallPtr, HashCallPtr, Arity, HashSize, TablePtr)} \>	\\
+ \> {\tt print\_predicate\_table(PSC)}		\>		\\
+ \> {\tt analyze\_predicate\_table(PSC)}	\>		\\
+ \> {\tt comp\_code\_call(CodeAddr, Term)}	\>		\\
+ \> {\tt abolish\_table\_info}			\>		\\
+ \> {\tt assert\_code\_to\_buff(Clause, Size)}	\>		\\
+ \> {\tt assert\_buff\_to\_clref(Head, Arity, Prref, AZ, RInd, HashTabSize, Clref)}	\>		\\
+ \> {\tt fmt\_write(FileDescr, Format, ValueList)}	\>		\\
+ \> {\tt fmt\_write\_string(String, Format, ValueList)}	\>		\\
+ \> {\tt fmt\_read(FileDescr, Format, TypeList, ValueList, Return)}	\>		\\
+\end{tabbing}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

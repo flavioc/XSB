@@ -1,0 +1,646 @@
+%\chapter{XSB-ODBC Interface} \label{odbc_interface}
+%====================================================
+
+\section{Introduction}
+%=====================
+
+The XSB-ODBC interface is the PC platform counterpart to XSB-Oracle
+interface on UNIX systems. It allows XSB users to access data in any
+ODBC compliant database management system(DBMS). Using this uniformed
+interface, information in different DBMS's can be accessed as though it
+existed as Prolog facts. Similar to its counterpart on UNIX platforms,
+XSB-ODBC interface provides users with two levels of interaction: {\it
+relation level} and {\it view level}.  The former offers a
+tuple-at-a-time retrieval of information from ODBC data sources while
+the latter can translate an entire Prolog clause into a single SQL
+query, including joins and aggregate operations, which gives XSB users
+all the features of Prolog as a query language such as intentional
+database specification, recursion etc.  A listing of the features that
+XSB-ODBC interface provides is as follows:
+\begin{itemize} 
+\item Concurrent access from multiple XSB systems to DBMS's
+\item Full data access and cursor transparency including support for
+	\begin{itemize}
+	\item Full data recursion through XSB's tabling mechanism
+	\item Runtime type checking
+	\item Automatic handling of NULL values for insertion, 
+		deletion and querying
+	\item Partial recovery for cursor losses due to cuts
+	\end{itemize}
+\item Full access to data source including
+	\begin{itemize}
+	\item Transaction support
+	\item Cursor reuse for cached SQL statements 
+		with bind variables (by avoiding re-parsing and re-declaring).
+	\item Caching compiler generated SQL statements with bind variables 
+		and efficient cursor management for cached statements
+	\end{itemize}
+\item A powerful Prolog / SQL compiler based on \cite{draxler}.
+\item Full source code availability for feature enforcement
+\item Independence from database schema by employing {\it relation level}
+\item Performance as SQL by employing {\it view level} 
+\item No mode specification is required for optimized view compilation
+\end{itemize}
+
+We use the {\tt Hospital} database as our example to illustrate 
+the usage of XSB-ODBC interface in this manual. We assume the basic 
+knowledge of MicroSoft ODBC interface and its ODBC administrator 
+throughout the text.  Please refer to ``Inside Windows$^{TM}$ 95''
+ for information on this topic.
+
+\section{Using the Interface}
+%========================================
+
+The XSB-ODBC module has to be loaded before the interface can be used.  
+To load it, type in ``{\tt [odbc\_call].}'' at the XSB prompt.
+
+\subsection{Connecting to and Disconnecting from Data Sources}
+%=================================================
+
+Assuming that the data source to be connected to is available, i.e. it has an 
+entry in {\tt ODBC.INI} file which can be checked by running MicroSoft 
+ODBC Administrator, it can be connected to in the following way: 
+
+\begin{center}
+{\tt  | ?- odbc\_open(data\_source\_name, username, passwd).}
+\end{center}
+
+If the connection is successful, the system will give a positive response of 
+{\tt yes}.  This step is necessary before anything can be done with the data 
+sources since it gives XSB the opportunity to initialize system resources for 
+the session.
+
+To close the current session use:
+\begin{center}
+{\tt  | ?- odbc\_close.}
+\end{center}
+
+and XSB will give all the resources  it allocated for this session back to the
+system.
+
+\subsection{Accessing Tables in Data Sources}
+%=======================================
+
+There are several ways that can be used to extract information from or modify 
+a table in a data source.  Users can access a table using the relation level interface 
+or view level interface which XSB provides or they can have their SQL statements 
+executed directly without having XSB process it.  In general,  uses are required 
+to firstly use {\tt odbc\_import/2} to give XSB the information about columns 
+in the table of interest, expect for the cases such as direct execution of SQL 
+statements and data dictionary operations, etc. and XSB will automatically assert 
+data dictionary information$($some other ODBC interface predicates can 
+cause XSB to do this too$)$. The Prolog predicate {\tt listing/2} can be used
+$($if it's available$)$ to see the asserted data dictionary information at any time.  
+
+The syntax of  {\tt odbc\_import/2} is as follows:
+
+\begin{center}
+{\tt | ?- odbc\_import('TableName'('FIELD1', 'FIELD2', ..., 'FIELDn', 'PredicateName').}
+\end{center}
+
+where {\tt 'TableName'} is the name of the table that is desired for accessing
+and {\tt 'PredicateName'} is the name of the predicate for future table operations 
+from XSB. {\tt 'FIELD1'}, {\tt 'FIELD2'}, ... , {\tt 'FIELDn'} are
+the exact attribute names$($case sensitive$)$ as defined in the table schema.  The
+chosen columns define the view and the order of arguments for the
+database predicate {\tt 'PredicateName'}.  
+ 
+For example, to create a link to the {\tt  Test} table through the {\tt 'test'} predicate:
+\begin{verbatim}
+| ?- odbc_import('Test'('TId','TName','Length','Price'),test).
+
+yes
+\end{verbatim}
+
+\subsection{Using the Relation Level Interface}
+%===========================================
+
+Once the links between tables and predicates have been successfully established, 
+information can then be extracted from these tables using the corresponding 
+predicates.   Continuing from the above example, now rows from the table 
+{\tt Test} can be obtained:
+ \begin{verbatim}
+
+| ?- test(TId, TName, L, P).
+
+TId = t001
+TName = X-Ray
+L = 5
+P = 100 
+\end{verbatim}
+
+Backtracking can then be used to retrieve the next row of the table {\tt Test}.
+
+Records with particular field values may be selected in the same way
+as in Prolog; no mode specification for database predicates is
+required. For example:
+\begin{center}
+
+{\tt | ?- test(TId, 'X-Ray', L, P).}
+\end{center}
+generates the query:
+\begin{verbatim}
+
+SELECT rel1.TId, rel1.TName, rel1.Length, rel1.Price
+FROM Test rel1
+WHERE rel1.TName = ?
+;
+\end{verbatim}
+and 
+\begin{center}
+
+{\tt | ?- test('NULL'(\_), 'X-Ray',  L, P).}
+\end{center}
+
+generates: (See Section 12.3.6 of \cite{xsb-manual})
+
+\begin{verbatim}
+SELECT NULL , rel1.TName, rel1.Length, rel1.Price
+FROM Test rel1
+WHERE rel1.TId IS NULL AND rel1.TName = ?
+;
+\end{verbatim}
+
+During the execution of this query the bind variable {\tt ?} will be bound
+to {\tt 'X-Ray'}.\newline
+
+Note that if a field includes a quote $(')$ then this should be represented by
+using two quotes.
+
+Also as a courtesy to Quintus Prolog users we have provided
+compatibility support for some PRODBI predicates which access tables
+at a relational level.
+
+\begin{verbatim}
+i) | ?- odbc_attach(PredicateName, table(TableName)).
+\end{verbatim}
+
+eg. invoke 
+\begin{center}
+{\tt | ?- odbc\_attach(test2, table('Test')).} 
+\end{center}
+and then execute 
+\begin{center}	
+{\tt | ?- test2(TId, TName, L, P).}
+\end{center}
+to retrieve the rows.
+\begin{verbatim}
+
+ii) | ?- odbc_record('Test', R).
+
+    R = [t001, X-Ray, 5, 100];
+
+    R = ...
+
+\end{verbatim}
+    You can use {\tt odbc\_record/2} to treat the whole database row as a 
+single list structure.
+
+\subsection{The View Level Interface}
+%===========================================
+
+The view level interface can be used for the definition of rules
+whose bodies includes only imported database predicates (by using the
+relation level interface) described above and aggregate predicates
+(defined below).  When they are invoked, rules are translated into complex
+database queries, which are then executed taking advantage of the query
+processing ability of the DBMS's.
+
+One can use the view level interface through the predicate {\tt odbc\_query/2}:  
+\begin{center}
+{\tt | ?- odbc\_query('RuleName'(ARG1, ..., ARGn), DatabaseGoal).}
+\end{center}
+All arguments are standard Prolog terms.  {\tt ARG1}, {\tt ARG2}, ..., 
+{\tt ARGn}defines the attributes to be retrieved from the database, while
+{\tt DatabaseGoal} defines the selection restrictions and join conditions.
+
+The compiler is a simple extension of \cite{draxler} which generates SQL
+queries with bind variables and handles NULL values as described in
+Section 12.3.6 of \cite{xsb-manual}.  It allows negation, the expression
+of arithmetic functions, and higher-order constructs such as grouping,
+sorting, and aggregate functions.
+
+Database goals are translated according to the following rules
+from \cite{draxler}:
+\begin{itemize}
+\item Disjunctive goals translate to distinct SQL queries
+	connected through the UNION operator.
+\item Goal conjunctions translate to joins.
+\item Negated goals translate to negated EXISTS subqueries.
+\item Variables with single occurrences in the body are not
+	  translated.
+\item Free variables translate to grouping attributes.
+\item Shared variables in goals translate to equi-join conditions.
+\item Constants translate to equality comparisons of an attribute and
+	  the constant value.
+\item Nulls are translated to {\tt IS NULL} conditions.
+\end{itemize}
+For more examples and implementation details see \cite{draxler}.
+ 
+In the following, we show the definition of a simple join view between the 
+two database predicates {\it Room} and {\it Floor}.
+
+Assuming the declarations:
+\begin{verbatim}
+
+| ?- odbc_import('Room'('RoomNo','CostPerDay','Capacity','FId'),room).
+
+| ?- odbc_import('Floor'('FId','','FName'),floor).
+\end{verbatim}
+
+use
+
+\begin{verbatim}
+	
+| ?- odbc_query(rule1(RoomNo,FName),
+	          (room(RoomNo,_,FId),floor(FId,FName))).
+yes
+
+| ?- rule1(RoomNo,FloorName).
+\end{verbatim}
+
+Prolog/SQL compiler generates the SQL statement:
+\begin{verbatim}
+
+SELECT rel1.RoomNo , rel2.FName FROM Room rel1 , Floor rel2 
+WHERE rel2.FId = rel1.FId;
+
+RoomNo = 101
+FloorName = First Floor
+\end{verbatim}
+
+Backtracking can then be used to retrieve the next row of the view.
+\begin{center}
+
+{\tt | ?- rule1('101','NULL'(\_)).}
+\end{center}
+
+generates the SQL statement:
+\begin{verbatim}
+
+SELECT rel1.RoomNo, NULL
+FROM Room rel1 , Floor rel2
+WHERE rel1.RoomId = ? AND rel2.FId = rel1.FId AND rel2.FName IS NULL;
+\end{verbatim}
+
+The view interface also supports aggregate functions predicates such as sum, avg,
+count, min and max.  For example
+\begin{verbatim}
+
+| ?- odbc_import('Doctor'('DId', 'FId', 'DName','PhoneNo','ChargePerMin'),doctor).
+
+yes
+| ?- odbc_query(avgchargepermin(X),
+                (X is avg(ChargePerMin, A1 ^ A2 ^ A3 ^ A4 ^ 
+                          doctor(A1,A2, A3,A4,ChargePerMin)))).
+
+yes
+| ?- avgchargepermin(X).
+
+SELECT AVG(rel1.ChargePerMin)
+FROM doctor rel1;
+
+X = 1.64
+
+yes
+\end{verbatim}
+
+
+A more complicated example:
+\begin{verbatim}
+
+| ?- odbc_query(nonsense(A,B,C,D,E),
+                (doctor(A, B, C, D, E), 
+                 not floor('First Floor', B), 
+                 not (A = 'd001'), 
+                 E > avg(ChargePerMin, A1 ^ A2 ^ A3 ^ A4 ^
+                         (doctor(A1, A2, A3, A4, ChargePerMin))))).
+
+| ?- nonsense(A,'4',C,D,E).
+
+SELECT rel1.DId , rel1.FId , rel1.DName , rel1.PhoneNo , rel1.ChargePerMin
+FROM doctor rel1
+WHERE rel1.FId = ? AND NOT EXISTS
+(SELECT *
+FROM Floor rel2
+WHERE rel2.FName = 'First Floor' and rel2.FId = rel1.FId
+) AND rel1.Did <> 'd001' AND rel1.ChargePerMin >
+(SELECT AVG(rel3.ChargePerMin)
+FROM Doctor rel3
+);
+
+
+A = d004
+C = Tom Wilson
+D = 516-252-100
+E = 2.5
+\end{verbatim}
+
+All database rules defined by odbc\_query can be queried with any mode.
+
+Note that at each call to a database relation or rule, the
+communication takes place through bind variables.  The corresponding
+restrictive SQL query is generated, and if this is the first call with
+that adornment, it is cached.  A second call with same adornment would
+try to use the same database cursor if still available, without
+parsing the respective SQL statement.  Otherwise, it would find an
+unused cursor and retrieve the results.  In this way efficient access
+methods for relations and database rules can be maintained throughout
+the session.
+
+Also the relation level interface can be used to define and
+access simple project views of single tables.  For example:
+\begin{center}
+
+{\tt | ?- odbc\_import('Room'('RoomNo','Capacity'),roomview).}
+\end{center}
+defines {\tt roomview/2}.
+
+\subsection{Insertions and Deletions of Rows}
+%=========================================
+
+Insertion and deletion operations can also be performed on an imported
+table.  The two predicates to accomplish these operations are 
+{\tt odbc\_insert/2} and {\tt odbc\_delete/2}.  The syntax of 
+{\tt odbc\_insert/2} is as follows: the first argument is the declared 
+database predicate for insertions and the second argument
+is some imported data source relation.  The second argument can be 
+declared with some of its arguments bound to constants.  For example 
+after {\tt Room} is imported through {\tt odbc\_import}:
+\begin{verbatim}
+
+|?- odbc_import('Room'('RoomNo','CostPerDay','Capacity','FId'), room).
+yes 
+\end{verbatim}
+
+Now we can do
+
+\begin{verbatim}
+| ?- odbc_insert(room_ins(A1,A2,A3),(room(A1,A2,A3,'3'))).
+
+yes
+| ?- room_ins('306','NULL'(_),2).
+
+yes
+\end{verbatim}
+This will insert the row: ('306',NULL, 2,'3') into the table {\tt Room}. Note that 
+any call to {\tt room\_ins/7} should have all its arguments bound.
+
+See Section 12.3.6 of \cite{xsb-manual} for information about NULL value
+handling.
+
+The first argument of {\tt odbc\_delete/2} predicate is the declared delete
+predicate and the second argument is the imported data source relation
+with the condition for requested deletes, if any.  The condition is
+limited to simple comparisons.  For example assuming
+{\tt Room/3} has been imported as above:
+\begin{verbatim}
+
+| ?- odbc_delete(room_del(A), (room('306',A,B,C), A > 2)). 
+
+yes
+\end{verbatim}
+
+After this declaration you can use:
+\begin{verbatim}
+
+| ?- room_del(3).
+\end{verbatim}
+
+to generate the SQL statement:
+\begin{verbatim}
+
+DELETE From Room rel1 
+WHERE rel1.RoomNo = '306' AND rel1.CostPerDay = ? AND ? > 2
+;
+\end{verbatim}
+
+Note that you have to commit your inserts or deletes to tables to make
+them permanent.  (See section \ref{TransactionManagement}).
+
+\subsection{ Direct Execution of SQL statements}
+%==========================================
+It is also possible to execute SQL statements directly. 
+{\tt odbc\_sql\_select/2} and {\tt odbc\_sql/1} predicates provide this 
+feature.  The former takes an SQL query string as its input and returns 
+a list of field values.  For example:
+\begin{verbatim}
+
+| ?- odbc_sql_select('SELECT * FROM Test', R).
+
+R = [t001, X-Ray, 5, 100];
+
+...
+
+\end{verbatim}
+The latter, {\tt odbc\_sql/1}, can be used for any other non-query SQL statement request:
+\begin{verbatim}
+
+| ?- odbc_sql('Create Table MyTable( Column1 DataType1, Column2 DataType2)').
+
+yes
+\end{verbatim}
+
+\subsection{Access to Data Dictionaries}
+%======================================
+
+The following utility predicates provide users the tools to access data 
+dictionaries.  Users of Quintus Prolog may note that these predicates are all 
+PRODBI compatible.  A brief description of these predicates is as follows:
+\begin{description}
+
+\item[odbc\_show\_schema(accessible)]
+	 Shows all accessible table names for the user.  This list can be long!
+
+\item[odbc\_show\_schema(user)]
+	Shows just those tables that belongs to user.
+
+\item[odbc\_show\_schema(tuples('Table'))]
+	Shows the contents of the base table named {\tt 'Table'}.
+
+\item[odbc\_show\_schema(arity('Table'))]
+	The number of fields in the table {\tt 'Table'}.
+
+\item[odbc\_show\_schema(columns('Table'))]
+	The field names of a table.
+\end{description}
+
+For retrieving above information use:
+\begin{itemize}
+
+\item odbc\_get\_schema(accessible,List)
+\item odbc\_get\_schema(user,List)
+\item odbc\_get\_schema(arity('Table'),List)
+\item odbc\_get\_schema(columns('Table'),List)
+\end{itemize}
+
+The results of above are returned in List as a list.
+
+\subsection{Other Database Operations}
+
+\begin{description}
+
+\item[odbc\_create\_table('TableName','FIELDs')]
+	{\tt FIELDS} is the field specification as in SQL.
+\begin{verbatim}
+
+eg. odbc_create_table('MyTable', 'Col1 NUMBER,
+                             Col2 TEXT(50),
+                             Col3 TEXT(13)').
+\end{verbatim}
+
+
+\item[odbc\_create\_index('TableName','IndexName', index(\_,Fields))]
+	{\tt Fields} is the list of columns for which an index
+	is requested.  For example:
+\begin{center}
+
+{\tt odbc\_create\_index('Doctor', 'DocKey', index(\_,'DId')).}
+\end{center}
+
+\item[odbc\_delete\_table('TableName')] To delete a table named {\tt 'TableName'}
+
+\item[odbc\_delete\_view('ViewName')] To delete a view named {\tt 'ViewName'}
+
+\item[odbc\_delete\_index('IndexName')] To delete an index named {\tt 'IndexName'}
+\end{description}
+
+These following predicates are the supported PRODBI syntax for deleting and 
+inserting rows:
+\begin{description}
+
+\item[\mbox{odbc\_add\_record('Floor',['Seventh Floor','7'])}]
+	 arguments are a list composed of field values and the table name to
+	 insert the row.
+
+\item[\mbox{odbc\_delete\_record('Floor', ['Seventh Floor',\_])}]
+	 to delete rows from {\tt 'Floor'} matching the list of values mentioned in
+	 second argument. 
+\end{description}
+
+For other SQL statements use {\tt odbc\_sql/1} with the SQL statement as the 
+     first argument.  For example:
+\begin{center}
+{\tt odbc\_sql('grant connect to fred identified by bloggs')).}
+\end{center}
+
+\subsection{Transaction Management}\label{TransactionManagement}
+%===================================================
+Depending on how the transaction options are set in ODBC.INI for data sources, 
+any changes to the data source tables may not be committed$($changes become 
+permanent$)$  until the user expicitly issues a commit statement. 
+The predicate {\tt odbc\_transaction/1} is provided in this sense. 
+\begin{description}
+\item[odbc\_transaction(commit)]
+	Commits all transactions up to this point.
+\item[odbc\_transaction(rollback)]
+	Rolls back all transactions$($discard the changes made$)$  since 
+the last commit.
+\end{description}
+
+\subsection{Handling NULL Values}
+%=======================================
+Null value is handled in the same way as that of XSB Oracle interface.
+Please refer to Section 12.3.6 of \cite{xsb-manual} for details.
+
+\subsection{Interface Flags}
+%====================================
+
+Users are given the option to monitor the SQL queries generated 
+by the interface and their execution status by using the 
+predicate {\tt db\_flag/3}.  The first parameter indicates the function  to be
+changed.  The second argument is the old value, and the third argument specifies
+the new value.  For example:
+\begin{verbatim}
+
+| ?- odbc_flag(show_query, Old, on).
+
+     Old = off
+\end{verbatim}
+
+SQL statements will now be displayed for all SQL queries $($the default$)$.
+To turn it off use {\tt odbc\_flag(show\_query,on, off)}.  The default value 
+of {\tt show\_query} is on.
+
+To control the error behavior of either the interface or
+data sources use {\tt odbc\_flag/3} with fail\_on\_error as first argument.
+For example:
+
+\begin{description}
+
+\item[\tt | ?- odbc\_flag(fail\_on\_error, on, off)] Gives all the error control 
+to users, hence all requests to data sources return true.  It's users' 
+responsibility to check each of their actions and do error handling.
+
+\item[\tt | ?- odbc\_flag(fail\_on\_error, off, on)] Interface fails whenever 
+error occurs.
+\end{description}
+
+The default value of fail\_on\_error is on.
+
+
+\subsection{Datalog}
+%===================
+Users can write recursive Datalog queries with exactly the same
+semantics as in XSB using imported database predicates or database
+rules.  For example assuming {\tt odbc\_parent/2} is an imported database
+predicate, the following recursive query computes its transitive closure.
+
+\begin{verbatim}
+
+:- table(ancestor/2).
+ancestor(X,Y) :- odbc_parent(X,Y).
+ancestor(X,Z) :- ancestor(X,Y), odbc_parent(Y,Z).
+\end{verbatim}
+
+
+\section{Limitation and Guidelines for Application Developers} \label{Guide}
+%=======================================================
+Since XSB-ODBC interface is a simulation of XSB-ORACLE interface on UNIX 
+platform, it inherits all limitations of the XSB-ORACLE interface, i.e. limited 
+number of usable cursors, cursor leaking when using cuts and etc.  Hence 
+the guidelines for XSB-ORACLE interface application 
+developers are also for XSB-ODBC interface application developers.  
+Please refer to Sections 12.5 and 12.3 of \cite{xsb-manual} for datails.
+
+\section{Error messages}
+%============================
+\begin{description}
+\item[ERR - DB: Connection failed] For some reason the attempt to connect
+	to data source failed.
+	\begin{itemize}
+	\item	Diagnosis: Try to see if the data source has been registered 
+                                  with MicroSoft ODBC Administrator, the username and 
+                                  password are correct and MAXCURSORNUM is not set 
+                                  to a very large number.
+	\end{itemize}
+
+\item[ERR - DB: Parse error] The SQL statement generated by the
+	                  Interface or the first argument to {\tt odbc\_sql/1} or 
+	               {\tt odbc\_sql\_select/2} can not be parsed by the data 
+                              source driver.
+	\begin{itemize}
+	\item	Diagnosis: Check the SQL statement.  If our interface
+		generated the erroneous statement please contact us at
+		{\tt xsb-contact@cs.sunysb.edu}.
+	\end{itemize}
+
+\item[ERR - DB: No more cursors left] Interface run out of non-active
+                                               cursors either because of
+a leak (See Section 12.3 of \cite{xsb-manual}) 
+                                               or no more free cursors left.
+\begin{itemize}
+
+\item Diagnosis: System fails always with this error.  odbc\_transaction(rollback) or
+	   odbc\_transaction(commit) should resolve this by freeing all cursors.
+\end{itemize}
+
+\item[ERR - DB: FETCH failed] Normally this error should not occur if the 
+interface running properly.
+\begin{itemize}
+
+\item Diagnosis: Please contact us at xsb-contact@cs.sunysb.edu
+\end{itemize}
+
+\end{description}
+

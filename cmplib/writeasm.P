@@ -1,0 +1,146 @@
+/* File:      writeasm.P
+** Author(s): Kostis F. Sagonas, Jiyang Xu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+write_asmheader(AFile, ModName, SymTab, IsModule) :-
+	tell(AFile),
+	( IsModule =:= 1 -> write(module), sp, my_writeq(ModName) ; write(globalmod) ), nl,
+	( option(optimize) -> writeln(optimize) ; true ),
+	writeln(symtab),
+	write_symbols(SymTab), nl.
+
+/* I made the following "SymTab" structure indepedent (Kostis 7/16/92) */
+
+write_symbols(SymTab) :-
+	sort_by_index(SymTab, Sorted_SymList),
+	rest_write_symbols(Sorted_SymList),
+	fail.	% undo the binding of the tail of the hash table part of
+		% the symbol table (caused by the sorting of the symbols).
+write_symbols(_).
+
+rest_write_symbols(SymList) :-
+	member(Sym, SymList),
+	write_symbol(Sym),
+	fail.	% get next symbol from SymTab and reclaim the space used.
+rest_write_symbols(_).
+
+write_symbol(Sym) :-
+	sym_env(Sym, Env),
+	sym_category(Sym, Cat),
+	tab, write_sym(Sym), tab,
+	( nonvar(Cat) -> my_writeq(Cat) ; write('no_cat') ),
+	sp,
+	( nonvar(Env) -> my_writeq(Env) ; write('no_env') ),
+	nl,
+	!.
+
+write_asm_instructions([]).
+write_asm_instructions([One|Rest]) :-
+	write_asm_inst(One),
+	write_asm_instructions(Rest).
+
+write_asm_inst(label(T,L)) :- 
+	!, 
+	simplify_label(L, Sym-Id),
+	write(Id), write(':'), sp,
+	( T = pred, sym_prop(pred,Sym)
+	  -> write_pred_label(Sym)
+	   ; write('% '), write(T) ),
+	nl.
+write_asm_inst(call(Sym,A)) :- 
+	!,
+	tab, write(call), sp, write_sym(Sym), sp, writeln(A).
+write_asm_inst(switchonbound(Narg,Lab,NCls)) :- 
+	!,
+	tab, write(switchonbound), sp,
+	write(r), write(Narg), sp, write_label(Lab), sp, writeln(NCls).
+write_asm_inst(switchon3bound(N1,N2,N3,Lab,NCls)) :- 
+	!,
+	tab, write(switchon3bound), sp,
+	write(r), write(N1), sp, write(r), write(N2), sp,
+	write(r), write(N3), sp, write_label(Lab), sp, writeln(NCls).
+write_asm_inst(cases(Lab,Arity,N1,_)) :- 
+	!,
+	tab, write(cases), sp,
+	write_label(Lab), sp, write(Arity), sp, writeln(N1).
+write_asm_inst(arglabel(T,V,L)) :- 
+	!,
+	tab, write(arglabel), sp, write(T),
+	( T = i -> sp, write(V)
+	; T = c -> sp, write_sym(V)
+	; T = s -> sp, write_sym(V)
+	; true
+	),
+	sp, write_label(L), nl.
+write_asm_inst(Inst) :- 
+	functor(Inst, Op, A),
+	functor(Inst0, Op, A),
+	asm_inst(Inst0, _, _, ArgPattens),
+	tab, write(Op), write_inst_args(ArgPattens, Inst, 0), nl.
+
+write_pred_label(Sym) :-
+	( sym_prop(internal,Sym) ->
+		write('% internal pred '), write_sym(Sym)
+	;
+		write('entry '), write_sym(Sym)
+	).
+
+write_inst_args([], _, _). 
+write_inst_args([One|Rest], Inst, I) :-
+	( One=p, I1 is I
+	; One=pp, I1 is I
+	; One=ppp, I1 is I
+	; I1 is I + 1, arg(I1, Inst, Arg), write_inst_arg(One, Arg)
+	),
+	write_inst_args(Rest, Inst, I1).
+
+write_inst_arg(v(_V), Loc) :- write(' v'), write(Loc).
+write_inst_arg(r(_R), Loc) :- write(' r'), write(Loc).
+write_inst_arg(s(_I), Sym) :- put(0' ), write_sym(Sym).
+write_inst_arg(c(_I), Sym) :- put(0' ), write_sym(Sym).
+write_inst_arg(i(_N), Int) :- put(0' ), write(Int).
+write_inst_arg(n(_N), Int) :- put(0' ), write(Int).
+write_inst_arg(a(_A), Int) :- put(0' ), write(Int).
+write_inst_arg(l(_L), Lab) :- put(0' ), write_label(Lab).
+write_inst_arg(t(_T), Arg) :- put(0' ), write(Arg).
+
+%simplify_label((Sym,LabId), Name/Arity-LabId) :- sym_name(Sym, Name, Arity).
+simplify_label((Other,LabId), Other-LabId).
+simplify_label(abs(-1), fail - (-1)).
+
+write_sym(Sym) :-
+	( sym_name(Sym,Name,Arity) -> write_sym2(Name,Arity)
+	; my_writeq(Sym) ).
+
+write_sym2(Name,Arity) :- my_writeq(Name), write(' / '), write(Arity).
+
+my_writeq('$') :- !, put(0''), put(0'$), put(0'').
+my_writeq(X) :- writeq(X).
+
+write_label(Lab) :- simplify_label(Lab, _N-Id), write(Id).
+
+sp :- put(0' ).
+tab :- put(9).

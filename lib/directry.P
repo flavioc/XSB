@@ -1,0 +1,138 @@
+/* File:      directory.P
+** Author(s): Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- export
+	 directory/2,
+	 find_file/1, find_file/2,
+	 get_file_name/2, get_file_date/2,
+	 is_directory/1,
+	 whats_new/3.
+
+:- import  ca/2, date/1, sysin/2 from scrptutl.
+:- import concat_atom/2 from string.
+:- import member/2 from basics.
+:- import atom_chars/2, arg/3, number_chars/2, name/2, integer/1
+	from standard.
+
+% I always want this in UNIX.
+whats_new(Directory,Date,List):-
+	directory(Directory,List1),
+	transform_date(Date,Date1),
+	date_filter(List1,Date1,List).
+
+transform_date(date(Y,M_in,D,H,Mi,S),date(Y,M,D,H,Mi,S)):-
+	(integer(M_in) -> M = M_in ; month(M_in,M)).
+transform_date(date(Y,M_in,D),date(Y,M,D,0,0,0)):-
+	(integer(M_in) -> M = M_in ; month(M_in,M)).
+
+month('Jan',0).
+month('Feb',1).
+month('Mar',2).
+month('Apr',3).
+month('May',4).
+month('Jun',5).
+month('Jul',6).
+month('Aug',7).
+month('Sep',8).
+month('Oct',9).
+month('Nov',10).
+month('Dec',11).
+
+date_filter([],_,[]).
+date_filter([Entry|Rest],Date,[Entry|Rest1]):-
+	get_file_date(Entry,Edate),
+	dt_gt(Edate,Date),!,
+	date_filter(Rest,Date,Rest1).
+date_filter([_Entry|Rest],Date,Rest1):-
+	date_filter(Rest,Date,Rest1).
+	
+dt_gt(Date1,Date2):- Date1 @> Date2.
+
+
+% replicates some functionality of unix find command.
+find_file(File):-
+	find_file_1('.',File).
+	
+find_file_1(Argument,File):- 
+	directory(Argument,Dir),
+	member(File1,Dir),
+	(is_directory(File1) -> 
+		get_file_name(File1,File2),
+		concat_atom([Argument,'/',File2],Newarg),
+		find_file_1(Newarg,File)
+	; 
+	 	File = File1).
+
+get_file_name(File,Name):- arg(7,File,Name).
+get_file_date(File,Date):- arg(6,File,Date).
+
+is_directory(File):-
+	arg(1,File,Permissions),
+	atom_chars(Permissions,[100|_]).
+
+directory(Argument,Dir):-
+	ca(['ls -l',Argument],Command),
+	sysin(Command,List),
+	date(date(Year,Month,Day,_,_,_)),
+	directory_1(List,date(Year,Month,Day),Dir).
+
+directory_1([],_,[]):-!.
+directory_1([H|T],Year,List):-!,
+	process_toklist(H,Year,Entry),
+	(Entry == [] -> List = T1 ; List = [Entry|T1]),
+	directory_1(T,Year,T1).
+
+process_toklist([Permissions,Links,Owner,Group,Size,
+					 Month,Date,TY|N],Year,
+		entry(Permissions,Links,Owner,Group,Size,Dateout,Name)):-!,
+	process_date(Year,Month,Date,TY,Dateout),
+	process_name(N,Name).
+process_toklist(_,_,[]).
+
+process_name([Name],Name):-!.
+process_name([One,'->',Two],'->'(One,Two)):-!.
+process_name(List,List).
+
+process_date(date(Tyear,Tmonth,Tday),
+			M_in,D,TY,date(Year,Month,D,Hour,Min,0)):- 
+	name(TY,[H1,H2,58,M1,M2]),!,
+	month(M_in,Month),
+%	aton(D,Day),
+	number_chars(Hour,[H1,H2]),
+	number_chars(Min,[M1,M2]),
+	(d(Month,D) @> d(Tmonth,Tday) 
+		-> Year is Tyear-1 ; Year = Tyear).
+process_date(_,M_in,D,Y,date(Y,Month,D,0,0,0)):- 
+%	aton(Y,Year),
+	month(M_in,Month).
+%	aton(D,Day)
+
+%process_time_year(TY,time(Hour,Minute)):- 
+%	name(TY,[H1,H2,58,M1,M2]),!,
+%	number_chars(Hour,[H1,H2]),
+%	number_chars(Minute,[M1,M2]).
+%process_time_year(TY,year(TY1)):- aton(TY,TY1).
+
+

@@ -1,0 +1,1460 @@
+\chapter{System Description}
+\label{system}
+
+Throughout this chapter, we use \verb'$XSB_DIR' to refer to the
+directory in which XSB was installed.
+
+\section{Entering and Exiting XSB}
+%========================================
+
+After the system has been installed, the emulator's executable code appears 
+in the file:
+\begin{verbatim}
+                     $XSB_DIR/bin/xsb
+\end{verbatim}
+or, if, after being built, XSB is later installed  at a central location,
+\verb'$SHARED_XSB'.
+\begin{verbatim}
+                     $SHARED_XSB/bin/xsb
+\end{verbatim}
+%%
+
+To invoke \ourprolog's top level interpreter (the usual way of
+using \ourprolog), simply issue the command:
+\begin{verbatim}
+                       $XSB_DIR/bin/xsb -i
+\end{verbatim}
+%%$
+
+\version\ of XSB can also directly execute object code files
+from the command line interface.  Suppose you have a top-level routine
+{\tt go} in a file {\tt foo.P} that you would like to run from the
+UNIX or DOS/Windows command line.  As long as {\tt foo.P} contains a
+directive {\tt :- go.}, and {\tt foo} has been compiled to an object
+file ({\tt foo.O}), then
+\begin{verbatim}
+                       $XSB_DIR/bin/xsb foo
+\end{verbatim}
+%%$
+will execute {\tt go}, loading the appropriate files as needed.  In
+fact the command \verb'$XSB_DIR/bin/xsb -i' is equivalent to the command:
+%%$
+\begin{verbatim}
+             $XSB_DIR/bin/xsb $XSB_DIR/syslib/loader
+\end{verbatim}
+
+There are several ways to exit XSB.  A user may issue the
+command \verb'halt.' or \verb'end_of_file', or simply type
+\verb'CTRL-d' at the XSB prompt.  To interrupt XSB
+while it is executing a query, strike \verb'CTRL-c'.
+
+\section{The System and its Directories}
+%=======================================
+
+The XSB system, when installed, resides in a single directory that
+contains the following six subdirectories:
+\begin{enumerate}
+\item {\tt build}
+\item {\tt docs}
+\item {\tt emu}
+\item {\tt etc}
+\item {\tt examples}
+\item {\tt cmplib}
+\item {\tt lib}
+\item {\tt packages}
+\item {\tt syslib}
+\end{enumerate}
+
+The directory {\tt emu} contains the source and object code for
+the XSB emulator, which is written in C.
+
+The directories {\tt syslib}, {\tt cmplib} and {\tt lib} contain source
+and object code for the basic Prolog libraries, the compiler, and the
+extended Prolog libraries, respectively.  All the source programs
+are written in \ourprolog, and all object (byte code) files contain SLG-WAM
+instructions that can be executed by the emulator.  These byte-coded 
+instructions are machine-independent, so usually no installation 
+procedure is needed for the byte code files.
+
+The directory {\tt packages} contains the various applications, written in
+XSB, which are not part of the system per se.
+
+You must already be familiar with the {\tt build} directory, which is what
+you must have used to build XSB. This directory contains XSB configuration
+scripts.  The directory {\tt etc} contains miscellaneous files used by XSB.
+
+The directory {\tt docs} contains this manual in \LaTeX, dvi and Postscipt
+format, and the directory {\tt examples} contains sample programs to 
+demonstrate various features of \ourprolog.
+
+
+\section{The Module system of \ourprolog} \label{Modules}
+%========================================================
+XSB has been designed as a module-oriented Prolog system.  Modules
+provide a small step towards {\em logic programming ``in the large''}
+that facilitates large programs or projects to be put together from
+components which can be developed, compiled and tested separately.
+Also module systems enforce the {\em principle of information hiding}
+and can provide a basis for {\em data abstraction}.
+
+The module system of \ourprolog, unlike the module systems of most
+other Prolog systems is {\em atom-based}.  Briefly, the main
+difference between atom-based module systems and predicate-based ones
+is that in an atom-based module system {\em any symbol in a module can
+be imported, exported or be a local symbol} as opposed to the
+predicate-based ones where this can be done only for predicate
+symbols~\footnote{Operator symbols can be exported as any other
+symbols, but their precedence must be redeclared in the importing
+module.}.
+
+Usually the following three files are associated with a particular
+module:
+\begin{itemize}
+\item A single {\it source} file, whose name is the module name plus 
+      the suffix ``{\tt .P}''.  
+\item An optional {\it header} file, whose name is the module name plus 
+      the suffix ``{\tt .H}''.  
+\item An {\it object (byte-code)} file, whose name consists of the module 
+      name plus the suffix ``{\tt .O}''.
+\end{itemize}
+The header file is normally used to contain declarations and
+directives while the source file usually contains the actual
+definitions of the predicates defined in that module.  The module
+hierarchy of XSB is therefore {\em flat} --- nested modules are not
+possible.
+
+In order for a file to be a module, it should contain one or more 
+{\it export declarations}, which specify that a set of symbols appearing
+in that module is visible and therefore can be used by any other module.
+A module can also contain {\it local declarations}, which specify that
+a set of symbols are {\it visible by this module only}, and therefore
+cannot be accessed by any other module.
+Any file (either module or not) may also contain {\it import declarations},
+which allow symbols defined in and exported by other modules to be used
+in the current module.  We note that only exported symbols can be
+imported; for example importing a local symbol will cause an {\tt
+environment conflict error}.
+
+Export, local, and import declarations can appear anywhere in the source
+or header files and have the following forms:
+
+\demo{:- export $sym_1$, \ldots, $sym_l$. }
+
+\demo{:- local $sym_1$, \ldots, $sym_m$. }
+
+\demo{:- import $sym_1$, \ldots, $sym_n$ from $module$. }
+
+\noindent
+where $sym_i$ has the form $functor/arity$.
+
+If the user does not want to use modules, he can simply
+bypass the module system by not supplying any export declarations.
+Such exportless files (non-modules) will be loaded into the module 
+{\tt usermod}, which is the working module of the XSB interpreter.
+
+Currently the module name is stored in its byte code file, which means
+that if the byte code file is renamed, the module name is not altered,
+and hence may cause confusion to the user and/or the system.  So, it
+is advisable that the user not rename byte code files generated for
+modules by the XSB compiler.  However, byte code files generated for
+non-modules can be safely renamed.  We will try to fix the problem
+described above in future releases.
+
+In order to understand the semantics of modules, the user should keep in
+mind that in a module oriented system, the name of each symbol is identified
+as if it were prefixed with its module name, hence two symbols of the same
+$functor/arity$ but different module prefixes are distinct symbols.  
+Currently the following set of rules is used to determine the module 
+prefix of a symbol:
+\begin{itemize}
+\item	Every predicate symbol appearing in a module (i.e. that appears as
+	the head of some clause) is assumed to be {\em local} to that
+	module unless it is declared otherwise (via an export or
+	import declaration).  Symbols that are local to a given module
+	are not visible to other modules.
+\item	Every other symbol (essentially function symbols) in a module is
+	assumed to be {\em global} (its module prefix is {\tt
+	usermod}) unless declared otherwise.
+\item	If a symbol is imported from another module (via an explicit import 
+	declaration), the module prefix of the symbol is the module it is 
+	imported from; any other symbol takes the module where the symbol 
+	occurs as its module prefix.
+\item	The XSB interpreter is entered with {\tt usermod} as its 
+	working module.
+\item	Symbols that are either defined in non-modules loaded into the
+	system or that are dynamically created (by the use of standard
+	predicates such as {\tt read/1, functor/3, '=..'/2}, etc) are
+	contained in usermod.
+\end{itemize}
+
+The following facts about the module system of XSB may not be
+immediately obvious:
+\begin{itemize}
+\item   If users want to use a symbol from another module, they must
+        explicitly import it otherwise the two symbols are different
+        even if they are of the same $functor/arity$ form.
+\item	A module can only export symbols that are defined in that module.  
+	As a consequence, a module {\em cannot} export symbols that are
+	imported from other modules.
+        This happens because an {\tt import} declaration is just a
+        request for permission to use a symbol from a module where
+        its definition and an {\tt export} declaration appear.
+\item   The implicit module for a particular symbol appearing in a
+        module must be uniquely determined.  As a consequence, a
+        symbol of a specific $functor/arity$ {\em cannot} be declared
+        as both exported and local, or both exported and imported from
+        another module, or declared to be imported from more than one
+        module, etc.  These types of environment conflicts are
+        detected at compile-time and abort the compilation.
+\item   It is an error to import a symbol from a module that does not
+        export it.  This error is {\em not\/} detected at compile-time
+        but at run-time when a call to that symbol is made.  If the
+        symbol is defined in, but not exported from the module that
+	defines it, an environment conflict error will take place.
+	If the symbol is not defined in that module an undefined
+	predicate/function error will be be reported to the user.
+	\index{errors!undefined predicate}
+\item   In the current implementation, at any time only one symbol of
+        a specific $functor/arity$ form can appear in a module.  As an
+        immediate consequence of this fact, only one $functor/arity$
+        symbol can be loaded into the current working module ({\tt
+        usermod}).  An attempt to load a module that redefines that
+        symbol results in a warning to the user and the newly loaded
+        symbol {\em overrides} the definition of the previously loaded
+        one.
+\end{itemize}
+
+\section{The Dynamic Loader and its Search Path} \label{LibPath}
+\index{load search path}
+%===============================================================
+The dynamic (or automatic) loader comprises one of \ourprolog's 
+differences from other Prolog systems.
+In \ourprolog, the loading of user modules Prolog libraries (including
+the XSB compiler itself) is delayed until predicates in them
+are actually needed, saving program space for large Prolog
+applications.  The delay in the loading is done automatically, unlike
+other systems where it must be explicitly specified for non-system
+libraries.
+
+When a predicate imported from another module (see section~\ref{Modules})
+is called during execution, the dynamic loader is invoked automatically
+if the module is not yet loaded into the system, 
+The default action of the dynamic loader is to search for the
+byte code file of the module 
+first in the system library directories (in the order {\tt lib, syslib}, 
+and then {\tt cmplib}), and finally in the current working directory.
+If the module is found in one of these directories, then it will 
+be loaded ({\em on a first-found basis}). Otherwise, an error 
+message will be displayed on the current output stream
+reporting that the module was not found.
+
+In fact, XSB loads the compiler and most system modules this way.
+Because of dynamic loading, the time it takes to compile a file 
+is slightly longer than usual the first time the compiler is 
+invoked in a session.
+
+
+\subsection{Changing the Default Search Path and the Packaging System}
+%=====================================================================
+Users are allowed to supply their own library directories and also to
+override the default search path of the dynamic loader. 
+User-supplied library directories are searched by the dynamic loader 
+{\em before} searching the default library directories.
+
+The default search path of the dynamic loader can easily be changed
+by having a file named {\verb|.xsb/xsbrc.P|} in the user's home directory.  
+The {\verb|.xsb/xsbrc.P|} file, which is automatically consulted by the
+ XSB interpreter, might look like the following:
+\begin{verbatim}
+             :- assert(library_directory('./')).
+             :- assert(library_directory('~/')).
+             :- assert(library_directory('~my_friend')).
+             :- assert(library_directory('/usr/lib/sbprolog')).
+\end{verbatim}
+ After loading the module of the above example, the current working
+ directory is searched first (as opposed to the default action of searching
+ it last).  Also, \ourprolog's system library directories ({\tt lib,
+   syslib}, and {\tt cmplib}), will now be searched {\em after} searching
+ the user's, {\tt my\_friend}'s and the {\tt "/usr/lib/sbprolog/"}
+ directory.
+
+ In fact, XSB also uses {\tt library\_directory/1} for internal purposes.
+ For instance, before the user's {\verb|.xsb/xsbrc.P|} is consulted,
+ XSB puts the {\tt packages} directory and the directory 
+ %%
+ \begin{verbatim}
+      .xsb/config/$CONFIGURATION
+ \end{verbatim}
+ %%$
+ on the library search path.
+ The directory \verb'.xsb/config/$CONFIGURATION' is used to store user
+ libraries that are machine or OS dependent. (\verb'$CONFIGURATION' for a
+ machine is something that looks like {\tt sparc-sun-solaris2.6} or
+ {\tt pc-linux-gnu}, and is selected by XSB automatically at run time).  
+ %%$
+ 
+ 
+ Note that the file {\verb|.xsb/xsbrc.P|} is not limited to setting the
+ library search path.  In fact, arbitrary Prolog code can go there.
+
+We emphasize that in the presense of a {\verb|.xsb/xsbrc.P|} file
+{\em it is the user's responsibility to avoid module name clashes 
+with modules in \ourprolog's system library directories}.
+Such name clashes can cause the system to behave strangely since these
+modules will probably have different semantics from that expected
+by the XSB system code.  The list of module names in
+\ourprolog's system library directories can be found in
+appendix~\ref{module_names}.
+
+Apart from the user libraries, XSB now has a simple packaging system.
+A {\em package\/} is an application consisting of one or more files that
+are organized in a subdirectory of one of the XSB system or user libraries.
+The system directory \verb|$XSB_DIR/packages| has several examples
+%%$
+of such packages. Packages are convenient as a means of organizing
+large XSB applications, and for simplifying user interaction with such
+applications. User-level packaging is implemented through the predicate
+%%
+\begin{verbatim}
+     bootstrap_userpackage(+LibraryDir, +PackageDir, +PackageName).
+\end{verbatim}
+%%
+\index{{\tt bootstrap_userpackage/3}}
+which must be imported from the {\tt packaging} module. 
+
+To illustrate, suppose you wanted to create a package, {\tt foobar}, inside
+your own library, {\tt my\_lib}. Here is a sequence of steps you can
+follow:  
+%%
+\begin{enumerate}
+\item Make sure that {\tt my\_lib} is on the library search path by putting
+  an appropriate assert statement in your {\tt xsbrc.P}.
+\item Make subdirectory \verb|~/my_lib/foobar| and organize all the
+  package files there. Designate one file, say, {\tt foo.P}, as the
+  entry point, {\it i.e.}, the application file that must be loaded first.
+\item Create the interface program \verb|~/my_lib/foobar.P| with the
+  following content:
+    %%
+    \begin{verbatim}
+           :- bootstrap_userpackage('~/my_lib', 'foobar', foobar), [foo].
+    \end{verbatim}
+    %%
+  The interface program and the package directory do not need to have the
+  same name, but it is convenient to follow the above naming schema.
+\item Now, if you need to invoke the {\tt foobar} application, you can
+  simply type \verb|[foobar].| at the XSB prompt. This is because both and
+  \verb|~/my_lib/foobar| have already been automatically added to the
+  library search path.
+\item If your application files export many predicates, you can simplify
+  the use of your package by having \verb|~/my_lib/foobar.P| import all
+  these predicates, renaming them, and then exporting them. This provides a
+  uniform interface to the {\tt foobar} module, since all the package
+  predicates are can now be imported from just one module, {\tt foobar}.
+\end{enumerate}
+%%
+In addition to adding the appropriate directory to the library search path,
+the predicate \verb|bootstrap_userpackage/3| also adds information to the
+predicate \verb|package_configuration/3|, so that other applications could
+query the information about loaded packages.
+
+Packages can also be unloaded using the predicate
+\verb|unload_package/1|. For instance, 
+
+%%
+\begin{verbatim}
+       :- unload_package(foobar).  
+\end{verbatim}
+%%
+removes the directory \verb|~/my_lib/foobar| from the library search path
+and deletes the associated information from \verb|package_configuration/3|.
+\index{{\tt unload_package/1}}
+\index{{\tt package_configuration/2}}
+
+
+\subsection{Dynamically loading predicates in the interpreter}
+%=============================================================
+Modules are usually loaded into an environment when they are consulted
+(see section~\ref{Consulting}).  Specific predicates from a module can
+also be imported into the run-time environment through the standard 
+predicate {\tt import PredList from Module}\index{{\tt import/1}}.
+Here, {\tt PredList} can either be a Prolog list or a comma list.  (The
+{\tt import/1} can also be used as a directive in a source module 
+(see section~\ref{Modules}).
+
+We provide a sample session for compiling, dynamically loading, and 
+querying a user-defined module named {\tt quick\_sort}.
+For this example we assume that {\tt quick\_sort} is a file in the 
+current working directory, and contains the definitions of the
+predicates {\tt concat/3} and {\tt qsort/2}, both of which are exported.
+
+{\footnotesize
+\begin{verbatim}
+             | ?- compile(quick_sort).
+             [Compiling ./quick_sort]
+             [quick_sort compiled, cpu time used: 1.439 seconds]
+
+             yes
+             | ?- import concat/3, qsort/2 from quick_sort. 
+
+             yes
+             | ?- concat([1,3], [2], L), qsort(L, S).
+
+             L = [1,3,2]
+             S = [1,2,3]
+
+             yes.
+\end{verbatim}
+}
+
+The standard predicate {\tt import/1} does not load the module 
+containing the imported predicates, but simply informs the system 
+where it can find the definition of the predicate when (and if) the
+predicate is called.
+
+
+\section{Command Line Arguments} \label{emulator_options}
+%========================================================
+\index{emulator!command line options}
+\index{options!command line arguments}
+\index{stacks!default sizes}
+\index{stacks!expanding}
+%========================================================
+
+There are several command line options for the emulator. The general 
+synopsis is:
+\begin{verbatim}
+      	xsb [flags] [-l] [-i]
+	xsb [flags] -n
+	xsb [flags] module
+	xsb [flags] -B boot_module [-D cmd_loop_driver] [-t] [-e goal]
+	xsb [flags] -B module_to_disassemble -d
+	xsb -[h | v]
+
+      	flags:
+	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -s | -T
+	    These are compiler flags.
+	module:
+	    Module to execute after XSB starts up.
+	    Module should have no suffixes, no directory part, and
+	    the file module.O must be on the library search path.
+      	boot_module:
+	    This is a developer's option.
+	    The -B flags tells XSB which bootstraping module to use instead
+	    of the standard loader. The loader must be specified using its
+	    full pathname, and boot_module.O must exist.
+    	module_to_disassemble:
+	    This is a developer's option.
+	    The -d flag tells XSB to act as a disassembler.
+	    The -B flag specifies the module to disassemble.
+	cmd_loop_driver:
+	    The top-level command loop driver to be used instead of the
+	    standard one. Usually needed when XSB is run as a server.
+
+      	    -i : bring up the XSB interpreter
+       -e goal : evaluate goal when XSB starts up
+      	    -l : the interpreter prints unbound variables using letters
+      	    -n : used when calling XSB from C
+	    -B : specify the boot module to use in lieu of the standard loader
+	    -D : Sets top-level command loop driver to replace the default.
+      	    -t : trace execution at the SLG-WAM instruction level
+		 (for this to work, build XSB with the --debug option)
+	    -d : disassemble the loader and exit
+      	  -c N : allocate N KB for the trail/choice-point stack
+      	  -m N : allocate N KB for the local/global stack
+      	  -o N : allocate N KB for the SLG completion stackof
+      	  -u N : allocate N KB for the SLG unification (table copy) stack
+      	    -r : turn off automatic stack expansion
+      	    -s : maintains more detailed statistical information
+      	    -T : print a trace of each called predicate
+      	    -v : print the version and configuration information about XSB.
+      	    -h : print this help message
+
+\end{verbatim}
+The order in which these options appear makes no difference.
+
+\begin{description}
+\item[{\tt -i}] Brings up the XSB interpreter.  This is the normal use.
+\item[{\tt -l}] Forces the interpreter to print unbound variables as
+	letters, as opposed to the default setting which prints
+	variables as memory locations prefixed with an underscore.
+	For example, starting XSB's interpreter with this option will
+	print the following:
+\begin{verbatim} | ?- Y = X, Z = 3, W =
+	foo(X,Z).
+
+                  Y = A
+                  X = A
+                  Z = 3
+                  W = foo(A,3)
+	\end{verbatim}
+	as opposed to something like the following:
+	\begin{verbatim}
+                  | ?- Y = X, Z = 3, W = foo(X,Z).
+
+                  Y = _10073976
+                  X = _10073976
+                  Z = 3
+                  W = foo(_10073976,3);
+	\end{verbatim}
+\item[{\tt -n}] used in conjunction with the {\tt -i} option, to
+    indicate that the usual read-eval-print top-loop is not to be
+    entered, but instead will interface to a calling C program.  See
+    Chapter~\ref{ccallingxsb} for details.
+\item[{\tt -d}] Produces a disassembled dump of {\tt byte\_code\_file} to 
+    {\tt stdout} and exits.
+\item[{\tt -c} {\em size}] Allocates {\em initial  size\/} Kbytes of space
+    to the trail/choice-point stack area.  The trail stack grows
+    upward from the bottom of the region, and the choice point stack
+    grows downward from the top of the region.  Because this region is
+    expanded automatically from Version 1.6.0 onward, this option
+    should rarely need to be used.  Default initial size: 768 Kbytes.
+\item[{\tt -m} {\em size}] Allocates {\em size\/} Kbytes
+    of space to the local/global stack area.  The global stack grows 
+    upward from the bottom of the region, and the local stack grows 
+    downward from the top of the region.  Default: 768 Kbytes.
+\item[{\tt -o} {\em size}] Allocates {\em size\/} Kbytes of space
+    to thecompletion stack area.  Because this region is expanded
+    automatically from Version 1.6.0 onward, this option should rarely
+    need to be used. Default initial size 64 Kbytes.
+\item[{\tt -u} {\em size}] Allocates {\em size} Kbytes of space
+    to the unification (and table copy) stack.  Default 64 Kbytes.
+    (This option should rarely need to be used).
+\item[{\tt -D}] Tells XSB to use a top-level command loop driver specified
+  here instead of the standard XSB interpreter. This is most useful when
+  XSB is used as a server.
+\item[{\tt -r}] Turns off automatic stack expansion.
+\item[{\tt -s}] Maintains information on the size of program stacks 
+    for the predicate {\tt statistics/0}.  This option may be expected
+    to slow execution by around 10\%.  Default: off.
+\item[{\tt -T}] Generates a trace at entry to each called predicate
+    (both system and user-defined).  This option is available mainly
+    for people who want to modify and/or extend \ourprolog, and it is
+    {\em not\/} the normal way to trace XSB programs.  For the
+    latter, the builtin predicates {\tt trace/0} or {\tt debug/0}
+    should be used (see Chapter~\ref{debugging}).
+
+    Note: This option is not available when the system is being used
+    at the non-tracing mode (see Section~\ref{Debug_Mode}).
+\item[{\tt -t}] Traces through code at SLG-WAM instruction level.  This
+    option is for internal debugging and is not fully supported.
+    It is also not available when the system is being used at the non-debug
+    mode (see Section~\ref{Debug_Mode}).
+
+  \item[-e goal] Pass {\tt goal}  to XSB at starup. This goal is evaluated
+    right before the first prompt is issued. For instance, 
+    \verb'xsb -e "write('Hello!'), nl."'
+    will print a heart-warming message when XSB starts up.
+\end{description}
+
+As an example, a program which uses more heap than common might be run
+with the command.
+\begin{verbatim}
+         xsb -m 2000 -i
+\end{verbatim}
+
+
+\section{Memory Management}\label{memory_management}
+\index{memory management}
+%===================================================
+The developers of XSB have gone to great effort to provide a useful,
+robust programming system.  However, we have not yet included many
+features that would be extremely useful to the system.  Foremost among
+these is better memory management for the heap and local stacks.  We
+hope to fix this deficiency in the near future.  In the meantime, the
+{\tt '-s'} option is provided for viewing the maximum amount of memory
+needed for program stacks.
+
+Both the trail/choice point region and the completion stack region are
+automatically expanded in \version .  These regions begin with an
+initial value set by the user (or the default stated in Section
+\ref{emulator_options}), and doubles the size until it is not possible
+to do so with available system memory.  At that point XSB tries to
+find the maximal amount of space that will still fit in system memory.
+%This algorithm for increasing space may be refined in future versions
+%of XSB, so we are interested in hearing about experiences in XSB's
+%memory management from our users.
+
+The program area (the area into which the code is loaded) is also
+dynamically expanded as needed, and the area occupied by dynamic code
+(created using {\tt assert/1}, or the standard predicate {\tt
+load\_dyn/1}) is reclaimed when that code is retracted.  Version 1.8
+improves memory management for retracted dynamic code.
+
+\version\ provides memory management for table space as well.  Space for
+tables is dynamically allocated as needed and reclaimed through use of
+predicates {\tt abolish\_all\_tables/0}, {\tt, abolish\_table\_pred/1}
+and {\tt abolish\_table\_call/1}.  (see
+Section~\ref{tabling_predicates}).  
+
+\section{Compiling and Consulting} \label{Consulting}
+%====================================================
+In XSB, both compiled and interpreted code are transformed into
+SLG-WAM instructions.  The main differences are that compiled code may
+be more optimized than interpreted code, and that compilation produces
+an object code file.
+
+\index{{\tt consult/[1,2]}}
+This section describes the actions of the standard predicate {\tt
+consult/[1,2]} (and of {\tt reconsult/[1,2]} which is defined to have
+the same actions as {\tt consult/[1,2]}).  {\tt consult/[1,2]} is the
+most convenient method for entering rules into XSB's database.  Though
+{\tt consult} comes in many flavors, the most general form is:
+\begin{center}{\tt
+	consult(+FileList, +CompilerOptionList) }
+\end{center} 
+At the time of the call both of its arguments should be instantiated
+(ground).  {\tt FileList} is a list of filenames or module names (see
+section~\ref{Modules}) and {\tt CompilerOptionList} is a list of
+options that are to be passed to the compiler when (and if) it should
+be invoked.  For a detailed description of the format and the options
+that can appear in this list see Section~\ref{the_compiler}.
+
+If the user wants to consult one module (file) only, she can provide an
+atom instead of a list for the first argument of {\tt consult/2}.
+Furthermore, if there isn't any need for special compilation options the
+following two forms:
+\begin{center}{\tt
+	    [FileName]. \\
+	consult(FileName).
+}\end{center}
+are just notational shorthands for:
+\begin{center}{\tt
+	consult(FileName, []).
+}\end{center}
+
+Consulting a module (file) generally consists of the following five
+steps which are described in detail in the next paragraphs.
+\begin{description}
+\item[Name Resolution]: determine the module to be consulted.
+\item[Compilation]:  if necessary (and the source file is not too big),
+      compile the module using predicate {\tt compile/2} with the options
+      specified.
+\item[Loading] load the object code of the module into memory.
+\item[Importing] import all the exported predicates of that module to
+      the current working module ({\tt usermod}).
+\item[Query Execution]: execute any queries that the module may contain.
+\end{description}
+
+There are two steps to name resolution: determination of the proper
+directory prefix and determination of the proper extension.  When {\tt
+FileName} is absolute (i.e. in UNIX contains a slash {\tt '/'})
+determination of the proper directory prefix is straightforward.
+However, the user may also enter a name without any directory
+prefix. In this case, the directory prefix is a directory in the
+dynamic loader path (see section~\ref{LibPath}) where the source file
+exists.  Once the directory prefix is determined, the file name is
+checked for an extension.  If there is no extension the loader first
+checks for a file in the directory with the {\tt .P} extension, (or
+{\tt .c} for foreign modules) before searching for a file without the
+extension.  Note that since directories in the dynamic loader path are
+searched in a predetermined order (see section~\ref{LibPath}), if the
+same file name appears in more than one of these directories, the
+compiler will consult the first one it encounters.
+
+Compilation is performed if the update date of the the source file
+({\tt *.P}) is later than that of the the object file ({\tt *.O}),
+{\em and} if the source file is not larger than the default compile
+size.  This default compile is set to be 20,000 bytes (in {\tt
+cmplib/config.P}), but can be reset by the user.  If the source file
+is larger than the default compile size, the file will be loaded using
+{\tt load\_dyn/1}, and otherwise it will be compiled ({\tt
+load\_dyn/1} can also be called separately, see \pageref{load_dyn/1}).
+While {\tt load\_dyn} gives reasonibly good execution times,
+compilation can always be done by using {\tt compile/[1,2]}
+explicitly.  Currently (\version), a foreign language module is
+compiled when at least one of files {\tt *.c} or {\tt *.H} has been
+changed from the time the corresponding object files have been
+created.
+
+\index{{\tt multifile/2}}
+Whether the file is compiled or dynamically loaded, the byte-code for
+the file is loaded into XSB's database.  The default action upon
+loading is to delete any previous byte-code for predicates defined in
+the file.  If this is not the desired behavior, the user may add to
+the file a declaration 
+\begin{center}
+{\tt :- multifile <Predicate\_List> .} \\
+\end{center}
+where {\tt Predicate\_List} is a list of predicates in {\em
+functor/arity} form.  The effect of this declaration is to delete {\em
+only} those clauses of {\tt predicate/arity} that were defined in the
+file itself.
+
+After loading the module, all exported predicates of that module are
+imported into the current environment (the current current working
+module {\tt usermod}).  For non-modules (see section~\ref{Modules}),
+all predicates are imported into thecurrent working module.
+
+Finally any queries --- that is, any terms with principal functor {\tt
+':-'/1} that are not directives like the ones described in
+section~\ref{the_compiler} --- are executed in the order that they are
+encountered.
+
+\section{The Compiler} \label{the_compiler} \index{Compiler}
+%===========================================================
+
+The XSB compiler translates XSB source files into
+byte-code object files.  It is written entirely in Prolog.
+Both the sources and the byte code\index{byte code!files!compiler}
+for the compiler can be found in the XSB system directory
+{\tt cmplib}\index{cmplib@{\tt cmplib}}.
+
+The following sections describe the various aspects of the compiler 
+in more detail.
+
+
+\subsection{Invoking the Compiler} \label{compiler_invoking}
+\index{invoking the Compiler}\index{Compiler!invoking}
+%=====================================================
+
+The compiler is invoked directly at the interpreter level (or in a 
+program) through the Prolog predicates {\tt compile/[1,2]}.  
+
+The general forms of predicate {\tt compile/2} are:
+\begin{center}{\tt	
+	compile(+File, +OptionList) \\
+	compile(+FileList, +OptionList)
+}
+\end{center}
+and at the time of the call both of its arguments should be ground.
+
+The second form allows the user to supply a proper list of file names as
+the parameter for {\tt compile/[1,2]}.  In this case the compiler will
+compile all the files in {\tt FileList} with the compiler
+options specified in {\tt OptionList}.
+
+% JF
+%\demo{\verb+|+ ?- compile(Files).} 
+\demo{$|$ ?- compile(Files).} 
+
+\noindent
+is just a notational shorthand for the query:
+
+% JF
+%\demo{\verb+|+ ?- compile(Files, []).}
+\demo{$|$ ?- compile(Files, []).}
+
+The standard predicates {\tt consult/[1,2]} call {\tt compile/1} (if
+necessary).  Argument {\tt File} can be any syntactically valid UNIX
+or DOS file name (in the form of a Prolog atom), but the user can also
+supply a module name.
+
+The list of compiler options {\tt OptionList}, if specified, 
+should be a proper Prolog list, i.e.\ a term of the form:
+\begin{center}
+	{\tt [ $option_1$, $option_2$, $\ldots$, $option_n$ ].}
+\end{center}
+where $option_i$ is one of the options described in
+Section~\ref{compiler_options}.
+
+The source file name corresponding to a given module is obtained by 
+concatenating a directory prefix and the extension {\tt .P} (or {\tt .c}) 
+to the module name.  The directory prefix must be in the
+dynamic loader path (see Section~\ref{LibPath}).
+Note that these directories are searched in a predetermined
+order (see Section~\ref{LibPath}), so if a module with the same name
+appears in more than one of the directories searched, the compiler 
+will compile the first one it encounters.  In such a case, the user can 
+override the search order by providing an absolute path name.
+
+If {\tt File} contains no extension, an attempt is made to compile the 
+file {\tt File.P} (or {\tt File.c}) before trying compiling the file 
+with name {\tt File}.  
+
+We recommend use of the extension {\tt .P} for Prolog source file to
+avoid ambiguity.  Optionally, users can also provide a header file for
+a module (denoted by the module name suffixed by {\tt .H}).  In such a
+case, the XSB compiler will first read the header file (if it
+exists), and then the source file.  Currently the compiler makes no
+special treatment of header files.  They are simply included in the
+beginning of the corresponding source files, and code can, in
+principle, be placed in either.  In future versions of XSB the
+header files may be used to check interfaces across modules, hence it
+is a good programming practice to restrict header files to
+declarations alone.
+ 
+The result of the compilation (an SLG-WAM object code file) is stored
+in a ($\langle$filename$\rangle$.O), but {\tt compile/[1,2]} does {\em
+not\/} load the object file it creates.  (The standard predicates {\tt
+consult/[1,2]} and {\tt reconsult/[1,2]} both recompile the source
+file, if needed, and load the object file into the system.)  The
+object file created is always written into the directory where the
+source file resides (the user should therefore have write permission
+in that directory).
+ 
+If desired, when compiling a module (file), clauses and directives can be
+transformed as they are read.  This is indeed the case for definite clause
+grammar rules (see Chapter~\ref{DCGs}), but it can also be done for clauses
+of any form by providing a definition for predicate {\tt term\_expansion/2}
+(see Section~\ref{DCG_builtins}).
+
+Predicates {\tt compile/[1,2]} can also be used to compile foreign
+language modules.  In this case, the names of the source files should
+have the extension {\tt .c} and a {\tt .P} file must {\em not\/}
+exist.  A header file (with extension {\tt .H}) {\em must} be present
+for a foreign language module (see Chapter~\ref{foreign}).
+
+
+\subsection{Compiler Options}\label{compiler_options}
+\index{Compiler!options}\index{options!Compiler}
+%=================================================
+
+The following options are currently recognized by the compiler:
+\begin{description}
+\item[{\tt optimize}]\index{{\tt optimize}}
+	When specified, the compiler tries to optimize the object code.
+	In \version, this option optimizes predicate calls, among other
+	features, so execution may be considerably faster for recursive
+	loops.  However,
+	due to the nature of the optimizations, the user may not be able to
+	trace all calls to predicates in the program.  Also the Prolog code
+	should be {\em static}.  In other words, the user is {\em not} allowed
+	to alter the entry point of these compiled predicates by asserting new
+	clauses.  As expected, the compilation phase will also be slightly
+	longer.  For these reasons, the use of the {\tt optimize} option may
+	not be suitable for the development phase, but is
+	recommended once the code has been debugged.
+
+%-------------------------------
+\index{tabling!compiler options}
+%-------------------------------
+\item[{\tt auto\_table}]\index{{\tt auto\_table}}
+	When specified as a compiler option, the effect is
+	as described in Section~\ref{tabling_directives}.  Briefly, a static
+	analysis is made to determine which predicates may loop under Prolog's
+	SLD evaluation.  These predicates are compiled as tabled predicates,
+	and SLG evaluation is used instead.
+%qkostis
+\item[{\tt suppl\_table}]\index{{\tt suppl\_table}}
+	The intention of this option is to direct the
+	system to table for efficiency rather than termination.  When 
+	specified, the compiler uses tabling to ensure that no predicate
+	will depend on more than three tables or EDB facts (as specified
+	by the declaration {\tt edb} of Section~\ref{tabling_directives}).
+        The action of {\tt suppl\_table} is independent of that of
+	{\tt auto\_table}, in that a predicate tabled by one will not
+	necessarily be tabled by the other.
+	During compilation, {\tt suppl\_table} occurs after {\tt auto\_table},
+	and uses table declarations generated by it, if any.
+%--------------------------------------
+\index{specialisation!compiler options}
+%--------------------------------------
+\item[{\tt spec\_repr}]\index{{\tt spec\_repr}}
+	When specified, the compiler performs specialisation of partially
+	instantiated calls by replacing their selected clauses with the
+	representative of these clauses, i.e. it performs {\em folding\/}
+	whenever possible.  We note in general, the code replacement
+	operation is not always sound; i.e. there
+	are cases when the original and the residual program are not
+	computationally equivalent.  The compiler checks for sufficient (but
+	not necessary) conditions that guarantee computational equivalence.
+	If these conditions are not met, specialisation is not performed
+	for the violating calls.
+\item[{\tt spec\_off}]\index{{\tt spec\_off}}
+	When specified, the compiler does not perform specialisation of
+	partially instantiated calls.
+\item[{\tt unfold\_off}]\index{{\tt unfold\_off}}
+	When specified, singleton sets optimisations are not performed
+	during specialisation.  This option is necessary in \version\
+	for the specialisation of {\tt table} declarations that select
+	only a single chain rule of the predicate.
+%qtls ??
+\item[{\tt spec\_dump}]\index{{\tt spec\_dump}}
+	Generates a {\tt module.spec} file, containing the result of
+	specialising partially instantiated calls to predicates defined
+	in the {\tt module} under compilation.  The result is in Prolog
+	source code form.
+
+%---------------------------------------------
+\index{unification factoring!compiler options}
+%---------------------------------------------
+\item[{\tt ti\_dump}]\index{{\tt ti\_dump}}
+	Generates a {\tt module.ti} file containing the result of applying
+	unification factoring to predicates defined in the {\tt module}
+	under compilation.  The result is in Prolog source code form.
+	See page~\pageref{transformational_indexing} for more information
+	on unification factoring.
+\item[{\tt ti\_long\_names}]\index{{\tt ti\_long\_names}}
+	Used in conjunction with {\tt ti\_dump}, generates names for
+	predicates created by unification factoring that reflect the
+	clause head factoring done by the transformation.
+
+\item[{\tt init\_var\_off}]\index{{\tt init\_var\_off}}
+	When specified, the compiler will give a warning (instead of an
+	error) upon finding that a potentially uninitialized variable is
+	being used.  {\em Potentially uninitialized variables\/} are
+	variables that appear in only one branch of an {\sf or} or an
+	{\sf if-then-else} goal in the body, and, furthermore, are used
+	after that goal.
+	In certain clauses, the variable may always be initialized after
+	the {\sf or} or the {\sf if-then-else} goal, because the execution 
+	cannot continue through the path of the branch that does not initialize
+	the variable.  In these cases, the {\tt init\_var\_off} option can be
+	useful, though the user is cautioned against careless use of this
+	option.
+
+	{\sc Warning:} The object-file generated by the compiler when this
+		option is used may not execute correctly (or even cause
+		XSB to core dump!) if the variable is indeed
+		uninitialized when used.
+
+%---------------------------------------------
+\index{mode analysis!compiler options}
+%---------------------------------------------
+\item[{\tt modeinfer}]\index{{\tt modeinfer}}
+	This option is used to trigger mode analysis. For each module
+	compiled,  the mode analyzer creates a  {\tt {\em module}.D} file
+	that contains the mode information.
+
+	{\sc Warning:}
+	Occasionally, the analysis itself may take a long time. 
+	As far as we have seen,
+	the analysis times are longer than the rest of the compilation time
+	only when the module contains recursive predicates of arity $\geq 10$.
+	If the analysis takes an unusually long time
+	(say, more than 4 times as long as the rest of the compilation)
+	you may want to abort and restart compilation without {\tt modeinfer}.
+	
+\item[{\tt mi\_warn}]\index{{\tt mi\_warn}}
+	During mode analysis, the {\tt .D} files corresponding to the
+	imported modules are read in. The option {\tt mi\_warn} is used
+	to generate warning messages if these {\tt .D} files are 
+	outdated --- {\em i.e.}, older
+	than the last modification time of the source files.
+
+\item[{\tt mi\_foreign}] This option is used {\em only\/} when mode analysis
+	is performed on XSB system modules. This option is
+	needed when analyzing {\tt standard} and {\tt machine} in
+	{\tt syslib}.
+
+
+% tls mention that the following are for hackers ...
+\item[{\tt sysmod}] Mainly used when compiling system modules. If specified,
+	standard predicates (listed in
+	Appendix~\ref{standard_predicates}) are automatically
+	available for use only if they are primitive predicates (see
+	Appendix~\ref{primitive_predicates}).  When compiling in this
+	mode, non primitive standard predicates must be explicitly
+	imported from the appropriate system module.
+%	On the other hand, when compiling with this option all XSB
+%	primitive predicates (see Appendix~\ref{primitive_predicates}) are
+%	automatically available for use.
+\item[{\tt verbo}] Compiles the files (modules) specified in ``verbose'' mode, 
+	printing out information about the progress of the compilation of each 
+	predicate.
+\item[{\tt profile}] This option is usually used when modifying the
+	XSB compiler.  When specified, the compiler prints out
+	information about the time spent in each phase of the
+	compilation process.
+
+\item[{\tt asm\_dump, compile\_off}] Generates a textual representation of 
+	the SLG-WAM assembly code and writes it into the file {\tt module.A}
+	where {\tt module} is the name of the module (file) being compiled.  
+	
+	{\sc Warning:} This option was created for compiler debugging and is
+		not intended for general use.  There might be cases where
+		compiling a module with these options may cause generation
+		of an incorrect {\tt .A} and {\tt .O} file.  In such cases,
+		the user can see the SLG-WAM instructions that are
+		generated for a module by compiling the module as usual and
+		then using the {\tt -d module.O} command-line option of the
+		XSB emulator (see Section~\ref{emulator_options}).
+\item[{\tt index\_off}] When specified, the compiler does not generate indices
+	for the predicates compiled.  
+\end{description}
+
+
+\subsection{Specialisation}\label{specialisation}
+\index{Compiler!specialisation}\index{specialisation!Compiler}
+%=============================================================
+
+From Version 1.4.0 on, the XSB compiler automatically performs
+specialisation of partially instantiated calls.  Specialisation can be
+thought as a source-level program transformation of a program to a
+residual program in which partially instantiated calls to predicates
+in the original program are replaced with calls to specialised versions
+of these predicates.  The expectation from this process is that the
+calls in the residual program can be executed more efficiently that
+their non-specialised counterparts.  This expectation is justified
+mainly because of the following two basic properties of the
+specialisation algorithm:
+\begin{description}
+\item[Compile-time Clause Selection] The specialised calls of the
+	residual program  directly select (at compile time) a subset
+	containing only the clauses that the corresponding calls of the
+	original program would otherwise have to examine during their
+	execution (at run time).  By doing so, laying down unnecessary
+	choice points is at least partly avoided, and so is the need to
+	select clauses through some sort of indexing.
+\item[Factoring of Common Subterms] Non-variable subterms of partially
+	instantiated calls that are common with subterms in the heads
+	of the selected clauses are factored out from these terms
+	during the specialisation process.  As a result, some head
+	unification ({\tt get\_*} or {\tt unify\_*}) and some argument
+	register ({\tt put\_*}) WAM instructions of the original
+	program become unnecessary.  These instructions are eliminated
+	from both the specialised calls as well as from the specialised
+	versions of the predicates.
+\end{description}
+Though these properties are sufficient to get the idea behind
+specialisation, the actual specialisation performed by the XSB
+compiler can be better understood by the following example.  The
+example shows the specialisation of a predicate that checks if a list
+of HiLog terms is ordered:
+\begin{center}
+\tt
+\begin{tabular}{ccc}
+\begin{tabular}{l}
+ordered([]). \\
+ordered([X]). \\
+ordered([X,Y|Z]) :- \\
+\ \ \ \ X @=< Y, ordered([Y|Z]). 
+\end{tabular}
+& $\longrightarrow$ &
+\begin{tabular}{l}
+ordered([]). \\
+ordered([X]). \\
+ordered([X,Y|Z]) :- \\
+\ \ \ \ X @=< Y, \_\$ordered(Y, Z). \\
+\\
+:- index \_\$ordered/2-2. \\
+\_\$ordered(X, []). \\
+\_\$ordered(X, [Y|Z]) :- \\
+\ \ \ \ X @=< Y, \_\$ordered(Y, Z).
+\end{tabular}
+\end{tabular}
+\end{center}
+The transformation (driven by the partially instantiated call
+{\tt ordered([Y|Z])}) effectively allows predicate {\tt ordered/2}
+to be completely deterministic (when used with a proper list as its
+argument), and to not use any unnecessary heap-space for its
+execution.  We note that appropriate {\tt :- index} directives are
+automatically generated by the XSB compiler for all specialised
+versions of predicates.
+
+The default specialisation of partially instantiated calls is without
+any folding of the clauses that the calls select.  Using the {\tt
+spec\_repr} compiler option (see Section~\ref{compiler_options})
+specialisation with replacement of the selected clauses with the
+representative of these clauses is performed.  Using this compiler
+option, predicate {\tt ordered/2} above would be specialised as follows:
+\begin{center}
+\begin{minipage}{4.1in}
+\begin{verbatim}
+ordered([]).
+ordered([X|Y]) :- _$ordered(X, Y).
+
+:- index _$ordered/2-2.
+_$ordered(X, []).
+_$ordered(X, [Y|Z]) :- X @=< Y, _$ordered(Y, Z).
+\end{verbatim}
+\end{minipage}
+\end{center}
+We note that in the presense of cuts or side-effects, the code
+replacement operation is not always sound, i.e.  there are cases when
+the original and the residual program are not computationally equivalent
+(with respect to the answer substitution semantics).  The compiler
+checks for sufficient (but not necessary) conditions that guarantee
+computational equivalence, and if these conditions are not met,
+specialisation is not performed for the violating calls.
+
+The XSB compiler prints out messages whenever it specialises
+calls to some predicate.  For example, while compiling a file
+containing predicate {\tt ordered/1} above, the compiler would print
+out the following message:
+\begin{center}
+{\tt	\% Specialising partially instantiated calls to ordered/1}
+\end{center}
+The user may examine the result of the specialisation transformation
+by using the {\tt spec\_dump} compiler option
+(see Section~\ref{compiler_options}).
+
+Finally, we have to mention that for technical reasons beyond the scope of
+this document, specialisation cannot be transparent to the user; predicates
+created by the transformation do appear during tracing.
+
+
+\subsection{Compiler Directives}\label{compiler_directives}
+\index{Compiler!directives}\index{directives!Compiler}
+%=====================================================
+
+The following compiler directives are recognized in \version\ of XSB
+\footnote{Any parallelisation directives ({\tt parallel}) are simply
+ignored by the compiler, but do not result in syntax errors to enhance
+compatibility with various other earlier versions of PSB-Prolog.}.
+
+\subsubsection{Mode Declarations}\label{mode_declarations}
+\index{modes!directives}\index{directives!modes}
+%-----------------------------------------------------
+
+The XSB compiler accepts {\tt mode} declarations of the form:
+
+\demo{:- mode $ModeAnnot_1, \ldots, ModeAnnot_n$.}
+
+\noindent
+where each $ModeAnnot$ is a {\em mode annotation\/} (a {\em term
+indicator\/} whose arguments are elements of the set {\tt
+\{+,-,\#,?\}}).  From Version 1.4.1 on, {\tt mode} directives are used
+by the compiler for tabling directives, a use which differs from the
+standard use of modes in Prolog systems\footnote{The most common uses
+of {\tt mode} declarations in Prolog systems are to reduce the size of
+compiled code, or to speed up a predicate's execution.}.  See
+Section~\ref{tabling_directives} for detailed examples.
+
+Mode annotations have the following meaning:
+\begin{description}
+\item[{\tt +}]
+	This argument is an input to the predicate.  In every invocation
+	of the predicate, the argument position must contain a non-variable
+	term.  This term may not necessisarily be ground, but the 
+	predicate is guaranteed not to alter this argument).
+
+	\demo{:- mode see(+), assert(+).}
+\item[{\tt -}]
+	This argument is an output of the predicate.  In every
+	invocation of the predicate the argument
+	position {\em will always be a variable\/} (as opposed to 
+	the {\tt \#} annotation below).
+	This variable is unified with the value returned by the predicate.
+	We note that Prolog does not enforce the requirement that output
+	arguments should be variables; however, output unification is not
+	very common in practice.
+
+	\demo{:- mode cputime(-).}
+\item[{\tt \#}]
+	This argument is either:
+	\begin{itemize}
+	\item	An output argument of the predicate for which a non-variable
+		value may be supplied for this argument position.  If such a
+		value is supplied, the result in this position is unified with
+		the supplied supplied value.  The predicate fails if this
+		unification fails.  If a variable term is supplied, the
+		predicate succeeds, and the output variable is unified with
+		the return value.
+
+		\demo{:- mode '='(\#,\#).}
+	\item	An input/output argument position of a predicate that has
+		only side-effects (usually by further instantiating that
+		argument).  The {\tt \#} symbol is used to denote the $\pm$
+		symbol that cannot be entered from the keyboard.
+	\end{itemize}
+\item[{\tt ?}]
+	This argument does not fall into any of the above categories. 
+        Typical cases would be the following:
+	\begin{itemize}
+	\item	An argument that can be used both as input and as output
+		(but usually not with both uses at the same time).
+
+		\demo{:- mode functor(?,?,?).}
+	\item	An input argument where the term supplied can be a variable
+		(so that the argument cannot be annotated as {\tt +}), or is
+		instantiated to a term which itself contains uninstantiated
+		variables, but the predicate is guaranteed {\em not\/} to
+		bind any of these variables.
+
+		\demo{:- mode var(?), write(?).}
+	\end{itemize}
+\end{description}
+We try to follow these mode annotation conventions throughout this manual.
+
+Finally, we warn the user that {\tt mode} declarations can be error-prone,
+and since errors in mode declarations do not show up while running the
+predicates interactively, unexpected behaviour may be witnessed in compiled
+code, optimised to take modes into account (currently not performed by
+\ourprolog).  However, despite this danger, {\tt mode} annotations can be
+a good source of documentation, since they express the programmer's
+intention of data flow in the program.
+
+
+\subsubsection{Tabling Directives}\label{tabling_directives}
+\index{tabling!directives}\index{directives!tabling}
+%-----------------------------------------------------
+\index{{\tt auto\_table}}
+Memoization is often necessary to ensure that programs terminate, and
+can be useful as an optimization strategy as well.  The underlying
+engine of XSB is based on SLG, a memoization strategy, which,
+in our version, maintains a table of calls and their answers for each
+predicate declared as {\em tabled}.  Predicates that are not declared
+as tabled execute as in Prolog, eliminating the expense of tabling
+when it is unnecessary.
+
+The simplest way to use tabling is to include the directive
+
+\demo{:- auto\_table.}
+
+\noindent
+anywhere in the source file.  {\tt auto\_table} declares predicates
+tabled so that the program will terminate.
+
+To understand precisely how {\tt auto\_table} does this, it is
+necessary to mention a few properties of SLG.  For programs which have
+no function symbols, or where function symbols always have a limited
+depth, SLG resolution ensures that any query will terminate after it
+has found all correct answers.  In the rest of this section, we
+restrict consideration to such programs.
+
+Obviously, not all predicates will need to be tabled for a program to
+terminate.  The {\tt auto\_table} compiler directive tables only those
+predicates of a module which appear to static analysis to contain an
+infinite loop, or which are called directly through {\tt tnot/1}.  It
+is perhaps more illuminating to demonstrate these conditions through
+an example rather than explaining them.  For instance, in the program.
+
+%tls commented out minipage because latex was formatting badly,
+\begin{center}
+%\begin{minipage}{3in}
+\begin{verbatim}
+:- auto_table. 
+
+p(a) :- s(f(a)). 
+
+s(X) :- p(f(a)).
+
+r(X) :- q(X,W),r(Y).
+
+m(X) :- tnot(f(X)).
+
+:- mode ap1(-,-,+).
+ap1([H|T],L,[H|L1]) :- ap1(T,L,L1).
+
+:- mode ap(+,+,-).
+ap([],F,F).
+ap([H|T],L,[H|L1]) :- ap(T,L,L1).
+
+mem(H,[H|T]).
+mem(H,[_|T]) :- mem(H,T).
+\end{verbatim}
+%\end{minipage}
+\end{center}
+
+\noindent
+The compiler prints out the messages
+\begin{verbatim}
+% Compiling predicate s/1 as a tabled predicate
+% Compiling predicate r/1 as a tabled predicate
+% Compiling predicate m/1 as a tabled predicate
+% Compiling predicate mem/2 as a tabled predicate
+\end{verbatim}
+
+Terminating conditions were detected for {\tt ap1/3} and {\tt ap/3}, but
+not for any of the other predicates.
+
+{\tt auto\_table} gives an approximation of tabled programs which we
+hope will be useful for most programs.  The minimal set of tabled
+predicates needed to insure termination for a given program is
+undecidible.  
+\comment{
+Practically, refining the set of tabled predicates
+deduced by {\tt auto\_table} is still an open research problem.
+}
+It should be noted that the presence of meta-predicates such as {\tt
+call/1} makes any static analysis useless, so that the {\tt
+auto\_table} directive should not be used in such cases.
+
+Predicates can be explicitly declared as tabled as well, through the
+{\tt table/1}.  When {\tt table/1} is used, the directive takes the
+form
+
+\demo{:- table(F/A).}
+
+\noindent
+where {\tt F} is the functor of the predicate to be tabled, and {\tt A} its
+arity.  
+
+\index{{\tt suppl\_table}}
+Another use of tabling is to filter out redundant solutions for
+efficiency rather than termination.  In this case, suppose that the
+directive {\tt edb/1} were used to indicate that certain predicates were
+likely to have a large number of clauses.  Then the action of the declaration
+{\tt :- suppl\_table} in the program:
+\begin{verbatim}
+:- edb(r1/2).
+:- edb(r2/2).
+:- edb(r3/2).
+
+:- suppl_table.
+
+join(X,Z):- r1(X,X1),r2(X1,X2),r3(X2,Z).
+\end{verbatim}
+would be to table {\tt join/2}.  The {\tt suppl\_table} directive is
+the XSB analogue to the deductive database optimization, {\em
+supplementary magic templates} \cite{BeRa91}.  {\tt suppl\_table/0} is
+shorthand for {\tt suppl\_table(2)} which tables all predicates
+containing clauses with two or more {\tt edb} facts or tabled
+predicates.  By specifying {\tt suppl\_table(3)} for instance, only
+predicates containing clauses with three or more {\tt edb} facts or
+tabled predicates would be tabled.  This flexibility can prove useful
+for certain data-intensive applications.
+
+
+\subsubsection{Indexing Directives}\label{indexing_directives}
+\index{indexing!directives}\index{directives!indexing}
+%-------------------------------------------------------------
+
+The XSB compiler usually generates an index on the principal 
+functor of the first argument of a predicate.  Indexing on the appropriate 
+argument of a predicate may significantly speed up its execution time.  
+In many cases the first argument of a predicate may not be the most
+appropriate argument for indexing and changing the order of arguments
+may seem unnatural.  In these cases, the user may generate an index
+on any other argument by means of an indexing directive.  This is a
+directive of the form:
+
+\demo{:- index Functor/Arity-IndexArg.}
+
+\noindent
+indicating that an index should be created for predicate 
+{\tt Functor}/{\tt Arity} on its ${\tt IndexArg}^{\rm th}$ argument.
+One may also use the form:
+
+\demo{:- index(Functor/Arity, IndexArg, HashTableSize).}
+
+\noindent
+which allows further specification of the size of the hash table to use for
+indexing this predicate if it is a {\em dynamic} (i.e., asserted) predicate.
+For predicates that are dynamically loaded, this directive can be used to
+specify indexing on more than one argument, or indexing on a combination
+of arguments (see its description on page~\pageref{index_dynamic}).
+For a compiled predicate the size of the hash table is computed automatically,
+so {\tt HashTableSize} is ignored.
+
+All of the values {\tt Functor}, {\tt Arity}, {\tt IndexArg} (and possibly
+{\tt HashTableSize}) should be ground in the directive.  More specifically,
+{\tt Functor} should be an atom, {\tt Arity} an integer in the range 0..255,
+and {\tt IndexArg} an integer between 0 and {\tt Arity}.  If {\tt IndexArg}
+is equal to~0, then no index is created for that predicate. An {\tt index}
+directive may be placed anywhere in the file containing the predicate it
+refers to.
+
+As an example, if we wished to create an index on the third argument 
+of predicate {\tt foo/5}, the compiler directive would be:
+
+\demo{:- index foo/5-3.}
+
+
+\subsubsection{Unification Factoring}\label{transformational_indexing}
+\index{indexing!transformational}
+When the clause heads of a predicate have portions of arguments common
+to several clauses, indexing on the principal functor of one argument
+may not be sufficient.  Indexing may be improved in such cases by the
+use of unification factoring.  Unification Factoring is a program
+transformation that ``factors out'' common parts of clause heads,
+allowing differing parts to be used for indexing, as illustrated by
+the following example:
+\begin{center}
+\tt
+\begin{tabular}{ccc}
+\begin{tabular}{l}
+p(f(a),X) :- q(X). \\
+p(f(b),X) :- r(X).
+\end{tabular}
+& $\longrightarrow$ &
+\begin{tabular}{l}
+p(f(X),Y) :- \_\$p(X,Y). \\
+\_\$p(a,X) :- q(X). \\
+\_\$p(b,X) :- r(X).
+\end{tabular}
+\end{tabular}
+\end{center}
+The transformation thus effectively allows $p/2$ to be indexed
+on atoms $a/0$ and $b/0$.  Unification Factoring is transparent
+to the user; predicates created by the transformation are internal
+to the system and do not appear during tracing.
+
+The following compiler directives control the use of unification
+factoring:\footnote{Unification factoring was once called
+transformational indexing, hence the abbreviation {\tt ti} in the
+compiler directives}.
+\begin{description}
+\item[{\tt :- ti(F/A).}] Specifies that predicate $F/A$ should be
+	compiled with unification factoring enabled.
+\item[{\tt :- ti\_off(F/A).}] Specifies that predicate $F/A$ should be
+	compiled with unification factoring disabled.
+\item[{\tt :- ti\_all.}] Specifies that all predicates defined in the
+	file should be compiled with unification factoring enabled.
+\item[{\tt :- ti\_off\_all.}] Specifies that all predicates defined in
+	the file should be compiled with unification factoring disabled.
+\end{description}
+By default, higher-order predicates (more precisely, predicates named
+{\it apply\/} with arity greater than 1) are compiled with unification
+factoring enabled.  It can be disabled using the {\tt ti\_off}
+directive.  For all other predicates, unification factoring must be
+enabled explicitly via the {\tt ti} or {\tt ti\_all} directive.  If
+both {\tt :- ti(F/A).} ({\tt :- ti\_all.}) and {\tt :- ti\_off(F/A).}
+({\tt :- ti\_off\_all.}) are specified, {\tt :- ti\_off(F/A).} ({\tt
+:- ti\_off\_all.}) takes precedence.  Note that unification factoring
+may have no effect when a predicate is well indexed to begin
+with.  For example, unification factoring has no effect on the
+following program:
+\begin{center}
+\tt
+\begin{tabular}{l}
+p(a,c,X) :- q(X). \\
+p(b,c,X) :- r(X).
+\end{tabular}
+\end{center}
+even though the two clauses have $c/0$ in common.  The user may
+examine the results of the transformation by using the {\tt ti\_dump}
+compiler option (see Section~\ref{compiler_options}).
+
+\subsubsection{Other Directives} \label{other-directives}
+%==============================================
+
+XSB has other directives not found in other Prolog systems.
+
+\begin{description}
+\desc{:- hilog $atom_1, \ldots, atom_n$.}
+	Declares symbols $atom_1$ through $atom_n$ as HiLog symbols.
+	The {\tt hilog} declaration should appear {\em before} any use of
+	the symbols.  See Chapter~\ref{Syntax} for a purpose of this
+ 	declaration.
+\desc{:- ldoption($Options$).}
+        This directive is only recognized in the header file ({\tt .H} file) 
+	of a foreign module. See Chapter~\ref{foreign} for its explanation.
+\end{description}
+
+\subsection{Inline Predicates}\label{inline_predicates}
+\index{Compiler!inlines}\index{inlines!Compiler}
+%======================================================
+
+{\em Inline predicates} represent ``primitive'' operations in the
+WAM.  Calls to inline predicates are compiled into a sequence of WAM
+instructions in-line, i.e. without actually making a call to the
+predicate.  Thus, for example, relational predicates (like {\tt >/2},
+{\tt >=/2}, etc.) compile to, essentially, a subtraction followed by
+a conditional branch.  Inline predicates are expanded specially by
+the compiler and thus {\em cannot be redefined by the user without
+changing the compiler}.  The user does not need to import these
+predicates from anywhere.  There are available no matter what options
+are specified during compiling.
+
+Table~\ref{inlinepredicatetable} lists the inline predicates of
+XSB \version.  Those predicates that start with \verb|_$|
+are internal predicates that are also expanded in-line during
+compilation.
+
+\begin{table}[htbp]\centering{\tt
+\begin{tabular}{lllll}
+\verb|'='/2|    &\verb|'<'/2|	&\verb|'=<'/2|  &\verb|'>='/2| &\verb|'>'/2| \\
+\verb|'=:='/2|  &\verb|'=\='/2|	&is/2           &\verb|'@<'/2| &\verb|'@=<'/2|\\
+\verb|'@>'/2|	&\verb|'@>='/2|	&\verb|'=='/2|	&\verb|'\=='/2|&fail/0  \\
+true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0   \\
+'\_\$cutto'/1	&'\_\$savecp'/1	&'\_\$builtin'/1
+\end{tabular}}
+\caption{The Inline Predicates of \ourprolog}\label{inlinepredicatetable}
+\end{table}
+
+We warn the user to be very cautious when defining predicates whose functor
+starts with \verb|_$| since the names of these predicates may interfere with
+some of \ourprolog's internal predicates.  The situation may be particularly
+severe for predicates like {\tt '\_\$builtin'/1} that are treated specially
+by the XSB compiler.
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

@@ -1,0 +1,201 @@
+/* File:      tp_eval.P
+** Author(s): Saumya Debray, Kostis Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+eval_relop(Op, Arg1, Arg2, HoldR, Label, Pil, Pilr, Tin, Tout, PredSym, NC) :-
+	( int_eq(Op, Arg2, N) ->
+		test_with_int(Op, Arg1, N, HoldR, Label,
+			      Pil, Pilr, Tin, Tout, PredSym, NC)
+	; 'eval relop'(Op, Arg1, Arg2, HoldR, Label,
+		       Pil, Pilr, Tin, Tout, PredSym, NC)
+	).
+
+'eval relop'(Op, Arg1, Arg2, HoldR, Label, Pil, Pilr, Tin, Tout, PredSym, NC) :-
+	eval_exp(Arg1, R1, Pil, Pilm, HoldR, Tin, Tmid, PredSym, NC),
+	eval_exp(Arg2, R2, Pilm,[subreg(R2,R1),JumpInst|Pilr],
+		 HoldR, Tmid, Tout1, PredSym, NC),
+	eval_arithreloptab(Op, R1, Label, JumpInst),
+	release_if_done0(Arg1, R1, HoldR, Tout1, Tout2),
+	release_if_done0(Arg2, R2, HoldR, Tout2, Tout).
+
+test_with_int(Op, Arg1, N, HoldR, Label, Pil, Pilr, Tin, Tout, PredSym, NC) :-
+	eval_exp(Arg1, R1, Pil, [JumpInst|Pilr], HoldR, Tin, Tmid, PredSym, NC),
+%	( N =:= 0 -> eval_arithreloptab(Op, R1, Label, JumpInst)
+	eval_arithreloptab(Op, R1, N, Label, JumpInst),
+%	),
+        release_if_done0(Arg1, R1, HoldR, Tmid, Tout).
+
+int_eq(Op, integer(N), N) :-
+	( Op == '=:=' -> true ; Op == '=\=' ).
+
+/*======================================================================*/
+/* eval_exp(+Term, -R, -Inst, -InstTail, #HoldRegs, +Tin,-Tout,		*/
+/*	    +PredSym, +NC)						*/
+/*	R is the register allocated for the result			*/
+/* Generate code for an evaluable term.					*/
+/* The code generated for different terms are listed below.		*/
+/*  integer(N):   putnumcon(R, N)			Res in R	*/
+/*  real(N):	  putfloat(R, N)			in R		*/
+/*  constant(S):  error							*/
+/*  varocc(_,_):  movreg(Loc,R)/none			in Loc/R	*/
+/*  structure cases ......						*/
+/*     + X:	  code(X, R)				in R		*/
+/*     - X:	  putnumcon(R,0),code(X,R1),subreg(R1,R) in R		*/
+/*     \ X:	  code(X, R), negate(R)			in R		*/
+/*   other unary builtin function:					*/
+/*     f(X):	  code(X, R), unifunc(FunNum,R)		in R		*/
+/*     X mod Y:	  code(X,R0),code(Y,R1),movreg(R0,R),idivreg(R1,R0)	*/
+/*		  mulreg(R1,R0),subreg(R0,R) 		in R		*/
+/*   other binary builtin function:					*/
+/*     f(X,Y):	  code(X,R1),code(Y,R2),Corres. Inst.	in R1		*/
+/*     ... ... 								*/
+/*======================================================================*/
+
+eval_exp(varocc(_,Prag),R,Pil,Pilr,_,Tin,Tout,PredSym,NC) :-
+	eval_var(Prag,R,Pil,Pilr,Tin,Tout,PredSym,NC).
+eval_exp(integer(N),R,[Inst|Pil],Pil,_,Tin,Tout,_,_) :- 
+	getreg(Tin,R),
+	hold(R,Tin,Tout),
+	Inst = putnumcon(R,N).
+eval_exp(real(N),R,[Inst|Pil],Pil,_,Tin,Tout,_,_) :- 
+	getreg(Tin,R),
+	hold(R,Tin,Tout),
+	Inst = putfloat(R,N).
+eval_exp(structure(Sym,Args),R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
+	sym_name(Sym, Op, Arity),
+	( Arity =:= 2 -> Args = [E1,E2],
+		eval_binop(Op,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC)
+	; Arity =:= 1 -> Args = [E],
+		eval_uniop(Op, E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC)
+	; sym_name(PredSym, P, A),
+	  error(('Unknown function ', Op, '/', Arity,
+		 ' in an arithmetic expression')),
+	  message(('         involving is/2 or =:=/2 in clause #', NC,
+		   ' of predicate ', P, '/', A))
+	).
+eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,PredSym,NC) :-
+	sym_name(PredSym, P, A), sym_name(Sym, Const, _),
+	error(('non-numeric constant ', Const, ' in a numeric expression')),
+	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
+	Inst = fail, Tin = Tout, R = 0.
+
+eval_uniop('+',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  /* unary plus */
+    eval_exp(E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC).
+eval_uniop('-',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  /* unary minus */
+    getreg(Tin,R), hold(R,Tin,Tmid1),
+    Pil = [putnumcon(R,0)|Pilm],
+    eval_exp(E,R1,Pilm,[subreg(R1,R)|Pilr],HoldR,Tmid1,Tmid2,PredSym,NC),
+    release(R,Tmid2,Tmid3),
+    release_if_done0(E,R1,HoldR,Tmid3,Tout).
+eval_uniop('\',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-  /* negation */
+    eval_exp(E,R,Pil,[negate(R)|Pilr],HoldR,Tin,Tout,PredSym,NC).
+eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-   /* others */
+    builtin_function(Op, 1, Num),
+    eval_exp(E,R,Pil,[unifunc(Num,R)|Pilr],HoldR,Tin,Tout,PredSym,NC).
+eval_uniop(Op,_,_,Pil,Pil,_,Tin,Tin,PredSym,NC) :-
+    sym_name(PredSym, P, A),
+    error(('Unknown function ', Op, '/1 in an arithmetic expression')),
+    message(('         using is/2 in clause #', NC, ' of predicate ', P,'/',A)).
+
+eval_binoptab(+,R1,R2,addreg(R2,R1)).
+eval_binoptab(-,R1,R2,subreg(R2,R1)).
+eval_binoptab(*,R1,R2,mulreg(R2,R1)).
+eval_binoptab(/,R1,R2,divreg(R2,R1)).
+eval_binoptab(//,R1,R2,idivreg(R2,R1)).
+eval_binoptab('/\',R1,R2,and(R2,R1)).
+eval_binoptab('\/',R1,R2,or(R2,R1)).
+eval_binoptab('<<',R1,R2,logshiftl(R2,R1)).
+eval_binoptab('>>',R1,R2,logshiftr(R2,R1)).
+
+eval_binop('+').
+eval_binop('-').
+eval_binop('*').
+eval_binop('/').
+eval_binop('//').
+eval_binop('/\').
+eval_binop('\/').
+eval_binop('<<').
+eval_binop('>>').
+
+arithrelop('=:=').
+arithrelop('=\=').
+arithrelop('<').
+arithrelop('=<').
+arithrelop('>').
+arithrelop('>=').
+
+eval_arithreloptab(=:=, R, Label, jumpnz(R,Label)).
+eval_arithreloptab(=\=, R, Label, jumpz(R,Label)).
+eval_arithreloptab(<,   R, Label, jumpge(R,Label)).
+eval_arithreloptab(=<,  R, Label, jumpgt(R,Label)).
+eval_arithreloptab(>,   R, Label, jumple(R,Label)).
+eval_arithreloptab(>=,  R, Label, jumplt(R,Label)).
+
+eval_arithreloptab(=:=, R, N, Label, int_test_nz(R,N,Label)).
+eval_arithreloptab(=\=, R, N, Label, int_test_z(R,N,Label)).
+
+eval_var(Prag,R,Pil,Pilr,Tin,Tout,PredSym,NC) :-
+    alloc_reg(Prag,Tin,Tmid),
+    vprag_occ(Prag,Occ),
+    ( ( Occ == s ; Occ == l) -> eval_numgetinst(Prag,R,Pil,Pilr,Tmid,Tout)
+    ; sym_name(PredSym, P, A),
+      error('Unbound variable in an arithmetic expression'),
+      message(('         (in clause #', NC, ' of predicate ', P, '/', A, ')')),
+      Pil = [fail|Pilr], R = 0, Tmid = Tout
+    ).
+
+eval_binop(Op,E1,E2,R1,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
+    eval_binop(Op),
+    eval_exp(E1,R1,Pil,Pilm,HoldR,Tin,Tmid1,PredSym,NC),
+    eval_exp(E2,R2,Pilm,[Inst|Pilr],HoldR,Tmid1,Tmid2,PredSym,NC),
+    eval_binoptab(Op,R1,R2,Inst),
+    release_if_done0(E2,R2,HoldR,Tmid2,Tout).
+eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :-
+    eval_exp(E1,R0,Pil,Pilm0,HoldR,Tin,Tmid,PredSym,NC),
+    eval_exp(E2,R1,Pilm0,Pilm1,HoldR,Tmid,Tmid1,PredSym,NC),
+    getreg(Tmid1,R),
+    Pilm1 = [movreg(R0,R),idivreg(R1,R0),mulreg(R1,R0),subreg(R0,R)|Pilr],
+    release_if_done0(E1,R0,HoldR,Tmid1,Tmid2),
+    release_if_done0(E2,R1,HoldR,Tmid2,Tout).
+eval_binop(Op,_,_,_,Pil,Pil,_,Tin,Tin,PredSym,NC) :-
+    sym_name(PredSym, P, A),
+    error(('Unknown function ', Op, '/2 in an arithmetic expression')),
+    message(('         using is/2 in clause #', NC, ' of predicate ', P,'/',A)).
+
+eval_numgetinst(VPrag,R,Pil,Pilr,Tin,Tout) :-
+	vprag_type(VPrag, Type),
+	( Type == t ->
+		vprag_loc(VPrag, Loc),
+		vprag_occ(VPrag, Occ),
+		( Occ == l -> R = Loc, Pil = Pilr, Tin = Tout
+		; getreg(Tin,R), hold(R,Tin,Tout), Pil = [movreg(Loc,R)|Pilr]
+		)
+	; getreg(Tin,R), hold(R,Tin,Tout), 
+	  putvarinst(VPrag,R,Pil,Pilr,0) /* replace by tabled */
+	).
+
+force_tp_eval_loaded.
+

@@ -1,0 +1,297 @@
+\chapter{Foreign Language Interface}
+%===================================
+\label{foreign}
+
+When \ourprolog\ is used to build real-world systems, a foreign-language
+interface may be necessary to:
+\begin{itemize}
+\item combine \ourprolog\ with existing programs and libraries, thereby
+      forming composite systems;
+\item interface \ourprolog\ with the operating system, graphical user 
+      interfaces or other system level programs;
+\item speed up certain critical operations.
+\end{itemize}
+
+\ourprolog\ provides a simple yet powerful foreign language interface.
+We have tried to keep the interface part of a foreign predicate similar
+to that of a normal Prolog predicate.  Currently we only provide a C 
+interface for SUN3/SPARC machines (running SunOS 4.x.x or Solaris 2.x),
+and 80386/80486-based machines running Linux, to which the discussion
+below is restricted.  In the future releases we intend to provide the
+same foreign language interface for the other platforms where \ourprolog\
+can be used.
+
+Foreign predicates must always appear in modules, which can contain
+only foreign predicates.  The main difference between a normal module
+and a foreign module is the very natural one: the source file of the
+module implementation, which is in C, must appear in a {\tt *.c} file
+rather than a {\tt *.P} file.  This {\tt *.c} file cannot contain a
+{\tt main()} function.  Furthermore, a {\tt *.P} file with the same
+name {\em must not} be present or else the {\tt *.c} file is ignored
+and the module is compiled as a regular Prolog module.  The interface
+part of a foreign module, which has the same syntax as that of a
+normal module, is written in Prolog and hence must appear in a {\tt
+*.H} file.  This {\tt *.H} file contains {\tt export} declarations
+for each and every one of the foreign predicates that are to be used
+by other modules.  Here is an example of a {\tt .H} file for a foreign
+module:
+
+\begin{verbatim}
+/*======================================================================
+  File                  :  XSB/examples/simple_foreign.H
+  Author(s)             :  Kostis F. Sagonas
+  Last modification     :  December 8, 1994
+========================================================================*/
+
+:- export minus_one/2, my_sqrt/2, change_char/4.
+
+:- ldoption('-lm').     % link together with the math library
+\end{verbatim}
+
+Directives such as {\tt index}, {\tt hilog}, {\tt table}, {\tt auto\_table} 
+or even {\tt import} make no sense in the case of a foreign module and thus 
+are ignored by the compiler.  However, another directive, namely 
+{\tt ldoption}, is recognized in a foreign module and is used to instruct 
+the dynamic loading and linking of the module.  
+The syntax of the {\tt ldoption} directive is simply:
+\begin{center}
+{\tt  :- ldoption(Option).    }
+\end{center}
+where {\tt Option} should either be an atom (currently of length less
+or equal to 255 characters) or a list of atoms.  Multiple {\tt ldoption}
+directives may appear in the same {\tt .H} file of a foreign module.
+
+%(Explain more about the directive.....).
+The foreign language interface of \ourprolog\ uses the Unix command 
+{\tt ld} that combines object programs to create an executable file  
+or another object program suitable for further {\tt ld} processing.
+\version\ of \ourprolog\ assumes that the {\tt ld} command resides
+in the file {\tt /usr/bin/ld}.
+
+A foreign predicate assumes that its arguments are always of the correct 
+types and modes. It is the caller's responsibility (in the Prolog level) 
+to guarantee this.
+
+At the C level, the procedure that implements the foreign predicate
+must have the same name as the predicate (that is declared in the 
+% again the example. ???
+{\tt *.H} file), and it must be {\em parameterless}.  The Prolog level 
+arguments are converted to C data structures through several 
+predefined functions rather than through direct parameter passing.
+
+Our foreign language interface currently supports exchange of Prolog's 
+atomic data types (atoms, integers, and floating-point numbers).  The data 
+has to be converted between Prolog's internal representation and the internal 
+representation of the foreign language.  For that reason, the following 
+C functions are used to convert Prolog and C data types to each other.
+% again the example ???
+\begin{description}
+\desc{int ptoc\_int(int N)}
+        Argument {\tt N} is assumed to hold a Prolog integer, and this
+        function returns its integer value in C format.
+\desc{float ptoc\_float(int N)}
+        Argument {\tt N} is assumed to hold a Prolog floating point number,
+        and this function returns its floating point value in C format.
+	(Precision is less than single word floating point).
+\desc{char *ptoc\_string(int N)}
+        Argument {\tt N} is assumed to hold a Prolog atom, and this
+        function returns the C string (of type {\tt char *}) that 
+	corresponds to this Prolog atom.
+\desc{void ctop\_int(int N, int V)}
+        Argument {\tt N} is assumed to hold a Prolog free variable, and
+        this function binds that variable to an integer of value {\tt V}.
+\desc{void ctop\_float(int N, float V)}
+        Argument {\tt N} is assumed to hold a Prolog free variable, and
+        this function binds that variable to a floating point number of 
+	value {\tt V}.
+\desc{void ctop\_string(int N, char * V)}
+        Argument {\tt N} is assumed to hold a Prolog free variable, and
+        this function binds that variable to a Prolog atom of value {\tt V}.
+	In C, {\tt V} is of type {\tt char *}.
+
+	Note that the atom of value {\tt V} is not interned, i.e. it is 
+	not inserted into the Prolog atom table.  For that reason, the
+	{\tt string\_find(char *V, int Insert)} function should be used.
+        Function {\tt string\_find()} searches the symbol table for
+	the symbol, and if the symbol does not appear there and the
+	value of {\tt Insert} is non-zero, it inserts it.  Thus, the most
+	common use of this function is as follows:
+	\begin{center}
+	{\tt	ctop\_string(N, string\_find(V, 1))	}
+	\end{center}
+	Refer to the example {\tt simple\_foreign} in the {\tt examples}
+	directory to see a use of this function.
+\desc{void c2p\_string(int N, char *V)}
+	Same as {\tt ctop\_string(N, V)} but it interns the atom of
+	value {\tt V}.  So, it is equivalent to the following:
+	\begin{center}
+	{\tt	ctop\_string(N, string\_find(V, 1))	}
+	\end{center}
+\end{description}
+A limitation of the current implementation of the foreign language
+interface is that the above procedures assume correct modes and types
+being passed between C and the Prolog level.  So, output unification
+should be explicitly performed in the Prolog level.  The function
+prototypes should be declared before the corresponding functions are
+used.  This can be done by either including the {\tt "cinterf.h"} header
+file (located in the {\tt XSB/emu} directory), or by declaring the
+function prototypes explicitly like the following.
+\begin{verbatim}
+    extern int   ptoc_int(int);            /* defined in builtin.c */
+    extern float ptoc_float(int);          /* defined in builtin.c */
+    extern char* ptoc_string(int);         /* defined in builtin.c */
+ 
+    extern void  ctop_int(int, int);       /* defined in builtin.c */
+    extern void  ctop_float(int, float);   /* defined in builtin.c */
+    extern void  ctop_string(int, char *); /* defined in builtin.c */
+    extern void  c2p_string(int, char *);  /* defined in cinterf.c */
+
+    extern char* string_find(char *, int); /* defined in psc.c */
+\end{verbatim}
+
+In the current implementation, the Prolog procedures that are
+attached to foreign predicates are deterministic, in the sense that
+they succeed at most once for a given call and are not re-entered on
+backtracking.  Note that this requirement imposes no serious
+limitation, since it is always possible to divide a foreign predicate
+into the part to be done on the first call and the part to be redone
+on backtracking.  Backtracking can then take place at the Prolog
+level where it is more naturally expressed.
+
+A foreign module can be {\tt compile}d or {\tt consult}ed just like a
+normal Prolog module.  Currently, predicates {\tt consult/[1,2]}
+recompile both the {\tt *.c} and the {\tt *.H} files of a foreign
+module when at least one of them has been changed from the time the
+corresponding object files have been created (see Section~\ref{Consulting}).
+The C compiler used to compile the {\tt *.c} files can be set as a
+compilation option or defaults to that used for the installation of
+\ourprolog\ (refer to Section~\ref{installation_options}).
+Moreover, the user can control the compiler options that can be passed
+to the C compiler.  To give an example, the following command will
+compile file {\tt file.c} using the Gnu C Compiler with optimization
+and by including {\tt /usr/local/X11/R6/include} to the directories that
+will be searched for header files.
+\begin{center}
+{\tt  :- consult(file,
+		 [cc(gcc), cc\_opts('-O2 -I/usr/local/X11/R6/include')]). }
+\end{center}
+If no C compiler options are specified, the compilation of the C-file
+defaults to $CC$~{\tt -c~file.c} where $CC$ is the name of the C compiler
+used to install \ourprolog.
+Any Prolog compiler options are ignored when compiling a foreign module.
+
+We end by a very simple example of using the foreign language
+interface of \ourprolog.  The programs above and below are programs
+{\tt simple\_foreign.\{H,c\}} in the {\tt examples} directory.
+
+\begin{small}
+\begin{verbatim}
+/*======================================================================
+  File                  :  XSB/examples/simple_foreign.c
+  Author(s)             :  Kostis F. Sagonas
+  Last modification     :  December 8, 1994
+========================================================================*/
+
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <alloca.h>
+
+/*----- Make sure your C compiler finds the following header file ------*/
+
+#include "../emu/cinterf.h"
+
+/*----------------------------------------------------------------------*/
+
+void minus_one(void)
+{
+   int  i = ptoc_int(1);
+
+        ctop_int(2, i-1);
+}
+
+/*----------------------------------------------------------------------*/
+
+void my_sqrt(void)
+{
+   int i = ptoc_int(1);
+
+        ctop_float(2, (float) pow((double)i, 0.5));
+}
+
+/*----------------------------------------------------------------------*/
+
+void change_char(void)
+{
+   char *str_in;
+   int  pos;
+   char *c;
+   char *str_out;
+
+        str_in = (char *) ptoc_string(1);
+        str_out = (char *) alloca(strlen(str_in)+1);
+        strcpy(str_out, str_in);
+        pos = ptoc_int(2);
+        c = (char *) ptoc_string(3);
+        str_out[pos-1] = c[0];
+
+        /* Now that we have constructed a new symbol, we must ensure that it
+           appears in the symbol table.  This can be done using function
+           string_find() that searches the symbol table for the symbol, and
+           if the symbol does not appear there, it inserts it.  If we are
+           sure that the symbol already appeared in the symbol table there
+           is no need to use string_find().
+         */
+
+        ctop_string(4, (char *) string_find(str_out,1));  /* 1 = INSERT */
+}
+
+/*----------------------------------------------------------------------*/
+\end{verbatim}
+\end{small}
+
+Here is a sample session of using these files.
+\begin{small}
+\begin{verbatim}
+XSB Version 1.4.3 (94/12/8)
+[sequential, single word, optimal mode]
+| ?- [simple_foreign].
+[Compiling C file ./simple_foreign.c using gcc]
+[Compiling Foreign Module ./simple_foreign]
+[simple_foreign compiled, cpu time used: 0.0099993 seconds]
+[simple_foreign loaded]
+
+yes
+| ?- change_char('Kostis', 2, w, TempStr),
+     change_char(TempStr, 5, h, GrkName).
+
+TempStr = Kwstis
+GrkName = Kwsths;
+
+no
+| ?- minus_one(43, X).
+
+X = 42;
+
+no
+| ?- minus_one(43, 42).	           % No output unification is allowed
+Wrong arg in ctop_int 2a2 (Reg = 2)
+
+yes
+| ?- my_sqrt(4,X). 
+
+X = 2
+
+yes
+| ?- my_sqrt(23,X).
+
+X = 4.7958;
+
+no
+\end{verbatim}
+\end{small}
+
+There are some more sample programs in the {\tt examples} directory that
+exhibit most of the features of the foreign language interface, and
+will probably make clear many questions that users may have.
+

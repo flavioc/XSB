@@ -1,0 +1,186 @@
+/* File:      inprog.P
+** Author(s): Saumya Debray, Terrance Swift, Kostis Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+/*======================================================================*/
+/* inprog(+Sym, +Clause, -InClause, +NC)				*/
+/*	Transforms a flattened internal source program clause into	*/
+/*	the intermediate form (the top level structures are both	*/
+/*	clause(Args,Body,Prag)).					*/
+/*									*/
+/*	1. Pragma info is attached to clause, and, or, if_then_else,	*/
+/* 	   goal, inlinegoal, varocc structure. structure, constant, 	*/
+/*	   integer structure remain.					*/
+/*									*/
+/*	2. Pragma info:							*/
+/*		clause (CPrag):	crec(ARSize,LabelList)			*/
+/*		varocc (VPrag):	See end of file 'varproc.P'		*/
+/*======================================================================*/
+
+inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag), NC) :- 
+    CPrag = crec(ARSize,_),
+    VarTab = [head(VOList)|VarTab1],
+    ( Body = inlinegoal(true,0,_) -> 
+	inp_args(Args, NArgs, VOList, [], h, 1, VarList),
+	NBody = nil, VarTab1=[]
+    ; inp_args(Args, NArgs, VOList, [], h, 1, VarList),
+      inp_body(Body, NBody, VarTab1, [], 1, _ChunkOut, VarList)
+		% The id of the first chunk is 1, same as the head.
+    ),
+    varproc(VarList, VarTab, Sym, NC, PvarCount),
+    ( (need_alloc(Body) ; sym_type(Sym,tabled(_,_,_,_))) -> 
+	ARSize is PvarCount + 2		/* tls changed for XWAM */
+    ; ARSize = 0
+    ).
+
+
+/*======================================================================*/
+/* need_alloc(+Body)							*/
+/*	Succeeds if an "allocate" instruction is needed.		*/
+/*	I.e, when the body contains more than one chunk, or contains	*/
+/*	disjuctions.							*/
+/*	The procedure did not count the number correctly, when the	*/
+/*	goal is an inline, so another flag is tested in the following	*/
+/*	implementation.							*/
+/*======================================================================*/
+
+need_alloc(Body) :- need_alloc(Body, 0, N, InlineEnd), N + InlineEnd > 1.
+
+need_alloc(and(Goal,Goals), N0, N1, InlineEnd) :-
+    need_alloc(Goal, N0, N2, _),
+    ( N2 > 1, N1 = N2, InlineEnd = 0
+    ; N2 =< 1, need_alloc(Goals, N2, N1, InlineEnd)
+    ).
+need_alloc(or(_Goal,_Goals), _, 2, 0).
+need_alloc(if_then_else(_,Goal1,Goal2), N0, N1, 0) :-
+    need_alloc(Goal1, N0, N2, Inend1),
+    ( N2 + Inend1 > 1, N1 = 2
+    ; need_alloc(Goal2, N0, N3, Inend2),
+	( N3 + Inend2 > 1, N1 = 2
+	; N1 = 1
+	)
+    ).
+need_alloc(goal(_Sym,_Args), N0, N1, 0) :- N1 is N0 + 1.
+need_alloc(inlinegoal(_,_,_), N, N, 1).
+
+
+/*======================================================================*/
+/* inp_body(+Goal, -InGoal, VarTab-VarTab, 				*/
+/*	+CkId,+Chunkin, -Chunkout,-VarList)				*/
+/*	Pathin: The ordinal number of the current path (initially 1)	*/
+/*	Pathout: The last path number contained (since the branch may 	*/
+/*		fork, Pathout may be different from Pathin)		*/
+/*	CkId: the current chunk id					*/
+/*	Chunkin: The next available chunk id when entry			*/
+/*	Chunkout:  The next available chunk id when exit.		*/
+/*		Reminder: inline goals are not counted as chunks.	*/
+/*	VarList: a list of variable(ID, v(Type,Loc,Use/Save,UnUse))	*/
+/*======================================================================*/
+
+inp_body(and(Goal,Goals),and(NGoal,NGoals),VarTab,VarTabr,
+		Chunkin,Chunkout,VarList) :-
+    inp_body(Goal,NGoal,VarTab,VarTab1,Chunkin,Chunkmid,VarList),
+    inp_body(Goals,NGoals,VarTab1,VarTabr,Chunkmid,Chunkout,VarList).
+inp_body(or(Goal,Goals), or(NGoal,NGoals),
+	[branch(VarTab1,VarTab2)|VarTabr],VarTabr,_Ckin,Ckout,VarList) :-
+    gennum(Ckin1), gennum(Ckin2), gennum(Ckout),
+    inp_body(Goal,NGoal,VarTab1,[],Ckin1, _, VarList),
+    inp_body(Goals,NGoals,VarTab2,[],Ckin2,_,VarList).
+inp_body(if_then_else(Test,Goal1,Goal2),if_then_else(NTest,NGoal1,NGoal2),
+	VarTab,VarTabr,Ckin,Ckout,VarList) :-
+    VarTab = [ifthenelse(VarTab0, VarTab1, VarTab2)|VarTabr],
+    gennum(Ckout),
+    inp_body_test(Test,NTest,VarTab0, [],VarList,Ckin),
+    inp_body(Goal1,NGoal1,VarTab1,[],Ckin,_,VarList),
+    inp_body(Goal2,NGoal2,VarTab2,[],Ckin,_,VarList).
+inp_body(goal(Sym,Args),goal(Sym,NArgs),VarTab,VarTabr,Ckin,Ckout,VarList) :-
+    sym_name(Sym,Name,Arity),
+    gennum(Ckout),
+    VarTab=[goal(Ckin,Name,Arity,VOList)|VarTabr],
+    inp_args(Args,NArgs,VOList,[],b,1,VarList).
+inp_body(inlinegoal(Name,Arity,Args),inlinegoal(Name,Arity,NArgs),
+		VarTab,VarTabr,Chunkno,Chunkno,VarList) :-
+    VarTab=[inlinegoal(Chunkno,Name,Arity,VOList)|VarTabr],
+    inp_args(Args,NArgs,VOList,[],i,1,VarList).
+
+
+/*  	"inp_body_test" converts the test for an if-then-else		*/
+/* currently only inlinegoals can be in the test part, so always Ckin=Ckout */
+
+inp_body_test(and(T1,T2),and(NT1,NT2),VarTab,VarTabr,VarList,Ckin) :-
+	inp_body_test(T1,NT1,VarTab,VarTab1,VarList,Ckin),
+	inp_body_test(T2,NT2,VarTab1,VarTabr,VarList,Ckin).
+inp_body_test(or(T1,T2),or(NT1,NT2),VarTab,VarTabr,VarList,Ckin) :-
+	VarTab = [branch(VarTab1, VarTab2)|VarTabr],
+	inp_body_test(T1,NT1,VarTab1,[],VarList,Ckin),
+	inp_body_test(T2,NT2,VarTab2,[],VarList,Ckin).
+inp_body_test(inlinegoal(Name,Arity,Args),inlinegoal(Name,Arity,NArgs),
+	      [inlinegoal(Ckin,Name,Arity,VOList)|VarTabr],
+	      VarTabr,VarList,Ckin) :-
+	inp_args(Args,NArgs,VOList,[],i,1,VarList).
+
+
+/*======================================================================*/
+/* inp_args(+Args, -NArgs, #VarTab, +h/b/i, +Argno)			*/
+/*	Run inp_arg/7 through the list of Args				*/
+/*======================================================================*/
+
+inp_args([], [], VOList, VOList, _, _,_).
+inp_args([Arg|Args], [NArg|NArgs], VOList, VOListr, Head, Argno, VarList) :-
+	inp_arg(Arg, NArg, VOList, VOList1, Head, Argno, t, VarList),
+	Nextargno is Argno+1,
+	inp_args(Args, NArgs, VOList1, VOListr, Head, Nextargno, VarList).
+
+/*======================================================================*/
+/* inp_arg(+Arg, -NArg, #VarTab, +Pathno, +Chunkno, +Argno, +Level)	*/
+/*	+Level: t - top level arg; s - second level arg			*/
+/*======================================================================*/
+
+inp_arg(Arg, NArg, VOList, VOListr, Head, Argno, Level, VarList) :-
+	( Arg = varocc(Vid) ->
+		NArg = varocc(Vid,Prag),
+		vprag_context(Prag, Head),
+		vprag_level(Prag, Level),
+		vprag_argno(Prag, Argno),
+		VOList = [NArg|VOListr],
+		vprag_common(Prag, Common),
+		member1(variable(Vid, Common), VarList)
+	; Arg = structure(Sym,Args) ->
+		NArg = structure(Sym,NArgs),
+        	inp_subargs(Args, NArgs, VOList, VOListr,Head,Argno,VarList)
+	; NArg = Arg, VOListr = VOList      /* integer, real, constant */
+	).
+
+inp_subargs([],[],VOList,VOList,_,_,_).
+inp_subargs([Arg|Args],[NArg|NArgs],VOList,VOListr,Head,Argno,VarList) :-
+    inp_arg(Arg,NArg,VOList,VOList1,Head,Argno,s,VarList),
+    inp_subargs(Args,NArgs,VOList1,VOListr,Head,Argno,VarList).
+
+
+/*======================================================================*/
+/*======================================================================*/
+
+force_inprog_loaded.

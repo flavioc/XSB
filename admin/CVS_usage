@@ -1,0 +1,333 @@
+CVS for XSB Developers
+======================
+
+1. Overview of CVS
+------------------
+
+THIS IS NOT A SUBSTITUTE FOR READING THE MANUAL, but it should help you get
+started. To get more information on CVS as well as to download the sources,
+please visit: 
+       http://www.loria.fr/~molli/cvs-index.html
+       http://www.cyclic.com/
+
+CVS is based on a very different work model than RCS.
+
+You start by checking out the whole thing, and it transfers the whole
+enchelada to your machine. Then you work locally as you please.
+
+Periodically you should run 
+
+	     cvs update.
+
+This compares your versions with those in the main repository and updates
+your copy. If CVS determines that both your copy and the repository copy
+has changed, it would tell you which files fall in this category and it
+will merge the changes. What this means is that your files will look like:
+
+... common part ...
+... common part ...
+
+<<<<<<<
+your conflicting hunk
+--------
+repository's conflicting hunk
+>>>>>>>
+
+... common part ...
+... common part ...
+
+Obviously, your copy of XSB will become busted, and you will have to go
+through all these files and resolve the conflicts.
+
+A BETTER WAY: use CVS EXCLUSIVELY though Emacs or XEmacs. In this case,
+your copy won't be busted. Instead, emacs will open an Ediff session (emacs
+interface to diff) on your copy and repository's copy (for each conflicting
+file) and will walk you through the changes, allowing YOU to merge the
+changes in a very simple way.
+
+CVS update must be done also before you commit your changes to the common
+repository. Although this is not strictly necessary, I strongly suggest
+doing this, especially for remote access users.
+
+When you are ready to commit, run cvs commit
+
+The important features of CVS, which are relevant to us:
+========================================================
+
+a.  Checkout/update/commit can be done remotely. You don't need to login
+    and, in fact, you should not. This way it will be easy to keep
+    everybody's code in synch.
+
+b.  No need to lock the common XSB directory. You must have figured out why
+    from the previous description.
+
+c.  You can set a watch on the files you are interested in, and CVS will
+    notify you by email if somebody starts editing them (in their own
+    space! -- no one will be editing the common dir any more).
+    *** Unfortunately, I was unable to set this one properly.
+    *** any takers?
+
+d.  Automatic tracking of who changed what. This was possible with RCS as
+    well, but for some reason wasn't done.
+    You no longer have to update the last modification time, a thing that
+    people were neglected to do anyway. Now each time you commit, a record
+    of who did is and when will be as in a comment in the
+    corresponding file.
+
+e.  Easy to make consistent releases and even tag intermediate consistent
+    developer's versions.
+
+f.  CVS maintains the main development trunk, but you can start side
+    branches. Say, you are developing a supper-duper optimization, which
+    is not stable enough to commit to the main branck. Yet, you want to use
+    CVS to do version control for you, and you want others in the XSB Land
+    to be able to try it (they can do it without zapping their stable
+    copies of from the main trunk or their experimental development
+    branches!).
+    In short, you can start your own development branch and tell others
+    what it is. When you decide to commit uut branch to the main trunk, you
+    do this by merging your changes into the common version. (Again, ediff
+    is your best friend.)
+
+
+2. What you need
+----------------
+
+a. A version of CVS. Must be at least 1.8. Current version is 1.10.
+b. Secure shell (ssh) installed on your system.
+
+CVS runs under all Unices and Windows, and is free.
+If can be obtained from: http://www.loria.fr/~molli/cvs-index.html
+
+SSH also run on Unices and Windows, but is free only for Unix users.
+Unix versions can be downloaded from:
+	    http://www.ssh.fi/sshprotocols2/index.html 
+
+3. Getting down to work
+-----------------------
+
+Step 1:  Create and send me (kifer@cs.sunysb.edu) your SSH public key.
+	 *** Make sure you remember the password you used to create this pair
+	     of keys!
+         Make sure the environment variable CVS_RSH is set to point to ssh
+	 (something like /usr/local/bin/ssh or whereever your ssh lives).
+
+Step 2:  Decide where you want XSB to live. Let's assume you want it to
+	 live in ~/projects
+
+Step 3:  cd ~/projects and type:
+
+cvs -d :ext:sbprolog@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT checkout xsbdevel
+
+*** You will be asked for the password that you used to create your
+    public/private key pair.
+
+Then you will see a lot of messages about files being copied. When the dust
+settles, XSB will be checked out into the directory ~/projects/XSB.
+
+Explanations:
+    -d :ext:sbprolog@compserv2.cs.sunysb.edu:/home/u17/sbprolog/CVSROOT
+    specifies the repository to use. "ext" is one of the cvs access protocols,
+    sbprolog is the account you used to log into, and compserv2.cs.sunysb.edu
+    is one of the servers. (You can use compserv1, too.)
+
+    The "checkout" command does what it says, and "xsbdevel" is one of the
+    modules. 
+
+    What is a module:
+    ----------------
+
+    In CVS you normally check out entire parts a projects rather than
+    individual files (although the latter is also possible).  "xsbdevel" is
+    a module (defined by me), which contains everything an XSB developer
+    needs, except the testsuite. I made the testsuite into a separate
+    module, because of its size. To checkout the testsuite
+    type the following in the ~/projects/XSB directory:
+
+    cvs checkout xsbtests
+
+    This will create the tests directory in ~/projects/XSB and will put the
+    testsuite there.
+    
+    From now on everyone will have a private version of the testsuite, and
+    the tests should be done locally, using your own checked out version of
+    the suite and of XSB. This is designed to avoid the existing
+    bottleneck, which testsuite was, and will also help us track changes to
+    the suite itself.
+
+    Note that you didn't have to type -d and the repository address,
+    because once you are in the XSB directory, CVS knows which repository
+    the XSB belongs to.
+
+    Here is a complete list of modules defined as of this writing,
+    along with the directories they correspond to:
+
+    xsbemu	 -d emu        XSB/emu
+    xsbsyslib    -d syslib     XSB/syslib
+    xsblib       -d lib        XSB/lib
+    xsbcmplib    -d cmplib     XSB/cmplib
+    xsbpackages  -d packages   XSB/packages
+    
+    xsbdocs	 -d docs       XSB/docs
+    xsbtests     -d tests      XSB/tests
+    xsbexamples  -d examples   XSB/examples
+
+
+    # Everything but admin, tests, examples, docs.
+    xsbcore      -a !XSB/tests !XSB/admin !XSB/examples !XSB/docs XSB
+
+    # What developers need, sans XSB/tests, because of the size of XSB/tests
+    xsbdevel     -a xsbcore XSB/admin XSB/docs
+
+    # This is how we'll be making releases. (Need to decide on the docs)
+    xsbrelease   -a xsbcore xsbexamples
+
+NOTE: The modules xsbcore, xsbdevel, xsbrelease must be checked out from
+      the ~/projects directory, and you must specify the repository.
+      The other modules must be checked out when you are in ~/projects/XSB,
+      and there isno need to specify the repository!!!
+
+NOTE: modules provide a convenient way of grouping files and directories
+      for checkout, but for some reason, CVS developers didn't extend this
+      feature consistently to other commands. So, you might not be able to
+      use the above module names for committing and updating (see
+      below). But you will still be able to commit/update on the
+      directory-by-directory basis.
+
+
+Step 4: Working with the checked out version.
+--------------------------------------------
+
+    You can build, modify, etc. your checked out version as you please.
+    Periodically, people will be checking their changes into the main
+    repository. To update your copy, you can cd to ~/projects/XSB
+    and type:
+
+	cvs update 
+    or
+        cvs update <specific-dirs>
+
+    Both should be run in ~/projects/XSB and will update either
+    everything or the specific directories you indicated.
+    You don't need to specify the repository, because (if you do it in
+    ~/projects/XSB), CVS will figure out which repository should be used.
+
+    If there are conflicts between your changes and the version in the main
+    repository, you will be told so, as explained above.
+    
+
+Step 5: Committing your changes
+-------------------------------
+
+    Committing is the CVS' term for checking your work in. To commit a
+    module to the main repository, type (in ~/projects/XSB):
+
+      cvs commit 
+    or
+      cvs commit <specific dirs>
+
+
+    HOWEVER, if there are conflicts between your changes and the version in
+    the main repository, your update will be rejected. In this case, you
+    will have to cvs update your version and resolve all conflicts.
+    Then commit.
+
+    If there are no conflicts, CVS will open up an editor of your choice
+    (what you have in the EDITOR environment).
+    Here you must enter the commit message and exit the editor.
+
+    I suggest to use GNU format:
+
+    * file: (procedure, procedure, ...): what you did.
+    * file: (variable, variable,...): added/deleted.
+    etc.
+    This way, others will be able to find out what you did and avoid
+    introducing new bugs.
+    For some changes, the above format is not appropriate. Then use your
+    own judgment, but have your fellow developers in mind when writing the
+    comments! Never exit the editor without writing a comment. (Put it
+    differently, don't commit, if you have nothing interesting to say.)
+
+How to make all this less painful
+---------------------------------
+
+Once you created a checked out version, you can do most of the other things
+using a graphical interface.
+
+I strongly recommend the use of XEmacs, because it has an integrated CVS
+interface, called pcl-cvs.  Or you can use Emacs, but then you will have to
+download pcl-cvs http://www.cyclic.com/cvs/soft-pcl.html (but then you also
+need another package, elib:
+ftp://ftp.lysator.liu.se/pub/emacs/elib-1.0.tar.gz, and you get the
+picture).
+
+Pcl-cvs now also comes with the latest CVS distribution, and they took it
+off of the CVS site.
+
+FSF's version of Emacs comes with another version control package, VC,
+which can do certain things with CVS, but it is very limited, and I
+recommend against using it. (I use FSF emacs with pcl-cvs).
+
+There are also various stand alone graphical interfaces to CVS, which
+can be found at the CVS web site, but I never tried them.
+
+The use of X/Emacs with pcl-cvs is not only much more convenient---it is
+also much safer! This is due to their interface to the Ediff package, which
+lets you resolve conflicts between versions in a visually simple way.
+(Remember that in case of conflicts CVS tries to merge changes and you then
+have to go over all the files and resolve them. Pcl-cvs makes this job MUCH
+easier.)
+
+There is one more reason to use pcl-cvs: it allows the user to write commit
+log messages on a per-file basis. This could be very important for tracking
+changes (by typing "cvs log <files>") to specific files. In contrast, if
+you commit by typing "cvs commit" on command line, you will only be offered
+an opportunity to write *one* message, which will be added to every
+commited file. This would render change tracking much more difficult,
+because the output of "cvs log" will contain multiple copies of the same
+commit record, and it won't be split into parts that refer to individual
+files.
+
+Tagging XSB versions
+--------------------
+
+Sometimes, there is a need to check in consistent versions of XSB, because we
+might needed to check them out later. Public XSB releases are obviously in this
+category. But it might also be necessary to put tags on intermediate
+versions, in case things get messed up during subsequent changes.
+(For instance, when you change the loader or the compiler, it is very
+important to check out the right .O files with the right .P files.)
+
+So, after you committed a version that needs to be distinguished as a
+whole, you can use cvs tag:
+
+        cvs tag my-best-ever .
+
+Here "my-best-ever" is the tag that CVS will give to the current version in
+the main repository. Years later, you will be able to check out this
+version with
+        cvs checkout -r my-best-ever .
+
+Alternatively, you can tag specific directories:
+
+	cvs tag my-best-ever-dir <dir>
+
+NOTE: using tags can be your life-line, if you mess up your local copy!
+      You simply do a checkout with the tag you trust!
+        
+
+Branching out development versions
+----------------------------------
+
+When a major subproject starts and files won't be committed into the main
+repository trunk for a long time, it is still convenient to keep your
+development version under version control.
+
+In CVS, you can start a private branch, where you would keep your private
+commits. (Private is not the right word, because others will still have
+access to it.) You will still be able to do CVS update, which is handy,
+because you can keep abreast with the changes others are making to the main
+trunk. When you are done, CVS provides support for merging your branch into
+the main trunk.
+
+CVS manual gives many more details on that.

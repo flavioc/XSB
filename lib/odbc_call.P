@@ -1,0 +1,1947 @@
+/* File:      odbc_call.P
+** Author(s): Hasan Davulcu, Lily Dong
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+% --- for projction goal, we are to use bind variables for those constants. 
+
+get_mode([],[],[]) :- !.
+
+get_mode([HA|TA],[bind(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    HA = 'NULL',!,
+    writeln('WAR - DB: ''NULL'' as a bind variable.'),
+    get_mode(TA,TM,TR).
+
+get_mode([HA|TA],['NULL'(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    HA = 'NULL'(X),var(X),!,
+    get_mode(TA,TM,TR).
+
+get_mode([HA|TA],[bind(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    HA = 'NULL'(X),nonvar(X),!,
+    get_mode(TA,TM,TR).
+
+get_mode([HA|TA],[HR|TM],[HR|TR]) :-
+    var(HA),!,
+    get_mode(TA,TM,TR).
+
+get_mode([HA|TA],[bind(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    get_mode(TA,TM,TR).
+    
+% --- basically same as predicate get_mode.  the special case we take care of here is that if 
+% --- the SQL query is an insertion, then we don't distinguish 'NULL'(Var) or 'NULL'(constant)
+
+get_mode_ins([],[],[]) :- !.
+
+get_mode_ins([HA|TA],[bind(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    HA = 'NULL',!,
+    writeln('WAR - DB: ''NULL'' as a bind variable.'),
+    get_mode_ins(TA,TM,TR).
+
+get_mode_ins([HA|TA],['NULL'(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    HA = 'NULL'(X),!,
+    get_mode_ins(TA,TM,TR).
+
+get_mode_ins([HA|TA],[HR|TM],[HR|TR]) :-
+    var(HA),!,
+    get_mode_ins(TA,TM,TR).
+
+get_mode_ins([HA|TA],[bind(HR)|TM],[HR|TR]) :-
+    nonvar(HA),
+    get_mode_ins(TA,TM,TR).
+    
+% --------------------------------------------------------------------------------------
+%
+% This Prolog to SQL compiler may be distributed free of charge provided that it is
+% not used in commercial applications without written consent of the author, and
+% that the copyright notice remains unchanged.
+%
+%                    (C) Copyright by Christoph Draxler, Munich
+%                        Version 1.1 of Dec. 21st 1992
+%
+% I would like to keep in my hands the further development and distribution of the
+% compiler. This does not mean that I don't want other people to suggest or even
+% implement improvements - quite on the contrary: I greatly appreciate contributions 
+% and if they make sense to me I will incorporate them into the compiler (with due
+% credits given!). 
+% 
+% For further development of the compiler, address your requests, comments and
+% criticism to the author:
+%
+%                    Christoph Draxler
+%                    CIS Centre for Information and Speech Processing
+%                    Ludwig-Maximilians-University Munich
+%                    Wagmuellerstr. 23 
+%                    D 80538 Munich
+%                    Tel : ++49 / +89 / 211 06 64 (-60)
+%                    Fax : ++49 / +89 / 211 06 74
+%                    Mail: draxler@cis.uni-muenchen.de
+%
+%
+% A report describing the implementation is available upon request from the
+% author. 
+%
+%
+% RELEASE INFORMATION
+% ===================
+% Current version is v. 1.1 of Dec. 21st 1992.
+% Version 1.0 Sept. 3 1992
+% --------------------------------------------------------------------------------------
+
+% --- banchmarks of sample queries ---------
+% --- Meta Database for schema definition of SQL DB in Prolog --------------------------
+%
+% maps Prolog predicates to SQL table names, Prolog predicate argument positions to SQL
+% attributes, and Prolog operators to SQL operators. 
+%
+% ATTENTION! It is assumed that the arithmetic operators in Prolog and SQL are the same,
+% i.e. + is addition in Prolog and in SQL, etc. If this is not the case, then a mapping
+% function for arithmetic operators is necessary too.
+% ---------------------------------------------------------------------off -----------------
+
+% --- :::for testing::: -----------------------------------------------
+% --- relation(PrologFunctor,Arity,SQLTableName) ---------------------------------------
+/*
+relation(flight,6,'FLIGHT').
+relation(plane,2,'PLANE').
+relation(emp,5,'EMP').
+relation(dept,3,'DEPT').
+*/
+% --- attribute(PrologArgumentPosition,SQLTableName,SQLAttributeName) ------------------
+
+attribute(1,'FLIGHT','FLIGHT_NO',string).
+/*
+attribute(1,'nameid','ID',integer).
+attribute(2,'FLIGHT','DEPARTURE',string).
+attribute(3,'FLIGHT','DESTINATION',string).
+attribute(4,'FLIGHT','PLANE_TYPE',string).
+attribute(5,'FLIGHT','EMPNO',integer).
+attribute(6,'FLIGHT','LOC',string).
+
+attribute(1,flight,'FLIGHT_NO',string).
+attribute(2,flight,'DEPARTURE',string).
+attribute(3,flight,'DESTINATION',string).
+attribute(4,flight,'PLANE_TYPE',string).
+attribute(5,flight,'EMPNO',integer).
+attribute(6,flight,'LOC',string).
+
+attribute(1,'PLANE','TYPE',string).
+attribute(2,'PLANE','SEATS',integer).
+
+attribute(1,plane,'TYPE',string).
+attribute(2,plane,'SEATS',integer).
+
+attribute(1,'USER_TAB_COLUMNS','TABLE_NAME',string).
+attribute(2,'USER_TAB_COLUMNS','COLUMN_NAME', string).
+attribute(3,'USER_TAB_COLUMNS','DATA_TYPE',string).
+attribute(4,'USER_TAB_COLUMNS','DATA_LENGTH',integer).
+attribute(5,'USER_TAB_COLUMNS','DATA_PRECISION',string).
+attribute(6,'USER_TAB_COLUMNS','DATA_SCALE',integer).
+attribute(7,'USER_TAB_COLUMNS','N',string).
+attribute(8,'USER_TAB_COLUMNS','COLUMN_ID',string).
+attribute(9,'USER_TAB_COLUMNS','DEFAULT_LENGTH',integer).
+attribute(10,'USER_TAB_COLUMNS','DATA_DEFAULT',string).
+attribute(11,'USER_TAB_COLUMNS','NUM_DISTINCT',integer).
+attribute(12,'USER_TAB_COLUMNS','LOW_VALUE',string).
+attribute(13,'USER_TAB_COLUMNS','HIGH_VALUE',string).
+attribute(14,'USER_TAB_COLUMNS','DENSITY',string).
+
+attribute(1,'EMP','EMPNO',integer).
+attribute(2,'EMP','ENAME',string).
+attribute(3,'EMP','MGR',integer).
+attribute(4,'EMP','SAL',integer).
+attribute(5,'EMP','DEPTNO',integer).
+
+attribute(1,'DEPT','DEPTNO',integer).
+attribute(2,'DEPT','DNAME',string).
+attribute(3,'DEPT','LOC',string).
+
+attribute(1,emp,'EMPNO',integer).
+attribute(2,emp,'ENAME',string).
+attribute(3,emp,'MGR',integer).
+attribute(4,emp,'SAL',integer).
+attribute(5,emp,'DEPTNO',integer).
+
+attribute(1,dept,'DEPTNO',integer).
+attribute(2,dept,'DNAME',string).
+attribute(3,dept,'LOC',string).
+*/
+
+% --- auxiliary predicates (some of them may be built-in...) ----------------------------
+
+length([],0).
+length([H|T],Len) :-
+    length(T,Tlen),
+    Len is Tlen+1.
+
+append([],L,L).
+append([H1|L1],L2,[H1|L3]) :-
+    append(L1,L2,L3).
+
+member(X,[X|_]).
+member(X,[_|T]) :-
+    member(X,T).
+
+% --- add_to_dictionary(Key,RangeVar,Attribute,Quantifier,Dict,NewDict) ----------------
+
+add_to_dictionary(Key,RangeVar,Attribute,Type,Quantifier,Dict,Dict) :-
+    member(dict(Key,RangeVar,Attribute,Type,existential),Dict).
+
+add_to_dictionary(Key,RangeVar,Attribute,Type,Quantifier,Dict,NewDict) :-
+    % key has to be unique here.  that's a strange requirement
+    not member(dict(Key,_,_,_,_),Dict),  
+    NewDict = [dict(Key,RangeVar,Attribute,Type,Quantifier)|Dict].
+
+% --- lookup(Key,Dict,Value) -----------------------------------------------------------
+
+lookup(VarId,Dict,RangeVar,Attribute,Type) :-
+    member(dict(VarId,RangeVar,Attribute,Type,Quant),Dict),
+    (
+     Quant = all ->
+       true
+     ;
+       nonvar(RangeVar),
+       nonvar(Attribute)
+    ).
+   
+% --- :::can't see why we need this... ------------------------------------------------
+
+repeat_n(N) :-
+    integer(N),
+    N > 0,
+    repeat_1(N).
+
+repeat_1(1) :- !.
+
+repeat_1(_).
+
+repeat_1(N) :-
+    N1 is N-1,
+    repeat_1(N1).
+
+% --- set_difference(SetA,SetB,Difference) --------------------------------------------
+%
+% SetA - SetB = Difference
+%--------------------------------------------------------------------------------------
+
+set_difference([],_,[]).
+
+set_difference([Element|RestSet],Set,[Element|RestDifference]) :-
+    not member(Element,Set),
+    set_difference(RestSet,Set,RestDifference).
+
+set_difference([Element|RestSet],Set,RestDifference) :-
+    member(Element,Set),
+    set_difference(RestSet,Set,RestDifference).
+
+% --------------------------------------------------------------------------------------
+%
+% Output to screen predicates - rather crude at the moment
+%
+% --------------------------------------------------------------------------------------
+
+% --- printqueries(Code) ---------------------------------------------------------------
+
+printqueries([Query]) :-
+    nl,
+    print_query(Query),
+    write(';'),
+    nl,
+    nl.
+
+printqueries([Query|Queries]) :-
+    not (Queries = []),
+    nl,
+    print_query(Query),
+    nl,
+    write('UNION'),
+    nl,
+    printqueries(Queries).
+
+% --- print_query(QueryCode) -----------------------------------------------------------
+
+print_query(query([agg_query(Function,Select,From,Where,Group)],_,_)) :-
+    % --- ugly rule here: aggregate function only in SELECT Part of query ----
+    !, print_query(agg_query(Function,Select,From,Where,Group)).
+
+print_query(query(Select,From,Where)) :-
+    print_clause('SELECT',Select,','),
+    nl,
+    print_clause('FROM',From,','),
+    nl,
+    print_clause('WHERE',Where,'AND'),
+    nl.
+
+print_query(del_query(From,Where)) :-
+    print_clause('DELETE FROM',From,','),
+    nl,
+    print_clause('WHERE',Where,'AND'),
+    nl.
+
+print_query(ins_query(From,Where)):-
+    print_ins_clause('INSERT INTO',From,','),
+    nl,
+    print_ins_clause('VALUES (',Where,','),
+    nl,
+    write(')').
+
+print_query(agg_query(Function,Select,From,Where,Group)) :-
+    print_clause('SELECT',Function,Select,','),
+    nl,
+    print_clause('FROM',From,','),
+    nl,
+    print_clause('WHERE',Where,'AND'),
+    nl,
+    print_clause('GROUP BY',Group,',').
+
+print_query(negated_existential_subquery(Select,From,Where)) :-
+    write('NOT EXISTS'),
+    nl,
+    write('('),
+    print_clause('SELECT',Select,','),
+    nl,
+    print_clause('FROM',From,','),
+    nl,
+    print_clause('WHERE',Where,'AND'),
+    nl,
+    write(')').
+
+% --- print_clause(Keyword,ClauseCode,Separator) ---------------------------------------
+%
+% with 
+% Keyword    one of SELECT, FROM, WHERE, or GROUP BY, 
+% ClauseCode the code corresponding to the appropriate clause of an SQL query, and 
+% Separator  indicating the character(s) through which the items of a clause
+%            are separated from each other (',' or 'AND').
+% 
+% --------------------------------------------------------------------------------------
+
+print_clause(Keyword,[],_).
+
+print_clause(Keyword,[Column|RestColumns],Separator) :-
+    write(Keyword),
+    write(' '),
+    print_clause([Column|RestColumns],Separator).
+
+print_clause(Keyword,Function,[Column],Separator) :-
+    write(Keyword),
+    write(' '),
+    write(Function),
+    write('('),
+    print_clause([Column],Separator),       
+    write(')').
+
+% --- print_clause(ClauseCode,Separator) -----------------------------------------------
+
+print_clause([Item],_) :-
+    print_column(Item).
+
+print_clause([Item,NextItem|RestItems],Separator) :-
+    print_column(Item),
+    write(' '),
+    write(Separator),
+    write(' '),
+    print_clause([NextItem|RestItems],Separator).
+
+print_ins_clause(Keyword,[],_).
+
+print_ins_clause(Keyword,[Column|RestColumns],Separator) :-
+    write(Keyword),
+    write(' '),
+    print_ins_clause([Column|RestColumns],Separator).
+
+print_ins_clause([Item],_) :-
+    print_ins_column(Item).
+
+print_ins_clause([Item,NextItem|RestItems],Separator) :-
+    print_ins_column(Item),
+    write(' '),
+    write(Separator),
+    write(' '),
+    print_ins_clause([NextItem|RestItems],Separator).
+
+% --- print_column(ColumnCode) --------------------------------
+
+print_column('*') :-
+    write('*').
+
+print_column(att(RangeVar,Attribute)) :-
+    write(RangeVar),
+    write('.'),
+    write(Attribute).
+
+print_column(rel(Relation,RangeVar)) :-
+    write(Relation),
+    write(' '),
+    write(RangeVar).
+
+print_column('$const$'('NULL')) :-
+    !,
+    write('NULL').
+
+print_column('$const$'(String)) :-
+    get_type('$const$'(String),string),
+    write(''''),
+    write(String),
+    write('''').
+
+print_column('$const$'(Number)) :-
+    get_type('$const$'(Number),NumType),
+    type_compatible(NumType,number),
+    write(Number).
+
+print_column('$bind$'(BindId)) :-
+    write('?').
+
+print_column(comp(LeftArg,Operator,RightArg)) :-
+    print_column(LeftArg),
+    write(' '),
+    write(Operator),
+    write(' '),
+    print_column(RightArg).
+
+print_column(LeftExpr * RightExpr) :-
+    print_column(LeftExpr),
+    write('*'),
+    print_column(RightExpr).
+
+print_column(LeftExpr / RightExpr) :-
+    print_column(LeftExpr),
+    write('/'),
+    print_column(RightExpr).
+
+print_column(LeftExpr + RightExpr) :-
+    print_column(LeftExpr),
+    write('+'),
+    print_column(RightExpr).
+
+print_column(LeftExpr - RightExpr) :-
+    print_column(LeftExpr),
+    write('-'),
+    print_column(RightExpr).
+
+print_column(agg_query(Function,Select,From,Where,Group)) :-
+    nl,
+    write('('),
+    print_query(agg_query(Function,Select,From,Where,Group)),
+    write(')').
+
+print_column(negated_existential_subquery(Select,From,Where)) :-
+    print_query(negated_existential_subquery(Select,From,Where)).
+
+print_ins_column(rel(Relation,RangeVar)) :-
+    write(Relation).
+   
+print_ins_column(comp(LeftArg,Operator,RightArg)) :-
+    print_column(RightArg).
+
+% --- Mapping of Prolog operators to SQL operators -------------------------------------
+
+comparison(=,=).
+comparison(<,<).
+comparison(>,>).
+comparison(@<,<).
+comparison(@>,>).
+comparison('IS','IS').
+
+negated_comparison(=,'<>').
+negated_comparison(\=,=).
+negated_comparison(>,=<).
+negated_comparison(=<,>).
+negated_comparison(<,>=).
+negated_comparison(>=,<).
+
+% --- aggregate_function(PrologFunctor,SQLFunction) -----------------
+
+aggregate_functor(avg,'AVG').
+aggregate_functor(min,'MIN').
+aggregate_functor(max,'MAX').
+aggregate_functor(sum,'SUM').
+aggregate_functor(count,'COUNT').
+
+% --- type system --------------------------------------------------------------
+%
+% A rudimentary type system is provided for consistency checking during the
+% translation and for output formatting
+%
+% The basic types are string and number. number has the subtypes integer and
+% real.
+%
+% ------------------------------------------------------------------------------
+
+type_compatible(Type,Type) :-
+    is_type(Type).
+type_compatible(SubType,Type) :-
+    subtype(SubType,Type).
+type_compatible(Type,SubType) :-
+    subtype(SubType,Type).
+
+% --- subtype(SubType,SuperType) -----------------------------------------------
+%
+% Simple type hierarchy checking
+%
+% ------------------------------------------------------------------------------
+
+subtype(SubType,Type) :-
+    is_subtype(SubType,Type).
+
+subtype(SubType,Type) :-
+    is_subtype(SubType,InterType),
+    subtype(InterType,Type).
+
+% --- is_type(Type) ------------------------------------------------------------
+%
+% Type names
+%
+% ------------------------------------------------------------------------------
+
+is_type(number).
+is_type(integer).
+is_type(real).
+is_type(string).
+is_type(natural).
+
+% --- is_subtype(SubType,Type) --------------------------------------------
+%
+% Simple type hierarchy for numeric types
+%
+% ------------------------------------------------------------------------------
+
+is_subtype(integer,number).
+is_subtype(real,number).
+is_subtype(natural,integer).
+
+% --- get_type(Constant,Type) --------------------------------------------------
+%
+% Prolog implementation specific definition of type retrieval
+% sepia Prolog version given here
+%
+% ------------------------------------------------------------------------------
+
+get_type(Type,integer) :-
+    atomic(Type),
+    name(Type,[105,110,116,101,103,101,114|_]),!.
+
+get_type(Type,number) :-
+    atomic(Type),
+    name(Type,[110,117,109,98,101,114|_]),!.
+
+get_type(Type,string) :- 
+    atomic(Type).
+    /* not name(Type,[78,85,77,66,69,82|_]). */
+
+get_type('$const$'(Constant), integer) :- 
+    integer(Constant),!.
+
+get_type('$const$'(Constant), number) :-
+    number(Constant),!.
+
+get_type('$const$'(Constant),string) :-
+    atom(Constant).
+
+% --- gensym(Root,Symbol) ----------------------------------------------------
+%
+% SEPIA 3.2. version - other Prolog implementations provide gensym/2
+% and init_gensym/1 as built-ins. */
+%
+% (C) Christoph Draxler, Aug. 1992
+%
+% ---------------------------------------------------------------------------- 
+
+init_gensym(Root) :-
+    nonvar(Root),
+    conset(Root,0). 
+
+gensym(Root,Symbol) :-
+    nonvar(Root),
+    var(Symbol),
+    conget(Root,Counter),
+    NewCounter is Counter + 1,
+    name(NewCounter,L), atom_chars(Atom,L),
+    str_cat(Root,Atom,Symbol),
+    conset(Root,NewCounter).
+   
+% --- tokenize_term(Term,TokenizedTerm) -------------------------------------------------
+%
+% If Term is a 
+%
+%  - variable, then this variable is instantiated with a unique identifier 
+%    of the form '$var$'(VarId), and TokenizedTerm is bound to the same 
+%    term '$var$'(VarId). 
+%
+%  - constant, then TokenizedTerm is bound to '$const$'(Term).
+%
+%  - complex term, then the term is decomposed, its arguments are tokenized,
+%    and TokenizedTerm is bound to the result of the composition of the original
+%    functor and the tokenized arguments.
+%
+% --------------------------------------------------------------------------------------
+
+tokenize_term('$var$'(VarId),'$var$'(VarId)) :-
+   var(VarId),
+   % --- uninstantiated variable: instantiate it with unique identifier.
+   gensym(var,VarId).
+
+tokenize_term('$var$'(VarId),'$var$'(VarId)) :-
+   nonvar(VarId).
+
+tokenize_term(bind(BindId),'$bind$'(BindId)) :-
+   var(BindId),
+   gensym('BIND', BindId).
+
+tokenize_term('$bind$'(BindId),'$bind$'(BindId)) :-
+   nonvar(BindId).
+
+tokenize_term(bind(BindId),'$bind$'(BindId)) :-
+   nonvar(BindId).
+
+tokenize_term('NULL'(HR),'$const$'('NULL')) :-
+   HR = '$const$'('NULL').
+
+tokenize_term('$const$'('NULL'),'$const$'('NULL')).
+
+tokenize_term(A,'$bind$'(A)) :- 
+   atom(A),
+   name(A,[66,73,78,68|_]).
+
+tokenize_term(Constant,'$const$'(Constant)) :-
+   nonvar(Constant),
+   functor(Constant,_,0).
+
+tokenize_term(Term,TokenizedTerm) :-
+   nonvar(Term),
+   Term \= '$var$'(_),
+   Term \= '$const$'(_),
+   Term \= '$bind$'(_),
+   Term =.. [Functor|Arguments],
+   Arguments \= [],
+   tokenize_arguments(Arguments,TokenArguments),
+   TokenizedTerm =.. [Functor|TokenArguments].
+
+% --- tokenize_arguments(Arguments,TokenizedArguments) ---------------------------------
+%
+% organizes tokenization of arguments by traversing list and calling tokenize_term
+% for each element of the list.
+%
+% --------------------------------------------------------------------------------------
+
+tokenize_arguments([],[]).
+
+tokenize_arguments([FirstArg|RestArgs],[TokFirstArg|TokRestArgs]) :-
+   tokenize_term(FirstArg,TokFirstArg),
+   tokenize_arguments(RestArgs,TokRestArgs).
+
+% --------------------------------------------------------------------------------------
+%
+% Top level predicate translate/5 organizes the compilation and constructs a
+% Prolog term representation of the SQL query.
+%
+% --------------------------------------------------------------------------------------
+
+translate(ProjectionTerm,DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
+    % --- initialize variable identifiers and range variables for relations -----
+    init_gensym(var),
+    init_gensym(rel),
+    init_gensym('BIND'),
+    % --- tokenize projection term and database goal ----------------------------
+    tokenize_term(ProjectionTerm,TokenProjectionTerm), 
+    tokenize_term(DatabaseGoal,TokenDatabaseGoal),
+    % --- lexical analysis: reordering of goals for disjunctive normalized form -
+    disjunction(TokenDatabaseGoal,Disjunction),
+    % --- code generation ---------------------------------------------------------------
+    query_generation(Disjunction,TokenProjectionTerm,SQLQueryTerm),
+    ('$show_query$'(on) -> printqueries(SQLQueryTerm);true),
+    queries_atom(SQLQueryTerm,SQLAtom,Blist).
+    
+% --- linearize(Goal,ConjunctionList) --------------------------------------------------
+%
+% Returns a conjunction of base goals for a complex disjunctive or conjunctive goal
+% Yields several solutions upon backtracking for disjunctive goals
+%
+% --------------------------------------------------------------------------------------
+
+linearize(((A,B),C),(LinA,(LinB,LinC))) :-
+    % --- transform left-linear to right-linear conjunction (',' is associative) ----
+    linearize(A,LinA),
+    linearize(B,LinB),
+    linearize(C,LinC).
+
+linearize((A,B),(LinA,LinB)) :-
+    A \= (_,_),
+    % --- make sure A is not a conjunction ------------------------------------------
+    linearize(A,LinA),
+    linearize(B,LinB).
+
+linearize((A;B),LinA) :-
+    linearize(A,LinA).
+ 
+linearize((A;B),LinB) :-
+    linearize(B,LinB).
+
+linearize(not A, not LinA) :-
+    linearize(A,LinA).
+
+linearize(Var^A, Var^LinA) :-
+    linearize(A,LinA).
+
+linearize(A,A) :-
+    A \= (_,_),
+    A \= (_;_),
+    A \= _^_,
+    A \= not(_).
+
+% --- disjunction(Goal,Disjunction) -----------------------------------------------------
+%
+% turns original goal into disjunctive normalized form by computing all conjunctions
+% and collecting them in a list
+%
+% ---------------------------------------------------------------------------------------  
+
+disjunction(Goal,Disjunction) :-
+    findall(Conjunction,linearize(Goal,Conjunction),Disjunction).
+
+% --- query_generation(ListOfConjunctions, ProjectionTerm, ListOfQueries) --------------
+%
+% For each Conjunction translate the pair (ProjectionTerm,Conjunction) to an SQL query
+% and connect each such query through a UNION-operator to result in the ListOfQueries.
+%
+% A Conjunction consists of positive or negative subgoals. Each subgoal is translated
+% as follows:
+%  - the functor of a goal that is not a comparison operation is translated to
+%    a relation name with a range variable
+%  - negated goals are translated to NOT EXISTS-subqueries with * projection
+%  - comparison operations are translated to comparison operations in the WHERE-clause
+%  - aggregate function terms are translated to aggregate function (sub)queries
+%
+% The arguments of a goal are translated as follows:
+%  - variables of a goal are translated to qualified attributes
+%  - variables occurring in several goals are translated to equality comparisons
+%    (equi join) in the WHERE-clause
+%  - constant arguments are translated to equality comparisons in the WHERE-clause
+%
+% Special treatment of arithmetic functions:
+%  - arithmetic functions are identified through the Prolog is/2 operator
+%  - an arithmetic function may contain an unbound variable only on its left side
+%  - the right side of the is/2 operator may consist of
+%    * bound variables (bound through occurrence within a positive database goal, or
+%      bound through preceeding arithmetic function), or of
+%    * constants (numbers, i.e. integers, reals)
+%
+% The following RESTRICTION holds:
+%
+%  - the binding of variables follows Prolog: variables are bound by positive base goals
+%    and on the left side of the is/2 predicate - comparison operations, negated goals
+%    and right sides of the is/2 predicate do not return variable bindings and may even
+%    require all arguments to be bound for a safe evaluation.
+%
+% --------------------------------------------------------------------------------------
+
+query_generation([],_,[]).
+
+query_generation([Conjunction|Conjunctions],ProjectionTerm,[Query|Queries]) :-
+    projection_term_variables(ProjectionTerm,InitDict),
+    translate_conjunction(Conjunction,SQLFrom,SQLWhere,InitDict,Dict),
+    translate_projection(ProjectionTerm,Dict,SQLSelect),
+    Query = query(SQLSelect,SQLFrom,SQLWhere),
+    query_generation(Conjunctions,ProjectionTerm,Queries).
+   
+% --- projection_term_variables(ProjectionTerm,Dict) -----------------------------------
+%
+% extracts all variables from the ProjectionTerm and places them into the
+% Dict as a dict/4 term with their Identifier, a non instantiated RangeVar and
+% Attribute argument, and the keyword existential for the type of quantification
+%
+% --------------------------------------------------------------------------------------
+
+projection_list_vars([],[]).
+
+projection_list_vars(['$var$'(VarId)|RestArgs],[dict(VarId,_,_,_,existential)|RestVars]) :-
+    projection_list_vars(RestArgs,RestVars).
+
+projection_list_vars(['$const$'(_)|RestArgs],Vars) :-
+    projection_list_vars(RestArgs,Vars).
+
+projection_list_vars(['$bind$'(BindId)|RestArgs],[dict(BindId,_,_,_,existential)|RestVars]) :-
+    projection_list_vars(RestArgs,RestVars).
+
+projection_term_variables('$const(_)$',[]).
+
+projection_term_variables('$var$'(VarId),[dict(VarId,_,_,_,existential)]).
+
+projection_term_variables('$bind$'(BindId),[dict(BindId,_,_,_,existential)]).
+
+projection_term_variables(ProjectionTerm,ProjectionTermVariables) :-
+    ProjectionTerm =.. [Functor|ProjectionTermList],
+    not (Functor = '$var$'),
+    not (Functor = '$bind$'),
+    not (ProjectionTermList = []),
+    projection_list_vars(ProjectionTermList,ProjectionTermVariables).
+
+% --- translate_conjunction(Conjunction,SQLFrom,SQLWhere,Dict,NewDict) -----------------
+%
+% translates a conjunction of goals (represented as a list of goals preceeded by
+% existentially quantified variables) to FROM- and WHERE-clause of an SQL query.
+% A dictionary containing the associated SQL table and attribute names is built up
+% as an accumulator pair (arguments Dict and NewDict)
+%
+% --------------------------------------------------------------------------------------         
+
+translate_conjunction('$var$'(VarId)^Goal,SQLFrom,SQLWhere,Dict,NewDict) :-
+    % --- add info on existentially quantified variables to dictionary here -------------
+    add_to_dictionary(VarId,_,_,_,existential,Dict,TmpDict),
+    translate_conjunction(Goal,SQLFrom,SQLWhere,TmpDict,NewDict).
+
+translate_conjunction(Goal,SQLFrom,SQLWhere,Dict,NewDict) :-
+    Goal \= (_,_),
+    translate_goal(Goal,SQLFrom,SQLWhere,Dict,NewDict).
+
+translate_conjunction((Goal,Conjunction),SQLFrom,SQLWhere,Dict,NewDict) :-
+    translate_goal(Goal,FromBegin,WhereBegin,Dict,TmpDict),
+    translate_conjunction(Conjunction,FromRest,WhereRest,TmpDict,NewDict),
+    append(FromBegin,FromRest,SQLFrom),
+    append(WhereBegin,WhereRest,SQLWhere).
+   
+% --- translate_goal(Goal,SQLFrom,SQLWhere,Dict,NewDict) -------------------------------
+%
+% translates a
+%
+%   - positive database goal to the associated FROM- and WHERE clause of an SQL query
+%   - a negated goal to a negated existential subquery
+%   - an arithmetic goal to an arithmetic expression or an aggregate function query
+%   - a comparison goal to a comparison expression
+%   - a negated comparison goal to a comparison expression with the opposite comparison
+%     operator
+%
+% --------------------------------------------------------------------------------------
+
+translate_goal(SimpleGoal,[SQLFrom],SQLWhere,Dict,NewDict) :-
+    % --- positive goal binds variables - these bindings are held in the dictionary -----
+    functor(SimpleGoal,Functor,Arity),
+    translate_functor(Functor,Arity,SQLFrom),
+    SimpleGoal =.. [Functor|Arguments],
+    translate_arguments(Functor,Arguments,SQLFrom,1,SQLWhere,Dict,NewDict).
+
+translate_goal(Result is Expression,[],SQLWhere,Dict,NewDict) :-
+     translate_arithmetic_function(Result,Expression,SQLWhere,Dict,NewDict).
+ 
+translate_goal(not NegatedGoals,[],SQLNegatedSubquery,Dict,Dict) :-
+    % --- negated goals do not bind variables - hence Dict is returned unchanged--------
+    functor(NegatedGoals,Functor,_),
+    not comparison(Functor,_),
+    translate_conjunction(NegatedGoals,SQLFrom,SQLWhere,Dict,_),
+    SQLNegatedSubquery = [negated_existential_subquery([*],SQLFrom,SQLWhere)].
+
+translate_goal(not ComparisonGoal,[],SQLCompOp,Dict,Dict) :-
+    % --- comparison operations do not bind variables - Dict is returned unchanged ------
+    ComparisonGoal =.. [ComparisonOperator,LeftArg,RightArg],
+    comparison(ComparisonOperator,SQLOperator),
+    negated_comparison(SQLOperator,SQLNegOperator),
+    translate_comparison(LeftArg,RightArg,SQLNegOperator,Dict,SQLCompOp).
+
+translate_goal(ComparisonGoal,[],SQLCompOp,Dict,Dict) :-
+    % --- comparison operations do not bind variables - Dict is returned unchanged ------
+    ComparisonGoal =.. [ComparisonOperator,LeftArg,RightArg],
+    comparison(ComparisonOperator,SQLOperator),
+    translate_comparison(LeftArg,RightArg,SQLOperator,Dict,SQLCompOp).
+      
+% --- translate_functor(Functor,QualifiedTableName) ------------------------------------
+%
+% translate_functor searches for the matching relation table name for
+% a given functor and creates a unique range variable to result in
+% a unique qualified relation table name.
+%
+% --------------------------------------------------------------------------------------
+
+translate_functor(Functor,Arity,rel(TableName,RangeVariable)) :-
+    relation(Functor,Arity,TableName),
+    gensym(rel,RangeVariable).
+
+% --- translate_arguments(Arguments,RelTable,ArgPos,Conditions,Dict) -------------------
+%
+% translate_arguments organizes the translation of term arguments. One
+% term argument after the other is taken from the list of term arguments
+% until the list is exhausted.
+%
+% --------------------------------------------------------------------------------------
+
+translate_arguments(_,[],_,_,[],Dict,Dict).
+
+translate_arguments(Functor,[Arg|Args],SQLTable,Position,SQLWhere,Dict,NewDict) :-
+    translate_argument(Functor,Arg,SQLTable,Position,Where,Dict,TmpDict),
+    NewPosition is Position + 1,
+    translate_arguments(Functor,Args,SQLTable,NewPosition,RestWhere,TmpDict,NewDict),
+    append(Where,RestWhere,SQLWhere).
+
+% --- translate_argument(Argument,RelTable,Position,Condition,Dict) --------------------
+%
+% The first occurrence of a variable leads to its associated SQL attribute information
+% to be recorded in the Dict. Any further occurrence creates an equi-join condition
+% between the current attribute and the previously recorded attribute.
+% Constant arguments always translate to equality comparisons between an attribute and
+% the constant value.
+%
+% --------------------------------------------------------------------------------------
+
+translate_argument(Functor,'$bind$'(BindId),rel(SQLTable,RangeVar),Position,Bind_Cond,Dict,NewDict) :-
+    attribute(Position,Functor,Attribute,Type),
+    add_to_dictionary(BindId,RangeVar,Attribute,Type,all,Dict,NewDict),
+    Bind_Cond = [comp(att(RangeVar,Attribute),=,'$bind$'(BindId))].
+
+translate_argument(Functor,'$bind$'(BindId),rel(SQLTable,RangeVar),Position,AttComparison,Dict,Dict) :-
+    % --- Variable occurred previously - retrieve first occurrence data from dictionary -
+    lookup(BindId,Dict,PrevRangeVar,PrevAtt,PrevType),
+    attribute(Position,Functor,Attribute,Type),
+    type_compatible(PrevType,Type),
+    AttComparison = [comp(att(RangeVar,Attribute),=,att(PrevRangeVar,PrevAtt))].
+
+translate_argument(Functor,'$var$'(VarId),rel(SQLTable,RangeVar),Position,[],Dict,NewDict) :-
+    attribute(Position,Functor,Attribute,Type),
+    add_to_dictionary(VarId,RangeVar,Attribute,Type,all,Dict,NewDict).
+
+translate_argument(Functor,'$var$'(VarId),rel(SQLTable,RangeVar),Position,AttComparison,Dict,Dict) :-
+    % --- Variable occurred previously - retrieve first occurrence data from dictionary -
+    lookup(VarId,Dict,PrevRangeVar,PrevAtt,PrevType),
+    attribute(Position,Functor,Attribute,Type),
+    type_compatible(PrevType,Type),
+    AttComparison = [comp(att(RangeVar,Attribute),=,att(PrevRangeVar,PrevAtt))].
+
+translate_argument(Functor,'$const$'('NULL'),rel(SQLTable,RangeVar),Position,ConstComparison,Dict,Dict) :- 
+    !,
+    % --- Equality comparison of constant value and attribute in table ------------------
+    attribute(Position,Functor,Attribute,Type),
+    get_type('$const$'('NULL'),ConstType),  % do we need it here?
+    ConstComparison = [comp(att(RangeVar,Attribute),'IS','$const$'('NULL'))].
+
+translate_argument(Functor,'$const$'(Constant),rel(SQLTable,RangeVar),Position,ConstComparison,Dict,Dict) :-
+    % --- Equality comparison of constant value and attribute in table ------------------
+    attribute(Position,Functor,Attribute,Type),
+    get_type('$const$'(Constant),ConstType),
+    type_compatible(ConstType,Type),
+    ConstComparison = [comp(att(RangeVar,Attribute),=,'$const$'(Constant))].
+   
+% --- translate_arithmetic_function(Result,Expression,SQLWhere,Dict,NewDict) -----------
+%
+% Arithmetic functions (left side of is/2 operator is bound to value of expression on
+% right side) may be called with either
+%
+% - Result unbound: then Result is bound to the value of the evaluation of Expression
+% - Result bound: then an equality condition is returned between the value of Result
+%   and the value of the evaluation of Expression.
+%
+% Only the equality test shows up in the WHERE clause of an SQLquery.
+%
+% --------------------------------------------------------------------------------------
+
+translate_arithmetic_function('$var$'(VarId),Expression,[],Dict,NewDict) :-
+    % assigment of value of arithmetic expression to variable - does not
+    % show up in WHERE-part, but expression corresponding to
+    % variable must be stored in Dict for projection translation
+    evaluable_expression(Expression,Dict,ArithExpression,Type),
+    add_to_dictionary(VarId,is,ArithExpression,Type,all,Dict,NewDict).
+
+translate_arithmetic_function('$var$'(VarId),Expression,ArithComparison,Dict,Dict) :-
+    % --- test whether left side evaluates to right side: return equality comparison ----
+    % Left side consists of qualified attribute, i.e. range variable must not be
+    % arithmetic operator is/2 
+    lookup(VarId,Dict,PrevRangeVar,PrevAtt,PrevType),
+    not (PrevRangeVar = is),
+    % test whether type of attribute is numeric - if not, there's no sense in 
+    % continuing the translation
+    type_compatible(PrevType,number),
+    evaluable_expression(Expression,Dict,ArithExpression,ExprType),
+    type_compatible(ExprType,number),
+    ArithComparison = [comp(att(PrevRangeVar,PrevAtt),'=',ArithExpression)].
+
+translate_arithmetic_function('$var$'(VarId),Expression,ArithComparison,Dict,Dict) :-
+    % --- test whether left side evaluates to right side: return equality comparison ----
+    % Left side consists of arithmetic expression, i.e. VarId is stored in Dict as 
+    % belonging to arithmetic expression which is expressed as RangeVar-argument 
+    % of lookup returning is/2. Type information is implicit through the is/2 functor
+    lookup(VarId,Dict,is,LeftExpr,Type),
+    type_compatible(Type,number),
+    evaluable_expression(Expression,Dict,RightExpr,ExprType),
+    type_compatible(ExprType,number),
+    ArithComparison = [comp(LeftExpr,'=',RightExpr)].
+
+translate_arithmetic_function('$const$'(Constant),Expression,ArithComparison,Dict,Dict) :-
+    % --- is/2 used to test whether left side evaluates to right side -------------------
+    get_type('$const$'(Constant),ConstantType),
+    type_compatible(ConstantType,number),
+    evaluable_expression(Expression,Dict,ArithExpression,ExprType),
+    type_compatible(ExprType,number),
+    ArithComparison = [comp('$const$'(Constant),'=',ArithExpression)].
+    
+translate_arithmetic_function('$bind$'(BindId),Expression,ArithComparison,Dict,Dict) :-
+    % --- is/2 used to test whether left side evaluates to right side -------------------
+    lookup(BindId,Dict,_,_,Type),
+    type_compatible(Type,number),
+    evaluable_expression(Expression,Dict,ArithExpression,ExprType),
+    type_compatible(ExprType,number),
+    ArithComparison = [comp('$bind$'(BindId),'=',ArithExpression)].
+
+% --- evaluable_expression(ExpressionTerm,Dictionary,Expression,Type) --------------------
+% evaluable_expression constructs SQL arithmetic expressions with qualified attribute names
+% from the Prolog arithmetic expression term and the information stored in the dictionary.
+% The type of an evaluable function is returned in the argument Type.
+% The dictionary is not changed because it is used for lookup only. 
+% ---------------------------------------------------------------------------------------- 
+
+evaluable_expression(AggregateFunctionTerm,Dictionary,AggregateFunctionExpression,number) :-
+    aggregate_function(AggregateFunctionTerm,Dictionary,AggregateFunctionExpression).
+
+evaluable_expression(LeftExp + RightExp,Dictionary,LeftAr + RightAr,number) :-
+    evaluable_expression(LeftExp,Dictionary,LeftAr,number),
+    evaluable_expression(RightExp,Dictionary,RightAr,number).
+
+evaluable_expression(LeftExp - RightExp,Dictionary,LeftAr - RightAr,number) :-
+    evaluable_expression(LeftExp,Dictionary,LeftAr,number),
+    evaluable_expression(RightExp,Dictionary,RightAr,number).
+
+evaluable_expression(LeftExp * RightExp,Dictionary,LeftAr * RightAr,number) :-
+    evaluable_expression(LeftExp,Dictionary,LeftAr,number),
+    evaluable_expression(RightExp,Dictionary,RightAr,number).
+
+evaluable_expression(LeftExp / RightExp,Dictionary, LeftAr / RightAr,number) :-
+    evaluable_expression(LeftExp,Dictionary,LeftAr,number),
+    evaluable_expression(RightExp,Dictionary,RightAr,number).
+
+evaluable_expression('$var$'(VarId),Dictionary,att(RangeVar,Attribute),Type) :-
+    lookup(VarId,Dictionary,RangeVar,Attribute,Type),
+    RangeVar \= is.
+
+evaluable_expression('$var$'(VarId),Dictionary,ArithmeticExpression,Type) :-
+    lookup(VarId,Dictionary,is,ArithmeticExpression,Type).
+
+evaluable_expression('$const$'(Const),_,'$const$'(Const),ConstType) :-
+    get_type('$const$'(Const),ConstType).
+
+evaluable_expression('$bind$'(BindId),_,'$bind$'(BindId),number).
+
+% --- translate_comparison(LeftArg,RightArg,CompOp,Dict,SQLComparison) ---------
+% translates the left and right arguments of a comparison term into the
+% appropriate comparison operation in SQL. The result type of each 
+% argument expression is checked for type compatibility
+% ------------------------------------------------------------------------------
+
+translate_comparison(LeftArg,RightArg,CompOp,Dict,Comparison) :-
+   evaluable_expression(LeftArg,Dict,LeftTerm,LeftArgType),
+   evaluable_expression(RightArg,Dict,RightTerm,RightArgType),
+   type_compatible(LeftArgType,RightArgType),
+   Comparison = [comp(LeftTerm,CompOp,RightTerm)].
+ 
+% --- aggregate_function(AggregateFunctionTerm,Dict,AggregateFunctionQuery) ------------
+%
+% aggregate_function discerns five Prolog aggregate function terms: count, avg, min,
+% max, and sum. Each such term is has two arguments: a variable indicating the attribute
+% over which the function is to be computed, and a goal argument which must contain in 
+% at least one argument position the variable:
+%
+%    e.g.  avg(Seats,plane(Type,Seats))
+%
+% These aggregate function terms correspond to the SQL built-in aggregate functions.
+% 
+% RESTRICTION: AggregateGoal may only be conjunction of (positive or negative) base 
+% goals
+% 
+% --------------------------------------------------------------------------------------
+
+aggregate_function(AggregateFunctionTerm,Dict,AggregateFunctionExpression) :-
+    AggregateFunctionTerm =.. [AggFunctor,AggVar,AggGoal],
+    aggregate_functor(AggFunctor,SQLFunction),
+    conjunction(AggGoal,AggConjunction),
+    aggregate_query_generation(SQLFunction,AggVar,AggConjunction,Dict,AggregateFunctionExpression).
+
+conjunction(Goal,Conjunction) :-
+    disjunction(Goal,[Conjunction]).
+
+% --- aggregate_query_generation(Function,FunctionVariable,AggGoal,Dict,AggregateQuery) 
+%
+% compiles the function variable (representing the attribute over which the aggregate 
+% function is to be computed) and the aggregate goal (representing the selection and 
+% join conditions for the computation of the aggregate function) to an SQL aggregate 
+% function subquery.
+% 
+% --------------------------------------------------------------------------------------
+
+aggregate_query_generation(count,'$const$'('*'),AggGoal,Dict,AggregateQuery) :-
+    translate_conjunction(AggGoal,SQLFrom,SQLWhere,Dict,TmpDict),
+    % ATTENTION! It is assumed that in count(*) aggregate query terms there cannot be
+    % free variables because '*' stands for "all arguments"
+    AggregateQuery = agg_query(Function,(count,['$const$'(*)]),SQLFrom,SQLWhere,[]).
+
+aggregate_query_generation(Function,FunctionVariable,AggGoal,Dict,AggregateQuery) :-
+    translate_conjunction(AggGoal,SQLFrom,SQLWhere,Dict,TmpDict),
+    % --- only variables occurring in the aggregate goal are relevant to the translation
+    % of the function variable and the free variables in the goal.
+    % Thus subtract from TmpDict all entries of Dict
+    set_difference(TmpDict,Dict,AggDict),
+    translate_projection(FunctionVariable,AggDict,SQLSelect),
+    translate_grouping(FunctionVariable,AggDict,SQLGroup),
+    AggregateQuery = agg_query(Function,SQLSelect,SQLFrom,SQLWhere,SQLGroup).
+
+% --- translate_grouping(FunctionVariable,Dict,SQLGroup) -------------------------------
+%
+% finds the free variables in the aggregate function term and collects their
+% corresponding SQL qualified attributes in the SQLGroup list.
+% 
+% --------------------------------------------------------------------------------------
+
+translate_grouping(FunctionVariable,Dict,SQLGroup) :-
+    free_vars(FunctionVariable,Dict,FreeVariables),
+    translate_free_vars(FreeVariables,SQLGroup).
+
+% --- free_vars(FunctionVariable,Dict,FreeVarList) -------------------------------------
+%
+% A Variable is free if it neither occurs as the FunctionVariable, nor is stored as
+% existentially quantified (through ^/2 in the original goal) in the dictionary
+% 
+% FreeVars contains for each variable the relevant attribute and relation information 
+% contained in the dictionary
+% 
+% --------------------------------------------------------------------------------------
+
+free_vars(FunctionVariable,Dict,FreeVarList) :-
+   projection_term_variables(FunctionVariable,FunctionVariableList),
+   findall((Var,Table,Attribute),
+       (member(dict(Var,Table,Attribute,Type,all),Dict),
+       not member(dict(Var,_,_,_,_),FunctionVariableList)),
+       FreeVarList).
+       
+% --- ::: can't see why we need this -----------------
+% --- function_variable_list(FunctionVariable,FunctionVariableList) --------------------
+%
+% extracts the list of variables which occur in the function variable term
+%
+% RESTRICTION: FunctionVariable may only contain one single variable.
+% 
+% --------------------------------------------------------------------------------------
+
+function_variable_list('$var$'(VarId),[VarId]).
+
+% --- translate_free_vars(FreeVars,SQLGroup) -------------------------------------------
+%
+% translates dictionary information on free variables to SQLGroup of aggregate
+% function query
+% 
+% --------------------------------------------------------------------------------------
+
+translate_free_vars([],[]).
+translate_free_vars([(VarId,Table,Attribute)|FreeVars],[att(Table,Attribute)|SQLGroups]) :-
+    translate_free_vars(FreeVars,SQLGroups).
+
+% --------------------------------------------------------------------------------------
+% RESTRICTION! ProjectionTerm underlies the following restrictions:
+%
+%  - ProjectionTerm must have a functor other than the built-in
+%    operators, i.e. ',',';', etc. are not allowed
+%
+%  - only variables and constants are allowed as arguments,
+%    i.e. no structured terms
+%
+% --------------------------------------------------------------------------------------
+
+translate_projection('$var$'(VarId),Dict,SelectList) :-
+    projection_arguments(['$var$'(VarId)],SelectList,Dict).
+
+translate_projection('$bind$'(BindId),Dict,SelectList) :-
+    projection_arguments(['$bind$'(BindId)],SelectList,Dict).
+
+translate_projection('$const$'(Const),_,['$const$'(Const)]).
+
+translate_projection(ProjectionTerm,Dict,SelectList) :-
+    ProjectionTerm =.. [Functor|Arguments],
+    not (Functor = '$var$'),
+    not (Functor = '$const$'),
+    not (Functor = '$bind$'),
+    not (Arguments = []),
+    projection_arguments(Arguments,SelectList,Dict).
+
+projection_arguments([],[],_).
+
+projection_arguments([Arg|RestArgs],[Att|RestAtts],Dict) :-
+    retrieve_argument(Arg,Att,Dict),
+    projection_arguments(RestArgs,RestAtts,Dict).
+
+% - retrieve_argument(Argument,SQLAttribute,Dictionary) --------------------------------
+%
+% retrieves the mapping of an argument to the appropriate SQL construct, i.e.
+%
+%  - qualified attribute names for variables in base goals
+%  - arithmetic expressions for variables in arithmetic goals
+%  - constant values for constants
+% 
+% --------------------------------------------------------------------------------------
+
+retrieve_argument('$var$'(VarId),Attribute,Dict) :-
+    lookup(VarId,Dict,TableName,AttName,_),
+    (
+     TableName = is ->
+       Attribute = AttName
+     ;
+       Attribute = att(TableName,AttName)
+    ).
+
+retrieve_argument('$bind$'(BindId),Attribute,Dict) :-
+    lookup(BindId,Dict,TableName,AttName,_),!,
+    Attribute = att(TableName,AttName).
+
+retrieve_argument('$bind$'(BindId),'$bind$'(BindId),Dict) :-
+    lookup(BindId,Dict,TableName,AttName,_),
+    var(TableName), var(AttName).
+   
+retrieve_argument('$const$'(Constant),'$const$'(Constant),_).
+
+% --- queries_atom(Queries,QueryAtom, Blist) -------------------------------------------------
+%
+% queries_atom(Queries,QueryAtom,Blist) returns in its second argument
+% the SQL query as a Prolog atom. For efficiency reasons, a list
+% of ASCII codes is ceated as a difference list, and it is then 
+% transformed to an atom by name/2.  It also create a list of bind variables
+% occurring in the QueryAtom so that we can bind them to the place holders '?'
+% at a leter time.
+% --------------------------------------------------------------------------------------------
+
+queries_atom(Queries,QueryAtom,Blist) :-
+    queries_atom(Queries,QueryList,[],Blist,[]),
+    name(QueryAtom,QueryList).
+
+queries_atom([Query],QueryList,Diff,Blist,Olist) :-
+    query_atom(Query,QueryList,Diff,Blist,Olist).
+
+queries_atom([Query|Queries],QueryList,Diff,Blist,Olist) :-
+    Queries \= [],
+    query_atom(Query,QueryList,X1,Blist,Tlist),
+    column_atom(' UNION ',X1,X2,_,_),
+    queries_atom(Queries,X2,Diff,Tlist,Olist).
+
+% --- query_atom(QueryCode) --------------------------------
+
+query_atom(query([agg_query(Function,Select,From,Where,Group)],_,_),QueryList,Diff,Blist,Olist) :-
+    % --- ugly rule here: aggregate function only in SELECT Part of query ----
+    !, query_atom(agg_query(Function,Select,From,Where,Group),QueryList,Diff,Blist,Olist).
+
+query_atom(query(Select,From,Where),QueryList,Diff,Blist,Olist) :-
+    clause_atom('SELECT',Select,',',QueryList,X1,Blist,Tl2),
+    clause_atom('FROM',From,',',X1,X2,Tl2,Tl1),
+    clause_atom('WHERE',Where,'AND',X2,Diff,Tl1,Olist).
+
+query_atom(del_query(From,Where),QueryList,Diff,Blist,Olist) :-
+    clause_atom('DELETE FROM',From,',',QueryList,X1,Blist,Tlist),
+    clause_atom('WHERE',Where,'AND',X1,Diff,Tlist,Olist).
+
+query_atom(ins_query(From,Where),QueryList,Diff,Blist,Olist) :-
+    clause_ins_atom('INSERT INTO',From,',',QueryList,X1,Blist,Tlist),
+    clause_ins_atom('VALUES (',Where,',',X1,X2,Tlist,Olist),
+    column_atom(')',X2,Diff,_,_).
+
+query_atom(agg_query(Function,Select,From,Where,Group),QueryList,Diff,Blist,Olist) :-
+    clause_atom('SELECT',Function,Select,',',QueryList,X1,Blist,Tl3),
+    clause_atom('FROM',From,',',X1,X2,Tl3,Tl2),
+    clause_atom('WHERE',Where,'AND',X2,X3,Tl2,Tl1),
+    clause_atom('GROUP BY',Group,',',X3,Diff,Tl1,Olist).
+
+query_atom(negated_existential_subquery(Select,From,Where),QueryList,Diff,Blist,Olist) :-
+    column_atom('NOT EXISTS(',QueryList,X1,_,_),   
+    clause_atom('SELECT',Select,',',X1,X2,Blist,Tl2),
+    clause_atom('FROM',From,',',X2,X3,Tl2,Tl1),
+    clause_atom('WHERE',Where,'AND',X3,X4,Tl1,Olist),
+    column_atom(')',X4,Diff,_,_).
+
+% --- clause_atom(Keyword,ClauseCode,Junctor,CurrAtom,QueryAtom,Blist,Olist) -------------
+%
+% with 
+% Keyword    one of SELECT, FROM, WHERE, or GROUP BY, 
+% ClauseCode the code corresponding to the appropriate clause of an SQL query, and 
+% Junctor    indicating the character(s) through which the items of a clause
+%            are separated from each other (',' or 'AND').
+% Olist      list of bind variables in QueryAtom
+% Blist      new list of bind variables in CurrAtom
+% ---------------------------------------------------------------------------------
+
+clause_atom(Keyword,[],_,QueryList,QueryList,Blist,Blist).
+
+clause_atom(Keyword,[Column|RestColumns],Junctor,QueryList,Diff,Blist,Olist) :-
+    column_atom(Keyword,QueryList,X1,Blist,Tlist),
+    column_atom(' ',X1,X2,_,_),
+    clause_atom([Column|RestColumns],Junctor,X2,X3,Tlist,Olist),
+    column_atom(' ',X3,Diff,_,_).
+
+clause_atom(Keyword,Function,[Column],Junctor,QueryList,Diff,Blist,Olist) :-
+    column_atom(Keyword,QueryList,X1,Blist,Tl2),
+    column_atom(' ',X1,X2,_,_),
+    column_atom(Function,X2,X3,Tl2,Tl1),
+    column_atom('(',X3,X4,_,_),
+    clause_atom([Column],Junctor,X4,X5,Tl1,Olist),
+    column_atom(') ',X5,Diff,_,_).
+
+clause_atom([Item],_,QueryList,Diff,Blist,Olist) :-
+    column_atom(Item,QueryList,Diff,Blist,Olist).
+
+clause_atom([Item,NextItem|RestItems],Junctor,QueryList,Diff,Blist,Olist) :-
+    clause_atom([NextItem|RestItems],Junctor,X4,Diff,Tl1,Olist),
+    column_atom(' ',X3,X4,_,_),
+    column_atom(Junctor,X2,X3,Tl2,Tl1),
+    column_atom(' ',X1,X2,_,_),
+    column_atom(Item,QueryList,X1,Blist,Tl2).
+
+clause_ins_atom(Keyword,[],_,QueryList,QueryList,Blist,Blist).
+
+clause_ins_atom(Keyword,[Column|RestColumns],Junctor,QueryList,Diff,Blist,Olist) :-
+    column_atom(Keyword,QueryList,X1,Blist,Tlist),
+    column_atom(' ',X1,X2,_,_),
+    clause_ins_atom([Column|RestColumns],Junctor,X2,X3,Tlist,Olist),
+    column_atom(' ',X3,Diff,_,_).
+
+clause_ins_atom([Item],_,QueryList,Diff,Blist,Olist) :-
+    column_ins_atom(Item,QueryList,Diff,Blist,Olist).
+
+clause_ins_atom([Item,NextItem|RestItems],Junctor,QueryList,Diff,Blist,Olist) :-
+    column_ins_atom(Item,QueryList,X1,Blist,Tl2),
+    column_atom(' ',X1,X2,_,_),
+    column_atom(Junctor,X2,X3,Tl2,Tl1),
+    column_atom(' ',X3,X4,_,_),
+    clause_ins_atom([NextItem|RestItems],Junctor,X4,Diff,Tl1,Olist).
+
+column_atom(att(RangeVar,Attribute),QueryList,Diff,Blist,Olist) :-
+    column_atom(RangeVar,QueryList,X1,Blist,Olist),
+    column_atom('.',X1,X2,_,_),
+    column_atom(Attribute,X2,Diff,Tlist,Olist).
+
+column_atom(rel(Relation,RangeVar),QueryList,Diff,Blist,Olist) :-
+    column_atom(Relation,QueryList,X1,Blist,Tlist), 
+    column_atom(' ',X1,X2,_,_),
+    column_atom(RangeVar,X2,Diff,Tlist,Olist).
+
+column_atom('$const$'('NULL'),QueryList,Diff,Blist,Olist) :- 
+    get_type('$const$'('NULL'),string),!,
+    column_atom('NULL',QueryList,Diff,Blist,Olist).
+
+column_atom('$const$'(String),QueryList,Diff,Blist,Olist) :-
+    get_type('$const$'(String),string),
+    column_atom('''',QueryList,X1,Blist,Tl2),
+    column_atom(String,X1,X2,Tl2,Tl1),
+    column_atom('''',X2,Diff,Tl1,Olist).
+
+column_atom('$const$'(Number),QueryList,Diff,Blist,Olist) :-
+    get_type('$const$'(Number),NumType),
+    type_compatible(NumType,number),
+    column_atom(Number,QueryList,Diff,Blist,Olist).
+
+column_atom('$bind$'(BindId),QueryList,Diff,Blist,Olist) :-
+    append([BindId],Tlist,Blist),
+    column_atom('?',QueryList,Diff,Tlist,Olist).
+
+column_atom(comp(LeftArg,Operator,RightArg),QueryList,Diff,Blist,Olist) :-
+    column_atom(LeftArg,QueryList,X1,Blist,Tl2),
+    column_atom(' ',X1,X2,_,_),
+    column_atom(Operator,X2,X3,Tl2,Tl1),
+    column_atom(' ',X3,X4,_,_),
+    column_atom(RightArg,X4,Diff,Tl1,Olist).
+
+column_atom(LeftExpr * RightExpr,QueryList,Diff,Blist,Olist) :-
+    column_atom(LeftExpr,QueryList,X1,Blist,Tlist),
+    column_atom('*',X1,X2,_,_),
+    column_atom(RightExpr,X2,Diff,Tlist,Olist).
+
+column_atom(LeftExpr + RightExpr,QueryList,Diff,Blist,Olist) :-
+    column_atom(LeftExpr,QueryList,X1,Blist,Tlist),
+    column_atom('+',X1,X2,_,_),
+    column_atom(RightExpr,X2,Diff,Tlist,Olist).
+
+column_atom(LeftExpr - RightExpr,QueryList,Diff,Blist,Olist) :-
+    column_atom(LeftExpr,QueryList,X1,Blist,Tlist),
+    column_atom('-',X1,X2,_,_),
+    column_atom(RightExpr,X2,Diff,Tlist,Olist).
+
+column_atom(LeftExpr / RightExpr,QueryList,Diff,Blist,Olist) :-
+    column_atom(LeftExpr,QueryList,X1,Blist,Tlist),
+    column_atom('/',X1,X2,_,_),
+    column_atom(RightExpr,X2,Diff,Tlist,Olist).
+
+column_atom(agg_query(Function,Select,From,Where,Group),QueryList,Diff,Blist,Olist) :-
+    column_atom('(',QueryList,X1,_,_),
+    query_atom(agg_query(Function,Select,From,Where,Group),X1,X2,Blist,Olist),
+    column_atom(')',X2,Diff,_,_).
+
+column_atom(negated_existential_subquery(Select,From,Where),QueryList,Diff,Blist,Olist) :-
+    query_atom(negated_existential_subquery(Select,From,Where),QueryList,Diff,Blist,Olist).
+
+column_atom(Atom,List,Diff,Blist,Blist) :-
+   atomic(Atom),
+   name(Atom,X1),
+   append(X1,Diff,List).
+
+column_ins_atom(rel(Relation,RangeVar),QueryList,Diff,Blist,Olist) :-
+    column_atom(Relation,QueryList,Diff,Blist,Olist).
+ 
+column_ins_atom(comp(LeftArg,Operator,RightArg),QueryList,Diff,Blist,Olist) :-
+    column_atom(RightArg,QueryList,Diff,Blist,Olist).
+    
+translate_del(DeleteTerm, DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
+    % --- initialize variable identifiers and range variables for relations -----
+    init_gensym(var),
+    init_gensym(rel),
+    init_gensym('BIND'),
+    % --- tokenize projection term and database goal ----------------------------
+    tokenize_term(DeleteTerm,TokenDeleteTerm),
+    tokenize_term(DatabaseGoal,TokenDatabaseGoal),
+    % --- lexical analysis: reordering of goals for disjunctive normalized form -
+    disjunction(TokenDatabaseGoal,Disjunction),
+    % --- code generation ---------------------------------------------------------------
+    query_generation_del(Disjunction,TokenDeleteTerm,SQLQueryTerm),
+    ('$show_query$'(on) -> printqueries(SQLQueryTerm);true),
+    queries_atom(SQLQueryTerm,SQLAtom,Blist).
+
+query_generation_del([],_,[]).
+
+query_generation_del([Conjunction|Conjunctions],ProjectionTerm,[Query|Queries]) :-
+    projection_term_variables(ProjectionTerm,InitDict),
+    translate_conjunction(Conjunction,SQLFrom,SQLWhere,InitDict,Dict),
+    translate_projection(ProjectionTerm,Dict,SQLSelect),
+    Query = del_query(SQLFrom,SQLWhere),
+    query_generation(Conjunctions,ProjectionTerm,Queries).
+   
+translate_ins(InsertTerm, DatabaseGoal,SQLQueryTerm,SQLAtom,Blist) :-
+    % --- initialize variable identifiers and range variables for relations -----
+    init_gensym(var),
+    init_gensym(rel),
+    init_gensym('BIND'),
+    % --- tokenize projection term and database goal ----------------------------
+    tokenize_term(InsertTerm,TokenInsertTerm),
+    tokenize_term(DatabaseGoal,TokenDatabaseGoal),  
+    % --- lexical analysis: reordering of goals for disjunctive normalized form -
+    disjunction(TokenDatabaseGoal,Disjunction),
+    % --- code generation ---------------------------------------------------------------
+    query_generation_ins(Disjunction,TokenInsertTerm,SQLQueryTerm),
+    ('$show_query$'(on) -> printqueries(SQLQueryTerm);true),
+    queries_atom(SQLQueryTerm,SQLAtom,Blist).
+
+query_generation_ins([],_,[]).
+
+query_generation_ins([Conjunction|Conjunctions],ProjectionTerm,[Query|Queries]) :-
+    projection_term_variables(ProjectionTerm,InitDict),
+    translate_conjunction(Conjunction,SQLFrom,SQLWhere,InitDict,Dict),
+    translate_projection(ProjectionTerm,Dict,SQLSelect),
+    Query = ins_query(SQLFrom,SQLWhere),
+    query_generation(Conjunctions,ProjectionTerm,Queries).
+
+odbc_open(Server, Name,Passwd) :- 
+    odbc_connect(Server,Name,Passwd,RetVal),
+    % --- cursor 0 is reserved for table information retrieval
+    % --- cursor 1 is reserved for odbc_sql_select 
+    conset(count,2),init_gensym(table1),init_gensym(null),
+    assert('$ora_err$'(off)),
+    assert('$show_query$'(on)),
+    (RetVal =:= 0,!;
+     writeln('ERR - ODBC: Connection failed.'),fail).
+
+odbc_connect(Server,Name,Passwd,RetVal) :-
+    odbc_exec_query(1,Server,Name,Passwd,RetVal).
+    
+odbc_close :- 
+    retract('$ora_err$'(_)), 
+    retract('$show_query$'(_)), 
+    odbc_disconnect.
+
+odbc_disconnect :- odbc_exec_query(8).
+
+odbc_import(DbPredicate, SymName) :-
+    DbPredicate =.. [TableName|Attributes],
+    conset(col,1),
+    % --- asserts attribute(Position,Functor,Attribute,Type)
+    assert_attributes_info(TableName),
+    functor(DbPredicate, TableName, Arity),
+    % --- asserts relation(Functor,Arity,Functor)
+    assert(relation(SymName,Arity,TableName)), 
+    assert_import_attributes(SymName, Attributes, TableName,1),
+    functor(SymPred, SymName, Arity),
+    odbc_query(SymPred, (SymPred)).
+    
+assert_import_attributes(_,[],_,_).
+
+assert_import_attributes(SymName, [HAttr|RAttr], TableName,Num) :-
+    attribute(_,TableName,TmpHAttr,Type),
+    name(TmpHAttr, TmpHAttr1),
+    name(HAttr, TmpHAttr2),
+    TmpHAttr1 = TmpHAttr2,
+    assert(attribute(Num,SymName,HAttr,Type)),
+    Num1 is Num + 1,
+    assert_import_attributes(SymName,RAttr,TableName,Num1).
+
+assert_attributes_info(Table) :- 
+    not attribute(_,Table,_,_),
+    attr(Table,Col,Type),
+    get_type(Type,Type1),
+    conget(col,N),
+    N1 is N + 1,
+    conset(col,N1),
+    copy_term(attribute(N,Table,Col,Type1),Term),
+    assert(Term),fail.
+
+assert_attributes_info(Table) :- conget(col, N), N1 is N-1, N1 > 0,!,
+                                 assert(table_arity(Table, N1)). 
+
+assert_attributes_info(Table) :- table_arity(Table, N), !, N1 is N+1, conset(col, N1).
+    
+assert_attributes_info(Table).
+attr(A,B,C) :-
+     nonvar(A),
+     var(B),
+     var(C),
+     odbc_all(attr(B,C), A, attr('$var$'(var1),'$var$'(var2)),[],0).
+
+odbc_all(Call, SQLAtom, ProjectionTerm, Blist, StmtNo) :-
+    Call =.. [SymbolicName|CallArgs],
+    find_free_cursor(StmtNo, Index),
+    (Index =\= -1 ->
+         (ProjectionTerm =.. [Head|ProjectionTermArgs],
+          set_global_bind_table(Index,ProjectionTermArgs,CallArgs,Blist), 
+          parse(Index,SQLAtom, RetVal),
+          (RetVal =:= 0, 
+               (next(Row, Index), 
+                skip_bind(Row,ProjectionTermArgs,Row1),
+                append([SymbolicName],Row1,CallList),
+                Call =.. CallList);
+           (RetVal =:= 2, true);
+           RetVal =:= 1,writeln('ERR - DB: Parse error.'), 
+               ('$ora_err$'(on) -> fail;true)));
+         writeln('ERR - DB: No more cursors left.'),fail).
+                                  
+find_free_cursor(StmtNo, Index) :-
+                odbc_exec_query(7,StmtNo, Index).
+
+set_global_bind_table(Index,Alist,Calllist,Blist) :-
+    bind_num(Alist,0,Num),
+    length(Blist,Blen),
+    set_bind_var_num(Index,Num,Blen),
+    set_var_table(Index,Alist,Calllist),
+    set_bind_table(Index,Blist).
+    
+bind_num([],Num,Num).
+
+bind_num([H|T],ONum,Num) :-
+    H = '$bind$'(_),!,
+    bind_num(T,ONum,TNum), Num is TNum+1.
+    
+bind_num([H|T],ONum,Num) :- bind_num(T,ONum,Num).
+
+set_bind_var_num(Index,Num,Blen) :- (Num =\= 0->odbc_exec_query(3,Index,Num,Blen));true.
+    
+set_var_table(Index,[],[]) :- !.
+set_var_table(Index, [H|T], [H1|T1]) :-
+    H = '$bind$'(BindId),!,
+    (integer(H1)->
+         set_var(Index,BindId,H1,0);
+     (number(H1),
+         set_var(Index,BindId,H1,1);
+     atom(H1), 
+         set_var(Index, BindId, H1,2);
+     H1 = 'NULL'(_),
+         set_var(Index, BindId, 'NULL',2))),
+    set_var_table(Index,T,T1).
+        
+set_var_table(Index, [H|T], [H1|T1]) :-
+    set_var_table(Index,T,T1).
+        
+set_var(Index, BindId, H1,C) :-
+    odbc_exec_query(6,Index, BindId, H1,C).        
+        
+set_bind_table(Index, []) :- !.
+
+set_bind_table(Index, [BindId|BList]) :-
+    odbc_exec_query(9,Index,BindId),
+    set_bind_table(Index,BList).
+   
+parse(Index,SQLAtom, RetVal) :-
+    odbc_exec_query(2,Index,SQLAtom, RetVal).
+    
+next(Row,Index) :-
+    fetch_next_col(Index,RetVal),
+    (RetVal =:= 0 ->
+        (get_list(X1,Index), 
+         Row=X1;
+         next(Row, Index));
+     RetVal =:= 2 ->
+         writeln('ERR - ODBC: Fetch Failed'), fail).
+         
+fetch_next_col(Index,RetVal) :- odbc_exec_query(4,Index,RetVal).
+         
+get_list([X|Y], Index) :- get_column(Index,X,RetVal),
+                          RetVal=:=0,
+                          get_list(Y, Index),!.
+get_list([], Index).                       
+
+get_column(Index,X,RetVal) :-
+    odbc_exec_query(5,Index,X,RetVal).      
+    
+skip_bind([],[],[]).
+skip_bind([R|R1],[P|P1],[H|H1]) :-
+    skip_head(R,P,H),
+    skip_bind(R1,P1,H1).    
+
+skip_head(R,'$bind$'(_),_).
+skip_head('NULL','$var$'(_),'NULL'(X)) :- !, gensym(null, X).
+skip_head(R,'$var$'(_),R).
+skip_head(R,'$const$'('NULL'), 'NULL'(X)) :- !, gensym(null, X).
+skip_head(R,'$const$'(_),_).
+
+odbc_query(Head,Body) :-
+    copy_term(Head,Head1),
+    Head =.. [H|A],
+    not Head1 =.. [_],
+    assert((Head1 :- 
+              Head1 =..[_|Args] ',' 
+              get_mode(Args,Mode,A) ','
+              NewHead =.. [H| Mode] ','
+              odbc_link(NewHead,Body) ',' !
+              ',' Head1)).
+
+odbc_link(ProjectionTerm, DatabaseGoal) :-
+    translate(ProjectionTerm, DatabaseGoal,_, SQLAtom,Blist),!,
+    conget(count, Num),
+    Num1 is Num +1,
+    conset(count, Num1),
+    assert_call_rule_del(ProjectionTerm, SQLAtom,Blist,Num).
+
+assert_call_rule_del(ProjectionTerm, SQLAtom,Blist,Num) :-
+        init_gensym(var),
+        init_gensym(rel),
+        init_gensym('BIND'),
+        tokenize_term(ProjectionTerm, Tokens),!,
+        functor(ProjectionTerm, Head, Arity),
+        Tokens =.. [Head|Args],
+        functor(RuleHead, Head, Arity),
+        RuleHead =..[RuleH|NewArgs],
+        converts_del(Args, NewArgs, RuleBody),
+        asserta((RuleHead :- (RuleBody ',' ! ',' odbc_all(RuleHead, SQLAtom, Tokens,Blist,Num)))).
+
+converts_del([H,H2|Rest], [H1|Rest1], ','(X, RestX)) :-
+    convert_del(H,H1, X),
+    converts_del([H2|Rest], Rest1, RestX).
+
+converts_del([H],[H1],X) :- 
+    convert_del(H,H1,X).
+                
+convert_del('$var$'(_), A, var(A)).
+convert_del('$bind$'(_),A,','(nonvar(A), not((A = 'NULL'(X),var(X))))).
+convert_del('$const$'('NULL'), A,','(nonvar(A), ','(A = 'NULL'(X), var(X)))) :- !.
+convert_del('$const$'(C),A, A == C).
+
+odbc_sql(SQLAtom) :- 
+    parse(-1,SQLAtom, RetVal), 
+    (RetVal =:=1 -> (writeln('ERR - DB: ODBC Execution Error.'),
+                ('$ora_err$'(on) -> fail;true));
+     true).
+     
+odbc_sql_select(Select,Row) :-
+    find_free_cursor(1, Index),
+    (Index =\= -1 ->    
+        (parse(Index,Select,RetVal),
+         (RetVal =:= 0, next(Row, Index);
+          RetVal =:= 2, true;
+          RetVal =:= 1,
+          writeln('ERR - DB: Parse error.'), ('$ora_err$'(on) -> fail;true)));
+     writeln('ERR - DB: No more cursors left.'),fail).
+
+odbc_transaction(commit) :-
+    parse(-2,'No Query',RetVal),
+    (RetVal =:=1 -> writeln('ERR - DB: ODBC Commit Error.'),
+        ('$ora_err$'(on) -> fail;true);
+     true).
+
+odbc_transaction(rollback) :-
+    parse(-3,'No Query',RetVal),
+    (RetVal =:=1 -> writeln('ERR - DB: ODBC Commit Error.'),
+        ('$ora_err$'(on) -> fail;true);
+     true).
+
+odbc_delete(Head, Body) :-
+    copy_term(Head,Head1),
+    Head =.. [H|A],
+    assert((Head1 :- 
+                    Head1 =..[_|Args] ',' 
+                    get_mode(Args,Mode,A) ',' 
+                    NewHead =.. [H| Mode] ','
+                    odbc_link_del(NewHead,Body) ',' ! ','
+                    Head1)).
+
+odbc_link_del(ProjectionTerm, DatabaseGoal) :- 
+    translate_del(ProjectionTerm, DatabaseGoal,_, SQLAtom,Blist),!,
+    conget(count, Num),
+    Num1 is Num +1,
+    conset(count, Num1),
+    assert_call_rule_del(ProjectionTerm,SQLAtom,Blist,Num).
+
+odbc_insert(Head, Body) :-
+    copy_term(Head,Head1),
+    Head =.. [H|A],
+    assert((Head1 :- 
+                    Head1 =..[_|Args] ',' 
+                    get_mode_ins(Args,Mode,A) ',' 
+                    NewHead =.. [H| Mode] ','
+                    odbc_link_ins(NewHead,Body) ',' ! ','
+                    Head1)).
+
+odbc_link_ins(ProjectionTerm, DatabaseGoal) :- 
+    translate_ins(ProjectionTerm, DatabaseGoal,_, SQLAtom,Blist),!,
+    conget(count, Num),
+    Num1 is Num +1,
+    conset(count, Num1),
+    assert_call_rule(ProjectionTerm, SQLAtom,Blist,Num).
+
+assert_call_rule(ProjectionTerm,SQLAtom,Blist,Num) :-
+    init_gensym(var),
+    init_gensym(rel),
+    init_gensym('BIND'),
+    tokenize_term(ProjectionTerm, Tokens),!,
+    functor(ProjectionTerm, Head, Arity),
+    Tokens =.. [Head|Args], 
+    functor(RuleHead, Head, Arity),
+    RuleHead =..[RuleH|NewArgs],
+    converts(Args, NewArgs, RuleBody),
+    asserta((RuleHead :- (RuleBody ',' ! ',' 
+                          odbc_all(RuleHead, SQLAtom, Tokens,Blist,Num)))).
+
+convert('$var$'(_), A, var(A)).
+convert('$bind$'(_),A, ','(nonvar(A), not(A = 'NULL'(X)))).
+convert('$const$'('NULL'), A, ','(nonvar(A),A = 'NULL'(_))) :- !.
+convert('$const$'(C),A, A == C).
+
+
+converts([H,H2|Rest], [H1|Rest1], ','(X, RestX)) :-
+        convert(H,H1, X),
+        converts([H2|Rest], Rest1, RestX).
+
+converts([H],[H1],X) :- 
+        convert(H,H1,X).
+
+odbc_SQL_DDL(SQL,Name) :-
+    assert((Name :- odbc_SQL(SQL))),listing.
+        
+odbc_SQL(SQL) :-
+    parse(-1,SQL, RetVal),
+    (RetVal =:= 0;
+     writeln('ERR - ODBC: Execution Error.'),fail).
+      
+writelist([H]) :- writeln(H),!.
+writelist([H|T]) :-
+    write(H),write(' '), writelist(T).
+
+writelistln([H]) :- writeln(H),!.
+writelistln([H|T]) :-
+    writeln(H), writelistln(T).
+
+% -----------------------------------------------------------------------
+odbc_get_schema(tuples(Table),Row) :-
+    name(Table, Tlist),
+    append([115,101,108,101,99,116,32,42,32,102,114,111,109,32], Tlist, L),
+    name(Sql, L),
+    odbc_sql_select(Sql, Row).
+
+odbc_show_schema(tuples(Table)) :-
+    name(Table, Tlist),
+    append([115,101,108,101,99,116,32,42,32,102,114,111,109,32], Tlist, L),
+    name(Sql, L),
+    odbc_sql_select(Sql, Row),
+    writelist(Row), fail.
+odbc_show_schema(tuples(Table)).
+
+%--------------------------------
+odbc_get_schema(user, List) :-
+        bagof(A, user_tables(A), List).
+odbc_show_schema(user) :-
+        odbc_get_schema(user, List),
+        writelistln(List).
+
+user_tables(A) :-
+    var(A),
+    odbc_all(user_tables(A), 'No Query', user_tables('$var$'(var1)),[],-1).
+    
+%---------------------------
+odbc_get_schema(accessible, List) :-
+    bagof(A, accessible_tables(A), List).
+odbc_show_schema(accessible) :-
+    odbc_get_schema(accessible, List),
+    writelistln(List).
+
+accessible_tables(A) :-
+    var(A),
+    odbc_all(accessible_tables(A), 'No Query', accessible_tables('$var$'(var1)),[],-2).
+
+%----------------------------
+odbc_get_schema(arity(Table),N1) :-
+    conset(col,1),
+    assert_attributes_info(Table),
+    table_arity(Table, N1).
+
+odbc_show_schema(arity(Table)) :-
+    odbc_get_schema(arity(Table), N1),
+    write('Table '), write( Table), write(' has arity '), writeln(N1).
+
+%------------------------------
+odbc_get_schema(columns(Table),List) :-
+    conset(col,1),
+    assert_attributes_info(Table),
+    bagof(Col, N1^Type1^attribute(N1,Table,Col,Type1), List).
+
+odbc_show_schema(columns(Table)) :-
+    odbc_get_schema(columns(Table), List), writelistln(List).    
+    
+%--------------------------------
+odbc_attach(Pname, table(Table)) :-
+    conset(col, 1), 
+    assert_attributes_info(Table),
+    bagof(Col, N1^Type1^attribute(N1,Table,Col,Type1), List),
+    write('odbc_attach...'), writeln(List),
+    DBPred =.. [Table|List],
+    odbc_import(DBPred, Pname).
+
+odbc_attach(Pname, table(Table, List)) :-
+    conset(col, 1), 
+    assert_attributes_info(Table),
+    DBPred =.. [Table|List],
+    odbc_import(DBPred, Pname).
+        
+%--------------------------------
+odbc_record(Table, List) :-
+    gensym(table1,Name),
+    odbc_attach(Name,table(Table)),
+    odbc_get_schema(arity(Table),N1),
+    (var(List) ->
+         functor(B,Name,N1);
+     B =.. [Name|List]),
+    !,B,B =.. [Name|List]. 
+    
+%--------------------------------
+odbc_create_table(Table,Fields) :-        
+    nonvar(Table),
+    nonvar(Table),
+    name(Table,Tl),
+    name(Fields,Fl),
+    append([67,82,69,65,84,69,32,84,65,66,76,69,32],Tl,L1),
+    append(L1,[32,40],L2),
+    append(L2,Fl,L3),
+    append(L3,[32,41],Res), name(Query,Res),
+    odbc_sql(Query).       
+    
+%--------------------------------
+odbc_create_index(Tname,Iname,index(_,Fields)) :-
+    nonvar(Tname),
+    nonvar(Iname),
+    nonvar(Fields),
+    name(Tname,Tlist),
+    name(Iname,Ilist),
+    name(Fields,Flist),
+    append([67,82,69,65,84,69,32,73,78,68,69,88,32],Ilist,L1),
+    append(L1,[32,79,78,32],L2),
+    append(L2,Tlist,L3),
+    append(L3, [32,40],L4),
+    append(L4,Flist,L5),
+    append(L5,[32,41],Res), 
+    name(Query,Res),
+    odbc_sql(Query).
+    
+%--------------------------------
+odbc_delete_table(Table) :-
+    nonvar(Table),
+    name(Table, Tlist),
+    append([68,82,79,80,32,84,65,66,76,69,32],Tlist,Res),
+    name(Query,Res),
+    odbc_sql(Query).
+
+%--------------------------------
+odbc_delete_view(View) :-
+    nonvar(View),
+    name(View, Vlist),
+    append([68,82,79,80,32,86,73,69,87,32],Vlist,Res),
+    name(Query,Res),
+    odbc_sql(Query).
+
+%--------------------------------
+odbc_delete_index(TableName,Index) :-
+    nonvar(Index),
+    name(Index,Ilist),
+    append([68,82,79,80,32,73,78,68,69,88,32],Ilist,TmpRes1),
+    append(TmpRes1, [32,79,78,32], TmpRes2),
+    name(TableName, Table),
+    append(TmpRes2, Table, Res),
+    name(Query,Res),
+    odbc_sql(Query).
+
+%--------------------------------
+odbc_add_record(Table,VList) :-
+    conset(col,1),
+    assert_attributes_info(Table),
+    conget(col,N), N1 is N - 1,
+    name(Table, Tl), 
+    append([105,110,115,95],Tl, Tl1), 
+    name(Table1,Tl1),
+    assert(relation(Table,N1,Table)),
+    functor(Head1, Table1, N1),
+    Head1 =..[Table1|Tail],
+    Head =..[Table|Tail],
+    odbc_insert(Head1, (Head)),
+    asserta((odbc_add_record(Table,Values) :- Query =..[Table1|Values] ',' ! ',' Query)), 
+    Query =.. [Table1|VList],!,
+    Query.
+
+%--------------------------------
+odbc_delete_record(Table,VList) :-
+    conset(col,1),
+    assert_attributes_info(Table),
+    conget(col,N), N1 is N - 1,
+    name(Table, Tl), 
+    append([100,101,108,95],Tl,Tl1), 
+    name(Table1,Tl1),
+    assert(relation(Table,N1,Table)),
+    functor(Head1, Table1, N1),
+    Head1 =..[Table1|Tail],
+    Head =..[Table|Tail],
+    odbc_delete(Head1, (Head)),
+    asserta((odbc_delete_record(Table,Values) :- Query =..[Table1|Values] ',' ! ',' Query)), 
+    Query =.. [Table1|VList],!,
+    Query.
+        
+db_flag(fail_on_error,on,off) :-
+    retract('$ora_err$'(on)), assert('$ora_err$'(off)).
+
+db_flag(fail_on_error, off, on) :-
+    retract('$ora_err$'(off)), assert('$ora_err$'(on)).
+
+db_flag(show_query, off, on) :-
+    retract('$show_query$'(off)), assert('$show_query$'(on)).
+
+db_flag(show_query, on, off) :-
+    retract('$show_query$'(on)), assert('$show_query$'(off)).
+      
+odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
+odbc_exec_query(A,B) :- odbc_exec_query(A,B,_,_,_).
+odbc_exec_query(A,B,C) :- odbc_exec_query(A,B,C,_,_).
+odbc_exec_query(A,B,C,D) :- odbc_exec_query(A,B,C,D,_).
+

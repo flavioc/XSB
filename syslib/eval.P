@@ -1,0 +1,113 @@
+/* File:      eval.P
+** Author(s): David S. Warren, Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%-------------------------------------------------------------------------
+% NOTE:	Predicate eval/2 is the one who is responsible for error checking
+%	of arithmetic comparisons and evaluations. According to the Prolog
+%	standard, arithmetic comparisons and evaluations can cause
+%	instantiation errors ONLY. Everything else should simply fail as
+%	far as evaluation is concerned.
+%-------------------------------------------------------------------------
+% NOTE: According to the Prolog standard, predicate eval/2 should perform 
+%	type conversion between integers and reals when necessary. 
+%	Our eval/2, does NOT. (mainly because at the moment when this is
+%	written it is not clear whether we will support reals in the first
+%	XSB version).
+%-------------------------------------------------------------------------
+
+eval(Arg, Res) :- 
+	term_type(Arg, T), 
+	( T =:= 0 -> abort('Unbound variable in arithmetic expression')
+	; T =:= 2 -> Res=Arg
+	; T =:= 6 -> Res=Arg
+	; eval0(Arg, Res) -> true	/* system defined function */
+	; T =:= 1 -> eval1(Arg, Res)	/* user defined function */
+	).
+
+eval0('+'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 + Res2.
+eval0('-'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 - Res2.
+eval0('*'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 * Res2.
+eval0('/'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 / Res2.
+eval0('//'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 // Res2.
+eval0(mod(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 mod Res2.
+eval0('-'(X), Res) :- eval(X, Res1), Res is -(Res1).
+eval0('/\'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 /\ Res2.
+eval0('\/'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 \/ Res2.
+eval0('<<'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 << Res2.
+eval0('>>'(X,Y), Res) :- eval(X, Res1), eval(Y, Res2), Res is Res1 >> Res2.
+eval0('\'(X), Res) :- eval(X, Res1), Res is '\'(Res1).
+eval0(float(X), Res) :- eval(X, Res1), Res is float(Res1).
+eval0(floor(X), Res) :- eval(X, Res1), Res is floor(Res1).
+eval0(sin(X), Res) :- eval(X, Res1), Res is sin(Res1).
+eval0(cos(X), Res) :- eval(X, Res1), Res is cos(Res1).
+eval0(tan(X), Res) :- eval(X, Res1), Res is tan(Res1).
+eval0(asin(X), Res) :- eval(X, Res1), Res is asin(Res1).
+eval0(acos(X), Res) :- eval(X, Res1), Res is acos(Res1).
+eval0(atan(X), Res) :- eval(X, Res1), Res is atan(Res1).
+eval0(exp(X), Res) :- eval(X, Res1), Res is exp(Res1).
+eval0(log(X), Res) :- eval(X, Res1), Res is log(Res1).
+eval0(log10(X), Res) :- eval(X, Res1), Res is log10(Res1).
+eval0(sqrt(X), Res) :- eval(X, Res1), Res is sqrt(Res1).
+
+eval1(Term, Res) :-
+	term_psc(Term, Psc),
+	psc_type(Psc, T0),
+	( T0 =:= 15 ->		% unloaded function
+	    psc_prop(Psc, ModPSC),
+            psc_name(ModPSC, ModName),
+            psc_type(ModPSC, ModType),
+            ( ModType =:= 4
+            ; ModType =\= 4,              % module is not loaded yet
+              load(ModName)               % can fail here
+            )
+	; true
+	),
+	psc_type(Psc, T1),
+	( T1 =\= 14, eval_regularterm(Term, Res)	 % Regular term
+	; T1 =:= 14,
+          psc_prop(Psc, Code),
+	  eval_func(Code, Term, T1),
+	  '_$getreturn'(Res)
+	).
+
+/* need this because code_call/3 must be the last goal of a clause.	*/
+
+eval_func(Code, Term, T1) :- code_call(Code, Term, T1).
+
+eval_regularterm(Term, Res) :-
+	functor(Term, F, A),
+	functor(Res, F, A),
+	eval_rt_args(0, A, Term, Res).
+
+eval_rt_args(A, A, _, _).
+eval_rt_args(I, A, Term, Res) :- I < A,
+	I1 is I + 1,
+	arg(I1, Term, X),
+	arg(I1, Res, Y),
+	eval(X, Y),
+	eval_rt_args(I1, A, Term, Res).
+
+/* ---------------------- end of file eval.P --------------------------	*/

@@ -1,0 +1,247 @@
+/* File:      machine.P
+** Author(s): Jiyang Xu, Kostis F. Sagonas, Terrance Swift David S. Warren,
+**    	      Ernie Johnson 
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*======================================================================*/
+/* This file contains definitions for predicates implemented by the	*/
+/* underlying machine (hard builtins).					*/
+/*======================================================================*/
+
+psc_name(_PSC, _String) :- '_$builtin'(1).
+psc_arity(_PSC, _Arity) :- '_$builtin'(2).
+psc_type(_PSC, _Type) :- '_$builtin'(3).
+psc_prop(_PSC, _Term) :- '_$builtin'(4).
+psc_set_type(_PSC, _Type, _Perm) :- '_$builtin'(5).
+psc_set_prop(_PSC, _Term, _Perm) :- '_$builtin'(6).
+file_open(_NameString, _RWMode, _File) :- '_$builtin'(7).
+file_close(_File) :- '_$builtin'(8).
+file_get(_File, _Char) :- '_$builtin'(9).
+file_put(_File, _Char) :- '_$builtin'(10).
+term_psc(_Term, _PSC) :- '_$builtin'(11).
+term_type(_Term, _Type) :- '_$builtin'(12).
+term_compare(_Term1, _Term2, _Res) :- '_$builtin'(13).
+term_new(_PSC, _Term) :- '_$builtin'(14).
+term_arg(_Term, _Index, _Arg) :- '_$builtin'(15).
+term_set_arg(_Term, _Index, _Arg, _Perm) :- '_$builtin'(16).
+stat_flag(_Flag, _Value) :- '_$builtin'(17).
+stat_set_flag(_Flag, _Value, _Perm) :- '_$builtin'(18).
+buff_alloc(_Size, _Buffer, _Perm) :- '_$builtin'(19).
+buff_word(_Buffer, _Disp, _Value) :- '_$builtin'(20).
+buff_set_word(_Buffer, _Disp, _Value) :- '_$builtin'(21).
+buff_byte(_Buffer, _Disp, _Value) :- '_$builtin'(22).
+buff_set_byte(_Buffer, _Disp, _Value) :- '_$builtin'(23).
+code_call(_CodeAddr, _Term, _Type) :- '_$builtin'(24).
+str_len(_String, _Length) :- '_$builtin'(25).
+str_cat(_String1, _String2, _String3) :- '_$builtin'(27).
+str_cmp(_String1, _String2, _Res) :- '_$builtin'(28).
+str_hsh(_String, _Arity, _Size, _Res) :- '_$builtin'(29).
+str_insert(_StringIn, _StringOut) :- '_$builtin'(30).
+call0(_Term) :- '_$builtin'(31).
+
+/* some other builtins that might need hard implementation */
+
+stat_sta(_X) :- '_$builtin'(32).
+stat_cputime(_X) :- '_$builtin'(33).
+
+code_load(ByteCodeFileName, InitAddr) :- 
+	code_load(ByteCodeFileName, InitAddr, 0).
+code_load(_ByteCodeFileName, _InitAddr, _Exp) :- '_$builtin'(34).
+buff_set_var(_Buff, _Disp, _BufSize, _Var) :- '_$builtin'(35).
+buff_dealloc(_Buff, _OldSize, _NewSize, _Perm) :- '_$builtin'(36).
+buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(37).
+buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(38).
+copy_term0(_Term, _Result) :- '_$builtin'(39).
+
+/* check if Sub is a substring in Str */
+str_sub(_Sub, _Str, _Pos) :- '_$builtin'(40).
+str_sub(Sub, Str) :- str_sub(Sub, Str, _).
+
+%% If file is a directory, add slash, if needed, or strip extra slashes
+dirname_canonic(_File, _Canonic) :- '_$builtin'(41).
+
+/* for efficiency reasons, the following predicates are also implemented */
+
+psc_insert(_Name, _Arity, _PSC, _MName) :- '_$builtin'(42).
+psc_import(_Pname, _Arity, _MName) :- '_$builtin'(43).
+file_getbuf(_File, _Bytes, _Buf, _Disp) :- '_$builtin'(44).
+file_putbuf(_File, _Bytes, _Buf, _Disp) :- '_$builtin'(45).
+psc_insertmod(_ModName, _Def, _PSC) :- '_$builtin'(46).
+load_seg(_SegNo, _TextBytes, _IndexBytes, _File, _InitAddr) :- '_$builtin'(47).
+file_gettoken(_File, _PrevCh, _Type, _Value, _NextCh) :- '_$builtin'(48).
+file_puttoken(_File, _Type, _Value) :- '_$builtin'(49).
+term_hash(_Term, _Size, _Value) :- '_$builtin'(50).
+unload_seg(_CodeSeg) :- '_$builtin'(51).
+load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(52).
+
+getenv(_EnvVar, _Value) :- '_$builtin'(54).
+/* sys_syscall(CallNo, Res, Arg, ......) :- '_$builtin'(55). */
+sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(55).
+
+sys_system(_Command, _Res) :- '_$builtin'(56).
+sys_gethost(_Name, _Buffer) :- '_$builtin'(57).
+sys_errno(_Errno) :- '_$builtin'(58).
+file_stat(_File, _Which, _RetVal) :- '_$builtin'(60).
+file_writequoted(_File, _Term) :- '_$builtin'(61).
+fast_ground(_Term) :- '_$builtin'(62).
+file_pos(_File,_Position) :- '_$builtin'(64).
+
+intern_string(_Str,_InternedStr) :- '_$builtin'(65).
+
+expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(66).
+tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(67).
+is_absolute_filename(_FileName) :- '_$builtin'(68).
+parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(69).
+
+buff_assign_word(_Buffer, _Disp, _Value) :- '_$builtin'(96).
+
+psc_env(_PSC, _Env) :- '_$builtin'(100).
+psc_spy(_PSC, _Spy) :- '_$builtin'(101).
+
+psc_tabled(_PSC, _Tabled) :- '_$builtin'(102).
+tip_prop(_Tip, _Field, _Get_or_set, _Value):- '_$builtin'(103).
+is_incomplete(_Tab,_SubgoalPtr,_PTCP,_Usage,_Ans):- '_$builtin'(104).
+get_osp_breg(_Osp,_Breg):- '_$builtin'(105).
+cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(106).
+get_ptcp(_PTCP) :- '_$builtin'(107).
+get_subgoal_ptr(_Term, _SubgoalPtr) :- '_$builtin'(108).
+
+dereference_the_bucket(_Pair_Pointer, _Pair) :- '_$builtin'(109).
+pair_psc(_Pair, _PSC) :- '_$builtin'(110).
+pair_next(_Pair, _Next_Pair) :- '_$builtin'(111).
+next_bucket(_Bucket, _Next_Bucket) :- '_$builtin'(112).
+
+slg_not(_SubgoalPtr) :- '_$builtin'(114).
+
+is_xwammode(_Flag) :- '_$builtin'(117).
+close_open_tables :- '_$builtin'(118).
+call_hash(_Term,_Ht_base,_Ar,_Chs,_Call_str):- '_$builtin'(119).
+print_predicate_table(_Psc):- '_$builtin'(120).
+
+file_read_line(_File, _String, _IsFullLine) :- '_$builtin'(123).
+slash(_Slash) :- '_$builtin'(124).
+fmt_write_string(_String,_Format,_ValsList) :- '_$builtin'(125).
+
+abolish_table_info:- '_$builtin'(126).
+zero_out_profile:- '_$builtin'(127).
+write_out_profile:- '_$builtin'(128).
+assert_code_to_buff(_Clause,_Size) :- '_$builtin'(129).
+assert_buff_to_clref(_Head,_NAri,_Prref,_AZ,_RInd,_HashTabSize,_Clref) :-
+	'_$builtin'(130).
+fmt_write(_File,_Format,_ValsList) :- '_$builtin'(131).
+fmt_read(_File,_Format,_TypeList,_ValsListVar,_Ret) :- '_$builtin'(132).
+file_read_canonical(_File,_Var,_Ret) :- '_$builtin'(133).
+gen_retract_all(_Buff) :- '_$builtin'(134).
+compiled_to_dynamic(_PSC,_NewPred) :- '_$builtin'(135).
+db_retract0(_Clause,_DontReclaim) :- '_$builtin'(136).
+db_get_clause(_CC0,_CI,_CIL,_PrRef,_Index,_Clause,_Type,_Entry) :- 
+	'_$builtin'(137).
+db_build_prref(_Arity,_FirstTIP,_TIP,_PrRef,_PrEntry) :- '_$builtin'(138).
+db_remove_prref(_Prref) :- '_$builtin'(139).
+
+get_emu_dependent_const(_ConstName, _Value) :- '_$builtin'(156).
+sched_strat(_SchedStrat) :- '_$builtin'(157).
+trimcore :- '_$builtin'(158).
+
+oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
+odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(240).
+
+'$$findall_init'(_I,_C) :- '_$builtin'(249).
+'$$findall_add'(_T,_I,_C) :- '_$builtin'(250).
+'$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(251).
+
+% SOCKET_IO
+socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr) :-
+	'_$builtin'(252).
+/*======================================================================*/
+
+file_time(File, Time) :- file_stat(File,0,Time).
+file_size(File, Size) :- file_stat(File,1,Size).
+
+
+fmt_read(Format, TypeList, ValsListVar, Ret) :-
+	stat_flag(10, FileDescriptor),
+	fmt_read(FileDescriptor, Format, TypeList, ValsListVar, Ret).
+fmt_write(Format, ValsListVar) :-
+	stat_flag(11, FileDescriptor),
+	fmt_write(FileDescriptor, Format, ValsListVar).
+	
+psc_insert(Name, Arity, PSC) :- psc_insert(Name, Arity, PSC, 0). 
+
+/* The following should be written in C. Now it is only used in the
+ * code for assert.
+ */
+
+psc_set_env(PSC, Env) :-
+        buff_byte(PSC, 0, Env0),
+        NEnv is (Env0 /\ 240) \/ Env,
+        buff_set_byte(PSC, 0, NEnv).
+
+conname(Con, Name) :-
+	term_type(Con, Type),
+	( Type =:= 1 -> term_psc(Con, Psc), psc_name(Psc, Name)
+	; Type =:= 5 -> Name = Con
+	).
+
+conpsc(Con, Psc) :-
+	term_type(Con, Type),
+	( Type =:= 1 -> term_psc(Con, Psc)
+	; Type =:= 5 -> psc_insert(Con, 0, Psc, 0)
+	).
+
+machine_file_exists(File) :- 
+	sys_syscall(33, Res, File, 0), Res =:= 0.
+
+file_read_line(String, IsFullLine) :-
+	 stat_flag(10, File), file_read_line(File, String, IsFullLine).
+
+/* some checks for OS type */
+
+is_backslashing_os :-  stat_flag(28, ConfigurationC),
+		    %% convert C string to Prolog
+		    intern_string(ConfigurationC, Configuration),
+		    ( str_sub('win', Configuration, Pos)
+		      ; str_sub('-nt', Configuration, Pos)
+		      ; str_sub('w95', Configuration, Pos)
+		      ; str_sub('wnt', Configuration, Pos) ).
+
+is_pcdos :- stat_flag(28, ConfigurationC),
+	  %% convert C string to Prolog
+	  intern_string(ConfigurationC, Configuration),
+	  str_sub('pc-dos', Configuration, _).
+
+/* The following is extremely DIRTY and should be used very very	*/
+/* cautiously!.  For the moment it is only used in symtab.P when the	*/
+/* symbol that was inserted into the symbol table may be retracted and	*/
+/* the count of the symbols has to remain the same.			*/
+
+backtrackable_buff_set_word(Buff, Bytes, NewValue, _) :- 
+	buff_set_word(Buff, Bytes, NewValue). 
+backtrackable_buff_set_word(Buff, Bytes, _, OldValue) :- 
+	buff_set_word(Buff, Bytes, OldValue), fail.
+
+
+/* --------------------- end of file machine.P ------------------------ */
+

@@ -1,0 +1,69 @@
+\section{Script Writing Utilities}
+%========================
+
+Prolog, (or XSB) can be useful for writing scripts in a UNIX system.
+Prolog's simple syntax and declarative semantics make it especially
+suitable for scripts that involve text processing.  The following
+library functions are intended to be used on UNIX-based platforms.
+Furthermore, they are new to Version 1.7 and should be considered to
+be in the Beta test stage.
+
+\begin{description}
+\ournewitem{date(?Date)}{scrptutl}
+\index{{\tt date/1}}
+	Unifies {\tt Date} to the current date, returned as a Prolog
+term, suitable for term comparison.
+
+Example:
+{\footnotesize
+\begin{verbatim}
+                > date 
+                Thu Feb 20 08:46:08 EST 1997
+                > xsb -i
+               XSB Version 1.7
+               [sequential, single word, optimal mode]
+               | ?- [scrptutl].
+               [scrptutl loaded]
+
+               yes
+               | ?- date(D).
+               D = date(1997,1,20,8,47,41)
+
+               yes
+\end{verbatim}}
+
+\ournewitem{directory(+Path,?Directory)}{directry}
+\index{{\tt directory/2}}
+
+	Unifies {\tt Directory} with a list of files in the directory
+specified by path.  Information about the files is similar to that
+obtained by {\tt ls -l}, but transformed for ease of processing.
+
+\ournewitem{fget\_line(+Str,?Inlist,?Next)}{scrptutl}
+\index{{\tt fget\_line/3}}
+
+{\tt fget\_line/3} reads one line from the input stream {\tt Str} and
+unifies {\tt Inlist} to the list of ASCII integers representing the
+characters in the line, and {\tt Next} to the line terminator, either
+a newline ({\tt 10}) or EOF ({\tt-1}).
+
+\ournewitem{sysin(+Command,?Output)}{scrptutl}
+\index{{\tt sysin/2}}
+
+	Unifies {\tt Output} with the stdout of {\tt Command}
+represented as a list of lists of tokens, where each element in the
+outer list of {\tt Command} represents a line of stdout.
+
+Example:
+{\footnotesize
+\begin{verbatim}
+                > uname -a
+                Linux swiftlap 1.2.8 #1 Sun May 7 13:10:10 CDT 1995 i486
+                | ?- sysin('uname -a',Output).
+
+                Output = [[Linux,swiftlap,1.2.8,#1,Sun,May,7,13:10:10,CDT,1995,i486]]
+
+                yes
+\end{verbatim}}
+
+

@@ -1,0 +1,15 @@
+
+/* Various debug options. They are here rather than in def_config.in to make
+   complete recompilation less likely, if the debugging option is requested */
+
+/* General debug	*/
+#undef DEBUG
+
+/* Heap debug		*/
+#undef DEBUG_HEAP
+
+/* Delay debug		*/
+#undef DEBUG_DELAY
+
+/* Profiling	  	*/
+#undef PROFILE

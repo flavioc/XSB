@@ -1,0 +1,159 @@
+/* File:      sanity.P
+** Author(s): Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+dump_module(SpecFile, module(SymTab,_DC,CL,QR)) :-
+	telling(X), tell(SpecFile),
+	write_envs(SymTab), write_queries(QR), write_preds(CL),
+	told, tell(X).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+write_envs(SymTab) :-
+	sym_gen(Sym, SymTab),
+	sym_name(Sym, Name, Arity),
+	( sym_prop(ex, Sym) ->
+		write(':- export '), writeq(Name), put(0'/),
+		write(Arity), put(0'.), nl
+	; sym_prop(im(Mod), Sym) ->
+		write(':- import '), writeq(Name), put(0'/),
+		write(Arity), write(' from '), writeq(Mod), put(0'.), nl
+	; sym_prop((local), Sym) ->
+		write(':- local '), writeq(Name), put(0'/),
+		write(Arity), put(0'.), nl
+	),
+	fail.
+write_envs(_) :- nl.
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+write_queries([pred(_PredSym,QrCls,_)|_]) :- 'write queries'(QrCls).
+
+'write queries'([]) :- nl.
+'write queries'([clause(_,QrBody,_)|QrCls]) :-
+	( QrBody = inlinegoal(true,0,_) -> true
+	; QrBody = if(Qr,_) -> write('?- '), write_body(Qr), put(0'.), nl
+	; write('?- '), write_body(QrBody), put(0'.), nl
+	),
+	'write queries'(QrCls).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+write_preds([]).
+write_preds([Pred|Preds]) :-
+	Pred = pred(Sym,ClauseList,_Pragma),
+	sym_name(Sym, Name, Arity),
+	write_pred_props(Sym, Name, Arity),
+	write_clauses(ClauseList, Name, Arity),
+	write_preds(Preds).
+
+write_pred_props(Sym, Name, Arity) :-
+	( sym_prop(index(Pos), Sym) ->
+		write(':- index '), writeq(Name), put(0'/),
+		write(Arity), put(0'-), write(Pos), put(0'.), nl
+	; true ),
+	( sym_prop(mode(Mode), Sym) ->
+		write(':- mode  '), write(Mode), put(0'.), nl
+	; true ),
+	( sym_prop(tabled(_,_,_,_), Sym) ->
+		write(':- table '), writeq(Name), put(0'/),
+		write(Arity), put(0'.), nl
+	; true ).
+
+write_clauses([], _, _) :- nl.
+write_clauses([Cl|Cls], Name, Arity) :-
+	Cl = clause(HeadArgs,Body,_),
+	writeq(Name), 
+	( Arity =:= 0 -> true
+	; put(0'(), HeadArgs = [Arg|Args], write_args(Arg, Args), put(0'))
+	),
+	( Body = inlinegoal(true,0,_) -> true
+	; write(' :- '), nl, write_body(Body)
+	),
+	put(0'.), nl,
+	write_clauses(Cls, Name, Arity).
+
+/*	The following works for all representations (both internal and	*/
+/*	intermediate.							*/
+
+write_body(nil).
+write_body(and(G1,G2)) :- 
+	write_body(G1), write(', '), nl,
+	write_body(G2).
+write_body(or(G1,G2)) :- 
+	write_body(G1), nl,
+	tab(8), write(' ; '), nl,
+	write_body(G2).
+write_body(if(G1,G2)) :- 
+	write_body(G1), write(' -> '), nl,
+	write_body(G2).
+write_body(if_then_else(G1,G2,G3)) :-
+	write('( '), write_body(G1), write(' -> '), nl, 
+	write_body(G2), nl, 
+	write(' ; '), nl, 
+	write_body(G3), write(' )'), nl.
+write_body(not(G)) :- write('\+ '), write_body(G).
+write_body(goal(Sym,GoalArgs)) :-
+	tab(8), 
+	sym_name(Sym, Name, Arity),
+	writeq(Name),
+	( Arity =:= 0 -> true
+	; put(0'(), GoalArgs = [Arg|Args], write_args(Arg, Args), put(0'))
+	).
+write_body(inlinegoal(Name,Arity,Args)) :-
+	tab(8), 
+	( Arity =:= 0 -> write(Name)
+	; Arity =:= 1 ->
+		writeq(Name), put(0'(), Args = [Arg], write_arg(Arg), put(0'))
+	; Args = [Arg1,Arg2], write_arg(Arg1),
+	  put(0' ), write(Name), put(0' ), write_arg(Arg2)
+	).
+
+:- index write_args/2-2.
+
+write_args(One, []) :- write_arg(One).
+write_args(One, [Two|Rest]) :-
+	write_arg(One), write(', '), write_args(Two, Rest).
+
+write_arg(varocc(ID)) :- 
+	( integer(ID) -> put(0'_) ; true ), write(ID).
+write_arg(constant(Sym)) :- sym_name(Sym,Name,_), writeq(Name).
+write_arg(integer(I)) :- write(I).
+write_arg(real(R)) :- write(R).
+write_arg(structure(Sym,StructArgs)) :-
+	sym_name(Sym, Name, Arity),
+	( Name == '.', Arity =:= 2 ->
+		put(0'[), StructArgs = [H,T],
+		write_arg(H), put(0'|),
+		write_arg(T), put(0'])
+	; writeq(Name), put(0'(),
+	  StructArgs = [Arg|Args], write_args(Arg, Args), put(0'))
+	).
+
+/* --------------------- end of file sanity.P ------------------------- */
+

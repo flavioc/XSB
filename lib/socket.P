@@ -1,0 +1,37 @@
+/* File:      socket.P
+** Author(s): The XSB Group
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+socket(Sockfd) :- socket_request(0,0,Sockfd,_,_,_). % Domain=AF_INET
+socket_bind(Sockfd,Port) :- socket_request(1,0,Sockfd,Port,_,_).
+socket_listen(Sockfd,Length) :- socket_request(2,Sockfd,Length,_,_,_).
+socket_accept(Sockfd,Sockfptr) :- socket_request(3,Sockfd,Sockfptr,_,_,_).
+socket_connect(Sockfd,Port,Hostname,Sockfptr) :- 
+	socket_request(4,0,Sockfd,Port,Hostname,Sockfptr).
+socket_flush(Sockfd) :- socket_request(5,Sockfd,_,_,_,_).
+socket_close(Sockfd) :- socket_request(6,Sockfd,_,_,_,_).
+socket_recv(Sockfd, Msg) :- socket_request(7,Sockfd,Msg,_,_,_).
+socket_send(Sockfd, Msg) :- socket_request(8,Sockfd,Msg,_,_,_).
+socket_send_eof(Sockfd) :- socket_request(9,Sockfd,_,_,_,_).
+socket_send_asci(Sockfd,Msg) :- socket_request(10,Sockfd,Msg,_,_,_).

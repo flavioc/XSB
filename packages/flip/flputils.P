@@ -1,0 +1,164 @@
+/* File:      flputils.P
+** Author(s): Bertram Ludaescher
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+:- export 
+	write_stream/2,display_nl/0,display/1,portray_list/1,
+	write_matches/1,write_match/1,
+	write_list/1,
+	write_codelist/1,write_body/1,
+	depth_bound/2.
+
+
+write_stream(Stream,T) :-
+	telling(F),tell(Stream),
+	write(T),
+	told,tell(F).
+
+display_nl :- name(NL,[10]),write_stream(userout,NL).
+display(T) :- write_stream(userout,T).
+
+portray_list([]).
+portray_list([X|Xs]) :-
+	portray(X),
+	portray_list(Xs).
+
+portray(identifier(X)) :- !,write(X).
+portray(atom(X)) :- !,
+	(name(X,[32|R])
+	-> name(X1,R),write(X1)
+	; write(X)
+	).
+portray(num(X)) :- !,write(X).
+portray(var(_,X)) :- !,write(X).
+portray(identifier(X)) :- !,write(X).
+portray(X) :- write(X).
+
+
+
+write_matches([]).
+write_matches([M|Ms]) :-
+	write_match(M),nl,
+	write_matches(Ms).
+
+write_match([]).
+write_match([XN=V]) :-
+	name(X,XN),
+	write(X),write('='),write_val(V).
+write_match([XN=V,X2|Xs]) :-
+	name(X,XN),
+	write(X),write('='),write_val(V),put(9),
+	write_match([X2|Xs]).
+
+write_val([]) :- !,write('""').
+write_val([C|Cs]) :- !,
+	name(A,[C|Cs]),
+	write('"'),write(A),write('"').
+write_val(X) :- 
+	write(X).
+
+write_list([]).
+write_list([X|Xs]) :-
+	write(X),
+	write_list(Xs).
+
+
+
+
+write_codelist([]).
+write_codelist([X|Xs]) :-
+	write_code(X),
+	write_codelist(Xs).
+
+
+write_code(rule(H,B)):-
+	write(H),write(' :-'),nl,
+	write('	'),write_body(B).
+write_code(query(Q,Match)) :-
+	write(' :- '),write_body([print_all(Q,Match)]).
+write_code(fact(Hs)):-
+	write_facts(Hs).
+
+write_body([X]) :-
+	write(X), write('.'),nl.
+write_body([X,X1|Xs]) :-
+	write(X),write(','),
+	write_body([X1|Xs]).
+
+write_facts([]).
+write_facts([X|Xs]) :-
+	write(X),write('.'),nl,
+	write_facts(Xs).
+
+%   Author : R.A.O'Keefe
+%   Updated: 12 March 1984, 23 June 1987
+
+depth_bound(Compound, Bound) :-
+	nonvar(Compound),
+	functor(Compound, _, Arity),
+	Arity > 0,
+	!,
+	Bound > 0,		% this is the test!
+	Limit is Bound-1,
+	depth_bound(Arity, Compound, Limit).
+
+depth_bound(_, _).
+
+
+depth_bound(0, _, _) :-
+	!.
+
+depth_bound(N, Compound, Limit) :-
+	arg(N, Compound, Arg),
+	depth_bound(Arg, Limit),
+	M is N-1,
+	!,
+	depth_bound(M, Compound, Limit).
+
+%depth_of_term(Compound, Depth) :-
+%	nonvar(Compound),
+%	functor(Compound, _, Arity),
+%	Arity > 0,
+%	!,
+%	depth_of_term(Arity, Compound, 0, ArgDepth),
+%	Depth is ArgDepth+1.
+%depth_of_term(_, 0).
+
+%depth_of_term(0, _, Depth, Depth) :- !.
+
+%depth_of_term(N, Compound, SoFar, Depth) :-
+%	arg(N, Compound, Arg),
+%	depth_of_term(Arg, ArgDepth),
+%	ArgDepth > SoFar,
+%	M is N-1,
+%	!,
+%	depth_of_term(M, Compound, ArgDepth, Depth).
+
+%depth_of_term(N, Compound, SoFar, Depth) :-
+%	M is N-1,
+%	depth_of_term(M, Compound, SoFar, Depth).
+
+
+

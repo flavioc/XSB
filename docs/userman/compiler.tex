@@ -1,0 +1,760 @@
+\section{The Compiler} \label{the_compiler} \index{Compiler}
+%===========================================================
+
+The \ourprolog\ compiler translates \ourprolog\ source files into
+byte-code object files.  It is written entirely in Prolog.
+Both the sources and the byte code\index{byte code!files!compiler}
+for the compiler can be found in the \ourprolog\ system directory
+{\tt cmplib}\index{cmplib@{\tt cmplib}}.
+
+The following sections describe the various aspects of the compiler 
+in more detail.
+
+
+\subsection{Invoking the Compiler} \label{compiler_invoking}
+\index{invoking the Compiler}\index{Compiler!invoking}
+%=====================================================
+
+The compiler is invoked directly at the interpreter level (or in a 
+program) through the Prolog predicates {\tt compile/[1,2]}.  
+
+The general forms of predicate {\tt compile/2} are:
+\begin{center}{\tt	
+	compile(+File, +OptionList) \\
+	compile(+FileList, +OptionList)
+}
+\end{center}
+and at the time of the call both of its arguments should be ground.
+
+The second form allows the user to supply a proper list of file names as
+the parameter for {\tt compile/[1,2]}.  In this case the compiler will
+compile all the files in {\tt FileList} with the compiler
+options specified in {\tt OptionList}.
+
+% JF:
+%\demo{\verb+|+ ?- compile(Files).} 
+\demo{$|$ ?- compile(Files).} 
+
+\noindent
+is just a notational shorthand for the query:
+
+% JF:
+%\demo{\verb+|+ ?- compile(Files, []).}
+\demo{$|$ ?- compile(Files, []).}
+
+The standard predicates {\tt consult/[1,2]} call {\tt compile/1} (if
+necessary).  Argument {\tt File} can be any syntactically valid UNIX
+or DOS file name (in the form of a Prolog atom), but the user can also
+supply a module name.
+
+The list of compiler options {\tt OptionList}, if specified, 
+should be a proper Prolog list, i.e.\ a term of the form:
+\begin{center}
+	{\tt [ $option_1$, $option_2$, $\ldots$, $option_n$ ].}
+\end{center}
+where $option_i$ is one of the options described in
+Section~\ref{compiler_options}.
+
+The source file name corresponding to a given module is obtained by 
+concatenating a directory prefix and the extension {\tt .P} (or {\tt .c}) 
+to the module name.  The directory prefix must be in the
+dynamic loader path (see Section~\ref{LibPath}).
+Note that these directories are searched in a predetermined
+order (see Section~\ref{LibPath}), so if a module with the same name
+appears in more than one of the directories searched, the compiler 
+will compile the first one it encounters.  In such a case, the user can 
+override the search order by providing an absolute path name.
+
+If {\tt File} contains no extension, an attempt is made to compile the 
+file {\tt File.P} (or {\tt File.c}) before trying compiling the file 
+with name {\tt File}.  
+
+We recommend use of the extension {\tt .P} for Prolog source file to
+avoid ambiguity.  Optionally, users can also provide a header file for
+a module (denoted by the module name suffixed by {\tt .H}).  In such a
+case, the \ourprolog\ compiler will first read the header file (if it
+exists), and then the source file.  Currently the compiler makes no
+special treatment of header files.  They are simply included in the
+beginning of the corresponding source files, and code can, in
+principle, be placed in either.  In future versions of \ourprolog\ the
+header files may be used to check interfaces across modules, hence it
+is a good programming practice to restrict header files to
+declarations alone.
+ 
+The result of the compilation (an SLG-WAM object code file) is stored
+in a ($\langle$filename$\rangle$.O), but {\tt compile/[1,2]} does {\em
+not\/} load the object file it creates.  (The standard predicates {\tt
+consult/[1,2]} and {\tt reconsult/[1,2]} both recompile the source
+file, if needed, and load the object file into the system.)  The
+object file created is always written into the directory where the
+source file resides (the user should therefore have write permission
+in that directory).
+ 
+If desired, when compiling a module (file), clauses and directives can be
+transformed as they are read.  This is indeed the case for definite clause
+grammar rules (see Chapter~\ref{DCGs}), but it can also be done for clauses
+of any form by providing a definition for predicate {\tt term\_expansion/2}
+(see Section~\ref{DCG_builtins}).
+
+Predicates {\tt compile/[1,2]} can also be used to compile foreign
+language modules.  In this case, the names of the source files should
+have the extension {\tt .c} and a {\tt .P} file must {\em not\/}
+exist.  A header file (with extension {\tt .H}) {\em must} be present
+for a foreign language module (see Chapter~\ref{foreign}).
+
+
+\subsection{Compiler Options}\label{compiler_options}
+\index{Compiler!options}\index{options!Compiler}
+%=================================================
+
+The following options are currently recognized by the compiler:
+\begin{description}
+\item[{\tt optimize}]\index{{\tt optimize}}
+	When specified, the compiler tries to optimize the object code.
+	In \version, this option optimizes predicate calls, among other
+	features, so execution may be considerably faster for recursive
+	loops.  However,
+	due to the nature of the optimizations, the user may not be able to
+	trace all calls to predicates in the program.  Also the Prolog code
+	should be {\em static}.  In other words, the user is {\em not} allowed
+	to alter the entry point of these compiled predicates by asserting new
+	clauses.  As expected, the compilation phase will also be slightly
+	longer.  For these reasons, the use of the {\tt optimize} option may
+	not be suitable for the development phase, but is
+	recommended once the code has been debugged.
+
+%-------------------------------
+\index{tabling!compiler options}
+%-------------------------------
+\item[{\tt auto\_table}]\index{{\tt auto\_table}}
+	When specified as a compiler option, the effect is
+	as described in Section~\ref{tabling_directives}.  Briefly, a static
+	analysis is made to determine which predicates may loop under Prolog's
+	SLD evaluation.  These predicates are compiled as tabled predicates,
+	and SLG evaluation is used instead.
+%qkostis
+\item[{\tt suppl\_table}]\index{{\tt suppl\_table}}
+	The intention of this option is to direct the
+	system to table for efficiency rather than termination.  When 
+	specified, the compiler uses tabling to ensure that no predicate
+	will depend on more than three tables or EDB facts (as specified
+	by the declaration {\tt edb} of Section~\ref{tabling_directives}).
+        The action of {\tt suppl\_table} is independent of that of
+	{\tt auto\_table}, in that a predicate tabled by one will not
+	necessarily be tabled by the other.
+	During compilation, {\tt suppl\_table} occurs after {\tt auto\_table},
+	and uses table declarations generated by it, if any.
+        
+%--------------------------------------
+\index{specialisation!compiler options}
+%--------------------------------------
+\item[{\tt spec\_repr}]\index{{\tt spec\_repr}}
+	When specified, the compiler performs specialisation of partially
+	instantiated calls by replacing their selected clauses with the
+	representative of these clauses, i.e. it performs {\em folding\/}
+	whenever possible.  We note in general, the code replacement
+	operation is not always sound; i.e. there
+	are cases when the original and the residual program are not
+	computationally equivalent.  The compiler checks for sufficient (but
+	not necessary) conditions that guarantee computational equivalence.
+	If these conditions are not met, specialisation is not performed
+	for the violating calls.
+\item[{\tt spec\_off}]\index{{\tt spec\_off}}
+	When specified, the compiler does not perform specialisation of
+	partially instantiated calls.
+\item[{\tt unfold\_off}]\index{{\tt unfold\_off}}
+	When specified, singleton sets optimisations are not performed
+	during specialisation.  This option is necessary in \version\
+	for the specialisation of {\tt table} declarations that select
+	only a single chain rule of the predicate.
+%qtls ??
+\item[{\tt spec\_dump}]\index{{\tt spec\_dump}}
+	Generates a {\tt module.spec} file, containing the result of
+	specialising partially instantiated calls to predicates defined
+	in the {\tt module} under compilation.  The result is in Prolog
+	source code form.
+
+%---------------------------------------------
+\index{unification factoring!compiler options}
+%---------------------------------------------
+\item[{\tt ti\_dump}]\index{{\tt ti\_dump}}
+	Generates a {\tt module.ti} file containing the result of applying
+	unification factoring to predicates defined in the {\tt module}
+	under compilation.  The result is in Prolog source code form.
+	See page~\pageref{transformational_indexing} for more information
+	on unification factoring.
+\item[{\tt ti\_long\_names}]\index{{\tt ti\_long\_names}}
+	Used in conjunction with {\tt ti\_dump}, generates names for
+	predicates created by unification factoring that reflect the
+	clause head factoring done by the transformation.
+
+\item[{\tt init\_var\_off}]\index{{\tt init\_var\_off}}
+	When specified, the compiler will give a warning (instead of an
+	error) upon finding that a potentially uninitialized variable is
+	being used.  {\em Potentially uninitialized variables\/} are
+	variables that appear in only one branch of an {\sf or} or an
+	{\sf if-then-else} goal in the body, and, furthermore, are used
+	after that goal.
+	In certain clauses, the variable may always be initialized after
+	the {\sf or} or the {\sf if-then-else} goal, because the execution 
+	cannot continue through the path of the branch that does not initialize
+	the variable.  In these cases, the {\tt init\_var\_off} option can be
+	useful, though the user is cautioned against careless use of this
+	option.
+
+	{\sc Warning:} The object-file generated by the compiler when this
+		option is used may not execute correctly (or even cause
+		\ourprolog\ to core dump!) if the variable is indeed
+		uninitialized when used.
+
+%---------------------------------------------
+\index{mode analysis!compiler options}
+%---------------------------------------------
+\item[{\tt modeinfer}]\index{{\tt modeinfer}}
+	This option is used to trigger mode analysis. For each module
+	compiled,  the mode analyzer creates a  {\tt {\em module}.D} file
+	that contains the mode information.
+
+	{\sc Warning:}
+	Occasionally, the analysis itself may take a long time. 
+	As far as we have seen,
+	the analysis times are longer than the rest of the compilation time
+	only when the module contains recursive predicates of arity $\geq 10$.
+	If the analysis takes an unusually long time
+	(say, more than 4 times as long as the rest of the compilation)
+	you may want to abort and restart compilation without {\tt modeinfer}.
+	
+\item[{\tt mi\_warn}]\index{{\tt mi\_warn}}
+	During mode analysis, the {\tt .D} files corresponding to the
+	imported modules are read in. The option {\tt mi\_warn} is used
+	to generate warning messages if these {\tt .D} files are 
+	outdated --- {\em i.e.}, older
+	than the last modification time of the source files.
+
+% tls mention that the following are for hackers ...
+\item[{\tt sysmod}] Mainly used when compiling system modules. If specified,
+	standard predicates (listed in
+	Appendix~\ref{standard_predicates}) are automatically
+	available for use only if they are primitive predicates (see
+	Appendix~\ref{primitive_predicates}).  When compiling in this
+	mode, non primitive standard predicates must be explicitly
+	imported from the appropriate system module.
+%	On the other hand, when compiling with this option all \ourprolog\
+%	primitive predicates (see Appendix~\ref{primitive_predicates}) are
+%	automatically available for use.
+\item[{\tt verbo}] Compiles the files (modules) specified in ``verbose'' mode, 
+	printing out information about the progress of the compilation of each 
+	predicate.
+\item[{\tt profile}] This option is usually used when modifying the
+	\ourprolog\ compiler.  When specified, the compiler prints out
+	information about the time spent in each phase of the
+	compilation process.
+
+\item[{\tt mi\_foreign}] This option is used {\em only\/} when mode analysis
+	is performed on \ourprolog\ system modules. This option is
+	needed when analyzing {\tt standard} and {\tt machine} in
+	{\tt syslib}.
+
+\item[{\tt asm\_dump, compile\_off}] Generates a textual representation of 
+	the SLG-WAM assembly code and writes it into the file {\tt module.A}
+	where {\tt module} is the name of the module (file) being compiled.  
+	
+	{\sc Warning:} This option was created for compiler debugging and is
+		not intended for general use.  There might be cases where
+		compiling a module with these options may cause generation
+		of an incorrect {\tt .A} and {\tt .O} file.  In such cases,
+		the user can see the SLG-WAM instructions that are
+		generated for a module by compiling the module as usual and
+		then using the {\tt -d module.O} command-line option of the
+		\ourprolog\ emulator (see Section~\ref{emulator_options}).
+\item[{\tt index\_off}] When specified, the compiler does not generate indices
+	for the predicates compiled.  
+\end{description}
+
+
+\subsection{Specialisation}\label{specialisation}
+\index{Compiler!specialisation}\index{specialisation!Compiler}
+%=============================================================
+
+From Version 1.4.0 on, the \ourprolog\ compiler automatically performs
+specialisation of partially instantiated calls.  Specialisation can be
+thought as a source-level program transformation of a program to a
+residual program in which partially instantiated calls to predicates
+in the original program are replaced with calls to specialised versions
+of these predicates.  The expectation from this process is that the
+calls in the residual program can be executed more efficiently that
+their non-specialised counterparts.  This expectation is justified
+mainly because of the following two basic properties of the
+specialisation algorithm:
+\begin{description}
+\item[Compile-time Clause Selection] The specialised calls of the
+	residual program  directly select (at compile time) a subset
+	containing only the clauses that the corresponding calls of the
+	original program would otherwise have to examine during their
+	execution (at run time).  By doing so, laying down unnecessary
+	choice points is at least partly avoided, and so is the need to
+	select clauses through some sort of indexing.
+\item[Factoring of Common Subterms] Non-variable subterms of partially
+	instantiated calls that are common with subterms in the heads
+	of the selected clauses are factored out from these terms
+	during the specialisation process.  As a result, some head
+	unification ({\tt get\_*} or {\tt unify\_*}) and some argument
+	register ({\tt put\_*}) WAM instructions of the original
+	program become unnecessary.  These instructions are eliminated
+	from both the specialised calls as well as from the specialised
+	versions of the predicates.
+\end{description}
+Though these properties are sufficient to get the idea behind
+specialisation, the actual specialisation performed by the \ourprolog\
+compiler can be better understood by the following example.  The
+example shows the specialisation of a predicate that checks if a list
+of HiLog terms is ordered:
+\begin{center}
+\tt
+\begin{tabular}{ccc}
+\begin{tabular}{l}
+ordered([]). \\
+ordered([X]). \\
+ordered([X,Y|Z]) :- \\
+\ \ \ \ X @=< Y, ordered([Y|Z]). 
+\end{tabular}
+& $\longrightarrow$ &
+\begin{tabular}{l}
+ordered([]). \\
+ordered([X]). \\
+ordered([X,Y|Z]) :- \\
+\ \ \ \ X @=< Y, \_\$ordered(Y, Z). \\
+\\
+:- index \_\$ordered/2-2. \\
+\_\$ordered(X, []). \\
+\_\$ordered(X, [Y|Z]) :- \\
+\ \ \ \ X @=< Y, \_\$ordered(Y, Z).
+\end{tabular}
+\end{tabular}
+\end{center}
+The transformation (driven by the partially instantiated call
+{\tt ordered([Y|Z])}) effectively allows predicate {\tt ordered/2}
+to be completely deterministic (when used with a proper list as its
+argument), and to not use any unnecessary heap-space for its
+execution.  We note that appropriate {\tt :- index} directives are
+automatically generated by the \ourprolog\ compiler for all specialised
+versions of predicates.
+
+The default specialisation of partially instantiated calls is without
+any folding of the clauses that the calls select.  Using the {\tt
+spec\_repr} compiler option (see Section~\ref{compiler_options})
+specialisation with replacement of the selected clauses with the
+representative of these clauses is performed.  Using this compiler
+option, predicate {\tt ordered/2} above would be specialised as follows:
+\begin{center}
+\begin{minipage}{4.1in}
+\begin{verbatim}
+ordered([]).
+ordered([X|Y]) :- _$ordered(X, Y).
+
+:- index _$ordered/2-2.
+_$ordered(X, []).
+_$ordered(X, [Y|Z]) :- X @=< Y, _$ordered(Y, Z).
+\end{verbatim}
+\end{minipage}
+\end{center}
+We note that in the presense of cuts or side-effects, the code
+replacement operation is not always sound, i.e.  there are cases when
+the original and the residual program are not computationally equivalent
+(with respect to the answer substitution semantics).  The compiler
+checks for sufficient (but not necessary) conditions that guarantee
+computational equivalence, and if these conditions are not met,
+specialisation is not performed for the violating calls.
+
+The \ourprolog\ compiler prints out messages whenever it specialises
+calls to some predicate.  For example, while compiling a file
+containing predicate {\tt ordered/1} above, the compiler would print
+out the following message:
+\begin{center}
+{\tt	\% Specialising partially instantiated calls to ordered/1}
+\end{center}
+The user may examine the result of the specialisation transformation
+by using the {\tt spec\_dump} compiler option
+(see Section~\ref{compiler_options}).
+
+Finally, we have to mention that for technical reasons beyond the scope of
+this document, specialisation cannot be transparent to the user; predicates
+created by the transformation do appear during tracing.
+
+
+\subsection{Compiler Directives}\label{compiler_directives}
+\index{Compiler!directives}\index{directives!Compiler}
+%=====================================================
+
+The following compiler directives are recognized in \version\ of XSB
+\footnote{Any parallelisation directives ({\tt parallel}) are simply ignored by the
+compiler, but do not result in syntax errors to enhance compatibility with
+various other earlier versions of PSB-Prolog.}.  
+
+\subsubsection{Mode Declarations}\label{mode_declarations}
+\index{modes!directives}\index{directives!modes}
+%-----------------------------------------------------
+
+The \ourprolog\ compiler accepts {\tt mode} declarations of the form:
+
+\demo{:- mode $ModeAnnot_1, \ldots, ModeAnnot_n$.}
+
+\noindent
+where each $ModeAnnot$ is a {\em mode annotation\/} (a {\em term
+indicator\/} whose arguments are elements of the set {\tt \{+,-,\#,?\}}).
+From Version 1.4.1 on, {\tt mode} directives are used by the compiler for 
+tabling directives, a use which differs from the standard use of modes
+in Prolog systems\footnote{The most common uses of {\tt mode} declarations in 
+	  Prolog systems are to reduce the size of compiled code,
+	  or to speed up a predicate's execution.}.
+See Section~\ref{tabling_directives} for detailed examples.
+
+Mode annotations have the following meaning:
+\begin{description}
+\item[{\tt +}]
+	This argument is an input to the predicate.  In every invocation
+	of the predicate, the argument position must contain a non-variable
+	term.  This term may not necessisarily be ground, but the 
+	predicate is guaranteed not to alter this argument).
+
+	\demo{:- mode see(+), assert(+).}
+\item[{\tt -}]
+	This argument is an output of the predicate.  In every
+	invocation of the predicate the argument
+	position {\em will always be a variable\/} (as opposed to 
+	the {\tt \#} annotation below).
+	This variable is unified with the value returned by the predicate.
+	We note that Prolog does not enforce the requirement that output
+	arguments should be variables; however, output unification is not
+	very common in practice.
+
+	\demo{:- mode cputime(-).}
+\item[{\tt \#}]
+	This argument is either:
+	\begin{itemize}
+	\item	An output argument of the predicate for which a non-variable
+		value may be supplied for this argument position.  If such a
+		value is supplied, the result in this position is unified with
+		the supplied supplied value.  The predicate fails if this
+		unification fails.  If a variable term is supplied, the
+		predicate succeeds, and the output variable is unified with
+		the return value.
+
+		\demo{:- mode '='(\#,\#).}
+	\item	An input/output argument position of a predicate that has
+		only side-effects (usually by further instantiating that
+		argument).  The {\tt \#} symbol is used to denote the $\pm$
+		symbol that cannot be entered from the keyboard.
+	\end{itemize}
+\item[{\tt ?}]
+	This argument does not fall into any of the above categories. 
+        Typical cases would be the following:
+	\begin{itemize}
+	\item	An argument that can be used both as input and as output
+		(but usually not with both uses at the same time).
+
+		\demo{:- mode functor(?,?,?).}
+	\item	An input argument where the term supplied can be a variable
+		(so that the argument cannot be annotated as {\tt +}), or is
+		instantiated to a term which itself contains uninstantiated
+		variables, but the predicate is guaranteed {\em not\/} to
+		bind any of these variables.
+
+		\demo{:- mode var(?), write(?).}
+	\end{itemize}
+\end{description}
+We try to follow these mode annotation conventions throughout this manual.
+
+Finally, we warn the user that {\tt mode} declarations can be error-prone,
+and since errors in mode declarations do not show up while running the
+predicates interactively, unexpected behaviour may be witnessed in compiled
+code, optimised to take modes into account (currently not performed by
+\ourprolog).  However, despite this danger, {\tt mode} annotations can be
+a good source of documentation, since they express the programmer's
+intention of data flow in the program.
+
+
+\subsubsection{Tabling Directives}\label{tabling_directives}
+\index{tabling!directives}\index{directives!tabling}
+%-----------------------------------------------------
+\index{{\tt auto\_table}}
+Memoization is often necessary to ensure that programs terminate, and
+can be useful as an optimization strategy as well.  The underlying
+engine of \ourprolog\ is based on SLG, a memoization strategy, which,
+in our version, maintains a table of calls and their answers for each
+predicate declared as {\em tabled}.  Predicates that are not declared
+as tabled execute as in Prolog, eliminating the expense of tabling
+when it is unnecessary.
+
+The simplest way to use tabling is to include the directive
+
+\demo{:- auto\_table.}
+
+\noindent
+anywhere in the source file.  {\tt auto\_table} declares predicates
+tabled so that the program will terminate.
+
+To understand precisely how {\tt auto\_table} does this, it is
+necessary to mention a few properties of SLG.  For programs which have
+no function symbols, or where function symbols always have a limited
+depth, SLG resolution ensures that any query will terminate after it
+has found all correct answers.  In the rest of this section, we
+restrict consideration to such programs.
+
+Obviously, not all predicates will need to be tabled for a program to
+terminate.  The {\tt auto\_table} compiler directive tables only those
+predicates of a module which appear to static analysis to contain an
+infinite loop, or which are called directly through {\tt tnot/1}.  It
+is perhaps more illuminating to demonstrate these conditions through
+an example rather than explaining them.  For instance, in the program.
+
+%tls commented out minipage because latex was formatting badly,
+\begin{center}
+%\begin{minipage}{3in}
+\begin{verbatim}
+:- auto_table. 
+
+p(a) :- s(f(a)). 
+
+s(X) :- p(f(a)).
+
+r(X) :- q(X,W),r(Y).
+
+m(X) :- tnot(f(X)).
+
+:- mode ap1(-,-,+).
+ap1([H|T],L,[H|L1]) :- ap1(T,L,L1).
+
+:- mode ap(+,+,-).
+ap([],F,F).
+ap([H|T],L,[H|L1]) :- ap(T,L,L1).
+
+mem(H,[H|T]).
+mem(H,[_|T]) :- mem(H,T).
+\end{verbatim}
+%\end{minipage}
+\end{center}
+
+\noindent
+The compiler prints out the messages
+\begin{verbatim}
+% Compiling predicate s/1 as a tabled predicate
+% Compiling predicate r/1 as a tabled predicate
+% Compiling predicate m/1 as a tabled predicate
+% Compiling predicate mem/2 as a tabled predicate
+\end{verbatim}
+
+Terminating conditions were detected for {\tt ap1/3} and {\tt ap/3}, but
+not for any of the other predicates.
+
+{\tt auto\_table} gives an approximation of tabled programs which we
+hope will be useful for most programs.  The minimal set of tabled
+predicates needed to insure termination for a given program is
+undecidible.  
+\comment{
+Practically, refining the set of tabled predicates
+deduced by {\tt auto\_table} is still an open research problem.
+}
+It should be noted that the presence of meta-predicates such as {\tt
+call/1} makes any static analysis useless, so that the {\tt
+auto\_table} directive should not be used in such cases.
+
+Predicates can be explicitly declared as tabled as well, through the 
+{\tt table/[1,2,3]}.   When {\tt table/1} is used, the directive
+takes the form
+
+\demo{:- table(F/A).}
+
+\noindent
+where {\tt F} is the functor of the predicate to be tabled, and {\tt A} its
+arity.  
+
+\index{{\tt suppl\_table}}
+Another use of tabling is to filter out redundant solutions for
+efficiency rather than termination.  In this case, suppose that the
+directive {\tt edb/1} were used to indicate that certain predicates were
+likely to have a large number of clauses.  Then the action of the declaration
+{\tt :- suppl\_table} in the program:
+\begin{verbatim}
+:- edb(r1/2).
+:- edb(r2/2).
+:- edb(r3/2).
+
+:- suppl_table.
+
+join(X,Z):- r1(X,X1),r2(X1,X2),r3(X2,Z).
+\end{verbatim}
+would be to table {\tt join/2}.  The {\tt suppl\_table} directive is
+the XSB analogue to the deductive database optimization, {\em
+supplementary magic templates} \cite{BeRa91}.  {\tt suppl\_table/0} is
+shorthand for {\tt suppl\_table(2)} which tables all predicates
+containing clauses with two or more {\tt edb} facts or tabled
+predicates.  By specifying {\tt suppl\_table(3)} for instance, only
+predicates containing clauses with three or more {\tt edb} facts or
+tabled predicates would be tabled.  This flexibility can prove useful
+for certain data-intensive applications.
+
+
+\subsubsection{Indexing Directives}\label{indexing_directives}
+\index{indexing!directives}\index{directives!indexing}
+%-------------------------------------------------------------
+
+The \ourprolog\ compiler usually generates an index on the principal 
+functor of the first argument of a predicate.  Indexing on the appropriate 
+argument of a predicate may significantly speed up its execution time.  
+In many cases the first argument of a predicate may not be the most
+appropriate argument for indexing and changing the order of arguments
+may seem unnatural.  In these cases, the user may generate an index
+on any other argument by means of an indexing directive.  This is a
+directive of the form:
+
+\demo{:- index Functor/Arity-IndexArg.}
+
+\noindent
+indicating that an index should be created for predicate 
+{\tt Functor}/{\tt Arity} on its ${\tt IndexArg}^{\rm th}$ argument.
+One may also use the form:
+
+\demo{:- index(Functor/Arity, IndexArg, HashTableSize).}
+
+\noindent
+which allows further specification of the size of the hash table to use for
+indexing this predicate if it is a {\em dynamic} (i.e., asserted) predicate.
+For predicates that are dynamically loaded, this directive can be used to
+specify indexing on more than one argument, or indexing on a combination
+of arguments (see its description on page~\pageref{index_dynamic}).
+For a compiled predicate the size of the hash table is computed automatically,
+so {\tt HashTableSize} is ignored.
+
+All of the values {\tt Functor}, {\tt Arity}, {\tt IndexArg} (and possibly
+{\tt HashTableSize}) should be ground in the directive.  More specifically,
+{\tt Functor} should be an atom, {\tt Arity} an integer in the range 0..255,
+and {\tt IndexArg} an integer between 0 and {\tt Arity}.  If {\tt IndexArg}
+is equal to~0, then no index is created for that predicate. An {\tt index}
+directive may be placed anywhere in the file containing the predicate it
+refers to.
+
+As an example, if we wished to create an index on the third argument 
+of predicate {\tt foo/5}, the compiler directive would be:
+
+\demo{:- index foo/5-3.}
+
+
+\subsubsection{Unification Factoring}\label{transformational_indexing}
+\index{indexing!transformational}
+When the clause heads of a predicate have portions of arguments common
+to several clauses, indexing on the principal functor of one argument
+may not be sufficient.  Indexing may be improved in such cases by the
+use of unification factoring.  Unification Factoring is a program
+transformation that ``factors out'' common parts of clause heads,
+allowing differing parts to be used for indexing, as illustrated by
+the following example:
+\begin{center}
+\tt
+\begin{tabular}{ccc}
+\begin{tabular}{l}
+p(f(a),X) :- q(X). \\
+p(f(b),X) :- r(X).
+\end{tabular}
+& $\longrightarrow$ &
+\begin{tabular}{l}
+p(f(X),Y) :- \_\$p(X,Y). \\
+\_\$p(a,X) :- q(X). \\
+\_\$p(b,X) :- r(X).
+\end{tabular}
+\end{tabular}
+\end{center}
+The transformation thus effectively allows $p/2$ to be indexed
+on atoms $a/0$ and $b/0$.  Unification Factoring is transparent
+to the user; predicates created by the transformation are internal
+to the system and do not appear during tracing.
+
+The following compiler directives control the use of unification
+factoring:\footnote{Unification factoring was once called
+transformational indexing, hence the abbreviation {\tt ti} in the
+compiler directives}.
+\begin{description}
+\item[{\tt :- ti(F/A).}] Specifies that predicate $F/A$ should be
+	compiled with unification factoring enabled.
+\item[{\tt :- ti\_off(F/A).}] Specifies that predicate $F/A$ should be
+	compiled with unification factoring disabled.
+\item[{\tt :- ti\_all.}] Specifies that all predicates defined in the
+	file should be compiled with unification factoring enabled.
+\item[{\tt :- ti\_off\_all.}] Specifies that all predicates defined in
+	the file should be compiled with unification factoring disabled.
+\end{description}
+By default, higher-order predicates (more precisely, predicates named
+{\it apply\/} with arity greater than 1) are compiled with unification
+factoring enabled.  It can be disabled using the {\tt ti\_off}
+directive.  For all other predicates, unification factoring must be
+enabled explicitly via the {\tt ti} or {\tt ti\_all} directive.  If
+both {\tt :- ti(F/A).} ({\tt :- ti\_all.}) and {\tt :- ti\_off(F/A).}
+({\tt :- ti\_off\_all.}) are specified, {\tt :- ti\_off(F/A).} ({\tt
+:- ti\_off\_all.}) takes precedence.  Note that unification factoring
+may have no effect when a predicate is well indexed to begin
+with.  For example, unification factoring has no effect on the
+following program:
+\begin{center}
+\tt
+\begin{tabular}{l}
+p(a,c,X) :- q(X). \\
+p(b,c,X) :- r(X).
+\end{tabular}
+\end{center}
+even though the two clauses have $c/0$ in common.  The user may
+examine the results of the transformation by using the {\tt ti\_dump}
+compiler option (see Section~\ref{compiler_options}).
+
+\subsubsection{Other Directives} \label{other-directives}
+%==============================================
+
+XSB has other directives not found in other Prolog systems.
+
+\begin{description}
+\desc{:- hilog $atom_1, \ldots, atom_n$.}
+	Declares symbols $atom_1$ through $atom_n$ as HiLog symbols.
+	The {\tt hilog} declaration should appear {\em before} any use of
+	the symbols.  See Chapter~\ref{Syntax} for a purpose of this
+ 	declaration.
+\desc{:- ldoption($Options$).}
+        This directive is only recognized in the header file ({\tt .H} file) 
+	of a foreign module. See Chapter~\ref{foreign} for its explanation.
+\end{description}
+
+\subsection{Inline Predicates}\label{inline_predicates}
+\index{Compiler!inlines}\index{inlines!Compiler}
+%======================================================
+
+{\em Inline predicates} represent ``primitive'' operations in the
+WAM.  Calls to inline predicates are compiled into a sequence of WAM
+instructions in-line, i.e. without actually making a call to the
+predicate.  Thus, for example, relational predicates (like {\tt >/2},
+{\tt >=/2}, etc.) compile to, essentially, a subtraction followed by
+a conditional branch.  Inline predicates are expanded specially by
+the compiler and thus {\em cannot be redefined by the user without
+changing the compiler}.  The user does not need to import these
+predicates from anywhere.  There are available no matter what options
+are specified during compiling.
+
+Table~\ref{inlinepredicatetable} lists the inline predicates of
+\ourprolog\ \version.  Those predicates that start with \verb|_$|
+are internal predicates that are also expanded in-line during
+compilation.
+
+\begin{table}[htbp]\centering{\tt
+\begin{tabular}{lllll}
+\verb|'='/2|    &\verb|'<'/2|	&\verb|'=<'/2|  &\verb|'>='/2| &\verb|'>'/2| \\
+\verb|'=:='/2|  &\verb|'=\='/2|	&is/2           &\verb|'@<'/2| &\verb|'@=<'/2|\\
+\verb|'@>'/2|	&\verb|'@>='/2|	&\verb|'=='/2|	&\verb|'\=='/2|&fail/0  \\
+true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0   \\
+'\_\$cutto'/1	&'\_\$savecp'/1	&'\_\$builtin'/1
+\end{tabular}}
+\caption{The Inline Predicates of \ourprolog}\label{inlinepredicatetable}
+\end{table}
+
+We warn the user to be very cautious when defining predicates whose functor
+starts with \verb|_$| since the names of these predicates may interfere with
+some of \ourprolog's internal predicates.  The situation may be particularly
+severe for predicates like {\tt '\_\$builtin'/1} that are treated specially
+by the \ourprolog\ compiler.
+

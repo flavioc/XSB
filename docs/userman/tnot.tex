@@ -1,0 +1,24 @@
+%----------------------------------------------------------------------------
+\begin{figure}[hbt]
+\longline
+\begin{sf}
+\begin{tabbing}
+foooo\=foooo\=foooo\=foooo\=fooooooooooooooooooooo\=ooo\=\kill
+\> tnot($S$) {\tt :-} \\
+\> \> ( ground($S$) $\rightarrow$ \\
+\> \> \> ( subgoal\_not\_in\_system($S$), call($S$), fail \\
+\> \> \> ;   ( is\_complete($S$) $\rightarrow$ has\_no\_answers($S$) \\
+\> \> \> \ \ ; negation\_suspend($S$), true \ \ \ 
+			{\em /* if execution reaches here, $S$ */} \\
+\> \> \> \ \ ) \> \>		{\em /* is completed with no answers */}\\
+\> \> \> ) \\
+\> \> ; error("Flounder: subgoal $S$ is not ground") \\
+\> \> ).
+\end{tabbing}
+\longline
+\end{sf}
+\caption{The Prolog implementation of tabled negation ({\tt tnot/1})
+	 for LRD-stratified programs.}
+\label{fig:tnot}
+\end{figure}
+%----------------------------------------------------------------------------

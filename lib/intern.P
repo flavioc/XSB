@@ -1,0 +1,151 @@
+/* File:      intern.P
+** Author(s): Prasad Rao
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+:- export new_trie/1, trie_intern/5, trie_intern/4, trie_interned/4,
+	trie_intern/3, trie_interned/3, trie_unintern/2,
+	delete_trie/1.
+:- import  get_skel/2 from tables.
+:- import integer/1, abort/1  from standard.
+
+
+% the i_ predicates are internal!
+
+
+/*--------------------------------------------------
+	new_trie(-Root)
+   	Root is a handle for a new trie 
+--------------------------------------------------*/
+
+new_trie(_Root) :-
+	 '_$builtin'(159).
+
+
+/*--------------------------------------------------
+trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
+	Term: term to be interned
+	Root: handle for the trie
+	Leaf: handle for the interned term
+	Flag: 1 -> Old term 0 -> New term
+	Skel: Variables in the interned term
+--------------------------------------------------*/
+trie_intern(Term,Root,Leaf,Flag,Skel) :- 
+       i_trie_intern(Term,Root,Leaf,Flag),
+	get_skel(_,Skel).
+
+
+
+/*--------------------------------------------------
+ version where flag is ignored 
+--------------------------------------------------*/
+trie_intern(Term,Root,Leaf,Skel) :- 
+	trie_intern(Term,Root,Leaf,_Flag,Skel). 
+
+
+/* --------------------------------------------------
+version which interns into a fixed trie 
+--------------------------------------------------*/
+trie_intern(Term,Leaf,Skel) :- 	trie_intern(Term,0,Leaf,Skel).
+
+
+
+
+/*--------------------------------------------------
+trie_interned(?Term,+Root,?Leaf,-Skel)
+	Term: term to be retrieved can be either (partially) bound
+		or free
+	Root: handle for the trie
+	Leaf: handle for the interned term
+	      can be bound or free
+	Skel: Variables in the interned term
+
+A call to this predicate will fail if there is no term
+in the trie whose handle is 'Root' that unifies with Term
+The behavior is unpredicable (seg fault etc if the Root and
+Leaf Parameters are incorrect)
+--------------------------------------------------*/
+
+trie_interned(Term,Root,Leaf,Skel) :-
+	var(Leaf),
+	i_trie_interned(Term,Root,Leaf),
+	get_skel(Leaf,Skel1),
+	Skel1 = Skel.
+
+trie_interned(Term,Root,Leaf,Skel) :-
+	integer(Leaf),
+	bottom_up_unify(Term1,Root,Leaf),
+	Term1 = Term,
+	get_skel(_,Skel1),
+	Skel1 = Skel.
+
+/* --------------------------------------------------
+version which interns into a fixed trie 
+--------------------------------------------------*/
+trie_interned(Term,Leaf,Skel) :- 
+	trie_interned(Term,0,Leaf,Skel).
+
+
+
+/*--------------------------------------------------
+trie_unintern(+Root,+Leaf)
+this predicate has to be called with care. Uninterning
+can be done only when the trie from which the term is
+being uninterned is not being actively accessed. 
+--------------------------------------------------*/
+trie_unintern(Root,Leaf) :- 
+	integer(Root),
+	integer(Leaf),
+	!,
+	 trie_dispose(Root,Leaf).
+trie_unintern(R,L) :-
+	abort(('Incorrect Arguments to',trie_unintern(R,L))).
+
+
+/*--------------------------------------------------
+delete_trie(+Root)
+--------------------------------------------------*/
+/*delete_trie(Root) :-
+	findall(Leaf,trie_interned(_,Root,Leaf,_),L),
+	delete_all(Root,L).
+
+delete_all(_,[]).
+delete_all(Root,[Hd|Tl]) :- trie_unintern(Root,Hd),
+	delete_all(Root,Tl).
+*/
+
+delete_trie(Root) :- delete_trie(Root,intern).
+
+
+
+
+/* builtin calls */
+i_trie_intern(_Term,_Root,_Leaf,_Flag) :- '_$builtin'(160).
+i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(161).
+trie_dispose(_Root,_Leaf) :- '_$builtin'(162).
+bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(163).
+delete_trie(_Root,_Usage) :- '_$builtin'(164).
+
+

@@ -1,0 +1,250 @@
+
+
+I'm a little rusty on the compiler, since I havn't looked at it for
+several months.  I needed to spend an hour so on a review, so I
+thought writing up an informal guide to the compiler would be a good
+vehicle for doing so.
+
+If there are any mistakes in here, let me know.
+
+If you have any questions, in the next week, let me know:
+	swift@ida.org  (note different user id as well as different
+        address).  Hope this helps.
+
+-- Major files (in approximate order of use)
+	
+compile.P --The top-level driver of the program
+  parse.P -- Prolog read/2 and initial symbol table registry
+  flatten.P -- Flattens out structures along the lines of 
+	p(f(g(D))) => p(f(Y)),Y = g(D)
+  preprocess.P -- Puts down code for cuts, and conditionals
+    pre_cond.P -- Analyzes for tests which need no CPs.
+  tp_index.P -- Makes structure for index for predicate
+  tprog.P -- Translates clauses into WAM (XWAM) code.  
+	     'Heart' of coompiler.  Calls in some order:
+    inprog.P, varproc.P -- Analyze variables -- temp, perm, val/var etc.
+    tp_geninline.P  -- Generates code for inline predicates.
+    tp_cond.P -- Generates special code for conditionals, disjunctions.
+                 There may be a bug -- see tp_cond.pl
+    tp_goal.P -- Gets, puts, blds, unis for each goal (including
+		 head).  Uses tp_var.P	
+    tp_eval.P -- Generates code for arithmetic expressions.
+  peephole.P -- Peephole Optimization
+  asm.P , asm_pass2.P -- generates WAM byte code from internal
+			 representation. 
+
+Other files -- 
+	useinfer.P Inference on exported predicates/functors/constants
+	           unused/undefined predicates.
+        ty_xxx.P   Type inference routines.
+
+Example:
+
+-- in ~sbprolog/PSB-terry/PSB-terry3/qcmplib there is a file
+time_prim.P for which I dumped out the compilation structures at
+various phases of the compilation.  For me, the sort of structure a
+prolog predicate expects is often the most useful documentation.  So
+here is how the following predicate ( chosen more or less at random)
+looks as it works its way through the compiler.	
+
+non_null_intersect(intvl(F1,T1),intvl(F2,T2)):-
+	date_before(F1,T1),
+	date_before(F2,T2),
+	(date_before(F1,F2) -> date_before(F2,T1)
+	;	date_before(F1,T2)).
+
+%%%%%%%%%%%%%%%%%%%%%
+parseout.time_prim (from parse.pl)
+
+sym(non_null_intersect,2,prop(_14473,_14474,defined,_14476,_14477,_14478),12)
+
+pred(sym(non_null_intersect,2,
+prop(_14473,_14474,defined,_14476,_14477,_14478),12),
+[clause([structure(sym(intvl,2,_8080,5),[varocc(1),varocc(2)]),
+structure(sym(intvl,2,_8080,5),[varocc(3),varocc(4)])],
+and(goal(sym(date_before,2,prop(_13327,_13328,defined,_13330,_13331,_13332),10)
+,[varocc(1),varocc(2)]),
+and(goal(sym(date_before,2,prop(_13327,_13328,defined,_13330,_13331,_13332),10)
+,[varocc(3),varocc(4)]),
+or(
+if(goal(sym(date_before,2,prop(_13327,_13328,defined,_13330,_13331,_13332),10),
+[varocc(1),varocc(3)]),
+goal(sym(date_before,2,prop(_13327,_13328,defined,_13330,_13331,_13332),10),
+[varocc(3),varocc(2)])),
+goal(sym(date_before,2,prop(_13327,_13328,defined,_13330,_13331,_13332),10),
+[varocc(1),varocc(4)])))),_14649)|_14651],_14482)
+
+%%%%%%%%%%%%%%%%%%%%%
+flatout.time_prim (from flatten.pl)
+(this is not internal syntax -- I use someone's flt_writeclause
+Actually, flatten has no effect on this clause since flatten is used
+for nested structures.
+
+sym(non_null_intersect,2,prop(_10576,_10577,defined,_10579,_10580,_10581),12)
+<pred>(structure(sym(intvl,2,_4183,5),[varocc(1),varocc(2)]), 
+	structure(sym(intvl,2,_4183,5),[varocc(3),varocc(4)])) :- 
+date_before(varocc(1), varocc(2))
+, date_before(varocc(3), varocc(4))
+, or(if(goal(sym(date_before,2,prop(_9430,_9431,defined,_9433,_9434,_9435),10),
+[varocc(1),varocc(3)]),
+goal(sym(date_before,2,prop(_9430,_9431,defined,_9433,_9434,_9435),10),
+[varocc(3),varocc(2)])),
+goal(sym(date_before,2,prop(_9430,_9431,defined,_9433,_9434,_9435),10),
+[varocc(1),varocc(4)]))
+
+%%%%%%%%%%%%%%%%%%%%%
+prepout.time_prim  (preprocess.pl)
+(handles cuts, if-then-elses)
+
+preddef
+sym(non_null_intersect,2,
+prop(_119850,_119851,defined,_119853,_119854,[(index _152643)|_152645]),12)
+_150620
+blks
+
+clause([
+structure(sym(intvl,2,_13858,5),[varocc(1),varocc(2)]),
+structure(sym(intvl,2,_13858,5),[varocc(3),varocc(4)])],and(
+goal(sym(date_before,2,
+prop(_118704,_118705,defined,_118707,_118708,_118709),10),[varocc(1),varocc(2)]),
+and(
+goal(sym(date_before,2,
+prop(_118704,_118705,defined,_118707,_118708,_118709),10),[varocc(3),varocc(4)]),
+and(
+inlinegoal(_$savecp,1,[varocc(_v51)]),or(and(
+goal(sym(date_before,2,
+prop(_118704,_118705,defined,_118707,_118708,_118709),10),[varocc(1),varocc(3)]),
+and(
+inlinegoal(_$cutto,1,[varocc(_v51)]),goal(sym(date_before,2,
+prop(_118704,_118705,defined,_118707,_118708,_118709),10),[varocc(3),varocc(2)]))),
+goal(sym(date_before,2,
+prop(_118704,_118705,defined,_118707,_118708,_118709),10),[varocc(1),varocc(4)]))))),_120026)
+
+%%%%%%%%%%%%%%%%%%%%%
+after tp_index.pl
+
+[label(pred,(sym(non_null_intersect,2,
+prop(_15017,_15018,defined,_15020,_15021,[(index _129005)|_129007]),12),758))|_129133]
+
+(other indices are more illuminating in indout.time_prim when they
+have more clauses, e.g)
+
+[label(pred,(sym(leap_date_to_julian,3,
+prop(_122531,_122532,defined,_122534,_122535,[(index 1)|_129007]),27),832)),
+cases((inde,834),3,12,_129438),arglabel(i,1,_129205),arglabel(i,2,_129216),
+arglabel(i,3,_129227),arglabel(i,4,_129238),arglabel(i,5,_129249),
+arglabel(i,6,_129260),arglabel(i,7,_129271),arglabel(i,8,_129282),
+arglabel(i,9,_129293),arglabel(i,10,_129304),arglabel(i,11,_129315),
+arglabel(i,12,_129326),switchonbound(1,(inde,834),12),try(3,_129205),
+retry(3,_129216),retry(3,_129227),retry(3,_129238),retry(3,_129249),
+retry(3,_129260),retry(3,_129271),retry(3,_129282),retry(3,_129293),
+retry(3,_129304),retry(3,_129315),trust(3,_129326)|_129573]
+
+%%%%%%%%%%%%%%%%%%%%%
+after inprog.pl
+(variable analysis)
+
+newclause
+args
+structure(sym(intvl,2,_4363,5),[varocc(1,vrec(h,s,1,f,v(p,2,d,_126209),0)),
+varocc(2,vrec(h,s,1,f,v(p,3,d,_126297),0))])
+structure(sym(intvl,2,_4363,5),[varocc(3,vrec(h,s,2,f,v(p,4,d,_126380),0)),
+varocc(4,vrec(h,s,2,f,v(p,5,d,_126470),0))])
+
+body
+and(goal(sym(date_before,2,prop(_9610,_9611,defined,_9613,_9614,_9615),10),
+[varocc(1,vrec(b,t,1,s,v(p,2,d,_126209),0)),
+varocc(2,vrec(b,t,2,s,v(p,3,d,_126297),0))],_125397),
+and(goal(sym(date_before,2,prop(_9610,_9611,defined,_9613,_9614,_9615),10),
+[varocc(3,vrec(b,t,1,s,v(p,4,d,_126380),0)),
+varocc(4,vrec(b,t,2,s,v(p,5,d,_126470),0))],_125479),
+and(inlinegoal(_$savecp,1,
+[varocc(_v93,vrec(i,t,1,f,v(p,6,d,_126555),0))],_125562),
+or(and(goal(sym(date_before,2,
+prop(_9610,_9611,defined,_9613,_9614,_9615),10),
+[varocc(1,vrec(b,t,1,l,v(p,2,d,_126209),0)),
+varocc(3,vrec(b,t,2,s,v(p,4,d,_126380),0))],_125695),
+and(inlinegoal(_$cutto,1,
+[varocc(_v93,vrec(i,t,1,l,v(p,6,d,_126555),1))],_125778),
+goal(sym(date_before,2,prop(_9610,_9611,defined,_9613,_9614,_9615),10),
+[varocc(3,vrec(b,t,1,l,v(p,4,d,_126380),1)),
+varocc(2,vrec(b,t,2,l,v(p,3,d,_126297),1))],_125808),_125773),_125691),
+goal(sym(date_before,2,
+prop(_9610,_9611,defined,_9613,_9614,_9615),10),
+[varocc(1,vrec(b,t,1,l,v(p,2,d,_126209),1)),
+varocc(4,vrec(b,t,2,l,v(p,5,d,_126470),1))],_125887),
+_125594),_125557),_125475),_125393)
+crec
+head([varocc(1,vrec(h,s,1,f,v(p,2,d,_126209),0)),
+varocc(2,vrec(h,s,1,f,v(p,3,d,_126297),0)),
+vrc(3,vrec(h,s,2,f,v(p,4,d,_126380),0)),
+vrc(4,vrec(h,s,2,f,v(p,5,d,_126470),0))])
+goal(1,date_before,2,[vrc(1,vrec(b,t,1,s,v(p,2,d,_126209),0)),
+vrc(2,vrec(b,t,2,s,v(p,3,d,_126297),0))])
+goal(1517,date_before,2,[vrc(3,vrec(b,t,1,s,v(p,4,d,_126380),0)),
+vrc(4,vrec(b,t,2,s,v(p,5,d,_126470),0))])
+inlinegoal(1518,_$savecp,1,[vrc(_v93,vrec(i,t,1,f,v(p,6,d,_126555),0))])
+branch([goal(1519,date_before,2,[vrc(1,vrec(b,t,1,l,v(p,2,d,_126209),0)),
+vrc(3,vrec(b,t,2,s,v(p,4,d,_126380),0))]),
+inlinegoal(1522,_$cutto,1,[vrc(_v93,vrec(i,t,1,l,v(p,6,d,_126555),1))]),
+goal(1522,date_before,2,[vrc(3,vrec(b,t,1,l,v(p,4,d,_126380),1)),
+vrc(2,vrec(b,t,2,l,v(p,3,d,_126297),1))])],[goal(1520,date_before,2,
+[vrc(1,vrec(b,t,1,l,v(p,2,d,_126209),1)),
+vrc(4,vrec(b,t,2,l,v(p,5,d,_126470),1))])])
+
+arsize
+7
+label
+_125283
+?
+variable(1,v(p,2,d,_126209))
+variable(2,v(p,3,d,_126297))
+variable(3,v(p,4,d,_126380))
+variable(4,v(p,5,d,_126470))
+variable(_v93,v(p,6,d,_126555))
+
+%%%%%%%%%%%%%%%%%%%%%
+
+The next transformation after inprog/3 is tclause/4 which essentially
+produces the WAM code.  The WAM code produced can be seen by setting a
+compiler flag (genasm? I believe its documented, but I personally use
+the assembly code generator in the emulator.  The output of that is in
+dumpasm.time_prim.
+
+... ... BUCKET NO. 0
+42e10: leap_date_to_julian/3,	PRED,	VISIBLE	,  439d8
+42bd0: non_null_intersect/2,	PRED,	VISIBLE	,  433c8
+
+New segment below 
+
+433c8	allocate
+433cc	getstr	r1	0x42ae0
+433d4	unipvar	v2
+433d8	unipvar	v3
+433dc	getstr	r2	0x42ae0
+433e4	unipvar	v4
+433e8	unipvar	v5
+433ec	putpval	v2	r1
+433f0	putpval	v3	r2
+433f4	call	7	0x42b70
+433fc	putpval	v4	r1
+43400	putpval	v5	r2
+43404	call	7	0x42b70
+4340c	getpbreg	v6
+43410	calld	7	0x43418
+43418	trymeelse	0	0x43448
+43420	putpval	v2	r1
+43424	putpval	v4	r2
+43428	call	7	0x42b70
+43430	putpbreg	v6
+43434	putdval	v4	r1
+43438	putdval	v3	r2
+4343c	deallocate
+43440	execute	0x42b70
+43448	trustmeelsefail	0
+4344c	putdval	v2	r1
+43450	putdval	v5	r2
+43454	deallocate
+43458	execute	0x42b70
+
+

@@ -1,0 +1,121 @@
+This is a list of actions performed to create the XSB repository
+
+Setting repository
+==================
+cvs -d ~/CVSROOT init
+
+Make sure junk doesn't get added:
+================================
+
+Add file $CVSROOT/CVSROOT/cvsignore with this contents:
+
+*.dvi *.aux *.log *.lof *.lot *.toc *.idx *.bbl *.blg *.ilg *.ind *.pdx
+*.plg *.pnd *.ps *.so *.tar
+
+Other .cvsignore files directly in the XSB source tree take care of the rest
+
+Import
+======
+
+cvs -d /home/u17/sbprolog/CVSROOT import -W "*.O -k 'b'" -m "Imported sources" XSB  xsb start
+
+-d sets CVSROOT
+-W supposed to take care of binary files 
+   (no key expansion, no newline conversion).
+XSB is the subdir where XSB will be checked out
+xsb vendor tag
+start release tag
+
+
+Setting modules
+===============
+
+cvs checkout CVSROOT
+
+Then checkout and edit $CVSROOT/CVSROOT/modules. Add:
+
+
+CVSROOT      CVSROOT
+modules	     CVSROOT modules
+
+xsbemu	     -d emu 	   XSB/emu
+xsbsyslib    -d syslib	   XSB/syslib
+xsblib       -d lib    	   XSB/lib
+xsbcmplib    -d cmplib     XSB/cmplib
+xsbpackages  -d packages   XSB/packages
+
+xsbdocs	     -d docs       XSB/docs
+xsbtests     -d tests      XSB/tests
+xsbexamples  -d examples   XSB/examples
+
+# Everything but admin, tests, examples, docs. Note: negated part comes first!
+xsbcore	     -a !XSB/tests !XSB/admin !XSB/examples !XSB/docs XSB
+
+# What developers need, sans XSB/tests, because of the size of XSB/tests
+xsbdevel     -a xsbcore XSB/admin XSB/docs
+
+# This is how we'll be making releases
+xsbrelease   -a xsbcore xsbexamples
+
+
+
+Tell CVS to watch XSB directory
+===============================
+
+Do this in some checked out user copy. Counterintuitive, but this is how it
+seems to be done:
+
+cvs -d /home/u17/sbprolog/CVSROOT watch on XSB
+
+
+Users must run cvs edit <file>, NOT chmod to make files rw.
+
+Users add themselves to a watch list by executing
+	cvs watch add -a all <files-or-dirs>
+
+Others can see who's watching/editing with
+        cvs watchers <files>
+        cvs editors  <files>
+
+
+CVSROOT/notify
+==============
+
+Uncoment the line to enable watchlist notification:
+
+ALL mail %s -s "CVS notification"
+
+
+CVSROOT/loginfo
+===============
+
+Uncomment the line:
+
+DEFAULT	(echo ""; who am i; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
+
+In the future, should set commitlog per directory.
+
+CVSROOT/cvswrappers
+===================
+Make sure binaries aren't broken during checkin/outs, etc.
+
+*.gif   -m 'COPY' -k 'b'
+*.tif   -m 'COPY' -k 'b'
+*.tiff  -m 'COPY' -k 'b'
+*.jpg   -m 'COPY' -k 'b'
+*.jpeg  -m 'COPY' -k 'b'
+*.png   -m 'COPY' -k 'b'
+*.gz    -m 'COPY' -k 'b'
+*.bz2   -m 'COPY' -k 'b'
+*.Z     -m 'COPY' -k 'b'
+*.tar   -m 'COPY' -k 'b'
+*.tgz   -m 'COPY' -k 'b'
+*.class -m 'COPY' -k 'b'
+*.wav   -m 'COPY' -k 'b'
+*.au    -m 'COPY' -k 'b'
+*.O     -m 'COPY' -k 'b'
+*.o     -m 'COPY' -k 'b'
+*.exe   -m 'COPY' -k 'b'
+*.so    -m 'COPY' -k 'b'
+
+

@@ -1,0 +1,197 @@
+\chapter{Using Perl as a Pattern Matching and String Substitution Server}
+
+XSB has an efficient interface to the Perl interpreter, which allows XSB
+programs to use powerful Perl pattern matching capabilities. You need Perl
+5.004 or later to be able to take advantage of this service.
+
+The following discussion assumes that you are familiar with the syntax of
+Perl regular expressions and have a reasonably good idea about the
+capabilities of Perl matching and string substitution functions.
+
+To start, you must first load the {\tt Perlmatch}  package:
+
+%%
+\begin{quote}
+ {\tt  :- [perlmatch]. }
+\end{quote}
+%%
+
+\section{Iterative Pattern Matching}
+There are two ways to do matching. One is to first do the matching
+operation and then count the beans. To find the first match, do:
+
+%%
+\begin{quote}
+ {\tt   :- try\_match( +String, +Pattern ). }
+\end{quote}
+%%
+
+Both arguments must be of the XSB string data types.  If there is a match
+in the string, the submatches {\$}1, {\$}2, etc., the prematch substring
+{\$}` ({\it i.e.}, the part before the match), the postmatch substring
+{\$}' ({\it i.e.}, the part after the match), the whole matched substring
+{\$}{\&}, and the last parentheses match substring {\$}+ will be stored
+into a global data structure, and the predicate try\_match(string, pattern)
+succeeds. If no match is found, this predicate fails.
+
+The ability to return parts of the match using the Perl variables {\$}+,
+{\$}1, {\$}2, etc., is an extremely powerful feature of Perl.
+As we said, a familiarity with Perl matching is assumed, but we'll give an
+example to stimulate the interest in learning these capabilities of Perl.
+For instance, \verb|m/(\d+)\.?(\d*)|\.(\d+)/| matches a valid
+number. Moreover, if the number had the form `xx.yy', then the Perl variable
+\$1 will hold `xx' and \$1 will hold `yy'. If the number was of the form
+`.zz', then \$1 and \$2 will be empty, and \$3 will hold `zz'.
+
+XSB-Perl interface provides access to all these special variables using the
+predicate {\tt get\_match\_result()}.
+The input variables string
+and pattern are of XSB string data types. For example:
+
+For instance,
+%%
+\begin{quote}
+ {\tt :- tryMatch('First 11.22 ; next: 3.4', 'm/(\d+)\.?(\d*)/g'). }\\
+ {\tt yes.}  
+\end{quote}
+%%
+finds the character which precedes by 's' in the string 'this is a
+test'. The first match is `is'.
+
+Now, we can use {\tt get\_match\_result()} to find the submatches.  The
+first argument is a tag, which can be 1 through 20, denoting the Perl
+variables \$1 -- \$20. In addition, the entire match can be found using the
+tag {\tt match}, the part before that is hanging off the tag {\tt prematch}
+and the part of the string to the right of the match is fetched with the
+tag {\tt postmatch}. For instance, in the above, we shall have: 
+
+This function is used to fetch the pattern match results {\$}1, {\$}2, etc.,
+{\$}`, {\$}', {\$}{\&} and {\$}+, as follows:
+
+\begin{verbatim}
+:- get_match_result(1,X).
+X=11
+yes
+:- get_match_result(2,X).
+X=22
+yes
+:- get_match_result(3,X).
+no
+:- get_match_result(4,X).
+no
+:- get_match_result(prematch,X)
+X=First  (including 1 trailing space)
+yes
+:- get_match_result(postmatch,X)
+X= ; next 3.4
+yes
+:- get_match_result(match,X)
+11.22
+yes
+\end{verbatim}
+
+As you noticed, if a tag fetches nothing (like in the case of Perl
+variables \$3, \$4, etc.), then the predicate fails.
+
+The above is not the only possible match, of course. If we want more, we
+can call:
+%%
+\begin{quote}
+ {\tt  :- next\_match. }
+\end{quote}
+%%
+
+This will match the second number in the string. Correspondingly, we shall
+have: 
+\begin{verbatim}
+   :- get_match_result(1,X).
+   X=3
+   yes
+   :- get_match_result(2,X).
+   X=4
+   yes
+   :- get_match_result(3,X).
+   no
+   :- get_match_result(4,X).
+   no
+   :- get_match_result(prematch,X)
+   X=First 11.22 ; next 
+   yes
+   :- get_match_result(postmatch,X)
+   no
+   :- get_match_result(match,X)
+   3.4
+   yes
+\end{verbatim}
+
+The next call to {\tt next\_match}  would fail, because there are no more
+matches in the given string. Note that {\tt next\_match} and
+{\tt get\_match\_result} do not take a string and a pattern as
+argument---they work off of the previous {\tt try\_match}. If you want to
+change the string or the pattern, call {\tt try\_match} again (with
+different parameters).
+
+\section{Bulk Matching}
+XSB-perl interface also supports {\em bulk\/} matching through the
+predicate {\tt bulk\_match/3}. Here, you get all
+the substrings that match the patters at once, in a list, and then you can
+process the matches as you wish. However, this does not give you full
+access to submatches. More precisely, if you use parenthesized expressions,
+then you get the list of non-null values in the variables \$1, \$2, etc.
+If you do not use parenthesized regular expressions, you get the result of
+the full match. For instance,
+%%
+\begin{verbatim}
+  :- bulk_match('First 11.22 ; next: 3.4', 'm/(\d+)\.?(\d*)/g', Lst).}
+  Lst=[11,22,3,4]
+  yes
+  :- bulk_match('First 11.22 ; next: 3.4', 'm/\d+\.?\d*/g', Lst).}
+  Lst=[11.22,3.4]
+  yes
+\end{verbatim}
+%%
+{\tt bulk\_match/3} never fails. If there is no match, it returns an empty
+list. 
+
+Please note that you must specify `g' at the end of the pattern in order to
+get something useful. This ia Perl thing! If you do not, instead of
+returning a list of matches, Perl will think that you just want to test if
+there is a match or not, and it will return \verb|[1]| or \verb|[]|,
+depending on the outcome.
+
+\section{String Substitution}
+The last feature of the XSB-Perl interface is string substitution based on
+pattern matching. This is achieved through the predicate
+{\tt string\_substitute/3}: 
+
+\begin{verbatim}
+  :- string_substitute(+String, +PerlSubstitutionExpr, -ResultString).
+\end{verbatim}
+
+We assume you are familiar with the syntax of Perl substitution
+expressions. Here we just give an example of what kind of things are
+possible:
+
+\begin{verbatim}
+  :- string_substitute('this is fun', 's/(this) (is)(.*)/\2 \1\3?/', Str).
+  Str=is this fun?
+\end{verbatim}
+
+\section{Unloading Perl}
+Playing with Perl is nice, but this also means that both XSB and the Perl
+interpreter  are loaded in the main memory. If you do not need Perl
+for some time and memory is at premium, you can unload the Perl
+interpreter:
+%%
+\begin{quote}
+   {\tt :- unload\_perl. }
+\end{quote}
+%%
+This predicate always succeeds. If you need Perl matching features later,
+you can always come back to it: it is loaded automatically each time you
+use a pattern matching or a string substitution predicate.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

@@ -1,0 +1,194 @@
+/* File:      flpparser.P
+** Author(s): Bertram Ludaescher
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+%
+% ***To do***
+%	Prolog Source: lists, arithmetics etc.
+%
+
+
+:- export 
+	rule/3,
+	object/3,		% for debugging
+	path/3.			% for debugging
+:- import append/3 from basics.
+
+rule(R)			-->	head(H), rule1(H,R).
+rule(query(B))          -->	query_symbol, body(B).
+
+rule1(H,rule(H,B))	-->	impl_symbol, body(B).
+rule1(H,fact(H))	-->	[].
+
+impl_symbol             -->	[atom(' :-')].   
+query_symbol            -->	[atom(' ?-')].   
+			
+head(H)                 -->	term_list(H).
+
+term_list([X|L])        -->	term(X), term_list1(L).
+
+term_list1(L)           -->	[','], term_list(L).	% mehrdeutig
+term_list1([])		-->	[].
+
+body(B)                 -->	literal_list(B).
+
+literal_list([X|L])	-->	literal(X), literal_list1(L).
+
+literal_list1(L)	-->	[','], literal_list(L),{true}.
+literal_list1([])	-->	[].
+
+literal(T)              -->	term(T).
+literal(non(T))         -->	[identifier(not)], term(T).
+literal(non(T))         -->	[atom(' ~')], term(T).
+
+
+% mehrdeutig: 
+%	o[].	bis 'o'  wird ein pterm gelesen
+%	j:p=m	bis 'j:p' wir ein f_mol gelesen
+
+term(T)                 -->	f_mol(T).
+term(T)                 -->	p_term(T).		
+
+p_term(pterm(P1,L))	-->	[identifier(P)],arg_list(L),
+				{name(P,PN), 
+				 append(PN,"_",PN1),
+				 name(P1,PN1)}.
+
+p_term(spterm(S,P1,P2))	-->	path(P1), special_pred(S), path(P2).
+				
+arg_list(L)		-->	['('], path_list(L), [')'],{true}.
+arg_list([])		-->	[].
+
+
+special_pred('>')	-->	[atom(' >')].
+special_pred('<')	-->	[atom(' <')].
+special_pred('=')	-->	[atom(' =')].
+special_pred('>=')	-->	[atom(' >=')].
+special_pred('=<')	-->	[atom(' =<')].
+special_pred('=/=')	-->	[atom(' =/=')].
+							
+
+path(ref(O,MR,S))	-->	reference(ref(O,MR,S0)),
+				opt_specification(S1),
+				{append(S0,S1,S)}.
+
+f_mol(ref(O,MR,S))	-->	reference(ref(O,MR,S0)),
+				specification(S1),
+				{append(S0,S1,S)}.
+
+reference(ref(O1,MR1,[])) --> 	object(O), 
+				sm_list(O,'$self',O1,MR1).
+	                  
+
+sm_list(Oi,MRi,Oo,MRo)	-->	specification0(S),
+				meth_ref(MR),
+				sm_list(ref(Oi,MRi,S),MR, Oo,MRo).
+
+sm_list(Oi,MRi,Oi,MRi)  -->	[]. 
+
+
+object(O)               -->	id_term(O).		% mehrdeutig
+%object(O)               -->	['('], path(O), [')'].
+object(O)               -->	['('], path(O), [')'].
+
+specification0(S)	-->	specification(S).
+specification0([])	-->	[].
+
+specification(Ms)	-->	meth_spec(Ms),{true}.
+specification([Is|Ms])	-->	isa_spec(Is), meth_spec1(Ms),{true}.
+
+opt_specification(S)	-->	specification(S),{true}.
+opt_specification([])	-->	[].
+
+
+isa_spec(Is)		-->	isa_symbol(S), object(O), {Is=..[S,O]}.
+
+isa_symbol(isa_)	-->	[atom(' :')].
+isa_symbol(sub_)	-->	[atom(' ::')].
+
+meth_spec(L)            -->	['['], meth_list(L), [']'],{true}.
+meth_spec([])           -->	['['], [']'].
+
+meth_spec1(L)		-->	meth_spec(L),{true}.
+meth_spec1([])		-->	[].
+
+
+meth_ref(mref(C,MA))	-->	colon(C), meth_appl(MA).
+
+colon(mvd_)		-->	[atom(' ..')].
+colon(fd_)		-->	[atom(' .')].
+colon(imvd_)		-->	[atom(' !!')].
+colon(ifd_)		-->	[atom(' !')].
+
+meth_appl('@'(M,Args))	-->	object(M), meth_args(Args).
+
+meth_args(L)		-->	[atom(' @'),'('], path_list(L), [')'],{true}.
+meth_args([])		-->	[].
+
+
+meth_list([MR|L])	-->	meth_appl(MA), 
+				meth_result(MA,MR),
+				rest_meth_list(L).
+
+rest_meth_list(L)       -->	[atom(' ;')], meth_list(L),{true}.
+rest_meth_list([])      -->	[].
+
+path_list([P|L])	-->	path(P), path_list1(L).
+				
+path_list1(L)		-->	[','], path_list(L).	% mehrdeutig
+path_list1([])		-->	[].
+
+
+meth_result(M,fun(M,A,P))	-->	fun_arrow(A), path(P).
+
+meth_result(M,set(M,A,[P]))	-->	set_arrow(A), path(P).
+meth_result(M,set(M,A,[]))	-->	set_arrow(A), ['{'], ['}'].
+meth_result(M,set(M,A,L))	-->	set_arrow(A), 
+					['{'], path_list(L), ['}'].
+
+meth_result(M,set(M,A,[P]))	-->	sig_arrow(A), path(P).
+meth_result(M,set(M,A,[]))	-->	sig_arrow(A), ['('], [')'].
+meth_result(M,set(M,A,L))	-->	sig_arrow(A), 
+					['('], path_list(L), [')'].
+
+fun_arrow(fd_)		-->	[atom(' ->')].   
+fun_arrow(ifd_)		-->	[atom(' *->')].   
+set_arrow(mvd_)		-->	[atom(' ->>')].    
+set_arrow(imvd_)	-->	[atom(' *->>')].
+sig_arrow(fs_)		-->	[atom(' =>')].        
+sig_arrow(mvs_)		-->	[atom(' =>>')].    
+
+id_term(fn(F,L))	-->	[identifier(F),'('], path_list(L), [')'].
+id_term(identifier(Id)) -->	[identifier(Id)].
+id_term(var(V,Name))	-->	[var(V,Name)].
+id_term(string(S))	-->	[string(S)].
+%no id_term(number(N))	-->	[number(N)]. 
+%no id_term(number(N))	-->	[X],{X = number(N)}.
+%yes id_term(number(N))	-->	[X],{X =.. [number,N]}.
+id_term(number(N))	-->	[num(N)].
+id_term(number(-(N)))	-->	[atom(' -'),num(N)].
+
+
+

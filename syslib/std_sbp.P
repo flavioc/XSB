@@ -1,0 +1,237 @@
+/* File:      std_sbp.P
+** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren, Terrance Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+standard_symbol(abolish, 1, assert).
+standard_symbol(abolish, 2, assert).
+standard_symbol(abolish_all_tables, 0, tables).
+standard_symbol(abolish_table_call, 1, tables).
+standard_symbol(abolish_table_pred, 1, tables).
+standard_symbol(abort, 0, standard).
+standard_symbol(abort, 1, standard).
+standard_symbol(analyze_table, 1, tables).
+standard_symbol(arg, 3, standard).
+standard_symbol(arg0, 3, standard).
+standard_symbol(assert, 1, assert).
+standard_symbol(asserta, 1, assert).
+/* standard_symbol(asserta, 2, assert). */
+standard_symbol(assertz, 1, assert).
+/* standard_symbol(assertz, 2, assert). */
+standard_symbol(atom, 1, standard).
+standard_symbol(atomic, 1, standard).
+standard_symbol(atom_chars, 2, standard).
+standard_symbol(bagof, 3, setof).
+standard_symbol(break, 0, x_interp).
+standard_symbol('C', 3, dcg).
+standard_symbol(call, 1, standard).
+standard_symbol(callable, 1, standard).
+standard_symbol(cd, 1, unix).
+standard_symbol(clause, 2, assert).
+/* standard_symbol(clause, 3, assert). */
+standard_symbol(close, 1, standard).
+standard_symbol(compare, 3, standard).
+standard_symbol(compound, 1, standard).
+standard_symbol(compile, 1, consult).
+standard_symbol(compile, 2, consult).
+standard_symbol(consult, 1, consult).
+standard_symbol(consult, 2, consult).
+standard_symbol(load_dyn, 1, consult).
+standard_symbol(load_dync, 1, consult).
+standard_symbol(read_canonical, 1, consult).
+standard_symbol(copy_term, 2, basics).
+standard_symbol(cputime, 1, standard).
+standard_symbol(current_atom, 1, curr_sym).
+standard_symbol(current_functor, 1, curr_sym).
+standard_symbol(current_functor, 2, curr_sym).
+standard_symbol(current_input, 1, curr_sym).
+standard_symbol(current_module, 1, curr_sym).
+standard_symbol(current_module, 2, curr_sym).
+standard_symbol(current_op, 3, curr_sym).
+standard_symbol(current_output, 1, curr_sym).
+standard_symbol(current_predicate, 1, curr_sym).
+standard_symbol(current_predicate, 2, curr_sym).
+standard_symbol(debug, 0, debugger).
+standard_symbol(debugging, 0, debugger).
+/* standard_symbol(display, 1, standard). */
+standard_symbol((dynamic), 1, assert).
+standard_symbol(edit, 1, unix).
+standard_symbol(erase, 1, record).
+/* standard_symbol(erased, 1, record). */
+standard_symbol(expand_filename, 2, machine).
+standard_symbol(expand_term, 2, standard).
+standard_symbol(fail, 0, standard).
+standard_symbol(fail_if, 1, standard).
+standard_symbol(file_exists, 1, standard).
+standard_symbol(findall, 3, setof).
+standard_symbol(float, 1, standard).
+standard_symbol(functor, 3, standard).
+
+standard_symbol(fmt_read, 4, xsb_read).
+standard_symbol(fmt_write, 2, xsb_writ).
+standard_symbol(fmt_write_string, 3, xsb_writ).
+
+standard_symbol(get, 1, standard).
+standard_symbol(get0, 1, standard).
+standard_symbol(get_calls_for_table, 3, tables).
+standard_symbol(get_returns_for_call, 2, tables).
+standard_symbol(halt, 0, standard).
+standard_symbol((hilog), 1, standard).
+standard_symbol(hilog_arg, 3, standard).
+standard_symbol(hilog_functor, 3, standard).
+standard_symbol(hilog_op, 3, standard).
+standard_symbol(hilog_symbol, 1, curr_sym).
+standard_symbol((import), 1, standard).
+standard_symbol(instance, 2, record).
+standard_symbol(integer, 1, standard).
+standard_symbol(is, 2, standard).
+standard_symbol(is_list, 1, standard).
+standard_symbol(is_string, 1, standard).
+standard_symbol(is_absolute_filename, 1, machine).
+standard_symbol(keysort, 2, setof).
+%% Note: DON'T make library direstory a standard predicate: XSB will deny
+%% assertions into it!!! - mk
+%% standard_symbol(library_directory, 1, usermod).
+standard_symbol(listing, 0, standard).
+standard_symbol(listing, 1, standard).
+standard_symbol(ls, 0, unix).
+standard_symbol((mc), 2, compile).
+standard_symbol(module_property, 2, curr_sym).
+standard_symbol((multifile), 1, standard).
+standard_symbol(name, 2, standard).
+standard_symbol(nl, 0, standard).
+standard_symbol(nl, 1, standard).
+standard_symbol(nodebug, 0, debugger).
+standard_symbol(nonvar, 1, standard).
+standard_symbol((nospy), 1, debugger).
+standard_symbol((not), 1, standard).
+standard_symbol((notrace), 0, debugger).
+standard_symbol(number, 1, standard).
+standard_symbol(number_chars, 2, standard).
+standard_symbol(once, 1, standard).
+standard_symbol(op, 3, standard).
+standard_symbol(open, 3, standard).
+standard_symbol((index), 3, standard).
+standard_symbol((index), 2, standard).
+standard_symbol((table), 1, standard).
+standard_symbol(tilde_expand_filename, 2, machine).
+standard_symbol(otherwise, 0, standard).
+standard_symbol(parse_filename, 4, machine).
+standard_symbol(phrase, 2, dcg).
+standard_symbol(phrase, 3, dcg).
+standard_symbol(predicate_property, 2, curr_sym).
+standard_symbol(print, 1, standard).
+standard_symbol(proper_hilog, 1, standard).
+standard_symbol(put, 1, standard).
+standard_symbol(read, 1, standard).
+standard_symbol(read, 2, standard).
+
+standard_symbol(read_line, 2, xsb_read).
+
+standard_symbol(real, 1, standard).
+standard_symbol(reconsult, 1, consult).
+standard_symbol(reconsult, 2, consult).
+standard_symbol(record, 3, record).
+standard_symbol(recorda, 3, record).
+standard_symbol(recorded, 3, record).
+standard_symbol(recordz, 3, record).
+standard_symbol(rename, 2, unix).
+standard_symbol(repeat, 0, standard).
+standard_symbol(retract, 1, assert).
+standard_symbol(retractall, 1, assert).
+/* standard_symbol(save, 1, standard). */
+standard_symbol(see, 1, standard).
+standard_symbol(seeing, 1, standard).
+standard_symbol(seen, 0, standard).
+standard_symbol(setof, 3, setof).
+standard_symbol(skip, 1, standard).
+standard_symbol((sort), 2, setof).
+standard_symbol((spy), 1, debugger).
+standard_symbol(statistics, 0, standard).
+standard_symbol(statistics, 1, standard).
+standard_symbol(structure, 1, standard).
+
+standard_symbol(str_cat, 3, string).
+standard_symbol(str_sub, 3, string).
+standard_symbol(str_sub, 2, string).
+standard_symbol(str_length, 2, string).
+
+standard_symbol(tab, 1, standard).
+standard_symbol(table_prop, 3, tables).
+standard_symbol(table_prop, 4, tables).
+standard_symbol(tbagof, 3, setof).
+standard_symbol(table_state, 2, tables).
+standard_symbol(tell, 1, standard).
+standard_symbol(telling, 1, standard).
+standard_symbol(tfindall, 3, tables).
+standard_symbol(tnot, 1, tables).
+standard_symbol(told, 0, standard).
+standard_symbol(true, 0, standard).
+standard_symbol(trace, 0, debugger).
+standard_symbol(tsetof, 3, setof).
+standard_symbol(ttywrite, 1, standard).
+standard_symbol(ttywritenl, 1, standard).
+standard_symbol(unix, 1, unix).
+standard_symbol(unix, 2, unix).
+standard_symbol(var, 1, standard).
+standard_symbol(write, 1, standard).
+standard_symbol(write, 2, standard).
+standard_symbol(writeln, 1, standard).
+standard_symbol(writeln, 1, standard).
+standard_symbol(write_prolog, 1, standard).
+standard_symbol(write_prolog, 2, standard).
+standard_symbol(writeq, 1, standard).
+standard_symbol(writeq, 2, standard).
+standard_symbol(write_canonical, 1, standard).
+standard_symbol(write_canonical, 2, standard).
+standard_symbol(xsb_flag, 2, curr_sym).
+
+standard_symbol(('_$cutto'), 1, standard).
+standard_symbol(('_$savecp'), 1, standard).
+
+standard_symbol((('\+')), 1, standard).
+standard_symbol('!', 0, inline).
+standard_symbol(('=:='), 2, standard).
+standard_symbol(('=\='), 2, standard).
+standard_symbol(('<'), 2, standard).
+standard_symbol(('>'), 2, standard).
+standard_symbol(('=<'), 2, standard).
+standard_symbol(('>='), 2, standard).
+standard_symbol(('='), 2, standard).
+standard_symbol(('\='), 2, standard).
+standard_symbol(('=..'), 2, standard).
+standard_symbol(('^=..'), 2, standard).
+standard_symbol(('=='), 2, standard).
+standard_symbol(('\=='), 2, standard).
+standard_symbol(('@<'), 2, standard).
+standard_symbol(('@>'), 2, standard).
+standard_symbol(('@=<'), 2, standard).
+standard_symbol(('@>='), 2, standard).
+standard_symbol(('.'), 2, consult).
+standard_symbol((';'), 2, standard).
+standard_symbol((','), 2, standard).
+standard_symbol(('->'), 2, standard).
+standard_symbol(('^'), 2, setof).
+
+/* ---------------------- end of file std_sbp.P ----------------------- */

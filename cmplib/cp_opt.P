@@ -1,0 +1,123 @@
+/* File:      cp_opt.P
+** Author(s): Terrance Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+cp_opt(module(Symtab,DcList,ClList,QrList),
+       module(Symtab,DcList,ClList1,QrList)) :-
+	cp_opt0(ClList, ClList1, Symtab).
+
+cp_opt0([], [],_Symtab).
+cp_opt0([pred(Sym,Pscs,Oth)|CList0],Outlist,Symtab):-
+	sym_type(Sym, tabled(_Tabind,_Chs,_Rhs,_Ar)),!,
+	cp_opt_block(pred(Sym,Pscs,Oth), pred(Sym1,Pscs1,Oth1), 
+					 Symtab,Switch),
+	(Switch =:= 0 -> Outlist = [pred(Sym,Pscs,Oth)|CList1]
+	 ; Outlist = [pred(Sym1,Pscs,Oth),pred(Sym,Pscs1,Oth1)|CList1]),
+	cp_opt0(CList0, CList1,Symtab).
+cp_opt0([One|Rest],[One|Rest1],Symtab):-
+	cp_opt0(Rest,Rest1,Symtab).
+
+/*======================================================================*/
+/* BigPicture =\= 0 if the code needs transformation, that is, if
+   it cannot be optimized.  Conceptually, the default consists of
+   transforming a tabled predicate
+
+	tabpred:- body1.
+	tabpred:- body2.
+
+   into
+	tabpred:- '_$tabpred'.
+	
+	'_$tabpred':- body1.
+	'_$tabpred':- body2.
+
+   where _$tabpred is NOT tabled.  Optimization in this context consists
+   of forgoing the transformation.  
+
+   Currently the transformation is made when
+	1) One of the bodies has a hard cut.
+	or 
+	2) When the indexing will generate more than one try for any
+	entry point (at leas if I got my check right).
+
+   As can be seen from the .H file, I have cannibalized other pieces
+   of code to do this.  I have documented this code in their original 
+   source files, where needed.						*/   
+/*======================================================================*/
+
+cp_opt_block(pred(Sym,Pscs,Oth),pred(Sym1,Pscs1,Oth1),Symtab,BigPicture):-
+	have_hardcut(Pscs,Hc),
+	must_keep_tabpoint(Sym,Pscs,Res),
+	BigPicture is Hc + Res,
+	cp_opt_block1(BigPicture,
+		      pred(Sym,Pscs,Oth),pred(Sym1,Pscs1,Oth1),Symtab).
+	
+cp_opt_block1(0,_,_,_):-!.
+cp_opt_block1(_,pred(Sym,_Pscs,_Oth),pred(Sym1,Pscs1,Oth1),Symtab):-
+	sym_name(Sym,Pred,Arity),
+	transform_pred(Pred,Pred1),
+	functor(Head,Pred,Arity),
+	functor(Body,Pred1,Arity),
+	bind_args(Arity,Head,Body),
+	parse_preddef(Body,Head, ClList1, Symtab),
+	ClList1 =[pred(Sym1,_Pscs1,_Oth1)|_T],
+	parse_preddef(Head, Body, ClList, Symtab),
+	ClList =[pred(_Sym1,Pscs1,Oth1)|_T].
+
+transform_pred(Pred,Pred1):-
+	atom_chars(Pred,Predlist),
+	append("_$",Predlist,Predlist1),
+	atom_chars(Pred1,Predlist1).
+
+bind_args(0,_,_):-!.
+bind_args(N,Head,Body):-
+	arg(N,Head,A),
+	arg(N,Body,A),
+	N1 is N - 1,
+	bind_args(N1,Head,Body).	
+
+must_keep_tabpoint(Sym, Pscs, Res):-
+	sym_name(Sym,_Pred,Arity),
+	( Arity =:= 0 -> Res = 0
+	; sym_index(Sym, Narg),
+	  cpo_index_argpats(Pscs,Narg,Argpat),
+	  index_split(Argpat,Groups),
+	  ( member(arglabel(g,_,_),Groups) -> Res = 1 ; Res = 0 )
+	).
+
+
+cpo_index_argpats([],_,[]).
+cpo_index_argpats([clause(Arglist,_,_)|CRest], N, 
+			[arglabel(Pattern,NewArg,_L)|APatternRest]) :-
+        nthmember(Arg, Arglist, N),
+	cpo_index_argpat(Arg,Pattern, NewArg),
+	cpo_index_argpats(CRest,N,APatternRest).
+
+cpo_index_argpat(constant(Sym), n, []) :- sym_name(Sym, [], 0).
+cpo_index_argpat(integer(X), i, X).
+cpo_index_argpat(real(X), i, X).
+cpo_index_argpat(constant(C), c, C).
+cpo_index_argpat(varocc(_), v, v).
+cpo_index_argpat(structure(Sym,_), l,l) :- sym_name(Sym, '.', 2).
+cpo_index_argpat(structure(Sym,_), s,Sym).

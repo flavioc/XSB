@@ -1,0 +1,159 @@
+\chapter{Restrictions and Current Known Bugs}
+
+In this chapter we indicate some features and bugs of XSB that may
+affect the users at some point in their interaction with the system.
+
+If at some point in your interaction with the system you suspect that
+you have run across a bug not mentioned below, please report it to
+{\tt (xsb-contact@cs.sunysb.edu)}.  Please try to find the {\em
+smallest} program that illustrates the bug and mail it to this address
+together with a script that shows the problem. We will do our best to
+fix it or to assist you to bypass it.
+
+\section{Current Restrictions}
+
+\begin{itemize}
+\item	The maximum arity for predicate and function symbols is 255.
+%
+\item	Though the maximum length of the atoms that can be read by the 
+      reader is currently 1000, when the atoms are compiled, their
+      maximum length that can be stored in the byte code file is by
+      definition 255.  So, users should avoid compiling files
+      containing atoms whose length is more than 255.  Instead, the
+      files containing these atoms could be loaded into the system
+      using the standard predicate {\tt load\_dyn/1} that asserts the
+      contents of a file in XSB's database (see
+      section~\ref{LoadDyn}). To increase this limit beyond 1000
+      requires a redefinition of MaxStrLen in file {\tt emu/token.c},
+      and recompilation.
+%
+\item	In the current version, you should never try to rename a byte code 
+      file generated for a module, though you can move it around in your 
+      file system.  Since the module name is stored in the file, renaming it
+      causes the system to load it into wrong places.  However, byte code 
+      files for non-modules can be renamed at will.
+%
+\item	XSB allows up to 1 Gigabyte of address space for SUNs and 512
+      Megabytes of address space for other platforms.  For SUNs the
+      address space for integers is $-2^{28}$---$(2^{28}-1)$.  For
+      MIPS-based machines (e.g. Silicon Graphics machines), the
+      address space for integers is $-2^{26}$---$(2^{26}-1)$.  For all
+      other machines it is $-2^{27}$---$(2^{27}-1)$.  This restriction can
+      cause unexpected results when numbers are computed.  The amount
+      of space allowed for floating point numbers is similar for each
+      machine.
+%
+\item	Indexing on floating-point numbers does not work, since the semantics
+      of floating-point unification is murky in the best case. Therefore, it
+      is advisable that you avoid using floating point numbers in the first 
+      argument of a procedure, since the compiler generates index information 
+      for the first argument by default, or that you explicitly index the
+      predicate in some other argument.
+%
+\item	The XSB compiler cannot distinguish the occurrences of a
+      0-ary predicate and a name of a module (of an import declaration) as
+      two different entities.  For that reason it fails to characterise the
+      same symbol table entry as both a predicate and a module at the
+      same time.  As a result of this fact, a compiler error is issued
+      and the file is not compiled.  For that reason we suggest the
+      use of mutually exclusive names for modules and 0-ary predicates,
+      though we will try to amend this restriction in future versions of
+      XSB.
+\end{itemize}
+
+\section{Known Bugs}
+
+\begin{itemize}
+\item As mentioned in sectiom~\ref{memory_management} the heap and
+      local environment stacks are not dynamically expanded, and in
+      the current version, heap overflows are not adequately caught.
+      When stack overflows occur, you should try to enlarge the
+      appropriate stack space through the command line option (see
+      section~\ref{emulator_options}).  In addition \version\ contains
+      no garbage collector.
+\item When compiling a predicate such as
+\begin{verbatim}
+foo :- (X=1;Y=2),write(X),nl,write(Y),nl,fail.
+\end{verbatim}
+you may get an error such as
+\begin{verbatim}
+++Error: Uninitialized variable #1 in clause #1 of temp/0
+         (cannot generate object code)
+++Error: Uninitialized variable #2 in clause #1 of temp/0
+         (cannot generate object code)
+\end{verbatim}
+This error occurs because, according to the compiler, for both {\tt X}
+and {\tt Y} there is an execution path that leads to a possibly
+uninitialized use of the variable.  For instance if {\tt X} is equal
+to {\tt 1}, the code for {\tt Y = 2} will not be executed so that {\tt
+write(Y)} will write an occurrence of {\tt Y} that is not initialized
+by the compiler.  The following predicate provides an inelegant but
+effective rewrite.
+\begin{verbatim}
+foo :- (X=1,Y=Z;Y=2,X=Z),write(X),nl,write(Y),nl,fail.
+\end{verbatim}
+\item The current version of XSB does not fully support dynamic code.
+In fact the declartion {\tt :- dynamic} essentially instructs XSB to
+fail on that code if it is undefined.
+%
+\item When ``compiling'' of large files through {\tt consult/2}, many
+      parts of the compiler are bypassed.  As a result compiler
+      directives like {\tt auto-table} may not work with large files.
+      To work around this, the files may be explicitly compiled
+      through {\tt compile/2} to create an object file, and then
+      loaded as usual through {\tt consult/2}.
+% I think this is mostly fixed: tls
+%\item Explicit compilation (using {\tt compile/1}) of {\em very} large
+%      files {\em may} cause a core dump due to unfinished memory
+%      management.
+\item Variables that appear in {\em compiled} arithmetic comparison
+      predicates should only be bound to numbers and not evaluable
+      arithmetic expressions.  That is, the variables are not evaluated
+      to obtain an arithmetic value, but the XSB compiler assumes
+      that they are evaluated.  For example, executing compiled code for
+      the following program will cause an {\tt "Arithmetic exception"}
+      error:
+      \begin{verbatim}
+            p(X) :- X =:= 1.
+
+            ?- p(cos(0)).
+      \end{verbatim}
+      This behaviour is only exhibited in {\em compiled} code.
+% Currently this solution does not work: kostis
+%     For variables that is not known whether they will always be bound to
+%     numbers, it is advisable that these variables are evaluated
+%     by using {\tt is/2}.  In our example, predicate {\tt p/1} could
+%     be written as:
+%     \begin{verbatim}
+%           p(X) :- X1 is X, X1 =:= 1.
+%     \end{verbatim}
+\item The reader cannot read an infix operator immediately followed 
+       by a left parenthesis.  In such a case you get a
+      syntax error.  To avoid the syntax error just leave a blank between the
+      infix operator and the left parenthesis.  For example, instead of 
+      writing:
+
+      \demo{	| ?- X=(a,b).}
+
+      \noindent
+      write:
+
+      \demo{	| ?- X= (a,b).}
+%
+\item The reader cannot properly read an operator defined as both a
+prefix and an infix operator.  For instance the declaration 
+\begin{verbatim}
+                :- op(1200,xf,'<=').
+                :- op(1200,xfx,'<=').
+\end{verbatim}
+will lead to a syntax error.
+%
+\item When the code of a predicate is reloaded many times, if the old 
+      code is still in use at the time of loading, unexpected errors may 
+      occur, due to the fact that the space of the old code is reclaimed
+      and may be used for other purposes.
+\item Currently, term comparisons ({\tt ==},{\tt @<=},{\tt @<},{\tt
+      @>}, and {\tt @>=}) do not work for very large terms (around
+      10,000 variables and function symbols) on the Next platform.
+\end{itemize}
+

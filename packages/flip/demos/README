@@ -1,0 +1,23 @@
+=============================
+Demo files in this directory:
+=============================
+
+rel_ops.flp: 
+	*very* simple *example* to illustrate the correspondence
+	between relational operations and Datalog rules
+
+family_rel.flp:
+	a simple family database, modeled in DATALOG 
+	(family taken from http://www.swf.de/diefallers/stammbaum/index.html)
+
+family_obj.flp:
+	*extended* and *object-oriented* version of the former 
+	(including *path expressions*)
+
+flogic_basics.flp:
+	illustrates the basic features of F-Logic (as supported by FLIP).
+	Take a look at this!
+
+
+Please send any (more) interesting demos to:
+	ludaesch@informatik.uni-freiburg.de !

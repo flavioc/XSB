@@ -1,0 +1,7 @@
+
+1. Flip Trailer should be made into a library; it doesn't
+   need to be prepended/appended.
+   Is flip Header necessary at all?
+
+2. Get the parser understand quoted files: 'abcd'
+3. Make Flip understand regular Prolog! This is a big job!

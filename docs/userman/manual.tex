@@ -1,0 +1,405 @@
+\documentclass[11pt]{report}
+
+%\documentstyle[11pt,epsf]{report}
+\usepackage{epsf,epsfig,subfigure,latexsym}
+
+\pagestyle{headings}
+
+% LaTeX Size Stuff
+%-----------------
+\newcommand{\newsched}{Batched Scheduling}
+\newcommand{\Newsched}{Batched Scheduling}
+\newcommand{\NewSched}{Batched Scheduling}
+\newcommand{\Oldsched}{Single Stack Scheduling}
+\newcommand{\OldSched}{Single Stack Scheduling}
+\newcommand{\oldsched}{Single Stack Scheduling}
+\newcommand{\localsched}{Local Scheduling}
+\newcommand{\Localsched}{Local Scheduling}
+\newcommand{\LocalSched}{Local Scheduling}
+
+\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{10pt}
+\setlength{\headsep}{30pt}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textheight}{8.5in}
+\setlength{\textwidth}{6.5in}
+\setlength{\footskip}{50pt}
+
+% JF: not allowed in Latex2e
+%\setlength{\footheight}{24pt}
+
+\setlength{\parskip}{2mm}               % space between paragraphs
+
+\def\cut{\mbox{\tt '!'/0}}
+\def\not{\mbox{${\tt '\backslash+'/1}$}}
+
+\newtheorem{example}{Example}[section]
+
+\newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
+
+\newcommand{\comment}[1]{}
+\newcommand{\ourprolog}{XSB}
+\newcommand{\smallourprolog}{xsb}
+\newcommand{\version}{Version 1.8}
+\newcommand{\LRD}{LRD-stratified}
+
+\newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
+\newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
+\newcommand{\desce}[1]{\item[{\tt #1}]}
+\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
+\newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
+\newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
+
+\newcommand{\stuff}[1]{
+        \begin{minipage}{4in}
+        {\tt \samepage
+        \begin{tabbing}
+        \hspace{8mm} \= \hspace{6mm} \= \hspace{10mm} \= \hspace{55mm} \= \kill
+        #1 \hfill
+        \end{tabbing}
+        }
+        \end{minipage}
+}
+
+\newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
+
+%------------------------------------------------------------
+\input{predindex.sty}
+\makepredindex
+\makeindex
+%------------------------------------------------------------
+
+\begin{document}
+
+\title{\bf The \ourprolog\ Programmer's Manual \\ \version}
+
+\author{{\epsfxsize=230pt \epsfbox{xsb-logo.eps}}\\
+	\ \\ \ \\
+	{\em Konstantinos F. Sagonas} \\
+	{\em Terrance Swift} \\
+	{\em David S. Warren} \\ 
+	{\em Juliana Freire} \\
+	{\em Prasad Rao} \\
+	\ \\ \\ \\
+%	{Department of Computer Science} \\
+%	{SUNY @ Stony Brook} \\
+%	{Stony Brook, NY 11794-4400, U.S.A.} \\
+%	\ \\ \\ \\
+	{\normalsize with contributions from} \\
+	{\em Hassan Davulcu} \\
+	{\em Steve Dawson} \\
+	\ \\
+} 
+
+\date{February 1998}
+
+\maketitle
+
+\bibliographystyle{plain}
+
+\thispagestyle{empty}
+\input{credits}
+\newpage
+\thispagestyle{empty}
+%\input{Acknowl}
+%\newpage
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage	% Just to avoid a silly LaTeX bug with \pagenumbering
+  
+\pagenumbering{arabic}
+
+\input{intro}
+\input{quick_start}
+\input{system}
+\input{syntax}
+\input{tables}
+\input{builtin}
+\input{state}
+\input{rbltin}
+\input{debugging}
+\input{dcg}
+\input{library}
+\input{perlmatch}
+\input{foreign}
+\input{ccallingxsb}
+\input{oracle_inter}
+\input{restrict}
+%\input{contact}
+
+\appendix
+
+\input{standard_pred}
+\input{primitive_pred}
+\input{module_list}
+%\input{non_supported}
+
+\input{manual.ind}
+
+\bibliography{manual,slg}
+
+\end{document}
+
+\begin{thebibliography}{AAAAAAA 99a}
+
+\end{thebibliography}
+
+
+\bibitem[BMSU 86]{BancilhonMSU86}
+F.~Bancilhon, D.~Maier, Y.~Sagiv, and J.D.~Ullman.
+\newblock Magic sets and other strange ways to implement logic programs.
+\newblock In {\em ACM SIGACT-SIGMOD-SIGART Symposium on Principles of Database
+	  Systems}, pages 1--15, March 1986.
+
+\bibitem[BR 86]{BaRa86}
+F. Banchilhon and R. Ramakrishnan,
+\newblock An Amateur's Introduction to Recursive Query Processing Strategies,
+\newblock In {\em Proc. of SIGMOD 1986 Conf}, pages 16--52,1986.
+
+\bibitem[BR 86]{BeRa91}
+C. Beeri and R. Ramakrishnan,
+\newblock On the Power of Magic.
+\newblock In {\em J. Logic Programming}, v. 10 n. 3. pages 255--299,1991.
+
+\bibitem[Brat 86]{Brat86}
+I. Bratko
+\newblock Prolog Programming for Artificial Intelligence.
+\newblock Addison-Wesley. 1986.
+
+\bibitem[CKW 93]{CKW-93}
+W.~Chen, M.~Kifer, and D.S.~Warren.
+\newblock HiLog: A Foundation for Higher-Order Logic Programming.
+\newblock {\em Journal of Logic Programming}, 15:3, pp. 187--230, February 1993.
+
+\bibitem[CW 93]{SLG:ChenWarren}
+W.~Chen and D.S.~Warren.
+\newblock Towards Effective Evaluation of General Logic Programs.
+\newblock A shortened version of this paper appeared in the {\em Proceedings of
+  the 12th PODS}.
+
+\bibitem[CSW 93]{SLG:ChenSwiftWarren}
+W.~Chen, T.~Swift and D.S.~Warren.
+\newblock Efficient Top-Down Computation of Queries under the Well-Founded
+	  Semantics.
+\newblock {\em Journal of Logic Programming}, (to appear).
+
+\bibitem[CM 84]{ClockM}
+W.~Clocksin C.~Mellish,
+\newblock Programming in Prolog.
+\newblock Springer-Verlag, 1984.
+
+\bibitem[DR+S+W94]{DRRSSSW94}
+S.~Dawson, C.~R. Ramakrishnan, I.~V. Ramakrishnan, K.~Sagonas, S.~Skiena,
+T.~Swift, and D.~S. Warren.
+\newblock Unification factoring for efficient execution of logic programs.
+\newblock In {\em Proc. of the 22nd Symp. on Principles of Programming
+	  Languages}. ACM, January 1995.
+
+\bibitem[DRW96]{DRW96}
+S. Dawson, C.R. Ramakrishnan and D.S. Warren,
+\newblock Practical Program Analysis Using General Purpose Logic Programming Systems --- A Case Study".
+\newblock In {\em ACM PLDI}, 1996.  To appear.
+
+\bibitem[Debr 88]{sbprolog}
+S. Debray, 
+\newblock SB-Prolog System, Version 3.0, A User Manual,
+\newblock {\em Department of Computer Science, University of Arizona}, 
+	  September 1988.
+
+\bibitem[DW 86]{DietrichW86}
+S.W. Dietrich and D.S. Warren,
+\newblock Extension tables: Memo relations in logic programming.
+\newblock {\em Technical Report 86/18, Department of Computer Science, 
+	  SUNY at Stony Brook}, 1986.
+
+\bibitem[Drax 92]{draxler}
+Christoph Draxler.
+\newblock Prolog to SQL compiler, Version 1.0.
+\newblock {\em Technical Report, CIS Centre for Information and Speech
+	  Processing Ludwig-Maximilians-University}, Munich, 1992.
+
+\bibitem[FSW 96]{FSW96}
+Freire, J., Swift, T., and Warren, D.~S.
+\newblock {Beyond Depth-First}: {E}xploring {A}lternative {S}cheduling
+  {S}trategies for {T}abling {S}ystems.
+\newblock Tech. rep., SUNY at Stony Brook, 1996.
+\newblock Submitted for publication.
+
+\bibitem[FSW 96]{FSW@plilp96}
+Freire, J., Swift, T., and Warren, D.~S.
+\newblock {Beyond Depth-First}: {I}mproving {T}abled {L}ogic {P}rograms through {A}lternative {S}cheduling {S}trategies
+\newblock  In {\em Proc. of the 8th International Symposium PLILP}, 1996.
+
+
+\bibitem[ISO Draft]{ISO92}
+\newblock {\em ISO Prolog Standard -- Working Draft},
+\newblock 1992.
+
+\bibitem[GeLi88]{GeLi88}
+M. Gelfond and V. Lifshitz,
+\newblock {\em The stable model semantics for logic programming},
+\newblock Joint Int'l Conf. and Symposium on Logic Programming, pages
+1070--1080, 1988.
+
+
+\bibitem[KT 88]{KempT88}
+D.B. Kemp and R.W. Topor,
+\newblock Completeness of a top-down query evaluation procedure for stratified
+	  databases.
+\newblock In {\em Proceedings of the Joint International Conference and
+	  Symposium on Logic Programming}, pages 178--194, 1988.
+
+\bibitem[Synt]{Synt}
+R. Larson, D. S. Warren, J. Freire and K. Sagonas,
+\newblock {\em Syntactica}.
+\newblock MIT Press. 1995.
+
+\bibitem[Sem]{Sem}
+R. Larson, D. S. Warren, K. Sagonas, J. Freire and P. Gomez,
+\newblock {\em Semantica}.
+\newblock MIT Press. To appear.
+
+\bibitem[LO'K 87]{LiOk87}
+T. Lindholm  and R.A. O'Keefe,
+\newblock Efficient Implementation of a Defensible Semantics for
+	  Dynamic {PROLOG} Code.  
+\newblock In {\em Proceedings of the International Conference 
+	  on Logic Programming}, pages 21-39, 1987.
+
+\bibitem[MW 88]{MaierW} 
+D. Maier and D.S. Warren,
+\newblock Computing with Logic: Logic Programming with Prolog
+\newblock Benjamin Cummings Publishing Co.  1988.
+
+\bibitem[Keef 90]{OKeefe}
+R.A. O' Keefe,
+\newblock {\em The Craft of Prolog}.
+\newblock MIT Press.  1990.
+
+\bibitem[Przy 89]{PRZY89d}
+T.~C.~Przymusinski.
+\newblock Every logic program has a natural stratification and an
+	  iterated least fixed point model.
+\newblock In {\em Proceedings of the 8th ACM Conference on Principles of
+	  Database Systems}, pages 11--21, 1989.
+
+\bibitem[RRSSW95]{RRSSW95}
+P. Rao, I.~V. Ramakrishnan, K. Sagonas, T. Swift and D.~S. Warren,
+\newblock Efficient Table Access Mechanisms for Logic Programs.
+\newblock In {\em Proceedings of the International Conference on Logic
+	Programming}, pages 687--711, Japan, 1995.  The MIT Press.
+
+\bibitem[Ross 91]{Ross91}
+K.~A. Ross,
+\newblock The Semantics of Deductive Databases.
+\newblock {\em PhD thesis, Department of Computer Science, Stanford University},
+	  August 1991.
+
+\bibitem[SI 88]{SekiI88}
+H.~Seki and H.~Itoh,
+\newblock A Query Evaluation Method for Stratified Programs Under the Extended
+	  CWA.
+\newblock In R. Kowalski and K. Bowen (Eds), {\em Proceedings of the Fifth
+	  International Conference and Symposium on Logic Programming},
+	  pages 195--211, Seatle, 1988.  The MIT Press.
+
+\bibitem[SS 86]{StSh}
+L. Sterling and E. Shapiro,
+\newblock The Art of Prolog.
+\newblock MIT Press.  1986.
+
+\bibitem[SSW 94]{SSW@SIGMOD-94}
+K. Sagonas, T. Swift and D.S. Warren
+\newblock {XSB} as an efficient deductive database engine.
+\newblock In {\em Proceedings of the ACM SIGMOD International Conference on the
+  	  Management of Data}, Minneapolis, Minnesota, May 1994.
+
+\bibitem[SSW 96]{SSW96}
+K. Sagonas, T. Swift and D.~S. Warren
+\newblock The Limits of Fixed-Order Computation.
+\newblock Technical Report, University at Stony Brook, 1996.
+
+\bibitem[SSW 96a]{SSW96a} K. Sagonas, T. Swift and D.~S. Warren
+\newblock An Abstract machine for Fixed-Order Stratified Logic Programs 
+\newblock Preliminary versions apperared in {\em Proceedings
+of the International Symposium on Logic Programming}, pages 633--654,
+1994 and {\em Proceedings of the Thirteenth International Conference
+on Automated Deduction}, July 1996.
+
+\bibitem[SSW 96b]{SSW96b}
+K. Sagonas, T. Swift and D.~S. Warren
+\newblock An Abstract Machine for Computing the Well-Founded Semantics
+\newblock {\em Joint International Conference and Symposium on Logic
+Programming} To appear, 1996.
+
+\bibitem[SW 94]{SW-94}
+K. Sagonas and D.~S. Warren
+\newblock Efficient Execution of HiLog in WAM-based Prolog implementations.
+\newblock In {\em Proceedings of the International Conference on Logic
+	Programming}, Japan, 1995.  The MIT Press.
+
+\bibitem[Sw 94]{Sw94}
+T. Swift
+\newblock {\em Efficient Evaluation of Normal Logic Programs}.
+\newblock PhD thesis, Department of Computer Science, SUNY at Stony Brook,
+  1994.
+
+\bibitem[SwW 94b]{SW94b}
+T.~Swift and D.~S. Warren.
+\newblock Analysis of sequential {SLG} evaluation.
+\newblock In {\em Proceedings of the International Symposium on Logic 
+	Programming}, pages 219--238, 1994.
+
+\bibitem[TS 86]{TamakiS86}
+H.~Tamaki and T.~Sato.
+\newblock OLD resolution with tabulation.
+\newblock In E. Shapiro (Ed), {\em Proceedings of the Third International
+	  Conference on Logic Programming}, pages 84--98, London, 1986.
+	  Springer-Verlag.
+
+\bibitem[Ullm 89]{Ullman89}
+J.~D. Ullman.
+\newblock Principles of Database and Knowledge-base Systems.
+\newblock Volumes I \& II, Computer Science Press, 1987.
+
+\bibitem[vGRS 91]{VGRS91}
+A.~van Gelder, K.~A. Ross, and J.~S. Schlipf.
+\newblock The well-founded semantics for general logic programs.
+\newblock {\em JACM}, 38(3):620--650, July 1991.
+
+\bibitem[Viel 87]{Vieille87}
+L.~Vieille.
+\newblock A database-complete proof procedure based upon sld-resolution.
+\newblock In {\em Proceedings of the Fourth International Conference on
+	  Logic Programming}, 1987.
+
+\bibitem[Walk ??]{Walker}
+A. Walker.
+\newblock Backchain iteration: towards a practical inference method that
+	  is simple enough to be proved terminating, sound and complete.
+\newblock {\em Journal of Automated Reasoning}.
+
+\bibitem[Warr 92]{Warren92}
+D.~S. Warren.
+\newblock Memoing for logic programs with application to abstract 
+	  interpretation and partial deduction.
+\newblock {\em Communications of the ACM}, Vol 35, No. 3, March 1992.
+
+\bibitem[War 93]{DSW93}
+D.~S. Warren.
+\newblock Programming the {PTQ} grammar in {XSB}.
+\newblock In {\em Proc. ILPS'93 Workshop on Programming with Logic Databases},
+  1993.
+
+\bibitem[Xu 91]{psbprolog}
+J. Xu,
+\newblock PSB-Prolog System, Version 1.40, User Manual,
+\newblock {\em ECRC}, 1991
+
+\bibitem[Xu 89]{lowlevel}
+J. Xu, 
+\newblock Metalogical Built-in Predicates: Semantics, Implementation
+	  and Applications, 
+\newblock draft, 1989.

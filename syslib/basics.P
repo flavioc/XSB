@@ -1,0 +1,173 @@
+/* File:      basics.P
+** Author(s): David S. Warren, Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+% ground/1 checks for ground term (Prolog version at end of file).
+% This version uses function calls, and could be made somewhat more 
+% efficient via macros, if necessary.
+
+ground(T) :- fast_ground(T).
+
+
+% good ole member
+member(X,[X|_]).
+member(X,[_|L]) :- member(X,L).
+
+memberchk(X,[X|_]) :- !.
+memberchk(X,[_|L]) :- memberchk(X,L).
+
+
+% append! ta-da!
+append([],L,L).
+append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
+
+
+% A not so naive reverse
+reverse(L, R) :- reverse_acc(L, [], R).
+
+reverse_acc([], Acc, Acc).
+reverse_acc([Head|Tail], Acc, Reversed) :-
+	reverse_acc(Tail, [Head|Acc], Reversed).
+
+
+% Some Prologs like to call this delete!
+select(Element, [Element|Rest_Elements], Rest_Elements).
+select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
+	select(Element, Rest_L1, Rest_L2).
+
+
+% length/2 that works both ways
+length(L,N) :-
+	var(N)
+	 ->	length1(L,N)
+	 ;	length2(L,N).
+
+length1([], 0).
+length1([_|R], N) :- length1(R, N1), N is N1 + 1.
+
+length2(L,N) :-
+	N =< 0
+	 ->	L=[]
+	 ;	N1 is N-1, L=[_|L1],
+		length2(L1,N1).
+
+
+% ith/3 that works both ways
+% ith(Index,List,Element)
+ith(Index,List,Element) :-
+	term_type(Index,T),
+	(T =:= 2		% integer
+	 ->	ith0(Index,List,Element)
+	 ;	ith1(List,1,Index,Element)
+	).
+
+ith0(I,[X|L],Y) :-
+	I > 0,
+	(I =< 1
+	 ->	Y=X
+	 ;	I1 is I-1,
+		ith0(I1,L,Y)
+	).
+
+ith1([X|_],I,I,X).
+ith1([_|L],I1,I,X) :- I2 is I1+1, ith1(L,I2,I,X).
+
+/* copy_term0 is defined on machine.P */
+copy_term(A,B) :- copy_term0(A,C), B = C.
+
+/* --------------------- end of file basics.P ------------------------- */
+
+end_of_file.
+% copy_term/2 creates a new variant of a term. It does NOT copy ground
+% subterms.
+/*      Term: to copy, 
+        Buff: to copy it into, 
+        Worddisp: to put answer or ptr to anser,
+        Start: of free space to put subterms,
+        End: (returned) space used on subterms,
+        Size: of buffer to know direction to point pointers.
+        Grd: var if subterms are ground, 1 if not.
+*/
+
+copy_term(X,Y) :- 
+	%%\+ (\+ (X=Y)),
+	term_type(X,Type),
+	(Type =:= 0	%var
+	 ->	true
+	 ; Type =:= 1	% str
+	 ->	alloc_copy(65536,X,Y)
+	 ; Type =:= 3	% list
+	 ->	alloc_copy(65536,X,Y)
+	 ;	X=Y
+	).
+
+alloc_copy(BSize,X,Y) :-
+	buff_alloc(BSize,Buff,0),	%heap
+	copy_term1(X,Y,Buff,BSize).
+
+copy_term1(X,Y,Buff,BSize) :-
+	buff_copyterm(X,Buff,0,4,Size,BSize),
+	(Size < 0
+	 ->	!,
+		buff_dealloc(Buff,BSize,0,0),
+		NewBSize is 2*BSize,
+		alloc_copy(NewBSize,X,Y)
+	 ;	SavPt is BSize - 8,
+		buff_set_word(Buff,SavPt,Size),
+		fail
+	).
+copy_term1(X,Y,Buff,BSize) :-
+	SavPt is BSize - 8,
+        buff_word(Buff,SavPt,Size),
+        (Size =:= 4
+         ->     buff_dealloc(Buff,BSize,0,0), X=Y
+         ;      buff_cell(Buff,0,Z),
+                buff_dealloc(Buff,BSize,Size,0),
+                Z=Y
+        ).
+
+/* --------------------- end of file basics.P ------------------------- */
+
+end_of_file.
+
+
+ground(T) :- nonvar(T), term_type(T,Ty),
+	(Ty =:= 3
+	 ->	T = [A1|A2],
+	 	ground(A1), ground(A2)
+	 ; Ty =:= 1
+	 ->	term_psc(T,PSC),
+	 	psc_arity(PSC,N),
+		ground(T,N)
+	 ;	true
+	).
+ground(T,N) :-
+	N =:= 0
+	 ->	true
+	 ;	term_arg(T,N,A),
+	 	ground(A),
+		N1 is N-1,
+		ground(T,N1).
+
+

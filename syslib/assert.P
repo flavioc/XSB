@@ -1,0 +1,505 @@
+/* File:      assert.P
+** Author(s): Kostis F. Sagonas, David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*======================================================================*/
+/* Predicates to add dynamic clauses in Prolog's database:		*/
+/*  - assert(+Clause)							*/
+/*	same as assert(Clause, 1, 1, _)					*/
+/*  - asserta(+Clause)							*/
+/*	same as assert(Clause, 0, 1, _)					*/
+/*  - assertz(+Clause)							*/
+/*	same as assert(Clause, 1, 1, _)					*/
+/*  - asserti(+Clause, +Index)						*/
+/*	same as assert(Clause, 1, Index, _)				*/
+/* where:								*/
+/*    assert(+Clause, +AorZ, +Index, -ClauseRef)			*/
+/*	Asserts a clause and returns the clause reference.		*/
+/*	AorZ:  0 for insertion as the first clause, 1 for as the last.	*/
+/*	Index: the number of the argument on which to index; 		*/
+/*		0 for no indexing. 					*/
+/*======================================================================*/
+
+/*======================================================================*/
+/* Formats for dynamic code:						*/
+/* PSC rec point to:							*/
+/*	PrRef:								*/
+/*		0: BC instruction: fail (if empty),			*/
+/*			jump and save breg (if nonempty)		*/
+/*		4: Addr of first Clref on ALL chain			*/
+/*		8: Addr of last Clref on ALL chain			*/
+/*									*/
+/* PrRef's point to chain of ClRef's (one of 3 types):			*/
+/* (the -8 location stores length of buff + flag indicating ClRef type	*/
+/*	ClRef2 (for compiled code):					*/
+/*		-8: length of buffer (+2)				*/
+/*		-4: Addr of previous ClRef (or PrRef)			*/
+/*		0: Try-type instruction, for chain			*/
+/*		4: (cont) Addr of next ClRef on chain			*/
+/*		8: jump							*/
+/*		12: Addr of compiled code				*/
+/*	ClRef0 (for unindexed asserted code):				*/
+/*		-8: length of buffer (+0)				*/
+/*		-4: Addr of previous ClRef (or PrRef)			*/
+/*		0: Try-type instruction, for chain			*/
+/*		4: (cont) Addr of next ClRef on chain			*/
+/*		8+: BC for asserted clause				*/
+/*	ClRef1 (for group of indexed clauses, aka SOB record):		*/
+/*		-8: length of buffer (+1)				*/
+/*		-4: Addr of previous ClRef (or PrRef)			*/
+/*		0: Try-type instruction, for chain			*/
+/*		4: (cont) Addr of next ClRef on chain			*/
+/*		8: BC switch-on-bound instruction (drop thru if var)	*/
+/*		11: (cont) arg to index on				*/
+/*		12: (cont) address of Hash Table			*/
+/*		16: (cont) size of Hash Table				*/
+/*		20: BC jump to	(or fail if empty)			*/
+/*		24: (cont) Addr of first ClRefI on all subchain		*/
+/*		28: Addr of last ClRefI on all subchain			*/
+/*		32: Number of clauses in hash table			*/
+/*		36+: Hash Table						*/
+/*									*/
+/* ClRef1's point to indexed clauses, each represented by a ClRefI:	*/
+/*	ClRefI (for an indexed clause):					*/
+/*		-8: length of buffer (+3)				*/
+/*		-4: Addr of previous ClRefI on all chain		*/
+/*		0: Try-type instruction, for all subchain		*/
+/*		4: (cont) Addr of next ClRefI on all subchain		*/
+/*		8: BC noop(6) to skip next 12 bytes			*/
+/*		12: Addr of previous ClRefI on bucket chain		*/
+/*		16: Try-type instruction, for hash bucket subchain	*/
+/*		20: (cont) Addr of next ClRefI in bucket		*/
+/* and for each additional index:					*/
+/*		24: BC noop(6) to skip next 12 bytes			*/
+/*		28: Addr of previous ClRefI on bucket chain		*/
+/*		32: Try-type instruction, for hash bucket subchain	*/
+/*		36: (cont) Addr of next ClRefI in bucket		*/
+/*		40+: BC for asserted code				*/
+/*									*/
+/*======================================================================*/
+
+
+% NOTE: Predicate assert0/1 is a quicker assert/1 with no error
+%	checking, provided for system usage only.
+
+assert0(Clause) :- assert(Clause,1,1,_).
+
+
+assert(Clause)  :- check_assert(Clause, assert/1), assert(Clause,1,1,_).
+asserta(Clause) :- check_assert(Clause,asserta/1), assert(Clause,0,1,_).
+assertz(Clause) :- check_assert(Clause,assertz/1), assert(Clause,1,1,_).
+
+
+% NOTE: Predicates asserti[a,z]/2 though exported, are not available to
+%	the user (in the intepreter) and so no error checking is done.
+%	Should they become available in the interpreter error checking
+%	must be added to them.
+
+asserti(Clause, Index) :- assert(Clause,1,Index,_).
+assertai(Clause,Index) :- assert(Clause,0,Index,_).
+assertzi(Clause,Index) :- assert(Clause,1,Index,_).
+
+
+assert(Clause, AZ, Index1, Clref) :-
+	( Clause = (Head:-_) -> conpsc(Head, PSC)
+	; Clause = Head -> conpsc(Head, PSC)
+	),
+	psc_arity(PSC, Arity),
+	Index = Index,
+	HashTabSize = HashTabSize,
+	('_$trie_asserted'(Clause) 
+	-> 	t_assert_1(Clause, _Flag)
+	 ;('_$index'(Head,Index,HashTabSize)
+	 ->	true
+	 ; integer(Index1)
+	 ->	(Index1 > Arity
+		 ->	Index = 0,default_assert_size(HashTabSize)
+		 ; Index1 < 0
+		 ->	Index = 1,default_assert_size(HashTabSize)
+		 ;	Index = Index1,default_assert_size(HashTabSize)
+		)
+	 ;	Index = Index1,default_assert_size(HashTabSize)
+	),
+	NArity is Arity+1,		% to hold the cut addr
+	convert_to_dyna(Head,Prref),
+	cut_transform(Clause,Nclause),
+
+	code_to_buff(Nclause,_),
+	assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize,Clref)).
+
+/* Must fail after code is put into buffer, to reset variables bound in 
+   the process */
+code_to_buff(Clause,_) :- assert_code_to_buff(Clause,_), fail.
+code_to_buff(_,_).
+
+
+/*======================================================================*/
+/* check_assert(+Clause, +Predicate_Called)				*/
+/*	Given the Clause to be asserted in the database and the flavor	*/
+/*	of assert used, checks the Clause for errors so  that Prolog's	*/
+/*	database remains consistent. As usual, if an error is detected	*/
+/*	the predicate aborts.						*/
+/*	The errors that can occur are:					*/
+/*	  - instantiation error: If Head of Clause is uninstantiated.	*/
+/*	  - type error: If Head of Clause is not a callable term or	*/
+/*		if Body contains a non-callable goal.			*/
+/*	  - permission error: If the predicate corresponding to Head	*/
+/*		is one of XSB's built-in predicates (Database error).	*/
+/*======================================================================*/
+
+check_assert((Head :- Body), Pred) :- 
+	!,			% This captures Clause being variable
+	( var(Head) ->
+		abort(('Uninstantiated argument 1 of ', Pred))
+	; check_assert(Head, Pred), 
+	  ( check_body(Body) -> true
+	  ; abort(('Wrong type in argument 1 of ', Pred,
+			   ' (callable term expected)'))
+	  )
+	).
+check_assert(Head, Pred) :- 	% asserting a fact
+	( callable(Head) -> 
+		( functor(Head, F, A), standard_symbol(F, A, _Prop) ->
+			abort(('Not permitted to assert to a built-in predicate: ',F/A))
+		; true
+		)
+	; abort(('Wrong type in argument 1 of ', Pred, 
+			 ' (callable term expected)'))
+	).
+
+check_body(X) :- var(X), !.
+check_body((X,Y)) :- !, check_body(X), check_body(Y).
+check_body(X) :- callable(X).
+
+/*======================================================================*/
+/* cut_transform(+Clause, -NewClause)					*/
+/*	Transform cuts to '_$cutto'.					*/
+/*======================================================================*/
+
+cut_transform((Head:-Body),(Nhead:-Nbody)) :- !,
+	Head =.. Hlist,
+	append(Hlist,[Cutpoint],Nhlist),
+	Nhead =.. Nhlist,
+	goal_cut_trans(Body,Nbody,Cutpoint).
+cut_transform(Head,Head). /* leave unchanged, Arity is one less */
+
+/*======================================================================*/
+/* convert_to_dyna(+PredHead, -Prref)					*/
+/*	Convert the predicate to DYNA, and return its Prref.		*/
+/*	If it is already a dynamic pred, simply return its Prref.	*/
+/*======================================================================*/
+
+dynamic((P1,P2)) :- dynamic(P1), dynamic(P2).
+dynamic(P/A) :- !, functor(Head,P,A), convert_to_dyna(Head,_).
+dynamic(Head) :- convert_to_dyna(Head,_).
+
+convert_to_dyna(PHead,Prref) :-
+	conpsc(PHead, PSC),
+	psc_type(PSC, SYMTYPE),
+	( SYMTYPE =:= 1 ->			/* already dynamic */
+		psc_tabled(PSC, Tabled),
+		(Tabled =:= 0
+		 ->	psc_prop(PSC, Prref),		/* get the Prref */
+			buff_byte(Prref, 0, Tmp),
+			(Tmp =:= 124	/* a trie_assert_inst instruction!!*/
+			 ->	functor(PHead,P,_),
+				abort(('Asserting to trie_assert predicate: ',
+					P))
+			 ;	true
+			)
+		 ;	psc_prop(PSC, Prrefa),
+			buff_word(Prrefa, 24, Prref)	% !! into calld
+		)
+	; SYMTYPE =:= 0  ->    		/* undefined, this is first clause */
+		db_new_prref(PSC,PHead,Prref)
+	; SYMTYPE =:= 12  ->    		/* unld, this is frst clse */
+		db_new_prref(PSC,PHead,Prref)
+	; SYMTYPE =:= 2 ->			/* compiled, so convert */
+		psc_prop(PSC, OldP),
+	        db_new_prref(PSC,PHead,Prref),		/* get a new Prref */
+		compiled_to_dynamic(PSC,OldP)
+	; abort(('Asserting to something illegal (Type = ', SYMTYPE, ')'))
+	).
+
+/*======================================================================*/
+/* retract(+Fact)							*/
+/*	this routine retracts facts. It does so by running the chain of */
+/*	buffers, explicitly. When it finds a fact that unifies, it 	*/
+/*	overwrites the first instruction in the buffer (after the 	*/
+/*	retrymeelse instruction) to be a fail. This is somewhat of a 	*/
+/*	kludge but is easy. Besides you shouldn't be using retract 	*/
+/*	anyway. 							*/
+/*	(dsw 4/21/92) It's also incorrect. It deletes ALL clauses in	*/
+/*	the group COMPILED with it. This is particularly unpleasant in	*/
+/*	op/3, where redefining a 'builtin' operator, deletes them ALL.	*/
+/*======================================================================*/
+
+
+retract(Rule) :-	% changed for multifile predicates (2/24/98)
+	(Rule = (Head :- Body)
+	 ->	true
+	 ;	Head = Rule, Body = true
+	),
+	(nonvar(Head), '_$multifile_retract'(Head, _, _)
+	 % argument 1 fo retract/1 must be instantiated
+	 ->	do_multifile_retract(Head, Body)
+	 ;	retract0((Head :- Body))
+	).
+
+do_multifile_retract(Head, Body) :-
+	'_$multifile_retract'(Head, _, New_Head),
+	check_retract(New_Head, retract/1),
+	conpsc(New_Head, PSC),
+	psc_type(PSC,Type), Type = 1,		/* is DYNA */
+	psc_prop(PSC, Prref),			/* get Prref */
+	db_retract(New_Head, Body, Prref).
+
+
+retract0(Rule) :-	% original retract/1, is used in standard.P
+	(Rule = (Head :- Body)
+	 ->	true
+	 ;	Head = Rule, Body = true
+	),
+	check_retract(Head, retract/1),
+	conpsc(Head, PSC),
+	psc_type(PSC,Type), Type = 1,		/* is DYNA */
+	psc_prop(PSC, Prref),			/* get Prref */
+	db_retract(Head, Body, Prref).
+
+retractall(Fact) :-
+	(nonvar(Fact), '_$multifile_retract'(Fact, _, _)
+	 ->	do_multifile_retractall(Fact)
+	 ;	retractall0(Fact)
+	).
+
+do_multifile_retractall(Fact) :-
+	'_$multifile_retract'(Fact, _, New_Fact),
+	retractall0(New_Fact),
+	fail.
+do_multifile_retractall(_).
+
+retractall0(Fact) :-
+	check_retract(Fact, retractall/1),
+	conpsc(Fact, PSC),
+	psc_type(PSC,Type), 
+	(Type =\= 1
+	 ->	true		/* not DYNA */
+	 ;	psc_prop(PSC, Prref),			/* get Prref */
+		db_retractall(Fact, Prref)
+	).
+
+retract_nr(Rule) :-
+	(Rule = (Head :- Body)
+	 ->	true
+	 ;	Head = Rule, Body = true
+	),
+	check_retract(Head, retract_nr/1),
+	conpsc(Head, PSC),
+	psc_type(PSC,Type), Type = 1,		/* is DYNA */
+	psc_prop(PSC, Prref),			/* get Prref */
+	db_retract_nr(Head, Body, Prref).
+
+reclaim_space(Fact) :-
+	check_retract(Fact, reclaim_space/1),
+	conpsc(Fact, PSC),
+	psc_type(PSC,Type), 
+	(Type =\= 1
+	 ->	true		/* not DYNA */
+	 ;	psc_prop(PSC, Prref),			/* get Prref */
+		db_reclaim_space(Fact, Prref)
+	).
+
+/*======================================================================*/
+/* check_retract(+Head_of_Clause, +Predicate_Called)			*/
+/*	Given the Head of the Clause to be retracted from the database	*/
+/*	checks it for exceptions so that Prolog's database remains	*/
+/*	consistent. As usual, if an error is detected the predicate	*/
+/*	aborts.								*/
+/*	The errors that can occur are:					*/
+/*	  - instantiation error: If Head_of_Clause is uninstantiated.	*/
+/*	  - type error: If Head_of_Clause is not a callable term.	*/
+/*	  - permission error: If the predicate corresponding to Head	*/
+/*		is one of XSB's built-in predicates (Database error).	*/
+/*	Note that it is not a type error to call the retract(s) with	*/
+/*	Head a functor of a non-dynamic procedure, or with a body	*/
+/*	instantiated to a non-valid Prolog body. In these cases		*/
+/*	predicate retract or retractall simply fail.			*/
+/*======================================================================*/
+
+check_retract(Head, Pred) :-
+	( var(Head) ->
+		abort(('Uninstantiated argument 1 of ', Pred))
+	; callable(Head) -> 
+		( functor(Head, F, A), standard_symbol(F, A, _Prop) ->
+			abort(('Not permitted to retract clauses of built-in predicate ', F/A))
+		; true
+		)
+	; abort(('Wrong type in argument 1 of ', Pred,
+			 ' (callable term expected)'))
+	).
+
+
+/*======================================================================*/
+/* abolish(+Pred/+Arity) or abolish(+PredSpec)				*/
+/*	Removes all procedures specified from the Prolog database.	*/
+/*	After this command is executed the current program functions	*/
+/*	as if the named procedures had never existed. Predicate		*/
+/*	abolish/[1,2] removes all clauses of the specified procedure	*/
+/*	regardless of whether they are dynamic or compiled, but it	*/
+/*	cannot abolish built-in predicates or predicates in unloaded	*/
+/*	modules.							*/
+/*	As it ought to, abolish/[1,2] does not complain when trying to	*/
+/*	abolish an undefined predicate.					*/
+/*======================================================================*/
+
+abolish(Spec) :-
+	(var(Spec)
+	 ->	abort('Uninstantiated argument of abolish/1'),
+		Nspec=_,Pred=Arity
+	 ; Spec = (Pred/Arity)
+	 ->	(var(Pred)
+		 ->	abort('Uninstantiated argument of abolish/1'),Nspec=_
+		 ; arity_integer(Arity)
+		 ->	functor(Nspec,Pred,Arity)
+		 ;	abort('Incorrect arity in abolish/1'),Nspec=_
+		)
+	 ; Nspec = Spec, functor(Nspec,Pred,Arity)
+	),
+	(standard_symbol(Pred,Arity,_Prop)
+	 ->	abort('Not permitted to abolish built-in predicates')
+	 ;	abolish1(Nspec)
+	).
+
+/*======================================================================*/
+/* abolish(+Pred, +Arity)						*/
+/*	Predicate abolish/2 is an obsolete special case of abolish/1	*/
+/*	maintained here to provide compatibility with DEC-10 Prolog,	*/
+/*	Quintus Prolog, C Prolog and earlier versions of SB and		*/
+/*	PSB-Prolog.							*/
+/*======================================================================*/
+
+abolish(Pred,Arity) :-
+	functor(Spec,Pred,Arity),
+	abolish1(Spec).
+
+abolish1(Term) :-
+	retractall('_$index'(Term,_,_)),
+	retractall('_$trie_asserted'(Term)),
+	conpsc(Term,Psc),
+	psc_type(Psc, Type),
+	( Type =:= 1 ->				% DYNA
+		psc_prop(Psc, Prref),
+		db_abolish(Term, Prref),
+		psc_set_type(Psc, 0, 1),
+		psc_set_prop(Psc, 0, 1)
+	; Type =:= 2 ->				% normal compiled predicate
+		psc_prop(Psc,Ep),		% get entry point
+		unload_seg(Ep),			% free the space
+		psc_set_type(Psc, 0, 1),
+		psc_set_prop(Psc, 0, 1)
+	; Type =:= 0	/* need to check imported !!!! */
+	).
+
+
+/*======================================================================*/
+/* clause(+Head, ?Body)							*/
+/*	Predicate clause/2 searches the database for a clause whose	*/
+/*	head matches the given Head and whose body matches Body. So	*/
+/*	Head must be instantiated. This procedure is non-deterministic.	*/
+/*	it can be used to backtrack through all the clauses matching	*/
+/*	a given Head and Body. It fails when there are no (or no	*/
+/*	further) matching clauses in the database.			*/
+/*	In the case of unit-clauses, Body is unified with 'true'.	*/
+/*======================================================================*/
+
+clause(Head, Body) :-
+	check_clause(Head),
+	clause0(Head, Body0),
+	goal_cut_untrans(Body0, Body).
+
+
+clause0(Head, Body) :-
+	conpsc(Head, PSC),
+	psc_type(PSC,Type), Type = 1,		/* is DYNA */
+	psc_prop(PSC, Prref),			/* get Prref */
+	db_clause(Head,Body,Prref,_Clref).
+
+/*======================================================================*/
+/* check_clause(+Head_of_Clause)					*/
+/*	Given the Head of the Clause to be asserted in the database	*/
+/*	checks this Head for errors. As usual, if an error is detected	*/
+/*	the predicate aborts.						*/
+/*	The errors that can occur are:					*/
+/*	  - instantiation error: If Head of Clause is uninstantiated.	*/
+/*	  - type error: If Head of Clause is not a callable term.	*/
+/*	  - permission error: If the predicate corresponding to Head	*/
+/*		is one of XSB's built-in predicates (Database error).	*/
+/*	Note that it is not a type error to call clause/2 with Head a	*/
+/*	functor of a non-dynamic procedure, or with body instantiated	*/
+/*	to a non-valid Prolog body. In these cases predicate clause/2	*/
+/*	simply fails.							*/
+/*======================================================================*/
+
+check_clause(Head) :-
+	( var(Head) ->
+		abort('Uninstantiated argument 1 of clause/2')
+	; callable(Head) -> 
+		( functor(Head, F, A), standard_symbol(F, A, _Prop) ->
+			abort(('Not permitted to access clauses of built-in predicate ', F/A))
+		; true
+		)
+	; abort(('Wrong type in argument 1 of clause/2', 
+			 ' (callable term expected)'))
+	).
+
+/*======================================================================*/
+/* Aux routines								*/
+/*======================================================================*/
+
+append([], L, L).
+append([X|L1], L2, [X|L3]) :- append(L1, L2, L3).
+
+/*==================================================*/
+t_assert_exit(Clause) :- abort(('Illegal Term in trie_assert:',Clause)).
+
+
+%t_assert(Clause) :- Clause = (_Head :- _Body), t_assert_exit(Clause).
+t_assert(Clause, Flag) :- check_assert(Clause,trie_assert/1),
+	t_assert_1(Clause, Flag).
+
+t_assert_1((Head :- Body), _Flag) :- t_assert_exit((Head :- Body)).
+t_assert_1(Clause, Flag) :- 
+	conpsc(Clause, PSC),
+	psc_arity(PSC, Arity),
+	convert_to_dyna(Clause,Prref),
+%	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
+	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).
+
+
+
+
+trie_assert_builtin(_Clause,_PSC,_Arity,_Prref,_Flag) :-
+	'_$builtin'(147).
+

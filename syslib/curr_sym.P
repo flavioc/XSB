@@ -1,0 +1,513 @@
+/* File:      curr_sym.P
+** Author(s): Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/* ===== current_atom/1 =============================================== */
+
+%current_atom(Atom) :- true.
+current_atom(Module:Atom) :-
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	ModuleName = Module,
+	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+						% of this module
+	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
+		write('Predicate current_atom/1 for module "'),
+		write(ModuleName),
+		writeln('" is not yet implemented !'),
+		fail
+        ; psc_scan_in_module(First_PSC_Pair, PSC), 
+	  psc_arity(PSC, Arity), 
+	  0 = Arity,
+	  psc_name(PSC, Name),
+% The following appeared here by Jiyang (dunno completely what it does!)
+%	term_new(PSC, A0),
+	  Atom = Name
+	).
+
+% Original Jiyang version of current_atom/1
+%	psc_scan(PSC), psc_arity(PSC, N), N = 0, term_new(PSC, A0), A0 = A.
+
+
+/* ===== current_functor/1 ============================================ */
+
+%   current_functor(?Predicate_Indicator)
+%   Succeeds iff Predicate_Indicator is a predicate indicator for one
+%   of the procedures appearing in the database (both system and user 
+%   defined but not necessarily loaded in the system). 
+%   Predicate_Indicator can have the following forms:
+%	 (i) Module:Functor/Arity.
+%	(ii) Functor/Arity (for global modules)
+%   A variable in place of Predicate_Indicator succeeds only for global
+%   modules.
+
+current_functor(Functor/N) :-		% This takes care of global modules.
+	!,				% i.e. "usermod" and "global".
+	psc_scan_in_hash_table(0, PSC),
+	psc_arity(PSC, Arity), 
+	psc_name(PSC, Name),
+	Functor = Name,
+	Arity = N.
+current_functor(Module:Functor/N) :-
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	ModuleName = Module,
+	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+						% of this module
+	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
+		current_functor(Functor/N)
+        ; psc_scan_in_module(First_PSC_Pair, PSC),
+	  psc_arity(PSC, Arity), 
+	  psc_name(PSC, Name),
+% The following appeared here by Jiyang (dunno why)
+%	psc_insert(Name, 0, PSC0), 
+%	term_new(PSC0, F0),
+	  Functor = Name,
+	  Arity = N
+	).
+
+psc_scan_in_hash_table(Bucket_Index, PSC) :- 
+	dereference_the_bucket(Bucket_Index, First_Pair_of_Bucket),
+	psc_scan_in_bucket(First_Pair_of_Bucket, PSC).
+psc_scan_in_hash_table(Bucket_Index, PSC) :- 
+	next_bucket(Bucket_Index, Next_Bucket_Index),
+	( Next_Bucket_Index =\= 0 ->		% At end of hash_table.
+		psc_scan_in_hash_table(Next_Bucket_Index, PSC) ).
+
+psc_scan_in_bucket(PSC_Pair, _) :-
+	PSC_Pair =:= 0,		% PSC_Pair == NULL
+	!,
+	fail.
+psc_scan_in_bucket(PSC_Pair, PSC) :-
+	pair_psc(PSC_Pair, PSC).
+psc_scan_in_bucket(PSC_Pair, Next_PSC) :- 
+	pair_next(PSC_Pair, Next_PSC_Pair),
+	psc_scan_in_bucket(Next_PSC_Pair, Next_PSC).
+
+% Original Jiyang version of current_functor/2
+%	psc_scan(PSC), psc_arity(PSC, N0), psc_name(PSC, Name),
+%	psc_insert(Name, 0, PSC0), term_new(PSC0, F0), F0 = F, N0 = N.
+
+
+/* ===== current_functor/2 ============================================ */
+
+%   current_functor(?Name, ?Term_Indicator)
+%   Succeeds iff Term_Indicator is the most general term corresponding to
+%   one of the procedures appearing in the database (both system and user
+%   defined but not necessarily loaded in the system) having functor Name.
+%   Term_Indicator can have the following forms:
+%	 (i) Module:Term.
+%	(ii) Term (for global modules)
+%   A variable in place of Term_Indicator succeeds only for global
+%   modules. Note that the order of term generation is undetermined.
+
+current_functor(Name, Term) :-		% This takes care of global modules.
+					% i.e. "usermod" and "global".
+	psc_scan_in_hash_table(0, PSC),
+	psc_name(PSC, F),
+	Name = F,
+	psc_arity(PSC, Arity), 
+	functor(Term, Name, Arity).
+current_functor(Name, Term_Indicator) :-
+	nonvar(Term_Indicator),
+	Term_Indicator = :(Module, Term),
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	ModuleName = Module,
+	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+						% of this module
+	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
+		current_functor(Name, Term)
+        ; psc_scan_in_module(First_PSC_Pair, PSC),
+	  psc_name(PSC, F),
+	  Name = F,
+	  psc_arity(PSC, Arity),
+	  functor(Term, Name, Arity)
+	).
+
+
+/* ===== current_input/1 ============================================== */
+
+%   current_input(?Stream)
+%   Succeeds iff stream Stream is the current input stream.
+
+current_input(Stream) :-
+	conpsc(current_input, CurinPsc),
+	psc_prop(CurinPsc, Curin), 
+	psc_name(Curin, Name),
+	Name = Stream.
+
+
+/* ===== current_op/3 ================================================= */
+
+%   current_op(?Operator_Precedence, ?Operator_Specifier, ?Operator_Name)
+%   Succeeds iff Operator_Name is an operator with type defined by
+%   Operator_Specifier and precedence Operator_Precedence.
+%   NOTE: According to the Prolog standard this predicate has no errors.
+
+current_op(Prec, Type, Name) :- 
+	'_$op'(Prec, Type, Name).
+
+
+/* ===== current_output/1 ============================================= */
+
+%   current_output(?Stream)
+%   Succeeds iff stream Stream is the current output stream.
+
+current_output(Stream) :- 
+	conpsc(current_output, CuroutPsc),
+	psc_prop(CuroutPsc, Curout), 
+	psc_name(Curout, Name), 
+	Name = Stream.
+
+
+/* ===== current_predicate/1 ========================================== */
+
+%   current_predicate(?Predicate_Indicator)
+%   Succeeds iff Predicate_Indicator is a predicate indicator for one
+%   of the loaded procedures in the database (both system and user defined).
+%   Predicate_Indicator can have the following forms:
+%	 (i) Module:Functor/Arity.
+%	(ii) Functor/Arity (for global modules)
+%   A variable in place of Predicate_Indicator succeeds only for global
+%   modules.
+
+current_predicate(Functor/N) :-		% This takes care of global modules.
+	!,				% i.e. "usermod" and "global".
+	psc_scan_in_hash_table(0, PSC),
+	psc_type(PSC, Type), 
+	( Type =:= 2 -> true		% Regular loaded predicate.
+	; Type =:= 1 -> true		% Dynamic predicate.
+	; Type =:= 13			% Foreign predicate.
+	),
+	psc_arity(PSC, Arity), 
+	psc_name(PSC, Name),
+	Functor = Name,
+	Arity = N.
+current_predicate(Module:Functor/N) :-
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	ModuleName = Module,
+	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+						% of this module
+	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
+		current_predicate(Functor/N)
+        ; psc_scan_in_module(First_PSC_Pair, PSC), 
+          psc_type(PSC, Type), 
+	  ( Type =:= 2 -> true		% Regular loaded predicate.
+	  ; Type =:= 1 -> true		% Dynamic predicate.
+	  ; Type =:= 13			% Foreign predicate.
+	  ),
+	  psc_arity(PSC, Arity), 
+	  psc_name(PSC, Name),
+	  Functor = Name, 
+	  Arity = N
+	).
+
+module_scan(PSC_Pair, _, _) :-
+	PSC_Pair =:= 0,		% PSC_Pair == NULL
+	!,
+	fail.
+module_scan(PSC_Pair, ModuleName, ModulePSC) :- 
+	pair_psc(PSC_Pair, ModulePSC),
+	psc_name(ModulePSC, ModuleName).
+module_scan(PSC_Pair, NextModuleName, ModulePSC) :- 
+	pair_next(PSC_Pair, Next_PSC_Pair),
+	module_scan(Next_PSC_Pair, NextModuleName, ModulePSC).
+
+psc_scan_in_module(PSC_Pair, _) :-
+	PSC_Pair =:= 0,		% PSC_Pair == NULL
+	!,
+	fail.
+psc_scan_in_module(PSC_Pair, PSC) :-
+	pair_psc(PSC_Pair, PSC).
+psc_scan_in_module(PSC_Pair, Next_PSC) :- 
+	pair_next(PSC_Pair, Next_PSC_Pair),
+	psc_scan_in_module(Next_PSC_Pair, Next_PSC).
+
+
+/* ===== current_predicate/2 ========================================== */
+
+%   current_predicate(?Name, ?Term_Indicator)
+%   Succeeds iff Term_Indicator is the most general term corresponding to
+%   one of the loaded procedures in the database (both system and user
+%   defined) having functor Name.
+%   Term_Indicator can have the following forms:
+%	 (i) Module:Term.
+%	(ii) Term (for global modules)
+%   A variable in place of Term_Indicator succeeds only for global
+%   modules. Note that the order of term generation is undetermined.
+
+current_predicate(Name, Term) :-	% This takes care of global modules.
+					% i.e. "usermod" and "global".
+	psc_scan_in_hash_table(0, PSC),
+	psc_type(PSC, Type),
+	( Type =:= 2 -> true		% Regular loaded predicate.
+	; Type =:= 1 -> true		% Dynamic predicate.
+	; Type =:= 13			% Foreign predicate.
+	),
+	psc_arity(PSC, Arity), 
+	psc_name(PSC, F),
+	Name = F,
+	functor(Term, Name, Arity).
+current_predicate(Name, Term_Indicator) :-
+	nonvar(Term_Indicator),
+	Term_Indicator = :(Module, Term),
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	ModuleName = Module,
+	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+						% of this module
+	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
+		current_predicate(Name, Term)
+	; psc_scan_in_module(First_PSC_Pair, PSC), 
+	  psc_type(PSC, Type), 
+	  ( Type =:= 2 -> true		% Regular loaded predicate.
+	  ; Type =:= 1 -> true		% Dynamic predicate.
+	  ; Type =:= 13			% Foreign predicate.
+	  ),
+	  psc_arity(PSC, Arity), 
+	  psc_name(PSC, F),
+	  Name = F, 
+	  functor(Term, Name, Arity)
+	).
+
+
+/* ===== current_module/1 ============================================= */
+
+%   current_module(?Module)
+%   Succeeds iff Module is one of the modules in the database. This 
+%   includes both user modules and system modules. A module becomes 
+%   "current" as soon as it is loaded in the system or when another 
+%   module that is loaded in the system imports some predicates from 
+%   that module. A module can never lose the property of being "current".
+
+current_module(Module) :- 
+	get_first_psc_pair(PSC_Pair),
+	scan_modules(PSC_Pair, ModuleName),
+	Module = ModuleName.
+
+scan_modules(PSC_Pair, _) :-
+	PSC_Pair =:= 0,		% PSC_Pair == NULL
+	!,
+	fail.
+scan_modules(PSC_Pair, ModuleName) :- 
+	pair_psc(PSC_Pair, ModulePSC),
+	psc_name(ModulePSC, ModuleName).
+scan_modules(PSC_Pair, NextModuleName) :- 
+	pair_next(PSC_Pair, Next_PSC_Pair),
+	scan_modules(Next_PSC_Pair, NextModuleName).
+
+
+/* ===== current_module/2 ============================================= */
+
+%   current_module(?Module, ?ObjectFile)
+%   Gives the relationship between the modules and their associated 
+%   module object file names. It is possible for a current module to
+%   have no associated object file name or for the system to be unable 
+%   to find out the object file name of a current module.
+
+current_module(Module, ObjectFile) :- 
+	current_module(Module),
+	module_file(Module, ObjectFile).
+
+module_file('.xsbrc', File) :-
+	!,
+	current_predicate('.xsbrc':_),	% module .xsbrc is indeed loaded
+	!,
+	xsb_configuration(user_home, HomeDir),
+	( is_pcdos -> conname('/.xsbrc.OX', OFile)
+		    ; conname('/.xsbrc.O', OFile) ),
+	str_cat(HomeDir, OFile, FileName),
+	FileName = File.
+module_file(ModuleName, File) :-
+	( is_pcdos -> conname('.OX', Suffix)
+		    ; conname('.O', Suffix) ),
+	str_cat(ModuleName, Suffix, OFile),
+	libpath(Lib),
+	expand_lib(Lib, Absolute_Lib),
+	str_cat(Absolute_Lib, OFile, FileName),
+	machine_file_exists(FileName),
+	!,	% This cut is needed so that we get only one filename
+		% as an answer (exactly the one that corresponds to the
+		% file that would be consulted when using the loader).
+	FileName = File.
+
+
+/* ===== predicate_property/2 ========================================= */
+
+%   predicate_property(?Predicate_Indicator, ?Property)
+%   Succeeds iff predicate Predicate has the property Property.
+%   Hacked by Kostis (10/27/92) to make it fast when searching 
+%   in a global module with Predicate_Indicator ground.
+
+predicate_property(Term_Indicator, Property) :-
+	nonvar(Term_Indicator),
+	Term_Indicator = :(Module, Term),
+	!,
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	ModuleName = Module,
+	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+						% of this module
+	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
+		predicate_property(Term, Property)
+        ; psc_scan_in_module(First_PSC_Pair, PSC),
+	  psc_name(PSC, Name),
+	  psc_arity(PSC, Arity),
+	  functor(Term, Name, Arity),
+	  psc_properties(PSC, Property)
+	).
+predicate_property(Term, Property) :-	% This takes care of global 
+					% modules,"usermod" and "global".
+	term_type(Term, Type),
+	( Type =:= 1 ->	% Hacked to make it fast when Term is given.
+			% If Term is given and it is represented as a structure 
+			% (has a PSC record) then using term_psc/2 we get to 
+			% this PSC record directly without having to scan the 
+			% whole PSC-Pair list.
+		term_psc(Term, PSC),
+		psc_properties(PSC, Property)
+	; Type =:= 5 ->
+		conpsc(Term, PSC),
+		psc_properties(PSC, Property)
+	; psc_scan_in_hash_table(0, PSC),
+	  psc_name(PSC, Name),
+	  psc_arity(PSC, Arity), 
+	  functor(Term, Name, Arity),
+	  psc_properties(PSC, Property)
+	).
+
+psc_properties(PSC, Property) :- 
+	psc_type(PSC, Type),
+	( Type =:=  0 -> Property = unclassified
+	; Type =:=  1 -> Property = (dynamic)
+	; Type =:=  2 -> Property = loaded
+	; Type =:= 12 -> Property = unloaded
+	; Type =:= 13 -> Property = foreign
+	; Type =:= 14 -> Property = function ).
+psc_properties(PSC, Property) :-
+	psc_env(PSC, Env),
+	( Env =:= 0 -> Property = exported
+	; Env =:= 1 -> Property = (local)
+	; Env =:= 2 -> psc_prop(PSC, ModulePSC), 
+		       psc_name(ModulePSC, ModuleName), 
+		       Property = imported_from(ModuleName)
+	; Property = global ).
+psc_properties(PSC, Property) :- 
+	psc_spy(PSC, Spy),
+	( Spy =\= 0 -> Property = spied ).
+psc_properties(PSC, Property) :- 
+	psc_tabled(PSC, Tabled),
+	( Tabled =\= 0 -> Property = tabled ).
+psc_properties(PSC, Property) :-
+	psc_name(PSC, Functor),		% Finding the Functor and the Arity
+	psc_arity(PSC, Arity),		% twice is silly, isn't it?
+	( standard_symbol(Functor, Arity, _) -> Property = built_in ).
+		 % Unfortunately this doesn't take the Module into account.
+
+
+/* ===== module_property/2 ============================================ */
+
+%   module_property(?Module, ?Property)
+%   Succeeds iff module Module has the property Property.
+
+module_property(Module, Property) :-
+	get_first_psc_pair(PSC_Pair),
+	module_scan(PSC_Pair, ModuleName, ModulePSC),
+	Module = ModuleName, 
+	module_properties(ModulePSC, Property).
+
+module_properties(PSC, Property) :- 
+	psc_type(PSC, Type),
+	( Type =:=  0 -> Property = unloaded
+	; Type =:=  4 -> Property = loaded ).
+
+
+/* ===== xsb_flag/2 =================================================== */
+
+%%   xsb_flag(?FlagName, ?Value)
+%%   Succeeds if the XSB flag FlagName has the value Value.
+%%
+%%   IMPORTANT Convention: use xsb_flag for dynamic aspects of XSB setting,
+%%   i.e., those that can change between sessions or within a session.
+%%   In contrast, xsb_configuration is to be used for settings that are the
+%%   same for different sessions and are fixed at XSB build time.
+
+xsb_flag(debugging, Debug) :-
+	stat_flag(4, Value), 
+	( Value =:= 0 -> Debug = off
+		       ; Debug = on ).
+xsb_flag(tracing, Trace) :-
+	stat_flag(6, Value), 
+	( Value =:= 0 -> Trace = off
+		       ; Trace = on ).
+%% Goal passed on cmd line
+xsb_flag(goal, Goal) :-
+	stat_flag(21, GoalUninterned),
+	intern_string(GoalUninterned, Goal).      	
+	
+
+hdr_ext(HExt) :-
+	( is_pcdos -> HExt = '.HX'
+		    ; HExt = '.H' ).
+
+obj_ext(OExt) :-
+	( is_pcdos -> OExt = '.OX'
+		    ; OExt = '.O' ).
+
+asm_ext(AExt) :-
+	( is_pcdos -> AExt = '.AX'
+		    ; AExt = '.A' ).
+
+decl_ext(DExt) :-
+	( is_pcdos -> DExt = '.DX'
+		    ; DExt = '.D' ).
+
+
+
+/* ===== hilog_symbol/1 =============================================== */
+
+%   hilog_symbol(?Symbol)
+%   Succeeds iff Symbol is one of the symbols that are declared as HiLog.
+
+hilog_symbol(HS) :- 
+	'_$hilog_symbol'(HS).
+
+
+/* ===== Auxilliary Predicates ======================================== */
+
+get_first_psc_pair(PSC_Pair) :-
+	stat_flag(13, PSC_Pair).
+
+
+/*************************************************/
+
+%  This doesn't do what it is supposed to do yet!
+expand_lib(X, X) :- !.
+expand_lib('./', CWD) :- getenv('cwd', CWD).
+
+
+
+/* ----------------- end of file current_symbols.P -------------------- */

@@ -1,0 +1,234 @@
+/* File:      auxlry.P
+** Author(s): Saumya Debray, Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*======================================================================*/
+/* member1: This is basically membercheck/2.				*/
+/*======================================================================*/
+
+member1(X, [X|_]) :- !.
+member1(X, [_|L]) :- member1(X, L).
+
+/*======================================================================*/
+/*  messages and such							*/
+/*======================================================================*/
+
+message(Message) :- ttywritenl(Message).
+
+warning(Message) :- message(('++Warning: ', Message)).
+
+error(Message) :- 
+	( conget('error occurred', 1) -> true
+	; conset('error occurred', 1)
+	),
+	message(('++Error: ', Message)).
+
+/*======================================================================*/
+/*  setoptions(+Options)						*/
+/*	Compiler option setting.					*/
+/*======================================================================*/
+
+setoptions(_) :- current_option(Option), conset(Option, 0), fail.
+setoptions(Options) :- setoptions1(Options).
+
+setoptions1([]).
+setoptions1([Opt|Rest]) :- 
+	( current_option(Opt) -> conset(Opt, 1)
+	; current_option(Opt, NewOpt) -> conset(NewOpt, 1)
+	; warning(('Unknown compiler option: ', Opt))
+	),
+	setoptions1(Rest).
+
+current_option(sysmod).
+current_option(optimize).
+current_option(asm_dump).
+current_option(auto_table).
+current_option(suppl_table).
+current_option(table_dump).
+current_option(suppl_fold_off).
+current_option(index_off).
+current_option(compile_off).
+current_option(init_var_off).
+
+current_option(spec_repr).
+current_option(spec_dump).
+current_option(spec_off).
+current_option(unfold_off).
+
+current_option(ti_dump).
+current_option(ti_long_names).
+current_option(ti_opt1).
+
+current_option(db_opt).
+current_option(unfold).
+current_option(reorder).
+
+/* need to test out optimizations -- tls */
+current_option(no_check).
+current_option(profile).
+current_option(verbo).
+current_option(ccp).
+
+
+current_option(modeinfer).
+current_option(mi_verbose).
+current_option(mi_debug).
+current_option(mi_dump).
+current_option(mi_warn).
+current_option(mi_foreign).
+
+
+/* more options for type inference -- taken out by Kostis (10/16/92)
+
+current_option(typeinfer).
+current_option(funcinfer).
+current_option(shallow).
+
+current_option(show_et).
+current_option(print_local).
+current_option(write_prog).
+current_option(fix).
+current_option(least).
+current_option(d1).
+current_option(step).
+ */
+
+/* options kept only for backwards compatibility;
+   should be deleted in the next release.	*/
+
+current_option(dumpasm, asm_dump) :-
+       warning('Compiler option "dumpasm" has been renamed to "asm_dump"').
+current_option(noindex, index_off) :-
+       warning('Compiler option "noindex" has been renamed to "index_off"').
+current_option(nocompile, compile_off) :-
+       warning('Compiler option "nocompile" has been renamed to "compile_off"').
+current_option(table_all, auto_table) :-
+       warning('Compiler option "table_all" has been renamed to "auto_table"').
+
+/*======================================================================*/
+/*  option(+Option)							*/
+/*	Succeeds iff Option is one of the compilation options that are	*/
+/*	set.								*/
+/*======================================================================*/
+
+option(X) :- conget(X, 1).
+
+/*======================================================================*/
+/*  time_message(+StartTime, +Message)					*/
+/*	Display the Message and the elapsed cpu time.			*/
+/*======================================================================*/
+
+time_message(StartTime, Message) :- 
+	cputime(Time),
+	Laps is Time - StartTime,
+	message(('[', Message, ', cpu time used: ', Laps, ' seconds]')).
+
+verbo_time_message(StartTime, Message) :- 
+	( option(verbo) -> time_message(StartTime, Message) ; true ).
+
+/*======================================================================*/
+/*  subsumes(+X, +Y):							*/
+/*	X subsumes Y, i.e. X is an instance of Y			*/
+/*	The procedure is side-effect free.				*/
+/*======================================================================*/
+
+subsumes(X,Y) :- \+ X=Y,!,fail.
+subsumes(X,Y) :- numbervars(Y,0,_), \+ X=Y,!,fail.
+subsumes(_,_).
+
+/*======================================================================*/
+/*  subsumed_member(+Elem, +List):					*/
+/*	check if Elem is subsumed by a one of elements in List		*/
+/*======================================================================*/
+
+subsumed_member(X, L) :- member(Y, L), subsumes(Y, X).
+
+/*======================================================================*/
+/* dict_lookup(+Key,-+Value,+-Dict)					*/
+/*	find the Value associated with Key in the dictionary;		*/
+/*	if no entry for it, insert it.					*/
+/*		Key can be a variable also.				*/
+/*======================================================================*/
+
+dict_lookup(Key, Value, Dict) :- 
+	var(Dict), !, 
+	Dict = ['@'(Key, Value) | _].
+dict_lookup(Key, Value, ['@'(Y, Value) | _]) :- 
+	Key == Y, !.
+dict_lookup(Key, Value, [_|Dict]) :- dict_lookup(Key, Value, Dict).
+
+/*======================================================================*/
+/* debug_writenl(A) : 							*/
+/*======================================================================*/
+
+debug_writenl(A) :- 
+	( option(d1) ->  ttywritenl(('       ', A)) ; true ).
+
+/*----freeze------------------------------------------------------------*/
+
+freeze(X) :- numbervars(X, 0, _).
+
+/*----melt--------------------------------------------------------------*/
+/* melt(+Term, -NewTerm):	melt a frozen term to a new copy	*/
+/*----------------------------------------------------------------------*/
+
+melt(X, Y) :- melt(X, Y, _).
+
+melt(X, X, _) :- atomic(X), !.
+melt('$VAR'(I), V, FrozenVarDict) :- !, dict_lookup(I, V, FrozenVarDict).
+melt(X, Y, FrozenVarDict) :-
+	functor(X, F, N),
+	functor(Y, F, N),
+	meltargs(N, X, Y, FrozenVarDict).
+
+meltargs(0, _, _, _) :- !.
+meltargs(I, X, Y, FrozenVarDict) :-
+	arg(I, X, X1),
+	arg(I, Y, Y1),
+	melt(X1, Y1, FrozenVarDict),
+	I1 is I - 1,
+	meltargs(I1, X, Y, FrozenVarDict).
+
+/*----writetop----------------------------------------------------------*/
+
+writetop(Term, Level) :-
+	telling(F), tell(user), writetop0(Term, Level), nl, tell(F).
+
+writetop0(Term, _Level) :- atomic(Term), !, write(Term).
+writetop0(Term, _Level) :- var(Term), !, write(Term).
+writetop0(Term, Level) :- 
+	Level1 is Level - 1,
+	Term =.. [F|Args],
+	write(F),write('('),
+	( Level1 < 0 -> write('_') ; writetop_args(Args,Level1), ! ),
+	write(')'),
+	!.
+
+writetop_args([X], Level) :- writetop0(X, Level), !.
+writetop_args([X|R], Level) :-
+	writetop0(X, Level), write(','), writetop_args(R, Level).
+
+
+/* --------------------- end of file auxlry.P ------------------------- */

@@ -1,0 +1,182 @@
+/* File:      dcg.P
+** Author(s): Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*----------------------------------------------------------------------*/
+/*  dcg(+DCG_Rule, -Prolog_Clause)					*/
+/*  Prolog_Clause is the corresponding expanded version of DCG_Rule.	*/
+/*  Predicate dcg/2 is called by expand_term/2 when there is not a	*/
+/*  user-defined predicate term_expansion/2. Predicate dcg/2 performs	*/
+/*  the error checking for expand_term/2.				*/
+/*									*/
+/*  NOTE: This DCG expansion is different from the one found in		*/
+/*	  Quintus Prolog, SICStus Prolog and C-Prolog. It expands a	*/
+/*	  DCG clause in such a way that when a '!' is the last goal	*/
+/*	  of the DCG clause, the expanded DCG clause is steadfast.	*/
+/*	  That is, the DCG clause:					*/
+/*			a --> b, ! ; c.					*/
+/*	  gets expanded to the clause:					*/
+/*		a(A, B) :- b(A, C), ! , C = B ;  c(A, B).		*/
+/*	  and NOT the clause:						*/
+/*		a(A, B) :- b(A, B), ! ; c(A, B).			*/
+/*	  that Quintus, SICStus and C Prologs expand to.		*/
+/*	  A moment of thought will convince you that the latter		*/
+/*	  expansion is not just optimized, but it can have a different	*/
+/*	  (unintended) meaning if a/2 is called with the second		*/
+/*	  argument bound.						*/
+/*	  If you insist on using the wrong expansion, interchange this	*/
+/*	  file with file dcg_qsc.P found in this directory.		*/
+/*----------------------------------------------------------------------*/
+
+dcg((LHS --> RHS), (OutHead :- OutBody)) :-
+	( functor(LHS, ',', 2) -> 
+		arg(1, LHS, Non_Terminal),
+		( var(Non_Terminal) ->
+			abort('Uninstantiated left-hand side of DCG rule')
+		; arg(2, LHS, PushBack_List),
+		  ( is_list(PushBack_List) -> true
+		  ; abort('Push-Back list in DCG rule is not a proper list')
+		  )
+		),
+		New_LHS = LHS
+	; ( var(LHS) -> abort('Uninstantiated left-hand side of DCG rule') ; true ),
+	  New_LHS = ','(LHS, [])
+	),
+	dcg_with_pushback_list(New_LHS, RHS, OutHead, OutBody).
+
+dcg_with_pushback_list(','(Non_Terminal, []), RHS, OutHead, OutBody) :-
+	!,
+	expand_dcg_non_ternimal(Non_Terminal, In, Out, OutHead),
+	expand_dcg_body(RHS, In, Out, OutBody).
+dcg_with_pushback_list(','(Non_Terminal, PushBack_List), 
+                       RHS, 
+                       OutHead, 
+                       ','(Normal_Body, PushBack_Body)) :-
+	expand_dcg_non_ternimal(Non_Terminal, In, Out, OutHead),
+	expand_dcg_body(RHS, In, Middle, Normal_Body),
+	dcg_list_of_terminals(PushBack_List, Out, Middle, PushBack_Body).
+
+expand_dcg_non_ternimal(Non_Terminal, In, Out, NewTerm) :-
+	functor(Non_Terminal, P, Arity),
+	NewArity is Arity + 2,
+	functor(NewTerm, P, NewArity),
+	N1 is Arity + 1,
+	arg(N1, NewTerm, In),
+	arg(NewArity, NewTerm, Out),
+	dcg_fillin_arguments(Arity, Non_Terminal, NewTerm).
+
+dcg_fillin_arguments(N, DCG_Term, Prolog_Term) :-
+	( N =:= 0 -> true 
+	; arg(N, DCG_Term, Arg), arg(N, Prolog_Term, Arg),
+	  NewN is N - 1, dcg_fillin_arguments(NewN, DCG_Term, Prolog_Term)
+	).
+
+expand_dcg_body(RHS, In, Out, Goal) :-
+	( (RHS == '!' ; RHS == '{}'('!')) -> 
+		Goal = ('!', In = Out)	/* Make the expansion steadfast. */
+	; dcg_body(RHS, In, Out, Goal)
+	).
+
+dcg_body(RHS, In, Out, Goal) :-
+	( var(RHS) -> dcg_body_var(RHS, In, Out, Goal) 
+	; dcg_body_nonvar(RHS, In, Out, Goal)
+	).
+
+% NOTE:	What the following fact should return is really:
+%		phrase(user:Phrase, In, Out)
+%	but for the moment I dunno the way to do it.
+dcg_body_var(Phrase, In, Out, phrase(Phrase, In, Out)).
+
+dcg_body_nonvar(','(Term1,Term2), In, Out, ','(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Middle, Goal1),
+	( (Term2 == '!' ; Term2 == '{}'('!')) ->
+		Goal2 = ('!', Middle = Out)  /* Make the expansion steadfast. */
+	; dcg_body(Term2, Middle, Out, Goal2)
+	).
+dcg_body_nonvar(';'(Term1,Term2), In, Out, ';'(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Out, Goal1),
+	dcg_body(Term2, In, Out, Goal2).
+dcg_body_nonvar('->'(Term1,Term2), In, Out, '->'(Goal1,Goal2)) :-
+	!,
+	dcg_body(Term1, In, Middle, Goal1),
+	dcg_body(Term2, Middle, Out, Goal2).
+dcg_body_nonvar(not(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+	!,
+	dcg_body(Term, In, _, Goal).
+dcg_body_nonvar('\+'(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+	!,
+	dcg_body(Term, In, _, Goal).
+dcg_body_nonvar(fail_if(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+	!,
+	dcg_body(Term, In, _, Goal).
+dcg_body_nonvar('{}'(G), In, Out, Goal) :- 
+	!,
+	( G == '!' -> Goal = G, In = Out	/* A {!} is the same as a !. */
+		    ; Goal = (G, In = Out) ).
+dcg_body_nonvar('!', In, In, '!') :- 
+	!.
+dcg_body_nonvar([], In, Out, (In = Out)) :-
+	!.
+dcg_body_nonvar(L, In, Out, Goal) :-
+	( (L = [_|_] ->
+		( is_list(L) -> 		/* proper list of terminals */
+			dcg_list_of_terminals(L, In, Out, Goal)
+		; abort('A list of terminals in DCG rule is not a proper list')
+		)
+	  )
+	; expand_dcg_non_ternimal(L, In, Out, Goal)	/* nonterminal */
+	).
+
+dcg_list_of_terminals([H], In, Out, 'C'(In,H,Out)).
+dcg_list_of_terminals([H|L], In, Out, ','('C'(In,H,Mid), Goal)) :-
+     dcg_list_of_terminals(L, Mid, Out, Goal).
+
+/*----------------------------------------------------------------------*/
+/*  'C'(S1, T, S2)	: S1 is connected to S2 by the terminal T.	*/
+/*----------------------------------------------------------------------*/
+
+'C'([Token|Tokens], Token, Tokens).
+
+/*----------------------------------------------------------------------*/
+/*  phrase(P, L)	: list L can be parsed as a phrase of type P.	*/
+/*  phrase(P, L, R) 	: list R is what remains of list L after phrase */
+/*			  P has been found.				*/
+/*----------------------------------------------------------------------*/
+
+phrase(Phrase_Type, List) :-
+	( nonvar(Phrase_Type) -> phrase(Phrase_Type, List, []) 
+	; abort('Uninstantiated argument 1 of phrase/2')
+	).
+
+phrase(Phrase_Type, List, Rest) :-
+	( nonvar(Phrase_Type) ->
+		dcg_body_nonvar(Phrase_Type, List, Rest, Goal),
+		call(Goal)
+	; abort('Uninstantiated argument 1 of phrase/3')
+	).
+
+/* ----------------------- end of file dcg.P -------------------------- */
+

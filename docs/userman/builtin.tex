@@ -1,0 +1,1733 @@
+\chapter{Standard Predicates} \label{standard}
+%=============================================
+
+Standard predicates are always available to the Prolog interpreter, and do
+not need to be imported or loaded explicitly as do other Prolog predicates.
+Our standard predicates are listed below.  Standard predicates whose 
+semantics depend on HiLog terms or on SLG evaluation are marked as 
+{\sf HiLog} or {\sf Tabling}.
+
+It is possible for the user to add standard predicates not provided
+in the standard release. See the section on Customizing XSB.
+
+\section{Input and Output}
+Presently, input and output can only be done with respect to the 
+current input and output
+streams.  These can be set, reset or checked using the file handling
+predicates described below.  The default input and output streams are
+internally denoted by userin and userout (the user accesses them both 
+via the name {\tt ``user''}, and they refer to the user's terminal).
+
+
+\subsection{File Handling}
+\begin{description}
+\ouritem{see(+F)}\index{{\tt see/1}}
+    Makes file {\tt F} the current input stream. 
+    \begin{itemize}
+    \item If there is an open input stream associated with the file that 
+          has {\tt F} as its file name, and that stream was opened previously
+	  by {\tt see/1}, then it is made the current input stream.
+    \item Otherwise, the specified file is opened for input and made the
+          current input stream. If the file does not exist, {\tt see/1} 
+	  fails.
+    \end{itemize}
+    Also note that different file names (that is, names which do not unify) 
+    represent different input streams (even if these different file names 
+    correspond to the same file).
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt permission\_error}]
+    	File {\tt F} is directory or file is not readable. 
+    \item[{\tt instantiation\_error}]
+    	{\tt F} is not instantiated at the time of call. 
+    \item[{\tt existence\_error}]
+    	File {\tt F} does not exist. 
+    \end{description}
+
+\ouritem{seeing(?F)}\index{{\tt seeing/1}}
+    {\tt F} is unified with the name of the current input stream.
+    This is exactly the same with predicate {\tt current\_input/1}
+    described in section~\ref{State}, and it is only provided for
+    upwards compatibility reasons.
+
+\ouritem{seen}\index{{\tt seen/0}}
+    Closes the current input stream. 
+    Current input reverts to {\tt ``userin''} (the standard input stream).
+
+\ouritem{tell(+F)}\index{{\tt tell/1}}
+    Makes file {\tt F} the current output stream. 
+    \begin{itemize}
+    \item If there is an open output stream associated with {\em F}  
+          and that was opened previously 
+          by {\tt tell/1}, then that stream is made the current output 
+	  stream. 
+    \item Otherwise, the specified file is opened for output and made the
+          current output stream. If the file does not exist, it is created.
+    \end{itemize}
+
+    Also note that different file names (that is, names which do not unify) 
+    represent different output streams (even if these different file names 
+    correspond to the same file).
+
+    Exceptions:
+    \begin {description}
+    \item[{\tt permission\_error}]
+	File {\tt F} does not have write permission, or is a directory.
+    \item[{\tt instantiation\_error}]
+	{\tt F} is uninstantiated.
+    \end{description}
+
+\ouritem{telling(?F)}\index{{\tt telling/1}}
+    {\tt F} is unified with the name of the current output stream.
+    This predicate is exactly the same with predicate {\tt current\_output/1}
+    described in section~\ref{State}, and it is only provided for
+    upwards compatibility reasons.
+
+\ouritem{told}\index{{\tt told/0}}
+    Closes the current output stream. 
+    Current output stream reverts to ``userout'' (the standard output stream).
+
+\ouritem{open(+File,+Mode,-Stream)}\index{{\tt close/1}}
+    {\tt open/1} creates a stream for the file designated in {\em
+    File}, and binds {\em Stream} to a structure representing that
+    stream.  {\em Mode} can be one of either {\tt read} to create an
+    input stream or {\tt write} or {\tt append} to create an output
+    stream.  If the mode is {\tt write}, the contents of {\em File}
+    are removed and {\em File} becomes a record of the output stream.
+    If the mode is {\tt append} the output stream is appended to the
+    contents of {\em File}.
+
+    Exceptions ({\tt read} mode)
+    \begin{description}
+    \item[{\tt permission\_error}]
+    	File {\tt F} is directory or file is not readable. 
+    \item[{\tt instantiation\_error}]
+    	{\tt F} is not instantiated at the time of call. 
+    \item[{\tt existence\_error}]
+    	File {\tt F} does not exist. 
+    \end{description}
+
+    Exceptions ({\tt write} mode)
+    \begin {description}
+    \item[{\tt permission\_error}]
+	File {\tt F} does not have write permission, or is a directory.
+    \item[{\tt instantiation\_error}]
+	{\tt F} is uninstantiated.
+    \end{description}
+
+\ouritem{close(+Stream)}\index{{\tt close/1}}
+	{\tt close/1} closes the stream {\em Stream}.
+
+\ouritem{file\_exists(+F)}\index{{\tt file\_exists/1}}
+    Succeeds if file {\tt F} exists. {\tt F} must be instantiated to
+    an atom at the time of the call, or an error message is displayed on
+    the standard error stream and the predicate aborts.
+
+    Exceptions:
+    \begin {description}
+    \item[{\tt instantiation\_error}]
+	{\tt F} is uninstantiated.
+    \end{description}
+
+\end{description}
+
+
+\subsection{Character I/O}
+\begin{description}
+\ouritem{nl}\index{{\tt nl/0}}
+    A new line character is sent to the current output stream.
+
+\ouritem{nl(+Stream)}\index{{\tt nl/1}}
+    A new line character is sent to the designated output stream.
+
+\ouritem{get0(?N)}\index{{\tt get0/1}}
+    {\tt N} is the ASCII code of the next character read from the current 
+    input stream. If the current input stream reaches its end of file,
+    a {\tt -1} is returned 
+
+    Compatibility Note:  Unlike other Prologs, such as C-Prolog, the input 
+    stream is not closed on encountering the end-of-file character.
+
+\ouritem{get(?N)}\index{{\tt get/1}}
+    {\tt N} is the ASCII code of the next non-blank printable character
+    from the current input stream. It has the same behaviour as {\tt get0/1}
+    when an end of file character is encountered.
+
+    Compatibility Note:  Unlike other Prologs, such as C-Prolog, the input 
+    stream is not closed on encountering the end-of-file character.
+
+\ouritem{put(+N)}\index{{\tt put/1}}
+    Puts the ASCII character code {\tt N} to the current output stream.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt N} is not instantiated at the time of the call.
+    \item[{\tt type\_error}]
+	{\tt N} is not an integer at the time of the call.
+    \end{description}
+
+\ouritem{tab(+N)}\index{{\tt tab/1}}
+    Puts {\tt N} spaces to the current output stream. 
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt N} is not instantiated at the time of the call.
+    \item[{\tt type\_error}]
+	{\tt N} is not an integer at the time of the call.
+    \end{description}
+\end{description}
+
+\subsection{Term I/O}
+\begin{description}
+\ouritem{read(?Term)}\index{{\tt read/1}}
+    A HiLog term is read from the current or designated input stream,
+    and unified with {\tt Term} according to the operator declarations
+    in force.  (See Section~\ref{TermSyntax} for the definition and
+    syntax of HiLog terms). The term must be delimited by a full stop
+    (i.e. a ``.'' followed by a carriage-return, space or tab).
+    Predicate {\tt read/1} does not return until a valid HiLog term is
+    successfully read; that is, in the presense of syntax errors {\tt
+    read/1} does not fail but continues reading terms until a term
+    with no syntax errors is encountered.  If a call to {\tt
+    read(Term)} causes the end of the current input stream to be
+    reached, variable {\tt Term} is unified with the term {\tt
+    end\_of\_file}.  In that case, further calls to {\tt read/1} for
+    the same input stream will cause an error failure.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt existence\_error}]
+	{\tt end\_of\_file} is reached before the current term is read.
+    \end{description}
+
+\ouritem{read(+Stream, ?Term)}\index{{\tt read/2}}
+	{\tt read/2} has the same behavior as {\tt read/1} but the
+	input stream is explicitly designated using the first argument.
+
+\ouritem{write(?Term)}\index{{\tt write/1}}
+    The HiLog term {\tt Term} is written to the current output stream, 
+    according to the operator declarations in force.  Any uninstantiated 
+    subterm of term {\tt Term} is written as an anonymous variable (an 
+    underscore followed by a non-negative integer).  
+
+    All {\em proper HiLog terms} (HiLog terms which are not also Prolog terms) 
+    are not written in their internal Prolog representation.  Predicate 
+    {\tt write/1} always succeeds without producing an error.
+
+    The HiLog terms that are output by {\tt write/1} cannot in general be 
+    read back using {\tt read/1}.  This happens for two reasons:
+    \begin{itemize}
+    \item The atoms appearing in term {\tt Term} are not quoted. In that case 
+          the user must use {\tt writeq/1} or 
+          {\tt write\_canonical/1} described below, which quote around atoms 
+          whenever necessary.
+    \item The output of {\tt write/1} is not terminated by a full-stop;
+          therefore, if the user wants the term to be accepted as input to
+          {\tt read/1}, the terminating full-stop must be explicitly sent 
+          to the current output stream. 
+    \end{itemize}
+
+    Predicate {\tt write/1} treats terms of the form 
+    \verb|'$VAR'(N)| specially:  it writes {\tt 'A'} if {\tt N}=0,
+    {\tt 'B'} if {\tt N}=1, $\ldots$, {\tt 'Z'} if {\tt N}=25, {\tt 'A1'} 
+    if {\tt N}=26, etc.  Terms of this form are generated by
+    {\tt numbervars/[1,3]} described in Section~\ref{NumberVars}\@.
+%% $
+
+\ouritem{write(+Stream, ?Term)}\index{{\tt write/2}}
+	{\tt write/2} has the same behavior as {\tt write/1} but the
+	output stream is explicitly designated using the first argument.
+
+\ouritem{writeln(?Term)}\index{{\tt writeln/1}}
+    {\tt writeln(Term)} can be defined as {\tt write(Term), nl}.
+
+\ouritem{writeln(+Stream,?Term)}\index{{\tt writeln/2}}
+    {\tt writeln(Term)} can be defined as {\tt write(Stream,Term),
+    nl(Stream)}.
+
+\ouritem{display(?Term)}\index{{\tt display/1}}
+    The HiLog term {\tt Term} is displayed on the terminal (standard output 
+    stream), according to the operator declarations in force. In other words,
+    {\tt display/1} is similar to {\tt write/1} but the result is always
+    written on {\tt ``userout''}\@.  Like {\tt write/1}, {\tt display/1} 
+    always succeeds without producing an error. After returning from a call 
+    to this predicate, the current output stream remains unchanged.
+
+\ournewitem{write\_prolog(?Term)}{HiLog}\index{{\tt write\_prolog/1}}
+    This predicate acts as does {\tt write/1} except that
+    any HiLog term {\tt Term} is written as a Prolog term. 
+    {\tt write\_prolog/1} outputs {\tt Term} according to the operator 
+    declarations
+    in force.  Because of this, it differs from {\tt write\_canonical/1} 
+    described below, despite the fact that both predicates write HiLog terms
+    as Prolog terms.
+
+\ournewitem{write\_prolog(+Stream,?Term)}{HiLog}\index{{\tt write\_prolog/2}}
+	{\tt write\_prolog/2} has the same behavior as {\tt
+	write\_prolog/1} but the output stream is explicitly
+	designated using the first argument.
+
+\ouritem{writeq(?Term)}\index{{\tt writeq/1}}
+    Acts as {\tt write(Term)}, but atoms and functors are quoted
+    whenever necessary to make the result acceptable as input to 
+    {\tt read/1}\@. {\tt writeq/1} treats treats terms of the form 
+    \verb|'$VAR'(N)| the same way as {\tt write/1}, writing {\tt A} if
+    {\tt N}= 0, etc. 
+%% $
+
+    {\tt writeq/1} always succeeds without producing an error.
+
+\ouritem{writeq(+Stream, ?Term)}\index{{\tt writeq/2}}
+	{\tt writeq/2} has the same behavior as {\tt writeq/1} but the
+	output stream is explicitly designated using the first argument.
+
+\ouritem{write\_canonical(?Term)}\index{{\tt write\_canonical/1}}
+    This predicate is provided so that the HiLog term {\tt Term}, 
+    if written to a file, can be read back using {\tt read/1} regardless of 
+    special characters appearing in {\tt Term} or prevailing operator 
+    declarations. Like {\tt write\_prolog/1}, {\tt write\_canonical/1} 
+    writes all proper HiLog terms to the current output stream using the 
+    standard Prolog syntax (see Section~\ref{TermSyntax} on the standard 
+    syntax of HiLog terms). {\tt write\_canonical/1} also quotes atoms and 
+    functors as {\tt writeq/1} does, to make them acceptable as input of 
+    {\tt read/1}\@.  Operator declarations are not taken into consideration,
+    and compound terms are therefore always written in the form:
+
+		\[ \langle predicate\ name \rangle
+			(\langle arg_1 \rangle, \ldots,
+			 \langle arg_n \rangle) \]
+
+    Unlike {\tt writeq/1}, {\tt write\_canonical/1} does not treat terms 
+    of the form \verb|'$VAR'(N)| specially. It writes square bracket lists 
+    using {\tt '.'/2} and {\tt []} (that is, {\tt [foo, bar]} is written 
+    as \verb|'.'(foo,'.'(bar,[]))|).
+%% $
+
+\ouritem{write\_canonical(+Stream, ?Term)}\index{{\tt write\_canonical/2}}
+	{\tt write\_canonical/2} has the same behavior as {\tt
+	write\_canonical/1} but the output stream is explicitly
+	designated using the first argument.
+
+\ouritem{print(?Term)}\index{{\tt print/1}}
+    This predicate is intended to provide a handle for user-defined 
+    pretty-printing.  Currently it is defined as {\em write/1}.
+
+\end{description}
+
+\section{Special I/O}
+
+\begin{description}
+\ouritem{fmt\_read(+Format, types(+T1,+T2,...), args(-A1,-A2,...), -RetCode)}\index{{\tt fmt\_read/4}} 
+ This predicate implements C-style formatted input. It reads the current
+ input according to the {\tt Format} string.  {\tt Format} has the
+ same syntax as the input format in C. The term {\tt types(...)} lists the
+ types of the arguments; they must match the types specified in {\tt
+ Format}. Here, 1 means string, 2 means integer, and 3 means float.
+ The term {\tt args()} specifies the variables for the input. {\tt RetCode}
+ specifies the return code: 0 -- ok; -1 -- end of file.
+
+\ouritem{read\_line(-Line, -Status)}\index{{\tt read\_line/2}} 
+ Reads the next line from the current input and puts it in {\tt Line}.
+ If the line is larger than the available buffer, then {\tt Status} is 0.
+ If the line was read in full, up to and including the newline character,
+ then {\tt Status} is 1. 
+
+\ouritem{fmt\_write(+Format, args(-A1,-A2,...))}\index{{\tt fmt\_write/2}} 
+ Similar to formatted write in C. The semantics of the arguments is the
+ same as for {\tt fmt\_read/4}.
+
+\ouritem{fmt\_write\_string(-String, +Format, args(-A1,-A2,...))}\index{{\tt fmt\_write/2}} 
+ Like {\tt fmt\_write/2}, but the output string is placed in {\tt String}.
+
+\end{description}
+
+% tls \section{Arithmetic} \label{Arithmetic}
+
+%--- Need a very cursory description of arithmetic operations. \\
+%--- Descriptions and of how we handle floats. \\
+
+
+\section{Convenience} \label{Convenience}
+These predicates are standard and often self-explanatory, so they are 
+described only briefly.
+\begin{description}
+
+\ouritem{true}\index{{\tt true/0}} 
+%\predindex{true/0~(I)}
+    Always succeeds.
+
+\ouritem{otherwise}\index{{\tt otherwise/0}} 
+%\predindex{otherwise/0~(B)}
+    Same as {\tt true/0}.
+
+\ouritem{fail}\index{{\tt fail/0}}
+%\predindex{fail/0~(I)}
+    Always fails.
+
+\ouritem{X = Y}\index{{\tt =/2}} 
+%\predindex{=/2~(I)}
+    Defined as if by the clause ``Z=Z'', i.e.~{\tt X} and~{\tt Y} are unified.
+
+\ouritem{X $\backslash$\,= Y}\index{{\tt $\backslash$=/2}}
+%\predindex{$\backslash$ =/2~$(I)}
+%\index{not unifiable|see{$\backslash$=/2}}
+    Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
+    fails if~{\tt X} and~{\tt Y} are unifiable.
+    It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
+
+\end{description}
+
+
+\section{Negation and Control}\index{control}
+
+\begin{description}
+\ouritem{\cut}\index{{\cut}} 
+    Cut (discard) all choice points made since the parent goal
+    started execution.
+    Cuts across tabled predicates are not valid.  The compiler checks for
+    such cuts, although whether the scope of a cut includes a tabled 
+    predicate is undecidable in the presence of meta-predicates like
+    {\tt call/1}.
+    Further discussion of conditions allowing cuts and of their actions 
+    can be found in Section~\ref{tabling_env}.
+
+\ouritem{fail\_if(+P)}\index{{\tt fail\_if/1}}
+    If the goal {\tt P} has a solution, fails, otherwise it succeeds.
+    Equivalently, it is true iff {\tt call(P)} 
+    (see section~\ref{meta_predicates}) is false. Argument {\tt P} 
+    must be ground for sound negation as failure, although no runtime 
+    checks are made by the system.
+
+    The standard predicate {\tt fail\_if/1} is compiled by the 
+    XSB compiler.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt P} is not instantiated.
+    \item[{\tt type\_error}]
+	{\tt P} is not a callable term.
+    \end{description}
+
+
+\ouritem{$\backslash$+ +P}\index{{\tt \not}}
+    Exactly the same as {\tt fail\_if/1}.  Its existence is only 
+    for compatibility with other Prolog systems.
+
+\ouritem{not +P}\index{{\tt not/1}} 
+    If the goal {\tt P} has a solution, fails, otherwise it succeeds.
+    It is defined by:
+    \begin{center}
+    \begin{minipage}{2.40in}
+    \begin{verbatim}
+	not(P) :- call(P), !, fail.
+	not(_).
+    \end{verbatim}
+    \end{minipage}
+    \end{center}
+
+    Argument {\tt P} must be ground for sound negation, although no 
+    runtime checks are made by the system.
+
+    Note that in contrast to the other two kinds of negation as failure
+    (\not\ and {\tt fail\_if/1}), predicate {\tt not/1} is not compiled
+    by the compiler but the above definition is used.
+
+    Exceptions: The same as {\tt call/1} 
+		(see section~\ref{meta_predicates}).
+
+\ournewitem{tnot(+P)}{Tabling}\index{{\tt tnot/1}}\label{tnot/1}
+    The semantics of {\tt tnot/1} allows for correct execution of
+    programs with according to the well-founded semantics.  {\tt P}
+    must be a tabled predicate, 
+% tls: need to provide an example.
+%and the actions of {\tt tnot/1} are
+%presented in Figure~\ref{fig:tnot}. 
+%
+%\input{tnot} 
+%
+    For a detailed description of the actions of tabled negation for
+    in XSB \version\ see~\cite{SaSw98, SaSW96}.
+    Chapter~\ref{tabling_overview} contains further discussion of the
+    functionality of {\tt tnot/1}.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt P} is not ground (floundering occurs).
+    \item[{\tt type\_error}]
+	{\tt P} is not a callable term.
+    \item[{\tt table\_error}]
+	{\tt P} is not a call to a tabled predicate.
+    \end{description}
+
+\ournewitem{'t not'(+P)}{Tabling}\index{{\tt 't not'/1}}
+    Same as {\tt tnot/1} but does not check for floundering.  This predicate
+    is not standard, but should be explicitly imported from module {\tt
+    tables}.  Since it is not safe, its use is discouraged.
+
+\ouritem{P -> Q ; R}\index{{\tt ->/2}} 
+    Analogous to if {\tt P} then {\tt Q} else {\tt R}, i.e.\ defined as 
+    if by
+	\begin{center}
+	\begin{minipage}{2.10in}
+	\begin{verbatim}
+	(P -> Q ; R) :- P, !, Q.
+	(P -> Q ; R) :- R.
+	\end{verbatim}
+	\end{minipage}
+	\end{center}
+
+\ouritem{P -> Q} \index{{\tt ->/2}} 
+    When occurring other than as one of the alternatives of a disjunction,
+    is equivalent to:
+	\begin{center}
+	{\tt P -> Q ; fail.}
+	\end{center}
+
+\ouritem{repeat} \index{{\tt repeat/2}} 
+    Generates an infinite sequence of choice points (in other words it 
+    provides a very convenient way of executing a loop). It is defined 
+    by the clauses:
+    \begin{center}
+    \begin{minipage}{1.5in}
+    \begin{verbatim}
+	repeat.
+	repeat :- repeat.
+    \end{verbatim}
+    \end{minipage}
+    \end{center}
+
+\end{description}
+
+
+\section{Meta-Logical}\label{MetaLogical}
+
+To facilitate manipulation of terms as objects in themselves,
+XSB provides a number meta-logical predicates.  These
+predicates include the standard meta-logical predicates of Prolog,
+along with their usual semantics.  In addition are provided predicates
+which provide special operations on HiLog terms.  For a full
+discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
+
+\begin{description}
+\ouritem{var(?X)}\index{{\tt var/1}} 
+    Succeeds if {\tt X} is currently uninstantiated (i.e.\ is still a 
+    variable); otherwise it fails.  
+
+    Term {\tt X} is uninstantiated if it has not been bound to anything, 
+    except possibly another uninstantiated variable. Note in particular,
+    that the HiLog term X(Y,Z) is considered to be instantiated.  There 
+    is no distinction between a Prolog and a HiLog variable.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- var(X).
+                yes
+                | ?- var([X]).
+                no
+                | ?- var(X(Y,Z)).
+                no
+                | ?- var((X)).
+                yes
+                | ?- var((X)(Y)).
+                no
+     \end{verbatim}}
+
+
+\ouritem{nonvar(?X)}\index{{\tt nonvar/1}} 
+    Succeeds if {\tt X} is currently instantiated to a non-variable term;
+    otherwise it fails. This has exactly the opposite behaviour of 
+    {\tt var/1}\@.
+
+\ouritem{atom(?X)}\index{{\tt atom/1}} 
+    Succeeds only if the {\tt X} is currently instantiated to an atom, that
+    is to a Prolog or HiLog non-numeric constant.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- atom(HiLog).
+                no
+                | ?- atom(10).
+                no
+                | ?- atom('HiLog').
+                yes
+                | ?- atom(X(a,b)).
+                no
+                | ?- atom(h).
+                yes
+                | ?- atom(+).
+                yes
+                | ?- atom([]).
+                yes
+     \end{verbatim}}
+
+\ouritem{integer(?X)}\index{{\tt integer/1}}
+    Succeeds if {\tt X} is currently instantiated to an integer; 
+    otherwise it fails. 
+
+\ouritem{real(?X)}\index{{\tt real/1}} 
+    Succeeds if {\tt X} is currently instantiated to a floating point number;
+    otherwise it fails. 
+
+\ouritem{float(?X)}\index{{\tt float/1}} 
+    Same as {\tt real/1}. Succeeds if {\tt X} is currently instantiated 
+    to a floating point number; otherwise it fails.  This predicate is 
+    included for compatibility with earlier versions of SBProlog.
+	
+\ouritem{number(?X)}\index{{\tt number/1}} 
+    Succeeds if {\tt X} is currently instantiated to either an integer or 
+    a floating point number (real); otherwise it fails.
+
+\ouritem{atomic(?X)}\index{{\tt atomic/1}} 
+    Succeeds if {\tt X} is currently instantiated to an atom or a number;
+    otherwise it fails.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- atomic(10).
+                yes
+                | ?- atomic(p).
+                yes
+                | ?- atomic(h).
+                yes
+                | ?- atomic(h(X)).
+                no
+                | ?- atomic("foo").
+                no
+                | ?- atomic('foo').
+                yes
+                | ?- atomic(X).
+                no
+                | ?- atomic(X((Y))).
+                no
+     \end{verbatim}}
+
+\ouritem{compound(?X)}\index{{\tt compound/1}} 
+    Succeeds if {\tt X} is currently instantiated to a compound term (with 
+    arity greater that zero), i.e.\ to a nonvariable term that is not atomic;
+    otherwise it fails.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- compound(1).
+                no
+                | ?- compound(foo(1,2,3)).
+                yes
+                | ?- compound([foo, bar]).
+                yes
+                | ?- compound("foo").
+                yes
+                | ?- compound('foo').
+                no
+                | ?- compound(X(a,b)).
+                yes
+                | ?- compound((a,b)).
+                yes	
+     \end{verbatim}}
+
+\ouritem{structure(?X)}\index{{\tt structure/1}} 
+    Same as {\tt compound/1}\@. Its existence is only for compatibility 
+    with SB-Prolog version 3.1.
+
+\ouritem{is\_list(?X)}\index{{\tt is\_list/1}}
+    Succeeds if {\tt X} is a {\em proper list}. In other words if it is 
+    either the atom {\tt []} or {\tt [H|T]} where H is any Prolog or HiLog
+    term and T is a proper list; otherwise it fails.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- is_list([p(a,b,c), h(a,b)]).
+                yes
+                | ?- is_list([_,_]).
+                yes
+                | ?- is_list([a,b|X]).
+                no
+                | ?- is_list([a|b]).
+                no
+     \end{verbatim}}
+
+\ouritem{is\_string(?X)}\index{{\tt is\_string/1}}
+    Succeeds if {\tt X} is a Prolog string, {\it i.e.}, a list of
+    characters.
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- is_string("abc").
+                yes
+                | ?- is_string(abc).
+                no
+     \end{verbatim}}
+
+\ouritem{callable(?X)}\index{{\tt callable/1}}
+    Succeeds if {\tt X} is currently instantiated to a term that standard
+    predicate {\tt call/1} could take as an argument and not give an 
+    instantiation or type error.  Note that it only checks for errors of
+    predicate {\tt call/1}.  In other words it succeeds if {\tt X}
+    is an atom or a compound term; otherwise it fails.  Predicate
+    {\tt callable/1} has no associated error conditions.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- callable(p).
+                yes
+                | ?- callable(p(1,2,3)).
+                yes
+                | ?- callable([_,_]).
+                yes
+                | ?- callable(_(a)).
+                yes
+                | ?- callable(3.14).
+                no
+     \end{verbatim}}
+
+\ournewitem{proper\_hilog(?X)}{HiLog}\index{{\tt proper\_hilog/1}}
+    Succeeds if {\tt X} is a proper HiLog term; otherwise it fails.
+
+    Examples:
+    (In this example and the rest of the examples of this section we assume
+     that {\tt h} is the only parameter symbol that has been declared a HiLog
+     symbol).
+
+    {\footnotesize
+     \begin{verbatim}
+                | ?- proper_hilog(X).
+                no
+                | ?- proper_hilog(foo(a,f(b),[A])).
+                no
+                | ?- proper_hilog(X(a,b,c)).
+                yes
+                | ?- proper_hilog(3.6(2,4)).
+                yes
+                | ?- proper_hilog(h).
+                no
+                | ?- proper_hilog([a, [d, e, X(a)], c]).
+                yes
+                | ?- proper_hilog(a(a(X(a)))).
+                yes
+     \end{verbatim}}
+
+\ouritem{functor(?Term, ?Functor, ?Arity)}\index{{\tt functor/3}}
+    Succeeds if the {\em functor} of the Prolog term {\tt Term} is 
+    {\tt Functor} and the {\em arity} (number of arguments) of {\tt Term} is
+    {\tt Arity}\@.  {\tt Functor} can be used in either the following two 
+    ways:
+    \begin{enumerate}
+    \item If {\tt Term} is initially instantiated, then
+          \begin{itemize}
+          \item If {\tt Term} is a compound term, {\tt Functor} and 
+                {\tt Arity} are unified with the name and arity of 
+                its principal functor, respectively. 
+          \item If {\tt Term} is an atom or a number, {\tt Functor} is 
+                unified with {\tt Term}, and {\tt Arity} is unified with 0.
+          \end{itemize}
+    \item If {\tt Term} is initially uninstantiated, then either both 
+          {\tt Functor} and {\tt Arity} must be instantiated, or {\tt Functor}
+          is instantiated to a number, and
+          \begin{itemize}
+          \item If {\tt Arity} is an integer in the range 1..255, then
+                {\tt Term} becomes instantiated to {\em the most general 
+                Prolog term} having the specified {\tt Functor} and 
+                {\tt Arity} as principal functor and number of arguments,
+                respectively. The variables appearing as arguments of 
+                {\tt Term} are all distinct.
+          \item If {\tt Arity} is 0, then {\tt Functor} must be either an 
+                atom or a number and it is unified with {\tt Term}. 
+          \item If {\tt Arity} is anything else, then {\tt functor/3} aborts.
+          \end{itemize}
+    \end{enumerate}
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt domain\_error}]
+	{\tt Functor} is instantiated to a compound term.
+    \item[{\tt instantiation\_error}]
+	Both {\tt Term}, and either {\tt Functor}, or {\tt Arity} are 
+	uninstantiated.
+    \end{description}
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- functor(p(f(a),b,t), F, A).
+                F = p
+                A = 3
+
+                | ?- functor(T, foo, 3).
+                T = foo(_595708,_595712,_595716)
+
+                | ?- functor(T, 1.3, A).
+                T = 1.3
+                A = 0
+
+                | ?- functor(foo, F, 0).
+                F = foo
+
+                | ?- functor("foo", F, A).
+                F = .
+                A = 2
+
+                | ?- functor([], [], A).
+                A = 0
+
+                | ?- functor([2,3,4], F, A).
+                F = .
+                A = 2
+
+                | ?- functor(a+b, F, A).
+                F = +
+                A = 2
+
+                | ?- functor(f(a,b,c), F, A).
+                F = f
+                A = 3
+
+                | ?- functor(X(a,b,c), F, A).
+                F = apply
+                A = 4
+
+                | ?- functor(map(P)(a,b), F, A).
+                F = apply
+                A = 3
+
+                | ?- functor(T, foo(a), 1).
+                ++Error: Wrong type in argument 2 of functor/3
+                Aborting...
+
+                | ?- functor(T, F, 3).
+                ++Error: Uninstantiated argument 2 of functor/3
+                Aborting...
+
+                | ?- functor(T, foo, A).
+                ++Error: Uninstantiated argument 3 of functor/3
+                Aborting...
+     \end{verbatim}}
+
+\ournewitem{hilog\_functor(?Term, ?F, ?Arity)}{HiLog}
+\index{{\tt hilog\_functor/3}}
+    The XSB standard predicate {\tt hilog\_functor/3} succeeds 
+    \begin{itemize}
+    \item when {\tt Term} is a Prolog term and the principal function 
+          symbol ({\em functor}) of {\tt Term} is {\tt F} and the
+          {\em arity} (number of arguments) of {\tt Term} is 
+          {\tt Arity}, or
+    \item when {\tt Term} is a HiLog term, having {\em name} {\tt F} 
+          and the number of arguments {\tt F} is applied to, in the 
+          HiLog term, is {\tt Arity}.
+    \end{itemize}
+    The first of these cases corresponds to the ``usual'' behaviour of
+    Prolog's {\tt functor/3}, while the second is the extension of
+    {\tt functor/3} to handle HiLog terms. Like the Prolog's {\tt
+    functor/3} predicate, {\tt hilog\_functor/3} can be used in either
+    of the following two ways:
+    \begin{enumerate}
+    \item If {\tt Term} is initially instantiated, then
+          \begin{itemize}
+          \item If {\tt Term} is a Prolog compound term, {\tt F} and 
+                {\tt Arity} are unified with the name and arity of 
+                its principal functor, respectively.
+          \item If {\tt Term} is an atom or a number, {\tt F} is unified 
+                with {\tt Term}, and {\tt Arity} is unified with 0.
+          \item If {\tt Term} is any other HiLog term, {\tt F} and {\tt Arity} 
+                are unified with the name and the number of arguments 
+                that {\tt F} is applied to. Note that in this case {\tt F}
+                may still be uninstantiated.
+          \end{itemize}
+    \item If {\tt Term} is initially uninstantiated, then at least
+          {\tt Arity} must be instantiated, and
+          \begin{itemize}
+          \item If {\tt Arity} is an integer in the range 1..255, then
+                {\tt Term} becomes instantiated to {\em the most general 
+                Prolog or HiLog term} having the specified {\tt F} and 
+                {\tt Arity} as name and number of arguments {\tt F} is 
+                applied to, respectively. The variables appearing as 
+                arguments are all unique.
+          \item If {\tt Arity} is 0, then {\tt F} must be a Prolog or
+                HiLog constant, and it is unified with {\tt Term}\@. Note
+                that in this case {\tt F} cannot be a compound term.
+          \item If {\tt Arity} is anything else, then {\tt hilog\_functor/3}
+                aborts.
+          \end{itemize}
+    \end{enumerate}
+    In other words, the standard predicate {\tt hilog\_functor/3} either
+    decomposes a given HiLog term into its {\em name} and {\em arity}, or
+    given an arity ---and possibly a name--- constructs the corresponding 
+    HiLog term creating new uninstantiated variables for its arguments. 
+    As happens with {\tt functor/3} all constants can be their own 
+    principal function symbols.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+               | ?- hilog_functor(f(a,b,c), F, A).
+               F = f
+               A = 3
+
+               | ?- hilog_functor(X(a,b,c), F, A).
+               X = _595836
+               F = _595836
+               A = 3
+
+               | ?- hilog_functor(map(P)(a,b), F, A).
+               P = _595828
+               F = map(_595828)
+               A = 2
+
+               | ?- hilog_functor(T, p, 2).
+               T = p(_595708,_595712)
+
+               | ?- hilog_functor(T, h, 2).
+               T = apply(h,_595712,_595716)
+
+               | ?- hilog_functor(T, X, 3).
+               T = apply(_595592,_595736,_595740,_595744)
+               X = _595592
+
+               | ?- hilog_functor(T, p(f(a)), 2).
+               T = apply(p(f(a)),_595792,_595796)
+
+               | ?- hilog_functor(T, h(p(a))(L1,L2), 1).
+               T = apply(apply(apply(h,p(a)),_595984,_595776),_596128)
+               L1 = _595984
+               L2 = _595776
+
+               | ?- hilog_functor(T, a+b, 3).
+               T = apply(a+b,_595820,_595824,_595828)
+     \end{verbatim}}
+
+\ouritem{arg(+Index, +Term, ?Argument)}\index{{\tt arg/3}}
+    Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of 
+    {\tt Term}\@, where the index is taken to start at $1$.
+    Initially, {\tt Index} must be instantiated to any integer and {\tt Term} 
+    to any non-variable Prolog or HiLog term.
+    The arguments of the {\tt Term} are numbered from~1 upwards. An atomic term
+    has $0$ arguments. If the initial conditions are not satisfied or~$I$ is 
+    out of range, the call quietly fails.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- arg(2, p(a,b), A).
+                   A = b
+
+                   | ?- arg(2, h(a,b), A).
+                   A = a
+
+                   | ?- arg(0, foo, A).
+                   no
+
+                   | ?- arg(2, [a,b,c], A).
+                   A = [b,c]
+
+                   | ?- arg(2, "HiLog", A).
+                   A = [105,108,111,103]
+
+                   | ?- arg(2, a+b+c, A).
+                   A = c
+
+                   | ?- arg(3, X(a,b,c), A).
+                   X = _595820 
+                   A = b 
+
+                   | ?- arg(2, map(f)(a,b), A).
+                   A = a
+
+                   | ?- arg(1, map(f)(a,b), A). 
+                   A = map(f)
+
+                   | ?- arg(1, (a+b)(foo,bar), A).
+                   A = a+b
+     \end{verbatim}}
+
+\ouritem{arg0(+Index, +Term, ?Argument)}\index{{\tt arg0/3}}
+    Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt Term}
+    if {\tt Index} $>$ 0, or with the functor of {\tt Term} if {\tt Index} = 0.
+
+\ournewitem{hilog\_arg(+Index, +Term, ?Argument)}{HiLog}\index{{\tt hilog\_arg/3}}
+    If {\tt Term} is a Prolog term, it has the same behaviour as {\tt arg/3},
+    but if {\tt Term} is a proper HiLog term, {\tt hilog\_arg/3} unifies 
+    {\tt Argument} with the 
+    $({\tt Index}+1)^{th}$ argument of the Prolog representation of 
+    {\tt Term}\@.  Semantically, {\tt Argument} is the ${\tt Index}^{th}$ 
+    argument to which the {\em HiLog functor} of {\tt Term} is applied.
+    The arguments of the {\tt Term} are numbered from~1 upwards. An atomic term 
+    is taken to have $0$ arguments.  
+    
+    Initially, {\tt Index} must be instantiated to a positive integer and 
+    {\tt Term} to any non-variable Prolog or HiLog term.
+    If the initial conditions are not satisfied or~$I$ is 
+    out of range, the call quietly fails. Note that like {\tt arg/3}
+    this predicate does not succeed for {\tt Index}=0.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- hilog_arg(2, p(a,b), A).
+                   A = b
+
+                   | ?- hilog_arg(2, h(a,b), A).
+                   A = b
+
+                   | ?- hilog_arg(3, X(a,b,c), A).
+                   X = _595820
+                   A = c
+
+                   | ?- hilog_arg(1, map(f)(a,b), A).
+                   A = a
+
+                   | ?- hilog_arg(2, map(f)(a,b), A).
+                   A = b
+
+                   | ?- hilog_arg(1, (a+b)(foo,bar), A).
+                   A = foo
+
+                   | ?- hilog_arg(1, apply(foo), A). 
+                   A = foo
+
+                   | ?- hilog_arg(1, apply(foo,bar), A).
+                   A = bar
+     \end{verbatim}}
+
+    Note the difference between the last two examples. The difference is 
+    due to the fact that {\tt apply/1} is a Prolog term, while 
+    {\tt apply/2} is a proper HiLog term.
+
+\ouritem{?Term =.. [?Functor |?ArgList]}\index{{\tt =../2}} 
+    Succeeds when {\tt Term} is any (Prolog or) HiLog term, {\tt Functor} is 
+    its Prolog functor and {\tt ArgList} is the list of its arguments. 
+    The use of {\tt =../2} (pronounced {\em univ}) although convenient, 
+    can nearly always be avoided.
+    Whenever efficiency is critical, it is advisable to use the
+    predicates {\tt functor/3} and {\tt arg/3}, since {\tt =../2} is 
+    implemented by calls to these predicates.  The behaviour of 
+    {\tt =../2} is as follows:
+    \begin{itemize}
+    \item If initially {\tt Term} is uninstantiated, then the list in the 
+          second argument of {\tt =../2} must be instantiated either to a
+          {\em proper list} (list of determinate length) whose head is an 
+          atom, or to a list of length 1 whose head is a number.
+    \item If the arguments of {\tt =../2} are both uninstantiated, or if 
+          either of them is not what is expected, {\tt =../2} aborts, 
+          producing an appropriate error message.
+    \end{itemize}
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- X - 1 =.. L.
+                   X = _595692
+                   L = [-,_595692,1]
+
+                   | ?- p(a,b,c) =.. L.
+                   L = [p,a,b,c]
+
+                   | ?- h(a,b,c) =.. L.
+                   L = [apply,h,a,b,c]
+
+                   | ?- map(p)(a,b) =.. L.
+                   L = [apply,map(p),a,b]
+
+                   | ?- T =.. [foo].
+                   T = foo
+
+                   | ?- T =.. [3|X].
+                   T = 3
+                   X = []
+
+                   | ?- T =.. [apply,X,a,b].
+                   T = apply(X,a,b)
+
+                   | ?- T =.. [1,2].
+                   ++Error: Wrong type(s) in argument 2 of =../2
+                   Aborting...
+
+                   | ?- T =.. [a+b,2].
+                   ++Error: Wrong type(s) in argument 2 of =../2
+                   Aborting..
+
+                   | ?- X =.. [foo|Y].
+                   ++Error: Argument 2 of =../2 is not a proper list
+                   Aborting...
+     \end{verbatim}}
+
+     Exceptions:
+     \begin{description}
+     \item[{\tt instantiation\_error}]
+	Argument 2 of {\tt =../2} is not a proper list.
+     \item[{\tt type\_error}]
+	Head of argument 2 of {\tt =../2} is not an atom or number.
+     \end{description}
+
+%in the following line I used a very ``dirty'' LaTeX hack! -- Kostis.
+
+\ournewitem{?Term \^{ }=.. [?F |?ArgList]}{HiLog}\index{{\tt \^{ }=../2}} 
+    When {\tt Term} is a Prolog term, this predicate behaves exactly like
+    the Prolog {\tt =../2}. However when {\tt Term} is a proper HiLog term, 
+    {\tt \verb|^|=../2} 
+    succeeds unifying {\tt F} to its HiLog functor and {\tt ArgList} to the 
+    list of the arguments to which this HiLog functor is applied. Like 
+    {\tt =../2}, the use of {\tt \verb|^|=../2} can nearly always be avoided
+    by using the more efficient predicates {\tt hilog\_functor/3} and 
+    {\tt hilog\_arg/3}. The behaviour of {\tt \verb|^|=../2}, on HiLog terms 
+    is as follows:
+    \begin{itemize}
+    \item If initially {\tt Term} is uninstantiated, then the list in the 
+          second argument of {\tt \verb|^|=../2} must be instantiated to 
+          a {\em proper list} (list of determinate length) whose head can 
+          be any Prolog or HiLog term.
+    \item If the arguments of {\tt \verb|^|=../2} are both uninstantiated, 
+          or if the second of them is not what is expected, 
+          {\tt \verb|^|=../2} aborts, producing an appropriate error message.
+    \end{itemize}
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- p(a,b,c) ^=.. L.
+                   L = [p,a,b,c]
+
+                   | ?- h(a,b,c) ^=.. L.
+                   L = [h,a,b,c]
+
+                   | ?- map(p)(a,b) ^=.. L.
+                   L = [map(p),a,b]
+
+                   | ?- T ^=.. [X,a,b].
+                   T = apply(X,a,b)
+
+                   | ?- T ^=.. [2,2].
+                   T = apply(2,2)
+
+                   | ?- T ^=.. [a+b,2].
+                   T = apply(a+b,2)
+
+                   | ?- T ^=.. [3|X].
+                   ++Error: Argument 2 of ^=../2 is not a proper list
+                   Aborting...
+     \end{verbatim}}
+
+     Exceptions:
+     \begin{description}
+     \item[{\tt instantiation\_error}]
+	Argument 2 of {\tt \verb|^|=../2} is not a proper list.
+     \end{description}
+
+\ouritem{copy\_term(+Term, -Copy)}\index{{\tt copy\_term/2}}
+    Makes a {\tt Copy} of {\tt Term} in which all variables have been
+    replaced by brand new variables which occur nowhere else. It can
+    be very handy when writing (meta-)interpreters for logic-based
+    languages.  The version of {\tt copy\_term/2} provided is {\em space
+    efficient} in the sense that it never copies ground terms. 
+    Predicate {\tt copy\_term/2} has no associated errors or exceptions.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- copy_term(X, Y).
+
+                   X = _598948
+                   Y = _598904
+
+                   | ?- copy_term(f(a,X), Y).
+
+                   X = _598892
+                   Y = f(a,_599112)
+     \end{verbatim}}
+
+\ouritem{name(?Constant, ?CharList)}\index{{\tt name/2}} 
+    The standard predicate {\tt name/2} performs the conversion 
+    between a constant and its character list representation. 
+    If {\tt Constant} is supplied (and is any atom or number), {\tt CharList} 
+    is unified with a list of ASCII codes representing the {\em ``name''} 
+    of the constant.  In that case, {\tt CharList} is exactly the list of 
+    ASCII character codes that appear in the printed representation of 
+    {\tt Constant}\@.  If on the other hand {\tt Constant} is a variable, 
+    then {\tt CharList} must be a proper list of ASCII character codes. 
+    In that case, {\tt name/2} will convert a list of ASCII characters 
+    that can represent a number to a number rather than to a character string.
+    As a consequence of this, there are some atoms (for example \verb|'18'|)
+    which cannot be constructed by using {\tt name/2}\@. 
+    If conversion to an atom is preferred in these cases, the 
+    standard predicate {\tt atom\_chars/2} should be used instead. The 
+    syntax for numbers that is accepted by {\tt name/2} is exactly the one 
+    which {\tt read/1} accepts.  Predicate {\tt name/2} is provided for 
+    backwards compatibility.  It is advisable that new programs use
+    the predicates {\tt atom\_chars/2} and {\tt number\_chars/2} described
+    below.
+
+    In \version\ predicate {\tt name/2} is not yet implemented for 
+    converting from a real number to its character list representation, 
+    and if the representation of a real is provided as {\tt CharList}, 
+    it will be converted to an atom.
+
+    If both of the arguments of {\tt name/2} are uninstantiated or 
+    {\tt CharList} is not a proper list of ASCII characters, {\tt name/2} 
+    will abort and an error message will be sent to the standard error stream.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- name('Foo', L).
+                   L = [70,111,111]
+
+                   | ?- name([], L).
+                   L = [91,93]
+
+                   | ?- name(431, L).
+                   L = [52,51,49]
+
+                   | ?- name(X, [102,111,111]).
+                   X = foo
+ 
+                   | ?- name(X, []).
+                   X = ''
+
+                   | ?- name(X, "Foo").
+                   X = 'Foo'
+
+                   | ?- name(X, [52,51,49]).
+                   X = 431
+
+                   | ?- name(X, [45,48,50,49,51]), integer(X).
+                   X = -213
+
+                   | ?- name(3.14, L).
+                   ++Error: Predicate name/2 for reals is not implemented yet
+                   Aborting...
+     \end{verbatim}}
+
+     Exceptions:
+     \begin{description}
+     \item[{\tt instantiation\_error}]
+	Both arguments are uninstantiated, or argument 2 of {\tt name/2} 
+	contains a variable or is not a proper list.
+     \item[{\tt type\_error}]
+	{\tt Constant} is not a variable, an atom or a number.
+     \item[{\tt range\_error}]
+	{\tt CharList} is not a list of ASCII characters.
+     \item[{\tt implementation\_error}]
+	{\tt Constant} is a real number (conversion from a real to its 
+	character list representation is not implemented yet).
+     \end{description}
+
+\ouritem{atom\_chars(?Atom, ?CharList)}\index{{\tt atom\_chars/2}} 
+    The standard predicate {\tt atom\_chars/2} performs the conversion 
+    between an atom and its character list representation. 
+    If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
+    is unified with a list of ASCII codes representing the {\em ``name''} 
+    of that atom.  In that case, {\tt CharList} is exactly the list of 
+    ASCII character codes that appear in the printed representation of 
+    {\tt Atom}.  If on the other hand {\tt Atom} is a variable, 
+    then {\tt CharList} must be a proper list of ASCII character codes. 
+    In that case, {\tt Atom} is instantiated to an atom containing
+    exactly those characters, even if the characters look like the
+    printed representation of a number.
+
+    If both of the arguments of {\tt atom\_chars/2} are uninstantiated or
+    {\tt CharList} is not a proper list of ASCII characters, {\tt
+    atom\_chars/2} aborts, and an error message will be sent to
+    the standard error stream.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- atom_chars('Foo', L).
+                   L = [70,111,111]
+
+                   | ?- atom_chars([], L).
+                   L = [91,93]
+
+                   | ?- atom_chars(X, [102,111,111]).
+                   X = foo
+ 
+                   | ?- atom_chars(X, []).
+                   X = ''
+
+                   | ?- atom_chars(X, "Foo").
+                   X = 'Foo'
+
+                   | ?- atom_chars(X, [52,51,49]).
+                   X = '431'
+
+                   | ?- atom_chars(X, [52,51,49]), integer(X).
+                   no
+
+                   | ?- atom_chars(X, [52,Y,49]).
+                   ! Instantiation error in argument 2 of atom_chars/2
+                   ! Aborting...
+
+                   | ?- atom_chars(431, L).
+                   ! Type error: in argument 1 of atom_chars/2
+                   ! atom expected, but something else found
+                   ! Aborting...
+
+                   | ?- atom_chars(X, [52,300,49]).
+                   ! Range error: in argument 2 of atom_chars/2
+                   ! ASCII code expected, but 300 found
+                   ! Aborting...
+     \end{verbatim}}
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	Both arguments are uninstantiated, or argument 2
+	is not a proper list, or it contains a variable.
+    \item[{\tt type\_error}]
+	{\tt Atom} is not a variable or an atom.
+    \item[{\tt range\_error}]
+	{\tt CharList} is not a list of ASCII characters.
+    \end{description}
+
+\ouritem{number\_chars(?Number, ?CharList)}\index{{\tt number\_chars/2}} 
+    The standard predicate {\tt number\_chars/2} performs the conversion 
+    between a number and its character list representation. 
+    If {\tt Number} is supplied (and is a number), {\tt CharList} is
+    unified with a list of ASCII codes comprising the printed representation
+    of that {\tt Number}.  If on the other hand {\tt Number} is a variable, 
+    then {\tt CharList} must be a proper list of ASCII character codes that
+    corresponds to the correct syntax of a number (either integer or float)
+    In that case, {\tt Number} is instantiated to that number, otherwise
+    {\tt number\_chars/2} will simply fail.
+
+    If both of the arguments of {\tt number\_chars/2} are uninstantiated or
+    {\tt CharList} is not a proper list of ASCII characters, {\tt
+    number\_chars/2} aborts, and an error message will be sent to
+    the standard error stream.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- number_chars(123, L).
+                   L = [49,50,51];
+
+                   | ?- number_chars(N, [49,50,51]), integer(N).
+                   N = 123
+
+                   | ?- number_chars(31.4e+10, L).
+                   L = [51,46,49,51,57,57,57,55,69,43,49,48]
+
+                   | ?- number_chars(N, "314e+8").
+                   N = 3.14e+10
+
+                   | ?- number_chars(foo, L).
+                   ! Type error: in argument 1 of number_chars/2
+                   ! number expected, but something else found
+                   ! Aborting...
+     \end{verbatim}}
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	Both arguments are uninstantiated, or argument 2
+	is not a proper list, or it contains a variable.
+    \item[{\tt type\_error}]
+	{\tt Number} is not a variable or a number.
+    \item[{\tt range\_error}]
+	{\tt CharList} is not a list of ASCII characters.
+    \end{description}
+
+\end{description}
+
+
+\section{All Solutions and Aggregate Predicates}
+\index{sets, bags} \index{aggregate predicates!prolog}
+%-----------------------------------------------------
+Often there are many solutions to a problem and it is necessary
+somehow to compare these solutions with one another.  The most general
+way of doing this is to collect all the solutions into a list, which
+may then be processed in any way desired.  So XSB provides several
+builtin all-solutions predicates which collect solutions into lists.
+Sometimes however, one wants simply to perform some aggregate
+operation over the set of solutions, for example to find the maximum
+or minimum of the set of solutions.  \ourprolog\ uses tabling and
+HiLog to provide a general and powerful aggregation facility through
+the use of two new builtins.
+
+\begin{description}
+\ouritem{setof(?X, +Goal, ?Set)}\index{{\tt setof/3}}
+%\predindex{setof/3~(L)}
+    This predicate may be read as ``{\tt Set} is the set of all instances 
+    of {\tt X} such that {\tt Goal} is provable''.
+    If~{\tt Goal} is not provable, {\tt setof/3} fails.
+    The term {\tt Goal} specifies a goal or goals as in {\tt call(Goal)}.
+    {\tt Set} is a set of terms represented as a list of those terms,
+    without duplicates, in the standard order for terms 
+    (see Section~\ref{Comparison}).
+    If there are uninstantiated variables in {\tt Goal} which do not also 
+    appear in {\tt X}, then a call to this evaluable predicate may backtrack,
+    generating alternative values for~{\tt Set} corresponding to different
+    instantiations of the free variables of~{\tt Goal}.
+    Variables occurring in {\tt Goal} will not be treated as free if they 
+    are explicitly bound within~{\tt Goal} by an existential quantifier.
+    An existential quantification can be specified as:
+    \begin{center}
+    {\tt Y \^\ G}\index{\^}
+    \end{center}
+    meaning there exists a {\tt Y} such that {\tt G} is true,
+    where {\tt Y} is some Prolog term (usually, a variable).
+  
+    Exceptions: Same as predicate {\tt call/1}
+		(see Section~\ref{meta_predicates}).
+
+\ouritem{bagof(?X, +Goal, ?Bag)}
+%\predindex{bagof/3~(L)}\index{bagof/3|bold}
+    This predicate has the same semantics as {\tt setof/3} except that the 
+    third argument returns an unordered list that may contain duplicates.
+
+    Exceptions: Same as predicate {\tt call/1}
+		(see Section~\ref{meta_predicates}).
+
+\ouritem{findall(?X, +Goal, ?List)}
+%\predindex{findall/3~(L)}\index{findall/3|bold}
+    Similar to predicate {\tt bagof/3}, except that variables in {\tt Goal}
+    that do not occur in {\tt X} are treated as existential, and alternative
+    lists are not returned for different bindings of such variables.  This
+    makes {\tt findall/3} deterministic (non-backtrackable).  Unlike
+    {\tt setof/3} and {\tt bagof/3}, if {\tt Goal} is unsatisfiable,
+    {\tt findall/3} succeeds binding {\tt List} to the empty list.
+
+    Exceptions: Same as predicate {\tt call/1}
+		(see Section~\ref{meta_predicates}).
+
+\ournewitem{tfindall(?X, +Goal, ?List)}{Tabling}
+\index{{\tt tfindall/3}}
+%\predindex{tfindall/3~(L)}
+\label{tfindall/3}
+    Like {\tt findall/3}, {\tt tfindall/3} treats all variables in
+    {\tt Goal} that do not occur in {\tt X} as existential.  However,
+    in {\tt tfindall/3}, the {\tt Goal} must be a call to a single
+    tabled predicate.
+	
+    {\tt tfindall/3} allows the user to build programs that use
+    stratified aggregation.  If the table to {\tt Goal} is incomplete,
+    {\tt tfindall/3} suspends until the table has been completed, and
+    only then computes {\tt List}.  See Chapter~\ref{tabling_overview}
+    for further discussion of {\tt tfindall/3}.  Like {\tt findall/3},
+    if {\tt Goal} is unsatisfiable, {\tt tfindall/3} succeeds binding
+    {\tt List} to the empty list.
+
+    Some of the differences between predicates {\tt findall/3} and
+    {\tt tfindall/3} can be seen from the following example:
+
+    {\footnotesize
+    \begin{verbatim}
+            | ?- [user].
+            [Compiling user]
+            :- table p/1.
+            p(a).
+            p(b).
+            [user compiled, cpu time used: 0.639 seconds]
+            [user loaded]
+
+            yes
+            | ?- p(X), findall(Y, p(Y), L).
+
+            X = a
+            Y = _922928
+            L = [a];
+
+            X = b
+            Y = _922820
+            L = [a,b];
+
+            no
+            | ?- abolish_all_tables.
+
+            yes
+            | ?- p(X), tfindall(Y, p(Y), L).
+
+            X = b
+            Y = _922820
+            L = [b,a];
+
+            X = a
+            Y = _922820
+            L = [b,a];
+
+            no
+    \end{verbatim}
+    }
+
+    Exceptions: Same as predicate {\tt findall/3} (see above).  Also:
+    \begin{description}
+    \item[{\tt table\_error}]
+	Upon execution {\tt Goal} is not a subgoal of a tabled predicate.
+    \end{description}
+
+\ournewitem{tbagof(?X, +Goal, ?List) / tsetof(?X, +Goal, ?List)}{Tabling}
+\index{{\tt tsetof/3}}
+\index{{\tt tbagof/3}}
+
+The standard predicates {\tt tbagof/3} and {\tt tsetof/3} provide
+tabled versions of {\tt bagof/3} and {\tt setof/3} in a similar manner
+to the way in which {\tt tfindall/3} provides a tabled version of {\tt
+findall/3}.
+
+\ouritem{X \^\ Goal}
+%\predindex{$\wedge/2$~(L)}\index{$\wedge/2$|bold}
+    The system recognises this as meaning there exists an {\tt X} such
+    that {\tt Goal} is true, and treats it as equivalent to {\tt call(Goal)}.
+    The use of this explicit existential quantifier outside predicates
+    {\tt setof/3} and {\tt bagof/3} constructs is superfluous.
+\end{description}
+
+\subsection{Tabling Aggregate Predicates}
+%-------------------------------------------------------------------------
+\index{aggregate predicates!tabling} \index{tabling!aggregate predicates}
+%-------------------------------------------------------------------------
+
+HiLog provides an elegant way to introduce aggregate operations into
+\ourprolog.  HiLog allows a user to define named (and parameterized)
+sets (or bags).  For example, say we have a simple database-like predicate,
+\verb|employee(Name,Dept,Sal)|, which contains a tuple for each
+employee in our concern and contains the employee's name, department,
+and salary.  From this predicate we can construct a set, or bag
+really, that contains all the salaries of employees in the relation:
+\begin{verbatim}
+    :- hilog salaries.
+    salaries(Sal) :- employee(_Name,_Dept,Sal).
+\end{verbatim}
+So \verb|salaries| is the name of a unary predicate that is true of
+all salaries, or rather is the name of a {\em bag} of all salaries.
+It is a bag since it may contain the same salary multiple times.
+\ourprolog\ provides a predicate \verb|bagSum| which can be used to
+sum up the elements in a named bag.  So given the definition of the
+HiLog predicate \verb|salaries/1| above, we can get the sum of all the
+salaries with:
+\begin{verbatim}
+    :- bagSum(salaries,TotalSals).
+\end{verbatim}
+The first argument to \verb|bagSum| is the name of a bag, and the
+second is bound to the sum of the elements in the bag.
+
+We can also do a ``group by'' to get total salaries within departments
+as follows.  We define a parameterized predicate, \verb|sals(Dept)|,
+to be the bag of salaries of employees in department \verb|Dept|, as
+follows:
+\begin{verbatim}
+    sals(Dept)(Sal) :- employee(_Name,Dept,Sal).
+\end{verbatim}
+This rule says that \verb|Sal| is in the bag named \verb|sals(Dept)|
+if there is an employee with some name who works in department
+\verb|Dept| and has salary \verb|Sal|.
+
+Now with this definition, we can define a predicate,
+\verb|deptPayroll/2|, that associates with each department the sum of
+all the salaries of employees in that department:
+\begin{verbatim}
+    deptPayroll(Dept,Payroll) :- bagSum(sals(Dept),Payroll).
+\end{verbatim}
+
+\ourprolog\ provides analogous aggregate operators, described below, to
+compute the minimum, maximum, count, and average, of a bag,
+respectively.  These predicates are all defined using a more basic
+predicate \verb|bagReduce/4|.
+
+\begin{description}
+
+\ournewitem{bagReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
+\index{{\tt bagReduce/4}}
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt Op} must be a Hilog operation, i.e., a 3-ary
+    HiLog predicate that defines an associative operator.  The predicate
+    must define a binary function in which the first two arguments
+    determine the third.  {\tt Id} must be the identity of the operator.
+    {\tt bagReduce} returns with {\tt Arg} bound to the ``reduce'' of the
+    elements of the bag determined by {\tt SetPred} under the operation {\tt
+    Op}.  I.e., {\tt Arg} becomes the result of applying the operator to
+    all the elements in the bag that unify with {\tt Arg}.  See the {\tt
+    bagSum} operator below to see an example of {\tt bagReduce}'s use.
+
+\ournewitem{bagPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
+\index{{\tt bagPO/4}}
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt Order} must be a binary Hilog relation that
+    defines a partial order.  {\tt bagPO} returns nondeterministically
+    with {\tt Arg} bound to the maximal elements, under {\tt Order}, of
+    the bag {\tt SetPred}.  {\tt bagPO/3} can be used with {\tt Order}
+    being subsumption to reduce a set of answers and keep only the most
+    general answers.
+
+    See the {\tt bagMax} operator below to see an example of {\tt bagPO}'s use.
+
+\ournewitem{bagMax(?SetPred,?Arg)}{HiLog,Tabling}
+\index{{\tt bagMax/2}}
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagMax} returns with {\tt Arg} bound to the
+    maximum element (under the Prolog term ordering) of the set {\tt
+    SetPred}.  To use this predicate, it must be imported from aggregs,
+    and you must give the following definitions in the main module {\tt
+    usermod}:
+\begin{verbatim}
+:- hilog maximum.
+maximum(X,Y,Z) :- X @< Y -> Z=Y ; Z=X.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagMax/2} can be (and
+    is) defined as follows:
+\begin{verbatim}
+bagMax(Call,Var) :- bagReduce(Call,Var,maximum,_).
+\end{verbatim}
+    (Where variables are minimal in the term ordering.)
+
+Another possible definition of {\tt bagMax/2} would be:
+\begin{verbatim}
+:- hilog lt.
+lt(X,Y) :- X @< Y.
+
+bagMax(Call,Var) :- bagPO(Call,Var,lt).
+\end{verbatim}
+This definition would work, but it is slightly less efficient than the
+previous definition since it is known that {\tt bagMax} is
+deterministic.
+
+\ournewitem{bagMin(?SetPred,?Arg)}{HiLog,Tabling}
+\index{{\tt bagMin/2}}
+
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagMin} returns with {\tt Arg} bound to the
+    minimum element (under the Prolog term ordering) of the set {\tt
+    SetPred}.  To use this predicate, it must be imported from aggregs,
+    and you must give the following definitions in the main module {\tt
+    usermod}:
+\begin{verbatim}
+:- hilog minimum.  
+minimum(X,Y,Z) :- X @< Y -> Z=X ; Z=Y.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagMin/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagMin(Call,Var) :- bagReduce(Call,Var,minimum,zz(zz)).
+\end{verbatim}
+    (where structures are the largest elements in the term ordering.)
+
+\ournewitem{bagSum(?SetPred,?Arg)}{HiLog,Tabling}
+\index{{\tt bagSum/2}}
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagSum} returns with {\tt Arg} bound to the sum
+    of the elements of the set {\tt SetPred}.  To use this predicate, it
+    must be imported from aggregs, and you must give the following
+    definitions in the main module {\tt usermod}:
+\begin{verbatim}
+:- hilog sum.
+sum(X,Y,Z) :- Z is X+Y.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagSum/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagSum(Call,Var) :- bagReduce(Call,Var,sum,0).
+\end{verbatim}
+
+\ouritem{bagCount(?SetPred,?Arg)}{HiLog,Tabling}
+\index{{\tt bagCount/2}}
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagCount} returns with {\tt Arg} bound to the
+    count (i.e., number) of elements of the set {\tt SetPred}.  To use
+    this predicate, it must be imported from aggregs, and you must give
+    the following definitions in the main module {\tt usermod}:
+\begin{verbatim}
+:- hilog successor.
+successor(X,_Y,Z) :- Z is X+1.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagCount/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagCount(Call,Var) :- bagReduce(Call,Var,successor,0).
+\end{verbatim}
+
+\ournewitem{bagAvg(?SetPred,?Arg)}{HiLog,Tabling}
+\index{{\tt bagAvg/2}}
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagAvg} returns with {\tt Arg} bound to the
+    average (i.e., mean) of elements of the set {\tt SetPred}.  To use
+    this predicate, it must be imported from aggregs, and you must give
+    the following definitions in the main module {\tt usermod}:
+\begin{verbatim}
+:- hilog sumcount.
+sumcount([S|C],X,[S1|C1]) :- S1 is S+X, C1 is C+1.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagAvg/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagAvg(Call,Avg) :- 
+    bagReduce(Call,[Sum|Count],sumcount,[0|0]),
+    Avg is Sum/Count.
+\end{verbatim}
+
+\end{description}
+
+
+\section{Comparison} \label{Comparison}
+\input{comparison}
+
+
+\section{Meta-Predicates} \label{meta_predicates}
+\begin{description}
+\ouritem{call(+X)}\index{{\tt call/1}} 
+%\predindex{call/1~(P)}
+    If {\tt X} is a nonvariable term in the program text, then it is 
+    executed exactly as if {\tt X} appeared in the program text instead 
+    of {\tt call(X)},
+    e.g.
+    \begin{center}
+        {\tt $\ldots$, p(a), call( (q(X), r(Y)) ), s(X), $\ldots$}
+    \end{center}
+    is equivalent to
+    \begin{center}
+        {\tt $\ldots$, p(a), q(X), r(Y), s(X), $\ldots$}
+    \end{center}
+    However, if {\tt X} is a variable in the program text,
+    then if at runtime {\tt X} is instantiated to a term which 
+    would be acceptable as the body of a clause, the goal 
+    {\tt call(X)} is executed as if that
+    term appeared textually in place of the {\tt call(X)},
+    {\em except that} any cut (`!')\index{"!/0}\index{cut}
+    occurring in {\tt X} will remove only those choice points in~{\tt X}.
+    If~{\tt X} is not instantiated as described above,
+    an error message is printed and {\tt call/1} fails.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	Argument 1 of {\tt call/1} is not instantiated.
+     \item[{\tt type\_error}]
+	Argument 1 of {\tt call/1} is not a callable term.
+    \end{description}
+
+\ouritem{+X}					      
+    (where {\tt X} is a variable) executes exactly the same as 
+    {\tt call(X)}.
+    However, the explicit use of {\tt call/1} is considered better
+    programming practice.  The use of a top level variable subgoal
+    elicits a warning from the compiler.
+
+\ouritem{once(+X)}\index{{\tt once/1}}
+%\predindex{once/1~(P)}
+    The same as {\tt call(X), !}.
+
+    Exceptions: The same as {\tt call/1}.
+
+\end{description}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

@@ -1,0 +1,252 @@
+\chapter{Standard Predicates and Functions} \label{standard_predicates}
+%======================================================================
+
+
+\section{List of Standard Predicates}
+%====================================
+\begin{tabbing}
+12 \= 12345678901234567890123456789012 \=	\kill
+ \> {\tt abolish(Name/Arity)}	\>					\\
+ \> {\tt abolish(Name, Arity)}	\>					\\
+ \> {\tt abolish\_all\_tables}	\>					\\
+ \> {\tt abolish\_table\_call(Term)} \>					\\
+ \> {\tt abolish\_table\_pred(Pred)} \>					\\
+ \> {\tt abort}			\>					\\
+ \> {\tt analyze\_table(Pred)}	\>					\\
+ \> {\tt arg(Index, Term, Arg)}	\>					\\
+ \> {\tt arg0(Index, Term, Arg)}\>					\\
+ \> {\tt assert(Clause)}	\>					\\
+ \> {\tt asserta(Clause)}	\>					\\
+ \> {\tt assertz(Clause)}	\>					\\
+ \> {\tt atom(Term)}		\>					\\
+ \> {\tt atomic(Term)}		\>					\\
+ \> {\tt atom\_chars(Atom, CharList)}	\>				\\
+ \> {\tt bagof(Elem, Goal, Bag)}\>					\\
+ \> {\tt break}			\>					\\
+ \> {\tt 'C'(List1, Token, List2)} \>					\\
+ \> {\tt call(Term)}		\>					\\
+ \> {\tt callable(Term)}	\>					\\
+ \> {\tt cd(Dir)}		\>					\\
+ \> {\tt clause(Head, Body)}	\>					\\
+%\> {\tt clause(Head, Body, Ref)} \> This predicate is not yet implemented.\\
+ \> {\tt close(FileName)}	\>					\\
+ \> {\tt compare(Res, Term1, Term2)} \>					\\
+ \> {\tt compound(Term)}	\>					\\
+ \> {\tt compile(Module)}	\>					\\
+ \> {\tt compile(Module, Options)} \>					\\
+ \> {\tt consult(Module)}	\>					\\
+ \> {\tt consult(Module, Options)} \>					\\
+ \> {\tt copy\_term(Term, Copy)} \>					\\
+ \> {\tt cputime(Time)}		\>					\\
+ \> {\tt current\_atom(Atom)}	\>				\\
+ \> {\tt current\_functor(Functor)} \>				\\
+ \> {\tt current\_functor(Functor, Term)} \>				\\
+ \> {\tt current\_input(File)}	\>					\\
+ \> {\tt current\_module(Module)}	\>				\\
+ \> {\tt current\_module(Module, File)}	\>				\\
+ \> {\tt current\_op(Precedence, Type, Name)} \>			\\
+ \> {\tt current\_output(File)}	\>					\\
+ \> {\tt current\_predicate(Predicate)} \>				\\
+ \> {\tt current\_predicate(Predicate, Term)} \>			\\
+ \> {\tt debug}			\>					\\
+ \> {\tt debugging}		\>					\\
+%\> {\tt display(Term)}		\> This predicate is not yet implemented.\\
+ \> {\tt edit(File)}		\>					\\
+ \> {\tt erase(Reference)}	\>					\\
+ \> {\tt expand\_term(Term, Expanded\_Term)} \>				\\
+ \> {\tt fail}			\>					\\
+ \> {\tt fail\_if(Goal)}	\>					\\
+ \> {\tt file\_exists(File)}	\>					\\
+ \> {\tt findall(Elem, Goal, List)} \>					\\
+ \> {\tt float(Term)}		\>					\\
+ \> {\tt functor(Term, Functor, Arity)} \>				\\
+ \> {\tt get(Char)}		\>					\\
+ \> {\tt get0(Char)}		\>					\\
+ \> {\tt get\_calls\_for\_table(Pred, Call, Empty)} \>			\\
+ \> {\tt get\_returns\_for\_call(Call, Return)} \>			\\
+ \> {\tt halt}			\>					\\
+ \> {\tt hilog(Symbol)}		\>					\\
+ \> {\tt hilog\_arg(Index, Term, Arg)}	\>				\\
+ \> {\tt hilog\_functor(Term, Functor, Arity)} \>			\\
+ \> {\tt hilog\_op(Precedence, Type, Name)} \>				\\
+ \> {\tt hilog\_symbol(Symbol)}	\>					\\
+ \> {\tt import PredList from Module} \>				\\
+ \> {\tt index(Predicate, ArgNo, HashSize)} \>				\\
+ \> {\tt instance(Ref, Instance)} \>					\\
+ \> {\tt integer(Term)}		\>					\\
+ \> {\tt is(Result, Expression)} \>					\\
+ \> {\tt is\_list(Term)}	\>					\\
+ \> {\tt is\_string(Term)}	\>					\\
+ \> {\tt keysort(Input, Output)} \>					\\
+ \> {\tt load\_dyn(Module)}	\>					\\
+ \> {\tt listing}		\>					\\
+ \> {\tt listing(Predicate)}	\>					\\
+ \> {\tt ls}			\>					\\
+ \> {\tt mc(Module, Options)}	\> This predicate is used in the 	\\
+ \>				\> {\tt Makefile}s when self-compiling 
+				   \ourprolog.	\\
+ \> {\tt module\_property(Module, Property)} \>				\\
+ \> {\tt name(Term, CharList)}	\>					\\
+ \> {\tt nl}			\>					\\
+ \> {\tt nodebug}		\>					\\
+ \> {\tt nonvar(Term)}		\>					\\
+ \> {\tt nospy(Predicate\_List)} \>					\\
+ \> {\tt not(Goal)}		\>					\\
+ \> {\tt notrace}		\>					\\
+ \> {\tt number(Term)}		\>					\\
+ \> {\tt once(Goal)}		\>					\\
+ \> {\tt op(Precedence, Format, Operator)} \>				\\
+ \> {\tt otherwise}		\>					\\
+ \> {\tt phrase(Phrase, List)}	\>					\\
+ \> {\tt phrase(Phrase, List, Remains)}	\>				\\
+ \> {\tt predicate\_property(Predicate, Property)} \>			\\
+ \> {\tt print(Term)}		\> Currently the same as {\tt write/1}.	\\
+ \> {\tt prompt(New, Old)}	\>					\\
+ \> {\tt proper\_hilog(Term)}	\>					\\
+ \> {\tt put(Char)}		\>					\\
+ \> {\tt read(Term)}		\>					\\
+ \> {\tt real(Term)}		\>					\\
+ \> {\tt reconsult(Module)}	\>					\\
+ \> {\tt reconsult(Module, Options)} \>					\\
+ \> {\tt record(Key, Term, Ref)} \>					\\
+ \> {\tt recorda(Key, Term, Ref)} \>					\\
+ \> {\tt recorded(Key, Term, Ref)} \>					\\
+ \> {\tt recordz(Key, Term, Ref)} \>					\\
+ \> {\tt rename(OldName, NewName)} \>					\\
+ \> {\tt repeat}		\>					\\
+ \> {\tt retract(Term)}		\>					\\
+ \> {\tt retractall(Predicate)}	\>					\\
+%\> {\tt save(File)}		\> This predicate is not yet implemented.	\\
+ \> {\tt see(File)}		\>					\\
+ \> {\tt seeing(File)}		\>					\\
+ \> {\tt seen}			\>					\\
+ \> {\tt setof(Elem, Goal, Set)} \>					\\
+ \> {\tt skip(Char)}		\>					\\
+ \> {\tt sort(Input, Output)}	\>					\\
+ \> {\tt spy(Predicate\_List)}	\>					\\
+ \> {\tt statistics}		\>					\\
+ \> {\tt statistics(Number)}	\>					\\
+ \> {\tt structure(Term)}	\>					\\
+ \> {\tt tab(Count)}		\>					\\
+ \> {\tt table\_copy(Old, New)}	\>					\\
+ \> {\tt table\_prop(Pred, Type, Value)} \>				\\
+ \> {\tt table\_prop(Pred, Type, OldValue, NewValue)} \>		\\
+ \> {\tt table\_state(Call, State)} \>					\\
+ \> {\tt tell(File)}		\>					\\
+ \> {\tt telling(File)}		\>					\\
+ \> {\tt tfindall(Elem, Goal, List)} \>					\\
+ \> {\tt tnot(Goal)}		\>					\\
+ \> {\tt told}			\>					\\
+ \> {\tt true}			\>					\\
+ \> {\tt trace}			\>					\\
+ \> {\tt ttywrite(Term)}	\> Same as {\tt write} but always writes to \\
+ \>				\> the standard output.			\\
+ \> {\tt ttywritenl(Terms)}	\>
+		{\tt Terms} can be a comma list of terms. The predicate	\\
+ \>	\>	calls {\tt ttywrite/1} to print all the terms in the list \\
+ \>	\>	and then prints a new line symbol at the end.		\\
+ \> {\tt unix(Command)}		\>					\\
+ \> {\tt unix(Command, Result)}	\>					\\
+ \> {\tt var(Term)}		\>					\\
+ \> {\tt write(Term)}		\>					\\
+ \> {\tt writeln(Term)}		\>					\\
+ \> {\tt write\_prolog(Term)}	\>					\\
+ \> {\tt writeq(Term)}		\>					\\
+ \> {\tt write\_canonical(Term)} \>					\\
+ \> {\tt xsb\_configuration(Feature, Value)} \>				\\
+ \> {\tt xsb\_flag(Flag, Value)} \>					\\
+ \> {\tt $\backslash$+ Query}	\>					\\
+ \> {\tt !}			\>					\\
+ \> {\tt X =:= Y}		\>					\\
+ \> {\tt X =$\backslash$= Y}	\>					\\
+ \> {\tt X $<$ Y}		\>					\\
+ \> {\tt X $>$ Y}		\>					\\
+ \> {\tt X =$<$ Y}		\>					\\
+ \> {\tt X $>$= Y}		\>					\\
+ \> {\tt X = Y}			\>					\\
+ \> {\tt Term =.. List}		\>					\\
+ \> {\tt Term \verb'^'=.. List}	\>					\\
+ \> {\tt X == Y}		\>					\\
+ \> {\tt X $\backslash$== Y}	\>					\\
+ \> {\tt X @$<$ Y}		\>					\\
+ \> {\tt X @$>$ Y}		\>					\\
+ \> {\tt X @=$<$ Y}		\>					\\
+ \> {\tt X @$>$= Y}		\>					\\
+ \> {\tt [X$|$Y]}		\>					\\
+ \> {\tt X ; Y}			\>					\\
+ \> {\tt X , Y}			\>					\\
+ \> {\tt X -$>$ Y}		\>					\\
+ \> {\tt X \verb'^' Goal}	\>					\\
+\end{tabbing}
+
+
+
+\section{List of Standard Functions}
+%===================================
+
+\begin{tabbing}
+12 \= 12345678901234567890123456789012 \=	\kill
+ \> {\tt X + Y}			\>					\\
+ \> {\tt X - Y}			\>					\\
+ \> {\tt X * Y}			\>					\\
+ \> {\tt X / Y}			\>					\\
+ \> {\tt X // Y}		\> integer division			\\
+ \> {\tt X mod Y}		\>					\\
+ \> {\tt -X}			\>					\\
+ \> {\tt X $\backslash$/ Y}	\> bitwise OR				\\
+ \> {\tt X /$\backslash$ Y}	\> bitwise AND				\\
+ \> {\tt $\backslash$ X }	\> bitwise negate			\\
+ \> {\tt X $>>$ Y}		\> logical shift right			\\
+ \> {\tt X $<<$ Y}		\> logical shift left			\\
+ \> {\tt sin(X)}		\>					\\
+ \> {\tt cos(X)}		\>					\\
+ \> {\tt tan(X)}		\>					\\
+ \> {\tt float(X)}		\>					\\
+ \> {\tt floor(X)}		\>					\\
+ \> {\tt exp(X)}		\>					\\
+ \> {\tt log(X)}		\> logarithm with base $e$		\\
+ \> {\tt log10(X)}		\> logarithm with base 10		\\
+ \> {\tt sqrt(X)}		\>					\\
+ \> {\tt asin(X)}		\>					\\
+ \> {\tt acos(X)}		\>					\\
+ \> {\tt atan(X)}		\>					\\
+\end{tabbing}
+
+
+\section{List of Standard Operators} \label{operator_list}
+%=========================================================
+The following operators are provided with the \ourprolog\ system:
+\begin{tabbing}
+12 \= 123456789 \= 1234567 \= 12345678901234567 \=	\kill
+ \> {\tt op(1200,} \> \verb|xfx, [ | \> {\tt :-, --> ])}\>		\\
+ \> {\tt op(1200,} \> \verb| fx, [ | \> {\tt :-, ?- ])}	\>		\\
+ \> {\tt op(1198,} \> \verb|xfx, [ | \> {\tt ::- ])}	\>		\\
+ \> {\tt op(1150,} \> \verb|xfx, [ | \> {\tt hilog, dynamic, multifile ])} \> \\
+ \> {\tt op(1100,} \> \verb| fy, [ | \> {\tt index, ti, ti\_off ])}	\> \\
+ \> {\tt op(1100,} \> \verb| fx, [ | \> {\tt ;, table, edb, mode, export,
+						local, parallel ])} \> \\
+ \> {\tt op(1100,} \> \verb|xfx, [ | \> {\tt using ])}	\>		\\
+ \> {\tt op(1050,} \> \verb| fy, [ | \> {\tt import ])}	\>		\\
+ \> {\tt op(1050,} \> \verb|xfx, [ | \> {\tt from ])}	\>		\\
+ \> {\tt op(1050,} \> \verb|xfy, [ | \> {\tt -> ])}	\>		\\
+ \> {\tt op(1000,} \> \verb|xfy, [ | \> {\tt ',' ])}	\>		\\
+ \> {\tt op( 900,} \> \verb| fy, [ | \> {\verb|not, \+, spy, nospy ])|}  \> \\
+ \> {\tt op( 700,} \> \verb|xfx, [ | \> {\verb|=, \=, ==, \==, @<, @=<, @>, @=>,|} \>	\\
+ \>		   \>		     \> {\verb|=.., ^=.., is, =:=, =\=, <, =<, >, >= ])|}	\> \\
+ \> {\tt op( 661,} \> \verb|xfy, [ | \> {\tt '.' ])}	\>		\\
+ \> {\tt op( 600,} \> \verb|xfy, [ | \> {\verb|: ])|}	\>		\\
+ \> {\tt op( 500,} \> \verb|yfx, [ | \> {\verb|+, -, /\, \/ ])|}	\> \\
+ \> {\tt op( 500,} \> \verb| fx, [ | \> {\verb|+, - ])|}		\> \\
+ \> {\tt op( 400,} \> \verb|yfx, [ | \> {\verb|*, /, //, mod, <<, >>, \ ])|} \>	\\
+ \> {\tt op( 200,} \> \verb|xfy, [ | \> {\verb|^ ]|)}	\>	\\
+\end{tabbing}
+while the following is the list of operators in the Prolog draft standard
+that are {\em not} provided:
+\begin{tabbing}
+12 \= 12345678901234567890123456789012 \=	\kill
+ \> {\tt op(1150, \ fx, [ discontiguous ])}	\>		\\
+ \> {\tt op( 400,  yfx, [ rem ])}	\>	\\
+ \> {\tt op( 200,  xfx, [ ** ])}	\>	\\
+\end{tabbing}
+
+

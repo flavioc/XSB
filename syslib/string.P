@@ -1,0 +1,126 @@
+/* File:      string.P
+** Author(s): Kostis Sagonas, Jiyang Xu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%  str_fromlist(-Atom, +List)
+%  Given a list of integers representing characters returns the 
+%  corresponding atom. This is more like atom_chars/2 that works
+%  only in the opposite direction.
+
+str_fromlist(String, List) :-
+	str_fl_check(List, Length),
+	buff_alloc(Length, Buff, 1),	% changed to permanent -- RFM 9/98
+	str_fl_put(Buff, 0, List),
+	str_insert(Buff, String),
+	buff_dealloc(Buff,Length,0,1).
+
+str_fl_check([], 1).
+str_fl_check([_H|T], N) :- 
+/* The following check (enhanced) is now ensured by name/2
+	integer(H),	 */
+	str_fl_check(T,M), N is M + 1.
+
+:- index str_fl_put/3-3.
+
+str_fl_put(Buff, N, []) :- buff_set_byte(Buff, N, 0).  % ending \0
+str_fl_put(Buff, N, [A|T]) :-
+	buff_set_byte(Buff, N, A),
+	N1 is N + 1,
+	str_fl_put(Buff, N1, T).
+
+str_tolist(Buff, List) :- str_tolist(Buff, 0, List).
+
+str_tolist(Buff, N, List) :-
+	buff_byte(Buff, N, Char),
+	( Char =:= 0 -> List = []
+	; List = [Char|Rest],
+	  N1 is N + 1,
+	  str_tolist(Buff, N1, Rest)
+	).
+
+% This could be made more efficient.  Quadratic.
+concat_atom([],'').
+concat_atom([H],H):-!.
+concat_atom([H1,H2|T],Out):-
+	atom(H1),atom(H2),
+	str_cat(H1,H2,Mid),	
+	concat_atom_1(T,Mid,Out).
+
+concat_atom_1([],Out,Out).
+concat_atom_1([Atom|T],In,Out):-
+	atom(Atom),
+	str_cat(In,Atom,Mid),
+	concat_atom_1(T,Mid,Out).
+
+concat_atom([],_Sep,'').
+concat_atom([H],_Sep,H):-!.
+concat_atom([H|T],Sep,Out):-
+	concat_atom_1(T,Sep,H,Out).
+
+concat_atom_1([H],Sep,Mid,Out):-!,
+	atom(H),
+	str_cat(Mid,Sep,Mid1),
+	str_cat(Mid1,H,Out).
+concat_atom_1([Atom|T],Sep,In,Out):-
+	atom(Atom),
+	str_cat(In,Sep,Mid1),
+	str_cat(Mid1,Atom,Mid),
+	concat_atom_1(T,Sep,Mid,Out).
+
+str_length(Str, Len) :- ( atom(Str) -> str_len(Str, L), Len = L ).
+
+str_cat(S1, S2, S3) :- ( atom(S1), atom(S2) -> str_cat(S1,S2,S), S = S3 ).
+str_sub(S1, S2, Pos) :- ( atom(S1), atom(S2), var(Pos) -> str_sub(S1,S2,Pos) ).
+str_sub(S1,S2) :- str_sub(S1,S2,Pos).
+
+
+%% Extract substring of Len at Loc from String. Result -> SubString
+str_substring(String, Loc, Len, SubString) :-
+	BufSize is Len+1,
+	buff_alloc(BufSize, Buff, 1),	     % changed to permanent -- RFM 9/98
+	str_ncopy(String, Loc, Buff, 0, Len),
+	buff_set_byte(Buff, Len, 0),		% trailing 0
+	str_insert(Buff, SubString),
+	buff_dealloc( Buff, BufSize, 0, 1 ).
+
+sublist([], L).
+sublist([C|S], [C|L]) :- sublist(S,L).
+sublist(S, [D|L]) :- sublist(S,L).
+
+str_ncopy(_, _, _, _, 0).
+str_ncopy(Source, SDisp, Dest, DDisp, Len) :- Len > 0,
+	buff_byte(Source, SDisp, Char),
+	buff_set_byte(Dest, DDisp, Char),
+	SDisp1 is SDisp + 1,
+	DDisp1 is DDisp + 1,
+	Len1 is Len-1,
+	str_ncopy(Source, SDisp1, Dest, DDisp1, Len1).
+
+
+%Calls to get around the moronic module system.
+%substring(X,Y,Z):- c_substring(X,Y,Z).
+%min_ed_dis(X,Y,Z):- c_min_ed_dis(X,Y,Z).
+
+/* ---------------------- end of file string.P ------------------------ */

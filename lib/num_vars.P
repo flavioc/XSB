@@ -1,0 +1,61 @@
+/* File:      numbervars.P
+** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%   numbervars(+Term, +FirstN, ?LastN) 
+%   Each variable in the HiLog Term is instantiated to a term of the form 
+%   '$VAR'(N), where N is an integer starting from FirstN. FirstN is used
+%   as the value of  N  for the first variable in Term (starting from the 
+%   left).  The second distinct variable in  Term  is given a value  of N
+%   satisfying "N is FirstVar + 1";  the third distinct variable gets the 
+%   value FirstVar+2, and so on.  The last variable in Term has the value 
+%   LastVar-1.
+
+numbervars(Y,I,J) :- term_type(Y,T),
+	(T =:= 0
+	 ->	Y='$VAR'(I), J is I+1
+	 ; T =:= 3
+	 ->	Y=[A1|A2],
+	 	numbervars(A1,I,I1), numbervars(A2,I1,J)
+	 ; T =:= 1
+	 ->	term_psc(Y,PSC), psc_arity(PSC,N),
+	 	numbervars(Y,I,J,1,N)
+	 ;	J=I
+	).
+numbervars(Y,I,J,N,A) :-
+	(N > A
+	 ->	J=I
+	 ;	term_arg(Y,N,Arg),
+	 	numbervars(Arg,I,I1),
+	 	N1 is N+1, numbervars(Y,I1,J,N1,A)
+	).
+
+%   numbervars(+Term)
+%   makes a HiLog Term ground by binding variables to subterms $VAR(N) with
+%   integer values of N ranging from 0 up. This predicate was written since
+%   most of the calls to numbervars/3 are of the form: numbervars(Term,0,_)
+ 
+numbervars(Term) :-
+        numbervars(Term, 0, _).
+

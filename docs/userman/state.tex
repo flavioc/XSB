@@ -1,0 +1,701 @@
+\section{Information about the State of the Program} \label{State}
+\index{state of the program} \index{program, state of}
+
+In \ourprolog\ various aspects of the program state --- information about 
+predicates, modules, clauses, and their object files can all be inspected 
+in ways similar to many Prolog systems.  However, because the atom-based 
+module system of \ourprolog\ may associate structures with particular 
+modules, predicates are provided to inspect these elements as well.  
+The following descriptions of {\em state} predicates use the terms 
+{\em predicate indicator}, {\em term indicator} and {\em current module}
+to mean the following:
+\begin{itemize}
+\item By {\em predicate indicator} \index{predicate indicator} we mean a
+      {\em compound term} of the form {\tt M:F/A} or simply {\tt F/A}.
+      When the predicate indicator is fully instantiated, {\tt M} and {\tt F}
+      are atoms representing the {\em module name} and the {\em functor} 
+      of the predicate respectively and {\tt A} is a non negative integer 
+      representing its {\em arity}.
+
+      Example: {\tt usermod:append/3}
+\item By {\em term indicator} \index{term indicator} we mean a predicate or
+      function symbol of arity N followed by a sequence of N variables
+      (enclosed in parentheses if N is greater than zero).  A term indicator
+      may optionally be prefixed by the module name, thus it can be of the
+      form {\tt M:Term}.
+
+      Example: {\tt usermod:append(\_,\_,\_)}
+\item A module {\tt M} becomes a {\em current (i.e. ``known'') module} as
+      soon as it is loaded in the system or when another module that is
+      loaded in the system imports some predicates from module {\tt M}.
+
+      Note that due to the dynamic loading of \ourprolog, a module can be 
+      current even if it has not been loaded, and that some predicates of 
+      that module may not be defined. In fact, a module can be current even
+      if it does not exist.  This situation occurs when a predicate is 
+      improperly imported from a non-existent module.  Despite this, 
+      a module can never lose the property of being {\em current}.
+\end{itemize}
+
+\begin{description}
+
+\ouritem{current\_input(?Stream)}\index{{\tt current\_input/1}}
+    Succeeds iff stream {\tt Stream} is the current input stream, or 
+    procedurally unifies {\tt Stream} with the current input stream.
+    There are no error conditions for this predicate.
+
+\ouritem{current\_output(?Stream)}\index{{\tt current\_output/1}}
+    Succeeds iff stream {\tt Stream} is the current output stream, or 
+    procedurally unifies {\tt Stream} with the current output stream.
+    There are no error conditions for this predicate.
+
+\ouritem{current\_module(?Module)}\index{{\tt current\_module/1}}
+    The standard predicate {\tt current\_module/1} allows the user to check 
+    whether a given module is {\em current} or to generate (through 
+    backtracking) all currently known modules.
+    Succeeds iff {\tt Module} is one of the modules in the database. This
+    includes both user modules and system modules.  
+
+    Note that predicate {\tt current\_module/1} succeeds for a given module 
+    even if that module is not a real module (in the sense taht it does not
+    export any predicates). There are no error conditions associated 
+    with this predicate; if its argument does not unify with one of the 
+    current modules, {\tt current\_module/1} simply fails.
+
+\ouritem{current\_module(?Module, ?ObjectFile)}\index{{\tt current\_module/2}}
+    Predicate {\tt current\_module/2} gives the relationship between the
+    modules and their associated object file names. The file name 
+    {\tt ObjectFile} must be absolute and always ends with {\tt '.O'}.
+
+    It is possible for a current module to have no associated file name 
+    (as is the case for modules like {\tt "usermod"} and {\tt "global"}), 
+    or for the system to be unable to determine the file name of a current
+    module. In both cases, predicate {\tt current\_module/1} will succeed
+    for this module, while {\tt current\_module/2} will fail. The system is
+    unable to determine the file name of a given module if that module is not
+    in one of the directories of the search path (see Section~\ref{LibPath}).
+    Once again, there are no error conditions associated with this predicate;
+    if the arguments of {\tt current\_module/2} are not correct, or 
+    {\tt Module} has no associated {\tt File}, the predicate will simply fail.
+
+\ouritem{current\_atom(?Atom\_Indicator)}\index{{\tt current\_atom/1}}
+    Generates (through backtracking) all currently known atoms, and unifies
+    each in turn with {\tt Atom\_Indicator}. 
+
+%\ouritem{current\_atom(?Atom)}\index{{\tt current\_atom/2}}
+%\predindex{\$current\_atom/2~(B)}
+%    However, atoms considered ``internal'' symbols,
+%    i.e.\ those whose names begin with {\bf \$} or {\bf \_\$} are not returned.
+%    The intrepid user who wishes to access such internal atoms as
+%    well can use the goal
+%    \begin{center}
+%    {\tt ?- \$current\_atom({\tt Atom}, 1).}
+%    \end{center}
+
+\ouritem{current\_functor(?Predicate\_Indicator)}
+\index{{\tt current\_functor/1}}
+    The standard predicate {\tt current\_functor/1} can be used to find all
+    the currently known terms appearing in a particular current module. 
+    It succeeds iff {\tt Predicate\_Indicator} is a predicate 
+    indicator for any term that appears in the database. Note that 
+    this includes terms both in system and in user defined modules, even 
+    terms that may be not yet loaded in the system. The behaviour of
+    {\tt current\_functor/1} may be contrasted with that of
+    {\tt current\_predicate/1}, which reports only those predicates which 
+    have been loaded in the system (both Prolog and foreign predicates) or
+    are dynamic predicates.
+    There are no error conditions associated with this predicate; if its 
+    argument is not a predicate indicator the predicate simply fails.
+
+    Predicate {\tt current\_functor/1} comes in two flavours depending on 
+    the form of its argument ({\tt Predicate\_Indicator}):
+    \begin{enumerate}
+    \item If {\tt Predicate\_Indicator} is of the form 
+	  {\tt Module:Functor/Arity}, then the execution of
+	  {\tt current\_functor/1} will backtrack through all
+	  the current modules of the system (user defined, system
+	  defined and global modules). 
+    \item If, however, {\tt Predicate\_Indicator} is uninstantiated 
+	  or has the form {\tt Functor/Arity}, then predicate 
+	  {\tt current\_functor/1} backtracks only through the terms appearing 
+	  in the global modules of the system (in other words searches only 
+	  modules {\tt "usermod"} and {\tt "global"}). This flavour is only 
+	  for convenience, since this is the common use of predicate 
+	  {\tt current\_functor/1}. Note that all the following are equivalent:
+
+	  \stuff{
+          \>	\>	| ?- current\_functor(Functor/Arity).     \\
+          \>	\>	| ?- current\_functor(Predicate).         \\
+          \>	\>	| ?- current\_functor(usermod:Predicate). \\
+          \>	\>	| ?- current\_functor(global:Predicate).  
+          }
+    \end{enumerate}
+
+    So, to backtrack through all of the functors of positive arity (function
+    and predicate symbols) that appear in the global modules of the system
+    regardless of whether they are system or a user defined, use:
+
+    \stuff{
+    \> \>	| ?- current\_functor(Functor/Arity), Arity > 0.
+    }
+
+\ouritem{current\_functor(?Name, ?Term\_Indicator)}
+\index{{\tt current\_functor/2}}
+    Succeeds iff {\tt Term\_Indicator} is the most general term 
+    corresponding to one of the currently known terms having {\tt Name} 
+    as their functor appearing in a current module.  (Both system and user 
+    defined modules are checked).  Or procedurally, 
+    {\tt current\_functor/2} unifies {\tt Name} with the name of a functor 
+    known to the database, and {\tt Term\_Indicator} with the most 
+    general term corresponding to that functor. The flavours of this predicate 
+    are analogous to the ones of {\tt current\_functor/1} according to 
+    whether {\tt Term\_Indicator} has one of the following two forms:
+    \begin{enumerate}
+    \item{\tt Module:Term.}
+    \item{\tt Term} (for global modules).
+    \end{enumerate}
+    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+    only for global modules.  
+    As in {\tt current\_functor/1} even unloaded predicates are reported
+    (if they have been imported and are are known to the database).
+
+    For example, if a predicate {\tt foo/2} and and a function symbol 
+    {\tt foo/1} are defined into module {\tt blah}, the following query 
+    will return:
+
+    \stuff{
+    \>	\>	| ?- current\_functor(foo, blah:Term).	\\
+    \>  \>						\\
+    \>	\>      Term = foo(\_638788,\_638792);		\\
+    \>  \>						\\
+    \>	\>	Term = foo(\_638788);			\\
+    \>  \>						\\
+    \>	\>	no
+    }
+
+    If a module is specified, {\tt current\_functor/2} succeeds only for
+    those functors (function and predicate symbols) which are defined in 
+    that module. Unless the module is one of the global modules, 
+    {\tt current\_functor/2} fails for the predicates which are imported 
+    into that module.
+
+    On the other hand, the goal:
+
+    \stuff{
+    \>	\>	| ?- current\_functor(Name, Term).
+    }
+
+    can be used to backtrack through every known term {\tt Term} in the global
+    modules of \ourprolog's database that has {\tt Name} as its functor.
+
+    Note that the order of term generation is undetermined. Once again, 
+    there are no error conditions associated with this predicate; if its
+    arguments are inappropriate, the predicate simply fails.
+
+\ouritem{current\_predicate(?Predicate\_Indicator)}
+\index{{\tt current\_predicate/1}}
+    The predicate {\tt current\_predicate/1} can be used to find all
+    the predicates that are defined and loaded in a particular current module. 
+    The module can be either a Prolog or a foreign module (see 
+    Chapter~\ref{foreign}).
+    This predicate succeeds iff {\tt Predicate\_Indicator} is a 
+    predicate indicator for one of the procedures (both Prolog and foreign 
+    language ones) that are loaded in the database or that are dynamic. Note
+    that this includes procedures both in system and in user defined modules. 
+    Unlike {\tt current\_functor/1} which reports all predicates that are
+    somehow known to the database, {\tt current\_predicate/1} reports only
+    those predicates that are either created dynamically (for example using 
+    {\tt assert/1}) or loaded in the system.  (I.e. it excludes those
+    predicates which have been imported, but not loaded).
+    There are no error conditions associated with this predicate; if its 
+    argument is not what it should be, the predicate simply fails.
+
+    Like {\tt current\_functor/1}, predicate {\tt current\_predicate/1}
+    comes in two flavours depending on  the form of its argument 
+    ({\tt Predicate\_Indicator}).
+    \begin{enumerate}
+    \item If {\tt Predicate\_Indicator} has the form 
+	  {\tt Module:Functor/Arity}, then the execution of
+	  {\tt current\_predicate/1} unifies the predicate indicator
+	  with predicates in all current modules (user defined, system
+	  defined and global modules). 
+    \item If, however, {\tt Predicate\_Indicator} is uninstantiated 
+	  or has the form {\tt Functor/Arity}, then {\tt current\_predicate/1} 
+	  backtracks only through the predicates loaded in the global modules 
+	  of the system (in other words searches only modules {\tt "usermod"}
+	  and {\tt "global"}).
+	  Since this is the common use of predicate {\tt current\_predicate/1}, 
+	  this flavour is only for convenience.
+	  Note that all the following are equivalent:
+
+	  \stuff{
+          \>	\>	| ?- current\_predicate(Functor/Arity).     \\
+          \>	\>	| ?- current\_predicate(Predicate).         \\
+          \>	\>	| ?- current\_predicate(usermod:Predicate). \\
+          \>	\>	| ?- current\_predicate(global:Predicate).  
+          }
+    \end{enumerate}
+
+    So, to backtrack through all of the predicates defined and loaded in module 
+    {\tt blah}, regardless of whether {\tt blah} is a system or a user 
+    defined module
+    \footnote{The only limitation is that {\tt blah} must indeed 
+	      be a module in the sense that it exports at least one symbol.}
+    , use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(blah:Predicate).
+    }
+
+    In this case {\tt Predicate} will have the form: {\tt Functor/Arity}.
+
+    To backtrack through all predicates defined and loaded in any current 
+    module, use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(Module:Functor/Arity).
+    }
+
+    This succeeds once for every predicate that is loaded in \ourprolog's 
+    database.
+
+    To find the predicates having arity 3 that are loaded in the global 
+    modules of the system, use: 
+
+    \stuff{
+    \> \>	| ?- current\_predicate(Functor/3).
+    }
+
+    while to find all predicates loaded in the global modules of the system
+    regardless of their arity, use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(Predicate). \\
+    }
+
+
+\ouritem{current\_predicate(?Name, ?Term\_Indicator)}
+\index{{\tt current\_predicate/2}}
+    Succeeds iff {\tt Term\_Indicator} is the most general term 
+    corresponding to one of the predicates having functor {\tt Name} that are 
+    defined and loaded in a particular module in the database. 
+    (The module can be either system or user defined).
+    Or procedurally, {\tt current\_predicate/2}
+    unifies {\tt Name} with the name of a loaded predicate, and 
+    {\tt Term\_Indicator} with the most general term corresponding to that
+    predicate.  The flavours of this predicate are analogous to those of 
+    {\tt current\_predicate/1} and behave according to whether 
+    {\tt Term\_Indicator} has one of the following two forms:
+    \begin{enumerate}
+    \item{\tt Module:Term.}
+    \item{\tt Term} (module is assumed to be global or usermod).
+    \end{enumerate}
+    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+    only for global modules. Like {\tt current\_predicate/1} only 
+    predicates that have a property in the following set:
+    \begin{center}
+    {\tt \{ loaded, dynamic, foreign \} }
+    \end{center}
+    (see {\tt predicate\_property/2} below) are reported.
+
+    For example, if predicates {\tt foo/1} and {\tt foo/3} are defined and
+    loaded into module {\tt blah}, the following query will return:
+
+    \stuff{
+    \>	\>	| ?- current\_predicate(foo, blah:Term).\\
+    \>  \>						\\
+    \>	\>      Term = foo(\_638788,\_638792,\_638796);	\\
+    \>  \>						\\
+    \>	\>	Term = foo(\_638788);			\\
+    \>  \>						\\
+    \>	\>	no
+    }
+
+    If a module is specified, {\tt current\_predicate/2} succeeds only for
+    those predicates which are defined and loaded in that module. Unless 
+    the module is one of the global modules, {\tt current\_predicate/2} fails
+    for those predicates which are imported into that module.
+
+    On the other hand, the goal:
+
+    \stuff{
+    \>	\>	| ?- current\_predicate(Name, Term).
+    }
+
+    can be used to backtrack through every predicate that is loaded in the
+    global modules of \ourprolog's database.
+
+    Note that the order of term generation is undetermined. Once again, 
+    there are no error conditions associated with this predicate; if its
+    argument is not what it should be, the predicate simply fails.
+
+%??? need to define visible.
+\label{PredProp}
+\ouritem{predicate\_property(?Term\_Indicator, ?Property)}
+\index{{\tt predicate\_property/2}}
+    The standard predicate {\tt predicate\_property/2} can be used to find 
+    the properties of any predicate which is visible to a particular module.
+    Succeeds iff {\tt Term\_Indicator} is a term indicator for a current 
+    predicate whose principal functor is a predicate having {\tt Property} 
+    as one of its properties. Or procedurally, {\tt Property} is unified 
+    with the currently known properties of the predicate having 
+    {\tt Term\_Indicator} as its skeletal specification.
+    
+    A brief description of {\tt predicate\_property/2} is as follows:
+    \begin{itemize}
+    \item If {\tt Term\_Indicator} is instantiated, then {\tt Property}
+          is successively unified with the various properties associated 
+          with {\tt Term\_Indicator}.
+    \item If {\tt Property} is bound to a valid predicate property, then
+          {\tt predicate\_property/2} successively unifies 
+          {\tt Term\_Indicator} with the skeletal specifications of all 
+          known to the system predicates having the specified {\tt Property}.
+    \item If {\tt Term\_Indicator} is a variable, then it is unified
+          (successively through backtracking) with the most general term for a
+          predicate whose known properties are unified with {\tt Property}.
+    \item If {\tt Term\_Indicator} is a skeletal specification not a known to 
+          the system, or {\tt Property} is not a valid predicate 
+	  property, the call simply fails.
+    \end{itemize} 
+    For example, all the loaded predicate skeletal specifications in module 
+    {\tt "usermod"} may be enumerated using:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(Pred, loaded).
+    }
+
+    Also the following query finds all predicate skeletal specifications that 
+    are exported by module {\tt blah}:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(blah:Pred, exported).
+    }
+
+    Currently, the following properties are associated with predicates 
+    either implicitly or by declaration (where double lines show property
+    categories, and a predicate can have at most one property of each
+    category).
+
+    \begin{center}
+    \begin{tabular}{||l|l||}               \hline 
+	{\em Property}		& {\em Explanation} \\ \hline \hline
+	{\tt unclassified}	& 
+		The predicate symbol is not yet classified according  \\
+	&	to this category. This property has various meanings. \\ 
+	&	Usually for exported predicate symbols in system or   \\
+	&	user defined modules it means that the predicate is   \\
+	&	yet unloaded (because it has not been used).	      \\
+	&	In global modules it usually means that the predicate \\
+	&	is either a function symbol, or an unloaded predicate \\
+	&	symbol (including constants). \\ \hline
+	{\tt dynamic}	& 
+		The predicate is dynamic. \\ \hline
+	{\tt loaded}		& 
+		The predicate (including internal predicates) is a \\ 
+	&	Prolog predicate loaded into the module in question; \\
+	&	this is always the case for predicates in global modules.\\ 
+		\hline
+	{\tt unloaded}		& 
+		The predicate is yet unloaded into the module \\
+	&	in question.\\ \hline
+	{\tt foreign}	& 
+		The predicate is a foreign predicate. This implies that  \\ 
+	&	the predicate is already loaded in the system, because	 \\
+	&	currently there is no way for \ourprolog\ to know that a \\
+	&	predicate is a foreign predicate until it is loaded in	 \\
+	&	the system.\\ \hline
+%	{\tt function}	& 
+%		The predicate symbol is declared as a function. \\ \hline
+	\hline
+	{\tt exported}	&
+		The predicate symbol is exported by the module in \\ 
+	&	question; in other words the predicate symbol is \\
+	&	visible to any other module in the system. \\ \hline
+	{\tt local}	& 
+		The predicate symbol is local to the module \\
+	&	in question. \\ \hline
+	{\tt imported\_from(Mod)}	& 
+		The predicate symbol is imported into the module in \\
+	&	question from module {\tt Mod}. \\ \hline
+	\hline
+	{\tt spied}		&
+		The predicate symbol has been declared spied \\
+	&	(either conditionally or unconditionally). \\ \hline
+	\hline
+	{\tt tabled}	& 
+		The predicate has been declared tabled. \\ \hline
+	\hline
+	{\tt built\_in}	& 
+		The predicate symbol has the same Functor and Arity \\
+	&	as one of \ourprolog's builtin (standard) predicates. \\ \hline
+    \end{tabular}
+    \end{center}
+
+    Finally, since {\tt dynamic} is usually declared as an operator with 
+    precedence greater than 999, writing the following:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(X, dynamic).
+    }
+
+    will cause a syntax error. The way to achieve the desired result is to
+    parenthesize the operator like in:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(X, (dynamic)).
+    }
+
+
+\ouritem{module\_property(?Module, ?Property)}\index{{\tt module\_property/2}}
+    The standard predicate {\tt module\_property/2} can be used to find the
+    properties of any current module.
+    Succeeds iff {\tt Module} is the name of a current module having 
+    {\tt Property} as one of its properties. Or procedurally, {\tt Property}
+    is unified with the currently known properties of the module having 
+    {\tt Module} as its name.
+
+    Currently, the following properties are associated with modules 
+    implicitly 
+
+    \begin{center}
+    \begin{tabular}{||l|l||}               \hline 
+	{\em Property}		& {\em Explanation} \\ \hline \hline
+	{\tt unloaded}		& 
+		The module (including system modules) though it is \\
+	&	current, is yet unloaded in the system. \\ \hline
+	{\tt loaded}		& 
+		The module (including system modules) is loaded in the \\
+	&	system; this is always the case for global modules.\\ \hline
+    \end{tabular}
+    \end{center}
+
+\ouritem{listing}\index{{\tt listing/0}}
+    Lists in the current output stream the clauses for all dynamic
+    predicates found in module {\tt usermod}.  Note that {\tt listing/0}
+    does not list any compiled predicates unless they have the
+    {\tt dynamic} property (see {\tt predicate\_property/2}).  A
+    predicate gets the {\tt dynamic} property when it is explicitly
+    declared as {\tt dynamic}, or automatically acquires it when some
+    clauses for that predicate are asserted in the database.  In
+    cases where a predicate was compiled but converted to {\tt dynamic}
+    by asserting additional clauses for that predicate, {\tt listing/0}
+    will just display an indication that there exist compiled clauses
+    for that predicate and only the dynamically created clauses of the
+    predicate will be listed.  For example:
+
+    \stuff{ 
+    \>   \>     | ?- [user]. \\ 
+    \>   \>     [Compiling user] \\
+    \>   \>     a(X) :- b(X). \\
+    \>   \>     a(1). \\
+    \>   \>     [user compiled, cpu time used: 0.3 seconds] \\
+    \>   \>     [user loaded] \\
+    \>   \>     \\
+    \>   \>     yes \\
+    \>   \>     | ?- assert(a(3)). \\
+    \>   \>     \\
+    \>   \>     yes \\
+    \>   \>     | ?- listing. \\
+    \>   \>     \\
+    \>   \>     a(A) :- \\
+    \>   \>  \>    \$compiled. \\
+    \>   \>     a(3). \\
+    \>   \>     \\
+    \>   \>     yes \\
+    }
+
+    Predicate {\tt listing/0} always succeeds.  The query:
+
+    \stuff{
+    \>   \>     | ?- listing.
+    }
+
+    \noindent
+    is just a notational shorthand for the query:
+
+    \stuff{
+    \>   \>     | ?- listing(X).
+    }
+
+\ouritem{listing(+Predicate\_Indicator)}\index{{\tt listing/1}}
+    If {\tt Predicate\_Indicator} is a variable then {\tt listing/1} is
+    equivalent to {\tt listing/0}.
+    If {\tt Predicate\_Indicator} is an atom, then {\tt listing/1} 
+    lists the dynamic clauses for all predicates of that name found in 
+    module {\tt usermod} of the database.
+    The argument {\tt Predicate\_Indicator} can also be a predicate 
+    indicator of the form {\tt Name/Arity} in which case only the 
+    clauses for the specified predicate are listed.
+    Finally, it is possible for {\tt Predicate\_Indicator}
+    to be a list of predicate indicators and/or atoms; e.g.
+
+    \stuff{
+    \>   \>     | ?- listing([foo/2, bar, blah/4]).
+    }
+
+    If {\tt Predicate\_Indicator} is not a variable, an atom or a predicate 
+    indicator (or list of predicate indicators) of the form {\tt Name/Arity}, 
+    predicate {\tt listing/1} will simply fail.
+
+    In future releases of \ourprolog, we intend to allow the user to
+    specify a predicate indicator of the form {\tt Module:Name/Arity} 
+    as argument of {\tt listing/1}.
+
+\ouritem{xsb\_configuration(Feature\_Name, ?Value)}\index{{\tt
+    xsb\_configuration/2}}
+    Succeeds iff the current value of the \ourprolog\ feature {\tt
+    Feature\_Name} is {\tt Value}.
+
+    This predicate provides information on a wide variety of features
+    related to how XSB was built, including the compiler used, the compiler
+    and loader flags, the machine and OS on which XSB was built, the
+    release number, the various directories that XSB uses to find its
+    libraries, etc.
+
+    To find all features and their values, ask the following query:
+
+    \stuff{
+    \>   \>	| ?- xsb\_configuration(FeatureName, Value), fail.
+    }
+
+    Here is how {\tt xsb\_configuration} might look like:
+
+\begin{verbatim}
+    xsb_configuration(architecture, 'i686-pc-linux-gnu').
+    %% configuration is usualy the same as architecture, but it can also
+    %% contain special tags, {\it e.g.}, i686-pc-linux-gnu-dbg, for a verion
+    %% built with debugging enabled.
+    xsb_configuration(configuration, 'i686-pc-linux-gnu-dbg').
+    xsb_configuration(host_os, 'linux-gnu').
+    xsb_configuration(os_version, '2.34').
+    xsb_configuration(os_type, 'linux-gnu').
+    xsb_configuration(host_vendor, 'pc').
+    xsb_configuration(host_cpu,  'i686').
+    xsb_configuration(compiler, 'gcc').
+    xsb_configuration(compiler_flags, '  -ansi -pedantic -Wall -g').
+    xsb_configuration(loader_flags, ' -lm -ldl -Wl,-export-dynamic').
+    xsb_configuration(compile_mode, 'debug').
+    %% The following is XSB release information
+    xsb_configuration(major_version, '1').
+    xsb_configuration(minor_version, '9').
+    xsb_configuration(beta_version, '3').
+    xsb_configuration(version, '1.9-b3').
+    xsb_configuration(codename, 'Code Breaker').
+    xsb_configuration(release_date, date(1998, 10, 17)).
+    %% XSB query evaluation directive
+    xsb_configuration(scheduling_strategy, '(batched)').
+    %% Support for other languages
+    xsb_configuration(perl_support, 'yes').
+    xsb_configuration(perl_archlib, '/usr/lib/perl5/i386-linux/5.00404').
+    xsb_configuration(perl_cc_compiler, 'cc').
+    xsb_configuration(perl_ccflags, '-Dbool=char -DHAS_BOOL -I/usr/local/include').
+    xsb_configuration(perl_libs, '-lnsl -lndbm -lgdbm -ldb -ldl -lm -lc -lposix -lcrypt').
+    xsb_configuration(javac, '/usr/bin/javac').
+    /* Tells where XSB is currently residing; can be moved */
+    xsb_configuration(install_dir, InstallDir) :- ...
+    /* User home directory. Usually HOME. If that is null, then it would
+       be the directory where XSB is currently residing.
+       This is where we expect to find the .xsb directory */
+    xsb_configuration(user_home, Home) :- ...
+    /* Where XSB invocation script is residing */
+    xsb_configuration(scriptdir, ScriptDir) :- ...
+    /* where are cmplib, syslib, lib, packages, etc live */
+    xsb_configuration(cmplibdir, CmplibDir) :- ...
+    xsb_configuration(libdir, LibDir) :- ...
+    xsb_configuration(syslibdir, SyslibDir) :- ...
+    xsb_configuration(packagesdir, PackDir) :-  ...
+    xsb_configuration(etcdir, EtcDir) :- ...
+    /* architecture and configuration specific directories */
+    xsb_configuration(config_dir, ConfigDir) :- ...
+    xsb_configuration(config_libdir, ConfigLibdir) :- ...
+    /* site-specific directories */
+    xsb_configuration(site_dir, '/usr/local/XSB/site').
+    xsb_configuration(site_libdir, SiteLibdir) :- ...
+    /* site and configuration-specific directories */
+    xsb_configuration(site_config_dir, SiteConfigDir) :- ...
+    xsb_configuration(site_config_libdir, SiteConfigLibdir) :- ...
+    /* Where user's arch-specific libraries are found by default. */
+    xsb_configuration(user_config_libdir, UserConfigLibdir) :- ...
+\end{verbatim}
+
+\ouritem{xsb\_flag(?Flag\_Name, ?Value)}\index{{\tt xsb\_flag/2}}
+    Succeeds iff the current value of the \ourprolog\ flag {\tt Flag\_Name} is 
+    {\tt Value}. So, one can enumerate all the flag names which the system
+    currently understands, together with their current values by using the
+    following query:
+
+    \stuff{
+    \>   \>	| ?- xsb\_flag(FlagName, Value), fail.
+    }
+
+    The flag names currently supported are:
+
+    \begin{center}
+    \begin{tabular}{||l|l||}               \hline
+	{\em Flag Name}		& {\em Purpose} \\ \hline \hline
+	{\tt debugging}		& 
+		{\tt "on"} iff debug mode is on; {\tt "off"} otherwise.\\ \hline
+	{\tt tracing}		& 
+		{\tt "on"} iff trace mode is on; {\tt "off"} otherwise.\\ \hline
+	{\tt goal}		& 
+		the goal passed to XSB on command line; `{\tt true.}' if
+                nothing passed.\\ \hline
+    \end{tabular}
+    \end{center}
+    
+    Note that {\tt xsb\_flag} is used only for dynamic XSB settings, {\it
+      i.e.}, settings that might change between sessions or within the same
+    session. For static configuration information, use {\tt
+      xsb\_configuration/2}. \index{{\tt xsb\_configuration/2}} 
+
+\ouritem{hilog\_symbol(?Symbol)}\index{{\tt hilog\_symbol/1}}
+    Succeeds iff {\tt Symbol} has been declared as a HiLog symbol, or 
+    procedurally unifies {\tt Symbol} with one of the currently known 
+    (because of a prior declaration) HiLog symbols. The HiLog symbols
+    are always atoms, but if the argument of {\tt hilog\_symbol},
+    though instantiated, is not an atom the predicate simply fails.
+    So, one can enumerate all the HiLog symbols by using the following
+    query:
+
+    \stuff{
+    \>   \>	| ?- hilog\_symbol(X).
+    }
+
+\ouritem{current\_op(?Precedence, ?Type, ?Name)}\index{{\tt current\_op/3}}
+    This predicate is used to examine the set of operators currently in force.
+    It succeeds when the atom {\tt Name} is currently an operator of type 
+    {\tt Type} and precedence {\tt Precedence}.  None of the arguments of
+    {\tt current\_op/3} need to be instantiated at the time of the call, 
+    but if they are, they must be of the following types:
+    \begin{description}
+    \item[{\tt Precedence}] 
+	it must be an integer in the range from 1 to 1200.
+    \item[{\tt Type}]
+	it must be one of the atoms:
+	\begin{verbatim}
+	        xfx  xfy  yfx  fx  fy  hx  hy  xf  yf
+	\end{verbatim}
+    \item[{\tt Name}]
+	it must be either an atom or a list of atoms.
+    \end{description}
+
+    Exceptions (not yet implemented):
+    \begin{description}
+    \item[{\tt domain\_error}]
+	{\tt Precedence} is not between 1--1200, or {\tt Type} is not one
+	of the listed atoms.
+    \item[{\tt type\_error}]
+	{\tt Name} is not an atom.
+    \end{description}
+
+\ouritem{hilog\_op(?Precedence, ?Type, ?Name)}\index{{\tt hilog\_op/3}}
+    This predicate has exactly the same behaviour as {\tt current\_op/3}
+    with the only difference that {\tt Type} can only have the values
+    {\tt hx} and {\tt hy}.
+\end{description}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

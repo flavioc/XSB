@@ -1,0 +1,116 @@
+/* File:      printresult.P
+** Author(s): Saumya Debray, Terrance Swift, Kostis Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+print_result(_Module) :-
+	option(show_et),
+	show_et, 
+	fail.
+print_result(Module) :-
+	ttywritenl('***** Exported symbols ***************'),
+	get_symtab(Module, SymTab),
+	print_result0(SymTab, ex),
+	fail.
+print_result(Module) :-
+	option(print_local),
+	ttywritenl('***** Local symbols ***************'),
+	get_symtab(Module, SymTab),
+	print_result0(SymTab, (local)),
+	fail.
+print_result(_Module).
+
+print_result0(SymTab, _Domain) :- option(typeinfer), !,
+	print_result1(SymTab, _Env).
+print_result0(SymTab, Domain) :-
+	extract_symlist(Domain, SymList, SymTab),
+	write_symlist(SymList).
+
+write_symlist([]) :- nl.
+write_symlist([Sym|Rest]) :- 
+	sym_name(Sym, N, A),
+	write(N/A), write(' '),
+	write_symlist(Rest).
+	
+print_result1(SymTab, Env) :-
+	sym_scan(Sym, SymTab, RTab),
+	sym_name(Sym, Name, Arity),
+	!,
+	( sym_prop(Env, Sym) ->
+		( sym_prop(type(Type), Sym) ->
+			print_typing(Name, Arity, Type)
+		; ttywritenl(Name/Arity)
+		)
+	; true
+	),
+	print_result1(RTab, Env).
+print_result1(_SymTab, _Env).
+/*======================================================================*/
+/* print_typing(+Name, +Arity, +Type).					*/
+/* print the types of preds which are inferred by the system		*/
+/*======================================================================*/
+print_typing(_P, _A, []) :- !.
+print_typing(P, A, [Typing|Typings]) :- !,
+	freeze(Typing),				% To print in a better looking
+	write('  '), write(P/A), write(' ---  ['),
+	( Typing = arrow(ArgType, ResType) ->
+		write_typing(0, A, ArgType),
+		write(' --> '), write(ResType)
+	; write_typing(0, A, Typing)
+	),
+	write(' ]'), nl,
+	print_typing(P, A, Typings), !.
+print_typing(P, A, arrow(ArgType, ResType)) :- !,
+	freeze(arrow(ArgType, ResType)),	% To print in a better looking
+	write('  '), write(P/A), write(' ---  ['),
+	write_typing(0, A, ArgType), write(' --> '), 
+	write(ResType),
+	write(' ]'), nl, !.
+print_typing(P, A, im(Mod)) :- !,
+	( Mod = system -> true
+	; ttywritenl(('  ', P/A, ' ---     imported from ', Mod))
+	).
+print_typing(P, A, Type) :- ttywritenl(('  ', P/A, ' ---        ', Type)).
+
+write_typing(A, A, _) :- !.
+write_typing(I, A, Typing) :-
+	I1 is I + 1,
+	( I1 > 1 -> write(' X ')
+	; tab(1)
+	),
+	arg(I1, Typing, One),
+	write(One),
+	write_typing(I1, A, Typing).
+
+/*======================================================================*/
+/* show_et								*/
+/*======================================================================*/
+show_et :-
+	ttywritenl('/** Extension Table **/'),
+	recorded(et_key(_), Answer, _),
+	functor(Answer, P, A),
+	ttywritenl((' -- ', P/A, '   ...  ', Answer)),
+	fail.
+show_et :- ttywritenl('/** End Extension Table **/').
+

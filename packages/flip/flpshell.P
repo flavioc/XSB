@@ -1,0 +1,407 @@
+/* File:      flpshell.P
+** Author(s): Bertram Ludaescher
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+:- import append/3, length/2, member/2
+   from basics.
+
+:- import fmt_write_string/3, slash/1,
+	  parse_filename/4, is_absolute_filename/1,
+	  machine_file_exists/1
+   from machine.
+
+%% Where to search for FLIP libraries
+:- import library_directory/1 from usermod.
+
+:- import abort/0, write/1, repeat/0
+   from standard.
+:- import unload_package/1 from packaging.
+
+:- import write_stream/2,display_nl/0,display/1,portray_list/1,
+	  write_matches/1,write_match/1,
+	  write_list/1, write_codelist/1,write_body/1,
+	  depth_bound/2  			
+   from flputils.
+
+:- import read_tokens/1	from flptokens.
+:- import rule/3,object/3,path/3 from flpparser.
+:- import comp/2 from flpcompiler.
+
+:- dynamic switch/1.
+
+:- set(all).	% default: show all solutions
+
+
+shell :-
+	welcome_msg,
+%%	package_configuration(dir(flip), FlipDir),
+%%	slash(Slash),
+%%	fmt_write_string(FlipLib, '%s%slib', f(FlipDir,Slash)),
+%%	assert(library_directory(FlipLib)),
+%%	[flpclosure],
+	shell1.
+
+welcome_msg :- nl,
+      write('FLIP Version '), package_configuration(version(flip), I),
+      write(I), writeln(' loaded.'),
+      writeln('Type ``help.'''' for help. Type ``rundemo(demoName).'''' to run demos in'),
+      slash(Slash),
+      package_configuration(dir(flip), FlipDir),
+      fmt_write_string(DemoDir, '%s%sdemos', f(FlipDir,Slash)),
+      write('       '), writeln(DemoDir).
+
+shell1 :-
+	write('FLIP> ?- '),
+	read_tokens(L),
+	(rule(Parsed_Rule, [atom(' ?-') |L], [])
+	-> comp(Parsed_Rule,[query(Q,Match)]),
+	   print_solutions(Q,Match),nl
+	;  portray_list(['*** Parse ERROR: '|L]),nl,
+	   write_list(L),nl
+	),
+	shell1.
+
+
+%%% conv(+Atom_or_String,-Atom)
+%%%   convert to an atom
+conv([],_) :- 
+	!,fail.
+conv([C|Cs],Name) :- 
+	!,
+	name(Name,[C|Cs]).
+conv(X,X).
+
+parse(File) :- 
+	conv(File,FileN),
+	write('*** FLIP: Compiling to XSB: '),write(FileN), write('.flp'),
+	parse_code(FileN),
+        write('done.').
+
+run(File) :- 
+	conv(File,FileN),
+	write('*** FLIP: Compiling to XSB: '), write(FileN), write('.flp '),
+	cputime(T0),
+	gen_code(FileN),
+	cputime(T1),
+	T is T1-T0,
+	nl, write('*** CPU time used: '),write(T),write(' seconds.'),nl,
+	consult(FileN,[optimize,auto_table,spec_repr]).
+
+load(File) :- 
+	conv(File,FileN),
+	consult(FileN,[optimize,auto_table,spec_repr]).
+
+
+%%% parse_code(+File): parse code for File
+parse_code(InFile) :-
+	flip_search_module(InFile, Module),
+	name(Module,InFileL),
+	open_input(InFileL),
+	open_output(InFileL),
+	parse_all,
+	close_output,
+	close_input.
+
+parse_all :-
+	read_tokens(L),
+	((L = [atom(end_of_file)] 
+	 ; L = [identifier(end_of_file)]
+	 )
+	-> true
+	;  parse_and_write(L),
+	   parse_all
+	).
+
+parse_and_write(L) :-
+	(rule(Parsed_Rule, L, [])
+	-> write('%%% '),
+	   portray_list(L), write('.'), nl,
+	   write(Parsed_Rule),write('.'),nl,nl
+	;  close_output,close_input,
+	   nl,portray_list(['*** Parse ERROR: '|L]),
+	   nl,write_list(L),
+	   fail
+	).
+
+%%% gen_code(+InFile): generate code for InFile
+gen_code(InFile) :-
+	flip_search_module(InFile, Module),
+	name(Module,InFileL),
+	open_input(InFileL),
+	open_output(InFileL),
+	package_configuration(dir(flip), FlipDir),
+	slash(Slash),
+	fmt_write_string(Header,
+			 '%s%slib%sflpheader.P', f(FlipDir,Slash,Slash)),
+	copy_to_output(Header),
+	comp_all,
+	fmt_write_string(Trailer,
+			 '%s%slib%sflptrailer.P', f(FlipDir,Slash,Slash)),
+	copy_to_output(Trailer),
+	close_output,
+	close_input.
+
+comp_all :-
+	read_tokens(L),
+	((L = [atom(end_of_file)] 
+	 ; L = [identifier(end_of_file)]
+	 )
+	-> true
+	 ; comp_and_write(L),
+	   comp_all
+	).
+
+comp_and_write(L) :-
+	(rule(Parsed_Rule, L, [])
+	-> comp(Parsed_Rule,Flat_Rules),
+	   write('%%% '),
+	   portray_list(L), write('.'), nl,
+	   write_codelist(Flat_Rules),nl 
+	   , display('.')
+	;  close_output,close_input,
+	   nl, portray_list(['*** Parse ERROR: '|L]),
+	   nl,write_list(L),
+	   fail
+	).
+
+
+open_output(InFileL):-
+	append(InFileL,".P",OutFileL),
+	name(OutFile,OutFileL),
+	tell(OutFile).
+close_output :-	told.
+
+open_input(InFileL) :-
+	append(InFileL,".flp",InFileL1),
+	name(InFile1,InFileL1),
+	(file_exists(InFile1)
+	-> see(InFile1)
+	;  nl,write('*** Warning: Could not open '),write(InFile1),nl,
+	   fail
+	).
+close_input :-	seen.
+
+copy_to_output(File) :-
+	seeing(In),
+	see(File),
+	repeat,
+		get0(C),
+		(C= -1 -> true ;  put(C)),
+		C = -1,		% end_of_file
+	!,
+	seen,
+	see(In).
+
+
+%%% interface to underlying Prolog:
+call_(X) :- call_direct(X).
+
+run_ :- run.
+run_(X) :- run(X).
+
+parse_(X) :- parse(X).
+
+load_(X) :- load(X).
+
+all_ :- set(all).
+
+one_ :- del(all).
+
+end_ :- unload_package(flip), abort.
+
+help_:-	nl,
+	writeln('available commands:'),
+	writeln('  help		 :	show this info'),
+	writeln('  parse(FILE)	 :	parse "FILE.flp"; create "FILE.P"'),
+	writeln('  run(FILE)	 :	compile "FILE.flp"; execute "FILE.P"'),
+	writeln('  rundemo(FILE) :	run a demo from FLIP demos directory'),
+	writeln('  load(FILE)	:	load and execute "FILE.O"'),
+	writeln('  all		:	show all solutions (default)'),
+	writeln('  one		:	show solutions one after another'),
+	writeln('  end		:	say CIAO to FLIP'),
+	writeln('  call(GOAL)	:	call underlying XSB system').
+
+%%% call_direct(+Goal);  convert if Goal is a string
+call_direct([]) :- !.
+call_direct([X|Xs]) :-
+	!,
+	name(Goal,[X|Xs]),
+	check1(Goal),
+	call(Goal).
+call_direct(Goal) :-
+	check1(Goal).
+
+print_solutions(Gs,Match) :-
+	(switch(all) 
+	-> print_all(Gs,Match)
+	;  print_one(Gs,Match)
+	).
+
+%%% print_all(+Goal_list,+Match_list)
+print_all(Gs,Match) :-
+	cputime(T0),
+	(check_conj(Gs)
+	-> findall(Match,prove_conj(Gs,Match),L),
+	   cputime(T1), T is T1-T0,
+	   sort(L,L1),
+	   nl, write_matches(L1), 
+	   length(L1,N),
+	   ( N=0 -> write('no! ') ; write('yes! ') ), 
+	   write(N)
+	;  cputime(T1), T is T1-T0,
+	   nl, write('no! 0')
+	),
+	write(' solutions in '),
+	write(T), write(' sec. on '), unix(hostname).
+
+%%% print_one(+Goal_list,+Match_list)
+print_one(Gs,Match) :-
+	nl,
+	(check_conj(Gs)
+	-> (ground(Gs)
+	   -> (prove_conj(Gs,Match)
+	      -> write_match(Match),
+	      nl,write(yes)
+	      ;  nl,write(no)
+	      )
+	   ;  (prove_conj(Gs,Match),
+	       write_match(Match),
+	       fail_unless_return
+	      ;
+		  nl,write(no)
+	      )
+	   )
+	; nl,write(no)
+	).
+
+fail_unless_return :- 
+	get0(C),
+	(C = 10
+	-> true
+	; get0(_)	% ignore RETURN
+	),
+	C=10,
+	nl,write(yes).
+
+
+check_conj([]) :-!.
+check_conj([G|Gs]) :-
+	check1(G),
+	check_conj(Gs).
+
+check1(G) :-
+	functor(G,F,N),
+	(  current_predicate(F/N) -> true
+	;  display_nl,
+	   display('*** Warning: '),
+	   display(F/N),
+	   display(' undefined'),
+	   !,
+	   fail
+	).
+
+prove_conj([],_).
+prove_conj([G|Gs],Match) :-
+	call(G),
+	prove_conj(Gs,Match).
+
+
+%%% ground(+Term)
+%%%   True if Term is ground, that is, it contains no
+%%%   uninstantiated variables.
+
+ground(Term) :-
+	nonvar(Term),
+	functor(Term, _, N),
+	ground(N, Term).
+ 
+ground(0, _) :-
+	!.
+
+ground(N, Term) :-
+	arg(N, Term, Arg),
+	ground(Arg),
+	M is N-1, !,
+	ground(M, Term).
+ 
+%%% switch management
+
+toggle(S) :-
+	(switch(S)
+	-> retractall(switch(S))
+	;  asserta(switch(S))
+	).
+set(S) :-
+	(switch(S)
+	-> true
+	;  asserta(switch(S))
+	).
+del(S) :-
+	(retractall(switch(S))).
+
+
+%%% Hack for displaying messages via 
+%%%	FLIP ?- call(myprint("BLA bla")): 
+myprint(Cs) :- name(N,Cs), write(N).	
+
+:- shell.
+
+%:-spy(id_term).
+%:-spy(rule).
+%:-spy(read_tokens).
+
+rundemo_(X) :- 
+	package_configuration(dir(flip), FlipDir),
+	slash(Slash),
+	fmt_write_string(DemoDir, '%s%sdemos', f(FlipDir, Slash)),
+	(library_directory(DemoDir) -> true
+		; assert(library_directory(DemoDir))
+	),
+	run(X),
+	retract(library_directory(DemoDir)).
+
+%%rundemo_(X) :- rundemo(X).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Find module in XSB library.
+%% If `In' filename is absolute, then use it.
+%% Otherwise, search library_directory.
+
+%% Don't let it backtrack, or else it will be called again in
+%% gen_code or parse_code! 
+flip_search_module(In, In) :- is_absolute_filename(In),!.
+flip_search_module(In, Out) :- 
+	library_directory(Lib),
+	slash(Slash),
+	parse_filename(In, InDir, InBase, _),
+	(InDir == '' ->  Fmt = '%s%s%s', Term = f(Lib,Slash,InBase)
+		 ; Fmt = '%s%s%s%s%s', Term = f(Lib,Slash,InDir,Slash,InBase)
+	 ),
+	fmt_write_string(Out, Fmt, Term),
+	str_cat(Out,'.flp', FullOut),
+	%% Don't let it backtrack, if a module is found. Otherwise, it will
+	%% be called again in gen_code or parse_code!
+	machine_file_exists(FullOut), !.
+flip_search_module(In,In).

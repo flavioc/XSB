@@ -1,0 +1,238 @@
+## File:      topMakefile.in
+## Author(s): kifer
+## Contact:   xsb-contact@cs.sunysb.edu
+## 
+## Copyright (C) The Research Foundation of SUNY, 1998
+## 
+## XSB is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Library General Public License as published by the Free
+## Software Foundation; either version 2 of the License, or (at your option)
+## any later version.
+## 
+## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+## more details.
+## 
+## You should have received a copy of the GNU Library General Public License
+## along with XSB; if not, write to the Free Software Foundation,
+## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+## $Id$
+## 
+##
+
+###############################################################################
+#  This is a top-level distribution Makefile for XSB.
+#  The `configure' script uses this file as a template for creating Makefile
+#
+# make all	to compile and build XSB.
+# make install	to install it.
+#
+# make clean
+#      Delete all files from the distribution that are normally
+#      created by building XSB, but preserve the files that 
+#      record the configuration.
+#
+# make configclean
+#	Delete architecture-specific files for the current architecture.
+#
+# make distclean
+#      Delete all files from the current directory that are created by
+#      configuring or building XSB.
+# 
+###############################################################################
+
+
+SHELL = /bin/sh
+
+# If Make doesn't predefine MAKE, set it here.
+@SET_MAKE@
+
+# ==================== Things `configure' Might Edit ====================
+
+CC=@CC@
+CPP=@CPP@
+LDFLAGS=@LDFLAGS@
+CPPFLAGS=@CPPFLAGS@
+
+### These help us choose version- and architecture-specific directories
+### to install files in. Not used for now.
+xsb_version=@xsb_version@
+
+### This should be the name of the configuration we're building XSB
+### for, like `sparc-sun-sunos'.
+configuration=@canonical@
+config_tag=@config_tag@
+
+# ==================== Where To Install XSB ====================
+
+# Everything is placed in subdirectories of this directory.  
+# The values for many of the variables below are expressed 
+# in terms of this one, so you do not need to change them.
+prefix=@prefix@
+
+srcdir=@topdir@
+VPATH=$(srcdir)
+
+# where XSB lib directory lives
+install_libdir=$(prefix)/lib
+# where XSB syslib directory lives
+install_syslibdir=$(prefix)/syslib
+# where XSB cmplib directory lives
+install_cmplibdir=$(prefix)/cmplib
+# where packages are installed
+install_pkgdir=$(prefix)/packages
+# where etc are installed
+install_etcdir=$(prefix)/etc
+# where .h files will be copied
+install_emudir=$(prefix)/emu
+
+
+# Like `prefix', but used for architecture-specific files.
+src_config_prefix=@arch_config_prefix@
+install_config_prefix=@arch_install_config_prefix@
+
+src_emudir=$(srcdir)/emu
+
+# where source lib directory lives
+src_libdir=$(srcdir)/lib
+# where source syslib directory lives
+src_syslibdir=$(srcdir)/syslib
+# where source cmplib directory lives
+src_cmplibdir=$(srcdir)/cmplib
+src_pkgdir=$(srcdir)/packages
+src_etcdir=$(srcdir)/etc
+
+src_config_libdir=$(src_config_prefix)/lib
+
+# Where to install XSB binaries
+install_bindir=$(install_config_prefix)/bin
+# where arch-dependent XSB .{P,H,O} files go
+install_config_libdir=$(install_config_prefix)/lib
+# where the scripts go
+install_scriptdir=$(prefix)/bin
+
+# where the object code goes
+src_config_objlibdir=$(src_config_prefix)/saved.o
+src_bindir=$(src_config_prefix)/bin
+src_scriptdir=$(srcdir)/bin
+
+EXECUTABLE=$(src_bindir)/xsb
+
+# If building with Oracle, `configure' will set this to xsbora target.
+# Otherwise, it'll be the emu target. The right target is dispatched 
+# out of the `all' target.
+emumake_goal=@emumake_goal@
+
+
+# Allow the user to specify the install program.
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+
+
+# What XSB should be called when installed.
+XSB = xsb
+
+
+all: prepare emu run_xsb register emu_clean 
+
+devel: prepare emu run_xsb emu_clean
+
+prepare:
+	@cd $(src_emudir); \
+	  rm -f *.o Makefile \
+	    configs/config.h debugs/debug.h  2> /dev/null || echo "" ; \
+	  ln ${src_config_prefix}/config.h configs ; \
+	  ln ${src_config_prefix}/debug.h debugs ; \
+	  ln ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
+	  ln ${src_config_prefix}/emuMakefile ./Makefile 
+
+emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
+	cd ${src_emudir}; \
+	    make depend; \
+	    make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) \
+		| tee -a ../build/Installation_summary
+
+emu_clean:
+	@cd $(src_emudir); \
+	  rm -f *.o 2> /dev/null || echo "" ; \
+	  rm -f Makefile Makefile.bak  2> /dev/null || echo ""
+	@cp ./Installation_summary $(src_config_prefix)
+	@echo "" ; \
+	    echo "Now you can run XSB using the shell script:" ; \
+	    echo "       $(src_scriptdir)/xsb${config_tag}" ; \
+	    echo ""
+
+register:
+	@register.sh
+
+
+install:: copy_files
+
+copy_files::
+	@( test "${prefix}" = "${srcdir}" && \
+	  echo "Installation dir = source dir: nothing to install" ) || \
+	  ( echo "Installing XSB in ${prefix} ..." ; \
+	    echo "Copying executables..." ; \
+	    ${INSTALL} ${src_bindir}/* ${install_bindir}  ; \
+	    ${INSTALL} ${src_scriptdir}/xsb${config_tag} \
+				${install_scriptdir}/xsb${config_tag}; \
+	    cp -f ${srcdir}/build/config.sub \
+		  ${srcdir}/build/config.guess \
+		  ${prefix}/build; \
+	    chmod 555 ${install_scriptdir}/* ${install_bindir}/* ; \
+	    echo "Copying config..." ; \
+	    cp -f ${src_config_prefix}/configuration.* \
+	          ${install_config_prefix} ; \
+	    chmod 444 ${install_config_prefix}/configuration.* ; \
+	    cp -f ${src_config_libdir}/* \
+	          ${install_config_libdir} 2> /dev/null || echo ""; \
+	    chmod 644 ${install_config_libdir}/* 2> /dev/null || echo ""; \
+	    echo "Copying .h files from emu dir..." ; \
+	    cp -f ${src_emudir}/cinterf.h ${src_emudir}/basictypes.h \
+	          ${install_emudir} ; \
+	    echo "Copying lib..." ; \
+	    cp -f ${src_libdir}/*.O ${install_libdir} ; \
+	    chmod 444 ${install_libdir}/*.O ; \
+	    echo "Copying syslib..." ; \
+	    cp -f ${src_syslibdir}/*.O ${install_syslibdir} ; \
+	    chmod 444 ${install_syslibdir}/*.O ; \
+	    echo "Copying cmplib..." ; \
+	    cp -f ${src_cmplibdir}/*.O ${install_cmplibdir} ; \
+	    chmod 444 ${install_cmplibdir}/*.O ; \
+	    echo "Copying packages..."; \
+	    cp -pfr ${src_pkgdir}/* ${install_pkgdir}; \
+	    echo "Copying etc..."; \
+	    cp -fr ${src_etcdir}/* ${install_etcdir}; \
+	    echo "Installed!" \
+	  )
+
+run_xsb:
+	@rm -f $(src_config_prefix)/configuration.O; \
+	  echo "[perlmatch]. halt." | $(src_scriptdir)/xsb$(config_tag); \
+	  chmod 644  $(src_config_prefix)/configuration.O
+
+# clean for this architecture only
+configclean::
+	rm -rf $(src_config_prefix)/*
+
+# clean out all architectures
+distclean:
+	rm -rf $(srcdir)/config/*
+	rm -f $(srcdir)/bin/*
+	rm -f $(srcdir)/emu/*.o
+
+# clean only the object code for this architecture
+clean:
+	rm -f ${src_config_objlibdir}/*
+	rm -f ${src_emudir}/*.o
+
+# recreate the makefiles
+again: Makefile.in emuMakefile.in config.status ${src_config_prefix}/config.cache
+	./config.status
+
+config.status:
+${src_config_prefix}/config.cache:
+

@@ -1,0 +1,108 @@
+\documentclass[11pt]{article}
+
+%\documentstyle[11pt,epsf]{report}
+\usepackage{epsf,epsfig,subfigure,latexsym}
+
+\pagestyle{headings}
+
+% LaTeX Size Stuff
+%-----------------
+\newcommand{\newsched}{Batched Scheduling}
+\newcommand{\Newsched}{Batched Scheduling}
+\newcommand{\NewSched}{Batched Scheduling}
+\newcommand{\Oldsched}{Single Stack Scheduling}
+\newcommand{\OldSched}{Single Stack Scheduling}
+\newcommand{\oldsched}{Single Stack Scheduling}
+\newcommand{\localsched}{Local Scheduling}
+\newcommand{\Localsched}{Local Scheduling}
+\newcommand{\LocalSched}{Local Scheduling}
+
+\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{10pt}
+\setlength{\headsep}{30pt}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textheight}{8.5in}
+\setlength{\textwidth}{6.5in}
+\setlength{\footskip}{50pt}
+
+% JF: not allowed in Latex2e
+%\setlength{\footheight}{24pt}
+
+\setlength{\parskip}{2mm}               % space between paragraphs
+
+\def\cut{\mbox{\tt '!'/0}}
+\def\not{\mbox{${\tt '\backslash+'/1}$}}
+
+\newtheorem{example}{Example}[section]
+
+\newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
+
+\newcommand{\comment}[1]{}
+\newcommand{\ourprolog}{XSB}
+\newcommand{\smallourprolog}{xsb}
+\newcommand{\version}{Version 1.8}
+\newcommand{\LRD}{LRD-stratified}
+
+\newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
+\newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
+\newcommand{\desce}[1]{\item[{\tt #1}]}
+\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
+\newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
+\newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
+
+\newcommand{\stuff}[1]{
+        \begin{minipage}{4in}
+        {\tt \samepage
+        \begin{tabbing}
+        \hspace{8mm} \= \hspace{6mm} \= \hspace{10mm} \= \hspace{55mm} \= \kill
+        #1 \hfill
+        \end{tabbing}
+        }
+        \end{minipage}
+}
+
+\newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
+
+%------------------------------------------------------------
+\input{predindex.sty}
+\makepredindex
+\makeindex
+%------------------------------------------------------------
+
+\begin{document}
+
+\title{\bf XSB-ODBC Interface \\
+	--- Programmer's Manual}
+
+\author{Lily Dong}
+\date{December 1, 1997}
+\maketitle
+
+\bibliographystyle{plain}
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage	% Just to avoid a silly LaTeX bug with \pagenumbering
+
+\pagenumbering{arabic}
+
+\input{odbc_man.tex}
+
+\begin{thebibliography}{AAAAAAA 99a}
+
+\bibitem[Drax 92]{draxler}
+Christoph Draxler.
+\newblock Prolog to SQL compiler, Version 1.0.
+\newblock {\em Technical Report, CIS Centre for Information and Speech
+          Processing Ludwig-Maximilians-University}, Munich, 1992.
+
+\bibitem[XSB 98]{xsb-manual}
+K. Sagonas, T. Swift, D.S. Warren, J. Freire, P. Rao.
+\newblock The {XSB} Programmer's Manual: Version 1.8.
+\newblock SUNY at Stony Brook, 1998.
+
+\end{thebibliography}
+
+\end{document}
+

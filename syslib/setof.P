@@ -1,0 +1,161 @@
+/* File:      setof.P
+** Author(s): Kostis Sagonas, David S. Warren, Bart Demoen
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
+
+
+/*======================================================================*/
+/* setof(?Template, +Call, ?Set)					*/
+/*======================================================================*/
+
+setof(Template, Generator, Set) :-
+	bagof(Template, Generator, Bag),
+	sort(Bag, Set0),
+	Set=Set0.
+
+tsetof(Template, Generator, Set) :-
+	tbagof(Template, Generator, Bag),
+	sort(Bag, Set0),
+	Set=Set0.
+
+
+/*======================================================================*/
+/* bagof(?Template, +Call, ?Bag)					*/
+/*======================================================================*/
+
+bagof(Template, Generator, Bag) :-
+	excess_vars(Generator, Template, [], VarList), 
+	VarList \== [], !,
+	Key =.. ['$'|VarList],
+	findall(Key-Template, Generator, Bags0),
+	keysort(Bags0, Bags),	% This performs the groupby
+	pick(Bags, Key, Bag).
+bagof(Template, Generator, Bag) :-
+	findall(Template, Generator, Bag),
+	Bag \== [].	% If Bag=[] then bagof/3 and setof/3 should fail.
+
+tbagof(Template, Generator, Bag) :-
+	excess_vars(Generator, Template, [], VarList), 
+	VarList \== [], !,
+	Key =.. ['$'|VarList],
+	clean_existentials(Generator, CleanGen),
+	tfindall(Key-Template, CleanGen, Bags0),
+	keysort(Bags0, Bags),	% This performs the groupby
+	pick(Bags, Key, Bag).
+tbagof(Template, Generator, Bag) :-
+	clean_existentials(Generator, CleanGen),
+	tfindall(Template, CleanGen, Bag),
+	Bag \== [].	% If Bag=[] then tbagof/3 and tsetof/3 should fail.
+
+
+clean_existentials(X,Y) :- var(X), !, Y=X.
+clean_existentials(_^X,Y) :- !, clean_existentials(X,Y).
+clean_existentials(X,X).
+
+pick(Bags,Key,Bag) :-
+   Bags \== [],
+   parade(Bags,Key1,Bag1,Bags1),
+   decide(Key1,Bag1,Bags1,Key,Bag).
+
+parade([K-X|L1],K,[X|B],L) :- !, parade(L1,K,B,L).
+parade(L,_,[],L).
+
+decide(Key,Bag,Bags,Key,Bag) :- (Bags=[], ! ; true).
+decide(_,_,Bags,Key,Bag) :- pick(Bags,Key,Bag).
+
+excess_vars(T,X,L0,L) :- var(T), !,
+   ( no_occurrence(T,X), !, introduce(T,L0,L)
+   ; L = L0 ).
+excess_vars(X^P,Y,L0,L) :- !, excess_vars(P,(X,Y),L0,L).
+excess_vars(setof(X,P,S),Y,L0,L) :- !, excess_vars((P,S),(X,Y),L0,L).
+excess_vars(bagof(X,P,S),Y,L0,L) :- !, excess_vars((P,S),(X,Y),L0,L).
+excess_vars(T,X,L0,L) :- functor(T,_,N), rem_excess_vars(N,T,X,L0,L).
+
+rem_excess_vars(N,T,X,L0,L) :-
+	( N =:= 0 -> L0 = L
+	; arg(N,T,T1), excess_vars(T1,X,L0,L1),
+	  N1 is N-1, rem_excess_vars(N1,T,X,L1,L)
+	).
+
+introduce(X,L,L) :- included(X,L), !.
+introduce(X,L,[X|L]).
+
+included(X,L) :- doesnt_include(L,X), !, fail.
+included(_,_).
+
+doesnt_include([],_).
+doesnt_include([Y|L],X) :- Y \== X, doesnt_include(L,X).
+
+no_occurrence(X,Term) :- contains(Term,X), !, fail.
+no_occurrence(_,_).
+
+contains(T,X) :- 
+	( var(T) -> T == X
+	; functor(T,_,N), upto(N,I), arg(I,T,T1), contains(T1,X)
+	).
+
+upto(N,N) :- N > 0.
+upto(N,I) :- N > 0, N1 is N-1, upto(N1,I).
+
+/* -------------------------------------------------------------------- */
+/*	Sorting now is implemented in C via qsort(). 			*/
+/* -------------------------------------------------------------------- */
+
+sort(List, SortedList) :- sort(List, SortedList).
+
+keysort(List, SortedList) :- keysort(List, SortedList).
+
+/*======================================================================*/
+
+_X^P :- call(P).
+
+/*======================================================================*/
+/* findall(?Template, +Call, ?List)					*/
+/*	The first word in buffer is the size of the buffer; not used	*/
+/*	The second word is the pointer to the argument position where	*/
+/*		the current answer should be be put.			*/
+/*		This location is initialized to [] before writing.	*/
+/*	The third word is a pointer to the next free location in buffer	*/
+/*	The rest of buffer contains the answer (a list)			*/
+/*======================================================================*/
+
+findall(Template,Goal,List) :- findall(Template,Goal,List,[]).
+
+% findall/4
+% by Bart Demoen - Christmas period 1996
+% inspiration from a very old ALP newsletter and some Portuguese people
+% with a twist for the fact that findalls are not strictly nested due to
+% tabling donated to XSB
+
+findall(Template,Goal,List,Tail) :-
+	'$$findall_init'(I,Closed),
+	(
+	  call(Goal), '$$findall_add'(Template,I,Closed), fail
+	;
+	  '$$findall_get_solutions'(L,T,I,Closed), List = L , Tail = T
+	) .
+
+/* ----------------------- end of file setof.P ------------------------ */

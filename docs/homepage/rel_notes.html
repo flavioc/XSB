@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Release Notes of Version 1.8</title>
+  </head>
+
+  <body>
+
+<HR>
+<center> <h1>Release Notes of Version 1.8</h1> </center>
+<HR>
+
+Version 1.8 of XSB, a Prolog-based Logic Programming System, is
+now available.  XSB extends the standard functionality of Prolog to
+include implementations of tabling (through SLG resolution), full
+compilation of HiLog terms, and a more flexible handling of dynamic
+code.  In addition, XSB offers a number of interfaces that make it
+able to call -- or be called by -- other software systems.
+<P>
+The main improvements of Version 1.8 over previous versions are its
+improved Local Evaluation scheduling strategy, the addition of ODBC and
+DLL interfaces, its ability to run on 64-bit architectures and expanded
+libraries -- such as the WFSX preprocessor -- along with general
+improvements for robustness and speed.
+<P>
+
+
+
+<H3><A NAME="SECTION00001000000000000000">Tabled Resolution</A></H3>
+<P>
+Tabled resolution is useful for recursive query computation, allowing
+programs to terminate correctly in many cases where Prolog does not.
+Users interested in Parsing, Program Analysis, Model-checking, Data
+Mining and Diagnosis may benefit from XSB.
+<P>
+XSB's Tabling implementation:
+<UL>
+<LI> Evaluates at the engine level programs with stratified and
+non-stratified negation, and programs with stratified aggregation.
+<LI> Allows full Prolog functionality in tabled code including cuts,
+(subject to weak semantic restrictions), in meta-logical predicates,
+in second-order predicates, etc.
+<LI> Allows for declaration of tabled predicates either automatically
+by the system or manually by the user.  Furthermore, tabling can be
+automatically performed for termination, for efficiency, or for both.
+<LI> Provides standard tabling predicates which can
+be used to program a number of applications in Non-Monotonic reasoning
+and Knowledge representation.
+<LI> Dynamically compiles tables into trie-based SLG-WAM code.
+which is indexed dynamically and for which full memory management is
+provided.
+<LI> Finally, Version 1.8 includes an improved and robust version of
+an alternative tabling strategy called <EM>Local Evaluation</EM> which
+can be extremely efficient for applications such as program analysis.
+</UL>
+
+
+
+
+<H3><A NAME="SECTION00002000000000000000">HiLog Compilation</A></H3>
+<P>
+HiLog supports a type of higher-order programming in which predicate
+symbols can be variable or structured.  This allows unification to be
+performed on the predicate symbols themselves in addition to the
+arguments of the predicates.
+<P>
+XSB's HiLog implementation:
+<UL>
+<LI> Includes compiled HiLog.  Higher-order predicates execute at
+essentially the same speed as compiled first-order predicates.
+<LI> Includes a fully integrated HiLog preprocessor.  HiLog terms can
+be used anywhere in XSB, including the interpreter level.
+<LI> Provides a number of meta-logical standard predicates for HiLog
+terms. 
+</UL>
+
+
+
+
+<H3><A NAME="SECTION00003000000000000000">Indexing of Dynamic Code</A></H3>
+<P>
+XSB contains a variety of features to support in-memory data-oriented
+applications.  Using these features, knowledge bases of up to one
+million clauses can be quickly loaded and efficiently indexed.
+<P>
+<UL>
+<LI> XSB provides a variety of read and assert mechanisms for quickly
+loading dynamic predicates, especially if these predicates are unit
+clauses.
+<LI> 
+Indexes can be created on alternate or joint arguments of dynamic
+code.  Furthermore this indexing can be hash-based, or trie-based if
+it is necessary to perform indexing deep within a term.
+<LI> 
+For static code XSB provides <EM>unification factoring</EM> which extends
+clause indexing by factoring common unifications out of clause heads,
+and can be used to optimize many Prolog programs.
+</UL>
+
+
+
+<H3><A NAME="SECTION00004000000000000000">Interfaces</A></H3>
+<P>
+Supported interfaces for XSB include: 
+<UL>
+<LI> Interfaces to call C functions or to be called by them,
+	under UNIX.
+<LI> An interface to Oracle that
+<UL>
+<LI> efficiently generates SQL code for Prolog queries
+	on-demand, making use of Level 4 of Oracle's ProC.
+<LI> translates Datalog clauses into SQL automatically.
+<LI> makes public all source-code so that the interface can
+	be tuned as needed, or can be ported to other Prologs.
+</UL>
+<LI> A DLL interface so that XSB can be called from within a
+	Windows application.
+<LI> An ODBC interface, to call data stored by other Windows
+	applications.
+</UL>
+<P>
+XSB has been tested on over a dozen hardware and operating system
+platforms under DOS, Microsoft Windows, Windows NT, and various
+versions of 32-bit UNIX.  Version 1.8 has been rewritten to run under
+64-bit architectures and has been tested on 64-bit SGI machines.
+Various versions of XSB have been used to construct large-scale
+commercial systems for the U.S. Customs Service, the U.S. Defense
+Logistics Agency, the National Security Agency, and Medicine Rules,
+Inc.
+<P>
+XSB is available through anonymous ftp from <TT>ftp.cs.sunysb.edu</TT>,
+and via the web from <TT>http://www.cs.sunysb.edu</TT>.
+<P>
+Queries can be directed to <TT>xsb-contact@cs.sunysb.edu</TT>.
+<P>
+
+    <hr>
+    <address>Email:<a
+    href="mailto:xsb-contact@cs.sunysb.edu">xsb-contact@cs.sunysb.edu
+    </a></address>
+
+<!-- Created: Thu May 14 20:16:29 EDT 1998 --> 
+<!-- hhmts start -->
+Last modified: Fri May 15 00:10:01 EDT 1998
+<!-- hhmts end -->
+  </body>
+</html>

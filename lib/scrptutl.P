@@ -1,0 +1,119 @@
+/* File:      scrptutl.P
+** Author(s): Swift 
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- export  
+	   ca/2,ca_null/2,
+	   date/1,
+	   fget_line/3,file_to_list/3,
+	   simple_tokenize/2,
+	   sysin/2.
+
+:- import concat_atom/3 from string.
+:- import close/1, name/2, see/1, get0/1, open/3, atom/1, arg/3, functor/3
+	from standard.
+:- import unix/1 from unix.
+
+% Crude but effective.  Returns stdout of a unix command as a list of
+% tokens.
+sysin(Command,List):-
+	ca([Command,'> /tmp/XSBdir'],Com1),
+	unix(Com1),
+	open('/tmp/XSBdir',read,Str),
+	file_to_list(Str,0,List),
+	close(Str).
+
+file_to_list(_Str,-1,[]):-!.
+file_to_list(Str,_,List):-
+	fget_line(Str,Inlist,Next),
+	(Inlist == [] -> List = [] 
+	  ; List = [Toklist|Rest],	
+   	    simple_tokenize(Inlist,Toklist),
+	    file_to_list(Str,Next,Rest)).
+
+date(date(Y,Mon,D,H,Min,S)):-
+	sysin('date +%Y\ %b\ %d\ %k\ %M\ %S',[[Y,M_in,D,H,Min,S]]),
+	month(M_in,Mon).
+
+month('Jan',0).
+month('Feb',1).
+month('Mar',2).
+month('Apr',3).
+month('May',4).
+month('Jun',5).
+month('Jul',6).
+month('Aug',7).
+month('Sep',8).
+month('Oct',9).
+month('Nov',10).
+month('Dec',11).
+
+% Utilities.
+%aton(Atom,Number):-
+%	name(Atom,L),
+%	number_chars(Number,L).
+
+simple_tokenize([],[]):-!.
+simple_tokenize([32|Rest],Toks):-!,
+	simple_tokenize(Rest,Toks).
+simple_tokenize(List,[Tok|Rest]):-
+	read_const(List,Rlist,Toklist),
+	name(Tok,Toklist),
+	simple_tokenize(Rlist,Rest).
+
+read_const([],[],[]).
+read_const([32|Rest],Rest,[]):-!.
+read_const([H|Rest],Out,[H|T]):-
+	read_const(Rest,Out,T).
+
+ca(In,Out):-
+	ca_1(In,Mid),
+	concat_atom(Mid,' ',Out).
+
+ca_null(In,Out):-
+	ca_1(In,Mid),
+	concat_atom(Mid,'',Out).
+
+ca_1([],[]):-!.
+ca_1([''|T],T1):-!,
+	ca_1(T,T1).
+ca_1([H|T],[H1|T1]):-!,
+	(functor(H,_,1) -> arg(1,H,H1) ;  H1 = H),
+        ca_1(T,T1).
+ca_1('',[]):- !.
+ca_1(H,[H]):- atom(H).
+
+/* Stage 1: tokenize XSB specific */
+fget_line(Str,Inlist,Next):-
+	see(Str),
+	fget_line_1(Inlist,Next),
+	see(user),!.
+
+% -1 vs end_of_file.
+fget_line_1(Inlist,Next):-
+	get0(Char),
+	((Char == 10 ; Char == -1) -> 
+	    Inlist = [],Next = Char
+	 ; Inlist = [Char|Inlist1],fget_line_1(Inlist1,Next)).
+

@@ -1,0 +1,119 @@
+/* File:      flatten.P
+** Author(s): Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+/*======================================================================*/
+/* flatten(+Clause, -FlattenedClause)					*/
+/*	Predicate flatten/2 flattens a clause so that it contains no	*/
+/*	compound terms with a compound term as an argument.  We say	*/
+/*	that clauses of this kind are clauses with 1-level functor	*/
+/*	allowance.							*/
+/*	However, the procedure here is more general, in that it can	*/
+/*	transform clauses to k-level functor allowance form, where	*/
+/*	k >= 0 (when k = 0, 1-level function is still allowed in '='/2).*/
+/*	The only thing that needs to be changed, is the definition of	*/
+/*	the level_allowed/1 predicate.					*/
+/*	Currently, the arguments of is/2 are not flattened due to 	*/
+/*	the special processing of the compiler. If some day functions	*/
+/*	are (re)-implemented, is/2 can then be replaced by =/2, and the	*/
+/*	exception will be no longer needed.				*/
+/*	Note that for compiling, it REQUIRES level_allowed(1).		*/
+/*======================================================================*/
+
+level_allowed(1).
+
+flatten(clause(Args,B0,P), clause(NArgs,B1,P)) :-
+	flt_args(Args, NArgs, B2, B1, 1, 0),
+	flt_body(B0, B2).
+
+
+/*======================================================================*/
+/* flt_body(+Body, -FlattenedBody)					*/
+/*======================================================================*/
+
+flt_body(and(G1,G2), and(G3,G4)) :- 
+	flt_body(G1, G3), flt_body(G2, G4).
+flt_body(or(G1,G2), or(G3,G4)) :-
+	flt_body(G1, G3), flt_body(G2, G4).
+flt_body(if_then_else(TG,G1,G2), if_then_else(FTG,G3,G4)) :- 
+	flt_body(TG,FTG), flt_body(G1, G3), flt_body(G2, G4).
+flt_body(goal(Sym,Args), NewGoal) :- 
+	flt_args(Args, NArgs, goal(Sym,NArgs), NewGoal, 1, 0).
+flt_body(inlinegoal(P,A,Args), NewGoal) :- 
+	( (P = 'is' ; arithrelop(P)), A = 2 -> InIs = 1 ; InIs = 0 ),
+	flt_args(Args, NArgs, inlinegoal(P,A,NArgs), NewGoal, 1, InIs).
+
+
+/*======================================================================*/
+/* flt_arg(+OldArgs, -NewArgs, +OldGoal, -NewGoal, +Level, +InIs)	*/
+/*======================================================================*/
+
+flt_args([], [], OldGoal, OldGoal, _, _InIs).
+flt_args([Arg|Args], [NArg|NArgs], OldGoal, NewGoal, Level, InIs) :- 
+	flt_arg(Arg, NArg, OldGoal, MedGoal, Level, InIs),
+	flt_args(Args, NArgs, MedGoal, NewGoal, Level, InIs).
+
+/*======================================================================*/
+/* flt_arg(+OldArg, -NewArg, +OldGoal, -NewGoal, +Level, +InIs)		*/
+/*									*/
+/*	InIs| Level>allowd   Level<=allowd				*/
+/*	-----------------------------------				*/
+/*	0   |  no flatten   flatten to '='				*/
+/*	1   |  no flatten   flatten to 'is'				*/
+/*									*/
+/*	When function translation is allowed, all functions are		*/
+/*	flattened except in the case when a function occurs within	*/
+/*	is/2 or an arithmetic comparison operator (=:=/2, </2, etc)	*/
+/*	at the allowed level.						*/
+/*======================================================================*/
+
+flt_arg(varocc(Var), varocc(Var), OldGoal, OldGoal, _, _InIs).
+flt_arg(integer(Int), integer(Int), OldGoal, OldGoal, _, _InIs).
+flt_arg(real(Real), real(Real), OldGoal, OldGoal, _, _InIs).
+flt_arg(constant(Sym), constant(Sym), OldGoal, OldGoal, _, _InIs).
+flt_arg(structure(Sym,Args), New, OldGoal, NewGoal, Level, InIs) :-
+	level_allowed(Allowed),
+	NStr = structure(Sym, NArgs),
+	Level1 is Level + 1,
+	flt_args(Args, NArgs, MedGoal, NewGoal, Level1, InIs),
+	( Level =< Allowed, New = NStr, MedGoal = OldGoal
+	; Level > Allowed, gennum(Vid), New = varocc(Vid),
+	  ( InIs =:= 1,
+		MedGoal = and(inlinegoal(is, 2, [New,NStr]), OldGoal)
+	  ; InIs =\= 1, 
+		MedGoal = and(inlinegoal('=', 2, [New,NStr]), OldGoal)
+	  )
+	).
+
+
+/*======================================================================*/
+/* Auxilliary predicates						*/
+/*======================================================================*/
+
+force_flatten_loaded.
+
+
+/* ---------------------- end of file flatten.P ----------------------- */

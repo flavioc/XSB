@@ -1,0 +1,551 @@
+/* File:      parse.P
+** Author(s): Saumya Debray, Kostis Sagonas, Terrance Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+/*======================================================================*/
+/* parse(+Modname, +PFile, +HFile,					*/
+/*	 -module(-SymTab,-DcList,-ClList,-QrList))			*/
+/*======================================================================*/
+
+%-----------------------------------------------------------------------
+:- dynamic '_$multifile'(_).
+:- dynamic '_$multifile1'(_).
+:- dynamic '_$multifile2'(_,_,_).
+:- dynamic '_$apply_arity'(_).
+:- dynamic '_$multifile_retract'(_,_,_).
+
+% '_$multifile'/1 and '_$multifile2'/3 will be retractd in useinfer/3.
+% '_$multifile1'/1 and '_$apply_arity'/1 will be retracted in parse/4
+% '_$multifile_retract'/3 will be retracted in parse/4.
+%-----------------------------------------------------------------------
+
+parse(Modname, PFile, HFile, Module) :-
+	(Modname == user
+	 ->	see(user), parse_clauses(user, Module0)
+	 ; file_exists(PFile)
+	 ->	(file_exists(HFile)
+		 ->	parse1(Modname,HFile,Module0)
+		 ;	Module0 = Module0	% init (lamp variable)
+		),
+		parse1(Modname,PFile,Module0)
+	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
+	),
+	retractall('_$multifile_retract'(_, Modname, _)),
+	module_close(Module0,Module), !.
+
+parse1(Modname, File, Module) :-
+	seeing(OldFile),	% added by Baoqiu (1/16/1997)
+	see(File),
+	parse_clauses(Modname, Module),
+	multifile_query(Modname, Module),
+	('_$apply_arity'(_)
+	 ->	assert('_$multifile'(apply/0)),
+		multifile_apply(Modname, Module)
+         ;	true
+	),
+	seen,
+	see(OldFile).
+
+
+/*======================================================================*/
+/* parse_clauses(+ModName, #module(#SymTab,#DcList,#ClList,#QrList))	*/
+/*======================================================================*/
+
+parse_clauses(ModName, Module) :-
+	my_read(Clause, VariableList),
+	singleton_check(Clause, VariableList),
+%	expand_term(Clause, Expanded_Clause),	% This line is changed to the
+						% two lines below by Baoqiu 
+						% to process the multifile 
+						% directive
+	expand_term(Clause, Expanded_Clause0),
+	change_multifile_directive(Expanded_Clause0, ModName, Expanded_Clause),
+
+	( Expanded_Clause == end_of_file, !
+	; otherwise, !,
+		parse_clause(Expanded_Clause, VariableList, Module),
+		parse_clauses(ModName, Module)
+	).
+parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
+	error(('Clauses of ', M, ' cannot be parsed.')).
+
+my_read(Term, Vars) :- stat_flag(10, File), file_read(File, Term, Vars).
+
+
+%/////////////////////////////////////////////////////////////////////////
+% 	Modifications made by Baoqiu Cui (11/22/1996)
+%/////////////////////////////////////////////////////////////////////////
+%-------------------------------------------------------------------------
+% Note: The VariableList is not used in the rule parse_clause/3 for the 
+%	queries like
+%  :- (retract(p(_,_):-p_file1(_,_)); true), assertz(:-(p(X,Y),p_file1(X,Y)))).
+%	So, we DO NOT consider it in the transformation.
+%-------------------------------------------------------------------------
+
+change_multifile_directive(':-'(multifile(PredSpecs)), ModName, []) :-
+	!,
+	change_PAList(PredSpecs, ModName).
+
+change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
+	functor(H, apply, A), 
+	!,
+	('_$apply_arity'(A)
+	 ->	true
+	 ;	assert('_$apply_arity'(A))
+        ),
+	H =.. [_|Args],
+	get_p_mod(apply, ModName, P_Mod),
+	NewH =..[P_Mod|Args].
+
+change_multifile_directive(ApplyFact, ModName, NewFact) :-
+	functor(ApplyFact, apply, A),
+	!,
+	('_$apply_arity'(A)
+	 ->	true
+	 ;	assert('_$apply_arity'(A))
+	),
+	ApplyFact =.. [_|Args],
+	get_p_mod(apply, ModName, P_Mod),
+	NewFact =..[P_Mod|Args].
+
+change_multifile_directive(':-'(index(P/A, Arg, Size)), ModName, 
+			   ':-'(index(P_Mod/A, Arg, Size))) :-
+	functor(Term, P, A),
+	'_$multifile2'(Term, ModName, _), !,
+	get_p_mod(P, ModName, P_Mod).
+
+change_multifile_directive(':-'(index(PAs)), ModName, ':-'(index(NewPAs))) :-
+	!,
+	change_index(PAs, ModName, NewPAs).
+
+change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
+	'_$multifile2'(H, ModName, NewH), !.
+
+change_multifile_directive(Fact, ModName, NewFact) :-
+	'_$multifile2'(Fact, ModName, NewFact), !.
+
+change_multifile_directive(Clause, _, Clause).
+
+change_PAList((PA,PAs), ModName) :-
+	change_PAList(PA, ModName),
+	change_PAList(PAs, ModName).
+
+change_PAList(P/A, ModName) :-
+	get_p_mod(P, ModName, P_Mod),
+	functor(Pred, P, A),
+	('_$index'(Pred, _, _)
+	 ->	warning(('Index directive/query on ', P, '/', A, ' is omitted. It cannot be declared before the directive '':- multifile ', P, '/', A, ''' !'))
+	 ;	true
+	),
+	functor(TT1, P, A),
+	TT1 =.. [P|Args],
+	TT2 =.. [P_Mod|Args],
+	assert('_$multifile'(P/A)),
+	assert('_$multifile1'(P/A)),
+	assert('_$multifile2'(TT1, ModName, TT2)),
+	% '_$multifile_retract'/3 is kept after the program is load_dyned,
+	% so retract the old one
+	retractall('_$multifile_retract'(TT1, ModName, TT2)), % for retract
+	assert('_$multifile_retract'(TT1, ModName, TT2)). % for retract
+
+
+%-------------------------------------------------------------------------
+% change_index(+Preds, +ModName, -NewPreds)
+%	Changes the index like p/3-2 to p_file/3-2 (here p/3 is a multifile
+%	predicate).  If the predicate is not a multifile predicate, then 
+%	the index will not be changed.
+%-------------------------------------------------------------------------
+change_index((Pred, Preds), ModName, (NewPred, NewPreds)) :- !,
+	change_index(Pred, ModName, NewPred),
+	change_index(Preds, ModName, NewPreds).
+
+change_index(P/A-Arg, ModName, P_Mod/A-Arg) :-
+	functor(Term, P, A),
+	('_$multifile2'(Term, ModName, _)
+	 ->	get_p_mod(P, ModName, P_Mod)
+	 ;	P_Mod = P			% unchanged
+	).
+
+%-------------------------------------------------------------------------
+% get_p_mode(+P, +ModName, +P_Mod)
+%	Given a predicate name P and a module/file name ModName, returns
+%	a new predicate name P_Mod.
+%-------------------------------------------------------------------------
+get_p_mod(P, ModName, P_Mod) :-
+	name(P,PChars), 
+	name(ModName, ModNameChars),
+	append(PChars, [0'_|ModNameChars], P_ModChars),
+	name(P_Mod, P_ModChars).
+
+
+%-------------------------------------------------------------------------
+% multifile_apply(ModName, Module) adds a query
+%	:- multifile([apply/A, apply(_,_), apply_file1(_,_)]).
+% to the source program for each
+%	'_$apply_arity'(A)
+% where file1 is the ModName.
+%-------------------------------------------------------------------------
+multifile_apply(ModName, Module) :-
+	(retract('_$apply_arity'(A)) 
+	->	get_p_mod(apply, ModName, P_Mod),
+		functor(TT1, apply, A),
+		TT1 =.. [apply|Args],
+		TT2 =.. [P_Mod|Args],
+		Clause = (:-multifile([apply/A, TT1, TT2])),
+		parse_clause(Clause, _VariableList, Module),
+		% Note: _VariableList is not used in parse_clause/3 for Clause
+		multifile_apply(ModName, Module)
+	;	true).
+
+
+%-------------------------------------------------------------------------
+% multifile_query(ModName, Module) adds a query
+%	:- multifile([P/A, P(_,_), P_file1(_,_)]).
+% to the source program for each
+%	'_$multifile1'(P/A)
+% where file1 is the ModName.
+%-------------------------------------------------------------------------
+multifile_query(ModName, Module) :-
+	(retract('_$multifile1'(P/A)) 
+	->	get_p_mod(P, ModName, P_Mod),
+		functor(TT1, P, A),
+		TT1 =.. [P|Args],
+		TT2 =.. [P_Mod|Args],
+		Clause = (:-multifile([P/A, TT1, TT2])),
+		parse_clause(Clause, _VariableList, Module),
+		multifile_query(ModName, Module)
+	;	true).
+
+
+%/////////////////////////////////////////////////////////////////////////
+
+/*======================================================================*/
+/* parse_clause(+Clause, +VariableList,					*/
+/*		#module(#SymTab,#DcList,#ClList,#QrList))		*/
+/*======================================================================*/
+
+parse_clause([], _, _) :- !.
+parse_clause([Cl|Cls], VariableList, Module) :- !,
+	parse_clause(Cl, VariableList, Module),
+	parse_clause(Cls, VariableList, Module).
+parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList)) :-
+	( Cl = (':-'(H, B)) ->		parse_preddef(H, B, ClList, SymTab)
+	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
+						QrList, SymTab)
+	; Cl = (':-'(Directive)) ->	( parse_spec_directive(Directive,
+						VariableList, SymTab, DcList), !
+					; parse_directive(Directive, SymTab), !
+					; parse_query(Directive, QrList,SymTab)
+					)
+	; Cl = ('?-'(Q)) -> 		parse_query(Q,QrList,SymTab)
+	; parse_preddef(Cl, true, ClList, SymTab)
+	).
+
+/*======================================================================*/
+/* parse_spec_directive(+Directive, +VariableList, #SymTab, #DcList)	*/
+/*======================================================================*/
+
+parse_spec_directive(table(Term), VariableList, SymTab, DcList) :-
+	fail_if((Term = _/_ ; Term = (_,_))),
+	all_anonymous(VariableList),
+	trans_goal(Term, Goal, SymTab, 0, _VidOut),
+	member1(Goal, DcList).
+
+all_anonymous([]).
+all_anonymous([vv(VarName,_)|Vars]) :-
+	( VarName == '_' -> true
+	; warning(('Non anonymous variable ', VarName,
+		   ' in a table specialisation directive')),
+	  message('           (treated as anonymous)')
+	),
+	all_anonymous(Vars).
+
+/*======================================================================*/
+/* parse_table_directive(+PAs, #QrList, #SymTab)			*/
+/*======================================================================*/
+
+parse_table_directive(P/A, QrList, SymTab) :-
+	nonvar(P), integer(A),
+	!,
+	sym_insert(P, A, [tabled(_,_)], SymTab, _),
+	add_table(P/A),
+	parse_query(table(P/A), QrList, SymTab).
+
+parse_table_directive((PA, PAs), QrList, SymTab) :- !,
+	parse_table_directive(PA, QrList, SymTab),
+	parse_table_directive(PAs, QrList, SymTab).
+	
+
+/*======================================================================*/
+/* parse_directive(+Directive, #Symbol_Table)				*/
+/*	Processes the given directive and updates the symbol table	*/
+/*	accordingly.  However, since the symbol table uses buffers to	*/
+/*	record the number of symbols that have been found, we should	*/
+/*	be certain that Directive can be parsed as a directive before	*/
+/*	inserting any symbols to the symbol table (non-backtrackable	*/
+/*	insert).							*/
+/*======================================================================*/
+
+parse_directive(export(X), SymTab) :- 	
+	parse_list(X, SymTab, [ex], (export)).
+parse_directive(import(from(P/A, _Mod)), _SymTab) :-
+	inline_predicate(P, A), !,
+	error((P,'/',A,' is an inline predicate, cannot be imported !')).
+parse_directive(import(from(X, Mod)), SymTab) :-
+	parse_list(X, SymTab, [im(Mod)], (import)),
+	sym_insert(Mod, 0, [module], SymTab, _). 
+parse_directive(local(X), SymTab) :-
+	parse_list(X, SymTab, [(local)], (local)).
+parse_directive(index(X), SymTab) :-	% for compiled-code indexing
+	parse_index(X, SymTab).
+parse_directive(index(Ps,Arg,Size), SymTab) :-
+	Ps = Pname/Arity,
+	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
+	index(Ps,Arg,Size), 
+	fail.
+parse_directive(index(Ps,Arg), SymTab) :-
+	Ps = Pname/Arity,
+	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
+	index(Ps,Arg,0),
+	fail.
+parse_directive(mode(X), SymTab) :- 
+	parse_mode(X, SymTab).
+parse_directive(parallel(X), SymTab) :-
+	parse_list(X, SymTab, [(parallel)], (parallel)).
+% parse_directive(table(X), SymTab) :-
+%	parse_list(X, SymTab, [tabled(_,_)], (table)).
+parse_directive(table_all, _SymTab) :-
+	warning('Compiler directive "table_all" has been renamed to "auto_table" (Tabling will not be performed)').
+parse_directive(auto_table, _SymTab) :-	% This is quite dirty!
+	conset(auto_table, 1).
+parse_directive(suppl_table, _SymTab) :-	% This is quite dirty!
+	conset(suppl_table, 1).
+parse_directive(suppl_table(EDB_Dep), _SymTab) :-	% This is quite dirty!
+	conset('EDB Dep #', EDB_Dep),
+	conset(suppl_table, 1).
+parse_directive(op(P,T,S), _SymTab) :-
+	op(P,T,S), 
+	fail.
+parse_directive(hilog(X), _SymTab) :-
+	add_hilog_symbol(X), 
+	fail.
+parse_directive(ti(X), SymTab) :-
+	parse_ti(X, (ti), SymTab).
+parse_directive(ti_all, _SymTab) :-
+	conset(ti_all, 1).
+parse_directive(ti_off(X), SymTab) :-
+	parse_ti(X, (ti_off), SymTab).
+parse_directive(ti_off_all, _SymTab) :-
+	conset(ti_off_all, 1).
+parse_directive(edb(X), SymTab) :-
+	parse_list(X, SymTab, [(edb)], (edb)).
+
+
+/*======================================================================*/
+/* process regular clauses --- collect them in List			*/
+/*	ListType : tylist, dclist, cllist				*/
+/* This code is also used in cp_opt.P, so make sure any changes here    */
+/* dont break cp_opt/2							*/
+/*======================================================================*/
+
+parse_preddef(H, B, List, SymTab) :-
+	functor(H, F, A),
+	sym_insert(F, A, [defined], SymTab, PredSym),
+	member1(pred(PredSym,PCs,_), List),
+	trans_head(H, goal(_, ArgList), SymTab, 0, VidMed),
+	trans_goals(B, Body, SymTab, VidMed, _VidOut),
+	add_new_clause(clause(ArgList, Body, _), PCs),
+	sym_propin(pred, PredSym).
+
+
+/*======================================================================*/
+/* process queries --- same as process regular clauses, but adding	*/
+/* a predicate '_$main'/0.						*/
+/*	ListType : tylist, dclist, cllist				*/
+/*======================================================================*/
+
+parse_query(B, List, SymTab) :-
+	parse_preddef('_$main', (B->fail), List, SymTab).
+
+
+/*======================================================================*/
+/* parse_list(+PredList, #SymTab, +SymbolProp, +Directive) 		*/
+/*	Processes export/import/local lists (records the appropriate	*/
+/*	information in symbol table).  It also does the same for	*/
+/*	parallel/table lists.						*/
+/*======================================================================*/
+
+parse_list(P/A, SymTab, SymbolProp, _Directive) :- 
+	nonvar(P), integer(A), 
+	!,
+%	(
+%	Directive = (table)
+%	->	add_table(P/A)
+%	;	true
+%       ),	 
+	sym_insert(P, A, SymbolProp, SymTab, _).
+parse_list((Pred, Preds), SymTab, SymbolProp, Directive) :- 
+	!,
+	parse_list(Pred, SymTab, SymbolProp, Directive),
+	parse_list(Preds, SymTab, SymbolProp, Directive).
+parse_list(X, _, _, Directive) :-
+	warning(('Non predicate specification "', X, 
+		 '" found in ', Directive, ' directive')),
+	fail.
+
+/*======================================================================*/
+/* module_close(+ModuleIn, -ModuleOut)					*/
+/*	Closes the lists in the completed module description and	*/
+/*	completes the symbol table.					*/
+/*======================================================================*/
+
+module_close(module(SymTab,DcList,ClList0,QrList0),
+	     module(SymTab,DcList,ClList,QrList)) :-
+	closetail(DcList), 
+	clauselist_straight(ClList0,ClList), 
+	parse_preddef('_$main', true, QrList0, SymTab),
+	clauselist_straight(QrList0,QrList), 
+	sym_complete(SymTab),
+	!.
+
+clauselist_straight([],[]).
+clauselist_straight([pred(Sym,Cls,P)|Rest0],[pred(Sym,Lcls,P)|Rest]) :-
+	clause_listify(Cls,Lcls),
+	clauselist_straight(Rest0,Rest).
+
+/*======================================================================*/
+/* auxiliary routines							*/
+/*======================================================================*/
+
+get_symtab(module(SymTab,_,_,_), SymTab).
+
+/*======================================================================*/
+/* parse_mode(+Modes, +SymTab)						*/
+/*	Parses the mode directives for compiled code.			*/
+/*======================================================================*/
+
+parse_mode((Pred, Preds), SymTab) :- !,
+	parse_mode(Pred, SymTab),
+	parse_mode(Preds, SymTab).
+parse_mode(Pred, SymTab) :- 
+	functor(Pred, Name, Arity),
+	sym_insert(Name, Arity, [mode(Pred)], SymTab, _Sym).
+
+/*======================================================================*/
+/* parse_index(+Indices, +SymTab)					*/
+/*	Parses the indexing directives for compiled code.		*/
+/*======================================================================*/
+
+parse_index((Pred, Preds), SymTab) :- !,
+	parse_index(Pred, SymTab),
+	parse_index(Preds, SymTab).
+parse_index(Pname/Arity-Arg, _SymTab) :-
+	\+ integer(Arg), !, 
+	warning(('Index cannot be created on more than one arguments for a compiled predicate ',Pname,'/',Arity,' !')).
+parse_index(Pname/Arity-Arg, SymTab) :- !,
+	index(Pname/Arity, Arg, 0),
+	sym_insert(Pname, Arity, [index(Arg)], SymTab, _).
+parse_index(Pname/Arity, SymTab) :- 
+	index(Pname/Arity, 1, 0),
+	sym_insert(Pname, Arity, [index(1)], SymTab, _).
+
+/*======================================================================*/
+/* parse_ti(+Preds, +Type, +SymTab)					*/
+/*	Parses ti directives.						*/
+/*======================================================================*/
+
+parse_ti((Pred, Preds), Type, SymTab) :- !,
+	parse_ti(Pred, Type, SymTab),
+	parse_ti(Preds, Type, SymTab).
+parse_ti(Pname/Arity, Type, SymTab) :- !,
+	sym_insert(Pname, Arity, [Type], SymTab, _).
+
+/*======================================================================*/
+/* trans_goals(+Term, -Goal, #SymTab, +VidIn, -VidOut)			*/
+/*======================================================================*/
+
+trans_goals('$$var'(Vid), goal(Sym,[varocc(Vid)]), SymTab, VidIn, VidOut) :-
+	sym_insert(call, 1, [], SymTab, Sym),
+	( var(Vid) -> VidOut is VidIn + 1, Vid = VidOut
+			% The input term is the 1st occurance of a variable
+	; VidOut = VidIn
+	).
+trans_goals((A, B), and(Goal1, Goal2), SymTab, VidIn, VidOut) :- 
+	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
+	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
+trans_goals((A; B), or(Goal1, Goal2), SymTab, VidIn, VidOut) :- 
+	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
+	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
+trans_goals((A->B), if(Goal1, Goal2), SymTab, VidIn, VidOut) :- 
+	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
+	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
+trans_goals('\+'(A), not(Goal1), SymTab, VidIn, VidOut) :- 
+	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
+trans_goals(fail_if(A), not(Goal1), SymTab, VidIn, VidOut) :- 
+	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
+trans_goals(T, Goal, SymTab, VidIn, VidOut) :-
+	trans_goal(T, Goal, SymTab, VidIn, VidOut).
+
+trans_goal(Term, Goal, SymTab, VidIn, VidOut) :-
+	functor(Term, P, A),
+	( inline_predicate(P, A), Goal = inlinegoal(P, A, ArgList)
+	; Goal = goal(Sym, ArgList), sym_insert(P, A, _Prop, SymTab, Sym)
+	),
+	prolog_arglist(Term, RawArgs, A, A),
+	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
+
+trans_head(Term, goal(_Sym, ArgList), SymTab, VidIn, VidOut) :-
+	Term =.. [_|RawArgs],
+        trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
+
+/*======================================================================*/
+/* trans_args(+RawArgList, -ArgList, #SymTab, +VidIn, -VidOut)		*/
+/*======================================================================*/
+
+trans_args([], [], _SymTab, VidIn, VidIn).
+trans_args([RawArg|RawArgs], [Arg|ArgList], SymTab, VidIn, VidOut) :-
+	trans_arg(RawArg, Arg, SymTab, VidIn, VidMed),
+	trans_args(RawArgs, ArgList, SymTab, VidMed, VidOut).
+
+trans_arg(RawArg, Arg, _SymTab, VidIn, VidOut) :- var(RawArg),
+	VidOut is VidIn + 1,
+	RawArg = '$$var'(VidOut),
+	Arg = varocc(VidOut).
+trans_arg('$$var'(ID), varocc(ID), _SymTab, VidIn, VidIn) :- integer(ID).
+	% the test is needed for self-compiling! Trick.
+	% when compile this module, '$$var' may mean a structure!
+trans_arg(RawArg, integer(RawArg), _SymTab, VidIn, VidIn) :- integer(RawArg).
+trans_arg(RawArg, real(RawArg), _SymTab, VidIn, VidIn) :- real(RawArg).
+trans_arg(RawArg, constant(Sym), SymTab, VidIn, VidIn) :- atom(RawArg),
+	sym_insert(RawArg, 0, _Prop, SymTab, Sym).
+trans_arg(RawArg, structure(Sym, ArgList), SymTab, VidIn, VidOut) :-
+	functor(RawArg, N, A),
+	prolog_arglist(RawArg, RawArgs, A, A),
+	sym_insert(N, A, _Prop, SymTab, Sym),
+	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
+
+/* ---------------------- end of file parse.P ------------------------- */
+

@@ -1,0 +1,89 @@
+/* File:      copyterm.P
+** Author(s): David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- export copyterm/4, copyterm/6, termsize/2, wordsize/1.
+
+:- import atomic/1, arg/3 from standard.
+:- import buff_alloc/3, buff_copyterm/6, term_psc/2, psc_arity/2, stat_flag/2
+     from machine.
+
+/*======================================================================*/
+/*	The following two routines copy a term into a buffer.  For a	*/
+/*	complete description of how buff_copyterm/6 works, see the	*/
+/*	comments in file emu/cutils.c.					*/
+/*======================================================================*/
+
+copyterm(Term, Perm, Buff, SizeByte) :- 
+	termsize(Term, Size),
+	wordsize(Wordsize),
+	SizeByte is Size * Wordsize,
+	buff_alloc(SizeByte, Buff, Perm),
+	buff_copyterm(Term, Buff, 0, Wordsize, _End, SizeByte).
+
+copyterm(Term, Buff, Worddisp, Start, End, Size) :- 
+	buff_copyterm(Term, Buff, Worddisp, Start, End, Size).
+
+
+/*======================================================================*/
+/* termsize(+Term, -Size)						*/
+/*	Returns the number of words (cells) used by the Term.		*/
+/*======================================================================*/
+
+termsize(Term, Size) :- 
+	termsize0(Term, Size1),
+	Size is Size1 + 1.
+
+termsize0(Term, 0) :- var(Term),!.
+termsize0(Term, 0) :- atomic(Term),!.
+termsize0(Term, Size) :- Term=[_|_],!,
+	termargsize(Term, 1, 2, S1),
+	Size is S1 + 2.
+termsize0(Term, Size) :- 
+	term_psc(Term, Psc),
+	psc_arity(Psc, Arity),
+	termargsize(Term, 1, Arity, S1),
+	Size is S1 + Arity + 1.
+	
+termargsize(Term, Argno, Maxargs, Size) :- 
+	( Argno > Maxargs -> Size = 0
+	; arg(Argno, Term, Arg),
+	  termsize0(Arg, S1),
+	  Nargno is Argno+1,
+	  termargsize(Term, Nargno, Maxargs, S2),
+	  Size is S1 + S2
+	).
+
+/*======================================================================*/
+/* wordsize(-WordSize)							*/
+/*	Determines the size of a word in bytes (whether a single or a	*/
+/*	double word version of XSB is used).				*/
+/*======================================================================*/
+
+wordsize(WordSize) :-
+        stat_flag(18, Word),
+        ( Word =:= 3 -> WordSize = 8 ; WordSize = 4 ).
+
+/* -------------------- end of file copyterm.P ------------------------ */

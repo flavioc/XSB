@@ -1,0 +1,887 @@
+\chapter{XSB - Oracle Interface} \label{oracle_inter}
+%====================================================
+
+\section{Introduction}
+%=====================
+
+The XSB - Oracle interface provides the programmer with two levels of
+interaction.  The first, {\it relation level interface},
+offers a tuple-at-a-time retrieval of information from the Oracle
+tables.  The second, {\it view level interface}, can translate an
+entire Prolog clause into a single SQL query to the Oracle, including
+joins and aggregate operations.
+
+This interface allows Oracle tables to be accessed from XSB's
+environment as though they existed as facts. All database accesses are
+done on the fly allowing XSB to sit alongside other concurrent tasks.
+
+Our interface gives an Oracle programmer all the features of Prolog as
+a query language including intensional database specification,
+recursion, the ability to deal with incomplete knowledge, inference
+control through the {\it cut} operation, and the representation of
+negative knowledge through negation.
+
+
+\subsection{Interface features}
+%==============================
+\begin{itemize} 
+\item Concurrent access for multiple XSB systems to Oracle 7.1.3
+	running under Solaris
+\item Full data access and cursor transparency including support for
+	\begin{itemize}
+	\item Full data recursion through XSB's tabling mechanism
+	\item Runtime type checking
+	\item Automatic handling of NULL values for insertion, 
+		deletion and querying
+	\item Partial recovery for cursor losses due to cuts
+	\end{itemize}
+\item Full access to Oracle's SQLplus including
+	\begin{itemize}
+	\item Transaction support
+	\item Cursor reuse for cached SQL statements 
+		with bind variables (by avoiding re-parsing and re-declaring).
+	\item Caching compiler generated SQL statements with bind variables 
+		and efficient cursor management for cached statements
+	\end{itemize}
+\item A powerful Prolog / SQL compiler based on \cite{Drax92}.
+\item Full source code availability for ports to other versions of
+      Oracle or other platforms
+\item Independence from database schema by employing {\it relation level}
+\item Performance as SQL by employing {\it view level} 
+\item No mode specification is required for optimized view compilation
+\end{itemize}
+
+\section{Installation:}
+%======================
+
+Assuming Oracle is currently installed:
+
+\begin{enumerate}
+\item When running {\tt configure} durig XSB installation, add these
+  options: {\tt --with-oracle} and {\tt
+    --site-static-libraries=ORACLE\_LIB\_PATH}, where {\tt
+    ORACLE\_LIB\_PATH} is the directory that has the Oracle client
+  libraries.
+\item run {\tt configure} with appropriate options specified on command
+  line.
+\item when done, the {\tt configure} script will tell you  whether you
+  should build XSB with just {\tt makexsb} or pass an additional option. 
+\item When {\tt makexsb} is done, it will tell use if you need to run XSB
+  using the usual {\tt .../bin/xsb} script or, maybe, something like
+  {\tt .../bin/xsb-ora}.
+\item after starting XSB, load {\tt ora\_call.P} by {\tt [ora\_call].}
+\end{enumerate}
+
+\section{Using the interface:}
+
+
+\subsection{Connecting to and disconnecting from Oracle:}
+
+Assuming the Oracle server is running, you have an account, and that
+the environment variables {\tt ORACLE\_SID, ORACLE\_HOME} are set, you
+can login to Oracle by invoking {\tt db\_open/1} as:
+\begin{center}
+{\tt  | ?- db\_open(oracle(name, passwd)).}
+\end{center}
+If the login is successful, there will be a response of {\tt yes}.
+
+To reach a remote server you can use:
+\begin{center}
+{\tt  | ?- db\_open(oracle('name@dblink', passwd)).}
+\end{center}
+where {\tt dblink} is the protocol, machine and server instance name.
+For example, \\ {\tt SCOTT@T:compserv1gw:INST} tells the runtime system we
+want to contact an oracle server instance whose {\tt ORACLE\_SID} is
+{\tt INST} on the host {\tt compserv1gw} using the TCP/IP protocol.
+
+To disconnect from the current session use:
+\begin{center}
+{\tt  | ?- db\_close.}
+\end{center}
+
+
+\subsection{Accessing an Oracle table: $($relation level interface$)$}
+
+Assuming you have access permission for the table you wish to import,
+you can use {\tt db\_import/2} as:
+\begin{center}
+{\tt | ?- db\_import('TABLENAME'('FIELD1', 'FIELD2', .., 'FIELDn'), 'Pname').}
+\end{center}
+where {\tt 'TABLENAME'} is the name of the table you wish to access
+and {\tt 'Pname'} is the name of the predicate you wish to use to
+access the table from XSB. {\tt 'FIELD1'} through {\tt 'FIELDn'} are
+the exact attribute names as defined in the database catalog.  The
+chosen attributes define the view and the order of arguments for the
+database predicate {\tt 'Pname'}.  For example, to create a link to
+the {\tt DEPT} table through the {\tt 'dept'} predicate:
+\begin{verbatim}
+| ?- db_import('DEPT'('DEPTNO','DNAME','LOC'),dept).
+
+yes
+| ?- dept(Deptno, Dname, Loc).
+
+Deptno = 10
+Dname = ACCOUNTING
+Loc = NEW YORK 
+\end{verbatim}
+
+Backtracking can then be used to retrieve the next row of the table {\tt DEPT}.
+
+Records with particular field values may be selected in the same way
+as in Prolog.  (In particular, no mode specification for database predicates is
+required). For example:
+\begin{center}
+
+{\tt | ?- dept(A, 'ACCOUNTING', C).}
+\end{center}
+generates the query:
+\begin{verbatim}
+
+SELECT DEPTNO, LOC
+FROM DEPT rel1
+WHERE rel1.DNAME = :BIND1;
+\end{verbatim}
+and 
+\begin{center}
+
+{\tt | ?- dept('NULL'(\_), 'ACCOUNTING', C).}
+\end{center}
+generates: (See section \ref{NULL-values})
+\begin{verbatim}
+SELECT NULL , rel1.DNAME , rel1.LOC
+FROM DEPT rel1
+WHERE rel1.DEPTNO IS NULL AND rel1.DNAME = :BIND1;
+\end{verbatim}
+During the execution of this query the {\tt :BIND1} variable will be bound
+to {\tt 'ACCOUNTING'}.\newline
+If a field includes a quote $(')$ then this should be represented by
+using two quotes.
+
+Note that the relation level interface can be used to define and
+access simple project views of single tables.  For example:
+\begin{center}
+
+{\tt | ?- db\_import('DEPT'('DEPTNO','DNAME'),deptview).}
+\end{center}
+defines {\tt deptview/2}.
+
+The predicate {\tt db\_import/2} $($and other Oracle interface
+predicates$)$ automatically asserts data dictionary information.  You
+can use the Prolog predicate {\tt listing/2} to see the asserted data
+dictionary information at any time.  
+
+% You do not need to assert any dictionary information at any time.
+
+Note: as a courtesy to Quintus Prolog users we have provided
+compatibility support for some PRODBI predicates which access tables
+at a relational level.
+
+\begin{verbatim}
+i) | ?- db_attach(Pname, table(Tablename)).
+\end{verbatim}
+
+eg. execute 
+\begin{center}
+{\tt | ?- db\_attach(dept, table('DEPT')).} 
+\end{center}
+then execute 
+\begin{center}	
+{\tt | ?- dept(Depno, Dname, Loc).}
+\end{center}
+to retrieve the rows.
+\begin{verbatim}
+
+ii) | ?- db_record('DEPT', R).
+
+    R = [20,RESEARCH,DALLAS];
+
+    R = ...
+
+\end{verbatim}
+    You can use {\tt db\_record/2} to treat the whole database row as a single list structure.
+
+
+
+\subsection{The view level interface:}
+
+
+% how about builtins.
+
+   The view level interface can be used for the definition of rules
+whose bodies includes only imported database predicates (by using the
+relation level interface) described above and aggregate predicates
+(defined below).  In this case, the rule is translated into a complex
+database query, which is then executed taking advantage of the query
+processing ability of the database system.
+
+One can use the view level interface through the predicate {\tt
+db\_query/2}:  
+\begin{center}
+{\tt | ?- db\_query('Rulename'(Arg1, ... , Argn), DatabaseGoal).}
+\end{center}
+All arguments are standard Prolog terms.  {\tt Arg\_1} through {\tt Arg\_n}
+defines the attributes to be retrieved from the database, while
+{\tt DatabaseGoal} defines the selection restrictions and join conditions.
+
+The compiler is a simple extension of \cite{Drax92} which generates SQL
+queries with bind variables and handles NULL values as described below
+(see section~\ref{NULL-values}).  It allows negation, the expression of
+arithmetic functions, and higher-order constructs such as grouping,
+sorting, and aggregate functions.
+
+Database goals are translated according to the following rules
+from \cite{Drax92}:
+\begin{itemize}
+\item Disjunctive goals translate to distinct SQL queries
+	connected through the UNION operator.
+\item Goal conjunctions translate to joins.
+\item Negated goals translate to negated EXISTS subqueries.
+\item Variables with single occurrences in the body are not
+	  translated.
+\item Free variables translate to grouping attributes.
+\item Shared variables in goals translate to equi-join conditions.
+\item Constants translate to equality comparisons of an attribute and
+	  the constant value.
+\item Nulls are translated to {\tt IS NULL} conditions.
+\end{itemize}
+For more examples and implementation details see the demo in 
+{\tt \$XSB\_DIR/examples/xsb\_ora\_demo.P}, and \cite{Drax92}.
+ 
+In the following, we show the definition of a simple join view between the 
+two database predicates {\it emp} and {\it dept}.
+
+Assuming the declarations:
+\begin{verbatim}
+
+| ?- db_import('EMP'('ENAME','JOB','SAL','COMM','DEPTNO'),emp).
+
+| ?- db_import('DEPT'('DEPTNO','DNAME','LOC'),dept).
+
+use:
+	
+| ?- db_query(rule1(Ename,Dept,Loc),
+	          (emp(Ename,_,_,_,Dept),dept(Dept,Dname,Loc))).
+yes
+
+| ?- rule1(Ename,Dept,Loc).
+\end{verbatim}
+
+generates the SQL statement:
+\begin{verbatim}
+
+SELECT rel1.ENAME , rel1.DEPTNO , rel2.LOC
+FROM emp rel1 , DEPT rel2
+WHERE rel2.DEPTNO = rel1.DEPTNO;
+
+Ename = CLARK
+Dept = 10
+Loc = NEW YORK
+\end{verbatim}
+
+Backtracking can then be used to retrieve the next row of the view.
+\begin{center}
+
+{\tt | ?- rule1('CLARK',Dept,'NULL'(\_)).}
+\end{center}
+
+generates the SQL statement:
+\begin{verbatim}
+
+SELECT rel1.ENAME , rel1.DEPTNO , NULL
+FROM emp rel1 , DEPT rel2
+WHERE rel1.ENAME = :BIND1 AND rel2.DEPTNO = rel1.DEPTNO AND rel2.LOC IS NULL;
+\end{verbatim}
+
+The view interface also supports aggregate functions predicates sum, avg,
+count, min and max.  For example
+\begin{verbatim}
+
+| ?- db_query(a(X),(X is avg(Sal,A1 ^ A2 ^ A4 ^ A5 ^ emp(A1,A2,Sal,A4,A5)))).
+
+
+yes.
+| ?- a(X).
+
+generates the query :
+
+SELECT AVG(rel1.SAL)
+FROM emp rel1;
+
+X = 2023.2
+
+yes
+\end{verbatim}
+
+
+A more complicated example:
+\begin{verbatim}
+
+| ?- db_query(harder(A,B,D,E,S), 
+                           (emp(A,B,S,E,D),
+                            not dept(D,P,C), 
+                            not (A = 'CAROL'),
+                            S > avg(Sal,A1 ^ A2 ^ A4 ^ A5 ^ A6 ^ A7 ^(
+                                    emp(A1,A2,Sal,A4,A5),
+                                    dept(A5,A7,A6),
+                                    not (A1 = A2))))).
+
+
+| ?- harder(A,B,D,E,S).
+\end{verbatim}
+
+generates the SQL query:
+\begin{verbatim}
+
+SELECT rel1.ENAME , rel1.JOB , rel1.DEPTNO , rel1.COMM , rel1.SAL
+FROM emp rel1
+WHERE NOT EXISTS
+       (SELECT * 
+        FROM DEPT rel2 
+        WHERE rel2.DEPTNO = rel1.DEPTNO) 
+   AND rel1.ENAME <> 'CAROL' 
+   AND rel1.SAL > 
+	(SELECT AVG(rel3.SAL) 
+         FROM emp rel3 , DEPT rel4
+	 WHERE rel4.DEPTNO = rel3.DEPTNO 
+            AND rel3.ENAME <> rel3.JOB);
+
+
+A = SCOTT
+B = ANALYST
+D = 50
+E = NULL(null1)
+S = 2300
+\end{verbatim}
+
+All database rules defined by db\_query can be queried with any mode:
+For example:
+\begin{center}
+
+{\tt | ?- harder(A,'ANALYST',D,'NULL'(\_),S).}
+\end{center}
+
+generates the query:
+\begin{verbatim}
+
+SELECT rel1.ENAME , rel1.JOB , rel1.DEPTNO , NULL , rel1.SAL
+FROM emp rel1
+WHERE rel1.JOB = :BIND1 AND rel1.COMM IS NULL AND NOT EXISTS
+(SELECT *
+FROM DEPT rel2
+WHERE rel2.DEPTNO = rel1.DEPTNO
+) AND rel1.ENAME <> 'CAROL' AND rel1.SAL > 
+(SELECT AVG(rel3.SAL)
+FROM emp rel3 , DEPT rel4
+WHERE rel4.DEPTNO = rel3.DEPTNO AND rel3.ENAME <> rel3.JOB
+);
+
+
+A = SCOTT
+D = 50
+S = 2300;
+
+no
+\end{verbatim}
+
+Notice that at each call to a database relation or rule, the
+communication takes place through bind variables.  The corresponding
+restrictive SQL query is generated, and if this is the first call with
+that adornment, it is cached.  A second call with same adornment would
+try to use the same database cursor if still available, without
+parsing the respective SQL statement.  Otherwise, it would find an
+unused cursor and retrieve the results.  In this way efficient access
+methods for relations and database rules can be maintained throughout
+the session.
+
+\subsection{ Connecting to an SQL query}
+
+
+It is also possible to connect to any SQL query using the {\tt
+db\_sql\_select/2} predicate which takes an SQL string as its input and
+returns a list of field values.  For example:
+\begin{verbatim}
+
+| ?- db_sql_select('SELECT * FROM EMP',L).
+
+L = [7369,SMITH,CLERK,7902,17-DEC-80,800,NULL,20];
+
+L = etc ...
+\end{verbatim}
+
+And you can use db\_sql/1 for any other non-query SQL statement request.  For 
+example:
+\begin{verbatim}
+
+| ?- db_sql('create table test ( test1 number, test2 date)').
+
+yes
+\end{verbatim}
+
+\subsection{Insertions and deletions of rows}
+
+Inserts are communicated to the database {\it array at a time}.
+To flush the buffered inserts one has to invoke {\tt flush/0}
+at the end of his inserts. 
+
+For setting the size of the {\it input array} See section \ref{Array-sizes}.
+
+Assuming you have imported the related base table using {\tt db\_import/2}, you can insert to
+that table by using {\tt db\_insert/2} predicate.  The first argument is
+the declared database predicate for insertions and the second argument
+is the imported database relation.  The second argument can be declared with
+with some of its arguments bound to constants.  For example assuming {\tt empall} is imported through {\tt db\_import}:
+\begin{verbatim}
+
+|?- db_import('EMP'('EMPNO','ENAME','JOB','MGR','HIREDATE','SAL','COMM',
+	'DEPTNO'), empall).
+yes 
+| ?- db_insert(emp_ins(A1,A2,A3,A4,A5,A6,A7),(empall(A1,A2,A3,A4,A5,A6,A7,10))).
+
+yes
+| ?- emp_ins(9001,'NULL'(35),'qqq',9999,'14-DEC-88',8888,'NULL'(_)).
+
+yes
+\end{verbatim}
+Inserts the row: 9001,NULL,'qqq',9999,'14-DEC-88',8888,NULL,10
+Note that any call to {\tt emp\_ins/7} should have all its arguments bound.
+
+See section \ref{NULL-values} for information about NULL values.
+
+Deletion of rows from database tables is supported by the {\tt
+db\_delete/2} predicate.  The first argument is the declared delete
+predicate and the second argument is the imported database relation
+with the condition for requested deletes, if any.  The condition is
+limited to simple comparisons.  For example assuming
+{\tt dept/3} is imported as above:
+\begin{verbatim}
+
+| ?- db_delete(dept_del(A), (dept(A,'ACCOUNTING',B), A > 10)). 
+
+yes
+\end{verbatim}
+
+After this declaration you can use:
+\begin{verbatim}
+
+| ?- dept_del(10).
+\end{verbatim}
+
+to generate the SQL statement:
+\begin{verbatim}
+
+DELETE DEPT rel1 
+WHERE rel1.DEPTNO = :BIND1 
+      AND rel1.DNAME = 'ACCOUNTING'
+      AND rel1.DEPTNO > 10;
+\end{verbatim}
+
+
+Note that you have to commit your inserts or deletes to tables to make
+them permanent.  (See section \ref{Transaction-management}).
+
+\subsection{Input and Output arrays}\label{Array-sizes}
+
+To enable efficient {\it array at a time} communication between the XSB client
+and the database server we employ {\it input} and  {\it output} buffer areas.
+
+The {\it input} buffer size specifies the size of the array size to be used
+during {\it insertions}. The {\it output} buffer size specifies the size of the
+array size to be used during {\it queries}. The default sizes of these arrays
+are set to 200. The sizes of these arrays can be queried by {\tt stat\_flag/2}
+and they can be modified by {\tt stat\_set\_flag/2}. The flag number assigned
+for input array length is 58 and  the flag number assigned for output array 
+length is 60.
+
+\subsection{Handling NULL values}\label{NULL-values}
+
+
+The interface treats NULL's by introducing a single valued function
+{\tt 'NULL'/1} whose single value is a unique $($Skolem$)$ constant.
+For example a NULL value may be represented by 
+\begin{verbatim}
+	'NULL'(null123245) 
+\end{verbatim} 
+Under this representation, two distinct NULL values will not unify.
+On the other hand, the search condition {\tt IS NULL Field} can be
+represented in XSB as {\tt Field = 'NULL'(\_)}
+
+Using this representation of NULL's the following protocol for queries
+and updates is established.
+
+\subsubsection{Queries:}
+
+\begin{center}
+
+{\tt | ?- dept('NULL'(\_),\_,\_).}
+\end{center}
+
+Generates the query: 
+
+
+\begin{verbatim}
+
+
+SELECT NULL , rel1.DNAME , rel1.LOC
+			  FROM DEPT rel1
+			  WHERE rel1.DEPTNO IS NULL;
+\end{verbatim}
+
+Hence, {\tt 'NULL'(\_)} can be used to retrieve rows with NULL values 
+at any field.
+
+{\tt 'NULL'/1} fails the predicate whenever it is
+used with a bound argument.
+\begin{center}
+
+{\tt | ?- dept('NULL'(null2745),\_,\_). $\rightarrow$ fails always.}
+\end{center}
+
+
+\subsubsection{Query Results:}
+When returning NULL's as field values, the interface returns {\tt NULL/1} 
+function with a unique integer argument serving as a skolem constant.
+
+Notice that the above guarantees the expected semantics for the join 
+statements.  In the following example, even if {\tt Deptno} is NULL for some rows in {\tt emp} or {\tt dept} tables, the query still evaluates the join successfully.
+\begin{center}
+
+{\tt | ?- emp(Ename,\_,\_,\_,Deptno),dept(Deptno,Dname,Loc)..}
+\end{center}
+
+\subsubsection{Inserts:}
+
+To insert rows with NULL values you can use {\tt Field = 'NULL'(\_)} or
+{\tt Field = 'NULL'(null2346)}.  For example:
+
+\begin{center}
+
+{\tt | ?- emp\_ins('NULL'(\_), ...).  $\rightarrow$ inserts a NULL value for ENAME}
+\end{center}
+\begin{center}
+
+{\tt | ?- emp\_ins('NULL'('bound'), ...) $\rightarrow$ inserts a NULL value for ENAME.}
+
+\end{center}
+
+
+\subsubsection{Deletes:}
+
+
+To delete rows with NULL values at any particular {\tt FIELD} use {\tt Field = 'NULL'(\_)}, {\tt 'NULL'/1} with a free argument.  When {\tt 'NULL'/1} 's argument
+is bound it fails the delete predicate always.  For example:
+
+\begin{center}
+{\tt | ?- emp\_del('NULL'(\_), ..).  $\rightarrow$ adds ENAME IS NULL to the generated SQL statement}
+\end{center}
+\begin{center}
+
+{\tt | ?- emp\_del('NULL'('bound'), ...).  $\rightarrow$ fails always}
+
+\end{center}
+
+The reason for the above protocol is to preserve the semantics of deletes, 
+when some free arguments of a delete predicate get bound by some preceding
+predicates.  For example in the following clause, the semantics is preserved 
+even if the {\tt Deptno} field is NULL for some rows.
+
+
+\begin{center}
+
+{\tt | ?- emp(\_,\_,\_,\_,Deptno), dept\_del(Deptno).}
+\end{center}
+
+
+
+
+\subsection{Data dictionary}
+
+
+The following utility predicates access the data dictionary.  Users of
+Quintus Prolog may note that these predicates are all PRODBI
+compatible.  The following predicates print out the indicated information:
+\begin{description}
+
+\item[db\_show\_schema(accessible)]
+	 Shows all accessible table names for the user.  This list can be long!
+
+\item[db\_show\_schema(user)]
+	Shows just those tables that belongs to you.
+
+\item[db\_show\_schema(tuples('TABLE'))]
+	Shows the contents of the base table named {\tt 'TABLE'}.
+
+\item[db\_show\_schema(arity('TABLE'))]
+	The number of fields in the table {\tt 'TABLE'}.
+
+\item[db\_show\_schema(columns('TABLE'))]
+	The field names of a table.
+\end{description}
+
+For retrieving above information use:
+\begin{itemize}
+
+\item db\_get\_schema(accessible,List)
+\item db\_get\_schema(user,List)
+\item db\_get\_schema(tuples('TABLE'),List)
+\item db\_get\_schema(arity('TABLE'),List)
+\item db\_get\_schema(columns('TABLE'),List)
+\end{itemize}
+
+The results of above are returned in List as a list.
+
+
+\subsection{Other database operations:}
+
+\begin{description}
+
+\item[db\_create\_table('TABLE\_NAME','FIELDS')]
+	{\tt FIELDS} is the field specification as in SQL.
+\begin{verbatim}
+
+eg. db_create_table('DEPT', 'DEPTNO NUMBER(2),
+                             DNAME VARCHAR2(14),
+                             LOC VARCHAR2(13)').
+\end{verbatim}
+
+
+\item[db\_create\_index('TABLE\_NAME','INDEX\_NAME', index(\_,Fields))]
+	{\tt Fields} is the list of columns for which an index
+	is requested.  For example:
+\begin{center}
+
+{\tt db\_create\_index('EMP', 'EMP\_KEY', index(\_,'DEPTNO, EMPNO')).}
+\end{center}
+
+\item[db\_delete\_table('TABLE\_NAME')] To delete a table named {\tt 'TABLE\_NAME'}
+
+\item[db\_delete\_view('VIEW\_NAME')] To delete a view named {\tt 'VIEW\_NAME'}
+
+\item[db\_delete\_index('INDEX\_NAME')] To delete an index named {\tt 'INDEX\_NAME'}
+\end{description}
+
+These following predicates are the supported PRODBI syntax for deleting and inserting rows:
+\begin{description}
+
+\item[\mbox{db\_add\_record('DEPT',[30,'SALES','CHICAGO'])}]
+	 arguments are a list composed of field values and the table name to
+	 insert the row.
+
+\item[\mbox{delete\_record('DEPT', [40,\_,\_])}]
+	 to delete rows from {\tt 'DEPT'} matching the list of values mentioned in
+	 second argument. 
+\end{description}
+
+For other SQL statements use {\tt db\_sql/1} with the SQL statement as the 
+     first argument.  For example:
+\begin{center}
+{\tt db\_sql('grant connect to fred identified by bloggs')).}
+\end{center}
+
+
+\subsection{Interface Flags:}
+	
+   If you wish to see the SQL query generated by the interface use the 
+predicate {\tt db\_flag/3}.  The first parameter indicates the function you wish to
+change.  The second argument is the old value, and the third argument specifies
+the new value.  For example:
+\begin{verbatim}
+
+| ?- db_flag(show_query, Old, on).
+
+     Old = off
+\end{verbatim}
+
+SQL statements will now be displayed for all your queries $($the default$)$.
+To turn it off use {\tt db\_flag(show\_query,on, off)}.
+
+
+To enable you to control the error behavior of either the interface or
+Oracle database use {\tt db\_flag/3} with fail\_on\_error as first argument.
+For example:
+
+\begin{description}
+
+\item[\tt | ?- db\_flag(fail\_on\_error, on, off)]
+
+     Gives all the error control to you,
+     (default), hence all requests to Oracle returns true.  You have to check
+     each action of yours and take the responsibility for your actions.
+     (See \ref{SQLCA})
+
+\item[\tt | ?- db\_flag(fail\_on\_error, off, on)]
+
+	Interface fails whenever something goes wrong.
+\end{description}
+
+
+\subsection{Transaction management}\label{Transaction-management}
+
+
+Normally any changes to the database will not be committed until the user 
+disconnects from the database.  In order to provide the user with some control
+over this process, db\_transaction/1 is provided. 
+\begin{description}
+\item[db\_transaction(commit)]
+	Commits all transactions up to this point.
+\item[db\_transaction(rollback)]
+	Rolls back all transactions since the last commit.
+\end{description}
+Other services provided by Oracle such that {\tt SET TRANSACTION} can be
+effected by using {\tt db\_sql/1}.
+
+Note that depending on Oracle's MODE of operation some or all data manipulation 
+statements may execute a commit statement implicitly.
+
+
+\subsection{SQLCA interface} \label{SQLCA}
+%-----------------------------------------
+You can use {\tt db\_SQLCA/2} predicate to access the {\tt SQLCA} for error 
+reporting or other services.
+\begin{description}
+
+\item[db\_SQLCA(Comm, Res)]
+	Where Comm is any one of the below and Res is the result
+		    from Oracle.
+\end{description}
+
+\begin{itemize}
+\item SQLCODE: The most recent error code
+\item SQLERRML: Length of the most recent error msg
+\item SQLERRMC: The error msg 
+\end{itemize}
+\begin{verbatim}
+eg. | ?- db_SQLCA('SQLERRD'(2), Rows).
+\end{verbatim}
+returns in Rows number of rows processed by the most recent statement.
+
+For SQLCAID, SQLCABC,SQLERRP, 'SQLERRD'(0) to 'SQLERRD'(5), 'SQLWARN'(0), to 
+'SQLWARN'(5),'SQLEXT' see {\tt ORACLE's C PRECOMPILER} user's manual.
+
+
+\subsection{Datalog}
+%-------------------
+You can write recursive Datalog queries with exactly the same
+semantics as in XSB using imported database predicates or database
+rules.  For example assuming {\tt db\_parent/2} is an imported database
+predicate, the following recursive query computes its transitive closure.
+
+\begin{verbatim}
+
+:- table(ancestor/2).
+ancestor(X,Y) :- db_parent(X,Y).
+ancestor(X,Z) :- ancestor(X,Y), db_parent(Y,Z).
+\end{verbatim}
+
+
+\subsection{Guidelines for application developers} \label{Guide}
+%---------------------------------------------------------------
+\begin{enumerate}
+\item  Try to group your database predicates and use the view level interface
+   to generate efficient SQL queries.
+\item  Avoid cuts over cursors since they leave cursors open and can cause
+   a leak of cursors.
+\item Whenever you send a query get all the results sent by the Oracle by
+   backtracking to avoid cursor leaks.  This interface automatically closes a 
+   cursor only after you retrieve the last row from the active set.
+\item Try to use tabled database predicates for cashing database tables.
+\end{enumerate}
+
+
+
+\section{Demo}
+%-------------
+A file demonstrating most of the examples introduced here is included
+with this installation in the {\tt examples} directory.  Load the
+package and call the goal go/2 to start the demo which is self
+documenting.  Do not forget to load {\tt ora\_call.P} first.
+
+\begin{verbatim}
+| ?- [ora_call].
+| ?- [ora_demo].
+[ora_demo loaded]
+
+yes
+| ?- go(user, passwd).
+\end{verbatim}
+where user is your account name, and passwd is your passwd.
+
+
+\section{Limitations}
+%----------------------
+The default limit on open cursors per session in most Oracle
+installations is 50, which is also the default limit for our
+interface.  There is also a limit imposed by the XSB interface of 100
+cursors, which can be changed upon request
+\footnote{e-mail xsb-contact@cs.sunysb.edu}.
+If your Oracle installation allows more than 50 cursors but
+less then 100 then change the line 
+\begin{verbatim} 
+#define MAX_OPEN_CURSORS 20 
+\end{verbatim} 
+in XSB\_DIR/emu/orastuff.pc to your new value, and uncomment enough
+many cases to match the above number of cursors plus one, in the switch
+statements. Currently this number is 21. Then re-build the system. In 
+XSB\_DIR/emu/orastuff.pc we provide code for up to 100 cursors. The last
+80 of these cursors are currently commented out.
+
+
+\section{Error msgs}
+
+\begin{description}
+\item[ERR - DB: Connection failed] For some reason you can not connect
+	to Oracle.
+	\begin{itemize}
+	\item	Diagnosis: Try to see if you can run sqlplus.
+		If not ask your Oracle admin about it.
+	\end{itemize}
+
+\item[ERR - DB: Parse error] The SQL statement generated by the
+	Interface or the first argument to {\tt db\_sql/1} or 
+	{\tt db\_sql\_select/2} can not be parsed by the Oracle.
+	The character number is the location of the error. 
+	\begin{itemize}
+	\item	Diagnosis: Check your SQL statement.  If our interface
+		generated the erroneous statement please contact us at
+		{\tt xsb-contact@cs.sunysb.edu}.
+	\end{itemize}
+
+\item[ERR - DB: No more cursors left] Interface run out of non-active
+cursors either because of a leak (See \ref{Guide}) or you have more then MAX\_OPEN\_CURSORS concurrently open
+searches.
+\begin{itemize}
+
+\item Diagnosis: System fails always with this error.  db\_transaction(rollback) or
+	   db\_transaction(commit) should resolve this by freeing all cursors.
+	   Please contact us for more help since this error is fatal for your
+	   application.
+\end{itemize}
+
+\item[ERR - DB: FETCH failed] Normally you should never get this error if the 
+interface running properly.
+\begin{itemize}
+
+\item Diagnosis: Please contact us at xsb-contact@cs.sunysb.edu
+\end{itemize}
+
+\end{description}
+
+
+\section{Future work}
+
+
+% probably needs a more careful rewrite.
+
+We plan to write a precompiler to detect base conjunctions (a
+sequence of database predicates and arithmetic comparison predicates)
+to build larger more restrictive base conjuncts by classical methods of
+rule composition, predicate exchange etc. and then employ the view
+level interface to generate more efficient queries and programs.
+	Also we want to explore the use of tabling for caching of data
+and queries for optimization.
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

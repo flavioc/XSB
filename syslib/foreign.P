@@ -1,0 +1,162 @@
+/* File:      foreign.P
+** Author(s): Kostis Sagonas, Jiyang Xu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+
+compile_cH(Modname, Base, Options, ExList, Dir) :-
+	/* ldoption is needed at compile time for ELF systems,
+	   so compile_H is now done first. */
+	compile_H(Modname, Base, Options, ExList, LdOption),
+	compile_c(Modname, Base, Options, Dir, LdOption).
+
+compile_c(Modname, Base, Options, Dir, LdOption) :-
+	xsb_configuration(configuration, Configuration),
+	cc_name(Options, CC_Name), cc_options(Options, CC_Opts),
+	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
+	( var(LdOption) -> LdOption = '' ; true ),
+	( str_sub('solaris', Configuration) ->
+		unix([CC_Name, ' -s -o ', Base, '.so',
+			       ' -G ', Base, '.c ', CC_Opts, ' ', LdOption])
+	; str_sub('linux', Configuration) ->
+		unix([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+			       Base, '.c ', CC_Opts, ' ', LdOption])
+	; str_sub('alpha', Configuration) ->
+		unix([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
+		unix(['ld -expect_unresolved \* -O1 -shared -o ', Base, '.so ',
+				Base, '.o ', LdOption])
+	; unix([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
+	  /* The following appears here because C compilers usually put the 
+	     object file in the current directory and not in the source's one.*/
+	  ( Dir == './' -> true
+	  ; ( str_sub('msdos', Configuration) ->
+		unix(['ren ', Modname, '.o', Dir])
+	    ;
+		unix(['mv ', Modname, '.o ', Dir])
+	    )
+	  )
+	).
+
+cc_name(Options, CC_Name) :-
+	( memberchk(cc(CC_Name), Options), atom(CC_Name) -> true
+	; xsb_configuration(compiler, CC_Name)
+	).
+cc_options(Options, CC_Opts) :-
+	( memberchk(cc_opts(CC_Opts), Options) -> true ; CC_Opts = '' ).
+
+compile_H(Modname, Base, Options, ExList, LdOption) :-
+	hdr_ext(HExt),
+	str_cat(Base, HExt, HFile),
+	( file_exists(HFile) ->
+		( Options == [] -> M = ''
+		; M = ' (any Prolog compiler options are ignored)'
+		),
+		message(('[Compiling Foreign Module ', Base, M, ']')),
+		cputime(TimeStart),
+		see(HFile),
+		read_clauses(ExList, '', LdOption),
+		seen,
+		length(ExList, Count),
+		obj_ext(OExt),
+		str_cat(Base, OExt, OFile),
+		tell(OFile),
+		co_asmhead(Modname, LdOption, Count),
+		co_asmsym(ExList),
+		told,
+		time_message(TimeStart, (Modname, ' compiled'))
+	; abort(('File ', HFile, ' for foreign module does not exist'))
+	),
+	!.
+
+read_clauses(ExList, LdOptionIn, LdOptionOut) :-
+	read(Clause),
+	( Clause == end_of_file -> LdOptionOut = LdOptionIn
+        ;   ( Clause = (':-'(export(Exports))) ->
+		add_to_exlist(Exports, ExList),
+		LdOptionMid = LdOptionIn
+	    ; Clause = (':-'(ldoption(Opt))) ->
+		form_ld_option(Opt, LdOptionIn, LdOptionMid)
+	    ; LdOptionMid = LdOptionIn		% all other clauses are ignored
+	    ),
+            read_clauses(ExList, LdOptionMid, LdOptionOut)
+        ).
+
+form_ld_option([], In, In) :- !.
+form_ld_option([Opt|Opts], In , Out) :- !,
+	form_ld_option(In, Opt, Mid), form_ld_option(Opts, Mid, Out).
+form_ld_option(Opt, In, Out) :-
+	str_cat(In, Opt, M), str_cat(M, ' ', Out).
+
+add_to_exlist(P/A, ExList) :- !, attach(P/A, ExList).
+add_to_exlist((Pred, Preds), ListType) :- !,
+        add_to_exlist(Pred, ListType),
+        add_to_exlist(Preds, ListType).
+
+co_asmhead(Modname, LdOption, PSC_Count) :-
+	co_magic(8),
+	str_len(Modname, Length),
+	put(Length),
+	write(Modname),
+	( LdOption == '' -> put(0)	% No ldoption was specified.
+	; str_len(LdOption, LdoLen), put(LdoLen), write(LdOption)
+	),
+	write_int(PSC_Count).
+
+co_asmsym([]).
+co_asmsym([One|ExList]) :-
+	co_one(One),
+	co_asmsym(ExList).
+
+co_one(P/A) :-
+	str_len(P, L),
+	put(0),		% domain = ex(ported)
+	put(13),	% type = T_FORN
+	put(A),		% arity = a
+	put(L),		% length
+	write(P).		
+
+co_magic(N) :- put(17), put(18), put(19), put(N).
+
+	
+/*======================================================================*/
+/* format: 
+		+-----------------------+
+		| magic = 8		|
+		+-----------------------+------------------+
+		| len  |  module name (len size)	   |
+		+-----------------------+----------+-------+
+		| len  |  ld option		   |
+		+-----------------------+----------+
+		| psc count		|
+		+-----------------------+
+
+		+-----------------------+-------------------------------+
+	count:	| 0 | 13 | 0 |arity|len |  symbol name			|
+		+-----------------------+-------------------------------+
+		... ... ... ...
+		... ... ... ...
+
+	Note that a foreign module is always a Module (len size =/= 0).
+*/
+/*======================================================================*/

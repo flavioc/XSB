@@ -1,0 +1,32 @@
+Recheck Size of integers on mips.
+
+HP 9000
+
+Locality: meet with Juliana.
+
+Does abolish abolish indexing declarations.
+
+fail if undefined
+
+Windows NT
+
+demo1_slg/2: does not work with predicate/arity.
+
+Document the TCP/IP libraries of Rui and Juliana.
+
+Document aspects of Hilog and the module systems.  One of the issues
+here is that a hilog symbol is always a constant.
+
+:- hilog q.
+
+whereas the module system addresses only function and predicate
+symbols.
+
+-----------------------------------
+
+Stuff for new release
+
+dynamic and index as compiler pass throughs.
+
+warning on indexing compiled code.
+

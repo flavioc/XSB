@@ -1,0 +1,272 @@
+\documentclass{article}
+\begin{document}
+
+
+\title{Introduction to XSB-Perl connectivity}
+\author{Jin Yu and Michael Kifer}
+
+\maketitle
+
+There are many advantages in enabling the invocation of Perl functions from
+within XSB. Perl can't be beat when it comes to text manipulation and a
+large number of libraries have been written to facilitate processing Web
+documents in Perl. XSB already has a flexible interface to Perl's pattern
+matching and string substitution facilities and it is desirable to build
+a more general interface. This section provides an overview of how this can
+be done. For more details, see the manual pages that describe the subject:
+%%
+\begin{quote}
+ man perlguts\\
+ man perlembed\\
+ man perlcall
+\end{quote}
+%%
+
+
+\paragraph{Perl interface to C.}
+To communicate with Perl, one would use a C program as a bridge.
+Here we describe the Perl side of the story.
+
+The Perl library is the collection of compiled C programs that are used to
+start and communicate with create the interpreter. The C program that talks
+to Perl must link to the Perl library. The Perl built-in library functions
+perl{\_}alloc(), perl{\_}construct(), perl{\_}parse() and perl{\_}run() are
+used to create and execute the Perl Interpreter Object.
+
+After loading the Perl interpreter, the C program with
+embedded Perl can be compiled into an executable program.
+We illustrate the ideas using the example of Perl patterm matching
+functions.
+
+In the Perl language, the pattern matching syntax is as follows:
+
+%%
+\begin{quote}
+ {\tt  m/<regular expression>/g(o)(i) }
+\end{quote}
+%%
+
+
+
+The default input for pattern matching is the variable {\$}{\_}, and the
+result of the match assigned to the match Perl variables {\$}1, {\$}2,
+etc., the prematch substring {\$}`, the postmatch substring {\$}', the
+exact match {\$}{\&}, and the match corresponding to the last parenthesized
+regular subexpression, {\$}+. (Please see the Perl manual for the
+explanation of these features.)
+
+The first step is to learn some basics of the Perl internal data
+structures. This discussion assumes some basic familiarity with Perl.
+
+\begin{quote}
+{\bf SV} - {\em Scalar Value\/}; stores int, float, and string data types.\\
+{\bf AV} - {\em Array Value\/}; stores array data types.\\
+{\bf HV} - {\em Hash Value\/}; stores the hash value types (also known as
+associative arrays).
+\end{quote}
+
+As an example, consider a C function that implements pattern matching:
+
+%%
+\begin{quote}
+    {\tt  int match(SV *string, char *pattern) }
+\end{quote}
+%%
+
+This function searches the input {\em string\/} for a given Perl regular
+expression, {\em pattern\/}, and returns the number of matches found.  The
+code looks like:
+
+
+
+\begin{verbatim}
+int match(SV *string, char *pattern)
+{
+    ......
+    SV *command = newSV(0);
+    sv_setpvf(command, "$__text__='%s'; $__text__=~%s",
+                       SvPV(string,na), pattern);
+    perl_eval_sv(command, G_SCALAR);
+    ......
+}
+\end{verbatim}
+
+
+The library function {\em sv\_setpvf\/} takes a string and constructs a
+Perl sentence where the first \%s is substituted with the value of {\em
+  string\/} Here, {\em string\/} is of the Perl scalar type \verb|SV *|.
+The function {\tt SvPV} converts this value back to the regular C pointer
+to {\tt char (the flag {\tt na} tells SvPV tt to put a string terminating
+  character at the end. The second \%s is replaced by the value of {\em
+    pattern}.  As a result, the Perl variable \$\_\_text\_\_ is initialized
+  with the value of {\em string\/}, and then it is matched against {\em
+    pattern}. (The oprator \verb|=~| performs pattern matching in Perl.)
+  The actual evaluation of the command string is done using the library
+  function {\tt perl\_eval\_sv}.  The flag {G\_SCALAR} means that we call
+  the Perl subroutine in a scalar context ({\em context\/} is a special
+  attribute of Perl environments; it is a source of much controversy and
+  cannot be explained here).
+
+
+  
+\noindent
+The following functions in C are used to allocate space for Perl scalar
+values SV:
+
+\begin{verbatim}
+    SV* newSViv(IV); /* allocates integer scalar value */
+    SV* newSVnv(double); /* allocates double-precision scalar value */
+    SV* newSVpv(char*, int); /* allocates fixed-size string scalar value */
+    SV* newSVpvf(const char*, ...); /*  allocates a list of strings */
+    SV* newSVsv(SV*); /* allocates arbitrary scalar value */
+\end{verbatim}
+
+
+\noindent
+The following functions assign C data to scalar values:
+
+\begin{verbatim}
+    void sv_setiv(SV*, IV); /* put integer into a scalar variable */
+    void sv_setnv(SV*, double); /* put double value into a scalar variable */
+    void sv_setpv(SV*, char*); /* put a string into a scalar variable */
+    void sv_setpvn(SV*, char*, int); /* put a fixed size string */
+    void sv_setpvf(SV*, const char*, ...); /* put a list of strings */
+    void sv_setsv(SV*, SV*); /* put a scalar value into a scalar variable */
+\end{verbatim}
+
+
+The function
+perl{\_}get{\_}sv() is used to get a Perl variable value and put it in the
+SV-type structure. It returns a pointer to that SV data type. For
+example:
+
+\begin{verbatim}
+    SV *returnValue = perl_get_sv( data, false);
+\end{verbatim}
+
+This takes Perl data and copies it into a newly allocated SV-type
+structure; false is a flag.
+
+\paragraph{The XSB side of the deal.}
+The aforesaid function {\tt match()}  takes C strings, converts them into
+Perl format, executes the match operation, and returns the result back to C.
+To call this function from XSB, we need to take XSB strings, convert them
+to C, call {\tt match()}, then get the result of {\tt match()} back to XSB.  
+
+Here we briefly review the interface between C and XSB. First, C programs
+called from XSB cannot contain {\tt main()}. These programs are compiled
+into shared, dynamically loaded libraries, which are linked to XSB
+executable when needed.
+
+Just like with Perl, XSB data structures cannot be directly used in C, and
+vice versa. Therefore, the folowing converter functions are provided:
+
+\noindent
+{\tt int ptoc\_int(int N)}: Get argument number N from an XSB predicate,
+which is assumed to hold a Prolog integer, and return its integer value in
+the valid C format.
+
+\noindent
+{\tt float ptoc\_float(int N)}: Get argument number N from an XSB predicate,
+which is assumed to hold a Prolog floating point number, and return its
+value in the valid C floating point format.
+
+\noindent
+{\tt char *ptoc\_string(int N)}: Get argument number N, which is assumed to
+hold a Prolog atom, and return a pointer to the C string that corresponds
+to this Prolog atom.
+
+\noindent
+{\tt void ctop\_int(int N, int V)}: Argument number N is assumed to hold a
+free Prolog variable; this variabl is then bound to the value V which must
+be an integer.
+
+\noindent
+{\tt void ctop\_float(int N, float V)}: Argument number N is assumed to hold a
+free Prolog variable, which is then is bound to a floating point value V.
+
+\noindent
+{\tt void c2p\_string(int N, char *V)}: Argument number N is assumed to hold a
+free Prolog variable; this function binds that variable to the string
+pointed to by V.
+
+
+To illustrate how arguments are marshalled back and forth, consider
+the following query:
+
+\begin{verbatim}
+    :- try_match( 'hellow world', 'm/\wl/g' ).
+\end{verbatim}
+
+
+The C function \verb|try_match()| looks like this:
+
+\begin{verbatim}
+void try_match( void ) {
+    char* string = ptoc_string(1);     /*get arguments*/
+    char* pattern = ptoc_string(2);
+    int result;
+    ......
+    result = match(string, pattern);
+    ......
+    return(result);                    /*output result*/
+\end{verbatim}
+
+
+
+Here, functions {\tt ptoc\_string(1)} and {\tt ptoc\_string(2)} pass the
+first and the second arguments from XSB to the C function {\tt
+  try\_match()}. These values are them passed to the function {\tt
+  match()}.  As discused earlier, the latter function passes these values
+further to the Perl interpreter for evaluation. The return value then
+eventually passed back to XSB. If the return value is non-0, then XSB
+considers the built-in predicate {\tt try\_match()} as having executed
+successfully. If it is 0, then the built-in is considered to have failed.
+
+
+Sometimes it is necessary to pass values that are more complex than just
+numbers and strings. XSB does not have an off-the-shelf function to marshal
+such values to and from C. However, this can be accomplished by writing a
+simple Prolog program that would pass around one scalar value at a time.
+See the {\tt perlmatch} package for an example of how this can be done for
+lists and arrays. 
+
+\paragraph{Configuration issues.}
+When compiling the buffer module to interface XSB to Perl, it is important
+to compile it with the right Perl libraries. The difficulty here is that
+Perl is compiled differently on different platforms, so there is no single
+set of compile and load parameters that can be always used.
+
+Fortunately, Perl can supply all the requisite information.
+The following command provides the directory of the Perl libraries:
+
+\begin{verbatim}
+   perl -MConfig -e 'print $Config{archlib}'
+\end{verbatim}
+%% $
+
+All that is needed is now needed is to add {\tt /CORE}, which is the actual
+library. Let us denote this as {\tt Archlib}.  In addition to this, Perl
+can tell the following about itself:
+
+\begin{verbatim}
+   perl -MConfig -e 'print $Config{cc}       (CC: the C-compiled)
+   perl -MConfig -e 'print $Config{ccflags}' (CFlags: the C compiler flags)
+   perl -MConfig -e 'print $Config{libs}     (CCLibs: the C libraries needed)
+\end{verbatim}
+%%$
+
+\noindent
+The XSB-Perl buffer module (which contains both {\tt match()} and {\tt
+  try\_match()}) can then be compiled as folows:
+
+\begin{verbatim}
+   CC <CCFlags> -I<Archbib>  ...
+\end{verbatim}
+
+The loader will need the following flags: \verb|-L<Archbib> -lperl|.
+See C interface section of the XSB manual for details on how to use these
+flags.
+
+
+\end{document}

@@ -1,0 +1,16 @@
+
+    Yet to be figured out. See emu/nt/README for some hints.
+
+1. Check the file 
+
+       emu/nt/config.h
+
+   You may have to change some variables there. These variables have
+   comments that explain the purpose of each variable that might need to be
+   changed.
+
+   When done, copy this file to emu/configs/config.h
+
+2. IF YOU ARE DEBUGGING:
+   Check the files in emu/debugs/ and DEFINE the appropriate debugging
+   flags.

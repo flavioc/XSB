@@ -1,0 +1,903 @@
+\chapter{Library Utilities} \label{library_utilities}
+%====================================================
+
+In this chapter we introduce some useful predicates that are supplied
+with the system. These predicates are available only when imported
+them from (or explicitly consult) the corresponding modules.
+
+
+\section{List Processing}
+%========================
+The XSB library contains various list utilities, some of which 
+are listed below.  These predicates should be explicitly imported from
+the module specified after the skeletal specification of each predicate.
+There are a lot more useful list processing predicates in various modules
+of the XSB system, and the interested user can find them by 
+looking at the sources.
+
+\begin{description}
+\ournewitem{append(?List1, ?List2, ?List3)}{basics}\index{{\tt append/3}}
+%\predindex{append/3~(L)}
+    Succeeds if list {\tt List3} is the concatenation of lists 
+    {\tt List1} and {\tt List2}.
+
+\ournewitem{member(?Element, ?List)}{basics}\index{{\tt member/2}}
+%\predindex{member/2~(L)}
+    Checks whether {\tt Element} unifies with any element of list 
+    {\tt List}, succeeding more than once if there are multiple 
+    such elements.
+
+\ournewitem{memberchk(?Element, ?List)}{basics}\index{{\tt memberchk/2}}
+%\predindex{memberchk/2~(L)}
+    Similar to {\tt member}/2, except that {\tt memberchk}/2 is
+    deterministic, i.e.\ does not succeed more than once for any call.
+
+\ournewitem{ith(?Index, ?List, ?Element)}{basics}\index{{\tt ith/3}}
+%\predindex{ith/3~(L)}
+    Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List} 
+    unifies with {\tt Element}.  Fails if {\tt Index} is not a positive
+    integer or greater than the length of {\tt List}.
+    Either {\tt Index} and {\tt List}, or {\tt List} and {\tt Element}, 
+    should be instantiated (but not necessarily ground) at the time of 
+    the call.
+
+\ournewitem{length(?List, ?Length)}{basics}\index{{\tt length/2}}
+%\predindex{length/2~(L)}
+    Succeeds if the length of the list {\tt List} is {\tt Length}.
+    This predicate is deterministic if {\tt List} is instantiated 
+    to a list of definite length, but is nondeterministic if 
+    {\tt List} is a variable or has a variable tail.  If {\tt List}
+    is uninstantiated, it is unified with a list of length {\tt Length}
+    that contains variables.
+
+\ournewitem{same\_length(?List1, ?List2)}{basics}\index{{\tt same\_length/2}}
+%\predindex{same\_length/2~(L)}
+    Succeeds if list {\tt List1} and {\tt List2} are both lists of
+    the same number of elements.  No relation between the types or
+    values of their elements is implied.  This predicate may be used
+    to generate either list (containing variables as elements) given
+    the other, or to generate two lists of the same length, in which
+    case the arguments will be bound to lists of length $0,1,2,\ldots$.
+
+\ournewitem{select(?Element, ?L1, ?L2)}{basics}\index{{\tt select/3}}
+%\predindex{select/3~(L)}
+    {\tt List2} derives from {\tt List1} by selecting (removing) an 
+    {\tt Element} non-deterministically.
+
+\ournewitem{reverse(+List, ?ReversedList)}{basics}\index{{\tt reverse/2}}
+%\predindex{reverse/2~(L)}
+    Succeeds if {\tt ReversedList} is the reverse of list {\tt List}.
+    If {\tt List} is not a proper list, {\tt reverse/2} can succeed
+    arbitrarily many times.  It works only one way.
+
+\ournewitem{perm(+List, ?Perm)}{basics}\index{{\tt perm/2}}
+%\predindex{perm/2~(L)}
+    Succeeds when {\tt List} and {\tt Perm} are permutations of each
+    other.  The main use of {\tt perm/2} is to generate permutations
+    of a given list.  {\tt List} must be a proper list.
+    {\tt Perm} may be partly instantiated.
+
+\ournewitem{subseq(?Sequence, ?SubSequence, ?Complement)}{basics}
+\index{{\tt subseq/3}}
+%\predindex{subseq/3(L)}
+    Succeeds when {\tt SubSequence} and {\tt Complement} are both
+    subsequences of the list {\tt Sequence} (the order of corresponding
+    elements being preserved) and every element of {\tt Sequence} which
+    is not in {\tt SubSequence} is in the {\tt Complement} and vice
+    versa.  That is,
+    \[ length({\tt Sequence}) =
+		length({\tt SubSequence})+length({\tt Complement}) \]
+    for example, {\tt subseq([1,2,3,4], [1,3], [2,4]).}
+    The main use of {\tt subseq/3} is to generate subsets and their
+    complements together, but can also be used to interleave two lists
+    in all possible ways.
+
+\ournewitem{merge(+List1, +List2, ?List3)}{listutil}\index{{\tt merge/3}}
+%\predindex{merge/3~(L)}
+    Succeeds if {\tt List3} is the list resulting from ``merging'' lists 
+    {\tt List1} and {\tt List2},
+    i.e.\ the elements of {\tt List1} together with any element of 
+    {\tt List2} not occurring in {\tt List1}.
+    If~{\tt List1} or~{\tt List2} contain duplicates, {\tt List3} may 
+    also contain duplicates.
+
+\ournewitem{absmerge(+List1, +List2, ?List3)}{listutil}\index{{\tt absmerge/3}}
+%\predindex{absmerge/3~(L)}
+    Predicate {\tt absmerge/3} is similar to {\tt merge/3}, except that 
+    it uses predicate {\tt absmember/2} described below rather than 
+    {\tt member/2}.
+
+\ournewitem{absmember(+Element, +List)}{listutil}\index{{\tt absmember/2}}
+%\predindex{absmember/2~(L)}
+    Similar to {\tt member}/2, except that it checks for identity
+    (through the use of predicate {\tt '=='/2}) rather than unifiability 
+    (through {\tt '='/2}) of {\tt Element} with elements of {\tt List}.
+
+\ournewitem{member2(?Element, ?List)}{listutil}\index{{\tt member2/2}}
+%\predindex{member2/2~(L)}
+    Checks whether {\tt Element} unifies with any of the actual elements 
+    of {\tt List}.  The only difference between this predicate and 
+    predicate {\tt member/2} is on lists having a variable tail, 
+    e.g.\ \verb'[a, b, c | _ ]': while {\tt member/2} would insert 
+    {\tt Element} at the end of such a list if it did not find it, 
+    Predicate {\tt member2/2} only checks for membership but does not 
+    insert the {\tt Element} into the list if it is not there.
+
+\ournewitem{delete\_ith(+Index, +List, ?Element, ?RestList)}{listutil}
+\index{{\tt delete\_ith/4}}
+%\predindex{delete\_ith/4~(L)}
+    Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List}
+    unifies with {\tt Element}, and {\tt RestList} is {\tt List} with
+    {\tt Element} removed.  Fails if {\tt Index} is not a positive
+    integer or greater than the length of {\tt List}.
+
+\ournewitem{closetail(?List)}{listutil}\index{{\tt closetail/1}}
+%\predindex{closetail/1~(L)}
+    Predicate {\tt closetail/1} closes the tail of an open-ended list.
+    It succeeds only once.
+
+\ouritem{remove\_dupls(+List1, ?List2)}\index{{\tt remove\_dupls/2}}
+    There is no need to provide such a predicate.  If you need one use
+    the {\tt sort/2} standard predicate (described in section~\ref{Comparison}).
+\end{description}
+
+
+
+\section{Asserting Dynamic Code} \label{LoadDyn}
+%===============================================
+
+The module {\tt consult} in directory {\tt lib} provides several handy
+library predicates that can assert the contents of a file into
+\ourprolog's database.  The use of these predicates may be necessary
+when the code needs to be {\tt dynamic} (so that it is retractable),
+or when it contains atoms whose length is more than 255 that cannot be
+handled by the XSB compiler.
+
+\begin{description}
+\ournewitem{load\_dyn(+FileName)}{consult}
+\index{{\tt load\_dyn/1}}\label{load_dyn/1}
+%\predindex{load\_dyn/1~(L)}
+    Asserts the contents of file {\tt FileName} into the database.
+    All existing clauses of the predicates in the file that already
+    appear in the database, are retracted unless there is a {\tt
+    multifile/1} declaration for them.  Clauses in the file must be
+    in a format that {\tt read/1} will process.  So, for example,
+    operators are permitted.  As usual, clauses of predicates are not
+    retracted if they are compiled instead of dynamically asserted.
+    All predicates are loaded into {\tt usermod}.  Module declarations
+    such as {\tt :- export} are ignored and a warning is issued.
+    Starting with Version 1.5.0, this predicate is a standard predicate
+    of \ourprolog.
+
+\ournewitem{ensure\_dyn\_loaded(+FileName)}{consult}
+\index{{\tt ensure\_dyn\_loaded/1}}
+    Is similar to {\tt load\_dyn/1} except that it does nothing if the
+    file has previously been loaded and the file has not been changed
+    since.  However the file will be reloaded if the index declaration of
+    any predicate in that file has changed to require more indexing, or a
+    larger hash table.
+
+\ournewitem{load\_dync(+FileName)}{consult}\index{{\tt load\_dync/1}}
+%\predindex{load\_dync/1~(L)}
+    Asserts the contents of file {\tt FileName} into the database.
+    All existing clauses of the predicates in the file that already appear
+    in the database, are retracted unless there is a {\tt multifile/1}
+    directive for them.  The terms in the file {\tt FileName} must be in
+    ``canonical'' format; that is, they must not use any operators (or
+    list notation.) This is the format produced by the predicate {\tt
+    write\_canonical/1}. (See {\tt cvt\_canonical/2} to convert a file from
+    the usual {\tt read/1} format to {\tt read\_canonical} format.)  As
+    usual, clauses of predicates are not retracted if they are compiled
+    instead of dynamically asserted. All predicates are loaded into {\tt
+    usermod}.  {\tt :- export} declarations are ignored and a warning is
+    issued.
+
+    Notice that this predicate can be used to load files of Datalog facts
+    (since they will be in canonical format).  This predicate is
+    significantly faster than {\tt load\_dyn/1} and should be used when
+    speed is important.  A file that is to be dynamically loaded often but
+    not often modified by hand should be loaded with this predicate.  Use
+    predicate {\tt cvt\_canonical/2} (see below) to convert a usual file
+    to a format readable by this predicate.
+
+\ournewitem{ensure\_dync\_loaded(+FileName)}{consult}
+\index{{\tt ensure\_dync\_loaded/1}}
+    Is similar to {\tt load\_dync/1} except that it does nothing if the
+    file has previously been loaded and the file has not been changed
+    since.  However the file will be reloaded if the index declaration of
+    any predicate in that file has changed to require more indexing, or a
+    larger hash table.
+
+\ournewitem{cvt\_canonical(+FileName1,+FileName2)}{consult}
+\index{{\tt cvt\_canonical/2}}
+    Converts a file from standard term format to ``canonical'' format.
+    The input file name is {\tt FileName1}; the converted file is put in
+    {\tt FileName2}.  This predicate can be used to convert a file in
+    standard Prolog format to one loadable by {\tt load\_dync/1}.
+\end{description}
+
+%----------------------------------------------------------------------
+
+
+\section{Ground, Numbervars, Subsumption, Variant} \label{NumberVars}
+%====================================================================
+
+\begin{description}
+\ournewitem{ground(+X)}{basics}\index{{\tt ground/1}}
+%\predindex{ground/1~(L)}
+    Succeeds if {\tt X} is currently instantiated to a term that is 
+    completely bound (has no uninstantiated variables in it); 
+    otherwise it fails.  Predicate {\tt ground/1} has no associated 
+    error conditions.
+
+\ournewitem{numbervars(+Term, +FirstN, ?LastN)}{num\_vars}
+\index{{\tt numbervars/3}}
+%\predindex{numbervars/3~(L)}
+    This predicate provides a mechanism for grounding a (HiLog) term
+    so that it may be analyzed.  Each variable in the (HiLog) term
+    {\tt Term} is instantiated to a term of the form \verb|'$VAR'(N)|,
+    where {\tt N} is an integer starting from {\tt FirstN}.  
+    {\tt FirstN} is used as the value of {\tt N} for the first
+    variable in {\tt Term} (starting from the left). The second distinct
+    variable in {\tt Term} is given a value of {\tt N} satisfying
+    {\tt "N is FirstN + 1"} and so on.  The last variable in {\tt Term}
+    has the value {\tt LastN-1}.
+
+\ournewitem{numbervars(+Term)}{num\_vars}\index{{\tt numbervars/1}}
+%\predindex{numbervars/1~(L)}
+    This predicate is defined as:
+    \begin{center}
+    {\tt   numbervars(Term, 0, \_)}.
+    \end{center}
+    It is included solely for convenience.
+
+%\ournewitem{varnumbers(Term, FirstN, Copy)}{num\_vars}
+%\index{{\tt varnumbers/3}}
+%%\predindex{varnumbers/3~(B)}
+%    This predicate is a partial inverse of predicate {\tt numbervars/3}.
+%    It unifies {\tt Copy} with a copy of {\tt Term} in which subterms of
+%    the form \verb|'$VAR'(N)| where {\tt N} is an integer not less than
+%    {\tt FirstN} have been systematically replaced by fresh variables. 
+%    Since 0 is the usual second argument of numbervars/3,
+%    \begin{center}
+%    {\tt   varnumbers(Term, Copy)}
+%    \end{center}
+%    is also provided.
+
+\ournewitem{subsumes(?Term1, +Term2)}{subsumes}\index{{\tt subsumes/2}}
+%\predindex{subsumes/2~(L)}
+    Term subsumption is a sort of one-way unification.  Term {\tt Term1}
+    and {\tt Term2} unify if they have a common instance, and unification
+    in Prolog instantiates both terms to that (most general) common instance.
+    {\tt Term1} subsumes {\tt Term2} if {\tt Term2} is already an instance of
+    {\tt Term1}.  For our purposes, {\tt Term2} is an instance of {\tt Term1}
+    if there is a substitution that leaves {\tt Term2} unchanged and makes
+    {\tt Term1} identical to {\tt Term2}.  Predicate {\tt subsumes/2} does
+    not work as described if {\tt Term1} and {\tt Term2} share common
+    variables.
+
+\ournewitem{subsumes\_chk(+Term1, +Term2)}{subsumes}
+\index{{\tt subsumes\_chk/2}}
+%\predindex{subsumes\_chk/2~(L)}
+    The {\tt subsumes\_chk/2} predicate is true when {\tt Term1} subsumes 
+    {\tt Term2}; that is, when {\tt Term2} is already an instance of
+    {\tt Term1}.  This predicate simply checks for subsumption and 
+    does not bind any variables either in {\tt Term1} or in {\tt Term2}.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+            | ?- subsumes_chk(a(X,f,Y,X),a(U,X,b,S)).
+
+            no
+            | ?- subsumes_chk(a(X,Y,X),a(b,b,b)).
+
+            X = _595884
+            Y = _595624
+     \end{verbatim}}
+
+\ournewitem{variant(?Term1, ?Term2)}{subsumes}\index{{\tt variant/2}}
+%\predindex{variant/2~(L)}
+    This predicate is true when {\tt Term1} and {\tt Term2} are 
+    alphabetic variants.  That is, you could imagine that {\tt variant/2}
+    as being defined like:
+    \begin{center}
+    \begin{minipage}{3.5in}
+    \begin{verbatim}
+	variant(Term1, Term2) :-
+	     subsumes_chk(Term1, Term2),
+	     subsumes_chk(Term2, Term1).
+    \end{verbatim}
+    \end{minipage}
+    \end{center}
+    but the actual implementation of {\tt variant/2} is considerably more
+    efficient.  However, in general, it does not work for terms that share
+    variables; an assumption that holds for most (reasonable) uses of
+    {\tt variant/2}.  Whenever the terms may share variables, the above
+    definition of variant (via {\tt subsumes\_chk/2}) should be used.
+\end{description}
+
+
+\section{Lower-Level I/O}
+%======================
+
+XSB  has various low-level routines that support input and output, 
+at both the term level and the character level.  The supporting
+predicates are described here.
+
+\begin{description}
+
+\ournewitem{fmt\_read(+Fmt,+Types,-Term,-Ret)}{machine}\index{{\tt fmt\_read/4}}
+%\predindex{fmt\_read/4~(L)}
+    This predicate provides a low-level routine for reading data from
+    the current input file (which must have been already opened by using
+    {\tt see/1}) according to a C format, as used in the C function
+    {\tt scanf}. To use it, it must be imported from the module {\tt
+    machine}.  {\tt Fmt} must be an atom representing the format that
+    will be passed to the C call to {\tt scanf}.  See the C
+    documentation for {\tt scanf} for the meaning of this string.
+    Note that this argument is an atom, not a string, and the C escape
+    characters are NOT recognized.  So, for example, to include a
+    newline, one must put a newline directly in the atom, and not use
+    \verb|\n|.  {\tt Types} is a term whose subfields describe the
+    types of the fields to be read.  For example, if three fields are
+    to be read, first an integer, then a string, and then a floating
+    point number, the term {\tt type(2,1,3)} could be used. The
+    functor symbol of {\tt Type} is ignored. The arguments indicate
+    the types of the subfields: 1 indicates a string value; 2
+    indicates an integer value; and 3 indicates a floating point
+    value.  {\tt Term} is a term whose arguments will be unified with
+    the field values read in.  (Again, the functor symbol of {\tt
+    Term} is ignored.)  It is an error (and in some cases the results
+    are unpredictable) if the number of arguments and their types are
+    not consistent among {\tt Fmt}, {\tt Types}, and {\tt Term}.  {\tt
+    Ret} must be a variable and it will be assigned a return value by
+    the predicate: a negative integer if end-of-file is encountered;
+    otherwise the number of fields read (as returned by {\tt scanf}.)
+
+\ournewitem{fmt\_write(+Fmt,+Term)}{machine}\index{{\tt fmt\_write/2}}
+%\predindex{fmt\_write/2~(L)}
+    This predicate provides a low-level routine for writing data to
+    the current output file (which must have been already opened by using
+    {\tt tell/1}) according to a C format, as used in the C function
+    {\tt printf}.
+    To use it, it must be imported from the module {\tt machine}.
+    {\tt Fmt} must be an atom representing the format that will be
+    passed to the C call to {\tt printf}.  See the C documentation
+    for {\tt printf} for the meaning of this string.  Note that this
+    is an atom, not a string, and the C escape characters are NOT
+    recognized.  So, for example, to include a newline, one must put
+    a newline directly in the atom, and not use \verb|\n|.
+    {\tt Term} is a term whose arguments will be output. They must
+    agree in number and in type with the field indicators in the
+    format {\tt Fmt}.  (The functor symbol of {\tt Term} is ignored.)
+
+\ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{machine}\index{{\tt fmt\_write\_string/2}}
+    This predicate works like the C function {\tt sprintf}. It takes the
+    format string and substitutes the values from the arguments of {\tt
+      Term} for the formatting instructions \%s, \%d, etc. The result is
+    available in {\tt String}.
+
+
+\ournewitem{read\_canonical(-Term)}{basics}\index{{\tt read\_canonical/1}}
+    Reads a term that is in canonical format from the current input
+    stream and returns it in {\tt Term}. On end-of-file, it returns the
+    atom {\tt end\_of\_file}.  If it encounters an error, it prints an
+    error message on stderr and returns the atom {\tt
+    read\_canonical\_error}. This is significantly faster than {\tt
+    read/1}, but requires the input to be in canonical form.
+
+\ournewitem{file\_read\_canonical(+FileDes,-Term,-Psc)}{machine}
+\index{{\tt file\_read\_canonical/3}}
+    Reads a term that is in canonical format from the the file
+    indicated by {\tt FileDes} (as returned by {\tt file\_open/3} or
+    by {\tt stat\_flag(10,FileDes))}, and returns it in {\tt Term}.
+    It also returns (in {\tt Psc}) the psc address of the main functor
+    symbol of the term, if it is the same as that of the previously
+    read term, and the current term is a ground (non 0-ary) fact.
+    (This is used for efficiency in the implementation of {\tt
+    load\_dync/1}).  Otherwise {\tt Psc} is set to 0.  To initialize
+    its previous psc value to zero, this predicate can be called with
+    {\tt FileDes} of -1000.
+
+\ournewitem{file\_open(+FileName,+Mode,-FileDes)}{machine}
+\index{{\tt file\_open/3}}
+    Opens a file with name {\tt FileName} to be accessed in mode {\tt
+    Mode} and returns a file-descriptor in {\tt FileDes} that can be
+    used to access the file.  If {\tt Mode} is 0, the the file is
+    opened for reading; if it is 1, the file is opened for writing; if
+    it is 2, the file is opened for appending.  If {\tt Mode} is 3,
+    then the string making up the atom {\tt FileName} is treated as
+    the contents of the file, and a descriptor is returned that allows
+    ``file'' access to that string.  This is how one can use
+    \ourprolog 's term I/O routines to build terms from atoms.
+
+\ournewitem{file\_close(+FileDes)}{machine}\index{{\tt file\_close/1}}
+    Closes the file (or string) for descriptor {\tt FileDes}.
+
+\ournewitem{file\_read(+FileDes,-Term)}{xsb\_read}
+\index{{\tt file\_read/2}}
+    Reads a term from the file (or string) with descriptor {\tt
+    FileDes} into {\tt Term}.  Note that the term must be terminated
+    with a period (.) (whether it appears in a file or in a string.)
+
+\ournewitem{file\_read(+FileDes,-Term,-Vars)}{xsb\_read}
+\index{{\tt file\_read/3}}
+    Reads a term from the file (or string) with descriptor {\tt
+    FileDes} into {\tt Term}, and returns in {\tt Vars} an open-tailed list of
+    pairs of names of variables and the variables themselves that
+    appear in Term.  For example, reading a term {\tt f(a,X,Y,X)}
+    would result in {\tt term} being bound to {\tt
+    f(a,\_25,\_26,\_25)} (for some internal variables) and {\tt Vars}
+    being bound to {[vv('X',\_25),vv('Y',\_26)|\_83]}.  Note that the
+    pairing functor symbol is {\tt vv/2} and it must be imported from
+    {\tt xsb\_read} along with this read predicate.  Also note that 
+    {\tt Vars} is not a proper list, but has a free variable instead 
+    of [] at its end.
+
+\end{description}
+
+\section{Script Writing Utilities}
+%========================
+
+Prolog, (or XSB) can be useful for writing scripts in a UNIX system.
+Prolog's simple syntax and declarative semantics make it especially
+suitable for scripts that involve text processing.  The following
+library functions are intended to be used on UNIX-based platforms.
+Furthermore, they are new to Version 1.7 and should be considered to
+be in the Beta test stage.
+
+\begin{description}
+\ournewitem{date(?Date)}{scrptutl}
+\index{{\tt date/1}}
+	Unifies {\tt Date} to the current date, returned as a Prolog
+term, suitable for term comparison.
+
+Example:
+{\footnotesize
+\begin{verbatim}
+                > date 
+                Thu Feb 20 08:46:08 EST 1997
+                > xsb -i
+               XSB Version 1.7
+               [sequential, single word, optimal mode]
+               | ?- [scrptutl].
+               [scrptutl loaded]
+
+               yes
+               | ?- date(D).
+               D = date(1997,1,20,8,47,41)
+
+               yes
+\end{verbatim}}
+
+\ournewitem{file\_time(+FileName, -time(Time1,Time2))}{machine}
+\index{{\tt file\_time/2}}
+
+Returns file's modification time. Because 
+XSB steals 5 bits from each word, time must be returned as two words:
+Time1, representing the most significant digits, and Time2, representing
+the less significant digits.
+
+\ournewitem{directory(+Path,?Directory)}{directry}
+\index{{\tt directory/2}}
+
+	Unifies {\tt Directory} with a list of files in the directory
+specified by path.  Information about the files is similar to that
+obtained by {\tt ls -l}, but transformed for ease of processing.
+
+\ournewitem{fget\_line(+Str,?Inlist,?Next)}{scrptutl}
+\index{{\tt fget\_line/3}}
+
+{\tt fget\_line/3} reads one line from the input stream {\tt Str} and
+unifies {\tt Inlist} to the list of ASCII integers representing the
+characters in the line, and {\tt Next} to the line terminator, either
+a newline ({\tt 10}) or EOF ({\tt-1}).
+
+\ournewitem{file\_read\_line(+FileDes,-String,-IsFullLine)}{machine}
+\index{{\tt file\_read\_line/3}}
+\index{{\tt intern\_string/2}}
+    This is a low-level predicate that allows XSB to read input files
+    efficiently, line by line. It returns the string read from {\tt
+      FileDes} using the variable {\tt String}. The output variable {\tt
+      IsFullLine} is 1, if the line read contains the newline character at
+    the end. Otherwise, it is 0. This latter case arises in two situations:
+    when the last line in the stream does not have a newline  character or
+    when the line is very long, longer than the buffer allocated for that
+    purpose. (In such a case {\tt file\_read\_line/3} will read only as
+    much as the buffer allows.) 
+
+    This predicate fails on reaching the end of file.
+
+    This predicate is much more efficient than {{\tt fget\_line/3}}, but it
+    is also much more low level (see next). Also, there is a difference
+    between {{\tt fget\_line/3}} and {\tt file\_read\_line/3} in that the
+    former returns strings, while the latter returns lists of ASCII
+    characters.
+    
+    {\bf Important}: {\tt file\_read\_line/3} does \underline{not} intern
+    the strings it reads from the input file. This is done for efficiency
+    reasons (it is designed to be a low-level I/O predicate).  In
+    particular, this means you cannot compare these strings to normal
+    (interned) XSB strings. If interning is necessary, this should be done
+    explicitly. For instance, {\tt intern\_string(Uninterned, Interned)}
+    converts an uninterned string into an interned one.
+
+\ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
+\index{{\tt expand\_filename/2}}
+Expands the file name passed as the first argument and binds the variable
+in the second argument to the expanded name. This includes expanding Unix
+tildas, prepending the current directory, etc. In addition, the expanded
+file name is ``rectified'' so that multiple repeated slashes are replaced
+with a single slash, the intervening ``./'' are removed, and ``../'' are
+applied so that the preceding item in the path name is deleted. For
+instance, if the current directory is {\tt /home}, then {\tt
+  abc//cde/..///ff/./b} will be converted into {\tt /home/abc/ff/b}.
+
+Under NT and DOS, this predicates does rectification (using backslashes
+when appropriate), but it does not expand the tildas.
+
+\ournewitem{tilde\_expand\_filename(+FileName,-ExpandedName)}{machine}
+\index{{\tt tilde\_expand\_filename/2}}
+Like {\tt expand\_filename/2}, but only expands tildas and does
+rectification. This does not prepend the current working directory to
+relative file names.
+
+\ournewitem{is\_absolute\_filename(+FileName)}{machine}
+\index{{\tt is\_absolute\_filename/1}}
+Succeeds, if file name is absolute; fails otherwise.
+This predicate works also under NT and DOS, {\it i.e.}, it recognizes drive
+letters, etc.
+
+\ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
+\index{{\tt parse\_filename/4}}
+This predicate parses file names by separating the directory part, the base
+name part, and file extension. If file extension is found, it is removed
+from the base name. Also, directory names are rectified and if a directory
+name starts with a tilde (in Unix), then it is expanded.
+
+For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
+{\tt /home/john/doe}, {\tt foo}, and {\tt bar} (where we assume that    
+{\tt /home/john} is what {\tt $\sim$john} expands into).  
+
+
+\ournewitem{sysin(+Command,?Output)}{scrptutl}
+\index{{\tt sysin/2}}
+
+	Unifies {\tt Output} with the stdout of {\tt Command}
+represented as a list of lists of tokens, where each element in the
+outer list of {\tt Command} represents a line of stdout.
+
+Example:
+{\footnotesize
+\begin{verbatim}
+                > uname -a
+                Linux swiftlap 1.2.8 #1 Sun May 7 13:10:10 CDT 1995 i486
+                | ?- sysin('uname -a',Output).
+
+                Output = [[Linux,swiftlap,1.2.8,#1,Sun,May,7,13:10:10,CDT,1995,i486]]
+
+                yes
+\end{verbatim}}
+
+\end{description}
+
+\comment{
+
+TLS --- Im not quite sure that the sockets are ready for prime time.
+
+\section{The Socket Library}
+
+As a convenience, XSB provides access to sockets through the following
+routines.  Currently only the domain {\tt AF\_INET} is supported.
+
+\begin{description}
+\ournewitem{socket(-Socket\_fd)}{socket}
+
+\ournewitem{socket\_request(+Socket\_fd,+Port,+Hostname,+Sockfptr)}{socket}
+
+
+
+\ournewitem{socket\_bind(+Socket\_fd,+Port)}{socket}
+
+\ournewitem{socket\_listen(+Socket\_fd,+Length)}{socket}
+
+\ournewitem{socket\_accept(+Socket\_fd,Sockfptr)}{socket}
+
+\ournewitem{socket\_connect(+Socket\_fd,Port,Hostname,Sockfptr)}{socket}
+
+\ournewitem{socket\_flush(+Socket\_fd)}{socket}
+
+\ournewitem{socket\_close(+Socket\_fd)}{socket}
+
+\end{description}
+
+(dsw - This is stuff Hasan wrote, wich ought to be formated, cleaned up an dincluded: )
+
+The following calls can be imported from the ``socket'' library.
+
+socket(-Sockfd) :
+Creates a new TCP communication end point of type AF_INET. Succeeds with
+binding Sockfd to a small integer called a socket descriptor.
+
+socket_bind(+Sockfd, +Port) :
+Used for attaching a specific local (integer) Port for the socket with
+descriptor Sockfd.
+
+socket_listen(+Sockfd, +QueueLength) :
+Used for announcing willingness to accept connections at the socket identified
+with descriptor Sockfd. The (integer) QueueLength sets the length of the queue
+for the incoming connections at this socket.
+
+socket_accept(+Sockfd, -NewSockfd) :
+Block the caller until a connection attempt arrives. If the incoming queue is
+not empty, the first connection request is accepted, the call succeeds and
+binds NewSockfd with a socket descriptor that will be used for this new
+connection.
+
+socket_connect(+Sockfd, +Port, +Hostname, -Sockfileptr) :
+The caller identifies a server's IP address in Hostname and port in Port.
+TCP will attempt to establish a connection with the server using local socket
+with descriptor Sockfd. For information about Sockfileptr argument see the
+note below.
+
+socket_close(+Sockfd) :
+Terminates and closes a connection identified with the descriptor Sockfd.
+
+socket_recv(+Sockfd, -Data) :
+Receives a message from the connection identified with the descriptor Sockfd,
+strips off the special end_of_message symbol ```'' and binds it to variable Data.
+
+socket_send(+Sockfd, +Data) :
+Appends the end_of_message symbol ```'' to the atom Data and sends Data over
+the connection identified with the descriptor Sockfd.
+
+socket_send_eof(+Sockfd) :
+Sends the special EOF symbol appended with end_of_message symbol ```'' over
+the connection identified with the descriptor Sockfd.
+
+socket_send_asci(+Sockfd, Code) :
+Send the ascii character with ASCII code Code appended with end_of_message
+symbol ```''  over the connection identified with the descriptor Sockfd.
+
+
+Note: (UNIX only) file_write_canonical(+Sockfileptr, +Data)
+		  file_read_canonical(+Sockfileptr, -Data, -Psc) 
+		  socket_flush(+Sockfileptr)
+
+The above calls can be used for sending/flushing and receiving Data over a
+Unix file descriptor Sockfileptr associated with a socket. Sockfileptr can be
+either obtained from the socket_accept(+Sockfd, -Sockfileptr) in server mode
+or from socket_connect(+Sockfd, +Port, +Hostname, -Sockfileptr) in client mode.
+
+}
+
+\section{Arrays}
+%===============
+
+The module {\tt array1} in directory {\tt lib} provides a very simple 
+backtrackable array implementation.  The predicates through which the 
+array objects are manipulated are:
+
+\begin{description}
+\ournewitem{array\_new(-Array, +Size)}{array1}\index{{\tt array\_new/2}}
+%\predindex{array\_new/2~(L)}
+    Creates a one dimensional empty array of size {\tt Size}.  All the 
+    elements of this array are variables.
+\ournewitem{array\_elt(+Array, +Index, ?Element)}{array1}
+\index{{\tt array\_elt/3}}
+%\predindex{array\_elt/3~(L)}
+    True iff {\tt Element} is the {\tt Index}-th element of array 
+    {\tt Array}.
+\ournewitem{array\_update(+Array, +Index, +Elem, -NewArray)}{array1}
+\index{{\tt array\_update/4}}
+%\predindex{array\_update/4~(L)}
+    Updates the array {\tt Array} such that the {\tt Index}-th element
+    of the new array is {\tt Elem} and returns the new array in 
+    {\tt NewArray}.  The implementation is quite efficient in that it 
+    avoids the copying of the entire array.
+\end{description}
+
+A small example that shows the use of these predicates is the following:
+{\footnotesize
+ \begin{verbatim}
+           | ?- import [array_new/2, array_elt/3, array_update/4] from array1.
+
+           yes
+           | ?- array_new(A, 4), array_update(A,1,1,B), array_update(B,2,2,C),
+                ( array_update(C,3,3,D), array_elt(D,3,E)
+                ; array_update(C,3,6,D), array_elt(D,3,E)
+                ; array_update(C,3,7,D), array_elt(D,3,E)
+                ).
+
+           A = array(1,2,3,_874600)
+           B = array(1,2,3,_874600)
+           C = array(1,2,3,_874600)
+           D = array(1,2,3,_874600)
+           E = 3;
+
+           A = array(1,2,6,_874600)
+           B = array(1,2,6,_874600)
+           C = array(1,2,6,_874600)
+           D = array(1,2,6,_874600)
+           E = 6;
+
+           A = array(1,2,7,_874600)
+           B = array(1,2,7,_874600)
+           C = array(1,2,7,_874600)
+           D = array(1,2,7,_874600)
+           E = 7;
+
+           no
+ \end{verbatim}
+}
+
+
+\section{The Profiling Library}
+%==============================
+
+These predicates are available by loading the library through
+{\tt [prof\_lib]}.
+
+\begin{description}
+\ournewitem{measure(+Call)}{prof\_lib}\index{{\tt measure/1}}
+%\predindex{measure/1~(L)}\label{p:measure}
+     The same as {\tt once/1} (see section~\ref{meta_predicates}), 
+     but it also prints out statistical information about the call,
+     that looks like the information printed out by predicate
+     {\tt statistics/0} (see section~\ref{environmental}).
+\end{description}
+
+%----------------------------------------------------------------------
+%\input{tr_assert}
+\section{Asserts/Retracts using Tries }
+
+\index{{\tt trie\_assert/1}}
+\index{{\tt trie\_retract/1}}
+\index{{\tt trie\_retractall/1}}
+\index{{\tt trie\_retract\_nr/1}}
+\index{{\tt abolish\_trie\_asserted/1}}
+\index{{\tt trie\_dynamic/1}}
+
+In \version, trie asserted code has been merged with standard asserted
+code.  If the user wishes to use tries for dynamic code, the
+recommended programming practice is as outlined in Section
+\ref{sec:assert}.  For compatability with previous versions, the
+predicates {\tt trie\_assert/1}, {\tt trie\_retract/1}, {\tt
+trie\_retractall/1}, {\tt trie\_retract\_nr/1}, {\tt
+abolish\_trie\_asserted/1} and {\tt trie\_dynamic/1} can be imported
+from the module {\sf tables}.  However, if the current index
+specification of these predicates is {\tt trie} (see Section
+\ref{sec:assert}), the predicates are defined as {\tt assert/1}, {\tt
+retract/1}, {\tt retractall/1}, {\tt retract\_nr/1}, {\tt abolish/1}
+and {\tt dynamic/1} respectively.  If the index specification is other
+than {\tt tries}, the predicate will issue a warning message and have
+no effect on the database.
+
+\section{Extended Logic Programs}  \label{library_utilities:wfsx}
+\index{WFSX}
+\index{negation!explicit negation}
+As explained in Section \ref{tabling_overview} XSB can compute normal
+logic programs according to the well-founded semantics.  In fact, XSB
+can also compute {\em Extended Logic Programs}, which contain an
+operator for explicit negation (written using the symbol {\tt -} in
+addition to the negation-by-failure of the well-founded semantics
+(\verb|\+| or {\tt not}).  Extended logic programs can be extremely
+useful when reasoning about actions, for model-based diagnosis, and
+for many other uses \cite{AlPe95}.  The library, {\sf slx} provides a means
+to compile programs so that they can be executed by XSB according to
+the {\em well-founded semantics with explicit negation} \cite{ADP95}.
+Briefly, WFSX is an extension of the well-founded semantics to include
+explicit negation and which is based on the {\em coherence principle}
+in which an atom is taken to be default false if it is proven to be
+explicitly false, intutively:
+\[
+-p \Rightarrow not\ p.
+\]
+
+This section is not intended to be a primer on extended logic
+programming or on WFSX semantics, but we do provide a few sample
+programs to indicate the action of WFSX.  Consider the program
+{\small 
+\begin{verbatim}
+s:- not t.
+
+t:- r.
+t.
+
+r:- not r.
+\end{verbatim}
+}
+If the clause {\tt -t} were not present, the atoms {\tt r, t, s} would
+all be undefined in WFSX just as they would be in the well-founded
+semantics.  However, when the clause {\tt t} is included, {\tt t}
+becomes true in the well-founded model, while {\tt s} becomes false.
+Next, consider the program
+{\small 
+\begin{verbatim}
+s:- not t.
+
+t:- r.
+-t.
+
+r:- not r.
+\end{verbatim}
+}
+In this program, the explicitly false truth value for {\tt t} obtained
+by the rule {\tt -t} overrides the undefined truth value for {\tt t}
+obtained by the rule {\tt t:- r}.  The WFSX model for this program
+will assign the truth value of {\tt t} as false, and that of {\tt s}
+as true.  If the above program were contained in the file {\tt
+test.P}, an XSB session ising {\tt test.P} might look like the
+following:
+{\small
+\begin{verbatim}
+              > xsb
+              
+              | ?- [slx].
+              [slx loaded]
+            
+              yes
+              | ?- slx_compile('test.P').
+              [Compiling ./tmptest]
+              [tmptest compiled, cpu time used: 0.1280 seconds]
+              [tmptest loaded]
+            
+              | ?- s.
+              
+              yes
+              | ?- t.
+
+              no
+              | ?- naf t.
+              
+              yes
+              | ?- r.
+
+              no
+              | ?- naf r.
+              
+              no
+              | ?- und r.
+              
+              yes
+\end{verbatim}
+}
+In the above program, the query {\tt ?- t.} did not succeed,  because
+{\tt t} is false in WFSX: accordingly the query {\tt naf t} did
+succeed, because it is true that t is false via negation-as-failure,
+in addition to {\tt t} being false via explicit negation.  Note that
+after being processed by the SLX preprocessor, {\tt r} is undefined
+but does not succeed, although {\tt und r} will succeed.
+
+We note in passing that programs under WFSX can be paraconsistent.
+For instance in the program.
+{\small
+\begin{verbatim}
+              p:- q.
+
+              q:- not q.
+              -q.
+\end{verbatim}
+}
+both {\tt p} and {\tt q} will be true {\em and} false in the WFSX
+model.  Accordingly, under SLX preprocessing, both {\tt p} and {\tt
+naf p} will succeed.
+
+\begin{description}
+\ournewitem{slx\_compile(+File)}{slx}
+Preprocesses and loads the extended logic program named {\tt File}.
+Default negation in {\tt File} must be represented using the operator
+{\tt not} rather than using {\tt tnot} or \verb|\+|.  If {\tt L} is an
+objective literal (e.g. of the form $A$ or $-A$ where $A$ is an atom),
+a query {\tt ?- L} will succeed if {\tt L} is true in the WFSX model,
+{\tt naf L} will succeed if {\tt L} is false in the WFSX model, and
+{\tt und L} will succeed if {\tt L} is undefined in the WFSX model.
+\end{description}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

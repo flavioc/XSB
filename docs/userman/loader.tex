@@ -1,0 +1,108 @@
+The dynamic (or automatic) loader comprises one of \ourprolog's 
+differences from other Prolog systems.
+In \ourprolog, the loading of user modules Prolog libraries (including
+the \ourprolog\ compiler itself) is delayed until predicates in them
+are actually needed, saving program space for large Prolog
+applications.  The delay in the loading is done automatically, unlike
+other systems where it must be explicitly specified for non-system
+libraries.
+
+When a predicate imported from another module (see section~\ref{Modules})
+is called during execution, the dynamic loader is invoked automatically
+if the module is not yet loaded into the system, 
+The default action of the dynamic loader is to search for the
+byte code file of the module 
+first in the system library directories (in the order {\tt lib, syslib}, 
+and then {\tt cmplib}), and finally in the current working directory.
+If the module is found in one of these directories, then it will 
+be loaded ({\em on a first-found basis}). Otherwise, an error 
+message will be displayed on the current output stream
+reporting that the module was not found.
+
+In fact, \ourprolog\ loads the compiler and most system modules this way.
+Because of dynamic loading, the time it takes to compile a file 
+is slightly longer than usual the first time the compiler is 
+invoked in a session.
+
+
+\subsection{Changing the default Search Path}
+%============================================
+Users are allowed to supply their own library directories and also to
+override the default search path of the dynamic loader. 
+User-supplied library directories are searched by the dynamic loader 
+{\em before} searching the default library directories.
+
+The default search path of the dynamic loader can easily be changed
+by having a file named {\verb|.xsbrc.P|} in the user's home directory.  
+The {\verb|.xsbrc.P|} file, which is automatically consulted by the
+ \ourprolog\ interpreter, must be a module (see section~\ref{Modules}),
+and might look like the following:
+\begin{verbatim}
+             :- export library_directory/1.
+
+             library_directory('./').
+             library_directory('~/').
+             library_directory('~my_friend/').
+             library_directory('/usr/lib/sbprolog/').
+\end{verbatim}
+Note that all directories specified in predicate {\tt library\_directory/1}
+must end with a {\tt '/'}.  After loading the module of the above 
+example, the current working directory is searched first (as opposed to the
+default action of searching it last).  Also, \ourprolog's system
+library directories ({\tt lib, syslib}, and {\tt cmplib}), will now
+be searched {\em after} searching the user's, {\tt my\_friend}'s 
+and the {\tt "/usr/lib/sbprolog/"} directory.
+
+In \version\ the {\verb|.xsbrc.P|} file {\em must} define and 
+export the predicate {\tt library\_directory/1} if it is used, although
+in the future {\verb|.xsbrc.P|} may be used for other purposes as well.
+
+We emphasize that in the presense of a {\verb|.xsbrc.P|} file
+{\em it is the user's responsibility to avoid module name clashes 
+with modules in \ourprolog's system library directories}.
+Such name clashes can cause the system to behave strangely since these
+modules will probably have with semantics different from that expected
+by the \ourprolog\ system code.  The list of module names in
+\ourprolog's system library directories can be found in
+appendix~\ref{module_names}.
+
+
+\subsection{Dynamically loading predicates in the interpreter}
+%=============================================================
+Modules are usually loaded into an environment when they are consulted
+(see section~\ref{Consulting}).  Specific predicates from a module can
+also be imported into the run-time environment through the standard 
+predicate {\tt import PredList from Module}\index{{\tt import/1}}.
+Here, {\tt PredList} can either be a Prolog list or a comma list.  (The
+{\tt import/1} can also be used as a directive in a source module 
+(see section~\ref{Modules}).
+
+We provide a sample session for compiling, dynamically loading, and 
+querying a user-defined module named {\tt quick\_sort}.
+For this example we assume that {\tt quick\_sort} is a file in the 
+current working directory, and contains the definitions of the
+predicates {\tt concat/3} and {\tt qsort/2}, both of which are exported.
+
+{\footnotesize
+\begin{verbatim}
+             | ?- compile(quick_sort).
+             [Compiling ./quick_sort]
+             [quick_sort compiled, cpu time used: 1.439 seconds]
+
+             yes
+             | ?- import concat/3, qsort/2 from quick_sort. 
+
+             yes
+             | ?- concat([1,3], [2], L), qsort(L, S).
+
+             L = [1,3,2]
+             S = [1,2,3]
+
+             yes.
+\end{verbatim}
+}
+
+The standard predicate {\tt import/1} does not load the module 
+containing the imported predicates, but simply informs the system 
+where it can find the definition of the predicate when (and if) the
+predicate is called.

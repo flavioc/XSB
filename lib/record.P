@@ -1,0 +1,210 @@
+/* File:      record.P
+** Author(s): Jiyang Xu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- export assume/1, assumed/1, assumed_all/2.
+:- export assume_flag/1, assumed_flag/1.
+:- export record/3, recorda/3, recordz/3, recorded/3, erase/1, instance/2.
+
+:- import buff_cell/3, buff_alloc/3, buff_dealloc/4, buff_set_word/3, 
+	  psc_type/2, psc_set_type/3, term_psc/2, term_new/2, psc_arity/2,
+	  buff_word/3, term_type/2, psc_prop/2, psc_set_prop/3, conpsc/2
+     from machine.
+:- import arg/3, atomic/1 from standard.
+:- import numbervars/3 from num_vars.
+:- import copyterm/4 from copyterm.
+
+/* -- assume ---------------------------------------------------------*/
+
+assume(Fact) :-
+	conpsc(Fact, Psc),
+	psc_type(Psc, T),
+	( T =:= 0 -> 
+		psc_set_type(Psc, 11, 0), 	% T_ALIA
+		psc_set_prop(Psc, a(List), 1)
+	; T =:= 11 -> psc_prop(Psc, AList), AList = a(List)
+	),
+	attach(Fact, List).
+
+attach(One, List) :- var(List), !, List = [One|_].
+attach(One, [_|List]) :- attach(One, List).
+
+assumed_all(Fact, List) :-
+	conpsc(Fact, Psc),
+	psc_type(Psc, T),
+	T =:= 11,
+	psc_prop(Psc, AList),
+	AList = a(List).
+
+assumed(Fact) :-
+	assumed_all(Fact, List),
+	assumed(Fact, List).
+
+assumed(_Fact, List) :- var(List), !, fail.
+assumed(Fact, [Fact|_]).
+assumed(Fact, [_|Rest]) :- assumed(Fact, Rest).
+
+/* -- assume flag (old conset) -------------------------------------- */
+
+assume_flag(Fact) :- 
+	conpsc(Fact, Psc),
+	psc_type(Psc, T),
+	( T =:= 0, !, psc_set_type(Psc, 8, 1) 		% T_CSET
+	; T =:= 8, !
+	; fail
+	),
+	psc_set_prop(Psc, _, 1),
+	psc_prop(Psc, Flag),
+	arg(1, Fact, Flag),
+	!.
+
+assumed_flag(Fact) :-
+	conpsc(Fact, Psc),
+	psc_type(Psc, T),
+	( T =:= 8, !
+	; fail
+	),
+	psc_prop(Psc, Flag),
+	arg(1, Fact, Flag).
+
+/* -- record ---------------------------------------------------------*/
+
+instance(Term, Term, _Varlist) :- atomic(Term), !.
+instance(Term, Instance, Varlist) :- Term = '$VAR'(VarNo), !,
+	member1('$VAR'(VarNo, Instance), Varlist).
+instance([H|T], [IH|IT], Varlist) :- !,
+	instance(H, IH, Varlist),
+	instance(T, IT, Varlist).
+instance(Term, Instance, Varlist) :- structure(Term), !,
+   % Do the following to create the functor in the same module!!!
+	term_psc(Term, PSC),
+	psc_arity(PSC, A),
+	term_new(PSC, Instance1), Instance = Instance1,
+	instanceargs(Term, A, A, Instance, Varlist).
+
+instanceargs(_, 0, _, _, _).
+instanceargs(Term, ArgNo, A, Instance, Varlist) :- ArgNo > 0,
+	arg(ArgNo, Term, Arg),
+	instance(Arg, IArg, Varlist),
+	arg(ArgNo, Instance, IArg),
+	ArgNo1 is ArgNo - 1,
+	instanceargs(Term, ArgNo1, A, Instance, Varlist).
+
+/* -- CProlog record ----------------------------------------------- */
+
+record(Key, Term, Ref) :- recordz(Key, Term, Ref).
+
+recordz(Key, Term, Ref) :-
+	conpsc(Key, Psc),
+	psc_type(Psc, T),
+	( T =:= 0, !, record_init(Psc)
+	; T =:= 10				% T_RKEY
+	),
+	psc_prop(Psc, MarkNode),
+	( numbervars(Term, 0, _),
+	  copyterm(Term, 1, Buff, Size),
+	  buff_word(MarkNode, 4, PrevNode),
+	  buff_alloc(16, NewNode, 1),
+	  buff_set_word(NewNode, 0, MarkNode),
+	  buff_set_word(NewNode, 4, PrevNode),
+	  buff_set_word(NewNode, 8, Buff),
+	  buff_set_word(NewNode, 12, Size),
+	  buff_set_word(MarkNode, 4, NewNode),
+	  buff_set_word(PrevNode, 0, NewNode),
+	  fail
+	; buff_word(MarkNode, 4, CurNode), Ref = CurNode
+	).
+
+recorda(Key, Term, Ref) :-
+	conpsc(Key, Psc),
+	psc_type(Psc, T),
+	( T =:= 0, !, record_init(Psc)
+	; T =:= 10				% T_RKEY
+	),
+	psc_prop(Psc, MarkNode),
+	( numbervars(Term, 0, _),
+	  copyterm(Term, 1, Buff, Size),
+	  buff_word(MarkNode, 0, NextNode),
+	  buff_alloc(16, NewNode, 1),
+	  buff_set_word(NewNode, 0, NextNode),
+	  buff_set_word(NewNode, 4, MarkNode),
+	  buff_set_word(NewNode, 8, Buff),
+	  buff_set_word(NewNode, 12, Size),
+	  buff_set_word(MarkNode, 0, NewNode),
+	  buff_set_word(NextNode, 4, NewNode),
+	  fail
+	; buff_word(MarkNode, 0, CurNode), Ref = CurNode
+	).
+
+recorded(Key, Term, Ref) :-
+	conpsc(Key, Psc),
+	psc_type(Psc, T),
+	T =:= 10,					% T_RKEY
+	psc_prop(Psc, MarkNode),
+	buff_word(MarkNode, 0, FirstNode),
+	recorded1(Term, FirstNode, Ref).
+
+recorded1(Term, Node, Ref) :- 
+	buff_word(Node, 8, Buff),
+	buff_word(Node, 0, NextNode),
+	( Buff = 0, !, fail			% mark node -- end
+	; buff_cell(Buff, 0, Recorded),
+	  instance(Recorded, Term, _),
+	  Ref = Node
+	; recorded1(Term, NextNode, Ref)
+	).
+
+erase(Ref) :- 
+	buff_word(Ref, 0, Next),
+	buff_word(Ref, 4, Prev),
+	buff_word(Ref, 8, Buff),
+	buff_word(Ref, 12, Size),
+	buff_set_word(Next, 4, Prev),
+	buff_set_word(Prev, 0, Next),
+	buff_dealloc(Buff, Size, 0, 1),
+	buff_dealloc(Ref, 16, 0, 1).
+
+instance(Ref, Term) :-
+	buff_word(Ref, 8, Buff),
+	buff_cell(Buff, 0, Recorded),
+	instance(Recorded, Term, _).
+
+/* -- record initialization, appending ------------------------------------ */
+
+record_init(Psc) :-
+	psc_set_type(Psc, 10, 1), 		% T_RKEY 
+	buff_alloc(16, MarkNode, 1),
+	buff_set_word(MarkNode, 0, MarkNode),	% next -> self
+	buff_set_word(MarkNode, 4, MarkNode),	% prev -> self
+	buff_set_word(MarkNode, 8, 0),		% buff -> 0
+	psc_set_prop(Psc, MarkNode, 1).
+
+/* -- builtins ------------------------------------------------------ */
+
+member1(X, [X|_]) :- !.
+member1(X, [_|Y]) :- member1(X, Y).
+
+structure(X) :- term_type(X, T), T =:= 1.
+

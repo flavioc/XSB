@@ -1,0 +1,680 @@
+/* File:      consult.P
+** Author(s): Kostis F. Sagonas, David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+compile(Path) :- compile(Path, []).	% compile with no options
+
+compile(X, _) :-
+	var(X), !,
+	abort('Uninstantiated argument 1 of compile/[1,2], cannot compile!').
+compile([], _) :- !.
+compile([H|T], Options) :- !,
+	\+ (\+ (compile0(H,Options))),
+	compile(T, Options).
+compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
+
+compile0(Path, Options) :-
+	atom(Path),
+	tilde_expand_filename(Path, Expanded_Path),
+	search_module(Expanded_Path, Dir, Mod, SExt, _HasObj, Base, _Obj),
+	obj_ext(OExt),
+	SExt \== OExt,
+	!,
+	compile_f(SExt, Base, Options, _, Mod, Dir).
+compile0(Path, _) :-
+	file_write0(2, 'Cannot find the file/module '),
+	file_write0(2, Path), file_nl(2), fail.
+
+compile_f(0'P, Base, Opts, ExList, Mod, _) :- 
+	compile(Mod, Base, Opts, ExList).
+compile_f(0'c, Base, Opts, ExList, Mod, Dir) :- 
+	compile_cH(Mod, Base, Opts, ExList, Dir).
+compile_f(0'x, Base, Opts, ExList, Mod, _) :-
+	str_cat(Base, '.P', FileName),
+	sys_link(Base, FileName, _Result),
+	compile(Mod, Base, Opts, ExList),
+	rm(FileName).
+
+/*======================================================================*/
+/* Predicates consult/[1,2] are thereafter similar to reconsult/[1,2].	*/
+/*======================================================================*/
+
+consult(Path) :- reconsult(Path, []).
+consult(Path, Options) :- \+ (\+ (reconsult(Path, Options))).
+
+[File|Rest] :- reconsult(File), ( Rest == [] -> true ; call(Rest) ).
+
+/*======================================================================*/
+/*======================================================================*/
+
+reconsult(Path) :- reconsult(Path, []).
+
+reconsult(Path, Options) :- 
+	( nonvar(Path) -> 
+		( atom(Path) -> \+ (\+ (reconsult0(Path, Options)))
+		; abort('Wrong type in argument 1 of reconsult/[1,2], cannot reconsult!')
+		)
+	; abort('Uninstantiated argument 1 of reconsult/[1,2], cannot reconsult!')
+	).
+
+reconsult0(user, Options) :- !, compile_load_user(Options).
+reconsult0(Path, Options) :- 
+	tilde_expand_filename(Path, Expanded_Path),
+        search_module(Expanded_Path, Dir, Mod, SExt, HasObj, Base, Obj),
+	!,
+	( (obj_ext(OExt), SExt \== OExt,
+	   i_want_compile(SExt, Base, Obj, HasObj))
+	 ->	((HasObj =:= 0, large_source_file(SExt,Base))
+		 ->	message(('[Dynamically loading ',Base,']')),
+			load_dyn0(SExt,Base)
+		 ;	compile_f(SExt, Base, Options, _ExList, Mod, Dir),
+			load_exec(Obj, Mod)
+		)
+	 ; 	load_exec(Obj, Mod)
+	).
+
+reconsult0(Path, _) :-
+        file_write0(2, 'Cannot find the file/module '),
+        file_write0(2, Path), file_nl(2), fail.
+
+i_want_compile(SExt, Base, Obj, HasObj) :-
+	( HasObj =:= 0 -> true ; needs_recompile(SExt, Base, Obj) ).
+
+large_source_file(0'P, Base) :-
+	str_cat(Base, '.P', PFileName),
+	file_size(PFileName, Size),
+	default_compile_size(MaxSize), 
+	Size >= MaxSize.
+large_source_file(0'x, Base) :-
+	file_size(Base, Size),
+	default_compile_size(MaxSize), 
+	Size >= MaxSize.
+
+needs_recompile(0'P, Base, Obj) :-
+	( str_cat(Base, '.P', PFileName),
+	  file_time(Obj, time(OTime1,OTime2)), 
+	  file_time(PFileName, time(PTime1,PTime2)),
+	  time(OTime1,OTime2) @< time(PTime1,PTime2)
+	)
+	;
+	(hdr_ext(HExt),  % .H or .HX, depending on OS
+	  str_cat(Base, HExt, HFileName),
+	  file_time(Obj, time(OTime1,Otime2)),
+	  %% If no .H file exists, then HTime = 0
+	  file_time(HFileName, time(HTime1,HTime2)), 
+	  time(OTime1,Otime2) @< time(HTime1,HTime2)
+	).	  
+
+needs_recompile(0'x, Base, Obj) :-
+	file_time(Obj, time(OTime1,OTime2)), 
+	file_time(Base, time(PTime1,PTime2)),
+	time(OTime1,OTime2) @< time(PTime1,PTime2).
+
+%%%needs_recompile(0'o, _Base, _Obj).
+% As a temporary solution a foreign module needs to be recompiled
+% if either the .c file or if the .H file needs to be recompiled.
+
+% Solution??? It's a problem!!! What does this test for solaris do?
+% obviously, solaris is not the only system that uses .so!!! -- mk
+needs_recompile(0'c, Base, Obj) :-
+	xsb_configuration(os_type, OS_type),
+	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
+	  ; str_cat(Base, '.o', C_Obj)
+	  ),
+	  ( file_exists(C_Obj) -> 
+		file_time(C_Obj, time(COTime1,COTime2)),
+		str_cat(Base, '.c', CFileName),
+		file_time(CFileName, time(CTime1,CTime2)),
+		time(COTime1,COTime2) @< time(CTime1,CTime2)
+	  ; true
+	  )
+	)
+	; 
+	( hdr_ext(HExt),
+	  str_cat(Base, HExt, HFileName),
+	  file_time(Obj, time(OTime1,OTime2)), 
+	  file_time(HFileName, time(HTime1,HTime2)), 
+	  time(OTime1,OTime2) @< time(HTime1,HTime2)
+	).
+
+
+/*======================================================================*/
+/*  search_module(+FileName, -Dir, -Mod, -SExt, -HasObj, -Base, -Obj)	*/
+/*                                                                      */
+/*	Given a FileName (must be an atom), search_module/7 finds the	*/
+/*	location of the corresponding module and returns:		*/
+/*		1) the directory (Dir),					*/
+/*		2) the module name (Mod),				*/
+/*		3) the extension (SExt) of the source file		*/
+/*		   (P/c/x[other name]/O[no source file]),		*/
+/*		4) whether an object code file exists (HasObj = 0,1),	*/
+/*		5) the base name of the file (Base = Dir+Mod), and	*/
+/*		6) the object file name (Obj)				*/
+/* 	The call will fail if the specified file cannot be found.	*/
+/*======================================================================*/
+
+%% This whole piece is buggy and will choke on unusual file names
+%% Needs to be thrown out and redone using str_sub and such. -mk
+search_module(Name, Dir, Mod, SExt, HasObj, Base, Obj) :-
+	str_len(Name, Len),
+	search_slash(Name, Len, Slash), % If Slash =:= -1 no slash is found
+	Loc1 is Len - 2,	   % The following is obviously a non-general
+	buff_byte(Name, Loc1, B1), % way of searching for the '.?' suffix
+	( B1 =:= 0'. -> Dot = Loc1 ; Dot = Len ),
+	( Slash < 0, Dot =:= Len ->  % only a base name
+		Mod = Name, real_search_module(Mod, Dir, Base, SExt)
+	  ;	% is a full file name
+	    ( Dot =:= Len -> 
+		% if the file name has no extension first check for the
+		% existence of the file with the extension.
+		( str_cat(Name, '.P', PName), file_exists(PName), SExt = 0'P
+		; str_cat(Name, '.c', PName), file_exists(PName), SExt = 0'c
+		; file_exists(Name), SExt = 0'x
+		; obj_ext(OExt), str_cat(Name, OExt, PName),
+		  file_exists(PName), SExt = OExt
+		)
+	  %% fle with extension
+	  ; file_exists(Name), Loc3 is Len - 1, buff_byte(Name, Loc3, Ext),
+	    ( memberchk(Ext, [0'P,0'c,0'O]) -> SExt = Ext ; SExt = 0'x )
+	  ),
+	  %% just the base name
+	  ( Slash < 0 -> 
+	        slash(Slash_chr),  % get the OS-appropriate slash: / or \.
+    	    	str_cat('.', Slash_chr, Dir),
+		( SExt =:= 0'x -> Mod = Name
+		; str_substring(Name, 0, Dot, Mod)
+		),
+		str_cat(Dir, Mod, Base)
+	  ; str_substring(Name, 0, Slash, Dir),
+	    Loc2 is Slash + 1, Till_Dot is Dot - Loc2,
+	    str_substring(Name, Loc2, Till_Dot, Mod),
+	    str_substring(Name, 0, Dot, Base)
+	  )
+	),
+	obj_ext(OExt2),
+	str_cat(Base, OExt2, Obj),
+	( file_exists(Obj) -> HasObj = 1 ; HasObj = 0 ).
+
+/*======================================================================*/
+/* real_search_module(+ModName, -Dir, -Base, -Ext)			*/
+/*======================================================================*/
+
+real_search_module(ModName, Dir, Base, Ext) :-
+        libpath(Dir),
+        str_cat(Dir, ModName, Base),
+	( str_cat(Base, '.P', Path), file_exists(Path), Ext = 0'P
+	; str_cat(Base, '.c', Path), file_exists(Path), Ext = 0'c
+	; file_exists(Base), Ext = 0'x		% no suffix
+	; obj_ext(OExt), str_cat(Base, OExt, Path), file_exists(Path), Ext = OExt
+	).
+
+/*======================================================================*/
+/* search_slash(+FileName, +InLoc, -SlashLoc)				*/
+/*	Search for the occurrence of a '/' from the InLoc'th character	*/
+/*	of FileName (backwards), and return the offset of the last '/'	*/
+/*	character. If no '/' exists, a -1 is returned.			*/
+/*======================================================================*/
+
+search_slash(FileName, I, SlashLoc) :-
+	( I =:= 0 -> SlashLoc = -1
+	; I1 is I - 1,
+	  buff_byte(FileName, I1, Byte),
+	  ( (Byte =:= 0'/ ; Byte =:= 0'\) -> SlashLoc = I1 
+	  ; search_slash(FileName, I1, SlashLoc) 
+	  )
+	).	
+
+/*======================================================================*/
+/* load_exec(+File, +ModName)						*/
+/*	Changed to use the C loader (code_load/3) that automatically	*/
+/*	imports all exported predicates of the module into the current	*/
+/*	working module when its third argument is 1.  - Kostis (4/3/93)	*/
+/*======================================================================*/
+
+load_exec(File, ModName) :-	
+	code_load(File, Init, 1),	% use the changed C loader.
+	% jf: for Windows a valid file pointer might be negative
+	( Init =\= 0			% load succeeded
+	; Init =:= 0, file_write0(2, 'Error in loading file '), 
+		file_write0(2, File),
+		file_nl(2), fail
+	),
+	!,
+	file_write0(1, '['), file_write0(1, ModName),
+	file_write0(1, ' loaded]'), file_nl(1),
+	(Init > 4			% Prolog byte code loaded
+	 ->	co_code_call(Init, true, 2),	% call '_$main'
+		unload_seg(Init)		% free space for '_$main'
+	 ;	true			% Foreign obj code loaded
+	).
+
+co_code_call(A,B,C) :- code_call(A,B,C).
+
+compile_load_user(Options) :-
+	compile(user, user, Options, _), !,
+	obj_ext(OExt),
+	str_cat('user', OExt, Obj),
+	load_exec(Obj, user),
+	rm(Obj).
+
+/*-------------define load_dyn for reading in dynamic predicates -----*/
+
+read_canonical(Term) :- 
+	stat_flag(10, File), 
+	file_read_canonical(File,Term,_).
+
+cvt_canonical(InFile,OutFile) :-
+	atom(InFile), atom(OutFile),
+	seeing(OldInFile),
+	expand_filename(InFile,InFilename),
+	see(InFilename),
+	telling(OldOutFile),
+	expand_filename(OutFile,OutFilename),
+	tell(OutFilename),
+	repeat,
+	read(Term),
+	(Term == end_of_file
+	 -> 	told, tell(OldOutFile), seen, see(OldInFile),!
+	 ;	expand_term(Term,Term1),
+		write_canonical_list(Term1),
+		fail
+	).
+
+write_canonical_list([]) :- !.
+write_canonical_list([Term|Terms]) :- !,
+	write_canonical_list(Term),write_canonical_list(Terms).
+write_canonical_list(Term) :-
+	(Term = (:-(op(A,B,C)))
+	 ->	op(A,B,C)
+	 ;	true
+	),
+	write_canonical(Term),writeln('.').
+
+
+load_dyn(File) :-
+	(atom(File)
+	 ->	true
+	 ;	warning('Wrong type in argument 1 of load_dyn/1'),fail
+	),
+	tilde_expand_filename(File,Filename),
+	get_fname(Filename,SExt,Base),
+	load_dyn0(SExt,Base).
+
+load_dyn0(SExt,Base) :-
+	(SExt == 0'x	% no suffix
+	 ->	init_for_load(Base),
+		load_dyn1(Base),
+		cleanup_for_load
+	 ; 	tran_ext(SExt,Suff),
+	 	str_cat(Base, Suff, Rfname),
+		init_for_load(Rfname),
+		(SExt == 0'P
+		 ->	str_cat(Base, '.H', Hfname),
+			(file_exists(Hfname)
+			 ->	load_dyn1(Hfname)
+			 ;	true
+			)
+		 ;	true
+		),
+		load_dyn1(Rfname),
+		cleanup_for_load
+	).
+
+tran_ext(0'P,'.P').
+tran_ext(0'D,'.D').
+
+load_dyn1(Rfname) :-
+	cputime(T0),
+	seeing(OldFile),
+	see(Rfname),
+	(read_and_assert ; true),
+	see(OldFile),
+	time_message(T0,(Rfname,' dynamically loaded')).
+	
+get_fname(Filename,SExt,Base) :-
+	search_module(Filename,_Dir,_Mod,SExt,_HasObj,Base,_Obj), !.
+get_fname(Filename,_SExt,_Base) :-
+	warning('Cannot find file'(Filename)),
+	fail.
+
+:- dynamic load_dyn_trie_retracted(_).
+:- dynamic load_dyn_retracted(_,_,_,_,_).
+:- dynamic load_dyn_file_loaded(_,_).
+:- dynamic load_dyn_pred_loaded(_,_,_,_).
+:- dynamic load_dyn_file(_).
+:- dynamic load_dyn_module(_).
+
+init_for_load(Filename) :-
+	file_time(Filename,time(Time1,Time2)),
+	retractall(load_dyn_file_loaded(Filename,_)),
+	assert(load_dyn_file_loaded(Filename,time(Time1,Time2))),
+	retractall(load_dyn_trie_retracted(_)),
+	retractall(load_dyn_retracted(_,_,_,_,_)),
+	assert(load_dyn_file(Filename)),
+	retractall(load_dyn_pred_loaded(Filename,_,_,_)),
+	search_module(Filename,_Dir,Mod,_SExt,_HasObj,_Base,_Obj),
+	assert(load_dyn_module(Mod)).
+
+cleanup_for_load :-
+	retractall(load_dyn_trie_retracted(_)),
+	retractall(load_dyn_retracted(_,_,_,_,_)),
+	retractall(load_dyn_file(_)),
+	load_dyn_module(ModName),
+	multifile_query(ModName),
+	multifile_apply(ModName),
+	retractall(load_dyn_module(_)),
+	retractall('_$multifile'(_)),
+	retractall('_$multifile2'(_,_,_)).
+
+
+%-------------------------------------------------------------------------
+% multifile_apply(ModName, Module) adds a query
+%	:- multifile([apply/A, apply(_,_), apply_file1(_,_)]).
+% to the source program for each
+%	'_$apply_arity'(A)
+% where file1 is the ModName.
+%-------------------------------------------------------------------------
+multifile_apply(ModName) :-
+	(retract('_$apply_arity'(A)) 
+	->	get_p_mod(apply, ModName, P_Mod),
+		functor(TT1, apply, A),
+		TT1 =.. [apply|Args],
+		TT2 =.. [P_Mod|Args],
+		call(multifile([apply/A, TT1, TT2])),
+		multifile_apply(ModName)
+	;	true
+        ).
+	
+%-------------------------------------------------------------------------
+% multifile_query(ModName) adds a query
+%       :- multifile([P/A, P(_,_), P_file1(_,_)]).
+% to the source program for each
+%       '_$multifile1'(P/A)
+% where file1 is the ModName.
+%-------------------------------------------------------------------------
+multifile_query(ModName) :-
+	(retract('_$multifile1'(P/A)) 
+	->	get_p_mod(P, ModName, P_Mod),
+		functor(TT1, P, A),
+		TT1 =.. [P|Args],
+		TT2 =.. [P_Mod|Args],
+		call(multifile([P/A, TT1, TT2])),
+		multifile_query(ModName)
+	;	true).
+ 
+ 
+read_and_assert :-
+	read(Term1),
+	expand_term(Term1,Term2),
+	load_dyn_module(ModName),
+	change_multifile_directive(Term2, ModName, Term),
+	(Term == end_of_file
+	 ->	!,seen,fail
+	 ;	do_assert_and_fail(Term)
+	).
+read_and_assert :- read_and_assert.
+
+
+load_dync(File) :-
+	(atom(File)
+	 ->	true
+	 ;	warning('Wrong type in argument 1 of load_dync/1'),fail
+	),
+	tilde_expand_filename(File,Filename),
+	get_fname(Filename,SExt,Base),
+	load_dync0(SExt,Base).
+
+load_dync0(SExt,Base) :-
+	(SExt == 0'x	% no suffix
+	 ->	init_for_load(Base),
+		load_dync1(Base),
+		cleanup_for_load
+	 ; 	tran_ext(SExt,Suff),
+	 	str_cat(Base, Suff, Rfname),
+		init_for_load(Rfname),
+		(SExt == 0'P
+		 ->	str_cat(Base, '.H', Hfname),
+			(file_exists(Hfname)
+			 ->	load_dync1(Hfname)
+			 ;	true
+			)
+		 ;	true
+		),
+		load_dync1(Rfname),
+		cleanup_for_load
+	).
+
+load_dync1(Rfname) :-
+	cputime(T0),
+	seeing(OldFile),
+	see(Rfname),
+	stat_flag(10,Fd),
+	file_read_canonical(-1000,0,0),	% initialize previous psc
+	(read_and_assert(Fd) ; true),
+	see(OldFile),
+	time_message(T0,(Rfname,' dynamically loaded')).
+
+
+read_and_assert(Fd) :-
+	file_read_canonical(Fd,Term0,Opsc),	% Opsc: Old(Previous) psc
+%	expand_term(Term0,Term1),	% should we do this?
+	load_dyn_module(ModName),
+	change_multifile_directive(Term0, ModName, Term),
+	(Opsc =\= 0,\+'_$trie_asserted'(Term)
+	 ->	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
+		assert_code_to_buff(Term,_),
+		assert_buff_to_clref(Term,NArity,Prref,1,Index,Hashsize,_),
+		fail
+	 ;	Prref=_,NArity=_,Index=_,Hashsize=_	 
+	),
+	(Term == end_of_file
+	 ->	!,seen,fail
+	 ;	do_assert_and_fail(Term)
+	).
+read_and_assert(Fd) :- read_and_assert(Fd).
+
+
+/* In change_multifile_directive(TermIn, ModName, TermOut), TermOut may be 
+   bound to [] (when TermIn is a multifile directive like :- multifile p/2, 
+   q/3).  So we have to add the following line for do_assert_and_fail/1.
+*/
+
+do_assert_and_fail([]) :- !, fail.
+
+do_assert_and_fail(Term) :-	% Now Term is the output of
+				% change_multifile_directive(TermIn,_,Term)
+	(Term = (:-Cmd)
+	 ->	proc_directive(Cmd),fail
+	 ;	true
+	),
+	(Term = (Head :- _)
+	 ->	true
+	 ;	Head = Term
+	),
+	(predicate_property(Head,built_in)
+	 ->	warning('Cannot assert to builtin'(Head)),fail
+	 ;	true
+	),
+	('_$multifile2'(Origin_Head, _, Head)
+	 ->	conpsc(Origin_Head, OPsc), conpsc(Head, Psc)
+	 ;	conpsc(Head, Psc), OPsc = Psc
+	),
+	('_$trie_asserted'(Term) 
+	 ->
+		(load_dyn_trie_retracted(OPsc) 
+		-> true
+		;       psc_arity(Psc,Arity),
+			psc_name(Psc,Name),
+			functor(Gen,Name,Arity),
+			retractall(Gen),
+			asserta(load_dyn_trie_retracted(OPsc))
+		),
+		t_assert(Term, _Flag)
+
+		
+	;
+		(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
+		 ->	true
+		 ;	psc_arity(Psc,Arity),
+			psc_name(Psc,Name),
+			functor(Gen,Name,Arity),
+			retractall(Gen),
+			set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize),
+			NArity is Arity+1
+		),
+		(Term = (_ :- Body)
+		 ->	Head =.. Hlist,
+			append(Hlist,[Cutpoint],Nhlist),
+			Nhead =.. Nhlist,
+			goal_cut_trans(Body,Nbody,Cutpoint),
+			(assert_code_to_buff((Nhead:-Nbody),_),fail;true)
+		 ;	(assert_code_to_buff(Term,_),fail;true)
+		),
+		assert_buff_to_clref(Head,NArity,Prref,1,Index,Hashsize,_)
+		),
+	fail.
+
+
+/* In set_retracted/7, Head is the predicate which has been transformed by
+   change_multifile_directive/3.  So p(_,_) may have been transformed to 
+   p_file1(_,_). 
+
+   OPsc is the Original Psc (e.g. for p(_,_)), while Psc is the actually
+   used Psc (e.g. for p_file1(_,_)).  OPsc is only used in 
+   load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize).  So, after
+   file_read_canonical(Fd,Term0,OPsc) reads a new Term0 (say p(_,_)), and the
+   psc address is the same as that of the previous read term, then this term 
+   can be asserted directly.   
+*/
+
+set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize) :-
+	('_$index'(Head,Index,Hashsize)
+	 ->	true
+	 ; Arity =:= 0
+	 ->	Index = 0,default_assert_size(Hashsize)
+	 ;	Index = 1,default_assert_size(Hashsize)
+	),
+	NArity is Arity+1,		% to hold the cut addr
+	psc_type(Psc, SYMTYPE),
+	(SYMTYPE =\= 1
+	 ->	dynamic(Head)
+	 ;	true
+	),
+	psc_tabled(Psc, Tabled),
+	(Tabled =:= 0
+	 ->	psc_prop(Psc, Prref)		/* get the Prref */
+	 ;	psc_prop(Psc, Prrefa),
+		buff_word(Prrefa, 24, Prref)	% !! into calld
+	),
+	asserta(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)),
+	load_dyn_file(Filename),
+	asserta(load_dyn_pred_loaded(Filename,Head,Index,Hashsize)).
+
+proc_directive(export(_X)) :- !,
+	warning('export directive ignored.').
+proc_directive(local(_X)) :- !,
+	warning('local directive ignored.').
+proc_directive(import(from(X, Mod))) :- !,
+	import(from(X, Mod)).
+proc_directive(index(X)) :- !,
+	proc_index(X).
+proc_directive(index(Ps,Arg,Size)) :- !,
+	index(Ps,Arg,Size).
+proc_directive(index(Ps,trie)) :- !,
+	index(Ps,trie).
+proc_directive(index(Ps,Arg)) :- !,
+	index(Ps,Arg,0).
+proc_directive(mode(_X)) :- !,
+	warning('mode directive ignored.').
+proc_directive(parallel(_X)) :- !,
+	warning('parallel directive ignored.').
+proc_directive(table(Pred)) :- !,
+	proc_table(Pred).
+proc_directive(table_all) :- !, 
+	warning('table_all directive ignored. Use table/n explicitly').
+proc_directive(op(P,T,S)) :- !, op(P,T,S).
+proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
+%proc_directive(multifile(P/A)) :- !,
+%	functor(Term,P,A),
+%	conpsc(Term,Psc),
+%	psc_arity(Psc,Arity),
+%	set_retracted(Term,Arity,Psc,_,_,_).
+
+proc_directive(Cmd) :-
+	call(Cmd)
+	 ->	true
+	 ;	warning('Command failed.')
+	.
+
+proc_index((Pred, Preds)) :- !,
+	proc_index(Pred),
+	proc_index(Preds).
+proc_index(Pname/Arity-Arg) :- !,
+	index(Pname/Arity, Arg, 0).
+proc_index(Pname/Arity) :- 
+	index(Pname/Arity, 1, 0).
+
+proc_table((Pred, Preds)) :- !,
+	proc_table(Pred),
+	proc_table(Preds).
+proc_table(Pname/Arity) :- 
+	table(Pname/Arity).
+
+
+ensure_dyn_loaded(File) :-
+	(if_should_not_reload(File)
+	 ->	true
+	 ;	load_dyn(File)
+	).
+
+ensure_dync_loaded(File) :-
+	(if_should_not_reload(File)
+	 ->	true
+	 ;	load_dync(File)
+	).
+
+if_should_not_reload(File) :-
+	tilde_expand_filename(File,Filename),
+	load_dyn_file_loaded(Filename,time(Ltime1,Ltime2)),
+	file_time(Filename,time(Ctime1,Ctime2)),
+	time(Ltime1,Ltime2) @=< time(Ctime1,Ctime2),
+	\+ need_more_index(Filename).
+
+need_more_index(Filename) :-
+	load_dyn_pred_loaded(Filename,Head,OIndex,OHashsize),
+	'_$index'(Head,Index,Hashsize),
+	(Hashsize > OHashsize
+	 ;
+	 \+ indexes_subsumed(Index,OIndex)
+	).
+
+indexes_subsumed(X,X) :- !.
+indexes_subsumed([],_).
+indexes_subsumed([Ispec|Ispecs],OIndex) :-
+	memberchk(Ispec,OIndex),
+	indexes_subsumed(Ispecs,OIndex).
+indexes_subsumed(Ispec,OIndex) :-
+	memberchk(Ispec,OIndex).
+

@@ -1,0 +1,223 @@
+/* File:      flpheader.P
+** Author(s): Bertram Ludaescher
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%:- table_all.  
+%:- auto_table.
+%:- ti_all.
+
+%%% times_flies_like_an_arrow.
+times_flies_like_an_arrow_.
+
+%%% fruit_flies_like_an_apple[].
+
+%%% e(a,b).
+e_(a,b).
+
+%%% e(b,a).
+e_(b,a).
+
+%%% e(b,c).
+e_(b,c).
+
+%%% tc(X,Y):-e(X,Y).
+tc_(_X,_Y) :-
+	e_(_X,_Y).
+
+%%% tc(X,Y):-tc(X,Z),tc(Z,Y).
+tc_(_X,_Y) :-
+	tc_(_X,_Z),tc_(_Z,_Y).
+
+%%% john:employee.
+isa_(john,employee).
+
+%%% employee::person.
+sub_(employee,person).
+
+%%% person[age=>integer;kids=>>person].
+fs_(person,@(age),integer).
+mvs_(person,@(kids),person).
+
+%%% mary:employee[age->29;kids->>{tim,leo};salary@(1998)->a_lot].
+isa_(mary,employee).
+fd_(mary,@(age),29).
+mvd_(mary,@(kids),tim).
+mvd_(mary,@(kids),leo).
+fd_(mary,@(salary,1998),a_lot).
+
+%%% tim[hobbies->>{stamps,snowboard}].
+mvd_(tim,@(hobbies),stamps).
+mvd_(tim,@(hobbies),snowboard).
+
+%%% snowboard:dangerous_hobby.
+isa_(snowboard,dangerous_hobby).
+
+%%% *Warning* unbound in fact: [_X]
+%%% X[self->X].
+fd_(_X,@(self),_X).
+
+%%% person[believes_in*->>{something,something_else}].
+imvd_(person,@(believes_in),something).
+imvd_(person,@(believes_in),something_else).
+
+%%% person[instances->>{X}]:-X:person.
+mvd_(person,@(instances),_X) :-
+	isa_(_X,person).
+
+%%% ?-times_flies_like_an_arrow.
+ :- print_all([times_flies_like_an_arrow_],[]).
+
+%%% ?-fruit_flies_like_a_banana.
+ :- print_all([fruit_flies_like_a_banana_],[]).
+
+%%% ?-call(myprint(string([62,62,62,32,65,110,115,119,101,114,32,78,79,32,97,110,100,32,87,65,82,78,73,78,71,32,105,110,116,101,110,100,101,100,33,32,60,60,60]))).
+ :- print_all([call_(myprint([62,62,62,32,65,110,115,119,101,114,32,78,79,32,97,110,100,32,87,65,82,78,73,78,71,32,105,110,116,101,110,100,101,100,33,32,60,60,60]))],[]).
+
+%%% ?-fruit_flies_like_a_banana[].
+ :- print_all([],[]).
+
+%%% ?-tc(X,Y).
+ :- print_all([tc_(_h26394,_h26395)],[[88] = _h26394,[89] = _h26395]).
+
+%%% ?-X:person.
+ :- print_all([isa_(_h26524,person)],[[88] = _h26524]).
+
+%%% ?-person[instances->>{X}].
+ :- print_all([mvd_(person,@(instances),_h26716)],[[88] = _h26716]).
+
+%%% ?-X[believes_in->>{Y}].
+ :- print_all([mvd_(_h26915,@(believes_in),_h26917)],[[88] = _h26915,[89] = _h26917]).
+
+%%% ?-X..kids[self->K;hobbies->>{H:dangerous_hobby}].
+ :- print_all([mvd_(_h27421,@(kids),_h27375),fd_(_h27375,@(self),_h27405),isa_(_h27377,dangerous_hobby),mvd_(_h27375,@(hobbies),_h27377)],[[88] = _h27421,[75] = _h27405,[72] = _h27377]).
+
+%%% ?-call(myprint(string([84,104,97,110,107,115,32]))),call(unix(whoami)),call(myprint(string([32,102,111,114,32,117,115,105,110,103,32,70,76,73,80,33]))).
+ :- print_all([call_(myprint([84,104,97,110,107,115,32])),call_(unix(whoami)),call_(myprint([32,102,111,114,32,117,115,105,110,103,32,70,76,73,80,33]))],[]).
+
+/* File:      flptrailer.P
+** Author(s): Bertram Ludaescher
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $ID$
+** 
+*/
+
+
+%:- auto_table.
+%:- table_all.  
+%:- ti_all.
+
+%%% BEGIN closure rules
+
+% closure rules for X::Y
+sub_(X,X).
+sub_(X,Y) :-
+	sub_(X,Z), 
+	sub_(Z,Y),
+	(X\=Z -> true
+	;Z\=Y
+	),
+	(X=Y
+	-> write('***Warning: cyclic subclass hierarchy: '),
+	   write(X),write('::'),write(Z),write('::'),write(Y),nl
+	;  true
+	).
+
+% closure rules for X:C
+isa_(O,C) :-
+	sub_(C1,C), % sub *before* isa: speedup almost 20x for London prog.!
+	isa_(O,C1),
+	C1 \== C.   % avoid double derivations!
+		    % speed-up almost 2x for London prog.!
+		    % x17 for fahrplan!
+
+
+
+
+% monotone inheritance
+% here for fixed arity 1:
+%
+% O[M@(X)->R]:-CL[M@(X)*->R],O:CL.
+% 
+% fd_(_O,@(_M,_X),_R) :-
+%	ifd_(_CL,@(_M,_X),_R),isa_(_O,_CL).
+
+% here with meta-variable for all arities
+fd_(O,M_and_Args,R) :-
+	ifd_(Class,M_and_Args,R),isa_(O,Class).
+
+mvd_(O,M_and_Args,R) :-
+	imvd_(Class,M_and_Args,R),isa_(O,Class).
+
+
+ifd_(_,_,_) :- fail.
+imvd_(_,_,_) :- fail.
+
+%%% END closure rules
+
+ic_ :-
+	fd_(O,M,X),fd_(O,M,Y), X @< Y,
+	nl,
+	write('***Warning: inconsistency: '),
+	write(O),write('['),write(M),write('->'), write((X,Y)),write(']'),nl
+ ;
+	true.
+
+ic_all_ :-	
+	setof((X,Y), 
+	(fd_(O,M,X),fd_(O,M,Y), X @< Y),
+	 EQs),
+	nl,
+	write('***Warning: inconsistency: '),
+	write(O),write('['),write(M),write('->'), write(EQs),write(']'),nl,
+	fail
+ ;
+	true.
+
+
+consistent_ :- not ic_.
+
+	
+%:-	cputime(T0),
+%	ic_,
+%	cputime(T1),
+%	T is T1-T0,
+%	nl,write('cpu-time for IC-check: '),write(T),write(' seconds]'),nl.
+	

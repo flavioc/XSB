@@ -1,0 +1,280 @@
+/* File:      x_interp.P
+** Author(s): David S. Warren, Terrance Swift,
+**    	      Ernie Johnson, Jiyang Xu, Kostis Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*======================================================================*/
+/*  This file contains the main program of the interpreter.		*/
+/*======================================================================*/
+/*  WARNING: Should you change this file better consult the comment in	*/
+/*	     predicate hack_libpath_changed/0 first!			*/
+/*======================================================================*/
+
+:- interpreter.
+
+interpreter :-
+	set_inthandler('_$keyboard_int'(_), 1),         % MYSIG_KEYB
+	set_inthandler('_$calltonum'(_), 3),            % MYSIG_SPY
+	version_message,
+	prompt('| ?- ',[]),
+	prompt('',[],'_$more_prompt'(_)),
+	prompt(' ? ',[],'_$debug_prompt'(_)),
+	%% Execute command line goal passed to XSB with the -e option
+	stat_flag(21, CmdGoalUninterned),
+	intern_string(CmdGoalUninterned, CmdGoal),
+	%% If Goal is a command loop interpreter, like Flip, then abort/0
+	%% in that command loop will terminate XSB.
+	%% I couldn't manage to intercept abort/0    --mk
+	(CmdGoal == 'true.' -> true
+	  ; file_nl(1),
+	    file_write(1, 'Evaluating command line goal:  '),
+	    file_nl(1),
+	    file_write(1, '| ?- '),
+	    file_write(1, CmdGoal), file_nl(1),
+	    file_open(CmdGoal, 3, FileDes),
+	    file_read(FileDes, Goal),
+	    file_close(FileDes),
+	    call(Goal),
+	    file_nl(1)
+	),
+	repeat,
+	    trimcore,
+	    '_$savecp'(Cp),			% to set abort cut point
+	    conset('_$abort_cutpoint', Cp),
+	    stat_set_flag(5, 1, 1),		% hide call interceptions.  
+	    stat_set_flag(7, 0,1),		% reset trace number
+	    conset('_$break_level', 0),
+	    print_debug_state,
+	    prompt(Prompt,Prompt),
+	    file_write(1, Prompt),
+	    file_read(0, X, Vars),
+	    ( nonvar(X), read_in_stop(X), halt, !	% end of top loop; halt
+	    ; process_query(X, Vars)
+	    ).
+
+read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
+read_in_stop(end_of_file).	% pop a break level, out if at top
+
+process_query(X, []) :-		% no variables appeared in the input
+	!,
+	call_query(X), close_open_tables,
+	!,
+	file_nl(1), file_write(1, yes), file_nl(1),
+	fail.
+process_query(X, Vars) :- 
+	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
+	call_query(X),
+	stat_flag(55, LetterVars),
+	( LetterVars =:= 0 -> print_answer(Vars)
+	; ( numbervars(Vars), print_answer(Vars), fail ; true )
+	),
+	file_write(1, MorePrompt),
+	no_more,
+	close_open_tables,
+	!,
+	file_nl(1), file_write(1, yes), file_nl(1),
+	fail.
+
+no_more :- file_get(0, X), ( X =:= -1 /* end_of_file */ ; X =:= 10 ), !.
+no_more :- no_more, fail.
+
+call_query(X) :- 
+%%%	'_$savecp'(C),			% moved into call/1, affect trace?
+	func_trans(X, Y),
+	( stat_set_flag(5, 0, 1) 		% expose tracing
+	; stat_set_flag(5, 1, 1), fail		% hide again when backtrack
+	),
+	'_$call'(Y), 
+	( stat_set_flag(5, 1, 1)		% hide tracing when succeed
+	; stat_set_flag(5, 0, 1), fail		% expose when backtrack to user
+	).
+call_query(_) :- 
+	file_nl(1), file_write(1, no), file_nl(1), fail.
+
+% hidden version of call
+'_$call'(Y) :- 
+	'_$savecp'(C), 
+	goal_cut_trans(Y,X,C),
+	call_expose(X).
+
+
+
+print_answer([]) :- !.
+print_answer([vv(Name, Val)|Tail]) :-
+	file_nl(1), file_write(1, Name), 
+	file_write(1, ' = '), file_write(1, Val),
+	print_answer(Tail).
+
+
+/* === break =========================================================== */
+
+break :- conval('_$break_level', Blevel),
+	Nblevel is Blevel+1, conset('_$break_level', Nblevel),
+	file_write(1, '[ Break (level '), file_write(1, Nblevel),
+	file_write(1, ') ]'),file_nl(1),
+	readl_brklp1,
+	conset('_$break_level', Blevel),
+	file_write(1, '[ End break (level '),file_write(1, Nblevel),
+	file_write(1, ') ]'),file_nl(1).
+
+readl_brklp1 :- 
+	repeat, 
+		conval('_$break_level', Blevel),
+		file_write(1, Blevel), file_write(1, ': ?- '),
+		file_read(0, X, Vars),
+		( nonvar(X), read_in_stop(X), !
+			% end read loop; pop a break level, out if X=halt.
+		; process_query(X, Vars)
+		).
+
+
+/* === hide and expose ================================================= */
+
+/*
+ *  No longer used within the system.  To be taken out if no problems arise.
+ *   	-EJJ  4/97
+ *
+'_$hide'(N) :- stat_flag(5, N), NewN is N + 1, stat_set_flag(5, NewN, 1).
+			% N = hide_state++
+'_$hide'(N) :- stat_flag(5, N), NewN is N - 1, stat_set_flag(5, NewN, 1), fail.
+			% hide_state--
+'_$expose'(N) :- stat_set_flag(5, N, 1).
+			% hide_state = N
+'_$expose'(N) :- N1 is N + 1, stat_set_flag(5, N1, 1), fail.
+			% hide_state = N+1, fail
+ *
+ */
+
+/* === interrupt handlers ============================================== */
+
+'_$keyboard_int'(Call) :- 
+	is_xwammode(Flag),
+	( Flag =:= 1 -> abort ; break, call_c(Call) ).
+
+
+'_$calltonum'(_) :-
+	file_write(2, 'Illegal call: to a number!'), 
+	file_nl(2), abort.
+
+
+/* === version message ================================================= */
+
+version_message :-
+	file_nl(2),
+	slash(Slash),
+	xsb_configuration(etcdir, EtcDir),
+	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(EtcDir,Slash)),
+	%% print_file_contents(CopyingMsg),
+	%% file_nl(2),
+	fmt_write_string(ConfMsg, '%s%sconfig.msg', f(EtcDir,Slash)),
+	print_file_contents(ConfMsg).
+
+/* === utilities ======================================================= */
+
+
+conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val, 1).
+conval(Con, Val) :- conpsc(Con, PSC), psc_prop(PSC, Val).
+
+
+prompt(New,Old) :- prompt(New,Old,'_$main_prompt'(_)).
+
+prompt(New,Old,Pstore) :- 
+	(Old == []
+	 ->	true
+	 ;	get_prompt(Pstore,Old)
+	),
+	(Old \== New
+	 ->	set_prompt(Pstore,New)
+	 ;	true
+	).
+
+get_prompt(Pstore,Prompt) :-
+	term_psc(Pstore, Psc),
+	psc_prop(Psc, Buff),	
+	str_insert(Buff, String),	% temp solution, since ALIAS not work
+	Prompt = String.		% for double word.
+
+set_prompt(Pstore,Prompt) :-
+	term_psc(Pstore, Psc),
+	psc_set_type(Psc, 8, 1),			% T_CSET
+	conname(Prompt, String),
+	psc_set_prop(Psc, String, 1).
+
+print_debug_state :-
+	stat_flag(6,Trace),
+	stat_flag(4,Debug),
+	stat_flag(9,QuasiSkip),
+	( (Trace > 0, QuasiSkip =:= 0)
+	  ->	file_write(2,[trace]), file_nl(2)
+	  ; (Debug > 0; (Trace > 0, QuasiSkip > 0))
+	  ->	file_write(2,[debug]), file_nl(2)
+	; true
+	).
+		
+/*
+func_trans(X, X).
+*/
+
+% The following should be a syntactic transformation 
+% to handle functional syntax. dsw
+
+func_trans(X, Y) :- func_trans(X, Z, Z, Y).
+
+func_trans(X, Y, O, N) :- 
+	term_type(X, T),
+	( T =:= 0 -> Y = X, N = O
+	; T =:= 3 -> X = [X1|X2], Y = [Y1|Y2],
+		func_trans(X1, Y1, O, M), func_trans(X2, Y2, M, N)
+	; T =:= 1 ->
+		term_psc(X, Psc),
+		psc_type(Psc, Type),
+		( Type =:= 14, M = ((Y is Z), O)	% Y is free
+		; Type =\= 14, M = O, Z = Y
+		),
+		term_new(Psc, Z),
+		psc_arity(Psc, A),
+		func_transargs(A, X, Z, M, N)
+	; /* T=:=5; T=:=2; T=:=6 */ Y = X, N = O
+	).
+
+func_transargs(0, _, _, O, O) :- !.
+func_transargs(I, X, Y, O, N) :-
+	term_arg(X, I, X1),
+	term_arg(Y, I, Y1),
+	func_trans(X1, Y1, O, M),
+	I1 is I - 1,
+	func_transargs(I1, X, Y, M, N).
+
+
+print_file_contents(FileName) :-
+	see(FileName),
+	print_file_contents1,
+	seen.
+print_file_contents1 :-
+	(file_read_line(Line, _) -> file_write(2,Line)),
+	print_file_contents1,
+	fail.        	 %% so as to not leave choice points around
+print_file_contents1.
+

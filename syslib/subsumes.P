@@ -1,0 +1,94 @@
+/* File:      subsumes.P
+** Author(s): Kostis F. Sagonas
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%   subsumes_chk(General, Specific)
+%   is true when Specific is an instance of General. However, this
+%   predicate performs the test without binding any variables neither
+%   in General nor in Specific.
+
+subsumes_chk(General, Specific) :-
+ 	\+  (	numbervars(Specific),
+ 		\+ (General = Specific)
+ 	    ).
+
+
+%   subsumes(General, Specific)
+%   is true when Specific is an instance of General. Unlike subsumes_chk/2
+%   this predicate will bind variables in General (but not those in Specific)
+%   so that General becomes identical to Specific.
+
+subsumes(General, Specific) :-
+	subsumes_chk(General, Specific),
+	General = Specific.
+
+/*** SB-Prolog one
+subsumes(X,Y) :- \+ (X=Y),!,fail.
+subsumes(X,Y) :- numbervars(Y,0,_),\+ (X=Y),!,fail.
+subsumes(_,_).
+***/
+
+%   variant(Term1, Term2)
+%   is true when Term1 and Term2 are alphabetic variants. The definition 
+%   here is not quite right;  if Term1 and Term2 share any variables it 
+%   may give the wrong answer. It is only meant to be used when the two 
+%   terms have no variables in common. 
+
+/*** A naive first version
+variant(Term1, Term2) :-
+	subsumes_chk(Term1, Term2),
+	subsumes_chk(Term2, Term1).
+***/
+
+variant(X,Y) :- \+ (X=Y), !, fail.
+variant(X,Y) :- '_$variant'(Buff),buff_set_word(Buff,0,0),
+		\+ variant1(X,Y), !, fail.
+variant(_,_).
+
+:- buff_alloc(8,Buff,1), assert0('_$variant'(Buff)).
+
+variant1(X,Y) :-
+	term_type(X,Ty), term_type(Y,Ty1), Ty=Ty1,
+	(Ty =:= 3	% list
+	 ->	X=[X1|X2], Y=[Y1|Y2],
+	 	variant1(X1,Y1), variant1(X2,Y2)
+	 ; Ty =:= 1	% str
+	 ->	term_psc(X,Xpsc), psc_arity(Xpsc,Arity),
+		term_psc(Y,Ypsc), psc_arity(Ypsc,Arity1), Arity=Arity1,
+		variant1(X,Y,Arity)
+	 ; Ty =:= 0	% vars
+	 ->	'_$variant'(Buff), buff_word(Buff,0,I0),
+	 	I is I0+1, buff_set_word(Buff,0,I),
+		X = '$VAR'(I0), Y = X
+	 ;	true
+	).
+
+variant1(X,Y,N) :-
+	(N =:= 0
+	 ->	true
+	 ;	term_arg(X,N,X1), term_arg(Y,N,Y1),
+	 	variant1(X1,Y1),
+		N1 is N-1, variant1(X,Y,N1)
+	).
+

@@ -1,0 +1,248 @@
+/* File:      useinfer.P
+** Author(s): Kostis F. Sagonas, Jiyang Xu, David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/************************************************************************/
+/* NOTE: This file was seriously changed by Kostis and David during the	*/
+/*	 summer of 1992 to speed up the XSB compiler.  These changes	*/
+/*	 were mostly focused on predicate infer_usage_of_symbol/4 and	*/
+/*	 the predicates that it calls.  Predicate add_if_necessary/3	*/
+/*	 was added by David during that period.  Those changes made the	*/
+/*	 algorithm that infer_usage_of_symbol/4 implements linear on	*/
+/*	 the number of symbols in the symbol table.			*/
+/*	    On May of 1993, Kostis made some more improvements on the	*/
+/*	 speed of inferencing and took out the calls to the inference	*/
+/*	 of the exported types stuff.  An earlier version of XSB (say	*/
+/*	 XSB v1.0 Beta or even PSB) should be consulted if it is ever	*/
+/*	 decided to put the typing inference stuff back to XSB.		*/
+/************************************************************************/
+
+/*======================================================================*/
+/* useinfer(#Module, -IsModule, -ExportList)				*/
+/*	Performs inference of exported predicates/functors/constants,	*/
+/*	and inference of unused or undefined predicates.  In doing so,	*/
+/*	fills in the following entries for each symbol:			*/
+/*		@ one of im(M), ex, local, global (internal is not	*/
+/*		  used until preprocessing)				*/
+/*		@ one of used, unused					*/
+/*		@ 'pred' for predicates used in the body		*/
+/*		@ 'undef' if a 'pred' is used but not defined in, or	*/
+/*		  imported from another module.				*/
+/*	Some warning messages will be printed when doing the inference.	*/
+/*	E.g., if no export names are declared, a warning message is	*/
+/*	      given, and all symbols are assumed to be exported.	*/
+/*======================================================================*/
+
+useinfer(Module, IsModule, ExportList) :-
+	Module = module(SymTab,_DcList,ClList,_QrList),
+	extract_symlist(ex, ExList, SymTab),
+	sym_insert('_$main', 0, [], SymTab, SymMain),
+	( ExList == [] -> 
+		IsModule = 0,		% No export list, is a global module
+		sym_propin(global, SymMain), 
+		infer_export_fill(SymTab, SymTab, ClList, global)
+	; IsModule = 1,
+	  ( sym_prop(im(_Mod),SymMain) -> true ; sym_propin((local),SymMain) ),
+	  infer_usage([SymMain|ExList], Module),
+	  infer_export_fill(SymTab, SymTab, ClList, (local)),
+	  infer_fillunused(SymTab)
+	),
+	retractall('_$multifile'(_)),
+	retractall('_$multifile2'(_,_,_)),
+	get_sym_names(ExList, ExportList).
+
+
+/*======================================================================*/
+/* infer_export_fill(#SymTab, #SymTab, ClList, ex/local/global)		*/
+/* 	Mark all symbols that do not have an environment field yet,	*/
+/*	and they are not standard predicates by ex/local/global.	*/
+/*======================================================================*/
+
+infer_export_fill(RestTab, SymTab, ClList, Domain) :-
+	sym_scan(Sym, RestTab, RestTab2),
+	sym_env(Sym, Dom),
+	( nonvar(Dom) -> true
+	; sym_prop(pred, Sym) ->
+		((clause('_$multifile'(P/A), _), sym_name(Sym, P, A))
+                 ->     Dom = global
+                        % multifile predicates are assumed global
+		; member(pred(Sym,_,_), ClList) -> Dom = Domain
+		; pred_implicitly_imported_from(Sym, Mod) ->
+			sym_insert(Mod, 0, [module,used], SymTab, _ModSym),
+			Dom = im(Mod)
+		; Dom = Domain
+		)
+	; Dom = global	% function symbols are assumed global; temporarily
+	),
+	infer_export_fill(RestTab2, SymTab, ClList, Domain).
+infer_export_fill(_RestTab, _SymTab, _ClList, _Domain).
+
+
+/*======================================================================*/
+/* infer_usage(+SymList, #Module)					*/
+/*	Infers the usage of symbols appearing in a real module.		*/
+/*	SymList is a list of symbols to be checked, and the result is	*/
+/*	stored in the symbol table.  Information is inserted into the	*/
+/*	symbol table when a symbol is used, or when an undefined	*/
+/*	predicate is encountered.					*/
+/*======================================================================*/
+
+infer_usage([], _Module).
+infer_usage([Sym|Rest], Module) :-
+	infer_usage_of_symbol(Sym, Rest, NList, Module),
+	infer_usage(NList, Module).
+
+/*----------------------------------------------------------------------*/
+/* infer_usage_of_symbol(+Sym, +Rest, -NewRest, #Module)		*/
+/*	Mark Sym "used", and look for possible symbols used by Sym,	*/
+/*	e.g., predicates used in the clauses of Sym when it is a	*/
+/*	predicate.  "Rest" is the symbol list remained to be checked.	*/
+/*	Symbols used by Sym is added to the list and is returned in	*/
+/*	"NewRest".							*/
+/*----------------------------------------------------------------------*/
+
+infer_usage_of_symbol(Sym, InList, OutList, Module) :-
+	Module = module(SymTab,_DcList,ClList,QrList),
+	( sym_prop(used, Sym) -> OutList = InList	% already checked
+	; sym_name(Sym, '_$main', 0) -> 
+		( QrList == [] -> OutList = InList
+		; sym_propin(used, Sym),
+		  member(pred(Sym,Cls,_), QrList),
+		  check_pred(Cls, SymTab, InList, OutList)
+		)
+	; sym_propin(used, Sym),
+	  ( sym_prop(pred, Sym) ->
+	    	( member(pred(Sym,Cls,_), ClList) ->
+			check_pred(Cls, SymTab, InList, OutList)
+		; ( sym_prop(im(Mod), Sym) ->
+			sym_insert(Mod, 0, [used], SymTab, _ModSym)
+		  ; pred_implicitly_imported_from(Sym, Mod) ->
+			sym_insert(Mod, 0, [module,used], SymTab, _ModSym),
+			sym_propin(im(Mod), Sym)
+		  ; sym_name(Sym, P, A),
+		    sym_propin(undef, Sym),
+		    warning(('Undefined predicate ', P, '/', A))
+		  ),
+		  OutList = InList
+		)
+	  ; sym_prop(im(Mod), Sym) ->
+		% takes care of the case when Sym is imported from Mod but is
+		% not a predicate symbol. If Sym is used, then Mod is used.
+		sym_insert(Mod, 0, [used], SymTab, _ModSym), OutList = InList
+	  ; OutList = InList
+		/* include the case of a module, a constant, a functor, ... */
+	  )
+	).
+
+check_pred([], _SymTab, InList, InList) :- !.
+check_pred([Cl|Cls], SymTab, InList, OutList) :-
+	check_clause(Cl, SymTab, InList, MedList),
+	check_pred(Cls, SymTab, MedList, OutList).
+
+check_clause(clause(Args,Body, _), SymTab, InList, OutList) :-
+	check_args(Args, SymTab, InList, MedList),
+	check_body(Body, SymTab, MedList, OutList).
+
+check_body(and(L1,L2), SymTab, InList, OutList) :-
+	check_body(L1, SymTab, InList, MedList),
+	check_body(L2, SymTab, MedList, OutList).
+check_body(or(L1,L2), SymTab, InList, OutList) :-
+	check_body(L1, SymTab, InList, MedList),
+	check_body(L2, SymTab, MedList, OutList).
+check_body(if(L1,L2), SymTab, InList, OutList) :-
+	check_body(L1, SymTab, InList, MedList),
+	check_body(L2, SymTab, MedList, OutList).
+check_body(not(L1), SymTab, InList, OutList) :-
+	check_body(L1, SymTab, InList, OutList).
+check_body(inlinegoal(_,_,Args), SymTab, InList, OutList) :-
+	check_args(Args, SymTab, InList, OutList).
+check_body(goal(Sym,Args), SymTab, InList, OutList) :-
+	sym_propin(pred, Sym),
+	add_if_necessary(Sym, InList, MedList),
+	check_args(Args, SymTab, MedList, OutList).
+
+check_args([], _SymTab, InList, InList).
+check_args([Arg|Args], SymTab, InList, OutList) :-
+	check_arg(Arg, SymTab, InList, MedList),
+	check_args(Args, SymTab, MedList, OutList).
+
+check_arg(constant(Sym), _SymTab, InList, [Sym|InList]).
+check_arg(integer(_), _SymTab, InList, InList).
+check_arg(real(_), _SymTab, InList, InList).
+check_arg(varocc(_), _SymTab, InList, InList).
+check_arg(structure(Sym,Args), SymTab, InList, OutList) :-
+	add_if_necessary(Sym, InList, MedList),
+	check_args(Args, SymTab, MedList, OutList).
+
+
+/*======================================================================*/
+/* infer_fillunused(#SymTab)						*/
+/*	Mark all symbols that are not "used" as "unused".		*/
+/*======================================================================*/
+
+infer_fillunused(SymTab) :-
+	sym_scan(Sym, SymTab, RestTab),
+	( sym_prop(used, Sym) -> true 
+	; sym_propin(unused, Sym), sym_name(Sym, N, A),
+	  warning(('Unused symbol ', N, '/', A))
+	),
+	infer_fillunused(RestTab).
+infer_fillunused(_).
+
+
+/*======================================================================*/
+/* add_if_necessary(+Sym, +InList, -OutList)				*/
+/*	Try to add symbol Sym in list InList giving OutList only when	*/
+/*	it is necessary.						*/
+/*======================================================================*/
+
+add_if_necessary(Sym, InList, OutList) :-
+	( sym_prop(used,Sym) -> OutList = InList
+	; ( sym_prop(pred,Sym) -> OutList = [Sym|InList]
+	  ; ( sym_prop(im(_Mod),Sym) -> OutList = [Sym|InList]
+	    ; OutList = InList, sym_propin(used,Sym)
+	    )
+	  )
+	).
+
+/*----------------------------------------------------------------------*/
+/* get_sym_names(+SymList, -PredList)					*/
+/*	From a SymList we get a PredList.				*/
+/*----------------------------------------------------------------------*/
+
+get_sym_names([], []).
+get_sym_names([Sym|ExportList0], [N/A|ExportList]) :-
+        sym_name(Sym, N, A),
+        get_sym_names(ExportList0, ExportList).
+
+/*----------------------------------------------------------------------*/
+/* pred_implicitly_imported_from(+Sym, -Mod)				*/
+/*	Succeeds if Sym is a predicate that is standard.		*/
+/*----------------------------------------------------------------------*/
+
+pred_implicitly_imported_from(Sym, Mod) :-	/* Sym is pred */
+	\+ option(sysmod), sym_name(Sym, P, A), standard_symbol(P, A, Mod).
+
+/* -------------------- end of file useinfer.P ------------------------ */

@@ -1,0 +1,979 @@
+\section{Modification of the Database} \label{sec:assert}
+
+XSB provides an array of features for modifying the dynamic database.
+Using {\tt assert/1}, clauses can be asserted using first-argument
+indexing in a manner that is now standard to Prolog implementations.
+While this is the default behavior for XSB, other behaviour can be
+specified using the (executable) directives {\tt index/3} and {\tt
+index/2}.  For instance, dynamic clauses can be declared to have
+multiple or joint indexes, while this indexing can be either
+hash-based as is typical in Prolog systems or based on {\em tries}.
+No matter what kind of indexing is used, space is dynamically
+allocated when a new clause is asserted and, unless specified
+otherwise, released when it is retracted.  Furthermore, the size of
+any index table expands dynamically as clauses are asserted.
+
+Consider first dynamic predicates that use traditional hash-based
+indexing.  XSB asserts WAM code for such clauses, leading to execution
+times similar to compiled code for unit and binary clauses.
+Furthermore, tabling can be used with a dynamic predicate by
+explicitly declaring a predicate to be both dynamic and tabled.  For
+clauses that are asserted as WAM code, the {\em ``immediate
+semantics''} of dynamic predicates is used, not the so-called {\em
+``logical semantics''} of assert/retract \cite{LiOk87}. This means
+that significant care must be taken when modifying the definition of a
+predicate which is currently being executed. Notice that this makes
+some operations difficult. For example, one might try to retract from
+dynamically asserted predicates, {\tt p/1} and {\tt q/1}, exactly
+their intersection, by issuing the following query:
+\begin{center} 
+{\tt :- p(X), q(X), retract(p(X)), retract(q(X)), fail.}
+\end{center}
+Neither {\tt retract/1} nor {\tt retractall/1} support this behavior,
+due to their techniques for space reclamation.  One alternative is to
+use {\tt findall/3} to collect the intersection first, before retracting.
+Another is to use the predicates {\tt retract\_nr/1} and {\tt
+reclaim\_space/1}, described below.  
+
+Asserting clauses as WAM code might be considerably slow for some
+applications.  To remedy this, XSB provides an alternative to {\tt
+assert/1} which implements assert's functionality using the trie-based
+tabling data structures \cite{RRSSW98}.  Though trie-based dynamic
+code can be created (and usually executed) significantly faster than
+using {\tt assert/1}, users of the following predicates should be
+aware that trie-based assert can be used only for unit clauses where a
+relation is viewed as a set, and where the order of the facts is not
+important.
+
+XSB does not at this time fully support dynamic predicates defined
+within compiled code.  The only way to generate dynamic code is by
+explicitly asserting it, or by using the standard predicate {\tt
+load\_dyn/1} to read clauses from a file and assert them (see
+page~\pageref{load_dyn/1}).  There is a {\tt dynamic/1} predicate (see
+page~\pageref{dynamic/1}) that declares a predicate within the system
+so that if the predicate is called when no clauses are presently
+defining it, the call will quietly fail instead of issuing an {\sf
+``Undefined predicate''} error message.
+
+\begin{description}
+
+\ouritem{assert(+Clause)}\index{{\tt assert/1}}
+adds a dynamic clause, {\tt Clause}, to the database. {\tt Clause}
+must be of one of the forms: {\tt Head} or {\tt Head :- Body}. Note
+that because of the precedence of {\tt :-/2}, using the second form
+requires an extra set of parentheses: {\tt assert((Head :- Body))}.
+Default: first-argument indexing.
+
+\ouritem{asserta(+Clause)}\index{{\tt asserta/1}}
+If the index specification for the preicate is not {\tt tries}, this
+predicate adds a dynamic clause, {\tt Clause}, to the database {\em
+before} any other clauses for the same predicate currently in the
+database.  If the index specification for the preicate is {\tt trie},
+the clause is asserted arbitrarily within the trie, and a warning
+message sent to {\tt stderr}.
+
+
+\ouritem{assertz(+Clause)}\index{{\tt assertz/1}}
+If the index specification for the preicate is not {\tt tries}, this
+predicate adds a dynamic clause, {\tt Clause}, to the database {\em
+after} any other clauses for the same predicate currently in the
+database.  If the index specification for the preicate is {\tt trie},
+the clause is asserted arbitrarily within the trie, and a warning
+message sent to {\tt stderr}.
+
+\ouritem{retract(+Clause)}\index{{\tt retract/1}}
+removes through backtracking all clauses in the database that match with
+{\tt Clause}.  {\tt Clause} must be of one of the forms:  {\tt Head} or
+{\tt Head :- Body}.  Note, that because of the precedence of {\tt :-/2},
+using the second form requires an extra set of parentheses:
+{\tt retract((Head :- Body))}.  Space is reclaimed when a 
+clause is retracted.
+
+\ouritem{retractall(+Head)}\index{{\tt retractall/1}}
+removes every clause in the database whose head matches with {\tt Head}.
+The predicate whose clauses have been retracted retains the {\tt dynamic}
+property (contrast this behaviour with that of predicates 
+{\tt abolish/[1,2]} below).
+Predicate {\tt retractall/1} is determinate and always succeeds.
+The term {\tt Head} is not further instantiated by this call.
+
+\ouritem{abolish(+PredSpec)}\index{{\tt abolish/1}}
+Removes the definition of the specified predicate.  {\tt PredSpec}
+is of the form {\tt Pred/Arity}.  Everything about the abolished
+predicate is completely forgotten by the system (including the
+{\tt dynamic} property).  There is also an {\tt abolish/2} which
+takes {\tt Pred} and {\tt Arity} as its two arguments.
+
+\ouritem{clause(+Head,?Body)}\index{{\tt clause/2}}
+Returns through backtracking all dynamic clauses in the database whose head
+matches {\tt Head} and Body matches {\tt Body}.  For facts the {\tt Body} is
+{\tt true}.  
+
+\ouritem{retract\_nr(+Clause)}\index{{\tt retract\_nr/1}}
+Performs just as {\tt retract/1} does, except that it does not reclaim the
+space used by the retracted clause. This is provided to allow programmers
+to modify dynamic clauses while executing them (a practice that is 
+discouraged.) For example, to retract an intersection, as described above,
+one could do:
+\begin{center}
+{\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail.}
+\end{center}
+In order to reclaim space after using {\tt retract\_nr/1}, see 
+{\tt reclaim\_space/1} below.  Predicate {\tt retract\_nr/1}
+is not a standard predicate and must be imported from module {\tt assert}.
+{\tt retract\_nr/1} is provided for (partial)
+compatibility with the {\tt retract/1} predicate of SB-Prolog.
+
+%In this case, the {\tt retract\_nr/1} deletes the clauses, but will not
+%drastically modify the clause data structure,
+%and this code will execute. Of course, space is not reclaimed for further
+%use (but see {\tt reclaim\_space/1} below).  Predicate {\tt retract\_nr/1}
+%is not a standard predicate but must be imported from module {\tt assert}.
+%The use of this predicate is discouraged; it is provided for (partial)
+%compatibility with the {\tt retract/1} predicate provided by SB-Prolog that
+%did not reclaim space.
+
+\ouritem{reclaim\_space(+Head)}\index{{\tt reclaim\_space/1}}
+Runs through the dynamic code for the predicate indicated by {\tt Head}, and
+reclaims space for any clauses that have been deleted from that predicate by
+{\tt retract\_nr/1}.  This cannot safely be used when execution is still
+within some invocation of the specified predicate, or will backtrack into
+such a scope.  To complete our example of retracting the intersection of
+dynamic predicates:
+\begin{center}
+{\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail\ ;\\
+     reclaim\_space(p(\_)), reclaim\_space(q(\_)).}
+\end{center}
+would do the trick. Notice that the {\tt reclaim\_space} calls 
+must be made after execution has completely failed
+out of choice points for {\tt q(X)} and {\tt p(X)}.  Predicate 
+{\tt reclaim\_space/1} is not
+standard but must be imported from module {\tt assert}.
+As with {\tt retract\_nr}, the use of this predicate is discouraged; 
+it is provided for (partial) compatibility with SB-Prolog.
+
+\ouritem{index(+PredSpec, +IndexSpec, +HashTableSize)}\index{{\tt index/3}}
+\vspace{-.35in}
+\ouritem{index(+PredSpec, +IndexSpec)}\index{{\tt index/2}}
+\label{index_dynamic}
+{\tt index/3} and {\tt index/2} are executable directives that
+determine what form of indexing a dynamic predicate will take and to a
+certain extent, what semantics the dynamic predicate will have.  
+
+If {\tt index/3} is used, then the predicate indicated by {\tt
+PredSpec} is declared to be indexed according to {\tt IndexSpec} using
+initial hash table of sizes of {\tt HashTableSize}.  After this
+directive is given, all clauses asserted to {\tt PredSpec} will be so
+indexed.  The index directive does {\em not\/} re-index an already
+existing predicate but takes effect only if the program store contains
+no clauses for {\tt PredSpec} (a Database Error is raised
+otherwise). Index directives can be given to the compiler as part of
+source code or executed during program execution (analogously to {\tt
+op/3}).
+
+XSB supports different indexing for compiled and asserted code.  For a
+compiled predicate {\tt IndexArgSpec} must be an integer which
+indicates the argument on which an index is to be constructed.  If
+{\tt IndexArgSpec} is~0 (or []), then no index is kept (an efficient
+strategy for predicates with only one or two clauses.)  
+%If {\tt IndexArgSpec} is a negative integer, then indexing information
+%regarding the indicated predicate is deleted, and its handling reverts
+%to the default.  
+For a dynamic predicate, (to which clauses are asserted), {\tt
+IndexArgSpec} may be a list of {\tt IndexArg}s.  An {\tt IndexArg} is
+an integer that indicates the argument on which to index.  One may
+specify, for example, {\tt index(p/3,[2,1],150)} to indicate that
+clauses asserted to the predicate {\tt p/3} should be indexed on both
+the second and the first argument, and that the initial hash-table
+size has 150 buckets.  Subsequent calls to {\tt p/3} will first check
+to see if the second argument is nonvariable, and if so use that
+index. If the second argument is variable, it will check to see if the
+first argument is nonvariable and if so, use that index.  One may have
+any number of distinct indexes.  For asserted clauses an {\tt
+IndexArg} may also be a sequence of up to three integers separated by
+{\tt +}, e.g., {\tt 1+2+3}.  This indicates that an index is to be
+built using those specified field values together. To use such an
+index in a call, all the indicated fields must be nonvariable.
+
+As an example, one could specify: {\tt index(p/5,[1+2,1,4],300)}.
+After clauses are asserted to it, a call to {\tt p/5} would first
+check to see if both the first and second arguments are nonvariable
+and if so, use an index based on both those values. Otherwise, it
+would see if the second argument is nonvariable and if so, use an
+index based on it. Otherwise, it would see if the fourth argument is
+nonvariable and if so use an index based on it. As a last resort, it would
+use no index but backtrack through all the clauses in the predicate.
+(Notice that it may well make sense to include an argument that 
+appears in a joint specification later alone, as 1 in this example,
+but it never makes sense foring the single argument to appear earlier. In
+that case the joint index would never be used.)
+
+The executable declaration {\tt index(Predspec,trie)} causes clauses
+for {\tt Predspec} to be asserted using tries (see \cite{RRSSW98},
+which is available through the XSB web page).  The name trie indexing
+is something of a misnomer since the trie itself both indexes the term
+and represents it.  In XSB, the above rie index is formed using a
+left-to-right traversal of the unit clauses.  These indexes can be
+very effective if discriminating information lies deep within a term,
+and if there is sharing of left-prefixes of a term, can reduce the
+space needed to represent terms.  Furthermore, asserting a unit as a
+trie is much faster than asserting it using default WAM code.  Trie
+indexing can be used with alternative or joint indexes.  For the
+directive {\tt index(p/3,[2,1],trie)}, two trie indices would be
+formed for {\tt p/3}: one that traversed arguments in order {\em
+2,1,3} and another that traversed arguments in order {\em 1,2,3}.  The
+actual implementation seeks to reduce redundant storage of code for
+alternative indices.
+
+Despite these advantages, representing terms as tries leads to
+semantic differences from asserted code, of which the user should be
+aware.  First, the order of clauses within a trie is arbitrary: using
+{\tt asserta/1} or {\tt assertz} for a predicate currently using trie
+indexing will give the same behavior as using {\tt assert}.  Also, the
+current version of XSB only allows trie indexing for unit clauses.
+
+\ouritem{dynamic(+PredSpec)}\index{{\tt dynamic/1}}\label{dynamic/1}
+is an executable predicate which converts a predicate specified as
+(Predicate/Arity) to a dynamic predicate. If {\tt Predicate} is not
+previously defined, it will be initialized to empty (so that calls to
+it quietly fail, instead of issuing {\sf ``Undefined predicate''}
+error messages.) If the predicate is previously defined and dynamic,
+{\tt dynamic/1} is a noop. If previously defined as compiled, {\tt
+Predicate} will be converted to dynamic, which means that clauses can
+be added, although the compiled portion cannot be manipulated.  Note
+that {\tt dynamic/1} can be used like a compiler directive, since it
+will be passed through to be executed when the module is loaded. Note,
+however, that the semantics is different from that of the standard
+\cite{ISO-Prolog} when the file contains clauses defining the
+so-specified predicate.
+
+\ouritem{table(+PredSpec)}\index{{\tt table/1}}
+is an executable predicate, where PredSpec is a predicate
+specification for a dynamic predicate. (This is also a compiler
+directive when {\tt PredSpec} specifies a compiled predicate. See the
+section of this manual on compiler directives.) This predicate
+declares a dynamic predicate to be tabled. It simply saves information
+to be used at the time of assert and so it must be called before any
+clauses are asserted into the specified predicate in order for the
+predicate to be tabled.
+
+\end{description}
+
+%----------------------------------------------------------------------
+%\input{tr_assert}	% To be uncommented when they become standard.
+%----------------------------------------------------------------------
+
+
+
+\section{Execution State}\label{environmental}
+
+\begin{description}
+
+\ouritem{abort}\index{{\tt abort/0}} 
+    Abandons the current execution and returns to the top level.  This
+    predicate is normally used in one of the following two cases: 
+    \begin{itemize} 
+    \item when some error condition or exception has occurred and carrying
+	  on the computation is of no further use.
+    \item when using the debugger (see Chapter~\ref{debugging}).  
+    \end{itemize}
+    Currently, all exception handling routines terminate with a call to 
+    predicate {\tt abort/0}, so an exception encountered at some break level 
+    other than the top level will return the interpreter at the top level.
+
+    The user should be aware of the fact that {\tt abort/0} does not close 
+    any files which may have been opened.  If the program under execution is 
+    doing file manipulation using {\tt see/1} and {\tt tell/1}, then strange 
+    behaviour may occur after the program is aborted and restarted, unless
+    the user manually closes the files.
+
+    Aborting closes all incomplete tables (those which may not have a 
+    complete set of answers).  Closed tables are unaffected, even if 
+    the tables were created during the aborted computation.
+
+\ouritem{break}\index{{\tt break/0}}
+    Causes the current execution to be suspended at the beginning of the next 
+    call.  The interpreter then enters break level 1 and is ready to accept
+    input as if it were at top level.  If another call to {\tt break/0} is 
+    encountered, it moves up to break level 2, and so on.  While execution 
+    is done at break level $n>0$ the prompt changes to {\tt $n$: ?-}.
+
+    To close a break level and resume the suspended execution, the user can 
+    type the the atom {\tt end\_of\_file} or the end-of-file character 
+    applicable on the system (usually {\tt CTRL-d} on UNIX systems).  
+    Predicate {\tt break/0} 
+    then succeeds (note in the following example that the calls to {\tt break/0}
+    do not succeed), and the execution of the interrupted program is resumed.  
+    Alternatively, the suspended execution can be abandoned by calling the 
+    standard predicate {\tt abort/0}, which causes a return to the top level.
+
+    An example of {\tt break/0} 's use is the following:
+
+    \stuff{
+	\>   \>     | ?- break. \\
+	\>   \>     [ Break (level 1) ] \\
+	\>   \>     1: ?- break. \\
+	\>   \>     [ Break (level 2) ] \\
+	\>   \>     2: ?- end\_of\_file. \\
+	\>   \>     [ End break (level 2) ] \\
+	\\
+	\>   \>     yes \\
+	\>   \>     1: ?-
+    }
+
+    Entering a break closes all incomplete tables (those which may not have a 
+    complete set of answers).  Closed tables are unaffected, even if 
+    the tables were created during the computation for which the break was
+    entered.
+
+\ouritem{halt}\index{{\tt halt/0}}
+    Exits the \ourprolog\ session regardless of the break level.  On exiting
+    the system cpu and elapsed time information is displayed.
+
+\ouritem{prompt(+NewPrompt, ?OldPrompt)}\index{{\tt prompt/2}}
+    Sets the prompt of the top level interpreter to {\tt NewPrompt} and 
+    returns the old prompt in {\tt OldPrompt}.
+
+    An example of {\tt prompt/2} 's use is the following:
+
+    \stuff{
+	\>   \>     | ?- prompt('Yes master > ', P). \\
+	\\
+	\>   \>     P = | ?- ; \\
+	\\
+	\>   \>     no \\
+	\>   \>     Yes master > fail. \\
+	\\
+	\>   \>     no \\
+	\>   \>     Yes master >
+    }
+ 
+\ouritem{cputime(-CPU\_Time)}\index{{\tt cputime/1}}
+    Returns the {\tt CPU\_Time} at the time of the call in seconds. 
+    The difference between results of successive calls to this
+    predicate can measure the time spent in specific predicates.
+
+\ouritem{statistics}\index{{\tt statistics/0}}
+    Prints on the current output stream:
+    \begin{itemize}
+    \item Information about allocation of memory 
+	  (see Section~\ref{emulator_options}) containing the 
+          \begin{itemize}
+          \item global stack (heap) and local (environment) stack
+          \item trail and choice point stack
+	  \item SLG subgoal space (tablestack)
+          \item SLG unification stack
+          \item SLG completion stack
+	  \item the spacce occupied by subgoal and answer tables
+		(in the form of tries).
+          \end{itemize}
+    \item Current use of the above specified memory areas
+		(allocated/in use/free).
+    \item Information about process cpu and clock time.
+    \end{itemize}
+
+    Additionally, if the emulator is invoked with the {\tt '-s'} option
+    (see Section~\ref{emulator_options}), information is printed out about
+    \begin{itemize}
+    \item Maximum use of the memory areas.
+    \end{itemize}
+    The {\tt '-s'} option slows down the emulator by about 10\%.
+
+    Example:
+    {\footnotesize
+     \begin{verbatim}
+     | ?- statistics.
+
+     memory (total)        1873737 bytes:     171317 in use,    1702420 free
+        permanent space     169801 bytes
+        glob/loc space      786432 bytes:       1080 in use,     785352 free
+           global                                152 bytes
+           local                                 928 bytes
+        trail/cp space      786432 bytes:        436 in use,     785996 free
+           trail                                 240 bytes
+           choice point                          196 bytes
+        SLG subgoal space        0 bytes:          0 in use,          0 free
+        SLG unific. space    65536 bytes:          0 in use,      65536 free
+        SLG completion       65536 bytes:          0 in use,      65536 free
+        SLG trie space           0 bytes:          0 in use,          0 free
+        (call+ret. trie          0 bytes,   trie hash tables          0 bytes)
+
+        Maximum stack use: global 224, local 1384, trail 240, cp 492
+        Maximum stack use: SLG completion 0.  Max level: 0
+
+          0 Trail unwinds,       0 levels
+
+      0.570 sec. cputime,  5.088 sec. elapsetime
+     \end{verbatim}}
+    shows how the emulator output looks if it is invoked with the 
+    {\tt '-s'} option (without it the Maximum use line is not shown).
+    Information about the allocation size is provided since the sizes
+    can be changed through emulator options
+    (see Section~\ref{emulator_options}).
+
+
+%\ouritem{analyze\_table(+Pred\_indicator)}\index{{\tt analyze\_table/1}}
+%    This predicate provides additional means for the user to profile
+%    execution of tabled predicates.  Given a predicate indicator for a 
+%    tabled predicate, {\tt analyze\_table/1} prints the following information.
+%    \begin{itemize}
+%    \item  "$\langle$Num$\rangle$ call hash buckets used out of 
+%	   $\langle$Total$\rangle$".  The number
+%           of call hash buckets containing at least one element.
+%    \item  "avg call bucket length (of used) $\langle$Avg$\rangle$".  
+%	   The average length of call hash buckets containing at least one
+%	   element.
+%    \item  "max call bucket length $\langle$Length$\rangle$".
+%    \item  "$\langle$Num$\rangle$ ret hash buckets used out of 
+%	   $\langle$Total$\rangle$".  The number
+%           of ret hash buckets containing at least one element.
+%    \item  "avg ret bucket length (of used) $\langle$Avg$\rangle$".
+%	   The average length of ret hash buckets containing at least
+%	   one element.
+%    \item  "max ret bucket length $\langle$Length$\rangle$".
+%    \end{itemize}
+
+%    In \version, {\tt analyze\_table/1} is most readily used to 
+%    determine proper call and return hash sizes.  The hash table sizes can
+%    be reset using {\tt set\_table\_prop/3} from the interpreter level
+%    (see Section~\ref{tabling_predicates}) or by recompiling the source code
+%    with new declarations (see Section~\ref{compiler_directives}).
+
+%    Example:
+%    {\footnotesize
+%     \begin{verbatim}
+%     | ?- analyze_table(ancestor/2).
+%                 1 hash buckets full out of 97
+%                 avg call bucket length (of filled) 1.00
+%                 max call bucket length 1
+%                 ret buckets used 97 out of 97
+%                 avg return bucket length 11.92
+%                 max ret bucket length 17
+%
+%     yes
+%     \end{verbatim}}
+%    The output of {\tt analyze\_table} indicates that the return hash size for
+%    ancestor is too small for the query.  Changing the return hash size will
+%    speed up similar queries which add answers to tables, but the size of the
+%    return hash table has no effect on the speed of queries which use completed
+%    tables.
+
+\ouritem{unix(+SystemCall)}\index{{\tt unix/1}}
+    Calls the operating system with the atom {\tt SystemCall} as argument.
+    It succeeds if {\tt SystemCall} is executed successfully, otherwise it
+    fails.  As a notational convenience, the user can supply {\tt SystemCall} 
+    in the form of a list (something currently not possible for {\tt unix/2}).
+
+    For example, the call:
+
+% JF
+%    \demo{\verb+| ?- unix('echo \$HOME').+}
+    \demo{{\tt $|$ ?- unix('echo \$HOME').}}
+
+    \noindent
+    will output in the current output stream of \ourprolog\ the name of
+    the user's home directory; while the call:
+
+% JF
+%   \demo{\verb+| ?- File = 'test.c', unix(['cc -c ', File]).+}
+    \demo{{\tt $|$ ?- File = 'test.c', unix(['cc -c ', File]).}}
+
+    \noindent
+    will call the C compiler to compile the file {\tt test.c}.
+
+    Note that in UNIX systems, since {\tt unix/1} is executed by forking 
+    off a shell process,
+    it cannot be used, for example, to change the working directory of the 
+    interpreter.  For that reason the standard predicate {\tt cd/1} described 
+    below should be used.
+
+    {\em Note to DOS users.} \index{DOS}  The {\tt unix/1} command works
+    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
+
+\ouritem{unix(+SystemCall, -Result)}\index{{\tt unix/2}}
+    Calls the operating system with the atom {\tt SystemCall} as argument
+    and returns the result of the call in {\tt Result}.  In comparison with
+    {\tt unix/1} this predicate always succeeds, even if the {\tt SystemCall} 
+    cannot be successfully executed.
+
+    {\em Note to DOS users.} \index{DOS}  The {\tt unix/2} command works
+    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
+
+\ouritem{ls}\index{{\tt ls/0}} 
+    Under UNIX, this command lists in the current output stream the files 
+    in the system's current directory if it can do so.  If so, it succeeds.
+    It is the same as {\tt unix('ls -F', 0)}.  
+
+\ouritem{cd(+Dir)}\index{{\tt cd/1}}
+    Under UNIX and DOS, this predicate changes the interpreter's working 
+    directory to {\tt Dir}.  If the directory
+    specified does not exist or is not a directory, or the user does not have 
+    execute permission for that directory, predicate {\tt cd/1} simply fails 
+    raising no permission error.
+
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	{\tt Dir} is not instantiated at the time of call.
+    \item[{\tt type\_error}]
+	{\tt Dir} is not an atom.
+    \end{description}
+
+\ouritem{edit(+Module)}\index{{\tt edit/1}}
+    Provided that the environment variable {\tt EDITOR} has been set,
+    and the system is executing under UNIX, 
+    a call to {\tt edit(foo)} will call the default editor on the file
+    named {\tt foo.P}.  The argument to {\tt edit/1}, should be instantiated,
+    it can be an absolute or a relative file name, but it should {\em not}
+    contain the suffix {\tt .P}.  Users can also set their preferred options
+    of calling the default editor by setting an environment variable named
+    {\tt EDITOR\_OPTIONS}.
+
+    Examples of possible uses of predicate {\tt edit/1} are:
+    \begin{enumerate}
+    \item If the environment variables have been set as follows:
+          \begin{verbatim}
+	        setenv EDITOR /usr/ucb/vi
+	        setenv EDITOR_OPTIONS -l
+          \end{verbatim}
+          a call like:
+          \begin{verbatim}
+	        | ?- edit(foo).
+          \end{verbatim}
+          will call the vi editor in the mode where left and right parentheses
+	  and curly brackets are checked for balance for the file {\tt foo.P}
+	  in the current working directory.
+    \item If, on the other hand, they have been set as follows:
+          \begin{verbatim}
+	        setenv EDITOR /usr/local/bin/emacs
+	        setenv EDITOR_OPTIONS -r
+          \end{verbatim}
+          a call like:
+          \begin{verbatim}
+	        | ?- edit('~/foo').
+          \end{verbatim}
+          will call the emacs editor in reverse video for the file {\tt foo.P}
+	  in user's home directory.
+    \end{enumerate}
+
+\end{description}
+
+%need op (just so we dont forget ???
+
+
+\section{Tabling}\label{tabling_predicates}
+
+In \ourprolog, tables are designed so that they can be used
+transparently by computations.  However, it is often useful to be able
+to explicitly inspect a table, or alter its state, especially during
+program development.  The following predicates are supplied for these
+purposes.
+
+In the following predicates, {\tt Skeleton} refers to information
+about the function and arity of a predicate.  If p/2 is a predicate,
+its skeleton can be represented as {$p(\langle arg1 \rangle,\langle
+arg2 \rangle)$} where {\em arg1} and {\em arg2} can be any
+instantiation pattern.  Thus the information derived from the
+skeletons {\em p(1,2)} and {\em p(A,B)} would be the same.
+
+The user should be aware that skeletons which are dynamically created
+(e.g. by {\tt functor/3}) are located in usermod.  In such a case, the
+tabling predicates below may not behave in the desired manner if the
+tabled predicates themselves have not been imported into usermod.
+
+\begin{description}
+
+\ournewitem{get\_calls(+Skeleton,-Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}
+\index{{\tt get\_calls/3}}
+Backtracks through the subgoal trie, instantiates the {\tt Skeleton}
+to a call term in the {\tt call trie} by binding the variable in the skeleton,
+binds {\tt Subgoal\_Structure\_Pointer} with the pointer to the 
+{\tt subgoal structure} and binds {\tt Return\_Skeleton} to 
+a term of the form ret/n where each of its arguments corresponds to
+a free variable in the call.
+Example:
+
+For the following program and table
+     \begin{center}
+     \begin{tabular}{cc}
+     \begin{minipage}{1.1in}
+     {\tt
+          :- table p/2.	\\
+          p(1,2).       \\
+          p(1,3).       \\
+          p(1,X).       \\
+          p(2,3). 
+     }
+     \end{minipage}
+     &
+     \begin{tabular}{||l|l||}   \hline
+     {\em Call}			& {\em Returns} \\ \hline \hline
+     p(1,X)			& p(1,2) \\ 
+ 	       			& p(1,3) \\
+                                & p(1,X) \\ \hline
+     p(X,3)			& p(1,3) \\ 
+ 	       			& p(2,3) \\ \hline
+     \end{tabular}
+     \end{tabular}
+     \end{center}
+calls to {\tt get\_calls/3} will act as follows
+	{\footnotesize
+	\begin{verbatim}
+                   | ?- get_calls(p(X,Y),Cs,Ret).
+
+                   X = _864816
+                   Y = 3
+                   Cs = 2927152
+                   Ret = ret(_864816);
+
+                   X = 1
+                   Y = _864644
+                   Cs = 2927104
+                   Ret = ret(_864644);
+
+                   no
+                   | ?- get_calls(p(1,Y),Cs,Ret).
+
+                   Y = 3
+                   Cs = 2927152
+                   Ret = ret(1);
+
+                   Y = _864620
+                   Cs = 2927104
+                   Ret = ret(_864620);
+
+                   no
+                   | ?- get_calls(p(Y,3),Cs,Ret).
+
+                   Y = _864792
+                   Cs = 2927152
+                   Ret = ret(_864792);
+
+                   Y = 1
+                   Cs = 2927104
+                   Ret = ret(3);
+
+                   no
+                   | ?- get_calls(p(1,3),Cs,Ret).
+
+                   Cs = 2927152
+                   Ret = ret(1);
+
+                   Cs = 2927104
+                   Ret = ret(3);
+
+                   no
+
+	\end{verbatim}
+	}
+
+\ournewitem{get\_calls\_for\_table(+Skeleton,-Call,-Empty)}{Tabling}\index{{\tt get\_table\_pred/3}}
+Succeeds whenever {\tt Skeleton} corresponds to a predicate that has been 
+declared tabled.  For these predicates {\tt get\_calls\_for\_table/3} 
+upon backtracking returns the calls of all current table entries.
+Also returned with each call is an atom which is a member of the set
+\begin{center}
+\{ {\tt empty, notempty} \}.
+\end{center}
+indicating whether the table is empty or non-empty.  
+
+This predicate does not provide any information about whether a table is
+complete.  Use {\tt table\_state} to inquire about a table's state.
+
+\noindent
+Calls to {\tt get\_calls\_for\_table/3} for the 
+program in {\tt get\_calls/3} would act as follows
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- get_calls_for_table(p(X,Y), Call, Empty).
+                   X = _646608
+                   Y = _646436
+                   Call = p(1,_646724)
+                   Empty = notempty;
+
+                   X = _646608
+                   Y = _646436
+                   Call = p(_646720,3)
+                   Empty = notempty
+
+                   | ?- get_calls_for_table(p(1,2), Call, Empty).
+                   Call = p(1,_646676)
+                   Empty = notempty
+
+                   Call = p(_646672,3)
+                   Empty = notempty
+     \end{verbatim}
+     }
+The second example backtracks through all entries in the table, since
+only skeletal information is used from the first argument.
+
+Exception:
+    \begin{description}
+    \item[{\tt table\_error}]
+	First argument is not callable.
+    \end{description}
+
+% qtls this had been fixed, and will be again soon.
+%{\bf Release Note:} In future versions, this predicate may be changed to 
+%allow partial instantiation of the second argument. 
+
+\ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton)}{Tabling}\index{{\tt get\_returns/2}}
+Backtracks through the answer trie for the subgoal whose {\tt subgoal structure}
+is pointed to by {\tt Subgoal\_Structure\_Pointer}, and instantiates the 
+{Return\_Skeleton} with the bindings corresponding to the return.
+
+
+A way of accessing some subgoals and answers of the table in
+in {\tt get\_calls/3}  would act as follows
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- get_calls(p(Y,3),Cs,Ret), get_returns(Cs,Ret).
+
+                   Y = 2
+                   Cs = 2561656
+                   Ret = ret(2);
+
+                   Y = 1
+                   Cs = 2561656
+                   Ret = ret(1);
+
+                   Y = 1
+                   Cs = 2559032
+                   Ret = ret(3);
+
+                   Y = 1
+                   Cs = 2559032
+                   Ret = ret(3);
+
+                   no
+
+     \end{verbatim}
+     }
+
+
+\ournewitem{get\_returns(+Subgoal\_Structure\_Pointer,-Return\_Skeleton,-LeafNode)}{Tabling}\index{{\tt get\_returns/3}}
+Same as above, except for the fact that the third argument is bound
+to the leaf node corresponding to the return in the return trie.
+
+
+
+\ournewitem{get\_returns\_for\_call(+Call,-Return)}{Tabling}\index{{\tt get\_returns\_for\_call/2}}
+Succeeds whenever there is a table entry for a variant of {\tt Call}.
+If this is the case, {\tt Return} is instantiated with an
+entry for the table corresponding to call, and successive entries are returned
+by backtracking.  If there are no answers in the table, or no table entry
+for {\tt Call}, the goal fails.
+
+This predicate creates fresh variables for the return, rather than
+unifying them with variables in the first argument.  An explicit
+unification of a call with its return can be done if so desired.
+
+Example:
+Let us continue from the example in {\tt get\_calls\_for\_table/3}.
+
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- get_returns_for_call(p(1,X), Return).
+
+                   X = _646412
+                   Return = p(1,_646628);
+
+                   X = _646412
+                   Return = p(1,2);
+
+                   X = _646412
+                   Return = p(1,3);
+
+                   no
+                   | ?- get_returns_for_call(p(X,Y), Return).
+                   no
+
+                   | ?- get_returns_for_call(p(1,2), Return).
+                   no
+      \end{verbatim}
+      }
+
+Exception:
+    \begin{description}
+    \item[{\tt table\_error}]
+	Argument 1 is not a callable predicate.
+    \end{description}
+
+% qtls this had been fixed, and will be again soon.
+%{\bf Release Note:} In future versions, this predicate may be changed to 
+%allow partial instantiation of the second argument. 
+
+
+\ournewitem{delete\_return(+Subgoal\_Structure\_Pointer,+LeafNode)}{Tabling}
+\index{{\tt delete\_returns/2}}
+Deletes a return from the return trie. The LeafNode parameter should
+be obtained from a call to get\_returns/3.
+
+
+\ournewitem{abolish\_all\_tables}{Tabling}\index{{\tt abolish\_all\_tables/0}}
+{\tt abolish\_all\_tables/0} abolishes all tables presently in the
+system.  Predicates which have been declared tabled remain tabled, but
+information about calls and returns is deleted.  In \version, {\tt
+abolish\_all\_tablesl/0} reclaims used space.  The predicate always 
+succeeds.
+
+Note that incomplete tables are abolished automatically by the system on
+exceptions and when the interpreter level is resumed.  In these cases,
+the user does not need to abolish tables to maintain correctness.
+
+
+\ournewitem{abolish\_table\_pred(?Skeleton)}{Tabling}\index{{\tt abolish\_table\_pred/1}}
+{\tt abolish\_table\_pred/1} abolishes tables for all calls to the
+predicate denoted by {\em Skeleton}.  The predicate remains
+tabled, but information about its calls and their returns is removed
+from the system.  In \version, {\tt abolish\_table\_pred/1}
+reclaims used space.  Note that incomplete tables are abolished automatically
+by the system on exceptions and when the interpreter level is resumed.
+In these cases, the user does not need to abolish tables to maintain
+correctness.
+
+Exception:
+    \begin{description}
+    \item[{\tt table\_error}]
+        Not a tabled predicate.
+    \end{description}
+
+
+\ournewitem{abolish\_table\_call(?Call)}{Tabling}
+\index{{\tt abolish\_table\_call/1}}
+{\tt abolish\_table\_call/1} abolishes tables for a particular call to
+a predicate denoted by {\em Call}.  The predicate remains tabled, and
+information about all other tables remains intact.  In \version, {\tt
+abolish\_table\_call/1} does not reclaim used space.  Note that incomplete
+tables are abolished automatically by the system on exceptions and
+when the interpreter level is resumed.  In these cases, the user does
+not need to abolish tables to maintain correctness.
+
+Example:
+
+    Continuing the example started in the description of predicate
+    {\tt get\_calls\_for\_table/3} the call
+    {\tt abolish\_table\_call(p(1,X))} would produce the table
+    \begin{center}
+    \begin{tabular}{||l|l||}               \hline
+    {\em Call}			& {\em Returns} \\ \hline \hline
+    p(X,3)			& p(1,3) \\ 
+	       			& p(2,3) \\ \hline
+    \end{tabular}
+    \end{center}
+
+Exception:
+    \begin{description}
+    \item[{\tt table\_error}]
+	Argument 1 is not a callable predicate.
+    \end{description}
+
+
+\ournewitem{table\_state(?Call,-State)}{Tabling}
+\index{{\tt table\_state/2}}
+If the first argument is a valid Term indicator, {\tt table\_state/1}
+unifies state with one of the set 
+	\{{\tt not\_yet\_called, complete, incomplete, undef}\}.
+The meaning of these atoms is defined as:
+\begin{description}
+\item[{\tt not\_yet\_called}] iff the predicate corresponding to
+Call has been declared tabled, but there is no table entry for call.
+\item[{\tt complete}] iff the table entry for {\tt Call} contains
+all solutions.
+\item[{\tt incomplete}] iff the table entry for {\tt Call} may not contain
+all solutions.
+\item[{\tt undef}] iff the predicate corresponding to {\tt Call} 
+has not been declared tabled.
+\end{description}
+
+Exceptions:
+    \begin{description}
+    \item[{\tt type\_error}]
+	Argument 1 is not a callable predicate.
+    \end{description}
+
+
+\comment{
+
+\ournewitem{table\_prop(?Pred\_indicator,+Type,?Old\_val,+New\_val)}{Tabling}
+\index{{\tt table\_prop/4}}
+This predicate is described together with the following one.
+
+\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{{\tt table\_prop/3}}
+This predicate is used either to provide information about a table
+property, or to reset one of properties to a particular value.  These
+values can also be set by the table declarations in the source code.
+{\tt table\_prop} provides a method for doing so without having to
+recompile code.
+
+In previous versions {\tt table\_prop} was used to reset hash sizes for
+calls and returns.  It is not used in \version, but is maintained since
+in future versions {\tt table\_prop} may be used for other table
+properties such as subgoal subsumption.
+
+}
+
+%In \version\ the properties visible to the user are the call and return
+%hash sizes.  Each tabled predicate contains two types of hash tables.
+%A {\em call hash table} is used to find whether the variant of a call
+%to a tabled predicate has occurred before in the course of a
+%computation.  Each tabled call has a {\em return hash table} which is
+%used during a computation to determine whether a given return needs to
+%be added to the table.  Appropriate indexing for call and return
+%lookup, including proper hash table sizes, is crucial to good
+%performance.  
+
+%Hash table sizes are non-negative integers denoting the number of
+%buckets in the hash table.  When {\tt Pred\_indicator} denotes a
+%tabled predicate, the predicate can take one of two modes depending on
+%its arity.  In {\tt table\_prop/4}, the {\tt New\_value} is provided by
+%the user and {\tt Old\_value} is unified with the precious value of
+%the table property.  In {\tt table\_prop/3} the present value of the 
+%property is returned.
+
+%Presently, the hash table sizes can only be reset when there are no tabled
+%calls to {\tt Pred\_indicator}.  This can be ensured by a call to 
+%{\tt abolish\_table\_pred/1}
+%
+%Future versions of \ourprolog\ may include additional indexing
+%strategies as configurable table properties.
+
+\comment{
+
+    Exceptions:
+    \begin{description}
+%    \item[{\tt table\_error}]
+%	Attempt to reset hash table size for predicate with tabled calls.
+    \item[{\tt table\_error}]
+	Argument 1 is not a tabled predicate.
+    \end{description}
+
+}
+%\ounewitem{table\_copy(+From,-To)} \index{{\tt table\_copy/2}}
+%Table copy provides an explicit mechanism for the user to reduce the
+%amount of copying into and out of a table.  {\tt table\_copy/2}
+%succeeds when {\tt From} is ground, and returns a copy of that
+%structure (or list) in the table space.  No copying of that structure
+%will be required when calls or returns containing it are tabled, and
+%no copying will be necessary when returns using it are resolved with
+%goals. 
+%
+%For an example of the use of table copy, see Section~\ref{dcg_tabling}
+
+\comment{
+
+\ournewitem{breg\_retskel(+Breg,+Arity,-Return\_Skeleton,-SubgoalStructurePtr)}
+\index{{\tt breg\_retskel/4}}
+If Breg is bound to a pointer to the tabling choice point and 
+Arity is bound to the arity of the predicate corresponding to 
+the choice point, {\tt breg\_retskel} succeeds after binding 
+{\tt Return\_Skeleton} to ret/n as in {\tt get\_calls/3} and 
+{\tt SubgoalStructurePtr} to the pointer to the subgoal structure.
+
+Warning:This builtin works for tabling predicates only.
+
+}
+
+\end{description}
+
+

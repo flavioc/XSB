@@ -1,0 +1,119 @@
+The XSB system is now available by anonymous ftp from SUNY Stony Brook.
+
+The following is a list of instructions on how to ftp and install XSB.
+
+     1) Issue FTP command to connect to our ftp server
+
+                ftp ftp.cs.sunysb.edu or ftp 130.245.1.40
+
+        When asked for Name, respond with "anonymous".
+        When asked for Password, respond with your e-mail address.
+
+     2) Issue the following change directory command to where the XSB system is
+ 
+                cd pub/XSB
+ 
+     3) Change transfer mode to binary
+         
+                binary
+ 
+     4) Now retrieve the XSB system (using either of the following)
+ 
+                get XSB.tar.gz    or	get XSB.tar.Z
+ 
+     5) Exit the ftp program
+ 
+                quit
+ 
+     6) Now uncompress and untar the files (again using either of the following)
+ 
+		gnutar zxvf XSB.tar.gz
+
+                uncompress -c XSB.tar.Z | tar xvf -
+
+        Note that these commands uncompress the files into the current
+	working directory, and create a directory named XSB.
+ 
+     7) Change directory to XSB
+
+		cd XSB
+
+	This directory should now contain some files (among which there should
+	be one named "makeall"), and the following 7 directories: 
+
+		build, cmplib, emu, examples, lib, manual, and syslib.
+
+	Note that after the installation of XSB the directory structure of XSB
+	should be maintained.  However, you can build XSB for installation
+	in a place other than the directory where you unpacked the system
+	(see the INSTALL file).
+
+     8) Read carefully the License Agreement for XSB found in the file LICENSE.
+
+		more LICENSE
+
+	This should be done before executing step 9 below.  By installing the
+	XSB system you automatically agree to the conditions of the LICENSE
+	agreement.
+
+     9) For detailed installation instructions, see the file INSTALL.
+
+
+    10) The Prolog byte code files in cmplib, syslib and lib should NOT
+	have to be recompiled except under exceptional circumstances
+	(such as corruption during ftp transmission), as they are machine
+	and installation procedure independent.
+
+    11) (Optional) Remove the compressed XSB system
+
+                rm ../XSB.tar.gz   or   rm ../XSB.tar.Z
+
+    12) The XSB Programmer's Manual (in LateX, dvi and Postcript format)
+	resides in the directory manual.  In case the dvi or Postcript
+	files are corrupted, you can type "latex manual" twice in the
+	manual directory to obtain the manual.dvi file.
+
+    13) For those familiar with Prolog interpreters, the XSB interpreter
+	can be executing the script
+
+		bin/xsb -i
+
+        (it might also be bin/xsb-aout, if you have built XSB with the
+	--linuxaout option, or bin/xsb-bits64, if you have built with the
+	--force64 option.
+	All Prolog standard predicates are provided.  Those unfamiliar with
+	Prolog systems, should read chapters 2 and 3 of the XSB manual to
+	find out how to consult files and call predicates.
+
+    14) Some sample programs and benchmarks are in the directory "examples".
+
+    15) Have fun with the XSB system...
+
+
+Once you obtain XSB, please register as an XSB user.  You will be asked to
+auto-register once the build process is complete. The registration script
+will leave a file .xsb/registration in your home directory. While this file 
+is present, you will not be asked to register again.
+
+In addition, each time you build XSB, you will be asked to send us the
+installation log (this is done automatically, if you respond positively to
+the prompt). This log will help us keep track of the XSB usage on the
+different systems and focus our development efforts.
+
+Our address:
+ - high-tech:
+
+	e-mail: xsb-contact@cs.sunysb.edu
+
+ - low-tech:
+
+	XSB-Group
+	Department of Computer Science
+	SUNY at Stony Brook
+	Stony Brook, NY 11794-4400
+	U.S.A.
+
+Please address all comments and bug reports to the addresses above.
+We will be happy to hear your comments or suggestions, or to assist
+you in any possible way.
+

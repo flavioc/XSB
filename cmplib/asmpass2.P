@@ -1,0 +1,155 @@
+/* File:      asm_pass2.P
+** Author(s): Kostis Sagonas, Terrance Swift, Saumya Debray
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+/*======================================================================*/
+/*  asm_gendata(+SymList)						*/ 
+/*	Generates the data segment of the byte code file.  The data	*/
+/*	segment contains information about the symbols in the module.	*/
+/*======================================================================*/
+
+asm_gendata(SymList) :- 
+	member(Sym, SymList),	% Non-deterministically get a symbol
+	asm_putsym(Sym),
+	fail.		% reclaim space (remove all choice points left)
+asm_gendata(_).
+
+asm_putsym(Sym) :-
+	sym_name(Sym, Name, Arity), str_len(Name, L),
+	sym_env(Sym, Env), env_code(Env, DomCode),
+	sym_category(Sym, Cat), category_code(Cat, CatCode),
+	put(DomCode), put(CatCode), put(Arity),
+	( L < 256 -> put(L) 
+	; error('cannot generate byte-code for atoms having length > 255') 
+	),
+	write(Name),
+	( DomCode =\= 2 -> true
+	; Env = im(Mod), str_len(Mod, LM), put(LM), write(Mod)
+	),
+	!.
+
+env_code(ex, 0).
+env_code((local), 1).
+env_code(im(_), 2).
+% env_code(imex, 3).
+env_code(global, 4).
+
+category_code(ordinary, 0).		% uninstantiated variable
+% category_code(dynamic, 1).		% not used in the compiler yet
+category_code(pred, 12).		% T_UDEF; T_PRED=:=2
+category_code(module, 4).
+
+
+/*======================================================================*/
+/*  asm_gentext(+PilCode, +LabelTab)					*/
+/*	Generates the text segment of the byte code file.  Each time	*/
+/*	text segment for a single predicate block is generated.  The	*/
+/*	PilCode for the predicate contains the non-index code ONLY	*/
+/*	(the part of the code used for indexing has already been taken	*/
+/*	out of the PilCode by predicate asm_get_index/5 of asm).	*/
+/*======================================================================*/
+
+asm_gentext(Program, LabelTab) :-
+	member(Inst, Program),
+	asm_gentext_inst(Inst, LabelTab),
+	fail.		% reclaim space (remove all choice points left)
+asm_gentext(_, _).
+
+asm_gentext_inst(Inst, LabelTab) :-
+	asm_inst(Inst, _Len, Opcode, Args),
+	( Opcode >= 0 -> put(Opcode), asm_genargs(Args, LabelTab)
+	; Opcode =:= -2 -> true		% label
+	; error(('unknown pil text instruction: ', Inst))
+	),
+	!.
+
+asm_genargs([], _).
+asm_genargs([One|More], LabelTab) :- 
+	asm_genarg(One, LabelTab), 
+	asm_genargs(More, LabelTab).
+
+asm_genarg(p, _) :- put(0).
+asm_genarg(pp, _) :- put(0), put(0).
+asm_genarg(ppp, _) :- put(0), put(0), put(0).
+asm_genarg(s(Sym), _) :- sym_offset(Sym, I), write_int(I).
+asm_genarg(c(Sym), _) :- sym_offset(Sym, I), write_int(I).
+asm_genarg(g(Sym), _) :- sym_offset(Sym, I), write_int(I).
+asm_genarg(n(I), _) :- integer(I) -> write_int(I) ; write_float(I).
+asm_genarg(i(I), _) :-  write_int(I).
+asm_genarg(l(L), LabelTab) :- hashed_find_label((L,I), LabelTab), write_int(I).
+asm_genarg(r(I), _) :- put(I).
+asm_genarg(v(I), _) :- put(I).
+asm_genarg(a(I), _) :- put(I).
+asm_genarg(t(T), _) :- write(T).
+
+
+/*======================================================================*/
+/*  asm_genindex(+IndexCode, +LabelTab)					*/
+/*	Generates the index segment of the byte code file.  Each time	*/
+/*	index code for a single predicate block is generated.		*/
+/*======================================================================*/
+
+asm_genindex(IndexCode, LabelTab) :-
+	member(Inst, IndexCode),
+	asm_proc_index(Inst, LabelTab),
+	fail.		% reclaim space (remove all choice points left)
+asm_genindex(_, _).
+
+asm_proc_index(cases(_Label,Arity,Num,OrderNum), _) :-
+	asm_genindex_inst(cases(Arity,OrderNum,Num), _), !.
+asm_proc_index(arglabel(T,Val,L), LabelTab) :-
+	( T = c, sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
+	; T = s, sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
+	; T = i, Inst = arglabel(T,Val,L)
+	; Inst = arglabel(T,L)
+	), 
+	asm_genindex_inst(Inst, LabelTab), !.
+
+asm_genindex_inst(Inst, LabelTab) :-
+	asm_inst(Inst, _Len, Opcode, Args),
+	( Opcode >= 0 -> put(Opcode), asm_genargs(Args, LabelTab)
+	; Opcode =:= -3 -> asm_genargs(Args, LabelTab)	% arglabel
+	; error(('unknown pil index instruction: ', Inst))
+	),
+	!.
+
+
+/*======================================================================*/
+/* --- other utilities ------------------------------------------------ */
+/*======================================================================*/
+
+hashed_find_label((abs(Value),Value), _) :- !.
+hashed_find_label(Elem, label_tab(Hash_Size,_,HashLabelTab)) :-
+	Elem = (X,_),
+	( X = (_,LabelId) ->
+		term_hash(LabelId, Hash_Size, Hash)
+	; term_hash(X, Hash_Size, Hash)
+	),
+	HashArg is Hash+1,
+	ll_arg(HashArg, HashLabelTab, BucketList),
+	membercheck(Elem, BucketList).
+
+
+force_asm_pass2_loaded.

@@ -1,0 +1,95 @@
+#! /bin/sh
+
+# @configure_input@
+
+## File:      xsb.in
+## Author(s): kifer
+## Contact:   xsb-contact@cs.sunysb.edu
+## 
+## Copyright (C) The Research Foundation of SUNY, 1998
+## 
+## XSB is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Library General Public License as published by the Free
+## Software Foundation; either version 2 of the License, or (at your option)
+## any later version.
+## 
+## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+## more details.
+## 
+## You should have received a copy of the GNU Library General Public License
+## along with XSB; if not, write to the Free Software Foundation,
+## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+## $Id$
+## 
+##
+
+
+# This is a smart XSB invocation script. It senses 
+# the current architecture and finds the right executable for it.
+# Invoke as 'xsb${suffix} args'
+
+# Don't move this script (except if you move it along with the 
+# whole XSB source tree) and/or invoke it via links.
+# This script assumes that it resides one level above the root
+# of the XSB source tree. 
+# If you need to invoke this (bin/xsb) script from some other location,
+# put a simple shell script in that other location, which would simly
+# call the bin/xsb script.
+
+
+
+suffix=@config_tag@
+
+case $0 in
+/*) thisfile=$0
+    ;;
+*)  thisfile=`pwd`/$0
+    ;;
+esac
+
+# rectify .. in path names - 4 times should suffice for the most weird 
+# invocations with multiple ..'s
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
+thisfile=`echo $thisfile | sed 's,[^/][^/]*//*\.\.//*,,g'`
+#rectify . in path names
+thisfile=`echo $thisfile | sed 's,//*\.//*,/,g'`
+
+scriptdir=`dirname $thisfile`
+topdir=`dirname $scriptdir`
+
+config=`$topdir/build/config.guess`
+canonical=`$topdir/build/config.sub $config`
+exec_dir=$topdir/config/${canonical}${suffix}
+executable=${exec_dir}/bin/xsb
+
+# The purpose of this complex thing is to make sure that arguments
+# with spaces in them get passed as one to the XSB executable, e.g., 
+# bin/xsb -e "write('Hello World'), nl." should pass this goal to
+# XSB as a single string. Here we build a quoted argument list, 
+# skipping empty argument strings.
+xsb_cmd=""
+for arg
+do
+    if test -n "$arg"; then
+      xsb_cmd="$xsb_cmd \"$arg\""
+    fi
+done
+
+if test -x "$executable" ; then
+   eval "$executable $xsb_cmd"
+else
+   echo "${executable}: "
+   echo "       file doesn't exist or is not executable"
+   echo ""
+   echo "XSB might not have have been compiled for the following machine configuration:"
+   echo "             " ${canonical}${suffix}
+   echo "This installation seems to have the following configurations available:"
+   ls -1  $topdir/config 2> /dev/null
+   echo ""
+   echo "Please contact your system administrator, if you can't rebuild XSB."
+fi

@@ -1,0 +1,281 @@
+/* File:      file_op.P 
+** Author(s): Kostis F. Sagonas, David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+		/************************************/
+		/*  Querying the Operator Database  */
+		/************************************/
+
+'_$op'(P, T, S) :- 
+	dyn_op(P, T, S),
+	P =\= 0.		% operator S has not been de-activated
+'_$op'(P, T, S) :- 
+	'_$op1'(P, T, S),
+	\+ dyn_op(0, T, S).
+
+
+		/*************************************/
+		/*  Modifying the Operator Database  */
+		/*************************************/
+
+%   add_ops(+Precedence, +Operator_Specifier, +OPList)
+%   Is used by op/3 to add a list of operators with a given Precedence and
+%   Operator_Specifier, when it is already known that no error can occur.
+%   (This must be ensured by op/3). Predicate op/3 always calls this
+%   procedure to add the given operators, (even when only one operator is
+%   to be added), so this is the exported predicate in contrast to add_op/3
+%   which is local to this module.
+ 
+add_ops(_P,_T, []).
+add_ops( P, T, [OP|OPs]) :- add_op(P, T, OP), add_ops(P, T, OPs).
+
+add_op(0, T, S) :- 
+	dyn_op(0, T, S),	% An already deleted op doesn't 
+	!.			% need to be deleted again.
+add_op(0, T, S) :-
+	'_$op'(_, T, S),	% op S is a current op
+	!,
+	deactivate_op(T, S).
+add_op(0, _, _) :-		% If S is not a current op it doesn't matter!
+	!.
+add_op(P, T, S) :- 
+	'_$op'(P, T, S), 	% The same op declaration already exists
+	!.			% in the database (don't insert it again)
+add_op(_, T, S) :-
+	same_type_op(T, T0, S),
+	deactivate_op(T0, S),
+	fail.
+add_op(P, T, S) :-
+	assertai(dyn_op(P,T,S), 3).
+
+same_type_op(T, T0, S) :-
+	'_$op'(_, T0, S),	% op S is a current op
+	op_type(T0, Ty),
+	op_type(T, Ty),
+	!.
+
+deactivate_op(T, S) :-
+	retract(dyn_op(_,T,S)),		% op S was dynamically created;
+	!.				% remove it!
+deactivate_op(T, S) :-
+	assertai(dyn_op(0,T,S), 3).	% op S is a compiled op; 
+					% deactivate it!
+
+
+		/**************************************/
+		/*  Database of Predefined Operators  */
+		/**************************************/
+
+% NOTE: From the Prolog standard we are missing the following operators:
+%		op(1150, fx, [(discontiguous)]).
+%		op(400, yfx, rem).
+%		op(200, xfx, **).
+
+:- dynamic dyn_op(_,_,_).	% need this form so get right psc record.
+
+'_$op1'(1200,xfx,(':-')).
+'_$op1'(1200,xfx,('-->')).	% Not in the Prolog standard
+'_$op1'(1200,fx,(':-')).
+'_$op1'(1200,fx,('?-')).
+'_$op1'(1198,xfx,('::-')).
+'_$op1'(1150,fx,(hilog)).	% Added for HiLog
+'_$op1'(1150,fx,(dynamic)).
+'_$op1'(1150,fx,(multifile)).
+'_$op1'(1100,xfy,';').
+'_$op1'(1100,fx,(table)).	% Added for tabling
+'_$op1'(1100,fx,(edb)).		% Added for tabling
+'_$op1'(1100,fy,(index)).	% Not in the Prolog standard
+'_$op1'(1100,fy,(ti)).		% Added for transformational indexing
+'_$op1'(1100,fy,(ti_off)).	% Added for transformational indexing
+'_$op1'(1100,fx,(mode)).	% Not in the Prolog standard
+'_$op1'(1100,fx,(export)).	% Not in the Prolog standard
+'_$op1'(1100,fx,(parallel)).	% Not in the Prolog standard
+'_$op1'(1100,fx,(local)).	% Not in the Prolog standard
+'_$op1'(1050,fy,(import)).	% Not in the Prolog standard
+'_$op1'(1050,xfx,(from)).	% Not in the Prolog standard
+'_$op1'(1050,xfy,'->').
+'_$op1'(1000,xfy,',').
+'_$op1'(900,fy,not).		% Not in the Prolog standard
+'_$op1'(900,fy,'\+').		% Not in the Prolog standard
+'_$op1'(900,fy,spy).		% Not in the Prolog standard
+'_$op1'(900,fy,nospy).		% Not in the Prolog standard
+'_$op1'(700,xfx,'=').
+'_$op1'(700,xfx,'\=').
+'_$op1'(700,xfx,'==').
+'_$op1'(700,xfx,'\==').
+'_$op1'(700,xfx,'@<').
+'_$op1'(700,xfx,'@=<').
+'_$op1'(700,xfx,'@>').
+'_$op1'(700,xfx,'@>=').
+'_$op1'(700,xfx,'=..').
+'_$op1'(700,xfx,'^=..').	% HiLog univ
+'_$op1'(700,xfx,is).
+'_$op1'(700,xfx,'=:=').
+'_$op1'(700,xfx,'=\=').
+'_$op1'(700,xfx,'<').
+'_$op1'(700,xfx,'=<').
+'_$op1'(700,xfx,'>').
+'_$op1'(700,xfx,'>=').
+%'_$op1'(700,xfx,in).		% Not in the Prolog standard (used for domains)
+%'_$op1'(700,xfx,'/=').		% Not in the Prolog standard (used for domains)
+'_$op1'(661,xfy,'.').		% Not in the Prolog standard /* !! */
+'_$op1'(600,xfy,':').		% As Quintus (Not as in the Prolog standard)
+'_$op1'(500,yfx,'+').
+'_$op1'(500,yfx,'-').
+'_$op1'(500,yfx,'/\').
+'_$op1'(500,yfx,'\/').
+'_$op1'(500,fx,'+').		% Not in the Prolog standard
+'_$op1'(500,fx,'-').		% Not in the Prolog standard
+'_$op1'(400,yfx,'*').
+'_$op1'(400,yfx,'/').
+'_$op1'(400,yfx,'//').
+'_$op1'(400,yfx,mod).
+'_$op1'(400,yfx,'<<').
+'_$op1'(400,yfx,'>>').
+'_$op1'(400,yfx,'\').
+'_$op1'(200,xfy,'^').
+
+
+			/************************/
+			/*  Auxiliary routines  */
+			/************************/
+
+%  op_priority(+Priority)
+%  true iff Priority is an integer representing a valid operator priority
+
+op_priority(Priority) :-
+	integer(Priority),
+	Priority >= 0, Priority =< 1200.
+
+
+%  op_specifier(+Op_Specifier)
+%  true iff Op_Specifier is a valid operator specifier
+
+op_specifier(Op_Specifier) :-
+	nonvar(Op_Specifier),
+	op_type(Op_Specifier, _).
+
+
+%  op_type(?Op_Specifier, ?Op_Type)
+%  classify operator types, within type must be exclusive
+
+op_type(xfx,inf).
+op_type(xfy,inf).
+op_type(yfx,inf).
+op_type(fx,pre).
+op_type(fy,pre).
+op_type(hx,pre).
+op_type(hy,pre).
+op_type(xf,pos).
+op_type(yf,pos).
+
+
+/* add_index allows declaration of indexing for dynamic (and static) code.
+Informaiton is kept in a table '_$index'/3 which stores a most-general
+call to a predicate, the argument to index on, and the size of the hash
+table to use. */
+
+'_$index'(dyn_op(_,_,_),3,17).
+'_$index'('_$index'(_,_,_),1,29).
+
+:- dynamic '_$trie_asserted'/1.
+
+'_$trie_asserted'(_) :- fail. % Garbage declaration to avoid undefined error.
+
+add_trie_index(P/Arity) :- !, 
+	functor(Pcall,P,Arity),
+	assert_trie_index(Pcall).
+add_trie_index(Pcall)    :- 
+	 assert_trie_index(Pcall).
+
+
+assert_trie_index(Pcall) :-
+%	assertai('_$trie_asserted'(Pcall),1).
+	assert('_$trie_asserted'(Pcall)).
+
+add_index(Pred,Arg,Size) :-
+	(Pred = P/Arity
+	 ->	functor(Pcall,P,Arity)
+	;	Pcall = Pred,
+		functor(Pcall,P,Arity)
+	),
+	(Size =< 0 -> default_assert_size(Hsize) ; Hsize = Size),
+	(integer(Arg)
+	 ->	Narg = Arg, Targ = Arg
+	 ; Arg == []
+	 ->	Narg = 0, Targ = Arg
+	 ; Arg = [_|_]
+	 ->	Narg = 1,
+		fix_arg(Arg,Arity,Targ)
+	),
+	(Narg < 0
+	 ->	retractall('_$index'(Pcall,_,_))
+	 ; '_$index'(Pcall,Oarg,Osize)
+	 ->	(Targ==Oarg, Hsize=:=Osize
+		 ->	true
+		 ;	retractall('_$index'(Pcall,_,_)),
+			assertai('_$index'(Pcall,Targ,Hsize),1)
+		)
+	 ;	assertai('_$index'(Pcall,Targ,Hsize),1)
+	).			
+
+
+
+
+fix_arg([],_,[]).
+fix_arg([Arg|Args],Arity,[Narg|Nargs]) :-
+	(integer(Arg)
+	 ->	((Arg > 0, Arg =< Arity)
+		 ->	Narg = Arg
+		 ;	fail
+		)
+	 ;	conv_joint(Arg,0,Arity,Narg)
+	),
+	fix_arg(Args,Arity,Nargs).
+
+conv_joint(B+A,Na,Arity,Narg) :- !, 
+	integer(A), A > 0, A =< Arity, 
+	Naa is A + (Na << 8),
+	conv_joint(B,Naa,Arity,Narg).
+conv_joint(A,Na,Arity,Narg) :- 
+	integer(A), A > 0, A =< Arity, Narg is A + (Na << 8).
+
+/* quick hack to get dynamic tabling in. robustify it!!! */
+
+'_$table'(_) :- fail.
+
+add_table(P/A) :-
+	functor(Call,P,A),
+	retractall('_$table'(Call)),
+	assertai('_$table'(Call),1).
+
+
+/*======================================================================*/
+/* The purpose of the following is explained in file: interpreter.P     */
+/*======================================================================*/
+
+force_file_op_loaded.
+
+/* --------------------- end of file file_op.P ------------------------ */

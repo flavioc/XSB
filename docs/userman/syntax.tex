@@ -1,0 +1,522 @@
+\chapter{Syntax} \label{Syntax}
+%==============================
+
+The syntax of \ourprolog\ is taken from C-Prolog with extensions.
+This chapter mainly introduces the extensions.
+The syntax of \ourprolog\ is that of the HiLog language.  The syntax
+of HiLog is a proper superset of the Prolog syntax.
+
+
+\section{Terms} \label{TermSyntax}
+%=================================
+The data objects of the HiLog language are called {\em terms}.
+A {\em HiLog term} can be constructed from any logical symbol or a term
+followed by any finite number of arguments.  In any case, a {\em term}
+is either a {\em constant}, a {\em variable}, or a {\em compound term}.
+
+A {\em constant} is either a {\em number} (integer or floating-point) or an
+{\em atom}.  Constants are definite elementary objects, and correspond to
+proper nouns in natural language.
+
+
+\subsection{Integers}
+The printed form of an integer in HiLog consists of a sequence of digits
+optionally preceded by a minus sign ({\tt '-'}).  These are normally 
+interpreted as base $10$ integers.  It is also possible to enter integers
+in other bases ($2$ through $36$); this can be done by preceding the digit
+string by the base (in decimal) followed by an apostrophe ({\tt '}).  If a
+base greater than $10$ is used, the characters {\tt A-Z} or {\tt a-z} are
+used to stand for digits greater than $9$.
+
+Using these rules, examples of valid integer representations in \ourprolog\ are:
+\begin{verbatim}
+           1    -3456    95359    9'888    16'1FA4    -12'A0    20'
+\end{verbatim}
+representing respectively the following integers in decimal base:
+\begin{verbatim}
+           1    -3456    95359     728       8100      -120      0
+\end{verbatim}
+
+Note that the following:
+\begin{verbatim}
+                   +525     12'2CF4     37'12     20'-23
+\end{verbatim}
+are not valid integers of \ourprolog.
+
+A base of $0$ (zero) will return the ASCII code of the (single) character
+after the apostrophe; for example,
+\begin{verbatim}
+                                 0'A = 65
+\end{verbatim}
+
+
+\subsection{Floating-point Numbers}
+A HiLog floating-point number consists of a sequence of digits with an
+embedded decimal point, optionally preceded by a minus sign ({\tt '-'}), and
+optionally followed by an exponent consisting of uppercase or lowercase
+{\tt 'E'} and a signed base $10$ integer.
+
+Using these rules, examples of HiLog floating point numbers are:
+\begin{verbatim}
+              1.0    -34.56    817.3E12    -0.0314e26    2.0E-1
+\end{verbatim}
+Note that in any case there must be at least one digit before, and one digit
+after, the decimal point.
+
+
+\subsection{Atoms}
+A HiLog atom is identified by its name, which is a sequence of up to 1000
+characters (other than the null character).  Just like a Prolog atom, a HiLog
+atom can be written in any of the following forms:
+\begin{itemize}
+\item Any sequence of alphanumeric characters (including {\tt '\_'}), starting
+      with a lowercase letter.
+
+\item Any sequence from the following set of characters (except of the
+      sequence {\tt '/*'}, which begins a comment):
+      \begin{verbatim}
+                     + - * / \ ^ < > = ` ~ : . ? @ # &
+      \end{verbatim}
+
+\item Any sequence of characters delimited by single quotes, such as:
+      \begin{verbatim}
+                         'sofaki'    '%'    '_$op'
+      \end{verbatim}
+      If the single quote character is to be included in the sequence it must
+      be written twice. For example:
+      \begin{verbatim}
+                             'don''t'      ''''
+      \end{verbatim}
+
+\item Any of the following:
+      \begin{verbatim}
+                                 !  ;  []  {}
+      \end{verbatim}
+      Note that the bracket pairs are special. While {\tt '[]'} and {\tt '\{\}'}
+      are atoms, {\tt '['}, {\tt ']'}, {\tt '\{'}, and {\tt '\}'} are not.
+      Like Prolog, the form {\tt [X]} is a special notation for lists
+      (see section~\ref{Lists}), while the form {\tt \{X\}} is just ``syntactic
+      sugar'' for the term {\tt '\{\}'(X)}.
+\end{itemize}
+
+Examples of HiLog atoms are:
+\begin{verbatim}
+               h   foo   ^=..   ::=   'I am also a HiLog atom'   []
+\end{verbatim}
+
+
+\subsection{Variables}
+Variables may be written as any sequence of alphanumeric characters
+(including {\tt '\_'}) beginning with either a capital letter or {\tt '\_'}.
+For example:
+\begin{verbatim}
+                      X   HiLog   Var1   _3   _List
+\end{verbatim}
+
+If a variable is referred to only once in a clause, it does not need to be
+named and may be written as an {\em anonymous variable}, represented by a
+single underscore character {\tt '\_'}.  Any number of anonymous variables
+may appear in a HiLog clause; all of these variables are read as distinct
+variables.  Anonymous variables are not special at runtime.
+
+
+\subsection{Compound Terms}
+Like in Prolog, the structured data objects of HiLog are {\em compound terms}
+(or {\em structures}).  The external representation of a HiLog compound term
+comprises a {\em functor} (called the {\em principal functor} or the
+{\em name} of the compound term) and a sequence of one or more terms called
+{\em arguments}.  Unlike Prolog where the functor of a term must be an atom,
+in HiLog the functor of a compound term {\em can be any valid HiLog term}.
+This includes numbers, atoms, variables or even compound terms.  Thus, since
+in HiLog a compound term is just a term followed by any finite number of
+arguments, all the following are valid external representations of HiLog
+compound terms: 
+\label{some_compound_terms}
+\begin{verbatim}
+          foo(bar)             prolog(a, X)              hilog(X)       
+       123(john, 500)        X(kostis, sofia)         X(Y, Z, Y(W))   
+      f(a, (b(c))(d))       map(double)([], [])     h(map(P)(A, B))(C)
+\end{verbatim}
+
+Like a functor in Prolog, a functor in HiLog can be characterized by
+its {\em name} and its {\em arity} which is the number of arguments this
+functor is applied to.  For example, the compound term whose principal functor
+is {\tt 'map(P)'} of arity 2, and which has arguments {\tt L1}, and {\tt L2},
+is written as:
+\begin{verbatim}
+                            map(P)(L1, L2)
+\end{verbatim}
+
+As in Prolog, when we need to refer explicitly to a functor we will normally
+denote it by the form $Name/Arity$.  Thus, in the previous example, the functor
+{\tt 'map(P)'} of arity 2 is denoted by:
+\begin{verbatim}
+                                 map(P)/2
+\end{verbatim}
+Note that a functor of arity 0 is represented as an atom.
+
+In Prolog, a compound term of the form $p(t_1, t_2, \ldots, t_k)$ is usually
+pictured as a tree in which every node contains the name $p$ of the functor
+of the term and has exactly $k$ children each one of which is the root of the
+tree of terms $t_1, t_2, \ldots, t_k$.
+
+For example, the compound term
+\begin{verbatim}
+                 s(np(kostis), vp(v(loves), np(sofia)))
+\end{verbatim}
+would be pictured as the following tree:
+
+\begin{minipage}{4.0in}
+\begin{verbatim}
+                                  s
+                                /   \
+                             np       vp
+                             |       /  \
+                             |      v     np
+                             |      |     |
+                          kostis  loves  sofia
+\end{verbatim}
+\end{minipage}
+
+\noindent
+The principal functor of this term is {\tt s/2}.  Its two arguments are also
+compound terms.  In illustration, the principal functor of the second
+argument is {\tt vp/2}.
+
+Likewise, any external representation of a HiLog compound term
+$t(t_1, t_2, \ldots, t_k)$ can be pictured as a tree in which every node
+contains the tree representation of the name $t$ of the functor of the term
+and has exactly $k$ children each one of which is the root of the tree of
+terms $t_1, t_2, \ldots, t_k$.
+
+Sometimes it is convenient to write certain functors as {\em operators}.
+{\em Binary functors} (that is, functors that are applied to two arguments)
+may be declared as {\em infix operators}, and {\em unary functors} (that is,
+functors that are applied to one argument) may be declared as either 
+{\em prefix or postfix operators}.  
+Thus, it is possible to write the following:
+\begin{verbatim}
+                    X+Y     (P;Q)     X<Y      +X     P;
+\end{verbatim}
+More about operators in HiLog can be found in section~\ref{Operators}.
+
+
+\subsection{Lists}\label{Lists}
+As in Prolog, lists form an important class of data structures in HiLog.
+They are essentially the same as the lists of Lisp: a list is either the atom
+{\tt '[]'}, representing the empty list, or else a compound term with functor
+{\tt '.'}  and two arguments which are the head and tail of the list
+respectively, where the tail of a list is also a list.
+Thus a list of the first three natural numbers is the structure:
+\begin{verbatim}
+                                  .
+                                 / \
+                                1    .
+                                    / \
+                                   2    .
+                                       / \
+                                      3   []
+\end{verbatim}
+which could be written using the standard syntax, as:
+\begin{verbatim}
+                             .(1,.(2,.(3,[])))
+\end{verbatim}
+but which is normally written in a special list notation, as:
+\begin{verbatim}
+                                  [1,2,3]
+\end{verbatim}
+Two examples of this list notation, as used when the tail of a list is a
+variable, are:
+\begin{verbatim}
+                       [Head|Tail]      [foo,bar|Tail]
+\end{verbatim}
+which represent the structures:
+\begin{verbatim}
+                            .                .
+                           / \              / \
+                       Head   Tail        foo   .
+                                               / \
+                                             bar  Tail
+\end{verbatim}
+respectively.
+
+Note that the usual list notation {\tt [H|T]} does not add any new power
+to the language; it is simply a notational convenience and improves
+readability. The above examples could have been written equally well as:
+\begin{verbatim}
+                      .(Head,Tail)      .(foo,.(bar,Tail))
+\end{verbatim}
+
+For convenience, a further notational variant is allowed for lists of
+integers that correspond to ASCII character codes.  Lists written in this
+notation are called {\em strings}.  For example,
+\begin{verbatim}
+                            "I am a HiLog string"
+\end{verbatim}
+represents exactly the same list as:
+\begin{verbatim}
+    [73,32,97,109,32,97,32,72,105,76,111,103,32,115,116,114,105,110,103]
+\end{verbatim}
+
+
+\section{From HiLog to Prolog} \label{HiLog2Prolog}
+%==================================================
+From the discussion about the syntax of HiLog terms, it is clear that the
+HiLog syntax allows the incorporation of some higher-order constructs in
+a declarative way within logic programs.  As we will show in this section,
+HiLog does so  while retaining a clean first-order declarative semantics.
+The semantics of HiLog is first-order, because every HiLog term (and formula)
+is automatically {\em encoded (converted)} in predicate calculus in the way
+explained below.
+
+Before we briefly explain the encoding of HiLog terms, let us note that the 
+HiLog syntax is a simple (but notationally very convenient) encoding for Prolog
+terms, of some special form.  In the same way that in Prolog:
+\begin{center}
+{\tt	1 + 2}
+\end{center}
+is just an (external) shorthand for the term:
+\begin{center}
+{\tt  +(1, 2)} 
+\end{center}
+in the presence of an infix operator declaration for {\tt +} 
+(see section~\ref{Operators}), so:
+\begin{center}
+{\tt  X(a, b)}
+\end{center}
+is just an (external) shorthand for the Prolog compound term:
+\begin{center}
+{\tt    apply(X, a, b)}
+\end{center}
+Also, in the presence of a {\tt hilog} declaration (see
+section~\ref{other-directives}) for {\tt h}, the HiLog term whose external
+representation is:
+\begin{center}
+{\tt  h(a, h, b)} 
+\end{center}
+is a notational shorthand for the term:
+\begin{center}
+{\tt apply(h, a, h, b)}
+\end{center}
+Notice that even though the two occurrences of {\tt h} refer to the same 
+symbol, only the one where {\tt h} appears in a functor position is encoded
+with the special functor {\tt apply/}$n, n \geq 1$.
+
+The encoding of HiLog terms is performed based upon the existing declarations
+of {\em hilog symbols}.  These declarations (see section~\ref{other-directives}),
+determine whether an atom that appears in a functor position of an external 
+representation of a HiLog term, denotes a functor or the first argument of a 
+set of special functors {\tt apply}.  The actual encoding is as follows:
+\begin{itemize}
+\item	The encoding of any variable or parameter symbol (atom or number) that
+	does not appear in a functor position is the variable or the symbol
+	itself.
+\item	The encoding of any compound term {\tt t} where the functor {\em f}
+	is an atom that is not one of the hilog symbols (as a result of a
+	previous {\tt hilog} declaration), is the compound term that has
+	{\em f} as functor and has as arguments the encoding of the arguments
+	of term {\em t}.  Note that the arity of the compound term that results
+	from the encoding of {\em t} is the same as that of {\em t}.
+\item	The encoding of any compound term {\tt t} where the functor {\em f}
+	is either not an atom, or is an atom that is a hilog symbol, is a 
+	compound term that has {\tt apply} as functor, has first argument
+	the encoding of {\em f} and the rest of its arguments are obtained
+	by encoding of the arguments of term{\em t}.  Note that in this case
+	the arity of the compound term that results from the encoding of
+	{\em t} is one more than the arity of {\em t}.
+\end{itemize}
+
+Note that the encoding of HiLog terms described above, implies that even
+though the HiLog terms:
+\begin{center}
+\begin{minipage}{1.0in}
+\begin{verbatim}
+	p(a, b)
+	h(a, b)
+\end{verbatim}
+\end{minipage}
+\end{center}
+externally appear to have the same form, in the presence of a {\tt hilog}
+declaration for {\tt h} but not for {\tt p}, they are completely different.
+This is because these terms are shorthands for the terms whose internal 
+representation is: 
+\begin{center}
+\begin{minipage}{1.2in}
+\begin{verbatim}
+	    p(a, b)
+	apply(h, a, b)
+\end{verbatim}
+\end{minipage}
+\end{center}
+respectively.  Furthermore, only {\tt h(a,b)} is unifiable with the HiLog term
+whose external representation is {\tt X(a, b)}.
+
+We end this short discussion on the encoding of HiLog terms with a small
+example that illustrates the way the encoding described above is being done.
+Assuming that the following declarations of parameter symbols have taken place,
+\begin{center}
+\begin{minipage}{1.6in}
+\begin{verbatim}
+ :- hilog h.
+ :- hilog (hilog).
+\end{verbatim}
+\end{minipage}
+\end{center}
+before the compound terms of page~\pageref{some_compound_terms} were read by
+\ourprolog, the encoding of these terms in predicate calculus using the
+described transformation is as follows:
+\begin{center}
+\begin{minipage}{4.5in}
+\begin{verbatim}
+      foo(bar)                    prolog(a,X) 
+   apply(hilog,X)             apply(123,john,500)
+apply(X,kostis,sofia)       apply(X,Y,Z,apply(Y,W))
+  f(a,apply(b(c),d))       apply(map(double),[],[])  
+        apply(apply(h,apply(map(P),A,B)),C)
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+
+\section{Operators} \label{Operators}
+%====================================
+From a theoretical point of view, operators in Prolog are simply a notational
+convenience and add absolutely nothing to the power of the language.
+For example, in most Prologs {\tt '+'} is an infix operator, so
+\begin{verbatim}
+                                 2 + 1
+\end{verbatim}
+is an alternative way of writing the term {\tt +(2, 1)}.  That is, {\tt 2 + 1}
+represents the data structure:
+\begin{verbatim}
+                                   +
+                                  / \
+                                 2   1
+\end{verbatim}
+and not the number 3.  (The addition would only be performed if the structure
+were passed as an argument to an appropriate procedure, such as {\tt is/2}).
+% tls we havent done this yet. described in section~\ref{Arithmetic}).
+
+However, from a practical or a programmer's point of view, the existence of
+operators is highly desirable, and clearly handy.
+
+Prolog syntax allows operators of three kinds: {\em infix}, {\em prefix}, and
+{\em postfix}.  An {\em infix} operator appears between its two arguments,
+while a {\em prefix} operator precedes its single argument and a {\em postfix}
+operator follows its single argument.
+
+Each operator has a precedence, which is an integer from 1 to 1200.  The
+precedence is used to disambiguate expressions in which the structure of the
+term denoted is not made explicit through the use of parentheses.  The
+general rule is that the operator with the highest precedence is the
+principal functor.  Thus if {\tt '+'} has a higher precedence than {\tt '/'},
+then the following
+\begin{verbatim}
+                           a+b/c     a+(b/c)
+\end{verbatim}
+are equivalent, and both denote the same term {\tt +(a,/(b,c))}. Note that
+in this case, the infix form of the term {\tt /(+(a,b),c)} must be written
+with explicit use of parentheses, as in:
+\begin{verbatim}
+                               (a+b)/c
+\end{verbatim}
+
+If there are two operators in the expression having the same highest
+precedence, the ambiguity must be resolved from the {\em types} (and 
+the implied {\em associativity}) of the operators.  The possible types
+for an infix operator are
+\begin{verbatim}
+                          yfx     xfx     xfy
+\end{verbatim}
+Operators of type {\tt 'xfx'} are not associative.  Thus, it is required that
+both of the arguments of the operator must be subexpressions of lower
+precedence than the operator itself; that is, the principal functor of each
+subexpression must be of lower precedence, unless the subexpression is written
+in parentheses (which automatically gives it zero precedence).
+
+Operators of type {\tt 'xfy'} are {\em right-associative}:  only the
+first (left-hand) subexpression must be of lower precedence; the right-hand
+subexpression can be of the same precedence as the main operator.
+{\em Left-associative} operators (type {\tt 'yfx'}) are the other way around.
+
+An atom named {\tt Name} can be declared as an operator of type {\tt Type} and
+precedence {\tt Precedence} by the command;
+\begin{verbatim}
+                    :- op(Precedence, Type, Name).
+\end{verbatim}
+The same command can be used to redefine one of the predefined \ourprolog\
+operators (see appendix~\ref{operator_list}).  However, it is not allowed to
+alter the definition of the comma ({\tt ','}) operator.  An operator
+declaration can be cancelled by redeclaring the {\tt Name} with the same
+{\tt Type}, but {\tt Precedence} 0.
+
+As a notational convenience, the argument {\tt Name} can also be a list of
+names of operators of the same type and precedence.
+
+It is possible to have more than one operator of the same name, so long as
+they are of different kinds:  infix, prefix, or postfix.  An operator of any
+kind may be redefined by a new declaration of the same kind.  Declarations
+for all these built-in operators can be found in appendix~\ref{operator_list}.
+For example, the built-in operators {\tt '+'} and {\tt '-'} are as if they had
+been declared by the command:
+\begin{verbatim}
+                       :- op(500, yfx, [+,-]).
+\end{verbatim}
+so that:
+\begin{verbatim}
+                                  1-2+3
+\end{verbatim}
+is valid syntax, and denotes the compound term:
+\begin{verbatim}
+                                 (1-2)+3
+\end{verbatim}
+or pictorially:
+\begin{verbatim}
+                                    +
+                                   / \
+                                  -   3
+                                 / \
+                                1   2
+\end{verbatim}
+
+In \ourprolog, the list functor {\tt '.'/2} is one of the standard operators, 
+that can be thought as declared by the command:
+\begin{verbatim}
+                          :- op(661, xfy, .).
+\end{verbatim}
+So, in \ourprolog,
+\begin{verbatim}
+                                  1.2.[]
+\end{verbatim}
+represents the structure
+\begin{verbatim}
+                                    .
+                                   / \
+                                  1   .
+                                     / \
+                                    2   []
+\end{verbatim}
+Contrasting this picture with the picture above for {\tt 1-2+3} shows the
+difference between {\tt 'yfx'} operators where the tree grows to the left,
+and {\tt 'xfy'} operators where it grows to the right.  The tree cannot
+grow at all for {\tt 'xfx'} type operators.  It is simply illegal to combine
+{\tt 'xfx'} operators having equal precedences in this way.
+
+If these precedence and associativity rules seem rather complex, remember
+that you can always use parentheses when in any doubt.
+
+In \ourprolog, at the time when this is written, the possible types for
+prefix operators are:
+\begin{verbatim}
+                      fx       fy       hx       hy
+\end{verbatim}
+and the possible types for postfix operators are:
+\begin{verbatim}
+                               xf       yf
+\end{verbatim}
+
+We end our discussion about operators by just mentioning that prefix operators
+of type {\tt hx} and {\tt hy} are {\em proper HiLog operators}.  The discussion 
+of proper HiLog operators and their properties is deferred for the manual
+of a future version.
+
