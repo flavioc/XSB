@@ -44,6 +44,11 @@
  *
  */
 
+/* on Windows, be sure to set the cinterf.h include file path
+correctly, and also myargv[0].  When compiling this file, be sure to
+include the XSB_DLL or XSB_DLL_C flag as was included when the xsb.dll
+was compiled.  */
+
 #include <stdio.h>
 
 /* The following include is necessary to get the macros and routine
