@@ -1993,6 +1993,36 @@ static int retract_clause( ClRef Clause, int retract_nr )
  *** Entry points for CLAUSE/RETRACT predicates
  ***/
 
+ClRef previous_clref(ClRef Clause) {
+  int numInds;
+  byte opcode;
+
+  if (ClRefType(Clause) == INDEXED_CL) {
+    opcode = ClRefTryOpCode(Clause);
+    if (opcode == noop || opcode == trymeelse) {
+      numInds = ClRefNumInds(Clause);
+      Clause = ClRefPrev(Clause); /* get used_up parent SOB */
+      opcode = ClRefTryOpCode(Clause);
+      while (opcode == noop || opcode == trymeelse) {
+	if (--numInds) {
+	  Clause = (ClRef)(((Cell *)ClRefPrev(Clause)) - 5);
+	  opcode = ClRefTryOpCode(Clause);
+	} else return ClRefPrev(Clause);
+      }
+      Clause = ClRefPrev(Clause);
+      while (ClRefType(Clause) == SOB_RECORD) {
+	Clause = (ClRef)ClRefLastIndex(Clause);
+      }
+    } else Clause = ClRefPrev(Clause);
+  } else { // if (ClRefType(Clause) == UNINDEXED_CL)) {
+    Clause = ClRefPrev(Clause);
+    while (ClRefType(Clause) == SOB_RECORD) {
+      Clause = (ClRef)ClRefLastIndex(Clause);
+    }
+  }
+   return Clause;
+}
+
 /* db_get_last_clause returns the clref of the last (un-failed) clause
 in a predicate.  It fails if there are no clauses.  It should be
 extended to handle indexed predicates... */
@@ -2003,42 +2033,30 @@ xsbBool db_get_last_clause( /*+(PrRef)Pred, -(ClRef)Clause,
   PrRef Pred = (PrRef)ptoc_int(1);
   ClRef Clause;
   CPtr EntryPoint = 0;
-  int numInds, icnt = 0;
-  byte opcode;
+  int numInds;
 
   if (cell_opcode((CPtr)Pred) == tabletrysingle) {
 	/* Tabled pred, fetch real prref */
     	Pred = (PrRef)((CPtr *)Pred)[6];
   }
     
-  if (Pred->LastClRef == (ClRef)Pred) {
-    return FALSE;
+  if (Pred->LastClRef == (ClRef)Pred) return FALSE;
+  Clause = Pred->LastClRef;
+
+  while (ClRefType(Clause) == SOB_RECORD) {
+    Clause = (ClRef)ClRefLastIndex(Clause);
+  }
+
+  while (Clause != (ClRef)Pred && !ClRefNotRetracted(Clause)) {
+    Clause = previous_clref(Clause);
+  }
+
+  if (Clause == (ClRef)Pred) return FALSE;
+  if (ClRefType(Clause) != INDEXED_CL) {
+    EntryPoint = ClRefEntryPoint(Clause);
   } else {
-    Clause = Pred->LastClRef;
-    while (Clause != (ClRef)Pred) {
-      while (ClRefType(Clause) == SOB_RECORD) {
-	Clause = (ClRef)ClRefLastIndex(Clause);
-	icnt++;
-      }
-      if (ClRefNotRetracted(Clause)) break;
-      if (ClRefType(Clause) == INDEXED_CL) {
-	opcode = ClRefTryOpCode(Clause);
-	if (opcode == noop || opcode == trymeelse) {
-	  Clause = ClRefPrev(Clause);
-	  while (--icnt > 0) {
-	    Clause = ClRefUpSOB(Clause);
-	  }
-	}
-      }
-      Clause = ClRefPrev(Clause);
-    }
-    if (Clause == (ClRef)Pred) return FALSE;
-    if (ClRefType(Clause) != INDEXED_CL) {
-      EntryPoint = ClRefEntryPoint(Clause);
-    } else { /* ClRefType(Clause) == INDEXED_CL */
-      numInds = ClRefNumInds(Clause);
-      EntryPoint = ClRefIEntryPoint(Clause,numInds);
-    }
+    numInds = ClRefNumInds(Clause);
+    EntryPoint = ClRefIEntryPoint(Clause,numInds);
   }
   ctop_int(2, (Integer)Clause);
   ctop_int(3, (Integer)ClRefType(Clause));
@@ -2093,8 +2111,9 @@ xsbBool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type,
     {   Clause = first_clref( Pred, Head, &IndexLevel, &IndexArg ) ;
     }
     else
-    {	IndexLevel = ptoc_int(2);
-	IndexArg   = ptoc_int(3);
+      {	IndexLevel = ptoc_int(2);  /* which index is used, ith */
+        IndexArg   = ptoc_int(3);  /* index mask */
+
 	do { /* loop until a clause is found:
 		Retracted if looking for failed; 
 		Not Retracted if looking for not failed */
