@@ -1,52 +1,79 @@
+
+:- compiler_options([xpp_on]).
 :- export http_err_code/3.
 
-http_err_code( 100, 'Continue',                             'information' ). 
-http_err_code( 101, 'Switching Protocols',                  'information' ).
-http_err_code( 200, 'OK',                                   'success' ). 
-http_err_code( 201, 'Created',                              'success' ). 
-http_err_code( 202, 'Accepted',                             'success' ). 
-http_err_code( 203, 'Non-authoritative Information',        'success' ). 
-http_err_code( 204, 'Document Updated',                     'success' ). 
-http_err_code( 205, 'Reset Content',                        'success' ). 
-http_err_code( 206, 'Partial Content',                      'success' ). 
-http_err_code( 207, 'Partial Update OK',                    'success' ). 
-http_err_code( 300, 'Multiple Choices',                     'redirection' ). 
-http_err_code( 301, 'Moved Permanently',                    'redirection' ). 
-http_err_code( 302, 'Found',                                'redirection' ). 
-http_err_code( 303, 'See Other',                            'redirection' ). 
-http_err_code( 304, 'Not Modified',                         'redirection' ). 
-http_err_code( 305, 'Use Proxy',                            'redirection' ). 
-http_err_code( 306, 'Proxy Redirect',                       'redirection' ). 
-http_err_code( 307, 'Temporary Redirect',                   'redirection' ).
-http_err_code(-400, 'Bad Request',                          'client_error' ).
-http_err_code(-401, 'Unauthorized',                         'client_error' ).
-http_err_code(-403, 'Forbidden',                            'client_error' ).
-http_err_code(-404, 'Not Found',                            'client_error' ).
-http_err_code(-405, 'Method Not Allowed',                   'client_error' ).
-http_err_code(-406, 'Not Acceptable',                       'client_error' ).
-http_err_code(-407, 'Proxy Authentication Required',        'client_error' ).
-http_err_code(-409, 'Conflict',                             'client_error' ).
-http_err_code(-411, 'Length Required',                      'client_error' ).
-http_err_code(-412, 'Precondition Failed',                  'client_error' ).
-http_err_code(-413, 'Request Entity Too Large',             'client_error' ).
-http_err_code(-414, 'Request-URI Too Large',                'client_error' ).
-http_err_code(-415, 'Unsupported Media Type',               'client_error' ).
-http_err_code(-416, 'Range Not Satisfiable',                'client_error' ).
-http_err_code(-417, 'Expectation Failed',                   'client_error' ).
-http_err_code(-418, 'Reauthentication Required',            'client_error' ).
-http_err_code(-419, 'Proxy Reauthentication Reuired',       'client_error' ).
-http_err_code(-500, 'Internal Server Error',                'server_error' ).
-http_err_code(-501, 'Not Implemented',                      'server_error' ).
-http_err_code(-502, 'Bad Gateway',                          'server_error' ).
-http_err_code(-503, 'Service Unavailable',                  'server_error' ).
-http_err_code(-504, 'Gateway Timeout',                      'server_error' ).
-http_err_code(-505, 'HTTP Version not supported',           'server_error' ).
-http_err_code(-506, 'Partial update Not Implemented',       'server_error' ).
-http_err_code(-900, 'Weird, should never happen',           'internal' ).
-http_err_code(-901, 'We are in a select',                   'internal' ).
-http_err_code(-902, 'Negative value',                       'internal' ).
-http_err_code(-903, 'If we want to pause a stream',         'internal' ).
-http_err_code(-904, 'Recover pipe line',                    'internal' ).
-http_err_code(-905, 'Connection timeout',                   'internal' ).
-http_err_code(-906, 'Can not locate remote host',           'internal' ).
-http_err_code(   0, 'illegal URL',                          'client_error' ).
+#include "http_errors.h"
+
+http_err_code(HT_OK, 	      	      'Generic success',       'information').
+http_err_code(HT_ALL, 	       	      'Used by Net Manager',   'information').
+
+http_err_code(HT_CONTINUE,    	      'Continue',              'information').
+http_err_code(HT_UPGRADE,     	      'Switching Protocols',   'information').
+http_err_code(HT_LOADED,    	      'OK',                    'success'). 
+http_err_code(HT_CREATED,    	      'Created',               'success'). 
+http_err_code(HT_ACCEPTED, 	      'Accepted',              'success'). 
+http_err_code(HT_NON_AUTHORITATIVE,   'Non-authoritative Information',
+	       	       	       	       	       	       	       'success'). 
+http_err_code(HT_NO_DATA,     	      'Document Updated',      'success'). 
+http_err_code(HT_RESET_CONTENT,       'Reset Content',         'success'). 
+http_err_code(HT_PARTIAL_CONTENT,     'Partial Content',       'success'). 
+http_err_code(HT_PARTIAL_OK, 	      'Partial Update OK',     'success'). 
+http_err_code(HT_MULTIPLE_CHOICES,    'Multiple Choices',      'redirection').
+http_err_code(HT_PERM_REDIRECT,       'Moved Permanently',     'redirection').
+http_err_code(HT_FOUND,     	      'Found',                 'redirection').
+http_err_code(HT_SEE_OTHER, 	      'See Other',             'redirection').
+http_err_code(HT_NOT_MODIFIED,        'Not Modified',          'redirection').
+http_err_code(HT_USE_PROXY, 	      'Use Proxy',             'redirection').
+http_err_code(HT_PROXY_REDIRECT,      'Proxy Redirect',        'redirection').
+http_err_code(HT_TEMP_REDIRECT,       'Temporary Redirect',    'redirection').
+
+http_err_code(HT_IGNORE,     	      'Ignore this in the Net manager',
+	      	      	      	      	      	      	       'ignore').
+http_err_code(HT_CLOSED,     	      'The socket was closed', 'socket').
+http_err_code(HT_PENDING,    	      'Wait for connection',   'socket').
+http_err_code(HT_RELOAD,      	      'Must reload document',  'reload').
+
+/* Errors */
+http_err_code(HT_ERROR,     	      'General error',         'internal').
+http_err_code(HT_BAD_REQUEST, 	      'Bad Request',           'client_error').
+http_err_code(HT_NO_ACCESS,    	      'Unauthorized',          'client_error').
+http_err_code(HT_FORBIDDEN,           'Forbidden',             'client_error').
+http_err_code(HT_NOT_FOUND,           'Not Found',             'client_error').
+http_err_code(HT_NOT_ALLOWED,         'Method Not Allowed',    'client_error').
+http_err_code(HT_NOT_ACCEPTABLE,      'Not Acceptable',        'client_error').
+http_err_code(HT_NO_PROXY_ACCESS,     'Proxy Authentication Required',
+	      	      	      	      	      	      	       'client_error').
+http_err_code(HT_CONFLICT,     	      'Conflict',              'client_error').
+http_err_code(HT_LENGTH_REQUIRED,     'Length Required',       'client_error').
+http_err_code(HT_PRECONDITION_FAILED, 'Precondition Failed',   'client_error').
+http_err_code(HT_TOO_BIG,    	      'Request Entity Too Large',
+	      	      	      	      	      	      	       'client_error').
+http_err_code(HT_URI_TOO_BIG, 	      'Request-URI Too Large', 'client_error').
+http_err_code(HT_UNSUPPORTED, 	      'Unsupported Media Type','client_error').
+http_err_code(HT_BAD_RANGE, 	      'Range Not Satisfiable', 'client_error').
+http_err_code(HT_EXPECTATION_FAILED,  'Expectation Failed',    'client_error').
+http_err_code(HT_REAUTH,     	      'Reauthentication Required',
+	      	      	      	      	      	      	       'client_error').
+http_err_code(HT_PROXY_REAUTH,	      'Proxy Reauthentication Reuired',
+	      	      	      	      	      	      	       'client_error').
+
+http_err_code(HT_SERVER_ERROR,	      'Internal Server Error', 'server_error').
+http_err_code(HT_NOT_IMPLEMENTED,     'Not Implemented',       'server_error').
+http_err_code(HT_BAD_GATEWAY, 	      'Bad Gateway',           'server_error').
+http_err_code(HT_RETRY,     	      'Service Unavailable',   'server_error').
+http_err_code(HT_GATEWAY_TIMEOUT,     'Gateway Timeout',       'server_error').
+http_err_code(HT_BAD_VERSION,         'HTTP Version not supported',
+	       	       	       	       	       	       	       'server_error').
+http_err_code(HT_PARTIAL_NOT_IMPLEMENTED,
+	      	      	      	      'Partial update Not Implemented',
+	      	      	      	      	      	      	       'server_error').
+http_err_code(HT_DOC_SYNTAX,	      'Document syntax',       'server_error').
+http_err_code(HT_INTERNAL,            'Weird, should never happen',
+	      	      	      	      	      	      	       'internal').
+http_err_code(HT_WOULD_BLOCK, 	      'We are in a select',    'internal').
+http_err_code(HT_INTERRUPTED, 	      'Negative value',        'internal').
+http_err_code(HT_PAUSE,	       	      'If we want to pause a stream',
+	      	      	      	      	      	      	       'internal').
+http_err_code(HT_RECOVER_PIPE,        'Recover pipe line',     'internal').
+http_err_code(HT_TIMEOUT,             'Connection timeout',    'internal').
+http_err_code(HT_NO_HOST,             'Cannot find remote host','internal').
