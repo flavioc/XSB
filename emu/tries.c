@@ -1082,7 +1082,15 @@ void bottomupunify(Cell term, NODEptr Root, NODEptr Leaf)
   for(i = 0; i < num_heap_term_vars; i++){
     var_regs[i] = var_addr[i];
   }
-  num_vars_in_var_regs =  num_heap_term_vars -1;
+  /*
+   * global_num_vars is needed by get_lastnode_cs_retskel() (see
+   * trie_interned/4 in intern.P).
+   *
+   * Last_Nod_Sav is also needed by get_lastnode_cs_retskel().  We can
+   * assign it to Leaf.
+   */
+  global_num_vars = num_vars_in_var_regs = num_heap_term_vars - 1;
+  Last_Nod_Sav = Leaf;
 
 #ifdef DEBUG_INTERN
   deref(returned_val);
@@ -1382,7 +1390,12 @@ NODEptr whole_term_chk_ins(Cell term, CPtr hook, int *flagptr)
     for (j = 0; j < ctr; j++) {
       var_regs[j] = (CPtr)trie_tr_base[j + 1];
     }
-    num_vars_in_var_regs = ctr - 1;
+    /*
+     * Both global_num_vars and Last_Nod_Sav are needed by
+     * get_lastnode_cs_retskel() (see trie_intern/5 in intern.P).
+     */
+    global_num_vars = num_vars_in_var_regs = ctr - 1;
+    Last_Nod_Sav = Paren;
     simple_table_undo_bindings;
 
     return(Paren);
@@ -1473,6 +1486,10 @@ NODEptr one_term_chk_ins(CPtr termptr, CPtr hook, int *flagptr)
 
 /*----------------------------------------------------------------------*/
 
+/*
+ * This is builtin #150: TRIE_GET_RETURN
+ */
+
 byte * trie_get_returns_for_call(void)
 {
   SGFrame call_str_ptr;
@@ -1488,26 +1505,27 @@ byte * trie_get_returns_for_call(void)
 #endif
 
   call_str_ptr = (SGFrame) ptoc_int(1);
-    if ((ans_root_ptr = subg_ans_root_ptr(call_str_ptr)) == NULL)
-      return (byte *)&fail_inst;
-    else {
-      retskel = (CPtr)ptoc_tag(2);
-      term1 = retskel;
-      cptr_deref(term1);
-      /* num_vars_in_var_regs = -1; Bart added */
-      if (isconstr(term1)) {
-	psc_ptr = get_str_psc(retskel);
-	reg_arrayptr = reg_array -1;
-	num_vars_in_var_regs = -1;
-	cptr = (CPtr)cs_val(retskel);
-	for (i = get_arity(psc_ptr); i>=1; i--) {
-	  pushreg(cell(cptr+i));
-	}
+  if ((ans_root_ptr = subg_ans_root_ptr(call_str_ptr)) == NULL)
+    return (byte *)&fail_inst;
+  else {
+    retskel = (CPtr)ptoc_tag(2);
+    term1 = retskel;
+    cptr_deref(term1);
+    /* num_vars_in_var_regs = -1; Bart added */
+    if (isconstr(term1)) {
+      psc_ptr = get_str_psc(retskel);
+      reg_arrayptr = reg_array -1;
+      num_vars_in_var_regs = -1;
+      cptr = (CPtr)cs_val(retskel);
+      for (i = get_arity(psc_ptr); i>=1; i--) {
+	pushreg(cell(cptr+i));
       }
+    }
 #ifdef DEBUG_DELAYVAR
-      fprintf(stderr, ">>>> The end of trie_get_returns_for_call ==> go to answer trie\n");
+    fprintf(stderr, ">>>> The end of trie_get_returns_for_call ==> go to answer trie\n");
 #endif
-      return (byte *)ans_root_ptr;
+    delay_it = 0;  /* Don't delay the answer. */
+    return (byte *)ans_root_ptr;
   }
 }
 
@@ -1557,7 +1575,7 @@ static void construct_ret(void)
     CPtr sreg;
     int  arity, i, new;
 
-    arity = num_vars_in_var_regs+1;
+    arity = global_num_vars + 1;
     if (arity == 0) {
       ctop_string(3, string_find("ret",1));
     } else {
@@ -1574,26 +1592,28 @@ static void construct_ret(void)
     }
 }
 
-/*----------------------------------------------------------------------*/
-/* This function is called immediately after using the trie intructions
+/*
+ * This function is changed from get_lastnode_and_retskel().  It is the
+ * body of *inline* builtin GET_LASTNODE_CS_RETSKEL(LastNode, CallStr,
+ * RetSkel). [1/9/1999]
+ *
+ * This function is called immediately after using the trie intructions
  * to traverse one branch of the call or answer trie.  A side-effect of
  * executing these instructions is that the leaf node of the branch is
- * left in a global variable "Last_Nod_Sav".  If needed, the function
- * also calls construct_ret() to construct a term with the return
- * skeleton in the third argument.
- * One reason for writing it so, is that it is important that the
+ * left in a global variable "Last_Nod_Sav".  Function construct_ret()
+ * will be called to construct a term with the return skeleton in the
+ * third argument.
+ *
+ * One reason for writing it so is that it is important that the
  * construction of the return skeleton is an operation that cannot be
  * interrupted by garbage collection.
- *----------------------------------------------------------------------*/
+ */
 
-void get_lastnode_and_retskel(void)
-{  
-    int mode;
-
-    ctop_int(1, (Integer)Last_Nod_Sav);
-    mode = ptoc_int(2);
-    if (mode) construct_ret(/* in 3rd arg */);
-    /* num_vars_in_var_regs = -1;  Bart added */
+void get_lastnode_cs_retskel(void)
+{
+  ctop_int(1, (Integer)Last_Nod_Sav);
+  ctop_int(2, (Integer)Child(Last_Nod_Sav));
+  construct_ret();		/* build RetSkel in the 3rd argument */
 }
 
 /*----------------------------------------------------------------------*/
