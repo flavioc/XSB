@@ -125,13 +125,13 @@ Cell build_ret_term(int arity, Cell termVector[]) {
 
   Pair sym;
   CPtr ret_term;
-  int  i, n;
+  int  i, is_new;
 
   if ( arity == 0 )
     return makestring(ret_psc[0]);  /* return as a term */
   else {
     ret_term = hreg;  /* pointer to where ret(..) will be built */
-    sym = insert("ret", (byte)arity, (Psc)flags[CURRENT_MODULE], &n);
+    sym = insert("ret", (byte)arity, (Psc)flags[CURRENT_MODULE], &is_new);
     new_heap_functor(hreg, pair_psc(sym));
     for ( i = 0; i < arity; i++ )
       nbldval(termVector[i]);
@@ -784,7 +784,7 @@ void breg_retskel(void)
     Cell    term;
     VariantSF sg_frame;
     CPtr    tcp, cptr, where;
-    int     n, i;
+    int     is_new, i;
 #ifndef CHAT
     int     arity;
 #endif
@@ -809,7 +809,7 @@ void breg_retskel(void)
 /*
       sreg = hreg;
       bind_cs((CPtr)term, sreg);
-      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &n);
+      sym = insert("ret", Nvars, (Psc)flags[CURRENT_MODULE], &is_new);
       new_heap_functor(sreg, sym->psc_ptr);
 #ifdef CHAT
       for (i = Nvars; i > 0; i--) {
@@ -823,7 +823,7 @@ void breg_retskel(void)
       hreg = sreg;
 */
       bind_cs((CPtr)ptoc_tag(3), hreg);
-      sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &n);
+      sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &is_new);
       new_heap_functor(hreg, sym->psc_ptr);
 #ifdef CHAT
       for (i = Nvars; i > 0; i--) {
