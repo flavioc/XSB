@@ -1123,11 +1123,10 @@ is equivalent to the following formula:
 \index{arithmetic expression}
 %%
 In \FLORA arithmetic expressions are \emph{not} always evaluated. As in
-XSB, the arithmetic operators such as {\tt +}, {\tt -}, {\tt /}, and {\tt
-  *}, are defined as normal binary functors. However, to evaluate
-arithmetic expressions, \FLORA provides two operators: {\tt is} and {\tt
-  :=}, which are synonymous.  For example, {\tt X := 3+4} will bind {\tt X} to
-the value {\tt 7}.
+Prolog, the arithmetic operators such as {\tt +}, {\tt -}, {\tt /}, and
+{\tt *}, are defined as normal binary functors. To evaluate an arithmetic
+expression, \FLORA provides another operator, {\tt is}.  For example, {\tt
+  X is 3+4} will bind {\tt X} to the value {\tt 7}.
 
 When dealing with arithmetic expressions, the order of literals is
 important.  In particular, all variables appearing in an arithmetic
@@ -1136,14 +1135,14 @@ runtime error will occur. For instance,
 %%
 \begin{qrules}
   \tt
-?- X > 1, X := 1+1.
+?- X > 1, X is 1+1.
 \end{qrules}
 %%
 will produce an error, while
 %%
 \begin{qrules}
   \tt
-?- X := 1+1, X > 1.
+?- X is 1+1, X > 1.
 \end{qrules}
 %%
 will evaluate to true.
@@ -1237,8 +1236,7 @@ not applicable & . & decimal point & not applicable & not applicable \\ \hline
             & >= & greater than or equals to & not applicable & binary \\ \cline{2-5}
 1000        & =:= & equals to & not applicable & binary \\ \cline{2-5}
             & ={\bksl}= & unequal to & not applicable & binary \\ \cline{2-5}
-            & := & assignment & not applicable & binary \\ \cline{2-5}
-            &is & \multicolumn{3}{c|}{same as :=} \\
+            & is & assignment & not applicable & binary \\
 \hline
 \end{tabular}
 }
