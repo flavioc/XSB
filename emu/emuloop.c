@@ -609,6 +609,15 @@ contcase:     /* the main loop */
       bld_ref((CPtr)op1, *(sreg));
       op1 = (Cell)op3;
       bld_ref((CPtr)op1, *(sreg+1));
+    } else if (isattv(op1)) {
+      attv_dbgmsg(">>>> getlist_tvar_tvar: ATTV interrupt needed\n");
+      add_interrupt(op1, makelist(hreg));
+      op1 = (Cell)op2;
+      bld_ref((CPtr)op1, hreg);
+      new_heap_free(hreg);
+      op1 = (Cell)op3;
+      bld_ref((CPtr)op1, hreg);
+      new_heap_free(hreg);
     }
     else Fail1;
     XSB_Next_Instr();	/* end getlist_tvar_tvar */
