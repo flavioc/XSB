@@ -1,0 +1,7 @@
+#!/bin/sh
+## This file is the command file for running SubprocessListener
+
+JAVA_BIN=/home/miti/Summer/j2sdk1.4.0_01/bin
+XSB_DIR=/home/miti/Summer/XSB
+
+$JAVA_BIN/java -classpath interprolog.jar com.declarativa.interprolog.gui.SubprocessEngineWindow -d $XSB_DIR/config/i686-pc-linux-gnu/bin/xsb

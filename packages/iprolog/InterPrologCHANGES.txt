@@ -1,0 +1,13 @@
+- NativeEngine class, courtesy of XSB Inc.: faster, more reliable as it uses the standard C interface
+- deterministicGoal and javaMessage may now call each other recursively, and from multiple Java threads
+- New macro class structure: PrologEngine defines generic engine, subclassed by SubprocessEngine (sockets implementation) and NativeEngine (JNI)
+- One less socket used in SubprocessEngine; it uses 1 socket for both deterministicGoal and javaMessage, and another one on Windows for interrupts (other sockets may or not be used by the Java Process implementation, which captures sub-process I/O)
+- Unjared Prolog files are now extracted to temporary files with the same names in a temporary directory, which is added as a library_directory; this way Prolog modules can be jared
+- getRealJavaObject method in PrologEngine allows getting a specification out of an object reference, see comments in source
+- new Prolog.isIdle() method in NativeEngine, more reliable than isAvailable()
+- Minor changes
+- JUnit (http://www.junit.org) - based testing suite
+- Undefined predicates no longer hang deterministicGoal, an exception is thrown
+- Syntax errors in deterministicGoal argument now cause an exception to be thrown
+- interrupt() no longer leaves Prolog in break mode
+- byte and short negative values are now correctly passed to Prolog

@@ -1,0 +1,6 @@
+#!/bin/sh
+## This is the testit file
+
+JAVA_BIN=/home/miti/Summer/j2sdk1.4.0_01/bin
+
+$JAVA_BIN/java -classpath .:junit.jar:interprolog.jar com.declarativa.interprolog.AllTests
