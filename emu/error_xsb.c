@@ -343,18 +343,33 @@ void err_handle(int description, int arg, char *f,
 
 */
 
+/* TLS: I keep forgetting what is going on here, so I'm documenting
+   it.  Each time a catch is called, a scope marker is set and this
+   scope marker points to the literal '$$clean_up_block' in the first
+   clause of catch.  There is a little monkying to make the scope
+   marker equal to this (THROWPAD).  Upon a throw, unwind_stack()
+   checks cp regs of various envs to see whether a given cpreg is
+   equal to this -- i.e. the env represents that of a catch.  If so,
+   we fail into the second clause of the catch and try to unify with
+   the exception ball.  If so, we do what the handler tells us, if
+   not, we call unwind_stack again to look for the right catcher to
+   unify with the ball. */
+
 static byte *scope_marker;
 
 int set_scope_marker()
 {
-  /*     printf("%x %x\n",cp_ereg(breg),ereg);*/
+  /*   printf("%x %x\n",cp_ereg(breg),ereg);*/
    scope_marker = pcreg;
    /* skipping a putpval and a call instruction */
    /* is there a portable way to do this ?      */
    /* instruction builtin has already made pcreg point to the putpval */
    scope_marker += THROWPAD;
+   /* printf("ssm sm 2 %d  x%x\n",scope_marker,scope_marker); */
    return(TRUE);
 } /* set_scope_marker */
+
+
 
 int unwind_stack()
 {
@@ -362,13 +377,13 @@ int unwind_stack()
    CPtr e,b;
 
    cpmark = scope_marker;
-   /*   printf("sm 2 %d  x%x\n",scope_marker,scope_marker);*/
+   /* printf("us sm 2 %d  x%x\n",scope_marker,scope_marker); */
    /* first find the right environment */
    e = ereg;
    cp = cpreg; /* apparently not pcreg ... maybe not good in general */
    while ( (cp != cpmark) && e )
      {
-       /*       printf("cp %d x%x\n",cp,cp);*/
+       /*            printf("cp %d x%x\n",cp,cp);*/
        cp = (byte *)e[-1];
        e = (CPtr)e[0];
      }
