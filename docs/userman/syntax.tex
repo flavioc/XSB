@@ -446,21 +446,20 @@ Type} and precedence {\tt Precedence} by the command;
 \begin{verbatim}
                     :- op(Precedence, Type, Name).
 \end{verbatim}
-The same command can be used to redefine one of the predefined \ourprolog\
-operators (see appendix~\ref{operator_list}).  However, it is not allowed to
-alter the definition of the comma ({\tt ','}) operator.  An operator
-declaration can be cancelled by redeclaring the {\tt Name} with the same
-{\tt Type}, but {\tt Precedence} 0.
+The same command can be used to redefine one of the predefined
+\ourprolog\ operators (obtainable via {\tt current\_op/3}).  However,
+it is not allowed to alter the definition of the comma ({\tt ','})
+operator.  An operator declaration can be cancelled by redeclaring the
+{\tt Name} with the same {\tt Type}, but {\tt Precedence} 0.
 
 As a notational convenience, the argument {\tt Name} can also be a list of
 names of operators of the same type and precedence.
 
-It is possible to have more than one operator of the same name, so long as
-they are of different kinds:  infix, prefix, or postfix.  An operator of any
-kind may be redefined by a new declaration of the same kind.  Declarations
-for all these built-in operators can be found in appendix~\ref{operator_list}.
-For example, the built-in operators {\tt '+'} and {\tt '-'} are as if they had
-been declared by the command:
+It is possible to have more than one operator of the same name, so
+long as they are of different kinds: infix, prefix, or postfix.  An
+operator of any kind may be redefined by a new declaration of the same
+kind.  For example, the built-in operators {\tt '+'} and {\tt '-'} are
+as if they had been declared by the command:
 \begin{verbatim}
                        :- op(500, yfx, [+,-]).
 \end{verbatim}

@@ -2,10 +2,10 @@
 %=================================================================
 \index{state of the program} \index{program, state of}
 
-In \ourprolog\ various aspects of the program state --- information about 
+In XSB  various aspects of the program state --- information about 
 predicates, modules, clauses, and their object files can all be inspected 
 in ways similar to many Prolog systems.  However, because the atom-based 
-module system of \ourprolog\ may associate structures with particular 
+module system of XSB  may associate structures with particular 
 modules, predicates are provided to inspect these elements as well.  
 The following descriptions of {\em state} predicates use the terms 
 {\em predicate indicator}, {\em term indicator} and {\em current module}
@@ -402,7 +402,7 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 	{\tt foreign}	& 
 		The predicate is a foreign predicate. This implies that  \\ 
 	&	the predicate is already loaded in the system, because	 \\
-	&	currently there is no way for \ourprolog\ to know that a \\
+	&	currently there is no way for XSB  to know that a \\
 	&	predicate is a foreign predicate until it is loaded in	 \\
 	&	the system.\\ \hline
 %	{\tt function}	& 
@@ -544,7 +544,7 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 
 \ouritem{xsb\_configuration(Feature\_Name, ?Value)}
 \index{{\tt xsb\_configuration/2}}
-    Succeeds iff the current value of the \ourprolog\ feature {\tt
+    Succeeds iff the current value of the XSB  feature {\tt
     Feature\_Name} is {\tt Value}.
 
     This predicate provides information on a wide variety of features
@@ -620,7 +620,7 @@ Chapter {\it Foreign Language Interface} in Volume 2.
 \end{verbatim}
 
 \ouritem{xsb\_flag(?Flag\_Name, ?Value)}\index{{\tt xsb\_flag/2}}
-    Succeeds iff the current value of the \ourprolog\ flag {\tt Flag\_Name} is 
+    Succeeds iff the current value of the XSB flag {\tt Flag\_Name} is 
     {\tt Value}. So, one can enumerate all the flag names which the system
     currently understands, together with their current values by using the
     following query:

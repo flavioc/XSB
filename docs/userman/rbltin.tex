@@ -535,14 +535,17 @@ typically called just before returning to the top level.
 
           0 Trail unwinds,       0 levels
 
-      0.570 sec. cputime,  5.088 sec. elapsetime
-     \end{verbatim}}
-    shows how the emulator output looks if it is invoked with the 
-    {\tt '-s'} option (without it the Maximum use line is not shown).
-    Information about the allocation size is provided since the sizes
-    can be changed through emulator options
-    (see Section~\ref{sec:EmuOptions}).
+      0.570 sec. cputime, 5.088 sec. elapsetime 
+\end{verbatim}} 
+     shows how the emulator output looks if it is invoked with the
+     {\tt '-s'} option (without it the Maximum use line is not shown).
+     Information about the allocation size is provided since the sizes
+     can be changed through emulator options (see
+     Section~\ref{sec:EmuOptions}).
 
+     For expert users of XSB, further information about resources
+     required by the system can be obtained through the non-supported
+     predicate {\tt statistics/1} in {\tt \$XSB\_DIR/emu/trace.c}.
 
 %\ouritem{analyze\_table(+Pred\_indicator)}\index{{\tt analyze\_table/1}}
 %    This predicate provides additional means for the user to profile

@@ -21,6 +21,8 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
 
 \subsection{File Handling}
 \begin{description}
+\ouritem{set\_input(+F)}\index{{\tt set\_input/1}}
+\vspace{-7mm} 
 \ouritem{see(+F)}\index{{\tt see/1}}
     Makes file {\tt F} the current input stream. 
     \begin{itemize}
@@ -55,6 +57,8 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
     Closes the current input stream. 
     Current input reverts to {\tt ``userin''} (the standard input stream).
 
+\ouritem{set\_output(+F)}\index{{\tt set\_output/1}}
+\vspace{-7mm} 
 \ouritem{tell(+F)}\index{{\tt tell/1}}
     Makes file {\tt F} the current output stream. 
     \begin{itemize}
@@ -275,6 +279,97 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
 	{\tt write/2} has the same behavior as {\tt write/1} but the
 	output stream is explicitly designated using the first argument.
 
+\ouritem{write\_term(?Term,+Options)}\index{{\tt write\_term/2}}
+\vspace{-7mm} 
+\ouritem{write\_term(+Stream, ?Term,+Options)}\index{{\tt write\_term/3}}
+
+    Outputs {\tt +Term} to the current output ({\tt write\_term/2}) or
+    to {\tt Stream} ({\tt write\_term/3}) according to the list of
+    write options, {\tt Options}.  The current set of write options
+    which form a superset of the ISO-standard write options, are as
+    follows:
+%
+\begin{itemize}
+%
+\item {\tt quoted(+Bool)}.  If {\tt Bool = true}, then atoms and
+    functors that can't be read back by {\tt read/1} are quoted, if
+    {\tt Bool = false}, each atom and functor is written as its
+    unquoted name. Default value is {\tt false}.
+%
+\item {\tt ignore\_ops(+Bool)}. If {\tt Bool = true} each compound term
+is output in functional notation; curly brackets and list braces are
+ignored, as are all explicitly defined operators.  If {\tt Bool =
+false}, curly bracketed notation and list notation is enabled when
+outputing compound terms, and all other operator notation is
+enabed.  Default value is {\tt false}.
+%
+ \item {\tt numbervars(+Bool)}.  If {\tt Bool = true}, a term of the
+form {\tt '\$VAR'(N)} where {\tt N} is an integer, is output as a
+variable name consisting of a capital letter possibly followed by an
+integer.  A term of the form {\tt '\$VAR'(Atom)} where {\tt Atom} is an
+atom, is output as itself (without quotes).  Finally, a term of the
+form {\tt '\$VAR'(String)} where {\tt String} is a character string, is
+output as the atom corresponding to this character string.  If
+{\tt bool} is {\tt false} this cases are not treated in any special
+way.  Default value is {\tt false}.
+%
+% See predicates {\tt numbervars/3} and {\tt prettyvars/1}.  
+%
+% TLS: need predicate portray attribute, if we dont have it.
+%
+\comment{
+\item {\tt portrayed(+Bool)}. If {\tt Bool = true}, then a call is made
+to the predicate @pred{portray/1}, to
+provide the user handlers for pretty printing some terms.  {\tt
+portray_attribute/1} is called whenever an attributed variable is to
+be printed, {\tt portray/1} is called whenever a non-variable term is
+to be printed.  If either call succeeds, then it is assumed that the
+term has been output, else it is printed as usual.  If {\tt bool} is
+{\tt false}, these predicates are not called. Default value is {\tt
+false}.  This option is set by the toplevel when writting the final
+values of variables, and by the debugging package when writting the
+goals in the tracing messages.  Thus you can vary the forms of these
+messages if you wish.
+}
+\item {\tt max\_depth(+Depth)}. {\tt Depth} is a positive integer or
+zero. If positive, it denotes the depth limit on printing compound
+terms. If {\tt Depth} is zero, there is no limit. Default value is
+{\tt 0} (no limit).
+%
+\item {\tt priority(+Prio)} {\tt Prio} is an integer between 1 and
+1200.  If the term to be printed has higher priority than {\tt Prio},
+it will be printed parenthesized.  Default value is 1200 (no term
+parenthesized).
+\end{itemize}
+
+From the following examples it can be seen that {\tt
+write\_term/\{2,3\}} can duplicate the behavior of a number of other
+I/O predicates such as {\tt writeq/\{1,2\}}, {\tt
+write\_canonical/\{1,2\}}, etc.
+{\small
+\begin{verbatim}
+
+| ?- write_term(f(1+2,'A',"string",'$VAR'(3),'$VAR'('Temp'),(multifile foo)),[]).
+f(1 + 2,A,"string",$VAR(3),$VAR(Temp),(multifile foo))
+yes
+
+| ?- write_term(f(1+2,'A',"string",'$VAR'(3),'$VAR'('Temp'),(multifile foo)),
+                [quoted(true)]).
+f(1 + 2,'A',"string",'$VAR'(3),'$VAR'('Temp'),(multifile foo))
+yes
+
+| ?- write_term(f(1+2,'A',"string",'$VAR'(3),'$VAR'('Temp'),(multifile foo)),
+                [quoted(true),ignore_ops(true),numbervars(true)]).
+f(+(1,2),'A','.'(115,'.'(116,'.'(114,'.'(105,'.'(110,'.'(103,[])))))),D,Temp,(multifile foo))
+yes
+
+| ?- write_term(f(1+2,'A',"string",'$VAR'(3),'$VAR'('Temp'),(multifile foo)),
+                [quoted(true),ignore_ops(true),numbervars(true),priority(1000)]).
+f(+(1,2),'A','.'(115,'.'(116,'.'(114,'.'(105,'.'(110,'.'(103,[])))))),D,Temp,multifile(foo))
+yes
+\end{verbatim}
+}
+
 \ouritem{writeln(?Term)}\index{{\tt writeln/1}}
     {\tt writeln(Term)} can be defined as {\tt write(Term), nl}.
 
@@ -308,7 +403,7 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
     Acts as {\tt write(Term)}, but atoms and functors are quoted
     whenever necessary to make the result acceptable as input to 
     {\tt read/1}\@. {\tt writeq/1} treats treats terms of the form 
-    \verb|'$VAR'(N)| the same way as {\tt write/1}, writing {\tt A} if
+    \verb|'\VAR'(N)| the same way as {\tt write/1}, writing {\tt A} if
     {\tt N}= 0, etc. 
 %% $
 
