@@ -462,7 +462,8 @@ contcase:     /* the main loop */
     nunify_with_attv(op1);
   XSB_End_Instr()
 
-/* tls 12/8/92 */
+/* TLS: Need trailing here: for a full explanation, see "A Note on
+   Trailing in the SLGWAM on my web page. */
   XSB_Start_Instr(unipvar,_unipvar) /* PPV */
     Def1op
     Op1(get_xxv);
@@ -604,7 +605,8 @@ contcase:     /* the main loop */
     new_heap_free(hreg); 
   XSB_End_Instr()
 
-/* tls 12/8/92 */
+/* TLS: Need trailing here: for a full explanation, see "A Note on
+   Trailing in the SLGWAM on my web page. */
   XSB_Start_Instr(putstrv,_putstrv) /*  PPV-S */
     Def2ops
     Op1(get_xxv);
@@ -629,7 +631,8 @@ contcase:     /* the main loop */
     bld_nil((CPtr)op1);
   XSB_End_Instr()
 
-/* doc tls -- differs from putstrv since it pulls from a register */
+/* doc tls -- differs from putstrv since it pulls from a register.
+   Thus the variable is already initialized.  */
   XSB_Start_Instr(putstr,_putstr) /* PPR-S */
     Def2ops
     Op1(get_xxr);
@@ -654,11 +657,12 @@ contcase:     /* the main loop */
     new_heap_free(hreg);
   XSB_End_Instr()
 
+/* TLS: Need trailing here: for a full explanation, see "A Note on
+   Trailing in the SLGWAM on my web page. */
   XSB_Start_Instr(bldpvar,_bldpvar) /* PPV */
     Def1op
     Op1(get_xxv);
     ADVANCE_PC(size_xxx);
-    /* tls 12/8/92 */
     bind_ref((CPtr)op1, hreg); /* trailing is needed: if o/w see ai_tests */
     new_heap_free(hreg);
   XSB_End_Instr()
