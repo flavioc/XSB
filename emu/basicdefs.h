@@ -68,11 +68,11 @@
 #define STANDARD_DCG   1    /* use standard DCG grammars */
 
 
-#ifndef max
-#define max(p1,p2) ((p1)>=(p2)?(p1):(p2))
+#ifndef xsb_max
+#define xsb_max(p1,p2) ((p1)>=(p2)?(p1):(p2))
 #endif
-#ifndef min
-#define min(p1,p2) ((p1)<=(p2)?(p1):(p2))
+#ifndef xsb_min
+#define xsb_min(p1,p2) ((p1)<=(p2)?(p1):(p2))
 #endif
 
 #define MOD %

@@ -167,7 +167,7 @@ static inline void vs_ensure_size(VarString *vstr, int minsize)
 {
   vs_init(vstr,0);
 
-  vs_adjust_size(vstr, max(vstr->length,minsize)+1);
+  vs_adjust_size(vstr, xsb_max(vstr->length,minsize)+1);
 }
 
 

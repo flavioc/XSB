@@ -663,7 +663,7 @@ xsbBool xsb_socket_request(void)
 		    &connections[connection_count].sizee);
 
 	connections[connection_count].maximum_fd =
-	  max(max(rmax_fd,wmax_fd), emax_fd);
+	  xsb_max(xsb_max(rmax_fd,wmax_fd), emax_fd);
       } else 
 	/* if this one is reached, it is probably a bug */
 	xsb_abort("[SOCKET_SET_SELECT] All connections are busy!");
@@ -893,7 +893,7 @@ static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
   for (i=0; i<(*size); i++) {
     /* turn on the bit in the fd_set */
     FD_SET((*fds)[i], fdset);
-    *max_fd = max(*max_fd, (*fds)[i]);
+    *max_fd = xsb_max(*max_fd, (*fds)[i]);
   }
 
   return TRUE;
