@@ -1465,7 +1465,7 @@ int builtin_call(byte number)
       switch (token->type) {
         case TK_ATOM : case TK_FUNC : case TK_STR : case TK_LIST :
         case TK_VAR : case TK_VVAR : case TK_VARFUNC : case TK_VVARFUNC :
-	  ctop_string(4, token->value);
+	  ctop_string(4, token->value);  // NOT INTERNED, CALLER MUST DO SO SOON!!
 	  break;
         case TK_INT : case TK_INTFUNC :
 	  ctop_int(4, *(long *)(token->value));
