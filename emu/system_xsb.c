@@ -1053,11 +1053,18 @@ static int file_copy(char *source, char *dest)
       return 0;
     }
   } else {
+#ifdef WIN_NT
+    if (!strcmp(source,dest)) {
+      xsb_warn("[file_copy] %s and %s are the same file.\n", source,dest);
+      return 0;
+    }
+#else
     if (source_stat.st_dev == dest_stat.st_dev &&
 	source_stat.st_ino == dest_stat.st_ino) {
       xsb_warn("[file_copy] %s and %s are the same file.\n", source,dest);
       return 0;
     }
+#endif
     dest_exists = 1;
   }
   
