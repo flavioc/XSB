@@ -1,8 +1,6 @@
 #include "xsb_libwww_util.h"
 #include <time.h>
 
-typedef time_t int;
-
 HTBasic *HTBasic_new()
 {
 	HTBasic * me = NULL;
@@ -73,7 +71,8 @@ BOOL Basic_credentials (HTRequest * request, HTBasic * basic)
 */
 int Basic_generate (HTRequest * request, void * context, int mode)
 { 
-    HTBasic * basic = (HTBasic *) context;
+    char * url;
+	HTBasic * basic = (HTBasic *) context;
     BOOL proxy = (mode==HT_NO_PROXY_ACCESS) ? YES : NO;
     if (request) {
         const char * realm = HTRequest_realm(request);
@@ -92,7 +91,7 @@ int Basic_generate (HTRequest * request, void * context, int mode)
         }
 
 		Basic_credentials(request, basic);
-        char * url = HTAnchor_address((HTAnchor*)HTRequest_anchor(request));
+        url = HTAnchor_address((HTAnchor*)HTRequest_anchor(request));
         HTAA_deleteNode(proxy, BASIC_AUTH, realm, url);
         HT_FREE(url);
         return HT_ERROR;
@@ -119,37 +118,36 @@ HTChunk * HTGetFormAnchorToChunk (HTAssocList * formdata,
     return NULL;
 }
 
-void time_comparison(lm_time, time_user) 
+void time_comparison(char * lm_time, prolog_term time_user) 
 {
-/*time1 is ptr to the last-modified time, time2 is ptr to the user input time*/
+	/*time1 is ptr to the last-modified time, time2 is ptr to the user input time*/
+		time_t lm_sec, user_sec; 
 		struct tm *time1, *time2;
 		char seps[] = ", :";
 
 		/* get the tm struct element from the time1 */
-		strtok(time1, seps);
-		time1->tm_mday = atoi(strtok(lm_time, seps)));
-		time1->tm_mon = atoi(strtok(lm_time, seps)));
-		time1->tm_year = atoi(strtok(lm_time, seps)));
-		time1->tm_hour = atoi(strtok(lm_time, seps)));
-		time1->tm_min = atoi(strtok(lm_time, seps)));
-		time1->tm_sec = atoi(strtok(lm_time, seps)));
+		strtok(lm_time, seps);
+		time1->tm_mday = atoi(strtok(lm_time, seps));
+		time1->tm_mon = atoi(strtok(lm_time, seps));
+		time1->tm_year = atoi(strtok(lm_time, seps));
+		time1->tm_hour = atoi(strtok(lm_time, seps));
+		time1->tm_min = atoi(strtok(lm_time, seps));
+		time1->tm_sec = atoi(strtok(lm_time, seps));
 
 		/* extract the if_modified_since infomation into struct tm */ 
-		c2p_int(time2->tm_mday, p2p_car(time2));
-		time2 = p2p_cdr(time_user);
-		c2p_int(time2->tm_mon, p2p_car(time2));
-		time2 = p2p_cdr(time_user);
-		c2p_int(time2->tm_year, p2p_car(time2));
-		time2 = p2p_cdr(time_user);
-		c2p_int(time2->tm_hour, p2p_car(time2));
-		time2 = p2p_cdr(time_user);
-		c2p_int(time2->tm_min, p2p_car(time2));
-		time2 = p2p_cdr(time_user);
-		c2p_int(time2->tm_sec, p2p_car(time2));
+		c2p_int(time2->tm_mday, (int)(p2p_car(time_user)));
+		time_user = p2p_cdr(time_user);
+		c2p_int(time2->tm_mon, (int)(p2p_car(time_user)));
+		time_user = p2p_cdr(time_user);
+		c2p_int(time2->tm_year, p2p_car(time_user));
+		time_user = p2p_cdr(time_user);
+		c2p_int(time2->tm_hour, p2p_car(time_user));
+		time_user = p2p_cdr(time_user);
+		c2p_int(time2->tm_min, p2p_car(time_user));
+		time_user = p2p_cdr(time_user);
+		c2p_int(time2->tm_sec, p2p_car(time_user));
 		c2p_nil(time_user);
 		
-		time_t lm_sec, user_sec; 
-	
 		/* mktime and compare the time1 time with the
 		if_modified_since time */
 		
@@ -157,8 +155,8 @@ void time_comparison(lm_time, time_user)
 		user_sec = mktime(time2);
 
 		if (lm_sec != -1 || user_sec != -1) {
-			if (lm_sec > user_sec) LOAD = TRUE;
-			else LOAD = FALSE;
+			if (lm_sec > user_sec) load = TRUE;
+			else load = FALSE;
 		}
 		else 
 			xsb_abort("the user-specified time or the last-modified time 			is not correct\n");

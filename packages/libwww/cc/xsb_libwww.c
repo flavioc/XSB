@@ -1,15 +1,18 @@
 #include "WWWLib.h"
 #include "WWWHTTP.h"
 #include "WWWInit.h"
+#include "HTAABrow.h"
 
 #include "cinterf.h"
 #include "basictypes.h"
 
 #include "xsb_libwww_util.c"
 
+HTBasic * auth_info;
 HTRequest * request = NULL;
 HTResponse * response = NULL;
 HTChunk * chunk = NULL;
+HTChunk * result = NULL;
 HTParentAnchor * anchor = NULL;
 
 HTAssocList * headers = NULL;
@@ -19,16 +22,12 @@ HTAssoc * pres;
 prolog_term Request_term, Response_term;
 prolog_term Form_list, element_list, head, tail;
 
-char *url, *cwd, *absolute_url, *string;
+char *url, *cwd, *absolute_url, *string, * method;
 char * response_array[MAX];
-prolog_term * modified_time;
+prolog_term modified_time;
+char * name, * value;
 char * last_modified;
 int timeout_integer;
-int load;
-load = FALSE;
-
-void *context;
-context =(HTBasic *) malloc(sizeof(HTBasic));
 
 /* after filter for all retcodes other than HT_NO_ACCESS and HT_NO_PROXY_ACCESS */
 int HTInfoFilter (HTRequest * request, HTResponse * response, void * param,
@@ -61,8 +60,8 @@ int HTAuthFilter (HTRequest * request, HTResponse * response, void * param,
 	}
 
 	if (HTResponse_challenge(response)) {
-		Basic_generate(request, context, status);
-		HTLoad(request, NO);
+		Basic_generate(request, auth_info, status);
+		HTload(request, NO);
 		return HT_ERROR;
 	}
 	return HT_OK;
@@ -72,47 +71,50 @@ prolog_term get_request_member(prolog_term V)
 { 
 	char * str;
 	str = p2c_functor(V);
+
+	auth_info = malloc(sizeof(HTBasic));
+	
 	if (str == "timeout") 
 		timeout_integer = ptoc_int(p2p_arg(V, 1));
 	if (str == "if_modified_since")
 		modified_time = p2p_arg(V, 1);
 	if (str == "authorization") 
 	{ 
-		context->uid = ptoc_string(p2p_arg(V, 1));
-		context->pw = ptoc_string(p2p_arg(V, 2));
+		auth_info->uid = ptoc_string(p2p_arg(V, 1));
+		auth_info->pw = ptoc_string(p2p_arg(V, 2));
 	}
-	if (str == "head") Load = FALSE;
+	if (str == "head") load = FALSE;
 	if (str == "form_list")	Form_list = p2p_arg(V, 1);		
 	if (str == "form_method") 
 		method = ptoc_string(p2p_arg(V, 1));
-	return true;
+	return TRUE;
 }
 
-add_response(prolog_term listTail, char * array)
+add_response(prolog_term * listTail, char ** array)
 {
 	int i, j;
-	prolog_term listHead, listTail;
+	prolog_term listHead;
 	i=0;
 	j=0;
-	listHead = p2p_car(listTail);
+	listHead = p2p_car(*listTail);
 	while (array[i++] != NULL); 
 	c2p_functor(array[0], i-2, listHead);
 	while (array[++j] != NULL) 
 		c2p_string(array[j], p2p_arg(listHead, j));
-	listTail = p2p_cdr(listTail);
+	*listTail = p2p_cdr(*listTail);
 }
 
-load_header(HTRequest * request)
+load_header(HTRequest * Request)
 {
-	HTHeadAbsolute(url, request); 
-	anchor = HTRequest_anchor(request);
+	HTHeadAbsolute(url, Request); 
+	anchor = HTRequest_anchor(Request);
 	headers = HTAnchor_header(anchor);
 
 	if (headers) {
 		cur = headers;
 		while ((pres = (HTAssoc *) HTAssocList_nextObject(cur))) {
-			char * name = HTAssoc_name(pres);
-			char * value = HTAssoc_value(pres);
+			name = HTAssoc_name(pres);
+			value = HTAssoc_value(pres);
 			response_array[0] = name;
 			response_array[1] = value;
 			response_array[2] = NULL;
@@ -158,7 +160,7 @@ bool do_libwww_fetch_url___(void)
 		HTRequest_addConnection(request, "close", "");
 
 		absolute_url = HTParse(url, cwd, PARSE_ALL);
-		chunk =	HTLoadToChunk(absolute_url, request);
+		chunk =	(HTChunk *)HTloadToChunk(absolute_url, request);
  		HT_FREE(absolute_url);
 		HT_FREE(cwd);
 
@@ -171,7 +173,7 @@ bool do_libwww_fetch_url___(void)
 	else 
 		load = TRUE;
 
-	if (is_nil((Request_term) || (load == TRUE)) {
+	if ((is_nil(Request_term)) || (load == TRUE)) {
 		if (chunk) {
 			string = HTChunk_toCString(chunk);
 			response_array[0] = "content"; 
@@ -187,6 +189,8 @@ bool do_libwww_fetch_url___(void)
 
 	HTRequest_delete(request);
 	HTProfile_delete();
+
+	return TRUE;
 }
 
 
@@ -275,9 +279,12 @@ bool do_libwww_form_request___(void)
 					add_response(&Response_term, response_array);
 					HT_FREE(string);
 				}
+		}
 	} else
 		xsb_abort("Bad parameters - please try again\n");
 	
 	HTRequest_delete(request);
 	HTProfile_delete();
+	return TRUE;
+
 }

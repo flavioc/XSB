@@ -1,6 +1,7 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#define BASIC_AUTH "basic"
 typedef struct HT_err {
 	int code;
 	char * message;
@@ -61,7 +62,6 @@ HT_status status_msg[] = {
 typedef struct _HTBasic {		  /* Basic challenge and credentials */
     char *	uid;
     char *	pw;
-    BOOL	retry;			    /* Should we ask the user again? */
     BOOL	proxy;				     /* Proxy authentication */
 } HTBasic;
 
@@ -69,7 +69,7 @@ typedef struct _HTBasic {		  /* Basic challenge and credentials */
 HTBasic *HTBasic_new();
 BOOL Basic_credentials (HTRequest *request, HTBasic *basic);
 int Basic_generate (HTRequest *request, void *context, int mode);
-void time_comparison(char *time1, char *time2);
+void time_comparison(char *, prolog_term);
 HTChunk *HTGetFormAnchorToChunk (HTAssocList *formdata,
                                   HTAnchor *anchor,
                                   HTRequest *request);
@@ -78,6 +78,7 @@ HTChunk *HTGetFormAnchorToChunk (HTAssocList *formdata,
 
 #define MAX 7
 
+int load = FALSE;
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
