@@ -41,7 +41,7 @@
 ****************************************************************************/
 flora_reset_lexer :-
 	reset_file_stack,
-	reset_charpos.
+	flora_reset_charpos.
 
 
 flora_reset_lexer(FileName) :-
@@ -50,11 +50,11 @@ flora_reset_lexer(FileName) :-
 
 
 /****************************************************************************
-  reset_charpos
+  flora_reset_charpos
   resets the line number counter and character number counter. They together
   denote the position of the next character to be read.
 ****************************************************************************/
-reset_charpos :- set_charpos(1,1).
+flora_reset_charpos :- set_charpos(1,1).
 
 
 /****************************************************************************
@@ -83,7 +83,7 @@ flora_begin_file(FileName) :-
 	M is N + 1,
 	conset(CURR_FILE,M),
 	assert(flora_file_stack(M,FileName)),
-	reset_charpos.
+	flora_reset_charpos.
 
 
 /****************************************************************************
@@ -221,7 +221,7 @@ get_char(LN,CN,Char,NextLN,NextCN) :-
 	; Char == CH_EOF_P ->
 	    NextLN=1,
 	    NextCN=1,
-	    reset_charpos
+	    flora_reset_charpos
 	;
 	  NextLN=LN,
 	  NextCN is CN+1

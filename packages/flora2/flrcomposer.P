@@ -90,6 +90,12 @@ is_next_token(Index,Token) :-
 
 
 /**************************************************************************
+  if_flora_gpp_markup(+Token)
+**************************************************************************/
+is_flora_gpp_markup(QUOTED_ATOM(FLORA_GPP_MARKUP)).
+
+
+/**************************************************************************
   Symbol tokens are allowed to be operands. They are equal to quoted atoms.
 
   Special tokens are treated as if they were just operands.
@@ -173,6 +179,16 @@ object_struct(O,I,OBJECT(O,I)).
 
 
 /**************************************************************************/
+get_rightmost_index(OBJECT(_O,I),I) :- !.
+get_rightmost_index(INFIX(_S,_L,R,_I),I) :- !, get_rightmost_index(R,I).
+get_rightmost_index(PREFIX(_S,O,_I),I) :- !, get_rightmost_index(O,I).
+get_rightmost_index(SUFFIX(_S,_O,I),I) :- !.
+get_rightmost_index(ARGUMENT(_S,_O,_I1,I2),I2) :- !.
+get_rightmost_index(ARGUMENT(_S,_I1,I2),I2) :- !.
+get_rightmost_index(FUNCTION(_F,A),I) :- !, get_rightmost_index(A,I).
+
+
+/**************************************************************************/
 report_error(Indx,Msg) :- assert(composing_error(Indx,Msg)).
 report_error(I1,I2,Msg) :- assert(composing_error(I1,I2,Msg)).
 
@@ -187,6 +203,10 @@ retract_error :-
 
 
 /**************************************************************************/
+choose_error(error(I,UNEXP_ENDCLAUSE)) :-
+	composing_error(I,UNEXP_ENDCLAUSE),
+	!.
+
 choose_error(E) :-
 	findall(composing_error(I,Msg1),composing_error(I,Msg1),L1),
 	findall(composing_error(I1,I2,Msg2),composing_error(I1,I2,Msg2),L2),
@@ -378,13 +398,17 @@ compose_atom_operator(PrevToken,TmStack,OpStack,N,CurToken,Term,Status) :-
 	  compose_sole_operator(PrevToken,TmStack,OpStack,N,QA,Term,Status)
         ).
 
+compose_atom_operator(OPRND(_),_TmStack,_OpStack,_N,_CurToken,_Term,_Status) :-
+	!,
+	fail.
+
 compose_atom_operator(PrevToken,TmStack,OpStack,N,CurToken,Term,Status) :-
 	see_operand(PrevToken,TmStack,OpStack,N,CurToken,Term,Status).
 
 
 /***************************************************************************
   compose_symobject_operator(+PrevToken,+TmStack,+OpStack,+N,+Token,-Term,-Status)
-  is called when an atom/operator is read. Ambiguity might arise.
+  is called when a/an symbol/operator is read. Ambiguity might arise.
 ***************************************************************************/
 compose_symobject_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
 	is_right_brace(X,B),
@@ -395,6 +419,10 @@ compose_symobject_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
 
 compose_symobject_operator(PrevToken,TmStack,OpStack,N,SYMBOL_TOKEN(S),Term,Status) :-
 	compose_sole_operator(PrevToken,TmStack,OpStack,N,S,Term,Status).
+
+compose_symobject_operator(OPRND(_),_TmStack,_OpStack,_N,_CurToken,_Term,_Status) :-
+	!,
+	fail.
 
 compose_symobject_operator(PrevToken,TmStack,OpStack,N,CurToken,Term,Status) :-
 	see_operand(PrevToken,TmStack,OpStack,N,CurToken,Term,Status).
@@ -420,34 +448,58 @@ see_comment(P,TS,OS,N,Term,Status) :-
   see_operand(+PrevToken,+TmStack,+OpStack,+N,+Operand,-Term,-Status)
   is called when a token interpreted as an operand is read.
 ***************************************************************************/
-see_operand(INFOP(S,L,R,P,I),TS,OS,N,O,Term,Status) :-
-	!,
-	object_struct(O,N,T),
-	flora_compose(OPRND(T),TS,[INFOP(S,L,R,P,I)|OS],N+1,Term,Status).
-
-see_operand(BRACE(B,I),TS,OS,N,O,Term,Status) :-
-	!,
-	object_struct(O,N,T),
-	flora_compose(OPRND(T),[BRACE(B,I)|TS],[BRACE(B,I)|OS],N+1,Term,Status).
-
-see_operand(PREOP(S,A,P,I),TS,OS,N,O,Term,Status) :-
-	!,
-	object_struct(O,N,T),
-	flora_compose(OPRND(T),TS,[PREOP(S,A,P,I)|OS],N+1,Term,Status).
-
 see_operand(NULL,[],[],N,O,Term,Status) :-
 	!,
 	object_struct(O,N,T),
 	flora_compose(OPRND(T),[],[],N+1,Term,Status).
 
-see_operand(SUFOP(_S,_A,_P,_I),_TS,_OS,N,_O,_Term,_Status) :-
+see_operand(INFOP(S,L,R,P,I),TS,OS,N,O,Term,Status) :-
 	!,
-	report_error(N,UNEXP_OPERAND),
+	( is_flora_gpp_markup(O) ->
+	    report_error(I,UNEXP_ENDCLAUSE),
+	    fail
+	;
+	  object_struct(O,N,T),
+	  flora_compose(OPRND(T),TS,[INFOP(S,L,R,P,I)|OS],N+1,Term,Status)
+	).
+
+see_operand(BRACE(B,I),TS,OS,N,O,Term,Status) :-
+	!,
+	( is_flora_gpp_markup(O) ->
+	    report_error(I,UNEXP_ENDCLAUSE),
+	    fail
+	;
+	  object_struct(O,N,T),
+	  flora_compose(OPRND(T),[BRACE(B,I)|TS],[BRACE(B,I)|OS],N+1,Term,Status)
+	).
+
+see_operand(PREOP(S,A,P,I),TS,OS,N,O,Term,Status) :-
+	!,
+	( is_flora_gpp_markup(O) ->
+	    report_error(I,UNEXP_ENDCLAUSE),
+	    fail
+	;
+	  object_struct(O,N,T),
+	  flora_compose(OPRND(T),TS,[PREOP(S,A,P,I)|OS],N+1,Term,Status)
+	).
+
+see_operand(SUFOP(_S,_A,_P,I),_TS,_OS,N,O,_Term,_Status) :-
+	!,
+	( is_flora_gpp_markup(O) ->
+	    report_error(I,UNEXP_ENDCLAUSE)
+	;
+	  report_error(N,UNEXP_OPERAND)
+	),
 	fail.
 
-see_operand(OPRND(_X),_TS,_OS,N,_O,_Term,_Status) :-
+see_operand(OPRND(X),_TS,_OS,N,O,_Term,_Status) :-
 	!,
-	report_error(N,UNEXP_OPERAND),
+	( is_flora_gpp_markup(O) ->
+	    get_rightmost_index(X,I),
+	    report_error(I,UNEXP_ENDCLAUSE)
+	;
+	  report_error(N,UNEXP_OPERAND)
+	),
 	fail.
 
 

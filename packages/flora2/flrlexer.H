@@ -41,6 +41,7 @@
 :- export
 	flora_reset_lexer/0,
 	flora_reset_lexer/1,
+	flora_reset_charpos/0,
 	flora_tokens/2,
 	flora_token_text/6,
 	flora_symbol_token_struct/6,

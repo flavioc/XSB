@@ -1169,8 +1169,8 @@ flora_gpp_markup(CANOTERM(Funct,3,FL_PARENTHESIS,[Arg1,Arg2,Arg3],_If,_Ip),Statu
 	get_name(Funct,FLORA_GPP_MARKUP),
 	!,
 	( ( get_name(Arg3,'') ->
-	      %% This is the top level file name. Skip it.
-	      true
+	      %% This is the top level file name. Reset line number.
+	      flora_reset_charpos
 
 	  ; get_name(Arg3,'1') ->
 	      %% This is the beginning of a include file.

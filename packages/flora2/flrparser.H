@@ -30,7 +30,11 @@
 
 :- import conget/2 from gensym.
 
-:- import flora_begin_file/1, flora_end_file/1 from flrlexer.
+:- import
+	flora_begin_file/1,
+	flora_end_file/1,
+	flora_reset_charpos/0
+   from flrlexer.
 
 :- import flora_conflict_operator/3 from flroperator.
 

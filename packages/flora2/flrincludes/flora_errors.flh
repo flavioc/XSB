@@ -56,6 +56,7 @@
 #define UNEXP_LEFT       'unexpected left parenthesis/brace/bracket'
 #define UNEXP_RIGHT      'unexpected right parenthesis/brace/bracket'
 #define UNEXP_END        'unexpected end of rule'
+#define UNEXP_ENDCLAUSE	 'unexpected end of clause before the #include macro'
 #define WRONG_PRECEDENCE 'precedence definitions violated'
 #define WRONG_ASSOCIATE  'associativity definition violated'
 #define UNMATCHED_LEFT   'unmatched left parenthesis/brace/bracket'
