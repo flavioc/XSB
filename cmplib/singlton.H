@@ -1,5 +1,5 @@
 /* File:      singlton.H
-** Author(s): Kostis F. Sagonas
+** Author(s): Debray, Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -28,6 +28,7 @@
 :- import vv/2 from xsb_read.
 :- import warning/1 from auxlry.
 :- import numbervars_cmplib/3 from auxlry.
+:- import option/1 from auxlry.
 :- import ll_arg/3 from auxlry.
 :- import append/3 from basics.
 :- import atom_codes/2, functor/3, hilog_functor/3, atomic/1, integer/1,

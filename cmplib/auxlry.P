@@ -1,5 +1,5 @@
 /* File:      auxlry.P
-** Author(s): Saumya Debray, Kostis F. Sagonas
+** Author(s): Debray, Warren, Kifer, Sagonas, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -28,9 +28,9 @@
 #include "celltags_xsb.h"
 
 
-/*======================================================================*/
+/*============================================================*/
 /*  messages and such							*/
-/*======================================================================*/
+/*============================================================*/
 
 :- dynamic(current_compiled_module(_)).
 :- dynamic(load_dyn_module(_)).
@@ -59,12 +59,10 @@ set_global_compiler_options(Options) :-
 	retractall('_$global_compiler_options'(_)),
 	assert('_$global_compiler_options'(Options)).
 
-
-/*======================================================================*/
+/*================================================================*/
 /*  setoptions(+Options)						*/
 /*	Compiler option setting.					*/
-/*======================================================================*/
-
+/*================================================================*/
 
 setoptions(_) :- current_option(Option), conset(Option, 0), fail.
 setoptions(_) :- 
@@ -98,31 +96,30 @@ setopt(Opt,Setting) :-
 	; warning(('Unknown compiler option: ', Opt))
 	).
 
+/* Old PSB genes */
 current_option(sysmod).
 current_option(optimize).
 current_option(asm_dump).
+current_option(index_off).
+current_option(compile_off).
+current_option(verbo).
+
+/* tabling */
 current_option(auto_table).
 current_option(suppl_table).
 current_option(table_dump).
 current_option(suppl_fold_off).
-current_option(index_off).
-current_option(compile_off).
 
-% TLS: taken out 11/03: does not seem to be used.
-% current_option(init_var_off).
-
+/* specialization */
 current_option(spec_repr).
 current_option(spec_dump).
 current_option(spec_off).
 current_option(unfold_off).
 
+/* unification factoring */
 current_option(ti_dump).
 current_option(ti_long_names).
 current_option(ti_opt1).
-
-current_option(db_opt).
-current_option(unfold).
-current_option(reorder).
 
 /* preprocessor */
 current_option(xpp_on).
@@ -131,19 +128,28 @@ current_option(xpp_dump).
 /* parse */
 current_option(quit_on_error).
 
-/* need to test out optimizations -- tls */
-current_option(no_check).
-current_option(profile).
-current_option(verbo).
-current_option(ccp).
-
-
+/* CRs mode inferencing */
 current_option(modeinfer).
 current_option(mi_verbose).
 current_option(mi_debug).
 current_option(mi_dump).
 current_option(mi_warn).
 current_option(mi_foreign).
+
+/* Compiler tests */
+current_option(profile).
+
+current_option(singleton_warnings_off).
+
+% TLS: taken out 11/03: these do not seem to be used.
+% current_option(init_var_off).
+% current_option(no_check).
+% current_option(ccp).
+
+% Probably relics of aborted attempt at clause reordering.
+% current_option(db_opt).
+% current_option(unfold).
+% current_option(reorder).
 
 /* TLS: added Jan, O1.  This is put in so that XSB can read files commented
    via lpdoc without having to have something along the lines of texinfo .src
@@ -154,6 +160,9 @@ current_option(mi_foreign).
 
 current_option(ciao_directives).
 
+% TLS: used for backward compatability when options change.
+current_option(_,_):- fail.
+
 set_ciao_opts:- 
 	op(500,yfx,#),
 	op(975, xfx,(=>)),
@@ -161,31 +170,18 @@ set_ciao_opts:-
 %	op(1100,fx,(document_export)),
 %	op(1100,fx,(document_import)).
 
-
-/* options kept only for backwards compatibility;
-   should be deleted in the next release.	*/
-
-current_option(dumpasm, asm_dump) :-
-       warning('Compiler option "dumpasm" has been renamed to "asm_dump"').
-current_option(noindex, index_off) :-
-       warning('Compiler option "noindex" has been renamed to "index_off"').
-current_option(nocompile, compile_off) :-
-       warning('Compiler option "nocompile" has been renamed to "compile_off"').
-current_option(table_all, auto_table) :-
-       warning('Compiler option "table_all" has been renamed to "auto_table"').
-
-/*======================================================================*/
+/*================================================================*/
 /*  option(+Option)							*/
 /*	Succeeds iff Option is one of the compilation options that are	*/
 /*	set.								*/
-/*======================================================================*/
+/*================================================================*/
 
 option(X) :- conget(X, 1).
 
-/*======================================================================*/
+/*================================================================*/
 /*  time_message(+StartTime, +Message)					*/
 /*	Display the Message and the elapsed cpu time.			*/
-/*======================================================================*/
+/*================================================================*/
 
 time_message(StartTime, Message) :- 
 	cputime(Time),
@@ -195,11 +191,11 @@ time_message(StartTime, Message) :-
 verbo_time_message(StartTime, Message) :- 
 	( option(verbo) -> time_message(StartTime, Message) ; true ).
 
-/*======================================================================*/
+/*================================================================*/
 /*  subsumes(+X, +Y):							*/
 /*	X subsumes Y, i.e. X is an instance of Y			*/
 /*	The procedure is side-effect free.				*/
-/*======================================================================*/
+/*===============================================================*/
 
 subsumes(X,Y) :- \+ X=Y,!,fail.
 subsumes(X,Y) :- numbervars_cmplib(Y,0,_), \+ X=Y,!,fail.

@@ -26,7 +26,7 @@
 default_assert_size(17).	% Default size to make hash table for
 				% dynamic code.
 
-default_compile_size(5000).	% size (in WORDS) of largest file to
+%default_compile_size(10000).	% size (in WORDS) of largest file to
 				% automatically recompile when
 				% consulting.  Larger files will be
 				% loaded dynamically.

@@ -32,7 +32,7 @@
 :- import cp_opt/2 from cp_opt.
 :- import str_cat/3, stat_flag/2 from machine.
 :- import useinfer/3 from useinfer.
-:- import db_optimize/4 from db_opt.
+%%:- import db_optimize/4 from db_opt.
 %%:- import build_graph/1 from cutcheck.
 :- import print_result/1 from printres.
 :- import standard_symbol/3 from std_xsb.

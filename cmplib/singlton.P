@@ -27,7 +27,7 @@
 
 /*======================================================================*/
 /*  singleton_check(+Clause, +VariableList).				*/
-/*======================================================================*/
+/*============================================================*/
 
 singleton_check(X, _) :- var(X), !.
 singleton_check([], _) :- !.
@@ -116,18 +116,23 @@ calculate_occurences(Term, Occurences) :-
 	),
 	'calculate occurences'(Term, NewN, Arity, Occurences).
 
+write_singleton_warnings(VariableList, Occurences, P, A):- 
+	(option(singleton_warnings_off) -> 
+	    true
+	  ; write_singleton_warnings_1(VariableList, Occurences, P, A) ).
 
-write_singleton_warnings([], _, _, _) :-
+write_singleton_warnings_1([], _, _, _) :-
 	!.	% This captures the open-end of VariableList.
-write_singleton_warnings([vv(VarName,'_$cmplib_var'(N))|Rest], Occurences, P, A) :-
+write_singleton_warnings_1([vv(VarName,'_$cmplib_var'(N))|Rest], 
+	                                                                           Occurences, P, A) :-
 	atom_codes(VarName, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
 		true		% (underscore), so its OK, ignore it!.
 	; ll_arg(N, Occurences, OccCount),
 	  ( OccCount == found('at least twice') -> true
-	  ; warning(('Singleton variable ', VarName,
+	  ; (warning(('Singleton variable ', VarName,
 		     ' in a clause of ', P, '/', A))
 	  )
-	),
-	write_singleton_warnings(Rest, Occurences, P, A).
+	) ),
+	write_singleton_warnings_1(Rest, Occurences, P, A).
 

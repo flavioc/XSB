@@ -44,7 +44,7 @@ mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 compile(Modname, Basename, Options, ExportList) :-
 	telling(OldFile),
 	file_names(Basename, PFile, HFile, OFile, AFile, DFile,
-		   SpecFile, TIFile, TableFile, OptFile),
+		   SpecFile, TIFile, TableFile, _OptFile),
 	setoptions(Options), initialize,
 	%% If --quietload, don't print Compiling/compiled messages
 	stat_flag(BANNER_CTL,BannerCtl),
@@ -56,8 +56,8 @@ compile(Modname, Basename, Options, ExportList) :-
 	cputime(TimeStart),
 	retractall(current_compiled_module(_)),
 	assert(current_compiled_module(Basename)),
-	db_preprocess(PFile, HFile, OptFile, SourceFile),
-	parse(Modname, SourceFile, HFile, Module_0),
+%	db_preprocess(PFile, HFile, OptFile, SourceFile),
+	parse(Modname, PFile, HFile, Module_0),
 	( option(profile) -> 
 	    time_message(TimeStart, 'Parse finita'), cputime(TimeParse)
 	; TimeParse = TimeParse ), % To avoid a silly lamp variable message!
@@ -122,31 +122,32 @@ abort_if_syntax_errors(Modname) :-
 	;   true
 	).
 
-/*======================================================================*/
+/*================================================================*/
 /* db_preprocess(+PFile, +HFile, +OptFile, -SourceFile)	*/
 /*	Calls the database optimizer of XSB as a preprocessor that	*/
 /*	produces the file OptFile out of PFile and HFile.		*/
-/*======================================================================*/
+/*==============================================================*/
 
-db_preprocess(PFile, HFile, OptFile, SourceFile) :-
-	(option(db_opt)
-	 ->	(option(unfold),option(reorder)
-		 ->	DB_Opt_Options = [unfold,reorder]
-		 ; option(unfold)
-		 ->	DB_Opt_Options = [unfold]
-		 ; option(reorder)
-		 ->	DB_Opt_Options = [reorder]
-		 ;	DB_Opt_Options = []
-		),
-		db_optimize(PFile, HFile, DB_Opt_Options, OptFile),
-		SourceFile = OptFile
-	 ;	SourceFile = PFile
-	).
-
-/*======================================================================*/
+/* TLS: taken out 11/03.  Could not find any predicate definition for
+db_optimize
+*                                                                                                    *
+*  db_preprocess(PFile, HFile, OptFile, SourceFile) :-                        * 
+* 	(option(db_opt) ->                                                              * 
+* 	    (option(unfold),option(reorder) ->                                   * 
+* 	          DB_Opt_Options =[unfold,reorder]                             *
+* 	       ;  option(unfold) ->                                                      * 
+* 	               DB_Opt_Options = [unfold]                                   *
+* 	           ;  option(reorder) ->                                                 * 
+* 		    DB_Opt_Options = [reorder]                                 * 
+* 		  ; DB_Opt_Options = [] ),                                        *
+*  	    db_optimize(PFile, HFile, DB_Opt_Options, OptFile),         * 
+* 	    SourceFile = OptFile                                                         *
+* 	  ; SourceFile = PFile ).                                                         *
+*/
+/*============================================================*/
 /* table_process(+ModuleIn, -ModuleOut, +SFile)				*/
 /*	Performs necessary module-level analyses for tabling.		*/
-/*======================================================================*/
+/*============================================================*/
 
 table_process(ModuleIn, ModuleOut, SFile) :-
 	( option(auto_table) -> perform_auto_table(ModuleIn) ; true ),
