@@ -57,6 +57,7 @@ get_list(0,0,[]).
 get_list(NumOfMatches,0,[]) :-
         NumOfMatches > 0.
 get_list(NumOfMatches, Counter, [MatchVal | Rest]) :-
+	Counter > 0,
 	Counter1 is Counter - 1,
         MatchSeqNumber is NumOfMatches - Counter, 
 	%% we need to pass NumOfMatches so get_bulk_match_result__ will
