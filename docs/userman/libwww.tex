@@ -25,14 +25,15 @@ must be configured to work with the Libwww library as follows:
 
 One of the most important aspects of the Libwww package is that it allows
 XSB to dispatch multiple HTTP requests, which interleave their Web access
-phases. This can be a significant performance boost. Furthermore, the HTNL
-and the XML parsers begin their work as the fragments of pages arrive, so
-by the time the page is fully accepted, it is also parsed. Here is a list
-of features provided by the XSB Libwww package:
+phases. This can be a significant performance boost. Furthermore, the HTML,
+the XML, and the RDF parsers begin their work as the fragments of pages
+arrive, so by the time the page is fully accepted, it is also parsed. Here
+is a list of features provided by the XSB Libwww package:
 %%
 \begin{itemize}
   \item  HTML-4 parser.
   \item  XML parser (non-validating).
+  \item  RDF parser.
   \item  Page fetching (without parsing).
   \item  Form handling.
   \item  HTTP header information.
@@ -51,6 +52,8 @@ To start using the package, you must load it first:
 \end{verbatim}
 %%
 
+\subsection{Syntax}
+
 The general form of a Web call is as follows:
 
 %%
@@ -65,11 +68,11 @@ Each request has the following syntax:
 \end{verbatim}
 %%
 The request type functor must be either {\tt htmlparse}, {\tt xmlparse},
-{\tt fetch}, or {\tt header}. The first two are requests to parse HTML/XML
-pages, respectively. {\tt Fetch} is a request to bring in a page without
-parsing, nd {\tt header} is a request to retrieve only the header
-information (which is returned in the {\tt ResponseParams} argument---see
-below).
+{\tt rdfparse}, {\tt fetch}, or {\tt header}. The first two are requests to
+parse HTML/XML pages, respectively. {\tt Fetch} is a request to bring in a
+page without parsing, nd {\tt header} is a request to retrieve only the
+header information (which is returned in the {\tt ResponseParams}
+argument---see below).
 %%
 The URL must be an atom or a string (list of characters).\footnote{
   %%
@@ -80,6 +83,9 @@ The URL must be an atom or a string (list of characters).\footnote{
   %%
   }
 %%
+
+\subsection{Request Parameters}
+
 Request parameters must be either a variable (in which case the request is
 considered to not have special parameters) or a list. The following terms
 are allowed in that list:
@@ -132,6 +138,9 @@ are allowed in that list:
   Otherwise, the status code {\tt WWW\_EXPIRED\_DOC} is returned.
 \end{itemize}
 %%
+
+\subsection{Response Parameters}
+
 The {\tt ResponseParams} argument is a list of terms returned by the {\tt
   libwww\_request} call. It contains two kinds of information: header
 information and sub-request information. The header information consists of
@@ -145,15 +154,22 @@ another page, {\tt http://www.foo.org/test/file.html}, but the server
 responded with the error code -401 (authentication error).
 Such sub-requests might be spawned during XML parsing.
 
-The {\tt Result} of a {\tt libwww\_request} call depends on the request type.
-In case of {\tt fetch} it is an atom or a list of characters (depending on
-whether {\tt URL} was specified as an atom or a list of characters), or it
-might be an unbound variable in case of an error. For {\tt header}
-requests, {\tt Result} is always an unbound variable.
+\subsection{Result of a Libwww Call}
 
-For {\tt htmlparse} and {\tt xmlparse}, Result is a variable in case of an
-error and a complex term otherwise. In the latter case, it is a list of the
-form {\tt [elt1,...,elt\_n]}, where each {\tt elt\_i} is of the form:
+The type of the {\tt Result} returned by a {\tt libwww\_request} call
+depends on the request type. 
+
+\paragraph{Page fetching.}
+In case of {\tt fetch}, {\tt Result} is an atom or a list of characters
+(depending on whether {\tt URL} was specified as an atom or a list of
+characters), or it might be an unbound variable in case of an error. For
+{\tt header} requests, {\tt Result} is always an unbound variable.
+
+\paragraph{HTML and XML parsing.}
+For {\tt htmlparse} and {\tt xmlparse}, {\tt Result} is a variable in case
+of an error and a complex term otherwise. In the latter case, it is a list
+of the form {\tt [elt1,...,elt\_n]}, where each {\tt elt\_i} is of the
+form:
 %%
 \begin{verbatim}
     elt(tag, [attval(attrname,value),...], [elt1',...,elt'_m])
@@ -176,30 +192,49 @@ argument of the {\tt pcdata}-element is an atom as well. If URL is a
 character list, then so is the corresponding argument in the
 {\tt pcdata}-element.
 
+\paragraph{RDF parsing.}
+The form of the {\tt Result} returned by an {\tt rdfparse} call is 
+a list of terms of the form:
+\[
+\tt
+[triple_1,~triple_2,~...,~triple_n]
+\]
+where each triple is of the form:
+\[
+\tt
+rdftriple(predicate, subject, object)
+\]
+which is the usual representation of RDF elements.
+
+
+\subsection{Status Code}
+
 Finally, {\tt Status} is bound to an integer that represents the return
 code from the HTTP request. A complete list of return codes is given in
 {\tt XSB/prolog\_includes/http\_errors.h}. If you need to refer to error
-codes in your Prolog application, it is advisable to use symbolic
-notation. To make this happen, put the following lines at the top of your
-program: 
+codes in your Prolog application, it is advisable to use symbolic notation
+({\it e.g.}, {\tt HT\_TIMEOUT}) rather than specific numbers ({\it e.g.},
+-905). To make this happen, put the following lines at the top of your
+program:
 %%
 \begin{verbatim}
     :- compiler_options([xpp_on]).
     #include "http_errors.h"
 \end{verbatim}
 %%
-The Libwww package also includes a predicate that is convenient for
-providing English language explanations to the errors:
+The Libwww package also includes a predicate, {\tt http\_liberr/3}, that is
+convenient for providing English language explanations to the errors:
 %%
 \begin{verbatim}
     :- import http_liberr/3 from usermod.  
 \end{verbatim}
 %%
-The first argument of this predicate is the error code, the second is an
-explanation in English, and the last is the class of the error ({\it e.g.},
-internal, server error, client error, etc.). For full details see
-{\tt XSB/packages/libwww/http\_liberr.P}. Note that the code for a successful 
-call is HT\_LOADED (=200), not zero or one!
+The first argument of this predicate is the status code returned by an
+earlier call to {\tt Libwww\_request}, the second is an English explanation
+of the status, and the last is an atom that describes the class of the
+error ({\it e.g.}, internal, server error, client error, etc.). For full
+details see {\tt XSB/packages/libwww/http\_liberr.P}. Note that the status
+code for a successful call is HT\_LOADED (=200), not 0 or 1!
 
 \section{Example}
 
