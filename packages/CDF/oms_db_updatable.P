@@ -261,18 +261,27 @@ object_int_udb(Name,NatId,Source) :-
 			       [NatId,Name])
 	).
 
-retractall_oms_int_udb(oms_obj(Oid,Name,NatId,Source)) :- 
-	ob_id_map(Oid,Name,NatId,Source),
+retractall_oms_int_udb(object_ext(Name,NatId,Source)) :-
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,_MC,_MS),
-	%%writeln(ret_ob_int(Oid,Name,NatId,Source)),
-	retractall(ob_id_map(Oid,Name,NatId,Source)),
-	odbc_sql_local(Source,
-		       [NatId],
-		       ['delete from ',TableName,
-			' where ',NOidAttr,' = ?'
-			],[]).
+	(var(NatId)
+	 ->	(var(Name)
+		 ->	odbc_sql_local(Source,
+				       [],
+				       ['delete from ',TableName],[])
+		 ;	object(Name,NatId,Source),
+			odbc_sql_local(Source,
+				       [NatId],
+				       ['delete from ',TableName,
+					' where ',NOidAttr,' = ?'
+					],[])
+		)
+	 ;	odbc_sql_local(Source,
+			       [NatId],
+			       ['delete from ',TableName,
+				' where ',NOidAttr,' = ?'
+				],[])).
 
-assert_oms_int_udb(oms_obj(Oid,Name,NatId,Source)) :-
+assert_oms_int_udb(object_ext(Name,NatId,Source)) :-
 	ext_object_table(Source,TableName,NOidAttr,NameAttr,_MC,_MS),
 	%%writeln(new_ob_int(Name,Cid,NatId,Source)),
 	(NOidAttr == NameAttr
@@ -290,16 +299,11 @@ assert_oms_int_udb(oms_obj(Oid,Name,NatId,Source)) :-
 				' values (?,?)'
 				],
 			       [])
-	),
-	%% writeln(added_new_obj(Oid,Name,NatId,Source)),
-	asserta(ob_id_map(Oid,Name,NatId,Source)).
+	).
 
-assert_oms_int_udb(oms_mo(Oid,Cid)) :-
+assert_oms_int_udb(memberof_ext(NatId,Source,MCid,MSSou)) :-
 	%% writeln(assert_mo(Oid,Cid)),
-	nonvar(Oid),
-	ob_id_map(Oid,_Name,NatId,Source),
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,MC,MS),
-	class(Cid,_,MCid,MSSou),
 	(MC = con(MCid)
 	 ->	MS = con(MSSou)
 	 ; (atom(MC),MS = con(MSSou))
@@ -385,12 +389,10 @@ immediate_memberof_int_udb(NatOID,Source,NatCid,CSou) :-
 		)
 	).
 
-retractall_oms_int_udb(oms_mo(Oid,Cid)) :-
+retractall_oms_int_udb(memberof_ext(NatOid,Source,MCid,CSou)) :-
 	%% writeln(retracting(mo(Oid,Cid))),
-	nonvar(Oid),
-	object(Oid,_,NatOid,Source),
+	nonvar(NatOid), nonvar(Source),
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,MC,MCSou),
-	class(Cid,_,MCid,CSou),
 	(MC = con(MCid)
 	 ->	true
 	 ; (atom(MC),MCSou = con(CSou))
@@ -456,11 +458,9 @@ immediate_attribute_int_udb(SNOid,Source,RNCid,RSou,TNCid,TSou) :-
 	%%,writeln(im_attr(SNOid,RNCid,TNCid))
 	.
 
-retractall_oms_int_udb(oms_at(Oid,RCid,TCid)) :-
-	nonvar(RCid),
-	ob_id_map(Oid,_Name,NatId,Source), % object must exist
+retractall_oms_int_udb(attribute_ext(NatId,Source,RNCid,RSou,TNCid, _TSou)) :-
+	nonvar(NatId),nonvar(RNCid),nonvar(RSou),
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,_MC,_MS),
-	class(RCid,_,RNCid,RSou),
 	%%writeln(ret_at_int(NatId,RNCid,TCid)),
 	(ext_functional_attribute_table(Source,RNCid,RSou,TarAttr,_Tran),
 	 (atom(TarAttr)
@@ -479,9 +479,8 @@ retractall_oms_int_udb(oms_at(Oid,RCid,TCid)) :-
 	 )
 	 ;
 	 ext_attribute_table(Source,ATableName,ANOidAttr,RNCid,RSou,TarAttr,Tran),
-	 (nonvar(TCid)
-	  ->	 class(TCid,_,TNCid,_),
-		 coerce_db_type(TNCid,Tran,TNCid,DBVal,[]),
+	 (nonvar(TNCid)
+	  ->	 coerce_db_type(TNCid,Tran,TNCid,DBVal,[]),
 		 (atom(TarAttr)
 		  ->	 odbc_sql_local(Source,
 					[NatId|DBVal],
@@ -502,12 +501,9 @@ retractall_oms_int_udb(oms_at(Oid,RCid,TCid)) :-
 	 )
 	).
 
-assert_oms_int_udb(oms_at(Oid,RCid,TCid)) :-
-	ob_id_map(Oid,_Name,NatId,Source), % object must exist
+assert_oms_int_udb(attribute_ext(NatId,Source,RNCid,RSou,TNCid,_TSou)) :-
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,_MC,_MS),
-	class(RCid,_,RNCid,RSou),
 	(ext_functional_attribute_table(Source,RNCid,RSou,TarAttr,Tran),
-	 class(TCid,_,TNCid,_),
 	 coerce_db_type(TNCid,Tran,TNCid,TVal,[]),
 	 append(TVal,[NatId],InpPars),
 	 (atom(TarAttr)
@@ -526,7 +522,6 @@ assert_oms_int_udb(oms_at(Oid,RCid,TCid)) :-
 	 )
 	 ;
 	 ext_attribute_table(Source,ATableName,ANOidAttr,RNCid,RSou,TarAttr,Tran),
-	 class(TCid,_,TNCid,_),
 	 coerce_db_type(TNCid,Tran,TNCid,TVal,[]),
 	 (atom(TarAttr)
 	  ->	 odbc_sql_local(Source,
@@ -579,11 +574,9 @@ attribute_object_int_udb(SNOid,Source,RNCid,RSou,TNCid,TSou) :-
 	%%,writeln(im_attr(SNOid,RNCid,TNCid))
 	.
 
-retractall_oms_int_udb(oms_ao(Oid,RCid,TOid)) :-
-	nonvar(RCid),
-	ob_id_map(Oid,_Name,NatId,Source), % object must exist
+retractall_oms_int_udb(attribute_object_ext(NatId,Source,RNCid,RSou,DBVal,TSou)) :-
+	nonvar(NatId),nonvar(RNCid),nonvar(RSou),
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,_MC,_MS),
-	class(RCid,_,RNCid,RSou),
 	%%writeln(ret_ao_int(NatId,RNCid,TOid)),
 	(ext_functional_attribute_object_table(Source,RNCid,RSou,TarAttr,TSou),
 	 odbc_sql_local(Source,
@@ -594,9 +587,8 @@ retractall_oms_int_udb(oms_ao(Oid,RCid,TOid)) :-
 			[])
 	 ;
 	 ext_attribute_object_table(Source,ATableName,ANOidAttr,RNCid,RSou,TarAttr,TSou),
-	 (nonvar(TOid)
-	  ->	 object(TOid,_,DBVal,TSou),
-		 odbc_sql_local(Source,
+	 (nonvar(DBVal), nonvar(TSou)
+	  ->	 odbc_sql_local(Source,
 				[NatId,DBVal],
 				['delete from ',ATableName,
 				 ' where ',ANOidAttr,' = ?',
@@ -606,15 +598,11 @@ retractall_oms_int_udb(oms_ao(Oid,RCid,TOid)) :-
 				['delete from ',ATableName,
 				 ' where ',ANOidAttr,' = ?'],[])
 	 )
-	),
-	oms_update_list([ext_update(oms_ao(Oid,RCid,TOid))]).
+	).
+%%	oms_update_list([ext_update(oms_ao(NatId,Source,RNCid,RSou,DBVal,TSou))]).
 
-assert_oms_int_udb(oms_ao(Oid,RCid,TOid)) :-
-	ob_id_map(Oid,_Name,NatId,Source), % object must exist
+assert_oms_int_udb(attribute_object_ext(NatId,Source,RNCid,RSou,TVal,TSou)) :-
 	ext_object_table(Source,TableName,NOidAttr,_NameAttr,_MC,_MS),
-	class(RCid,_,RNCid,RSou),
-	%%writeln(new_ao_int(NatId,RNCid,TOid)),
-	object(TOid,_,TVal,TSou),
 	(ext_functional_attribute_object_table(Source,RNCid,RSou,TarAttr,TSou),
 	 odbc_sql_local(Source,
 			[TVal,NatId],
@@ -631,8 +619,8 @@ assert_oms_int_udb(oms_ao(Oid,RCid,TOid)) :-
 			 ' values (?,?)'
 			 ],
 			[])
-	),
-	oms_update_list([ext_update(oms_ao(Oid,RCid,TOid))]).
+	).
+%%	oms_update_list([ext_update(oms_ao(Oid,RCid,TOid))]).
 
 /****************************************************************/
 /*								*/
