@@ -1,3 +1,11 @@
+/* File:      redund.P
+** Author(s): Christian Holzbaur (see below)
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+** 
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.2 %
 %                                                                 %
@@ -19,6 +27,13 @@
 %	+) indep t_[lu] -> t_none invalidates invariants (fixed)
 %
 
+:- export systems/3, redundancy_vars/1.
+
+:- import get_atts/2, put_atts/2 from atts.
+:- import {}/1 from usermod.
+:- import arith_eval/2 from arith_r.
+:- import detach_bounds/1, intro_at/3 from bv.
+	
 %
 % O(n^2), use sort later
 %
@@ -43,12 +58,12 @@ redundancy_systems( [S|Sys]) :-
   redundancy_systems( Sys).
 
 redundancy_vars( Vs) :- !, redundancy_vs( Vs).
-redundancy_vars( Vs) :-
-  statistics( runtime, [Start|_]),
-    redundancy_vs( Vs),
-  statistics( runtime, [End|_]),
-  Duration is End-Start,
-  format( user_error, "% Redundancy elimination took ~d msec~n", Duration).
+% redundancy_vars( Vs) :-
+%   statistics( runtime, [Start|_]),
+%     redundancy_vs( Vs),
+%   statistics( runtime, [End|_]),
+%   Duration is End-Start,
+%   writeln((user_error, "% Redundancy elimination took ~d msec~n", Duration)).
 
 
 %

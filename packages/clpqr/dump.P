@@ -1,3 +1,11 @@
+/* File:      dump.P
+** Author(s): Christian Holzbaur (see below)
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+**
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.3 %
 %                                                                 %
@@ -19,15 +27,29 @@ onto the target variables where the target variables are replaced by
 the corresponding variables from NewVars.
 */
 
-:- use_module( library(terms), [term_variables/2]).
+% :- use_module( library(terms), [term_variables/2]).
 
-:- use_module( library(assoc), 
-	[
-	    empty_assoc/1,
-	    get_assoc/3,
-	    put_assoc/4,
-	    assoc_to_list/2
-	]).
+% :- use_module( library(assoc), 
+% 	[
+% 	    empty_assoc/1,
+% 	    get_assoc/3,
+% 	    put_assoc/4,
+% 	    assoc_to_list/2
+% 	]).
+
+:- export dump/3, related_linear_vars/2.
+	  raise_exception/1,
+	  related_linear_vars/2,
+	  all_attribute_goals/3.
+
+:- import empty_assoc/1, get_assoc/3, put_assoc/4, assoc_to_list/2
+   from assoc.
+
+:- import ordering/1 from ordering.
+:- import dump_linear/4, dump_nonzero/4 from usermod.
+:- import class_allvars/2 from class.
+:- import get_atts/2 from atts.
+:- import project_attributes/2 from project.
 
 dump( Target, NewVars, Constraints) :-
 	( 
@@ -38,17 +60,20 @@ dump( Target, NewVars, Constraints) :-
 	    ),
 	    ordering( Target),
 	    related_linear_vars( Target, All),
-	    nonlin_crux( All, Nonlin),
+	    % nonlin_crux( All, Nonlin),
+	    Nonlin = [],
 	    project_attributes( Target, All),
 	    related_linear_vars( Target, Again), % project drops/adds vars
 	    all_attribute_goals( Again, Gs, Nonlin),
 	    empty_assoc( D0),
 	    mapping( Target, NewVars, D0,D1),	% late (AVL suffers from put_atts)
 	    copy( Gs, Copy, D1,_),		% strip constraints
-	    bb_put( copy, NewVars/Copy),
-	    fail				% undo projection
+	    !, Constraints = Copy,		% ADDED BY ME
+	    % bb_put( copy, NewVars/Copy),
+	    (fail; true)			% undo projection
 	;
-	    bb_delete( copy, NewVars/Constraints) % garbage collect
+	    true
+	    % bb_delete( copy, NewVars/Constraints) % garbage collect
 	).
 
 proper_varlist( X) :- var( X), !, fail.
@@ -143,5 +168,9 @@ copy( N, T, C, D0,D2) :-
 	copy( At, Ac, D0,D1),
 	N1 is N-1,
 	copy( N1, T, C, D1,D2).
+
+raise_exception(X) :-
+	writeln(X),
+	abort.
 
 end_of_file.

@@ -1,3 +1,11 @@
+/* File:      ordering.P
+** Author(s): Christian Holzbaur (see below)
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+** 
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.3 %
 %                                                                 %
@@ -17,14 +25,14 @@
 %
 %
 
-:- use_module( library(lists), [append/3]).
+:- export ordering/1, combine/3, arrangement/2.
 
-:- use_module( library(ugraphs), 
-	[
-	    top_sort/2,
-	    add_edges/3,
-	    add_vertices/3
-	]).
+:- import append/3 from basics.
+:- import top_sort/2, add_edges/3, add_vertices/3, graph_union/3
+   from ugraphs.
+:- import class_get_prio/2, class_put_prio/2 from class.
+:- import get_or_add_class/2 from bv.
+
 
 ordering( X) :- var(X), !, fail.
 ordering( A>B) :- !, ordering( B<A).
@@ -55,7 +63,8 @@ arrangement( Class, Arr) :-
   top_sort( Gn, Arr),
   !.
 arrangement( _, _) :-
-  raise_exception( unsatisfiable_ordering).
+	writeln(raise_exception( unsatisfiable_ordering)),
+	abort.
 
 join_class( [],     _).
 join_class( [X|Xs], Class) :-
@@ -67,7 +76,7 @@ join_class( [X|Xs], Class) :-
 combine( Ga, Gb, Gc) :-
   normalize( Ga, Gan),
   normalize( Gb, Gbn),
-  ugraphs:graph_union( Gan, Gbn, Gc).
+  graph_union( Gan, Gbn, Gc).
 
 %
 % both Ga and Gb might have their internal ordering invalidated

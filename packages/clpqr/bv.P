@@ -1,3 +1,11 @@
+/* File:      bv.P
+** Author(s): Christian Holzbaur
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+** 
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.3 %
 %                                                                 %
@@ -45,10 +53,6 @@
 %
 %
 
-:- public {}/1, maximize/1, minimize/1, sup/2, inf/2, imin/2. % xref.pl
-
-:- use_module( library(ordsets), [ord_add_element/3]).
-
 % :- use_module( library(deterministic)).
 
 %
@@ -72,6 +76,54 @@
 %	-) t_Lu
 %	-) t_lU
 %
+
+:- export maximize/1, minimize/1, sup/2, inf/2, imin/2. % xref.pl
+
+:- export var_intern/3,
+	  export_binding/1,
+	  export_binding/2,
+	  rcbl_status/6,
+	  inc_step/2,
+	  deref/2,
+	  log_deref/4,
+	  solve/1,
+	  solve_x/2,
+	  'solve_<'/1,
+	  'solve_=<'/1,
+	  'solve_=\='/1,
+	  detach_bounds/1,
+	  reconsider/1,
+	  determine_active_inc/1,
+	  determine_active_dec/1,
+	  basis_add/2,
+	  backsubst/2,
+	  dec_step/2,
+	  same_class/2,
+	  unconstrained/4,
+	  get_or_add_class/2,
+	  pivot/3,
+	  intro_at/3,
+	  allvars/2,
+	  var_with_def_intern/4,
+	  dump_var/6.
+
+:- import length/2 from basics.
+:- import arith_eval/1, arith_eval/2, case_signum/4 from arith_r.
+:- import put_atts/2, get_atts/2 from atts.
+:- import {}/1, split/3 from usermod.		% actually from nf.P 
+:- import ord_add_element/3 from ordsets.
+:- import add_linear_ff/5, add_linear_11/3, nf_substitute/4,
+	  decompose/4, normalize_scalar/2, isolate/3, delete_factor/4,
+	  indep/2, mult_linear_factor/3, nf_rhs_x/4, mult_hom/3,
+	  nf2sum/3
+          from store.
+:- import class_new/4, class_allvars/2, class_basis_pivot/3,
+	  class_basis/2, class_basis_add/3, class_basis_drop/2
+          from class.
+:- import ineq/4 from ineq.
+:- import wait_linear/3 from usermod.
+
+
 
 % ----------------------------------- deref ------------------------------------ %
 
@@ -204,71 +256,26 @@ export_binding( Y, X) :- nonvar(Y),
   ineq( H, I, Nf, nonstrict).
 
 maximize( Term) :-
-	minimize( -Term).
+  sup(Term,Sup),
+  { Term =:= Sup }.
 
-%
-% This is NOT coded as minimize(Expr) :- inf(Expr,Expr).
-%
-% because the new version of inf/2 only visits
-% the vertex where the infimum is assumed and returns
-% to the 'current' vertex via backtracking.
-% The rationale behind this construction is to eliminate
-% all garbage in the solver data structures produced by
-% the pivots on the way to the extremal point caused by
-% {inf,sup}/{2,4}.
-%
-% If we are after the infimum/supremum for minimizing/maximizing,
-% this strategy may have adverse effects on performance because
-% the simplex algorithm is forced to re-discover the
-% extremal vertex through the equation {Inf =:= Expr}.
-%
-% Thus the extra code for {minimize,maximize}/1.
-%
-% In case someone comes up with an example where
-%
-%   inf(Expr,Expr)
-%
-% outperforms the provided formulation for minimize - so be it.
-% Both forms are available to the user.
-%
 minimize( Term) :-
-	wait_linear( Term, Nf, minimize_lin(Nf)).
+  inf( Term, Inf),
+  { Term =:= Inf }.
 
-minimize_lin( Lin) :-
-	deref( Lin, Lind),
-	var_with_def_intern( t_none, Dep, Lind, 2'00),
-	determine_active_dec( Lind),
-	iterate_dec( Dep, Inf),
-	{ Dep =:= Inf }.
+inf( Term, Inf) :-
+  wait_linear( Term, Nf, inf_lin(Nf,Inf)).
 
-sup( Expression, Sup) :-
-	sup( Expression, Sup, [], []).
+inf_lin( Lin, Infimum) :-
+  deref( Lin, Lind),
+  var_with_def_intern( t_none, Dep, Lind, 2'00),
+  determine_active_dec( Lind),
+  iterate_dec( Dep, Inf),
+  { Infimum =:= Inf }.
 
-sup( Expression, Sup, Vector, Vertex) :-
-	inf( -Expression, -Sup, Vector, Vertex).
-
-inf( Expression, Inf) :-
-	inf( Expression, Inf, [], []).
-
-inf( Expression, Inf, Vector, Vertex) :-
-	wait_linear( Expression, Nf, inf_lin(Nf,Inf,Vector,Vertex)).
-
-inf_lin( Lin, _, Vector, _) :-
-	deref( Lin, Lind),
-	var_with_def_intern( t_none, Dep, Lind, 2'00),
-	determine_active_dec( Lind),
-	iterate_dec( Dep, Inf),
-	vertex_value( Vector, Values),
-	bb_put( inf, [Inf|Values]),
-	fail.
-inf_lin( _, Infimum, _, Vertex) :-
-	bb_delete( inf, L),
-	assign( [Infimum|Vertex], L).
-
-assign( [],     []).
-assign( [X|Xs], [Y|Ys]) :-
-	{X =:= Y},				  % more defensive/expressive than X=Y
-	assign( Xs, Ys).
+sup( Term, Sup) :-
+  inf( -Term, Inf),
+  { -Inf =:= Sup }.
 
 % --------------------------------- optimization ------------------------------- %
 %
@@ -1022,11 +1029,9 @@ bs_collect_bindings( [X|Xs], V, Lin, Bind0,BindT) :-
 
 %
 % The first clause exports bindings,
-% the second (no longer) aliasings
+%	       the second aliasings
 %
 bs_collect_binding( [],       X, Inhom) --> [ X-Inhom ].
-bs_collect_binding( [_|_],    _, _)     --> [].
-/*
 bs_collect_binding( [Y*K|Ys], X, Inhom) -->
   ( { Ys = [],
       Y \== X,
@@ -1037,7 +1042,6 @@ bs_collect_binding( [Y*K|Ys], X, Inhom) -->
   ;
       []
   ).
-*/
 
 %
 % reconsider the basis
@@ -1205,7 +1209,7 @@ dump_var( t_l(L), V, I,H) --> !,
     get_atts( V, strictness(Strict)),
     Sm is Strict /\ 2'10,
     arith_eval( 1/K, Kr),
-    arith_eval( Kr*(L-I), Li),
+    arith_eval( Kr * (L-I), Li),
     mult_hom( H, Kr, H1),
     arith_eval( 0, Z), nf2sum( H1, Z, Sum),
     ( arith_eval( K > 0) ->
@@ -1222,7 +1226,7 @@ dump_var( t_u(U), V, I,H) --> !,
     get_atts( V, strictness(Strict)),
     Sm is Strict /\ 2'01,
     arith_eval( 1/K, Kr),
-    arith_eval( Kr*(U-I), Ui),
+    arith_eval( Kr * (U-I), Ui),
     mult_hom( H, Kr, H1),
     arith_eval( 0, Z), nf2sum( H1, Z, Sum),
     ( arith_eval( K > 0) ->

@@ -1,3 +1,11 @@
+/* File:      clpr.P
+** Author(s): Christian Holzbaur (see below)
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+** 
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.3 %
 %                                                                 %
@@ -10,51 +18,40 @@
 %  Author: Christian Holzbaur           christian@ai.univie.ac.at %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- module( clpr, [
-                        {}/1, 
-			maximize/1,
-			minimize/1, 
-			inf/2, inf/4, sup/2, sup/4,
-			bb_inf/3,
-			bb_inf/5,
-			ordering/1,
-			entailed/1,
-			dump/3
-		 ]).
+:- import maximize/1, minimize/1, sup/2, inf/2 from bv.
+:- import bb_inf/3, bb_inf/5 from bb.
+:- import ordering/1 from ordering.
+:- import dump/3 from dump.
+:- import get_atts/2, put_atts/2 from atts.
+:- import dump/3 from dump.
 
-%
-% Don't report export of private predicates from clpr
-%
-:- multifile 
-	user:portray_message/2.
-
-:- dynamic
-	user:portray_message/2.
-%
-user:portray_message( warning, import(_,_,clpr,private)).
+:- attribute class/1, order/1, lin/1, forward/1,
+	     type/1, strictness/1, nonzero/0,
+	     target/0, keep_indep/0, keep/0, class_atts/4.
 
 this_linear_solver( clpr).
 
-:- use_module( 'clpr/arith_r').
+:- [itf3].
+:- [nf].
 
-:- ensure_loaded( 
-	[
-	    'clpr/itf3',
-	    'clpr/store'			% early because of macros
-						% but after itf3
-	]).
+% :- ensure_loaded( 
+% 	[
+% 	    'clpr/itf3',
+% 	    'clpr/store'			% early because of macros
+% 						% but after itf3
+% 	]).
 
-:- use_module( 'clpr/geler').
-:- use_module( 'clpr/nfr').
-:- use_module( 'clpr/class').
+% :- use_module( 'clpr/geler').
+% :- use_module( 'clpr/nfr').
+% :- use_module( 'clpr/class').
 
-:- ensure_loaded( 
-	[
-	    'clpr/project',
-	    'clpr/bv',
-	    'clpr/ineq',
-	    'clpr/redund',
-	    'clpr/fourmotz',
-	    'clpr/bb',
-	    'clpr/dump'
-	]).
+% :- ensure_loaded( 
+% 	[
+% 	    'clpr/project',
+% 	    'clpr/bv',
+% 	    'clpr/ineq',
+% 	    'clpr/redund',
+% 	    'clpr/fourmotz',
+% 	    'clpr/bb',
+% 	    'clpr/dump'
+% 	]).

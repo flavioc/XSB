@@ -1,3 +1,11 @@
+/* File:      nf.P
+** Author(s): Christian Holzbaur (see below)
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+** 
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.3 %
 %                                                                 %
@@ -10,14 +18,123 @@
 %  Author: Christian Holzbaur           christian@ai.univie.ac.at %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- use_module( library(terms), [term_variables/2]).
-:- use_module( geler).
+% :- use_module( library(terms), [term_variables/2]).
+% :- use_module( geler).
+
+:- import arith_eval/1,
+	  arith_eval/2,
+	  arith_normalize/2,
+	  integerp/2
+   from arith_r.
+
+:- import memberchk/2 from basics.
+:- import sort/2 from setof.
+:- import ineq_one/4, ineq_one_n_p_0/1, ineq_one_n_n_0/1, ineq_one_s_p_0/1,
+	  ineq_one_s_n_0/1 from ineq.
+:- import export_binding/2, log_deref/4, solve/1,
+	  'solve_<'/1, 'solve_=<'/1, 'solve_=\='/1 from bv.
+:- import normalize_scalar/2, add_linear_11/3 from store.
+:- import project_attributes/2 from project.
+:- import get_atts/2 from atts.
+
+
+%-----------------------------------------------------------------------
+% term_variables/2
+%-----------------------------------------------------------------------
+term_variables(Term, Vars) :-
+	listofvars(Term, Vs, []),
+	sort(Vs, Vars).	
+
+listofvars(Term, Vh, Vt) :-
+	(var(Term)
+	 ->	Vh = [Term | Vt]
+	 ;	Term =.. [_|Args],
+		listofvars1(Args, Vh, Vt)
+	).
+
+listofvars1([], V, V).
+listofvars1([T|Ts], Vh, Vt) :-
+	listofvars(T, Vh, Vm),
+	listofvars1(Ts, Vm, Vt).
+
+%-----------------------------------------------------------------------
+% A new predicate term_attvars(+Term, -Vars): Given a term, returns all
+% the attributed variables that are relevant to it.
+%-----------------------------------------------------------------------
+term_attvars(Term, Vars) :-
+	term_attvars(Term, [], Vars).
+
+term_attvars(Var, VarsIn, VarsOut) :-
+	var(Var), !,
+	get_atts(Var, All),
+	(All = []
+	 ->	VarsOut = VarsIn
+	 ;	(var_member(Var, VarsIn)
+		 ->	VarsOut = VarsIn
+		 ;	term_attvars(All, [Var|VarsIn], VarsOut)
+		)
+        ).
+term_attvars(Term, VarsIn, VarsOut) :-
+	Term =.. [_|Args],
+	term_attvars_list(Args, VarsIn, VarsOut).
+
+term_attvars_list([], VarsIn, VarsIn).
+term_attvars_list([H|T], VarsIn, VarsOut) :-
+	term_attvars(H, VarsIn, VarsMid),
+	term_attvars_list(T, VarsMid, VarsOut).
+
+var_member(X,[H|_]) :- X == H, !.
+var_member(X,[_|L]) :- var_member(X,L).
+
 
 % -------------------------------------------------------------------------
 
-{   Rel   } :- var( Rel), !, raise_exception(instantiation_error({Rel},1)).
+s(Constraints) :-
+	term_variables(Constraints, QueryVars),
+	{Constraints},
+ 	term_attvars(QueryVars, AttrVars),
+	nl,
+	writeln('.... =============== Before projection ================'),
+	nl,
+	print_attributes(AttrVars),	
+	% remove those vars in QueryVars that have been bound
+	remove_nonvars(QueryVars, NewQVars),
+	write('.... QV-AttrVars: '), writeln(NewQVars-AttrVars),
+ 	project_attributes(NewQVars, AttrVars), !,	% why need a cut?
+	nl,
+	writeln('.... =============== After  projection ================'),
+	nl,
+	print_attributes(AttrVars),
+	nl,
+	writeln('.... =============== After attribute_goal ============='),
+	nl,
+	print_attr_goal(AttrVars).
+
+remove_nonvars([], []).
+remove_nonvars([H|T], [H|NewT]) :-
+	var(H), !,
+	remove_nonvars(T, NewT).
+remove_nonvars([_|T], NewT) :-
+	remove_nonvars(T, NewT).
+
+print_attributes([]).
+print_attributes([H|T]) :-
+	get_atts(H, AH),
+	writeln(H:AH),
+	print_attributes(T).
+
+print_attr_goal([]).
+print_attr_goal([H|T]) :-
+	attribute_goal(H, GH),
+	write('==> '), writeln(H:GH),
+	print_attr_goal(T).
+
+%-----------------------------------------------------------------------
+
+{   Rel   } :- var( Rel), !, writeln('++INSTANTIATION ERROR'), abort.
 {   R,Rs  } :- !, {R}, {Rs}.
-{   R;Rs  } :- !, ({R} ; {Rs}).			% for entailment checking
+{   R;Rs  } :- !, ({R} ; {Rs}).	
+					% for entailment checking
 {  L < R  } :- !, nf( L-R, Nf), submit_lt( Nf).
 {  L > R  } :- !, nf( R-L, Nf), submit_lt( Nf).
 {  L =< R } :- !, nf( L-R, Nf), submit_le( Nf).
@@ -26,7 +143,7 @@
 { L =\= R } :- !, nf( L-R, Nf), submit_ne( Nf).
 { L =:= R } :- !, nf( L-R, Nf), submit_eq( Nf).
 { L  =	R } :- !, nf( L-R, Nf), submit_eq( Nf).
-{   Rel   } :- raise_exception( type_error({Rel},1,'a constraint',Rel)).
+{  _Rel   } :- writeln('++TYPE ERROR: expected a constraint'), abort.
 
 %
 % s -> c = ~s v c = ~(s /\ ~c) 
@@ -233,7 +350,7 @@ linear_ps( [V^1]) :- var( V).			% excludes sin(_), ...
 % Goal delays until Term gets linear.
 % At this time, Var will be bound to the normalform of Term.
 %
-:- meta_predicate wait_linear( ?, ?, :).
+% :- meta_predicate wait_linear( ?, ?, :).
 %
 wait_linear( Term, Var, Goal) :-
   nf( Term, Nf),
@@ -455,6 +572,11 @@ split( [First|T], H,  I) :-
 %
 % runtime predicate
 %
+
+%-----------------------------------------------------------------------
+% nf_add(As, Bs, Cs) adds two lists, As and Bs, and put the sum in Cs,
+% which is ordered.
+%-----------------------------------------------------------------------
 :- mode nf_add( +, +, ?).
 %
 nf_add( [],	Bs, Bs).
@@ -792,14 +914,14 @@ f02t( v(K,P), T) :-
 
 fn2t( v(K,P),  Term, Op) :-
   ( arith_eval( K=:=1) ->
-      Term = Pt, Op = +
+      Term = Pt, Op = ('+')
   ; arith_eval( K=:= -1) ->
-      Term = Pt, Op = -
+      Term = Pt, Op = '--'
   ; arith_eval( K<0) ->
       arith_eval( -K, Kf),
-      Term = Kf*Pt, Op = -
+      Term = Kf*Pt, Op = '--'
   ;
-      Term = K*Pt, Op = +
+      Term = K*Pt, Op = ('+')
   ),
   p2term( P, Pt).
 

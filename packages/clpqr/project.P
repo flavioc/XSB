@@ -1,3 +1,11 @@
+/* File:      project.P
+** Author(s): Christian Holzbaur (see below)
+**	      (modified by Baoqiu Cui to make it work in XSB)
+**
+** $Id$
+** 
+*/
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  clp(q,r)                                         version 1.3.3 %
 %                                                                 %
@@ -14,25 +22,35 @@
 %
 % Answer constraint projection
 %
-
-:- public project_attributes/2. 		% xref.pl
-
 %
 % interface predicate
 %
 % May be destructive (either acts on a copy or in a failure loop)
 %
+
+:- export project_attributes/2, drop_dep/1, make_target_indep/2,
+	  drop_dep_one/1.
+
+:- import pivot/3 from bv.
+:- import nf_ordering/3, decompose/4, renormalize/2, indep/2 from store.
+:- import get_atts/2, put_atts/2 from atts.
+:- import class_allvars/2 from class.
+:- import arrangement/2 from ordering.
+:- import systems/3, redundancy_vars/1 from redund.
+:- import fm_elim/3 from fourmotz.
+:- import project_nonlin/3 from geler.
+
 project_attributes( TargetVars, Cvas) :-
   sort( TargetVars, Tvs),		% duplicates ?
   sort( Cvas, Avs),			% duplicates ?
   mark_target( Tvs),
-  project_nonlin( Tvs, Avs, NlReachable),
+%  project_nonlin( Tvs, Avs, NlReachable),
   ( Tvs == [] -> 
       drop_lin_atts( Avs)
   ;
       redundancy_vars( Avs),			% redundancy.pl
       make_target_indep( Tvs, Pivots),		
-      mark_target( NlReachable),		% after make_indep to express priority
+      % mark_target( NlReachable),		% after make_indep to express priority
       drop_dep( Avs),
       fm_elim( Avs, Tvs, Pivots),
       impose_ordering( Avs)
@@ -43,10 +61,10 @@ mark_target( [V|Vs]) :-
   put_atts( V, target),
   mark_target( Vs).
 
-mark_keep( []).
-mark_keep( [V|Vs]) :-
-  put_atts( V, keep),
-  mark_keep( Vs).
+% mark_keep( []).
+% mark_keep( [V|Vs]) :-
+%   put_atts( V, keep),
+%   mark_keep( Vs).
 
 %
 % Collect the pivots in reverse order
