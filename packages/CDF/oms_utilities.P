@@ -269,16 +269,16 @@ oms_clean(attribute_function(RelCid),Fix) :-
 
 :- ensure_loaded(oms_init_oms).
 
-build_taxonomy(DataAccessor,_RootID,_Source) :-
+build_taxonomy(DataAccessor,_HookCid,_RootID,_Source) :-
 	retractall(bc_node(_,_)),
 	apply_lambda_fast(DataAccessor,ID,Label),
 	atom_codes(ID,IDC),
 	assert(bc_node(IDC,Label)),
 	fail.
-build_taxonomy(_DataAccessor,RootID,Source) :-
+build_taxonomy(_DataAccessor,HookCid,RootID,Source) :-
 %%	init_oms_rels,
 	bc_node(IDC,Label),
-	find_parent(IDC,RootID,Source,PCid),
+	find_parent(IDC,HookCid,RootID,Source,PCid),
 	atom_codes(ID,IDC),
 	(class(Oid,OldLabel,ID,Source)
 	 ->	(OldLabel \== Label
@@ -287,10 +287,10 @@ build_taxonomy(_DataAccessor,RootID,Source) :-
 	 ;	newClass(Label,PCid,ID,Source,_)
 	),
 	fail.
-build_taxonomy(_,_,_) :-
-	retractall(bc_nod(_,_)).
+build_taxonomy(_,_,_,_) :-
+	retractall(bc_node(_,_)).
 
-find_parent(IDC,RootID,Source,PCid) :-
+find_parent(IDC,HookCid,RootID,Source,PCid) :-
 	lappend(PIDC,Tl,IDC),	% find longest prefix
 	Tl \== [],		% that is proper
 	bc_node(PIDC,PLabel),	% and is id of another node
@@ -298,14 +298,13 @@ find_parent(IDC,RootID,Source,PCid) :-
 	atom_codes(PID,PIDC),
 	(class(PCid,_,PID,Source)
 	 ->	true
-	 ;	find_parent(PIDC,RootID,Source,GPCid),
+	 ;	find_parent(PIDC,HookCid,RootID,Source,GPCid),
 		newClass(PLabel,GPCid,PID,Source,PCid)
 	).
-find_parent(_IDC,RootID,Source,PCid) :-	% has no parent, return root
+find_parent(_IDC,HookCid,RootID,Source,PCid) :-	% has no parent, return root
 	(class(PCid,_,RootID,Source)
 	 ->	true
-	 ;	class(Root,_,'OMS Root','OMS'),
-		newClass(RootID,Root,RootID,Source,PCid)
+	 ;	newClass(RootID,HookCid,RootID,Source,PCid)
 	).
 
 lappend([X|L1],L2,[X|L3]) :- lappend(L1,L2,L3).
