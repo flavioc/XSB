@@ -78,12 +78,7 @@ sym_insert(Name, Arity, Prop, SymTab, Sym) :-
 	( var(Index) ->	% First time we encounter the symbol.
 		Index = Count,
 		New_I is Index+1,
-		(term_set_arg(SymTab,1,New_I,1)
-		 ;
-		 term_set_arg(SymTab,1,Index,1)  % reset on backtracking
-		 %% can't use -1 for pre-image trailing; breaks GC?
-		 %% required to be backtrackable for testretract
-		)
+	        term_set_arg(SymTab,1,New_I,-1)
         ; true
 	).
 
