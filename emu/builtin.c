@@ -123,7 +123,6 @@
 #endif
 
 /*======================================================================*/
-/*======================================================================*/
 
 /* For tip hacking */
 #define CALL_NEXT_TIP 0
@@ -133,6 +132,9 @@
 #define FIRST_TIP 4
 
 /*======================================================================*/
+
+#define DELETED_SET 1
+
 #ifdef HAVE_SOCKET
 #ifdef WIN_NT
 extern FILE *_fdopen(int handle, const char *mode);
@@ -1575,9 +1577,23 @@ int  builtin_call(byte number)
   case DELETE_TRIE:
     if(strcmp(ptoc_string(2),"intern") == 0){
       switch_to_trie_assert;
-      delete_trie(Set_ArrayPtr[ptoc_int(1)]);
-      switch_from_trie_assert;
-      Set_ArrayPtr[ptoc_int(1)] = NULL;
+      tmpval = ptoc_int(1);
+      /*
+       * We can only delete a valid NODEptr, so that only those sets
+       * that were used before can be put into the free set list.
+       */
+      if ((Set_ArrayPtr[tmpval] != NULL) &&
+	  (!((int) Set_ArrayPtr[tmpval] & 0x3))) {
+	delete_trie(Set_ArrayPtr[tmpval]);
+	switch_from_trie_assert;
+        /*
+	 * Save the value of first_free_set into Set_ArrayPtr[tmpval].
+	 * Some simple encoding is needed, because in trie_interned/4 we
+	 * have to know this set is already deleted.
+	 */
+	Set_ArrayPtr[tmpval] = (NODEptr) (first_free_set << 2 | DELETED_SET);
+	first_free_set = tmpval;
+      }
     }
     else{
       xsb_abort("Unknown Usage in intern:delete_trie/2\n");
