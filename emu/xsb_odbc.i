@@ -25,7 +25,7 @@
 
 #ifdef XSB_ODBC
 
-case ODBC_QUERY:
+case ODBC_EXEC_QUERY:
    switch (ptoc_int(1)) {
       case ODBC_CONNECT:
          ODBCConnect();
