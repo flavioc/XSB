@@ -69,6 +69,12 @@ storage_delete_fact(StorageName,Fact,Deleted) :-
 	;   Deleted=0    % non-existing fact: no action
 	).
 
+%% deletes the whole trie
+storage_delete_all(StorageName) :- 
+	triehandle_for_storage(StorageName,H),
+	conset(StorageName,0), %% record that trie has been deleted
+	delete_trie(H).
+
 
 %% Find fact in storage
 storage_find_fact(StorageName,Fact) :-
