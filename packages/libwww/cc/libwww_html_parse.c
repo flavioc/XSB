@@ -597,7 +597,11 @@ PRIVATE BOOL delete_HText_obj(HText *me)
 
   /* close open tags on stack */
   for (i=me->stackptr; i>=0; i--)
-    pop_element(me);
+    if (parsing(me))
+      pop_element(me);
+    else
+      pop_suppressed_element(me);
+
   /* terminate the parsed prolog terms list */
   c2p_nil(me->parsed_term_tail);
 
