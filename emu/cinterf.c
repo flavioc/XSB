@@ -440,7 +440,8 @@ DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
       return FALSE;
     
     head_char = (char) int_val(head);
-    if (head_char < 0 || head_char > 255) 
+    /* ' ' is the lowest printable ascii and '~' is the highest */
+    if (head_char < (int)' ' || head_char > (int)'~')
       return FALSE;
 
     if (escape_mode)
