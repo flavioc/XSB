@@ -72,6 +72,7 @@ AC_ARG_ENABLE(optimization,
 
 
 
+
 # make sure new files are readable 
 umask 022
 
@@ -361,6 +362,15 @@ dnl If on AIX, define _ALL_SOURCE, which allows the use of some BSD functions
 dnl This must be AFTER AC_PROG_CC
 AC_AIX
 
+AC_MSG_CHECKING(whether we are using SunPro C)
+AC_TRY_COMPILE([],[#ifndef __SUNPRO_C
+#error Not a  SunPro compiler :-(
+******* ======= ******** &&&&&&&&
+#endif
+], __sunpro_c=yes, __sunpro_c=no)
+AC_MSG_RESULT($__sunpro_c)
+
+
 dnl set some basic flags
 case $CC in
    gcc) # This is the optimization flag used for emuloop.c. 
@@ -368,7 +378,11 @@ case $CC in
 	c_low_opt_level="-O4"
 	CFLAGS="-ansi -pedantic -Wall"
 	;;
-   cc)  c_low_opt_level="-O4"
+   cc)  if test -z "$__sunpro_c"; then
+	   c_low_opt_level="-O4"
+	else
+	   c_low_opt_level="-xO4"
+        fi
 	CFLAGS=""
 	;;
    acc) c_low_opt_level="-O2"
@@ -380,6 +394,7 @@ dnl In XSB, CC is the C compiler to be used with the C interface
 dnl Could be different from C compiler with which XSB was compiled, 
 dnl if it was done with a cross-compiler.
 AC_DEFINE_UNQUOTED(CC, "${CC}")
+
 
 dnl Let autoconf take care of the "inline" and "const" keywords.
 if test -z "$with_os" ; then
@@ -685,7 +700,11 @@ fi
 
 # Normally, the optimization level will be O4. 
 # SGI64 must have O1 and 32 bit SGI's can have O2
-c_opt_level="-O4"
+if test -z "$__sunpro_c"; then
+   c_opt_level="-O4"
+else
+   c_opt_level="-xO4"
+fi
 LDFLAGS="-lm"
 
 # Set OS-specific variables for XSB
