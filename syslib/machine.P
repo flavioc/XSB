@@ -186,7 +186,14 @@ trimcore :- '_$builtin'(TRIMCORE).
 put_attributes(_Var, _VNew) :- '_$builtin'(PUT_ATTRIBUTES).
 get_attributes(_Var, _V, _OldMask) :- '_$builtin'(GET_ATTRIBUTES).
 delete_attributes(_Var) :- '_$builtin'(DELETE_ATTRIBUTES).
-attv_unify(_Var, _Value) :- '_$builtin'(ATTV_UNIFY).
+
+'_$attv_unify'(_Var,_Value) :- '_$builtin'(ATTV_UNIFY).
+
+attv_unify(Var, Value) :-
+	(   is_attv(Var)
+	->  '_$attv_unify'(Var,Value)
+	;   Var = Value
+	).
 
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN emu/private_builtin.c to UNDERSTAND HOW 
