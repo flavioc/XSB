@@ -174,12 +174,15 @@ phrase(Phrase_Type, List, Rest) :-
 
 
 tphrase(Phrase_Type) :-
+	tphrase(Phrase_Type,End,End).
+
+tphrase(Phrase_Type, To, End) :-
 	(nonvar(Phrase_Type)
 	 ->     (num_words(End)
                  ->     true
 	         ;      abort('No input for tphrase/1')
 	        ),
-		dcg_body_nonvar(Phrase_Type, 0, End, Goal),
+		dcg_body_nonvar(Phrase_Type, 0, To, Goal),
 	        call(Goal)
 	; abort('Uninstantiated argument 1 of tphrase/1')
 	).

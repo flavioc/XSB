@@ -224,6 +224,7 @@ standard_symbol(sk_not, 1, tables).
 standard_symbol(told, 0, standard).
 standard_symbol(tphrase, 1, dcg).
 standard_symbol(tphrase, 2, dcg).
+standard_symbol(tphrase, 3, dcg).
 standard_symbol(tphrase_set_string, 1, dcg).
 standard_symbol(tphrase_string_length, 1, dcg).
 standard_symbol(true, 0, standard).
