@@ -319,9 +319,9 @@ arch_install_config_libdir=${arch_install_config_prefix}/lib
 
 
 dnl When running autoheader, uncoment thse 2 lines and comment the next 2.
-dnl Then move config.h.in to def_config.h.
+dnl Then move config.h.in to def_config.in.
 dnl There probably will be no need to run autoheader any more!
-dnl AC_CONFIG_HEADER([${arch_config_prefix}/config.h:def_config.h
+dnl AC_CONFIG_HEADER([${arch_config_prefix}/config.h:def_config.in
 dnl  ${arch_config_prefix}/debug.h:def_debug.in])
 
 AC_CONFIG_HEADER([${arch_config_prefix}/config.h:${config_dot_h_templ}
