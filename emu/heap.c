@@ -144,7 +144,6 @@ static int ls_early_reset;
 
 
 /* ways to count gc and control the output during a gc */
-
 static int printnum = 0 ;
 static int num_gc = 0 ;
 
@@ -162,10 +161,10 @@ static int print_anyway = 0 ;
 #define print_on_gc 0
 #endif
 
-/* if SAFE_GC is defined, some more checks are made after gc */
+/* if SAFE_GC is defined, some more checks are made after gargage collection */
 /*#define SAFE_GC*/
 
-/* if VERBOSE_GC is defined, gc prints its statistics */
+/* if VERBOSE_GC is defined, garbage collection prints its statistics */
 /*#define VERBOSE_GC*/
 
 
@@ -302,11 +301,11 @@ static char * pr_tr_marked(CPtr cell_ptr)
 
 /*-------------------------------------------------------------------------*/
 
-/* mark_cell keeps an explicit stack
-   marking without using such a stack, as in SICStus, should not be considered
-   it is nice, but slower and more prone to errors
-   recursive marking is the only alternative in my opinion, but one can
-   construct too easely examples that overflow the C-stack
+/* mark_cell() keeps an explicit stack to perform marking.
+   Marking without using such a stack, as in SICStus, should not be
+   considered.  It is nice, but slower and more prone to errors.
+   Recursive marking is the only alternative in my opinion, but one can
+   construct too easily examples that overflow the C-stack - Bart Demoen.
 */
 
 #define MAXS 3700
@@ -1268,10 +1267,22 @@ void print_chat(int add)
     }
 
   do
-    { fprintf(where,"CHAT area - %p\n",initial_pheader);
-      fprintf(where,"--------------------\n");
+    {
+      CPtr b = (CPtr)(&chat_get_cons_start(initial_pheader));
+
+      if (is_consumer_choicepoint(b)) fprintf(where,"CHAT area of a consumer");
+      else if (is_compl_susp_frame(b))
+	     fprintf(where,"CHAT area of a completion suspension");
+           else fprintf(where,"CHAT area of UNKNOWN TYPE");
+#ifdef DEBUG
+      fprintf(where," (subgoal = ");
+      print_subgoal(where, (SGFrame)nlcp_subgoal_ptr(b));
+      fprintf(where,")");
+#endif
+      fprintf(where," @ %p:\n",initial_pheader);
+      fprintf(where,"----------------------\n");
       fprintf(where,"Arguments\n");
-      fprintf(where,"--------------------\n");
+      fprintf(where,"----------------------\n");
 
       startp = (CPtr)chat_get_args_start(initial_pheader);
       len = chat_get_nrargs(initial_pheader);
@@ -1281,7 +1292,8 @@ void print_chat(int add)
 	    { j = sizeof(CPtr); len -= sizeof(CPtr); }
 	  else { j = len; len = 0; }
 	  while (j--)
-	    { fprintf(where,"chatargs('%p',%3d,%1d,",startp,i,chat_is_chained(startp));
+	    { fprintf(where,"chatargs('%p',%3d,%1d,",
+		      startp,i,chat_is_chained(startp));
 	      print_cell(where,startp,FROM_CP);
 	      startp++ ; i++;
 	    }
@@ -1291,7 +1303,8 @@ void print_chat(int add)
       fprintf(where,"Trail\n");
       pheader = chat_get_father(initial_pheader);
       while (pheader != NULL)
-	{ fprintf(where,"increment %p marked = %d\n",pheader,chat_area_imarked(pheader));
+	{ fprintf(where,"increment %p marked = %d\n",
+		  pheader,chat_area_imarked(pheader));
 	   startp = (CPtr)chat_get_tr_start(pheader);
 	  len = chat_get_tr_length(pheader);
 
@@ -1301,7 +1314,8 @@ void print_chat(int add)
 	      { j = sizeof(CPtr); len -= sizeof(CPtr); }
 	    else { j = len; len = 0; }
 	    while (j--)
-	      { fprintf(where,"chattrail('%p',%3d,%1d,",startp,i,chat_is_chained(startp));
+	      { fprintf(where,"chattrail('%p',%3d,%1d,",
+			startp,i,chat_is_chained(startp));
 	        print_cell(where,startp,FROM_CP);
 		startp++ ; i++;
 	      }
