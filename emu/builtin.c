@@ -244,6 +244,7 @@ int readmsg(SOCKET sockfd, char *buff, int maxbuff)
  */
 Cell ptoc_tag(int regnum)
 {
+  /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
   deref(addr);
@@ -253,6 +254,7 @@ Cell ptoc_tag(int regnum)
 
 DllExport prolog_int call_conv ptoc_int(int regnum)
 {
+  /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
   /* deref and then check the type */
@@ -273,6 +275,7 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
 
 DllExport prolog_float call_conv ptoc_float(int regnum)
 {
+  /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
   /* deref and then check the type */
@@ -293,6 +296,7 @@ DllExport prolog_float call_conv ptoc_float(int regnum)
 
 DllExport char* call_conv ptoc_string(int regnum)
 {
+  /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
   
   /* deref and then check the type */
@@ -339,6 +343,7 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
 
 DllExport void call_conv ctop_float(int regnum, prolog_float value) /* from float value form an int node */
 {
+  /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
   deref(addr);
@@ -348,8 +353,10 @@ DllExport void call_conv ctop_float(int regnum, prolog_float value) /* from floa
   else fprintf(stderr, "Wrong arg in ctop_float %lux\n", addr);
 }
 
-DllExport void call_conv ctop_string(int regnum, char *value) /* from string form a string node */
+/* take a C string, form a string node */
+DllExport void call_conv ctop_string(int regnum, char *value)
 {
+  /* reg is global array in register.h */
   register Cell addr = cell(reg+regnum);
 
   deref(addr);
