@@ -257,9 +257,9 @@ inline static xsbBool file_function(CTXTdecl)
 	open_files[io_port].file_name = NULL;
 	open_files[io_port].io_mode = '\0';
 	open_files[io_port].stream_type = 0;
-	if (flags[CURRENT_INPUT] == io_port) 
+	if (flags[CURRENT_INPUT] == (Cell) io_port) 
 	  { flags[CURRENT_INPUT] = STDIN;}
-	if (flags[CURRENT_OUTPUT] == io_port) 
+	if (flags[CURRENT_OUTPUT] == (Cell) io_port) 
 	  { flags[CURRENT_OUTPUT] = STDOUT;}
       }
     break;

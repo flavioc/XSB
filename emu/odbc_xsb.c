@@ -742,7 +742,7 @@ void SetBindVarNum(CTXTdecl)
     xsb_abort("[ODBC] Not enough memory for cur->BindTypes!");
 }
 
-void call_conv write_canonical_term(Cell prologterm);
+DllExport void call_conv write_canonical_term(Cell prologterm);
 extern char *wcan_string;
 extern int wcan_disp;
 extern int letter_flag;
