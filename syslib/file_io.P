@@ -217,17 +217,17 @@ file_size(FileName, Size) :- file_stat(FileName,FILE_STAT_SIZE,Size).
 ****************************************************************/
 
 print_file_contents(Filename) :-
-	stat_flag(CURRENT_OUTPUT, ToOIport),  % current output
-	print_file_contents(Filename, ToOIport).
+	stat_flag(CURRENT_OUTPUT, ToIOport),  % current output
+	print_file_contents(Filename, ToIOport).
 
-print_file_contents(FileName, ToOIport) :-
-	file_open(FileName, OREAD, Fdes),
-	print_fd_contents(Fdes, ToOIport),
-	file_close(Fdes).
-print_fd_contents(Fdes, ToOIport) :-
-	(file_read_line(Fdes, Line, _) -> file_write(ToOIport, Line)),
-	print_fd_contents(Fdes, ToOIport),
+print_file_contents(FileName, ToIOport) :-
+	file_open(FileName, OREAD, FromIOport),
+	copyIOport(FromIOport, ToIOport),
+	file_close(FromIOport).
+copyIOport(FromIOport, ToIOport) :-
+	(file_read_line(FromIOport, Line, _) -> file_write(ToIOport, Line)),
+	copyIOport(FromIOport, ToIOport),
 	fail.        	 %% so as to not leave choice points around
-print_fd_contents(_,_).
+copyIOport(_,_).
 
 
