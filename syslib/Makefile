@@ -27,7 +27,8 @@ OBJEXT=.xwam
 
 ALL =	assert${OBJEXT} atts${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
 	curr_sym${OBJEXT} dbclause${OBJEXT} \
-	dcg${OBJEXT} debugger${OBJEXT} domain${OBJEXT} eval${OBJEXT}  \
+	dcg${OBJEXT} debugger${OBJEXT} domain${OBJEXT}\
+	error_handler${OBJEXT}  eval${OBJEXT}  \
 	file_io${OBJEXT} \
 	file_op${OBJEXT} gensym${OBJEXT} hilogsym${OBJEXT} loader${OBJEXT}  \
 	machine${OBJEXT} num_vars${OBJEXT} \

@@ -95,7 +95,7 @@ eval_cmdline_goal :-
 eval_cmdline_goal(FileDes) :-
 	file_read(FileDes, Goal),
 	Goal \= end_of_file,
-	(call((Goal,!)) -> true ; true),
+	(catch(call((Goal,!)),Msg,default_error_handler(Msg)) -> true ; true),
 	eval_cmdline_goal(FileDes).
 eval_cmdline_goal(FileDes) :- file_close(FileDes).
 
