@@ -22,6 +22,6 @@
 ** 
 */
 
-:- import member/2 from basics.
+:- import member/2, append/3 from basics.
 :- import close_open_tables/0 from machine.
 :- import trie_interned/3 from intern.

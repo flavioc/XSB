@@ -39,6 +39,7 @@ leaf(G) :- functor(G, member, 2).
 
 show(G) :- functor(G, rec_models, 2).
 
-allowed(G) :- functor(G, models, 2).
+%allowed(G) :- functor(G, models, 2).
+allowed(G) :- G =.. [models, _, F], F \= form(_).
 allowed(G) :- functor(G, transition, 3). %G =.. [transition, _, A, _], A\=nop.
 allowed(G) :- functor(G, ancestor, 1).

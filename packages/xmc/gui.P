@@ -59,7 +59,8 @@ get_models(Process, Formula, Models) :-
 	start(Process, StartState),
 	Models = rec_models(StartState, Formula).
 
-%%----------------------------------------------------------------%% for justifier GUI
+%%----------------------------------------------------------------
+%% for justifier GUI
 
 begin_justification :-
 	resolve_file_name('mucalculus.P', MCFile),
@@ -73,7 +74,8 @@ resolve_file_name(Name, FullName) :-
 	str_cat(D, S, D1),
 	str_cat(D1, Name, FullName). 
 
-:- import node/3 from usermod.
+:- dynamic '$justifier_trie'/1.
+
 get_process_list(InNode, Process, Line,Char, VarbindingsString) :-
 %
 % Patch to fix a wierd problem with getting variable bindings from the gui
@@ -119,16 +121,13 @@ conv_binding_string_1([(Name = Value) | L], OldString, String) :-
 	conv_binding_string_1(L, NewString, String).
 
 getroot(Predicate, Id, Display, Truth) :-
-	justification_root(Predicate, node(Id, Pred, Truth)),
+	justification_root(Predicate, node(Id, Pred, _, Truth)),
 	translate_node(Pred, Display).
 
 getchild(NodeID, Id, Display, Truth) :-
-	get_child(NodeID, node(Id, Pred, Truth)),
+	get_child(NodeID, node(Id, Pred, _, Truth)),
 	translate_node(Pred, Display).
 
-get_truth(NodeID, Truth) :-
-	node(NodeID, _, Truth).
-	     
 translate_node(Pred, Display) :-
 	( (Pred =.. [models, IState, Formula]; 
 		Pred =.. [rec_models, IState, FName], Formula = form(FName))
@@ -162,7 +161,6 @@ translate_node(Pred, Display) :-
 					args(SN1, Act))
 	    )
 	 ; Pred =.. [ancestor, P] ->
-%		node(AID, P, _),
 		translate_node(P, D),
 		fmt_write_string(Display, "Ancestor:   %S", args(D))
 
@@ -231,7 +229,7 @@ convert_formula(fBoxMinus(A,X), Form) :-
 	convert_formula(X, F),
 	fmt_write_string(Form, "[-%S] %s", args(B,F)).
 
-convert_formula(fBoxSet(Au,X), Form) :-
+convert_formula(fBoxSet(A,X), Form) :-
 	convert_set(A, B),
 	convert_formula(X, F),
 	fmt_write_string(Form, "[%S] %s", args(B,F)).
