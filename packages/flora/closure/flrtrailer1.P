@@ -98,6 +98,150 @@
 
 
 /*****************************************************************************
+  rules for nonmonotonic inheritance of behavior
+*****************************************************************************/
+
+:- table '_$_$_flora_fd'/3.
+:- table '_$_$_flora_mvd'/3.
+:- table '_$_$_flora_ifd'/3.
+:- table '_$_$_flora_imvd'/3.
+:- table '_$_$_flora_defined_fd'/2.
+:- table '_$_$_flora_defined_mvd'/2.
+:- table '_$_$_flora_defined_ifd'/2.
+:- table '_$_$_flora_defined_imvd'/2.
+:- table '_$_$_flora_overwritten_fd'/3.
+:- table '_$_$_flora_overwritten_mvd'/3.
+:- table '_$_$_flora_overwritten_ifd'/3.
+:- table '_$_$_flora_overwritten_imvd'/3.
+:- table '_$_$_flora_conflict_fd'/3.
+:- table '_$_$_flora_conflict_ifd'/3.
+:- table '_$_$_flora_conflict_mvd'/3.
+:- table '_$_$_flora_conflict_imvd'/3.
+
+'_$_$_flora_fd'(Object,Method,Value) :-
+	%% If Object,Method are ground, check if Object[Method->...]
+	%% is defined right away --an optimization
+	(ground(Object), ground(Method) ->
+	    tnot('_$_$_flora_defined_fd'(Object,Method)),
+	    '_$_$_flora_isa'(Object,Class),
+	    '_$_$_flora_ifd'(Class,Method,Value)
+	  ;
+	    '_$_$_flora_isa'(Object,Class),
+	    '_$_$_flora_ifd'(Class,Method,Value),
+	    tnot('_$_$_flora_defined_fd'(Object,Method))
+	),
+	tnot('_$_$_flora_overwritten_fd'(Object,Class,Method)),
+	tnot('_$_$_flora_conflict_fd'(Object,Class,Method)).
+
+/* Should we add '_$_$_flora_eql' everywhere? Why not make '_$_$_flora_isa',
+    '_$_$_flora_subclass', '_$_$_flora_ifd', etc. friendly to eql, so that 
+   we won't need to check for equality everywhere?
+   We need to take care of equality in these rules below.
+*/
+'_$_$_flora_defined_fd'(Object,Method) :- '_$_$_flora_fd'(Object,Method,_).
+
+'_$_$_flora_overwritten_fd'(Object,Class,Method) :-
+	'_$_$_flora_isa'(Object,SubClass),
+	'_$_$_flora_subclass'(SubClass,Class),
+	SubClass \= Class,
+	'_$_$_flora_ifd'(SubClass,Method,_).
+
+%% When this is called, Object always belongs to Class
+'_$_$_flora_conflict_fd'(Object,Class,Method) :-
+	'_$_$_flora_defined_ifd'(Class1,Method),
+	'_$_$_flora_isa'(Object,Class1),
+	tnot('_$_$_flora_subclass'(Class1,Class)),
+	tnot('_$_$_flora_subclass'(Class,Class1)).
+
+
+'_$_$_flora_mvd'(Object,Method,Value) :-
+	(ground(Object), ground(Method) ->
+	    tnot('_$_$_flora_defined_mvd'(Object,Method)),
+	    '_$_$_flora_isa'(Object,Class),
+	    '_$_$_flora_imvd'(Class,Method,Value)
+	  ;
+	    '_$_$_flora_isa'(Object,Class),
+	    '_$_$_flora_imvd'(Class,Method,Value),
+	    tnot('_$_$_flora_defined_mvd'(Object,Method))
+	),
+	tnot('_$_$_flora_overwritten_mvd'(Object,Class,Method)),
+	tnot('_$_$_flora_conflict_mvd'(Object,Class,Method)).
+
+'_$_$_flora_defined_mvd'(Object,Method) :- '_$_$_flora_mvd'(Object,Method,_).
+
+'_$_$_flora_overwritten_mvd'(Object,Class,Method) :-
+	'_$_$_flora_isa'(Object,SubClass),
+	'_$_$_flora_subclass'(SubClass,Class),
+	SubClass \= Class,
+	'_$_$_flora_imvd'(SubClass,Method,_).
+
+'_$_$_flora_conflict_mvd'(Object,Class,Method) :-
+	'_$_$_flora_defined_imvd'(Class1,Method),
+	'_$_$_flora_isa'(Object,Class1),
+	tnot('_$_$_flora_subclass'(Class1,Class)),
+	tnot('_$_$_flora_subclass'(Class,Class1)).
+
+
+'_$_$_flora_ifd'(Class,Method,Value) :-
+	(ground(Class), ground(Method) ->
+	    tnot('_$_$_flora_defined_ifd'(Class,Method)),
+	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_ifd'(Super,Method,Value)
+	  ;
+	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_ifd'(Super,Method,Value),
+	    tnot('_$_$_flora_defined_ifd'(Class,Method))
+	),
+	tnot('_$_$_flora_overwritten_ifd'(Class,Super,Method)),
+	tnot('_$_$_flora_conflict_ifd'(Class,Super,Method)).
+
+'_$_$_flora_defined_ifd'(Class,Method) :- '_$_$_flora_ifd'(Class,Method,_).
+
+'_$_$_flora_overwritten_ifd'(Class,Super,Method) :-
+	'_$_$_flora_subclass'(Class,S),
+	'_$_$_flora_subclass'(S,Super),
+	Super \= S,
+	'_$_$_flora_ifd'(S,Method,_).
+
+%% Note: when this is called, Class is always a subclass of Super
+'_$_$_flora_conflict_ifd'(Class,Super,Method) :-
+	'_$_$_flora_defined_ifd'(Super1,Method),
+	'_$_$_flora_subclass'(Class,Super1),
+	tnot('_$_$_flora_subclass'(Super1,Super)),
+	tnot('_$_$_flora_subclass'(Super,Super1)).
+
+
+'_$_$_flora_imvd'(Class,Method,Value) :-
+	(ground(Class), ground(Method) ->
+	    tnot('_$_$_flora_defined_imvd'(Class,Method)),
+	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_imvd'(Super,Method,Value)
+	  ;
+	    '_$_$_flora_subclass'(Class,Super),
+	    '_$_$_flora_imvd'(Super,Method,Value),
+	    tnot('_$_$_flora_defined_imvd'(Class,Method))
+	),
+	tnot('_$_$_flora_overwritten_imvd'(Class,Super,Method)),
+	tnot('_$_$_flora_conflict_imvd'(Class,Super,Method)).
+
+'_$_$_flora_defined_imvd'(Class,Method) :- '_$_$_flora_imvd'(Class,Method,_).
+
+'_$_$_flora_overwritten_imvd'(Class,Super,Method) :-
+	'_$_$_flora_subclass'(Class,S),
+	'_$_$_flora_subclass'(S,Super),
+	Super \= S,
+	'_$_$_flora_imvd'(S,Method,_).
+
+%% Note: when this is called, Class is always a subclass of Super
+'_$_$_flora_conflict_imvd'(Class,Super,Method) :-
+	'_$_$_flora_defined_imvd'(Super1,Method),
+	'_$_$_flora_subclass'(Class,Super1),
+	tnot('_$_$_flora_subclass'(Super1,Super)),
+	tnot('_$_$_flora_subclass'(Super,Super1)).
+
+
+
+/*****************************************************************************
   rules for congruence due to single-valued methods
 *****************************************************************************/
 :- table '_$_$_flora_eql'/2.
