@@ -74,7 +74,7 @@ extern void total_stat(double);
 extern void perproc_stat(void), perproc_reset_stat(void), reset_stat_total(void); 
 
 #ifdef LINUX
-struct sigaction act, oact;
+static struct sigaction act, oact;
 #endif
 
 void (*xsb_default_segfault_handler)(int); /* where the previous value of the
@@ -104,7 +104,7 @@ void add_interrupt(Cell op1, Cell op2) {
 }
 
 
-Cell build_interrupt_chain() {
+static Cell build_interrupt_chain(void) {
   Cell head;
   CPtr tmp = &head;
   int num, i;
@@ -208,7 +208,7 @@ static Pair build_call(Psc psc)
 
   callstr = (Pair)hreg;	/* save addr of new structure rec */
   new_heap_functor(hreg, psc); /* set str psc ptr */
-  for (i=1; i <= (int)get_arity(psc); i++) {
+  for (i=1; i <= get_arity(psc); i++) {
     arg = cell(reg+i);
     nbldval(arg);
   }
@@ -264,7 +264,7 @@ Psc synint_proc(Psc psc, int intcode, byte *cur_inst)
 }
 
 /* change from Jiyangs way of doing things. */
-void keyint_proc(int sig)
+inline static void keyint_proc(int sig)
 {
   *asynint_ptr |= KEYINT_MARK;
 }
