@@ -45,6 +45,32 @@ compile_so(Path, COptions, LdOptions) :-
 	parse_filename(Path, Dir, BaseName, _Extension),
 	fmt_write_string(PathSansExt, '%s/%s', args(Dir,BaseName)),
 	compile_c(BaseName, PathSansExt, COptions, Dir, LdOptions, _, _).
+
+
+%% User-level predicate that yields the flag suitable for defining 
+%% the runtime loader library search path. This flag (along with the string 
+%% dir:dir:dir should be added to ldoptions when the foreign module 
+%% itself dynamically links with other C libraries. See packages/libwww/ 
+%% for an example.
+%% If this predicate fails to return an appropriate flag, things might still 
+%% work, if the OS allows to change LD_LIBRARY_PATH at runtime, 
+%% because XSB adds the -L libraries to this environment variable.
+%% The Hints argument is currently ignored. Will be used to allow the 
+%% application to provide hints that can help find the right runtime flag.
+runtime_loader_flag(_Hints, Flag) :-
+	xsb_configuration(configuration, Configuration),
+	(   str_sub(solaris, Configuration)
+	->  Flag = '-R'
+	;   str_sub(linux, Configuration)
+	->  Flag = '-Wl,-R'
+	;   str_sub(netbsd, Configuration)
+	->  Flag = '-Wl,-R'
+	;   str_sub(freebsd, Configuration)
+	->  Flag = '-R'
+	;   str_sub(openbsd, Configuration)
+	->  Flag = '-R'
+	;   fail
+	).
 	
 
 

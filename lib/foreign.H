@@ -24,8 +24,7 @@
 */
 
 
-:- export compile_cH/5.
-:- export compile_so/3.
+:- export compile_cH/5, compile_so/3, runtime_loader_flag/2.
 
 :- import shell/1 from shell.
 :- import asm_magic/1 from asm.
