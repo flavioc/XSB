@@ -80,8 +80,10 @@ typedef Cell *CPtr;
 
 #ifdef BITS64
 typedef long Integer ;
+typedef unsigned long UInteger ;
 #else
 typedef int Integer ;
+typedef unsigned int UInteger ;
 #endif
  
 #ifdef BITS64
@@ -171,10 +173,10 @@ extern Float getfloatval(Cell);
 
 #define enc_int(val) ( ((Integer)(val) & 0xc0000003) ?\
 		       (((Integer)(val) << 4) | 0x08) :\
-		       ((Integer)(val) << 2) )
+		       ((UInteger)(val) << 2) )
 #define dec_int(val) ( ((Integer)(val) & 0x08) ?\
 		       ((Integer)(val) >> 4) :\
-		       (((Integer)(val) >> 2) & 0x3ffffffc) )
+		       (((UInteger)(val) >> 2) & 0x3ffffffc) )
 
 #define enc_addr(addr) ((Cell)(addr) << 1)
 #define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)
