@@ -1,7 +1,6 @@
 *.cache
-*.status
 *.log
-makexsb
+*.status
 Installation*
-makexsb$
-configure$
+configure
+makexsb
