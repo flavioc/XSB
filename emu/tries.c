@@ -687,14 +687,13 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  *----------------------------------------------------------------------*/
 
 BTNptr variant_trie_search(int arity, CPtr cptr,
-			    CPtr subgoal_ptr, int *flagptr)
+			   CPtr subgoal_ptr, int *flagptr)
 {
     Psc   psc;
     CPtr  xtemp1;
     int   i, j, flag = 1;
     Cell  tag = FREE, item;
     ALNptr answer_node;
-
 
     ans_chk_ins++; /* Counter (answers checked & inserted) */
 

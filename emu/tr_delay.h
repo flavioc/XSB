@@ -47,16 +47,18 @@
 #ifdef DEBUG_DELAY
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
+    SGFrame subgoal;                                                    \
+                                                                        \
     if (is_conditional_answer(NodePtr)) {				\
       fprintf(stddbg, "Trie-Code returning a conditional answer for ");	\
-      SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));			\
-      print_subgoal(stddbg, (SGFrame) SUBGOAL);				\
+      subgoal = asi_subgoal(Delay(NodePtr));	        		\
+      print_subgoal(stddbg, subgoal);			        	\
       fprintf(stddbg, " (positively delaying)\n");			\
       fprintf(stddbg, ">>>> In handle_conditional_answers macro: \n");  \
       fprintf(stddbg, ">>>>     num_vars_in_var_regs = %d\n",           \
                       num_vars_in_var_regs);			        \
       if (num_vars_in_var_regs == -1) {					\
-	delay_positively(SUBGOAL, NodePtr,				\
+	delay_positively(subgoal, NodePtr,				\
 			 makestring((char *) ret_psc[0]));		\
       }									\
       else {								\
@@ -72,17 +74,19 @@
 	    fprintf(stddbg, "\n");					\
 	  }								\
 	}								\
-	delay_positively(SUBGOAL, NodePtr, makecs(temp_hreg));		\
+	delay_positively(subgoal, NodePtr, makecs(temp_hreg));		\
       }									\
     }									\
   }
 #else
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
+    SGFrame subgoal;                                                    \
+                                                                        \
     if (is_conditional_answer(NodePtr)) {				\
-      SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));			\
+      subgoal = asi_subgoal(Delay(NodePtr));			        \
       if (num_vars_in_var_regs == -1) {					\
-	delay_positively(SUBGOAL, NodePtr,				\
+	delay_positively(subgoal, NodePtr,				\
 			 makestring((char *) ret_psc[0]));		\
       }									\
       else {								\
@@ -94,7 +98,7 @@
 	    cell(hreg++) = (Cell) var_regs[i]; /* new */		\
 	  }								\
 	}								\
-	delay_positively(SUBGOAL, NodePtr, makecs(temp_hreg));		\
+	delay_positively(subgoal, NodePtr, makecs(temp_hreg));		\
       }									\
     }									\
   }
@@ -102,8 +106,8 @@
 #else  /* IGNORE_DELAYVAR */
 #define handle_conditional_answers {			\
   if (is_conditional_answer(NodePtr)) {			\
-    SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));	\
-    delay_positively(SUBGOAL, NodePtr,			\
+    SGFrame subgoal = asi_subgoal(Delay(NodePtr));	\
+    delay_positively(subgoal, NodePtr,			\
 		     makestring((char *) ret_psc[0]));	\
   }							\
 }

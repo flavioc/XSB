@@ -216,26 +216,13 @@ static int emuloop(byte *startaddr)
   register Cell op1, op2;	/* (*CPtr) */
   CPtr op3;
   byte flag = READFLAG;  	/* read/write mode flag */
-  Cell opa[3]; 
   int  i, j, arity;	/* to unify subfields of op1 and op2 */
   int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
 #if (defined(GC) && defined(GC_TEST))
 #define GC_INFERENCES 66 /* make sure the garbage collection test is hard */
   static int infcounter = 0;
 #endif
-  int   xflag;
-  CPtr  xtemp1, xtemp2, xtemp3, xtemp5, xcurcall;
-  char  message[80];
-
-/* for slginsts.i
-   -------------- */
-  CallLookupResults lookupResults;
-  Cell  CallNumVar;	/* number of vars (including attvs) in the call */
-/*   Cell  CallNumAttv; */	/* number of attvs in the call */
-/*   Integer tmp;	 */	/* used to get CallNumVar & CallNumAttv */
-  ALNptr OldRetPtr;
-  NODEptr TrieRetPtr;
-
+  CPtr  xtemp1, xtemp2;
 
   xsb_segfault_message = xsb_default_segfault_msg;
   rreg = reg; /* for SUN */
@@ -728,6 +715,8 @@ contcase:     /* the main loop */
   sotd2: goto contcase;
       
   case switchon3bound: /* RRR-L-L */
+  {
+    Cell opa[3]; 
     /* op1 is register, op2 is hash table offset, op3 is modulus */
     if (*lpcreg == 0) { lpcreg++; opa[0] = 0; }
     else opa[0] = (Cell)opreg;
@@ -771,6 +760,7 @@ contcase:     /* the main loop */
     }
     lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
   sob3d2: goto contcase;
+  }
 
   case trymeorelse: /* PPA-L */
     pppad;
@@ -1246,9 +1236,11 @@ contcase:     /* the main loop */
     else lpcreg = startaddr;  /* first instruction of entire engine */
     goto contcase;
 
-  default: 
+  default: {
+    char message[80];
     sprintf(message, "Illegal opcode hex %x", *--lpcreg); 
     xsb_exit(message);
+  }
 } /* end of switch */
 
 
@@ -1332,7 +1324,6 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
    char *startup_file;
    FILE *fd;
    Cell magic;
-   char message[256];
    static double realtime;	/* To retain its value across invocations */
 
    extern void dis(int);
@@ -1369,6 +1360,7 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
      fd = fopen(startup_file, "rb");   /* "b" needed for DOS. -smd */
      if (!fd) {
+       char message[256];
        sprintf(message, "The startup file, %s, could not be found!",
 	       startup_file);
        xsb_exit(message);

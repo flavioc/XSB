@@ -31,7 +31,7 @@
  * to fail over them, else continue forward execution
  * orig_breg is the address of the TCP
  */
-CPtr sched_answers(CPtr subg_struct, CPtr orig_breg, int leader) {
+static CPtr sched_answers(SGFrame subg_struct, CPtr orig_breg, int leader) {
   ALNptr tmp_ret_ptr;
   CPtr first_sched_node, prev_node, active_node;
 
@@ -109,7 +109,7 @@ CPtr sched_answers(CPtr subg_struct, CPtr orig_breg, int leader) {
  * I recall that kostis mentioned cps should not be relinked
  * I cannot remember why...
  */
-CPtr find_fixpoint(CPtr subg, CPtr orig_breg) {
+static CPtr find_fixpoint(SGFrame subg, CPtr orig_breg) {
   SGFrame currSubg;
   CPtr complFrame; /* completion frame for currSubg */
   CPtr tcp; /* choice point for currSubg */
@@ -131,7 +131,7 @@ CPtr find_fixpoint(CPtr subg, CPtr orig_breg) {
     tcp = subg_cp_ptr(currSubg);
 
     /* if there are unresolved answers for currSubg */
-    if ((tmp_sched = sched_answers((CPtr) currSubg,tcp,0))) {
+    if ((tmp_sched = sched_answers(currSubg, tcp, 0))) {
       if (prev_sched) { /* if there is a prev subgoal scheduled */
 	/* link new node to the previous one */
 	tcp_prevbreg(prev_sched) = tmp_sched;

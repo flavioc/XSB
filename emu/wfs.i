@@ -177,7 +177,7 @@ static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
 
 static void batched_compute_wfs(CPtr leader_compl_frame, 
 				CPtr leader_breg, 
-				CPtr leader_subg)
+				SGFrame leader_subg)
 {  
   CPtr ComplStkFrame; /* CopyFrame */
   bool sccs_needed;
