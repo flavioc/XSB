@@ -203,17 +203,6 @@ other XSB modules, and regular XSB modules can query the objects defined in
 because it heavily relies on tabling and the well-founded semantics for
 negation that at the moment are available only in XSB.
 
-\FLORA comes with a number of demo programs that live in
-%%
-\begin{quote}
- \verb|<xsb-installation-directory>/packages/flora/demos/|  
-\end{quote}
-%%
-The demos can be run by issuing the command
-\verb|rundemo('demo-filename').| at the \FLORA prompt, {\it e.g.},
-\verb|rundemo('flogic_basics').|
-There is no need to change to the demo directory.
-
 As mentioned earlier, an XSB programmer can invoke \FLORA objects from
 other XSB programs. However, the easiest way to get a feel of the system
 is to start \FLORA shell and begin to enter queries interactively.  To
@@ -242,7 +231,7 @@ commands, but to run queries you must enter the \FLORA command loop:
  \tt
 ... FLORA messages omitted ... \\
  \tt
-FLORA> ?-
+flora ?-
 \end{quote}
 %%
 
@@ -254,6 +243,24 @@ norm. To get back to the XSB command loop, type {\tt Control-D} or
 | ?- end.  
 \end{quote}
 %%
+
+\noindent
+\FLORA comes with a number of demo programs that live in
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flora/demos/|  
+\end{quote}
+%%
+The demos can be run by issuing the command
+``\verb|rundemo(demo-filename).|''
+at the \FLORA prompt, {\it e.g.},
+%%
+\begin{verbatim}
+   rundemo(flogic_basics). 
+\end{verbatim}
+%%
+There is no need to change to the demo directory.
+
 
 \section{\FLORA Shell Commands} \label{sec-shell-commands}
 
@@ -267,7 +274,7 @@ The following \FLORA shell commands are supported:
   flcompile('FILE',[...])\footnotemark  \> : \> flcompile('FILE') with options [...] \\
   flconsult('FILE')         \> : \> compile FILE.flr, then consult FILE.P \\
   flconsult('FILE',[...])   \> : \> flconsult('FILE') with options [...] \\
-  load('FILE[.EXT]')\footnotemark       \> : \> consult FILE.flr, FILE.P or FILE.O \\
+  flload('FILE[.EXT]')\footnotemark  \> : \> consult FILE.flr, FILE.P or FILE.O \\
   \symbol{91}'FILE[.EXT]',...\symbol{93}        \> : \> consult a list of .flr, .P, or .O files \\
   dyncompile('FILE')        \> : \> compile FILE.flr to dynamic code \\
   dyncompile('FILE',[...])  \> : \> dyncompile('FILE') with options [...] \\
@@ -308,7 +315,7 @@ hitting the Enter key once, then entering a ``.'' character and Enter again
 will normally reset the current input buffer and cause \FLORA issue a
 command prompt:
 \begin{verbatim}
-FLORA> ?-
+flora ?-
 \end{verbatim}
 
  
@@ -363,7 +370,7 @@ headers and trailers that are automatically attached to the {\tt *.P} files by
 As an \fl-to-XSB compiler, \FLORA first parses its argument file and then
 compiles it to XSB syntax. For instance the command
 \begin{verbatim}
-        FLORA> ?- flconsult(myprog).
+        flora ?- flconsult(myprog).
 \end{verbatim}
 compiles the program \verb|'myprog.flr'| into the XSB file
 \verb|'myprog.P'|.  Take a look at this file to see what has become of your
@@ -376,9 +383,9 @@ byte-code \verb|'myprog.O'|, which is then loaded and executed.  If
 The main purpose of the \FLORA shell, however, is to allow the evaluation
 of ad-hoc F-logic queries. For example, after having requested the
 execution of the \texttt{'default.flr'} file from the demo directory (using
-the command \texttt{FLORA>~?-~rundemo(default).}), you may ask
+the command \texttt{flora~?-~rundemo(default).}), you may ask
 \begin{verbatim}
-    FLORA> ?-  X..kids[                 % Whose kids
+    flora ?-  X..kids[                 % Whose kids
                  self -> K;             % ... (list them by name)
                  hobbies ->>            % ... have hobbies
                  {H:dangerous_hobby}    % ... that are dangerous?
@@ -1437,15 +1444,15 @@ provided by the underlying XSB system and \FLORA simply takes advantage of
 them: 
 %%
 \begin{verbatim}
-FLORA> ?- functor(X,f,3).
+flora ?- functor(X,f,3).
 X = f(_h455,_h456,_h457)
 Yes.
 
-FLORA> ?- compound(f(X)).
+flora ?- compound(f(X)).
 X = _h472
 Yes.
 
-FLORA> ?- X =.. [f,a,b].
+flora ?- X =.. [f,a,b].
 X = f(a,b)
 Yes.
 \end{verbatim}
@@ -1475,7 +1482,7 @@ variable. The first element in the list is assumed to represent the method
 name and the rest represent the arguments.  For instance,
 %%
 \begin{verbatim}
-FLORA> ?- @M =.. [m,a1,a2].
+flora ?- @M =.. [m,a1,a2].
 @M = m@(a1,a2)
 Yes.
 \end{verbatim}
@@ -1511,10 +1518,10 @@ rules (and more, if we were to copy the methods of higher arities).  To see
 how this works in \FLORA, try the following:
 %%
 \begin{verbatim}
-FLORA> ?- rundemo(metavar).
+flora ?- rundemo(metavar).
 Yes.
 
-FLORA> ?- o2[@M->R].
+flora ?- o2[@M->R].
 @M = m2@(b1,b2)
 R = r2
 Yes.
@@ -1535,7 +1542,7 @@ will.
 Conceptually, the runtime environment of \FLORA is partitioned into two
 areas: static and dynamic. \emph{Static code} is generated using the
 predicate {\tt flcompile(file)}, and is loaded into the static runtime
-environment by {\tt flconsult(file)}, {\tt load(file)}, or {\tt [file]}.
+environment by {\tt flconsult(file)}, {\tt flload(file)}, or {\tt [file]}.
 \emph{Dynamic code} can be compiled by {\tt dyncompile(file)} and loaded
 into the dynamic runtime environment by {\tt dynconsult(file)},
 {\tt dynload(file)}, or \texttt{<file>}.  we have shown the syntax of
@@ -1580,13 +1587,13 @@ john[teaches@(spring,1999){\mvd}math101].
 Start XSB in the directory where both \emph{static.flr} and
 \emph{dynamic.flr} reside. Then start \FLORA shell and type:
 \begin{verbatim}
-FLORA> ?- flconsult(static).
+flora ?- flconsult(static).
 Yes.
 
-FLORA> ?- dynconsult(dynamic).
+flora ?- dynconsult(dynamic).
 Yes.
 
-FLORA> ?- D:department[coursesOffered->>C].
+flora ?- D:department[coursesOffered->>C].
 
 D = cse
 C = cse220
@@ -1677,7 +1684,7 @@ To see the effects of $\mathtt{erase}$, continue
 the example of Figure~\ref{fig:fig-static-dynamic-code}:
 %%
 \begin{verbatim}
-FLORA> ?- erase(cse[faculty->>smith]).
+flora ?- erase(cse[faculty->>smith]).
 No.
 \end{verbatim}
 %%
@@ -1685,7 +1692,7 @@ Here, \FLORA returns ``no'' because the fact {\tt cse[faculty->>smith]} is
 located in the static area and thus cannot be retracted.
 
 \begin{verbatim}
-FLORA> ?- erase(math[faculty->>john]).
+flora ?- erase(math[faculty->>john]).
 Yes.
 \end{verbatim}
 %%
@@ -1695,7 +1702,7 @@ information about John is also gone as well!
 This can be seen from the following queries:
 %%
 \begin{verbatim}
-FLORA> ?- P:professor[teaches@(Semester,Year)->>Course].
+flora ?- P:professor[teaches@(Semester,Year)->>Course].
 
 P = smith
 Semester = fall
@@ -1713,7 +1720,7 @@ Year = 1999
 Course = cse530
 Yes.
 
-FLORA> ?- P:professor.
+flora ?- P:professor.
 P = smith
 Yes.
 \end{verbatim}
@@ -1782,14 +1789,14 @@ mary[salary@(1998){\fd}90].
 
 %%
 \begin{verbatim}
-FLORA> ?- flcompile(module2).
+flora ?- flcompile(module2).
 ... FLORA messages omitted ...
 Yes.
 
-FLORA> ?- [module1].
+flora ?- [module1].
 Yes.
 
-FLORA> ?- X=count{Year; john.salary@(Year) < mary.salary@(Year)}.
+flora ?- X=count{Year; john.salary@(Year) < mary.salary@(Year)}.
 X = 2
 Yes.
 \end{verbatim}
@@ -1871,10 +1878,10 @@ Consider the example in Figure~\ref{fig:fig-mix} and suppose that the
 following queries are entered at the \FLORA prompt:
 %%
 \begin{verbatim}
-FLORA> ?- [mix].
+flora ?- [mix].
 Yes.
 
-FLORA> ?- show(a), show(b).
+flora ?- show(a), show(b).
 a[reachableTo->>{b,c}]
 b[reachableTo->>{b,c}]
 Yes.
@@ -1991,12 +1998,32 @@ to the equality level 1.  Therefore, path expressions in the rule head must
 be avoided if at all possible.
 
 Equality maintenance can also be requested when \FLORA modules are compiled
-using predicates such as {\tt flcompile} and {\tt flconsult} (see
-Section~\ref{sec-shell-commands}). For instance, {\tt
+using predicates such as {\tt flcompile} and {\tt flconsult} (which must be
+imported from the module {\tt flrutils}).  For instance, {\tt
   flcompile(benchmark,[eqlevel(1)])} will compile {\tt benchmark.flr} with
 equality maintenance level 1.  If equality maintenance is given both in the
 {\tt flcompile} command and inside the flora module being compiled, the
 highest level will be selected by the compiler.
+
+Here is the full list of compilation and loading predicates, all imported
+from {\tt flrutils}, that can be used in conjunction with \FLORA:
+%%
+\begin{tabbing}
+ \tt flcompile(FILE, Directives)  \= ---- \= compile\kill
+ \tt flcompile(File, Directives) \> -- \> compile File with compilation Directives.\\
+ \tt flcompile(File) \> -- \> same with default directives.\\
+ \tt flconsult(File, Directives) \> -- \> consult File with compilation Directives.\\
+ \tt flconsult(File) \> -- \> same with default directives.\\
+ \tt dyncompile(File, Directives) \> -- \> like flcompile/2, but compiles
+ as \FLORA dynamic code.\\
+ \tt dyncompile(File) \> -- \> same with default directives.\\
+ \tt dynconsult(File, Directives) \> -- \> like flconsult/2, but consults
+ as \FLORA dynamic code.\\
+ \tt dynconsult(File) \> -- \> same with default directives.\\
+ \tt flload(File) \> -- \> load File.\{flr,P,O\} as static code.\\
+ \tt dynload(File) \> -- \> load File.\{flr,P,O\} as dynamic code.\\
+\end{tabbing}
+%%
 
 \section{Future Enhancements}
 
