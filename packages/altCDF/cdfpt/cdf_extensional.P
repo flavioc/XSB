@@ -1,8 +1,5 @@
-isa_ext(cid('CDF Primitive Types',cdf),cid('CDF Classes',cdf)).
 
-isa_ext(cid(allIntegers,cdf),cid('CDF Primitive Types',cdf)).
-isa_ext(cid(allFloats,cdf),cid('CDF Primitive Types',cdf)).
-isa_ext(cid(allAtoms,cdf),cid('CDF Primitive Types',cdf)).
+isa_ext(cid(cdfpt,cdfpt),cid(componentClasses,cdf)).
 
 classHasAttr_ext(cid(cdfpt,cdfpt),crid(hasPath,cdfpt),cid('',cdfpt)).
 classHasAttr_ext(cid(compName(cid(cdfpt,cdfpt),cid('',cdfpt)),cdfpt),
@@ -10,7 +7,7 @@ classHasAttr_ext(cid(compName(cid(cdfpt,cdfpt),cid('',cdfpt)),cdfpt),
 		   cid(0,cdfpt)).
 
 classHasAttr_ext(cid(component(cid(cdfpt,cdfpt),
-                                                 cid('',cdfpt),cid(0,cdfpt)),cdfpt),
+                               cid('',cdfpt),cid(0,cdfpt)),cdfpt),
 	              crid(componentDepends,cdfpt),
-		   cid(component(cid(cdf,cdf),cid('',cdf),cid(0,cdf)),cdf)).
+		 cid(component(cid(cdf,cdf),cid('',cdfpt),cid(0,cdfpt)),cdf)).
 

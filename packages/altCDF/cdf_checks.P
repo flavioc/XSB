@@ -112,8 +112,8 @@ check_ind_types_1([Id|T],[List|LT],Context,Term):-
 
 
 %TLS could perhaps also test to see that F \in oid,cid
-check_arg_consist(cdfpt,Nid,_F,_Id,Context,Term):- !,
-	check_primitive_type(Nid,Context,Term).
+check_arg_consist(cdfpt,_Nid,_F,_Id,_Context,_Term):- !.
+%	check_primitive_type(Nid,Context,Term).
 check_arg_consist(_Src,Nid,F,Id,Context,Term):- 
 	(structure(Nid) -> 
 	    Nid =.. [_Funct|L],
@@ -131,6 +131,7 @@ check_arg_consist_list([Nid|T],F,Id,Context,Term):-
 		fail ) ),
 	  check_arg_consist_list(T,F,Id,Context,Term).
 	
+/*
 check_primitive_type(Nid,Context,Term):- 
 	(atomic(Nid) -> 
 	    true
@@ -148,6 +149,7 @@ check_primitive_type_list([],_Context,_Term).
 check_primitive_type_list([H|T],Context,Term):- 
 	check_primitive_type(H,Context,Term),
 	check_primitive_type_list(T,Context,Term).
+*/
 
 type_table(isa(A,B),check_isa_types(_,A,B,isa(A,B))).
 type_table(isa_ext(A,B),check_isa_types(_,A,B,isa_ext(A,B))).
@@ -195,7 +197,7 @@ remove_ext(allAttr_ext(A,B,C),allAttr(A,B,C)).
 classify_if_necessary(component_load,Name):-
 %	writeln(cin(Name)),
 	(cdf_flags(classify_if_necessary,component_load) -> 
-	    writeln(cin(Name)),
+%	    writeln(cin(Name)),
 	    classify_if_necessary_no_checkflag(Name)
 	  ; true).
 	    

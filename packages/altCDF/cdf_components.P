@@ -53,7 +53,8 @@
 
 :- ensure_loaded(cdf_config).
 
-:- dynamic temp_depends/4.
+:- dynamic temp_depends(_,_,_,_).
+:- dynamic loaded_component/1.
 
 /*
 handle_load_component_error(Message):- 
@@ -431,7 +432,7 @@ version of a component.
 load_component(Name,Path,Arglist):-
 	load_component_setup(Name,Path,Arglist),
 	load_component_1(Name,Path,Arglist),
-	perform_component_level_checks(Name).
+	perform_component_level_checks.
 
 load_component_setup(Name,Path,Arglist):-
 	init_path_engine,
@@ -448,8 +449,7 @@ load_component_1(Name,Path,Arglist):-
 	(load_component_pass1(Name,Path,AbsPath,V,Arglist1) -> 
 	    load_component_pass2(Name,AbsPath,V,[]) 
 	  ; true),
-	clean_up_dirty_bits,
-	retractall(temp_depends(_,_,_,_)).
+	clean_up_dirty_bits.
 
 split_arglist_on_version([],null,[]).
 split_arglist_on_version([version(V)|R],version(V),R):-!.
@@ -463,8 +463,15 @@ clean_up_dirty_bits:-
 	fail.
 clean_up_dirty_bits.
 
-perform_component_level_checks(Name):- 
-	classify_if_necessary(component_load,Name).
+perform_component_level_checks:- 
+	loaded_component(Name),
+	writeln(Name),
+	classify_if_necessary(component_load,Name),
+	fail.
+perform_component_level_checks:- 
+	retractall(temp_depends(_,_,_,_)),
+	retractall(loaded_component(_)).
+
 
 %----------
 
@@ -574,7 +581,7 @@ check_component(Name,Path,V,Arglist):-
 	(   already_present(Name,Path,V,Arglist)
 	->  cdf_warning(component, [Name, ' is already loaded.']),
 	    fail
-	;   true
+	;   assert(loaded_component(Name))
 	).
 
 check_conflicting_version(Name,Path,V):- 

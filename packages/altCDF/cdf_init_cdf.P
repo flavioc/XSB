@@ -100,9 +100,9 @@ initialize_cdf:-
 	retractall(cdf_logging_state(_)),
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
-	load_component(cdf,'',[]),
-	load_component(cdfpt,'',[]),
 	initialize_cdf_flags,
+%	load_component(cdf,'',[]),
+	load_component(cdfpt,'',[]),
 	make_cdf_clean.
 	
 init_dynamic_code:- 
@@ -197,9 +197,9 @@ initialize_state:-
 	asserta(cdf_logging_state(off)),
 	cdf_set_log_off,
 	retractall(cdf_flags(_,_)),
+	initialize_cdf_flags,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
-	initialize_cdf_flags,
 	make_cdf_clean.
 
 reset_dynamics:- 
