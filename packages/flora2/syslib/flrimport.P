@@ -82,16 +82,6 @@ flImportFloraPred(P,A,File,Module) :-
 	NewP =.. [_|Args],
 	funish_up(NewA,NewP,File,Module).
 
-%% This assumes that P is a HiLog predicate
-flImportProlog(P,A,File,Module) :-
-	check_args(P,A,Module),
-	P = FuncP/ArityP,
-	duplicate(A,NewA,Args),
-	(import FuncP/ArityP from usermod), % import whatever P is bound to
-	functor(NewP, FuncP, ArityP),
-	%% unify the args of P and A
-	NewP =.. [_|Args],
-	funish_up(NewA,NewP,File,Module).
 
 %% This assumes that P is a prolog predicate within a flora program.
 flImportHiLog(P,A,File,Module) :-

@@ -30,7 +30,6 @@
 :- import flora_wssymbol/3, flora_wshilog/2 from flrwrapper.
 :- export
 	flImportFloraPred/4,
-	flImportProlog/4,
 	flImportHiLog/4.
 
 

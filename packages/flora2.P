@@ -40,7 +40,6 @@
 
 :- import
 	flImportHiLog/4,
-	flImportProlog/4,
 	flImportFloraPred/4
    from flrimport.
 
@@ -144,10 +143,10 @@ flora_shell :-
   Flora import stuff
 
   Syntax:
-      :- flImport [flHilog|flProlog|flPredicate] Pred/Arity as Pred1(_,_,...)
+      :- flImport {flHilog|flPredicate} Pred/Arity as Pred1(_,_,...)
                                 from File[.flr]>>FloraModule
   or
-      :- flImport [flHilog|flProlog|flPredicate] Pred/Arity as Pred1(_,_,...)
+      :- flImport {flHilog|flPredicate} Pred/Arity as Pred1(_,_,...)
                                 from FloraModule
 
   Also (to load into the default module)
@@ -161,7 +160,6 @@ flora_shell :-
       :- flCompile file>>module.
 ************************************************************************/
 
-:- op(1150,fx,(flProlog)).
 :- op(1150,fx,(flPredicate)).
 :- op(1150,fx,(flHilog)).
 
@@ -180,12 +178,6 @@ flImport(flHilog(from(as(What,AsWhat),FileMod))) :- !,
 	-> flImportHiLog(What,AsWhat,File,Module)
 	).
 
-flImport(flProlog(from(as(What,AsWhat), FileMod))) :- !,
-	(atom(FileMod)
-	-> flImportProlog(What,AsWhat,_,FileMod)
-	; FileMod = File>>Module 
-	-> flImportProlog(What,AsWhat,File,Module)
-	).
 flImport(flPredicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
 	(atom(FileMod)
 	-> flImportFloraPred(What,AsWhat,_,FileMod)
