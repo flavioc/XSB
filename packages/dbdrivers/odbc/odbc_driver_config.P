@@ -55,7 +55,7 @@ make_odbc_driverH(CC, CC_opts) :-
     fmt_write_string(Module,
 		     '%s%scc%s%s', f(ODBCDriverDir, Slash, Slash, Basename)),
     (  %% avoid recompilation: check if odbc_driver.xwam exists and 
-	%% is newer than mysql_driver.c.
+	%% is newer than odbc_driver.c.
 	search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
 	str_cat(Module, '.c', ModuleSourceFile),
 	str_cat(Module, '.H', ModuleH),
@@ -85,16 +85,16 @@ make_odbc_driverH(CC, CC_opts) :-
 	make_odbc_driverH(CC, CC_opts),
 	compile_so(Module, [cc(CC), cc_opts(CC_opts)], LDflags),
 	str_cat(Module, '.so', SharedLib),
-	str_cat(Module, '.O', Objfile),
 	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibDir,Slash,Basename)),
 	rename(SharedLib, LibMod),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibSharedObjFile,
 			 '%s%s%s.so', a(ConfigLibDir, Slash, Basename)),
 	rename(SharedLib, LibSharedObjFile),
-	fmt_write_string(LibObjFile,
-			 '%s%s%s.O', a(ConfigLibDir, Slash, Basename)),
-	rename(Objfile, LibObjFile)
+	str_cat(Module, '.xwam', ObjfileX),
+	fmt_write_string(LibObjFileX,
+			 '%s%s%s.xwam', a(ConfigLibDir, Slash, Basename)),
+	rename(ObjfileX, LibObjFileX)
      ).
 	
 

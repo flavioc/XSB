@@ -15,6 +15,10 @@
 
 #include "odbc_driver_defs.h"
 
+static int driverODBC_getXSBType(SQLSMALLINT dataType);
+static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle);
+static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* query, int direct);
+
 struct driverODBC_connectionInfo* odbcHandles[MAX_HANDLES];
 struct driverODBC_queryInfo* odbcQueries[MAX_QUERIES];
 int numHandles, numQueries;
@@ -33,7 +37,7 @@ DllExport int call_conv driverODBC_initialise()
 }
 
 
-int driverODBC_connect(struct xsb_connectionHandle* handle)
+DllExport int call_conv driverODBC_connect(struct xsb_connectionHandle* handle)
 {
 	struct driverODBC_connectionInfo* odbcHandle;
 	SQLRETURN val;
@@ -73,7 +77,7 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
 }
 
 
-int driverODBC_disconnect(struct xsb_connectionHandle* handle)
+DllExport int call_conv driverODBC_disconnect(struct xsb_connectionHandle* handle)
 {
 	SQLRETURN val;
 	int i, j;
@@ -116,7 +120,8 @@ int driverODBC_disconnect(struct xsb_connectionHandle* handle)
 	return SUCCESS;
 }
 
-struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
+
+DllExport struct xsb_data** call_conv driverODBC_query(struct xsb_queryHandle* handle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLHDBC hdbc;
@@ -200,7 +205,7 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 }
 
 
-struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* query, int direct)
+static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* query, int direct)
 {
 	struct xsb_data** result;
 	SQLRETURN val;
@@ -291,7 +296,7 @@ struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* query, int 
 }
 
 
-int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
+DllExport int call_conv driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLRETURN val;
@@ -355,7 +360,7 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
 }
 
 
-struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle)
+DllExport struct xsb_data** call_conv driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLRETURN val;
@@ -430,7 +435,7 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
 }
 
 
-int driverODBC_closeStatement(struct xsb_queryHandle* handle)
+DllExport int call_conv driverODBC_closeStatement(struct xsb_queryHandle* handle)
 {
 	struct driverODBC_queryInfo* query;
 	SQLRETURN val;
@@ -464,7 +469,7 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle)
 }
 
 
-char* driverODBC_errorMesg()
+DllExport char* call_conv driverODBC_errorMesg()
 {
 	char* temp;
 	if (errorMesg != NULL)
@@ -479,7 +484,7 @@ char* driverODBC_errorMesg()
 }
 
 
-int driverODBC_getXSBType(SQLSMALLINT dataType)
+static int driverODBC_getXSBType(SQLSMALLINT dataType)
 {
 	int type;
 	type = STRING_TYPE;
@@ -511,7 +516,7 @@ int driverODBC_getXSBType(SQLSMALLINT dataType)
 }
 
 
-void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
+static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 	SQLCHAR* sqlState;
 	
