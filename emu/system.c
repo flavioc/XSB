@@ -46,8 +46,8 @@
 #include <unistd.h>
 #endif
 
-FILE *popen(char *cmd, char *mode);
-int pclose(FILE *stream);
+extern FILE *popen(const char *cmd, const char *mode);
+extern int pclose(FILE *stream);
 
 int sys_syscall(int callno)
 {

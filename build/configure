@@ -3231,23 +3231,17 @@ EOF
 #define SEQUENT 1
 EOF
  ;;
-      *sgi*) if test "$CC" = gcc ; then
-		echo ""
-		echo "configure: warning:  **** XSB is not known to compile on SGI machines
-                     **** using the GCC compiler. Type:
-                     ****   make configclean; configure --with-cc 
-                     **** to reconfigure using CC.
-                     **** If you find the right flags to compile XSB with GCC,
-                     **** please report to xsb-contact@cs.sunysb.edu" 1>&2
-		echo ""
-		have_warnings=yes
-	     fi
+      *sgi*) 
 	     case "${canonical}" in
 	       *mips*) cat >> confdefs.h <<\EOF
 #define MIPS_BASED 1
 EOF
  ;;
 	     esac
+	     cat >> confdefs.h <<\EOF
+#define FOREIGN_ELF 1
+EOF
+
 	     if test "${machine64bit}" = yes ; then
 		cat >> confdefs.h <<\EOF
 #define SGI64 1
@@ -3255,8 +3249,10 @@ EOF
 
 		c_opt_level=-${optimization_level-"O1"}
 		c_low_opt_level=-${optimization_level-"O1"}
-		CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
-		LINKFLAGS="-64"
+		if test ! "$CC" = gcc ; then
+		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
+		    LINKFLAGS="-64"
+		fi
 	     else
       		cat >> confdefs.h <<\EOF
 #define SGI 1
@@ -3264,8 +3260,9 @@ EOF
 
 	     	c_opt_level=-${optimization_level-"O2"}
 	     	c_low_opt_level=-${optimization_level-"O2"}
-	     	CFLAGS="${CFLAGS} -32 -Olimit 5000"
-	     	LINKFLAGS="-32"
+		if test ! "$CC" = gcc ; then
+		    CFLAGS="${CFLAGS} -OPT:Olimit=7500"
+	     	fi
 	     fi     	
 	    ;;
       *-solaris* | *-sunos5* ) cat >> confdefs.h <<\EOF
@@ -3952,69 +3949,69 @@ Checking installation directories...
 ( 
 
 echo $ac_n "checking $scriptdir""... $ac_c" 1>&6
-echo "configure:3956: checking $scriptdir" >&5 && \
+echo "configure:3953: checking $scriptdir" >&5 && \
      ((test -d $scriptdir || mkdir -p $scriptdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_bindir""... $ac_c" 1>&6
-echo "configure:3960: checking $arch_bindir" >&5 && \
+echo "configure:3957: checking $arch_bindir" >&5 && \
      ((test -d $arch_bindir || mkdir -p $arch_bindir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_config_libdir""... $ac_c" 1>&6
-echo "configure:3964: checking $arch_config_libdir" >&5 && \
+echo "configure:3961: checking $arch_config_libdir" >&5 && \
      ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking ${arch_config_objlibdir}""... $ac_c" 1>&6
-echo "configure:3968: checking ${arch_config_objlibdir}" >&5 && \
+echo "configure:3965: checking ${arch_config_objlibdir}" >&5 && \
      ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 
 echo $ac_n "checking $site_libdir""... $ac_c" 1>&6
-echo "configure:3973: checking $site_libdir" >&5 && \
+echo "configure:3970: checking $site_libdir" >&5 && \
      ((test -d $site_libdir || mkdir -p $site_libdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $site_config_libdir""... $ac_c" 1>&6
-echo "configure:3977: checking $site_config_libdir" >&5 && \
+echo "configure:3974: checking $site_config_libdir" >&5 && \
      ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 
 echo $ac_n "checking $install_emudir""... $ac_c" 1>&6
-echo "configure:3982: checking $install_emudir" >&5 && \
+echo "configure:3979: checking $install_emudir" >&5 && \
      ((test -d $install_emudir || mkdir -p $install_emudir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_libdir""... $ac_c" 1>&6
-echo "configure:3986: checking $install_libdir" >&5 && \
+echo "configure:3983: checking $install_libdir" >&5 && \
      ((test -d $install_libdir || mkdir -p $install_libdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_syslibdir""... $ac_c" 1>&6
-echo "configure:3990: checking $install_syslibdir" >&5 && \
+echo "configure:3987: checking $install_syslibdir" >&5 && \
      ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_cmplibdir""... $ac_c" 1>&6
-echo "configure:3994: checking $install_cmplibdir" >&5 && \
+echo "configure:3991: checking $install_cmplibdir" >&5 && \
      ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_scriptdir""... $ac_c" 1>&6
-echo "configure:3998: checking $install_scriptdir" >&5 && \
+echo "configure:3995: checking $install_scriptdir" >&5 && \
      ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_builddir""... $ac_c" 1>&6
-echo "configure:4002: checking $install_builddir" >&5 && \
+echo "configure:3999: checking $install_builddir" >&5 && \
      ((test -d $install_builddir || mkdir -p $install_builddir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_bindir""... $ac_c" 1>&6
-echo "configure:4006: checking $arch_install_bindir" >&5 && \
+echo "configure:4003: checking $arch_install_bindir" >&5 && \
      ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_config_libdir""... $ac_c" 1>&6
-echo "configure:4010: checking $arch_install_config_libdir" >&5 && \
+echo "configure:4007: checking $arch_install_config_libdir" >&5 && \
      ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_etcdir""... $ac_c" 1>&6
-echo "configure:4014: checking $install_etcdir" >&5 && \
+echo "configure:4011: checking $install_etcdir" >&5 && \
      ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_pkgdir""... $ac_c" 1>&6
-echo "configure:4018: checking $install_pkgdir" >&5 && \
+echo "configure:4015: checking $install_pkgdir" >&5 && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && echo "$ac_t""OK" 1>&6) \
         || echo "$ac_t""FAILED" 1>&6
 ) 2> /dev/null

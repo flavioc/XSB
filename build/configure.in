@@ -810,32 +810,26 @@ case "$canonical" in
       dnl NexTStep
       *next*) AC_DEFINE(NeXT) ;;
       *sequent*) AC_DEFINE(SEQUENT) ;;
-      *sgi*) if test "$CC" = gcc ; then
-		echo ""
-		AC_MSG_WARN([ **** XSB is not known to compile on SGI machines
-                     **** using the GCC compiler. Type:
-                     ****   make configclean; configure --with-cc 
-                     **** to reconfigure using CC.
-                     **** If you find the right flags to compile XSB with GCC,
-                     **** please report to xsb-contact@cs.sunysb.edu])
-		echo ""
-		have_warnings=yes
-	     fi
+      *sgi*) 
 	     case "${canonical}" in
 	       *mips*) AC_DEFINE(MIPS_BASED) ;;
 	     esac
+	     AC_DEFINE(FOREIGN_ELF)
 	     if test "${machine64bit}" = yes ; then
 		AC_DEFINE(SGI64)
 		c_opt_level=-${optimization_level-"O1"}
 		c_low_opt_level=-${optimization_level-"O1"}
-		CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
-		LINKFLAGS="-64"
+		if test ! "$CC" = gcc ; then
+		    CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
+		    LINKFLAGS="-64"
+		fi
 	     else
       		AC_DEFINE(SGI)
 	     	c_opt_level=-${optimization_level-"O2"}
 	     	c_low_opt_level=-${optimization_level-"O2"}
-	     	CFLAGS="${CFLAGS} -32 -Olimit 5000"
-	     	LINKFLAGS="-32"
+		if test ! "$CC" = gcc ; then
+		    CFLAGS="${CFLAGS} -OPT:Olimit=7500"
+	     	fi
 	     fi     	
 	    ;;
       *-solaris* | *-sunos5* ) AC_DEFINE(SOLARIS)
