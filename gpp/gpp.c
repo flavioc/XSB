@@ -197,6 +197,7 @@ struct INPUTCONTEXT *C;
 int commented[STACKDEPTH],iflevel;
 
 void ProcessContext(); /* the main loop */
+static void getDirname(char *fname, char *dirname);
 
 void bug(char *s)
 {
@@ -1843,10 +1844,24 @@ int ParsePossibleMeta()
        s=malloc(p1end-p1start+1);
        for (i=0;i<p1end-p1start;i++) s[i]=getChar(p1start+i);
        s[p1end-p1start]=0;
-       /* search current dir, if this search isn't turned off */
-       if (!NoCurInc)
-	 f=fopen(s,"r");
 
+       /* if absolute path name is specified */
+       if (s[0]==SLASH
+#ifdef WIN_NT
+	   || (isalpha(s[0]) && s[1]==':')
+#endif
+	   )
+	 f=fopen(s,"r");
+       else /* search current dir, if this search isn't turned off */
+	 if (!NoCurInc) {
+	   char *absfile =
+	     (char *)calloc(strlen(C->filename)+strlen(s)+1, sizeof(char));
+	   getDirname(C->filename,absfile);
+	   strcat(absfile,s);
+	   f=fopen(absfile,"r");
+	   free(absfile);
+	 }
+       
        for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
          s=realloc(s,p1end-p1start+strlen(includedir[j])+2);
          strcpy(s,includedir[j]);
@@ -2162,6 +2177,23 @@ void ProcessContext()
   if (C->in!=NULL) fclose(C->in);
   free(C->malloced_buf);
 }
+
+
+
+/* copy SLASH-terminated name of the directory of fname */
+static void getDirname(char *fname, char *dirname)
+{
+  int i;
+
+  for (i = strlen(fname)-1; i>=0; i--) {
+    if (fname[i] == SLASH)
+      break;
+  }
+  strncpy(dirname,fname,i);
+  dirname[i] = SLASH;
+  dirname[i+1] = '\0';
+}
+
 
 int main(int argc,char **argv)
 {
