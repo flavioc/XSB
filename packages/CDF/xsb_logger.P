@@ -4,7 +4,7 @@
 #include "flag_defs_xsb.h"
 #include "standard.h"
 
-:- import messagelist/2, messageln/2, datime/1 from standard.
+:- import message/2, messageln/2, datime/1 from standard.
 :- import concat_atom/2 from string.
 
 
@@ -391,7 +391,7 @@ default_log_writer(Error_level, Module, Pred, Message, List) :-
  
       '_$get_log_stream'(Error_num, Log_port),
       '_$log_eol'(EOL),
-      messagelist([TimeStamp, ' ', Error_label, ' [', Module, ':', Pred, '] :: ', Message, EOL], Log_port),
+      message([TimeStamp, ' ', Error_label, ' [', Module, ':', Pred, '] :: ', Message, EOL], Log_port),
       
       log_writelist(List, Log_port),      
       file_flush(Log_port, _)
@@ -421,7 +421,7 @@ log_writelist(List, Log_port) :-
    log_writelist(List, 1, Log_port).   
 log_writelist([A|B], Count, Log_port) :-
    '_$log_eol'(EOL),
-   messagelist(['     ', Count, ':', A, EOL], Log_port),
+   message(['     ', Count, ':', A, EOL], Log_port),
 
    Count1 is Count + 1,
    log_writelist(B, Count1, Log_port).
