@@ -1187,14 +1187,15 @@ flora_tailappend([H|V],[H|L],T) :- flora_tailappend(V,L,T).
 %% Calls the compiler. This is used to wrap templates, like trailers, 
 %% with the WORKSPACE macros.
 flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus) :-
-	flora_read_parse_compile(FLORA_FILE,Tokens,FlattenedRules,RuleOptions,RuleStatus),
+	flora_read_parse_compile(FLORA_FILE,Tokens,FlattenedRules,
+				 RuleOptions,RuleStatus),
 	member(error(EN),RuleStatus),
 	member(warning(WN),RuleStatus),
 	NewErrNum is ErrNum+EN,
 	NewWarnNum is WarnNum+WN,
-	( EN > 0 -> %% errors just found
+	( EN > 0 ->		% errors found
 	    ( MaxErr \== FLORA_ALL, NewErrNum >= MaxErr ->
-		FileStatus=FLORA_FAILURE,
+		FileStatus==FLORA_FAILURE,
 		flora_stderr_nl,
 		flora_errorwarn_count(NewErrNum,NewWarnNum),
 		flora_stderr_nl,
@@ -1202,7 +1203,8 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 		flora_stderr_nl
 
 	    ; flora_rule_delimeter_struct(_,_,_,_,_,RuleDelimeterToken),
-	      flora_not_end_of_input(RuleStatus), member(RuleDelimeterToken,Tokens) ->
+		flora_not_end_of_input(RuleStatus),
+		member(RuleDelimeterToken,Tokens) ->
 	        flora_rpc_file(MaxErr,NewErrNum,NewWarnNum,
                                _CompiledRuleList,_FileOptionList,FileStatus)
 
@@ -1210,7 +1212,7 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 	        flora_rpc_file(MaxErr,NewErrNum,NewWarnNum,
                                _CompiledRuleList,_FileOptionList,FileStatus)
 	    ;
-	      FileStatus=FLORA_FAILURE,
+		FileStatus==FLORA_FAILURE,
 		flora_stderr_nl,
 		flora_errorwarn_count(NewErrNum,NewWarnNum),
 		flora_stderr_nl,
@@ -1218,35 +1220,35 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 		flora_stderr_nl
 	    )
 	;
-	  ( NewErrNum == 0 -> %% no error so far
-	      flora_tailappend(CompiledRuleList,FlattenedRules,NewCompiledRuleList),
-	      flora_tailappend(FileOptionList,RuleOptions,NewFileOptionList)
-	  ;
-	    true
-	  ),
-	  ( flora_not_end_of_input(RuleStatus) ->
-	      flora_rpc_file(MaxErr,NewErrNum,NewWarnNum,
-                             NewCompiledRuleList,NewFileOptionList,FileStatus)
-	  ; %% end of file already
-	    ( NewErrNum == 0 ->
-		NewCompiledRuleList=[],
-		NewFileOptionList=[],
-		FileStatus=FLORA_SUCCESS,
-		( NewWarnNum == 0 ->
-		    true
-		;
-		  flora_stdwarn_nl,
-		  flora_errorwarn_count(NewErrNum,NewWarnNum)
-		)
+	    ( NewErrNum == 0 ->	% no errors so far
+		flora_tailappend(CompiledRuleList,FlattenedRules,NewCompiledRuleList),
+		flora_tailappend(FileOptionList,RuleOptions,NewFileOptionList)
 	    ;
-	      FileStatus=FLORA_FAILURE,
-		flora_stderr_nl,
-		flora_errorwarn_count(NewErrNum,NewWarnNum),
-		flora_stderr_nl,
-		flora_stderr_string('++compilation aborted'),
-		flora_stderr_nl
+		true
+	    ),
+	    ( flora_not_end_of_input(RuleStatus) ->
+		flora_rpc_file(MaxErr,NewErrNum,NewWarnNum,NewCompiledRuleList,
+			       NewFileOptionList,FileStatus)
+	    ;			% end of file already
+		( NewErrNum == 0 ->
+		    NewCompiledRuleList=[],
+		    NewFileOptionList=[],
+		    FileStatus=FLORA_SUCCESS,
+		    ( NewWarnNum == 0 ->
+			true
+		    ;
+			flora_stdwarn_nl,
+			flora_errorwarn_count(NewErrNum,NewWarnNum)
+		    )
+		;
+		    FileStatus==FLORA_FAILURE,
+		    flora_stderr_nl,
+		    flora_errorwarn_count(NewErrNum,NewWarnNum),
+		    flora_stderr_nl,
+		    flora_stderr_string('++compilation aborted'),
+		    flora_stderr_nl
+		)
 	    )
-	  )
 	),
 	!.
 
