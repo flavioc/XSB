@@ -115,6 +115,7 @@ bool do_wildmatch__(void)
   return FALSE;
 }
 
+
 /* XSB glob matcher: match files in current directory according to a wildcard.
 ** Arg1: wildcard, Arg2: Mark directories with `/' flag, Arg3: variable that
 ** gets the list of matched files.
@@ -197,3 +198,66 @@ static char *lowercase_string(char *str)
     *(newstr+i) = tolower(*(str+i));
   return newstr;
 }
+
+/* gets string, converts to uppercase, returns result; allocates space 
+   so don't forget to clean up */
+static char *uppercase_string(char *str)
+{
+  int i, len=strlen(str)+1;
+  char *newstr = (char *) malloc(len);
+
+  for (i=0; i<len; i++)
+    *(newstr+i) = toupper(*(str+i));
+  return newstr;
+}
+
+
+bool do_convert_string__(void)
+{
+  char *output_ptr=NULL, *input_string=NULL, *conversion_flag=NULL;
+  prolog_term conversion_flag_term, output_term;
+  bool to_string_conversion_required=FALSE;
+
+  input_string_term = reg_term(1); /* Arg1: string to convert */
+
+  output_term = reg_term(2);
+  if (! is_var(output_term))
+    xsb_abort("CONVERT_STRING: Output string (Arg 2) must be a variable");
+
+  /* If arg 3 is bound to anything, then consider this as ignore case flag */
+  conversion_flag_term = reg_term(3);
+  if (! is_string(conversion_flag_term))
+    xsb_abort("CONVERT_STRING: Conversion flag (Arg 3) must be an atom");
+
+  conversion_flag = string_val(conversion_flag_term);
+
+  /* check string to be converted */
+  if (is_string(input_string_term))
+    input_string = string_val(input_string_term);
+  else if (is_list(input_string_term)) {
+    input_string = p_charlist_to_c_string(input_string_term,
+					  input_string_buffer,
+					  sizeof(wild_buffer),
+					  "STRING_CONVERT", "input string");
+    to_string_conversion_required = TRUE;
+  } else
+    xsb_abort("CONVERT_STRING: Input string (Arg 1) must be an atom or a character list");
+
+  if (0==strcmp(conversion_flag,"tolower"))
+    output_ptr = lowercase_string(input_string);
+  else if (0==strcmp(conversion_flag,"toupper"))
+    output_ptr = uppercase_string(input_string);
+  else
+    xsb_abort("CONVERT_STRING: Valid conversion flags (Arg 3): `tolower', `toupper'");
+
+  if (to_string_conversion_required)
+    c_string_to_p_charlist(output_ptr,output_term,"CONVERT_STRING","Arg 2");
+  else
+    c2p_string(output_ptr, output_term);
+
+  /* free up space to avoid memory leak */
+  free(output_ptr);
+
+  return TRUE;
+}
+

@@ -72,8 +72,8 @@ static int first_call = TRUE; /* whether this is the first call to the regexp
 
 /* output buffer should be large enough to include the input string and the
    substitution string <= sizeof(subst_buf) */
-char output_buffer[5*MAXBUFSIZE], input_buffer[4*MAXBUFSIZE];
-char temp_buffer[4*MAXBUFSIZE];
+static char output_buffer[5*MAXBUFSIZE], input_buffer[4*MAXBUFSIZE];
+static char temp_buffer[4*MAXBUFSIZE];
 
 
 /* XSB regular expression matcher entry point

@@ -34,8 +34,8 @@
 %% package_configuration(dir(PackageName), FullPackageDirname)
 %% some packages use it.
 
-:- export glob_directory/4, wildmatch/3.
-:- import do_glob_directory__/4, do_wildmatch__/3 from xsb_wildmatch.
+:- export glob_directory/4, wildmatch/3, convert_string/3.
+:- import do_glob_directory__/4, do_wildmatch__/3, do_convert_string__/3 from xsb_wildmatch.
 
 :- bootstrap_package('wildmatch', wildmatch),
    (xsb_configuration(wildmatch_support, 'yes') -> [wldmtchshell]
@@ -56,3 +56,8 @@ glob_directory(Wildcard, Directory, MarkDirs, FileList) :-
 
 wildmatch(Wildcard, String, IgnoreCase) :-
 	do_wildmatch__(Wildcard, String, IgnoreCase).
+
+%% Conversion flag: From (atom/charlist), To (atom/charlist),
+%% tolower, toupper (atoms)
+convert_string(From, To, ConversionFlag) :-
+	do_convert_string__(From, To, ConversionFlag).

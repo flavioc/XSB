@@ -388,13 +388,14 @@ These interfaces are implemented using the {\tt Wildmatch} package of XSB.
 This package provides the following functionality: 
 %%
 \begin{enumerate}
-\item Telling whether a wildcard, like the ones used in Unix shells match
+\item Telling whether a wildcard, like the ones used in Unix shells, match
   against a given string. Wildcards supported are of the kind available in
   tcsh or bash. Alternating characters ({\it e.g.}, ``\verb|[abc]|'' or
   ``\verb|[^abc]|'') are supported.
 \item Finding the list of all file names in a given directory that match a
   given wildcard. This facility generalizes {\tt directory/2} (in module {\tt
     directory}), and it is much more efficient.
+\item String conversion to lower and upper case.
 \end{enumerate}
 %%
 
@@ -404,15 +405,15 @@ To use this package, you need to type:
 | ?- [wildmatch].  
 \end{verbatim}
 %%
-If you are planning to use it in an XSB program, you will also need to add
-these directive:
+If you are planning to use it in an XSB program, you need
+this directive:
 %%
 \begin{verbatim}
-:- import glob_directory/4, wildmatch/3 from wildmatch.
+:- import glob_directory/4, wildmatch/3, convert_string/3 from wildmatch.
 \end{verbatim}
 %%
 
-The calling sequence for \verb|glob_directory| is:
+The calling sequence for \verb|glob_directory/4| is:
 %%
 \begin{verbatim}
    glob_directory(+Wildcard, +Directory, ?MarkDirs, -FileList)  
@@ -434,7 +435,7 @@ This predicate succeeds is at least one match is found. If no matches are
 found or if {\tt Directory} does not exist or cannot be read, then the
 predicate fails.
 
-The calling sequence for wildmatch/3 is as follows:
+The calling sequence for {\tt wildmatch/3}  is as follows:
 %%
 \begin{verbatim}
     wildmatch(+Wildcard, +String, ?IgnoreCase)  
@@ -449,6 +450,20 @@ non-variable, then the case of letters is ignored. Otherwise, if {\tt
 
 This predicate succeeds when {\tt Wildcard} matches {\tt String} and fails
 otherwise.
+
+The calling sequence for {\tt convert_string/3}  is as follows:
+%%
+\begin{verbatim}
+    convert_string(+InputString, +OutputString, +ConversionFlag)  
+\end{verbatim}
+%%
+The input string must be an atom or a character list. The output string
+must be unbound. Its type will ``atom'' if so was the input and it will be
+a character list if so was the input string. The conversion flag must be
+the atom {\tt tolower} or {\tt toupper}. 
+
+This predicate always succeeds, unless there was an error, such as wrong
+type argument passed as a parameter.
 
 
 
