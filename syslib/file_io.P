@@ -154,9 +154,8 @@ file_read_line_atom(Str) :-
 
 %% Like file_read_line_atom, but returns list of characters
 file_read_line_list(IOport, CharLst) :-
-	( var(Str) ->
-	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_),
-	    atom_codes(Str,CharLst)
+	( var(CharLst) ->
+	    file_function(FILE_READ_LINE_LIST, IOport, CharLst, _, _, _,_)
 	; abort('Usage: file_read_line_list([+IOport,] -InputStr)')
         ).
 
