@@ -881,6 +881,7 @@ static void write_quotedname(FILE *file, char *string)
 
 /* inlined functions for prolog standard builtins */
 #include "std_pred_xsb_i.h"
+#include "call_xsb_i.h"
 
 /* --- built in predicates --------------------------------------------	*/
 
@@ -987,8 +988,8 @@ int builtin_call(byte number)
     break;
   case STAT_SET_FLAG:	/* R1: flagname(+int); R2: value(+int); */
     flags[ptoc_int(1)] = ptoc_int(2);
-    call_intercept = (byte) (flags[DEBUG_ON]|flags[TRACE_STA]|flags[HITRACE]
-      |flags[CLAUSE_INT]);
+    call_intercept = (byte) (flags[DEBUG_ON]|flags[TRACE_STA]
+			     |flags[HITRACE]|flags[CLAUSE_INT]);
     break;
   case BUFF_ALLOC: {	/* R1: size (+integer); R2: -buffer; */
 	           /* the length of the buffer is also stored at position 0 */
@@ -1113,80 +1114,23 @@ int builtin_call(byte number)
   case CALL0: {			/* R1: +Term, the call to be made */
     /* Note: this procedure does not save cpreg, hence is more like */
     /* an "execute" instruction, and must be used as the last goal!!!*/
-    Psc  psc;
     Cell term = ptoc_tag(1);
-
-    if (isconstr(term)) {
-      int  disp;
-      char *addr;
-      psc = get_str_psc(term);
-      addr = (char *)(clref_val(term));
-      for (disp = 1; disp <= (int)get_arity(psc); ++disp) {
-	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
-      }
-    } else if (isstring(term)) {
-      int  value;
-      Pair sym = insert(string_val(term),0,(Psc)flags[CURRENT_MODULE],&value);
-      psc = pair_psc(sym);
-    } else {
-      if (isnonvar(term))
-	err_handle(TYPE, 1, "call", 1, "callable term", term);
-      else err(INSTANTIATION, 1, "call", 1);
-      pcreg = (pb)&fail_inst;
-      return FALSE;
-    }
-    switch (get_type(psc)) {
-    case T_PRED:
-    case T_DYNA:
-    case T_UDEF:
-    default:
-    case T_FORN:
-      pcreg = get_ep(psc);
-      break;
-/****    case T_FORN:
-#ifdef FOREIGN
-      proc_ptr = (PFI) get_ep(psc);
-      if (proc_ptr())
-	pcreg = cpreg;
-      else
-	pcreg = (pb)&fail_inst;	 
-#else
-      xsb_exit("Foreign call in configuration that does not support it !");
-#endif
-      break;
-    case T_UDEF:
-    default:
-      psc = synint_proc(psc, MYSIG_UNDEF, NULL);
-      if (psc) pcreg = get_ep(psc);
-      break;
-*****/
-    }
-    if (call_intercept) intercept(psc);
-    break;
+    /* in call_xsb_i.h */
+    return prolog_call0(term);
   }
-    
+
   case CODE_CALL: {		/* R1: +Code (addr), the code address */
 				/* R2: +Term, the call to be made */
 				/* R3: +Type, code type (same as psc->type)  */
 				/* may need to resume interrupt testing here */
     /* Note: this procedure does not save cpreg, hence is more like */
     /* an "execute" instruction, and must be used as the last goal!!!*/
-    Psc  psc;
     Cell term = ptoc_tag(2);
     int  value = ptoc_int(3);  /* Cannot be delayed! R3 may be reused */
-
     pcreg = (byte *)ptoc_int(1);
-    if (isconstr(term)) {
-      int  disp;
-      char *addr;
-      psc = get_str_psc(term);
-      addr = (char *)(clref_val(term));
-      for (disp = 1; disp <= (int)get_arity(psc); ++disp) {
-	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
-      }
-      bld_int(reg+get_arity(psc)+1, value);
-    } else psc = NULL; 
-    break;
+
+    /* in call_xsb_i.h */
+    return prolog_code_call(term,value);
   }
   case SUBSTRING: /* R1: +String; R2,R3: +begin/end offset; R4: -OutSubstr */
     return substring(); 
@@ -2047,8 +1991,10 @@ int builtin_call(byte number)
   default:
     xsb_exit("Builtin #%d is not implemented", number);
     break;
-  }
-  return TRUE;
+
+  } /* switch */
+
+  return TRUE; /* catch for every break from switch */
 }
 
 /*------------------------- end of builtin.c -----------------------------*/
