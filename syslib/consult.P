@@ -211,7 +211,10 @@ load_exec(File, ModName) :-
 	    file_write0(STDMSG, ' loaded]'), file_nl(STDMSG)
 	),
 	(Init > 4			% Prolog byte code loaded
-	 ->	co_code_call(Init, true, 2),	% call '_$main'
+	 ->     % push/pop_loaded_file: added by MK, 7/16/01
+		push_loaded_file(File,Rand),
+	        co_code_call(Init, true, 2), % call '_$main'
+		pop_loaded_file(Rand),
 		unload_seg(Init)		% free space for '_$main'
 	 ;	true			% Foreign obj code loaded
 	).
@@ -696,3 +699,21 @@ indexes_subsumed([Ispec|Ispecs],OIndex) :-
 indexes_subsumed(Ispec,OIndex) :-
 	memberchk(Ispec,OIndex).
 
+%% The stack of files currently being loaded
+:- dynamic loading_stack(_,_).
+:- index loading_stack/2-1.
+
+%% Push/pop the currently loaded file onto a stack.
+%% A program that is being loaded can examine which file it is in.
+%% Rand is a gensym generated symbol, which ensures that we don't remove wrong
+%% entries from the stack
+push_loaded_file(File,Rand) :-
+	gensym('loadfile',Rand),
+	expand_filename(File,ExpandedFile),
+	asserta(loading_stack(Rand,ExpandedFile)).
+
+
+pop_loaded_file(Rand) :-
+	retract(loading_stack(Rand,_)).
+
+current_loaded_file(File) :- loading_stack(_,File), !.

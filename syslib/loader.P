@@ -106,8 +106,8 @@ set_inthandler(Handler, Number) :-
 
 set_current_module :-
 	conpsc(current_module, CURMOD_PSC),
-	conpsc(usermod, USERMOD_PSC),
-	psc_set_prop(CURMOD_PSC, USERMOD_PSC),
+	conpsc(usermod, UsermodPsc),
+	psc_set_prop(CURMOD_PSC, UsermodPsc),
 	stat_set_flag(CURRENT_MODULE, 0).
 
 

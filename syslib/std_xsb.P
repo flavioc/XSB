@@ -49,6 +49,8 @@ standard_symbol(break, 0, x_interp).
 standard_symbol('C', 3, dcg).
 standard_symbol(call, 1, standard).
 standard_symbol(callable, 1, standard).
+standard_symbol(catch, 3, standard).
+standard_symbol(throw, 1, standard).
 standard_symbol(cd, 1, shell).
 standard_symbol(cwd, 1, shell).
 standard_symbol(clause, 2, assert).

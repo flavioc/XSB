@@ -28,6 +28,7 @@
 	  compile/1, compile/2, search_module/6,
 	  load_dyn/1, load_dyn/2, 
 	  load_dync/1, load_dync/2, read_canonical/1,
+	  current_loaded_file/1,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,
 	  ensure_loaded/1, ensure_loaded/2,
 	  cvt_canonical/2.
@@ -67,5 +68,5 @@
 	  '_$multifile'/1, '_$multifile1'/1,
 	  '_$multifile2'/3, '_$apply_arity'/1
      from parse.
-:- import conset/2, conget/2  from gensym.
+:- import conset/2, conget/2, gensym/2  from gensym.
 :- import xsb_configuration/2 from xsb_configuration.
