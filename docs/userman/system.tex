@@ -586,7 +586,7 @@ default configuration of XSB might be run by invoking XSB with the command.
 \index{memory management}
 \index{garbage collection}
 %===================================================
-All execution stacks are automatically expanded in \version{}
+All execution stacks are automatically expanded in \version{},
 including the local stack/heap region, the trail/choice point region,
 and the completion stack region.  Each of these regions begin with an
 initial value set by the user (or the default stated in
@@ -597,7 +597,7 @@ system memory.  Garbage collection is automatically performed for
 retracted clauses.  In addition, heap garbage collection is
 automatically included when the {\tt --enable-chat} configuration
 option is used.  (It can be turned off; see the predicate {\tt
-garbage\_collection/1}.) 
+garbage\_collection/1}.)
 
 The program area (the area into which the code is loaded) is also
 dynamically expanded as needed, and the area occupied by dynamic code
@@ -610,7 +610,6 @@ tables is dynamically allocated as needed and reclaimed through use of
 the predicate {\tt abolish\_all\_tables/0}
 %, {\tt, abolish\_table\_pred/1} and {\tt abolish\_table\_call/1}.  
 (see Section~\ref{sec:TablingPredicates}).
-
 
 \section{Compiling and Consulting} \label{Consulting}
 %====================================================

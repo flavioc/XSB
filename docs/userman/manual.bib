@@ -618,15 +618,16 @@ title = "Deductive database support for data visualization",
 institution = "U. Toronto",
 YEAR = 1994 }
 
-@inproceedings{ CuSW99a,
-AUTHOR = {B. Cui and T. Swift and D. S. Warren},
-TITLE = "A Case Study in Using Preference Logic Grammars for Knowledge
-                  Representation", 
-Booktitle = LPNMR,
-Publisher = SPRINGER,
-Note = "LNAI 1730",
-Pages = "206-220",
-YEAR = 1999 }
+@article{ CuSW99a,
+AUTHOR = {B. Cui and T. Swift},
+TITLE = "Preference Logic Grammars: Fixed-Point Semantics 
+         and Application to Data Standardization",
+Journal = "Artificial Intelligence",
+Note = "To Appear.  Preliminary version appeared in Conference on
+                  Logic Programming and Non-Monotonic Reasoning, 1999,
+                  Springer-Verlag LNAI 1730.",
+YEAR = 2001 }
+
 
 @inproceedings{ CuSW99b,
 AUTHOR = {B. Cui and T. Swift and D. S. Warren},
@@ -773,7 +774,11 @@ YEAR = 1988 }
      AUTHOR = {Bart Demoen and Konstantinos Sagonas},
       TITLE = {{CAT: the Copying Approach to Tabling}},
       PAGES = {21--35},
-   CROSSREF = {PLILP98}
+      Booktitle = "Priniclpes of Declarative Programming, 10th
+                  International Symposium", 
+      Publisher = {Springer-Verlag},
+      Note = {LNCS 1490},
+      Year = 1998
 }
 
 @INPROCEEDINGS{CATmem@ISMM-98,
@@ -782,9 +787,7 @@ YEAR = 1988 }
       PAGES = {97--106},
   BOOKTITLE = {Proceedings of ISMM'98: ACM SIGPLAN International
 		Symposium on Memory Management},
-      MONTH = oct,
        YEAR = {1998},
-    ADDRESS = {Vancouver, B.C., Canada},
   PUBLISHER = {ACM Press}
 }
 
@@ -1007,7 +1010,9 @@ AUTHOR = "J. Gartner and T. Swift and A. Tien and L. M. Pereira and
                   C. Dam\'asio", 
 TITLE = "Psychiatric Diagnosis from the Viewpoint of Computational Logic",
 Booktitle = "International Conference on Computational Logic",
-Note = "To Appear",
+PUBLISHER = SPRINGER,
+Note = "LNAI 1861",
+Pages = "1362-1376",
 YEAR = 2000 }
 
 @phdthesis{ Hong93,
@@ -2105,22 +2110,31 @@ BOOKTITLE = "Proc. of SIGMOD 1994 Conference",
 ORGANIZATION = "ACM",
 YEAR = 1994 }
 
+@article{SaSW00, 
+AUTHOR = "K. Sagonas and T. Swift and D. S. Warren", 
+TITLE = "An Abstract Machine for Efficiently Computing Queries to Well-Founded Models",
+Journal = JLP,
+Volume = 45,
+Number = "1-3",
+Pages = "1-41",
+Year = 2000}
+
 @article{SaSW96, 
-AUTHOR = "K. Sagonas and T. Swift and D. S. Warren",
-TITLE = "An Abstract Machine for Computing the Well-Founded
-            Semantics", 
-Journal = JLP, 
-Note = "To appear.  Preliminary version appeared in Joint
-                  International Conference 
-            and Symposium on Logic Programming, 1996",
+AUTHOR = "K. Sagonas and T. Swift and D. S. Warren", 
+TITLE = "An Abstract Machine for Efficiently Computing Queries to Well-Founded Models",
+Journal = JLP,
+Volume = 45,
+Number = "1-3",
+Pages = "1-41",
 Year = 2000}
 
 @article{ SaSW99,
 AUTHOR = "K. Sagonas and T. Swift and D. S. Warren",
 TITLE = "The Limits of Fixed-Order Computation",
 Journal = "Theoretical Computer Science",
-Note = "To apperar.  Preliminary version apeared in International
-                  Workshop on Logic and Databases, LNCS.", 
+Volume = 254,
+Number = "1-2",
+Pages = "465-499",
 Year = 2000 }
 
 @inproceedings{ SaWa95,
@@ -2365,13 +2379,17 @@ Journal = "Computational Logic: The Newsletter of CompulogNet",
 Month = "December",
 YEAR = 1996 }
  
-@article{ Swif99a,
-AUTHOR = "T. Swift",
-Title = "Tabling for Non-Monotonic Programming",
-Journal = "Annals of Mathematics and Artificial Intelligence",
-Note = "To Appear.  Available at http://cs.sunysb.edu/~tswift",
-YEAR = 1999 }
- 
+@article{Swif99a, 
+AUTHOR = "T. Swift", 
+TITLE = "Tabling for Non-Monotonic Programming",
+Journal = {Annals of Mathematics and Artificial Intelligence},
+  publisher     = {Baltzer Science Publishers},
+  volume = {25},
+  number = {3-4},
+  pages = "201-240",
+  year          = {1999}
+}
+
 @inproceedings{ Swif99b, 
 AUTHOR = "T. Swift", 
 TITLE = "A New Formulation of Tabled Resolution with Delay", 
@@ -2624,14 +2642,14 @@ YEAR = 1993,
 Note = "Originally formulated in New York University TR 34, 1981" }
 
 @techreport{ DHWa83,
-AUTHOR = "D.H.D. Warren",
+AUTHOR = "D. H. D. Warren",
 TITLE = "An Abstract {P}rolog Instruction Set",
 INSTITUTION = "SRI",
 NUMBER = 309,
 YEAR = 1983 }
 
 @inproceedings{ DHWa87,
-AUTHOR = "D.H.D. Warren",
+AUTHOR = "D. H. D. Warren",
 TITLE = "The {SRI} Model for Or-Parallel Execution of {P}rolog ---
 		  Abstract Design and Implementation",
 BOOKTITLE = "Proc of the 1987 Symposium on Logic Programming",
@@ -2777,7 +2795,6 @@ pages = {572--586}
      SERIES = {LNCS},
      NUMBER = {1551},
   PUBLISHER = {Springer},
-    ADDRESS = {San Antonio, Texas}
 }
 
 @Manual{sicstus-manual,

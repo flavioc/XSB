@@ -485,64 +485,147 @@ typically called just before returning to the top level.
     The difference between results of successive calls to this
     predicate can measure the time spent in specific predicates.
 
-\ouritem{statistics}\index{{\tt statistics/0}}
-    Prints on the current output stream:
-    \begin{itemize}
-    \item Information about allocation of memory 
-	  (see Section~\ref{sec:EmuOptions}) containing the 
-          \begin{itemize}
-          \item global stack (heap) and local (environment) stack
-          \item trail and choice point stack
-	  \item SLG subgoal space (tablestack)
-          \item SLG unification stack
-          \item SLG completion stack
-	  \item the space occupied by subgoal and answer tables
-		(in the form of tries).
-          \end{itemize}
-    \item Current use of the above specified memory areas
-		(allocated/in use/free).
-    \item Information about process cpu and clock time.
+\ouritem{statistics}\index{{\tt statistics/0}} Prints on the current
+    output stream: 
+\begin{itemize} 
+\item Information about allocation of memory  containing the 
+\begin{itemize} 
+\item Global stack (heap) and local (environment) stack (see e.g.
+\cite{AitK90}). Memory for these two WAM stacks is allocated as a
+single unit so that each stack grows together; information is provided
+on the current allocation for the stacks as well as on the stack sizes
+themselves.  (See Section~\ref{sec:EmuOptions} for the memory
+re-allocation algorithm).  For maximum space used by each of these
+stacks, use the {\tt '-s'} option.
+%
+\item Trail and choice point stack (see e.g. \cite{AitK90}).  Memory
+for these two WAM stacks is allocated as a single unit so that each
+stack grows together; information is provided on the current
+allocation for the stacks as well as on the stack sizes themselves.
+The (re-)allocation follows the algorithm sketched in
+Section~\ref{sec:EmuOptions}).  (See Section~\ref{sec:EmuOptions} for
+the memory re-allocation algorithm).  For maximum space used by each
+of these stacks, use the {\tt '-s'} option.
+% TLS: this had been taken out a version or two ago.
+%	  \item SLG subgoal space (tablestack)
+\item SLG unification stack.  This stack is used as a space to copy
+terms from the execution stacks into table space, or back out.  This
+stack will not be reallocated unless extremely large terms are tabled.
+%
+\item SLG completion stack.  The completion stack is used to perform
+incremental completion for sets of mutually dependant tabled
+subgoals.  One completion stack frame is allocated per tabled subgoal
+\cite{SaSw98} but the size of these frames is version-dependent.
+%
+\item the space occupied by subgoal and answer tables (in the form of
+tries) \cite{RRSSW98}.
+\end{itemize}
+\item Information about the number of tabling operations performed in
+the session.
+\begin{itemize}
+\item Call Subsumption Subgoal Operations.  For predicates that use
+subsumptive tabling, the total number of subgoal calls is given, as is
+the number of new calls ({\tt producers}) and the number of repeated
+calls to non-completed tables ({\tt variants}).  Furthermore, the
+number of properly subsumed calls is given, along with the number of
+table entries constructed for these subsumed calls.  Finally, the
+number of subsuming calls to completed tables is given.
+%
+\item Call Subsumption Answer Operations.  The number of {\tt
+answer ident} operations represents the number of copies of answer
+lists made from producer table entries to subsumed consumer table
+entries.  In addition, the number of consumptions performed by all
+consuming subsumptive table entries is also given.
+%
+\item Call Variance Subgoal Operations.  For call variance the number
+of subgoal check/insert operations is given along with the unique
+number of subgoals encountered ({\tt generator}) and the number of
+redundant consumer encountered ({\tt consumer}).
+%
+\item Total Answer Operations.  For both variant and subsumptive
+tables, the number of answer check insert operations is given along
+with the number of answers actually inserted into the table and the
+number of redundant answers derived.
+\end{itemize}
+%
+\item CHAT memory operations (compilation under CHAT only).  As
+described in \cite{CHAT@PADL-99} CHAT requires an extra memory area
+beyond the WAM execution stacks, completion stack and table space.
+This memory area is used to copy parts of suspended environments for
+tabled subgoals that may be awaiting answers.  The first line
+represents the current amount of CHAT memory, the maximal amount, and
+unused CHAT space not restored to the operating system.  The second
+line represents the number of suspended tabled environments saved, as
+well as the number of CHAT increments (portions of an envionment)
+required to save these suspensioons and the number of these increments
+that are shared.  The third line represents the number of tabled
+environments that have been restored, or copied back into execution
+stacks, along with the total amount of memory copied.
+
+\item Garbage Collection Information.  This information is currently
+available only with the CHAT compilation.
+
+\item Information about process CPU and clock time.
     \end{itemize}
 
-    Additionally, if the emulator is invoked with the {\tt '-s'} option
-    (see Section~\ref{sec:EmuOptions}), information is printed out about
-    \begin{itemize}
-    \item Maximum use of the memory areas.
-    \end{itemize}
-    The {\tt '-s'} option slows down the emulator by about 10\%.
+    As mentioned above, if the emulator is invoked with the {\tt '-s'}
+    option (see Section~\ref{sec:EmuOptions}), information is printed
+    out about 
+\begin{itemize} 
+\item Maximum use of the memory areas.
+\end{itemize} 
+However, as the {\tt '-s'} option slows down the emulator by at least
+10\%, benchmarks of time should be performed separately from
+benchmarks of space.
 
-    Example:
+{\bf Example}: The following printout shows how the {\tt statistics/0}
+output looks if it is invoked with the {\tt '-s'} option (without it
+the {\tt Maximum stack used}, and {\tt Maximum table space used} lines
+are not shown).  Information about the allocation size is provided
+since the sizes can be changed through emulator options (see
+Section~\ref{sec:EmuOptions}).
+
     {\footnotesize
      \begin{verbatim}
      | ?- statistics.
 
-     memory (total)        1873737 bytes:     171317 in use,    1702420 free
-        permanent space     169801 bytes
-        glob/loc space      786432 bytes:       1080 in use,     785352 free
-           global                                152 bytes
-           local                                 928 bytes
-        trail/cp space      786432 bytes:        436 in use,     785996 free
-           trail                                 240 bytes
-           choice point                          196 bytes
-        SLG subgoal space        0 bytes:          0 in use,          0 free
-        SLG unific. space    65536 bytes:          0 in use,      65536 free
-        SLG completion       65536 bytes:          0 in use,      65536 free
-        SLG trie space           0 bytes:          0 in use,          0 free
-        (call+ret. trie          0 bytes,   trie hash tables          0 bytes)
+Memory (total)         1941216 bytes:       238120 in use,      1703096 free
+  permanent space       237280 bytes:       237280 in use,            0 free
+  glob/loc space        786432 bytes:          524 in use,       785908 free
+    global                                     284 bytes
+    local                                      240 bytes
+  trail/cp space        786432 bytes:          316 in use,       786116 free
+    trail                                       24 bytes
+    choice point                               292 bytes
+  SLG unific. space      65536 bytes:            0 in use,        65536 free
+  SLG completion         65536 bytes:            0 in use,        65536 free
+  SLG table space            0 bytes:            0 in use,            0 free
 
-        Maximum stack use: global 224, local 1384, trail 240, cp 492
-        Maximum stack use: SLG completion 0.  Max level: 0
+        Maximum stack used: global 224, local 1384, trail 240, cp 492,
+                            SLG completion 0 (0 subgoals)
+        Maximum table space used:  0 bytes
 
-          0 Trail unwinds,       0 levels
+Tabling Operations
+  Call Subsumption Subgoal Operations:
+            call check/insert ops: 0 producers, 0 variants,
+            0 properly subsumed (0 table entries), 
+            0 used completed table.
+  Call Subsumption Answer Operations:
+            0 relevant answer ident ops.  0 consumptions via answer list.
+  Call Variance Subgoal Operations: 
+            0 call check/insert ops: 0 generators, 0 consumers.
+  Total Answer Operations: 
+            0 answer check/insert ops: 0 unique inserts, 0 redundant.
+
+CHAT Operations
+  total size CHAT areas: 0 b; high water mark: 0 b; not freed: 0 b
+  suspensions saved: 0; increments saved: 0; shared increments: 0
+  number of restored suspensions: 0; total restored memory: 0 b
+
+{GC}    0 heap garbage collections by copying: collected 0 cells in 0.000000 millisecs
 
       0.570 sec. cputime, 5.088 sec. elapsetime 
 \end{verbatim}} 
-     shows how the emulator output looks if it is invoked with the
-     {\tt '-s'} option (without it the Maximum use line is not shown).
-     Information about the allocation size is provided since the sizes
-     can be changed through emulator options (see
-     Section~\ref{sec:EmuOptions}).
-
      For expert users of XSB, further information about resources
      required by the system can be obtained through the non-supported
      predicate {\tt statistics/1} in {\tt \$XSB\_DIR/emu/trace.c}.
