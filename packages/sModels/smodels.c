@@ -24,6 +24,7 @@
 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "smodels.h"
 #ifndef SMODELS_H
 #error "You need the .h and .o files from SModels in your directory"
@@ -66,14 +67,39 @@ extern "C" void beginBasicRule(void)
   api->begin_rule(BASICRULE);
 }
 
+extern "C" void beginChoiceRule(void)
+{
+  api->begin_rule(CHOICERULE);
+}
+
+extern "C" void beginConstraintRule(void)
+{
+  api->begin_rule(CONSTRAINTRULE);
+}
+
+extern "C" void beginWeightRule(void)
+{
+  api->begin_rule(WEIGHTRULE);
+}
+
 extern "C" void addHead(int atomNum)
 {
   api->add_head(atoms[atomNum-1]);
 }
 
+extern "C" void addWPosBody(int atomNum,Weight weight)
+{
+  api->add_body(atoms[atomNum-1],true,weight);
+}
+
 extern "C" void addPosBody(int atomNum)
 {
   api->add_body(atoms[atomNum-1],true);
+}
+
+extern "C" void addWNegBody(int atomNum,Weight weight)
+{
+  api->add_body(atoms[atomNum-1],false,weight);
 }
 
 extern "C" void addNegBody(int atomNum)
@@ -152,6 +178,11 @@ extern "C" void forget(void)
 extern "C" void setBody(long val)
 {
   api->set_atleast_body(val);
+}
+
+extern "C" void setWeight(long val)
+{
+  api->set_atleast_weight(val);
 }
 
 extern "C" void setHead(long val)

@@ -1,53 +1,29 @@
-/* 
-
-init_smodels(+Query): initializes smodels with the residual program
-for Query.  Query must be a call to a tabled predicate that is
-currently completely evaluated (and should have a delay list).
-
-atom_handle(?Atom,?AtomHandle): is set by init_smodels to be true of
-the set of atoms in the residual program (and thus the herbrand base
-of the stable models.)  AtomHandle is an integer uniquely identifying
-the atom.  The initial query given to init_smodels has the atom-handle
-of 1.
-
-in_all_stable_models(+AtomHandle,+Neg): is true if Neg is 0 and the
-atom numbered AtomHandle is true in all stable models (of the residual
-program set by the previous init_smodels).  If Neg is nonzero, then it
-is true if the atom is in NO stable model.
-
-a_stable_model: invokes smodels to find a stable model (of the program
-set by the previous invocation of init_smodels.)  If there are no
-(more) stable models, it fails.  It will compute all stable models
-through backtracking.  Atoms true in a stable model can be obtained by
-in_current_stable_model/1.
-
-;n_current_stable_model(?AtomHandle): true of handles of atoms true in
-the current stable model (set by an invocation of a_stable_model/0.)
-
-current_stable_model(-AtomList) returns the list of atoms true in the
-current stable model.
-
-answer_set(+Query) true if Query is true in all partial stable models
-total on the subgoals relevant to Query.  And false otherwise. 
-
-full_answer_set(+Query,-Res) where Res is true if Query is true in all
-partial stable models total on subgoals relevant to Query; Res is
-false if the query -Query (the explicit negation of Query, where the
-dash (-) is the explicit negation operator) is true in all such
-partial stable models; it fails otherwise.
-
-print_current_stable_model: prints the current stable model on STDFDBK.
-
-pstable_model(+Query,-Model,+Flag) returns nondeterministically a list
-of atoms true in the partial stable model total on the atoms relevant
-to instances of Query, if Flag is 0.  If Flag is 1, it only returns
-models in which the instance of Query is true.  
-
-set_query_true/1: set smodels so as to compute only partial stable
-models where the give query is true
+/* File:      xnmr_int.P
+** Author(s): David Warren (I think)
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1999
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
 */
 
-:- compiler_options([xpp_on]).
+
+:- compiler_options([xpp_on,ciao_directives]).
 
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
@@ -55,12 +31,25 @@ models where the give query is true
 #include "char_defs.h"
 
 :- dynamic atomhandle/2.
+
+:- comment(module,"This module provides the interface from the
+@tt{xnmr} module to Smodels.  It does not use the @tt{sm_int}
+interface, but rather directly calls the Smodels C interface, and can
+be thought of as a special-purpose alternative to @tt{sm_int}. ").
+
+/* counter of atoms to be passed to Smodels */
 :- local '_$smctr'/0.
+
 :- local '_$smissm'/0.
+
 :- dynamic atomtrie/1.
 
 :- index(atomhandle(_,_),[1,2],1001).
 
+:- comment(init_smodels/1,"@pred{init_smodels(+Query)}: initializes
+smodels with the residual program produced by evaluationg @tt{Query}.
+@tt{Query} must be a call to a tabled predicate that is currently
+completely evaluated (and should have a delay list)").
 
 init_smodels(Query) :-
 	close_smodels,
@@ -145,6 +134,11 @@ close_smodels :-
          ;      true
         ).
 	
+:- comment(atom_handle/2,"@tt{atom_handle(?Atom,?AtomHandle)} is set
+by @pred{init_smodels/1} to be an integer uniquely identifying each
+atoms in the residual program (and thus each atom in the Herbrand base
+of the program for which the stable models are to be derived.  The
+initial query given to init_smodels has the atom-handle of 1.").
 
 atom_handle(Atom,Handle) :-
 	smodels_initted,
@@ -163,11 +157,24 @@ atom_handle(Atom,Handle) :-
 		atomhandle(Handle,Leaf)
 	).
 
+:- comment(hide,set_query_true/1).
+
+%TLS: need new documentation.
+/*set smodels so as to compute only partial stable
+models where the give query is true*/
+
 set_query_true(Neg) :-
 	smodels_initted,	
 	(Neg =:= 1
 	->  smodelsSetNegCompute(1)
 	;   smodelsSetPosCompute(1)).
+
+:-comment(in_all_stable_models/2,
+"@tt{in_all_stable_models(+AtomHandle,+Neg)} is true if @tt{Neg} is 0
+and the atom numbered AtomHandle is true in all stable models (of the
+residual program set by the previous call to @tt{init_smodels/1}).  If
+@tt{Neg} is nonzero, then it is true if the atom is in NO stable
+model.").
 
 in_all_stable_models(Handle,Neg) :-
 	smodels_initted,
@@ -187,6 +194,12 @@ in_all_stable_models1(Handle,Neg) :-
 	!,
 	close_smodels,
 	Ret =:= 0.         
+
+:- comment(pstable_model/3,"@tt{pstable_model(+Query,-Model,+Flag)}
+returns nondeterministically a list of atoms true in the partial
+stable model total on the atoms relevant to instances of @tt{Query},
+if @tt{Flag} is 0.  If @tt{Flag} is 1, it only returns models in which
+the instance of @tt{Query} is true.").
 
 pstable_model(Query0,Model,Flag) :-
 	make_call(Query0,Query,QueryVars,Neg),
@@ -213,6 +226,13 @@ pstable_model(Query0,Model,Flag) :-
 	).
 
 
+/*
+answer_set(+Query) true if Query is true in all partial stable models
+total on the subgoals relevant to Query.  And false otherwise. 
+*/
+%TLS hidden because of semantic difficulties.
+:- comment(hide,answer_set/1).
+
 answer_set(Query0) :-
 	make_call(Query0,Query,QueryVars,Neg),
 	get_calls(Query, S, R),
@@ -225,6 +245,17 @@ answer_set(Query0) :-
 	 ;      init_smodels(Query),
 	        in_all_stable_models1(1,Neg)
 	).
+
+/*
+full_answer_set(+Query,-Res) where Res is true if Query is true in all
+partial stable models total on subgoals relevant to Query; Res is
+false if the query -Query (the explicit negation of Query, where the
+dash (-) is the explicit negation operator) is true in all such
+partial stable models; it fails otherwise.
+*/
+
+%TLS hidden because of semantic difficulties.
+:- comment(hide,full_answer_set/2).
 
 full_answer_set(Query,true) :-
 	answer_set(Query).
@@ -253,6 +284,13 @@ make_call(Query0,Query,QueryVars,Neg) :-
 :- table table_call/1.
 table_call(Q) :- call(Q).
 
+:- comment(a_stable_model/0,"This predicate invokes Smodels to find a
+(new) stable model (of the program set by the previous invocation of
+@pred{init_smodels/1}.)  It will compute all stable models through
+backtracking.  If there are no (more) stable models, it fails.  Atoms
+true in a stable model can be examined by
+@pred{in_current_stable_model/1}.").
+
 a_stable_model :-
 	smodels_initted,
 	repeat,
@@ -271,17 +309,26 @@ have_sm :-
          ;      abort('smodels: no current stable model')
         ).
 
+:- comment(in_current_stable_model/1,
+"@tt{in_current_stable_model(?AtomHandle)} is true of handles of atoms
+true in the current stable model (set by an invocation of
+@pred{a_stable_model/0}.)").
+
 in_current_stable_model(Handle) :-
 	smodels_initted,
 	have_sm,
 	conget('_$smctr',NumAtoms),
 	(integer(Handle),Handle>0,Handle=<NumAtoms
          ->     true
-         ;      abort(('in_current_stable_model: illegal atom number: ',Handle))
+         ;      abort(('in_current_stable_model: illegal atom number: ',
+			Handle))
         ),
 	smodelsCheckAtom(Handle,Ret),
 	Ret =\= 0.
 	
+:-comment(current_stable_model/1,"@tt{current_stable_model(-AtomList)}
+returns the list of atoms true in the current stable model.").
+
 current_stable_model(Atoms) :-
 	smodels_initted,
 	have_sm,
@@ -295,6 +342,9 @@ true_in_csm(Atom) :-
 	Ret =\= 0,
 	atomhandle(Hand,Leaf),
 	trie_interned(Atom,AtomTrie,Leaf,_Skel).
+
+:- comment(print_current_stable_model/0,"prints the current stable
+model to the stream to which answers are sent.(stdfbrk)").
 
 print_current_stable_model :-
 	current_stable_model(SM),
