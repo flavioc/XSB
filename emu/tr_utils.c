@@ -1225,7 +1225,7 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   while(p != NULL){
     /*    xsb_warn("loopd"); */
     if(p -> leaf == leafn){
-      xsb_warn(" Leaf Node was previously deleted !");
+      xsb_warn("Leaf node was previously deleted!");
       return;
     }
     p = p -> next;
