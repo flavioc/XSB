@@ -1826,12 +1826,13 @@ int builtin_call(byte number)
       /* ctop_tag(2, makenil); */ /* keep it as a free var */
       ctop_tag(3, makeint(0));
     }
-    else {
+    else if (isattv(attv)) {
       CPtr vector;
       vector = (CPtr)dec_addr(attv) + 1;
       ctop_tag(2, cell(vector));
       ctop_tag(3, cell(clref_val(cell(vector)) + 1));
     }
+    else xsb_abort("GET_ATTRIBUTES: Argument 1 is not an attributed variable");
     break;
   }
 
