@@ -146,6 +146,7 @@ make_include_directive1(' ',_, []).
 parse_clauses(ModName, Module) :-
 	my_read(Clause, VariableList),
 	singleton_check(Clause, VariableList),
+	check_compilable_clause(Clause),
 %	expand_term(Clause, Expanded_Clause),	% This line is changed to the
 						% two lines below by Baoqiu 
 						% to process the multifile 
@@ -171,6 +172,20 @@ parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
 
 my_read(Term, Vars) :- stat_flag(10, File), file_read(File, Term, Vars).
 
+check_compilable_clause(Cl) :- var(Cl), !, 
+	error(('Clause cannot be compiled: ',Cl)),
+	fail.
+check_compilable_clause(:-(D)) :- var(D), !, 
+	error(('Clause cannot be compiled: ',:-(D))),
+	fail.
+check_compilable_clause(:-(H,B)) :- var(H), !, 
+	error(('Clause cannot be compiled: ',:-(H,B))),
+	fail.
+check_compilable_clause([]) :- !.
+check_compilable_clause([Cl|Cls]) :- !,
+	check_compilable_clause(Cl),
+	check_compilable_clause(Cls).
+check_compilable_clause(_).
 
 %/////////////////////////////////////////////////////////////////////////
 % 	Modifications made by Baoqiu Cui (11/22/1996)
@@ -462,6 +477,7 @@ parse_directive(compiler_options(Options),_SymTab) :-
 /* This code is also used in cp_opt.P, so make sure any changes here    */
 /* dont break cp_opt/2							*/
 /*======================================================================*/
+
 
 parse_preddef(H, B, List, SymTab) :-
 	functor(H, F, A),

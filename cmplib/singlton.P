@@ -28,6 +28,7 @@
 /*  singleton_check(+Clause, +VariableList).				*/
 /*======================================================================*/
 
+singleton_check(X, _) :- var(X), !.
 singleton_check([], _) :- !.
 singleton_check([Cl|Cls], VariableList) :- !,
 	singleton_check(Cl, VariableList),
