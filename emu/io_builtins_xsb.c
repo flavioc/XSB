@@ -698,7 +698,7 @@ static int read_can_error(FILE *filep, STRFILE *instr, int prevchar, Cell prolog
     case TK_INTFUNC	: fprintf(stderr,"%d ", *(int *)ptr); break;
     case TK_REALFUNC	: fprintf(stderr,"%f ", *(double *)ptr); break;
     }
-    token = GetToken(filep,NULL,prevchar);
+    token = GetToken(filep,instr,prevchar);
     prevchar = token-> nextch;
   }
   if (token->type == TK_EOC)
@@ -1053,8 +1053,9 @@ int read_canonical_term(FILE *filep, STRFILE *instr, Cell prologvar)
     if (funtop == 0) {  /* term is finished */
       token = GetToken(filep,instr,prevchar);
       /* print_token(token->type,token->value); */
-      prevchar = token->nextch;
-      if (token->type != TK_EOC) return read_can_error(filep,instr,prevchar,prologvar);
+      prevchar = token->nextch; /* accept EOF as end_of_clause */
+      if (token->type != TK_EOF && token->type != TK_EOC) 
+	return read_can_error(filep,instr,prevchar,prologvar);
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	term = opstk[0].op;
