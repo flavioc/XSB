@@ -179,7 +179,7 @@ static int emuloop(byte *startaddr)
   int  i, j, arity;	/* to unify subfields of op1 and op2 */
   int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
 #if (defined(GC) && defined(GC_TEST))
-#define GC_INFERENCES 50 /* make sure the garbage collection test is hard */
+#define GC_INFERENCES 66 /* make sure the garbage collection test is hard */
   static int infcounter = 0;
 #endif
   int   xflag;

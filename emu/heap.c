@@ -151,7 +151,6 @@ static int printnum = 0 ;
 static int num_gc = 0 ;
 
 #ifdef DEBUG
-#define NEG_DEBUG
 static int print_at = 0 ; /* at the print_at-th gc, the stacks are printed */
 static int print_after = 0 ; /* if non zero, print all after this numgc */
 static int print_anyway = 0 ;
@@ -179,7 +178,7 @@ static CPtr heap_bot,heap_top,
             ls_bot,ls_top,
             tr_bot,tr_top,
             cp_bot,cp_top,
-            compl_top, compl_bot;
+            compl_top,compl_bot;
 
 #define stack_boundaries \
   heap_top = hreg; \
@@ -191,28 +190,23 @@ static CPtr heap_bot,heap_top,
   tr_bot = (CPtr)tcpstack.low ; \
   cp_bot = (CPtr)tcpstack.high - 1 ; \
   cp_top = top_of_cpstack ; \
-  compl_top = (CPtr)complstack.high ; \
-  compl_bot = (CPtr)complstack.low ;
-
-#ifdef COMMENT
   compl_top = (CPtr)complstack.low ; /* NOT top_of_complstk !!! */\
   compl_bot = (CPtr)complstack.high ;
-#endif
 
 #define points_into_heap(p)  ((heap_bot <= p) && (p < heap_top))
 #define points_into_ls(p)    ((ls_top <= p) && (p <= ls_bot))
 #define points_into_cp(p)    ((cp_top <= p) && (p <= cp_bot))
 #define points_into_tr(p)    ((tr_bot <= p) && (p <= tr_top))
-#define points_into_compl(p) ((compl_bot <= p) && (p <= compl_top))
-/*#define points_into_compl(p) ((compl_top <= p) && (p <= compl_bot))*/
+#define points_into_compl(p) ((compl_top <= p) && (p <= compl_bot))
 
 /*----------------------------------------------------------------------*/
 /* marker bits in different areas: the mark bit for the CHAT areas is   */
-/* in the CHAT areas themselves - same for the completion stack.        */
+/* in the CHAT areas themselves.                                        */
 /*----------------------------------------------------------------------*/
 
 static char *heap_marks  = NULL ;
 static char *ls_marks    = NULL ;
+/* the following areas are just chain bits and are used only in sliding */
 static char *cp_marks    = NULL ;
 static char *tr_marks    = NULL ;
 #ifdef CHAT
@@ -246,6 +240,8 @@ static CPtr hp_pointer_from_cell(Cell cell, int *tag)
 
     t = cell_tag(cell) ;
 
+    /* the use of if-tests rather than a switch is for efficiency ! */
+    /* as this function is very heavily used - do not modify */
     if (t == LIST)
       {
 	*tag = LIST;
@@ -616,11 +612,8 @@ static int mark_query(void)
 	     total_marked += mark_region(beginregion,endregion) ;
            }
 
-      /* mark the delay list field of choice points in CP stack too */
+      /* mark the delay list field of all choice points in CP stack too */
       if ((d = cp_pdreg(b)) != NULL) {
-#ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE */
-	fprintf(stderr,"Marking of Dreg field @%p is needed !\n",&cp_pdreg(b));
-#endif
 	total_marked += mark_root((Cell)d);
       }
 
@@ -638,7 +631,7 @@ static int mark_query(void)
 static int chat_mark_trail(CPtr *tr, int trlen)
 {
   int  i, j, m = 0;
-  CPtr trailed_cell ;
+  CPtr trailed_cell;
 
   /* mark trail: both address and value - do cautious early reset */
 
@@ -745,7 +738,7 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
   int  m, i, trlen, yvar;
   chat_init_pheader initial_pheader;
   chat_incr_pheader pheader;
-  CPtr b,e,d,*tr;
+  CPtr b, e, d, *tr;
   byte *cp;
 
   m = 0;
@@ -758,7 +751,7 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
       m += chat_mark_region(b,chat_get_nrargs(initial_pheader));
 
       /* marking of heap pointer from consumer is unnecessary */
-      /* as consumer gets hreg from its scheduler             */
+      /* as consumer gets hreg from its scheduling generator  */
 
       /* mark from the consumer the environment chain */
       /* it is enough to do that until the e of the leader of the consumer */
@@ -770,9 +763,6 @@ static int chat_mark_frozen_parts(int *avail_dreg_marks)
 
       /* mark the delay list field of choice points too */
       if ((d = cp_pdreg(b)) != NULL) {
-#ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE */
-	fprintf(stderr, "Marking of Dreg field in CHAT area is needed !\n");
-#endif
 	if (slide) {
 	  if (*avail_dreg_marks > 0) {
 	    *avail_dreg_marks -= 1;
@@ -847,18 +837,13 @@ static int chat_mark_substitution_factor(void)
 
       /* we also need to mark the Dreg fields of those generator
          choice points that have been reclaimed from the CP stack */
-if (! slide) { /* VERY VERY TEMPORARY TEST --- SHOULD BE REVISED */
       subg_ptr = compl_subgoal_ptr(compl_fr);
       if ((subg_cp_ptr(subg_ptr) == NULL) /* not in the CP stack anymore */ &&
 	  (! is_completed(subg_ptr))) {
 	if ((d = compl_pdreg(compl_fr)) != NULL) {
-#ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE -- NEEDS REVISION FOR SLIDING */
-	  xsb_mesg("Marking of Dreg field in compl stack is needed !");
-#endif
 	  m += mark_root((Cell)d);
 	}
       }
-}
       compl_fr = prev_compl_frame(compl_fr);
     }
   return(m) ;
@@ -935,18 +920,11 @@ int mark_heap(int arity, int *marked_dregs)
 
   if (slide) {
 #ifdef CHAT
-    avail_dreg_marks = MAX_DREG_MARKS ;
-#ifdef COMMENT
+    avail_dreg_marks = MAX_DREG_MARKS;
     /* here allocate EXACT amount for completion stack: not upper bound */
-    compl_marks = calloc((2*((compl_bot-top_of_complstk)/COMPLFRAMESIZE))+1,1);
+    compl_marks = calloc(compl_bot - top_of_complstk,1);
     if (! compl_marks)
-      xsb_exit("Not enough core to allocate marks for completion stack");
-#ifdef DEBUG
-    fprintf(stderr,"Allocated %d mark bits for completion stack (%p,%p)\n",
-	    (compl_bot-top_of_complstk)/COMPLFRAMESIZE,
-	    compl_bot,top_of_complstk);
-#endif
-#endif
+      xsb_exit("Not enough core to allocate chain bis for completion stack");
 #endif
     /* these areas are not used in a copying collector */
     cp_marks = calloc(cp_bot - cp_top + 1,1);
@@ -965,9 +943,6 @@ int mark_heap(int arity, int *marked_dregs)
 
   marked = mark_region(reg+1,reg+arity);
   if (delayreg != NULL) {
-#ifdef NEG_DEBUG
-    fprintf(stderr,"Dreg pointing to %p\n", delayreg);
-#endif
     marked += mark_root((Cell)delayreg);
   }
 
@@ -988,9 +963,6 @@ int mark_heap(int arity, int *marked_dregs)
 #ifdef CHAT
   marked += chat_mark_frozen_parts(&avail_dreg_marks);
   if (slide) *marked_dregs = MAX_DREG_MARKS - avail_dreg_marks;
-#ifdef NEG_DEBUG
-  fprintf(stderr, "Total of %d marked Dregs in CHAT areas\n", *marked_dregs);
-#endif
 #endif
 
   marked += mark_hreg_from_choicepoints();
@@ -1178,7 +1150,7 @@ void print_cp(int add)
 {
   CPtr startp, endp ;
   char buf[100] ;
-  int start ;
+  int  start ;
   FILE *where ;
 
   sprintf(buf,"CP%d",printnum) ;
@@ -1207,7 +1179,7 @@ void print_cp(int add)
 void print_tr(int add)
 {
   CPtr startp, endp ;
-  int start ;
+  int  start ;
   FILE *where ;
   char buf[100] ;
 
@@ -1236,7 +1208,7 @@ void print_tr(int add)
 void print_regs(int a,int add)
 {
   CPtr startp, endp ;                                                     
-  int start ;                                                             
+  int  start ;                                                             
   FILE *where ;
   char buf[100] ;                                                         
 
@@ -1294,12 +1266,12 @@ void print_regs(int a,int add)
 
 void print_chat(int add)
 {
-  CPtr startp ;                                                     
-  FILE *where ;
+  CPtr startp;                                                     
+  FILE *where;
   chat_init_pheader initial_pheader;
   chat_incr_pheader pheader;
-  char buf[100] ;                                                         
-  int i, j, len;
+  char buf[100];                                                         
+  int  i, j, len;
 
   sprintf(buf,"CHAT%d",printnum) ;                                       
   printnum += add ;
@@ -1429,7 +1401,7 @@ void print_all_stacks(void)
 static void chat_relocate_region(CPtr *startp, int len,
 				 int heap_offset, int local_offset)
 { int j;
-  Cell cell_val ;
+  Cell cell_val;
 
   while (len)
     { 
@@ -1675,11 +1647,17 @@ bool glstack_realloc(int new_size, int arity)
 #define tr_set_unchained(p)      tr_marks[(p-tr_bot)] &= ~CHAIN_BIT
 #define tr_is_chained(p)         (tr_marks[(p-tr_bot)] & CHAIN_BIT)
 
+#ifdef CHAT
+#define compl_is_chained(p)      compl_marks[(compl_bot-p)]
+#define compl_set_unchained(p)   compl_marks[(compl_bot-p)] = 0
+#define compl_set_chained(p)     compl_marks[(compl_bot-p)] = 1
+#endif
+
 static void unchain(CPtr hptr, CPtr destination)
 {
-  CPtr start,pointsto ;
-  int whereto, tag ;
-  int continue_after_this = 0 ;
+  CPtr start, pointsto ;
+  int  whereto, tag ;
+  int  continue_after_this = 0 ;
 
 /* hptr is a pointer to the heap and is chained */
 /* the whole chain is unchained, i.e.
@@ -1901,7 +1879,7 @@ static CPtr slide_heap(int num_marked)
     }
 
     /* chain choicepoints */
-    /* more precise traversal of choicepoints possible */
+    /* more precise traversal of choice points possible */
 
     { CPtr endcp ;
       endcp = cp_top ;
@@ -1918,8 +1896,9 @@ static CPtr slide_heap(int num_marked)
     }
 
     /* chain the substitution factors reachable - for CHAT	  */
-    /* substitution factors of generators are in completion stack */
-    /* the substitution factors of the consumers are in the cps   */
+    /* substitution factors of generators are in the heap and are */
+    /* pointed by a field of the completion stack; the substitution */
+    /* factors of the consumers are in the choice point stack     */
     /* so they have just been chained already                     */
 #ifdef CHAT
     { CPtr compl_fr;
@@ -1928,15 +1907,25 @@ static CPtr slide_heap(int num_marked)
       while (compl_fr != COMPLSTACKBOTTOM)
 	{ /* substitution factor is now in the heap for generators */
 	  p = (CPtr)(&compl_hreg(compl_fr));
-	  contents = cell(p) ;
-	  q = hp_pointer_from_cell(contents,&tag) ;
-	  if (!q)
-	    fprintf(stderr,"bad heap pointer during chaining SF\n");
-	  if (! h_marked(q-heap_bot))
-	    fprintf(stderr,"chain SF problem\n");
-	  if (h_is_chained(q)) compl_set_chained(p) ;
-	  h_set_chained(q) ;
-	  swap_with_tag(p,q,tag) ;
+	  contents = cell(p);
+	  q = hp_pointer_from_cell(contents,&tag);
+	  if (!q) fprintf(stderr,"bad heap pointer during chaining SF\n");
+	  if (! h_marked(q-heap_bot)) fprintf(stderr,"chain SF problem\n");
+	  if (h_is_chained(q)) compl_set_chained(p);
+	  h_set_chained(q);
+	  swap_with_tag(p,q,tag);
+
+	  /* we also need to adapt the Dreg fields */
+	  if (compl_pdreg(compl_fr) != NULL) {
+	    p = (CPtr)(&(compl_pdreg(compl_fr)));
+	    contents = cell(p);
+	    q = hp_pointer_from_cell(contents,&tag);
+	    if (!q) fprintf(stderr,"bad heap pointer during chaining Dreg\n");
+	    if (! h_marked(q-heap_bot)) fprintf(stderr,"chain SF problem\n");
+	    if (h_is_chained(q)) compl_set_chained(p);
+	    h_set_chained(q);
+	    swap_with_tag(p,q,tag);
+	  }
 	  compl_fr = prev_compl_frame(compl_fr);
 	}
     }
@@ -1977,7 +1966,8 @@ static CPtr slide_heap(int num_marked)
 	    /* chaining of argument registers from consumer */
 	    chat_chain_region(b,chat_get_nrargs(initial_pheader));
 
-	    /* chaining of heap pointer from consumer is unnecessary     */
+	    /* chaining of heap pointer from consumer is unnecessary */
+
 	    /* because of how chaining of ls is done above, no need to   */
 	    /* do chaining of the ls that is reachable from the consumer */
 	    /* revision might be needed                                  */
@@ -2290,9 +2280,9 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     }
 
 #ifdef CHAT
-  /* copy & adapt substitution factors reachable - they are in
-     completion stack; the substitution factors of the consumers are
-     in the choice point stack and they have just been treated */
+  /* copy & adapt substitution factors reachable - they are pointed by a
+     field of completion stack; the substitution factors of the consumers 
+     are in the choice point stack and they have just been treated */
 
     { CPtr compl_fr;
       compl_fr = openreg;
@@ -2308,9 +2298,6 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 
 	  /* we also need to adapt the Dreg fields */
 	  if (compl_pdreg(compl_fr) != NULL) {
-#ifdef NEG_DEBUG /* PLEASE TAKE ME OUT OF HERE - NEEDS REVISION FOR SLIDING */
-	    xsb_mesg("Adapting the Dreg field in compl stack...");
-#endif
 	    p = (CPtr)(&(compl_pdreg(compl_fr)));
 	    contents = cell(p) ;
 	    q = hp_pointer_from_cell(contents,&tag) ;
@@ -2607,11 +2594,11 @@ int gc_heap(int arity)
     if (print_on_gc) print_all_stacks();
 
     /* get rid of the marking areas - if they exist */
-    if (heap_marks)  { check_zero(heap_marks,(heap_top-heap_bot),"heap") ;
+    if (heap_marks)  { check_zero(heap_marks,(heap_top - heap_bot),"heap") ;
                        free((heap_marks-1)) ; /* see its calloc */
 		       heap_marks = NULL ;
                      }
-    if (tr_marks)    { check_zero(tr_marks,(tr_top-tr_bot + 1),"tr") ;
+    if (tr_marks)    { check_zero(tr_marks,(tr_top - tr_bot + 1),"tr") ;
                        free(tr_marks) ;
 		       tr_marks = NULL ;
                      }
@@ -2624,7 +2611,7 @@ int gc_heap(int arity)
 		       cp_marks = NULL ;
                      }
 #ifdef CHAT
-    if (compl_marks) { i = (2*((compl_bot-top_of_complstk)/COMPLFRAMESIZE))+1;
+    if (compl_marks) { i = (compl_bot - top_of_complstk);
                        check_zero(compl_marks,i,"compl") ;
                        free(compl_marks) ;
 		       compl_marks = NULL ;

@@ -79,7 +79,6 @@ struct completion_stack_frame {
   int     level_num;
 #ifdef CHAT
   CPtr    hreg;	          /* for accessing the substitution factor */
-  int     chat_chain_bit; /* should come immediatly after hreg */
   CPtr    pdreg;
   CPtr    ptcp;
   CPtr    cons_copy_list; /* Pointer to a list of consumer copy frames */
@@ -96,14 +95,9 @@ struct completion_stack_frame {
 #define compl_level(b)		((ComplStackFrame)(b))->level_num
 #ifdef CHAT
 #define compl_hreg(b)		((ComplStackFrame)(b))->hreg
-#define compl_chain_bit(b)	((ComplStackFrame)(b))->chat_chain_bit
 #define compl_pdreg(b)		((ComplStackFrame)(b))->pdreg
 #define compl_ptcp(b)		((ComplStackFrame)(b))->ptcp
 #define compl_cons_copy_list(b)	((ComplStackFrame)(b))->cons_copy_list
-
-#define compl_is_chained(b)     *(((CPtr)b)+1)
-#define compl_set_unchained(b)  *(((CPtr)b)+1) = 0
-#define compl_set_chained(b)    *(((CPtr)b)+1) = 1
 #endif
 #define compl_del_ret_list(b)	((ComplStackFrame)(b))->del_ret_list
 #define compl_visited(b)	((ComplStackFrame)(b))->visited
@@ -127,13 +121,12 @@ struct completion_stack_frame {
   compl_subgoal_ptr(openreg) = subgoal; \
   compl_level(openreg) = level_num; \
   compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
-  compl_chain_bit(openreg) = 0; \
   compl_pdreg(openreg) = delayreg; \
   compl_ptcp(openreg) = ptcpreg; \
   compl_cons_copy_list(openreg) = NULL; \
-  compl_del_ret_list(openreg) = (ALPtr)NULL; \
+  compl_del_ret_list(openreg) = NULL; \
   compl_visited(openreg) = FALSE; \
-  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = (EPtr) NULL; \
+  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL; \
   check_completion_stack_overflow
 #else  /* Regular SLG-WAM */
 #define	push_completion_frame(subgoal)	\
@@ -141,32 +134,33 @@ struct completion_stack_frame {
   openreg -= COMPLFRAMESIZE; \
   compl_subgoal_ptr(openreg) = subgoal; \
   compl_level(openreg) = level_num; \
-  compl_del_ret_list(openreg) = (ALPtr)NULL; \
+  compl_del_ret_list(openreg) = NULL; \
   compl_visited(openreg) = FALSE; \
-  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = (EPtr) NULL; \
+  compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL; \
   check_completion_stack_overflow
 #endif
 
-#ifdef CHAT
+#if (!defined(LOCAL_EVAL))
+#if (defined(CHAT))
 #define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
   compl_subgoal_ptr(cp_frame) = subgoal;			\
   compl_level(cp_frame) = compl_level(cs_frame);		\
   compl_hreg(cp_frame) = compl_hreg(cs_frame);			\
-  compl_chain_bit(cp_frame) = compl_chain_bit(cs_frame);	\
   compl_pdreg(cp_frame) = compl_pdreg(cs_frame);	       	\
   compl_ptcp(cp_frame) = compl_ptcp(cs_frame);			\
   compl_cons_copy_list(cp_frame) = compl_cons_copy_list(cs_frame); \
   compl_del_ret_list(cp_frame) = compl_del_ret_list(cs_frame);	\
   compl_visited(cp_frame) = FALSE;				\
-  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = (EPtr) NULL; \
+  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL; \
   cp_frame = next_compl_frame(cp_frame)
 #else
 #define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
   compl_subgoal_ptr(cp_frame) = subgoal;			\
   compl_level(cp_frame) = compl_level(cs_frame);		\
   compl_visited(cp_frame) = FALSE;				\
-  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = (EPtr) NULL; \
+  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL; \
   cp_frame = next_compl_frame(cp_frame)
+#endif
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -196,7 +190,7 @@ struct subgoal_frame {
   ALPtr ans_list_ptr;	/* Pointer to the list of returns in the ret trie */
   SGFrame prev_subgoal;
   NODEptr leaf_ptr;	/* Used only in remove_open_tries */
-  CPtr cp_ptr;          /* Pointer to the Generator CP */
+  CPtr  cp_ptr;         /* Pointer to the Generator CP */
   ALPtr ans_list_tail;  /* pointer to the tail of the answer list */
   CPtr compl_flag;      /* jf: indicate whether subg is completed */
   PNDE nde_list;	/* pointer to a list of negative DEs */
@@ -320,13 +314,16 @@ extern ALPtr empty_return();
         ((Integer) subg_compl_flag(SUBG_PTR) < 0)
 
 #define mark_as_completed(SUBG_PTR) {\
-        subg_compl_flag(SUBG_PTR) = (CPtr) -1;  \
-        reclaim_del_ret_list((SGFrame)SUBG_PTR); } 
+          subg_compl_flag(SUBG_PTR) = (CPtr) -1;  \
+          reclaim_del_ret_list((SGFrame)SUBG_PTR); \
+        } 
 
 #define mark_delayed(csf1, csf2, susp) { \
-	compl_visited(csf1) = DELAYED; \
-	compl_visited(csf2) = DELAYED; \
-	csf_neg_loop(susp) = TRUE; }
+	  compl_visited(csf1) = DELAYED; \
+	  compl_visited(csf2) = DELAYED; \
+  /* do not put TRUE but some !0 value that GC can recognize as int tagged */\
+	  csf_neg_loop(susp) = INT; \
+        }
 
 /*----------------------------------------------------------------------*/
 /* The following macro might be called more than once for some subgoal. */
@@ -414,3 +411,4 @@ extern ALPtr empty_return();
 
 #define remove_open_tables() remove_open_tries(COMPLSTACKBOTTOM)
 
+/*----------------------------------------------------------------------*/

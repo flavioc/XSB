@@ -179,7 +179,7 @@ char *init_para(int argc, char *argv[])
 
 
   flags[STACK_REALLOC] = TRUE;
-  flags[GARBAGE_COLLECT] = COPYING_GC;  /* temporarily copying made default */
+  flags[GARBAGE_COLLECT] = SLIDING_GC;
 
   /* Set default Prolog files.
      ------------------------- */

@@ -1013,7 +1013,7 @@ static void print_heap(int overlap)	/* Heap grows up */
 static char *compl_stk_frame_field[] = {
         "subgoal_ptr", "level_num",
 #ifdef CHAT
-	"tcp-hreg", "chain-bit", "tcp-pdreg", "tcp-ptcp", "cons_copy_list",
+	"tcp-hreg", "tcp-pdreg", "tcp-ptcp", "cons_copy_list",
 #endif
 	"del_ret_list", "visited", "DG_edges", "DGT_edges"
 };
