@@ -142,6 +142,10 @@ void xsb_executable_full_path(char *myname)
     sprintf(executable, "%s%c%s", current_dir, SLASH, myname);
   }
 
+#ifdef WIN_NT
+    strcat(executable, ".exe");
+#else
+
   /* found executable by prepending cwd */
   if (!stat(executable, &fileinfo)) return;
 
@@ -155,7 +159,7 @@ void xsb_executable_full_path(char *myname)
       pathcounter++;
     }
 
-    /* save the separator ':' (or ';' on NT and replace it with \0 */
+    /* save the separator ':' (or ';' on NT and replace it with \0) */
     save = *pathcounter;
     *pathcounter = '\0';
 
@@ -169,6 +173,7 @@ void xsb_executable_full_path(char *myname)
     if (*pathcounter) pathcounter++;
 
 #ifdef WIN_NT
+    strcat(executable, ".exe");
     found = (0 == access(executable, 02));	/* readable */
 #else
     found = (0 == access(executable, 01));	/* executable */
