@@ -2111,6 +2111,10 @@ xsbBool db_build_prref( /* PSC, Tabled?, -PrRef */ )
   /* moved this functionality from Prolog (very ugly and error-prone) to C */
   set_type(psc, T_DYNA);
   set_env(psc, T_VISIBLE);
+
+  /* set data to point to usemod -- lfcastro */
+  if (get_data(psc) == NULL) 
+    set_data(psc,global_mod);
     
   p = (CPtr)mem_alloc(sizeof(PrRefData));
   Loc = 0 ;

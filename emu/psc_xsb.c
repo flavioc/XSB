@@ -179,7 +179,7 @@ static int is_globalmod(Psc mod_psc)
  * know that have this property are the modules "global" and "usermod".
  */
     if (mod_psc)
-      return (((Cell)get_data(mod_psc) == 1));
+      return (((Cell)get_data(mod_psc) == USERMOD_PSC));
     /** dsw need a better check here!!?! **/
     else
       return 1;
