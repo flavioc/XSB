@@ -555,4 +555,5 @@ Gotchas and experience
 
             find . -name '*.O' -exec touch -c '{}' \;
 
-8. I am sure there are other gotchas. Please add to this list.
+8. There are other, more serious gotchas. Please see Policies in this
+   directory.
