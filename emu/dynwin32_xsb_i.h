@@ -37,6 +37,8 @@
 #include "error_xsb.h"
 #include "inst_xsb.h"
 #include "psc_xsb.h"
+#include "string_xsb.h"
+#include "extensions_xsb.h"
 
 #define BUFFEXTRA 1024
 
@@ -62,15 +64,16 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   int 	strl = strlen(pofilename);
   HMODULE handle;
   void	*funcep;
+  char  *file_extension_ptr;
   xsbBool	dummy();
   
   /* (1) create filename.so */
   
   strcpy(sofilename, pofilename);
-  sofilename[strl-1] = 'd';
-  sofilename[strl]   = 'l';
-  sofilename[strl+1] = 'l';
-  sofilename[strl+2] = '\0';
+
+  file_extension_ptr = xsb_strrstr(sofilename, XSB_OBJ_EXTENSION_STRING);
+  /* replace the OBJ file suffix with the so suffix */
+  strcpy(file_extension_ptr+1, "dll");
   
   /* (2) open the needed object */
   if (( handle = LoadLibrary(sofilename)) == 0 ) {
