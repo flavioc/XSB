@@ -426,7 +426,9 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 
 	% Source files whose contents should not be documented
         get_comment(nodoc,multiple,ignore(_),_Format,_Idxs,Opts,NoDocS),
-	optional_message('Not documenting'(NoDocS),Opts),
+	(NoDocS == [] -> 
+	    true
+	  ; optional_message('Not documenting'(NoDocS),Opts)),
 
 	% Usage comment to override automatic one
 	get_comment(usage,single,ignore(_),Format,Idxs,Opts,Usage),
@@ -773,7 +775,7 @@ document_table_type(tabled(X),Format,OS):-
 get_native_declaration(Pred,dynamic):- 
 	functor(Pred,F,A),
 	'_#clause'(directive(dynamic(Comma_list)),_),
-	comma_member(F/A,Comma_list),
+	comma_member(F/A,Comma_list).
 
 %% ---------------------------------------------------------------------------
 :- pred doc_usages/9 # "Generates documentation for each ``usage'' of
