@@ -144,13 +144,13 @@ make_gpp_command(GPP_command) :-
 	%% Construct the -Include directories
 	make_include_directive(Directive, '-I'),
 	slash(Slash),
-	xsb_configuration(install_dir, InstalDir),
-	fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
-			 args('-I',InstalDir,Slash,
-			      '-I',InstalDir,Slash,
-			      Directive)),
+	xsb_configuration(install_dir, InstallDir),
+	fmt_write_string(IncludeDirs, ' %s %s%s%semu %s%s%sprolog_includes ',
+			 args(Directive,
+			      '-I',InstallDir,Slash,
+			      '-I',InstallDir,Slash)),
 	xsb_configuration(config_bindir, Bindir),
-	%% Constract the gpp command
+	%% Construct the gpp command
 	fmt_write_string(GPP_command, '%s%sgpp -P -m %s -DXSB_PROLOG ',
 			 args(Bindir,Slash,IncludeDirs)).
 
@@ -164,7 +164,6 @@ make_include_directive1(Directive, Flag, [H|Tail]) :-
 	make_include_directive1(Directive1, Flag, Tail),
 	fmt_write_string(Directive, ' %s%s %s', args(Flag, H, Directive1)).
 make_include_directive1(' ',_, []).
-
 
 
 

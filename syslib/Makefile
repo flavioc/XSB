@@ -76,8 +76,12 @@ all: init $(ALL) finish
 	@cp -f $*.O $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
 
+# Redirect warnings into a file so we would be able to display it later.
 # The header cmd...hdr is prepended before each split cmd...xx file
 # so that the output will be redirected into the appropriate cmd...?? file.
+# Also: assert the emu/prolog_includes into xpp_include_dir, to make sure that
+# the right include directories are used if we compile cmplib using an
+# older version of XSB
 init:
 	rm -f $(SVFILE)
 	@test -d $(OBJFILESAVED) || mkdir $(OBJFILESAVED)
@@ -86,6 +90,9 @@ init:
 	@echo 'file_flush($(STDWARN),_).' >> cmd...
 	@echo 'import file_reopen/4, fmt_write/3, file_flush/2 from file_io.' >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
+	@echo 'import xpp_include_dir/1 from parse.' >> cmd...hdr
+	@echo "assert(xpp_include_dir('../emu'))." >> cmd...hdr
+	@echo "assert(xpp_include_dir('../prolog_includes'))." >> cmd...hdr
 
 finish:
 	@echo 'fmt_write($(STDWARN),"%s\n",arg("--------------------------------------------")).' >> cmd...
