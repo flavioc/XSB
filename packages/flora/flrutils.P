@@ -50,7 +50,7 @@
 
 :- import fmt_write_string/3, file_time/2 from file_io.
 
-:- import unix/1 from unix.
+%%:- import unix/1 from unix.
 
 :- import read_tokens/2 from flrtokens.
 
@@ -66,6 +66,7 @@
 	'_$_$_flora_loadlist'/1,
 	'_$_$_flora_dynloadlist'/1,
 	'_$_$_flora_check_filename'/1,
+	'_$_$_write_flora_warnheader'/0,
 	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
 	dyncompile/2, dynconsult/1, dynconsult/2, load/1, dynload/1,
 	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,
@@ -131,19 +132,22 @@ displayln(A) :-
 	tell(F).
 
 flora_errheader :-
-	display('+++ FLORA Error: ').
+	display('++FLORA Error: ').
 
 flora_warnheader :-
-	display('*** FLORA Warning: ').
+	display('++FLORA Warning: ').
+
+'_$_$_write_flora_warnheader' :-
+	write('++FLORA Warning: ').
 
 flora_msgheader :-
-	display('%%% FLORA: ').
+	display('[FLORA: ').
 
 
 /*********************************************************************/
 flcompile(InFile,Dtvs) :-
 	'_$_$_flora_flcompile'(static_mode,Dtvs,InFile,force,Module),
-	displayln, flora_msgheader, displayln('calling XSB ...'),
+	displayln, flora_msgheader, displayln('calling XSB]'),
 	compile(Module,[optimize,spec_repr]).
 
 flcompile(InFile) :-
@@ -154,7 +158,7 @@ flcompile(InFile) :-
 /*********************************************************************/
 dyncompile(InFile,Dtvs) :-
 	'_$_$_flora_flcompile'(dynamic_mode,Dtvs,InFile,force,Module),
-	displayln, flora_msgheader, displayln('calling XSB ...'),
+	displayln, flora_msgheader, displayln('calling XSB]'),
 	compile(Module,[optimize,spec_repr]).
 
 dyncompile(InFile) :-
@@ -166,7 +170,7 @@ dyncompile(InFile) :-
 flconsult(File,Dtvs) :- 
 	'_$_$_flora_flcompile'(static_mode,Dtvs,File,noforce,Module),
 	displayln, flora_msgheader, display('consulting '),
-	display(Module), displayln(' ...'),
+	display(Module), displayln(']'),
 	consult(Module,[optimize,spec_repr]).
 
 flconsult(File) :- 
@@ -178,7 +182,7 @@ flconsult(File) :-
 dynconsult(File,Dtvs) :- 
 	'_$_$_flora_flcompile'(dynamic_mode,Dtvs,File,noforce,Module),
 	displayln, flora_msgheader, display('dynamically loading '),
-	display(Module), displayln(' ...'),
+	display(Module), displayln(']'),
 	load_dyn(Module).
 
 dynconsult(File) :- 
@@ -213,7 +217,7 @@ load(File) :-
 	    flora_locate_file(File,TFile),
 	    ( file_exists(TFile) ->
 		displayln, flora_msgheader, display('consulting '),
-		display(TFile), displayln(' ...'),
+		display(TFile), displayln(']'),
 		consult(File)
 
 	      ;
@@ -238,7 +242,7 @@ load(File) :-
 	        flora_locate_file(PName,PFile),
 		( file_exists(PFile) ->
 		    displayln, flora_msgheader, display('consulting '),
-		    display(PFile), displayln(' ...'),
+		    display(PFile), displayln(']'),
 		    consult(PFile,[optimize,spec_repr])
 
 		  ;
@@ -246,7 +250,7 @@ load(File) :-
 	            flora_locate_file(OName,OFile),
 		    ( file_exists(OFile) ->
 			displayln, flora_msgheader, display('consulting '),
-			display(OFile), displayln(' ...'),
+			display(OFile), displayln(']'),
 			consult(OFile,[optimize,spec_repr])
 
 		      ;
@@ -270,7 +274,7 @@ dynload(File) :-
 	    flora_locate_file(File,TFile),
 	    ( file_exists(TFile) ->
 		displayln, flora_msgheader, display('dynamically loading '),
-		display(TFile), displayln(' ...'),
+		display(TFile), displayln(']'),
 		load_dyn(File)
 
 	      ;
@@ -295,7 +299,7 @@ dynload(File) :-
 	        flora_locate_file(PName,PFile),
 		( file_exists(PFile) ->
 		    displayln, flora_msgheader, display('dynamically loading '),
-		    display(PFile), displayln(' ...'),
+		    display(PFile), displayln(']'),
 		    load_dyn(PFile)
 
 		  ;
@@ -493,10 +497,11 @@ write_PAs([pa(P,A)|PAs]) :-
 
 /********************************************************************/
 unbound_warn(Form,L) :-
-	write('*** Warning: variable(s) '),
+	'_$_$_write_flora_warnheader',
+	write('unbound variable(s) '),
 	write_list(L),
-	write(' unbound in '),
-	writeln(Form).
+	write(' in `'),
+	write(Form), writeln('''').
 
 
 /********************************************************************/
@@ -519,10 +524,9 @@ generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	display('compiling '), display(FlrFile),
 	(LoadMode == static_mode -> Str="static" ; Str="dynamic"),
 	atom_chars(A,Str),
-	display(' to '), display(A), displayln(' code,'),
-	display('           with option(s) '),
+	display(' to '), display(A), display(' code with options: '),
 	telling(F), tell(userout), write_list(Directives), tell(F),
-	displayln(' ...'),
+	displayln(']'),
 	cputime(T0),
 	seeing(PreInFile),
 	telling(PreOutFile),
@@ -554,7 +558,7 @@ generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	  ;
 	    displayln, flora_msgheader, display('Done! CPU time used: '),
 	    T is T1-T0,
-	    display(T), display(' seconds on '), unix(hostname)
+	    display(T), displayln(' seconds]')
 	).
 
 
@@ -594,12 +598,12 @@ directives_options(LoadMode,Directives,Options,Status) :-
 	    displayln, flora_msgheader, display('compiler option '),
 	    display(eqlevel(N3)), display(' detected in source code '),
 	    ( N3 > N1 ->
-		displayln('(overriding)')
+		displayln('(overriding)]')
 
 	      ; N1 > N3 ->
-	        displayln('(overridden)')
+	        displayln('(overridden)]')
 	      ;
-	        displayln
+	        displayln(']')
 	    )
 	  ;
 	    N3=0
@@ -703,10 +707,10 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 
 	  ;
 	    ( member(unbound_warning(Form,L),FlattenedRules) ->
-		displayln, flora_warnheader, display('variable(s) '),
+		displayln, flora_warnheader, display('unbound variable(s) '),
 		telling(CurrStream), tell(userout),
 		write_list(L), tell(CurrStream),
-		display(' unbound in '), displayln(Form)
+		display(' in `'), display(Form), displayln('''')
 	      ;
 		true
 	    ),
@@ -815,8 +819,8 @@ flora_directives([H|T],Opts) :-
 	    flora_directives(T,R)
 
 	  ;
-	    displayln, flora_warnheader, display('unknown compiler option '),
-	    display(H), displayln(' (discarded)'),
+	    displayln, flora_warnheader, display('unknown compiler option `'),
+	    display(H), displayln(''' (discarded)'),
 	    flora_directives(T,Opts)
 	),
 	!.

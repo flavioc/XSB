@@ -39,6 +39,8 @@
 
 :- import current_predicate/1 from curr_sym.
 
+:- import '_$_$_write_flora_warnheader'/0 from flrutils.
+
 
 /********************************************************************/
 '_$_$_flora_print_all'(Gs,NVs) :-
@@ -109,9 +111,9 @@
 	    true
 
 	  ;
-	    nl, write('*** FLORA Warning: '),
+	    nl, '_$_$_write_flora_warnheader',
 	    write(F/N),
-	    writeln(' undefined'),
+	    writeln(' is undefined'),
 	    fail
 	).
 

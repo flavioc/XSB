@@ -54,6 +54,7 @@
 	'_$_$_flora_loadlist'/1,
 	'_$_$_flora_dynloadlist'/1,
 	'_$_$_flora_check_filename'/1,
+	'_$_$_write_flora_warnheader'/0,
 	flcompile/1, flcompile/2, maxerr/1, flconsult/1, flconsult/2,
 	load/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
 	dynconsult/2, displayln_warning/1
@@ -85,12 +86,12 @@ flora_shell :-
 	write('FLORA Version '),
 	package_configuration(version(flora),V),
 	write(V), writeln(' loaded.'), nl,
-	writeln('help. displays help message'),
-	write('rundemo(''demoName''). runs demos in '),
+	writeln('help.'), writeln('       Displays help message'),
+	writeln('rundemo(''demoName'').'),
+	write('       Runs demos in '),
 	slash(S),
 	package_configuration(dir(flora),FloraDir),
-	fmt_write_string(DemoDir,'%s%sdemos',f(FloraDir,S)),
-	writeln(DemoDir), nl,
+	fmt_write("%s%sdemos\n\n",f(FloraDir,S)),
 	!.
 
 
@@ -130,29 +131,29 @@ flora_shell :-
 	slash(S),
 	( member(flrassert,Opts) ->
 	    ( current_predicate('_$_$_flora_assert'/1) ->
-		true
+	       true
 	      ;
-	        fmt_write_string(Assert,'%s%slib%sflrassert.P',f(FloraDir,S,S)),
-	        consult(Assert)
+	       fmt_write_string(Assert,'%s%slib%sflrassert.P',f(FloraDir,S,S)),
+	       consult(Assert)
 	    )
 	  ;
 	    true
 	),
 	( member(flraggregate,Opts) ->
 	    ( current_predicate('_$_$_flora_min'/3) ->
-		true
-	      ;
-	        fmt_write_string(Aggr,'%s%slib%sflraggregate.P',f(FloraDir,S,S)),
-	        consult(Aggr)
+	      true
+	     ;
+	      fmt_write_string(Aggr,'%s%slib%sflraggregate.P',f(FloraDir,S,S)),
+	      consult(Aggr)
 	    )
 	  ;
 	    true
 	),
 	( member(skolem,Opts) ->
 	    nl,
-	    displayln_warning('skolemization may require equality checking.')
+	    displayln_warning('skolemization may require equality checking')
 	  ;
-	    true
+	   true
 	).
 
 
@@ -320,7 +321,8 @@ flcompile_all_demos  :-
 	'_$_$_flora_subclass'(Z,Y),
 	(X \= Z -> true ; Z\=Y),
 	( X = Y ->
-	    write('*** FLORA Warning: cyclic subclass hierarchy: '),
+	    '_$_$_write_flora_warnheader',
+	    write('cyclic subclass hierarchy: '),
 	    write(X), write('::'), write(Z), write('::'), write(Y), nl
 	  ;
 	    true
