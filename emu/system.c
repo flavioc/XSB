@@ -29,8 +29,22 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "configs/config.h"
+
+#ifdef WIN_NT
+#include <windows.h>
+#include <direct.h>
+#include <io.h>
+#include <fcntl.h>
+#include <process.h>
+#else
+#include <unistd.h>	
+#include <stddef.h>
+#include <sys/wait.h>
+#endif
+
 #include "basictypes.h"
 #include "auxlry.h"
 #include "cell.h"
@@ -41,16 +55,6 @@
 #include "system.h"
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
-
-#ifdef WIN_NT
-#include <direct.h>
-#include <io.h>
-#include <process.h>
-#else
-#include <unistd.h>	
-#include <stddef.h>
-#include <sys/wait.h>
-#endif
 
 #ifndef fileno				/* fileno may be a  macro */
 extern int    fileno(FILE *f);	        /* this is defined in POSIX */
@@ -63,9 +67,14 @@ extern int kill(int pid, int sig);
 #endif
 
 #ifdef WIN_NT
-#define PIPE(filedes)	 _pipe(filedes, 5*MAXBUFSIZE, _O_TEXT)
+#define PIPE(filedes)	     _pipe(filedes, 5*MAXBUFSIZE, _O_TEXT)
+#define WAIT(pid, status)    _cwait(&status, pid, 0)
+#define KILL_FAILED(pid)     !TerminateProcess((HANDLE) pid, -1) /* -1 is a
+								    retval */
 #else
-#define PIPE(filedes)	 pipe(filedes)
+#define PIPE(filedes)	     pipe(filedes)
+#define WAIT(pid, status)    waitpid(pid, &status, 0)
+#define KILL_FAILED(pid)     kill(pid, SIGKILL) < 0
 #endif
 
 #define FREE_PROC_TABLE_CELL(pid)   ((pid < 0) \
@@ -328,20 +337,15 @@ bool sys_system(int callno)
     signal = string_val(signal_term);
 
     if (strcmp(signal, "kill")==0) {
+      if (KILL_FAILED(pid))
+	return FALSE;
 #ifdef WIN_NT
-      if (!TerminateProcess(pid, -1))   /* -1 is the return value */
-#else
-      if (kill(pid, SIGKILL) < 0)
+	CloseHandle((HANDLE) pid);
 #endif
-	return FALSE;  /* some kind of a problem during kill */
       return TRUE;
     }
     if (strcmp(signal, "wait")==0) {
-#ifdef WIN_NT
-      if (_cwait(&status, pid, NULL) < 0)
-#else
-      if (waitpid(pid, &status, 0) < 0)
-#endif
+      if (WAIT(pid, status) < 0)
 	return FALSE;
       return TRUE;
     }
@@ -523,8 +527,8 @@ static void init_process_table(void)
 int process_status(int pid)
 {
 #ifdef WIN_NT
-  LPDWORD status;
-  if (GetExitCodeProcess(pid, &status)) {
+  long status;
+  if (GetExitCodeProcess((HANDLE) pid, &status)) {
     if (status == STILL_ACTIVE)
       return RUNNING;
     else

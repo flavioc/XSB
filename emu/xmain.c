@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
 #ifdef WIN_NT
   INT err;
   WSADATA wsaData;
-  FILE *stream_err, *stream_out;
 #ifdef SILENT_NT
+  FILE *stream_err, *stream_out;
   stream_err = freopen("errorlog", "w", stderr);
   stream_out = freopen("outlog", "w", stdout);
 #endif

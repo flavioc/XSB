@@ -854,8 +854,15 @@ stream and binds the variable {\tt XX} to that output.
     atoms: {\tt running}, {\tt stopped}, {\tt exited} (normally), {\tt
       aborted} (abnormally), {\tt invalid}, and {\tt unknown}.
     The {\tt invalid} status is given to proceses that never existed or
-    that are not children of the parent XSb process. The {\tt unknown}
+    that are not children of the parent XSB process. The {\tt unknown}
     status is assigned when none of the other statuses can be assigned.
+
+    Note: process status (other than {\tt running}) is system dependent.
+    Windows does not seem to support {\tt stopped} and {\tt aborted}.
+    Also, processes killed using the \verb|process_control| predicate
+    (described next) are often marked as {\tt invalid} rather than {\tt
+    exited}, because Windows seems to lose all information about such
+    processes.
 \ouritem{process\_control(+Pid,+Operation)}\index{{\tt process\_control/2}} 
     Perform a process control {\tt operation} on the process with the given
     {\tt Pid}. 

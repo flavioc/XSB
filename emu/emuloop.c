@@ -1133,7 +1133,7 @@ contcase:     /* the main loop */
     pad;
     op1byte;
     if (unifunc_call((int)(op1), opregaddr) == 0) {
-      printf("Error in unary function call\n");
+      fprintf(stderr, "Error in unary function call\n");
       Fail1;
     }
     pad64;

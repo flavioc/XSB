@@ -473,6 +473,7 @@ DEP_CPP_SYSTE=\
 	{$(INTDIR)}"\configs\config.h"\
 	{$(INTDIR)}"\basictypes.h"\
 	{$(INTDIR)}"\cell.h"\
+	{$(INTDIR)}"\system.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\export.h"\
 	{$(INTDIR)}"\msyscall.h"\
@@ -1286,8 +1287,16 @@ DEP_CPP_CHAT_=\
 	".\..\emu\slgdelay.h"\
 	".\..\emu\debugs\debug_delay.h"\
 
+"$(OBJDIR)\chat.obj" : $(SOURCE) $(DEP_CPP_CHAT_) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+# End Source File
+################################################################################
+# Begin Source File
+
+
 SOURCE=$(INTDIR)\xsbsocket.c
-DEP_CPP_BUILT=\
+DEP_CPP_XSBSOCK=\
 	{$(INTDIR)}"\configs\config.h"\
 	{$(INTDIR)}"\debugs\debug.h"\
 	{$(INCLUDE)}"\sys\types.h"\
@@ -1302,8 +1311,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\xsbsocket.h"\
 	
 	
-
-"$(OBJDIR)\chat.obj" : $(SOURCE) $(DEP_CPP_CHAT_) "$(INTDIR)"
+"$(OBJDIR)\xsbsocket.obj" : $(SOURCE) $(DEP_CPP_XSBSOCK) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 

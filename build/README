@@ -103,7 +103,6 @@ The new directory structure:
 
 				  debug_biassert.h 
 				  debug_delay.h
-				  debug_kostis.h
 				  debug_residual.h
 				  debug_tries.h
 

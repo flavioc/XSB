@@ -62,9 +62,7 @@
 /*======================================================================*/
 /*======================================================================*/
 
-#define FAILED		return 0
 #define IFTHEN_FAILED	return 0
-#define SUCCEED		return 1
 #define IFTHEN_SUCCEED	return 1
 
 double realtime_count;
@@ -109,7 +107,7 @@ void print_statistics(int amount)
     realtime_count = real_time();
     perproc_reset_stat();
     reset_stat_total();
-    printf("Statistics is reset.\n");
+    fprintf(stderr, "Statistics is reset.\n");
     break;
   case 1:			/* print stack usage and cputime */
     perproc_stat();
