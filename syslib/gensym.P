@@ -41,6 +41,8 @@ conlength(Con, Length) :-
 /*----gennum------------------------------------------------------------*/
 
 gennum(N) :- conget(gennum_val, O), N is O + 1, conset(gennum_val, N).
+gennum(Obj,N) :-
+	nonvar(Obj), conget(Obj, O), N is O + 1, conset(Obj, N).
 
 /*----gensym------------------------------------------------------------*/
 

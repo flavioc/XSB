@@ -24,7 +24,7 @@
 */
 
 
-:- export gensym/2, gennum/1, prepare/0.
+:- export gensym/2, gennum/1, gennum/2, prepare/0.
 :- export conlength/2, conset/2, conget/2, coninc/1.
 :- export newcounter/1, inccounter/1, getcounter/1.
 
