@@ -96,6 +96,7 @@ static xsbTimeout *make_timeout_obj();
 
 /* declare the utility functions for select calls */
 static void init_connections();
+static void set_sockfd(int count);
 static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
 			   int **fds, int * size);
 static void test_ready(prolog_term *avail_sockfds, fd_set *fdset,
@@ -232,13 +233,10 @@ static void socket_recv(xsbTimeout *pptr)	{
 }
 
 static void socket_send(xsbTimeout *pptr) {
-    SOCKET sock_handle;
-    char *send_msg_aux;
+    SOCKET sock_handle = (SOCKET) ptoc_int(2);
+    char *send_msg_aux = ptoc_string(3);
     unsigned int msg_body_len, network_encoded_len;
 
-    sock_handle = (SOCKET) ptoc_int(2);
-    send_msg_aux = (char*) ptoc_string(3);
-    
     /* We use the first XSB_MSG_HEADER_LENGTH bytes for the message size.*/
     if ((pptr->sockdata
 	 = calloc(strlen(send_msg_aux)+XSB_MSG_HEADER_LENGTH+1,sizeof(char)))
@@ -570,9 +568,9 @@ xsbBool xsb_socket_request(void)
   case SOCKET_SET_OPTION: {
     /* socket_request(SOCKET_SET_OPTION,+Sockfd,+OptionName,+Value,_,_,_) */
     
-    char *option_name;
-    sock_handle = (SOCKET) ptoc_int(2);
-    option_name = ptoc_string(3);
+    char *option_name = ptoc_string(3);
+
+    sock_handle = (SOCKET)ptoc_int(2);
 
     /* Set the "linger" parameter to a small number of seconds */
     if (0==strcmp(option_name,"linger")) {
@@ -604,8 +602,9 @@ xsbBool xsb_socket_request(void)
     /*socket_request(SOCKET_SET_SELECT,+connection_name,
                                        +R_sockfd,+W_sockfd,+E_sockfd) */
     prolog_term R_sockfd, W_sockfd, E_sockfd;
-    int connection_count;
+    int i, connection_count;
     int rmax_fd=0, wmax_fd=0, emax_fd=0; 
+    char *connection_name = ptoc_string(2);
 
     /* bind fds to input arguments */
     R_sockfd = reg_term(3);
@@ -615,10 +614,18 @@ xsbBool xsb_socket_request(void)
     /* initialize the array of connect_t structure for select call */	
     init_connections(); 
 
+    /* check whether the same connection name exists */
+    for (i=0;i<MAXCONNECT;i++) {
+      if ((connections[i].empty_flag==0) &&
+	  (strcmp(connection_name,connections[i].connection_name)==0)) 	
+	xsb_abort("SOCKET_SET_SELECT: Connection `%s' already exists!",
+		  connection_name);
+    }
+
     /* check whether there is empty slot left for connection */	
     if ((connection_count=checkslot())<MAXCONNECT) {
       if (connections[connection_count].connection_name == NULL) {
-	connections[connection_count].connection_name = ptoc_string(2);
+	connections[connection_count].connection_name = connection_name;
  	connections[connection_count].empty_flag = 0;
 
 	/* call the utility function seperately to take the fds in */
@@ -653,14 +660,13 @@ xsbBool xsb_socket_request(void)
     prolog_term Avail_rsockfds_tail, Avail_wsockfds_tail, Avail_esockfds_tail;
 
     int maxfd;
-    int i;       /* steps for connection_count */
-    char *connection_name;
+    int i;       /* index for connection_count */
+    char *connection_name = ptoc_string(2);
     struct timeval *tv;
     prolog_term timeout_term;
     int timeout =0;
     int connectname_found = FALSE;
     int count=0;			
-    connection_name = ptoc_string(2);
 
     /* specify the time out */
     timeout_term = reg_term(3);
@@ -706,6 +712,9 @@ xsbBool xsb_socket_request(void)
     /* compute maxfd for select call */
     maxfd = connections[count].maximum_fd + 1;
 
+    /* FD_SET all sockets */
+    set_sockfd( count );
+
     /* test whether the socket fd is available */
     retcode = select(maxfd, &connections[count].readset, 
 		     &connections[count].writeset,
@@ -737,8 +746,7 @@ xsbBool xsb_socket_request(void)
 
   case SOCKET_SELECT_DESTROY:  { 
     /*socket_request(SOCKET_SELECT_DESTROY, +connection_name) */
-    char *connection_name = NULL;
-    connection_name = (char*)ptoc_string(2);
+    char *connection_name = ptoc_string(2);
     select_destroy(connection_name);
     return TRUE;
   }
@@ -810,6 +818,31 @@ static void init_connections()
  }
 }
 
+/* FD_SET the socket fds */
+static void set_sockfd(int count)
+{
+  int i;
+  
+  FD_ZERO(&connections[count].readset);
+  FD_ZERO(&connections[count].writeset);
+  FD_ZERO(&connections[count].exceptionset);
+  
+  for (i=0; i< connections[count].sizer; i++) {
+    /* turn on the bit in the fd_set */
+    FD_SET(connections[count].read_fds[i], &connections[count].readset);
+  }
+
+  for (i=0; i< connections[count].sizew; i++) {
+    /* turn on the bit in the fd_set */
+    FD_SET(connections[count].write_fds[i], &connections[count].writeset);
+  }
+
+  for (i=0; i< connections[count].sizee; i++) {
+    /* turn on the bit in the fd_set */
+    FD_SET(connections[count].exception_fds[i],
+	   &connections[count].exceptionset);
+  }
+}
 
 /* utility function to take the user specified fds in and prepare for
    select call */
@@ -821,9 +854,7 @@ static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
   prolog_term local=list;
   prolog_term head;
 
-  FD_ZERO(fdset); 
   *size = getsize(local);
-
   *fds = (int*)malloc(sizeof(int)*(*size));
 
   while (!is_nil(list)) {
