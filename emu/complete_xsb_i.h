@@ -48,8 +48,8 @@ XSB_Start_Instr(check_complete,_check_complete)
   subgoal = (VariantSF) tcp_subgoal_ptr(breg);	/* subgoal that is checked */
 
 #ifdef DEBUG_DELAY
-  fprintf(stderr, ">>>> check_complete is called.  The checked subgoal is: ");
-  print_subgoal(stderr, subgoal); fprintf(stderr, "\n");
+  fprintf(stderr, "check_complete_entered(");
+  print_subgoal(stderr, subgoal); fprintf(stderr, ").\n");
 #endif
   cs_ptr = subg_compl_stack_ptr(subgoal);
 

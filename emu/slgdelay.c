@@ -359,7 +359,7 @@ static void record_de_usage(DL dl)
   PNDE pnde, current_first;
   NODEptr as_leaf;
 #ifdef DEBUG_DELAYVAR
-  NODE tmp;
+  PNDE tmp;
 #endif
  
   de = dl_de_list(dl);
