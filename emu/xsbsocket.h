@@ -50,7 +50,7 @@
 #define WSAGetLastError()      	   1       /* in windows; use 1 in Unix */
 #define BAD_SOCKET(sockfd)         sockfd<0
 #define SOCKET_OP_FAILED(sockfd)   sockfd<0
-#define IS_IP_ADDR(string)    	   inet_addr(string) != (in_addr_t) -1
+#define IS_IP_ADDR(string)    	   inet_addr(string) != -1
 #endif
 
 #ifdef WIN_NT

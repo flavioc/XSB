@@ -161,16 +161,21 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     
-    /* find empty slot in XSB openfile table and put sockptr there */
-    i = xsb_intern_file(sockptr, "SOCKET_ACCEPT");
+    /*** NOTE: In Unix, this returns stream for the socket file 
+	 In NT, this returns a file descriptor.
+	 This is ugly and should be changed!
+    */
 #ifdef WIN_NT
     sockptr = NULL;
+    i = sockfd;
 #else
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       sockptr = NULL;
       xsb_warn("SOCKET_ACCEPT: fdopen failed");
       return FALSE;
     }
+    /* find empty slot in XSB openfile table and put sockptr there */
+    i = xsb_intern_file(sockptr, "SOCKET_ACCEPT");
 #endif
     ctop_int(3, i);
     break;
@@ -205,16 +210,21 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     
-    /* find empty slot in XSB openfile table and put fptr there */
-    i = xsb_intern_file(sockptr,"SOCKET_CONNECT");
+    /*** NOTE: In Unix, this returns stream for the socket file 
+	 In NT, this returns a file descriptor.
+	 This is ugly and should be changed!
+    */
 #ifdef WIN_NT
     sockptr = NULL;
+    i = sockfd;
 #else
     if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
       xsb_warn("SOCKET_CONNECT: fdopen failed");
       sockptr = NULL;
       return FALSE;
     }
+    /* find empty slot in XSB openfile table and put fptr there */
+    i = xsb_intern_file(sockptr,"SOCKET_CONNECT");
 #endif
     ctop_int(6, i);
     break;
