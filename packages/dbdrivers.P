@@ -1,0 +1,32 @@
+% File: dbdrivers.P
+% Author: Saikat Mukherjee
+% contact : saikat@cs.sunysb.edu
+
+% This module loads up the selected driver from the dbdrivers directory
+
+:- import bootstrap_package/2 from packaging.
+:- import fmt_write_string/3 from file_io.
+:- import slash/1 from machine.
+:- import rename/2 from shell.
+:- import xsb_configuration/2 from xsb_configuration.
+:- import initialise/0 from driver_manager.
+
+:- 	[db_interface],
+	bootstrap_package('dbdrivers', dbdrivers),
+	Basename = driver_manager,
+	[Basename],
+	slash(Slash),
+	package_configuration(dir(dbdrivers), DriverManagerDir),
+	writeln(DriverManagerDir),
+	fmt_write_string(SharedLibDriverManager, '%s%s%s.so', a(DriverManagerDir, Slash, Basename)),
+	xsb_configuration(config_libdir, ConfigLibDir),
+	fmt_write_string(LibDriverManager, '%s%s%s.so', a(ConfigLibDir, Slash, Basename)),
+	rename(SharedLibDriverManager, LibDriverManager),
+	initialise.
+
+
+load_driver(Driver) :-
+		bootstrap_package(Driver, Driver),
+		[Driver], 
+		write('driver '), write(Driver), writeln(' installed.').
+
