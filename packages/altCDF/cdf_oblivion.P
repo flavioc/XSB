@@ -7,6 +7,7 @@
 	obliterate_extensional_component/1,
 	retractall_itsobjects/1,
 	retractall_subclasses/1,
+	delete_unattached_ext_things/0,
 	delete_all_things_to_delete/0,
 	rename_things/1, rename_things/0.
 
@@ -17,6 +18,8 @@
 	    concrete_component/1,
 	    cdf_id_fields/4
 	from cdf_init_cdf.
+
+:- import cdf_root/1, system_component/1 from cdf_init_cdf.
 
 :- import classHasAttr_ext/3, hasAttr_ext/3, allAttr_ext/3, minAttr_ext/4, maxAttr_ext/4 from usermod.
 
@@ -141,6 +144,41 @@ obliterate_extensional_component(Comp) :-
 	).
 
 
+/* Delete all classes and objects that are not immediately connected
+to the isa hierarchy by an isa_ext fact. */
+delete_unattached_ext_things :-
+	retractall(things_to_delete(_)),
+	cdf_term_ext(Term,_Filt),
+	Term \= isa_ext(_,_),
+	call0(Term),
+	cdf_term_ext_arg(Term,Thing),
+	is_a_subthing(Thing,SubThing),
+	\+ isa_ext(SubThing,_),
+	\+ cdf_root(SubThing),
+	cdf_id_fields(SubThing,Id,Prod,Comp),
+	nonvar(Comp),
+	\+ system_component(Comp),
+	(structure(Prod)
+	 ->	\+ approx_prod_isa(Id,Prod,Comp)
+	 ;	true
+	),
+	assert(things_to_delete(SubThing)),
+	fail.
+delete_unattached_ext_things :-
+	delete_all_things_to_delete,
+	fail.
+delete_unattached_ext_things :-
+	abolish_table_pred(local_tabled_isa(_)).
+
+approx_prod_isa(Id,Prod,Comp) :-
+	functor(Prod,Fun,Arity),
+	functor(AbsProd,Fun,Arity),
+	cdf_id_fields(AbsThing,Id,AbsProd,Comp),
+	local_tabled_isa(AbsThing).
+
+:- table local_tabled_isa/1.
+local_tabled_isa(AbsThing) :- isa_ext(AbsThing,_).
+
 /************************************************************************/
 /*									*/
 /*	Mass Delete Utilities						*/
@@ -215,7 +253,7 @@ things_to_delete are deleted. */
 
 %%%:- import conset/2, conget/2, coninc/1 from gensym.
 close_things_to_delete :-
-	write('closing...'),
+	write(userout,'closing...'),
 	%%conset(myctr,0),
 	(abolish_table_pred(disconnected(_)),
 	 retractall(things_in_closure(_)),
