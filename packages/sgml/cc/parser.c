@@ -22,7 +22,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "util.h"
+/*
 #include "socketcall.h"
+*/
 #include "error_term.h"
 #include "cinterf.h"
 

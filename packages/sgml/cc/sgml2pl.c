@@ -32,7 +32,9 @@
 #include <sys/stat.h>
 #endif
 
+/*
 #include "socketcall.h"
+*/
                                                                                 
 #define PD_MAGIC        0x36472ba1      /* just a number */
 

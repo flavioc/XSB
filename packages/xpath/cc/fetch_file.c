@@ -6,6 +6,7 @@
  *
  ****************************************************************************/
 
+#include "xsb_config.h"
 #include "socketcall.h"
 #include <stdio.h>
 #include <errno.h>
@@ -126,7 +127,7 @@ int get_file_www(char *server, char *fname, char **source)
   rc = WSAStartup(2, &wsadata);
   *source = (char*)malloc(MAXSTRLEN);	
   if(rc) {
-    sprintf( *source, "WSAStartup FAILED: err=%d\n", GetLastError());
+    sprintf( *source, "WSAStartup FAILED: err=%d\n", (int) GetLastError());
     return FALSE;
   }
 #endif
@@ -162,7 +163,7 @@ int get_file_www(char *server, char *fname, char **source)
 	  
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(port); 
+    servaddr.sin_port = htons((unsigned short)port); 
     memcpy(&servaddr.sin_addr, *pptr, sizeof(struct in_addr));
     if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) == 0)
       break;		

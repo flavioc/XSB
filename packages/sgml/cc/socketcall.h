@@ -4,10 +4,8 @@
  *
  *****************************************************************************/
 
-#include "xsb_config.h"
 #ifdef WIN_NT
 #include <winsock2.h>
-#include <windows.h>
 #else 
 #include <sys/socket.h>
 #include <netinet/in.h>

@@ -6,6 +6,7 @@
  *
  ***************************************************************************/
 
+#include "xsb_config.h"
 #ifdef WIN_NT
 #define XSB_DLL
 #endif
