@@ -35,12 +35,12 @@
 /*
 :- export 
 :- import 
-   from xsb_libwww..
+   from xsb_libwww.
 */
 
 :- bootstrap_package('libwww', libwww),
 	(   xsb_configuration(libwww_support, 'yes')
 	->  [libwwwconfig]
-	;   abort('Your system doesn't seem to have the W3C's libwww library installed.')
+	;   abort('XSB hasn''t been configured with W3C''s libwww support.')
 	).
 

@@ -23,7 +23,7 @@
 ##
 
 
-ALL = 	 ????
+ALL = 	 libwwwconfig.O
 
 EMU_INCLUDES = ../../emu/builtin.h ../../emu/celltags.h ../../emu/flag_defs.h \
 	../../emu/io_defs.h ../../emu/msyscall.h ../../emu/sig.h \

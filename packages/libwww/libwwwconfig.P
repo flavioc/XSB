@@ -28,31 +28,29 @@
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
 
-%% Construct the file cc/libwwwconfig.H on the fly
+%% Construct the file cc/xsb_libwww.H on the fly
 make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
 	slash(Slash),
 	xsb_configuration(configuration, XSBconfiguration),
-	package_configuration(dir(regmatch), LibwwwDir),
+	package_configuration(dir(libwww), LibwwwDir),
 	fmt_write_string(LD_directives_file,
 			 '%s%scc%sxsb_libwww.H', f(LibwwwDir, Slash, Slash)),
     tell(LD_directives_file),
     writeln('%% This file is generated on-the-fly by libwwwconfig.P'),
     writeln('%% Do not edit--any changes will be written over.'),
-    write('%% XSB config:     '), writeln(XSBconfiguration),
-    write('%% XSB CC:         '), writeln(CC),
-    write('%% Compiler flags: '), writeln(CC_opts),
+    write('%% XSB config:            '), writeln(XSBconfiguration),
+    write('%% XSB CC:                '), writeln(CC),
+    write('%% Libwww compiler flags: '), writeln(CC_opts),
     writeln(':- import slash/1 from machine.'),
     writeln(':- export ????.'),
-    write(':- ldoption('''),
-    write(LoaderFlags),
-    writeln(''').'),
+    fmt_write(':- ldoption(''%s'').', arg(LoaderFlags)),
     told.
     
 
-:-  package_configuration(dir(regmatch), LibwwwDir),
+:-  package_configuration(dir(libwww), LibwwwDir),
     slash(Slash),
     fmt_write_string(Module,
-		     '%s%scc%slibwwwconfig', f(LibwwwDir, Slash, Slash)),
+		     '%s%scc%sxsb_libwww', f(LibwwwDir, Slash, Slash)),
     (  %% avoid recompilation: check if xsb_libwww.O exists and 
        %% is newer than xsb_libwww.c.
        search_module('xsb_libwww',Dir,_Mod,_Ext,_Base,ModuleO),
@@ -67,8 +65,8 @@ make_xsb_libwwwH(CC, CC_opts, LoaderFlags) :-
 
       %% If Module isn't compiled or is old --- recompile
       ; xsb_configuration(compiler, CC),
-	xsb_configuration(loader_flags, LoaderFlags),
-	xsb_configuration(compiler_flags, CCflags),
+	xsb_configuration(libwww_ldflags, LoaderFlags),
+	xsb_configuration(libwww_ccflags, CCflags),
 	xsb_configuration(emudir, EmuDir),
 	fmt_write_string(CC_opts,
 			 ' %s %s -I%s',
