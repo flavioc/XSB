@@ -1,6 +1,6 @@
 /* File:      tries.c
 ** Author(s): Prasad Rao, David S. Warren, Kostis Sagonas,
-**    	      Juliana Freire
+**    	      Juliana Freire, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -23,7 +23,6 @@
 ** $Id$
 ** 
 */
-
 
 
 #include <stdio.h>
@@ -51,8 +50,8 @@
 #include "tr_utils.h"
 
 struct NODE dummy_ans_node = {0,0,1,0,NULL,NULL,NULL,0};
-
-
+static CPtr *trie_tr_base, *temp_trreg;
+int AnsVarCtr;
 /*======================================================================*/
 
 extern tab_inf_ptr get_tip(Psc);
@@ -417,7 +416,7 @@ int allocated_trie_hash_size(void)
   NODEptr LocalNodePtr, *Cnodeptr;\
   struct HASHhdr *hh;\
 \
-  if (!(*GNodePtrPtr)) {\
+  if (!(*GNodePtrPtr)) { /* *GNodePtrPtr == NULL */ \
       NewNode(LocalNodePtr,item,NULL,NULL,Paren);\
       *GNodePtrPtr = Paren = LocalNodePtr;\
       Found = 0;\
@@ -698,36 +697,125 @@ NODEptr get_next_trie_solution(ALPtr *NextPtrPtr)
         resetpdl;\
 }
 
-/************************************************************************/
-/* variant_trie_search(NumVarsInCall, VarsInCall, SubgoalPtr, Ptrflag)	*/
-/************************************************************************/
+/***************************************************************************/
+
+/*
+ * This is a special version of recvariant_trie(), and it is only used by 
+ * variant_trie_search().  The only difference between this and
+ * recvariant_trie() is that this version will save the answer
+ * substitution factor into the heap (see the following line):
+ *
+ * 	 bld_ref(hreg++, xtemp1));
+ */
+
+#define recvariant_trie_ans_subsf(flag)\
+{\
+	int  j;\
+\
+	while (!pdlempty ) {\
+	  xtemp1 = (CPtr) pdlpop;\
+	  cptr_deref(xtemp1);\
+	  tag = cell_tag(xtemp1);\
+	  switch (tag) {\
+	    case FREE: case REF1:\
+	    if(is_VarEnumerator(xtemp1)){\
+	      bld_ref(hreg++, xtemp1);\
+	      simple_dbind_ref_nth_var(xtemp1,ctr);\
+	      one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));\
+	      ctr++;\
+					}\
+            else{\
+              one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
+	       }\
+              break;\
+	    case STRING: case INT: case FLOAT:\
+	      one_node_chk_ins(flag, (Cell)xtemp1);\
+	      break;\
+	    case LIST:\
+	      one_node_chk_ins(flag, (Cell)LIST);\
+	      pdlpush(cell(clref_val(xtemp1)+1));/* changed */\
+              pdlpush(cell(clref_val(xtemp1)));\
+	      break;\
+	    case CS:\
+	      one_node_chk_ins(flag,makecs(follow(cs_val(xtemp1)))); /*put root in trie */\
+	      for (j = get_arity((Psc)follow(cs_val(xtemp1))); j>=1 ; j--) \
+  	         {pdlpush(cell(clref_val(xtemp1) +j));}\
+	      break;\
+	    default: \
+              xsb_abort("Bad type tag in recvariant_trie_ans_subsf...\n");\
+	  }\
+	}\
+        resetpdl;\
+}
+
+/*
+ * Called in SLG instruction `new_answer_dealloc', variant_trie_search()
+ * checks if the answer has been returned before and, if not, inserts it
+ * into the answer trie.  Here, `arity' is the number of variables in the
+ * call (arity of the answer substitution), `cptr' is the pointer to
+ * VarsInCall (all the variables in call, saved in the CP stack and
+ * already bound to some terms), and `subgoal_ptr' is the subgoal frame
+ * of the call.  At the end of this function, `flagptr' tells if the
+ * answer has been returned before.
+ *
+ * The returned value of this function is the leaf of the answer trie.  
+ */
 
 NODEptr variant_trie_search(int arity, CPtr cptr,
 			    CPtr subgoal_ptr, int *flagptr)
 {
-    CPtr *trie_tr_base, *temp_trreg;
     CPtr xtemp1;
     int i, j, flag = 1;
     Cell tag = 0 ;
     ALPtr answer_node;
 
-    ans_chk_ins++;
+    ans_chk_ins++; /* Counter (answers checked & inserted) */
 
+    /*
+     * Initialize trie_tr_base (trial base for trie code) and
+     * temp_trreg.
+     */
     if(trfreg > trreg)
 	trie_tr_base = temp_trreg = trfreg;
     else
 	trie_tr_base = temp_trreg = trreg;
+
+    AnsVarCtr = 0;
     ctr = 0;
-    Paren = NOPAR;
+    Paren = NOPAR; /* Initial value of Paren.  Paren is used in
+		    * one_node_chk_ins().
+		    */
     GNodePtrPtr = (NODEptr *) &subg_ans_root_ptr(subgoal_ptr);
     for (i = 0; i<arity; i++) {
-      xtemp1 = (CPtr) (cptr - i);
+      xtemp1 = (CPtr) (cptr - i); /*
+				   * One element of VarsInCall.  It might
+				   * have been bound in the answer for
+				   * the call.
+				   */
       cptr_deref(xtemp1);
       tag = cell_tag(xtemp1);
       switch (tag) {
       case FREE: case REF1:
 	/*one_node_chk_ins(flag,FREE);*/
 	if(is_VarEnumerator(xtemp1)){
+	  /*
+	   * If this is the first occurrence of this variable, then:
+	   *
+	   * 	simple_dbind_ref_nth_var(xtemp1, ctr)
+	   * 			||
+	   * 	simple_dbind_ref(xtemp1, VarEnumerator[ctr])
+	   * 			||
+	   * 	bld_ref(xtemp1, VarEnumerator[ctr]);
+	   * 	*(++temp_trreg) = xtemp1
+	   *
+	   * Notice that all the variables appear in the answer are bound
+	   * to elements in VarEnumerator[], and each element in
+	   * VarEnumerator[] is a free variable itself.  Besides, all
+	   * these variables are trailed (saved between trie_tr_base and
+	   * temp_trreg) and they will be used in delay_chk_insert() (in
+	   * function do_delay_stuff()).
+	   */
+	  bld_ref(hreg++, xtemp1);
 	  simple_dbind_ref_nth_var(xtemp1,ctr);
 	  one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
 	  ctr++;
@@ -743,7 +831,7 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 	one_node_chk_ins(flag, (Cell)LIST);
 	pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
 	pdlpush(cell(clref_val(xtemp1)));
-	recvariant_trie(flag);
+	recvariant_trie_ans_subsf(flag);
 	break;
       case CS:
 	/* put root in trie */
@@ -751,15 +839,32 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 	for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
 	  pdlpush(cell(clref_val(xtemp1)+j));
 	}
-	recvariant_trie(flag);
+	recvariant_trie_ans_subsf(flag);
 	break;
 	default:
 	  xsb_abort(" Bad type tag :variant_trie_search\n");
 	}                                                       
-    }                
+    }
     resetpdl;                                                   
 
-    simple_table_undo_bindings;
+    /*
+     * Put the substitution factor of the answer into a term ret/n.
+     * Notice that simple_table_undo_bindings in the old version of XSB
+     * has been removed here, because all the variable bindings of this
+     * answer will be used later on (in do_delay_stuff()) when we build
+     * the delay list for this answer.
+     */
+    bld_functor(ans_var_pos_reg, get_ret_psc(ctr));
+
+    /*
+     * Save the number of variables in the answer, i.e. the arity of
+     * the substitution factor of the answer, into `AnsVarCtr'.
+     */
+    AnsVarCtr = ctr;		
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> [V] AnsVarCtr = %d\n", AnsVarCtr);
+#endif
 
     /* if there is no parent node an ESCAPE node has to be created;	*/
     /* ow the parent node is "ftagged" to indicate that it is a leaf.	*/
@@ -774,18 +879,17 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
       }
     }
 
-
     if (!flag) {
       NewAnsListNode(answer_node);
       aln_answer_ptr(answer_node) = Paren;
-	
+
       NodeType(Paren) = NODE_TYPE_ANSWER_LEAF;
       if(subg_ans_list_tail(subgoal_ptr) == NULL) { 
 	/* add a dummy node and the new answer*/ 
 	subg_answers(subgoal_ptr) = answer_node;
 	subg_ans_list_tail(subgoal_ptr) = answer_node;
       }
-      else { 
+      else {
 	aln_next_aln(subg_ans_list_tail(subgoal_ptr)) = answer_node; 
         aln_next_aln(answer_node) = NULL; 
 	subg_ans_list_tail(subgoal_ptr) = answer_node;	/* update tail */
@@ -795,6 +899,149 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
 
     if (!flag) ans_inserts++;
 
+    return Paren;
+}
+
+/*
+ * undo_answer_bindings() has the same functionality of
+ * simple_table_undo_bindings.  It is called just after do_delay_stuff(),
+ * and do_delay_stuff() is called after variant_trie_search (in
+ * new_answer_dealloc)
+ *
+ * In XSB 1.8.1, simple_table_undo_bindings is called in
+ * variant_trie_search().  But to handle variables in delay list in
+ * do_delay_stuff() , we need the variable binding information got from
+ * variant_trie_search().  So we have to take simple_table_undo_bindings
+ * out of variant_trie_search() and call it after do_delay_stuff() is
+ * done.
+ */
+
+void undo_answer_bindings(){
+  simple_table_undo_bindings;
+}
+
+/*
+ * Function delay_chk_insert() is called in intern_delay_element() to
+ * create the delay trie for the corresponding delay element.  This delay
+ * trie contains the substitution factor of the answer to the subgoal
+ * call of this delay element.  Its leaf node will be saved as a field,
+ * de_subs_fact_leaf, in the delay element.
+ *
+ * This function is closely related to variant_trie_search(), because it
+ * uses the value of AnsVarCtr that is set in variant_trie_search().  The
+ * body of this function is almost the same as the core part of
+ * variant_trie_search(), except that `ctr', the counter of the variables
+ * in the answer, starts from AnsVarCtr.  Initially, before the first
+ * delay element in the delay list of a subgoal (say p/2), is interned,
+ * AnsVarCtr is the number of variables in the answer for p/2 and it was
+ * set in variant_trie_search() when this answer was returned.  Then,
+ * AnsVarCtr will be dynamically increased as more and more delay
+ * elements for p/2 are interned.
+ *
+ * In the arguments, `arity' is the arity of the the answer substitution
+ * factor, `cptr' points to the first field of term ret/n (the answer
+ * substitution factor), `hook' is the root of this delay trie.
+ */  
+ 
+NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
+{
+    CPtr xtemp1;
+    int i, j, tag = 0, flag = 1;
+ 
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> start delay_chk_insert()\n");
+#endif
+
+    ans_chk_ins++;
+ 
+   /* if(trfreg > trreg)
+        trie_tr_base = temp_trreg = trfreg;
+    else
+        trie_tr_base = temp_trreg = trreg; */
+
+    Paren = NOPAR;
+    GNodePtrPtr = (NODEptr *) hook;
+
+    ctr = AnsVarCtr;
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> [D1] AnsVarCtr = %d\n", AnsVarCtr);
+#endif
+
+    for (i = 0; i<arity; i++) {
+      /*
+       * Notice: the direction of saving the variables in substitution
+       * factors has been changed.  Because Prasad saves the substitution
+       * factors in CP stack (--VarPosReg), but I save them in heap
+       * (hreg++).  So (cptr - i) is changed to (cptr + i) in the
+       * following line.
+       */
+      xtemp1 = (CPtr) (cptr + i);
+#ifdef DPVR_DEBUG_BD
+      printf("arg[%d] =  %x ",i, xtemp1);
+#endif
+      cptr_deref(xtemp1);
+#ifdef DPVR_DEBUG_BD
+      printterm(xtemp1,1,25);
+      printf("\n");
+#endif
+      tag = cell_tag(xtemp1);
+      switch (tag) {
+      case FREE: case REF1:
+        /*one_node_chk_ins(flag,FREE);*/
+        if(is_VarEnumerator(xtemp1)){
+          simple_dbind_ref_nth_var(xtemp1,ctr);
+          one_node_chk_ins(flag, maketrievar((ctr | 0x10000)));
+          ctr++;
+        }
+        else{
+          one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));\
+        }
+        break;
+      case STRING: case INT:  case FLOAT:
+        one_node_chk_ins(flag, (Cell)xtemp1);
+        break;
+      case LIST:
+        one_node_chk_ins(flag, (Cell)LIST);
+        pdlpush(cell(clref_val(xtemp1)+1)); /* changed */
+        pdlpush(cell(clref_val(xtemp1)));
+        recvariant_trie(flag);
+        break;
+      case CS:
+        /* put root in trie */
+        one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))));
+        for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
+          pdlpush(cell(clref_val(xtemp1)+j));
+        }
+        recvariant_trie(flag);
+        break;
+        default:
+          xsb_abort(" Bad type tag :variant_trie_search\n");
+        }
+    }
+    resetpdl;  
+    AnsVarCtr = ctr;
+
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> [D2] AnsVarCtr = %d\n", AnsVarCtr);
+#endif
+
+    /* if there is no parent node an ESCAPE node has to be created;     */
+    /* ow the parent node is "ftagged" to indicate that it is a leaf.   */
+    if (Paren == NOPAR) {
+      one_node_chk_ins(flag, (Cell)0);
+      Instr(Paren) = trie_proceed;
+    } else {
+      Parent(Paren) = makeftag(Parent(Paren));
+      /* NOTE: for structures and lists tag can be set by recvariant_trie */
+      if ((flag == 0) && (tag == STRING || tag == INT || tag == FLOAT)) {
+        change_to_success(Paren);
+      }
+    }
+ 
+#ifdef DPVR_DEBUG_BD
+    printf("----------------------------- Exit\n");
+#endif
     return Paren;
 }
 
@@ -890,6 +1137,15 @@ void load_solution_trie(int arity, CPtr cptr, NODEptr TriePtr)
 }
 
 /*----------------------------------------------------------------------*/
+void load_delay_trie(int arity, CPtr cptr, NODEptr TriePtr)
+{
+   if (arity) {
+     follow_par_chain(unftag(TriePtr));
+     load_solution_from_trie(arity,cptr);
+   }
+}
+ 
+/*----------------------------------------------------------------------*/
 
 #define recvariant_call(flag)\
 {\
@@ -931,6 +1187,7 @@ void load_solution_trie(int arity, CPtr cptr, NODEptr TriePtr)
   }\
   resetpdl;\
 }
+
 /******************************************************/
 
 void variant_call_search(int arity, CPtr cptr, CPtr *curcallptr, int *flagptr)
@@ -955,6 +1212,12 @@ void variant_call_search(int arity, CPtr cptr, CPtr *curcallptr, int *flagptr)
 	  switch (tag) {
 	    case FREE: case REF1:
 	        if(is_VarEnumerator(xtemp1)){
+		  /*
+		   * Save pointers of the substitution factor of the call
+		   * into CP stack.  Each pointer points to a variable in 
+		   * the heap.  The variables may get bound in the later
+		   * computation.
+		   */
 		  *(--VarPosReg) = (Cell) xtemp1;
 		  bld_nth_var(xtemp1,ctr);
 		  one_node_chk_ins(flag,maketrievar((ctr | 0x10000)));
@@ -1214,6 +1477,10 @@ int trie_get_returns_for_call(void)
   NODEptr ans_root_ptr;
   CPtr cptr;
   
+#ifdef DEBUG_DELAYVAR
+  fprintf(stderr, ">>>> (at the beginning of trie_get_returns_for_call\n");
+  fprintf(stderr, ">>>> num_vars_in_var_regs = %d)\n", num_vars_in_var_regs);
+#endif
 
   call_str_ptr = (SGFrame) ptoc_int(1);
   retskel = (CPtr)ptoc_tag(2);
@@ -1233,6 +1500,9 @@ int trie_get_returns_for_call(void)
 	pushreg(cell(cptr+i));
       }
     }
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> The end of trie_get_returns_for_call ==> go to answer trie\n");
+#endif
     return TRUE;
   }
 }
@@ -1261,6 +1531,9 @@ int trie_get_calls(void)
        reg_arrayptr = reg_array  -1;
        num_vars_in_var_regs = -1;
        for (i = get_arity(psc_ptr); i >=1; i--) {
+#ifdef DEBUG_DELAYVAR
+	 fprintf(stderr, ">>>> push one cell\n");
+#endif
 	 pushreg(cell(cptr+i));
        }
        pcreg = (byte *)call_trie_root;
