@@ -1083,6 +1083,11 @@ abort :- throw('_$abort_ball').
 %  abort/1
 abort(Msg) :- throw('_$abort_ball'(Msg)).
 
+error_write(X):- 
+	message(X,STDERR).
+error_writeln(X):- 
+	messageln(X,STDERR).
+
 %  warning/1
 warning(Message) :- 
 	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
@@ -1122,7 +1127,7 @@ messageln(Message, File) :-
 	file_nl(File).
 
 
-/* === expose a goal for tracing ====================================== */
+/* === expose a goal for tracing ================================= */
  
 call_expose(Goal) :-
 	stat_flag(HIDE_STATE,N),

@@ -31,6 +31,7 @@
 #include "standard.h"
 #include "char_defs.h"
 
+:- import default_user_error_handler/1 from usermod.
 :- dynamic default_user_error_handler/1.
 
 /* Types of errors are taken from Section 7.12 of the ISO Standard */
@@ -38,7 +39,7 @@
 default_error_handler(Error) :- 
 	default_user_error_handler(Error),
         close_open_tables,
-	!.
+	!,fail.
 default_error_handler(Error) :-
 	default_sys_error_handler(Error),
 	!,
@@ -58,11 +59,14 @@ default_sys_error_handler(error(type_error(Valid_type,Culprit),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: [Type (',
 		    Culprit,' in place of ',Valid_type,')] ', Msg),STDERR).
 default_sys_error_handler(error(domain_error(Valid_type_in,Culprit),Msg)) :-
-            concat_atom(Valid_type_in,Valid_type),
+	(Valid_type_in = [_|_] -> 
+                 concat_atom(Valid_type_in,Valid_type) ; 
+  	     Valid_type = Valid_type_in),
 	messageln(('++Error[XSB/Runtime/P]: [Domain (',
-		Culprit,' in place of ',Valid_type,')] ', Msg), STDERR).
-default_sys_error_handler(error(existence_error(_Object_type,_Culprit),Msg)) :-
-	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
+		Culprit,' not in domain ',Valid_type,')] ', Msg), STDERR).
+default_sys_error_handler(error(existence_error(Object_type,Culprit),Msg)) :-
+	messageln(('++Error[XSB/Runtime/P]: [Existence (No ',Object_type,
+		' ',Culprit,' exists)] ', Msg), STDERR).
 default_sys_error_handler(error(
                                       undefined_predicate(_Name,_Arity,_Module),Msg)) :-
 	messageln(('++Error[XSB/Runtime/P]: ', Msg), STDERR).
@@ -98,7 +102,7 @@ instantiation_error(Predicate,Arg):-
 
 instantiation_error(Predicate,Arg,State):- 
 	throw(error(instantiation_error,
-	      (' in arg ',Arg,' of predicate ',Predicate,'---: must be ',State))).
+	      (' in arg ',Arg,' of predicate ',Predicate,': must be ',State))).
 
 permission_error(Op,Obj_type,Culprit,Predicate):- 
 	throw(error(permission_error(Op,Obj_type,Culprit),(' in ',Predicate))).
