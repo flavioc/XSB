@@ -16,7 +16,7 @@
 :- import flora_load_library/1 from flrlibman.
 #endif
 
-?- flora_load_library(FLLIBABOLISH).
+?- flora_load_library(FLLIBEXPUNGE).
 
 /***********************************************************************/
 
