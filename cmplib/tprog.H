@@ -24,7 +24,7 @@
 */
 
 
-:- export compile_clause/6.
+:- export compile_clause/5.
 :- export force_tprog_loaded/0.
 
 :- import option/1 from auxlry.

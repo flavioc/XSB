@@ -67,9 +67,7 @@ asm_inst(bldfloat(Float),	8,	131,	[ppp, n(Float)]	).
 asm_inst(trys(A,L),		8,	154,	[pp, a(A), l(L)]).
 asm_inst(retrys(A,L),		8,	155,	[pp, a(A), l(L)]).
 asm_inst(trusts(A,L),		8,	156,	[pp, a(A), l(L)]).
-asm_inst(neck(A),		4,	157,	[pp, a(A)]	).
-asm_inst(neck_putpbreg(A,V),	4,	158,	[p, a(A), v(V)]	).
-asm_inst(neck_puttbreg(A,R),	4,	159,	[p, a(A), r(R)]	).
+
 asm_inst(trymeelse(A,L),	8,	160,	[pp, a(A), l(L)]).
 asm_inst(retrymeelse(A,L),	8,	161,	[pp, a(A), l(L)]).
 asm_inst(trustmeelsefail(A),	4,	162,	[pp, a(A)]	).

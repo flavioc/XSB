@@ -251,9 +251,8 @@ compile_predicate2(pred(Sym,Clauses,Prag), PilCode-PilCodeR, NC) :-
 	sym_name(Sym,_,Arity), Margin = 2000, % Margin is temporary
 	find_if_tabled(Sym,Tabled,Tabind),
 	makeindex(Sym, Clauses, PilCode1, PilCodeM, Prag, Tabled, Tabind),
-	need_neck(Clauses, Neck),
 %    ( option(profile) -> cputime(TimeStart) ; TimeStart = TimeStart ),
-	compile_clauses(Clauses, Sym, PilCodeM, PilCodeR, Neck, 0, NC).
+	compile_clauses(Clauses, Sym, PilCodeM, PilCodeR, 0, NC).
 %    ( option(profile) -> 
 %		time_message(TimeStart, 'Compile_clauses finito') 
 %    ; true).
@@ -263,19 +262,12 @@ find_if_tabled(Sym, 1, tabled(Tabind,Chs,Rhs,Ar)):-
 find_if_tabled(_, 0, _). 
 
 /*======================================================================*/
-/* need_neck(+Clauses, -Neck)						*/
-/*	A neck instruction (shallow backtracking) is needed when there	*/
-/*	are more than one clauses and the option is turned on.		*/
-/*======================================================================*/
 
-need_neck([_,_|_], 1) :- option(shallow), !.
-need_neck(_, 0).
-
-compile_clauses([], _, PilCode, PilCode, _, Nin, Nin).
-compile_clauses([Clause|Clauses], Sym, PilCode, PilCodeR, Neck, Nin, Nout) :-
+compile_clauses([], _, PilCode, PilCode, Nin, Nin).
+compile_clauses([Clause|Clauses], Sym, PilCode, PilCodeR, Nin, Nout) :-
 	Nmid is Nin + 1,  
-	compile_clause(Sym, Clause, PilCode, PilCodeM, Neck, Nmid),
-	compile_clauses(Clauses, Sym, PilCodeM, PilCodeR, Neck, Nmid, Nout).
+	compile_clause(Sym, Clause, PilCode, PilCodeM, Nmid),
+	compile_clauses(Clauses, Sym, PilCodeM, PilCodeR, Nmid, Nout).
 
 
 /*======================================================================*/

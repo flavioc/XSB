@@ -25,34 +25,31 @@
 
 
 /*======================================================================*/
-/* compile_clause(+Sym, +Clause, -PilCode, -PilCodeR, +Neck, +NC)	*/
+/* compile_clause(+Sym, +Clause, -PilCode, -PilCodeR, +NC)      	*/
 /*	This procedure takes a clause in internal source form		*/
 /*	clause(_,_,_), translates it into the intermediate form		*/
 /*	clause(_,_,_) (done by the predicate inprog/4), and then	*/
 /*	produces the list of PIL instructions for that clause.		*/
 /*	- PilCode-PilCodeR is the difference list of the resulting	*/
 /*			   translation of the clause.			*/
-/*	+ Neck = 1: generate "neck", and do not reuse registers in the	*/
-/*		    head (shallow backtracking)				*/
-/*	       = 0: do not generate "neck" (no shallow backtracking)	*/
 /*	+ NC is the relative number of Clause for the predicate that	*/
 /*	     is being compiled.						*/
 /* 	Refer to the file Format for the format of InClause.		*/
 /*======================================================================*/
 
-compile_clause(Sym, Clause, PilCode, PilCodeR, Neck, NC) :-
+compile_clause(Sym, Clause, PilCode, PilCodeR, NC) :-
 	flatten(Clause, FlatClause),
 	inprog(Sym, FlatClause, InClause, NC),
-	tclause(Sym, InClause, PilCode, PilCodeR, Neck, NC).
+	tclause(Sym, InClause, PilCode, PilCodeR, NC).
 
 % In tclause/2 Arsize1 is wordsize of local env (if needed),
 %              Arsize2 is # of Pvars (incl ptr to CP/Subgoal frame.
 
 tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
-	[label(clau,Label)|Pil0], Pilr, Neck, NC) :- 
+	[label(clau,Label)|Pil0], Pilr, NC) :- 
 	( sym_type(Sym, tabled(_,_,_,Tabar)) -> Tabled = 1, ARSize1 is ARSize+1
 	; Tabar = Tabar, Tabled = 0, ARSize1 = ARSize
-	),	
+	),
         Initsize is ARSize1 + 2,
 	gennum(N), Label = (Sym,N),
 	sym_name(Sym, _, Arity),
@@ -63,10 +60,7 @@ tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
 	    )
         ; Pil0 = [allocate_gc(2,Initsize),getVn(ARSize)|Pil1]   % was getpbreg
 	),
-	( Neck=:=0, theadpars(Args,1,Pil1,Pil3,Tin,TRegs)
-	; Neck=\=0, theadpars_hold(Args,1,Pil1,Pil2,Tin,TRegs),
-		    Pil2 = [neck(Arity)|Pil3]
-	),
+	theadpars(Args,1,Pil1,Pil3,Tin,TRegs),
 %telling(X),tell(user),
 %write(clause(Args,Body,crec(ARSize,LabelList))),
 %nl,write('PilHead = '),write(Pil0),nl,told,tell(X),
@@ -90,19 +84,6 @@ theadpars([Par|Rest], N, Pil, Pilr, TRin, TRout) :-
 	tgetpar(Par, N, Pil, Pil1, TRm, TRmid),
 	N1 is N+1,
 	theadpars(Rest, N1, Pil1, Pilr, TRmid, TRout).
-
-/*======================================================================*/
-/* theadpars_hold(+Args, +Argno, -Pil, -Pilr, +TRin, -TRout)		*/
-/*	It is the same as theadpars/6 except it does not release the	*/
-/*	registers used by the parameters of the head.  It is used for	*/
-/*	shallow backtracking.						*/
-/*======================================================================*/
-
-theadpars_hold([], _, Pil, Pil, T, T).
-theadpars_hold([Par|Rest], N, Pil, Pilr, TRin, TRout) :-
-	tgetpar(Par, N, Pil, Pil1, TRin, TRmid),
-	N1 is N+1,
-	theadpars_hold(Rest, N1, Pil1, Pilr, TRmid, TRout).
 
 /*======================================================================*/
 /* ----------- EFFICIENT CODE FOR DISJUNCTIONS/CONDITIONALS ----------- */

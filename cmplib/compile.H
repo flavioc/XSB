@@ -56,14 +56,14 @@
 :- import force_tp_geninline_loaded/0 from tpinline.
 :- import sym_name/3, sym_type/2, sym_prop/2 from symtab.
 :- import dispose_symtab/1 from symtab.
-:- import force_tprog_loaded/0, compile_clause/6 from tprog.
+:- import force_tprog_loaded/0, compile_clause/5 from tprog.
 :- import force_tp_index_loaded/0, makeindex/7 from tp_index.
 :- import force_preprocess_loaded/0, preprocess/3 from preproc.
 :- import write_asmheader/4, write_asm_instructions/1 from writeasm.
 :- import abort/0, tell/1, telling/1, told/0, cputime/1 from standard.
 :- import force_peephole_loaded/0, compile_peephole_opt/2 from peephole.
 :- import message/1, warning/1, error/1, time_message/2,
-	  setoptions/1, option/1, member1/2
+	  setoptions/1, option/1
      from auxlry.
 :- import prepare/0, member/2, gennum/1, myclose/1, conget/2, conset/2, system/1
      from prof_sbp.
