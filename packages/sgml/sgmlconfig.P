@@ -82,7 +82,7 @@ make_sgmlH(CC, CC_opts) :-
     ; running_under(darwin)
     ->
 	fmt_write_string(ConfigSharedMod,
-			 '%s%s%s.dylib', f(ConfigBinDir, Slash, Basename))
+			 '%s%s%s.dylib', f(ConfigLibDir, Slash, Basename))
     ;
 	fmt_write_string(ConfigSharedMod,
 			 '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))
@@ -124,9 +124,12 @@ make_sgmlH(CC, CC_opts) :-
 
 	; running_under(darwin) ->  %% MacOS
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	    writeln(finished_consult),
 	    force_rename(Objfile, LibObjFile),
+	    writeln(renaming(Objfile,LibObjFile)),
 	    str_cat(Module, '.dylib', SharedLib),
-	    force_rename(SharedLib,ConfigSharedMod)
+	    force_rename(SharedLib,ConfigSharedMod),
+	    writeln(rename(SharedLib,ConfigSharedMod))
 	; %% Other Unices
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	    force_rename(Objfile, LibObjFile),
