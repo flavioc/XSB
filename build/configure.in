@@ -442,7 +442,6 @@ case $CC in
 	trutils_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
 	c_inline_level="-finline-functions -Winline" 
 	CFLAGS="-Wall -ansi -pedantic"
-# -ansi & -pedantic are used only if not using threading
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
 	   emuloop_opt_level=-${optimization_level-"O4"}
@@ -835,11 +834,11 @@ if test "${enable_threading}" = "yes" ; then
   if test "${CC}" = "gcc"; then
     AC_DEFINE(INDIRECT_THREADING)
     threading=yes
+    CFLAGS=`echo ${CFLAGS} | sed "s/-ansi//" -`
+    CFLAGS=`echo ${CFLAGS} | sed "s/-pedantic//" -`
   else
     AC_MSG_ERROR(Threading is only possible with gcc)
   fi
-else
-  CFLAGS="-ansi -pedantic ${CFLAGS}"
 fi
 
 AC_ARG_ENABLE(profiling,
