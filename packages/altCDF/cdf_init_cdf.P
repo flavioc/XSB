@@ -1593,8 +1593,7 @@ retracteachExtTerm(_Term).
 :- comment(hide,assert_cdf/1).
 assert_cdf(Term) :-
 	cdf_log(assert(Term)),
-	assert_cdf_term(Term),
-	abolish_nec_tables(Term).
+	assert_cdf_term(Term).
 
 assert_cdf_term(Term) :-
 	assert_cdf_int(Term),
@@ -1613,9 +1612,8 @@ assert_cdf_ext(Term):-
 :- comment(hide,retractall_cdf/1).
 
 retractall_cdf(Term) :-
-	retractall_cdf_term(Term),
-	abolish_nec_tables(Term).
- 
+	retractall_cdf_term(Term).
+
 retractall_cdf_term(Term) :- 
 	retractall_cdf_int(Term),
 	cdf_log(retractall(Term)),
@@ -1646,7 +1644,6 @@ newIntRule(newIntRuleBatch,Head,Body,Cmpt):-
 
 newIntRuleSingle(Head,Body,Cmpt):- 
 	(apply_checks(newIntRuleBatch,Head)  -> 
-	    abolish_nec_tables(Head),
 	    caching_cdf(Flg),
 	    addIntRule(Head,Body,Cmpt),
 	    maybe_invalidate_cache(Flg,Head,assert)
@@ -1696,7 +1693,6 @@ transform_intensional_rules(Head,_BlankHead,_NewHead,Name):-
 
 retractallIntRule(Head,Body,Name) :- 
 	caching_cdf(Flg),
-	abolish_nec_tables(Head),
 	retractallIntRule_1(Head,Body,Name) ,
 	maybe_invalidate_cache(Flg,Head,retract).
 
@@ -1745,7 +1741,6 @@ retractallDLRule(Head,Body,Name) :-
 retractallDLRule_1(H,B,Name) :- 
 	dlrule_to_cdf('<='(H,B),CDFList,Name),
 	member((:-(Head,Body)),CDFList),
-	abolish_nec_tables(Head),
 	transform_intensional_rules(Head,BlankBody,NewHead,Name),
 	functor(Head,T,A),
 	functor(BlankHead,T,A),
@@ -1796,6 +1791,14 @@ abolish_isas:-
 	abolish_table_pred(table_isa(_,_)).
 #endif
 
+%%% set invalidate_table handler for cdf updates.
+:- Head = invalidate_table_for(Term,_),
+	Body = abolish_nec_tables(Term),
+	(clause(Head,Body)
+	 ->	true
+	 ;	assert((Head:-Body))
+	).
+
 abolish_nec_tables(hasAttr_int(_,_,_)) :- !,
 	abolish_nec_tables(hasAttr_ext(_,_,_)) .
 abolish_nec_tables(hasAttr_ext(_,_,_)) :- !,
@@ -1842,7 +1845,6 @@ abolish_nec_tables(isa_ext(_,_)) :- !,
 	abolish_classHasAttr_inherits,
 	abolish_maxAttr_inherits,
 	abolish_minAttr_inherits.
-abolish_nec_tables(_).
 
 abolish_hasAttr_inherits :-
 	abolish_table_pred(hasAttr_1fix(_,_,_)),
@@ -2037,29 +2039,26 @@ newExtTerm(Context,Term,Upd0,Upd):-
 
 maybe_invalidate_cache(Flg,Term,Mode):- 
 	(Flg =:= 1
-	 ->	cache_invalidate_for(Term),
-		%%writeln(calling_invalidate_tables_for_maybe(Term)),
-		invalidate_tables_for(Term,Mode) 
-				% always used for asserting now
-	 ;	true).
+	 ->	cache_invalidate_for(Term)
+	 ;	true
+	),
+	invalidate_tables_for(Term,Mode).
 
 cdf_update_term(asserta(Term),CFlg) :-
 	assert_cdf(Term),
 	(CFlg =:= 1
-	 ->	cache_invalidate_for(Term),
-		%%writeln(calling_invalidate_tables_for(Term)),
-		invalidate_tables_for(Term,assert)
+	 ->	cache_invalidate_for(Term)
 	 ;	true
-	).
+	),
+	invalidate_tables_for(Term,assert).
 
 cdf_update_term(retractall(Term),CFlg) :-
 	retractall_cdf(Term),
 	(CFlg =:= 1
-	 ->	cache_invalidate_for(Term),
-		%%writeln(calling_invalidate_tables_for(Term)),
-		invalidate_tables_for(Term,retract)
+	 ->	cache_invalidate_for(Term)
 	 ;	true
-	).
+	),
+	invalidate_tables_for(Term,retract).
 
 #else
 :- 	   cdf_message('Not using XJ').
