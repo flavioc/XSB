@@ -524,7 +524,7 @@ void xsb_segfault_catcher(int err)
 
 void xsb_segfault_quitter(int err)
 {
-  xsb_exit("Memory violation occurred during evaluation");
+  xsb_exit(xsb_segfault_message);
 }
 
 #ifdef WIN_NT
