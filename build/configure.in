@@ -831,8 +831,8 @@ if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
    if test "${disable_jumptable}" != "yes"; then
      AC_DEFINE(JUMPTABLE_EMULOOP)
      jumptable=yes
-     CFLAGS=`echo ${CFLAGS} | sed "s/-ansi//" -`
-     CFLAGS=`echo ${CFLAGS} | sed "s/-pedantic//" -`
+     CFLAGS=`echo ${CFLAGS} | sed -e "s/-ansi//"`
+     CFLAGS=`echo ${CFLAGS} | sed -e "s/-pedantic//"`
    fi
 fi
 
