@@ -43,19 +43,18 @@ compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
 compile0(Path, Options) :-
 	atom(Path),
 	search_module(Path, Dir, Mod, SExt, _HasObj, Base, _Obj),
-	obj_ext(OExt),
-	SExt \== OExt,
+	SExt \== 'O',
 	!,
 	compile_f(SExt, Base, Options, _, Mod, Dir).
 compile0(Path, _) :-
 	file_write0(STDERR, 'Cannot find the file/module '),
 	file_write0(STDERR, Path), file_nl(STDERR), fail.
 
-compile_f(CH_P, Base, Opts, ExList, Mod, _) :- 
+compile_f('P', Base, Opts, ExList, Mod, _) :- 
 	compile(Mod, Base, Opts, ExList).
-compile_f(CH_c, Base, Opts, ExList, Mod, Dir) :- 
+compile_f('c', Base, Opts, ExList, Mod, Dir) :- 
 	compile_cH(Mod, Base, Opts, ExList, Dir).
-compile_f(CH_x, Base, Opts, ExList, Mod, _) :-
+compile_f('', Base, Opts, ExList, Mod, _) :-
 	str_cat(Base, '.P', FileName),
 	sys_link(Base, FileName, _Result),
 	compile(Mod, Base, Opts, ExList),
@@ -86,8 +85,7 @@ reconsult(Path, Options) :-
 reconsult0(Path, Options) :-
 	( Path == user -> compile_load_user(Options)
 	; ( search_module(Path, Dir, Mod, SExt, HasObj, Base, Obj) ->
-	      (	  (obj_ext(OExt), SExt \== OExt,
-		      i_want_compile(SExt, Base, Obj, HasObj))
+	      (	 ( SExt \== 'O', i_want_compile(SExt, Base, Obj, HasObj) )
 	      ->  compile_f(SExt, Base, Options, _ExList, Mod, Dir),
 		  load_exec(Obj, Mod)
 	      ;	  load_exec(Obj, Mod)
@@ -100,33 +98,24 @@ reconsult0(Path, Options) :-
 i_want_compile(SExt, Base, Obj, HasObj) :-
 	( HasObj =:= 0 -> true ; needs_recompile(SExt, Base, Obj) ).
 
-needs_recompile(CH_P, Base, Obj) :-
+needs_recompile('P', Base, Obj) :-
 	( str_cat(Base, '.P', PFileName),
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(PFileName, time(PTime1,PTime2)),
 	  time(OTime1,OTime2) @< time(PTime1,PTime2)
 	)
 	;
-	(hdr_ext(HExt),  % .H or .HX, depending on OS
-	  str_cat(Base, HExt, HFileName),
+	( str_cat(Base, '.H', HFileName),
 	  file_time(Obj, time(OTime1,Otime2)),
 	  %% If no .H file exists, then HTime = 0
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,Otime2) @< time(HTime1,HTime2)
 	).	  
-
-needs_recompile(CH_x, Base, Obj) :-
+needs_recompile('', Base, Obj) :-
 	file_time(Obj, time(OTime1,OTime2)), 
 	file_time(Base, time(PTime1,PTime2)),
 	time(OTime1,OTime2) @< time(PTime1,PTime2).
-
-%%%needs_recompile(CH_o, _Base, _Obj).
-% As a temporary solution a foreign module needs to be recompiled
-% if either the .c file or if the .H file needs to be recompiled.
-
-% Solution??? It''s a problem!!! What does this test for solaris do?
-% obviously, solaris is not the only system that uses .so!!! -- mk
-needs_recompile(CH_c, Base, Obj) :-
+needs_recompile('c', Base, Obj) :-
 	xsb_configuration(os_type, OS_type),
 	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
           ; (str_sub('linux', OS_type) -> str_cat(Base, '.so', C_Obj))
@@ -142,8 +131,7 @@ needs_recompile(CH_c, Base, Obj) :-
 	  )
 	)
 	; 
-	( hdr_ext(HExt),
-	  str_cat(Base, HExt, HFileName),
+	( str_cat(Base, '.H', HFileName),
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,OTime2) @< time(HTime1,HTime2)
@@ -158,54 +146,23 @@ needs_recompile(CH_c, Base, Obj) :-
 /*		1) the directory (Dir),					*/
 /*		2) the module name (Mod),				*/
 /*		3) the extension (SExt) of the source file		*/
-/*		   (P/c/x[other name]/O[no source file]),		*/
+/*		   ('P'/'c'/''[other name]/'O'[object file only]),	*/
 /*		4) whether an object code file exists (HasObj = 0,1),	*/
 /*		5) the base name of the file (Base = Dir+Mod), and	*/
 /*		6) the object file name (Obj)				*/
 /* 	The call will fail if the specified file cannot be found.	*/
 /*======================================================================*/
 
-%% This whole piece is buggy and will choke on unusual file names
-%% Needs to be thrown out and redone using str_sub and such. -mk
-search_module(FileName, Dir, Mod, SExt, HasObj, Base, Obj) :-
-	tilde_expand_filename(FileName, Name),
-	str_len(Name, Len),
-	search_slash(Name, Len, Slash), %% If Slash =:= -1 no slash is found
-	Loc1 is Len - 2,	   %% The following is obviously a non-general
-	buff_byte(Name, Loc1, B1), %% way of searching for the '.?' suffix
-	( B1 =:= CH_DOT -> Dot = Loc1 ; Dot = Len ),
-	( Slash < 0, Dot =:= Len ->  %% only a base name
-		Mod = Name, real_search_module(Mod, Dir, Base, SExt)
-	;	%% is a full file name
-	  ( Dot =:= Len -> 
-		%% if the file name has no extension first check for
-		%% the existence of the file with the extension.
-		( str_cat(Name, '.P', PName), file_exists(PName), SExt = CH_P
-		; str_cat(Name, '.c', PName), file_exists(PName), SExt = CH_c
-		; file_exists(Name), SExt = CH_x
-		; obj_ext(OExt), str_cat(Name, OExt, PName),
-		  file_exists(PName), SExt = OExt
-		)
-	  %% file with extension
-	  ; file_exists(Name), Loc3 is Len - 1, buff_byte(Name, Loc3, Ext),
-	    ( memberchk(Ext, [CH_P,CH_c,CH_O]) -> SExt = Ext ; SExt = CH_x )
-	  ),
-	  %% just the base name
-	  ( Slash < 0 -> 
-	        slash(Slash_chr),  %% get the OS-appropriate slash: / or \.
-    	    	str_cat('.', Slash_chr, Dir),
-		( SExt =:= CH_x -> Mod = Name
-		; str_substring(Name, 0, Dot, Mod)
-		),
-		str_cat(Dir, Mod, Base)
-	  ; str_substring(Name, 0, Slash, Dir),
-	    Loc2 is Slash + 1, Till_Dot is Dot - Loc2,
-	    str_substring(Name, Loc2, Till_Dot, Mod),
-	    str_substring(Name, 0, Dot, Base)
-	  )
+search_module(FileName, Dir, Mod, Ext, HasObj, Base, Obj) :-
+	almost_search_module(FileName, D, Mod, E, B),
+	( D == '', FileName == Mod -> % only a module name was given
+	    real_search_module(Mod, Dir, Base, Ext)
+	; Dir = D, Ext = E, Base = B
 	),
-	obj_ext(OExt2),
-	str_cat(Base, OExt2, Obj),
+	get_object_file(Base, HasObj, Obj).
+
+get_object_file(Base, HasObj, Obj) :-
+	str_cat(Base, '.O', Obj),
 	( file_exists(Obj) -> HasObj = 1 ; HasObj = 0 ).
 
 /*======================================================================*/
@@ -215,27 +172,7 @@ search_module(FileName, Dir, Mod, SExt, HasObj, Base, Obj) :-
 real_search_module(ModName, Dir, Base, Ext) :-
         libpath(Dir),
         str_cat(Dir, ModName, Base),
-	( str_cat(Base, '.P', Path), file_exists(Path), Ext = CH_P
-	; str_cat(Base, '.c', Path), file_exists(Path), Ext = CH_c
-	; file_exists(Base), Ext = CH_x		% no suffix
-	; obj_ext(OExt), str_cat(Base, OExt, Path), file_exists(Path), Ext = OExt
-	).
-
-/*======================================================================*/
-/* search_slash(+FileName, +InLoc, -SlashLoc)				*/
-/*	Search for the occurrence of a '/' from the InLoc''th character	*/
-/*	of FileName (backwards), and return the offset of the last '/'	*/
-/*	character. If no '/' exists, a -1 is returned.			*/
-/*======================================================================*/
-
-search_slash(FileName, I, SlashLoc) :-
-	( I =:= 0 -> SlashLoc = -1
-	; I1 is I - 1,
-	  buff_byte(FileName, I1, Byte),
-	  ( (Byte =:= CH_SLASH ; Byte =:= CH_BACKSLASH) -> SlashLoc = I1 
-	  ; search_slash(FileName, I1, SlashLoc) 
-	  )
-	).	
+	existing_file_extension(Base, Ext).
 
 /*======================================================================*/
 /* load_exec(+File, +ModName)						*/
@@ -265,10 +202,8 @@ co_code_call(A,B,C) :- code_call(A,B,C).
 
 compile_load_user(Options) :-
 	compile(user, user, Options, _), !,
-	obj_ext(OExt),
-	str_cat('user', OExt, Obj),
-	load_exec(Obj, user),
-	rm(Obj).
+	load_exec('user.O', user),
+	rm('user.O').
 
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
@@ -318,14 +253,14 @@ get_fname(Filename,SExt,Base,Mod) :-
 	).
 
 load_dyn0(SExt,Base,Mod) :-
-	(SExt == CH_x	% no suffix
+	(SExt == ''	% no suffix
 	 ->	init_for_load(Base,Mod),
 		load_dyn1(Base),
 		cleanup_for_load
-	 ; 	tran_ext(SExt,Suff),
-	 	str_cat(Base, Suff, Rfname),
-		init_for_load(Rfname,Mod),
-		(SExt == CH_P
+	 ;      dotted_ext(SExt, DExt),
+	        str_cat(Base, DExt, Rfname),
+		init_for_load(Rfname, Mod),
+		(SExt == 'P'
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
 			 ->	load_dyn1(Hfname)
@@ -337,8 +272,7 @@ load_dyn0(SExt,Base,Mod) :-
 		cleanup_for_load
 	).
 
-tran_ext(CH_P,'.P').
-tran_ext(CH_D,'.D').
+dotted_ext(Ext,DExt) :- str_cat('.',Ext,DExt).
 
 load_dyn1(Rfname) :-
 	cputime(T0),
@@ -455,14 +389,14 @@ load_dync(File) :-
 	load_dync0(SExt,Base,Mod).
 
 load_dync0(SExt,Base,Mod) :-
-	(SExt == CH_x	% no suffix
+	(SExt == ''	% no suffix
 	 ->	init_for_load(Base,Mod),
 		load_dync1(Base),
 		cleanup_for_load
-	 ; 	tran_ext(SExt,Suff),
-	 	str_cat(Base, Suff, Rfname),
-		init_for_load(Rfname,Mod),
-		(SExt == CH_P
+	 ;      dotted_ext(SExt, DExt),
+	        str_cat(Base, DExt, Rfname),
+		init_for_load(Rfname, Mod),
+		(SExt == 'P'
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
 			 ->	load_dync1(Hfname)

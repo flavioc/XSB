@@ -79,6 +79,8 @@
         tilde_expand_filename/2,
         is_absolute_filename/1,
         parse_filename/4,
+	almost_search_module/5,
+	existing_file_extension/2,
 	getenv/2, 
 	sys_syscall/4,
 	sys_system/7, 

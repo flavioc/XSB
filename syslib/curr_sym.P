@@ -45,8 +45,6 @@ current_atom(Module:Atom) :-
 	  psc_arity(PSC, Arity), 
 	  0 = Arity,
 	  psc_name(PSC, Name),
-% The following appeared here by Jiyang (dunno completely what it does!)
-%	term_new(PSC, A0),
 	  Atom = Name
 	).
 
@@ -84,9 +82,6 @@ current_functor(Module:Functor/N) :-
         ; psc_scan_in_module(First_PSC_Pair, PSC),
 	  psc_arity(PSC, Arity), 
 	  psc_name(PSC, Name),
-% The following appeared here by Jiyang (dunno why)
-%	psc_insert(Name, 0, PSC0), 
-%	term_new(PSC0, F0),
 	  Functor = Name,
 	  Arity = N
 	).
@@ -345,24 +340,15 @@ module_file('xsbrc', File) :-
 	current_predicate('xsbrc':_),	% module .xsbrc is indeed loaded
 	!,
 	xsb_configuration(user_home, HomeDir),
-	/* don''t support DOS any more 
-	( dos_os -> conname('/.xsbrc.OX', OFile)
-		    ; conname('/.xsbrc.O', OFile) ),
-	*/
 	slash(Slash),
 	fmt_write_string(FileName, '%s%s.xsb%sxsbrc.O',
 			 arg(HomeDir, Slash, Slash)),
 	FileName = File.
 module_file(ModuleName, File) :-
-	/*
-	( dos_os -> conname('.OX', Suffix)
-		    ; conname('.O', Suffix) ),
-	*/
-	Suffix = '.O',
+	obj_ext(Suffix),
 	str_cat(ModuleName, Suffix, OFile),
 	libpath(Lib),
-	expand_lib(Lib, Absolute_Lib),
-	str_cat(Absolute_Lib, OFile, FileName),
+	str_cat(Lib, OFile, FileName),
 	machine_file_exists(FileName),
 	!,	% This cut is needed so that we get only one filename
 		% as an answer (exactly the one that corresponds to the
@@ -490,28 +476,12 @@ xsb_flag(dcg_style, DcgMode) :-
 	  DcgMode = standard
         ).
 	
-
-/* DOS is gone
-hdr_ext(HExt) :-
-	( dos_os -> HExt = '.HX'
-	;   HExt = '.H' ).
-obj_ext(OExt) :-
-	( dos_os -> OExt = '.OX'
-	;   OExt = '.O' ).
-asm_ext(AExt) :-
-	( dos_os -> AExt = '.AX'
-	;   AExt = '.A' ).
-decl_ext(DExt) :-
-	( dos_os -> DExt = '.DX'
-	;   DExt = '.D' ).
-*/
+/* ==================================================================== */
 
 hdr_ext('.H').
 obj_ext('.O').
 asm_ext('.A').
 decl_ext('.D').
-
-
 
 /* ===== hilog_symbol/1 =============================================== */
 
@@ -521,20 +491,9 @@ decl_ext('.D').
 hilog_symbol(HS) :- 
 	'_$hilog_symbol'(HS).
 
-
 /* ===== Auxilliary Predicates ======================================== */
 
 get_first_psc_pair(PSC_Pair) :-
-	stat_flag(13, PSC_Pair).
-
-
-/*************************************************/
-
-%  This doesn''t do what it is supposed to do yet!
-%% MK: what is it supposed to do? See expand_file_name and friends
-expand_lib(X, X) :- !.
-expand_lib('./', CWD) :- getenv('cwd', CWD).
-
-
+	stat_flag(MOD_LIST, PSC_Pair).
 
 /* ----------------- end of file current_symbols.P -------------------- */

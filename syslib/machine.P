@@ -111,19 +111,26 @@ load_obj(FileName, Mod, LdOption, InitAddr) :-
 getenv(EnvVar, Value) :- getenv(EnvVar, Value).
 
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(SYS_SYSCALL).
-sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :-
-    sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5).
-sys_gethost(_Name, _Buffer) :- sys_gethost(_Name, _Buffer).
-sys_errno(_Errno) :- sys_errno(_Errno).
+sys_system(CallNo, Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :-
+    sys_system(CallNo, Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5).
+sys_gethost(Name, Buffer) :- sys_gethost(Name, Buffer).
+sys_errno(Errno) :- sys_errno(Errno).
 
-file_stat(_File, _Which, _RetVal) :- file_stat(_File, _Which, _RetVal).
-file_writequoted(_File, _Term) :- file_writequoted(_File, _Term).
+file_stat(File, Which, RetVal) :- file_stat(File, Which, RetVal).
+file_writequoted(File, Term) :- file_writequoted(File, Term).
 
-intern_string(_Str,_InternedStr) :- '_$builtin'(INTERN_STRING).
-expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(EXPAND_FILENAME).
-tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(TILDE_EXPAND_FILENAME).
-is_absolute_filename(_FileName) :- '_$builtin'(IS_ABSOLUTE_FILENAME).
-parse_filename(_FileName, _Dir, _Basename, _Extension) :- '_$builtin'(PARSE_FILENAME).
+intern_string(Str, InternedStr) :- intern_string(Str, InternedStr).
+expand_filename(FileName, ExpandedFileName) :-
+	expand_filename(FileName, ExpandedFileName).
+tilde_expand_filename(FileName, ExpandedFileName) :-
+	tilde_expand_filename(FileName, ExpandedFileName).
+is_absolute_filename(FileName) :- is_absolute_filename(FileName).
+parse_filename(FileName, Dir, Basename, Extension) :-
+	parse_filename(FileName, Dir, Basename, Extension).
+almost_search_module(FileName, Dir, ModName, Extension, BaseName) :-
+	almost_search_module(FileName, Dir, ModName, Extension, BaseName).
+existing_file_extension(FileName, Extension) :-
+	existing_file_extension(FileName, Extension).
 
 psc_env(PSC, Env) :- psc_env(PSC, Env).
 psc_spy(PSC, Spy) :- psc_spy(PSC, Spy).

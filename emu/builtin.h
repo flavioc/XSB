@@ -94,6 +94,8 @@
 #define TILDE_EXPAND_FILENAME    67
 #define IS_ABSOLUTE_FILENAME     68
 #define PARSE_FILENAME        	 69
+#define ALMOST_SEARCH_MODULE     70
+#define EXISTING_FILE_EXTENSION  71
 
 #define PSC_ENV		        100
 #define PSC_SPY		        101

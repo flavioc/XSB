@@ -1,5 +1,5 @@
 /* File:      xpathname.c -- utilities to manipulate path/file names
-** Author(s): kifer
+** Author(s): kifer, kostis
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1998
@@ -54,17 +54,34 @@
 #include "cell.h"
 #include "xsberror.h"
 
+/*=========================================================================*/
 
 #define DDOT	".."
 #define DOT	"."
 
 extern char *user_home;  	  /* from xmain.c: the user $HOME dir or
-				     install dir, if $HOME is null */ 
-bool is_absolute_filename(char *);
-char *tilde_expand_filename(char *);
-char *tilde_expand_filename_norectify(char *, char *);
+				     install dir, if $HOME is null */
 static char *rectify_pathname(char *, char *);
 
+/*=========================================================================*/
+
+/* check if the path name is absolute */
+bool is_absolute_filename(char *filename) {
+
+#if defined(WIN_NT) || defined(DJGPP)
+  /*  If the file name begins with a "\" or with an "X:", where X is some
+   *  character, then the file name is absolute.
+   *  Otherwise it's not. */
+  if ( (filename[0] == SLASH) || (isalpha(filename[0]) && filename[1] == ':') )
+    return TRUE;
+#else /* Unix */
+  if (filename[0] == '/')
+    return TRUE;
+#endif
+
+  return FALSE;
+}
+  
 
 /* if file is a directory and is missing a trailing slash, add it 
    passes file name and the slash to be added. can be backslash on NT
@@ -87,55 +104,6 @@ char *dirname_canonic(char *filename) {
   return canonicized;
 }
 
-
-/*
- *  Return full path name for the file passed in as argument.
- */
-
-char *expand_filename(char *filename) {
-  char aux_filename[MAXPATHLEN], aux_filename2[MAXPATHLEN];
-  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
-  
-#if defined(WIN_NT) || defined(DJGPP)
-
-  if ( is_absolute_filename(filename) ) {
-    return rectify_pathname(filename, absolute_filename);
-  } else {
-    getcwd(aux_filename2, MAXPATHLEN-1);
-    sprintf(aux_filename, "%s%c%s", aux_filename2, SLASH, filename);
-    return rectify_pathname(aux_filename, absolute_filename);
-  }
-
-#else /* For UNIX systems */
-
-  if (is_absolute_filename(filename))
-    /* rectify and put in string tbl */
-    return rectify_pathname(filename, absolute_filename);
-
-  /* The file name is absolute, but the initial `~' must be expanded. */
-  else if (filename[0] == '~') 
-    return tilde_expand_filename(filename);
-
-  else {     /*  The file name is not absolute. */
-    getcwd(aux_filename2, MAXPATHLEN-1);
-    sprintf(aux_filename, "%s%c%s", aux_filename2, SLASH, filename);
-    return rectify_pathname(aux_filename, absolute_filename);
-  }
-#endif /* of def for Unix */
-}
-
-/*
-** Like expand_filename, but ONLY expands Unix tilde by replacing '~', '~user'
-** with the home directory of the appropriate user.
-** Does nothing on NT and DOS.
-*/
-char *tilde_expand_filename(char *filename) {
-  char aux_filename[MAXPATHLEN];
-  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
-
-  tilde_expand_filename_norectify(filename, aux_filename);
-  return rectify_pathname(aux_filename, absolute_filename);
-}
 
 /* Like tilde_expand_filename, but doesn't rectify */
 char *tilde_expand_filename_norectify(char *filename, char *expanded) {
@@ -188,24 +156,56 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
 #endif /* Unix */
 }
 
+/*
+** Like expand_filename, but ONLY expands Unix tilde by replacing '~', '~user'
+** with the home directory of the appropriate user.
+** Does nothing on NT and DOS.
+*/
+char *tilde_expand_filename(char *filename) {
+  char aux_filename[MAXPATHLEN];
+  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
 
-/* check if the path name is absolute */
-bool is_absolute_filename(char *filename) {
-
-#if defined(WIN_NT) || defined(DJGPP)
-  /*  If the file name begins with a "\" or with an "X:", where X is some
-   *  character, then the file name is absolute.
-   *  Otherwise it's not. */
-  if ( (filename[0] == SLASH) || (isalpha(filename[0]) && filename[1] == ':') )
-    return TRUE;
-#else /* Unix */
-  if (filename[0] == '/')
-    return TRUE;
-#endif
-
-  return FALSE;
+  tilde_expand_filename_norectify(filename, aux_filename);
+  return rectify_pathname(aux_filename, absolute_filename);
 }
+
+
+/*
+ *  Return full path name for the file passed in as argument.
+ */
+
+char *expand_filename(char *filename) {
+  char aux_filename[MAXPATHLEN], aux_filename2[MAXPATHLEN];
+  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
   
+#if defined(WIN_NT) || defined(DJGPP)
+
+  if ( is_absolute_filename(filename) ) {
+    return rectify_pathname(filename, absolute_filename);
+  } else {
+    getcwd(aux_filename2, MAXPATHLEN-1);
+    sprintf(aux_filename, "%s%c%s", aux_filename2, SLASH, filename);
+    return rectify_pathname(aux_filename, absolute_filename);
+  }
+
+#else /* For UNIX systems */
+
+  if (is_absolute_filename(filename))
+    /* rectify and put in string tbl */
+    return rectify_pathname(filename, absolute_filename);
+
+  /* The file name is absolute, but the initial `~' must be expanded. */
+  else if (filename[0] == '~') 
+    return tilde_expand_filename(filename);
+
+  else {     /*  The file name is not absolute. */
+    getcwd(aux_filename2, MAXPATHLEN-1);
+    sprintf(aux_filename, "%s%c%s", aux_filename2, SLASH, filename);
+    return rectify_pathname(aux_filename, absolute_filename);
+  }
+#endif /* of def for Unix */
+}
+
 
 /* strip names from the back of path 
    PATH is the path name from which to strip.
@@ -445,3 +445,69 @@ void transform_pathname(char *filename)
   *(pointer-1) = '\0';
 }
 
+/*=========================================================================*/
+
+char *existing_file_extension(char *basename)
+{
+  char filename[MAXPATHLEN];
+  struct stat fileinfo;
+
+  strcpy(filename, basename); strcat(filename, ".P");
+  if (! stat(filename, &fileinfo)) return "P";
+
+  strcpy(filename, basename); strcat(filename, ".c");
+  if (! stat(filename, &fileinfo)) return "c";
+
+  strcpy(filename, basename);
+  if (! stat(filename, &fileinfo)) return ""; /* no extension */
+
+  strcpy(filename, basename); strcat(filename, ".O");
+  if (! stat(filename, &fileinfo)) return "O";
+
+  return NULL; /* signifies that the search was unsuccessful */
+}
+
+/*=========================================================================*/
+
+bool almost_search_module(char *filename)
+{
+  char *fullname, *dir, *basename, *extension;
+  struct stat fileinfo;
+
+  fullname = tilde_expand_filename(filename);
+  parse_filename(fullname, &dir, &basename, &extension);
+  if (! strcmp(filename, basename)) { /* only a module name given */
+    /* this is the case that we have to resort to a non-deterministic
+     * search in Prolog using the predicate libpath/1; that's why the
+     * function is called "almost_".  Note that arguments 4 and 5 are
+     * left unbound here.
+     */
+    ctop_string(2, string_find(dir, 1));
+    ctop_string(3, string_find(filename, 1)); /* Mod = FileName */
+  } else { /* input argument is a full file name */
+    if (! strcmp(extension, "")) {
+      extension = existing_file_extension(filename);
+      if (! extension) return FALSE; /* file was not found */
+    } else {
+      if (stat(fullname, &fileinfo)) return FALSE; /* file not found */
+    }
+    if (! strcmp(dir, "")) {
+      static char dot_dir[MAXPATHLEN];
+      dot_dir[0] = '.';
+      dot_dir[1] = SLASH;
+      dot_dir[2] = '\0';
+      ctop_string(2, string_find(dot_dir, 1));
+      strcat(dot_dir, basename); /* dot_dir is updated here */
+      ctop_string(5, string_find(dot_dir, 1));
+    } else {
+      ctop_string(2, string_find(dir, 1));
+      strcat(dir, basename);
+      ctop_string(5, string_find(dir, 1));
+    }
+    ctop_string(3, string_find(basename, 1));
+    ctop_string(4, string_find(extension, 1));
+  }
+  return TRUE;
+}
+
+/*=========================================================================*/

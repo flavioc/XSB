@@ -36,30 +36,29 @@
 :- import libpath/1 from loader.
 :- import compile/4 from compile.
 :- import compile_cH/5 from foreign.
-:- import rm/1, sys_link/3 from shell.
+:- import str_cat/3, str_sub/2 from string.
+:- import default_assert_size/1 from config.
+:- import predicate_property/2 from curr_sym.
 :- import file_write0/2, file_nl/1 from xsb_writ.
-:- import hdr_ext/1, obj_ext/1, predicate_property/2 from curr_sym.
-:- import str_substring/4, str_cat/3, str_sub/2 from string.
+:- import rm/1, sys_link/3, process_control/2 from shell.
 :- import abort/1, call/1, file_exists/1, atom/1, repeat/0,
 	  seeing/1, see/1, seen/0, call/1, goal_cut_trans/3,
 	  expand_term/2, read/1, op/3, (table)/1, (index)/3, (index)/2,
 	  (=..)/2, writeln/1, write_canonical/1, tell/1,
 	  told/0, telling/1, functor/3, cputime/1
      from standard.
-:- import code_load/3, code_call/3, buff_byte/3, str_len/2,
+:- import code_load/3, code_call/3,
 	  expand_filename/2, tilde_expand_filename/2, unload_seg/1,
 	  buff_word/3, assert_code_to_buff/2, assert_buff_to_clref/7,
 	  file_read_canonical/3, stat_flag/2, conpsc/2, 
 	  psc_prop/2, psc_tabled/2, psc_type/2, psc_name/2,
-	  psc_arity/2, slash/1
+	  psc_arity/2, existing_file_extension/2, almost_search_module/5
      from machine.
 :- import file_time/2, file_close/1 from file_io.
 :- import asserta/1, (dynamic)/1, retractall/1, assert/1, retract/1, t_assert/2
      from assert.
 :- import warning/1, time_message/2 from auxlry.
 :- import append/3, memberchk/2 from basics.
-:- import default_assert_size/1
-     from config.
 :- import '_$index'/3, '_$trie_asserted'/1 from file_op.
 :- import add_hilog_symbol/1 from hilogsym.
 :- import get_p_mod/3, change_multifile_directive/3, open_or_cpp_file/2,
@@ -68,4 +67,3 @@
      from parse.
 :- import conset/2, conget/2  from prof_sbp.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import process_control/2 from shell.

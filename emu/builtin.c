@@ -126,7 +126,9 @@ extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
   db_reclaim0(void);
 
 extern char *dirname_canonic(char *);
+extern bool almost_search_module(char *);
 extern char *expand_filename(char *filename);
+extern char *existing_file_extension(char *);
 extern char *tilde_expand_filename(char *filename);
 extern bool is_absolute_filename(char *filename);
 extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
@@ -590,6 +592,8 @@ void init_builtin_table(void)
   set_builtin_table(TILDE_EXPAND_FILENAME, "tilde_expand_filename");
   set_builtin_table(IS_ABSOLUTE_FILENAME, "is_absolute_filename");
   set_builtin_table(PARSE_FILENAME, "parse_filename");
+  set_builtin_table(ALMOST_SEARCH_MODULE, "almost_search_module");
+  set_builtin_table(EXISTING_FILE_EXTENSION, "existing_file_extension");
 
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
@@ -1157,13 +1161,11 @@ int builtin_call(byte number)
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
     ctop_string(2, string_find(expand_filename(ptoc_string(1)), 1));
     break;
-
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
     ctop_string(2, string_find(tilde_expand_filename(ptoc_string(1)), 1));
     break;
   case IS_ABSOLUTE_FILENAME: /* R1: +FN. Ret 1 if name is absolute, 0 else */
     return is_absolute_filename(ptoc_string(1));
-
   case PARSE_FILENAME: {    /* R1: +FN, R2: -Dir, R3: -Basename, R4: -Ext */
     char *dir, *basename, *extension;
     parse_filename(ptoc_string(1), &dir, &basename, &extension);
@@ -1172,6 +1174,18 @@ int builtin_call(byte number)
     ctop_string(4, string_find(extension, 1));
     break;
   }
+  case ALMOST_SEARCH_MODULE: /* R1: +FileName, R2: -Dir, R3: -Mod,
+				R4: -Ext, R5: -BaseName */
+    return almost_search_module(ptoc_string(1));
+  case EXISTING_FILE_EXTENSION: { /* R1: +FileN, R2: ?Ext */
+    char *extension = existing_file_extension(ptoc_string(1));
+    if (extension == NULL) return FALSE;
+    else {
+      extension = string_find(extension,1);
+      return atom_unify(makestring(extension), ptoc_tag(2));
+    }
+  }
+
   case GETENV:  {	/* R1: +environment variable */
 			/* R2: -value of that environment variable */
     char *env = getenv(ptoc_string(1));
