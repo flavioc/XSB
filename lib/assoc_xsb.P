@@ -1,13 +1,21 @@
 /* File:      assoc_xsb.P
 ** Author(s): Mats Carlsson (see below)
 **	      (modified by Baoqiu Cui to make it work in XSB)
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** This file is adapted from SICStus Prolog:
+**
+**   Mats Carlsson, et al.  SICStus Prolog User's Manual.
+**   Swedish Institute of Computer Science, 1995. ISBN 91-630-3648-7
 **
 ** $Id$
 ** 
 */
 
+% THE ORIGINAL FILE HEADER:
+% ------------------------------------------------------------
 %   Copyright(C) 1994, Swedish Institute of Computer Science
-
+%
 %   File   : ASSOC.PL
 %   Author : Mats Carlsson
 %   Updated: 15 December 1994
