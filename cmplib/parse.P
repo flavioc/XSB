@@ -645,6 +645,11 @@ trans_goals('$$var'(Vid), goal(Sym,[varocc(Vid)]), SymTab, VidIn, VidOut) :- !,
 			% The input term is the 1st occurance of a variable
 	; VidOut = VidIn
 	).
+%% hack to eliminate true goals at end of clauses, so that
+%% the compiler may consider TCO --lfcastro, 050801
+trans_goals((A, true), Goal,SymTab,VidIn,VidOut) :-
+	!,
+	trans_goal(A,Goal,SymTab,VidIn,VidOut).
 trans_goals((A, B), and(Goal1, Goal2), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidMed),
 	trans_goals(B, Goal2, SymTab, VidMed, VidOut).
