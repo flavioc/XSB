@@ -30,4 +30,4 @@
 	  getrand/1,
 	  setrand/1.
 
-:- import abort/1 from standard.
+:- import abort/1, integer/1 from standard.
