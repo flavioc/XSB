@@ -663,9 +663,17 @@ immed_hasAttr1(SCid,Rid,TCid) :-
 	immed_minAttr2(SCid,Rid,TCid,_).
 
 immed_hasAttr2(SCid,Rid,TCid) :-
+	check_hasAttr_indices(SCid,Rid,TCid),
 	hasAttr_ext(SCid,Rid,TCid).
 immed_hasAttr2(SCid,Rid,TCid) :-
 	hasAttr_int(SCid,Rid,TCid).
+
+check_hasAttr_indices(Scid,Rid,Tcid):- 
+	(ground(Scid) -> 
+	    true
+	  ; (ground(Rid),ground(Tcid) -> 
+	         true
+	       ; writeln(nonindexed(hasAttr(Scid,Rid,Tcid))) ) ).
 
 :- comment(hasAttr/3, "@tt{hasAttr(SCid,Rid,TCid)} defines the
 inheritable relation predicate, where @tt{SCid} is the source class or

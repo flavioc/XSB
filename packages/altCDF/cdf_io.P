@@ -202,10 +202,11 @@ load_extensional_facts(Dir) :-
 
 reload_extensional(Dir):- 
 	concat_atom([Dir,'cdf_extensional.P'],File),
+	seeing(OldF),
 	see(File),
 	abolish_cdf_tables,
 	reload_extensional,
-	seen.
+	see(OldF).
 
 reload_extensional :-
 	caching_cdf(Flg),
@@ -318,13 +319,14 @@ read_till_slash_1([H|R],[H|R1]):-
 
 %TLS: dont know if permission error is right here.	   :	
 load_intensional_rules(Path,Name):- 
+	seeing(OldF),
 	retract_intensional_rules(Name),
 	abolish_cdf_tables,
 	concat_atom([Path,'/cdf_intensional.P'],File),
 	(file_exists(File) -> 
    	    see(File),
 	    read_intensional_rules_1(Name),
-	    seen
+	    see(OldF)
 	  ; existence_error(file,File,'load_intensional_rules/2',2) ).
 
 retract_intensional_rules(Name):- 

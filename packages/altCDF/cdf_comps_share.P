@@ -476,7 +476,7 @@ initialize_component(Name,Path):-
 	cwd(CurrDir),
 	concat_atom([Path,Slash,Name],InitDir),
 	cd(InitDir),
-	(file_exists('initialization_file.P') -> load_dyn('initialization_file.P') ; true),
+	(file_exists('initialization_file.P') -> consult('initialization_file.P') ; true),
 	cd(CurrDir).
 
 %	concat_atom([Path,Slash,Name,'/initialization_file.P'],File),
@@ -779,9 +779,10 @@ cdf_load_extensional_facts(Dir,CPath) :-
 
 reload_extensional(Dir,CPath):- 
 	concat_atom([Dir,'cdf_extensional.P'],File),
+	seeing(OldF),
 	see(File),
 	reload_extensional(CPath),
-	seen.
+	see(OldF).
 
 reload_extensional(CPath) :-
 	repeat,
@@ -838,9 +839,10 @@ get_component_direct_dependencies(Comp,RPath,Ver,Deps) :-
 	 ->	concat_atom([Path,'/',Comp,'/cdf_extensional.P'],ExtFile)
 	 ;	concat_atom([Path,'/',Comp,'_',Ver,'/cdf_extensional.P'],ExtFile)
 	),
+	seeing(OldF),
 	see(ExtFile),
 	findall(Dep,read_dependencies(Comp,Path,Dep),UDeps),
-	seen,
+	see(OldF),
 	sort(UDeps,Deps).
 
 read_dependencies(CComp,CPath,comp(Comp,Path,Ver)) :-

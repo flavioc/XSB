@@ -187,6 +187,7 @@ to and loading them from a component.
 	  immed_minAttr/4,immed_maxAttr/4,
 	  in_hierarchy/1,
 	  newExtTerm/1,retractallExtTerm/1,
+	  system_component/1,
 	  cdf_id_fields/4 from cdf_init_cdf.
 :- import get_component_extensional/2 from cdf_comps_share.
 
@@ -485,27 +486,40 @@ classify_if_necessary(_Context,Name):-
 	get_component_fact(Name,Term),
 	classify_if_necessary_term(Term,Upd1,[]),
 	member(Term1,Upd1),
-	(call0(Term1) -> true ; newExtTerm(Term1)),
+	(call0(Term1) -> 
+	  true 
+	; newExtTerm(Term1),
+	  writeq(Term1),writeln('.')),
 	fail.
 classify_if_necessary(_,_Term).
 
 get_component_fact(Name,Fact):- 
-	(  Fact = isa_ext(One,Two) ; Fact = classHasAttr_ext(One,Two,Three)
+	(    Fact = isa_ext(One,Two)  
+               ;  Fact = classHasAttr_ext(One,Two,Three)
 	   ; Fact = allAttr_ext(One,Two,Three) 
-	   ; Fact = hasAttr_ext(One,Two,Three) ),
+	   ; Fact = hasAttr_ext(One,Two,Three)
+               ; Fact = minAttr_ext(_,One,Two,Three)
+               ; Fact = minAttr_ext(_,One,Two,Three)
+               ; Fact = necessCond_ext(One,Two)
+	   ),
 	call0(Fact),
-	get_component_extensional(Fact,Name).
+	get_component_extensional(Fact,Name),
+	\+ system_component(Name).
 
-classify_if_necessary_term(Term,Upd1,Upd):-
-	\+ (Term = isa_ext(_,_)),!,
-	Term =.. [_|L],
-	classify_if_necessary_list(L,Upd1,Upd).
-classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-
+%:- [cdftp_chkCon].
+classify_if_necessary_term(necessCond_ext(First,Vid),Upd1,Upd):-!,
+	findall(Id,ceMember(Vid,Id),Ids),
+	sort(Ids,Idsort),
+	classify_if_necessary_list([First|Idsort],Upd1,Upd).
+classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-!,
 	arg(1,First,Arg),
 	(structure(Arg) -> 
 	    Arg =.. [_|L],
 	    classify_if_necessary_list([Second|L],Upd1,Upd)
 	  ; classify_arg(Second,Upd1,Upd)).
+classify_if_necessary_term(Term,Upd1,Upd):-
+	Term =.. [_|L],
+	classify_if_necessary_list(L,Upd1,Upd).
 
 classify_if_necessary_list([],Upd,Upd).
 classify_if_necessary_list([Arg|R],Updin,Upd):- 
