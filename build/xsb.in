@@ -43,7 +43,7 @@
 
 suffix=@config_tag@
 
-invocation_name=$0
+invocation_name=`basename $0`
 
 # If symbolic link: is there a more elegant way to extract the value of a link?
 if test -h $invocation_name ; then
