@@ -67,6 +67,7 @@ inline_builtin(psc_type, 2, PSC_TYPE).
 inline_builtin(psc_prop, 2, PSC_PROP).
 inline_builtin(psc_set_type, 2, PSC_SET_TYPE).
 inline_builtin(psc_set_prop, 2, PSC_SET_PROP).
+inline_builtin(psc_set_spy, 2, PSC_SET_SPY).
 
 inline_builtin(term_psc, 2, TERM_PSC).
 inline_builtin(term_type, 2, TERM_TYPE).

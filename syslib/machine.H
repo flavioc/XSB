@@ -37,6 +37,7 @@
 	psc_prop/2, 
 	psc_set_type/2, 
 	psc_set_prop/2,
+	psc_set_spy/2,
 	term_psc/2, 
 	term_type/2, 
 	term_compare/3, 

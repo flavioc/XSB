@@ -35,20 +35,19 @@
 :- import set_inthandler/2, '_$load_undef'/1, load_pred/1 from loader.
 :- import file_write/2 from xsb_writ.
 
-:- import =.. /2, \= /2, functor/3, atom/1, is_list/1, cputime/1,
-    	warning/1, abort/0, abort/1, (import)/1
+:- import =.. /2, \= /2, functor/3, atom/1, is_list/1, call/1, cputime/1,
+          call/1, see/1, seen/0, repeat/0, read/1, warning/1,
+	  abort/0, abort/1, (import)/1
      from standard.
-:- import call/1, see/1, seen/0, repeat/0 from standard.
-:- import read/1 from standard.
 
 :- import assert/1 from assert.
 :- import (dynamic)/1, assert0/1, retract/1, retractall/1 from assert.
 
 :- import break/0, prompt/3 from x_interp.
 :- import term_psc/2, psc_insert/4, stat_flag/2, stat_set_flag/2, 
-	  psc_type/2, psc_prop/2,
-	  buff_byte/3, buff_set_byte/3, conname/2, code_call/3,
-	  psc_arity/2, psc_name/2, term_arg/3, term_type/2, term_new/2
+	  psc_name/2, psc_type/2, psc_prop/2, psc_spy/2, psc_set_spy/2,
+	  psc_arity/2, conname/2, code_call/3, term_arg/3, term_type/2,
+	  term_new/2
      from machine.
 :- import standard_symbol/3 from std_xsb.
 :- import predicate_property/2, current_predicate/1 from curr_sym.

@@ -234,7 +234,7 @@ must_load(PSC) :-
 	    stat_set_flag(INVOKE_NUM,N1), % invoke_num++
 	    stat_flag(SKIPPING, S),	% S = skipping
 	    psc_spy(PSC, K),
-	    (	S == 0, (K=:=128 ; K=:=192, indeed_spy(Call))
+	    (	S =:= 0, (K=:=128 ; K=:=192, indeed_spy(Call))
 	    ->	%% Not skipping
 		stat_set_flag(TRACE, 1),
 		deb_enterpred(N,PSC,Call,inspy, L, 0)
@@ -610,13 +610,5 @@ code_call_h(Code,Call,Nt) :- code_call(Code,Call,Nt).
 ll_write(X) :- file_write(STDDBG, X).
 ll_nl :- file_put(STDDBG, CH_NEWLINE).
 ll_flush :- file_flush(STDDBG, _).
-
-/* NOTE: psc_spy/2 now is builtin in machine.P */
-psc_spy(PSC, Spy) :- buff_byte(PSC, 0, Val), Spy is Val /\ 192.
-
-psc_set_spy(PSC, Spy) :- buff_byte(PSC, 0, Val), 
-	Val1 is (Val /\ 63) \/ Spy,
-	buff_set_byte(PSC, 0, Val1).
-
 
 /* --------------------- end of file debugger.P ----------------------- */

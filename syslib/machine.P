@@ -59,6 +59,7 @@ psc_type(PSC, Type) :- psc_type(PSC, Type).
 psc_prop(PSC, Term) :- psc_prop(PSC, Term).
 psc_set_type(PSC, Type) :- psc_set_type(PSC, Type).
 psc_set_prop(PSC, Term) :- psc_set_prop(PSC, Term).
+psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
 
 term_psc(Term, PSC) :- term_psc(Term, PSC).
 term_type(Term, Type) :- term_type(Term, Type).

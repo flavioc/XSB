@@ -540,6 +540,8 @@ void init_builtin_table(void)
   set_builtin_table(PSC_PROP, "psc_prop");
   set_builtin_table(PSC_SET_TYPE, "psc_set_type");
   set_builtin_table(PSC_SET_PROP, "psc_set_prop");
+  set_builtin_table(PSC_SET_SPY, "psc_set_spy");
+
   set_builtin_table(FILE_FUNCTION, "file_function");
   set_builtin_table(TERM_PSC, "term_psc");
   set_builtin_table(TERM_TYPE, "term_type");
@@ -755,6 +757,11 @@ int builtin_call(byte number)
     if (get_type(psc)==T_ALIA) set_ep(psc, (pb)ptoc_tag(2));
     else set_ep(psc, (pb)ptoc_int(2));
     break;
+  case PSC_SET_SPY: 	        /* R1: +PSC; R2: +int */
+    psc = (Psc)ptoc_addr(1);
+    set_spy(psc, ptoc_int(2));
+    break;
+
   case FILE_FUNCTION:  /* file_open/close/put/get/truncate/seek/pos */
     return file_function();
 
