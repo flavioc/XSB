@@ -352,10 +352,12 @@
 #define PRCUT			prcut
 #define PRWORKSPACE		prworkspace
 #define PRFLORALIB		prfloralib
-#define PRNEWPRED		prnewpred
 #define PROLOGTERM		prologterm
 #define PROLOGLIBLIT		prologliblit
 #define FLORASYSLIB		florasyslib
+
+#define PRNEWPRED		prnewpred
+#define PRNEWOID		prnewoid
 
 #define PRISA			prisa
 #define PRSUB			prsub

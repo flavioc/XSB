@@ -726,10 +726,14 @@ flora_loaddyn_FDB_filename(DBFileName) :-
 	%% Output the base file name only. The full path will be taken
 	%% care of by flora_load_dyn and consult.
 	parse_filename(DBFileName,_Dir,Base,Ext),
+	writeln(':- import flora_load_dyn/2 from flrutils.'),
+	writeln('#if !defined(FLORA_FDB_FILENAME)'),
 	current_output_port(OutPort),
-	fmt_write(OutPort,":- import flora_load_dyn/2 from flrutils.\n",_),
-	fmt_write(OutPort,"?- flora_load_dyn('%s.%s',%s).\n\n",
-                  args(Base,Ext,'FLORA_THIS_MODULE_NAME')).
+	fmt_write(OutPort, "#define FLORA_FDB_FILENAME  '%s.%s'", args(Base,Ext)),
+	nl,
+	writeln('#endif'),
+	writeln('?- flora_load_dyn(FLORA_FDB_FILENAME,FLORA_THIS_MODULE_NAME).'),
+	nl.
 
 
 /*************************************************************************
@@ -1535,7 +1539,7 @@ flDump(InFile) :-
 /*************************************************************************
   flora_dump_file(+File,+Workspace,+SquashingOption)
 
-  It expects a Flora file as input and dump its content in a more readable
+  It expects a Flora file as input and dumps the .P file in a more readable
   format. If SquashingOption == squash, ignore Workspace in the final round 
   of gpp pre-processing.
 *************************************************************************/
@@ -1586,8 +1590,12 @@ flora_dump_file(InFile,Workspace,SquashingOption) :-
   for existence.
 *************************************************************************/
 flora_gpp_dumpfile(FileName,DumpFileName,Workspace) :-
-	flora_message_line('Making dump file %s from %s',args(FileName,DumpFileName)),
-	flora_set_xpp_options(Workspace,'-D FLORA_DUMP'),
+	flora_message_line('Making dump file %s from %s',args(DumpFileName,FileName)),
+	parse_filename(DumpFileName,_,Base,_),
+	fmt_write_string(ExtraOptions,
+			 '-D FLORA_DUMP -D FLORA_FDB_FILENAME=''%s.%s''',
+			 arg(Base,FLORA_FDB_EXT)),
+	flora_set_xpp_options(Workspace,ExtraOptions),
 	file_open(DumpFileName,w,DumpPort),
 	xpp_process_file(FileName,XPP_process,IOportFromGPP),
 	copyIOport(IOportFromGPP,DumpPort),

@@ -29,7 +29,11 @@
 
 #define NEWVAR		newvar
 #define NEWPREDICATE	newpredicate
-#define NEWOID		FLORA_PREFIX'newoid'
+#define NEWOID          newoid
+#mode save
+#mode nostring "\!#'"
+#define NEWOID_COUNT	FLORA_SYMBOL('NEWOID')
+#mode restore
 #define TMPDIRECT	tmpdirect
 #define TMPOPTION	tmpoption
 
@@ -191,6 +195,7 @@ varobj_struct(Name,PRVARIABLE(Name)).
 strobj_struct(String,PRSTRING(String)).
 list_struct(List,Term,PRLIST(List,Term)).
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
+newoid_struct(Oid,PRNEWOID(Oid)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
 thisstorage_struct(PRTHISSTORAGE(PRTHISSTORAGE)).
@@ -465,16 +470,17 @@ new_varobjlist(N,[VarObj|L]) :-
   reset_newoid/0
   new_oidobj(-OidObject)
 ****************************************************************************/
-reset_newoid :- conset(NEWOID,1).
+reset_newoid :- conset(NEWOID_COUNT,1).
 
 new_oidobj(OidObject) :-
-	conget(NEWOID,N),
+	conget(NEWOID_COUNT,N),
 	M is N+1,
-	conset(NEWOID,M),
-	number_codes(N,NLst),
-	atom_codes(NAtm,NLst),
-	str_cat(NEWOID,NAtm,Name),
-	atomobj_struct(Name,OidObject).
+	conset(NEWOID_COUNT,M),
+	%%number_codes(N,NLst),
+	%%atom_codes(NAtm,NLst),
+	%%str_cat(NEWOID,NAtm,Name),
+	fmt_write_string(Name,'%s%d', args(NEWOID,N)),
+	newoid_struct(Name,OidObject).
 
 
 /****************************************************************************
