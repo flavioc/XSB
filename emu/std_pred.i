@@ -437,6 +437,7 @@ inline static bool number_to_list(int call_type)
     if (sscanf(str, "%ld%c", &c, &hack_char) == 1) {
       bind_int((CPtr)(term), c);
     } else {
+      Float float_temp;
 #ifdef BITS64
       if (sscanf(str, "%le%c", &float_temp, &hack_char) == 1)
 #else

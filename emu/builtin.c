@@ -72,9 +72,7 @@
 #include "binding.h"
 #include "xmacro.h"
 #include "token.h"
-#include "inst.h"
 #include "builtin.h"
-#include "subinst.h"
 #include "sig.h"
 #include "subp.h"
 #include "tr_utils.h"
@@ -94,6 +92,11 @@
 #include "xsb_odbc.h"
 #endif
 
+#ifdef PROFILE
+#include "inst.h"
+#include "subinst.h"
+#endif
+
 #include "io_builtins.h"
 
 /* special.h must be included after sys/stat.h */
@@ -101,7 +104,6 @@
 #include "system.h"
 
 /*======================================================================*/
-
 
 extern TIFptr get_tip(Psc);
 extern TIFptr first_tip;
@@ -149,30 +151,9 @@ extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, SGFrame);
 #endif
 
-/* ------- definitions of procedures used in "builtin_call" -----------	*/
-
-static void abolish_table_info(void);
-static void write_quotedname(FILE *, char *);
-
-#ifdef DEBUG
-extern void printterm(Cell, byte, int);
-#endif
-
-#ifdef PROFILE
-static void write_out_profile(void);
-#endif
-
 /* ------- variables also used in other parts of the system -----------	*/
 
 Cell flags[64];			  /* System flags + user flags */
-extern char *install_dir;    	  /* from self_orientation.c */
-extern char *user_home;    	  /* from self_orientation.c */
-
-/* ------- working variables for the procedure "builtin_call" ---------	*/
-
-static FILE* fptr;			/* working variable */
-static Float float_temp;		/* working variable */
-
 
 /* ------- utility routines -------------------------------------------	*/
 
@@ -188,7 +169,6 @@ Cell ptoc_tag(int regnum)
   deref(addr);
   return addr;
 }
-
 
 DllExport prolog_int call_conv ptoc_int(int regnum)
 {
@@ -407,7 +387,7 @@ static int ground(CPtr temp)
 
 /* --------------------------------------------------------------------	*/
 
-static inline int is_proper_list(Cell term)	/* for standard preds */
+inline static int is_proper_list(Cell term)	/* for standard preds */
 {
   register Cell addr;
 
@@ -482,7 +462,7 @@ static int is_most_general_term(Cell term)
 
 /* --------------------------------------------------------------------	*/
 
-Psc term_psc(Cell term)
+inline Psc term_psc(Cell term)
 {
   int value;
   Psc psc;
@@ -502,7 +482,7 @@ Psc term_psc(Cell term)
 
 /* -------------------------------------------------------------------- */
 
-static inline void xsb_fprint_variable(FILE *fptr, CPtr var)
+inline static void xsb_fprint_variable(FILE *fptr, CPtr var)
 {
   if (var >= (CPtr)glstack.low && var <= top_of_heap)
     fprintf(fptr, "_h%ld", ((Cell)var-(Cell)glstack.low+1)/sizeof(CPtr));
@@ -716,9 +696,154 @@ void init_builtin_table(void)
 
 /*----------------------------------------------------------------------*/
 
+inline static void abolish_table_info(void)
+{
+  TIFptr pTIF;
+
+  pTIF = first_tip;
+  while (IsNonNULL(pTIF)) {
+    TIF_CallTrie(pTIF) = NULL;
+    pTIF = TIF_NextTIF(pTIF);
+  }
+  reset_freeze_registers;
+  openreg = COMPLSTACKBOTTOM;
+  abolish_trie();
+  abolish_wfs_space(); 
+}
+
+/* --------------------------------------------------------------------	*/
+
+#ifdef PROFILE
+static void write_out_profile(void)
+{ 
+  int i, isum, ssum, tot;
+  float rat1, rat2;
+
+  isum = ssum = tot = 0;
+  for (i = 0; i < BUILTIN_TBL_SZ; i++) {
+    if (inst_table[i][0] != 0) isum = isum + inst_table[i][5];
+  }
+  for (i = 0; i < BUILTIN_TBL_SZ; i++) {
+    if (subinst_table[i][0] != 0) ssum = ssum + subinst_table[i][1];
+  }
+  tot = isum + ssum;
+  if (tot!=0) {
+    rat1 = isum / tot;
+    rat2 = ssum / tot;
+    fprintf(stdout,"total: %d inst: %d pct %f subinst: %d pct %f\n",
+	    tot,isum,rat1,ssum,rat2);
+    for (i = 0; i < BUILTIN_TBL_SZ; i++) {
+      if (inst_table[i][0] != 0)
+        fprintf(stdout,"-- %s %x %d %.3f\n",(char *) inst_table[i][0],i,
+	        inst_table[i][5],(((float)inst_table[i][5])/(float)tot));
+    }
+    fprintf(stdout,"_______________subinsts_______________\n");
+    for (i = 0; i < BUILTIN_TBL_SZ; i++) {
+      if (subinst_table[i][0] != 0) {
+	ssum = subinst_table[i][1];
+	rat1 = ssum/tot;
+	fprintf(stdout,"-- %s %x %d %g \n",(char *) subinst_table[i][0],i,
+		subinst_table[i][1],rat1);
+      }
+    }
+    fprintf(stdout,"_______________builtins_______________\n");
+    for (i = 0; i < BUILTIN_TBL_SZ; i++)
+      if (builtin_table[i][1] > 0 && builtin_table[i][0] != 0)
+	fprintf(stdout,"%s %d %d \n",
+		(char *) builtin_table[i][0],i,builtin_table[i][1]);
+  }
+  else 
+    fprintf(stdout,"Instruction profiling not turned On\n");
+}
+#endif
+
+/*----------------------- write_quotedname/2 ---------------------------*/
+
+static bool no_quotes_needed(char *string)
+{
+  int nextchar;
+  int ctr, flag;
+
+  ctr = 0;
+  nextchar = (int) string[0];
+  flag = 0;
+  if (nextchar >= 97 && nextchar <= 122) {    /* 0'a=97, 0'z=122  */
+    while (nextchar != '\0' && !flag) {
+      if (nextchar < 48 
+	  || (nextchar > 57 && nextchar < 65)
+	  || ((nextchar > 90 && nextchar < 97) && nextchar != 95)
+	  || (nextchar > 122))
+	flag = 1;
+      ctr++;
+      nextchar = (int) string[ctr];
+    }
+    if (!flag) return FALSE;
+  }
+
+  if (string[1] == '\0') {
+    if ((int) string[0] == 33 /*--- || (int) string[0] == 59 ---*/)
+      return FALSE;
+    if ((int) string[0] == 46) return TRUE;
+  }
+
+  nextchar = (int) string[0];
+  ctr = 0; 
+  while (nextchar != '\0' && !flag) {
+    switch(nextchar) {
+    case 35: case 36: case 38: case 42: case 43: case 45: case 46:
+    case 47: case 58: case 60: case 61: case 62: case 63: case 64: 
+    case 92: case 94: case 96: case 126:
+      nextchar++;
+      break;
+    default: 
+      flag = 1;
+    }
+    ctr++;
+    nextchar = (int) string[ctr];
+  }
+  return flag;
+}
+
+static void double_quotes(char *string, char *new_string)
+{
+  int ctr = 0, nctr = 0;
+
+  while (string[ctr] != '\0') {
+    if (string[ctr] == 39) {
+      new_string[nctr] = 39;
+      nctr++;
+    }
+    new_string[nctr] = string[ctr];
+    nctr++; ctr++;
+  }
+  new_string[nctr] = '\0';
+}
+
+static void write_quotedname(FILE *file, char *string)
+{
+  char* new_string;
+
+  new_string  = malloc(2*(strlen(string))+1);
+
+  if (*string == '\0') 
+    fprintf(file,"''");
+  else {
+    if (!no_quotes_needed(string)) {
+      fprintf(file,"%s",string);
+    }
+    else {
+      double_quotes(string,new_string);
+      fprintf(file,"\'%s\'",new_string);
+    }
+  }
+
+  free(new_string);
+}
+
+/*----------------------------------------------------------------------*/
+
 /* inlined definition of file_function */
 #include "io_builtins.i"
-
 
 /* inlined functions for prolog standard builtins */
 #include "std_pred.i"
@@ -731,10 +856,8 @@ int builtin_call(byte number)
   char *addr, *tmpstr;
   int  value, i, disp, arity, tmpval;
   Cell term;
-  
   TIFptr tip;
   Psc  psc;
-  Pair sym;
   CPtr subgoal_ptr, t_ptcp;
   register CPtr xtemp1, xtemp2;
   Cell attv, atts;
@@ -925,7 +1048,7 @@ int builtin_call(byte number)
     copy_term();
     break;
     
-  case CALL0:			/* R1: +Term, the call to be made */
+  case CALL0: {			/* R1: +Term, the call to be made */
     /* Note: this procedure does not save cpreg, hence is more like */
     /* an "execute" instruction, and must be used as the last goal!!!*/
     term = ptoc_tag(1);
@@ -936,7 +1059,7 @@ int builtin_call(byte number)
 	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
       }
     } else if (isstring(term)) {
-      sym = insert(string_val(term),0,(Psc)flags[CURRENT_MODULE],&value);
+      Pair sym = insert(string_val(term),0,(Psc)flags[CURRENT_MODULE],&value);
       psc = pair_psc(sym);
     } else {
       if (isnonvar(term))
@@ -971,6 +1094,7 @@ int builtin_call(byte number)
     }
     if (call_intercept) intercept(psc);
     break;
+  }
     
   case CODE_CALL:		/* R1: +Code (addr), the code address */
 				/* R2: +Term, the call to be made */
@@ -1035,13 +1159,13 @@ int builtin_call(byte number)
     ctop_int(2, (Integer)loader(ptoc_string(1), ptoc_int(3)));
     break;
 
-  case PSC_INSERT:	/* R1: +String, symbol name
+  case PSC_INSERT: {	/* R1: +String, symbol name
 			   R2: +Arity
 			   R3: -PSC, the new PSC
 			   R4: +String, module to be inserted */
     /* inserts or finds a symbol in a given module.	*/
-    /* When the given module is 0 (null string),	*/
-    /* current module is used.			*/
+    /* When the given module is 0 (null string), current module is used. */
+    Pair sym;
     addr = ptoc_string(4);
     if (addr)
       psc = pair_psc(insert_module(0, addr));
@@ -1050,27 +1174,31 @@ int builtin_call(byte number)
     sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
     ctop_addr(3, pair_psc(sym));
     break;
+  }
 
-  case PSC_IMPORT:      /* R1: +String, functor name to be imported
+  case PSC_IMPORT: {    /* R1: +String, functor name to be imported
 			   R2: +Arity
 			   R3: +String, Module name where functor lives  */
     /*
      * Creates a PSC record for a predicate and its module (if they
      * don't already exist) and links the predicate into usermod.
      */
-    psc = pair_psc(insert_module(0, ptoc_string(3)));
-    sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
+    Psc  psc = pair_psc(insert_module(0, ptoc_string(3)));
+    Pair sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
       set_ep(pair_psc(sym), (byte *)(psc));
     env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, value);
     link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
     break;
+  }
+
   case FILE_GETTOKEN:     /* R1: +File, R2: +PrevCh, R3: -Type; */
                                 /* R4: -Value, R5: -NextCh */
     tmpval = ptoc_int(1);
     if ((tmpval < 0) && (tmpval >= -MAXIOSTRS))
       token = GetToken(NULL,strfileptr(tmpval), ptoc_int(2));
     else {
+      FILE* fptr;
       SET_FILEPTR(fptr, tmpval);
       token = GetToken(fptr, NULL, ptoc_int(2));
     }
@@ -1080,32 +1208,28 @@ int builtin_call(byte number)
     else {
       ctop_int(3, token->type);
       ctop_int(5, token->nextch);
-      switch (token->type)
-	{
-	case TK_PUNC	   : ctop_int(4, *(token->value)); break;
-	case TK_VARFUNC    : ctop_string(4, token->value); break;
-	case TK_VAR	   : ctop_string(4, token->value); break;
-	case TK_FUNC	   : ctop_string(4, token->value); break;
-	case TK_INT	   : ctop_int(4, *(long *)(token->value)); break;
-	case TK_ATOM	   : ctop_string(4, token->value); break;
-	case TK_EOC	   : ctop_int(4, 0); break;
-	case TK_VVAR	   : ctop_string(4, token->value); break;
-	case TK_VVARFUNC   : ctop_string(4, token->value); break;
-	case TK_REAL	   : 
-	  float_temp = *(double *)(token->value);
-	  ctop_float(4, float_temp); break;
-	case TK_EOF	   : ctop_int(4, 0); break;
-	case TK_STR	   : ctop_string(4, token->value); break;
-	case TK_LIST	   : ctop_string(4, token->value); break;
-	case TK_HPUNC	   : ctop_int(4, *(token->value)); break;
-	case TK_INTFUNC    : ctop_int(4, *(long *)(token->value)); break;
-	case TK_REALFUNC   : 
-	  float_temp =  *(double *)(token->value);
-	  ctop_float(4, float_temp); break;
-	}   
+      switch (token->type) {
+        case TK_ATOM : case TK_FUNC : case TK_STR : case TK_LIST :
+        case TK_VAR : case TK_VVAR : case TK_VARFUNC : case TK_VVARFUNC :
+	  ctop_string(4, token->value);
+	  break;
+        case TK_INT : case TK_INTFUNC :
+	  ctop_int(4, *(long *)(token->value));
+	  break;
+        case TK_REAL : case TK_REALFUNC : {
+	  Float float_temp =  *(double *)(token->value);
+	  ctop_float(4, float_temp);
+	  break;
+        case TK_PUNC : case TK_HPUNC :
+	  ctop_int(4, *(token->value)); break;
+        case TK_EOC : case TK_EOF :
+	  ctop_int(4, 0); break;
+        }
+      }
     }
     break;
-  case FILE_PUTTOKEN:	/* R1: +File, R2: +Type, R3: +Value; */
+  case FILE_PUTTOKEN: {	/* R1: +File, R2: +Type, R3: +Value; */
+    FILE* fptr;
     tmpval = ptoc_int(1);
     SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(2)) {
@@ -1137,12 +1261,14 @@ int builtin_call(byte number)
     default : xsb_abort("FILE_PUTTOKEN: Unknown token type");
     }
     break;
-  case PSC_INSERTMOD:   /* R1: +String, Module name */
+  }
+  case PSC_INSERTMOD: { /* R1: +String, Module name */
                         /* R2: +Def (4 - is a definition; 0 -not) */
                         /* R3: -PSC of the Module entry */
-    sym = insert_module(ptoc_int(2), ptoc_string(1));
+    Pair sym = insert_module(ptoc_int(2), ptoc_string(1));
     ctop_addr(3, pair_psc(sym));
     break;
+  }
   case TERM_HASH:		/* R1: +Term	*/
 				/* R2: +Size (of hash table) */
 				/* R3: -HashVal */
@@ -1226,11 +1352,13 @@ int builtin_call(byte number)
   case FILE_STAT: /* file_stat(+FileName, +StatFunction, -Result) 
 		     Used to obtain file mod time, size, etc., using stat() */
     return file_stat();
-  case FILE_WRITEQUOTED:
+  case FILE_WRITEQUOTED: {
+    FILE* fptr;
     tmpval = ptoc_int(1);
     SET_FILEPTR(fptr, tmpval);
     write_quotedname(fptr ,ptoc_string(2));
     break;
+  }
   case GROUND:
     return ground((CPtr)ptoc_tag(1));
 
@@ -1253,7 +1381,8 @@ int builtin_call(byte number)
 #include "bineg.i"
 
 /*----------------------------------------------------------------------*/
-  case GET_SUBGOAL_PTR: 	/* reg1: +term; reg2: -subgoal_ptr */
+  case GET_SUBGOAL_PTR: {	/* reg1: +term; reg2: -subgoal_ptr */
+    TIFptr tip;
     term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "get_subgoal_ptr", 2, "callable term", term);
@@ -1261,11 +1390,12 @@ int builtin_call(byte number)
     }
     tip = get_tip(psc);
     if (tip == NULL) {
-      xsb_abort("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
+      xsb_abort("Predicate %s/%d is not tabled", get_name(psc),get_arity(psc));
     }
     subgoal_ptr = get_subgoal_ptr(term, tip);
     ctop_int(2, (Integer)subgoal_ptr);
     break;
+  }
 
   case DEREFERENCE_THE_BUCKET:
     /*
@@ -1368,7 +1498,8 @@ int builtin_call(byte number)
     
 /*----------------------------------------------------------------------*/
     
-  case TABLE_STATUS:  /* reg1: +term or +subgoal_ptr; reg2: -status (int) */
+  case TABLE_STATUS: { /* reg1: +term or +subgoal_ptr; reg2: -status (int) */
+    TIFptr tip;
     term = ptoc_tag(1);
     if (!isinteger(term)) {
       if ((psc = term_psc(term)) == NULL) {
@@ -1391,7 +1522,9 @@ int builtin_call(byte number)
     }
     ctop_int(2, value);
     break;
-  case ABOLISH_TABLE_PREDICATE:
+  }
+  case ABOLISH_TABLE_PREDICATE: {
+    TIFptr tip;
     term = ptoc_tag(1);
     if ((psc = term_psc(term)) == NULL) {
       err_handle(TYPE, 1, "abolish_table_pred", 1,
@@ -1409,6 +1542,7 @@ int builtin_call(byte number)
       delete_predicate_table(CallRoot);
     }
     break;
+  }
   case TRIE_ASSERT:
     if (trie_assert())
       return TRUE;
@@ -1666,150 +1800,4 @@ int builtin_call(byte number)
   return TRUE;
 }
 
-/*------------------------- Auxiliary functions -----------------------------*/
-
-static void abolish_table_info(void)
-{
-  TIFptr pTIF;
-
-  pTIF = first_tip;
-  while ( IsNonNULL(pTIF) ) {
-    TIF_CallTrie(pTIF) = NULL;
-    pTIF = TIF_NextTIF(pTIF);
-  }
-  reset_freeze_registers;
-  openreg = COMPLSTACKBOTTOM;
-  abolish_trie();
-  abolish_wfs_space(); 
-}
-
-/* --------------------------------------------------------------------	*/
-
-#ifdef PROFILE
-static void write_out_profile(void)
-{ 
-  int i, isum, ssum, tot;
-  float rat1, rat2;
-
-  isum = ssum = tot = 0;
-  for (i = 0; i < BUILTIN_TBL_SZ; i++) {
-    if (inst_table[i][0] != 0) isum = isum + inst_table[i][5];
-  }
-  for (i = 0; i < BUILTIN_TBL_SZ; i++) {
-    if (subinst_table[i][0] != 0) ssum = ssum + subinst_table[i][1];
-  }
-  tot = isum + ssum;
-  if (tot!=0) {
-    rat1 = isum / tot;
-    rat2 = ssum / tot;
-    fprintf(stdout,"total: %d inst: %d pct %f subinst: %d pct %f\n",
-	    tot,isum,rat1,ssum,rat2);
-    for (i = 0; i < BUILTIN_TBL_SZ; i++) {
-      if (inst_table[i][0] != 0)
-        fprintf(stdout,"-- %s %x %d %.3f\n",(char *) inst_table[i][0],i,
-	        inst_table[i][5],(((float)inst_table[i][5])/(float)tot));
-    }
-    fprintf(stdout,"_______________subinsts_______________\n");
-    for (i = 0; i < BUILTIN_TBL_SZ; i++) {
-      if (subinst_table[i][0] != 0) {
-	ssum = subinst_table[i][1];
-	rat1 = ssum/tot;
-	fprintf(stdout,"-- %s %x %d %g \n",(char *) subinst_table[i][0],i,
-		subinst_table[i][1],rat1);
-      }
-    }
-    fprintf(stdout,"_______________builtins_______________\n");
-    for (i = 0; i < BUILTIN_TBL_SZ; i++)
-      if (builtin_table[i][1] > 0 && builtin_table[i][0] != 0)
-	fprintf(stdout,"%s %d %d \n",
-		(char *) builtin_table[i][0],i,builtin_table[i][1]);
-  }
-  else 
-    fprintf(stdout,"Instruction profiling not turned On\n");
-}
-#endif
-
-/*----------------------- write_quotedname/2 ---------------------------*/
-
-static bool no_quotes_needed(char *string)
-{
-  int nextchar;
-  int ctr, flag;
-
-  ctr = 0;
-  nextchar = (int) string[0];
-  flag = 0;
-  if (nextchar >= 97 && nextchar <= 122) {    /* 0'a=97, 0'z=122  */
-    while (nextchar != '\0' && !flag) {
-      if (nextchar < 48 
-	  || (nextchar > 57 && nextchar < 65)
-	  || ((nextchar > 90 && nextchar < 97) && nextchar != 95)
-	  || (nextchar > 122))
-	flag = 1;
-      ctr++;
-      nextchar = (int) string[ctr];
-    }
-    if (!flag) return FALSE;
-  }
-
-  if (string[1] == '\0') {
-    if ((int) string[0] == 33 /*--- || (int) string[0] == 59 ---*/)
-      return FALSE;
-    if ((int) string[0] == 46) return TRUE;
-  }
-
-  nextchar = (int) string[0];
-  ctr = 0; 
-  while (nextchar != '\0' && !flag) {
-    switch(nextchar) {
-    case 35: case 36: case 38: case 42: case 43: case 45: case 46:
-    case 47: case 58: case 60: case 61: case 62: case 63: case 64: 
-    case 92: case 94: case 96: case 126:
-      nextchar++;
-      break;
-    default: 
-      flag = 1;
-    }
-    ctr++;
-    nextchar = (int) string[ctr];
-  }
-  return flag;
-}
-
-static void double_quotes(char *string, char *new_string)
-{
-  int ctr = 0, nctr = 0;
-
-  while (string[ctr] != '\0') {
-    if (string[ctr] == 39) {
-      new_string[nctr] = 39;
-      nctr++;
-    }
-    new_string[nctr] = string[ctr];
-    nctr++; ctr++;
-  }
-  new_string[nctr] = '\0';
-}
-
-static void write_quotedname(FILE *file, char *string)
-{
-  char* new_string;
-
-  new_string  = malloc(2*(strlen(string))+1);
-
-  if (*string == '\0') 
-    fprintf(file,"''");
-  else {
-    if (!no_quotes_needed(string)) {
-      fprintf(file,"%s",string);
-    }
-    else {
-      double_quotes(string,new_string);
-      fprintf(file,"\'%s\'",new_string);
-    }
-  }
- 
-  free(new_string);
-}
-
-/*----------------------------------------------------------------------*/
+/*------------------------- end of builtin.c -----------------------------*/

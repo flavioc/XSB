@@ -107,6 +107,7 @@ bool file_stat(void)
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static bool file_function(void)
 {
+  static FILE *fptr;
   static int io_port, value, size, offset, length, mode;
   static STRFILE *sfptr;
   static char buf[MAX_IO_BUFSIZE+1];
