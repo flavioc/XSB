@@ -719,7 +719,7 @@ inline static xsbBool file_function(void)
   case PRINT_OPENFILES: { /* no args */
     int i; 
     for (i= 0 ; i < MAX_OPEN_FILES ; i++) {
-      if ((int) open_files[i].file_name == 0) {
+      if (open_files[i].file_name == NULL) {
  	printf("i: %d File Ptr %p Mode %c Type %d \n",
  	        i,open_files[i].file_ptr,open_files[i].io_mode,
 	        open_files[i].stream_type);

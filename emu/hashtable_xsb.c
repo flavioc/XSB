@@ -126,7 +126,7 @@ xsbBucket *search_bucket(Cell name,
 static void init_hashtable(xsbHashTable *table)
 {
   /* calloc zeroes the allocated space; clients rely on this */
-  table->table = (char *)calloc(table->length,table->bucket_size);
+  table->table = (byte *)calloc(table->length,table->bucket_size);
   if (!table->table)
     xsb_exit("Out of Memory: Can't create hash table");
   table->initted = TRUE;
