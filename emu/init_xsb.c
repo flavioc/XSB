@@ -60,7 +60,7 @@
 #include "tr_utils.h"
 #include "export.h"
 #include "io_builtins_xsb.h"
-#include "timer_xsb.h"
+#include "timer_defs_xsb.h"
 
 /*-----------------------------------------------------------------------*/
 

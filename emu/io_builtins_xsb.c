@@ -29,13 +29,13 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <setjmp.h>
 #include <stdlib.h>
 #ifndef WIN_NT
 #include <unistd.h> 
 #endif
 #include <sys/stat.h>
 
+#include "setjmp_xsb.h"
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"

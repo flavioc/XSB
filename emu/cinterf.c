@@ -467,7 +467,7 @@ DllExport void call_conv c2p_chars(char *str, prolog_term term)
 **
 */
 
-#include <setjmp.h>
+#include "setjmp_xsb.h"
 
 static char *subformat[10];
 static char *c_dataptr_rest;
@@ -924,7 +924,7 @@ int ctop_term(char *fmt, char *c_dataptr, reg_num regnum)
     int my_errno;
 
     variable = reg_term(regnum);
-    if ((my_errno = setjmp(env))) return my_errno;	/* catch an exception */
+    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
     ctop_term0(fmt, c_dataptr, variable, 0);
     return 0;
 }
@@ -940,7 +940,7 @@ int ptoc_term(char *fmt, char *c_dataptr, reg_num regnum)
     int my_errno;
 
     variable = reg_term(regnum);
-    if ((my_errno = setjmp(env))) return my_errno;	/* catch an exception */
+    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
     ptoc_term0(fmt, c_dataptr, variable, 0);
     return 0;
 }
@@ -954,7 +954,7 @@ int c2p_term(char *fmt, char *c_dataptr, prolog_term variable)
 {
     int my_errno;
 
-    if ((my_errno = setjmp(env))) return my_errno;	/* catch an exception */
+    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
     ctop_term0(fmt, c_dataptr, variable, 0);
     return 0;
 }
@@ -968,7 +968,7 @@ int p2c_term(char *fmt, char *c_dataptr, prolog_term variable)
 {
     int my_errno;
 
-    if ((my_errno = setjmp(env))) return my_errno;	/* catch an exception */
+    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
     ptoc_term0(fmt, c_dataptr, variable, 0);
     return 0;
 }

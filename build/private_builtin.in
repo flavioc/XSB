@@ -37,7 +37,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <setjmp.h>
+#include <setjmp_xsb.h>
 #include <stdlib.h>
 #ifndef WIN_NT
 #include <unistd.h> 

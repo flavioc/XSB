@@ -261,3 +261,4 @@ extern Float getfloatval(Cell);
 			(isinteger(dcell) && int_val(dcell) >= 0 \
 					  && int_val(dcell) <= MAX_ARITY)
 
+#define CELL_DEFS_INCLUDED

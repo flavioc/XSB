@@ -79,6 +79,26 @@ void xsb_abort(char *description, ...)
   longjmp(xsb_abort_fallback_environment, (int) pcreg);
 }
 
+
+void xsb_bug(char *description, ...)
+{
+  char message[MAXBUFSIZE];
+  va_list args;
+
+  va_start(args, description);
+
+  strcpy(message, "++XSB bug: ");
+  vsprintf(message+strlen(message), description, args);
+  if (message[strlen(message)-1] != '\n')
+    strcat(message, "\n");
+
+  va_end(args);
+  pcreg = exception_handler(message);
+
+  /* this allows xsb_abort to jump out even from nested loops */
+  longjmp(xsb_abort_fallback_environment, (int) pcreg);
+}
+
 /*----------------------------------------------------------------------*/
 
 void arithmetic_abort(Cell op1, char *OP, Cell op2)

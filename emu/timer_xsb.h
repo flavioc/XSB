@@ -27,6 +27,11 @@
 #error "File configs/config.h must be included before this file"
 #endif
 
+#include "setjmp_xsb.h" 
+
+#ifndef CELL_DEFS_INCLUDED
+#error "File cell_xsb.h must be included before this file"
+#endif
 
 #ifndef SYSTEM_FLAGS
 #include "flags_xsb.h"

@@ -23,6 +23,7 @@
 */
 
 
+
 #include "configs/config.h"
 
 #ifdef WIN_NT
@@ -30,16 +31,11 @@
 #include <winuser.h>
 #endif
 
-#include <signal.h>
-#include <setjmp.h>
-
+#include "setjmp_xsb.h" 
 
 
 /* To set a timeout, do this:
-#include <signal.h>
-#include <setjmp.h>
 #include "configs/config.h"
-#include "cell_xsb.h"
 #include "timer_xsb.h"
 
    if (CHECK_TIMER_SET) {

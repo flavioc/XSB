@@ -22,7 +22,7 @@
 ** 
 */
 
-#include <setjmp.h>
+#include "setjmp_xsb.h"
 
 /*----------------------------------------------------------------------*/
 /* The following is a list of errors as defined by the Prolog ISO	*/
@@ -54,6 +54,7 @@
 
 extern void xsb_exit(char *, ...);
 extern void xsb_abort(char *, ...);
+extern void xsb_bug(char *, ...);
 extern void xsb_warn(char *, ...);
 extern void xsb_mesg(char *, ...);
 extern void xsb_error(char *, ...);

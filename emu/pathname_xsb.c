@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <setjmp.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -48,6 +47,7 @@
 #include <pwd.h>
 #endif
 
+#include "setjmp_xsb.h"
 #include "auxlry.h"
 #include "psc_xsb.h"
 #include "cinterf.h"

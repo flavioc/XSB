@@ -32,12 +32,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
-#include <setjmp.h>
-
 
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
-
 
 /* The socket material */
 
@@ -433,7 +430,7 @@ bool xsb_socket_request(void)
 
   case SOCKET_GET0: {
     /* socket_request(SOCKET_GET0,+Sockfd,-C,-Error,_,_,_) */
-    static unsigned char tmpch;
+    static char tmpch;
 
     sock_handle = (SOCKET) ptoc_int(2);
 
@@ -471,9 +468,9 @@ bool xsb_socket_request(void)
 
   case SOCKET_PUT: {
     /* socket_request(SOCKET_PUT,+Sockfd,+C,-Error_,_,_) */
-    static unsigned char tmpch;
+    static char tmpch;
     sock_handle = (SOCKET) ptoc_int(2);
-    tmpch = (unsigned char)ptoc_int(3);
+    tmpch = (char)ptoc_int(3);
 
     /* control time out */
     if (CHECK_TIMER_SET) {
@@ -668,7 +665,8 @@ bool xsb_socket_request(void)
     return FALSE;
   }
 
-  return TRUE;
+  xsb_bug("SOCKET_REQUEST case %d has no return clause",
+	    ptoc_int(1));
 }
 
 
