@@ -114,7 +114,9 @@ int do_wildmatch__(void)
   return FALSE;
 }
 
+#ifndef GLOB_ABORTED
 #define	GLOB_ABORTED	(-2)	/* Unignored error. */
+#endif
 #define	GLOB_NOMATCH	(-3)	/* No match and GLOB_NOCHECK not set. */
 #define	GLOB_NOSYS	(-4)	/* Function not supported. */
 #define GLOB_ABEND	GLOB_ABORTED
