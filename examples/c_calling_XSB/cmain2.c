@@ -37,6 +37,11 @@
  *    For example, here's how one would create an executable for a
  *    Sun Microsystems machine running Solaris:
  *      gcc -o cmain cmain.o <XSB object files> -lm -lnsl -ldl -lsocket
+ *
+ * A good idea would be to look at the make file in this directory.
+ * Note: the XSB executable must be in the directory
+ *    	      <xsb install dir>/config/<your architecture>/bin/
+ *
  */
 
 #include <stdio.h>
@@ -45,7 +50,7 @@
 /* The following include is necessary to get the macros and routine
    headers */
 
-#include "../emu/cinterf.h"
+#include "../../emu/cinterf.h"
 
 int getline(s, lim)
 char s[];
@@ -99,15 +104,18 @@ void printpterm(prolog_term term)
   } else fprintf(stdout,"error, unrecognized type");
 }
 
-int main()
+int main(int argc, char *argv[])
 { 
   int rcode;
-  int argc = 2;
-  char *argv[] = {"xsb","-n"};
+  int myargc = 2;
+  char *myargv[2];
   char query[256];
 
+  myargv[0] = argv[0];
+  myargv[1] = "-n";
+
   /* Initialize xsb */
-  xsb_init(argc,argv);  /* depend on user to put in right options (-n) */
+  xsb_init(myargc,myargv);  /* depend on user to put in right options (-n) */
 
   /* Create command to consult a file: ctest.P, and send it. */
   c2p_functor("consult",1,reg_term(1));
