@@ -1,4 +1,6 @@
 
+#include "xsb_libwww_errors.h"
+
 /*
   Return Codes for Libwww Protocol Modules and Streams.
   Success codes are (>=0) and failure are (<0)
@@ -62,10 +64,6 @@
 #define HT_BAD_VERSION		-505	/* Bad protocol version */
 #define HT_PARTIAL_NOT_IMPLEMENTED -506
 
-#define HT_DOC_SYNTAX	     	-555	/* Bad document syntax or nesting
-					   exceeded. This is the only code that
-					   we added to the standard HTTP */
-
 #define HT_INTERNAL		-900    /* Weird -- should never happen. */
 #define HT_WOULD_BLOCK		-901    /* If we are in a select */
 #define HT_INTERRUPTED 		-902    /* Note the negative value! */
@@ -73,3 +71,4 @@
 #define HT_RECOVER_PIPE         -904    /* Recover pipe line */
 #define HT_TIMEOUT              -905    /* Connection timeout */
 #define HT_NO_HOST              -906    /* Can't locate host */
+

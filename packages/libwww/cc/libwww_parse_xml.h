@@ -24,7 +24,9 @@
 
 
 #define MAX_XML_NESTING  170
+typedef struct XML_userData USERDATA;
 struct XML_userData {
+  DELETE_USERDATA *   	  delete_method;
   XML_Parser 	          parser; 
   HTRequest *		  request;
   HTStream *		  target;
@@ -42,7 +44,6 @@ struct XML_userData {
     prolog_term    content_list_tail; /* auxil var to help build elements */
   } 	    	    	  stack[MAX_XML_NESTING]; /* keeps nested elements */
 };
-typedef struct XML_userData USERDATA;
 
 
 /* function declarations */
@@ -50,9 +51,6 @@ typedef struct XML_userData USERDATA;
 PRIVATE USERDATA *create_userData(XML_Parser parser,
 				  HTRequest  *request,
 				  HTStream   *target_stream);
-PRIVATE void delete_userData(USERDATA *me);
-
-PRIVATE void setup_xml_request_structure (prolog_term prolog_req, int req_id);
 
 PRIVATE void xml_push_element (USERDATA    *userdata,
 			       const XML_Char  *tag,
@@ -73,12 +71,6 @@ PRIVATE void xml_beginElement(void  	     *userdata,
 			      const XML_Char **attributes);
 PRIVATE void xml_endElement(void *userdata, const XML_Char *tag);
 
-PRIVATE void HTXML_newInstance (HTStream *		me,
-				HTRequest *		request,
-				HTFormat 		target_format,
-				HTStream *		target_stream,
-				XML_Parser              xmlparser,
-				void * 			context);
 
 PRIVATE void xml_processingInstruction (void 	       *userData,
 					const XML_Char *target,
@@ -105,13 +97,3 @@ PRIVATE int xml_unknownEncoding (void 	      	*encodingHandlerData,
 /*
 PRIVATE void xml_default (void * userData, const XML_Char * s, int len);
 */
-
-/* hash table stuff */
-typedef char * HKEY;
-PRIVATE unsigned long myhash(HKEY s);
-#define HTABLE_CELL_INITIALIZER      	NULL
-#define HASH(item) 	    	    	myhash(item)
-#define SET_HASH_CELL(cell,item)        cell=(HKEY)malloc(strlen(item)+1); \
-    	    	    	    	    	strcpy_lower(cell,item)
-#define HASH_CELL_EQUAL(cell,item)      strcasecmp(cell,item)==0
-

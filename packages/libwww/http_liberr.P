@@ -67,7 +67,6 @@ http_err_code(HT_BAD_VERSION,         'HTTP Version not supported',
 http_err_code(HT_PARTIAL_NOT_IMPLEMENTED,
 	      	      	      	      'Partial update Not Implemented',
 	      	      	      	      	      	      	       'server_error').
-http_err_code(HT_DOC_SYNTAX,	      'Document syntax',       'server_error').
 http_err_code(HT_INTERNAL,            'Weird, should never happen',
 	      	      	      	      	      	      	       'internal').
 http_err_code(HT_WOULD_BLOCK, 	      'We are in a select',    'internal').
@@ -77,3 +76,10 @@ http_err_code(HT_PAUSE,	       	      'If we want to pause a stream',
 http_err_code(HT_RECOVER_PIPE,        'Recover pipe line',     'internal').
 http_err_code(HT_TIMEOUT,             'Connection timeout',    'internal').
 http_err_code(HT_NO_HOST,             'Cannot find remote host','internal').
+
+%% Errors used only in the XSB libwww package */
+http_err_code(WWW_DOC_SYNTAX,	      'Document syntax',       'server_error').
+http_err_code(WWW_EXTERNAL_ENTITY,    'External entity not found',
+	      	      	      	      	      	      	       'server_error').
+http_err_code(WWW_EXPIRED_DOC,        'Document older than specified time',
+	      	      	      	      	      	      	       'server_error').

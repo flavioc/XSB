@@ -23,11 +23,10 @@
 */
 
 
-/* special tag type that we use to wrap around text */
-#define PCDATA_SPECIAL 	  -77
-
 #define MAX_HTML_NESTING  70
+typedef HText  USERDATA;
 struct _HText {
+  DELETE_USERDATA *    	  delete_method;
   HTRequest *		  request;
   HTParentAnchor * 	  node_anchor; 	   /* not used */
   HTStream *		  target;
@@ -46,7 +45,6 @@ struct _HText {
     prolog_term    content_list_tail; /* auxil var to help build elements */
   } 	    	    	  stack[MAX_HTML_NESTING]; /* keeps nested elements */
 };
-typedef HText  USERDATA;
 
 
 /* function declarations */
@@ -56,9 +54,7 @@ PRIVATE inline HTTag *special_find_tag(USERDATA *htext, int element_number);
 PRIVATE USERDATA *create_userData( HTRequest         *request,
 				   HTParentAnchor    *anchor,
 				   HTStream          *output_stream);
-PRIVATE BOOL delete_userData(USERDATA *me);
 
-PRIVATE void setup_html_request_structure (prolog_term prolog_req, int req_id);
 PRIVATE int find_matching_elt(USERDATA *htext, int elt_number);
 
 PRIVATE void html_push_element (USERDATA        *htext,
@@ -81,17 +77,3 @@ PRIVATE void html_beginElement(USERDATA  	*htext,
 			       const char       **value);
 PRIVATE void html_endElement(USERDATA *htext, int element_number);
 
-/*-------------------*/
-enum http_method {FORM_GET, FORM_POST};
-typedef enum http_method HTTP_METHOD;
-
-PRIVATE HTAssocList *get_form_params(prolog_term form_params);
-PRIVATE HTTP_METHOD get_request_method(prolog_term method);
-/*-------------------*/
-
-/* hash table stuff */
-typedef int HKEY;
-#define HTABLE_CELL_INITIALIZER       -1
-#define HASH(item) 	    	      item
-#define SET_HASH_CELL(cell,item)      cell=item
-#define HASH_CELL_EQUAL(cell,item)    cell==item

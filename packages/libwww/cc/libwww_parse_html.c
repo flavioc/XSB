@@ -23,168 +23,12 @@
 */
 
 
-#include "WWWLib.h"
-#include "WWWHTTP.h"
-#include "WWWInit.h"
-#include "HTAABrow.h"
-#include "WWWApp.h"
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include "basictypes.h"
-#include "basicdefs.h"
-#include "auxlry.h"
-#include "configs/xsb_config.h"
-#include "configs/special.h"
-#include "cell_xsb.h"
-#include "error_xsb.h"
-#include "cinterf.h"
-#include "varstring_xsb.h"
-
-
-static int total_number_of_requests;
-
-
+#include "libwww_util.h"
+#include "libwww_parse.h"
 #include "libwww_parse_html.h"
-#include "libwww_parse_utils.h"
-#include "libwww_parse_utils.c"
 
 
 /* BOOL, PRIVATE, PUBLIC, etc., are defined in a Libwww header */
-
-/* Calling sequence:
-       libwww_parse_html([req1,req2,...])
-
-   Each req: f(URL, FORM-Params, SELECTED-Tags, PARSED-Result, ERROR-Code)
-   SELECTED-Tags:
-       	     _ (all tags),
-	     f(chosen-tag-list,suppressed-tag-list,stripped-tag-list) means:
-	     	    parse only inside
-		    the tags on the chosen tag list. Stop parsing if a
-		    suppressed tag is found. Resume if a chosen tag is found,
-		    etc. 
-		    Stripped tags are those that just get discarded.
-	     f(_,suppressed-tag-list,...) means: parse all tags except those in
-		    the suppressed tags list.
-	     f(chosen-tag-list,_,...) means: parse only inside the chosen tags.
- */
-BOOL  libwww_parse_html(void)
-{
-  prolog_term request_term_list = reg_term(1), request_list_tail;
-  int request_id=0;
-
-  /* Create a new premptive client */
-  HTProfile_newHTMLNoCacheClient ("HTML Parser", "1.0");
-  HTAlert_setInteractive(NO);
-  HTHost_setEventTimeout(DEFAULT_TIMEOUT);
-
-  if (!is_list(request_term_list))
-    xsb_abort("LIBWWW_PARSE_HTML: Argument must be a list");
-
-  request_list_tail = request_term_list;
-  total_number_of_requests=0;
-  while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
-    request_id++;
-    setup_html_request_structure(p2p_car(request_list_tail), request_id);
-    request_list_tail = p2p_cdr(request_list_tail);
-    total_number_of_requests=request_id;
-  }
-
-  /* start the event loop and begin to parse all requests in parallel */
-  if (total_number_of_requests > 0) {
-    int status;
-
-#ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In libwww_parse_html: starting event loop. Total requests=%d",
-	       total_number_of_requests);
-#endif
-
-    status = HTEventList_newLoop();
-    if (status != HT_OK)
-      xsb_abort("LIBWWW_PARSE_HTML: Couldn't launch HTTP request");
-
-#ifdef LIBWWW_DEBUG
-    xsb_dbgmsg("In libwww_parse_html: event loop ended");
-#endif
-  }
-  
-  /* don't delete the profile: it crashes libwww on the second try */
-  return TRUE;
-}
-
-
-/* Sets up the libwww request structure for the request specified in
-   PROLOG_REQ, including the request context, which contains the info about the
-   return parameters.
-   Note that we use xsb_abort here instead of abort handlers, because the error
-   conditions handled here are programmatic mistakes rather than network
-   conditions. */
-PRIVATE void setup_html_request_structure(prolog_term prolog_req, int request_id)
-{
-  int	      status;
-  HTAnchor    *anchor = NULL;
-  HTRequest   *request;
-  HTAssocList *formdata;
-  char 	      *uri = NULL;
-  prolog_term form_params;
-  int 	      is_form_request;
-  HTTP_METHOD form_method;
-
-  /* register callback for begin/end element events */
-  HText_registerElementCallback(html_beginElement, html_endElement);
-  /* register callback for text chunks */
-  HText_registerTextCallback(html_addText);
-  /* register callbacks to create and delete the HText (USERDATA)
-     objects. These are objects where we build parsed terms */
-  HText_registerCDCallback(create_userData, delete_userData);
-
-  /* get URL */
-  uri=string_val(p2p_arg(prolog_req,1));
-  /* use abort here, because it is a programmatic mistake */
-  if (uri == NULL) xsb_abort("LIBWWW_PARSE_HTML: Arg 1 (URI) is invalid");
-
-  /* Create a new request and attach the context structure to it */
-  request = HTRequest_new();
-  set_request_context(request, prolog_req, request_id, "LIBWWW_PARSE_HTML");
-
-  form_params = p2p_arg(prolog_req,2);
-  if (is_var(form_params))
-    is_form_request = FALSE;
-  else if (is_list(form_params)) {
-    is_form_request = TRUE;
-    form_method = get_request_method(p2p_car(form_params));
-    formdata = get_form_params(p2p_car(p2p_cdr(form_params)));
-  } else
-    xsb_abort("LIBWWW_PARSE_HTML: Request %d: Arg 2 (Form params) must be a variable or a list", request_id);
-
-  uri = HTParse(uri, NULL, PARSE_ALL);
-  /* Create a new Anchor */
-  anchor = HTAnchor_findAddress(uri);
-  /* Hook up anchor to our request */
-  if (is_form_request)
-    if (form_method == FORM_GET)
-      status = (YES == HTGetFormAnchor(formdata,anchor,request));
-    else /* FORM_POST */
-      status = (NULL != HTPostFormAnchor(formdata,anchor,request));
-  else /* not a form request */
-    status = (YES==HTLoadAnchor(anchor, request));
-
-#ifdef LIBWWW_DEBUG_TERSE
-  if (is_form_request)
-    xsb_dbgmsg("Request %d: HTTP Method: %s",
-	       request_id,
-	       (form_method==FORM_GET ? "FORM,GET" : "FORM,POST"));
-  else
-    xsb_dbgmsg("Request %d: HTTP Method: NON-FORM REQ", request_id);
-#endif
-
-  if (formdata) HTAssocList_delete(formdata);
-
-  if (!status)
-    /* use abort, because it is a programmatic mistake */
-    xsb_abort("LIBWWW_PARSE_HTML: Invalid data in URI %d", uri);
-}
-
 
 /* This is the callback that captures start tag events */
 PRIVATE void html_beginElement(USERDATA	*htext, /* where we build everything */
@@ -200,23 +44,23 @@ PRIVATE void html_beginElement(USERDATA	*htext, /* where we build everything */
   xsb_dbgmsg("In html_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d",
 	     REQUEST_ID(htext->request),
 	     htext->stackptr, HTTag_name(tag),
-	     IS_SUPPRESSED_TAG(element_number, htext->request),
-	     IS_SELECTED_TAG(element_number, htext->request)
+	     IS_SUPPRESSED_TAG((HKEY)element_number, htext->request),
+	     IS_SELECTED_TAG((HKEY)element_number, htext->request)
 	     );
 #endif
 
-  if (IS_STRIPPED_TAG(element_number, htext->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)element_number, htext->request)) return;
 
-  if ((suppressing(htext) && !IS_SELECTED_TAG(element_number, htext->request))
-      || (parsing(htext) && IS_SUPPRESSED_TAG(element_number, htext->request))) {
+  if ((suppressing(htext) && !IS_SELECTED_TAG((HKEY)element_number, htext->request))
+      || (parsing(htext) && IS_SUPPRESSED_TAG((HKEY)element_number, htext->request))) {
     html_push_suppressed_element(htext, element_number);
     return;
   }
 
   /* parsing or suppressing & found a selected tag */
-  if ((parsing(htext) && !IS_SUPPRESSED_TAG(element_number, htext->request))
+  if ((parsing(htext) && !IS_SUPPRESSED_TAG((HKEY)element_number,htext->request))
       || (suppressing(htext) 
-	  && IS_SELECTED_TAG(element_number, htext->request))) {
+	  && IS_SELECTED_TAG((HKEY)element_number, htext->request))) {
     html_push_element(htext,element_number,present,value);
     return;
   }
@@ -233,7 +77,7 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
 	     REQUEST_ID(htext->request), htext->stackptr);
 #endif
 
-  if (IS_STRIPPED_TAG(element_number, htext->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)element_number, htext->request)) return;
 
   match = find_matching_elt(htext, element_number);
   /* the closing tag is probably out of place */
@@ -265,7 +109,7 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
   static vstrDEFINE(pcdata_buf);
   int shift = 0;
 
-  if (IS_STRIPPED_TAG(PCDATA_SPECIAL, htext->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)PCDATA_SPECIAL, htext->request)) return;
   if (suppressing(htext)) return;
 
   /* strip useless newlines */
@@ -367,8 +211,8 @@ PRIVATE void html_push_element (USERDATA       *htext,
 
   if (htext->stackptr > MAX_HTML_NESTING)
     libwww_abort_request(htext->request,
-			 HT_DOC_SYNTAX,
-			 "LIBWWW_PARSE_HTML: Element nesting exceeds MAX(%d)",
+			 WWW_DOC_SYNTAX,
+			 "LIBWWW_REQUEST: Element nesting exceeds MAX(%d)",
 			 MAX_HTML_NESTING);
 
   /* wire the new elt into where it should be in the content list */
@@ -379,18 +223,9 @@ PRIVATE void html_push_element (USERDATA       *htext,
 
   /* normal tags look like elt(tagname, attrlist, contentlist);
      pcdata tags are: elt(pcdata,[],text);
-     empty tags look like elt(tagname, attrlist); */
+     empty tags look like elt(tagname,attrlist,[]); */
   STACK_TOP(htext).element_type = HTTag_content(tag);
-  switch (STACK_TOP(htext).element_type) {
-  case SGML_EMPTY:
-    c2p_functor("elt",2,STACK_TOP(htext).elt_term);
-    break;
-  case PCDATA_SPECIAL:
-    c2p_functor("elt",3,STACK_TOP(htext).elt_term);
-    break;
-  default: /* normal elt */
-    c2p_functor("elt",3,STACK_TOP(htext).elt_term);
-  }
+  c2p_functor("elt",3,STACK_TOP(htext).elt_term);
 
   vstrENSURE_SIZE(&tagname, strlen(HTTag_name(tag)));
   strcpy_lower(tagname.string, HTTag_name(tag));
@@ -403,10 +238,11 @@ PRIVATE void html_push_element (USERDATA       *htext,
 
   switch (STACK_TOP(htext).element_type) {
   case SGML_EMPTY:
+    c2p_nil(p2p_arg(STACK_TOP(htext).elt_term,3));
     html_pop_element(htext);
     break;
   case PCDATA_SPECIAL:
-    /* nothing to do: we pop this after thext is inserted in html_addText */
+    /* nothing to do: we pop this after htext is inserted in html_addText */
     break;
   default: /* normal elt */
     STACK_TOP(htext).content_list_tail = p2p_arg(STACK_TOP(htext).elt_term,3);
@@ -535,14 +371,15 @@ PRIVATE inline HTTag *special_find_tag(USERDATA *htext, int element_number)
 
 
 /* USERDATA creation and deletion callbacks */
-PRIVATE USERDATA *create_userData( HTRequest *             request,
-				   HTParentAnchor *        anchor,
-				   HTStream *              output_stream)
+USERDATA *create_userData( HTRequest *             request,
+			   HTParentAnchor *        anchor,
+			   HTStream *              output_stream)
 {
   USERDATA *me = NULL;
   if (request) {
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_html");
+    me->delete_method = delete_userData;
     me->request = request;
     me->node_anchor =  anchor;
     me->target = output_stream;
@@ -565,14 +402,22 @@ PRIVATE USERDATA *create_userData( HTRequest *             request,
 }
 
 
-PRIVATE BOOL delete_userData(USERDATA *me)
+PRIVATE void delete_userData(void *userdata)
 {
   int i;
-  prolog_term 
-    parsed_result =
-    ((REQUEST_CONTEXT *)HTRequest_context(me->request))->parsed_result;
+  prolog_term parsed_result;
+  USERDATA *me = (USERDATA *)userdata;
 #ifdef LIBWWW_DEBUG
-  int request_id = REQUEST_ID(me->request);
+  int request_id;
+#endif
+
+  if (me->request)
+    parsed_result =
+      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->request_result;
+  else return;
+
+#ifdef LIBWWW_DEBUG
+  request_id = REQUEST_ID(me->request);
   xsb_dbgmsg("In delete_userData(%d): stackptr=%d", request_id, me->stackptr);
 #endif
 
@@ -590,7 +435,7 @@ PRIVATE BOOL delete_userData(USERDATA *me)
   if (is_var(me->parsed_term))
     p2p_unify(parsed_result, me->parsed_term);
   else
-    xsb_warn("LIBWWW_PARSE_HTML: Request %d: Arg 4 (Parse result) must be a variable",
+    xsb_warn("LIBWWW_REQUEST: Request %d: Arg 3 (Result) must be a variable",
 	      REQUEST_ID(me->request));
 
   if (me->target) FREE_TARGET(me);
@@ -600,79 +445,18 @@ PRIVATE BOOL delete_userData(USERDATA *me)
   xsb_dbgmsg("Request %d: freed the USERDATA obj", request_id);
 #endif
 
-  return HT_OK;
+  return;
 }
 
-PRIVATE void free_htable(HASH_TABLE *htable)
+
+void html_register_callbacks()
 {
-  free(htable->table);
+  /* register callback for begin/end element events */
+  HText_registerElementCallback(html_beginElement, html_endElement);
+  /* register callback for text chunks */
+  HText_registerTextCallback(html_addText);
+  /* register callbacks to create and delete the HText (USERDATA)
+     objects. These are objects where we build parsed terms */
+  HText_registerCDCallback(create_userData, (HText_delete *)delete_userData);
+  return;
 }
-
-
-
-PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
-{
-  prolog_term tail, head;
-  int i=0;
-  char *tagname;
-  HKEY tag_number;
-  SGML_dtd *dtd = HTML_dtd();
-  /* Save tag numbers in the table */
-  tail=tag_list;
-  while (is_list(tail) && !is_nil(tail) && i < tag_tbl->size) {
-    head= p2p_car(tail);
-    tail=p2p_cdr(tail);
-    tagname = string_val(head);
-    tag_number = (strcasecmp(tagname,"pcdata")==0?
-		  PCDATA_SPECIAL : SGML_findElementNumber(dtd, tagname));
-    add_to_htable(tag_number, tag_tbl);
-    i++;
-  }
-}
-
-
-PRIVATE HTAssocList *get_form_params(prolog_term form_params)
-{
-  HTAssocList *formfields=NULL;
-
-  if (!is_list(form_params))
-    xsb_abort("LIBWWW_PARSE_HTML: Form params in Arg 2 must be a non-empty list or a variable");
-  
-  while (!is_nil(form_params)) {
-    prolog_term head;
-    char *string;
-
-    head = p2p_car(form_params);
-    if (is_string(head))
-      string = p2c_string(head);
-    else
-      xsb_abort("LIBWWW_PARSE_HTML: Non-string member in form parameter list");
-
-    form_params = p2p_cdr(form_params);
-		
-    /* create a list to hold the form arguments */
-    if (!formfields) formfields = HTAssocList_new();
-
-    /* parse the content and add it to the association list */
-    HTParseFormInput(formfields, string);
-  }
-
-  return formfields;
-}
-
-
-/* FORM_POST or FORM_GET */
-PRIVATE HTTP_METHOD get_request_method(prolog_term method)
-{
-  if (is_string(method)) {
-    if (strcasecmp(string_val(method), "POST")==0)
-      return FORM_POST;
-    if (strcasecmp(string_val(method), "GET")==0)
-      return FORM_GET;
-  }
-  else
-    xsb_abort("LIBWWW_PARSE_HTML: Invalid HTTP request method");
-  /* this is just to pacify the compiler */
-  return FORM_GET;
-}
-

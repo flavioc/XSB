@@ -1,10 +1,7 @@
-
-
 #include "xsb_libwww_debug.h"
 
 #ifdef XSB_LIBWWW_SEPARATE_UTIL
 
-#include <time.h>
 #include <string.h>
 #include "WWWLib.h"
 #include "WWWHTTP.h"
@@ -14,7 +11,6 @@
 
 #include "cinterf.h"
 #include "basictypes.h"
-#include "error_xsb.h"
 #include "xsb_libwww_util.h"
 
 #endif
@@ -64,13 +60,13 @@ BOOL Basic_credentials (HTRequest * request, HTBasic * basic)
       strcpy(cookie, "Basic ");
       strcat(cookie, cipher);
       HTTRACE(AUTH_TRACE, "Basic Cookie `%s\'\n" _ cookie);
-
+      
       /* Check whether it is proxy or normal credentials */
       if (basic->proxy)
 	HTRequest_addCredentials(request, "Proxy-Authorization", cookie);
       else
 	HTRequest_addCredentials(request, "Authorization", cookie);
-
+      
       HT_FREE(cookie);
     }
     HT_FREE(cleartext);
@@ -82,10 +78,10 @@ BOOL Basic_credentials (HTRequest * request, HTBasic * basic)
 
 /*      HTBasic_generate
 **      ----------------
-**      This function generates "basic" credentials for the challenge found in
-**      the authentication information base for this request. The result is
-**      stored as an association list in the request object.
-**      This is a callback function for the AA handler.
+**      This function generates "basic" credentials for the challenge
+**      found in the authentication information base for this request.
+**      The result is stored as an association list in the request 
+**      object. This is a callback function for the AA handler.
 */
 int Basic_generate (HTRequest *request, void *context, int mode)
 { 
@@ -98,86 +94,24 @@ int Basic_generate (HTRequest *request, void *context, int mode)
     if (!basic) {
       basic = HTBasic_new();
       if (proxy) {
-	char * url = HTRequest_proxy(request);
+	url = HTRequest_proxy(request);
 	basic->proxy = YES;
 	HTAA_updateNode(proxy, BASIC_AUTH, realm, url, basic);
       } else {
-	char * url = HTAnchor_address((HTAnchor*)HTRequest_anchor(request));
+	url = HTAnchor_address((HTAnchor*)HTRequest_anchor(request));
 	HTAA_updateNode(proxy, BASIC_AUTH, realm, url, basic);
 	HT_FREE(url);
       }
     }
-
+    
     Basic_credentials(request, basic);
-    url = HTAnchor_address((HTAnchor*)HTRequest_anchor(request));
-    HTAA_deleteNode(proxy, BASIC_AUTH, realm, url);
-    HT_FREE(url);
+    
+    /*
+      url = HTAnchor_address((HTAnchor*)HTRequest_anchor(request));
+      HTAA_deleteNode(proxy, BASIC_AUTH, realm, url); HT_FREE(url);
+    */
+    
     return HT_ERROR;
-        
   }
   return HT_OK;
-}
-
-/* function for GET form */
-HTChunk * HTGetFormAnchorToChunk (HTAssocList *formdata,
-                                  HTAnchor    *anchor,
-                                  HTRequest   *request)
-{
-  if (formdata && anchor && request) {
-    HTChunk  *chunk = NULL;
-    HTStream *target = HTStreamToChunk(request, &chunk, 0);
-    HTRequest_setOutputStream(request, target);
-    if (HTGetFormAnchor(formdata, anchor, request))
-      return chunk;
-    else {
-      HTChunk_delete(chunk);
-      return NULL;
-    }
-  }
-  return NULL;
-}
-
-/* function to handle if the timestamp is newer or not */
-void time_comparison(char *lm_time, struct tm *time_user) 
-{               
-  char * mon;
-  time_t lm_sec, user_sec; 
-  struct tm *time1;
-  char seps[] = ", :";
-
-  time1=(struct tm*)malloc(sizeof(struct tm));
-
-  strtok(lm_time, seps);
-  time1->tm_mday = atoi(strtok(NULL, seps));
-  mon = strtok(NULL, seps);
-  if (strcmp(mon, "Jan")==0) time1->tm_mon = 0;
-  if (strcmp(mon, "Feb")==0) time1->tm_mon = 1;
-  if (strcmp(mon, "Mar")==0) time1->tm_mon = 2;
-  if (strcmp(mon, "Apr")==0) time1->tm_mon = 3;
-  if (strcmp(mon, "May")==0) time1->tm_mon = 4;
-  if (strcmp(mon, "Jun")==0) time1->tm_mon = 5;
-  if (strcmp(mon, "Jul")==0) time1->tm_mon = 6;
-  if (strcmp(mon, "Aug")==0) time1->tm_mon = 7;
-  if (strcmp(mon, "Sep")==0) time1->tm_mon = 8;
-  if (strcmp(mon, "Oct")==0) time1->tm_mon = 9;
-  if (strcmp(mon, "Nov")==0) time1->tm_mon = 10;
-  if (strcmp(mon, "Dec")==0) time1->tm_mon = 11;
-
-  time1->tm_year = atoi(strtok(NULL, seps))-1900;
-  time1->tm_hour = atoi(strtok(NULL, seps));
-  time1->tm_min = atoi(strtok(NULL, seps));
-  time1->tm_sec = atoi(strtok(NULL, seps));
-		
-
-  lm_sec = mktime(time1);
-  /*  printf("the sec is %d\n", lm_sec); */
-	
-  user_sec = mktime(time_user);
-  /*  printf("the sec is %d\n", user_sec); */
-
-  if (lm_sec != -1 && user_sec != -1) {
-    if (lm_sec < user_sec) load_flag = FALSE;
-  }
-  else 
-    xsb_abort("LIBWWW_FETCH_URL: invalid Last-Modified value\n");
 }

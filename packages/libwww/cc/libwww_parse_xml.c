@@ -23,135 +23,13 @@
 */
 
 
-#include "WWWLib.h"
-#include "WWWHTTP.h"
-#include "WWWInit.h"
-#include "HTAABrow.h"
-#include "WWWApp.h"
-#include "WWWXML.h"
-#include "HTUtils.h"
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include "basictypes.h"
-#include "basicdefs.h"
-#include "auxlry.h"
-#include "configs/xsb_config.h"
-#include "configs/special.h"
-#include "cell_xsb.h"
-#include "error_xsb.h"
-#include "cinterf.h"
-#include "varstring_xsb.h"
-
-
-static int total_number_of_requests;
-
-
+#include "libwww_util.h"
+#include "libwww_parse.h"
 #include "libwww_parse_xml.h"
-#include "libwww_parse_utils.h"
-#include "libwww_parse_utils.c"
+
 
 
 /* BOOL, PRIVATE, PUBLIC, etc., are defined in a Libwww header */
-
-/* Calling sequence:
-       libwww_parse_xml([req1,req2,...])
-
-   Each req: f(URL, FORM-Params, SELECTED-Tags, PARSED-Result, ERROR-Code)
-   SELECTED-Tags:
-       	     _ (all tags),
-	     f(chosen-tag-list,suppressed-tag-list,stripped-tag-list) means:
-	     	    parse only inside
-		    the tags on the chosen tag list. Stop parsing if a
-		    suppressed tag is found. Resume if a chosen tag is found,
-		    etc. 
-		    Stripped tags are those that just get discarded.
-	     f(_,suppressed-tag-list,...) means: parse all tags except those in
-		    the suppressed tags list.
-	     f(chosen-tag-list,_,...) means: parse only inside the chosen tags.
- */
-BOOL  libwww_parse_xml(void)
-{
-  prolog_term request_term_list = reg_term(1), request_list_tail;
-  int request_id=0;
-
-  /* Create a new premptive client */
-  HTProfile_newHTMLNoCacheClient ("XML Parser", "1.0");
-  HTAlert_setInteractive(NO);
-  HTHost_setEventTimeout(DEFAULT_TIMEOUT);
-
-  /* use abort here, because this is a programmatic mistake */
-  if (!is_list(request_term_list))
-    xsb_abort("LIBWWW_PARSE_XML: Argument must be a list");
-
-  request_list_tail = request_term_list;
-  total_number_of_requests=0;
-  while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
-    request_id++;
-    setup_xml_request_structure(p2p_car(request_list_tail), request_id);
-    request_list_tail = p2p_cdr(request_list_tail);
-    total_number_of_requests = request_id;
-  }
-
-  /* start the event loop and begin to parse all requests in parallel */
-  if (total_number_of_requests > 0) {
-    int status;
-
-#ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In libwww_parse_xml: starting event loop. Total requests=%d",
-	     total_number_of_requests);
-#endif
-
-    status = HTEventList_newLoop();
-    if (status != HT_OK)
-      xsb_abort("LIBWWW_PARSE_XML: Couldn't launch HTTP request");
-
-#ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In libwww_parse_xml: event loop ended");
-#endif
-  }
-  
-  /* don't delete the profile: it crashes libwww on the second try */
-  return TRUE;
-}
-
-
-/* Sets up the libwww request structure for the request specified in
-   PROLOG_REQ, including the request context, which contains the info about the
-   return parameters.
-   Note that we use xsb_abort here instead of abort handlers, because the error
-   conditions handled here are programmatic mistakes rather than network
-   conditions. */
-PRIVATE void setup_xml_request_structure(prolog_term prolog_req, int request_id)
-{
-  int	      status;
-  HTAnchor    *anchor = NULL;
-  HTRequest   *request;
-  char 	      *uri = NULL;
-
-  /* Register our new XML Instance handler */
-  HTXMLCallback_registerNew(HTXML_newInstance, NULL);
-
-  /* get URL */
-  uri=string_val(p2p_arg(prolog_req,1));
-  if (uri == NULL)
-    xsb_abort("LIBWWW_PARSE_XML: Arg 1(URI) is invalid");
-
-  /* Create a new request and attach the context structure to it */
-  request = HTRequest_new();
-  set_request_context(request, prolog_req, request_id, "LIBWWW_PARSE_XML");
-
-  uri = HTParse(uri, NULL, PARSE_ALL);
-  /* Create a new Anchor */
-  anchor = HTAnchor_findAddress(uri);
-  /* Hook up anchor to our request */
-  status = (YES==HTLoadAnchor(anchor, request));
-
-  if (!status)
-    /* use abort here, because it is a programmatic mistake */
-    xsb_abort("LIBWWW_PARSE_XML: Invalid data in URI %d", uri);
-}
-
 
 /* ------------------------------------------------------------------------- */
 /*			     HTXML STREAM HANDLERS			     */
@@ -173,12 +51,12 @@ PRIVATE void HTXML_setHandlers (XML_Parser me)
   */
 }
 
-PRIVATE void HTXML_newInstance (HTStream *		me,
-				HTRequest *		request,
-				HTFormat 		target_format,
-				HTStream *		target_stream,
-				XML_Parser              xmlparser,
-				void * 			context)
+void HTXML_newInstance (HTStream *		me,
+			HTRequest *		request,
+			HTFormat 		target_format,
+			HTStream *		target_stream,
+			XML_Parser              xmlparser,
+			void * 			context)
 {
   USERDATA *userdata = create_userData(xmlparser, request, target_stream);
   XML_SetUserData(xmlparser, (void *) userdata);
@@ -198,26 +76,26 @@ PRIVATE void xml_beginElement(void  *userdata, /* where we build everything */
   xsb_dbgmsg("In xml_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d",
 	     REQUEST_ID(userdata_obj->request),
 	     userdata_obj->stackptr, tag,
-	     IS_SUPPRESSED_TAG((HKEY) tag, userdata_obj->request),
-	     IS_SELECTED_TAG((HKEY) tag, userdata_obj->request)
+	     IS_SUPPRESSED_TAG((HKEY)(char *)tag, userdata_obj->request),
+	     IS_SELECTED_TAG((HKEY)(char *)tag, userdata_obj->request)
 	     );
 #endif
 
-  if (IS_STRIPPED_TAG((HKEY)tag, userdata_obj->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)(char *)tag, userdata_obj->request)) return;
 
   if ((suppressing(userdata_obj)
-       && !IS_SELECTED_TAG((HKEY)tag, userdata_obj->request))
+       && !IS_SELECTED_TAG((HKEY)(char *)tag, userdata_obj->request))
       || (parsing(userdata_obj)
-	  && IS_SUPPRESSED_TAG((HKEY)tag, userdata_obj->request))) {
+	  && IS_SUPPRESSED_TAG((HKEY)(char *)tag, userdata_obj->request))) {
     xml_push_suppressed_element(userdata_obj, tag);
     return;
   }
 
   /* parsing or suppressing & found a selected tag */
   if ((parsing(userdata_obj)
-       && !IS_SUPPRESSED_TAG((HKEY)tag, userdata_obj->request))
+       && !IS_SUPPRESSED_TAG((HKEY)(char *)tag, userdata_obj->request))
       || (suppressing(userdata_obj) 
-	  && IS_SELECTED_TAG((HKEY)tag, userdata_obj->request))) {
+	  && IS_SELECTED_TAG((HKEY)(char *)tag, userdata_obj->request))) {
     xml_push_element(userdata_obj,tag,attributes);
     return;
   }
@@ -235,11 +113,11 @@ PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
 	     userdata_obj->stackptr, tag);
 #endif
 
-  if (IS_STRIPPED_TAG((HKEY)tag, userdata_obj->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)(char *)tag, userdata_obj->request)) return;
 
   if (strcasecmp(STACK_TOP(userdata_obj).tag, tag) != 0)
     libwww_abort_request(userdata_obj->request,
-			 HT_DOC_SYNTAX,
+			 WWW_DOC_SYNTAX,
 			 "LIBWWW_PARSE_XML: End tag %s/start tag %s mismatch",
 			 tag, STACK_TOP(userdata_obj).tag);
 
@@ -270,7 +148,7 @@ PRIVATE void xml_addText (void	         *userdata,
   xsb_dbgmsg("In xml_addText (%d):", REQUEST_ID(userdata_obj->request));
 #endif
 
-  if (IS_STRIPPED_TAG("pcdata", userdata_obj->request)) return;
+  if (IS_STRIPPED_TAG((HKEY)"pcdata", userdata_obj->request)) return;
   if (suppressing(userdata_obj)) return;
 
   /* strip useless newlines */
@@ -289,7 +167,7 @@ PRIVATE void xml_addText (void	         *userdata,
     shift = strlen("\n");
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("pcdata=%s", pcdata_buf.string+shift);
+  xsb_dbgmsg("In addText: pcdata=%s", pcdata_buf.string+shift);
 #endif
 
   /* put the text string into the elt term and then pop it */
@@ -365,7 +243,7 @@ PRIVATE void xml_push_element (USERDATA    *userdata,
 
   if (userdata->stackptr > MAX_XML_NESTING)
     libwww_abort_request(userdata->request,
-			 HT_DOC_SYNTAX,
+			 WWW_DOC_SYNTAX,
 			 "LIBWWW_PARSE_XML: Element nesting exceeds MAX(%d)",
 			 MAX_XML_NESTING);
 
@@ -490,14 +368,15 @@ PRIVATE void xml_pop_suppressed_element(USERDATA *userdata)
 }
 
 
-PRIVATE USERDATA *create_userData(XML_Parser parser,
-				  HTRequest *request,
-				  HTStream  *target_stream)
+USERDATA *create_userData(XML_Parser parser,
+			  HTRequest *request,
+			  HTStream  *target_stream)
 {
   USERDATA *me = NULL;
   if (parser) {
     if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_xml");
+    me->delete_method = delete_userData;
     me->parser = parser;
     me->request = request;
     me->target = target_stream;
@@ -520,23 +399,30 @@ PRIVATE USERDATA *create_userData(XML_Parser parser,
 }
 
 
-PRIVATE void delete_userData(USERDATA *me)
+PRIVATE void delete_userData(void *userdata)
 {
-  prolog_term 
-    parsed_result =
-    ((REQUEST_CONTEXT *)HTRequest_context(me->request))->parsed_result,
-    status_term =
-    ((REQUEST_CONTEXT *)HTRequest_context(me->request))->status_term;
+  prolog_term parsed_result, status_term;
+  USERDATA *me = (USERDATA *)userdata;
 #ifdef LIBWWW_DEBUG
-  int request_id = REQUEST_ID(me->request);
-  xsb_dbgmsg("In delete_userData(%d): stackptr=%d",
-	     request_id, me->stackptr);
+  int request_id;
+#endif
+
+  if (me->request) {
+    parsed_result =
+      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->request_result;
+    status_term =
+      ((REQUEST_CONTEXT *)HTRequest_context(me->request))->status_term;
+  } else return;
+
+#ifdef LIBWWW_DEBUG
+  request_id = REQUEST_ID(me->request);
+  xsb_dbgmsg("In delete_userData(%d): stackptr=%d", request_id, me->stackptr);
 #endif
 
   /* if the status code says the doc was loaded fine, but stackptr is != -1,
      it means the doc is ill-formed */
   if (me->stackptr >= 0 && (int_val(status_term) == HT_LOADED)) {
-    c2p_int(HT_DOC_SYNTAX,status_term);
+    c2p_int(WWW_DOC_SYNTAX,status_term);
     xsb_warn("LIBWWW_PARSE_XML: Ill-formed document (a syntax error or tags left open)");
   }
 
@@ -547,7 +433,7 @@ PRIVATE void delete_userData(USERDATA *me)
   if (is_var(me->parsed_term))
     p2p_unify(parsed_result, me->parsed_term);
   else
-    xsb_warn("LIBWWW_PARSE_XML: Request %d: Arg 4 (Parse result) must be a variable",
+    xsb_warn("LIBWWW_REQUEST: Request %d: Arg 4 (Result) must be a variable",
 	      REQUEST_ID(me->request));
 
   if (me->target) FREE_TARGET(me);
@@ -623,42 +509,67 @@ PRIVATE void xml_notationDecl (void * userData,
 ** case the calling parser will return an XML_ERROR_EXTERNAL_ENTITY_HANDLING
 ** error.  Note that unlike other handlers the first argument is the parser,
 ** not userData.  */
-PRIVATE int xml_externalEntityRef (XML_Parser parser,
-				   const XML_Char * openEntityNames,
-				   const XML_Char * base,
-				   const XML_Char * systemId,
-				   const XML_Char * publicId)
+PRIVATE int xml_externalEntityRef (XML_Parser     parser,
+				   const XML_Char *openEntityNames,
+				   const XML_Char *base,
+				   const XML_Char *systemId,
+				   const XML_Char *publicId)
 {
   /* This external entity processor doesn't do anything. This is because we
      need to figure out how to start a new libwww request on the external
      entity URL while the parent request is waiting. */
-  int status;
   XML_Parser extParser =
     XML_ExternalEntityParserCreate(parser, openEntityNames, 0);
-  HTAnchor    *anchor = NULL;
+  HTAnchor  *anchor = NULL;
   HTRequest *request = HTRequest_new();
-  char *uri;
-  USERDATA *userdata = XML_GetUserData(parser);
-  void *context = HTRequest_context(userdata->request);
+  char      *uri;
+  USERDATA  *userdata = XML_GetUserData(parser);
+  REQUEST_CONTEXT *context =
+    (REQUEST_CONTEXT *)HTRequest_context(userdata->request);
+  HTChunk   *chunk = NULL;
+  char      *cwd = HTGetCurrentDirectoryURL();
 
-  uri = HTParse((char *)systemId, NULL, PARSE_ALL);
-  anchor = HTAnchor_findAddress(uri);
-  status = (YES==HTLoadAnchor(anchor, request));
-
+  /* make it a blocking request, so that we get the result now */
+  HTRequest_setPreemptive(request, YES);
   /* put the same context on this request */
   HTRequest_setContext(request, (void *) context);
-  
-  /* launch the new request; this should add it to the existing event loop */
-  if (YES != HTLoadAnchor(anchor,request))
-    XML_ParserFree(extParser);
+
+  uri = HTParse((char *)systemId, cwd, PARSE_ALL);
+  anchor = HTAnchor_findAddress(uri);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("In xml_externalEntityRef(%d): uri=%s",
-	     REQUEST_ID(request), uri);
+  xsb_dbgmsg("In xml_externalEntityRef(%d): uri=%s", context->request_id, uri);
 #endif
 
+  HTRequest_setOutputFormat(request, WWW_SOURCE);
+  /* close connection after request is done */
+  HTRequest_addConnection(request, "close", "");
+  /* Launch a new subrequest. Since this request is blocking, this will
+     execute the request immediately. */
+  context->is_subrequest = TRUE;
+  chunk = HTLoadAnchorToChunk(anchor,request);
+  if (chunk) {
+    char *ext_entity_expansion = HTChunk_toCString(chunk);
+
+    if (ext_entity_expansion) {
+#ifdef LIBWWW_DEBUG
+      xsb_dbgmsg("In xml_externalEntityRef: entity=%s", ext_entity_expansion);
+#endif
+      XML_Parse(extParser,ext_entity_expansion,strlen(ext_entity_expansion),1);
+      HT_FREE(ext_entity_expansion);
+    }
+  } else {
+    /* here we should put the WWW_EXTERNAL_ENTITY error code in the response */
+    xsb_warn("LIBWWW_REQUEST: Failed to retrieve external entity %s",
+	     (char *)uri);
+  }
+
+  HT_FREE(uri);
+  HT_FREE(cwd);
+  XML_ParserFree(extParser);
   return TRUE;
 }
+
 
 /* 
 ** This is called for an encoding that is unknown to the parser.
@@ -696,44 +607,5 @@ PRIVATE void xml_default (void * userData, const XML_Char * str, int len)
   return;
 }
 */
-
-
-/* hash table stuff */
-
-
-PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
-{
-  prolog_term tail, head;
-  int i=0;
-  HKEY tagname;
-  /* Save tag numbers in the table */
-  tail=tag_list;
-  while (is_list(tail) && !is_nil(tail) && i < tag_tbl->size) {
-    head= p2p_car(tail);
-    tail=p2p_cdr(tail);
-    tagname = string_val(head);
-    add_to_htable(tagname, tag_tbl);
-    i++;
-  }
-}
-
-
-PRIVATE unsigned long myhash(HKEY s)
-{
-  unsigned long h = 0;
-  while (*s)
-    h = (h << 5) + h + (unsigned char)*s++;
-  return h;
-}
-
-
-PRIVATE void free_htable(HASH_TABLE *htable)
-{
-  int i;
-  for (i=0; i < htable->size; i++)
-    if (htable->table[i] != NULL)
-      free(htable->table[i]);
-  free(htable->table);
-}
 
 

@@ -32,9 +32,8 @@
 %% package_configuration(dir(PackageName), FullPackageDirname)
 %% some packages use it.
 
-:- export libwww_fetch_url/4, libwww_form_request/4.
-:- import do_libwww_fetch_url___/4, do_libwww_form_request___/4
-   from xsb_libwww.
+:- export libwww_request/1.
+:- import do_libwww_request___/1 from xsb_libwww.
 
 :- bootstrap_package('libwww', libwww),
 	(   xsb_configuration(libwww_support, 'yes')
@@ -43,5 +42,4 @@
 	).
 
 
-libwww_fetch_url(X,Y,Z,W) :- do_libwww_fetch_url___(X,Y,Z,W).
-libwww_form_request(X,Y,Z,W) :- do_libwww_form_request___(X,Y,Z,W).
+libwww_request(X) :- do_libwww_request___(X).
