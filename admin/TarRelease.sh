@@ -9,6 +9,8 @@ files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS \
         ./XSB/build/ac* ./XSB/build/*.in ./XSB/build/config.guess \
         ./XSB/build/config.sub ./XSB/build/*sh ./XSB/build/*.msg \
         ./XSB/build/configure ./XSB/build/README \
+	./XSB/build/MSVC.sed ./XSB/build/MSVC.sh ./XSB/build/MSVC_mkfile.in \
+	./XSB/build/makexsb_wind.bat \
         ./XSB/emu ./XSB/syslib ./XSB/cmplib  ./XSB/lib \
 	./XSB/gpp \
 	./XSB/prolog_includes \
