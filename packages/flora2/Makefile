@@ -25,30 +25,31 @@
 ## 
 ##
 
+OBJEXT=.O
 
 XSBDIR = ../..
 
-ALLOBJS = flroperator.O \
-	  flrnodefp.O \
-	  flrnowsp.O \
-	  flrarguments.O \
-	  flrprolog.O \
-	  flrfirstorder.O \
-	  flrprint.O \
-	  flrlibman.O \
-	  flrlexer.O \
-	  flrcomposer.O \
-          flrparser.O \
-	  flrcompiler.O \
-	  flrdependency.O \
-	  flrcoder.O \
-	  flrundefined.O \
-	  flrutils.O \
-	  flrwrapper.O \
-	  flrwraparound.O \
-	  flrprettyprint.O \
-	  flrundefhook.O \
-	  flrshell.O
+ALLOBJS = flroperator${OBJEXT} \
+	  flrnodefp${OBJEXT} \
+	  flrnowsp${OBJEXT} \
+	  flrarguments${OBJEXT} \
+	  flrprolog${OBJEXT} \
+	  flrfirstorder${OBJEXT} \
+	  flrprint${OBJEXT} \
+	  flrlibman${OBJEXT} \
+	  flrlexer${OBJEXT} \
+	  flrcomposer${OBJEXT} \
+          flrparser${OBJEXT} \
+	  flrcompiler${OBJEXT} \
+	  flrdependency${OBJEXT} \
+	  flrcoder${OBJEXT} \
+	  flrundefined${OBJEXT} \
+	  flrutils${OBJEXT} \
+	  flrwrapper${OBJEXT} \
+	  flrwraparound${OBJEXT} \
+	  flrprettyprint${OBJEXT} \
+	  flrundefhook${OBJEXT} \
+	  flrshell${OBJEXT}
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	       $(XSBDIR)/emu/flag_defs_xsb.h \
@@ -94,85 +95,85 @@ all: init $(ALLOBJS) finish
 	@cat $(XSBDIR)/build/.flora*.tmp
 
 
-flroperator.O : flroperator.P flroperator.H $(FLORA_TERMS)
+flroperator${OBJEXT} : flroperator.P flroperator.H $(FLORA_TERMS)
 	@echo 'mc(flroperator,$(OPTION)).' >> cmd...
 
 
-flrnodefp.O : flrnodefp.P flrnodefp.H $(FLORA_TERMS)
+flrnodefp${OBJEXT} : flrnodefp.P flrnodefp.H $(FLORA_TERMS)
 	@echo 'mc(flrnodefp,$(OPTION)).' >> cmd...
 
 
-flrnowsp.O : flrnowsp.P flrnowsp.H $(FLORA_TERMS)
+flrnowsp${OBJEXT} : flrnowsp.P flrnowsp.H $(FLORA_TERMS)
 	@echo 'mc(flrnowsp,$(OPTION)).' >> cmd...
 
 
-flrarguments.O : flrarguments.P flrarguments.H $(FLORA_TERMS)
+flrarguments${OBJEXT} : flrarguments.P flrarguments.H $(FLORA_TERMS)
 	@echo 'mc(flrarguments,$(OPTION)).' >> cmd...
 
 
-flrprolog.O : flrprolog.P flrprolog.H $(FLORA_TERMS)
+flrprolog${OBJEXT} : flrprolog.P flrprolog.H $(FLORA_TERMS)
 	@echo 'mc(flrprolog,$(OPTION)).' >> cmd...
 
 
-flrfirstorder.O : flrfirstorder.P flrfirstorder.H $(FLORA_TERMS)
+flrfirstorder${OBJEXT} : flrfirstorder.P flrfirstorder.H $(FLORA_TERMS)
 	@echo 'mc(flrfirstorder,$(OPTION)).' >> cmd...
 
 
-flrprint.O : flrprint.P flrprint.H $(XSB_STANDARD)
+flrprint${OBJEXT} : flrprint.P flrprint.H $(XSB_STANDARD)
 	@echo 'mc(flrprint,$(OPTION)).' >> cmd...
 
 
-flrlibman.O : flrlibman.P flrlibman.H $(FLORA_TERMS)
+flrlibman${OBJEXT} : flrlibman.P flrlibman.H $(FLORA_TERMS)
 	@echo 'mc(flrlibman,$(OPTION)).' >> cmd...
 
 
-flrlexer.O : flrlexer.P flrlexer.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrlexer${OBJEXT} : flrlexer.P flrlexer.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrlexer,$(OPTION)).' >> cmd...
 
 
-flrcomposer.O : flrcomposer.P flrcomposer.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcomposer${OBJEXT} : flrcomposer.P flrcomposer.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrcomposer,$(OPTION)).' >> cmd...
 
 
-flrparser.O : flrparser.P flrparser.H $(FLORA_TERMS) $(FLORA_ERRORS)
+flrparser${OBJEXT} : flrparser.P flrparser.H $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrparser,$(OPTION)).' >> cmd...
 
 
-flrcompiler.O : flrcompiler.P flrcompiler.H $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcompiler${OBJEXT} : flrcompiler.P flrcompiler.H $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrcompiler,$(OPTION)).' >> cmd...
 
 
-flrdependency.O : flrdependency.P flrdependency.H $(FLORA_TERMS)
+flrdependency${OBJEXT} : flrdependency.P flrdependency.H $(FLORA_TERMS)
 	@echo 'mc(flrdependency,$(OPTION)).' >> cmd...
 
 
-flrcoder.O : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
+flrcoder${OBJEXT} : flrcoder.P flrcoder.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(FLORA_ERRORS)
 	@echo 'mc(flrcoder,$(OPTION)).' >> cmd...
 
 
-flrundefined.O : flrundefined.P flrundefined.H $(FLORA_TERMS) 
+flrundefined${OBJEXT} : flrundefined.P flrundefined.H $(FLORA_TERMS) 
 	@echo 'mc(flrundefined,$(OPTION)).' >> cmd...
 
 
-flrutils.O : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+flrutils${OBJEXT} : flrutils.P flrutils.H $(XSB_CHAR_DEFS) $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrutils,$(OPTION)).' >> cmd...
 
 
-flrwrapper.O : flrwrapper.P flrwrapper.H $(XSB_STANDARD) $(FLORA_TERMS)
+flrwrapper${OBJEXT} : flrwrapper.P flrwrapper.H $(XSB_STANDARD) $(FLORA_TERMS)
 	@echo 'mc(flrwrapper,$(OPTION)).' >> cmd...
 
 
-flrundefhook.O : flrundefhook.P flrundefhook.H $(FLORA_TERMS)
+flrundefhook${OBJEXT} : flrundefhook.P flrundefhook.H $(FLORA_TERMS)
 	@echo 'mc(flrundefhook,$(OPTION)).' >> cmd...
 
 
-flrshell.O : flrshell.P flrshell.H $(FLORA_TERMS)
+flrshell${OBJEXT} : flrshell.P flrshell.H $(FLORA_TERMS)
 	@echo 'mc(flrshell,$(OPTION)).' >> cmd...
 
-flrwraparound.O : flrwraparound.P flrwraparound.H $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
+flrwraparound${OBJEXT} : flrwraparound.P flrwraparound.H $(FLORA_TERMS) $(XSB_EMU_FLAG_DEFS)
 	@echo 'mc(flrwraparound,$(OPTION)).' >> cmd...
 
-flrprettyprint.O : flrprettyprint.P $(FLORA_TERMS)
+flrprettyprint${OBJEXT} : flrprettyprint.P $(FLORA_TERMS)
 	@echo 'mc(flrprettyprint,$(OPTION)).' >> cmd...
 
 
@@ -192,7 +193,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *.O .#* *.bak ../flora2.O
+	/bin/rm -f *~ .*~ *${OBJEXT} .#* *.bak ../flora2${OBJEXT}
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean
@@ -209,7 +210,7 @@ clean:
 	/bin/rm -f libinc/*~ libinc/.*~
 	/bin/rm -f includes/*~ includes/.*~
 	/bin/rm -f flrincludes/*~ flrincludes/.*~
-	/bin/rm -f $(HOME)/.xsb/flora/*.P $(HOME)/.xsb/flora/*.O
+	/bin/rm -f $(HOME)/.xsb/flora/*.P $(HOME)/.xsb/flora/*${OBJEXT}
 
 
 .DONE:

@@ -26,6 +26,9 @@
 ##
 
 
+
+OBJEXT=.O
+
 XSBDIR = ../../..
 
 CLOSURE = ../closure
@@ -130,7 +133,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *.P *.O *.flh *.bak .#*
+	/bin/rm -f *~ .*~ *.P *$(OBJEXT) *.flh *.bak .#*
 
 
 .DONE:

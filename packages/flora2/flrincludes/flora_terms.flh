@@ -169,7 +169,7 @@
 #define FL_FROM			(from)
 #define FL_ARGUMENTS		arguments
 #define FL_OID			oid
-#define FL_BODYFORMULA		bform
+#define FL_BODYFORMULA		meta
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog

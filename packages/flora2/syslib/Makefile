@@ -26,27 +26,29 @@
 ##
 
 
+OBJEXT=.O
+
 XSBDIR = ../../..
 
-ALLOBJS = flranswer.O \
-	  flrcontrol.O \
-	  flrdisplay.O \
-	  flrload.O \
-	  flraggavg.O \
-	  flraggcolbag.O \
-	  flraggcolset.O \
-	  flraggcount.O \
-	  flraggmax.O \
-	  flraggmin.O \
-	  flraggsum.O \
-	  flrstorage.O \
-	  flrdbop.O \
-	  flrbtdbop.O \
-	  flrshdirect.O \
-	  flrdynmod.O \
-	  flrequality.O \
-	  flrimport.O \
-	  flrexpunge.O
+ALLOBJS = flranswer${OBJEXT} \
+	  flrcontrol${OBJEXT} \
+	  flrdisplay${OBJEXT} \
+	  flrload${OBJEXT} \
+	  flraggavg${OBJEXT} \
+	  flraggcolbag${OBJEXT} \
+	  flraggcolset${OBJEXT} \
+	  flraggcount${OBJEXT} \
+	  flraggmax${OBJEXT} \
+	  flraggmin${OBJEXT} \
+	  flraggsum${OBJEXT} \
+	  flrstorage${OBJEXT} \
+	  flrdbop${OBJEXT} \
+	  flrbtdbop${OBJEXT} \
+	  flrshdirect${OBJEXT} \
+	  flrdynmod${OBJEXT} \
+	  flrequality${OBJEXT} \
+	  flrimport${OBJEXT} \
+	  flrexpunge${OBJEXT}
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	       $(XSBDIR)/emu/flag_defs_xsb.h \
@@ -85,77 +87,77 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flranswer.O : flranswer.P $(XSB_CHAR_DEFS) $(XSB_EMU_FLAG_DEFS) $(XSB_STANDARD) $(FLORA_TERMS)
+flranswer${OBJEXT} : flranswer.P $(XSB_CHAR_DEFS) $(XSB_EMU_FLAG_DEFS) $(XSB_STANDARD) $(FLORA_TERMS)
 	@echo 'mc(flranswer,$(OPTION)).' >> cmd...
 
 
-flrcontrol.O : flrcontrol.P $(FLORA_TERMS) $(XSB_STANDARD)
+flrcontrol${OBJEXT} : flrcontrol.P $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrcontrol,$(OPTION)).' >> cmd...
 
-flrdisplay.O : flrdisplay.P $(FLORA_TERMS) $(XSB_STANDARD)
+flrdisplay${OBJEXT} : flrdisplay.P $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrdisplay,$(OPTION)).' >> cmd...
 
 
-flrload.O : flrload.P $(FLORA_TERMS)
+flrload${OBJEXT} : flrload.P $(FLORA_TERMS)
 	@echo 'mc(flrload,$(OPTION)).' >> cmd...
 
 
-flraggavg.O :flraggavg.P $(FLORA_TERMS)
+flraggavg${OBJEXT} :flraggavg.P $(FLORA_TERMS)
 	@echo 'mc(flraggavg,$(OPTION)).' >> cmd...
 
 
-flraggcolbag.O : flraggcolbag.P $(FLORA_TERMS)
+flraggcolbag${OBJEXT} : flraggcolbag.P $(FLORA_TERMS)
 	@echo 'mc(flraggcolbag,$(OPTION)).' >> cmd...
 
 
-flraggcolset.O : flraggcolset.P $(FLORA_TERMS)
+flraggcolset${OBJEXT} : flraggcolset.P $(FLORA_TERMS)
 	@echo 'mc(flraggcolset,$(OPTION)).' >> cmd...
 
 
-flraggcount.O : flraggcount.P $(FLORA_TERMS)
+flraggcount${OBJEXT} : flraggcount.P $(FLORA_TERMS)
 	@echo 'mc(flraggcount,$(OPTION)).' >> cmd...
 
 
-flraggmax.O : flraggmax.P $(FLORA_TERMS)
+flraggmax${OBJEXT} : flraggmax.P $(FLORA_TERMS)
 	@echo 'mc(flraggmax,$(OPTION)).' >> cmd...
 
 
-flraggmin.O : flraggmin.P $(FLORA_TERMS)
+flraggmin${OBJEXT} : flraggmin.P $(FLORA_TERMS)
 	@echo 'mc(flraggmin,$(OPTION)).' >> cmd...
 
 
-flraggsum.O : flraggsum.P $(FLORA_TERMS)
+flraggsum${OBJEXT} : flraggsum.P $(FLORA_TERMS)
 	@echo 'mc(flraggsum,$(OPTION)).' >> cmd...
 
 
-flrstorage.O : flrstorage.P $(FLORA_TERMS)
+flrstorage${OBJEXT} : flrstorage.P $(FLORA_TERMS)
 	@echo 'mc(flrstorage,$(OPTION)).' >> cmd...
 
 
-flrdbop.O : flrdbop.P $(FLORA_TERMS)
+flrdbop${OBJEXT} : flrdbop.P $(FLORA_TERMS)
 	@echo 'mc(flrdbop,$(OPTION)).' >> cmd...
 
 
-flrbtdbop.O : flrbtdbop.P $(FLORA_TERMS)
+flrbtdbop${OBJEXT} : flrbtdbop.P $(FLORA_TERMS)
 	@echo 'mc(flrbtdbop,$(OPTION)).' >> cmd...
 
 
-flrshdirect.O : flrshdirect.P $(FLORA_TERMS)
+flrshdirect${OBJEXT} : flrshdirect.P $(FLORA_TERMS)
 	@echo 'mc(flrshdirect,$(OPTION)).' >> cmd...
 
 
-flrdynmod.O : flrdynmod.P $(FLORA_TERMS)
+flrdynmod${OBJEXT} : flrdynmod.P $(FLORA_TERMS)
 	@echo 'mc(flrdynmod,$(OPTION)).' >> cmd...
 
 
-flrequality.O : flrequality.P $(FLORA_TERMS)
+flrequality${OBJEXT} : flrequality.P $(FLORA_TERMS)
 	@echo 'mc(flrequality,$(OPTION)).' >> cmd...
 
-flrimport.O: flrimport.P $(FLORA_TERMS) $(FLRHEADER)
+flrimport${OBJEXT}: flrimport.P $(FLORA_TERMS) $(FLRHEADER)
 	@echo 'mc(flrimport,$(OPTION)).' >> cmd...
 
 
-flrexpunge.O : flrexpunge.P $(FLORA_TERMS)
+flrexpunge${OBJEXT} : flrexpunge.P $(FLORA_TERMS)
 	@echo 'mc(flrexpunge,$(OPTION)).' >> cmd...
 
 
@@ -175,7 +177,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *.O *.bak .#*
+	/bin/rm -f *~ .*~ *${OBJEXT} *.bak .#*
 
 
 .DONE:

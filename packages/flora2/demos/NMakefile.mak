@@ -1,5 +1,7 @@
 # Make file for Microsoft NMAKE
 
+OBJEXT = .O
+
 ALLOBJS = aggregate.P benchmark.P default.P family_obj.P \
 	  family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \
 	  mono_inherit.P rel_ops.P tree_traversal.P
@@ -19,7 +21,7 @@ ALL: $(ALLOBJS)
 
 CLEAN:
 	-@del *~
-	-@del *.O
+	-@del *$(OBJEXT)
 	-@del *.P
 	-@del *.P_gpp
 	-@del *.fdb

@@ -1,3 +1,5 @@
 
+OBJEXT=.O
+
 clean:
-	/bin/rm -f *.O *.so *.bak *~ .*~ .#*
+	/bin/rm -f *${OBJEXT} *.so *.bak *~ .*~ .#*

@@ -1,5 +1,6 @@
 # Make file for prolog2hilog.dll
 
+
 XSBDIR = ..\..\..
 MYPROGRAM = prolog2hilog
 

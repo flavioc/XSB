@@ -27,6 +27,7 @@
 
 
 :- compiler_options([xpp_on]).
+#include "loader_defs.h"
 
 
 #define FLORA_FILE_EXT		flr
@@ -35,9 +36,9 @@
 #define FLORA_FDB_EXT		fdb
 %% Extension for storage of defined predicate skeletons
 #define FLORA_FLD_EXT		fld
-#define XSB_PFILE_EXT		'P'
-#define XSB_OFILE_EXT		'O'
-#define XSB_HFILE_EXT		'H'
+#define PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
 #define FLORA_FAILURE		failure
 #define FLORA_SUCCESS		success
 #define FLORA_NOOP		noop
@@ -103,30 +104,30 @@ flora_load_module_internal(InFile) :-
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,FLORA_DEFAULT_WORKSPACE)
 
-	; flora_locate_file(File,XSB_PFILE_EXT,PFile) ->
+	; flora_locate_file(File,PROLOG_PFILE_EXT,PFile) ->
 	    flora_stdmsg_nl,
 	    flora_message_line('Consulting %s',args(PFile)),
 	    consult(PFile)
 
-	; flora_locate_file(File,XSB_OFILE_EXT,OFile) ->
+	; flora_locate_file(File,PROLOG_OFILE_EXT,OFile) ->
 	    flora_stdmsg_nl,
 	    flora_message_line('Consulting %s',args(OFile)),
 	    consult(OFile)
 
 	; parse_filename(File,_,_,Ext),
-          Ext \== '', Ext \== XSB_OFILE_EXT, Ext \== XSB_PFILE_EXT, Ext \== FLORA_FILE_EXT,
+          Ext \== '', Ext \== PROLOG_OFILE_EXT, Ext \== PROLOG_PFILE_EXT, Ext \== FLORA_FILE_EXT,
 	  path_sysop(exists,File)
 	->
 	    flora_stderr_nl,
 	    flora_error_line('%s: Filename extension must be %s, %s or %s!',
 	                     args(File,
-				  FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
+				  FLORA_FILE_EXT,PROLOG_PFILE_EXT,PROLOG_OFILE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
 	  flora_error_line('File %s[.{%s|%s|%s}] does not exist!',
 			   args(File,
-				FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
+				FLORA_FILE_EXT,PROLOG_PFILE_EXT,PROLOG_OFILE_EXT)),
           fail
         ),
 	!.
@@ -614,11 +615,11 @@ flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
 *************************************************************************/
 flora_mainP_filename(File,MPFile) :-
 	parse_filename(File,Dir,Base,_),
-	fmt_write_string(MPFile,'%s%s.%s',args(Dir,Base,XSB_PFILE_EXT)).
+	fmt_write_string(MPFile,'%s%s.%s',args(Dir,Base,PROLOG_PFILE_EXT)).
 
 flora_mainO_filename(File,MOFile) :-
 	parse_filename(File,Dir,Base,_),
-	fmt_write_string(MOFile,'%s%s.%s',args(Dir,Base,XSB_OFILE_EXT)).
+	fmt_write_string(MOFile,'%s%s.%s',args(Dir,Base,PROLOG_OFILE_EXT)).
 
 flora_FDB_filename(File,FDBFile) :-
 	parse_filename(File,Dir,Base,_),
@@ -634,11 +635,11 @@ flora_FLH_filename(File,FLHFile) :-
 
 %flora_WSP_filename(File,WS,WSPFile) :-
 %	parse_filename(File,Dir,Base,_),
-%	fmt_write_string(WSPFile,'%s%s_%s.%s',args(Dir,Base,WS,XSB_PFILE_EXT)).
+%	fmt_write_string(WSPFile,'%s%s_%s.%s',args(Dir,Base,WS,PROLOG_PFILE_EXT)).
 
 flora_WSO_filename(File,WS,WSOFile) :-
 	parse_filename(File,Dir,Base,_),
-	fmt_write_string(WSOFile,'%s%s_%s.%s',args(Dir,Base,WS,XSB_OFILE_EXT)).
+	fmt_write_string(WSOFile,'%s%s_%s.%s',args(Dir,Base,WS,PROLOG_OFILE_EXT)).
 
 flora_dump_filename(File,DFile) :-
 	parse_filename(File,Dir,Base,Ext),

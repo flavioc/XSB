@@ -22,6 +22,8 @@
 ## 
 ##
 
+OBJEXT=.O
+
 XSBDIR=../../..
 
 ALL = 	flrprettyprint.P flrio.P flrstorage.P flrsystem.P
@@ -86,4 +88,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f *.P *.O *.fdb *~ .*~ *.fld *.bak .#*
+	/bin/rm -f *.P *${OBJEXT} *.fdb *~ .*~ *.fld *.bak .#*

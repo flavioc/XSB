@@ -1,28 +1,30 @@
 # Make file for Microsoft NMAKE
 
-ALLOBJS =  flroperator.O \
-	   flrnodefp.O \
-	   flrnowsp.O \
-	   flrarguments.O \
-	   flrprolog.O \
-	   flrfirstorder.O \
-	   flrprint.O \
-	   flrlibman.O \
-	   flrlexer.O \
-	   flrcomposer.O \
-	   flrparser.O \
-	   flrcompiler.O \
-	   flrcoder.O \
-	   flrutils.O \
-	   flrwrapper.O \
-	   flrwraparound.O \
-	   flrundefhook.O \
-	   flrshell.O
+OBJEXT = .O
+
+ALLOBJS =  flroperator$(OBJEXT) \
+	   flrnodefp$(OBJEXT) \
+	   flrnowsp$(OBJEXT) \
+	   flrarguments$(OBJEXT) \
+	   flrprolog$(OBJEXT) \
+	   flrfirstorder$(OBJEXT) \
+	   flrprint$(OBJEXT) \
+	   flrlibman$(OBJEXT) \
+	   flrlexer$(OBJEXT) \
+	   flrcomposer$(OBJEXT) \
+	   flrparser$(OBJEXT) \
+	   flrcompiler$(OBJEXT) \
+	   flrcoder$(OBJEXT) \
+	   flrutils$(OBJEXT) \
+	   flrwrapper$(OBJEXT) \
+	   flrwraparound$(OBJEXT) \
+	   flrundefhook$(OBJEXT) \
+	   flrshell$(OBJEXT)
 
 OPTIONS = [optimize]
 XSB = ..\..\config\x86-pc-windows\bin\xsb.exe
 
-.SUFFIXES: .P .O
+.SUFFIXES: .P $(OBJEXT)
 
 ALL:: $(ALLOBJS)
 	cd p2h
@@ -47,10 +49,10 @@ ALL:: $(ALLOBJS)
 
 CLEAN :
 	-@erase *~
-	-@erase *.O
+	-@erase *$(OBJEXT)
 	-@erase *.bak
 	-@erase .#*
-	-@erase ..\flora2.O
+	-@erase ..\flora2$(OBJEXT)
 	cd p2h
 	nmake /f NMakefile.mak clean
 	cd ..\closure
@@ -74,7 +76,7 @@ CLEAN :
 	cd ..
 
 
-.P.O:
+.P$(OBJEXT):
 	$(XSB) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 

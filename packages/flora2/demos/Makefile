@@ -22,6 +22,8 @@
 ## 
 ##
 
+OBJEXT=.O
+
 XSBDIR=../../..
 
 ALL = 	aggregate.P benchmark.P default.P family_obj.P \
@@ -87,4 +89,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f *.P *.P_gpp *.O *.bak *.fdb *.fld *~ .*~ .#*
+	/bin/rm -f *.P *.P_gpp *${OBJEXT} *.bak *.fdb *.fld *~ .*~ .#*

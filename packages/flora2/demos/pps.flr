@@ -129,7 +129,7 @@ addTo(golfCL,wheel155,1).
 
 :- firstorder p1/2.
 :- table p1/2.
-:- arguments get_residual(bform,oid).
+:- arguments get_residual(meta,oid).
 
 p1(S,ctrl_produces(P)) :- pps[produces(S)->>P].
 p1(P,ctrl_stop_in(S)) :- stop (P,S).

@@ -28,9 +28,13 @@
 
 
 :- compiler_options([xpp_on]).
+#include "loader_defs.h"
 
 #include "flora_terms.flh"
 
+#define PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
+#define PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
 
 /*********************************************************************/
 flora_shell_loop :-
@@ -115,7 +119,8 @@ flHelp :-
 	flora_stdmsg_line('    compile FILE.flr for Module'),
 	flora_stdmsg_line('o FL_LOAD FILE>>Module  OR  [FILE >> Module,...]'),
 	flora_stdmsg_line('    load FILE.flr into Module'),
-	flora_stdmsg_line('    specifying ''FILE.P'' or ''FILE.O'' loads these files'),
+	flora_stdmsg_line('    specifying FILE.%s or FILE.%s loads these files',
+			 args(PROLOG_PFILE_EXT,PROLOG_OFILE_EXT)),
 	flora_stdmsg_line('    the [...] version can load a list of files files'),
 	flora_stdmsg_line('o FL_LOAD FILE  OR  [FILE,...]'),
 	flora_stdmsg_line('    load FILE.flr into the shell module `main'''),

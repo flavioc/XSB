@@ -1,5 +1,7 @@
 # Make file for Microsoft NMAKE
 
+OBJEXT = .O
+
 ALLOBJS = flrprettyprint.P flrio.P flrstorage.P flrsystem.P
 
 XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
@@ -17,7 +19,7 @@ ALL: $(ALLOBJS)
 
 CLEAN:
 	-@del *~
-	-@del *.O
+	-@del *$(OBJEXT)
 	-@del *.P
 	-@del *.fdb
 	-@del *.fld

@@ -154,13 +154,12 @@ DONE 2. Implement undefined predicate/method handling infrastructure.
 	predicate and its first argument is the rule head. So, things must
 	be translated differently there.
 	Right now if we have
-	:- arguments p(bform).
+	:- arguments p(meta).
 	p(a[b->c]) :- ...
 	then a[b->c] is translated as defived_fd, so the compiler treats
-	bform in the rule head differently. We should extend this treatment
+	meta in the rule head differently. We should extend this treatment
 	to the predicate ':-'.
 
-	Also, change `bform' to `meta'.
 
 5. Metaprogramming
 

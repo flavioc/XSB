@@ -2164,7 +2164,7 @@ instruction.
 \index{predicate meta signature}
 \index{meta signature of a predicate}
 \index{compiler directive!{\tt arguments}}
-\index{bform}
+\index{meta}
 %
 By default, when a truth-valued expression, $E$, such as an \fl molecule or
 a path expression, appears as an argument to a predicate or function
@@ -2176,7 +2176,7 @@ directive {\tt arguments}.  For instance, the following directive will make
 {\tt findall/3} work as intended:
 %%
 \begin{qrules}
-:- arguments findall(oid,bform,oid).
+:- arguments findall(oid,meta,oid).
 \end{qrules}
 %%
 \index{syntactic object}
@@ -3793,8 +3793,8 @@ construct supported by most programming languages.  For instance,
 %%
 Here the system first evaluates {\tt foo(a),foo2(b)} and, if true,
 evaluates {\tt abc(X),cde(Y)}. Otherwise, it evaluates {\tt qpr(X),rts(Y)}.
-Note that {\tt if}, {\tt then}, and {\tt else} are implemented as
-operators, and they bind stronger than the conjunction ``,'', the
+Note that {\tt if}, {\tt then}, and {\tt else}
+bind stronger than the conjunction ``,'', the
 disjunction ``;'', etc. This is why the parentheses are needed in the above
 example.
 
@@ -4198,15 +4198,15 @@ compiler directives:
   Makes all predicates into first-order predicates. (The default for predicates
   is HiLog.)
 \item {\tt arguments} \emph{functor}(\emph{type}, ..., \emph{type}), where
-  \emph{type} is either {\tt oid} or {\tt bform}
+  \emph{type} is either {\tt oid} or {\tt meta}
   \\
-  \index{bform}
+  \index{meta}
   \index{syntactic object}
   %%
   Specifies the meta signature to the given predicate, which tells how the
   arguments of the predicate are to be compiled. The {\tt oid} type means
   that the oid of the corresponding argument is computed and passed to the
-  predicate as an argument; {\tt bform} means that the argument is treated
+  predicate as an argument; {\tt meta} means that the argument is treated
   as a \emph{syntactic object} and its entire structure is preserved. For
   instance, if the argument is a formula (an \fl molecule, a conjunction or
   a disjunction of literals), then it is converted to an object that
@@ -4635,8 +4635,6 @@ fact that certain features are yet to be implemented:
   \item Error messages when \FLORA update predicates contain arithmetic
     expressions in the query part. This problem will be fixed in the
     future.
-  \item If-then-else does not have the right associativity, so explicit
-    parentheses are often required.
   \item Multiple types (which represent type intersection in \fl) are not
     allowed in set-valued signature expressions: {\tt a[m=>>{c,d}]} and
     {\tt a[m*=>>{c,d}]}. Use {\tt a[m=>>c],a[m=>>d]} for now.

@@ -1,40 +1,42 @@
 # Make file for Microsoft NMAKE
 
-ALLOBJS =  flranswer.O \
-	   flrcontrol.O \
-	   flrdisplay.O \
-	   flrload.O \
-	   flraggavg.O \
-	   flraggcolbag.O \
-	   flraggcolset.O \
-	   flraggcount.O \
-	   flraggmax.O \
-	   flraggmin.O \
-	   flraggsum.O \
-	   flrstorage.O \
-	   flrdbop.O \
-	   flrbtdbop.O \
-	   flrshdirect.O \
-	   flrdynmod.O \
-	   flrequality.O \
-	   flrimport.O \
-	   flrexpunge.O
+OBJEXT = .O
+
+ALLOBJS =  flranswer$(OBJEXT) \
+	   flrcontrol$(OBJEXT) \
+	   flrdisplay$(OBJEXT) \
+	   flrload$(OBJEXT) \
+	   flraggavg$(OBJEXT) \
+	   flraggcolbag$(OBJEXT) \
+	   flraggcolset$(OBJEXT) \
+	   flraggcount$(OBJEXT) \
+	   flraggmax$(OBJEXT) \
+	   flraggmin$(OBJEXT) \
+	   flraggsum$(OBJEXT) \
+	   flrstorage$(OBJEXT) \
+	   flrdbop$(OBJEXT) \
+	   flrbtdbop$(OBJEXT) \
+	   flrshdirect$(OBJEXT) \
+	   flrdynmod$(OBJEXT) \
+	   flrequality$(OBJEXT) \
+	   flrimport$(OBJEXT) \
+	   flrexpunge$(OBJEXT)
 
 OPTIONS = [optimize]
 XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 
-.SUFFIXES: .P .O
+.SUFFIXES: .P $(OBJEXT)
 
 ALL:: $(ALLOBJS)
 
 CLEAN :
 	-@erase *~
-	-@erase *.O
+	-@erase *$(OBJEXT)
 	-@erase *.bak
 	-@erase .#*
 
 
-.P.O:
+.P$(OBJEXT):
 	$(XSB) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 

@@ -1,22 +1,24 @@
 # Make file for Microsoft NMAKE
 
-ALLOBJS=  flrdebugger.O dynamic_data.dat static_data.dat
+OBJEXT = .O
+
+ALLOBJS=  flrdebugger$(OBJEXT) dynamic_data.dat static_data.dat
 
 OPTIONS=[optimize]
 XSB=..\..\..\config\x86-pc-windows\bin\xsb.exe
 
-.SUFFIXES:  .in .dat .P .H .O
+.SUFFIXES:  .in .dat .P .H $(OBJEXT)
 
 ALL:: $(ALLOBJS)
 
 CLEAN :
 	-@erase *~
-	-@erase *.O
+	-@erase *$(OBJEXT)
 	-@erase .#*
 	-@erase *.dat
 	-@erase *.bak
 
-.P.O:
+.P$(OBJEXT):
 	$(XSB) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 static_data.dat: static_data.in

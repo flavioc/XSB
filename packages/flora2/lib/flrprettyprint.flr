@@ -42,7 +42,7 @@
 
 :- table flora_in_between_isa/3, flora_in_between_sub/3.
 :- firstorder flora_in_between_isa/3, flora_in_between_sub/3.
-:- arguments flora_pp_write_comma_conditional(bform).
+:- arguments flora_pp_write_comma_conditional(meta).
 
 %% Methods to ignore during pretty printing
 flora_print_ignore('________') :- true.

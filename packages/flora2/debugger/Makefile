@@ -25,10 +25,11 @@
 ## 
 ##
 
+OBJEXT=.O
 
 XSBDIR = ../../..
 
-ALLOBJS = flrdebugger.O dynamic_data.dat static_data.dat
+ALLOBJS = flrdebugger${OBJEXT} dynamic_data.dat static_data.dat
 
 XSB_STANDARD = $(XSBDIR)/prolog_includes/standard.h
 XSB_EMU_FLAG_DEFS = $(XSBDIR)/emu/flag_defs_xsb.h
@@ -40,7 +41,7 @@ FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh
 FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
 
-.SUFFIXES:  .in .dat .P .H .O
+.SUFFIXES:  .in .dat .P .H ${OBJEXT}
 
 
 OPTION = [optimize]
@@ -69,7 +70,7 @@ static_data.dat: static_data.in $(FLORA_TERMS)
 	@echo 'flWrapAround($*).' >> cmd...
 
 
-flrdebugger.O: flrdebugger.P $(FLORA_TERMS) $(XSB_STANDARD)
+flrdebugger${OBJEXT}: flrdebugger.P $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrdebugger,$(OPTION)).' >> cmd...
 
 
