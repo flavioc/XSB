@@ -372,6 +372,11 @@ init_component_info :-
 	newComponent('OMS','.',check,OCid,Rcid),
 	newStrel(OCid,Rcid,OCid).
 
+cdf_install_dir('.').
+/*cdf_install_dir(P) :- 
+	xsb_configuration(install_dir, InstallDir),
+        fmt_write_string(P,'%s/packages/CDF',f(InstallDir)).*/
+
 /* New component initializes a new component, creating version,
 dependency and path information.  Given a previously existing component, 
 re-creating the component with the same path is a safe operation.
@@ -2424,7 +2429,7 @@ assert_oms(Term) :-
 	abolish_nec_tables(Term).
 
 assert_oms_term(Term) :-
-	assert_oms_int(Term),
+	call_assert_oms_int(Term),
 	!.
 %	get_component_intensional(Term,Name),
 %	(oms_dirty(Name)
@@ -2462,17 +2467,45 @@ get_component_intensional(Term,Body,Component):-
 			  (:-(Term,Body))]),
 	    fail).
 
-/*
-assert_oms_term(Term) :-
-	assert_oms_int(Term),!.
-assert_oms_term(Term) :-
-	asserta(Term),
-	oms_dirty(DFlg),
-	(DFlg =:= 1
-	 ->	true
-	 ;	make_oms_dirty
-	).
-*/
+call_assert_oms_int(oms_cn(Cid,N,Nid,Cmp)) :-
+	assert_oms_int(class_ext(N,Nid,Cmp)),
+	assert(cn_id_map(Cid,N,Nid,Cmp)).
+call_assert_oms_int(oms_sc(SubCid,SupCid)) :-
+	class_cidbound(SubCid,_,SubNid,SubCmp),
+	class_cidbound(SupCid,_,SupNid,SupCmp),
+	assert_oms_int(subclass_ext(SubNid,SubCmp,SupNid,SupCmp)).
+call_assert_oms_int(oms_rln(Cid,Rid,Tid)) :-
+	class_cidbound(Cid,_,CNid,CCmp),
+	class_cidbound(Rid,_,RNid,RCmp),
+	class_cidbound(Tid,_,TNid,TCmp),
+	assert_oms_int(relationship_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
+call_assert_oms_int(oms_strel(Cid,Rid,Tid)) :-
+	class_cidbound(Cid,_,CNid,CCmp),
+	class_cidbound(Rid,_,RNid,RCmp),
+	class_cidbound(Tid,_,TNid,TCmp),
+	assert_oms_int(strel_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
+call_assert_oms_int(oms_schrel(Cid,Rid,Tid)) :-
+	class_cidbound(Cid,_,CNid,CCmp),
+	class_cidbound(Rid,_,RNid,RCmp),
+	class_cidbound(Tid,_,TNid,TCmp),
+	assert_oms_int(schrel_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
+call_assert_oms_int(oms_obj(Oid,N,Nid,Cmp)) :-
+	assert_oms_int(object_ext(N,Nid,Cmp)),
+	assert(ob_id_map(Oid,N,Nid,Cmp)).
+call_assert_oms_int(oms_mo(Oid,Cid)) :-
+	object(Oid,_,ONid,OCmp),
+	class_cidbound(Cid,_,CNid,CCmp),
+	assert_oms_int(memberof_ext(ONid,OCmp,CNid,CCmp)).
+call_assert_oms_int(oms_at(Oid,Rid,Tid)) :-
+	object(Oid,_,ONid,OCmp),
+	class_cidbound(Rid,_,RNid,RCmp),
+	class_cidbound(Tid,_,TNid,TCmp),
+	assert_oms_int(attribute_ext(ONid,OCmp,RNid,RCmp,TNid,TCmp)).
+call_assert_oms_int(oms_ao(Oid,Rid,TOid)) :-
+	object(Oid,_,ONid,OCmp),
+	class_cidbound(Rid,_,RNid,RCmp),
+	object(TOid,_,TNid,TCmp),
+	assert_oms_int(attribute_object_ext(ONid,OCmp,RNid,RCmp,TNid,TCmp)).
 
 retractall_oms(Term) :-
 	oms_log(retractall(Term)),
@@ -2480,7 +2513,7 @@ retractall_oms(Term) :-
 	abolish_nec_tables(Term).
  
 retractall_oms_term(Term) :- 
-	retractall_oms_int(Term),
+	call_retractall_oms_int(Term),
 	%% fail to check other components if component argument is not bound, 
 	%% i.e. retractall(oms_at(oid,_,_))
 %	get_component_intensional(Term,Name),
@@ -2497,20 +2530,65 @@ retractall_oms_term(Term) :-
 	 ;	make_oms_dirty(Name)
 	).
 
-/*
-retractall_oms_term(Term) :- 
-	retractall_oms_int(Term),
-	%% fail to check other components if component argument is not bound, 
-	%% i.e. retractall(oms_at(oid,_,_))
-	fail. 
-retractall_oms_term(Term) :-
-	retractall(Term),
-	oms_dirty(DFlg),
-	(DFlg =:= 1
-	 ->	true
-	 ;	make_oms_dirty
+call_retractall_oms_int(oms_cn(Cid,N,Nid,Cmp)) :-
+	(nonvar(Cid),var(Nid)
+	 ->	class_cidbound(Cid,_,Nid,Cmp)
+	 ;	true
+	),
+	retractall_oms_int(class_ext(N,Nid,Cmp)),
+	retractall(cn_id_map(Cid,N,Nid,Cmp)).
+call_retractall_oms_int(oms_sc(SubCid,SupCid)) :-
+	class_cidbound_var(SubCid,SubNid,SubCmp),
+	class_cidbound_var(SupCid,SupNid,SupCmp),
+	retractall_oms_int(subclass_ext(SubNid,SubCmp,SupNid,SupCmp)).
+call_retractall_oms_int(oms_rln(Cid,Rid,Tid)) :-
+	class_cidbound_var(Cid,CNid,CCmp),
+	class_cidbound_var(Rid,RNid,RCmp),
+	class_cidbound_var(Tid,TNid,TCmp),
+	retractall_oms_int(relationship_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
+call_retractall_oms_int(oms_strel(Cid,Rid,Tid)) :-
+	class_cidbound_var(Cid,CNid,CCmp),
+	class_cidbound_var(Rid,RNid,RCmp),
+	class_cidbound_var(Tid,TNid,TCmp),
+	retractall_oms_int(strel_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
+call_retractall_oms_int(oms_schrel(Cid,Rid,Tid)) :-
+	class_cidbound_var(Cid,CNid,CCmp),
+	class_cidbound_var(Rid,RNid,RCmp),
+	class_cidbound_var(Tid,TNid,TCmp),
+	retractall_oms_int(schrel_ext(CNid,CCmp,RNid,RCmp,TNid,TCmp)).
+call_retractall_oms_int(oms_obj(Oid,N,Nid,Cmp)) :-
+	(nonvar(Oid),var(Nid)
+	 ->	object(Cid,N,Nid,Cmp)
+	 ;	true
+	),
+	retractall_oms_int(object_ext(N,Nid,Cmp)),
+	retractall(ob_id_map(Cid,N,Nid,Cmp)).
+call_retractall_oms_int(oms_mo(Oid,Cid)) :-
+	object_bound_var(Oid,ONid,OCmp),
+	class_cidbound_var(Cid,CNid,CCmp),
+	retractall_oms_int(memberof_ext(ONid,OCmp,CNid,CCmp)).
+call_retractall_oms_int(oms_at(Oid,Rid,Tid)) :-
+	object_bound_var(Oid,ONid,OCmp),
+	class_cidbound_var(Rid,RNid,RCmp),
+	class_cidbound_var(Tid,TNid,TCmp),
+	retractall_oms_int(attribute_ext(ONid,OCmp,RNid,RCmp,TNid,TCmp)).
+call_retractall_oms_int(oms_ao(Oid,Rid,TOid)) :-
+	object_bound_var(Oid,ONid,OCmp),
+	class_cidbound_var(Rid,RNid,RCmp),
+	object_bound_var(TOid,TNid,TCmp),
+	retractall_oms_int(attribute_object_ext(ONid,OCmp,RNid,RCmp,TNid,TCmp)).
+
+class_cidbound_var(Cid,Nid,Cmp) :-
+	(nonvar(Cid)
+	 ->	class_cidbound(Cid,_,Nid,Cmp)
+	 ;	true
 	).
-*/
+
+object_bound_var(Oid,Nid,Cmp) :-
+	(nonvar(Oid)
+	 ->	object(Oid,_,Nid,Cmp)
+	 ;	true
+	).
 
 abolish_nec_tables(oms_rln(_,_,_)) :- !,
 	abolish_relationship_inherits.
