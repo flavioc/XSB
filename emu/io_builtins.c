@@ -87,7 +87,7 @@ char *p_charlist_to_c_string(prolog_term, char *, int, char *, char *);
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
         if (current_fmt_spec->type != ch_type) { \
-	    xsb_abort("%s: Type mismatch in argument %d", Label, i); \
+	    xsb_abort("%s: Type mismatch in argument value %d", Label, i); \
         }
 
 #define PRINT_ARG(arg) switch (current_fmt_spec->size) { \
@@ -180,7 +180,7 @@ bool fmt_write(void)
   static char str_arg_buf[MAXBUFSIZE+1];      /* holder for string arguments */
   static char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
-  int i, Arity;
+  int i, Arity=0;
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -198,9 +198,28 @@ bool fmt_write(void)
     xsb_abort("FMT_WRITE: Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
-  if (!is_functor(ValTerm))
-    xsb_abort("Usage: fmt_write([File,] FormatStr, args(Arg1,...,Arg_n))");
-  Arity = get_arity(get_str_psc(ValTerm));
+  if (is_functor(ValTerm))
+    Arity = get_arity(get_str_psc(ValTerm));
+  else if (is_var(ValTerm))
+    /* Var in the argument position means, no arguments */
+    Arity = 0;
+  else {
+    /* assume single argument; convert ValTerm into arg(val) */
+    prolog_term TmpValTerm=p2p_new();
+
+    c2p_functor("arg", 1, TmpValTerm);
+    if (is_string(ValTerm))
+      c2p_string(string_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else if (is_int(ValTerm))
+      c2p_int(int_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else if (is_float(ValTerm))
+      c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else
+      xsb_abort("Usage: fmt_write([+FileDes,] +FmtStr, +args(A1,A2,...))");
+
+    ValTerm = TmpValTerm;
+    Arity = 1;
+  }
 
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */
@@ -209,13 +228,17 @@ bool fmt_write(void)
     "++FMT_WRITE: Argument type doesn't match format specifier\n";
   signal(SIGSEGV, &xsb_segfault_catcher);
   
-  for (i = 1; (i <= Arity); i++) {
+  i=0;
+  while (i <= Arity) {
     /* last format substring (and has no conversion spec) */
     if (current_fmt_spec->type == '.') {
       PRINT_ARG("");
-      xsb_warn("FMT_WRITE: More arguments than format specifiers");
+      if (i < Arity)
+	xsb_warn("FMT_WRITE: More arguments than format specifiers");
       goto EXIT_WRITE;
     }
+
+    i++; /* increment after checking the last format segment */
 
     if (current_fmt_spec->size >  1) {
       Arg = p2p_arg(ValTerm,i++);
@@ -313,6 +336,10 @@ bool fmt_write_string(void)
 					       returned by sprintf/snprintf */
   int safe_outstring_bytes = SAFE_OUT_SIZE; /* safe number of bytes to write
 					       to OutString 	    	    */
+
+  if (isnonvar(reg_term(2)))
+    xsb_abort("Usage: fmt_write_string(-OutStr, +FmtStr, +args(A1,A2,...))");
+  
   OutString[0] = '\0'; 	       	            /* anull the output string 	    */
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
@@ -324,9 +351,28 @@ bool fmt_write_string(void)
     xsb_abort("FMT_WRITE_STRING: Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
-  if (!is_functor(ValTerm))
-    xsb_abort("Usage: fmt_write_string(OutBuf, FormatStr, args(Arg1,...,Arg_n))");
-  Arity = get_arity(get_str_psc(ValTerm));
+  if (is_functor(ValTerm))
+    Arity = get_arity(get_str_psc(ValTerm));
+  else if (is_var(ValTerm))
+    /* Var in the argument position means, no arguments */
+    Arity = 0;
+  else {
+    /* assume single argument; convert ValTerm into arg(val) */
+    prolog_term TmpValTerm=p2p_new();
+
+    c2p_functor("arg", 1, TmpValTerm);
+    if (is_string(ValTerm))
+      c2p_string(string_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else if (is_int(ValTerm))
+      c2p_int(int_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else if (is_float(ValTerm))
+      c2p_float(float_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else
+      xsb_abort("Usage: fmt_write_string(-OutStr, +FmtStr, +args(A1,A2,...))");
+
+    ValTerm = TmpValTerm;
+    Arity = 1;
+  }
 
   current_fmt_spec = next_format_substr(Fmt,
 					1,  /* initialize     	      	     */
@@ -335,15 +381,18 @@ bool fmt_write_string(void)
     "++FMT_WRITE_STRING: Argument type doesn't match format specifier\n";
   signal(SIGSEGV, &xsb_segfault_catcher);
   
-  for (i = 1; (i <= Arity); i++) {
+  i=0;
+  while (i <= Arity) {
     /* last string (and has no conversion spec) */
     if (current_fmt_spec->type == '.') {
       SPRINT_ARG("");
-      xsb_warn("FMT_WRITE_STRING: More arguments than format specifiers");
+      if (i < Arity)
+	xsb_warn("FMT_WRITE_STRING: More arguments than format specifiers");
       CHECK_OUTPUT_SIZE; /* might xsb_abort */
       goto EXIT_WRITE_STRING;
     }
 
+    i++; /* increment after checking the last format segment */
 
     if (current_fmt_spec->size >  1) {
       Arg = p2p_arg(ValTerm,i++);
@@ -432,7 +481,7 @@ bool fmt_read(void)
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
-  int Arity;
+  int Arity=0;
   int number_of_successes=0, curr_assignment=0;
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
@@ -448,9 +497,29 @@ bool fmt_read(void)
     xsb_abort("FMT_READ: Format must be an atom or a character string");
 
   AnsTerm = reg_term(4);
-  if (!is_functor(AnsTerm))
-    xsb_abort("Usage: fmt_read([File,] FormatStr, args(Arg1,...,Arg_n), RetCode");
-  Arity = get_arity(get_str_psc(AnsTerm));
+  if (is_functor(AnsTerm))
+    Arity = get_arity(get_str_psc(AnsTerm));
+  else if (is_var(AnsTerm)) {
+    /* assume that only one input val is reuired */
+    prolog_term TmpAnsTerm=p2p_new(), TmpArg;
+
+    Arity = 1;
+    c2p_functor("arg", 1, TmpAnsTerm);
+    /* The following is a bit tricky: Suppose AnsTerm was X.
+       We unify AnsTerm (which is avriable) with
+       TmpArg, the argument of the new term TmpAnsTerm.
+       Then the variable AnsTerm is reset to TmpAnsTerm so that the rest of the
+       code would think that AnsTerm was arg(X).
+       Eventually, X will get bound to the result */
+    TmpArg = p2p_arg(TmpAnsTerm,1);
+    p2p_unify(TmpArg, AnsTerm);
+    AnsTerm = TmpAnsTerm;
+  } else
+    xsb_abort("Usage: fmt_read([FileDes,] FmtStr, args(A1,A2,...), RetCode");
+
+  /* status variable */
+  if (isnonvar(reg_term(5)))
+    xsb_abort("Usage: fmt_read([FileDes,] FmtStr, args(A1,A2,...), RetCode");
 
   current_fmt_spec = next_format_substr(Fmt,
 					1,   /* initialize    	      	     */

@@ -28,8 +28,8 @@
     	file_stat/3, formatted_io/5, intern_string/2
       from machine.
 
-:- import abort/1, atom_codes/2,
-	compound/1, callable/1
+:- import
+	abort/1, atom_codes/2
       from standard.
 
 :- import file_write/2 from xsb_writ.
@@ -49,4 +49,5 @@
       	  file_read_line/3,
 	  file_read_line_atom/2, file_read_line_atom/3,
 	  file_read_line_list/2, file_read_line_list/3,
-	  file_reopen/4, file_clone/3.
+	  file_reopen/4, file_clone/3,
+	  pipe_open/2, pipe2file/2.

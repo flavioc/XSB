@@ -38,16 +38,10 @@ fmt_write(Fmt, Args) :-
 	fmt_write(FileDes, Fmt, Args).
 
 fmt_write(FileDes, Fmt, Args) :-
-       ( callable(Args) -> formatted_io(FMT_WRITE, FileDes, Fmt, Args, _Ret)
-         ;
-	 abort('Usage: fmt_write([+FileDes,] +FmtString, args(+A1,+A2,...))')
-       ).
+	formatted_io(FMT_WRITE, FileDes, Fmt, Args, _Ret).
 
 fmt_write_string(Str, Fmt, Args) :-
-	( var(Str), callable(Args)
-    	 -> formatted_io(FMT_WRITE_STRING, Str, Fmt, Args, _Ret)
-	 ; abort('Usage: fmt_write_string(-OutputString, +FmtString, args(+A1,...))')
-        ).
+	formatted_io(FMT_WRITE_STRING, Str, Fmt, Args, _Ret).
 
 
 fmt_read(Fmt,Result,Status) :-
@@ -55,11 +49,7 @@ fmt_read(Fmt,Result,Status) :-
 	fmt_read(FileDes, Fmt,Result,Status).
 
 fmt_read(FileDes, Fmt, Result, Status) :-
-	(compound(Result), var(Status)
-		     -> formatted_io(FMT_READ, FileDes, Fmt, Result, Status)
-	;
-	 abort('Usage: fmt_read([+FileDes,] +FmtString, result(-R1,-R2,...), -RetCode)')
-    	).
+	formatted_io(FMT_READ, FileDes, Fmt, Result, Status).
 
 
 /***************************************************************/
@@ -192,9 +182,23 @@ file_write_line(Str, Offset) :-
 file_reopen(FileName, Mode, FileDes,ErrCode) :-
 	file_function(FILE_REOPEN, FileName,  Mode, FileDes, ErrCode,_,_).
 
-%% Like dup2: make DestFileDes into the same file descriptor as SrcFileDes
+%% Like dup/dup2: make DestFileDes into the same file descriptor as SrcFileDes
+%% If DestFileDes is var, then behaves like dup; else like dup2 
+%% (and then expects DestFileDes to be a file descriptor).
+%% ErrCode=0 - ok
 file_clone(SrcFileDes, DestFileDes, ErrorCode) :-
 	file_function(FILE_CLONE, SrcFileDes, DestFileDes, ErrorCode,_,_,_).
+
+%% Open pipe. ReadPipe is for reading from pipe,
+%% WritePipe is for writing to the pipe.
+pipe_open(ReadPipe, WritePipe) :-
+	file_function(PIPE_OPEN, ReadPipe, WritePipe, _,_,_,_).
+
+%% Convert pipe into an XSB file descriptor.
+%% This should be done on both ends: by the parent XSB process and by 
+%% the child XSB process
+pipe2file(Pipe, FileDes) :-
+	file_function(PIPE2FILE, Pipe, FileDes,_,_,_,_).
 
 
 /***************************************************************/

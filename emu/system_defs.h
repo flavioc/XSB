@@ -1,4 +1,4 @@
-/* File:      io_defs.h
+/* File:      system_defs.h
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -22,31 +22,9 @@
 ** 
 */
 
-
-/* OP numbers for file_function */
-#define FILE_FLUSH         0
-#define FILE_SEEK          1
-#define FILE_TRUNCATE      2
-#define FILE_POS      	   3
-#define FILE_OPEN      	   4
-#define FILE_CLOSE     	   5
-#define FILE_GET     	   6
-#define FILE_PUT     	   7
-#define FILE_GETBUF    	   8
-#define FILE_PUTBUF    	   9
-#define FILE_READ_LINE 	   10
-#define FILE_WRITE_LINE	   11
-#define FILE_REOPEN    	   12
-#define FILE_CLONE     	   13
-#define PIPE_OPEN     	   14
-#define PIPE2FILE   	   15
-
-/* OP numbers for formatted_io */
-#define FMT_WRITE    	   1
-#define FMT_WRITE_STRING   2
-#define FMT_READ       	   3
-
-
-/* OP numbers for file_stat */
-#define FILE_STAT_TIME	  0
-#define FILE_STAT_SIZE	  1
+#define PLAIN_SYSTEM_CALL    	 0
+#define SPAWN_PROCESS	         1
+#define SHELL		         2
+#define GET_PROCESS_TABLE    	 3
+#define PROCESS_STATUS    	 4
+#define PROCESS_CONTROL    	 5

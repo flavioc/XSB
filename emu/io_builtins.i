@@ -29,12 +29,8 @@
 
 
 static struct stat stat_buff;
-#ifndef fileno				/* fileno may be a  macro */
-extern int    fileno(FILE *f);	        /* this is defined in POSIX */
-#endif
 extern Cell   ptoc_tag(int i);
 extern char   *expand_filename(char *filename);
-extern char *p_charlist_to_c_string (prolog_term, char *, int, char *, char *);
 
 
 static FILE *stropen(char *str)
@@ -162,8 +158,21 @@ inline static bool file_function(void)
        when append, mode = 2, when opening a 
        string for read mode = 3 */
     tmpstr = ptoc_string(2);
-    mode = ptoc_int(3);
-    if (mode<3) {
+    pterm = reg_term(3);
+    if (is_int(pterm))
+      mode = int_val(pterm);
+    else if (is_string(pterm)) {
+      switch ((string_val(pterm))[0]) {
+      case 'r': mode = 0; break;
+      case 'w': mode = 1; break;
+      case 'a': mode = 2; break;
+      case 's': mode = 3; break;
+      default: mode = -1;
+      }
+    } else
+      xsb_abort("FILE_OPEN: Open mode must be an atom or an integer");
+
+    if ((mode >= 0) && (mode<3)) {
       addr = expand_filename(tmpstr);
       switch (mode) {
 	/* "b"'s needed for DOS. -smd */
@@ -292,8 +301,20 @@ inline static bool file_function(void)
   case FILE_REOPEN: 
     /* file_function(FILE_REOPEN, +Filename,+Mode,+FileDes,-ErrorCode) */
     tmpstr = ptoc_string(2);
-    mode = ptoc_int(3);
-    if (mode<3) {
+    pterm = reg_term(3);
+    if (is_int(pterm))
+      mode = int_val(pterm);
+    else if (is_string(pterm)) {
+      switch ((string_val(pterm))[0]) {
+      case 'r': mode = 0; break;
+      case 'w': mode = 1; break;
+      case 'a': mode = 2; break;
+      default: mode = -1;
+      }
+    } else
+      xsb_abort("FILE_OPEN: Open mode must be an atom or an integer");
+
+    if ((mode >= 0) && (mode<3)) {
       addr = expand_filename(tmpstr);
       SET_FILEPTR(fptr, ptoc_int(4));
       fflush(fptr);
@@ -311,7 +332,7 @@ inline static bool file_function(void)
 	  xsb_warn("File %s is a directory, cannot open!", tmpstr);
 	  ctop_int(5, -2);
 	}
-      } else ctop_int(5, -1);
+      } else ctop_int(5, -3);
     } 
     /* Whoever knows how to str-reopen a file --- please fix this. mk
     else if (mode==3) {
@@ -327,8 +348,11 @@ inline static bool file_function(void)
 
   case FILE_CLONE: {
     /* file_function(FILE_CLONE,SrcFileDes,DestFileDes,ErrorCode) */
+    /* Note: when cloning (dup) streams, NT doesn't copy the buffering mode of
+       the source file. So, if this will turn out to be a problem, a new
+       builtin (interface to setvbuf) will have to be introduced. */
     FILE *src_fptr, *dest_fptr;
-    int src_fd, dest_fd, dest_xsb_fileno, errcode, fd_flags;
+    int src_fd, dest_fd, dest_xsb_fileno, errcode;
     char *mode = NULL;
     prolog_term dest_fptr_term;
 
@@ -347,6 +371,11 @@ inline static bool file_function(void)
       dest_fd = dup(src_fd);
       errcode = dest_fd;
       if (dest_fd >= 0) {
+#ifdef WIN_NT
+	/* NT doesn't have fcntl(). Brain damage? */
+	mode = "r+";
+#else /* Unix */ 
+	int fd_flags;
 	/* get the flags that open has set for this file descriptor */
 	fd_flags = fcntl(dest_fd, F_GETFL); 
 	if (fd_flags == (O_APPEND | O_WRONLY))
@@ -361,6 +390,7 @@ inline static bool file_function(void)
 	     However, the mode r+ seems to work well for them. */
 	  mode = "r+";
 	}
+#endif
 	dest_fptr = fdopen(dest_fd, mode);
 	dest_xsb_fileno = xsb_intern_file(dest_fptr, "FILE_CLONE");
 	c2p_int(dest_xsb_fileno, dest_fptr_term);
@@ -368,6 +398,50 @@ inline static bool file_function(void)
     }
     ctop_int(4, errcode);
 
+    break;
+  }
+
+  case PIPE_OPEN: { /* open_pipe(-ReadPipe, -WritePipe) */
+    int pipe_fd[2];
+
+    if (PIPE(pipe_fd) < 0) {
+      ctop_int(2, PIPE_TO_PROC_FAILED);
+      ctop_int(3, PIPE_FROM_PROC_FAILED);
+      return TRUE;
+    }
+    ctop_int(2, pipe_fd[0]);
+    ctop_int(3, pipe_fd[1]);
+    break;
+  }
+
+  case PIPE2FILE: { /* pipe_to_file(+Pipe, -FileDes) */
+    /* this can take any C file descriptor and make it into an XSB file
+       descriptor */
+    int pipe_fd;
+    char *mode=NULL;
+#ifndef WIN_NT /* unix */
+    int fd_flags;
+#endif
+
+    pipe_fd = ptoc_int(2); /* the C file descriptor */
+#ifdef WIN_NT
+    /* NT doesn't have fcntl(). Brain damage? */
+    mode = "r+";
+#else /* unix */
+    fd_flags = fcntl(pipe_fd, F_GETFL); 
+    if (fd_flags == O_RDONLY)
+      mode = "rb";
+    else if (fd_flags == O_WRONLY)
+      mode = "wb";
+    else {
+      /* can't determine the mode of the C fd -- return an invalid XSB fd */
+      ctop_int(3, -1);
+      break;
+    }
+#endif
+
+    fptr = fdopen(pipe_fd, mode);
+    ctop_int(3, xsb_intern_file(fptr, "PIPE2FILE"));
     break;
   }
     

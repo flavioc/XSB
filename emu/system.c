@@ -37,13 +37,14 @@
 #include <windows.h>
 #include <direct.h>
 #include <io.h>
-#include <fcntl.h>
 #include <process.h>
 #else
 #include <unistd.h>	
 #include <stddef.h>
 #include <sys/wait.h>
 #endif
+
+#include <fcntl.h>
 
 #include "basictypes.h"
 #include "auxlry.h"
@@ -52,55 +53,11 @@
 #include "cinterf.h"
 #include "msyscall.h"
 #include "io_builtins.h"
-#include "system.h"
 /* special.h must be included after sys/stat.h */
 #include "configs/special.h"
+#include "system.h"
+#include "system_defs.h"
 
-#ifndef fileno				/* fileno may be a  macro */
-extern int    fileno(FILE *f);	        /* this is defined in POSIX */
-#endif
-
-extern FILE *fdopen(int fildes, const char *type);
-
-#ifndef WIN_NT
-extern int kill(int pid, int sig);
-#endif
-
-#ifdef WIN_NT
-#define PIPE(filedes)	     _pipe(filedes, 5*MAXBUFSIZE, _O_TEXT)
-#define WAIT(pid, status)    _cwait(&status, pid, 0)
-#define KILL_FAILED(pid)     !TerminateProcess((HANDLE) pid, -1) /* -1 is a
-								    retval */
-#else
-#define PIPE(filedes)	     pipe(filedes)
-#define WAIT(pid, status)    waitpid(pid, &status, 0)
-#define KILL_FAILED(pid)     kill(pid, SIGKILL) < 0
-#endif
-
-#define FREE_PROC_TABLE_CELL(pid)   ((pid < 0) \
-				     || ((process_status(pid) != RUNNING) \
-					 && (process_status(pid) != STOPPED)))
-
-/* return codes from xsb_spawn */
-#define  PIPE_TO_PROC_FAILED	-1
-#define  PIPE_FROM_PROC_FAILED	-2
-#define  SUB_PROC_FAILED	-3
-
-#define MAX_SUBPROC_PARAMS 30  /* max # of cmdline params in a subprocess */
-
-#define MAX_SUBPROC_NUMBER 20  /* max number of subrocesses allowed       */
-
-
-#define RUNNING	       1
-#define STOPPED	       2
-#define EXITED	       3
-#define ABORTED	       4
-#define INVALID	       5
-#define UNKNOWN	       6
-
-extern char *p_charlist_to_c_string(prolog_term term, char *outstring, 
-				    int outstring_size,
-				    char *in_func, char *where);
 
 static int xsb_spawn (char *prog, char *arg[], int callno,
 		      int pipe1[], int pipe2[], int pipe3[],

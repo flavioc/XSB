@@ -165,7 +165,7 @@ handled by the XSB compiler.
     such as {\tt :- export} are ignored and a warning is issued.
 
     Dynamically loaded files can be filtered through the C preprocessor.
-    To do this, put the folowing in the source file: 
+    To do this, put the following in the source file: 
     %%
     \begin{verbatim}
     :- compiler_options([cpp_on]).      
@@ -338,11 +338,11 @@ handled by the XSB compiler.
 \section{Lower-Level I/O}
 %======================
 
-XSB  has various low-level routines that support input and output, 
-at both the term level and the character level.  Unlike the standard Prolog
-stream I/O, the low-level routines use \emph{XSB file descriptors} (or I/O
-ports) to refer to files. XSB file descriptors should not be confused with
-the file descriptors used by the OS ({\it e.g.}, the numberd returned by
+XSB has various low-level routines that support input and output, at both
+the term level and the character level.  Unlike the standard Prolog stream
+I/O, the low-level routines use \emph{XSB file descriptors} (or I/O ports)
+to refer to files. XSB file descriptors should not be confused with the
+file descriptors used by the OS ({\it e.g.}, the small integers returned by
 the C {\tt open} function). XSB file descriptors are indices into the XSB
 table of open files. Typically XSB opens files for buffered I/O (whether
 using the stream I/O predicates or the predicates described here), so XSB
@@ -399,14 +399,17 @@ a file using {\tt consult} and such.)
 \ournewitem{file\_open(+FileName,+Mode,-FileDes)}{file\_io} \index{{\tt file\_open/3}}
     Opens a file with name {\tt FileName} to be accessed
     in mode {\tt Mode} and returns a file-descriptor in {\tt FileDes} that
-    can be used to access the file.  If {\tt Mode} is 0 ({\tt OREAD}), the
-    the file is opened for reading; if it is 1 ({\tt OWRITE}), the file is
-    opened for writing; if it is 2 ({\tt OAPPEND}), the file is opened for
-    appending.  If {\tt Mode} is 3 ({\tt OAPPEND}), then the string making
+    can be used to access the file.  If {\tt Mode} is atom ``{\tt r}'', the
+    the file is opened for reading; if it is ``{\tt w}'', the file is
+    opened for writing; if it is ``{\tt a}'', the file is opened for
+    appending.  If {\tt Mode} is ``{\tt s}'', then the string making
     up the atom {\tt FileName} is treated as the contents of the file, and
     a descriptor is returned that allows ``file'' access to that string.
     This is how one can use XSB's term I/O routines to build terms from
     atoms.
+
+    The old-style mode specification, 0 ({\tt OREAD}), 1 ({\tt OWRITE}), 2
+    ({\tt OAPPEND}), or 3 ({\tt OSTRING}), is also supported.
 
 \ournewitem{file\_reopen(+FileName,+Mode,+FileDes,-RetCode)}{file\_io}\index{{\tt file\_reopen/1}}
     Takes an existing file descriptor, closes it, then opens it and
@@ -414,7 +417,7 @@ a file using {\tt consult} and such.)
     standard streams to a file. For instance, 
 %%
 \begin{verbatim}
-    | ?- file_reopen('/dev/null', 1, 3, Error).
+    | ?- file_reopen('/dev/null', w, 3, Error).
 \end{verbatim}
 %%
     redirects all warnings to the Unix black hole. 
@@ -473,12 +476,24 @@ a file using {\tt consult} and such.)
     you must type {\tt \%\%}.
     Format can also be an atom enclosed in single quotes. However, in that
     case, escape sequences are not recognized and are printed as is.
+
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)})  whose arguments
     will be unified with the field values read in.  (The functor symbol of {\tt
-    Term} is ignored.)  Note that floats do not unify with anything.
-    {\tt Ret} must be a variable and it will be assigned a return value by
-    the predicate: a negative integer if end-of-file is encountered;
-    otherwise the number of fields read (as returned by {\tt scanf}.)
+    Term} is ignored.)  Special syntactic sugar is provided for the case
+    when the format string contains only one format specifier: If {\tt
+    Term} is a variable, {\tt X}, then the predicate behaves as if {\tt
+    Term} were {\tt arg(X)}.
+
+  If the number of arguments exceeds the number of format specifiers, a
+  warning is produced and the extra arguments remain uninstantiated.
+  If the number of format specifiers exceeds the number of arguments, then
+  the remainder of the format string (after the last matching specifier) is
+  ignored.
+  
+  Note that floats do not unify with anything.  {\tt Ret} must be a
+  variable and it will be assigned a return value by the predicate: a
+  negative integer if end-of-file is encountered; otherwise the number of
+  fields read (as returned by {\tt scanf}.)
 
 \ournewitem{fmt\_write(+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write/2}}
     This predicate provides a low-level routine for writing data to
@@ -507,16 +522,30 @@ a file using {\tt consult} and such.)
     recognized.
 
     {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
-    will be output. 
-    The functor symbol of {\tt Term} is ignored.
+    will be output. The functor symbol of {\tt Term} is ignored.
+    
+    Special syntactic sugar is provided for the following cases: If {\tt
+      Term} is a variable, {\tt X}, then it is ignored and only the format
+    string is printed. If {\tt Term} is a string, integer or a float, then
+    it is assumed that this is the only argument to be printed, {\it i.e.},
+    it is equivalent to specifying {\tt arg(Term)}.
+
+    If the number of format specifiers is greater than the number of
+    arguments to be printed, an error is issued. If the number of arguments
+    is greater, then a warning is issued.
 
 \ournewitem{fmt\_write\_string(-String,+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write\_string/2}}
     This predicate works like the C function {\tt sprintf}. It takes the
     format string and substitutes the values from the arguments of {\tt
       Term} ({\it e.g.}, {\tt args(X,Y,Z)}) for the formatting instructions
-    \%s, \%d, etc. The result is available in {\tt String}. {\tt Fmt} is a
+    \%s, \%d, etc. Additional syntactic sugar, as in \verb|fmt_write|, is
+    recognized. The result is available in {\tt String}. {\tt Fmt} is a
     string or an atom that represents the format, as in
     {\tt fmt\_write}.
+    
+    If the number of format specifiers is greater than the number of
+    arguments to be printed, an error is issued. If the number of arguments
+    is greater, then a warning is issued.
 
 \ournewitem{file\_flush(+FileDes, -Return)}{file\_io}
 \index{{\tt file\_flush/2}}
@@ -835,15 +864,22 @@ For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 \section{Communication with Subprocesses}
 
 In the previous section, we have seen several predicates that allow XSB to
-create other processes. However, these predicates offer only a very
-limited way to communicate with these processes. The predicate
-\verb|spawn_process/5| and friends come to the rescue. It allows to spawn any
-process (including multiple copies of XSB) and redirect its standard
-input and output to XSB I/O ports. XSB can then write to the process and read
-from it. The section of socket I/O describes yet another mode of
-interprocess communication.
+create other processes. However, these predicates offer only a very limited
+way to communicate with these processes. The predicate
+\verb|spawn_process/5| and friends come to the rescue. It allows to spawn
+any process (including multiple copies of XSB) and redirect its standard
+input and output to XSB I/O ports. XSB can then write to the process and
+read from it. The section of socket I/O describes yet another mode of
+interprocess communication. 
 
-All predicates in this section must be imported from module {\tt shell}.
+In addition, the predicate {\tt pipe\_open/2} described in this section
+lets one create any number of pipes (that do not need to be connected to
+the standard I/O port) and talk to child processes through these pipes.
+
+All predicates in this section, except {\tt pipe\_open/2} and
+{\tt pipe2file/2}, must be imported from module {\tt shell}.
+The predicates {\tt pipe\_open/2} and
+{\tt pipe2file/2} must be imported from {\tt file\_io}.
 
 \begin{description}
 \ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc,-ProcStderrStream,-ProcId)}\index{{\tt spawn\_process/5}} 
@@ -976,7 +1012,7 @@ Finally, we should note that the port variables in the
 is an example:
 %%
 \begin{verbatim}
-| ?- file_open(test,1,File),
+| ?- file_open(test,w,File),
      spawn_process([cat, 'data'], none, FromCat1, none, _),
      spawn_process([sort], FromCat1, File, none, _).  
 \end{verbatim}
@@ -1016,7 +1052,7 @@ following shell command:
     argument (which must be an unbound variable) to one of the following
     atoms: {\tt running}, {\tt stopped}, {\tt exited} (normally), {\tt
       aborted} (abnormally), {\tt invalid}, and {\tt unknown}.
-    The {\tt invalid} status is given to proceses that never existed or
+    The {\tt invalid} status is given to processes that never existed or
     that are not children of the parent XSB process. The {\tt unknown}
     status is assigned when none of the other statuses can be assigned.
 
@@ -1034,7 +1070,7 @@ following shell command:
     The former causes the process to exit unconditionally, and the latter
     waits for process completion.
 
-    This predicate suceeds, if the operation was performed successfully.
+    This predicate succeeds, if the operation was performed successfully.
     Otherwise, it fails. The {\tt wait} operation fails if the process
     specified in {\tt Pid} does not exist or is not a child of the parent
     XSB process. 
@@ -1049,7 +1085,7 @@ following shell command:
     consequences if one kills a process that has DLLs attached to it.
 
 \ouritem{shell(+CmdSpec,-StreamToProc, -StreamFromProc, -ProcStderr,
-  -Errorcode)}\index{{\tt shell/5}} 
+  -ErrorCode)}\index{{\tt shell/5}} 
     The arguments of this predicate are similar to those of
     \verb|spawn_process|, except for the following:
     (1) The first argument is an atom or a list of atoms, like in
@@ -1075,7 +1111,7 @@ following shell command:
     The fact that XSB must wait until {\tt shell/5} finishes has a very
     important implication: the amount of data the can be sent to and from
     the shell command is limited (1K is probably safe). This is because the
-    shell command comunicates with XSB via pipes, which have limited
+    shell command communicates with XSB via pipes, which have limited
     capacity.  So, if the pipe is filled, XSB will hang waiting for {\tt
       shell/5} to finish and {\tt shel/5} will wait for XSB to consume data
     from the pipe.  Thus, use \verb|spawn_process/5| for any kind of
@@ -1088,7 +1124,7 @@ following shell command:
   args''. For instance,
 %%
 \begin{verbatim}
-| ?- file_open(test,1,File),
+| ?- file_open(test,w,File),
      shell('cat | sort > data', File, none, none, ErrCode)
 \end{verbatim}
 %%
@@ -1096,12 +1132,116 @@ As seen from this example, the same rules for blocking I/O streams
 apply to {\tt shell/5}. Finally, we should note that the already familiar
 standard predicates {\tt shell/1} and {\tt shell/2} are implemented using
 shell/5.
-\ouritem{sys\_exit(-ExitCode)}\index{{\tt sys\_exit/5}} 
+\ouritem{sys\_exit(-ExitCode)}\index{{\tt sys\_exit/1}} 
 This predicate causes XSB subprocess to exit unconditionally with the exit
 code {\tt ExitCode}. Normally {\tt 0} is considered to indicate normal
 termination, while other exit codes are used to report various degrees of
 abnormality.
+
+\ouritem{pipe\_open(-ReadPipe, -WritePipe)}\index{{\tt pipe\_open/2}} 
+  Open a new pipe and return the read end and the write end of that pipe.
+  If the operation fails, both {\tt ReadPipe} and {\tt WritePipe} are bound
+  to negative numbers.
+
+  The pipes returned by the {\tt pipe\_open/2} predicate are small integers
+  that represent file handles of the underlying OS. They {\bf are not XSB file
+  descriptors}, and they cannot be used for I/O directly. To use them, one
+  must call the {\tt pipe2file/2} predicate, as described next.\footnote{
+    %%
+    XSB does not convert pipes into file descriptors automatically because.
+    Because of the way XSB file descriptors are represented, they are not
+    inherited by the child process and they do not make sense to the child
+    process (especially if the child is not another xsb). Therefore, we
+    must pass the child processes an OS file handle instead. The child then
+    converts these handles into XSB file descriptors.
+    %%
+    }
+\ouritem{pipe2file(+Pipe, -FileDes)}\index{{\tt pipe2file/2}} 
+    Take a pipe and convert it to an XSB file descriptor that can be used
+    for I/O.
+
+    The best way to illustrate how one can create a new pipe to a child
+    (even if the child has been created earlier) is to show an example.
+    Consider two programs, {\tt parent.P} and {\tt child.P}. The parent
+    copy of XSB consults {\tt parent.P}, which does the following: First, it
+    creates a pipe and spawns a copy of XSB. Then it tells the
+    child copy of XSB to assert the fact {\tt pipe(RP)}, where {\tt RP} is
+    a number representing the read part of the pipe. Next, the parent XSB tells
+    the child XSB to consult the program {\tt child.P}. Finally, it sends
+    the message {\tt Hello!}.
+
+    The {\tt child.P} program gets the pipe from predicate {\tt pipe/1}
+    (note that the parent tells the child XSB to first assert {\tt
+    pipe(RP)} and only then to consult the {\tt child.P} file).
+  After that, the child reads a message from the pipe and prints it to its
+    standard output. Both programs are shown below:
+    %%
+    \begin{verbatim}
+%% parent.p      
+:- import pipe_open/2, pipe2file/2, fmt_write/3, file_flush/2 from file_io.
+%% Create the pipe and pass it to the child process
+?- pipe_open(RP,WP),
+   %% WF is now the XSB file descriptor bound to the write part of the pipe
+   pipe2file(WP,WF),
+   %% ProcInput becomes the XSB stream leading directly to the child's stdin
+   spawn_process(xsb, ProcInput, block, block, Process),
+   %% Tell the child where the reading part of the pipe is
+   fmt_write(ProcInput, "assert(pipe(%d)).\n", arg(RP)),
+   fmt_write(ProcInput, "[child].\n", _),
+   file_flush(ProcInput, _),
+   %% Pass a message through the pipe
+   fmt_write(WF, "Hello!\n", _),
+   file_flush(WF, _).
+    \end{verbatim}
+    %%
+    %%
+    \begin{verbatim}
+%% child.P
+:- import pipe2file/2 from file_io.
+:- import file_read_line_atom/3 from file_io.
+:- dynamic pipe/1.
+?- pipe(P), pipe2file(P,F),
+   %% Acknowledge receipt of the pipe
+   fmt_write("\nPipe %d received\n", arg(P)),
+   %% Get a message from the parent and print it to stdout
+   file_read_line_atom(F, Line,_), write('Message was: '), writeln(Line).
+    \end{verbatim}
+    %%
+    This produces the following output:
+    %%
+    \begin{verbatim}
+| ?- [parent].                    <- parent XSB consults parent.P
+[parent loaded]
+yes
+| ?- [xsb_configuration loaded]   <- parent.P spawns a child copy of XSB
+[sysinitrc loaded]                   Here we see the startup messages of
+[packaging loaded]                   the child copy
+XSB Version 2.0 (Gouden Carolus) of June 27, 1999
+[i686-pc-linux-gnu; mode: optimal; engine: slg-wam; scheduling: batched]
+| ?- 
+yes
+| ?- [Compiling ./child]          <- The child copy of received the pipe from
+[child compiled, cpu time used: 0.1300 seconds]     the parent and then the
+[child loaded]                                      request to consult child.P
+Pipe 15 received                  <- child.P acknowledges receipt of the pipe
+Message was: Hello!               <- child.P gets the message and prints it
+yes       
+    \end{verbatim}
+    %%
+
+    Finally, we should note htat this mechanism can be used to communicate
+    through pipes with
+    non-XSB processes as well. Indeed, an XSB process can create
+    a pipe using {\tt pipe\_open}, pass one end of the pipe to a child
+    process (which can be a C program), and use {\tt pipe2file} to convert
+    the other end of the pipe to an XSB file. The C program, of course,
+    does not need {\tt pipe2file}, since it can use the pipe file handle
+    directly. Likewise, a C program can spawn off an XSB process and pass
+    it one end of a pipe. The XSB child-process can then convert this pipe
+    to a file using {\tt pipe2file} and then talk to the paren C program.
+
 \end{description}
+
 
 
 \section{Socket I/O}
@@ -1197,7 +1337,7 @@ routines.  Currently only the domain {\tt AF\_INET} is supported.
 
 \end{description}
 
-(dsw - This is stuff Hasan wrote, wich ought to be formated, cleaned up and included: )
+(dsw - This is stuff Hasan wrote, which ought to be formated, cleaned up and included: )
 
 The following calls can be imported from the ``socket'' library.
 
@@ -1520,7 +1660,7 @@ interface to the GAP library is through the following call.
 \ournewitem{meta(?Annotated\_atom)}{gap} 
 %
 If {\tt Annotated\_atom} is of the form {\tt
-Atom:[Lattice\_type,Annotation]} the meta-intepreter computes bindings
+Atom:[Lattice\_type,Annotation]} the meta-interpreter computes bindings
 for {\tt Atom} and {\tt Annotation} by evaluating the program
 according to the definitions provided for {\tt Lattice\_type}.
 \end{description}

@@ -29,30 +29,25 @@
 
 #include "configs/config.h"
 #include "debugs/debug.h"
-
 /* Private debugs */
 #include "debugs/debug_delay.h"
 
-
-#ifdef WIN_NT
-#include <windows.h>
-#include <tchar.h>
-#include <io.h>
-#endif
-
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-/* special.h must be included after sys/stat.h */
-#include "configs/special.h"
 
 #ifdef WIN_NT
+#include <windows.h>
+#include <direct.h>
+#include <io.h>
+#include <process.h>
 #include <stdarg.h>
 #include <winsock.h>
 #include <wsipx.h>
+#include <tchar.h>
 #else /* Unix */
 #include <unistd.h> 
 #include <sys/socket.h>
@@ -60,7 +55,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif /* WIN_NT */
+#endif
 
 #include <fcntl.h>
 
@@ -105,10 +100,12 @@
 
 #include "io_builtins.h"
 
+/* special.h must be included after sys/stat.h */
+#include "configs/special.h"
+#include "system.h"
+
 /*======================================================================*/
 
-/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
-extern FILE *fdopen(int fildes, const char *type);
 
 extern TIFptr get_tip(Psc);
 extern TIFptr first_tip;
@@ -119,6 +116,10 @@ extern bool sys_system(int);
 extern bool formatted_io(void), read_canonical(void);
 extern bool file_stat(void);
 extern bool private_builtin(void);
+
+#ifdef WIN_NT
+extern boolean startInterruptThread(SOCKET intSocket);
+#endif
 
 extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
   gen_retract_all(void), compiled_to_dynamic(void), db_retract0(void),

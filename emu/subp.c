@@ -540,7 +540,7 @@ void checkJavaInterrupt(void *info)
     /* Avoid those annoying lags? */
     fflush(stdout);
     fflush(stderr);
-    fflush(stdmgs);
+    fflush(stdmsg);
     fflush(stdwarn);
     fflush(stddbg);
     keyint_proc(SIGINT); /* Do XSB's "interrupt" thing */
