@@ -913,8 +913,12 @@ and get the desired effect.
         \end{itemize}
 
 \item[ERR - DB: No more cursors left] Interface run out of non-active
-cursors either because of a leak (See Section \ref{oracle:use}) or no
+cursors either because of a leak or no
 more free cursors left. 
+
+% TLS: should probably use (See Section \ref{oracle:use}) to describe
+% the leaks a little better. 
+
 \begin{itemize}
 
 \item Diagnosis: System fails always with this error.  odbc\_transaction(rollback) or

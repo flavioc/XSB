@@ -926,19 +926,6 @@ offset (from the beginning of {\tt Str}) of the last character of {\tt
   Sub}.
 
 %-----------------------------------------------------------------------
-\comment{
-TLS: use concat_atom, or atom_concat. 
-\ournewitem{str\_cat(+Str1, +Str2, ?Result)}{string}
-\index{\texttt{str\_cat/3}}
-        
-Concatenates {\tt Str1} with {\tt Str2}. Unifies the result with {\tt Result}.
-
-In addition to this, the predicate \verb|fmt_write_string/3| described in
-Section~\ref{sec-low-level-io} can be used to concatenate strings and do
-much more. However, for simple string concatenation, {\tt str\_cat/3} is
-more efficient.
-}
-%-----------------------------------------------------------------------
 
 \ournewitem{str\_length(+Str, ?Result)}{string}
 \index{\texttt{str\_length/2}}
@@ -1805,11 +1792,10 @@ and \emph{message-oriented}. In turn, stream-oriented communication can be
 \emph{buffered} or \emph{character-at-a-time}.
 
 To use \emph{buffered} stream-oriented communication, system socket
-handles must be converted to XSB I/O ports using {\tt fd2ioport/2} and then
-the regular low-level file I/O primitives (described in
-Section~\ref{sec-low-level-io}) are used. In stream-oriented communication,
-messages have no boundaries, and communication appears to the processes
-as reading and writing to a file.  At present, buffered stream-oriented
+handles must be converted to XSB I/O streams using {\tt
+fd2iostream/2}.  In these stream-oriented communication, messages have
+no boundaries, and communication appears to the processes as reading
+and writing to a file.  At present, buffered stream-oriented
 communication works under Unix only.
 
 \emph{Character-at-a-time} stream communication is accomplished using

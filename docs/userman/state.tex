@@ -958,55 +958,47 @@ Tabling Operations
 
       0.570 sec. cputime, 5.088 sec. elapsetime 
 \end{verbatim}} 
-     For expert users of XSB, further information about resources
-     required by the system can be obtained through the non-supported
-     predicate {\tt statistics/1} in {\tt \$XSB\_DIR/emu/trace.c}.
 
-%\ouritem{analyze\_table(+Pred\_indicator)}\index{\texttt{analyze\_table/1}}
-%    This predicate provides additional means for the user to profile
-%    execution of tabled predicates.  Given a predicate indicator for a 
-%    tabled predicate, {\tt analyze\_table/1} prints the following information.
-%    \begin{itemize}
-%    \item  "$\langle$Num$\rangle$ call hash buckets used out of 
-%          $\langle$Total$\rangle$".  The number
-%           of call hash buckets containing at least one element.
-%    \item  "avg call bucket length (of used) $\langle$Avg$\rangle$".  
-%          The average length of call hash buckets containing at least one
-%          element.
-%    \item  "max call bucket length $\langle$Length$\rangle$".
-%    \item  "$\langle$Num$\rangle$ ret hash buckets used out of 
-%          $\langle$Total$\rangle$".  The number
-%           of ret hash buckets containing at least one element.
-%    \item  "avg ret bucket length (of used) $\langle$Avg$\rangle$".
-%          The average length of ret hash buckets containing at least
-%          one element.
-%    \item  "max ret bucket length $\langle$Length$\rangle$".
-%    \end{itemize}
+%===================
 
-%    In \version, {\tt analyze\_table/1} is most readily used to 
-%    determine proper call and return hash sizes.  The hash table sizes can
-%    be reset using {\tt set\_table\_prop/3} from the interpreter level
-%    (see Section~\ref{sec:TablingPredicates}) or by recompiling the source code
-%    with new declarations (see Section~\ref{compiler_directives}).
-
-%    Example:
-%    {\footnotesize
-%     \begin{verbatim}
-%     | ?- analyze_table(ancestor/2).
-%                 1 hash buckets full out of 97
-%                 avg call bucket length (of filled) 1.00
-%                 max call bucket length 1
-%                 ret buckets used 97 out of 97
-%                 avg return bucket length 11.92
-%                 max ret bucket length 17
+\ouritem{statistics(+Type)}\index{\texttt{statistics/1}} 
 %
-%     yes
-%     \end{verbatim}}
-%    The output of {\tt analyze\_table} indicates that the return hash size for
-%    ancestor is too small for the query.  Changing the return hash size will
-%    speed up similar queries which add answers to tables, but the size of the
-%    return hash table has no effect on the speed of queries which use completed
-%    tables.
+{\tt statistics/1} allows the user to output detailed statistical
+information about the atom and symbol tables, as well as about table
+space.  The following calls to {\tt statistics/1} are supported:
+%
+\begin{itemize}
+\item {\tt statistics(reset)}  Resets the CPU time as well as counts
+for various tabling operations. 
+%
+\item {\tt statistics(atom)} Outputs statistics about both the atom
+and symbol tables.  An example is: 
+%
+\begin{verbatim}
+| ?- statistics(8).
+
+Symbol table statistics:
+------------------------
+Table Size:	8191
+Total Symbols:	1188
+            used buckets:              1088  (range: [0, 8174])
+            unused buckets:            7103
+            maximum bucket size:       3  (#: 18)
+
+String table statistics:
+------------------------
+Table Size:	16381
+Total Strings:	1702
+            used buckets:              1598  (range: [0, 16373])
+            unused buckets:            14783
+            maximum bucket size:       3  (#: 2318)
+\end{verbatim}
+%
+\item {\tt statistics(table)} Outputs {\em very} detailed statistics
+about table space, including breakdowns into variant and subsumptive
+call- and answer- trie nodes and hash tables; as well as answer return
+list nodes (cf. \cite{SaSw98, RRSSW98, TST99}).
+\end{itemize}
 
 \end{description}
 
