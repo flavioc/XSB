@@ -293,7 +293,14 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define check_complete		0xc9
 #define resume_compl_suspension 0xca
 
-#define new_answer_dealloc	0xce
+/*
+ * Rename the original instruction `new_answer_dealloc' (0xce) to
+ * `old_new_answer_dealloc', and use a new number (0xcf) for
+ * `new_answer_dealloc' (this is done in XSB 2.0 to make the system
+ * backward compatible).
+ */
+#define old_new_answer_dealloc	0xce
+#define new_answer_dealloc	0xcf
 
 #define term_comp		0xd0
 
