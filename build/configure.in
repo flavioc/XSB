@@ -725,6 +725,9 @@ test "${have_errors}" = "yes" &&
 dnl Note, under NT, we sould include time.h instead
 AC_CHECK_HEADERS(sys/time.h)
 
+dnl defines TIME_WITH_SYS_TIME if both allowed
+AC_HEADER_TIME
+
 AC_CHECK_HEADERS(sys/resource.h, , have_errors=yes)
 test "${have_errors}" = "yes" &&
     AC_MSG_ERROR([sys/resource.h is missing on your system])
