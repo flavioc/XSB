@@ -247,7 +247,7 @@ standard_symbol(var, 1, standard).
 standard_symbol(write, 1, standard).
 standard_symbol(write, 2, standard).
 standard_symbol(writeln, 1, standard).
-standard_symbol(writeln, 1, standard).
+standard_symbol(writeln, 2, standard).
 standard_symbol(write_prolog, 1, standard).
 standard_symbol(write_prolog, 2, standard).
 standard_symbol(writeq, 1, standard).

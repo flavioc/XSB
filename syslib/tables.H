@@ -48,7 +48,7 @@
 :- import abolish_table_info/0, is_incomplete/4, get_ptcp/1, slg_not/1,
 	  get_subgoal_ptr/2, delete_attributes/1 from machine.
 :- import numbervars/3, unnumbervars/2 from num_vars.
-:- import (table)/1 from standard..
+:- import (table)/1 from standard.
 
 /* ------------------- end of file tables.H --------------------------- */
 
