@@ -69,6 +69,7 @@ xsb_configuration(perl_libs, '').
 xsb_configuration(libwww_support, 'no').
 xsb_configuration(libwww_ccflags, '').
 xsb_configuration(libwww_ldflags, '').
+xsb_configuration(libwww_libdir,  '@libwww_libdir@').
 
 
 xsb_configuration(site_dir, 'C:\xsb_site').

@@ -506,21 +506,6 @@ if test -n "$site_includes"; then
 fi
 
 
-## Check if run-time library search path can be set: needed for packages,
-## like libwww, that dynamically link with other libraries
-## Runtime library search path is built into the .so module and is better
-## than setting LD_LIBRARY_PATH at runtime. Besides, some systems (Solaris)
-## ignore changes to LD_LIBRARY_PATH at run time.
-if test "$CC"=gcc; then
-   __runtime_libpath_flag=-Wl,-R
-elif test "$__sunpro_c"=yes; then
-   __runtime_libpath_flag=-R
-fi
-if test -n "$__runtime_libpath_flag"; then
-   AC_DEFINE(RUNTIME_LD_PATH)
-fi
-
-
 dnl --with-libwww=DIR
 libwww_support="no"
 if test -n "$with_libwww" ; then
@@ -536,12 +521,7 @@ if test "$libwww_support" = "yes" ; then
    test "${enable_debug+yes}" = "yes" && libwww_debug=" -g"
    libwww_ccflags="$libwww_debug `sh $libwww_config_prog --cflags`"
    libwww_ldflags="`sh $libwww_config_prog --libs`"
-
-   # Add the libwww library to the loader search path. Build it directly
-   # into the shared library when it is compiled
-   if test -n "$__runtime_libpath_flag"; then
-      libwww_ldflags="$__runtime_libpath_flag$with_libwww/lib $libwww_ldflags"
-   fi
+   libwww_libdir="$with_libwww"/lib
 fi
 
 
@@ -807,6 +787,7 @@ AC_SUBST(perl_libs)
 AC_SUBST(libwww_support)
 AC_SUBST(libwww_ccflags)
 AC_SUBST(libwww_ldflags)
+AC_SUBST(libwww_libdir)
 
 # Java support
 AC_CHECK_PROG(java_support, javac, "yes", "no")

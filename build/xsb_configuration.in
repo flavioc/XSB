@@ -57,6 +57,7 @@ xsb_configuration(perl_libs, '@perl_libs@').
 xsb_configuration(libwww_support, '@libwww_support@').
 xsb_configuration(libwww_ccflags, '@libwww_ccflags@').
 xsb_configuration(libwww_ldflags, '@libwww_ldflags@').
+xsb_configuration(libwww_libdir,  '@libwww_libdir@').
 
 /* Java compiler */
 xsb_configuration(javac, '@javac@').
