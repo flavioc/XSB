@@ -43,12 +43,13 @@
 %% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- export main/2, load_chr/1.
+:- export main/2, preprocess_chr/2, load_chr/1.
 
 :- import op/3 from usermod.
 
 :- import append/3, append_lists/2, delete/3, intersect_eq/3,is_not_empty/1,length/2, list_difference_eq/3,member/2, memberchk_eq/2, nth/3, or_list/2, permutation/2, reverse/2,substitute/4,take/3 from lists. 
 
+:- import misc_error/1 from error_handler.
 
 :- import lookup_eq/3,pairup/3,translate/3 from pairlist.
 
@@ -58,8 +59,7 @@
 
 :- import concat_atom/2 from string.
 
-:- import
-	nl/0,
+:- import nl/0,
 	write/1,
 	told/0,
 	tell/1,
@@ -72,6 +72,8 @@
    from standard.
 
 :- import sort/2 from setof.
+
+:- import file_time/2 from file_io.
 
 :- import bagof/3 from setof.
 
@@ -109,11 +111,36 @@ listofvars1([T|Ts], Vh, Vt) :-
 %%
 %% Main
 
-load_chr(File):- 
-	concat_atom([File,'.chr'],Chrfile),
-	concat_atom([File,'.P'],Pfile),
-	main(Chrfile,Pfile),
-	[Pfile].
+load_chr(ChrIn):- 
+	preprocess_chr(ChrIn,PFile),
+	[PFile].
+
+preprocess_chr(ChrIn,PFile):- 
+	check_extension(ChrIn,'.chr',ChrFile,BaseName),
+	concat_atom([BaseName,'.P'],PFile),
+	file_time(ChrFile, time(ChrTime1,ChrTime2)),
+	file_time(PFile, time(PTime1,PTime2)),
+	(time(PTime1,PTime2) @< time(ChrTime1,ChrTime2) -> 
+	    main(ChrFile,PFile)
+	    ; true).
+	
+
+check_extension(In,Ext,File,BaseName):- 
+	atom_chars(In,List),
+	atom_chars(Ext,ExtList),
+	(append(BaseList,ExtList,List) -> 
+	    File = In, 
+	    atom_chars(BaseName,BaseList)
+	 ;  (check_extension(List) -> 
+	       misc_error(('Input requires file neame with extension ',
+	                        Ext,' or with no extension: ',In))
+	     ; append(List,ExtList,FileList),
+	       atom_chars(BaseName,List),
+	       atom_chars(File,FileList) ) ).
+
+check_extension(['.'|_]):- !.
+check_extension([_|T]):- 
+	check_extension(T).
 
 main(From,To) :-
 	prolog_flag(verbose,X),
@@ -265,18 +292,18 @@ translate(Declarations,NewDeclarations) :-
 		generate_attach_increment(Decls,Mod,AttachIncrementClauses),
 		generate_attr_unify_hook(Decls,Mod,AttrUnifyHookClauses),
 		constraints_code(Decls,Rules,Mod,ConstraintClauses,[]),
-		append_lists([OtherClauses,
+		append_lists([
                               [(:- compiler_options([singleton_warnings_off])),
 			  (:- import activate_constraint/3,remove_constraint_internal/2,insert_constraint_internal/5,
 			         allocate_constraint/4,constraint_generation/3,sbag_member/2,sbag_del_element/3,
 			         run_suspensions/1,run_suspensions_loop/1,change_state/2,extend_history/2,
 			         novel_production/2,merge_attributes/3,lock/1,unlock/1,via_1/2, via_2/3, merge/3, 
-			         term_variables/2, not_locked/1, global_term_ref_1/1 from chr),
+			         term_variables/2, not_locked/1, global_term_ref_1/1 from chr_interp),
 				(:- import get_mutable/2, update_mutable/2 from mutablevar),
 				(:- import get_attr/3, put_attr/3, del_attr/2 from machine),
 				(:- import install_verify_attribute_handler/4 from machine),
 				(:- local attr_unify_hook/2),
-				(:- install_verify_attribute_handler(Mod,Attr,Val,attr_unify_hook(Attr,Val)))],
+				(:- install_verify_attribute_handler(Mod,Attr,Val,attr_unify_hook(Attr,Val)))],OtherClauses,
                               AttachAConstraintClauses,
                               DettachAConstraintClauses,
                               AttachIncrementClauses,
