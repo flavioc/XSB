@@ -1671,16 +1671,22 @@ user_tables(ConnHandle,A) :-
 	odbc_user_tables(ConnHandle,A).
 
 %---------------------------
-odbc_get_schema1(accessible,ConnHandle, List) :-
-	bagof(A, accessible_tables(ConnHandle,A), List).
+% Use 'dbo' as default user to be backwards compatible
+odbc_get_schema1(accessible,ConnHandle,List) :-              
+	bagof(A, accessible_tables(ConnHandle,dbo,A), List). 
+
+odbc_get_schema1(accessible(User),ConnHandle, List) :-
+	bagof(A, accessible_tables(ConnHandle,User,A), List).
 
 odbc_show_schema1(accessible,ConnHandle) :-
-	odbc_get_schema1(accessible,ConnHandle,List),
-	writelistln(List).
+	odbc_show_schema1(accessible(dbo),ConnHandle).
+odbc_show_schema1(accessible(User),ConnHandle) :-
+	odbc_get_schema1(accessible(User),ConnHandle,List),
+	write(User), writeln(' owns:'), writelistln(List), fail; true.
 
-accessible_tables(ConnHandle,A) :-
+accessible_tables(ConnHandle,User,A) :-
 	var(A),
-	odbc_accessible_tables(ConnHandle,A).
+	odbc_accessible_tables(ConnHandle,User,A).
 
 %----------------------------
 odbc_get_schema1(arity(Table),ConnHandle,N1) :-
@@ -1822,14 +1828,14 @@ odbc_get_attr(ConnHandle,Tab,Col,Type) :-
 
 
 
-odbc_accessible_tables(ConnHandle,Tab) :-
+odbc_accessible_tables(ConnHandle,User,Tab) :-
 	find_free_cursor(ConnHandle,'GET TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
 	odbc_tables(Cursor,RetVal0),
 	(RetVal0 =:=0
 	 ->	odbc_describe_select(Cursor,RetVal),
 		(RetVal =:= 0
-		 ->	fetch([1,2,3],Cursor,[dbo,Tab,TabType]),
+		 ->	fetch([1,2,3],Cursor,[User,Tab,TabType]),
 			(TabType = 'TABLE' ; TabType = 'SYSTEM TABLE')
 		 ; RetVal =:= 2
 		 ->	odbc_deactivate_cursor(Cursor),
