@@ -492,6 +492,15 @@ flcontrolconstruct_struct(Cond,Action,FLDOUNTIL,FLDOUNTIL(Cond,Action)).
 flcontrolconstruct_struct(Cond,Action,FLLOOPUNTIL,FLLOOPUNTIL(Cond,Action)).
 flcontrolconstruct_struct(Cond,Action,FLUNLESSDO,FLUNLESSDO(Cond,Action)).
 
+%% Arg 1: parser's wrapper for control construct
+%% Arg 2: top-level keyword of control construct
+%% Arg 3: second keyword of construct
+get_control_construct_definition(FLWHILEDO,FL_WHILE,FL_DO).
+get_control_construct_definition(FLWHILELOOP,FL_WHILE,FL_LOOP).
+get_control_construct_definition(FLDOUNTIL,FL_DO,FL_UNTIL).
+get_control_construct_definition(FLLOOPUNTIL,FL_LOOP,FL_UNTIL).
+get_control_construct_definition(FLUNLESSDO,FL_UNLESS,FL_DO).
+
 
 /****************************************************************************
   parsing_error(+IndexOrTerm,+ErrorMessage,-Status)
@@ -1440,14 +1449,15 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
 %% Process the control constructs while-do/loop, loop/do-until, unless-do
 flora_body(CANOTERM(TopWrapper,1,FL_PARENTHESIS,Args,_If,_Ip), WS,Code,Status) :-
 	get_name(TopWrapper,TopName),
-	(TopName==FL_WHILE;TopName==FL_DO;TopName==FL_LOOP;TopName==FL_UNLESS),
+	get_control_construct_definition(_CtlWrapper,TopName,_InnerName),
 	!,
-	%% Args should be [CanonTerm]. If not, issue a syntax error
+	%% Args should be [CanonTerm]. If not, will issue a syntax error
 	flora_body_controlconstruct(Args,WS,TopName,Code,Status).
 
+%% If inner keyword of ctl construct occurs at the top level -- error
 flora_body(CANOTERM(TopWrapper,2,_Paren,_Args,If,_Ip), _WS,_Code,Status) :-
 	get_name(TopWrapper,TopName),
-	(TopName==FL_DO ; TopName==FL_LOOP ; TopName==FL_UNTIL),
+	get_control_construct_definition(_,_,TopName),
 	!,
 	parsing_error(If,UNEXPECTED_CONTROL,Status).
 
@@ -1709,11 +1719,7 @@ flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,
 flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],WS,TopWrapper,Code,Status) :-
 	get_name(InnerFunct,InnerName),
 	!,
-	(TopWrapper==FL_WHILE,InnerName==FL_DO -> StructType=FLWHILEDO
-	; TopWrapper==FL_WHILE,InnerName==FL_LOOP -> StructType=FLWHILELOOP
-	; TopWrapper==FL_DO,InnerName==FL_UNTIL -> StructType=FLDOUNTIL
-	; TopWrapper==FL_LOOP,InnerName==FL_UNTIL -> StructType=FLLOOPUNTIL
-	; TopWrapper==FL_UNLESS,InnerName==FL_DO -> StructType=FLUNLESSDO
+	(get_control_construct_definition(StructType,TopWrapper,InnerName), !
 	; fmt_write_string(ErrMsg,
 			   'Illegal connective `%s'' in `%s'' construct',
 			   args(InnerName, TopWrapper)),
