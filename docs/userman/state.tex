@@ -1,4 +1,5 @@
 \section{Information about the State of the Program} \label{State}
+%=================================================================
 \index{state of the program} \index{program, state of}
 
 In \ourprolog\ various aspects of the program state --- information about 
@@ -634,9 +635,11 @@ Chapter {\it Foreign Language Interface} in Volume 2.
     \begin{tabular}{||l|p{11cm}||}               \hline
 	{\em Flag Name}		& {\em Purpose} \\ \hline \hline
 	{\tt debugging}		& 
-		{\tt "on"} iff debug mode is on; {\tt "off"} otherwise.\\ \hline
+		{\tt "on"} iff debug mode is on; {\tt "off"} otherwise.\\
+		\hline
 	{\tt tracing}		& 
-		{\tt "on"} iff trace mode is on; {\tt "off"} otherwise.\\ \hline
+		{\tt "on"} iff trace mode is on; {\tt "off"} otherwise.\\
+		\hline
 	{\tt goal}		& 
 		the goal passed to XSB on command line with the `-e'
                 switch; `{\tt true.}' if nothing is passed.
@@ -646,6 +649,10 @@ Chapter {\it Foreign Language Interface} in Volume 2.
                 (standard is used in Quintus, SICSTUS, etc.).
                 See Section~\ref{sec-dcg-differences} for more details.
                 \\ \hline
+	{\tt garbage\_collection} &
+		{\tt "none", "sliding"}, or {\tt "copying"} depending
+		on the garbage collection strategy that is currently
+		being employed (see also Section~\ref{emulator_options}).
     \end{tabular}
     \end{center}
     
