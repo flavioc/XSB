@@ -8,12 +8,12 @@ which is written in another language.  To do this, one wants to be
 able to {\em call}\ \ourprolog\ from the host language, often C,
 providing queries for \ourprolog\ to evaluate and retrieving back the
 answers.  An interface for calling \ourprolog\ from C is provided for
-this purpose and is described in this chapter.  A simple example of
-the use of this interface is given in the {\tt XSB/examples}
-subdirectory, in files {\tt cmain.c}, {\tt ctest.P}, and {\tt
-cmakefile}.
+this purpose and is described in this chapter.  Simple examples of
+the use of this interface are given in the {\tt XSB/examples/c_calling_XSB}
+subdirectory, in files {\tt cmain.c}, {\tt cmain2.c}, {\tt ctest.P}, and {\tt
+Makefile}.
 
-\section{C Funtions for Calling \ourprolog}
+\section{C Functions for Calling \ourprolog}
 
 \ourprolog\ provides several C functions (declared in {\tt
 XSB/emu/cinterf.h} and defined in \\ {\tt XSB/emu/cinterf.c}), which can
@@ -210,16 +210,11 @@ To create an executable that includes calls to the above C functions,
 these routines, and the \ourprolog\ routines that they call, must be
 included in the link ({\tt ld}) step.
 
-First, you must create a relocatable file, named {\tt xsbmod.o}, that
+First, you must create a relocatable file, named {\tt xsbmodule.o}, that
 contains all the \ourprolog\ routines.  To do this, get into the
-{\tt XSB/emu} subdirectory, and execute:
+{\tt XSB/build} subdirectory, and execute:
 \begin{verbatim}
-    % make xsbmod
-\end{verbatim}
-After this executes successfully, you may want to clean up the directory
-by executing:
-\begin{verbatim}
-    % make clean
+    % makexsb module
 \end{verbatim}
 
 Second, you must compile your C program, which includes a main
@@ -230,12 +225,12 @@ that you will need to use.
 Third, to create your executable, after you have created the object
 file, say ruleproc.o, for your C routine, you could execute:
 \begin{verbatim}
-    % gcc -o ruleproc ruleproc.o $XSB_DIR/emu/xsbmod.o
+    % gcc -o ruleproc ruleproc.o $XSB_DIR/emu/xsbmodule.o
 \end{verbatim}
 
 There is a simple example of a C program calling \ourprolog\ in the
-{\tt XSB/examples} directory, in files {\tt cmain.c}, {\tt ctest.P},
-and {\tt cmakefile}.
+{\tt XSB/examples/c_calling_XSB} directory, in files {\tt cmain.c}, {\tt
+  ctest.P}, cmain2.c {\tt and},  {\tt Makefile}.
 
 \section{Passing Data Between C and \ourprolog} \label{c2p_p2p_p2c}
 
@@ -459,3 +454,8 @@ ans, with the following C statement:
           ans = p2c_string(p2p_arg(reg_term(2),1));
         else printf("Error in answer type\n");
 \end{verbatim}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 
