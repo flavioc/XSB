@@ -129,12 +129,10 @@ static CPtr sched_answers(VariantSF producer_sf, CPtr producer_cpf,
 /*-------------------------------------------------------------------------*/
 
 /* returns 0 if reached fixpoint, otherwise, returns the next breg 
- * for batched - should extend to local (but first decide if can
- * do local without sched_ans in subg_frame)
- * also try to do for batched what I did for local: at fixpoint
- * create a sched_chain of all active nodes with unresolved answers
- * I recall that kostis mentioned cps should not be relinked
- * I cannot remember why...
+ * for batched.  Essentially this routine performs a sched_answer()
+ * for each subgoal in the (A)SCC except the leader.  This
+ * sched_answer() has already been performed earlier in the
+ * check_complete instruction.
  */
 
 static CPtr find_fixpoint(VariantSF subg, CPtr producer_cpf) {
