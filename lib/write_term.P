@@ -25,9 +25,6 @@
 ** 
 */
 
-
-:- compiler_options([ciao_directives]).
-
 :- export write_term/2, write_term/3, write_option/1,code_class/2.
 
 :- import current_infixop/4, current_postfixop/3, current_prefixop/3
@@ -61,7 +58,7 @@ display(Term):- write(Term).
 
 write_term(Stream, Term, OptList) :-
         current_output(Curr),
-	set_output(Stream),
+        set_output(Stream),
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 3, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
