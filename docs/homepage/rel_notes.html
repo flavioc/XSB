@@ -8,6 +8,82 @@
 <body>
 
 <hr>
+<h1> Release Notes for Version 2.6</h1></center>
+
+<h3>General</h3>
+
+Version 2.6.1 is mostly a bugfix release based on 2.6. It contains
+fixes to some important bugs found after 2.6 was released. Also, the
+constraint system has been revamped, and now provides a CHR-based
+interface (thanks to Tom Schrijvers).
+
+<h3>News</h3>
+<ul>
+  <li> Java 1.4.2 introduced some incompatibilities in memory
+  management which broke InterProlog. This has been fixed in this
+  version.
+  </li>
+
+  <li> The GPP pre-processor has been updated. Most notably among the
+  new functionalities is that #include can, now, take a macro as an
+  argument.
+  </li>
+
+  <li> A new builtin has been created to provide a cross-platform
+  file-copying functionality.
+  </li>
+
+  <li> An inconsistency in the handling of declarations has been
+  fixed. The inconsistency involved different handling of predicate
+  names declared as P/A and P(_,_,_,...).
+  </li>
+
+  <li> message/2 has been fixed to properly deal with a list as its
+  1st argument.
+  </li>
+
+  <li> A new builtin (term_new_mod/3) has been created that copies a
+  given term to a different module.
+  </li>
+
+  <li> A new builtin (globalvar/1) provides fast access to a unique
+  global variable (used by the new constraint system).
+  </li>
+
+  <li> A new builtin (set_file_write_depth/1) controls the depth of
+  terms printed by standard I/O builtins.
+  </li>
+</ul>
+
+<h3>Packages and Libraries</h3>
+<ul>
+  <li>
+  Added several new libraries needed by the CHR system, but most may
+  be useful in other contexts as well.
+  <br>
+  <ul>
+    <li> chr:		chr runtime system </li>
+    <li> chr_pp:		chr preprocessor, converts .chr file to .P
+    file </li>
+    <li> globalvar:	provides multiple named global variables </li>
+    <li> lists:		list predicates </li>
+    <li> mutablevar:	mutable variables </li>
+    <li> pairlist:	predicates on lists of pairs (with (-)/2
+    functor) </li>
+    <li> pretty_print:	pretty printer </li>
+  </ul>
+  </li>
+</ul>
+
+<h3>Backward Incompatibility</h3>
+<ul>
+  <li> The new constraint system introduces backwards
+  incompatibilities. Most notably, the CLP(R) system is not available
+  in this release, in favour of a more capable CHR implementation.
+  </li>
+</ul>
+<hr>
+
 <center>
 <h1> Release Notes for Version 2.6</h1></center>
 
