@@ -230,12 +230,12 @@ table to use. */
 add_trie_index(P/Arity) :- !, 
 	functor(Pcall,P,Arity),
 	assert_trie_index(Pcall).
-add_trie_index(Pcall)    :- 
-	 assert_trie_index(Pcall).
+add_trie_index(Pcall) :- 
+	assert_trie_index(Pcall).
 
 
 assert_trie_index(Pcall) :-
-	retractall('_$trie_asserted1'(Pcall)),
+	retract_index(Pcall),
 	assert('_$trie_asserted1'(Pcall)).
 
 retract_trie_index(Pcall) :-
@@ -256,6 +256,7 @@ add_index(Pred,Arg,Size) :-
 	 ->	Narg = 1,
 		fix_arg(Arg,Arity,Targ)
 	),
+	retract_trie_index(Pcall),
 	(Narg < 0
 	 ->	retractall('_$index1'(Pcall,_,_))
 	 ; '_$index'(Pcall,Oarg,Osize)
