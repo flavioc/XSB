@@ -712,7 +712,8 @@ init_path_engine :-
 	canonical_pathname([IDIR,Slash,'packages',Slash,'altCDF'],DefaultPath),
 	retractall(pe_cwd(_)),
 	retractall(pe_sysdir(_)),
-	asserta(pe_cwd(DefaultPath)),
+	cwd(CurrentPath),
+	asserta(pe_cwd(CurrentPath)),
 	asserta(pe_sysdir(DefaultPath)),
 	retractall(pe_dir_stack(_)).
 
