@@ -481,9 +481,9 @@ case new_answer_dealloc: {
 #ifdef DEBUG_DELAYVAR
   xsb_dbgmsg(">>>> New answer for %s subgoal: ",
 	     (is_completed(producer_sf) ? "completed" : "incomplete"));
+  fprintf(stddbg, ">>>> ");
   print_subgoal(stddbg, producer_sf);
-  xsb_dbgmsg("\n");
-  xsb_dbgmsg(">>>>              has delayreg = %p", delayreg);
+  xsb_dbgmsg(">>>> has delayreg = %p", delayreg);
 #endif
 
   producer_csf = subg_compl_stack_ptr(producer_sf);
@@ -551,7 +551,7 @@ case new_answer_dealloc: {
     if (is_conditional_answer(answer_leaf)) {	/* positive delay */
 #ifndef LOCAL_EVAL
 #ifdef DEBUG_DELAYVAR
-      fprintf(stddbg, "\n>>>> delay_positively in new_answer_dealloc\n");
+      fprintf(stddbg, ">>>> delay_positively in new_answer_dealloc\n");
 #endif
       /*
        * The new answer for this call is a conditional one, so add it
