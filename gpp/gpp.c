@@ -966,7 +966,7 @@ void initthings(int argc,char **argv)
       index1 = index2+1;
       index2 = strchr(index1,'%');
       strncat(include_directive_marker,index1, index2-index1);
-      strcat(include_directive_marker,"\"%s\"");
+      strcat(include_directive_marker,"%s");
       /* replace the third % with %s */
       index1 = index2+1;
       index2 = strchr(index1,'%');
