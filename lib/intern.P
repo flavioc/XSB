@@ -81,11 +81,13 @@ Leaf Parameters are incorrect)
 
 trie_interned(Term,Root,Leaf,Skel) :-
 	(var(Leaf)
-	 ->	i_trie_interned(Term,Root,Leaf)
-	 ;	bottom_up_unify(Term1,Root,Leaf),
-		Term1 = Term
+	 ->	i_trie_interned(Term,Root,Leaf),
+		get_lastnode_cs_retskel(_,Leaf,_,Skel1)
+	 ;	integer(Leaf),
+		bottom_up_unify(Term1,Root,Leaf),
+		Term1 = Term,
+		get_lastnode_cs_retskel(_,_,_,Skel1)
 	),
-	get_lastnode_cs_retskel(_,Leaf,_,Skel1),
 	Skel1 = Skel.
 
 /* --------------------------------------------------
