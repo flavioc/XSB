@@ -23,10 +23,10 @@
 */
 
 
-:- export copyterm/4, copyterm/6, termsize/2, wordsize/1.
+:- export copyterm/3, copyterm/6, termsize/2, wordsize/1.
 
 :- import atomic/1, arg/3 from standard.
-:- import buff_alloc/3, buff_copyterm/6, term_psc/2, psc_arity/2, stat_flag/2
+:- import buff_alloc/2, buff_copyterm/6, term_psc/2, psc_arity/2, stat_flag/2
      from machine.
 
 /*======================================================================*/
@@ -35,11 +35,11 @@
 /*	comments in file emu/cutils.c.					*/
 /*======================================================================*/
 
-copyterm(Term, Perm, Buff, SizeByte) :- 
+copyterm(Term, Buff, SizeByte) :- 
 	termsize(Term, Size),
 	wordsize(Wordsize),
 	SizeByte is Size * Wordsize,
-	buff_alloc(SizeByte, Buff, Perm),
+	buff_alloc(SizeByte, Buff),
 	buff_copyterm(Term, Buff, 0, Wordsize, _End, SizeByte).
 
 copyterm(Term, Buff, Worddisp, Start, End, Size) :- 

@@ -28,13 +28,13 @@
 :- export assume_flag/1, assumed_flag/1.
 :- export record/3, recorda/3, recordz/3, recorded/3, erase/1, instance/2.
 
-:- import buff_cell/3, buff_alloc/3, buff_dealloc/4, buff_set_word/3, 
+:- import buff_cell/3, buff_alloc/2, buff_dealloc/3, buff_set_word/3, 
 	  psc_type/2, psc_set_type/3, term_psc/2, term_new/2, psc_arity/2,
 	  buff_word/3, term_type/2, psc_prop/2, psc_set_prop/3, conpsc/2
      from machine.
 :- import arg/3, atomic/1 from standard.
 :- import numbervars/3 from num_vars.
-:- import copyterm/4 from copyterm.
+:- import copyterm/3 from copyterm.
 
 /* -- assume ---------------------------------------------------------*/
 
@@ -124,9 +124,9 @@ recordz(Key, Term, Ref) :-
 	),
 	psc_prop(Psc, MarkNode),
 	( numbervars(Term, 0, _),
-	  copyterm(Term, 1, Buff, Size),
+	  copyterm(Term, Buff, Size),
 	  buff_word(MarkNode, 4, PrevNode),
-	  buff_alloc(16, NewNode, 1),
+	  buff_alloc(16, NewNode),
 	  buff_set_word(NewNode, 0, MarkNode),
 	  buff_set_word(NewNode, 4, PrevNode),
 	  buff_set_word(NewNode, 8, Buff),
@@ -145,9 +145,9 @@ recorda(Key, Term, Ref) :-
 	),
 	psc_prop(Psc, MarkNode),
 	( numbervars(Term, 0, _),
-	  copyterm(Term, 1, Buff, Size),
+	  copyterm(Term, Buff, Size),
 	  buff_word(MarkNode, 0, NextNode),
-	  buff_alloc(16, NewNode, 1),
+	  buff_alloc(16, NewNode),
 	  buff_set_word(NewNode, 0, NextNode),
 	  buff_set_word(NewNode, 4, MarkNode),
 	  buff_set_word(NewNode, 8, Buff),
@@ -183,8 +183,8 @@ erase(Ref) :-
 	buff_word(Ref, 12, Size),
 	buff_set_word(Next, 4, Prev),
 	buff_set_word(Prev, 0, Next),
-	buff_dealloc(Buff, Size, 0, 1),
-	buff_dealloc(Ref, 16, 0, 1).
+	buff_dealloc(Buff, Size, 0),
+	buff_dealloc(Ref, 16, 0).
 
 instance(Ref, Term) :-
 	buff_word(Ref, 8, Buff),
@@ -195,7 +195,7 @@ instance(Ref, Term) :-
 
 record_init(Psc) :-
 	psc_set_type(Psc, 10, 1), 		% T_RKEY 
-	buff_alloc(16, MarkNode, 1),
+	buff_alloc(16, MarkNode),
 	buff_set_word(MarkNode, 0, MarkNode),	% next -> self
 	buff_set_word(MarkNode, 4, MarkNode),	% prev -> self
 	buff_set_word(MarkNode, 8, 0),		% buff -> 0

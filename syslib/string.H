@@ -29,8 +29,7 @@
    str_tolist/2, sublist/2.
 
 :- import atom/1 from standard.
-:- import buff_set_byte/3, buff_alloc/3, buff_byte/3, buff_dealloc/4,
+:- import buff_set_byte/3, buff_alloc/2, buff_byte/3, buff_dealloc/3,
 	  str_insert/2, str_len/2 from machine.
-%:- import c_min_ed_dis/3,c_substring/3 from xeddis.
 
 /* ---------------------- end of file string.H ------------------------ */

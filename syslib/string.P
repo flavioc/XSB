@@ -31,10 +31,10 @@
 
 str_fromlist(String, List) :-
 	str_fl_check(List, Length),
-	buff_alloc(Length, Buff, 1),	% changed to permanent -- RFM 9/98
+	buff_alloc(Length, Buff),
 	str_fl_put(Buff, 0, List),
 	str_insert(Buff, String),
-	buff_dealloc(Buff,Length,0,1).
+	buff_dealloc(Buff,Length,0).
 
 str_fl_check([], 1).
 str_fl_check([_H|T], N) :- 
@@ -99,15 +99,15 @@ str_sub(S1,S2) :- str_sub(S1,S2,Pos).
 %% Extract substring of Len at Loc from String. Result -> SubString
 str_substring(String, Loc, Len, SubString) :-
 	BufSize is Len+1,
-	buff_alloc(BufSize, Buff, 1),	     % changed to permanent -- RFM 9/98
+	buff_alloc(BufSize, Buff),
 	str_ncopy(String, Loc, Buff, 0, Len),
 	buff_set_byte(Buff, Len, 0),		% trailing 0
 	str_insert(Buff, SubString),
-	buff_dealloc( Buff, BufSize, 0, 1 ).
+	buff_dealloc(Buff, BufSize, 0).
 
-sublist([], L).
+sublist([], _).
 sublist([C|S], [C|L]) :- sublist(S,L).
-sublist(S, [D|L]) :- sublist(S,L).
+sublist(S, [_|L]) :- sublist(S,L).
 
 str_ncopy(_, _, _, _, 0).
 str_ncopy(Source, SDisp, Dest, DDisp, Len) :- Len > 0,
@@ -118,9 +118,5 @@ str_ncopy(Source, SDisp, Dest, DDisp, Len) :- Len > 0,
 	Len1 is Len-1,
 	str_ncopy(Source, SDisp1, Dest, DDisp1, Len1).
 
-
-%Calls to get around the moronic module system.
-%substring(X,Y,Z):- c_substring(X,Y,Z).
-%min_ed_dis(X,Y,Z):- c_min_ed_dis(X,Y,Z).
 
 /* ---------------------- end of file string.P ------------------------ */

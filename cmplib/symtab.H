@@ -36,8 +36,8 @@
 :- import integer/1, functor/3 from standard.
 :- import membercheck/2, member2/2, closetail/1 from listutil.
 :- import append/3, member/2, ll_arg/3, conget/2, conset/2 from prof_sbp.
-:- import buff_alloc/3, buff_word/3, buff_set_word/3, term_hash/3,
-	  backtrackable_buff_set_word/4, buff_dealloc/4 
+:- import buff_alloc/2, buff_word/3, buff_set_word/3, term_hash/3,
+	  backtrackable_buff_set_word/4, buff_dealloc/3 
      from machine.
 :- import copy_term/2 from basics.
 

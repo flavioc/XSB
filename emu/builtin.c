@@ -148,7 +148,6 @@ extern tab_inf_ptr first_tip;
 extern tab_inf_ptr last_tip;
 
 extern int  sys_syscall(int);
-extern void heap_copyarg(CPtr, CPtr);
 extern int  buff_copyterm(Cell, pb, long, long, long);
 extern bool fmt_read(void), fmt_write(void), fmt_write_string(void),
   read_canonical(void), file_read_line(void);
@@ -163,9 +162,9 @@ extern bool is_absolute_filename(char *filename);
 extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
 
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
-extern int copy_term() ;
+extern int  copy_term(void);
 
-#if (defined(DEBUG) && (defined(KOSTIS_DEBUG) || defined(DEBUG_DELAY)))
+#if (defined(DEBUG) && defined(DEBUG_DELAY))
 extern void print_delay_list(FILE *, CPtr);
 extern void print_subgoal(FILE *, SGFrame);
 #endif
@@ -189,7 +188,7 @@ static void write_out_profile(void);
 
 /* ------- variables also used in other parts of the system -----------	*/
 
-Cell  flags[64];			/* System flags + user flags */
+Cell flags[64];			  /* System flags + user flags */
 FILE *open_files[MAX_OPEN_FILES]; /* open file table */
 extern char *install_dir;    	  /* from self_orientation.c */
 extern char *user_home;    	  /* from self_orientation.c */
@@ -712,31 +711,22 @@ int  builtin_call(byte number)
       |flags[CLAUSE_INT];
     break;
   case BUFF_ALLOC:	/* r1: size (+integer); r2: -buffer; */
-				/* r3: 1=>perm, 0=>heap, */
-				/* the length of the buffer is also stored */
-				/* at 0 position initially */
+	           /* the length of the buffer is also stored at position 0 */
     value = ((ptoc_int(1)+7)>>3)<<3;
     value *= ZOOM_FACTOR ;
-    if (ptoc_int(3)) addr = (char *)mem_alloc(value);
-    else { 
-      xsb_exit( "internal error: bubble on the heap!\n" );
-      addr = (char *)hreg;
-      hreg = (CPtr)((pb)hreg+value);
-    }
-    
+    addr = (char *)mem_alloc(value);
     value /= ZOOM_FACTOR ;
     *(Integer *)addr = value;	/* store buffer size at buf[0] */
     ctop_int(2, (Integer)addr);	/* use "integer" type now! */
     break;
-  case BUFF_DEALLOC:	/* r1: +buffer; r2: +oldsize; */
-				/* r3: +newsize; r4: +perm/temp */
+  case BUFF_DEALLOC:	/* r1: +buffer; r2: +oldsize; r3: +newsize; */
     addr = ptoc_string(1);
     disp = ((ptoc_int(2)+7)>>3)<<3;
     disp *= ZOOM_FACTOR ;
     value = ((ptoc_int(3)+7)>>3)<<3;	/* alignment */
     value *= ZOOM_FACTOR ;
     if (value > disp) {
-      printf("New Buffer Size Cannot exceed the old one!!\n");
+      fprintf(stderr, "New Buffer Size Cannot exceed the old one!!\n");
       break;
     }
     mem_dealloc((byte *)(addr+value), disp-value);

@@ -48,7 +48,7 @@ term_arg(_Term, _Index, _Arg) :- '_$builtin'(15).
 term_set_arg(_Term, _Index, _Arg, _Perm) :- '_$builtin'(16).
 stat_flag(_Flag, _Value) :- '_$builtin'(17).
 stat_set_flag(_Flag, _Value, _Perm) :- '_$builtin'(18).
-buff_alloc(_Size, _Buffer, _Perm) :- '_$builtin'(19).
+buff_alloc(_Size, _Buffer) :- '_$builtin'(19).
 buff_word(_Buffer, _Disp, _Value) :- '_$builtin'(20).
 buff_set_word(_Buffer, _Disp, _Value) :- '_$builtin'(21).
 buff_byte(_Buffer, _Disp, _Value) :- '_$builtin'(22).
@@ -70,7 +70,7 @@ code_load(ByteCodeFileName, InitAddr) :-
 	code_load(ByteCodeFileName, InitAddr, 0).
 code_load(_ByteCodeFileName, _InitAddr, _Exp) :- '_$builtin'(34).
 buff_set_var(_Buff, _Disp, _BufSize, _Var) :- '_$builtin'(35).
-buff_dealloc(_Buff, _OldSize, _NewSize, _Perm) :- '_$builtin'(36).
+buff_dealloc(_Buff, _OldSize, _NewSize) :- '_$builtin'(36).
 buff_cell(_Buff, _Disp, _Cell) :- '_$builtin'(37).
 buff_set_cell(_Buff, _Disp, _Tag, _Value) :- '_$builtin'(38).
 copy_term0(_Term, _Result) :- '_$builtin'(39).

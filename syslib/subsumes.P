@@ -66,7 +66,7 @@ variant(X,Y) :- '_$variant'(Buff),buff_set_word(Buff,0,0),
 		\+ variant1(X,Y), !, fail.
 variant(_,_).
 
-:- buff_alloc(8,Buff,1), assert0('_$variant'(Buff)).
+:- buff_alloc(8,Buff), assert0('_$variant'(Buff)).
 
 variant1(X,Y) :-
 	term_type(X,Ty), term_type(Y,Ty1), Ty=Ty1,

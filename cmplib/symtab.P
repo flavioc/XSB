@@ -67,7 +67,7 @@
 
 sym_insert(Name, Arity, Prop, sym_tab(Buff,_Completed,HashTab), Sym) :-
 	( var(HashTab) ->	% SymTab does not exist yet (is empty).
-		buff_alloc(8, Buff, 1),
+		buff_alloc(8, Buff),
                 buff_set_word(Buff, 4, 0),
 		functor(HashTab, hash_tab, 101)
 	; true
@@ -89,7 +89,7 @@ sym_inserti(Name, Arity, Prop, [Sym|_], Sym, Index) :-
 sym_inserti(Name, Arity, Prop, [_|SymTab], Sym, Index) :-
 	sym_inserti(Name, Arity, Prop, SymTab, Sym, Index).
 
-dispose_symtab( sym_tab(Buff,_,_) ) :- buff_dealloc( Buff, 8, 0, 1 ).
+dispose_symtab( sym_tab(Buff,_,_) ) :- buff_dealloc(Buff, 8, 0).
 
 /*======================================================================*/
 /*  sym_complete(#SymTab)						*/

@@ -29,14 +29,12 @@
 
 
 :- import asserti/2 from assert.
-:- import abort/1, atom/1,
-          call/1, repeat/0 from standard.
+:- import abort/1, atom/1, call/1, repeat/0 from standard.
 :- import set_inthandler/2, '_$load_undef'/1 from loader.
 :- import stat_set_flag/3, code_call/3, conname/2,
           conpsc/2, term_arg/3, psc_arity/2, gen_retract_all/1,
-	  buff_set_byte/3,
-	  buff_set_cell/4, buff_set_var/4, buff_byte/3, 
-	  buff_word/3, buff_cell/3, buff_alloc/3, 
+	  buff_set_byte/3, buff_set_cell/4, buff_set_var/4, buff_byte/3, 
+	  buff_word/3, buff_cell/3, buff_alloc/2, 
           db_get_clause/8, db_retract0/2, db_remove_prref/1
      from machine.
 

@@ -77,7 +77,7 @@ inline_builtin(term_arg, 3, 15).
 inline_builtin(term_set_arg, 4, 16).
 inline_builtin(stat_flag, 2,  17).
 inline_builtin(stat_set_flag, 3, 18).
-inline_builtin(buff_alloc, 3, 19).
+inline_builtin(buff_alloc, 2, 19).
 inline_builtin(buff_word, 3, 20).
 inline_builtin(buff_set_word, 3, 21).
 inline_builtin(buff_byte, 3, 22).
@@ -93,7 +93,7 @@ inline_builtin(stat_sta, 1, 32).
 inline_builtin(stat_cputime, 1, 33).
 inline_builtin(code_load, 3, 34).
 inline_builtin(buff_set_var, 4, 35).
-inline_builtin(buff_dealloc, 4, 36).
+inline_builtin(buff_dealloc, 3, 36).
 inline_builtin(buff_cell, 3, 37).
 inline_builtin(buff_set_cell, 4, 38).
 inline_builtin(buff_copyterm, 6, 39).

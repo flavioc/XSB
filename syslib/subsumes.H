@@ -28,7 +28,7 @@
 
 :- import assert0/1 from assert.
 :- import numbervars/1 from num_vars.
-:- import buff_alloc/3, buff_set_word/3, buff_word/3,
+:- import buff_alloc/2, buff_set_word/3, buff_word/3,
 	  term_psc/2, psc_arity/2, term_arg/3, term_type/2
      from machine.
 
