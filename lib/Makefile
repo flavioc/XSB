@@ -24,9 +24,9 @@
 ##
 
 
-ALL = 	aggregs.O array.O array1.O copyterm.O directry.O foreign.O \
+ALL = 	aggregs.O array.O array1.O directry.O foreign.O \
 	intern.O interprolog.O obsolete.O odbc_call.O ordsets.O ora_call.O \
-	record.O packaging.O scrptutl.O setof.O socket.O
+	packaging.O scrptutl.O setof.O socket.O
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
 	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
