@@ -172,42 +172,32 @@ static int emuloop(byte *startaddr)
   Psc psc;
   register byte *lpcreg;
   register CPtr rreg;
-  register Cell op1, op2;	/* (*Cptr) */
+  register Cell op1, op2;	/* (*CPtr) */
   CPtr op3;
   byte flag = READFLAG;  	/* read/write mode flag */
   Cell opa[3]; 
-  int i, j, arity;	/* to unify subfields of op1 and op2 */
-  int restore_type;	/* 0 for retry restore; 1 for trust restore */ 
+  int  i, j, arity;	/* to unify subfields of op1 and op2 */
+  int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
 #if (defined(GC) && defined(GC_TEST))
-#define GC_INFERENCES 1000
+#define GC_INFERENCES 50 /* make sure the garbage collection test is hard */
   static int infcounter = 0;
-  static int just_print = 0;
 #endif
-  int  xflag;
-  CPtr xtemp1, xtemp2, xtemp3, xtemp5, xcurcall;
+  int   xflag;
+  CPtr  xtemp1, xtemp2, xtemp3, xtemp5, xcurcall;
   Cell  CallNumVar;
   ALPtr OldRetPtr;
   NODEptr TrieRetPtr;
-  char message[80];
+  char  message[80];
   
   rreg = reg; /* for SUN */
   op1 = op2 = (Cell) NULL;
   lpcreg = startaddr;
 
-contcase:	/* the main loop */
+contcase:     /* the main loop */
 
 #ifdef DEBUG
   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
   xctr++;
-#if (defined(STACKS_DEBUG) && !defined(CHAT))
-    if ((pb)ereg < (pb)hreg + OVERFLOW_MARGIN/4 ||
-        (pb)efreg < (pb)hreg + OVERFLOW_MARGIN/4 ||
-        (pb)ebreg < (pb)hreg + OVERFLOW_MARGIN/4) {
-      fprintf(stderr,
-              "! Detected global stack overflow in the EMULOOP\n");
-      local_global_exception(lpcreg);
-    }
-#endif
 #endif
 #ifdef PROFILE
   if (flags[PROFFLAG]) {
@@ -541,7 +531,7 @@ contcase:	/* the main loop */
     ppad; op1byte;
     pad64;
     op2 = (Cell)((Cell)lpcreg + sizeof(Cell));
-    lpcreg = *(pb *)lpcreg; /* = *(pointer to byte pointer ) */
+    lpcreg = *(pb *)lpcreg; /* = *(pointer to byte pointer) */
     goto subtryme;
 
   case retry: /* PPA-L */
@@ -560,14 +550,10 @@ contcase:	/* the main loop */
     goto restore_sub;
 
   case getVn: /* PPV */
-#ifdef CHAT
     ppad; op1 = (Cell)(opvaraddr);
     pad64;
     cell((CPtr)op1) = (Cell)tcp_subgoal_ptr(breg);
     goto contcase;
-#else
-    /* fall through to the getpbreg case */
-#endif
 
   case getpbreg: /* PPV */
     ppad; op1 = (Cell)(opvaraddr);
@@ -576,7 +562,6 @@ contcase:	/* the main loop */
     goto contcase;
 
   case gettbreg: /* PPR */
-/* doc tls op1 = rreg+*lpcreg++ */
     ppad; op1 = (Cell)(opregaddr);
     pad64;
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
@@ -611,16 +596,23 @@ contcase:	/* the main loop */
       {
 	infcounter = 0;
         fprintf(stderr,".");
-        if (just_print)
-	  goto contcase;
 #else
     if ((ereg - hreg) < op2)
       {
 #endif
-        if (gc_heap(op1)) {
-	  if (((ereg - hreg) < op2) && flags[STACK_REALLOC])
-	    /* an expansion strategy for testing - later better */
-	    glstack_realloc(glstack.size+20,op1); 
+        if (gc_heap(op1)) { /* garbage collection potentially modifies hreg */
+	  if ((ereg - hreg) < op2) {
+	    if (flags[STACK_REALLOC]) {
+	      if (glstack_realloc(resize_stack(glstack.size,0),op1) != 0) {
+		local_global_exception(lpcreg);
+		goto contcase;
+	      }
+	    } else {
+	      xsb_warn("Reallocation is turned OFF !");
+	      local_global_exception(lpcreg);
+	      goto contcase;
+	    }
+	  }
 	}
 	/* are there any localy cached quantities that must be reinstalled ? */
       }
@@ -959,7 +951,7 @@ contcase:	/* the main loop */
     *(CPtr *)((CPtr) op1) = ereg;
     *((byte **) (CPtr)op1-1) = cpreg;
     ereg = (CPtr)op1; 
-    { /* initialize local variables that appear in the *body* of the clause */
+    {/* initialize all permanent variables not in the first chunk to unbound */
       int  i = ((Cell)op3) - op2;
       CPtr p = ((CPtr)op1) - op2;
       while (i--) {
@@ -1016,7 +1008,6 @@ contcase:	/* the main loop */
   case jump:   /* PPP-L */
     pppad;
     pad64;
-    check_glstack_overflow( MAX_ARITY, lpcreg, OVERFLOW_MARGIN ) ;
     lpcreg = *(byte **)lpcreg;
     goto contcase;
 

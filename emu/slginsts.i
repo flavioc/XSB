@@ -193,27 +193,23 @@ case new_answer_dealloc:
     ARITY = (Cell) (*lpcreg++);
     Yn = (Cell) (*lpcreg++);
     pad64;
-#ifdef CHAT
     SUBGOAL = (CPtr)cell(ereg-Yn);
+#ifdef CHAT
     COMPL_STK_FRAME = subg_compl_stack_ptr(SUBGOAL);
     /* substitution factor is now in the heap for generators */
     CallNumVar = int_val(cell(compl_hreg(COMPL_STK_FRAME)));
     VarsInCall = compl_hreg(COMPL_STK_FRAME)-1;
 #else
-    op3 = (CPtr) *(ereg-Yn);
     /*
      * All the information from the choice point stack, including
-     * CallNumVar, VarsInCall, and ARITY's registers, was set in
-     * tabletry.
+     * CallNumVar, VarsInCall, and ARITY's registers, was set in tabletry.
      *
      * ARITY      : arity of the call predicate
      * CallNumVar : number of variables in the call
      * VarsInCall : answer substitution (binding results of the variables
      *              in the call)
-     * breg       : first permanent var (saved in local stack as an offset) 
      */
-    GENERATOR_CP = (CPtr)(tcpstack.high - int_val(op3));
-    SUBGOAL = tcp_subgoal_ptr(GENERATOR_CP);
+    GENERATOR_CP = subg_cp_ptr(SUBGOAL);
     CallNumVar = *(GENERATOR_CP + TCP_SIZE + (Cell) ARITY);
     VarsInCall = GENERATOR_CP + TCP_SIZE + (Cell) ARITY + CallNumVar;
 #endif
