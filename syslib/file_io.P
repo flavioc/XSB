@@ -185,3 +185,20 @@ file_write_line(Str, Offset) :-
 file_time(FileName, Time) :- file_stat(FileName,0,Time).
 file_size(FileName, Size) :- file_stat(FileName,1,Size).
 
+/***************************************************************
+**
+** print_file_contents/1
+**
+****************************************************************/
+
+print_file_contents(FileName) :-
+	file_open(FileName, 0, Fdes),
+	print_fd_contents(Fdes),
+	file_close(Fdes).
+print_fd_contents(Fdes) :-
+	(file_read_line(Fdes, Line, _) -> write(Line)),
+	print_fd_contents(Fdes),
+	fail.        	 %% so as to not leave choice points around
+print_fd_contents(_).
+
+

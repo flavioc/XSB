@@ -283,15 +283,3 @@ func_transargs(I, X, Y, O, N) :-
 	func_trans(X1, Y1, O, M),
 	I1 is I - 1,
 	func_transargs(I1, X, Y, M, N).
-
-
-print_file_contents(FileName) :-
-	file_open(FileName, 0, Fdes),
-	print_file_contents1(Fdes),
-	file_close(Fdes).
-print_file_contents1(Fdes) :-
-	(file_read_line(Fdes, Line, _) -> file_write(2,Line)),
-	print_file_contents1(Fdes),
-	fail.        	 %% so as to not leave choice points around
-print_file_contents1(_).
-

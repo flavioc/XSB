@@ -29,11 +29,12 @@
       from machine.
 
 :- import abort/1, atom_codes/2,
-	  compound/1, callable/1
+	write/1, compound/1, callable/1
       from standard.
 
 :- export fmt_write_string/3, fmt_write/2, fmt_read/3,
 	  fmt_write/3, fmt_read/4,
+	  print_file_contents/1,
 	  file_flush/2, file_seek/4, file_truncate/3,
 	  file_pos/2, file_size/2, file_time/2,
 	  file_open/3, file_close/1, file_get/2, file_put/2,
