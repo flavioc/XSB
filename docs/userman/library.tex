@@ -1445,10 +1445,11 @@ X = 1---6---89---
 \ournewitem{concat\_atom(+AtomList,?Atom)}{string}
 \index{{\tt concat\_atom/2 }}
 
-{\tt AtomList} must be a list containing atoms, integers and/or
-floats.  This predicate concatenates the atoms and integers into a
-single atom, returned in {\tt Atom}.  Integers and floats are
-converted to character strings using {\tt number\_codes/2}.
+{\tt AtomList} must be a list structure containing atoms, integers
+and/or floats.  This predicate flattens {\tt AtomList} and
+concatenates the atoms and integers into a single atom, returned in
+{\tt Atom}.  Integers and floats are converted to character strings
+using {\tt number\_codes/2}.
 
 \ournewitem{concat\_atom(+AtomList,+Sep,?Atom)}{string}
 \index{{\tt concat\_atom/3 }}

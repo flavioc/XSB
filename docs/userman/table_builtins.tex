@@ -906,38 +906,43 @@ table-inspection predicate.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{invalidate\_tables\_for(+DynamicPredGoal)}{Tabling}
-\index{{\tt invalidate\_tables\_for/1}}
+\ournewitem{invalidate\_tables\_for(+DynamicPredGoal,+Mode)}{Tabling}
+\index{{\tt invalidate\_tables\_for/2}}
 
 This predicate supports invalidation of tables.  Tables may become
 invalid if dynamic predicates on which they depend change, due to
 asserts or retracts.  By default XSB does not change or delete tables
 when they become invalid; it is the user's responsibility to know when
-a table is no longer valid and to use the {\tt abolish\_table}
+a table is no longer valid and to use the {\tt abolish\_table\_*}
 primitives to delete any table when its contents become invalid.
 
 This predicate gives the XSB programmer some support in managing
 tables and deleting them when they bcome invalid.  To use this
 predicate, the user must have previously added clauses to the dynamic
-predicate, {\tt invalidate\_table\_for/1}.  That predicate should be
-defined to take a goal for a dynamic predicate and abolish (some)
-tables (or table calls) that might depend on (any instance of) that
-fact.  \\ {\tt invalidate\_tables\_for(+DynamicPredGoal)} simply calls
-all unifying clauses of \\ {\tt
-invalidate\_table\_for(+DynamicPredGoal)}.
+predicate, {\tt invalidate\_table\_for/2}.  That predicate should be
+defined to take a goal for a dynamic predicate and a mode indicator
+and abolish (some) tables (or table calls) that might depend on (any
+instance of) that fact.  \\ {\tt
+invalidate\_tables\_for(+DynamicPredGoal),+Mode} simply backtracks
+through calls to all unifying clauses of \\ {\tt
+invalidate\_table\_for(+DynamicPredGoal,+Mode)}.  The {\tt Mode}
+indicator can be any term as long as the two predicates agree on how
+they should be used.  The intention is that {\tt Mode} will be either
+'assert' or 'retract' indicating the kind of database change being
+made.
 
 Consider a simple example of the use of these predicates: Assume the
 definition of tabled predicate ptab/2 depends on dynamic predicate
 qdyn/2.  In this case, the user could initially call:
 \begin{verbatim}
-      :- assert((invalidate_table_for(qdyn(_,_)) :-
+      :- assert((invalidate_table_for(qdyn(_,_),_) :-
                     abolish_table_pred(ptab(_,_,_)))).
 \end{verbatim}
-to declare that when qdyn/2 changes, the table for ptab/3 should be
-abolished.  Then each time a fact such as {\tt qdyn(A,B)} is
-asserted to, or retracted from, qdyn/2, the user would call
+to declare that when qdyn/2 changes (in any way), the table for ptab/3
+should be abolished.  Then each time a fact such as {\tt qdyn(A,B)} is
+asserted to, or retracted from, qdyn/2, the user could call
 \begin{verbatim}
-      :- invalidate_table_for(qdyn(A,B)).
+      :- invalidate_table_for(qdyn(A,B),_).
 \end{verbatim}
 
 The user could use the hook mechanisms in XSB (\ref{hooks}) to
