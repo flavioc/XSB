@@ -11,17 +11,28 @@ It is possible for the user to add standard predicates not provided
 in the standard release. See the section on Customizing XSB.
 
 \section{Input and Output}
-Presently, input and output can only be done with respect to the 
-current input and output
-streams.  These can be set, reset or checked using the file handling
-predicates described below.  The default input and output streams are
-internally denoted by userin and userout (the user accesses them both 
-via the name {\tt ``user''}, and they refer to the user's terminal).
+
+XSB has two levels of I/O: a higher level that supports DEC-10 and
+ISO-like file and stream handling; and a lower level that is based in
+XSB I/O ports.  This section describes higher-level I/O, while the
+lower-level is described in Volume 2 Section 1.5 of this manual.
+Presently, higher-level input and output operations bind a file
+identifier to the current input or output stream.  The semantics of
+the operations here is basically that of Edinbourough Prolog's {\tt
+see/1} and {\tt tell/1}.  However, this interface has been extended to
+provide portability for programs written using the ISO standard, and
+includes predicates such as {\tt open/3}, {\tt close/1}, {\tt write/2}
+and so on.
+
+The default input and output streams are internally denoted by userin
+and userout (the user accesses them both via the name {\tt ``user''},
+and they refer to the process'es standard input and standard output
+streams).
 
 
 \subsection{File Handling}
 \begin{description}
-\ouritem{set\_input(+F)}\index{{\tt set\_input/1}}
+\ournewitem{set\_input(+F)}{ISO}\index{{\tt set\_input/1}}
 \vspace{-7mm} 
 \ouritem{see(+F)}\index{{\tt see/1}}
     Makes file {\tt F} the current input stream. 
@@ -45,6 +56,8 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
     	{\tt F} is not instantiated at the time of call. 
     \item[{\tt existence\_error}]
     	File {\tt F} does not exist. 
+    \item[{\tt domain\_error}]
+    	{\tt F} is not an atomic file identifier
     \end{description}
 
 \ouritem{seeing(?F)}\index{{\tt seeing/1}}
@@ -57,7 +70,7 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
     Closes the current input stream. 
     Current input reverts to {\tt ``userin''} (the standard input stream).
 
-\ouritem{set\_output(+F)}\index{{\tt set\_output/1}}
+\ournewitem{set\_output(+F)}{ISO}\index{{\tt set\_output/1}}
 \vspace{-7mm} 
 \ouritem{tell(+F)}\index{{\tt tell/1}}
     Makes file {\tt F} the current output stream. 
@@ -80,6 +93,8 @@ via the name {\tt ``user''}, and they refer to the user's terminal).
 	File {\tt F} does not have write permission, or is a directory.
     \item[{\tt instantiation\_error}]
 	{\tt F} is uninstantiated.
+    \item[{\tt domain\_error}]
+    	{\tt F} is not an atomic file identifier
     \end{description}
 
 \ouritem{telling(?F)}\index{{\tt telling/1}}
