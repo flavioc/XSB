@@ -175,9 +175,8 @@
 #define FL_ARGUMENTS		arguments
 #define FL_OID			oid
 #define FL_BODYFORMULA		meta
-%%#define FL_PROLOG		(prolog)
-%%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
+#define FL_PLIBALL		prologall
 #define FL_FIRSTORDER		firstorder
 #define FL_FIRSTORDERALL	firstorderall
 #define FL_FLOGICSTATIC		flogic
@@ -258,6 +257,8 @@
   FLWORKSPACE(FLTERM|FLOBJSPEC|FLBIRELATE,Name)
   FLPLIB(FLTERM,Name)
   FLPLIB(FLTERM)
+  FLPLIBALL(FLTERM,Name)
+  FLPLIBALL(FLTERM)
   FLFLORALIB(FLTERM,NAME)
   FLCONJUNCT(Goal,Goal)
   FLDISJUNCT(Goal,Goal)
@@ -325,6 +326,7 @@
 #define FLLOAD			flload
 #define FLWORKSPACE		flworkspace
 #define FLPLIB			flplib
+#define FLPLIBALL               flpliball
 #define FLFLORALIB		flfloralib
 #define FLCONJUNCT		flconjunct
 #define FLDISJUNCT		fldisjunct

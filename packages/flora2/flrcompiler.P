@@ -82,10 +82,17 @@ is_flnot(FLNOT(Goal),Goal).
 is_fltnot(FLTNOT(Goal),Goal).
 
 is_flload(FLLOAD(LoadList),LoadList).
+%% @module
 is_flworkspace(FLWORKSPACE(P,WS),P,WS).
+%% @flora(module)
+is_flfloralib(FLFLORALIB(P,M),P,M).
+
+%% @prolog(M) and @prolog()
 is_flplib(FLPLIB(P,M),P,M).
 is_flplib(FLPLIB(P),P).
-is_flfloralib(FLFLORALIB(P,M),P,M).
+%% @prologall() and @prologall(module)
+is_flpliball(FLPLIBALL(P),P).
+is_flpliball(FLPLIBALL(P,M),P,M).
 
 is_flifthenelse(FLIFTHENELSE(Cond,Then,Else),Cond,Then,Else).
 is_flifthen(FLIFTHEN(Cond,Then),Cond,Then).
@@ -1430,9 +1437,13 @@ compile_body_literal(ParserTerm,Code,Status) :-
 
 	; is_flplib(ParserTerm,P) ->
 	    compile_prologliblit(P,OidCode,SpecCode,Status)
-
 	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prologliblit(P,Module,OidCode,SpecCode,Status)
+
+	; is_flpliball(ParserTerm,P) ->
+	    compile_prologallliblit(P,OidCode,SpecCode,Status)
+	; is_flpliball(ParserTerm,P,Module) ->
+	    compile_prologallliblit(P,Module,OidCode,SpecCode,Status)
 
 	; is_flfloralib(ParserTerm,P,Module) ->
 	    compile_floraliblit(P,Module,OidCode,SpecCode,Status)
@@ -1653,10 +1664,14 @@ compile_pathexp(ParserTerm,Object,OidCode,Code,Status) :-
 
 	; is_flplib(ParserTerm,P) ->
 	    compile_prologlibobj(P,Object,OidCode,Code,Status)
-
 	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prologlibobj(P,Module,Object,OidCode,Code,Status)
 
+	; is_flpliball(ParserTerm,P) ->
+	    compile_prologalllibobj(P,Object,OidCode,Code,Status)
+	; is_flpliball(ParserTerm,P,Module) ->
+	    compile_prologalllibobj(P,Module,Object,OidCode,Code,Status)
+	
 	; is_flfloralib(ParserTerm,P,Module) ->
 	    compile_floralibobj(P,Module,Object,OidCode,Code,Status)
 	;
@@ -3119,7 +3134,7 @@ compile_wsflobjeql(Obj1,Obj2,WS,OidCode,Code,Status) :-
 /****************************************************************************
   compile_prologliblit(+ParserTerm,-OidCode,-Code,-Status)
 
-  This is for compiling Prolog library calls whose module name is not provided.
+  Compiles Prolog library call @prolog()
 ****************************************************************************/
 compile_prologliblit(ParserTerm,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
@@ -3138,7 +3153,7 @@ compile_prologliblit(ParserTerm,OidCode,Code,Status) :-
 /****************************************************************************
   compile_prologliblit(+ParserTerm,+Module,-OidCode,-Code,-Status)
 
-  This is for compiling Prolog library calls whose module is provided.
+  Compiles Prolog library call @prolog(module)
 ****************************************************************************/
 compile_prologliblit(ParserTerm,Module,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
@@ -3169,11 +3184,60 @@ compile_prologliblit(ParserTerm,Module,OidCode,Code,Status) :-
 
 
 /****************************************************************************
+  compile_prologallliblit(+ParserTerm,-OidCode,-Code,-Status)
+
+  Compiles Prolog library call @prologall()
+****************************************************************************/
+compile_prologallliblit(ParserTerm,OidCode,Code,Status) :-
+	compile_prologliblit(ParserTerm,OidCode,PrelimCode,Status),
+	( % here PrelimCode is bound and we decompose it
+	  conjunct_struct(ACode,PrelimTermCode,PrelimCode), !
+	; PrelimCode = PrelimTermCode, ACode=NULL
+	),
+	%% Here PrelimTermCode is bound and we decompose it
+	prologterm_struct(FunctCode,N,ArgsCode,PrelimTermCode),
+	new_varobjlist(N,NewVarList),
+	(is_pratom(FunctCode,FAtom,_), flora_argdef(FAtom,N,ArgTypes), !
+	; ArgTypes = NewVarList
+	),
+	generate_convert_to_prolog_code(ArgsCode,ArgTypes,NewVarList,ToPrologCode),
+	prologterm_struct(FunctCode,N,NewVarList,TermCode),
+	generate_convert_from_prolog_code(ArgsCode,ArgTypes,NewVarList,FromPrologCode),
+	conjunct_code([ACode,ToPrologCode,TermCode,FromPrologCode],Code).
+
+
+/****************************************************************************
+  compile_prologallliblit(+ParserTerm,+Module,-OidCode,-Code,-Status)
+
+  Compiles Prolog library call @prologall(module)
+****************************************************************************/
+compile_prologallliblit(ParserTerm,Module,OidCode,Code,Status) :-
+	compile_prologliblit(ParserTerm,Module,OidCode,PrelimCode,Status),
+	( % here PrelimCode is bound and we decompose it
+	  conjunct_struct(ACode,PrelimTermLitCode,PrelimCode), !
+	; PrelimCode = PrelimTermLitCode, ACode=NULL
+	),
+	%% PrelimTermLitCode is bound and we decompose it
+	prologliblit_struct(PrelimTermCode,PrelimTermLitCode),
+	%% PrelimTermCode is bound and we decompose it
+	prologterm_struct(FunctCode,N,ArgsCode,PrelimTermCode),
+	new_varobjlist(N,NewVarList),
+	(is_pratom(FunctCode,FAtom,_), flora_argdef(FAtom,N,ArgTypes), !
+	; ArgTypes = NewVarList
+	),
+	generate_convert_to_prolog_code(ArgsCode,ArgTypes,NewVarList,ToPrologCode),
+	prologterm_struct(FunctCode,N,NewVarList,TermCode),
+	prologliblit_struct(TermCode,TermLitCode),
+	generate_convert_from_prolog_code(ArgsCode,ArgTypes,NewVarList,FromPrologCode),
+	conjunct_code([ACode,ToPrologCode,TermLitCode,FromPrologCode],Code).
+
+
+/****************************************************************************
   compile_prologlibobj(+ParserTerm,-Object,-OidCode,-Code,-Status)
 
-  This is for compiling Prolog library calls in the arguments position. E.g.,
-  f(member(X,[a])@prolog(basics)). This feature might be userful for
-  meta-programming.  
+  Compiles Prolog library call @prolog() in the arguments position
+  E.g., f(member(X,[a])@prolog())
+  This feature might be userful for meta-programming.  
 ****************************************************************************/
 compile_prologlibobj(ParserTerm,Object,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
@@ -3192,8 +3256,7 @@ compile_prologlibobj(ParserTerm,Object,OidCode,Code,Status) :-
 /****************************************************************************
   compile_prologlibobj(+ParserTerm,+Module,-Object,-OidCode,-Code,-Status)
 
-  This is for compiling Prolog library calls in the arguments position, when
-  the library name is provided.
+  Compiles Prolog library call @prolog(module) in the arguments position
 ****************************************************************************/
 compile_prologlibobj(ParserTerm,Module,Object,OidCode,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
@@ -3222,6 +3285,46 @@ compile_prologlibobj(ParserTerm,Module,Object,OidCode,Code,Status) :-
 
 
 /****************************************************************************
+  compile_prologalllibobj(+ParserTerm,-Object,-OidCode,-Code,-Status)
+
+  Compiles @prologall() in argument position, e.g., foo(f(...)@prologall()
+***************************************************************************/
+compile_prologalllibobj(ParserTerm,Object,OidCode,Code,Status) :-
+	compile_prologlibobj(ParserTerm,PrelimObject,PrelimOidCode,PrelimCode,Status),
+	%% PrelimObject is bound and we decompose it
+	prologterm_struct(FunctCode,N,ArgsCode,PrelimObject),
+	new_varobjlist(N,NewVarList),
+	(is_pratom(FunctCode,FAtom,_), flora_argdef(FAtom,N,ArgTypes), !
+	; ArgTypes = NewVarList
+	),
+	generate_convert_to_prolog_code(ArgsCode,ArgTypes,NewVarList,ToPrologCode),
+	prologterm_struct(FunctCode,N,NewVarList,Object),
+	generate_convert_from_prolog_code(ArgsCode,ArgTypes,NewVarList,FromPrologCode),
+	conjunct_code([ToPrologCode,PrelimOidCode],OidCode),
+	conjunct_code([FromPrologCode,PrelimCode],Code).
+
+/****************************************************************************
+  compile_prologalllibobj(+ParserTerm,+Module,-Object,-OidCode,-Code,-Status)
+
+  Compiles @prologall(module) in argument position,
+  e.g., foo(f(...)@prologall(module)
+***************************************************************************/
+compile_prologalllibobj(ParserTerm,Module,Object,OidCode,Code,Status) :-
+	compile_prologlibobj(ParserTerm,Module,PrelimObject,PrelimOidCode,PrelimCode,Status),
+	%% PrelimObject is bound and we decompose it
+	prologterm_struct(FunctCode,N,ArgsCode,PrelimObject),
+	new_varobjlist(N,NewVarList),
+	(is_pratom(FunctCode,FAtom,_), flora_argdef(FAtom,N,ArgTypes), !
+	; ArgTypes = NewVarList
+	),
+	generate_convert_to_prolog_code(ArgsCode,ArgTypes,NewVarList,ToPrologCode),
+	prologterm_struct(FunctCode,N,NewVarList,Object),
+	generate_convert_from_prolog_code(ArgsCode,ArgTypes,NewVarList,FromPrologCode),
+	conjunct_code([ToPrologCode,PrelimOidCode],OidCode),
+	conjunct_code([PrelimCode,FromPrologCode],Code).
+
+
+/****************************************************************************
   compile_prlgterm(+FunctTerm,+Arity,+ArgList,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
 compile_prlgterm(Funct,N,Args,Object,OidCode,Code,Status) :-
@@ -3236,11 +3339,52 @@ compile_prlgterm(Funct,N,Args,Object,OidCode,Code,Status) :-
 	!.
 
 
+/*************************************************************************
+   generate_convert_to_prolog_code(+AObjList,+ArgTypeList,+VarList,-Code)
+*************************************************************************/ 
+generate_convert_to_prolog_code([],_,_,NULL).
+
+generate_convert_to_prolog_code([AObjH|AObjT],[AType|ATypes],[VarH|VarT],Code) :-
+	(AType==FL_BODYFORMULA
+	->  atomobj_struct('=',EqAtom),
+	    termlit_struct(EqAtom,2,[AObjH,VarH],CodeH)
+	;  atomobj_struct(var,VarAtom),
+	    termlit_struct(VarAtom,1,[AObjH],VarTerm),
+	    cut_struct(NO_INDEX, Cut),
+	    atomobj_struct(flP2H,FlP2H),	
+	    termlit_struct(FlP2H,2,[VarH,AObjH],FlP2HTerm),
+	    conjunct_struct(VarTerm,Cut,Code1),
+	    disjunct_struct(Code1,FlP2HTerm,CodeH)
+	), 
+	generate_convert_to_prolog_code(AObjT,ATypes,VarT,CodeT),
+	conjunct_code([CodeH,CodeT],Code).
+
+/*************************************************************************
+   generate_convert_from_prolog_code(+AObjList,+VarList,-Code)
+*************************************************************************/ 
+generate_convert_from_prolog_code([],_,_,NULL).
+
+generate_convert_from_prolog_code([AObjH|AObjT],[AType|ATypes],[VarH|VarT],Code) :-
+	(AType==FL_BODYFORMULA
+	->  atomobj_struct('=',EqAtom),
+	    termlit_struct(EqAtom,2,[AObjH,VarH],CodeH)
+ 	; atomobj_struct(nonvar,NonvarAtom),
+	    termlit_struct(NonvarAtom,1,[AObjH],NonvarTerm),
+	    cut_struct(NO_INDEX, Cut),
+	    atomobj_struct(flP2H,FlP2H),	
+	    termlit_struct(FlP2H,2,[VarH,AObjH],FlP2HTerm),
+	    conjunct_struct(NonvarTerm,Cut,Code1),
+	    disjunct_struct(Code1,FlP2HTerm,CodeH)
+	),
+	generate_convert_from_prolog_code(AObjT,ATypes,VarT,CodeT),
+	conjunct_code([CodeH,CodeT],Code).
+		
+
 /****************************************************************************
   compile_head_wspathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
 
-  This procedure is called from compile_head_pathexp/4 and compile_head_wsflpathexp/5
-  when a workspace is explicitly specified.
+  This procedure is called from compile_head_pathexp/4 and
+  compile_head_wsflpathexp/5 when a workspace is explicitly specified.
 ****************************************************************************/
 compile_head_wspathexp(ParserTerm,WS,Object,Code,Status) :-
 	( atomlit_struct(ParserTerm,A) ->

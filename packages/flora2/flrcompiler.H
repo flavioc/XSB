@@ -33,6 +33,8 @@
 	flora_match_substring/3
     from flrporting.
 
+:- import is_pratom/3 from flrcoder.
+
 :- import member/2, append/3, length/2 from basics.
 
 :- import sort/2, keysort/2, findall/3 from setof.

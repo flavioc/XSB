@@ -33,8 +33,12 @@
 #define FLINS		flins
 #define FLDEL		fldel
 
+%% @flora(...)
 #define FLORASYSMOD	florasysmod
+%% @prolog(), @prolog(...)
 #define PROLOGMODULE	prologmodule
+%% @prologall(), @proologall(...)
+#define PROLOGALLMODULE prologallmodule
 #define FLORAUSERMOD	florausermod
 
 #include "flora_errors.flh"
@@ -533,26 +537,32 @@ flload_struct(List,FLLOAD(List)).
 
 is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
-%% Encoding module specs of the form: @mod, @flora(mod), @prolog(mod)
+%% Encoding these module specs: @mod @flora(mod) @prolog(mod) @prologall(mod)
 flmodule_struct(Literal,WSName,FLORAUSERMOD,FLWORKSPACE(Literal,WSName)) :- !.
 flmodule_struct(Literal,Module,FLORASYSMOD,FLFLORALIB(Literal,Module)). :- !.
 flmodule_struct(Goal,Name,PROLOGMODULE,FLPLIB(Goal,Name)). :- !.
+flmodule_struct(Goal,Name,PROLOGALLMODULE,FLPLIBALL(Goal,Name)). :- !.
 
-%% Encoding module specs of the form: @prolog()
+%% Encoding module specs of the form @prolog() and @prologall()
 %% Takes a goal and protects it against hilog conversion
 flplib_struct(Goal,FLPLIB(Goal)) :- !.
+flpliball_struct(Goal,FLPLIBALL(Goal)) :- !.
 
 %% Given module spec, get back module type and module name
 get_module_from_spec(FLORAUSERMOD(Mod),FLORAUSERMOD,Mod) :- !.
 get_module_from_spec(FLORASYSMOD(Mod),FLORASYSMOD,Mod) :- !.
 get_module_from_spec(PROLOGMODULE(Mod),PROLOGMODULE,Mod) :- !.
 get_module_from_spec(PROLOGMODULE,NULL) :- !.
+get_module_from_spec(PROLOGALLMODULE(Mod),PROLOGALLMODULE,Mod) :- !.
+get_module_from_spec(PROLOGALLMODULE,NULL) :- !.
 
 
 is_flmodulespec_struct(FLWORKSPACE(_G,_N)) :- !.
 is_flmodulespec_struct(FLPLIB(_G)) :- !.
 is_flmodulespec_struct(FLPLIB(_G,_N)) :- !.
 is_flmodulespec_struct(FLFLORALIB(_L,_M)) :- !.
+is_flmodulespec_struct(FLPLIBALL(_G)) :- !.
+is_flmodulespec_struct(FLPLIBALL(_G,_N)) :- !.
 
 is_dbinsertop(FL_INSERT) :- !.
 is_dbinsertop(FL_INSERTALL) :- !.
@@ -665,8 +675,6 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	; flora_expunge_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorderall_directive(CanoniTerm,CodeList,Status)
-	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
-	%%;  flora_prologall_directive(CanoniTerm,CodeList,Status)
         ),
 	fldirective_struct(CodeList,Code),
 	!.
@@ -696,10 +704,7 @@ flora_parse_directive(CanoniTerm,_Code,Status) :-
 flora_exec_directive(CanoniTerm,Code,Status) :-
 	fldirective_struct(CodeList,Code),
 	( 
-	%%  flora_prologall_directive(CanoniTerm,CodeList,Status)
-	%%;
 	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
-	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
 	; flora_arguments_directive(CanoniTerm,CodeList,Status)
 	; flora_table_directive(CanoniTerm,CodeList,Status)
@@ -850,30 +855,6 @@ flora_table_directlist([F/A|L],[Code|CL]) :-
 	flora_table_directlist(L,CL).
 
 
-
-/****************************************************************************
-  flora_prologall_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-%%flora_prologall_directive(CanoniTerm,[Code],[]) :-
-%%	get_name(CanoniTerm,FL_PROLOGALL),
-%%	flprlgdirect_struct(_Funct,_Arity,Code).
-
-
-/****************************************************************************
-  flora_prolog_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-%%flora_prolog_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-%%	get_name(Funct,FL_PROLOG),
-%%	flora_commasep_falist(T,FAList,Status),
-%%	(Status == [] -> flora_prolog_directlist(FAList,CodeList); true).
-
-
-%%flora_prolog_directlist([],[]) :- !.
-
-%%flora_prolog_directlist([F/A|L],[Code|CL]) :-
-%%	!,
-%%	flprlgdirect_struct(F,A,Code),
-%%	flora_prolog_directlist(L,CL).
 
 
 /****************************************************************************
@@ -1335,25 +1316,6 @@ flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :
 	!,
 	parsing_error(If,ERROR_HDLITERAL,Status).
 
-/*
-%% No need to handle if-then-else separately here
-
-flora_head_literal(CANOTERM(Funct,1,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
-        get_name(Funct,FL_IF),
-        !,
-        parsing_error(If,ERROR_IFHEAD,Status).
-
-flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
-        get_name(Funct,FL_THEN),
-        !,
-        parsing_error(If,ERROR_THENHEAD,Status).
-
-flora_head_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
-        get_name(Funct,FL_ELSE),
-        !,
-        parsing_error(If,ERROR_ELSEHEAD,Status).
-*/
-
 flora_head_literal(CANOTERM(Funct,N,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :-
 	get_atom(Funct,F),
 	flora_nodefp(F,N),
@@ -1515,12 +1477,14 @@ flora_body(CanoniTerm,NULL,Code,Status) :-
 	%% no module name
 	flora_body_literal(CanoniTerm,Code,Status).
 
+%% @prolog()
 flora_body(CanoniTerm,PROLOGMODULE,Code,Status) :-
 	!,
 	%% Prolog builtin
 	flora_prlgterm(CanoniTerm,TCode,Status),
 	(Status == [] -> flplib_struct(TCode,Code); true).
 
+%% @prolog(...)
 flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
 	get_module_from_spec(PrologModuleSpec,PROLOGMODULE,Mod),
 	!,
@@ -1528,6 +1492,22 @@ flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
 	flora_prlgterm(CanoniTerm,TCode,Status),
 	(Status == [] -> flmodule_struct(TCode,Mod,PROLOGMODULE,Code); true).
 
+%% @prologall()
+flora_body(CanoniTerm,PROLOGALLMODULE,Code,Status) :-
+	!,
+	%% Prolog builtin
+	flora_prlgterm(CanoniTerm,TCode,Status),
+	(Status == [] -> flpliball_struct(TCode,Code); true).
+
+%% @prologall(...)
+flora_body(CanoniTerm,PrologModuleSpec,Code,Status) :-
+	get_module_from_spec(PrologModuleSpec,PROLOGALLMODULE,Mod),
+	!,
+	%% Prolog module
+	flora_prlgterm(CanoniTerm,TCode,Status),
+	(Status == [] -> flmodule_struct(TCode,Mod,PROLOGALLMODULE,Code); true).
+
+%% @module or @flora(...)
 flora_body(CanoniTerm,FloraModSpec,Code,Status) :-
 	get_module_from_spec(FloraModSpec,ModuleType,Module),
 	!,
@@ -1542,8 +1522,10 @@ flora_body(CanoniTerm,FloraModSpec,Code,Status) :-
 
   This predicate is called to parse the module name of a workspace specification.
   Three types of module names are allowed:
-  (1) Prolog module, e.g., @prolog(basics), @prolog().
+  (1) Prolog module, e.g., @prolog(basics), @prolog()
+                           @prologall(basics), @prologall()
       WSCode=PROLOGMODULE(name), or PROLOGMODULE
+      WSCode=PROLOGALLMODULE(name), or PROLOGALLMODULE
   (2) Flora system module, e.g., @flora(io), @flora(pp). Unlike prolog module,
       @flora() is not allowed.
       WSCode=FLORASYSMOD(name)
@@ -1565,6 +1547,19 @@ flora_workspace(CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),PROLOGMODULE,[]) :-
 flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),PROLOGMODULE(MCode),Status) :-
 	%% Check if it is a Prolog module. (@prolog(xsbmod))
 	get_name(Mod,FL_PLIB),
+	!,
+	(get_flname_struct(M,MCode) -> Status=[]
+	;
+	    parsing_error(M,ERROR_WSNAME,Status)).
+
+%% @prologall() workspace
+flora_workspace(CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),PROLOGALLMODULE,[]) :-
+	get_name(Mod,FL_PLIBALL),
+	!.
+
+%% @prologall(module) workspace
+flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),PROLOGALLMODULE(MCode),Status) :-
+	get_name(Mod,FL_PLIBALL),
 	!,
 	(get_flname_struct(M,MCode) -> Status=[]
 	;
@@ -1691,17 +1686,20 @@ flora_body_univeqform(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Sta
   flora_body_metauniv(+CanoniTerm,+WS,-Code,-Status)
 
   Parse the meta op =..
-  (_=.. _)@floramodule, and (_ =.. _)@prolog(mod) are illegal, but
-  (_ =.. _)@prolog() is.
+  (_=.. _)@floramodule, (_ =.. _)@prolog(mod) and (_ =.. _)@prologall(mod)
+  are illegal, but
+  (_ =.. _)@prolog() and (_ =.. _)@prologall() are legal.
 ****************************************************************************/
 flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
-	%% only @prolog() are allowed; this doesn't match get_module_from_spec
+	%% only @prolog() and @prologall() are allowed;
+	%% they don't match get_module_from_spec/3
 	get_module_from_spec(WS,_,_),
 	!,
 	parsing_error(If,NO_WORKSPACE,Status).
 
-%% If (_ =.. _)@prolog() then use Prolog =..
-flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),PROLOGMODULE,Code,Status) :-
+%% If (_ =.. _)@prolog() or (_ =.. _)@prologall(), then use Prolog =..
+flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),WS,Code,Status) :-
+	(WS == PROLOGMODULE; WS == PROLOGALLMODULE),
 	!,
 	Args = [LCode,RCode],
 	flora_prlgterm(LCode,LCodeParsed,S1),
@@ -1715,7 +1713,11 @@ flora_body_metauniv(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),PROLOGMODULE,C
 	    flobject_struct(Funct,FCode),
 	    flterm_struct(FCode,2,[LCodeParsed,RCodeParsed],Code1),
 	    %% protect predicate code against hilog conversion
-	    flplib_struct(Code1,Code)
+	    ( WS == PROLOGMODULE
+	     -> flplib_struct(Code1,Code)
+	      %% WS == PROLOGALLMODULE
+	     ;  flpliball_struct(Code1,Code)
+	    ) 
 	%% failed to parse the second term
 	; true
 	).
@@ -1739,7 +1741,9 @@ flora_body_metauniv(CANOTERM(_Funct,2,FL_PARENTHESIS,Args,_If,_Ip),_WS,Code,Stat
   Parse the meta op ~..
   This is like =.. but is compiled differently: the left arg is meta.
   Also, all module specs are illegal:
-      (_~.. _)@floramodule, (_ ~.. _)@prolog(mod), (_ ~.. _)@prolog()
+      (_~.. _)@floramodule, (_ ~.. _)@prolog(mod), (_ ~.. _)@prolog(),
+      (_ ~.. _)@prologall(mod), (_ ~.. _)@prologall(),
+
 ****************************************************************************/
 flora_body_metaunivform(CANOTERM(_Funct,2,FL_PARENTHESIS,_Args,If,_Ip),WS,_Code,Status) :-
 	(get_module_from_spec(WS,_,_) ; get_module_from_spec(WS,null)),
@@ -2034,7 +2038,7 @@ flora_name_or_normvar(CanoniTerm,Code) :-
 /****************************************************************************
   flora_prlgterm(+CanoniTerm,-Code,-Status)
 
-  This predicate is called to parse a Prolog predicate or terms.
+  This predicate is called to parse a Prolog predicate or prolog term.
   Its arguments can be F-logic molecules and path expressions, so they are
   not parsed as Prolog terms.
 ****************************************************************************/
@@ -2182,6 +2186,9 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	( S1 == [] ->
 	    ( (WSCode = PROLOGMODULE; WSCode = PROLOGMODULE(Mod)) ->
 		flora_prlgterm(L,LCode,S2)
+	    
+	    ; (WSCode = PROLOGALLMODULE; WSCode = PROLOGALLMODULE(Mod)) ->
+		flora_prlgterm(L,LCode,S2)
 
 	    ; (WSCode = FLORAUSERMOD(Mod); WSCode = FLORASYSMOD(Mod)) ->
 	        flora_pathexp(L,LCode,S2)
@@ -2198,8 +2205,12 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 		  ( WSCode = PROLOGMODULE ->
 		      %% Covers: @prolog()
 		      flplib_struct(LCode,Code)
+		  
+		  ; WSCode = PROLOGALLMODULE ->
+		      %% Covers: @prologall()
+		      flpliball_struct(LCode,Code)
 
-		  %% Covers: @mod, @flora(mod), @prolog(mod)
+		  %% Covers: @mod, @flora(mod), @prolog(mod), @prologall(mod)
 		  ; get_module_from_spec(WSCode,ModuleType,Mod) ->
 		      flmodule_struct(LCode,Mod,ModuleType,Code)
 		  )

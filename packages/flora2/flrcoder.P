@@ -1134,6 +1134,7 @@ flora_build_struct(Term,DWS,Prefix,VarList,Code) :-
 	flora_build_structlist(Args,DWS,Prefix,VarList,ArgsCodeList),
 	%% If p(a)@prolog(mod) is run from Flora shell, the code generated
 	%% must look like: X =.. [p,a], call(X).
+	%% due to XSB module design inconsistencies
 	Code=','('=..'(P,[F|ArgsCodeList]),call(P)).
 
 flora_build_struct(Term,DWS,Prefix,VarList,Code) :-

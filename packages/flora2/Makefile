@@ -100,6 +100,10 @@ system: $(ALLOBJS)
 	cd trailer; $(MAKE)
 	cd debugger; $(MAKE)
 
+top: init $(ALLOBJS)
+	./CompileChangedFiles.sh $(PROLOG_COMMAND)
+	@cat $(SVFILE)
+
 libs:
 	cd lib; $(MAKE)
 

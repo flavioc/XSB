@@ -1641,7 +1641,10 @@ Prolog predicates can be called from \FLORA through the \FLORA module system
 \FLORA models Prolog programs as collections of static {\em Prolog modules},
 {\it i.e.}, from \FLORA's point of view, Prolog modules are always available
 and do not need to be loaded explicitly because the association between Prolog
-programs and modules is fixed.  The syntax to call Prolog predicates is
+programs and modules is fixed.
+
+\paragraph{@prolog().}
+The syntax to call Prolog predicates is
 %%
 \index{module!{\tt prolog(modulename)}}
 %%
@@ -1694,6 +1697,67 @@ with particular ease:
 {\it i.e.}, we can simply omit the Prolog module name (but parentheses must be
 preserved). 
 
+\index{module!{\tt prolog(modulename)}}
+\paragraph{@prologall().}
+The Prolog module specification {\tt @prolog()} has one subtlety: it does
+not affect the arguments of a call. For instance, 
+%%
+\begin{verbatim}
+ ?- foo(f(X,b))@prolog().  
+\end{verbatim}
+%%
+will call the Prolog predicate foo/1, but its argument, {\tt f(X,b)}, will
+be considered as a HiLog term. If the fact {\tt foo(f(a,b))} 
+was defined somewhere in the Prolog program then the above query will fail,
+since a Prolog term {\tt f(X,b)} and a HiLog term {\tt f(X,b)} are
+\emph{different} even though their textual representation in \FLORA is the
+same.
+
+A correct call to {\tt foo/1} in this case would be as follows:
+%%
+\begin{verbatim}
+ ?- foo(f(X,b)@prolog())@prolog().
+\end{verbatim}
+%%
+Clearly, this might be too much writing and is error prone. Moreover, as
+explained in Section~\ref{sec-passing-args}, there also is a subtle issue of
+passing arguments between Prolog and \FLORA.
+
+To simplify calls to Prolog, \FLORA provides another, more powerful
+primitive: {\tt @prologall()}. Thus, one can call
+%%
+\begin{verbatim}
+ ?- foo(f(X,b))@prologall().  
+\end{verbatim}
+%%
+without having to worry about the differences between the HiLog
+representation of terms in \FLORA and the representation used in Prolog.
+
+One might wonder why is there the {\tt @prolog()} module call in the first
+place. The reason is efficiency. The {\tt @prologall()} call does automatic
+conversion between Prolog and HiLog, which is not always necessary. For
+instance, to check whether a term, {\tt f(a)}, is a member of a list,
+{\tt [f(b),f(a)]}, one does not need to do any conversion, because the
+answer is the same whether these terms are HiLog terms or Prolog
+ones. Thus,
+%%
+\begin{verbatim}
+ ?-  member(f(a), [f(b),f(a)])@prolog(basics).
+\end{verbatim}
+%%
+is perfectly acceptable and is more efficient than
+%%
+\begin{verbatim}
+ ?-  member(f(a), [f(b),f(a)])@prologall(basics).
+\end{verbatim}
+%%
+\index{flP2H/2}
+%%
+\FLORA provides a special predicate, {\tt flP2H/2}, which converts terms to
+and from the HiLog representation, and the programmer can use it in
+conjunction with {\tt @prolog()} to achieve a greater degree of control
+over argument conversion. This issue is further discussed in
+Section~\ref{sec-passing-args}.
 
 
 
@@ -2504,6 +2568,16 @@ methods that do appropriate conversion without the user having to do
 this explicitly. One such library, {\tt io}, is described in
 Section~\ref{sec-service-libs}.
 
+\index{@prologall()}
+%%
+Another mechanism, described in Section~\ref{sec-prolog-modules}, is the
+use of the {\tt @prologall()} and {\tt @prologall(module)} specifier to
+call Prolog modules. This specifier cause the compiler to include code for
+automatic conversion of arguments to and from Prolog
+representation. However, as mentioned above, such conversion is sometimes
+not necessary and the use of {\tt @prologall()} might incur unnecessary
+overhead.
+
 
 \subsection{First-Order Predicates and HiLog Predicates}
 \label{sec:flora-modules-predicates}
@@ -2637,7 +2711,7 @@ structures, including the subclass hierarchy, the ISA hierarchy, etc.,
 depending on the application domain. Although equality is a powerful
 feature, its maintenance can slow the program down quite significantly.
 In order to be able to eat the cake and have it at the same time, \FLORA
-allows the user to control how equality is handles.
+allows the user to control how equality is handled.
 by providing the following three compiler directives:
 %%
 \index{equality}
@@ -3501,14 +3575,45 @@ Prolog does not understand and will not associate it with the predicate {\tt
 \end{quote}
 %%
 This will insert {\tt foo(a,b,c)} into the default XSB module called {\tt
-  usermod}. If {\tt foo/3} is defined in another Prolog module, {\tt bar}, and
+  usermod}.
+
+\index{@prologall()}
+%%
+If all this looks too complicated, \FLORA provides a higher-level
+primitive, {\tt @prologall()}, as described in
+Section~\ref{sec-prolog-modules}. This module specifier does automatic
+conversion of terms to and from Prolog representation, so the above example
+can be written much more simply:
+%%
+\begin{quote}
+ {\tt flora2 ?- assert(foo(a,b,c))@prologall().  }  
+\end{quote}
+%%
+
+Another possible complication might be that
+If {\tt foo/3} is defined in another Prolog module, {\tt bar}, and
 is imported by {\tt usermod}, then the above statement will not do anything
-useful due to certain idiosyncrasies in the XSB module system.  However,
-the following will work if {\tt foo/3} is defined as dynamic in the module
-  {\tt bar}:
+useful due to certain idiosyncrasies in the XSB module system. In this
+case, we have to tell the system that {\tt foo/3} was defined in Prolog
+module {\tt bar}.  Thus,
+{\tt foo/3} was defined as a dynamic predicate in the module
+  {\tt bar}, we have to write:
 %%
 \begin{quote}
  {\tt flora2 ?- assert(foo(a,b,c)@prolog(bar))@prolog().  }  
+\end{quote}
+%%
+Note that if we want to assert a more complex fact, such as {\tt
+  foo(f(a),b,c)}, we would have to use either
+%%
+\begin{quote}
+ {\tt flora2 ?- assert(foo(f(a)@prolog(bar),b,c)@prolog(bar))@prolog().  }  
+\end{quote}
+%%
+or {\tt @prologall()}:
+%%
+\begin{quote}
+ {\tt flora2 ?- assert(foo(f(a),b,c)@prologall(bar))@prolog().  }  
 \end{quote}
 %%
 
