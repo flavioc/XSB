@@ -1633,7 +1633,8 @@ byte * trie_get_returns_for_call(void)
 #endif
 
   call_str_ptr = (SGFrame) ptoc_int(1);
-  if ((ans_root_ptr = subg_ans_root_ptr(call_str_ptr)) == NULL)
+  ans_root_ptr = subg_ans_root_ptr(subg_producer(call_str_ptr));
+  if ( IsNULL(ans_root_ptr) )
     return (byte *)&fail_inst;
   else {
     retskel = (CPtr)ptoc_tag(2);
@@ -1696,26 +1697,6 @@ byte * trie_get_calls(void)
 
 /*----------------------------------------------------------------------*/
 
-static void construct_ret(void)
-{
-    Pair sym;
-    Cell term;
-    int  arity, i, new;
-
-    arity = global_num_vars + 1;
-    if (arity == 0) {
-      ctop_string(3, (char *) ret_psc[0]);
-    } else {
-      bind_cs((CPtr)ptoc_tag(3), hreg);
-      sym = insert("ret", arity, (Psc)flags[CURRENT_MODULE], &new);
-      new_heap_functor(hreg, sym->psc_ptr);
-      for (i = 0; i < arity; i++) {
-	term = (Cell)var_regs[i];
-	nbldval(term);
-      }
-    }
-}
-
 /*
  * This function is changed from get_lastnode_and_retskel().  It is the
  * body of *inline* builtin GET_LASTNODE_CS_RETSKEL(LastNode, CallStr,
@@ -1724,20 +1705,34 @@ static void construct_ret(void)
  * This function is called immediately after using the trie intructions
  * to traverse one branch of the call or answer trie.  A side-effect of
  * executing these instructions is that the leaf node of the branch is
- * left in a global variable "Last_Nod_Sav".  Function construct_ret()
- * will be called to construct a term with the return skeleton in the
- * third argument.
+ * left in a global variable "Last_Nod_Sav".  One reason for writing it
+ * so is that it is important that the construction of the return
+ * skeleton is an operation that cannot be interrupted by garbage
+ * collection.
  *
- * One reason for writing it so is that it is important that the
- * construction of the return skeleton is an operation that cannot be
- * interrupted by garbage collection.
+ * In case we just traversed the Call Trie of a subsumptive predicate,
+ * and the call we just unified with is subsumed, then the answer
+ * template (i.e., the return) must be reconstructed based on the
+ * original call, the argument "callTerm" below, and the subsuming call
+ * in the table.  Otherwise, we return the variables placed in
+ * "var_regs[]" during the embedded-trie-code walk.
  */
+Cell get_lastnode_cs_retskel(Cell callTerm) {
 
-void get_lastnode_cs_retskel(void)
-{
-  ctop_int(1, (Integer)Last_Nod_Sav);
-  ctop_int(2, (Integer)BTN_Child(Last_Nod_Sav));
-  construct_ret();		/* build RetSkel in the 3rd argument */
+  int arity;
+  Cell *vector;
+
+  arity = global_num_vars + 1;
+  vector = (Cell *)var_regs;
+  if ( IsInCallTrie(Last_Nod_Sav) ) {
+    SGFrame sf = CallTrieLeaf_GetSF(Last_Nod_Sav);
+    if ( ! SubgoalHasOwnAnswerSet(sf) ) {
+      construct_answer_template(callTerm, subg_producer(sf), (Cell *)var_regs);
+      arity = (int)var_regs[0];
+      vector = (Cell *)&var_regs[1];
+    }
+  }
+  return ( build_ret_term(arity, vector) );
 }
 
 /*----------------------------------------------------------------------*/
