@@ -36,11 +36,10 @@
 	  stat_flag/2, stat_set_flag/3, expand_filename/2,
      	  tilde_expand_filename/2, is_absolute_filename/1,
 	  unload_seg/1, machine_file_exists/1, call0/1, str_insert/2,
-     	  slash/1, dirname_canonic/2, intern_string/2
+	  formatted_io/5, slash/1, dirname_canonic/2,
+	  intern_string/2, str_sub/3
    from machine.
 
-:- import str_sub/3, fmt_write_string/3
-     from machine.
 
 :- import conset/2 from prof_sbp.
 :- import standard_symbol/3 from std_sbp.
@@ -53,5 +52,6 @@
 
 :- import abort/0 from standard.
 
-:- import file_put/2 from file_io.
+:- import file_put/2
+   from file_io.
 

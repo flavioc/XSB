@@ -24,63 +24,41 @@
 
 
 	       /********************************/
-	       /*  fmt_write, fmt_write_string */
+	       /*  Formatted I/O    	       */
 	       /********************************/
+
 fmt_write(Fmt, Args) :-
        stat_flag(11, File), 
-       ( callable(Args) -> fmt_write(File, Fmt, Args)
-         ;
-	 abort('Usage: fmt_write(+FmtString, args(+A1,+A2,...))')
-       ).
+	fmt_write(File, Fmt, Args).
 
 fmt_write(File, Fmt, Args) :-
-       ( callable(Args) -> fmt_write(File, Fmt, Args)
+       ( callable(Args) -> formatted_io(1, File, Fmt, Args, _Ret)
          ;
-	 abort('Usage: fmt_write(+FmtString, args(+A1,+A2,...))')
+	 abort('Usage: fmt_write([+FileDes,] +FmtString, args(+A1,+A2,...))')
        ).
 
 fmt_write_string(Str, Fmt, Args) :-
-   ( var(Str), callable(Args) -> fmt_write_string(Str, Fmt, Args)
-     ;
-     abort('Usage: fmt_write_string(-OutputString, +FmtString, args(+A1,+A2,...))')
-   ).
+	( var(Str), callable(Args) -> formatted_io(2, Str, Fmt, Args, _Ret)
+	  ;
+	  abort('Usage: fmt_write_string(-OutputString, +FmtString, args(+A1,...))')
+        ).
 
 
-	/*****************************************/
-	/*  fmt_read, read_line                  */
-	/*****************************************/
 fmt_read(Fmt,Result,Status) :-
         stat_flag(10, File),
-	( compound(Result), var(Status)
-		     -> fmt_read(File,Fmt,Result,Status)
-	    ;
-	    abort('Usage: fmt_read(+FmtString, result(-R1,-R2,...), -RetCode)')
+	fmt_read(File, Fmt,Result,Status).
+
+fmt_read(File, Fmt, Result, Status) :-
+	(compound(Result), var(Status)
+		     -> formatted_io(3, File, Fmt, Result, Status)
+	;
+	 abort('Usage: fmt_read([+FileDes,] +FmtString, result(-R1,-R2,...), -RetCode)')
     	).
 
-fmt_read(File, Fmt,Result,Status) :-
-	( compound(Result), var(Status)
-		     -> fmt_read(File,Fmt,Result,Status)
-	    ;
-	    abort('Usage: fmt_read(+FmtString, result(-R1,-R2,...), -RetCode)')
-    	).
-
-%% Read line from current input stream (previously set by 'see')
-file_read_line(Str, IsFullLine) :-
-   stat_flag(10, File),
-   ( var(Str), var(IsFullLine) -> file_read_line(File, Str, IsFullLine)
-     ;
-      abort('Usage: file_read_line(-InputStr, -IsFullLine)')
-   ).
-
-file_read_line(File, Str, IsFullLine) :-
-	( var(Str), var(IsFullLine) -> file_read_line(File, Str, IsFullLine)
-	    ;
-	    abort('Usage: file_read_line(+FileDes, -InputStr, -IsFullLine)')
-       ).
 
 /***************************************************************/
 /*    	      	      	      	      	      	      	       */
-/*       file_flush, file_seel, file_truncate, file_pos	       */
+/*       file_flush, file_seek, file_truncate, file_pos, etc.  */
 /*    	      	      	      	      	      	      	       */
 /***************************************************************/
 
@@ -98,6 +76,18 @@ file_getbuf(FileDes, ByteCount, ToString, Offset) :-
 	file_function(8, FileDes, ByteCount, ToString, Offset).
 file_putbuf(FileDes, ByteCount, FromString, Offset) :-
 	file_function(9, FileDes, ByteCount, FromString, Offset).
+
+file_read_line(File, Str, IsFullLine) :-
+	( var(Str), var(IsFullLine) ->
+	    file_function(10, File, Str, IsFullLine, _)
+	    ;
+	    abort('Usage: file_read_line([+FileDes,] -InputStr, -IsFullLine)')
+        ).
+
+%% Read line from current input stream (previously set by 'see')
+file_read_line(Str, IsFullLine) :-
+	stat_flag(10, File),
+	file_read_line(File, Str, IsFullLine).
 
 
 /***************************************************************/

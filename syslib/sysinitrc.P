@@ -26,8 +26,8 @@
 %% This file is consulted from loader.P
 
 
-:- import stat_flag/2, str_cat/3, stat_set_flag/3, is_backslashing_os/0,
-     	  fmt_write_string/3, slash/1
+:- import stat_flag/2, str_cat/3, stat_set_flag/3, 
+	is_backslashing_os/0, slash/1
    from machine.
 :- import xsb_configuration/2 from configuration.
 

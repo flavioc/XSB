@@ -51,6 +51,9 @@ is_backslashing_os :-  stat_flag(28, ConfigurationC),
 		      ; str_sub('w95', Configuration, _)
 		      ; str_sub('wnt', Configuration, _) ).
 
+%% must duplicate fmt_write_string here: it is used early on, in libpath()
+fmt_write_string(S,Fmt,A) :- formatted_io(2,S,Fmt,A,_).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -169,14 +172,13 @@ load_library_directories :-
 	%%
 	%% Construct user's .xsb/xsbrc.P
 	xsb_configuration(user_home, HomeDir),
-	fmt_write_string(UserFileName, '%s%s.xsb%sxsbrc',
-				       f(HomeDir, Slash, Slash)),
-	str_cat(UserFileName, '.P', UserFileNameP),
-	str_cat(UserFileName, '.O', UserFileNameO),
+	fmt_write_string(UsrFileN, '%s%s.xsb%sxsbrc', f(HomeDir,Slash,Slash)),
+	str_cat(UsrFileN, '.P', UserFileNameP),
+	str_cat(UsrFileN, '.O', UserFileNameO),
 	%% User init file isn't mandatory
 	( (machine_file_exists(UserFileNameP)
 	   ; machine_file_exists(UserFileNameO)) ->
-		reconsult(UserFileName)
+		reconsult(UsrFileN)
 		; true
         ).
 
@@ -396,7 +398,7 @@ libpath(P) :- stat_flag(23, InstallDir1),  %% get the installation directory
 libpath(P) :- stat_flag(23, InstallDir1),
 	      intern_string(InstallDir1, InstallDir),
 	      slash(Slash),
-	      %% <installdir>/syslib/  (slash type depends on the OS)
+	      %%<installdir>/syslib/  (slash type depends on the OS)
 	      fmt_write_string(P, '%s%ssyslib%s', f(InstallDir, Slash, Slash)).
 libpath(P) :- stat_flag(23, InstallDir1),
 	      intern_string(InstallDir1, InstallDir),

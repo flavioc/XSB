@@ -40,10 +40,11 @@
 :- import conpsc/2, psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
           psc_arity/2, term_psc/2, term_arg/3, term_new/2, term_type/2,
 	  conname/2, stat_flag/2, stat_set_flag/3, str_insert/2,
-	  is_xwammode/1, close_open_tables/0, trimcore/0, fmt_write_string/3,
+	  is_xwammode/1, close_open_tables/0, trimcore/0, 
 	  slash/1
      from machine.
 
-:- import file_read_line/2, file_open/3, file_close/1, file_get/2
-     from file_io.
+:- import file_read_line/2, file_open/3, file_close/1, file_get/2,
+	fmt_write_string/3
+    from file_io.
 

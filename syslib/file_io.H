@@ -25,7 +25,7 @@
 
 :- import
 	stat_flag/2, file_function/5,
-    	file_stat/3
+    	file_stat/3, formatted_io/5
       from machine.
 
 :- import abort/1, 
