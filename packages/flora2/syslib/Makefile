@@ -27,6 +27,7 @@
 
 
 OBJEXT=.xwam
+PROLOGEXT = .P
 
 PROLOG = none
 FLORADIR = ..
@@ -75,77 +76,77 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-flranswer${OBJEXT} : flranswer.P $(FLORA_TERMS)
+flranswer${OBJEXT} : flranswer$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flranswer,$(OPTION)).' >> cmd...
 
 
-flrcontrol${OBJEXT} : flrcontrol.P $(FLORA_TERMS) $(XSB_STANDARD)
+flrcontrol${OBJEXT} : flrcontrol$(PROLOGEXT) $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrcontrol,$(OPTION)).' >> cmd...
 
-flrdisplay${OBJEXT} : flrdisplay.P $(FLORA_TERMS) $(XSB_STANDARD)
+flrdisplay${OBJEXT} : flrdisplay$(PROLOGEXT) $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrdisplay,$(OPTION)).' >> cmd...
 
 
-flrload${OBJEXT} : flrload.P $(FLORA_TERMS)
+flrload${OBJEXT} : flrload$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrload,$(OPTION)).' >> cmd...
 
 
-flraggavg${OBJEXT} :flraggavg.P $(FLORA_TERMS)
+flraggavg${OBJEXT} :flraggavg$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggavg,$(OPTION)).' >> cmd...
 
 
-flraggcolbag${OBJEXT} : flraggcolbag.P $(FLORA_TERMS)
+flraggcolbag${OBJEXT} : flraggcolbag$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggcolbag,$(OPTION)).' >> cmd...
 
 
-flraggcolset${OBJEXT} : flraggcolset.P $(FLORA_TERMS)
+flraggcolset${OBJEXT} : flraggcolset$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggcolset,$(OPTION)).' >> cmd...
 
 
-flraggcount${OBJEXT} : flraggcount.P $(FLORA_TERMS)
+flraggcount${OBJEXT} : flraggcount$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggcount,$(OPTION)).' >> cmd...
 
 
-flraggmax${OBJEXT} : flraggmax.P $(FLORA_TERMS)
+flraggmax${OBJEXT} : flraggmax$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggmax,$(OPTION)).' >> cmd...
 
 
-flraggmin${OBJEXT} : flraggmin.P $(FLORA_TERMS)
+flraggmin${OBJEXT} : flraggmin$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggmin,$(OPTION)).' >> cmd...
 
 
-flraggsum${OBJEXT} : flraggsum.P $(FLORA_TERMS)
+flraggsum${OBJEXT} : flraggsum$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flraggsum,$(OPTION)).' >> cmd...
 
 
-flrstorage${OBJEXT} : flrstorage.P $(FLORA_TERMS)
+flrstorage${OBJEXT} : flrstorage$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrstorage,$(OPTION)).' >> cmd...
 
 
-flrdbop${OBJEXT} : flrdbop.P $(FLORA_TERMS)
+flrdbop${OBJEXT} : flrdbop$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrdbop,$(OPTION)).' >> cmd...
 
 
-flrbtdbop${OBJEXT} : flrbtdbop.P $(FLORA_TERMS)
+flrbtdbop${OBJEXT} : flrbtdbop$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrbtdbop,$(OPTION)).' >> cmd...
 
 
-flrshdirect${OBJEXT} : flrshdirect.P $(FLORA_TERMS)
+flrshdirect${OBJEXT} : flrshdirect$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrshdirect,$(OPTION)).' >> cmd...
 
 
-flrdynmod${OBJEXT} : flrdynmod.P $(FLORA_TERMS)
+flrdynmod${OBJEXT} : flrdynmod$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrdynmod,$(OPTION)).' >> cmd...
 
 
-flrequality${OBJEXT} : flrequality.P $(FLORA_TERMS)
+flrequality${OBJEXT} : flrequality$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrequality,$(OPTION)).' >> cmd...
 
-flrimport${OBJEXT}: flrimport.P $(FLORA_TERMS) $(FLRHEADER)
+flrimport${OBJEXT}: flrimport$(PROLOGEXT) $(FLORA_TERMS) $(FLRHEADER)
 	@echo 'mc(flrimport,$(OPTION)).' >> cmd...
 
 
-flrexpunge${OBJEXT} : flrexpunge.P $(FLORA_TERMS)
+flrexpunge${OBJEXT} : flrexpunge$(PROLOGEXT) $(FLORA_TERMS)
 	@echo 'mc(flrexpunge,$(OPTION)).' >> cmd...
 
 

@@ -34,14 +34,9 @@
 #include "flora_characters.flh"
 #include "flora_terms.flh"
 #include "flora_porting.flh"
+#include "flora_extensions.flh"
 
 
-#define FLORA_FILE_EXT		flr
-#define FLORA_INCLUDE_EXT	fli
-#define FLORA_HEADER_EXT	flh
-#define FLORA_FDB_EXT		fdb
-%% Extension for storage of defined predicate skeletons
-#define FLORA_FLD_EXT		fld
 #define FLORA_FAILURE		failure
 #define FLORA_SUCCESS		success
 #define FLORA_NOOP		noop
@@ -823,6 +818,8 @@ flora_reset_modules_for_file(FullFileName) :-
 	flora_reset_firstorder,
 	flora_reset_compiler,
 	flora_set_counter(flora_shell_mode,0),
+	retractall(flora_compiler_environment(_,_)),
+	assert(flora_compiler_environment(file,FullFileName)),
 	!.
 
 
@@ -833,7 +830,9 @@ flora_reset_modules_for_shell :-
 	flora_reset_lexer,
 	flora_reset_composer,
 	flora_reset_compiler,
-	flora_set_counter(flora_shell_mode,1).
+	flora_set_counter(flora_shell_mode,1),
+	retractall(flora_compiler_environment(_,_)),
+	assert(flora_compiler_environment(file,userin)).
 
 
 /*************************************************************************
@@ -856,7 +855,7 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	flora_measure_time(
 	flora_rpc_file(MaxErrNum,0,0,CompiledRuleList,FileOptionList,CompileStatus),
-	'Compiling '),
+	'Compile time '),
 	%% Wait, to not leave zombies.
 	process_control(XPP_process,wait(ExitStatus)),
 	(ExitStatus==0, !
@@ -1680,7 +1679,14 @@ flMaxerr(X) :-
 /*************************************************************************
   flP2H/2
 *************************************************************************/
-flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG).
+flP2H(PrologTerm,HiLogTerm) :-
+	flora_plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG,P2H_UNIFY_VARS).
+
+%% This is used by the compiler for converting prolog to hilog 
+%% in the implementation of @prologall().
+%% Note: flora_plg2hlg/4 succeeds if both arguments are unifiable prolog terms
+flora_post_p2h_conversion(PrologTerm,HiLogTerm) :-
+	flora_plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG,P2H_UNIFY_VARS).
 
 
 /*************************************************************************

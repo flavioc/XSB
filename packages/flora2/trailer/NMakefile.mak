@@ -1,19 +1,21 @@
 # Make file for Microsoft NMAKE
 
+!include ..\.prolog_path
+
 OBJEXT = .O
+PROLOGEXT = .P
 
 OPTIONS = [optimize]
-XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 
-.SUFFIXES: .P .O
+.SUFFIXES: $(PROLOGEXT) .O
 
 ALL:: 
-	$(XSB) -e "bootstrap_flora. [flrutils]. import flsetuptrailer/1, flsetuppatch/0 from flrutils. flsetuptrailer(none). flsetuptrailer(basic). flsetuptrailer(flogic). flsetuppatch. halt."
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrutils]. import flsetuptrailer/1, flsetuppatch/0 from flrutils. flsetuptrailer(none). flsetuptrailer(basic). flsetuptrailer(flogic). flsetuppatch. halt."
 
 CLEAN :
 	-@erase *~
 	-@erase *$(OBJEXT)
-	-@erase *.P
+	-@erase *$(PROLOGEXT)
 	-@erase *.flh
 	-@erase *.bak
 	-@erase .#*

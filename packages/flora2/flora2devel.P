@@ -30,7 +30,6 @@
 %% .flora_path contains #define FLORA_INSTALL_DIR
 #include ".flora_path"
 
-#define FLORA_VERSION               '0.85devel of May 2002'
 
 :- import flora_configuration/2 from flrregistry.
 :- import flora_concat_atoms/2,
@@ -46,9 +45,9 @@
    retractall(flora_configuration(version,_)),
    retractall(flora_configuration(develmode,_)),
    assert(flora_configuration(installdir,FLORA_INSTALL_DIR)),
-   assert(flora_configuration(version,FLORA_VERSION)),
    assert(library_directory(FLORA_INSTALL_DIR)),
    assert(flora_configuration(develmode,yes)),
+   [flrversion],
    flora_assert_directories([syslib,lib,debugger,pkgs,p2h]).
 
 ?- flora_slash(S),

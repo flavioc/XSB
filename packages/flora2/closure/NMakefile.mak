@@ -5,7 +5,7 @@ ALLOBJS = flrcommon.flh \
 	  flreqltrailer.flh \
           flrscalareql.flh
 
-PROLOG_COMMAND = ..\..\..\config\x86-pc-windows\bin\xsb.exe
+!include ..\.prolog_path
 
 .SUFFIXES: .flh .fli
 
@@ -19,5 +19,5 @@ CLEAN :
 	-@erase includes\*~
 
 .fli.flh:
-	$(PROLOG_COMMAND) -e "bootstrap_flora. [flrutils]. import flCompileInclude/1 from flrutils. flCompileInclude(%|fF). halt."
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrutils]. import flCompileInclude/1 from flrutils. flCompileInclude(%|fF). halt."
 

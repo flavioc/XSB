@@ -131,6 +131,8 @@ is_agg(FLLIBCOLLECTBAG(Var,Group,Cond,Result),collectbag,Var,Group,Cond,Result)
 is_control(FLLIBIFTHEN(If,Then),FLLIBIFTHEN,[If,Then]) :- !.
 is_control(FLLIBIFTHENELSE(If,Then,Else),FLLIBIFTHENELSE,[If,Then,Else]) :- !.
 
+is_constraint(PRCONSTRAINT(Constr),Constr).
+
 /****************************************************************************
   cut_off(+Term_before_cutoff,-Term_after_cutoff)
   cut off a term whose depth is greater than MAXDEPTH
@@ -397,6 +399,10 @@ assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,_,U)) :-
 	!,
 	assert_rule(HeadCode,NewBody,NewBCI,anu(A,n,U)).
 
+assert_rule(_HeadCode,BodyCode,(_BCI,_I),anu(_A,_N,_U)) :-
+	is_constraint(BodyCode,_),
+	!.
+	
 assert_rule(HeadCode,BodyCode,(BCI,Index),anu(A,N,U)) :-
 	is_upd(BodyCode,_,List,Cond),
 	!,
@@ -550,6 +556,11 @@ build_struct(Term,_VarList,Oid,(Oid,Index)) :-
 	is_prnewoid(Term,Oid,Index),
 	!.
 
+build_struct(Term,VarList,Code,Spec) :-
+	is_prreify(Term,Term1),
+	!,
+	build_struct(Term1,VarList,Code,Spec).
+
 build_struct(Term,VarList,Code,(CodeInd,Index)) :-
 	is_flogic(Term,F,N,Args),
 	!,
@@ -574,6 +585,10 @@ build_struct(Term,VarList,Code,(CodeInd,Index)) :-
 	is_skolem(Term,F,N,Args,Index),
 	!,
 	build_prolog(F,N,Args,VarList,Code,CodeInd).
+
+build_struct(Term,_VarList,Code,(_CodeInd,_Index)) :-
+	is_constraint(Term,Code),
+	!.
 
 build_struct(Term,_VarList,thismodule,(thismodule,NO_INDEX)) :-
 	is_prthismodule(Term),
@@ -717,6 +732,13 @@ build_syslib(Lib,N,Args,VarList,Code,CInd) :-
 	      PF=WRAP_HILOG,
 	      is_prlist(PArgs,[FObj|ObjList],[],_)
 	    )
+
+	%% Case of X@Y, where X is a variable
+	; is_prvariable(P,_VarName,_Index) ->
+	    ModeArg=[],
+	    PArgs = P,
+	    PF=WRAP_HILOG
+
 	;
 	  ModeArg=[],
 	  is_flogic(P,PF,Arity,ObjList),

@@ -1,2 +1,2 @@
 
-:- export plg2hlg/3.
+:- export flora_plg2hlg/4.

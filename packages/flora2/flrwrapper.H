@@ -77,6 +77,7 @@
 
 	flora_decode_predicate/6,
 	flora_decode_module_name/2,
+	flora_decode_module_prefix/3,
 	flora_is_flogic_wrapper/3,
 
 	flora_is_dynamic_flogic_base/2.

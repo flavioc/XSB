@@ -115,3 +115,30 @@ SKELETONS
    ruleoid/2 relation is reset by the compiler at the beginning of each new
    rule.
 
+3. Translation of @prologall()
+   p(X,Y)@prologall() becomes:
+
+   flora_plg2hilog(NewX,X,flapply,0), % don't unify vars
+   flora_plg2hilog(NewY,Y,flapply,0),
+   p(NewX,NewY),
+   flora_post_p2h_convertion(NewX,X), % unify vars
+   flora_post_p2h_convertion(NewY,Y)
+
+   This works because:
+
+   a. flora_plg2hilog(NewX,X,0) creates a new variable NewX and doesn't
+      unify it with X
+   b. p/2 is evaluated with respect to the new variables
+   c. The resulting bindings for NewX, NewY are converted to hilog and
+      unified with X,Y.
+   d. If X or Y are already prolog then NewX, NewY are unified as Prolog
+      predicates. This is because flora_post_p2h_convertion/2 is defined as
+
+      flora_post_p2h_convertion(PrologTerm,HiLogTerm) :-
+	(flora_plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG,P2H_UNIFY_VARS), !
+	; PrologTerm = HiLogTerm
+	).
+
+      In our situation, flora_plg2hlg/4 fails ONLY if HiLogTerm (i.e., X or Y)
+      were originally Prolog terms.
+

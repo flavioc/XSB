@@ -1,7 +1,8 @@
 # Make file for prolog2hilog.dll
 
 
-XSBDIR = ..\..\..
+!include ..\.prolog_path
+
 MYPROGRAM = prolog2hilog
 
 
@@ -20,8 +21,8 @@ CLEAN :
 	-@erase *.bak
 
 
-CPP_PROJ = /nologo /MT /W3 /GX /O2 /I "$(XSBDIR)\config\x86-pc-windows" \
-		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" \
+CPP_PROJ = /nologo /MT /W3 /GX /O2 /I "$(PROLOGDIR)\config\x86-pc-windows" \
+		 /I "$(PROLOGDIR)\emu" /I "$(PROLOGDIR)\prolog_includes" \
 		 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
 		 /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
 	
@@ -36,7 +37,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
 		odbc32.lib odbccp32.lib xsb.lib /nologo /dll \
 		/machine:I386 /out:"$(OUTDIR)\$(MYPROGRAM).dll" \
-		/libpath:"$(XSBDIR)\config\x86-pc-windows\bin" 
+		/libpath:"$(PROLOGDIR)\config\x86-pc-windows\bin" 
 LINK32_OBJS =  "$(INTDIR)\$(MYPROGRAM).obj"
 
 "$(OUTDIR)\$(MYPROGRAM).dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)

@@ -32,8 +32,11 @@
 :- import
 	flora_check_module_name/1,
 	flora_module_predicate/4,
+	flora_decode_module_prefix/3,
 	flora_firstorder_module_predicate/4
    from flrwrapper.
+
+:- import flora_error_line/2 from flrprint.
 
 
 /*********************************************************************
@@ -50,11 +53,30 @@
 /*********************************************************************
   fllibmodlit(+Functor,+Args,+ModuleName)
 *********************************************************************/
-fllibmodlit(F,Args,ModuleName) :-
+fllibmodlit(F,Arg,ModuleName) :-
 	( flora_check_module_name(ModuleName) ->
-	    flora_module_predicate(F,Args,ModuleName,P),
-	    !,
-	    call(P)
+	    (var(Arg) -> flora_error_line('Uninstantiated literal, ~w@~w',
+					  [Arg,ModuleName]),
+			 abort
+	    ; (
+		is_list(Arg), Arg = Args, !, % Term@X
+	        flora_module_predicate(F,Args,ModuleName,P)
+	      ; atom(Arg), !,	% Var@..., Var bound to atom
+		(	      % if already a hilog predicate -- use it
+		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
+		%% else construct it
+		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
+		)
+	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
+		(   % if already a hilog or flogic predicate -- use it
+		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
+		%% else construct it
+		; flora_module_predicate(Funct,Args,ModuleName,P)
+		)
+	      ),
+	      !,
+	      call(P)
+	    )
 	;
 	  abort
 	).
@@ -63,9 +85,28 @@ fllibmodlit(F,Args,ModuleName) :-
 /*********************************************************************
   fllibmodobj(+Functor,+Args,+ModuleName,-Predicate)
 *********************************************************************/
-fllibmodobj(F,Args,ModuleName,P) :-
+fllibmodobj(F,Arg,ModuleName,P) :-
 	( flora_check_module_name(ModuleName) ->
-	    flora_module_predicate(F,Args,ModuleName,P)
+	    (var(Arg) -> flora_error_line('Uninstantiated literal, ~w@~w',
+					  [Arg,ModuleName]),
+			 abort
+	    ; ( 
+		is_list(Arg), Arg = Args, !, % Term@X
+		flora_module_predicate(F,Args,ModuleName,P)
+	      ; atom(Arg), !,	% Var@..., Var bound to atom
+		(   % if already a hilog predicate -- use it
+		    flora_decode_module_prefix(Arg,_,_), Arg = P, !
+		%% else construct it
+		; flora_module_predicate(WRAP_HILOG,[Arg],ModuleName,P)
+		)
+	      ; Arg =.. [Funct|Args], !, % Var@..., Var bound to compound
+		(   % if already a hilog or flogic predicate -- use it
+		    flora_decode_module_prefix(Funct,_,_), Arg = P, !
+		%% else construct it
+		; flora_module_predicate(Funct,Args,ModuleName,P)
+		)
+	      )
+	    )
 	;
 	  abort
 	),

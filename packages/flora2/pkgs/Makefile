@@ -25,6 +25,7 @@
 
 
 OBJEXT=.xwam
+PROLOGEXT=.P
 
 FLORADIR=..
 
@@ -49,7 +50,7 @@ HDRMSG = "While compiling .../flora2/pkgs:"
 
 
 # suffix rules
-.SUFFIXES: .P .flr
+.SUFFIXES: $(PROLOGEXT) .flr
 
 # We should have touch *.flr here when there will be packages
 all: clean init recompile
@@ -60,7 +61,7 @@ recompile: $(ALL) finish
 	@rm cmd...
 	@cat $(SVFILE)
 
-.flr.P:
+.flr$(PROLOGEXT):
 	echo 'import (flCompile)/1 from flora2. flCompile($*).' >> cmd...
 
 init:
@@ -82,4 +83,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f core *.P *${OBJEXT} *.O *.fdb *.fld *.bak *~ .*~ .#*
+	/bin/rm -f core *$(PROLOGEXT) *${OBJEXT} *.O *.fdb *.fld *.bak *~ .*~ .#*

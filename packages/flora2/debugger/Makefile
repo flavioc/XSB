@@ -26,6 +26,7 @@
 ##
 
 OBJEXT=.xwam
+PROLOGEXT=.P
 
 FLORADIR = ..
 
@@ -38,7 +39,7 @@ FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 FLORA_ERRORS = $(FLORA_INCLUDES_DIR)/flora_errors.flh
 FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
 
-.SUFFIXES:  .in .dat .P .H ${OBJEXT}
+.SUFFIXES:  .in .dat ${PROLOGEXT} .H ${OBJEXT}
 
 
 OPTION = [optimize]
@@ -67,7 +68,7 @@ static_data.dat: static_data.in $(FLORA_TERMS)
 	@echo 'flWrapAround($*).' >> cmd...
 
 
-flrdebugger${OBJEXT}: flrdebugger.P $(FLORA_TERMS)
+flrdebugger${OBJEXT}: flrdebugger${PROLOGEXT} $(FLORA_TERMS)
 	@echo 'mc(flrdebugger,$(OPTION)).' >> cmd...
 
 

@@ -46,16 +46,16 @@
 /* take hilog term and a hilog apply op and return prolog term.
    If the apply term is != the one used in the hilog term, assume it is already
    a prolog term and don't convert */
-static prolog_term hilog2prolog(prolog_term hterm, char *apply);
+static prolog_term hilog2prolog(prolog_term hterm, char *apply, int unify_vars);
 /* take prolog term and a symbol name of the apply operator and return hilog
    term. If prolog term already has the main functor==hilog apply, then don't
    convert. */
-static prolog_term prolog2hilog(prolog_term pterm, char *apply);
+static prolog_term prolog2hilog(prolog_term pterm, char *apply, int unify_vars);
 static char *pterm2string(prolog_term term);
 inline static int is_hilog(prolog_term term, char *apply_funct);
-inline static int is_commalist(prolog_term term);
-static prolog_term map_commalist(prolog_term (*func)(), prolog_term term, char *apply);
-static prolog_term map_list(prolog_term func(), prolog_term term, char *apply);
+inline static int is_special_form(prolog_term term);
+static prolog_term map_special_form(prolog_term (*func)(), prolog_term term, char *apply, int unify_vars);
+static prolog_term map_list(prolog_term func(), prolog_term term, char *apply, int unify_vars);
 
 
 /*
@@ -63,6 +63,7 @@ static prolog_term map_list(prolog_term func(), prolog_term term, char *apply);
   - Pterm:  Prolog term
   - Hterm:  HiLog term
   - Apply:  Symbol name for the HiLog apply predicate
+  - UnifyGlag: If true, unify if both Pterm and Hterm are variables
 
   If Pterm is a variable, then it is unified with Hterm.
   If Hterm is a variable, then it is unified with Pterm.
@@ -86,28 +87,29 @@ static prolog_term map_list(prolog_term func(), prolog_term term, char *apply);
   term and the term is simply returned without change.
 
   For instance,
-      plg2hlg(f(a,g(b,X)),Y,abc)
+      flora_plg2hlg(f(a,g(b,X)),Y,abc)
       Y = abc(f,a,abc(g,b,_h123))
 
-      plg2hlg(X, cde(f,a,cde(g,b,Y))),Z)
+      flora_plg2hlg(X, cde(f,a,cde(g,b,Y))),Z)
       X = abc(f,a,abc(g,b,_h123))
       Z = abc
 
   Doesn't do occur-check!!! Something like
-      plg2hlg(X, cde(f,a,cde(g,b,X))),Z)
+      flora_plg2hlg(X, cde(f,a,cde(g,b,X))),Z)
   Will loop and eventually crash because X occurs in Pterm and in Hterm.
  */
-DllExport xsbBool call_conv plg2hlg () {
+DllExport xsbBool call_conv flora_plg2hlg () {
   prolog_term pterm = reg_term(1);
   prolog_term hterm = reg_term(2);
   prolog_term apply_t = reg_term(3);
-  prolog_term temp_pterm;
+  int unify_vars = ptoc_int(4); /* whether to unify if both args are vars */
+  prolog_term temp_term;
   char *apply;
 
 #ifdef P2HDEBUG_VERBOSE
-  xsb_dbgmsg("plg2hlg: Arg1=%s", pterm2string(pterm));
-  xsb_dbgmsg("plg2hlg: Arg2=%s", pterm2string(hterm));
-  xsb_dbgmsg("plg2hlg: Arg3=%s", pterm2string(apply_t));
+  xsb_dbgmsg("flora_plg2hlg: Arg1=%s", pterm2string(pterm));
+  xsb_dbgmsg("flora_plg2hlg: Arg2=%s", pterm2string(hterm));
+  xsb_dbgmsg("flora_plg2hlg: Arg3=%s", pterm2string(apply_t));
 #endif
 
   if (!is_atom(apply_t))
@@ -116,20 +118,25 @@ DllExport xsbBool call_conv plg2hlg () {
 
   apply = string_val(apply_t);
 
-  if (is_var(pterm)) {
-    /* prolog term is variable; convert hilog to prolog */
-    if (is_var(hterm))
-      return p2p_unify(pterm, hterm);
-
-    temp_pterm = hilog2prolog(hterm, apply);
-    return p2p_unify(pterm, temp_pterm);
-
-  } else {
-    temp_pterm = prolog2hilog(pterm, apply);
-    /* prolog term is instantiated; convert to hilog */
-    return p2p_unify(temp_pterm, hterm);
+  /* both are variables */
+  if (is_var(pterm) && is_var(hterm)) {
+    if (unify_vars)
+      return p2p_unify(pterm,hterm);
+    else
+      return TRUE;
   }
-  return TRUE; /* this is unreachable---just to pacify the compiler */
+
+  /* if hilog is instantiated, convert from hilog to prolog
+     and unify, because hilog->prolog conversion is more accurate */
+  if (!is_var(hterm)) {
+    temp_term = hilog2prolog(hterm, apply,unify_vars);
+    return p2p_unify(temp_term, pterm);
+  }
+
+  /* hterm is a variable and pterm is not */
+  temp_term = prolog2hilog(pterm, apply, unify_vars);
+
+  return p2p_unify(temp_term, hterm);
 }
 
 static inline xsbBool is_scalar(prolog_term pterm)
@@ -140,21 +147,25 @@ static inline xsbBool is_scalar(prolog_term pterm)
 }
 
 
-static prolog_term hilog2prolog(prolog_term hterm, char *apply)
+static prolog_term hilog2prolog(prolog_term hterm, char *apply, int unify_vars)
 {
   prolog_term pterm = p2p_new();
   prolog_term pfunctor;
   int arity, i;
 
-  if (is_var(hterm))
-    return hterm;
-  else if (is_list(hterm))
-    return map_list(hilog2prolog,hterm,apply);
-  else if (is_commalist(hterm))
-    return map_commalist(hilog2prolog,hterm,apply);
+  if (is_var(hterm)){
+    if (unify_vars)
+      return hterm;
+    else
+      return pterm; /* don't reuse input vars: make new ones */
+  }
+  if (is_scalar(hterm)) return hterm;
 
-  if (is_scalar(hterm) || is_var(hterm))
-    return hterm;
+  if (is_list(hterm))
+    return map_list(hilog2prolog,hterm,apply,unify_vars);
+  else if (is_special_form(hterm))
+    return map_special_form(hilog2prolog,hterm,apply,unify_vars);
+
 #ifdef P2HDEBUG
   if (!is_functor(hterm))
     xsb_abort("PLG2HLG: Arg 2 =`%s' is not a HiLog term.",
@@ -182,7 +193,7 @@ static prolog_term hilog2prolog(prolog_term hterm, char *apply)
 #endif
 
   for (i=2; i<=arity; i++) {
-    p2p_unify(hilog2prolog(p2p_arg(hterm,i), apply),
+    p2p_unify(hilog2prolog(p2p_arg(hterm,i), apply,unify_vars),
 	      p2p_arg(pterm, i-1));
 #ifdef P2HDEBUG_VERBOSE
     xsb_dbgmsg("h2p loop: Pterm=%s", pterm2string(pterm));
@@ -192,20 +203,24 @@ static prolog_term hilog2prolog(prolog_term hterm, char *apply)
 }
 
 
-static prolog_term prolog2hilog(prolog_term pterm, char *apply)
+static prolog_term prolog2hilog(prolog_term pterm, char *apply, int unify_vars)
 {
   prolog_term hterm = p2p_new();
   int arity, i;
 
-  if (is_var(pterm))
-    return pterm;
-  else if (is_list(pterm))
-    return map_list(prolog2hilog,pterm,apply);
-  else if (is_commalist(pterm))
-    return map_commalist(prolog2hilog,pterm,apply);
+  if (is_var(pterm)) {
+    if (unify_vars)
+      return pterm;
+    else
+      return hterm; /* don't reuse input vars: create new */
+  }
+  if (is_scalar(pterm)) return pterm;
 
-  if (is_scalar(pterm) || is_var(pterm))
-    return pterm;
+  if (is_list(pterm))
+    return map_list(prolog2hilog,pterm,apply, unify_vars);
+  else if (is_special_form(pterm))
+    return map_special_form(prolog2hilog,pterm,apply, unify_vars);
+
   if (!is_functor(pterm))
     xsb_abort("PLG2HLG: Arg 1 = `%s' (the Prolog term) must be a var, a const, or a functor.",
 	      pterm2string(pterm));
@@ -225,7 +240,7 @@ static prolog_term prolog2hilog(prolog_term pterm, char *apply)
 
   /* set the rest of the args */
   for (i=1; i<=arity; i++) {
-    p2p_unify(prolog2hilog(p2p_arg(pterm,i),apply), p2p_arg(hterm,i+1));
+    p2p_unify(prolog2hilog(p2p_arg(pterm,i),apply, unify_vars), p2p_arg(hterm,i+1));
 #ifdef P2HDEBUG_VERBOSE
   xsb_dbgmsg("p2h loop: Hterm=%s", pterm2string(hterm));
 #endif
@@ -234,24 +249,23 @@ static prolog_term prolog2hilog(prolog_term pterm, char *apply)
 }
 
 
-static prolog_term map_list(prolog_term func(), prolog_term termList, char *apply)
+static prolog_term map_list(prolog_term func(), prolog_term termList, char *apply, int unify_vars)
 {
   prolog_term listHead, listTail;
   prolog_term outList=p2p_new(), outListHead, outListTail;
   prolog_term temp_term;
 
-  c2p_list(outList);
   listTail = termList;
   outListTail = outList;
 
   while (!is_nil(listTail)) {
+    c2p_list(outListTail);
     listHead = p2p_car(listTail);
     outListHead = p2p_car(outListTail);
-    temp_term = func(listHead,apply);
+    temp_term = func(listHead,apply, unify_vars);
     p2p_unify(outListHead, temp_term);
     listTail = p2p_cdr(listTail);
     outListTail = p2p_cdr(outListTail);
-    c2p_list(outListTail);
   }
 
   c2p_nil(outListTail); /* bind tail to nil */
@@ -259,30 +273,21 @@ static prolog_term map_list(prolog_term func(), prolog_term termList, char *appl
   return outList;
 }
 
-static prolog_term map_commalist(prolog_term (*func)(), prolog_term termCList, char *apply)
+static prolog_term map_special_form(prolog_term (*func)(), prolog_term special_form, char *apply, int unify_vars)
 {
-  prolog_term clistHead, clistTail;
-  prolog_term outCList=p2p_new(), outCListHead, outCListTail;
-  prolog_term temp_term;
-  char *clist_functor = ",";
+  prolog_term formArg1_temp, formArg2_temp;
+  prolog_term out_form=p2p_new(), formArg1_out, formArg2_out;
+  char *functor = p2c_functor(special_form);
 
-  c2p_functor(clist_functor, 2, outCList);
-  outCListTail = outCList;
-  clistTail = termCList;
+  c2p_functor(functor, 2, out_form);
+  formArg1_out = p2p_arg(out_form,1);
+  formArg2_out = p2p_arg(out_form,2);
+  formArg1_temp = func(p2p_arg(special_form,1),apply, unify_vars);
+  formArg2_temp = func(p2p_arg(special_form,2),apply, unify_vars);
+  p2p_unify(formArg1_out,formArg1_temp);
+  p2p_unify(formArg2_out,formArg2_temp);
 
-  while (is_commalist(clistTail)) {
-    clistHead = p2p_arg(clistTail,1);
-    outCListHead = p2p_arg(outCListTail,1);
-    temp_term = func(clistHead,apply);
-    p2p_unify(temp_term,outCListHead);
-    clistTail = p2p_arg(clistTail,2);
-    outCListTail = p2p_arg(outCListTail,2);
-    if (is_commalist(clistTail))
-      c2p_functor(clist_functor, 2, outCListTail);
-  }
-
-  p2p_unify(outCListTail,func(clistTail,apply));
-  return outCList;
+  return out_form;
 }
 
 
@@ -298,7 +303,7 @@ static char *pterm2string(prolog_term term)
 } 
 
 
-inline static int is_hilog(prolog_term term, char *apply_funct)
+static int is_hilog(prolog_term term, char *apply_funct)
 {
   size_t length_diff;
   char *func = p2c_functor(term); /* term functor */
@@ -314,30 +319,66 @@ inline static int is_hilog(prolog_term term, char *apply_funct)
 }
 
 
-inline static int is_commalist(prolog_term term)
+/* Note: this only treats 2-ary 1-character functors that are treated as
+   prolog in Flora. We don't do it for others due to speed considerations. */
+static int is_special_form(prolog_term term)
 {
+  char *functor;
   if (is_scalar(term) || is_list(term)) return FALSE;
-  return (strcmp(",", p2c_functor(term))==0);
+
+  functor = p2c_functor(term);
+  if (strlen(functor)==1) {
+    switch (*functor) {
+    case ',':
+    case ';':
+    case '+':
+    case '-':
+    case '/':
+    case '*':
+    case '>':
+    case '<':
+    case '~': return TRUE;
+    default: return FALSE;
+    }
+  }
+  return FALSE;
 }
 
 
 
 /* 
-   plg2hlg(a(qq,b(c,4),b(c,5,d(X,U))),Y,aaa).
-   plg2hlg(aaa(qq,b(c,4)),X,aaa).
-   plg2hlg(X, aaa(qq,b(c,4),aaa(kkk,Bbb,aaa(ppp,aaa(uuu,Aaa),Ooo))),aaa).
-   plg2hlg(X, aaa(qq,aaa(aaa,4)),aaa).
-   plg2hlg(X, [], aaa).
-   plg2hlg([], X, aaa).
-   plg2hlg(X, [aaa(qq,b(c,4)), f(abc), aaa(b,c(K),aaa(bbb,aaa(ccc,aaa(ddd))))],aaa).
-   plg2hlg(X, [aaa(qq,b(c,4)), f(abc), aaa(b,c(K))],aaa).
-   plg2hlg(X, [[aaa(qq,b(c,4)), f(abc)], aaa(b,c(K))],aaa).
-   plg2hlg([aaa(qq,b(c,4)), a(qq,b(c,4)), f(q(a),b,c(p,q(Y)))], X, aaa).
-   plg2hlg([aaa(qq,b(c,4)), [a(qq,b(c,4))], [f(q(a),b,c(p,q(Y))), b(_)]], X, aaa).
-   plg2hlg(X, (aaa(qq,b(c,4)), f(abc), aaa(b,c(K),aaa(bbb,aaa(ccc,aaa(ddd))))),aaa).
-   plg2hlg(X, (aaa(qq,b(c,4)), f(abc), aaa(b,c(K))),aaa).
-   plg2hlg(X, ((aaa(qq,b(c,4)), f(abc)), aaa(b,c(K))),aaa).
-   plg2hlg((aaa(qq,b(c,4)), a(qq,b(c,4)), f(q(a),b,c(p,q(Y)))), X, aaa).
-   plg2hlg((aaa(qq,b(c,4)), a(qq,b(c,4)), f(q(a),b,c(p,q(Y)))), X, aaa).
-   plg2hlg(((aaa(qq,b(c,4)), a(qq,b(c,4))), (f(q(a),b,c(p,q(Y))), b(_))), X, aaa).
+   flora_plg2hlg(a(qq,b(c,4),b(c,5,d(X,U))),Y,aaa,1).
+     Y = aaa(a,qq,aaa(b,c,4),aaa(b,c,5,aaa(d,_h312,_h313)))
+   flora_plg2hlg(aaa(qq,b(c,4)),X,aaa,1).
+     X = aaa(qq,b(c,4))
+   flora_plg2hlg(X, aaa(qq,b(c,4),aaa(kkk,Bbb,aaa(ppp,aaa(uuu,Aaa),Ooo))),aaa,1).
+     X = qq(b(c,4),kkk(_h356,ppp(uuu(_h365),_h362)))
+   flora_plg2hlg(X, aaa(qq,aaa(aaa,4)),aaa,1).
+     X = qq(aaa(4))
+   flora_plg2hlg(X, [], aaa,1).
+     X = []
+   flora_plg2hlg([], X, aaa,1).
+     X = []
+   flora_plg2hlg(X, [aaa(qq,b(c,4)), f(abc), aaa(b,c(K),aaa(bbb,aaa(ccc,aaa(ddd))))],aaa,1).
+     X = [qq(b(c,4)),f(abc),b(c(_h185),bbb(ccc(ddd)))]
+   flora_plg2hlg(X, [aaa(qq,b(c,4)), f(abc), aaa(b,c(K))],aaa,1).
+     X = [qq(b(c,4)),f(abc),b(c(_h185))]
+   flora_plg2hlg(X, [[aaa(qq,b(c,4)), f(abc)], aaa(b,c(K))],aaa,1).
+     X = [[qq(b(c,4)),f(abc)],b(c(_h193))]
+   flora_plg2hlg([aaa(qq,b(c,4)), a(qq,b(c,4)), f(q(a),b,c(p,q(Y)))], X, aaa,1).
+     X = [aaa(qq,b(c,4)),aaa(a,qq,aaa(b,c,4)),aaa(f,aaa(q,a),b,aaa(c,p,aaa(q,_h423)))]
+   flora_plg2hlg([aaa(qq,b(c,4)), [a(qq,b(c,4))], [f(q(a),b,c(p,q(Y))), b(_)]], X, aaa,1).
+     X = [aaa(qq,b(c,4)),[aaa(a,qq,aaa(b,c,4))],[aaa(f,aaa(q,a),b,aaa(c,p,aaa(q,_h480))),aaa(b,_h487)]]
+   flora_plg2hlg(X, (aaa(qq,b(c,4)), f(abc), aaa(b,c(K),aaa(bbb,aaa(ccc,aaa(ddd))))),aaa,1).
+     X = (qq(b(c,4))  ','  f(abc)  ','  b(c(_h185),bbb(ccc(ddd))))
+   flora_plg2hlg(X, (aaa(qq,b(c,4)), f(abc), aaa(b,c(K))),aaa,1).
+     X = (qq(b(c,4))  ','  f(abc)  ','  b(c(_h185)))
+   flora_plg2hlg(X, ((aaa(qq,b(c,4)); f(abc)), aaa(b,c(K))),aaa,1).
+     X = ((qq(b(c,4))  ';'  f(abc))  ','  b(c(_h193)))
+   flora_plg2hlg((aaa(qq,b(c,4)); a(qq,b(c,4)), f(q(a),b,c(p,q(Y)))), X,aaa,1).
+     X = (aaa(qq,b(c,4))  ';'  aaa(a,qq,aaa(b,c,4))  ','  aaa(f,aaa(q,a),b,aaa(c,p,aaa(q,_h427))))
+   flora_plg2hlg((aaa(qq,b(c,4)), a(qq,b(c,4)), f(q(a),b,c(p,q(Y)))), X,aaa,1).
+     X = (aaa(qq,b(c,4))  ','  aaa(a,qq,aaa(b,c,4))  ','  aaa(f,aaa(q,a),b,aaa(c,p,aaa(q,_h427))))
+   flora_plg2hlg(((aaa(qq,b(c,4)), a(qq,b(c,4))); (f(q(a),b,c(p,q(Y))), b(_))), X, aaa,1).
+     X= (aaa(qq,b(c,4))  ','  aaa(a,qq,aaa(b,c,4))  ';' aaa(f,aaa(q,a),b,aaa(c,p,aaa(q,_h480)))  ','  aaa(b,_h485))
 */

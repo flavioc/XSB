@@ -88,7 +88,6 @@
 #mode restore
 
 #define ERROR_ARGUMENTS	'invalid arguments directive'
-#define ERROR_PROLOGMODULE	'invalid module name'
 #define ERROR_AGGREGT	'syntax error in aggregate body'
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_PRLGLIT	'invalid PROLOG literal'
@@ -110,6 +109,7 @@
 #define ERROR_ARITY	'invalid arity (non-negative integers or variables expected)'
 #define ERROR_EQLSPEC	'invalid equality specification'
 #define ERROR_UPDATEOP	'invalid use of update operator where an oid is expected'
+#define ERROR_SETNOTE	'invalid use of set notation'
 #define ERROR_GPP	'error while parsing the output from the gpp preprocessor'
 #define EXP_POSINTEGER	'positive integer (including 0) expected'
 #define EXP_VARIABLE	'variable expected'

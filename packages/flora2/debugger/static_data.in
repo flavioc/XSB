@@ -110,6 +110,9 @@ flora_show_this_hide(FLLIBDELETEALL/1).
 flora_show_this_hide(FLLIBDELETE/2).
 flora_show_this_hide(FLLIBDELETE/1).
 
+%% A ~ B
+flora_show_this_hide(FLLIBUNIVEQFORM/2).
+
 %% Dynamic module spec wrappers
 flora_show_this_hide(FLLIBMODLIT/3).
 flora_show_this_hide(FLLIBMODLIT/4).

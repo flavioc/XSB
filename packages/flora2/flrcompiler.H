@@ -54,9 +54,21 @@
 	flora_define_flogicstatic/2
    from flrfirstorder.
 
+:- import
+	flora_token_text/6
+    from flrlexer.
+
+:- import
+	flora_nth_token/2
+   from flrcomposer.
+
 :- import 
 	flora_is_dynamic_flogic_base/2
    from flrwrapper.
+
+:- import
+	flora_compiler_environment/2
+   from flrutils.
 
 :- export 
 	flora_reset_compiler/0, 

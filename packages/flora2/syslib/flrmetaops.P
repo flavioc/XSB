@@ -33,42 +33,109 @@
 	flora_decode_predicate/6
     from flrwrapper.
 
-#include "flora_terms.flh"
+:- import flora_concat_atoms/2 from flrporting.
 
+#include "flora_terms.flh"
 
 
 /******************************************************************************
   FLLIBUNIVEQFORM(?X,?Y)
   The meta predicate ~
 ******************************************************************************/
-FLLIBUNIVEQFORM(X,Y) :- X=Y, !.
-
-%% This takes care of F-logic molecules with dynamic module specification
-FLLIBUNIVEQFORM(X, Y) :-
-	X=FLLIBMODLIT(Fun1,Args1,ModuleName1),
-	Y=FLLIBMODLIT(Fun2,Args2,ModuleName2),
+FLLIBUNIVEQFORM(X,Y) :-
+	(var(X) ; var(Y)),
 	!,
-	Fun1 = Fun2,
-	Args1 = Args2,
-	ModuleName1 = ModuleName2.
+	X=Y.
 
-FLLIBUNIVEQFORM(X, Y) :-
-	X=FLLIBMODLIT(Fun,Args,ModuleName),
-	!,
-	%% this ensures that ModuleName is bound whenever possible
-	(nonvar(ModuleName), !
-	; flora_decode_predicate(Y,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
-	flora_module_predicate(Fun,Args,ModuleName,Literal),
-	Literal = Y.
+FLLIBUNIVEQFORM((X,XX),(Y,YY)) :-
+	FLLIBUNIVEQFORM(X,Y),
+	FLLIBUNIVEQFORM(XX,YY).
 
-FLLIBUNIVEQFORM(X, Y) :-
-	Y=FLLIBMODLIT(Fun,Args,ModuleName),
+FLLIBUNIVEQFORM((X,XX),FLLIBMODLIT(FL_LIBMOD,(Y,YY),M)) :-
+	FLLIBUNIVEQFORM(X,FLLIBMODLIT(FL_LIBMOD,Y,M)),
+	FLLIBUNIVEQFORM(XX,FLLIBMODLIT(FL_LIBMOD,YY,M)).
+
+FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,(X,XX),M), (Y,YY)) :-
+	FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,X,M),Y),
+	FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,XX,M),YY).
+
+FLLIBUNIVEQFORM((X;XX),(Y;YY)) :-
+	FLLIBUNIVEQFORM(X,Y),
+	FLLIBUNIVEQFORM(XX,YY).
+
+FLLIBUNIVEQFORM((X;XX),FLLIBMODLIT(FL_LIBMOD,(Y;YY),M)) :-
+	FLLIBUNIVEQFORM(X,FLLIBMODLIT(FL_LIBMOD,Y,M)),
+	FLLIBUNIVEQFORM(XX,FLLIBMODLIT(FL_LIBMOD,YY,M)).
+
+FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,(X;XX),M), (Y;YY)) :-
+	FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,X,M),Y),
+	FLLIBUNIVEQFORM(FLLIBMODLIT(FL_LIBMOD,XX,M),YY).
+
+%% Now neither X nor Y are variables
+
+%% Speed up the case of  nonvar1@Var1 ~ nonvar2@Var2
+FLLIBUNIVEQFORM(FLLIBMODLIT(WrapX,X,MX),FLLIBMODLIT(WrapY,Y,MY)) :-
+	WrapX \== FL_LIBMOD,
+	WrapY \== FL_LIBMOD,
+	WrapX = WrapY,
+	X=Y,
+	MX=MY.
+
+%% Spped up the case of nonvar1@nonvarmod1 ~ nonvar2@nonvarmod2
+FLLIBUNIVEQFORM(X,Y) :-
+	X \= FLLIBMODLIT(_,_,_),
+	Y \= FLLIBMODLIT(_,_,_),
 	!,
-	%% this ensures that ModuleName is bound whenever possible
-	(nonvar(ModuleName), !
-	; flora_decode_predicate(X,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
-	flora_module_predicate(Fun,Args,ModuleName,Literal),
-	X = Literal.
+	X=Y.
+
+%% Common (expensive) case
+FLLIBUNIVEQFORM(X,Y) :-
+	get_canonical_form(X,(Wrap,Args,Mod,Callable)),
+	get_canonical_form(Y,(Wrap,Args,Mod,Callable)),
+	(var(Callable),nonvar(Wrap),nonvar(Args),nonvar(Mod)
+	-> flora_module_predicate(Wrap,Args,Mod,Callable)
+	;  var(Callable), nonvar(Wrap), nonvar(Args)
+	%% Cases like a(X)@M ~ Y@Z where module stays unbound
+	-> Callable = FLLIBMODLIT(Wrap,Args,Mod)
+	;  true
+	).
+
+%% get_canonical_form(+Term,-Module,-CallableForm)
+%%     Term is either a Hilog/Prolog term or a reified statement
+%%     Canonical form is (Func,Args,Module,CallableForm)
+get_canonical_form(Term,(_,_,_,Term)) :-
+	var(Term),
+	!.
+
+%% Case of Var@...
+get_canonical_form(FLLIBMODLIT(FL_LIBMOD,Term,Mod),(Wrap,Args,Module,Callable)) :-
+	!,
+	get_canonical_form(Term,Canon),
+	Canon = (Wrap,Args,NewMod,Callable),
+	(var(Term) -> Module = Mod
+	;  var(NewMod) -> Module=Mod
+	;  Module = NewMod
+	).
+
+%% Case of nonvar@Var
+get_canonical_form(FLLIBMODLIT(Wrap,Args,Mod), (Wrap,Args,Mod,Callable)) :-
+	!,
+	(var(Mod) -> true
+	; flora_module_predicate(Wrap,Args,Mod,Callable)
+	).
+
+get_canonical_form(Term, Canon) :-
+	flora_decode_predicate(Term,Type,TermModuleName,Prefix,Wrapper,ArgL),
+	(Type = (hilog) ->
+	    Canon = (WRAP_HILOG,[Wrapper|ArgL],TermModuleName,_)
+	; (atom(Prefix) -> flora_concat_atoms([Prefix,Wrapper],Wrapper1)
+	  ; Wrapper1 = Wrapper
+	  ),
+	  Canon = (Wrapper1,ArgL,TermModuleName,Term)
+	).
+
+
+
 
 %% This takes care of first-order Flora predicates with dynamic 
 %% module specification 

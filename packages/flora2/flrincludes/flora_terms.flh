@@ -20,6 +20,8 @@
 ** along with FLORA-2; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
+** $Id$
+**
 **
 */
 
@@ -188,6 +190,8 @@
 #define FL_EXPUNGE		expunge
 #define FL_IN			(in)
 
+#define FL_LIBMOD               libmod_wrapper
+
 #define FL_MIN			min
 #define FL_MAX			max
 #define FL_SUM			sum
@@ -209,6 +213,9 @@
 #define FL_BTDELETEALL		btdeleteall
 #define FL_BTERASE		bterase
 #define FL_BTERASEALL		bteraseall
+
+#define FL_CONSTRAINT_START     '{'
+#define FL_CONSTRAINT_END       '}'
 
 
 /****************************************************************************
@@ -301,6 +308,7 @@
 #define FLFIRSTORDER		flfirstorder
 #define FLINDEX			flindex
 #define FLHILOGTABLE		flhilogtable
+%%#define FLTHISMODULE		flthismodule
 #define FLEQUALITY		flequality
 #define FLEXPUNGE		flexpunge
 #define FLFLOGICSTATIC		flflogicstatic
@@ -339,6 +347,8 @@
 #define FLINSERT		flinsert
 #define FLDELETE		fldelete
 
+#define FLCONSTRAINT	        flconstraint
+
 #define FLIFTHEN		flifthen
 #define FLIFTHENELSE		flifthenelse
 
@@ -360,6 +370,12 @@
 
 
 /****************************************************************************
+  Flags that control the behavior of flP2H, plg2hlg
+****************************************************************************/
+#define P2H_UNIFY_VARS 	      1
+#define P2H_DONOT_UNIFY_VARS  0
+
+/****************************************************************************
   Prolog encoding of a compiled FLORA program
 ****************************************************************************/
 #define PRRULE			prrule
@@ -367,6 +383,10 @@
 #define PRFACT			prfact
 #define PRQUERY			prquery
 #define PRDIRECTIVE		prdirective
+
+#define PRREIFY	       	        prreify
+
+#define PRCONSTRAINT		prconstraint
 
 #define PRCOMMAND		prcommand
 #define PRTABLE			prtable

@@ -350,7 +350,7 @@ dump_literal(Spec,Indent) :-
 	; dump_simple_goal(Spec, Indent)
 	).
 
-%% We don't want things like FLORA_WORKSPACE
+%% We don't want things like FLORA_THIS_WORKSPACE
 %% to appear in quote marks, as it would be with write_canonical/1
 %% Simple write/1 won't work either because strings that are arguments
 %% to predicates wil then be written without the quotes

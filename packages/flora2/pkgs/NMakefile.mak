@@ -1,27 +1,28 @@
 # Make file for Microsoft NMAKE
 
+!include ..\.prolog_path
+
 OBJEXT = .xwam
+PROLOGEXT = .P
 
 ALLOBJS =
 
-XSB=..\..\..\config\x86-pc-windows\bin\xsb.exe
-
 OPTIONS=[optimize]
 
-.SUFFIXES: .P .flr
+.SUFFIXES: $(PROLOGEXT) .flr
 
 ALL: $(ALLOBJS)
 
 
-.flr.P:
-	$(XSB) -e "bootstrap_flora. import (flCompile)/1 from flora2. flCompile(%|fF)."
+.flr$(PROLOGEXT):
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. import (flCompile)/1 from flora2. flCompile(%|fF)."
 
 
 CLEAN:
-	-@del *~
-	-@del *$(OBJEXT)
-	-@del *.P
-	-@del *.fdb
-	-@del *.fld
-	-@del *.bak
-	-@del .#*
+	-@erase *~
+	-@erase *$(OBJEXT)
+	-@erase *$(PROLOGEXT)
+	-@erase *.fdb
+	-@erase *.fld
+	-@erase *.bak
+	-@erase .#*

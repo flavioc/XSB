@@ -140,6 +140,8 @@ d_mvd(X,Y,Z) :-
 	debugging,
 	check_mvd(X,Y,Z),
 	check_imvd(X,Y,Z),
+	check_mvddef(X,Y),
+	check_imvddef(X,Y),
 	flora_error_undefined(mvd(X,Y,Z)),
 	abort.
 
@@ -149,6 +151,7 @@ d_mvd(X,Y,Z) :-
 d_imvd(X,Y,Z) :-
 	debugging,
 	check_imvd(X,Y,Z),
+	check_imvddef(X,Y),
 	flora_error_undefined(imvd(X,Y,Z)),
 	abort.
 

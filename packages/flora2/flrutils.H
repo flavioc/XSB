@@ -112,7 +112,7 @@
 	flora_debug_code/2
    from flrundefined.
 
-:- import plg2hlg/3 from prolog2hilog.
+:- import flora_plg2hlg/4 from prolog2hilog.
 
 :- import flora_configuration/2,
 	flora_storage_registry/1,
@@ -145,7 +145,7 @@
 	flora_sysmod_file/3
    from flrlibman.
 
-:- import prettyprint_stdin/0 from flrprettyprint.
+:- import prettyprint_stdin/0 from flrpretifydump.
 
 :- import
 	flora_module_name/3,
@@ -162,6 +162,8 @@
 :- dynamic flora_maxerr(_).
 :- index(flora_maxerr/1,trie).
 
+:- dynamic flora_compiler_environment(_,_).
+
 :- export
 	flMaxerr/1,
 	flHalt/0,
@@ -171,6 +173,7 @@
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
 	flP2H/2,
+	flora_post_p2h_conversion/2,
 	flDump/1,
 	flora_locate_file/3,
 	flora_FLH_filename/2,
@@ -198,6 +201,8 @@
 	flora_reclaim_storage_space/0,
 	flora_commit_storage/0,
 	flora_load_dyn_data/3,
+
+	flora_compiler_environment/2,
 
 	flora_read_canonical_and_insert/2,
 	flora_compile_system_module_by_ID/1,

@@ -27,49 +27,50 @@
 %% and loaded.
 
 :- compiler_options([xpp_on]).
-#include "extensions_xsb.h"
+#include "flora_porting.flh"
 
 
-:- import slash/1 from machine.
-:- import fmt_write_string/3, path_sysop/3 from file_io.
-:- import search_module/6 from consult.
-:- import xsb_configuration/2, windows_os/0 from xsb_configuration.
-:- import str_cat/3, str_sub/2 from string.
+:- import
+	flora_slash/1,
+	flora_concat_atoms/2,
+	flora_file_op/3,
+	flora_running_under/1
+    from flrporting.
 :- import flora_configuration/2 from flrregistry.
-
-is_cygwin :- xsb_configuration(architecture,A), str_sub(cygwin,A).
+:- import search_module/6 from consult.
+:- import xsb_configuration/2 from xsb_configuration.
 
 ?-  flora_configuration(installdir, FloraDir),
-    slash(Slash),
+    flora_slash(Slash),
     Basename = prolog2hilog,
-    fmt_write_string(Module,
-		     '%s%sp2h%s%s', f(FloraDir, Slash, Slash,Basename)),
+    flora_concat_atoms([FloraDir,Slash,p2h,Slash,Basename],Module),
     (   %% avoid recompilation: check if prolog2hilog.OBJ exists and 
 	%% is newer than prolog2hilog.c.
 	search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
-	str_cat(Module, '.c', ModuleSourceFile),
-	path_sysop(newerthan,ModuleO,ModuleSourceFile)
+	flora_concat_atoms([Module, '.c'], ModuleSourceFile),
+	flora_file_op(newerthan,ModuleO,ModuleSourceFile)
     %% module compiled and is current, so just load
     -> [Basename]
+
+    ;  % Don't check anything on Windows -- module is supposed to be compiled
+	flora_running_under(windows) -> [Basename]
 
     %% If Module isn't compiled or is old --- recompile
     ;   xsb_configuration(compiler, CC),
 	xsb_configuration(config_libdir, ConfigLibdir),
-	str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
+	flora_concat_atoms([Module,'.', PROLOG_OFILE_EXT], Objfile),
 	consult(Module, [cc(CC), cc_opts(' ')]),
-	fmt_write_string(LibObjFile,
-			 '%s%s%s%s',
-			 args(ConfigLibdir,Slash,Basename,
-			      XSB_OBJ_EXTENSION_ATOM)),
-	path_sysop(rename,Objfile, LibObjFile),
-	((windows_os; is_cygwin), !
-	;
-	    %% Note: the .so ending is Unix-ism. I dunno what this
-	    %% corresponds to in windows. - mk
-	    str_cat(Module, '.so', SharedLib),
-	    fmt_write_string(LibMod,
-			     '%s%s%s.so',
-			     a(ConfigLibdir,Slash,Basename)),
-	    path_sysop(rename,SharedLib,LibMod)
+	flora_concat_atoms([ConfigLibdir,Slash,Basename,'.',PROLOG_OFILE_EXT],
+			   LibObjFile),
+	flora_file_op(rename,Objfile, LibObjFile),
+	(flora_running_under(unix)
+	->
+	    %% Note: the .so ending is Unix-specific.
+	    %% We don't need to run this script under Windows
+	    flora_concat_atoms([Module, '.so'], SharedLib),
+	    flora_concat_atoms([ConfigLibdir,Slash,Basename,'.so'], LibMod),
+	    flora_file_op(rename,SharedLib,LibMod)
+	; % Not sure what to do under Cygwin -- probably nothing
+	  true
 	)
      ).

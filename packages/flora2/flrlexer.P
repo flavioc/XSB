@@ -147,19 +147,24 @@ flora_symbol_token_struct(TextStr,LN1,CN1,LN2,CN2,SYMBOL_TOKEN(A,Text)) :-
 	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
 	atom_codes(A,TextStr).
 
+/***************************************************************************
+	Special tokens: numbered and unnumbered anon oids, _@
+****************************************************************************/
+%% _#, _@
 flora_special_token_struct(TextStr,LN1,CN1,LN2,CN2,SPECIAL_TOKEN(A,Text)) :-
 	text_info(LN1,CN1,LN2,CN2,TextStr,Text),
 	atom_codes(A,TextStr).
 
-/***************************************************************************
-	support for numbered anon oids
-****************************************************************************/
+%% _#N
 flora_special_token_struct(TextStr,Num,LN1,CN1,LN2,CN2,SPECIAL_TOKEN(A,B,Text)) :-
         TextStr=[Underscore, Hash],
 	text_info(LN1,CN1,LN2,CN2,[Underscore|[Hash|Num]],Text),
         atom_codes(A,TextStr),
 	atom_codes(B,Num).
 
+/***************************************************************************
+	whitespace
+****************************************************************************/
 flora_whitespace_struct(TextStr,LN1,CN1,LN2,CN2,WHITESPACE(Text)) :-
 	text_info(LN1,CN1,LN2,CN2,TextStr,Text).
 

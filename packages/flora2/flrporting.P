@@ -26,14 +26,18 @@
 
 
 :- compiler_options([xpp_on]).
+
 #include "flag_defs_xsb.h"
-#include "flora_characters.flh"
 #include "token_defs_xsb.h"
+%% DO NOT include any FLORA .flh files here, or else FLORA won't
+%% build correctly when installed outside of the XSB tree
+
 
 :- import conget/2, conset/2 from gensym.
 :- import eval/2 from eval.
 :- import
 	slash/1, stat_flag/2,
+	str_len/2,
 	file_puttoken/3, file_writequoted/2
    from machine.
 :- import substring/4 from string.
@@ -46,10 +50,12 @@
 	flora_write_quoted_atom/1,
 	flora_write_atom/1,
 	flora_slash/1,
+	flora_running_under/1,
 	flora_file_op/2,
 	flora_file_op/3,
 	flora_copy_input/0,
 	flora_user_home/1,
+	flora_atom_length/2,
 	flora_match_substring/3,
 	flora_match_substring/5,
 	flora_get_substring/4,
@@ -86,6 +92,10 @@ flora_concat_atoms([Atom1|AtomList],Atom) :-
 	str_cat(Atom1,Atom2,Atom).
 flora_concat_atoms([],'').
 	
+
+
+flora_atom_length(Atom,Length) :- str_len(Atom, Length).
+
 
 flora_get_counter(Counter,Value) :- conget(Counter,Value).
 flora_set_counter(Counter,Value) :- conset(Counter,Value).
@@ -136,6 +146,7 @@ flora_file_op(tmpfilename,File)     :- path_sysop(tmpfilename,File).
 flora_file_op(isabsolute,File)      :- path_sysop(isabsolute,File).
 flora_file_op(rename,File,ToFile)   :- path_sysop(rename,File,ToFile).
 flora_file_op(basename,File,Base)   :- path_sysop(basename,File,Base).
+flora_file_op(extension,File,Ext)   :- path_sysop(extension,File,Ext).
 flora_file_op(expand,File,Base)     :- path_sysop(expand,File,Base).
 flora_file_op(newerthan,File,Base)  :- path_sysop(newerthan,File,Base).
 flora_file_op(dirname,File,Dir)     :- path_sysop(dirname,File,Dir).
@@ -147,18 +158,33 @@ flora_copy_input :-
 	stat_flag(CURRENT_INPUT, StdIn),
 	stat_flag(CURRENT_OUTPUT, StdOut),
 	copyIOport(StdIn,StdOut).
-/*
-	repeat,
-	  get0(Ch),
-	  (Ch =:= CH_EOF_P, !
-	  ; put(Ch), fail
-	  ).
-*/
 
 
 flora_write_quoted_atom(Atom) :-
 	stat_flag(CURRENT_OUTPUT, StdOut),
 	file_writequoted(StdOut,Atom).
+%% Unquoted atom
 flora_write_atom(Atom) :-
 	stat_flag(CURRENT_OUTPUT, StdOut),
 	file_puttoken(StdOut,TK_ATOM,Atom).
+
+
+:- table flora_running_under/1.
+
+flora_running_under(cygwin) :-
+	xsb_configuration(architecture,A),
+	str_sub(cygwin,A),
+	!.
+flora_running_under(windows) :-
+	xsb_configuration(architecture,A),
+	str_sub(windows,A),
+	!.
+flora_running_under(macos) :-
+	xsb_configuration(architecture,A),
+	str_sub(rhapsody,A),
+	!.
+flora_running_under(darwin) :-
+	xsb_configuration(architecture,A),
+	str_sub(rhapsody,A),
+	!.
+flora_running_under(unix).

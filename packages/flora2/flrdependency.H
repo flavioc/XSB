@@ -47,6 +47,7 @@
 	is_prologliblit/4,
 	is_prnewpred/4,
 	is_prnewoid/3,
+	is_prreify/2,
 	is_flogic/4,
 	is_fllibdb/1
    from flrcoder.

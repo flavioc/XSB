@@ -1,0 +1,8 @@
+%% File extensions used in FLORA-2
+
+#define FLORA_FILE_EXT		flr
+#define FLORA_INCLUDE_EXT	fli
+#define FLORA_HEADER_EXT	flh
+#define FLORA_FDB_EXT		fdb
+%% Extension for storage of defined predicate skeletons
+#define FLORA_FLD_EXT		fld

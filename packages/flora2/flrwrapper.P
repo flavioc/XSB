@@ -62,6 +62,10 @@ flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
   It fails if the input is not a valid Flora module name. It is used for
   either F-logic or HiLog wrapper predicates.
 *****************************************************************************/
+%% Tabling this expensive predicate can speed up dynamic module calls
+%% like foo@X
+:- table flora_module_predicate/4.
+
 flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
 	flora_module_name(ModuleName,Type,WS),
 	!,
@@ -192,7 +196,7 @@ flora_check_module_name(ModuleName) :-
   flora_module_name_error(+ModuleName)
 *****************************************************************************/
 flora_module_name_error(ModuleName) :-
-	flora_error_line("invalid Flora module name `~w'",args(ModuleName)).
+	flora_error_line("invalid Flora module name `~w'",ModuleName).
 
 
 /***************************************************************************
@@ -445,6 +449,9 @@ flora_is_flogic_base(WRAP_OBJEQL)     :- !.
         ArgsList=[]. In (3), PredicateSymbol=[] and ArgsList=[].
 
 *****************************************************************************/
+%% This is an expensive predicate -- table it
+:- table flora_decode_predicate/6.
+
 flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	               WrapPrefix,PredicateSymbol,ArgsList) :-
 	%% This branch is to decode an F-logic, a HiLog, or a Flora predicate.

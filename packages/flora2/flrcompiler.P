@@ -82,6 +82,9 @@ is_flnot(FLNOT(Goal),Goal).
 is_fltnot(FLTNOT(Goal),Goal).
 
 is_flload(FLLOAD(LoadList),LoadList).
+
+is_flconstraint(FLCONSTRAINT(ConstrBody),ConstrBody).
+
 %% @module
 is_flworkspace(FLWORKSPACE(P,WS),P,WS).
 %% @flora(module)
@@ -91,8 +94,13 @@ is_flfloralib(FLFLORALIB(P,M),P,M).
 is_flplib(FLPLIB(P,M),P,M).
 is_flplib(FLPLIB(P),P).
 %% @prologall() and @prologall(module)
-is_flpliball(FLPLIBALL(P),P).
-is_flpliball(FLPLIBALL(P,M),P,M).
+%% Make sure the coder translates flora_plg2hlg/4 as prolog
+is_flpliball(FLPLIBALL(P),P) :-
+	flora_define_prolog(flora_plg2hlg,4),
+	flora_define_prolog(flora_post_p2h_conversion,2).
+is_flpliball(FLPLIBALL(P,M),P,M) :-
+	flora_define_prolog(flora_plg2hlg,4),
+	flora_define_prolog(flora_post_p2h_conversion,2).
 
 is_flifthenelse(FLIFTHENELSE(Cond,Then,Else),Cond,Then,Else).
 is_flifthen(FLIFTHEN(Cond,Then),Cond,Then).
@@ -216,6 +224,8 @@ fact_struct(Head,PRFACT(Head)).
 query_struct(Goal,PRQUERY(Goal)).
 directive_struct(Direct,PRDIRECTIVE(Direct)).
 
+reify_struct(Formula,PRREIFY(Formula)).
+
 command_struct(C,PRCOMMAND(C)).
 table_struct(F,N,PRTABLE(F,N)).
 %% We keep the import directive's support mechanism for @prolog(module)
@@ -312,30 +322,60 @@ call_struct(VarName,Index,PRCALL(Var)) :- varobj_struct(VarName,Index,Var).
 termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
 
 workspacelit_struct(P,WS,Code) :-
-	( is_flatom(WS,WSAtom,Index) ->
-	    atomobj_struct(WSAtom,Index,WSCode),
-	    workspace_struct(P,WSCode,Code)
-
-	; is_flvar(WS,WSVarName,Index) ->
+	(is_flvar(WS,WSVarName,Index) ->
 	    varobj_struct(WSVarName,Index,WSVarCode),
 	    %% a call to a Flora user module
 	    florasyslib_struct(FLLIBMODLIT,2,[P,WSVarCode],Code)
+
+	%% X@module of X@flora(module)
+	; is_varobj_struct(P) ->
+	    (is_flatom(WS,WSAtom,Index) -> atomobj_struct(WSAtom,Index,WSCode)
+	    %% ...@ _@
+	    ; is_fltoken(WS,FL_THISMODULE,_) -> thismodule_struct(WSCode)
+	    ;  WSCode = WS % if system module then it is already compiled
+	    ),
+	    %% a call to a module
+	    florasyslib_struct(FLLIBMODLIT,2,[P,WSCode],Code)
+
+	; is_flatom(WS,WSAtom,Index) ->
+	    atomobj_struct(WSAtom,Index,WSCode),
+	    workspace_struct(P,WSCode,Code)
+
+	; is_fltoken(WS,FL_THISMODULE,_) ->
+	    thismodule_struct(WSCode),
+	    workspace_struct(P,WSCode,Code)
 	;
-	  %% a Flora system module
-	  workspace_struct(P,WS,Code)
+	    %% a Flora system module
+	    workspace_struct(P,WS,Code)
 	).
 
 workspaceobj_struct(P,WS,Object,Code) :-
-	( is_flatom(WS,WSAtom,Index) ->
-	    atomobj_struct(WSAtom,Index,WSCode),
-	    Code=NULL,
-	    workspace_struct(P,WSCode,Object)
-
-	; is_flvar(WS,WSVarName,Index) ->
+	(is_flvar(WS,WSVarName,Index) ->
 	    varobj_struct(WSVarName,Index,WSVarCode),
 	    new_varobj(Index,Object),
-	    %% a call to a Flora user module
+	    %% code to construct the object for foo@X in arg position,
+	    %% i.e., p(foo@X)
 	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSVarCode,Object],Code)
+
+	; is_varobj_struct(P) ->
+	    (is_flatom(WS,WSAtom,Index) -> atomobj_struct(WSAtom,Index,WSCode)
+	    ; is_fltoken(WS,FL_THISMODULE,_) -> thismodule_struct(WSCode)
+	    ;  WSCode = WS % if system module then it is already compiled
+	    ),
+	    new_varobj(Index,Object),
+	    %% code to construct the object for X@... in arg position,
+	    %% i.e., p(X@...)
+	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSCode,Object],Code)
+
+	; is_flatom(WS,WSAtom,Index) ->
+	    atomobj_struct(WSAtom,Index,WSCode),
+	    workspace_struct(P,WSCode,Object),
+	    Code=NULL
+
+	; is_fltoken(WS,FL_THISMODULE,_) ->
+	    thismodule_struct(WSCode),
+	    workspace_struct(P,WSCode,Object),
+	    Code=NULL
 	;
 	  %% a Flora system module
 	  Code=NULL,
@@ -585,6 +625,7 @@ metauniv_struct(Left,Right,Code) :-
 controlconstruct_struct(CondCode,ActionCode,Wrapper,Code) :-
 	florasyslib_struct(Wrapper,2,[CondCode,ActionCode],Code).
 
+constraint_struct(ConstrCode,PRCONSTRAINT(ConstrCode)).
 
 /****************************************************************************
   reset_newpredicate/0
@@ -651,6 +692,12 @@ new_oidobj(RuleNum,OidNumStr,Index,OidObject) :-
         flora_concat_atoms([NEWOID,RuleNumAtm,'|',OidNumStr],Name),
 	newoid_struct(Name,Index,OidObject).
 
+
+/****************************************************************************
+  reset_rulenum
+
+****************************************************************************/
+reset_rulenum :- flora_set_counter(RULE_NUM,1).
 
 
 /****************************************************************************
@@ -971,6 +1018,7 @@ initialize_work :-
 ****************************************************************************/
 flora_reset_compiler :-
 	reset_newpredicate,
+	reset_rulenum,
 	reset_newoid.
 
 
@@ -1435,6 +1483,11 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	    compile_flload(LoadList,SpecCode,Status),
 	    OidCode=NULL
 
+	; is_flconstraint(ParserTerm,ConstrBody) ->
+	    compile_body(ConstrBody,ConstrBodyCode,Status),
+	    constraint_struct(ConstrBodyCode,SpecCode),
+	    OidCode=NULL
+
 	; is_flworkspace(ParserTerm,P,WS) ->
 	    compile_wsliteral(P,WS,OidCode,SpecCode,Status)
 
@@ -1631,7 +1684,7 @@ compile_pathexp(ParserTerm,Object,NULL,NULL,[]) :-
 	( is_flatom(ParserTerm,_A) ->
 	    atomobj_struct(ParserTerm,Object)
 
-	; is_fltoken(ParserTerm,FL_THISMODULE,Index) ->
+	; is_fltoken(ParserTerm,FL_THISMODULE,_Index) ->
 	    thismodule_struct(Object)
 
 	; is_flnumber(ParserTerm,_N) ->
@@ -1732,7 +1785,8 @@ compile_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],OidCode,C
 	%% because we are compiling a meta here, the code
 	%% is self-contained -- no oid part will be pushed
 	%% to the front of the enveloping term
-	compile_body(T,TCode,S),
+	compile_body(T,TCode1,S),
+	reify_struct(TCode1,TCode),
 	( S == [] ->
 	    compile_argpathexplist(L,ArgTypeList,LObj,OidCode,Code,Status)
 	;
@@ -1748,7 +1802,22 @@ compile_flload(LoadList,Code,Status) :-
 	%% since complex terms aren't allowed in load lists, we ignore OidCode
 	compile_fllist(L,T,I,ObjList,_OidCode,OCode,Status),
 	( Status == [] ->
-	    florasyslib_struct(FLLIBLOAD,1,[ObjList],LCode),
+	    thismodule_struct(Mod),
+	    %% This is the file being compiled
+	    (flora_compiler_environment(file,ProgramFile), !
+	    ; ProgramFile=userin
+	    ),
+	    %% "I" is a token index
+	    flora_nth_token(I,Token),
+	    flora_token_text(Token,_TextStr,BLN,BCN,_ELN,_ECN),
+	    %% Encode location of the literal [file>>mod]
+	    %% Location is used for error checking in flrload.P to make sure
+	    %% that loading of a file doesn't override the program
+	    %% in which the loading statement occurs
+	    list_struct([BLN,BCN],[],PositionCode),
+	    florasyslib_struct(FLLIBLOAD,
+			       4,
+			       [ObjList,ProgramFile,Mod,PositionCode],LCode),
 	    conjunct_code([OCode,LCode],Code)
 	;
 	  true
@@ -2328,7 +2397,8 @@ compile_head_argpathexplist([T|L],[FL_OID|ArgTypeList],[TObj|LObj],Code,Status) 
 
 compile_head_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Status) :-
 	!,
-	compile_body(T,TCode,S),
+	compile_body(T,TCode1,S),
+	reify_struct(TCode1,TCode),
 	( S == [] ->
 	    compile_head_argpathexplist(L,ArgTypeList,LObj,Code,Status)
 	;
@@ -2616,6 +2686,12 @@ compile_wsliteral(ParserTerm,WS,OidCode,WSCode,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_wstermlit(Funct,N,Args,WS,OidCode,WSCode,Status)
 
+	; is_flvar(ParserTerm,VarName,Index) ->
+	    compile_flvar(VarName,Index,VarCode),
+	    workspacelit_struct(VarCode,WS,WSCode),
+	    OidCode = NULL,
+	    Status = []
+
 	; is_flbirelate(ParserTerm,ObjTerm1,RelType,ObjTerm2) ->
 	    compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,_Obj,OidCode,WSCode,Status)
 
@@ -2647,9 +2723,12 @@ compile_floralibobj(ParserTerm,WS,Object,OidCode,Code,Status) :-
   compile_wspathexp(+ParserTerm,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
 compile_wspathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
-	( atomlit_struct(ParserTerm,A) ->
-	    workspaceobj_struct(A,WS,Object,Code),
-	    OidCode=NULL,
+	( %% pred(Term@...)
+	  %% Note: We have have to create code to compute X@.... We put this
+	  %% code in OidCode so that it would precede the code for pred(...)
+	  atomlit_struct(ParserTerm,A) ->
+	    workspaceobj_struct(A,WS,Object,OidCode),
+	    Code=NULL,
 	    Status=[]
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
@@ -2660,6 +2739,15 @@ compile_wspathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
 	    compile_wsflobjspec(ObjTerm,Spec,WS,Object,OidCode,Code,Status)
+
+	%% pred(X@...)
+	%% Note: We have have to create code to compute X@..., so we put
+	%% this code in OidCode so that it would precede the code for pred(...)
+	; is_flvar(ParserTerm,VarName,VarIndex) ->
+	    compile_flvar(VarName,VarIndex,VarCode),
+	    workspaceobj_struct(VarCode,WS,Object,OidCode),
+	    Code=NULL,
+	    Status = []
 	;
 	  is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm),
 	  compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,OidCode,Code,Status)
@@ -2707,7 +2795,8 @@ compile_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],OidCode,Cod
 compile_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,[TCode|LObj],OidCode,Code,Status) :-
 	!,
 	%% workspace not distributive over nested "meta"
-	compile_body(T,TCode,S),
+	compile_body(T,TCode1,S),
+	reify_struct(TCode1,TCode),
 	( S == [] ->
 	    compile_wsflargpathexplist(L,ArgTypeList,WS,LObj,OidCode,Code,Status)
 	;
@@ -3148,7 +3237,8 @@ compile_wsflobjeql(Obj1,Obj2,WS,OidCode,Code,Status) :-
   Compiling ${...}
 ****************************************************************************/
 compile_reifyop(Formula,Object,Status) :-
-	compile_body(Formula,Object,Status).
+	compile_body(Formula,Object1,Status),
+	reify_struct(Object1,Object).
 
 
 /****************************************************************************
@@ -3366,8 +3456,13 @@ generate_convert_to_prolog_code([],_,_,NULL).
 
 generate_convert_to_prolog_code([AObjH|AObjT],[AType|ATypes],[VarH|VarT],Code) :-
 	(AType==FL_BODYFORMULA
+	%% Don't convert meta arguments -- doesn't make sense
 	->  atomobj_struct('=',EqAtom),
 	    termlit_struct(EqAtom,2,[AObjH,VarH],CodeH)
+	;  atomobj_struct(flora_plg2hlg,FlP2H),
+	    %% P2H_DONOT_UNIFY_VARS - do not unify when both args are vars
+	    termlit_struct(FlP2H,4,[VarH,AObjH,WRAP_HILOG,P2H_DONOT_UNIFY_VARS],CodeH)
+	/*
 	;  atomobj_struct(var,VarAtom),
 	    termlit_struct(VarAtom,1,[AObjH],VarTerm),
 	    cut_struct(NO_INDEX, Cut),
@@ -3375,6 +3470,7 @@ generate_convert_to_prolog_code([AObjH|AObjT],[AType|ATypes],[VarH|VarT],Code) :
 	    termlit_struct(FlP2H,2,[VarH,AObjH],FlP2HTerm),
 	    conjunct_struct(VarTerm,Cut,Code1),
 	    disjunct_struct(Code1,FlP2HTerm,CodeH)
+	*/
 	), 
 	generate_convert_to_prolog_code(AObjT,ATypes,VarT,CodeT),
 	conjunct_code([CodeH,CodeT],Code).
@@ -3388,6 +3484,10 @@ generate_convert_from_prolog_code([AObjH|AObjT],[AType|ATypes],[VarH|VarT],Code)
 	(AType==FL_BODYFORMULA
 	->  atomobj_struct('=',EqAtom),
 	    termlit_struct(EqAtom,2,[AObjH,VarH],CodeH)
+	; atomobj_struct(flora_post_p2h_conversion,FlP2H),
+	    %% P2H_UNIFY_VARS - unify when both args are vars
+	    termlit_struct(FlP2H,2,[VarH,AObjH],CodeH)
+	/*
  	; atomobj_struct(nonvar,NonvarAtom),
 	    termlit_struct(NonvarAtom,1,[AObjH],NonvarTerm),
 	    cut_struct(NO_INDEX, Cut),
@@ -3395,6 +3495,7 @@ generate_convert_from_prolog_code([AObjH|AObjT],[AType|ATypes],[VarH|VarT],Code)
 	    termlit_struct(FlP2H,2,[VarH,AObjH],FlP2HTerm),
 	    conjunct_struct(NonvarTerm,Cut,Code1),
 	    disjunct_struct(Code1,FlP2HTerm,CodeH)
+	*/
 	),
 	generate_convert_from_prolog_code(AObjT,ATypes,VarT,CodeT),
 	conjunct_code([CodeH,CodeT],Code).
@@ -3467,8 +3568,9 @@ compile_head_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,
 compile_head_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,
                                 [TCode|LObj],Code,Status) :-
 	!,
-	%% workspace not distributive over nested "form"
-	compile_body(T,TCode,S),
+	%% workspace not distributive over nested `meta' argument spec
+	compile_body(T,TCode1,S),
+	reify_struct(TCode1,TCode),
 	( S == [] ->
 	    compile_head_wsflargpathexplist(L,ArgTypeList,WS,LObj,Code,Status)
 	;
@@ -4017,12 +4119,6 @@ compile_execdirect(DirectTerm,Code) :-
 
 compile_execdirect(DirectTerm,Code) :-
 	(
-	%%  is_flprolog(DirectTerm,Funct,Arity) ->
-	%%  (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
-	%%  (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
-	%%  florasyslib_struct(FLLIBSHDIRECT,3,[FL_PROLOG,FunctCode,ArityCode],Code)
-	%%;
-	
 	  is_flfirstorder(DirectTerm,Funct,Arity) ->
 	    %% Both Funct and Arity could be a variable because of the parsing
 	    %% of the directive firstorderall.

@@ -76,7 +76,6 @@
 	flora_shell/0.
 
 
-#define FLORA_VERSION               '0.85 of May 2002'
 /*****************************************************************************/
 
 
@@ -96,14 +95,13 @@ bootstrap_flora :-
 	;
 	  %% running FLORA as a package
 	  bootstrap_package([flora2,syslib,lib,debugger,pkgs,p2h],flora),
-	  assert(package_configuration(version(flora),FLORA_VERSION)),
-	  package_configuration(dir(flora),FloraDir),
-	  assert(flora_configuration(version,FLORA_VERSION)),
 	  (flora_configuration(develmode,yes)
 	  -> abort('FLORA-2 has been loaded as a standalone application: quit XSB then run FLORA as a package')
 	  ; true
 	  ),
 	  assert(flora_configuration(develmode,no)),
+	  [flrversion],
+	  package_configuration(dir(flora),FloraDir),
 	  assert(flora_configuration(installdir,FloraDir))
 	),
 	!,

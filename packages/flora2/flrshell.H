@@ -49,6 +49,9 @@
 	flora_module_path_remove/1
    from flrporting.
 
+:- import flora_plg2hlg/4 from prolog2hilog.
+:- import flora_post_p2h_conversion/2 from flrutils.
+
 :- import pop_stdin/1 from push_io.
 
 :- import

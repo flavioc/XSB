@@ -143,7 +143,11 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\title{\FLORA: User's Manual}
+\title{
+        \FLORA: User's Manual
+           \\
+       {\Large Version 0.90}
+       }
 
 \author{
   {Guizhen Yang
@@ -151,7 +155,7 @@
   Michael Kifer}
   \\\\
   Department of Computer Science\\
-  State University of New York at Stony Brook\\
+  Stony Brook University\\
   Stony Brook, NY 11794-4400
   }
   
@@ -214,25 +218,88 @@ consequence of the added support for HiLog, which obviates the need for the
 ``@'' sign in method invocations (this sign is now used to denote calls to
 \FLORA modules).
 
-\FLORA is no longer part of the official distribution of XSB and must be
-installed separately.
-To install it, first install XSB, then
+\FLORA is distributed in two ways. First, it is part of the official
+distribution of XSB and thus is installed together with XSB
+({\tt http://xsb.sourceforge.net}). Second, a more
+up-to-date, bleeding edge version of \FLORA can be downloaded from its own
+Web site at
+%%
+\begin{quote}
+  {\tt http://flora.sourceforge.net}
+\end{quote}
+%%
+These two versions can be
+installed at the same time and used independently ({\it e.g.}, if you want
+to keep abreast with the development of \FLORA or if a newer version was
+released in-between the releases of XSB). The installation instructions are
+somewhat different in these two cases.
+
+\paragraph{Installting \FLORA under UNIX.}
+To configure a version of \FLORA that was downloaded as part of the
+distribution of XSB, simply configure XSB as usual:
 %%
 \begin{verbatim}
- cd packages
- tar xf flora2.tar
+ cd XSB/build
+ configure
+ makexsb
+ makexsb packages
+\end{verbatim}
+%%
+(Under Windows, XSB is configured with the script {\tt makexsb\_wind} in
+directory {\tt XSB$\backslash$build}.)
+
+If you downloaded XSB from its CVS repository earlier and are updating your
+copy using the {\tt cvs update} command, then it might be a good idea to
+also do the following: 
+%%
+\begin{verbatim}
+ cd packages/flora2
+ makeflora clean
+ makeflora
+\end{verbatim}
+%%
+
+Under Windows also make sure that the {\tt packages} directory contains a
+shortcut called {\tt flora2.P} to the file
+{\tt packages$\backslash$flora2$\backslash$flora2.P}.
+
+To install the ``bleeding edge'' version of \FLORA from {\tt
+http://flora.sourceforge.net} you must download it (either as a tarball
+or from CVS) into a separate directory \emph{outside} of the XSB
+installation tree. After unpacking (or checking out from CVS) the \FLORA
+sources will be placed in the subdirectory called {\tt flora2}. To
+configure \FLORA, do the following:
+%%
+\begin{verbatim}
  cd flora2
- make
+ makeflora clean
+ makeflora
 \end{verbatim}
 %%
-To build \FLORA in Windows, you need Microsoft's {\tt nmake} or
-compatible installed. Then use the following two command instead of the
-last command above:
+(assuming that XSB has been already installed and configured separately).
+If an XSB executable is not on your program search {\tt PATH}, then you
+need to provide the XSB installation directory to {\tt makeflora} as
+an argument, {\it e.g.},
 %%
 \begin{verbatim}
-   nmake /f NMakefile.mak
+ makeflora ~/XSB  
 \end{verbatim}
 %%
+
+\paragraph{Installing \FLORA in Windows.}
+First, you need Microsoft's {\tt nmake}.
+Then use the following commands to configure
+\FLORA (assuming that XSB is installed and configured):
+%%
+\begin{verbatim}
+   cd flora2
+   makeflora clean
+   makeflora path-to-prolog-executable
+\end{verbatim}
+%%
+
+
+\paragraph{Running \FLORA.}
 \FLORA is fully integrated into the underlying Prolog engine, including its
 module system. In particular, \FLORA modules can invoke predicates defined in
 other Prolog modules, and Prolog modules can query the objects defined in
@@ -241,14 +308,37 @@ can run, because it heavily relies on tabling and the well-founded
 semantics for negation, both of which are available only in XSB.
 
 Due to certain problems with XSB, \FLORA runs best when XSB is configured
-with SLG-WAM and local scheduling (as opposed to \emph{batched}
-scheduling), which is the default XSB configuration.
+with local scheduling, which is the default XSB configuration.
 
 
-The fastest and easiest way to get a feel of the system
-is to start \FLORA shell and begin to enter queries interactively.  To
-this end, you must first invoke the underlying Prolog engine and then load
-the {\tt flora2} package:
+\index{runflora script}
+\label{runflora-page}
+%%
+The easiest way to get a feel of the system
+is to start \FLORA shell and begin to enter queries interactively.
+The simplest way to do this is to use the shell script
+%%
+\begin{verbatim}
+ .../flora2/runflora  
+\end{verbatim}
+%%
+where ``...'' is the directory where \FLORA is downloaded. For instance, to
+invoke the version supplied with XSB, you would type something like
+%%
+\begin{verbatim}
+   ~/XSB/packages/flora2/runflora
+\end{verbatim}
+%%
+If \FLORA is installed separately in a directory, say, {\tt bleeding-edge},
+then it can be invoked as
+%%
+\begin{verbatim}
+ ~/bleeding-edge/flora2/runflora  
+\end{verbatim}
+%%
+You can take a look at this script and devise your own ways of calling \FLORA.
+The version supplied with XSB can also be invoked using the following
+commands:
 %%
 \begin{quote}
   \tt
@@ -256,28 +346,22 @@ foo>~~xsb  \\
 \tt
 ... XSB loading messages omitted ...\\
 \tt
-| ?- [flora2].\\
+| ?- [flora2], flora\_shell.\\
 \tt
-[flora2 loaded]\\
-\tt
+... FLORA messages omitted ... \\
 | ?-
 \end{quote}
 %%
-At this point, it is possible to use a limited number of \FLORA
-commands, but to run queries you must enter the \FLORA command loop:
+or even
 %%
-\begin{quote}
-  \tt
-| ?- flora\_shell.  \\
- \tt
-... FLORA messages omitted ... \\
- \tt
-flora2 ?-
-\end{quote}
+\begin{verbatim}
+ foo>  xsb -e "[flora2]. flora_shell."
+\end{verbatim}
 %%
 
 At this point, \FLORA takes over and \fl syntax becomes the
-norm. To get back to the Prolog command loop, type {\tt Control-D} or 
+norm. To get back to the Prolog command loop, type {\tt Control-D} (in
+Unix), Control-Z (Windows), or 
 %%
 \begin{quote}
   \tt
@@ -289,37 +373,33 @@ norm. To get back to the Prolog command loop, type {\tt Control-D} or
 If you are using \FLORA shell frequently, it pays to define an alias, say
 (in Bash):
 %%
-\begin{quote}
- {\tt
-   alias flora2='xsb -e "[flora2], flora\_shell."'
-   }
-\end{quote}
+\begin{verbatim}
+ alias flora2='xsb -e "[flora2], flora\_shell."'
+ alias runflora='~/bleeding-edge/flora2/runflora'
+\end{verbatim}
 %%
 \FLORA can then be invoked directly from the shell prompt by typing
-\begin{quote}
-  \tt
-foo>~~flora2
-\end{quote}
+{\tt flora2} or {\tt runflora}. 
 %%
-It is even possible to tell it to execute commands on start-up.
+It is even possible to tell \FLORA to execute commands on start-up.
 For instance, 
 %%
-\begin{quote}
- \tt
- foo>~~flora2 -e "flHelp."
-\end{quote}
+\begin{verbatim}
+ foo>  flora2 -e "flHelp."
+ foo>  runflora -e "flHelp."
+\end{verbatim}
 %%
-will cause the system to execute the help command right after the start.
-Then the usual \FLORA shell prompt is displayed.
+will cause the system to execute the help command right after after the
+initialization. Then the usual \FLORA shell prompt is displayed.
 
 \noindent
 \FLORA comes with a number of demo programs that live in
 %%
 \begin{quote}
- \verb|<xsb-installation-directory>/packages/flora2/demos/|  
+ \verb|.../flora2/demos/|  
 \end{quote}
 %%
-The demos can be run by issuing the command
+The demos can be run issuing the command
 ``\verb|flDemo(demo-filename).|''
 at the \FLORA prompt, {\it e.g.},
 %%
@@ -328,7 +408,7 @@ at the \FLORA prompt, {\it e.g.},
 \end{quote}
 %%
 There is no need to change to the demo directory, as {\tt flDemo} knows
-where to find the demos.
+where to find these programs.
 
 
 \section{\FLORA Shell Commands} \label{sec-shell-commands}
@@ -1643,14 +1723,17 @@ Prolog predicates can be called from \FLORA through the \FLORA module system
 and do not need to be loaded explicitly because the association between Prolog
 programs and modules is fixed.
 
-\paragraph{@prolog().}
-The syntax to call Prolog predicates is
-%%
+\index{module!{\tt prolog()}}
 \index{module!{\tt prolog(modulename)}}
+%%\index{module!{\tt prolog modulename}}
+\paragraph{@prolog().}
+The syntax to call Prolog predicates is either one of the following:
 %%
 \begin{quote}
   \tt
-  ?- {\it predicate}@prolog({\it module})  
+  ?- {\it predicate}@prolog({\it module})  \\
+  \tt
+  ?- {\it predicate}@prolog {\it module}
 \end{quote}
 %%
 For instance, since the predicate {\tt member/2} is defined in the Prolog
@@ -1658,19 +1741,19 @@ module {\tt basics}, we can call it as follows:
 %%
 \begin{quote}
  \tt
- ?- member(abc,[cde,abc,pqr])@prolog(basics).
+ ?- member(abc,[cde,abc,pqr])@prolog basics.
 \end{quote}
 %%
 To use this mechanism, you must know which Prolog module the particular
 predicate is defined in. Some predicates are defined by programs that do
 not belong to any module. When such an Prolog program is loaded, the
 corresponding predicates become available in the default Prolog module.  In
-XSB the default module is called {\tt usermod} and \FLORA can call such
+XSB, the default module is called {\tt usermod} and \FLORA can call such
 predicates as follows:
 %%
 \begin{quote}
  \tt
- ?- foo(X)@prolog(usermod).
+ ?- foo(X)@prolog usermod.
 \end{quote}
 %%
 Note that variables are not allowed in the module specifications of Prolog
@@ -1697,7 +1780,9 @@ with particular ease:
 {\it i.e.}, we can simply omit the Prolog module name (but parentheses must be
 preserved). 
 
-\index{module!{\tt prolog(modulename)}}
+\index{module!{\tt prologall()}}
+\index{module!{\tt prologall(modulename)}}
+\index{module!{\tt prologall modulename}}
 \paragraph{@prologall().}
 The Prolog module specification {\tt @prolog()} has one subtlety: it does
 not affect the arguments of a call. For instance, 
@@ -1742,13 +1827,13 @@ answer is the same whether these terms are HiLog terms or Prolog
 ones. Thus,
 %%
 \begin{verbatim}
- ?-  member(f(a), [f(b),f(a)])@prolog(basics).
+ ?-  member(f(a), [f(b),f(a)])@prolog basics.
 \end{verbatim}
 %%
 is perfectly acceptable and is more efficient than
 %%
 \begin{verbatim}
- ?-  member(f(a), [f(b),f(a)])@prologall(basics).
+ ?-  member(f(a), [f(b),f(a)])@prologall basics.
 \end{verbatim}
 %%
 \index{flP2H/2}
@@ -1797,6 +1882,18 @@ must be executed first.
 %%
 We will explain shortly which {\tt flImport} query should be used in what
 situation.
+
+{\bf Note:} If you are using an interim release of \FLORA, which is
+installed outside of the XSB directory structure, then you must let Prolog
+know the location of your distribution of \FLORA. This is done by executing
+{\tt asserta(library\_directory(path-to-flora))} {\it e.g.},
+%%
+\begin{verbatim}
+ ?- asserta(library_directory('/home/me/flora2')).  
+\end{verbatim}
+%%
+before calling any of the \FLORA modules. Observe that {\tt asserta} and
+\emph{not} {\tt assert} must be used.
 
 \paragraph{Calling \FLORA from Prolog module.}
 To call \FLORA from within a Prolog program, say {\tt test.P}, the
@@ -1868,6 +1965,37 @@ loaded using the following call:
  ?- flLoadedModule({\it flora-module-name}).
 \end{quote}
 %%
+
+{\bf Note:} If you use an interim release of \FLORA that is installed
+outside of the XSB directory tree, you must make sure that Prolog will find
+this installation and use it in preference to the \FLORA package that is
+located in your XSB distribution. One way of doing this was described
+earlier (by executing an appropriate {\tt asserta/1}). This method works
+best if your application consists of both \FLORA and Prolog modules, but
+the initial module of your application ({\it i.e.}, the one that bootstraps
+everything) is a Prolog program.  If the initial module is a \FLORA
+program, then the best way is to start XSB and \FLORA using the {\tt
+  runflora} script (page~\pageref{runflora-page}) located inside your
+interim distribution of \FLORA.
+
+\paragraph{Passing parameters between Prolog and \FLORA modules.}
+In an application that has both Prolog and \FLORA modules, parameter
+passing between modules plays an important role. We already discussed this
+issue in the context of calls from \FLORA to Prolog. The same applies to
+calls in the opposite direction. When calling a \FLORA module, it might be
+necessary to convert arguments represented as Prolog terms into HiLog and
+vice versa. For instance, if {\tt p/2} is a predicate imported from \FLORA,
+which uses the first argument as input and returns the result in the second
+argument, then one might need to use the following calling sequence:
+%%
+\begin{verbatim}
+ ... :- ..., flP2H(In,InHilog), p(InHilog,OutHilog), flP2H(Out,OutHilog), ...
+\end{verbatim}
+%%
+Here we assume that the Prolog module that calls the \FLORA predicate {\tt
+  p/1} passes the input through the variable {\tt In}and gets the result in
+the variable {\tt Out}.
+
 
 \subsection{\FLORA System Modules}\label{sec-flora-system-modules}
 
@@ -2357,9 +2485,9 @@ Although HiLog has a higher order syntax, its semantics is first order
 \cite{hilog-jlp}. Any HiLog term can be consistently translated into a
 Prolog term. For instance, {\tt group(X)(Y,Z)} can be represented by the
 Prolog term {\tt apply(apply(group,X),Y,Z)}. The translation scheme is
-pretty straightforward and described in \cite{hilog-jlp}.
+pretty straightforward and is described in \cite{hilog-jlp}.
 
-In \FLORA any Id-term, including function symbols and predicate symbols,
+Any Id-term in \FLORA, including function symbols and predicate symbols,
 are considered to be HiLog terms and therefore are subject to translation.
 That is, even a normal Prolog term will by default be represented using the
 HiLog translation, e.g., {\tt foo(a)} will be represented as {\tt
@@ -2379,16 +2507,23 @@ In contrast, in \FLORA they are in different domains.\footnote{
 %%
 For instance, (\ref{eq-hilog-notallowed}) will cause an error because {\tt
   X} is bound to the \emph{term} {\tt a(b)}, which is different from the
-atomic formula {\tt a(b)}, and thus has no truth value.  In a future
-release, we will provide a predicate {\tt call}/1, which converts HiLog
-terms in the domain of arguments into HiLog terms in the domain of atomic
-formulas, so (\ref{eq-hilog-notallowed}) could be rewritten into {\tt p(X),
-  X(p), call(X).}\footnote{
-  %%
-  Of course, {\tt call/1} exists in Prolog as well. However, unlike HiLog
-  and sorted HiLog, this predicate does not have logical semantics.
-  %%
-  }
+atomic formula {\tt a(b)}, and thus has no truth value. In fact, since
+terms are not associated with any \FLORA module, it is not clear what $\tt
+X(p)$ should mean when $\tt X$ is bound to a \emph{term} $\tt a(b)$ ({\it
+  e.g.}, in what module should $\tt a(b)(p)$ be called).  However,
+the following query would work correctly:
+%%
+\begin{verbatim}
+  ?- p(X),X(p),X@foo.
+\end{verbatim}
+%%
+if we need to call {\tt X} in module {\tt foo}. If we need to call it in
+the current module, then we could use the following:
+%%
+\begin{verbatim}
+  ?- p(X),X(p),X@ _@.  
+\end{verbatim}
+%%
 
 
 
@@ -2513,6 +2648,60 @@ instance, {\tt X $\sim$ a[m->v,k->V]} binds {\tt X} to the F-molecule {\tt
 molecules by binding {\tt X} to {\tt a}, {\tt M} to {\tt m}, and {\tt V} to
 {\tt p}.
 
+Meta-unification is very useful when it is necessary to find out the module
+in which a particular formula lives. For instance,
+%%
+\begin{verbatim}
+ ?- X ~ a[b->c]@foo, X ~ Y@M.  
+\end{verbatim}
+%%
+would bind {\tt Y} to {\tt X} and {\tt M} to the module of {\tt X}. Note that
+in meta-unification the variable {\tt Y} in the idiom \verb|Y@M| or
+\verb|Y@foo| is viewed as a meta-variable that is bound to a
+formula. Thus, in the above, {\tt Y} is bound to {\tt X}. More subtle
+examples are
+%%
+\begin{verbatim}
+  ?- X ~ f(a)@foo, X ~ Y@M.  
+  ?- f(a)@foo ~ Y@M.
+\end{verbatim}
+%%
+In both cases {\tt M} is bound to {\tt foo} and {\tt Y} is bound to the
+(internal representation of the) HiLog formula {\tt f(a)@foo} ---
+\emph{not} to the HiLog term {\tt f(a)}!
+
+Another subtlety has to do with the scope of the module specification.
+In \FLORA, module specifications have scope and inner specifications
+override the outer ones. For instance, in
+%%
+\begin{verbatim}
+  ..., (abc@foo, cde)@bar, ...
+\end{verbatim}
+%%
+the term {\tt abc} is in module {\tt foo}, while {\tt cde} in module {\tt
+bar}. This is because the inner module specification, {\tt @foo}, overrides
+the outer specification {\tt @bar} for the literal in which it occurs ({\it
+i.e.}, {\tt abc}). These scoping rules have subtle impact on literals that
+are computed dynamically at run time. For instance, consider
+%%
+\begin{verbatim}
+  ?- X ~ a[b->c]@foo, X@bar.  
+\end{verbatim}
+%%
+Because {\tt X} gets bound to {\tt a[b->c]@foo}, the literal {\tt X@bar}
+becomes the same as  {\tt (a[b->c]@foo)@bar}, {\it i.e.}, {\tt a[b->c]@foo}.
+Thus, both of the following queries succeed:
+%%
+\begin{verbatim}
+  ?- X ~ a[b->c]@foo, X@bar ~ a[b->c]@foo.
+  ?- X ~ a[b->c]@foo, X@M ~ a[b->c]@foo.
+\end{verbatim}
+%%
+Moreover, in the second query, the variable {\tt M} is \emph{not} bound to
+anything because, as noted before, the literal {\tt X@M} becomes
+{\tt (a[b->c]@foo)@M)} at run time and, due to the scoping rules, is the
+same as {\tt a[b->c]@foo}.
+
 \paragraph{Reification.}
 \index{reification operator \$\{...\}}
 \index{\$\{...\}!reification operator}
@@ -2623,31 +2812,45 @@ arguments are bound, then the call succeeds if and only if
 \begin{itemize}
 \item {\tt Plg} is a Prolog term and {\tt Hlg} is its HiLog
   representation.
-\item Both {\tt Plg} and {\tt Hlg} are identical HiLog terms.
+\item Both {\tt Plg} and {\tt Hlg} are identical Prolog terms.
 \end{itemize}
 %%
 Note that if both {\tt Plg} and {\tt Hlg} are bound to the same
-\emph{Prolog term} then the predicate \emph{fails}. Thus, if you type the
+\emph{HiLog term} then the predicate \emph{fails}. Thus, if you type the
 following queries into the \FLORA shell, they both succeed:
 %%
 {\tt
 \begin{quote}
-  ?- flP2H(X,f(a)), flP2H(X,f(a)).  \\
+  ?- flP2H(X,f(a)), flP2H(X,X).  \\
   ?- flP2H(f(a),f(a)).
 \end{quote}
 }
 %%
+but the following will fail:
+%%
+\begin{verbatim}
+ ?- flP2H(f(a),X), flP2H(X,X).  
+\end{verbatim}
+%%
+
+We should note that you should not try to convert certain Prolog terms to
+HiLog and expect them to be the same as similarly looking \FLORA terms. In
+particular, this applies to reified statements. For instance, if {\tt X =
+\${a[b->c]}} then {\tt ?- flP2H(X,Y), Y = \${a[b->c]}} is not expected to
+succeed. This is because {\tt flP2H/2} does not attempt to mimic the \FLORA
+compiler in cases where conversion to HiLog (such as in case of reified
+statements) makes no sense. Doing so would have substantially increased the
+run-time overhead.
 
 
-%% Unimplemented -- useful libraries
 Not all arguments passed back and forth to Prolog need conversion. For
 instance, {\tt sort/2}, {\tt ground/1}, {\tt compound/1}, and many others
 do not need conversion because they work the same for Prolog and HiLog
 representations. On the other hand, most I/O predicates require conversion.
-In a future release, \FLORA will provide libraries of useful predicates and
-methods that do appropriate conversion without the user having to do
-this explicitly. One such library, {\tt io}, is described in
-Section~\ref{sec-service-libs}.
+\FLORA provides the {\tt io} library, described in
+Section~\ref{sec-service-libs}, which provides the needed conversions for
+the I/O predicates.
+
 
 \index{@prologall()}
 %%
@@ -3440,7 +3643,6 @@ tc(X,Y) :- edge(X,Y), tc(Y,Z).
 \end{quote}
 %%
 which renders {\tt tc/2}  as a tabled first-order predicate.
-({\bf Unimplemented}: In the future, the tabling directive will imply {\tt firstorder}.)
 
 \index{hilogtable}
 \index{compiler directive!{\tt hilogtable}}
@@ -4341,6 +4543,80 @@ which are undefined. The correct syntax is:
 {\it i.e.}, an additional pair of parentheses is needed to indicate that
 the sequence of literals form a single argument.
 
+\section{Constraint Solving}\label{sec-clp}
+\index{Constraint solving}
+
+\FLORA provides an interface to constraint solving capabilities of the
+underlying Prolog engine. Currently XSB supports linear constraint solving
+over the domain of real numbers (CLPR). However, we must warn that the XSB
+implementation of CLPR has many rough spots -- do not say that we did not
+warn! To pass a constraint to a constraint solver in the body of a \FLORA
+rule (or query), simply include it inside curly braces.
+
+Here is a 2-minute introduction to CLPR. Try the following program:
+%%
+\begin{verbatim}
+  ?- insert{p(1.0),p(2.0),p(3.0)}.
+  ?- X>0, X<5, p(X).
+\end{verbatim}
+%%
+Intuitively, one would expect 2.0 and 3.0 as answers. However, if you
+actually try to run this
+program, you will be disappointed --- an error message will be
+reported:
+%%
+\begin{quote}
+ ++Error[XSB]: [Runtime/P] Type Error: Uninstantiated Arithmetic Expression \\
+ Aborting...
+\end{quote}
+%%
+This happens because ordinarily Prolog views {\tt >/2} and {\tt </2} as
+predicates with infinite number of facts. Since there are infinite number
+of values for {\tt X} that make {\tt X > 0} true, it reasons, the query
+does not make sense.
+
+Constraint logic programming takes a different view: it considers {\tt X>0,
+  X<5} to be a \emph{constraint} on the set of solutions of the query {\tt
+  p(X)}. This approach allows Prolog to return meaningful solutions to the
+above query. However, the user must explicitly tell the system which view
+  to take --- the ``dumb'' view that treats arithmetic built-ins are
+  infinite predicates or a ``smart'' view, which treats them as constraints.
+  The smart view is indicated by enclosing constraints in curly
+  braces. Thus, the above program becomes:
+%%
+\begin{verbatim}
+  ?- [clpr].          % must be loaded prior to the use of constraint solver
+  ?- insert{p(1.0),p(2.0),p(3.0)}.
+  ?- {X>0, X<5}, p(X).
+  
+  X = 2.000000e+00
+
+  X = 3.000000e+00
+
+  2 solution(s) in 0.0000 seconds
+\end{verbatim}
+%%
+Note that the package {\tt clpr} must be loaded in advance.
+
+It should be kept in mind that the constraint solver is very picky about
+the type of values it is willing to work with. It insists on floats and
+will refuse to convert integers to floats. For instance, if the insert
+statement were as follows:
+%%
+\begin{verbatim}
+   ?- insert{p(1),p(2),p(3)}.  
+\end{verbatim}
+%%
+then the user would have been rewarded with the following obscure message:
+%%
+\begin{quote}
+  type\_error(\_h5356 = 3,2,a real number,3)
+\end{quote}
+%%
+It is trying to tell the user that a floating number is expected and the
+integer 3 will not do.
+
+
 
 \section{Debugging User Programs}\label{sec-debugging}
 \index{debugging}
@@ -5079,10 +5355,9 @@ ideas, such as the use of trailer files to implement the F-logic semantics,
 trace back to the \FLIP compiler developed by Bertram Lud\"aescher.
 
 Michael Kifer helped design \FLORA, implemented the debugger, and some
-other features. Chang Zhao added a number of enhancements, such as run-time
-undefinedness checks and the checker for dependency among tabled predicates
-and updates. Bin Tang added support for numbered anonymous oids and wrote the
-pretty-printer for dumped Prolog code.
+other features. Chang Zhao added a number of important enhancements, such
+as run-time undefinedness checks and the checker for dependency among
+tabled predicates and updates.
 
 
 \appendix
@@ -5114,12 +5389,14 @@ HeadLiteral := BinaryRelationship | ObjectSpecification | Term
 Body := BodyLiteral
 Body := BodyConjunt | BodyDisjunct | BodyNegative | ControlFlowStatement
 Body := Body '@' ModuleName
+Body := BodyConstraint
 
 ModuleName := 'prolog()' | 'prolog(' atom ')' | atom | 'flora(' atom ') '
 
 BodyConjuct  := Body ',' Body
 BodyDisjunct := Body ';' Body
 BodyNegative := ('tnot' | '\+') Body
+BodyConstraint := '{' CLPR-style constraint '}'
 
 ControlFlowStatement  := IfThenElse | UnlessDo
                           | WhileDo | WhileLoop
@@ -5134,7 +5411,7 @@ LoopUntil  := loop Body until Body
 BodyLiteral := BinaryRelationship | ObjectSpecification | Term
                 | DBUpdate | Builtin | Loading
 
-Builtin := Arithmetic Comparison, etc.
+Builtin := ArithmeticComparison, Unification, MetaUnification, etc.
 
 Loading := '[' LoadingCommand (',' LoadingCommand)* ']'
 LoadingCommand := filename ('>>' atom)
@@ -5154,7 +5431,7 @@ MethodSpecification :=  PathExpression ValueReferenceConnective PathExpression
 ValueReferenceConnective :=  '->' | '->>' | '*->' | '*->>' | '=>' | '=>>'
 
 PathExpression := atom | number | string | variable | specialOidToken
-PathExpression := Term | List
+PathExpression := Term | List | ReifiedFormula
 PathExpression := PathExpression  PathExpressionConnective PathExpression
 PathExpression := BinaryRelationship
 PathExpression := ObjectSpecification
@@ -5163,6 +5440,8 @@ PathExpression := Aggregate
 PathExpressionConnective :=  '.' | '..' | '!' | '!!'
 
 specialOidToken :=  anonymousOid | numberedOid | thisModuleName
+
+ReifiedFormula := ${Body}
 
 %% No quotes are allowed in the following special tokens!
 %% No space alowed between _# and integer
@@ -5633,19 +5912,19 @@ code where each predicate is wrapped with a preprocessor macro. For
 instance, the predicate {\tt fd} would be dumped as
 %%
 \begin{quote}
- \tt FLORA\_WORKSPACE(FLORA\_VAR\_WORKSPACE,fd)  
+ \tt FLORA\_THIS\_WORKSPACE(FLORA\_USER\_WORKSPACE,fd)  
 \end{quote}
 %%
 When the program, {\tt myprog.P}, compiled by the \FLORA compiler needs to
 be loaded into a user module, say {\tt main}, the preprocessor, {\tt
-  gpp}, is called with the macro {\tt FLORA\_VAR\_WORKSPACE} set to {\tt
+  gpp}, is called with the macro {\tt FLORA\_USER\_WORKSPACE} set to {\tt
   main}. Gpp replaces all macros with the actual values, includes the
 necessary files, and then pipes the result to the Prolog compiler. The latter
 produces the object {\tt myprog.\ofile} file where all the predicate names are
 wrapped with the user module name, as described above.  This object file is
 renamed to {\tt myprog\_main.\ofile}. If later we need to compile {\tt myprog.P}
 for another user module, {\tt foo}, {\tt gpp} is called again, but this time it
-sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When Prolog finally compiles
+sets {\tt FLORA\_USER\_WORKSPACE} to {\tt foo}. When Prolog finally compiles
 the program into the object file, the file is renames to {\tt
   myprog\_foo.\ofile}.
 
@@ -5666,7 +5945,7 @@ would be encoded as
 %%
 \begin{quote}
  \tt
- FLORA\_WORKSPACE(FLORA\_VAR\_WORKSPACE,apply)(p,a,FLORA\_PREFIX'apply(f,b))  
+ FLORA\_THIS\_WORKSPACE(FLORA\_USER\_WORKSPACE,apply)(p,a,FLORA\_PREFIX'apply(f,b))  
 \end{quote}
 %%
 The same term would be encoded differently if it occurs as an argument of a
@@ -5712,11 +5991,11 @@ while the last two are backtrackable.
 each module. The mechanism is similar to that used for predicate names:
 %%
 \begin{quote}
- \tt FLORA\_THIS\_FDB\_STORAGE(FLORA\_VAR\_WORKSPACE)  
+ \tt FLORA\_THIS\_FDB\_STORAGE(FLORA\_USER\_WORKSPACE)  
 \end{quote}
 %%
 As explained earlier, when Prolog compiles the file generated by the
-\FLORA compiler, the macro {\tt FLORA\_VAR\_WORKSPACE} gets replaced with
+\FLORA compiler, the macro {\tt FLORA\_USER\_WORKSPACE} gets replaced with
 the module name and out comes a unique, hard to replicate triehandle.
 
 Unfortunately, putting something in a trie does not mean that Prolog will find
@@ -5768,7 +6047,7 @@ to the shell. In this case, a patch rule must be generated dynamically and
 asserted into the system.
 
 One complication is that the file {\tt flrpatch.flh} must be compiled for
-the right module, so the preprocessor macro {\tt FLORA\_VAR\_WORKSPACE} can
+the right module, so the preprocessor macro {\tt FLORA\_USER\_WORKSPACE} can
 be given value only when we load the patch rules into a specified module.
 If the directory {\tt genincludes} that holds {\tt flrpatch.flh} is not
 writable by the user (which is often the case, if XSB is installed in a
@@ -5872,7 +6151,7 @@ patch rules. The file {\tt flrpatch.fli} is a template, and {\tt
 {\tt flrpatch.fli} during the installation.
 
 The directory {\tt includes/} contains the header file, which defines the
-macros ({\it e.g.}, {\tt FLORA\_WORKSPACE}) that wrap all the names with
+macros ({\it e.g.}, {\tt FLORA\_THIS\_WORKSPACE}) that wrap all the names with
 prefixes to separate the different modules of the user program.  The
 directory {\tt headerinc/} is another place where the template files are
 located. Each of these files contains just a few {\tt \#include}

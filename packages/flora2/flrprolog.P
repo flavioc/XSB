@@ -54,6 +54,9 @@ flora_prlg(FL_EQGT,2) :- !.
 flora_prlg(FL_RIGHTTO,2) :- !.
 flora_prlg(FL_LEFTTO,2) :- !.
 
+flora_prlg(FL_COMMA,2) :- !.
+flora_prlg(FL_SEMICOLON,2) :- !.
+
 flora_prlg(FL_PLUS,2) :- !.
 flora_prlg(FL_MINUS,2) :- !.
 flora_prlg(FL_SYMOR,2) :- !.

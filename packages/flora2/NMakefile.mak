@@ -1,30 +1,62 @@
-# Make file for Microsoft NMAKE
+## File:      flora2/NMakefile.mak -- Make file for Microsoft NMAKE
+##
+## Author(s): Michael Kifer
+##
+## Contact:   flora-users@lists.sourceforge.net
+## 
+## Copyright (C) The Research Foundation of SUNY, 1999-2002
+## 
+## FLORA-2 is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Library General Public License as published by the Free
+## Software Foundation; either version 2 of the License, or (at your option)
+## any later version.
+## 
+## FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+## more details.
+## 
+## You should have received a copy of the GNU Library General Public License
+## along with FLORA-2; if not, write to the Free Software Foundation,
+## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+## $Id$
+## 
+##
 
 OBJEXT = .xwam
+PROLOGEXT = .P
 
-ALLOBJS =  flroperator$(OBJEXT) \
-	   flrnodefp$(OBJEXT) \
-	   flrnowsp$(OBJEXT) \
-	   flrarguments$(OBJEXT) \
-	   flrprolog$(OBJEXT) \
-	   flrfirstorder$(OBJEXT) \
-	   flrprint$(OBJEXT) \
-	   flrlibman$(OBJEXT) \
-	   flrlexer$(OBJEXT) \
-	   flrcomposer$(OBJEXT) \
-	   flrparser$(OBJEXT) \
-	   flrcompiler$(OBJEXT) \
-	   flrcoder$(OBJEXT) \
-	   flrutils$(OBJEXT) \
-	   flrwrapper$(OBJEXT) \
-	   flrwraparound$(OBJEXT) \
-	   flrundefhook$(OBJEXT) \
-	   flrshell$(OBJEXT)
+ALLOBJS = flrarguments$(OBJEXT) \
+	  flrcomposer$(OBJEXT) \
+	  flrcompiler$(OBJEXT) \
+	  flrcoder$(OBJEXT) \
+	  flrdependency$(OBJEXT) \
+	  flora2devel$(OBJEXT) \
+	  flrfirstorder$(OBJEXT) \
+	  flrlexer$(OBJEXT) \
+	  flrlibman$(OBJEXT) \
+	  flrnodefp$(OBJEXT) \
+	  flrnowsp$(OBJEXT) \
+	  flroperator$(OBJEXT) \
+	  flrparser$(OBJEXT) \
+	  flrporting$(OBJEXT) \
+	  flrprettyprint$(OBJEXT) \
+	  flrprint$(OBJEXT) \
+	  flrprolog$(OBJEXT) \
+	  flrregistry$(OBJEXT) \
+	  flrshell$(OBJEXT) \
+	  flrundefined$(OBJEXT) \
+	  flrundefhook$(OBJEXT) \
+	  flrutils$(OBJEXT) \
+	  flrwraparound$(OBJEXT) \
+	  flrwrapper$(OBJEXT)
 
 OPTIONS = [optimize]
-PROLOG = ..\..\config\x86-pc-windows\bin\xsb.exe
 
-.SUFFIXES: .P $(OBJEXT)
+!include .prolog_path
+
+.SUFFIXES: $(PROLOGEXT) $(OBJEXT)
 
 ALL:: $(ALLOBJS)
 	cd p2h
@@ -76,7 +108,7 @@ CLEAN :
 	cd ..
 
 
-.P$(OBJEXT):
-	$(PROLOG) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
+$(PROLOGEXT)$(OBJEXT):
+	$(PROLOG) -e "[flora2devel]. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 

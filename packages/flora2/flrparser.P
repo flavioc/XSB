@@ -65,12 +65,14 @@ HeadLiteral := BinaryRelationship | ObjectSpecification | Term
 Body := BodyLiteral
 Body := BodyConjunt | BodyDisjunct | BodyNegative | ControlFlowStatement
 Body := Body '@' ModuleName
+Body := BodyConstraint
 
 ModuleName := 'prolog()' | 'prolog(' atom ')' | atom | 'flora(' atom ') '
 
 BodyConjuct  := Body ',' Body
 BodyDisjunct := Body ';' Body
 BodyNegative := ('tnot' | '\+') Body
+BodyConstraint := '{' CLPR-style constraint '}'
 
 ControlFlowStatement  := IfThenElse | UnlessDo
                           | WhileDo | WhileLoop
@@ -105,7 +107,7 @@ MethodSpecification :=  PathExpression ValueReferenceConnective PathExpression
 ValueReferenceConnective :=  '->' | '->>' | '*->' | '*->>' | '=>' | '=>>'
 
 PathExpression := atom | number | string | variable | specialOidToken
-PathExpression := Term | List
+PathExpression := Term | List | ReifiedFormula
 PathExpression := PathExpression  PathExpressionConnective PathExpression
 PathExpression := BinaryRelationship
 PathExpression := ObjectSpecification
@@ -114,6 +116,8 @@ PathExpression := Aggregate
 PathExpressionConnective :=  '.' | '..' | '!' | '!!'
 
 specialOidToken :=  anonymousOid | numberedOid | thisModuleName
+
+ReifiedFormula := ${Body}
 
 %% No quotes are allowed in the following special tokens!
 %% No space alowed between _# and integer
@@ -149,7 +153,7 @@ UpdateList := UpdateList ',' UpdateList
 /****************************************************************************
   canonical_form(+ComposerTerm,-CanoniTerm)
   canonical_form(+ComposerTerm,-CanoniTerm,-PrimaryIndex)
-  translates a structure constructed by the composer into an intermidiate
+  translates a structure constructed by the composer into an intermediate
   canonical form. That is to make the functor/arguments syntax compatible
   with the operator syntax.
 
@@ -169,7 +173,7 @@ UpdateList := UpdateList ',' UpdateList
           )
 
   CANOBRACE(ListOfElements,	% are CANOTERMs separated by ',' at top level
-	    NumberOfElements,	% separated by ',' at the top level
+	    NumberOfElements,	% number of terms between {...}
 	    ParenthesisIndex	% index of the brace '{' (error message)
            )
 
@@ -481,7 +485,7 @@ is_flnumber_struct(FLNUMBER(_Num,_I)).
 is_flstring_struct(FLSTRING(_Str,_I)).
 
 get_flvar_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I)).
-is_flvar_struct(FLVAR(_Name,_I)).
+%%is_flvar_struct(FLVAR(_Name,_I)).
 is_anonymous_flvar_struct(FLVAR(FL_UNDERSCORE,_I)).
 
 fllist_struct(L,T,Index,FLLIST(L,T,Index)).
@@ -535,6 +539,8 @@ fltnot_struct(Goal,FLTNOT(Goal)).
 
 flload_struct(List,FLLOAD(List)).
 
+flconstraint_struct(Constr,FLCONSTRAINT(Constr)).
+
 is_flworkspace_struct(FLWORKSPACE(_G,_N)).
 
 %% Encoding these module specs: @mod @flora(mod) @prolog(mod) @prologall(mod)
@@ -549,7 +555,6 @@ flplib_struct(Goal,FLPLIB(Goal)) :- !.
 flpliball_struct(Goal,FLPLIBALL(Goal)) :- !.
 
 %% Given module spec, get back module type and module name
-get_module_from_spec(FLORAUSERMOD(FL_THISMODULE),FLORAUSERMOD,FL_THISMODULE) :- !.
 get_module_from_spec(FLORAUSERMOD(Mod),FLORAUSERMOD,Mod) :- !.
 get_module_from_spec(FLORASYSMOD(Mod),FLORASYSMOD,Mod) :- !.
 get_module_from_spec(PROLOGMODULE(Mod),PROLOGMODULE,Mod) :- !.
@@ -1424,6 +1429,13 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
 	flora_workspace(R,RCode,S),
 	(S == [] -> flora_body(L,RCode,Code,Status); Status=S).
 
+%% reify op ${...} that occurs as a formula
+flora_body(CANOTERM(Funct,1,FL_BRACE,[Arg],_If,_Ip),_WS,Code,Status) :-
+	get_atom(Funct,Atom),
+	is_reifyop(Atom),
+	!,
+	flora_body(Arg,Code,Status).
+
 %% At this point, CanoniTerm is not a logical formula.
 flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,Args,If,Ip),WS,Code,Status) :-
 	get_name(Funct,FL_IF),
@@ -1547,14 +1559,15 @@ flora_workspace(CanoniTerm,FLORAUSERMOD(NVCode),[]) :-
 	!.
 
 %% Handle THIS MODULE specification, e.g., a[b->c]@ _@.
-flora_workspace(CanoniTerm,FLORAUSERMOD(FL_THISMODULE),[]) :-
+flora_workspace(CanoniTerm,FLORAUSERMOD(ThisModToken),[]) :-
 	%% When _@ is specified as a module, we treat it
 	%% syntactically as FLORAUSERMOD because it is an atom
 	%% and not flora(...). However, this gets substituted with
 	%% FLORA_THIS_MODULE_NAME, so at compile time we get the right
 	%% module even if the current module was a system module
 	get_spectoken(CanoniTerm,FL_THISMODULE),
-	!.
+	!,
+	flobject_struct(CanoniTerm,ThisModToken).
 
 %% Handle a Prolog module. (@ prolog())
 flora_workspace(CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa),PROLOGMODULE,[]) :-
@@ -1914,6 +1927,11 @@ flora_body_literal(CANOLIST(L,T,_N,I,_Ib),Code,Status) :-
 	  (Status == [] -> flload_struct(C,Code); true)
 	).
 
+%% {...} at the top level -- constraint
+flora_body_literal(CANOBRACE(L,_N,_I),Code,Status) :-
+	!,
+	flora_constraint_list(L,Code,Status).
+
 flora_body_literal(CanoniTerm,Code,[]) :-
 	get_atom(CanoniTerm,A),
 	!,
@@ -1990,10 +2008,9 @@ flora_body_wsliteral(CANOLIST(_L,_T,_N,I,_Ib),_Code,Status) :-
 	!,
 	parsing_error(I,NO_WORKSPACE,Status).
 
-flora_body_wsliteral(CanoniTerm,_Code,Status) :-
-	get_flvar_struct(CanoniTerm,_V),
-	!,
-	parsing_error(CanoniTerm,NO_WORKSPACE,Status).
+flora_body_wsliteral(CanoniTerm,Code,[]) :-
+	get_flvar_struct(CanoniTerm,Code),
+	!.
 
 flora_body_wsliteral(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_BDLITERAL,Status).
@@ -2065,6 +2082,33 @@ flora_name_or_normvar(CanoniTerm,Code) :-
 	  not is_anonymous_flvar_struct(Code)
         ),
 	!.
+
+thismodule_token(CanoniTerm,ThisModToken) :-
+	get_spectoken(CanoniTerm,FL_THISMODULE),
+	flobject_struct(CanoniTerm,ThisModToken).
+
+
+/****************************************************************************
+    flora_constraint_list(+L,-Code,-Status)
+    Add brace to delineate constraints
+****************************************************************************/
+
+flora_constraint_list(L,Code,Status) :-
+	flora_body_literal_list(L,Lcode,Status),
+	flconstraint_struct(Lcode,Code).
+
+flora_body_literal_list([L],Code,Status) :-
+	!,
+	flora_body_literal(L,Code,Status).
+
+flora_body_literal_list([L|Lits],Code,Status) :-
+	flora_body_literal(L,Lcode,S),
+	(S == []
+	-> flora_body_literal_list(Lits,LitsCode,Status),
+	    (Status == [] -> flconjunct_struct(Lcode,LitsCode,Code); true)
+	; Status = S
+	).
+
 
 
 /****************************************************************************
@@ -2287,13 +2331,16 @@ flora_pathexp(ObjectTerm,Code,[]) :-
 	flobject_struct(ObjectTerm,Code),
 	!.
 
+flora_pathexp(CANOBRACE(_L,_N,I),_Code,Status) :-
+	!,
+	parsing_error(I,ERROR_SETNOTE,Status).
+
 flora_pathexp(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_PATHEXP,Status).
 
 
 %% Define which type of arguemnts should not have module specification.
 nowspathexp(S) :- is_fllist_struct(S), !.
-nowspathexp(S) :- is_flvar_struct(S), !.
 nowspathexp(S) :- is_flaggregt_struct(S), !.
 nowspathexp(S) :- is_flreify_struct(S), !.
 nowspathexp(S) :- is_flnumber_struct(S), !.
@@ -2630,7 +2677,7 @@ flora_head_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	    parsing_error(If,NO_MULTIATT,Status)
 
 	; F == FL_AT ->
-	    %% Module name specs for F-logic modules should not be allowed.
+	    %% Module specs for F-logic molecules in the head are not allowed.
 	    %% However, module name specs for a term should be OK, since it
 	    %% might be a useful meta-programming feature.
 	    %% But this requires more checking.
@@ -2665,6 +2712,10 @@ flora_head_pathexp(CANOTERM(Funct,1,FL_BRACE,[Arg],_If,_Ip),Code,Status) :-
 flora_head_pathexp(CANOTERM(_Funct,_N,FL_BRACE,_Args,_If,Ip),_Code,Status) :-
 	!,
 	parsing_error(Ip,NO_AGGINHEAD,Status).
+
+flora_head_pathexp(CANOBRACE(_L,_N,I),_Code,Status) :-
+	!,
+	parsing_error(I,ERROR_SETNOTE,Status).
 
 flora_head_pathexp(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_EXPINHEAD,Status).
@@ -2828,12 +2879,14 @@ flora_dbliteral_list(Mode,[H|T],CodeList,Status) :-
 /****************************************************************************
   flora_dbliteral(+Mode,+CanoniTerm,-CodeList,-Status)
 
-  Note: Module name are allowed in insert/delete literals.
+  Note: Module names are allowed in insert/delete literals.
 ****************************************************************************/
 flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( flora_name_or_normvar(R,RCode) ->
+	%% Regular module name, Var, or special token _@
+	( (flora_name_or_normvar(R,RCode) ; thismodule_token(R,RCode))
+	->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
 
@@ -2871,7 +2924,9 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	get_atom(Funct,FL_AT),
 	!,
 	%% nested module name
-	( flora_name_or_normvar(R,RCode) ->
+	%% Regular module name, Var, or special token _@
+	( (flora_name_or_normvar(R,RCode) ; thismodule_token(R,RCode))
+	->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
 
@@ -3063,11 +3118,6 @@ flora_dbwslit(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	flora_db_pathexplist(Mode,Args,[LCode,RCode],Status),
 	(Status == [] -> flobjeql_struct(LCode,RCode,Code); true).
 
-/*
-flora_dbwslit(_Mode,CanoniTerm,_Code,Status) :-
-	flora_check_update_ifthenelse(CanoniTerm,Status),
-	!.
-*/
 
 flora_dbwslit(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
 	!,
@@ -3195,7 +3245,8 @@ flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) 
 flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( flora_name_or_normvar(R,RCode) ->
+	( (flora_name_or_normvar(R,RCode) ; thismodule_token(R,RCode))
+	->
 	    flora_db_pathexp(Mode,L,LCode,S),
 	    ( S == [] ->
 		( is_flworkspace_struct(LCode) ->

@@ -290,7 +290,7 @@ DONE 8. If then else
 DONE 9. Add while-do, unless-do and do-until to the parser, like it is done for
    if-the-else.
 
-10. Add the contraints syntax {...}.
+DONE 10. Add the constraints syntax {...}.
 
 
 DONE 11. Implement convenient versions of I/O predicates and others, such as

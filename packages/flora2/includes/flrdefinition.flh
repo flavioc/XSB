@@ -6,9 +6,15 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
+:- import flora_plg2hlg/4 from prolog2hilog.
+:- import flora_post_p2h_conversion/2 from flrutils.
 
-:- import storage_delete_all/1 from storage.
-:- import storage_find_fact/2 from storage.
+:- import
+        storage_delete_all/1,
+   	storage_find_fact/2,
+	storage_insert_fact/3,
+	storage_delete_fact/3 
+   from storage.
 :- import
 	flora_load_dyndata_for_user_modules/1,
 	FLORA_SYMBOL('debugger_loaded')/0
@@ -19,8 +25,9 @@
 	  flora_in_debug_mode/1
    from flrregistry.
 
+:- import flora_set_counter/2 from flrporting.
+
 :- import flora_error_undefined/1 from flrundefined.
-:- import storage_insert_fact/3,storage_delete_fact/3 from storage.
 
 ?- storage_delete_all(FLORA_THIS_FLD_STORAGE).
 ?- flora_in_debug_mode(_), !,
@@ -40,5 +47,6 @@
       ;  true
       )
    ).
+
 
 /***********************************************************************/

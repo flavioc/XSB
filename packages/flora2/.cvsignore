@@ -5,3 +5,7 @@ cmd...
 .prolog_path
 .flora_path
 runflora
+runflora.bat
+*.gz
+*.Z
+*.tar

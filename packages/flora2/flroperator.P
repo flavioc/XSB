@@ -127,8 +127,10 @@ flora_op(600,fy,FL_MINUS).
 
 flora_op(500,xfx,FL_AT).
 
-flora_op(400,fx,FL_PLIB).
-flora_op(400,fx,FL_FLORALIB).
+%% These operators are disabled until the composer is fixed
+%flora_op(400,fx,FL_PLIB).
+%flora_op(400,fx,FL_PLIBALL).
+%flora_op(400,fx,FL_FLORALIB).
 
 flora_op(350,yfx,FL_ISA).
 flora_op(350,yfx,FL_SUB).
@@ -137,7 +139,6 @@ flora_op(300,yfx,FL_FD).
 flora_op(300,yfx,FL_MVD).
 flora_op(300,yfx,FL_INHERIFD).
 flora_op(300,yfx,FL_INHERIMVD).
-
 
 
 /****************************************************************************

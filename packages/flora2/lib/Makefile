@@ -23,10 +23,12 @@
 ##
 
 OBJEXT=.xwam
+PROLOGEXT=.P
 
 FLORADIR=..
 
-ALL = 	flrprettyprint.P flrio.P flrstorage.P flrsystem.P
+ALL = 	flrprettyprint${PROLOGEXT} flrio${PROLOGEXT} \
+	flrstorage${PROLOGEXT} flrsystem${PROLOGEXT}
 
 Option = [optimize]
 
@@ -48,7 +50,7 @@ HDRMSG = "While compiling .../flora2/lib:"
 
 
 # suffix rules
-.SUFFIXES: .P .flr
+.SUFFIXES: ${PROLOGEXT} .flr
 
 all: clean init recompile
 
@@ -58,7 +60,7 @@ recompile: $(ALL) finish
 	@rm cmd...
 	@cat $(SVFILE)
 
-.flr.P:
+.flr${PROLOGEXT}:
 	echo 'flora_compile_system_module($*).' >> cmd...
 
 init:
@@ -81,4 +83,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f *.P *$(OBJEXT) *.O *.fdb *~ .*~ *.fld *.bak .#*
+	/bin/rm -f *${PROLOGEXT} *$(OBJEXT) *.O *.fdb *~ .*~ *.fld *.bak .#*

@@ -1,13 +1,15 @@
 # Make file for Microsoft NMAKE
 
+!include ..\.prolog_path
+
 OBJEXT = .O
+PROLOGEXT = .P
 
 ALLOBJS=  flrdebugger$(OBJEXT) dynamic_data.dat static_data.dat
 
 OPTIONS=[optimize]
-PROLOG=..\..\..\config\x86-pc-windows\bin\xsb.exe
 
-.SUFFIXES:  .in .dat .P .H $(OBJEXT)
+.SUFFIXES:  .in .dat $(PROLOGEXT) .H $(OBJEXT)
 
 ALL:: $(ALLOBJS)
 
@@ -18,13 +20,13 @@ CLEAN :
 	-@erase *.dat
 	-@erase *.bak
 
-.P$(OBJEXT):
-	$(PROLOG) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
+$(PROLOGEXT)$(OBJEXT):
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 static_data.dat: static_data.in
 	copy static_data.in static_data.dat
 
 dynamic_data.dat: dynamic_data.in
-	$(PROLOG) -e "bootstrap_flora. [flrwraparound]. import flrWrapAround/1 from flrwraparound. flWrapAround(%|fF). halt.
+	$(PROLOG) -e "['..\flora2devel']. import bootstrap_flora/0 from flora2. bootstrap_flora. [flrwraparound]. import flrWrapAround/1 from flrwraparound. flWrapAround(%|fF). halt.
 
 

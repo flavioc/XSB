@@ -206,9 +206,6 @@ argument_struct(S,I1,I2,ARGUMENT(S,I1,I2)).
 
 function_struct(F,A,FUNCTION(F,A)).
 
-/************************************************************
-     support for numbered anon oids
-*************************************************************/
 object_struct(O,I,OBJECT(T,I)) :-
 	%% Strip textual information.
 	( O =.. [F,N,_], T =.. [F,N]
@@ -361,6 +358,7 @@ flora_compose(PrevToken,TmStack,OpStack,N,Term,Status) :-
 	; PrevToken == NULL, TmStack == [], OpStack == [] ->
 	    Term=NULL,
 	    Status=[]
+
 	; K is M-1,
 	  report_error(K,UNEXP_EOR),
 	  fail
@@ -434,6 +432,7 @@ compose_sole_operator(PrevToken,TmStack,OpStack,N,Op,Term,Status) :-
   parentheses.
 ***************************************************************************/
 compose_atom_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
+	%% Check if the next token is a matching right parenthesis.
 	is_right_brace(X,B),
 	M is N+1,
 	is_next_token(M,X),
@@ -995,7 +994,7 @@ solve_right(_TS,[],N2,_B2,_Term,_Status) :-
 
 
 /***************************************************************************
-  solve_right(+TmStack,+OpStack,+N,-Term,-Status)
+  solve_end(+TmStack,+OpStack,+N,-Term,-Status)
   is called when a rule delimeter is just read.
 ***************************************************************************/
 solve_end(TS,[INFOP(S,_L,_R,_P,I)|OS],N,Term,Status) :-
