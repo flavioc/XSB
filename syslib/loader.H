@@ -25,23 +25,21 @@
 
 
 :- export load_pred/1, load/1, libpath/1, set_inthandler/2, '_$load_undef'/1,
-	dos_os_loader/0, windows_os_loader/0.
+	  windows_os_loader/0.
 
-
+:- import abort/0 from standard.
+:- import conset/2 from prof_sbp.
+:- import reconsult/1 from consult.
+:- import standard_symbol/3 from std_xsb.
+:- import library_directory/1 from usermod.
+:- import xsb_configuration/2 from xsb_configuration.
 :- import term_type/2, term_psc/2, psc_name/2, psc_arity/2, psc_env/2,
 	  psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
 	  psc_insert/4, psc_import/3, conpsc/2, str_cat/3, str_sub/3,
-	  buff_byte/3, code_call/3, code_load/3, intern_string/2,
+	  code_call/3, code_load/3, intern_string/2,
 	  stat_flag/2, stat_set_flag/2, expand_filename/2,
      	  tilde_expand_filename/2, is_absolute_filename/1,
-	  unload_seg/1, machine_file_exists/1, call0/1, str_insert/2,
+	  unload_seg/1, machine_file_exists/1, call0/1,
 	  formatted_io/5, slash/1, dirname_canonic/2
    from machine.
-:- import conset/2 from prof_sbp.
-:- import standard_symbol/3 from std_xsb.
-:- import reconsult/1 from consult.
-:- import library_directory/1 from usermod.
-:- import xsb_configuration/2 from xsb_configuration.
-:- import abort/0 from standard.
-:- import file_put/2 from file_io.
 

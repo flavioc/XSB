@@ -45,15 +45,12 @@
 #include "celltags.h"
 
 
-%% These provide tests for the respective OS.
-%% windows_os_loader and dos_os_loader are used only here and in xsb_writ.
+%% Provide tests for the respective OS.
+%% windows_os_loader is used only here and in parse.
 %% All other modules use windows_os and dos_os imported from xsb_configuration.
 %% The *_loader version is needed  here because we can''t import 
 %% them from xsb_configuration this early. 
-dos_os_loader :- stat_flag(CONFIG_NAME, ConfigurationC),
-	%% convert C string to Prolog
-	intern_string(ConfigurationC, Configuration),
-	str_sub('pc-dos', Configuration, _).
+
 windows_os_loader :-  stat_flag(CONFIG_NAME, ConfigurationC),
 	%% convert C string to Prolog
 	intern_string(ConfigurationC, Configuration),
@@ -198,52 +195,12 @@ load_library_directories.
 
 
 /*****************************************************************************
-** In the future, we'll add a modifier "standard", so the user could indicate
+** In the future, we'll add a modifier "system", so the user could indicate
 ** more precisely where predicates are imported from. E.g.,
 **
-** :- import file_write/2 from xsb_writ(standard)
+** :- import file_write/2 from system(xsb_writ)
 **
 *****************************************************************************/
-
-/*****************************************************************************
-The following comment is probably no longer relevant and/or accurate. - mk
-
-At the time this comment is written, the following modules are loaded
-automatically as a result of execution up to and including the
-reconsult/1-ing of a pre-existing .xsbrc.O file:
-
-	1) loader	2) prof_sbp	3) machine
-	4) std_xsb	5) consult	6) assert
-	7) db		8) dbcmpl	9) asm_inst
-	10) file_op	11) standard	12) basics
-	13) string	14) config	15) curr_sym
-	16) xsb_writ
-
-However, if the .O file is missing, the following modules are loaded:
-
-	1) loader	2) prof_sbp	3) machine
-	4) std_xsb	5) curr_sym	6) consult
-	7) assert	8) db		9) dbcmpl
-	10) asm_inst	11) file_op	12) standard
-	13) basics	14) string	15) config
-	16) compile	17) auxlry	18) xsb_writ
-	19) parse	20) xsb_read	21) singleton
-	22) dbclause	23) listutil	24) symtab
-	25) builtin	26) useinfer	27) spec
-	28) tprog	29) inprog	30) tp_var
-	31) flatten	32) varproc	33) tp_eval
-	34) tp_comp	35) tp_cond	36) tp_goal
-	37) asm_opt	38) tp_index	39) peephole
-	40) asmpass2	41) preproc	42) tpinline
-	43) ti_mod	44) asm
-
-Currently, xsb_read stands as the only essential module which may not
-be loaded at the time the emulator flag must be set.
-
-NOTE that x_interp will be loaded correctly because the emu passes the
-entire path to our interpreter to the loader.
-******************************************************************************/
-
 
 /*
  *  Load and execute the module specified on the command line.
@@ -265,8 +222,7 @@ The following code should be self-contained since it would be impossible
 to load a predicate on demand if the mechanism by which it is loaded
 requires the use of another unloaded predicate.  Therefore we are not
 allowed imports and so cannot rely on code defined elsewhere in the
-system.  This explains the use of some `strange' predicates like
-ll_prompt/1, ll_writearity/1, etc.
+system.
 
 In fact, the only predicates that can be used in this part of the file
 are those that are explicitly defined or expanded (in-lined) by the
@@ -286,11 +242,6 @@ XSB's in-lined predicates, builtins, and functions.
 
 '_$load_undef'(Term) :-
 	term_type(Term, Type),
-	/* OLD
-	( Type =:= 1 -> term_psc(Term, PSC)
-	; Type =:= 5 -> psc_insert(Term, 0, PSC, 0)
-	),
-	*/
 	( Type =:= CS -> term_psc(Term, PSC)
 	; Type =:= STRING -> psc_insert(Term, 0, PSC, 0)
 	),
@@ -301,12 +252,6 @@ XSB's in-lined predicates, builtins, and functions.
 load_pred(PSC) :- \+ (\+ (load_pred0(PSC))).
 
 load_pred0(PSC) :- 
-	/* OLD
-	stat_flag(1, Hitrace), 	
-	stat_set_flag(1, 0),		% turn off hitrace
-	load_pred1(PSC),
-	stat_set_flag(1, Hitrace).	% resume hitrace status if successful
-	*/
 	stat_flag(HITRACE, Hitrace), 	
 	stat_set_flag(HITRACE, 0),	  % turn off hitrace
 	load_pred1(PSC),
@@ -317,29 +262,27 @@ load_pred1(PSC) :-
 	psc_arity(PSC, Arity),
 	psc_env(PSC, Env), 
 	( Env =:= 2 ->			% is "imported"
-		psc_prop(PSC, ModPSC),
-		psc_name(ModPSC, ModName),
-		psc_type(ModPSC, ModType), 
-		( ModType =:= 4
-		; ModType =\= 4,	% module is not loaded yet
-		  load(ModName)		% can fail here <--- MAY BE A BUG HERE 
-		),
+	    psc_prop(PSC, ModPSC),
+	    psc_name(ModPSC, ModName),
+	    psc_type(ModPSC, ModType), 
+	    (	ModType =:= 4
+	    ;	ModType =\= 4,	% module is not loaded yet
+		load(ModName)	% can fail here <--- MAY BE A BUG HERE 
+	    ),
 		( psc_type(PSC, NType),
 		  ( NType =:= 2; NType =:= 13; NType =:= 14; NType =:= 1 ), 
 		    %% module loaded, and pred/func/foreign-pred is there
 		    '_$cutto'(B)
 		    %% module loaded, but pred/func/foreign-pred is not there
-		    ; ll_prompt('The predicate/function '),
-		      ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity),
-		      ll_prompt(' is not defined in the module '),
-		      ll_prompt(ModName), ll_nl,
-		      fmt_write(STDFDBK, "%s\n", arg('Aborting...')),
-		      abort
+		; fmt_write(STDERR,
+		   "! The predicate: %s/%d is not defined in the module %s\n",
+				arg(Name,Arity,ModName)),
+		  fmt_write(STDFDBK, "%s\n", arg('! Aborting...')),
+		  abort
 		)
-	;   ll_prompt('Undefined predicate/function: '), % no module or no pred
-	    ll_prompt(Name), ll_prompt('/'), ll_writearity(Arity), ll_nl, 
-	    fmt_write(STDFDBK, "%s\n", arg('Aborting...')),
-	    abort
+	; fmt_write(STDERR, "! Undefined predicate: %s/%d\n", arg(Name,Arity)),
+	  fmt_write(STDFDBK, "%s\n", arg('! Aborting...')),
+	  abort
 	).
 
 
@@ -352,21 +295,21 @@ load(ModName) :-
 	'_$savecp'(B),
 	stat_flag(DEBUG_ON, Debug_on),
 	( Debug_on =:= 1
-	  ->	fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
-	   ;	Debug_on =\= 1
+	->  fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
+	;   true
 	),
 	( search_file(ModName, FileName),
 	  code_load(FileName, Init, 0),		% use the C loader
-	  (Init =\= 0				% load succeeded
-	   ->	'_$cutto'(B),
-		( Init =\= 4 			% prolog byte-code succeeded
-		  ->	ll_code_call(Init, true, 2),	% call '_$main'
-			unload_seg(Init)	% delete code for '_$main'
-	   	   ;	true		% load foreign obj code succeeded
-		)
+	  ( Init =\= 0				% load succeeded
+	  ->  '_$cutto'(B),
+	      (	  Init =\= 4	% prolog byte-code succeeded
+	      ->  ll_code_call(Init, true, 2), % call '_$main'
+		  unload_seg(Init) % delete code for '_$main'
+	      ;	  true		% load foreign obj code succeeded
+	      )
 	  )
-	;   ll_prompt('Cannot find the module '), ll_prompt(ModName), ll_nl,
-	    fail
+	; fmt_write(STDERR, '! Cannot find the module: %s\n', arg(ModName)),
+	  fail
 	).
 
 /*
@@ -391,10 +334,6 @@ search_file(ModName, AbsFileName) :-
 	;   libpath(LibPath),
 	    str_cat(LibPath, ExpandedModName, WholePath)
 	),
-	/* Don''t support DOS any more
-	( dos_os_loader -> Extension = '.OX' ;   Extension = '.O' ),
-	str_cat(WholePath, Extension, AbsFileName).
-	*/
 	str_cat(WholePath, '.O', AbsFileName).
 
 
@@ -437,49 +376,5 @@ libraries_loaded :-
 	stat_flag(LIBS_LOADED, Lib_Loaded),
 	Lib_Loaded =:= 1.
 
-
-
-/*======================================================================*/
-/* Auxiliary predicates.						*/
-/*	Many of them already appear somewhere else in the system, but	*/
-/*	they also appear here due to the fact that they	cannot be	*/
-/*	imported in this module (the loader should be self-contained).	*/
 /*======================================================================*/
 
-/*
- *  Print a new line
-*/
-
-/*  OLD
-ll_nl :- (windows_os_loader
-	 ->  file_put(2, 13), file_put(2, 10)
-	 ;   file_put(2, 10) ).
-*/
-ll_nl :- (windows_os_loader
-	 ->  file_put(STDERR, CH_RETURN), file_put(STDERR, CH_NEWLINE)
-	 ;   file_put(STDERR, CH_NEWLINE) ).
-
-
-/*
- *  Print a string.
- */
-ll_prompt(String) :- ll_prompt(0, String).
-
-ll_prompt(N, String) :-
-	term_type(String, T), 
-	( T =:= STRING -> String0 = String
-	; T =:= CS -> term_psc(String, PSC), psc_name(PSC, String0)
-	; T =:= INT -> str_insert(String, String0)	% INT encoded string
-	),
-	buff_byte(String0, N, Char),
-	( Char =:= 0 -> true
-	; file_put(STDERR, Char), N1 is N+1, ll_prompt(N1, String0)
-	).
-
-/*
- *  Print a small integer
- */
-ll_writearity(Int) :- 
-	( Int < 10 -> Char is Int + CH_0, file_put(STDERR, Char)
-	; file_put(STDERR, CH_STAR)	% when arity > 9, write an asterisk *
-	).	
