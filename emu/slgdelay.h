@@ -157,6 +157,8 @@ struct pos_neg_de_list {
 
 #define UNCONDITIONAL_MARK 0x3
 
+#define Delay(X) (ASI) ((word) (TN_Child(X)) & ~UNCONDITIONAL_MARK)
+
 #define is_conditional_answer(ANS) \
   (Child(ANS) && !((word) (Child(ANS)) & UNCONDITIONAL_MARK))
 
