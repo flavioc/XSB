@@ -108,6 +108,8 @@ extern Psc get_ret_psc(int);
 
 extern Psc get_intern_psc();
 
+extern struct Table_Info_Frame *get_tip(Psc);
+
 /*======================================================================*/
 /*  HiLog related macros.						*/
 /*======================================================================*/
