@@ -40,10 +40,11 @@ compile_peephole_opt(Pil, OptPil) :-
 	compile_popt4(Pil3,_,OptPil),
 	!.
 
-
 compile_popt1([], []).
 compile_popt1([Inst|Rest], Pil1) :- compile_popt11(Inst, Rest, Pil1).
 
+compile_popt11(trustmeorelsefail(R), [trymeorelse(R,L)|PilRest], [retrymeorelse(R,L)|OptPilRest]) :-
+	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(puttvar(T,R), [getstr(R,S)|PilRest], [putstr(T,S)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(puttvar(T,T), [movreg(T,R)|PilRest], [puttvar(T,R)|OptPilRest]) :-
