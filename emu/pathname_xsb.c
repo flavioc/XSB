@@ -53,6 +53,7 @@
 #include "cell_xsb.h"
 #include "cinterf.h"
 #include "error_xsb.h"
+#include "flags_xsb.h"
 
 /*=========================================================================*/
 
@@ -62,6 +63,7 @@
 extern char *user_home;  	  /* from main_xsb.c: the user $HOME dir or
 				     install dir, if $HOME is null */
 static char *rectify_pathname(char *, char *);
+extern void transform_cygwin_pathname(char *);
 
 /*=========================================================================*/
 
@@ -71,8 +73,11 @@ xsbBool is_absolute_filename(char *filename) {
 #if defined(WIN_NT) 
   /*  If the file name begins with a "\" or with an "X:", where X is some
    *  character, then the file name is absolute.
-   *  Otherwise it's not. */
-  if ( (filename[0] == SLASH) || (isalpha(filename[0]) && filename[1] == ':') )
+   *  We also assume if it starts with a // or /cygdrive/, it's absolute */
+  if ( (filename[0] == SLASH) || 
+       (isalpha(filename[0]) && filename[1] == ':') ||
+       (filename[0] == '/')
+       )
     return TRUE;
 #else /* Unix */
   if (filename[0] == '/')
@@ -105,11 +110,23 @@ char *dirname_canonic(char *filename) {
 }
 
 
+static void normalize_file_slashes(char *path) {
+  int ANTISLASH = (SLASH == '/' ? '\\' : '/');
+
+  path = strchr(path,ANTISLASH);
+  while (path != NULL) {
+    *path = SLASH;
+    path = strchr(path,ANTISLASH);
+  }
+}
+
 /* Like tilde_expand_filename, but doesn't rectify */
 char *tilde_expand_filename_norectify(char *filename, char *expanded) {
   
 #if defined(WIN_NT)
   strcpy(expanded, filename);
+  transform_cygwin_pathname(expanded);
+  normalize_file_slashes(expanded);
   return expanded;
 
 #else /* Unix */
@@ -123,6 +140,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
 
   if (filename[0] != '~') {
     strcpy(expanded, filename);
+    normalize_file_slashes(expanded);
     return expanded;
   } 
   if (filename[1] == '/' || filename[1] == '\0') {
@@ -152,6 +170,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
   }
     
   sprintf(expanded, "%s%c%s", path_prefix, SLASH, path_suffix);
+  normalize_file_slashes(expanded);
   return expanded;
 #endif /* Unix */
 }
@@ -435,25 +454,48 @@ void parse_filename(char *filename, char **dir, char **base, char **extension)
     *(*extension-1) = '\0'; 
 }
 
-/* transform_pathname takes cygwin-like pathnames and transforms them
-   into windows-like pathnames (in-place).
-   It assumes that the given pathname is a valid cygwin absolute
-   pathname */
-void transform_pathname(char *filename) 
+/* transform_cygwin_pathname takes cygwin-like pathnames
+/cygdrive/D/..  and transforms them into windows-like pathnames D:\
+(in-place).  It assumes that the given pathname is a valid cygwin
+absolute pathname */
+
+void transform_cygwin_pathname(char *filename) 
 {
   char *pointer;
+  char tmp[MAXPATHLEN];
+  int diff;
 
-  pointer=filename+2;
-  filename[0]=*pointer;
-  filename[1]=':';
-  filename[2]='\\';
-  for(pointer+=2;*pointer;pointer++) 
-    if (*pointer == '/')
-      *(pointer-1) = '\\';
-    else
-      *(pointer-1) = *pointer;
+  if (filename[0] == '/') {
+    if (filename[1] == '/') diff = 1;
+    else if (filename[1] == 'c' &&
+	     filename[2] == 'y' &&
+	     filename[3] == 'g' &&
+	     filename[4] == 'd' &&
+	     filename[5] == 'r' &&
+	     filename[6] == 'i' &&
+	     filename[7] == 'v' &&
+	     filename[8] == 'e' &&
+	     filename[9] == '/') diff = 9;
+    else {
+      strcpy(tmp,filename);
+      strcpy(filename,(char *)flags[USER_HOME]);
+      strcpy(filename+strlen((char *)flags[USER_HOME]),tmp);
+      return;
+    }
 
-  *(pointer-1) = '\0';
+    pointer=filename+diff+1;
+    filename[0]=*pointer;
+    filename[1]=':';
+    filename[2]='\\';
+    for(pointer+=1;*pointer;pointer++) 
+      if (*pointer == '/')
+	*(pointer-diff) = '\\';
+      else
+	*(pointer-diff) = *pointer;
+  
+    *(pointer-diff) = '\0';
+    return;
+  }
 }
 
 /*=========================================================================*/
