@@ -1,0 +1,55 @@
+/* File:      navigate.P
+** Author(s): Abhik Roychoudhury
+** Contact:   lmc@cs.sunysb.edu
+** 
+** Copyright (C) SUNY at Stony Brook, 1998-2000
+** 
+** XMC is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XMC is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XMC; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+:- dynamic node/3.
+:- dynamic edge/2.
+
+% justification_root(+Q, -RootNode)
+% ---- Evaluates query Q and returns the rootnode of the tree.
+
+justification_root(Q, TV, Root) :-
+	justify(Q, TV, Root), close_open_tables, !.
+%	node(RootNodeId, Q, TV),
+%	RootNode = node(RootNodeId, Q, TV).
+
+justification_root1(Q, TV, Root, H) :-
+        justify1(Q, TV, Root, H), close_open_tables, !.                                 
+
+get_child(NodeId, Child) :- 
+	arc(NodeId, CId),
+	node(CId, G, TV),
+	( (show(G) ; (allowed(G), \+ single_child(CId)))
+		-> Child = node(CId, G, TV)
+	;  \+ builtin(G)
+		-> get_child(CId, Child)
+	).
+
+get_children(NodeId, Children) :- 
+	setof(C, get_child(NodeId, C), Children).
+
+single_child(NId) :- get_children(NId, [_1child]).
+
+arc(S, D) :- edge(S, Cs), member(D, Cs).
+
+%-------------------------------------------------------------------------
+

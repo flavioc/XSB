@@ -1,0 +1,413 @@
+/* File:      typecheck.P	-- XL typechecker
+** Author(s): 
+** Contact:   lmc@cs.sunysb.edu
+** 
+** Copyright (C) SUNY at Stony Brook, 1998-2000
+** 
+** XMC is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XMC is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XMC; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%:- [stdtype].
+
+/*   Polymorphic typechecker for XL
+***************************************************************************
+Top level module compiles other source files and calls other predicates
+to typecheck process definitions.
+***************************************************************************
+*/
+
+typecheck(File) :-
+	load_dyn(stdtype),
+	load_dyn(File),
+%	writeln('typechecking ...'),
+	toplevel,
+	perform_typecheck,
+	nl,
+	cleanup,
+	(clause(tc_error(_,_,_,_), _) ->
+	    report_errors
+	;   true).
+
+perform_typecheck :-
+	qpdef([G,_],_,_),
+	once(typecheck_process(G)),
+	fail.
+perform_typecheck.
+
+typecheck_process(G) :-
+	xl_typeinfer([G,_]),
+	get_var_types(G).			% to print the types
+%	G =.. [GName|Types],
+%	print_process_name(GName),
+%	print_types(Types).
+
+%print_process_name(ProcName)  :-
+%	nl,
+%	name(ProcName,L),
+%	length(L,X),
+%	X1 is 17 - X,
+%	write(ProcName),
+%	tab(X1),
+%	write(':  ').
+
+%print_types([]).
+%print_types([X|Xs]) :-
+%	split_var_type(X,_,Z),
+%	write(Z),
+%	(Xs \= []
+%	->  write(' * '),
+%	    print_types(Xs)).
+
+cleanup :-
+	% remove temporary clauses added
+	retractall(pdef([_,_],_,_)),
+	retractall(cpdef([_,_],_,_)),
+	retractall(qpdef([_,_],_,_)),
+	abolish_all_tables.
+
+%% ------------------------------------------------------------------
+%% Error reporting
+error(Where, Opn,Type, Pos) :-
+	assert(tc_error(Where, Opn, Type, Pos)).
+
+report_errors :-
+	retract(tc_error(Where, What, Type, [Y1,X1,Y2,X2])),
+	nl,
+	write('Error in '), write(Where), write(': '),
+	write(Y1), write('/'), write(X1), write('-'),
+	write(Y2), write('/'), write(X2),
+	write(': '),
+	write(What),
+	write(' got: '),
+	write(Type),
+	fail.
+
+
+% toplevel loop
+
+% asserts new code replacing the user annotated types to the
+% corresponding variables
+%   pdef - Original process definitions  like
+%		Datchan(X:chan(int)) ::= ...... [(A, 'X')]
+%   qpdef - new process definition where type annotations and variables
+%	  are unified
+%		Datachan(chan(int))  ::= ......
+%   cpdef - process definition where type annotations are stripped off
+%	  and an additional type argument is added to the symbol table.
+%		Datachan(X)  ::= .......[(A,'X',Ta)]
+
+toplevel :-
+	pdef([Proc,Pos], Expr, Z1),
+	Proc =.. [Head|Args],
+	split_var_type_list(Args, Vars, Types),
+	G1 =.. [Head | Types],
+	G2 =.. [Head | Vars],
+	add_types_list(Z1,Z2),		% add a variable for types in the symbol table
+	assert(cpdef([G2,Pos],Expr, Z2)),
+	cpdef([G1,Pos], Expr, Z2),
+	assert(qpdef([G1,Pos], Expr, Z2)),
+	fail.
+toplevel.
+
+% split variable and type annotation
+
+split_var_type_list([],[],[]).
+split_var_type_list([X|Xs],[V|Vs],[T|Ts]) :-
+	split_var_type(X,V,T),
+	split_var_type_list(Xs,Vs,Ts).
+
+split_var_type(X, V, T) :- nonvar(X), X = V:T, var(T), !.
+split_var_type(X, V, '$type'(T)) :- nonvar(X), X = V:T, !.
+split_var_type(X, X, X).
+
+% After typechecking add type information into the symbol table
+%		pdef(Datchan(X:chan(int),Y:int), ..., [(A, 'X'),(B,'Y')])
+% becomes
+%		npdef(Datchan(X,Y), ..., [(A, 'X',chan(int))],[(B,'Y',int)])
+% and the variables are separated into two lists,  channels and others.
+get_var_types(G) :-
+	functor(G, F, A),
+	functor(G1, F, A),
+	copy_term(G1,G2),
+	cpdef([G1,X1],X,_),
+	copy_term(X,NewX),
+	qpdef([G,X1],X,Z1),
+	xl_typeinfer(X),		% from the table
+	add_var_types_list(Z1,Z2),	% get the type of the variables in list Z2
+	cpdef([G2,X1],NewX,Z2),
+	get_channel_varslist(Z2,Chanvars,Vars), % separate channel variables
+	assert(npdef([G2,X1],NewX,Chanvars,Vars)).
+
+
+% Add a type variable to the symbol table
+add_types_list([],[]).
+add_types_list([X|Xs],[Y|Ys]) :- add_types(X,Y),add_types_list(Xs,Ys).
+
+add_types((X,Y),(X,Y,_T)).
+
+/* get the type of the variable after typechecking and unify it to the
+type variable in the symbol table */
+add_var_types_list([],[]).
+add_var_types_list([X|Xs],[Y|Ys]) :- 
+	add_var_types(X,Y),
+	add_var_types_list(Xs,Ys).
+
+add_var_types((X,Y,_),(_,Y,X)).
+
+/* separate channel variables from others */
+get_channel_vars((A,B,X),[(A,B,X)],[]) :- nonvar(X), X = '$type'(chan(_)), !.
+get_channel_vars((A,B,X),[],[(A,B,X)]).
+
+get_channel_varslist([],[],[]).
+get_channel_varslist([X|Xs],Z1,Z2) :- get_channel_vars(X,L1,L2),
+                                      get_channel_varslist(Xs, T1, T2),
+	                              append(L1,T1,Z1),
+	                              append(L2,T2,Z2).
+
+
+/* ************************************************************************
+	The main type inference module
+***************************************************************************
+*/
+
+:- op(700, xfx, ':=').
+:- op(600, xfx, ':').
+
+:- hilog xl_unifies.
+xl_unifies(X,Y,Zx) :-
+	copy_term(X,Zx),
+	copy_term(Y,Zy),
+	abstract_unify(Zx,Zy).
+
+:- hilog xl_typeof.
+xl_typeof(X)(Y) :-
+	copy_term(X,Y),
+	qpdef([Y,_],B,_),
+	xl_typeinfer(B);
+        true.
+
+/* inference for recursive definitions  like  P(X) ::=  .....P(Z) .....  */
+%:- table principal_types/1.
+principal_types(X,Y) :- bagReduce(xl_typeof(X), Y, xl_unifies, _).
+principal_types(X) :- principal_types(X,X).
+
+
+%:- table xl_typeinfer/1.
+/* Typing rules for the constructs in the language */
+xl_typeinfer([true,_]) :- !.
+xl_typeinfer([action(_),_]) :- !.
+xl_typeinfer([end,_]) :- !.
+
+xl_typeinfer([par(Proc1,Proc2),_]) :- !,
+	xl_typeinfer(Proc1), 
+	xl_typeinfer(Proc2).
+
+xl_typeinfer([pref(Proc1,Proc2),_]) :- !,
+	xl_typeinfer(Proc1),
+	xl_typeinfer(Proc2).
+
+xl_typeinfer([choice(Proc1,Proc2),_]) :- !,
+	xl_typeinfer(Proc1),
+	xl_typeinfer(Proc2).
+
+xl_typeinfer([in(Link,Mesg),Pos])  :- !,
+	abstract_unify(Mesg,Z),
+	(abstract_unify(Link,'$type'(chan(Z))) ->
+	    true
+	;   error(process,Link,chan(Z),Pos)
+	).
+
+xl_typeinfer([out(Link,Mesg),Pos]) :- !,
+	abstract_unify(Mesg,Z),
+	(abstract_unify(Link,'$type'(chan(Z))) ->
+	    true
+	;   error(process,Link,chan(Z),Pos)
+	).
+
+xl_typeinfer([if(Cond,Proc1,Proc2),_]) :- !,
+	prolog_operation(Cond),
+	xl_typeinfer(Proc1),
+	xl_typeinfer(Proc2).
+
+xl_typeinfer([if(Cond,Proc1),_]) :- !,
+	prolog_operation(Cond),
+	xl_typeinfer(Proc1).
+
+xl_typeinfer([G,Pos]) :-
+	isprocess(G) -> (
+	    functor(G, F, A),
+	    functor(O, F, A), % O: open version of G
+	    G =.. [_|Args],
+	    O =.. [_|Params],
+	    principal_types(O),
+	    abstract_unify_list(Args,Typed_Args),
+	    abstract_unify_list(Typed_Args,Params) )
+	; prolog_operation([G,Pos]).
+
+/* Is G a process or a prolog computation ? */
+isprocess(G) :-
+	functor(G,F,A),
+	functor(G1,F,A),
+	pdef([G1,_],_,_).
+
+
+
+abstract_unify_list([], []).
+abstract_unify_list([X|Xs], [Y|Ys]) :- abstract_unify(Y,X),
+                                       abstract_unify_list(Xs, Ys).
+abstract_unify(X, Y) :-
+	type(X,W), type(Y,W).
+
+% ------------------------------------------------------------------
+% typecheck a prolog operation
+prolog_operation([Opn, Pos]) :-
+	abstract_operation(Opn, Type) ->
+	true
+    ;   error(prolog, Opn, Type, Pos).
+
+% variable
+abstract_operation(X,Y) :-
+	var(X), !,
+	abstract_unify(X,Y).
+
+% match left and right
+match_operation(X,Y,Z) :-
+	abstract_operation(Y,Z1),
+	abstract_unify(X,Z1),
+	Z = Z1.
+
+abstract_operation((X is Y),Z)  :- !, match_operation(X,Y,Z).
+abstract_operation((X := Y),Z)  :- !, match_operation(X,Y,Z).
+abstract_operation((X == Y),Z)  :- !, match_operation(X,Y,Z).
+abstract_operation((X \== Y),Z) :- !, match_operation(X,Y,Z).
+abstract_operation((X = Y),Z)   :- !, match_operation(X,Y,Z).
+
+% independent operations
+independent_operation(X,Y,_Z) :-		% Z not used???
+	abstract_operation(X, _Z1),		% Z1 not used???
+	abstract_operation(Y, _Z2).		% Z2 not used???
+
+abstract_operation((X , Y),Z)   :- !, independent_operation(X,Y,Z).
+abstract_operation((X ; Y),Z)   :- !, independent_operation(X,Y,Z).
+
+% comparison
+compare_operation(X,Y,Z) :-
+	abstract_unify(X, '$type'(integer)),
+	abstract_unify(Y, '$type'(integer)),
+	abstract_unify(Z, '$type'(integer)).		% Z to integear??? not bool?
+
+abstract_operation((X > Y),Z)   :- !, compare_operation(X,Y,Z).
+abstract_operation((X < Y),Z)   :- !, compare_operation(X,Y,Z).
+abstract_operation((X >= Y),Z)  :- !, compare_operation(X,Y,Z).
+abstract_operation((X =< Y),Z)  :- !, compare_operation(X,Y,Z).
+
+% integer arithmetic
+integer_operation(X,Y,Z) :-
+	abstract_unify(X, '$type'(integer)),
+	abstract_unify(Y, '$type'(integer)),
+	abstract_unify(Z, '$type'(integer)).
+
+abstract_operation((X + Y),Z)	:- !, integer_operation(X,Y,Z).
+abstract_operation((X - Y),Z)	:- !, integer_operation(X,Y,Z).
+abstract_operation((X * Y),Z)	:- !, integer_operation(X,Y,Z).
+abstract_operation((X / Y),Z)	:- !, integer_operation(X,Y,Z).
+abstract_operation((X // Y),Z)	:- !, integer_operation(X,Y,Z).
+abstract_operation((X mod Y),Z)	:- !, integer_operation(X,Y,Z).
+
+% others
+abstract_operation(X,Y) :-
+	abstract_unify(X,Y).
+
+
+
+/* Patched code for bagReduce -- to be removed after XSB is fixed */
+
+breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
+
+% Reduce elements using associative Op with identity Id.
+bagReduce(Call,_Res,Op,Id) :- bagReduce1(Call,_,Op,Id), fail.
+bagReduce(Call,Res,Op,Id) :- bagReduce1(Call,Res0,Op,Id), Res=Res0.
+:- table bagReduce1/4.
+bagReduce1(Call,Res,Op,Id) :-
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+	copy_term(p(Call,Res,Skel),p(Call,Ovar,Oskel)),
+	Call(Nvar),
+	(get_returns(Cs,Oskel,Leaf)
+	 ->	Op(Ovar,Nvar,Res),
+		not variant(Res, Ovar),
+		delete_return(Cs,Leaf)
+	 ;	Op(Id,Nvar,Res)
+	).
+
+
+%% ==================================================================
+%%        unif.P
+%% "occurs check" unification of two prolog terms
+
+occ_unify_list([],[]).
+occ_unify_list([H1|T1],[H2|T2]) :-
+	var(H1), not(occ_search(H2,H1)), !,
+	H1 = H2,
+	occ_unify_list(T1,T2).
+occ_unify_list([H1|T1],[H2|T2]) :-
+	var(H2), not(occ_search(H1,H2)), !,
+	H2 = H1,
+	occ_unify_list(T1,T2).
+occ_unify_list([H1|T1],[H2|T2]) :-
+	H1 == H2,
+	occ_unify_list(T1,T2),!.
+occ_unify_list([H1|T1],[H2|T2]) :-
+	occ_unify(H1,H2), !,
+	occ_unify_list(T1,T2).
+
+occ_unify(X,Y) :-
+	nonvar(X), nonvar(Y),
+	X=..[F|P1], Y=..[F|P2],
+	occ_unify_list(P1,P2).
+occ_unify(X,Y) :-
+	var(X),
+	not(occ_search(Y,X)), X=Y.
+occ_unify(X,Y) :-
+	var(Y),
+	not(occ_search(X,Y)), Y=X.
+
+occ_search(T,X) :- var(T), !, T == X.
+occ_search(T,X) :- T =.. [_|L], occ_search_list(L,X).
+
+occ_search_list([H|T],X) :- 
+	occ_search(H,X);
+	occ_search_list(T,X).
+
+
+/* Now the typing rules  */
+
+type(X,Y) :- var(X), var(Y), X = Y, !.
+type(X,Y) :- atype(X,Y), !.			% user-defined type
+%type(X,Y) :- var(Y), occ_unify(X,Y), !.	% X does not occur in Y
+type(X,Y) :- var(X), occ_unify(X,Y), !.		% Y does not occur in X
+
+type(A,B) :-					% unify terms
+	A =.. [F|L],
+	type_list(L, R),
+	B =.. [F|R].
+
+type_list([], []).
+type_list([X|Xs], [Y|Ys]) :- type(X,Y), type_list(Xs, Ys).
+
