@@ -79,33 +79,34 @@ DEPEND = makedepend
 #
 
 
-SRCS =	auxlry.c biassert.c xsbsocket.c builtin.c \
-	chat.c cinterf.c debug.c \
-	dis.c dynload.c emuloop.c \
-	findall.c function.c hash.c \
-	heap.c init.c inst.c \
-	io_builtins.c loader.c \
-	psc.c residual.c scc.c \
-	self_orientation.c slgdelay.c \
-	struct_manager.c subp.c system.c \
-	token.c tr_utils.c trace.c tries.c \
-	xmain.c xpathname.c xsberror.c xsb_memory.c xsb_string.c
+SRCS =	auxlry.c biassert.c builtin.c \
+	chat.c cinterf.c debug.c dis.c dynload.c \
+	emuloop.c findall.c function.c \
+	hash.c heap.c init.c inst.c io_builtins.c \
+	loader.c psc.c residual.c \
+	scc.c self_orientation.c slgdelay.c \
+	struct_manager.c sub_insert.c subp.c system.c \
+	table_stats.c tables.c token.c tr_utils.c \
+	trace.c tries.c tst_insert.c tst_retrv.c\
+	tst_unify.c tst_utils.c \
+	xmain.c xpathname.c xsb_memory.c \
+	xsb_string.c xsberror.c xsbsocket.c
 
 ORASRCS = $(SRCS) orastuff.c
 
 
-OBJS = auxlry.o biassert.o xsbsocket.o builtin.o \
-	chat.o cinterf.o debug.o \
-	dis.o dynload.o emuloop.o \
-	findall.o function.o hash.o \
-	heap.o init.o inst.o \
-	io_builtins.o loader.o \
-	private_builtin.o \
-	psc.o residual.o scc.o \
-	self_orientation.o slgdelay.o \
-	struct_manager.o subp.o system.o \
-	token.o tr_utils.o trace.o tries.o \
-	xpathname.o xsberror.o xsb_memory.o xsb_string.o
+OBJS =	auxlry.o biassert.o builtin.o \
+	chat.o cinterf.o debug.o dis.o dynload.o \
+	emuloop.o findall.o function.o \
+	hash.o heap.o init.o inst.o io_builtins.o \
+	loader.o private_builtin.o psc.o \
+	residual.o scc.o self_orientation.o slgdelay.o \
+	struct_manager.o sub_insert.o subp.o system.o \
+	table_stats.o tables.o token.o tr_utils.o \
+	trace.o tries.o tst_insert.o tst_retrv.o\
+	tst_unify.o tst_utils.o \
+	xpathname.o xsb_memory.o \
+	xsb_string.o xsberror.o xsbsocket.o
 
 allOBJS = xmain.o ${OBJS}
 
