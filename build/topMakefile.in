@@ -176,7 +176,8 @@ smodels:
 	  echo "Compiling smodels interface"; \
 	  rm -f *.o Makefile *.h *.O *.so 2>/dev/null || echo ""; \
 	  ln ${src_config_prefix}/smoMakefile ./Makefile; \
-	  make @smodels_goal@ 2>&1 | tee -a ../../build/Installation_summary
+	  make XSB=$(src_scriptdir)/xsb$(config_tag) @smodels_goal@ 2>&1\
+		 | tee -a ../../build/Installation_summary
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
