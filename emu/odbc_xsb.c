@@ -64,7 +64,6 @@
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
 static Psc     nullFctPsc;
-static int      serverConnected = 0;
 /* static int      numberOfCursors = 0; */
 static long      SQL_NTSval = SQL_NTS;
 static long      SQL_NULL_DATAval = SQL_NULL_DATA;
@@ -484,7 +483,6 @@ void ODBCConnect()
     }
   }
 
-  serverConnected = 1;
   ctop_int(6, (long)hdbc);
   return;
 }
@@ -508,13 +506,10 @@ void ODBCDisconnect()
   struct NumberofCursors *numi = FCurNum, *numj = FCurNum;
   HDBC hdbc = (HDBC)ptoc_int(2);
 
-  if (!serverConnected) return;
-
   if (hdbc == NULL) {  /* close entire connection*/
     if (FCursor != NULL)
       xsb_abort("[ODBC] Must close all connections before shutting down");
     SQLFreeEnv(henv);
-    serverConnected = 0;
     return;
   }
 
@@ -549,7 +544,6 @@ void ODBCDisconnect()
   SQLDisconnect(hdbc);
   SQLFreeConnect(hdbc);
   /*  SQLFreeEnv(henv);*/
-  serverConnected = 0;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -1360,7 +1354,7 @@ void FetchNextRow()
   struct Cursor *cur = (struct Cursor *)ptoc_int(2);
   RETCODE rc;
 
-  if (!serverConnected || cur->Status == 0) {
+  if (cur->Status == 0) {
     ctop_int(3,2);
     return;
   }
