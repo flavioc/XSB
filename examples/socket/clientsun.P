@@ -11,7 +11,7 @@
 :- import
         file_read_canonical/3 from machine.
 
-machine(sbproud8,'130.245.8.8').
+machine(sbproud8,'130.245.18.8').
 machine(sbproud12,'130.245.18.12').
 machine(compserv2,'130.245.1.58').
 machine(compserv1,'130.245.1.44').
