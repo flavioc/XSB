@@ -151,6 +151,7 @@
         install_verify_attribute_handler/4,
         verify_attribute_handler/4,
 	globalvar/1,
+	xsb_backtrace/0,
         interprolog_callback/3.
 
 :- import assert/1, retract/1 from assert.

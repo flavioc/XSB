@@ -99,15 +99,19 @@ set_output(Stream):- tell(Stream).
 % whenever streams are fixed, dont forget userout and user.
 tell(Stream) :- 
 	check_stream(Stream,'tell/1',1),
-	tell0(Stream).
+	tell0(Stream,w).
 
-tell0(F) :- 
+tell(Stream,WA) :-
+	check_stream(Stream,'tell/2',1),
+	tell0(Stream,WA).
+
+tell0(F,WA) :- 
 	conpsc(F, PSC),
 	psc_type(PSC, Type), 
 	( Type =:= T_FILE, !				% already opened
 	; Type =:= T_ORDI,
 	  psc_name(PSC, Name),
-	  file_open(Name, w, File), 		% 1: "w"
+	  file_open(Name, WA, File), 		% 1: "w"
 	  File > 0,                             % file F exists and
 	  !,					% is writable.
 	  psc_set_prop(PSC, File),
@@ -149,7 +153,7 @@ open(File,_,_):-
 	var(File), !, 
 	abort('Uninstantiated argument 1 of open/3').
 open(user,write,userin):-!, 
-	tell0(userin).
+	tell0(userin,w).
 open(user,read,userin):-!, 
 	see0(userin).
 open(F,read,F):-!, 
@@ -183,7 +187,7 @@ open(F,write,F):-!,
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_output, CuroutPsc),
 	psc_set_prop(CuroutPsc, PSC),
-	tell0(CurFile).
+	tell0(CurFile,w).
 open(F,append,F):-!, 
 	telling(CurFile),
 	conpsc(F, PSC),
@@ -199,7 +203,7 @@ open(F,append,F):-!,
 	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_output, CuroutPsc),
 	psc_set_prop(CuroutPsc, PSC),
-	tell0(CurFile).
+	tell0(CurFile,w).
 
 open(File,w,File):-!, 
 	open(File,write,userin).
