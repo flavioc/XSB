@@ -950,8 +950,8 @@ compwrite_classHasAttr(Source):-
 	%% relativize (sp?) dependency paths
 	(   Rel = crid(componentDepends,_)
 	->  Targ = cid(component(cid(TN,TN),cid(TPath,cdfpt),Version),SN),
-	    (	TN == cdf
-	    ->	RTPath = TPath
+	    (	system_component(TN)
+	    ->	RTPath = ''
 	    ;	Src = cid(component(_,cid(SPath,cdfpt),_),_),
 		rel_path(SPath,TPath,RTPath)
 	    ),
@@ -1082,7 +1082,7 @@ newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):-
 	     Pathin = Path ).
 
 %%%% Path manipulation.
-:- dynamic pe_cwd/1, pe_dir_stack/1.
+:- dynamic pe_cwd/1, pe_dir_stack/1, pe_sysdir/1.
 
 %% initialize default path to CDF package dir
 :- init_path_engine.
@@ -1092,7 +1092,9 @@ init_path_engine :-
 	slash(Slash),
 	canonical_pathname([IDIR,Slash,'packages',Slash,'altCDF'],DefaultPath),
 	retractall(pe_cwd(_)),
+	retractall(pe_sysdir(_)),
 	asserta(pe_cwd(DefaultPath)),
+	asserta(pe_sysdir(DefaultPath)),
 	retractall(pe_dir_stack(_)).
 
 pe_push_dir(Dir) :-
@@ -1124,6 +1126,9 @@ strip_base([],[H|L],L1):-
 strip_base([H|T],[H|T1],L):- 
 	strip_base(T,T1,L).
 
+pe_canon_path('',Dir) :-
+	!,
+	pe_sysdir(Dir).
 pe_canon_path(Path,CPath) :-
 	(   is_absolute_filename(Path)
 	->  canonical_pathname(Path,CPath)
