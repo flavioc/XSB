@@ -30,8 +30,9 @@
 
 
 static struct stat stat_buff;
-extern Cell ptoc_tag(int);
-extern char *expand_filename(char *filename);
+extern int    fileno(FILE *);	        /* this is defined in POSIX */
+extern Cell   ptoc_tag(int);
+extern char   *expand_filename(char *filename);
 
 static FILE *stropen(char *str)
 {

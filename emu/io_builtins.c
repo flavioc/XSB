@@ -53,8 +53,6 @@
 #include "io_builtins.h"
 #include "configs/special.h"
 
-extern int      fileno(FILE *);	        /* this is defined in POSIX */
-
 static FILE *fptr;			/* working variable */
     
 #define setvar(op1) \
