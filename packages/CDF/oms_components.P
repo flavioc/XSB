@@ -8,7 +8,8 @@
           load_component/3.
 
 :- import short_directory/2,
-	canonical_pathname/2 from directry.
+	canonical_pathname/2,
+	rel_path/3 from directry.
 
 :- import is_absolute_filename/1,
 	machine_file_exists/1 from machine.
@@ -597,8 +598,9 @@ load_component_dependencies_pass2(Name,_Path,Anclist):-
 	fail.
 load_component_dependencies_pass2(_,_,_).
 
-initialize_component(Name,Path):- 
-	concat_atom([Path,'/',Name,'/initialization_file.P'],File),
+initialize_component(Name,Path):-
+	slash(Slash),
+	concat_atom([Path,Slash,Name,Slash,'initialization_file.P'],File),
 	(file_exists(File) -> consult(File) ; true).
 
 %---------------
@@ -684,7 +686,7 @@ already_present(Name,Path,V,Arglist):-
 
 %---------------
 
-/* here is where we may do something w. relative paths.
+/* 
    Name is the name part of a component, and Path its path-part, 
    possibly input as a relative path name.  Upon success, V is
    instantiated to the proper version of the component (which may
@@ -774,7 +776,8 @@ path information.
 
 :- dynamic temp_new_version/2.
 
-update_all_components(Dir,Options):- 
+update_all_components(InDir,Options):-
+	pe_canon_path(InDir,Dir),
 	retractall(temp_new_version(_,_)),
 	(member(action(create),Options) -> 
 	    Action = create,initialize_for_create(Dir)
@@ -797,7 +800,8 @@ update_all_components(_Dir,_Options):-
 
 initialize_for_create(Dir):- 
 	analyze_components(Name,_),
-	concat_atom([Dir,'/',Name],File),
+	slash(Slash),
+	concat_atom([Dir,Slash,Name],File),
 	(file_exists(File) ->
   	     file_latest_version(Dir,Name,V),
 	     V1 is V + 1,
@@ -827,8 +831,9 @@ propagate_dirty_bits(Dir):-
   	fail.
 propagate_dirty_bits(_Dir).
 
-versions_for_new_component(Dir,Name):- 
-	concat_atom([Dir,'/',Name],File),
+versions_for_new_component(Dir,Name):-
+	slash(Slash),
+	concat_atom([Dir,Slash,Name],File),
 	(file_exists(File) ->
     	     file_latest_version(Dir,Name,V),
 	     V1 is V + 1,
@@ -1101,8 +1106,20 @@ compwrite_strel(Source):-
 	class_cidbound(Src,_,Nid1,Source1),
 	class_cidbound(Rel,_,Nid2,Source2),
 	class_cidbound(Targ,_,Nid3,Source3),
+	%% make dependencies use relative paths
+	(   Nid2 == componentDepends
+	->  Nid3 = component(CName,CSrc,atom(CPath),PSrc,CVer,VSrc),
+	    (	CName == 'OMS'
+	    ->	RCPath = CPath
+	    ;	Nid1 = component(_,_,atom(OPath),_,_,_),
+		rel_path(OPath,CPath,RCPath)
+	    ),
+	    RNid3 = component(CName,CSrc,atom(RCPath),PSrc,CVer,VSrc),
+	    message(strel_ext(Nid1,Source1,Nid2,Source2,RNid3,Source3))
+	;   RNid3 = Nid3
+	),
 	write_ext_term(
-                 strel_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
+                 strel_ext(Nid1,Source1,Nid2,Source2,RNid3,Source3)),
 	fail.
 compwrite_strel(_).
 
@@ -1198,7 +1215,8 @@ needs_update(Component):- oms_dirty(Component).
 
 init_path_engine :-
 	xsb_configuration(install_dir,IDIR),
-	canonical_pathname([IDIR,'/packages/CDF/'],DefaultPath),
+	slash(Slash),
+	canonical_pathname([IDIR,Slash,'packages',Slash,'CDF'],DefaultPath),
 	retractall(pe_cwd(_)),
 	asserta(pe_cwd(DefaultPath)),
 	retractall(pe_dir_stack(_)).
@@ -1223,8 +1241,9 @@ pe_canon_path(Path,CPath) :-
 	(   is_absolute_filename(Path)
 	->  canonical_pathname(Path,CPath)
 	;   pe_cwd(Cwd),
-	    (	machine_file_exists([Cwd,'/',Path])
-	    ->	canonical_pathname([Cwd,'/',Path],CPath)
+	    slash(Slash),
+	    (	machine_file_exists([Cwd,Slash,Path])
+	    ->	canonical_pathname([Cwd,Slash,Path],CPath)
 	    ;	throw(file_not_found(Path,cwd(Cwd)))
 	    )
 	),
