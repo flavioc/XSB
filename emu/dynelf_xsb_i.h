@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -63,10 +64,10 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*handle;
   void	*funcep;
   bool	dummy();
-  char  *ldp1,*ldp2;
-  char  *ldstring,*libpath;
-  char  ldtemp;
-  int   slibpath;
+/*   char  *ldp1,*ldp2; */
+/*   char  *ldstring,*libpath; */
+/*   char  ldtemp; */
+/*   int   slibpath; */
   
   /* (1) create filename.so */
   
