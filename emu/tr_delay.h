@@ -48,7 +48,7 @@
     CPtr temp_hreg;							\
     if (is_conditional_answer(NodePtr)) {				\
       fprintf(stderr, "Trie-Code returning a conditional answer for ");	\
-      SUBGOAL = (CPtr) asi_subgoal((ASI) Delay(NodePtr));		\
+      SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));			\
       print_subgoal(stderr, (SGFrame) SUBGOAL);				\
       fprintf(stderr, " (positively delaying)\n");			\
       fprintf(stderr, ">>>> (in handle_conditional_answers)\
@@ -78,7 +78,7 @@ num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
     if (is_conditional_answer(NodePtr)) {				\
-      SUBGOAL = (CPtr) asi_subgoal((ASI) Delay(NodePtr));		\
+      SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));			\
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(SUBGOAL, NodePtr,				\
 			 makestring((char *) ret_psc[0]));		\

@@ -95,7 +95,7 @@ typedef struct AS_info {
 
 #define create_as_info(ANS, SUBG)		\
     asi = (ASI) malloc(sizeof(struct AS_info));	\
-    Delay(ANS) = (NODEptr) asi;			\
+    Child(ANS) = (NODEptr) asi;			\
     asi_pdes(asi) = NULL;			\
     asi_subgoal(asi) = SUBG;			\
     asi_dl_list(asi) = NULL
@@ -155,8 +155,13 @@ struct pos_neg_de_list {
  * Handling of conditional answers.	     			      
  */
 
-#define is_conditional_answer(ANS)		(Delay(ANS) != NULL)
-#define is_unconditional_answer(ANS)		(Delay(ANS) == NULL)
+#define UNCONDITIONAL_MARK 0x3
+
+#define is_conditional_answer(ANS) \
+  (Child(ANS) && !((word) (Child(ANS)) & UNCONDITIONAL_MARK))
+
+#define is_unconditional_answer(ANS) \
+  (!Child(ANS) || ((word) (Child(ANS)) & UNCONDITIONAL_MARK))
 
 /*
  * Checks whether a delay element that is about to be interned was
@@ -186,18 +191,18 @@ struct pos_neg_de_list {
  */
 
 #define mark_conditional_answer(ANS, SUBG, NEW_DL)			\
-  if (is_unconditional_answer(ANS)) {					\
+  if (Child(ANS) == NULL) {						\
     create_as_info(ANS, SUBG);						\
   }									\
   else {								\
-    asi = (ASI) Delay(ANS);						\
+    asi = Delay(ANS);							\
   }									\
   dl_next(NEW_DL) = asi_dl_list(asi);					\
   asi_dl_list(asi) = NEW_DL;						\
   dl_asl(NEW_DL) = ANS
 
 #define unmark_conditional_answer(ANS) /*-- NEEDS CHANGE --*/		\
-    Delay(ANS) = NULL
+    Child(ANS) = (NODEptr) ((word) (Child(ANS)) | UNCONDITIONAL_MARK)
 
 #define most_general_answer(ANS) is_escape_node(ANS)
 

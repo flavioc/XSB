@@ -107,9 +107,9 @@ static char *new_block;		/* used in new_entry() */
   else if (NEXT_FREE < CURRENT_BLOCK_TOP)				\
     NEW_ENTRY = NEXT_FREE++;						\
   else {								\
-    if ((new_block = (char *)malloc(BLOCK_SIZE + sizeof(Cell))) == NULL)\
+    if ((new_block = (char *) malloc(BLOCK_SIZE + sizeof(Cell))) == NULL)\
       xsb_abort(ABORT_MESG);						\
-    *(char **)new_block = CURRENT_BLOCK;				\
+    *(char **) new_block = CURRENT_BLOCK;				\
     CURRENT_BLOCK = new_block;						\
     NEXT_FREE = (ENTRY_TYPE)(new_block + sizeof(Cell));			\
     CURRENT_BLOCK_TOP = (ENTRY_TYPE)(new_block + sizeof(Cell) + BLOCK_SIZE);\
@@ -121,6 +121,13 @@ static char *new_block;		/* used in new_entry() */
 		      NEXT_FUNCTION)					\
   NEXT_FUNCTION(ENTRY_TO_BE_RELEASED) = RELEASED;			\
   RELEASED = ENTRY_TO_BE_RELEASED
+
+#define remove_pnde(PNDE_HEAD, PNDE)					\
+  if (PNDE_HEAD == PNDE)						\
+    PNDE_HEAD = pnde_next(PNDE);					\
+  else									\
+    pnde_next(pnde_prev(PNDE)) = pnde_next(PNDE);			\
+  release_entry(PNDE, released_pndes, pnde_next)
 
 /*
  * Assign one entry for delay_elem in the current DE (Delay Element)
@@ -216,9 +223,9 @@ static DL intern_delay_list(CPtr dlist) /* assumes that dlist != NULL	*/
       de_next(de) = head;
       head = de;
     }
-    dlist = (CPtr)cell(dlist+1);
+    dlist = (CPtr) cell(dlist+1);
   }
-  if (head != NULL) {
+  if (head) {
     new_entry(dl,
 	      released_dls,
 	      next_free_dl,
@@ -252,11 +259,11 @@ static DL intern_delay_list(CPtr dlist) /* assumes that dlist != NULL	*/
 static void record_de_usage(DL dl)
 {
   DE de;
-  PNDE pnde;
+  PNDE pnde, current_first;
   NODEptr as_leaf;
  
   de = dl_de_list(dl);
-  while (de != NULL) {
+  while (de) {
     new_entry(pnde,
 	      released_pndes,
 	      next_free_pnde,
@@ -270,12 +277,18 @@ static void record_de_usage(DL dl)
     pnde_de(pnde) = de;
     pnde_prev(pnde) = NULL;
     if ((as_leaf = de_ans_subst(de)) == NULL) {	/* a negative DE */
-      pnde_next(pnde) = subg_nde_list(de_subgoal(de));
+      current_first = subg_nde_list(de_subgoal(de));
+      pnde_next(pnde) = current_first;
+      if (current_first)
+	pnde_prev(current_first) = pnde;
       subg_nde_list(de_subgoal(de)) = pnde;
     }
     else {					/* a positive DE */
-      pnde_next(pnde) = asi_pdes((ASI)Delay(as_leaf));
-      asi_pdes((ASI)Delay(as_leaf)) = pnde;
+      current_first = asi_pdes(Delay(as_leaf));
+      pnde_next(pnde) = current_first;
+      if (current_first)
+	pnde_prev(current_first) = pnde;
+      asi_pdes(Delay(as_leaf)) = pnde;
     }
     de_pnde(de) = pnde;	/* record */
     de = de_next(de);
@@ -321,7 +334,7 @@ void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, bool sf_exists)
     fprintf(stderr, "\n");
 #endif
 
-    if (delayreg != NULL && (!sf_exists || is_conditional_answer(as_leaf))) {
+    if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
       if ((dl = intern_delay_list(delayreg)) != NULL) {
 	mark_conditional_answer(as_leaf, subgoal, dl);
 	record_de_usage(dl);
@@ -331,14 +344,14 @@ void do_delay_stuff(NODEptr as_leaf, SGFrame subgoal, bool sf_exists)
      * Check for the derivation of an unconditional answer.
      */
     if (sf_exists && is_conditional_answer(as_leaf) &&
-	(delayreg == NULL || dl == NULL)) {
+	(!delayreg || !dl)) {
       /*
        * Initiate positive simplification in places where this answer
        * substitution has already been returned.
        */
       simplify_pos_unconditional(as_leaf);
     }
-    if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal) != NULL) {
+    if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal)) {
       simplify_neg_succeeds(subgoal);
     }
 }
@@ -354,7 +367,7 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
 
     while (islist(dlist)) {
       dlist = clref_val(dlist);
-      cptr = (CPtr)cs_val(cell(dlist));
+      cptr = (CPtr) cs_val(cell(dlist));
       tmp_cell = cell(cptr + 1);
       subgoal = (SGFrame) int_val(tmp_cell);
       tmp_cell = cell(cptr + 2);
@@ -362,7 +375,7 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
       if (is_failing_delay_element(subgoal,ans_subst)) {
 	return TRUE;
       }
-      dlist = (CPtr)cell(dlist+1);
+      dlist = (CPtr) cell(dlist+1);
     }
     return FALSE;
 }
@@ -428,22 +441,39 @@ static bool remove_dl_from_dl_list(DL dl, ASI asi)
  * When a DL becomes empty (after remove_de_from_dl()), the answer
  * substitution which uses this DL becomes unconditional.  Further
  * simplification operations go on ...
- *
- * Remember: release_dl
  */
 
 static void handle_empty_dl_creation(DL dl)
 {
   NODEptr as_leaf = dl_asl(dl);
+  ASI asi = Delay(as_leaf);
   SGFrame subgoal;
 
 #ifdef DEBUG_DELAYVAR
   fprintf(stderr, ">>>> start handle_empty_dl_creation()\n");
 #endif
-
-  release_entry(dl, released_dls, dl_next);
+  /*
+   * Only when `as_leaf' is still a conditional answer can we do
+   * remove_dl_from_dl_list(), simplify_pos_unconditional(), and
+   * simplify_neg_succeeds() here.
+   *
+   * If `as_leaf' is already marked UNCONDITIONAL (by
+   * unmark_conditional_answer(as_leaf) in simplify_pos_unconditional()),
+   * that means this is the second time when `as_leaf' becomes
+   * unconditional. So we don't need do anything.  All the DLs have been
+   * released in the first time.
+   */
   if (is_conditional_answer(as_leaf)) {	/* if it is still conditional */
-    subgoal = asi_subgoal((ASI)Delay(as_leaf));
+    remove_dl_from_dl_list(dl, asi);
+    subgoal = asi_subgoal(Delay(as_leaf));
+#ifdef DEBUG_DELAYVAR
+    fprintf(stderr, ">>>> the subgoal is:");
+    print_subgoal(stderr, subgoal); fprintf(stderr, "\n");
+#endif
+    /*
+     * simplify_pos_unconditional(as_leaf) will release all other DLs for
+     * as_leaf, and mark as_leaf as UNCONDITIONAL.
+     */
     simplify_pos_unconditional(as_leaf);
     /*-- perform early completion if necessary; please preserve invariants --*/
     if (!is_completed(subgoal) && most_general_answer(as_leaf)) {
@@ -466,7 +496,7 @@ static void handle_empty_dl_creation(DL dl)
 
 static void handle_unsupported_answer_subst(NODEptr as_leaf)
 {
-  ASI unsup_asi = (ASI)Delay(as_leaf);
+  ASI unsup_asi = Delay(as_leaf);
   SGFrame unsup_subgoal = asi_subgoal(unsup_asi);
 
 #ifdef DEBUG_DELAYVAR
@@ -481,6 +511,7 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
       simplify_neg_fails(unsup_subgoal);
     }
   }
+  free(unsup_asi);
 }
 
 /*
@@ -491,17 +522,42 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
 
 static void simplify_pos_unconditional(NODEptr as_leaf)
 {
-  ASI asi = (ASI)Delay(as_leaf);
-  PNDE pde = asi_pdes(asi), tmp;
-  DE de;
-  DL dl;
+  ASI asi = Delay(as_leaf);
+  ASI de_asi;
+  PNDE pde, tmp;
+  DE de, tmp_de;
+  DL dl, tmp_dl;
 
 #ifdef DEBUG_DELAYVAR
   fprintf(stderr, ">>>> start simplify_pos_unconditional()\n");
 #endif
 
+  /*
+   * To release all the DLs (and their DEs).
+   */
+  dl = asi_dl_list(asi);
+  while (dl) {
+    tmp_dl = dl_next(dl);
+    de = dl_de_list(dl);
+    while (de) {
+      tmp_de = de_next(de);
+      if (de_ans_subst(de) == NULL) { /* is NED */
+	remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
+      }
+      else {
+	de_asi = Delay(de_ans_subst(de));
+	remove_pnde(asi_pdes(de_asi), de_pnde(de));
+      }
+      release_entry(de, released_des, de_next);
+      de = tmp_de; /* next DE */
+    } /* while (de) */
+    release_entry(dl, released_dls, dl_next);
+    dl = tmp_dl; /* next DL */
+  } /* while (dl) */
+
   unmark_conditional_answer(as_leaf);
-  while (pde != NULL) {
+  pde = asi_pdes(asi);
+  while (pde) {
     de = pnde_de(pde);
     dl = pnde_dl(pde);
     tmp = pnde_next(pde);
@@ -511,6 +567,12 @@ static void simplify_pos_unconditional(NODEptr as_leaf)
       handle_empty_dl_creation(dl);
   }
   asi_pdes(asi) = NULL;		/* forget this PDE list */
+  /*
+   * Now this DelayInfo `asi' does not contain any useful info, so we can
+   * free it, and really mark `as_leaf' as an unconditional answer.
+   */
+  Child(as_leaf) = NULL;
+  free(asi);
 }
 
 /*
@@ -527,10 +589,12 @@ void simplify_neg_fails(SGFrame subgoal)
 
 #ifdef DEBUG_DELAYVAR
   fprintf(stderr, ">>>> start simplify_neg_fails()\n");
+  fprintf(stderr, ">>>> the subgoal is: ");
+  print_subgoal(stderr, subgoal); fprintf(stderr, "\n");
 #endif
 
   subg_nde_list(subgoal) = NULL; /* forget this NDE list */
-  while (nde != NULL) {
+  while (nde) {
     de = pnde_de(nde); dl = pnde_dl(nde);
     tmp = pnde_next(nde);
     release_entry(nde, released_pndes, pnde_next);
@@ -539,13 +603,6 @@ void simplify_neg_fails(SGFrame subgoal)
       handle_empty_dl_creation(dl);
   }
 }
-
-#define remove_pnde(PNDE_HEAD, PNDE)					\
-  if (PNDE_HEAD == PNDE)						\
-    PNDE_HEAD = pnde_next(PNDE);					\
-  else									\
-    pnde_next(pnde_prev(PNDE)) = pnde_next(PNDE);			\
-  release_entry(PNDE, released_pndes, pnde_next)
 
 /*
  * On occasion that the subgoal succeeds (gets an unconditional	
@@ -559,7 +616,7 @@ void simplify_neg_fails(SGFrame subgoal)
 
 static void simplify_neg_succeeds(SGFrame subgoal)
 {
-  PNDE nde = subg_nde_list(subgoal), tmp_nde;
+  PNDE nde;
   DL dl;
   DE de, tmp_de;
   ASI used_asi, de_asi;
@@ -569,34 +626,21 @@ static void simplify_neg_succeeds(SGFrame subgoal)
   fprintf(stderr, ">>>> start simplify_neg_succeeds()\n");
 #endif
 
-  /*
-   * First, set this NDE list as NULL, because further simplification
-   * operations (invoked by handle_unsupported_answer_subst) may visit
-   * this NDE list again.  At that time, since this pointer is already
-   * NULL, nothing will be done.
-   */
-  subg_nde_list(subgoal) = NULL;
-
-  while (nde != NULL) {
+  while (subg_nde_list(subgoal) != NULL) {
+    nde = subg_nde_list(subgoal);
     dl = pnde_dl(nde); /* dl: to be removed */
     used_as_leaf = dl_asl(dl);
     if (is_not_deleted(used_as_leaf) &&
-	(used_asi = (ASI)Delay(used_as_leaf)) != NULL) {
+	(used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
-      while (de != NULL) {
+      while (de) {
 	tmp_de = de_next(de);
-	if (de != pnde_de(nde)) { /*
-				   * except this NDE, which will be
-				   * released later (within the first
-				   * while loop) anyway
-				   */
-	  if (de_ans_subst(de) == NULL) { /* is NDE */
-	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
-	  }
-	  else {
-	    de_asi = (ASI)Delay(de_ans_subst(de));
- 	    remove_pnde(asi_pdes(de_asi), de_pnde(de));
-	  }
+	if (de_ans_subst(de) == NULL) { /* is NDE */
+	  remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
+	}
+	else {
+	  de_asi = Delay(de_ans_subst(de));
+	  remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	}
 #ifdef DEBUG_DELAYVAR
 	fprintf(stderr, ">>>> release DE (in simplify_neg_succeeds)");
@@ -604,27 +648,25 @@ static void simplify_neg_succeeds(SGFrame subgoal)
 	release_entry(de, released_des, de_next);
 	de = tmp_de; /* next DE */
       } /* while */
-
       if (!remove_dl_from_dl_list(dl, used_asi)) {
 	handle_unsupported_answer_subst(used_as_leaf);
       }
     } /* if */
-    tmp_nde = pnde_next(nde); /* release unused NDE */
-    release_entry(nde, released_pndes, pnde_next);
-    nde = tmp_nde;
   } /* while */
 }
 
 /*
- * On occasion that an AnswerSubstitution looses all its conditional
- * answers, it deletes all delay lists that contain a positive delay
- * element pointing to that AnswerSubstitution.
+ * On occasion that an AnswerSubstitution at `as_leaf' looses all its
+ * conditional answers (all its DLs have been removed),
+ * simplify_pos_unsupported() deletes all delay lists (of other
+ * predicates' conditional answers) that contain a positive delay element
+ * pointing to that AnswerSubstitution.
  */
 
 static void simplify_pos_unsupported(NODEptr as_leaf)
 {
-  ASI asi = (ASI)Delay(as_leaf);
-  PNDE pde = asi_pdes(asi), tmp_pde;
+  ASI asi = Delay(as_leaf);
+  PNDE pde;
   DL dl;
   DE de, tmp_de;
   ASI used_asi, de_asi;
@@ -634,25 +676,21 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
   fprintf(stderr, ">>>> start simplify_pos_unsupported()\n");
 #endif
 
-  /* First, set this PDE list as NULL */
-  asi_pdes(asi) = NULL;
-
-  while (pde != NULL) {
+  while (asi_pdes(asi)) {
+    pde = asi_pdes(asi);
     dl = pnde_dl(pde); /* dl: to be removed */
     used_as_leaf = dl_asl(dl);
     if (is_not_deleted(used_as_leaf) &&
-	(used_asi = (ASI)Delay(used_as_leaf)) != NULL) {
+	(used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
-      while (de != NULL) {
+      while (de) {
 	tmp_de = de_next(de);
-	if (de != pnde_de(pde)) {
-	  if (de_ans_subst(de) == NULL) { /* is NDE */
-	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
-	  }
-	  else {			  /* is PDE */
-	    de_asi = (ASI)Delay(de_ans_subst(de));
-	    remove_pnde(asi_pdes(de_asi), de_pnde(de));
-	  }
+	if (de_ans_subst(de) == NULL) { /* is NDE */
+	  remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de));
+	}
+	else {			  /* is PDE */
+	  de_asi = Delay(de_ans_subst(de));
+	  remove_pnde(asi_pdes(de_asi), de_pnde(de));
 	}
 #ifdef DEBUG_DELAYVAR
 	fprintf(stderr, ">>>> release DE (in simplify_pos_unsupported)");
@@ -660,14 +698,10 @@ static void simplify_pos_unsupported(NODEptr as_leaf)
 	release_entry(de, released_des, de_next);
 	de = tmp_de; /* next DE */
       } /* while */
-
       if (!remove_dl_from_dl_list(dl, used_asi)) {
 	handle_unsupported_answer_subst(used_as_leaf);
       }
     } /* if */
-    tmp_pde = pnde_next(pde); /* release unused PDE */
-    release_entry(pde, released_pndes, pnde_next);
-    pde = tmp_pde;
   } /* while */
 }
 
@@ -682,7 +716,7 @@ void abolish_wfs_space(void)
   /* clear DE blocks */
 
   while (current_de_block) {
-    last_block = *(char **)current_de_block;
+    last_block = *(char **) current_de_block;
     free(current_de_block);
     current_de_block = last_block;
   }
@@ -690,7 +724,7 @@ void abolish_wfs_space(void)
   /* clear DL blocks */
 
   while (current_dl_block) {
-    last_block = *(char **)current_dl_block;
+    last_block = *(char **) current_dl_block;
     free(current_dl_block);
     current_dl_block = last_block;
   }
@@ -698,7 +732,7 @@ void abolish_wfs_space(void)
   /* clear PNDE blocks */
   
   while (current_pnde_block) {
-    last_block = *(char **)current_pnde_block;
+    last_block = *(char **) current_pnde_block;
     free(current_pnde_block);
     current_pnde_block = last_block;
   }

@@ -65,7 +65,7 @@ struct NODE {
 #define NODE_TYPE_ANSWER_LEAF  ((byte)1)
 #define is_answer_leaf(x) (NodeType(x) == NODE_TYPE_ANSWER_LEAF)
 
-#define Delay(X)	Child(X)
+#define Delay(X) (ASI) ((word) (Child(X)) & ~UNCONDITIONAL_MARK)
 
 #define is_escape_node(X)	(Instr(X) == trie_proceed)
 
