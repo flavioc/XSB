@@ -366,7 +366,7 @@ static void chat_restore_init_area(CPtr destination, int type,
   destination += NLCPSIZE;
   len = chat_get_nrargs(phead);
   if (type == CONSUMER_TYPE) {
-    *destination = len; 
+    *destination = makeint(len); /* tagged */
     destination++;
   }
   from = (CPtr)chat_get_args_start(phead);
@@ -439,7 +439,6 @@ CPtr chat_restore_consumer(chat_init_pheader pheader)
 
 CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
 {
-    int nrarguments;
     CPtr compl_susp_breg;
 
 #ifdef Chat_DEBUG
@@ -452,12 +451,11 @@ CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
       fprintf(stderr, "Subgoal = %p", subg);
       if (is_completed(subg)) {
 	fprintf(stderr, " is completed; clobbering its TCP[next_clause]\n");
-	/* tcp_pcreg(breg) = (pb)&fail_inst; --- csuses infinite loop */
+	/* tcp_pcreg(breg) = (pb)&fail_inst; --- causes infinite loop */
       } else fprintf(stderr, "\n");
     }
 #endif
-    nrarguments = chat_get_nrargs(pheader);
-    compl_susp_breg = breg - NLCPSIZE - nrarguments;
+    compl_susp_breg = breg - NLCPSIZE;  /* nrarguments is always 0 here */
     chat_restore_init_area(compl_susp_breg, COMPL_SUSP_TYPE, pheader);
 
     /* propagate trreg of leader */
@@ -744,7 +742,10 @@ chat_init_pheader save_a_consumer_copy(SGFrame subg_ptr, int incremental)
     /* consumer and the substitution factor below it	*/
     if (incremental)
          size_cons = 0;
-    else size_cons = NLCPSIZE + *(breg+NLCPSIZE) + 1;
+    else {
+      int tagged_sf_var_num = *(breg+NLCPSIZE);
+      size_cons = NLCPSIZE + int_val(tagged_sf_var_num) + 1;
+    }
 
 #ifdef Chat_DEBUG
     fprintf(stderr, "Trail to be copied from %p to %p (%ld cells)\n",
@@ -916,10 +917,9 @@ chat_init_pheader save_a_chat_compl_susp(SGFrame subg_ptr, CPtr ptcp, byte *cp)
     }
 
     /* only a choice point needs to be saved: the completion suspension */
-    /* argument registers do not make sense in this case	*/
     chat_get_malloc_start(pheader) = NULL;
+    /* argument registers do not make sense in this case */
     chat_set_nrargs(pheader,0);
-    /* chat_save_cons_arguments(pheader, nrarguments, (CPtr *)reg_base); */
     where = (CPtr)(&chat_get_cons_start(pheader));
     save_compl_susp_frame(where, subg_ptr, ptcp, cp);
     chat_fill_chat_area(pheader);

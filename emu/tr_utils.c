@@ -722,7 +722,7 @@ void breg_retskel(void)
 #else
     arity = ptoc_int(2);
     where = tcp + TCP_SIZE + (Cell)arity;
-    Nvars = cell(where);
+    Nvars = int_val(cell(where));
     cptr = where + Nvars;
 #endif
     if (Nvars == 0) {

@@ -66,7 +66,8 @@ case check_complete: {
     } else { /* This code mimics the answer_return code */
       restore_some_wamregs(breg,ereg); 
       ARITY = tcp_arity(breg); 
-      CallNumVar = *(breg + TCP_SIZE + (Cell)ARITY); 
+      CallNumVar = *(breg + TCP_SIZE + (Cell)ARITY);
+      CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
       op3 = breg + TCP_SIZE + (Cell) ARITY + CallNumVar; 
       OldRetPtr = aln_next_aln(tcp_trie_return(breg)); /* get next answer */ 
       if (OldRetPtr) {
@@ -285,6 +286,7 @@ case check_complete: {
 #else
 	ARITY = tcp_arity(orig_breg);
 	CallNumVar = *(orig_breg + TCP_SIZE + (Cell)ARITY);
+	CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
 	VarsInCall = orig_breg+TCP_SIZE+(Cell)ARITY + 1; /* first variable */
 #endif
 	for (i=0; i<CallNumVar; i++) {

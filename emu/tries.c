@@ -1344,15 +1344,15 @@ bool variant_call_search(int arity, CPtr cptr, CPtr *curcallptr)
       VarPosReg = tVarPosReg;
     } else { /* consumer is found */
       /* for consumers the substitution factor is stored in CP stack */
-      *(--VarPosReg) = ctr;
+      cell(--VarPosReg) = makeint(ctr); /* tag the # of SF vars */
       while (--tVarPosReg > VarPosReg) { bld_free(((CPtr)(*tVarPosReg))); }
     }
 #else
     if (!flag) { /* generator is found */
       subg_inserts++;
     }
-    /* the SLG-WAM stores the substitution factor in the CP stack */
-    *(--VarPosReg) = ctr;
+    /* the SLG-WAM always stores the substitution factor in the CP stack */
+    cell(--VarPosReg) = makeint(ctr); /* tag the # of SF vars */
     while (--tVarPosReg > VarPosReg) { bld_free(((CPtr)(*tVarPosReg))); }
 #endif
 
@@ -1425,7 +1425,7 @@ NODEptr whole_term_chk_ins(Cell term, CPtr hook, int *flagptr)
 	one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
       }
       break;
-    case STRING: case INT:  case FLOAT:
+    case STRING: case INT: case FLOAT:
       one_node_chk_ins(flag, (Cell)xtemp1);
       break;
     case LIST:

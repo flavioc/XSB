@@ -120,14 +120,14 @@ case tabletry:		/* cur_label arity label xcurcall	*/
 
 case answer_return:
     OldRetPtr = aln_next_aln(nlcp_trie_return(breg)); /* get next answer */
-    if (OldRetPtr){
-
+    if (OldRetPtr) {
       switch_envs(breg);
       ptcpreg = nlcp_ptcp(breg);
       delayreg = nlcp_pdreg(breg);
       restore_some_wamregs(breg, ereg);
       /* An extra computation in the interest of clarity */
       CallNumVar = *(breg + NLCPSIZE);
+      CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
       op3 = breg + NLCPSIZE + CallNumVar;
       nlcp_trie_return(breg) = OldRetPtr; /* last answer consumed */
       TrieRetPtr = get_next_trie_solution(&OldRetPtr);
@@ -211,6 +211,7 @@ case new_answer_dealloc:
      */
     GENERATOR_CP = subg_cp_ptr(SUBGOAL);
     CallNumVar = *(GENERATOR_CP + TCP_SIZE + (Cell) ARITY);
+    CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
     VarsInCall = GENERATOR_CP + TCP_SIZE + (Cell) ARITY + CallNumVar;
 #endif
 
@@ -450,28 +451,26 @@ return_table_code:
 #ifdef DEBUG_DELAY
     xsb_warn("Returning answers from a COMPLETED table...");
 #endif
-    CallNumVar = *(VarPosReg);
+    CallNumVar = int_val(cell(VarPosReg));
     num_vars_in_var_regs = -1;
     reg_arrayptr = reg_array-1;
     for (i = 1; i <= CallNumVar; i++) {
-       pushreg(cell(VarPosReg+i));
+      pushreg(cell(VarPosReg+i));
     }
     delay_it = 1;
-    lpcreg = (byte *) subg_ans_root_ptr(xcurcall);
+    lpcreg = (byte *)subg_ans_root_ptr(xcurcall);
     goto contcase;
 
 /*----------------------------------------------------------------------*/
 
 lay_down_consumer:
     adjust_level(subg_compl_stack_ptr(xcurcall));
-#if (!defined(CHAT))
-    PREV_CONSUMER = subg_asf_list_ptr(xcurcall);
-#endif
     save_find_locx(ereg);
 #if (!defined(CHAT))
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
+    PREV_CONSUMER = subg_asf_list_ptr(xcurcall);
     save_consumer_choicepoint(VarPosReg,ereg,xcurcall,PREV_CONSUMER,breg);
 #else
     save_consumer_choicepoint(VarPosReg,ereg,xcurcall,breg);
@@ -488,17 +487,13 @@ lay_down_consumer:
 #endif
     OldRetPtr = subg_answers(xcurcall);
     if (OldRetPtr) {
-/* CHAT had this which is correct -- but does not have variables in delay lists
-      if (is_conditional_answer(aln_answer_ptr(OldRetPtr))) {
-	delay_positively(xcurcall, aln_answer_ptr(OldRetPtr))
-      }
- */
 #ifdef CHAT      /* for the time being let's update consumed answers eagerly */
       nlcp_trie_return((CPtr)(&chat_get_cons_start((chat_init_pheader)nlcp_chat_area(breg)))) =
 #endif
 	nlcp_trie_return(breg) = OldRetPtr; 
       TrieRetPtr = get_next_trie_solution(&OldRetPtr);
       CallNumVar = *(breg+NLCPSIZE);
+      CallNumVar = int_val(CallNumVar); /* # of SF vars is stored tagged */
       op3 = breg + NLCPSIZE + CallNumVar;
       hbreg = hreg;
       load_solution_trie(CallNumVar,op3,TrieRetPtr);

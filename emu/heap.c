@@ -4,7 +4,7 @@
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
 ** Copyright (C) ECRC, Germany, 1990
-** Copyright (C) K.U. Leuven, 1998
+** Copyright (C) K.U. Leuven, 1998-1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -26,37 +26,41 @@
 
 
 /*************************************************************************
- * This module provides
+ * This module provides:
 
 	reallocation of the heap/environment area
-		bool glstack_realloc(new_size,arity)
+	-----------------------------------------
+	Function glstack_realloc(new_size,arity)
 		originally written by E. Johnson in file
 		memory.c, but completely redone by Bart Demoen
 
-	heap garbage collector
-		int gc_heap(arity) - currently only supported for CHAT
-		see paper
+	heap garbage collection
+	-----------------------
+	Function gc_heap(arity) - currently only supported for CHAT
+	   To understand the usefulness logic, see paper:
 		B. Demoen and K. Sagonas.
 		Memory Management for Prolog with Tabling.
 		in Proceedings of the 1998 ACM SIGPLAN International
 		Symposium on Memory Management, Vancouver, B.C., Canada,
 		Oct. 1998. ACM Press. p. 97-106
 
-		additional information in
+	   To understand the implementation and for additional information see:
 		B. Demoen and K. Sagonas.
-		Experiences with building garbage collectors for XSB-CHAT.
-		CW report 272, September 1998
+		Heap Garbage Collection in XSB: Practice and Experience.
+		CW report 272, September 1998; finished February 1999.
 
 
 	Function slide_heap() implements a sliding collector a la Morris
-	       for a Prolog specific one see paper
+	   It was mostly written by Bart Demoen
+	       for a Prolog specific one see paper:
 	       K. Appleby, M. Carlsson, S. Haridi, and D. Sahlin.
 	       Garbage Collection for Prolog Based on WAM.
-	       Communications of the ACM}, 31(6):719--741, June 1988.
+	       Communications of the ACM, 31(6):719--741, June 1988.
 
 
 	Function copy_heap() implements a copying collector a la Cheney
-               for a Prolog specific one see paper
+	   It was mostly written by Kostis Sagonas
+               for a Prolog specific one see paper:
 	       J. Bevemyr and T. Lindgren.
 	       A Simple and Efficient Copying Garbage Collector for Prolog.
 	       In M. Hermenegildo and J. Penjam, editors,
@@ -78,8 +82,8 @@
 
 
 Todo:
-        adapt the gc's to SLG-WAM
-	provide a decent user interface to the gc
+        adapt the garbage collectors to SLG-WAM
+	provide a decent user interface to the garbage collector
 	integrate with compiler
 
 ****************************************************************************/
@@ -104,7 +108,7 @@ Todo:
 #include "register.h"  /* breg, trreg */
 #include "tries.h"     /* needed by "choice.h" */
 #include "choice.h"    /* choice point structures and macros */
-#include "xsberror.h"  /* xsb_exit() */
+#include "xsberror.h"  /* xsb_exit() and friends */
 #include "psc.h"       /* needed by "xmacro.h" */
 #include "xmacro.h"    /* Completion Stack and Subgoal Frame def's */
 #include "realloc.h"   /* Heap - ls reallocation macros */
@@ -116,7 +120,7 @@ Todo:
 
 /* to choose between copying or sliding collector:
    its value is determined based on the the value of flags[GARBAGE_COLLECT] */
-static int slide;
+static bool slide;
 
 /* max value of active delay register fields in CHAT areas.  it should
    not be bigger than the margin (2nd arg) of gc_heap instruction minus
@@ -219,13 +223,52 @@ static char *compl_marks = NULL ;
 #define MARKED    1
 #define CHAIN_BIT 4                            
 
-#define h_marked(i)  (heap_marks[i])
-#define h_mark(i)    heap_marks[i] |= MARKED
+#define h_marked(i)        (heap_marks[i])
+#define h_mark(i)          heap_marks[i] |= MARKED
+#define h_clear_mark(i)	   heap_marks[i] &= ~MARKED
 
-#define ls_marked(i) (ls_marks[i])
-#define ls_mark(i)   ls_marks[i] |= MARKED
+#define ls_marked(i)       (ls_marks[i])
+#define ls_mark(i)         ls_marks[i] |= MARKED
+#define ls_clear_mark(i)   ls_marks[i] = 0
 
 /*=========================================================================*/
+
+/* in the absence of serious bugs, the test is an invariant of the WAM */
+#ifdef DEBUG
+#define testreturnit(retp)   if (points_into_heap(retp)) return(retp)
+#else
+#define testreturnit(retp)   return(retp)
+#endif
+
+static CPtr hp_pointer_from_cell(Cell cell, int *tag)
+{
+    int t;
+    CPtr retp;
+
+    t = cell_tag(cell) ;
+
+    if (t == LIST)
+      {
+	*tag = LIST;
+	retp = clref_val(cell);
+	testreturnit(retp);
+      }
+    if (t == CS)
+      {
+	*tag = CS;
+	retp = (CPtr)(cs_val(cell));
+	testreturnit(retp);
+      }
+    if ((t == REF) || (t == REF1))
+      {
+	*tag = t;
+	retp = (CPtr)cell ;
+	if (points_into_heap(retp)) return(retp);
+      }
+
+    return NULL;
+} /* hp_pointer_from_cell */
+
 
 static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 { int t ;
@@ -233,18 +276,18 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 
       *tag = t = cell_tag(cell) ;
       switch (t)
-	{ case REF : case REF1:
-		retp = (CPtr)cell ;
-		break ;
-	  case LIST :
-		retp = clref_val(cell) ;
-		break ;
-	  case CS :
-		retp = ((CPtr)(cs_val(cell))) ;
-		break ;
-	  default :
-		*whereto = TO_NOWHERE ;
-		return((CPtr)cell) ;
+	{ case REF: case REF1:
+	    retp = (CPtr)cell ;
+	    break ;
+	  case LIST:
+	    retp = clref_val(cell) ;
+	    break ;
+	  case CS:
+	    retp = ((CPtr)(cs_val(cell))) ;
+	    break ;
+	  default:
+	    *whereto = TO_NOWHERE ;
+	    return((CPtr)cell) ;
 	}
 
       if (points_into_heap(retp)) *whereto = TO_HEAP ;
@@ -301,7 +344,7 @@ static char * pr_tr_marked(CPtr cell_ptr)
 
 /*-------------------------------------------------------------------------*/
 
-/* mark_cell() keeps an explicit stack to perform marking.
+/* Function mark_cell() keeps an explicit stack to perform marking.
    Marking without using such a stack, as in SICStus, should not be
    considered.  It is nice, but slower and more prone to errors.
    Recursive marking is the only alternative in my opinion, but one can
@@ -316,61 +359,61 @@ static int mark_cell(CPtr cell_ptr)
 {
   CPtr p ;
   Cell cell_val ;
-  int  i, m, arity ;
-  CPtr mark_stack[MAXS+MAX_ARITY+1] ;
+  int  i, m, arity, tag ;
   int  mark_top = 0 ;
+  CPtr mark_stack[MAXS+MAX_ARITY+1] ;
 
     m = 0 ;
 mark_more:
     if (!points_into_heap(cell_ptr)) /* defensive marking */
 		goto pop_more ;
+safe_mark_more:
     i = cell_ptr - heap_bot ;
     if (h_marked(i)) goto pop_more ;
     h_mark(i) ;
     m++ ;
 
-    cell_val = *cell_ptr; p = (CPtr)cell_val ;
-    switch (cell_tag(cell_val))
-    { case REF : case REF1 :
+    cell_val = *cell_ptr;
+    tag = cell_tag(cell_val);
+
+    if (tag == LIST)
+      { cell_ptr = clref_val(cell_val) ;
+        if (mark_overflow)
+	  { m += mark_cell(cell_ptr+1) ; }
+        else push_to_mark(cell_ptr+1) ;
+        goto safe_mark_more ;
+      }
+
+    if (tag == CS)
+      { p = (CPtr)cell_val ;
+        cell_ptr = ((CPtr)(cs_val(cell_val))) ;
+        i = cell_ptr - heap_bot ;
+        if (h_marked(i)) goto pop_more ;
+        h_mark(i) ; m++ ;
+        cell_val = *cell_ptr;
+        arity = get_arity((Psc)(cell_val)) ;
+        p = ++cell_ptr ;
+        if (mark_overflow)
+	  { while (--arity)
+	    { m += mark_cell(++p) ; }
+	  }
+        else while (--arity) push_to_mark(++p) ;
+        goto mark_more ;
+      }
+
+
+    if ((tag == REF) || (tag == REF1))
+      { p = (CPtr)cell_val ;
         if (p == cell_ptr) goto pop_more ;
 	cell_ptr = p ;
 	goto mark_more ;
-        break ;
+      }
 
-      case CS :                     
-        cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-	i = cell_ptr - heap_bot ;
-	if (h_marked(i)) goto pop_more ;
-	h_mark(i) ; m++ ;
-	cell_val = *cell_ptr;
-	arity = get_arity((Psc)(cell_val)) ;
-	p = ++cell_ptr ;
-	if (mark_overflow)
-		{ while (--arity)
-			{ m += mark_cell(++p) ; }
-		}
-	else while (--arity) push_to_mark(++p) ;
-	goto mark_more ;
-        break ;
+    /*    if (tag == STRUCT)
+      { fprintf(stderr,"Unknown tag on heap during marking %ld\n",cell_val) ;
+        return(0) ;
+      } */
 
-      case LIST :
-        cell_ptr = clref_val(cell_val) ;
-        if (mark_overflow)
-        	{ m += mark_cell(cell_ptr+1) ; }
-        else push_to_mark(cell_ptr+1) ;
-	goto mark_more ;
-        break ;
-
-      case INT :
-      case FLOAT :
-      case STRING :
-	goto pop_more ;
-
-      default :
-        fprintf(stderr,"Unknown tag on heap during marking %ld\n",cell_val) ;
-	return(0) ;
-        break ;
-    }
 pop_more:
     if (mark_top--)
     	{ cell_ptr = mark_stack[mark_top] ; goto mark_more ; }
@@ -889,31 +932,37 @@ int mark_heap(int arity, int *marked_dregs)
 
   if (print_on_gc) print_all_stacks();
 
+  if (slide) {
 #ifdef CHAT
-  if (slide) avail_dreg_marks = MAX_DREG_MARKS ;
+    avail_dreg_marks = MAX_DREG_MARKS ;
 #ifdef COMMENT
-  /* here allocate EXACT amount for completion stack: not upper bound */
-  compl_marks = calloc((2*((compl_bot-top_of_complstk)/COMPLFRAMESIZE)) + 1,1);
-  if (! compl_marks)
-    xsb_exit("Not enough core to allocate marks for completion stack");
+    /* here allocate EXACT amount for completion stack: not upper bound */
+    compl_marks = calloc((2*((compl_bot-top_of_complstk)/COMPLFRAMESIZE))+1,1);
+    if (! compl_marks)
+      xsb_exit("Not enough core to allocate marks for completion stack");
 #ifdef DEBUG
-  fprintf(stderr,"Allocated %d mark bits for completion stack (%p,%p)\n",
-	 (compl_bot-top_of_complstk)/COMPLFRAMESIZE,compl_bot,top_of_complstk);
+    fprintf(stderr,"Allocated %d mark bits for completion stack (%p,%p)\n",
+	    (compl_bot-top_of_complstk)/COMPLFRAMESIZE,
+	    compl_bot,top_of_complstk);
 #endif
 #endif
 #endif
+    /* these areas are not used in a copying collector */
+    cp_marks = calloc(cp_bot - cp_top + 1,1);
+    tr_marks = calloc(tr_top - tr_bot + 1,1);
+    if ((! cp_marks) || (! tr_marks))
+      xsb_exit("Not enough core to perform garbage collection chaining phase");
+  }
 
-  heap_marks = calloc(heap_top - heap_bot + 2 + avail_dreg_marks,1) ;
-  ls_marks   = calloc(ls_bot - ls_top + 1,1) ;
-  cp_marks   = calloc(cp_bot - cp_top + 1,1) ;
-  tr_marks   = calloc(tr_top - tr_bot + 1,1) ;
-
-  if ((! heap_marks) || (! ls_marks) || (! cp_marks) || (! tr_marks))
-    xsb_exit("Not enough core to perform garbage collection marking phase") ;
+  heap_marks = calloc(heap_top - heap_bot + 2 + avail_dreg_marks,1);
+  ls_marks   = calloc(ls_bot - ls_top + 1,1);
+  if ((! heap_marks) || (! ls_marks))
+    xsb_exit("Not enough core to perform garbage collection marking phase");
  
-  heap_marks += 1 ; /* see its free */
+  heap_marks += 1; /* see its free; also note that heap_marks[-1] = 0 is
+		      needed for copying garbage collection see copy_block() */
 
-  marked = mark_region(reg+1,reg+arity) ;
+  marked = mark_region(reg+1,reg+arity);
   if (delayreg != NULL) {
 #ifdef NEG_DEBUG
     fprintf(stderr,"Dreg pointing to %p\n", delayreg);
@@ -926,17 +975,17 @@ int mark_heap(int arity, int *marked_dregs)
       put_on_heap = arity;
       marked += put_on_heap;
       while (put_on_heap > 0)
-	h_mark((heap_top - put_on_heap--)-heap_bot) ;
+	h_mark((heap_top - put_on_heap--)-heap_bot);
     }
 
 #ifdef CHAT
-  marked += chat_mark_substitution_factor() ;
+  marked += chat_mark_substitution_factor();
 #endif
 
-  marked += mark_query() ;
+  marked += mark_query();
 
 #ifdef CHAT
-  marked += chat_mark_frozen_parts(&avail_dreg_marks) ;
+  marked += chat_mark_frozen_parts(&avail_dreg_marks);
   if (slide) *marked_dregs = MAX_DREG_MARKS - avail_dreg_marks;
 #ifdef NEG_DEBUG
   fprintf(stderr, "Total of %d marked Dregs in CHAT areas\n", *marked_dregs);
@@ -1604,7 +1653,7 @@ bool glstack_realloc(int new_size, int arity)
 /* from here to end of slide_heap is code taken to some extent from
    BinProlog and adapted to XSB - especially what concerns the
    environments
-   the BinProlog gc was also written originally by Bart Demoen
+   the BinProlog garbage collector was also written originally by Bart Demoen
 */
 
 #ifdef GC
@@ -1612,12 +1661,10 @@ bool glstack_realloc(int new_size, int arity)
 #define h_set_chained(p)	 heap_marks[(p-heap_bot)] |= CHAIN_BIT
 #define h_set_unchained(p)	 heap_marks[(p-heap_bot)] &= ~CHAIN_BIT
 #define h_is_chained(p)		 (heap_marks[(p-heap_bot)] & CHAIN_BIT)
-#define h_clear_mark(p)		 heap_marks[(p-heap_bot)] &= ~MARKED
 
 #define ls_set_chained(p)        ls_marks[(p-ls_top)] |= CHAIN_BIT 
 #define ls_set_unchained(p)      ls_marks[(p-ls_top)] &= ~CHAIN_BIT
 #define ls_is_chained(p)         (ls_marks[(p-ls_top)] & CHAIN_BIT)
-#define ls_clear_mark(p)	 ls_marks[(p-ls_top)] = 0
 
 #define cp_set_chained(p)        cp_marks[(p-cp_top)] |= CHAIN_BIT
 #define cp_set_unchained(p)      cp_marks[(p-cp_top)] &= ~CHAIN_BIT
@@ -1819,14 +1866,15 @@ static void chat_chain_region(CPtr b, int len)
 	slide_heap: implements a sliding collector for the heap
 	see: Algorithm of Morris / ACM paper by Appleby et al.
 	num_marked = number of marked heap cells
-	the relevant argument registers have been moved to the top of the heap
-		prior to marking
+	the relevant argument registers have been moved to the top
+	of the heap prior to marking
 */
 
 #ifdef GC
 
 static CPtr slide_heap(int num_marked)
-{ int whereto, tag ;
+{
+  int  tag ;
   Cell contents;
   CPtr p, q ;
 
@@ -1842,8 +1890,8 @@ static CPtr slide_heap(int num_marked)
       endtr = tr_top ;
       for (p = tr_bot; p <= endtr ; p++ )
 	{ contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) continue ;
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot)) continue ;
 	  if (h_is_chained(q)) tr_set_chained(p) ;
 	  h_set_chained(q) ;
@@ -1858,8 +1906,8 @@ static CPtr slide_heap(int num_marked)
       endcp = cp_top ;
       for (p = cp_bot; p >= endcp ; p-- )
 	{ contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) continue ;
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot))
 	    { fprintf(stderr,"not marked from cp\n"); continue ; }
 	  if (h_is_chained(q)) cp_set_chained(p) ;
@@ -1880,8 +1928,8 @@ static CPtr slide_heap(int num_marked)
 	{ /* substitution factor is now in the heap for generators */
 	  p = (CPtr)(&compl_hreg(compl_fr));
 	  contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP)
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q)
 	    fprintf(stderr,"bad heap pointer during chaining SF\n");
 	  if (! h_marked(q-heap_bot))
 	    fprintf(stderr,"chain SF problem\n");
@@ -1901,10 +1949,10 @@ static CPtr slide_heap(int num_marked)
       for (p = ls_bot; p >= endls ; p-- )
 	{
 	  if (! ls_marked(p-ls_top)) continue ;
-	  ls_clear_mark(p) ; /* chain bit cannot be on yet */
+	  ls_clear_mark((p-ls_top)) ; /* chain bit cannot be on yet */
 	  contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) continue ;
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot)) continue ;
 	  if (h_is_chained(q)) ls_set_chained(p) ;
 	  h_set_chained(q) ;
@@ -1971,8 +2019,8 @@ static CPtr slide_heap(int num_marked)
 	    }
 	  if (h_is_chained(hptr))
 	    { unchain(hptr,destination) ; }
-	  p = pointer_from_cell(*hptr,&tag,&whereto) ;            
-	  if ((whereto == TO_HEAP) && (p < hptr))
+	  p = hp_pointer_from_cell(*hptr,&tag) ;            
+	  if (p && (p < hptr))
 	    { swap_with_tag(hptr,p,tag) ;
 	      if (h_is_chained(p))
 		h_set_chained(hptr) ;
@@ -1993,25 +2041,29 @@ static CPtr slide_heap(int num_marked)
     /* one phase downwards - from bottom of heap to top of heap */
     index = 0 ;
     destination = heap_bot ;
-    for (hptr = heap_bot ; hptr < heap_top ;)
-      { if (h_marked(hptr - heap_bot))
-	{ if (h_is_chained(hptr))
-	  { unchain(hptr,destination) ; }
-	if ((Cell)(hptr) == *hptr) /* UNDEF */
-	  bld_free(destination) ;
-	else
-	  { p = pointer_from_cell(*hptr,&tag,&whereto) ;
-	    *destination = *hptr ;
-	    if ((whereto == TO_HEAP) && (p > hptr))
-	      { swap_with_tag(destination,p,tag) ;
-	        if (h_is_chained(p))           
-		  h_set_chained(destination) ;   
-		else h_set_chained(p) ;
-	      }
-	  }
-	h_clear_mark(hptr) ;
-	hptr++ ; destination++ ;
-	index++ ;
+    for (hptr = heap_bot ; hptr < heap_top ; )
+      {
+	if (h_marked(hptr - heap_bot))
+	{
+	  if (h_is_chained(hptr))
+	    { unchain(hptr,destination) ; }
+	  if ((Cell)(hptr) == *hptr) /* UNDEF */
+	    bld_free(destination) ;
+	  else
+	    {
+	      p = hp_pointer_from_cell(*hptr,&tag) ;
+	      *destination = *hptr ;
+	      if (p && (p > hptr))
+		{
+		  swap_with_tag(destination,p,tag) ;
+		  if (h_is_chained(p))           
+		    h_set_chained(destination) ;   
+		  else h_set_chained(p) ;
+		}
+	    }
+	  h_clear_mark((hptr-heap_bot)) ;
+	  hptr++ ; destination++ ;
+	  index++ ;
 	}
       else
 	{
@@ -2052,7 +2104,7 @@ static void check_zero(char *b, int l, char *s)
 /*          the copy back as a mem copy; so heap pointers during Cheney  */
 /*          will already point to the final destination                  */
 /*                                                                       */
-/*  It is very similar to the BinProlog garbage collector                */
+/*  It is very similar to the BinProlog garbage collector.               */
 /*=======================================================================*/
 
 #ifdef GC
@@ -2060,8 +2112,15 @@ static void check_zero(char *b, int l, char *s)
 /*#define GC_DEBUG*/
 
 #ifdef GC_DEBUG
-#define GCDBG(mes,val) if (num_gc == 61) fprintf(stderr,mes,val)
+static void CHECK(CPtr p)
+{ CPtr q;
+  q = (CPtr)(*p);
+  if (((heap_bot - offset) <= q) && (q < next)) return;
+  fprintf(stderr,"really bad thing discovered\n");
+} /* CHECK */
+#define GCDBG(mes,val) /*if (num_gc == 61)*/ fprintf(stderr,mes,val)
 #else
+#define CHECK(p)
 #define GCDBG(mes,val)
 #endif
 
@@ -2071,19 +2130,8 @@ static void check_zero(char *b, int l, char *s)
 static int offset;
 static CPtr scan, next;
 
-#ifdef GC_DEBUG
-static void check(CPtr p)
-{ CPtr q;
-  q = (CPtr)(*p);
-  if (((heap_bot - offset) <= q) && (q < next)) return;
-  fprintf(stderr,"really bad thing discovered\n");
-} /* check */
-#else
-#define check(p)
-#endif
-
 #define adapt_external_heap_pointer(P,Q,TAG) \
-    check(Q);\
+    CHECK(Q);\
     GCDBG("Adapting %p ", P); GCDBG("with %p ", Q);\
     Q = (CPtr)((CPtr)(cell(Q))+offset); \
     if (TAG == REF || TAG == REF1) {\
@@ -2093,41 +2141,29 @@ static void check(CPtr p)
     } \
     GCDBG("to %lx\n", cell(P))
 
-#define find_begin_point(HP) \
-    begin_point = HP; \
-    GCDBG("In hp = %p, ",begin_point); \
-    while ((i = begin_point-heap_bot-1) >= 0 && h_marked(i)) begin_point--;
-#define find_end_point(HP) \
-    end_point = HP; \
-    while (h_marked(end_point+1-heap_bot)) end_point++;
-
-#define copy_block(BEGIN_P,END_P,NEXT) \
-    for (p=BEGIN_P; p<=END_P; p++) { \
-      GCDBG("%p ", p); \
-      h_clear_mark(p); \
+#define copy_block(HP,NEXT) /* make sure this macro does not modify HP ! */\
+    i = HP-heap_bot; \
+    while (h_marked(--i)) ; /* assumes that h_marked[-1] = 0 !!! */\
+    /* while (--i >= 0 && h_marked(i)) ; otherwise */\
+    p = heap_bot+i+1;\
+    for (i = p-heap_bot; h_marked(i); p++, i++) { \
+      h_clear_mark(i); \
       cell(NEXT) = cell(p); \
       cell(p) = (Cell)(NEXT); /* leave a forwarding pointer */\
       NEXT++; \
-    } \
-    GCDBG("%s","\n");
+    }
 
 static void find_and_copy_block(CPtr hp)
 {
-    int i, tag;
-    CPtr p, q, addr, begin_point, end_point;
-
-    find_begin_point(hp);
-    find_end_point(hp);
-    GCDBG("found1 a block of size %d ... ", (end_point-begin_point+1));
-    /* GCDBG("(bp = %p ",begin_point); GCDBG("ep = %p)  ", end_point); */
+    int  i, tag;
+    CPtr p, q, addr;
 
     /* copy the block into the new heap area */
-
-    copy_block(begin_point,end_point,next);
+    copy_block(hp,next);
 
     /* perform a Cheney scan: pointer "scan" chases the "next" pointer  */
     /* note that "next" is modified inside the for loop by copy_block() */
-    for ( ; scan < next; /* fprintf(stderr,".\n"),*/ scan++) {
+    for ( ; scan < next; scan++) {
       q = (CPtr)cell(scan);
       tag = cell_tag(q);
       switch (tag)
@@ -2138,12 +2174,9 @@ static void find_and_copy_block(CPtr hp)
 	    fprintf(stderr, "In adapting case for %p with %p (%lx)...",
 		    scan, q, cell(q));
 #endif
-	   if (h_marked(q-heap_bot))
-	     { find_begin_point(q);
-	       find_end_point(q);
-	       GCDBG("found4 a block of size %d ... ", (end_point-begin_point+1));
-	       copy_block(begin_point,end_point,next);
-	     }
+	   if (h_marked(q-heap_bot)) {
+	     copy_block(q,next);
+	   }
 	   q = (CPtr)((CPtr)(cell(q))+offset);
 	   GCDBG(" to be adapted to %p\n", q);
 	   bld_ref(scan, q);
@@ -2153,12 +2186,9 @@ static void find_and_copy_block(CPtr hp)
 	  addr = (CPtr)cs_val(q);
 	  GCDBG("Structure pointing to %p found...\n", addr);
 	  if (h_marked(addr-heap_bot)) { /* if structure not already copied */
-	    find_begin_point(addr);
-	    find_end_point(addr);
-	    GCDBG("found2 a block of size %d ... ", (end_point-begin_point+1));
-	    copy_block(begin_point,end_point,next); /* this modifies *addr */
+	    copy_block(addr,next); /* this modifies *addr */
 	  }
-	  check(addr);
+	  CHECK(addr);
 	  GCDBG("*p = %lx ", cell(addr));
 	  addr = (CPtr)((CPtr)(cell(addr))+offset);
 	  GCDBG("q = %p ", addr);
@@ -2167,14 +2197,11 @@ static void find_and_copy_block(CPtr hp)
           break;
         case LIST :
 	  addr = clref_val(q);
-	  GCDBG("List found... %s\n", "Not treated yet");
+	  GCDBG("List %p found... \n", addr);
 	  if (h_marked(addr-heap_bot)) { /* if list head not already copied */
-	    find_begin_point(addr);
-	    find_end_point(addr);
-	    GCDBG("found3 a block of size %d ... ", (end_point-begin_point+1));
-	    copy_block(begin_point,end_point,next); /* this modifies *addr */
+	    copy_block(addr,next); /* this modifies *addr */
 	  }
-	  check(addr);
+	  CHECK(addr);
 	  addr = (CPtr)((CPtr)(cell(addr))+offset);
 	  bld_list(scan, addr);
           break;
@@ -2190,9 +2217,9 @@ static void find_and_copy_block(CPtr hp)
 
 #ifdef CHAT
 static void chat_copy_region(CPtr p, int len)
-{ int j;
+{
   CPtr q;
-  int tag, whereto;
+  int  j, tag;
   Cell contents;
 
   while (len)
@@ -2202,8 +2229,8 @@ static void chat_copy_region(CPtr p, int len)
       else { j = len; len = 0; }
       while (j--)
         { contents = cell(p);
-          q = pointer_from_cell(contents,&tag,&whereto) ;
-          if (whereto != TO_HEAP) { p++; continue ; }
+          q = hp_pointer_from_cell(contents,&tag) ;
+          if (!q) { p++; continue ; }
           if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
           adapt_external_heap_pointer(p,q,tag);
           p++;
@@ -2219,9 +2246,9 @@ static void chat_copy_region(CPtr p, int len)
 
 static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 {
-    Cell contents;
     CPtr p, q;
-    int  tag, whereto; 
+    int  tag; 
+    Cell contents;
 
     offset = heap_bot-begin_new_h;
     scan = next = begin_new_h; 
@@ -2240,8 +2267,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
       endtr = tr_top ;
       for (p = tr_bot; p <= endtr; p++)
 	{ contents = cell(p);
-          q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) continue ;
+          q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q) continue ;
 	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
 	  adapt_external_heap_pointer(p,q,tag);
 	}
@@ -2254,8 +2281,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
       endcp = cp_top ;
       for (p = cp_bot; p >= endcp ; p--)
 	{ contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) continue ;
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q) continue ;
 	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
 	  adapt_external_heap_pointer(p,q,tag);
 	}
@@ -2272,8 +2299,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	{ /* CHAT stores the substitution factor of generators in the heap */
 	  p = (CPtr)(&compl_hreg(compl_fr));
 	  contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP)
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q)
 	    fprintf(stderr,"bad heap pointer during copying SF\n");
 	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
 	  adapt_external_heap_pointer(p,q,tag);
@@ -2283,8 +2310,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	    xsb_mesg("Adapting the Dreg field in compl stack...");
 	    p = (CPtr)(&(compl_pdreg(compl_fr)));
 	    contents = cell(p) ;
-	    q = pointer_from_cell(contents,&tag,&whereto) ;
-	    if (whereto != TO_HEAP)
+	    q = hp_pointer_from_cell(contents,&tag) ;
+	    if (!q)
 	      xsb_mesg("non null Dreg field in ComplStack points not in heap");
 	    else
 	      {
@@ -2304,10 +2331,10 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
       endls = ls_top ;
       for (p = ls_bot; p >= endls ; p-- )
 	{ if (! ls_marked(p-ls_top)) continue ;
-          ls_clear_mark(p) ;
+          ls_clear_mark((p-ls_top)) ;
 	  contents = cell(p) ;
-	  q = pointer_from_cell(contents,&tag,&whereto) ;
-	  if (whereto != TO_HEAP) continue ;
+	  q = hp_pointer_from_cell(contents,&tag) ;
+	  if (!q) continue ;
 	  if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
 	  adapt_external_heap_pointer(p,q,tag);
 	}
@@ -2341,8 +2368,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  if (cp_pdreg(b) != NULL) {
 	    p = (CPtr)(&(cp_pdreg(b)));
 	    contents = cell(p) ;
-	    q = pointer_from_cell(contents,&tag,&whereto) ;
-	    if (whereto != TO_HEAP)
+	    q = hp_pointer_from_cell(contents,&tag) ;
+	    if (!q)
 	      xsb_mesg("non null Dreg field in CP stack points not in heap");
 	    else
 	      {
@@ -2374,8 +2401,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     { CPtr p;
       for (p = reg+1; arity-- > 0; p++)
         { contents = cell(p) ;
-          q = pointer_from_cell(contents,&tag,&whereto) ;
-          if (whereto != TO_HEAP) continue ;
+          q = hp_pointer_from_cell(contents,&tag) ;
+          if (!q) continue ;
           if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
           adapt_external_heap_pointer(p,q,tag);
         }
@@ -2389,8 +2416,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	{ 
 	  p = (CPtr)(&delayreg);
 	  contents = cell(p) ;
-          q = pointer_from_cell(contents,&tag,&whereto) ;
-          if (whereto != TO_HEAP)
+          q = hp_pointer_from_cell(contents,&tag) ;
+          if (!q)
 	    fprintf(stderr,"non null delayreg points not in heap\n");
           else
 	    {
