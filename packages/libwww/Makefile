@@ -24,7 +24,7 @@
 
 XSBDIR = ../..
 
-ALL = 	 libwwwconfig.O
+ALL = 	 libwwwconfig.O libwww_init.O
 
 PROLOG_INCLUDES = $(XSBDIR)/prolog_includes/char_defs.h \
 	$(XSBDIR)/prolog_includes/standard.h
@@ -73,6 +73,10 @@ init:
 
 finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
+
+
+clean:
+	rm -f *.O cc/*.H
 
 
 .DONE:

@@ -22,7 +22,6 @@
 ** 
 */
 
-:- import xsb_configuration/2 from xsb_configuration.
 :- import bootstrap_package/2 from packaging.
 :- import abort/1 from standard.
 :- import libwww_info/2 from libwww_init.
