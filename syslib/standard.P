@@ -234,7 +234,7 @@ nl(Ostr) :-  telling(Oldstr),
 	     tell(Ostr),nl,
 	     tell(Oldstr).
 
-nl :- (windows_os 
+nl :- (windows_os_loader 
       ->  put(CH_RETURN), put(CH_NEWLINE)
       ;	  put(CH_NEWLINE) ).
 

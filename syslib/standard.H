@@ -89,9 +89,6 @@
 	(import)/1,	(multifile)/1.
 
 
-:- import windows_os/0 from xsb_configuration.
-
-
 :- import (dynamic)/1, asserta/1 from assert.
 :- import member/2,append/3 from basics.
 :- import consult/1, reconsult/1 from consult.
@@ -109,6 +106,7 @@
      from error_handler.
 :- import  check_stream/3, check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
+:- import windows_os_loader/0 from loader.
 
 :- import call0/1, conname/2, conpsc/2, 
 	  expand_filename/2, machine_file_exists/1, 
