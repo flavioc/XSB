@@ -34,9 +34,29 @@ void init_system_threads( void ) ;
 		xsb_abort( "more then one thread running" ) ; 	\
 }
 
+
+/*
+  TLS: the mt engine does not yet work for enable no cygwin, but this
+   allows random and srandom to be used.  They're both defined in
+   stdlib.h as they should be, but Windows calls them rand and srand.
+*/
+
+#if defined(WIN_NT)
+
+#define RANDOM_CALL rand
+#define SRANDOM_CALL srand
+
+#else
+
+#define RANDOM_CALL random
+#define SRANDOM_CALL srandom
+
+#endif
+
+
 /* TLS: for Cygwin, these constants must be re-defined */
 
-#if defined(CYGWIN)
+#if defined(CYGWIN) || defined(DARWIN)
 
 #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
 #define PTHREAD_MUTEX_ERRORCHECK_NP PTHREAD_MUTEX_ERRORCHECK

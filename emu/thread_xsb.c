@@ -354,11 +354,11 @@ xsbBool mt_random_request( CTXTdecl )
   switch( request_num )
     {
     case INIT_MT_RANDOM:
-      srandom(time(0));
+     SRANDOM_CALL(time(0)); 
       break;
 
     case MT_RANDOM:
-      ctop_int(CTXTc 2,random());
+            ctop_int(CTXTc 2,RANDOM_CALL());
       break;
 
     case MT_RANDOM_INTERVAL:
@@ -369,7 +369,7 @@ xsbBool mt_random_request( CTXTdecl )
 	printf("max %lx\n",((unsigned long) pow(2,32)-1));
 	printf("int %x scale %x s1 %d ex %x\n",
 	       interval,scale,scale,16);
-	rval = random();
+	rval = RANDOM_CALL(); 
 	printf("rval %x \n",rval);
 	ctop_int(CTXTc 3,floor(rval / interval));
 	break;
