@@ -31,6 +31,9 @@
 
 :- index flora_nowsp/2-1.
 
+%% These are predicates that aren't supposed to have associated workspaces
+%% Used by parser to issue syntax errors
+
 flora_nowsp(FL_SEMICOLON,2).
 flora_nowsp(FL_COMMA,2).
 flora_nowsp(FL_TNOT,1).

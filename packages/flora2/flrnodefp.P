@@ -31,6 +31,8 @@
 
 :- index flora_nodefp/2-1.
 
+%% These are predicates that are not supposed to have definitions.
+%% Parser issues errors when these occur in the head of a rule.
 
 flora_nodefp(FL_SEMICOLON,2) :- !.
 flora_nodefp(FL_COMMA,2) :- !.
