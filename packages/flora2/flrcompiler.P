@@ -102,15 +102,16 @@ is_flmethspec(FLMETHSPEC(Meth),Meth).
 is_flimethspec(FLIMETHSPEC(IMeth),IMeth).
 is_fltranspec(FLTRANSPEC(Tran),Tran).
 is_flobjeql(FLOBJEQL(O1,O2),O1,O2).
-is_flcut(FLCUT(_I)).
+is_flcut(FLCUT(I),I).
 
 %% basic building blocks
 is_flatom(FLATOM(Atom,_I),Atom).
+is_flatom(FLATOM(Atom,Index),Atom,Index).
 is_flnumber(FLNUMBER(Number,_I),Number).
 is_flstring(FLSTRING(String,_I),String).
-is_fltoken(FLTOKEN(Token,_I),Token).
+is_fltoken(FLTOKEN(Token,I),Token,I).
 is_flvar(FLVAR(Name,Index),Name,Index).
-is_fllist(FLLIST(L,T),L,T).
+is_fllist(FLLIST(L,T,I),L,T,I).
 
 is_isaspecop(FL_ISA).
 is_subspecop(FL_SUB).
@@ -130,6 +131,41 @@ is_mvdtolistspecop(FL_TOLISTARROW).
 is_imvdtolistspecop(FL_INTOLISTARROW).
 is_ifdsigspecop(FL_INFDSIGARR).
 is_imvdsigspecop(FL_INMVDSIGARR).
+
+
+/****************************************************************************
+  approximate_index(+ParserTerm,-Index)
+
+  It takes a term output from the parser and returns the main index. This
+  routine is called when an oid reference is compiled. Since a new variable
+  needs to be generated, this main index will represent the textual information
+  that corresponds to this new variable.
+
+  Ideally, this procedure should always succeed with a meaningful index,
+  since the input is a structure from the parser and corresponds to a
+  piece of text in the program file.
+
+  This procedure should be called for a syntax in an oid position.
+****************************************************************************/
+approximate_index(FLATOM(_Atom,I),I)              :- !.
+approximate_index(FLNUMBER(_Number,I),I)          :- !.
+approximate_index(FLSTRING(_String,I),I)          :- !.
+approximate_index(FLTOKEN(_Token,I),I)            :- !.
+approximate_index(FLVAR(_Name,I),I)               :- !.
+approximate_index(FLLIST(_List,_T,I),I)           :- !.
+approximate_index(FLTERM(F,_A,_Args),I)           :- !, approximate_index(F,I).
+approximate_index(FLBIRELATE(Obj1,_Rel,_Obj2),I)  :- !, approximate_index(Obj1,I).
+approximate_index(FLOBJSPEC(Obj,_Spec),I)         :- !, approximate_index(Obj,I).
+approximate_index(FLOBJREF(Obj,_Ref,_Att),I)      :- !, approximate_index(Obj,I).
+approximate_index(FLAGGREGATE(Op,_V,_GV,_Goal),I) :- !, approximate_index(Op,I).
+approximate_index(FLPLIB(P,_M),I)                 :- !, approximate_index(P,I).
+approximate_index(FLPLIB(P),I)                    :- !, approximate_index(P,I).
+approximate_index(FLFLORALIB(P,_M),I)             :- !, approximate_index(P,I).
+approximate_index(FLWORKSPACE(P,_WS),I)           :- !, approximate_index(P,I).
+approximate_index(FLINSERT(Op,_List,_Cond),I)     :- !, approximate_index(Op,I).
+approximate_index(FLINSERT(Op,_List),I)           :- !, approximate_index(Op,I).
+approximate_index(FLDELETE(Op,_List,_Cond),I)     :- !, approximate_index(Op,I).
+approximate_index(FLDELETE(Op,_List),I)           :- !, approximate_index(Op,I).
 
 
 /****************************************************************************
@@ -160,12 +196,11 @@ hilogtable_struct(A,PRHILOGTABLE(A)).
 conjunct_struct(Goal1,Goal2,PRAND(Goal1,Goal2)).
 disjunct_struct(Goal1,Goal2,PROR(Goal1,Goal2)).
 not_struct(Goal,PRNOT(Goal)).
-call_struct(VarName,PRCALL(Var)) :- varobj_struct(VarName,Var).
-cut_struct(PRCUT).
 
-atomlit_struct(Atom,PRATOMLIT(Atom)).
-
-termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
+tnot_struct(Goal,PRTNOT(Goal)) :-
+	import_struct((sk_not),1,(tables),ICode),
+	directive_struct(ICode,DCode),
+	report_directive(DCode).
 
 conjunct_code(Goal1,Goal2,Code) :-
 	( Goal1 == NULL ->
@@ -179,36 +214,51 @@ conjunct_code(Goal1,Goal2,Code) :-
 
 
 /****************************************************************************
-  tnot_struct(+Goal,-Code)
-****************************************************************************/
-tnot_struct(Goal,PRTNOT(Goal)) :-
-	import_struct((sk_not),1,(tables),ICode),
-	directive_struct(ICode,DCode),
-	report_directive(DCode).
-
-
-/****************************************************************************
   encoding routines
+
+  Note: Only primitive structures (atoms, variables, numbers, strings, lists,
+        newoids, and cuts) encode the index to the corresponding textual
+        information. The compiler directives do not encode any textual
+        information. However, not all primitive structures have a meaningful
+        index, for instance, new variables that are generated for an oid
+        reference. In this case, an index is approximated. In some other
+        cases, an atom is generated to encode an internal structure. So there
+        is no meaningful index. Then the macro NO_INDEX is encoded as a
+        place holder. No textual information should be inferred from the
+        NO_INDEX value.
 ****************************************************************************/
-atomobj_struct(Atom,PRATOM(Atom)).
-numobj_struct(Number,PRNUMBER(Number)).
-varobj_struct(Name,PRVARIABLE(Name)).
-strobj_struct(String,PRSTRING(String)).
-list_struct(List,Term,PRLIST(List,Term)).
+%% basic structures
+atomobj_struct(FLATOM(Atom,I),PRATOM(Atom,I)) :- !.
+atomobj_struct(Atom,PRATOM(Atom,NO_INDEX)) :- atomic(Atom).
+atomobj_struct(Atom,Index,PRATOM(Atom,Index)).
+
+atomlit_struct(FLATOM(Atom,I),PRATOMLIT(Atom,I)).
+numobj_struct(FLNUMBER(Number,I),PRNUMBER(Number,I)).
+varobj_struct(Name,Index,PRVARIABLE(Name,Index)).
+strobj_struct(FLSTRING(String,I),PRSTRING(String,I)).
+newoid_struct(Oid,Index,PRNEWOID(Oid,Index)).
+cut_struct(Index,PRCUT(Index)).
+
+list_struct(List,Term,Index,PRLIST(List,Term,Index)).
+list_struct(List,Term,PRLIST(List,Term,NO_INDEX)).
+
 workspace_struct(P,WS,PRWORKSPACE(P,WS)).
-newoid_struct(Oid,PRNEWOID(Oid)).
 newpredicate_struct(Name,N,Args,PRNEWPRED(Name,N,Args)).
 thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
 thisstorage_struct(PRTHISSTORAGE(PRTHISSTORAGE)).
 floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRSTORAGE(WS)).
 
-workspacelit_struct(P,WS,Code) :-
-	( is_flatom(WS,WSAtom) ->
-	    workspace_struct(P,WSAtom,Code)
+call_struct(VarName,Index,PRCALL(Var)) :- varobj_struct(VarName,Index,Var).
+termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
 
-	; is_flvar(WS,WSVarName,_I) ->
-	    varobj_struct(WSVarName,WSVarCode),
+workspacelit_struct(P,WS,Code) :-
+	( is_flatom(WS,WSAtom,Index) ->
+	    atomobj_struct(WSAtom,Index,WSCode),
+	    workspace_struct(P,WSCode,Code)
+
+	; is_flvar(WS,WSVarName,Index) ->
+	    varobj_struct(WSVarName,Index,WSVarCode),
 	    %% a call to a Flora user module
 	    florasyslib_struct(FLLIBMODLIT,2,[P,WSVarCode],Code)
 	;
@@ -217,13 +267,14 @@ workspacelit_struct(P,WS,Code) :-
 	).
 
 workspaceobj_struct(P,WS,Object,Code) :-
-	( is_flatom(WS,WSAtom) ->
+	( is_flatom(WS,WSAtom,Index) ->
+	    atomobj_struct(WSAtom,Index,WSCode),
 	    Code=NULL,
-	    workspace_struct(P,WSAtom,Object)
+	    workspace_struct(P,WSCode,Object)
 
-	; is_flvar(WS,WSVarName,_I) ->
-	    varobj_struct(WSVarName,WSVarCode),
-	    new_varobj(Object),
+	; is_flvar(WS,WSVarName,Index) ->
+	    varobj_struct(WSVarName,Index,WSVarCode),
+	    new_varobj(Index,Object),
 	    %% a call to a Flora user module
 	    florasyslib_struct(FLLIBMODOBJ,3,[P,WSVarCode,Object],Code)
 	;
@@ -236,27 +287,46 @@ prologterm_struct(F,N,Args,PROLOGTERM(F,N,Args)).
 
 prologliblit_struct(PrologTerm,PROLOGLIBLIT(PrologTerm)).
 
-florasyslib_struct(F,N,Args,FLORASYSLIB(F,N,Args)) :- report_option(FLSYSLIB(F)).
+%% Not all Flora system libraries encode textual information. Only
+%% those for aggregates and DB updates do.
+florasyslib_struct(F,N,Args,FLORASYSLIB(NO_INDEX,F,N,Args)) :- report_option(FLSYSLIB(F)).
+florasyslib_struct(Index,F,N,Args,FLORASYSLIB(Index,F,N,Args)) :- report_option(FLSYSLIB(F)).
 
-is_florasyslib_struct(FLORASYSLIB(_F,_N,_Args)).
+is_florasyslib_struct(FLORASYSLIB(_I,_F,_N,_Args)).
 
 termobj_struct(FObj,N,ObjList,PRTERM(FObj,N,ObjList)).
 
 insert_struct(Op,List,Cond,Code) :-
-	insert_syslib(Op,Lib),
-	florasyslib_struct(Lib,2,[List,Cond],Code).
+	%% Index denotes the textual information for the insert
+	%% operator and represents the textual information for the
+	%% entire insert statement.
+	is_flatom(Op,OpAtom,Index),
+	insert_syslib(OpAtom,Lib),
+	florasyslib_struct(Index,Lib,2,[List,Cond],Code).
 
 insert_struct(Op,List,Code) :-
-	insert_syslib(Op,Lib),
-	florasyslib_struct(Lib,1,[List],Code).
+	%% Index denotes the textual information for the insert
+	%% operator and represents the textual information for the
+	%% entire insert statement.
+	is_flatom(Op,OpAtom,Index),
+	insert_syslib(OpAtom,Lib),
+	florasyslib_struct(Index,Lib,1,[List],Code).
 
 delete_struct(Op,List,Cond,Code) :-
-	delete_syslib(Op,Lib),
-	florasyslib_struct(Lib,2,[List,Cond],Code).
+	%% Index denotes the textual information for the delete
+	%% operator and represents the textual information for the
+	%% entire delete statement.
+	is_flatom(Op,OpAtom,Index),
+	delete_syslib(OpAtom,Lib),
+	florasyslib_struct(Index,Lib,2,[List,Cond],Code).
 
 delete_struct(Op,List,Code) :-
-	delete_syslib(Op,Lib),
-	florasyslib_struct(Lib,1,[List],Code).
+	%% Index denotes the textual information for the delete
+	%% operator and represents the textual information for the
+	%% entire delete statement.
+	is_flatom(Op,OpAtom,Index),
+	delete_syslib(OpAtom,Lib),
+	florasyslib_struct(Index,Lib,1,[List],Code).
 
 insert_syslib(FL_INSERT,FLLIBINSERT) :- !.
 insert_syslib(FL_INSERTALL,FLLIBINSERTALL) :- !.
@@ -275,13 +345,18 @@ delete_syslib(FL_BTERASE,FLLIBBTERASE) :- !.
 delete_syslib(FL_BTERASEALL,FLLIBBTERASEALL) :- !.
 
 aggregate_struct(Op,V,GV,B,Object,Code) :-
-	aggregate_syslib(Op,Lib),
-	new_varobj(Object),
+	%% Index denotes the textual information for the aggregate
+	%% operator and represents the textual information for the
+	%% entire aggregate statement.
+	is_flatom(Op,OpAtom,Index),
+	aggregate_syslib(OpAtom,Lib),
+	new_varobj(Index,Object),
 	( GV == [] ->
-	    florasyslib_struct(Lib,3,[V,B,Object],Code)
+	    florasyslib_struct(Index,Lib,3,[V,B,Object],Code)
 	;
-	  florasyslib_struct(Lib,4,[V,GV,B,Object],Code)
-        ).
+	  florasyslib_struct(Index,Lib,4,[V,GV,B,Object],Code)
+        ),
+	!.
 
 aggregate_syslib(FL_MIN,FLLIBMIN) :- !.
 aggregate_syslib(FL_MAX,FLLIBMAX) :- !.
@@ -392,8 +467,10 @@ tolistattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 mvdtolistspec_struct(Object,AttObj,ValObj,PRMVDTOLIST(Object,AttObj,ValObj)).
 imvdtolistspec_struct(Object,AttObj,ValObj,PRIMVDTOLIST(Object,AttObj,ValObj)).
 
-objref_struct(Obj,RefType,Att,Val,Code) :-
-	new_varobj(Val),
+objref_struct(Obj,RefType,Att,Index,Val,Code) :-
+	%% Index is the approximate textual information
+	%% for the new variable that represents an oid.
+	new_varobj(Index,Val),
 	( is_fdrefop(RefType) ->
 	    fdspec_struct(Obj,Att,Val,Code)
 
@@ -407,18 +484,19 @@ objref_struct(Obj,RefType,Att,Val,Code) :-
 	  imvdspec_struct(Obj,Att,Val,Code)
         ).
 
-head_objref_struct(Obj,RefType,Att,Val,Code) :-
+head_objref_struct(Obj,RefType,Att,Index,Val,Code) :-
 	( is_fdrefop(RefType) ->
-	    fdskolem_struct(Obj,Att,Val),
+	    fdskolem_struct(Obj,Att,Index,Val),
 	    fdspec_struct(Obj,Att,Val,Code)
 	;
 	  is_ifdrefop(RefType),
-	  ifdskolem_struct(Obj,Att,Val),
+	  ifdskolem_struct(Obj,Att,Index,Val),
 	  ifdspec_struct(Obj,Att,Val,Code)
         ).
 
-fdskolem_struct(Obj,Att,PRFDSKOLEM(Obj,Att)) :- report_option(FLSKOLEM).
-ifdskolem_struct(Obj,Att,PRIFDSKOLEM(Obj,Att)) :- report_option(FLSKOLEM).
+%% Skolem functions encode textual information.
+fdskolem_struct(Obj,Att,Index,PRFDSKOLEM(Obj,Att,Index)) :- report_option(FLSKOLEM).
+ifdskolem_struct(Obj,Att,Index,PRIFDSKOLEM(Obj,Att,Index)) :- report_option(FLSKOLEM).
 
 methspec_struct(Obj,Meth,PRMETH(Obj,Meth)).
 imethspec_struct(Obj,IMeth,PRIMETH(Obj,IMeth)).
@@ -449,39 +527,36 @@ new_predicate(Name) :-
 ****************************************************************************/
 reset_newvar :- conset(NEWVAR,1).
 
-new_varobj(VarObj) :-
+new_varobj(Index,VarObj) :-
 	conget(NEWVAR,N),
 	M is N+1,
 	conset(NEWVAR,M),
 	number_codes(N,NLst),
 	atom_codes(NAtm,NLst),
 	str_cat(NEWVAR,NAtm,Name),
-	varobj_struct(Name,VarObj).
+	varobj_struct(Name,Index,VarObj).
 
 
 new_varobjlist(0,[]) :- !.
 
 new_varobjlist(N,[VarObj|L]) :-
-	new_varobj(VarObj),
+	new_varobj(NO_INDEX,VarObj),
 	M is N-1,
 	new_varobjlist(M,L).
 
 
 /****************************************************************************
   reset_newoid/0
-  new_oidobj(-OidObject)
+  new_oidobj(+Index,-OidObject)
 ****************************************************************************/
 reset_newoid :- conset(NEWOID_COUNT,1).
 
-new_oidobj(OidObject) :-
+new_oidobj(Index,OidObject) :-
 	conget(NEWOID_COUNT,N),
 	M is N+1,
 	conset(NEWOID_COUNT,M),
-	%%number_codes(N,NLst),
-	%%atom_codes(NAtm,NLst),
-	%%str_cat(NEWOID,NAtm,Name),
-	fmt_write_string(Name,'%s%d', args(NEWOID,N)),
-	newoid_struct(Name,OidObject).
+	fmt_write_string(Name,'%s%d',args(NEWOID,N)),
+	newoid_struct(Name,Index,OidObject).
 
 
 /****************************************************************************
@@ -490,10 +565,10 @@ new_oidobj(OidObject) :-
 
   allvars(+CompilerTerm,-Vars,-TailVars)
 ****************************************************************************/
-is_atomobj_struct(PRATOM(_Atom)).
-is_numobj_struct(PRNUMBER(_Number)).
-is_varobj_struct(PRVARIABLE(_Name)).
-is_strobj_struct(PRSTRING(_String)).
+is_atomobj_struct(PRATOM(_Atom,_I)).
+is_numobj_struct(PRNUMBER(_Number,_I)).
+is_varobj_struct(PRVARIABLE(_Name,_I)).
+is_strobj_struct(PRSTRING(_String,_I)).
 
 allvars(Term,Vars) :-
 	allvars(Term,Vs,[]),
@@ -594,7 +669,7 @@ collect_vars(ParserTerm,Vars,Vars) :-
 	( is_flatom(ParserTerm,_Atom);
 	  is_flnumber(ParserTerm,_Number);
 	  is_flstring(ParserTerm,_String);
-	  is_fltoken(ParserTerm,_Token)
+	  is_fltoken(ParserTerm,_Token,_I)
         ),
 	!.
 
@@ -659,10 +734,11 @@ indexvars([T|L],Vars) :-
 
 namevars([],[]) :- !.
 
-namevars([_I-Name|L],[NV|NVs]) :-
-	varobj_struct(Name,V),
-	atomobj_struct(Name,N),
-	prologterm_struct(FL_UNIVEQ,2,[N,V],NV),
+namevars([Index-Name|L],[NV|NVs]) :-
+	varobj_struct(Name,Index,VCode),
+	atomobj_struct(Name,Index,NCode),
+	atomobj_struct(FL_UNIVEQ,FCode),
+	prologterm_struct(FCode,2,[NCode,VCode],NV),
 	namevars(L,NVs).
 
 
@@ -878,7 +954,8 @@ compile_direct(DirectTerm,CodeList,[]) :-
 	  new_varobjlist(N,ArgsCode),
 	  termlit_struct(PCode,N,ArgsCode,HCode),
 	  thisstorage_struct(SCode),
-	  prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
+	  atomobj_struct(storage_find_fact,FCode),
+	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
 	  rule_struct(HCode,BCode,Code),
 	  CodeList=[Code]
 	),
@@ -941,7 +1018,8 @@ compile_direct(DirectTerm,[Code],[]) :-
 	    termlit_struct(HPCode,N,ArgsCode,HCode),
 	    termlit_struct(BPCode,N,ArgsCode,BodyFactCode),
 	    thisstorage_struct(SCode),
-	    prologterm_struct(storage_find_fact,2,[SCode,BodyFactCode],BCode),
+	    atomobj_struct(storage_find_fact,FCode),
+	    prologterm_struct(FCode,2,[SCode,BodyFactCode],BCode),
 	    rule_struct(HCode,BCode,Code)
 	;
 	  %% a HiLog predicate
@@ -950,7 +1028,8 @@ compile_direct(DirectTerm,[Code],[]) :-
 	  new_varobjlist(N,ArgsCode),
 	  termlit_struct(PCode,N,ArgsCode,HCode),
 	  thisstorage_struct(SCode),
-	  prologterm_struct(storage_find_fact,2,[SCode,HCode],BCode),
+	  atomobj_struct(storage_find_fact,FCode),
+	  prologterm_struct(FCode,2,[SCode,HCode],BCode),
 	  rule_struct(HCode,BCode,Code)
 	),
 	!.
@@ -958,15 +1037,14 @@ compile_direct(DirectTerm,[Code],[]) :-
 
 /****************************************************************************
   compile_flatomvar(+T,-Code)
+
+  T is a variable structure, or an atom structure, or a plain atomic.
 ****************************************************************************/
 compile_flatomvar(T,Code) :-
-	    ( is_flvar(T,TName,_I) ->
-		varobj_struct(TName,Code)
-
-	    ; is_flatom(T,TAtom) ->
-	        atomobj_struct(TAtom,Code)
-	    ;
-	      Code=T
+	    ( is_flvar(T,TName,I) ->
+		varobj_struct(TName,I,Code)
+	    ; 
+	      atomobj_struct(T,Code)
 	    ).
 
 
@@ -977,9 +1055,11 @@ compile_falist([],[]) :- !.
 
 compile_falist([F/A|L],[Code|CL]) :-
 	!,
-	compile_flatomvar(F,FObj),
-	(is_flvar(A,AName,_I) -> varobj_struct(AName,AObj); AObj=A),
-	prologterm_struct('/',2,[FObj,AObj],Code),
+	%% F/A is generated by the parser routines for compiler directives.
+	compile_flatomvar(F,FCode),
+	compile_flatomvar(A,ACode),
+	atomobj_struct('/',Funct),
+	prologterm_struct(Funct,2,[FCode,ACode],Code),
 	compile_falist(L,CL).
 
 
@@ -1067,8 +1147,7 @@ compile_head_literal(ParserTerm,CodeList,Status) :-
 	; is_flworkspace(ParserTerm,P,WS) ->
 	    compile_head_wsliteral(P,WS,CodeList,Status)
 	;
-	  is_flatom(ParserTerm,Atom),
-	  atomlit_struct(Atom,Code),
+	  atomlit_struct(ParserTerm,Code),
 	  CodeList=[Code],
 	  Status=[]
 	).
@@ -1155,17 +1234,17 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	; is_fldelete(ParserTerm,Op,List) ->
 	    compile_fldelete(Op,List,Code,Status)
 
-        ; is_flcut(ParserTerm) ->
-	    cut_struct(Code),
+        ; is_flcut(ParserTerm,I) ->
+	    cut_struct(I,Code),
 	    Status=[]
 
-	; is_flatom(ParserTerm,Atom) ->
-	    atomlit_struct(Atom,Code),
+	; is_flatom(ParserTerm,_A) ->
+	    atomlit_struct(ParserTerm,Code) ->
 	    Status=[]
 
-	; is_flvar(ParserTerm,Name,_Index) ->
-	  call_struct(Name,Code),
-	  Status=[]
+	; is_flvar(ParserTerm,Name,Index) ->
+	    call_struct(Name,Index,Code),
+	    Status=[]
 
 	; is_flobjeql(ParserTerm,O1,O2) ->
 	    compile_flobjeql(O1,O2,Code,Status)
@@ -1179,17 +1258,17 @@ compile_body_literal(ParserTerm,Code,Status) :-
   compile_pathexp(+ParserTerm,-Object,-Code,-Status)
 ****************************************************************************/
 compile_pathexp(ParserTerm,Object,NULL,[]) :-
-	( is_flatom(ParserTerm,Atom) ->
-	    atomobj_struct(Atom,Object)
+	( is_flatom(ParserTerm,_A) ->
+	    atomobj_struct(ParserTerm,Object)
 
-	; is_flnumber(ParserTerm,Number) ->
-	    numobj_struct(Number,Object)
+	; is_flnumber(ParserTerm,_N) ->
+	    numobj_struct(ParserTerm,Object)
 
-	; is_flvar(ParserTerm,Name,_Index) ->
-	    compile_flvar(Name,Object)
-	;
-	  is_flstring(ParserTerm,String),
-	  strobj_struct(String,Object)
+	; is_flvar(ParserTerm,Name,Index) ->
+	    compile_flvar(Name,Index,Object)
+
+	; is_flstring(ParserTerm,_S) ->
+	    strobj_struct(ParserTerm,Object)
 	),
 	!.
 
@@ -1206,8 +1285,8 @@ compile_pathexp(ParserTerm,Object,Code,Status) :-
 	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
 	    compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status)
 
-	; is_fllist(ParserTerm,L,T) ->
-	    compile_fllist(L,T,Object,Code,Status)
+	; is_fllist(ParserTerm,L,T,I) ->
+	    compile_fllist(L,T,I,Object,Code,Status)
 
 	; is_flaggregate(ParserTerm,Op,V,GV,B) ->
 	    compile_flaggregate(Op,V,GV,B,Object,Code,Status)
@@ -1270,8 +1349,8 @@ compile_argpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],[TCode|LObj],Code,Stat
   compile_flload(+LoadList,-Code,-Status)
 ****************************************************************************/
 compile_flload(LoadList,Code,Status) :-
-	is_fllist(LoadList,L,T),
-	compile_fllist(L,T,ObjList,OCode,Status),
+	is_fllist(LoadList,L,T,I),
+	compile_fllist(L,T,I,ObjList,OCode,Status),
 	( Status == [] ->
 	    florasyslib_struct(FLLIBLOAD,1,[ObjList],LCode),
 	    conjunct_code(OCode,LCode,Code)
@@ -1281,13 +1360,13 @@ compile_flload(LoadList,Code,Status) :-
 
 
 /****************************************************************************
-  compile_flvar(+Name,-VarObject)
+  compile_flvar(+Name,+Index,-VarObject)
 ****************************************************************************/
-compile_flvar(Name,VarObject) :-
+compile_flvar(Name,Index,VarObject) :-
 	( Name == FL_UNDERSCORE ->
-	    new_varobj(VarObject)
+	    new_varobj(Index,VarObject)
 	;
-	  varobj_struct(Name,VarObject)
+	  varobj_struct(Name,Index,VarObject)
         ).
 
 
@@ -1298,7 +1377,7 @@ compile_fltermobj(Funct,N,Args,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_argpathexplist(Args,ArgTypes,AObj,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
@@ -1314,7 +1393,7 @@ compile_fltermlit(Funct,N,Args,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_argpathexplist(Args,ArgTypes,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
@@ -1334,9 +1413,11 @@ compile_fltermlit(Funct,N,Args,Code,Status) :-
 
 
 /****************************************************************************
-  compile_fllist(+ObjTermList,+ObjTerm,-Object,-Code,-Status)
+  compile_fllist(+ObjTermList,+ObjTerm,+Index,-Object,-Code,-Status)
+
+  Index refers to '['.
 ****************************************************************************/
-compile_fllist(ObjTermList,ObjTerm,Object,Code,Status) :-
+compile_fllist(ObjTermList,ObjTerm,Index,Object,Code,Status) :-
 	compile_pathexplist(ObjTermList,ObjList,ObjListCode,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
@@ -1347,7 +1428,7 @@ compile_fllist(ObjTermList,ObjTerm,Object,Code,Status) :-
 	      compile_pathexp(ObjTerm,Obj,ObjCode,Status)
 	    ),
 	    ( Status == [] ->
-		list_struct(ObjList,Obj,Object),
+		list_struct(ObjList,Obj,Index,Object),
 		conjunct_code(ObjListCode,ObjCode,Code)
 	    ;
 	      true
@@ -1363,7 +1444,9 @@ compile_fllist(ObjTermList,ObjTerm,Object,Code,Status) :-
 compile_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status) :-
 	compile_pathexplist([ObjTerm,AttTerm],[Obj,Att],OCode,Status),
 	( Status == [] ->
-	    objref_struct(Obj,RefType,Att,Object,TCode),
+	    %% Approximate the textual information for the new variable.
+	    approximate_index(AttTerm,Index),
+	    objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    conjunct_code(OCode,TCode,Code)
 	;
 	  true
@@ -1685,7 +1768,7 @@ compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_head_argpathexplist(Args,ArgTypes,AObj,CodeList,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
@@ -1703,7 +1786,7 @@ compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_head_argpathexplist(Args,ArgTypes,AObj,ObjCodeList,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TObj),
@@ -1723,9 +1806,11 @@ compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_fllist(+ObjTermList,+ObjTerm,-Object,-CodeList,-Status)
+  compile_head_fllist(+ObjTermList,+ObjTerm,+Index,-Object,-CodeList,-Status)
+
+  Index refers to '['.
 ****************************************************************************/
-compile_head_fllist(ObjTermList,ObjTerm,Object,CodeList,Status) :-
+compile_head_fllist(ObjTermList,ObjTerm,Index,Object,CodeList,Status) :-
 	compile_head_pathexplist(ObjTermList,ObjList,ObjListCodeList,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
@@ -1736,7 +1821,7 @@ compile_head_fllist(ObjTermList,ObjTerm,Object,CodeList,Status) :-
 	      compile_head_pathexp(ObjTerm,Obj,ObjCodeList,Status)
 	    ),
 	    ( Status == [] ->
-		list_struct(ObjList,Obj,Object),
+		list_struct(ObjList,Obj,Index,Object),
 		append(ObjListCodeList,ObjCodeList,CodeList)
 	    ;
 	      true
@@ -1793,20 +1878,20 @@ compile_head_pathexplist([T|L],[TObj|LObj],CodeList,Status) :-
   Note: It is for skolemization.
 ****************************************************************************/
 compile_head_pathexp(ParserTerm,Object,[],[]) :-
-	( is_flatom(ParserTerm,Atom) ->
-	    atomobj_struct(Atom,Object)
+	( is_flatom(ParserTerm,_A) ->
+	    atomobj_struct(ParserTerm,Object)
 
-	; is_flnumber(ParserTerm,Number) ->
-	    numobj_struct(Number,Object)
+	; is_flnumber(ParserTerm,_N) ->
+	    numobj_struct(ParserTerm,Object)
 
-	; is_flvar(ParserTerm,Name,_Index) ->
-	    compile_flvar(Name,Object)
+	; is_flvar(ParserTerm,Name,Index) ->
+	    compile_flvar(Name,Index,Object)
 
-	; is_fltoken(ParserTerm,Token) ->
-	    compile_head_fltoken(Token,Object)
-	;
-	  is_flstring(ParserTerm,String),
-	  strobj_struct(String,Object)
+	; is_flstring(ParserTerm,_S) ->
+	    strobj_struct(ParserTerm,Object)
+
+	; is_fltoken(ParserTerm,Token,Index) ->
+	    compile_head_fltoken(Token,Index,Object)
 	),
 	!.
 
@@ -1823,8 +1908,8 @@ compile_head_pathexp(ParserTerm,Object,CodeList,Status) :-
 	; is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status)
 
-	; is_fllist(ParserTerm,L,T) ->
-	    compile_head_fllist(L,T,Object,CodeList,Status)
+	; is_fllist(ParserTerm,L,T,I) ->
+	    compile_head_fllist(L,T,I,Object,CodeList,Status)
 	;
 	  is_flworkspace(ParserTerm,P,WS),
 	  compile_head_wspathexp(P,WS,Object,CodeList,Status)
@@ -1832,13 +1917,13 @@ compile_head_pathexp(ParserTerm,Object,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_fltoken(+Token,-Object)
+  compile_head_fltoken(+Token,+Index,-Object)
 ****************************************************************************/
-compile_head_fltoken(Token,Object) :-
+compile_head_fltoken(Token,Index,Object) :-
 	( Token == FL_NEWOID ->
-	    new_oidobj(Object)
+	    new_oidobj(Index,Object)
 	;
-	  atomobj_struct(Token,Object)
+	  atomobj_struct(Token,Index,Object)
         ).
 
 
@@ -1848,7 +1933,9 @@ compile_head_fltoken(Token,Object) :-
 compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,CodeList,Status) :-
 	compile_head_pathexplist([ObjTerm,AttTerm],[Obj,Att],OACodeList,Status),
 	( Status == [] ->
-	    head_objref_struct(Obj,RefType,Att,Object,TCode),
+	    %% Approximate the textual information for the new variable.
+	    approximate_index(AttTerm,Index),
+	    head_objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    append(OACodeList,[TCode],CodeList)
 	;
 	  true
@@ -2012,9 +2099,10 @@ compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
 compile_floraliblit(ParserTerm,WS,Code,Status) :-
 	%% Flora system modules are like normal users modules except that
 	%% users cannot load into those areas.
-	is_flatom(WS,WSName),
+	is_flatom(WS,WSName,Index),
 	report_option(FLSYSMOD(WSName)),
-	floralib_struct(WSName,WSCode),
+	atomobj_struct(WSName,Index,WSNameCode),
+	floralib_struct(WSNameCode,WSCode),
 	compile_wsliteral(ParserTerm,WSCode,Code,Status).
 
 
@@ -2034,8 +2122,7 @@ compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
 	; is_flobjeql(ParserTerm,O1,O2) ->
 	    compile_wsflobjeql(O1,O2,WS,WSCode,Status)
 	;
-	  is_flatom(ParserTerm,Atom),
-	  atomlit_struct(Atom,Code),
+	  atomlit_struct(ParserTerm,Code),
 	  workspacelit_struct(Code,WS,WSCode),
 	  Status=[]
 	).
@@ -2045,9 +2132,10 @@ compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
   compile_floralibobj(+ParserTerm,+Workspace,-Object,-Code,-Status)
 ****************************************************************************/
 compile_floralibobj(ParserTerm,WS,Object,Code,Status) :-
-	is_flatom(WS,WSName),
+	is_flatom(WS,WSName,Index),
 	report_option(FLSYSMOD(WSName)),
-	floralib_struct(WSName,WSCode),
+	atomobj_struct(WSName,Index,WSNameCode),
+	floralib_struct(WSNameCode,WSCode),
 	compile_wspathexp(ParserTerm,WSCode,Object,Code,Status).
 
 
@@ -2055,8 +2143,7 @@ compile_floralibobj(ParserTerm,WS,Object,Code,Status) :-
   compile_wspathexp(+ParserTerm,+Workspace,-Object,-Code,-Status)
 ****************************************************************************/
 compile_wspathexp(ParserTerm,WS,Object,Code,Status) :-
-	( is_flatom(ParserTerm,Atom) ->
-	    atomlit_struct(Atom,A),
+	( atomlit_struct(ParserTerm,A) ->
 	    workspaceobj_struct(A,WS,Object,Code),
 	    Status=[]
 
@@ -2135,8 +2222,8 @@ compile_wsflpathexp(ParserTerm,WS,Object,Code,Status) :-
 	; is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status)
 
-	; is_fllist(ParserTerm,L,T) ->
-	    compile_wsfllist(L,T,WS,Object,Code,Status)
+	; is_fllist(ParserTerm,L,T,I) ->
+	    compile_wsfllist(L,T,I,WS,Object,Code,Status)
 
 	; is_flworkspace(ParserTerm,P,NestedWS) ->
 	    compile_wspathexp(P,NestedWS,Object,Code,Status)
@@ -2153,7 +2240,7 @@ compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,TCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
@@ -2185,7 +2272,7 @@ compile_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,Code,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
@@ -2201,7 +2288,7 @@ compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCode,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
@@ -2223,9 +2310,9 @@ compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
 
 
 /****************************************************************************
-  compile_wsfllist(+ObjTermList,+ObjTerm,+WS,-Object,-Code,-Status)
+  compile_wsfllist(+ObjTermList,+ObjTerm,+Index,+WS,-Object,-Code,-Status)
 ****************************************************************************/
-compile_wsfllist(ObjTermList,ObjTerm,WS,Object,Code,Status) :-
+compile_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,Code,Status) :-
 	compile_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCode,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
@@ -2236,7 +2323,7 @@ compile_wsfllist(ObjTermList,ObjTerm,WS,Object,Code,Status) :-
 	      compile_wsflpathexp(ObjTerm,WS,Obj,ObjCode,Status)
 	    ),
 	    ( Status == [] ->
-		list_struct(ObjList,Obj,Object),
+		list_struct(ObjList,Obj,Index,Object),
 		conjunct_code(ObjListCode,ObjCode,Code)
 	    ;
 	      true
@@ -2252,7 +2339,9 @@ compile_wsfllist(ObjTermList,ObjTerm,WS,Object,Code,Status) :-
 compile_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,Code,Status) :-
 	compile_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACode,Status),
 	( Status == [] ->
-	    objref_struct(Obj,RefType,Att,Object,TCode),
+	    %% Approximate the textual information for the new variable.
+	    approximate_index(AttTerm,Index),
+	    objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
 	    conjunct_code(OACode,WTCode,Code)
 	;
@@ -2481,13 +2570,12 @@ compile_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
 ****************************************************************************/
 compile_prologliblit(ParserTerm,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
+	    compile_prlgterm(Funct,N,Args,TCode,ACode,Status),
 	    (Status == [] -> conjunct_code(ACode,TCode,Code); true)
 	;
-	  is_flatom(ParserTerm,FAtom),
+	  atomobj_struct(ParserTerm,FObj),
 	  N=0,
-	  prologterm_struct(FAtom,0,[],Code),
+	  prologterm_struct(FObj,0,[],Code),
 	  Status=[]
 	),
 	!.
@@ -2501,11 +2589,12 @@ compile_prologliblit(ParserTerm,Code,Status) :-
 compile_prologliblit(ParserTerm,Module,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status)
+	    compile_prlgterm(Funct,N,Args,TCode,ACode,Status)
 	;
 	  is_flatom(ParserTerm,FAtom),
+	  atomobj_struct(ParserTerm,FObj),
 	  N=0,
-	  prologterm_struct(FAtom,0,[],TCode),
+	  prologterm_struct(FObj,0,[],TCode),
 	  ACode=NULL,
 	  Status=[]
 	),
@@ -2533,12 +2622,11 @@ compile_prologliblit(ParserTerm,Module,Code,Status) :-
 ****************************************************************************/
 compile_prologlibobj(ParserTerm,Object,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
-	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(FAtom,N,Args,Object,Code,Status)
+	    compile_prlgterm(Funct,N,Args,Object,Code,Status)
 	;
-	  is_flatom(ParserTerm,FAtom),
+	  atomobj_struct(ParserTerm,FObj),
 	  N=0,
-	  prologterm_struct(FAtom,0,[],Object),
+	  prologterm_struct(FObj,0,[],Object),
 	  Code=NULL,
 	  Status=[]
 	),
@@ -2554,31 +2642,17 @@ compile_prologlibobj(ParserTerm,Object,Code,Status) :-
 compile_prologlibobj(ParserTerm,Module,Object,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
 	    is_flatom(Funct,FAtom),
-	    compile_prlgterm(FAtom,N,Args,Object,Code,Status)
+	    compile_prlgterm(Funct,N,Args,Object,Code,Status)
 	;
 	  is_flatom(ParserTerm,FAtom),
+	  atomobj_struct(ParserTerm,FObj),
 	  N=0,
-	  prologterm_struct(FAtom,0,[],Object),
+	  prologterm_struct(FObj,0,[],Object),
 	  Code=NULL,
 	  Status=[]
 	),
 	!,
-	%( is_flterm(ParserTerm,Funct,N,Args) ->
-	%    is_flatom(Funct,FAtom),
-	%    compile_prlgterm(FAtom,N,Args,TCode,ACode,Status),
-	%    prologterm_struct(FAtom,N,ArgsCode,TCode)
-	%;
-	%  is_flatom(ParserTerm,FAtom),
-	%  N=0,
-	%  ArgsCode=[],
-	%  ACode=NULL,
-	%  Status=[]
-	%),
 	( Status == [] ->
-	    %new_varobj(Object),
-	    %list_struct([FAtom|ArgsCode],[],LCode),
-	    %prologterm_struct(FL_METAUNIV,2,[Object,LCode],CCode),
-	    %conjunct_code(ACode,CCode,Code),
 	    %% generate an import statement for the corresponding XSB predicate
 	    is_flatom(Module,MName),
 	    import_struct(FAtom,N,MName,ICode),
@@ -2591,25 +2665,18 @@ compile_prologlibobj(ParserTerm,Module,Object,Code,Status) :-
 
 
 /****************************************************************************
-  compile_prlgterm(+FunctorAtom,+Arity,+ArgList,-Object,-Code,-Status)
+  compile_prlgterm(+FunctTerm,+Arity,+ArgList,-Object,-Code,-Status)
 ****************************************************************************/
-compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
-	flora_argdef(FAtom,N,ArgTypes),
-	!,
-	compile_argpathexplist(Args,ArgTypes,AObj,Code,Status),
-	( Status == [] ->
-	    prologterm_struct(FAtom,N,AObj,Object)
+compile_prlgterm(Funct,N,Args,Object,Code,Status) :-
+	is_flatom(Funct,FAtom),
+	atomobj_struct(Funct,FObj),
+	prologterm_struct(FObj,N,AObj,Object),
+	( flora_argdef(FAtom,N,ArgTypes) ->
+	    compile_argpathexplist(Args,ArgTypes,AObj,Code,Status)
 	;
-	  true
-        ).
-
-compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
-	compile_pathexplist(Args,AObj,Code,Status),
-	( Status == [] ->
-	    prologterm_struct(FAtom,N,AObj,Object)
-	;
-	  true
-        ).
+	  compile_pathexplist(Args,AObj,Code,Status)
+	),
+	!.
 
 
 /****************************************************************************
@@ -2619,8 +2686,7 @@ compile_prlgterm(FAtom,N,Args,Object,Code,Status) :-
   when a workspace is explicitly specified.
 ****************************************************************************/
 compile_head_wspathexp(ParserTerm,WS,Object,CodeList,Status) :-
-	( is_flatom(ParserTerm,Atom) ->
-	    atomlit_struct(Atom,A),
+	( atomlit_struct(ParserTerm,A) ->
 	    workspaceobj_struct(A,WS,Object,Code),
 	    (Code == NULL -> CodeList=[]; CodeList=[Code]),
 	    Status=[]
@@ -2655,8 +2721,7 @@ compile_head_wsliteral(ParserTerm,WS,CodeList,Status) :-
 	; is_flobjeql(ParserTerm,O1,O2) ->
 	    compile_head_wsflobjeql(O1,O2,WS,CodeList,Status)
 	;
-	  is_flatom(ParserTerm,Atom),
-	  atomlit_struct(Atom,Code),
+	  atomlit_struct(ParserTerm,Code),
 	  workspacelit_struct(Code,WS,WSCode),
 	  CodeList=[WSCode],
 	  Status=[]
@@ -2664,11 +2729,13 @@ compile_head_wsliteral(ParserTerm,WS,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_wsflpathexplist(+ParserTermList,+ArgTypeList,+WS,-ObjectList,-CodeList,-Status)
+  compile_head_wsflpathexplist(+ParserTermList,+ArgTypeList,+WS,
+                               -ObjectList,-CodeList,-Status)
 ****************************************************************************/
 compile_head_wsflargpathexplist([],[],_WS,[],[],[]) :- !.
 
-compile_head_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],CodeList,Status) :-
+compile_head_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,
+                                [TObj|LObj],CodeList,Status) :-
 	!,
 	compile_head_wsflpathexp(T,WS,TObj,TCodeList,S),
 	( S == [] ->
@@ -2678,7 +2745,8 @@ compile_head_wsflargpathexplist([T|L],[FL_OID|ArgTypeList],WS,[TObj|LObj],CodeLi
 	  Status=S
         ).
 
-compile_head_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,[TCode|LObj],CodeList,Status) :-
+compile_head_wsflargpathexplist([T|L],[FL_BODYFORMULA|ArgTypeList],WS,
+                                [TCode|LObj],CodeList,Status) :-
 	!,
 	%% workspace not distributive over nested "form"
 	compile_body(T,TCode,S),
@@ -2724,8 +2792,8 @@ compile_head_wsflpathexp(ParserTerm,WS,Object,CodeList,Status) :-
 	; is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status)
 
-	; is_fllist(ParserTerm,L,T) ->
-	    compile_head_wsfllist(L,T,WS,Object,CodeList,Status)
+	; is_fllist(ParserTerm,L,T,I) ->
+	    compile_head_wsfllist(L,T,I,WS,Object,CodeList,Status)
 
 	; is_flworkspace(ParserTerm,P,NestedWS) ->
 	    compile_head_wspathexp(P,NestedWS,Object,CodeList,Status)
@@ -2749,7 +2817,7 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,CodeList,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,O),
@@ -2783,7 +2851,7 @@ compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,CodeList,Status),
 	(Status == [] -> termobj_struct(FObj,N,AObj,Object); true).
 
@@ -2799,7 +2867,7 @@ compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	atomobj_struct(FAtom,FObj),
+	atomobj_struct(Funct,FObj),
 	compile_head_wsflargpathexplist(Args,ArgTypes,WS,AObj,ObjCodeList,Status),
 	( Status == [] ->
 	    termlit_struct(FObj,N,AObj,TCode),
@@ -2821,9 +2889,9 @@ compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_head_wsfllist(+ObjTermList,+ObjTerm,+WS,-Object,-CodeList,-Status)
+  compile_head_wsfllist(+ObjTermList,+ObjTerm,+Index,+WS,-Object,-CodeList,-Status)
 ****************************************************************************/
-compile_head_wsfllist(ObjTermList,ObjTerm,WS,Object,CodeList,Status) :-
+compile_head_wsfllist(ObjTermList,ObjTerm,Index,WS,Object,CodeList,Status) :-
 	compile_head_wsflpathexplist(ObjTermList,WS,ObjList,ObjListCodeList,S),
 	( S == [] ->
 	    ( ObjTerm == [] ->
@@ -2834,7 +2902,7 @@ compile_head_wsfllist(ObjTermList,ObjTerm,WS,Object,CodeList,Status) :-
 	      compile_head_wsflpathexp(ObjTerm,WS,Obj,ObjCodeList,Status)
 	    ),
 	    ( Status == [] ->
-		list_struct(ObjList,Obj,Object),
+		list_struct(ObjList,Obj,Index,Object),
 		append(ObjListCodeList,ObjCodeList,CodeList)
 	    ;
 	      true
@@ -2850,7 +2918,9 @@ compile_head_wsfllist(ObjTermList,ObjTerm,WS,Object,CodeList,Status) :-
 compile_head_wsflobjref(ObjTerm,RefType,AttTerm,WS,Object,CodeList,Status) :-
 	compile_head_wsflpathexplist([ObjTerm,AttTerm],WS,[Obj,Att],OACodeList,Status),
 	( Status == [] ->
-	    head_objref_struct(Obj,RefType,Att,Object,TCode),
+	    %% Approximate the textual information for the new variable.
+	    approximate_index(AttTerm,Index),
+	    head_objref_struct(Obj,RefType,Att,Index,Object,TCode),
 	    workspacelit_struct(TCode,WS,WTCode),
 	    append(OACodeList,[WTCode],CodeList)
 	;
@@ -3057,9 +3127,9 @@ compile_flinsert_literals(List,DBCodeList,Status) :-
 compile_flinsert_list([],[],[]) :- !.
 
 compile_flinsert_list([H|T],[VarCode|TCodeList],Status) :-
-	is_flvar(H,VarName,_Index),
+	is_flvar(H,VarName,Index),
 	!,
-	compile_flvar(VarName,VarCode),
+	compile_flvar(VarName,Index,VarCode),
 	compile_flinsert_list(T,TCodeList,Status).
 
 compile_flinsert_list([H|T],CodeList,Status) :-
@@ -3117,9 +3187,9 @@ compile_fldelete_literals(List,DBCodeList,Status) :-
 compile_fldelete_list([],[],[]) :- !.
 
 compile_fldelete_list([H|T],[VarCode|TCodeList],Status) :-
-	is_flvar(H,VarName,_Index),
+	is_flvar(H,VarName,Index),
 	!,
-	compile_flvar(VarName,VarCode),
+	compile_flvar(VarName,Index,VarCode),
 	compile_fldelete_list(T,TCodeList,Status).
 
 compile_fldelete_list([H|T],CodeList,Status) :-
@@ -3153,11 +3223,13 @@ compile_dbupdate_list([C|CL],[C|DBCodeList]) :-
 
 compile_dbupdate_list([C|CL],[DBCode|DBCodeList]) :-
 	( workspace_struct(_P,WS,C) ->
+	    %% The name of the module is known.
 	    storage_struct(WS,SCode)
 	;
 	  thisstorage_struct(SCode)
 	),
-	prologterm_struct(FLSYSDBUPDATE,2,[C,SCode],DBCode),
+	atomobj_struct(FLSYSDBUPDATE,FCode),
+	prologterm_struct(FCode,2,[C,SCode],DBCode),
 	compile_dbupdate_list(CL,DBCodeList).
 
 
@@ -3231,18 +3303,26 @@ compile_execdirect(DirectTerm,Code) :-
 	%%;
 	
 	  is_flfirstorder(DirectTerm,Funct,Arity) ->
-	  (var(Funct) -> new_varobj(FunctCode); FunctCode=Funct),
-	  (var(Arity) -> new_varobj(ArityCode); ArityCode=Arity),
-	  florasyslib_struct(FLLIBSHDIRECT,3,[FL_FIRSTORDER,FunctCode,ArityCode],Code)
+	    %% Both Funct and Arity could be a variable because of the parsing
+	    %% of the directive firstorderall.
+	    ( var(Funct) ->
+		new_varobj(NO_INDEX,FunctCode)
+	    ;
+	      compile_flatomvar(Funct,FunctCode)
+	    ),
+	    ( var(Arity) ->
+		new_varobj(NO_INDEX,ArityCode)
+	    ;
+	      compile_flatomvar(Arity,ArityCode)
+	    ),
+	    florasyslib_struct(FLLIBSHDIRECT,3,[FL_FIRSTORDER,FunctCode,ArityCode],Code)
 
-	;
-	  is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
-	  florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
+	; is_flopdef(DirectTerm,Precedence,Associativity,Op) ->
+	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_OP,Precedence,Associativity,Op],Code)
 
-	;
-	  is_flarguments(DirectTerm,Funct,Arity,Args) ->
-	  list_struct(Args,[],ArgsCode),
-	  florasyslib_struct(FLLIBSHDIRECT,4,[FL_ARGUMENTS,Funct,Arity,ArgsCode],Code)
+	; is_flarguments(DirectTerm,Funct,Arity,Args) ->
+	    list_struct(Args,[],ArgsCode),
+	    florasyslib_struct(FLLIBSHDIRECT,4,[FL_ARGUMENTS,Funct,Arity,ArgsCode],Code)
 	),
 	!.
 
