@@ -130,7 +130,6 @@ CLEAN :
 	-@erase "$(OBJDIR)\io_builtins.obj"
 	-@erase "$(OBJDIR)\loader.obj"
 	-@erase "$(OBJDIR)\chat.obj
-	-@erase "$(OBJDIR)\load_seg.obj"
 	-@erase "$(OBJDIR)\xsb_memory.obj"
 	-@erase "$(OBJDIR)\orastuff.obj"
 	-@erase "$(OBJDIR)\psc.obj"
@@ -177,7 +176,6 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/inst.obj" \
 	"$(OBJDIR)/io_builtins.obj" \
 	"$(OBJDIR)/loader.obj" \
-	"$(OBJDIR)/load_seg.obj" \
 	"$(OBJDIR)/xsb_memory.obj" \
 	"$(OBJDIR)/psc.obj" \
 	"$(OBJDIR)/private_builtin.obj" \
@@ -690,31 +688,6 @@ DEP_CPP_MEMOR=\
 ################################################################################
 # Begin Source File
 
-SOURCE=$(INTDIR)\load_seg.c
-DEP_CPP_LOAD_=\
-	{$(INTDIR)}"\configs\config.h"\
-	{$(INTDIR)}"\debugs\debug.h"\
-	{$(INTDIR)}"\auxlry.h"\
-	{$(INTDIR)}"\cell.h"\
-	{$(INTDIR)}"\inst.h"\
-	{$(INTDIR)}"\register.h"\
-	{$(INTDIR)}"\psc.h"\
-	{$(INTDIR)}"\loader.h"\
-	{$(INTDIR)}"\tries.h"\
-	{$(INTDIR)}"\xmacro.h"\
-	{$(INTDIR)}"\basictypes.h"\
-	{$(INTDIR)}"\slgdelay.h"\
-	{$(INTDIR)}"\debugs\debug_delay.h"\
-	
-
-"$(OBJDIR)\load_seg.obj" : $(SOURCE) $(DEP_CPP_LOAD_) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
 SOURCE=$(INTDIR)\io_builtins.c
 DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\configs\config.h"\
@@ -732,7 +705,6 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\token.h"\
 	{$(INTDIR)}"\loader.h"\
-	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\tries.h"\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xmacro.h"\
@@ -787,7 +759,6 @@ DEP_CPP_INIT_=\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\flags.h"\
 	{$(INTDIR)}"\loader.h"\
-	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\tr_utils.h"\
 	{$(INTDIR)}"\basictypes.h"\
@@ -1077,7 +1048,6 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\register.h"\
 	{$(INTDIR)}"\flags.h"\
 	{$(INTDIR)}"\loader.h"\
-	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\binding.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\token.h"\
@@ -1128,7 +1098,6 @@ DEP_CPP_BIASS=\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\token.h"\
 	{$(INTDIR)}"\loader.h"\
-	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\tries.h"\
 	{$(INTDIR)}"\struct_manager.h"\
 	{$(INTDIR)}"\choice.h"\
@@ -1188,7 +1157,6 @@ DEP_CPP_LOADE=\
 	{$(INTDIR)}"\loader.h"\
 	{$(INTDIR)}"\flags.h"\
 	{$(INTDIR)}"\cell.h"\
-	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\tries.h"\
 	{$(INTDIR)}"\xmacro.h"\
 	{$(INTDIR)}"\xsberror.h"\
@@ -1336,7 +1304,6 @@ DEP_CPP_XSB_STR=\
 	{$(INTDIR)}"\inst.h"\
 	{$(INTDIR)}"\token.h"\
 	{$(INTDIR)}"\loader.h"\
-	{$(INTDIR)}"\load_seg.h"\
 	{$(INTDIR)}"\tries.h"\
 	{$(INTDIR)}"\choice.h"\
 	{$(INTDIR)}"\xsb_memory.h"\

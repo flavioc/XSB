@@ -84,8 +84,7 @@ SRCS =	auxlry.c biassert.c xsbsocket.c builtin.c \
 	dis.c dynload.c emuloop.c \
 	findall.c function.c hash.c \
 	heap.c init.c inst.c \
-	io_builtins.c \
-	load_seg.c loader.c \
+	io_builtins.c loader.c \
 	psc.c residual.c scc.c \
 	self_orientation.c slgdelay.c \
 	struct_manager.c subp.c system.c \
@@ -100,8 +99,7 @@ OBJS = auxlry.o biassert.o xsbsocket.o builtin.o \
 	dis.o dynload.o emuloop.o \
 	findall.o function.o hash.o \
 	heap.o init.o inst.o \
-	io_builtins.o \
-	load_seg.o loader.o \
+	io_builtins.o loader.o \
 	private_builtin.o \
 	psc.o residual.o scc.o \
 	self_orientation.o slgdelay.o \
