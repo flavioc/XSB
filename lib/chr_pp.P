@@ -64,12 +64,13 @@
 	(=..)/2,
 	name/2,
 	functor/3,
-	sort/2,
 	atomic/1,
 	seen/0,
 	see/1,
 	read/1
    from standard.
+
+:- import sort/2 from setof.
 
 :- import bagof/3 from setof.
 
@@ -257,6 +258,7 @@ translate(Declarations,NewDeclarations) :-
 	( Decls == [] ->
 		NewDeclarations = OtherClauses
 	;
+		check_rules(Rules,Decls),
 		generate_attach_a_constraint_all(Decls,Mod,AttachAConstraintClauses),
 		generate_detach_a_constraint_all(Decls,Mod,DettachAConstraintClauses),
 		generate_attach_increment(Decls,Mod,AttachIncrementClauses),
@@ -350,8 +352,8 @@ is_rule(RI,R,IDs) :-				%% simplification/simpagation rule
    (   H = (H1 \ H2) ->
        conj2list(H1,Head2i),
        conj2list(H2,Head1i),
-       get_ids(Head2i,IDs2,Head2),
-       get_ids(Head1i,IDs1,Head1),
+       get_ids(Head2i,IDs2,Head2,0,N),
+       get_ids(Head1i,IDs1,Head1,N,_),
        IDs = ids(IDs1,IDs2)
    ;   conj2list(H,Head1i),
        Head2 = [],
@@ -360,16 +362,48 @@ is_rule(RI,R,IDs) :-				%% simplification/simpagation rule
    ),
    R = rule(Head1,Head2,Guard,Body).
 
-get_ids([],[],[]).
-get_ids([C|Cs],[ID|IDs],[NC|NCs]) :-
-	( C = (NC # ID) ->
+get_ids(Cs,IDs,NCs) :-
+	get_ids(Cs,IDs,NCs,0,_).
+
+get_ids([],[],[],N,N).
+get_ids([C|Cs],[N|IDs],[NC|NCs],N,NN) :-
+	( C = (NC # N) ->
 		true
 	;
-		ID = _,
 		NC = C
 	),
-	get_ids(Cs,IDs,NCs).
+	M is N + 1,
+	get_ids(Cs,IDs,NCs, M,NN).
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+check_rules(Rules,Decls) :-
+	check_rules(Rules,Decls,1).
+
+check_rules([],_,_).
+check_rules([pragma(Rule,_,_)|Rest],Decls,N) :-
+	Rule = rule(H1,H2,_,_),
+	append(H1,H2,HeadConstraints),
+	check_head_constraints(HeadConstraints,Decls,N),
+	N1 is N + 1,
+	check_rules(Rest,Decls,N1).
+
+check_head_constraints([],_,_).
+check_head_constraints([Constr|Rest],Decls,N) :-
+	functor(Constr,F,A),
+	( member(F/A,Decls) ->
+		check_head_constraints(Rest,Decls,N)
+	;
+		write('ERROR: Undeclared constraint '),
+		write(F/A),
+		write(' used in head of rule number '),
+		write(N),
+		write('!'),
+		nl,
+		fail
+	).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -745,58 +779,64 @@ rules_code([R |Rs],RuleNb,FA,I,N,Constraints,Mod,Id1,Id3,L,T) :-
 
 %%	Generate code for a constraint based on a single CHR rule
 rule_code(PragmaRule,RuleNb,FA,I,N,Constraints,Mod,Id1,Id2,L,T) :-
-	PragmaRule = pragma(Rule,HeadIDs,Pragmas),
+	PragmaRule = pragma(Rule,HeadIDs,_Pragmas),
 	HeadIDs = ids(Head1IDs,Head2IDs),
 	Rule = rule(Head1,Head2,_,_),
-	heads1_code(Head1,[],Head1IDs,Pragmas,Rule,FA,I,N,Constraints,Mod,Id1,L,L1),
-	heads2_code(Head2,[],Head2IDs,Pragmas,Rule,RuleNb,FA,I,N,Constraints,Mod,Id1,Id2,L1,T).
+	heads1_code(Head1,[],Head1IDs,[],PragmaRule,FA,I,N,Constraints,Mod,Id1,L,L1),
+	heads2_code(Head2,[],Head2IDs,[],PragmaRule,RuleNb,FA,I,N,Constraints,Mod,Id1,Id2,L1,T).
 
 %%	Generate code based on all the removed heads of a CHR rule
 heads1_code([],_,_,_,_,_,_,_,_,_,_,L,L).
-heads1_code([Head|Heads],RestHeads,[HeadID|HeadIDs],Pragmas,Rule,F/A,I,N,Constraints,Mod,Id,L,T) :-
+heads1_code([Head|Heads],RestHeads,[HeadID|HeadIDs],RestIDs,PragmaRule,F/A,I,N,Constraints,Mod,Id,L,T) :-
+	PragmaRule = pragma(Rule,_,Pragmas),
 	( functor(Head,F,A),
 	  \+ check_unnecessary_active(Head,RestHeads,Rule),
 	  \+ memberchk_eq(passive(HeadID),Pragmas) ->
 		append(Heads,RestHeads,OtherHeads),
-		head1_code(Head,OtherHeads,Rule,F/A,I,N,Constraints,Mod,Id,L,L1)
+		append(HeadIDs,RestIDs,OtherIDs),
+		head1_code(Head,OtherHeads,OtherIDs,PragmaRule,F/A,I,N,Constraints,Mod,Id,L,L1)
 	;	
 		L = L1
 	),
-	heads1_code(Heads,[Head|RestHeads],HeadIDs,Pragmas,Rule,F/A,I,N,Constraints,Mod,Id,L1,T).
+	heads1_code(Heads,[Head|RestHeads],HeadIDs,[HeadID|RestIDs],PragmaRule,F/A,I,N,Constraints,Mod,Id,L1,T).
 
 %%	Generate code based on one removed head of a CHR rule
-head1_code(Head,OtherHeads,Rule,FA,I,N,Constraints,Mod,Id,L,T) :-
+head1_code(Head,OtherHeads,OtherIDs,PragmaRule,FA,I,N,Constraints,Mod,Id,L,T) :-
+	PragmaRule = pragma(Rule,_,_),
 	Rule = rule(_,Head2,_,_),
 	( Head2 == [] ->
 		simplification_code(Head,OtherHeads,Rule,FA,I,N,Constraints,Mod,Id,L,T)
 	;
-		simpagation_head1_code(Head,OtherHeads,Rule,FA,I,N,Constraints,Mod,Id,L,T)
+		simpagation_head1_code(Head,OtherHeads,OtherIDs,PragmaRule,FA,I,N,Constraints,Mod,Id,L,T)
 	).
 
 %% Generate code based on all the persistent heads of a CHR rule
 heads2_code([],_,_,_,_,_,_,_,_,_,_,Id,Id,L,L).
-heads2_code([Head|Heads],RestHeads,[HeadID|HeadIDs],Pragmas,Rule,RuleNb,F/A,I,N,Constraints,Mod,Id1,Id3,L,T) :-
+heads2_code([Head|Heads],RestHeads,[HeadID|HeadIDs],RestIDs,PragmaRule,RuleNb,F/A,I,N,Constraints,Mod,Id1,Id3,L,T) :-
+	PragmaRule = pragma(Rule,_,Pragmas),
 	( functor(Head,F,A),
 	  \+ check_unnecessary_active(Head,RestHeads,Rule),
 	  \+ memberchk_eq(passive(HeadID),Pragmas) ->
 		append(Heads,RestHeads,OtherHeads),
+		append(HeadIDs,RestIDs,OtherIDs),
 		length(Heads,RestHeadNb),
-		head2_code(Head,OtherHeads,Rule,RuleNb,RestHeadNb,F/A,I,N,Constraints,Mod,Id1,L,L0),
+		head2_code(Head,OtherHeads,OtherIDs,PragmaRule,RuleNb,RestHeadNb,F/A,I,N,Constraints,Mod,Id1,L,L0),
 		inc_id(Id1,Id2),
 		gen_alloc_inc_clause(F/A,Mod,Id1,L0,L1)
 	;
 		L = L1,
 		Id2 = Id1
 	),
-	heads2_code(Heads,[Head|RestHeads],HeadIDs,Pragmas,Rule,RuleNb,F/A,I,N,Constraints,Mod,Id2,Id3,L1,T).
+	heads2_code(Heads,[Head|RestHeads],HeadIDs,[HeadID|RestIDs],PragmaRule,RuleNb,F/A,I,N,Constraints,Mod,Id2,Id3,L1,T).
 
 %% Generate code based on one persistent head of a CHR rule
-head2_code(Head,OtherHeads,Rule,RuleNb,RestHeadNb,FA,I,N,Constraints,Mod,Id,L,T) :-
+head2_code(Head,OtherHeads,OtherIDs,PragmaRule,RuleNb,RestHeadNb,FA,I,N,Constraints,Mod,Id,L,T) :-
+	PragmaRule = pragma(Rule,_,_),
 	Rule = rule(Head1,_,_,_),
 	( Head1 == [] ->
 		propagation_code(Head,OtherHeads,Rule,RuleNb,RestHeadNb,FA,N,Constraints,Mod,Id,L,T)
 	;
-		simpagation_head2_code(Head,OtherHeads,Rule,FA,I,N,Constraints,Mod,Id,_,L,T) 
+		simpagation_head2_code(Head,OtherHeads,OtherIDs,PragmaRule,FA,I,N,Constraints,Mod,Id,L,T) 
 	).
 
 gen_alloc_inc_clause(F/A,Mod,Id,L,T) :-
@@ -985,9 +1025,21 @@ rest_heads_retrieval_and_matching(Heads,ActiveHead,Mod,N,Constraints,Goals,Susps
 		VarDict = NVarDict
 	).
 
+rest_heads_retrieval_and_matching2(Heads,IDs,Pragmas,ActiveHead,Mod,N,Constraints,Goals,Susps,VarDict,NVarDict):-
+	rest_heads_retrieval_and_matching2(Heads,IDs,Pragmas,ActiveHead,Mod,N,Constraints,Goals,Susps,VarDict,NVarDict,[],[],[]).
+	
+rest_heads_retrieval_and_matching2(Heads,IDs,Pragmas,ActiveHead,Mod,N,Constraints,Goals,Susps,VarDict,NVarDict,PrevHs,PrevSusps,AttrDict) :-
+	( is_not_empty(Heads) ->
+		rest_heads_retrieval_and_matching_n2(Heads,IDs,Pragmas,PrevHs,PrevSusps,ActiveHead,Mod,N,Constraints,Goals,Susps,VarDict,NVarDict,AttrDict)	
+	;
+		Goals = true,
+		Susps = [],
+		VarDict = NVarDict
+	).
+
 instantiate_pattern_goals([],_).
 instantiate_pattern_goals([_-attr(Attr,Bits,Goal)|Rest],N) :-
-	( N == 1  ->
+	( N == 1 ->
 		Goal = true
 	;
 		make_attr(N,Mask,_,Attr),
@@ -1023,6 +1075,44 @@ rest_heads_retrieval_and_matching_n([H|Hs],PrevHs,PrevSusps,ActiveHead,Mod,N,Con
 	),
 	rest_heads_retrieval_and_matching_n(Hs,[H|PrevHs],[Susp|PrevSusps],ActiveHead,Mod,N,Constraints,Goals,Susps,VarDict1,NVarDict,NewAttrDict).
 
+rest_heads_retrieval_and_matching_n2([],_,_,_,_,_,_,N,_,true,[],VarDict,VarDict,AttrDict) :-
+	instantiate_pattern_goals(AttrDict,N).
+rest_heads_retrieval_and_matching_n2([H|Hs],[ID|IDs],Pragmas,PrevHs,PrevSusps,ActiveHead,Mod,N,Constraints,(Goal,Goals),[Susp|Susps],VarDict,NVarDict,AttrDict) :-
+	passive_head_via(H,[ActiveHead|PrevHs],AttrDict,Constraints,Mod,VarDict,ViaGoal,Attr,NewAttrDict),
+	functor(H,Fct,Aty),
+	head_info(H,Aty,Vars,_,_,Pairs),
+	intermediate_head_arg_matches(Pairs,VarDict,MatchingGoal,VarDict1),
+	Suspension =.. [suspension,_,State,_,_,_,_|Vars],
+	( N == 1 ->
+		VarSusps = Attr
+	;
+		nth(Pos,Constraints,Fct/Aty), !,
+		make_attr(N,_Mask,SuspsList,Attr),
+		nth(Pos,SuspsList,VarSusps)
+	),
+	different_from_other_susps(H,Susp,PrevHs,PrevSusps,DiffSuspGoals),
+	Goal1 = 
+	(
+		ViaGoal,
+		sbag_member(Susp,VarSusps),
+		Susp = Suspension,
+		get_mutable(active,State),
+		DiffSuspGoals,
+		MatchingGoal
+	),
+	( member(unique(ID,UniqueKeus),Pragmas),
+	  check_unique_keys(UniqueKeus,VarDict) ->
+		Goal = (Goal1 -> true ; fail)
+	;
+		Goal = Goal1
+	),
+	rest_heads_retrieval_and_matching_n2(Hs,IDs,Pragmas,[H|PrevHs],[Susp|PrevSusps],ActiveHead,Mod,N,Constraints,Goals,Susps,VarDict1,NVarDict,NewAttrDict).
+
+check_unique_keys([],_).
+check_unique_keys([V|Vs],Dict) :-
+	lookup_eq(Dict,V,_),
+	check_unique_keys(Vs,Dict).
+
 different_from_other_susps(Head,Susp,Heads,Susps,DiffSuspGoals) :-
 	( bagof(DiffSuspGoal, Pos ^ ( nth(Pos,Heads,PreHead), \+ Head \= PreHead, nth(Pos,Susps,PreSusp), DiffSuspGoal = (Susp \== PreSusp) ),DiffSuspGoalList) ->
 	     list2conj(DiffSuspGoalList,DiffSuspGoals)
@@ -1035,15 +1125,16 @@ passive_head_via(Head,PrevHeads,AttrDict,Constraints,Mod,VarDict,Goal,Attr,NewAt
 	nth(Pos,Constraints,F/A),!,
 	common_variables(Head,PrevHeads,CommonVars),
 	translate(CommonVars,VarDict,Vars),
+	or_pattern(Pos,Bit),
 	( permutation(Vars,PermutedVars),
 	  lookup_eq(AttrDict,PermutedVars,attr(Attr,Positions,_)) ->
-		member(Pos,Positions), !,
+		member(Bit,Positions), !,
 		NewAttrDict = AttrDict,
 		Goal = true
 	; 
 		Goal = (Goal1, PatternGoal),
 		gen_get_mod_constraints(Mod,Vars,Goal1,Attr),
-		NewAttrDict = [Vars - attr(Attr,[Pos|_],PatternGoal) | AttrDict]
+		NewAttrDict = [Vars - attr(Attr,[Bit|_],PatternGoal) | AttrDict]
 	).
  
 common_variables(T,Ts,Vs) :-
@@ -1055,17 +1146,14 @@ gen_get_mod_constraints(Mod,L,Goal,Susps) :-
    (   L == [] ->
        Goal = 
        (   global_term_ref_1(Global),
-           get_attr(Global,Mod,Susps) 
+           get_attr(Global,Mod,Susps)
        )
    ; 
        (    L = [A] ->
             VIA =  via_1(A,V)
        ;    (   L = [A,B] ->
                 VIA = via_2(A,B,V)
-            ;   (   L = [A,B,C] ->
-                    VIA = via_3(A,B,C,V)
-                ;   VIA = via(L,V)
-                )
+            ;   VIA = via(L,V)
             )
        ),
        Goal =
@@ -1076,7 +1164,7 @@ gen_get_mod_constraints(Mod,L,Goal,Susps) :-
 
 code_copies(Rule,VarDict,GuardCopy,BodyCopy) :-
 	Rule = rule(_,_,Guard,Body),
-	my_term_copy(Guard,VarDict,GuardCopyCore),
+	my_term_copy(Guard,VarDict,VarDict2,GuardCopyCore),
 	( simple_guard(Guard,VarDict) ->
 		GuardCopy = GuardCopyCore
 	;
@@ -1096,7 +1184,7 @@ code_copies(Rule,VarDict,GuardCopy,BodyCopy) :-
 		list2conj(Unlocks,UnlockPhase),
 		GuardCopy = (LockPhase,(GuardCopyCore,UnlockPhase))
 	),
-	my_term_copy(Body,VarDict,BodyCopy).
+	my_term_copy(Body,VarDict2,BodyCopy).
 
 
 simple_guard(var(_),    _).
@@ -1174,7 +1262,8 @@ gen_uncond_susps_detachments([Susp|Susps],[Term|Terms],(SuspDetachment,SuspsDeta
 %% |____/|_|_| |_| |_| .__/ \__,_|\__, |\__,_|\__|_|\___/|_| |_| |_|
 %%                   |_|          |___/
 
-simpagation_head1_code(Head,RestHeads,Rule,F/A,_I,N,Constraints,Mod,Id,L,T) :-
+simpagation_head1_code(Head,RestHeads,OtherIDs,PragmaRule,F/A,_I,N,Constraints,Mod,Id,L,T) :-
+   PragmaRule = pragma(Rule,ids(_,Heads2IDs),Pragmas),
    Rule = rule(_Heads,Heads2,_Guard,_Body),
 
    head_info(Head,A,_Vars,Susp,HeadVars,HeadPairs),
@@ -1183,7 +1272,8 @@ simpagation_head1_code(Head,RestHeads,Rule,F/A,_I,N,Constraints,Mod,Id,L,T) :-
    build_head(F,A,Id,HeadVars,ClauseHead),
 
    append(RestHeads,Heads2,Heads),
-   rest_heads_retrieval_and_matching(Heads,Head,Mod,N,Constraints,SuspsRetrieval,Susps,VarDict1,VarDict),
+   append(OtherIDs,Heads2IDs,IDs),
+   rest_heads_retrieval_and_matching2(Heads,IDs,Pragmas,Head,Mod,N,Constraints,SuspsRetrieval,Susps,VarDict1,VarDict),
    length(RestHeads,RN),
    take(RN,Susps,Susps1),
 
@@ -1216,15 +1306,16 @@ simpagation_head1_code(Head,RestHeads,Rule,F/A,_I,N,Constraints,Mod,Id,L,T) :-
 %% Genereate prelude + worker predicate
 %% prelude calls worker
 %% worker iterates over one type of removed constraints
-simpagation_head2_code(Head2,RestHeads2,Rule,FA,I,N,Constraints,Mod,Id,Id,L,T) :-
+simpagation_head2_code(Head2,RestHeads2,RestIDs,PragmaRule,FA,I,N,Constraints,Mod,Id,L,T) :-
+   PragmaRule = pragma(Rule,ids([ID1|IDs1],_),Pragmas),
    Rule = rule(Heads1,_,Guard,Body),
    Heads1 = [Head1|RestHeads1],
-   simpagation_head2_prelude(Head2,Head1,[RestHeads2,Heads1,Guard,Body],FA,I,N,Constraints,Mod,Id,Id,L,L1),
+   simpagation_head2_prelude(Head2,Head1,[RestHeads2,Heads1,Guard,Body],FA,I,N,Constraints,Mod,Id,L,L1),
    extend_id(Id,Id2), 
-   simpagation_head2_worker(Head2,Head1,RestHeads1,RestHeads2,Rule,FA,I,N,Constraints,Mod,Id2,Id2,L1,T).
+   simpagation_head2_worker(Head2,Head1,ID1,RestHeads1,IDs1,RestHeads2,RestIDs,Rule,Pragmas,FA,I,N,Constraints,Mod,Id2,Id2,L1,T).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-simpagation_head2_prelude(Head,Head1,Rest,F/A,_I,N,Constraints,Mod,Id1,Id1,L,T) :-
+simpagation_head2_prelude(Head,Head1,Rest,F/A,_I,N,Constraints,Mod,Id1,L,T) :-
 	head_info(Head,A,Vars,Susp,VarsSusp,HeadPairs),
 	build_head(F,A,Id1,VarsSusp,ClauseHead),
 	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
@@ -1249,7 +1340,7 @@ simpagation_head2_prelude(Head,Head1,Rest,F/A,_I,N,Constraints,Mod,Id1,Id1,L,T) 
 	extra_active_delegate_variables(Head,Rest,VarDict,ExtraVars),
 	append([AllSusps|VarsSusp],ExtraVars,DelegateCallVars),
 	build_head(F,A,DelegateId,DelegateCallVars,Delegate),
- 
+
 	PreludeClause = 
 	   ( ClauseHead :-
 	          FirstMatching,
@@ -1277,13 +1368,13 @@ delegate_variables(Term,Terms,VarDict,PrevVars,Vars) :-
 	
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-simpagation_head2_worker(Head2,Head1,RestHeads1,RestHeads2,Rule,FA,I,N,Constraints,Mod,Id,Id,L,T) :-
+simpagation_head2_worker(Head2,Head1,ID1,RestHeads1,IDs1,RestHeads2,IDs2,Rule,Pragmas,FA,I,N,Constraints,Mod,Id,Id,L,T) :-
    Rule = rule(_,_,Guard,Body),
    simpagation_head2_worker_end(Head2,[Head1,RestHeads1,RestHeads2,Guard,Body],FA,Id,L,L1),
-   simpagation_head2_worker_body(Head2,Head1,RestHeads1,RestHeads2,Rule,FA,I,N,Constraints,Mod,Id,L1,T).
+   simpagation_head2_worker_body(Head2,Head1,ID1,RestHeads1,IDs1,RestHeads2,IDs2,Rule,Pragmas,FA,I,N,Constraints,Mod,Id,L1,T).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-simpagation_head2_worker_body(Head2,Head1,RestHeads1,RestHeads2,Rule,F/A,_I,N,Constraints,Mod,Id,L,T) :-
+simpagation_head2_worker_body(Head2,Head1,ID1,RestHeads1,IDs1,RestHeads2,IDs2,Rule,Pragmas,F/A,_I,N,Constraints,Mod,Id,L,T) :-
    gen_var(OtherSusp),
    gen_var(OtherSusps),
 
@@ -1307,7 +1398,8 @@ simpagation_head2_worker_body(Head2,Head1,RestHeads1,RestHeads2,Rule,F/A,_I,N,Co
 
    (   (RestHeads1 \== [] ; RestHeads2 \== []) ->
 		append(RestHeads1,RestHeads2,RestHeads),
-		rest_heads_retrieval_and_matching(RestHeads,[Head1,Head2],Mod,N,Constraints,RestSuspsRetrieval,Susps,VarDict2,VarDict,[Head1],[OtherSusp],[]),
+		append(IDs1,IDs2,IDs),
+		rest_heads_retrieval_and_matching2(RestHeads,IDs,Pragmas,[Head1,Head2],Mod,N,Constraints,RestSuspsRetrieval,Susps,VarDict2,VarDict,[Head1],[OtherSusp],[]),
 		length(RestHeads1,RH1N),
 		take(RH1N,Susps,Susps1)
    ;   RestSuspsRetrieval = true,
@@ -1318,30 +1410,55 @@ simpagation_head2_worker_body(Head2,Head1,RestHeads1,RestHeads2,Rule,F/A,_I,N,Co
    gen_uncond_susps_detachments([OtherSusp | Susps1],[Head1|RestHeads1],Susps1Detachments),
 
    append([OtherSusps|VarsSusp],ExtraVars,RecursiveVars),
-   build_head(F,A,Id,RecursiveVars,RecursiveHead),
-   RecursiveCall = RecursiveHead, 
+   build_head(F,A,Id,RecursiveVars,RecursiveCall),
+   append([[]|VarsSusp],ExtraVars,RecursiveVars2),
+   build_head(F,A,Id,RecursiveVars2,RecursiveCall2),
 
    code_copies(Rule,VarDict,GuardCopy,BodyCopy),
    (   BodyCopy \== true ->
        gen_uncond_attach_goal(F/A,Susp,Mod,Attachment,Generation),
-       gen_state_cond_call(Susp,A,RecursiveCall,Generation,ConditionalRecursiveCall)
+       gen_state_cond_call(Susp,A,RecursiveCall,Generation,ConditionalRecursiveCall),
+       gen_state_cond_call(Susp,A,RecursiveCall2,Generation,ConditionalRecursiveCall2)
    ;   Attachment = true,
-       ConditionalRecursiveCall = RecursiveCall
+       ConditionalRecursiveCall = RecursiveCall,
+       ConditionalRecursiveCall2 = RecursiveCall2
    ),
 
-   Clause =
-      ( ClauseHead :-
-             (   IteratorSuspTest,
-		 FirstMatching,
-                 RestSuspsRetrieval,
-                 GuardCopy ->
-                 Susps1Detachments,
-                 Attachment,
-                 BodyCopy,
-                 ConditionalRecursiveCall
-             ;   RecursiveCall
-             )
-      ),
+   ( member(unique(ID1,UniqueKeys), Pragmas),
+     check_unique_keys(UniqueKeys,VarDict1) ->
+	Clause =
+		( ClauseHead :-
+			( IteratorSuspTest,
+			  FirstMatching ->
+				( RestSuspsRetrieval,
+				  GuardCopy ->
+					Susps1Detachments,
+					Attachment,
+					BodyCopy,
+					ConditionalRecursiveCall2
+				;
+					RecursiveCall2
+				)
+			;
+				RecursiveCall
+			)
+		)
+    ;
+	Clause =
+      		( ClauseHead :-
+             		( IteratorSuspTest,
+			  FirstMatching,
+			  RestSuspsRetrieval,
+			  GuardCopy ->
+				Susps1Detachments,
+				Attachment,
+				BodyCopy,
+				ConditionalRecursiveCall
+			;
+				RecursiveCall
+			)
+		)
+   ),
    L = [Clause | T].
 
 gen_state_cond_call(Susp,N,Call,Generation,ConditionalCall) :-
@@ -1667,8 +1784,6 @@ pre_vars_and_susps([Head|Heads],Terms,NVSs,NVarDict,[Susp|Susps]) :-
 	append(HeadVars,[Susp,NextSusps|VSs],NVSs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

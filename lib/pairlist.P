@@ -36,6 +36,10 @@
 %% * ported to XSB
 
 :- export 
+		delete/3,
+		delete_all/3,
+		delete_eq/3,
+		delete_all_eq/3,
 		lookup/3,
 		lookup_any/3,
 		lookup_eq/3,
@@ -82,7 +86,6 @@ translate([X|Xs],Dict,[Y|Ys]) :-
 	lookup_eq(Dict,X,Y),
 	translate(Xs,Dict,Ys).
 
-/*** uncomment if used or exported ***
 delete([], _, []).
 delete([K - V| KVs], Key, PL) :-
 	( Key = K ->
@@ -119,4 +122,4 @@ delete_all_eq([K - V| KVs], Key, PL) :-
 		PL = [ K - V | T ],
 		delete_all_eq(KVs, Key, T)
 	).
-***/		
+		
