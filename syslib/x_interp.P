@@ -54,7 +54,7 @@ interpreter :-
 	push_abort_cutpoint,         %% set abort cutpoint to this cp
         %% Execute command line goal passed to XSB with the -e option
         xsb_flag(goal, CmdGoal),
-        (CmdGoal == 'true.' ->
+        (CmdGoal == '' ->
             true
         ;   file_nl(STDMSG),
             file_write(STDMSG, 'Evaluating command line goal:  '),

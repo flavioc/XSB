@@ -271,7 +271,7 @@ char *init_para(int argc, char *argv[])
   ** comand loop.
   */
   char *boot_module, *cmd_loop_driver;
-  char *cmd_line_goal="true.";
+  char cmd_line_goal[MAXBUFSIZE+1] = "";
   int  strlen_instdir, strlen_initfile, strlen_2ndfile;
   void tstInitDataStructs();
 
@@ -462,21 +462,29 @@ char *init_para(int argc, char *argv[])
 	   xsb_warn("Missing top-level command loop driver's file name");
       }
       break;
-    case 'e':
+    case 'e': {
+      char *tmp_goal=NULL;
       if (argv[i][2] != '\0')
-	cmd_line_goal = argv[i]+2;
+	tmp_goal = argv[i]+2;
       else {
 	i++;
 	if (i < argc)
-	   cmd_line_goal = argv[i];
+	   tmp_goal = argv[i];
 	 else
 	   xsb_warn("Missing command line goal");
       }
 
-      if (strchr(cmd_line_goal, '.') == NULL) {
-	xsb_exit("\n\nSyntax error in command line goal:\n\t`%s'", cmd_line_goal);
+      if (strchr(tmp_goal, '.') == NULL) {
+	xsb_exit("\n\nTerminating `.' missing in command line goal:\n\t`%s'",
+		 tmp_goal);
       }
+
+      if ((strlen(cmd_line_goal) + strlen(tmp_goal)) >= MAXBUFSIZE)
+	xsb_exit("\n\nCommand line goal is too long (> %d)\n\n", MAXBUFSIZE);
+      strcat(cmd_line_goal, " ");
+      strcat(cmd_line_goal, tmp_goal);
       break;
+    }
     case 'h':
       help_message();
       break;
@@ -511,7 +519,7 @@ char *init_para(int argc, char *argv[])
   flags[CONFIG_FILE] = (Cell) malloc(strlen(xsb_config_file) + 1);
   strcpy( (char *)flags[CONFIG_FILE], xsb_config_file );
 
-  /* the default for cmd_line_goal goal is "true." */
+  /* the default for cmd_line_goal goal is "" */
   flags[CMD_LINE_GOAL] = (Cell) malloc(strlen(cmd_line_goal) + 1);
   strcpy( (char *)flags[CMD_LINE_GOAL], cmd_line_goal );
   

@@ -26,8 +26,7 @@
 
 :- compiler_options([sysmod, xpp_on]).
 #include "flag_defs_xsb.h"
-
-
+%%#define DEBUG_GPP 1
 
 /*======================================================================*/
 /* parse(+Modname, +PFile, +HFile,					*/
@@ -140,25 +139,6 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	!,
 	retractall(xpp_program(_)).
 
-/*
-make_cpp_command(CPP_command) :-
-	%% Construct the -Include directories
-	(   windows_os_loader
-	->  IncludeFlag = '/I'
-	;   IncludeFlag = '-I'
-	),
-	make_include_directive(Directive, IncludeFlag),
-	slash(Slash),
-	xsb_configuration(install_dir, InstalDir),
-	fmt_write_string(IncludeDirs, '%s%s%semu %s%s%sprolog_includes %s',
-			 args(IncludeFlag,InstalDir,Slash,
-			      IncludeFlag,InstalDir,Slash,
-			      Directive)),
-	%% Constract the cpp command
-	xsb_configuration(cpp, CPP),
-	fmt_write_string(CPP_command, '%s %s -DXSB_PROLOG ',
-			 args(CPP, IncludeDirs)).
-*/
 
 make_gpp_command(GPP_command) :-
 	%% Construct the -Include directories
