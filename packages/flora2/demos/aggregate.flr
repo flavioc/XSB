@@ -21,20 +21,33 @@ mary[salary(1996) -> 70].
 mary[salary(1997) -> 80].
 mary[salary(1998) -> unknown].
 
-?- Z=max{X|john[salary(Year)->X] }.
+?- writeln('max1: ')@prolog(),
+	Z=max{X|john[salary(Year)->X] }.
 
-?- Z=max{X|john[salary(Year) ->X], Year < 1996}.
+?- writeln('max2: ')@prolog(),
+	Z=max{X|john[salary(Year) ->X], Year < 1996}.
 
-?- Z=count{Year|john.salary(Year) < max{ X | john[salary(Y2)->X], Y2<Year}}.
+?- writeln('count1: ')@prolog(),
+	Z=count{Year|john.salary(Year) < max{ X | john[salary(Y2)->X], Y2<Year}}.
 
-?- Z=count{Year|john.salary(Year) < mary.salary(Year)}.
+?- writeln('count2: ')@prolog(),
+	Z=count{Year| X=john.salary(Year),Y=mary.salary(Year),
+	              (number(X), number(Y))@prolog(), X < Y}.
 
-?- Z=avg{X[Who]|Who[salary(Year)->X]}.
+?- writeln('avg1: ')@prolog(),
+	Z=avg{X[Who]|Who[salary(Year)->X]}.
 
-?- Z=collectset{Year[Who]|Who[salary(Year) -> X], X < 60}.
+?- writeln('collect1: ')@prolog(),
+    Z=collectset{Year[Who]|Who[salary(Year) -> X], number(X)@prolog(), X < 60}.
 
-?- delete{mary[salary(Y)->unknown]}.
+?- writeln('delete1: ')@prolog(), delete{mary[salary(Y)->unknown]}.
 
-?- delete{john[salary(Y)->S1], mary[salary(Y)->S2]|S1<S2}.
+?- writeln('delete2: ')@prolog(),
+	delete{john[salary(Y)->S1], mary[salary(Y)->S2]|
+		       ((var(S1); number(S1)), (var(S2); number(S2)))@prolog(),
+		       S1<S2}.
 
-?- delete{john[salary(Y)->S1]|mary[salary(Y)->S2], S1<S2}.
+?- writeln('delete3: ')@prolog(),
+	delete{john[salary(Y)->S1]|mary[salary(Y)->S2],
+		       ((var(S1); number(S1)), (var(S2); number(S2)))@prolog(),
+		       S1<S2}.
