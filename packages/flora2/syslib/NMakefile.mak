@@ -1,6 +1,6 @@
 # Make file for Microsoft NMAKE
 
-OBJEXT = .O
+OBJEXT = .xwam
 
 ALLOBJS =  flranswer$(OBJEXT) \
 	   flrcontrol$(OBJEXT) \

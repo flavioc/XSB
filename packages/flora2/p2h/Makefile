@@ -1,5 +1,5 @@
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 clean:
-	/bin/rm -f *${OBJEXT} *.so *.bak *~ .*~ .#*
+	/bin/rm -f core *${OBJEXT} *.O *.so *.o *.bak *~ .*~ .#*

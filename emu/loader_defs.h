@@ -24,15 +24,15 @@
 
 /* Info on the file extension used for XSB files */
 
-#define XSB_OBJ_EXTENSION_STRING  ".O"
-#define XSB_OBJ_EXTENSION_LENGTH  4
+#define XSB_OBJ_EXTENSION_STRING  ".xwam"
+#define XSB_OBJ_EXTENSION_LENGTH  5
 
 #define XSB_SRC_EXTENSION_STRING  ".P"
 
-#define XSB_OBJ_EXTENSION_ATOM    '.O'
+#define XSB_OBJ_EXTENSION_ATOM    '.xwam'
 #define XSB_SRC_EXTENSION_ATOM    '.P'
 #define XSB_HDR_EXTENSION_ATOM    '.H'
 
-#define XSB_OBJ_EXTENSION_ATOM_SANS_DOT    'O'
+#define XSB_OBJ_EXTENSION_ATOM_SANS_DOT    'xwam'
 #define XSB_SRC_EXTENSION_ATOM_SANS_DOT    'P'
 #define XSB_HDR_EXTENSION_ATOM_SANS_DOT    'H'

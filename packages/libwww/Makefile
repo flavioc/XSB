@@ -22,7 +22,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 XSBDIR = ../..
 
@@ -78,8 +78,8 @@ finish:
 
 
 clean:
-	rm -f *${OBJEXT} *~ .*~ *.bak
-	rm -f cc/*.H cc/*.so cc/*.o cc/*${OBJEXT} cc/*~ cc/.*~ cc/*.bak
+	rm -f core *${OBJEXT} *.O *~ .*~ *.bak
+	rm -f cc/*.H cc/*.so cc/*.[oO] cc/*${OBJEXT} cc/*~ cc/.*~ cc/*.bak
 
 
 .DONE:

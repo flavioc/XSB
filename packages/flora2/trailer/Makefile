@@ -27,7 +27,7 @@
 
 
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 XSBDIR = ../../..
 
@@ -133,7 +133,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *.P *$(OBJEXT) *.flh *.bak .#*
+	/bin/rm -f *~ .*~ *.P *$(OBJEXT) *.O *.flh *.bak .#*
 
 
 .DONE:

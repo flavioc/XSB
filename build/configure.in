@@ -1447,7 +1447,7 @@ AC_SUBST(mno_cyg_lib)
 AC_SUBST(DLLTYPE)
 AC_SUBST(java_win_site_includes)
 
-xsb_obj_extension=.O
+xsb_obj_extension=.xwam
 AC_SUBST(xsb_obj_extension)
 
 topdir_base=/`basename $topdir`

@@ -3630,7 +3630,7 @@ fi
 
 
 
-xsb_obj_extension=.O
+xsb_obj_extension=.xwam
 
 
 topdir_base=/`basename $topdir`

@@ -1,4 +1,4 @@
-;;; flora.el --- a major mode for editing and running F-Logic programs
+;;; flora.el --- a major mode for editing and running FLORA programs
 
 ;; Authors:
 ;; Heinz Uphoff (uphoff@informatik.uni-freiburg.de)
@@ -9,13 +9,13 @@
 
 ;;; Commentary:
 
-;; This package provides a major mode for editing F-Logic.  It knows
+;; This package provides a major mode for editing FLORA programs.  It knows
 ;; about Flora syntax and comments (well, sort of), and can send
 ;; regions, buffers, and files to an inferior F-Logic interpreter
 ;; process.
 
-;; This package was derived from flp.el by Michael Kifer.
-;; In turn, flp.el, a major mode for FLORID, was derived from prolog.el by
+;; This package was adapted from flp.el by Michael Kifer.
+;; In turn, flp.el, a major mode for FLORID, was adapted from prolog.el by
 ;; Heinz Uphoff and Christian Schlepphorst.
 
 ;;

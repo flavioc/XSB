@@ -1,5 +1,6 @@
 # Make file for Microsoft NMAKE
 
+OBJEXT = .O
 
 OPTIONS = [optimize]
 XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
@@ -11,7 +12,7 @@ ALL::
 
 CLEAN :
 	-@erase *~
-	-@erase *.O
+	-@erase *$(OBJEXT)
 	-@erase *.P
 	-@erase *.flh
 	-@erase *.bak

@@ -157,10 +157,10 @@ devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files emu_clean
 
 superdevel: prepare emu xsbmod xsbdll gpp remake_dot_O_files_force packages emu_clean
 
-# Developer who needs a quick re-make of the executable
-fast: prepare emu gpp emu_clean
+# Developer who needs a quick re-make of the executable, don't make .O files
+fast: prepare emu gpp do_cleaning
 # very fast: like fast, but without gpp
-vfast: prepare emu emu_clean
+vfast: prepare emu do_cleaning
 
 
 # Packages
@@ -432,6 +432,11 @@ clean:
 	@-cd ${src_examples}; rm -f *$(xsb_obj_extension) *.o *~ */*$(xsb_obj_extension) */*.o */*~
 	@echo "Cleaning up ${src_libdir}"
 	@-(cd ${src_libdir}; make clean)
+	@echo "Cleaning up ${src_syslibdir}"
+	@-(cd ${src_syslibdir}; make clean)
+	@echo "Cleaning up ${src_cmplibdir}"
+	@-(cd ${src_cmplibdir}; make clean)
+	@rm -f *~ *.bak .#*
 
 # recreate the makefiles
 again: Makefile.in emuMakefile.in config.status ${src_config_prefix}/config.cache

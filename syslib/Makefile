@@ -23,7 +23,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 ALL =	assert${OBJEXT} atts${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
 	curr_sym${OBJEXT} dbclause${OBJEXT} \
@@ -109,6 +109,9 @@ finish:
 restore:
 	mv -f $(OBJFILESAVED)/*${OBJEXT} .
 
+clean:
+	rm -f core *~ *.bak .#*
+	rm -f objfiles.saved/*
 
 .DONE:
 	echo Done

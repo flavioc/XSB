@@ -5,7 +5,7 @@
 ## $Id$
 
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 # Note: xlparse must NOT be on the list below
 ALL = comp${OBJEXT} count${OBJEXT} formula${OBJEXT} \
@@ -41,9 +41,9 @@ HDRMSG = "While compiling XSB/packages/xmc:"
 .IGNORE:
 
 # suffix rules
-.SUFFIXES: .P .O .H
+.SUFFIXES: .P $(OBJEXT) .H
 
-%.O: %.P %.H
+%$(OBJEXT): %.P %.H
 	echo 'mc($*, $(Option)),' >> cmd...
 
 all:  init $(ALL) finish parse libxlp.a xlparse.so
@@ -92,7 +92,7 @@ clean:
 	@echo "Removing all C object files..."
 	-rm -f parse *.o
 	@echo "Removing all Prolog bytecode files..."
-	-rm -f $(ALL) xlparse.O
+	-rm -f *$(OBJEXT) *.O
 	@echo "Removing all libraries!"
 	-rm -f libxlp.a xlparse.so
 	@echo "Removing intermediate C files..."

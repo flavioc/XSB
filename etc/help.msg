@@ -14,12 +14,12 @@ Usage:	xsb [flags] [-l] [-i]
 	module:
 	    Module to execute after XSB starts up.
 	    Module should have no suffixes, no directory part, and
-	    the file module.O must be on the library search path.
+	    the file module.xwam must be on the library search path.
       	boot_module:
 	    This is a developer's option.
 	    The -B flags tells XSB which bootstraping module to use instead
 	    of the standard loader.  The loader must be specified using its
-	    full pathname, and boot_module.O must exist.
+	    full pathname, and boot_module.xwam must exist.
     	module_to_disassemble:
 	    This is a developer's option.
 	    The -d flag tells XSB to act as a disassembler.

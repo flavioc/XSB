@@ -22,7 +22,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 ALL = smodels${OBJEXT} smodelsops${OBJEXT} smodelsint${OBJEXT}
 

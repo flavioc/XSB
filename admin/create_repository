@@ -10,6 +10,6 @@ cat <<EOT > $REPO/CVSROOT/cvsignore
 *.plg *.pnd *.ps *.so *.tar *.Z *.gz
 EOT
 
-cvs -d $REPO import -W "*.O -k 'b'" -m "Imported sources" XSB  xsb start \
+cvs -d $REPO import -W "*.xwam -k 'b'" -m "Imported sources" XSB  xsb start \
     	    > admin/import.log
 

@@ -23,7 +23,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 ALL = 	aggregs${OBJEXT} array${OBJEXT} array1${OBJEXT} assoc_xsb${OBJEXT} \
 	basic_props${OBJEXT} \
@@ -92,7 +92,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *${OBJEXT}
+	/bin/rm -f *${OBJEXT} *.O core *~ *.bak .#*
 
 
 .DONE:

@@ -22,7 +22,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 ALL = 	flora2${OBJEXT} slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
@@ -119,7 +119,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *${OBJEXT} *~ .*~ *.bak .#*
+	/bin/rm -f core *${OBJEXT} *.O *~ .*~ *.bak .#*
 
 .DONE:
 	@echo Done

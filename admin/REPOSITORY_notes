@@ -17,7 +17,7 @@ Other .cvsignore files directly in the XSB source tree take care of the rest
 Import
 ======
 
-cvs -d /home/u17/sbprolog/CVSROOT import -W "*.O -k 'b'" -m "Imported sources" XSB  xsb start
+cvs -d /home/u17/sbprolog/CVSROOT import -W "*.xwam -k 'b'" -m "Imported sources" XSB  xsb start
 
 -d sets CVSROOT
 -W supposed to take care of binary files 
@@ -69,7 +69,7 @@ repository). Counterintuitive, but this is how it is done.
     cd XSB
     cvs watch on .
 
-However, we must unwatch `tests' and all the .O files to avoid errors
+However, we must unwatch `tests' and all the object files to avoid errors
 during testsuite runs and various compilations. In particular, the
 repository is not set up to watch the testsuite. (Somebody wants to
 tinker with tests/ to ensure that it will be watched and there won't be any 
@@ -87,14 +87,14 @@ Configure is in the repository for those who don't have autoconf
 installed. However, it makes no sense to watch it, because it is generated
 by autoconf.
 
-To un-watch the .O files, type:
+To un-watch the object files, type:
 
-   cvs watch off cmplib/*.O
-   cvs watch off syslib/*.O
+   cvs watch off cmplib/*.xwam
+   cvs watch off syslib/*.xwam
 
 The last two must be repeated, if new files are added.
 Please suggest a better way to set watches, if you know it.
-(Note, the .O files in lib/ and packages/ dirs are not in the repository,
+(Note, the object files in lib/ and packages/ dirs are not in the repository,
 so they don't need to be un-watched.)
 
 
@@ -149,7 +149,7 @@ Make sure binaries aren't broken during checkin/outs, etc.
 *.class -m 'COPY' -k 'b'
 *.wav   -m 'COPY' -k 'b'
 *.au    -m 'COPY' -k 'b'
-*.O     -m 'COPY' -k 'b'
+*.xwam  -m 'COPY' -k 'b'
 *.o     -m 'COPY' -k 'b'
 *.exe   -m 'COPY' -k 'b'
 *.so    -m 'COPY' -k 'b'

@@ -23,7 +23,7 @@
 ##
 
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 ALL = 	slxshell${OBJEXT}
 
@@ -55,7 +55,7 @@ all: $(ALL)
 .PHONY: clean
 
 clean:
-	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *.O *~ .*~ *.bak
 
 
 .DONE:

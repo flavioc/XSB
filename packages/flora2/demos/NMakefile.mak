@@ -1,6 +1,6 @@
 # Make file for Microsoft NMAKE
 
-OBJEXT = .O
+OBJEXT = .xwam
 
 ALLOBJS = aggregate.P benchmark.P default.P family_obj.P \
 	  family_rel.P flogic_basics.P metavar.P mix.P module1.P mod1.P \

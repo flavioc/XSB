@@ -25,7 +25,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 XSBDIR = ../..
 
@@ -193,7 +193,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *${OBJEXT} .#* *.bak ../flora2${OBJEXT}
+	/bin/rm -f core *~ .*~ *${OBJEXT} *.O *.bak ../flora2${OBJEXT} .#*
 	cd closure; $(MAKE) clean
 	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean

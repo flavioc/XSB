@@ -1,4 +1,4 @@
-*.O
+*.xwam
 cmd...
 a.out
 *.o

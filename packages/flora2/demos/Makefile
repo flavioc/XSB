@@ -22,7 +22,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 XSBDIR=../../..
 
@@ -89,4 +89,4 @@ finish:
 	echo Done
 
 clean:
-	/bin/rm -f *.P *.P_gpp *${OBJEXT} *.bak *.fdb *.fld *~ .*~ .#*
+	/bin/rm -f *.P *.P_gpp *${OBJEXT} *.O *.bak *.fdb *.fld *~ .*~ .#*

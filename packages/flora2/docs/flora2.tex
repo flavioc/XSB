@@ -132,6 +132,8 @@
 \newcommand{\preds}{\ensuremath{\mathcal{P}}}
 \newcommand{\vars}{\ensuremath{\mathcal{V}}}
 
+\newcommand{\ofile}{xwam}
+
 \newcommand{\HU}{\ensuremath{U}}
 \newcommand{\HB}{\ensuremath{\mathcal{HB}}}
 \newcommand{\ext}{\ensuremath{^{\star}}}
@@ -179,7 +181,7 @@ takes a program written in the \fl language with HiLog and Transaction
 Logic extensions (which must be in a file with extension {\tt .flr}, {\it
   e.g.}, {\tt file.flr}) and outputs a regular XSB program (with extension
 {\tt .P}).  This program is then passed to XSB for compilation (which
-produces {\tt file.O}) and execution, which, however, requires \FLORA
+produces {\tt file.\ofile}) and execution, which, however, requires \FLORA
 runtime support.
 
 \index{FLIP}
@@ -370,11 +372,11 @@ Here {\tt program-file} can contain a \FLORA program or an XSB program. If
 system will compile the program, if necessary, and then load it. The
 compilation process is two-stage: first, the program is compiled into a
 Prolog program (one or more files with extensions {\tt .P} and {\tt .fdb})
-and then into an executable byte-code, which has the extension {\tt .O}.
+and then into an executable byte-code, which has the extension {\tt .\ofile}.
 
 If there is no {\tt program-file.flr} file, the file is assumed to contain
 a Prolog program and the system will look for the file named {\tt
-  program-file.P}. This file then is compiled into {\tt program-file.O} and
+  program-file.P}. This file then is compiled into {\tt program-file.\ofile} and
 loaded. Note that in this case the program is loaded into a {\em Prolog
   module} of \FLORA and, therefore, calls to the predicates defined in that
 program must use the appropriate module attribution --- see
@@ -433,15 +435,15 @@ of these commands might seem a bit cryptic, so it is a good idea to come
 back here after you become more familiar with the various concepts
 underlying the system.
 
-In the following command list, the suffixes {\tt .flr} {\tt .P}, {\tt .O}
+In the following command list, the suffixes {\tt .flr} {\tt .P}, {\tt .\ofile}
 are optional. If the file suffix is specified explicitly, the system uses
 the file with the given name without any modification. The {\tt .flr}
 suffix denotes a \FLORA program, the {\tt .P} suffix indicates that it is an
-XSB program, and {\tt .O} means that it is a bytecode file, which can be
+XSB program, and {\tt .\ofile} means that it is a bytecode file, which can be
 executed by XSB.  If no suffix is given, the system assumes it is dealing
 with a \FLORA program and adds the suffix {\tt .flr}. If the file with such a
 name does not exist, it assumes that the file contains an XSB program and
-tries the suffix {\tt .P}. Otherwise, it tries {\tt .O} in the hope that an
+tries the suffix {\tt .P}. Otherwise, it tries {\tt .\ofile} in the hope that an
 executable XSB bytecode exists. If none of these tries are successful, an
 error is reported.
 %
@@ -453,12 +455,12 @@ error is reported.
 \item {\tt flCompile file>>module}:
     Compile FILE.flr for the module {\tt module}.
   \item {\tt flLoad file>>module}: Load {\tt file.flr} into the module {\tt
-      module}. If you specify {\tt file.P} or {\tt file.O} then will load
+      module}. If you specify {\tt file.P} or {\tt file.\ofile} then will load
     these files.
   \item {\tt flLoad file}: Load {\tt file.flr} into the default module {\tt
-      main}. If you specify {\tt file.P} or {\tt file.O} then will load
+      main}. If you specify {\tt file.P} or {\tt file.\ofile} then will load
     these files.
-\item {\tt [file.\{P$|$O$|$flr\} $>>$ module,...]}:
+\item {\tt [file.\{P$|$\ofile$|$flr\} $>>$ module,...]}:
     Load the files in the specified list into the module {\tt module}.
 \item {\tt flDemo(demofilename)}:
     Consult a demo from \FLORA demos directory.
@@ -1515,7 +1517,7 @@ generates the byte code for the program to be loaded into the user module
 named {\tt module}. The name of the byte code for the program in
 \emph{file}.flr, which can later be loaded into the specified module. In
 practice this means that the compiler generates files named
-\emph{file\_module.P} and \emph{file\_module.O} with symbols appropriately
+\emph{file\_module.P} and \emph{file\_module.\ofile} with symbols appropriately
 renamed to avoid clashes.
 
 If no module is specified, the command
@@ -1575,7 +1577,7 @@ Note that the {\tt [...]} command can also load and compile XSB programs.
 The overall algorithm is as follows. If the file suffix is specified
 explicitly, the corresponding file is assumed to be a \FLORA file, an XSB
 file, or a byte code depending on the suffix: {\tt .flr}, {\tt .P}, or {\tt
-  .O}. If the suffix is not given explicitly, the compiler first checks if
+  .\ofile}. If the suffix is not given explicitly, the compiler first checks if
 {\it file}.{\tt flr} exists. If so, the file assumed to be a \FLORA program
 and is compiled as such. If {\it file}.{\tt flr} is not found, but {\it
   file}.{\tt P} or {\it file}.{\tt O} is, the file is passed to XSB for
@@ -4921,15 +4923,15 @@ compiles it into XSB syntax and then outputs XSB code. For instance the command
 \verb|flora ?- flLoad(myprog).|
 \end{quote}
 compiles the \FLORA program {\tt myprog.flr} and generate the following
-files: {\tt myprog.P}, {\tt myprog\_main.O}, and {\tt myprog.fdb} (if {\tt
+files: {\tt myprog.P}, {\tt myprog\_main.\ofile}, and {\tt myprog.fdb} (if {\tt
   myprog.flr} contains \fl facts).  By default, {\tt flLoad(myprog)} loads
 the program into the default user module named {\tt main}. If {\tt myprog.flr}
 contains \fl facts, all these facts will be compiled separately into the
 XSB file {\tt myprog.fdb} that is dynamically loaded at runtime.  Next, the
 file {\tt myprog.P} is generated --- take a look at ``{\tt
   myprog\_main.P}'' to see what has become of your \FLORA program! --- and
-passed to the XSB compiler, yielding Prolog byte code {\tt myprog.O}, which
-is then renamed to {\tt myprog\_main.O}. This file is then loaded and
+passed to the XSB compiler, yielding Prolog byte code {\tt myprog.\ofile}, which
+is then renamed to {\tt myprog\_main.\ofile}. This file is then loaded and
 executed.  If {\tt myprog.flr} contains queries, they are immediately
 executed by XSB (provided there are no errors).
 
@@ -4937,7 +4939,7 @@ In the module system of \FLORA, the same program can be loaded into any
 user module. The same program can even be loaded into two different
 modules at the same time, in which case there will be two distinct copies
 of the same program running at the same time. For each user module, a different
-byte code is generated (this is why {\tt myprog.O} was renamed into an
+byte code is generated (this is why {\tt myprog.\ofile} was renamed into an
 object file that contains the module name as part of the file name).
 
 The main purpose of the \FLORA shell is to allow the evaluation
@@ -5104,13 +5106,13 @@ be loaded into a user module, say {\tt main}, the XSB's preprocessor, {\tt
   gpp}, is called with the macro {\tt FLORA\_VAR\_WORKSPACE} set to {\tt
   main}. Gpp replaces all macros with the actual values, includes the
 necessary files, and then pipes the result to the XSB compiler. The latter
-produces the object {\tt myprog.O} file where all the predicate names are
+produces the object {\tt myprog.\ofile} file where all the predicate names are
 wrapped with the user module name, as described above.  This object file is
-renamed to {\tt myprog\_main.O}. If later we need to compile {\tt myprog.P}
+renamed to {\tt myprog\_main.\ofile}. If later we need to compile {\tt myprog.P}
 for another user module, {\tt foo}, {\tt gpp} is called again, but this time it
 sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When XSB finally compiles
 the program into the object file, the file is renames to {\tt
-  myprog\_foo.O}.
+  myprog\_foo.\ofile}.
 
 It is important to keep in mind that only the predicate names are wrapped
 with the {\tt FLORA\_PREFIX} macro and a module name. Predicate arguments

@@ -23,7 +23,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 ALL =	asm${OBJEXT} asm_inst${OBJEXT} asm_opt${OBJEXT} asmpass2${OBJEXT} \
 	auxlry${OBJEXT} builtin${OBJEXT} \
@@ -109,6 +109,9 @@ finish:
 restore:
 	mv -f $(OBJFILESAVED)/*${OBJEXT} .
 
+clean:
+	rm -f core *~ *.bak .#*
+	rm -f objfiles.saved/*
 
 .DONE:
 	echo Done

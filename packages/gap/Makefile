@@ -22,7 +22,7 @@
 ## 
 ##
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 XSBDIR=../..
 
@@ -75,7 +75,7 @@ finish:
 .PHONY: clean
 
 clean:
-	/bin/rm -f *${OBJEXT} *~ .*~ *.bak
+	/bin/rm -f *${OBJEXT} *.O *~ .*~ *.bak
 
 
 .DONE:

@@ -26,7 +26,7 @@
 ##
 
 
-OBJEXT=.O
+OBJEXT=.xwam
 
 XSBDIR = ../../..
 
@@ -177,7 +177,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *${OBJEXT} *.bak .#*
+	/bin/rm -f core *~ .*~ *${OBJEXT} *.O *.bak .#*
 
 
 .DONE:
