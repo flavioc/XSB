@@ -12,7 +12,7 @@ ALL: $(ALLOBJS)
 
 
 .flr.P:
-	$(XSB) -e "bootstrap_flora. import flora_compile_system_module/1 from flrutils. flora_compile_system_module(%|fF)."
+	$(XSB) -e "bootstrap_flora. import flora_compile_system_module/1 from flrutils. flora_compile_system_module(%|fF). halt."
 
 
 CLEAN:
