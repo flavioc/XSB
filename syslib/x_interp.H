@@ -33,12 +33,11 @@
 :- import set_inthandler/2 from loader.
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import file_read/3, vv/2, file_read/2 from xsb_read.
+:- import file_read/3, vv/2 from xsb_read.
 %% These are explicitly imported because they are used early on, 
 %% before XSB is fully bootstrapped.
-:- import abort/0, call/1, call_c/1, call_expose/1, goal_cut_trans/3,
-          push_abort_cutpoint/0, pop_abort_cutpoint/0, atom_codes/2,
-	  '\='/2
+:- import abort/0, call_c/1, call_expose/1, goal_cut_trans/3,
+          push_abort_cutpoint/0, pop_abort_cutpoint/0, atom_codes/2
      from standard.
 :- import '$$exception_ball'/1 from standard.
 :- import psc_set_type/2, psc_prop/2, psc_set_prop/2, term_psc/2,
@@ -46,9 +45,10 @@
 	  is_xwammode/1, close_open_tables/0, trimcore/0, slash/1
      from machine.
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
-	  file_flush/2
+	  file_flush/2, ioport2iostream/2
     from file_io.
+:- import push_stdin/2, pop_stdin/1 from push_io.
 :- import retractall/1 from assert.
 :- import call_xsb_hook/1, xsb_exit_hook/1 from xsb_hook.
-:- import verify_attributes/2, ','/2 from usermod.
+:- import verify_attributes/2 from usermod.
 :- import conset/2, conget/2 from gensym.

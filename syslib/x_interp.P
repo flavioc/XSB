@@ -77,8 +77,11 @@ interpreter :-
 	    ;  file_write(STDMSG, CmdGoal), file_nl(STDMSG)
 	    ),
             file_open(CmdGoal, sr, FileDes),
-            eval_command_line_goal(FileDes),
-            file_close(FileDes),
+	    %% promote I/O port to stream
+	    ioport2iostream(FileDes,CmdGoalStream),
+	    %% make CmdGoalStream the current input stream;s
+	    %% push the old stream on cmd_line_argument stack
+	    push_stdin(cmd_line_argument, CmdGoalStream),
             file_nl(STDMSG)
         ),
         fail.
@@ -106,28 +109,24 @@ interpreter1 :-
 	->  true
 	;   file_write(STDFDBK, Prompt), file_flush(STDFDBK, _)
 	),
-	file_read(STDIN, X, Vars),
+	stat_flag(CURRENT_INPUT, FileIn),
+	file_read(FileIn, X, Vars),
 	( nonvar(X), read_in_stop(X), halt, ! %% end of top loop; halt
 	; process_query(X, Vars)
 	).
 
-read_in_stop(halt) :-          %% quit entire system, regardless of break level
+read_in_stop(halt) :-          %% quit XSB, regardless of break level
 	call_xsb_hook(xsb_exit_hook(_)),
 	halt.
 read_in_stop(end_of_file) :-   %% pop a break level, out if at top
-	call_xsb_hook(xsb_exit_hook(_)).
+	%% if we previously pushed an input stream onto cmd_line_argument stack
+	%% then pop it back and make this stream current
+	(pop_stdin(cmd_line_argument) ->  fail
+	; call_xsb_hook(xsb_exit_hook(_))
+	).
 
-eval_command_line_goal(FileDes) :-
-	file_read(FileDes, Goal),
-	Goal \= end_of_file,
-	(call((Goal,!))
-	-> true
-	;  true
-	),
-	eval_command_line_goal(FileDes).
-eval_command_line_goal(_).
-	
 
+process_query(end_of_file,_) :- !, file_nl(STDFDBK), fail.
 process_query(X, Vars) :-
 	exclude__(Vars,PrintableVars), process_query1(X,PrintableVars).
 
@@ -152,7 +151,9 @@ process_query1(X, Vars) :-
 	file_nl(STDFDBK), file_write(STDFDBK, yes), file_nl(STDFDBK),
 	fail.
 
-no_more :- file_get(0, X), ( X =:= -1 /* end_of_file */ ; X =:= 10 ), !.
+no_more :-
+	file_get(0, X),
+	( X =:= CH_EOF_P /* end_of_file */ ; X =:= CH_NEWLINE ), !.
 no_more :- no_more, fail.
 
 call_query(X) :- 
@@ -204,7 +205,8 @@ readl_brklp1 :-
 	conget('_$break_level', Blevel),
 	file_write(STDFDBK, Blevel),
 	file_write(STDFDBK, ': ?- '), file_flush(STDFDBK, _),
-	file_read(STDIN, X, Vars),
+	stat_flag(CURRENT_INPUT, FileIn),
+	file_read(FileIn, X, Vars),
 	(   nonvar(X), read_in_stop(X), !
 	%% end read loop; pop a break level, out if X=halt.
 	;   process_query(X, Vars)

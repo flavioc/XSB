@@ -41,7 +41,7 @@ static FILE *stropen(char *str)
   for (i=0; i<MAXIOSTRS; i++) {
     if (iostrs[i] == NULL) break;
   }
-  if (i>=MAXIOSTRS) return 0;
+  if (i>=MAXIOSTRS) return FALSE;
   tmp = (STRFILE *)mem_alloc(sizeof(STRFILE));
   iostrs[i] = tmp;
   tmp->strcnt = strlen(str);
@@ -199,7 +199,7 @@ inline static xsbBool file_function(void)
 	ctop_int(4, -1000);
       return TRUE;
     case OSTRINGW:
-      xsb_abort("FILE_OPEN: Output to strings has not yet been implemented");
+      xsb_abort("FILE_OPEN: Output to strings has not been implemented yet");
       ctop_int(4, -1000);
       return TRUE;
     default:
@@ -552,6 +552,25 @@ inline static xsbBool file_function(void)
     else
       ctop_int(2, -1);
     break;
+  }
+    
+  case IS_VALID_IOPORT: {
+    io_port = ptoc_int(2);
+    if (io_port >= MAX_OPEN_FILES)
+	return FALSE;
+    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
+      /* port for reading from string */
+      sfptr = strfileptr(io_port);
+      if (sfptr == NULL)
+	return FALSE;
+      return TRUE;
+    }
+    if (io_port < -MAXIOSTRS)
+      return FALSE;
+    fptr = fileptr(io_port); \
+    if ((fptr==NULL) && (io_port != 0))
+	return FALSE;
+    return TRUE;
   }
 
   default:
