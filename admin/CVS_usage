@@ -511,10 +511,10 @@ Gotchas and experience
    copy with the repository.
 
 3.1 There's a -z option that enables gzip compression before the transmission
-	of files. I find -z 3 an ok setting - you can turn it on by default
-	setting a line in the file ~/.cvsrc (which specifies default command
-	options):
-	cvs -z 3
+   of files. I find -z 3 an ok setting - you can turn it on by default
+   setting a line in the file ~/.cvsrc (which specifies default command
+   options):
+   cvs -z 3
 
 4. The test suite is real big---bigger than the rest of XSB!
    If you modify it, please check it in.
@@ -561,4 +561,8 @@ Gotchas and experience
    in the ~projects/XSB directory, CVS won't search through the "tests"
    directory.
 
-7. I am sure there are other gotchas. Please add to this list.
+7. To touch all .O files when you checkout or update, at the top level
+   dir you can use the UNIX command:
+            find . -name '*.O' -exec touch -c '{}' \;
+
+8. I am sure there are other gotchas. Please add to this list.
