@@ -30,6 +30,8 @@
 #include "flora_terms.flh"
 #include "flora_porting.flh"
 
+#define MOST_GENERAL	most_general
+
 /***********************************************************************
  * flora_debug_code(+CompileList)
  * Generate facts that will be loaded into fld storage
@@ -57,29 +59,20 @@ flora_build_debug_inter_codelist([T|L]) :-
 	flora_build_debug_inter_codelist(L).
 
 flora_build_debug_inter_code(Term) :-
-	( is_prrule(Term,Head,_) ->
-	    ( flora_build_debug_skeleton(Head,Code) ->
+	( (is_prrule(Term,Head,_);is_prfact(Term,Head)) ->
+	    ( flora_build_debug_skeleton(Head,Code,GFlag) ->
 		( var(Code) ->
 		    true
 		;
-	            ( old_term(Code) ->
-	                true
-	            ;
-	                assert(term_seen(Code))
-	            )
-		)
-            ;
-	        true
-	    )
-	; is_prfact(Term,Head) ->
-	    ( flora_build_debug_skeleton(Head,Code) ->
-		( var(Code) ->
-		    true
-		;
-	            ( old_term(Code) ->
-	                true
-	            ;
-	                assert(term_seen(Code))
+		    ( GFlag==MOST_GENERAL ->
+			retractall(term_seen(Code)),
+			assert(term_seen(Code))
+		    ;
+	                ( term_seen(Code) ->
+	                    true
+	                ;
+	                    assert(term_seen(Code))
+			)
 	            )
 		)
             ;
@@ -89,352 +82,343 @@ flora_build_debug_inter_code(Term) :-
 	).
 
 /***********************************************************
- * flora_build_variable(-Code)
- ***********************************************************/
- %% Can't we use new_varobj/2 from flrcompiler?
- flora_build_variable(PRVARIABLE(NewVar,_)) :-
- 	fmt_write_string(NewVar, "%S", args(_)).
-
-/***********************************************************
- * flora_build_variable_list(+N, -Code)
- ***********************************************************/
- %% Can't we use new_varobj_list/2 from flrcompiler?
- flora_build_variable_list(0, []) :- !.
- flora_build_variable_list(N, [PRVARIABLE(NewVar, _)|Rest]) :-
- 	fmt_write_string(NewVar, "%S", args(_)),
-	M is N-1,
-	flora_build_variable_list(M, Rest).
-
-/***********************************************************
- * flora_build_debug_skeleton(+Term, -Code)
+ * flora_build_debug_skeleton(+Term, -Code, -Flag)
  * builds the intermediate form of the skeletons of all facts
- * and rule heads
+ * and rule heads and returns a flag showing whether the 
+ * skeleton is of the most general form, eg. fd's whose second
+ * parameter is a variable
  ***********************************************************/
-flora_build_debug_skeleton(Term,Term) :-
-	is_pratom(Term,_Atom,_Index),
+flora_build_debug_skeleton(Term,Atom,_GFlag) :-
+	is_pratom(Term,Atom,_Index),
 	!.
 
-flora_build_debug_skeleton(Term,NewVar) :-
-	is_prvariable(Term, _Name, _Index),
-	!,
-	flora_build_variable(NewVar).
+flora_build_debug_skeleton(Term,_NewVar,MOST_GENERAL) :-
+	is_prvariable(Term,_Name,_Index),
+	!.
 
-flora_build_debug_skeleton(Term,PRTERM(FCode,N,ObjListCode)) :-
-	is_prterm(Term, FObj, N, _ObjList),
+flora_build_debug_skeleton(Term,Sk,GFlag) :-
+	is_prterm(Term,FObj,N,_ObjList),
 	!,
-	( is_pratom(FObj, FAtom, _Index), flora_prlgdef(FAtom,N) ->
+	( is_pratom(FObj,FAtom,_Index), flora_prlgdef(FAtom,N) ->
 	    fail
 	;
-	    flora_build_debug_skeleton(FObj, FCode),
-	    flora_build_variable_list(N, ObjListCode)
+	    flora_build_debug_skeleton(FObj,FCode,GFlag),
+	    var_list(N,ObjListCode),
+	    Sk =.. [WRAP_HILOG,FCode|ObjListCode]
 	).
 
-flora_build_debug_skeleton(Term,Term) :-
-        is_pratomlit(Term, A, _Index),
+flora_build_debug_skeleton(Term,Sk,_GFlag) :-
+        is_pratomlit(Term,A,_Index),
 	!,
 	( flora_prlgdef(A,0) ->
-	   fail
+	    fail
         ;
-	   true
+	    ( (flora_firstorderdef(A,0); flora_flogicstaticdef(A,0)) ->
+	        Sk=A
+	    ;
+		Sk=WRAP_HILOG(A)
+	    )  
         ).
 
-flora_build_debug_skeleton(Term, PRTERMLIT(FCode,N,ObjListCode)) :-
-	is_prtermlit(Term, FObj, N, _ObjList),
+flora_build_debug_skeleton(Term,Sk,GFlag) :-
+	is_prtermlit(Term,FObj,N,_ObjList),
 	!,
-	( is_pratom(FObj,FAtom,_Index),
-	  flora_prlgdef(FAtom, N) ->
-	    fail
+	( is_pratom(FObj,FAtom,_Index) ->
+	    ( flora_prlgdef(FAtom, N) ->
+	        fail
+	    ;
+	        ( (flora_firstorderdef(FAtom,N); flora_flogicstaticdef(FAtom,N)) ->
+		    functor(Sk,FAtom,N)
+		;
+		    var_list(N,ObjListCode),
+		    Sk=..[WRAP_HILOG,FAtom|ObjListCode]
+		)
+	    )
 	;
-	    flora_build_debug_skeleton(FObj, FCode),
-	    flora_build_variable_list(N, ObjListCode)
+	    var_list(N,ObjListCode),
+	    flora_build_debug_skeleton(FObj,FCode,GFlag),
+	    Sk=..[WRAP_HILOG,FCode|ObjListCode]
 	).
 
-flora_build_debug_skeleton(PRISA(_Obj1,Obj2),PRISA(NewVar,CCode)) :-
+flora_build_debug_skeleton(PRISA(_Obj1,Obj2),WRAP_ISA(_NewVar,CCode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Obj2,CCode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Obj2,CCode,GFlag).
 
-flora_build_debug_skeleton(PRSUB(_Obj1,Obj2),PRSUB(NewVar,CCode)) :-
+flora_build_debug_skeleton(PRSUB(_Obj1,Obj2),WRAP_SUB(_NewVar,CCode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Obj2,CCode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Obj2,CCode,GFlag).
 
-flora_build_debug_skeleton(PRMETH(_Obj1,Meth),PRMETH(NewVar,MCode)) :-
+flora_build_debug_skeleton(PRMETH(_Obj1,Meth),WRAP_METH(_NewVar,MCode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Meth,MCode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Meth,MCode,GFlag).
 
-flora_build_debug_skeleton(PRIMETH(_Obj1,IMeth),PRIMETH(NewVar,MCode)) :-
+flora_build_debug_skeleton(PRIMETH(_Obj1,IMeth),WRAP_IMETH(_NewVar,MCode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(IMeth,MCode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(IMeth,MCode,GFlag).
 
-flora_build_debug_skeleton(PRFDDEF(_Obj,Attr),PRFDDEF(NewVar,ACode)) :-
+flora_build_debug_skeleton(PRFDDEF(_Obj,Attr),WRAP_FDDEF(_NewVar,ACode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Attr,ACode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Attr,ACode,GFlag).
 
-flora_build_debug_skeleton(PRMVDDEF(_Obj,Attr),PRMVDDEF(NewVar,ACode)) :-
+flora_build_debug_skeleton(PRMVDDEF(_Obj,Attr),WRAP_MVDDEF(_NewVar,ACode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Attr,ACode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Attr,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIFDDEF(_Obj,Attr),PRIFDDEF(NewVar,ACode)) :-
+flora_build_debug_skeleton(PRIFDDEF(_Obj,Attr),WRAP_IFDDEF(_NewVar,ACode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Attr,ACode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Attr,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIMVDDEF(_Obj,Attr),PRIMVDDEF(NewVar,ACode)) :-
+flora_build_debug_skeleton(PRIMVDDEF(_Obj,Attr),WRAP_IMVDDEF(_NewVar,ACode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Attr,ACode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Attr,ACode,GFlag).
 
-flora_build_debug_skeleton(PRTRAN(_Obj,Tran),PRTRAN(NewVar,TCode)) :-
+flora_build_debug_skeleton(PRTRAN(_Obj,Tran),WRAP_TRAN(_NewVar,TCode),GFlag) :-
 	!,
-	flora_build_debug_skeleton(Tran,TCode),
-	flora_build_variable(NewVar).
+	flora_build_debug_skeleton(Tran,TCode,GFlag).
 
-flora_build_debug_skeleton(PRFD(_Obj,Att,_Val),PRFD(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRFD(_Obj,Att,_Val),WRAP_FD(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIFD(_Obj,Att,_Val),PRIFD(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRIFD(_Obj,Att,_Val),WRAP_IFD(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRFDSIG(_Obj,Att,_Val),PRFDSIG(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRFDSIG(_Obj,Att,_Val),WRAP_FDSIG(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRMVDSIG(_Obj,Att,_Val),PRMVDSIG(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRMVDSIG(_Obj,Att,_Val),WRAP_MVDSIG(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIFDSIG(_Obj,Att,_Val),PRIFDSIG(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRIFDSIG(_Obj,Att,_Val),WRAP_IFDSIG(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIMVDSIG(_Obj,Att,_Val),PRIMVDSIG(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRIMVDSIG(_Obj,Att,_Val),WRAP_IMVDSIG(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRMVD(_Obj,Att,_Val),PRMVD(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRMVD(_Obj,Att,_Val),WRAP_MVD(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIMVD(_Obj,Att,_Val),PRIMVD(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRIMVD(_Obj,Att,_Val),WRAP_IMVD(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRMVDINC(_Obj,Att,_Val),PRMVDINC(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRMVDINC(_Obj,Att,_Val),WRAP_MVDINC(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIMVDINC(_Obj,Att,_Val),PRIMVDINC(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRIMVDINC(_Obj,Att,_Val),WRAP_IMVDINC(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRMVDTOLIST(_Obj,Att,_Val),PRMVDTOLIST(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRMVDTOLIST(_Obj,Att,_Val),WRAP_MVDTOLIST(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(PRIMVDTOLIST(_Obj,Att,_Val),PRIMVDTOLIST(OCode,ACode,VCode)) :-
+flora_build_debug_skeleton(PRIMVDTOLIST(_Obj,Att,_Val),WRAP_IMVDTOLIST(_OCode,ACode,_VCode),GFlag) :-
 	!,
-	flora_build_variable(OCode),
-	flora_build_debug_skeleton(Att,ACode),
-	flora_build_variable(VCode).
+	flora_build_debug_skeleton(Att,ACode,GFlag).
 
-flora_build_debug_skeleton(_, _) :-
+flora_build_debug_skeleton(_, _, _) :-
 	!.
-
-/***************************************
- * old_term(+Term)
- ***************************************/
-old_term(Term) :-
-   	term_seen(OldTerm),
-    	(inter_subsumes(OldTerm, Term); inter_subsumes(Term, OldTerm)),
-    	!,
-    	( inter_subsumes(OldTerm, Term)->
-            true
-    	;
-            retract(term_seen(OldTerm)),
-	    assert(term_seen(Term))
-	).
-
-/**********************************************
- * inter_subsumes(+T1, +T2) 
- * given T1 and T2 in intermediate form, decide
- * whether T1 subsumes T2
- **********************************************/
- inter_subsumes(pratom(X,_),pratom(X,_)) :- !.
-
- inter_subsumes(prvariable(_,_), _) :- !.
- 
- inter_subsumes(T1, T2) :-
- 	!,
-	T1 =.. [F|A],
-	T2 =.. [F|B],
-	inter_list_subsumes(A, B).
-
- inter_subsumes(T1, T2) :-
- 	!,
-	T1 =.. [F,A1,A2,AL],
-	T2 =.. [F,B1,B2,BL],
-	inter_subsumes(A1, B1),
-	inter_subsumes(A2, B2),
-	inter_list_subsumes(AL, BL).
-
-inter_list_subsumes([], []) :- !.
-inter_list_subsumes([H1|L1], [H2|L2]) :-
-	inter_subsumes(H1, H2),
-	inter_list_subsumes(L1, L2).
 
 /*********************************************
  * generate_patches
  * generate a fact in intermediate form 
  * for each Term asserted in term_seen(Term)
  *********************************************/
- generate_patches :-
+generate_patches :-
  	term_seen(Term),
-	flora_extern_code([PRFACT(Term)], _FStatus),
+	Term =.. [F|Args],
+	length(Args,N),
+	( flora_firstorderdef(F,N) ->
+	    flora_write_atom('FLORA_FO_THIS_WORKSPACE(')
+	;
+	    flora_write_atom('FLORA_THIS_WORKSPACE(')
+	),
+	write(F),
+	put(0')),
+	put(0'(),
+	write_args(Args),
+	put(0')),
+	put(0'.),
+	nl,
 	fail.
 
- generate_patches :- !.
+generate_patches :- !.
+
+write_args([]) :- !.
+write_args([A]) :-
+	!,
+	write(A).
+write_args([H|L]) :-
+	write(H),
+	put(0',),
+	write_args(L).
+ 
+/***********************************************************
+ * utilities for flora_build_skeleton
+ ***********************************************************/
+is_flogic_2params(WRAP_ISA) :- !.
+is_flogic_2params(WRAP_SUB) :- !.
+is_flogic_2params(WRAP_METH) :- !.
+is_flogic_2params(WRAP_IMETH) :- !.
+is_flogic_2params(WRAP_FDDEF) :- !.
+is_flogic_2params(WRAP_MVDDEF) :- !.
+is_flogic_2params(WRAP_IFDDEF) :- !.
+is_flogic_2params(WRAP_IMVDDEF) :- !.
+is_flogic_2params(WRAP_TRAN) :- !.
+
+is_flogic_3params(WRAP_FD) :- !.
+is_flogic_3params(WRAP_IFD) :- !.
+is_flogic_3params(WRAP_FDSIG) :- !.
+is_flogic_3params(WRAP_MVDSIG) :- !.
+is_flogic_3params(WRAP_IFDSIG) :- !.
+is_flogic_3params(WRAP_IMVDSIG) :- !.
+is_flogic_3params(WRAP_MVD) :- !.
+is_flogic_3params(WRAP_IMVD) :- !.
+is_flogic_3params(WRAP_MVDINC) :- !.
+is_flogic_3params(WRAP_IMVDINC) :- !.
+is_flogic_3params(WRAP_MVDTOLIST) :- !.
+is_flogic_3params(WRAP_IMVDTOLIST) :- !.
 
 /***********************************************************
- * flora_build_skeleton(+Term, -Code)
+ * flora_build_skeleton(+Term, -Code, -GFlag)
  * builds the skeleton of Term
  * this is similar to flora_build_debug_skeleton, but the 
  * term is not in intermediate form.
- * This predicate is used by flrdbop.P and flrbtdbop.P
+ * This predicate is called by db operations at run time
  ***********************************************************/
-flora_build_skeleton(Term,Term) :-
+flora_build_skeleton(Term,Term,_GFlag) :-
 	atom(Term),
 	!.
 
-flora_build_skeleton(Term,Term) :-
+flora_build_skeleton(Term,Term,MOST_GENERAL) :-
 	var(Term),
 	!.
 
-flora_build_skeleton(WRAP_ISA(_Obj1,Obj2),WRAP_ISA(_,CCode)) :-
+flora_build_skeleton([Wrap,_Obj1,Obj2],[Wrap,_,CCode],GFlag) :-
+	is_flogic_2params(Wrap),
 	!,
-	flora_build_skeleton(Obj2,CCode).
+	flora_build_skeleton(Obj2,CCode,GFlag).
 
-flora_build_skeleton(WRAP_SUB(_Obj1,Obj2),WRAP_SUB(_,CCode)) :-
+flora_build_skeleton([Wrap,_Obj,Att,_Val],[Wrap,_,ACode,_],GFlag) :-
+	is_flogic_3params(Wrap),
 	!,
-	flora_build_skeleton(Obj2,CCode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_METH(_Obj1,Meth),WRAP_METH(_,MCode)) :-
+flora_build_skeleton([WRAP_HILOG,F|Arg],[WRAP_HILOG,FSkeleton|VList],GFlag) :-
 	!,
-	flora_build_skeleton(Meth,MCode).
+	length(Arg,N),
+	var_list(N, VList),
+	flora_build_skeleton(F,FSkeleton,GFlag).
 
-flora_build_skeleton(WRAP_IMETH(_Obj1,IMeth),WRAP_IMETH(_,MCode)) :-
+flora_build_skeleton([F|Arg],[FSkeleton,VList],GFlag) :-
+	length(Arg,N),
+	var_list(N,VList),
+	flora_build_skeleton(F,FSkeleton,GFlag).
+
+flora_build_skeleton(WRAP_ISA(_Obj1,Obj2),WRAP_ISA(_,CCode),GFlag) :-
 	!,
-	flora_build_skeleton(IMeth,MCode).
+	flora_build_skeleton(Obj2,CCode,GFlag).
 
-flora_build_skeleton(WRAP_FDDEF(_Obj,Attr),WRAP_FDDEF(_,ACode)) :-
+flora_build_skeleton(WRAP_SUB(_Obj1,Obj2),WRAP_SUB(_,CCode),GFlag) :-
 	!,
-	flora_build_skeleton(Attr,ACode).
+	flora_build_skeleton(Obj2,CCode,GFlag).
 
-flora_build_skeleton(WRAP_MVDDEF(_Obj,Attr),WRAP_MVDDEF(_,ACode)) :-
+flora_build_skeleton(WRAP_METH(_Obj1,Meth),WRAP_METH(_,MCode),GFlag) :-
 	!,
-	flora_build_skeleton(Attr,ACode).
+	flora_build_skeleton(Meth,MCode,GFlag).
 
-flora_build_skeleton(WRAP_IFDDEF(_Obj,Attr),WRAP_IFDDEF(_,ACode)) :-
+flora_build_skeleton(WRAP_IMETH(_Obj1,IMeth),WRAP_IMETH(_,MCode),GFlag) :-
 	!,
-	flora_build_skeleton(Attr,ACode).
+	flora_build_skeleton(IMeth,MCode,GFlag).
 
-flora_build_skeleton(WRAP_IMVDDEF(_Obj,Attr),WRAP_IMVDDEF(_,ACode)) :-
+flora_build_skeleton(WRAP_FDDEF(_Obj,Attr),WRAP_FDDEF(_,ACode),GFlag) :-
 	!,
-	flora_build_skeleton(Attr,ACode).
+	flora_build_skeleton(Attr,ACode,GFlag).
 
-flora_build_skeleton(WRAP_TRAN(_Obj,Tran),WRAP_TRAN(_,TCode)) :-
+flora_build_skeleton(WRAP_MVDDEF(_Obj,Attr),WRAP_MVDDEF(_,ACode),GFlag) :-
 	!,
-	flora_build_skeleton(Tran,TCode).
+	flora_build_skeleton(Attr,ACode,GFlag).
 
-flora_build_skeleton(WRAP_FD(_Obj,Att,_Val),WRAP_FD(_,ACode,_)) :-
+flora_build_skeleton(WRAP_IFDDEF(_Obj,Attr),WRAP_IFDDEF(_,ACode),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Attr,ACode,GFlag).
 
-flora_build_skeleton(WRAP_IFD(_Obj,Att,_Val),WRAP_IFD(_,ACode,_)) :-
+flora_build_skeleton(WRAP_IMVDDEF(_Obj,Attr),WRAP_IMVDDEF(_,ACode),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Attr,ACode,GFlag).
 
-flora_build_skeleton(WRAP_FDSIG(_Obj,Att,_Val),WRAP_FDSIG(_,ACode,_)) :-
+flora_build_skeleton(WRAP_TRAN(_Obj,Tran),WRAP_TRAN(_,TCode),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Tran,TCode,GFlag).
 
-flora_build_skeleton(WRAP_MVDSIG(_Obj,Att,_Val),WRAP_MVDSIG(_,ACode,_)) :-
+flora_build_skeleton(WRAP_FD(_Obj,Att,_Val),WRAP_FD(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_IFDSIG(_Obj,Att,_Val),WRAP_IFDSIG(_,ACode,_)) :-
+flora_build_skeleton(WRAP_IFD(_Obj,Att,_Val),WRAP_IFD(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_IMVDSIG(_Obj,Att,_Val),WRAP_IMVDSIG(_,ACode,_)) :-
+flora_build_skeleton(WRAP_FDSIG(_Obj,Att,_Val),WRAP_FDSIG(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_MVD(_Obj,Att,_Val),WRAP_MVD(_,ACode,_)) :-
+flora_build_skeleton(WRAP_MVDSIG(_Obj,Att,_Val),WRAP_MVDSIG(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_IMVD(_Obj,Att,_Val),WRAP_IMVD(_,ACode,_)) :-
+flora_build_skeleton(WRAP_IFDSIG(_Obj,Att,_Val),WRAP_IFDSIG(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_MVDINC(_Obj,Att,_Val),WRAP_MVDINC(_,ACode,_)) :-
+flora_build_skeleton(WRAP_IMVDSIG(_Obj,Att,_Val),WRAP_IMVDSIG(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_IMVDINC(_Obj,Att,_Val),WRAP_IMVDINC(_,ACode,_)) :-
+flora_build_skeleton(WRAP_MVD(_Obj,Att,_Val),WRAP_MVD(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_MVDTOLIST(_Obj,Att,_Val),WRAP_MVDTOLIST(_,ACode,_)) :-
+flora_build_skeleton(WRAP_IMVD(_Obj,Att,_Val),WRAP_IMVD(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(WRAP_IMVDTOLIST(_Obj,Att,_Val),WRAP_IMVDTOLIST(_,ACode,_)) :-
+flora_build_skeleton(WRAP_MVDINC(_Obj,Att,_Val),WRAP_MVDINC(_,ACode,_),GFlag) :-
 	!,
-	flora_build_skeleton(Att,ACode).
+	flora_build_skeleton(Att,ACode,GFlag).
 
-flora_build_skeleton(Term,Skeleton) :-
+flora_build_skeleton(WRAP_IMVDINC(_Obj,Att,_Val),WRAP_IMVDINC(_,ACode,_),GFlag) :-
+	!,
+	flora_build_skeleton(Att,ACode,GFlag).
+
+flora_build_skeleton(WRAP_MVDTOLIST(_Obj,Att,_Val),WRAP_MVDTOLIST(_,ACode,_),GFlag) :-
+	!,
+	flora_build_skeleton(Att,ACode,GFlag).
+
+flora_build_skeleton(WRAP_IMVDTOLIST(_Obj,Att,_Val),WRAP_IMVDTOLIST(_,ACode,_),GFlag) :-
+	!,
+	flora_build_skeleton(Att,ACode,GFlag).
+
+flora_build_skeleton(Term,Skeleton,GFlag) :-
 	functor(Term, WRAP_HILOG, N),
 	!,
 	Term =.. [WRAP_HILOG, MainFunct|_Args],
 	M is N-1,
 	var_list(M, VarList),
-	flora_build_skeleton(MainFunct, MainFunctSkeleton),
+	flora_build_skeleton(MainFunct, MainFunctSkeleton,GFlag),
 	Skeleton =.. [WRAP_HILOG, MainFunctSkeleton|VarList].
 
-flora_build_skeleton(Term, Skeleton) :-
+flora_build_skeleton(Term, Skeleton,_GFlag) :-
 	functor(Term, MainFunct, N),
-	var_list(N, VarList),
-	Skeleton =.. [MainFunct|VarList].
+	functor(Skeleton, MainFunct, N).
 
 var_list(0, []) :- !.
 var_list(N, [_|Rest]) :-
@@ -623,17 +607,18 @@ flora_insert_skeleton(P) :-
 	        flora_concat_atoms([FLORA_SYSTEM_FLD_TRIE_PREFIX, ''''], S1)
 	    ),
 	    flora_concat_atoms([S1, ModuleName],FldStorage),
-	    ( FLORA_DB_FIND(FldStorage,P) ->
+
+	    ( (PredicateType=hilog) ->
+		Code = [WRAP_HILOG,PredicateSymbol|ArgsList]
+	    ;
+	        Code = [PredicateSymbol|ArgsList]
+	    ),
+   	    flora_build_skeleton(Code,Skeleton,GFlag),
+
+	    ( FLORA_DB_FIND(FldStorage,P), not(GFlag==MOST_GENERAL) ->
 	        true
 	    ;
-		( (PredicateType=hilog) ->
-		    Code =.. [WRAP_HILOG,PredicateSymbol|ArgsList]
-		;
-	            Code =.. [PredicateSymbol|ArgsList]
-		),
-   	        flora_build_skeleton(Code,Skeleton),
-
-	        Skeleton =.. [Funct|NewArgs],
+	        Skeleton = [Funct|NewArgs],
 		( (PredicateType=firstorder) ->
 		    ( (ModuleType=user) ->
 	                flora_concat_atoms([FLORA_FO_USER_MODULE_PREFIX, ''''], F1)
@@ -650,9 +635,20 @@ flora_insert_skeleton(P) :-
 		flora_concat_atoms([F1,ModuleName,'''',Funct],NewFunct),
 	        Sk =.. [NewFunct|NewArgs],
 
+	        ( GFlag==MOST_GENERAL ->
+		    remove_dup_defn(FldStorage,P)
+		;
+		    true
+		),
 		FLORA_DB_INSERT(FldStorage,Sk,_Ins)
             )
 	;
 	    true
 	).
+
+remove_dup_defn(FldStorage,Sk) :-
+	FLORA_DB_DELETE(FldStorage,Sk,_Del),
+	fail.
+
+remove_dup_defn(_FldStorage,_Sk) :- !.
 

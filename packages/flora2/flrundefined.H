@@ -31,20 +31,28 @@
 
 :- dynamic term_seen(_).
 
+:- import length/2 from basics.
+
 :- import 
 	FLORA_DB_FIND_PREDICATE/2, 
+	FLORA_DB_DELETE_PREDICATE/3,
 	FLORA_DB_INSERT_PREDICATE/3
    from storage.
 
 :- import
+	flora_write_atom/1,
 	flora_concat_atoms/2,
 	flora_concat_items/2
    from flrporting.
 
 :- import flora_prlgdef/2 from flrprolog.
 
+:- import 
+	flora_firstorderdef/2,
+	flora_flogicstaticdef/2
+   from flrfirstorder.
+
 :- import
-	flora_extern_code/2,
 	is_prrule/3,
 	is_prfact/2,
 	is_pratom/3,

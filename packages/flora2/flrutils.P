@@ -875,14 +875,7 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	    /*
-	    cputime(T11),
-	    Tcompile is T11 - T0,
-	    writeln(compilation=Tcompile),
-	    */
-	    flora_measure_time(
 	    check_for_dependencies(CompiledRuleList, DepWarnList),
-	    '[DependencyCheck] '),
 	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
 	    flora_errorwarn_count(0,DepWarnNum),
 
@@ -908,12 +901,8 @@ flora_compile_file(_InputFile,_PFile,_DBFile,_FLDFile,FLORA_FAILURE).
 *************************************************************************/
 flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus) :-
 	%% Generate FLD file for undefinedness checking
-	flora_measure_time(
 	flora_debug_code(CompiledRuleList, FLDFile),
-	'[Coder] Generating FLD file '),
-	flora_measure_time(
 	flora_divide_program(CompiledRuleList,RuleList,FactList),
-	'[Coder] Dividing program '),
 	sort(FileOptionList,FileOptions),
 	flora_measure_time(
 	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,FLDFile,PFileStatus),
@@ -926,7 +915,8 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileSta
 	  ;
 	      flora_measure_time(
 	      flora_generate_DBfile(DBFile,FactList,FileStatus)
-	      , '[Coder] Generating DB file ')
+	      ,
+	      '[Coder] Generating DB file ')
 	  )
         ),
 	!.
