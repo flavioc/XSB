@@ -275,13 +275,16 @@ extern struct tstTrail    tstTrail;
    *tstTrail.top++ = (CPtr)(Addr);      \
  }
 
+#define Trail_PopAndReset {		\
+   tstTrail.top--;			\
+   bld_free(*tstTrail.top);		\
+ }
+
 #define Trail_Unwind_All   Trail_Unwind(tstTrail.base)
 
-#define Trail_Unwind(UnwindBase)     		\
-   while(tstTrail.top > UnwindBase) {		\
-     tstTrail.top--;                 		\
-     bld_free(*tstTrail.top);        		\
-   }
+#define Trail_Unwind(UnwindBase)	\
+   while(tstTrail.top > UnwindBase)	\
+     Trail_PopAndReset
 
 #define Trail_OverflowCheck        \
    if (Trail_IsFull)               \
