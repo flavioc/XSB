@@ -52,26 +52,6 @@ gensym(Root, Sym) :-
 	;   abort('Wrong type argument in gensym/2')
 	).
 
-/*----copyterm----------------------------------------------------------*/
-/* Get a copy of the Term, with a new set of variables.			*/
-
-copyterm(Term, NewTerm) :- copyterm(Term, NewTerm, _).
-
-copyterm(Term, NewTerm, VarDict) :- var(Term), !,
-	dict_lookup(Term, NewTerm, VarDict).
-copyterm(Term, Term, _) :- atomic(Term), !.
-copyterm(Term, NewTerm, VarDict) :- 
-	functor(Term, Func, Arity),
-	functor(NewTerm, Func, Arity),
-	copyterm_args(Term, NewTerm, Arity, VarDict).
-
-copyterm_args(_, _, 0, _) :- !.
-copyterm_args(Term, NewTerm, N, VarDict) :-
-	arg(N, Term, Arg),
-	copyterm(Arg, NewArg, VarDict),
-	arg(N, NewTerm, NewArg),
-	N1 is N - 1,
-	copyterm_args(Term, NewTerm, N1, VarDict).
 
 conset(Con, Val) :- 
 	conpsc(Con, Psc), psc_set_prop(Psc, Val).

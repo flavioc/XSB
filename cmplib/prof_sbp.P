@@ -75,7 +75,7 @@ gensym(R, C) :-
 
 copyterm(Term, NewTerm) :-
 	obsolete('copyterm/2 in module prof_sbp',
-		 'use copyterm/2 in module gensym'),
+		 'use copy_term/2 in module basics'),
 	copyterm(Term, NewTerm, _).
 
 copyterm(Term, NewTerm, VarDict) :- var(Term), !,
