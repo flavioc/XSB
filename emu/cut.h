@@ -38,8 +38,8 @@
 /* Of course, if we are cutting to the current choice point which often	*/
 /* happens, or if there is nothing in between, there is no need to	*/
 /* check whether there is trail to unwind.				*/
-/* This is the general scheme for Prolog and is more or less the easy	*/
-/* case.  The code that pretty much implements this, is as follows:	*/
+/* This is the general scheme and the code that pretty much implements  */
+/* this, is as follows:                                         	*/
 /*									*/
 /*	#define cut_code(OP1)						*/
 /*	    deref(OP1);							*/
@@ -52,16 +52,6 @@
 /*		breg = cut_breg;					*/
 /*	    } goto contcase;						*/
 /*									*/
-/* However, in tabled execution, cuts are slightly more complicated	*/
-/* than in Prolog.  It might be the case, for example, that breg and	*/
-/* cut_breg do not lie on the same execution branch (this happens, but 	*/
-/* very rarely).  In such cases, the following code might unnecessarily	*/
-/* scan trail entries, since I do not see an easy way of limiting the	*/
-/* part of the trail that we are really cutting... so I chose to retain	*/
-/* the functionality of XSB 1.7.2.  As I said, such cases happen very 	*/
-/* very rarely (only 3 cases in the whole testsuite) so I would not	*/
-/* lose my sleep over it...  I *believe* that the following works for	*/
-/* Prolog code the way it really should.		- Kostis.	*/
 /*----------------------------------------------------------------------*/
 
 #if (defined(DEBUG) && !defined(CHAT))
@@ -93,11 +83,10 @@
      if (breg != cut_breg) { /* not cutting back to the current CP */\
 /*      fprintf(stderr,						\
            "Tidying trail (cutbreg = %p, breg = %p)\n", cut_breg,breg); */\
-	while (cp_prevbreg(breg) < cut_breg) {			\
+	while (cp_prevbreg(breg) != cut_breg) {			\
            CHECK_TABLE_CUT() ;                                  \
 	   breg = cp_prevbreg(breg);				\
 	}							\
-	if (breg > cut_breg) breg = cut_breg; /* happens rarely */\
         unwind_trail(breg,xtemp1,xtemp2);			\
 	breg = cut_breg;					\
      }								\
