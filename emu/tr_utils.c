@@ -1235,7 +1235,7 @@ void reclaim_uninterned_nr(long rootidx)
 	 the garbage list. So it is a non-deleted node on the garbage list.
 	 It is removed from there only when we reclaim space.
       */
-      xsb_dbgmsg("Non deleted interned node in garbage list - ok");
+      xsb_dbgmsg((LOG_INTERN,"Non deleted interned node in garbage list - ok"));
     }
 
     switch_from_trie_assert;
