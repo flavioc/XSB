@@ -66,6 +66,6 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	(flModule(Workspace)
 	-> flora_error_line('undefined first order predicate %s/%d in module %s',
 			    args(Predicate,N,Workspace))
-	; flora_error_line('calling first order predicate %s/%d in module %s, which not loaded', args(Predicate,N,Workspace))
+	; flora_error_line('calling first order predicate %s/%d in module %s, which is not loaded', args(Predicate,N,Workspace))
 	),
 	abort.

@@ -29,8 +29,6 @@
 #include "flora_terms.flh"
 
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import flora_wspredicate/4 from flrwrapper.
 
 
@@ -38,13 +36,6 @@
   This file is for the following dynamic module references:
   FLLIBMODLIT and FLLIBMODOBJ.
 *********************************************************************/
-?- flora_register_syslib(FLLIBDYNMOD).
-
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBMODLIT).
 
 
 /*********************************************************************
@@ -54,11 +45,6 @@ fllibmodlit(F,Args,WS) :-
 	flora_wspredicate(F,Args,WS,P),
 	call(P).
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBMODOBJ).
 
 
 /*********************************************************************

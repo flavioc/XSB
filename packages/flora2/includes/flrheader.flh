@@ -7,21 +7,47 @@
 ************************************************************************/
 
 /************************************************************************
-  Note: This file should contain Macro only.
+  Note: This file should contain Macros only.
 ************************************************************************/
+
+%% If FLORA_DUMP is defined: preprocessing for user-readable dumping
+%% If FLORA_COMPILING_SERVICE_LIBRARY is defined: compiling service library
+%% using flora_compile_service/1 in flrutils.P
 
 #mode standard Prolog
 
-#define	FLORA_PREFIX			'_$_$_flora'
-#define FLORA_SYSTEM_PREFIX		'_$_$_flora_system'
-#define FLORA_STORAGE_PREFIX		'_$_$_flora_storage'
+#include "flora_prefix.flh"
+
+%% If any of these macros are changed, the corresponding wrappers in
+%% flrwrapper.P must also be changed
+
+#ifndef FLORA_DUMP
 
 #mode save
 #mode nostring "\!#'"
-#define FLORA_WORKSPACE(X,Y)		FLORA_PREFIX'X''Y'
-#define FLORA_SYSTEM_WORKSPACE(X,Y)	FLORA_SYSTEM_PREFIX'X''Y'
-#define FLORA_WSSTORAGE(X)		FLORA_STORAGE_PREFIX'X'
+
+#define FLORA_SYSTEM_WORKSPACE(X,Y)  FLORA_PREFIX'FLORA_SERVICE_STR#1''#2'
+
+#ifndef FLORA_COMPILING_SERVICE_LIBRARY
+%% Normal operation
+#define FLORA_WORKSPACE(X,Y)	     FLORA_PREFIX'X''Y'
+#define FLORA_WSSTORAGE(X)	     FLORA_STORAGE_PREFIX'X'
+
+%% compiling service library
+#else
+#define FLORA_WORKSPACE(X,Y)	     FLORA_PREFIX'FLORA_SERVICE_STR#1''#2'
+#define FLORA_WSSTORAGE(X)    	     FLORA_STORAGE_PREFIX'FLORA_SERVICE_STR#1'
+
+%% end FLORA_COMPILING_SERVICE_LIBRARY
+#endif
+
 #mode restore
+
+%% dumping
+#else
+#define FLORA_WORKSPACE(X,Y)			#1#2
+#define FLORA_WSSTORAGE(X,Y)	        	FLORA_STORAGE_PREFIX#1
+#endif
 
 
 

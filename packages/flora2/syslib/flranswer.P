@@ -52,8 +52,6 @@
 
 :- import shell/5 from shell.
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import
 	flora_stdfdbk_string/2,
 	flora_stdfdbk_nl/0,
@@ -64,13 +62,6 @@
 
 :- dynamic flora_switch(_).
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBANSWER).
-?- flora_register_syslib(FLLIBSHELLANS).
-?- flora_register_syslib(FLLIBPROGRAMANS).
 
 
 /********************************************************************/
@@ -181,16 +172,26 @@ flora_findall(_NVs,_Gs,_TempL) :-
 
 /********************************************************************/
 flora_handle_trace :-
-    	( flora_switch(trace) ->
-	    (stat_flag(TRACE,Trace), Trace = 0 -> trace; true)
+	( flora_switch(low_level_trace)
+	->  true
+	;   flora_switch(trace)
+	->  (stat_flag(TRACE,Trace), Trace == 0
+	    -> trace
+	    ; true
+	    )
 	;
-	  true
+	    true
 	).
 
 
 /********************************************************************/
 flora_handle_notrace :-
-    	(stat_flag(TRACE,Trace), Trace > 0 -> notrace; true).
+	( flora_switch(low_level_trace)
+	->  true
+    	;   stat_flag(TRACE,Trace), Trace > 0
+	-> notrace
+	; true
+	).
 
 
 /********************************************************************/

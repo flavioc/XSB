@@ -33,15 +33,8 @@
 
 :- import findall/3, sort/2 from setof.
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import flora_warning_line/1 from flrprint.
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBAVG).
 
 
 /*********************************************************************

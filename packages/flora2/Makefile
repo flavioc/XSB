@@ -77,9 +77,7 @@ HDRMSG = "While compiling XSB/packages/flora2:"
 
 
 all: init $(ALLOBJS) finish
-	@$(XSBDIR)/build/touch.sh cmd...
-	$(PROLOG) < cmd...
-	@rm cmd...
+	./CompileChangedFiles.sh $(PROLOG)
 	@cat $(SVFILE)
 	cd closure; $(MAKE)
 	cd genincludes; $(MAKE)
@@ -88,6 +86,7 @@ all: init $(ALLOBJS) finish
 	cd lib; $(MAKE)
 	cd pkgs; $(MAKE)
 	cd demos; $(MAKE)
+	@cat $(XSBDIR)/build/.flora*.tmp
 
 
 flroperator.O : flroperator.P flroperator.H $(FLORA_TERMS)
@@ -163,13 +162,13 @@ flrcompileinclude.O : flrcompileinclude.P flrcompileinclude.H $(FLORA_TERMS) $(X
 
 init:
 	/bin/rm -f $(SVFILE)
-	@echo "import bootstrap_flora/0 from flora2." >> cmd...
-	@echo "bootstrap_flora." >> cmd...
-	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
-	@echo "file_clone($(STDWARN),$(STDERR),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",args($(HDRMSG))).' >> cmd...
 	@echo "file_flush($(STDWARN),_)." >> cmd...
+	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
+	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
+	@echo "file_clone($(STDWARN),$(STDERR),_)." >> cmd...hdr
+	@echo "bootstrap_flora." >> cmd...hdr
 
 
 finish:
@@ -187,7 +186,9 @@ clean:
 	cd demos; $(MAKE) clean
 	/bin/rm -f headerinc/*~
 	/bin/rm -f syslibinc/*~
+	/bin/rm -f libinc/*~
 	/bin/rm -f includes/*~
+	/bin/rm -f flrincludes/*~
 	/bin/rm -f $(HOME)/.xsb/flora/*.P $(HOME)/.xsb/flora/*.O
 
 

@@ -1,4 +1,4 @@
-/* File:      flora_terms.flhh -- FLORA intermediate terms
+/* File:      flora_terms.flh -- FLORA intermediate terms
 **
 ** Author(s): Guizhen Yang
 **
@@ -42,6 +42,9 @@
 
   TextInfo=TEXT(BeginX,BeginY,EndX,EndY,ListOfCodes)
 **************************************************************************/
+
+#include "flora_prefix.flh"
+
 #define TEXT			text
 #define IDENTIFIER		identifier
 #define VARIABLE		variable
@@ -425,6 +428,14 @@
 #define FLLIBCONTROL		fllibcontrol
 
 
+/*****************************************************************************
+   Flora services
+*****************************************************************************/
+
+#define FLSERVPP		pp
+#define FLSERVIO		io
+
+
 /****************************************************************************
   FLORA options
 ****************************************************************************/
@@ -499,19 +510,16 @@
 #define FLSYSLIB		flsyslib
 #define FLSYSDBUPDATE		flsysdbupdate
 
-#define FLORA_PREFIX		'_$_$_flora'
 %% Length of FLORA_PREFIX: We take out 2 to account for the quotes
 #define FLORA_PREFIX_LEN_PLUS1	FLORA_EVAL_MACRO(length(FLORA_PREFIX)+1-2)
 
+#define FLORA_SERVICE_STR_LEN	FLORA_EVAL_MACRO(length(FLORA_SERVICE_STR))
+
 #define FLORA_THIS_MODULE	flThisModule
-
-#define FLORA_STORAGE_PREFIX	'_$_$_flora_storage'
-
-#define FLORA_SYSTEM_PREFIX	'_$_$_flora_system'
 
 
 /****************************************************************************
-  F-logic atoms prefixes
+  F-logic atom prefixes
 ****************************************************************************/
 #define FLFACTPREFIX		'base_'
 #define FLHEADPREFIX		'derived_'

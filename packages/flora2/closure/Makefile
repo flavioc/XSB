@@ -40,7 +40,7 @@ PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(
 FLORA_PRED_DEF = includes/flrpred.fli
 
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
+SVFILE = '$(XSBDIR)/build/.flora_closure_warn.tmp'
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora2/closure:"

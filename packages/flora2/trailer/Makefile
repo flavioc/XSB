@@ -48,7 +48,7 @@ FLORA_INCLUDES_DIR = ../flrincludes
 FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
+SVFILE = '$(XSBDIR)/build/.flora_trailer_warn.tmp'
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora2/trailer:"

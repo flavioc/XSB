@@ -29,8 +29,6 @@
 #include "flora_terms.flh"
 
 
-:- import flora_register_syslib/1 from flrlibman.
-
 %%:- import flora_shdefine_prolog/2 from flrprolog.
 
 :- import flora_shdefine_firstorder/2 from flrnohilog.
@@ -40,10 +38,6 @@
 :- import flora_shdefine_arguments/3 from flrsignature.
 
 
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBSHDIRECT).
 
 
 /*****************************************************************************

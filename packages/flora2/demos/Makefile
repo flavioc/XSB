@@ -77,7 +77,6 @@ init:
 	@echo "bootstrap_flora." >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
 	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...hdr
-	@echo "[flora2],bootstrap_flora." >> cmd...hdr
 
 finish:
 	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...

@@ -213,12 +213,23 @@ flora_firstorder_predicate(Funct,Predicate,Workspace) :-
 
 /*****************************************************************************
   Take a predicate name, args, and workspace and return a Florified call
-  (with workspace attached) for Flora system module.
-  flora_sysmod_predicate(+Functor,+Args,+Workspace,-Predicate)
+  (with workspace attached) for a Flora service module.
+  flora_service_lib_predicate(+Functor,+Args,+ServiceName,-Predicate)
 *****************************************************************************/
-flora_sysmod_predicate(Functor,Args,WS,Predicate) :-
-	fmt_write_string(PF,"%s'%s'%s",args(FLORA_SYSTEM_PREFIX,WS,Functor)),
+flora_service_lib_predicate(Functor,Args,Service,Predicate) :-
+	fmt_write_string(PF,"%s'%s%s'%s",
+			 args(FLORA_PREFIX,FLORA_SERVICE_STR_QUOTED,Service,Functor)),
 	Predicate =.. [PF|Args].
+
+/***************************************************************************
+  flora_service_ws(+Workspace,-Service)
+  Succeeds, if Workspace represents a Flora service.
+  Binds Service to that service name
+***************************************************************************/
+flora_service_ws(Workspace,Service) :-
+	str_sub(FLORA_SERVICE_STR_QUOTED,Workspace,1),
+	substring(Workspace,FLORA_SERVICE_STR_LEN,_,Service).
+
 
 
 /*****************************************************************************
@@ -234,7 +245,7 @@ flora_wspredicate(Functor,Args,WS,Predicate) :-
       flora_wssymbol(+Symbol,+WS,-FlorifiedSymbol)
 */
 flora_wssymbol(Symbol,WS,FlorifiedSymbol) :-
-	( flora_check_workspace(WS)
+	((flora_service_ws(WS,_Service), !; flora_check_workspace(WS))
 	-> fmt_write_string(FlorifiedSymbol, "%s'%s'%s",
 			    args(FLORA_PREFIX,WS,Symbol))
 	; abort

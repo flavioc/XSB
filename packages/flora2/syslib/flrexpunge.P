@@ -1,4 +1,4 @@
-/* File:      flrabolish.P
+/* File:      flrexpunge.P
 **
 ** Author(s): Guizhen Yang 
 **
@@ -35,19 +35,12 @@
 
 :- import storage_find_fact/2, storage_delete_fact/3 from storage.
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import flora_check_workspace/1 from flrutils.
 
 :- import flora_error_line/4 from flrprint.
 
 :- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBEXPUNGE).
 
 
 /*****************************************************************************

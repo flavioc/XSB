@@ -40,7 +40,7 @@
 :- import
 	flora_wspredicate/4,
 	flora_storage_name/2,
-	flora_sysmod_predicate/4
+	flora_service_lib_predicate/4
    from flrwrapper.
 
 :- export

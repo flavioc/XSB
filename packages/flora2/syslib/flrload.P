@@ -30,8 +30,6 @@
 #include "flora_terms.flh"
 
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import
 	flora_stderr_nl/0,
 	flora_stderr_string/1,
@@ -46,11 +44,6 @@
 
 :- import flora_stderr_write/1 from flrdisplay.
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBLOAD).
 
 
 /********************************************************************/

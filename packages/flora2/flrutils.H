@@ -43,7 +43,9 @@
 
 :- import xsb_configuration/2 from xsb_configuration.
 
-:- import xpp_options/1 from parse.
+:- import xpp_options/1,
+	xpp_process_file/3
+    from parse.
 
 :- import current_output_port/1, current_predicate/1 from curr_sym.
 
@@ -131,11 +133,16 @@
 
 :- import flora_stderr_write/1 from flrdisplay.
 
-:- import flora_include/2 from flrlibman.
+:- import flora_include/2,
+	flora_service_file/3
+   from flrlibman.
 
-:- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
+:- import flora_wspredicate/4,
+	flora_storage_name/2
+   from flrwrapper.
 
 :- dynamic flora_maxerr(_).
+:- dynamic flora_xpp_extra_options/1.
 
 :- index(flora_maxerr/1,trie).
 
@@ -144,9 +151,11 @@
 	flHalt/0,
 	flora_compile_internal/1,
 	flora_compile_internal/2,
+	flora_compile_service/1,
 	flora_load_module_internal/1,
 	flora_load_module_internal/2,
 	flP2H/2,
+	flDump/1,
 	flora_locate_file/3,
 	flora_FLH_filename/2,
 	flloadtrailer/1,

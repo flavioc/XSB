@@ -33,13 +33,6 @@
 
 :- import findall/3, sort/2 from setof.
 
-:- import flora_register_syslib/1 from flrlibman.
-
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBCOUNT).
 
 
 /*********************************************************************

@@ -114,6 +114,9 @@ is_fllibdb(FLLIBBTDELETEALL) :- !.
 is_fllibdb(FLLIBBTERASE) :- !.
 is_fllibdb(FLLIBBTERASEALL) :- !.
 
+is_fllibdb(FLSERVPP) :- !.
+is_fllibdb(FLSERVIO) :- !.
+
 
 /****************************************************************************
   flora_divide_program(+CompiledRuleList,-RuleList,-FactList)
@@ -1106,7 +1109,7 @@ flora_build_wsliteral(F,_N,Args,WS,DWS,Prefix,VarList,Code) :-
 ****************************************************************************/
 flora_build_floralib_wsliteral(F,_N,Args,WS,DWS,Prefix,VarList,Code) :-
 	flora_build_structlist(Args,DWS,Prefix,VarList,ACode),
-	flora_sysmod_predicate(F,ACode,WS,Code).
+	flora_service_lib_predicate(F,ACode,WS,Code).
 
 
 /****************************************************************************

@@ -1,0 +1,117 @@
+/* File:      flrio.flr
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2001
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+#include "standard.h"
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% I/O port based ops
+%%%%%%%%%%%%%%%%%%%%%%
+
+Filename[#open(Mode,Port)] :- file_open(Filename,Mode,Port)@prolog(file_io).
+Port[#close] :- file_close(Port)@prolog(file_io).
+
+Port[#read(HResult)] :-
+	integer(Port),
+	!,
+	file_read(Port, PResult)@prolog(file_io), flP2H(PResult,HResult).
+Port[#write(HResult)] :-
+	integer(Port),
+	!,
+	flP2H(PResult,HResult), file_read(Port, PResult)@prolog(file_io).
+stdread(HResult) :-
+	file_read(STDIN, PResult)@prolog(file_io), flP2H(PResult,HResult).
+stdwrite(HResult) :-
+	flP2H(PResult,HResult), file_read(STDOUT, PResult)@prolog(file_io).
+
+
+%% Use arg(obj, obj, obj) to supply multiple arguments
+fmt_write(Format,O) :-
+	!,
+	flP2H(PO,O),
+	fmt_write(Format,PO)@prolog().
+FileHandle[#fmt_write(Format,O)] :-
+	flP2H(PO,O),
+	fmt_write(FileHandle,Format,PO)@prolog().
+fmt_write_string(String,Format,O) :-
+	!,
+	flP2H(PO,O),
+	fmt_write(String,Format,PO)@prolog().
+fmt_read(Format,Result,Status) :-
+	!,
+	flP2H(PResult,Result),
+	fmt_write(Format,PResult,Status)@prolog().
+FileHandle[#fmt_read(Format,Result,Status)] :-
+	flP2H(PResult,Result),
+	fmt_write(FileHandle,Format,PResult,Status)@prolog().
+
+Filehandle[#write_canonical(HTerm)] :-
+	flP2H(PTerm,HTerm),
+	file_write_canonical(Filehandle,PTerm)@prolog(xsb_writ).
+write_canonical(HTerm) :-
+	flP2H(PTerm,HTerm), write_canonical(PTerm)@prolog().
+
+read_canonical(HTerm) :-
+	read_canonical(PTerm)@prolog(), flP2H(PTerm,HTerm). 
+Filehandle[#read_canonical(HTerm)] :-
+	file_read_canonical(Filehandle,PTerm,_)@prolog(machine),
+	flP2H(PTerm,HTerm). 
+Filehandle[#readline(atom,String)] :-
+	!, file_read_line_atom(Filehandle,String)@prolog(file_io).
+Filehandle[#readline(charlist,String)] :-
+	!, file_read_line_list(Filehandle,String)@prolog(file_io).
+_Filehandle[#readline(Request,_)] :- 
+	abort(('Invalid readline format, ', Request))@prolog().
+readline(atom,String) :-
+	!, file_read_line_atom(String)@prolog(file_io).
+readline(charlist,String) :-
+	!, file_read_line_list(String)@prolog(file_io).
+readline(Request,_) :- 
+	abort(('Invalid readline format, ', Request))@prolog().
+
+
+%%%%%%%%%%%%%%%%%%%%
+%% Stream-based I/O
+%%%%%%%%%%%%%%%%%%%%
+
+write(O) :- !, flP2H(PO,O), write(PO)@prolog().
+IOstream[#write(O)] :- flP2H(PO,O), writeln(IOstream,PO)@prolog().
+writeln(O) :- !, flP2H(PO,O), write(PO)@prolog().
+IOstream[#writeln(O)] :- flP2H(PO,O), writeln(IOstream,PO)@prolog().
+nl :- nl@prolog().
+
+read(Result) :- !, read(PResult)@prolog(), flP2H(PResult,Result).
+IOstream[#read(Result)] :-
+	read(IOstream,PResult)@prolog(), flP2H(PResult,Result).
+
+Filename[#see] :- see(Filename)@prolog().
+seen :- seen@prolog().
+seeing(Stream) :- seeing(Stream)@prolog().
+
+Filename[#tell] :- tell(Filename)@prolog().
+told :- told@prolog().
+telling(Stream) :- telling(Stream)@prolog().
+

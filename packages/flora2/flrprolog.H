@@ -24,9 +24,12 @@
 */
 
 
+%% NOTE: flora_dynprlg exists only because of the way import
+%% is handled in foo@prolog(mod). In this case, FLORA inserts
+%% a dynamic declaration that foo is a prolog predicate.
 :- dynamic flora_dynprlg(_,_).
 
-:- dynamic flora_shprlg(_,_).
+%%:- dynamic flora_shprlg(_,_).
 
 :- index 
 	flora_dynprlg/2-1,

@@ -72,12 +72,14 @@ flora_prlg(FL_MINUS,1) :- !.
 /****************************************************************************
   XSB predicates
 ****************************************************************************/
-flora_prlg(findall,3) :- !.
+flora_prlg(abolish_all_tables,0) :- !.
+flora_prlg(abort,0) :- !.
+flora_prlg(catch,3) :- !.
 flora_prlg(compile,1) :- !.
 flora_prlg(fail,0) :- !.
+flora_prlg(findall,3) :- !.
 flora_prlg(true,0) :- !.
-flora_prlg(abort,0) :- !.
-flora_prlg(abolish_all_tables,0) :- !.
+flora_prlg(throw,1) :- !.
 
 
 /****************************************************************************
@@ -96,8 +98,10 @@ flora_prlg(flEnd,0) :- !.
 flora_prlg(flHalt,0) :- !.
 flora_prlg(flMaxerr,1) :- !.
 flora_prlg(flDemo,1) :- !.
+flora_prlg(flDump,1) :- !.
 flora_prlg(flTrace,0) :- !.
 flora_prlg(flNoTrace,0) :- !.
+flora_prlg(flLowTrace,0) :- !.
 flora_prlg(flChatter,0) :- !.
 flora_prlg(flNoChatter,0) :- !.
 
@@ -123,6 +127,9 @@ flora_prlgdef(X,Y) :-
 	%%  conget(flora_shell_mode,1) ->
 	%%    flora_shprlg(X,Y)
 	%%;
+	  %% NOTE: flora_dynprlg exists only because of the way import
+	  %% is handled in foo@prolog(mod). In this case, FLORA inserts
+	  %% a dynamic declaration that foo is a prolog predicate.
 	  flora_dynprlg(X,Y)
 	).
 

@@ -24,7 +24,7 @@
 
 XSBDIR=../../..
 
-ALL = 	flrprettyprint.P
+ALL = 	flrprettyprint.P flrio.P
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	$(XSBDIR)/emu/flag_defs_xsb.h \
@@ -65,7 +65,7 @@ recompile: $(ALL) finish
 	@cat $(SVFILE)
 
 .flr.P:
-	echo 'import (flCompile)/1 from flora2. flCompile($*).' >> cmd...
+	echo 'import (flora_compile_service)/1 from flrutils. flora_compile_service($*).' >> cmd...
 
 init:
 	rm -f $(SVFILE)

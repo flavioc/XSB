@@ -39,16 +39,11 @@ flora_shell_loop :-
 	repeat,
 	pop_abort_cutpoint,
 	push_abort_cutpoint,
-	%seen,
-	%see(userin),
-	%told,
-	%tell(userout),
 	flora_shell_prompt,
 	flora_shell_command_line(Code,Options,Status),
 	( flora_good_command(Status) ->
 	    findall(Op,member(FLSYSLIB(Op),Options),OpList),
 	    flora_load_library(OpList),
-	    %writeln(Code),
 	    call(Code)
 	;
 	  true
@@ -99,7 +94,7 @@ flora_loop_guard(Status) :-
 	      flEnd
 	    )
 	;
-	  abort
+	    abort
         ).
 
 
@@ -193,6 +188,7 @@ flEnd :-
 
 
 /*********************************************************************/
+%% Enable Flora high-level debugging
 flTrace :-
 	( flora_debugger_data_loaded ->
 	    true
@@ -200,7 +196,6 @@ flTrace :-
 	  consult(flrdebugger)
 	),
 	flora_trace.
-
 flNoTrace :-
 	( flora_debugger_data_loaded ->
 	    true
@@ -208,6 +203,9 @@ flNoTrace :-
 	  consult(flrdebugger)
 	),
 	flora_notrace.
+%% Disables flora debugging and enables low-level XSB debugging
+flLowTrace :- assert(flora_switch(low_level_trace)), trace.
+
 
 
 /*********************************************************************/

@@ -26,7 +26,7 @@
 :- compiler_options([xpp_on]).
 #include "standard.h"
 
-#include "flrheader.flh
+#include "flrheader.flh"
 
 
 
@@ -419,10 +419,12 @@ flora_write_vars(V,Rest) :-
 
 /*********************************************************************/
 
-STD_FPREFIX(trace) :-
-	trie_assert(flora_switch(trace)),
+flora_trace :-
+	assert(flora_switch(trace)),
+	retract(flora_switch(low_level_trace)),
 	flora_handle_trace.
-STD_FPREFIX(notrace) :-
-	trie_retract_all(flora_switch(trace)),
+flora_notrace :-
+	retract_all(flora_switch(trace)),
+	retract_all(flora_switch(low_level_trace)),
 	flora_handle_notrace.
 

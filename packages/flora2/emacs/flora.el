@@ -114,7 +114,7 @@
     ;; for objects
     '("\\([A-Za-z0-9_][A-Za-z0-9_!.]*\\) *\\["
       1 'font-lock-variable-name-face)
-    '("\\b\\(\\\+\\|tnot\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|deleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\||fl[A-Z][a-zA-Z]*\\)\\b"
+    '("\\b\\(\\\+\\|tnot\\|avg\\|max\\|min\\|sum\\|count\\|collectset\\|collectbag\\|insert\\|delete\\|btinsert\\|btdelete\\|insertall\\|deleteall\\|erase\\|eraseall\\|bterase\\|bteraseall\\|if\\|then\\|else\\|while\\|fl[A-Z][a-zA-Z]*\\)\\b"
       1 'font-lock-keyword-face)
     '("\\(:\\||\\)" 
       1 'font-lock-type-face)

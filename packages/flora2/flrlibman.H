@@ -39,18 +39,18 @@
 :- import bootstrap_flora/0 from flora2.
 :- bootstrap_flora.
 
-:- index flora_include/2-1.
-
-:- index flora_library/2-1.
+:- index flora_service_file/3-1.
+:- index flora_library_file/3-1.
 
 :- dynamic flora_syslib_loaded(_).
-:- index(flora_register_syslib/1,trie).
+:- index flora_syslib_loaded/1-1.
 
-:- import flora_error_line/1 from flrprint.
+:- import flora_error_line/1,
+	flora_error_line/2
+   from flrprint.
 
 :- export
+	flora_service_file/3,
 	flora_include/2,
-	flora_library/2,
-	flora_register_syslib/1,
 	flora_load_library/1.
 

@@ -29,15 +29,9 @@
 #include "flora_terms.flh"
 
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import flloadtrailer/1, flloadtrailer/2 from flrutils.
 
 
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBEQUALITY).
 
 
 /*****************************************************************************

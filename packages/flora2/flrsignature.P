@@ -33,6 +33,7 @@ flora_arguments_spec((findall),3,[FL_OID,FL_BODYFORMULA,FL_OID]) :- !.
 flora_arguments_spec((if),1,[FL_BODYFORMULA]) :- !.
 flora_arguments_spec((else),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
 flora_arguments_spec((then),2,[FL_BODYFORMULA,FL_BODYFORMULA]) :- !.
+flora_arguments_spec((catch),3,[FL_BODYFORMULA,FL_OID,FL_BODYFORMULA]) :- !.
 
 
 /****************************************************************************

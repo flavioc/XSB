@@ -39,8 +39,6 @@
 
 :- import append/3 from basics.
 
-:- import flora_register_syslib/1 from flrlibman.
-
 :- import
 	flora_error_line/1,
 	flora_error_heading/0,
@@ -71,13 +69,6 @@
   This file is for the following backtrackable FLORA database operations:
   btinsert, btinsertall, btdelete, btdeleteall, bterase, bteraseall.
 *********************************************************************/
-?- flora_register_syslib(FLLIBBTDBOP).
-
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBBTINSERT).
 
 
 /*****************************************************************************
@@ -143,11 +134,6 @@ flora_storage_insertfacts_bt([P|T]) :-
 	).
 
 
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBBTINSERTALL).
-
 
 /*****************************************************************************
   fllibbtinsertall(+List)
@@ -175,11 +161,6 @@ flora_btinsertall_facts([Fs|FL]) :-
 	flora_storage_insertfacts_bt(Fs),
 	flora_btinsertall_facts(FL).
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBBTDELETE).
 
 
 /*****************************************************************************
@@ -231,11 +212,6 @@ flora_storage_deletelist_bt([FLSYSDBUPDATE(P,StorageName)|L]) :-
 	storage_delete_fact_bt(StorageName,P,_Deleted),
 	flora_storage_deletelist_bt(L).
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBBTDELETEALL).
 
 
 /*****************************************************************************
@@ -297,11 +273,6 @@ flora_btdeleteall_facts([Fs|FL]) :-
 	flora_storage_deletelist_bt(Fs),
 	flora_btdeleteall_facts(FL).
 
-
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBBTERASE).
 
 
 /*****************************************************************************
@@ -450,10 +421,6 @@ flora_bterase_objects([O|OList],StorageName) :-
 	flora_bterase_objects(NextOList,StorageName).
 
 
-/*********************************************************************
-  system library registration
-*********************************************************************/
-?- flora_register_syslib(FLLIBBTERASEALL).
 
 
 /*****************************************************************************

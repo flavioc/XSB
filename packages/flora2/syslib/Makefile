@@ -46,7 +46,7 @@ ALLOBJS = flranswer.O \
 	  flrdynmod.O \
 	  flrequality.O \
 	  flrimport.O \
-	  flrabolish.O
+	  flrexpunge.O
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	       $(XSBDIR)/emu/flag_defs_xsb.h \
@@ -74,7 +74,7 @@ XSB = $(XSBDIR)/bin/xsb
 PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
+SVFILE = '$(XSBDIR)/build/.flora_syslib_warn.tmp'
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora2/syslib:"
@@ -155,8 +155,8 @@ flrimport.O: flrimport.P $(FLORA_TERMS) $(FLRHEADER)
 	@echo 'mc(flrimport,$(OPTION)).' >> cmd...
 
 
-flrabolish.O : flrabolish.P $(FLORA_TERMS)
-	@echo 'mc(flrabolish,$(OPTION)).' >> cmd...
+flrexpunge.O : flrexpunge.P $(FLORA_TERMS)
+	@echo 'mc(flrexpunge,$(OPTION)).' >> cmd...
 
 
 init:

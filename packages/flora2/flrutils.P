@@ -54,9 +54,10 @@ flora_compile_internal(File) :-
 	flora_compile_internal(File,FLORA_DEFAULT_WORKSPACE).
 
 
-/*************************************************************************
+/******************************************************************************
   flora_compile_internal(+File,+Workspace)
-*************************************************************************/
+  The .O file is renamed using the module name
+******************************************************************************/
 flora_compile_internal(File,Workspace) :-
 	flora_check_filename(File),
 	flora_check_workspace(Workspace),
@@ -181,7 +182,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	      true
 	  ;
 	    flora_set_xpp_options(Workspace),
-	    compile(UserTrailerPFile,[optimize,spec_repr]),
+	    compile(UserTrailerPFile,[optimize,spec_repr,ti_all]),
 	    path_sysop(rename,UserTrailerOFile,UserTrailerWSOFile),
 	    flora_clear_xpp_options
 	  ),
@@ -216,7 +217,7 @@ flsetuptrailer(TrailerName) :-
 	    fail
 	;
 	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
-	  compile(TrailerFullName,[optimize,spec_repr]),
+	  compile(TrailerFullName,[optimize,spec_repr,ti_all]),
 	  flora_clear_xpp_options
 	),
 	!.
@@ -253,7 +254,7 @@ flloadpatch(Workspace) :-
 	    true
 	;
 	  flora_set_xpp_options(Workspace),
-	  compile(UserPatchPFile,[optimize,spec_repr]),
+	  compile(UserPatchPFile,[optimize,spec_repr,ti_all]),
 	  path_sysop(rename,UserPatchOFile,UserPatchWSOFile),
 	  flora_clear_xpp_options
         ),
@@ -279,7 +280,7 @@ flsetuppatch :-
 	    fail
 	;
 	  flora_set_xpp_options(FLORA_DEFAULT_WORKSPACE),
-	  compile(PatchFullName,[optimize,spec_repr]),
+	  compile(PatchFullName,[optimize,spec_repr,ti_all]),
 	  flora_clear_xpp_options
 	),
 	!.
@@ -315,23 +316,54 @@ flora_user_flora_dir(Dir) :-
 
 /*************************************************************************
   flora_flcompile(+FlrFile,+Workspace)
+  Renames the .O file using the module name
 *************************************************************************/
 flora_flcompile(FlrFile,Workspace) :-
+	flora_flcompile(FlrFile,Workspace,rename).
+
+/*************************************************************************
+  flora_flcompile(+FlrFile,+Workspace,+WhetherToRename)
+  If WhetherToRename=rename, then the .O file is renamed
+*************************************************************************/
+flora_flcompile(FlrFile,Workspace,WhetherToRename) :-
 	flora_mainP_filename(FlrFile,MPFile),
 	flora_FDB_filename(FlrFile,FDBFile),
 	flora_compile_file(FlrFile,MPFile,FDBFile,Status),
 	( Status == FLORA_FAILURE ->
 	    fail
 	;
-	  flora_mainO_filename(FlrFile,MOFile),
-	  flora_WSO_filename(FlrFile,Workspace,WSOFile),
-	  flora_message_line("calling XSB compiler"),
-	  flora_set_xpp_options(Workspace),
-	  compile(MPFile,[optimize,spec_repr]),
-	  flora_clear_xpp_options,
-	  path_sysop(rename,MOFile,WSOFile)
+	    flora_mainO_filename(FlrFile,MOFile),
+	    flora_message_line("calling XSB compiler"),
+	    flora_set_xpp_options(Workspace),
+	    compile(MPFile,[optimize,spec_repr,ti_all]),
+	    flora_clear_xpp_options,
+	    (WhetherToRename==rename
+	    ->  flora_WSO_filename(FlrFile,Workspace,WSOFile),
+		path_sysop(rename,MOFile,WSOFile)
+	    ;   true
+	    )
         ),
 	!.
+
+
+/******************************************************************************
+   Compile a service in the lib/ directory. Since services are loaded
+   into predefined modules, there is no need to rename the .O file.
+   This is used only in the Makefile, so we don't do error checking
+   for file existence, etc.
+******************************************************************************/
+flora_compile_service(File) :-
+	path_sysop(basename,File,Basename),
+	flora_service_file(Servicename,Basename,_), % get service's name
+	flora_set_xpp_extra_options(' -D FLORA_COMPILING_SERVICE_LIBRARY '),
+	(flora_locate_file(Basename,FLORA_FILE_EXT,FlrFile)
+	-> flora_flcompile(FlrFile,Servicename,dontrename)
+	;  flora_stderr_nl,
+	    flora_error_line("File %s[.%s] does not exist!",
+			     args(Basename,FLORA_FILE_EXT)),
+	    fail
+	).
+
 
 
 /*************************************************************************
@@ -356,7 +388,7 @@ flora_flload(FlrFile,Workspace) :-
 	( flora_file_newerthan(WSOFile,MPFile) ->
 	    true
 	;
-	  compile(MPFile,[optimize,spec_repr]),
+	  compile(MPFile,[optimize,spec_repr,ti_all]),
 	  path_sysop(rename,MOFile,WSOFile)
         ),
         consult(WSOFile),
@@ -496,15 +528,28 @@ flora_check_workspace(Name) :-
 	( var(Name) ->
 	    flora_error_line('uninstantiated module name'),
 	    fail
-	; not atom(Name) ->
+	; not (atom(Name), is_alphanumeric(Name)) ->
 	    flora_error_heading,
-	    flora_stderr_string('invalid module name: '),
+	    flora_stderr_string('invalid module name (not alphanumeric): '),
 	    flora_stderr_write(Name),
 	    flora_stderr_nl,
 	    fail
-	;
+	; 
 	  true
 	).
+
+is_alphanumeric(Name) :-
+	atom_codes(Name,NameL),
+	is_alphanumericL(NameL).
+is_alphanumericChar(Ch) :-
+	(CH_0 =< Ch, Ch =< CH_9
+	; CH_a =< Ch, Ch =< CH_z
+	; CH_A =< Ch, Ch =< CH_Z
+	; Ch == 0'_).
+is_alphanumericL([]).
+is_alphanumericL([Ch|Rest]) :-
+	is_alphanumericChar(Ch),
+	is_alphanumericL(Rest).
 
 
 /*************************************************************************
@@ -514,16 +559,24 @@ flora_set_xpp_options :-
 	retractall(xpp_options(_)),
 	assert(xpp_options('-P -m -nostdinc -curdirinclast')).
 
-
+%% Looks in flora_xpp_extra_options/1 to see if needs to add more options
 flora_set_xpp_options(WS) :-
+	(flora_xpp_extra_options(ExtraOptions) -> true
+	; ExtraOptions = ''
+	),
 	fmt_write_string(Opt,
-                         '-P -m -nostdinc -curdirinclast -D FLORA_VAR_WORKSPACE=%s',
-                         args(WS)),
-	retractall(xpp_options(_)),
+                         '-P -m -nostdinc -curdirinclast %s -D FLORA_VAR_WORKSPACE=%s',
+                         args(ExtraOptions,WS)),
+	flora_clear_xpp_options,
 	assert(xpp_options(Opt)).
 
+%% Extra options for GPP
+flora_set_xpp_extra_options(Opt) :-
+	flora_clear_xpp_extra_options,
+	assert(flora_xpp_extra_options(Opt)).
 
 flora_clear_xpp_options :- retractall(xpp_options(_)).
+flora_clear_xpp_extra_options :- retractall(flora_xpp_extra_options(_)).
 
 
 /*************************************************************************
@@ -663,9 +716,9 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FileStatu
 	telling(PreOutFile),
 	tell(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
-	%% FLLIBCONTROL (sylibinc/flrcontrol_inc.flh) should probably 
-	%% be included by the compiler
-	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL|LibOptionList],
+	%% FLLIBCONTROL (sylibinc), (libinc) FLSERVPP, FLSERVIO
+	%%  should be included by the compiler
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL,FLSERVPP,FLSERVIO|LibOptionList],
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
@@ -1168,6 +1221,50 @@ flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,WRAP_HILOG).
 
 
 flHalt :- halt.
+
+flDump(InFile>>Workspace) :-
+	flora_dump_file(InFile,Workspace,dontsquash).
+flDump(InFile) :-
+	atom(InFile),
+	flora_dump_file(InFile,FLORA_DEFAULT_WORKSPACE,squash).
+
+%% If SquashingOption == squash, ignore Workspace in the final round 
+%% of gpp pre-processing.
+flora_dump_file(InFile,Workspace,SquashingOption) :-
+	path_sysop(basename,InFile,Basename),
+	(flora_locate_file(Basename,FLORA_FILE_EXT,File)
+	-> flora_flcompile(File,Workspace,dontrename)
+	;  flora_stderr_nl,
+	    flora_error_line("File %s[.%s] does not exist!",
+			     args(Basename,FLORA_FILE_EXT)),
+	    fail
+	),
+	(SquashingOption == squash ->  NewWorkspace = ''
+	;   %% Add '_' to the workspace: simplifies reading the predicates
+	    str_cat(Workspace,'_',NewWorkspace)
+	),
+	(flora_gpp_dumpfile(Basename,NewWorkspace,XSB_PFILE_EXT)
+	; flora_error_line('Failed to make a dump file for %s',args(Basename)),
+	    fail
+	),
+	(flora_gpp_dumpfile(Basename,NewWorkspace,FLORA_FDB_EXT)
+	;   true
+	).
+
+flora_gpp_dumpfile(Basename,Workspace,Extension) :-
+	(flora_locate_file(Basename,Extension,ExtFile)
+	->
+	    flora_set_xpp_extra_options(' -D FLORA_DUMP '),
+	    flora_set_xpp_options(Workspace),
+	    fmt_write_string(Dumpfile, '%s_dump.%s', args(Basename,Extension)),
+	    file_open(Dumpfile,w,DumpPort),
+	    xpp_process_file(ExtFile,XPP_process,IOportFromGPP),
+	    copyIOport(IOportFromGPP,DumpPort),
+	    process_control(XPP_process, wait),
+	    flora_clear_xpp_options,
+	    file_close(DumpPort),
+	    file_close(IOportFromGPP)
+	).
 
 
 /*************************************************************************

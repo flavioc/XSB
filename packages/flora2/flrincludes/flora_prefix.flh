@@ -1,11 +1,11 @@
-/* File:      flrabolish.P
+/* File:      flora_prefix.flh -- FLORA prefixes
 **
 ** Author(s): kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
-**
+** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
@@ -19,19 +19,28 @@
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-** 
-** 
+**
+**
 */
 
 
-:- compiler_options([xpp_on]).
+%% If FLORA_DUMP is defined: preprocessing for user-readable dumping
 
-#include "flora_terms.flh"
+#ifndef FLORA_DUMP
 
+#define FLORA_STORAGE_PREFIX		 '_$_$_flora|storage|'
+#define FLORA_PREFIX		     	 '_$_$_flora'
 
+#else
 
-%% IF THEN ELSE
-FL_IF(FL_THEN(Cond,FL_ELSE(Then,_Else))) :- call(Cond), call(Then).
-%% This cut prevents `if' with the `else' clause from matching the third clause
-FL_IF(FL_THEN(Cond,FL_ELSE(_Then,Else))) :- !, sk_not(Cond), call(Else).
-FL_IF(FL_THEN(Cond,Then)) :- call(Cond), call(Then).
+#define FLORA_PREFIX	
+#define FLORA_STORAGE_PREFIX		 storage_
+
+#endif
+
+%% String added to the service name to form a service workspace
+%% These are used for the service libraries in lib/ and they protect the
+%% service modules from the user who might load something else inthose
+%% modules.
+#define FLORA_SERVICE_STR		 |service|
+#define FLORA_SERVICE_STR_QUOTED	 '|service|'
