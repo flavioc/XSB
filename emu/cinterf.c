@@ -1069,6 +1069,9 @@ DllExport void call_conv print_pterm(prolog_term term, int toplevel, VarString *
   if (is_var(term)) {
     xsb_sprint_variable(tempstring, (CPtr) term);
     XSB_StrAppend(straddr,tempstring);
+  } else if (is_attv(term)) {
+    xsb_sprint_variable(tempstring, (CPtr) dec_addr(term));
+    XSB_StrAppend(straddr,tempstring);
   } else if (is_int(term)) {
     sprintf(tempstring,"%d", (int) p2c_int(term));
     XSB_StrAppend(straddr,tempstring);
