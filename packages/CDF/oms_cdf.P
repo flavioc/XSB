@@ -15,8 +15,7 @@ make_oms_clean :- retractall(oms_dirty(_)),asserta(oms_dirty(0)).
 
 :- comment(oms_update_list/1, "oms_update_list takes a list of
 assert/retracts to stored OMS relations and executes them.  All
-updates to any OMS relation should go through here.  This will
-allow to keep the external DB consistent, when we get to it.").
+updates to any OMS relation should go through here.").
 
 oms_update_list(List) :-
 	oms_do_update_list(List).
@@ -26,5 +25,9 @@ oms_do_update_list([Term|Terms]) :-
 	oms_update_term(Term),
 	oms_do_update_list(Terms).
 
-oms_update_term(asserta(Term)) :- assert_oms(Term).
-oms_update_term(retractall(Term)) :- retractall_oms(Term).
+oms_update_term(asserta(Term)) :-
+	assert_oms(Term).
+oms_update_term(retractall(Term)) :- 
+	retractall_oms(Term),
+	retractall(Term).
+
