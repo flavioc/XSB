@@ -2002,13 +2002,11 @@ int builtin_call(byte number)
 
   case ABOLISH_TABLE_CALL: {
     VariantSF subgoal;
-    ComplStackFrame csf;
     TIFptr tif;
 
     subgoal = (VariantSF) ptoc_int(1);
-    csf = (ComplStackFrame) subgoal->compl_stack_ptr;
     tif = (TIFptr) subgoal->tif_ptr;
-    compl_subgoal_ptr(subg_compl_stack_ptr(subgoal)) = NULL;
+    //    compl_subgoal_ptr(subg_compl_stack_ptr(subgoal)) = NULL; (dsw?)
     reclaim_incomplete_table_structs(subgoal);
     delete_branch(subgoal->leaf_ptr, &tif->call_trie);
     return TRUE;
