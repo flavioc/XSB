@@ -28,14 +28,16 @@
 
 
 # Where the architectue specific XSB stuff is
-ARCH=arch_dir=i686-pc-linux-gnu
+ARCH=i686-pc-linux-gnu
+#ARCH=i686-pc-linux-gnu-dbg
 arch_dir=$(HOME)/XSB/XSB/config/$(ARCH)
 
 CC=gcc
 CFLAGS= -O4 -ansi -pedantic -Wall
+#CFLAGS= -ansi -pedantic -Wall -g
 LDFLAGS= -lm -ldl -Wl,-export-dynamic
 # For Soraris use:
-LDFLAGS= -lsocket  -lm -lnsl -ldl -Wl,-export-dynamic
+#LDFLAGS=  -lsocket -lm -lnsl -ldl -Wl,-export-dynamic
 
 ## DON'T EDIT BELOW THIS LINE
 ############################################################################
