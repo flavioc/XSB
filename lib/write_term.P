@@ -24,6 +24,7 @@
 **
 ** 
 */
+:- compiler_options([ciao_directives,sysmod,optimize]).
 
 :- export write_term/2, write_term/3, write_option/1,code_class/2.
 
