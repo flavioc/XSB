@@ -55,7 +55,7 @@ DLLNAME=xsb.dll
 DLL_LIBS=$(LDFLAGS) 
 LIB_OBJECTS=xsb.o dllinit_xsb.o
 BASE_FILE=xsb.base
-DEF_FILE=xsb.def
+DEF_FILE=$(arch_config_prefix)/saved.o/xsb.def
 LIB_FILE=libxsb.a
 ENTRY_FUNCTION=_win_xsbent@12
 
@@ -192,9 +192,11 @@ dll: $(DLLTYPE)
 
 nodll:
 
-cygdll: $(HEADERS) $(DEF_FILE) xsb.o
+cygdll: $(HEADERS) xsb.o
+	chmod ugo+x $(arch_config_prefix)/makedef.sh
 	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dllinit_xsb.cc
 	@cp dllinit_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+	$(arch_config_prefix)/makedef.sh $(allOBJS) dllinit_xsb.o
 	$(CC) -mno-cygwin -shared -o $(DLLNAME) $(LIB_OBJECTS) $(DEF_FILE) -Wl,--out-implib=xsb.a $(DLL_LIBS) -e $(ENTRY_FUNCTION)
 	@mv $(DLLNAME) $(bindir) 2> /dev/null || echo ""
 	@mv $(LIB_FILE) $(bindir) 2> /dev/null || echo ""

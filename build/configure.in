@@ -1539,6 +1539,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${arch_config_prefix}/modMakefile:modMakefile.in
 	    ${arch_config_prefix}/gppMakefile:gppMakefile.in
 	    ${arch_config_prefix}/smoMakefile:smoMakefile.in
+	    ${arch_config_prefix}/makedef.sh:makedef.sh.in
 	    ${arch_config_file}:${configuration_templ}
 	    makexsb:makexsb.in
 	    ${emudir}/extensions_xsb.h:extensions_xsb.in
