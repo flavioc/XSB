@@ -30,6 +30,7 @@
 /* wind2unix.h must be included after sys/stat.h */
 #include "wind2unix.h"
 #include <errno.h>
+#include <string.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -39,8 +40,11 @@
 #include "psc_xsb.h"
 #include "string_xsb.h"
 #include "extensions_xsb.h"
+#include "xsb_config.h"
 
 #define BUFFEXTRA 1024
+
+extern char *xsb_config_file;
 
 /*----------------------------------------------------------------------*/
 
@@ -51,6 +55,23 @@ xsbBool dummy()
 }
 
 /*----------------------------------------------------------------------*/
+
+// construct a path to config\bin\cfile_name.dll by removing "lib\xsb_configuration.P"
+// from xsb_config_file location and appending "bin\cfile_name.dll"
+static char *create_bin_dll_path(char *xsb_config_file_location, char *dll_file_name){
+  char *xsb_bin_dir;
+  int char_count;
+  char_count = strlen(xsb_config_file_location)-strlen("lib")-1-strlen("xsb_configuration.P");
+  xsb_bin_dir = malloc(sizeof(char)*(char_count+strlen(dll_file_name)+5)); // 5 stands for bin\\ + null
+  strncpy(xsb_bin_dir, xsb_config_file_location,char_count);
+  xsb_bin_dir[char_count]='\0';
+  strcat(xsb_bin_dir, "bin");
+  char_count += 3;
+  xsb_bin_dir[char_count]=SLASH;
+  xsb_bin_dir[char_count+1]='\0';
+  strcat(xsb_bin_dir, dll_file_name);
+  return xsb_bin_dir;
+}
 
 static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 {
@@ -65,6 +86,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*funcep;
   char  *file_extension_ptr;
   xsbBool	dummy();
+  char *basename_ptr;
+  char *xsb_bin_dir;
   
   /* (1) create filename.so */
   
@@ -76,8 +99,22 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   /* (2) open the needed object */
   if (( handle = LoadLibrary(sofilename)) == 0 ) {
-    xsb_warn("Cannot load library %s; error #%d",sofilename,GetLastError());
-    return 0;
+    // if DLL is not found in c file's path
+    // look for it in bin path, if still not found
+    // let OS find it
+    basename_ptr = strrchr(sofilename, SLASH); // get \file.dll
+    if(basename_ptr != NULL){
+      basename_ptr = basename_ptr + 1;
+      xsb_bin_dir = create_bin_dll_path(xsb_config_file, basename_ptr);
+      if(( handle = LoadLibrary(xsb_bin_dir)) == 0 ){
+	if (( handle = LoadLibrary(basename_ptr)) == 0 ) {
+	  free(xsb_bin_dir);
+	  xsb_warn("Cannot load library %s or %s; error #%d",basename_ptr,sofilename,GetLastError());
+	  return 0;
+	}
+      }
+      free(xsb_bin_dir);
+    }
   }
   
   /* (3) find address of function and data objects
