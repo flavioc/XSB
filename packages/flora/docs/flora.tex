@@ -2109,6 +2109,151 @@ from {\tt flrutils}, that can be used in conjunction with \FLORA:
 \end{tabbing}
 %%
 
+\section{Emacs Support}
+
+Editing and debugging \FLORA programs can be greatly simplified with the
+help of \emph{flora-mode}, a special Emacs editing mode designed
+specifically for \FLORA programs. Flora-mode provides support for syntactic
+highlighting, automatic indentation, and the ability to run \FLORA programs
+right out of the Emacs buffer.
+
+\subsection{Instalation}
+To install \emph{flora-mode}, you must perform the following steps. Put the
+file
+%%
+\begin{quote}
+  {\tt XSB/packages/flora/emacs/flora.el} 
+\end{quote}
+%%
+found in your XSB distribution on the load path of Emacs or XEmacs
+(whichever you are using). The best way to work with Emacs is to make a
+separate directory for Emacs libraries (if you do not have one), and put
+{\tt flora.el} there. Such a directory can be added to emacs search path by
+putting the following command in the file \verb|~/.emacs| (or
+\verb|~/.xemacs|, if you are running one of the newer versions of XEmacs):
+%%
+\begin{quote}
+  \tt
+   (setq load-path (cons "your-directory" load-path)) 
+\end{quote}
+%%
+It is also a good idea to compile emacs libraries. To compile flora.el,
+use this:
+%%
+\begin{quote}
+  \tt
+   emacs -batch -f batch-byte-compile flora.el 
+\end{quote}
+%%
+If you are using XEmacs, use {\tt xemacs} instead of {\tt emacs} above ---
+the two emacsen often use incompatible byte code.
+
+Finally, you must tell X/Emacs how to recognize \FLORA program files, so
+Emacs will be able to invoke the Flora major mode automatically when you
+are editing such files:
+%%
+\begin{verbatim}
+(setq auto-mode-alist (cons '("\\.flr$" . flora-mode) auto-mode-alist))
+(autoload 'flora-mode "flora" "Major mode for editing Flora programs." t)
+\end{verbatim}
+%%$
+
+To enable syntactic highlighting of Emacs buffers (not just for \FLORA
+programs), you can do the following:
+%%
+\begin{itemize}
+  \item  {\sf In Emacs:} select {\tt Help.Options.Global Font Lock} on
+    the menubar.  To enable highlingting permanently, put 
+    %%
+    \begin{quote}
+      \tt
+      (global-font-lock-mode t)
+    \end{quote}
+    %%
+    in \verb|~/.emacs|.
+  \item {\sf In XEmacs:} select {\tt Options.Syntax
+        Highlighting.Automatic} in the menubar. To enable this permanently, put
+      %%
+      \begin{quote}
+        \tt
+        (add-hook 'find-file-hooks 'turn-on-font-lock)
+      \end{quote}
+      %%
+      in \verb|~/.emacs| or \verb|~/.xemacs| (whichever is used by your
+      XEmacs).
+\end{itemize}
+%%
+
+\subsection{Functionality}
+\paragraph{Menubar menu.}
+Once flora editing mode is installed, it provides a number of functions.
+First, whenever you edit a \FLORA program, you will see the ``Flora'' menu
+in the menubar. This menu provides commands for controlling the Flora
+process ({\it i.e.}, XSB with the \FLORA shell). You can start and stop
+this process, type queries to it, and you can tell it to consult regions of
+the buffer you are editing, the entire buffer, or some other file.
+
+Because Emacs provides automatic file completion and allows you to edit
+what you typed, performing these functions right out of the buffer takes
+much less effort than typing the corresponding commands on XSB command
+line.
+
+\paragraph{Keyboard functions.}
+In addition to the menu, \emph{flora-mode} lets you execute most of the
+menu commands using the keyboard. Once you get the hang of it, keyboard
+commands are much faster to invoke:
+%%
+\begin{verbatim}
+Consult file:                 Ctl-c Ctl-f
+Consult file dynamically:     Ctl-u Ctl-c Ctl-f
+Consult buffer:               Ctl-c Ctl-b
+Consult buffer dynamically:   Ctl-u Ctl-c Ctl-b
+Consult region:               Ctl-c Ctl-r
+Consult region dynamically:   Ctl-u Ctl-c Ctl-r
+\end{verbatim}
+%%
+When you invoke any of the above commands, a \FLORA process is started,
+unless it is already running. However, if you want to invoke this process
+explicitly, type
+%%
+\begin{verbatim}
+ESC x run-flora  
+\end{verbatim}
+%%
+You can control the \FLORA process using the following commands:
+%%
+\begin{verbatim}
+Interrupt Flora Process:      Ctl-c Ctl-c
+Quit Flora Process:           Ctl-c Ctl-d
+Restart Flora Process:        Ctl-c Ctl-s
+\end{verbatim}
+%%
+Interrupting \FLORA is equivalent to typing {\tt Ctl-c} at the \FLORA
+prompt, quitting the process stops XSB, and restarting the process shuts
+down the old XSB process and starts a new one with \FLORA shell running.
+
+\paragraph{Indentation.}
+Flora editing mode understands some aspects of the \FLORA syntax, which
+enables it to provide correct indentation of program lines (in many cases).
+In the future, flora mode will know more about the syntax, which will let
+it provide even better support for indentation.
+
+The most common use of \FLORA indentation facility is by typing the {\tt
+  TAB}-key. If \emph{flora-mode} manages to understand where the cursor is,
+it will indent the line accordingly. Another way is to put the following in
+your emacs startup file (\verb|~/.emacs| or \verb|~/.xemacs|):
+%%
+\begin{verbatim}
+    (setq flora-electric t)  
+\end{verbatim}
+%%
+In this case, whenever you type the return key, the next line will be
+indented automatically.
+
+
+
+
+
 \section{Future Enhancements}
 
 \FLORA is work in progress. We are still experimenting with features and

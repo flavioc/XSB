@@ -30,9 +30,10 @@
 ;; Is it Emacs?
 (defconst flora-emacs-p (not flora-xemacs-p))
 
-(defconst flora-temp-file-prefix (if flora-emacs-p
-				     temporary-file-directory
-				   (temp-directory))
+(defconst flora-temp-file-prefix
+  (cond (flora-emacs-p temporary-file-directory)
+	((fboundp 'temp-directory) (temp-directory))
+	(t "/tmp/"))
   "*Directory for temporary files.")
 
 ;; This path has to be set at installation of the F-Logic-System!!!
@@ -54,6 +55,9 @@
 (defvar flora-offer-save t
   "*If non-nil, ask about saving modified buffers before 
 \\[flora-consult-file] is run.")
+
+(defvar flora-electric nil
+  "*If t, typing RETURN automatically indents Flora lines.")
 
 (defvar flora-indent-width 4)
 
@@ -199,6 +203,8 @@
   (define-key map "\M-\t"    'comint-dynamic-complete)
   (define-key map "\C-c\C-c" 'flora-interrupt)
   (define-key map "\C-c\C-d" 'flora-quit)
+  (define-key map "\C-m"     'flora-electric-return)
+  (define-key map "[return]" 'flora-electric-return)
   (define-key map "*"	     'flora-electric-star)
   (define-key map "/"	     'flora-electric-slash))
 
@@ -389,6 +395,14 @@ is inhibited."
     (self-insert-command (prefix-numeric-value arg))
     (if indentp
 	(flora-indent-line))))
+
+(defun flora-electric-return ()
+  "If flora-electric is t, indent automatically whenever the user types RETURN.
+Otherwise, just insert newline."
+  (interactive)
+  (insert "\n")
+  (if flora-electric
+      (indent-according-to-mode)))
 
 (defun flora-in-literal ()
   ;; to be worked out
