@@ -796,18 +796,23 @@ CHAT Operations
     \item when using the debugger (see Chapter~\ref{debugging}).  
     \end{itemize}
     Currently, all exception handling routines terminate with a call to 
-    predicate {\tt abort/0}, so an exception encountered at some break level 
+    predicate {\tt abort/0}, so an exception encountered at a break level 
     other than the top level will return the interpreter at the top level.
 
-    The user should be aware of the fact that {\tt abort/0} does not close 
-    any files which may have been opened.  If the program under execution is 
-    doing file manipulation using {\tt see/1} and {\tt tell/1}, then strange 
-    behavior may occur after the program is aborted and restarted, unless
-    the user manually closes the files.
+    {\tt abort/0} does not close any files which may have been opened.
+    If the program under execution is doing file manipulation using
+    {\tt see/1} and {\tt tell/1}, then unexpected behavior may occur
+    after the program is aborted and restarted, unless the user
+    manually closes the files.
 
     Aborting closes all incomplete tables (those which may not have a 
     complete set of answers).  Closed tables are unaffected, even if 
     the tables were created during the aborted computation.
+
+    {\tt abort/0} is implemented by throwing the term {\tt
+    '_$abort_ball/0}.  Implementations that wish to override the
+    default behavior of {\tt abort/0} must call a top-level goal via
+    {\tt catch/1} and ensure that {\tt '_$abort_ball/0'} is handled.
 
 \ouritem{abort(+Message)}\index{{\tt abort/1}} \index{{\tt STDERR}}
     Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
