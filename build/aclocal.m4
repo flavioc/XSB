@@ -102,24 +102,29 @@ Usage: configure [options] [host]
 Options: [defaults in brackets after descriptions]
 
 Control:
-  --help                  print this message
+  --help                  Print this message
   --cache                 use cached test results from a previous run
                           of \`configure', if available
-  --force64               on 64 bit machines that default to the 32 bit mode,
+  --force64               On 64 bit machines that default to the 32 bit mode,
                           force the 64 bit mode.
 
   --linuxaout             If you are using an older Linux system that
                           utilizez the a.out format, you must tell us, or
                           else XSB won't be configured correctly.
 
-  --no-create             do not create output files
-  --quiet, --silent       do not print \`checking...' messages
-  --version               print the version of autoconf that created configure
+  --optimization-level=level
+                          You can override the default optimization settings by
+                          specifying something like O2 (or xO2, for some
+                          compilers).
+
+  --no-create             Do not create output files
+  --quiet, --silent       Do not print \`checking...' messages
+  --version               Print the version of autoconf that created configure
 
 Directory and file names:
-  --prefix=PREFIX         install architecture-independent files in PREFIX
+  --prefix=PREFIX         Install architecture-independent files in PREFIX
                           [$ac_default_prefix]
-  --site-prefix=DIR       site-specific XSB libraries in DIR [PREFIX/site]
+  --site-prefix=DIR       Site-specific XSB libraries in DIR [PREFIX/site]
 
   --site-static-libraries=DIR
                           These might be needed, if compiling with support 
@@ -145,7 +150,7 @@ Directory and file names:
                           You can specify a list of libraries by enclosing 
                           them in quotes.
 
-  --config-tag=TAG        makes the configuration directory name look like
+  --config-tag=TAG        Makes the configuration directory name look like
                           [CONFIG_PREFIX]/configuration-TAG. If TAG is missing,
                           the directory is [CONFIG_PREFIX]/[configuration].
                           TAG is used for debugging, so one can have
@@ -154,13 +159,13 @@ EOF
     cat << EOF
 
 Host type:
-  --host=HOST             configure for HOST [guessed]
+  --host=HOST             Configure for HOST [guessed]
 
 Features and packages:
-  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
-  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
-  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --disable-FEATURE       Do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  Include FEATURE [ARG=yes]
+  --with-PACKAGE[=ARG]    Use PACKAGE [ARG=yes]
+  --without-PACKAGE       Do not use PACKAGE (same as --with-PACKAGE=no)
 
 changequote([, ])dnl
 EOF
@@ -203,6 +208,11 @@ changequote([, ])dnl
   -no-recursion | --no-recursion | --no-recursio | --no-recursi \
   | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r)
     no_recursion=yes ;;
+
+  -optimization-level | --optimization-level | --opt)
+    ac_prev=optimization_level ;;
+  -optimization-level=* | --optimization-level=* | --opt*=*)
+    optimization_level="$ac_optarg" ;;
 
   -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
     ac_prev=prefix ;;

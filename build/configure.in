@@ -375,17 +375,20 @@ dnl set some basic flags
 case $CC in
    gcc) # This is the optimization flag used for emuloop.c. 
 	# It is generally lower than for other modules.
-	c_low_opt_level="-O4"
+	c_low_opt_level=-${optimization_level-"O4"}
 	CFLAGS="-ansi -pedantic -Wall"
 	;;
    cc)  if test "$__sunpro_c" = "no"; then
-	   c_low_opt_level="-O4"
+	   c_low_opt_level=-${optimization_level-"O4"}
 	else
-	   c_low_opt_level="-xO4"
+	   # c_low_opt_level is the optimization level for emuloop.c
+    	   # Using xO4 would take SunPro more than an hour, hence xO2.
+	   c_low_opt_level=-${optimization_level-"xO4"}
         fi
 	CFLAGS=""
 	;;
-   acc) c_low_opt_level="-O2"
+   acc) # acc also seems to choke on high optimization levels for emuloop.c
+	c_low_opt_level=-${optimization_level-"O2"}
 	CFLAGS="-Xa"
 	;;
 esac
@@ -701,11 +704,22 @@ fi
 # Normally, the optimization level will be O4. 
 # SGI64 must have O1 and 32 bit SGI's can have O2
 if test "$__sunpro_c" = "no"; then
-   c_opt_level="-O4"
+   c_opt_level=-${optimization_level-"O4"}
 else
-   c_opt_level="-xO4"
+   c_opt_level=-${optimization_level-"xO4"}
 fi
-LDFLAGS="-lm"
+
+####### Test for -export-dynamic option of ld
+TEMP_LDFLAGS=$LDFLAGS
+LDFLAGS="-Wl,-export-dynamic"
+AC_MSG_CHECKING(whether loader understands -Wl,-export-dynamic)
+AC_TRY_LINK([],[], __export_dynamic=yes, __export_dynamic=no)
+AC_MSG_RESULT($__export_dynamic)
+LDFLAGS=$TEMP_LDFLAGS
+####### End of test for -export-dynamic option of ld
+
+
+LDFLAGS="$LDFLAGS -lm"
 
 # Set OS-specific variables for XSB
 case "$canonical" in
@@ -728,7 +742,10 @@ case "$canonical" in
 			 dnl Linux ELF
 			 AC_DEFINE(LINUX_ELF) 
 			 AC_DEFINE(FOREIGN_ELF)
-			 LDFLAGS="${LDFLAGS} -ldl -Wl,-export-dynamic"
+			 LDFLAGS="${LDFLAGS} -ldl"
+			 if test "$__export_dynamic" = "yes" ; then
+			    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+			 fi
 			 if test "${have_dl}" = "no" ; then
 			    AC_MSG_ERROR(Your system is missing library: \`dl')
 		         fi
@@ -755,14 +772,14 @@ case "$canonical" in
 	     esac
 	     if test "${machine64bit}" = yes ; then
 		AC_DEFINE(SGI64)
-		c_opt_level="-O1"
-		c_low_opt_level="-O1"
+		c_opt_level=-${optimization_level-"O1"}
+		c_low_opt_level=-${optimization_level-"O1"}
 		CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
 		LINKFLAGS="-64"
 	     else
       		AC_DEFINE(SGI)
-	     	c_opt_level="-O2"
-	     	c_low_opt_level="-O2"
+	     	c_opt_level=-${optimization_level-"O2"}
+	     	c_low_opt_level=-${optimization_level-"O2"}
 	     	CFLAGS="${CFLAGS} -32 -Olimit 5000"
 	     	LINKFLAGS="-32"
 	     fi     	
@@ -785,7 +802,10 @@ case "$canonical" in
 			    if test "$CC" = "gcc" ; then
 			       CFLAGS="${CFLAGS} -msupersparc"
 			    fi
-			    LDFLAGS="-lsocket ${LDFLAGS} -Wl,-export-dynamic"
+			    LDFLAGS="-lsocket ${LDFLAGS}"
+			    if test "$__export_dynamic" = "yes" ; then
+				LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+			    fi
 			    if test "${have_socket}" = "no" ; then
 				AC_MSG_ERROR(Your system is missing library: \`socket')
 			    fi

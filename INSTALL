@@ -94,6 +94,11 @@ Control:
 			  bin/xsb script name (i.e., it will be
 			  bin/xsb-aout). 
 
+  --optimization-level=level
+                          You can override the default optimization settings by
+                          specifying something like O2 (or xO2, for some
+                          compilers).
+
   --no-create             do not create output files
   --quiet, --silent       do not print `checking...' messages
   --version               print the version of autoconf that created configure
@@ -127,8 +132,6 @@ Directory and file names:
                           You can specify a list of libraries by enclosing 
                           them in quotes.
 
-  --config-prefix=DIR     architecture-specific executables in DIR
-                          [PREFIX/config]
   --config-tag=TAG        makes the configuration directory name look like
                           [CONFIG_PREFIX]/configuration-TAG. If TAG is missing,
                           the directory is [CONFIG_PREFIX]/[configuration].
