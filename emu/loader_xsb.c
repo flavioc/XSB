@@ -538,7 +538,7 @@ void env_type_set(Psc psc, byte t_env, byte t_type, bool is_new)
 
 /*----------------------------------------------------------------------*/
 
-inline unsigned int read_magic(FILE *fd)
+unsigned int read_magic(FILE *fd)
 {
   unsigned int num;
 
