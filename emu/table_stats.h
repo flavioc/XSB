@@ -111,6 +111,7 @@ typedef struct {
 
 /* Collection Routines
    ------------------- */
+NodeStats subgoal_statistics(Structure_Manager *);
 NodeStats node_statistics(Structure_Manager *);
 HashStats hash_statistics(Structure_Manager *);
 

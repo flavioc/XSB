@@ -131,9 +131,9 @@ void total_stat(double elapstime) {
 
   tbtn = node_statistics(&smTableBTN);
   tbtht = hash_statistics(&smTableBTHT);
-  varsf = node_statistics(&smVarSF);
-  prodsf = node_statistics(&smProdSF);
-  conssf = node_statistics(&smConsSF);
+  varsf = subgoal_statistics(&smVarSF);
+  prodsf = subgoal_statistics(&smProdSF);
+  conssf = subgoal_statistics(&smConsSF);
   aln = node_statistics(&smALN);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
