@@ -23,10 +23,10 @@
 */
 #include "export.h"
 
-DllExport extern void call_conv set_xsbinfo_dir (void);
-DllExport extern void call_conv set_install_dir(void);
-DllExport extern void call_conv set_config_file(void);
-DllExport extern void call_conv set_user_home(void);
-DllExport extern char * call_conv xsb_executable_full_path(char *);
-extern char executable[];
+extern void  set_xsbinfo_dir (void);
+extern void  set_install_dir(void);
+extern void  set_config_file(void);
+extern void  set_user_home(void);
+extern char *xsb_executable_full_path(char *);
+extern char  executable[];
 

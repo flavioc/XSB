@@ -73,19 +73,7 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-  /* set the name of the executable to the real name */
-  xsb_executable_full_path(argv[0]);
-
-  /* set install_dir, xsb_config_file, and user_home */
-  set_install_dir();
-  set_config_file();
-  set_user_home();
-
   xsb(0, argc, argv);  /* init xsb */
-
-  /* do it after initialization, so that typing
-     xsb -v or xsb -h won't create .xsb directory */
-  set_xsbinfo_dir ();
 
   xsb(1, 0, 0);        /* normal execution */
   xsb(2, 0, 0);        /* when halts, exit */

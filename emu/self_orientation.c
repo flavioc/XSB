@@ -62,7 +62,7 @@ char current_dir[MAXPATHLEN];
 char xsbinfo_dir[MAXPATHLEN];
 
 
-DllExport void call_conv set_xsbinfo_dir () {
+void set_xsbinfo_dir () {
   struct stat fileinfo;
   char old_xinitrc[MAXPATHLEN], new_xinitrc[MAXPATHLEN],
     user_config_dir[MAXPATHLEN], user_arch_dir[MAXPATHLEN];
@@ -131,7 +131,7 @@ static void check_create_dir(char *path) {
 }
 
 /* uses the global executable var */
-DllExport char * call_conv xsb_executable_full_path(char *myname)
+char *xsb_executable_full_path(char *myname)
 {
   struct stat fileinfo;
   char *path = getenv("PATH");
@@ -221,7 +221,7 @@ DllExport char * call_conv xsb_executable_full_path(char *myname)
   exit(1);
 }
 
-DllExport void call_conv set_install_dir() {
+void set_install_dir() {
 
   /* strip 4 levels, since executable is always of this form:
      install_dir/config/<arch>/bin/xsb */
@@ -238,7 +238,7 @@ DllExport void call_conv set_install_dir() {
   }
 }
 
-DllExport void call_conv set_config_file() {
+void set_config_file() {
   int retcode;
   struct stat fileinfo;
 
@@ -276,7 +276,7 @@ DllExport void call_conv set_config_file() {
   }
 }
 
-DllExport void call_conv set_user_home() {
+void set_user_home() {
   user_home = (char *) getenv("HOME");
   if ( user_home == NULL )
     user_home = install_dir;
