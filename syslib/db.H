@@ -24,11 +24,8 @@
 */
 
 
-
-
 :- export db_new_prref/3.
 
-:- import psc_set_type/3, psc_set_prop/3, tip_prop/4,
-	  psc_arity/2, psc_set_env/2, db_build_prref/5
-	from machine.
 :- import '_$table'/1 from file_op.
+:- import psc_set_type/2, psc_set_prop/2, tip_prop/4,
+	  psc_arity/2, psc_set_env/2, db_build_prref/5 from machine.

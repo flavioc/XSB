@@ -94,7 +94,7 @@ set_inthandler(Handler, Number) :-
 set_current_module :-
 	conpsc(current_module, CURMOD_PSC),
 	conpsc(usermod, USERMOD_PSC),
-	psc_set_prop(CURMOD_PSC, USERMOD_PSC, 1),
+	psc_set_prop(CURMOD_PSC, USERMOD_PSC),
 	stat_set_flag(12, 0, 1).
 
 
@@ -106,8 +106,8 @@ set_current_module :-
 
 set_current_input :-
 	conpsc(userin, UserInPSC),
-	psc_set_type(UserInPSC, 5, 1),        % `ep' field contains file desc
-	psc_set_prop(UserInPSC, 0, 1),        % `ep' field set to stdin
+	psc_set_type(UserInPSC, 5),        % `ep' field contains file desc
+	psc_set_prop(UserInPSC, 0),        % `ep' field set to stdin
 	conset(current_input, UserInPSC),
 	stat_set_flag(10, 0, 1).
 
@@ -120,8 +120,8 @@ set_current_input :-
 
 set_current_output :-
 	conpsc(userout, UserOutPSC),
-	psc_set_type(UserOutPSC, 5, 1),       % `ep' field contains file desc
-	psc_set_prop(UserOutPSC, 1, 1),       % `ep' field set to stdout
+	psc_set_type(UserOutPSC, 5),       % `ep' field contains file desc
+	psc_set_prop(UserOutPSC, 1),       % `ep' field set to stdout
 	conset(current_output, UserOutPSC),
 	stat_set_flag(11, 1, 1).
 

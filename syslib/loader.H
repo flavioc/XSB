@@ -30,7 +30,7 @@
 
 
 :- import term_type/2, term_psc/2, psc_name/2, psc_arity/2, psc_env/2,
-	  psc_type/2, psc_set_type/3, psc_prop/2, psc_set_prop/3,
+	  psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
 	  psc_insert/4, psc_import/3, conpsc/2, str_cat/3, 
 	  file_put/2, buff_byte/3, code_call/3, code_load/3,
 	  stat_flag/2, stat_set_flag/3, expand_filename/2,

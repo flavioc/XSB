@@ -252,7 +252,7 @@ Cell ptoc_tag(int regnum)
 {
   register Cell addr = cell(reg+regnum);
 
-  deref( addr);
+  deref(addr);
   return addr;
 }
 
@@ -543,62 +543,51 @@ int  builtin_call(byte number)
 #endif
   
 #ifdef HAVE_SOCKET
+  FILE *sockptr;
   struct hostent *hostptr;
-  int rc;
+  int rc, domain, portnum;
   char ch;
 #ifdef WIN_NT
   char Endtxt=3;
   SOCKET sockfd, sockfd_in;
-  int err, in;
-  int domain, portnum;
+  int  err, in;
   SOCKADDR_IN localAddr;
-  FILE *sockptr;
   SOCKADDR_IN remoteAddr;
   char *sock_msg;
   char ci;
   char last[1];
 #else
-  int domain, sockfd, sockfd_in, portnum;
+  int  sockfd, sockfd_in;
   struct sockaddr_in socket_addr;
-  FILE *sockptr;
-  /* struct sockaddr_in dest; */
-  /* int return_value_for_connect; */
-  /*
-    unsigned long inet_addr(char *ptr);
-    int fileno(FILE *stream);
-  */
 #endif
 #endif /* HAVE_SOCKET */
   
   switch (number) {
   case PSC_NAME:		/* reg 1: +PSC; reg 2: -String */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     ctop_string(2, get_name(psc));
     break;
   case PSC_ARITY:		/* reg 1: +PSC; reg 2: -int */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_arity(psc));
     break;
   case PSC_TYPE:		/* reg 1: +PSC; reg 2: -int */
 				/* type: see psc.h, `entry_type' field defs */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     ctop_int(2, (Integer)get_type(psc));
     break;
-  case PSC_SET_TYPE:	/* reg 1: +PSC; reg 2: +int; reg 3: +Perm */
-				/* reg 3 is currently ignored */
-				/* type: See psc.h */
-    psc = (struct psc_rec *)ptoc_addr(1);
+  case PSC_SET_TYPE:	/* reg 1: +PSC; reg 2: +type (int): see psc.h */
+    psc = (Psc)ptoc_addr(1);
     set_type(psc, ptoc_int(2));
     break;
   case PSC_PROP:		/* reg 1: +PSC reg 2: -term */
 				/* prop: as a buffer pointer */
-    psc = (struct psc_rec *)ptoc_addr(1);
+    psc = (Psc)ptoc_addr(1);
     if (get_type(psc)==T_ALIA) ctop_tag(2, (Cell)get_ep(psc));
     else ctop_int(2, (Integer)get_ep(psc));
     break;
-  case PSC_SET_PROP:	/* reg 1: +PSC; reg 2: int; reg 3: +Perm */
-				/* reg 3 is currently ignored */
-    psc = (struct psc_rec *)ptoc_addr(1);
+  case PSC_SET_PROP:	        /* reg 1: +PSC; reg 2: int */
+    psc = (Psc)ptoc_addr(1);
     if (get_type(psc)==T_ALIA) set_ep(psc, (pb)ptoc_tag(2));
     else set_ep(psc, (pb)ptoc_int(2));
     break;

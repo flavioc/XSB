@@ -34,8 +34,8 @@ psc_name(_PSC, _String) :- '_$builtin'(1).
 psc_arity(_PSC, _Arity) :- '_$builtin'(2).
 psc_type(_PSC, _Type) :- '_$builtin'(3).
 psc_prop(_PSC, _Term) :- '_$builtin'(4).
-psc_set_type(_PSC, _Type, _Perm) :- '_$builtin'(5).
-psc_set_prop(_PSC, _Term, _Perm) :- '_$builtin'(6).
+psc_set_type(_PSC, _Type) :- '_$builtin'(5).
+psc_set_prop(_PSC, _Term) :- '_$builtin'(6).
 file_open(_NameString, _RWMode, _File) :- '_$builtin'(7).
 file_close(_File) :- '_$builtin'(8).
 file_get(_File, _Char) :- '_$builtin'(9).
@@ -99,7 +99,6 @@ load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(52).
 getenv(_EnvVar, _Value) :- '_$builtin'(54).
 /* sys_syscall(CallNo, Res, Arg, ......) :- '_$builtin'(55). */
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(55).
-
 sys_system(_Command, _Res) :- '_$builtin'(56).
 sys_gethost(_Name, _Buffer) :- '_$builtin'(57).
 sys_errno(_Errno) :- '_$builtin'(58).
@@ -107,9 +106,7 @@ file_stat(_File, _Which, _RetVal) :- '_$builtin'(60).
 file_writequoted(_File, _Term) :- '_$builtin'(61).
 fast_ground(_Term) :- '_$builtin'(62).
 file_pos(_File,_Position) :- '_$builtin'(64).
-
 intern_string(_Str,_InternedStr) :- '_$builtin'(65).
-
 expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(66).
 tilde_expand_filename(_FileName,_ExpandedFileName) :- '_$builtin'(67).
 is_absolute_filename(_FileName) :- '_$builtin'(68).
@@ -119,7 +116,6 @@ buff_assign_word(_Buffer, _Disp, _Value) :- '_$builtin'(96).
 
 psc_env(_PSC, _Env) :- '_$builtin'(100).
 psc_spy(_PSC, _Spy) :- '_$builtin'(101).
-
 psc_tabled(_PSC, _Tabled) :- '_$builtin'(102).
 tip_prop(_Tip, _Field, _Get_or_set, _Value):- '_$builtin'(103).
 is_incomplete(_Tab,_SubgoalPtr,_PTCP,_SubgoalFrame):- '_$builtin'(104).
@@ -127,7 +123,6 @@ get_osp_breg(_Osp,_Breg):- '_$builtin'(105).
 cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(106).
 get_ptcp(_PTCP) :- '_$builtin'(107).
 get_subgoal_ptr(_Term, _SubgoalPtr) :- '_$builtin'(108).
-
 dereference_the_bucket(_Pair_Pointer, _Pair) :- '_$builtin'(109).
 pair_psc(_Pair, _PSC) :- '_$builtin'(110).
 pair_next(_Pair, _Next_Pair) :- '_$builtin'(111).
@@ -143,10 +138,9 @@ print_predicate_table(_Psc):- '_$builtin'(120).
 file_read_line(_File, _String, _IsFullLine) :- '_$builtin'(123).
 slash(_Slash) :- '_$builtin'(124).
 fmt_write_string(_String,_Format,_ValsList) :- '_$builtin'(125).
-
-abolish_table_info:- '_$builtin'(126).
-zero_out_profile:- '_$builtin'(127).
-write_out_profile:- '_$builtin'(128).
+abolish_table_info :- '_$builtin'(126).
+zero_out_profile :- '_$builtin'(127).
+write_out_profile :- '_$builtin'(128).
 assert_code_to_buff(_Clause,_Size) :- '_$builtin'(129).
 assert_buff_to_clref(_Head,_NAri,_Prref,_AZ,_RInd,_HashTabSize,_Clref) :-
 	'_$builtin'(130).
@@ -162,7 +156,7 @@ db_build_prref(_Arity,_FirstTIP,_TIP,_PrRef,_PrEntry) :- '_$builtin'(138).
 db_remove_prref(_Prref) :- '_$builtin'(139).
 
 get_emu_dependent_const(_ConstName, _Value) :- '_$builtin'(156).
-sched_strat(_SchedStrat) :- '_$builtin'(157).
+
 trimcore :- '_$builtin'(158).
 
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).

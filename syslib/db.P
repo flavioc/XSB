@@ -53,8 +53,8 @@
 /*======================================================================*/
 
 db_new_prref(PSC,PHead,Prref) :-
-	psc_set_type(PSC, 1, 1),        /* Make it dynamic */
-	psc_set_env(PSC, 0),            /* Make it exported */
+	psc_set_type(PSC, 1),        /* Make it dynamic */
+	psc_set_env(PSC, 0),         /* Make it exported */
 	psc_arity(PSC,Arity),
 	('_$table'(PHead)
 	 ->
@@ -64,5 +64,5 @@ db_new_prref(PSC,PHead,Prref) :-
 	 ;
 		db_build_prref( Arity, -1, _, Prref, PrEntry )
 	),
-	psc_set_prop(PSC, PrEntry, 1).	% set psc to point to table ins
+	psc_set_prop(PSC, PrEntry).	% set psc to point to table ins
 

@@ -55,14 +55,14 @@ see0(F) :-
 	  file_open(Name, 0, File),		% 0: "r"
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
-	  psc_set_prop(PSC, File, 1),
-	  psc_set_type(PSC, 5, 1)
+	  psc_set_prop(PSC, File),
+	  psc_set_type(PSC, 5)
 	; abort([F,'not a file or file not readable, cannot see!'])
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(10, File0, 1),
 	conpsc(current_input, CurinPsc),
-	psc_set_prop(CurinPsc, PSC, 1).
+	psc_set_prop(CurinPsc, PSC).
 
 seeing(F) :- 
 	conpsc(current_input, CurinPsc), 
@@ -77,12 +77,12 @@ seen :- conpsc(current_input, CurinPsc),
 	psc_prop(FilePSC, File),
 	( File > 1 ->
 		file_close(File),
-		psc_set_type(FilePSC, 0, 1)
+		psc_set_type(FilePSC, 0)
 	; true
 	),
 	stat_set_flag(10, 0, 1),
 	conpsc(userin, UserPsc),
-	psc_set_prop(CurinPsc, UserPsc, 1).
+	psc_set_prop(CurinPsc, UserPsc).
 
 tell(Var) :- 
         var(Var), !,
@@ -102,14 +102,14 @@ tell0(F) :-
 	  file_open(Name, 1, File), 		% 1: "w"
 	  File > 0,                             % file F exists and
 	  !,					% is writable.
-	  psc_set_prop(PSC, File, 1),
-	  psc_set_type(PSC, 5, 1)
+	  psc_set_prop(PSC, File),
+	  psc_set_type(PSC, 5)
 	; abort([F,': Not a file or file not writable, cannot tell!'])
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(11, File0, 1),
 	conpsc(current_output, CuroutPsc),
-	psc_set_prop(CuroutPsc, PSC, 1).
+	psc_set_prop(CuroutPsc, PSC).
 
 telling(F) :- 
 	conpsc(current_output, CuroutPsc), 
@@ -124,12 +124,12 @@ told :- conpsc(current_output, CuroutPsc),
 	psc_prop(FilePSC, File),
 	( File > 1 ->
 		file_close(File),
-		psc_set_type(FilePSC, 0, 1)
+		psc_set_type(FilePSC, 0)
 	; true
 	),
 	stat_set_flag(11, 1, 1),
 	conpsc(userout, UserPsc),
-	psc_set_prop(CuroutPsc, UserPsc, 1).
+	psc_set_prop(CuroutPsc, UserPsc).
 
 file_exists(F) :- 
 	( atom(F) ->
@@ -155,14 +155,14 @@ open(F,read,F):-!,
 	(file_open(Name, 0, File),		% 0: "r"
 	File > 0,                             % file F exists and
 	!,					% is readable.
-	psc_set_prop(PSC, File, 1),
-	psc_set_type(PSC, 5, 1)
+	psc_set_prop(PSC, File),
+	psc_set_type(PSC, 5)
 	; abort([F,'not a file or not readable, cannot open'])
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(10, File0, 1),
 	conpsc(current_input, CurinPsc),
-	psc_set_prop(CurinPsc, PSC, 1),
+	psc_set_prop(CurinPsc, PSC),
 	see0(userin).
 open(F,write,F):-!, 
 	conpsc(F, PSC),
@@ -170,14 +170,14 @@ open(F,write,F):-!,
 	(file_open(Name, 1, File),		% 0: "w"
 	File > 0,                             % file F exists and
 	!,					% is readable.
-	psc_set_prop(PSC, File, 1),
-	psc_set_type(PSC, 5, 1)
+	psc_set_prop(PSC, File),
+	psc_set_type(PSC, 5)
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(11, File0, 1),
 	conpsc(current_input, CurinPsc),
-	psc_set_prop(CurinPsc, PSC, 1),
+	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 open(F,append,F):-!, 
 	conpsc(F, PSC),
@@ -185,14 +185,14 @@ open(F,append,F):-!,
 	(file_open(Name, 2, File),		% 0: "a"
 	File > 0,                             % file F exists and
 	!,					% is readable.
-	psc_set_prop(PSC, File, 1),
-	psc_set_type(PSC, 5, 1)
+	psc_set_prop(PSC, File),
+	psc_set_type(PSC, 5)
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
 	stat_set_flag(11, File0, 1),
 	conpsc(current_input, CurinPsc),
-	psc_set_prop(CurinPsc, PSC, 1),
+	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
 
 close(user) :- !.
@@ -202,7 +202,7 @@ close(F) :-
 	conpsc(F, PSC),
 	psc_type(PSC, Type), Type=5,
 	psc_prop(PSC, File), file_close(File),
-	psc_set_type(PSC, 0, 1).
+	psc_set_type(PSC, 0).
 
 
 %--------------------------%
@@ -829,10 +829,6 @@ statistics(X) :- stat_sta(X).
 			/***************/
 
 fileerrors :- stat_set_flag(fileerrors, 1, 1).
-
-fun((X,Y)) :- fun(X), fun(Y), !.
-fun(P/A) :- atom(P), integer(A), psc_insert(P, A, Psc),
-	psc_set_type(Psc, 14, 1).
 
 nofileerrors :- stat_set_flag(fileerrors, 0, 1).
 

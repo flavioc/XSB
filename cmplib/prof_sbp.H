@@ -32,8 +32,8 @@
 :- export ll_arg/3.
 
 :- import dict_lookup/3 from auxlry.
-:- import psc_set_prop/3, conpsc/2, conname/2,psc_prop/2, str_len/2,
- 	  stat_flag/2, file_puttoken/3, psc_set_type/3, sys_system/2,
+:- import psc_set_prop/2, conpsc/2, conname/2,psc_prop/2, str_len/2,
+ 	  stat_flag/2, file_puttoken/3, psc_set_type/2, sys_system/2,
 	  term_arg/3
      from machine.
 :- import name/2, arg/3, functor/3, atomic/1, atom/1, told/0, tell/1, 

@@ -28,13 +28,14 @@
 :- export assume_flag/1, assumed_flag/1.
 :- export record/3, recorda/3, recordz/3, recorded/3, erase/1, instance/2.
 
-:- import buff_cell/3, buff_alloc/2, buff_dealloc/3, buff_set_word/3, 
-	  psc_type/2, psc_set_type/3, term_psc/2, term_new/2, psc_arity/2,
-	  buff_word/3, term_type/2, psc_prop/2, psc_set_prop/3, conpsc/2
-     from machine.
-:- import arg/3, atomic/1 from standard.
-:- import numbervars/3 from num_vars.
+:- import memberchk/2 from basics.
 :- import copyterm/3 from copyterm.
+:- import numbervars/3 from num_vars.
+:- import arg/3, atomic/1, structure/1 from standard.
+:- import buff_cell/3, buff_alloc/2, buff_dealloc/3, buff_set_word/3, 
+	  psc_type/2, psc_set_type/2, term_psc/2, term_new/2, psc_arity/2,
+	  buff_word/3, psc_prop/2, psc_set_prop/2, conpsc/2
+     from machine.
 
 /* -- assume ---------------------------------------------------------*/
 
@@ -42,8 +43,8 @@ assume(Fact) :-
 	conpsc(Fact, Psc),
 	psc_type(Psc, T),
 	( T =:= 0 -> 
-		psc_set_type(Psc, 11, 0), 	% T_ALIA
-		psc_set_prop(Psc, a(List), 1)
+		psc_set_type(Psc, 11), 	% T_ALIA
+		psc_set_prop(Psc, a(List))
 	; T =:= 11 -> psc_prop(Psc, AList), AList = a(List)
 	),
 	attach(Fact, List).
@@ -71,11 +72,11 @@ assumed(Fact, [_|Rest]) :- assumed(Fact, Rest).
 assume_flag(Fact) :- 
 	conpsc(Fact, Psc),
 	psc_type(Psc, T),
-	( T =:= 0, !, psc_set_type(Psc, 8, 1) 		% T_CSET
+	( T =:= 0, !, psc_set_type(Psc, 8) 		% T_CSET
 	; T =:= 8, !
 	; fail
 	),
-	psc_set_prop(Psc, _, 1),
+	psc_set_prop(Psc, _),
 	psc_prop(Psc, Flag),
 	arg(1, Fact, Flag),
 	!.
@@ -93,7 +94,7 @@ assumed_flag(Fact) :-
 
 instance(Term, Term, _Varlist) :- atomic(Term), !.
 instance(Term, Instance, Varlist) :- Term = '$VAR'(VarNo), !,
-	member1('$VAR'(VarNo, Instance), Varlist).
+	memberchk('$VAR'(VarNo, Instance), Varlist).
 instance([H|T], [IH|IT], Varlist) :- !,
 	instance(H, IH, Varlist),
 	instance(T, IT, Varlist).
@@ -194,17 +195,9 @@ instance(Ref, Term) :-
 /* -- record initialization, appending ------------------------------------ */
 
 record_init(Psc) :-
-	psc_set_type(Psc, 10, 1), 		% T_RKEY 
+	psc_set_type(Psc, 10), 		% T_RKEY 
 	buff_alloc(16, MarkNode),
 	buff_set_word(MarkNode, 0, MarkNode),	% next -> self
 	buff_set_word(MarkNode, 4, MarkNode),	% prev -> self
 	buff_set_word(MarkNode, 8, 0),		% buff -> 0
-	psc_set_prop(Psc, MarkNode, 1).
-
-/* -- builtins ------------------------------------------------------ */
-
-member1(X, [X|_]) :- !.
-member1(X, [_|Y]) :- member1(X, Y).
-
-structure(X) :- term_type(X, T), T =:= 1.
-
+	psc_set_prop(Psc, MarkNode).

@@ -36,7 +36,7 @@
    from standard.
 
 :- import
-       psc_type/2, psc_set_type/3, psc_prop/2, psc_set_prop/3,
+       psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
        psc_arity/2, term_psc/2, term_arg/3, term_new/2,
        term_type/2, conpsc/2, conname/2, file_get/2,
        stat_flag/2, stat_set_flag/3, str_insert/2, is_xwammode/1,

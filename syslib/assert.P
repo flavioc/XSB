@@ -411,13 +411,13 @@ abolish1(Term) :-
 	( Type =:= 1 ->				% DYNA
 		psc_prop(Psc, Prref),
 		db_abolish(Term, Prref),
-		psc_set_type(Psc, 0, 1),
-		psc_set_prop(Psc, 0, 1)
+		psc_set_type(Psc, 0),
+		psc_set_prop(Psc, 0)
 	; Type =:= 2 ->				% normal compiled predicate
 		psc_prop(Psc,Ep),		% get entry point
 		unload_seg(Ep),			% free the space
-		psc_set_type(Psc, 0, 1),
-		psc_set_prop(Psc, 0, 1)
+		psc_set_type(Psc, 0),
+		psc_set_prop(Psc, 0)
 	; Type =:= 0	/* need to check imported !!!! */
 	).
 

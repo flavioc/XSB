@@ -35,7 +35,7 @@
 	cputime/1,	call/1,		call_expose/1,	callable/1,
 	close/1,	compare/3,	compound/1,	display/1,
 	expand_term/2,	file_exists/1,	fail/0,		fail_if/1,
-	fileerrors/0,	float/1,	(fun)/1,	functor/3,
+	fileerrors/0,	float/1,	functor/3,
 	get/1,		get0/1,		halt/0,		
 	(hilog)/1,	hilog_arg/3,	hilog_functor/3,hilog_op/3,
 	(index)/3,	(index)/2,      (table)/1,
@@ -78,10 +78,10 @@
 /* The following predicates are directly imported from other modules */
 
 :- import '_$load_undef'/1 from loader.
-:- import file_put/2, psc_set_prop/3, psc_name/2,
+:- import file_put/2, psc_set_prop/2, psc_name/2,
 	  term_psc/2, term_new/2, psc_arity/2, term_type/2, psc_prop/2,
 	  file_open/3, psc_type/2, stat_set_flag/3, file_close/1,
-	  file_get/2, stat_flag/2, psc_set_type/3, term_compare/3,
+	  file_get/2, stat_flag/2, psc_set_type/2, term_compare/3,
 	  stat_sta/1, conname/2, conpsc/2, stat_cputime/1, 
 	  expand_filename/2, machine_file_exists/1, psc_insert/3,
 	  psc_import/3, call0/1, close_open_tables/0, is_backslashing_os/0

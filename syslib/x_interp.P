@@ -198,7 +198,7 @@ version_message :-
 /* === utilities ======================================================= */
 
 
-conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val, 1).
+conset(Con, Val) :- conpsc(Con, PSC), psc_set_prop(PSC, Val).
 conval(Con, Val) :- conpsc(Con, PSC), psc_prop(PSC, Val).
 
 
@@ -222,9 +222,9 @@ get_prompt(Pstore,Prompt) :-
 
 set_prompt(Pstore,Prompt) :-
 	term_psc(Pstore, Psc),
-	psc_set_type(Psc, 8, 1),			% T_CSET
+	psc_set_type(Psc, 8),			% T_CSET
 	conname(Prompt, String),
-	psc_set_prop(Psc, String, 1).
+	psc_set_prop(Psc, String).
 
 print_debug_state :-
 	stat_flag(6,Trace),

@@ -40,7 +40,7 @@ file_read(File, Answer) :-
 
 file_read_foe(File, Answer, Variables) :-
 	stat_set_flag(51, File, 1),
-	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1, 1),
+	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
 	read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
 	read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
 	read_all(LeftOver),			% precedence
@@ -52,7 +52,7 @@ file_read_foe(File, Answer, Variables) :-
 
 file_read(File, Answer, Variables) :-
 	stat_set_flag(51, File, 1),
-	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1, 1),
+	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
 	repeat,	% reading terms until you find one with no syntax errors
 	    read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
 	    ( read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
@@ -673,7 +673,7 @@ read_record_error(List) :-
 	term_psc('_$synerr'(_), Psc), psc_prop(Psc, Loc),
 	( Loc < 0, 
 		l_length(List, Length),
-		psc_set_prop(Psc, Length, 1)
+		psc_set_prop(Psc, Length)
 	; Loc >= 0
 	),
 	!,
@@ -700,7 +700,7 @@ increase_syntax_errors :-
 	conpsc('syntax errors', PSC),
 	psc_prop(PSC, N),
 	New_N is N + 1,
-	psc_set_prop(PSC, New_N, 1).
+	psc_set_prop(PSC, New_N).
 
 read_display_list(X, 0, X).
 read_display_list([Head|Tail], Count, Rest) :-
