@@ -2,7 +2,7 @@
 ** Author(s): David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1993-1998
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,34 +23,8 @@
 */
 
 
-% To use some of these predicates, the indicated hilog predicates must
-% be defined in usermod
+/*=======================================================================
 
-:- export 
-	bagReduce/4,
-	bagPO/3,
-	bagPO1/3,
-	bagOf/2,
-% to use bagMin, must define in usermod: 
-%	:- hilog minimum.  minimum(X,Y,Z) :- X @< Y -> Z=X ; Z=Y.
-	bagMin/2,
-% to use bagMax, must define in usermod: 
-%	:- hilog maximum.  maximum(X,Y,Z) :- X @< Y -> Z=Y ; Z=X.
-	bagMax/2,
-% to use bagSum, must define in usermod: 
-%	:- hilog sum.  sum(X,Y,Z) :- Z is X+Y.
-	bagSum/2,
-% to use bagCount, must define in usermod: 
-%	:- hilog successor.  successor(X,_Y,Z) :- Z is X+1.
-	bagCount/2,
-% to use bagAvg, must define in usermod: 
-%	:- hilog sumcount.  sumcount([S|C],X,[S1|C1]) :- S1 is S+X, C1 is C+1.
-	bagAvg/2.
-
-:- import apply/2,apply/3,apply/4 from usermod.
-:- import sort/2 from setof.
-
-/* 
 bagReduce(+UnaryPred,?Result,+BinOp,+OpId) reduces all values that
 	(HiLog) UnaryPred is true of using BinOp with identity OpId.
 	So, for example, bagReduce(p,Sum,plus,0) binds Sum to the sum
@@ -62,12 +36,8 @@ bagReduce(+UnaryPred,?Result,+BinOp,+OpId) reduces all values that
 bagPO(+UnaryPred,?Result,+PO) finds all the maximal elements (under
 	the partial order PO) that unify with Result and that
 	UnaryPred is true of.
-*/
 
-:- import member/2, copy_term/2  from basics.
-:- import findall/3, bagof/3 from setof.
-:- import get_returns/3, delete_return/2, breg_retskel/4 from tables.
-:- import (table)/1 from usermod.
+========================================================================*/
 
 bagMin(Call,Var) :- bagReduce(Call,Var,minimum,zzz(zzz)).
 
@@ -123,3 +93,9 @@ bagReduce1(Call,Res,Op,Id) :-
 
 % Define HiLog bagOf in terms of Prolog bagof. 
 bagOf(Call,List) :- bagof(Var,Call(Var),List).
+
+/*------------------------------------------------------------------------*/
+/* A built-in used in the implementation of aggregates.                   */
+/*------------------------------------------------------------------------*/
+
+breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
