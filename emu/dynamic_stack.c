@@ -35,7 +35,8 @@
 #include "cell_xsb.h"
 #include "tst_aux.h"  /* needs cell_xsb.h */
 #include "error_xsb.h"
-
+#include "debug_xsb.h"
+#include "flags_xsb.h"
 
 /*-------------------------------------------------------------------------*/
 
@@ -46,7 +47,7 @@
 
 void dsPrint(DynamicStack ds, char *comment) {
 
-  xsb_dbgmsg("Dynamic Stack: %s (%s)\n"
+  xsb_dbgmsg(LOG_DEBUG, "Dynamic Stack: %s (%s)\n"
 	     "  Stack Base:    %8p\tFrame Size:   %u bytes\n"
 	     "  Stack Top:     %8p\tCurrent Size: %u frames\n"
 	     "  Stack Ceiling: %8p\tInitial Size: %u frames",
@@ -68,9 +69,8 @@ void dsInit(DynamicStack *ds, size_t stack_size, size_t frame_size,
 
   size_t total_bytes;
 
-#ifdef DEBUG_TRIE_STACK
-  xsb_dbgmsg("Initializing %s", name);
-#endif
+  xsb_dbgmsg(LOG_TRIE_STACK, "Initializing %s", name);
+
   total_bytes = stack_size * frame_size;
   DynStk_Base(*ds) = malloc(total_bytes);
   if ( IsNULL(DynStk_Base(*ds)) )
@@ -102,11 +102,11 @@ void dsExpand(DynamicStack *ds, int num_frames) {
     new_size = DynStk_InitSize(*ds);
   if ( new_size < DynStk_CurSize(*ds) + num_frames )
     new_size = new_size + num_frames;
-#ifdef DEBUG_TRIE_STACK
-  xsb_dbgmsg("Expanding %s: %d -> %d", DynStk_Name(*ds),
+
+  xsb_dbgmsg(LOG_TRIE_STACK, "Expanding %s: %d -> %d", DynStk_Name(*ds),
 	     DynStk_CurSize(*ds), new_size);
-  dsPrint(*ds, "Before expansion");
-#endif
+  dbg_dsPrint(LOG_TRIE_STACK, *ds, "Before expansion");
+
   total_bytes = new_size * DynStk_FrameSize(*ds);
   new_base = realloc(DynStk_Base(*ds),total_bytes);
   if ( IsNULL(new_base) )
@@ -116,9 +116,8 @@ void dsExpand(DynamicStack *ds, int num_frames) {
   DynStk_Base(*ds) = new_base;
   DynStk_Ceiling(*ds) = new_base + total_bytes;
   DynStk_CurSize(*ds) = new_size;
-#ifdef DEBUG_TRIE_STACK
-  dsPrint(*ds, "After expansion");
-#endif
+
+  dbg_dsPrint(LOG_TRIE_STACK, *ds, "After expansion");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -137,10 +136,10 @@ void dsShrink(DynamicStack *ds) {
     return;
   total_bytes = DynStk_InitSize(*ds) * DynStk_FrameSize(*ds);
   new_base = realloc(DynStk_Base(*ds),total_bytes);
-#ifdef DEBUG_TRIE_STACK
-  xsb_dbgmsg("Shrinking %s: %d -> %d", DynStk_Name(*ds),
+
+  xsb_dbgmsg(LOG_TRIE_STACK, "Shrinking %s: %d -> %d", DynStk_Name(*ds),
 	     DynStk_CurSize(*ds), DynStk_InitSize(*ds));
-#endif
+
   if ( IsNULL(new_base) )
     xsb_abort("Ran out of memory during expansion of %s", DynStk_Name(*ds));
   DynStk_Top(*ds) =

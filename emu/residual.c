@@ -43,12 +43,8 @@
 #include "macro_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
-
-/*----------------------------------------------------------------------*/
-
-#ifdef DEBUG_RESIDUAL
-extern void print_subgoal(FILE *, VariantSF);
-#endif
+#include "debug_xsb.h"
+#include "flags_xsb.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -107,10 +103,6 @@ void build_delay_list(CPtr delay_list, DE de)
   CPtr *tmp_var_addr;
   CPtr oldhreg = hreg;
  
- 
-#ifdef HEAP_DEBUG
-  xsb_dbgmsg("delay_list starts at %p", hreg);
-#endif
   i = 0;
   if (de != NULL && !isnil(de)) {
     
@@ -161,7 +153,7 @@ void build_delay_list(CPtr delay_list, DE de)
 	}
 	
 #ifdef DEBUG_DELAYVAR
-	xsb_dbgmsg(">>>> (before build_subgoal_args) num_heap_term_vars = %d",
+	xsb_dbgmsg(LOG_DEBUG,">>>> (before build_subgoal_args) num_heap_term_vars = %d",
 		   num_heap_term_vars);
 #endif
 
@@ -177,14 +169,14 @@ void build_delay_list(CPtr delay_list, DE de)
 	build_subgoal_args(subg);
 	
 #ifdef DEBUG_DELAYVAR
-	xsb_dbgmsg(">>>> (after build_subgoal_args) num_heap_term_vars = %d",
+	xsb_dbgmsg(LOG_DEBUG,">>>> (after build_subgoal_args) num_heap_term_vars = %d",
 		   num_heap_term_vars);
 #endif
 	
 	for (i = 0, j = num_heap_term_vars-1; j >= 0; j--) {
 	  cell_array[i++] = (Cell)var_addr[j];
 #ifdef DEBUG_DELAYVAR
-	  xsb_dbgmsg(">>>> var_addr[%x] = %x", j, (int)var_addr[j]);
+	  xsb_dbgmsg(LOG_DEBUG,">>>> var_addr[%x] = %x", j, (int)var_addr[j]);
 #endif
 	}
 	
@@ -196,14 +188,14 @@ void build_delay_list(CPtr delay_list, DE de)
 	load_solution_trie(i, 0, &cell_array[i-1], ans_subst);
 	
 #ifdef DEBUG_DELAYVAR
-	xsb_dbgmsg(">>>> (after load_solution_trie) num_heap_term_vars = %d",
+	xsb_dbgmsg(LOG_DEBUG,">>>> (after load_solution_trie) num_heap_term_vars = %d",
 		   num_heap_term_vars);
 #endif
 	
 	for (i = 0, j = num_heap_term_vars-1; j >= 0; j--) {
 	  cell_array[i++] = (Cell)var_addr[j];
 #ifdef DEBUG_DELAYVAR
-	  xsb_dbgmsg(">>>> var_addr[%x] = %x", j, (int)var_addr[j]);
+	  xsb_dbgmsg(LOG_DEBUG,">>>> var_addr[%x] = %x", j, (int)var_addr[j]);
 #endif
 	}
 	
@@ -230,18 +222,18 @@ void build_delay_list(CPtr delay_list, DE de)
 	
 	
 #ifdef DEBUG_DELAYVAR
-	xsb_dbgmsg(">>>> NOW copy_of_num_heap_term_vars = %d",
+	xsb_dbgmsg(LOG_DEBUG,">>>> NOW copy_of_num_heap_term_vars = %d",
 		   copy_of_num_heap_term_vars);
 	{
 	  int i;
 	  for(i = 0; i < num_heap_term_vars; i++)
-	    xsb_dbgmsg(">>>> var_addr[%d] = %x",i, (int)var_addr[i]);
+	    xsb_dbgmsg(LOG_DEBUG,">>>> var_addr[%d] = %x",i, (int)var_addr[i]);
 	  
 	  fprintf(stddbg, "Stored Subs Fact: <");
 	  {
 	    BTNptr x = subs_factp;
 	    if (x == NULL)
-	      xsb_dbgmsg(">>>> subs_factp is NULL");
+	      xsb_dbgmsg(LOG_DEBUG,">>>> subs_factp is NULL");
 	    while(x != NULL){
 	      print_trie_atom(Atom(x));
 	      if(Sibl(x) != NULL) 
@@ -252,7 +244,7 @@ void build_delay_list(CPtr delay_list, DE de)
 	  }
 	  fprintf(stddbg, ">\n");
 	}
-	xsb_dbgmsg(">>>> num_heap_term_vars is %d before calling load_delay_trie",
+	xsb_dbgmsg(LOG_DEBUG,">>>> num_heap_term_vars is %d before calling load_delay_trie",
 		   num_heap_term_vars);
 #endif /* DEBUG_DELAYVAR */
 	
@@ -261,10 +253,10 @@ void build_delay_list(CPtr delay_list, DE de)
 #endif
 	
 #ifdef DEBUG_DELAYVAR
-	xsb_dbgmsg(">>>> num_heap_term_vars becomes %d",
+	xsb_dbgmsg(LOG_DEBUG,">>>> num_heap_term_vars becomes %d",
 		   num_heap_term_vars);
 	for (i = 0; i < num_heap_term_vars; i++)
-	  xsb_dbgmsg(">>>> var_addr[%d] = %x",i, (int)var_addr[i]);
+	  xsb_dbgmsg(LOG_DEBUG,">>>> var_addr[%d] = %x",i, (int)var_addr[i]);
 #endif
 	var_addr = tmp_var_addr;
       }

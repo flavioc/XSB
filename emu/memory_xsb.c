@@ -57,6 +57,7 @@
 
 #include "flags_xsb.h"
 #include "subp.h"
+#include "debug_xsb.h"
 
 /* === alloc permanent memory ============================================== */
 
@@ -113,20 +114,17 @@ void tcpstack_realloc(long new_size) {
   cps_top = (byte *)top_of_cpstack;
   trail_top = (byte *)top_of_trail;
 
-#ifdef DEBUG
-  xsb_dbgmsg("Reallocating the Trail and Choice Point Stack data area");
-#endif
+  xsb_dbgmsg(LOG_DEBUG,
+	     "Reallocating the Trail and Choice Point Stack data area");
 
   /* Expand the Trail / Choice Point Stack Area
      ------------------------------------------ */
   if (new_size > tcpstack.size) {
-#ifdef DEBUG
     if (tcpstack.size == tcpstack.init_size) {
-      xsb_dbgmsg("\tBottom:\t\t%p\t\tInitial Size: %ldK",
+      xsb_dbgmsg(LOG_DEBUG, "\tBottom:\t\t%p\t\tInitial Size: %ldK",
 		 tcpstack.low, tcpstack.size);
-      xsb_dbgmsg("\tTop:\t\t%p", tcpstack.high);
+      xsb_dbgmsg(LOG_DEBUG, "\tTop:\t\t%p", tcpstack.high);
     }
-#endif
     /*
      * Increase the size of the data area and push the Choice Point Stack
      * to its high-memory end.
@@ -242,11 +240,9 @@ void tcpstack_realloc(long new_size) {
   if ( IsNonNULL(root_address) )
     root_address = (CPtr)((byte *)root_address + cps_offset);
 
-#ifdef DEBUG
-  xsb_dbgmsg("\tNew Bottom:\t%p\t\tNew Size: %ldK",
+  xsb_dbgmsg(LOG_DEBUG, "\tNew Bottom:\t%p\t\tNew Size: %ldK",
 	     tcpstack.low, tcpstack.size);
-  xsb_dbgmsg("\tNew Top:\t%p\n", tcpstack.high);
-#endif
+  xsb_dbgmsg(LOG_DEBUG, "\tNew Top:\t%p\n", tcpstack.high);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -254,9 +250,7 @@ void tcpstack_realloc(long new_size) {
 void handle_tcpstack_overflow(void)
 {
   if (flags[STACK_REALLOC]) {
-#ifdef DEBUG
     xsb_warn("Expanding the Trail and Choice Point Stack...");
-#endif
     tcpstack_realloc(resize_stack(tcpstack.size,0));
   }
   else {
@@ -290,20 +284,17 @@ void complstack_realloc (long new_size) {
   
   cs_top = (byte *)top_of_complstk;
   
-#ifdef DEBUG
-  xsb_dbgmsg("Reallocating the Completion Stack");
-#endif
+  xsb_dbgmsg(LOG_DEBUG, "Reallocating the Completion Stack");
 
   /* Expand the Completion Stack
      --------------------------- */
   if (new_size > complstack.size) {
-#ifdef DEBUG
-    if (complstack.size == complstack.init_size) {
-      xsb_dbgmsg("\tBottom:\t\t%p\t\tInitial Size: %ldK",
+    if (complstack.size == complstack.init_size) { 
+      xsb_dbgmsg(LOG_DEBUG, "\tBottom:\t\t%p\t\tInitial Size: %ldK",
 		 complstack.low, complstack.size);
-      xsb_dbgmsg("\tTop:\t\t%p", complstack.high);
+      xsb_dbgmsg(LOG_DEBUG, "\tTop:\t\t%p", complstack.high);
     }
-#endif
+
     /*
      * Increase the size of the data area and push the Completion Stack
      * to its high-memory end.
@@ -354,9 +345,7 @@ void complstack_realloc (long new_size) {
   
   openreg = (CPtr)((byte *)openreg + bottom_offset);
 
-#ifdef DEBUG
-  xsb_dbgmsg("\tNew Bottom:\t%p\t\tNew Size: %ldK",
+  xsb_dbgmsg(LOG_DEBUG, "\tNew Bottom:\t%p\t\tNew Size: %ldK",
 	     complstack.low, complstack.size);
-  xsb_dbgmsg("\tNew Top:\t%p\n", complstack.high);
-#endif
+  xsb_dbgmsg(LOG_DEBUG, "\tNew Top:\t%p\n", complstack.high);
 }

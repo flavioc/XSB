@@ -23,9 +23,11 @@
 */
 
 
+#include "debug_xsb.h"
+
 /*----------------------------------------------------------------------*/
 
-typedef struct subgoal_frame *VariantSF;
+/* typedef struct subgoal_frame *VariantSF; */
 
 /*===========================================================================*/
 

@@ -50,13 +50,11 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "tr_utils.h"
+#include "debug_xsb.h"
 
 /*----------------------------------------------------------------------*/
 
 extern TIFptr get_tip(Psc);
-#ifdef DPVR_DEBUG_BD
-extern void printterm(FILE *, Cell, int);
-#endif
 
 /*----------------------------------------------------------------------*/
 /* The following variables are used in other parts of the system        */
@@ -869,7 +867,7 @@ BTNptr variant_answer_search(int arity, int attv_num, CPtr cptr,
   AnsVarCtr = ctr;		
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(">>>> [V] AnsVarCtr = %d", AnsVarCtr);
+  xsb_dbgmsg(LOG_DEBUG,">>>> [V] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
   /* if there is no term to insert, an ESCAPE node has to be created/found */
@@ -955,7 +953,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     int  i, j, tag = XSB_FREE, flag = 1;
  
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(">>>> start delay_chk_insert()");
+    xsb_dbgmsg(LOG_DEBUG,">>>> start delay_chk_insert()");
 #endif
 
     Paren = NULL;
@@ -964,7 +962,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     ctr = AnsVarCtr;
 
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(">>>> [D1] AnsVarCtr = %d", AnsVarCtr);
+    xsb_dbgmsg(LOG_DEBUG,">>>> [D1] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     for (i = 0; i<arity; i++) {
@@ -976,14 +974,10 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
        * following line.
        */
       xtemp1 = (CPtr) (cptr + i);
-#ifdef DPVR_DEBUG_BD
-      fprintf(stddbg, "arg[%d] =  %x ",i, xtemp1);
-#endif
+      xsb_dbgmsg(LOG_BD, "arg[%d] =  %x ",i, xtemp1);
       XSB_CptrDeref(xtemp1);
-#ifdef DPVR_DEBUG_BD
-      printterm(stddbg,xtemp1,25);
-      fprintf(stddbg, "\n");
-#endif
+      dbg_printterm(LOG_BD,stddbg,xtemp1,25);
+      xsb_dbgmsg(LOG_BD, "\n");
       tag = cell_tag(xtemp1);
       switch (tag) {
       case XSB_FREE:
@@ -1026,7 +1020,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
     AnsVarCtr = ctr;
 
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(">>>> [D2] AnsVarCtr = %d", AnsVarCtr);
+    xsb_dbgmsg(LOG_DEBUG,">>>> [D2] AnsVarCtr = %d", AnsVarCtr);
 #endif
 
     /*
@@ -1037,9 +1031,7 @@ BTNptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
       TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
     }
  
-#ifdef DPVR_DEBUG_BD
-    fprintf(stddbg, "----------------------------- Exit\n");
-#endif
+    xsb_dbgmsg(LOG_BD, "----------------------------- Exit\n");
     return Paren;
 }
 
@@ -1650,8 +1642,8 @@ byte *trie_get_returns(VariantSF sf, Cell retTerm) {
 
 
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(">>>> (at the beginning of trie_get_returns");
-  xsb_dbgmsg(">>>> num_vars_in_var_regs = %d)", num_vars_in_var_regs);
+  xsb_dbgmsg(LOG_DEBUG,">>>> (at the beginning of trie_get_returns");
+  xsb_dbgmsg(LOG_DEBUG,">>>> num_vars_in_var_regs = %d)", num_vars_in_var_regs);
 #endif
 
   if ( IsProperlySubsumed(sf) )
@@ -1687,7 +1679,7 @@ byte *trie_get_returns(VariantSF sf, Cell retTerm) {
     }
   }
 #ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg(">>>> The end of trie_get_returns ==> go to answer trie");
+  xsb_dbgmsg(LOG_DEBUG,">>>> The end of trie_get_returns ==> go to answer trie");
 #endif
   delay_it = 0;  /* Don't delay the answer. */
   return (byte *)ans_root_ptr;
@@ -1720,7 +1712,7 @@ byte * trie_get_calls(void)
        num_vars_in_var_regs = -1;
        for (i = get_arity(psc_ptr); i>=1; i--) {
 #ifdef DEBUG_DELAYVAR
-	 xsb_dbgmsg(">>>> push one cell");
+	 xsb_dbgmsg(LOG_DEBUG,">>>> push one cell");
 #endif
 	 pushreg(cell(cptr+i));
        }

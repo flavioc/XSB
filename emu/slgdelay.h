@@ -231,9 +231,4 @@ extern unsigned long unused_dl_space(void);
 extern void simplify_pos_unsupported(NODEptr);
 extern void release_all_dls(ASI);
 
-#ifdef DEBUG
-extern void print_subgoal(FILE *, VariantSF);
-extern void print_delay_list(FILE *, CPtr);
-#endif
-
 /*---------------------- end of file slgdelay.h ------------------------*/

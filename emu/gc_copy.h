@@ -37,8 +37,6 @@
 
 #ifdef GC
 
-/* #define GC_DEBUG */
-
 /* the following variables are set by copy_heap() and used as */
 /* globals in the two functions below.                        */
 
@@ -46,14 +44,14 @@ static int offset;
 static CPtr scan, next;
 
 
-#ifdef GC_DEBUG
+#ifdef DEBUG_ASSERTIONS
 static void CHECK(CPtr p)
 { CPtr q;
   q = (CPtr)(*p);
   if (((heap_bot - offset) <= q) && (q < next)) return;
-  xsb_dbgmsg("really bad thing discovered");
+  xsb_dbgmsg(LOG_GC, "really bad thing discovered");
 } /* CHECK */
-#define GCDBG(mes,val) /*if (num_gc == 61)*/ fprintf(stddbg,mes,val)
+#define GCDBG(mes,val) /*if (num_gc == 61)*/ xsb_dbgmsg(LOG_GC,mes,val)
 #else
 #define CHECK(p)
 #define GCDBG(mes,val)
@@ -100,10 +98,10 @@ static void find_and_copy_block(CPtr hp)
       case XSB_REF1:
 	if (points_into_heap(q)) {
 	  GCDBG("Reference to heap with tag %d\n", tag);
-#ifdef GC_DEBUG
-	  fprintf(stddbg, "In adapting case for %p with %p (%lx)...",
-		  scan, q, cell(q));
-#endif
+
+	  xsb_dbgmsg(LOG_GC, "In adapting case for %p with %p (%lx)...",
+		     scan, q, cell(q));
+
 	  if (h_marked(q-heap_bot)) {
 	    copy_block(q,next);
 	  }
@@ -205,9 +203,8 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     offset = heap_bot-begin_new_h;
     scan = next = begin_new_h; 
 
-#ifdef GC_DEBUG
-    xsb_dbgmsg("New heap space between %p and %p", begin_new_h,end_new_h);
-#endif
+    xsb_dbgmsg(LOG_GC, 
+	       "New heap space between %p and %p", begin_new_h,end_new_h);
 
   /* the order in which stuff is copied might be important                 */
   /* but like the price of a ticket from Seattle to New York: nobody knows */
@@ -292,7 +289,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
 	  contents = cell(p) ;
           q = hp_pointer_from_cell(contents,&tag) ;
           if (!q)
-	    xsb_dbgmsg("non null delayreg points not in heap");
+	    xsb_dbgmsg(LOG_GC, "non null delayreg points not in heap");
           else
 	    {
 	      if (h_marked(q-heap_bot)) { find_and_copy_block(q); }
@@ -302,7 +299,7 @@ static CPtr copy_heap(int marked, CPtr begin_new_h, CPtr end_new_h, int arity)
     }
 
     if (next != end_new_h) { 
-      xsb_dbgmsg("heap copy gc - inconsistent hreg: %d cells not copied. (num_gc=%d)\n",
+      xsb_dbgmsg(LOG_GC, "heap copy gc - inconsistent hreg: %d cells not copied. (num_gc=%d)\n",
 		 (end_new_h-next),num_gc);
     }
 

@@ -132,6 +132,9 @@
 #define CP_DEBUG
 #define PROFILE
 #define DEBUG_ORACLE
+#define DEBUG_VERBOSE
+#define DEBUG_VM
+#define DEBUG_ASSERTIONS
 #endif
 
 /*  File needed for XSB to get the configuration information */

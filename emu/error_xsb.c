@@ -46,6 +46,7 @@
 #include "macro_xsb.h"
 #include "tr_utils.h"
 #include "cut_xsb.h"
+#include "flags_xsb.h"
 
 extern void exit(int status);
 
@@ -68,7 +69,7 @@ static char *err_msg[] = {
 /* you can pass either 1 argument---a full description (a string),
    or a variable number of arguments -- a format followed by arguments.
 */
-#if defined(DEBUG) && defined(CP_DEBUG)
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
 extern void print_cp_backtrace();
 #endif
 
@@ -87,7 +88,7 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_end(args);
   pcreg = exception_handler(message);
 
-#if defined(DEBUG) && defined(CP_DEBUG)
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
 #endif
   /* this allows xsb_abort to jump out even from nested loops */
@@ -174,7 +175,7 @@ DllExport void call_conv xsb_error (char *description, ...)
   vfprintf(stderr, description, args);
   va_end(args);
   fprintf(stderr, "\n");
-#if defined(DEBUG) && defined(CP_DEBUG)
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
 #endif
 }
@@ -188,7 +189,7 @@ DllExport void call_conv xsb_warn(char *description, ...)
   vfprintf(stdwarn, description, args);
   va_end(args);
   fprintf(stdwarn, "\n");
-#if defined(DEBUG) && defined(CP_DEBUG)
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
 #endif
 }
@@ -203,15 +204,19 @@ DllExport void call_conv xsb_mesg(char *description, ...)
   fprintf(stdmsg, "\n");
 }
 
-DllExport void call_conv xsb_dbgmsg(char *description, ...)
+#ifdef DEBUG_VERBOSE
+DllExport void call_conv xsb_dbgmsg1(int log_level, char *description, ...)
 {
   va_list args;
 
-  va_start(args, description);
-  vfprintf(stddbg, description, args);
-  va_end(args);
-  fprintf(stddbg, "\n");
+  if (log_level <= cur_log_level) {
+    va_start(args, description);
+    vfprintf(stddbg, description, args);
+    va_end(args);
+    fprintf(stddbg, "\n");
+  }
 }
+#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -271,7 +276,7 @@ void err_handle(int description, int arg, char *f,
     break;
   }
   pcreg = exception_handler(message);
-#if defined(DEBUG) && defined(CP_DEBUG)
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
 #endif
 }

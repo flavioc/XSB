@@ -107,7 +107,7 @@ static void consumption_error(char *string) {
   char *abort_string;
 
   fprintf(stderr,"\nAnswer Return ERROR:  Failed to unify answer\n\t");
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
   printTriePath(stderr,gAnsLeaf,YES);
 #else
   printTriePath(stderr,gAnsLeaf,NO);
@@ -116,7 +116,7 @@ static void consumption_error(char *string) {
   printAnswerTemplate(stderr,gAnsTmplt,gSizeTmplt);
   fprintf(stderr,
 	  "(* Note: this template may be partially instantiated *)\n");
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   xsb_error(string);
   /* Get Consumer SF from the CPS, using the ptr to AnsTmplt */
   {

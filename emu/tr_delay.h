@@ -44,18 +44,19 @@
  */
 
 #ifndef IGNORE_DELAYVAR
-#ifdef DEBUG_DELAY
 #define handle_conditional_answers {					\
     CPtr temp_hreg;							\
-    VariantSF subgoal;                                                    \
+    VariantSF subgoal;                                                  \
                                                                         \
     if (is_conditional_answer(NodePtr)) {				\
-      fprintf(stddbg, "Trie-Code returning a conditional answer for ");	\
+      xsb_dbgmsg(LOG_DELAY,                                             \
+                 "Trie-Code returning a conditional answer for ");	\
       subgoal = asi_subgoal(Delay(NodePtr));	        		\
-      print_subgoal(stddbg, subgoal);			        	\
-      fprintf(stddbg, " (positively delaying)\n");			\
-      fprintf(stddbg, ">>>> In handle_conditional_answers macro: \n");  \
-      fprintf(stddbg, ">>>>     num_vars_in_var_regs = %d\n",           \
+      dbg_print_subgoal(LOG_DELAY, stddbg, subgoal);                    \
+      xsb_dbgmsg(LOG_DELAY, " (positively delaying)\n");		\
+      xsb_dbgmsg(LOG_DELAY,                                             \
+                      ">>>> In handle_conditional_answers macro: \n");  \
+      xsb_dbgmsg(LOG_DELAY, ">>>>     num_vars_in_var_regs = %d\n",     \
                       num_vars_in_var_regs);			        \
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(subgoal, NodePtr,				\
@@ -69,40 +70,15 @@
 	  int i;							\
 	  for (i = 0; i < num_vars_in_var_regs + 1; i++) {		\
 	    cell(hreg++) = (Cell) var_regs[i]; /* new */		\
-	    fprintf(stddbg, ">>>>     var_regs[%d] = ", i);		\
-	    printterm(stddbg, cell(var_regs[i]), 25);			\
-	    fprintf(stddbg, "\n");					\
+	    xsb_dbgmsg(LOG_DELAY, ">>>>     var_regs[%d] = ", i);	\
+	    dbg_printterm(LOG_DELAY, stddbg, cell(var_regs[i]), 25);	\
+	    xsb_dbgmsg(LOG_DELAY, "\n");				\
 	  }								\
 	}								\
 	delay_positively(subgoal, NodePtr, makecs(temp_hreg));		\
       }									\
     }									\
   }
-#else
-#define handle_conditional_answers {					\
-    CPtr temp_hreg;							\
-    VariantSF subgoal;                                                  \
-                                                                        \
-    if (is_conditional_answer(NodePtr)) {				\
-      subgoal = asi_subgoal(Delay(NodePtr));			        \
-      if (num_vars_in_var_regs == -1) {					\
-	delay_positively(subgoal, NodePtr,				\
-			 makestring(get_ret_string()));			\
-      }									\
-      else {								\
-	temp_hreg = hreg;						\
-	new_heap_functor(hreg, get_ret_psc(num_vars_in_var_regs + 1));	\
-	{								\
-	  int i;							\
-	  for (i = 0; i < num_vars_in_var_regs + 1; i++) {		\
-	    cell(hreg++) = (Cell) var_regs[i]; /* new */		\
-	  }								\
-	}								\
-	delay_positively(subgoal, NodePtr, makecs(temp_hreg));		\
-      }									\
-    }									\
-  }
-#endif /* DEBUG_DELAY */
 #else  /* IGNORE_DELAYVAR */
 #define handle_conditional_answers {			\
   if (is_conditional_answer(NodePtr)) {			\

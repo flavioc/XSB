@@ -47,7 +47,7 @@ extern Hash_Table string_table;
  *  Macros for hash table overflow checks.
  */
 
-#ifndef DEBUG
+#ifndef DEBUG_ASSERTIONS
 #define string_table_increment_and_check_for_overflow               \
   {                                                                 \
     string_table.contains++;                                        \

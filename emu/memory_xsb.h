@@ -138,7 +138,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 /* Stack Overflow Checkers
    ----------------------- */
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
 
 #define check_tcpstack_overflow {					\
 									\

@@ -62,16 +62,12 @@
 #include "macro_xsb.h"
 #include "table_stats.h"
 #include "unify_xsb.h"
+#include "debug_xsb.h"
 
 /*======================================================================*/
 /*======================================================================*/
 
 /* attv_dbgmsg() is used in unify_xsb_i.h */
-#ifdef DEBUG_ATTV
-#define attv_dbgmsg(String) xsb_dbgmsg(String)
-#else
-#define attv_dbgmsg(String)
-#endif
 
 #undef IFTHEN_FAILED
 #define IFTHEN_FAILED	return 0
@@ -382,7 +378,7 @@ void init_interrupt(void)
   signal(SIGINT, keyint_proc); 
 #endif
 
-#ifdef DEBUG
+#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM) || defined(DEBUG_ASSERTIONS))
   /* Don't handle SIGSEGV/SIGBUS if configured with DEBUG */
   xsb_default_segfault_handler = SIG_DFL;
 #else 
@@ -742,9 +738,7 @@ void checkJavaInterrupt(void *info)
 {
   char ch;
   SOCKET intSocket = (SOCKET)info;
-#ifdef DEBUG
-  xsb_dbgmsg("Thread started on socket %ld",(int)intSocket);
-#endif
+  xsb_dbgmsg(LOG_DEBUG, "Thread started on socket %ld",(int)intSocket);
   while(1){
     if (1!=recv(intSocket,&ch,1,0)) {
       xsb_warn("Problem handling interrupt from Java");

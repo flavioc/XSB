@@ -114,7 +114,7 @@ do { \
 #define GC_PROFILE_START_SUMMARY \
 do { \
     if (verbose_gc) { \
-      xsb_dbgmsg("{GC} Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n", \
+      xsb_dbgmsg(LOG_GC,"{GC} Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n", \
 		 arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc) ; \
     } \
 } while(0)
@@ -122,7 +122,7 @@ do { \
 #define GC_PROFILE_MARK_SUMMARY \
 do { \
     if (verbose_gc) { \
-      xsb_dbgmsg("{GC} Heap gc - marking finished - #marked = %d - start compact\n", \
+      xsb_dbgmsg(LOG_GC, "{GC} Heap gc - marking finished - #marked = %d - start compact\n", \
 		 marked); \
     }  \
 } while (0)
@@ -130,7 +130,7 @@ do { \
 #define GC_PROFILE_QUIT_MSG \
 do { \
 	if (verbose_gc) { \
-	  xsb_dbgmsg("{GC} Heap gc - marked too much - quitting gc\n") ; \
+	  xsb_dbgmsg(LOG_GC, "{GC} Heap gc - marked too much - quitting gc\n") ; \
 	} \
 } while (0)
 
@@ -139,7 +139,7 @@ do { \
 #define GC_PROFILE_SLIDE_FINAL_SUMMARY \
 do { \
 	if (verbose_gc) { \
-	  xsb_dbgmsg("{GC} Heap gc end - mark time = %f; slide time = %f; total = %f\n", \
+	  xsb_dbgmsg(LOG_GC, "{GC} Heap gc end - mark time = %f; slide time = %f; total = %f\n", \
 	  (double)(end_marktime - begin_marktime)*1000/CLOCKS_PER_SEC, \
 	  (double)(end_slidetime - begin_slidetime)*1000/CLOCKS_PER_SEC, \
 	  total_time_gc) ; \

@@ -429,7 +429,7 @@ char *init_para(int argc, char *argv[])
       asynint_val |= MSGINT_MARK; 
       break;
     case 't': 
-#ifdef DEBUG
+#ifdef DEBUG_VM
       flags[PIL_TRACE] = 1;
       flags[HITRACE] = 1;
       asynint_val |= MSGINT_MARK;

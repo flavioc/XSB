@@ -114,6 +114,8 @@
 #include "demand.h"
 #endif
 
+#include "debug_xsb.h"
+
 /*======================================================================*/
 
 extern int  sys_syscall(int);
@@ -156,12 +158,6 @@ extern void force_answer_false(BTNptr);
 extern int set_scope_marker();
 extern int unwind_stack();
 extern int clean_up_block();
-
-#if (defined(DEBUG) && defined(DEBUG_DELAY))
-extern void print_delay_list(FILE *, CPtr);
-extern void print_subgoal(FILE *, VariantSF);
-extern void printterm(FILE *, Cell, int);	/* used in bineg_xsb_i.h */
-#endif
 
 /* ------- variables also used in other parts of the system -----------	*/
 

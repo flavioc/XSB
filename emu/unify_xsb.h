@@ -33,6 +33,8 @@
 #define COND1      (CPtr)(op1) < hreg ||  (CPtr)(op1) < hfreg 
 #define COND2      (CPtr)(op2) < hreg ||  (CPtr)(op2) < hfreg 
 
+#define attv_dbgmsg(String) xsb_dbgmsg(LOG_ATTV,String)
+
 #define unify_xsb(loc)                                       \
  loc##_tail_recursion:                                       \
   XSB_Deref2(op1, goto loc##_label_op1_free);                \

@@ -70,7 +70,7 @@ DllExport extern void call_conv xsb_bug(char *, ...);
 DllExport extern void call_conv xsb_warn(char *, ...);
 DllExport extern void call_conv xsb_mesg(char *, ...);
 DllExport extern void call_conv xsb_error(char *, ...);
-DllExport extern void call_conv xsb_dbgmsg(char *, ...);
+DllExport extern void call_conv xsb_dbgmsg1(int, char *, ...);
 extern void arithmetic_abort1(char *, Cell);
 extern void arithmetic_abort(Cell, char *, Cell);
 extern void arithmetic_comp_abort(Cell, char *, int);

@@ -121,7 +121,7 @@ Todo:
 #include "io_builtins_xsb.h"
 #include "subp.h"          /* for attv_interrupts[][] */
 #include "binding.h"       /* for PRE_IMAGE_TRAIL */
-
+#include "debug_xsb.h"
 /*=========================================================================*/
 
 /* this might belong somewhere else (or should be accessible to init.c),
@@ -130,7 +130,7 @@ Todo:
 static float mark_threshold = 0.9F;
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG_VM
 #define GC_PROFILE
 #endif
 
@@ -150,8 +150,6 @@ unsigned long active_cps, frozen_cps;
 void print_cpf_pred(CPtr cpf);
 
 #endif /* GC_PROFILE */
-
-/* #define REALLOC_DEBUG */
 
 /*=========================================================================*/
 
@@ -179,7 +177,7 @@ static int ls_early_reset;
 static int printnum = 0 ;
 static int num_gc = 0 ;
 
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 static int print_at = 0 ; /* at the print_at-th gc, the stacks are printed */
 static int print_after = 0 ; /* if non zero, print all after this numgc */
 static int print_anyway = 0 ;
@@ -194,7 +192,7 @@ static int print_anyway = 0 ;
 
 /* if SAFE_GC is defined, some more checks are made after gargage collection */
 /* #define SAFE_GC */
-#define DEBUG_ASSERTIONS
+/* #define DEBUG_ASSERTIONS */
 
 /* if VERBOSE_GC is defined, garbage collection prints its statistics */
 /* #define VERBOSE_GC */
@@ -312,12 +310,15 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   if (new_size <= glstack.size) return 0;
 
-#ifdef REALLOC_DEBUG
-  xsb_dbgmsg("Reallocating the Heap and Local Stack data area") ;
-  if (glstack.size == glstack.init_size) {
-    xsb_dbgmsg("\tBottom:\t\t%p\t\tInitial Size: %ldK",
-	       glstack.low, glstack.size) ;
-    xsb_dbgmsg("\tTop:\t\t%p", glstack.high) ;
+  xsb_dbgmsg(LOG_REALLOC, 
+	     "Reallocating the Heap and Local Stack data area") ;
+#ifdef DEBUG_VERBOSE
+  if (LOG_REALLOC <= cur_log_level) {
+    if (glstack.size == glstack.init_size) {
+      xsb_dbgmsg(LOG_REALLOC,"\tBottom:\t\t%p\t\tInitial Size: %ldK",
+		 glstack.low, glstack.size);
+      xsb_dbgmsg(LOG_REALLOC,"\tTop:\t\t%p", glstack.high);
+    }
   }
 #endif
 
@@ -397,13 +398,12 @@ xsbBool glstack_realloc(int new_size, int arity)
 
   expandtime = (long)(1000*cpu_time()) - expandtime;
 
-#ifdef REALLOC_DEBUG
-  xsb_dbgmsg("\tNew Bottom:\t%p\t\tNew Size: %ldK",
+  xsb_dbgmsg(LOG_REALLOC,"\tNew Bottom:\t%p\t\tNew Size: %ldK",
 	     glstack.low, glstack.size) ;
-  xsb_dbgmsg("\tNew Top:\t%p", glstack.high) ;
-  xsb_dbgmsg("Heap/Local Stack data area expansion - finished in %ld msecs\n",
+  xsb_dbgmsg(LOG_REALLOC,"\tNew Top:\t%p", glstack.high) ;
+  xsb_dbgmsg(LOG_REALLOC,
+	     "Heap/Local Stack data area expansion - finished in %ld msecs\n",
 	     expandtime) ;
-#endif
 
   return 0;
 } /* glstack_realloc */
@@ -483,7 +483,7 @@ int gc_heap(int arity)
       /* fragmentation is expressed as ratio not-marked/total heap in use
 	 this is internal fragmentation only.  we print marked and total,
 	 so that postprocessing can do what it wants with this info. */
-      xsb_dbgmsg("marked_used_missed(%d,%d,%d,%d).",
+      xsb_dbgmsg(LOG_GC, "marked_used_missed(%d,%d,%d,%d).",
 		 marked,hreg+1-(CPtr)glstack.low,
 		 heap_early_reset,ls_early_reset);
     free_marks:
@@ -520,7 +520,7 @@ int gc_heap(int arity)
 	hreg = slide_heap(marked) ;
 
 	if (hreg != (heap_bot+marked))
-	  xsb_dbgmsg("heap sliding gc - inconsistent hreg");
+	  xsb_dbgmsg(LOG_GC, "heap sliding gc - inconsistent hreg");
 #ifdef SLG_GC
 	/* copy hfreg back from the heap */
 	hreg--;

@@ -38,8 +38,8 @@
 #include "psc_xsb.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
-
-
+#include "debug_xsb.h"
+#include "flags_xsb.h"
 
 /****************************************************************************
 
@@ -137,7 +137,7 @@ BTNptr subsumptive_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
   TriePathType path_type;
 
   
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( IsNULL(btRoot) || (nTerms < 0) )
     TrieError_InterfaceInvariant("subsumptive_bt_search()");
 #endif
@@ -184,19 +184,20 @@ TSTNptr subsumptive_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
   TriePathType path_type;
 
   
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( IsNULL(tstRoot) || (nTerms < 0) )
     TrieError_InterfaceInvariant("subsumptive_tst_search()");
 #endif
 
-#ifdef DEBUG_INTERN
-  {
+#ifdef DEBUG_VERBOSE
+  if (LOG_INTERN <= cur_log_level) {
     int i;
-    xsb_dbgmsg("Entered subsumptive_tst_search() with the following terms:");
+    xsb_dbgmsg(LOG_INTERN, 
+	       "Entered subsumptive_tst_search() with the following terms:");
     for (i = 0; i < nTerms; i++) {
-      fprintf(stddbg,"\t");
-      printterm(stddbg,(Cell)(termVector - i),25);
-      fprintf(stddbg,"\n");
+      xsb_dbgmsg(LOG_INTERN,"\t");
+      dbg_printterm(LOG_INTERN,stddbg, (Cell)(termVector - i),25);
+      xsb_dbgmsg(LOG_INTERN,"\n");
     }
   }
 #endif
@@ -251,7 +252,7 @@ BTNptr variant_bt_search(BTNptr btRoot, int nTerms, CPtr termVector,
   Cell symbol;
 
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( IsNULL(btRoot) || (nTerms < 0) )
     TrieError_InterfaceInvariant("variant_bt_search()");
 #endif
@@ -293,7 +294,7 @@ TSTNptr variant_tst_search(TSTNptr tstRoot, int nTerms, CPtr termVector,
   Cell symbol;
 
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( IsNULL(tstRoot) || (nTerms < 0) )
     TrieError_InterfaceInvariant("variant_tst_search()");
 #endif

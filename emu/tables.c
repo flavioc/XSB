@@ -49,7 +49,7 @@
 #include "subp.h" /* for exception_handler, used in stack expansion */
 
 #include "sub_tables_xsb_i.h"
-
+#include "debug_xsb.h"
 
 
 /*=========================================================================
@@ -293,7 +293,7 @@ ALNptr table_identify_relevant_answers(SubProdSF prodSF, SubConsSF consSF,
   ALNptr answers;
 
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( ((SubProdSF)consSF == prodSF) || (! IsSubsumptiveProducer(prodSF))
        || (! IsProperlySubsumed(consSF)) )
     xsb_abort("Relevant Answer Identification apparently triggered for a "
@@ -351,13 +351,8 @@ void table_complete_entry(VariantSF producerSF) {
   TSTHTptr ht;
   TSINptr tsi_entry;
 
-
-#ifdef DEBUG_STRUCT_ALLOC
-  extern void print_subgoal(FILE *, VariantSF);
-
-  print_subgoal(stderr,producerSF);
-  fprintf(stderr, " complete... reclaiming structures.\n");
-#endif
+  dbg_print_subgoal(LOG_STRUCT_MANAGER, stddbg, producerSF);
+  xsb_dbgmsg(LOG_STRUCT_MANAGER, " complete... reclaiming structures.\n");
 
   if (flags[TRACE_STA])
     compute_maximum_tablespace_stats();
@@ -382,18 +377,14 @@ void table_complete_entry(VariantSF producerSF) {
 	   IsNonNULL(TSIN_Prev(TSTHT_IndexHead(ht))) )
 	xsb_warn("Malconstructed TSI");
 
-#ifdef DEBUG_STRUCT_ALLOC
-      fprintf(stderr, "  Reclaiming TS Index\n");
-      smPrint(smTSIN, "  before chain reclamation");
-#endif
+      xsb_dbgmsg(LOG_STRUCT_MANAGER, "  Reclaiming TS Index\n");
+      dbg_smPrint(LOG_STRUCT_MANAGER, smTSIN, "  before chain reclamation");
 
       /*** Because 'prev' field is first, the tail becomes the list head ***/
       SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(ht),TSTHT_IndexHead(ht));
       TSTHT_IndexHead(ht) = TSTHT_IndexTail(ht) = NULL;
 
-#ifdef DEBUG_STRUCT_ALLOC
-      smPrint(smTSIN, "  after chain reclamation");
-#endif
+      dbg_smPrint(LOG_STRUCT_MANAGER, smTSIN, "  after chain reclamation");
     }
 
   /* Reclaim Producer's Answer List
@@ -410,10 +401,8 @@ void table_complete_entry(VariantSF producerSF) {
     } while ( IsNonNULL(pALN) );
     subg_answers(producerSF) = tag;
 
-#ifdef DEBUG_STRUCT_ALLOC
-      fprintf(stderr, "  Reclaiming ALN chain for subgoal\n");
-      smPrint(smALN, "  before chain reclamation");
-#endif
+      xsb_dbgmsg(LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for subgoal\n");
+      dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  before chain reclamation");
 
     if ( IsNULL(subg_ans_list_tail(producerSF)) ||
 	 IsNonNULL(ALN_Next(subg_ans_list_tail(producerSF))) )
@@ -421,9 +410,7 @@ void table_complete_entry(VariantSF producerSF) {
     SM_DeallocateStructList(smALN,pRealAnsList,subg_ans_list_tail(producerSF));
     subg_ans_list_tail(producerSF) = NULL;
 
-#ifdef DEBUG_STRUCT_ALLOC
-    smPrint(smALN, "  after chain reclamation");
-#endif
+    dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  after chain reclamation");
   }
 
   /* Process its Consumers
@@ -431,20 +418,18 @@ void table_complete_entry(VariantSF producerSF) {
   if ( IsSubsumptiveProducer(producerSF) ) {
     pSF = subg_consumers(producerSF);
 
-#ifdef DEBUG_STRUCT_ALLOC
-    if ( IsNonNULL(pSF) ) {
-      fprintf(stderr, "Reclaiming structures from consumers of ");
-      print_subgoal(stderr, producerSF);
-      fprintf(stderr, "\n");
+
+    if (IsNonNULL(pSF)) {
+      xsb_dbgmsg(LOG_STRUCT_MANAGER, 
+		 "Reclaiming structures from consumers of ");
+      dbg_print_subgoal(LOG_STRUCT_MANAGER, stddbg, producerSF);
+      xsb_dbgmsg(LOG_STRUCT_MANAGER, "\n");
     }
-#endif
 
     while ( IsNonNULL(pSF) ) {
 
-#ifdef DEBUG_STRUCT_ALLOC
-      fprintf(stderr, "  Reclaiming ALN chain for consumer\n");
-      smPrint(smALN, "  before chain reclamation");
-#endif
+      xsb_dbgmsg(LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for consumer\n");
+      dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  before chain reclamation");
 
       if ( has_answers(pSF) )    /* real answers exist */
 	SM_DeallocateStructList(smALN,subg_ans_list_ptr(pSF),
@@ -452,18 +437,14 @@ void table_complete_entry(VariantSF producerSF) {
       else
 	SM_DeallocateStruct(smALN,subg_ans_list_ptr(pSF))
 
-#ifdef DEBUG_STRUCT_ALLOC
-      smPrint(smALN, "  after chain reclamation");
-#endif
+      dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  after chain reclamation");
 
       subg_ans_list_ptr(pSF) = subg_ans_list_tail(pSF) = NULL;
       pSF = conssf_consumers(pSF);
     }
   }
 
-#ifdef DEBUG_STRUCT_ALLOC
-  fprintf(stderr, "Subgoal structure-reclamation complete!\n");
-#endif
+  xsb_dbgmsg(LOG_STRUCT_MANAGER, "Subgoal structure-reclamation complete!\n");
 }
 
 /*-------------------------------------------------------------------------*/

@@ -56,14 +56,11 @@
 #include "tr_utils.h"
 #include "tst_utils.h"
 #include "subp.h"
+#include "debug_xsb.h"
 
 /*----------------------------------------------------------------------*/
 
 #define MAX_VAR_SIZE	200
-
-#ifdef DEBUG
-extern void printterm(FILE *, Cell, int);
-#endif
 
 #include "ptoc_tag_xsb_i.h"
 #include "term_psc_xsb_i.h"
@@ -319,7 +316,7 @@ struct freeing_stack_node{
 #define pop_node(node){\
     struct freeing_stack_node *temp;\
     if (node_stk_top == NULL) {\
-       xsb_dbgmsg("DELETE_PREDICATE_TABLE: pop attempted from NULL");\
+       xsb_dbgmsg(LOG_DEBUG,"DELETE_PREDICATE_TABLE: pop attempted from NULL");\
        return;\
     }\
     node         = node_stk_top->item;\
@@ -516,7 +513,7 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
       z = CalculateBucketForSymbol((BTHTptr)(*y1),
 				   BTN_Symbol(lowest_node_in_branch));
       if ( *z != lowest_node_in_branch )
-	xsb_dbgmsg("DELETE_BRANCH: trie node not found in hash table");
+	xsb_dbgmsg(LOG_DEBUG,"DELETE_BRANCH: trie node not found in hash table");
       *z = NULL;
       num_left_in_hash = --BTHT_NumContents((BTHTptr)*y1);
       if (num_left_in_hash  > 0) {
@@ -593,13 +590,11 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
 	instruction field correctly, which is done above. */
      MakeStatusValid(lowest_node_in_branch);
    }
-#ifdef DEBUG_INTERN
    else
      /* This is permitted, because we might bt_delete, then insert
 	(non-backtrackably) and then backtrack.
      */
-     xsb_dbgmsg("Undeleting a node that is not deleted");
-#endif
+     xsb_dbgmsg(LOG_INTERN, "Undeleting a node that is not deleted");
 }
 
 
@@ -623,7 +618,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_op_size = 2*trie_op_size;\
     delete_trie_op = (char *)realloc(delete_trie_op,trie_op_size*sizeof(char));\
     if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
-    /*xsb_dbgmsg("realloc delete_trie_op to %d",trie_op_size);*/\
+    /*xsb_dbgmsg(LOG_DEBUG,"realloc delete_trie_op to %d",trie_op_size);*/\
   }\
   delete_trie_op[trie_op_top] = op;\
   trie_node_top++;\
@@ -631,7 +626,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_node_size = 2*trie_node_size;\
     delete_trie_node = (BTNptr *)realloc(delete_trie_node,trie_node_size*sizeof(BTNptr));\
     if (!delete_trie_node) xsb_exit("out of space for deleting trie");\
-    /*xsb_dbgmsg("realloc delete_trie_node to %d",trie_node_size);*/\
+    /*xsb_dbgmsg(LOG_DEBUG,"realloc delete_trie_node to %d",trie_node_size);*/\
   }\
   delete_trie_node[trie_node_top] = node;\
 }  
@@ -641,7 +636,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_op_size = 2*trie_op_size;\
     delete_trie_op = (char *)realloc(delete_trie_op,trie_op_size*sizeof(char));\
     if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
-    /*xsb_dbgmsg("realloc delete_trie_op to %d",trie_op_size);*/\
+    /*xsb_dbgmsg(LOG_DEBUG,"realloc delete_trie_op to %d",trie_op_size);*/\
   }\
   delete_trie_op[trie_op_top] = DT_HT;\
   trie_hh_top++;\
@@ -649,7 +644,7 @@ int trie_op_size, trie_node_size, trie_hh_size;
     trie_hh_size = 2*trie_hh_size;\
     delete_trie_hh = (BTHTptr *)realloc(delete_trie_hh,trie_hh_size*sizeof(BTHTptr));\
     if (!delete_trie_hh) xsb_exit("out of space for deleting trie");\
-    /*xsb_dbgmsg("realloc delete_trie_hh to %d",trie_hh_size);*/\
+    /*xsb_dbgmsg(LOG_DEBUG,"realloc delete_trie_hh to %d",trie_hh_size);*/\
   }\
   delete_trie_hh[trie_hh_top] = hh;\
 }  
@@ -672,7 +667,7 @@ void delete_trie(BTNptr iroot) {
   delete_trie_op[0] = 0;
   delete_trie_node[0] = iroot;
   while (trie_op_top >= 0) {
-    /*    xsb_dbgmsg("top %d %d %d %p",trie_op_top,trie_hh_top,
+    /*    xsb_dbgmsg(LOG_DEBUG,"top %d %d %d %p",trie_op_top,trie_hh_top,
 	  delete_trie_op[trie_op_top],delete_trie_node[trie_node_top]); */
     switch (delete_trie_op[trie_op_top--]) {
     case DT_DS:
@@ -757,9 +752,7 @@ void delete_return(BTNptr l, VariantSF sg_frame)
   TChoice  tc;
 #endif
 
-#ifdef DEBUG_RECLAIM_DEL_RET
-    xsb_dbgmsg("DELETE_NODE: %d - Par: %d", l, BTN_Parent(l));
-#endif
+    xsb_dbgmsg(LOG_INTERN, "DELETE_NODE: %d - Par: %d", l, BTN_Parent(l));
 
     /* deleting an answer makes it false, so we have to deal with 
        delay lists */
@@ -969,20 +962,17 @@ void trie_intern(void)
   term = ptoc_tag(1);
   RootIndex = ptoc_int(2);
 
-#ifdef DEBUG_INTERN
-  fprintf(stddbg,"Interning ");
-  printterm(stddbg,term,25);
-  xsb_dbgmsg("In trie with root %d", RootIndex);
-#endif
+  xsb_dbgmsg(LOG_INTERN, "Interning ");
+  dbg_printterm(LOG_INTERN,stddbg,term,25);
+  xsb_dbgmsg(LOG_INTERN, "In trie with root %d", RootIndex);
+
   switch_to_trie_assert;
   Leaf = whole_term_chk_ins(term,&(Set_ArrayPtr[RootIndex]),&flag);
   switch_from_trie_assert;
   
   ctop_int(3,(Integer)Leaf);
   ctop_int(4,flag);
-#ifdef DEBUG_INTERN
-  xsb_dbgmsg("Exit flag %d",flag);
-#endif
+  xsb_dbgmsg(LOG_INTERN, "Exit flag %d",flag);
 }
 
 /*----------------------------------------------------------------------*/
@@ -1159,9 +1149,7 @@ static IGRptr getAndRemoveIGRnode(long rootn)
       }
     }  
   }
-#ifdef DEBUG_INTERN
-  xsb_dbgmsg("Root node not found in Garbage List");
-#endif
+  xsb_dbgmsg(LOG_INTERN, "Root node not found in Garbage List");
   return NULL;
 }
 
@@ -1183,14 +1171,13 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   while(p != NULL){
     /*    xsb_warn("loopd"); */
     if(p -> leaf == leafn){
-#ifdef DEBUG_INTERN
       /* The following should be permitted, because we should be able to
 	 backtrackably delete backtrackably deleted nodes (which should have no
 	 effect)
       */
       if (IsDeletedNode(leafn))
-	xsb_dbgmsg("The leaf node being deleted has already been deleted");
-#endif
+	xsb_dbgmsg(LOG_INTERN,
+		   "The leaf node being deleted has already been deleted");
       return;
     }
     p = p -> next;
@@ -1257,9 +1244,8 @@ void trie_undispose(long rootIdx, BTNptr leafn)
   IGRptr r = getIGRnode(rootIdx);
   IGLptr p = r -> leaves;
   if(p == NULL){
-#ifdef DEBUG_INTERN
-    xsb_dbgmsg("In trie_undispose: The node being undisposed has been previously deleted");
-#endif
+    xsb_dbgmsg(LOG_INTERN,
+   "In trie_undispose: The node being undisposed has been previously deleted");
   } else{
     if(p -> leaf == leafn){
       r -> leaves = p -> next;

@@ -32,14 +32,14 @@
 
 case SLG_NOT: {
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   const int Arity = 1;
 #endif
   const int regSF = 1;  /* in: variant tabled subgoal frame */
   VariantSF sf;
 
   sf = ptoc_addr(regSF);
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( ! smIsValidStructRef(smVarSF,sf) )
     xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 	      regSF, BuiltinName(SLG_NOT), Arity);
@@ -59,7 +59,7 @@ case SLG_NOT: {
 
 case LRD_SUCCESS: {
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   const int Arity = 2;
 #endif
   const int regProducerSF = 1;  /* in: subsumptive producer consumed from */
@@ -67,7 +67,7 @@ case LRD_SUCCESS: {
   SubProdSF sf;
 
   sf = (SubProdSF)ptoc_addr(regProducerSF);
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( ! smIsValidStructRef(smProdSF,sf) )
     xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 	      regProducerSF, BuiltinName(SLG_NOT), Arity);
@@ -92,7 +92,7 @@ case LRD_SUCCESS: {
 
 case IS_INCOMPLETE: {
 
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   const int Arity = 2;
 #endif
   const int regSubgoalFrame = 1;  /* in: rep of a tabled subgoal */
@@ -100,17 +100,16 @@ case IS_INCOMPLETE: {
 
   VariantSF producerSF = ptoc_addr(regSubgoalFrame);
   CPtr t_ptcp = ptoc_addr(regRootSubgoal);
-#ifdef DEBUG
+#ifdef DEBUG_ASSERTIONS
   if ( ! smIsValidStructRef(smVarSF,producerSF) &&
        ! smIsValidStructRef(smProdSF,producerSF) )
     xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
-#ifdef DEBUG_DELAY
-  fprintf(stddbg, "Is incomplete for ");
-  print_subgoal(stddbg, producerSF);
-  fprintf(stddbg, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF));
 #endif
-#endif
+  xsb_dbgmsg(LOG_DELAY, "Is incomplete for ");
+  dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);
+  xsb_dbgmsg(LOG_DELAY, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF));
+
   if (is_completed(producerSF)) {
     neg_delay = FALSE;
     ptcpreg = t_ptcp;  /* restore ptcpreg as the compl. suspens. would */
@@ -120,15 +119,14 @@ case IS_INCOMPLETE: {
 #ifdef SLG_GC
     CPtr old_cptop;
 #endif
-#ifdef DEBUG_DELAY
-    fprintf(stddbg, "... Saving a completion suspension (~");
-    print_subgoal(stddbg, producerSF);
-    fprintf(stddbg, " in the body of ");
-    if (t_ptcp != NULL) {
-      print_subgoal(stddbg, (VariantSF)t_ptcp);
-    } else fprintf(stddbg, "an UNTABLED predicate");
-    fprintf(stddbg, ")\n");
-#endif
+
+    xsb_dbgmsg(LOG_DELAY, "... Saving a completion suspension (~");
+    dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);
+    xsb_dbgmsg(LOG_DELAY, " in the body of ");
+    dbg_print_subgoal(LOG_DELAY, stddbg, (VariantSF)t_ptcp);
+    xsb_dbgmsg(LOG_DELAY,"an UNTABLED predicate");
+    xsb_dbgmsg(LOG_DELAY, ")\n");
+
     adjust_level(subg_compl_stack_ptr(producerSF));
     save_find_locx(ereg);
     efreg = ebreg;
@@ -218,10 +216,10 @@ case IS_INCOMPLETE: {
 	  new_heap_free(hreg);
 	  new_heap_free(hreg);
 	  de = dl_de_list(dl);
-#ifdef DEBUG_DELAY
-	  fprintf(stderr, "orig_delayed_term(");
-	  print_subgoal(stderr, de_subgoal(de)); fprintf(stderr, ").\n");
-#endif
+
+	  xsb_dbgmsg(LOG_DELAY, "orig_delayed_term(");
+	  dbg_print_subgoal(LOG_DELAY, stddbg, de_subgoal(de)); 
+	  xsb_dbgmsg(LOG_DELAY, ").\n");
 	  /*
 	   * This answer may have more than one delay list.  We have to
 	   * restore copy_of_num_heap_term_vars for each of them.  But,

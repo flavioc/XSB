@@ -58,6 +58,8 @@
 #ifdef FOREIGN
 #include "dynload.h"
 #endif
+
+#include "debug_xsb.h"
  
 /* === stuff used from elsewhere ======================================	*/
 
@@ -415,7 +417,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
     } /* for */
   }
   if (inst_addr != end_addr) {
-    xsb_dbgmsg("inst_addr %p, end_addr %p", inst_addr, end_addr);
+    xsb_dbgmsg(LOG_DEBUG, "inst_addr %p, end_addr %p", inst_addr, end_addr);
     return FALSE;
   }
   else return TRUE;

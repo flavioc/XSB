@@ -69,6 +69,7 @@
 #include "unify_xsb.h"
 #include "emuloop_aux.h"
 #include "remove_unf.h"
+#include "debug_xsb.h"
 
 #include "hash_xsb.h"
 /*
@@ -88,7 +89,7 @@ CPtr	ans_var_pos_reg;
 /*----------------------------------------------------------------------*/
 /* indirect threading-related stuff                                     */
 
-#ifdef DEBUG
+#ifdef DEBUG_VM
 
 #define XSB_Debug_Instr                                    \
    if (flags[PIL_TRACE]) {                                 \
@@ -257,12 +258,8 @@ extern int  builtin_call(byte), unifunc_call(int, CPtr);
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 extern Pair build_call(Psc);
 
-#ifdef DEBUG
+#ifdef DEBUG_VM
 extern void debug_inst(byte *, CPtr);
-extern void print_completion_stack(void);
-extern void print_subgoal(FILE *, VariantSF);
-extern void print_delay_list(FILE *, CPtr);
-extern void printterm(FILE *, Cell, int);
 #endif
 
 /**static int  (*dyn_pred)(); unused-remove soon**/
@@ -270,7 +267,7 @@ extern void printterm(FILE *, Cell, int);
 xsbBool neg_delay;
 int  xwammode, level_num;
 
-#ifdef DEBUG
+#ifdef DEBUG_VM
 int  xctr;
 #endif
 
@@ -354,7 +351,7 @@ contcase:     /* the main loop */
 
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG_VM
   if (flags[PIL_TRACE]) debug_inst(lpcreg, ereg);
   xctr++;
 #endif
@@ -1774,6 +1771,8 @@ contcase:     /* the main loop */
       xsb_exit(message);
     }
 #endif
+
+return 0;
 
 } /* end of emuloop() */
 

@@ -49,6 +49,8 @@
 				   Check BANNER_CTL values at the end      */
 #define DCG_MODE        18      /* DGC mode: standard or xsb	           */
 
+#define VERBOSENESS_LEVEL 19    /* how verbose debug messages should be    */
+
 #define GARBAGE_COLLECT 20      /* type of garbage collection employed:    */
                                 /* 0 = none; 1 = sliding; 2 = copying.  NW */
 #define CMD_LINE_GOAL  	21	/* The Prolog goal passed on cmd 

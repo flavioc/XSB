@@ -161,7 +161,7 @@ static inline void construct_dep_graph(ComplStackFrame leader_compl_frame)
       csf1 = (ComplStackFrame)next_compl_frame(csf1);
     }
 #ifdef VERBOSE_COMPLETION
-    xsb_dbgmsg("! Constructed the edges of the DepGraph");
+    xsb_dbgmsg(LOG_DEBUG,"! Constructed the edges of the DepGraph");
 #endif
 }
 
@@ -234,20 +234,17 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     xsbBool non_lrd_stratified;
 
 #ifdef VERBOSE_COMPLETION
-    xsb_dbgmsg("\t===> SCC detection is needed...(%d subgoals in ASCC)...",
+    xsb_dbgmsg(LOG_DEBUG,"\t===> SCC detection is needed...(%d subgoals in ASCC)...",
 	       (int)((leader_compl_frame-openreg)/COMPLFRAMESIZE+1));
     print_completion_stack();
 #endif
 
     construct_dep_graph((ComplStackFrame)leader_compl_frame);
-#ifdef COMPLETION_DEBUG
-    print_completion_stack();
-#endif
+    dbg_print_completion_stack(LOG_COMPLETION);
 
     max_finish_csf = DFS_DGT((ComplStackFrame)leader_compl_frame);
-#ifdef COMPLETION_DEBUG
-    xsb_dbgmsg("! MAX FINISH_SUBGOAL AT COMPL STACK: %p",max_finish_csf);
-#endif
+    xsb_dbgmsg(LOG_COMPLETION, 
+	       "! MAX FINISH_SUBGOAL AT COMPL STACK: %p",max_finish_csf);
     /* mark as not visited all subgoals in the completion stack
      * below leader_compl_frame */
     unvisit((ComplStackFrame)leader_compl_frame);
@@ -256,9 +253,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
      * by traversing the SDG */
     find_independent_scc(max_finish_csf);
     
-#ifdef COMPLETION_DEBUG
-    print_completion_stack();
-#endif
+    dbg_print_completion_stack(LOG_COMPLETION);
 
     /* Perform a LRD stratification check of the program-query pair	*/
     /* and classify the completion suspensions as stratified or not.	*/
@@ -283,13 +278,11 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 		/*--- The suspended subgoal is in the completable SCC ---*/
 		mark_delayed(ComplStkFrame, susp_csf, nsf);
 		non_lrd_stratified = TRUE;
-#ifdef DELAY_DEBUG
-		fprintf(stddbg, "\t   Subgoal ");
-		print_subgoal(stddbg, (VariantSF)susp_subgoal);
-		fprintf(stddbg, " depends negatively on subgoal ");
-		print_subgoal(stddbg, curr_subg);
-		fprintf(stddbg, "\n");
-#endif
+		xsb_dbgmsg(LOG_DELAY, "\t   Subgoal ");
+		dbg_print_subgoal(LOG_DELAY, (VariantSF)susp_subgoal);
+		xsb_dbgmsg(LOG_DELAY, " depends negatively on subgoal ");
+		dbg_print_subgoal(LOG_DELAY, curr_subg);
+		xsb_dbgmsg(LOG_DELAY, "\n");
 	      } /*  no completed susp_subg */
 	    }
 	  } /* for each nsf */
@@ -340,9 +333,8 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	if (compl_visited(ComplStkFrame) <= FALSE) {
 	  cont_breg = subg_cp_ptr(compl_subgoal_ptr(ComplStkFrame));
 	  breg = cont_breg;
-#ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
-	  xsb_dbgmsg("------ Setting TBreg to %p...", cont_breg);
-#endif
+	  xsb_dbgmsg(LOG_COMPLETION,
+		     "------ Setting TBreg to %p...", cont_breg);
 	  found = TRUE;
 	}
       }
@@ -358,9 +350,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
       }
       cont_breg = subg_cp_ptr(compl_subgoal_ptr(leader_compl_frame));
       breg = cont_breg;
-#ifdef VERBOSE_COMPLETION /* was COMPLETION_DEBUG */
-      xsb_dbgmsg("------ Setting TBreg to %p...", cont_breg);
-#endif
+      xsb_dbgmsg(LOG_COMPLETION, "------ Setting TBreg to %p...", cont_breg);
     }
     
 /*----------------------------------------------------------------------*/
@@ -422,7 +412,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 	   /*-- forget these completion suspensions --*/
 	   subg_compl_susp_ptr(curr_subg) = NULL;
 #ifdef VERBOSE_COMPLETION
-	   xsb_dbgmsg("------ Setting Breg to %p...", breg);
+	   xsb_dbgmsg(LOG_DEBUG,"------ Setting Breg to %p...", breg);
 #endif
 	 } else {	/* unsuspend only those suspensions that are delayed */
 	   CPtr dnsf = NULL, ndnsf = NULL;
@@ -453,9 +443,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
      }
    }
  }
- #ifdef COMPLETION_DEBUG
-    xsb_dbgmsg("------ Completed the chosen SCC...");
-#endif
+    xsb_dbgmsg(LOG_COMPLETION, "------ Completed the chosen SCC...");
 /*----------------------------------------------------------------------*/
     /* Finally, compact the Completion Stack (and reclaim edge 
        space for the dependency graphs).
@@ -531,9 +519,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
     openreg = prev_compl_frame(leader_compl_frame);	
   }
   
-#ifdef COMPLETION_DEBUG
-  xsb_dbgmsg("------ Completed an ASCC...");
-#endif
+  xsb_dbgmsg(LOG_COMPLETION, "------ Completed an ASCC...");
 } /* compute_wfs() */
 
 /*----------------------------------------------------------------------*/

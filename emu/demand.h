@@ -28,7 +28,7 @@
 #include "cut_xsb.h"
 
 /* debug-related macros */
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 #ifdef CP_DEBUG
 #define INSPECT_CP(Type,CP) \
     fprintf(stddbg,\
