@@ -56,6 +56,8 @@
 #include "configs/special.h"
 #include "binding.h"
 
+extern print_pterm(prolog_term term, int toplevel, char *straddr, int *ind);
+
 static FILE *fptr;			/* working variable */
     
 #define setvar(op1) \
@@ -179,6 +181,7 @@ bool fmt_write(void)
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
+  int offset=0;	       	       	       	      /* used in print_term 	     */
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
   SET_FILEPTR(fptr, ptoc_int(2));
@@ -225,10 +228,18 @@ bool fmt_write(void)
 
     Arg = p2p_arg(ValTerm,i);
 
-    if (is_string(Arg)) {
+    if (current_fmt_spec->type == 'S') {
+      /* Any type: print as a string */
+      print_pterm(Arg, 1, str_arg_buf, &offset);
+      PRINT_ARG(str_arg_buf);
+    } else if (is_string(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       str_arg = string_val(Arg);
       PRINT_ARG(str_arg);
+    } else if ((is_list(Arg)) && (current_fmt_spec->type == 'S')) {
+      /* Print as a list */
+      print_pterm(Arg, 1, str_arg_buf, &offset);
+      PRINT_ARG(str_arg_buf);
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
@@ -295,13 +306,14 @@ bool fmt_write_string(void)
   long int_arg;     	     	     	    /* holder for int args     	    */
   float float_arg;     	     	     	    /* holder for float args   	    */
   struct fmt_spec *current_fmt_spec;
+  int offset=0;	       	       	       	    /* used in print_term 	    */
   int width=0, precision=0;      	    /* these are used in conjunction
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
 					       returned by sprintf/snprintf */
   int safe_outstring_bytes = SAFE_OUT_SIZE; /* safe number of bytes to write
-					       to OutString 	    	     */
-  OutString[0] = '\0'; 	       	            /* anull the output string 	     */
+					       to OutString 	    	    */
+  OutString[0] = '\0'; 	       	            /* anull the output string 	    */
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term, Fmt_buf, sizeof(Fmt_buf),
@@ -347,7 +359,11 @@ bool fmt_write_string(void)
 
     Arg = p2p_arg(ValTerm,i);
 
-    if (is_string(Arg)) {
+    if (current_fmt_spec->type == 'S') {
+      /* Any type: print as a string */
+      print_pterm(Arg, 1, str_arg_buf, &offset);
+      SPRINT_ARG(str_arg_buf);
+    } else if (is_string(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE_STRING");
       str_arg = string_val(Arg);
       SPRINT_ARG(str_arg);
@@ -966,6 +982,11 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
     case 's':
       keep_going = FALSE;
       result.type = 's'; /* string */
+      break;
+    case 'S':
+      keep_going = FALSE;
+      result.type = 'S'; /* string */
+      workspace[pos-1] = 's';
       break;
     case 'p':
       xsb_abort("Format specifier %%p not supported: %s",
