@@ -67,7 +67,7 @@ OPTION = [optimize]
 
 XSB = $(XSBDIR)/bin/xsb
 
-PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
+PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
 # Make sure warnings are saved in a file.
 SVFILE = '$(XSBDIR)/build/.flora_top_warn.tmp'
@@ -163,8 +163,8 @@ flrwraparound.O : flrwraparound.P flrwraparound.H $(FLORA_TERMS) $(XSB_EMU_FLAG_
 
 init:
 	/bin/rm -f $(SVFILE)
-	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
-	@echo 'fmt_write($(STDWARN),"%s\n",args($(HDRMSG))).' >> cmd...
+	@echo "file_write($(STDWARN),'-------------- Warnings/Errors --------------------'), file_nl($(STDWARN))." >> cmd...
+	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
 	@echo "file_flush($(STDWARN),_)." >> cmd...
 	@echo "import bootstrap_flora/0 from flora2." >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
@@ -173,7 +173,7 @@ init:
 
 
 finish:
-	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
+	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...
 
 
 clean:

@@ -158,7 +158,7 @@ d(X,Y):direct[(from)->X,to->Y,l->>{L}] :-
 %% XSB BUG: if you uncomment this, XSB dumps core IF it compiles this and 
 %% then runs. However, nothing happens if you compile, exit, reenter,
 %% and then run.
-L:line :- X:station[l->>{L}].
+L:line :- _X:station[l->>{L}].
 %%
 
 
