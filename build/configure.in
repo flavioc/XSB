@@ -44,8 +44,7 @@ fi
 
 SHELL=/bin/sh
 
-./touch.sh buildxsb.lock
-trap 'rm buildxsb.lock; exit 1' 1 2 3 15
+
 
 build_dir="`pwd`"
 # strip the last directory and possibly trailing slashes
@@ -77,8 +76,10 @@ AC_ARG_WITH(oracle,
 [  --with-oracle	   compile with support of Oracle])
 AC_ARG_WITH(odbc,
 [  --with-odbc		   compile with support of Oracle])
+
 AC_ARG_WITH(interprolog,
 [  --with-interprolog	   compile with support for InterProlog])
+
 AC_ARG_ENABLE(no-cygwin,
 [  --enable-no-cygwin	    compiled with option -mno-cygwin (default: disabled)])
 
@@ -105,7 +106,6 @@ if test "${with_wind+set}" = "set" ; then
    # suppress config tag
    config_tag=
 fi
-
 
 # make sure new files are readable 
 umask 022
@@ -467,7 +467,7 @@ dnl Find the source directory.
 
 if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
   echo ""
-  echo "    ******* I cannot find XSB sources!!! *******"
+  echo "    ******* I cannot find XSB sources!!! *_******"
   echo "    You must run \`configure' in the directory \`srcDir/build' "
   echo "    where \`srcDir' is the top directory of the XSB source tree."
   echo ""
@@ -926,9 +926,14 @@ if test "${with_odbc+set}" = "set"; then
     with_odbc=yes
 fi
 
+INTERPROLOGSRC=""
+INTERPROLOGOBJ=""
+
 if test "${with_interprolog+set}" = "set"; then
     AC_DEFINE(XSB_INTERPROLOG)
     with_interprolog=yes
+   INTERPROLOGSRC="interprolog_callback.c"
+   INTERPROLOGOBJ="interprolog_callback.o"
 fi
 
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
@@ -977,6 +982,30 @@ else
     javac=javac
 fi
 AC_SUBST(javac)
+AC_SUBST(java_support)
+
+AC_PATH_PROG(java_path,javac,no)
+java_path="${java_path%bin/javac}include"
+
+if test "${with_interprolog}" = "yes"; then
+  if test "${java_support}" != "yes"; then
+    echo "Interpolog not supported due to failure to find Java"
+    with_interprolog=""    
+    JAVA_HEADER_PATH=""
+    JAVA_PLATFORM_HEADER_PATH=""
+  else
+	JAVA_HEADER_PATH=${java_path}
+        JAVA_PLATFORM_HEADER_PATH=`ls ${JAVA_HEADER_PATH}/*/jni_md.h`
+        JAVA_PLATFORM_HEADER_PATH="${JAVA_PLATFORM_HEADER_PATH%jni_md.h}"
+	echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
+  fi
+else
+  JAVA_HEADER_PATH=""
+fi
+
+
+AC_SUBST(JAVA_HEADER_PATH)
+AC_SUBST(JAVA_PLATFORM_HEADER_PATH)
 
 # profiling implies debug
 if test "${enable_profile}" = "yes"; then
@@ -1329,6 +1358,8 @@ AC_SUBST(engine_mode)
 
 AC_SUBST(ODBCSRC)
 AC_SUBST(ODBCOBJ)
+AC_SUBST(INTERPROLOGSRC)
+AC_SUBST(INTERPROLOGOBJ)
 AC_SUBST(mno_cyg_inclib)
 AC_SUBST(mno_cyg_lib)
 AC_SUBST(DLLTYPE)

@@ -460,8 +460,7 @@ fi
 
 SHELL=/bin/sh
 
-./touch.sh buildxsb.lock
-trap 'rm buildxsb.lock; exit 1' 1 2 3 15
+
 
 build_dir="`pwd`"
 # strip the last directory and possibly trailing slashes
@@ -549,11 +548,13 @@ if test "${with_odbc+set}" = set; then
   :
 fi
 
+
 # Check whether --with-interprolog or --without-interprolog was given.
 if test "${with_interprolog+set}" = set; then
   withval="$with_interprolog"
   :
 fi
+
 
 # Check whether --enable-no-cygwin or --disable-no-cygwin was given.
 if test "${enable_no_cygwin+set}" = set; then
@@ -600,7 +601,6 @@ if test "${with_wind+set}" = "set" ; then
    # suppress config tag
    config_tag=
 fi
-
 
 # make sure new files are readable 
 umask 022
@@ -1028,7 +1028,7 @@ arch_install_objdir=${arch_install_config_prefix}/saved.o
 
 if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
   echo ""
-  echo "    ******* I cannot find XSB sources!!! *******"
+  echo "    ******* I cannot find XSB sources!!! *_******"
   echo "    You must run \`configure' in the directory \`srcDir/build' "
   echo "    where \`srcDir' is the top directory of the XSB source tree."
   echo ""
@@ -2826,18 +2826,23 @@ EOF
     with_odbc=yes
 fi
 
+INTERPROLOGSRC=""
+INTERPROLOGOBJ=""
+
 if test "${with_interprolog+set}" = "set"; then
     cat >> confdefs.h <<\EOF
 #define XSB_INTERPROLOG 1
 EOF
 
     with_interprolog=yes
+   INTERPROLOGSRC="interprolog_callback.c"
+   INTERPROLOGOBJ="interprolog_callback.o"
 fi
 
 # Extract the first word of "perl", so it can be a program name with args.
 set dummy perl; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2841: checking for $ac_word" >&5
+echo "configure:2846: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_perl_support'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2904,7 +2909,7 @@ trap 'rm buildxsb.lock; exit 1' 1 2 3 15
 # Extract the first word of "javac", so it can be a program name with args.
 set dummy javac; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2908: checking for $ac_word" >&5
+echo "configure:2913: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_java_support'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2936,6 +2941,65 @@ if test "${java_support}" = "yes"; then
 else
     javac=javac
 fi
+
+
+
+# Extract the first word of "javac", so it can be a program name with args.
+set dummy javac; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:2951: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_java_path'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$java_path" in
+  /*)
+  ac_cv_path_java_path="$java_path" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_java_path="$java_path" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_java_path="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  test -z "$ac_cv_path_java_path" && ac_cv_path_java_path="no"
+  ;;
+esac
+fi
+java_path="$ac_cv_path_java_path"
+if test -n "$java_path"; then
+  echo "$ac_t""$java_path" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+java_path="${java_path%bin/javac}include"
+
+if test "${with_interprolog}" = "yes"; then
+  if test "${java_support}" != "yes"; then
+    echo "Interpolog not supported due to failure to find Java"
+    with_interprolog=""    
+    JAVA_HEADER_PATH=""
+    JAVA_PLATFORM_HEADER_PATH=""
+  else
+	JAVA_HEADER_PATH=${java_path}
+        JAVA_PLATFORM_HEADER_PATH=`ls ${JAVA_HEADER_PATH}/*/jni_md.h`
+        JAVA_PLATFORM_HEADER_PATH="${JAVA_PLATFORM_HEADER_PATH%jni_md.h}"
+	echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
+  fi
+else
+  JAVA_HEADER_PATH=""
+fi
+
+
+
 
 
 # profiling implies debug
@@ -3015,7 +3079,7 @@ fi
 # Extract the first word of "itkwish", so it can be a program name with args.
 set dummy itkwish; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:3019: checking for $ac_word" >&5
+echo "configure:3083: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_itkwish_path'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -3085,16 +3149,16 @@ fi
 TEMP_LDFLAGS=$LDFLAGS
 LDFLAGS="-Wl,-export-dynamic"
 echo $ac_n "checking whether loader understands -Wl""... $ac_c" 1>&6
-echo "configure:3089: checking whether loader understands -Wl" >&5
+echo "configure:3153: checking whether loader understands -Wl" >&5
 cat > conftest.$ac_ext <<EOF
-#line 3091 "configure"
+#line 3155 "configure"
 #include "confdefs.h"
 
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:3098: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:3162: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   __export_dynamic=yes
 else
@@ -3298,21 +3362,21 @@ esac
 
 if test -z "$with_os" ; then
             echo $ac_n "checking for inline""... $ac_c" 1>&6
-echo "configure:3302: checking for inline" >&5
+echo "configure:3366: checking for inline" >&5
 if eval "test \"`echo '$''{'ac_cv_c_inline'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_cv_c_inline=no
 for ac_kw in inline __inline__ __inline; do
   cat > conftest.$ac_ext <<EOF
-#line 3309 "configure"
+#line 3373 "configure"
 #include "confdefs.h"
 
 int main() {
 } $ac_kw foo() {
 ; return 0; }
 EOF
-if { (eval echo configure:3316: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:3380: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_inline=$ac_kw; break
 else
@@ -3446,6 +3510,8 @@ fi
 
 
 # These are used in xsb_configuration.in
+
+
 
 
 
@@ -3653,6 +3719,9 @@ s%@perl_ccflags@%$perl_ccflags%g
 s%@perl_libs@%$perl_libs%g
 s%@java_support@%$java_support%g
 s%@javac@%$javac%g
+s%@java_path@%$java_path%g
+s%@JAVA_HEADER_PATH@%$JAVA_HEADER_PATH%g
+s%@JAVA_PLATFORM_HEADER_PATH@%$JAVA_PLATFORM_HEADER_PATH%g
 s%@itkwish_path@%$itkwish_path%g
 s%@xsb_version@%$xsb_version%g
 s%@canonical@%$canonical%g
@@ -3686,6 +3755,8 @@ s%@xsb_full_version_name@%$xsb_full_version_name%g
 s%@engine_mode@%$engine_mode%g
 s%@ODBCSRC@%$ODBCSRC%g
 s%@ODBCOBJ@%$ODBCOBJ%g
+s%@INTERPROLOGSRC@%$INTERPROLOGSRC%g
+s%@INTERPROLOGOBJ@%$INTERPROLOGOBJ%g
 s%@mno_cyg_inclib@%$mno_cyg_inclib%g
 s%@mno_cyg_lib@%$mno_cyg_lib%g
 s%@DLLTYPE@%$DLLTYPE%g

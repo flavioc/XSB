@@ -41,7 +41,11 @@ CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
 ODBCSRC=@ODBCSRC@
 ODBCOBJ=@ODBCOBJ@
-DLLTYPE=@DLLTYPE@
+INTERPROLOGSRC=@INTERPROLOGSRC@
+INTERPROLOGOBJ=@INTERPROLOGOBJ@
+-LDLLTYPE=@DLLTYPE@
+JAVA_HEADER_PATH=@JAVA_HEADER_PATH@
+JAVA_PLATFORM_HEADER_PATH=@JAVA_PLATFORM_HEADER_PATH@
 
 # For mno-cygwin 
 # -mdll option is needed so that MSVC files could link to dll
@@ -50,7 +54,7 @@ mno_cyg_inclib=@mno_cyg_inclib@
 mno_cyg_lib=@mno_cyg_lib@
 #cygconf=`(uname -m) 2>/dev/null` || cygconf=unknown
 cygconf=i686
-cygdirname=${cygconf}-cygwin
+cygdirname=${cygconf}-ceygwin
 DLLTOOL=dlltool
 DLLNAME=xsb.dll
 DLL_LIBS=$(LDFLAGS) -L /usr/$(cygdirname)/lib -lmingw32 -lmoldname -lcrtdll -lkernel32 -L /usr/lib/gcc-lib/$(cygdirname)/2.9-cygwin-990830 -lgcc
@@ -134,7 +138,7 @@ OBJS =	auxlry.o biassert.o builtin.o chat.o cinterf.o \
 	tst_insert.o tst_retrv.o tst_unify.o tst_utils.o varstring.o
 
 
-allOBJS = main_xsb.o ${OBJS} ${ODBCOBJ}
+allOBJS = main_xsb.o ${OBJS} ${ODBCOBJ} ${INTERPROLOGOBJ}
 
 ORAOBJS = $(OBJS) orastuff.o
 
@@ -143,7 +147,7 @@ allORAOBJS = $(allOBJS) orastuff.o
 xsb:: $(allOBJS)
 	@echo ""; echo "Making XSB executable $(EXECUTABLE) "; echo ""
 	cd $(emudir); \
-	$(CC) -o $(EXECUTABLE) $(LINKFLAGS) $(allOBJS) $(LDFLAGS)
+	$(CC) -o $(EXECUTABLE) $(LINKFLAGS) $(allOBJS) $(LDFLAGS) 
 
 xsbora:: $(allORAOBJS)
 	@echo ""; \
@@ -154,11 +158,11 @@ xsbora:: $(allORAOBJS)
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
-xsbmod:: $(OBJS) ${ODBCOBJ}
+xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o"; \
 	   echo ""
-	ld -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ}
+	ld -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # same as xsbmod, but with oracle support
@@ -171,7 +175,7 @@ xsboramod:: $(ORAOBJS)
 
 
 depend::
-	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC)
+	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(mno_cyg_inclib) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
 
 #
 # create a new DLL library in cygwin (compiled with -mno-cygwin) environment
@@ -205,6 +209,10 @@ cygdll: $(HEADERS) $(DEF_FILE) xsb.o
 #=======================================================================
 # Put in this group all actions (rules) of this Makefile.
 #=======================================================================
+
+interprolog_callback.o: interprolog_callback.c
+	$(CC) -I$(arch_config_prefix) -I$(JAVA_HEADER_PATH) -I$(JAVA_PLATFORM_HEADER_PATH) -c $(CFLAGS) interprolog_callback.c
+	@cp callback.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 init_xsb.o: init_xsb.c
 	$(CC) -I$(arch_config_prefix) $(mno_cyg_inclib) -c $(CFLAGS) init_xsb.c
