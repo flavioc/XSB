@@ -1235,7 +1235,7 @@ filterColName([rel(_,N)|Xs],[rel(N,_)|Ys]) :-
 :- dynamic odbc_active_cursors(_Cursor). %% estimate of stack of active cursors
 
 odbc_open(Server,Name,Passwd) :-
-	odbc_open(Server,Name,Passwd,_Connection).
+	odbc_open(Server,Name,Passwd,defaultConnection).
 
 odbc_open(Server,Name,Passwd,Connection) :-
 	odbc_connect(Server,Name,Passwd,ConnHandle),
@@ -1248,7 +1248,7 @@ odbc_open(Server,Name,Passwd,Connection) :-
 %%% pass whole Connect string, e.g.
 %%%'DRIVER={Microsoft Access Driver (*.mdb)};DBQ=C:\xsb-tests\sutures.mdb;UID=;PWD=;'
 odbc_open(ConnectIn) :-
-	odbc_open(ConnectIn,_Connection).
+	odbc_open(ConnectIn,defaultConnection).
 
 odbc_open(ConnectIn,Connection) :-
 	odbc_driver_connect(ConnectIn,ConnHandle),
@@ -1325,11 +1325,15 @@ retract_import_info(ConnHandle) :-
 	retractall(attributeX(_,_,_,ConnHandle)).
 
 odbc_sql(BindVals,SQLStmt,Result) :-
-	odbc_sql(_Connection,BindVals,SQLStmt,Result).
+	odbc_sql(defaultConnection,BindVals,SQLStmt,Result).
 
 odbc_sql(Connection,BindVals,SQLStmt,Result) :-
 	odbc_connection_check(Connection,ConnHandle),
 	odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result).
+
+odbc_sql_cnt(Connection,BindVals,SQLStmt,Count) :-
+	odbc_connection_check(Connection,ConnHandle),
+	odbc_sql_ic(ConnHandle,BindVals,SQLStmt,Count).
 
 odbc_connection_check(Connection,ConnHandle):- 
 	(odbc_connection(Connection,ConnHandle) -> 
@@ -1367,12 +1371,42 @@ odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
 		odbc_error('Parse error.')
 	).
 
+odbc_sql_ic(ConnHandle,BindVals,SQLStmt,Result) :-
+	find_free_cursor(ConnHandle,SQLStmt,Cursor),
+	(BindVals == []
+	 ->	true
+	 ;	length(BindVals,NumBindVals),
+		set_bind_table_size(Cursor,NumBindVals),
+		set_def_bindvar_table(BindVals,Cursor)
+	),
+	parse(Cursor,RetVal0),
+	(RetVal0 =:= 0
+	 ->	odbc_describe_select(Cursor,RetVal),
+		(RetVal =:= 0
+		 ->	odbc_deactivate_cursor(Cursor),
+			odbc_error('Invalid SQL statement type for count.')
+		 ; RetVal =:= 2
+		 ->	odbc_deactivate_cursor(Cursor),
+			odbc_get_row_count(Cursor,Count,Ret3),
+			(Ret3 =:= 0
+			 ->	odbc_deactivate_cursor(Cursor),
+				Result = Count
+			 ;	odbc_deactivate_cursor(Cursor),
+				odbc_error('Unable to get SQL row count.')
+			)
+		 ;	odbc_deactivate_cursor(Cursor),
+			odbc_error('DescribeSelect error.')
+		)
+	 ;      odbc_deactivate_cursor(Cursor),
+		odbc_error('Parse error.')
+	).
+
 %---------------------------------------------------------------------------------
 % ODBC Import (and attach)
 %---------------------------------------------------------------------------------
 
 odbc_import(DbPredicate,SymName) :-
-	odbc_import_1(_Connection,DbPredicate,SymName,option(false)).
+	odbc_import_1(defaultConnection,DbPredicate,SymName,option(false)).
 
 odbc_import(Connection,DbPredicate,PredName,Options) :-
 	check_odbc_import_options(Options,Findall),
@@ -1571,7 +1605,7 @@ translate(del,ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist) :-
 	translate_del(ProjectionTerm,DatabaseGoal,_,SQLAtom,Blist).
 
 odbc_transaction(Command) :-
-	odbc_transaction(_Connection,Command).
+	odbc_transaction(defaultConnection,Command).
 
 odbc_transaction(Connection,commit) :-
 	odbc_connection_check(Connection,ConnHandle),
@@ -1596,7 +1630,6 @@ odbc_transaction(Connection,autocommit(off)) :-
 	odbc_connect_option(ConnHandle,1,102,0,RetVal),
 	RetVal =:= 0.
 
-
 odbc_delete(Head,Body) :-
 	odbc_delete(_Conn,Head,Body).
 
@@ -1609,7 +1642,7 @@ odbc_delete(Connection,Head, Body) :-
 		Head1)).
 
 odbc_insert(Head, Body) :-
-	odbc_insert(_Connection,Head,Body).
+	odbc_insert(defaultConnection,Head,Body).
 odbc_insert(Connection,Head,Body) :-
 	odbc_connection_check(Connection,ConnHandle),
 	copy_term(Head,Head1),
@@ -1662,13 +1695,13 @@ writelistln([H|T]) :-
 
 % -----------------------------------------------------------------------
 odbc_get_schema(Command,Row) :-
-	odbc_get_schema(_Conn,Command,Row).
+	odbc_get_schema(defaultConnection,Command,Row).
 odbc_get_schema(Connection,Command,Row) :-
 	odbc_connection_check(Connection,ConnHandle),
 	odbc_get_schema1(Command,ConnHandle,Row).
 
 odbc_show_schema(Command) :-
-	odbc_show_schema(_Conn,Command).
+	odbc_show_schema(defaultConnection,Command).
 odbc_show_schema(Connection,Command) :-
 	odbc_connection_check(Connection,ConnHandle),
 	odbc_show_schema1(Command,ConnHandle).
@@ -1738,7 +1771,7 @@ odbc_show_schema1(columns(Table),ConnHandle) :-
 
 %--------------------------------
 odbc_attach(Pred,Table) :-
-	odbc_attach(_Connection,Pred,Table).
+	odbc_attach(defaultConnection,Pred,Table).
 
 odbc_attach(Connection,Pname,table(Table)) :-
 	odbc_connection_check(Connection,ConnHandle),
@@ -1764,7 +1797,7 @@ odbc_attach(Connection,Pname,table(Table, List)) :-
 
 %--------------------------------
 odbc_create_table(Table,Fields) :-
-	odbc_create_table(_Connection,Table,Fields).
+	odbc_create_table(defaultConnection,Table,Fields).
 
 odbc_create_table(Connection,Table,Fields) :-
 	nonvar(Table),
@@ -1773,7 +1806,7 @@ odbc_create_table(Connection,Table,Fields) :-
 
 %--------------------------------
 odbc_create_index(Tname,Iname,index(_,Fields)) :-
-	odbc_create_index(_Connection,Tname,Iname,index(_,Fields)).
+	odbc_create_index(defaultConnection,Tname,Iname,index(_,Fields)).
 
 odbc_create_index(Connection,Tname,Iname,index(_,Fields)) :-
 	nonvar(Tname),
@@ -1784,14 +1817,14 @@ odbc_create_index(Connection,Tname,Iname,index(_,Fields)) :-
 
 %--------------------------------
 odbc_delete_table(Table) :-
-	odbc_delete_table(_Conn,Table).
+	odbc_delete_table(defaultConnection,Table).
 odbc_delete_table(Connection,Table) :-
 	nonvar(Table),
 	odbc_sql(Connection,[],['DROP TABLE ',Table],[]).
 
 %--------------------------------
 odbc_delete_view(View) :-
-	odbc_delete_view(_Conn,View).
+	odbc_delete_view(defaultConnection,View).
 
 odbc_delete_view(Connection,View) :-
 	nonvar(View),
@@ -1799,7 +1832,7 @@ odbc_delete_view(Connection,View) :-
 
 %--------------------------------
 odbc_delete_index(TableName,Index) :-
-	odbc_delete_index(_Conn,TableName,Index).
+	odbc_delete_index(defaultConnection,TableName,Index).
 odbc_delete_index(Connection,TableName,Index) :-
 	nonvar(Index),
 	odbc_sql(Connection,[],['DROP INDEX ',Index,' ON ',TableName],[]).
@@ -1897,7 +1930,7 @@ odbc_accessible_tables(ConnHandle,User,Tab) :-
 	).
 
 odbc_user_tables(Tab) :-
-	odbc_connection_check(_Conn,ConnHandle),
+	odbc_connection_check(defaultConnection,ConnHandle),
 	odbc_user_tables(ConnHandle,Tab).
 
 odbc_user_tables(ConnHandle,Tab) :-
@@ -2043,6 +2076,8 @@ odbc_describe_select(Cursor,Ret) :- odbc_exec_query(15,Cursor,Ret).
 odbc_data_sources(N,DSN,Descr,Ret) :- odbc_exec_query(17,N,DSN,Descr,Ret).
 
 odbc_get_info(ConnHandle,Info_type,Info,Ret) :- odbc_exec_query(18,ConnHandle,Info_type,Info,Ret).
+
+odbc_get_row_count(Cursor,Count,Ret) :- odbc_exec_query(19,Cursor,Count,Ret).
 
 %%% parameters in SQLEXT.H;
 %%Attr: SQL_AUTOCOMMIT(102) Val: on(1), off(0);
