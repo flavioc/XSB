@@ -686,8 +686,11 @@ newClass(Name,ParentCid,NativeId,Source,NewCid,UpdateList0,UpdateList) :-
 			)
 		 ;	check_source_consistency(NativeId,Source),
 		        newcid(NativeId,Source,NewCid), % new class
-			UpdateList0 = [asserta(oms_cn(NewCid,Name,NativeId,Source))|UpdateList1],
-			add_parent_if_nec(NewCid,Name,ParentCid,UpdateList1,UpdateList)
+			(ParentCid=unk
+			 ->	UpdateList0 = [asserta(oms_cn(NewCid,Name,NativeId,Source))|UpdateList]
+			 ;      sc_parent_exists(ParentCid),
+				UpdateList0 = [asserta(oms_cn(NewCid,Name,NativeId,Source)),asserta(oms_sc(NewCid,ParentCid))|UpdateList]
+			)
 		)
 	 ;	oms_warning(update,('newClass needs a variable in CID: ',
                                     NewCid,', ',Name,', ',
