@@ -31,14 +31,18 @@
 /* inline predicates							*/
 /*======================================================================*/
 
-inline_predicate('=', 2).
-inline_predicate('<', 2).
-inline_predicate('>', 2).
-inline_predicate('=<', 2).
-inline_predicate('>=', 2).
-inline_predicate('=:=', 2).
-inline_predicate('=\=', 2).
+/* TLS 04/02  Sadly these predicates cannot be inlined properly with
+   our current mechanism.  See the discussion before the predicate
+   geninlin in tpinline.P */
+%inline_predicate('<', 2).
+%inline_predicate('>', 2).
+%inline_predicate('=<', 2).
+%inline_predicate('>=', 2).
+%inline_predicate('=:=', 2).
+%inline_predicate('=\=', 2).
 inline_predicate(is, 2).
+
+inline_predicate('=', 2).
 inline_predicate('==', 2).
 inline_predicate('\==', 2).
 inline_predicate('@<', 2).
