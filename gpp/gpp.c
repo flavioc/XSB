@@ -1852,7 +1852,7 @@ int ParsePossibleMeta()
      if (!commented[iflevel]) {
        struct INPUTCONTEXT *N;
        FILE *f = NULL;
-       char *s;
+       char *incfile_name;
 
        if (nparam==2) warning("Extra argument to #include ignored");
        if (!whiteout(&p1start,&p1end)) bug("Missing file name in #include");
@@ -1861,35 +1861,44 @@ int ParsePossibleMeta()
            ((getChar(p1start)=='<')&&(getChar(p1end-1)=='>')))
          { p1start++; p1end--; }
        if (p1start>=p1end) bug("Missing file name in #include");
-       s=malloc(p1end-p1start+1);
-       for (i=0;i<p1end-p1start;i++) s[i]=getChar(p1start+i);
-       s[p1end-p1start]=0;
+       incfile_name=malloc(p1end-p1start+1);
+       /* extract the orig include filename */
+       for (i=0;i<p1end-p1start;i++)
+	 incfile_name[i]=getChar(p1start+i);
+       incfile_name[p1end-p1start]=0;
 
        /* if absolute path name is specified */
-       if (s[0]==SLASH
+       if (incfile_name[0]==SLASH
 #ifdef WIN_NT
-	   || (isalpha(s[0]) && s[1]==':')
+	   || (isalpha(incfile_name[0]) && incfile_name[1]==':')
 #endif
 	   )
-	 f=fopen(s,"r");
+	 f=fopen(incfile_name,"r");
        else /* search current dir, if this search isn't turned off */
 	 if (!NoCurIncFirst) {
-	   f = openInCurrentDir(s);
+	   f = openInCurrentDir(incfile_name);
 	 }
        
        for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
-         s=realloc(s,p1end-p1start+strlen(includedir[j])+2);
-         strcpy(s,includedir[j]);
-         s[strlen(includedir[j])]=SLASH;
+         incfile_name =
+	   realloc(incfile_name,p1end-p1start+strlen(includedir[j])+2);
+         strcpy(incfile_name,includedir[j]);
+         incfile_name[strlen(includedir[j])]=SLASH;
+	 /* extract the orig include filename */
          for (i=0;i<p1end-p1start;i++) 
-           s[strlen(includedir[j])+1+i]=getChar(p1start+i);
-         s[p1end-p1start+strlen(includedir[j])+1]=0;
-         f=fopen(s,"r");
+           incfile_name[strlen(includedir[j])+1+i]=getChar(p1start+i);
+         incfile_name[p1end-p1start+strlen(includedir[j])+1]=0;
+         f=fopen(incfile_name,"r");
        }
 
-       /* If didn't find the file and "." is said to search last */
+       /* If didn't find the file and "." is said to be searched last */
        if (f==NULL && CurDirIncLast) {
-	 f = openInCurrentDir(s);
+	 incfile_name=realloc(incfile_name,p1end-p1start+1);
+	 /* extract the orig include filename */
+	 for (i=0;i<p1end-p1start;i++) 
+           incfile_name[i]=getChar(p1start+i);
+	 incfile_name[p1end-p1start]=0;
+	 f = openInCurrentDir(incfile_name);
        }
 
        if (f==NULL)
@@ -1900,7 +1909,7 @@ int ParsePossibleMeta()
        C->in=f;
        C->argc=0;
        C->argv=NULL;
-       C->filename=s;
+       C->filename=incfile_name;
        C->out=N->out;
        C->lineno=0;
        C->bufsize=80;
@@ -1912,7 +1921,8 @@ int ParsePossibleMeta()
        C->ambience=FLAG_TEXT;
        PushSpecs(S);
        if (autoswitch) {
-         if (!strcmp(s+strlen(s)-2,".h")||!strcmp(s+strlen(s)-2,".c"))
+         if (!strcmp(incfile_name+strlen(incfile_name)-2,".h")
+	     || !strcmp(incfile_name+strlen(incfile_name)-2,".c"))
            SetStandardMode(S,"C");
        }
        ProcessContext();
