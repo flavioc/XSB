@@ -138,7 +138,8 @@
 	put_attributes/2,
 	get_attributes/3,
 	delete_attributes/1,
-	attv_unify/2.
+        attv_unify/2, 
+        interprolog_callback/3.
 
 :- export 
 	file_function/7, conname/2, conpsc/2, machine_file_exists/1,
