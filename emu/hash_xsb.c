@@ -249,8 +249,8 @@ void symbol_table_stats() {
   printf("\tused buckets:\t%lu  (range: [%d, %lu])\n", used_buckets,
 	 first_index, last_index);
   printf("\tunused buckets:\t%lu\n", unused_buckets);
-  printf("\tfullest bucket:\t%lu  (size: %lu)\n", fullest_bucket_num,
-	 fullest_bucket_size);
+  printf("\tmaximum bucket size:\t%lu  (#: %lu)\n", fullest_bucket_size, 
+	 fullest_bucket_num);
 }  
 
 
@@ -295,6 +295,6 @@ void string_table_stats() {
   printf("\tused buckets:\t%lu  (range: [%d, %lu])\n", used_buckets,
 	 first_index, last_index);
   printf("\tunused buckets:\t%lu\n", unused_buckets);
-  printf("\tfullest bucket:\t%lu  (size: %lu)\n\n", fullest_bucket_num,
-	 fullest_bucket_size);
+  printf("\tmaximum bucket size:\t%lu  (#: %lu)\n", fullest_bucket_size, 
+	 fullest_bucket_num);
 }
