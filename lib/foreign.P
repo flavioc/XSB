@@ -65,7 +65,9 @@ compile_so(Path, COptions, LdOptions) :-
 runtime_loader_flag(_Compiler,'','') :- !.
 runtime_loader_flag(Compiler,LibraryDir,Flag):-
 	xsb_configuration(configuration, Configuration),
-	(   str_sub(gcc,Compiler) %% egcc, kgcc, and friends
+	(   str_sub('powerpc-apple-darwin', Configuration)
+	->  Flag = ''
+	;	str_sub(gcc,Compiler) %% egcc, kgcc, and friends
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;   str_sub(solaris, Configuration)
 	->  str_cat('-rpath ', LibraryDir, Flag)
@@ -139,9 +141,9 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
 	    ; str_sub('powerpc-apple-darwin', Configuration)
-	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts])
+	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts))
+	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
 #endif
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts])),

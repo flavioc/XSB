@@ -28,6 +28,9 @@
 #include "deref.h"
 #include "cinterf.h"
 
+int total_number_of_requests = 0;
+int event_loop_runnung = FALSE;
+
 
 /* Calling sequence:
        libwww_request([req1,req2,...])

@@ -90,13 +90,8 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 
 	runtime_loader_flag(CC, LibwwwLibdir, RunpathFlag),
 	%% Add something like -Wl,-rpath,<libdir> to the loader flags
-	fmt_write_string(LoaderFlags1, '%s %s', arg(RunpathFlag,LoaderFlags0)),
-
-	%% Compile the _util.c file into a shared object
-	compile_so(Module_xml, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
-	compile_so(Module_rdf, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
-	compile_so(Module_html, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
-	%% Move Module_util to the arch-dependent library
+	
+	%% Compute the arch-dependent library name
 	(
 	(xsb_configuration(architecture,A),str_sub(darwin,A))
 	->
@@ -120,12 +115,45 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 	str_cat(Module_rdf, '.so', SharedLib_rdf),
 	str_cat(Module_html, '.so', SharedLib_html)
 	),
+
+	(
+	(xsb_configuration(architecture,A),str_sub(darwin,A))
+	->
+	fmt_write_string(LoaderFlags1, '%s %s -install_name %s', arg(RunpathFlag,LoaderFlags0,LibMod_xml)),
+	compile_so(Module_xml, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
+	fmt_write_string(LoaderFlagsMac2, '%s %s -install_name %s', arg(RunpathFlag,LoaderFlags0,LibMod_rdf)),
+	compile_so(Module_rdf, [cc(CC), cc_opts(CC_opts)], LoaderFlagsMac2),
+	fmt_write_string(LoaderFlagsMac3, '%s %s -install_name %s', arg(RunpathFlag,LoaderFlags0,LibMod_html)),
+	compile_so(Module_html, [cc(CC), cc_opts(CC_opts)], LoaderFlagsMac3)
+	;
+	fmt_write_string(LoaderFlags1, '%s %s', arg(RunpathFlag,LoaderFlags0)),
+	%% Compile the _util.c file into a shared object
+	compile_so(Module_xml, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
+	compile_so(Module_rdf, [cc(CC), cc_opts(CC_opts)], LoaderFlags1),
+	compile_so(Module_html, [cc(CC), cc_opts(CC_opts)], LoaderFlags1)
+	),
+
+	%% Move Module_util to the arch-dependent library
 	force_rename(SharedLib_xml,LibMod_xml),
 	force_rename(SharedLib_rdf,LibMod_rdf),
 	force_rename(SharedLib_html,LibMod_html),
+
+	(
+	(xsb_configuration(architecture,A),str_sub(darwin,A))
+	->
+	str_cat(Module, '.dylib', SharedLib),
+	fmt_write_string(LibMod, '%s%s%s.dylib', a(ConfigLibdir,Slash,Basename)),
+	%% Make options for the main foreign module (libwww_request.c)
+	fmt_write_string(LoaderFlags2, '%s %s %s %s -install_name %s',
+			 a(LoaderFlags0,LibMod_xml,LibMod_rdf,LibMod_html,LibMod))
+	;
+	str_cat(Module, '.so', SharedLib),
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename)),
 	%% Make options for the main foreign module (libwww_request.c)
 	fmt_write_string(LoaderFlags2, '%s %s %s %s',
-			 a(LoaderFlags1,LibMod_xml,LibMod_rdf,LibMod_html)),
+			 a(LoaderFlags1,LibMod_xml,LibMod_rdf,LibMod_html))
+	),
+
 	make_libwwwH(CC, CC_opts, LoaderFlags2),
 	str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
@@ -133,15 +161,6 @@ make_libwwwH(CC, CC_opts, LoaderFlags) :-
 			 '%s%s%s%s',
 			 args(ConfigLibdir,Slash,Basename,XSB_OBJ_EXTENSION_ATOM)),
 	force_rename(Objfile, LibObjFile),
-	(
-	(xsb_configuration(architecture,A),str_sub(darwin,A))
-	->
-	str_cat(Module, '.dylib', SharedLib),
-	fmt_write_string(LibMod, '%s%s%s.dylib', a(ConfigLibdir,Slash,Basename))
-	;
-	str_cat(Module, '.so', SharedLib),
-	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibdir,Slash,Basename))
-	),
 	force_rename(SharedLib,LibMod)
      ).
 
