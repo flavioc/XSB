@@ -24,6 +24,9 @@
 
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <signal.h>
 
 #include "configs/config.h"
 
@@ -46,12 +49,29 @@ static char *err_msg[] = {
 
 /*----------------------------------------------------------------------*/
 
-void xsb_abort(char *description)
+/* you can pass either 1 argument---a full description (a string),
+   or a variable number of arguments -- a format followed by arguments.
+*/
+void xsb_abort(char *description, ...)
 {
-    char message[240];
+    char message[MAXBUFSIZE];
+    va_list args;
 
-    sprintf(message, "++Error: %s\n", description);
+    xsb_default_segfault_handler = signal(SIGSEGV, SIG_DFL);
+
+    va_start(args, description);
+
+    strcpy(message, "\n++Error: ");
+    vsprintf(message+strlen(message), description, args);
+    if (message[strlen(message)-1] != '\n')
+      strcat(message, "\n");
+
+    va_end(args);
     pcreg = exception_handler(message);
+
+    signal(SIGSEGV,  xsb_default_segfault_handler);
+    /* this allows xsb_abort to jump out even from nested loops */
+    longjmp(xsb_abort_fallback_environment, 1);
 }
 
 /*----------------------------------------------------------------------*/

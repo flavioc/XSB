@@ -51,13 +51,13 @@
 #define ZERO_DIVIDE	16 
 
 extern void xsb_exit(char *);
-extern void xsb_abort(char *);
+extern void xsb_abort(char *, ...);
 extern void err_handle(int, int, char *, int, char *, Cell);
 
 #define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
 
 #define xsb_mesg(message)       fprintf(stderr, "%s\n", message)
-#define xsb_warn(warning)	fprintf(stderr, "++Warning: %s\n", warning)
+#define xsb_warn(warning)	fprintf(stderr, "\n++Warning: %s\n", warning)
 
 extern char *xsb_default_segfault_msg;
 extern char *xsb_segfault_message; /* put your segfault message here prior to
@@ -67,8 +67,10 @@ extern char *xsb_segfault_message; /* put your segfault message here prior to
 extern void (*xsb_default_segfault_handler)(int); /* where the previous value
 						     of the SIGSEGV handler is
 						     saved */ 
-extern jmp_buf xsb_fall_back_environment; /* Environment for segfault longjump
-					     saved here */
+extern jmp_buf xsb_segfault_fallback_environment; /* Environment for segfault
+						     longjump saved here */
+extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
+						  longjump saved here */
 
 /* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
 extern void xsb_segfault_catcher (int);
