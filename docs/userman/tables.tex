@@ -1,3 +1,4 @@
+
 \newtheorem{exercise}{Exercise}[section]
 
 \chapter{Using Tabling in XSB: A Tutorial Introduction} 
@@ -229,23 +230,30 @@ cut_q(1).       cut_q(2).
 
 once(Term):- call(Term),!.
 \end{verbatim}
-What solutions are derived for the goal {\tt ?- p(X)}?  Suppose that
+What solutions are derived for the goal {\tt ?- cut\_p(X)}?  Suppose that
 {\tt cut\_p/1} were rewritten as 
 \begin{verbatim}
-p1(X):- q1(X),once(r1).
+cut\_p1(X):- cut\_q1(X),once(cut\_r1).
 \end{verbatim}
 
 How should this cut over a table affect the answers generated for {\tt
-cut\_p/1}?  What happens if you rewrite {\tt p/1} in this way and
+cut\_p/1}?  What happens if you rewrite {\tt cut\_p/1} in this way and
 compile it in XSB?
 \end{exercise}
 
-The solution \version{} of XSB takes to the problem posed in Exercise
-\ref{ex:nocut} is to check whether a tabled predicate statically lies
-in the scope of a cut at compile time.  If so, the compilation is
-aborted.  However, cuts are allowed within tabled predicates, subject
-(as always) to the restriction that the scope of a cut cannot include
-a call to a tabled predicate.  
+In Exercise \ref{ex:nocut}, {\tt cut\_p(1)} and {\tt cut\_p(2)} should
+both be true.  Thus, the cut in the {\tt once(cut\_r1)} literal in the
+revised may inadvertantly cut away solutions that are demanded by {\tt
+cut\_p/1}.  \version{} of XSB does not allow cuts over tabled
+predicates.  XSB checks whether a tabled predicate statically lies in
+the scope of a cut at compile time.  If so, the compilation is
+aborted\footnote{A more sophisticated solution is proposed in
+\cite{Swif99b}.}. At runtime, it also ensures that no incomplete
+tables are cut over whenever it executes a cut.
+
+However, cuts are allowed {\em within} tabled predicates, subject (as
+always) to the restriction that the scope of a cut cannot include a
+call to a tabled predicate.
 
 \begin{example}
 An example of using cuts in a tabled predicate is a tabled
@@ -558,11 +566,9 @@ when the when the {\tt move/2} relation is a cycle.  Load the file
 query {\tt ?- win(1)}.  Does the query succeed?  Try {\tt
 tnot(win(1))}.
 
-Now import {\tt get\_residual/2} via the command
-\begin{verbatim}
-?- import get_residual/2 from tables.
-\end{verbatim}
-Can you guess what is happening with this non-stratified program?
+Now query the table with the standard XSB predicate {\tt
+get\_residual/2}, e.g. {\tt ?- get_residual(win(1),X)}.  Can you guess
+what is happening with this non-stratified program?
 \end{exercise}
 
 The predicate {\tt get\_residual/2} (Section \ref{tabling_predicates})
@@ -716,10 +722,11 @@ when the second {\tt p} in this query is called, all simplification on
 {\tt p} is true {\em or} undefined.
 
 \begin{exercise} \label{ex:true-val}
-Write a predicate {\tt wfs\_call(?Tpred,?Val)} such that if {\tt
+Write a predicate {\tt wfs\_call(+Tpred,?Val)} such that if {\tt
 Tpred} is a ground call to a tabled predicate, {\tt
-wfs\_call(?Tpred,?Val)} calls {\tt Tpred} and unifies {\tt Val} with
+wfs\_call(#Tpred,?Val)} calls {\tt Tpred} and unifies {\tt Val} with
 the truth value of {\tt Tpred} under the well-founded semantics.
+{\em Hint: use {\tt get_residual/2}}.
 
 How would you modify {\tt wfs\_call(?Tpred,?Val)} so that it properly
 handled cases in which {\tt Tpred} is non-ground.
