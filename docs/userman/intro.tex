@@ -130,26 +130,32 @@ written as:
 \begin{center}
 \begin{minipage}{3.7in}
 \begin{verbatim}
-:- table closure(_)(_,_).
+:- hilog closure.
+:- table apply/3.
 
 closure(R)(X,Y) :- R(X,Y).
 closure(R)(X,Y) :- closure(R)(X,Z), R(Z,Y).
 \end{verbatim}
 \end{minipage}
 \end{center}
+as long as the underlying relations (the predicate symbols to which
+$R$ will be unified) are also declared as Hilog.  For example, if {\tt
+a/2} were a binary relation to which the {\tt closure} predicate would
+be applied, then the declaration {\tt :- hilog a.} would also need to
+be included.
 
-A further goal of XSB is to provide in implementation engine for both logic
-programming and for data-oriented applications such as in-memory
+A further goal of XSB is to provide in implementation engine for both
+logic programming and for data-oriented applications such as in-memory
 deductive database queries and data mining \cite{SaSw94}.  One
 prerequisite for this functionality is the ability to load a large
 amount of data very quickly.  We have taken care to code in C a
 compiler for asserted clauses.  The result is that the speed of
-asserting and retracting code is faster in XSB than in any
-other Prolog system of which we are aware.  At the same time, because
+asserting and retracting code is faster in XSB than in any other
+Prolog system of which we are aware.  At the same time, because
 asserted code is compiled into SLG-WAM code, the speed of executing
 asserted code in XSB is faster than that of many other Prologs as
-well.  We note however, that XSB does not follow the semantics
-of assert specified in \cite{LiOk87}.
+well.  We note however, that XSB does not follow the semantics of
+assert specified in \cite{LiOk87}.
 
 Data oriented applications may also require indices other than
 Prolog's first argument indexing.  XSB offers a variety of indexing
