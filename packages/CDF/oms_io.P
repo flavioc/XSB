@@ -366,7 +366,7 @@ loads @tt{schema_omsext.P} and @tt{data_omsext.P} files from
 @tt{Directory} (i.e. extensional facts in external format).  This
 information will not become accessible to the Programmer's View until
 it is translated into internal format by @pred{merge_omsext/0} or
-@pred{fast_load_merge_omsext/0}.  Loading an OMS will remove any OMS
+@pred{fast_load_mergeomsext/0}.  Loading an OMS will remove any OMS
 information in external format previously asserted to the OMS
 state.").
 
