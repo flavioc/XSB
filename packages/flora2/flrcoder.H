@@ -36,7 +36,7 @@
 :- import
 	flora_firstorderdef/2,
 	flora_flogicstaticdef/2
-   from flrnohilog.
+   from flrfirstorder.
 
 :- import flora_prlgdef/2 from flrprolog.
 

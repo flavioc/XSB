@@ -67,14 +67,17 @@ spouse(X,Y) :- spouse(Y,X).	% now spouse is an IDB (derived) relation!
 child(wilhelm,franz).
 child(wilhelm,heinz).
 child(wilhelm,hermann).
-child(rita,X) :- child(wilhelm,X).	% rita & wilhelm have the same kids
+
 child(hermann,bernhard).
 child(hermann,karl).
 child(hermann,kati).
-child(johanna,X) :- child(hermann,X).	% like above for johanna & hermann 
+
 child(bernhard,albert).
 child(monique,albert).
 child(kati,eva).
+
+child(rita,X) :- child(wilhelm,X).	% rita & wilhelm have the same kids
+child(johanna,X) :- child(hermann,X).	% like above for johanna & hermann 
 
 %%% ======================================================================
 %%% DEFINE SOME DERIVED (IDB) RELATIONS

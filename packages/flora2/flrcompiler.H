@@ -40,14 +40,14 @@
 :- import
 	flora_argdef/3,
 	flora_define_arguments/3
-   from flrsignature.
+   from flrarguments.
 
 :- import flora_define_prolog/2 from flrprolog.
 
 :- import
 	flora_define_firstorder/2,
 	flora_define_flogicstatic/2
-   from flrnohilog.
+   from flrfirstorder.
 
 :- import flora_is_dynamic_flogic_base/2 from flrwrapper.
 

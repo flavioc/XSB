@@ -92,11 +92,11 @@
 
 :- import flora_reset_operator/0 from flroperator.
 
-:- import flora_reset_arguments/0 from flrsignature.
+:- import flora_reset_arguments/0 from flrarguments.
 
 :- import flora_reset_prolog/0 from flrprolog.
 
-:- import flora_reset_firstorder/0 from flrnohilog.
+:- import flora_reset_firstorder/0 from flrfirstorder.
 
 :- import flora_parse/3 from flrparser.
 

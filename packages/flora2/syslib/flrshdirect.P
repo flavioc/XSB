@@ -31,11 +31,11 @@
 
 %%:- import flora_shdefine_prolog/2 from flrprolog.
 
-:- import flora_shdefine_firstorder/2 from flrnohilog.
+:- import flora_shdefine_firstorder/2 from flrfirstorder.
 
 :- import flora_shdefine_operator/3 from flroperator.
 
-:- import flora_shdefine_arguments/3 from flrsignature.
+:- import flora_shdefine_arguments/3 from flrarguments.
 
 
 
