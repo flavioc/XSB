@@ -57,7 +57,7 @@ singleton_check(Clause, VariableList) :-
 
 
 singleton_warnings(Clause, VariableList) :-
-	numbervars(Clause, 1, NumberOfVars),
+	numbervars_cmplib(Clause, 1, NumberOfVars),
 	N is NumberOfVars - 1,
 	functor(Occurences, occ, N),
 	calculate_occurences(Clause, Occurences),
@@ -76,7 +76,7 @@ calculate_occurences(Term, Occurences) :-
 'calculate occurences'(Term, N, Arity, Occurences) :-
 	NewN is N + 1,
 	arg(NewN, Term, Arg),	% We cannot use ll_arg/3 here (Term may be a list)
-	( Arg = '$VAR'(Number) ->
+	( Arg = '_$cmplib_var'(Number) ->
 		( integer(Number) ->
 			ll_arg(Number, Occurences, OccCount),
 			( var(OccCount) -> OccCount = found(_)
@@ -98,7 +98,7 @@ calculate_occurences(Term, Occurences) :-
 
 write_singleton_warnings([], _, _, _) :-
 	!.	% This captures the open-end of VariableList.
-write_singleton_warnings([vv(VarName,'$VAR'(N))|Rest], Occurences, P, A) :-
+write_singleton_warnings([vv(VarName,'_$cmplib_var'(N))|Rest], Occurences, P, A) :-
 	atom_codes(VarName, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
 		true		% (underscore), so its OK, ignore it!.

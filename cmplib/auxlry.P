@@ -25,6 +25,7 @@
 
 :- compiler_options([xpp_on,optimize,sysmod]).
 #include "standard.h"
+#include "celltags_xsb.h"
 
 
 /*======================================================================*/
@@ -198,7 +199,7 @@ verbo_time_message(StartTime, Message) :-
 /*======================================================================*/
 
 subsumes(X,Y) :- \+ X=Y,!,fail.
-subsumes(X,Y) :- numbervars(Y,0,_), \+ X=Y,!,fail.
+subsumes(X,Y) :- numbervars_cmplib(Y,0,_), \+ X=Y,!,fail.
 subsumes(_,_).
 
 /*======================================================================*/
@@ -225,7 +226,7 @@ dict_lookup(Key, Value, [_|Dict]) :- dict_lookup(Key, Value, Dict).
 
 /*----freeze------------------------------------------------------------*/
 
-freeze(X) :- numbervars(X, 0, _).
+freeze(X) :- numbervars_cmplib(X, 0, _).
 
 /*----melt--------------------------------------------------------------*/
 /* melt(+Term, -NewTerm):	melt a frozen term to a new copy	*/
@@ -234,7 +235,7 @@ freeze(X) :- numbervars(X, 0, _).
 melt(X, Y) :- melt(X, Y, _).
 
 melt(X, X, _) :- atomic(X), !.
-melt('$VAR'(I), V, FrozenVarDict) :- !, dict_lookup(I, V, FrozenVarDict).
+melt('_$cmplib_var'(I), V, FrozenVarDict) :- !, dict_lookup(I, V, FrozenVarDict).
 melt(X, Y, FrozenVarDict) :-
 	functor(X, F, N),
 	functor(Y, F, N),
@@ -280,5 +281,38 @@ ll_arg(Index, Term, Arg) :-
 	term_arg(Term, Index, A),
 	A = Arg.
 
+
+/*======================================================================*/
+/* Use compiler-local version of numbervars to avoid $VAR clashes with  */
+/* user code                                                            */
+/*======================================================================*/
+numbervars_cmplib(Y,I,J) :- term_type(Y,T),
+	(T =:= XSB_FREE
+	 ->	Y='_$cmplib_var'(I), J is I+1
+	 ; T =:= XSB_ATTV
+	 ->	Y='_$cmplib_var'(I), J is I+1
+	 ; T =:= XSB_LIST
+	 ->	Y=[A1|A2],
+	 	numbervars_cmplib(A1,I,I1), numbervars_cmplib(A2,I1,J)
+	 ; T =:= XSB_STRUCT
+	 ->	term_psc(Y,PSC), psc_arity(PSC,N),
+	 	numbervars_cmplib(Y,I,J,1,N)
+	 ;	J=I
+	).
+numbervars_cmplib(Y,I,J,N,A) :-
+	(N > A
+	 ->	J=I
+	 ;	term_arg(Y,N,Arg),
+	 	numbervars_cmplib(Arg,I,I1),
+	 	N1 is N+1, numbervars_cmplib(Y,I1,J,N1,A)
+	).
+
+%   numbervars_cmplib(+Term)
+%   makes a HiLog Term ground by binding variables to subterms _$cmplib_var(N) with
+%   integer values of N ranging from 0 up. This predicate was written since
+%   most of the calls to numbervars_cmplib/3 are of the form: numbervars_cmplib(Term,0,_)
+ 
+numbervars_cmplib(Term) :-
+        numbervars_cmplib(Term, 0, _).
 
 /* --------------------- end of file auxlry.P ------------------------- */
