@@ -1,6 +1,4 @@
 1. Make :- table imply :- firstorder.
-   Do variable analysis in delete{...}/insert{...}
-   to avoid errors like in demo/aggregate.flr
 
 
 2. Implement undefined predicate/method handling infrastructure.
@@ -247,6 +245,8 @@
 
 13. Do smart reordering of arithmetic operations in rule bodies to minimize
     the possibility of errors due to unbound variables.
+    Do variable analysis in delete{...}/insert{...}
+    to avoid errors like in demo/aggregate.flr
 
 	Algorithm: Bring query/\literal in update{literal|query}
 		   into disjunctive normal form. For each disjunct, move
