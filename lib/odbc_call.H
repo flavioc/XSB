@@ -25,6 +25,7 @@
 
 % import some necessary predicates from library.
 
+:- import str_cat/3 from string.
 :- import odbc_exec_query/5 from machine.
 :- import conset/2, conget/2 from prof_sbp.
-:- import str_cat/3 from string.
+:- import length/2, append/3, member/2 from basics.

@@ -192,20 +192,6 @@ attribute(2,dept,'DNAME',string).
 attribute(3,dept,'LOC',string).
 */
 
-% --- auxiliary predicates (some of them may be built-in...) ----------------------------
-
-length([],0).
-length([_H|T],Len) :-
-    length(T,Tlen),
-    Len is Tlen+1.
-
-append([],L,L).
-append([H1|L1],L2,[H1|L3]) :-
-    append(L1,L2,L3).
-
-member(X,[X|_]).
-member(X,[_|T]) :-
-    member(X,T).
 
 %% -- add_to_dictionary(Key,RangeVar,Attribute,Quantifier,Dict,NewDict) ---
 
@@ -707,7 +693,7 @@ linearize(not A, not LinA) :-
     linearize(A,LinA).
 
 linearize(Var^A, Var^LinA) :-
-    linearize(_A,LinA).
+    linearize(A,LinA).
 
 linearize(A,A) :-
     A \= (_,_),

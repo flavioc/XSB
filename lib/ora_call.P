@@ -344,7 +344,7 @@ db_all(Call, SQLAtom, ProjectionTerm, StmtNo) :-
 	    ((RetVal1 =:= 0,SQLType =:= 0),
 		( next(Row, Index),
 	  	  skip_bind(Row,ProjectionTermArgs,Row1),
-	 	  concat([SymbolicName],Row1,CallList),
+	 	  append([SymbolicName],Row1,CallList),
 	 	  Call =.. CallList;
 		deallocate_cursor_stack(Index), fail)
 	);
@@ -373,7 +373,7 @@ db_all_test(Call, SQLAtom, ProjectionTerm, StmtNo) :-
 	    ((RetVal1 =:= 0,SQLType =:= 0),
 		( next(Row, Index) ->
 	  	  	(skip_bind(Row,ProjectionTermArgs,Row1),
-	 	  	concat([SymbolicName],Row1,CallList),
+	 	  	append([SymbolicName],Row1,CallList),
 	 	  	Call =.. CallList,
 			deallocate_cursor(Index, _RetVal2));
 			deallocate_cursor(Index, _RetVal2),fail)
@@ -514,7 +514,7 @@ writelistln([H|T]) :-
 % -----------------------------------------------------------------------
 db_show_schema(tuples(Table)) :-
 	name(Table, Tlist),
-	concat([115,101,108,101,99,116,32,42,32,102,114,111,109,32],
+	append([115,101,108,101,99,116,32,42,32,102,114,111,109,32],
 		Tlist, L),
 	name(Sql, L),
 	db_sql_select(Sql, Row),
@@ -599,10 +599,10 @@ db_create_table(Table,Fields) :-
     nonvar(Table),
     name(Table,Tl),
     name(Fields,Fl),
-    concat([67,82,69,65,84,69,32,84,65,66,76,69,32],Tl,L1),
-    concat(L1,[32,40],L2),
-    concat(L2,Fl,L3),
-    concat(L3,[32,41],Res), name(Query,Res),
+    append([67,82,69,65,84,69,32,84,65,66,76,69,32],Tl,L1),
+    append(L1,[32,40],L2),
+    append(L2,Fl,L3),
+    append(L3,[32,41],Res), name(Query,Res),
     db_sql(Query).
 %--------------------------------
 db_create_index(Tname,Iname,index(_,Fields)) :-
@@ -612,38 +612,38 @@ db_create_index(Tname,Iname,index(_,Fields)) :-
 	name(Tname,Tlist),
 	name(Iname,Ilist),
 	name(Fields,Flist),
-	concat([67,82,69,65,84,69,32,73,78,68,69,88,32],Ilist,L1),
-	concat(L1,[32,79,78,32],L2),
-	concat(L2,Tlist,L3),
-	concat(L3, [32,40],L4),
-	concat(L4,Flist,L5),
-	concat(L5,[32,41],Res), name(Query,Res),
+	append([67,82,69,65,84,69,32,73,78,68,69,88,32],Ilist,L1),
+	append(L1,[32,79,78,32],L2),
+	append(L2,Tlist,L3),
+	append(L3, [32,40],L4),
+	append(L4,Flist,L5),
+	append(L5,[32,41],Res), name(Query,Res),
 	db_sql(Query).
 %--------------------------------
 db_delete_table(Table) :-
 	nonvar(Table),
 	name(Table, Tlist),
-	concat([68,82,79,80,32,84,65,66,76,69,32],Tlist,Res),name(Query,Res),
+	append([68,82,79,80,32,84,65,66,76,69,32],Tlist,Res),name(Query,Res),
 	db_sql(Query).
 
 %--------------------------------
 db_delete_view(View) :-
 	nonvar(View),
 	name(View, Vlist),
-	concat([68,82,79,80,32,86,73,69,87,32],Vlist,Res),name(Query,Res),
+	append([68,82,79,80,32,86,73,69,87,32],Vlist,Res),name(Query,Res),
 	db_sql(Query).
 %--------------------------------
 db_delete_index(Index) :-
 	nonvar(Index),
 	name(Index,Ilist),
-	concat([68,82,79,80,32,73,78,68,69,88,32],Ilist,Res),name(Query,Res),
+	append([68,82,79,80,32,73,78,68,69,88,32],Ilist,Res),name(Query,Res),
 	db_sql(Query).
 %--------------------------------
 db_add_record(Table,VList) :-
 	conset(col,1),
 	assert_attributes_info(Table),
 	conget(col,N), N1 is N - 1,
-	name(Table, Tl), concat(Tl,[95,105,110,115],Tl1), name(Table1,Tl1),
+	name(Table, Tl), append(Tl,[95,105,110,115],Tl1), name(Table1,Tl1),
 	assert(relation(Table,N1,Table)),
 	functor(Head1, Table1, N1),
 	Head1 =..[Table1|Tail],
@@ -657,7 +657,7 @@ delete_record(Table,VList) :-
 	conset(col,1),
 	assert_attributes_info(Table),
 	conget(col,N), N1 is N - 1,
-	name(Table, Tl), concat(Tl,[95,100,101,108],Tl1), name(Table1,Tl1),
+	name(Table, Tl), append(Tl,[95,100,101,108],Tl1), name(Table1,Tl1),
 	assert(relation(Table,N1,Table)),
 	functor(Head1, Table1, N1),
 	Head1 =..[Table1|Tail],
@@ -730,31 +730,20 @@ set_global_bind_table(Index, [H|T], [H1|T1]) :-
 set_global_bind_table(Index, [_H|T], [_H1|T1]) :-
 	set_global_bind_table(Index,T,T1).
 
-/* list concat */
-
-concat([],L,L).
-concat([H|T],L2,[H|L3]) :-
-			concat(T,L2,L3).
 
 
-
-
-
-%---------------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
 % Modifications : Hasan Davulcu
 % Date : 19 February, 1994
 % 
 % The copiler has been extended to generate queries with bind variables.
 % assert_call_rule has been added to provide an interface for database calls.
 %
-%---------------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
 
 
 
-
-
-
-% --------------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 %
 % This Prolog to SQL compiler may be distributed free of charge provided that it is
 % not used in commercial applications without written consent of the author, and
@@ -790,8 +779,7 @@ concat([H|T],L2,[H|L3]) :-
 % ===================
 % Current version is v. 1.1 of Dec. 21st 1992.
 % Version 1.0 Sept. 3 1992
-% --------------------------------------------------------------------------------------
-
+% -----------------------------------------------------------------------------
  
 
 
@@ -2066,11 +2054,6 @@ column_atom(Atom,List,Diff):-
    name(Atom,X1),
    append(X1,Diff,List).
 
-  
-
-
-
-
 
 % --- gensym(Root,Symbol) ----------------------------------------------------
 %
@@ -2097,34 +2080,8 @@ init_gensym(Root):-
 
 
 
-% --- auxiliary predicates (some of them may be built-in... --------------------
 
-append([],L,L).
-append([H1|L1],L2,[H1|L3]):-
-   append(L1,L2,L3).
-
-
-
-member(X,[X|_]).
-member(X,[_|T]):-
-   member(X,T).
-
-
-
-/*repeat_n(N):-
-   integer(N),
-   N > 0,
-   repeat_1(N).
-
-repeat_1(1):-!.
-repeat_1(_).
-repeat_1(N):-
-   N1 is N-1,
-   repeat_1(N1).*/
-
-
-
-% --- set_difference(SetA,SetB,Difference) --------------------------------------------
+% --- set_difference(SetA,SetB,Difference) -----------------------------------
 %
 % SetA - SetB = Difference
 
@@ -2143,7 +2100,7 @@ set_difference([Element|RestSet],Set,RestDifference):-
 
 
 
-% --- Meta Database for schema definition of SQL DB in Prolog --------------------------
+% --- Meta Database for schema definition of SQL DB in Prolog ----------------
 %
 % maps Prolog predicates to SQL table names, Prolog predicate argument positions to SQL
 % attributes, and Prolog operators to SQL operators. 
@@ -2197,7 +2154,7 @@ aggregate_functor(count,'COUNT').
 
 
 
-% --- type system --------------------------------------------------------------
+% --- type system -------------------------------------------------------------
 %
 % A rudimentary type system is provided for consistency checking during the
 % translation and for output formatting
@@ -2205,7 +2162,7 @@ aggregate_functor(count,'COUNT').
 % The basic types are string and number. number has the subtypes integer and
 % real.
 %
-% ------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 
 
 type_compatible(Type,Type):-
