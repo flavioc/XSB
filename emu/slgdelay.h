@@ -42,9 +42,9 @@
   follow(hreg++) = makecs(sreg);					\
   follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
   new_heap_functor(sreg, delay_psc);					\
-  cell(sreg) = makestring(SUBGOAL); sreg++;				\
-  cell(sreg) = makestring(NEG_DELAY); sreg++;				\
-  cell(sreg) = makecs(NEG_DELAY); sreg++;				\
+  cell(sreg) = makeint(SUBGOAL); sreg++;				\
+  cell(sreg) = makeint(NEG_DELAY); sreg++;				\
+  cell(sreg) = makeint(NEG_DELAY); sreg++;				\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
 }
@@ -60,7 +60,7 @@
  * predicate (pointed by delayreg).
  */
 
-#define delay_positively(SUBGOAL, ANSWER, SUBSF) {			\
+#define delay_positively(SUBGOAL, ANSWER, MAKE_SUBSF) {			\
   Cell new_delay_cons_cell;						\
 									\
   new_delay_cons_cell = makelist(hreg);					\
@@ -68,9 +68,9 @@
   follow(hreg++) = makecs(sreg);					\
   follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
   new_heap_functor(sreg, delay_psc);					\
-  cell(sreg++) = makestring(SUBGOAL);					\
-  cell(sreg++) = makestring(ANSWER);					\
-  follow(sreg++) = makecs(SUBSF);					\
+  cell(sreg++) = makeint(SUBGOAL);					\
+  cell(sreg++) = makeint(ANSWER);					\
+  follow(sreg++) = MAKE_SUBSF;						\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
 }

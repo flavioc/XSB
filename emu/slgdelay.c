@@ -138,7 +138,7 @@ static DE intern_delay_element(Cell delay_elem)
    */
   SGFrame subgoal;
   NODEptr ans_subst;
-  CPtr ret_n;
+  CPtr ret_n = 0;
   int arity;
   Cell tmp_cell;
 #if !defined(DEBUG_DELAYVAR)
@@ -146,16 +146,23 @@ static DE intern_delay_element(Cell delay_elem)
 #endif
 
   tmp_cell = cell(cptr + 1);
-  subgoal = (SGFrame) string_val(tmp_cell);
+  subgoal = (SGFrame) int_val(tmp_cell);
   tmp_cell = cell(cptr + 2);
-  ans_subst = (NODEptr) string_val(tmp_cell);
+  ans_subst = (NODEptr) int_val(tmp_cell);
   tmp_cell = cell(cptr + 3);
-  ret_n = (CPtr) cs_val(tmp_cell);
   
-  if (ret_n == NEG_DELAY)
+  /*
+   * cell(cptr + 3) can be one of the following:
+   *   1. integer 0 (NEG_DELAY), for a negative DE;
+   *   2. string "ret", for a positive DE with arity 0;
+   *   3. constr ret/n, for a positive DE with arity >=1.
+   */
+  if (isinteger(tmp_cell) || isstring(tmp_cell))
     arity = 0;
-  else
+  else {
+    ret_n = (CPtr) cs_val(tmp_cell);
     arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
+  }
 
 #ifdef DEBUG_DELAYVAR
   fprintf(stderr, ">>>> "); print_delay_list(stderr, delayreg);
@@ -349,9 +356,9 @@ bool answer_is_junk(CPtr dlist)		  /* assumes that dlist != NULL */
       dlist = clref_val(dlist);
       cptr = (CPtr)cs_val(cell(dlist));
       tmp_cell = cell(cptr + 1);
-      subgoal = (SGFrame) string_val(tmp_cell);
+      subgoal = (SGFrame) int_val(tmp_cell);
       tmp_cell = cell(cptr + 2);
-      ans_subst = (NODEptr) string_val(tmp_cell);
+      ans_subst = (NODEptr) int_val(tmp_cell);
       if (is_failing_delay_element(subgoal,ans_subst)) {
 #ifdef PROFILE
 	if (ans_subst == NULL) 
