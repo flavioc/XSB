@@ -50,15 +50,13 @@
 
 :- import fmt_write_string/3, file_time/2 from file_io.
 
-%%:- import unix/1 from unix.
-
 :- import read_tokens/2 from flrtokens.
 
 :- import rule/3 from flrparser.
 
 :- import set_load_mode/1, compile_flogic/3 from flrcompiler.
 
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 
 :- dynamic flora_maxerr(_).
 

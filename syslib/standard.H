@@ -82,8 +82,10 @@
 	  stat_flag/2, psc_set_type/2, term_compare/3,
 	  stat_sta/1, conname/2, conpsc/2, stat_cputime/1, 
 	  expand_filename/2, machine_file_exists/1, psc_insert/4,
-	  psc_import/3, call0/1, close_open_tables/0, is_backslashing_os/0
+	  psc_import/3, call0/1, close_open_tables/0
      from machine.
+:- import windows_os/0 from xsb_configuration.
+
 :- import file_open/3, file_close/1, file_get/2, file_put/2
      from file_io.
 

@@ -22,8 +22,9 @@
 ** 
 */
 
-#define PLAIN_SYSTEM_CALL    	 1
-#define SPAWN_PROCESS	         2
+#define PLAIN_SYSTEM_CALL    	 0
+#define SPAWN_PROCESS	         1
+#define SHELL		         2
 #define GET_PROCESS_TABLE    	 3
 #define PROCESS_STATUS    	 4
 #define PROCESS_CONTROL    	 5

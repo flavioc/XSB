@@ -1,0 +1,113 @@
+/* File:      shell.P
+** Author(s): Kostis F. Sagonas, Jiyang Xu, kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- compiler_options([cpp_on]).
+
+#include "../emu/celltags.h"
+#include "../emu/system.h"
+#include "../emu/builtin.h"
+#include "../emu/msyscall.h"
+
+
+/* Create subprocess. Redirect its standard input to StreamToProc
+   and standard output to StreamFromProc. Prolog program can then read 
+   from StreamFromProc and write to StreamToProc.
+   +CmdAndArglist, -StreamToProc,-StreamFromProc,-StreamFromStderr,-ProcessId
+   Fails, if can't create subprocess
+*/
+spawn_process(Cmd, StreamToProc, StreamFromProc, StreamFromStderr, Pid) :-
+	%% NEW
+	%%sys_system(1,
+	sys_system(SPAWN_PROCESS,
+		   Cmd,StreamToProc,StreamFromProc,StreamFromStderr,Pid,_).
+
+/* Like spawn_process, but returns error code instead of Pid.
+   XSB doesn't know where the corresponding processes are.
+   However, unlike spawn_process, you can pass any shell command, 
+   including pipes and redirection. */
+shell(Cmd,StreamToProc, StreamFromProc, StreamFromStderr, ErrCode) :-
+	%% NEW
+	sys_system(SHELL,
+	%%sys_system(2,
+		   Cmd,StreamToProc,StreamFromProc,StreamFromStderr,ErrCode,_).
+shell(Cmd, ErrCode) :- shell(Cmd, none, none, none, ErrCode).
+shell(Cmd) :- shell(Cmd, none, none, none, _).
+
+
+/* Process table is a list [process(Pid,To,From,Stderr,Cmdline), ...]
+   that represents all active subprocesses */
+get_process_table(ProcessList) :-
+	%% NEW
+	sys_system(GET_PROCESS_TABLE, ProcessList, _,_,_,_,_).
+	%%sys_system(3, ProcessList, _,_,_,_,_).
+
+%% obtain process status
+%% NEW
+process_status(Pid, Status) :- sys_system(PROCESS_STATUS,Pid,Status,_,_,_,_).
+%%process_status(Pid, Status) :- sys_system(4, Pid, Status, _,_,_,_).
+
+%% Send signal to process. Currently wait, kill
+%% NEW
+%%process_control(Pid, Signal) :- sys_system(5,
+process_control(Pid, Signal) :- sys_system(PROCESS_CONTROL,
+					   Pid, Signal, _,_,_,_).
+
+
+cd(Path) :- 
+	( atom(Path) -> 
+		expand_filename(Path, Dir), sys_chdir(Dir, Res), Res=:=0
+	; var(Path) ->
+		abort('Uninstantiated argument 1 of cd/1')
+	; abort('Wrong type in argument 1 of cd/1')
+	).
+
+rename(Old, New) :- sys_rename(Old, New, Res), Res =:= 0.
+
+ls :- shell('ls -F', Res), Res =:= 0.
+
+rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
+
+edit(File) :- 
+	expand_filename(File, FileName), 
+	shell(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
+
+
+%% NEW
+sys_link(Source, Dest, Res) :-	sys_syscall(SYS_link, Res, Source, Dest).
+sys_unlink(Path, Res) 	    :-	sys_syscall(SYS_unlink, Res, Path, _).
+sys_chdir(Dir, Res)	    :- 	sys_syscall(SYS_chdir, Res, Dir, _).
+sys_access(File, Mode, Res) :- 	sys_syscall(SYS_access, Res, File, Mode).
+sys_stat(Path, Buff, Res)   :-	sys_syscall(SYS_stat, Res, Path, Buff).
+sys_rename(Old, New, Res)   :-	sys_syscall(SYS_rename, Res, Old, New).
+/* OLD
+sys_link(Source, Dest, Res) :-	sys_syscall(  9, Res, Source, Dest).
+sys_unlink(Path, Res) 	    :-	sys_syscall( 10, Res, Path).
+sys_chdir(Dir, Res)	    :- 	sys_syscall( 12, Res, Dir).
+sys_access(File, Mode, Res) :- 	sys_syscall( 33, Res, File, Mode).
+sys_stat(Path, Buff, Res)   :-	sys_syscall( 38, Res, Path, Buff).
+sys_rename(Old, New, Res)   :-	sys_syscall(128, Res, Old, New).
+*/
+

@@ -1,3 +1,7 @@
+%%%
+%%%  This file is deprecated. For backward compatibility only
+%%%  Use shell.P instead!
+%%%
 /* File:      unix.P
 ** Author(s): Kostis F. Sagonas, Jiyang Xu
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -24,6 +28,17 @@
 */
 
 
+:- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1.
+:- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
+
+:- import str_cat/3 from string.
+:- import atom/1, abort/1 from standard.
+:- import psc_name/2, sys_system/7, term_psc/2, term_type/2, expand_filename/2
+   from machine.
+
+:- import obsolete/2 from obsolete.
+
+
 unix(Command) :- 
 	term_type(Command, T),
 	( T =:= 3 -> constr_command(Command, Command1), unix(Command1, Res)
@@ -37,32 +52,16 @@ constr_command([H|T], String) :-
 	str_cat(H, SubString, String).
 	
 unix(Command, Result) :-
+	obsolete('unix/1, unix/2', 'shell/1, shell/2'),
 	term_type(Command, T),
-	( T =:= 5 -> sys_system(1, Command, R, _, _, _, _), Result = R
+	( T =:= 5 -> sys_system(0, Command, R, _, _, _, _), Result = R
 	; T =:= 1 -> term_psc(Command, PSC), psc_name(PSC, RCommand), 
-		     sys_system(1, RCommand, R, _, _, _, _), Result = R
+	             sys_system(0, RCommand, R, _, _, _, _), Result = R
 	).
-
-/* Create subprocess. Redirect its standard input to StreamToProc
-   and standard output to StreamFromProc. Prolog program can then read 
-   from StreamFromProc and write to StreamToProc.
-   +CmdAndArglist, -StreamToProc,-StreamFromProc,-StreamFromStderr,-ProcessId
-   Fails, if can't create subprocess
-*/
-spawn_process(Cmd, StreamToProc, StreamFromProc, StreamFromStderr, Pid) :-
-	sys_system(2, Cmd,StreamToProc,StreamFromProc,StreamFromStderr,Pid,_).
-/* Process table is a list [process(Pid,To,From,Stderr,Cmdline), ...]
-   that represents all active subprocesses */
-get_process_table(ProcessList) :- sys_system(3, ProcessList, _,_,_,_,_).
-
-%% obtain process status
-process_status(Pid, Status) :- sys_system(4, Pid, Status, _,_,_,_).
-%% Send signal to process. Currently wait, kill
-process_control(Pid, Signal) :- 
-	sys_system(5, Pid, Signal, _,_,_,_).
 
 
 cd(Path) :- 
+	obsolete('cd/1 in module unix', 'use cd/1 in module'),
 	( atom(Path) -> 
 		expand_filename(Path, Dir), sys_chdir(Dir, Res), Res=:=0
 	; var(Path) ->
@@ -70,25 +69,38 @@ cd(Path) :-
 	; abort('Wrong type in argument 1 of cd/1')
 	).
 
-rename(Old, New) :- sys_rename(Old, New, Res), Res =:= 0.
+rename(Old, New) :-
+	sys_rename(Old, New, Res), Res =:= 0.
 
-ls :- unix('ls -F', Res), Res =:= 0.
+ls :-
+	unix('ls -F', Res), Res =:= 0.
 
-rm(Name) :- sys_unlink(Name, Res), Res =:= 0.
+rm(Name) :-
+	obsolete('rm/1 in module unix', 'use rm/1 in module'),
+	sys_unlink(Name, Res), Res =:= 0.
 
 edit(File) :- 
+	obsolete('edit/1 in module unix', 'use edit/1 in module'),
 	expand_filename(File, FileName), 
 	unix(['$EDITOR ', '$EDITOR_OPTIONS ', FileName, '.P']).
 
 /*
 sys_exit() :- sys_syscall(1).
  */
-sys_link(Source, Dest, Res) :-	sys_syscall(  9, Res, Source, Dest).
-sys_unlink(Path, Res) 	    :-	sys_syscall( 10, Res, Path).
-sys_chdir(Dir, Res)	    :- 	sys_syscall( 12, Res, Dir).
-sys_access(File, Mode, Res) :- 	sys_syscall( 33, Res, File, Mode).
-sys_stat(Path, Buff, Res)   :-	sys_syscall( 38, Res, Path, Buff).
-sys_rename(Old, New, Res)   :-	sys_syscall(128, Res, Old, New).
+sys_link(Source, Dest, Res) :-
+	obsolete('sys_link/3 in module unix', 'use sys_link/3 in module'),
+	sys_syscall(  9, Res, Source, Dest).
+sys_unlink(Path, Res) 	    :- sys_syscall( 10, Res, Path).
+sys_chdir(Dir, Res)	    :- sys_syscall( 12, Res, Dir).
+sys_access(File, Mode, Res) :-
+	obsolete('sys_access/3 in module unix', 'use sys_access/3 in module'),
+	sys_syscall( 33, Res, File, Mode).
+sys_stat(Path, Buff, Res)   :-
+	obsolete('sys_stat/1 in module unix', 'use sys_stat/1 in module'),
+	sys_syscall( 38, Res, Path, Buff).
+sys_rename(Old, New, Res)   :-
+	obsolete('rename/3 in module unix', 'use rename/3 in module'),
+	sys_syscall(128, Res, Old, New).
 
 
 /*

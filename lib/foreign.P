@@ -23,6 +23,9 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+
+#include "../prolog_includes/char_defs.h"
 
 
 compile_cH(Modname, Base, Options, ExList, Dir) :-
@@ -37,32 +40,32 @@ compile_c(Modname, Base, Options, Dir, LdOption) :-
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( str_sub('solaris', Configuration) ->
-		unix([CC_Name, ' -s -o ', Base, '.so',
-			       ' -G ', Base, '.c ', CC_Opts, ' ', LdOption])
-	; str_sub('linux', Configuration) ->
-		unix([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
-			       Base, '.c ', CC_Opts, ' ', LdOption])
-	; str_sub('alpha', Configuration) ->
-		unix([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
-		unix(['ld -expect_unresolved \* -O1 -shared -o ', Base, '.so ',
-				Base, '.o ', LdOption])
+	    shell([CC_Name, ' -s -o ', Base, '.so',
+		   ' -G ', Base, '.c ', CC_Opts, ' ', LdOption])
+	    ;str_sub('linux', Configuration) ->
+	    shell([CC_Name, ' -s -o ', Base, '.so', ' -shared ',
+		   Base, '.c ', CC_Opts, ' ', LdOption])
+	;   str_sub('alpha', Configuration) ->
+	    shell([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
+	    shell(['ld -expect_unresolved \* -O1 -shared -o ', Base, '.so ',
+		   Base, '.o ', LdOption])
 	; str_sub('windows', Configuration) ->
 	        warning(('You are responsible for creating ',Modname,'.dll'))
-	; unix([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
+	; shell([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
 	  /* The following appears here because C compilers usually put the 
 	     object file in the current directory and not in the source's one.*/
 	  ( Dir == './' -> true
 	  ; ( str_sub('msdos', Configuration) ->
-		unix(['ren ', Modname, '.o', Dir])
+		shell(['ren ', Modname, '.o', Dir])
 	    ;
-		unix(['mv ', Modname, '.o ', Dir])
+		shell(['mv ', Modname, '.o ', Dir])
 	    )
 	  )
 	).
 
 cc_name(Options, CC_Name) :-
 	( memberchk(cc(CC_Name), Options), atom(CC_Name) -> true
-	; xsb_configuration(compiler, CC_Name)
+	;   xsb_configuration(compiler, CC_Name)
 	).
 cc_options(Options, CC_Opts) :-
 	( memberchk(cc_opts(CC_Opts), Options) -> true ; CC_Opts = '' ).
@@ -120,7 +123,9 @@ co_asmhead(Modname, LdOption, PSC_Count) :-
 	str_len(Modname, Length),
 	put(Length),
 	write(Modname),
-	( LdOption == '' -> put(0)	% No ldoption was specified.
+	%% NEW
+	%%( LdOption == '' -> put(0)	 % No ldoption was specified.
+	( LdOption == '' -> put(CH_NULL) % No ldoption was specified.
 	; str_len(LdOption, LdoLen), put(LdoLen), write(LdOption)
 	),
 	write_int(PSC_Count).
@@ -132,13 +137,15 @@ co_asmsym([One|ExList]) :-
 
 co_one(P/A) :-
 	str_len(P, L),
-	put(0),		% domain = ex(ported)
-	put(13),	% type = T_FORN
+	%% NEW
+	put(CH_NULL),	% domain = ex(ported)
+	put(CH_RETURN),	% type = T_FORN
 	put(A),		% arity = a
 	put(L),		% length
 	write(P).		
 
-co_magic(N) :- put(17), put(18), put(19), put(N).
+%% NEW
+co_magic(N) :- put(CH_DC1), put(CH_DC2), put(CH_DC3), put(N).
 
 	
 /*======================================================================*/

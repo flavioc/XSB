@@ -22,10 +22,10 @@
 ** 
 */
 
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 :- import bootstrap_package/2 from packaging.
 :- import abort/1 from standard.
-:- import cd/1 from unix.
+:- import cd/1 from shell.
 :- import expand_filename/2 from machine.
 
 

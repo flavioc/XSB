@@ -24,7 +24,8 @@
 */
 
 
-:- export load_pred/1, load/1, libpath/1, set_inthandler/2, '_$load_undef'/1.
+:- export load_pred/1, load/1, libpath/1, set_inthandler/2, '_$load_undef'/1,
+	dos_os_loader/0, windows_os_loader/0.
 
 
 :- import term_type/2, term_psc/2, psc_name/2, psc_arity/2, psc_env/2,
@@ -40,7 +41,7 @@
 :- import standard_symbol/3 from std_xsb.
 :- import reconsult/1 from consult.
 :- import library_directory/1 from usermod.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 :- import abort/0 from standard.
 :- import file_put/2 from file_io.
 

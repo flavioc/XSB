@@ -58,8 +58,12 @@ parse(Modname, PFile, HFile, Module) :-
 
 parse1(Modname, File, Module) :-
 	seeing(OldFile),	% added by Baoqiu (1/16/1997)
-	see(File),
-	parse_clauses(Modname, Module),
+	open_or_cpp_file(File),
+	(parse_clauses(Modname, Module) 
+				% check if must restart
+	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
+	;  true
+	),
 	multifile_query(Modname, Module),
 	('_$apply_arity'(_)
 	 ->	assert('_$multifile'(apply/0)),
@@ -68,6 +72,33 @@ parse1(Modname, File, Module) :-
 	),
 	seen,
 	see(OldFile).
+
+%% When :- compiler_options([cpp_on]) is detected, setoptions1 skips the 
+%% rest of the options and sets needs_restart to 1.
+%% When this happens, parse_clause returns with needs_restart set to 1,
+%% which causes parse_clauses to skip the rest of the clauses.
+%% When parse_clauses returns in the parse1 clause above, 
+%% it checks whether to restart parsing. 
+%% If restart is needed, control falls down here, needs_restart is cleared,
+%% and parse1 is restarted. Since cpp_on is now 1, the restart 
+%% process doesn't repeat itself. -mk
+parse1(Modname, File, Module) :- 
+	conget(needs_restart,1),
+	conset(needs_restart, 0),
+	parse1(Modname, File, Module).
+
+
+%% If cpp_on option is not set, just open the file.
+%% Otherwise, pass it through the C preprocessor
+open_or_cpp_file(File) :-
+	(conget(cpp_on,0) -> see(File)
+	; 
+	    %% cpp_on is set: use preprocessor
+	    xsb_configuration(cpp, CPP),
+	    fmt_write_string(CPP_command, "%s %s", args(CPP, File)),
+	    spawn_process(CPP_command, block, From, block, _),
+	    stat_set_flag(10, From)
+	).
 
 
 /*======================================================================*/
@@ -83,11 +114,14 @@ parse_clauses(ModName, Module) :-
 						% directive
 	expand_term(Clause, Expanded_Clause0),
 	change_multifile_directive(Expanded_Clause0, ModName, Expanded_Clause),
-
 	( Expanded_Clause == end_of_file, !
 	; otherwise, !,
-		parse_clause(Expanded_Clause, VariableList, Module),
-		parse_clauses(ModName, Module)
+	    parse_clause(Expanded_Clause, VariableList, Module),
+	    %% stop parsing clauses, if needs_restart parsing
+	    (conget(needs_restart, 1) 
+	    ->	true
+	    ; parse_clauses(ModName, Module)
+	    )
 	).
 parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
 	error(('Clauses of ', M, ' cannot be parsed.')).
@@ -247,6 +281,7 @@ multifile_query(ModName, Module) :-
 /*		#module(#SymTab,#DcList,#ClList,#QrList))		*/
 /*======================================================================*/
 
+
 parse_clause([], _, _) :- !.
 parse_clause([Cl|Cls], VariableList, Module) :- !,
 	parse_clause(Cl, VariableList, Module),
@@ -256,7 +291,7 @@ parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList)) :-
 	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
 						QrList, SymTab)
 	; Cl = (':-'(Directive)) ->	( parse_spec_directive(Directive,
-						VariableList, SymTab, DcList), !
+					     VariableList, SymTab, DcList), !
 					; parse_directive(Directive, SymTab), !
 					; parse_query(Directive, QrList,SymTab)
 					)
@@ -363,6 +398,13 @@ parse_directive(ti_off_all, _SymTab) :-
 parse_directive(edb(X), SymTab) :-
 	parse_list(X, SymTab, [(edb)], (edb)).
 parse_directive(compiler_options(Options),_SymTab) :-
+	%% Found compiler_options directive in the file,
+	%% but cpp_on is currently off.
+	%% We might need to restart parsing, if one of the encontered
+	%% compiler options turns cpp_on on. So, we indicate 
+	%% interest in restarting. It might turn into a restart 
+	%% request if cpp_on is subsequently set.
+	(conget(cpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
 	setoptions1(Options).
 
 /*======================================================================*/

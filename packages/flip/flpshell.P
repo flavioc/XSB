@@ -301,7 +301,7 @@ print_all(Gs,Match) :-
 	%% fmt_write_string(Msg, ' solutions in %f seconds on ', f(T)),
 	%% write(Msg),
 	write(' solutions in '), write(T), write(' seconds on '),
-	unix(hostname).
+	shell(hostname).
 
 %%% print_one(+Goal_list,+Match_list)
 print_one(Gs,Match) :-

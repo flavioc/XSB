@@ -23,12 +23,7 @@
 */
 
 
-%% Each predicate here must call obsolete/2
+%% Insert this in obsolete predicates.
 obsolete(Msg1, Msg2) :-
-	fmt_write('++Warning: %s: Obsolete predicate. Use: %s instead',
-    	    	  args(Msg1, Msg2)),
-    	file_nl(1).
-
-fmt_read(Fmt,_Types,Result,Status) :- 
-	obsolete('fmt_read/4', 'fmt_read/3'),
-	fmt_read(Fmt, Result, Status).
+	fmt_write(2, "++Warning: %s: Obsolete predicate. Use: %s instead\n",
+    	    	  args(Msg1, Msg2)).

@@ -136,6 +136,8 @@ CPtr	ans_var_pos_reg;
 /*----------------------------------------------------------------------*/
 
 extern int  builtin_call(int), unifunc_call(int, CPtr);
+extern Cell builtin_table[BUILTIN_TBL_SZ][2];
+
 
 #ifdef DEBUG
 extern void debug_inst(byte *, CPtr);

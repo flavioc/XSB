@@ -25,7 +25,7 @@
 :- export bulk_match/3, get_match_result/2, try_match/2,
 	  next_match/0, string_substitute/3, load_perl/0, unload_perl/0.
 
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 :- import bootstrap_package/2 from packaging.
 :- import abort/1 from standard.
 

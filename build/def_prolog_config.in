@@ -1,0 +1,56 @@
+/* @configure_input@
+** File:      prolog_includes/config.h
+** Author(s): kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1999
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+#ifdef WIN_NT
+#define FILE_NL(File)	      file_put(File, 13), file_put(File, 10)
+#define NL	    	      put(13), put(10)
+#else
+#define FILE_NL(File)	      file_put(File, 10)
+#define NL	    	      put(10)
+#endif
+
+/* We use characters here because CPP lets us only do '\\', while XSB
+   interprets this as double backslash */
+#ifdef WIN_NT
+#define CH_OS_SLASH 	      92	/*  \     */
+#else
+#define CH_OS_SLASH    	      47    	/*  /     */
+#endif
+
+#ifdef DJGPP  /* DOS */
+#define XSB_OBJFILE_EXTENSION	 '.OX'
+else  /* Unix, NT */
+#define XSB_OBJFILE_EXTENSION	 '.O'
+#endif
+
+
+/* architecture is something like i386-pc-linux or sparc-sun-solaris5.2 */
+#define XSB_ARCHITECTURE    	 '@canonical@'
+
+/* <architecture>-<config-tag>, e.g., i386-pc-linux-dbg */
+#define XSB_CONFIGURATION    	 '@full_config_name@'
+
+#define COMPILER		 '@CC@'

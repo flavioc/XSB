@@ -692,24 +692,27 @@ For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 {\tt /home/john} is what {\tt $\sim$john} expands into).  
 
 
-\ournewitem{sysin(+Command,?Output)}{scrptutl}
-\index{{\tt sysin/2}}
-
-	Unifies {\tt Output} with the stdout of {\tt Command}
-represented as a list of lists of tokens, where each element in the
-outer list of {\tt Command} represents a line of stdout.
-
-Example:
-{\footnotesize
-\begin{verbatim}
-                > uname -a
-                Linux swiftlap 1.2.8 #1 Sun May 7 13:10:10 CDT 1995 i486
-                | ?- sysin('uname -a',Output).
-
-                Output = [[Linux,swiftlap,1.2.8,#1,Sun,May,7,13:10:10,CDT,1995,i486]]
-
-                yes
-\end{verbatim}}
+%% This predicate is superseded by spawn_process/5 and shell/5
+%% Do not use it!
+%%
+%%\ournewitem{sysin(+Command,?Output)}{scrptutl}
+%%\index{{\tt sysin/2}}
+%%
+%%	Unifies {\tt Output} with the stdout of {\tt Command}
+%%represented as a list of lists of tokens, where each element in the
+%%outer list of {\tt Command} represents a line of stdout.
+%%
+%%Example:
+%%{\footnotesize
+%%\begin{verbatim}
+%%                > uname -a
+%%                Linux swiftlap 1.2.8 #1 Sun May 7 13:10:10 CDT 1995 i486
+%%                | ?- sysin('uname -a',Output).
+%%
+%%                Output = [[Linux,swiftlap,1.2.8,#1,Sun,May,7,13:10:10,CDT,1995,i486]]
+%%
+%%                yes
+%%\end{verbatim}}
 
 \end{description}
 
@@ -725,16 +728,22 @@ input and output to XSB I/O ports. XSB can then write to the process and read
 from it. The section of socket I/O describes yet another mode of
 interprocess communication.
 
-All predicates in this section must be imported from module {\tt unix}.
+All predicates in this section must be imported from module {\tt shell}.
 
 \begin{description}
 \ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc,-ProcStderrStream,-ProcId)}\index{{\tt spawn\_process/5}} 
-Spawn a new process specified by {\tt CmdSpec}. {\tt CmdSpec} must be a
-\emph{list} of atoms or Prolog strings (character lists). The first
-argument must be the name of the program to run and the other elements are
-arguments to the program. Program name must be specified in such a way as
-to make sure the OS can find it using the contents of the environment
-variable {\tt PATH}.
+Spawn a new process specified by {\tt CmdSpec}. {\tt CmdSpec} must be
+either a single atom or a \emph{list} of atoms.
+If it is an atom, then it must represent a shell command.
+If it is a list, the first member of the list must be the name of the
+program to run and the 
+other elements must be arguments to the program. Program name must be specified
+in such a way as to make sure the OS can find it using the contents of the
+environment variable {\tt PATH}.
+Also note that pipes, I/O redirection and such are not allowed in command
+specification. That is, {\tt CmdSpec} must represent a single command.
+(But read about process plumbing below and about the related predicate
+{\tt shell/5}.)
 
 The next three parameters of \verb|spawn_process| are XSB I/O ports
 to the process (pipe to the subprocess standard input), from the process
@@ -751,7 +760,7 @@ Here is a simple example of how it works.
 | ?- import file_flush/2, file_read_line_atom/3 from file_io.
 | ?- import file_nl/1 , file_write/2 from xsb_writ.  
 
-| ?- spawn_process([cat, "-"], To, From, Stderr, Pid),
+| ?- spawn_process([cat, '-'], To, From, Stderr, Pid),
      file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_),
      file_read_line_atom(From,Y,_).
 
@@ -786,11 +795,11 @@ use one of the existing communication ports.  This is useful when you do
 not expect to write or read to/from the subprocess or when one process
 wants to write to another (see the process plumbing example below).
 
-To tell that a certain port is not needed, it suffices to pass an atom to
-\verb|spawn_process/5|. For instance,
+To tell that a certain port is not needed, it suffices to bind that port to
+an atom.  For instance,
 %%
 \begin{verbatim}
-| ?- spawn_process([cat, "-"], To, none, none, _),
+| ?- spawn_process([cat, '-'], To, none, none, _),
      file_nl(To), file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_).
 
 
@@ -801,16 +810,17 @@ Hello cat!
 reads from XSB and copies the result to standard output. Likewise,
 %%
 \begin{verbatim}
-| ?- spawn_process([cat, "test"], none, From, none, _),
+| ?- spawn_process('cat test', none, From, none, _),
      file_read_line_atom(From, S, _).
 
 From = 4
-S = The first line of file ``test''
+S = The first line of file `test'
 \end{verbatim}
 %%
-In each case, only one of the ports is open. Finally, if both ports are
-suppressed, then \verb|spawn_process| reduces to the already familiar
-{\tt unix/1} call:
+In each case, only one of the ports is open. (Note that the shell command
+is specified as an atom rather than a list.) Finally, if both ports are
+suppressed, then \verb|spawn_process| reduces to the usual
+{\tt shell/1} call (in fact, this is how {\tt shell/1} is implemented):
 %%
 \begin{verbatim}
 | ?- spawn_process([pwd], none, none).
@@ -917,11 +927,60 @@ following shell command:
     The {\tt kill} operation might fail, if the process to be killed does
     not exist or if the parent XSB process does not have the permission to
     terminate that process. Unix and Windows have different ideas as to
-    what these permissions are. See \emph{kill(2)} for unix and
+    what these permissions are. See \emph{kill(2)} for Unix and
     \emph{TerminateProcess} for Windows.
     
     \emph{Note}: under Windows, the programmer's manual warns of dire
     consequences if one kills a process that has DLLs attached to it.
+
+\ouritem{shell(+CmdSpec,-StreamToProc, -StreamFromProc, -ProcStderr,
+  -Errorcode)}\index{{\tt shell/5}} 
+    The arguments of this predicate are similar to those of
+    \verb|spawn_process|, except for the following:
+    (1) The first argument is an atom or a list of atoms, like in
+    \verb|spawn_process|. However, if it is a list of atoms, then the
+    resulting shell command is obtained by string concatenation. This is
+    different from \verb|spawn_process| where each member of the list must
+    represent an argument to the program being invoked (and which must be
+    the first member of that list).  (2) The last argument is the error
+    code returned by the shell command and not a process id. The code -1
+    and 127 mean that the shell command failed.
+    
+    The {\tt shell/5} predicate is similar to \verb|spawn_process| in that
+    it spawns another process and can capture that process' input and
+    output ports.
+    
+    The important difference, however, is that XSB will ways until the
+    process spawned by {\tt shell/5} terminates. In contrast, the process
+    spawned by \verb|spawn_process| will run concurrently with XSB.  In
+    this latter case, XSB must explicitly synchronize with the spawned
+    subprocess using the predicate \verb|process_control/2| (using the {\tt
+      wait} operation), as described earlier.
+    
+    The fact that XSB must wait until {\tt shell/5} finishes has a very
+    important implication: the amount of data the can be sent to and from
+    the shell command is limited (1K is probably safe). This is because the
+    shell command comunicates with XSB via pipes, which have limited
+    capacity.  So, if the pipe is filled, XSB will hang waiting for {\tt
+      shell/5} to finish and {\tt shel/5} will wait for XSB to consume data
+    from the pipe.  Thus, use \verb|spawn_process/5| for any kind of
+    significant data exchange between external processes and XSB.
+  
+  Another difference between these two forms of spawning subprocesses is
+  that {\tt CmdSpec} in {\tt shell/5} can represent \emph{any} shell
+  statement, including those that have pipes and I/O redirection. In
+  contrast, \verb|spawn_process| only allows command of the form ``program
+  args''. For instance,
+%%
+\begin{verbatim}
+| ?- file_open(test,1,File),
+     shell('cat | sort > data', File, none, none, ErrCode)
+\end{verbatim}
+%%
+As seen from this example, the same rules for blocking I/O streams
+apply to {\tt shell/5}. Finally, we should note that the already familiar
+standard predicates {\tt shell/1} and {\tt shell/2} are implemented using
+shell/5.
 \end{description}
 
 

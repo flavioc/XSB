@@ -24,10 +24,6 @@
 
 #define BUILTIN_TBL_SZ 256
 
-extern Cell builtin_table[BUILTIN_TBL_SZ][2];
-
-extern void init_builtin_table(void);
-
 /************************************************************************/
 /*	The following is the set of all primitive predicates.		*/
 /************************************************************************/

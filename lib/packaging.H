@@ -34,7 +34,7 @@
 
 :- import slash/1, expand_filename/2
    from machine.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 
 :- import fmt_write_string/3 from file_io.
 

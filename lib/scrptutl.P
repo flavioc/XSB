@@ -33,13 +33,13 @@
 :- import concat_atom/3 from string.
 :- import close/1, name/2, see/1, get0/1, open/3, atom/1, arg/3, functor/3
 	from standard.
-:- import unix/1 from unix.
+:- import shell/1 from shell.
 
 % Crude but effective.  Returns stdout of a unix command as a list of
 % tokens.
 sysin(Command,List):-
 	ca([Command,'> /tmp/XSBdir'],Com1),
-	unix(Com1),
+	shell(Com1),
 	open('/tmp/XSBdir',read,Str),
 	file_to_list(Str,0,List),
 	close(Str).

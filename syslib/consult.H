@@ -39,7 +39,7 @@
 :- import libpath/1 from loader.
 :- import compile/4 from compile.
 :- import compile_cH/5 from foreign.
-:- import rm/1, sys_link/3 from unix.
+:- import rm/1, sys_link/3 from shell.
 :- import file_write0/2, file_nl/1 from xsb_writ.
 :- import hdr_ext/1, obj_ext/1, predicate_property/2 from curr_sym.
 :- import str_substring/4, str_cat/3 from string.
@@ -73,4 +73,4 @@
 	  '_$multifile'/1, '_$multifile1'/1,
 	  '_$multifile2'/3, '_$apply_arity'/1
      from parse.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.

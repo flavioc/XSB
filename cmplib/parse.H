@@ -30,13 +30,13 @@
 	  '_$multifile2'/3, '_$apply_arity'/1,
 	  '_$multifile_retract'/3.
 
-:- import stat_flag/2 from machine.
+:- import stat_flag/2, stat_set_flag/2 from machine.
 :- import closetail/1 from listutil.
 :- import inline_predicate/2 from builtin.
 :- import singleton_check/2 from singlton.
 :- import file_read/3, vv/2 from xsb_read.
 :- import add_hilog_symbol/1 from hilogsym.
-:- import otherwise/0, conset/2, append/3 from prof_sbp.
+:- import otherwise/0, conset/2, append/3, conget/2 from prof_sbp.
 :- import member1/2, error/1, warning/1, message/1, setoptions1/1 from auxlry.
 :- import sym_insert/5, sym_propin/2, sym_complete/1,
 	  add_new_clause/2, clause_listify/2
@@ -47,3 +47,8 @@
      from standard.
 :- import retract/1, retractall/1, assert/1, (dynamic)/1 from assert.
 :- import add_table/1, '_$index'/3 from file_op.
+
+:- import spawn_process/5 from shell.
+:- import xsb_configuration/2 from xsb_configuration.
+
+:- import fmt_write_string/3 from file_io.

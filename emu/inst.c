@@ -30,8 +30,9 @@
 #include "auxlry.h"
 #include "cell.h"
 #include "inst.h"
-#include "builtin.h"
 #include "subinst.h"
+
+extern void init_builtin_table(void);
 
 Cell subinst_table[BUILTIN_TBL_SZ][2];
 

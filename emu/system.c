@@ -102,15 +102,16 @@ extern char *p_charlist_to_c_string(prolog_term term, char *outstring,
 				    int outstring_size,
 				    char *in_func, char *where);
 
-static int xsb_spawn (char *prog, char *arg[],
+static int xsb_spawn (char *prog, char *arg[], int callno,
 		      int pipe1[], int pipe2[], int pipe3[],
 		      FILE *toprocess_fptr, FILE *fromprocess_fptr,
-		      FILE *fromproc_stderr_fptr,
-		      bool to_needed,bool from_needed,bool fromstderr_needed);
-static void concat_array(char *array[], char *result_str, int maxsize);
+		      FILE *fromproc_stderr_fptr);
+static void concat_array(char *array[], char *separator,
+			 char *result_str, int maxsize);
 static int get_free_process_cell(void);
 static void init_process_table(void);
 static int process_status(int pid);
+static void split_string(char *string, char *params[], char *callname);
 
 
 static struct proc_table_t {
@@ -153,6 +154,9 @@ bool sys_system(int callno)
   case PLAIN_SYSTEM_CALL: /* dumb system call: no communication with XSB */
     ctop_int(3, system(ptoc_string(2)));
     return TRUE;
+  case SHELL: /* smart system call: like SPAWN_PROCESS, but returns error code
+		 instead of PID. Uses system() rather than execvp.
+		 Advantage: can pass arbitrary shell command. */
   case SPAWN_PROCESS: { /* spawn new process, reroute stdin/out/err to XSB */
     /* +CallNo=2, +ProcAndArgsList,
        -StreamToProc, -StreamFromProc, -StreamFromProcStderr,
@@ -164,21 +168,32 @@ bool sys_system(int callno)
       *fromprocess_fptr=NULL, *fromproc_stderr_fptr=NULL;
     char *params[MAX_SUBPROC_PARAMS+2]; /* one for progname--0th member,
 				       one for NULL termination*/
-    char arg_buf[MAXPATHLEN];
-    prolog_term cmdlist_term, cmdlist_temp_term;
+    prolog_term cmdspec_term, cmdlist_temp_term;
     prolog_term cmd_or_arg_term;
     bool toproc_needed=FALSE, fromproc_needed=FALSE, fromstderr_needed=FALSE;
-    char *cmd_or_arg=NULL;
+    char *cmd_or_arg=NULL, *shell_cmd=NULL;
     int idx = 0, tbl_pos;
+    char *callname=NULL;
+    bool params_are_in_a_list=FALSE;
 
     init_process_table();
 
-    cmdlist_term = reg_term(2);
-    if (!is_list(cmdlist_term))
-      xsb_abort("SPAWN_PROCESS: Arg 1 must be a list [command, arg, ...]");
+    if (callno == SPAWN_PROCESS)
+      callname = "SPAWN_PROCESS";
+    else
+      callname = "SHELL";
 
-    /* the user can indicate that he doesn't want either of the streams by
-       putting a nonvar in the corresponding argument position */
+    cmdspec_term = reg_term(2);
+    if (is_list(cmdspec_term))
+      params_are_in_a_list = TRUE;
+    else if (is_string(cmdspec_term))
+      shell_cmd = string_val(cmdspec_term);
+    else
+      xsb_abort("%s: Arg 1 must be an atom or a list [command, arg, ...]",
+		callname);
+
+    /* the user can indicate that he doesn't want either of the streams created
+       by putting an atom in the corresponding argument position */
     if (is_var(reg_term(3)))
       toproc_needed = TRUE;
     if (is_var(reg_term(4)))
@@ -199,32 +214,42 @@ bool sys_system(int callno)
     }
 
     if (!is_var(reg_term(6)))
-      xsb_abort("SPAWN_PROCESS: Arg 5 (process id) must be a variable");
+      xsb_abort("%s: Arg 5 (process id) must be a variable", callname);
 
-    /* fill in the params[] array */
-    if (is_nil(cmdlist_term))
-      xsb_abort("SPAWN_PROCESS: Arg 1 must not be an empty list");
+    if (params_are_in_a_list) {
+      /* fill in the params[] array */
+      if (is_nil(cmdspec_term))
+	xsb_abort("%s: Arg 1 must not be an empty list", callname);
+      
+      cmdlist_temp_term = cmdspec_term;
+      do {
+	cmd_or_arg_term = p2p_car(cmdlist_temp_term);
+	cmdlist_temp_term = p2p_cdr(cmdlist_temp_term);
+	if (is_string(cmd_or_arg_term)) {
+	  cmd_or_arg = string_val(cmd_or_arg_term);
+	}
+	else 
+	  xsb_abort("%s: Non string list member in the Arg",
+		    callname);
+	
+	params[idx++] = cmd_or_arg;
+	if (idx > MAX_SUBPROC_PARAMS)
+	  xsb_abort("%s: Too many arguments passed to subprocess",
+		    callname);
+	
+      } while (!is_nil(cmdlist_temp_term));
 
-    cmdlist_temp_term = cmdlist_term;
-    do {
-      cmd_or_arg_term = p2p_car(cmdlist_temp_term);
-      cmdlist_temp_term = p2p_cdr(cmdlist_temp_term);
-      if (is_string(cmd_or_arg_term)) {
-	cmd_or_arg = string_val(cmd_or_arg_term);
-      } else if (is_list(cmd_or_arg_term)) {
-	cmd_or_arg =
-	  p_charlist_to_c_string(cmd_or_arg_term, arg_buf, sizeof(arg_buf),
-				 "SPAWN_PROCESS", "command or argument");
-      } else 
-	xsb_abort("SPAWN_PROCESS: Non string list member in the Arg");
+      params[idx] = NULL; /* null termination */
 
-      params[idx++] = cmd_or_arg;
-      if (idx > MAX_SUBPROC_PARAMS)
-	xsb_abort("SPAWN_PROCESS: Too many arguments passed to subprocess");
-
-    } while (!is_nil(cmdlist_temp_term));
-
-    params[idx] = NULL; /* null termination */
+    } else { /* params are in a string */
+      if (callno == SPAWN_PROCESS)
+	split_string(shell_cmd, params, callname);
+      else {
+	/* if callno==SHELL => call system() => don't split shell_cmd */
+	params[0] = shell_cmd;
+	params[1] = NULL;
+      }
+    }
     
     /* -1 means: no space left */
     if ((tbl_pos = get_free_process_cell()) < 0) {
@@ -233,31 +258,33 @@ bool sys_system(int callno)
     }
 
     /* params[0] is the progname */
-    pid_or_status = xsb_spawn(params[0], params,
-			      pipe_to_proc, pipe_from_proc, pipe_from_stderr,
+    pid_or_status = xsb_spawn(params[0], params, callno,
+			      (toproc_needed ? pipe_to_proc : NULL),
+			      (fromproc_needed ? pipe_from_proc : NULL),
+			      (fromstderr_needed ? pipe_from_stderr : NULL),
 			      toprocess_fptr, fromprocess_fptr,
-			      fromproc_stderr_fptr,
-			      toproc_needed,fromproc_needed,fromstderr_needed);
+			      fromproc_stderr_fptr);
 
     if (pid_or_status < 0) {
-      xsb_warn("SPAWN_PROCESS: Subprocess creation failed");
+      xsb_warn("%s: Subprocess creation failed",
+	       callname);
       return FALSE;
     }
 
     if (toproc_needed) {
       toprocess_fptr = fdopen(pipe_to_proc[1], "w");
-      toproc_stream = xsb_intern_file(toprocess_fptr, "SPAWN_PROCESS");
+      toproc_stream = xsb_intern_file(toprocess_fptr, callname);
       ctop_int(3, toproc_stream);
     }
     if (fromproc_needed) {
       fromprocess_fptr = fdopen(pipe_from_proc[0], "r");
-      fromproc_stream = xsb_intern_file(fromprocess_fptr, "SPAWN_PROCESS");
+      fromproc_stream = xsb_intern_file(fromprocess_fptr, callname);
       ctop_int(4, fromproc_stream);
     }
     if (fromstderr_needed) {
       fromproc_stderr_fptr = fdopen(pipe_from_proc[0], "r");
       fromproc_stderr_stream
-	= xsb_intern_file(fromproc_stderr_fptr, "SPAWN_PROCESS");
+	= xsb_intern_file(fromproc_stderr_fptr, callname);
       ctop_int(5, fromproc_stderr_stream);
     }
     ctop_int(6, pid_or_status);
@@ -266,7 +293,8 @@ bool sys_system(int callno)
     xsb_process_table.process[tbl_pos].to_stream = toproc_stream;
     xsb_process_table.process[tbl_pos].from_stream = fromproc_stream;
     xsb_process_table.process[tbl_pos].stderr_stream = fromproc_stderr_stream;
-    concat_array(params,xsb_process_table.process[tbl_pos].cmdline,MAXPATHLEN);
+    concat_array(params, " ",
+		 xsb_process_table.process[tbl_pos].cmdline,MAXPATHLEN);
     
     return TRUE;
   }
@@ -383,26 +411,25 @@ bool sys_system(int callno)
    Also pass it two arrays of strings: PIPE_TO_PROC[2] and PIPE_FROM_PROC[2].
    These are going to be the arrays of fds for the communication pipes 
 */
-static int xsb_spawn (char *progname, char *argv[],
+static int xsb_spawn (char *progname, char *argv[], int callno,
 		      int pipe_to_proc[],
 		      int pipe_from_proc[],int pipe_from_stderr[],
 		      FILE *toprocess_fptr, FILE *fromprocess_fptr,
-		      FILE *fromproc_stderr_fptr,
-		      bool toproc_needed,
-		      bool fromproc_needed,bool fromstderr_needed)
+		      FILE *fromproc_stderr_fptr)
 {
   int pid;
   int stdin_saved, stdout_saved, stderr_saved;
+  static char shell_command[MAXPATHLEN];
 
-  if ( toproc_needed && PIPE(pipe_to_proc) < 0 ) {
+  if ( (pipe_to_proc != NULL) && PIPE(pipe_to_proc) < 0 ) {
     /* can't open pipe to process */
     return PIPE_TO_PROC_FAILED;
   }
-  if ( fromproc_needed && PIPE(pipe_from_proc) < 0 ) {
+  if ( (pipe_from_proc != NULL) && PIPE(pipe_from_proc) < 0 ) {
     /* can't open pipe to process */
     return PIPE_FROM_PROC_FAILED;
   }
-  if ( fromstderr_needed && PIPE(pipe_from_stderr) < 0 ) {
+  if ( (pipe_from_stderr != NULL) && PIPE(pipe_from_stderr) < 0 ) {
     /* can't open pipe to process */
     return PIPE_FROM_PROC_FAILED;
   }
@@ -413,6 +440,9 @@ static int xsb_spawn (char *progname, char *argv[],
      2. Redirect main process stdio to the pipes.
      3. Spawn subprocess. The subprocess inherits the redirected I/O
      4. Restore the original stdio for the parent process.
+
+     On the bright side, this trick allowed us to cpature the I/O streams of
+     the shell commands invoked by system()
   */
 
   /* save I/O */
@@ -420,7 +450,7 @@ static int xsb_spawn (char *progname, char *argv[],
   stdout_saved = dup(fileno(stdout));
   stderr_saved = dup(fileno(stderr));
 
-  if (toproc_needed) {
+  if (pipe_to_proc != NULL) {
     /* close child stdin, bind it to the reading part of pipe_to_proc */
     if (dup2(pipe_to_proc[0], fileno(stdin)) < 0) {
       return PIPE_TO_PROC_FAILED;
@@ -433,7 +463,7 @@ static int xsb_spawn (char *progname, char *argv[],
       return PIPE_TO_PROC_FAILED;
     }
   
-  if (fromproc_needed) {
+  if (pipe_from_proc != NULL) {
     /* close child stdout, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_proc[1], fileno(stdout)) < 0) {
       return PIPE_TO_PROC_FAILED;
@@ -446,7 +476,7 @@ static int xsb_spawn (char *progname, char *argv[],
       return PIPE_TO_PROC_FAILED;
     }
 
-  if (fromstderr_needed) {
+  if (pipe_from_stderr != NULL) {
     /* close child stdout, bind it to the write part of pipe_from_proc */
     if (dup2(pipe_from_stderr[1], fileno(stderr)) < 0) {
       return PIPE_TO_PROC_FAILED;
@@ -459,24 +489,30 @@ static int xsb_spawn (char *progname, char *argv[],
       return PIPE_TO_PROC_FAILED;
     }
 
+  if (callno == SPAWN_PROCESS) {
 #ifdef WIN_NT
-  pid = spawnvp(P_NOWAIT, progname, argv);
+    pid = spawnvp(P_NOWAIT, progname, argv);
 #else
-  pid = fork();
+    pid = fork();
 #endif
 
-  if (pid < 0) {
-    /* failed */
-    return pid;
-  } else if (pid == 0) {
-    /* child process */
-
+    if (pid < 0) {
+      /* failed */
+      return pid;
+    } else if (pid == 0) {
+      /* child process */
+      
 #ifndef WIN_NT  /* Unix: must exec */
-    execvp(progname, argv);
-    /* if we ever get here, this means that invocation of the process has
-       failed */
-    exit(SUB_PROC_FAILED);
+      execvp(progname, argv);
+      /* if we ever get here, this means that invocation of the process has
+	 failed */
+      exit(SUB_PROC_FAILED);
 #endif
+    }
+  } else { /* SHELL command */
+    /* no separator */
+    concat_array(argv, "", shell_command, MAXPATHLEN);
+    pid = system(shell_command);
   }
 
   /* main process continues */
@@ -496,28 +532,29 @@ static int xsb_spawn (char *progname, char *argv[],
 }
 
 /* array is a NULL terminated array of strings. Concat it and return string */
-static void concat_array(char *array[], char *result_str, int maxsize)
+static void concat_array(char *array[], char *separator,
+			 char *result_str, int maxsize)
 {
-  int space_left = maxsize-1;
+  int space_left = maxsize-1, separator_size = strlen(separator);
   char *current_pos=result_str;
-  int idx=0;
+  int idx=0, len;
 
   /* init result_str */
   *current_pos='\0';
 
   /* Die, he who neglects to NULL-terminate an array */
   while ((array[idx] != NULL) && (space_left > 0)) {
-    int len = strlen(array[idx]);
+    len = strlen(array[idx]);
 
     strncat(current_pos, array[idx], space_left);
     current_pos = current_pos + (len < space_left ? len : space_left);
     *current_pos='\0';
     space_left = space_left - len;
     /* insert space separator */
-    strncat(current_pos, " ", space_left);
-    current_pos++;
+    strncat(current_pos, separator, space_left);
+    current_pos += separator_size;
     *current_pos='\0';
-    space_left--;
+    space_left -= separator_size;
     idx++;
   }
 }
@@ -586,3 +623,58 @@ int process_status(int pid)
   return UNKNOWN; /*  unknown status */
 #endif
 }
+
+
+/* split buffer at spaces, \t, \n, and put components
+   in a NULL-terminated array.
+   If you call it twice, the old split is forgotten.
+*/
+static void split_string(char *string, char *params[], char *callname)
+{
+  int buflen = strlen(string);
+  int idx = 0, pos;
+  char *prev_ptr, *buf_ptr;
+  static char buffer[MAXPATHLEN];
+
+  if (buflen > MAXPATHLEN - 1)
+    xsb_abort("%s: Command string too long",
+	      callname);
+
+  strncpy(buffer, string, MAXPATHLEN);
+  buf_ptr = buffer;
+
+  do {
+    pos = buf_ptr - buffer;
+    /* skip leeding spaces */
+    /* Note: must use string for comparison, since we are modifying the buffer
+       and spaces might no longer be there */
+    while (pos < buflen && (*(string+pos) == ' '
+			    || *(string+pos) == '\t'
+			    || *(string+pos) == '\n')) {
+      buf_ptr++;
+      pos++;
+    }
+    
+    prev_ptr = buf_ptr;
+
+    /* last substring (and has no conversion spec) */
+    if ((buf_ptr=strchr(prev_ptr, ' ')) == NULL) {
+      if (prev_ptr >= (buffer+buflen))
+	params[idx] = NULL;
+      else {
+	params[idx] = prev_ptr;
+	params[idx+1] = NULL;
+      }
+      return;
+    }
+
+    /* space char found */
+    params[idx] = prev_ptr;
+    *(buf_ptr) = '\0';
+    idx++;
+  } while (idx <= MAX_SUBPROC_PARAMS); /* note: params has extra space,
+					  so not to worry */
+
+  return;
+}
+

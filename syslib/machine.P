@@ -90,7 +90,7 @@ unload_seg(_CodeSeg) :- '_$builtin'(51).
 load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(52).
 
 getenv(_EnvVar, _Value) :- '_$builtin'(54).
-/* sys_syscall(CallNo, Res, Arg, ......) :- '_$builtin'(55). */
+
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(55).
 sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :- '_$builtin'(56).
 sys_gethost(_Name, _Buffer) :- '_$builtin'(57).
@@ -211,19 +211,6 @@ set_prof_on(Level) :- stat_set_flag(52,Level).
 /* Perhaps, we should find a better place for them -mk	      	     */
 /*********************************************************************/
 
-/* Checks for OS type */
-is_backslashing_os :-  stat_flag(28, ConfigurationC),
-		    %% convert C string to Prolog
-		    intern_string(ConfigurationC, Configuration),
-		    ( str_sub('win', Configuration, Pos)
-		      ; str_sub('-nt', Configuration, Pos)
-		      ; str_sub('w95', Configuration, Pos)
-		      ; str_sub('wnt', Configuration, Pos) ).
-
-is_pcdos :- stat_flag(28, ConfigurationC),
-	  %% convert C string to Prolog
-	  intern_string(ConfigurationC, Configuration),
-	  str_sub('pc-dos', Configuration, _).
 
 /* The following is extremely DIRTY and should be used very very	*/
 /* cautiously!.  For the moment it is only used in symtab.P when the	*/

@@ -82,6 +82,6 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
             {H:dangerous_hobby}	% ... which are dangerous?
 ]. 
 
-?- call(myprint("Thanks ")), call(unix(whoami)), call(myprint(" for using FLIP!")).
+?- call(myprint("Thanks ")), call(shell(whoami)), call(myprint(" for using FLIP!")).
 
 

@@ -337,13 +337,19 @@ module_file('.xsbrc', File) :-
 	current_predicate('.xsbrc':_),	% module .xsbrc is indeed loaded
 	!,
 	xsb_configuration(user_home, HomeDir),
-	( is_pcdos -> conname('/.xsbrc.OX', OFile)
+	/* don''t support DOS any more 
+	( dos_os -> conname('/.xsbrc.OX', OFile)
 		    ; conname('/.xsbrc.O', OFile) ),
+	*/
+	OFile = '/.xsbrc.O',
 	str_cat(HomeDir, OFile, FileName),
 	FileName = File.
 module_file(ModuleName, File) :-
-	( is_pcdos -> conname('.OX', Suffix)
+	/*
+	( dos_os -> conname('.OX', Suffix)
 		    ; conname('.O', Suffix) ),
+	*/
+	Suffix = '.O',
 	str_cat(ModuleName, Suffix, OFile),
 	libpath(Lib),
 	expand_lib(Lib, Absolute_Lib),
@@ -476,21 +482,25 @@ xsb_flag(dcg_style, DcgMode) :-
         ).
 	
 
+/* DOS is gone
 hdr_ext(HExt) :-
-	( is_pcdos -> HExt = '.HX'
-		    ; HExt = '.H' ).
-
+	( dos_os -> HExt = '.HX'
+	;   HExt = '.H' ).
 obj_ext(OExt) :-
-	( is_pcdos -> OExt = '.OX'
-		    ; OExt = '.O' ).
-
+	( dos_os -> OExt = '.OX'
+	;   OExt = '.O' ).
 asm_ext(AExt) :-
-	( is_pcdos -> AExt = '.AX'
-		    ; AExt = '.A' ).
-
+	( dos_os -> AExt = '.AX'
+	;   AExt = '.A' ).
 decl_ext(DExt) :-
-	( is_pcdos -> DExt = '.DX'
-		    ; DExt = '.D' ).
+	( dos_os -> DExt = '.DX'
+	;   DExt = '.D' ).
+*/
+
+hdr_ext('.H').
+obj_ext('.O').
+asm_ext('.A').
+decl_ext('.D').
 
 
 

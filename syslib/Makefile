@@ -26,8 +26,9 @@
 ALL =	assert.O basics.O consult.O curr_sym.O dbclause.O dbcmpl.O \
 	dcg.O debugger.O domain.O eval.O file_io.O \
 	file_op.O hilogsym.O loader.O \
-	machine.O num_vars.O standard.O std_xsb.O \
-	string.O subsumes.O sysinitrc.O tables.O term_exp.O unix.O \
+	machine.O num_vars.O shell.O standard.O std_xsb.O \
+	string.O subsumes.O sysinitrc.O tables.O term_exp.O \
+	unix.O \
 	x_interp.O xsb_read.O xsb_tok.O xsb_writ.O xcallxsb.O
 
 

@@ -74,7 +74,12 @@ setoptions1([Opt|Rest]) :-
 	 ->	setopt(Opt1,0)
 	 ;	setopt(Opt,1)
 	),
-	setoptions1(Rest).
+	%% cpp was off and now is on, hence we had compiler_options(cpp_on)
+	%% Restart!
+	(conget(migh_need_restart,1), conget(cpp_on,1)
+	->  conset(needs_restart,1), conset(migh_need_restart,0)
+	;   setoptions1(Rest)
+	).
 
 setopt(Opt,Setting) :-
 	( current_option(Opt) -> conset(Opt, Setting)
@@ -105,6 +110,9 @@ current_option(ti_opt1).
 current_option(db_opt).
 current_option(unfold).
 current_option(reorder).
+
+/* preprocessor */
+current_option(cpp_on).
 
 /* need to test out optimizations -- tls */
 current_option(no_check).

@@ -91,5 +91,5 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ?- nl, write('mary..kids[] ??'), mary..kids[].
 
 // new
-?- nl, write('On '), unix(date), 
+?- nl, write('On '), shell(date), 
        writeln('FLORA thanks you for giving it a chance!').

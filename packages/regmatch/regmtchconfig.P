@@ -26,7 +26,7 @@
 :- import slash/1, str_cat/3, machine_file_exists/1 from machine.
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import real_search_module/4 from consult.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 
 %% Construct the file cc/xsb_re_match.H on the fly
 make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
@@ -78,10 +78,10 @@ make_xsb_re_matchH(CC, CC_opts, LoaderFlags) :-
 	xsb_configuration(config_libdir, ConfigLibdir),
 	str_cat(Module, '.O', Objfile),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	unix(['mv', ' -f ', Objfile, ' ', ConfigLibdir]),
+	shell(['mv', ' -f ', Objfile, ' ', ConfigLibdir]),
 	%% Note: the .so ending is heavily Unix-centered. I dunno what this
 	%% corresponds to in windows. - mk
 	str_cat(Module, '.so', SharedLib),
-	unix(['cp', ' -f ', SharedLib, ' ', ConfigLibdir]),
-	unix(['rm', ' -f ', SharedLib])
+	shell(['cp', ' -f ', SharedLib, ' ', ConfigLibdir]),
+	shell(['rm', ' -f ', SharedLib])
      ).

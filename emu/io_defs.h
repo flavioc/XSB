@@ -1,9 +1,8 @@
-/* File:      unix.H
-** Author(s): Kostis F. Sagonas, Jiyang Xu
+/* File:      io_defs.h
+** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
-** Copyright (C) ECRC, Germany, 1990
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -24,18 +23,26 @@
 */
 
 
-:- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1,
-	spawn_process/5, get_process_table/1, process_status/2, 
-	process_control/2.
-:- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
+/* OP numbers for file_function */
+#define FILE_FLUSH         0
+#define FILE_SEEK          1
+#define FILE_TRUNCATE      2
+#define FILE_POS      	   3
+#define FILE_OPEN      	   4
+#define FILE_CLOSE     	   5
+#define FILE_GET     	   6
+#define FILE_PUT     	   7
+#define FILE_GETBUF    	   8
+#define FILE_PUTBUF    	   9
+#define FILE_READ_LINE 	   10
+#define FILE_WRITE_LINE	   11
 
-:- import str_cat/3 from string.
-:- import atom/1, abort/1 from standard.
-:- import psc_name/2, sys_system/7, term_psc/2, term_type/2, expand_filename/2
-   from machine.
-/*
-:- import conpsc/2, psc_set_type/2, psc_set_prop/2,
-	psc_type/2, psc_prop/2,
-   from machine.
-*/
+/* OP numbers for formatted_io */
+#define FMT_WRITE    	   1
+#define FMT_WRITE_STRING   2
+#define FMT_READ       	   3
 
+
+/* OP numbers for file_stat */
+#define FILE_STAT_TIME	  0
+#define FILE_STAT_SIZE	  1

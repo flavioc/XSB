@@ -68,15 +68,7 @@
 
 /* ==== types of cells =================================================*/
 
-#define FREE	0x0	/* Free variable */
-#define REF	0x0	/* Reference */
-#define CS	0x1	/* Structure */
-#define INT     0x2	/* integer */
-#define LIST	0x3	/* List */
-#define REF1	0x4	/* REF */
-#define STRING  0x5	/* Non-Numeric Constant (Atom) */
-#define FLOAT	0x6	/* Floating point number */
-         /* Tag 0x7 is unused */
+#include "celltags.h"
 
 #define TrieVar 0x0
 

@@ -28,7 +28,11 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod]).
+:- compiler_options([sysmod, cpp_on]).
+
+#include "../emu/flag_defs.h"
+#include "../prolog_includes/standard.h"
+#include "../prolog_includes/char_defs.h"
 
 
 			/************************/
@@ -62,7 +66,9 @@ see0(F) :-
 	; abort([F,'not a file or file not readable, cannot see!'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(10, File0),
+	%% NEW
+	%%stat_set_flag(10, File0),
+	stat_set_flag(CURRENT_INPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC).
 
@@ -82,7 +88,9 @@ seen :- conpsc(current_input, CurinPsc),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	stat_set_flag(10, 0),
+	%% NEW
+	%%stat_set_flag(10, 0),
+	stat_set_flag(CURRENT_INPUT, 0),
 	conpsc(userin, UserPsc),
 	psc_set_prop(CurinPsc, UserPsc).
 
@@ -109,7 +117,9 @@ tell0(F) :-
 	; abort([F,': Not a file or file not writable, cannot tell!'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(11, File0),
+	%% NEW
+	%%stat_set_flag(11, File0),
+	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_output, CuroutPsc),
 	psc_set_prop(CuroutPsc, PSC).
 
@@ -129,7 +139,9 @@ told :- conpsc(current_output, CuroutPsc),
 		psc_set_type(FilePSC, 0)
 	; true
 	),
-	stat_set_flag(11, 1),
+	%% NEW
+	%%stat_set_flag(11, 1),
+	stat_set_flag(CURRENT_OUTPUT, 1),
 	conpsc(userout, UserPsc),
 	psc_set_prop(CuroutPsc, UserPsc).
 
@@ -162,7 +174,9 @@ open(F,read,F):-!,
 	; abort([F,'not a file or not readable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(10, File0),
+	%% NEW
+	%%stat_set_flag(10, File0),
+	stat_set_flag(CURRENT_INPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	see0(userin).
@@ -177,7 +191,9 @@ open(F,write,F):-!,
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(11, File0),
+	%% NEW
+	%%stat_set_flag(11, File0),
+	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
@@ -192,7 +208,9 @@ open(F,append,F):-!,
 	; abort([F,'not a file or not writable, cannot open'])
 	),
 	psc_prop(PSC, File0),
-	stat_set_flag(11, File0),
+	%% NEW
+	%%stat_set_flag(11, File0),
+	stat_set_flag(CURRENT_OUTPUT, File0),
 	conpsc(current_input, CurinPsc),
 	psc_set_prop(CurinPsc, PSC),
 	tell0(userout).
@@ -214,13 +232,20 @@ close(F) :-
 
 nl(Ostr) :- tell(Ostr),nl,tell(userout).
 
-nl :- (is_backslashing_os -> put(13), put(10)
-			  ; put(10) ).
+/* OLD
+nl :- (windows_os -> put(13), put(10) ;	  put(10) ).
+*/
+%% NEW
+nl :- (windows_os 
+      ->  put(CH_RETURN), put(CH_NEWLINE)
+      ;	  put(CH_NEWLINE) ).
 
 
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
-get0(C) :- stat_flag(10, File),	file_get(File, C0), C = C0.
+%% NEW
+%%get0(C) :- stat_flag(10, File),	file_get(File, C0), C = C0.
+get0(C) :- stat_flag(CURRENT_INPUT, File), file_get(File, C0), C = C0.
 
 skip(C) :- get0(C0), (C0=C ; skip(C)).
 
@@ -234,35 +259,49 @@ tab(N) :- tab(N).
 
 read(Istr,T) :- see(Istr),read(T),see(userin).
 
-read(T) :- stat_flag(10, File),	file_read(File, T).
+%% NEW
+%%read(T) :- stat_flag(10, File),	file_read(File, T).
+read(T) :- stat_flag(CURRENT_INPUT, File), file_read(File, T).
 
 write(Ostr,Term):- tell(Ostr),	write(Term),tell(userout).
 
-write(T) :- stat_flag(11, File), file_write(File, T).
+%% NEW
+%%write(T) :- stat_flag(11, File), file_write(File, T).
+write(T) :- stat_flag(CURRENT_OUTPUT, File), file_write(File, T).
 
 
 writeln(Ostr,Term):- tell(Ostr),writeln(Term),tell(userout).
 
-writeln(T) :- stat_flag(11, File), file_write(File, T), file_nl(File).
+%% NEW
+%%writeln(T) :- stat_flag(11, File), file_write(File, T), file_nl(File).
+writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
 display(T) :- telling(F), tell(userout), write(T), told, tell(F).	
 
 
 write_prolog(Ostr,Term):- tell(Ostr),write_prolog(Term),tell(userout).
 
-write_prolog(T) :- stat_flag(11, File), file_write_prolog(File, T).
+%% NEW
+%%write_prolog(T) :- stat_flag(11, File), file_write_prolog(File, T).
+write_prolog(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_prolog(File, T).
 
 
 writeq(Ostr,Term):- tell(Ostr),	writeq(Term),tell(userout).
 
-writeq(T) :- stat_flag(11, File), file_write_quoted(File, T).
+%% NEW
+%%writeq(T) :- stat_flag(11, File), file_write_quoted(File, T).
+writeq(T) :- stat_flag(CURRENT_OUTPUT, File), file_write_quoted(File, T).
 
 
 write_canonical(Ostr,Term):- tell(Ostr),
 			     file_write_canonical(Ostr,Term),
 			     tell(userout).
 
-write_canonical(T) :- stat_flag(11, File), file_write_canonical(File, T).
+%% NEW
+%%write_canonical(T) :- stat_flag(11, File), file_write_canonical(File, T).
+write_canonical(T) :-
+	stat_flag(CURRENT_OUTPUT, File),
+	file_write_canonical(File, T).
 
 print(T) :-	% Not what is supposed 2 B
 	telling(F), tell(userout), write(T), told, tell(F).
@@ -472,10 +511,10 @@ check(N) :-
 	).
 
 int_fromlist([45,H|Rest], I) :-	% It can start with a minus but 
-	!,			% it shouldn't be empty. 
+	!,			% it shouldn''t be empty. 
 	'can be integer'([H|Rest], 0, Pos),
 	I is - Pos.
-int_fromlist([H|T], I) :- 	% It shouldn't be empty.
+int_fromlist([H|T], I) :- 	% It shouldn''t be empty.
 	'can be integer'([H|T], 0, I).
 
 'can be integer'([], I, I).
@@ -485,7 +524,7 @@ int_fromlist([H|T], I) :- 	% It shouldn't be empty.
 	'can be integer'(T, I, NewI).
 
 int_name(N, L1, L2) :- 
-	( N < 0 -> NewN is -N, L2 = [45|RestL2]		% 0'- = 45
+	( N < 0 -> NewN is -N, L2 = [45|RestL2]		% '-' = 45
 	; NewN = N, RestL2 = L2
 	),
 	l_intname(NewN, L1, RestL2).
@@ -657,7 +696,7 @@ repeat :- true; repeat.
 
 (A->B) :- call_c(A) -> call_c(B).
 
-%  The following two predicates are added after David's request (they
+%  The following two predicates are added after David''s request (they
 %  are really inline predicates) but they better be exported by this
 %  module and imported in global (user) module.
 
@@ -787,7 +826,7 @@ pp_body0((B->T),I) :- !,
 	write('('), I1 is I+1, pp_body0(B,I1), nl,
 	tab(I1),write('-> '), I2 is I1+3, pp_body0(T,I2), nl,
 	tab(I), write(')').
-pp_body0((F;R),I) :- !,		% doesn't handle a;b;c nicely.
+pp_body0((F;R),I) :- !,		% doesn''t handle a;b;c nicely.
 	write('('), I1 is I+1, pp_body0(F,I1), nl,
 	tab(I1), write(';'), nl,
 	pp_body(R,I1), nl,
@@ -824,13 +863,13 @@ nofileerrors :- stat_set_flag(fileerrors, 0).
 
 % save(_C) :- write('Not implemented'), nl, fail.
 
-ttywrite(T) :- file_write(2, T).
+ttywrite(T) :- file_write(STDERR, T).
 
-ttywritenl(T) :- ttywritenl0(T), file_nl(2).
+ttywritenl(T) :- ttywritenl0(T), file_nl(STDERR).
 
-ttywritenl0(T) :- var(T), !, file_write(2, T).
+ttywritenl0(T) :- var(T), !, file_write(STDERR, T).
 ttywritenl0((X,Y)) :- !, ttywritenl0(X), ttywritenl0(Y).
-ttywritenl0(T) :- file_write(2, T).
+ttywritenl0(T) :- file_write(STDERR, T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
@@ -921,31 +960,45 @@ message((M1,M2)) :-
 message(P/N) :-		% temp solution till we fix operators
 	!,
 	message(P),
-	file_put(2, 47),	% 0'/ = 47
-	file_write0(2, N).
+	%% NEW
+	%%file_put(STDERR, 47),	% '/' = 47
+	file_put(STDERR, CH_SLASH),
+	file_write0(STDERR, N).
 message(Message) :- 
-	file_write0(2, Message). % 2 denotes stderr
+	file_write0(STDERR, Message). % 2 denotes stderr
 
 messageln(Message) :- 
 	message(Message),
-	file_nl(2).
+	file_nl(STDERR).
 
 
 /* === expose a goal for tracing ====================================== */
  
 call_expose(Goal) :-
-	stat_flag(5,N),
+	%% NEW
+	%%stat_flag(5,N),
+	stat_flag(HIDE_STATE,N),
 	(N =:= 0
 	 ->     call_c(Goal)
 	 ;      N1 is N-1,
-		(stat_set_flag(5,N1)
+		%% NEW
+	        %%(stat_set_flag(5,N1)
+		(stat_set_flag(HIDE_STATE,N1)
 		 ;
-		 stat_set_flag(5,N),fail
+		 %% NEW
+		 %% stat_set_flag(5,N),fail
+		 stat_set_flag(HIDE_STATE,N),fail
 		),
 		call_c(Goal),
+	        %% NEW
+	        /* OLD
 		(stat_set_flag(5,N)
 		 ;
 		 stat_set_flag(5,N1),fail
+		*/
+		(stat_set_flag(HIDE_STATE,N)
+		 ;
+		 stat_set_flag(HIDE_STATE,N1),fail
 		)
 	).
 

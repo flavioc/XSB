@@ -32,7 +32,7 @@
 :- import numbervars/1 from num_vars.
 :- import set_inthandler/2 from loader.
 :- import file_write/2, file_nl/1 from xsb_writ.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 :- import file_read/3, vv/2, file_read/2 from xsb_read.
 %% These are explicitly imported because they are used early on, 
 %% before XSB is fully bootstrapped.

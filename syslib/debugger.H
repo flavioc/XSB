@@ -60,7 +60,7 @@
 	'_$_deb_print_hidden'/0, '_$_debugger_data_loaded'/0
    from usermod.
 :- import call/1, see/1, seen/0, repeat/0 from standard.
-:- import xsb_configuration/2 from configuration.
+:- import xsb_configuration/2 from xsb_configuration.
 :- import fmt_write_string/3 from file_io.
 :- import assert/1 from assert.
 :- dynamic debug_display_call_hook(_), '_$_debugger_data_loaded'/0.

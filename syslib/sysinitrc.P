@@ -25,16 +25,16 @@
 
 %% This file is consulted from loader.P
 
+:- compiler_options([cpp_on]).
 
-:- import stat_flag/2, str_cat/3, stat_set_flag/2, 
-	is_backslashing_os/0, slash/1
-   from machine.
-:- import xsb_configuration/2 from configuration.
+#include "../emu/flag_defs.h"
+
+:- import stat_set_flag/2 from machine.
+:- import xsb_configuration/2 from xsb_configuration.
 
 :- dynamic library_directory/1.
 
-:-
-   %% Add the package library to the search path
+:- %% Add the packages dir to the search path
    xsb_configuration(packagesdir, LibDir1),
    assert(library_directory(LibDir1)),
 
@@ -62,12 +62,8 @@
 :- import force_file_read_loaded/0 from xsb_read.
 :- force_file_read_loaded.
 
-%% Flag 50 tells the loader to start looking at the user-supplied libraries 
-%% in site/lib and .xsbinitrc.
-
-:- stat_set_flag(50, 1). % Setting flags[50] tells the loader to start
-			 % searching library_directory for non-system
-			 % libraries
+%% tell the loader to start looking in non-system libraries
+:- stat_set_flag(LIBS_LOADED, 1). 
 
 %% load package maintenance definitions
 :- [packaging].

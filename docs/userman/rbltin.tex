@@ -493,46 +493,46 @@ predicate to be tabled.
 %    return hash table has no effect on the speed of queries which use completed
 %    tables.
 
-\ouritem{unix(+SystemCall)}\index{{\tt unix/1}}
+\ouritem{shell(+SystemCall)}\index{{\tt shell/1}}
     Calls the operating system with the atom {\tt SystemCall} as argument.
     It succeeds if {\tt SystemCall} is executed successfully, otherwise it
     fails.  As a notational convenience, the user can supply {\tt SystemCall} 
-    in the form of a list (something currently not possible for {\tt unix/2}).
+    in the form of a list (something currently not possible for {\tt shell/2}).
 
     For example, the call:
 
-    \demo{{\tt $|$ ?- unix('echo \$HOME').}}
+    \demo{{\tt $|$ ?- shell('echo \$HOME').}}
 
     \noindent
     will output in the current output stream of \ourprolog\ the name of
     the user's home directory; while the call:
 
-    \demo{{\tt $|$ ?- File = 'test.c', unix(['cc -c ', File]).}}
+    \demo{{\tt $|$ ?- File = 'test.c', shell(['cc -c ', File]).}}
 
     \noindent
     will call the C compiler to compile the file {\tt test.c}.
 
-    Note that in UNIX systems, since {\tt unix/1} is executed by
+    Note that in UNIX systems, since {\tt shell/1} is executed by
     forking off a shell process, it cannot be used, for example, to
     change the working directory of the interpreter.  For that reason
     the standard predicate {\tt cd/1} described below should be used.
 
-%    {\em Note to DOS users.} \index{DOS}  The {\tt unix/1} command works
+%    {\em Note to DOS users.} \index{DOS}  The {\tt shell/1} command works
 %    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
 
-\ouritem{unix(+SystemCall, -Result)}\index{{\tt unix/2}}
+\ouritem{shell(+SystemCall, -Result)}\index{{\tt shell/2}}
     Calls the operating system with the atom {\tt SystemCall} as argument
     and returns the result of the call in {\tt Result}.  In comparison with
-    {\tt unix/1} this predicate always succeeds, even if the {\tt SystemCall} 
+    {\tt shell/1} this predicate always succeeds, even if the {\tt SystemCall} 
     cannot be successfully executed.
 
-%    {\em Note to DOS users.} \index{DOS}  The {\tt unix/2} command works
+%    {\em Note to DOS users.} \index{DOS}  The {\tt shell/2} command works
 %    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
 
 \ouritem{ls}\index{{\tt ls/0}} 
     Under UNIX, this command lists in the current output stream the files 
     in the system's current directory if it can do so.  If so, it succeeds.
-    It is the same as {\tt unix('ls -F', 0)}.  
+    It is the same as {\tt shell('ls -F', 0)}.  
 
 \ouritem{cd(+Dir)}\index{{\tt cd/1}}
     Under UNIX and Windows, this predicate changes the interpreter's

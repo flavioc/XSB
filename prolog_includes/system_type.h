@@ -1,8 +1,8 @@
-/* File:      xsb_writ.H
-** Author(s): Kostis Sagonas
+/* File:      prolog_includes/system_type.h
+** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1999
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -23,19 +23,6 @@
 */
 
 
-:- export file_write/2, file_write0/2, file_write_prolog/2, 
-	  file_write_quoted/2, file_write_canonical/2,
-	  file_nl/1.
 
-:- import '_$op'/3 from file_op.
-:- import file_put/2 from file_io.
-:- import integer/1 from standard.
-:- import term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
-	  term_type/2, file_puttoken/3, file_writequoted/2
-     from machine.
-
-%% We must import this from the loader, because this might be called
-%% for the first time before xsb_configuration configuration is loaded.
-:- import windows_os_loader/0 from loader.
-
-/* ------------------- end of file file_write.H ----------------------- */
+/*  For conditional compilation */
+#define THIS_IS_XSB      1

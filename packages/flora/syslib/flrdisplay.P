@@ -71,7 +71,7 @@
 		    '_$_$_flora_write_matches'(L), nl,
 		    write(N), write(' solution(s) in '),
 		    write(T), write(' seconds on '),
-		    unix(hostname)
+		    shell(hostname)
 		),
 	        '_$_$_flora_write_Yes'
 	    )

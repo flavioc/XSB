@@ -44,6 +44,7 @@
 
 /* --------------- The following are working variables ----------------	*/
 
+extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 extern TIFptr get_tip(Psc);
 
 /*static FILE *filedes ;*/
