@@ -28,7 +28,7 @@
 
 :- import standard_metapredicate/3 from std_xsb.
 :- import member/2, ith/3 from basics.
-:- import warning/1, option/1,message/1 from auxlry.
+:- import warning/1, option/1 from auxlry.
 :- import standard_symbol/3 from std_xsb.
 :- import sym_propin/2, sym_prop/2, sym_insert/5, sym_scan/3,
 	  extract_symlist/3, sym_env/2, sym_name/3
