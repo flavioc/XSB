@@ -243,6 +243,27 @@ get_producer_call(CallTerm, ProducerTableEntry, ReturnTemplate) :-
  * the argument to the following findall is folded into the
  * predicate above so that get_lastnode_cs_retskel is inlined,
  * thus avoiding a GC between get_calls & get_lastnode_cs_retskel
+
+The semantics of get_calls can be understood as follows: You can
+assume that each call is stored in an "asserted" predicate, called
+get_calls/3 in the form:
+
+get_calls(Call,Ptr,VarsInCall)
+
+Then a call to get_calls simply retrieves from this "stored" table as
+usual.
+
+For example, if a call of p(1,X,Y,X) were made to a tabled predicate
+p/4, then there would be a fact in get_calls of:
+
+get_calls(p(1,X,Y,X),12345,ret(X,Y)).
+
+Now if we invoke get_calls(p(A,1,B,C),_,RET), it will succeed with
+A=1, C=1, and RET=ret(1,B).
+
+Not that if RET is most-general, then no variables in the current call
+were instantiated and so it subsumes the call in the table.
+
  */
 
 get_calls(CallTerm, Handle, Template) :-
