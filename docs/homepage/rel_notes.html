@@ -12,7 +12,7 @@
 <h1> Release Notes for Version 2.3</h1></center>
 
 <h3> General</h3>
-A number of bugs fixed. Some new features. Performance improvements.
+A great number of bugs fixed, new features, performance improvements.
 
 <h3>News</h3>
 <ul>
@@ -21,9 +21,11 @@ A number of bugs fixed. Some new features. Performance improvements.
 now has new 
 interface to the RDF parser provided by the libwww package from W3C.
 It requires that the libwww library from W3C is installed.
-<li> The throw/catch mechanism. It was already present in version 2.2, but now
-it is also documented.
+<li> The <b>throw/catch mechanism</b>: It was already present in version 2.2,
+but now it is also documented.
 <li> Foreign C interface now works on SGI's IRIX.
+<li> <b>Backtrackable assert and retract</b>, plus Perl-style associative
+arrays. (Read about them in the section on modifying the database in Manual 1.)
 </ul>
 
 <h3>Backward Incompatibility</h3>
@@ -34,6 +36,10 @@ platforms. Likewise, the macros for dealing with the variable string type used
 by C programs that call XSB as a library have been renamed. For instance,
 <tt>vstrDEFINE</tt> is now <tt>XSB_StrDefine</tt>. See Vol. 2 of the manual for
 the new names.
+<li> The predicates <tt>file_read_line</tt>, <tt>file_read_line_atom</tt>,
+<tt>file_read_line_list</tt> have lost the last argument (the indicator of
+whether the read has read the entire line). This argument is no longer
+necessary, since buffers expand automatically to accommodate any size input.
 </ul>
 
 <hr>
