@@ -48,7 +48,7 @@ flora_shell_loop :-
 	( flora_good_command(Status) ->
 	    findall(Op,member(FLSYSLIB(Op),Options),OpList),
 	    flora_load_library(OpList),
-	    writeln(Code),
+	    %writeln(Code),
 	    call(Code)
 	;
 	  true
