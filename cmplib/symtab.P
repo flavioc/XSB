@@ -65,21 +65,25 @@
 /*	are added and the symbol Sym is returned.			*/
 /*======================================================================*/
 
+%%:- import term_set_arg/4 from machine.
 sym_insert(Name, Arity, Prop, sym_tab(Buff,_Completed,HashTab), Sym) :-
 	( var(HashTab) ->	% SymTab does not exist yet (is empty).
 		buff_alloc(8, Buff),
-                buff_set_word(Buff, 4, 0),
-		functor(HashTab, hash_tab, 101)
+                buff_set_word(Buff, 4, 0)
+	 %% someday compute hashsize from size of file?
 	; true
 	),
-	term_hash(Name, 101, Hash0), Hash is Hash0+1,
-	ll_arg(Hash, HashTab, Symlist),
+	symbol_hash_table_size(HashSize),
+	term_hash(Name, HashSize, Hash0), Hash is Hash0+1,
+	log_ith(Hash, HashTab, Symlist),
 	sym_inserti(Name, Arity, Prop, Symlist, Sym, Index),
 	( var(Index) ->	% First time we encounter the symbol.
 		buff_word(Buff, 4, Index), New_I is Index+1,
 		backtrackable_buff_set_word(Buff, 4, New_I, Index)
         ; true
 	).
+
+symbol_hash_table_size(1009).
 
 %   for indexed insertion both into an uncompleted and a completed symbol table
 sym_inserti(Name, Arity, Prop, [Sym|_], Sym, Index) :- 
@@ -95,17 +99,19 @@ dispose_symtab( sym_tab(Buff,_,_) ) :- buff_dealloc(Buff, 8, 0).
 /*  sym_complete(#SymTab)						*/
 /*	Completes the hash table part of the symbol table by		*/
 /*	concatenating all the hash buckets.				*/
+/* DSW: This should be done better using the log_ith structure...	*/
 /*======================================================================*/
 
 sym_complete(sym_tab(_Buff,completed,HashTab)) :-
-	sym_complete1(1, _, HashTab).
+	symbol_hash_table_size(HashSize),
+	sym_complete1(1, HashSize, _, HashTab).
 
-sym_complete1(I, BucketList, HashTab) :-
-	( I > 101 -> true
-	; ll_arg(I, HashTab, BucketList),
+sym_complete1(I, HashSize, BucketList, HashTab) :-
+	( I > HashSize -> true
+	; log_ith(I, HashTab, BucketList),
 	  get_end_ith_bucket(BucketList, NextBucketList),
 	  NewI is I+1,
-	  sym_complete1(NewI, NextBucketList, HashTab)
+	  sym_complete1(NewI, HashSize, NextBucketList, HashTab)
 	).
 
 get_end_ith_bucket(BucketList, NextBucketList) :-
@@ -141,7 +147,7 @@ sym_scan(Sym, Symtab, RestSymTab) :-
 		true
 	; Symtab = sym_tab(_,Comp,HashTab), 
 	  nonvar(Comp),		% can't use this until it's completed
-	  ll_arg(1,HashTab,[Sym|RestSymTab])
+	  log_ith(1,HashTab,[Sym|RestSymTab])
 	).
 
 
@@ -268,7 +274,7 @@ sym_prop0(Other, prop(_,_,_,_,_,OtherList)) :- membercheck(Other, OtherList).
 
 extract_symlist(Prop, Symlist, sym_tab(_,Comp,Hashtab)) :-
 	nonvar(Comp),
-	ll_arg(1, Hashtab, Symtab),
+	log_ith(1, Hashtab, Symtab),
 	extract_symlist1(Prop, Symlist, Symtab).
 
 extract_symlist1(_Prop, [], SymTab) :- var(SymTab), !.
@@ -293,22 +299,22 @@ props_match(Prop, PropList) :- sym_prop0(Prop, PropList).
 /*	index field, giving them in the list Sorted_SymList.  The	*/
 /*	procedure should be carefully used, since it has side-effects.	*/
 /*======================================================================*/
-
 safe_sort_by_index(sym_tab(_,_,HashTab), Sorted_SymList) :-
-	ll_arg(1, HashTab, SymList),	% Be careful; SymList is open-ended.
+	log_ith(1, HashTab, SymList),	% Be careful; SymList is open-ended.
 	copy_term(SymList,Safe_list),	
 	closetail(Safe_list),		% This closes the open-end of SymList.
 	sort_indices(Safe_list, Sorted_SymList).
 
 sort_by_index(sym_tab(_,_,HashTab), Sorted_SymList) :-
-	ll_arg(1, HashTab, SymList),	% Be careful; SymList is open-ended.
+	log_ith(1, HashTab, SymList),	% Be careful; SymList is open-ended.
 	closetail(SymList),		% This closes the open-end of SymList.
 	sort_indices(SymList, Sorted_SymList).
 
 sort_indices(SymList,Sorted_SymList) :-
 	parsort(SymList,[asc(4)],0,Sorted_SymList).
 
-/**sort_indices([], []).	
+/****:- import append/3 from basics.
+sort_indices([], []).	
 sort_indices([Sym|Tail], Sorted_SymList) :-
 	Sym = sym(_,_,_,I),
 	split(Tail, I, Small, Big),
@@ -325,7 +331,7 @@ split([Sym|Tail], Index, Small, Big) :-
 	; Big = [Sym|BigTail],
 	  split(Tail, Index, Small, BigTail)
 	).
-***/
+************/
 
 /*======================================================================*/
 /* Symbol's Properties:							*/
@@ -486,6 +492,12 @@ tree_listify(T,L0,L) :-
 /* cautiously!.  For the moment it is only used when the symbol that	*/
 /* was inserted into the symbol table may be retracted and the count    */
 /* of the symbols has to remain the same.	        		*/
+
+/* DSW's comments 1/27/04: it seems that a test in testretract
+requires this to be backtrackable!?!  Trying to change this to use
+term_set_arg with backtrackable assignment doesn't work for large
+programs, and my guess is that GC doesn't work right for the pre-image
+trail. */
 
 backtrackable_buff_set_word(Buff, Bytes, NewValue, _) :- 
 	buff_set_word(Buff, Bytes, NewValue). 

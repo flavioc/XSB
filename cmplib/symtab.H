@@ -33,10 +33,10 @@
 
 :- import 'table #'/0 from compile.
 :- import memberchk/2, member/2 from basics.
+:- import log_ith/3 from basics.
 :- import error/1 from auxlry.
-:- import integer/1, functor/3 from standard.
+:- import integer/1 from standard.
 :- import membercheck/2, member2/2, closetail/1 from listutil.
-:- import ll_arg/3 from auxlry.
 :- import conget/2, conset/2 from gensym.
 :- import buff_alloc/2, buff_word/3, buff_set_word/3, term_hash/3,
 	  buff_dealloc/3, parsort/4

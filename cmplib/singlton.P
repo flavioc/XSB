@@ -76,8 +76,7 @@ calculate_singleton(Clause,VarList,Occurences) :-
 
 process_raw_occurences([],_, _, []):- !.
 %process_raw_occurences([_],_, _, []):- !.
-process_raw_occurences([vv(Name,Var)|R],[vv(Name,'_$cmplib_var'(N))|R1], 
-	                                                                              Occ, Occurences) :-
+process_raw_occurences([vv(Name,Var)|R],[vv(Name,'_$cmplib_var'(N))|R1],Occ, Occurences) :-
 	atom_codes(Name, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
                 Occurences = NewOccurences
@@ -123,8 +122,7 @@ write_singleton_warnings(VariableList, Occurences, P, A):-
 
 write_singleton_warnings_1([], _, _, _) :-
 	!.	% This captures the open-end of VariableList.
-write_singleton_warnings_1([vv(VarName,'_$cmplib_var'(N))|Rest], 
-	                                                                           Occurences, P, A) :-
+write_singleton_warnings_1([vv(VarName,'_$cmplib_var'(N))|Rest],Occurences, P, A) :-
 	atom_codes(VarName, CharList),
 	( CharList = [95|_] ->	% variable Var begins with an "_"
 		true		% (underscore), so its OK, ignore it!.

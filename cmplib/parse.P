@@ -770,16 +770,16 @@ trans_args([RawArg|RawArgs], [Arg|ArgList], SymTab, VidIn, VidOut) :-
 	trans_arg(RawArg, Arg, SymTab, VidIn, VidMed),
 	trans_args(RawArgs, ArgList, SymTab, VidMed, VidOut).
 
-trans_arg(RawArg, Arg, _SymTab, VidIn, VidOut) :- var(RawArg),
+trans_arg(RawArg, Arg, _SymTab, VidIn, VidOut) :- var(RawArg), !,
 	VidOut is VidIn + 1,
 	RawArg = '$$var'(VidOut),
 	Arg = varocc(VidOut).
-trans_arg('$$var'(ID), varocc(ID), _SymTab, VidIn, VidIn) :- integer(ID).
+trans_arg('$$var'(ID), varocc(ID), _SymTab, VidIn, VidIn) :- integer(ID), !.
 	% the test is needed for self-compiling! Trick.
 	% when compiling this module, '$$var' may mean a structure!
-trans_arg(RawArg, integer(RawArg), _SymTab, VidIn, VidIn) :- integer(RawArg).
-trans_arg(RawArg, real(RawArg), _SymTab, VidIn, VidIn) :- real(RawArg).
-trans_arg(RawArg, constant(Sym), SymTab, VidIn, VidIn) :- atom(RawArg),
+trans_arg(RawArg, integer(RawArg), _SymTab, VidIn, VidIn) :- integer(RawArg), !.
+trans_arg(RawArg, real(RawArg), _SymTab, VidIn, VidIn) :- real(RawArg), !.
+trans_arg(RawArg, constant(Sym), SymTab, VidIn, VidIn) :- atom(RawArg), !,
 	sym_insert(RawArg, 0, _Prop, SymTab, Sym).
 trans_arg(RawArg, structure(Sym, ArgList), SymTab, VidIn, VidOut) :-
 	functor(RawArg, N, A),
