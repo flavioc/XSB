@@ -59,3 +59,4 @@
         from xnmr_int.
 
 :- import retractall/1 from assert.
+:- import '$$exception_ball'/1 from usermod.
