@@ -3,23 +3,22 @@
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
    <meta name="GENERATOR" content="Mozilla/4.5 [en] (X11; I; SunOS 5.6 sun4u) [Netscape]">
-   <title>Release Notes of Version 1.8</title>
+   <title>Release Notes</title>
 </head>
 <body>
 
 <hr>
 <center>
-<h1>
-Release Notes for Version 2.0</h1></center>
-<font size=+0>Version 2.0 of XSB, a Prolog-based Logic Programming System,
-is now available. XSB extends the standard functionality of Prolog to include
-implementations of tabling (through SLG resolution),<font face="Times New Roman,Times">
-a more flexible handling of dynamic code,&nbsp;</font> and full compilation
-of HiLog terms.<font face="Times New Roman,Times"> In addition, XSB offers
-a number of interfaces that make it able to call -- or be called by --
-other software systems.&nbsp; Finally,&nbsp; XSB includes a set of preprocessors
-that allow it to efficiently evaluate powerful formalisms such as F-logic
-and the well-founded semantics with explicit negation.</font></font>
+<h1> Release Notes for Version 2.0</h1></center>
+
+<font size=+0>XSB Version 2.0 offers a more flexible handling of dynamic code
+and full compilation of HiLog terms. In addition, XSB offers a number of
+interfaces that make it able to call -- or be called by -- other software
+systems. XSB 2.0 now also includes a number of preprocessors that allow it to
+efficiently evaluate powerful formalisms such as F-logic, Annotated logic, and
+the well-founded semantics with explicit negation.  Finally, XSB 2.0 provides
+various packages for regular expression and wildcard matching.
+
 <p>&nbsp;Large parts of XSB have been rewritten for this release, especially&nbsp;
 memory management, and representation of tabled clauses.&nbsp; The result
 is a more robust system with improved functionality that is more suitable
@@ -134,31 +133,62 @@ A DLL interface so that XSB can be called from within a Windows application.</li
 <li>
 An ODBC interface, to call data stored by other Windows applications.</li>
 
-<li>
-An interface to call Perl applications and library routines</li>
 </ul>
 
-<h3>
-<a NAME="SECTION00004000000000000000"></a><b><font size=+3>Packages</font></b></h3>
-Version 2.0 of XSB includes the FLIP package that allow XSB to allow queries
-to F-logic programs, and the SLX library that allows XSB to evaluate extended
-logic programs according to the well-founded semantics with explicit negation.
-<p>XSB has been tested on over a dozen hardware and operating system platforms
-under DOS, Microsoft Windows, Windows NT, and various versions of 32-bit
-UNIX. Version 1.8 has been rewritten to run under 64-bit architectures
-and has been tested on 64-bit SGI machines. Various versions of XSB have
-been used to construct large-scale commercial systems for the U.S. Customs
-Service, the U.S. Defense Logistics Agency, the National Security Agency,
-and Medicine Rules, Inc.
-<p>XSB is available via the web from <tt>http://www.cs.sunysb.edu</tt>.
-and through anonymous ftp from <tt>ftp.cs.sunysb.edu.</tt>
-<p>Queries can be directed to <tt>xsb-contact@cs.sunysb.edu</tt>.
+<h3> <a NAME="SECTION00004000000000000000"></a><b> <font size=+3>Packages</font></b></h3>
+Version 2.0 of XSB includes the following packages:
+<ul>
+<li>
+ <i>FLORA</i>: A full-fledged F-logic to XSB compiler and shell.
+<li> <i>GAP</i>: support for annotated logic programming.
+<li> <i>SLX</i>: allows XSB to evaluate extended logic programs according to
+the well-founded semantics with explicit negation.
+<li> <i>PARLMATCH</i>: an interface to Perl pattern matching and
+string substitution capabilities.
+<li> <i>REGMATCH</i>: provides similar functionality,
+but relies on a POSIX-compliant C library instead of Perl.
+<li> <i>WILDMATCH</i>: allows matching wildcards and globbing of directories.
+Relies on a POSIX 2 compliant C library.
+</ul>
+
+<h3> <a NAME="SECTION00004000000000000000"></a><b> <font size=+3>Backward
+Incompatibility</font></b></h3>
+<p>
+The following incompatible changes have been made in XSB Version 2.0:
+<ul>
+<li>
+    The file .xsbrc in the home directory is no longer used. Instead, XSB
+    now uses the directory .xsb/ and the startup file is .xsb/xsbrc
+    It is now possible to have pretty much any Prolog code in that file.
+<li>
+    There is a change in how the library_directory predicate is used.
+    The user must now assert directories into this predicate.
+    There is no need to export this predicate (this predicate is now
+    global).
+</ul>
+
+
+ <p>
+
+<hr>
+ <p>
+ XSB has been tested on over a dozen hardware and
+operating system platforms under DOS, Microsoft Windows, Windows NT, and
+various versions of 32-bit UNIX. It has been rewritten to run under
+64-bit architectures and has been tested on 64-bit SGI machines. Various
+versions of XSB have been used to construct large-scale commercial systems for
+the U.S. Customs Service, the U.S. Defense Logistics Agency, the National
+Security Agency, and Medicine Rules, Inc. 
+
+<p>
+XSB is available via the web from
+<tt>http://www.cs.sunysb.edu</tt>.  and through anonymous ftp from
+<tt>ftp.cs.sunysb.edu.</tt>
+
 <p>
 <hr>
 <address>
-Email:<a href="mailto:xsb-contact@cs.sunysb.edu">xsb-contact@cs.sunysb.edu</a></address>
+Feedback: <a href="mailto:xsb-contact@cs.sunysb.edu">xsb-contact@cs.sunysb.edu</a></address>
 
-<br><!-- Created: Thu May 14 20:16:29 EDT 1998 --><!-- hhmts start -->Last
-modified: Fri May 15 00:10:01 EDT 1998<!-- hhmts end -->
 </body>
 </html>
