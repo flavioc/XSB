@@ -452,8 +452,8 @@ read_and_assert(IPort) :-
 	change_multifile_directive(Term0, ModName, Term),
 	(Opsc =\= 0,\+'_$trie_asserted'(Term)
 	 ->	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
-		assert_code_to_buff(Term,_),
-		assert_buff_to_clref(Term,NArity,Prref,1,Index,Hashsize,_),
+		assert_code_to_buff(Term),
+		assert_buff_to_clref(Term,NArity,Prref,1,Index,Hashsize),
 		fail
 	 ;	Prref=_,NArity=_,Index=_,Hashsize=_	 
 	),
@@ -521,10 +521,10 @@ do_assert_and_fail(Term) :-	% Now Term is the output of
 			append(Hlist,[Cutpoint],Nhlist),
 			Nhead =.. Nhlist,
 			goal_cut_trans(Body,Nbody,Cutpoint),
-			(assert_code_to_buff((Nhead:-Nbody),_),fail;true)
-		 ;	(assert_code_to_buff(Term,_),fail;true)
+			(assert_code_to_buff((Nhead:-Nbody)),fail;true)
+		 ;	(assert_code_to_buff(Term),fail;true)
 		),
-		assert_buff_to_clref(Head,NArity,Prref,1,Index,Hashsize,_)
+		assert_buff_to_clref(Head,NArity,Prref,1,Index,Hashsize)
 		),
 	fail.
 

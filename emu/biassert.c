@@ -643,7 +643,7 @@ static void db_genaput(prolog_term, int, struct instruction *, RegStat);
 /*  literal on the right-hand-side as a call to the predicate ,/2.	*/
 /*======================================================================*/
 
-int assert_code_to_buff(/* Clause, Size */)
+int assert_code_to_buff(/* Clause */)
 {
   prolog_term Clause;
   prolog_term Head, Body;
@@ -655,7 +655,7 @@ int assert_code_to_buff(/* Clause, Size */)
   int Argno;
   int v;
   Pair sym;
-  
+
   Clause = reg_term(1);
   /* set catcher */
   if ((Argno = setjmp(assertcmp_env))) {
@@ -664,7 +664,6 @@ int assert_code_to_buff(/* Clause, Size */)
   }
   if (isconstr(Clause) && strcmp(p2c_functor(Clause),":-")==0 &&
       get_arity(get_str_psc(Clause))==2) {
-
     Head = p2p_arg(Clause, 1);
     Body = p2p_arg(Clause, 2);
     if (isstring(Body)) {
@@ -681,7 +680,7 @@ int assert_code_to_buff(/* Clause, Size */)
   Arity = arity(Head);
   Location = 0;
   Loc = &Location;
-  dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched*/
+  dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched */
   Loc_size = *Loc - sizeof(Cell);
   if (has_body) Reg = reg_init(max(Arity,(int)get_arity(get_str_psc(Body))));
   else Reg = reg_init(Arity);
@@ -694,11 +693,10 @@ int assert_code_to_buff(/* Clause, Size */)
       db_genaput(p2p_arg(Body,Argno),Argno,inst_queue,Reg);
     }
     db_genmvs(inst_queue,Reg);
-    dbgen_instB_pppw(execute, get_str_psc(Body) );
-  } else dbgen_instB_ppp(proceed );
+    dbgen_instB_pppw(execute, get_str_psc(Body));
+  } else dbgen_instB_ppp(proceed);
   Size = *Loc;
   write_word(Buff,&Loc_size,(Size/sizeof(Cell)));  /* backpatch max heap needed*/
-  ctop_int(2,Size);
   return TRUE;
 }
 
@@ -991,8 +989,7 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*======================================================================*/
 
 /*======================================================================*/
-/* assert_buff_to_clref(+Arg,+Arity,+Prref,+AZ,+Index,+HashTabSize,	*/
-/*	-Clref)								*/
+/* assert_buff_to_clref(+Arg,+Arity,+Prref,+AZ,+Index,+HashTabSize)	*/
 /*	allocates a Clref, copies the byte-code for the clause from	*/
 /*	an internal buffer into it, and adds to to the chains.		*/
 /*	The arguments are:						*/
@@ -1006,7 +1003,6 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*		on the nth argument of the fact is to be used		*/
 /*	HashTabSize:  The size of the hash table to create if one must	*/
 /*		be created for this clause (the SOB record)		*/
-/*	Clref:  the clause reference of the asserted fact, returned.	*/
 /*======================================================================*/
 
 /*======================================================================*/
@@ -1235,7 +1231,7 @@ bool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
    to assert_buff_to_clref through PROLOG calls */
 
   memmove(((pb)Clause)+Location,Buff,Size); /* fill in clause with code from Buff */
-  ctop_int(7, (Integer)Clause);
+  /* ctop_int(7, (Integer)Clause);  DO NOT RETURN ANYTHING */
   
   if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,1);
   else db_addbuff_i(Arity,Clause,Pred,AZ,Index,NI,Head,HashTabSize);
@@ -1948,36 +1944,6 @@ bool db_retract0( /* ClRef, retract_nr */ )
   int retract_nr = (int)ptoc_int(2) ;
 
   return retract_clause( Clause, retract_nr ) ;
-}
-
-/* Covert compiled clause of pred associated with PSC to dynamic.
-   Addr is the old entry point of pred (new one has already
-   been created into PSC).
- */
-
-bool compiled_to_dynamic( /* +PSC, +OldPred */ )
-{
-  ClRef EntryCl ;
-  Psc psc = (Psc)ptoc_int(1);
-  int Arity = get_arity(psc) + 1;
-  int Loc ;
-  PrRef OldPred = (PrRef)ptoc_int(2),
-        NewPred = (PrRef)get_ep(psc) ;
-
-  MakeClRef(EntryCl,COMPILED_CL,4);
-  Loc = 0 ;
-  dbgen_inst_ppv( noop, sizeof(Cell)/2, EntryCl, &Loc) ;
-  Loc += sizeof(Cell) ; /* Leave word for try inst */
-  dbgen_inst_pppw( jump, OldPred, EntryCl, &Loc) ;
-  SetClRefPrev(EntryCl, NewPred) ;
-  SetClRefNext(EntryCl, NewPred) ;
-	
-  Loc = 0 ;
-  dbgen_inst_ppvw( jumptbreg, Arity, EntryCl, NewPred, &Loc ) ;
-  NewPred->LastClRef = EntryCl ;
-  NewPred->FirstClRef = EntryCl ;
-  
-  return TRUE ;
 }
 
 /*----------------------------------------------------------------------

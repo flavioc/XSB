@@ -120,10 +120,9 @@ extern void xsb_segfault_quitter(int err);
 extern boolean startInterruptThread(SOCKET intSocket);
 #endif
 
-extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
-  gen_retract_all(void), compiled_to_dynamic(void), db_retract0(void),
-  db_get_clause(void), db_build_prref(void), db_remove_prref(void),
-  db_reclaim0(void);
+extern bool assert_code_to_buff(void), assert_buff_to_clref(void);
+extern bool gen_retract_all(void), db_retract0(void), db_get_clause(void);
+extern bool db_build_prref(void), db_remove_prref(void), db_reclaim0(void);
 
 extern char *dirname_canonic(char *);
 extern bool almost_search_module(char *);
@@ -622,7 +621,7 @@ void init_builtin_table(void)
   set_builtin_table(SLASH_BUILTIN, "slash");
   set_builtin_table(FILE_READ_CANONICAL, "file_read_canonical");
   set_builtin_table(GEN_RETRACT_ALL, "gen_retract_all");
-  set_builtin_table(COMPILED_TO_DYNAMIC, "compiled_to_dynamic");
+
   set_builtin_table(DB_RETRACT0, "db_retract0");
   set_builtin_table(DB_GET_CLAUSE, "db_get_clause");
   set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
@@ -1338,9 +1337,7 @@ int builtin_call(byte number)
     return read_canonical();
   case GEN_RETRACT_ALL:
     return gen_retract_all();
-  case COMPILED_TO_DYNAMIC:
-    compiled_to_dynamic();
-    break;
+
   case DB_RETRACT0:
     db_retract0();
     break;

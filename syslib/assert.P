@@ -31,16 +31,16 @@
 /*======================================================================*/
 /* Predicates to add dynamic clauses in Prolog's database:		*/
 /*  - assert(+Clause)							*/
-/*	same as assert(Clause, 1, 1, _)					*/
+/*	same as assert(Clause, 1, 1)					*/
 /*  - asserta(+Clause)							*/
-/*	same as assert(Clause, 0, 1, _)					*/
+/*	same as assert(Clause, 0, 1)					*/
 /*  - assertz(+Clause)							*/
-/*	same as assert(Clause, 1, 1, _)					*/
+/*	same as assert(Clause, 1, 1)					*/
 /*  - asserti(+Clause, +Index)						*/
-/*	same as assert(Clause, 1, Index, _)				*/
+/*	same as assert(Clause, 1, Index)				*/
 /* where:								*/
-/*    assert(+Clause, +AorZ, +Index, -ClauseRef)			*/
-/*	Asserts a clause and returns the clause reference.		*/
+/*    assert(+Clause, +AorZ, +Index)            			*/
+/*	Asserts a clause.		                                */
 /*	AorZ:  0 for insertion as the first clause, 1 for as the last.	*/
 /*	Index: the number of the argument on which to index; 		*/
 /*		0 for no indexing. 					*/
@@ -108,12 +108,12 @@
 % NOTE: Predicate assert0/1 is a quicker assert/1 with no error
 %	checking, provided for system usage only.
 
-assert0(Clause) :- assert(Clause,1,1,_).
+assert0(Clause) :- assert(Clause,1,1).
 
 
-assert(Clause)  :- check_assert(Clause, assert/1), assert(Clause,1,1,_).
-asserta(Clause) :- check_assert(Clause,asserta/1), assert(Clause,0,1,_).
-assertz(Clause) :- check_assert(Clause,assertz/1), assert(Clause,1,1,_).
+assert(Clause)  :- check_assert(Clause, assert/1), assert(Clause,1,1).
+asserta(Clause) :- check_assert(Clause,asserta/1), assert(Clause,0,1).
+assertz(Clause) :- check_assert(Clause,assertz/1), assert(Clause,1,1).
 
 
 % NOTE: Predicates asserti[a,z]/2 though exported, are not available to
@@ -121,41 +121,40 @@ assertz(Clause) :- check_assert(Clause,assertz/1), assert(Clause,1,1,_).
 %	Should they become available in the interpreter error checking
 %	must be added to them.
 
-asserti(Clause, Index) :- assert(Clause,1,Index,_).
-assertai(Clause,Index) :- assert(Clause,0,Index,_).
-assertzi(Clause,Index) :- assert(Clause,1,Index,_).
+asserti(Clause, Index) :- assert(Clause,1,Index).
+assertai(Clause,Index) :- assert(Clause,0,Index).
+assertzi(Clause,Index) :- assert(Clause,1,Index).
 
 
-assert(Clause, AZ, Index1, Clref) :-
+assert(Clause, AZ, Index1) :-
 	( Clause = (Head:-_) -> conpsc(Head, PSC)
 	; Clause = Head -> conpsc(Head, PSC)
 	),
 	psc_arity(PSC, Arity),
-	Index = Index,
-	HashTabSize = HashTabSize,
-	('_$trie_asserted'(Clause) 
-	-> 	t_assert_1(Clause, _Flag)
-	 ;('_$index'(Head,Index,HashTabSize)
-	 ->	true
-	 ; integer(Index1)
-	 ->	(Index1 > Arity
-		 ->	Index = 0,default_assert_size(HashTabSize)
-		 ; Index1 < 0
-		 ->	Index = 1,default_assert_size(HashTabSize)
-		 ;	Index = Index1,default_assert_size(HashTabSize)
+	( '_$trie_asserted'(Clause) 
+	->  t_assert_1(Clause, _Flag)
+	;   ( '_$index'(Head,Index,HashTabSize)
+	    ->	true
+	    ;	integer(Index1)
+	    ->	(Index1 > Arity
+		->  Index = 0,default_assert_size(HashTabSize)
+		;   Index1 < 0
+		->  Index = 1,default_assert_size(HashTabSize)
+		;   Index = Index1,default_assert_size(HashTabSize)
 		)
-	 ;	Index = Index1,default_assert_size(HashTabSize)
-	),
-	NArity is Arity+1,		% to hold the cut addr
-	convert_to_dyna(Head,Prref),
-	cut_transform(Clause,Nclause),
-	code_to_buff(Nclause,_),
-	assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize,Clref)).
+	    ;	Index = Index1,default_assert_size(HashTabSize)
+	    ),
+	    NArity is Arity+1,	% to hold the cut addr
+	    convert_to_dyna(Head,Prref),
+	    cut_transform(Clause,Nclause),
+	    code_to_buff(Nclause),
+	    assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize)
+	).
 
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */
-code_to_buff(Clause,_) :- assert_code_to_buff(Clause,_), fail.
-code_to_buff(_,_).
+code_to_buff(Clause) :- assert_code_to_buff(Clause), fail.
+code_to_buff(_).
 
 
 /*======================================================================*/
