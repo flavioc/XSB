@@ -424,4 +424,24 @@ void parse_filename(char *filename, char **dir, char **base, char **extension)
     *(*extension-1) = '\0'; 
 }
 
+/* transform_pathname takes cygwin-like pathnames and transforms them
+   into windows-like pathnames (in-place).
+   It assumes that the given pathname is a valid cygwin absolute
+   pathname */
+void transform_pathname(char *filename) 
+{
+  char *pointer;
+
+  pointer=filename+2;
+  filename[0]=*pointer;
+  filename[1]=':';
+  filename[2]='\\';
+  for(pointer+=2;*pointer;pointer++) 
+    if (*pointer == '/')
+      *(pointer-1) = '\\';
+    else
+      *(pointer-1) = *pointer;
+
+  *(pointer-1) = '\0';
+}
 
