@@ -51,19 +51,26 @@ server :-
   ).
 
 
+:- dynamic timeout/0.
 
 server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
     writeln(serverloop1),
-    socket_recv(Sockfd0, GoalStr,_),
-    file_open(GoalStr,sr,IOport),
-    file_read(IOport,Goal),
-    file_close(IOport),
-    writeln(goal(Goal)),
     %% This tests the timer
-    set_timer(1),
-    socket_recv(Sockfd0, TMsg, Etimeout),
-    writeln(recv(Sockfd0,TMsg,Etimeout)),
-    (Etimeout < 0 -> fmt_write("Timeout or EOF: %d\n", Etimeout) ; true),
+    set_timer(5),
+    write('Waiting for input... '),
+    socket_recv(Sockfd0, GoalStr,RetCode),
+    (RetCode == TIMEOUT_ERR
+    -> writeln('Timeout'), assert(timeout), fail
+    ;  writeln('OK')
+    ),
+    (RetCode == SOCK_OK 
+    ->  file_open(GoalStr,sr,IOport),
+	file_read(IOport,Goal),
+	file_close(IOport),
+	writeln(goal(Goal))
+    ;   writeln('End of file or communication error'),
+	Goal = end_of_file
+    ),
     Goal =.. [F|_Rest],
     (F=end_of_file -> 
 	writeln('Client quits...'),
@@ -85,7 +92,9 @@ server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
   
 server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
   writeln(serverloop2),
-  socket_send(Sockfd1, 'end.', _),
+  (timeout -> retract(timeout)
+  ; socket_send(Sockfd1, 'end.', _)
+  ),
   server_loop(Sockfd_orig, Sockfd0,Sockfd1).
 
 
