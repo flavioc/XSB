@@ -485,8 +485,12 @@ inline static xsbBool number_to_list(int call_type)
       if (isfloat(term)) {
 	sprintf(str, "%e", float_val(term));
       } else {
-	err_handle(TYPE, 1, call_name, 2, "number", term);
-	return FALSE;	/* fail */
+	if (isboxedinteger(term)) {
+	  sprintf(str,"%ld",(long)boxedint_val(term));
+	} else {
+	  err_handle(TYPE, 1, call_name, 2, "number", term);
+	  return FALSE;	/* fail */
+	}
       }
     }
     new_list = makelist(hreg);
