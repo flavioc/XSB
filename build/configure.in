@@ -214,7 +214,7 @@ case "$with_os" in
 	host_cpu=x86
 	configuration_templ=xsb_configuration_nt.in
 	config_dot_h_templ=def_config_nt.in
-	echo 'Checking host system type... Windows NT/95/98'
+	echo 'Configuring for host system type... Windows NT/95/98'
 	;;
   pcdo*) dnl PC DOS
 	canonical=x86-pc-pcdos
@@ -225,7 +225,7 @@ case "$with_os" in
 	host_cpu=x86
 	configuration_templ=xsb_configuration_pcdos.in
 	config_dot_h_templ=def_config_pcdos.in
-	echo 'Checking host system type... PC DOS'
+	echo 'Configuring for host system type... PC DOS'
 	;;
   *)    dnl check for unknown OS
 	if test -n "$with_os" ; then
