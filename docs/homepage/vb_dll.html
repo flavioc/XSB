@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>How to Use XSB DLL from Visual Basic</title>
+  </head>
+
+  <body>
+    <h1>How to Use XSB DLL from Visual Basic</h1>
+
+To use the XSB DLL (compiled with the standard calling conventions)
+from Visual Basic, the following VB declarations should be included:
+
+<PRE>
+Option Explicit
+'declarations
+Private Declare Function XSB_INIT_STRING Lib "xsbdll" Alias
+"_xsb_init_string@4" (ByVal opts As String) As Long
+Private Declare Function XSB_COMMAND_STRING Lib "xsbdll" Alias
+"_xsb_command_string@4" (ByVal cmd As String) As Long
+Private Declare Function XSB_QUERY_STRING_STRING Lib "xsbdll" Alias
+"_xsb_query_string_string@16" (ByVal query As String, ByVal buff As String,
+ByVal blen As Long, ByVal sep As String) As Long
+Private Declare Function XSB_NEXT_STRING Lib "xsbdll" Alias
+"_xsb_next_string@12" (ByVal buff As String, ByVal blen As Long, ByVal sep
+As String) As Long
+Private Declare Function XSB_CLOSE_QUERY Lib "xsbdll" Alias
+"_xsb_close_query@0" () As Long
+Private Declare Function XSB_CLOSE Lib "xsbdll" Alias "_xsb_close@0" () As
+Long
+</PRE>
+
+The following VB functions were found useful by one user to provide a
+little more support in the XSB interface:
+
+<PRE>
+'Started used to close XSB queries when within wrappers functions when
+'query answers remain on stack
+
+Private Started As Boolean
+
+Public Function XSBCommand(ByVal str As String) As String
+On Error GoTo XSBErr:
+    Dim sReturn As String
+    Dim RC As Long
+    RC = XSB_COMMAND_STRING(str)
+    If RC = 0 Then
+        sReturn = "T"
+        XSBCommand = sReturn
+    ElseIf RC = 1 Then
+        sReturn = "F"
+        XSBCommand = sReturn
+    ElseIf RC = 2 Then
+        sReturn = "E"
+        XSBCommand = sReturn
+    End If
+    Started = False
+    Exit Function
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+Public Function XSBQuery(ByVal query As String, ByRef buffer As String,
+ByVal BufferLength As Long, ByVal Separator As String) As String
+On Error GoTo XSBErr:
+    Dim sReturn As String
+    Dim RC As Long
+    RC = XSB_QUERY_STRING_STRING(query, buffer, BufferLength, Separator)
+    If RC = 0 Then
+        sReturn = "T " & buffer
+        XSBQuery = sReturn
+    ElseIf RC = 1 Then
+        sReturn = "F"
+        XSBQuery = sReturn
+    ElseIf RC = 2 Then
+        sReturn = "E"
+        XSBQuery = sReturn
+    End If
+    Started = False
+    Exit Function
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+Public Function XSBQueryNext(ByVal query As String, ByRef buffer As String,
+ByVal BufferLength As Long, ByVal Separator As String) As String
+On Error GoTo XSBErr:
+
+    If Not Started Then
+        Started = True
+        Dim sReturn As String
+        Dim RC As Long
+        RC = XSB_QUERY_STRING_STRING(query, buffer, BufferLength,
+Separator)
+        If RC = 0 Then
+            sReturn = "T " & buffer
+            XSBQueryNext = sReturn
+            Exit Function
+        ElseIf RC = 1 Then
+            sReturn = "F"
+            XSBQueryNext = sReturn
+            Started = False
+            Exit Function
+        ElseIf RC = 2 Then
+            sReturn = "E"
+            XSBQueryNext = sReturn
+            Started = False
+            Exit Function
+        End If
+    Else
+        RC = XSB_NEXT_STRING(buffer, BufferLength, Separator)
+        If RC = 0 Then
+            sReturn = "T " & buffer
+            XSBQueryNext = sReturn
+            Exit Function
+        ElseIf RC = 1 Then
+            sReturn = "F"
+            XSBQueryNext = sReturn
+            Started = False
+            Exit Function
+        ElseIf RC = 2 Then
+            sReturn = "E"
+            XSBQueryNext = sReturn
+            Started = False
+            Exit Function
+        End If
+    End If
+    Exit Function
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+Public Function XSBClose() As String
+On Error GoTo XSBErr:
+    Dim sReturn As String
+    Dim RC As Long
+    RC = XSB_CLOSE()
+        If RC = 0 Then
+        sReturn = "T"
+        XSBClose = sReturn
+    ElseIf RC = 1 Then
+        sReturn = "F"
+        XSBClose = sReturn
+    ElseIf RC = 2 Then
+        sReturn = "E"
+        XSBClose = sReturn
+    End If
+    Exit Function
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+Public Function XSBCloseQuery() As String
+On Error GoTo XSBErr:
+    Dim sReturn As String
+    Dim RC As Long
+    RC = XSB_CLOSE_QUERY()
+    XSBCloseQuery = RC
+    If RC = 0 Then
+        sReturn = "T"
+        XSBCloseQuery = sReturn
+    ElseIf RC = 1 Then
+        sReturn = "F"
+        XSBCloseQuery = sReturn
+    ElseIf RC = 2 Then
+        sReturn = "E"
+        XSBCloseQuery = sReturn
+    End If
+    Started = False
+    Exit Function
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+Public Function XSBInitialize(Optional ByVal options As String) As String
+On Error GoTo XSBErr:
+    Static Started As Boolean
+    
+    Dim sReturn As String
+    Dim RC As Long
+    Dim st As String
+If Not Started Then
+    If options = "" Then
+        ' command for xsbdlls.dll which produced error after intialization
+        st = "xsb -n -m 5000"
+    Else
+        st = options
+    End If
+    RC = XSB_INIT_STRING(st)
+    If RC = 0 Then
+        sReturn = "T"
+        Started = True
+        'flag that XSB is running
+        XSBInitialize = sReturn
+    ElseIf RC = 1 Then
+        sReturn = "F"
+        XSBInitialize = sReturn
+    ElseIf RC = 2 Then
+        sReturn = "E"
+        XSBInitialize = sReturn
+    End If
+Else
+    sReturn = "alreadystarted"
+    XSBInitialize = sReturn
+End If
+
+    Exit Function
+
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+Public Function XSBNextResult(ByRef buffer As String, ByVal BuffLength As
+Long, ByVal Separator As String) As String
+On Error GoTo XSBErr:
+    Dim sReturn As String
+    Dim RC As Long
+    RC = XSB_NEXT_STRING(buffer, BuffLength, Separator)
+    If RC = 0 Then
+        sReturn = "T " & buffer
+        XSBNextResult = sReturn
+    ElseIf RC = 1 Then
+        sReturn = "F"
+        XSBNextResult = sReturn
+    ElseIf RC = 2 Then
+        sReturn = "E"
+        XSBNextResult = sReturn
+    End If
+    
+    Exit Function
+
+XSBErr:
+MsgBox Err.Description & " LastDllError= " & Err.LastDllError & " 
+err.number= " & Err.number & "  err.source= " & Err.Source
+Err.Clear
+Resume
+
+End Function
+
+</PRE>
+
+<hr>
+<address>Email: xsb-contact@cs.sunysb.edu</address>
+<address>Last updated on May 5, 1998</address>
+
+  </body>
+</html>
