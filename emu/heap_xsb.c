@@ -522,7 +522,19 @@ int gc_heap(int arity)
       xsb_dbgmsg((LOG_GC, "marked_used_missed(%d,%d,%d,%d).",
 		 marked,hreg+1-(CPtr)glstack.low,
 		 heap_early_reset,ls_early_reset));
+
     free_marks:
+
+#ifdef PRE_IMAGE_TRAIL
+      /* re-tag pre image cells in trail */
+      for (p = tr_bot; p <= tr_top ; p++ ) {
+	if (tr_pre_marked(p-tr_bot)) {
+	  *p = *p | PRE_IMAGE_MARK;
+	  tr_clear_pre_mark(p-tr_bot);
+	}
+      }
+#endif
+
       /* get rid of the marking areas - if they exist */
       if (heap_marks)  { free((heap_marks-1)); heap_marks = NULL; }
       if (tr_marks)    { free(tr_marks); tr_marks = NULL; }
