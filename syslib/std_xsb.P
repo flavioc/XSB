@@ -92,6 +92,7 @@ standard_symbol(cputime, 1, standard).
 standard_symbol(current_atom, 1, curr_sym).
 standard_symbol(current_functor, 1, curr_sym).
 standard_symbol(current_functor, 2, curr_sym).
+standard_symbol(current_index, 2, curr_sym).
 standard_symbol(current_input, 1, curr_sym).                   % ISO
 standard_symbol(current_module, 1, curr_sym).
 standard_symbol(current_module, 2, curr_sym).

@@ -165,15 +165,21 @@ each byte.  Unlike simple * indices, the l.s. byte is not set to 0.
 
 */
 
-current_index(F/N,Index):-
+current_index(Term,Index):-
+	check_nonvar(Term,current_index/2,1),
+	current_index_1(Term,Index).
+	
+
+current_index_1(F/N,Index):-
+	nonvar(F),nonvar(N),
 	functor(Term,F,N),!,
-	current_index(Term,Index).
-current_index(Term,Index):- 
+	current_index_1(Term,Index).
+current_index_1(Term,Index):- 
 	'_$index'(Term,Ind,_Size),!,
 	decode_index(Ind,Index).
-current_index(Term,trie):- 
+current_index_1(Term,trie):- 
 	'_$trie_asserted'(Term),!.
-current_index(_Term,1).
+current_index_1(_Term,1).
 
 decode_index([],[]):-!.
 decode_index([Ind|Rest],[Index|R]):- !,
