@@ -1641,9 +1641,22 @@ byte * trie_get_returns_for_call(void)
     term1 = retskel;
     cptr_deref(term1);
     num_vars_in_var_regs = -1;
+
     if (isconstr(term1)) {
+      int arity;
       psc_ptr = get_str_psc(retskel);
+      arity = get_arity(psc_ptr);
       reg_arrayptr = reg_array -1;
+      cptr = (CPtr)cs_val(retskel);
+
+      /* Initialize var_regs[] as the attvs in the call. */
+      cptr++;
+      for (i = 1; i <= arity; cptr++, i++) {
+	if (isattv(cell(cptr)))
+	  var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
+      }
+      /* now num_vars_in_var_regs should be attv_num - 1 */
+
       cptr = (CPtr)cs_val(retskel);
       for (i = get_arity(psc_ptr); i>=1; i--) {
 	pushreg(cell(cptr+i));
