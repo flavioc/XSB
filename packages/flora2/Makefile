@@ -83,6 +83,8 @@ all: init $(ALLOBJS) finish
 	cd syslib; $(MAKE)
 	cd closure; $(MAKE)
 	cd trailer; $(MAKE)
+	cd lib; $(MAKE)
+	cd pkgs; $(MAKE)
 
 
 flroperator.O : flroperator.P flroperator.H $(FLORA_TERMS)

@@ -62,22 +62,23 @@
 	flora_shell/0.
 
 
-/******************************************************************************/
+/*****************************************************************************/
 bootstrap_flora :-
-	bootstrap_package([flora2,syslib],flora),
+	bootstrap_package([flora2,syslib,lib,pkgs,p2h],flora),
 	!,
-	assert(package_configuration(version(flora),'2.0 of January, 2001')),
+	assert(package_configuration(version(flora),'0.80 of April, 2001')),
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(FloraIncludesDir,"%s%sincludes",args(FloraDir,S)),
 	assert(xpp_include_dir(FloraIncludesDir)),
 	fmt_write_string(FloraClosureDir,"%s%sclosure",args(FloraDir,S)),
-	assert(xpp_include_dir(FloraClosureDir)).
+	assert(xpp_include_dir(FloraClosureDir)),
+	[p2h_config].
 
 bootstrap_flora.
 
 
-/******************************************************************************/
+/*****************************************************************************/
 unstrap_flora :-
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
@@ -89,12 +90,12 @@ unstrap_flora :-
 	conset(flora_shell_loaded,0).
 
 
-/******************************************************************************/
+/*****************************************************************************/
 %% don''t show flora_shell in trace
 :- assert(hide_this_show(flora_shell,0)). 
 
 
-/******************************************************************************/
+/*****************************************************************************/
 flora_shell :-
 	bootstrap_flora,
 	notrace,

@@ -1,0 +1,215 @@
+/* File:      flrprettyprint.flr
+**
+** Author(s): Michael Kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+**
+** Copyright (C) The Research Foundation of SUNY, 2001
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+/*   To pretty print an object:
+**	?- flora_prettyprint(obj,module).
+**   To pretty print a class:
+**        ?- flora_prettyprint_class(class,module).
+**   To save result of a pretty-printed class in a file:
+**        ?- flora_prettyprint_class(class,module,outfile).
+**   To print class membership:
+**        ?- flora_prettyprint_isa(class,module).
+**   To save it in a file:
+**        ?- flora_prettyprint_isa(class,module,outfile).
+*/
+
+
+:- import ground/1 from basics.
+
+
+%% Methods to ignore during pretty printing
+flora_print_ignore(print(pretty)).
+flora_print_ignore(ignore(pretty)).
+
+%% flora_prettyprint_class(+Class,+Module,+File)
+flora_prettyprint_class(Class, Module, OutFile) :-
+	tell(OutFile)@prologlib(),
+    	flora_prettyprint_class(Class, Module),
+	told@prologlib().
+
+flora_prettyprint_class(Class,Module) :-
+	flora_pp_immediate_superclasses(Class,Module),
+    	flora_prettyprint(Class,Module),
+	(X : Class)@Module,
+	ground(X),  %% to ground X, if non-ground
+	flora_prettyprint(X,Module),
+	fail.
+
+flora_prettyprint(X,Module) :-
+	flora_pp_immediate_classes(X,Module),
+	flora_pp_write_header(X),
+	flora_pp_write_body_scalar(X,Module),
+	flora_pp_write_body_set(X,Module),
+	writeln('].')@prologlib(), nl@prologlib().
+
+flora_pp_write_header(X) :-
+    	atom(X)@prologlib(),
+	!,
+	flP2H(PX,X),
+    	fmt_write('''%s''[', PX)@prologlib(),
+    	nl@prologlib().
+flora_pp_write_header(X) :-
+    	is_charlist(X)@prologlib(),
+	!,
+	flP2H(PX,X),
+    	fmt_write('"%s"[',PX)@prologlib(),
+    	nl@prologlib().
+flora_pp_write_header(X) :- write(X)@prologlib(), writeln('[')@prologlib().
+
+%% Print out scalar methods
+flora_pp_write_body_scalar(Obj,Module) :-
+    	MethLst1 = flCollectSet{SM | Obj[SM -> _]@Module},
+	sort(MethLst1, MethLst2)@prologlib(),
+	flora_pp_write_body_scalar1(Obj, MethLst2,Module).
+
+%% Test if method is to be ignored and either skip it or print it.
+flora_pp_write_body_scalar1(_, [], _Module).
+flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	%%printable_object[ignore(pretty) ->> {M}],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_scalar1(Obj, MethInvs,Module).
+flora_pp_write_body_scalar1(Obj, [MethInv|MethInvs],Module) :-
+	Obj[MethInv -> Val]@Module,
+	write('    ')@prologlib(), flora_pp_write_method_invocation(MethInv),
+	write(' -> ')@prologlib(), flora_pp_write_value(Val),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_scalar1(Obj, MethInvs,Module).
+
+flora_pp_write_body_set(Obj,Module) :-
+    	MethLst1 = flCollectSet{MM | Obj[MM ->> _]@Module},
+	sort(MethLst1, MethLst2)@prologlib(),
+	flora_pp_write_body_set1(Obj, MethLst2,Module).
+
+flora_pp_write_body_set1(_Obj, [],_Module).
+flora_pp_write_body_set1(Obj, [MethInv|MethInvs],Module) :-
+        MethInv = [M|_Args],
+	%%printable_object[ignore(pretty) ->> {M}],
+	flora_print_ignore(M),
+	!,
+	%% skip this method
+	flora_pp_write_body_set1(Obj, MethInvs,Module).
+flora_pp_write_body_set1(Obj, [MethInv|MethInvs],Module) :-
+	Vals = flCollectSet{V| Obj[MethInv ->> V]@Module},
+	write('    ')@prologlib(), flora_pp_write_method_invocation(MethInv),
+	write(' ->> ')@prologlib(), flora_pp_write_set(Vals),
+	flora_pp_write_comma_maybe(MethInvs),
+	flora_pp_write_body_set1(Obj, MethInvs,Module).
+
+%% Write comma, if List is not empty 
+flora_pp_write_comma_maybe([]) :- nl@prologlib().
+flora_pp_write_comma_maybe([_First| _Rest]) :- writeln(',')@prologlib().
+
+
+flora_pp_write_method_invocation(M) :- flP2H(PM,M),write(PM)@prologlib().
+
+flora_pp_write_set(L) :-
+    	write('{')@prologlib(),
+	flora_pp_write_set1(L),
+	write('}')@prologlib().
+
+flora_pp_write_set1([]).
+flora_pp_write_set1([Elt]) :- flora_pp_write_value(Elt).
+flora_pp_write_set1([Elt, Elt2 | Rest]) :-
+    	flora_pp_write_value(Elt), write(',')@prologlib(),
+	flora_pp_write_set1([Elt2|Rest]).
+        
+flora_pp_write_value(Val) :-
+	atom(Val)@prologlib(),
+	!,
+	flP2H(PVal,Val),
+	fmt_write('''%s''', PVal)@prologlib().
+flora_pp_write_value(Val) :-
+	is_charlist(Val)@prologlib(),
+	!,
+	flP2H(PVal,Val),
+	fmt_write('"%s"', PVal)@prologlib().
+flora_pp_write_value(Val) :-
+	flP2H(PVal,Val),
+	write(PVal)@prologlib().
+
+%% Print all the isa info in one shot.
+flora_prettyprint_isa(Class,Module) :-
+	flora_pp_immediate_isa(Class,Module),
+	flora_pp_subclasses_isa(Class,Module).
+%% Same, but save in a file
+flora_prettyprint_isa(Class, File) :-
+	tell(File),
+	flora_prettyprint_isa(Class),
+	told.
+
+flora_pp_immediate_isa(Class,Module) :-
+	(X : Class)@Module, 
+	ground([X,Class]),
+	%% no intermediate class
+	tnot(flora_in_between_isa(X,Class,Module)),
+	flora_pp_write_value(X), write('		:  ')@prologlib(),
+	flora_pp_write_value(Class), nl@prologlib(),
+	fail.
+flora_pp_immediate_isa(_,_).
+
+%% There is an intermediate class between X and Class
+:- table flora_in_between_isa/3.
+flora_in_between_isa(X,Class,Module) :-
+	(X:C1)@Module, C1 \= Class, (C1::Class)@Module.
+
+
+flora_pp_subclasses_isa(Class,_) :-
+	(Sub :: Class)@Module,
+	Sub \= Class,
+	tnot(flora_in_between_sub(Sub,Class,Module)),
+	flora_pp_isa(Sub),
+	fail.
+flora_pp_subclasses_isa(_,_).
+
+:- table flora_in_between_sub/3.
+flora_in_between_sub(Sub,Class,Module) :-
+	(Sub :: Sub1)@Module,
+	Sub \= Sub1, Sub1 \= Class,
+	(Sub1 :: Class)@Module.
+	
+%% immediate classes of Obj
+flora_pp_immediate_classes(Obj,Module) :-
+	(Obj : Class)@Module,
+	ground([Obj,Class]),
+	tnot(flora_in_between_isa(Obj,Class,Module)),
+	flora_pp_write_value(Obj), write('	:  ')@prologlib(),
+	flora_pp_write_value(Class),
+	write('.')@prologlib(), nl@prologlib(),
+	fail.
+flora_pp_immediate_classes(_Obj,_Module).
+
+flora_pp_immediate_superclasses(Class,Module) :-
+	(Class :: Super)@Module, ground(Super),
+	Class \= Super,
+	tnot(flora_in_between_sub(Class,Super,Module)),
+	flora_pp_write_value(Class),
+	write('	:: ')@prologlib(),
+	flora_pp_write_value(Super),
+	write('.')@prologlib(), nl@prologlib(),
+	fail.
+flora_pp_immediate_superclasses(_,_).

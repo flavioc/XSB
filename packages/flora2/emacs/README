@@ -1,0 +1,26 @@
+
+    Emacs major mode for Flora.
+    ==========================
+
+Put flora.el in a directory that is on the load path of Emacs or XEmacs.
+The easiest way is to have a separate directory for emacs libraries.
+A directory can be added to emacs search path by putting the following in
+the file ~/.emacs (or ~/.xemacs, if you are running one of the newer
+versions of XEmacs):
+
+(setq load-path (cons "your-directory" load-path))
+
+It is also a good idea to compile emacs libraries. To compile flora.el,
+use this:
+
+emacs -batch -f batch-byte-compile flora.el
+
+(if you are using XEmacs, use xemacs, of course --- the two emacsen often use
+incompatible byte code.)
+
+Finally, you must tell X/Emacs which files are Flora files, so it would
+invoke the Flora major mode automatically:
+
+(setq auto-mode-alist (cons '("\\.flr$" . flora-mode) auto-mode-alist))
+(autoload 'flora-mode "flora" "Major mode for editing Flora programs." t)
+
