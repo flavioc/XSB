@@ -1,6 +1,4 @@
-:- compiler_options([ciao_directives,xpp_on]).
-
-#include "flag_defs_xsb.h"
+:- compiler_options([ciao_directives]).
 
 :- document_export
 	class/4, newClass/5, retractallClass/4,
@@ -372,8 +370,7 @@ init_component_info :-
 	newStrel(OCid,Rcid,OCid).
 
 cdf_install_dir(P) :- 
-	stat_flag(INSTALL_DIR, InstallDir1),
-	intern_string(InstallDir1, InstallDir),
+	xsb_configuration(install_dir, InstallDir),
         fmt_write_string(P,'%s/packages/CDF',f(InstallDir)).
 
 /* New component initializes a new component, creating version,
