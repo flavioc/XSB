@@ -41,7 +41,6 @@
 
 #include "xsbsocket.h"
 
-#ifdef WIN_NT
 int readmsg(SOCKET sockfd, char *buff, int maxbuff)
 {
   int n, rc;
@@ -71,7 +70,6 @@ int readmsg(SOCKET sockfd, char *buff, int maxbuff)
   *buff = 0;
   return (n);
 }
-#endif
 
 
 /* in order to save builtin numbers, create a single socket function with
@@ -131,7 +129,7 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     break;
-  case SOCKET_ACCEPT: { /* socket_request(3,+sockfd,+sockfptr) */
+  case SOCKET_ACCEPT: { /* socket_request(3,+sockfd,-sockfptr) */
     /* returns Prolog stream number: an index into xsb openfile table */
     sockfd_in = (SOCKET) ptoc_int(2);
     
@@ -148,9 +146,13 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     else {
+#ifdef WIN_NT
+      sockptr = NULL;
+#else
       if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
 	xsb_warn("SOCKET_ACCEPT: fdopen failed");
 	return FALSE;
+#endif
       }
       open_files[i] = sockptr;
       ctop_int(3, i);
@@ -194,23 +196,21 @@ inline static bool xsb_socket_request(void)
       return FALSE;
     }
     else {
+#ifdef WIN_NT
+      sockptr = NULL;
+#else
       if ((sockptr = fdopen(sockfd, "r+")) == NULL) {
 	xsb_warn("SOCKET_CONNECT: fdopen failed");
 	return FALSE;
+#endif
       }
       open_files[i] = sockptr;
       ctop_int(6, i);
     }
     break;
-  case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
-    SET_FILEPTR(fptr, ptoc_int(2));   
-    fflush(fptr);
-    break;
   case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
     closesocket((SOCKET) ptoc_int(2));
     break;
-#ifdef WIN_NT
-    /** Why are the following calls implemented only in windows??? */
   case SOCKET_RECV:
     sockfd = (SOCKET) ptoc_int(2);
     sock_msg = calloc(1024, sizeof(char));
@@ -245,7 +245,6 @@ inline static bool xsb_socket_request(void)
     send(sockfd, last, 1, 0);
     send(sockfd, "`", strlen("`"),0);
     break;
-#endif
   case SOCKET_GET0: /* socket_request(11,+Sockfd,-C,-Error,_,_) */
     sockfd = (SOCKET) ptoc_int(2);
     /*JPS: rc = readmsg(socketfd, &ch, 1);*/
