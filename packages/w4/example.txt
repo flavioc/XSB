@@ -1,0 +1,90 @@
+document(
+  [ comment([32,65,32,99,111,109,109,101,110,116,32]),
+    pi(log,[116,104,105,115,32,32,102,105,108,101,32,32],file:/example.xml),
+    element(http://xpto.org,tag1,[],
+      [ pcdata([10,65,32,118,101,114,121,32,115,105,109,112,108,101,32,116,101,120,116,10,9]),
+        element(http://abc.com,tag2,n1,
+          [ whitespace([10,9,9]),
+            comment([32,119,104,105,116,101,115,112,97,99,101,32,98,101,116,119,101,101,110,32,
+                     109,97,114,107,117,112,32,115,104,111,117,108,100,32,97,112,112,101,97,114,32]),
+            whitespace([10,9,9]),
+            element(http://xpto.org,tag3,[],
+              [],
+              [ename(http://www.w3.org/XML/1998/namespace,space) = attribute(http://www.w3.org/XML/1998/namespace,space,xml,[100,101,102,97,117,108,116],no,[])],
+              [],
+              [[] = http://xpto.org,n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+              file:/example.xml,[]
+            ),
+            whitespace([10,9,9]),
+            element(http://xpto.org,tag3,[],
+              [],
+              [],
+              [],
+              [[] = http://xpto.org,n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+              file:/example.xml,
+              []
+            ),
+            whitespace([10,9])
+          ],
+          [ename(http://www.w3.org/XML/1998/namespace,space) = attribute(http://www.w3.org/XML/1998/namespace,space,xml,[112,114,101,115,101,114,118,101],no,[])],
+          [],
+          [[] = http://xpto.org,n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+          file:/example.xml,
+          []
+        ),
+        element(http://xpto.org,tag3,[],
+          [ element([],tag4,[],
+              [ element([],tag5,[],
+                  [ pcdata([84,104,105,115,32,116,97,103,32,115,104,111,117,108,100,110,39,116,32,104,97,118,101,32,97,32,110,97,109,101,115,112,97,99,101])
+                  ],
+                  [],
+                  [],
+                  [[] = [],n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+                  file:/example.xml,
+                  [101,110]
+                )
+              ],
+              [],
+              [ename(http://www.w3.org/2000/xmlns/,[]) = attribute(http://www.w3.org/2000/xmlns/,xmlns,[],[],no,[])],
+              [[] = [],n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+              file:/example.xml,
+              [101,110]
+            ),
+            element(http://xpto.org,tag4,[],
+              [ comment([32,87,104,105,116,101,115,112,97,99,101,32,115,104,111,117,108,100,110,39,116,32,97,112,112,101,97,114,32])
+              ],
+              [],
+              [],
+              [[] = http://xpto.org,n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+              file:/example.xml,
+              [101,110]
+            )
+          ],
+          [ ename([],attrib1) = attribute([],attrib1,[],[84,104,105,115,32,97,116,116,114,105,98,117,116,101,32,104,97,115,32,32,32,32,115,112,97,99,101,115,
+                                                         32,32,32,32,97,110,100,32,32,32,32,32,32,32,32,32,32,32,32,97,32,108,105,110,101,32,102,101,101,100],no,[]),
+            ename(http://www.w3.org/XML/1998/namespace,lang) = attribute(http://www.w3.org/XML/1998/namespace,lang,xml,[101,110],no,[]) 
+          ],
+          [],
+          [[] = http://xpto.org,n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+          file:/example.xml,
+          [101,110]
+        )
+      ],
+      [ ename([],a) = attribute([],a,[],[97,98,99,32,60],no,[]),
+        ename(http://abc.com,b) = attribute(http://abc.com,b,n1,[49,50,51,52],no,[])],
+      [ ename(http://www.w3.org/2000/xmlns/,[]) = attribute(http://www.w3.org/2000/xmlns/,xmlns,[],[104,116,116,112,58,47,47,120,112,116,111,46,111,114,103],no,[]),
+        ename(http://www.w3.org/2000/xmlns/,n1) = attribute(http://www.w3.org/2000/xmlns/,n1,xmlns,[104,116,116,112,58,47,47,97,98,99,46,99,111,109],no,[])],
+      [[] = http://xpto.org,n1 = http://abc.com,xml = http://www.w3.org/XML/1998/namespace],
+      file:/example.xml,
+      []
+    )
+  ], 
+  ... The representation of the document element again ...,
+  [],
+  [],
+  file:/example.xml,
+  1.0,
+  UTF-8,
+  yes,
+  []
+)

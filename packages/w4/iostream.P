@@ -1,0 +1,129 @@
+:- multifile read_stream/5.
+
+:- export open_input_stream/2.
+:- export read_octet/3.
+:- export read_octets_till/5.
+:- export read_octets/5.
+:- export close_input_stream/1.
+:- export eos/1.
+:- export read_file/2.
+
+eos( -1 ).
+
+% Prolog Streams
+%open_input_stream( stream(FileName), stream(Stream) ) :-
+%	open( FileName, read, Stream ).
+
+open_input_stream( stream(FileName), stream(FileName) ) :-
+	see( FileName ).
+
+% Character Lists 
+open_input_stream( [], [] ).
+open_input_stream( [List|RestList], [List|RestList] ).
+
+open_input_stream( S1 + S2, OS1 + OS2 ) :- !,
+	open_input_stream( S1, OS1 ),
+	open_input_stream( S2, OS2 ).
+
+% URIREFS
+open_input_stream( uri(URI), _ ) :- !, fail.
+
+
+% Atoms
+open_input_stream( A, Codes ) :- 
+	atom( A ), !, 
+	atom_codes( A, Codes ).
+
+close_input_stream( [] ) :- !.
+close_input_stream( [_|_] ) :- !.
+close_input_stream( S1 + S2 ) :- !,
+	close_input_stream( S1 ),
+	close_input_stream( S2 ).
+%close_input_stream( stream(Stream) ) :- 
+%	close( Stream ).
+close_input_stream( stream(_) ) :- 
+	seen.
+
+/*
+reset_stream( [] ) :- !.
+reset_stream( [_|_] ) :- !.
+reset_stream( S1 + S2 ) :- !,
+	reset_stream( S1 ),
+	reset_stream( S2 ).
+reset_stream( Stream ) :- !,
+	seek( Stream, 0, 0, _ ).
+*/
+
+% Read one octet from the input stream
+read_octet( [Octet|RestOctets], Octet, RestOctets ) :- !.
+read_octet( S1 + S2, Octet, NS1 + S2 ) :-
+	read_octet( S1, Octet, NS1 ), !.
+read_octet( _ + S2, Octet, NS2 ) :- !,
+	read_octet( S2, Octet, NS2 ).	
+%read_octet( stream(Stream), Octet, stream(Stream) ) :- !, get_byte(Stream,Octet), Octet \= -1.
+read_octet( stream(Stream), Octet, stream(Stream) ) :- !, get0(Octet), Octet \= -1.
+
+
+% Read N octets from the input stream
+read_octets( 0, Stream, RestOctets, RestOctets, Stream ) :- !.
+read_octets( N, Stream, [Octet|NextOctets], RestOctets, RestStream ) :-
+	N > 0, 
+	N1 is N - 1,
+	read_octet( Stream, Octet, AuxStream ), !,
+	read_octets( N1, AuxStream, NextOctets, RestOctets, RestStream ).	
+
+
+read_octets_till( Stream, EOS, [Octet|NextOctets], RestOctets, RestStream ) :-
+	read_octet( Stream, Octet, AuxStream ), !,
+	( Octet = EOS -> RestStream = Stream, RestOctets = NextOctets;
+                       read_octets_till( AuxStream, EOS, NextOctets, RestOctets, RestStream )
+	). 
+
+
+% Reads a complete US-ASCII stream, returning a list of characters
+read_stream( 'US-ASCII', Stream, Codes, RestCodes, RestStream ) :- !,
+	read_ascii_stream( Stream, Codes, RestCodes, RestStream ).
+
+read_ascii_stream( Stream, [Code|NextCodes], RestCodes, RestStream ) :-
+	read_octet( Stream, Code, AuxStream ),
+	Code < 128, !,
+	read_ascii_stream( AuxStream, NextCodes, RestCodes, RestStream ).
+
+read_ascii_stream( Stream, RestCodes, RestCodes, Stream ) :- !.
+
+
+% Reads a single US-ASCII character
+read_code( 'US-ASCII', Stream, Code, RestStream ) :- !,
+	read_octet( Stream, Code, RestStream ), Code < 128.
+
+
+% Reads a complete ISO-8859-1 stream, returning a list of characters
+read_stream( 'ISO-8859-1', Stream, Codes, RestCodes, RestStream ) :- !,
+	read_iso88591_stream( Stream, Codes, RestCodes, RestStream ).
+
+read_iso88591_stream( Stream, [Code|NextCodes], RestCodes, RestStream ) :-
+	read_octet( Stream, Code, AuxStream ), !,
+	read_iso88591_stream( AuxStream, NextCodes, RestCodes, RestStream ).
+
+read_iso88591_stream( Stream, RestCodes, RestCodes, Stream ) :- !.
+
+
+% Reads a single ISO-8859-1 character
+read_code( 'ISO-8859-1', Stream, Code, RestStream ) :- !,
+	read_octet( Stream, Code, RestStream ).	
+
+get_byte( Stream, Byte ) :-
+	get_code( Stream, Byte  ).
+
+
+read_file( File, _ ) :-
+	open( File, read, Stream ),
+      read_all( Stream ),
+	close( Stream ).
+
+read_all( Stream ) :-
+	get_code( Stream, Byte ),
+	( Byte = -1 -> true; read_all( Stream ) ).
+
+
+
