@@ -153,8 +153,8 @@ int do_bulk_match__( void )
   /*get the matches from the AV */
   for ( i=0;i<num_match;i++ ) {
     string_buff = av_shift(match_list);
-    bulkMatchList[i] = (char *)malloc( strlen(SvPV(string_buff,na))+1 ); 
-    strcpy((char *)bulkMatchList[i], SvPV(string_buff,na) );   
+    bulkMatchList[i] = (char *)malloc( strlen(SvPV(string_buff,PL_na))+1 ); 
+    strcpy((char *)bulkMatchList[i], SvPV(string_buff,PL_na) );   
   } 
 
   SvREFCNT_dec(string_buff); /* release space*/
@@ -192,8 +192,8 @@ int perl_substitute__( void )
 
   if (substituteString != NULL ) free(substituteString);
 
-  substituteString = malloc(strlen(SvPV(text,na))+1);
-  strcpy(substituteString,SvPV(text,na));
+  substituteString = malloc(strlen(SvPV(text,PL_na))+1);
+  strcpy(substituteString,SvPV(text,PL_na));
   
   SvREFCNT_dec(text);  /*release space*/
   
@@ -246,7 +246,7 @@ int unload_perl__( void )
 {
   int i;
 
-  perl_destruct_level = 1;
+  PL_perl_destruct_level = 1;
   perl_destruct( my_perl );
   perl_free( my_perl );
 
