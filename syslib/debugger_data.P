@@ -28,6 +28,16 @@
 **    hide_this_show(Pred,Arity): calls to hide along with embedded code
 **    show_this_hide(Pred,Arity): calls to show, but hide embedded ones
 **
+**    trace_standard_predicate(Pred,Arity): normally trace doesn't go inside
+**    	      	      	      	      	    standard preds, ulsess this is set
+**    trace_this_print(P,A):      turn on trace user prompt and keep tracing
+**    trace_this_noprint(P,A):    turn off trace user prompt but keep tracing
+**
+**    trace_this_enable_print_on_redo(P,A): these predicates turn on trace
+**    	      	      	      	      	    prompt on "Redo". We already must
+**    	      	      	      	      	    be tracing with interrupts enabled.
+**    
+**
 ** The user must assert these facts in usermod.
 */
 
@@ -51,6 +61,22 @@ hide_this_hide(nospy,1).
 hide_this_hide(consult,1).
 hide_this_hide(reconsult,1).
 hide_this_hide(compile,1).
+
+%% trace inside call
+trace_standard_predicate(call,1).
+%% but control the prompts that are actually printed
+trace_this_print(call_c, 1).
+trace_this_noprint(call, 1).
+trace_this_noprint(goal_cut_trans, 3).
+
+trace_standard_predicate(findall,3).
+%% but control the prompts that are actualy printed
+trace_this_noprint(findall, 4). %% this is an auxiliary pred for findall
+
+trace_this_enable_print_on_redo(call, 1).
+
+% call_c is eliminated, so what is called is traced.
+is_xpar_call(call_c,1).
 
 
 '_$_debugger_data_loaded'.

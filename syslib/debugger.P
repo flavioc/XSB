@@ -88,11 +88,11 @@ debugging :-
 %	ll_write(trace(Call)),ll_nl,
 	stat_flag(5, L),			% L = hide_state;
 	stat_flag(9, S),		 	% S = quasi_skipping
-	term_type(Call,Type),
-	(Type =:= 5
-	 ->	psc_insert(Call, 0, PSC, 0), P = Call, A = 0
-	 ;	term_psc(Call,PSC), psc_name(PSC,P), psc_arity(PSC,A)
-	),
+	%% P-pred name, A- arity
+	get_psc_info(Call, PSC, P, A),
+	%% set_print_control is needed here too, if is_xpar_call 
+	%% predicates are used to control printing
+	set_print_control(P,A,_Type),
 	(is_xpar_call(P,A)
 	 ->	term_arg(Call,1,Ncall),
 		'_$deb_trace'(Ncall)
@@ -105,12 +105,18 @@ debugging :-
 	 ; hide_this_hide(P,A)
 	 ->	basic_call(1,PSC,Call)	% and leave tracing off
 	 ; show_this_hide_call(P,A)
-	 ->	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1),	% invoke_num++
+	 ->	stat_flag(7,N),
+	        ('_$_deb_print_hidden' -> true
+		; N1 is N+1,stat_set_flag(7,N1)
+		),		% invoke_num++
 		( S=\=0
 		 ->	basic_call(1,PSC,Call)	% skipping or quasi_skipping 
 		 ;	deb_enterpred(N, PSC, Call, intrace, L, 1)
 		)
-	 ;	stat_flag(7,N),N1 is N+1,stat_set_flag(7,N1),	% invoke_num++
+	 ;	stat_flag(7,N),
+	        ('_$_deb_print_hidden' -> true
+		; N1 is N+1,stat_set_flag(7,N1)
+		),		% invoke_num++
 		( S=\=0
 		 ->	basic_call(0,PSC,Call)	% skipping or quasi_skipping 
 		 ;	deb_enterpred(N, PSC, Call, intrace, L, 0)
@@ -118,14 +124,14 @@ debugging :-
 	).
 
 
-% trace this call, but hide all embedded calls
+%% trace this call, but hide all embedded calls
+%% Standard preds, except those in trace_standard_predicate
+%% Also, user-specified preds in show_this_hide/2.
+show_this_hide_call(P,A) :- trace_standard_predicate(P,A), !, fail.
 show_this_hide_call(P,A) :- standard_symbol(P,A,_).
 %% show_this_hide is constructed dynamically
 show_this_hide_call(P,A) :- show_this_hide(P,A).
 
-
-% call_c is eliminated, so what is called is traced.
-is_xpar_call(call_c,1).
 
 must_load(PSC) :-
 	psc_type(PSC, T),
@@ -141,11 +147,8 @@ must_load(PSC) :-
 
 '_$deb_spy'(Call) :-
 %	ll_write(spy(Call)),ll_nl,
-	term_type(Call,Type),
-	(Type =:= 5
-	 ->	psc_insert(Call, 0, PSC, 0), P = Call, A = 0
-	 ;	term_psc(Call,PSC), psc_name(PSC,P), psc_arity(PSC,A)
-	),
+	%% P-pred name, A- arity
+	get_psc_info(Call, PSC, _P, _A),
 	(must_load(PSC)
 	 ->	'_$deb_spy'(Call)
 	 ;	stat_flag(5, L),			% L = hide_state
@@ -159,6 +162,40 @@ must_load(PSC) :-
 		; basic_call(0,PSC,Call) 		% skipping
 		)
 	).
+
+%% +Call, -PSC, -Pred, -Arity
+get_psc_info(Call, PSC, P, A) :-
+	term_type(Call,Type),
+	(Type =:= 5
+	 ->	psc_insert(Call, 0, PSC, 0), P = Call, A = 0
+	 ;	term_psc(Call,PSC), psc_name(PSC,P), psc_arity(PSC,A)
+	).
+
+set_print_control(Pred, Arity, Type) :- 
+	Type == 'Redo',
+	!,
+	(trace_this_enable_print_on_redo(Pred,Arity) 
+	 -> (retractall('_$_deb_print_hidden') -> true
+	    ;	true
+	    )
+	; true
+	).
+set_print_control(_Pred, _Arity, Type) :- 
+	(Type == 'Exit' ; Type == 'Fail'),
+	!,
+	(retractall('_$_deb_print_hidden') -> true
+	;   true
+	).
+set_print_control(Pred, Arity, _Type) :-
+	(trace_this_print(Pred, Arity)
+	 ->     retractall('_$_deb_print_hidden')
+	 ;      true
+	),
+	(trace_this_noprint(Pred, Arity)
+	 ->     assert('_$_deb_print_hidden')
+	 ;      true
+	).
+
 
 indeed_spy(Call) :- \+ (\+ ('_b_SPY_condition'(Call))).
 %%indeed_spy(_) :- ll_write('Conditional spy not implemented'), ll_nl, fail.
@@ -217,22 +254,28 @@ deb_retry(Call,inspy) :- !,'_$deb_spy'(Call).
 deb_retry(Call,intrace) :- '_$deb_trace'(Call).
 
 deb_traceget(N,Spy,Type,Call,C) :-
+	%% P-pred name, A- arity
+	get_psc_info(Call, _PSC, P, A),
+	set_print_control(P,A,_),
 	(shown(Type,Spy)
-	 ->	deb_writepref(Spy),
-		ll_write(' ('),ll_write(N),ll_write(') '),
-		ll_write(Type),ll_write(': '),
-%% CHANGE
-		debug_display_call(Call),
-		deb_prompt(Type,Spy,C)
-	 ;	C = 10
-	).
+	   -> ('_$_deb_print_hidden'
+	          -> C = 10
+		  ;  
+		     deb_writepref(Spy),
+		     ll_write(' ('),ll_write(N),ll_write(') '),
+		     ll_write(Type),ll_write(': '),
+		     debug_display_call(Call),
+		     deb_prompt(Type,Spy,C)
+	      )
+	   ;	C = 10
+	),
+	set_print_control(P,A,Type).
 
 debug_display_call(Call) :- (debug_display_call_hook(Hook)
 			    	-> Invocation =.. [Hook, Call],
 				   call(Invocation)
 			    	; ll_write(Call)
 			    ).
-%% END CHANGE
 
 leashable('Call').
 leashable('Exit').

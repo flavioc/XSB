@@ -53,7 +53,11 @@
 
 :- import read/1 from standard.
 :- import hide_this_show/2, hide_this_hide/2, show_this_hide/2,
-	debug_display_call_hook/1, '_$_debugger_data_loaded'/0
+	trace_this_print/2, trace_this_noprint/2,
+	is_xpar_call/2,
+	trace_standard_predicate/2, debug_display_call_hook/1, 
+	trace_this_enable_print_on_redo/2,
+	'_$_deb_print_hidden'/0, '_$_debugger_data_loaded'/0
    from usermod.
 :- import call/1, see/1, seen/0, repeat/0 from standard.
 :- import xsb_configuration/2 from configuration.
@@ -61,6 +65,10 @@
 :- import assert/1 from assert.
 :- dynamic debug_display_call_hook(_), '_$_debugger_data_loaded'/0.
 :- dynamic hide_this_hide(_,_), hide_this_show(_,_), show_this_hide(_,_).
+:- dynamic trace_this_noprint(_,_), trace_this_print(_,_), 
+	trace_standard_predicate(_,_), is_xpar_call(_,_),
+	trace_this_enable_print_on_redo(_,_),
+	'_$_deb_print_hidden'/0.
 
 
 
