@@ -91,10 +91,11 @@ char temp_buffer[4*MAXBUFSIZE];
 */
 bool do_regmatch__(void)
 {
-  prolog_term listOfMatches, listHead, listTail;
+  prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term regexp_term, input_term, offset_term;
+  prolog_term output_term = p2p_new();
   int i;
   char *regexp_ptr=NULL;      /* regular expression ptr	       	      */
   char *input_string=NULL;    /* string where matches are to be found */
@@ -139,11 +140,6 @@ bool do_regmatch__(void)
   if (! is_var(reg_term(4)))
     ignorecase = TRUE;
 
-  /* check the var to receive the result of the match */
-  listTail = listOfMatches = reg_term(5);
-  if (! is_var(listTail))
-    xsb_abort("RE_MATCH: Arg 5 (the result of the match) must be an unbound variable");
-
 
   /* paren_number gets the # of parenthetical subexpressions (not 1 minus!) */
   return_code = xsb_re_match(regexp_ptr, input_string+offset, ignorecase,
@@ -154,6 +150,7 @@ bool do_regmatch__(void)
 
 
   /* return result */
+  listTail = output_term;
   for (i=0; i <= paren_number; i++) {
     c2p_list(listTail); /* make it into a list */
     listHead = p2p_car(listTail); /* get head of the list */
@@ -167,7 +164,7 @@ bool do_regmatch__(void)
   }
 
   c2p_nil(listTail); /* bind tail to nil */
-  return TRUE;
+  return p2p_unify(output_term, reg_term(5));
 }
 
 /* XSB string substitution entry point

@@ -64,8 +64,8 @@ argument is an uninstantiated variable, then the case is \emph{not}
 ignored. If this argument is bound to a non-variable, then the case
 \emph{is} ignored.
 
-The last argument is used to return the results. The result is in the form
-of a list of the form
+The last argument, {\tt MatchList}, is used to return the results. It
+must unify with a list of the form:
 %%
 \begin{verbatim}
     [match(beg_off0,end_off0), match(beg_off1,end_off1), ...]  
@@ -151,7 +151,8 @@ example. However, because we said that matching should start at offset 2,
 the first half of the string is not matched.
 
 The \verb|re_match/5| predicate fails if {\tt Regexp} does not match {\tt
-  InputStr}.  Otherwise, it succeeds.
+  InputStr} or if the term specified in {\tt MatchList} does not unify with
+the result produced by the match.  Otherwise, it succeeds.
 
 We should also note that parenthetical expressions can be represented
 using the \verb|\(...\)| notation. What if you want to match a ``('' then?
@@ -188,6 +189,8 @@ assumed.  The result returned in the fourth
 argument is a string, if {\tt String} is an atom, or a list of characters,
 if so is {\tt String}.
 
+The \verb|re_substitute/5| predicate always succeeds.
+
 Here are some examples: 
 %%
 \begin{verbatim}
@@ -217,6 +220,44 @@ for processing HTML pages.
 On the other hand, converting strings into lists (without interning them
 first) is safe, because lists are garbage-collected in XSB Version 2.0.
 
+Here is a complete example that shows matching followed by a subsequent 
+extraction of the matches:
+%%
+\begin{verbatim}
+| ?- import intern_string/2 from machine.
+
+| ?- Str = 'abbbcd\bbo',
+      re_match("a(b*)cd\\\\",'abbbcd\bbo',0,_,[match(X,Y), match(V,W)|L]),
+      re_substring(Str,X,Y,UninternedMatch),
+      intern_string(UninternedMatch,Match),
+      re_substring(Str,V,W,UninternedParen1),
+      atom_codes(UninternedParen1,Paren1).
+
+Str = abbbcd\bbo
+X = 0
+Y = 7
+V = 1
+W = 4
+L = []
+UninternedMatch = bbb
+Match = abbbcd\
+UninternedParen1 = bbb
+Paren1 = [98,98,98]
+\end{verbatim}
+%%
+Note that the strings {\tt UninternedMatch} and {\tt UninternedParen1}
+cannot be used by themselves. In the first case, we converted the string
+into a Prolog atom and in the second case into a string. The resulting
+objects ({\tt Match} and {\tt Paren1}) can be used in further computations.
+
+Observe that XSB reports that {\tt UninternedMatch} and {\tt
+UninternedParen1} are both equal the string ``{\tt bbb}'', while {\tt
+Match} --- the atom obtained from {\tt UninternedMatch} --- is different.
+This is because {\tt UninternedMatch} and {\tt UninternedParen1} are
+uninterned and both occupy the same physical space. Thus, the second call
+to \verb|re_substring/4| overrides the value stored in this location by the
+first call.
+
 \paragraph{Substitution.}
 The predicate \verb|re_substitute/5| has the following invocation:
 %%
@@ -234,6 +275,8 @@ InputStr}; otherwise, it is a string.
 As in the case of {\tt re\_substring/4}, if {\tt OutStr} is a string, it is
 not interned.  The user should either intern this string or convert it into
 a list, as explained previously.
+
+The \verb|re_substitute/5| predicate always succeeds.
 
 Here are some examples:
 %%
@@ -265,12 +308,12 @@ L = [97,98,99,100,49,50,51]
   \item When a list of characters is passed to any one of the above
     predicates, it is converted into a C string. This can be expensive, if
     done too often for the same string.
-
-    One way to circumvent the problem is to use {\tt atom\_codes/2} to first
-    convert the list into an atom and then use that atom repeatedly in the
-    match operations. One problem here might be the aforementioned overflow
-    of the atom table. So, if this is a concern, the following predicate can
-    help:
+    
+    One way to circumvent the problem is to use {\tt atom\_codes/2} to
+    first convert the list into an atom and then use that atom repeatedly
+    in the match operations. One problem here might be the aforementioned
+    overflow of the atom table. So, if this is a concern, the following
+    predicate (which always succeeds) can help:
 %%
 \begin{verbatim}
    re_charlist_to_string(+ListOfCharacters, -String)  
