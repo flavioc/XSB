@@ -23,6 +23,9 @@
 */
 
 
+#ifndef SYMBOL_TABLE_DEFS
+
+#define SYMBOL_TABLE_DEFS
 
 /* The abstract module for the symbol table (PSC table) */
 
@@ -130,3 +133,5 @@ extern Psc get_intern_psc();
 		((cell_tag(term) == CS) && (hilog_psc(get_str_psc(term))))
 
 /*----------------------------------------------------------------------*/
+
+#endif

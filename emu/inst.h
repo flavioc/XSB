@@ -24,6 +24,10 @@
 */
 
 
+#ifndef XSB_INSTS
+
+#define XSB_INSTS
+
 extern void init_inst_table(void);
 
 /************************************************************************/
@@ -365,3 +369,5 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define reset           0xfe
 #define endfile         0xff
    /* virtual instruction, used for disassembler to link different segs */
+
+#endif
