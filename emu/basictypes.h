@@ -1,4 +1,4 @@
-/* File:      auxlry.h
+/* File:      basictypes.h
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
