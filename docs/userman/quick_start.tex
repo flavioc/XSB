@@ -128,7 +128,13 @@ Here are some ways that are guaranteed to not work in some or all cases:
     --enable-debug}, and there are many other options.  Type {\tt configure
     --help} to see them all. Also see the file \verb'$XSB_DIR/INSTALL' for
   more details.
-    %%$
+%%$
+\item[Interfaces] \label{cc} Certain interfaces must be designated at
+configuration time, including those to Oracle, ODBC, and Libwww.
+However, the XSB-calling-C interface and the InterProlog Java
+interface do not need to be specified at configuration time.  See
+Volume 2, and the InterProlog site for details of specific interfaces.
+%%$
 \end{description}
 
 Other options are of interest to advanced users who wish to experiment
