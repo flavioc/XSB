@@ -96,7 +96,9 @@ Todo:
 #include <sys/stat.h>
 
 /* Take care of the time.h business */
-#include "xsb_time.h"
+/* #include "xsb_time.h" */
+/* But I need time.h, not sys/time.h here! -lfcastro */
+#include <time.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
