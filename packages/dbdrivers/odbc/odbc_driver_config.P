@@ -25,10 +25,9 @@ make_odbc_driverH(CC, CC_opts) :-
 	;  str_cat('-L', ODBC_libdir, ODBC_libdir_flag)
 	),
 	%% Creates something like -Wl,-rpath,<libdir>
-	runtime_loader_flag(XCC, ConfigLibdir, ConfigLibdirRunpathFlag),
 	runtime_loader_flag(XCC, ODBC_libdir, OdbcRunpathFlag),
 	fmt_write_string(LD_flags,
-			 ' %s %s %s -lodbc -ldl %s%sdriver_manager.so %s%sodbc_driver.so', f(ConfigLibdirRunpathFlag, OdbcRunpathFlag, ODBC_libdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
+			 '  %s %s -lodbc -ldl %s%sdriver_manager.so %s%sodbc_driver.so', f(OdbcRunpathFlag, ODBC_libdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
 	package_configuration(dir(odbc_driver), ODBCDriverDir),
 	fmt_write_string(LD_directives_file,
 			 '%s%scc%sodbc_driver.H', f(ODBCDriverDir, Slash, Slash)),
@@ -77,8 +76,7 @@ make_odbc_driverH(CC, CC_opts) :-
 	xsb_configuration(config_dir, ConfigDir),
 	xsb_configuration(config_libdir, ConfigLibDir),
 	xsb_configuration(packagesdir, PackagesDir),
-	DBdriver = 'dbdrivers/cc',
-	fmt_write_string(DBDriversDir, '%s%s%s', a(PackagesDir, Slash, DBdriver)),
+	fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', a(PackagesDir, Slash, Slash)),
 	fmt_write_string(CC_opts,
 			 ' %s -I %s -I %s',
 			 f(CCflags, ConfigDir, DBDriversDir)),

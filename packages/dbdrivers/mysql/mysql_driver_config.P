@@ -25,10 +25,9 @@ make_mysql_driverH(CC, CC_opts) :-
 	;  str_cat('-L', MysqlLibdir, MysqlLibdir_flag)
 	),
 	%% Creates something like -Wl,-rpath,<libdir>
-	runtime_loader_flag(XCC, ConfigLibdir, ConfigLibdirRunpathFlag),
 	runtime_loader_flag(XCC, MysqlLibdir, MysqlRunpathFlag),
 	fmt_write_string(LD_flags,
-			 ' %s %s %s -lmysqlclient -ldl %s%sdriver_manager.so %s%smysql_driver.so', f(ConfigLibdirRunpathFlag, MysqlRunpathFlag, MysqlLibdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
+			 ' %s %s -lmysqlclient -ldl %s%sdriver_manager.so %s%smysql_driver.so', f(MysqlRunpathFlag, MysqlLibdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
 	package_configuration(dir(mysql_driver), MySQLDriverDir),
 	fmt_write_string(LD_directives_file,
 			 '%s%scc%smysql_driver.H', f(MySQLDriverDir, Slash, Slash)),
@@ -77,8 +76,7 @@ make_mysql_driverH(CC, CC_opts) :-
 	xsb_configuration(config_dir, ConfigDir),
 	xsb_configuration(config_libdir, ConfigLibDir),
 	xsb_configuration(packagesdir, PackagesDir),
-	DBdriver = 'dbdrivers/cc',
-	fmt_write_string(DBDriversDir, '%s%s%s', a(PackagesDir, Slash, DBdriver)),
+	fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', a(PackagesDir, Slash, Slash)),
 	fmt_write_string(CC_opts,
 			 ' %s -I %s -I %s',
 			 f(CCflags, ConfigDir, DBDriversDir)),
