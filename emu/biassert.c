@@ -1559,12 +1559,10 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 	}
     }
 }
-
 /*
 #define RETRACT_DEBUG
 #define RETRACT_GC_DEBUG
 */
-
 /* Generic macro that deletes an element from a chain		*
  * Made possible because of the design of all chains containing	*
  * the three words:						*
@@ -1602,7 +1600,7 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
             }                                                           \
             break ;                                                     \
         default:                                                        \
-            xsb_exit("error removing a clause") ;                       \
+            xsb_exit("error removing a clause: %x",c) ;                 \
             break ;                                                     \
     }                                                                   \
 }
@@ -1674,7 +1672,7 @@ static void delete_from_sobchain(ClRef Clause)
 }
 
 /* circular buffer for retracted clauses */
-#define MAX_RETRACTED_CLAUSES   100
+#define MAX_RETRACTED_CLAUSES   25
 
 ClRef retracted_buffer[MAX_RETRACTED_CLAUSES+1]  ;
 ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
@@ -1695,44 +1693,31 @@ ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
 {   if( retract_buffer_full() )\
     {   ClRef ClauseToDelete = *OldestCl;\
 	remove_from_buffer();\
-	mem_dealloc((pb)ClRefAddr(ClauseToDelete), ClRefSize(ClauseToDelete));\
+	really_delete_clause(ClauseToDelete);\
     }\
     insert_in_buffer(Clause);\
 }
 
-static int retract_clause( ClRef Clause, int retract_nr )
+static int really_delete_clause(ClRef Clause)
 {
 #ifdef RETRACT_DEBUG
-            xsb_dbgmsg("Retract clause(%p) op(%x) type(%d)",
+            xsb_dbgmsg("Really deleting clause(%p) op(%x) type(%d)",
 		       Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
 #endif
     switch( ClRefType(Clause) )
     {
         case UNINDEXED_CL:
-	    /* set fail for retract_nr AND protection */
-	    cell_opcode(ClRefEntryPoint(Clause)) = fail ;
-	    if( !retract_nr )
-	        /* unindexed clauses are treated as SOBs
-	           for chaining purposes */
-                delete_from_sobchain(Clause) ;
-            break ;
+	  delete_from_sobchain(Clause) ;
+	  break ;
 
         case INDEXED_CL:
         {   int i ;
             SOBRef sob ;
             CPtr IP ;
 
-/*	    if( cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause)))
-                        == fail )
-                xsb_exit( "retracting retracted clause!" ) ; */
-
             NI = ClRefNumInds(Clause) ;
-	    /* set fail for retract_nr AND protection */
-	    cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = fail ;
-	    if( retract_nr )
-		break ;
 #ifdef RETRACT_DEBUG
-            xsb_dbgmsg("deleting clause (%p) size %d indexes %d",
+            xsb_dbgmsg("Really deleting clause (%p) size %d indexes %d",
 		       Clause, ClRefSize(Clause), NI ) ;
 #endif
             delete_from_allchain(Clause) ;
@@ -1758,23 +1743,65 @@ static int retract_clause( ClRef Clause, int retract_nr )
                     xsb_dbgmsg("deleting sob - %p", sob ) ;
 #endif
                     delete_from_sobchain(sob) ;
-    		    delete_clause(sob) ;
                 }
             }
             break ;
         }
         case COMPILED_CL:
-            return 0 ; /* cannot retract compiled code */
+	  return(0);  /* error message already given */
         case SOB_RECORD:
-            xsb_exit( "retracting indexing record!" ) ;
-            break ;
         default :
-            xsb_exit( "retract internal error!" ) ;
-            break ;
+	  xsb_exit( "retract internal error!" ) ;
     }
-    if( !retract_nr )
-	delete_clause(Clause) ;
+    mem_dealloc((pb)ClRefAddr(Clause), ClRefSize(Clause));
+    return TRUE ;
+}
 
+static int retract_clause( ClRef Clause, int retract_nr )
+{
+  bool perhaps_already_deleted = FALSE;
+  ClRef *CurrentCl;
+#ifdef RETRACT_DEBUG
+            xsb_dbgmsg("Retract clause(%p) op(%x) type(%d)",
+		       Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+#endif
+    switch( ClRefType(Clause) )
+    {
+        case UNINDEXED_CL:
+	    /* set fail for retract_nr AND protection */
+	  if (cell_opcode(ClRefEntryPoint(Clause)) == fail) 
+	    perhaps_already_deleted = TRUE;
+	  else
+	    cell_opcode(ClRefEntryPoint(Clause)) = fail ;
+	  break ;
+        case INDEXED_CL:
+	  if (cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) == fail )
+	    perhaps_already_deleted = TRUE;
+	  else
+	    cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = fail ;
+	  break ;
+        case COMPILED_CL:
+	  return 0 ; /* cannot retract compiled code */
+        case SOB_RECORD:
+	  xsb_exit( "retracting indexing record!" ) ;
+	  break ;
+        default :
+	  xsb_exit( "retract internal error!" ) ;
+	  break ;
+    }
+    if (retract_nr) return TRUE;
+    if (perhaps_already_deleted) { /* don't schedule if already scheduled */
+      CurrentCl = OldestCl;
+      while (CurrentCl != NewestCl) {
+	if (*CurrentCl == Clause) return TRUE; /* already scheduled */
+	CurrentCl = next_in_buffer(CurrentCl);
+      }
+    }
+#ifdef RETRACT_DEBUG
+    xsb_dbgmsg("Inserting clause in delete buffer(%p) op(%x) type(%d)",
+	 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ) ;
+#endif
+    delete_clause(Clause) ;
     return TRUE ;
 }
 
