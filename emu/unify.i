@@ -79,11 +79,14 @@ tail_recursion:
 	     IFTHEN_FAILED;
 	   } else {
 	     arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);
-	     for ( i=1; i <= arity;  i++ ) {
-	       if(!unify(*((CPtr)op1+i), *((CPtr)op2+i))) {
-		 IFTHEN_FAILED; 
+	     while (--arity) {
+	       op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
+	       if (!unify(cell((CPtr)op1), cell((CPtr)op2))) {
+		 IFTHEN_FAILED;
 	       }
 	     }
+	     op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);
+	     goto tail_recursion;
 	   }
 	 }
 	 IFTHEN_SUCCEED;
@@ -98,19 +101,13 @@ tail_recursion:
 	 if (op1 != op2) {
 	   op1 = (Cell)(clref_val(op1));
 	   op2 = (Cell)(clref_val(op2));
-#ifdef OLD
-	   if ( !unify(*((CPtr)op1), *((CPtr)op2))
-		   || !unify(*((CPtr)op1+1), *((CPtr)op2+1)) )
-	     { IFTHEN_FAILED; }
-#else
-	   if ( !unify(*((CPtr)op1), *((CPtr)op2)))
+	   if ( !unify(cell((CPtr)op1), cell((CPtr)op2)))
 	     { IFTHEN_FAILED; }
 	   else
 	     { op1 = (Cell)((CPtr)op1+1);
 	       op2 = (Cell)((CPtr)op2+1);
 	       goto tail_recursion;
 	     }
-#endif
 	 }
 	 IFTHEN_SUCCEED;
        }
@@ -123,9 +120,9 @@ tail_recursion:
        if (op1 == op2) { IFTHEN_SUCCEED; } else { IFTHEN_FAILED; }
        break;     /* op1=atomic */
        
-       /*   default:
-	    xsb_abort("Unknown term type in unify()");
-	    { IFTHEN_FAILED; }
-	    break; */
+       /* default:
+	  xsb_abort("Unknown term type in unify()");
+	  { IFTHEN_FAILED; }
+	  break; */
     }
 
