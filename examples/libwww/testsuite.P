@@ -166,7 +166,7 @@
 			 formdata(['index=books','field-keywords=java']),
 			 selection(_,['TABLE',form,title,img],[font])],
 			P,Y,Z)]).
-%% Wrong method: get instead of POST
+%% Wrong method: GET instead of POST (should return error)
 :- libwww_request([html('http://www.amazon.com/exec/obidos/search-handle-form/002-0526407-6129061',
 			[method(get),
 			 formdata(['index=books','field-keywords=java']),
@@ -179,9 +179,14 @@
 :- libwww_request([rdf('files/ex5.rdf', X,P,Y,Z)]).
 :- libwww_request([rdf('files/ex6.rdf', X,P,Y,Z)]).
 :- libwww_request([rdf('files/ex7.rdf', X,P,Y,Z)]).
+:- libwww_request([rdf('http://localhost/ex3rdf.html', [timeout(9)],P,Y,Z)]).
+:- libwww_request([rdf('http://localhost/ex3.rdf', [timeout(9)],P,Y,Z)]).
 :- libwww_request([rdf('http://www.w3.org/XML/2000/04soccer-sched/team-2.rdf',
-		       X,P,Y,Z)]).
+		       [timeout(9)],P,Y,Z)]).
+:- libwww_request([html('http://www.w3.org/XML/2000/04soccer-sched/team-2.rdf',
+			[timeout(9)],P,Y,Z)]).
 
+%% This should give an error about Y being bound.
 :- libwww_request([rdf('files/ex5.rdf', X,P,Y,Z),
 		   xml('http://www.ug.cs.sunysb.edu/~kifer/test/simple.xml',
 		       [authorization([c(_,testuser,hahaha)]),
