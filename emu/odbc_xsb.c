@@ -719,6 +719,30 @@ extern int letter_flag;
 #define MAX_BIND_VALS 30
 char *term_string[MAX_BIND_VALS] = {0};
 
+void string_to_char(Cell list, char **term_string) {
+  Cell tlist, car;
+  char *charptr;
+  int len = 0;
+  
+  if (*term_string) free(*term_string);
+  XSB_Deref(list);
+  tlist = list;
+  while (islist(tlist)) {
+    len++;
+    tlist = p2p_cdr(tlist);
+    XSB_Deref(tlist);
+  }
+  *term_string = charptr = malloc(len+1);
+  while (islist(list)) {
+    car = p2p_car(list);
+    XSB_Deref(car);
+    *(charptr++) = int_val(car);
+    list = p2p_cdr(list);
+    XSB_Deref(list);
+  }
+  *charptr = '\0';
+}
+
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
 /*     SetBindVal()   */
@@ -785,15 +809,21 @@ void SetBindVal()
       }
       cur->BindList[j] = string_val(BindVal);
     } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
-      letter_flag = 1;
-      wcan_disp = 0;
-      write_canonical_term(p2p_arg(BindVal,1));
-      if (term_string[j]) free(term_string[j]);
-      term_string[j] = malloc(wcan_disp+1);
-      strncpy(term_string[j],wcan_string,wcan_disp);
-      term_string[j][wcan_disp] = '\0';
-      cur->BindTypes[j] = 2;
-      cur->BindList[j] = term_string[j];
+      if (!strcmp(get_name(get_str_psc(BindVal)),"string")) {
+	string_to_char(p2p_arg(BindVal,1),&(term_string[j]));
+	cur->BindTypes[j] = 2;
+	cur->BindList[j] = term_string[j];
+      } else {
+	letter_flag = 1;
+	wcan_disp = 0;
+	write_canonical_term(p2p_arg(BindVal,1));
+	if (term_string[j]) free(term_string[j]);
+	term_string[j] = malloc(wcan_disp+1);
+	strncpy(term_string[j],wcan_string,wcan_disp);
+	term_string[j][wcan_disp] = '\0';
+	cur->BindTypes[j] = 2;
+	cur->BindList[j] = term_string[j];
+      }
     } else {
       xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
     }
@@ -818,6 +848,11 @@ void SetBindVal()
     cur->BindTypes[j] = 2;
     cur->BindList[j] = string_val(BindVal);
   } else if (isconstr(BindVal) && get_arity(get_str_psc(BindVal))==1) {
+    if (!strcmp(get_name(get_str_psc(BindVal)),"string")) {
+	string_to_char(p2p_arg(BindVal,1),&(term_string[j]));
+	cur->BindTypes[j] = 2;
+	cur->BindList[j] = term_string[j];
+    } else {
       letter_flag = 1;
       wcan_disp = 0;
       write_canonical_term(p2p_arg(BindVal,1));
@@ -827,6 +862,7 @@ void SetBindVal()
       term_string[j][wcan_disp] = '\0';
       cur->BindTypes[j] = 2;
       cur->BindList[j] = term_string[j];
+    }
   } else {
     xsb_exit("Unknown bind variable type, %d", cur->BindTypes[j]);
   }
