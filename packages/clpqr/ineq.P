@@ -29,7 +29,8 @@
           deref/2, solve/1, reconsider/1, determine_active_inc/1,
 	  determine_active_dec/1, basis_add/2, backsubst/2, dec_step/2,
 	  same_class/2, unconstrained/4, get_or_add_class/2,
-	  var_with_def_intern/4 from bv.
+	  var_with_def_intern/4, ub/2, lb/2, backsubst_delta/2,
+	  pivot_a/4 from bv.
 :- import arith_eval/1, arith_eval/2, case_signum/4 from arith_r.
 :- import put_atts/2, get_atts/2 from atts.
 :- import decompose/4, add_linear_ff/5, add_linear_11/3,

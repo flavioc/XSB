@@ -105,7 +105,11 @@
 	  intro_at/3,
 	  allvars/2,
 	  var_with_def_intern/4,
-	  dump_var/6.
+	  dump_var/6,
+	  ub/2,
+	  lb/2,
+	  backsubst_delta/2,
+	  pivot_a/4.
 
 :- import length/2 from basics.
 :- import arith_eval/1, arith_eval/2, case_signum/4 from arith_r.
