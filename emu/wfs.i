@@ -354,7 +354,7 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 
 	  H = cp_hreg(breg);
 	  EB = cp_ebreg(breg);
-#ifdef DEBUG
+#ifdef Chat_DEBUG
 fprintf(stderr, "leader_cp = %p, subgoal = %p, eb = %d\n",
 	breg, tcp_subgoal_ptr(breg), ((CPtr)glstack.high - 1) - EB);
 #endif
