@@ -37,7 +37,3 @@ nmake /f NMakefile.mak
 
 @cd ..\build
 
-
-REM Local Variables:
-REM coding-system-for-write:  dos
-REM End:
