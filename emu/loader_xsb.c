@@ -582,7 +582,7 @@ static bool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   get_obj_byte(&t_env);
   /* this simple check can avoid worse situations in case of compiler bugs */
   if (t_env > T_GLOBAL) 
-    xsb_abort("LOADER: The loaded object file %s is corrupted",
+    xsb_abort("LOADER: The loaded object file %s.O is corrupted",
 	      cur_mod->nameptr);
 
   get_obj_byte(&t_type);
