@@ -164,6 +164,11 @@ emuloop.o: emuloop.c
 	$(CC) -c $(LCFLAGS) emuloop.c
 	@cp emuloop.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
+# Higher optimization level has problem with some versions of gcc
+tr_utils.o: tr_utils.c
+	$(CC) -c -O1 tr_utils.c
+	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
 .c.o:
 	$(CC) -c $(CFLAGS) $*.c
 	@cp $*.o $(arch_config_objlibdir) 2> /dev/null || echo ""

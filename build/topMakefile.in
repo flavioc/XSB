@@ -258,6 +258,8 @@ copy_files::
 	    echo "Copying syslib..." ; \
 	    cp -f ${src_syslibdir}/*.O ${install_syslibdir} ; \
 	    chmod 644 ${install_syslibdir}/*.O ; \
+	    cp -f ${src_syslibdir}/debugger_data.P ${install_syslibdir} ; \
+	    chmod 644 ${install_syslibdir}/*.O ${install_syslibdir}/*.P ; \
 	    ./copysubdirs.sh ${src_syslibdir} ${install_syslibdir} ; \
 	    echo "Copying cmplib..." ; \
 	    cp -f ${src_cmplibdir}/*.O ${install_cmplibdir} ; \
