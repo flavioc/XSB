@@ -7,10 +7,12 @@
 
 %:- import (:-)/2 from usermod.
 
-:- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3 
+:- import isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, allAttr_ext/3,
+	   minAttr_ext/4, maxAttr_ext/4
 		 from usermod.
 
-:- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3
+:- import isa_int/2, hasAttr_int/3, classHasAttr_int/3, allAttr_int/3,
+	  minAttr_int/4, maxAttr_int/4
 		 from usermod.
 
 :- import component_table_int/3 from usermod.
@@ -52,6 +54,7 @@ dump_extensional_facts_1(Dir) :-
   	concat_atom([DirS,'cdf_extensional.P'],File),
 	tell(File),
 	i2ie, hasAttr2hasAttre, strel2strele, allAttr2allAttre,
+	maxAttr2maxAttre, minAttr2minAttre,
 	told.
 
 throw_cdf_writable(Dir):-
@@ -81,6 +84,18 @@ hasAttr2hasAttre :-
 		Relationships),
 	sort_and_write_terms(Relationships).
 	
+maxAttr2maxAttre :-
+	findall(maxAttr_ext(NSCid,NRCid,NTCid,N),
+		maxAttr_ext(NSCid,NRCid,NTCid,N),
+		Relationships),
+	sort_and_write_terms(Relationships).
+	
+minAttr2minAttre :-
+	findall(minAttr_ext(NSCid,NRCid,NTCid,N),
+		minAttr_ext(NSCid,NRCid,NTCid,N),
+		Relationships),
+	sort_and_write_terms(Relationships).
+	
 strel2strele :-
 	findall(classHasAttr_ext(NSCid,NRCid,NTCid),
 		classHasAttr_ext(NSCid,NRCid,NTCid),
@@ -95,7 +110,7 @@ allAttr2allAttre :-
 
 %-----------------------------------------------------------------
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_extensional_facts/1,
 "@tt{load_extensional_facts(DirectoryList)}: loads the file
@@ -164,9 +179,21 @@ merge_intensional_rules :-
 	 asserta(allAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
-	 retractall(allAttr_int(_,_,_)).
+	 retractall(allAttr_int(_,_,_)),
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	 minAttr_int(SCid,RCid,TCid,N),  \+minAttr_ext(SCid,RCid,TCid,N),
+	 asserta(minAttr_ext(SCid,RCid,TCid,N)),
+	 fail
+	 ;
+	 retractall(minAttr_int(_,_,_,_)),
+
+	 maxAttr_int(SCid,RCid,TCid,N),  \+maxAttr_ext(SCid,RCid,TCid,N),
+	 asserta(maxAttr_ext(SCid,RCid,TCid,N)),
+	 fail
+	 ;
+	 retractall(maxAttr_int(_,_,_,_)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_intensional_rules/1," @tt{load_intensional_rules(Dir)}
 ynamically loads intensional rules from @tt{cdf_intensional.P} in

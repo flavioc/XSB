@@ -251,7 +251,9 @@ the CDF state, nor saves component information to files.
 
 get_component_extensional(Term,Comp):- 
 	component_table_ext(Term,Compid,_),
-	cdf_id_fields(Compid,_,_N,Comp).
+	(nonvar(Compid) -> 
+	    cdf_id_fields(Compid,_,_N,Comp)
+	  ; true).
 
 %------------------
  

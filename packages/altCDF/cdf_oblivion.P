@@ -73,6 +73,8 @@ obliterate_objects(ObjList) :-
 obliterate_objects(_) :- gc_hasAttr_fail.
 obliterate_objects(_) :- gc_classHasAttr_fail.
 obliterate_objects(_) :- gc_allAttr_fail.
+obliterate_objects(_) :- gc_minAttr_fail.
+obliterate_objects(_) :- gc_maxAttr_fail.
 obliterate_objects(_).
 
 :- comment(obliterate_object/1, " @tt{obliterate_object(+ObjId)}
@@ -144,9 +146,21 @@ gc_class_fail(Cid) :-
 	 gc_class_fail(CCid)
 	).
 
+gc_allrels_fail :- gc_minAttr_fail.
+gc_allrels_fail :- gc_maxAttr_fail.
 gc_allrels_fail :- gc_hasAttr_fail.
 gc_allrels_fail :- gc_allAttr_fail.
 gc_allrels_fail :- gc_classHasAttr_fail.
+
+gc_minAttr_fail :-
+	orphan_minAttr(A,B,C),
+	retractallExtTerm(minAttr_ext(A,B,C)),
+	fail.
+
+gc_maxAttr_fail :-
+	orphan_maxAttr(A,B,C),
+	retractallExtTerm(maxAttr_ext(A,B,C)),
+	fail.
 
 gc_hasAttr_fail :-
 	orphan_hasAttr(A,B,C),
@@ -163,6 +177,18 @@ gc_classHasAttr_fail :-
 	retractallExtTerm(classHasAttr_ext(A,B,C)),
 	fail.
 
+orphan_minAttr(A,B,C) :-
+	minAttr_ext(A,B,C),
+	\+ (explicit_implicit_isa(A), 
+	     explicit_implicit_isa(B), 
+	     explicit_implicit_isa(C)).
+	 
+orphan_maxAttr(A,B,C) :-
+	maxAttr_ext(A,B,C),
+	\+ (explicit_implicit_isa(A), 
+	     explicit_implicit_isa(B), 
+	     explicit_implicit_isa(C)).
+	 
 orphan_hasAttr(A,B,C) :-
 	hasAttr_ext(A,B,C),
 	\+ (explicit_implicit_isa(A), explicit_implicit_isa(B), explicit_implicit_isa(C)).

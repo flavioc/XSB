@@ -4,13 +4,9 @@
 	classify_if_necessary/2
 	from cdf_checks.
 
-/* cdf flags: 
-caching
-logging
-*/
-
 % keep a table with all possible flags here.
 cdf_flag(dirty).
+cdf_flag(query).
 cdf_flag(componentUpdate).
 cdf_flag(componentLoad).
 cdf_flag(newExtTermSingle).
@@ -22,6 +18,7 @@ cdf_flag(retractallExtTermSingle).
 % corresponding user_cdf_flag/2 facts in $(HOME)/.xsb/xsbrc.P
 
 %initial_cdf_flag(dirty,<component>).
+%initial_cdf_flag(query,check(A,B,[check_types(A,B)
 initial_cdf_flag(componentUpdate,check(A,B,[classify_if_necessary(A,B)])).
 initial_cdf_flag(newExtTermSingle,check(A,B,[check_ground(A,B),
 				   	     check_types(A,B),
@@ -29,7 +26,6 @@ initial_cdf_flag(newExtTermSingle,check(A,B,[check_ground(A,B),
 initial_cdf_flag(newExtTermBatch,check(A,B,[check_ground(A,B),
 				   	     check_types(A,B),
 					     check_identity(A,B)])).
-
 
 :- dynamic cdf_flags/2.
 :- index(cdf_flags/2,trie).
@@ -42,11 +38,17 @@ component_table_ext(isa_ext(A,B),A,[B]).
 component_table_ext(hasAttr_ext(A,B,C),B,[A,C]).
 component_table_ext(allAttr_ext(A,B,C),B,[A,C]).
 component_table_ext(classHasAttr_ext(A,B,C),B,[A,C]).
+component_table_ext(minAttr_ext(A,B,C,D),B,[A,C,D]).
+component_table_ext(maxAttr_ext(A,B,C,D),B,[A,C,D]).
 
 component_table_int(isa_int(_,_),1,[arg(2,warn)]).
 component_table_int(hasAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
 component_table_int(allAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
 component_table_int(classHasAttr_int(_,_,_),2,[arg(1,warn),arg(3,no_warn)]).
+component_table_int(minAttr_int(_,_,_,_),2,[arg(1,warn),arg(3,no_warn),
+                                                                                      arg(4,no_warn)]).
+component_table_int(maxAttr_int(_,_,_,_),2,[arg(1,warn),arg(3,no_warn),
+	                                                                           arg(4,no_warn)]).
 
 component_table_int(assert_cdf_int(_),null,[]).
 component_table_int(retractall_cdf_int(_),null,[]).

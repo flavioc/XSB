@@ -12,7 +12,7 @@ isa_ext(rid(r2,test),rid(r3,test)).
 isa_ext(rid(r3,test),rid('CDF Object-Object Relations',cdf)).
 isa_ext(rid(r4,test),rid('CDF Object-Object Relations',cdf)).
 isa_ext(cid(f(cid(c1,test),
-                  cid(g(cid(1,cdf),cid(c2,test)),
+                  cid(g(cid(c1,cdf),cid(c2,test)),
 	             test)),
 	         test),
     	     cid(c13,test)).
@@ -61,3 +61,22 @@ allAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
 
 allAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test)).
 
+minAttr_ext(cid(c2,test),rid(r2,test),cid(c12,test),2).
+minAttr_ext(cid(c2,test),rid(r2,test),oid(o12,test),2).
+minAttr_ext(oid(o2,test),rid(r1,test),cid(c12,test),2).
+minAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test),2).
+minAttr_ext(oid(o2,test),rid(r2,test),oid(o12,test),2).
+minAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test),2).
+
+minAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test),2).
+
+maxAttr_ext(cid(c2,test),rid(r2,test),cid(c12,test),2).
+maxAttr_ext(cid(c2,test),rid(r2,test),oid(o12,test),2).
+maxAttr_ext(oid(o2,test),rid(r1,test),cid(c12,test),2).
+maxAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test),2).
+maxAttr_ext(oid(o2,test),rid(r2,test),oid(o12,test),2).
+maxAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test),2).
+
+maxAttr_ext(cid(c2,test),rid(prod(rid(r2,test),rid(r2,test)),test),
+	                                                         cid(c12,test),2).
+ 

@@ -3,7 +3,8 @@
 
 :- import load_extensional_facts/1 from cdf_io.
 :- import update_all_components/2 from cdf_comps_noshare.
-:- import  load_component/3 from cdf_comps_share.
+:- import load_component/3 from cdf_comps_share.
+:- import retractallExtTerm/1 from cdf_init_cdf.
 
 reset:- 
 	shell('rm -rf cdfcomp*').
@@ -51,6 +52,11 @@ load_twice :-
 	load_component(testo1,'mytest/cdfcomp1',[]),
 	load_component(testo1,'mytest/cdfcomp1',[force(yes)]).
 	
+check_deps :-
+	load_component(testo1,'mytest/cdfcomp2',[]),
+	retractallExtTerm(isa_ext(oid(o1,testo1),cid(c1,test))),
+	update_all_components('mytest/cdfcomp2',[action(in_place)]).
+
 
 
 end_of_file.
