@@ -32,35 +32,28 @@
 /****************************************************************************
   flora_undefined_predicate_hook/1
 ****************************************************************************/
-flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord]) :-
+flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord,true]) :-
 	flora_flogic_predicate(PredName,WS,_Position,Base),
 	!,
+	flora_stdmsg_nl,
 	( Base == WRAP_OBJEQL ->
-	    fmt_write_string(TrailerPred,"%s'%s'flora_trailer_loaded",args(FLORA_PREFIX,WS)),
-	    ( current_predicate(usermod:TrailerPred/1) ->
-		flora_error_line('equality maintenance not supported in module `%s''',args(WS))
-	    ;
-	      flora_error_line('query aborted due to no trailer in module `%s''',args(WS)),
-              flora_warning_line('automatically loading the equality traielr into module `%s''',args(WS)),
-	      flloadtrailer(EQLTRAILER,WS)
-	    )
+	    flora_message_line('automatically loading the equality traielr into module `%s''',args(WS)),
+	    flloadtrailer(EQLTRAILER,WS)
 	;
-	  flora_error_line('query aborted due to no trailer in module `%s''',args(WS)),
-          flora_warning_line('automatically loading the standard traielr into module `%s''',args(WS)),
+          flora_message_line('automatically loading the standard traielr into module `%s''',args(WS)),
           flloadtrailer(STDTRAILER,WS)
 	),
-	!,
-	abort.
+	!.
 
-
-flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord]) :-
+flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord,fail]) :-
 	flora_hilog_predicate(PredName,Workspace),
 	!,
 	flora_stderr_nl,
 	flora_error_line("undefined HiLog predicate in module `%s'",args(Workspace)).
 
-flora_undefined_predicate_hook([PredName,_XSBModule,_PscRecord]) :-
-	flora_nohilog_predicate(PredName,_Predicate,Workspace),
+flora_undefined_predicate_hook([PredName,_XSBModule,PscRecord,fail]) :-
+	flora_nohilog_predicate(PredName,Predicate,Workspace),
 	!,
+	psc_arity(PscRecord,N),
 	flora_stderr_nl,
-	flora_error_line("undefined predicate in module `%s'",args(Workspace)).
+	flora_error_line("undefined predicate %s/%d in module `%s'",args(Predicate,N,Workspace)).

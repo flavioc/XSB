@@ -303,6 +303,9 @@ is_mvdattspecop(FL_INMVDARROW) :- !.
 is_incattspecop(FL_ALLINARROW)   :- !.
 is_incattspecop(FL_INALLINARROW) :- !.
 
+is_tolistattspecop(FL_TOLISTARROW)   :- !.
+is_tolistattspecop(FL_INTOLISTARROW) :- !.
+
 is_aggregtop(FL_MIN)        :- !.
 is_aggregtop(FL_MAX)        :- !.
 is_aggregtop(FL_SUM)        :- !.
@@ -366,10 +369,12 @@ flobjspec_struct(Object,Spec,FLOBJSPEC(Object,Spec)).
 flfdattspec_struct(Attribute,Spec,Value,FLFDATTSPEC(Attribute,Spec,Value)).
 flmvdattspec_struct(Attribute,Spec,Value,FLMVDATTSPEC(Attribute,Spec,Value)).
 flincattspec_struct(Attribute,Spec,Value,FLINCATTSPEC(Attribute,Spec,Value)).
+fltolistattspec_struct(Attribute,Spec,Value,FLTOLISTATTSPEC(Attribute,Spec,Value)).
 
-is_flattspec_struct(FLFDATTSPEC(_A,_S,_V)).
-is_flattspec_struct(FLMVDATTSPEC(_A,_S,_V)).
-is_flattspec_struct(FLINCATTSPEC(_A,_S,_V)).
+is_flattspec_struct(FLFDATTSPEC(_A,_S,_V))     :- !.
+is_flattspec_struct(FLMVDATTSPEC(_A,_S,_V))    :- !.
+is_flattspec_struct(FLINCATTSPEC(_A,_S,_V))    :- !.
+is_flattspec_struct(FLTOLISTATTSPEC(_A,_S,_V)) :- !.
 
 flmethspec_struct(Method,FLMETHSPEC(Method)).
 
@@ -1003,7 +1008,7 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
 	    flora_body(L,RCode,Code,Status)
 
 	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_MODULE) ->
-	    ( get_name(M,MCode) ->
+	    ( (get_name(M,MCode); (get_atom(M,MCode), MCode == FL_UNIVMOD)) ->
 		flora_prlgterm(L,LCode,Status),
 		(Status == [] -> flmodule_struct(LCode,MCode,Code); true)
 	    ;
@@ -1364,7 +1369,7 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	    )
 
 	; R=CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa), get_name(Mod,FL_MODULE) ->
-	    ( get_name(M,MCode) ->
+	    ( (get_name(M,MCode); (get_atom(M,MCode), MCode == FL_UNIVMOD)) ->
 		flora_prlgterm(L,LCode,Status),
 		(Status == [] -> flmodule_struct(LCode,MCode,Code); true)
 	    ;
@@ -1480,10 +1485,14 @@ flora_attmethspec(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Status) :-
 	    flora_pathexp(L,LCode,S),
 	    (S == [] -> flora_setexp(R,RCode,Status); Status=S),
 	    (Status == [] -> flmvdattspec_struct(LCode,F,RCode,Code); true)
-	;
-	  is_incattspecop(F),
-	  flora_pathexplist([L,R],[LCode,RCode],Status),
-	  (Status == [] -> flincattspec_struct(LCode,F,RCode,Code); true)
+
+	; is_incattspecop(F) ->
+	    flora_pathexplist([L,R],[LCode,RCode],Status),
+	    (Status == [] -> flincattspec_struct(LCode,F,RCode,Code); true)
+
+	; is_tolistattspecop(F) ->
+	    flora_pathexplist([L,R],[LCode,RCode],Status),
+	    (Status == [] -> fltolistattspec_struct(LCode,F,RCode,Code); true)
         ),
 	!.
 
@@ -1775,7 +1784,7 @@ flora_head_attmethspec(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status
 	    (S == [] -> flora_head_setexp(R,RCode,Status); Status=S),
 	    (Status == [] -> flmvdattspec_struct(LCode,F,RCode,Code); true)
 
-	; is_incattspecop(F) ->
+	; (is_incattspecop(F); is_tolistattspecop(F)) ->
 	    parsing_error(If,ERROR_HDLITERAL,Status)
         ;
 	  F == FL_AT,
@@ -2197,13 +2206,13 @@ flora_db_attmethspec(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Sta
 	    (S == [] -> flora_db_setexp(Mode,R,RCode,Status); Status=S),
 	    (Status == [] -> flmvdattspec_struct(LCode,F,RCode,Code); true)
 
-	; is_incattspecop(F) ->
-	  ( Mode == FLINS ->
-	      parsing_error(If,ERROR_INSERT,Status)
-	  ;
-	    Mode == FLDEL,
-	    parsing_error(If,ERROR_DELETE,Status)
-	  )
+	; (is_incattspecop(F); is_tolistattspecop(F)) ->
+	    ( Mode == FLINS ->
+		parsing_error(If,ERROR_INSERT,Status)
+	    ;
+	      Mode == FLDEL,
+	      parsing_error(If,ERROR_DELETE,Status)
+	    )
         ;
 	  F == FL_AT,
 	  parsing_error(If,NO_WORKSPACE,Status)

@@ -58,11 +58,13 @@ flora_op(1200,fy,FL_TILDE).
 flora_op(1100,xfx,FL_FDARROW).
 flora_op(1100,xfx,FL_MVDARROW).
 flora_op(1100,xfx,FL_ALLINARROW).
+flora_op(1100,xfx,FL_TOLISTARROW).
 flora_op(1100,xfx,FL_FDSIGARROW).
 flora_op(1100,xfx,FL_MVDSIGARROW).
 flora_op(1100,xfx,FL_INFDARROW).
 flora_op(1100,xfx,FL_INMVDARROW).
 flora_op(1100,xfx,FL_INALLINARROW).
+flora_op(1100,xfx,FL_INTOLISTARROW).
 flora_op(1100,xfx,FL_INFDSIGARR).
 flora_op(1100,xfx,FL_INMVDSIGARR).
 flora_op(1100,fx,FL_INMETH).

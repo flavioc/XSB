@@ -85,6 +85,8 @@ is_flogic(PRMVD(Obj,Att,Val),WRAP_MVD,3,[Obj,Att,Val]) :- !.
 is_flogic(PRIMVD(Obj,Att,Val),WRAP_IMVD,3,[Obj,Att,Val]) :- !.
 is_flogic(PRMVDINC(Obj,Att,Val),WRAP_MVDINC,3,[Obj,Att,Val]) :- !.
 is_flogic(PRIMVDINC(Obj,Att,Val),WRAP_IMVDINC,3,[Obj,Att,Val]) :- !.
+is_flogic(PRMVDTOLIST(Obj,Att,Val),WRAP_MVDTOLIST,3,[Obj,Att,Val]) :- !.
+is_flogic(PRIMVDTOLIST(Obj,Att,Val),WRAP_IMVDTOLIST,3,[Obj,Att,Val]) :- !.
 is_flogic(PREXISTS(Obj),WRAP_EXISTS,1,[Obj]) :- !.
 is_flogic(PRFDDEF(Obj,Att),WRAP_FDDEF,2,[Obj,Att]) :- !.
 is_flogic(PRIFDDEF(Obj,Att),WRAP_IFDDEF,2,[Obj,Att]) :- !.

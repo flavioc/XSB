@@ -45,6 +45,8 @@ flora_nohilog(WRAP_MVDSIG,3) :- !.
 flora_nohilog(WRAP_IMVDSIG,3) :- !.
 flora_nohilog(WRAP_MVDINC,3) :- !.
 flora_nohilog(WRAP_IMVDINC,3) :- !.
+flora_nohilog(WRAP_MVDTOLIST,3) :- !.
+flora_nohilog(WRAP_IMVDTOLIST,3) :- !.
 flora_nohilog(WRAP_EXISTS,1) :- !.
 flora_nohilog(WRAP_FDDEF,2) :- !.
 flora_nohilog(WRAP_IFDDEF,2) :- !.

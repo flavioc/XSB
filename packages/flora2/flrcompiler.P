@@ -81,6 +81,7 @@ is_flobjref(FLOBJREF(Obj,RefType,Att),Obj,RefType,Att).
 is_flfdattspec(FLFDATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flmvdattspec(FLMVDATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flincattspec(FLINCATTSPEC(Att,RefType,Val),Att,RefType,Val).
+is_fltolistattspec(FLTOLISTATTSPEC(Att,RefType,Val),Att,RefType,Val).
 is_flmethspec(FLMETHSPEC(Meth),Meth).
 is_flimethspec(FLIMETHSPEC(IMeth),IMeth).
 is_fltranspec(FLTRANSPEC(Tran),Tran).
@@ -108,6 +109,8 @@ is_fdsigspecop(FL_FDSIGARROW).
 is_mvdsigspecop(FL_MVDSIGARROW).
 is_mvdincspecop(FL_ALLINARROW).
 is_imvdincspecop(FL_INALLINARROW).
+is_mvdtolistspecop(FL_TOLISTARROW).
+is_imvdtolistspecop(FL_INTOLISTARROW).
 is_ifdsigspecop(FL_INFDSIGARR).
 is_imvdsigspecop(FL_INMVDSIGARR).
 
@@ -340,6 +343,17 @@ incattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
 
 mvdincspec_struct(Object,AttObj,ValObj,PRMVDINC(Object,AttObj,ValObj)).
 imvdincspec_struct(Object,AttObj,ValObj,PRIMVDINC(Object,AttObj,ValObj)).
+
+tolistattspec_struct(Object,AttObj,RefType,ValObj,Code) :-
+	( is_mvdtolistspecop(RefType) ->
+	    mvdtolistspec_struct(Object,AttObj,ValObj,Code)
+	;
+	  is_imvdtolistspecop(RefType),
+	  imvdtolistspec_struct(Object,AttObj,ValObj,Code)
+        ).
+
+mvdtolistspec_struct(Object,AttObj,ValObj,PRMVDTOLIST(Object,AttObj,ValObj)).
+imvdtolistspec_struct(Object,AttObj,ValObj,PRIMVDTOLIST(Object,AttObj,ValObj)).
 
 objref_struct(Obj,RefType,Att,Val,Code) :-
 	new_varobj(Val),
@@ -1319,6 +1333,17 @@ compile_flspecbody(Object,SpecTerm,Code,Status) :-
         ).
 
 compile_flspecbody(Object,SpecTerm,Code,Status) :-
+	is_fltolistattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_pathexplist([AttTerm,ValTerm],[AttObj,ValObj],OCode,Status),
+	( Status == [] ->
+	    tolistattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    conjunct_code(OCode,SCode,Code)
+	;
+	  true
+        ).
+
+compile_flspecbody(Object,SpecTerm,Code,Status) :-
 	is_flmethspec(SpecTerm,MethTerm),
 	!,
 	compile_pathexp(MethTerm,MethObj,MCode,Status),
@@ -2113,9 +2138,21 @@ compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
 	is_flincattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
-	compile_wsflpathexp([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
 	( Status == [] ->
 	    incattspec_struct(Object,AttObj,RefType,ValObj,SCode),
+	    workspace_struct(SCode,WS,WSCode),
+	    conjunct_code(OCode,WSCode,Code)
+	;
+	  true
+        ).
+
+compile_wsflspecbody(Object,SpecTerm,WS,Code,Status) :-
+	is_fltolistattspec(SpecTerm,AttTerm,RefType,ValTerm),
+	!,
+	compile_wsflpathexplist([AttTerm,ValTerm],WS,[AttObj,ValObj],OCode,Status),
+	( Status == [] ->
+	    tolistattspec_struct(Object,AttObj,RefType,ValObj,SCode),
 	    workspace_struct(SCode,WS,WSCode),
 	    conjunct_code(OCode,WSCode,Code)
 	;
@@ -2215,9 +2252,15 @@ compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
 	  prologterm_struct(FAtom,0,[],Code),
 	  Status=[]
 	),
-	import_struct(FAtom,N,Module,ICode),
-	directive_struct(ICode,DCode),
-	report_directive(DCode).
+	!,
+	( Module == FL_UNIVMOD ->
+	    true
+	;
+	  import_struct(FAtom,N,Module,ICode),
+	  directive_struct(ICode,DCode),
+	  report_directive(DCode)
+	),
+	!.
 
 
 /****************************************************************************
@@ -2234,9 +2277,14 @@ compile_prlgtermobj(ParserTerm,Module,Object,Code,Status) :-
 	  Code=NULL,
 	  Status=[]
 	),
-	import_struct(FAtom,N,Module,ICode),
-	directive_struct(ICode,DCode),
-	report_directive(DCode).
+	!,
+	( Module == FL_UNIVMOD ->
+	    true
+	;
+	  import_struct(FAtom,N,Module,ICode),
+	  directive_struct(ICode,DCode),
+	  report_directive(DCode)
+	).
 
 
 /****************************************************************************

@@ -842,7 +842,7 @@ flora_errorwarn_count(ErrNum,WarnNum) :-
 	    flora_stderr_string("++1 error\n")
 
 	; ErrNum > 1 ->
-	    flora_stderr_string("++%d errors",args(ErrNum))
+	    flora_stderr_string("++%d errors\n",args(ErrNum))
 	;
 	  true
         ),

@@ -122,27 +122,29 @@ flora_flogic_predicate(Funct,Workspace,Position,Base) :-
 /*****************************************************************************
   is_flogic_base(+Base)
 *****************************************************************************/
-is_flogic_base(WRAP_ISA)     :- !.
-is_flogic_base(WRAP_SUB)     :- !.
-is_flogic_base(WRAP_FD)      :- !.
-is_flogic_base(WRAP_MVD)     :- !.
-is_flogic_base(WRAP_IFD)     :- !.
-is_flogic_base(WRAP_IMVD)    :- !.
-is_flogic_base(WRAP_METH)    :- !.
-is_flogic_base(WRAP_IMETH)   :- !.
-is_flogic_base(WRAP_EXISTS)  :- !.
-is_flogic_base(WRAP_MVDDEF)  :- !.
-is_flogic_base(WRAP_IMVDDEF) :- !.
-is_flogic_base(WRAP_TRAN)    :- !.
-is_flogic_base(WRAP_FDSIG)   :- !.
-is_flogic_base(WRAP_IFDSIG)  :- !.
-is_flogic_base(WRAP_MVDSIG)  :- !.
-is_flogic_base(WRAP_IMVDSIG) :- !.
-is_flogic_base(WRAP_MVDINC)  :- !.
-is_flogic_base(WRAP_IMVDINC) :- !.
-is_flogic_base(WRAP_FDDEF)   :- !.
-is_flogic_base(WRAP_IFDDEF)  :- !.
-is_flogic_base(WRAP_OBJEQL)  :- !.
+is_flogic_base(WRAP_ISA)        :- !.
+is_flogic_base(WRAP_SUB)        :- !.
+is_flogic_base(WRAP_FD)         :- !.
+is_flogic_base(WRAP_MVD)        :- !.
+is_flogic_base(WRAP_IFD)        :- !.
+is_flogic_base(WRAP_IMVD)       :- !.
+is_flogic_base(WRAP_METH)       :- !.
+is_flogic_base(WRAP_IMETH)      :- !.
+is_flogic_base(WRAP_EXISTS)     :- !.
+is_flogic_base(WRAP_MVDDEF)     :- !.
+is_flogic_base(WRAP_IMVDDEF)    :- !.
+is_flogic_base(WRAP_TRAN)       :- !.
+is_flogic_base(WRAP_FDSIG)      :- !.
+is_flogic_base(WRAP_IFDSIG)     :- !.
+is_flogic_base(WRAP_MVDSIG)     :- !.
+is_flogic_base(WRAP_IMVDSIG)    :- !.
+is_flogic_base(WRAP_MVDINC)     :- !.
+is_flogic_base(WRAP_IMVDINC)    :- !.
+is_flogic_base(WRAP_MVDTOLIST)  :- !.
+is_flogic_base(WRAP_IMVDTOLIST) :- !.
+is_flogic_base(WRAP_FDDEF)      :- !.
+is_flogic_base(WRAP_IFDDEF)     :- !.
+is_flogic_base(WRAP_OBJEQL)     :- !.
 
 
 /*****************************************************************************

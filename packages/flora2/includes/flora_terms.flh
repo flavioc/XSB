@@ -107,6 +107,7 @@
 #define FL_DOLLAR		'$'
 #define FL_CUT			'!'
 #define FL_NEWOID		'_#'
+#define FL_UNIVMOD		'*'
 
 #define FL_TNOT			(tnot)
 #define FL_NOT			(not)
@@ -123,11 +124,13 @@
 #define FL_FDARROW		'->'
 #define FL_MVDARROW		'->>'
 #define FL_ALLINARROW		'+>>'
+#define FL_TOLISTARROW		'->->'
 #define FL_FDSIGARROW		'=>'
 #define FL_MVDSIGARROW		'=>>'
 #define FL_INFDARROW		'*->'
 #define FL_INMVDARROW		'*->>'
 #define FL_INALLINARROW		'*+>>'
+#define FL_INTOLISTARROW	'*->->'
 #define FL_INFDSIGARR		'*=>'
 #define FL_INMVDSIGARR		'*=>>'
 #define FL_INMETH		'*'
@@ -225,6 +228,7 @@
   FLFDATTSPEC(FLPATHEXP,AttRefType,FLPATHEXP)
   FLMVDATTSPEC(FLPATHEXP,AttRefType,FLPATHEXPLIST)
   FLINCATTSPEC(FLPATHEXP,AttRefType,FLPATHEXP)
+  FLTOLISTATTSPEC(FLPATHEXP,AttRefType,FLPATHEXP)
   FLMETHSPEC(Meth)
   FLIMETHSPEC(IMeth)
   FLTRANSPEC(Tran)
@@ -271,6 +275,7 @@
 #define FLFDATTSPEC		flfdattspec
 #define FLMVDATTSPEC		flmvdattspec
 #define FLINCATTSPEC		flincattspec
+#define FLTOLISTATTSPEC		fltolistattspec
 #define FLMETHSPEC		flmethspec
 #define FLIMETHSPEC		flimethspec
 #define FLTRANSPEC		fltranspec
@@ -340,6 +345,8 @@
 #define PRIMVD			primvd
 #define PRMVDINC		prmvdinc
 #define PRIMVDINC		primvdinc
+#define PRMVDTOLIST		prmvdtolist
+#define PRIMVDTOLIST		primvdtolist
 #define PREXISTS		prexists
 #define PRFDDEF			prfddef
 #define PRIFDDEF		prifddef
@@ -418,6 +425,8 @@
 #define	WRAP_IMVDSIG		imvdsig
 #define	WRAP_MVDINC		mvdinc
 #define	WRAP_IMVDINC		imvdinc
+#define WRAP_MVDTOLIST		mvdtolist
+#define WRAP_IMVDTOLIST		imvdtolist
 #define	WRAP_EXISTS		exists
 #define	WRAP_FDDEF		fddef
 #define	WRAP_IFDDEF		ifddef

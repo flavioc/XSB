@@ -24,9 +24,7 @@
 */
 
 
-:- import fmt_write_string/3 from file_io.
-
-:- import current_predicate/1 from curr_sym.
+:- import psc_arity/2 from machine.
 
 :- import
 	flora_flogic_predicate/4,
@@ -37,7 +35,8 @@
 :- import
 	flora_stderr_nl/0,
 	flora_error_line/2,
-	flora_warning_line/2
+	flora_stdmsg_nl/0,
+	flora_message_line/2
    from flrprint.
 
 :- import flloadtrailer/2 from flrutils.
