@@ -197,6 +197,8 @@ void ODBCConnect()
     ctop_int(5, 1);
     return;
   }
+  SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2, 
+		SQL_IS_UINTEGER);
 
   // allocated connection handler
   rc = SQLAllocConnect(henv, &hdbc);
@@ -625,7 +627,6 @@ void Parse()
 //-----------------------------------------------------------------------------
 UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
 {
-
   switch (coltype) {
   case SQL_CHAR:
   case SQL_VARCHAR:
@@ -643,7 +644,7 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
   case SQL_DATE:
   case SQL_TIME:
   case SQL_TIMESTAMP: return 32;
-  default: ;
+  default: printf("Illegal ODBC Type: %d\n",coltype);
   }
   return 0;
 }
@@ -671,7 +672,8 @@ int DescribeSelectList(int i)
   UDWORD collen;
 
   CursorTable[i].ColCurNum = 0;
-  SQLNumResultCols(CursorTable[i].hstmt, &(CursorTable[i].ColNum));
+  CursorTable[i].ColNum = 0;
+  SQLNumResultCols(CursorTable[i].hstmt, (SQLSMALLINT*)&(CursorTable[i].ColNum));
   if (!(CursorTable[i].ColNum)) return 2;   // no columns are affected
 
   // if we aren't reusing a closed statement hand, we need to get
@@ -700,8 +702,11 @@ int DescribeSelectList(int i)
     for (j = 0; j < CursorTable[i].ColNum; j++) {
       SQLDescribeCol(CursorTable[i].hstmt, (short)(j+1), (UCHAR FAR*)colname,
 		     sizeof(colname), &colnamelen,
-		     &CursorTable[i].ColTypes[j],
+		     &(CursorTable[i].ColTypes[j]),
 		     &collen, &scale, &nullable);
+      // SQLServer returns these 2 wierd types, treat them as varchars?
+      if (CursorTable[i].ColTypes[j] == -9) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
+      if (CursorTable[i].ColTypes[j] == -6) CursorTable[i].ColTypes[j] = SQL_VARCHAR;
       colnamelen = (colnamelen > 49) ? 49 : colnamelen; 
       colname[colnamelen] = '\0';
       if (!((CursorTable[i]).ColLen[j] =
