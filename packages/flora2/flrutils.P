@@ -91,8 +91,8 @@ flora_load_module_internal(InFile,Workspace) :-
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,Workspace)
 
-	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_FILE_EXT]),
-	    path_sysop(exists,File)
+	; parse_filename(File,_,_,Ext), Ext \== '', Ext \== FLORA_FILE_EXT,
+	  path_sysop(exists,File)
 	->  flora_stderr_nl,
 	    flora_error_line("%s: Filename extension must be %s!",
 			     args(File,FLORA_FILE_EXT)),
@@ -127,8 +127,8 @@ flora_load_module_internal(InFile) :-
 	    consult(OFile)
 
 	; parse_filename(File,_,_,Ext),
-	    not member(Ext,['',XSB_OFILE_EXT,XSB_PFILE_EXT,FLORA_FILE_EXT]),
-	    path_sysop(exists,File)
+          Ext \== '', Ext \== XSB_OFILE_EXT, Ext \== XSB_PFILE_EXT, Ext \== FLORA_FILE_EXT,
+	  path_sysop(exists,File)
 	->
 	    flora_stderr_nl,
 	    flora_error_line("%s: Filename extension must be %s, %s or %s!",
@@ -155,7 +155,8 @@ flloadtrailer(TrailerName) :-
 
 flloadtrailer(TrailerName,Workspace) :-
 	( TrailerName \== NONE, TrailerName \== BASIC, TrailerName \== FLOGIC ->
-	    flora_error_line("Equality must be `%s', or `%s', or `%s'!",args(NONE,BASIC,FLOGIC)),
+	    flora_error_line("Equality must be `%s', or `%s', or `%s'!",
+                             args(NONE,BASIC,FLOGIC)),
 	    fail
 	;
 	  %% Get the trailer file name in Flora package.
@@ -163,20 +164,25 @@ flloadtrailer(TrailerName,Workspace) :-
 	  package_configuration(dir(flora),FloraDir),
 	  slash(S),
 	  flora_trailer_filename(TrailerName,TrailerFileName),
-	  fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
-
+	  fmt_write_string(TrailerFullName,"%s%strailer%s%s",
+                           args(FloraDir,S,S,TrailerFileName)),
 	  %% Get file names in user dir.
 	  flora_user_flora_dir(UserFloraDir),
-	  fmt_write_string(UserTrailerName,"%s%s%s",args(UserFloraDir,S,TrailerFileName)),
-	  flora_WSP_filename(UserTrailerName,Workspace,UserTrailerWSPFile),
-	  flora_WSO_filename(UserTrailerName,Workspace,UserTrailerWSOFile),
-	  %% Load the trailer.
-	  ( flora_file_newerthan(UserTrailerWSOFile,TrailerFullName) ->
+	  fmt_write_string(UserTrailerPFile,"%s%s%s",args(UserFloraDir,S,TrailerFileName)),
+	  flora_mainO_filename(UserTrailerPFile,UserTrailerOFile),
+	  flora_WSO_filename(UserTrailerPFile,Workspace,UserTrailerWSOFile),
+	  %% Copy the main file to user directory.
+	  ( flora_file_newerthan(UserTrailerPFile,TrailerFullName) ->
 	      true
 	  ;
-	    flora_copy_file(TrailerFullName,UserTrailerWSPFile),
+	    flora_copy_file(TrailerFullName,UserTrailerPFile)
+	  ),
+	  ( flora_file_newerthan(UserTrailerWSOFile,UserTrailerPFile) ->
+	      true
+	  ;
 	    flora_set_xpp_options(Workspace),
-	    compile(UserTrailerWSPFile,[optimize,spec_repr]),
+	    compile(UserTrailerPFile,[optimize,spec_repr]),
+	    path_sysop(rename,UserTrailerOFile,UserTrailerWSOFile),
 	    flora_clear_xpp_options
 	  ),
 	  consult(UserTrailerWSOFile),
@@ -197,7 +203,8 @@ flsetuptrailer(TrailerName) :-
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	flora_trailer_filename(TrailerName,TrailerFileName),
-	fmt_write_string(TrailerFullName,"%s%strailer%s%s",args(FloraDir,S,S,TrailerFileName)),
+	fmt_write_string(TrailerFullName,"%s%strailer%s%s",
+                         args(FloraDir,S,S,TrailerFileName)),
 	telling(PreOutFile),
 	tell(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
@@ -233,16 +240,21 @@ flloadpatch(Workspace) :-
 	fmt_write_string(PatchFullName,"%s%strailer%s%s",args(FloraDir,S,S,PatchName)),
 	%% Get file names in user dir.
 	flora_user_flora_dir(UserFloraDir),
-	fmt_write_string(UserPatchName,"%s%s%s",args(UserFloraDir,S,PatchName)),
-	flora_WSP_filename(UserPatchName,Workspace,UserPatchWSPFile),
-	flora_WSO_filename(UserPatchName,Workspace,UserPatchWSOFile),
-	%% Load the patch.
-	( flora_file_newerthan(UserPatchWSOFile,PatchFullName) ->
+	fmt_write_string(UserPatchPFile,"%s%s%s",args(UserFloraDir,S,PatchName)),
+	flora_mainO_filename(UserPatchPFile,UserPatchOFile),
+	flora_WSO_filename(UserPatchPFile,Workspace,UserPatchWSOFile),
+	%% Copy the main file to user directory.
+	( flora_file_newerthan(UserPatchPFile,PatchFullName) ->
 	    true
 	;
-	  flora_copy_file(PatchFullName,UserPatchWSPFile),
+	  flora_copy_file(PatchFullName,UserPatchPFile)
+	),
+	( flora_file_newerthan(UserPatchWSOFile,UserPatchPFile) ->
+	    true
+	;
 	  flora_set_xpp_options(Workspace),
-	  compile(UserPatchWSPFile,[optimize,spec_repr]),
+	  compile(UserPatchPFile,[optimize,spec_repr]),
+	  path_sysop(rename,UserPatchOFile,UserPatchWSOFile),
 	  flora_clear_xpp_options
         ),
 	consult(UserPatchWSOFile),
@@ -311,12 +323,13 @@ flora_flcompile(FlrFile,Workspace) :-
 	( Status == FLORA_FAILURE ->
 	    fail
 	;
-	  flora_WSP_filename(FlrFile,Workspace,WSPFile),
-	  flora_copy_file(MPFile,WSPFile),
+	  flora_mainO_filename(FlrFile,MOFile),
+	  flora_WSO_filename(FlrFile,Workspace,WSOFile),
 	  flora_message_line("calling XSB compiler"),
 	  flora_set_xpp_options(Workspace),
-	  compile(WSPFile,[optimize,spec_repr]),
-	  flora_clear_xpp_options
+	  compile(MPFile,[optimize,spec_repr]),
+	  flora_clear_xpp_options,
+	  path_sysop(rename,MOFile,WSOFile)
         ),
 	!.
 
@@ -326,32 +339,27 @@ flora_flcompile(FlrFile,Workspace) :-
 *************************************************************************/
 flora_flload(File,Workspace) :-
 	flora_mainP_filename(File,MPFile),
+	flora_mainO_filename(File,MOFile),
 	flora_FDB_filename(File,FDBFile),
-	flora_WSP_filename(File,Workspace,WSPFile),
 	flora_WSO_filename(File,Workspace,WSOFile),
 	!,
-        ( flora_file_newerthan(WSPFile,File) ->
+        ( flora_file_newerthan(MPFile,File) ->
 	    flora_stdmsg_nl,
 	    true
 	;
-	    ( flora_file_newerthan(MPFile,File) ->
-		flora_stdmsg_nl,
-		true
-	    ;
-		flora_compile_file(File,MPFile,FDBFile,Status),
-		(Status == FLORA_FAILURE -> fail; true)
-	    ),
-	    flora_copy_file(MPFile,WSPFile)
-        ),
+	  flora_compile_file(FlrFile,MPFile,FDBFile,Status),
+	  (Status == FLORA_FAILURE -> fail; true)
+	),
 	!,
-	( flora_file_newerthan(WSOFile,WSPFile) ->
-	    ConsultFile=WSOFile
-	;
-	    ConsultFile=WSPFile
-        ),
-	flora_message_line("loading %s into module %s", args(File,Workspace)),
+	flora_message_line("loading %s into module %s",args(FlrFile,Workspace)),
 	flora_set_xpp_options(Workspace),
-        consult(ConsultFile),
+	( flora_file_newerthan(WSOFile,MPFile) ->
+	    true
+	;
+	  compile(MPFile,[optimize,spec_repr]),
+	  path_sysop(rename,MOFile,WSOFile)
+        ),
+        consult(WSOFile),
 	flora_clear_xpp_options,
 	!.
 
@@ -370,15 +378,16 @@ flora_save_user_clauses(FlrFile) :-
 
 /*************************************************************************
   flora_get_user_program_maybe(+InFile,-File)
-  If InFile = user assume the user wants to input the program to the shell.
+  If InFile = user assume the user wants to input the program from the shell.
   Retrun the name of the tempfile that has the program.
 *************************************************************************/
 flora_get_user_program_maybe(InFile,File) :-
-	(InFile == user
-	->  path_sysop(tmpfilename,File),
+	( InFile == user ->
+	    path_sysop(tmpfilename,File),
 	    str_cat(File,'.flr',FlrFile),
 	    flora_save_user_clauses(FlrFile)
-	;   InFile = File
+	;
+	  File=InFile
 	).
 
 
@@ -393,7 +402,7 @@ flora_locate_file(InFile,ExtType,ExtFile) :-
 	( Ext == ExtType ->
 	    ExtFileName=InFile
 	;
-	    fmt_write_string(ExtFileName,"%s.%s",args(InFile,ExtType))
+	  fmt_write_string(ExtFileName,"%s.%s",args(InFile,ExtType))
 	),
 	flora_locate_file(ExtFileName,ExtFile),
 	!.
@@ -439,6 +448,7 @@ flora_library_directory(LibDir) :- xsb_configuration(cmplibdir,LibDir).
 
 /*************************************************************************
   flora_mainP_filename(+File,-MPFile)
+  flora_mainO_filename(+File,-MOFile)
   flora_FDB_filename(+File,-FDBFile)
   flora_FLH_filename(+File,-FLHFile)
   flora_WSP_filename(+File,+WS,-WSPFile)
@@ -448,6 +458,10 @@ flora_mainP_filename(File,MPFile) :-
 	parse_filename(File,Dir,Base,_),
 	fmt_write_string(MPFile,"%s%s.%s",args(Dir,Base,XSB_PFILE_EXT)).
 
+flora_mainO_filename(File,MOFile) :-
+	parse_filename(File,Dir,Base,_),
+	fmt_write_string(MOFile,"%s%s.%s",args(Dir,Base,XSB_OFILE_EXT)).
+
 flora_FDB_filename(File,FDBFile) :-
 	parse_filename(File,Dir,Base,_),
 	fmt_write_string(FDBFile,"%s%s.%s",args(Dir,Base,FLORA_FDB_EXT)).
@@ -456,9 +470,9 @@ flora_FLH_filename(File,FLHFile) :-
 	parse_filename(File,Dir,Base,_),
 	fmt_write_string(FLHFile,"%s%s.%s",args(Dir,Base,FLORA_HEADER_EXT)).
 
-flora_WSP_filename(File,WS,WSPFile) :-
-	parse_filename(File,Dir,Base,_),
-	fmt_write_string(WSPFile,"%s%s_%s.%s",args(Dir,Base,WS,XSB_PFILE_EXT)).
+%flora_WSP_filename(File,WS,WSPFile) :-
+%	parse_filename(File,Dir,Base,_),
+%	fmt_write_string(WSPFile,"%s%s_%s.%s",args(Dir,Base,WS,XSB_PFILE_EXT)).
 
 flora_WSO_filename(File,WS,WSOFile) :-
 	parse_filename(File,Dir,Base,_),
@@ -505,7 +519,9 @@ flora_set_xpp_options :-
 
 
 flora_set_xpp_options(WS) :-
-	fmt_write_string(Opt,'-P -m -nostdinc -curdirinclast -D FLORA_VAR_WORKSPACE=%s',args(WS)),
+	fmt_write_string(Opt,
+                         '-P -m -nostdinc -curdirinclast -D FLORA_VAR_WORKSPACE=%s',
+                         args(WS)),
 	retractall(xpp_options(_)),
 	assert(xpp_options(Opt)).
 
@@ -652,7 +668,8 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
 	%% FLLIBCONTROL (sylibinc/flrcontrol_inc.flh) should probably 
 	%% be included by the compiler
-	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH,FLLIBCONTROL|LibOptionList],HeaderStatus),
+	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH,FLLIBCONTROL|LibOptionList],
+                           HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
@@ -850,7 +867,11 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	  )
         ),
 	EWS=[error(ErrNum),warning(WarnNum)],
-	(flora_end_of_input(LexerStatus) -> Status=[FLORA_EOF|EWS]; Status=[FLORA_NOT_EOF|EWS]).
+	( flora_end_of_input(LexerStatus) ->
+	    Status=[FLORA_EOF|EWS]
+	;
+	  Status=[FLORA_NOT_EOF|EWS]
+	).
 
 
 /*************************************************************************
