@@ -759,14 +759,24 @@ trans_goals(T, Goal, SymTab, VidIn, VidOut) :-
 	trans_goal(T, Goal, SymTab, VidIn, VidOut).
 
 trans_goal(Term, Goal, SymTab, VidIn, VidOut) :-
-	functor(Term, P, A),
-	(inline_predicate(P, A)
-	 ->	Goal = inlinegoal(P, A, ArgList)
-	 ;	Goal = goal(Sym, ArgList), sym_insert(P, A, _Prop, SymTab, Sym)
-	),
-	prolog_arglist(Term, RawArgs, A, A),
-	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
-
+	(Term = Mod:Term1
+	 ->	functor(Term1, P, A),
+		Goal = goal(Sym, ArgList),
+		(sym_insert(P,A,[],SymTab,Sym),sym_prop(im(Mod),Sym)
+		 ->	true
+		 ;	sym_insert(Mod:P, A, [im(Mod)], SymTab, Sym)
+		),
+		prolog_arglist(Term1, RawArgs, A, A),
+		trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut)
+	 ;	functor(Term, P, A),
+		(inline_predicate(P, A)
+		 ->	Goal = inlinegoal(P, A, ArgList)
+		 ;	Goal = goal(Sym, ArgList), sym_insert(P, A, _Prop, SymTab, Sym)
+		),
+		prolog_arglist(Term, RawArgs, A, A),
+		trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut)
+	).
+	 
 trans_head(Term, goal(_Sym, ArgList), SymTab, VidIn, VidOut) :-
 	Term =.. [_|RawArgs],
         trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).

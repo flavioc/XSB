@@ -380,7 +380,11 @@ use_prop(unused).
 /*	Return the name Name and the arity Arity of the symbol Sym.	*/
 /*======================================================================*/
 
-sym_name(sym(P, A, _, _), P, A).
+sym_name(sym(P, A, _, _), P1, A) :-
+	(P = _Mod:P1
+	 ->	true
+	 ;	P1 = P
+	).
 
 
 /*======================================================================*/
