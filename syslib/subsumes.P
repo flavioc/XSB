@@ -62,11 +62,9 @@ variant(Term1, Term2) :-
 ***/
 
 variant(X,Y) :- \+ (X=Y), !, fail.
-variant(X,Y) :- '_$variant'(Buff),buff_set_word(Buff,0,0),
+variant(X,Y) :- conset('_$variant_cnt',0),
 		\+ variant1(X,Y), !, fail.
 variant(_,_).
-
-:- buff_alloc(8,Buff), assert0('_$variant'(Buff)).
 
 variant1(X,Y) :-
 	term_type(X,Ty), term_type(Y,Ty1), Ty=Ty1,
@@ -78,10 +76,10 @@ variant1(X,Y) :-
 		term_psc(Y,Ypsc), psc_arity(Ypsc,Arity1), Arity=Arity1,
 		variant1(X,Y,Arity)
 	 ; Ty =:= 0	% vars
-	 ->	'_$variant'(Buff), buff_word(Buff,0,I0),
-	 	I is I0+1, buff_set_word(Buff,0,I),
+	 ->	conget('_$variant_cnt',I0),
+	 	I is I0+1, conset('_$variant_cnt',I),
 		X = '$VAR'(I0), Y = X
-	 ;	true
+	 ;	X = Y
 	).
 
 variant1(X,Y,N) :-

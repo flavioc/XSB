@@ -25,10 +25,8 @@
 
 :- export subsumes_chk/2, variant/2, subsumes/2.
 
-
-:- import assert0/1 from assert.
 :- import numbervars/1 from num_vars.
-:- import buff_alloc/2, buff_set_word/3, buff_word/3,
-	  term_psc/2, psc_arity/2, term_arg/3, term_type/2
+:- import conset/2, conget/2 from gensym.
+:- import term_psc/2, psc_arity/2, term_arg/3, term_type/2
      from machine.
 
