@@ -426,7 +426,7 @@ them permanent.  (See section \ref{TransactionManagement}).
 \subsection{ Direct Execution of SQL statements}
 %==========================================
 It is also possible to execute SQL statements directly. 
-{\tt odbc\_sql\_select/2} and {\tt odbc\_sql/1} predicates provide this 
+{\tt odbc\_sql/2} and {\tt odbc\_sql/1} predicates provide this 
 feature.  The former takes an SQL query string as its input and returns 
 a list of field values.  For example:
 \begin{verbatim}
@@ -441,10 +441,27 @@ R = [t001, X-Ray, 5, 100];
 The latter, {\tt odbc\_sql/1}, can be used for any other non-query SQL statement request:
 \begin{verbatim}
 
-| ?- odbc_sql('Create Table MyTable( Column1 DataType1, Column2 DataType2)').
+| ?- odbc_sql('CREATE TABLE MyTable( Column1 DataType1, Column2 DataType2)').
 
 yes
 \end{verbatim}
+
+The most general way to execute SQL statments is to use {\tt
+odbc\sql/3}.  With this predicate, you can execute parameterized SQL
+statements.  For example,
+
+\begin{verbatim}
+
+| ?- Name = 'X-Ray',
+     odbc_sql_select([Name],
+                     'SELECT Length, Price FROM Test WHERE rel1.TName = ?',
+                     [L,P]).
+\end{verbatim}
+
+The first argument is a list of bind values, to be assigned the '?' in
+the query; the second argument is a parameterized query; the third
+argument is a list in which the the results are returned,
+nondeterministically.
 
 \subsection{Access to Data Dictionaries}
 %======================================
