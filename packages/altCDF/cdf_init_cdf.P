@@ -1638,7 +1638,8 @@ abolish_nec_tables(allAttr_ext(_,_,_)) :- !,
 abolish_nec_tables(classHasAttr_ext(_,_,_)) :- !,
 	abolish_classHasAttr_inherits.
 abolish_nec_tables(minAttr_ext(_,_,_,_)) :- !,
-	abolish_minAttr_inherits.
+	abolish_minAttr_inherits,
+	abolish_hasAttr_inherits.
 abolish_nec_tables(maxAttr_ext(_,_,_,_)) :- !,
 	abolish_maxAttr_inherits.
 abolish_nec_tables(necessCond_ext(_,_)) :- !,

@@ -192,7 +192,10 @@ apply_checks(Context,Term):-
 
 :- import term_set_arg/4 from machine.
 call_check(Check,CDFFlag):- 
-        (call0(Check) -> true ; term_set_arg(CDFFlag,1,0,1)).
+        (call0(Check) -> true 
+         ; term_set_arg(CDFFlag,1,0,1),
+           writeln(failed(Check))
+           ).
 
 %-----------------
 check_ground_checkflag(Context,Term):- 
@@ -201,31 +204,25 @@ check_ground_checkflag(Context,Term):-
 	    cdf_check_ground(Term)
 	  ; true).
 
-/*  Old: TLS
-cdf_check_ground(Term):- 
-	component_table_ext(Term,Main,Dep),
-	member(Arg,[Main|Dep]),
-	cdf_id_fields(Arg,_,_,Comp),
-	(Comp \== cdfpt->
-	   check_ground(Term,'cdf_check_ground/1',2)
-	   ; true),
-	  fail.
-cdf_check_ground(_Term).
-*/
-
 cdf_check_ground(Term):- 
 	cdf_check_ground(Term,Term).
 
+cdf_check_ground(minAttr_ext(A,B,C,N),OrigTerm):- !,
+	cdf_check_id_list([A,B,C],1,OrigTerm),
+	(ground(N) -> true ; instantiation_error(minAttr_ext(A,B,C,N),4,ground)).
+cdf_check_ground(maxAttr_ext(A,B,C,N),OrigTerm):- !,
+	cdf_check_id_list([A,B,C],1,OrigTerm),
+	(ground(N) -> true ; instantiation_error(maxAttr_ext(A,B,C,N),4,ground)).
 cdf_check_ground(Term,OrigTerm):- 
-	Term =.. [_|Args],
+	Term =.. [_Functor|Args],
 	cdf_check_id_list(Args,1,OrigTerm).
 
 cdf_check_id_list([],_,_).
 cdf_check_id_list([Id|Rest],N,OrigTerm):- 
-	cdf_id_fields(Id,_,Nid,Cmpt),
+	cdf_id_fields(Id,_,_Nid,Cmpt),
 	(Cmpt == cdfpt -> 
 	    true
-	  ; cdf_check_ground_1(Nid,N,OrigTerm)),
+	  ; cdf_check_ground_1(Id,N,OrigTerm)),
 	N1 is N + 1,
 	cdf_check_id_list(Rest,N1,OrigTerm).
 
