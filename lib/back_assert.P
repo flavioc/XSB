@@ -1,0 +1,138 @@
+/* File:      back_assert.P  -- Primitives for backtrackable updates
+** Author(s): Prasad Rao, Hasan Davulcu, kifer
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1998-2000
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+%% Asserts fact. On backtracking, fact is deleted.
+% that uses tries
+
+assert_bt(Fact,Inserted) :-	
+	triehandle_for_backtrackable_op('_$back_assert_triehandle',H),
+	trie_intern(Fact, H, Leaf, New, _),
+	(New == 0
+	->  Inserted=1,  % new fact inserted
+	    (  true
+	    ;  trie_unintern(H, Leaf), fail 
+	    )
+	; Inserted=0	 % fact was already there: no action
+	).
+
+
+%% Backtrackable retract.
+%% Doesn't remove anything, but instead "marks" for deletion.
+%% On backtracking: unmarks facts that are marked for deletion
+
+retract_bt(Fact,Deleted) :-
+	triehandle_for_backtrackable_op('_$back_assert_triehandle',H),
+	(trie_interned(Fact, H, Leaf, _)
+	->  Deleted=1,   % existing fact deleted
+	    ( trie_unintern_nr(H, Leaf)
+	    ; unmark_uninterned_nr(H, Leaf), fail
+	    )
+	;   Deleted=0    % non-existing fact: no action
+	).
+
+
+
+%% The folowing two functions insert key-value pairs
+%% If inserting an already existing keypair, then return 0
+%% If inserting a non-existing keypair with an existing key, then return -1.
+%% In both cases don't insert anything.
+%% If keypair is new, return 1 and insert pair(Key,Val)
+keypair_insert_bt(Key, Value, Inserted):-
+	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+	%% If this key already exists, then don't insert and return -1
+	(trie_interned(pair(Key,Val), H, _Leaf, _)
+	-> (Val==Value -> Inserted=0 ; Inserted = -1)
+	;
+	    %% Key doesn't exist
+	    trie_intern(pair(Key,Value), H, Leaf_Pair, _New, _ ),
+	    Inserted = 1,	% new fact: insert it
+	    ( true
+	    ;   trie_unintern(H, Leaf_Pair), fail
+	    )
+	).
+
+
+
+%% If key exists, then delete the pair and return 1; otherwise, return 0
+keypair_delete_bt(Key, Deleted):-
+	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+	(trie_interned(pair(Key,_Value), H, Leaf, _)
+	->  Deleted = 1,  % this is an existing fact: delete it
+	    ( trie_unintern_nr(H, Leaf) 
+	    ; unmark_uninterned_nr(H, Leaf), fail 
+	    )
+	;   Deleted = 0   % no such fact -- no action
+	).
+
+
+
+%% Like keypair_insert_bt, keypair_delete_bt, 
+%% but these are not backtrackable.
+keypair_insert(Key, Value, Inserted):-
+	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+	%% If this key already exists, then don't insert and return -1
+	( trie_interned(pair(Key,Val), H, _Leaf, _)
+	-> (Val==Value -> Inserted=0 ; Inserted = -1)
+	;
+	    %% Key doesn't exist
+	    trie_intern(pair(Key,Value), H, _Leaf_Pair, _New, _ ),
+	    Inserted = 1	% new fact: insert it
+	).
+
+
+%% If key exists, then delete the pair and return 1; otherwise, return 0
+keypair_delete(Key, Deleted):-
+	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+	(trie_interned(pair(Key,_Value), H, Leaf, _)
+	->  Deleted = 1,  % this is an existing fact: delete it
+	    trie_unintern_nr(H, Leaf) 
+	;   Deleted = 0   % no such fact -- no action
+	).
+
+
+keypair_find(Key,Value) :-
+	triehandle_for_backtrackable_op('_$keypair_triehandle',H),
+	trie_interned(pair(Key,Value),H,_,_).
+
+%% Reclaims space by removing nodes from the backtrackable assert trie
+%% which were marked for deletion. This should be done only at the top 
+%% level of a query.
+reclaim_space_bt :-
+	triehandle_for_backtrackable_op('_$back_assert_triehandle',H),
+	trie_reclaim_uninterned_nr(H).
+
+
+
+
+%% Create a new trie or use an existing one 
+%% that is already saved as a property of IdAtom
+triehandle_for_backtrackable_op(IdAtom,Handle) :-
+	conget(IdAtom,H),
+	(H==0
+	-> new_trie(Handle), conset(IdAtom,Handle)
+	;  integer(H), H > 0
+	-> H = Handle
+	;  abort(('Something wrong: ', IdAtom, ' trie handle is corrupted'))
+	).

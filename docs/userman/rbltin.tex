@@ -298,6 +298,98 @@ predicate to be tabled.
 %\input{tr_assert}	% To be uncommented when they become standard.
 %----------------------------------------------------------------------
 
+\subsection{Associative Arrays and Backtrackable Updates}
+
+\label{backtrackable update}
+XSB provides a high-level interface that supports efficient storage and
+querying of key-value pairs. A \emph{key-value pair} is an association
+between keys and the corresponding values. There can be at most one value
+associated with a given key. A key-value pair can be stored, deleted or
+queried. XSB provides two sets of predicates for handling such pairs:
+backtrackable and non-backtrackable. The backtrackable primitives for
+insertion and deletion of key-value pairs commit their changes to the
+database only if the goal succeeds. Otherwise, if the goal fails, the
+change is undone. Similarly, XSB provides primitive for backtrackable
+updates similar to {\tt assert} and {\tt retract}. The semantics of
+backtrackable updates is defined using Transaction logic \cite{BoKi94}.
+
+All the predicates described in this section must be imported from
+module {\tt back\_assert}.
+
+\subsubsection{Non-backtrackable Associative Arrays}
+
+\begin{description}
+\ouritem{keypair\_insert(+Key, +Value, ?Inserted)}\index{{\tt keypair\_insert/3}}
+%%
+Insert the given key-value pair into the database. If the pair is new, then
+{\tt Inserted} unifies with 1. If the pair is already in the database, then
+{\tt Inserted} unifies with 0. If the database already contains a pair with
+the given key that is associated with a \emph{different} value, then
+{\tt Inserted} unifies with -1.
+In both cases the predicate succeeds.
+
+\ouritem{keypair\_delete(+Key, ?Deleted)}\index{{\tt keypair\_delete/2}}
+%%
+Delete the key-value pair with the given key from the databases. If
+the pair was in the database then {\tt Deleted} unifies with 1.
+If it was \emph{not} in the databases then {\tt Deleted} unifies with 0.
+In both cases the predicate succeeds.
+
+\ouritem{keypair\_find(+Key, ?Value)}\index{{\tt keypair\_find/2}}
+%%
+If the database has a key pair with the given key, then {\tt Value} unifies
+with the value stored in the database. If no such pair exists in the
+database, then the goal fails.
+
+Note that this predicate works with non-backtrackable associative arrays
+described above as well as with the backtrackable ones, described below.
+\end{description}
+
+\subsubsection{Backtrackable Updates}
+\label{backtrackable update}
+
+\begin{description}
+\ouritem{keypair\_insert\_bt(+Key, +Value, ?Inserted)}
+\index{{\tt keypair\_insert\_bt/3}}
+This predicate works exactly as its non-backtrackable counterpart,
+{\tt keypair\_insert/3}, when the top-level goal succeeds.
+However, if the top-level goal fails, then the result of the insertion is
+undone. In other words, the pair remains in the database until it is
+explicitly deleted or until the top-level query fails. The exact semantics
+is defined by Transaction Logic \cite{BoKi94}.
+
+Backtrackable key-value pairs are kept in the same database as
+non-backtrackable pairs and are queried through the same predicate
+{\tt keypair\_find/2}.
+
+\ouritem{keypair\_delete\_bt(+Key, ?Deleted)} \index{{\tt keypair\_delete\_bt/2}}
+%%
+Like {\tt keypair\_delete/2}, but backtrackable.
+
+
+\ouritem{assert\_bt(+Goal)} \index{{\tt assert\_bt/1}}
+%%
+Like {\tt assert/1}, but backtrackable. Note the difference between
+insertions done by associative array manipulation primitives and
+{\tt assert/retract}: the former can be queried only through
+{\tt keypair\_find/2} while the latter become facts in the database, which
+can be ``called''.
+
+Also, {\tt assert\_bt/1} and {\tt retract\_bt/1} work only with goals ---
+one cannot assert clauses.
+
+\ouritem{retract\_bt(+Goal)} \index{{\tt retract\_bt/1}}
+%%
+This is a backtrackable version of {\tt retract/1}. Like {\tt
+  assert\_bt/1}, it works only with Prolog goals, not clauses.
+
+\ouritem{reclaim\_space\_bt} \index{{\tt reclaim\_space\_bt/0}}
+%%
+This is similar to {\tt reclaim\_space/1} but it is used for backtrackable
+updates only. As with {\tt reclaim\_space/1}, this goal is typically called
+just before returning to the top level.
+%%
+\end{description}
 
 
 \section{Execution State}\label{environmental}

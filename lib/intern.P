@@ -121,7 +121,7 @@ trie_unintern_nr(Root,Leaf) :-
 	integer(Root),
 	integer(Leaf),
 	!,
-	 trie_dispose_nr(Leaf).
+	trie_dispose_nr(Leaf).
 
 /*--------------------------------------------------
 unmark_uninterned_nr(+Root, +Leaf)
@@ -130,7 +130,7 @@ unmark_uninterned_nr(Root,Leaf) :-
 	integer(Root),
 	integer(Leaf),
 	!,
-	 trie_undispose(Root,Leaf).
+	trie_undispose(Root,Leaf).
 
 
 /*--------------------------------------------------
