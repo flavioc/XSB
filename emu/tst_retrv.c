@@ -38,14 +38,15 @@
 #include "error_xsb.h"
 #include "psc_xsb.h"
 #include "deref.h"
+#include "binding.h"
+#include "cut_xsb.h"	   /* trail frame field access macros */
+#include "sw_envs.h"
 #include "subp.h"          /* bool unify(Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "macro_xsb.h"
 #include "tst_aux.h"
 
-
-#define nDEBUG_RETRIEVAL
 
 
 /*  Data Structures and Related Macros
@@ -56,29 +57,12 @@
  *  --------
  *  Record bindings made during the search through the trie so that
  *  these variables can be unbound when an alternate path is explored.
- *  We will use XSB's SLG-WAM trail and forward trailing to accomodate
- *  XSB's unification algorithm, which is needed at certain points in the
- *  retrieval process.
+ *  We will use XSB's system Trail to accomodate XSB's unification
+ *  algorithm, which is needed at certain points in the retrieval
+ *  process.
  */
 
-/*
- *  XSB's "trreg" will be the focal point of our interaction with this stack.
- *  For our purposes, the trreg will be the ToS for the Trail.  As is
- *  standard in XSB, it will point to the dynamic link field of the topmost
- *  trail frame.
- *
- *  We will supply our own "unwind_trail" operation, below, but will use
- *  the previously defined trailing operations, adding our own tests for
- *  determining which variables require trailing.  */
-#define TrailFrame_Addr(pTFBase)     ( *((pTFBase) - 2) )
-#define TrailFrame_Value(pTFBase)    ( *((pTFBase) - 1) )
-#define TrailFrame_Prev(pTFBase)     ( *(pTFBase) )
-
-#define PreviousTrailFrame(pTFBase)  ( (pTFBase) - 3 )
-#define NewTrailFrame(pTFBase)       ( (pTFBase) + 3 )
-
-
-static CPtr *trail_base;    /* ptr to topmost used Cell on the SLG-WAM Trail;
+static CPtr *trail_base;    /* ptr to topmost used Cell on the system Trail;
 			       the beginning of our tstTrail. */
 
 static CPtr *orig_trreg;            
@@ -108,10 +92,7 @@ static CPtr orig_ebreg;
 /*
  *  Create a binding and trail it.
  */
-#define Bind_and_Trail(Addr, Val)	\
-   bld_ref(Addr, Val);			\
-   trreg = NewTrailFrame(trreg);	\
-   TrailFrame_Addr(trreg) = Addr
+#define Bind_and_Trail(Addr, Val)	pushtrail0(Addr, Val)
 
 /*
  *  Create a binding and conditionally trail it.  TrieVarBindings[] cells
@@ -121,24 +102,12 @@ static CPtr orig_ebreg;
  *  built on the heap for binding.  Therefore, this condition serves as in
  *  the WAM.
  */
-#define Bind_and_Conditionally_Trail(Addr, Val)                              \
-   bld_ref(Addr, Val);                                                       \
-   if ( IsUnboundTrieVar(Addr) || ((Addr) < hbreg) || ((Addr) >= ebreg) ) {  \
-     trreg = NewTrailFrame(trreg);                                           \
-     TrailFrame_Addr(trreg) = Addr;                                          \
-   }
+#define Bind_and_Conditionally_Trail(Addr, Val)		\
+   if ( IsUnboundTrieVar(Addr) || conditional(Addr) )	\
+     { pushtrail0(Addr, Val) }
 
-/*
- *  Contains overflow check for the forward Trail.
- */
-#define Forward_Trail_Unwind(UnwindBase)			\
-   if ((CPtr)trreg < top_of_cpstack)				\
-     while(trreg > UnwindBase) {				\
-       bld_free(TrailFrame_Addr(trreg));			\
-       trreg = PreviousTrailFrame(trreg);			\
-     }								\
-   else								\
-     xsb_exit("tstRetrieveAnswers: Trail clobbered CP Stack!")
+
+#define Sys_Trail_Unwind(UnwindBase)      table_undo_bindings(UnwindBase)
 
 /* ------------------------------------------------------------------------- */
 
@@ -202,7 +171,7 @@ void initTSTRetrieve() {
    CPStack_Pop;					\
    ResetParentAndCurrentNodes;			\
    RestoreTermStack;				\
-   Forward_Trail_Unwind(tstCPF_TrailTop);	\
+   Sys_Trail_Unwind(tstCPF_TrailTop);		\
    ResetHeap_fromCPF
 
 /*
@@ -225,7 +194,7 @@ void initTSTRetrieve() {
      goto While_TSnotEmpty;			\
    }						\
    else {					\
-     Forward_Trail_Unwind(trail_base);		\
+     Sys_Trail_Unwind(trail_base);		\
      Restore_WAM_Registers;			\
      return tstAnswerList;			\
    }
@@ -300,7 +269,7 @@ static void tstRetrievalError(char *string, bool cleanup_needed) {
   fprintf(stderr, "Error encountered in Time-Stamped Trie "
 	  "retrieval algorithm!\n");
   if (cleanup_needed) {
-    Forward_Trail_Unwind(trail_base);
+    Sys_Trail_Unwind(trail_base);
     Restore_WAM_Registers;
   }
   xsb_abort(string);
