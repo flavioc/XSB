@@ -20,9 +20,9 @@
 	newExtTerm/1, newExtTerm/2, newExtTermBatch/2,
             retractallExtTerm/1,
 	newIntRule/3, newIntRule/4, newIntRuleBatch/4,
-            retractallIntRule/1,
+            retractallIntRule/3,
 	newDLRule/3, newDLRule/4, newDLRuleBatch/4,
-            retractallDLRule/1,
+            retractallDLRule/3,
 	assert_cdf/1, retractall_cdf/1,
 	updateExtTerm/3,
 	make_cdf_clean/0, make_cdf_clean/1,
@@ -34,6 +34,10 @@
 #include "./cdf_definitions.h"
 
 %%%%%%%%%%%% Import dynamic predicates.
+% TLS: this should probably be first.
+
+:- import using_xj/0 from usermod.
+:- dynamic using_xj/0.
 
 :- import  isa_ext/2, allAttr_ext/3, hasAttr_ext/3,
 	classHasAttr_ext/3, 
@@ -46,17 +50,20 @@
 
 :- import assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
-%% From cdf_config.
-
 :- import cdf_flags/2, user_cdf_flag/2, 
 	 cdf_flag/1, initial_cdf_flag/2, cdf_configuration/2 from usermod.
 
 :- import cdf_index/3,cdf_index/4 from usermod.
 
-:- ensure_loaded(cdf_config).
+% For newIntRule/2 etc.
+:- import component_table_int/3 from usermod.
+
+% For newDLRule/2 etc.
+:- import dlrule_to_cdf/2 from cdftp_rules.
 
 %%%%%%%%%% 
-:- import apply_checks/2 from cdf_checks.
+%:- import apply_checks/2 from cdf_checks.
+:- import apply_checks/2 from usermod.
 
 %%%%%%%%%% 
 :- import cdf_set_log_off/0, cdf_log/1, cdf_reset_log/0
@@ -77,11 +84,9 @@
 
 %%%%%%%%%% Non-CDF Libraries
 
-:- import component_table_int/3 from usermod.
-
 %%%%%%%%%%
 
-:- import check_var/3 from error_handler.
+:- import check_var/3  from error_handler.
 :- import call0/1 from machine.
 
 :- import '_$index'/3 from file_op.
@@ -89,14 +94,6 @@
 :- import ground/1,member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import concat_atom/2 from string.
-
-#if TABLEDISA
-?- cdf_message('Using tabled isa').
-:- assert(cdf_configuration(tabled_isa,on)).
-#else
-?- cdf_message('Using non-tabled isa').
-:- assert(cdf_configuration(tabled_isa,off)).
-#endif
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -127,9 +124,6 @@ cdf_dynamic(necessCond_int/2).
 cdf_dynamic(coversAttr_int/3).
 
 %%%%%%%%%%%%% Declarations for caching and XJ interface
-/* TLS
-:- ensure_loaded(cdf_oblivion).
-*/
 
 %%%%%%%%%%%%% Declarations for updatable DB
 %%:- ensure_loaded(cdf_db_updatable).
@@ -139,8 +133,6 @@ cdf_dynamic(cdf_extint_updatable/1).
 
 cdf_dynamic(assert_cdf_int/1).
 cdf_dynamic(retractall_cdf_int/1).
-
-:- import dlrule_to_cdf/2 from cdftp_rules.
 
 %--------------------------------------------------------------------
 
@@ -285,6 +277,9 @@ init_index_std.
 system_component(cdf).
 system_component(cdfpt).
 
+concrete_component(cdftm).
+concrete_component(cdfpt).
+
 cdf_root(cid('CDF Classes',cdf)).
 cdf_root(rid('CDF Object-Object Relations',cdf)).
 cdf_root(crid('CDF Class-Object Relations',cdf)).
@@ -316,9 +311,6 @@ cdf_id_fields2(rid(N,S),rid,N,S).
 cdf_id_fields2(crid(N,S),crid,N,S).
 cdf_id_fields2(crrid(N,S),crrid,N,S).
 cdf_id_fields2(crcrid(N,S),crcrid,N,S).
-
-concrete_component(cdftm).
-concrete_component(cdfpt).
 
 product_identifier(Id):- 
 	cdf_id_fields(Id,_F,I,Comp),
@@ -561,7 +553,6 @@ isa_nospec_fx(Sub,Sup):-
 :- table isa_nospec_fx_maybe_table/2.
 #endif
 
-
 isa_nospec_fx_maybe_table(Sub,Sup):- 
 	immed_isa1(Mid,Sup),
 	isa_nospec_fx(Sub,Mid).
@@ -626,7 +617,7 @@ explosive_isa(Id1,Id2):-
 		  N1 =.. [_|Args1],
 		  N2 =.. [_|Args2],
 		  explosive_isa_list(Args1,Args2)
-	      ;       isa(Id1,Id2) ).
+	      ;       isa_nocheck(Id1,Id2) ).
 
 make_terms_if_necess(N1,N2):- 
 	(structure(N1) -> 
@@ -639,7 +630,6 @@ explosive_isa_list([],[]).
 explosive_isa_list([Arg1|R1],[Arg2|R2]):- 
     explosive_isa(Arg1,Arg2),
     explosive_isa_list(R1,R2).
-
 
 %%%%%%%%%%%%%% hasAttr %%%%%%%%%%%%%%%%%%%%
 
@@ -1485,9 +1475,10 @@ not_max_implicative_coversAttr_23fix(Term,BindPat) :-
 
 % Caching and cleaning.
 
-:- cdf_dont_use_cache.
-
 :- import caching_cdf/1 from usermod.
+:- dynamic caching_cdf/1.
+
+:- cdf_dont_use_cache.
 
 cdf_use_cache :- retractall(caching_cdf(_)),asserta(caching_cdf(1)).
 cdf_dont_use_cache :- retractall(caching_cdf(_)), asserta(caching_cdf(0)).
@@ -1531,7 +1522,7 @@ newExtTerm(newExtTermSingle,Term):-
 	(apply_checks(newExtTermSingle,Term) -> 
 	    caching_cdf(Flg),
 	    assert_cdf(Term),
-	    maybe_invalidate_cache(Flg,Term)
+	    maybe_invalidate_cache(Flg,Term,assert)
 	  ; true).
 newExtTerm(newExtTermBatch,Term):- 
 	caching_cdf(Flg),
@@ -1545,9 +1536,10 @@ newExtTermBatch(Term,Flg):-
 	(apply_checks(newExtTermBatch,Term) -> 
 %	     cdf_log(assert(Term)),
 	     assert_cdf_term(Term),
- 	     maybe_invalidate_cache(Flg,Term)
+ 	     maybe_invalidate_cache(Flg,Term,assert)
 	  ; true).
 
+%-------------------
 :- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
 all extensional CDF facts that unify with the parameters.  Note that
 this operation simply removes all matching tuples.  It does not affect
@@ -1566,11 +1558,12 @@ retractallExtTerm(Term) :-
 :- 	   cdf_message('Using XJ').
 :- 	   assert(cdf_configuration(proprietary_features,on)).
 
-maybe_invalidate_cache(Flg,Term):- 
+maybe_invalidate_cache(Flg,Term,Mode):- 
 	(Flg =:= 1
 	 ->	cache_invalidate_for(Term),
 		%%writeln(calling_invalidate_tables_for_maybe(Term)),
-		invalidate_tables_for(Term,assert) % always used for asserting now
+		invalidate_tables_for(Term,Mode) 
+				% always used for asserting now
 	 ;	true).
 
 cdf_update_term(asserta(Term),CFlg) :-
@@ -1596,12 +1589,15 @@ cdf_update_term(retractall(Term),CFlg) :-
 :- 	   assert(cdf_configuration(proprietary_features,off)).
 
 cdf_update_term(asserta(Term),CFlg) :-
-	assert_cdf(Term).
+	assert_cdf(Term),
+	invalidate_tables_for(Term,assert)
 
 cdf_update_term(retractall(Term),CFlg) :-
-	retractall_cdf(Term).
+	retractall_cdf(Term),
+	invalidate_tables_for(Term,retract)
 
-maybe_invalidate_cache(_,_).
+maybe_invalidate_cache(_Flg,Term,Mode):- 
+	invalidate_tables_for(Term,Mode) 
 
 #endif
 
@@ -1667,13 +1663,13 @@ newIntRuleSingle(Head,Body,Cmpt):-
 	    abolish_nec_tables(Head),
 	    caching_cdf(Flg),
 	    addIntRule(Head,Body,Cmpt),
-	    maybe_invalidate_cache(Flg,Head)
+	    maybe_invalidate_cache(Flg,Head,assert)
 	 ;  true).
 
 newIntRuleBatch(Head,Body,Cmpt,Flag):- 
 	(apply_checks(newIntRuleBatch,Head) -> 
 	    addIntRule(Head,Body,Cmpt),
-	    maybe_invalidate_cache(Flag,Head)
+	    maybe_invalidate_cache(Flag,Head,assert)
 	  ; true).
 
 addIntRule(Head,Body,Cmpt):- 
@@ -1706,6 +1702,31 @@ transform_intensional_rules(Head,_BlankHead,_NewHead,Name):-
 	fail.
 
 %%%%%%%%%%%%%%%%%
+
+retractallIntRule(Head,Body,Name) :- 
+	caching_cdf(Flg),
+	abolish_nec_tables(Head),
+	retractallIntRule_1(Head,Body,Name) ,
+	maybe_invalidate_cache(Flg,Head,retract).
+
+retractallIntRule_1(Head,Body,Name) :- 
+	transform_intensional_rules(Head,BlankBody,NewHead,Name),
+	functor(Head,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+%	clause_assert(BlankHead,BlankBody),
+%	assert((:-(NewHead,Body))),
+	retract((NewHead :- Body)),
+	cdf_log(retractall((Head :- Body))),
+	(cdf_flags(dirty,Name)
+	 ->	true
+	 ;	make_cdf_dirty(Name)
+	),
+	fail.
+retractallIntRule_1(_,_,_).
+
+%%%%%%%%%%%%%%%%%
 %DL rules are a specialized form of intensional rules.
 
 newDLRule(Head,Body,Name):- 
@@ -1718,7 +1739,36 @@ newDLRule(Head,Body,Name):-
 	BlankHead =.. [_|Args],
 	BlankBody =.. [_|Args],
 	clause_assert(BlankHead,BlankBody),
-	assert((:-(NewHead,B))).
+	assert((:-(NewHead,B))),
+	fail.
+newDLRule(_Head,_Body,_Name).
+
+%%%%%%%%%%%%%%%%%
+
+retractallDLRule(Head,Body,Name) :- 
+	caching_cdf(Flg),
+	retractallDLRule_1(Head,Body,Name) ,
+	maybe_invalidate_cache(Flg,Head).
+
+retractallDLRule_1(H,B,Name) :- 
+	dlrule_to_cdf('<='(H,B),CDFList),
+	member((:-(Head,Body)),CDFList),
+	abolish_nec_tables(Head),
+	transform_intensional_rules(Head,BlankBody,NewHead,Name),
+	functor(Head,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+%	clause_assert(BlankHead,BlankBody),
+%	assert((:-(NewHead,Body))),
+	retract((NewHead :- Body)),
+	cdf_log(retractall((Head :- Body))),
+	(cdf_flags(dirty,Name)
+	 ->	true
+	 ;	make_cdf_dirty(Name)
+	),
+	fail.
+retractallDLRule_1(_,_,_).
 
 %%%%%%%%%%%%%%%%%
 
@@ -1963,7 +2013,56 @@ newExtTerm(Context,Term,Upd0,Upd):-
 %%%%%% TLS: please keep this here -- we want to do the initialization 
 %%%%%% LAST upon load.
 
+:- ensure_loaded(cdf_config).
+
+#if TABLEDISA
+?- cdf_message('Using tabled isa').
+:- assert(cdf_configuration(tabled_isa,on)).
+#else
+?- cdf_message('Using non-tabled isa').
+:- assert(cdf_configuration(tabled_isa,off)).
+#endif
+
 :- initialize_cdf.
+
+#if USING_XJ
+:- import cache_invalidate_for/1 from prologCache.
+
+:- 	   cdf_message('Using XJ').
+:- 	   assert(cdf_configuration(proprietary_features,on)).
+
+maybe_invalidate_cache(Flg,Term):- 
+	    (Flg =:= 1
+   	       ->	cache_invalidate_for(Term)
+	     ;	true).
+
+cdf_update_term(asserta(Term),CFlg) :-
+	assert_cdf(Term),
+	(CFlg =:= 1
+	 ->	cache_invalidate_for(Term)
+	 ;	true
+	).
+
+cdf_update_term(retractall(Term),CFlg) :-
+	retractall_cdf(Term),
+	(CFlg =:= 1
+	 ->	cache_invalidate_for(Term)
+	 ;	true
+	).
+
+#else
+:- 	   cdf_message('Not using XJ').
+:- 	   assert(cdf_configuration(proprietary_features,off)).
+
+cdf_update_term(asserta(Term),CFlg) :-
+	assert_cdf(Term).
+
+cdf_update_term(retractall(Term),CFlg) :-
+	retractall_cdf(Term).
+
+maybe_invalidate_cache(_,_).
+
+#endif
 
 end_of_file.
 

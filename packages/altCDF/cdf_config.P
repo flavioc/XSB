@@ -1,6 +1,6 @@
 % TLS: keep all this in usermod.
 
-:- document_export initial_cdf_flag/2,cdf_index/3,
+:- document_export initial_cdf_flag/2,cdf_index/3,cdf_flag/1,
 	                 component_table_ext/3, component_table_int/3,
 			 default_user_error_handler/1.
 
@@ -9,18 +9,24 @@ may need to be configured for a particular user or application.  In
 addition to the predicates described below, @module{cdf_config.P}
 contains a fact for the dynamic predicate
 @tt{default_user_error_handler/1} which is used to handle errors.  See
-the XSB manual for documentation of this predicate.
-").
-
-:- import cdf_check_ground/1, check_types/2, check_identity/2,
-	classify_if_necessary/2
-	from cdf_checks.
+the XSB manual for documentation of this predicate.  ").
 
 :- import default_sys_error_handler/1 from error_handler.
 
+:- import cdf_flags/2 from usermod.
 
 /* For DL Rules */
 :- op(1150, xfx, (<=)).
+
+:- dynamic user_cdf_flag/2.
+:- dynamic cdf_configuration/2.
+
+:- dynamic initial_cdf_flag/2.
+
+:- dynamic cdf_index/4.
+
+:- dynamic cdf_flags/2.
+:- index(cdf_flags/2,trie).
 
 % keep a table with all possible flags here.
 cdf_flag(dirty).
@@ -71,29 +77,6 @@ classify any unclassified classes.
 @end{itemize}
 ").
 
-%initial_cdf_flag(dirty,<component>).
-%initial_cdf_flag(query,check(A,B,[check_types(A,B)
-initial_cdf_flag(componentUpdate,check(A,B,[classify_if_necessary(A,B)])).
-initial_cdf_flag(newExtTermSingle,check(A,B,[cdf_check_ground(B),
-				   	     check_types(A,B),
-					     check_identity(A,B)])).
-/*
-initial_cdf_flag(newExtTermBatch,check(A,B,[%cdf_check_ground(B),
-				   	     %check_types(A,B),
-					     %check_identity(A,B)
-                                                                 ])).
-*/
-
-:- dynamic cdf_flags/2.
-:- index(cdf_flags/2,trie).
-
-:- dynamic user_cdf_flag/2.
-:- dynamic cdf_configuration/2.
-
-:- dynamic caching_cdf/1.
-:- dynamic cdf_dirty/1.
-:- dynamic using_xj/0.
-
 component_table_ext(isa_ext(A,B),A,[B]).
 component_table_ext(allAttr_ext(A,B,C),B,[A,C]).
 component_table_ext(hasAttr_ext(A,B,C),B,[A,C]).
@@ -128,8 +111,6 @@ component_table_int(retractall_cdf_int(_),null,[]).
 set initial indices for the various types of extensional facts. IThese
 indices can be changed, if necessary to give better performance.  ").
 
-:- dynamic cdf_index/4.
-
 cdf_index(isa_ext,2,[*(1),*(2)]).
 cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
 %%cdf_index(hasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
@@ -139,4 +120,5 @@ cdf_index(minAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_index(maxAttr_ext,4,[*(1) + *(2),*(1),*(2) + *(3)]).
 cdf_index(necessCond_ext,2,[*(1)]).
 cdf_index(coversAttr,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+
 

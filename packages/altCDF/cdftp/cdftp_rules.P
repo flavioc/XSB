@@ -9,7 +9,8 @@
 	   cdf_id_fields/4 from cdf_init_cdf.
 :- import cdf_warning/2 from cdf_exceptions.
 :- import pretty_print/1 from newpp.
-:- import compdlrule/3,compdltrans/3 from usermod.
+%:- import compdlrule/3,compdltrans/3 from usermod.
+:- import compdltrans/3 from usermod.
 :- import member/2 from basics.
 
 dlrule_to_cdf('<='(Head,Body),CDFList):- 
@@ -19,8 +20,8 @@ dlrule_to_cdf('<='(Head,Body),CDFList):-
 %	                           '<='(Head,Body)))
 %	;  asserta(compdlrule(Cmpt,Head,Body)) ),
 	body_ce_to_formula(Body,V,BodyF),
-	add_cmpt_check_to_body(BodyF,V,Cmpt,BodyCF),	
-	distribute_heads_to_bodies(HeadList,BodyCF,CDFList),
+%	add_cmpt_check_to_body(BodyF,V,Cmpt,BodyCF),	
+	distribute_heads_to_bodies(HeadList,BodyF,CDFList),
 	assert_translation_facts(Cmpt,CDFList).
 
 assert_translation_facts(Cmpt,CDFList):- 
@@ -73,9 +74,11 @@ body_ce_to_formula(Cid,Var,isa(Var,Cid)):-
 body_ce_to_formula(CE,_,_):- !,
 	cdf_warning(rule,('Dont know how to translate ',CE)),fail.
 
+/*
 add_cmpt_check_to_body(','(A,B),V,Cmpt,','(NewA,B)):- !,
 	add_cmpt_check_to_body(A,V,Cmpt,NewA).
 add_cmpt_check_to_body(A,V,Cmpt,','(A,cdf_id_fields(V,_,_,Cmpt))):- !.
+*/
 
 pretty_print_list([]).
 pretty_print_list([H|R]):- 

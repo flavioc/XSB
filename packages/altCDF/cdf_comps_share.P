@@ -18,7 +18,8 @@
 
 :- import canonical_pathname/2 from directry.
 
-:- import apply_checks/2 from cdf_checks.
+%:- import apply_checks/2 from cdf_checks.
+:- import apply_checks/2 from usermod.
 
 :- import 
 	isa_ext/2, classHasAttr_ext/3

@@ -145,17 +145,21 @@ to and loading them from a component.
 
 %-----------------------------------------------------------------
 
-:- export apply_checks/2,
-	  check_ground_checkflag/2, cdf_check_ground/1, 
-	  check_types_checkflag/2, check_types/2,
-	  check_identity_checkflag/2, check_identity/2,
-	  check_implication_checkflag/2, check_implication/2,
-	  classify_if_necessary_checkflag/2, classify_if_necessary/2,
-	  check_redundancies_checkflag/2,  check_redundancies/2,
-	  check_object_constraints/2.
-
-% fool that module system... 
-:- export check_isa_types/4, check_ind_types/3.
+:- document_export apply_checks/2, 
+	  addCheckToContext/2, removeCheckFromContext/2,
+	  addUserContext/2,removeUserContext/1,
+	  cdf_check_ground/1, 
+	  check_types/2,
+	  check_identity/2,
+	  check_implication/2,
+	  classify_if_necessary/2,
+	  check_redundancies/2,
+	  check_object_constraints/2,
+	  currentContext/3,isContextType/1.
+%              check_isa_types/4, check_ind_types/3.
+%	  check_ground_checkflag/2, 	  check_redundancies_checkflag/2,  
+%	  classify_if_necessary_checkflag/2, check_implication_checkflag/2, 
+%	  check_identity_checkflag/2, 	  check_types_checkflag/2, 
 
 :- import cdf_warning/2 from cdf_exceptions.
 :- import  concrete_component/1, 
@@ -168,14 +172,17 @@ to and loading them from a component.
 	  cdf_id_fields/4 from cdf_init_cdf.
 :- import get_component_extensional/2 from cdf_comps_share.
 
-:- import cdf_flags/2
-%	 component_table_ext/3 
-	 from usermod.
-:- import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
-	   maxAttr_ext/4, minAttr_ext/4 from usermod.
+:- import cdf_flags/2 from usermod.
 
-:- import member/2, memberchk/2,length/2,ground/1  from basics.
-:- import instantiation_error/3, domain_error/4 from error_handler.
+%:- import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
+%	   maxAttr_ext/4, minAttr_ext/4 from usermod.
+
+:- import allAttr/3, classHasAttr/3, hasAttr/3,
+	   maxAttr/4, minAttr/4 from cdf_init_cdf.
+
+:- import member/2, memberchk/2,length/2,ground/1,append/3  from basics.
+:- import instantiation_error/3, domain_error/4, misc_error/1,
+	 check_nonvar/3 from error_handler.
 
 :- import call0/1 from machine.
 
@@ -193,17 +200,11 @@ apply_checks(Context,Term):-
 :- import term_set_arg/4 from machine.
 call_check(Check,CDFFlag):- 
         (call0(Check) -> true 
-         ; term_set_arg(CDFFlag,1,0,1),
-           writeln(failed(Check))
+         ; term_set_arg(CDFFlag,1,0,1)
+%           writeln(failed(Check))
            ).
 
 %-----------------
-check_ground_checkflag(Context,Term):- 
-	((cdf_flags(Context,check(_,_,List)),
-	  member(cdf_check_ground(_),List)) -> 
-	    cdf_check_ground(Term)
-	  ; true).
-
 cdf_check_ground(Term):- 
 	cdf_check_ground(Term,Term).
 
@@ -233,12 +234,6 @@ cdf_check_ground_1(Nid,Arg,OrigTerm):-
 
 %-----------------
 
-check_types_checkflag(Context,Term):- 
-	((cdf_flags(Context,check(_,_,List)),
-	  member(check_types(_,_),List)) -> 
-	    check_types(Context,Term)
-	  ; true).	
-
 check_types(Context,Term):- 
         ((get_component_extensional(Term,Comp),
 	  Comp \== cdfpt)-> 
@@ -254,7 +249,7 @@ check_types(Context,Term):-
 %------
 :- comment(hide,check_isa_types/2).
 
-check_isa_types(query,First,Second,Term):- !,
+check_isa_types(Context,First,Second,Term):- !,
 	(var(First) -> 
 	     true
 	  ; check_isa_arg_1(First,Term,Context,F1)),
@@ -409,12 +404,6 @@ type_table(necessCond_int(A,B),check_ind_types(_,necessCond_int(A,B),
 
 %----------------------------------------------------------------------
 
-check_identity_checkflag(Context,Term):- 
-	((cdf_flags(Context,check(_,_,List)),
-	   member(check_identity(_,_),List)) -> 
-	    check_identity(_,Term)
-	  ; true).
-
 check_identity(_,Term):- 
 	(call0(Term) -> 
 	    fail 
@@ -426,12 +415,6 @@ ext_to_int_call(allAttr_ext(A,B,C), allAttr_int(A,B,C)).
 ext_to_int_call(classHasAttr_ext(A,B,C), classHasAttr_int(A,B,C)).
 	
 %----------------------------------------------------------------------
-
-check_implication_checkflag(Context,Term):- 
-	((cdf_flags(Context,check(_,_,List)),
-	  member(check_implication(_,_),List)) -> 
-	    check_implication(Context,Term)
-	  ; true).
 
 check_implication(_Context,Term):- 
 	remove_ext(Term,Term1),
@@ -446,12 +429,6 @@ remove_ext(maxAttr_ext(A,B,C,N),maxAttr(A,B,C,N)).
 
 %----------------------------------------------------------------------
 
-classify_if_necessary_checkflag(Context,Name):-
-	((cdf_flags(Context,check(_,_,List)),
-	   member(classify_if_necessary(_,_),List)) -> 
-	     classify_if_necessary(_Context,Name)
-	  ;  true).
-	    
 classify_if_necessary(_Context,Name):- 
 	get_component_fact(Name,Term),
 	classify_if_necessary_term(Term,Upd1,[]),
@@ -702,6 +679,93 @@ check_maxAttr_constraints_1(Context,maxAttr(S,R,T,N)):-
                                                   constraint ',maxAttr(S,R,T,N)]) ).
 
 
+%-------------------------------------------------------------------------
+% See manual for currentContext/2
+currentContext(Context,system,Type):- 
+	currentSystemContext(Context,Type).
+currentContext(Context,user,Type):- 
+	currentUserContext(Context,Type).
+
+:- dynamic currentUserContext/2.
+
+currentSystemContext(componentLoad,component).
+currentSystemContext(componentUpdate,component).
+currentSystemContext(query,term).
+currentSystemContext(newExtTermSingle,term).
+currentSystemContext(newExtTermBatch,term).
+currentSystemContext(retractallExtTermSingle,term).
+
+isContextType(component).
+isContextType(term).
+
+addUserContext(Context,Type):- 
+	check_nonvar(Context,addUserContext,1),
+	check_nonvar(Type,addUserContext,2),
+	(isContextType(Type) -> 
+	    true
+	 ;  domain_error(contextType,Type,addUserContext,2)),
+	(currentSystemContext(Context,_) -> 
+	    misc_error(['Cannot add system context as user context ',Context])
+	  ; true),
+	(currentUserContext(Context,Type1) -> 
+	    (Type1 = Type -> 
+		true
+	       ;    misc_error(['Cannot change type of user context ',Context,
+	                             ' from ',Type1,' to ',Type]))
+             ; assert(currentUserContext(Context,Type))).
+
+removeUserContext(Context):- 
+	retractall(currentUserContext(Context,_)).
+
+checkType(check_types/2,term).
+checkType(cdf_check_ground/2,term).
+checkType(check_idendity/2,term).
+checkType(check_implication/2,term).
+checkType(check_redundancies/2,term).
+checkType(classify_if_necessary/2,component).
+
+addCheckToContext(Check,Context):- 
+	check_nonvar(Check,addCheckToContext,1),
+	check_nonvar(Context,addCheckToContext,2),
+	(currentContext(Context,_,Type) -> 
+	    true
+	 ;  domain_error(context,Context,addCheckToContext,2) ),
+	 (checkType(Check,Type) -> 
+	     true 
+	 ;  misc_error([Check,' cannot be used in ',Context])),
+	 addCheckToContext_1(Context,Check).
+	 
+addCheckToContext_1(Ctxt,B):- 
+	    (B = F/Arity -> 
+	          functor(Term,F,Arity),
+	          arg(1,Term,Ctxt),
+	          addCheckToContext_2(Ctxt,Term)
+	      ; misc_error(('cannot load initial flag for context: ',B))).
+
+addCheckToContext_2(Ctxt,Term):- 
+	((cdf_flags(Ctxt,check(Ctxt,Arg,List)),
+	      \+ member(Term,List)) -> 
+	     arg(2,Term,Arg),
+	     retractall(cdf_flags(Ctxt,_)),
+	     append([Term],List,NewList),
+	     assert(cdf_flags(Ctxt,check(Ctxt,Arg,NewList)))
+	  ;  arg(2,Term,Arg),
+ 	     assert(cdf_flags(Ctxt,check(Ctxt,Arg,[Term])))).
+
+removeCheckFromContext(F/A,Context):- 
+	currentContext(Context,_,_),
+	functor(Check,F,A),
+	cdf_flags(Context,List),
+	retractall(cdf_flags(Context,_)),
+	remove_from_list(List,Check,NewList),
+	assert(cdf_flags(Context,NewList)).
+    
+remove_from_list([],_,[]).
+remove_from_list([H|T],H,T):- 
+	remove_from_list(T,H,T).
+remove_from_list([H|T],Elt,[H|T1]):- 
+	remove_from_list(T,Elt,T1).
+
 end_of_file.
 
 :- import  marginal_clear/0, marginal_add/1, marginal_get/2 from marginals.
@@ -743,3 +807,34 @@ hasAttr_redundancy_check :-
 	T is T1-T0, writeln(cputime=T),
 	conget(lastind,Last), conget(firstind,First),
 	writeln(['Use 1+2 index count'=First, 'Use 2+3 index count'=Last]).
+
+check_identity_checkflag(Context,Term):- 
+	((cdf_flags(Context,check(_,_,List)),
+	   member(check_identity(_,_),List)) -> 
+	    check_identity(_,Term)
+	  ; true).
+
+check_ground_checkflag(Context,Term):- 
+	((cdf_flags(Context,check(_,_,List)),
+	  member(cdf_check_ground(_),List)) -> 
+	    cdf_check_ground(Term)
+	  ; true).
+
+check_types_checkflag(Context,Term):- 
+	((cdf_flags(Context,check(_,_,List)),
+	  member(check_types(_,_),List)) -> 
+	    check_types(Context,Term)
+	  ; true).	
+
+check_implication_checkflag(Context,Term):- 
+	((cdf_flags(Context,check(_,_,List)),
+	  member(check_implication(_,_),List)) -> 
+	    check_implication(Context,Term)
+	  ; true).
+
+classify_if_necessary_checkflag(Context,Name):-
+	((cdf_flags(Context,check(_,_,List)),
+	   member(classify_if_necessary(_,_),List)) -> 
+	     classify_if_necessary(_Context,Name)
+	  ;  true).
+	    
