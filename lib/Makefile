@@ -25,7 +25,7 @@
 
 
 ALL = 	aggregs.O array.O array1.O directry.O foreign.O \
-	intern.O interprolog.O obsolete.O \
+	intern.O obsolete.O \
 	odbc_call.O ordsets.O ora_call.O \
 	packaging.O scrptutl.O socket.O wrapping.O \
 	xnmr.O
