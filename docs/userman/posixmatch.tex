@@ -31,16 +31,18 @@ If you are planning to use pattern matching from within an XSB program,
 then you also need to add the following directive:
 %%
 \begin{verbatim}
-    :- import re_match/5, re_substitute/5, re_substring/4,
+    :- import re_match/5, re_bulkmatch/5,
+              re_substitute/4, re_substring/4,
               re_charlist_to_string/2
        from regmatch.
 \end{verbatim}
 %%
 
 \paragraph{Matching.}
-The \verb|re_match/5| predicate performs regular expression matching.
-The predicate \verb|re_substitute/5| replaces a substring with another
-string and returns the resulting new string.
+The predicates \verb|re_match/5| and \verb|re_bulkmatch/5| perform regular
+expression matching.  The predicate \verb|re_substitute/4| replaces
+substrings in a list with strings from another list and returns the
+resulting new string.
 
 The \verb|re_match/5| predicate has the following calling sequence:
 %%
@@ -174,6 +176,21 @@ M = [match(0,7),match(1,4)]
 \end{verbatim}
 %%
 
+The predicate \verb|re_bulkmatch/5| has the same calling sequence as
+\verb|re_match/5|, and the meaning of the arguments is the same, except the
+last (output) argument. The difference is that \verb|re_bulkmatch/5|
+ignores parenthesized subexpressions in the regular expression and instead
+of returning the matches corresponding to these parenthesized
+subexpressions it returns the list of all matches for the top-level regular
+expression. For instance, 
+%%
+\begin{verbatim}
+| ?- re_bulkmatch('[^a-zA-Z0-9]+', '123&*-456 )7890% 123', 0, 1, X).
+
+X = [match(3,6),match(9,11),match(15,17)]  
+\end{verbatim}
+%%
+
 \paragraph{Extracting the matches.}
 The predicate \verb|re_match/5| provides us with the offsets. How can we
 actually get the matched substrings? This is done with the help of the
@@ -189,7 +206,7 @@ assumed.  The result returned in the fourth
 argument is a string, if {\tt String} is an atom, or a list of characters,
 if so is {\tt String}.
 
-The \verb|re_substitute/5| predicate always succeeds.
+The \verb|re_substring/4| predicate always succeeds.
 
 Here are some examples: 
 %%
@@ -259,39 +276,64 @@ to \verb|re_substring/4| overrides the value stored in this location by the
 first call.
 
 \paragraph{Substitution.}
-The predicate \verb|re_substitute/5| has the following invocation:
+The predicate \verb|re_substitute/4| has the following invocation:
 %%
 \begin{verbatim}
-    re_subst(+InputStr, +BeginOffset, +EndOffset, +Substitution, -OutStr)  
+    re_substitute(+InputStr, +SubstrList, +SubstitutionList, -OutStr)  
 \end{verbatim}
 %%
-{\tt InputStr} and {\tt Substitution} can be atoms or lists of characters.
-The meaning of the offsets is the same as for {\tt re\_substring/4}.
-This predicate replaces the substring between {\tt BegOffset} and {\tt
-EndOffset} with another string, {\tt Substitution}. The result is returned
-in {\tt OutStr}. {\tt OutStr} is a list of characters, if so is {\tt
-InputStr}; otherwise, it is a string.
+{\tt InputStr} can an atom or a list of characters.  {\tt SubstrList} must
+be a list of terms of the form {\tt s(BegOffset, EndOffset)}, where the name
+of the functor is immaterial.  The meaning of the offsets is the same as
+for {\tt re\_substring/4}.  Each such term specifies a substring (between
+{\tt BegOffset} and {\tt EndOffset}; negative {\tt EndOffset} stands for
+the end of string) to be replaced.  {\tt SubstitutionList} must be a list
+of atoms or character lists.
 
-As in the case of {\tt re\_substring/4}, if {\tt OutStr} is a string, it is
+This predicate replaces the substrings specified in {\tt SubstrList} with
+the corresponding strings from {\tt SubstitutionList}.  The result is
+returned in {\tt OutStr}. {\tt OutStr} is a list of characters, if so is
+{\tt InputStr}; otherwise, it is an atom.
+
+If {\tt SubstitutionList} is shorter than {\tt SubstrList} then the last
+string in {\tt SubstitutionList} is used for substituting the extra
+substrings specified in {\tt SubstitutionList}. As a special case, this
+makes it possible to replace all specified substrings with a single string.
+
+As in the case of {\tt re\_substring/4}, if {\tt OutStr} is an atom, it is
 not interned.  The user should either intern this string or convert it into
 a list, as explained previously.
 
-The \verb|re_substitute/5| predicate always succeeds.
+The \verb|re_substitute/4| predicate always succeeds.
 
 Here are some examples:
 %%
 \begin{verbatim}
-| ?- re_substitute('qaddf', 2, 4, '123' ,L).
+| ?- re_substitute('qaddf', [s(2,4)], ['123'] ,L).
 
 L = qa123f
 
-| ?- re_substitute('qaddf', 2, -1, '123' ,L).
+| ?- re_substitute('qaddf', [s(2,-1)], ['123'] ,L).
 
 L = qa123
 
-| ?- re_substitute("abcdefg", 4, -1, "123",L).
+| ?- re_substitute("abcdefg", [s(4,-1)], ["123"],L).
 
 L = [97,98,99,100,49,50,51]
+
+| ?- re_substitute('1234567890123', [f(1,5),f(5,7),f(9,-2)], ["pppp", lll],X).
+
+X = 1pppplll89lll
+
+| ?- re_substitute('1234567890123', [f(1,5),f(6,7),f(9,-2)], ['---'],X).
+
+X = 1---6---89---
+
+| ?- re_bulkmatch('[^a-zA-Z0-9]+', '123&*-456 )7890| 123', 0, _, X),
+     re_substitute('123&*-456 )7890| 123', X, ['+++'], Y).
+
+X = [match(3,6),match(9,11),match(15,17)]
+Y = 123+++456+++7890+++123
 \end{verbatim}
 %%
 

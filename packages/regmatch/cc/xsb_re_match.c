@@ -126,7 +126,7 @@ bool do_regmatch__(void)
       p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
 			     "RE_MATCH", "input string");
   } else
-    xsb_abort("RE_MATCH: Arg 2 (the nput string) must be an atom or a character list");
+    xsb_abort("RE_MATCH: Arg 2 (the input string) must be an atom or a character list");
   
   offset_term = reg_term(3); /* arg3: offset within the string */
   if (! is_int(offset_term))
@@ -167,6 +167,98 @@ bool do_regmatch__(void)
   return p2p_unify(output_term, reg_term(5));
 }
 
+
+/* XSB regular expression matcher entry point
+   In:
+       Arg1: regexp
+       Arg2: string
+       Arg3: offset
+       Arg4: ignorecase
+   Out:
+       Arg5: list of the form [match(bo0,eo0), match(bo1,eo1),...]
+       	     where bo*,eo* specify the beginning and ending offsets of the
+	     matched substrings.
+	     All matched substrings are returned. Parenthesized expressions are
+	     ignored.
+*/
+bool do_bulkmatch__(void)
+{
+  prolog_term listHead, listTail;
+  /* Prolog args are first assigned to these, so we could examine the types
+     of these objects to determine if we got strings or atoms. */
+  prolog_term regexp_term, input_term, offset_term;
+  prolog_term output_term = p2p_new();
+  char *regexp_ptr=NULL;      /* regular expression ptr	       	      */
+  char *input_string=NULL;    /* string where matches are to be found */
+  int ignorecase=FALSE;
+  int return_code, paren_number, offset;
+  regmatch_t *match_array;
+  int last_pos=0, input_len;
+  char regexp_buffer[MAXBUFSIZE];
+
+
+  if (first_call)
+    initialize_regexp_tbl();
+
+  regexp_term = reg_term(1);  /* Arg1: regexp */
+  if (is_string(regexp_term)) /* check it */
+    regexp_ptr = string_val(regexp_term);
+  else if (is_list(regexp_term))
+    regexp_ptr =
+      p_charlist_to_c_string(regexp_term, regexp_buffer, sizeof(regexp_buffer),
+			     "RE_MATCH", "regular expression");
+  else
+    xsb_abort("RE_MATCH: Arg 1 (the regular expression) must be an atom or a character list");
+
+  input_term = reg_term(2);  /* Arg2: string to find matches in */
+  if (is_string(input_term)) /* check it */
+    input_string = string_val(input_term);
+  else if (is_list(input_term)) {
+    input_string =
+      p_charlist_to_c_string(input_term, input_buffer, sizeof(input_buffer),
+			     "RE_MATCH", "input string");
+  } else
+    xsb_abort("RE_MATCH: Arg 2 (the input string) must be an atom or a character list");
+
+  input_len = strlen(input_string);
+  
+  offset_term = reg_term(3); /* arg3: offset within the string */
+  if (! is_int(offset_term))
+    xsb_abort("RE_MATCH: Arg 3 (the offset) must be an integer");
+  offset = int_val(offset_term);
+  if (offset < 0 || offset > input_len)
+    xsb_abort("RE_MATCH: Arg 3 (=%d) must be between 0 and %d", input_len);
+
+  /* If arg 4 is bound to anything, then consider this as ignore case flag */
+  if (! is_var(reg_term(4)))
+    ignorecase = TRUE;
+
+  last_pos = offset;
+  /* returned result */
+  listTail = output_term;
+  while (last_pos < input_len) {
+    c2p_list(listTail); /* make it into a list */
+    listHead = p2p_car(listTail); /* get head of the list */
+
+    return_code = xsb_re_match(regexp_ptr, input_string+last_pos, ignorecase,
+			       &match_array, &paren_number);
+    /* exit on no match */
+    if (! return_code) break;
+
+    /* bind i-th match to listHead as match(beg,end) */
+    c2p_functor("match", 2, listHead);
+    c2p_int(match_array[0].rm_so+last_pos, p2p_arg(listHead,1));
+    c2p_int(match_array[0].rm_eo+last_pos, p2p_arg(listHead,2));
+
+    listTail = p2p_cdr(listTail);
+    last_pos = match_array[0].rm_eo+last_pos;
+  }
+
+  c2p_nil(listTail); /* bind tail to nil */
+  return p2p_unify(output_term, reg_term(5));
+}
+
+
 /* XSB string substitution entry point
    In: 
        Arg1: string
@@ -181,14 +273,19 @@ bool do_regsubstitute__(void)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
-  prolog_term input_term, output_term, subst_term;
-  prolog_term beg_offset_term, end_offset_term;
+  prolog_term input_term, output_term;
+  prolog_term subst_reg_term, subst_reg_list_term, subst_reg_list_term1;
+  prolog_term subst_str_term=(prolog_term)0,
+    subst_str_list_term, subst_str_list_term1;
   char *input_string=NULL;    /* string where matches are to be found */
   char *subst_string=NULL;
-  int beg_offset, end_offset, input_len;
+  prolog_term beg_term, end_term;
+  int beg_offset=0, end_offset=0, input_len;
+  int last_pos = 0; /* last scanned pos in input string */
   /* the output buffer is made large enough to include the input string and the
      substitution string. */
   char subst_buf[MAXBUFSIZE];
+  char *output_ptr;
   int conversion_required=FALSE;
 
   input_term = reg_term(1);  /* Arg1: string to find matches in */
@@ -204,51 +301,89 @@ bool do_regsubstitute__(void)
 
   input_len = strlen(input_string);
 
-  /* arg 2: beginning offset */
-  beg_offset_term = reg_term(2);
-  if (! is_int(beg_offset_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 2 (the beginning offset) must be an integer");
-  beg_offset = int_val(beg_offset_term);
-  if (beg_offset < 0 || beg_offset > input_len)
-    xsb_abort("RE_SUBSTITUTE: Arg 2 (=%d) must be between 0 and %d", 
-	      beg_offset, input_len);
-
-  /* arg 3: ending offset */
-  end_offset_term = reg_term(3);
-  if (! is_int(end_offset_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 3 (the ending offset) must be an integer");
-  end_offset = int_val(end_offset_term);
-  if (end_offset < 0)
-    end_offset = input_len;
-  else if (end_offset > input_len || end_offset < beg_offset)
-    xsb_abort("RE_SUBSTITUTE: Arg 3 (=%d) must be < 0 or between %d and %d",
-	      end_offset, beg_offset, input_len);
+  /* arg 2: substring specification */
+  subst_reg_list_term = reg_term(2);
+  if (!is_list(subst_reg_list_term) && !is_nil(subst_reg_list_term))
+    xsb_abort("RE_SUBSTITUTE: Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
-  subst_term = reg_term(4);
-  if (is_string(subst_term)) {
-    subst_string = string_val(subst_term);
-  } else if (is_list(subst_term)) {
-    subst_string =
-      p_charlist_to_c_string(subst_term, subst_buf, sizeof(subst_buf),
-			     "RE_SUBSTITUTE", "substitution string");
-  } else {
-    xsb_abort("RE_SUBSTITUTE: Arg 4 (the substitution string) must be an atom or a list of characters");
-  }
+  subst_str_list_term = reg_term(3);
+  if (! is_list(subst_str_list_term))
+    xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
 
-  output_term = reg_term(5);
+  output_term = reg_term(4);
   if (! is_var(output_term))
-    xsb_abort("RE_SUBSTITUTE: Arg 5 (the output string) must be an unbound variable");
+    xsb_abort("RE_SUBSTITUTE: Arg 4 (the output string) must be an unbound variable");
 
-  /* do the actual replacement */
-  strncpy(output_buffer, input_string, beg_offset);
-  strcpy(output_buffer+beg_offset, subst_string);
-  strcat(output_buffer, input_string+end_offset);
-  
+  subst_reg_list_term1 = subst_reg_list_term;
+  subst_str_list_term1 = subst_str_list_term;
+
+  if (is_nil(subst_reg_list_term1)) {
+    strncpy(output_buffer, input_string, sizeof(output_buffer));
+    goto EXIT;
+  }
+  if (is_nil(subst_str_list_term1))
+    xsb_abort("RE_SUBSTITUTE: Arg 3 must not be an empty list");
+
+  /* initialize output buf */
+  output_ptr = output_buffer;
+
+  do {
+    subst_reg_term = p2p_car(subst_reg_list_term1);
+    subst_reg_list_term1 = p2p_cdr(subst_reg_list_term1);
+
+    if (!is_nil(subst_str_list_term1)) {
+      subst_str_term = p2p_car(subst_str_list_term1);
+      subst_str_list_term1 = p2p_cdr(subst_str_list_term1);
+
+      if (is_string(subst_str_term)) {
+	subst_string = string_val(subst_str_term);
+      } else if (is_list(subst_str_term)) {
+	subst_string =
+	  p_charlist_to_c_string(subst_str_term, subst_buf, sizeof(subst_buf),
+				 "RE_SUBSTITUTE", "substitution string");
+      } else 
+	xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
+    }
+
+    beg_term = p2p_arg(subst_reg_term,1);
+    end_term = p2p_arg(subst_reg_term,2);
+
+    if (!is_int(beg_term) || !is_int(end_term))
+      xsb_abort("RE_SUBSTITUTE: Non-integer in Arg 2");
+    else{
+      beg_offset = int_val(beg_term);
+      end_offset = int_val(end_term);
+    }
+    /* -1 means end of string */
+    if (end_offset < 0)
+      end_offset = input_len;
+    if ((end_offset < beg_offset) || (beg_offset < last_pos))
+      xsb_abort("RE_SUBSTITUTE: Substitution regions in Arg 2 not sorted");
+
+    /* do the actual replacement */
+    strncpy(output_ptr, input_string + last_pos, beg_offset - last_pos);
+    output_ptr = output_ptr + beg_offset - last_pos;
+    if (sizeof(output_buffer)
+	> (output_ptr - output_buffer + strlen(subst_string)))
+      strcpy(output_ptr, subst_string);
+    else
+      xsb_abort("RE_SUBSTITUTE: Substitution result size %d > maximum %d",
+		beg_offset + strlen(subst_string),
+		sizeof(output_buffer));
+    
+    last_pos = end_offset;
+    output_ptr = output_ptr + strlen(subst_string);
+
+  } while (!is_nil(subst_reg_list_term1));
+
+  if (sizeof(output_buffer) > (output_ptr-output_buffer+input_len-end_offset))
+    strcat(output_ptr, input_string+end_offset);
+
+ EXIT:
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer, output_term,
-			   "RE_SUBSTITUTE", "Arg 5");
+    c_string_to_p_charlist(output_buffer,output_term,"RE_SUBSTITUTE","Arg 4");
   else
     /* DO NOT intern. When atom table garbage collection is in place, then
        replace the instruction with this:
@@ -257,7 +392,7 @@ bool do_regsubstitute__(void)
        manipulation it is often necessary to process the same string many
        times. This can cause atom table overflow. Not interning allws us to
        circumvent the problem.  */
-    ctop_string(5, output_buffer);
+    ctop_string(4, output_buffer);
   
   return(TRUE);
 }
