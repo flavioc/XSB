@@ -87,12 +87,7 @@ flora_compile_internal(File,Workspace) :-
 flora_load_module_internal(InFile,Workspace) :-
 	flora_check_filename(InFile),
 	flora_check_workspace(Workspace),
-	(InFile == user
-	->  path_sysop(tmpfilename,File),
-	    str_cat(File,'.flr',FlrFile),
-	    flora_save_user_clauses(FlrFile)
-	;   InFile = File
-	),
+	flora_get_user_program_maybe(InFile,File),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,Workspace)
 
@@ -117,12 +112,7 @@ flora_load_module_internal(InFile,Workspace) :-
 **********************************************************************/
 flora_load_module_internal(InFile) :-
 	flora_check_filename(InFile),
-	(InFile == user
-	->  path_sysop(tmpfilename,File),
-	    str_cat(File,'.flr',FlrFile),
-	    flora_save_user_clauses(FlrFile)
-	;   InFile = File
-	),
+	flora_get_user_program_maybe(InFile,File),
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,FLORA_DEFAULT_WORKSPACE)
 
@@ -376,6 +366,20 @@ flora_save_user_clauses(FlrFile) :-
 	copyIOport(InPort,Port),
 	file_close(Port),
 	flora_message_line('User program saved in file %s', arg(FlrFile)).
+
+
+/*************************************************************************
+  flora_get_user_program_maybe(+InFile,-File)
+  If InFile = user assume the user wants to input the program to the shell.
+  Retrun the name of the tempfile that has the program.
+*************************************************************************/
+flora_get_user_program_maybe(InFile,File) :-
+	(InFile == user
+	->  path_sysop(tmpfilename,File),
+	    str_cat(File,'.flr',FlrFile),
+	    flora_save_user_clauses(FlrFile)
+	;   InFile = File
+	).
 
 
 /*************************************************************************
