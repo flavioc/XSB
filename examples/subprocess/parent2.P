@@ -12,9 +12,6 @@
 ?- pipe_open(RP,WP),
    %% WF is now the XSB file descriptor bound to the write part of the pipe
    fd2ioport(WP,WF),
-   %% We aren't going to read from child, so let's close the pipe coming 
-   %% from it -- we don't want to run out of file descriptors!!!
-   fd2ioport(RP,RF), file_close(RF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
    spawn_process(xsb, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is

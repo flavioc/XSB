@@ -926,7 +926,7 @@ a file using {\tt consult} and such.)
     
 \ournewitem{file\_read\_line\_atom(-String)}{file\_io}
 \index{{\tt file\_read\_line\_atom/1}}
-   Like \verb|file_read_line_atom/3|, but {\tt IOport} is not required.
+   Like \verb|file_read_line_atom/2|, but {\tt IOport} is not required.
    The file being read is the one previously opened with {\tt see/1}.
 
 \ournewitem{file\_read\_line\_list(+IOport,-CharList)}{file\_io}
@@ -1502,12 +1502,12 @@ Here is a simple example of how it works.
 
 %%
 \begin{verbatim}
-| ?- import file_flush/2, file_read_line_atom/3 from file_io.
+| ?- import file_flush/2, file_read_line_atom/2 from file_io.
 | ?- import file_nl/1 , file_write/2 from xsb_writ.  
 
 | ?- spawn_process([cat, '-'], To, From, Stderr, Pid),
      file_write(To,'Hello cat!'), file_nl(To), file_flush(To,_),
-     file_read_line_atom(From,Y,_).
+     file_read_line_atom(From,Y).
 
 To = 3
 From = 4
@@ -1556,7 +1556,7 @@ reads from XSB and copies the result to standard output. Likewise,
 %%
 \begin{verbatim}
 | ?- spawn_process('cat test', none, From, none, _),
-     file_read_line_atom(From, S, _).
+     file_read_line_atom(From, S).
 
 From = 4
 S = The first line of file `test'
@@ -1586,7 +1586,7 @@ sending it a goal to evaluate and obtaining the result:
 | ?- spawn_process([xsb], To, From,Err,_),
      file_write(To,'assert(p(1)).'), file_nl(To), file_flush(To,_),
      file_write(To,'p(X), writeln(X).'), file_nl(To), file_flush(To,_), 
-     file_read_line_atom(From,XX,_).  
+     file_read_line_atom(From,XX).  
 
 XX = 1
 
@@ -1626,7 +1626,7 @@ following shell command:
 \end{verbatim}
 %%
 
-\paragraph{\em Important notes about spawned processes\/}:
+\paragraph{{\em Important notes about spawned processes\/}:}
 \begin{enumerate}
 \item Asynchronous processes spawned by XSB do not disappear (at least on
   Unix) when they terminate, \emph{unless} the XSB program executes a
@@ -1790,7 +1790,7 @@ shell/5.
 \ouritem{fd2ioport(+Pipe, -IOport)}\index{{\tt fd2ioport/2}} 
     Take a pipe and convert it to an XSB I/O port that can be used
     for I/O. This predicate is needed because pipes must be associated with
-    XSB I/O ports before any I/O can be on them by an XSB program.
+    XSB I/O ports before any I/O can be done on them by an XSB program.
 
     The best way to illustrate how one can create a new pipe to a child
     (even if the child has been created earlier) is to show an example.
@@ -1815,9 +1815,6 @@ shell/5.
 ?- pipe_open(RP,WP),
    %% WF is now the XSB I/O port bound to the write part of the pipe
    fd2ioport(WP,WF),
-   %% We aren't going to read from child, so let's close the pipe coming 
-   %% from it -- we don't want to run out of file descriptors!!!
-   fd2ioport(RP,RF), file_close(RF),
    %% ProcInput becomes the XSB stream leading directly to the child's stdin
    spawn_process(xsb, ProcInput, block, block, Process),
    %% Tell the child where the reading part of the pipe is
@@ -1842,13 +1839,13 @@ shell/5.
     \begin{verbatim}
 %% child.P
 :- import fd2ioport/2 from file_io.
-:- import file_read_line_atom/3 from file_io.
+:- import file_read_line_atom/2 from file_io.
 :- dynamic pipe/1.
 ?- pipe(P), fd2ioport(P,F),
    %% Acknowledge receipt of the pipe
    fmt_write("\nPipe %d received\n", arg(P)),
    %% Get a message from the parent and print it to stdout
-   file_read_line_atom(F, Line,_), write('Message was: '), writeln(Line).
+   file_read_line_atom(F, Line), write('Message was: '), writeln(Line).
     \end{verbatim}
     %%
     This produces the following output:

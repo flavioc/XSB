@@ -36,7 +36,7 @@
 :- import do_libwww_request___/1 from libwww_request.
 
 :- bootstrap_package('libwww', libwww),
-	(   libwww_info(support, yes)
+	(   [libwww_init], libwww_info(support, yes)
 	->  [libwwwconfig]
 	;   abort('The libwww package has not been configured')
 	).
