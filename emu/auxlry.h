@@ -27,7 +27,11 @@
 
 #define MOD %
 
+#define IsNULL(ptr)      ( (ptr) == NULL )
+#define IsNonNULL(ptr)   ( (ptr) != NULL )
+
 typedef unsigned char byte;
+typedef unsigned int counter;
 typedef unsigned long word;
 typedef byte *pb;
 typedef word *pw;

@@ -48,9 +48,12 @@ typedef unsigned long prolog_term;	/* opaque type definition */
 #define TRUE  (!FALSE)
 #endif
 
-
-#define IsNULL(ptr)      ( (ptr) == NULL )
-#define IsNonNULL(ptr)   ( (ptr) != NULL )
+#ifndef NO
+#define NO  FALSE
+#endif
+#ifndef YES
+#define YES  TRUE
+#endif
 
 
 #ifdef WIN_NT
