@@ -51,6 +51,7 @@
 #include "error_xsb.h"
 #include "tr_utils.h"
 #include "debug_xsb.h"
+#include "subp.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -1060,6 +1061,7 @@ static void load_solution_from_trie(int arity, CPtr cptr)
        }
        else {			/* an XSB_ATTV */
 	 /* Bind the variable part of xtemp1 to returned_val */
+	 add_interrupt(cell(((CPtr)dec_addr(xtemp1) + 1)), returned_val); 
 	 dbind_ref((CPtr) dec_addr(xtemp1), returned_val);
        }
      }
