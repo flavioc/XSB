@@ -30,14 +30,14 @@ Generally, each driver has to be configured separately, but if the database
 packages such as ODBC, MySql, etc., are installed in standard places then
 the XSB configuration mechanism will do the job automatically.
 
-Under Windows, typing
+Under Windows, the command
 %%
 \begin{verbatim}
     makexsb_wind  
 \end{verbatim}
 %%
-in the XSB's {\tt build} directory will normally configure the ODBC driver
-without problems. For the MySQL driver one has to edit the file
+in the diectory {\tt XSB$\backslash$build} will normally configure the ODBC
+driver without problems. For the MySQL driver one has to edit the file
 %%
 \begin{verbatim}
     packages\dbdrivers\mysql\cc\NMakefile.mak  
@@ -46,9 +46,10 @@ without problems. For the MySQL driver one has to edit the file
 to indicate where MySQL is installed.
 
 
-Under Unix, the {\tt configure} script should also build the drivers automatically.
-If, however, ODBC and MySQL are not installed in their standard places, you
-will have to provide the following parameters to the configure script:
+Under Unix, the {\tt configure} script should also build the drivers
+automatically.  If, however, ODBC and MySQL are not installed in their
+standard places, you will have to provide the following parameters to the
+configure script:
 %%
 \begin{itemize}
 \item  {\tt --with-odbc-libdir=LibDIR} -- {\tt LibDIR} is the directory
@@ -62,21 +63,13 @@ will have to provide the following parameters to the configure script:
 \end{itemize}
 %%
 
-Under Cygwin, the interface needs to be linked with the Visual Studio ODBC libraries.
-By default, the odbc interface assumes the location of the odbc32.lib and 
-odbccp32.lib as 
-\begin{verbatim}
-C:\Program Files\Microsoft Visual Studio\VC98\lib\. 
-\end{verbatim}
-In the event of these libraries being installed in a different directory,
-ypu have to manually change the line in the function make\_odbc\_driverH 
-which is defined in the file 
-\begin{verbatim}
-packages/dbdrivers/odbc/odbc_driver_config.P
-\end{verbatim}
-where the paths are
-specified. Otherwise, the configuration of the interface under cygwin is
-same as in unix.
+Under Cygwin, the ODBC libraries come with the distribution; they are
+located in the directory {\tt /cygdrive/c/cygwin/lib/w32api/} and are called
+{\tt odbc32.a} and {\tt odbccp32.a}. (Check if your installation is complete
+and has these libraries!)
+Otherwise, the configuration of the interface under cygwin is
+same as in unix (you do not need to provide any ODBC-specific parameters to
+the configure script under Cygwin).
 
 
 If at the time of configuring XSB some database packages ({\it e.g.},
@@ -90,8 +83,9 @@ ODBC interface separately, you can type
 \end{verbatim}
 %%
 Again, if ODBC is installed in a non-standard location, you might need to
-supply the options {\tt --with-odbc-libdir} and {\tt --with-odbc-incdir}
-to the configure script.
+supply the options {\tt --with-odbc-libdir} and {\tt --with-odbc-incdir} to
+the configure script. (Again, under Cygwin ODBC is always installed in a
+standard place, and {\tt configure} needs no additional parameters.)
 
 Under Windows, separate configuration of the XSB-DB interfaces is also
 possible, but you need Visual Studio installed. For instance, to do so for
@@ -169,15 +163,15 @@ ODBC.
 | ?- db_connect(Handle, Driver, Server, Database, User, Password).
 \end{verbatim}
 
-The {\tt Handle}, {\tt Driver}, {\tt User},
-and {\tt Password} are the same as before. The {\tt Server} and 
-{\tt Database} arguments specify the server and database to connect to.
-For example, for a connection to a database called test in the server
-wolfe with the user name xsb, password xsb, and using the mysql
-driver, the call is:
+The {\tt Handle}, {\tt Driver}, {\tt User}, and {\tt Password} are the same
+as before. The {\tt Server} and {\tt Database} arguments specify the server
+and database to connect to.  For example, for a connection to a database
+called {\tt test} located on the server {\tt wolfe} with the user name {\tt
+  xsb}, the password {\tt foo}, and using the {\tt mysql} driver, the call
+is:
 
 \begin{verbatim}
-| ?- db_connect(ha, mysql, wolfe, test, xsb, xsb).
+| ?- db_connect(ha, mysql, wolfe, test, xsb, foo).
 \end{verbatim}
 
 \noindent
@@ -289,7 +283,7 @@ the handle, a call is made to the predicate:
 where QueryHandle is the query handle for the statement to be closed.
 
 The interface is also able to transparently handle Prolog terms. 
-Users can both save and retrive terms without any special processing.
+Users can both save and retrieve terms without any special processing.
 
 
 \section{Error Handling}
@@ -372,20 +366,24 @@ statement.
 
 \subsubsection{ODBC Driver}
 
-The ODBC driver has been tested in Linux using the unixodbc driver manager.
-It currently supports the following functionalities: (a) connecting to a 
-database using a DSN, (b) direct querying of the database, (c) using 
-prepared statements to query the database, (d) closing a statement handle, and
-(d) disconnecting from the database. 
+The ODBC driver has been tested in Linux using the {\tt unixodbc} driver
+manager.  It currently supports the following functionality: (a)
+connecting to a database using a DSN, (b) direct querying of the database,
+(c) using prepared statements to query the database, (d) closing a
+statement handle, and (d) disconnecting from the database.
+The ODBC driver has also been tested under Windows and Cygwin.
 
 \subsubsection{MySQL Driver}
 
-The MySQL driver has been implemented using the native MySQL C API. Currently, it
-has support for the following functionalities: (a) connecting to 
-a database using the non-DSN {\tt db\_connect}, (b) direct querying of
+The MySQL driver has been implemented using the native MySQL C API.
+Currently, it has support for the following functionality: (a) connecting
+to a database using the non-DSN {\tt db\_connect}, (b) direct querying of
 the database, and (c) disconnecting from the database. Support for prepared
-statement functionality will be available from MySQL 4.1 version at which
-point the driver can be updated with such a feature.
+statements will be available from MySQL 4.1 version at which point the
+driver can be updated with such a feature.
+
+The MySQL driver has been tested under Linux and Windows.
+
 
 %%% Local Variables: 
 %%% mode: latex

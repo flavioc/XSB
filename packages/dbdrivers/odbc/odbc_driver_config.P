@@ -37,12 +37,6 @@ make_odbc_driverH(CC, CC_opts) :-
 			     ' %s %s%sdriver_manager.dll -lodbc32 -lodbccp32 ',
 			     f(ODBC_libdir_flag, ConfigBindir, Slash))
 
-	%% If using MSVC libraries
-	/*MSVCPath = 'C:\program files\microsoft visual studio\vc98\lib',
-	fmt_write_string(LD_flags,
-			 ' %s%sdriver_manager.dll "%s\odbc32.lib" "%s\odbccp32.lib" ',
-			 f(ConfigBindir, Slash, MSVCPath, MSVCPath))*/
-
 	; %% windows specific stuff
 	    running_under(windows) -> true
 	; %% MacOS
