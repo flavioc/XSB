@@ -81,13 +81,8 @@ int main(int argc, char *argv[])
 \end{itemize}
 %%
 Other flags are optional, but can be used to modify sizes of the various
-spaces used in \ourprolog.  In particular, if \ourprolog\ will be required
-to load some other (usually C) program using the foreign language
-interface, then the -E option must be used to specify the full path name of
-the executable of the main C program.  See the section on Command Line
-Options in Volume 1 
-for more details.  {\tt xsb\_init} returns 0 if initialization is
-completed, and 1 if some error is encountered.
+spaces used in \ourprolog.  {\tt xsb\_init} returns 0 if initialization is
+completed, and 1 if an error is encountered.
 
 \ouritem{int xsb\_init\_string(char *options)} \index{{\tt xsb\_init\_string}}
 This is a variant of {\tt xsb\_init} which takes the command line as a
@@ -409,57 +404,68 @@ these routines, and the \ourprolog\ routines that they call, must be
 included in the link ({\tt ld}) step.
 
 \paragraph{Unix instructions:}
-First, you must create a relocatable file, named {\tt xsb.o}, that
-contains all the \ourprolog\ routines.  To do this, get into the
-{\tt XSB/build} subdirectory, and execute:
-%%
-\begin{verbatim}
-    % makexsb module
-\end{verbatim}
-%%
-This will place the relocatable file in:
+You must link your C program, which should include the main procedure, with
+the XSB object file located in
 %%
 \begin{verbatim}
  $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o  
 \end{verbatim}
 %%$
-
-Second, you must compile your C program, which includes a main
-procedure.  You should include the file {\tt cinterf.h} located in the
-{\tt XSB/emu} subdirectory, which defines the routines described here
-that you will need to use.
-
-Third, to create your executable, after you have created the object
-file, say {\tt ruleproc.o}, for your C routine, you could execute:
-\begin{verbatim}
-    % gcc -o ruleproc ruleproc.o $XSB_DIR/config/<your-system-architecture>/saved.o/xsb.o
-\end{verbatim}
+Your program should include the file {\tt cinterf.h} located in the {\tt
+  XSB/emu} subdirectory, which defines the routines described earlier,
+which you will need to use in order to talk to XSB.  It is therefore
+recommended to compile your program with the option
+\verb|-I$XSB_DIR/XSB/emu|.
+%%$
 
 The file {\tt \$XSB\_DIR/config/your-system-architecture/modMakefile} is a
 makefile you can use to build your programs and link them with XSB.  It is
 generated automatically and contains all the right settings for your
 architecture, but you will have to fill in the name of your program, etc.
 
+It is also possible to compile and link your program with XSB using XSB
+itself as follows:
+%%
+\begin{verbatim}
+:- xsb_configuration(compiler_flags,CFLAGS),
+        xsb_configuration(loader_flags,LDFLAGS),
+        xsb_configuration(config_dir,CONFDIR),
+        xsb_configuration(emudir,EMUDIR),
+        xsb_configuration(compiler,Compiler),
+        str_cat(CONFDIR, '/saved.o/', ObjDir),
+        write('Compiling myprog.c ... '),
+        shell([Compiler, ' -I', EMUDIR, ' -c ', CFLAGS, ' myprog.c ']),
+        shell([Compiler, ' -o ', './myprog ',
+               ObjDir, 'xsb.o ', ' myprog.o ', LDFLAGS]),
+        writeln(done).  
+\end{verbatim}
+%%
+This works for every architecture and is often more convenient than using
+the make files.
+
 There are simple examples of C programs calling \ourprolog\ in the
 {\tt \$XSB\_DIR/examples/c\_calling\_XSB} directory, in files {\tt cmain.c},
 {\tt ctest.P}, {\tt cmain2.c}.
 
 \paragraph{Windows instructions:}
-To call XSB from C, you must build it as a DLL. To do this, you specify
-DLL=''yes'' on command line. {\it E.g.}, 
+To call XSB from C, you must build it as a DLL, which is done as follows:
 %%
-\begin{quote}
- {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="release" DLL="yes"  }
-\end{quote}
-%%
+\begin{verbatim}
+  cd $XSB_DIR\XSB\build
+  makexsb_wind DLL="yes"
+\end{verbatim}
+%%$
 The DLL, which you can call dynamically from your program is then found in 
 %%
 \[
  \tt
  \$XSB\_DIR\backslash config\backslash \mbox{\tt x86-pc-windows}\backslash
- saved.o \backslash xsb.dll
+ bin \backslash xsb.dll
 \]
 %%
+Since your program must include the file {\tt cinterf.h}, it is recommended
+to compile it with the option \verb|/I$XSB_DIR\XSB\emu|.
+%%$
 
 
 %%% Local Variables: 
