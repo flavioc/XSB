@@ -193,14 +193,19 @@ print_answer([vv(Name,Val)|Tail]) :-
 
 /* === break =========================================================== */
 
-break :- conget('_$break_level', Blevel),
+break :-
+	seeing(InpFile), telling(OutFile),
+	see(userin), tell(userout),
+	conget('_$break_level', Blevel),
 	Nblevel is Blevel+1, conset('_$break_level', Nblevel),
 	file_write(STDMSG, '[ Break (level '), file_write(STDMSG, Nblevel),
 	file_write(STDMSG, ') ]'), file_nl(STDMSG),
 	readl_brklp1,
 	conset('_$break_level', Blevel),
 	file_write(STDMSG, '[ End break (level '), file_write(STDMSG, Nblevel),
-	file_write(STDMSG, ') ]'), file_nl(STDMSG).
+	file_write(STDMSG, ') ]'), file_nl(STDMSG),
+	seen, told,
+	see(InpFile), tell(OutFile).
 
 readl_brklp1 :- 
 	x_interp_repeat, 
