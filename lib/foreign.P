@@ -138,6 +138,11 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
+	    ; str_sub('powerpc-apple-darwin', Configuration)
+	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts])
+#ifdef FOREIGN_DEBUG
+	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts))
+#endif
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts])),
 		concat_atom([Base,'.o'], Obj),

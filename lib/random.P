@@ -52,6 +52,7 @@ random(L, U, R) :-
 getrand(rand(X,Y,Z)) :-
 	wh_random(2, X, Y, Z).
 
+
 %-----------------------------------------------------------------------
 % Sets the state of the random generator. X, Y and Z must be integers
 % in the ranges [1,30269), [1,30307), [1,30323).
@@ -70,6 +71,12 @@ setrand(rand(X,Y,Z)) :-
 	 ;	abort('Third arg of setrand/3 is not in the range [1,30323).')
         ),
 	wh_random(3, X, Y, Z).
+
+%-----------------------------------------------------------------------
+datime_setrand:- 
+	datime(datime(_Y,_M,D,H,Min,Sec)), 
+	One is D + H, Two is H + Min, Three is Min + Sec, 
+	setrand(rand(One,Two,Three)).
 
 %-----------------------------------------------------------------------
 % randseq(+K, +N, -L) returns in L a random sequence of K integers in

@@ -22,7 +22,8 @@
 ** 
 */
 
-:- export random/1,
+:- export datime_setrand/0,
+          random/1,
 	  random/3,
 	  randseq/3,
 	  randset/3,
@@ -32,3 +33,4 @@
 
 :- import abort/1, integer/1 from standard.
 :- import keysort/2 from setof.
+:- import datime/1 from standard.
