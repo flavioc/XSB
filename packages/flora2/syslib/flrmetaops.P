@@ -2,7 +2,7 @@
 **
 ** Author(s): kifer
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
 **
@@ -31,7 +31,7 @@
 :- import
 	flora_module_predicate/4,
 	flora_decode_predicate/6
-	from flrwrapper.
+    from flrwrapper.
 
 #include "flora_terms.flh"
 

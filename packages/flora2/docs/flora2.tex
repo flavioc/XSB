@@ -176,13 +176,13 @@
 
 \FLORA is a sophisticated compiler and application development platform
 that translates a unified language of \fl \cite{KLW95}, HiLog
-\cite{hilog-jlp}, and Transaction Logic \cite{trans-tcs94} into XSB. It
-takes a program written in the \fl language with HiLog and Transaction
-Logic extensions (which must be in a file with extension {\tt .flr}, {\it
-  e.g.}, {\tt file.flr}) and outputs a regular XSB program (with extension
-{\tt .P}).  This program is then passed to XSB for compilation (which
-produces {\tt file.\ofile}) and execution, which, however, requires \FLORA
-runtime support.
+\cite{hilog-jlp}, and Transaction Logic \cite{trans-tcs94} into tabled
+Prolog code. It takes a program written in the \fl language with HiLog and
+Transaction Logic extensions (which must be in a file with extension {\tt
+  .flr}, {\it e.g.}, {\tt file.flr}) and outputs a regular Prolog program
+(with extension {\tt .P}).  This program is then passed to XSB for
+compilation (which produces {\tt file.\ofile}) and execution, which,
+however, requires \FLORA runtime support.
 
 \index{FLIP}
 \index{FLORID}
@@ -213,63 +213,41 @@ consequence of the added support for HiLog, which obviates the need for the
 ``@'' sign in method invocations (this sign is now used to denote calls to
 \FLORA modules).
 
-\FLORA is part of the official distribution of XSB beginning with version
-2.4. It is organized as an XSB package and lives in the directory
-%%
-\begin{quote}
- \verb|<xsb-installation-directory>/packages/flora2/|  
-\end{quote}
-%%
-\FLORA is fully integrated into the XSB system, including its module
-system. In particular, \FLORA modules can invoke predicates defined in
-other XSB modules, and regular XSB modules can query the objects defined in
-\FLORA modules. At present, XSB is the only platform where \FLORA can run,
-because it heavily relies on tabling and the well-founded semantics for
-negation, both of which are available only in XSB.
-
-%% Unimplemented -- slg-wam/batched
-Due to certain problems with XSB, \FLORA runs best when XSB is configured
-with SLG-WAM and local scheduling (as opposed to \emph{batched}
-scheduling). This problem will be fixed in a future release of XSB.
-Fortunately, beginning with XSB version 2.5 this is the default
-configuration.  If (for some reason) you need to configure 
-XSB differently, you can do so using these two commands:
-%%
-{\tt
-\begin{quote}
- configure --enable-batched-scheduling --config-tag=\\
- makexsb
-\end{quote}
-}
-%%
-If you are using Unix --- you are a lucky person, because \FLORA
-is built together with XSB, so you do not need to do anything special to
-have it working. If, for some reason it fails to build, follow
-these steps:
+\FLORA is no longer part of the official distribution of XSB and must be
+installed separately.
+To install it, first install XSB, then
 %%
 \begin{verbatim}
-   cd <xsb-installation-directory>/packages/flora2/
-   make clean
-   make
+ cd packages
+ tar xf flora2.tar
+ cd flora2
+ make
 \end{verbatim}
 %%
-If you are using Windows --- do not despair. Building \FLORA is easy,
-although it takes time. You need to have Microsoft {\tt nmake} or
-compatible installed.
+To build \FLORA in Windows, you need Microsoft's {\tt nmake} or
+compatible installed. Then use the following two command instead of the
+last command above:
 %%
 \begin{verbatim}
-   cd <xsb-installation-directory>\packages\flora2
-   nmake /f NMakefile.mak clean
    nmake /f NMakefile.mak
 \end{verbatim}
 %%
-At present \FLORA does not work under Cygwin because XSB's C interface is
-not working well with Cygwin.
+\FLORA is fully integrated into the underlying Prolog engine, including its
+module system. In particular, \FLORA modules can invoke predicates defined in
+other Prolog modules, and Prolog modules can query the objects defined in
+\FLORA modules. At present, XSB is the only Prolog platform where \FLORA
+can run, because it heavily relies on tabling and the well-founded
+semantics for negation, both of which are available only in XSB.
+
+Due to certain problems with XSB, \FLORA runs best when XSB is configured
+with SLG-WAM and local scheduling (as opposed to \emph{batched}
+scheduling), which is the default XSB configuration.
+
 
 The fastest and easiest way to get a feel of the system
 is to start \FLORA shell and begin to enter queries interactively.  To
-this end, you must first invoke XSB and then load the {\tt flora2}
-package:
+this end, you must first invoke the underlying Prolog engine and then load
+the {\tt flora2} package:
 %%
 \begin{quote}
   \tt
@@ -298,7 +276,7 @@ flora2 ?-
 %%
 
 At this point, \FLORA takes over and \fl syntax becomes the
-norm. To get back to the XSB command loop, type {\tt Control-D} or 
+norm. To get back to the Prolog command loop, type {\tt Control-D} or 
 %%
 \begin{quote}
   \tt
@@ -367,7 +345,7 @@ or
   flora2 ?- {\tt flLoad programfile.}
 \end{quote}
 %%
-Here {\tt program-file} can contain a \FLORA program or an XSB program. If
+Here {\tt program-file} can contain a \FLORA program or a Prolog program. If
 {\tt program-file.flr} exists, it is assumed to be a \FLORA program. The
 system will compile the program, if necessary, and then load it. The
 compilation process is two-stage: first, the program is compiled into a
@@ -435,17 +413,17 @@ of these commands might seem a bit cryptic, so it is a good idea to come
 back here after you become more familiar with the various concepts
 underlying the system.
 
-In the following command list, the suffixes {\tt .flr} {\tt .P}, {\tt .\ofile}
-are optional. If the file suffix is specified explicitly, the system uses
-the file with the given name without any modification. The {\tt .flr}
-suffix denotes a \FLORA program, the {\tt .P} suffix indicates that it is an
-XSB program, and {\tt .\ofile} means that it is a bytecode file, which can be
-executed by XSB.  If no suffix is given, the system assumes it is dealing
-with a \FLORA program and adds the suffix {\tt .flr}. If the file with such a
-name does not exist, it assumes that the file contains an XSB program and
-tries the suffix {\tt .P}. Otherwise, it tries {\tt .\ofile} in the hope that an
-executable XSB bytecode exists. If none of these tries are successful, an
-error is reported.
+In the following command list, the suffixes {\tt .flr} {\tt .P}, {\tt
+  .\ofile} are optional. If the file suffix is specified explicitly, the
+system uses the file with the given name without any modification. The {\tt
+  .flr} suffix denotes a \FLORA program, the {\tt .P} suffix indicates that
+it is a Prolog program, and {\tt .\ofile} means that it is a bytecode file,
+which can be executed by Prolog.  If no suffix is given, the system assumes it
+is dealing with a \FLORA program and adds the suffix {\tt .flr}. If the
+file with such a name does not exist, it assumes that the file contains a
+Prolog program and tries the suffix {\tt .P}. Otherwise, it tries {\tt
+  .\ofile} in the hope that an executable Prolog bytecode exists. If none of
+these tries are successful, an error is reported.
 %
 \begin{itemize}
 \item {\tt flHelp}:
@@ -473,7 +451,7 @@ error is reported.
     that F-logic style equality is supported ({\it i.e.}, congruence plus
     the axiom for scalar methods).
 \item {\tt abolish\_all\_tables}:
-    Flush all tabled data. This is sometimes needed when XSB's tabling 
+    Flush all tabled data. This is sometimes needed when Prolog's tabling 
     gets in the way. We describe tabling (as it pertains to \FLORA) in
     Section~\ref{sec-tabling-flora}.
 \item {\tt firstorder Functor/Arity}:
@@ -497,20 +475,20 @@ error is reported.
     Turn on/off the display of the number of solutions at the end of query
     evaluation.
 \item {\tt flEnd}:
-    Say Ciao to \FLORA, stay in XSB.
+    Say Ciao to \FLORA, stay in Prolog.
 \item {\tt flHalt}:
-    Quit both \FLORA and XSB.
+    Quit both \FLORA and Prolog.
 \end{itemize}
 %
 
-All commands with a FILE argument passed to them use the XSB
+All commands with a FILE argument passed to them use the Prolog
 {\tt library\_directory} predicate to search for the file, except that the
 command {\tt flDemo(FILE)} first looks for {\tt FILE} in the \FLORA demo
 directory. The search path typically includes the standard system's
-directories used by XSB followed by the current directory. 
+directories used by Prolog followed by the current directory. 
 
-All XSB commands can be executed from \FLORA shell, if the corresponding
-XSB library has already been loaded.
+All Prolog commands can be executed from \FLORA shell, if the corresponding
+Prolog library has already been loaded.
 
 After a syntax, parsing, or compilation error, \FLORA shell will
 discard tokens read from the current input stream until the end of file or a
@@ -851,9 +829,9 @@ letters ($\tt A \ldots Z, a \ldots z$), digits ($\tt 0 \ldots 9$), or underscore
 (\_), e.g., \texttt{student}, \texttt{apple\_pie}. Symbols can also be
 \emph{any} sequence of characters enclosed in a pair of single quotes,
 e.g., \texttt{'JOHN SMITH'},\texttt{'default.flr'}.  Internally, \FLORA
-symbols are represented as \emph{XSB symbols},\footnote{
+symbols are represented as \emph{Prolog symbols},\footnote{
   %%
-  Symbols are called ``atoms'' in XSB, which contravenes the use of this
+  Symbols are called ``atoms'' in Prolog, which contravenes the use of this
   term for atomic formulas in classical logic and \fl.
   We avoid the use of the term ``atom'' in reference to symbols.
   %%
@@ -916,7 +894,7 @@ escaped by another single quote, e.g., \texttt{'isn''t'}.
 \index{string}
 \index{character list}
 %
-Like XSB strings, \FLORA strings are enclosed in a pair of double quotes
+Like Prolog strings, \FLORA strings are enclosed in a pair of double quotes
 (\texttt{\dq}).  These strings are represented internally as lists of
 ASCII characters. For instance, \mbox{\texttt{[102,111,111]}} is the same
 as \texttt{{\dq}foo{\dq}}.
@@ -1313,7 +1291,7 @@ files can be included by the preprocessor prior to the compilation. In this
 case, all files share the same namespace in the sense that the different
 rules that define the same method name (or a predicate) in different files
 are assumed to be part of one definition. Third, \FLORA programs can call
-XSB modules and vice versa. In this way, a large system can be built partly
+Prolog modules and vice versa. In this way, a large system can be built partly
 in Prolog and partly in \FLORA.
 
 We discuss each of the aforesaid modularization methods in turn.
@@ -1372,7 +1350,7 @@ and the concrete binding of the method to the module will be done at
 runtime.
 
 This dynamic nature of \FLORA modules stands in sharp contrast to the module
-system of XSB, which is static and associates modules with files at compile
+system of Prolog, which is static and associates modules with files at compile
 time. Moreover, to call a predicate from another module, that predicate
 must be imported explicitly and referred to by the same name.
 
@@ -1388,11 +1366,11 @@ than just one. The kind described above is actually just one of the three:
 the \emph{user module}. As explained, these modules are decoupled from the
 actual code, and so they can contain different code at different times.
 The next kind is a \emph{Prolog module}. This is an abstraction in \FLORA,
-which is used to call XSB predicates. Prolog modules are static and are
+which is used to call Prolog predicates. Prolog modules are static and are
 assumed to be closely associated with their code. We describe these modules
 in Section~\ref{sec-prolog-modules}. (Do not confuse \FLORA Prolog modules
---- an abstraction used in the language of \FLORA --- with XSB modules,
-which is an abstraction used in XSB.)  The third type of modules are the
+--- an abstraction used in the language of \FLORA --- with Prolog modules,
+which is an abstraction used in Prolog.)  The third type of modules are the
 {\tt \FLORA system modules}. These modules are preloaded with \FLORA
 programs that provide useful methods and predicates ({\it e.g.}, I/O) and,
 thus, are also static. These modules are described in
@@ -1584,7 +1562,7 @@ module:
 This loads the \FLORA program {\tt myprog.flr} into the user module named {\tt
   foomod}, compiling it if necessary.
 
-Like XSB, \FLORA also the user to compile and load several program
+Like Prolog, \FLORA lets the user to compile and load several program
 files at the same time: If the file was not compiled before (or if the
 program file is newer), the program is compiled before being loaded.  For
 instance, the following command:
@@ -1596,7 +1574,7 @@ instance, the following command:
 will loads both {\tt myprog1} and {\tt myprog2} into the default module
 {\tt main}. However, loading several programs into the same module is not
 very useful: the code of the last program will wipe out the code of the
-previous ones. This is a general rule in \FLORA (and XSB). Thus, loading
+previous ones. This is a general rule in \FLORA (and Prolog). Thus, loading
 multiple files is always used in conjunction with the module targets:
 %%
 \begin{quote}
@@ -1605,14 +1583,14 @@ multiple files is always used in conjunction with the module targets:
 which loads {\tt myprog1.flr} into the module {\tt main} and {\tt
   myprog2.flr} into the module {\tt foomod}.
 
-Note that the {\tt [...]} command can also load and compile XSB programs.
+Note that the {\tt [...]} command can also load and compile Prolog programs.
 The overall algorithm is as follows. If the file suffix is specified
-explicitly, the corresponding file is assumed to be a \FLORA file, an XSB
+explicitly, the corresponding file is assumed to be a \FLORA file, a Prolog
 file, or a byte code depending on the suffix: {\tt .flr}, {\tt .P}, or {\tt
   .\ofile}. If the suffix is not given explicitly, the compiler first checks if
 {\it file}.{\tt flr} exists. If so, the file assumed to be a \FLORA program
 and is compiled as such. If {\it file}.{\tt flr} is not found, but {\it
-  file}.{\tt P} or {\it file}.{\tt O} is, the file is passed to XSB for
+  file}.{\tt P} or {\it file}.{\tt O} is, the file is passed to Prolog for
 compilation.
 
 
@@ -1636,16 +1614,16 @@ at the present time.
 %%
 
 
-\subsection{Calling XSB from \FLORA}\label{sec-prolog-modules}
+\subsection{Calling Prolog from \FLORA}\label{sec-prolog-modules}
 
 \index{Prolog module}
 \index{module!Prolog}
 %%
-XSB predicates can be called from \FLORA through the \FLORA module system
-\FLORA models XSB programs as collections of static {\em Prolog modules},
-{\it i.e.}, from \FLORA's point of view, XSB modules are always available
-and do not need to be loaded explicitly because the association between XSB
-programs and modules is fixed.  The syntax to call XSB predicates is
+Prolog predicates can be called from \FLORA through the \FLORA module system
+\FLORA models Prolog programs as collections of static {\em Prolog modules},
+{\it i.e.}, from \FLORA's point of view, Prolog modules are always available
+and do not need to be loaded explicitly because the association between Prolog
+programs and modules is fixed.  The syntax to call Prolog predicates is
 %%
 \index{module!{\tt prolog(modulename)}}
 %%
@@ -1654,7 +1632,7 @@ programs and modules is fixed.  The syntax to call XSB predicates is
   ?- {\it predicate}@prolog({\it module})  
 \end{quote}
 %%
-For instance, since the predicate {\tt member/2} is defined in the XSB
+For instance, since the predicate {\tt member/2} is defined in the Prolog
 module {\tt basics}, we can call it as follows:
 %%
 \begin{quote}
@@ -1662,18 +1640,19 @@ module {\tt basics}, we can call it as follows:
  ?- member(abc,[cde,abc,pqr])@prolog(basics).
 \end{quote}
 %%
-To use this mechanism, you must know which XSB module the particular predicate
-is defined in. Some predicates are defined by programs that do not belong
-to any module. When such an XSB program is loaded, the corresponding
-predicates become available in the special XSB module called {\tt usermod} and
-\FLORA can call such predicates as follows:
+To use this mechanism, you must know which Prolog module the particular
+predicate is defined in. Some predicates are defined by programs that do
+not belong to any module. When such an Prolog program is loaded, the
+corresponding predicates become available in the default Prolog module.  In
+XSB the default module is called {\tt usermod} and \FLORA can call such
+predicates as follows:
 %%
 \begin{quote}
  \tt
  ?- foo(X)@prolog(usermod).
 \end{quote}
 %%
-Note that variables are not allowed in the module specifications of XSB
+Note that variables are not allowed in the module specifications of Prolog
 predicates, {\it i.e.},
 %%
 \begin{quote}
@@ -1683,36 +1662,36 @@ predicates, {\it i.e.},
 %%
 will cause a compilation error.
 
-Some XSB predicates are considered ``well-known'' and, even though they are
-defined in various obscure XSB modules, the user can just use those predicates
-without remembering the corresponding XSB module names. These predicates
-(that are listed in the XSB manual) can be called from \FLORA with
-particular ease:
+Some Prolog predicates are considered ``well-known'' and, even though they
+are defined in various obscure Prolog modules, the user can just use those
+predicates without remembering the corresponding Prolog module names. These
+predicates (that are listed in the XSB manual) can be called from \FLORA
+with particular ease:
 %%
 \begin{quote}
  \tt
  ?- writeln('Hello')@prolog()
 \end{quote}
 %%
-{\it i.e.}, we can simply omit the XSB module name (but parentheses must be
+{\it i.e.}, we can simply omit the Prolog module name (but parentheses must be
 preserved). 
 
 
 
 
-\subsection{Calling \FLORA from XSB}
+\subsection{Calling \FLORA from Prolog}
 
-Since XSB does not understand object-oriented syntax, it can call only
+Since Prolog does not understand \FLORA syntax, it can call only
 predicates defined in \FLORA programs. These predicates can be HiLog or
 first-order predicates (See Section~\ref{sec:hilog}). To call predicates
-defined in \FLORA programs, they must be imported by the XSB program.
-To do this, the XSB query
+defined in \FLORA programs, they must be imported by the Prolog program.
+To do this, the Prolog query
 %%
 \begin{quote}
  ?- bootstrap\_flora.  
 \end{quote}
 %%
-must be executed first. To call \FLORA predicates from the XSB shell,
+must be executed first. To call \FLORA predicates from the Prolog shell,
 the following {\tt flImport} queries must be executed in the shell:
 %%
 \begin{quote}
@@ -1726,7 +1705,7 @@ the following {\tt flImport} queries must be executed in the shell:
    \hspace*{5cm}from {\it flora-module-name}
 \end{quote}
 %%
-To call \FLORA from within an XSB program, say {\tt test.P}, these {\tt
+To call \FLORA from within a Prolog program, say {\tt test.P}, these {\tt
   flImport} queries must appear near the top of the program (prior to any
 call to \FLORA predicates). Also, the query {\tt bootstrap\_flora} must be
 executed \emph{before compiling and loading} {\tt test.P} --- otherwise,
@@ -1741,16 +1720,16 @@ predicate.
 In both cases, the option {\tt hilog} is used to import a HiLog predicate
 and {\tt firstorder} is used to import first-order predicates. The imported
 predicate must be given a name by which the imported predicate will be
-known in XSB.  (This name can be the same as the name used in \FLORA.)  It
-is important, however, that the XSB name be specified as shown, {\it i.e.},
-as a predicate skeleton with the same number of arguments as in the
-first-order predicate. For instance, {\tt foo(\_,\_,\_)} will do, but {\tt
-  foo/3} will not.
+known in Prolog.  (This name can be the same as the name used in \FLORA.)
+It is important, however, that the Prolog name be specified as shown, {\it
+  i.e.}, as a predicate skeleton with the same number of arguments as in
+the first-order predicate. For instance, {\tt foo(\_,\_,\_)} will do, but
+{\tt foo/3} will not.
 
-Once the predicate is imported, it can be used under its XSB name as a
+Once the predicate is imported, it can be used under its Prolog name as a
 regular predicate.
 
-XSB programs can also load and compile \FLORA programs using the following
+Prolog programs can also load and compile \FLORA programs using the following
 queries (again, bootstrap\_ {\tt flora} must be executed in advance): 
 %%
 \begin{quote}
@@ -1768,7 +1747,7 @@ into the default module {\tt main}. The last two queries compile the file
 for loading into the module {\it flora-module} and {\tt main},
 respectively, but do not load it.
 
-Finally, an XSB program can check if a certain \FLORA user module has been
+Finally, a Prolog program can check if a certain \FLORA user module has been
 loaded using the following call:
 %%
 \begin{quote}
@@ -2150,7 +2129,7 @@ single-valued or multi-valued:
 \paragraph{Dual representation and meta-predicates.}
 Since path expressions can appear wherever Id-terms are allowed, the
 question arises whether a path expression is intended to indicate a truth
-value or an object value. For instance, we may want to call the XSB
+value or an object value. For instance, we may want to call the Prolog
 aggregate predicate {\tt findall/3} to retrieve the oids of the managers
 who like to play tennis:
 %%
@@ -2175,7 +2154,7 @@ list if the fact {\tt john} is true as a 0-ary predicate).
 The upshot of this problem is that the interpretation of \fl expressions as
 objects is not always suitable. In our example, we need to indicate to the
 compiler that the middle argument of {\tt findall/3} ought to be translated
-into XSB as follows:
+into Prolog as follows:
 %%
 \begin{quote}
  \tt
@@ -2379,7 +2358,7 @@ examples:
 
 However, a number of meta-programming primitives are still needed
 since they cannot be directly expressed in \fl. Many such features are
-provided by the underlying XSB system and \FLORA simply takes advantage of
+provided by the underlying Prolog system and \FLORA simply takes advantage of
 them: 
 %%
 \begin{quote}
@@ -2422,10 +2401,10 @@ F-molecules is incomplete. For instance, there is no operator similar to
 future enhancements.
 
 
-\subsection{Passing Arguments between \FLORA and XSB}\label{sec-passing-args}
+\subsection{Passing Arguments between \FLORA and Prolog}\label{sec-passing-args}
 
 The native HiLog support in \FLORA causes some tension when crossing the
-border from one system to another. The reason is that \FLORA terms and XSB
+border from one system to another. The reason is that \FLORA terms and Prolog
 terms have different internal representation. Even though XSB supports
 HiLog (according to the manual, anyway), this support is incomplete and is
 not integrated well into the system --- most notably into the XSB module
@@ -2468,7 +2447,7 @@ following queries into the \FLORA shell, they both succeed:
 
 
 %% Unimplemented -- useful libraries
-Not all arguments passed back and forth to XSB need conversion. For
+Not all arguments passed back and forth to Prolog need conversion. For
 instance, {\tt sort/2}, {\tt ground/1}, {\tt compound/1}, and many others
 do not need conversion because they work the same for Prolog and HiLog
 representations. On the other hand, most I/O predicates require conversion.
@@ -2545,7 +2524,7 @@ is discussed in Section~\ref{sec-tabling-flora}.
 
 \emph{Expunging} a predicate means deleting all of its tuples as well as
 the rules that have this predicate in the head. This operation corresponds
-to abolishing a predicate in XSB. Only first-order predicates can be
+to abolishing a predicate in Prolog. Only first-order predicates can be
 expunged in \FLORA.
 
 \index{{\tt expunge}}
@@ -2828,11 +2807,12 @@ A semantics that favors the second interpretation was proposed in
 \cite{KLW95}. This approach is based on a fixpoint computation of
 non-monotonic behavioral inheritance.  However, this semantics is very hard
 to implement efficiently, especially using a top-down deductive engine
-provided by XSB. It is also unsatisfactory in many respects because it is
-not based on any model-theory. \FLORA uses a different, more cautious
-semantics for inheritance, which favors the first interpretation above.
-The basic idea can be summarized using the following rules, which define how
-class instances inherit from the classes they belong to:
+provided by the underlying Prolog engine. It is also unsatisfactory in many
+respects because it is not based on any model-theory. \FLORA uses a
+different, more cautious semantics for inheritance, which favors the first
+interpretation above.  The basic idea can be summarized using the following
+rules, which define how class instances inherit from the classes they
+belong to:
 %%
 \begin{quote}
 \begin{verbatim}
@@ -2944,7 +2924,7 @@ The following aggregate operators are supported in \FLORA: {\tt min}, {\tt
   collectbag}.
 
 The operators {\tt min} and {\tt max} can apply to any list of
-terms. The order among terms is defined by the XSB operator {\tt @=<}.  In
+terms. The order among terms is defined by the Prolog operator {\tt @=<}.  In
 contrast, the operators {\tt sum} and {\tt avg} can take numbers only. If
 the aggregate variable is instantiated to something other than a
 number, {\tt sum} and {\tt avg} will discard it and generate a runtime
@@ -3215,7 +3195,7 @@ predicates of a given arity: For instance,
 tables all HiLog predicates of arity 3.
 
 %% Unimplemented -- Flora and subsumptive tabling
-It is important to keep in mind that XSB does not do reordering of \fl
+It is important to keep in mind that Prolog does not do reordering of \fl
 molecules and predicates during joins. Instead, all joins are performed
 left-to-right.  Thus, program clauses must be written in such a way as to
 ensure that smaller predicates and classes appear early on in the join.
@@ -3235,23 +3215,23 @@ this technique.
 
 \index{abolish\_all\_tables}
 %%
-When XSB (and \FLORA) evaluate a program, all tabled predicates are
-partially materialized and all the computed tuples are stored in XSB
+When Prolog (and \FLORA) evaluate a program, all tabled predicates are
+partially materialized and all the computed tuples are stored in Prolog
 tables. Thus, if you change the set of facts, the existing tables must be
-discarded in order to allow XSB to recompute the results. This is
+discarded in order to allow Prolog to recompute the results. This is
 accomplished by issuing the predicate {\tt abolish\_all\_tables/0}
 described in the XSB manual. We discuss updates in
 Section~\ref{sec-updates}.
 
 \index{method!procedural}
 %
-Because tabling is not integrated with the update mechanism in XSB, it can
+Because tabling is not integrated with the update mechanism in Prolog, it can
 have undesirable effect on predicates with non-logical ``side effects''
 (e.g., writing or reading a file) and predicates that change the state of
 the database.  If a tabled predicate has a side effect, the first time the
 predicate is called the side effect is performed, but the second time the
 call simply returns with success or failure (depending on the outcome of
-the first call), because XSB will simply look it up in a table.  Thus, if
+the first call), because Prolog will simply look it up in a table.  Thus, if
 the predicate is intended to perform the side effect each time it is
 called, it will not operate correctly.
 
@@ -3455,7 +3435,7 @@ is equivalent to the following one:
 \verb|flora2 ?- insert{mary[children->>frank] @ foomod, john[father->smith] @ foomod}|
 \end{quote}
 
-However, @prolog(...) is not allowed: If you want to update a dynamic XSB
+However, @prolog(...) is not allowed: If you want to update a dynamic Prolog
 predicate, use {\tt assert/retract}:
 %%
 \begin{quote}
@@ -3464,16 +3444,16 @@ predicate, use {\tt assert/retract}:
 %%
 Well, not quite. Recall Section~\ref{sec-passing-args} on the issues
 concerning the difference between Prolog representation of terms and the
-one used in XSB. The problem is that {\tt f(a,b,c)} is a HiLog term that
-XSB does not understand and will not associate it with the predicate {\tt
+one used in Prolog. The problem is that {\tt f(a,b,c)} is a HiLog term that
+Prolog does not understand and will not associate it with the predicate {\tt
   foo/3}  that it might have. To do it right, use explicit conversion:
 %%
 \begin{quote}
  {\tt ?- flP2H(PrologRepr,foo(a,b,c)), assert(PrologRepr)@prolog().  }
 \end{quote}
 %%
-This will insert {\tt foo(a,b,c)} into the catch-all XSB module called {\tt
-  usermod}. If {\tt foo/3} is defined in another XSB module, {\tt bar}, and
+This will insert {\tt foo(a,b,c)} into the default XSB module called {\tt
+  usermod}. If {\tt foo/3} is defined in another Prolog module, {\tt bar}, and
 is imported by {\tt usermod}, then the above statement will not do anything
 useful due to certain idiosyncrasies in the XSB module system.  However,
 the following will work if {\tt foo/3} is defined as dynamic in the module
@@ -3716,8 +3696,8 @@ future release.
 predicates depend.}
 We have earlier remarked in Section~\ref{sec-proc-methods} that tabling and
 database updates do not mix well.  One problem is that the results from
-previous queries are stored in XSB tables, and database updates do not
-modify XSB tables.  Thus, a user might get the following counterintuitive
+previous queries are stored in Prolog tables, and database updates do not
+modify Prolog tables.  Thus, a user might get the following counterintuitive
 result:
 %%
 \begin{quote}
@@ -3735,10 +3715,10 @@ flora2 ?- delete{o[m->v]}, o[m->v].
 Yes.
 \end{verbatim}
 \end{quote}
-The last positive answer is a consequence of the fact that XSB tables remember
-that the query {\tt o[m->v]} is true. So, when the same query is asked
-after {\tt delete}, a ``stale'' answer is returned from the tables. Similarly,
-tabling might interact poorly with {\tt insert}:
+The last positive answer is a consequence of the fact that Prolog tables
+remember that the query {\tt o[m->v]} is true. So, when the same query is
+asked after {\tt delete}, a ``stale'' answer is returned from the tables.
+Similarly, tabling might interact poorly with {\tt insert}:
 \begin{quote}
 \begin{verbatim}
 flora2 ?- o[m->v].
@@ -3750,9 +3730,9 @@ flora2 ?- insert{o[m->v]}, o[m->v].
 No.
 \end{verbatim}
 \end{quote}
-The reason for this result is, again, that XSB tables remember that {\tt
+The reason for this result is, again, that Prolog tables remember that {\tt
   o[m->v]} is false. However, this result becomes stale after the
-  insertion.
+insertion.
 
 \index{abolish\_all\_tables}
 %%
@@ -4011,7 +3991,7 @@ fail, and it is useless if the action is expected to always succeed.
 negation as failure \cite{Cla78} and negation based on well-founded
 semantics \cite{gelder-alternating-89,gelder-ross-schlipf-91}. Both types
 of negation are compiled into clauses that invoke the corresponding
-operators in XSB.
+operators in Prolog.
 
 \index{tnot}
 \index{\NAF}
@@ -4273,7 +4253,7 @@ the programmer can always unnest the literals and place them in the right
 order in the rule body.
 
 \paragraph{Open calls vs. bound calls.}
-In XSB (as in other Prolog engines), it is much more efficient (space- and
+In Prolog it is much more efficient (space- and
 time-wise) to make one unbound call than multiple bound ones. For instance,
 suppose we have a class, {\tt cl}, that has hundreds of members, and
 consider the following query:
@@ -4282,7 +4262,7 @@ consider the following query:
     ?- X:cl[attr->Y].  
 \end{verbatim}
 %%
-Here, XSB would first evaluate the open call $X:cl$ and then for each
+Here, Prolog would first evaluate the open call $X:cl$ and then for each
 answer {\tt x} for {\tt X} it will evaluate {\tt x[attr->Y]}.
 If the cost of computing {\tt x[attr->Y]} is higher than the cost of $x:cl$
 and the number of answers to {\tt X[attr->Y]} is not significantly
@@ -4314,7 +4294,7 @@ time.
 \index{compiler directive!{\tt arguments}}
 \index{compiler directive!{\tt op}}
 %
-Like XSB compiler, \FLORA compiler can take compiler directives, which
+Like Prolog compiler, \FLORA compiler can take compiler directives, which
 begin with {\tt :-} in contrast to {\tt ?-} for queries.  \FLORA requires
 that all directives appear at the top of the program prior to the first
 appearance of a rule or a fact.  The following is a list of all the supported
@@ -4453,14 +4433,15 @@ The following example illustrates the use of this library:
 
 \subsection{Input and Output}
 
-This library simplifies access to the most common XSB I/O facilities.
+This library simplifies access to the most common Prolog I/O facilities.
 This library is preloaded into the system module {\tt io} and
 can be accessed using the {\tt @flora(io)} syntax.
 
 The purpose of the I/O library is not to replace the standard I/O predicates
 with \FLORA methods, but rather to relieve the user from the need to do
 explicit conversion of arguments between the HiLog representation of terms
-used in \FLORA and the standard Prolog representation used in XSB.\footnote{
+used in \FLORA and the standard Prolog representation of the underlying
+engine.\footnote{
   %%
   See Section~\ref{sec:hilog} for a discussion of the problems associated
   with this representation mismatch.
@@ -4599,7 +4580,7 @@ behavior of the system. It is accessible though the system module reference
     {\tt Path} is bound, checks if the specified directory is on the
     library search path. Otherwise, binds (through backtracking) {\tt Path}
     to each directory on the library search path.
-  \item {\tt tables[\#abolish]} --- abolishes all tabled data in XSB.
+  \item {\tt tables[\#abolish]} --- abolishes all tabled data in Prolog.
 \end{itemize}
 %%
 This module also provides the following amenities:
@@ -4655,29 +4636,28 @@ rules:
 %%
 
 
-\section{Bugs in XSB and \FLORA: How to Report}
+\section{Bugs in Prolog and \FLORA: How to Report}
 
 The \FLORA system includes a compiler and runtime libraries, but for
-execution it relies on XSB. Thus, some bugs that you might encounter are
-the fault of \FLORA, while others are XSB bugs. For instance, a memory
+execution it relies on Prolog. Thus, some bugs that you might encounter are
+the fault of \FLORA, while others are Prolog bugs. For instance, a memory
 violation that occurs during the execution is in all likelihood an internal
-XSB bug. (\FLORA is like a stress test for XSB --- all bugs come to the
-surface.)
+Prolog bug. (\FLORA is a stress test --- all bugs come to the surface.)
 
-An incorrect result during the execution can be equally blamed on XSB or
+An incorrect result during the execution can be equally blamed on Prolog or
 on \FLORA --- it requires a close look at the program. A compiler or
 a runtime error for a perfectly valid program is probably a bug in the
 \FLORA system.
 
-Bugs that are the fault of XSB are particularly hard to fix, because \FLORA
-programs are translated into mangled, unreadable to humans Prolog code.
-To make things worse, this code might contain calls to \FLORA system
-libraries.
+Bugs that are the fault of the underlying Prolog engine are particularly
+hard to fix, because \FLORA programs are translated into mangled,
+unreadable to humans Prolog code.  To make things worse, this code might
+contain calls to \FLORA system libraries.
 
 \index{flDump/1}
 %%
 To simplify bug reporting, \FLORA provides a utility that makes the compiled
-XSB program more readable. The flDump/1 predicate can be used to strip the
+Prolog program more readable. The flDump/1 predicate can be used to strip the
 macros from the code, making it much easier to understand. If you issue the
 following command
 %%
@@ -4701,8 +4681,8 @@ might still not be executable on its own because it might contain calls to
 \FLORA libraries or other modules.  The set of guidelines, below, can help
 cope with these problems.
 
-\paragraph{Reporting \FLORA-related XSB bugs.}
-If you find an XSB bug triggered by a \FLORA program, here is a set of
+\paragraph{Reporting \FLORA-related Prolog bugs.}
+If you find a Prolog bug triggered by a \FLORA program, here is a set of
 guidelines that can simplify the job of the XSB developers and increase the
 chances that the bug will be fixed promptly:
 %%
@@ -4746,7 +4726,7 @@ chances that the bug will be fixed promptly:
        {\tt ?- bootstrap\_flora.}      
     \end{quote}
     %%
-    in the XSB shell. If the program runs after this (and reproduces the
+    in the Prolog shell. If the program runs after this (and reproduces the
     bug) --- it is better than nothing. If it does not, then something went
     wrong during the above process: start anew.
   \item Try to reduce the size of the resulting program as much as possible.
@@ -4759,8 +4739,8 @@ Finally, remember to include the details of your OS and other relevant
 information. Some bugs might be architecture-dependent.
 
 \paragraph{Reporting \FLORA bugs.}
-If you believe that the bug is in the \FLORA system rather than in XSB,
-the algorithm is much simpler: 
+If you believe that the bug is in the \FLORA system rather than in the
+underlying Prolog engine, the algorithm is much simpler: 
 %%
 \begin{enumerate}
   \item Reduce the size of the program as much as possible by deleting 
@@ -4823,7 +4803,7 @@ pretty-printer for dumped Prolog code.
 \index{debugger}
 
 
-\FLORA debugger is implemented as a presentation layer on top of the XSB
+\FLORA debugger is implemented as a presentation layer on top of the Prolog
 debugger, so familiarity with the latter is highly recommended (XSB Manual,
 Part I). Here we sketch only a few basics.
 
@@ -4883,7 +4863,7 @@ uses of the aforesaid {\tt debug\_ctl} interface. Executing
 %%
 will switch \FLORA to non-interactive trace mode
 and the entire trace will be dumped to file {\tt filename}.
-Note that you have to execute {\tt flNoTrace} or exit XSB in order for the
+Note that you have to execute {\tt flNoTrace} or exit Prolog in order for the
 entire file to be flushed on disk.
 
 \index{flTraceLow}
@@ -4893,7 +4873,7 @@ entire file to be flushed on disk.
   flTraceLow}. With normal tracing, the debugger converts low-level
 subgoals to subgoals that are found in the user program and are thus
 meaningful to the programmer. With low-level tracing, the debugger displays
-the actual XSB subgoals (of the compiled .P program) that are being
+the actual Prolog subgoals (of the compiled .P program) that are being
 executed. This facility is useful for debugging \FLORA runtime libraries.
 
 As with {\tt flTrace}, \FLORA provides a convenient shortcut that allows
@@ -4904,7 +4884,7 @@ the entire execution trace to be dumped into a file:
 \end{quote}
 %%
 
-{\bf Note:} \FLORA turns on various XSB optimizations. Some (like
+{\bf Note:} \FLORA turns on various Prolog optimizations. Some (like
 specialization and unification factoring) can cause certain subgoals to
 be omitted from the trace or the trace might show subgoals that
 are not in the original program. In the future, it will be possible to turn
@@ -5000,7 +4980,7 @@ programs), you can do the following:
 Once \FLORA editing mode is installed, it provides a number of functions.
 First, whenever you edit a \FLORA program, you will see the ``Flora'' menu
 in the menubar. This menu provides commands for controlling the Flora
-process (i.e., XSB with the \FLORA shell). You can start and stop
+process (i.e., the \FLORA shell). You can start and stop
 this process, type queries to it, and you can tell it to consult regions of
 the buffer you are editing, the entire buffer, or some other file.
 
@@ -5040,8 +5020,9 @@ Restart Flora Process:        Ctl-c Ctl-s
 \end{verbatim}
 %%
 Interrupting \FLORA is equivalent to typing {\tt Ctl-c} at the \FLORA
-prompt. Quitting the process stops XSB, and restarting the process shuts
-down the old XSB process and starts a new one with \FLORA shell running.
+prompt. Quitting the process stops the Prolog engine, and restarting the
+process shuts down the old Prolog process and starts a new one with \FLORA
+shell running. 
 
 \paragraph{Indentation.}
 Flora editing mode understands some aspects of the \FLORA syntax, which
@@ -5070,8 +5051,9 @@ indented automatically.
 \subsection{How \FLORA Works}
 
 
-As an \fl-to-XSB compiler, \FLORA first parses its source file,
-compiles it into XSB syntax and then outputs XSB code. For instance the command
+As an \fl-to-Prolog compiler, \FLORA first parses its source file,
+compiles it into Prolog syntax and then outputs the resulting code. For
+instance the command 
 \begin{quote}
 \verb|flora ?- flLoad(myprog).|
 \end{quote}
@@ -5080,13 +5062,14 @@ files: {\tt myprog.P}, {\tt myprog\_main.\ofile}, and {\tt myprog.fdb} (if {\tt
   myprog.flr} contains \fl facts).  By default, {\tt flLoad(myprog)} loads
 the program into the default user module named {\tt main}. If {\tt myprog.flr}
 contains \fl facts, all these facts will be compiled separately into the
-XSB file {\tt myprog.fdb} that is dynamically loaded at runtime.  Next, the
+file {\tt myprog.fdb} that is dynamically loaded at runtime.  Next, the
 file {\tt myprog.P} is generated --- take a look at ``{\tt
   myprog\_main.P}'' to see what has become of your \FLORA program! --- and
-passed to the XSB compiler, yielding Prolog byte code {\tt myprog.\ofile}, which
+passed to the Prolog compiler, yielding Prolog byte code {\tt
+myprog.\ofile}, which
 is then renamed to {\tt myprog\_main.\ofile}. This file is then loaded and
 executed.  If {\tt myprog.flr} contains queries, they are immediately
-executed by XSB (provided there are no errors).
+executed by Prolog (provided there are no errors).
 
 In the module system of \FLORA, the same program can be loaded into any
 user module. The same program can even be loaded into two different
@@ -5218,19 +5201,19 @@ trailers are stored in the user home directory in the subdirectory {\tt
 The above is a much simplified picture of the inner-workings of \FLORA. The
 actual translation into Prolog and the form of the closure rules is very
 complex.  Some of this complexity exists to ensure good performance.  Other
-complications come from the need to provide a module system and
-integrate it into the XSB system.  The module system serves two purposes.
-First, it promotes modular design for \FLORA programs, making it possible
-to split the code into separate files and import objects defined in other
-modules. Second, it allows \FLORA programs to communicate with XSB by using
-the predicates defined in XSB programs and letting XSB programs use \FLORA
-objects.  Some of these implementation issues are described in
-\cite{guiz-flora-00}.
+complications come from the need to provide a module system and integrate
+it with the underlying Prolog engine.  The module system serves two
+purposes.  First, it promotes modular design for \FLORA programs, making it
+possible to split the code into separate files and import objects defined
+in other modules. Second, it allows \FLORA programs to communicate with
+Prolog by using the predicates defined in Prolog programs and letting
+Prolog programs use \FLORA objects.  Some of these implementation issues
+are described in \cite{guiz-flora-00}.
 
 \paragraph{The module system.} The module system is implemented by
 providing separate namespaces for the various predicates used to encode \fl
 formulas. First, all predicates have a weird prefix to make clashes with
-other XSB programs unlikely. The prefix is defined in {\tt
+other Prolog programs unlikely. The prefix is defined in {\tt
   includes/header.flh} and currently is {\tt \_\$\_\$\_flora}. The user, of
 course, does not need to worry about it, unless she runs \FLORA programs in
 a very unfriendly Prolog environment in which other programs also use this
@@ -5238,7 +5221,7 @@ prefix. In this case, the prefix can be made
 even harder to match.\footnote{
   %%
   It is necessary to ensure that the resulting predicate names are symbol
-  strings acceptable to the XSB compiler. Look at the macros
+  strings acceptable to the Prolog compiler. Look at the macros
   {\tt FLORA\_THIS\_WORKSPACE} and {\tt FLORA\_THIS\_FDB\_STORAGE} in
   {\tt includes/flrheader.flh} to see what is involved.
   %%
@@ -5257,15 +5240,15 @@ instance, the predicate {\tt fd} would be dumped as
 \end{quote}
 %%
 When the program, {\tt myprog.P}, compiled by the \FLORA compiler needs to
-be loaded into a user module, say {\tt main}, the XSB's preprocessor, {\tt
+be loaded into a user module, say {\tt main}, the preprocessor, {\tt
   gpp}, is called with the macro {\tt FLORA\_VAR\_WORKSPACE} set to {\tt
   main}. Gpp replaces all macros with the actual values, includes the
-necessary files, and then pipes the result to the XSB compiler. The latter
+necessary files, and then pipes the result to the Prolog compiler. The latter
 produces the object {\tt myprog.\ofile} file where all the predicate names are
 wrapped with the user module name, as described above.  This object file is
 renamed to {\tt myprog\_main.\ofile}. If later we need to compile {\tt myprog.P}
 for another user module, {\tt foo}, {\tt gpp} is called again, but this time it
-sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When XSB finally compiles
+sets {\tt FLORA\_VAR\_WORKSPACE} to {\tt foo}. When Prolog finally compiles
 the program into the object file, the file is renames to {\tt
   myprog\_foo.\ofile}.
 
@@ -5304,7 +5287,7 @@ All objects and facts that are explicitly inserted by the program are kept
 in the special \emph{storage trie} associated with the user module where the
 program is loaded. A tries is a special data structure, which is
 well-suited for indexing tree-structured objects, like Prolog terms. This
-workhorse does much of the grudge work in the XSB engine. To manipulate the
+workhorse does much of the grudge work in the Prolog engine. To manipulate the
 storage tries, \FLORA uses the XSB package called {\tt storage.P}, which is
 described in the XSB manual. This package was originally created to support
 \FLORA, but it has independent uses as well.
@@ -5335,11 +5318,11 @@ each module. The mechanism is similar to that used for predicate names:
  \tt FLORA\_THIS\_FDB\_STORAGE(FLORA\_VAR\_WORKSPACE)  
 \end{quote}
 %%
-As explained earlier, when XSB compiles the Prolog file generated by the
+As explained earlier, when Prolog compiles the file generated by the
 \FLORA compiler, the macro {\tt FLORA\_VAR\_WORKSPACE} gets replaced with
 the module name and out comes a unique, hard to replicate triehandle.
 
-Unfortunately, putting something in a trie does not mean that XSB will find
+Unfortunately, putting something in a trie does not mean that Prolog will find
 it there automatically. That is, if you insert {\tt p(a)} in a trie, it
 does not mean that the query {\tt ?- p(a)} will evaluate to true, and this
 is another major source of complexity that the \FLORA compiler has to deal
@@ -5356,8 +5339,9 @@ variable unbound. In this case, we can backtrack through all the terms that
 exist in the trie.
 
 Suppose we insert a fact, {\tt a[m->v]}, represented by the formula
-{\tt fd(a,m,v)}. Since this formula is inserted in the trie and XSB knows
-nothing about it, we need to connect the trie to XSB through a rule like this:
+{\tt fd(a,m,v)}. Since this formula is inserted in the trie and Prolog knows
+nothing about it, we need to connect the trie to Prolog through a rule like
+this:
 %%
 {\tt
 \begin{quote}
@@ -5373,9 +5357,8 @@ for any module. In \FLORA such rules are called \emph{patch rules}.
 
 Since \fl uses only about a dozen of predicates to represent
 F-molecules, we can create such rules statically and let {\tt gpp} wrap
-them with the appropriate prefixes on the fly. Even for HiLog we can create
-such rules statically. After all, XSB limits us to functor arity no larger
-than 255! The problem arises with first-order predicates, because they need
+them with the appropriate prefixes on the fly.
+The problem arises with first-order predicates, because they need
 to be collected by the compiler and a separate rule needs to be created for
 each first-order predicate. The static patch rules are located in
 {\tt genincludes/flrpatch.fli} (from which {\tt flrpatch.flh} is generated
@@ -5415,13 +5398,13 @@ output of the parser is a \emph{canonic term} list, which represents the
 entire parsed program. The canonic term is taken up by the intermediate
 code generator, which generates abstract code. This code is represented in
 a form that is convenient for manipulation and is not yet Prolog code.  The
-compiler might add additional rules (such as patch rules) and XSB
+compiler might add additional rules (such as patch rules) and Prolog
 instructions. The compiled program is converted into (almost) Prolog syntax
 by the coder. As mentioned previously, the code produced by the compiler is
-full of preprocessor macros, so before passing it to XSB it must be
-preprocessed by GPP. GPP pipes the result to XSB, which finally produces
-the byte code program that can run under the control of the XWAM abstract
-machine, which is part of the XSB system.
+full of preprocessor macros, so before passing it to Prolog it must be
+preprocessed by GPP. GPP pipes the result to Prolog, which finally produces
+the byte code program that can run under the control of the Prolog
+emulator.
 
 %%
 \begin{figure}[bt]
@@ -5436,7 +5419,7 @@ machine, which is part of the XSB system.
 The following is a list of the key files of the system.
 %%
 \begin{itemize}
-\item \texttt{flrshell.P}: The top level XSB module that implements the
+\item \texttt{flrshell.P}: The top level module that implements the
   \FLORA shell --- a subsystem for accepting user commands and queries and
   passing them to the compiler.  See Section~\ref{sec-shell-commands} for a
   full description of shell commands.
@@ -5445,7 +5428,7 @@ The following is a list of the key files of the system.
   according to the operator grammar and does other magic.
 \item \texttt{flrparser.P}: The \FLORA parser.
 \item \texttt{flrcompiler.P}: The generator of the intermediate code.
-\item \texttt{flrcoder.P}: The \FLORA coder, which generates XSB code.
+\item \texttt{flrcoder.P}: The \FLORA coder, which generates Prolog code.
 \item \texttt{flrutils.P}: Miscellaneous utility predicates for loading
   programs, checking if files exist, whether they need to be recompiled,
   etc.

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang 
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -37,7 +37,7 @@
   Flora user module.
 *****************************************************************************/
 flora_user_module_predicate(Functor,Args,WS,Predicate) :-
-	fmt_write_string(PF,"%s'%s'%s",args(FLORA_USER_MODULE_PREFIX,WS,Functor)),
+	flora_concat_atoms([FLORA_USER_MODULE_PREFIX,'''',WS,'''',Functor],PF),
 	Predicate =.. [PF|Args].
 
 
@@ -49,8 +49,7 @@ flora_user_module_predicate(Functor,Args,WS,Predicate) :-
   to a Flora system module.
 *****************************************************************************/
 flora_system_module_predicate(Functor,Args,SysModID,Predicate) :-
-	fmt_write_string(PF,"%s'%s'%s",
-                         args(FLORA_SYSTEM_MODULE_PREFIX,SysModID,Functor)),
+	flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX,'''',SysModID,'''',Functor],PF),
 	Predicate =.. [PF|Args].
 
 
@@ -80,7 +79,7 @@ flora_module_predicate(Functor,Args,ModuleName,Predicate) :-
   flora_firstorder_user_module_predicate(+Functor,+Args,+Workspace,-Predicate)
 *****************************************************************************/
 flora_firstorder_user_module_predicate(Functor,Args,WS,Predicate) :-
-	fmt_write_string(PF,"%s'%s'%s",args(FLORA_FO_USER_MODULE_PREFIX,WS,Functor)),
+	flora_concat_atoms([FLORA_FO_USER_MODULE_PREFIX,'''',WS,'''',Functor],PF),
 	Predicate =.. [PF|Args].
 
 
@@ -88,8 +87,7 @@ flora_firstorder_user_module_predicate(Functor,Args,WS,Predicate) :-
   flora_firstorder_system_module_predicate(+Functor,+Args,+SysModID,-Predicate)
 *****************************************************************************/
 flora_firstorder_system_module_predicate(Functor,Args,SysModID,Predicate) :-
-	fmt_write_string(PF,"%s'%s'%s",
-                         args(FLORA_FO_SYSTEM_MODULE_PREFIX,SysModID,Functor)),
+	flora_concat_atoms([FLORA_FO_SYSTEM_MODULE_PREFIX,'''',SysModID,'''',Functor],PF),
 	Predicate =.. [PF|Args].
 
 
@@ -194,32 +192,32 @@ flora_check_module_name(ModuleName) :-
   flora_module_name_error(+ModuleName)
 *****************************************************************************/
 flora_module_name_error(ModuleName) :-
-	flora_error_line("invalid Flora module name `%S'",args(ModuleName)).
+	flora_error_line("invalid Flora module name `~w'",args(ModuleName)).
 
 
 /***************************************************************************
   flora_user_fdb_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
 flora_user_fdb_storage_name(WS,StorageName) :-
-	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_FDB_TRIE_PREFIX,WS)).
+	flora_concat_atoms([FLORA_USER_FDB_TRIE_PREFIX,'''',WS],StorageName).
 
 /***************************************************************************
   flora_user_fld_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
 flora_user_fld_storage_name(WS,StorageName) :-
-	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_FLD_TRIE_PREFIX,WS)).
+	flora_concat_atoms([FLORA_USER_FLD_TRIE_PREFIX,'''',WS],StorageName).
 
 /***************************************************************************
   flora_system_fdb_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
 flora_system_fdb_storage_name(WS,StorageName) :-
-	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_FDB_TRIE_PREFIX,WS)).
+	flora_concat_atoms([FLORA_SYSTEM_FDB_TRIE_PREFIX,'''',WS],StorageName).
 
 /***************************************************************************
   flora_system_fld_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
 flora_system_fld_storage_name(WS,StorageName) :-
-	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_FLD_TRIE_PREFIX,WS)).
+	flora_concat_atoms([FLORA_SYSTEM_FLD_TRIE_PREFIX,'''',WS],StorageName).
 
 /*****************************************************************************
   flora_storage_fdb_name(+ModuleName,-StorageName)
@@ -282,22 +280,22 @@ flora_setup_flogic_fact_wrapper(ModuleName) :-
 	;
 	  Prefix=FLORA_USER_MODULE_PREFIX
 	),
-	fmt_write_string(WSBisa,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_ISA)),
-	fmt_write_string(WSBsub,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_SUB)),
-	fmt_write_string(WSBmeth,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_METH)),
-	fmt_write_string(WSBimeth,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMETH)),
-	fmt_write_string(WSBtran,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_TRAN)),
-	fmt_write_string(WSBfd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_FD)),
-	fmt_write_string(WSBifd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IFD)),
-	fmt_write_string(WSBfdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_FDSIG)),
-	fmt_write_string(WSBifdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IFDSIG)),
-	fmt_write_string(WSBmvd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_MVD)),
-	fmt_write_string(WSBimvd,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMVD)),
-	fmt_write_string(WSBmvdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_MVDSIG)),
-	fmt_write_string(WSBimvdsig,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMVDSIG)),
-	fmt_write_string(WSBexists,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_EXISTS)),
-	fmt_write_string(WSBmvddef,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_MVDDEF)),
-	fmt_write_string(WSBimvddef,"%s'%s'%s%s",args(Prefix,WS,FLBODYPREFIX,WRAP_IMVDDEF)),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_ISA],WSBisa),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_SUB],WSBsub),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_METH],WSBmeth),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_IMETH],WSBimeth),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_TRAN],WSBtran),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_FD],WSBfd),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_IFD],WSBifd),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_FDSIG],WSBfdsig),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_IFDSIG],WSBifdsig),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_MVD],WSBmvd),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_IMVD],WSBimvd),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_MVDSIG],WSBmvdsig),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_IMVDSIG],WSBimvdsig),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_EXISTS],WSBexists),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_MVDDEF],WSBmvddef),
+	flora_concat_atoms([Prefix,'''',WS,'''',FLBODYPREFIX,WRAP_IMVDDEF],WSBimvddef),
 	retractall(flora_flogic_fact_wrapper(_,_)),
 	assert(flora_flogic_fact_wrapper(WRAP_ISA,WSBisa)),
 	assert(flora_flogic_fact_wrapper(WRAP_SUB,WSBsub)),
@@ -328,13 +326,13 @@ flora_setup_flogic_fact_wrapper(ModuleName) :-
 *****************************************************************************/
 flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 	%% Check if the functor begins with FLORA_PREFIX followed by an '.
-	str_sub(FLORA_PREFIX'',Funct,0),
+	flora_match_substring(FLORA_PREFIX'',Funct,0),
 	%% Check if it is followed by the type code of Flora module plus an '.
-	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS1) ->
+	( flora_match_substring(FLORA_USER_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS1) ->
 	    ModuleType=usermodule,
 	    Flora_module_prefix_len_plus1=FLORA_USER_MODULE_PREFIX_LEN_PLUS1
 	;
-	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS1),
+	  flora_match_substring(FLORA_SYSTEM_MODULE'',Funct,FLORA_PREFIX_LEN_PLUS1),
 	  ModuleType=systemmodule,
 	  Flora_module_prefix_len_plus1=FLORA_SYSTEM_MODULE_PREFIX_LEN_PLUS1
 	),
@@ -353,13 +351,13 @@ flora_decode_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 *****************************************************************************/
 flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_plus1) :-
 	%% Check if the functor begins with FLORA_FO_PREFIX followed by an '.
-	str_sub(FLORA_FO_PREFIX'',Funct,0),
+	flora_match_substring(FLORA_FO_PREFIX'',Funct,0),
 	%% Check if it is followed by the type code of Flora module plus an '.
-	( str_sub(FLORA_USER_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1) ->
+	( flora_match_substring(FLORA_USER_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1) ->
 	    ModuleType=usermodule,
 	    Flora_module_prefix_len_plus1=FLORA_FO_USER_MODULE_PREFIX_LEN_PLUS1
 	;
-	  str_sub(FLORA_SYSTEM_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1),
+	  flora_match_substring(FLORA_SYSTEM_MODULE'',Funct,FLORA_FO_PREFIX_LEN_PLUS1),
 	  ModuleType=systemmodule,
 	  Flora_module_prefix_len_plus1=FLORA_FO_SYSTEM_MODULE_PREFIX_LEN_PLUS1
 	),
@@ -462,12 +460,12 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	%% Locate the end of workspace name, assuming the next quote after
 	%% the prefix marks the end of the workspace. This will not work
 	%% correctly if the workspace contains the quote symbol.
-	substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
-	str_match('''',RestFunct,forward,N,M),
+	flora_get_substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
+	flora_match_substring('''',RestFunct,forward,N,M),
 	%% Extract the workspace name.
-	substring(RestFunct,0,N,Workspace),
+	flora_get_substring(RestFunct,0,N,Workspace),
 	%% Extract the predicate name.
-	substring(RestFunct,M,-1,Wrapper),
+	flora_get_substring(RestFunct,M,-1,Wrapper),
 	!,
 	( Wrapper == WRAP_HILOG ->
 	    %% a HiLog Predicate
@@ -481,10 +479,10 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	;
 	  %% either an F-logic wrapper or Flora system wrapper predicate
 	  ArgsList=Args,
-	  ( str_match('_',Wrapper,reverse,_,S) ->
+	  ( flora_match_substring('_',Wrapper,reverse,_,S) ->
 	      %% The predicate consists of a prefix and a base.
-	      substring(Wrapper,0,S,WrapPrefix),
-	      substring(Wrapper,S,-1,PredicateSymbol)
+	      flora_get_substring(Wrapper,0,S,WrapPrefix),
+	      flora_get_substring(Wrapper,S,-1,PredicateSymbol)
 	  ;
 	    WrapPrefix='',
 	    PredicateSymbol=Wrapper
@@ -514,12 +512,12 @@ flora_decode_predicate(Predicate,firstorder,ModuleName,
 	%% Locate the end of workspace name, assuming the next quote after
 	%% the prefix marks the end of the workspace. This will not work
 	%% correctly if the workspace contains the quote symbol.
-	substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
-	str_match('''',RestFunct,forward,N,M),
+	flora_get_substring(Funct,Flora_module_prefix_len_plus1,-1,RestFunct),
+	flora_match_substring('''',RestFunct,forward,N,M),
 	%% Extract the workspace name.
-	substring(RestFunct,0,N,Workspace),
+	flora_get_substring(RestFunct,0,N,Workspace),
 	%% Extract the predicate name.
-	substring(RestFunct,M,-1,PredicateSymbol),
+	flora_get_substring(RestFunct,M,-1,PredicateSymbol),
 	!.
 
 flora_decode_predicate(Predicate,prolog,_ModuleName,

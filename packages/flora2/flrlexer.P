@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -62,8 +62,8 @@ flora_reset_charpos :- set_charpos(1,1).
   sets the line number counter and character number counter.
 ****************************************************************************/
 set_charpos(LN,CN) :-
-	conset(LINE_NO,LN),
-	conset(CHAR_NO,CN).
+	flora_set_counter(LINE_NO,LN),
+	flora_set_counter(CHAR_NO,CN).
 
 
 /****************************************************************************
@@ -71,7 +71,7 @@ set_charpos(LN,CN) :-
 ****************************************************************************/
 reset_file_stack :-
 	%% Set the top of stack to 0.
-	conset(CURR_FILE,0),
+	flora_set_counter(CURR_FILE,0),
 	retractall(flora_file_stack(_,_)).
 
 
@@ -79,9 +79,7 @@ reset_file_stack :-
   flora_begin_file(+FileName)
 ****************************************************************************/
 flora_begin_file(FileName) :-
-	conget(CURR_FILE,N),
-	M is N + 1,
-	conset(CURR_FILE,M),
+	flora_increment_counter(CURR_FILE,1,_,M),
 	assert(flora_file_stack(M,FileName)),
 	flora_reset_charpos.
 
@@ -90,9 +88,7 @@ flora_begin_file(FileName) :-
   flora_end_file(+LineNumber)
 ****************************************************************************/
 flora_end_file(LineNumber) :-
-	conget(CURR_FILE,N),
-	M is N - 1,
-	conset(CURR_FILE,M),
+	flora_increment_counter(CURR_FILE,-1,N,_M),
 	retractall(flora_file_stack(N,_)),
 	set_charpos(LineNumber,1).
 
@@ -104,10 +100,13 @@ flora_end_file(LineNumber) :-
   It fails if a shell command is being processed.
 ****************************************************************************/
 flora_current_compile_filename(Name) :-
-	conget(CURR_FILE,N),
+	flora_get_counter(CURR_FILE,N),
 	flora_file_stack(N,FileName),
 	parse_filename(FileName,_,Base,Ext),
-	(Ext == '' -> Name=Base; fmt_write_string(Name,'%s.%s',args(Base,Ext))),
+	(Ext == '' -> Name=Base
+	;
+	flora_concat_atoms([Base,'.',Ext],Name)
+	),
 	!.
 
 
@@ -216,8 +215,8 @@ flora_token_text(RULE_DELIMETER(Text),TextStr,BLN,BCN,ELN,ECN) :-
   gets the line number counter and character number counter.
 ****************************************************************************/
 get_charpos(LN,CN) :-
-	conget(LINE_NO,LN),
-	conget(CHAR_NO,CN).
+	flora_get_counter(LINE_NO,LN),
+	flora_get_counter(CHAR_NO,CN).
 
 
 /****************************************************************************
@@ -315,7 +314,7 @@ scan_line(Ch,LN1,CN1,LN,CN,[Ch|Chars],LN2,CN2,Tokens,Status) :-
   read_tokens(+Char,+LineNo,+CharNo,+NextLN,+NextCN,-TokenList,-Status)
   parses tokens starting from Char. (NextLN,NextCN) is the position of the
   next character to be read. Passing this information is to avoid bookkeeping
-  by conget/conset. Performance can be improved.
+  by flora_get_counter/flora_set_counter. Performance can be improved.
 ****************************************************************************/
 read_tokens(Char,LineNo,CharNo,NextLN,NextCN,TokenList,Status) :-
 	( is_whitespace(Char) ->

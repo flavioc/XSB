@@ -1,9 +1,9 @@
-## File:      packages/flora2/syslib/Makefile
+## File:      flora2/syslib/Makefile
 ##
 ## Author(s): Michael Kifer
 ##            Guizhen Yang
 ##
-## Contact:   xsb-contact@cs.sunysb.edu
+## Contact:   flora-users@lists.sourceforge.net
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1999-2001
 ## 
@@ -28,7 +28,8 @@
 
 OBJEXT=.xwam
 
-XSBDIR = ../../..
+PROLOGDIR = ../../..
+FLORADIR = ..
 
 ALLOBJS = flranswer${OBJEXT} \
 	  flrcontrol${OBJEXT} \
@@ -50,16 +51,16 @@ ALLOBJS = flranswer${OBJEXT} \
 	  flrimport${OBJEXT} \
 	  flrexpunge${OBJEXT}
 
-EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
-	       $(XSBDIR)/emu/flag_defs_xsb.h \
-	       $(XSBDIR)/emu/io_defs_xsb.h \
-               $(XSBDIR)/emu/syscall_xsb.h \
-	       $(XSBDIR)/emu/system_defs_xsb.h \
-               $(XSBDIR)/emu/socket_xsb.h 
+EMU_INCLUDES = $(PROLOGDIR)/emu/builtin.h \
+	       $(PROLOGDIR)/emu/flag_defs_xsb.h \
+	       $(PROLOGDIR)/emu/io_defs_xsb.h \
+               $(PROLOGDIR)/emu/syscall_xsb.h \
+	       $(PROLOGDIR)/emu/system_defs_xsb.h \
+               $(PROLOGDIR)/emu/socket_xsb.h 
 
-XSB_CHAR_DEFS = $(XSBDIR)/prolog_includes/char_defs.h
-XSB_STANDARD = $(XSBDIR)/prolog_includes/standard.h
-XSB_EMU_FLAG_DEFS = $(XSBDIR)/emu/flag_defs_xsb.h
+XSB_CHAR_DEFS = $(PROLOGDIR)/prolog_includes/char_defs.h
+XSB_STANDARD = $(PROLOGDIR)/prolog_includes/standard.h
+XSB_EMU_FLAG_DEFS = $(PROLOGDIR)/emu/flag_defs_xsb.h
 
 FLORA_INCLUDES_DIR = ../flrincludes
 DYN_INCLUDES_DIR = ../includes
@@ -71,19 +72,19 @@ FLRHEADER = $(DYN_INCLUDES_DIR)/flrheader.flh
 
 OPTION = [optimize]
 
-XSB = $(XSBDIR)/bin/xsb
+PROLOG = $(PROLOGDIR)/bin/xsb
 
-PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
+PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.flora_syslib_warn.tmp'
+SVFILE = '$(FLORADIR)/.flora_syslib_warn.tmp'
 STDWARN = 3
 STDERR = 2
-HDRMSG = "While compiling XSB/packages/flora2/syslib:"
+HDRMSG = "While compiling .../flora2/syslib:"
 
 
 all: init $(ALLOBJS) finish
-	./CompileChangedFiles.sh $(PROLOG)
+	./CompileChangedFiles.sh $(PROLOG_COMMAND)
 	@cat $(SVFILE)
 
 

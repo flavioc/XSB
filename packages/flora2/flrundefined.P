@@ -2,7 +2,7 @@
 **
 ** Author(s): Chang Zhao
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2002
 ** 
@@ -28,6 +28,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 /***********************************************************************
  * flora_debug_code(+CompileList)
@@ -90,12 +91,14 @@ flora_build_debug_inter_code(Term) :-
 /***********************************************************
  * flora_build_variable(-Code)
  ***********************************************************/
+ %% Can't we use new_varobj/2 from flrcompiler?
  flora_build_variable(PRVARIABLE(NewVar,_)) :-
  	fmt_write_string(NewVar, "%S", args(_)).
 
 /***********************************************************
  * flora_build_variable_list(+N, -Code)
  ***********************************************************/
+ %% Can't we use new_varobj_list/2 from flrcompiler?
  flora_build_variable_list(0, []) :- !.
  flora_build_variable_list(N, [PRVARIABLE(NewVar, _)|Rest]) :-
  	fmt_write_string(NewVar, "%S", args(_)),
@@ -459,9 +462,9 @@ flora_error_undefined(Predicate) :-
 	    )
 	),
 	( MName=flora(Name) ->
-	    flora_error_line("%s %s in system module %s", args(S1,PMsg,Name))
+	    flora_error_line('~w ~w in system module ~w', [S1,PMsg,Name])
 	;
-	    flora_error_line("%s %s in user module %s", args(S1,PMsg,MName))
+	    flora_error_line('~w ~w in user module ~w', [S1,PMsg,MName])
 	).
 
 /**************************************************
@@ -482,101 +485,101 @@ predicate_msg(Term,PMsg) :-
 	!,
 	predicate_msg(MainFunct, FMsg),
 	( ArgList = [] ->
-	    fmt_write_string(PMsg,"%s", args(FMsg))
+	    PMsg = FMsg
 	;
 	    varlist_to_str(ArgList, VMsg),
-	    fmt_write_string(PMsg,"%s(%s)", args(FMsg, VMsg))
+	    flora_concat_atoms([FMsg,'(',VMsg,')'],PMsg)
 	).
 
 predicate_msg(WRAP_ISA,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_:%s", args(O2Msg)).
+	flora_concat_atoms(['_:', O2Msg],PMsg).
 
 predicate_msg(WRAP_SUB,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_::%s", args(O2Msg)).
+	flora_concat_atoms(['_::', O2Msg],PMsg).
 
 predicate_msg(WRAP_METH,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_[%s]", args(O2Msg)).
+	flora_concat_atoms(['_[',O2Msg,']'],PMsg).
 
 predicate_msg(WRAP_IMETH,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_[*%s]", args(O2Msg)).
+	flora_concat_atoms(['_[*',O2Msg,']'],PMsg).
 
 predicate_msg(WRAP_FDDEF,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_.%s[]", args(O2Msg)).
+	flora_concat_atoms(['_.',O2Msg,'[]'],PMsg).
 
 predicate_msg(WRAP_MVDDEF,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_..%s[]", args(O2Msg)).
+	flora_concat_atoms(['_..',O2Msg,'[]'],PMsg).
 
 predicate_msg(WRAP_IFDDEF,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_!%s[]", args(O2Msg)).
+	flora_concat_atoms(['_!',O2Msg,'[]'],PMsg).
 
 predicate_msg(WRAP_IMVDDEF,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_!!%s[]", args(O2Msg)).
+	flora_concat_atoms(['_!!',O2Msg,'[]'],PMsg).
 
 predicate_msg(WRAP_TRAN,[_O1, O2], PMsg) :-
 	!,
 	predicate_msg(O2, O2Msg),
-	fmt_write_string(PMsg,"_[#%s]", args(O2Msg)).
+	flora_concat_atoms(['_[#',O2Msg,']'],PMsg).
 
 predicate_msg(WRAP_FD, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s->_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'->_]'],PMsg).
 
 predicate_msg(WRAP_IFD, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s*->_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'*->_]'],PMsg).
 
 predicate_msg(WRAP_FDSIG, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s=>_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'=>_]'],PMsg).
 
 predicate_msg(WRAP_MVDSIG, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s=>>_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'=>>_]'],PMsg).
 
 predicate_msg(WRAP_IFDSIG, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s*=>_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'*=>_]'],PMsg).
 
 predicate_msg(WRAP_IMVDSIG, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s*=>>_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'*=>>_]'],PMsg).
 
 predicate_msg(WRAP_MVD, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s->>_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'->>_]'],PMsg).
 
 predicate_msg(WRAP_IMVD, [_Obj, Att, _Val], PMsg) :- 
 	!,
 	predicate_msg(Att,AMsg),
-	fmt_write_string(PMsg,"_[%s*->>_]", args(AMsg)).
+	flora_concat_atoms(['_[',AMsg,'*->>_]'],PMsg).
 
 predicate_msg(PredicateSymbol, ArgList, PMsg) :-
 	predicate_msg(PredicateSymbol, PredMsg),
 	varlist_count(ArgList, N),
-	fmt_write_string(PMsg, "%S/%d", args(PredMsg, N)).
+	flora_concat_items([PredMsg,'/',N],PMsg).
 
 /*****************************************************
  * varlist_to_str(+List, -String)
@@ -587,7 +590,7 @@ predicate_msg(PredicateSymbol, ArgList, PMsg) :-
 varlist_to_str([_], '_') :- !.
 varlist_to_str([_H|T], Str) :-
 	varlist_to_str(T, RestStr),
-	fmt_write_string(Str, "_,%s", args(RestStr)).
+	flora_concat_atoms(['_,',RestStr],Str).
 
 /*****************************************************
  * varlist_count(+List, -Number)
@@ -606,7 +609,7 @@ varlist_count([_H|T], M) :-
  ***************************************************************************/
 flora_insert_skeleton(P) :-
 	flora_decode_predicate(P, PredicateType, MName, _WrapPrefix, 
-		PredicateSymbol, ArgsList),
+			       PredicateSymbol, ArgsList),
 	( (MName = flora(ModuleName)) ->
 	    ModuleType=system
 	;
@@ -615,12 +618,12 @@ flora_insert_skeleton(P) :-
 	),
 	( flora_debug_module_registry(ModuleName) ->
 	    ( (ModuleType=user) ->
-	        str_cat(FLORA_USER_FLD_TRIE_PREFIX, '''', S1)
+	        flora_concat_atoms([FLORA_USER_FLD_TRIE_PREFIX, ''''], S1)
 	    ;
-	        str_cat(FLORA_SYSTEM_FLD_TRIE_PREFIX, '''', S1)
+	        flora_concat_atoms([FLORA_SYSTEM_FLD_TRIE_PREFIX, ''''], S1)
 	    ),
-	    str_cat(S1, ModuleName,FldStorage),
-	    ( storage_find_fact(FldStorage,P) ->
+	    flora_concat_atoms([S1, ModuleName],FldStorage),
+	    ( FLORA_DB_FIND(FldStorage,P) ->
 	        true
 	    ;
 		( (PredicateType=hilog) ->
@@ -633,23 +636,21 @@ flora_insert_skeleton(P) :-
 	        Skeleton =.. [Funct|NewArgs],
 		( (PredicateType=firstorder) ->
 		    ( (ModuleType=user) ->
-	                str_cat(FLORA_FO_USER_MODULE_PREFIX, '''', F1)
+	                flora_concat_atoms([FLORA_FO_USER_MODULE_PREFIX, ''''], F1)
 		    ;
-	                str_cat(FLORA_FO_SYSTEM_MODULE_PREFIX, '''', F1)
+	                flora_concat_atoms([FLORA_FO_SYSTEM_MODULE_PREFIX, ''''], F1)
 		    )
 		;
 		    ( (ModuleType=user) ->
-	                str_cat(FLORA_USER_MODULE_PREFIX, '''', F1)
+	                flora_concat_atoms([FLORA_USER_MODULE_PREFIX, ''''], F1)
 		    ;
-	                str_cat(FLORA_SYSTEM_MODULE_PREFIX, '''', F1)
+	                flora_concat_atoms([FLORA_SYSTEM_MODULE_PREFIX, ''''], F1)
 		    )
 		),
-	        str_cat(F1, ModuleName,F2),
-	        str_cat(F2, '''', F3),
-	        str_cat(F3, Funct, NewFunct),
+		flora_concat_atoms([F1,ModuleName,'''',Funct],NewFunct),
 	        Sk =.. [NewFunct|NewArgs],
 
-		storage_insert_fact(FldStorage,Sk,_Ins)
+		FLORA_DB_INSERT(FldStorage,Sk,_Ins)
             )
 	;
 	    true

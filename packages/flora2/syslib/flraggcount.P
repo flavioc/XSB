@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang 
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -30,8 +30,6 @@
 #include "flora_terms.flh"
 
 :- import ground/1, member/2, length/2 from basics.
-
-:- import findall/3, sort/2 from setof.
 
 
 

@@ -4,9 +4,9 @@
 **            Michael Kifer
 **            Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2001
+** Copyright (C) The Research Foundation of SUNY, 1999-2002
 **
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -69,14 +69,14 @@ flora_init_shell :-
 	flora_welcome_msg,
 	flAll,
 	flChatter,
-	conset(flora_shell_loaded,1),
+	flora_set_counter(flora_shell_loaded,1),
 	!.
 
 
 /*********************************************************************/
 flora_welcome_msg :-
 	package_configuration(version(flora),V),
-	flora_stdmsg_string("\nFLORA-2 Version %S\n\n",args(V)),
+	flora_stdmsg_string('~nFLORA-2 Version ~w~n~n',[V]),
 	flora_stdmsg_line('Type `flHelp.'' to show the help message.'),
 	flora_stdmsg_line('Type `flDemo(demoName).'' to run demos.'),
 	flora_stdmsg_nl,
@@ -84,7 +84,7 @@ flora_welcome_msg :-
 
 
 /*********************************************************************/
-flora_shell_prompt :- flora_stdfdbk_string("flora2 ?- ").
+flora_shell_prompt :- flora_stdfdbk_string('flora2 ?- ').
 
 
 /*********************************************************************/
@@ -92,7 +92,7 @@ flora_loop_guard(Status) :-
 	( flora_end_of_input(Status) ->
 	    ( pop_stdin(cmd_line_argument) ->
 		%% end of input from -e option string to XSB
-		flora_stdfdbk_string("\n"),
+		flora_stdfdbk_string('~n'),
 		abort
 	    ;
 	      flEnd
@@ -106,7 +106,7 @@ flora_loop_guard(Status) :-
 #mode save
 #mode nostring "\!#'"
 flHelp :-
-	flora_stdmsg_line("\nFLORA shell commands:\n"),
+	flora_stdmsg_line('~nFLORA shell commands:~n'),
 	flora_stdmsg_line('o flHelp'),
 	flora_stdmsg_line('    show this info'),
 	flora_stdmsg_line('o FL_COMPILE FILE'),
@@ -115,8 +115,8 @@ flHelp :-
 	flora_stdmsg_line('    compile FILE.flr for Module'),
 	flora_stdmsg_line('o FL_LOAD FILE>>Module  OR  [FILE >> Module,...]'),
 	flora_stdmsg_line('    load FILE.flr into Module'),
-	flora_stdmsg_string('    specifying FILE.%s or FILE.%s loads these files;',
-			    args(PROLOG_PFILE_EXT,PROLOG_OFILE_EXT)),
+	flora_stdmsg_string('    specifying FILE.~w or FILE.~w loads these files;',
+			    [PROLOG_PFILE_EXT,PROLOG_OFILE_EXT]),
 	flora_stdmsg_nl,
 	flora_stdmsg_line('    the [...] version can load a list of files'),
 	flora_stdmsg_line('o FL_LOAD FILE  OR  [FILE,...]'),
@@ -187,7 +187,7 @@ flOne :-
 flEnd :-
 	remove_xsb_hook(xsb_undefined_predicate_hook(flora_undefined_predicate_hook(_))),
 	unstrap_flora,
-	flora_stdmsg_line("\n\nCiao!"),
+	flora_stdmsg_line('~n~nCiao!'),
 	pop_abort_cutpoint,
 	abort.
 
@@ -242,9 +242,9 @@ flNoChatter :- retractall(flora_switch(chatter)).
 flDemo(File) :-
 	flora_check_filename(File),
 	package_configuration(dir(flora),FloraDir),
-	slash(Slash),
+	flora_slash(Slash),
 	%% Add the demo directory to library_directory
-	fmt_write_string(DemoDir,'%s%sdemos',args(FloraDir,Slash)),
+	flora_concat_atoms([FloraDir,Slash,'demos'],DemoDir),
 	( library_directory(DemoDir) ->
 	    true
 	;

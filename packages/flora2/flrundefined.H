@@ -2,7 +2,7 @@
 **
 ** Author(s): Chang Zhao
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2002
 **
@@ -24,14 +24,22 @@
 **
 */
 
+
+:- compiler_options([xpp_on]).
+
+#include "flora_porting.flh"
+
 :- dynamic term_seen(_).
 
 :- import 
-	storage_find_fact/2, 
-	storage_insert_fact/3
+	FLORA_DB_FIND_PREDICATE/2, 
+	FLORA_DB_INSERT_PREDICATE/3
    from storage.
 
-:- import str_cat/3 from string.
+:- import
+	flora_concat_atoms/2,
+	flora_concat_items/2
+   from flrporting.
 
 :- import flora_prlgdef/2 from flrprolog.
 

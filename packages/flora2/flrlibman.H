@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -24,6 +24,8 @@
 */
 
 
+:- import package_configuration/2 from packaging.
+
 :- import flora_syslib_loaded/1 from usermod.
 :- dynamic flora_syslib_loaded(_).
 :- index flora_syslib_loaded/1-1.
@@ -32,18 +34,11 @@
 :- dynamic flora_sysmod_loaded(_).
 :- index flora_sysmod_loaded/1-1.
 
-:- import consult/1 from consult.
-
-:- import assert/1 from assert.
-
-:- import package_configuration/2 from packaging.
-
-:- import fmt_write_string/3 from file_io.
-
-:- import slash/1 from machine.
+:- import flora_slash/1,
+	flora_concat_atoms/2
+   from flrporting.
 
 :- import bootstrap_flora/0 from flora2.
-:- bootstrap_flora.
 
 :- index flora_sysmod_file/3-1.
 :- index flora_library_file/3-1.

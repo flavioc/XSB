@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -36,9 +36,7 @@
 	%%flora_shprlg/2-1,
 	flora_prlg/2-1.
 
-:- import assert/1, retractall/1 from assert.
-
-%%:- import conget/2 from gensym.
+%%:- import flora_get_counter/2 from gensym.
 
 :- export
           flora_reset_prolog/0,

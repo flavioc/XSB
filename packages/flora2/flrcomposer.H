@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -32,13 +32,12 @@
 :- index(composing_error/2,trie).
 :- index(composing_error/3,trie).
 
-:- import findall/3 from setof.
-
-:- import retractall/1, assert/1 from assert.
-
 :- import eval/2 from eval.
 
-:- import conget/2, conset/2 from gensym.
+:- import 
+	flora_set_counter/2,
+	flora_get_counter/2
+   from flrporting.
 
 :- import flora_opdef/3 from flroperator.
 

@@ -3,7 +3,10 @@
 
 :- import variant/2 from subsumes.
 
-:- import conset/2, conget/2 from gensym.
+:- import
+	flora_set_counter/2,
+	flora_get_counter/2
+   from flrporting.
 
 :- import
 	flora_firstorderdef/2,

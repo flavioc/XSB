@@ -1,7 +1,7 @@
 /* File:        flrdebug_data.P -- data that guides XSB debugger in Flora shell
 **
 ** Author(s): Michael Kifer
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
 **
@@ -31,11 +31,14 @@
 
 #include "flrheader.flh"
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 
 %% These are handled even if flTracelow is in effect
 hide_this_hide(flora_shell_command_line,3).
 hide_this_hide(flora_write_goal,1).
+
+hide_this_hide(flora_debug_module_registry,1).
 
 hide_this_hide(flTrace,0).
 hide_this_hide(flTrace,1).
@@ -47,7 +50,7 @@ hide_this_hide(flNoTraceLow,0).
 hide_this_hide(flOne,0).
 hide_this_hide(flAll,0).
 
-hide_this_hide(sk_not,1).
+hide_this_hide(FLORA_TNOT_PREDICATE,1).
 
 hide_this_hide(flora_switch,1).
 hide_this_hide(flora_set_switch,1).
@@ -60,8 +63,8 @@ hide_this_hide(flora_handle_trace,0).
 hide_this_hide(flora_handle_notrace,0).
 hide_this_hide(flora_handle_end_of_call,0).
 
-hide_this_hide(storage_find_fact,2).
-hide_this_hide(storage_reclaim_space,0).
+hide_this_hide(FLORA_DB_FIND_PREDICATE,2).
+hide_this_hide(FLORA_DB_RECLAIM_SPACE_PREDICATE,0).
 hide_this_hide(flora_commit_storage,0).
 hide_this_hide(flora_commit_storage,1).
 hide_this_hide(flora_load_file,1).

@@ -146,15 +146,13 @@ query :-
 write_answers :- 
 	get_residual(p1(X,Y),[])@prolog(tables),
 	writeln(p1(X,Y))@flora(io),
-	conget(ans_count,C)@prolog(gensym),
-	C1 is C+1,
-	conset(ans_count,C1)@prolog(gensym),
+	flora_increment_counter(ans_count,1,_,_)@prolog(flrporting),
 	fail.
 write_answers :- 
 	write('Total number of answers: ')@flora(io),
-	conget(ans_count,C)@prolog(gensym),
+	flora_get_counter(ans_count,C)@prolog(flrporting),
 	writeln(C)@flora(io),
-	conset(ans_count,0)@prolog(gensym).
+	flora_set_counter(ans_count,0)@prolog(flrporting).
 
 ?- query.
 

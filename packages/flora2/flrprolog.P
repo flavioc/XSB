@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -126,7 +126,7 @@ flora_prlgdef(X,Y) :-
 
 flora_prlgdef(X,Y) :-
 	(
-	%%  conget(flora_shell_mode,1) ->
+	%%  flora_get_counter(flora_shell_mode,1) ->
 	%%    flora_shprlg(X,Y)
 	%%;
 	  %% NOTE: flora_dynprlg exists only because of the way import

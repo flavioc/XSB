@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -30,6 +30,7 @@
 #include "char_defs.h"
 #include "flora_errors.flh"
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 
 #define THISMODULE	thismodule
@@ -53,8 +54,6 @@ is_prdirective(PRDIRECTIVE(Direct),Direct).
 
 is_prcommand(PRCOMMAND(C),C).
 is_prtable(PRTABLE(P,A),P,A).
-%%is_prdynamic(PRDYNAMIC(P,A),P,A).
-%%is_prexport(PREXPORT(P,A),P,A).
 is_primport(PRIMPORT(P,A,M),P,A,M).
 is_prindex(PRINDEX(P,A,N),P,A,N).
 is_prhilogtable(PRHILOGTABLE(A),A).
@@ -80,8 +79,8 @@ is_prterm(PRTERM(FObj,N,ObjList),FObj,N,ObjList).
 
 is_goallogic(PRAND(Goal1,Goal2),',',2,[Goal1,Goal2]) :- !.
 is_goallogic(PROR(Goal1,Goal2),';',2,[Goal1,Goal2]) :- !.
-is_goallogic(PRNOT(Goal),'not',1,[Goal]) :- !.
-is_goallogic(PRTNOT(Goal),'sk_not',1,[Goal]) :- !.
+is_goallogic(PRNOT(Goal),not,1,[Goal]) :- !.
+is_goallogic(PRTNOT(Goal),FLORA_TNOT_PREDICATE,1,[Goal]) :- !.
 %%is_goallogic(PRCALL(Var),'call',1,[Var]) :- !.
 %% with textual information
 is_goallogic(PRCUT(_I),'!',0,[]) :- !.
@@ -911,7 +910,7 @@ flora_write_newpred(F,N,Args,Prefix) :-
   flora_write_newoid(+Oid)
 ****************************************************************************/
 flora_write_newoid(Oid) :-
-	fmt_write('FLORA_SYMBOL(''%s'')', arg(Oid)).
+	format('FLORA_SYMBOL(''~w'')', [Oid]).
 
 
 /****************************************************************************

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -31,42 +31,60 @@
 #include "standard.h"
 
 
-:- import file_write/2 from xsb_writ.
-:- import concat_atom/2 from string.
+:- import flora_concat_atoms/2, flora_term_to_atom/2 from flrporting.
+:- import flora_err_stream/1, flora_fdbk_stream/1 from flrprint.
 
 :- export
-	flora_stderr_write/1,
-	flora_stdfdbk_write/1,
+	flora_display_error/1,
+	flora_display_feedback/1,
 	flora_write_string/2,
 	flora_write/2.
 
 
 /********************************************************************/
-flora_stderr_write(X) :- flora_write(STDERR,X).
-flora_stdfdbk_write(X) :- flora_write(STDFDBK,X).
+%% These two are called to display errors/results,
+%% which are Flora literals, in human-readable form
+flora_display_error(InTerm) :-
+	flora_err_stream(Stream),
+	!,
+	flora_write_string(InTerm,OutStr),
+	write(Stream,OutStr).
+flora_display_feedback(InTerm) :-
+	flora_fdbk_stream(Stream),
+	!,
+	flora_write_string(InTerm,OutStr),
+	write(Stream,OutStr).
 
 
 
 /********************************************************************/
-%% Write Flora term to I/O port
-flora_write(IOPort,X) :- flora_write_string(X,Str), file_write(IOPort, Str).
 
 %% Write Flora term to string
-flora_write_string(X,Str) :-
-	flora_write_string1(X, AtomList, Tail), Tail = [],
-	concat_atom(AtomList,Str).
+%% This shouldn't be re-satisfiable, so we put cut at the end
+flora_write_string(InTerm,Str) :-
+	flora_write_string1(InTerm, AtomList, Tail), Tail = [],
+	flora_concat_atoms(AtomList,Str),
+	!.
+
+%% Tail/NewTail is a difference list that represents
+%% the processed parts of InTerm
+flora_write_string1(InTerm, Tail, NewTail) :-
+	var(InTerm),
+	!,
+	flora_term_to_atom(InTerm,InTermAtom),
+	Tail = [InTermAtom | NewTail].
 
 flora_write_string1(X, Tail, NewTail) :-
-	var(X),
+	atom(X),
 	!,
-	fmt_write_string(Xatom,'%S',arg(X)),
-	Tail = [Xatom | NewTail].
-
-flora_write_string1(X, Tail, NewTail) :-
-	atomic(X),
-	!,
-	%% Note: atom_codes won't do here because X can be an atom or a number
 	Tail = [X | NewTail].
+
+flora_write_string1(X, Tail, NewTail) :-
+	number(X),
+	number_codes(X,Codes),
+	atom_codes(Atm,Codes),
+	!,
+	Tail = [Atm | NewTail].
 
 flora_write_string1([], Tail, NewTail) :- 
 	Tail = ['[]' | NewTail].

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang 
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -27,6 +27,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 
 :- import storage_find_fact/2 from storage.
@@ -39,7 +40,7 @@
 	flora_stderr_nl/0
    from flrprint.
 
-:- import flora_stderr_write/1 from flrdisplay.
+:- import flora_display_error/1 from flrdisplay.
 
 :- import
 	flora_module_name/3,
@@ -79,8 +80,8 @@ flora_storage_check_module_name(ModuleName) :-
 	    abort
 
 	; Type == systemmodule ->
-	    flora_error_line("It is not allowed to update the Flora system module %s !",
-	                     args(WS)),
+	    flora_error_line("Updates to system modules (~w) are not allowed",
+	                     [WS]),
 	    abort
 	;
 	  true
@@ -126,7 +127,7 @@ flora_storage_check_deletepredicate(P,FLSYSDBUPDATE(P,StorageName)) :-
 	    abort
 
 	; N == 1, flora_storage_is_negation_symbol(F) ->
-	    flora_error_line('Deletion of negation is not allowed!'),
+	    flora_error_line('Deletion of negated facts is not allowed!'),
 	    abort
 	;
 	  flora_error_heading,
@@ -136,7 +137,7 @@ flora_storage_check_deletepredicate(P,FLSYSDBUPDATE(P,StorageName)) :-
 	  ;
 	    flora_stderr_string('Prolog term ')
 	  ),
-	  flora_stderr_write(P),
+	  flora_display_error(P),
 	  flora_stderr_string(' is not allowed!'),
 	  flora_stderr_nl,
           abort
@@ -213,6 +214,6 @@ flora_storage_convertlist([P|Fs],
   flora_storage_is_negation_symbol(+Functor)
 *****************************************************************************/
 flora_storage_is_negation_symbol('\+').
-flora_storage_is_negation_symbol('not').
-flora_storage_is_negation_symbol('tnot').
-flora_storage_is_negation_symbol('sk_not').
+flora_storage_is_negation_symbol(not).
+flora_storage_is_negation_symbol(tnot).
+flora_storage_is_negation_symbol(FLORA_TNOT_PREDICATE).

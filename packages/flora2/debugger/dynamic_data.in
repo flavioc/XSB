@@ -1,7 +1,7 @@
 /* File:       flrdebug_data.fli -- data guides for XSB debugger in Flora shell
 **
 ** Author(s): Michael Kifer
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
 **
@@ -38,6 +38,7 @@
 
 :- FL_FLOGICSTATIC
 	newpredicate/_,
+	debugging/0,
 	debugger_data_loaded/0.
 
 
@@ -178,6 +179,12 @@ flora_hide_this_hide(inferred_imvddef_eql/2).
 flora_hide_this_hide(inferred_fd_eql/3).
 flora_hide_this_hide(inferred_mvd_eql/3).
 flora_hide_this_hide(inferred_mvddef_eql/2).
+
+/*****************************************************************************
+    Flora Internal Predicates
+*****************************************************************************/
+flora_hide_this_hide(debugging/0).
+
 
 /*****************************************************************************
     Intermediate predicates

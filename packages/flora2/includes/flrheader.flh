@@ -21,6 +21,7 @@
 
 #mode standard Prolog
 
+#include "flora_porting.flh"
 #include "flora_prefix.flh"
 
 #ifndef FLORA_DUMP

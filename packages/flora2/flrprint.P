@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -28,30 +28,61 @@
 
 #include "standard.h"
 
+:- dynamic
+	flora_err_stream(_), flora_warn_stream(_),
+	flora_msg_stream(_), flora_fdbk_stream(_).
+
+?- (flora_err_stream(Stream) -> close(Stream), retractall(flora_err_stream(_))
+   ; ioport2iostream(STDERR,Stream), assert(flora_err_stream(Stream))
+   ).
+?- (flora_warn_stream(Stream) -> close(Stream), retractall(flora_warn_stream(_))
+   ; ioport2iostream(STDWARN,Stream), assert(flora_warn_stream(Stream))
+   ).
+?- (flora_msg_stream(Stream) -> close(Stream), retractall(flora_msg_stream(_))
+   ; ioport2iostream(STDMSG,Stream), assert(flora_msg_stream(Stream))
+   ).
+?- (flora_fdbk_stream(Stream) -> close(Stream), retractall(flora_fdbk_stream(_))
+   ; ioport2iostream(STDFDBK,Stream), assert(flora_fdbk_stream(Stream))
+   ).
 
 /*************************************************************************
   print utilities
 *************************************************************************/
-flora_stderr_nl :- file_nl(STDERR).
-flora_stderr_string(Str) :- fmt_write(STDERR,Str,_).
-flora_stderr_string(Fmt,Args) :- fmt_write(STDERR,Fmt,Args).
+flora_stderr_nl :- flora_err_stream(Stream), nl(Stream).
+%% Use format/3 so that we would be able to put formatting, like ~n in the Str
+flora_stderr_string(Str) :- flora_err_stream(Stream), format(Stream,Str,_).
+flora_stderr_string(Fmt,Args) :-
+	flora_err_stream(Stream),
+	format(Stream,Fmt,Args).
 
 
-flora_stdwarn_nl :- file_nl(STDWARN).
-flora_stdwarn_string(Str) :- fmt_write(STDWARN,Str,_).
-flora_stdwarn_string(Fmt,Args) :- fmt_write(STDWARN,Fmt,Args).
+flora_stdwarn_nl :- flora_warn_stream(Stream), nl(Stream).
+flora_stdwarn_string(Str) :- flora_warn_stream(Stream), format(Stream,Str,_).
+flora_stdwarn_string(Fmt,Args) :- 
+	flora_warn_stream(Stream),
+	format(Stream,Fmt,Args).
 
 
-flora_stdmsg_nl :- file_nl(STDMSG).
-flora_stdmsg_string(Str) :- fmt_write(STDMSG,Str,_).
-flora_stdmsg_string(Fmt,Args) :- fmt_write(STDMSG,Fmt,Args).
-flora_stdmsg_line(M) :- fmt_write(STDMSG,"%s\n",args(M)).
+flora_stdmsg_nl :- flora_msg_stream(Stream), nl(Stream).
+flora_stdmsg_string(Str) :- flora_msg_stream(Stream), format(Stream,Str,_).
+flora_stdmsg_string(Fmt,Args) :- 
+	flora_msg_stream(Stream),
+	format(Stream,Fmt,Args).
+flora_stdmsg_line(M) :-
+	flora_msg_stream(Stream),
+	format(Stream,M,_),
+	nl(Stream).
 
 
-flora_stdfdbk_nl :- file_nl(STDFDBK).
-flora_stdfdbk_string(Str) :- fmt_write(STDFDBK,Str,_).
-flora_stdfdbk_string(Fmt,Args) :- fmt_write(STDFDBK,Fmt,Args).
-flora_stdfdbk_line(M) :- fmt_write(STDFDBK,"%s\n",args(M)).
+flora_stdfdbk_nl :- flora_fdbk_stream(Stream), nl(Stream).
+flora_stdfdbk_string(Str) :- flora_fdbk_stream(Stream), format(Stream,Str,_).
+flora_stdfdbk_string(Fmt,Args) :- 
+	flora_fdbk_stream(Stream),
+	format(Stream,Fmt,Args).
+flora_stdfdbk_line(M) :-
+	flora_fdbk_stream(Stream),
+	format(Stream,M,_),
+	nl(Stream).
 
 
 flora_error_heading :- flora_stderr_string("++Error[FLORA]: ").
@@ -63,7 +94,7 @@ flora_warning_indentline :- flora_stdwarn_string("                 ").
 
 
 flora_message_heading :- flora_stdmsg_string("[FLORA: ").
-flora_message_tailing :- flora_stdmsg_string("]\n").
+flora_message_tailing :- flora_stdmsg_line("]").
 
 
 flora_error_line(Str) :-
@@ -95,5 +126,4 @@ flora_message_line(Fmt,Args) :-
 	flora_message_heading,
 	flora_stdmsg_string(Fmt,Args),
 	flora_message_tailing.
-
 

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang 
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -27,15 +27,14 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 
 :- import
-	storage_find_fact/2,
-	storage_insert_fact/3,
-	storage_delete_fact/3
+	FLORA_DB_FIND_PREDICATE/2,
+	FLORA_DB_INSERT_PREDICATE/3,
+	FLORA_DB_DELETE_PREDICATE/3
    from storage.
-
-:- import findall/3, sort/2 from setof.
 
 :- import append/3 from basics.
 
@@ -46,7 +45,7 @@
 	flora_stderr_nl/0
    from flrprint.
 
-:- import flora_stderr_write/1 from flrdisplay.
+:- import flora_display_error/1 from flrdisplay.
 
 :- import
 	flora_module_predicate/4,
@@ -106,7 +105,7 @@ flora_storage_insertfacts([P|_T]) :-
 
 flora_storage_insertfacts([FLSYSDBUPDATE(P,StorageName)|T]) :-
 	!,
-	storage_insert_fact(StorageName,P,_Inserted),
+	FLORA_DB_INSERT(StorageName,P,_Inserted),
 	flora_insert_skeleton(P),
 	flora_storage_insertfacts(T).
 
@@ -115,7 +114,7 @@ flora_storage_insertfacts([FLLIBMODLIT(F,Args,ModuleName)|T]) :-
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
 	flora_fdb_storage_name(ModuleName,StorageName),
-	storage_insert_fact(StorageName,P,_Inserted),
+	FLORA_DB_INSERT(StorageName,P,_Inserted),
 	!,
 	flora_storage_insertfacts(T).
 
@@ -124,7 +123,7 @@ flora_storage_insertfacts([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|T]) :-
 	flora_storage_check_module_name(ModuleName),
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
 	flora_fdb_storage_name(ModuleName,StorageName),
-	storage_insert_fact(StorageName,P,_Inserted),
+	FLORA_DB_INSERT(StorageName,P,_Inserted),
 	!,
 	flora_storage_insertfacts(T).
 
@@ -159,7 +158,7 @@ flora_storage_insertfacts([P|T]) :-
 	( flora_decode_module_name(F,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
 	    flora_fdb_storage_name(ModuleName,StorageName),
-	    storage_insert_fact(StorageName,P,_Inserted),
+	    FLORA_DB_INSERT(StorageName,P,_Inserted),
 	    flora_storage_insertfacts(T)
 
 	; N == 2, F == ';' ->
@@ -177,7 +176,7 @@ flora_storage_insertfacts([P|T]) :-
 	  ;
 	    flora_stderr_string('Prolog term ')
 	  ),
-	  flora_stderr_write(P),
+	  flora_display_error(P),
 	  flora_stderr_string(' is not allowed!'),
 	  flora_stderr_nl,
           abort
@@ -231,8 +230,8 @@ FLLIBDELETE([P],true) :-
 
 FLLIBDELETE([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,
-	storage_find_fact(StorageName,P),
-	storage_delete_fact(StorageName,P,_Deleted).
+	FLORA_DB_FIND(StorageName,P),
+	FLORA_DB_DELETE(StorageName,P,_Deleted).
 
 FLLIBDELETE([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
@@ -240,8 +239,8 @@ FLLIBDELETE([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	flora_module_predicate(F,Args,ModuleName,P),
 	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
-	storage_find_fact(StorageName,P),
-	storage_delete_fact(StorageName,P,_Deleted).
+	FLORA_DB_FIND(StorageName,P),
+	FLORA_DB_DELETE(StorageName,P,_Deleted).
 
 FLLIBDELETE([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	!,
@@ -249,8 +248,8 @@ FLLIBDELETE([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
 	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
-	storage_find_fact(StorageName,P),
-	storage_delete_fact(StorageName,P,_Deleted).
+	FLORA_DB_FIND(StorageName,P),
+	FLORA_DB_DELETE(StorageName,P,_Deleted).
 
 FLLIBDELETE(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
@@ -267,7 +266,7 @@ flora_storage_deletelist([]) :- !.
 
 flora_storage_deletelist([FLSYSDBUPDATE(P,StorageName)|L]) :-
 	!,
-	storage_delete_fact(StorageName,P,_Deleted),
+	FLORA_DB_DELETE(StorageName,P,_Deleted),
 	flora_storage_deletelist(L).
 
 flora_storage_deletelist([H|L]) :-
@@ -282,7 +281,7 @@ flora_storage_deletelist([H|L]) :-
   Note: This predicate always succeeds.
 *****************************************************************************/
 flora_storage_deleteall(P,StorageName) :-
-	findall(FLSYSDBUPDATE(P,StorageName),storage_find_fact(StorageName,P),L),
+	findall(FLSYSDBUPDATE(P,StorageName),FLORA_DB_FIND(StorageName,P),L),
 	!,
 	flora_storage_deletelist(L).
 
@@ -448,14 +447,14 @@ flora_erase_objects([O|OList],StorageName) :-
 	Wimvd =.. [WSBimvd,O,_,X],
 	Wmvdsig =.. [WSBmvdsig,O,_,X],
 	Wimvdsig =.. [WSBimvdsig,O,_,X],
-	findall(X,( storage_find_fact(StorageName,Wfd)
-                  ; storage_find_fact(StorageName,Wifd)
-	          ; storage_find_fact(StorageName,Wfdsig)
-                  ; storage_find_fact(StorageName,Wifdsig)
-                  ; storage_find_fact(StorageName,Wmvd)
-                  ; storage_find_fact(StorageName,Wimvd)
-                  ; storage_find_fact(StorageName,Wmvdsig)
-                  ; storage_find_fact(StorageName,Wimvdsig)
+	findall(X,( FLORA_DB_FIND(StorageName,Wfd)
+                  ; FLORA_DB_FIND(StorageName,Wifd)
+	          ; FLORA_DB_FIND(StorageName,Wfdsig)
+                  ; FLORA_DB_FIND(StorageName,Wifdsig)
+                  ; FLORA_DB_FIND(StorageName,Wmvd)
+                  ; FLORA_DB_FIND(StorageName,Wimvd)
+                  ; FLORA_DB_FIND(StorageName,Wmvdsig)
+                  ; FLORA_DB_FIND(StorageName,Wimvdsig)
 	          ),
                 AddedOList
                ),

@@ -649,7 +649,7 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
 	  (progn
 	    (display-buffer flora-process-buffer)
 	    (switch-to-buffer-other-window flora-process-buffer)))
-      ;; time is needed for XSB to return. otherwise, the point will be off
+      ;; time is needed for Prolog to return. otherwise, the point will be off
       (goto-char (point-max))
       (or switch
 	  (select-window wind))))

@@ -3,7 +3,7 @@
 ** Author(s): Guizhen Yang
 **            Michael Kifer
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -43,32 +43,32 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	    %% an F-logic predicate
 	    ( flLoadedModule(ModuleName) ->
 		%% This is very unlikely to happen unless something goes wrong.
-		flora_error_line('undefined F-logic molecule `%s'' in FLORA module `%S''',
-			         args(PredicateSymbol,ModuleName))
+		flora_error_line('undefined F-logic molecule `~w'' in FLORA module `~w''',
+			         [PredicateSymbol,ModuleName])
 	    ;
-	        flora_error_line('calling an F-logic molecule in an unloaded FLORA module `%S''',
-                                 args(ModuleName))
+	        flora_error_line('calling an F-logic molecule in an unloaded FLORA module `~w''',
+                                 [ModuleName])
 	    )
 
 	; PredicateType == (hilog) ->
 	    %% a HiLog predicate
 	    ( flLoadedModule(ModuleName) ->
-		flora_error_line('undefined HiLog predicate in FLORA module `%S''',
-				 args(ModuleName))
+		flora_error_line('undefined HiLog predicate in FLORA module `~w''',
+				 [ModuleName])
 	    ;
-	      flora_error_line('calling a HiLog literal in an unloaded FLORA module `%S''',
-                               args(ModuleName))
+	      flora_error_line('calling a HiLog literal in an unloaded FLORA module `~w''',
+                               [ModuleName])
 	    )
 
 	; PredicateType == (firstorder) ->
 	    %% a first order Flora predicate
 	    psc_arity(PscRecord,N),
 	    ( flLoadedModule(ModuleName) ->
-		flora_error_line('undefined first order predicate %s/%d in FLORA module `%S''',
-			         args(PredicateSymbol,N,ModuleName))
+		flora_error_line('undefined first order predicate ~w/~w in FLORA module `~w''',
+			         [PredicateSymbol,N,ModuleName])
 	    ;
-	      flora_error_line('calling first order predicate %s/%d in unloaded FLORA module `%S''',
-                               args(PredicateSymbol,N,ModuleName))
+	      flora_error_line('calling first order predicate ~w/~w in unloaded FLORA module `~w''',
+                               [PredicateSymbol,N,ModuleName])
 	    )
 	),
 	abort.

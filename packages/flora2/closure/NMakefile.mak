@@ -5,7 +5,7 @@ ALLOBJS = flrcommon.flh \
 	  flreqltrailer.flh \
           flrscalareql.flh
 
-XSB = ..\..\..\config\x86-pc-windows\bin\xsb.exe
+PROLOG_COMMAND = ..\..\..\config\x86-pc-windows\bin\xsb.exe
 
 .SUFFIXES: .flh .fli
 
@@ -19,5 +19,5 @@ CLEAN :
 	-@erase includes\*~
 
 .fli.flh:
-	$(XSB) -e "bootstrap_flora. [flrutils]. import flCompileInclude/1 from flrutils. flCompileInclude(%|fF). halt."
+	$(PROLOG_COMMAND) -e "bootstrap_flora. [flrutils]. import flCompileInclude/1 from flrutils. flCompileInclude(%|fF). halt."
 

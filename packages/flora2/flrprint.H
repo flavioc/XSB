@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2000
 ** 
@@ -24,9 +24,9 @@
 */
 
 
-:- import fmt_write/3 from file_io.
+:- import format/3 from format.
+:- import ioport2iostream/2 from file_io.
 
-:- import file_nl/1 from xsb_writ.
 
 :- export
 	flora_stderr_nl/0,
@@ -54,4 +54,9 @@
 	flora_warning_line/1,
 	flora_warning_line/2,
 	flora_message_line/1,
-	flora_message_line/2.
+	flora_message_line/2,
+	flora_write_string/3,
+	flora_err_stream/1,
+	flora_warn_stream/1,
+	flora_msg_stream/1,
+	flora_fdbk_stream/1.

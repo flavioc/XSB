@@ -1,13 +1,13 @@
 #! /bin/sh
 
-XSB=$1
+PROLOG=$1
 
-../../../build/touch.sh cmd...
+../touch.sh cmd...
 
 split -l 7 cmd... cmd..._
 
 for f in cmd..._*; do
-     cat cmd...hdr $f | "$XSB"
+     cat cmd...hdr $f | "$PROLOG"
 done
 
 rm cmd... cmd...hdr cmd..._*

@@ -1,3 +1,4 @@
 *.xwam
 *.O
 cmd...
+*.tmp

@@ -3,7 +3,7 @@
 ** Author(s): Guizhen Yang
 **            Michael Kifer 
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -34,19 +34,11 @@
 #include "flora_terms.flh"
 
 
-:- import
-	call/1,
-	cputime/1,
-	get0/1,
-	var/1
-   from standard.
+:- import cputime/1 from standard.
+
+:- import windows_os/0 from xsb_configuration.
 
 :- import length/2 from basics.
-:- import storage_reclaim_space/1, storage_commit/1 from storage.
-
-:- import findall/3, sort/2 from setof.
-
-:- import fmt_write/3 from file_io.
 
 :- import stat_flag/2 from machine.
 
@@ -61,9 +53,7 @@
 
 :- import flora_commit_storage/0, flora_reclaim_storage_space/0 from flrutils.
 
-:- import windows_os/0 from xsb_configuration.
-
-:- import flora_stdfdbk_write/1 from flrdisplay.
+:- import flora_display_feedback/1 from flrdisplay.
 
 :- dynamic flora_switch(_).
 
@@ -113,8 +103,8 @@ flora_print_all(Gs,NVs) :-
 	    ;
 		flora_write_matches(L),
 		( flora_switch(chatter) ->
-		    flora_stdfdbk_string("\n%d solution(s) in %S seconds",
-					 args(N,T)),
+		    flora_stdfdbk_string('~n~w solution(s) in ~w seconds',
+					 [N,T]),
 		    (  windows_os, flora_stdfdbk_nl, !
 		    ;
 			flora_stdfdbk_string(' on '),
@@ -163,8 +153,8 @@ flora_fail_unless_return :- flora_fail_unless_return, fail.
 
 
 /********************************************************************/
-flora_write_Yes :- flora_stdfdbk_line("\nYes.\n").
-flora_write_No  :- flora_stdfdbk_line("\nNo.\n").
+flora_write_Yes :- flora_stdfdbk_line('~nYes.~n').
+flora_write_No  :- flora_stdfdbk_line('~nNo.~n').
 
 
 /********************************************************************/
@@ -200,8 +190,8 @@ flora_write_pairs([]).
 
 flora_write_pairs([N=V|NVs]) :-
 	flora_stdfdbk_nl,
-	flora_stdfdbk_string("%s = ",args(N)),
-	flora_stdfdbk_write(V),
+	flora_stdfdbk_string('~w = ',[N]),
+	flora_display_feedback(V),
 	flora_write_pairs(NVs).
 
 

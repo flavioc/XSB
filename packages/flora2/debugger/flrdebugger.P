@@ -1,7 +1,7 @@
 /* File:        flrdebugger.P  -- Flora debugger
 **
 ** Author(s): Michael Kifer
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
 **
@@ -31,15 +31,12 @@
 
 
 
-:- import fmt_write/3, file_close/1 from file_io.
-:- import file_write/2 from xsb_writ.
+:- import file_close/1, ioport2iostream/2 from file_io.
+:- import format/3 from format.
 :- import debug_display_call_hook/1, flora_switch/1 from usermod.
 :- import package_configuration/2 from packaging.
-:- import conset/2 from gensym.
 :- import process_control/2 from shell.
-:- import retractall/1 from assert.
 :- import xpp_process_file/3 from parse.
-:- import slash/1 from machine.
 :- import member/2, append/3, length/2 from basics.
 
 :- import flora_decode_predicate/6,
@@ -53,6 +50,11 @@
 	flora_clear_xpp_options/0 from flrutils.
 :- import flora_message_line/1, flora_message_line/2 from flrprint.
 :- import flLoadedModule/1 from flora2.
+
+:- import flora_concat_atoms/2,
+	flora_slash/1,
+	flora_set_counter/2
+   from flrporting.
 
 
 :- import flora_handle_trace/0,
@@ -105,6 +107,15 @@
 	     ; print_item(X)
 	     )
 	  )).
+
+
+:- dynamic flora_dbg_stream/1.
+?- (flora_dbg_stream(Stream) -> close(Stream), retractall(flora_dbg_stream(_))
+   ; ioport2iostream(STDDBG,Stream), assert(flora_dbg_stream(Stream))
+   ).
+flora_write_dbg_item(Format,ArgList) :-
+	flora_dbg_stream(Stream), format(Stream,Format,ArgList).
+flora_write_dbg_item(Item) :- flora_dbg_stream(Stream), write(Stream,Item).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% flora_write_goal %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -538,8 +549,8 @@ classify_call(Call, Type,Basename,ArgList,Workspace) :-
 	flora_decode_predicate(Call,Type1,Workspace,Prefix,Basename1,ArgList1),
 	%% The following is a debugging statement, 
 	%% to help weed out calls that should be suppressed
-	%%fmt_write("\n%S\n%S\n%S\n%S\n%S\n%S\n",
-	%%	  arg(Call,Type1,Workspace,Prefix,Basename1,ArgList)),
+	%%format('~n~w~n~w~n~w~n~w~n~w~n~w~n',
+	%%	  [Call,Type1,Workspace,Prefix,Basename1,ArgList]),
 	(Type1 == (flora)
 	-> ((Prefix=immediate_ ; Prefix=inheritance_)
 	   -> Basename = Basename1, Type = (inheritance), ArgList = ArgList1
@@ -575,7 +586,7 @@ write_value(Val) :-
 write_value(Val) :-
 	is_charlist(Val),
 	!,
-	fmt_write(STDDBG, '"%s"', arg(Val)).
+	flora_write_dbg_item('"~w"', [Val]).
 write_value(Val) :- var(Val), !, print_item( Val).
 write_value(=(_N,Var)) :- !, print_item( Var).
 write_value(WRAP_FDSKOLEM(X,Y)) :- !,
@@ -669,7 +680,7 @@ write_hilog_args([Arg|Rest]) :-
 write_workspace(WS) :-
 	(WS==main -> true
 	;
-	    fmt_write(STDDBG,'@%S',arg(WS))
+	    flora_write_dbg_item('@~w',[WS])
 	).
 
 
@@ -689,7 +700,7 @@ flora_write_vars(V,Rest) :-
 	).
 */
 
-print_item(Item) :- file_write(STDDBG,Item).
+print_item(Item) :- flora_write_dbg_item(Item).
 print_items(','(Item,Rest)) :-
 	!,
 	print_item(Item),
@@ -708,16 +719,14 @@ flora_notrace :-
 
 flora_debug_dyndata_file(Filename) :-
 	package_configuration(dir(flora), FlrSysLib),
-	slash(S),
-	fmt_write_string(Filename,
-			 '%s%sdebugger%sdynamic_data.dat',
-			 arg(FlrSysLib,S,S)).
+	flora_slash(S),
+	flora_concat_atoms([FlrSysLib,S,debugger,S,'dynamic_data.dat'],
+			   Filename).
 flora_debug_statdata_file(Filename) :-
 	package_configuration(dir(flora), FlrSysLib),
-	slash(S),
-	fmt_write_string(Filename,
-			 '%s%sdebugger%sstatic_data.dat',
-			 arg(FlrSysLib,S,S)).
+	flora_slash(S),
+	flora_concat_atoms([FlrSysLib,S,debugger,S,'static_data.dat'],
+			   Filename).
 
 %% If WS is a var -- loading static data
 %% Otherwise, loading dynamic data for the specified module
@@ -748,10 +757,10 @@ flora_read_debugger_data(WS,Datafile) :-
 	),
 	flora_clear_xpp_options,
 	file_close(IOportFromCPP),
-	conset(xpp_on,0),
+	flora_set_counter(xpp_on,0),
 	(var(WS)
 	->  flora_message_line('Static debugger data loaded')
-	;   flora_message_line('Dynamic debugger data loaded for module %s',
+	;   flora_message_line('Dynamic debugger data loaded for module ~w',
 			       WS)
 	),
 	!.

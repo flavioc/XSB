@@ -1,0 +1,64 @@
+/* File:      flora_porting.flh -- FLORA portability macros
+**
+** Author(s): Michael Kifer
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 2002
+** 
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+**
+*/
+
+
+/******************************************************************************
+  Negation predicate
+******************************************************************************/
+#define  FLORA_TNOT_PREDICATE  	      	  sk_not
+#deffast FLORA_TNOT(Goal)   	      	  FLORA_TNOT_PREDICATE(#1)
+
+/******************************************************************************
+  Database retrieval predicates
+******************************************************************************/
+#define  FLORA_DB_FIND_PREDICATE    	    	storage_find_fact
+#define  FLORA_DB_INSERT_PREDICATE    	    	storage_insert_fact
+#define  FLORA_DB_DELETE_PREDICATE    	    	storage_delete_fact
+#define  FLORA_DB_INSERT_BT_PREDICATE    	storage_insert_fact_bt
+#define  FLORA_DB_DELETE_BT_PREDICATE    	storage_delete_fact_bt
+
+#deffast FLORA_DB_FIND(Storage,Fact)     FLORA_DB_FIND_PREDICATE(Storage,Fact)
+#deffast FLORA_DB_INSERT(Storage,Fact,Status)  \
+                                         FLORA_DB_INSERT_PREDICATE(#1,#2,#3)
+#deffast FLORA_DB_DELETE(Storage,Fact,Status)  \
+                                         FLORA_DB_DELETE_PREDICATE(#1,#2,#3)
+#deffast FLORA_DB_INSERT_BT(Storage,Fact,Status) \
+                                         FLORA_DB_INSERT_BT_PREDICATE(#1,#2,#3)
+#deffast FLORA_DB_DELETE_BT(Storage,Fact,Status)  \
+                                         FLORA_DB_DELETE_BT_PREDICATE(#1,#2,#3)
+
+#define FLORA_DB_INSERT_KEYPAIR_PREDICATE   storage_insert_keypair
+#define FLORA_DB_FIND_KEYPAIR_PREDICATE     storage_find_keypair
+
+#deffast FLORA_DB_INSERT_KEYPAIR(Storage,Key,Fact,Status) \
+				 FLORA_DB_INSERT_KEYPAIR_PREDICATE(#1,#2,#3,#4)
+#deffast FLORA_DB_FIND_KEYPAIR(Storage,Key,Fact)  \
+                                 FLORA_DB_FIND_KEYPAIR_PREDICATE(#1,#2,#3)
+
+#define  FLORA_DB_COMMIT_PREDICATE          storage_commit
+#define  FLORA_DB_RECLAIM_SPACE_PREDICATE   storage_reclaim_space
+
+#deffast FLORA_DB_COMMIT(Storage)         FLORA_DB_COMMIT_PREDICATE(#1)
+#deffast FLORA_DB_RECLAIM_SPACE(Storage)  FLORA_DB_RECLAIM_SPACE_PREDICATE(#1)

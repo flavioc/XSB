@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -24,6 +24,8 @@
 **
 */
 
+
+:- import format/2 from format.
 
 :- import write_canonical/1, writeln/1 from standard.
 

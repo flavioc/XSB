@@ -1,0 +1,89 @@
+/* File:      flrporting.P  -- Non-standard Prolog predicates used in Flora
+**
+** Author(s): Michael Kifer
+**
+** Contact:   flora-users@lists.sourceforge.net
+**
+** Copyright (C) The Research Foundation of SUNY, 2002
+**
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+**
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+**
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+**
+*/
+
+:- import conget/2, conset/2 from gensym.
+:- import eval/2 from eval.
+:- import slash/1 from machine.
+:- import substring/4 from string.
+
+
+:- export
+	flora_slash/1,
+	flora_match_substring/3,
+	flora_match_substring/5,
+	flora_get_substring/4,
+	flora_term_to_atom/2,
+	flora_concat_items/2,
+	flora_concat_atoms/2,
+	flora_set_counter/2,
+	flora_get_counter/2,
+	flora_increment_counter/4,
+	flora_cputime/1.
+
+
+flora_term_to_atom(Term,Atom) :- fmt_write_string(Atom,'%S',arg(Term)).
+
+%% This concats items or any type - atoms, numbers, etc.
+%% Make the most common case fast!
+flora_concat_items([Item1,Item2],Atom) :-
+	!,
+	fmt_write_string(Atom, '%S%S', arg(Item1,Item2)).
+flora_concat_items([Item|ItemList],Atom) :-
+	fmt_write_string(Atom1, '%S', arg(Item)),
+	flora_concat_items(ItemList,Atom2),
+	str_cat(Atom1,Atom2,Atom).
+flora_concat_atoms([],'').
+
+%% If all members are atoms, this is more efficient
+%% Make the most common case fast!
+flora_concat_atoms([Atom1,Atom2],Atom) :- !, str_cat(Atom1,Atom2,Atom).
+flora_concat_atoms([Atom1|AtomList],Atom) :-
+	flora_concat_atoms(AtomList,Atom2),
+	str_cat(Atom1,Atom2,Atom).
+flora_concat_atoms([],'').
+	
+
+flora_get_counter(Counter,Value) :- conget(Counter,Value).
+flora_set_counter(Counter,Value) :- conset(Counter,Value).
+flora_increment_counter(Counter,Increment,OldValue,NewValue) :-
+	eval(Increment,I),
+	conget(Counter,OldValue),
+	NewValue is OldValue + I,
+	conset(Counter,NewValue).
+
+%% Flora wrappers for str_match in XSB's syslib/string.P
+%% Checks if Substr matches Str in a given direction and at the right position
+flora_match_substring(Substr,Str,Pos) :-
+	str_match(Substr,Str,forward,Pos,_).
+flora_match_substring(Sub,Str,Direction,Beg,End) :-
+	str_match(Sub,Str,Direction,Beg,End).
+
+%% extract substring Subst from String at positions From - To
+flora_get_substring(String,From,To,Subst) :- substring(String,From,To,Subst).
+
+flora_slash(Slash) :- slash(Slash).
+
+flora_cputime(X) :- cputime(X).

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -24,11 +24,12 @@
 */
 
 
-:- import assert/1, retractall/1 from assert.
-
-:- import fmt_write_string/3 from file_io.
-
-:- import str_sub/3, substring/4 from string.
+:- import
+	flora_match_substring/3,
+	flora_match_substring/5,
+	flora_get_substring/4,
+	flora_concat_atoms/2
+    from flrporting.
 
 :- dynamic flora_flogic_fact_wrapper(_,_).
 :- dynamic flora_current_flogic_module(_).

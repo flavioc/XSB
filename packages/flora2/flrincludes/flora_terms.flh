@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -167,10 +167,8 @@
 
 #define FL_OP			op
 #define FL_HILOG		(hilog)
-%%#define FL_DYNAMIC		(dynamic)
 #define FL_TABLE		(table)
 #define FL_INDEX		(index)
-%%#define FL_EXPORT		(export)
 #define FL_IMPORT		(import)
 #define FL_FROM			(from)
 #define FL_ARGUMENTS		arguments
@@ -290,8 +288,6 @@
 
 #define FLCOMMAND		flcommand
 #define FLTABLE			fltable
-%%#define FLDYNAMIC		fldynamic
-%%#define FLEXPORT		flexport
 #define FLIMPORT		flimport
 #define FLARGUMENTS		flarguments
 #define FLPROLOG		flprolog
@@ -365,8 +361,6 @@
 
 #define PRCOMMAND		prcommand
 #define PRTABLE			prtable
-%%#define PRDYNAMIC		prdynamic
-%%#define PREXPORT		prexport
 #define PRIMPORT		primport
 #define PRINDEX			prindex
 #define PRHILOGTABLE		prhilogtable

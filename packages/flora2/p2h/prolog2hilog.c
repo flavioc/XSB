@@ -1,6 +1,6 @@
 /* File:      prolog2hilog.c
 ** Author(s): kifer
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 2000
 ** 

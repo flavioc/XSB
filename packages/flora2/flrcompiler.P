@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -40,6 +40,7 @@
 
 #include "flora_errors.flh"
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 %% ruleoid is used for numbered anonymous oid generation
 :- dynamic ruleoid(_,_,_).
@@ -60,9 +61,6 @@ is_fldirective(FLDIRECTIVE(DirectList),DirectList).
 
 is_flcommand(FLCOMMAND(C),C).
 is_fltable(FLTABLE(P,A),P,A).
-%%is_fldynamic(FLDYNAMIC(P,A),P,A).
-%%is_flexport(FLEXPORT(P,A),P,A).
-%%is_flimport(FLIMPORT(P,A,M),P,A,M).
 is_flopdef(FLOPDEF(P,A,O),P,A,O).
 is_flarguments(FLARGUMENTS(F,N,Args),F,N,Args).
 is_flprolog(FLPROLOG(F,N),F,N).
@@ -215,8 +213,6 @@ directive_struct(Direct,PRDIRECTIVE(Direct)).
 
 command_struct(C,PRCOMMAND(C)).
 table_struct(F,N,PRTABLE(F,N)).
-%%dynamic_struct(F,N,PRDYNAMIC(F,N)).
-%%export_struct(F,N,PREXPORT(F,N)).
 %% We keep the import directive's support mechanism for @prolog(module)
 import_struct(F,N,M,PRIMPORT(F,N,M)).
 index_struct(F,A,N,PRINDEX(F,A,N)).
@@ -234,7 +230,8 @@ disjunct_struct(Goal1,Goal2,PROR(Goal1,Goal2)).
 not_struct(Goal,PRNOT(Goal)).
 
 tnot_struct(Goal,PRTNOT(Goal)) :-
-	import_struct((sk_not),1,(tables),ICode),
+	%% sk_not/1 doesn't require import in XSB so this is just in case
+	import_struct((FLORA_TNOT_PREDICATE),1,(tables),ICode),
 	directive_struct(ICode,DCode),
 	report_directive(DCode).
 
@@ -293,6 +290,12 @@ thismodule_struct(PRTHISMODULE(PRTHISMODULE)).
 thisstorage_struct(fdb,PRTHISFDBSTORAGE(PRTHISFDBSTORAGE)).
 %% support for checking undefinedness
 thisstorage_struct(fld,PRTHISFLDSTORAGE(PRTHISFLDSTORAGE)).
+
+%% Generates things like FLORA_DB_FIND(Storage,Fact)
+storage_find_call_struct(StorageType,Fact,GetFromStorageCode) :-
+	thisstorage_struct(StorageType,StorageNameCode),
+	atomobj_struct(FLORA_DB_FIND_PREDICATE,FCode),
+	prologterm_struct(FCode,2,[StorageNameCode,Fact],GetFromStorageCode).
 
 floralib_struct(WS,PRFLORALIB(WS)).
 storage_struct(WS,PRFDBSTORAGE(WS)).
@@ -579,15 +582,13 @@ controlconstruct_struct(CondCode,ActionCode,Wrapper,Code) :-
   reset_newpredicate/0
   new_predicate(-Name)
 ****************************************************************************/
-reset_newpredicate :- conset(NEWPREDICATE,1).
+reset_newpredicate :- flora_set_counter(NEWPREDICATE,1).
 
 new_predicate(Name) :-
-	conget(NEWPREDICATE,N),
-	M is N+1,
-	conset(NEWPREDICATE,M),
-	number_codes(N,NLst),
-	atom_codes(NAtm,NLst),
-	str_cat(NEWPREDICATE,NAtm,Name).
+	flora_increment_counter(NEWPREDICATE,1,OldVal,_NewVal),
+	number_codes(OldVal,OldValLst),
+	atom_codes(OldValAtm,OldValLst),
+	flora_concat_atoms([NEWPREDICATE,OldValAtm],Name).
 
 
 /****************************************************************************
@@ -595,15 +596,13 @@ new_predicate(Name) :-
   new_varobj(-CompiledVarObj)
   new_varobjlist(+Number,-List)
 ****************************************************************************/
-reset_newvar :- conset(NEWVAR,1).
+reset_newvar :- flora_set_counter(NEWVAR,1).
 
 new_varobj(Index,VarObj) :-
-	conget(NEWVAR,N),
-	M is N+1,
-	conset(NEWVAR,M),
-	number_codes(N,NLst),
-	atom_codes(NAtm,NLst),
-	str_cat(NEWVAR,NAtm,Name),
+	flora_increment_counter(NEWVAR,1,OldVal,_NewVal),
+	number_codes(OldVal,OldValLst),
+	atom_codes(OldValAtm,OldValLst),
+	flora_concat_atoms([NEWVAR,OldValAtm],Name),
 	varobj_struct(Name,Index,VarObj).
 
 
@@ -619,27 +618,29 @@ new_varobjlist(N,[VarObj|L]) :-
   reset_newoid/0
   new_oidobj(+Index,-OidObject)
 ****************************************************************************/
-reset_newoid :- conset(NEWOID_COUNT,1).
+reset_newoid :- flora_set_counter(NEWOID_COUNT,1).
 
 new_oidobj(Index,OidObject) :-
-	conget(NEWOID_COUNT,N),
-	M is N+1,
-	conset(NEWOID_COUNT,M),
-	fmt_write_string(Name,'%s%d',args(NEWOID,N)),
+	flora_increment_counter(NEWOID_COUNT,1,OldVal,_NewVal),
+	number_codes(OldVal,OldValLst),
+	atom_codes(OldValAtm,OldValLst),
+	flora_concat_atoms([NEWOID,OldValAtm],Name),
 	newoid_struct(Name,Index,OidObject).
 
 /*************************************************************************
 	support for numbered anon oids
 *************************************************************************/
-new_oidobj(Rule_num,Num,Index,OidObject) :-
+new_oidobj(RuleNum,OidNumStr,Index,OidObject) :-
 	(
-	ruleoid(Num,_,Count)
+	ruleoid(OidNumStr,_,Count)
 	-> Count_new is Count+1,
-	   retract(ruleoid(Num,_,Count)),
-	   assert(ruleoid(Num,Index,Count_new))
-	;  assert(ruleoid(Num,Index,1))
+	   retract(ruleoid(OidNumStr,_,Count)),
+	   assert(ruleoid(OidNumStr,Index,Count_new))
+	;  assert(ruleoid(OidNumStr,Index,1))
 	), 
-        fmt_write_string(Name,'%s%d|%s',args(NEWOID,Rule_num,Num)),
+	number_codes(RuleNum,RuleNumLst),
+	atom_codes(RuleNumAtm,RuleNumLst),
+        flora_concat_atoms([NEWOID,RuleNumAtm,'|',OidNumStr],Name),
 	newoid_struct(Name,Index,OidObject).
 
 
@@ -811,7 +812,7 @@ indexvars([],[]) :- !.
 
 indexvars([T|L],Vars) :-
 	is_flvar(T,Name,I),
-	( str_sub(FL_UNDERSCORE,Name,0) ->
+	( flora_match_substring(FL_UNDERSCORE,Name,0) ->
 	    indexvars(L,Vars)
 	;
 	  Vars=[I-Name|Vs],
@@ -873,7 +874,7 @@ singleton_warning([],WarnList,WarnList).
 
 singleton_warning([V|L],WarnList,WarnTail) :-
 	is_flvar(V,Name,I),
-	( str_sub(FL_UNDERSCORE,Name,0) ->
+	( flora_match_substring(FL_UNDERSCORE,Name,0) ->
 	    singleton_warning(L,WarnList,WarnTail)
 	;
 	  compiling_warning(I,SINGLETON_VAR,W),
@@ -890,7 +891,7 @@ unbound_warning([],WarnList,WarnList).
 
 unbound_warning([V|L],WarnList,WarnTail) :-
 	is_flvar(V,Name,I),
-	( str_sub(FL_UNDERSCORE,Name,0) ->
+	( flora_match_substring(FL_UNDERSCORE,Name,0) ->
 	    unbound_warning(L,WarnList,WarnTail)
 	;
 	  compiling_warning(I,UNBOUND_VAR,W),
@@ -935,7 +936,7 @@ report_option(Option) :- assert(TMPOPTION(Option)).
    generate_patchrule(+HeadP,+BodyP,+Arity,+StorageType,-Code)
 
    Generate patch rule of the form:
-   HeadP(X1,...,XN) :- storage_find_fact(<AppropriateStprage>,BodyP(X1,...,XN))
+   HeadP(X1,...,XN) :- FLORA_DB_FIND_PREDICATE(<StorageName>,BodyP(X1,...,XN))
 ****************************************************************************/
 generate_patchrule(HeadP,BodyP,Arity,StorageType,Code) :-
 	atomobj_struct(HeadP,HPCode),
@@ -943,9 +944,7 @@ generate_patchrule(HeadP,BodyP,Arity,StorageType,Code) :-
 	new_varobjlist(Arity,ArgsCode),
 	termlit_struct(HPCode,Arity,ArgsCode,HeadCode),
 	termlit_struct(BPCode,Arity,ArgsCode,BodyFactCode),
-	thisstorage_struct(StorageType,StorageNameCode),
-	atomobj_struct(storage_find_fact,FCode),
-	prologterm_struct(FCode,2,[StorageNameCode,BodyFactCode],BodyCode),
+	storage_find_call_struct(StorageType,BodyFactCode,BodyCode),
 	patchrule_struct(HeadCode,BodyCode,Code).
 
 
@@ -959,7 +958,7 @@ generate_patchrule(HeadP,BodyP,Arity,StorageType,Code) :-
     The rules for firstorder predicates look as follows:
       P(X1,...,XN) :-
 	  flora_debug_module_registry(ThisModule),
-	  not storage_find_fact(ThisModuleFLDStorageName,P(X1,...,XN)),
+	  not FLORA_DB_FIND_PREDICATE(ThisModuleFLDStorageName,P(X1,...,XN)),
 	  flora_error_undefined(P(X1,...,XN)),
 	  abort.
 ****************************************************************************/
@@ -971,10 +970,8 @@ generate_undefinedness_traprule(Pred,Arity,Code) :-
 	thismodule_struct(ModCode),
 	%% generate flora_debug_module_registry(ThisModule)
 	prologterm_struct(DMCode,1,[ModCode],DebugCode),
-	thisstorage_struct(fld,StorageNameCode),
-	atomobj_struct(storage_find_fact,FCode),
-	prologterm_struct(FCode,2,[StorageNameCode,HeadCode],FldBCode),
-	%% generate  not storage_find_fact(ThisModuleFLDStorageName,Pred(...))
+	storage_find_call_struct(fld,HeadCode,FldBCode),
+	%% generate  not FLORA_DB_FIND(ThisModuleFLDStorageName,Pred(...))
 	not_struct(FldBCode,NotCode),
 	atomobj_struct(flora_error_undefined, ECode),
 	prologterm_struct(ECode,1,[HeadCode],MsgCode),
@@ -1010,9 +1007,7 @@ flora_compile(NULL,[],[],[]) :- !.
 
 flora_compile(ParserTerm,CodeList,OptionList,Status) :-
 	%% extract the rule number
-	conget(RULE_NUM,N),
-	M is N+1,
-	conset(RULE_NUM,M),
+	flora_increment_counter(RULE_NUM,1,_,_),
 	initialize_work,
 	( is_flrule(ParserTerm,Head,Body) ->
 	    compile_rule(Head,Body,CodeList,Status_rule),
@@ -1099,18 +1094,6 @@ compile_direct(DirectTerm,[Code|ImpliedCode],[]) :-
 		ImpliedCode = [NotFoundCode,FdbLinkingCode]
 	    )
 	*/
-
-	%%; is_fldynamic(DirectTerm,P,A) ->
-	%%    dynamic_struct(P,A,Direct),
-	%%    ImpliedCode = []
-
-	%%; is_flexport(DirectTerm,P,A) ->
-	%%    export_struct(P,A,Direct),
-	%%    ImpliedCode = []
-
-	%%; is_flimport(DirectTerm,P,A,M) ->
-	%%    import_struct(P,A,M,Direct),
-	%%    ImpliedCode = []
 
 	; is_flindex(DirectTerm,P,A,N) ->
 	    index_struct(P,A,N,Direct),
@@ -1205,8 +1188,8 @@ compile_direct(DirectTerm,[Code],[]) :-
 	%% head should be prepended with FLHEADPREFIX while the storage
 	%% fact should be prepended with FLBODYPREFIX.
 	( flora_is_dynamic_flogic_base(P,N) ->
-	    str_cat(FLFACTPREFIX,P,HP),
-	    str_cat(FLBODYPREFIX,P,BP),
+	    flora_concat_atoms([FLFACTPREFIX,P],HP),
+	    flora_concat_atoms([FLBODYPREFIX,P],BP),
 	    %% flogicstatic will ensure that module name will
 	    %% be wrapped around the predicate names
 	    flora_define_flogicstatic(HP,N),
@@ -2360,7 +2343,7 @@ compile_head_fltoken(Token,Index,Object) :-
 ****************************************************************************/
 compile_head_fltoken(Token,Num,Index,Object) :-
         ( Token == FL_NEWOID ->
-            conget(RULE_NUM, Rule_num), 
+            flora_get_counter(RULE_NUM, Rule_num), 
 	    new_oidobj(Rule_num,Num,Index,Object)
         ;
           atomobj_struct(Token,Index,Object)
@@ -3802,12 +3785,6 @@ compile_execdirect_list([D|L],[DCode|LCode]) :-
 compile_execdirect(DirectTerm,Code) :-
 	( is_fltable(DirectTerm,P,A) ->
 	    table_struct(P,A,Code)
-
-	%%; is_fldynamic(DirectTerm,P,A) ->
-	%%    dynamic_struct(P,A,Code)
-
-	%%; is_flimport(DirectTerm,P,A,M) ->
-	%%    import_struct(P,A,M,Code)
 
 	; is_flindex(DirectTerm,P,A,N) ->
 	    index_struct(P,A,N,Code)

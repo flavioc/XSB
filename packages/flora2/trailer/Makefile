@@ -3,7 +3,7 @@
 ## Author(s): Michael Kifer
 ##            Guizhen Yang
 ##
-## Contact:   xsb-contact@cs.sunysb.edu
+## Contact:   flora-users@lists.sourceforge.net
 ## 
 ## Copyright (C) The Research Foundation of SUNY, 1999-2001
 ## 
@@ -29,7 +29,8 @@
 
 OBJEXT=.xwam
 
-XSBDIR = ../../..
+PROLOGDIR = ../../..
+FLORADIR = ..
 
 CLOSURE = ../closure
 
@@ -42,24 +43,24 @@ ALLOBJS = standard.P \
           eqlflogic.P \
           patch.P
 
-XSB = $(XSBDIR)/bin/xsb
+PROLOG = $(PROLOGDIR)/bin/xsb
 
-PROLOG = $(XSB) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
+PROLOG_COMMAND = $(PROLOG) -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 
 FLORA_INCLUDES_DIR = ../flrincludes
 
 FLORA_TERMS = $(FLORA_INCLUDES_DIR)/flora_terms.flh
 
 # Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.flora_trailer_warn.tmp'
+SVFILE = '$(FLORADIR)/.flora_trailer_warn.tmp'
 STDWARN = 3
 STDERR = 2
-HDRMSG = "While compiling XSB/packages/flora2/trailer:"
+HDRMSG = "While compiling .../flora2/trailer:"
 
 
 all: init $(ALLOBJS) finish
-	@$(XSBDIR)/build/touch.sh cmd...
-	$(PROLOG) < cmd...
+	@$(PROLOGDIR)/build/touch.sh cmd...
+	$(PROLOG_COMMAND) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
 

@@ -3,7 +3,7 @@
 ** Author(s): Guizhen Yang
 **            Michael Kifer
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -30,6 +30,7 @@
 
 #include "flora_terms.flh"
 
+?- bootstrap_flora.
 
 /**********************************************************************
   flora_register_syslib(+LibBaseFile)
@@ -58,15 +59,15 @@ flora_load_library([H|T]) :-
 
 flora_load_library(LibID) :-
 	( flora_library_file(LibID,BaseFileName,SubDir) ->
-	    ( flora_syslib_loaded(BaseFileName) ->
-		true
+	    ( flora_syslib_loaded(BaseFileName) -> true
 	    ;
 	      package_configuration(dir(flora),FloraDir),
-	      slash(S),
-	      fmt_write_string(FullLibPath,"%s%s%s%s%s.P",
-	                       args(FloraDir,S,SubDir,S,BaseFileName)),
-	      %% Because LibID implies BaseFilename, we register base filename rather
-	      %% than the library name (several LibID can correspond to one file).
+	      flora_slash(S),
+	      flora_concat_atoms([FloraDir,S,SubDir,S,BaseFileName,'.P'],
+				 FullLibPath),
+		%% Because LibID implies BaseFilename, we register base
+		%% filename rather than the library name
+		%% (several LibID can correspond to one file).
 	      consult(FullLibPath),
 	      flora_register_syslib(BaseFileName)
 	    )
@@ -124,10 +125,10 @@ flora_load_system_module(_SysModID).
 ********************************************************************/
 flora_include(ID,IncFile) :-
 	atom(ID),
-	slash(S),
+	flora_slash(S),
 	flora_library_file(ID,BaseFilename,SubDir),
 	!,
-	fmt_write_string(IncFile,'%sinc%s%s_inc.flh',arg(SubDir,S,BaseFilename)).
+	flora_concat_atoms([SubDir,'inc',S,BaseFilename,'_inc.flh'], IncFile).
 
 
 /****************************************************************************

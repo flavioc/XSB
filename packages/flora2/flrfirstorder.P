@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -42,7 +42,7 @@ flora_firstorderdef(X,Y) :-
 	!.
 
 flora_firstorderdef(X,Y) :-
-	( conget(flora_shell_mode,1) ->
+	( flora_get_counter(flora_shell_mode,1) ->
 	    flora_shfirstorder(X,Y)
 	;
 	  flora_dynfirstorder(X,Y)

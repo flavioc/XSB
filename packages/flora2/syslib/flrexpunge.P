@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang 
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -27,15 +27,14 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 
 :- import abolish/1 from assert.
 
-:- import findall/3 from setof.
+:- import FLORA_DB_FIND_PREDICATE/2, FLORA_DB_DELETE_PREDICATE/3 from storage.
 
-:- import storage_find_fact/2, storage_delete_fact/3 from storage.
-
-:- import flora_error_line/4 from flrprint.
+:- import flora_error_line/2 from flrprint.
 
 :- import
 	flora_check_module_name/1,
@@ -69,17 +68,17 @@ flora_expunge([],_ModuleName,_StorageName) :- !.
 #mode nostring "\!#'"
 flora_expunge([F/A],ModuleName,StorageName) :-
 	( not atom(F) ->
-	    flora_error_line('FL_EXPUNGE: invalid predicate symbol'),
+	    flora_error_line('~w: invalid predicate symbol', [FL_EXPUNGE]),
 	    abort
 	
 	; not integer(A) ->
-	    flora_error_line('FL_EXPUNGE: invalid predicate arity'),
+	    flora_error_line('~w: invalid predicate arity', [FL_EXPUNGE]),
 	    abort
 	;
 	  flora_module_predicate_symbol(F,ModuleName,P),
 	  abolish(P/A),
 	  functor(Fact,P,A),
-	  findall(Fact,storage_find_fact(StorageName,Fact),FactList),
+	  findall(Fact,FLORA_DB_FIND(StorageName,Fact),FactList),
 	  flora_storage_expungelist(FactList,StorageName)
 	).
 #mode restore
@@ -92,5 +91,5 @@ flora_storage_expungelist([],_StorageName) :- !.
 
 flora_storage_expungelist([F|L],StorageName) :-
 	!,
-	storage_delete_fact(StorageName,F,_Deleted),
+	FLORA_DB_DELETE(StorageName,F,_Deleted),
 	flora_storage_expungelist(L).

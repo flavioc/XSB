@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -25,47 +25,42 @@
 */
 
 
+:- compiler_options([xpp_on]).
+
+#include "flora_porting.flh"
+
 :- import
-	cputime/1,
-	integer/1,
-	atom/1
-   from standard.
+	flora_slash/1,
+	flora_cputime/1,
+	flora_set_counter/2,
+	flora_concat_atoms/2
+   from flrporting.
+
+:- import format/2 from format.
 
 :- import member/2, append/3 from basics.
 
-:- import assert/1, retractall/1 from assert.
-
 :- import
-	compile/2,
-	consult/1,
-	read_canonical/1,
 	current_loaded_file/1
     from consult.
 
 :- import library_directory/1 from usermod.
 
-:- import sort/2, findall/3 from setof.
-
 :- import xsb_configuration/2 from xsb_configuration.
 
 :- import xpp_options/1, xpp_process_file/3 from parse.
 
-:- import current_output_port/1, current_predicate/1 from curr_sym.
+:- import current_predicate/1 from curr_sym.
 
 :- import package_configuration/2 from packaging.
 
-:- import conset/2 from gensym.
-
 :- import
-	slash/1,
 	parse_filename/4,
 	stat_flag/2,
 	stat_set_flag/2
    from machine.
 
 :- import
-	fmt_write_string/3,
-	fmt_write/3,
 	file_close/1,
 	print_file_contents/1,
 	copyIOport/2,
@@ -77,13 +72,13 @@
 
 :- import xpp_process_file/3 from parse.
 
-:- import storage_insert_fact/3,
-	storage_commit/1,
-	storage_reclaim_space/1
+:- import 
+	FLORA_DB_INSERT_PREDICATE/3,
+	FLORA_DB_COMMIT_PREDICATE/1,
+	FLORA_DB_RECLAIM_SPACE_PREDICATE/1
    from storage.
 
 :- import bootstrap_flora/0 from flora2.
-:- bootstrap_flora.
 
 :- import
 	flora_reset_lexer/0,
@@ -134,6 +129,7 @@
 	flora_stderr_nl/0,
 	flora_stderr_string/1,
 	flora_stderr_string/2,
+	flora_stdwarn_nl/0,
 	flora_stdwarn_string/1,
 	flora_stdwarn_string/2,
 	flora_stdmsg_nl/0,

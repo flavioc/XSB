@@ -4,7 +4,7 @@
 **            Michael Kifer
 **            Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -29,29 +29,22 @@
 
 
 :- import
-	abort/0,
 	push_abort_cutpoint/0,
-	pop_abort_cutpoint/0,
-	call/1
+	pop_abort_cutpoint/0
    from standard.
 
-:- import consult/1 from consult.
 
 :- import member/2 from basics.
-
-:- import findall/3 from setof.
-
-:- import assert/1, retractall/1 from assert.
-
-:- import fmt_write_string/3 from file_io.
-
-:- import slash/1 from machine.
 
 :- import cwd/1, cd/1 from shell.
 
 :- import package_configuration/2 from packaging.
 
-:- import conset/2 from gensym.
+:- import
+	flora_slash/1,
+	flora_concat_atoms/2,
+	flora_set_counter/2
+   from flrporting.
 
 :- import pop_stdin/1 from push_io.
 

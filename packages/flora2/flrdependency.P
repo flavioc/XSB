@@ -2,7 +2,7 @@
 **
 ** Author(s): Chang Zhao
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2002
 ** 
@@ -835,16 +835,16 @@ aggregate_warnings(Type) :-
 
 aggregate_warnings([],_) :- !.
 aggregate_warnings([((T1,IT1),(T2,IT2),_,_)|T],Type) :-
-	conset(min_ind,0),
-	conset(next_min_ind,0),
+	flora_set_counter(min_ind,0),
+	flora_set_counter(next_min_ind,0),
 	to_string(T1,IT1,Str1,RuleID),
-	conget(min_ind,HMinInd),
-	conget(next_min_ind,HNMinInd),
+	flora_get_counter(min_ind,HMinInd),
+	flora_get_counter(next_min_ind,HNMinInd),
 
-	conset(min_ind,0),
-	conset(next_min_ind,0),
+	flora_set_counter(min_ind,0),
+	flora_set_counter(next_min_ind,0),
 	to_string(T2,IT2,Str2,_RID),
-	conget(min_ind,BMinInd),
+	flora_get_counter(min_ind,BMinInd),
 
         fmt_write_string(WarnMsg,"Tabled literal in the head of rule that starts with %s depends on %s %s",
 			 args(Str1,Type,Str2)),
@@ -905,14 +905,14 @@ retrieve_program_tabled([H|T]) :-
 rebuild_text(_Term,(T,Index),Text) :-
 	(atomic(T);var(T)),
 	!,
-	conget(min_ind,MinInd),
-	conget(next_min_ind,NextMinInd),
+	flora_get_counter(min_ind,MinInd),
+	flora_get_counter(next_min_ind,NextMinInd),
 	( (Index<MinInd; MinInd=0) ->
-	    conset(next_min_ind,MinInd),
-	    conset(min_ind,Index)
+	    flora_set_counter(next_min_ind,MinInd),
+	    flora_set_counter(min_ind,Index)
 	;
 	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        conset(next_min_ind,Index)
+	        flora_set_counter(next_min_ind,Index)
 	    ;
 	        true
 	    )
@@ -932,14 +932,14 @@ rebuild_text(Term,(_IndT,Index),Text) :-
 	; is_agg(Term,_Op,_Var,_Group,_Condition,_Result)
 	),
     	!,
-	conget(min_ind,MinInd),
-	conget(next_min_ind,NextMinInd),
+	flora_get_counter(min_ind,MinInd),
+	flora_get_counter(next_min_ind,NextMinInd),
 	( (Index<MinInd; MinInd=0) ->
-	    conset(next_min_ind,MinInd),
-	    conset(min_ind,Index)
+	    flora_set_counter(next_min_ind,MinInd),
+	    flora_set_counter(min_ind,Index)
 	;
 	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        conset(next_min_ind,Index)
+	        flora_set_counter(next_min_ind,Index)
 	    ;
 	        true
 	    )
@@ -1122,14 +1122,14 @@ rebuild_text(Term,(IndT,Index),Text) :-
 	    IndA=[IndFunc|IndArgs],
 	    rebuild_text(Func,IndFunc,FuncText)
 	;
-	    conget(min_ind,MinInd),
-	    conget(next_min_ind,NextMinInd),
+	    flora_get_counter(min_ind,MinInd),
+	    flora_get_counter(next_min_ind,NextMinInd),
 	    ( (Index<MinInd; MinInd=0) ->
-	        conset(next_min_ind,MinInd),
-	        conset(min_ind,Index)
+	        flora_set_counter(next_min_ind,MinInd),
+	        flora_set_counter(min_ind,Index)
 	    ;
 	        ( (Index<NextMinInd; NextMinInd=0) ->
-	            conset(next_min_ind,Index)
+	            flora_set_counter(next_min_ind,Index)
 	        ;
 	            true
 	        )
@@ -1152,14 +1152,14 @@ rebuild_text(Term,(IndT,Index),Text) :-
 rebuild_text_list(L,(_Var,Index),Text) :-
 	var(L),
 	!,
-	conget(min_ind,MinInd),
-	conget(next_min_ind,NextMinInd),
+	flora_get_counter(min_ind,MinInd),
+	flora_get_counter(next_min_ind,NextMinInd),
 	( (Index<MinInd; MinInd=0) ->
-	    conset(next_min_ind,MinInd),
-	    conset(min_ind,Index)
+	    flora_set_counter(next_min_ind,MinInd),
+	    flora_set_counter(min_ind,Index)
 	;
 	    ( (Index<NextMinInd; NextMinInd=0) ->
-	        conset(next_min_ind,Index)
+	        flora_set_counter(next_min_ind,Index)
 	    ;
 	        true
 	    )

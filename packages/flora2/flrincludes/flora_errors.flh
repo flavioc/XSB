@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -49,7 +49,7 @@
 /**************************************
   errors reported by Flora Composer
 **************************************/
-#define UNKNOWN_ERROR    'internal error (please report this through the bug tracking system at http://sourceforge.net/projects/xsb)'
+#define UNKNOWN_ERROR    'internal error (please report this through the bug tracking system at http://sourceforge.net/projects/flora)'
 #define UNEXP_EOR	 'rule delimeter expected'
 #define UNEXP_OPERAND    'unexpected operand'
 #define UNEXP_OPERATOR   'unexpected operator'
@@ -88,7 +88,7 @@
 #mode restore
 
 #define ERROR_ARGUMENTS	'invalid arguments directive'
-#define ERROR_XSBMODULE	'invalid module name'
+#define ERROR_PROLOGMODULE	'invalid module name'
 #define ERROR_AGGREGT	'syntax error in aggregate body'
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_PRLGLIT	'invalid PROLOG literal'

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -149,7 +149,7 @@ flora_opdef(X,Y,Z) :-
 	flora_op(X,Y,Z).
 
 flora_opdef(X,Y,Z) :-
-	( conget(flora_shell_mode,1) ->
+	( flora_get_counter(flora_shell_mode,1) ->
 	    flora_shop(X,Y,Z)
 	;
 	  flora_dynop(X,Y,Z)

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -42,7 +42,7 @@
 	flora_load_module_internal/2
    from flrutils.
 
-:- import flora_stderr_write/1 from flrdisplay.
+:- import flora_display_error/1 from flrdisplay.
 
 
 
@@ -86,7 +86,7 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
 	      ;
 	        flora_error_heading,
 		flora_stderr_string('invalid module name: '),
-		flora_stderr_write(Workspace),
+		flora_display_error(Workspace),
 		flora_stderr_nl
 	      ),
 	      !,
@@ -96,7 +96,7 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
 	  flora_stderr_nl,
 	  flora_error_heading,
 	  flora_stderr_string('file name '),
-	  flora_stderr_write(FileName),
+	  flora_display_error(FileName),
 	  flora_stderr_string(' invalid for loading'),
 	  flora_stderr_nl,
 	  !,
@@ -107,7 +107,7 @@ flora_load_file(X) :-
 	flora_stderr_nl,
 	flora_error_heading,
 	flora_stderr_string('file name '),
-	flora_stderr_write(X),
+	flora_display_error(X),
 	flora_stderr_string(' invalid for loading'),
 	flora_stderr_nl,
 	!,

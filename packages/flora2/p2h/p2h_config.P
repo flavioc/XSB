@@ -1,6 +1,6 @@
 /* File:      p2h_config.P -- loader for the prolog to hilog module
 ** Author(s): kifer
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 2000
 ** 

@@ -3,7 +3,7 @@
 ** Author(s): Michael Kifer
 **            Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
 **
@@ -29,6 +29,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_porting.flh"
 
 :- import flora_commit_storage/0 from flrutils.
 
@@ -41,7 +42,7 @@ FLLIBIFTHENELSE(Cond,Then,_Else) :-
 	call(Then).
 
 FLLIBIFTHENELSE(Cond,_Then,Else) :-
-	sk_not(Cond),
+	FLORA_TNOT(Cond),
 	call(Else).
 
 
@@ -56,12 +57,12 @@ FLLIBIFTHEN(Cond,Then) :-
 	call(Then).
 
 FLLIBIFTHEN(Cond,_Then) :-
-	sk_not(Cond).
+	FLORA_TNOT(Cond).
 
 
 %% UNLESS ... DO ... is like IF...THEN true ELSE ...
 FLLIBUNLESSDO(Cond,_Action) :- call(Cond).
-FLLIBUNLESSDO(Cond,Action) :- sk_not(Cond), call(Action).
+FLLIBUNLESSDO(Cond,Action) :- FLORA_TNOT(Cond), call(Action).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -114,11 +115,12 @@ FLLIBWHILELOOP(Cond,Action) :-
 			     ).
 
 %% Cond shouldn't be tabled!!! Otherwise "not" barks!!!
-%% We can't use sk_not instead of "not" because sk_not
+%% We can't use FLORA_TNOT instead of "not" because FLORA_TNOT
 %% would table Cond and cause more iterations than necessary.
-%% We could call abolish_all_tables from within sk_not, but this is dangerous:
-%% If there is a recursive dependency on Cond then abolishing tables
-%% while computing them can crash XSB
+%% We could call abolish_all_tables from within FLORA_TNOT,
+%% but this is dangerous:
+%%    If there is a recursive dependency on Cond then abolishing tables
+%%    while computing them can crash XSB
 FLLIBLOOPUNTIL(Action,Cond) :-
 	%% Must copy_term Action&Cond together so the variables
 	%% will be preserved

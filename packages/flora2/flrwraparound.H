@@ -2,7 +2,7 @@
 **
 ** Author(s): kifer
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 2001
 ** 
@@ -25,19 +25,26 @@
 */
 
 
+:- compiler_options([xpp_on]).
+
+#include "flora_porting.flh"
+
 :- import
 	parse_filename/4,
 	stat_set_flag/2
    from machine.
 
 :- import 
-	%%storage_find_fact/2,
-	%%storage_insert_fact/3,
-	storage_insert_keypair/4,
-	storage_find_keypair/3
+	FLORA_DB_INSERT_KEYPAIR_PREDICATE/4,
+	FLORA_DB_FIND_KEYPAIR_PREDICATE/3
    from storage.
 
 :- import ','/2 from standard.
+
+:- import
+	flora_concat_items/2,
+	flora_concat_atoms/2
+   from flrporting.
 
 :- import
 	flora_set_xpp_options_for_read/0,
@@ -55,11 +62,6 @@
 :- import process_control/2 from shell.
 
 :- import xpp_process_file/3 from parse.
-
-:- import
-	fmt_write_string/3
-   from file_io.
-
 
 :- import bootstrap_flora/0 from flora2.
 

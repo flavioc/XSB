@@ -1,6 +1,6 @@
-/* File:      family_rel.flp
+/* File:      family_rel.flr
 ** Author(s): Bertram Ludaescher
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 ** 
 ** Copyright (C) Bertram Ludaescher, 1998
 ** 
@@ -31,7 +31,7 @@
 %%% ======================================================================
 
 %%% ======================================================================
-%%% DEFINE SOME BASE FACTS (EDB RELATIONS) ABOUT THE ``FALLERS'' 
+%%% DEFINE SOME BASE FACTS (EDB RELATIONS) ABOUT THE ``FATHERS'' 
 %%% ======================================================================
 
 

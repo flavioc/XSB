@@ -22,7 +22,7 @@ ALLOBJS =  flroperator$(OBJEXT) \
 	   flrshell$(OBJEXT)
 
 OPTIONS = [optimize]
-XSB = ..\..\config\x86-pc-windows\bin\xsb.exe
+PROLOG = ..\..\config\x86-pc-windows\bin\xsb.exe
 
 .SUFFIXES: .P $(OBJEXT)
 
@@ -77,6 +77,6 @@ CLEAN :
 
 
 .P$(OBJEXT):
-	$(XSB) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
+	$(PROLOG) -e "bootstrap_flora,mc(%|fF,$(OPTIONS)). halt."
 
 

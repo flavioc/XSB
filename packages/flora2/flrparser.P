@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -347,9 +347,6 @@ fldirective_struct(Direct,FLDIRECTIVE(Direct)).
 
 flcmddirect_struct(C,FLCOMMAND(C)).
 fltbldirect_struct(F,A,FLTABLE(F,A)).
-%%fldyndirect_struct(F,A,FLDYNAMIC(F,A)).
-%%flexptdirect_struct(F,A,FLEXPORT(F,A)).
-%%flimptdirect_struct(F,A,M,FLIMPORT(F,A,M)).
 flargumentsdirect_struct(F,N,Args,FLARGUMENTS(F,N,Args)).
 %%flprlgdirect_struct(F,A,FLPROLOG(F,A)).
 flfirstorderdirect_struct(F,A,FLFIRSTORDER(F,A)).
@@ -568,18 +565,15 @@ flora_parse_directive(CanoniTerm,Code,Status) :-
 	; flora_expunge_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorderall_directive(CanoniTerm,CodeList,Status)
-	%%; flora_import_directive(CanoniTerm,CodeList,Status)
-	%%; flora_export_directive(CanoniTerm,CodeList,Status)
 	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
 	%%;  flora_prologall_directive(CanoniTerm,CodeList,Status)
-	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
         ),
 	fldirective_struct(CodeList,Code),
 	!.
 
 flora_parse_directive(CanoniTerm,Code,Status) :-
 	%% The following directives are only used for compiling .fli files.
-	conget(flora_compile_include_file,1),
+	flora_get_counter(flora_compile_include_file,1),
 	( flora_flogicstatic_directive(CanoniTerm,CodeList,Status)
 	; flora_florapatch_directive(CanoniTerm,CodeList,Status)
 	),
@@ -605,7 +599,6 @@ flora_exec_directive(CanoniTerm,Code,Status) :-
 	%%  flora_prologall_directive(CanoniTerm,CodeList,Status)
 	%%;
 	  flora_firstorderall_directive(CanoniTerm,CodeList,Status)
-	%%; flora_import_directive(CanoniTerm,CodeList,Status)
 	%%; flora_prolog_directive(CanoniTerm,CodeList,Status)
 	; flora_firstorder_directive(CanoniTerm,CodeList,Status)
 	; flora_arguments_directive(CanoniTerm,CodeList,Status)
@@ -613,7 +606,6 @@ flora_exec_directive(CanoniTerm,Code,Status) :-
 	; flora_operator_directive(CanoniTerm,CodeList,Status)
 	; flora_index_directive(CanoniTerm,CodeList,Status)
 
-	%%; flora_dynamic_directive(CanoniTerm,CodeList,Status)
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_equality_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_expunge_directive(CanoniTerm,CodeList,Status)
@@ -752,62 +744,6 @@ flora_table_directlist([F/A|L],[Code|CL]) :-
 	fltbldirect_struct(F,A,Code),
 	flora_table_directlist(L,CL).
 
-
-/****************************************************************************
-  flora_dynamic_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-%%flora_dynamic_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-%%	get_name(Funct,FL_DYNAMIC),
-%%	flora_commasep_falist(T,FAList,Status),
-%%	(Status == [] -> flora_dynamic_directlist(FAList,CodeList); true).
-%%
-%%flora_dynamic_directlist([],[]) :- !.
-%%
-%%flora_dynamic_directlist([F/A|L],[Code|CL]) :-
-%%	!,
-%%	fldyndirect_struct(F,A,Code),
-%%	flora_dynamic_directlist(L,CL).
-
-
-/****************************************************************************
-  flora_export_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-%%flora_export_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-%%	get_name(Funct,FL_EXPORT),
-%%	flora_commasep_falist(T,FAList,Status),
-%%	(Status == [] -> flora_export_directlist(FAList,CodeList); true).
-%%
-%%flora_export_directlist([],[]) :- !.
-%%
-%%flora_export_directlist([F/A|L],[C1,C2|CL]) :-
-%%	!,
-%%	flprlgdirect_struct(F,A,C1),
-%%	flexptdirect_struct(F,A,C2),
-%%	flora_export_directlist(L,CL).
-
-
-/****************************************************************************
-  flora_import_directive(+CanoniTerm,-CodeList,-Status)
-****************************************************************************/
-%%flora_import_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Status) :-
-%%	get_name(Funct,FL_IMPORT),
-%%	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
-%%	get_name(F,FL_FROM),
-%%	( get_name(R,M) ->
-%%	    flora_commasep_falist(L,FAList,Status),
-%%	    (Status == [] -> flora_import_directlist(M,FAList,CodeList); true)
-%%	;
-%%	  parsing_error(R,ERROR_XSBMODULE,Status)
-%%        ).
-%%
-%%
-%%flora_import_directlist(_M,[],[]) :- !.
-%%
-%%flora_import_directlist(M,[F/A|L],[C1,C2|CL]) :-
-%%	!,
-%%	flprlgdirect_struct(F,A,C1),
-%%	flimptdirect_struct(F,A,M,C2),
-%%	flora_import_directlist(M,L,CL).
 
 
 /****************************************************************************
@@ -1722,9 +1658,10 @@ flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],
 	get_name(InnerFunct,InnerName),
 	!,
 	(get_control_construct_definition(StructType,TopWrapper,InnerName), !
-	; fmt_write_string(ErrMsg,
-			   'Illegal connective `%s'' in `%s'' construct',
-			   args(InnerName, TopWrapper)),
+	;
+	    flora_concat_atoms(['Illegal connective `', InnerName, ''' in `',
+			        TopWrapper, ''' construct'],
+			       ErrMsg),
 	    parsing_error(If,ErrMsg,Status)
 	),
 	(var(Status)
@@ -1742,17 +1679,15 @@ flora_body_controlconstruct([CANOTERM(InnerFunct,2,FL_PARENTHESIS,Args,If,_Ip)],
 
 %% If wrong number of args or wrong parenthesis - issue an error
 flora_body_controlconstruct([CANOTERM(_InnerFunct,_Arity,_Parenthesis,_Args,If,_Ip)],_WS,TopWrapper,_Code,Status) :-
-	fmt_write_string(ErrMsg,
-			 'Illegal syntax in `%s'' construct',
-			 arg(TopWrapper)),
+	flora_concat_atoms(['Illegal syntax in `', TopWrapper, ''' construct'],
+			   ErrMsg),
 	parsing_error(If,ErrMsg,Status).
 
 
 flora_body_controlconstruct([SomethingElse],_WS,TopWrapper,_Code,Status) :-
 	get_index(SomethingElse,Idx),
-	fmt_write_string(ErrMsg,
-			 'Illegal syntax in `%s'' construct',
-			 arg(TopWrapper)),
+	flora_concat_atoms(['Illegal syntax in `', TopWrapper, ''' construct'],
+			   ErrMsg),
 	parsing_error(Idx,ErrMsg,Status).
 
 

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
@@ -24,11 +24,12 @@
 */
 
 
-:- import integer/1 from standard.
-
 :- import append/3 from basics.
 
-:- import conget/2 from gensym.
+:- import
+	flora_get_counter/2,
+	flora_concat_atoms/2
+   from flrporting.
 
 :- import
 	flora_begin_file/1,

@@ -2,7 +2,7 @@
 **
 ** Author(s): Guizhen Yang
 **
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -61,14 +61,14 @@ flora_token_rulenum(N,RuleNum) :-
 index_tokens([],N,RuleNum) :-
 	!,
 	%% Store the sequence number for the next rule.
-	eval(RuleNum+1,X),
-	conset(RLCNT,X),
+	X is RuleNum+1,
+	flora_set_counter(RLCNT,X),
 	%% Store the index sequence number after indexing all tokens.
-	conset(TKCNT,N).
+	flora_set_counter(TKCNT,N).
 
 index_tokens([T|Ts],N,RuleNum) :-
 	assert(indexed_token(N,RuleNum,T)),
-	eval(N+1,M),
+	M is N+1,
 	index_tokens(Ts,M,RuleNum),
 	!.
 
@@ -87,6 +87,8 @@ token_by_index(Index,Token) :-
 	indexed_token(Index,_,Token).
 
 token_by_index(Index,Token) :-
+	%% Index can be an arithmetic expression, so evaluate it
+	%% Should use M is N, but some onscure bug in XSB prevents
 	eval(Index,N),
 	indexed_token(N,_,Token).
 
@@ -104,7 +106,7 @@ is_next_token(Index,Token) :-
 	    true
 
 	; (T=WHITESPACE(_); T=COMMENT(_)) ->
-	    eval(Index+1,N),
+	    N is Index+1,
 	    is_next_token(N,Token)
 	;
 	  !,
@@ -296,8 +298,8 @@ max_error2(composing_error(N11,N12,M1),[composing_error(N21,N22,M2)|T],X) :-
 ***************************************************************************/
 flora_reset_composer :-
 	retractall(indexed_token(_,_,_)),
-	conset(RLCNT,LOW_INDEX),
-	conset(TKCNT,LOW_INDEX).
+	flora_set_counter(RLCNT,LOW_INDEX),
+	flora_set_counter(TKCNT,LOW_INDEX).
 
 
 /***************************************************************************
@@ -321,9 +323,9 @@ flora_compose(_,_,_) :-
 
 flora_compose(Tokens,Term,Status) :-
 	%% Get the rule sequence number.
-	conget(RLCNT,RuleNum),
+	flora_get_counter(RLCNT,RuleNum),
 	%% Get the index sequence number.
-	conget(TKCNT,N),
+	flora_get_counter(TKCNT,N),
 	index_tokens(Tokens,N,RuleNum),
 	flora_compose(NULL,[],[],N,Term,Status),
 	!.
@@ -350,6 +352,8 @@ flora_compose(_,_,[ErrorMsg]) :-
   (7)Status: status of composing (error(TkIndx,Msg), warning(TkIndx,Msg))
 ***************************************************************************/
 flora_compose(PrevToken,TmStack,OpStack,N,Term,Status) :-
+	%% N can be an arithmetic expression, so evaluate it
+	%% Should use M is N, but some obscure XSB bug prevents
 	eval(N,M),
 	( token_by_index(M,CurToken) ->
 	    flora_compose(PrevToken,TmStack,OpStack,M,CurToken,Term,Status)
@@ -357,9 +361,7 @@ flora_compose(PrevToken,TmStack,OpStack,N,Term,Status) :-
 	; PrevToken == NULL, TmStack == [], OpStack == [] ->
 	    Term=NULL,
 	    Status=[]
-
-	;
-	  eval(M-1,K),
+	; K is M-1,
 	  report_error(K,UNEXP_EOR),
 	  fail
         ).
@@ -433,7 +435,7 @@ compose_sole_operator(PrevToken,TmStack,OpStack,N,Op,Term,Status) :-
 ***************************************************************************/
 compose_atom_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
 	is_right_brace(X,B),
-	eval(N+1,M),
+	M is N+1,
 	is_next_token(M,X),
 	!,
 	see_operand(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status).
@@ -460,7 +462,7 @@ compose_atom_operator(PrevToken,TmStack,OpStack,N,CurToken,Term,Status) :-
 ***************************************************************************/
 compose_symobject_operator(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status) :-
 	is_right_brace(X,B),
-	eval(N+1,M),
+	M is N+1,
 	is_next_token(M,X),
 	!,
 	see_operand(BRACE(B,I),TmStack,OpStack,N,CurToken,Term,Status).

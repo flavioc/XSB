@@ -1,7 +1,7 @@
 /* File:      flrlexer.H
 **
 ** Author(s): Guizhen Yang
-** Contact:   xsb-contact@cs.sunysb.edu
+** Contact:   flora-users@lists.sourceforge.net
 **
 ** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
@@ -28,11 +28,14 @@
 
 :- import append/3 from basics.
 
-:- import conget/2, conset/2 from gensym.
-
-:- import fmt_write_string/3 from file_io.
-
 :- import parse_filename/4 from machine.
+
+:- import
+	flora_concat_atoms/2,
+	flora_get_counter/2,
+	flora_set_counter/2,
+	flora_increment_counter/4
+   from flrporting.
 
 :- dynamic flora_file_stack/2.
 :- index(flora_file_stack/2,trie).
@@ -50,4 +53,3 @@
 	flora_begin_file/1,
 	flora_end_file/1,
 	flora_current_compile_filename/1.
-
