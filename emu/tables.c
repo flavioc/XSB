@@ -82,29 +82,25 @@ void table_call_search(TabledCallInfo *call_info, CallLookupResults *results) {
      * are still arranged from high mem (first) to low (last).
      */
     CPtr tmplt_component, ls_top, ls_bot, tmplt_var_addr, h_addr;
-    int size, j;
+    int size, j, attv_num, tmp;
 
     tmplt_component = CallLUR_VarVector(*results);
-    size = int_val(*tmplt_component);
+    tmp = int_val(*tmplt_component);
+    get_var_and_attv_nums(size, attv_num, tmp);
+
     ls_top = top_of_localstk;
     ls_bot = (CPtr)glstack.high - 1;
     for ( j = size - 1, tmplt_component = tmplt_component + size;
 	  j >= 0;
 	  j--, tmplt_component-- ) {
       tmplt_var_addr = (CPtr)*tmplt_component;
+      /* Now we are sure that tmplt_var_addr is a var on the heap */
       h_addr = hreg+j;
-      /* preserve WAM invariants: no vars from heap to local stack ! */
-      if ((ls_top <= tmplt_var_addr) && (tmplt_var_addr <= ls_bot)) {
-	bld_free(h_addr);
-	/* globalize the variable: trailing is needed -- below CP */
-	bind_ref(tmplt_var_addr, (Cell)(h_addr));
-      }
-      else {
-	bld_copy(h_addr, (Cell)(tmplt_var_addr));
-      }
+      bld_copy(h_addr, (Cell)(tmplt_var_addr));
     }
     hreg += size;
-    new_heap_num(hreg, size);
+    bld_copy(hreg, cell(CallLUR_VarVector(*results)));
+    hreg++;
     /* orig version in tries.c had VarPosReg pointing at Var_{m} */
     CallLUR_VarVector(*results) = CallLUR_VarVector(*results) + size + 1;
   }
