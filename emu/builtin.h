@@ -66,7 +66,7 @@
 #define BUFF_DEALLOC	36
 #define BUFF_CELL	37
 #define BUFF_SET_CELL	38
-#define COPY_TERM0	39
+#define COPY_TERM	39
 /* check for substring */
 #define STR_SUB	        40
 #define DIRNAME_CANONIC 41

@@ -63,7 +63,6 @@
 	code_load/3, 
 	file_gettoken/5,
 	stat_cputime/1, 
-	copy_term0/2,
         str_sub/3,
         dirname_canonic/2,
 	psc_insert/4, 

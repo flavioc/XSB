@@ -27,5 +27,5 @@
 	  member/2, memberchk/2, subset/2, reverse/2, select/3.
 :- export log_ith/3, log_ith_bound/3.
 
-:- import copy_term0/2, term_type/2 from machine.
+:- import term_type/2 from machine.
 :- import integer/1, is_list/1 from standard.

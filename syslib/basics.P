@@ -36,8 +36,8 @@ append([],L,L).
 append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
 
 %---
-/* copy_term0 is defined in machine.P */
-copy_term(A,B) :- copy_term0(A,B).
+/* copy_term is an inlined builtin */
+copy_term(Term, Result) :- copy_term(Term, Result).
 
 %---
 flatten([H|T],Flatlist):-
