@@ -167,7 +167,7 @@ co_asmhead(Modname, LdOption, PSC_Count) :-
 	put(Length),
 	write(Modname),
 	( LdOption == '' -> put(0) % No ldoption was specified (length is 0).
-	; str_len(LdOption, LdoLen), put(LdoLen), write(LdOption)
+	; str_len(LdOption, LdoLen), asm_putlength(LdoLen), write(LdOption)
 	),
 	write_int(PSC_Count).
 
@@ -176,10 +176,10 @@ co_asmsym([One|ExList]) :- co_one(One), co_asmsym(ExList).
 
 co_one(P/A) :-
 	str_len(P, L),
-	put(0),	% domain = ex(ported)
-	put(T_FORN),	% type = T_FORN (in psc_xsb.h)
-	put(A),		% arity = a
-	put(L),		% length
+	put(0),			% domain = ex(ported)
+	put(T_FORN),		% type = T_FORN (in psc_xsb.h)
+	put(A),			% arity = a
+	asm_putlength(L),	% length
 	write(P).		
 
 /*======================================================================*/
