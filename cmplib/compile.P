@@ -156,8 +156,8 @@ table_process(ModuleIn, ModuleOut, SFile) :-
 	),
 	conget('table #', Tables),
 	( Tables =:= 0 -> ModuleOut = ModuleMid
-	; cp_opt(ModuleMid, ModuleOut), 
-          ( option(no_check) -> true ; build_graph(ModuleOut) )
+	; cp_opt(ModuleMid, ModuleOut)
+          %%,( option(no_check) -> true ; build_graph(ModuleOut) )
 	),
 	( option(table_dump) -> dump_module(SFile, ModuleOut) ; true ).
 
