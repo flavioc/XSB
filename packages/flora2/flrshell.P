@@ -141,15 +141,15 @@ help :-
 	flora_stdmsg_line('o one'),
 	flora_stdmsg_line('    show solutions one by one'),
 	flora_stdmsg_line('o maxerr(all|N)'),
-	flora_stdmsg_line('    set/show the error reporting threshold'),
+	flora_stdmsg_line('    set/show the maximum number of errors FLORA reports'),
 	flora_stdmsg_line('o fltrace/flrnotrace'),
 	flora_stdmsg_line('    turn on/off FLORA trace'),
 	flora_stdmsg_line('o chatter/nochatter'),
 	flora_stdmsg_line('    turn on/off FLORA chatter'),
 	flora_stdmsg_line('o end'),
-	flora_stdmsg_line('    Ciao to FLORA'),
+	flora_stdmsg_line('    say Ciao to FLORA'),
 	flora_stdmsg_line('o halt'),
-	flora_stdmsg_line('    Ciao both to FLORA and XSB').
+	flora_stdmsg_line('    quit both FLORA and XSB').
 
 
 /*********************************************************************/
