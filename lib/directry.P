@@ -185,7 +185,7 @@ split_dirs(Path,Drive,LDirs) :-
 	->  atom_codes(Path,CPath)
 	;   CPath = Path
 	),
-	set_scan_pars([no_case]),
+	set_scan_pars([no_case,letter(0'_)]),
 	scan(CPath,SCPath),
 	path(Drive,LDirs,SCPath,[]),
 	!.
@@ -218,12 +218,20 @@ opt_slash --> slash.
 %% given, and they are different, RelPath = Dest.
 
 rel_path(Orig, Dest, RelPath) :-
-	split_dirs(Orig,ODrive,ODirs),
-	split_dirs(Dest,DDrive,DDirs),
+	split_dirs(Orig,ODrive,ODirs0),
+	elim_mixed(ODirs0,ODirs),
+	split_dirs(Dest,DDrive,DDirs0),
+	elim_mixed(DDirs0,DDirs),
 	(   ODrive = DDrive
 	->  make_relative(ODirs,DDirs,RelPath)
 	;   atom_codes(RelPath,Dest)
 	).
+
+elim_mixed([],[]) :- !.
+elim_mixed([mixed(H)|T],[H|T1]) :- !,
+	elim_mixed(T,T1).
+elim_mixed([H|T],[H|T1]) :-
+	elim_mixed(T,T1).
 
 make_relative([],[],'.') :- !.
 make_relative([],D,CD) :- !,
