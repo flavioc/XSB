@@ -1,0 +1,2665 @@
+\documentclass[11pt]{article}
+
+\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb,alltt}
+
+\pagestyle{headings}
+\bibliographystyle{plain}
+
+%%\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{10pt}
+\setlength{\headsep}{30pt}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textheight}{8.5in}
+\setlength{\textwidth}{6.5in}
+\setlength{\footskip}{50pt}
+
+
+\setlength{\parskip}{2mm}               % space between paragraphs
+
+\def\cut{\mbox{\tt '!'/0}}
+
+\newtheorem{example}{Example}[section]
+
+\newenvironment{Prog}{\begin{tt}\begin{tabular}[c]{l}}{\end{tabular}\end{tt}}
+
+\newcommand{\comment}[1]{}
+
+\newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
+\newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
+\newcommand{\desce}[1]{\item[{\tt #1}]}
+\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
+\newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
+\newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
+
+\newcommand{\stuff}[1]{
+        \begin{minipage}{4in}
+        {\tt \samepage
+        \begin{tabbing}
+        \hspace{8mm} \= \hspace{6mm} \= \hspace{10mm} \= \hspace{55mm} \= \kill
+        #1 \hfill
+        \end{tabbing}
+        }
+        \end{minipage}
+}
+
+\newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
+
+
+\newenvironment{qrules}{\begin{quote}\sf\begin{tabular}[t]{l}}%
+{\end{tabular}\end{quote}}
+
+
+\newcommand{\obj}{\textit{obj}\xspace}
+\newcommand{\db}[1]{\ensuremath{\mathcal{#1}}}
+
+\newcommand{\xany}{\textsf{any}}
+
+\newcommand{\xplus}{\ensuremath{^+}}
+\newcommand{\xstar}{\ensuremath{^*}}
+\newcommand{\xinv}{\ensuremath{^{-1}}}
+\newcommand{\xopt}{\ensuremath{^{?}}}
+
+\newcommand{\xto}[1]{\ensuremath{^{#1}}}
+\newcommand{\xcond}[1]{\ensuremath{\textsf{if}(#1)}}
+\newcommand{\xif}[1]{\ensuremath{\textsf{if}(#1)}}
+\newcommand{\xmu}[1]{\ensuremath{\tcmu(#1)}}
+\newcommand{\xmuif}[2]{\ensuremath{\tcmu(#1,#2)}}
+
+
+\newcommand{\xconc}{\ensuremath{{\cdot}}}
+\newcommand{\xor}{\ensuremath{|}}
+
+\newcommand{\nnot}{\mbox{$\neg$}}                           % negation
+\newcommand{\query}{\mbox{$\, ?\! - \, $}}                  % query
+\newcommand{\impl}                                          % implication
+  {\mbox{\Large $\; {\bf \leftarrow} \;$}}  
+\newcommand{\isa}{\,{\bf{:}}\,}
+\newcommand{\subcl}{\,{\bf{::}}\,}
+\newcommand{\eq}{\ensuremath{\doteq}}                           % equation
+
+% f-logic arrows
+
+\newcommand{\fd}{\ensuremath{{\rightarrow}}}                   % scalar
+\newcommand{\bfd}{\ensuremath{{\bullet\!\!\!\fd}}}            % " + inheritable
+\newcommand{\mvd}{\ensuremath{{\rightarrow\!\!\!\!\rightarrow}}}  % multivalued
+\newcommand{\bmvd}{\ensuremath{{\bullet\!\!\!\mvd}}}              % " + inheritable
+\newcommand{\Fd}{\ensuremath{{\Rightarrow}}}                      % scalar signature
+\newcommand{\Mvd}{\ensuremath{{\Rightarrow\!\!\!\!\Rightarrow}}}  % multiv signature
+
+
+
+% curved f-logic arrows
+
+\newcommand{\anyd}{\ensuremath{\leadsto}}                       % noninheritable
+\newcommand{\bleadsto}{\ensuremath{\bullet\!\!\!\leadsto}}     % inheritable
+\newcommand{\banyd}{\bleadsto}                              % "
+\newcommand{\Leadsto}{\ensuremath{\approx}\!\!{>}}            % signature
+\newcommand{\Anyd}{\Leadsto}                                % "
+
+\newcommand{\FdConstr}{\ensuremath{\stackrel{constr}{\Fd}}}
+\newcommand{\MvdConstr}{\ensuremath{\stackrel{constr}{\Mvd}}}
+
+\newlength{\flogicindent}
+
+
+\newlength{\flength}
+\newlength{\counterlength}
+
+
+\newcommand{\la}{\ensuremath{\,\leftarrow\,}}
+
+\newcommand{\anon}{\_}
+
+\newcommand{\note}[1]{\textit{[[#1]]}}
+\newcommand{\nterm}[1]{\ensuremath{\langle}\textit{#1}\ensuremath{\rangle}}
+
+
+
+\newcommand{\bs}{\ensuremath{\backslash}}
+\newcommand{\FLIP}{{\mbox{\sc Flip}}\xspace}
+\newcommand{\FLORA}{{\mbox{${\cal F}${\sc lora}\rm\emph{-2}}}\xspace}
+\newcommand{\FLORAone}{{\mbox{${\cal F}${\sc lora}}}\xspace}
+\newcommand{\FLORID}{{\mbox{\sc Florid}}\xspace}
+\newcommand{\fl}{\mbox{F-logic}\xspace}
+
+
+\newcommand{\consts}{\ensuremath{\mathcal{C}}}
+\newcommand{\funcs}{\ensuremath{\mathcal{F}}}
+\newcommand{\preds}{\ensuremath{\mathcal{P}}}
+\newcommand{\vars}{\ensuremath{\mathcal{V}}}
+
+\newcommand{\HU}{\ensuremath{U}}
+\newcommand{\HB}{\ensuremath{\mathcal{HB}}}
+\newcommand{\ext}{\ensuremath{^{\star}}}
+
+\newcommand{\bksl}{\symbol{92}}
+\newcommand{\dq}{\symbol{34}}
+
+
+\title{\FLORA: Users Manual}
+
+\author{
+  Guizhen Yang
+  \and
+  Michael Kifer
+  }
+  
+\makeindex
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\newpage
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\tableofcontents
+
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+
+\section{Introduction}
+
+\FLORA is a sophisticated \fl to XSB compiler and application
+development platform. It translates a program written in the \fl
+language \cite{KLW95} (which must be in a file with extension {\tt .flr},
+{\it e.g.}, {\tt file.flr}) and outputs a regular XSB program (with
+extension {\tt .P}). This program is
+then passed to XSB for compilation (yielding {\tt file.O}) and execution.
+
+\index{FLIP}
+\index{FLORID}
+%%
+\FLORA was implemented by Guizhen Yang, but its origins trace back to the
+\FLIP compiler developed by Bertram Lud\"aescher.  The programming language
+supported by \FLORA is a dialect of \fl with some extensions borrowed
+from \FLORID, a C++-based \fl system developed at Freiburg
+University.\footnote{
+  %%
+  See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
+  details.
+  %%
+  }
+%%
+In particular, \FLORA fully supports the versatile syntax of \FLORID path
+expressions. However, \FLORA has numerous extensions of its own.  Of
+particular importance is the support for HiLog \cite{hilog-jlp} and
+Transaction Logic \cite{trans-dbpl93,trans-iclp93,trans-tcs94}, both of
+which are smoothly integrated with \fl. Extensions aside, the syntax of
+\FLORA also differs in some important ways both from \FLORID, the original
+version of \fl as described in \cite{KLW95}, as well as from \FLORAone,
+Release 1. These syntactic changes were needed in order to bring the syntax
+of \FLORA closer to that of Prolog and make it possible to include typical
+Prolog programs into \FLORA programs without choking the compiler.
+It was also the result of the added support for HiLog, which made the use
+of the ``@'' sign in method invocations superfluous.
+
+\FLORA is part of the official distribution of XSB beginning with version
+2.3. It is organized as an XSB package and lives in the directory
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flora2/|  
+\end{quote}
+%%
+\FLORA is fully integrated into the XSB system, including its module
+system. In particular, \FLORA modules can invoke predicates defined in
+other XSB modules, and regular XSB modules can query the objects defined in
+\FLORA modules. At present, XSB is the only platform where \FLORA can run,
+because it heavily relies on tabling and the well-founded semantics for
+negation that at the moment are available only in XSB.
+
+As mentioned earlier, an XSB programmer can invoke \FLORA methods from
+other XSB programs. However, the easiest way to get a feel of the system
+is to start \FLORA shell and begin to enter queries interactively.  To
+this end, you must first invoke XSB and then load the {\tt flora2}
+package:
+%%
+\begin{quote}
+  \tt
+foo>~~xsb  \\
+\tt
+... XSB loading messages omitted ...\\
+\tt
+| ?- [flora2].\\
+\tt
+[flora2 loaded]\\
+\tt
+| ?-
+\end{quote}
+%%
+At this point, it is possible to use a limited number of \FLORA
+commands, but to run queries you must enter the \FLORA command loop:
+%%
+\begin{quote}
+  \tt
+| ?- flora\_shell.  \\
+ \tt
+... FLORA messages omitted ... \\
+ \tt
+flora2 ?-
+\end{quote}
+%%
+
+At this point, \FLORA takes over and \fl syntax becomes the
+norm. To get back to the XSB command loop, type {\tt Control-D} or 
+%%
+\begin{quote}
+  \tt
+| ?- end.  
+\end{quote}
+%%
+
+If you are using \FLORA shell frequently, it pays to define an alias, say,
+%%
+\begin{quote}
+ {\tt
+   alias flora2='xsb -e "[flora2], flora\_shell."'
+   }
+\end{quote}
+%%
+\FLORA can then be invoked directly from the shell prompt by typing
+\begin{quote}
+  \tt
+foo>~~flora2
+\end{quote}
+%%
+It is even possible to tell it to execute commands on start-up.
+For instance, 
+%%
+\begin{quote}
+ \tt
+ foo>~~flora2 -e "help."
+\end{quote}
+%%
+will cause the system to execute the help command right after the start.
+Then the usual \FLORA shell prompt is displayed.
+
+\noindent
+\FLORA comes with a number of demo programs that live in
+%%
+\begin{quote}
+ \verb|<xsb-installation-directory>/packages/flora2/demos/|  
+\end{quote}
+%%
+The demos can be run by issuing the command
+``\verb|rundemo(demo-filename).|''
+at the \FLORA prompt, {\it e.g.},
+%%
+\begin{quote}
+ \verb|flora2 ?- rundemo(flogic_basics).|
+\end{quote}
+%%
+There is no need to change to the demo directory, as {\tt rundemo} knows
+where to find the demos.
+
+
+\section{\FLORA Shell Commands} \label{sec-shell-commands}
+
+The following \FLORA shell commands are supported:
+%\begin{verbatim}
+\begin{itemize}
+\item {\tt help}:
+    show this help info
+\item {\tt compile(FILE[.P])}:
+    compile FILE.P; create FILE.O
+\item {\tt flcompile(FILE[.flr])}:
+    compile FILE.flr for the default module `main'
+\item {\tt flcompile(FILE[.flr],Module)}:
+    compile FILE.flr for the module `Module'
+\item {\tt flcompinc(FILE[.fli])}:
+    compile \FLORA template include file
+\item {\tt flconsult(FILE[.flr])}:
+    load FILE.flr into the default module `main'
+\item {\tt flload(FILE[.flr],Module)}:
+    load FILE.flr into the module `Module'
+\item {\tt flload(FILE[.\{P$|$O$|$flr\}])}:
+    load FILE.flr (into the default module `main'), or FILE.P or FILE.O
+\item {\tt [FILE[.\{P$|$O$|$flr\}][$>>$ Module],...]}:
+    load a list of .flr (into the module `Module'), .P, or .O files
+\item {\tt rundemo(FILE)}:
+    consult a demo from \FLORA demos directory
+\item {\tt flloadtrailer(\{standard$|$equality\},Module)}:
+    load the standard/equality trailer into the module `Module'
+\item {\tt flloadtrailer(\{standard$|$equality\})}:
+    load the standard/equality trailer into the default module `main'
+\item {\tt abolish\_all\_tables}:
+    flush all tabled data
+\item {\tt prolog Functor/Arity}:
+    define Functor/Arity as Prolog in shell mode
+\item {\tt nohilog Functor/Arity}:
+    define Functor/Arity as non-HiLog in shell mode
+\item {\tt sign Functor(\{oid$|$form\}[,\{oid$|$form\}]*)}:
+    define predicate signature in shell mode
+\item {\tt op(Precedence,Associativity,Operator)}:
+    define an operator in shell mode
+\item {\tt reset(prolog$|$nohilog$|$sign$|$op)}:
+    clear all dynamic prolog/nohilog/sign/op definitions in shell mode
+\item {\tt all}:
+    show all solutions (default)
+\item {\tt one}:
+    show solutions one by one
+\item {\tt maxerr(all$|$N)}:
+    set/show the maximum number of errors \FLORA reports
+\item {\tt fltrace/flrnotrace}:
+    turn on/off \FLORA trace
+\item {\tt chatter/nochatter}:
+    turn on/off \FLORA chatter
+\item {\tt end}:
+    say Ciao to \FLORA
+\item {\tt halt}:
+    quit both \FLORA and XSB
+\end{itemize}
+%\end{verbatim}
+
+All commands with a FILE argument passed to them use the XSB
+{\tt library\_directory} predicate to search for the file, except that the
+command {\tt rundemo(FILE)} first looks for {\tt FILE} in the \FLORA demo
+directory. In general, all XSB commands can be executed from \FLORA shell,
+if the corresponding XSB library has already been loaded.
+
+After a syntax error, parsing error, or compiling error, \FLORA shell will
+discard tokens read from the current input stream until the end of file or a
+rule delimiter (``.'') is encountered. If \FLORA shell seems to hang forever
+after the prompt:
+\begin{verbatim}
+++FLORA Warning: discarding tokens (rule delimeter `.' or EOF expected)
+\end{verbatim}
+hitting the Enter key once, then entering a ``.'' character and Enter again
+will normally reset the current input buffer and cause \FLORA issue a
+command prompt:
+\begin{verbatim}
+flora2 ?-
+\end{verbatim}
+
+ 
+\section{\fl and \FLORA by Example}
+
+In the future, this section will contain a number of small
+introductory examples illustrating the use of \fl and \FLORA. Meanwhile, the
+reader is referred to the excellent tutorial written by the members of the
+\FLORID project.\footnote{
+  %%
+  See {\tt http://www.informatik.uni-freiburg.de/$\sim$dbis/florid/} for more
+  details.
+  %%
+  }
+%%
+Since \FLORA and \FLORID share much of the same syntax, most examples in that
+tutorial can be made into valid \FLORA programs by changing the separator
+``;'' used in F-molecules into ``,'' and by eliminating the ``@''
+sign in method invocations.
+
+
+
+\section{Inside \FLORA}
+
+
+\FLORA consists of the following modules:
+\begin{itemize}
+\item \texttt{flrshell.P}: the top level module that provides the \FLORA shell
+  commands for compiling and consulting \FLORA programs, for setting the output mode,
+  and -- last but not the least -- for directly issuing queries against the loaded
+  database/program (see Section~\ref{sec-shell-commands} for a full
+  description of shell commands).
+\item \texttt{flrlexer.P}: the \FLORA lexer.
+\item \texttt{flrcomposer.P}: the \FLORA composer that parses tokens according to operator grammar.
+\item \texttt{flrparser.P}: the \FLORA parser.
+\item \texttt{flrcompiler.P}: the \FLORA compiler that translates \fl to XSB.
+\item \texttt{flrcoder.P}: the \FLORA coder that generates XSB code.
+\item \texttt{flrutils.P}: miscellaneous utility predicates.
+\end{itemize}
+%%
+Additional system libraries are located in the {\tt syslib/} subdirectory.
+The sbudirectory {\tt trailer/} contains two trailers that can be
+loaded by the \FLORA commands {\tt flloadtrailer/1} and \linebreak
+{\tt flloadtrailer/2}. There
+is also a number of files in the {\tt closure/} subdirectory that serve as
+headers and trailers that are automatically included into the {\tt .P} files by the
+\FLORA compiler (explained later).
+
+
+
+\subsection{How It Works}
+
+
+
+\paragraph{Overview.}
+
+As an \fl-to-XSB compiler, \FLORA first parses its source file,
+compiles it into XSB syntax and then outputs XSB code. For instance the command
+\begin{quote}
+\verb|flora ?- flconsult(myprog).|
+\end{quote}
+would compile the \FLORA program ``{\tt myprog.flr}'' and generate the
+following files: ``{\tt myprog.flh}'', ``{\tt myprog.P}'',
+``{\tt myprog\_main.P}'', and ``{\tt myprog.fdb}'' (if ``{\tt myprog.flr}''
+contains \fl facts).  By default, {\tt flconsult(myprog)} loads the
+program into the default module named ``main''. ``{\tt myprog.flh}''
+contains this module name definition.  If ``{\tt myprog.flr}''
+contains \fl facts, all these facts will be compiled separately into
+the XSB file ``{\tt myprog.fdb}'' that is to be dynamically loaded at
+runtime. When the compilation process continues, the file ``{\tt
+myprog\_main.P}'' will be generated and passed to the XSB compiler,
+yielding byte code ``{\tt myprog\_main.O}'', which is then loaded and
+executed.  If ``{\tt myprog.flr}'' contains queries, they are
+immediately executed by XSB (provided there are no errors).
+
+In the module system of \FLORA, a program can be loaded into any
+arbitrarily named module. Even the same program can loaded into
+different modules at the same time. For each module, a different byte
+code will be generated (module name is appended to the source file
+name to generate the name of the file containing the byte code). This
+is achieved by encoding the name of the module into all predicates
+(not function symbols) appearing in the program. Take a look at
+``{\tt myprog\_main.P}'' to see what has become of your \FLORA program!
+
+The main purpose of the \FLORA shell, however, is to allow the evaluation
+of ad-hoc \fl queries. For example, after having consulted the
+the \texttt{'default.flr'} file from the demo directory by launching
+the command \texttt{flora2~?-~rundemo(default).}, you may ask
+\begin{verbatim}
+    flora2 ?-  X..kids[                 % Whose kids
+                 self -> K,             % ... (list them by name)
+                 hobbies ->>            % ... have hobbies
+                   H:dangerous_hobby    % ... that are dangerous?
+    ]. 
+\end{verbatim}
+\FLORA will parse, flatten, and evaluate this query in the same way as
+those queries in a source program.
+
+
+\paragraph{\FLORA compilation.}
+The basic idea behind the implementation of \fl by translating it into
+predicate calculus is described in \cite{KLW95}. It consists of two parts:
+translation of F-molecules into various kinds of Prolog predicates, and
+addition of appropriate ``closure rules'' that implement the
+object-oriented semantics of the logic.
+
+Consider, for instance, the following complex F-molecule, representing
+facts about the object \texttt{mary} (the syntax of \fl is given in
+Section \ref{sec-basic-flogic}):
+
+\begin{quote}
+{\small\begin{verbatim}
+mary:employee[age->29, kids->>{tim,leo}, salary(1998)->a_lot].
+\end{verbatim}}
+\end{quote}
+
+As described in \cite{KLW95}, any complex F-molecule can be
+decomposed into a conjunction of simpler \fl atomic formulas. These
+latter atoms can be directly represented using Prolog syntax.  For
+different kinds of \fl atoms we use different Prolog predicates. For
+instance, the result of translating the above F-molecule might be:
+
+\begin{quote}
+{\small
+\begin{verbatim}
+isa(mary,employee).           % mary:employee.
+fd(mary,age,29).              % mary[age->29].
+mvd(mary,kids,tim).           % mary[kids->>{tim}].
+mvd(mary,kids,leo).           % mary[kids->>{leo}].
+fd(mary,salary(1998),a_lot).  % mary[salary(1998)->a_lot].
+\end{verbatim}
+  }
+\end{quote}
+%%
+
+\index{closure axioms}
+The closure axioms are intended to provide the following semantic features:
+%%
+\begin{itemize}
+\item Compute transitive closure of ``\subcl'' (the subclass relationship).  A
+  runtime check warns about cycles in the subclass hierarchy.
+\item Compute closure of ``\isa'' with respect to ``\subcl'', i.e., if $X\isa C,
+  C\subcl D$ then $X\isa D$.
+\item Perform monotonic and non-monotonic inheritance.
+\item Make sure that scalar methods are, indeed, scalar.
+\end{itemize}
+%%
+Templates for these axioms reside in the subdirectory \texttt{closure/}.
+
+The above is a much simplified picture of the inner-workings of \FLORA. The
+actual translation into Prolog and the form of the closure rules is very
+complex.  Some of this complexity exists to ensure good performance.  Other
+complications come from the need to provide a module system of \FLORA and
+integrate it into the XSB system.  The module system serves two purposes.
+First, it promotes modular design for \FLORA programs, making it possible
+to split the code into separate files and import objects defined in other
+modules. Second, it allows \FLORA programs to communicate with XSB by using
+the predicates defined in XSB programs and letting XSB programs use \FLORA
+objects.  Some of these implementation issues are described in
+\cite{guiz-flora-00}.
+
+
+\subsection{Equality Maintenance}
+
+
+Equality of object identities (oids) stems in the first place from the
+closure axioms stupilated on scalar methods in \fl. For instance, consider
+the following \fl facts:
+\begin{quote}
+mary[spouse{\fd}john]. \\
+mary[spouse{\fd}joe]. \\
+john[son{\mvd}frank].
+\end{quote}
+Because ``{\tt spouse}'' is a scalar method, i.e., single-valued method,
+we know that the oids ``{\tt john}'' and ``{\tt joe}'' represent
+the same object. Therefore, whatever is true about ``{\tt john}'' should
+be also true about ``{\tt joe}'', and vice versa. Thus we can derive
+that {\tt joe[son{\mvd}frank]}.
+
+What is illustrated above is just a very simple scenario of equality
+maintenance. Once oids are identified, it needs to propogate to all
+\fl structures, including the subclass hierarchy, the ISA hierarchy, etc.
+However, users do not have to worry about the various aspects of equality
+maintenance. The equality maintenance rules and other closure axioms
+are already implemented in the trailers and will be automatically included
+into the final file by the \FLORA compiler.
+
+By default, \FLORA does not use the trailer with equality maintenance,
+since equality maintenance consumes more resources. To inform the
+\FLORA compiler of the interest in equality maintenance, just include
+the following line in the source program:
+\begin{quote}
+\verb|a:=:a.|
+\end{quote}
+In fact, the operator ``{\tt :=:}'' can be used to explicitly define
+equality in a program. If the \FLORA compiler sees any equality
+definition in a program, it will automatically use the trailer with
+equality maintenance. Since {\tt a:=:a} only trivially identifies
+the oid {\tt a} with itself, its net effect is just to force the
+\FLORA compiler to use the trailer with equality maintenance. Note
+that the reflexive and transitive aspects of equality maintenance are
+already automatically taken care of in the \FLORA trailer, users do
+not need to implement them in the program.
+
+
+\section{Basic \fl Syntax}
+
+
+\subsection{\fl Vocabulary}\label{sec-basic-flogic}
+
+
+\begin{itemize}
+\item \emph{Symbols}: The \fl alphabet of \emph{object constructors}
+  \index{object constructor}
+  consists of the sets \funcs (function symbols), \preds (predicate symbols
+  including $=$), and \vars (variables).  Variables begin with a
+  capitalized letter or an underscore, followed by zero or more letters
+  and/or digits and/or underscores (e.g., $\tt X, Name, \_, \_v\_5$).
+  All other symbols, including the constants (which are 0-ary object
+  constructors), are symbols that start with a lowercase letter (e.g., {\tt a,
+  john}). Constants can also be any string of symbols enclosed in single
+  quotes (e.g., {\tt 'AB@*c'}). 
+  In addition to the usual first-order connectives and symbols, there is a
+  number of special symbols:
+  ], [, \}, \{, ``,'', ``;'', \#, \_\#, \fd, \mvd, \Fd,
+  \Mvd, \isa, \subcl. Later we will explain other symbols introduced by
+  the inheritance mechanism.
+  
+\item \emph{Variables}: The variable ``\_'' is called \emph{anonymous}
+  variable. It is used whenever a \emph{unique} new variable is needed.
+  In particular, two different occurrences of ``\_'' in the same clause are
+  treated as different variables. The variables that start with an
+  underscore, e.g., {\tt \_foo}, are \emph{not} anonymous and two
+  different occurrences of such a variable in the same clause refer to the
+  same variable. Nevertheless, such variables have special status as far as
+  error checking is concerned. The practice of logic programming shows that
+  a singleton occurrence of a variable in a clause is often a mistake
+  due to misspelling. Therefore, \FLORA issues a warning when
+  it finds that some variable is mentioned only once in a clause. If such
+  an occurrence is truly intended, it must be replaced by an anonymous
+  variable or a variable that begins with the underscore to avoid the
+  warning message from \FLORA.
+
+  %%
+  \index{id-term}
+  \index{oid}
+  \index{object identifier}
+\item \emph{Id-Terms/Oids}:
+    First-order terms over \funcs\ and \vars\ are called \emph{id-terms},
+    and are used to name objects, methods, and classes.  Ground id-terms
+    (i.e., terms with no variables) correspond to \emph{logical
+      object identifiers} (\emph{oid}s), also called object \emph{names}.
+    Numbers (including integers and floats) can also be used as id-terms,
+    but such use might be confusing and is not recommended.
+  \index{atomic formula!in \fl}
+\item \emph{Atomic formulas}: Let $O,M,R_{i},X_{i},C,D,T$ be id-terms.  In
+  addition to the usual first-order atomic formulas, like
+  $p(X_1,\dots,X_n)$, there are the following basic types of formulas:
+  \medskip
+
+  \begin{math} \sf
+    \hfill (1)~~O[M\fd R_0] \hfill (2)~~O[M\mvd \{R_1,\dots,R_n\}]
+    \hfill (3)~~C[M\Fd T] \hfill (4)~~C[M\Mvd T]. \hfill
+  \end{math} \medskip
+  
+  \index{data atom}
+  \index{atom!data}
+  \index{method}
+  \index{method!single-valued}
+  \index{method!scalar}
+  \index{method!set-valued}
+
+  (1) and (2) are \emph{data atoms}, which specify that a \emph{method} $M$
+  applied to an object $O$ yields the result object $R_i$. In (1), $M$ is a
+  \emph{single-valued} (or \emph{scalar}) method, i.e., there is
+  at most one $R_0$ such that $O[M\fd R_0]$ holds. In contrast, in
+  (2), $M$ is \emph{multi-valued}, so there can be several result objects
+  $R_i$. For $n=1$ the curly braces can be omitted.
+
+  \index{atom!signature}
+  \index{signature!in \fl}
+
+  \medskip
+
+  (3) and (4) denote \emph{signature atoms}. They specify that method $M$,
+  applied to objects of \emph{class} $C$, yields results of type $T$.
+  In (3), $M$ is declared as single-valued, while in (4) as set-valued.
+  \medskip
+
+  \index{atom!isa}
+  %%
+  Objects are grouped into classes using \emph{ISA-atoms}:
+  \medskip
+
+  \begin{math}
+    \sf \hfill (5)~~O\isa C \hfill (6)~~C\subcl D. \hfill
+  \end{math} \medskip
+
+  \index{class}
+  \index{subclass}
+  \index{class!subclass}
+  \index{class!instance}
+  (5) defines that $O$ is an \emph{instance} of class $C$, while (6)
+  specifies that $C$ is a \emph{subclass} of $D$. 
+\item \emph{Parameters}: Methods can have arguments, i.e., 
+  \begin{math}
+    M(P_1,\dots,P_k)
+  \end{math}
+  is allowed in (1)~--~(4), where $P_1,\dots,P_k$ are
+  id-terms, e.g., {\sf john[salary(1998)\fd50000]}.
+  
+\item \emph{Programs}: \fl\ \emph{literals}, \emph{rules}, and
+  \emph{programs} are defined as usual, based on \fl atoms.
+\end{itemize}
+
+\noindent
+\index{F-molecule}
+\emph{F-molecules} provide a shortcut for specifying properties of the same
+object. For instance, instead of
+{\sf john{\isa}person},~{\sf john[age{\fd}31]},~{\sf john[children\mvd\{bob,mary\}]},
+we can simply write \linebreak
+\mbox{\sf john{\isa}person[age{\fd}31, children\mvd\{bob,mary\}]}.
+
+
+\begin{example}
+  {\bf (Publications Database)} \rm Figure~\ref{fig-flogic-model} depicts
+  an \fl representation of a fragment of an object-oriented publications
+  database.
+\end{example}
+
+
+\begin{figure}[htb]
+\begin{tabular}{c}
+  \begin{tabular}{l}
+    {\bf Schema:}\\
+    conf\_p\subcl paper. \\
+    journal\_p\subcl paper.\\
+    paper[authors\Mvd  person, title\Fd string].\\
+    journal\_p[in\_vol\Fd volume]. \\
+    conf\_p[at\_conf\Fd conf\_proc].\\
+    journal\_vol[of \Fd journal, volume\Fd integer, 
+               number\Fd integer, year\Fd integer].\\  
+    journal[name\Fd string, publisher\Fd string,
+            editors\Mvd person]. \\
+    conf\_proc[of\_conf\Fd conf\_series, year\Fd integer,
+               editors\Mvd person]. \\
+    conf\_series[name\Fd string]. \\
+    publisher[name\Fd string].\\
+    person[name\Fd string, affil(integer)\Fd institution]. \\
+    institution[name\Fd string, address\Fd string].\smallskip\\
+
+    {\bf Objects:}\\
+    $o_{j1}$\isa journal\_p[%
+      title\fd 'Records, Relations, Sets, Entities, and Things',
+      authors\mvd$\{o_{mes}\}$, in\_vol\fd $o_{i11}$]. \\
+    $o_{di}$\isa conf\_p[
+      title\fd 'DIAM II and Levels of Abstraction',
+      authors\mvd$\{o_{mes},o_{eba}\}$, at\_conf\fd $o_{v76}$]. \\
+    $o_{i11}$\isa journal\_vol[of\fd $o_{is}$, number\fd 1, volume\fd 1, year\fd1975]. \\
+    $o_{is}$\isa journal[name\fd'Information Systems', editors\mvd $\{o_{mj}\}$]. \\
+    $o_{v76}$\isa conf\_proc[of\fd vldb, year\fd 1976, editors\mvd $\{o_{pcl},o_{ejn}\}$].\\
+    $o_{vldb}$\isa conf\_series[name\fd'Very Large Databases']. \\
+    $o_{mes}$\isa person[name\fd'Michael E. Senko']. \\
+    $o_{mj}$\isa person[name\fd'Matthias Jarke', affil(1976)\fd $o_{rwt}$]. \\
+    $o_{rwt}$\isa institution[name\fd'RWTH\_Aachen'].
+\end{tabular}
+\end{tabular}
+\caption{A Publications Object Base and its Schema Represented 
+  Using \fl}\label{fig-flogic-model}
+\end{figure}
+
+
+
+\subsection{Path Expressions in the Rule Body}
+
+
+\index{path expression}
+\index{path expression!in rule body}
+In addition to the basic \fl syntax, the \FLORA  system also supports
+\emph{path expressions} to simplify object navigation along
+single-valued and multi-valued method applications, and to avoid
+explicit join conditions \cite{frohn-lausen-uphoff-VLDB-94}.  The
+basic idea is to allow the following \emph{path expressions} wherever
+id-terms are allowed:
+%%
+
+  \medskip
+
+\begin{math} \sf
+  \hfill (7)~~O.M \hfill (8)~~O..M \hfill
+\end{math} \medskip
+
+\noindent
+The path expression in (7) is \emph{single-valued}; it refers to the unique
+object $R_0$ for which $O[M\fd R_0]$ holds; (8) is a \emph{multi-valued}
+path expression; it refers to each $R_i$ for which $O[M\mvd\{R_i\}]$ holds.
+The symbols $O$ and $M$ stand for an id-term or path a expression.
+Moreover, $M$ can be a method that takes arguments, i.e.,
+$O..M(P_1,\dots,P_k)$ is a valid path expression.
+  
+In order to obtain a unique syntax and to specify different orders of
+method applications, parentheses can be used. By default, path expressions
+associate to the left, so $a.b.c$ is equivalent to $(a.b).c$ and specifies
+the unique object $o$ such that $a[b\fd x] \land x[c\fd o]$ holds (note
+that $x=a.b$). In contrast, $a.(b.c)$ is the object $o1$ such that $b[c\fd
+x1] \land a[x1\fd o1]$ holds (here, $x1=b.c$). In general, these can be
+different objects. Note that in $(a.b).c$, $b$ is a method name, whereas in
+$a.(b.c)$ it is used as an object name.  Observe that function symbols can
+also be applied to path expressions, since path expressions (like id-terms)
+are used to refer objects. Thus, $f(a.b)$ is valid.
+
+As path expressions and F-molecules can be arbitrarily nested, this leads
+to a concise and very flexible specification language for object
+properties, as illustrated in the following example.
+
+\begin{example}[Path Expressions]\label{Ex:PathExpr}
+  \rm
+  Consider again the schema given in Figure~\ref{fig-flogic-model}.
+  Given the name $n$ of a person, the following path expression
+  references all editors of conferences in which $n$ had a
+  paper:\footnote{Each occurrence of ``\_'' denotes a distinct
+    don't-care variable (existentially quantified at the
+    innermost level).}
+\begin{qrules}
+  \anon\isa conf\_p[authors\mvd\{\anon [name\fd $n$]\}].at\_conf..editors
+\end{qrules}
+Therefore, the answer to the \emph{query}
+\begin{qrules}
+  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+  $n$]\}].at\_conf[editors\mvd\{E\}].
+\end{qrules}
+is the set of all pairs (\textsf{P},\textsf{E}) such that \textsf{P}
+is (the logical oid of) a paper written by $n$, and \textsf{E} is the
+corresponding proceedings editor.  If one is also interested in the
+affiliations of the above editors when the papers were published, we only
+need to slightly modify our query:
+\begin{qrules}
+  ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+  $n$]\}].at\_conf[year\fd Y]..editors[affil(Y)\fd A].
+\end{qrules}
+\end{example}
+Thus, \FLORA path expressions support navigation 
+along the method application dimension using the operators
+``.''  and
+``..''. In addition, intermediate objects through which such navigation
+takes place can be selected by specifying the properties of such objects
+inside square brackets.
+
+\index{method!self}
+To access intermediate objects that arise implicitly in the middle
+of a path expression, one can define the method \textsf{self} as
+{\sf X[self{\fd}X]} and then simply
+write $\dots${\sf [self{\fd}O]}$\dots$ anywhere in a complex
+path expression. This would bind the id of the current object to the
+variable {\sf O}.\footnote{
+  %%
+  A similar feature is used in other
+  languages, e.g., XSQL \cite{xsql-92}.
+  %%
+  }
+%%
+
+\begin{example}[Path Expressions with \textsf{self}]\label{ex-path-self}
+  \rm
+  Recall the second query in Example~\ref{Ex:PathExpr}. If the user is
+  also interested in the respective conferences, the query can be
+  reformulated as follows:
+\begin{qrules}
+  X[self\fd X].\\
+   ?- P\isa conf\_p[authors\mvd\{\anon [name\fd
+   $n$]\}].at\_conf[self\fd C, year\fd Y]..editors[affil(Y)\fd A]. 
+\end{qrules}
+\end{example}
+
+
+
+\subsection{Path Expressions in the Rule Head}
+
+Only single-valued path expressions are allowed in a rule head. Set-valued
+path expressions are not allowed because the semantics is not always clear
+in such cases.
+
+\index{path expression!in rule head}
+The following is an example of a path expression in rule head. For any
+person X, this rule defines the grand children for X's mother.
+\begin{qrules}
+X.mother[grandson{\mvd}Y] :- X{\isa}person[son{\mvd}Y].
+\end{qrules}
+%%
+Complications arise if we specify the following facts later on:
+%%
+\begin{qrules}
+john[mother{\fd}mary]. \\
+john[son{\mvd}david].
+\end{qrules}
+and ask the following query:
+\begin{qrules}
+?- mary[grandson{\mvd}S].
+\end{qrules}
+
+Here, we should be able to identify ${\tt mary}$ and ${\tt john.mother}$,
+since the attribute {\tt mother} is scalar. To deal with single-valued path
+expressions in rule heads, \FLORA \emph{skolemizes} ${\tt john.mother}$ and
+derives the requisite equalities.  All this is done by the
+\FLORA compiler transparently to the user: if a path expression in rule head
+is detected, \FLORA replaces this expression with a Skolem function and
+appends the trailer with equality maintenance to the final {\tt .P} file
+to ensure that proper equalities are maintained.
+
+The user must be aware though, that the use of Skolem functions implies
+the need for \emph{equality maintenance}, which may be costly.  Performance can
+thus be improved if path expressions in the rule heads are avoided.  Our
+experiments show that without equality checking \FLORA can run 2 -- 10 times
+faster in some cases.
+
+
+\subsection{Truth Value vs.\ Object Value}\label{sec-references}
+
+
+Id-terms, \fl atoms, and path expressions can all be used 
+as objects. This is obvious for id-terms and path
+expressions (7~--~8). Similarly, \fl atoms (1~--~6) have not only a
+truth value, but they each have an object value as well.
+For example, {\sf o{\isa}c[m{\fd}r]} has object value {\sf o} and a truth value.
+The latter depends on whether {\sf o} belongs to class {\sf c} and on the value of
+the attribute {\sf m}.
+
+Consequently, all F-molecules of the form (1~--~8) 
+have dual reading. Given an
+\fl\ database \db I (see below), an expression has:
+\begin{itemize}
+  \index{molecule!object value of}
+\item An \emph{object value}, which yields the name(s) of the object(s)
+  reachable in \db I by the corresponding expression, and 
+  \index{molecule!truth value of}
+\item A \emph{truth value}, like any other literal or molecule of the
+  language. In particular, a molecule $r$ evaluates to \emph{false} if
+  \db I has no object corresponding to $r$.
+\end{itemize}
+%%
+Thus, a path expression can be viewed as a logical formula (\emph{the
+  deductive perspective}), or as an expression that represents one or more
+objects (\emph{the object-oriented perspective}).
+
+Consider the following path expression and an equivalent, decomposed
+expression:
+
+\begin{displaymath}
+\sf
+a..b[c\mvd\{d.e\}] \quad\ \Leftrightarrow \quad\  a[b\mvd\{X_{ab}\}]
+\land d[e\fd X_{de}] \land X_{ab}[c\mvd\{X_{de}\}]. \hspace{4em} (*)
+\end{displaymath}
+
+\noindent
+Such decomposition is used to determine the truth value of arbitrarily complex
+path expressions in the \emph{body} of a rule.  Let $\sf \obj(path)$ denote
+the ids of all objects represented by the path expression. Then, for $(*)$,
+we have:
+\begin{displaymath} \sf
+\obj(a..b) = \{x_{ab} \mid \db I \models a[b\mvd\{x_{ab}\}]\}
+\qquad\textrm{ and }\qquad \obj(d.e) = \{x_{de} \mid \db I \models d[e\fd 
+x_{de}]\} ~,
+\end{displaymath}
+%
+where $\db I \models \varphi$ means that $\varphi$ holds in \db I.
+Observe that $\obj(d.e)$ contains at most one element because the
+\emph{single-valued} method $e$ is applied to a single oid $d$. Thus, two
+formulas might be equivalent logically, but their values as objects might
+be different!
+
+In general, for an \fl\ database \db I, the object values of ground
+path expressions are given by the following mapping \obj from ground molecules
+to sets of ground oids:
+%
+\begin{displaymath}
+  \begin{array}{cll@{\hspace{4em}}c}
+    \obj(t) & := & \{t \mid  \db I\models t[] \}, 
+     \textrm{ for a ground id-term $t$}  \\   
+                                %
+    \obj(o[\dots]) & := & \{o1 \mid o1\in\obj(o), \db I \models o1[\dots]
+    \} \\  
+                                %
+    \obj(o\isa c) & := & \{o1 \mid o1\in\obj(o), \db I \models o1\isa c\}
+     \\ 
+                                %
+    \obj(c\subcl d) & := & \{c1 \mid c1\in\obj(c), \db I \models c1\subcl
+    d\} \\ 
+                                %
+    \obj(o.m) & :=  & \{r1 \mid r1\in\obj(r), \db I \models o[m\fd
+    r]\} \\ 
+                                %
+    \obj(o..m) & := &  \{r1 \mid  r1\in\obj(r), \db I \models
+    o[m{\mvd}\{r\}] \}
+  \end{array}
+\end{displaymath}
+
+Observe that if $\tt t[]$ does not occur in \db{I}, then $\obj(t)$ is
+$\emptyset$.  Conversely, a ground molecule $r$ is called \emph{active} if
+$\obj(r)$ is not empty. A molecule, $r$, can be 
+single-valued or multi-valued:
+%%
+\begin{itemize}
+\item $r$ is called \emph{multi-valued} if
+ \begin{itemize}
+  \item it has the form $o..m$, or 
+  \item it has one of the forms $\underline{o}[\dots]$,
+    $\underline{o}\isa c$, $\underline{c}\subcl d$, or
+    $\underline{o}.\underline{m}$, and any of the underlined
+    subexpressions is multi-valued;
+ \end{itemize}
+\item in all other cases, $r$ is \emph{single-valued}.
+\end{itemize}
+
+In \FLORA, \fl path expressions can appear wherever id-terms are
+allowed. Consequently, the question arises whether a path expression
+is intended to indicate a truth value or an object value. For
+instance, we may want to call the following XSB {\sf findall/3}
+predicate to retrieve the oids of those managers whose hobbies include
+tennis:
+\begin{qrules}
+findall(P,P{\isa}manager[hobbies{\mvd}\{tennis\}],L)
+\end{qrules}
+In the above example, {\sf P{\isa}manager[hobbies{\mvd}\{tennis\}]}
+should evaluate to true in order for the bindings of {\sf P} to be
+collected into the list {\sf L}. Therefore, the formula corresponding
+to the F-molecule needs to be compiled into the predicate
+{\sf findall/3} for evaluation at runtime.
+
+By default, when a path expression appears as an argument to a
+predicate or function symbol, the \FLORA compiler will flatten it and
+pass its object value to the predicate or function. If the truth
+value of a path expression is intended, the compiler directive
+{\sf sign} can be used to signal how the compiler should flatten
+the arguments. For instance, the following compiler directive is
+needed to make {\sf findall/3} function correctly in \FLORA:
+\begin{qrules}
+:- sign findall(oid,form,oid).
+\end{qrules}
+which indicates that the \FLORA compiler should compile
+any second argument of {\sf findall/3} into a formula, while the
+first and third arguments into oids.
+
+
+
+\subsection{Inheritance}
+
+
+\index{inheritance!structural}
+\index{inheritance!behavioral}
+\fl identifies two types of inheritance: \emph{structural} and
+\emph{behavioral}.  Structural inheritance applies to signatures only. For
+instance, if {\sf student::person} and a program defines the signature
+{\sf person[name{\Fd}string]} then the query {\sf ?- student[name{\Fd}X]}
+succeeds with {\sf X=string}.
+
+\index{inheritance!non-monotonic}
+Behavioral inheritance is much more complicated. The problem  is that it is
+\emph{non-monotonic}. That is, the addition of new facts might obviate previously
+established inferences.
+
+\index{attribute!inheritable}
+\index{attribute!non-inheritable}
+\fl (and \FLORA) distinguishes between attributes and methods that can
+inherit values from superclasses and those that do not. The syntax that we
+have seen so far applies to \emph{non-inheritable} attributes only.
+\emph{Inheritable attributes} are declared using the {\tt *=>} and {\tt *=>>}
+style arrows and defined using the {\tt *->} and {\tt *->>} style arrows. For
+instance, the following is a \FLORA program for the classical {\sf Royal
+Elephant} example:
+%%
+\begin{quote}
+\begin{verbatim}
+elephant[color*=>color].
+royal_elephant::elephant.
+clyde:elephant.
+elephant[color*->gray].
+\end{verbatim}
+\end{quote}
+%%
+The question is what is the color of {\sf Clyde}?
+{\sf Clyde}'s color has not been defined in the above program. However, since
+{\sf Clyde} is an elephant and the default color for elephants is gray, {\sf Clyde}
+must be gray. Thus, we can derive:
+%%
+\begin{quote}
+\begin{verbatim}
+clyde[color->gray].  
+\end{verbatim}
+\end{quote}
+%%
+Observe that when inheritable methods are inherited from a class by its
+members, the attribute becomes non-inheritable. On the other hand, when
+such a method is inherited by a subclass from its superclass, then the
+method is still inheritable, so it can be further inherited by the members
+of that subclass or by its subclasses. For instance, if we have
+%%
+\begin{quote}
+\begin{verbatim}
+circus_elephant::elephant.
+\end{verbatim}
+\end{quote}
+%%
+then we can derive 
+%%
+\begin{quote}
+\begin{verbatim}
+circus_elephant[color*->gray].  
+\end{verbatim}
+\end{quote}
+%%
+
+Non-monotonicity of behavioral inheritance becomes apparent when certain new
+information gets added to the knowledge base. For instance, suppose we
+learn that
+%%
+\begin{quote}
+\begin{verbatim}
+royal_elephant[color*->white].  
+\end{verbatim}
+\end{quote}
+%%
+Although we have previously established that {\sf Clyde} is gray, this
+new information renders our earlier conclusion invalid. Indeed, Since
+{\sf Clyde} is a royal elephant, he must be white, while being an
+elephant he must be gray.  The conventional wisdom in object-oriented
+languages, however, is that inheritance from more specific classes
+must take precedence. Thus, we must withdraw our earlier conclusion
+that {\sf Clyde} is gray and infer that he is white:
+%%
+\begin{quote}
+\begin{verbatim}
+clyde[color->white].    
+\end{verbatim}
+\end{quote}
+%%
+
+Behavioral inheritance in \fl is discussed at length in \cite{KLW95}.
+The above problem of non-monotonicity is just a tip of the iceberg. Much
+more difficult problems arise when inheritance interacts with the regular
+deduction. To illustrate, consider the following program:
+%%
+\begin{quote}
+\begin{verbatim}
+b[m*->>c].
+a:b.
+a[m->>d] :- a[m->>c].
+\end{verbatim}
+\end{quote}
+%%
+In the beginning, it seems that \verb|a[m->>c]| should be derived by
+inheritance, and so we can derive \verb|a[m->>d]|. Now, however, we can
+reason in two different ways:
+%%
+\begin{enumerate}
+\item \verb|a[m->>c]| was derived based on the belief that attribute {\tt
+    m} is not defined for the object {\tt a}. However, once inherited,
+  necessarily we must have \verb|a[m->>{c,d}]|. So, the value of
+  attribute {\tt m} is not really that produced by inheritance. In other
+  words, inheritance of \verb|a[m->>c]| negates the very premise on which
+  the original inheritance was based, so we must undo the operation and the
+  ensuing rule application.
+\item We did derive \verb|a[m->>d]| as a result of inheritance, but
+  that's OK --- we should not really be looking back and undo previously
+  made inheritance inferences. Thus, the result must be \verb|a[m->>{c,d}]|.
+\end{enumerate}
+%%
+A semantics that favors the second interpretation was proposed in
+\cite{KLW95}. This approach is based on a fixpoint computation of
+non-monotonic behavioral inheritance.  However, this semantics is very hard
+to implement efficiently, especially using a top-down deductive engine
+provided by XSB. Thus, \FLORA uses a different, more cautious semantics for
+inheritance, which favors the first interpretation above.  The idea can be
+summarized using the following rules, which define how class instances
+inherit from the classes they belong to:
+%%
+\begin{quote}
+\begin{verbatim}
+// inheritance rules for scalar attributes
+:- table defined/2, overwritten/3, conflict/3.
+
+Obj[A->V] <- Obj:Class, Class[A*->V], tnot defined(Obj,A),
+             tnot overwritten(Obj,Class,A), tnot conflict(Obj,Class,A).
+
+defined(Obj,A) <- Obj[A->V].
+
+overwritten(Obj,Class,A) <- Obj:Class1, Class1::Class,
+                            Class1[A*->W], Class1 \= Class.
+
+conflict(Obj,Class,A) <- Obj:Super, Super[A*->V],
+                         tnot Super::Class, tnot Class::Super.
+
+// inheritance rules for multi-valued attributes
+:- table definedSet/2, overwrittenSet/3, conflictSet/3.
+
+Obj[A->>V] <- Obj:Class, Class[A*->>V], tnot definedSet(Obj,A),
+              tnot overwrittenSet(Obj,Class,A),
+              tnot conflictSet(Obj,Class,A).
+
+definedSet(Obj,A) <- Obj[A->>V].
+
+overwrittenSet(Obj,Class,A) <- Obj:Class1, Class1::Class,
+                               Class1[A*->>W], Class1 \= Class
+
+conflictSet(Obj,Class,A) <- Obj:Super, Super[A*->V],
+                            tnot Super::Class, tnot Class::Super.
+\end{verbatim}
+\end{quote}
+%%
+\index{well-founded semantics}
+Negation here is implemented using the {\em well-founded semantics}
+for negation \cite{gelder-alternating-89,gelder-ross-schlipf-91} (as
+indicated by the {\tt tnot} operator).  Similar rules are needed to
+describe how classes inherit from superclasses.
+
+In the examples that we have seen so far, path expressions use only
+non-inheritable attributes. Clearly, there is no reason to disallow
+inheritable attributes in such expressions. To distinguish inheritable
+attributes from non-inheritable ones in path expressions, \FLORA uses
+``{\tt !}'' and ``{\tt !!}''. For instance,
+%%
+\begin{quote}
+\begin{verbatim}
+clyde!color           means: some X, such that clyde[color*->X]}.
+obj!!attr             means: some Y, such that obj[attr*->>Y].
+\end{verbatim}
+\end{quote}
+%%
+
+
+\subsection{Type Checking}
+
+
+\index{type checking}
+%%
+Although \FLORA allows specification of object types through signatures,
+type correctness is not being checked automatically. So, what are the
+signatures good for then? One answer is that future versions of \FLORA
+might support some forms of type checking. However, because \fl can
+naturally support powerful meta-programming, even the current level
+of support for signatures is useful. For instance, users can write
+simple queries to check the types of methods that might look suspicious.
+Here is one way to construct such a type-checking query:
+%%
+\begin{verbatim}
+scalar_type_incorrect(O,M,R) :- O[X->R], O:C, C[X=>D], tnot R:D.
+?- scalar_type_incorrect(obj,meth,Result).
+\end{verbatim}
+%%
+Here, we define what it means to violate type checking using the usual
+\fl semantics. The corresponding predicate can then be queried. A
+``{\sf no}'' answer means that the corresponding attribute \emph{does not}
+violate the typing rules.
+
+In this way, one can easily consruct special purpose type checkers.  This
+feature is particularly important when dealing with \emph{semistructured}
+data. (Semistructured data has object-like structure but normally does not
+need to conform to any type; or if it does, the type would normally cover
+only certain portions of the object structure.)
+
+
+\section{Syntax of \FLORA}
+
+
+\subsection{Symbols, Strings, and Comments}
+
+
+\index{symbol!in XSB}
+\index{symbol}
+\index{string}
+\index{comment}
+%%
+\paragraph{Symbols.}
+\FLORA symbols (that are used for the names of constants, predicates, and
+object constructors) begin with a lowercase letter followed by zero or more
+letters ($\tt A \ldots Z, a \ldots z$), digits ($\tt 0 \ldots 9$), or underscores
+(\_), e.g., \texttt{student}, \texttt{apple\_pie}. Symbols can also be
+\emph{any} sequence of characters enclosed in a pair of single quotes,
+e.g., \texttt{'JOHN SMITH'},\texttt{'default.flr'}.  Internally, \FLORA
+symbols are represented as \emph{XSB symbols},\footnote{
+  %%
+  Symbols are called ``atoms'' in XSB, which contravenes the use of this
+  term for atomic formulas in classical logic and \fl.
+  We avoid the use of the term ``atom'' in reference to symbols.
+  %%
+  }
+%%
+which are used there as names of predicates and function symbols.
+
+\begin{table}[htb]
+\center
+\texttt{ \small
+\begin{tabular}{|c|r@{\hspace{1.5cm}}|@{\hspace{5mm}}l@{\hspace{5mm}}|}
+\hline
+Escaped String &
+  \multicolumn{1}{c|@{\hspace{5mm}}}{ASCII (decimal)} &
+  \multicolumn{1}{c|}{Symbol} \\ \hline
+{\bksl}{\bksl} &  92 & {\bksl} \\ \hline
+{\bksl}n &  10 &		 NewLine \\ \hline
+{\bksl}N &  10 &		 NewLine \\ \hline
+{\bksl}t &   9 &		 Tab \\ \hline
+{\bksl}T &   9 &		 Tab \\ \hline
+{\bksl}r &  13 &		 Return \\ \hline
+{\bksl}R &  13 &		 Return \\ \hline
+{\bksl}v &  11 &		 Vertical Tab \\ \hline
+{\bksl}V &  11 &		 Vertical Tab \\ \hline
+{\bksl}b &   8 &		 Backspace \\ \hline
+{\bksl}B &   8 &		 Backspace \\ \hline
+{\bksl}f &  12 &		 Form Feed \\ \hline
+{\bksl}F &  12 &		 Form Feed \\ \hline
+{\bksl}e &  27 &		 Escape \\ \hline
+{\bksl}E &  27 &		 Escape \\ \hline
+{\bksl}d & 127 &		 Delete \\ \hline
+{\bksl}D & 127 &		 Delete \\ \hline
+{\bksl}s &  32 &		 Whitespace \\ \hline
+{\bksl}S &  32 &		 Whitespace \\
+\hline
+\end{tabular}
+}
+\caption{Escaped Character Strings and Their Corresponding Symbols}
+\label{tab:tab-esc-str}
+\end{table}
+
+\index{escaped character}
+\FLORA also recognizes escaped characters inside single quotes
+(\texttt{'}).  An escaped character normally begins with a backslash
+(\texttt{\bksl}).  Table~\ref{tab:tab-esc-str} lists the special escaped
+character strings and their corresponding special symbols. An escaped
+character may also be any ASCII character. Such a character is preceded
+with a backslash together with a lowercase \texttt{x} (or an uppercase
+\texttt{X}) followed by one or two hexadecimal symbols representing its
+ASCII value. For example, \texttt{{\bksl}xd} is the ASCII character
+Carriage Return, whereas \texttt{{\bksl}x3A} represents the semicolon. In
+other cases, a backslash is recognized as itself.
+
+One exception is that inside a quoted symbol, a single quote character is
+escaped by another single quote, e.g., \texttt{'isn''t'}.
+
+\paragraph{Strings (character lists).}
+
+\index{string}
+\index{character list}
+Like XSB strings, \FLORA strings are enclosed in a pair of double quotes
+(\texttt{\dq}).  These strings are represented internally as lists of
+ASCII characters. For instance, \mbox{\texttt{[102,111,111]}} is the same
+as \texttt{{\dq}foo{\dq}}.
+
+Escape characters are recognized inside \FLORA strings similarly to
+\FLORA symbols.  However, inside a string, a single quote character does
+not need to be escaped. A double quote character, however, needs to be
+escaped by another double quote, e.g.,
+\texttt{{\dq}{\dq}{\dq}foo{\dq}{\dq}{\dq}}.
+
+\paragraph{Numbers.}
+
+\index{number}
+%%
+\index{integer}
+%%
+\index{float}
+%%
+Normal \FLORA integers are decimals represented by a sequence of digits,
+e.g., \texttt{892, 12}.  \FLORA also recognizes integers in other bases (2 through
+36). The base is specified by a decimal integer followed by a single quote
+(\texttt{'}). The digit string immediately follows the single quote. The
+letters $\tt A \ldots Z$ or $\tt a \ldots z$ are used to represent digits greater
+than 9.  Table~\ref{tab:tab-int-rep} lists a few example integers.
+%%
+\begin{table}[htb]
+\center
+\texttt{ \small
+\begin{tabular}{|r@{'}l|r@{\hspace{1.5cm}}|c|}
+\hline
+  \multicolumn{2}{|c|}{Integer} &
+  \multicolumn{1}{c|}{Base (decimal)} &
+  \multicolumn{1}{c|}{Value (decimal)} \\ \hline
+\multicolumn{1}{|r}{} & \multicolumn{1}{@{}l|}{1023} &  10 & 1023 \\ \hline
+2 & 1111111111 & 2 & 1023 \\ \hline
+8 & 1777 & 8 & 1023 \\ \hline
+16 & 3FF &  16 & 1023 \\ \hline
+32 & vv & 32 & 1023 \\
+\hline
+\end{tabular}
+}
+\caption{Representation of Integers}
+\label{tab:tab-int-rep}
+\end{table}
+
+Underscore (\texttt{\_}) can be put inside any sequence of digits as
+delimiters. It is used to partition some long numbers. For instance,
+$\texttt{2'11\_1111\_1111}$ is the same as $\texttt{2'1111111111}$.
+However, ``\texttt{\_}'' cannot be the first symbol of an integer, since
+variables can start with an underscore. For example, $1\_2\_3$ represents
+the number $123$ whereas $\_12\_3$ represents a variable named $\_12\_3$.
+
+Floating numbers normally look like {\tt 24.38}. The decimal point
+must be preceded by an integral part, even if it is 0, e.g., {\tt 0.3}
+must be entered as {\tt 0.3}, but not as {\tt .3}. Each floating
+number may also have an optional exponent. It begins with a lowercase
+{\tt e} or an uppercase {\tt E} followed by an optional minus sign
+({\tt -}) or plus sign ({\tt +}) and an integer. This exponent is
+recognized as in base 10. For example,
+\mbox{\tt 2.43E2 is 243} whereas
+\mbox{\tt 2.43e-2 is 0.0243}.
+
+\paragraph{Comments.}
+
+\FLORA supports three kinds of comments: (1) all characters following
+{\tt \%} until the end of the line; (2) all characters following
+{\tt //} until the end of the line; (3) all characters inside a pair of
+{\tt /*} and {\tt */}. Note that only (3) can span multiple lines.
+
+Comments are recognized like whitespaces by the compiler.  Therefore,
+tokens can also be delimited by comments.
+
+
+\subsection{Operators}
+
+
+All programming constructs in \FLORA, such as ``{\tt ,}'', ``{\tt;}'',
+``{\tt +}'', ``{\tt .}'', ``{\tt ->}'', and ``{\tt ::}'', are now
+carefully organized as operators.  This brings the programming
+practice in \FLORA much closer to that in Prolog. All the operator
+definitions reside in the file ``{\tt flroperator.P}''. These
+definitions consititute a grammar on which the \FLORA compiler relies
+to parse a source program.
+
+As in Prolog, there are three kinds of operators in \FLORA: infix,
+prefix, and postfix. An infix operator appears between its two
+arguments, while a prefix operator before its single argument and a
+postfix operator after its single argument.
+
+Each operator has a \emph{precedence level}, which is a positive
+integer. Each operator also has a \emph{type}. The possible types for
+infix operatos are: {\tt xfx}, {\tt xfy}, {\tt yfx}, while the
+possible types for prefix operators are: {\tt fx}, {\tt fy}, and the
+possible types for postfix operators are: {\tt xf}, {\tt yf}. The type
+of an operator is coded in a schematic expression in which {\tt f}
+stands for the operator, {\tt x} and {\tt y} stand for the arguments.
+Therefore, from the code of a type we can know whether an operator
+is binary or unary.
+
+The precedence levels and types together decide how an expression is
+parsed when the structure of the term denoted is not made explicit
+through the use of parentheses. The general rule is that the operator
+with the highest precedence level is the principal functor, and the
+subexpressions so determined will be its arguments. The code of a type
+also carries extra information: {\tt x} means that the precedence
+level of the functor of this argument should be \emph{smaller} than
+that of the principle functor, while {\tt y} means that the precedence
+level of the functor of this argument should be \emph{no greater} than
+that of the principle functor.
+
+For example, in \FLORA, {\tt -} has precedence level {\tt 800} and
+type {\tt yfx}, {\tt *} has precedence level {\tt 700} and type
+{\tt yfx}, {\tt ->} has precedence level 1100 and type {\tt xfx}.
+Therefore, {\tt 8-2-3*4} is the same as {\tt -(-(8,2),*(3,4))} in
+prefix notation, and {\tt a -> b -> c} will generate a parsing error.
+
+An atom named {\sf Name} can be declared as an operator of type {\sf Type}
+and precedence level {\sf Precedence} by the following compiler directive:
+\begin{qrules}
+{\tt :- op(Precedence,Type,Name).}
+\end{qrules}
+
+As a notational convenience, the argument {\sf Name} can also be a list of
+names of operators of the same type and precedence level, for instance,
+\begin{qrules}
+{\tt :- op(800,yfx,[+,-]).}
+\end{qrules}
+
+It is possible to have more than one operator of the same name. But the
+\FLORA built-in operators are not allowed to be redefined.
+
+
+\subsection{Logic Expressions}
+
+
+In a \FLORA program, any combination of conjunction, disjunction, and
+negation of literals can appear wherever a logial formula is allowed,
+e.g., in a rule body.
+
+Conjunction can be made through the infix operator ``{\tt ,}'', which
+has precedence level {\tt 1300} and type {\tt xfy}, while disjunction
+can be made through the infix operator ``{\tt ;}'', which has
+precedence level {\tt 1400} and type {\tt xfy}, and negation can be
+made through the prefix operators ``{\verb|~|}'', ``{\verb|\+|}'',
+``{\tt not}'', and ``{\tt tnot}'', which all have precedence level {\tt
+1200} and type {\tt fy}. Refer to Section~\ref{sec:negation} for more
+information on the difference between negation operators.
+
+For example, in \FLORA the following expression: \verb|a, b; c, ~d|,
+is equivalent to the the logical formula:
+$\tt (a \wedge b) \vee (c \wedge (\neg d))$.
+
+As a syntactic sugar, any combination of conjunction, disjunciton, and
+negation can also appear inside the specification of an object. For
+instance, the following F-molecule:
+\begin{qrules}
+o.m[att1{\fd}val1, att2{\mvd}val2; meth{\fd}res]
+\end{qrules}
+is equivalent to the following formula:
+\begin{qrules}
+o.m[att1{\fd}val1], o.m[att2{\mvd}val2]; o.m[meth{\fd}res]
+\end{qrules}
+
+In fact, when used properly, this feature can help specifiy some
+formula that would otherwise be very inconvenient to write. For example,
+the following F-molecule:
+\begin{qrules}
+o.m[tnot att1{\fd}val1; tnot att2{\mvd}val2]
+\end{qrules}
+would otherwise have to be written as the following equivalent formula:
+\begin{qrules}
+o[m{\fd}X], (tnot X[att1{\fd}val1]; tnot X[att2{\mvd}val2])
+\end{qrules}
+
+
+\subsection{Arithmetic Expressions}
+
+
+\index{arithmetic expression}
+In \FLORA arithmetic expressions are \emph{not} always evaluated. As
+in XSB, the arithmetic operators such as {\tt +}, {\tt -}, {\tt /},
+and {\tt *}, are defined as normal binary functors. However, to
+evaluate arithmetic expressions, \FLORA provides two operators:
+{\tt is} and {\tt :=}, which are just different names for the same
+operator. For example, {\tt X := 3+4} will bind {\tt X} to the value
+{\tt 7}.
+
+Order matters in \FLORA. All variables appearing in an arithmetic
+expression must be instantiated at the time of evaluation. Otherwise,
+a runtime error will occur.
+
+Both single-valued and multi-valued path expressions are allowed in
+arithmetic expressions, and all objects (variables) are considered to
+be existentially quantified. For example, the following query
+\begin{qrules}
+?- john..bonus $+$ mary..bonus $>$ 1000.
+\end{qrules}
+is actually equivalent to
+\begin{qrules}
+?- john[bonus{\mvd}{\tt V1}], mary[bonus{\mvd}{\tt V2}], ${\tt V1}+{\tt V2} > 1000$.
+\end{qrules}
+The only difference is that the values of {\tt V1} and {\tt V2} will be
+printed out for the latter query, but not for the former one.
+
+\FLORA recognizes numbers as oids, and allows arithmetic expressions
+to appear in path expressions, which are just like any complex id-terms
+in path expressions.
+
+Confustion may arise while combining arithmetic and path expressions together.
+To illustrate, consider the following example:
+%%
+\begin{qrules}
+1.m+2.n.k
+\end{qrules}
+%%
+It is not immediately obvious whether the previous
+example stands for the arithmetic expression {\tt (1.m)+(2.n.k)}, or for the
+path expressions {\tt (1.m+2.n).k}, {\tt (1.m + 2).n.k}, or {\tt 1.(m+2).n.k}.
+The correct answer is the first arithmetic expression, because in \FLORA
+``{\tt .}'' is also defined as an operator whose precedence level is smaller
+than that of ``{\tt +}''.
+
+One more confusing example is {\tt 2.3.4}. Does it mean {\tt (2).(3).(4)}, or
+{\tt (2.3).4}, or {\tt 2.(3.4)}?  In \FLORA, {\tt 2.3.4} actually means
+{\tt (2.3).4}, because all tokens, like integers, floating numbers,
+operators, etc., are first processed by the \FLORA lexer and then passed on to
+the \FLORA parser. In general, the interpretation of ``{\tt .}'' as a decimal
+point is done by the lexer and therefore precedes its interpretation as a object
+reference operator, which is done by the parser.
+
+Another ambiguous situation arises when the symbols {\tt -} and {\tt +}
+are used.  Indeed, they can be used as minus and plus signs,
+respectively, e.g., {\tt -3} and {\tt +3}, or as binary arithmetic
+operators, e.g., {\tt 4-7} and {\tt 4+7}. Actually, the minus and plus
+signs are defined in \FLORA as unary operators whose precedence levels
+are smaller than those of binary operators.
+
+Table~\ref{tab:tab-op-pre} lists various operators in decreasing precedence
+order, their associativity, and arity.
+%%
+\begin{table}[htb]
+\center
+\texttt{ \small
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+%%
+Precedence  & Operator & Use & Associativity & Arity \\ \hline
+not applied & () & parentheses & not applied & not applied\\ \hline
+not applied & . & decimal point & not applied & not applied \\ \hline
+            & .   & single-valued object reference & left & binary \\ \cline{2-5}
+300         & ..   & multi-valued object reference & left & binary \\ \cline{2-5}
+            & :    & ISA specification & left & binary \\ \cline{2-5}
+            & ::   & subclass specification & left & binary \\ \hline
+600         & - & minus sign & right & unary \\ \cline{2-5}
+            & + & plus sign & right & unary \\ \hline
+700         & * & multiplication & left & binary \\ \cline{2-5}
+            & / & division & left & binary \\ \hline
+800         & - & subtraction & left & binary \\ \cline{2-5}
+            & + & addition & left & binary \\ \hline
+            & =< & less than or equal to & not applied & binary \\ \cline{2-5}
+            & >= & greater than or equal to & not applied & binary \\ \cline{2-5}
+1000        & =:= & equal to & not applied & binary \\ \cline{2-5}
+            & ={\bksl}= & unequal to & not applied & binary \\ \cline{2-5}
+            & := & assignment & not applied & binary \\ \cline{2-5}
+            &is & \multicolumn{3}{c|}{same as :=} \\
+\hline
+\end{tabular}
+}
+\caption{Operators in Non-Increasing Precedence Order and Their Associativity and Arity}
+\label{tab:tab-op-pre}
+\end{table}
+
+Wherever ambiguity may arise, parentheses can be used to avoid misleading
+expressions. Here are more examples of valid expressions in \FLORA:
+\begin{quote}
+\begin{verbatim}
+o1.m_1+o2.m2.method
+2.(3.4)
+3 + - - 2              equivalent to 3+(-(-2))
+5 * - 6                equivalent to 5*(-6)
+5.(-6)                 method -6 applied to object 5
+\end{verbatim}
+\end{quote}
+
+Note that in the above examples, the parentheses in {\tt 5.(-6)} are needed,
+because otherwise ``{\tt .-}'' would be recognized as one single token by
+the \FLORA lexer. Similarly, the whitepsaces in \mbox{``{\tt + - -}''} and
+\mbox{``{\tt * -}''} are also needed to deliminate the operators.
+
+
+\subsection{Aggregates}
+
+
+The syntax for aggregates in \FLORA is similar to that in \FLORID. An
+aggregate in \FLORA has the following form:
+%%
+\begin{qrules}
+agg\{X[Gs] $|$ body\}
+\end{qrules}
+%%
+\index{aggregation!aggregate operator}
+\index{aggregation!grouping}
+where {\sf agg} represents the aggregate operator, {\sf X} is called the
+aggregation variable, {\sf Gs} is a list of comma-separated grouping
+variables, and {\sf body} is a logical formula that specifies the
+query conditions. The grouping variables, {\sf Gs}, are optional. {\sf body}
+can be any combinaiton of conjunction, disjunction, and negation of literals.
+
+All the variables appearing in {\sf body} but not in {\sf X} or {\sf Gs} are
+considered to be existentially quantified. Furthermore, the syntax of an
+aggregate must satisfy the following conditions:
+\begin{enumerate}
+\item All the variable names in both {\sf X} and {\sf Gs} must
+appear in {\sf body};
+\item {\sf Gs} should not contain {\sf X}.
+\end{enumerate}
+
+Aggregates in \FLORA are evaluated as follows: First, the query
+conditions specified by {\sf body} are evaluated to obtain all the bindings
+for the tuple of the form {\sf \texttt{<}X, Gs\texttt{>}}; Then, these
+tuples are grouped according to each distinct binding for
+{\sf \texttt{<}Gs\texttt{>}}; Finally, for each group the aggregate operator
+is applied the list of bindings for the aggregate variable.
+
+
+\index{aggregates!min}
+\index{aggregates!max}
+\index{aggregates!count}
+\index{aggregates!sum}
+\index{aggregates!avg}
+\index{aggregates!collectset}
+\index{aggregates!collectbag}
+The following aggregate operators are supported in \FLORA: {\sf min}, {\sf max},
+{\sf count}, {\sf sum}, {\sf avg}, {\sf collectset} and {\sf collectbag}.
+
+The operators {\sf min} and {\sf max} can apply to any list of
+terms. The order among terms is defined by the XSB operator {\tt @=<}.  In
+contrast, the operators {\sf sum} and {\sf avg} can take numbers only. If
+the aggregate variable is instantiated to something other than a
+number, {\sf sum} and {\sf avg} will discard it and generate a runtime
+warning message.
+
+For each group, the operator {\sf collectbag} collects all the bindings of
+the aggregation variable into a list. The operator {\sf collectset} works
+similarly to {\sf collectbag}, except that all the duplicates are removed
+from the result list.
+
+In general, aggregates can appear wherever a number or a list is
+allowed. Therefore, aggregates can be nested. The following examples
+illustrate the use of aggregates (some borrowed from the \FLORID manual):
+%%
+\begin{quote}
+\begin{verbatim}
+?- Z = min{S|john[salary(Year)->S]}.
+?- Z = count{Year|john.salary(Year) < max{S|john[salary(Y)->S], Y < Year}}.
+?- avg{S[Who]|Who:employee[salary(Year)->S]} > 20000. 
+\end{verbatim}
+\end{quote}
+%%
+If an aggregate contains grouping variables that are \emph{not} bound by a
+preceding subgoal, then this aggregate would backtrack over such grouping
+variables (In other words, they are considered to be existentially
+quantified). For instance, in the last query above, the aggregate will
+backtrack over the variable {\sf Who}. Thus, if {\sf john}'s and
+{\sf mary}'s average salary is greater than 20000, this query will backtrack
+and return both {\sf john} and {\sf mary}.
+
+The following example is a query that for each employee asks for a list of
+years when this employee had salary less than 60. This illustrates the use
+of the {\sf collectset} aggregate.
+%%
+\begin{quote}
+\begin{verbatim}
+?- Z = collectset{Year[Who]|Who[salary(Year)->X], X < 60}.
+Z = [1990,1991]
+Who = mary
+
+Z = [1990,1991,1997]
+Who = john
+\end{verbatim}
+\end{quote}
+%%
+
+
+\subsection{Boolean Methods}
+
+
+As a syntactic sugar, \FLORA introduces boolean methods, which can be
+considered as scalar methods that return some fixed value, e.g.,
+{\tt true}. For example, the following facts:
+\begin{quote}
+\verb|john[is_tall -> true].| \\
+\verb|john[loves(tennis) -> true].|
+\end{quote}
+can be rewritten using boolean methods as follows:
+\begin{quote}
+\verb|john[is_tall].| \\
+\verb|john[loves(tennis)].|
+\end{quote}
+
+Conceptually, boolean methods represent statements about objects whose
+truth value is of primary concern. However, boolean methods are not
+completely interchangeable with scalar methods in that boolean methods
+do not return any value (not even the value {\tt true}). Therefore,
+boolean methods can only appear inside the specification part for an
+object, not as part of a path navigation like
+\mbox{\tt john.is\_vegetarian}.
+
+Like inheritable scalar methods, there are also inheritable boolean
+methods. To make a boolean method inheritable, a ``\verb|*|'' sign
+needs to be added before it. For instance, the following facts:
+\begin{quote}
+\begin{verbatim}
+buddhist[*is_vegetarian].
+john:buddhist.
+\end{verbatim}
+\end{quote}
+say that all Buddhists are vegetarian and {\sf John} is a
+Buddhist. Since \verb|is_vegetarian| is inheritable, it follows that
+{\sf John} is also a vegetarian, i.e., \verb|john[is_vegetarian]|.
+
+
+\subsection {Sets vs. Lists}
+
+
+As mentioned in Section~\ref{sec-basic-flogic}, \fl uses the set
+notation, \{$\ldots$\}, to specify a subset of the return values of a
+multi-valued method, e.g.,
+\begin{quote}
+\verb|mary[children->>{john,frank}].|
+\end{quote}
+says that the children of {\sf Mary} \emph{include} {\sf John} and
+{\sf Frank}.
+
+However, since \fl does not support any operator to compose or
+decompose a set, and Prolog does not support the set notation either,
+breaking down of a set is done by the \FLORA compiler. This drawback
+leads to less flexibility in programing style.
+
+But in Prolog there is a data structure very close to sets --- lists.
+Note that lists are indeed complex terms and potentially can also be
+used as oids. To avoid this ambiguity, \FLORA introduces a new
+operator, {\tt +>>}, to specify that all members of a list constitute
+a subset of the return values of a multi-valued method. For example,
+the following query tests whether all {\sf Mary}'s children are also
+{\sf John}'s children:
+\begin{quote}
+\begin{verbatim}
+?- findall(X,mary[children->>X],L), john[children+>>L].
+\end{verbatim}
+\end{quote}
+
+Corresponding to inheritable multi-valued methods, \FLORA introduces
+another new operator, {\tt *+>>}, for use in the list notation.
+
+The only limitation to the use of {\tt +>>} and {\tt *+>>} is that
+they cannot appear in a fact or the head of a rule.
+
+
+\subsection{HiLog and Related Issues}
+
+
+\FLORA now supports HiLog. In HiLog, complex terms can appear wherever
+a function symbol is allowed, e.g., {\sf group(X)(Y,Z)}, where the
+functor is the complex term {\sf group(X)}. In \FLORA, any id-term,
+including function symbols, predicate symbols, and their arguments,
+can be a HiLog term.
+
+In fact, HiLog has a higher order syntax but a first order semantics
+\cite{hilog-jlp}. Any HiLog term can be consistently translated into
+a Prolog term. For instance, {\sf group(X)(Y,Z)} can be represented
+by the Prolog term {\sf flapply(flapply(group,X),Y,Z)}. The translation
+scheme is pretty straightforward and described in \cite{hilog-jlp}.
+
+In \FLORA any term is considered as a HiLog term and therefore subject
+to translation. That is, even a normal Prolog term will by default be
+represented using the HiLog translaiton, e.g., {\sf foo(a)} will be
+represented as {\sf flapply(foo,a)}. This is to guarantee that no
+extra translation will be needed for unification to work correctly at
+runtime. For instance, {\sf foo(a)} will unify with {\sf F(a)} and
+bind the variable {\sf F} to {\sf foo}.
+
+However, if the default HiLog translation is not intended, the following
+compiler directive can be used to define a traditional Prolog term:
+\begin{quote}
+\verb|:- prolog functor/arity.|
+\end{quote}
+where {\sf functor} stands for the functor of a Prolog term and
+{\sf arity} stands for its arity.
+
+Note that the above {\sf prolog} compiler directive does not affect
+the translation of its arguments. For instance, if nothing more than
+the following directive is defined in a \FLORA program:
+\begin{quote}
+\verb|:- prolog member/2.|
+\end{quote}
+then a term like {\sf member(foo(a),X)} in this program will be translated
+into {\sf member(flapply(foo,a),X)}.
+
+In the case where all Prolog terms should stay as they are, the following
+compiler directive can be used:
+\begin{quote}
+\verb|:- prologall.|
+\end{quote}
+However, for those non-Prolog terms, they will still be represented using
+the HiLog translation.
+
+For a list of built-in Prolog term definitions in \FLORA, refer to the
+file {\tt flrprolog.P}.
+
+The following problem arises as far as unificatoin is concerned:
+Should {\sf foo} unify with {\sf foo()}, which both seem like 0-ary
+terms? Moreover, if the answer is yes, then should {\sf foo} unify
+with {\sf foo()()}, which is also a valid HiLog term?  In \FLORA, the
+answers depend on whether these 0-ary terms appear as predicate calls
+in rule heads and bodies, or just as id-terms, i.e., arguments.
+
+In general, the presence of a pair of parenthese in a term would imply
+one application of the HiLog translation during
+compilation. Therefore, {\sf foo()} would be represented as
+{\sf flapply(foo)}, {\sf foo()()} as {\sf flapply(flapply(foo))},
+and {\sf foo} as it is, i.e, {\sf foo}.  So {\sf foo} does not unify
+with {\sf foo()} or {\sf foo()()} while they all act as id-terms. One
+of the advantages of keeping them differently is to make a \FLORA module
+communicate easily with normal XSB modules, which do not fully support
+HiLog. Refer to Section~\ref{sec:flora-modules} for more information
+on \FLORA modules.
+
+However, to make programming easy in the higher order fashion, 0-ary
+Prolog terms are translated like 0-ary HiLog terms when they appear
+as predicate calls in rule heads and bodies. For instance, the
+following two rules are equivalent in \FLORA:
+\begin{quote}
+\begin{verbatim}
+foo :- body.
+foo() :- body.
+\end{verbatim}
+\end{quote}
+and can be invoked in a rule body by either {\sf foo}, {\sf foo()},
+or more fancily, {\sf X()}, where {\sf X} is a variable to be bound
+to {\sf foo} when the call succeeds.
+
+{\sf foo} never unifies with {\sf foo()()} in \FLORA.
+
+
+\subsection{Meta-programming in \FLORA}
+
+
+The syntax of \fl and HiLog lends itself naturally to meta-programming. For
+instance, it is easy to examine the methods and types defined for the
+various classes.  Here are some simle examples:
+%%
+\begin{quote}
+\begin{verbatim}
+// all unary scalar methods defined for John
+?- john[M(_) -> _].
+
+// all unary scalar methods that apply to John,
+// for which a signature was declared
+?- john[M(_) => _].
+
+// all method signatures that apply to John,
+// which are either declared explicitly or inherited
+?- john[M => _].
+
+// all method invocations defined for John
+?- john[M -> _].
+\end{verbatim}
+\end{quote}
+%%
+
+However, a number of meta-programming primitives are still needed
+since they cannot be directly expressed in \fl. Many such features are
+provided by the underlying XSB system and \FLORA simply takes advantage of
+them: 
+%%
+\begin{quote}
+\begin{verbatim}
+?- functor(X,f,3).
+X = f(_h455,_h456,_h457)
+Yes.
+
+?- compound(f(X)).
+X = _h472
+Yes.
+
+?- X =.. [f,a,b].
+X = f(a,b)
+Yes.
+\end{verbatim}
+\end{quote}
+%%
+Note that these primitives are used for Prolog terms only and
+described in the XSB manual. Meta-programming support for HiLog terms
+and F-molecules will be provided through future enhancement.
+
+
+\subsection{Anonymous Oid}
+
+
+For applications where oids are not important, \FLORA provides the
+compiler directive \verb|_#| to automatically generate a new
+oid. \verb|_#| can be used wherever an id-term is allowed. Like the
+anonymous variable \verb|_|, each occurrence of \verb|_#| represents
+an anonymous oid. The difference is that such an oid is not only
+``unique'' in each rule, but in the source program as well.
+
+However, ``unique'' is just the approximate saying. The \FLORA
+compiler does not really check for uniqueness of those newly generated
+oids.  When \FLORA compiles a source program, it first initiates a
+sequential counter.  Each occurrence of \verb|_#| causes the counter
+to be incremented by one, and a new oid to be generated by
+concatenating a fixed prefix, e.g, \verb|_$_$_flora'newoid|, and the
+content of the counter.
+
+For example, the following program:
+\begin{quote}
+\begin{verbatim}
+_#[ssn->123, father->_#[name->john, spouse->_#[name->mary]]].
+foo[_#(X)->Y] :- foo(X,Y).
+\end{verbatim}
+\end{quote}
+is the same as the following one, where the anonymous oids are explicitly
+replaced by the corresponding encrypted strings that would be generated
+by the \FLORA compiler:
+\begin{quote}
+\begin{verbatim}
+'_$_$_flora''newoid1'[ssn->123, father->'_$_$_flora''newoid2'].
+'_$_$_flora''newoid2'[name->john, spouse->'_$_$_flora''newoid3'].
+'_$_$_flora''newoid3'[name->mary].
+foo['_$_$_flora''newoid4'(X)->Y] :- foo(X,Y).
+\end{verbatim}
+\end{quote}
+
+
+\section{\FLORA Modules} \label{sec:flora-modules}
+
+
+\FLORA modules are different from XSB modules in the following two
+ways:
+\begin{enumerate}
+\item In general, module names in XSB are determined by file names.
+      For example, if the file {\tt myprog.P} is loaded, then the name
+      of the module that this file resides in is named {\tt myprog}.
+      On the contrary, module names in \FLORA are more conceptual and
+      have nothing to do with file names at all. Any program can be
+      loaded into any arbitrarily named module as long as the name of
+      the module is provided.
+
+\item XSB modules are static. Once a program is loaded as a module (not
+      into {\tt usermod}), no other program (e.g., a new version of
+      the same program) can be loaded to replace the previous program.
+      It remains in the module until the XSB system exits. \FLORA modules,
+      however, can be dynamically loaded during runtime. When a program
+      is loaded into a module, its effect is just like that of the XSB
+      command {\tt consult} --- new predicates in the program will wipe
+      out those old predicates already loaded into the module if they
+      share the same functor and arity.
+\end{enumerate}
+
+Since a program can be loaded into any module, different byte code of
+the same program needs to be generated for each different module.  The
+command {\tt flcompile(file,module)} can be called to generate the
+byte code for the program to be loaded into the module named
+{\tt module}. The name of the byte code file is the module name appended
+to the program file name. For instance, {\tt flcompile(myprog,foomod)}
+would generate the byte code {\tt myprog\_foomod.O}.
+
+
+\subsection{Compilation}
+
+
+To compile a program file for a module, \FLORA actually encodes the
+module name into all predicate names in the program, and into all
+those predicate names used for translating \fl literals. Different
+modules will cause different names to be encoded, thus avoiding
+predicate name clashes and rendering the program loadable to different
+modules at runtime.  For example, the following \FLORA program:
+\begin{quote}
+\begin{verbatim}
+foo(a).
+john[father->smith].
+\end{verbatim}
+\end{quote}
+will be compiled into the following XSB program, assuming it is to
+loaded into the module named {\tt foomod}:
+\begin{quote}
+\begin{verbatim}
+'_$_$_flora''foomod''flapply'(foo,a).
+'_$_$_flora''foomod''fd'(john,father,smith).
+\end{verbatim}
+\end{quote}
+
+In the above examples, the translation of {\tt foo(a)} into
+\verb|'_$_$_flora''foomod''flapply'(foo,a)| is due to the HiLog
+translation. If this is not wanted, the compiler directive,
+{\tt nohilog functor/arity}, can be used to turn off the HiLog
+translation, as illustrated as follows:
+\begin{quote}
+\begin{verbatim}
+:- nohilog foo/1.
+foo(a).
+john[father->smith].
+\end{verbatim}
+\end{quote}
+The above program will be compiled into the following XSB program,
+assuming it is to be loaded into the module named {\tt foomod}:
+\begin{quote}
+\begin{verbatim}
+'_$_$_flora''foomod''foo'(a).
+'_$_$_flora''foomod''fd'(john,father,smith).
+\end{verbatim}
+\end{quote}
+
+Note that the compiler directive \mbox{\tt prolog functor/arity} is used
+to define a Prolog term, no matter whether it appears as
+a predicate call or as an argument. However, \mbox{\tt nohilog functor/arity}
+only turns off HiLog translation for predicate calls, not for arguments.
+Moreover, the presence of a {\tt prolog} directive will obviate
+the {\tt nohilog} directive for the same functor and arity pair. 
+
+Shown below is an example to illustrate the different effects of the
+{\tt prolog} and {\tt nohilog} compiler directives:
+\begin{quote}
+\begin{verbatim}
+:- prolog foo/1.
+:- prolog goo/1.
+:- nohilog foo/1.
+:- nohilog hoo/1.
+foo(X) :- hoo(goo(X)), goo(hoo(X)).
+\end{verbatim}
+\end{quote}
+Assuming the above program is to be loaded into the module named
+{\tt foomod}, it will be compiled into the following XSB program:
+\begin{quote}
+\begin{verbatim}
+foo(X) :- '_$_$_flora''foomod''hoo'(goo(X)), goo(flapply(hoo,X)).
+\end{verbatim}
+\end{quote}
+
+To turn off the HiLog translation for all predicate calls in a program,
+the following compiler directive can be used:
+\begin{quote}
+\begin{verbatim}
+:- nohilogall.
+\end{verbatim}
+\end{quote}
+
+
+\subsection{Reference to Literals in Other Modules}
+
+
+The syntax to refer to literals defined in other modules is as follows:
+\begin{quote}
+\verb|literal @ module|
+\end{quote}
+where {\tt literal} can be any predicate or F-molecule. For instance,
+\verb|foo(a) @ foomod| refers to {\tt foo(a)} in the module named
+{\tt foomod}, be it specified as a fact or defined by a rule.
+
+By default, if not followed by the ``\verb|@|'' sign and a module
+name, all literals only refer to the module where they reside. To specify
+literal references in a \FLORA program, the following rules need to be
+followed:
+\begin{enumerate}
+\item The name of the module must be known at compile time.
+
+\item Literal reference cannot appear in a rule head or be specified as
+      a fact. For example, the following program will generate
+      parsing errors in \FLORA:
+      \begin{quote}
+      \verb|john[father->smith] @ foomod.| \\
+      \verb|foo(X) @ foomod :- goo(X).|
+      \end{quote}
+
+\item Module name specification is distributive over logical connectives,
+      including the conjunction operator, ``\verb|,|'', the disjunction operator,
+      ``\verb|;|'', and the negation operators, ``\verb|~|'', ``\verb|\+|,
+      ``\verb|not|'', and ``\verb|tnot|''. For example, the formula below:
+      \begin{quote}
+      \verb|(john[father->smith], tnot smith[spouse->mary]) @ foomod|
+      \end{quote}
+      is equivalent to the following formula:
+      \begin{quote}
+      \verb|john[father->smith] @ foomod; tnot (smith[spouse->mary] @ foomod)|
+      \end{quote}
+
+\item Module name specifications can be nested. The one closest to a literal
+      takes effect. For example, the formula below:
+      \begin{quote}
+      \verb|(foo(a), goo(b) @ goomod, hoo(c)) @ foomod|
+      \end{quote}
+      is equivalent to the following formula:
+      \begin{quote}
+      \verb|foo(X) @ foomod, goo(b) @ goomod, hoo(c) @ foomod|
+      \end{quote}
+
+\item Module name specification propogates to any F-molecule appearing
+      in the argument position of a predicate for which the module name is
+      specified. For example, the formula below:
+      \begin{quote}
+      \verb|foo(a.b[c->d]) @ foomod|
+      \end{quote}
+      is equivalent to the following formula:
+      \begin{quote}
+      \verb|a[b->X] @ foomod, X[c->d] @ foomod, foo(X) @ foomod|
+      \end{quote}
+
+\item However, module name specification does not affect the translation of
+      any term in the argument position unless a module name is explicitly
+      specified for it. For example, the \FLORA queries below:
+      \begin{quote}
+      \verb|?- foo(goo(a[c->d])) @ foomod.| \\
+      \\
+      \verb|?- foo(goo(a[c->d]) @ goomod) @ foomod.|
+      \end{quote}
+      will be compiled into the following XSB queries, respectively:
+      \begin{quote}
+      \verb|?- '_$_$_flora''foomod''fd'(a,b,c),| \\
+      \verb|   '_$_$_flora''foomod''flapply'(foo,flapply(goo,a)).| \\
+      \\
+      \verb|?- '_$_$_flora''goomod''fd'(a,b,c),| \\
+      \verb|   '_$_$_flora''foomod''flapply'(foo,'_$_$_flora''goomod''flapply'(goo,a)).|
+      \end{quote}
+\end{enumerate}
+
+
+\subsection{Calling XSB from \FLORA}
+
+
+Like XSB, \FLORA supports the compiler directive,
+\mbox{\tt import functor/arity from module}, to call a predicate
+with functor {\tt functor} and arity {\tt arity} that is defined in an
+XSB module named {\tt module}. For example, the following line:
+\begin{quote}
+\verb|:- import member/2 from basics.|
+\end{quote}
+will tell the \FLORA compiler to compile {\tt member/2} as a predicate
+that refers to the XSB module named {\tt basics}.
+
+In fact, the above compiler directive will cause \emph{every}
+occurrence of {\tt member/2} in a \FLORA program to be compiled into a
+predicate that refers to the XSB module {\tt basics}. Moreover, its
+side effect is also to define {\tt member/2} as a Prolog
+term. It is equivalent to saying the following two lines of
+compiler directives:
+\begin{quote}
+\begin{verbatim}
+:- prolog member/2.
+:- import member/2 from basics.
+\end{verbatim}
+\end{quote}
+
+To avoid the above mentioned side effect, the following syntax, which
+is an extension to the module name specification, can be exploited to
+make individual XSB calls in a \FLORA program:
+\begin{quote}
+\begin{verbatim}
+xsb_predicate @ xsb xsb_module
+\end{verbatim}
+\end{quote}
+where {\tt xsb} is a fixed keyword, and \verb|xsb_predicate| is a
+predicate defined in the XSB module named \verb|xsb_module|. Note that
+the translation of other predicates that have the same functor and
+arity as \verb|xsb_predicate| will not be affected by this call. For
+example, the \FLORA query below:
+\begin{quote}
+\verb|?- member(a,[a]) @ xsb basics, member(X,[a]).|
+\end{quote}
+will be compiled into the following XSB query:
+\begin{quote}
+\begin{verbatim}
+?- import member/2 from basics, member(a,[a]),
+   '_$_$_flora''main''flapply(member,X,[a]).
+\end{verbatim}
+\end{quote}
+
+
+\subsection{Calling \FLORA from XSB}
+
+
+The major problem with calling \FLORA from XSB is that XSB does not
+understand the \fl syntax. However, \FLORA supports the XSB syntax and
+since every \FLORA program is finally compiled into an XSB program, it
+can loaded and used like an XSB module, based on the
+{\tt import/export} mechanism from the underlying XSB system.
+
+First, the \FLORA program needs to export the predicates of interest
+using the compiler directive \verb|export functor/arity|. If what
+needs to be exported directly involves \fl, then new predicates should
+be introduced to contain the relevant F-molecules. Once these new
+predicates are properly defined, all that is left to do is just to
+export them like any other predicates of interest.
+
+For example, the following program segment shows how to export course
+selection information about students:
+\begin{quote}
+\begin{verbatim}
+:- export studinfo/4.
+
+studinfo(SSN,Year,Semester,CourseCode) :-
+        _Person:student[ssn->SSN,Year(Semester)->>CourseCode].
+\end{verbatim}
+\end{quote}
+
+Note that like the {\tt import} compiler directive, the side effect
+of {\tt export functor/arity} is also to define \emph{every} occurrence
+of the predicate {\tt functor/arity} as a Prolog term.
+
+When the predicates of interest have been exported from a \FLORA
+program, the calling XSB program needs to import them using the
+compiler directive \mbox{\tt import functor/arity from module}.
+The only thing that needs extra care is the name of the module.
+Here {\tt module} refers to the name of an XSB module, but not
+a \FLORA module.
+
+As pointed out earlier at the beginning of
+Section~\ref{sec:flora-modules}, module names in XSB are associated
+with file names. Therefore, in the {\tt import} compiler directive the
+calling XSB program should use the name of the final byte code file of
+the \FLORA program. For instance, suppose the name of the \FLORA
+program is {\tt studentdb.flr}, and the byte code is generated using
+the \FLORA command {\tt flcompile(studentdb,studmod)}, then the XSB
+program calling predicates in it should use \verb|studentdb_studmod|
+as the module name in the {\tt import} compiler directive. However, if
+the byte code is generated using the command {\tt flcompile(studentdb)},
+which assumes {\tt main} as the default \FLORA module name, then
+\verb|studentdb_main| should be used as the module name in the calling
+XSB program.
+
+
+\subsection{Including Files into \FLORA Programs}
+
+
+There are programs that encode a lot of common functionalities but
+need to access predicates in the calling program. These programs are
+like an integral part of the calling program and therefore cannot be
+used like a \FLORA module or an XSB module. Ideally these programs
+need to be embeded into the calling program to function correctly.
+
+The only way to use these programs is to include their sources into
+the calling program. To include a file into a program, the following
+preprocessing command can be used:
+\begin{quote}
+\verb|#include "file_name"|
+\end{quote}
+where \verb|file_name| is the name of the program file to be included.
+
+In fact, before parsing a program, \FLORA \emph{always} calls the
+{\sf gpp} preprocessor to process its input program. Therefore, any
+preprocessing command that is recognized by {\sf gpp} can appear in
+a \FLORA program (refer to the XSB manual for more information on
+{\sf gpp}). The above mentioned \verb|#include "file_name"| is one
+of the preprocessing commands supported by {\sf gpp}.
+
+
+\section{\FLORA and Tabling}\label{sec-tabling-flora}
+
+************* should add the flora tabling/non-tabling directives ***
+
+\index{tabling}
+Tabling is a technique that enhances top-down evaluation with a mechanism
+that remembers the calls previously made during query evaluation.
+This technique is known to be essentially equivalent to the Magic Sets
+method for bottom-up evaluation. However, tabling combined with top-down
+evaluation has the advantage of being able to utilize highly optimized
+compilation techniques developed for Prolog. The result is a very efficient
+deductive engine.
+
+XSB lets the user specify which predicates must be tabled.  The \FLORA
+compiler automatically tables the predicates used to flatten F-molecules.
+However, the user is responsible for telling the system which other
+predicates must be tabled. (Normally, these are predicates defined by the
+user.)  \FLORA programs accepts the same tabling directives as XSB does
+(Section~\ref{sec-comp-directives} lists all the compiler directives).
+
+It is important to keep in mind that XSB does not do reordering of objects
+and predicates during joins. Instead, all joins are performed left-to-right.
+The programmer, thus, must write program clauses in such a way as to ensure
+that smaller predicates and classes appear early on in the join. Also, even
+though XSB tables the results obtained from previous queries, the current
+tabling engine has several limitations. In particular, when a new query
+comes in, XSB tries to determine if this query is ``similar'' to one that
+already has been answered (or is in the process of being evaluated).
+Unfortunately, the current notion of similarity used by XSB is fairly weak,
+and many unnecessary recomputations might result. This problem will be
+corrected in a future release.
+
+\index{abolish\_all\_tables}
+%%
+It is also important to be aware that when XSB (and \FLORA) evaluate a program,
+all tabled predicates are partially materialized and all the computed
+tuples are stored in XSB tables. Thus, if you change the set of facts, the
+existing tables must be discarded in order to allow XSB to recompute the
+results. This is accomplished by issuing the predicate {\tt
+  abolish\_all\_tables/0} described in the XSB manual.
+
+Furthermore, tabling sometimes has undesirable side effects in
+``real-world'' programming, especially when writing methods with
+non-logical side effects ({\it e.g.}, writing or reading a file).  If a
+tabled predicate has such side effects, then the first time the predicate
+is called the side effect will be performed, but the second time the call
+simply returns with success or failure (depending on the outcome of the
+first call).  Thus, if the predicate was intended to perform the side
+effect each time it is called, it will not operate correctly.
+
+All this is, of course, old news to XSB programmers, but is there anything
+\FLORA-specific in this? It turns out yes, and that the problem is not
+immediately apparent. In the object-oriented style, people tend to define
+methods with side effects and attach them to objects.  However, because
+\FLORA tables everything that comes from F-molecules, methods with side
+effects are subject to the same problem as described above.
+
+ To solve this
+program, \FLORA introduces new syntax to escape those methods with side
+effects, which are translated into non-tables predicates when the program
+is compiled. Refer to Section~\ref{sec:} for information
+
+
+\index{cut in \FLORA}
+\index{cutting across tables}
+%%
+No discussion of a logic programming language is complete without a few
+words about the infamous Prolog cut (!). Although Prolog cut has been
+(mostly rightfully) excommunicated by as far as Database Query Languages
+are concerned, it is sometimes indispensable when doing ``real work'', like
+pretty-printing \FLORA programs or implementing a pattern matching
+algorithm.  To facilitate this kind of tasks, \FLORA lets the programmer
+use cuts.  However, the current implementation of XSB has a limitation that
+Prolog cuts cannot ``cut across tabled predicates.''  Without trying to
+pretend to be experts, we refer the reader to the XSB manual for details on
+this obscure problem. The XSB team is considering correcting this problem
+in a future release.
+
+For now, enjoy your cut.  If you get an error message telling something
+about cutting across the tables --- you know that you may have cut too much.
+The basic rule that can keep you out of trouble is: do not put a cut
+in the body of a rule \emph{after} any F-molecule. However, it is (usually)
+OK to to put a cut before any F-molecule. It is even OK to have a cut in
+the body of a rule that \emph{defines} an F-molecule (again, provided that
+the body has no F-molecule to the left of that cut).
+
+
+\section{Updates}
+
+\FLORA provides the users with several predicates to modify the runtime
+database.  
+
+
+\subsection{Non-backtrackable Updates}
+
+\subsection{Backtrackable Updates}
+
+\subsection{Asserting, Retracting, and Tabling}
+To implement object properties, \FLORA relies on a feature of XSB called
+\emph{tabling} (see Section~\ref{sec-tabling-flora} for more details).
+Unfortunately, tabling and {\tt retract} do not mix well.
+The problem is that results from previous queries are cached in
+tables, and {\tt retract} does not delete facts from tables. Thus, you
+might get the following counterintuitive result:
+%%
+\begin{verbatim}
+flora ?- assert(o[m->1]).
+Yes.
+flora ?- o[m->1].
+Yes.
+flora ?- retract(o[m->1]), o[m->1].
+Yes.
+\end{verbatim}
+%%
+The reason for the wrong positive answer here is that the cache remembers
+that the query {\tt o[m->1]} is true. So, when the same query is asked
+after {\tt retract}, a wrong result is returned from the cache. Similarly,
+tabling might interact poorly with {\tt assert}:
+%%
+\begin{verbatim}
+flora ?- o[m->1].
+No.
+flora ?- assert(o[m->1]), o[m->1].
+No.
+\end{verbatim}
+%%
+The reason for the wrong result here is, again, that the cache remembers
+that {\tt o[m->1]} is false, which is no longer correct after the assert
+operation.
+
+\index{abolish\_all\_tables}
+%%
+In a future release, \FLORA will provide a workaround for these problems
+(and it is even possible that a future release of XSB will start doing the
+right thing in these situations. For now, the only remedy is to use a call
+to {\tt abolish\_all\_tables}, which would drop all tables.
+However, at present, the only safe way to do this is by executing {\tt
+  abolish\_all\_tables} as a separate query.
+
+
+************* other problems: tabled should not depend on transactions *****
+
+************* tabled queries that depend on dynamic part of the database
+              should use wrappers that abort tables on backtracking. ******
+
+
+
+
+\section{Negation} \label{sec:negation}
+
+
+\FLORA uses the well-founded semantics for negation and relies on the
+underlying XSB system for this service. Negation is specified using the
+{\tt tnot} operator. 
+
+***** Explain that if negation is applied to the molecule then the molecule
+      should not contain transactions.
+
+
+\section{\FLORA Compiler and Loader} \label{sec-comp-directives}
+
+Like XSB compiler, \FLORA compiler can take compilation directives. All
+such directives must begin with {\tt :-} (while all queries must begin with
+{\tt ?-}). The following is a list of all the compiler directives supported
+by \FLORA:
+
+
+\section{\FLORA Debugger}
+\index{debugging}
+
+
+*********** Must be fixed when the debugger is adapted **********
+
+
+\FLORA debugger is essentially a presentation layer on top of the XSB
+debugger, so familiarity with the latter is highly recommended (XSB Manual,
+Part I). Here we sketch only a few basics.
+
+The debugger has two facilities: tracing and spying. Tracing allows the
+user to watch the program being executed step by step, and spying allows
+one to tell \FLORA that it must pose when execution reaches certain 
+predicates or object methods. The user can trace the execution from then
+on. At present, only the tracing facility has been implemented.
+
+\index{tracing}
+To start tracing, you must issue the command {\tt flora\_trace} at the
+\FLORA prompt. It is also possible to put the subgoal {\tt flora\_trace} in
+the middle of the program. In tat case, tracing will start after this
+subgoal gets executed. This is useful when you know where exactly you want
+to start tracing the program. To stop tracing, type {\tt flora\_notrace}.
+
+During tracing, the user is normally prompted at the four ports of subgoal
+execution: {\tt Call} (when a subgoal is first called), {\tt Exit} (when
+the call exits), {\tt Redo} (when the subgoal is tried with a different
+binding on backtracking), and {\tt Fail} (when a subgoal fails).
+At each of the prompts, the user can issue a number of commands. The most
+common ones are listed below. See the XSB manual for more.
+%%
+\begin{itemize}
+  \item {\tt carriage return (creep)}:  to go to the next step  
+  \item {\tt s (skip)}: execute this subgoal non-interactively; prompt
+    again when the call exits (or fails)
+  \item {\tt S (verbose skip)}: like {\tt s}, but also show the trace
+    generated by this execution
+  \item {\tt l (leap)}: stop tracing and execute the remainder of the
+    program
+\end{itemize}
+%%
+The behavior of the debugger is controled by the predicate {\tt
+  debug\_ctl}. For instance, executing {\tt debug\_ctl(profile, on)} at the
+\FLORA prompt tells XSB to measure the CPU time it takes to execute each
+call. This is useful for tuning your program for performance. Other useful
+controls are: {\tt debug\_ctl(prompt, off)}, which causes the trace to be
+generated without user intervention; and {\tt debug\_ctl(redirect,
+  foobar)}, which redirects debugger output to the file named {\tt foobar}.
+The latter feature is usually useful only in conjunction with the
+  aforesaid prompt-off mode. See the XSB manual for additional information
+  on debugger control.
+
+
+\section{Emacs Support}
+
+Editing and debugging \FLORA programs can be greatly simplified with the
+help of \emph{flora-mode}, a special Emacs editing mode designed
+specifically for \FLORA programs. Flora-mode provides support for syntactic
+highlighting, automatic indentation, and the ability to run \FLORA programs
+right out of the Emacs buffer.
+
+\subsection{Instalation}
+To install \emph{flora-mode}, you must perform the following steps. Put the
+file
+%%
+\begin{quote}
+  {\tt XSB/packages/flora2/emacs/flora.el} 
+\end{quote}
+%%
+found in your XSB distribution on the load path of Emacs or XEmacs
+(whichever you are using). The best way to work with Emacs is to make a
+separate directory for Emacs libraries (if you do not have one), and put
+{\tt flora.el} there. Such a directory can be added to emacs search path by
+putting the following command in the file \verb|~/.emacs| (or
+\verb|~/.xemacs|, if you are running one of the newer versions of XEmacs):
+%%
+\begin{quote}
+  \tt
+   (setq load-path (cons "your-directory" load-path)) 
+\end{quote}
+%%
+It is also a good idea to compile emacs libraries. To compile flora.el,
+use this:
+%%
+\begin{quote}
+  \tt
+   emacs -batch -f batch-byte-compile flora.el 
+\end{quote}
+%%
+If you are using XEmacs, use {\tt xemacs} instead of {\tt emacs} above ---
+the two emacsen often use incompatible byte code.
+
+Finally, you must tell X/Emacs how to recognize \FLORA program files, so
+Emacs will be able to invoke the Flora major mode automatically when you
+are editing such files:
+%%
+\begin{verbatim}
+(setq auto-mode-alist (cons '("\\.flr$" . flora-mode) auto-mode-alist))
+(autoload 'flora-mode "flora" "Major mode for editing Flora programs." t)
+\end{verbatim}
+%%$
+
+To enable syntactic highlighting of Emacs buffers (not just for \FLORA
+programs), you can do the following:
+%%
+\begin{itemize}
+  \item  {\sf In Emacs:} select {\tt Help.Options.Global Font Lock} on
+    the menubar.  To enable highlingting permanently, put 
+    %%
+    \begin{quote}
+      \tt
+      (global-font-lock-mode t)
+    \end{quote}
+    %%
+    in \verb|~/.emacs|.
+  \item {\sf In XEmacs:} select {\tt Options.Syntax
+        Highlighting.Automatic} in the menubar. To enable this permanently, put
+      %%
+      \begin{quote}
+        \tt
+        (add-hook 'find-file-hooks 'turn-on-font-lock)
+      \end{quote}
+      %%
+      in \verb|~/.emacs| or \verb|~/.xemacs| (whichever is used by your
+      XEmacs).
+\end{itemize}
+%%
+
+\subsection{Functionality}
+\paragraph{Menubar menu.}
+Once flora editing mode is installed, it provides a number of functions.
+First, whenever you edit a \FLORA program, you will see the ``Flora'' menu
+in the menubar. This menu provides commands for controlling the Flora
+process (i.e., XSB with the \FLORA shell). You can start and stop
+this process, type queries to it, and you can tell it to consult regions of
+the buffer you are editing, the entire buffer, or some other file.
+
+Because Emacs provides automatic file completion and allows you to edit
+what you typed, performing these functions right out of the buffer takes
+much less effort than typing the corresponding commands on XSB command
+line.
+
+\paragraph{Keyboard functions.}
+In addition to the menu, \emph{flora-mode} lets you execute most of the
+menu commands using the keyboard. Once you get the hang of it, keyboard
+commands are much faster to invoke:
+%%
+\begin{verbatim}
+Consult file:                 Ctl-c Ctl-f
+Consult file dynamically:     Ctl-u Ctl-c Ctl-f
+Consult buffer:               Ctl-c Ctl-b
+Consult buffer dynamically:   Ctl-u Ctl-c Ctl-b
+Consult region:               Ctl-c Ctl-r
+Consult region dynamically:   Ctl-u Ctl-c Ctl-r
+\end{verbatim}
+%%
+When you invoke any of the above commands, a \FLORA process is started,
+unless it is already running. However, if you want to invoke this process
+explicitly, type
+%%
+\begin{verbatim}
+ESC x run-flora  
+\end{verbatim}
+%%
+You can control the \FLORA process using the following commands:
+%%
+\begin{verbatim}
+Interrupt Flora Process:      Ctl-c Ctl-c
+Quit Flora Process:           Ctl-c Ctl-d
+Restart Flora Process:        Ctl-c Ctl-s
+\end{verbatim}
+%%
+Interrupting \FLORA is equivalent to typing {\tt Ctl-c} at the \FLORA
+prompt, quitting the process stops XSB, and restarting the process shuts
+down the old XSB process and starts a new one with \FLORA shell running.
+
+\paragraph{Indentation.}
+Flora editing mode understands some aspects of the \FLORA syntax, which
+enables it to provide correct indentation of program lines (in many cases).
+In the future, flora mode will know more about the syntax, which will let
+it provide even better support for indentation.
+
+The most common use of \FLORA indentation facility is by typing the {\tt
+  TAB}-key. If \emph{flora-mode} manages to understand where the cursor is,
+it will indent the line accordingly. Another way is to put the following in
+your emacs startup file (\verb|~/.emacs| or \verb|~/.xemacs|):
+%%
+\begin{verbatim}
+    (setq flora-electric t)  
+\end{verbatim}
+%%
+In this case, whenever you type the return key, the next line will be
+indented automatically.
+
+
+
+
+
+\section{Future Enhancements}
+
+\FLORA is work in progress. We are still experimenting with features and
+nothing is cast in stone. So, although we do not intend to make the life of 
+\FLORA users harder than it already is, we cannot give a guarantee of
+backward compatibility. The following enhancements and features are among
+currently planned:
+
+%%
+\begin{description}
+  \item[Aggregates:] \FLORA will provide builtin functions that will
+    directly apply to the outcome of the aggregates {\tt collectbag} and
+    {\tt collectset}. This will make it possible to do grouping once and
+    then compute multiple aggregates over the groups.
+  \item[Negation:] Currently \FLORA does not support negation of mixed
+    F-molecules, i.e., molecules that contain tables and non-tabled
+    things..
+\end{description}
+%%
+
+
+\bibliography{../../../docs/userman/manual}
+
+\printindex
+
+\end{document}
