@@ -924,6 +924,7 @@ pop_abort_cutpoint :-
 	retract('_$abort_cutpoint'(Cp)),
 	conset('_$abort_cutpoint',Cp),
 	!.
+pop_abort_cutpoint.
 
 %  abort/0
 abort :- 
