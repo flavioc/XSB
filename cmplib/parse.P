@@ -190,7 +190,7 @@ change_index(P/A-Arg, ModName, P_Mod/A-Arg) :-
 	).
 
 %-------------------------------------------------------------------------
-% get_p_mode(+P, +ModName, +P_Mod)
+% get_p_mod(+P, +ModName, +P_Mod)
 %	Given a predicate name P and a module/file name ModName, returns
 %	a new predicate name P_Mod.
 %-------------------------------------------------------------------------
