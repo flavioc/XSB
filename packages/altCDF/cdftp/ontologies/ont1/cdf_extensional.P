@@ -4,6 +4,8 @@ isa_ext(cid(electronicPart,o1),cid('CDF Classes',cdf)).
     isa_ext(cid(bookshelfStereo,o1),cid(stereo,o1)).
       isa_ext(cid(expBookStereo,o1),cid(expensiveStereo,o1)).
       isa_ext(cid(expBookStereo,o1),cid(bookshelfStereo,o1)).
+
+    isa_ext(cid(quadStereo,o1),cid(stereo,o1)).  % defined by rules.
   isa_ext(cid(amplifier,o1),cid(electronicPart,o1)).
   isa_ext(cid(speaker,o1),cid(electronicPart,o1)).
 

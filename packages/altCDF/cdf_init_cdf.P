@@ -58,6 +58,8 @@
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
 	from cdf_xj.
 
+:- import cdf_message/1 from cdf_exceptions.
+
 :- import '_$index'/3 from file_op.
 %:- import conset/2, conget/2 from gensym.
 :- import ground/1 from basics.
@@ -65,6 +67,14 @@
 :- import search_module/6 from consult.
 :- dynamic user_cdf_flag/2.
 :- import user_cdf_flag/2 from usermod.
+
+:- ensure_loaded(cdf_config).
+
+#if TABLEDISA
+?- cdf_message('Using tabled isa').
+#else
+?- cdf_message('Using non-tabled isa').
+#endif
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -121,8 +131,6 @@ cdf_dynamic(assert_cdf_int/1).
 cdf_dynamic(retractall_cdf_int/1).
 
 %%%%%%%%%%%%% Declarations for constraint checking
-
-:- ensure_loaded(cdf_config).
 
 :- initialize_cdf.
 
@@ -1364,7 +1372,7 @@ abolish_cdf_tables:-
 	abolish_maxAttr_inherits,
 	abolish_minAttr_inherits.
 
-#ifdef TABLEDISA
+#if TABLEDISA
 abolish_isas:- 
 	abolish_table_pred(isa_bf_maybe_table(_,_)),
 	abolish_table_pred(isa_subclass_fx_maybe_table(_,_)),

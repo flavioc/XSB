@@ -276,7 +276,7 @@ get_intensional_call(Head,Call):-
 	functor(Body,F,A),
 	functor(Call,F,A).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(load_component/3,
 "@tt{load_component(Name,Path,Parameter_list)} loads the component
 @tt{Name}, from path @tt{Path} and recursively, all other components

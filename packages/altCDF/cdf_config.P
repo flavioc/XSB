@@ -6,6 +6,10 @@
 
 :- import default_sys_error_handler/1 from error_handler.
 
+
+/* For DL Rules */
+:- op(1150, xfx, (<=)).
+
 % keep a table with all possible flags here.
 cdf_flag(dirty).
 cdf_flag(query).
@@ -54,9 +58,6 @@ component_table_int(maxAttr_int(_,_,_,_),2,[arg(1,warn),arg(3,no_warn),
 
 component_table_int(assert_cdf_int(_),null,[]).
 component_table_int(retractall_cdf_int(_),null,[]).
-
-/* For DL Rules */
-:- op(400, xfx, (<=)).
 
 default_user_error_handler(error(Type,List)):-
 	(using_xj -> 

@@ -1,11 +1,11 @@
-:- compiler_options([xpp_on]).
 
-:- export tp_gensym/2, tp_gennum/1, reset_gennum/0, tp_testgennum/1,
-	  tp_incatomnum/1, reset_atomnum/0, tp_testatomnum/1.
+:- export  prettyPrintCE/1,tp_prettyPrintCE/1,
+              tp_gensym/2, tp_gennum/1, reset_gennum/0, tp_testgennum/1,
+	  tp_writeln/1.
 
+:- import on/0, debugging/1 from usermod.
 :- import conset/2,conget/2 from gensym.
-
-#include "tp_debug.h"
+:- import member/2 from basics.
 
 ?- reset_gennum.
 
@@ -19,20 +19,59 @@ tp_gennum(N) :- conget(tp_gennum_val, O), N is O + 1, conset(tp_gennum_val, N).
 
 tp_testgennum(N):- conget(tp_gennum_val, N).
 
-#ifdef FILES
-tp_gensym(Root, Sym) :- 
-	(atom(Root),var(Sym)
-	->  tp_gennum(N),
-	    number_codes(N,NLst), atom_codes(NAtm, NLst),
-	    str_cat(Root, NAtm, Sym)
-	;   abort('Wrong type argument in gensym/2')
-	).
-#else
 tp_gensym(_Root, N) :- 
 	conget(tp_gennum_val, O), 
 	N is O + 1, 
 	conset(tp_gennum_val, N).
-#endif
+
+/*----gennum------------------------------------------------------------*/
+
+tp_prettyPrintCE(CE):- 
+	debugging(X),
+            (X = on ->  prettyPrintCE(CE) ; true).
+
+prettyPrintCE(CE):- prettyPrintCE(CE,0).
+
+prettyPrintCE(','(A,B),N):- !,
+	N1 is N + 3,
+	prettyPrintCE(A,N1),
+	tab(N),writeln('and'),
+	prettyPrintCE(B,N1).
+prettyPrintCE(';'(A,B),N):- !,
+	N1 is N + 3,
+	prettyPrintCE(A,N1),
+	tab(N),writeln('or'),
+	prettyPrintCE(B,N1).
+prettyPrintCE(exists(R,CE),N):-!,
+	tab(N),write('exists('),write(R),write(','),
+	writeEmbeddedCE(CE,N).
+prettyPrintCE(all(R,CE),N):- !,
+	tab(N),write('all('),write(R),write(','),
+	writeEmbeddedCE(CE,N).
+prettyPrintCE(atLeast(N,R,CE),N):-!,
+	tab(N),write('atLeast('),write(N),write(','),write(R),write(','),
+	writeEmbeddedCE(CE,N).
+prettyPrintCE(atMost(N,R,CE),N):-!,
+	tab(N),write('atMost('),write(N),write(','),write(R),write(','),
+	writeEmbeddedCE(CE,N).
+prettyPrintCE(CE,N):- tab(N),writeln(CE).
+	    
+writeEmbeddedCE(CE,N):- 
+	(largeCE(CE) -> 
+	    nl,
+	    N1 is N + 3,
+	    prettyPrintCE(CE,N1),
+	    tab(N),writeln(')')
+	;
+	    write(CE),writeln(')') ).
+
+largeCE(CE):- 
+	functor(CE,F,_),
+	member(F,[',' , ';' , exists , all, atMost , atLeast]).
+
+tp_writeln(Term):-
+	debugging(X),
+	(X = on -> writeln(Term) ; true).
 
 end_of_file.
 

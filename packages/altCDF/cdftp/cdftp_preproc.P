@@ -1,7 +1,8 @@
 
-:- import necessCond/2 from cdf_init_cdf.
+:- document_export cdftp_preprocess/3.
+:- document_import topIdentifier/1 from cdftp_cdfsc.
 
-preprocess(In,Out,N):- 
+cdftp_preprocess(In,Out,N):- 
 	safe_list_to_comma(In,Mid),
 	preprocess1(Mid,Out,0,N).
 
@@ -13,8 +14,17 @@ list_to_comma([H],H):- !.
 list_to_comma([H|T],','(H,T1)):- 
 	list_to_comma(T,T1).
 
-/* Needs to 1) flatten inv 2) push negations 3) catch necConds
-    atLeast 2 -> 3? check bounds of atMost? */
+/* This predicate 
+    1) flattens inv: takes terms of the form
+    inv(inv(...(R)) and turns the term into either R or inv(R). 
+    2) pushes negations (as in paper)
+    3) Turns predicates of the form atLeast/2 into atLeast/3, and
+        atMost/2 into atMost/3. 
+
+    It also tries to estimate the number of classes, but this needs to be fixed.
+    Should it check bounds of atMost?
+*/
+
 preprocess1(','(A,B),','(A1,B1),NumIn,NumOut):- !, 
 	preprocess1(A,A1,NumIn,NumMid),
 	preprocess1(B,B1,NumMid,NumOut).
@@ -28,15 +38,17 @@ preprocess1(exists(R,C),exists(R1,C1),N,NOut):- !,
 preprocess1(all(R,C),all(R1,C1),N,NOut):- !,
 	preprocRel(R,R1),
 	preprocess1(C,C1,N,NOut).
-preprocess1(atLeast(N,R),atLeast(N,R1),NIn,NOut):- !,
+preprocess1(atLeast(N,R),atLeast(N,R1,Top),NIn,NOut):- !,
 	NOut is NIn + N,
-	preprocRel(R,R1).
+	preprocRel(R,R1),
+	topIdentifier(Top).
 preprocess1(atLeast(N,R,C),atLeast(N,R1,C1),NIn,NOut):- !,
 	preprocRel(R,R1),
 	NMid is NIn + N,
 	preprocess1(C,C1,NMid,NOut).
-preprocess1(atMost(N,R),atMost(N,R1)):- !,
-	preprocRel(R,R1).
+preprocess1(atMost(N,R),atMost(N,R1,Top),Nin,Nin):- !,
+	preprocRel(R,R1),
+            topIdentifier(Top).
 preprocess1(atMost(N,R,C),atMost(N,R1,C1),NIn,NOut):- !,
 	preprocRel(R,R1),
 	preprocess1(C,C1,NIn,NOut).
@@ -47,14 +59,8 @@ preprocess1(sameAs(R1,C1,R2,C2),sameAs(R11,C11,R21,C21),NIn,NOut):- !,
 	preprocess1(C2,C21,NMid,NOut).
 preprocess1(not(Class),C1,NIn,NOut):- !,
 	preprocessNot(Class,C1,NIn,NOut).
-preprocess1(cdfbottom,cdfbottom,N,N):- !.
-preprocess1(cdfroot,cdfroot,N,N):- !.
-preprocess1(Class,C1,N,NOut):- 
-	(getNecConds(Class,Conds) -> 
-	    preprocess(Conds,Conds1,N,NOut),
-	    C1 = ','(Class,Conds1) 
-	  ; C1 = Class,N = NOut).
-
+preprocess1(oid(Id,Cmpt),unique(cid(Id,Cmpt)),N,N).
+preprocess1(Class,Class,N,N).
 
 preprocessNot(','(A,B),';'(A1,B1),NIn,NOut):- !, 
 	preprocessNot(A,A1,NIn,NMid),
@@ -69,14 +75,16 @@ preprocessNot(all(R,C),exists(R1,C1),NIn,NOut):- !,
 	preprocRel(R,R1),
 	N1 is NIn + 1,
 	preprocessNot(C,C1,N1,NOut).
-preprocessNot(atLeast(N,R),atMost(N1,R1),N,N):- !,
+preprocessNot(atLeast(N,R),atMost(N1,R1,Top),Nin,Nin):- !,
+	topIdentifier(Top),
 	N1 is N - 1,
 	preprocRel(R,R1).
 preprocessNot(atLeast(N,R,C),atMost(N1,R1,C1),NIn,NOut):- !,
 	N1 is N - 1,
 	preprocRel(R,R1),
-	preprocess(C,C1,NIn,NOut).
-preprocessNot(atMost(N,R),atLeast(N1,R1),NIn,NOut):- !,
+	preprocess1(C,C1,NIn,NOut).
+preprocessNot(atMost(N,R),atLeast(N1,R1,Top),NIn,NOut):- !,
+	topIdentifier(Top),
 	N1 is N + 1,
 	NOut is NIn + N1,
 	preprocRel(R,R1).
@@ -84,7 +92,7 @@ preprocessNot(atMost(N,R,C),atLeast(N1,R1,C1),NIn,NOut):- !,
 	N1 is N + 1,
 	preprocRel(R,R1),
 	NMid is NIn + N1,
-	preprocess(C,C1,NMid,NOut).
+	preprocess1(C,C1,NMid,NOut).
 preprocessNot(sameAs(R1,C1,R2,C2),
 	          differentFrom(R11,C11,R21,C21),NIn,NOut):- !,
 	preprocRel(R1,R11),
@@ -92,14 +100,22 @@ preprocessNot(sameAs(R1,C1,R2,C2),
 	preprocRel(R2,R21),
 	preprocessNot(C2,C21,NMid,NOut).
 preprocessNot(not(Class),C1,NIn,NOut):- !,
+	% Should fail here if class is cdfroot.
 	preprocess1(Class,C1,NIn,NOut).
-preprocessNot(cdfbottom,cdfroot,N,N):- !.
-preprocessNot(cdfroot,cdfbottom,N,N):- !.
-preprocessNot(Class,C1,NIn,NOut):- 
+preprocessNot(oid(Id,Cmpt),not(unique(Id,Cmpt)),Nin,Nin).
+preprocessNot(Class,not(Class),Nin,Nin).    % includes unique.
+
+preprocRel(inv(inv(R)),R1):- !,
+	preprocRel(R,R1).
+preprocRel(R,R).
+	
+end_of_file.
+
+preprocess1(Class,C1,N,NOut):- 
 	(getNecConds(Class,Conds) -> 
-	    preprocessNot(Conds,Conds1,NIn,NOut),
+	    preprocess1(Conds,Conds1,N,NOut),
 	    C1 = ','(Class,Conds1) 
-	 ; C1 = not(Class),NIn = NOut).
+	  ; C1 = Class,N = NOut).
 
 getNecConds(Class,Conds):- 
 	findall(Cond,necessCond(Class,vid(Cond)),Conds1),
@@ -107,7 +123,9 @@ getNecConds(Class,Conds):-
 	    fail
 	;  safe_list_to_comma(Conds1,Conds)).
 
-preprocRel(inv(inv(R)),R1):- !,
-	preprocRel(R,R1).
-preprocRel(R,R).
-	
+preprocessNot(Class,C1,NIn,NOut):- 
+	(getNecConds(Class,Conds) -> 
+	    preprocessNot(Conds,Conds1,NIn,NOut),
+	    C1 = ','(Class,Conds1) 
+	 ; C1 = not(Class),NIn = NOut).
+

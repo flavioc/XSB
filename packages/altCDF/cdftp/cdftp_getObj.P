@@ -1,4 +1,10 @@
-:- import member/2,length/2 from basics.
+
+:- document_export inClass/3.
+
+:- document_import tp_subclass/2 from cdftp_cdfsc.
+:- document_import abduced/2 from cdftp_meta.
+
+:- import length/2 from basics.
 
 inClass(','(C1,C2),Elt,Abd):- !,
 	inClass(C1,Elt,Abd),
@@ -21,14 +27,14 @@ inClass(all(Rel,C),Elt,Abd):- !,
 	; 
 	\+ (abduced(rel(Elt,R1,E1),Abd),
 	    tp_subclass(R1,Rel),
-	    \+ inClass(C,E1,Abd,_)).
+	    \+ inClass(C,E1,_)).
 inClass(all(inv(Rel),C),Elt,Abd):- !,
 	\+ (abduced(rel(E1,R1,Elt),Abd),
 	    tp_subclass(R1,Rel)) 
 	; 
 	\+ (abduced(rel(E1,R1,Elt),Abd),
 	    tp_subclass(R1,Rel),
-	    \+ inClass(C,E1,Abd,_)).
+	    \+ inClass(C,E1,_)).
 inClass(not(Class),Elt,Abd):- !,
 	inClassNot(Class,Elt,Abd).
 inClass(atMost(N,inv(Rel),C),Elt,Abd):- !, 
@@ -67,8 +73,8 @@ inClass(differentFrom(R1,C1,R2,C2),Elt,Abd):- !,
 	                inClass(C2,E2,Abd)),El2),
 	sort(El2,El2s),
 	El1s \== El2s.
-inClass(cdfroot,_Elt,_Abd):- !.
-inClass(cdfbottom,_Elt,_Abd):- !,fail.
+inClass(cid('CDF Classes',cdf),_Elt,_Abd):- !.
+inClass(cid(emptyset,cdf),_Elt,_Abd):- !,fail.
 inClass(Class,Elt,Abd):-
 	abduced(elt(Elt,C1),Abd),
 	tp_subclass(C1,Class).
@@ -88,8 +94,8 @@ inClassNot(sameAs(R1,C1,R2,C2),Elt,Abd):-
 	inClass(differentFrom(R1,C1,R2,C2),Elt,Abd).
 inClassNot(not(Class),Elt,Abd):-
 	inClass(Class,Elt,Abd).
-inClass(cdfroot,_Elt,_Abd):- !,fail.
-inClass(cdfbottom,_Elt,_Abd):- !.
+inClassNot(cid('CDF Classes',cdf),_Elt,_Abd):- !,fail.
+inClassNot(cid(emptyset,cdf),_Elt,_Abd):- !.
 inClassNot(Class,Elt,Abd):-
 	\+ inClass(Class,Elt,Abd).
 

@@ -1,6 +1,6 @@
 :- compiler_options([xpp_on]).
 
-:- export cdf_warning/2.  
+:- export cdf_message/1, cdf_warning/2.  
              
 :- import  message/2,messageln/2 from standard.
 
@@ -47,9 +47,18 @@ Otherwise, @tt{cdf_error/2} will be handled by the default error
 handler.
 ").
 
-/* TLS: the xjNotifyUser should probably be best put in the handler,
-but until we get XJ to handle exceptions, I want to make sure the user
-is properly notified */
+cdf_message(List):- 
+	(using_xj -> 
+	    cdf_message_xj(List)
+	  ;
+	    cdf_message_noxj(List)).
+
+cdf_message_noxj(Message):- 
+	messageln(Message, STDWARN).
+
+% Shd probably use logger.
+cdf_warning_xj(Message):- 
+	messageln(Message, STDWARN).
 
 :- comment(cdf_warning/2,"cdf_arning can be used to handle warnings of
 different types -- currently @tt{consistency_warning} and

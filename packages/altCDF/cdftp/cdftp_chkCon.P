@@ -1,56 +1,38 @@
+:- compiler_options([spec_off]).
 
+:- [altCDF].
 :- [cdftp_meta].
 :- [cdftp_cdfsc].
-:- [altCDF].
+:- [cdftp_preproc].
 
-:- document_export classify/1, descend_all/0, get_relevant_facts/2.
+:- document_export descend_all/0, 
+	localClassExpression/2, check_lce/1,
+	checkIdConsistency/1.
+
 :- document_import isa_ext/2 from usermod.
-:- document_import cdf_warning/2 from cdf_exceptions.
+:- document_import compdlrule/3 from usermod.
 
-:- import allAttr/3, immed_classHasAttr/3, hasAttr/3, 
-	   necessCond/2,
-	   isa/2, maxAttr/4, minAttr/4 from cdf_init_cdf.
-:- import cdf_id_fields/4, system_component/1,abolish_cdf_tables/0
+:- document_import classIdentifier/1,topIdentifier/1 from cdftp_cdfsc.
+
+:- document_import checkContexts/4,
+            sat/4
+%	subsumes/2
+    from cdftp_meta.
+
+:- import tp_writeln/1 from tp_utils.
+:- import   isa/2, allAttr/3, hasAttr/3, necessCond/2,
+	   maxAttr/4, minAttr/4 from cdf_init_cdf.
+:- import 
+%            cdf_id_fields/4, 
+%	system_component/1,
+	abolish_cdf_tables/0
 	    from cdf_init_cdf.
+:- import prettyPrintCE/1 from tp_utils.
+
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import message/1 from standard.
-:- import domain_error/2 from error_handler.
-
-%--------------------------------
-% classify/1 is used to find all minimal parents of a class expression.
-
-classify(Expr):- 
-	cputime(Start),
-	conset(classify,0),
-	classify_1(Expr),
-	cputime(End),
-	Tot is End - Start,
-	conget(classify,N),
-	message(['Cputime ',Tot,' for ',N,' Classes.']).
-
-classify_1(Expr):- 
-	isa_ext(X,cid('CDF Classes',cdf)),
-	classify(Expr,X).
-classify_1(_Expr).
-
-:- table classify/2.
-classify(Expr,Class):- 
-	abolish_cdf_tables,
-	coninc(classify),
-	cdf_id_fields(Class,cid,_C,Comp),
-	\+ system_component(Comp),
-	findall(Conj,cdf_to_ce(Class,Conj),CEList),
-	preprocess([Class|CEList],CEForm,_N),
-	tp_writeln(CEForm),
-	subsumes(CEForm,Expr),
-	(\+ isa_ext(cid(_,_),Class) -> 
-	      writeln(classifying(Expr,Class))
-	    ; findall(NewClass,(isa_ext(cid(NewClass,S),Class),
-	                                 classify(Expr,cid(NewClass,S))),Subclasses),
-	       (Subclasses = []  -> 
-		   writeln(classifying(Expr,Class))
-		; true) ).
-
+:- import domain_error/4 from error_handler.
+:- import memberchk/2 from basics.
 %--------------------------------------------------
 % descend_all is used to check consistency of an entire CDF instance,
 % starting from CDF root.
@@ -73,23 +55,136 @@ descend_all_1.
 descend(Class):-
 	abolish_cdf_tables,
 	coninc(descend),
-	check_consist(Class),
+	checkIdConsistency(Class),
 	isa_ext(cid(NewClass,S),Class),
 	descend(cid(NewClass,S)),
 	fail.
 
+%----------------------------------------------------
 
+:- dynamic failed/1, succeeded/1, queried/1.
+
+checkIdConsistency(List):- 
+	retractall(failed(_)),retractall(succeeded(_)),retractall(queried(_)),
+	checkIdConsistency_1(List,[]).
+	
+check_all_worlds(L,L,_Contexts,_):- !.
+check_all_worlds(L,Arity,Contexts,AncList):- 
+	L1 is L + 1,
+	arg(L1,Contexts,List),
+	sort(List,Lsort),
+	checkIdConsistency_1(Lsort,AncList),
+	check_all_worlds(L1,Arity,Contexts,AncList).
+
+checkIdConsistency_1(List,AncList):- 
+	(memberchk(List,AncList) -> 
+	     tp_writeln(inLoopSuccess(List))
+	   ; checkIdConsistency_2(List,[List|AncList])).
+
+checkIdConsistency_2([],_).
+checkIdConsistency_2(Id,AncList):- 
+	(queried(Id) -> 
+	    (succeeded(Id) -> writeln(succeedingOnTable(Id))
+	      ; (failed(Id) -> writeln(failingOnTable(Id)),fail
+	          ; writeln(tableNotRight(Id))))
+              ;   writeln(recursivelyChecking(Id)),
+	      tableConsChk(Id,AncList)).
+
+tableConsChk(Id,AncList):- 
+	call_assert(queried(Id)),
+	(tableConsChk_1(Id,AncList) -> 
+	    call_assert(succeeded(Id))
+	  ; call_assert(failed(Id)),fail).
+
+tableConsChk_1(Id,AncList):- 
+	localClassExpression(Id,Expr),
+	prettyPrintCE(Expr),
+            table_sat(Expr,abd(Struct,Worlds)),
+	checkContexts(Struct,Worlds,Contexts,L),
+	check_all_worlds(0,L,Contexts,AncList).
+
+table_sat(Expr,Struct):- 
+	sat(Expr,Struct,_ConstOut,_N).
+
+call_assert(Term):- (call(Term) -> true ; asserta(Term)).
+
+%-------------------------
+
+check_lce(Id):- 
+	localClassExpression(Id,Expr),
+	prettyPrintCE(Expr).
+
+localClassExpression([H],Expr):- !,
+	localClassExpr_1(H,Expr).
+localClassExpression([H|T],(Expr1,Expr2)):- 
+	localClassExpr_1(H,Expr1),
+	localClassExpression(T,Expr2).
+
+% This actually returns oids, rather than all unique Cids
+localClassExpr_1(Id,(Id,Expr)):- 
+	getRelevantFacts(Id,CDFList),
+	localClassExpr_2(CDFList,Expr).
+	
+%-------------------------
 getRelevantFacts(Id,Facts):-
-    extractCDFidentifier(Id,Id1).
-
-extractCDFidentifier(cid(Id),cid(Id)):- !.
-extractCDFidentifier(oid(Id),oid(Id)):- !.
-extractCDFidentifier(unique(cid(Id)),oid(Id)):-!.
+	extractCDFidentifier(Id,Id1),
+	findall(F,getRelevantFacts_1(Id1,F),Facts).
+	
+extractCDFidentifier(cid(Id,Cpnt),cid(Id,Cpnt)):- !.
+extractCDFidentifier(oid(Id,Cpnt),oid(Id,Cpnt)):- !.
+extractCDFidentifier(unique(cid(Id,Cpnt)),oid(Id,Cpnt)):-!.
 extractCDFidentifier(X,_):-
      domain_error(['cid(_),oid(_), or unique(cid(_))'],X,extractCDFidentifier/2,1).
 
+getRelevantFacts_1(Id,hasAttr(Id,R,C)):- 
+	hasAttr(Id,R,C),
+	\+ (minAttr(Id,R,C,N),N > 1).
+getRelevantFacts_1(Id,minAttr(Id,R,C,N)):- 
+	minAttr(Id,R,C,N),N > 1.
+getRelevantFacts_1(Id,allAttr(Id,R,C)):- 
+	allAttr(Id,R,C).
+getRelevantFacts_1(Id,maxAttr(Id,R,C,N)):- 
+	maxAttr(Id,R,C,N).
+getRelevantFacts_1(Id,necessCond(Id,Cond)):- 
+	necessCond(Id,Cond).
+getRelevantFacts_1(Id,(H <= B)):- 
+	compdlrule(_,H,B),
+	relevantInRule(Id,H,B).
+
+% TLS: disallowing default relevant rules, for now.
+relevantInRule(Id,H,B):- 
+	relevantInRule_1(','(H,B),Id,Flag),
+	nonvar(Flag),!.
+
+relevantInRule_1(','(One,Two),Id,Flag):- !,
+	relevantInRule_1(One,Id,Flag),
+	relevantInRule_1(Two,Id,Flag).
+relevantInRule_1(';'(One,Two),Id,Flag):- !,
+	relevantInRule_1(One,Id,Flag),
+	relevantInRule_1(Two,Id,Flag).
+relevantInRule_1(Cid,Id,relevant):- 
+	classIdentifier(Cid),
+	isa(Id,Cid),!.
+relevantInRule_1(_Cid,_Id,_).
+
+%-------------------------
+
+localClassExpr_2([],Top):- !,
+	topIdentifier(Top).
+localClassExpr_2([Term],Expr):- !,
+	localClassExpr_3(Term,Expr).
+localClassExpr_2([Term|Rest],','(E1,E2)):- !,
+	localClassExpr_3(Term,E1),
+	localClassExpr_2(Rest,E2).
+
+localClassExpr_3(allAttr(_,Rid,Cid),all(Rid,Cid)):- !.
+localClassExpr_3(hasAttr(_,Rid,Cid),exists(Rid,Cid)):- !.
+localClassExpr_3(minAttr(_,Rid,Cid,N),atLeast(N,Rid,Cid)):- !.
+localClassExpr_3(maxAttr(_,Rid,Cid,N),atMost(N,Rid,Cid)):- !.
+localClassExpr_3(<=(H,B),(H ; not(B))):- !.
+localClassExpr_3(necessCond(_,vid(Expr)),Expr).
+
 end_of_file.
-%----------------------------------------------------
 
 % atomic	
 check_consist(Class):-
@@ -97,7 +192,7 @@ check_consist(Class):-
 	\+ system_component(Comp),
 	findall(Conj,cdf_to_ce(Class,Conj),CEList),
 	preprocess([Class|CEList],CEForm,_N),
-	tp_writeln(ce(CEForm)),
+%	tp_writeln(ce(CEForm)),
 	sat_test(CEForm,N).
 
 cdf_to_ce(Class,Form):- 
@@ -162,3 +257,39 @@ expand1(Class):-
 	preprocess(CEList,CEForm,N),
 	writeln(ce(Class,CEForm),N).
 
+:- table classify/2.
+classify(Expr,Class):- 
+	abolish_cdf_tables,
+	coninc(classify),
+	cdf_id_fields(Class,cid,_C,Comp),
+	\+ system_component(Comp),
+	findall(Conj,cdf_to_ce(Class,Conj),CEList),
+	preprocess([Class|CEList],CEForm,_N),
+	tp_writeln(CEForm),
+	subsumes(CEForm,Expr),
+	(\+ isa_ext(cid(_,_),Class) -> 
+	      writeln(classifying(Expr,Class))
+	    ; findall(NewClass,(isa_ext(cid(NewClass,S),Class),
+	                                 classify(Expr,cid(NewClass,S))),Subclasses),
+	       (Subclasses = []  -> 
+		   writeln(classifying(Expr,Class))
+		; true) ).
+
+%--------------------------------
+% classify/1 is used to find all minimal parents of a class expression.
+
+classify(Expr):- 
+	cputime(Start),
+	conset(classify,0),
+	classify_1(Expr),
+	cputime(End),
+	Tot is End - Start,
+	conget(classify,N),
+	message(['Cputime ',Tot,' for ',N,' Classes.']).
+
+classify_1(Expr):- 
+	isa_ext(X,cid('CDF Classes',cdf)),
+	classify(Expr,X).
+classify_1(_Expr).
+
+:- document_import cdf_warning/2 from cdf_exceptions.
