@@ -24,15 +24,17 @@
 */
 
 /*   To pretty print an object:
-**	?- flora_prettyprint(obj,module).
-**   To pretty print a class:
-**        ?- flora_prettyprint_class(class,module).
-**   To save result of a pretty-printed class in a file:
-**        ?- flora_prettyprint_class(class,module,outfile).
-**   To print class membership:
-**        ?- flora_prettyprint_isa(class,module).
+**	?- prettyprint_obj(obj,module).
 **   To save it in a file:
-**        ?- flora_prettyprint_isa(class,module,outfile).
+**	?- prettyprint_obj(obj,module,outfile).
+**   To pretty print a class:
+**      ?- prettyprint_class(class,module).
+**   To save result of a pretty-printed class in a file:
+**      ?- prettyprint_class(class,module,outfile).
+**   To print class membership:
+**      ?- prettyprint_isa(class,module).
+**   To save it in a file:
+**      ?- prettyprint_isa(class,module,outfile).
 */
 
 
@@ -43,26 +45,43 @@
 flora_print_ignore(print(pretty)).
 flora_print_ignore(ignore(pretty)).
 
-%% flora_prettyprint_class(+Class,+Module,+File)
-flora_prettyprint_class(Class, Module, OutFile) :-
+%% prettyprint_class(+Class,+Module,+File)
+prettyprint_class(Class, Module, OutFile) :-
 	tell(OutFile)@prologlib(),
-    	flora_prettyprint_class(Class, Module),
+    	prettyprint_class(Class, Module),
 	told@prologlib().
-
-flora_prettyprint_class(Class,Module) :-
+%% Print class in Module
+prettyprint_class(Class,Module) :-
 	flora_pp_immediate_superclasses(Class,Module),
-    	flora_prettyprint(Class,Module),
+    	prettyprint_obj(Class,Module),
 	(X : Class)@Module,
 	ground(X),  %% to ground X, if non-ground
-	flora_prettyprint(X,Module),
+	prettyprint_obj(X,Module),
 	fail.
 
-flora_prettyprint(X,Module) :-
+%% Print obj from Module
+prettyprint_obj(X,Module) :-
 	flora_pp_immediate_classes(X,Module),
 	flora_pp_write_header(X),
 	flora_pp_write_body_scalar(X,Module),
 	flora_pp_write_body_set(X,Module),
 	writeln('].')@prologlib(), nl@prologlib().
+%% Print obj in Module to a Outfile
+prettyprint_obj(X,Module,Outfile) :-
+	tell(OutFile)@prologlib(),
+	prettyprint_obj(X,Module),
+	told@prologlib().
+
+%% Print all the isa info in one shot.
+prettyprint_isa(Class,Module) :-
+	flora_pp_immediate_isa(Class,Module),
+	flora_pp_subclasses_isa(Class,Module).
+%% Same, but save in a file
+prettyprint_isa(Class, Module, File) :-
+	tell(File)@prologlib(),
+	prettyprint_isa(Class, Module),
+	told@prologlib().
+
 
 flora_pp_write_header(X) :-
     	atom(X)@prologlib(),
@@ -151,16 +170,6 @@ flora_pp_write_value(Val) :-
 flora_pp_write_value(Val) :-
 	flP2H(PVal,Val),
 	write(PVal)@prologlib().
-
-%% Print all the isa info in one shot.
-flora_prettyprint_isa(Class,Module) :-
-	flora_pp_immediate_isa(Class,Module),
-	flora_pp_subclasses_isa(Class,Module).
-%% Same, but save in a file
-flora_prettyprint_isa(Class, File) :-
-	tell(File),
-	flora_prettyprint_isa(Class),
-	told.
 
 flora_pp_immediate_isa(Class,Module) :-
 	(X : Class)@Module, 
