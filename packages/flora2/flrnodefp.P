@@ -65,7 +65,7 @@ flora_nodefp(FL_CUT,0) :- !.
 
 %% FLORA builtins
 flora_nodefp(FL_UNIVEQFORM,2) :- !.
-flora_nodefp(FL_UNIVEQFORM,1) :- !.
+flora_nodefp(FL_REIFYOP,1) :- !.
 flora_nodefp(FL_METAUNIV,2) :- !.
 
 %% FLORA special syntax

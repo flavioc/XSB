@@ -62,4 +62,3 @@ flora_nowsp(FL_RIGHTTO,2) :- !.
 flora_nowsp(FL_LEFTTO,2) :- !.
 
 flora_nowsp(FL_CUT,0) :- !.
-

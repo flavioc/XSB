@@ -104,6 +104,8 @@ is_flmetauniv(FLMETAUNIV(Left,Right),Left,Right).
 %% Meta ~..
 is_flmetaunivform(FLMETAUNIVFORM(Left,Right),Left,Right).
 
+is_reifyop(FLREIFYOP(Formula),Formula).
+
 %% Control constructs while-do, while-loop, loop-until, do-until,unless-do
 is_flcontrolconstruct(FLWHILEDO(Cond,Action),FLLIBWHILEDO,Cond,Action).
 is_flcontrolconstruct(FLWHILELOOP(Cond,Action),FLLIBWHILELOOP,Cond,Action).
@@ -1482,7 +1484,7 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	
 	; is_flmetaunivform(ParserTerm,Left,Right) ->
 	    compile_flmetaunivform(Left,Right,OidCode,SpecCode,Status)
-	
+
 	; is_flcontrolconstruct(ParserTerm,Wrapper,Cond,Action) ->
 	    compile_flcontrolconstruct(Cond,Action,Wrapper,SpecCode,Status),
 	    OidCode = NULL
@@ -1600,6 +1602,7 @@ compile_flmetaunivform(Left,Right,OidCode,Code,Status) :-
 	).
 
 
+
 /****************************************************************************
   compile_flcontrolconstruct(+Cond,+Action,+Wrapper,-Code,-Status)
 
@@ -1662,6 +1665,10 @@ compile_pathexp(ParserTerm,Object,OidCode,Code,Status) :-
 	    %% Aggregates are treated as OID, so its code would come
 	    %% ahead of the code of the literal it occurs in
 	    compile_flaggregate(Op,V,GV,B,Object,OidCode,Status)
+
+	; is_reifyop(ParserTerm,Formula) ->
+	    compile_reifyop(Formula,Object,Status),
+	    OidCode=NULL, Code=NULL
 
 	; is_flplib(ParserTerm,P) ->
 	    compile_prologlibobj(P,Object,OidCode,Code,Status)
@@ -1764,13 +1771,6 @@ compile_flvar(Name,Index,VarObject) :-
 
   Compile term in the OID position.
 ****************************************************************************/
-compile_fltermobj(Funct,1,Args,Object,OidCode,Code,Status) :-
-	%% If it is ~(...) treat as reificated term
-	is_flatom(Funct,FL_UNIVEQFORM),
-	!,
-	compile_argpathexplist(Args,[FL_BODYFORMULA],AObj,OidCode,Code,Status),
-	(Status == [] -> AObj = [Object] ; true).
-
 compile_fltermobj(Funct,N,Args,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -1891,7 +1891,7 @@ compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,OidCode,Code,Status) :-
 ****************************************************************************/
 compile_flobjspec(ObjTerm,SpecBody,Object,OidCode,Code,Status) :-
 	( SpecBody == [] ->
-	    %% Just objtref, no body. Something like a.b.c. Possibly a.b.c[]
+	    %% Just objref, no body. Something like a.b.c. Possibly a.b.c[]
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
 		compile_pathexplist([OTerm,ATerm],[OObj,AObj],OidCode,ObjCode,Status),
 		( Status == [] ->
@@ -1979,7 +1979,7 @@ compile_flspecbody(Object,SpecTerm,OidCode,Code,Status) :-
 %% OidCodeList below gets bound to code needed to produce
 %% the attribute (M) and the value (V). We conjunct this code in front of the
 %% code for the molecule
-%% NULL means tht we don't pass OID code out, because we use it right here.
+%% NULL means that we don't pass OID code out, because we use it right here.
 compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 	is_flfdattspec(SpecTerm,AttTerm,RefType,ValTerm),
 	!,
@@ -2013,7 +2013,7 @@ compile_flspecbody(Object,SpecTerm,NULL,Code,Status) :-
 		%% ACode: Code to produce attribute
 		%% SCode: code to produce pure attr specs and 
 		%%         the objects that represents the values
-	      (Status == [] ->
+		(Status == [] ->
 		  conjunct_code([AOidCode,VOidCode,ACode,SCode],Code)
 	      ;
 		  true
@@ -2243,13 +2243,6 @@ compile_flobjeql(Obj1,Obj2,OidCode,Code,Status) :-
 /****************************************************************************
   compile_head_fltermobj(+FunctorTerm,+Arity,+ArgList,-Object,-Code,-Status)
 ****************************************************************************/
-compile_head_fltermobj(Funct,1,Args,Object,Code,Status) :-
-	%% If it is ~(...) treat as reificated term
-	is_flatom(Funct,FL_UNIVEQFORM),
-	!,
-	compile_head_argpathexplist(Args,[FL_BODYFORMULA],AObj,Code,Status),
-	(Status == [] -> AObj = [Object] ; true).
-
 compile_head_fltermobj(Funct,N,Args,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -2393,6 +2386,10 @@ compile_head_pathexp(ParserTerm,Object,Code,Status) :-
 
 	; is_flobjref(ParserTerm,ObjTerm,RefType,AttTerm) ->
 	    compile_head_flobjref(ObjTerm,RefType,AttTerm,Object,Code,Status)
+
+	; is_reifyop(ParserTerm,Formula) ->
+	    compile_reifyop(Formula,Object,Status),
+	    Code=NULL
 
 	; is_flterm(ParserTerm,Funct,N,Args) ->
 	    compile_head_fltermobj(Funct,N,Args,Object,Code,Status)
@@ -2752,15 +2749,6 @@ compile_wsflpathexp(ParserTerm,WS,Object,OidCode,Code,Status) :-
 /****************************************************************************
   compile_wstermobj(+FunctorTerm,+Arity,+ArgList,+Workspace,-Object,-OidCode,-Code,-Status)
 ****************************************************************************/
-compile_wstermobj(Funct,1,Args,WS,Object,OidCode,Code,Status) :-
-	%% If it is ~(...) treat as reificated term
-	is_flatom(Funct,FL_UNIVEQFORM),
-	!,
-	compile_wsflargpathexplist(Args,[FL_BODYFORMULA],WS,AObj,OidCode,Code,Status),
-	(Status == [] -> AObj = [O], workspaceobj_struct(O,WS,Object,_WCode)
-	; true
-	).
-
 compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -2793,13 +2781,6 @@ compile_wstermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
         is that compile_wsfltermobj applies workspace only to F-Logic
         constructs.  
 ****************************************************************************/
-compile_wsfltermobj(Funct,1,Args,WS,Object,OidCode,Code,Status) :-
-	%% If it is ~(...) treat as reificated term
-	is_flatom(Funct,FL_UNIVEQFORM),
-	!,
-	compile_wsflargpathexplist(Args,[FL_BODYFORMULA],WS,AObj,OidCode,Code,Status),
-	(Status == [] -> AObj = [Object] ; true).
-
 compile_wsfltermobj(Funct,N,Args,WS,Object,OidCode,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -3160,6 +3141,14 @@ compile_wsflobjeql(Obj1,Obj2,WS,OidCode,Code,Status) :-
 	;
 	  true
 	).
+
+
+/****************************************************************************
+  compile_reifyop(+Formula,-Object,-Status)
+  Compiling ${...}
+****************************************************************************/
+compile_reifyop(Formula,Object,Status) :-
+	compile_body(Formula,Object,Status).
 
 
 /****************************************************************************
@@ -3579,13 +3568,6 @@ compile_head_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
         is that compile_head_wsflpathexp applies workspace only to F-Logic
         constructs.
 ****************************************************************************/
-compile_head_wsfltermobj(Funct,1,Args,WS,Object,Code,Status) :-
-	%% If it is ~(...) treat as reificated term
-	is_flatom(Funct,FL_UNIVEQFORM),
-	!,
-	compile_head_wsflargpathexplist(Args,[FL_BODYFORMULA],WS,AObj,Code,Status),
-	(Status == [] -> AObj = [Object] ; true).
-
 compile_head_wsfltermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	is_flatom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
@@ -3625,6 +3607,7 @@ compile_head_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	;
 	  true
         ).
+
 
 
 /****************************************************************************

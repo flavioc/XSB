@@ -125,8 +125,6 @@ flora_op(700,yfx,FL_SYMAND).
 flora_op(600,fy,FL_PLUS).
 flora_op(600,fy,FL_MINUS).
 
-flora_op(550,fy,FL_UNIVEQFORM).
-
 flora_op(500,xfx,FL_AT).
 
 flora_op(400,fx,FL_PLIB).
@@ -140,9 +138,6 @@ flora_op(300,yfx,FL_MVD).
 flora_op(300,yfx,FL_INHERIFD).
 flora_op(300,yfx,FL_INHERIMVD).
 
-flora_op(200,yfx,FL_DOLLAR).
-
-flora_op(100,fy,FL_DOLLAR).
 
 
 /****************************************************************************

@@ -581,6 +581,8 @@ is_dbdeleteop(FL_BTDELETEALL) :- !.
 is_dbdeleteop(FL_BTERASE) :- !.
 is_dbdeleteop(FL_BTERASEALL) :- !.
 
+is_reifyop(FL_REIFYOP) :- !.
+
 flinsert_struct(Op,List,Cond,FLINSERT(Op,List,Cond)).
 flinsert_struct(Op,List,FLINSERT(Op,List)).
 fldelete_struct(Op,List,Cond,FLDELETE(Op,List,Cond)).
@@ -595,6 +597,10 @@ fluniveqform_struct(Left,Right,FLUNIVEQFORM(Left,Right)).
 flmetauniv_struct(Left,Right,FLMETAUNIV(Left,Right)).
 %% struct for ~..
 flmetaunivform_struct(Left,Right,FLMETAUNIVFORM(Left,Right)).
+
+%% struct for ${...}
+flreify_struct(Formula,FLREIFYOP(Formula)).
+is_flreify_struct(FLREIFYOP(_Formula)).
 
 flcontrolconstruct_struct(Cond,Action,FLWHILEDO,FLWHILEDO(Cond,Action)).
 flcontrolconstruct_struct(Cond,Action,FLWHILELOOP,FLWHILELOOP(Cond,Action)).
@@ -1882,6 +1888,7 @@ flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	  flora_dbdelete(FCode,N,Args,Code,Status)
         ).
 
+
 %% :=:
 flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_OBJEQL),
@@ -1950,6 +1957,7 @@ flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :
 	; N == 2, F == FL_OBJEQL ->
 	    flora_pathexplist(Args,[LCode,RCode],Status),
 	    (Status == [] -> flobjeql_struct(LCode,RCode,Code); true)
+
 	;
 	  flora_term(Funct,N,Args,Code,Status)
         ).
@@ -1961,6 +1969,12 @@ flora_body_wsliteral(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) 
 flora_body_wsliteral(CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),Code,Status) :-
 	!,
 	flora_objspec(Funct,N,Args,Code,Status).
+
+flora_body_wsliteral(CANOTERM(Funct,_N,FL_BRACE,_Args,_If,Ip),_Code,Status) :-
+	get_atom(Funct,F),
+	((is_dbinsertop(F); is_dbdeleteop(F)) ->
+	    parsing_error(Ip,NO_WORKSPACE,Status)
+	).
 
 flora_body_wsliteral(CanoniTerm,Code,Status) :-
 	get_atom(CanoniTerm,A),
@@ -2252,6 +2266,13 @@ flora_pathexp(CANOLIST(L,T,_N,I,_Ib),Code,Status) :-
 	!,
 	flora_list(L,T,I,Code,Status).
 
+%% ${...} - reification
+flora_pathexp(CANOTERM(Funct,1,FL_BRACE,[Arg],_If,_Ip),Code,Status) :-
+	get_atom(Funct,Atom),
+	is_reifyop(Atom),
+	!,
+	flora_reify(Arg,Code,Status).
+
 flora_pathexp(CANOTERM(Funct,N,FL_BRACE,Args,If,Ip),Code,Status) :-
 	!,
 	flora_aggregt(Funct,N,Args,If,Ip,Code,Status).
@@ -2274,6 +2295,7 @@ flora_pathexp(CanoniTerm,_Code,Status) :-
 nowspathexp(S) :- is_fllist_struct(S), !.
 nowspathexp(S) :- is_flvar_struct(S), !.
 nowspathexp(S) :- is_flaggregt_struct(S), !.
+nowspathexp(S) :- is_flreify_struct(S), !.
 nowspathexp(S) :- is_flnumber_struct(S), !.
 nowspathexp(S) :- is_flstring_struct(S), !.
 
@@ -2633,6 +2655,13 @@ flora_head_pathexp(ObjectTerm,Code,[]) :-
 	flobject_struct(ObjectTerm,Code),
 	!.
 
+%% ${...} - reification
+flora_head_pathexp(CANOTERM(Funct,1,FL_BRACE,[Arg],_If,_Ip),Code,Status) :-
+	get_atom(Funct,Atom),
+	is_reifyop(Atom),
+	!,
+	flora_reify(Arg,Code,Status).
+
 flora_head_pathexp(CANOTERM(_Funct,_N,FL_BRACE,_Args,_If,Ip),_Code,Status) :-
 	!,
 	parsing_error(Ip,NO_AGGINHEAD,Status).
@@ -2856,6 +2885,15 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 flora_dbwsliteral(Mode,CanoniTerm,WS,[WSCode],Status) :-
 	flora_dbwslit(Mode,CanoniTerm,Code,Status),
 	flmodule_struct(Code,WS,FLORAUSERMOD,WSCode).
+
+
+/****************************************************************************
+        flora_reify(+Arg,-Code,-Status)
+	Handle reification, ${...}
+****************************************************************************/
+flora_reify(Arg,Code,Status) :-
+	flora_body(Arg,ArgCode,Status),
+	(Status == [] -> flreify_struct(ArgCode,Code); true).
 
 /****************************************************************************
    The following flora_check_update_* statements make sure that builtins
@@ -3183,6 +3221,12 @@ flora_db_pathexp(Mode,CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,_Ip),Code,Status)
 flora_db_pathexp(Mode,CANOTERM(Funct,N,FL_BRACKET,Args,_If,_Ip),Code,Status) :-
 	!,
 	flora_db_objspec(Mode,Funct,N,Args,Code,Status).
+
+flora_db_pathexp(_Mode,CANOTERM(Funct,1,FL_BRACE,[Arg],_If,_Ip),Code,Status) :-
+	get_atom(Funct,Atom),
+	is_reifyop(Atom),
+	!,
+	flora_reify(Arg,Code,Status).
 
 flora_db_pathexp(Mode,CANOLIST(L,T,_N,I,_Ib),Code,Status) :-
 	!,

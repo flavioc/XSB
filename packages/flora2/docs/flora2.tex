@@ -2316,7 +2316,7 @@ that represents formulas of the kind that might occur in the body of a
 rule.
 
 Another way to reify a formula is to use the \emph{reification operator},
-``$\sim$'', introduced in Section~\ref{sec-meta-reification}.
+``\$\{...\}'', introduced in Section~\ref{sec-meta-reification}.
 
 
 \section{HiLog and Related Issues} \label{sec:hilog}
@@ -2499,8 +2499,7 @@ Note that these primitives are used for Prolog terms only and
 are described in the XSB manual.
 
 \paragraph{Meta-unification.}
-\index{meta-unification}
-\index{meta-unification!$\sim$ operator}
+\index{meta-unification operator $\sim$}
 \index{$\sim$!meta-unification operator}
 %%
 In \FLORA, variables can be bound to both formulas and terms. For instance,
@@ -2510,14 +2509,13 @@ object value and then unified with {\tt X}. To bind variables to formulas
 instead, \FLORA provides a {\tt meta-unification} operator, $\sim$.  This
 operator treats its arguments as formulas and unifies them as such. For
 instance, {\tt X $\sim$ a[m->v,k->V]} binds {\tt X} to the F-molecule {\tt
-  a[m->v,k->V]} and {\tt a[m->v,k->V] ~ X[M->v,k->p]} unifies the two
+  a[m->v,k->V]} and {\tt a[m->v,k->V] $\sim$ X[M->v,k->p]} unifies the two
 molecules by binding {\tt X} to {\tt a}, {\tt M} to {\tt m}, and {\tt V} to
 {\tt p}.
 
 \paragraph{Reification.}
-\index{reification}
-\index{reification!$\sim$ operator}
-\index{$\sim$!reification operator}
+\index{reification operator \$\{...\}}
+\index{\$\{...\}!reification operator}
 %%
 It is sometimes useful to be able to treat \FLORA molecules and predicates
 as objects. For instance, consider the following statement:
@@ -2543,12 +2541,12 @@ other words, to achieve the desired effect we must turn the formula {\tt
   alice[thinks->>floraProgramming:coolThing]} into an object, {\it i.e.},
 \emph{reify} it.
 
-Reification is done using the unary operator ``$\sim$''. For instance, to
+Reification is done using the operator ``\$\{...\}''. For instance, to
 say that Tom believes that Alice thinks that programming in \FLORA is a
 cool thing one should write:
 %%
 \begin{verbatim}
- tom[believes->> ~alice[thinks->>floraProgramming:coolThing]].
+ tom[believes->> ${alice[thinks->>floraProgramming:coolThing]}].
 \end{verbatim}
 %%
 
@@ -2567,7 +2565,7 @@ will return \emph{true}, because the two molecules are structurally similar
 and thus meta-unify. On the other hand,
 %%
 \begin{verbatim}
- ?- M=foo, ~a[b->X]@M = ~Y[b->d]@foo.
+ ?- M=foo, ${a[b->X]@M} = ${Y[b->d]@foo}.
 \end{verbatim}
 %%
 will be false, because {\tt a[b->Y]@X} and {\tt Z[b->d]@foo} have different
@@ -2576,14 +2574,14 @@ similar), so they do not unify (using ``='', {\it i.e.}, in the usual
 first-order sense). Note, however, that
 %%
 \begin{verbatim}
- ?- ~a[b->Y]@foo = ~Z[b->d]@foo.
- ?- M=foo, ~a[b->Y]@M = ~Z[b->d]@M.
+ ?- ${a[b->Y]@foo} = ${Z[b->d]@foo}.
+ ?- M=foo, ${a[b->Y]@M} = ${Z[b->d]@M}.
  ?- a[b->Y]@foo ~ Z[b->d]@foo.
  ?- M=foo, a[b->Y]@M ~ Z[b->d]@M.
 \end{verbatim}
 %%
 will all return \emph{true}, because {\tt a[b->Y]@foo} and {\tt
-  Z[b->d]@foo} are structurally similar both conceptually and as far as
+  Z[b->d]@foo} are structurally similar --- both conceptually and as far as
   their
 internal encoding is concerned (and likewise are {\tt a[b->Y]@foo} and {\tt
   Z[b->d]@foo}).

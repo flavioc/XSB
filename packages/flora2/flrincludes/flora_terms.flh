@@ -114,7 +114,6 @@
 
 #define FL_UNDERSCORE		'_'
 #define FL_AT			'@'
-#define FL_DOLLAR		'$'
 #define FL_CUT			'!'
 #define FL_NEWOID		'_#'
 #define FL_THISMODULE           '_@'
@@ -165,6 +164,8 @@
 #define FL_EQGT			'>='
 #define FL_RIGHTTO		'>>'
 #define FL_LEFTTO		'<<'
+
+#define FL_REIFYOP		'$'
 
 #define FL_OP			op
 #define FL_HILOG		(hilog)
@@ -282,6 +283,8 @@
   FLMETAUNIV(LeftTerm,RightList)      % handles and =..
   FLMETAUNIVFORM(LeftTerm,RightList)  % handles both ~..
   FLUNIVEQFORM(LeftFormula,RightFormula)
+
+  FLREIFYOP(Formula)                  % ${...}
 ****************************************************************************/
 #define FLRULE			flrule
 #define FLFACT			flfact
@@ -351,6 +354,9 @@
 #define FLMETAUNIV              flmetauniv
 %% Parser functor for ~..
 #define FLMETAUNIVFORM          flmetaunivform
+
+%% ${...}
+#define FLREIFYOP               flreify
 
 
 /****************************************************************************
