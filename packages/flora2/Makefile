@@ -89,6 +89,7 @@ all: init $(ALLOBJS) finish
 	cd debugger; $(MAKE)
 	cd pkgs; $(MAKE)
 	cd demos; $(MAKE)
+	cd docs; $(MAKE)
 	@cat $(XSBDIR)/build/.flora*.tmp
 
 

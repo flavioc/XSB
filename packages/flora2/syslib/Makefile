@@ -175,7 +175,7 @@ finish:
 
 
 clean:
-	/bin/rm -f *~ .*~ *O *.bak .#*
+	/bin/rm -f *~ .*~ *.O *.bak .#*
 
 
 .DONE:
