@@ -615,11 +615,12 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     else 
       mod = cur_mod;
     temp_pair = insert(str.string, t_arity, mod, &is_new);
-    /*if (is_new && t_env==T_IMPORTED) */
+/*     if (is_new && t_env==T_IMPORTED) */
     /* make sure all data fields of predicates PSCs point to 
        their corresponding module */
-    if (is_new || 
+    if (is_new ||
 	(get_type(temp_pair->psc_ptr) == T_ORDI &&
+	 (t_type == T_DYNA || t_type == T_PRED) &&
 	 get_data(temp_pair->psc_ptr) == NULL))
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
