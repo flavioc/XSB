@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -407,8 +407,10 @@ flplib_struct(Goal,Name,FLPLIB(Goal,Name)).
 flplib_struct(Goal,FLPLIB(Goal)).
 
 is_dbinsertop(FL_INSERT) :- !.
+is_dbinsertop(FL_INSERTALL) :- !.
 
 is_dbinsertop(FL_BTINSERT) :- !.
+is_dbinsertop(FL_BTINSERTALL) :- !.
 
 is_dbdeleteop(FL_DELETE) :- !.
 is_dbdeleteop(FL_DELETEALL) :- !.
@@ -420,6 +422,7 @@ is_dbdeleteop(FL_BTDELETEALL) :- !.
 is_dbdeleteop(FL_BTERASE) :- !.
 is_dbdeleteop(FL_BTERASEALL) :- !.
 
+flinsert_struct(Op,List,Cond,FLINSERT(Op,List,Cond)).
 flinsert_struct(Op,List,FLINSERT(Op,List)).
 fldelete_struct(Op,List,Cond,FLDELETE(Op,List,Cond)).
 fldelete_struct(Op,List,FLDELETE(Op,List)).
@@ -1077,17 +1080,17 @@ flora_body_literal(CANOTERM(Funct,2,FL_PARENTHESIS,_Args,If,_Ip),_Code,Status) :
 	!,
 	parsing_error(If,ERROR_BDLITERAL,Status).
 
-flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,Ip),Code,Status) :-
+flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	get_name(Funct,Atom),
 	is_dbinsertop(Atom),
 	!,
 	( N == 0 ->
 	    parsing_error(Ip,EXP_ARGS,Status)
 	;
-	  flora_dbinsert(Atom,Args,Code,Status)
+	  flora_dbinsert(Atom,N,Args,Code,Status)
         ).
 
-flora_body_literal(CANOTERM(Funct,N,FL_PARENTHESIS,Args,_If,Ip),Code,Status) :-
+flora_body_literal(CANOTERM(Funct,N,FL_BRACE,Args,_If,Ip),Code,Status) :-
 	get_name(Funct,Atom),
 	is_dbdeleteop(Atom),
 	!,
@@ -1852,9 +1855,21 @@ flora_head_setexp(CanoniTerm,[Code],Status) :-
 
 
 /****************************************************************************
-  flora_dbinsert(+OpAtom,+ArgsList,-Code,-Status)
+  flora_dbinsert(+OpAtom,+N,+ArgsList,-Code,-Status)
 ****************************************************************************/
-flora_dbinsert(OpAtom,Args,Code,Status) :-
+flora_dbinsert(OpAtom,1,[CANOTERM(Bar,2,FL_PARENTHESIS,[L,R],_If,_Ip)],Code,Status) :-
+	get_atom(Bar,FL_BAR),
+	!,
+	flora_comma_separated_list(L,LList),
+	flora_dbliteral_list(FLINS,LList,LCodeList,S),
+	( S == [] ->
+	    flora_body(R,RCode,Status),
+	    (Status == [] -> flinsert_struct(OpAtom,LCodeList,RCode,Code); true)
+	;
+	  Status=S
+        ).
+
+flora_dbinsert(OpAtom,_N,Args,Code,Status) :-
 	flora_dbliteral_list(FLINS,Args,CodeList,Status),
 	(Status == [] -> flinsert_struct(OpAtom,CodeList,Code); true).
 
@@ -1868,7 +1883,7 @@ flora_dbdelete(OpAtom,1,[CANOTERM(Bar,2,FL_PARENTHESIS,[L,R],_If,_Ip)],Code,Stat
 	flora_comma_separated_list(L,LList),
 	flora_dbliteral_list(FLDEL,LList,LCodeList,S),
 	( S == [] ->
-	    flora_dbdelete_cond(R,RCode,Status),
+	    flora_body(R,RCode,Status),
 	    (Status == [] -> fldelete_struct(OpAtom,LCodeList,RCode,Code); true)
 	;
 	  Status=S
@@ -1877,13 +1892,6 @@ flora_dbdelete(OpAtom,1,[CANOTERM(Bar,2,FL_PARENTHESIS,[L,R],_If,_Ip)],Code,Stat
 flora_dbdelete(OpAtom,_N,Args,Code,Status) :-
 	flora_dbliteral_list(FLDEL,Args,CodeList,Status),
 	(Status == [] -> fldelete_struct(OpAtom,CodeList,Code); true).
-
-
-/****************************************************************************
-  flora_dbdelete_cond(+CanoniTerm,-Code,Status)
-****************************************************************************/
-flora_dbdelete_cond(CanoniTerm,Code,Status) :-
-	flora_body(CanoniTerm,Code,Status).
 
 
 /****************************************************************************

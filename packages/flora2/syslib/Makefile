@@ -5,7 +5,7 @@
 ##
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 1999-2000
+## Copyright (C) The Research Foundation of SUNY, 1999-2001
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
@@ -40,7 +40,8 @@ ALLOBJS = flranswer.O \
 	  flraggsum.O \
 	  flrdbop.O \
 	  flrbtdbop.O \
-	  flrshdirect.O
+	  flrshdirect.O \
+	  flrdynmod.O
 
 EMU_INCLUDES = $(XSBDIR)/emu/builtin.h \
 	       $(XSBDIR)/emu/flag_defs_xsb.h \
@@ -128,6 +129,10 @@ flrbtdbop.O : flrbtdbop.P $(FLORA_TERMS)
 
 flrshdirect.O : flrshdirect.P $(FLORA_TERMS)
 	@echo 'mc(flrshdirect,$(OPTION)).' >> cmd...
+
+
+flrdynmod.O : flrdynmod.P $(FLORA_TERMS)
+	@echo 'mc(flrdynmod,$(OPTION)).' >> cmd...
 
 
 init:

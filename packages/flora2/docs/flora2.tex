@@ -2201,7 +2201,9 @@ name, all literals only refer to the module where they reside. To specify
 literal references in a \FLORA program, the following rules need to be
 followed:
 \begin{enumerate}
-\item The name of the module must be known at compile time.
+\item The name of the module can be specified using an atom or a variable.
+      If a variable is used, then it must be bound to an atom at runtime
+      when this reference is evaluated.
 
 \item Literal reference cannot appear in a rule head or be specified as
       a fact. For example, the following program will generate
@@ -2579,19 +2581,34 @@ The effects of non-backtrackable updates persist once the operations are
 executed, even when a later failure causes the system to backtrack.
 
 \FLORA supports the following non-backtrackable update predicates:
-{\tt insert}, {\tt delete}, {\tt deleteall}, {\tt erase}, {\tt eraseall}.
+{\tt insert}, {\tt insertall}, {\tt delete}, {\tt deleteall},
+{\tt erase}, {\tt eraseall}.
 
 \index{non-backtrackable update!insert}
+\index{non-backtrackable update!insertall}
 %
 \paragraph{Insertion.} The syntax of an insertion predicate is as follows:
 \begin{quote}
-\verb|insert(literals)|
+\begin{verbatim}
+insop{literals [| formula]}
+\end{verbatim}
 \end{quote}
-where {\tt literals} stands for any number of comma separated literals,
-including predicates and \mbox{F-molecules}. For instance,
+where {\tt insop} stands for either {\tt insert} or {\tt insertall},
+{\tt literals} stands for any number of comma separated literals,
+including predicates and \mbox{F-molecules}, and {\tt [| formula]}
+stands for an optional logic formula following the vertical bar
+(``{\tt |}'') to specify additional quantifying conditions for the
+literals that will be inserted. For instance,
 \begin{quote}
-\verb|insert(p(a),mary[spouse->smith,children->>frank])|
+\begin{verbatim}
+insert{p(a),mary[spouse->smith,children->>frank]}
+insertall{P[spouse->S] | S[spouse->P]}
+\end{verbatim}
 \end{quote}
+
+While {\tt insert} inserts only one instance of the literals that
+satisfy the formula, {\tt insertall} inserts \emph{all} instances
+of the literals that satisfy the formula.
 
 Note that each literal appearing inside the insertion predicate is
 treated as a separate fact. Thus these literals should follow the
@@ -2602,11 +2619,13 @@ the facts for other modules. Moreover, module name specification here
 is distributive over multiple literals enclosed by a pair of
 parentheses. For example, the insertion predicate below:
 \begin{quote}
-\verb|insert((mary[children->>frank], john[father->smith]) @ foomod)|
+\begin{verbatim}
+insert{(mary[children->>frank], john[father->smith]) @ foomod}
+\end{verbatim}
 \end{quote}
 is equivalent to the following one:
 \begin{quote}
-\verb|insert(mary[children->>frank] @ foomod, john[father->smith] @ foomod)|
+\verb|insert{mary[children->>frank] @ foomod, john[father->smith] @ foomod}|
 \end{quote}
 
 
@@ -2618,7 +2637,7 @@ is equivalent to the following one:
 \paragraph{Deletion.} The syntax of a deletion predicate is as follows:
 \begin{quote}
 \begin{verbatim}
-delop(literals [| formula])
+delop{literals [| formula]}
 \end{verbatim}
 \end{quote}
 where {\tt delop} stands for any of the following four deletion
@@ -2632,7 +2651,7 @@ conditions for the literals that will be deleted.
 For instance, the following predicate:
 \begin{quote}
 \begin{verbatim}
-deleteall(john[Year(Semester)->>Course] | Year < 2000)
+deleteall{john[Year(Semester)->>Course] | Year < 2000}
 \end{verbatim}
 \end{quote}
 will delete {\sf John}'s course selection history before the year
@@ -2651,7 +2670,7 @@ p(a). p(b). q(a). q(c).
 then the predicate below:
 \begin{quote}
 \begin{verbatim}
-delete(p(X),q(X))
+delete{p(X),q(X)}
 \end{verbatim}
 \end{quote}
 will succeed with the variable {\tt X} bound to {\tt a}.  However, if
@@ -2670,7 +2689,7 @@ the above predicate will fail.
       \end{quote}
       then
       \begin{quote}
-      \verb|delete(p(X),q(X))|
+      \verb|delete{p(X),q(X)}|
       \end{quote}
       will succeed with {\tt X} bound to either {\tt a} or {\tt b},
       depending on the ordering of facts in the database at runtime.
@@ -2685,7 +2704,7 @@ the above predicate will fail.
       \end{quote}
       then both \verb|<p(a),q(b)>| and \verb|<p(a),q(c)>| are good
       bindings for \verb|<p(a),q(X)>|. But the question is: What will
-      \verb|deleteall(p(a),q(X))| do? Should it delete both or just one?
+      \verb|deleteall{p(a),q(X)}| do? Should it delete both or just one?
 
       \smallskip
 
@@ -2727,6 +2746,7 @@ a previous deleted item will be put back into the database when the
 system backtracks.
 
 \index{backtrackable update!btinsert}
+\index{backtrackable update!btinsertall}
 \index{backtrackable update!btdelete}
 \index{backtrackable update!btdeleteall}
 \index{backtrackable update!bterase}
@@ -2737,32 +2757,35 @@ to that of non-backtrackable update predicates, except that the
 predicate names are different. The syntax of a backtrackable insertion
 predicate is:
 \begin{quote}
-\verb|btinsert(literals)|
+\begin{verbatim}
+btinsop{literals [| formula]}
+\end{verbatim}
 \end{quote}
 while the syntax of a backtrackable deletion predicate is:
 \begin{quote}
 \begin{verbatim}
-btdelop(literals [| formula])
+btdelop{literals [| formula]}
 \end{verbatim}
 \end{quote}
-where {\tt btdelop} stands for any of the following four backtrackable
+where {\tt btinsop} stands for either {\tt btinsert} or {\tt btinsertall},
+{\tt btdelop} stands for any of the following four backtrackable
 deletion operations: {\tt btdelete}, {\tt btdeleteall}, {\tt bterase}, and
 {\tt bteraseall}. The meanings of {\tt literals} and {\tt [| formula]} are
 explained in Section~\ref{sec:non-backtrackable-updates}.
 
-{\tt btinsert}, {\tt btdelete}, {\tt btdeleteall}, {\tt bterase}, and
-{\tt bteraseall} work similarly to {\tt insert}, {\tt delete},
-{\tt deleteall}, {\tt erase}, and {\tt eraseall}, respectively, except that
-the former is backtrackable while the latter is not. Refer to
-Section~\ref{sec:non-backtrackable-updates} for details of these
-operations.
+{\tt btinsert}, {\tt btinsertall}, {\tt btdelete}, {\tt btdeleteall},
+{\tt bterase}, and {\tt bteraseall} work similarly to {\tt insert},
+{\tt delete}, {\tt deleteall}, {\tt erase}, and {\tt eraseall},
+respectively, except that the former is backtrackable while the latter
+is not. Refer to Section~\ref{sec:non-backtrackable-updates} for
+details of these operations.
 
 To illustrate the difference between backtrackable and
 non-backtrackable updates, consider the following execution trace
 immediately after the \FLORA system starts:
 \begin{quote}
 \begin{verbatim}
-flora2 ?- insert(p(a)), fail.
+flora2 ?- insert{p(a)}, fail.
 
 No.
 
@@ -2770,7 +2793,7 @@ flora2 ?- p(a).
 
 Yes.
 
-flora2 ?- btinsert(q(a)), fail.
+flora2 ?- btinsert{q(a)}, fail.
 
 No.
 
@@ -2780,10 +2803,10 @@ No.
 \end{verbatim}
 \end{quote}
 In the above example, when the first \verb|fail| executes, the system
-backtracks to {\tt insert(p(a))} and does nothing. Thus the insertion
+backtracks to {\tt insert\{p(a)\}} and does nothing. Thus the insertion
 of {\tt p(a)} persists and the following query \verb|p(a)| returns
 with {\tt Yes}. However, when the second \verb|fail| executes, the
-system backtracks to {\tt btinsert(q(a))} and removes {\tt q(a)} that
+system backtracks to {\tt btinsert\{q(a)\}} and removes {\tt q(a)} that
 was previously inserted into the database. Thus the next query
 \verb|q(a)| returns with {\tt No}.
 
@@ -2800,7 +2823,7 @@ XSB tables, and database updates do not modify XSB tables.
 Thus, a user might get the following counterintuitive result:
 \begin{quote}
 \begin{verbatim}
-flora2 ?- insert(o[m->v]).
+flora2 ?- insert{o[m->v]}.
 
 Yes.
 
@@ -2808,7 +2831,7 @@ flora2 ?- o[m->v].
 
 Yes.
 
-flora2 ?- delete(o[m->v]), o[m->v].
+flora2 ?- delete{o[m->v]}, o[m->v].
 
 Yes.
 \end{verbatim}
@@ -2823,7 +2846,7 @@ flora2 ?- o[m->v].
 
 No.
 
-flora2 ?- insert(o[m->v]), o[m->v].
+flora2 ?- insert{o[m->v]}, o[m->v].
 
 No.
 \end{verbatim}

@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -183,12 +183,14 @@
 #define FL_COLLECTBAG		collectbag
 
 #define FL_INSERT		insert
+#define FL_INSERTALL		insertall
 #define FL_DELETE		delete
 #define FL_DELETEALL		deleteall
 #define FL_ERASE		erase
 #define FL_ERASEALL		eraseall
 
 #define FL_BTINSERT		btinsert
+#define FL_BTINSERTALL		btinsertall
 #define FL_BTDELETE		btdelete
 #define FL_BTDELETEALL		btdeleteall
 #define FL_BTERASE		bterase
@@ -380,6 +382,7 @@
 
 #define FLLIBDBOP		fllibdbop
 #define FLLIBINSERT		fllibinsert
+#define FLLIBINSERTALL		fllibinsertall
 #define FLLIBDELETE		fllibdelete
 #define FLLIBDELETEALL		fllibdeleteall
 #define FLLIBERASE		flliberase
@@ -387,6 +390,7 @@
 
 #define FLLIBBTDBOP		fllibbtdbop
 #define FLLIBBTINSERT		fllibbtinsert
+#define FLLIBBTINSERTALL	fllibbtinsertall
 #define FLLIBBTDELETE		fllibbtdelete
 #define FLLIBBTDELETEALL	fllibbtdeleteall
 #define FLLIBBTERASE		fllibbterase
@@ -394,6 +398,7 @@
 
 #define FLLIBSHDIRECT		fllibshdirect
 
+#define FLLIBDYNMOD		fllibdynmod
 #define FLLIBMODLIT		fllibmodlit
 #define FLLIBMODOBJ		fllibmodobj
 

@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -31,9 +31,7 @@
 
 :- import var/1, call/1 from standard.
 
-:- import clause/2 from assert.
-
-:- import assert/1, retract/1, retractall/1 from assert.
+:- import clause/2, assert/1, retract/1, retractall/1 from assert.
 
 :- import findall/3, sort/2 from setof.
 
@@ -46,13 +44,16 @@
 :- import
 	flora_setup_flogic_bswrapper/1,
 	flora_flogic_bswrapper/2,
-	flora_flogic_predicate/4
+	flora_flogic_predicate/4,
+	flora_wspredicate/4
    from flrwrapper.
+
+:- import flora_list2conjunct/2 from flrutils.
 
 
 /*********************************************************************
   This file is for the following FLORA database operations:
-  insert, delete, deleteall, erase, eraseall.
+  insert, insertall, delete, deleteall, erase, eraseall.
 *********************************************************************/
 ?- flora_register_syslib(FLLIBDBOP).
 
@@ -66,17 +67,76 @@
 /*****************************************************************************
   fllibinsert(+List)
 *****************************************************************************/
-fllibinsert([]) :- !.
+fllibinsert(List) :- fllibinsert(List,true).
 
-fllibinsert([H|_T]) :-
+
+/*****************************************************************************
+  fllibinsert(+List,+Condition)
+*****************************************************************************/
+fllibinsert(List,Condition) :-
+	call(Condition),
+	flora_insert_facts(List).
+
+
+/*****************************************************************************
+  flora_insert_facts(+List)
+*****************************************************************************/
+flora_insert_facts([]) :- !.
+
+flora_insert_facts([H|_T]) :-
 	var(H),
 	!,
-	flora_error_line('uninstantiated argument of `insert'''),
+	flora_error_line('uninstantiated argument of insert operation'),
 	abort.
 
-fllibinsert([H|T]) :-
+flora_insert_facts([FLLIBMODLIT(P,Args,WS)|T]) :-
+	!,
+	flora_wspredicate(P,Args,WS,H),
 	assert(H),
-	fllibinsert(T).
+	flora_insert_facts(T).
+
+flora_insert_facts([FLLIBMODOBJ(P,Args,WS,O)|T]) :-
+	!,
+	flora_wspredicate(P,Args,WS,O),
+	flora_insert_facts(T).
+
+flora_insert_facts([H|T]) :-
+	assert(H),
+	flora_insert_facts(T).
+
+
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBINSERTALL).
+
+
+/*****************************************************************************
+  fllibinsertall(+List)
+*****************************************************************************/
+fllibinsertall(List) :- fllibinsert(List).
+
+
+/*****************************************************************************
+  fllibinsertall(+List,+Condition)
+*****************************************************************************/
+fllibinsertall(List,Condition) :-
+	findall(List,Condition,FsList),
+	!,
+	flora_insertall_facts(FsList).
+
+
+/*****************************************************************************
+  flora_insertall_facts(+FactsList)
+
+  Note: This predicate always succeeds.
+*****************************************************************************/
+flora_insertall_facts([]) :- !.
+
+flora_insertall_facts([Fs|FL]) :-
+	flora_insert_facts(Fs),
+	!,
+	flora_insertall_facts(FL).
 
 
 /*********************************************************************
@@ -100,38 +160,46 @@ fllibdelete(List) :- fllibdelete(List,true).
 fllibdelete([P],true) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of `delete'''),
+	flora_error_line('uninstantiated argument of delete operation'),
 	abort.
 
 fllibdelete([P],true) :-
 	!,
-	retract(P).
+	( P = FLLIBMODLIT(F,Args,WS) ->
+	    flora_wspredicate(F,Args,WS,X)
+	;
+	  X=P
+	),
+	retract(X).
 
 fllibdelete(List,Condition) :-
-	flora_prove_goals(List),
-	flora_prove_goals([Condition]),
-	flora_check_facts(List),
-	flora_delete_facts(List).
+	flora_convert_facts(List,CallList,FactList),
+	flora_list2conjunct([Condition|CallList],Goal),
+	call(Goal),
+	flora_check_facts(FactList),
+ 	flora_delete_facts(FactList).
 
 
 /*****************************************************************************
-  flora_list2conjunct(+List,-Goal)
+  flora_convert_facts(+List,-CallList,-FactList)
 *****************************************************************************/
-flora_list2conjunct([G],G) :- !.
+flora_convert_facts([],[],[]) :- !.
 
-flora_list2conjunct([G|L],Goal) :-
+flora_convert_facts([FLLIBMODLIT(P,Args,WS)|L],
+                    [flora_wspredicate(P,Args,WS,F),F|CL],
+                    [F|FL]) :-
 	!,
-	flora_list2conjunct(L,LG),
-	Goal =.. [',',G,LG].
+	flora_convert_facts(L,CL,FL).
 
-
-/*****************************************************************************
-  flora_prove_goals(+List)
-*****************************************************************************/
-flora_prove_goals(List) :-
-	flora_list2conjunct(List,Goal),
+flora_convert_facts([FLLIBMODOBJ(P,Args,WS,Obj)|L],
+                    [flora_wspredicate(P,Args,WS,Obj)|CL],
+                    FL) :-
 	!,
-	call(Goal).
+	flora_convert_facts(L,CL,FL).
+
+flora_convert_facts([F|L],[F|CL],[F|FL]) :-
+	!,
+	flora_convert_facts(L,CL,FL).
 
 
 /*****************************************************************************
@@ -139,21 +207,49 @@ flora_prove_goals(List) :-
 *****************************************************************************/
 flora_check_facts([]) :- !.
 
-flora_check_facts([F|Fs]) :-
+flora_check_facts([F|L],[F|FL]) :-
 	!,
 	clause(F,true),
-	flora_check_facts(Fs).
+	flora_check_facts(L,FL).
 
 
 /*****************************************************************************
   flora_delete_facts(+List)
-*****************************************************************************/
-flora_delete_facts([]) :- !.
 
-flora_delete_facts([F|Fs]) :-
-	!,
+  Note: This function does not always necessarily succeed.
+*****************************************************************************/
+flora_delete_facts(L) :-
+	flora_retract_facts(L,FL,Status),
+	( Status ==  success ->
+	    true
+	;
+	  flora_assert_facts(FL),
+	  fail
+	).
+
+
+/*****************************************************************************
+  flora_retract_facts(+List,-RetractedList,-Status)
+*****************************************************************************/
+flora_retract_facts([],[],success) :- !.
+
+flora_retract_facts([F|Fs],[F|FL],Status) :-
 	retract(F),
-	flora_delete_facts(Fs).
+	!,
+	flora_retract_facts(Fs,FL,Status).
+
+flora_retract_facts(_Fs,[],failure).
+
+
+/*****************************************************************************
+  flora_assert_facts(+List)
+*****************************************************************************/
+flora_assert_facts([]) :- !.
+
+flora_assert_facts([F|Fs]) :-
+	!,
+	assert(F),
+	flora_assert_facts(Fs).
 
 
 /*********************************************************************
@@ -177,21 +273,28 @@ fllibdeleteall(List) :- fllibdeleteall(List,true).
 fllibdeleteall([P],true) :-
 	var(P),
 	!,
-	flora_error_line('uninstantiated argument of `deleteall'''),
+	flora_error_line('uninstantiated argument of deleteall operation'),
 	abort.
 
 fllibdeleteall([P],true) :-
 	!,
-	retractall(P).
+	( P = FLLIBMODLIT(F,Args,WS) ->
+	    flora_wspredicate(F,Args,WS,X)
+	;
+	  X=P
+	),
+	retractall(X).
 
 fllibdeleteall(List,Condition) :-
-	flora_list2conjunct([Condition|List],Goal),
-	findall(List,Goal,FactList),
-	flora_deleteall_facts(FactList,_DeletedList).
+	flora_convert_facts(List,CallList,FactList),
+	flora_list2conjunct([Condition|CallList],Goal),
+	findall(FactList,Goal,FsList),
+	!,
+	flora_deleteall_facts(FsList,_DeletedFsList).
 
 
 /*****************************************************************************
-  flora_deleteall_facts(+FactList,-DeletedList)
+  flora_deleteall_facts(+FactsList,-DeletedList)
 
   Note: This predicate always succeeds.
 *****************************************************************************/
@@ -199,8 +302,8 @@ flora_deleteall_facts([],[]) :- !.
 
 flora_deleteall_facts([Fs|FL],[Fs|DFL]) :-
 	flora_check_facts(Fs),
-	!,
 	flora_delete_facts(Fs),
+	!,
 	flora_deleteall_facts(FL,DFL).
 
 flora_deleteall_facts([_Fs|FL],DFL) :-
@@ -223,11 +326,12 @@ flliberase(List) :- flliberase(List,true).
   flliberase(+List,+Condition)
 *****************************************************************************/
 flliberase(List,Condition) :-
-	flora_prove_goals(List),
-	flora_prove_goals([Condition]),
-	flora_check_facts(List),
-	flora_delete_facts(List),
-	flora_erase_facts(List).
+	flora_convert_facts(List,CallList,FactList),
+	flora_list2conjunct([Condition|CallList],Goal),
+	call(Goal),
+	flora_check_facts(FactList),
+	flora_delete_facts(FactList),
+	flora_erase_facts(FactList).
 
 
 /*****************************************************************************
@@ -329,6 +433,7 @@ flora_erase_objects([O|OList]) :-
 	Pexists =.. [WSBexists,O],
 	Pmvddef =.. [WSBmvddef,O,_],
 	Pimvddef =.. [WSBimvddef,O,_],
+	!,
 	retractall(Pisa),
 	retractall(Psub),
 	retractall(Pmeth),
@@ -364,14 +469,15 @@ flliberaseall(List) :- flliberaseall(List,true).
   flliberaseall(+List,+Condition)
 *****************************************************************************/
 flliberaseall(List,Condition) :-
-	flora_list2conjunct([Condition|List],Goal),
-	findall(List,Goal,FactList),
-	flora_deleteall_facts(FactList,DeletedFactList),
-	flora_eraseall_facts(DeletedFactList).
+	flora_convert_facts(List,CallList,FactList),
+	flora_list2conjunct([Condition|CallList],Goal),
+	findall(FactList,Goal,FsList),
+	flora_deleteall_facts(FsList,DeletedFsList),
+	flora_eraseall_facts(DeletedFsList).
 
 
 /*****************************************************************************
-  flora_eraseall_facts(+FactList)
+  flora_eraseall_facts(+FactsList)
 
   Note: This predicate always succeeds.
 *****************************************************************************/

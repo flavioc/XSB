@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -40,9 +40,19 @@
 :- index(flora_flogic_bswrapper/2,trie).
 :- index(flora_flogic_workspace/1,trie).
 
+:- import
+	flora_error_line/1,
+	flora_error_heading/0,
+	flora_stderr_string/1,
+	flora_stderr_nl/0
+   from flrprint.
+
+:- import flora_write/2 from flrdisplay.
+
 :- export
 	flora_setup_flogic_bswrapper/1,
 	flora_flogic_bswrapper/2,
 	flora_flogic_predicate/4,
 	flora_hilog_predicate/2,
-	flora_nohilog_predicate/3.
+	flora_nohilog_predicate/3,
+	flora_wspredicate/4.

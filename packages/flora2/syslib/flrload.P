@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -89,12 +89,11 @@ flora_load_file(FL_RIGHTTO(FileName,Workspace)) :-
 	    ;
 	      flora_stderr_nl,
 	      ( var(Workspace) ->
-		  flora_error_line('workspace name unbound at time of loading')
+		  flora_error_line('uninstantiated module name at time of loading')
 	      ;
 	        flora_error_heading,
-		flora_stderr_string('workspace name '),
+		flora_stderr_string('invalid module name: '),
 		flora_write(STDERR,Workspace),
-		flora_stderr_string(' invalid for loading'),
 		flora_stderr_nl
 	      ),
 	      !,

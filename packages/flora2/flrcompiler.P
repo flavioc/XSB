@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -73,6 +73,7 @@ is_flworkspace(FLWORKSPACE(P,WS),P,WS).
 is_flplib(FLPLIB(P,MD),P,MD).
 is_flplib(FLPLIB(P),P).
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
+is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
 is_flinsert(FLINSERT(Op,List),Op,List).
 is_fldelete(FLDELETE(Op,List,Cond),Op,List,Cond).
 is_fldelete(FLDELETE(Op,List),Op,List).
@@ -147,25 +148,9 @@ not_struct(Goal,PRNOT(Goal)).
 call_struct(VarName,PRCALL(Var)) :- varobj_struct(VarName,Var).
 cut_struct(PRCUT).
 
-
-atomlit_struct(Atom,Struct) :-
-	flora_prlgdef(Atom,0),
-	!,
-	prologterm_struct(Atom,0,[],Struct).
-
 atomlit_struct(Atom,PRATOMLIT(Atom)).
 
-
-termlit_struct(FObj,N,ObjList,Struct) :-
-	atomobj_struct(Atom,FObj),
-	flora_prlgdef(Atom,N),
-	!,
-	prologterm_struct(Atom,N,ObjList,Struct).
-
 termlit_struct(FObj,N,ObjList,PRTERMLIT(FObj,N,ObjList)).
-
-%% Prolog specification overrides workspace specification.
-wstermlit_struct(FObj,N,ObjList,Struct) :- termlit_struct(FObj,N,ObjList,Struct).
 
 conjunct_code(Goal1,Goal2,Code) :-
 	( Goal1 == NULL ->
@@ -223,16 +208,11 @@ prologterm_struct(F,N,Args,PROLOGTERM(F,N,Args)).
 
 florasyslib_struct(F,N,Args,FLORASYSLIB(F,N,Args)) :- report_option(FLSYSLIB(F)).
 
-termobj_struct(FObj,N,ObjList,Struct) :-
-	atomobj_struct(Atom,FObj),
-	flora_prlgdef(Atom,N),
-	!,
-	prologterm_struct(Atom,N,ObjList,Struct).
-
 termobj_struct(FObj,N,ObjList,PRTERM(FObj,N,ObjList)).
 
-%% Prolog declaration overrides workspace specification.
-wstermobj_struct(FObj,N,ObjList,Struct) :- termobj_struct(FObj,N,ObjList,Struct).
+insert_struct(Op,List,Cond,Code) :-
+	insert_syslib(Op,Lib),
+	florasyslib_struct(Lib,2,[List,Cond],Code).
 
 insert_struct(Op,List,Code) :-
 	insert_syslib(Op,Lib),
@@ -247,8 +227,10 @@ delete_struct(Op,List,Code) :-
 	florasyslib_struct(Lib,1,[List],Code).
 
 insert_syslib(FL_INSERT,FLLIBINSERT) :- !.
+insert_syslib(FL_INSERTALL,FLLIBINSERTALL) :- !.
 
 insert_syslib(FL_BTINSERT,FLLIBBTINSERT) :- !.
+insert_syslib(FL_BTINSERTALL,FLLIBBTINSERTALL) :- !.
 
 delete_syslib(FL_DELETE,FLLIBDELETE) :- !.
 delete_syslib(FL_DELETEALL,FLLIBDELETEALL) :- !.
@@ -991,7 +973,7 @@ compile_body_literal(ParserTerm,Code,Status) :-
 	    compile_flbirelate(ObjTerm1,RelType,ObjTerm2,_Obj,Code,Status)
 
 	; is_flobjspec(ParserTerm,ObjTerm,Spec) ->
-	    compile_flobjspec_literal(ObjTerm,Spec,Code,Status)
+	    compile_flobjspec(ObjTerm,Spec,_Object,Code,Status)
 
 	; is_flload(ParserTerm,LoadList) ->
 	    compile_flload(LoadList,Code,Status)
@@ -1004,6 +986,9 @@ compile_body_literal(ParserTerm,Code,Status) :-
 
 	; is_flplib(ParserTerm,P,Module) ->
 	    compile_prlgtermlit(P,Module,Code,Status)
+
+	; is_flinsert(ParserTerm,Op,List,Cond) ->
+	    compile_flinsert(Op,List,Cond,Code,Status)
 
 	; is_flinsert(ParserTerm,Op,List) ->
 	    compile_flinsert(Op,List,Code,Status)
@@ -1240,33 +1225,16 @@ compile_flbirelate(ObjTerm1,RelType,ObjTerm2,Obj1,Code,Status) :-
 
 
 /****************************************************************************
-  compile_flobjspec_literal(+ObjTerm,+SpecBody,-Code,-Status)
   compile_flobjspec(+ObjTerm,+SpecBody,-Object,-Code,-Status)
   compile_flspecbody(+Object,+SpecTerm,-Code,-Status)
   compile_mvdattspec(+Object,+AttObj,+RefType,+ValTermList,-Code,-Status)
 ****************************************************************************/
-compile_flobjspec_literal(ObjTerm,SpecBody,Code,Status) :-
-	SpecBody == [],
-	is_flobjref(ObjTerm,OTerm,RefType,ATerm),
-	!,
-	compile_pathexplist([OTerm,ATerm],[OObj,AObj],ObjCode,Status),
-	( Status == [] ->
-	    objattdef_struct(OObj,RefType,AObj,TCode),
-	    conjunct_code(ObjCode,TCode,Code)
-	;
-	  true
-        ).
-
-compile_flobjspec_literal(ObjTerm,SpecBody,Code,Status) :-
-	compile_flobjspec(ObjTerm,SpecBody,_Object,Code,Status).
-
-
 compile_flobjspec(ObjTerm,SpecBody,Object,Code,Status) :-
 	( SpecBody == [] ->
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
 		compile_pathexplist([OTerm,ATerm],[OObj,AObj],ObjCode,Status),
 		( Status == [] ->
-		    objref_struct(OObj,RefType,AObj,Object,TCode),
+		    objattdef_struct(OObj,RefType,AObj,TCode),
 		    conjunct_code(ObjCode,TCode,Code)
 		;
 		  true
@@ -1564,7 +1532,7 @@ compile_head_fltermobj(Funct,N,Args,Object,CodeList,Status) :-
 compile_head_fltermlit(Funct,N,Args,CodeList,Status) :-
 	compile_head_pathexplist([Funct|Args],[FObj|AObj],ObjCodeList,Status),
 	( Status == [] ->
-	    wstermlit_struct(FObj,N,AObj,TObj),
+	    termlit_struct(FObj,N,AObj,TObj),
 	    append(ObjCodeList,[TObj],CodeList)
 	;
 	  true
@@ -1954,7 +1922,7 @@ compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	atomobj_struct(FAtom,FObj),
 	compile_wsflsignpathexplist(Args,Signs,WS,AObj,TCode,Status),
 	( Status == [] ->
-	    wstermobj_struct(FObj,N,AObj,O),
+	    termlit_struct(FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
 	    conjunct_code(TCode,WCode,Code)
 	;
@@ -1964,7 +1932,7 @@ compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 compile_wstermobj(Funct,N,Args,WS,Object,Code,Status) :-
 	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],TCode,Status),
 	( Status == [] ->
-	    wstermobj_struct(FObj,N,AObj,O),
+	    termlit_struct(FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
 	    conjunct_code(TCode,WCode,Code)
 	;
@@ -2002,7 +1970,7 @@ compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	atomobj_struct(FAtom,FObj),
 	compile_wsflsignpathexplist(Args,Signs,WS,AObj,ObjCode,Status),
 	( Status == [] ->
-	    wstermlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
 	    conjunct_code(ObjCode,WSCode,Code)
 	;
@@ -2012,7 +1980,7 @@ compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
 compile_wstermlit(Funct,N,Args,WS,Code,Status) :-
 	compile_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCode,Status),
 	( Status == [] ->
-	    wstermlit_struct(FObj,N,AObj,TCode),
+	    termlit_struct(FObj,N,AObj,TCode),
 	    workspacelit_struct(TCode,WS,WSCode),
 	    conjunct_code(ObjCode,WSCode,Code)
 	;
@@ -2078,7 +2046,14 @@ compile_wsflbirelate(ObjTerm1,RelType,ObjTerm2,WS,Obj1,Code,Status) :-
 compile_wsflobjspec(ObjTerm,SpecBody,WS,Object,Code,Status) :-
 	( SpecBody == [] ->
 	    ( is_flobjref(ObjTerm,OTerm,RefType,ATerm) ->
-		compile_wsflobjref(OTerm,RefType,ATerm,WS,Object,Code,Status)
+		compile_wsflpathexplist([OTerm,ATerm],WS,[OObj,AObj],ObjCode,Status),
+		( Status == [] ->
+		    objattdef_struct(OObj,RefType,AObj,TCode),
+		    workspacelit_struct(TCode,WS,WTCode),
+		    conjunct_code(ObjCode,WTCode,Code)
+		;
+		  true
+	        )
 	    ;
 	      compile_wsflpathexp(ObjTerm,WS,Object,ObjCode,Status),
 	      ( Status == [] ->
@@ -2268,7 +2243,7 @@ compile_wsflobjeql(Obj1,Obj2,WS,Code,Status) :-
 /****************************************************************************
   compile_prlgtermlit(+ParserTerm,-Code,-Status)
 
-  This is for compiling Prolog library calls.
+  This is for compiling Prolog library calls whose module is not provided.
 ****************************************************************************/
 compile_prlgtermlit(ParserTerm,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
@@ -2287,7 +2262,7 @@ compile_prlgtermlit(ParserTerm,Code,Status) :-
 /****************************************************************************
   compile_prlgtermlit(+ParserTerm,+Module,-Code,-Status)
 
-  This is for compiling Prolog library calls.
+  This is for compiling Prolog library calls whose module is provided.
 ****************************************************************************/
 compile_prlgtermlit(ParserTerm,Module,Code,Status) :-
 	( is_flterm(ParserTerm,Funct,N,Args) ->
@@ -2464,7 +2439,7 @@ compile_head_wsflpathexp(ParserTerm,WS,Object,CodeList,Status) :-
 compile_head_wstermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],TCodeList,Status),
 	( Status == [] ->
-	    wstermobj_struct(FObj,N,AObj,O),
+	    termlit_struct(FObj,N,AObj,O),
 	    workspaceobj_struct(O,WS,Object,WCode),
 	    (WCode == NULL -> CodeList=TCodeList; append(TCodeList,[WCode],CodeList))
 	;
@@ -2490,7 +2465,7 @@ compile_head_wsfltermobj(Funct,N,Args,WS,Object,CodeList,Status) :-
 compile_head_wstermlit(Funct,N,Args,WS,CodeList,Status) :-
 	compile_head_wsflpathexplist([Funct|Args],WS,[FObj|AObj],ObjCodeList,Status),
 	( Status == [] ->
-	    wstermlit_struct(FObj,N,AObj,TObj),
+	    termlit_struct(FObj,N,AObj,TObj),
 	    workspacelit_struct(TObj,WS,WSTObj),
 	    append(ObjCodeList,[WSTObj],CodeList)
 	;
@@ -2688,6 +2663,24 @@ compile_head_wsflobjeql(Obj1,Obj2,WS,CodeList,Status) :-
 	;
 	  true
 	).
+
+
+/****************************************************************************
+  compile_flinsert(+Op,+List,+Cond,-Code,-Status)
+****************************************************************************/
+compile_flinsert(Op,List,Cond,Code,Status) :-
+	compile_flinsert_list(List,CodeList,S),
+	( S == [] ->
+	    compile_body(Cond,CondCode,Status),
+	    ( Status == [] ->
+		list_struct(CodeList,[],ListCode),
+		insert_struct(Op,ListCode,CondCode,Code)
+	    ;
+	      true
+	    )
+	;
+	  Status=S
+        ).
 
 
 /****************************************************************************

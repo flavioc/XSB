@@ -4,7 +4,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
-** Copyright (C) The Research Foundation of SUNY, 1999-2000
+** Copyright (C) The Research Foundation of SUNY, 1999-2001
 **
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -26,6 +26,7 @@
 
 :- compiler_options([xpp_on]).
 
+#include "standard.h"
 #include "flora_terms.flh"
 
 
@@ -201,3 +202,23 @@ flora_nohilog_predicate(Funct,Predicate,Workspace) :-
 	str_length(RestFunct,RestLen),
 	substring(RestFunct,N,RestLen,Predicate),
 	!.
+
+
+/*****************************************************************************
+  flora_wspredicate(+Functor,+Args,+Workspace,-Predicate)
+*****************************************************************************/
+flora_wspredicate(Functor,Args,WS,Predicate) :-
+	( var(WS) ->
+	    flora_error_line('uninstantiated module name'),
+	    abort
+
+	; not atom(WS) ->
+	    flora_error_heading,
+	    flora_stderr_string('invalid module name: '),
+	    flora_write(STDERR,WS),
+	    flora_stderr_nl,
+	    abort
+	;
+	  fmt_write_string(PF,"%s'%s'%s",args(FLORA_PREFIX,WS,Functor)),
+	  Predicate =.. [PF|Args]
+	).

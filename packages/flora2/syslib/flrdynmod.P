@@ -1,4 +1,4 @@
-/* File:      flraggcolset.P
+/* File:      flrdynmod.P
 **
 ** Author(s): Guizhen Yang 
 **
@@ -20,7 +20,6 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ** 
-** $Id$
 ** 
 */
 
@@ -29,38 +28,41 @@
 
 #include "flora_terms.flh"
 
-:- import ground/1, member/2 from basics.
-
-:- import findall/3, sort/2 from setof.
 
 :- import flora_register_syslib/1 from flrlibman.
+
+:- import flora_wspredicate/4 from flrwrapper.
+
+
+/*********************************************************************
+  This file is for the following dynamic module references:
+  FLLIBMODLIT and FLLIBMODOBJ.
+*********************************************************************/
+?- flora_register_syslib(FLLIBDYNMOD).
 
 
 /*********************************************************************
   system library registration
 *********************************************************************/
-?- flora_register_syslib(FLLIBCOLLECTSET).
+?- flora_register_syslib(FLLIBMODLIT).
 
 
 /*********************************************************************
-  fllibcollectset(+Var,+VarList,+Goal,-Set)
+  fllibmodlit(+Functor,+Args,+Workspace)
 *********************************************************************/
-fllibcollectset(Var,[],Goal,Set) :-
-	!,
-	findall(Var,Goal,Bag),
-	sort(Bag,Set).
+fllibmodlit(F,Args,WS) :-
+	flora_wspredicate(F,Args,WS,P),
+	call(P).
 
-fllibcollectset(Var,VarList,Goal,Set) :-
-	ground(VarList),
-	!,
-	findall(Var,Goal,Bag),
-	sort(Bag,Set).
 
-fllibcollectset(Var,VarList,Goal,Set) :-
-	!,
-	findall(flora_result(Var,VarList),Goal,Matches),
-	findall(Grp,member(flora_result(_,Grp),Matches),GL),
-	sort(GL,Groups),
-	member(VarList,Groups),
-	findall(D,member(flora_result(D,VarList),Matches),Bag),
-	sort(Bag,Set).
+/*********************************************************************
+  system library registration
+*********************************************************************/
+?- flora_register_syslib(FLLIBMODOBJ).
+
+
+/*********************************************************************
+  fllibmodobj(+Functor,+Args,+Workspace,-Predicate)
+*********************************************************************/
+fllibmodobj(F,Args,WS,P) :-
+	flora_wspredicate(F,Args,WS,P).
