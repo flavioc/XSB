@@ -1,0 +1,31 @@
+
+In order to use the Smodels interface, several steps must be
+performed.  Note: this interface has not yet been ported to Windows
+Cygwin.
+
+1) Smodels itself must be compiled as a library.  In version 2.26,
+this is done by typing 
+
+make lib
+
+in the Smodels2.26 directory (NOT this directory).  The compilation is
+complete if a .libs subdirectory was created containing various
+archive files.
+
+2) XSB must be configured with the '--with-smodels=<path-to-smodels>'
+option.  This will create a file 'smoMakefile' in this directory with
+a variable SMODELS set to the proper path.  the proper path.  If this
+doesn't work on your system, the SMODELS variable in the smoMakefile
+may need to be edited by hand.
+
+3) The Smodels files must be made available to this interface.  One
+way of doing this is by executing the command
+
+sh makelinks.sh <path-to-smodels>
+
+4) Finally, 
+
+make -f smoMakefile
+
+
+
