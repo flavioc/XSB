@@ -85,7 +85,7 @@
         parse_filename/4,
 	getenv/2, 
 	sys_syscall/4,
-	sys_system/2, 
+	sys_system/4, 
 	sys_gethost/2, 
 	sys_errno/1, 
 	file_stat/3,

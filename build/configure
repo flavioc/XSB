@@ -2973,10 +2973,10 @@ if test "${perl_support}" = "yes"; then
    perl_patchlevel=`perl -MConfig -e 'print $Config{patchlevel}'`
 
    # perl support doesn't work with perl < 5.004
-   if test "$perl_baserev" -lt "5" ; then
+   if test $perl_baserev -lt 5 ; then
       perl_support=no
    fi
-   if test "$perl_baserev" = "5" -a "$perl_patchlevel" -lt "4"  ; then
+   if test "$perl_baserev" = "5" -a $perl_patchlevel -lt 4  ; then
       perl_support=no
    fi
 fi

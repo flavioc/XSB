@@ -38,10 +38,42 @@ constr_command([H|T], String) :-
 	
 unix(Command, Result) :-
 	term_type(Command, T),
-	( T =:= 5 -> sys_system(Command, R), Result = R
-	; T =:= 1 -> term_psc(Command, Psc), psc_name(Psc, RCommand), 
-		     sys_system(RCommand, R), Result = R
+	( T =:= 5 -> sys_system(1, Command, R, _), Result = R
+	; T =:= 1 -> term_psc(Command, PSC), psc_name(PSC, RCommand), 
+		     sys_system(1, RCommand, R, _), Result = R
 	).
+
+/* Fails, if we can't open stream to/from the system command Command 
+** in mode Mode. Mode can be `read' or `write', as in open/3
+*/
+open_process_stream(Command, Mode, Stream) :-
+	term_type(Command, T),
+	( T =:= 5 -> sys_system(2, Command, Mode, FileDes), 
+	    conpsc(Command,PSC), Stream = Command
+	; T =:= 1 -> term_psc(Command, PSC), psc_name(PSC, Stream), 
+	    sys_system(2, Stream, Mode, FileDes)
+	),
+	psc_set_prop(PSC, FileDes),
+	psc_set_type(PSC, 5).
+
+%% Same as open_process_stream, bt operates with file descriptors
+open_process_pipe(Command, Mode, FileDes) :-
+	term_type(Command, T),
+	( T =:= 5 -> sys_system(2, Command, Mode, FileDes)
+	; T =:= 1 -> term_psc(Command, PSC), psc_name(PSC, RCommand), 
+	    sys_system(2, RCommand, Mode, FileDes)
+	).
+
+close_process_stream(Stream, RetCode) :-
+	conpsc(Stream, PSC),
+	psc_type(PSC, Type), Type=5,
+	psc_prop(PSC, FileDes), 
+	sys_system(3, FileDes,RetCode,_),
+	psc_set_type(PSC, 0).
+
+%% Same as close_process_stream, bt operates with file descriptors
+close_process_pipe(FileDes, RetCode) :-
+	sys_system(3, FileDes,RetCode,_).
 
 cd(Path) :- 
 	( atom(Path) -> 

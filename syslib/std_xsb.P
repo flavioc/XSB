@@ -201,6 +201,10 @@ standard_symbol(ttywrite, 1, standard).
 standard_symbol(ttywritenl, 1, standard).
 standard_symbol(unix, 1, unix).
 standard_symbol(unix, 2, unix).
+standard_symbol(open_process_stream, 3, unix).
+standard_symbol(open_process_pipe, 3, unix).
+standard_symbol(close_process_stream, 2, unix).
+standard_symbol(close_process_pipe, 2, unix).
 standard_symbol(var, 1, standard).
 standard_symbol(write, 1, standard).
 standard_symbol(write, 2, standard).

@@ -24,12 +24,15 @@
 */
 
 
-:- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1.
+:- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1,
+	open_process_stream/3, close_process_stream/2,
+	open_process_pipe/3, close_process_pipe/2.
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3.
 
 :- import str_cat/3 from string.
 :- import atom/1, abort/1 from standard.
-:- import psc_name/2, sys_system/2, term_psc/2, term_type/2,
-	  expand_filename/2
+:- import psc_name/2, psc_set_type/2, psc_set_prop/2, conpsc/2,
+	psc_type/2, psc_prop/2,
+	sys_system/4, term_psc/2, term_type/2, expand_filename/2
     from machine.
 

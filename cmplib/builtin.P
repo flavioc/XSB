@@ -110,7 +110,7 @@ inline_builtin(load_obj, 4, 52).
 
 inline_builtin(getenv, 2, 54).
 /* inline_builtin(sys_syscall, 4, 55). */
-inline_builtin(sys_system, 2, 56).
+inline_builtin(sys_system, 4, 56).
 inline_builtin(sys_gethost, 2, 57).
 inline_builtin(sys_errno, 1, 58).
 
