@@ -2523,12 +2523,14 @@ retractall_oms_term(Term) :-
 %	),	
 	fail. 
 retractall_oms_term(Term) :-
-	retractall(Term),
+	retract(Term),
 	get_component_extensional(Term,Name),
 	(oms_dirty(Name)
 	 ->	true
 	 ;	make_oms_dirty(Name)
-	).
+	),
+	fail.
+retractall_oms_term(_).
 
 call_retractall_oms_int(oms_cn(Cid,N,Nid,Cmp)) :-
 	(nonvar(Cid),var(Nid)
