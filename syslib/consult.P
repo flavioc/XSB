@@ -632,8 +632,10 @@ proc_table((Pred, Preds)) :- !,
 proc_table(Pname/Arity) :- 
 	table(Pname/Arity).
 
-ensure_loaded(File,dyn) :- ensure_dyn_loaded(File).
-ensure_loaded(File,dync) :- ensure_dync_loaded(File).
+ensure_loaded(File,dyn) :- ensure_dyn_loaded(File,1).
+ensure_loaded(File,dyna) :- ensure_dyn_loaded(File,0).
+ensure_loaded(File,dync) :- ensure_dync_loaded(File,1).
+ensure_loaded(File,dynca) :- ensure_dync_loaded(File,0).
 ensure_loaded(File,consult) :- ensure_loaded(File).
 
 ensure_loaded([]) :- !.
@@ -643,24 +645,30 @@ ensure_loaded([File|Files]) :- !,
 ensure_loaded(File) :-
 	reconsult(File,[],true).
 
-ensure_dyn_loaded([]) :- !.
-ensure_dyn_loaded([File|Files]) :- !, 
-	ensure_dyn_loaded(File),
-	ensure_dyn_loaded(Files).
-ensure_dyn_loaded(File) :-
+ensure_dyn_loaded(Files) :-
+	ensure_dyn_loaded(Files,1).
+
+ensure_dyn_loaded([],_Dir) :- !.
+ensure_dyn_loaded([File|Files],Dir) :- !, 
+	ensure_dyn_loaded(File,Dir),
+	ensure_dyn_loaded(Files,Dir).
+ensure_dyn_loaded(File,Dir) :-
 	(if_should_not_reload(File)
 	 ->	true
-	 ;	load_dyn(File)
+	 ;	load_dyn(File,Dir)
 	).
 
-ensure_dync_loaded([]) :- !.
-ensure_dync_loaded([File|Files]) :- !, 
-	ensure_dync_loaded(File),
-	ensure_dync_loaded(Files).
-ensure_dync_loaded(File) :-
+ensure_dync_loaded(Files) :-
+	ensure_dync_loaded(Files,1).
+
+ensure_dync_loaded([],_Dir) :- !.
+ensure_dync_loaded([File|Files],Dir) :- !, 
+	ensure_dync_loaded(File,Dir),
+	ensure_dync_loaded(Files,Dir).
+ensure_dync_loaded(File,Dir) :-
 	(if_should_not_reload(File)
 	 ->	true
-	 ;	load_dync(File)
+	 ;	load_dync(File,Dir)
 	).
 
 if_should_not_reload(File) :-
