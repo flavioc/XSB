@@ -1169,12 +1169,12 @@ flora_commit_storage :-
  Should be called only after it is certain that backtracking 
  over deleted facts cannot occur.
 **************************************************************************/
-
 flora_reclaim_storage_space :-
 	(flora_storage_registry(StorageName),
 	    FLORA_DB_RECLAIM_SPACE(StorageName),
 	    fail
 	; true).
+
 
 /*************************************************************************
   flora_rpc_file(+MaxErr,+ErrNum,+WarnNum,-CompiledRuleList,-FileOptionList,-FileStatus)
@@ -1187,7 +1187,9 @@ flora_tailappend([H|V],[H|L],T) :- flora_tailappend(V,L,T).
 %% Calls the compiler. This is used to wrap templates, like trailers, 
 %% with the WORKSPACE macros.
 flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus) :-
-	flora_read_parse_compile(FLORA_FILE,Tokens,FlattenedRules,RuleOptions,RuleStatus),
+	flora_read_parse_compile(FLORA_FILE,Tokens,
+                                 CompiledRuleList-NewCompiledRuleList,
+                                 RuleOptions,RuleStatus),
 	member(error(EN),RuleStatus),
 	member(warning(WN),RuleStatus),
 	NewErrNum is ErrNum+EN,
@@ -1219,7 +1221,6 @@ flora_rpc_file(MaxErr,ErrNum,WarnNum,CompiledRuleList,FileOptionList,FileStatus)
 	    )
 	;
 	  ( NewErrNum == 0 -> %% no error so far
-	      flora_tailappend(CompiledRuleList,FlattenedRules,NewCompiledRuleList),
 	      flora_tailappend(FileOptionList,RuleOptions,NewFileOptionList)
 	  ;
 	    true
@@ -1272,25 +1273,30 @@ flora_discard_tokens :-
 
 
 /*************************************************************************
-  flora_read_parse_compile(+Option,-Tokens,-FlattenedRuleList,-OptionList,-Status)
+  flora_read_parse_compile(+Option,-Tokens,-FlattenedRules,-OptionList,-Status)
 
   Note: This procedure can be used to read both file and command line.
         For reading file, Option is FLORA_FILE. For reading command line,
         Option is FLORA_COMMANDLINE.
+
+        FlattenedRules is a difference list in the form of List-Tail,
+        where Tail is the tail of List. Tail is unbound when this procedure
+        returns and so it should be set to [] later accordingly to close
+        the end of the list.
 *************************************************************************/
 flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	flora_tokens(InputTokens,LexerStatus),
 	flora_lexer_error(InputTokens,LexerStatus,LexErrNum),
 	( LexErrNum > 0 ->
 	    Tokens=InputTokens,
-	    FlattenedRules=[],
+	    FlattenedRules=T-T,
 	    OptionList=[],
 	    ErrNum=LexErrNum,
 	    WarnNum=0
 
 	; flora_blank_line(InputTokens) ->
 	    Tokens=InputTokens,
-	    FlattenedRules=[],
+	    FlattenedRules=T-T,
 	    OptionList=[],
 	    ErrNum=0,
 	    WarnNum=0
@@ -1303,7 +1309,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	  flora_compose(Tokens,ComposerTerm,ComposerStatus),
 	  flora_composer_errorwarn(ComposerStatus,CompoErrNum,CompoWarnNum),
 	  ( CompoErrNum > 0 ->
-	      FlattenedRules=[],
+	      FlattenedRules=T-T,
 	      OptionList=[],
 	      ErrNum=CompoErrNum,
 	      WarnNum=CompoWarnNum
@@ -1311,7 +1317,7 @@ flora_read_parse_compile(Option,Tokens,FlattenedRules,OptionList,Status) :-
 	    flora_parse(ComposerTerm,ParserTerm,ParserStatus),
 	    flora_parser_error(ParserStatus,ParErrNum),
 	    ( ParErrNum > 0 ->
-		FlattenedRules=[],
+		FlattenedRules=T-T,
 		OptionList=[],
 		ErrNum=ParErrNum,
 		WarnNum=CompoWarnNum
@@ -1369,7 +1375,8 @@ flora_noop_command(Status) :- member(FLORA_NOOP,Status).
 *************************************************************************/
 flora_shell_command_line(Code,Options,Status) :-
 	flora_reset_modules_for_shell,
-	flora_read_parse_compile(FLORA_COMMANDLINE,Tokens,Rules,RuleOptions,RuleStatus),
+	flora_read_parse_compile(FLORA_COMMANDLINE,Tokens,Rules-[],
+                                 RuleOptions,RuleStatus),
 	member(error(ErrNum),RuleStatus),
 	( ErrNum > 0 ->
 	    ( flora_end_of_input(RuleStatus) ->

@@ -135,10 +135,6 @@ is_flatom(FLATOM(Atom,Index),Atom,Index).
 is_flnumber(FLNUMBER(Number,_I),Number).
 is_flstring(FLSTRING(String,_I),String).
 is_fltoken(FLTOKEN(Token,I),Token,I).
-
-/****************************************************************
-	support for numbered anon oids
-****************************************************************/
 is_fltoken(FLTOKEN(Token,Num,I),Token,Num,I). 
 
 is_flvar(FLVAR(Name,Index),Name,Index).
@@ -631,7 +627,7 @@ new_oidobj(Index,OidObject) :-
 	newoid_struct(Name,Index,OidObject).
 
 /*************************************************************************
-	support for numbered anon oids
+  new_oidobj(+RuleNum,+OidNumStr,+Index,-OidObject) :-
 *************************************************************************/
 new_oidobj(RuleNum,OidNumStr,Index,OidObject) :-
 	(
@@ -692,35 +688,6 @@ allvars(Term,Vars,TVars) :-
 
 
 /****************************************************************************
-  encoding utilites
-****************************************************************************/
-factlist([],[]) :- !.
-
-factlist([H|L],[HC|LC]) :-
-	fact_struct(H,HC),
-	factlist(L,LC).
-
-
-rulelist([H],Body,[Code]) :-
-	!,
-	rule_struct(H,Body,Code).
-
-rulelist(HeadList,Body,[Code|CodeList]) :-
-	allvars(HeadList,HeadVars),
-	length(HeadVars,N),
-	new_predicate(Name),
-	newpredicate_struct(Name,N,HeadVars,Newpredicate),
-	rule_struct(Newpredicate,Body,Code),
-	rulelist_struct(HeadList,Newpredicate,CodeList).
-
-rulelist_struct([],_B,[]) :- !.
-
-rulelist_struct([H|L],B,[HC|LC]) :-
-	rule_struct(H,B,HC),
-	rulelist_struct(L,B,LC).
-
-
-/****************************************************************************
   error and warning messages
 ****************************************************************************/
 compiling_error(Index,Msg,error(Index,Msg)).
@@ -758,10 +725,6 @@ collect_vars(ParserTerm,Vars,Vars) :-
 	  is_flnumber(ParserTerm,_Number);
 	  is_flstring(ParserTerm,_String);
 	  is_fltoken(ParserTerm,_Token,_I);
-	  
-	  /****************************************************
-	  support for numbered anon oids
-	  ****************************************************/
 	  is_fltoken(ParserTerm,_Token,_Num,_I) 
         ),
 	!.
@@ -1003,35 +966,33 @@ flora_reset_compiler :-
 
 
 /****************************************************************************
-  support for numbered anon oids
-  flora_compile(+ParserTerm,-CodeList,-OptionList,-Status)
-****************************************************************************/
-flora_compile(NULL,[],[],[]) :- !.
+  flora_compile(+ParserTerm,-CodeDiffList,-OptionList,-Status)
 
-flora_compile(ParserTerm,CodeList,OptionList,Status) :-
+  This is the top level procedure that is called to compile code.
+
+  CodeDiffList is a difference list in the form of [...|T]-T. It is for
+  the optimization of append.
+****************************************************************************/
+flora_compile(NULL,X-X,[],[]) :- !.
+
+flora_compile(ParserTerm,CodeDiffList,OptionList,Status) :-
 	%% extract the rule number
 	flora_increment_counter(RULE_NUM,1,_,_),
 	initialize_work,
 	( is_flrule(ParserTerm,Head,Body) ->
-	    compile_rule(Head,Body,CodeList,Status_rule),
+	    compile_rule(Head,Body,CodeDiffList,S),
 	    %% check whether singleton numbered anon oid exists
-	    ( ruleoid(_,_,1) 
-	      -> referenced_once(Status_rule,Status)
-	      ;  Status_rule=Status
-	    )
+	    (ruleoid(_,_,1) -> referenced_once(S,Status);  Status=S)
 
 	; is_flfact(ParserTerm,Head) ->
-	    compile_fact(Head,CodeList,Status_fact),
-	    ( ruleoid(_,_,1) 
-	      -> referenced_once(Status_fact,Status)
-	      ;  Status_fact=Status
-	    )
+	    compile_fact(Head,CodeDiffList,S),
+	    (ruleoid(_,_,1) -> referenced_once(S,Status);  Status=S)
 
 	; is_flquery(ParserTerm,Body) ->
-	    compile_query(Body,CodeList,Status)
+	    compile_query(Body,CodeDiffList,Status)
 
 	; is_fldirective(ParserTerm,DirectList) ->
-	    compile_directive(DirectList,CodeList,Status)
+	    compile_directive(DirectList,CodeDiffList,Status)
         ),
 	!,
 	get_option(OptionList),
@@ -1042,7 +1003,6 @@ flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
 
 
 /***************************************************************************
-  support for numbered anon oids
   referenced_once(+Status_rf,-Status)
   finds singleton numbered anon oid and puts warning message in Status
 ***************************************************************************/
@@ -1064,16 +1024,16 @@ singleton_oid_warning([Index|L],WarnList,WarnTail) :-
 
 
 /****************************************************************************
-  compile_directive(+DirectList,-CodeList,-Status)
+  compile_directive(+DirectList,-CodeDiffList,-Status)
   compile_direct(DirectTerm,-CodeList,Status)
 ****************************************************************************/
-compile_directive([],[],[]) :- !.
+compile_directive([],T-T,[]) :- !.
 
-compile_directive([D|L],CodeList,Status) :-
+compile_directive([D|L],CodeList-ListTail,Status) :-
 	compile_direct(D,DCodeList,S),
 	( S == [] ->
-	    compile_directive(L,LCodeList,Status),
-	    (Status == [] -> append(DCodeList,LCodeList,CodeList); true)
+	    append(DCodeList,T,CodeList),
+	    compile_directive(L,T-ListTail,Status)
 	;
 	  Status=S
         ).
@@ -1236,13 +1196,15 @@ compile_falist([F/A|L],[Code|CL]) :-
 
 
 /****************************************************************************
-  compile_fact(+Head,-CodeList,-Status)
+  compile_fact(+Head,-CodeDiffList,-Status)
+
+  CodeDiffList is a difference list in the form of [...|T]-T. It is for
+  the optimization of append.
 ****************************************************************************/
-compile_fact(Head,CodeList,Status) :-
+compile_fact(Head,CodeDiffList,Status) :-
 	compile_head(Head,HeadCode,S),
-	compile_conjunct2list(HeadCode,HeadCodeList),
 	( S == [] ->
-	    factlist(HeadCodeList,CodeList),
+	    compile_factlist(HeadCode,CodeDiffList),
 	    check_vars(Head,[],Status)
         ;
 	  Status=S
@@ -1250,9 +1212,31 @@ compile_fact(Head,CodeList,Status) :-
 
 
 /****************************************************************************
-  compile_query(+Body,-CodeList,-Status)
+  compile_factlist(+Code,-CodeDifferenceList)
+
+  This procedure takes a conjucntion of atoms and splits into a
+  difference list.
 ****************************************************************************/
-compile_query(Body,CodeList,Status) :-
+compile_factlist(NULL,CodeList-CodeList) :- !.
+
+compile_factlist(ConjunctCode,CodeList-ListTail) :-
+	conjunct_struct(F1,F2,ConjunctCode),
+	!,
+	compile_factlist(F1,CodeList-T),
+	compile_factlist(F2,T-ListTail).
+
+compile_factlist(F,[FCode|ListTail]-ListTail) :-
+	!,
+	fact_struct(F,FCode).
+
+
+/****************************************************************************
+  compile_query(+Body,-CodeDiffList,-Status)
+
+  CodeDiffList is a difference list in the form of [...|T]-T. It is for
+  the optimization of append.
+****************************************************************************/
+compile_query(Body,CodeList-ListTail,Status) :-
 	compile_body(Body,BodyCode,Status),
 	( Status == [] ->
 	    collect_namevars(Body,NV),
@@ -1260,31 +1244,65 @@ compile_query(Body,CodeList,Status) :-
 	    florasyslib_struct(FLLIBANSWER,2,[BodyCode,NVCode],Goal),
 	    query_struct(Goal,QueryCode),
             get_directive(DirectCodeList),
-	    append(DirectCodeList,[QueryCode],CodeList)
+	    append(DirectCodeList,[QueryCode|ListTail],CodeList)
 	;
 	  true
 	).
 
 
 /****************************************************************************
-  compile_rule(+Head,+Body,-CodeList,-Status)
+  compile_rule(+Head,+Body,-CodeDiffList,-Status)
+
+  CodeDiffList is a difference list in the form of [...|T]-T. It is for
+  the optimization of append.
 ****************************************************************************/
-compile_rule(Head,Body,CodeList,Status) :-
+compile_rule(Head,Body,CodeList-ListTail,Status) :-
 	compile_head(Head,HeadCode,HS),
 	compile_conjunct2list(HeadCode,HeadCodeList),
 	( HS == [] ->
 	    compile_body(Body,BodyCode,BS),
 	    ( BS == [] ->
-		rulelist(HeadCodeList,BodyCode,RuleCodeList),
-		check_vars(Head,Body,Status),
 		get_directive(DirectCodeList),
-		append(DirectCodeList,RuleCodeList,CodeList)
+		append(DirectCodeList,T,CodeList),
+		compile_rulelist(HeadCodeList,BodyCode,T-ListTail),
+		check_vars(Head,Body,Status)
 	    ;
 	      Status=BS
 	    )
 	;
 	  Status=HS
         ).
+
+
+/****************************************************************************
+  compile_rulelist(+HeadCodeList,+BodyCode,-CodeDiffList)
+
+  HeadCodeList is a list of atoms in the rule head. BodyCode is the formula
+  in the rule body. This procedure splits the list of atoms in the rule
+  head and generates a difference list.
+****************************************************************************/
+compile_rulelist([H],Body,[Code|T]-T) :-
+	!,
+	%% Only a single atom appears in the rule head.
+	rule_struct(H,Body,Code).
+
+compile_rulelist(HeadList,Body,[Code|CodeList]-ListTail) :-
+	%% Multiple atoms appear in the rule head.
+	%% Generate a temp rule.
+	allvars(HeadList,HeadVars),
+	length(HeadVars,N),
+	new_predicate(Name),
+	newpredicate_struct(Name,N,HeadVars,Newpredicate),
+	rule_struct(Newpredicate,Body,Code),
+	%% Split the atoms over this temp rule.
+	rule_difflist(HeadList,Newpredicate,CodeList-ListTail).
+
+
+rule_difflist([],_B,CodeList-CodeList) :- !.
+
+rule_difflist([H|L],B,[HC|LC]-T) :-
+	rule_struct(H,B,HC),
+	rule_difflist(L,B,LC-T).
 
 
 /****************************************************************************
@@ -2372,7 +2390,6 @@ compile_head_fltoken(Token,Index,Object) :-
 	).
 
 /****************************************************************************
-  support for numbered anon oids
   compile_head_fltoken(+Token,+Num,+Index,-Object)
 ****************************************************************************/
 compile_head_fltoken(Token,Num,Index,Object) :-
