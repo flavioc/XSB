@@ -161,6 +161,8 @@ extern char *tilde_expand_filename(char *filename);
 extern xsbBool is_absolute_filename(char *filename);
 extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
 
+int print_xsb_backtrace();
+
 extern xsbBool xsb_socket_request(void);
 
 extern int  findall_init(void), findall_add(void), findall_get_solutions(void);
@@ -1051,7 +1053,6 @@ static void write_out_profile(void)
     fprintf(stdout,"Instruction profiling not turned On\n");
 }
 #endif
-
 
 /*----------------------------------------------------------------------*/
 
@@ -2264,18 +2265,22 @@ int builtin_call(byte number)
 	int call_type = ptoc_int(1);
 	if (call_type == 1) { /* turn profiling on */
 	  if (!startProfileThread()) {
-	    printf("Error starting profiling thread\n");
-	    return FALSE;
+	    xsb_abort("[XSB_PROFILE] Profiling thread does not start");
 	  }
 	} else if (call_type == 2) {
 	  if_profiling = 0;
 	} else if (call_type == 3) {
 	  retrieve_prof_table();
 	} else {
-	  printf("Error: unknown profiling command\n");
+	  xsb_abort("[XSB_PROFILE] Unknown profiling command");
 	}
 	return TRUE;
       } else return FALSE;
+    }
+
+  case XSB_BACKTRACE:
+    switch (ptoc_int(1)) {
+    case 1: print_xsb_backtrace();
     }
 
   case PRINT_LS: print_ls(1) ; return TRUE ;
@@ -2598,6 +2603,65 @@ void retrieve_prof_table() { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt], r4: -NextN
     prof_unk_count = 0;
     ctop_int(4,0);
   }
+}
+
+/*----------------------------------------------------------------------*/
+/* backtrace printer DSW */
+Psc psc_from_code_addr(byte *code_addr) {
+  ubi_btNodePtr NodePtr;
+
+  NodePtr = ubi_sptLocate(RootPtr, &code_addr, ubi_trLE);
+  if (NodePtr == NULL) return NULL;
+  if (code_addr <= NodePtr->code_end) return NodePtr->code_psc;
+  return NULL;
+}
+
+int print_xsb_backtrace() {
+  Psc tmp_psc, called_psc;
+  byte *tmp_cpreg;
+  CPtr tmp_ereg, tmp_breg;
+  if (xsb_profiling_enabled) {
+
+    // print forward continuation
+    printf("Forward Continuation...\n");
+    tmp_psc = psc_from_code_addr(pcreg);
+    if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),pcreg);
+    else printf("...unknown/?,  pc=%p\n",pcreg);
+    tmp_ereg = ereg;
+    tmp_cpreg = cpreg;
+    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call) {
+      called_psc = *((Psc *)tmp_cpreg - 1);
+      if (called_psc != tmp_psc) {
+	printf("..* %s/%d,  pc=%p\n",get_name(called_psc),get_arity(called_psc),get_ep(called_psc));
+      }
+      tmp_psc = psc_from_code_addr(tmp_cpreg);
+      if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),tmp_cpreg);
+      else printf("... unknown/?,  pc=%p\n",tmp_cpreg);
+      tmp_cpreg = *((byte **)tmp_ereg-1);
+      tmp_ereg = *(CPtr *)tmp_ereg;
+    }
+
+    // print backward continuation
+    printf("Backward Continuation...\n");
+    tmp_breg = breg;
+    while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg)) {
+      tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
+      if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),cp_pcreg(tmp_breg));
+      else printf("... unknown/?,  pc=%p\n",cp_pcreg(tmp_breg));
+      tmp_breg = cp_prevbreg(tmp_breg);
+    }
+  } else {
+    printf("Partial Forward Continuation...\n");
+    tmp_ereg = ereg;
+    tmp_cpreg = cpreg;
+    while (tmp_cpreg && *(tmp_cpreg-2*sizeof(Cell)) == call) {
+      called_psc = *((Psc *)tmp_cpreg - 1);
+      printf("... %s/%d\n",get_name(called_psc),get_arity(called_psc));
+      tmp_cpreg = *((byte **)tmp_ereg-1);
+      tmp_ereg = *(CPtr *)tmp_ereg;
+    }
+  }
+  return TRUE;
 }
 
 /*------------------------- end of builtin.c -----------------------------*/
