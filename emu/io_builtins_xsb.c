@@ -619,9 +619,15 @@ bool fmt_read(void)
     strcat(aux_fmt,"%n");
   }
 
+  /* if there are format specifiers beyond what corresponds to the last
+     variable then we make use of %* (suppression) and of non-format
+     strings. The leftover format specifiers are ignored. */
   /* last format substr without conversion spec */
   if (current_fmt_spec->type == '.')
     curr_assignment = fscanf(fptr, current_fmt_spec->fmt);
+  /* last format substr with assignment suppression (spec size=0) */
+  if (current_fmt_spec->size == 0)
+    fscanf(fptr, aux_fmt, &curr_chars_consumed);
 
   /* check for end of file */
   if ((number_of_successes == 0) && (curr_assignment < 0))
