@@ -115,6 +115,19 @@ and
 | ?- odbc_close(connectionName).
 \end{verbatim}
 
+A list of existing Data Source Names and descriptions can be obtained
+by backtracking through \texttt{odbc\_data\_sources/2}. For example:
+
+\begin{verbatim}
+| ?- odbc_data_sources(DSN,DSNDescr).
+ 
+DSN = myoms
+DSNDescr = MySQL driver;
+ 
+DSN = mywinoms
+DSNDescr = TDS driver (Sybase/MS SQL);
+\end{verbatim}
+
 \subsection{Accessing Tables in Data Sources Using SQL}
 %=======================================
 

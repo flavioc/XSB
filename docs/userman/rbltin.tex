@@ -325,7 +325,7 @@ predicate to be tabled.
 \end{description}
 
 %----------------------------------------------------------------------
-%\input{tr_assert}	% To be uncommented when they become standard.
+%\input{tr_assert}      % To be uncommented when they become standard.
 %----------------------------------------------------------------------
 
 \subsection{The {\tt storage} Module: Associative Arrays and Backtrackable Updates}
@@ -461,15 +461,15 @@ typically called just before returning to the top level.
     An example of {\tt break/0} 's use is the following:
 
     \stuff{
-	\>   \>     | ?- break. \\
-	\>   \>     [ Break (level 1) ] \\
-	\>   \>     1: ?- break. \\
-	\>   \>     [ Break (level 2) ] \\
-	\>   \>     2: ?- end\_of\_file. \\
-	\>   \>     [ End break (level 2) ] \\
-	\\
-	\>   \>     yes \\
-	\>   \>     1: ?-
+        \>   \>     | ?- break. \\
+        \>   \>     [ Break (level 1) ] \\
+        \>   \>     1: ?- break. \\
+        \>   \>     [ Break (level 2) ] \\
+        \>   \>     2: ?- end\_of\_file. \\
+        \>   \>     [ End break (level 2) ] \\
+        \\
+        \>   \>     yes \\
+        \>   \>     1: ?-
     }
 
     Entering a break closes all incomplete tables (those which may not have a 
@@ -488,15 +488,15 @@ typically called just before returning to the top level.
     An example of {\tt prompt/2} 's use is the following:
 
     \stuff{
-	\>   \>     | ?- prompt('Yes master > ', P). \\
-	\\
-	\>   \>     P = | ?- ; \\
-	\\
-	\>   \>     no \\
-	\>   \>     Yes master > fail. \\
-	\\
-	\>   \>     no \\
-	\>   \>     Yes master >
+        \>   \>     | ?- prompt('Yes master > ', P). \\
+        \\
+        \>   \>     P = | ?- ; \\
+        \\
+        \>   \>     no \\
+        \>   \>     Yes master > fail. \\
+        \\
+        \>   \>     no \\
+        \>   \>     Yes master >
     }
 
 \ouritem{garbage\_collection(+Option)}\index{{\tt
@@ -514,6 +514,10 @@ typically called just before returning to the top level.
     Returns the {\tt CPU\_Time} at the time of the call in seconds.
     The difference between results of successive calls to this
     predicate can measure the time spent in specific predicates.
+
+\ouritem{walltime(-Time)}\index{{\tt cputime/1}}
+    Returns the \texttt{Time}, in seconds, since execution started, or
+    since the last call to \texttt{statistics(0)}. 
 
 \ouritem{statistics}\index{{\tt statistics/0}} Prints on the current
     output stream: 
@@ -537,7 +541,7 @@ Section~\ref{sec:EmuOptions}).  (See Section~\ref{sec:EmuOptions} for
 the memory re-allocation algorithm).  For maximum space used by each
 of these stacks, use the {\tt '-s'} command-line option.
 % TLS: this had been taken out a version or two ago.
-%	  \item SLG subgoal space (tablestack)
+%         \item SLG subgoal space (tablestack)
 \item SLG unification stack.  This stack is used as a space to copy
 terms from the execution stacks into table space, or back out.  This
 stack will not be reallocated unless extremely large terms are tabled.
@@ -627,7 +631,7 @@ Tabling Operations
   Call Subsumption Subgoal Operations:
             0 call check/insert ops: 0 producers, 0 variants,
             0 properly subsumed. 0 used completed table, 
-	    0 table entries overall.
+            0 table entries overall.
   Call Subsumption Answer Operations:
             0 relevant answer ident ops.  0 consumptions via answer list.
   Call Variance Subgoal Operations: 
@@ -649,18 +653,18 @@ Tabling Operations
 %    tabled predicate, {\tt analyze\_table/1} prints the following information.
 %    \begin{itemize}
 %    \item  "$\langle$Num$\rangle$ call hash buckets used out of 
-%	   $\langle$Total$\rangle$".  The number
+%          $\langle$Total$\rangle$".  The number
 %           of call hash buckets containing at least one element.
 %    \item  "avg call bucket length (of used) $\langle$Avg$\rangle$".  
-%	   The average length of call hash buckets containing at least one
-%	   element.
+%          The average length of call hash buckets containing at least one
+%          element.
 %    \item  "max call bucket length $\langle$Length$\rangle$".
 %    \item  "$\langle$Num$\rangle$ ret hash buckets used out of 
-%	   $\langle$Total$\rangle$".  The number
+%          $\langle$Total$\rangle$".  The number
 %           of ret hash buckets containing at least one element.
 %    \item  "avg ret bucket length (of used) $\langle$Avg$\rangle$".
-%	   The average length of ret hash buckets containing at least
-%	   one element.
+%          The average length of ret hash buckets containing at least
+%          one element.
 %    \item  "max ret bucket length $\langle$Length$\rangle$".
 %    \end{itemize}
 
@@ -740,9 +744,9 @@ Tabling Operations
     Exceptions:
     \begin{description}
     \item[{\tt instantiation\_error}]
-	{\tt Dir} is not instantiated at the time of call.
+        {\tt Dir} is not instantiated at the time of call.
     \item[{\tt type\_error}]
-	{\tt Dir} is not an atom.
+        {\tt Dir} is not an atom.
     \end{description}
 
 \ouritem{edit(+Module)}\index{{\tt edit/1}}
@@ -759,27 +763,27 @@ Tabling Operations
     \begin{enumerate}
     \item If the environment variables have been set as follows:
           \begin{verbatim}
-	        setenv EDITOR /usr/ucb/vi
-	        setenv EDITOR_OPTIONS -l
+                setenv EDITOR /usr/ucb/vi
+                setenv EDITOR_OPTIONS -l
           \end{verbatim}
           a call like:
           \begin{verbatim}
-	        | ?- edit(foo).
+                | ?- edit(foo).
           \end{verbatim}
           will call the vi editor in the mode where left and right parentheses
-	  and curly brackets are checked for balance for the file {\tt foo.P}
-	  in the current working directory.
+          and curly brackets are checked for balance for the file {\tt foo.P}
+          in the current working directory.
     \item If, on the other hand, they have been set as follows:
           \begin{verbatim}
-	        setenv EDITOR /usr/local/bin/emacs
-	        setenv EDITOR_OPTIONS -r
+                setenv EDITOR /usr/local/bin/emacs
+                setenv EDITOR_OPTIONS -r
           \end{verbatim}
           a call like:
           \begin{verbatim}
-	        | ?- edit('~/foo').
+                | ?- edit('~/foo').
           \end{verbatim}
           will call the emacs editor in reverse video for the file {\tt foo.P}
-	  in user's home directory.
+          in user's home directory.
     \end{enumerate}
 
 \end{description}
@@ -799,7 +803,7 @@ Tabling Operations
     predicate is normally used in one of the following two cases: 
     \begin{itemize} 
     \item when some error condition or exception has occurred and carrying
-	  on the computation is of no further use.
+          on the computation is of no further use.
     \item when using the debugger (see Chapter~\ref{debugging}).  
     \end{itemize}
     Currently, all exception handling routines terminate with a call to 
