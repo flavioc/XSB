@@ -1480,10 +1480,9 @@ X = f(a,b)
 Yes.
 \end{verbatim}
 %%
-\index{meta-variable}
-These primitives are described in the XSB manual. However, \FLORA provides
-one primitive of its own: a {\em meta variable\/} that can range over methods of
-any arity.
+\index{meta-variable} These primitives are described in the XSB manual.
+However, \FLORA provides one primitive of its own: a {\em meta variable\/}
+that can range over methods of any arity.
 
 A meta variable is specified by a normal variable immediately prefixed with
 the ``@'' sign, {\it e.g.}, @Method, @\_var, @\_. Note that @\_ represents
@@ -1491,13 +1490,7 @@ a \emph{don't care} meta variable. The ``@'' sign is always considered to
 be a part of the meta variable's name.  Thus, @M and M represent two
 different variables.
 
-Currently, a meta variable can appear only where a method invocation is
-allowed. For instance, $\mathtt{john[@M{\fd}Salary],~
-  o_1.@M1.o_2[@M2{\mvd}r]}$. Thus, unlike the regular variables, meta
-variables represent method invocations and \emph{not} object.  So, it is
-more appropriate to call these variables \emph{method meta-variables}.
-
-The operator ``=..'' (simalar to that of XSB) is used to obtain a method and
+The operator ``=..'' (similar to that of XSB) is used to obtain a method and
 its arguments from a meta variable that is bound to a method invocation
 expression. Alternatively, this operator can be used to \emph{build} a
 method invocation expression from a list and assign the result to a meta
@@ -1550,6 +1543,25 @@ R = r2
 Yes.
 \end{verbatim}
 
+Currently, a meta variable can appear only where a method invocation is
+allowed or on the left side of the ``{\tt =..}'' operator. For instance,
+$\mathtt{john[@M{\fd}Salary],~ o_1.@M1.o_2[@M2{\mvd}r]}$. Thus, unlike the
+regular variables, meta variables represent method invocations and
+\emph{not} object. Because of this, you cannot directly pass meta-variables 
+as arguments to predicates and methods. However, you can always convert a
+meta-variable into a regular variable ({\it e.g.}, \verb|@M=..N|), pass the 
+regular variable as a parameter, and then convert it back into a
+meta-variable, as shown below:
+%%
+\begin{verbatim}
+/* Get some method invocation, convert to normal var, pass on to foo/1 */
+?- mary[@Meth -> V], @Meth =.. Param, foo(Param).
+/* Convert Param to meta var for method invocations, test object property */
+f(Param) :- @M =.. Param, abc[@M ->> 123].
+\end{verbatim}
+%%
+
+
 
 \section{Compiled Code vs. Dynamic Code}
 
@@ -1574,6 +1586,19 @@ these predicates in Section~\ref{sec-shell-commands}.
 The above predicates can also be called from within a \FLORA program, but
 except for {\tt [file]} and \texttt{<file>}, all of them must first be
 imported from \emph{flrutils} (see Section~\ref{sec-module} for details).
+
+\noindent
+{\bf Note 1:} When a file is compiled and loaded into the dynamic area, all
+queries that appear in that file are ignored.
+
+\noindent
+{\bf Note 2:} The same \FLORA program can be compiled statically and
+dynamically, and \FLORA puts the two compiled versions into different
+files.  When the program is loaded into the dynamic part of the code, the
+loader is looking for a dynamically compiled version of the program; when
+it is loaded into the static part of the code, the loader tries to find a
+statically compiled version. In particular, it is not possible to load
+statically what has been compiled dynamically, and vice versa.
 
 Although static and dynamic code resides in different areas, the rules and
 facts in both these areas are considered as a whole and executed together.
@@ -1763,8 +1788,6 @@ eraseall :- erase, fail. \\
 eraseall.
 \end{qrules}
 
-One final remark about the dynamic code: when a file is compiled and loaded
-into the dynamic area, all queries that appear in that file are ignored.
 
 \section{\FLORA Modules and Interaction with XSB}\label{sec-module}
 
@@ -1945,10 +1968,6 @@ predicates must be tabled. (Normally, these are predicates defined by the
 user.)  \FLORA programs accepts the same tabling directives as XSB does
 (Section~\ref{sec-comp-directives} lists all the compiler directives).
 
-The current implementation of XSB has a limitation that Prolog cuts (!)
-cannot cut across tabled predicates. See the XSB manual for the details on
-this obscure problem. This problem will be corrected in a future release.
-
 It is important to be aware that when XSB (and \FLORA) evaluate a program,
 all tabled predicates are partially materialized and all the computed
 tuples are stored in XSB tables. Thus, if you change the set of facts, the
@@ -1967,6 +1986,23 @@ already has been answered (or is in the process of being evaluated).
 Unfortunately, the current notion of similarity used by XSB is fairly weak,
 and many unnecessary recomputations might result. This problem will be
 corrected in a future release.
+
+\index{cut in \FLORA}
+\index{cutting across tables}
+%%
+No discussion of a logic programming language is
+complete without a few words about the infamous Prolog cut (!). Although
+Prolog cut has been (mostly rightfully) excommunicated by the Church of
+Database Query Languages, it is sometimes indispensable when doing ``real
+work'', like pretty-printing \FLORA programs or implementing a pattern
+matching algorithm.  To facilitate this kind of tasks, \FLORA lets the
+programmer use cuts.  However, the current implementation of XSB has a
+limitation that Prolog cuts cannot ``cut across tabled predicates.''
+Without trying to pretend to be experts, we refer the reader to the XSB
+manual for details on this obscure problem. The XSB team is considering
+correcting this problem in a future release.  For now, enjoy your cut.  If
+you get an error message telling something about cutting across the tables
+--- you know that you may have cut too much :-).
 
 
 \section{\FLORA Compiler} \label{sec-comp-directives}
@@ -2050,6 +2086,12 @@ from {\tt flrutils}, that can be used in conjunction with \FLORA:
 
 \section{Future Enhancements}
 
+\FLORA is work in progress. We are still experimenting with features and
+nothing is cast in stone. So, although we do not intend to make the life of 
+\FLORA users harder than it already is, we cannot give a guarantee of
+backward compatibility. The following enhancements and features are among
+currently planned:
+
 %%
 \begin{description}
   \item  [Syntax enhancements:]
@@ -2061,13 +2103,12 @@ from {\tt flrutils}, that can be used in conjunction with \FLORA:
     to write F-molecules without worrying about the semicolon, {\it i.e.}, 
     {\tt a[m->b;;c->d;]}. It will be also possible to have extraneous commas:
     {\tt head :- b1,,b2,.}
-  \item[Inheritance and equality:] In a future release, equality will be
-    defined using a separate equality theory, which does not utilize
-    negation or inheritance. Any other equalities derived
-    by the program will be treated as errors. This also opens the door for
-    extending the well-founded semantics with such a separate equality
-    theory. In turn, this will let us handle inheritance when equality is
-    present.
+  \item[Equality:] In a future release, equality
+    maintenance will most
+    likely be more restrictive: only the objects that are explicitly
+    equated via an equality predicate in the head of a rule will be allowed
+    to be equated. Any other derived equality will be treated as an error 
+    (or a very stern warning).
   \item[Aggregates:] \FLORA will provide builtin functions that will
     directly apply to the outcome of the aggregates {\tt collectbag} and
     {\tt collectset}. This will make it possible to do grouping once and
