@@ -129,6 +129,7 @@ needs_recompile(CH_x, Base, Obj) :-
 needs_recompile(CH_c, Base, Obj) :-
 	xsb_configuration(os_type, OS_type),
 	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
+          ; (str_sub('linux', OS_type) -> str_cat(Base, '.so', C_Obj))
 	  ; (str_sub('windows', OS_type) -> str_cat(Base, '.dll', C_Obj)
             ; str_cat(Base, '.o', C_Obj))
 	  ),
