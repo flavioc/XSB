@@ -1,4 +1,4 @@
-%\chapter{XSB-ODBC Interface} \label{odbc_interface}
+\chapter{XSB-ODBC Interface} \label{odbc_interface}
 %====================================================
 
 \section{Introduction}
@@ -6,11 +6,11 @@
 
 The XSB-ODBC interface is the PC platform counterpart to XSB-Oracle
 interface on UNIX systems. It allows XSB users to access data in any
-ODBC compliant database management system(DBMS). Using this uniformed
+ODBC compliant database management system (DBMS). Using this uniform
 interface, information in different DBMS's can be accessed as though it
 existed as Prolog facts. Similar to its counterpart on UNIX platforms,
-XSB-ODBC interface provides users with two levels of interaction: {\it
-relation level} and {\it view level}.  The former offers a
+XSB-ODBC interface provides users with two levels of interaction: a {\it
+relation level} and a {\it view level}.  The former offers a
 tuple-at-a-time retrieval of information from ODBC data sources while
 the latter can translate an entire Prolog clause into a single SQL
 query, including joins and aggregate operations, which gives XSB users
@@ -18,7 +18,7 @@ all the features of Prolog as a query language such as intentional
 database specification, recursion etc.  A listing of the features that
 XSB-ODBC interface provides is as follows:
 \begin{itemize} 
-\item Concurrent access from multiple XSB systems to DBMS's
+\item Concurrent access from multiple XSB processes to a single DBMS
 \item Full data access and cursor transparency including support for
 	\begin{itemize}
 	\item Full data recursion through XSB's tabling mechanism
@@ -35,10 +35,10 @@ XSB-ODBC interface provides is as follows:
 	\item Caching compiler generated SQL statements with bind variables 
 		and efficient cursor management for cached statements
 	\end{itemize}
-\item A powerful Prolog / SQL compiler based on \cite{draxler}.
-\item Full source code availability for feature enforcement
-\item Independence from database schema by employing {\it relation level}
-\item Performance as SQL by employing {\it view level} 
+\item A powerful Prolog / SQL compiler based on \cite{Dra92}.
+\item Full source code availability
+\item Independence from database schema by employing a {\it relation level}
+\item Performance as SQL by employing a {\it view level} 
 \item No mode specification is required for optimized view compilation
 \end{itemize}
 
@@ -152,7 +152,7 @@ and
 {\tt | ?- test('NULL'(\_), 'X-Ray',  L, P).}
 \end{center}
 
-generates: (See Section 12.3.6 of \cite{xsb-manual})
+generates: (See Section \ref{NULL-values})
 
 \begin{verbatim}
 SELECT NULL , rel1.TName, rel1.Length, rel1.Price
@@ -216,7 +216,7 @@ All arguments are standard Prolog terms.  {\tt ARG1}, {\tt ARG2}, ...,
 
 The compiler is a simple extension of \cite{draxler} which generates SQL
 queries with bind variables and handles NULL values as described in
-Section 12.3.6 of \cite{xsb-manual}.  It allows negation, the expression
+Section \ref{NULL-values}.  It allows negation, the expression
 of arithmetic functions, and higher-order constructs such as grouping,
 sorting, and aggregate functions.
 
@@ -386,7 +386,7 @@ yes
 This will insert the row: ('306',NULL, 2,'3') into the table {\tt Room}. Note that 
 any call to {\tt room\_ins/7} should have all its arguments bound.
 
-See Section 12.3.6 of \cite{xsb-manual} for information about NULL value
+See Section \ref{NULL-values}) for information about NULL value
 handling.
 
 The first argument of {\tt odbc\_delete/2} predicate is the declared delete
@@ -541,7 +541,7 @@ the last commit.
 \subsection{Handling NULL Values}
 %=======================================
 Null value is handled in the same way as that of XSB Oracle interface.
-Please refer to Section 12.3.6 of \cite{xsb-manual} for details.
+Please refer to Section \ref{NULL-values}) for details.
 
 \subsection{Interface Flags}
 %====================================
