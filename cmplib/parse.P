@@ -636,7 +636,7 @@ parse_list((Pred, Preds), SymTab, SymbolProp, Directive) :-
 	parse_list(Pred, SymTab, SymbolProp, Directive),
 	parse_list(Preds, SymTab, SymbolProp, Directive).
 parse_list(P/A, SymTab, SymbolProp, _Directive) :- 
-	nonvar(P), integer(A), 
+	atom(P), integer(A), 
 	!,
 	sym_insert(P, A, SymbolProp, SymTab, _).
 parse_list(Spec, SymTab, SymbolProp, _Directive) :- 
