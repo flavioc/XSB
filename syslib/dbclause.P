@@ -45,11 +45,9 @@ db_retract(Head,Body,Prref) :-
 	goal_cut_trans_a(Body,Tbody,_),
 	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
-	(	Result = trie, 
-		call_trie_retract(Head,Body,Clref,TrieNodeAddr)
-	;
-		Result = nottrie,
-		db_clause_match(Head,Tbody,EntryP),
+	(Result == trie
+	 ->	call_trie_retract(Head,Body,Clref,TrieNodeAddr)
+	 ;	db_clause_match(Head,Tbody,EntryP),
 		db_do_retract(Typ,Clref,0)
 	).
 
@@ -59,12 +57,10 @@ db_retract_nr(Head,Body,Prref) :-
 	goal_cut_trans_a(Body,Tbody,_),
 	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
-	(	Result = trie,
-		call_trie_retract_nr(Head,Body,TrieNodeAddr)
-	;
-		Result = nottrie,
-		db_clause_match(Head,Tbody,EntryP),
-		db_do_retract(Typ,Clref,1)  % 1 -> Don''t reclaim space! *****
+	(Result == trie
+	 ->	call_trie_retract_nr(Head,Body,TrieNodeAddr)
+	 ;	db_clause_match(Head,Tbody,EntryP),
+		db_do_retract(Typ,Clref,1) % 1 -> Don''t reclaim space! *****
 	).
 
 db_do_retract(1,_Clref,_) :- !, fail.
@@ -140,16 +136,12 @@ db_clause(Head,Body,Prref,Clref) :-
 	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
 	(Typ =:= 2	% compiled code
 	 ->	chk_if_trie_assert(Clref,Result,_),
-		(Result = trie ->
-			Body = true,
+		(Result == trie
+		 ->	Body = true,
 			db_clause_match_trassert(Head)
-		;
-		Result = nottrie ->
-			Body = '$compiled'	
-		;
-		abort(('Strange result type in clause',Result))
+		 ; 	Body = '$compiled'	% this should be an error!
 		)
-	 ;	db_clause_match(Head,Tbody,EntryP)
+	 ;      db_clause_match(Head,Tbody,EntryP)
 	).
 
 :- buff_alloc(8,Buff),asserti(db_body_save(Buff),0).
@@ -178,7 +170,7 @@ db_clause_match(Head,Body,Entry) :-
 
 db_clause_match_trassert(Head) :-
 	stat_set_flag(CLAUSE_INT,0),
-	call(Head).
+	call_c(Head).
 
 
 % db_do_call(+CodeEntry, +Head)
@@ -272,24 +264,14 @@ chk_if_trie_assert(Y,trie,TrieNodeAddr) :-
 chk_if_trie_assert(_,nottrie,_).
 
 
-call_trie_retract(Head,Body,Clref,NodeAddr) :-
-	(
-		Body = true,
-		repeat,
-		(
-			root_is_not_null(NodeAddr),
-			trie_retract_clref(0), % Make Last Node Save to 0
-			call(Head)
-			-> trie_retract_clref(Clref)
-		;				
-			!,fail
-		)
-	;
-	  	\+(Body = true), 			
-	  	fail
+call_trie_retract(Head,true,Clref,NodeAddr) :-
+	repeat,
+	(root_is_not_null(NodeAddr),
+	 trie_retract_clref(0), % Make Last Node Save to 0
+	 call_c(Head)
+	 ->	trie_retract_clref(Clref)
+	 ;	!,fail
 	).
-	
-
 
 trie_retract_clref(_Clref) :- '_$builtin'(TRIE_RETRACT).
 trie_retract_clref_nr(_WhatToDo) :- '_$builtin'(TRIE_RETRACT_SAFE).
@@ -299,23 +281,13 @@ trie_retract_clref_nr(_WhatToDo) :- '_$builtin'(TRIE_RETRACT_SAFE).
 % program clauses which may call trie code disaster
 % will result.
 
-
-call_trie_retract_nr(Head,Body,NodeAddr) :-
+call_trie_retract_nr(Head,true,NodeAddr) :-
 	%write(call_trie_retract_nr(Head,Body,Prref,Clref)),write(':'),
-	(
-		Body = true,
-	        '_$savecp'(Breg),	
-		repeat,
-		(
-			trie_retract_clref(0), % Zero out Last_Nod_Sav
-			root_is_not_null(NodeAddr),call(Head)
-			-> (trie_retract_clref_nr(1) -> true
-			   ;
-			    '_$cutto'(Breg),fail)
-		;
-			!,fail	
-		)
-	;
-		\+(Body = true),
-		fail
-	).	
+	repeat,
+	(trie_retract_clref(0), % Zero out Last_Nod_Sav
+	 root_is_not_null(NodeAddr),
+	 call_c(Head),
+	 trie_retract_clref_nr(1)
+	 ->	true
+	 ;	!,fail
+	).

@@ -27,12 +27,12 @@
 :- export db_clause/4, db_retractall/2, db_abolish/1, '_$clause_int'/1.
 
 :- import asserti/2, (dynamic)/1 from assert.
-:- import abort/1, atom/1, call/1, repeat/0, is_most_general_term/1
+:- import abort/1, atom/1, call_c/1, repeat/0, is_most_general_term/1
      from standard.
 :- import set_inthandler/2, '_$load_undef'/1 from loader.
 :- import stat_set_flag/2, code_call/3, conname/2,
           gen_retract_all/1, buff_word/3, buff_cell/3, buff_alloc/2, 
 	  buff_set_byte/3, buff_set_cell/4, buff_set_var/4, buff_byte/3,
-          db_get_clause/11, db_retract0/2, db_remove_prref/1, db_reclaim0/2
+	  db_get_clause/11, db_retract0/2, db_remove_prref/1, db_reclaim0/2
      from machine.
 
