@@ -76,7 +76,11 @@ static void init_process_table(void);
 static int process_status(int pid);
 static void split_command_arguments(char *string, char *params[], char *callname);
 static char *get_next_command_argument(char **buffptr, char **cmdlineprt);
-
+static int file_copy(char *, char *);
+static int copy_file_chunk(FILE *, FILE *, unsigned long);
+#ifndef WIN_NT
+static char *xreadlink(const char *);
+#endif
 
 static struct proc_table_t {
   int search_idx;	       /* index where to start search for free cells */
@@ -152,7 +156,9 @@ int sys_syscall(int callno)
     result = stat(ptoc_longstring(3), &stat_buff);
     break;
   }
-  case SYS_rename: result = rename(ptoc_longstring(3), ptoc_longstring(4)); break;
+  case SYS_rename: 
+    result = rename(ptoc_longstring(3), ptoc_longstring(4)); 
+    break;
   case SYS_cwd: {
     char current_dir[MAX_CMD_LEN];
     /* returns 0, if != NULL, 1 otherwise */
@@ -161,6 +167,13 @@ int sys_syscall(int callno)
       ctop_string(3,string_find(current_dir,1));
     break;
   }
+  case SYS_filecopy: {
+    char *from = ptoc_longstring(3);
+    char *to = ptoc_longstring(4);
+    result = file_copy(from,to);
+    break;
+  }
+    
   default: xsb_abort("[SYS_SYSCALL] Unknown system call number, %d", callno);
   }
   return result;
@@ -1015,3 +1028,193 @@ static int xsb_find_next_file(prolog_term handle,
   return TRUE;
 #endif
 }
+
+/* file_copy: based on code from busybox (www.busybox.net) */
+static int file_copy(char *source, char *dest)
+{
+  struct stat source_stat;
+  struct stat dest_stat;
+  int dest_exists = 0;
+  int status = 1;
+  
+  if (stat(source, &source_stat) < 0) {
+    xsb_warn("[file_copy] Source file not found: %s\n",
+	     source);
+    return 0;
+  }
+
+#ifndef WIN_NT
+  if (lstat(dest, &dest_stat) < 0) {
+#else
+  if (stat(dest, &dest_stat) < 0) {
+#endif
+    if (errno != ENOENT) {
+      xsb_warn("[file_copy] Unable to stat destination: %s\n", dest);
+      return 0;
+    }
+  } else {
+    if (source_stat.st_dev == dest_stat.st_dev &&
+	source_stat.st_ino == dest_stat.st_ino) {
+      xsb_warn("[file_copy] %s and %s are the same file.\n", source,dest);
+      return 0;
+    }
+    dest_exists = 1;
+  }
+  
+  if (S_ISDIR(source_stat.st_mode)) {
+    xsb_warn("[file_copy] Source is a directory: %s\n",source);
+    return 0;
+  } else if (S_ISREG(source_stat.st_mode)) {
+    FILE *sfp, *dfp=NULL;
+    if ((sfp = fopen(source, "r")) == NULL) {
+      xsb_warn("[file_copy] Unable to open source file: %s\n", source);
+      return 0;
+    }
+
+    if (dest_exists) {
+      if ((dfp = fopen(dest, "w")) == NULL) {
+	if (unlink(dest) < 0) {
+	  xsb_warn("[file_copy] Unable to remove destination: %s\n",
+		   dest);
+	  fclose (sfp);
+	  return 0;
+	}
+	dest_exists = 0;
+      }
+    }
+
+    if (!dest_exists) {
+      int fd;
+      
+      if ((fd = open(dest, O_WRONLY|O_CREAT, source_stat.st_mode)) < 0 ||
+	  (dfp = fdopen(fd, "w")) == NULL) {
+	if (fd >= 0)
+	  close(fd);
+	xsb_warn("[file_copy] Unable to open destination: %s\n",dest);
+	fclose (sfp);
+	return 0;
+      }
+    }
+
+    if (copy_file_chunk(sfp, dfp, -1) < 0)
+      status = 0;
+
+    if (fclose(dfp) < 0) {
+      xsb_warn("[file_copy] Unable to close destination: %s\n", dest);
+      status = 0;
+    }
+
+    if (fclose(sfp) < 0) {
+      xsb_warn("[file_copy] Unable to close source: %s\n", source);
+      status = 0;
+    }
+  } 
+#ifndef WIN_NT
+  else if (S_ISBLK(source_stat.st_mode) || S_ISCHR(source_stat.st_mode)
+	   || S_ISSOCK(source_stat.st_mode) || S_ISFIFO(source_stat.st_mode) 
+	   || S_ISLNK(source_stat.st_mode)
+	     ) {
+
+    if (dest_exists && unlink(dest) < 0) {
+      xsb_warn("[file_copy] Unable to remove destination: %s\n", dest);
+      return 0;
+    }
+  } 
+#endif
+  else {
+    xsb_warn("[file_copy] Unrecognized source file type: %s\n", source);
+    return 0;
+  }
+#ifndef WIN_NT
+  if (S_ISBLK(source_stat.st_mode) || S_ISCHR(source_stat.st_mode) ||
+      S_ISSOCK(source_stat.st_mode)) {
+    if (mknod(dest, source_stat.st_mode, source_stat.st_rdev) < 0) {
+      xsb_warn("[file_copy] Unable to create destination: %s\n", dest);
+      return 0;
+    }
+  } else if (S_ISFIFO(source_stat.st_mode)) {
+    if (mkfifo(dest, source_stat.st_mode) < 0) {
+      xsb_warn("[file_copy] Unable to create FIFO: %s\n", dest);
+      return 0;
+    }
+  } else if (S_ISLNK(source_stat.st_mode)) {
+    char *lpath;
+
+    lpath = xreadlink(source);
+    if (symlink(lpath, dest) < 0) {
+      xsb_warn("[file_copy] Cannot create symlink %s", dest);
+      return 0;
+    }
+    free(lpath);
+    return 1;
+  }
+#endif
+  return status;
+}
+
+/* Copy CHUNKSIZE bytes (or until EOF if CHUNKSIZE equals -1) from SRC_FILE
+ * to DST_FILE.  */
+static int copy_file_chunk(FILE *src_file, FILE *dst_file, unsigned long chunksize)
+{
+  size_t nread, nwritten, size;
+  char buffer[BUFSIZ];
+
+  while (chunksize != 0) {
+    if (chunksize > BUFSIZ)
+      size = BUFSIZ;
+    else
+      size = chunksize;
+
+    nread = fread (buffer, 1, size, src_file);
+
+    if (nread != size && ferror (src_file)) {
+      xsb_warn("[file_copy] Internal error: read.\n");
+      return -1;
+    } else if (nread == 0) {
+      if (chunksize != -1) {
+	xsb_warn("[file_copy] Internal error: Unable to read all data.\n");
+	return -1;
+      }
+      return 0;
+    }
+
+    nwritten = fwrite (buffer, 1, nread, dst_file);
+
+    if (nwritten != nread) {
+      if (ferror (dst_file))
+	xsb_warn("[file_copy] Internal error: write.\n");
+      else
+	xsb_warn("[file_copy] Internal error: Unable to write all data.\n");
+      return -1;
+    }
+
+    if (chunksize != -1)
+      chunksize -= nwritten;
+  }
+
+  return 0;
+}
+
+#ifndef WIN_NT
+static char *xreadlink(const char *path)
+{                       
+  static const int GROWBY = 80; /* how large we will grow strings by */
+
+  char *buf = NULL;   
+  int bufsize = 0, readsize = 0;
+
+  do {
+    buf = realloc(buf, bufsize += GROWBY);
+    readsize = readlink(path, buf, bufsize); /* 1st try */
+    if (readsize == -1) {
+      xsb_warn("[file_copy] Internal error: xreadlink.\n");
+      return NULL;
+    }
+  }           
+  while (bufsize < readsize + 1);
+
+  buf[readsize] = '\0';
+
+  return buf;
+}       
+#endif
