@@ -212,7 +212,7 @@ LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/orastuff.obj
 !MESSAGE Building XSB executable in Release mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+ $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -226,7 +226,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 
 CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
  /D "DEBUG" $(ORACLE_FLAG)\
-  /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+  /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" /nologo /subsystem:console /incremental:yes\
@@ -238,9 +238,9 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- /D "XSB_DLL_C" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+ /D "XSB_DLL_C" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 DLL_CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
-  /D "XSB_DLL_C" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /c 
+  /D "XSB_DLL_C" $(ORACLE_FLAG) /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
@@ -259,7 +259,7 @@ DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 
 DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
  /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL_C" /Fp"$(INTDIR)/xsb.pch" /YX\
- /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 
 DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -269,7 +269,7 @@ DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /implib:"$(DLLDIR)/xsb.lib"	 
 CPP_PROJ=/nologo /MLd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
  /D "DEBUG" $(ORACLE_FLAG) /D "XSB_DLL_C" \
-  /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+  /Fp"$(INTDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
@@ -700,7 +700,7 @@ DEP_CPP_IO_BU=\
 	{$(INTDIR)}"\cell.h"\
 	{$(INTDIR)}"\io_builtins.h"\
 	{$(INTDIR)}"\io_builtins.i"\
-	{$(INTDIR)}"\sockets.i"\
+	{$(INTDIR)}"\xsbsocket.i"\
 	{$(INTDIR)}"\xsberror.h"\
 	{$(INTDIR)}"\cinterf.h"\
 	{$(INTDIR)}"\export.h"\
@@ -1072,6 +1072,7 @@ DEP_CPP_BUILT=\
 	{$(INTDIR)}"\oracle.h"\
 	{$(INTDIR)}"\xsb_odbc.h"\
 	{$(INTDIR)}"\bineg.i"\
+	{$(INTDIR)}"\xsbsocket.i"\
 	{$(INTDIR)}"\io_builtins.i"\
 	{$(INTDIR)}"\std_pred.i"\
 	{$(INTDIR)}"\oracle.i"\

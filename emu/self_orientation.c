@@ -154,10 +154,10 @@ char *xsb_executable_full_path(char *myname)
   /* Windows doesn't seem to have readlink() */
   strcpy(myname_augmented, myname);
   /* if executable doesn't end with .exe, then add it */
-  if ( *(strlen(myname) - 4) != '.'
-       || tolower(*(strlen(myname) - 3)) != 'e'
-       || tolower(*(strlen(myname) - 2)) != 'x'
-       || tolower(*(strlen(myname) - 1)) != 'e' )
+  if ( *(myname_augmented + strlen(myname) - 4) != '.'
+       || tolower(*(myname_augmented + strlen(myname) - 3)) != 'e'
+       || tolower(*(myname_augmented + strlen(myname) - 2)) != 'x'
+       || tolower(*(myname_augmented + strlen(myname) - 1)) != 'e' )
     sprintf(myname_augmented, "%s.exe", myname);
 #endif
 
