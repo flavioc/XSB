@@ -164,7 +164,7 @@ log_ith2(K,[L|R],E,N) :-
 		log_ith2(K1,R,E,N2)
 	).
 
-bintree2(0,E,E,1).
+bintree2(0,E,E,1) :- !.
 bintree2(K,[L|R],E,N) :- 
 	N > 1,
 	N2 is N // 2,
