@@ -22,14 +22,17 @@
 ## 
 ##
 
+XSBDIR=../../..
 
 ALL = 	flrdisplay.O flrassert.O flrassert_dyn.O flraggregate.O \
 	flraggregate_dyn.O flrdebugger.O
 
-EMU_INCLUDES = ../../../emu/builtin.h ../../../emu/celltags.h ../../../emu/flag_defs.h \
-	../../../emu/io_defs.h ../../../emu/msyscall.h ../../../emu/sig.h \
-	../../../emu/system.h ../../../emu/xsbsocket.h 
-PROLOG_INCLUDES = ../../../prolog_includes/char_defs.h ../../../prolog_includes/standard.h
+EMU_INCLUDES = $(XSBDIR)/emu/builtin.h $(XSBDIR)/emu/celltags.h \
+	$(XSBDIR)/emu/flag_defs.h \
+	$(XSBDIR)/emu/io_defs.h $(XSBDIR)/emu/msyscall.h $(XSBDIR)/emu/sig.h \
+	$(XSBDIR)/emu/system.h $(XSBDIR)/emu/xsbsocket.h 
+PROLOG_INCLUDES = $(XSBDIR)/prolog_includes/char_defs.h \
+	$(XSBDIR)/prolog_includes/standard.h
 
 
 Option = [optimize,quit_on_error]
@@ -39,13 +42,13 @@ Option = [optimize,quit_on_error]
 #
 # Self-make: Version 1.4.1
 #
-XSB=../../../bin/xsb
+XSB=$(XSBDIR)/bin/xsb
 Prolog = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
 
 # Make sure warnings are saved in a file.
-SVFILE = '../../../build/.flora_syslib_warn.tmp'
+SVFILE = '$(XSBDIR)/build/.flora_syslib_warn.tmp'
 OWRITE = 1
 STDWARN = 3
 STDERR = 2
@@ -56,7 +59,7 @@ HDRMSG = "While compiling XSB/packages/flora/syslib:"
 .SUFFIXES: .P .O .H
 
 all: init $(ALL) finish
-	@../../../touch.sh cmd...
+	@$(XSBDIR)/build/touch.sh cmd...
 	$(Prolog) < cmd...
 	@rm cmd...
 	@cat $(SVFILE)
@@ -67,12 +70,12 @@ all: init $(ALL) finish
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
 %.P:   %.H
-	@../../../touch.sh $@
+	@$(XSBDIR)/build/touch.sh $@
 
 # These targets are obsolete. They are here just in case some 
 # obscure make utility doesn't understand patterns
 .H.P:
-	@../../../touch.sh $@
+	@$(XSBDIR)/build/touch.sh $@
 .P.O:
 	echo 'mc($*, $(Option)).' >> cmd...
 

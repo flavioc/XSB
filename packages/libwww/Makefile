@@ -22,13 +22,16 @@
 ## 
 ##
 
+XSBDIR = ../..
 
 ALL = 	 libwwwconfig.O
 
-EMU_INCLUDES = ../../emu/builtin.h ../../emu/celltags.h ../../emu/flag_defs.h \
-	../../emu/io_defs.h ../../emu/msyscall.h ../../emu/sig.h \
-	../../emu/system.h ../../emu/xsbsocket.h 
-PROLOG_INCLUDES = ../../prolog_includes/char_defs.h ../../prolog_includes/standard.h
+EMU_INCLUDES = $(XSBDIR)/emu/builtin.h $(XSBDIR)/emu/celltags.h \
+	$(XSBDIR)/emu/flag_defs.h \
+	$(XSBDIR)/emu/io_defs.h $(XSBDIR)/emu/msyscall.h $(XSBDIR)/emu/sig.h \
+	$(XSBDIR)/emu/system.h $(XSBDIR)/emu/xsbsocket.h 
+PROLOG_INCLUDES = $(XSBDIR)/prolog_includes/char_defs.h \
+	$(XSBDIR)/prolog_includes/standard.h
 
 Option = [optimize]
 
@@ -36,13 +39,13 @@ Option = [optimize]
 #
 # Self-make: Version 1.4.1
 #
-XSB=../../bin/xsb
+XSB=$(XSBDIR)/bin/xsb
 Prolog = $(XSB) -i -s -m 2000 -c 2000
 #
 #-----------------------------------------------------------------------#
 
 # Make sure warnings are saved in a file.
-SVFILE = '../../build/.libwww_warn.tmp'
+SVFILE = '$(XSBDIR)/build/.libwww_warn.tmp'
 OWRITE = 1
 STDWARN = 3
 STDERR = 2
@@ -65,7 +68,7 @@ all: init $(ALL) finish
 	echo 'mc($*, $(Option)).' >> cmd...
 
 init:
-	/bin/rm -f $(SVFILE)
+	rm -f $(SVFILE)
 	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
 	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
