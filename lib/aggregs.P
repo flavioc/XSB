@@ -145,7 +145,8 @@ bagReduce(Template,Call,Res,Op,Id) :-
 		)
 	 ; AnsSetStatus == incomplete
 	 ->	get_ptcp(PTCP),
-		get_producer_subgoal_frame(bagReduce1(Template,Call,Res,Op,Id),SubgPtr),
+		get_producer_subgoal_frame(bagReduce1(Template,Call,Res,Op,Id),
+		                           SubgPtr,_PTCode),
 		is_incomplete(SubgPtr,PTCP),
 		bagReduce1(Template,Call,Res,Op,Id)
 	).

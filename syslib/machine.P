@@ -143,8 +143,8 @@ psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
 
 get_ptcp(_PTCP) :- '_$builtin'(GET_PTCP).
 is_incomplete(_SubgoalFrame, _PTCP) :- '_$builtin'(IS_INCOMPLETE).
-get_producer_subgoal_frame(Subgoal,SubgoalFrame) :-
-	get_producer_subgoal_frame(Subgoal,SubgoalFrame).
+get_producer_subgoal_frame(Subgoal,SubgoalFrame,PredTypeCode) :-
+	get_producer_subgoal_frame(Subgoal,SubgoalFrame,PredTypeCode).
 
 dereference_the_bucket(Pair_Pointer, Pair) :-
 	dereference_the_bucket(Pair_Pointer, Pair).

@@ -100,7 +100,7 @@
 	get_osp_breg/2,
 	cut_if_leader/3,
 	get_ptcp/1,
-	get_producer_subgoal_frame/2,
+	get_producer_subgoal_frame/3,
 	dereference_the_bucket/2,
 	pair_psc/2, 
 	pair_next/2, 

@@ -1498,7 +1498,9 @@ int builtin_call(byte number)
     const int Arity = 2;
     const int regSubgoalTerm  = 1;  /* in: subgoal term */
     const int regSubgoalFrame = 2;  /* out: producer from which subgoal
-				            consumes */
+				       consumes */
+    const int regPredTypeCode = 3;  /* out: predicate type (as INT) */
+
     Cell term;
     Psc  psc;
     TIFptr tif;
@@ -1523,9 +1525,10 @@ int builtin_call(byte number)
 		get_name(psc), get_arity(psc), regSubgoalTerm,
 		BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity);
     if ( IsSubsumptivePredicate(tif) )
-      ctop_addr(regSubgoalFrame, get_subsumer_sf(term, tif));      
+      ctop_addr(regSubgoalFrame, get_subsumer_sf(term, tif));
     else
       ctop_addr(regSubgoalFrame, get_variant_sf(term, tif));
+    ctop_int(regPredTypeCode, TIF_EvalMethod(tif));
     break;
   }
 

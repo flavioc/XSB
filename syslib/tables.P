@@ -108,6 +108,14 @@ table_state(Call, State) :-
 
 /*----------------------------------------------------------------------*/
 
+get_producer_info(Subgoal, SubgoalFrame, PredicateType) :-
+	get_producer_subgoal_frame(Subgoal, SubgoalFrame, PredTypeCode),
+	predicate_type_code(PredTypeCode, PredicateType).
+
+get_producer_info(Subgoal, SubgoalFrame) :-
+	get_producer_subgoal_frame(Subgoal, SubgoalFrame, _PTCode).
+	
+
 tfindall(T, Call, Result) :-
 	table_state(Call,PredType,_CallType,AnsSetStatus),
 	( PredType \== undefined ->
@@ -115,7 +123,7 @@ tfindall(T, Call, Result) :-
           ; AnsSetStatus == undefined ->
 		( call(Call), fail ; tfindall(T,Call,Result) )
 	  ; AnsSetStatus == incomplete ->
-	        get_ptcp(PTCP), get_producer_subgoal_frame(Call,SubgPtr),
+	        get_ptcp(PTCP), get_producer_info(Call, SubgPtr),
 		is_incomplete(SubgPtr,PTCP), findall(T,Call,Result)
 	  )
 	; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
@@ -129,14 +137,13 @@ tnot(Goal) :-
 		   Goal]).
 
 't not'(Goal) :-
-	table_state(Goal,PredType,_CallType,_AnsSetStatus),
+	get_producer_info(Goal, SubgPtr, PredType),
 	( PredType == subsumptive ->
 	  abort(['Negation of subsumptive predicates currently',
 	         'not supported.'])
-	; get_producer_subgoal_frame(Goal,SubgPtr),
-	  get_ptcp(PTCP),
+	; get_ptcp(PTCP),
 	  ( SubgPtr =:= 0
-            -> ( tcall(Goal), fail; get_producer_subgoal_frame(Goal,SF) )
+            -> ( tcall(Goal), fail; get_producer_info(Goal,SF) )
 	    ;  SF = SubgPtr ),
 	  is_incomplete(SF,PTCP),
 	  slg_not(SF)
@@ -144,9 +151,11 @@ tnot(Goal) :-
 
 %% skolemized tnot.  Variables temporarily changed to ground and tnot 
 %% call is made.  Should give existential semantics to nonground negative
-%% calls. That is: ...:- sk_not(p(X)),... is like
-%%  ... :- tnot(pp),...
-%%  pp :- p(X).
+%% calls.  That is
+%%	...:- sk_not(p(X)),...
+%% is like
+%%	... :- tnot(pp),...
+%%	pp :- p(X).
 %% where pp is a new proposition.
 
 :- table tunnumcall/1.

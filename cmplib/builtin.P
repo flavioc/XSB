@@ -139,7 +139,7 @@ inline_builtin(psc_tabled, 2, PSC_TABLED).
 % Should not be inlined -- Kostis !!
 % inline_builtin(is_incomplete, 2, IS_INCOMPLETE).
 inline_builtin(get_ptcp, 1, GET_PTCP).
-inline_builtin(get_producer_subgoal_frame, 2, GET_PRODUCER_SUBGOAL_FRAME).
+inline_builtin(get_producer_subgoal_frame, 3, GET_PRODUCER_SUBGOAL_FRAME).
 
 inline_builtin(dereference_the_bucket, 2, DEREFERENCE_THE_BUCKET).
 inline_builtin(pair_psc, 2, PAIR_PSC).
