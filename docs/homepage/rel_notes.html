@@ -17,7 +17,12 @@ This is primarily a maintenance release that fixes a number of bugs.
 
 <h3>News</h3>
 <ul>
-<li>
+<li> SLGWAM stack management has been made the default rather than
+Chat.  Chat is still available through a configuration option.
+<li> A new heap garbage collector, called <tt> indirect </tt> has been
+made the default garbage collector for SLGWAM.  In addition, the Chat
+sliding and copying garbage collectors now also work on the SLGWAM
+configuration. 
 </ul>
 <h3>Bugfixes</h3>
 <ul>
@@ -71,6 +76,7 @@ Manipulation</i>).
 <li> The meaning of argument 3 in predicate str_sub/3 has changed. It still
 represents the position of the substring match. However, offsets now start from
 0, like other string functions, instead of 1.
+<li> A number of new predicates have been added as a step towards ISO compatability.  
 </ul>
 <h3>FLORA News</h3>
 <p>
