@@ -38,7 +38,8 @@
     from flrporting.
 
 
-?- flora_configuration(develmode,no),
+?- current_predicate(flrregistry:flora_configuration/2),
+   flora_configuration(develmode,no),
    abort('FLORA-2 is already loaded as a package: quit XSB then use `runflora''').
 
 ?- retractall(flora_configuration(installdir,_)),
