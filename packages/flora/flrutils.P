@@ -557,7 +557,7 @@ generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	( Status = failure ->
 	    true
 	  ;
-	    displayln, flora_msgheader, display('Done! CPU time used: '),
+	    flora_msgheader, display('Done! CPU time used: '),
 	    T is T1-T0,
 	    display(T), displayln(' seconds]')
 	).
