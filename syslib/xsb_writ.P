@@ -125,13 +125,13 @@ l_write(File, T, Prec, D) :- 	% functor(T, OP, N),
 	; N=:=2 ->
 		( '_$op'(Opprec, xfx, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Nprec)
+			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Nprec, D1)
 		; '_$op'(Opprec, xfy, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Opprec)
+			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Opprec, D1)
 		; '_$op'(Opprec, yfx, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec)
+			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec, D1)
 		; Name == apply ->
 			l_hilog_writestr(File, N, T, D) 
 		; l_writestr(File, Name, N, T, D1)
@@ -188,18 +188,18 @@ l_hilog_writestr(File, N, Term, D) :-
 	l_writearg(File, Term, N, 2, D1), % write the rest  of the HiLog args
 	file_put(File, CH_RPAREN).	% )
 
-l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp) :- 
+l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp, D) :- 
 	term_arg(Term, 1, Arg1),
 	term_arg(Term, 2, Arg2),
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
-		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp),
+		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D),
 		file_put(File, 41)		% ')'
 	;
-		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp)
+		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D)
 	).
 
-'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp) :-
+'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D) :-
 	l_write(File, Arg1, Newlp, D),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
 	file_puttoken(File, TK_INOP, Op),
