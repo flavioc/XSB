@@ -41,12 +41,12 @@ PRIVATE void html_beginElement(USERDATA	*htext, /* where we build everything */
 {
 #ifdef LIBWWW_DEBUG
   HTTag *tag = SGML_findTag(htext->dtd, element_number);
-  xsb_dbgmsg("***In html_beginElement(%s): stackptr=%d tag=%s suppress=%d choose=%d",
+  xsb_dbgmsg((LOG_DEBUG,"***In html_beginElement(%s): stackptr=%d tag=%s suppress=%d choose=%d",
 	     RequestID(htext->request),
 	     htext->stackptr, HTTag_name(tag),
 	     IS_SUPPRESSED_TAG((HKEY)element_number, htext->request),
 	     IS_SELECTED_TAG((HKEY)element_number, htext->request)
-	     );
+	      ));
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)element_number, htext->request)) return;
@@ -73,8 +73,8 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
   int i, match;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("***In html_endElement(%s): stackptr=%d",
-	     RequestID(htext->request), htext->stackptr);
+  xsb_dbgmsg((LOG_DEBUG,"***In html_endElement(%s): stackptr=%d",
+	      RequestID(htext->request), htext->stackptr));
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)element_number, htext->request)) return;
@@ -84,7 +84,7 @@ PRIVATE void html_endElement (USERDATA *htext, int element_number)
   if (match < 0) return;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***match=%d", match);
+  xsb_dbgmsg((LOG_DEBUG,"***match=%d", match));
 #endif
 
   for (i=htext->stackptr; i>=match; i--)
@@ -114,7 +114,7 @@ PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len)
     (REQUEST_CONTEXT *)HTRequest_context(htext->request);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***In html_addText: Request %s", RequestID(htext->request));
+  xsb_dbgmsg((LOG_DEBUG,"***In html_addText: Request %s", RequestID(htext->request)));
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)PCDATA_SPECIAL, htext->request)) return;
@@ -165,8 +165,8 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
   c2p_list(prop_list_tail);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***In collect_html_attributes: tag_attributes_number=%d",
-	     tag_attributes_number);
+  xsb_dbgmsg((LOG_DEBUG,"***In collect_html_attributes: tag_attributes_number=%d",
+	      tag_attributes_number));
 #endif
 
   for (cnt=0; cnt<tag_attributes_number; cnt++) {
@@ -175,8 +175,8 @@ PRIVATE void collect_html_attributes ( prolog_term  elt_term,
       strcpy_lower(attrname.string, HTTag_attributeName(tag, cnt));
       
 #ifdef LIBWWW_DEBUG_VERBOSE
-      xsb_dbgmsg("***attr=%s, val=%s ",
-		 attrname.string, (char *)value[cnt]);
+      xsb_dbgmsg((LOG_DEBUG,"***attr=%s, val=%s ",
+		  attrname.string, (char *)value[cnt]));
 #endif
       prop_list_head = p2p_car(prop_list_tail);
       c2p_functor("attval",2,prop_list_head);
@@ -218,8 +218,8 @@ PRIVATE void html_push_element (USERDATA       *htext,
   htext->stackptr++;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***In html_push_element(%s): stackptr=%d",
-	     RequestID(htext->request), htext->stackptr);
+  xsb_dbgmsg((LOG_DEBUG,"***In html_push_element(%s): stackptr=%d",
+	      RequestID(htext->request), htext->stackptr));
 #endif
 
   CHECK_STACK_OVERFLOW(htext);
@@ -241,7 +241,7 @@ PRIVATE void html_push_element (USERDATA       *htext,
   c2p_string(tagname.string, p2p_arg(STACK_TOP(htext).elt_term, 1));
   collect_html_attributes(STACK_TOP(htext).elt_term, tag, present, value);
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***elt_name=%s", HTTag_name(tag));
+  xsb_dbgmsg((LOG_DEBUG,"***elt_name=%s", HTTag_name(tag)));
   print_prolog_term(STACK_TOP(htext).elt_term, "elt_term");
 #endif
 
@@ -264,10 +264,10 @@ PRIVATE void html_push_element (USERDATA       *htext,
 PRIVATE void html_pop_element(USERDATA *htext)
 {
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***In html_pop_element(%s): stackptr=%d, elt_name=%s",
+  xsb_dbgmsg((LOG_DEBUG,"***In html_pop_element(%s): stackptr=%d, elt_name=%s",
 	     RequestID(htext->request),
 	     htext->stackptr,
-	     HTTag_name(special_find_tag(htext, STACK_TOP(htext).element_number)));
+	      HTTag_name(special_find_tag(htext, STACK_TOP(htext).element_number))));
 #endif
   /* close the property list, for notmal elements */
   switch (STACK_TOP(htext).element_type) {
@@ -337,8 +337,8 @@ PRIVATE void html_pop_suppressed_element(USERDATA *htext)
   htext->stackptr--;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  xsb_dbgmsg("***In html_pop_suppressed_element(%s): stackptr=%d",
-	     RequestID(htext->request), htext->stackptr);
+  xsb_dbgmsg((LOG_DEBUG,"***In html_pop_suppressed_element(%s): stackptr=%d",
+	      RequestID(htext->request), htext->stackptr));
   if (htext->stackptr >= 0)
     print_prolog_term(STACK_TOP(htext).content_list_tail, "content_list_tail");
   else
@@ -354,13 +354,13 @@ PRIVATE int find_matching_elt(USERDATA *htext, int elt_number)
   int i;
   for (i=htext->stackptr; i>=0; i--) {
 #ifdef LIBWWW_DEBUG_VERBOSE
-    xsb_dbgmsg("***In find_matching_elt");
-    xsb_dbgmsg("***i=%d htext->stack[i].element_number=%d(%s) elt_number=%d(%s)",
+    xsb_dbgmsg((LOG_DEBUG,"***In find_matching_elt"));
+    xsb_dbgmsg((LOG_DEBUG,"***i=%d htext->stack[i].element_number=%d(%s) elt_number=%d(%s)",
 	       i,
 	       htext->stack[i].element_number, 
 	       SGML_findTagName(htext->dtd, htext->stack[i].element_number),
 	       elt_number,
-	       SGML_findTagName(htext->dtd, elt_number));
+		SGML_findTagName(htext->dtd, elt_number)));
 #endif
     if (htext->stack[i].element_number == elt_number)
       return i;
@@ -386,7 +386,7 @@ USERDATA *html_create_userData( HTRequest *             request,
   USERDATA *me = NULL;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("***Start html_create_userData(%s):", RequestID(request));
+  xsb_dbgmsg((LOG_DEBUG,"***Start html_create_userData(%s):", RequestID(request)));
 #endif
   if (request) {
     /* make sure that MIME type is appropriate for HTML */
@@ -415,7 +415,7 @@ USERDATA *html_create_userData( HTRequest *             request,
   }
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("***In html_create_userData(%s):", RequestID(request));
+  xsb_dbgmsg((LOG_DEBUG,"***In html_create_userData(%s):", RequestID(request)));
 #endif
 
   /* Hook up userdata to the request context */
@@ -439,8 +439,8 @@ PRIVATE void html_delete_userData(void *userdata)
   } else return;
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("***In html_delete_userData(%s): stackptr=%d",
-	     RequestID(request), me->stackptr);
+  xsb_dbgmsg((LOG_DEBUG,"***In html_delete_userData(%s): stackptr=%d",
+	      RequestID(request), me->stackptr));
 #endif
 
   /* close open tags on stack */
@@ -466,7 +466,7 @@ PRIVATE void html_delete_userData(void *userdata)
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
-  xsb_dbgmsg("***Request %s: freed the USERDATA obj", RequestID(request));
+  xsb_dbgmsg((LOG_DEBUG,"***Request %s: freed the USERDATA obj", RequestID(request)));
 #endif
 
   return;

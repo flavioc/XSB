@@ -60,6 +60,7 @@ HTList *XML_converter=NULL, *RDF_converter=NULL, *HTML_converter=NULL;
 #define LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG
 #define LIBWWW_DEBUG_TERSE
+#include "debug_xsb.h"
 */
 #ifdef LIBWWW_DEBUG_VERBOSE
 #define LIBWWW_DEBUG
