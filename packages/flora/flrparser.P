@@ -293,7 +293,6 @@ literal(not([T]),V) -->
 
 literal(loadlist(L),_) -->
 	[atom('$[')],
-	!,
 	white_space0,
 	atom_name_list(L),
 	white_space0,
