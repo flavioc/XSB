@@ -75,8 +75,6 @@
 	psc_insert/4, 
 	psc_import/3, 
 	psc_insertmod/3,
-	file_getbuf/4, 
-	file_putbuf/4,
 	substring/4,
 	str_len/2, 
 	str_cat/3, 
@@ -101,8 +99,6 @@
  	psc_env/2, 
 	psc_spy/2, 
 	psc_tabled/2, 
-	get_osp_breg/2,
-	cut_if_leader/3,
 	dereference_the_bucket/2,
 	pair_psc/2, 
 	pair_next/2, 
@@ -152,8 +148,7 @@
         install_verify_attribute_handler/4,
         verify_attribute_handler/4,
 	globalvar/1,
-	xsb_backtrace/0, xsb_backtrace/1,
-        interprolog_callback/3.
+	xsb_backtrace/0, xsb_backtrace/1.
 
 :- import assert/1, retract/1 from assert.
 :- import write/1, writeln/1, is_attv/1 from standard.

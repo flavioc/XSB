@@ -31,7 +31,6 @@
 	  sym_pass_thru/1, typ_prop/1, env_prop/1, dispose_symtab/1.
 :- export add_new_clause/2, clause_listify/2.
 
-:- import 'table #'/0 from compile.
 :- import memberchk/2, member/2 from basics.
 :- import log_ith/3 from basics.
 :- import error/1 from auxlry.

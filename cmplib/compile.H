@@ -26,7 +26,7 @@
 
 
 :- export compile/4, mc/2, abort_if_syntax_errors/1. 
-:- export 'table #'/0, 'error occurred'/0, current_compiled_module/1.
+:- export current_compiled_module/1.
 
 :- import spec/2 from spec.
 :- import cp_opt/2 from cp_opt.
@@ -36,7 +36,6 @@
 %%:- import build_graph/1 from cutcheck.
 :- import print_result/1 from printres.
 :- import standard_symbol/3 from std_xsb.
-:- import 'syntax errors'/0 from xsb_read.
 :- import perform_auto_table/1 from tabdef.
 :- import parse/4, get_symtab/2 from parse.
 :- import force_inprog_loaded/0 from inprog.

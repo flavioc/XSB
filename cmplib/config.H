@@ -23,5 +23,6 @@
 */
 
 
-:- export default_assert_size/1, default_compile_size/1.
+:- export default_assert_size/1.
+%%:- export default_compile_size/1.
 

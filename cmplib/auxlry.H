@@ -31,7 +31,6 @@
               check_file_compiler_options/1,
 	  numbervars_cmplib/3.
 
-:- import 'error occurred'/0 from compile.
 :- import current_compiled_module/1 from compile.
 :- import load_dyn_module/1 from consult.
 :- import conget/2, conset/2 from gensym.

@@ -24,7 +24,7 @@
 */
 
 
-:- export file_read/2, file_read/3, string_as/1, vv/2, 'syntax errors'/0.
+:- export file_read/2, file_read/3, vv/2.
 :- export file_read_foe/3.
 :- export vv/2.
 
