@@ -47,9 +47,9 @@
 	  file_getbuf_list/4, file_getbuf_list/3,
 	  file_putbuf/5, file_putbuf/4,
 	  file_write_line/2, file_write_line/3,
-      	  file_read_line/3,
-	  file_read_line_atom/2, file_read_line_atom/3,
-	  file_read_line_list/2, file_read_line_list/3,
+      	  file_read_line/2,
+	  file_read_line_atom/1, file_read_line_atom/2,
+	  file_read_line_list/1, file_read_line_list/2,
 	  file_reopen/4, file_clone/3,
 	  pipe_open/2, fd2ioport/2,
 	  file_clearerr/1, tmpfile_open/1.

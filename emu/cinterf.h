@@ -246,6 +246,8 @@ DllExport extern int call_conv xsb_close_query();
 DllExport extern int call_conv xsb_close();
 
 extern void print_pterm(Cell, int, VarString*);
+extern char *p_charlist_to_c_string(prolog_term term, VarString *buf,
+				    char *in_func, char *where);
 
 /* macros for constructing answer terms and setting and retrieving atomic
 values in them. To pass or retrieve complex arguments, you must use

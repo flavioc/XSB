@@ -132,43 +132,41 @@ file_putbuf(ByteCount, FromString, Offset, BytesWritten) :-
 	abort('Usage: file_putbuf([+IOport,] +ByteCount, +FromString, +Offset, -BytesWritten)')
 	).
 
-%% This doesn''t intern Str
-file_read_line(IOport, Str, IsFullLine) :-
-	( var(Str), var(IsFullLine) ->
-	    file_function(FILE_READ_LINE, IOport, Str, IsFullLine, _, _,_)
+file_read_line(IOport, Str) :-
+	( var(Str) ->
+	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_)
 	    ;
-	    abort('Usage: file_read_line([+IOport,] -InputStr, -IsFullLine)')
+	    abort('Usage: file_read_line(+IOport, -InputStr)')
         ).
 
 %% Like file_read_line, but Str becomes an interned atom
-file_read_line_atom(IOport, Str, IsFullLine) :-
-	( var(Str), var(IsFullLine) ->
-	    file_function(FILE_READ_LINE, IOport, UnStr, IsFullLine, _, _,_),
-	    intern_string(UnStr,Str)
+file_read_line_atom(IOport, Str) :-
+	( var(Str) ->
+	    file_function(FILE_READ_LINE, IOport, UnStr, _, _, _,_)
 	    ;
-	    abort('Usage: file_read_line_atom([+IOport,] -InputStr, -IsFullLine)')
+	    abort('Usage: file_read_line_atom([+IOport,] -InputStr)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
 %% Intern string
-file_read_line_atom(Str, IsFullLine) :-
+file_read_line_atom(Str) :-
 	stat_flag(CURRENT_INPUT, IOport),  % Current input
-	file_read_line_atom(IOport, Str, IsFullLine).
+	file_read_line_atom(IOport, Str).
 
 %% Like file_read_line_atom, but returns list of characters
-file_read_line_list(IOport, CharLst, IsFullLine) :-
-	( var(Str), var(IsFullLine) ->
-	    file_function(FILE_READ_LINE, IOport, Str, IsFullLine, _, _,_),
+file_read_line_list(IOport, CharLst) :-
+	( var(Str) ->
+	    file_function(FILE_READ_LINE, IOport, Str, _, _, _,_),
 	    atom_codes(Str,CharLst)
 	    ;
-	    abort('Usage: file_read_line_list([+IOport,] -InputStr, -IsFullLine)')
+	    abort('Usage: file_read_line_list([+IOport,] -InputStr)')
         ).
 
 %% Read line from current input stream (previously set by 'see')
 %% Return list of chars
-file_read_line_list(Lst, IsFullLine) :-
+file_read_line_list(Lst) :-
 	stat_flag(CURRENT_INPUT, IOport),  % Current input
-	file_read_line_list(IOport, Lst, IsFullLine).
+	file_read_line_list(IOport, Lst).
 
 %% Write Str out to IOport. Str must be atom or list of chars.
 %% This is checked in C, by the builtin.
@@ -229,7 +227,7 @@ print_file_contents(FileName, ToIOport) :-
 	copyIOport(FromIOport, ToIOport),
 	file_close(FromIOport).
 copyIOport(FromIOport, ToIOport) :-
-	(file_read_line(FromIOport, Line, _) -> file_write(ToIOport, Line)),
+	(file_read_line(FromIOport, Line) -> file_write(ToIOport, Line)),
 	copyIOport(FromIOport, ToIOport),
 	fail.        	 %% so as to not leave choice points around
 copyIOport(_,_).

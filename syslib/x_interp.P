@@ -260,7 +260,8 @@ version_message :-
 	file_getbuf_atom(Handle, 500, Str, _),
 	file_close(Handle),
 	%% Print the banner
-	fmt_write(STDMSG, Str, GC_string), file_nl(STDMSG).
+	fmt_write(STDMSG, Str, GC_string),
+	file_nl(STDMSG).
 
 /* === utilities ======================================================= */
 

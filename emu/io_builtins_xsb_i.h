@@ -110,7 +110,7 @@ inline static xsbBool file_function(void)
   static FILE *fptr;
   static int io_port, value, size, offset, length, mode;
   static STRFILE *sfptr;
-  static char buf[MAX_IO_BUFSIZE+1];
+  static XSB_StrDefine(VarBuf);
   static char *addr, *tmpstr;
   static prolog_term pterm;
   static Cell term;
@@ -261,16 +261,13 @@ inline static xsbBool file_function(void)
        Read ByteCount bytes from OIport into String starting 
        at position Offset. Doesn't intern string.	      */
     size = ptoc_int(3);
-    if (size > MAX_IO_BUFSIZE) {
-      size = MAX_IO_BUFSIZE;
-      xsb_warn("FILE_GETBUF: Byte count(%d) exceeds MAX_IO_BUFSIZE(%d)",
-	       size, MAX_IO_BUFSIZE);
-    }
-
     SET_FILEPTR(fptr, ptoc_int(2));
-    value = fread(buf, 1, size, fptr);
-    *(buf+value) = '\0';
-    ctop_string(4, buf);
+    XSB_StrSet(&VarBuf,"");
+    XSB_StrEnsureSize(&VarBuf,size);
+    VarBuf.length = size;
+    value = fread(VarBuf.string, 1, size, fptr);
+    XSB_StrNullTerminate(&VarBuf);
+    ctop_string(4, string_find(VarBuf.string,1));
     ctop_int(5, value);
     break;
   case FILE_PUTBUF:
@@ -280,8 +277,8 @@ inline static xsbBool file_function(void)
        that string	      */
     pterm = reg_term(4);
     if (is_list(pterm))
-      addr = p_charlist_to_c_string(pterm, buf, sizeof(buf),
-				    "FILE_WRITE_LINE", "input string");
+      addr = 
+	p_charlist_to_c_string(pterm,&VarBuf,"FILE_WRITE_LINE","input string");
     else if (is_string(pterm))
       addr = string_val(pterm);
     else
@@ -294,33 +291,48 @@ inline static xsbBool file_function(void)
     value = fwrite(addr+offset, 1, size, fptr);
     ctop_int(6, value);
     break;
-  case FILE_READ_LINE:
+  case FILE_READ_LINE: {
     /* Works like fgets(buf, size, stdin). Fails on reaching the end of file
-    ** Invoke: file_function(FILE_READ_LINE, +File, -Str, -IsFullLine). Returns
-    ** the string read and an indicator (IsFullLine = 1 or 0) of whether the
-    ** string read is a full line. Doesn't intern string.
-    ** Prolog invocation: file_read_line(10, +File, -Str, -IsFullLine) */
+    ** Invoke: file_function(FILE_READ_LINE, +File, -Str). Returns
+    ** the string read.
+    ** Prolog invocation: file_read_line(+File, -Str) */
+    char buf[MAX_IO_BUFSIZE+1];
+    int break_loop = FALSE;
+    int eof=FALSE;
+
     SET_FILEPTR(fptr, ptoc_int(2));
-    if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL) {
-      return FALSE;
-    } else {
-      ctop_string(3, buf);
-      if (buf[(strlen(buf)-1)] == '\n')
-	ctop_int(4, 1);
-      else ctop_int(4, 0);
+    XSB_StrSet(&VarBuf,"");
+
+    do {
+      if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL) {
+	eof=TRUE;
+	break;
+      } else {
+	XSB_StrAppend(&VarBuf,buf);
+	break_loop = (buf[(strlen(buf)-1)] == '\n');
+      }
+    } while (!break_loop);
+    
+    ctop_string(3, string_find(VarBuf.string,1));
+    
+    /* this complex cond takes care of incomplete lines: lines that end with
+       end of file and not with end-of-line. */
+    if ((VarBuf.length>0) || (!eof))
       return TRUE;
-    }
-    /* Like FILE_PUTBUF, but ByteCount=Line length. Also, takes atoms and lists
-       of characters: file_function(11, +OIport, +String, +Offset) */
+    else
+      return FALSE;
+  }
+  /* Like FILE_PUTBUF, but ByteCount=Line length. Also, takes atoms and lists
+     of characters: file_function(11, +OIport, +String, +Offset) */
   case FILE_WRITE_LINE:
     pterm = reg_term(3);
     if (is_list(pterm))
-      addr = p_charlist_to_c_string(pterm, buf, sizeof(buf),
-				    "FILE_WRITE_LINE", "input string");
+      addr =
+	p_charlist_to_c_string(pterm,&VarBuf,"FILE_WRITE_LINE","input string");
     else if (is_string(pterm))
       addr = string_val(pterm);
     else
-      xsb_abort("FILE_WRITE_LINE: Output argument must be an atom or a character list");
+      xsb_abort("FILE_WRITE_LINE: Output arg must be an atom or a char list");
     offset = ptoc_int(4);
     size = strlen(addr)-offset;
     SET_FILEPTR(fptr, ptoc_int(2));

@@ -64,8 +64,3 @@ extern int kill(pid_t pid, int sig);
 #define ABORTED	       4
 #define INVALID	       5
 #define UNKNOWN	       6
-
-extern char *p_charlist_to_c_string(prolog_term term, char *outstring, 
-				    int outstring_size,
-				    char *in_func, char *where);
-

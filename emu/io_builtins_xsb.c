@@ -207,12 +207,11 @@ xsbBool fmt_write(void)
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
-				 "FMT_WRITE", "format string");
+    Fmt = p_charlist_to_c_string(Fmt_term,&FmtBuf,"FMT_WRITE","format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE: format must be an atom or a character string");
+    xsb_abort("FMT_WRITE: Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
   if (is_functor(ValTerm))
@@ -282,8 +281,7 @@ xsbBool fmt_write(void)
     } else if (is_list(Arg)) {
       TYPE_ERROR_CHK('s', "FMT_WRITE");
       sprintf(aux_msg, "argument %d", i);
-      str_arg = p_charlist_to_c_string(Arg, &StrArgBuf,
-				       "FMT_WRITE", aux_msg);
+      str_arg = p_charlist_to_c_string(Arg, &StrArgBuf, "FMT_WRITE", aux_msg);
       PRINT_ARG(str_arg);
     } else if (is_int(Arg)) {
       TYPE_ERROR_CHK('i', "FMT_WRITE");
@@ -294,7 +292,7 @@ xsbBool fmt_write(void)
       float_arg = float_val(Arg);
       PRINT_ARG(float_arg);
     } else {
-      xsb_abort("FMT_WRITE: argument %d has illegal type", i);
+      xsb_abort("FMT_WRITE: Argument %d has illegal type", i);
     }
     current_fmt_spec = next_format_substr(Fmt,
 					  0 /* don't initialize */,
@@ -360,7 +358,7 @@ xsbBool fmt_write_string(void)
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_WRITE_STRING: format must be an atom or a character string");
+    xsb_abort("FMT_WRITE_STRING: Format must be an atom or a character string");
 
   ValTerm = reg_term(4);
   if (is_functor(ValTerm))
@@ -495,12 +493,11 @@ xsbBool fmt_read(void)
   SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
-    Fmt = p_charlist_to_c_string(Fmt_term, &FmtBuf,
-				 "FMT_READ", "format string");
+    Fmt = p_charlist_to_c_string(Fmt_term,&FmtBuf,"FMT_READ","format string");
   else if (is_string(Fmt_term))
     Fmt = string_val(Fmt_term);
   else
-    xsb_abort("FMT_READ: format must be an atom or a character string");
+    xsb_abort("FMT_READ: Format must be an atom or a character string");
 
   AnsTerm = reg_term(4);
   if (is_functor(AnsTerm))
@@ -1235,7 +1232,7 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
       workspace.string[pos-1] = 's';
       break;
     case 'p':
-      xsb_abort("FMT_READ/WRITE: format specifier %%p not supported: %s",
+      xsb_abort("FMT_READ/WRITE: Format specifier %%p not supported: %s",
 		workspace.string+current_substr_start);
     case 'n':
       if (read_op) {
@@ -1244,17 +1241,17 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 	keep_going = FALSE;
 	break;
       }
-      xsb_abort("FMT_WRITE: format specifier %%n not supported: %s",
+      xsb_abort("FMT_WRITE: Format specifier %%n not supported: %s",
 		workspace.string+current_substr_start);
     case '[':
       /* scanf feature: [...] */
       if (!read_op) {
-	xsb_abort("FMT_WRITE: format specifier [ is invalid for output: %s",
+	xsb_abort("FMT_WRITE: Format specifier [ is invalid for output: %s",
 		  workspace.string+current_substr_start);
       }
       while ((pos < workspace.length) && (workspace.string[pos++] != ']'));
       if (workspace.string[pos-1] != ']') {
-	xsb_abort("FMT_READ: format specifier [ has no matching ] in: %s",
+	xsb_abort("FMT_READ: Format specifier [ has no matching ] in: %s",
 		  workspace.string+current_substr_start);
       }
       result.type = 's';
