@@ -928,17 +928,16 @@ static bool source_is_not_target(int Reg)
   return TRUE;
 }
 
-/* this is a simple routine to generate  a series  of instructions to
-   load a series of  registers with  constants or  from other registers.
-   It is  given a  list of  Source,Target pairs.   Target  is always a
-   register  number.    Source  may  be  a  putcon(con), putnumcon(num),
-   puttvar(reg),  puttvar(Var),  or  movreg(reg).    The  registers  can
-   overlap in any way.  db_genmvs tries to generate  a reasonably efficient
-   series  of  instructions  to  load  the indicated  registers with the
+/* this is a simple routine to generate a series of instructions to
+   load a series of registers with constants or from other registers.
+   It is given a list of Source,Target pairs.  Target is always a
+   register  number.  Source may be a putcon(con), putnumcon(num),
+   puttvar(reg), puttvar(Var), or movreg(reg).  The registers  can
+   overlap in any way.  db_genmvs tries to generate a reasonably efficient
+   series of instructions to load the indicated registers with the
    indicated values.  */ 
 
-static void db_genmvs(struct instruction *inst_queue,
-		      RegStat Reg)
+static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 {
   Cell Opcode, Arg, T0, R0;
   
@@ -1221,10 +1220,10 @@ bool assert_buff_to_clref(/*Head,Arity,Prref,AZ,Indexes,HashTabSize,Clref*/)
   write_word(Clause,Loc,0);
   for (Inum = NI; Inum > 0; Inum--) {
     /* put template code for chaining buffers from hash tables  */
-    dbgen_inst_ppv(noop,(4*Inum-1)*sizeof(Cell)/2,Clause,Loc);      /* noop(6) */
+    dbgen_inst_ppv(noop,(4*Inum-1)*sizeof(Cell)/2,Clause,Loc);  /* noop(6) */
     write_word(Clause,Loc,0);
     dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,Loc);             /* noop(2) */
-    write_word(Clause,Loc,0); 
+    write_word(Clause,Loc,0);
   }
 
 /* Buff - another dangerous global -- rfm */
@@ -1859,14 +1858,14 @@ static int retract_clause( ClRef Clause, int retract_nr )
 
 bool db_get_clause( /*+CC, ?CI, ?CIL, +PrRef, +Head, -Clause, -Type, -EntryPoint*/ )
 {
-    PrRef Pred = (PrRef)ptoc_int(4);
-    int IndexLevel, IndexArg, ni ;
-    ClRef Clause ;
-    prolog_term Head = reg_term(5);
-    CPtr EntryPoint = 0;
+  PrRef Pred = (PrRef)ptoc_int(4);
+  int IndexLevel, IndexArg, ni ;
+  ClRef Clause ;
+  prolog_term Head = reg_term(5);
+  CPtr EntryPoint = 0;
 
 #ifdef RETRACT_GC_DEBUG
-	fprintf( stderr, "GET CLAUSE P-%p(%x) C-%p(%x) F-%p L-%p\n", Pred, *(pb)Pred, ptoc_int(1), ptoc_int(1) ? *(pb)(ptoc_int(1)) : 0, Pred->FirstClRef, Pred->LastClRef ) ;
+    fprintf( stderr, "GET CLAUSE P-%p(%x) C-%p(%x) F-%p L-%p\n", Pred, *(pb)Pred, ptoc_int(1), ptoc_int(1) ? *(pb)(ptoc_int(1)) : 0, Pred->FirstClRef, Pred->LastClRef ) ;
 #endif
 
     if( cell_opcode((CPtr)Pred) == tabletrysingle )
@@ -1918,10 +1917,10 @@ set_outputs:
 
 bool db_retract0( /* ClRef, retract_nr */ )
 {
-    ClRef Clause = (ClRef)ptoc_int(1) ;
-	int retract_nr = (int) ptoc_int(2) ;
+  ClRef Clause = (ClRef)ptoc_int(1) ;
+  int retract_nr = (int)ptoc_int(2) ;
 
-    return retract_clause( Clause, retract_nr ) ;
+  return retract_clause( Clause, retract_nr ) ;
 }
 
 /* Covert compiled clause of pred associated with PSC to dynamic.
@@ -1931,88 +1930,92 @@ bool db_retract0( /* ClRef, retract_nr */ )
 
 bool compiled_to_dynamic( /* +PSC, +OldPred */ )
 {
-    ClRef EntryCl ;
-    Psc psc = (Psc)ptoc_int(1);
-    int Arity = get_arity(psc) + 1;
-    int Loc ;
-    PrRef OldPred = (PrRef)ptoc_int(2),
-    NewPred = (PrRef)get_ep(psc) ;
+  ClRef EntryCl ;
+  Psc psc = (Psc)ptoc_int(1);
+  int Arity = get_arity(psc) + 1;
+  int Loc ;
+  PrRef OldPred = (PrRef)ptoc_int(2),
+        NewPred = (PrRef)get_ep(psc) ;
 
-    MakeClRef(EntryCl,COMPILED_CL,4);
-    Loc = 0 ;
-    dbgen_inst_ppv( noop, sizeof(Cell)/2, EntryCl, &Loc) ;
-    Loc += sizeof(Cell) ; /* Leave word for try inst */
-    dbgen_inst_pppw( jump, OldPred, EntryCl, &Loc) ;
-    SetClRefPrev(EntryCl, NewPred) ;
-    SetClRefNext(EntryCl, NewPred) ;
-		
-    Loc = 0 ;
-    dbgen_inst_ppvw( jumptbreg, Arity, EntryCl, NewPred, &Loc )
-    NewPred->LastClRef = EntryCl ;
-    NewPred->FirstClRef = EntryCl ;
-
-    return TRUE ;
+  MakeClRef(EntryCl,COMPILED_CL,4);
+  Loc = 0 ;
+  dbgen_inst_ppv( noop, sizeof(Cell)/2, EntryCl, &Loc) ;
+  Loc += sizeof(Cell) ; /* Leave word for try inst */
+  dbgen_inst_pppw( jump, OldPred, EntryCl, &Loc) ;
+  SetClRefPrev(EntryCl, NewPred) ;
+  SetClRefNext(EntryCl, NewPred) ;
+	
+  Loc = 0 ;
+  dbgen_inst_ppvw( jumptbreg, Arity, EntryCl, NewPred, &Loc ) ;
+  NewPred->LastClRef = EntryCl ;
+  NewPred->FirstClRef = EntryCl ;
+  
+  return TRUE ;
 }
+
+/*----------------------------------------------------------------------
+  in the following, the number 8 denotes the size (in cells) of the
+  following fixed sequence of instructions:
+         <tabletrysingle, allocate_gc, getVn, calld, new_answer_dealloc>
+  that gets generated as an entry point clause for all dynamic tabled
+  predicates.
+  ----------------------------------------------------------------------*/
+#define FIXED_BLOCK_SIZE_FOR_TABLED_PRED     (8 * sizeof(Cell))
 
 bool db_build_prref( /* PSC, Tabled?, -PrRef */ )
 {
   CPtr p, tp;
-  tab_inf_ptr tip; 
+  tab_inf_ptr tip;
   int Loc;
-  Psc PSC = (Psc)ptoc_int(1);
-  Integer Arity = get_arity(PSC);
+  Psc psc = (Psc)ptoc_int(1);
+  Integer Arity = get_arity(psc);
   Integer Tabled = ptoc_int(2);
 
   /* moved this functionality from Prolog (very ugly and error-prone) to C */
-    set_type(PSC, T_DYNA);
-    set_env(PSC, T_VISIBLE);
+  set_type(psc, T_DYNA);
+  set_env(psc, T_VISIBLE);
     
-    p = (CPtr)mem_alloc(4*sizeof(Cell));
-    Loc = 0 ;
-    dbgen_inst_ppp(fail,p,&Loc) ;
-    p[2] = (Cell)p ;
-    if( Tabled )
-      {	tip = (tab_inf_ptr)mem_alloc(sizeof(struct tab_info));
-	ti_next_tip(tip) = 0;
-	ti_call_trie_root(tip) = 0;
-	ti_psc_ptr(tip) = PSC;
-	if (first_tip == 0) first_tip = tip;
-	else ti_next_tip(last_tip) = (CPtr)tip;
-	last_tip = tip;
-	tp  = (CPtr)mem_alloc(8*sizeof(Cell)) ;
-	Loc = 0 ;
-	dbgen_inst_ppvww(tabletrysingle,Arity,(tp+3),tip,tp,&Loc) ;
-	dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
-	dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
-	dbgen_inst_ppvw(calld,3,p,tp,&Loc) ;
-	dbgen_inst_pvv(new_answer_dealloc,Arity,2,tp,&Loc) ;
-	set_ep(PSC, (pb)tp);
+  p = (CPtr)mem_alloc(4*sizeof(Cell));
+  Loc = 0 ;
+  dbgen_inst_ppp(fail,p,&Loc) ;
+  p[2] = (Cell)p ;
+  if ( Tabled )
+    {
+      tip = (tab_inf_ptr)mem_alloc(sizeof(struct tab_info));
+      ti_next_tip(tip) = 0;
+      ti_call_trie_root(tip) = 0;
+      ti_psc_ptr(tip) = psc;
+      if (first_tip == 0) first_tip = tip;
+      else ti_next_tip(last_tip) = (CPtr)tip;
+      last_tip = tip;
+      tp  = (CPtr)mem_alloc(FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ;
+      Loc = 0 ;
+      dbgen_inst_ppvww(tabletrysingle,Arity,(tp+3),tip,tp,&Loc) ;
+      dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
+      dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
+      dbgen_inst_ppvw(calld,3,p,tp,&Loc) ;
+      dbgen_inst_pvv(new_answer_dealloc,Arity,2,tp,&Loc) ;
+      set_ep(psc, (pb)tp);
     }
-    else set_ep(PSC, (pb)p);
+  else set_ep(psc, (pb)p);
 
-    ctop_int(3,(Integer)p) ;
-    return TRUE ;
+  ctop_int(3,(Integer)p) ;
+  return TRUE ;
 }
 
 bool db_remove_prref( /* PrRef */ ) 
-{   CPtr *p, *p1 ;
-
-    p = (CPtr *)ptoc_int(1) ;
+{
+  CPtr *p = (CPtr *)ptoc_int(1) ;
 
 #ifdef RETRACT_GC_DEBUG
-	fprintf( stderr, "DEL Prref %p\n", p ) ;
+  fprintf( stderr, "DEL Prref %p\n", p ) ;
 #endif
 
-    if( *(pb)p == tabletrysingle )
-    {   p1 = (CPtr *)p[6] ;
-	mem_dealloc((pb)p, 10 * sizeof(Cell)) ;
-	p = p1 ;
+  if ( *(pb)p == tabletrysingle )
+    {
+      mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ;
     }
-/*
-    mem_dealloc((pb)p,4*sizeof(Cell)) ;
-*/
-
-    return TRUE ;
+  return TRUE ;
 }
 
 /*----------------------------------------------------------------------*/
@@ -2028,7 +2031,7 @@ bool db_remove_prref( /* PrRef */ )
 
 /*----------------------------------------------------------------------*/
 
-static int clref_trie_asserted(CPtr Clref) {
+static inline int clref_trie_asserted(CPtr Clref) {
   return((code_to_run(Clref) == jump) && 
 	 (first_instr_to_run(Clref) == trie_assert_inst));
 }
@@ -2036,14 +2039,14 @@ static int clref_trie_asserted(CPtr Clref) {
 
 static void abolish_trie_asserted_stuff(CPtr b)
 {
-   NODEptr TNode;
+  NODEptr TNode;
    
-   switch_to_trie_assert;
-   TNode = (NODEptr)*(b + 3);
-   delete_trie(Child(TNode));
-   free_node_function(TNode);
-   switch_from_trie_assert;
-   *(b + 3) = (Cell) 0;
+  switch_to_trie_assert;
+  TNode = (NODEptr)*(b + 3);
+  delete_trie(Child(TNode));
+  free_node_function(TNode);
+  switch_from_trie_assert;
+  *(b + 3) = (Cell) 0;
 }
 
 /*----------------------------------------------------------------------*/
@@ -2102,7 +2105,7 @@ int gen_retract_all(/* R1: + buff */)
 
 /*---------------------------------------------------------------*/
 
-static CPtr trie_asserted_clref(CPtr prref)
+static inline CPtr trie_asserted_clref(CPtr prref)
 {
   CPtr Clref;
 
@@ -2118,51 +2121,17 @@ static CPtr trie_asserted_clref(CPtr prref)
 /*---------------------------------------------------------------*/
 
 #ifdef DEBUG_T
-void print_bytes(CPtr x,int lo, int hi)
+static void print_bytes(CPtr x, int lo, int hi)
 {
   int i;
-  extern int inst_table[][];
 
   printf("addr %p ---------------------------------\n",x);
-  for( i = lo; i <= hi ; i++){
-    printf( " i = %d 4*i = %d  x[i] = %x \n",i,4*i, (int)*(x +i));
+  for (i = lo; i <= hi ; i++) {
+    printf(" i = %d 4*i = %d  x[i] = %x \n",i,4*i, (int)*(x+i));
   }
   printf("Instr = %s ---code to run %s----\n",
 	 (char *)inst_table[try_type_instr_fld(x)][0],
 	 (char *)inst_table[code_to_run(x)][0] );
-}
-
-void show_clrefs(CPtr prref)
-{
-
-  CPtr Clref;  
-  int limit = 5;
-
- if(try_type_instr_fld(prref) != fail)
-  {  
-    for(Clref = clref_fld(prref); Clref != NULL; ){
-      if( (-- limit) == 0){
-	printf("# clrefs exceeded visual limit \n");
-	return;
-      }
-#ifdef DEBUG_T
-      print_bytes(Clref, -2, 3);
-#endif  
-      if(another_buff(*(pb)Clref) == 0) {
-#ifdef DEBUG_T
-	printf("End of clref chain\n");
-#endif 
-	Clref = NULL;
-      }
-      else
-	Clref = next_clref(Clref);  
-    }
-  }
-  else{
-#ifdef DEBUG_T
-    printf(" Brand New Symbol \n");
-#endif
-  }
 }
 #endif
 
@@ -2174,14 +2143,10 @@ int trie_assert(void)
   Psc  psc;
   CPtr Prref;
   int  Arity;
-/*  int  found_t_asserted = FALSE; */
   CPtr Trie_Asserted_Clref = NULL;
   NODEptr inst_node_ptr;
   int  found = 1;
-#ifdef DEBUG_T
-  int  tmp1 = 1;
 
-#endif
   switch_to_trie_assert;
   
   Clause = reg_term(1);
@@ -2209,7 +2174,7 @@ int trie_assert(void)
   printf(" Trie_Asserted_Clref %p \n",Trie_Asserted_Clref);
 #endif
 
-  if(Trie_Asserted_Clref == NULL){
+  if (Trie_Asserted_Clref == NULL) {
     /* Allocate the trie node as in old trie assert 
        put it in a clref block and pray */
     Trie_Asserted_Clref = ((CPtr)mem_alloc(6*sizeof(Cell))) + 2;
@@ -2227,7 +2192,6 @@ int trie_assert(void)
     Child(inst_node_ptr)  = NULL;
     Atom(inst_node_ptr)   = 0;
 
-    /* changed AZ to 1 1/24/97 */
     db_addbuff(get_arity(psc) + 1,(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,2);
   }
   else{
@@ -2245,16 +2209,15 @@ int trie_assert(void)
 int trie_retract(void)
 {
   CPtr Clref;
-
   NODEptr inst_node_ptr;
 
   switch_to_trie_assert;
   Clref = (CPtr)ptoc_int(1);
-  if(Clref == NULL){
+  if (Clref == NULL) {
     Last_Nod_Sav = NULL;
   }
-  else{
-    if(Last_Nod_Sav == NULL){
+  else {
+    if (Last_Nod_Sav == NULL) {
       fprintf(stderr, "Last_Nod_Sav is NULL \n");
       switch_from_trie_assert;
       return FALSE;
@@ -2277,7 +2240,7 @@ int trie_retract(void)
 
 int trie_retract_safe(void)
 { 
-  if(Last_Nod_Sav == NULL)
+  if (Last_Nod_Sav == NULL)
     return FALSE;
   else{
     safe_delete_branch(Last_Nod_Sav);
