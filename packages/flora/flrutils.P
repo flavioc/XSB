@@ -285,7 +285,8 @@ flora_flcompile(LoadMode,Directives,InFile,Force,OutFile) :-
 		->  fmt_write_string(OFile,'%s%s.O',f(D,B))
 		;   OFile=PFile
 		),
-		(   file_older_than(OFile,FlrFile)
+		(   ( file_older_than(OFile,FlrFile)
+		    ; file_older_than(PFile,FlrFile))
 		->  generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
 		;   Status=noneed
 		)
