@@ -842,13 +842,19 @@ NODEptr variant_trie_search(int arity, CPtr cptr,
     resetpdl;                                                   
 
     /*
-     * Put the substitution factor of the answer into a term ret/n.
+     * Put the substitution factor of the answer into a term ret/n (if 
+     * the arity of the substitution factor is 0, then put integer 0
+     * into cell ans_var_pos_reg).
+     *
      * Notice that simple_table_undo_bindings in the old version of XSB
      * has been removed here, because all the variable bindings of this
      * answer will be used later on (in do_delay_stuff()) when we build
      * the delay list for this answer.
      */
-    bld_functor(ans_var_pos_reg, get_ret_psc(ctr));
+    if (ctr == 0)
+      bld_int(ans_var_pos_reg, 0);
+    else	
+      bld_functor(ans_var_pos_reg, get_ret_psc(ctr));
 
     /*
      * Save the number of variables in the answer, i.e. the arity of
