@@ -85,6 +85,7 @@ flora_prlg(abolish_all_tables,0) :- !.
 ****************************************************************************/
 flora_prlg(flCompile,1) :- !.
 flora_prlg(flCompile,2) :- !.
+flora_prlg(flP2H,2) :- !.
 flora_prlg(flLoad,1) :- !.
 flora_prlg(flLoad,2) :- !.
 flora_prlg(flConsult,1) :- !.

@@ -36,7 +36,8 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
 	flora_flogic_predicate(PredName,WS,_Position,_Base),
 	!,
-	flora_error_line('undefined F-logic atom in module %s',args(WS)),
+	flora_error_line('undefined F-logic predicate in module %s',
+			 args(WS)),
 	abort.
 
 flora_undefined_predicate_hook([PscRecord,fail]) :-
@@ -44,7 +45,9 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	flora_hilog_predicate(PredName,Workspace),
 	!,
 	flora_stderr_nl,
-	flora_error_line('undefined HiLog predicate in module %s',args(Workspace)).
+	flora_error_line('undefined HiLog predicate in module %s',
+			 args(Workspace)),
+	abort.
 
 flora_undefined_predicate_hook([PscRecord,fail]) :-
 	psc_name(PscRecord,PredName),
@@ -52,4 +55,6 @@ flora_undefined_predicate_hook([PscRecord,fail]) :-
 	!,
 	psc_arity(PscRecord,N),
 	flora_stderr_nl,
-	flora_error_line('undefined predicate %s/%d in module %s',args(Predicate,N,Workspace)).
+	flora_error_line('undefined predicate %s/%d in module %s',
+			 args(Predicate,N,Workspace)),
+	abort.

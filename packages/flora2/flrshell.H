@@ -87,6 +87,7 @@
 	maxerr/1,
 	flCompile/1,
 	flCompile/2,
+	flP2H/2,
 	flLoad/1,
 	flLoad/2,
 	flConsult/1,

@@ -109,6 +109,8 @@
 	flora_intern_code/4
    from flrcoder.
 
+:- import plg2hlg/3 from prolog2hilog.
+
 :- import
 	flora_stderr_nl/0,
 	flora_stderr_string/1,
@@ -142,6 +144,7 @@
 	flLoad/2,
 	flConsult/1,
 	flCompileInclude/1,
+	flP2H/2,
 	flloadtrailer/1,
 	flloadtrailer/2,
 	flsetuptrailer/1,

@@ -68,7 +68,7 @@ flCompile(File,Workspace) :-
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("%s does NOT exist!",args(File)),
+	  flora_error_line("File %s does not exist!",args(File)),
           fail
         ),
 	!.
@@ -96,7 +96,7 @@ flLoad(File,Workspace) :-
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("%s does NOT exist!",args(File)),
+	  flora_error_line("%File s does not exist!",args(File)),
           fail
         ),
 	!.
@@ -128,7 +128,7 @@ flLoad(File) :-
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("%s does NOT exist!",args(File)),
+	  flora_error_line("File %s does not exist!",args(File)),
           fail
         ),
 	!.
@@ -152,7 +152,7 @@ flCompileInclude(File) :-
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("%s does NOT exist!",args(File)),
+	  flora_error_line("File %s does not exist!",args(File)),
           fail
         ),
 	!.
@@ -489,7 +489,7 @@ flora_include_file([Opt|OptList],Status) :-
 	    print_file_contents(FullName),
 	    flora_include_file(OptList,Status)
 	;
-	  flora_error_line("The system file %s does NOT exist!",args(FullName)),
+	  flora_error_line("The FLORA system file %s not found!",args(FullName)),
           Status=FLORA_FAILURE
 	).
 
@@ -1079,3 +1079,5 @@ maxerr(X) :-
 	  retractall(flora_maxerr(_)),
 	  assert(flora_maxerr(X))
 	).
+
+flP2H(PrologTerm,HiLogTerm) :- plg2hlg(PrologTerm,HiLogTerm,flapply).
