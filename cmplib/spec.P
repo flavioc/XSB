@@ -22,6 +22,9 @@
 ** 
 */
 
+:- compiler_options([xpp_on,optimize,sysmod]).
+#include "standard.h"
+
 
 /*======================================================================*/
 /*  This module of the XSB compiler specialises (partially evaluates)	*/
@@ -395,7 +398,7 @@ represent(Msg, Name, Arity, Tabled, SymTab, NewSym, Representative) :-
 	; Prop = [tabled],
 	  warning(('The specialisation of ', Name, '/', Arity,
 		   ' will cause double tabling !')),
-	  message('           (possible source of inefficiency)')
+	  ttywritenl('           (possible source of inefficiency)',STDWARN)
 	),
 	sym_insert(NewName, NewArity, Properties, SymTab, NewSym),
 	Representative = clause(MsgCopy,goal(NewSym,NewArgs),_NewPrag).
@@ -746,8 +749,8 @@ generate_table_decl([goal(Sym,Args)|Goals], PICs) :-
 	; sym_name(Sym, N, A),
 	  warning(('Table specialisation declaration for ', N, '/', A,
 		   ' could not be ')),
-	  message(('           processed as intended... ',
-		   '(tabling the whole predicate instead)')),
+	  ttywritenl(('           processed as intended... ',
+		      '(tabling the whole predicate instead)'),STDWARN),
 	  sym_propin(tabled, Sym)
 	).
 
@@ -761,7 +764,8 @@ generate_table_decl([goal(Sym,Args)|Goals], PICs) :-
 		NCs = [goal(NewSym,_)|_],
 		sym_propin(tabled, NewSym)
 	    ; error(('Singleton optimisations clash with table declaration')),
-	      message('         (please use compiler option "unfold_off")')
+	      ttywritenl('         (please use compiler option "unfold_off")',
+			 STDERR)
 	    )
 	; 'search for call'(CL, Args)
 	).
