@@ -76,13 +76,14 @@ all: init $(ALL) finish
 	@cp -f $*.O $(OBJFILESAVED) || echo ""
 	echo 'mc($*, $(Option)).' >> cmd...
 
+# The header cmd...hdr is prepended before each split cmd...xx file
+# so that the output will be redirected into the appropriate cmd...?? file.
 init:
 	rm -f $(SVFILE)
 	@test -d $(OBJFILESAVED) || mkdir $(OBJFILESAVED)
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings --------------------\n",_).' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
 	@echo 'file_flush($(STDWARN),_).' >> cmd...
-	# This header is prepended before each split cmd...xx file
 	@echo 'import file_reopen/4, fmt_write/3, file_flush/2 from file_io.' >> cmd...hdr
 	@echo "file_reopen($(SVFILE),a,$(STDWARN),_)." >> cmd...hdr
 
