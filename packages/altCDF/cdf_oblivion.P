@@ -8,7 +8,7 @@
 	retractall_itsobjects/1,
 	retractall_subclasses/1,
 	delete_all_things_to_delete/0,
-	rename_things/1.
+	rename_things/1, rename_things/0.
 
 :- import
             immed_isa/2, proper_isa/2,
@@ -276,12 +276,16 @@ cdf_term_ext_arg(maxAttr_ext(_,_,X,_),X).
 /*									*/
 /*	Rename Utility							*/
 /*									*/
-/* rename_things takes a list of pairs of the form OldID>NewID, where	*/
+/* rename_things/1 takes a list of pairs of the form OldID>NewID, where	*/
 /* OldID is any ID (Oid,Cid,CRid,...) that is to be renamed to the new	*/
 /* ID NewID.  It handles multiple occurrences of renamings in the same	*/
 /* tuple, transitive renaming (but usually a bad idea), and renaming	*/
 /* within product ID's.  It will loop if there is a cycle in the	*/
 /* renaming (as in e.g. [a>b,b>a].)					*/
+/*									*/
+/* rename_things/0 assumes things_to_rename/2 contains pairs of OldID	*/
+/* and NewID, where OldID is to be renamed to NewID.  Otherwise it	*/
+/* works the same as rename_things/1.					*/
 /*									*/
 /************************************************************************/
 :- import things_to_rename/2 from usermod.
@@ -294,7 +298,17 @@ cdf_term_ext_arg(maxAttr_ext(_,_,X,_),X).
 rename_things(RenameList) :-
 	retractall(things_to_rename(_,_)),
 	save_rename_list(RenameList),
+	rename_things.
 
+save_rename_list([]).
+save_rename_list([Old>New|Rest]) :-
+	(Old \== New
+	 ->	assert(things_to_rename(Old,New))
+	 ;	true
+	),
+	save_rename_list(Rest).
+
+rename_things :-
 	cdf_term_ext(Goal,Filt),
 	retractall(facts_to_delete(_)),
 	retractall(facts_to_add(_)),
@@ -319,7 +333,7 @@ rename_things(RenameList) :-
 	 newExtTerm(Fact),
 	 fail
 	).
-rename_things(_RenameList) :-
+rename_things :-
 	retractall(facts_to_delete(_)),
 	retractall(facts_to_add(_)),
 	retractall(things_to_rename(_,_)).
@@ -343,14 +357,6 @@ rename_one_subthing_list([OldThing|OldThingList],[NewThing|NewThingList]) :-
 	 OldThing = NewThing,
 	 rename_one_subthing_list(OldThingList,NewThingList)
 	).
-
-save_rename_list([]).
-save_rename_list([Old>New|Rest]) :-
-	(Old \== New
-	 ->	assert(things_to_rename(Old,New))
-	 ;	true
-	),
-	save_rename_list(Rest).
 
 :- import term_set_arg/4 from machine.
 close_add_facts :-
