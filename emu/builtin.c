@@ -1255,15 +1255,15 @@ int builtin_call(byte number)
         case TK_INT : case TK_INTFUNC :
 	  ctop_int(4, *(long *)(token->value));
 	  break;
-        case TK_REAL : case TK_REALFUNC : {
-	  Float float_temp =  *(double *)(token->value);
+        case TK_REAL : case TK_REALFUNC : 
+	  {Float float_temp =  *(double *)(token->value);
 	  ctop_float(4, float_temp);
+	  }
 	  break;
         case TK_PUNC : case TK_HPUNC :
 	  ctop_int(4, *(token->value)); break;
         case TK_EOC : case TK_EOF :
 	  ctop_int(4, 0); break;
-        }
       }
     }
     break;
