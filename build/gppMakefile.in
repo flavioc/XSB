@@ -43,5 +43,6 @@ prepare:
 	@ln $(OBJDIR)/gpp.o . 2> /dev/null || echo "" 
 
 install:
-	@mv -f gpp $(BINDIR) || echo ""
+	@mv -f gpp $(BINDIR) 2> /dev/null || echo ""
+	@mv -f gpp.exe $(BINDIR) 2> /dev/null || echo ""
 	@rm -f gpp.o
