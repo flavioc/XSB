@@ -140,7 +140,8 @@ inline_builtin(psc_tabled, 2, PSC_TABLED).
 % inline_builtin(is_incomplete, 2, IS_INCOMPLETE).
 inline_builtin(get_ptcp, 1, GET_PTCP).
 inline_builtin(get_producer_call, 3, GET_PRODUCER_CALL).
-inline_builtin(slg_not, 3, SLG_NOT).
+inline_builtin(slg_not, 1, SLG_NOT).
+inline_builtin(lrd_success, 2, LRD_SUCCESS).
 
 inline_builtin(dereference_the_bucket, 2, DEREFERENCE_THE_BUCKET).
 inline_builtin(pair_psc, 2, PAIR_PSC).

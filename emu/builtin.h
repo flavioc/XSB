@@ -118,6 +118,7 @@
 #define NEXT_BUCKET		112
 
 #define SLG_NOT			114
+#define LRD_SUCCESS		115
 
 #define IS_XWAMMODE             117
 #define CLOSE_OPEN_TABLES       118

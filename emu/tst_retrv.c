@@ -665,6 +665,8 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
  *  timestamps greater than a given value and which unify with a given
  *  template.  The unifying answers are returned in a chain of Answer
  *  List Nodes.
+ *  Note that this algorithm relies on the Time Stamp Indices of the
+ *  TST (which are reclaimed from the table when a subgoal completes).
  *
  * Method:
  * ------
@@ -682,8 +684,7 @@ static void tstCollectionError(char *string, xsbBool cleanup_needed) {
  *  When we do succeed, we would like to record the subterm just
  *  consumed, but not any bindings created as a result of the match.
  *  In the code, we push a CPF before doing any of this recording.
- *  However, the log info is, in fact, saved.
- */
+ *  However, the log info is, in fact, saved.  */
 
 ALNptr tst_collect_relevant_answers(TSTNptr tstRoot, TimeStamp ts,
 				    int numTerms, CPtr termsRev) {
