@@ -434,7 +434,7 @@ multifile_query(ModName) :-
 	;	true).
  
  
-%% This version is used for load_dyn1 / load_dync1 only!
+%% This version is used for load_dyn1 only!
 read_and_assert(Dir) :-
 	read(Term1),
 	expand_term(Term1,Term2),
@@ -509,7 +509,8 @@ read_and_assert(IPort,Dir) :-
 	(Opsc =\= 0,\+'_$trie_asserted'(Term)
 	 ->	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
 		assert_code_to_buff(Term),
-		assert_buff_to_clref(Term,NArity,Prref,Dir,Index,Hashsize),
+		(Term = (Head:-_) -> true ; Head = Term),
+		assert_buff_to_clref(Head,NArity,Prref,Dir,Index,Hashsize),
 		fail
 	 ;	Prref=_,NArity=_,Index=_,Hashsize=_	 
 	),
