@@ -1,6 +1,8 @@
 
-:- import flcompile/1 from flrutils.
+%%:- import bootstrap_flora/0 from flora.
+%%?- bootstrap_flora.
 
+:- import flcompile/1 from flrutils.
 ?- flcompile(module2).
 
 :- import employee[salary@(number) => number] from module2.
