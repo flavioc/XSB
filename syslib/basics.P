@@ -23,6 +23,14 @@
 */
 
 
+/*----------------------------------------------------------------------*/
+/* NOTE: This file needs compilation with the "sysmod" option.  	*/
+/*----------------------------------------------------------------------*/
+
+:- compiler_options([sysmod]).
+
+/*----------------------------------------------------------------------*/
+
 % append! ta-da!
 append([],L,L).
 append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
@@ -42,22 +50,17 @@ flatten1([H|T],Flatlist,Flatout):-
 		; 	Flatlist = [H|Flatmid],
 			flatten1(T,Flatmid,Flatout).
 
+%---
+% ground/1 checks for ground term.
+
+ground(T) :- ground(T).
 
 %---
-% ground/1 checks for ground term (Prolog version at end of file).
-% This version uses function calls, and could be made somewhat more 
-% efficient via macros, if necessary.
-
-ground(T) :- fast_ground(T).
-
-
 % ith/3 that works both ways
 % ith(Index,List,Element)
 ith(Index,List,Element) :-
-	term_type(Index,T),
-	(T =:= 2		% integer
-	 ->	ith0(Index,List,Element)
-	 ;	ith1(List,1,Index,Element)
+	( integer(Index) -> ith0(Index,List,Element)
+	;   ith1(List,1,Index,Element)
 	).
 
 ith0(I,[X|L],Y) :-
@@ -87,7 +90,6 @@ length2(L,N) :-
 	 ;	N1 is N-1, L=[_|L1],
 		length2(L1,N1).
 
-
 %---
 % good ole member
 member(X,[X|_]).
@@ -105,11 +107,10 @@ reverse_acc([], Acc, Acc).
 reverse_acc([Head|Tail], Acc, Reversed) :-
 	reverse_acc(Tail, [Head|Acc], Reversed).
 
-
+%---
 % Some Prologs like to call this delete!
 select(Element, [Element|Rest_Elements], Rest_Elements).
 select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
 	select(Element, Rest_L1, Rest_L2).
-
 
 /* --------------------- end of file basics.P ------------------------- */

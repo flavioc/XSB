@@ -24,17 +24,14 @@
 */
 
 
-:- export consult/1, consult/2, '.'/2, 
-	  reconsult/1, reconsult/2,
+:- export consult/1, consult/2, '.'/2, reconsult/1, reconsult/2,
 	  compile/1, compile/2,
 	  load_dyn/1, load_dync/1, read_canonical/1,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,
-     	  real_search_module/4,
 	  cvt_canonical/2.
 
 :- local load_dyn_retracted/5, load_dyn_trie_retracted/1,
-	load_dyn_file_loaded/2,
-	load_dyn_pred_loaded/4, load_dyn_file/1.
+	 load_dyn_file_loaded/2, load_dyn_pred_loaded/4, load_dyn_file/1.
 
 :- import libpath/1 from loader.
 :- import compile/4 from compile.
@@ -49,7 +46,6 @@
 	  (=..)/2, writeln/1, write_canonical/1, tell/1,
 	  told/0, telling/1, functor/3, cputime/1
      from standard.
-
 :- import code_load/3, code_call/3, buff_byte/3, str_len/2,
 	  expand_filename/2, tilde_expand_filename/2, unload_seg/1,
 	  buff_word/3, assert_code_to_buff/2, assert_buff_to_clref/7,
@@ -57,21 +53,18 @@
 	  psc_prop/2, psc_tabled/2, psc_type/2, psc_name/2,
 	  psc_arity/2, slash/1
      from machine.
-
 :- import file_time/2, file_close/1 from file_io.
-
 :- import asserta/1, (dynamic)/1, retractall/1, assert/1, retract/1, t_assert/2
-	 from assert.
+     from assert.
 :- import warning/1, time_message/2 from auxlry.
 :- import append/3, memberchk/2 from basics.
 :- import default_assert_size/1
      from config.
 :- import '_$index'/3, '_$trie_asserted'/1 from file_op.
 :- import add_hilog_symbol/1 from hilogsym.
-:- import get_p_mod/3, change_multifile_directive/3,
-	open_or_cpp_file/2,
-	'_$multifile'/1, '_$multifile1'/1,
-	'_$multifile2'/3, '_$apply_arity'/1
+:- import get_p_mod/3, change_multifile_directive/3, open_or_cpp_file/2,
+	  '_$multifile'/1, '_$multifile1'/1,
+	  '_$multifile2'/3, '_$apply_arity'/1
      from parse.
 :- import conset/2, conget/2  from prof_sbp.
 :- import xsb_configuration/2 from xsb_configuration.

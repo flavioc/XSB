@@ -42,8 +42,7 @@ compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
 
 compile0(Path, Options) :-
 	atom(Path),
-	tilde_expand_filename(Path, Expanded_Path),
-	search_module(Expanded_Path, Dir, Mod, SExt, _HasObj, Base, _Obj),
+	search_module(Path, Dir, Mod, SExt, _HasObj, Base, _Obj),
 	obj_ext(OExt),
 	SExt \== OExt,
 	!,
@@ -84,21 +83,19 @@ reconsult(Path, Options) :-
 	; abort('Uninstantiated argument 1 of reconsult/[1,2], cannot reconsult!')
 	).
 
-reconsult0(user, Options) :- !, compile_load_user(Options).
-reconsult0(Path, Options) :- 
-	tilde_expand_filename(Path, Expanded_Path),
-        search_module(Expanded_Path, Dir, Mod, SExt, HasObj, Base, Obj),
-	!,
-	( (obj_ext(OExt), SExt \== OExt,
-	   i_want_compile(SExt, Base, Obj, HasObj))
-	 ->	compile_f(SExt, Base, Options, _ExList, Mod, Dir),
-		load_exec(Obj, Mod)
-	 ; 	load_exec(Obj, Mod)
+reconsult0(Path, Options) :-
+	( Path == user -> compile_load_user(Options)
+	; ( search_module(Path, Dir, Mod, SExt, HasObj, Base, Obj) ->
+	      (	  (obj_ext(OExt), SExt \== OExt,
+		      i_want_compile(SExt, Base, Obj, HasObj))
+	      ->  compile_f(SExt, Base, Options, _ExList, Mod, Dir),
+		  load_exec(Obj, Mod)
+	      ;	  load_exec(Obj, Mod)
+	      )
+	  ; file_write0(STDERR, 'Cannot find the file/module '),
+	    file_write0(STDERR, Path), file_nl(STDERR), fail
+	  )
 	).
-
-reconsult0(Path, _) :-
-        file_write0(STDERR, 'Cannot find the file/module '),
-        file_write0(STDERR, Path), file_nl(STDERR), fail.
 
 i_want_compile(SExt, Base, Obj, HasObj) :-
 	( HasObj =:= 0 -> true ; needs_recompile(SExt, Base, Obj) ).
@@ -169,31 +166,32 @@ needs_recompile(CH_c, Base, Obj) :-
 
 %% This whole piece is buggy and will choke on unusual file names
 %% Needs to be thrown out and redone using str_sub and such. -mk
-search_module(Name, Dir, Mod, SExt, HasObj, Base, Obj) :-
+search_module(FileName, Dir, Mod, SExt, HasObj, Base, Obj) :-
+	tilde_expand_filename(FileName, Name),
 	str_len(Name, Len),
-	search_slash(Name, Len, Slash), % If Slash =:= -1 no slash is found
-	Loc1 is Len - 2,	   % The following is obviously a non-general
-	buff_byte(Name, Loc1, B1), % way of searching for the '.?' suffix
+	search_slash(Name, Len, Slash), %% If Slash =:= -1 no slash is found
+	Loc1 is Len - 2,	   %% The following is obviously a non-general
+	buff_byte(Name, Loc1, B1), %% way of searching for the '.?' suffix
 	( B1 =:= CH_DOT -> Dot = Loc1 ; Dot = Len ),
-	( Slash < 0, Dot =:= Len ->  % only a base name
+	( Slash < 0, Dot =:= Len ->  %% only a base name
 		Mod = Name, real_search_module(Mod, Dir, Base, SExt)
-	  ;	% is a full file name
-	    ( Dot =:= Len -> 
-		% if the file name has no extension first check for the
-		% existence of the file with the extension.
+	;	%% is a full file name
+	  ( Dot =:= Len -> 
+		%% if the file name has no extension first check for
+		%% the existence of the file with the extension.
 		( str_cat(Name, '.P', PName), file_exists(PName), SExt = CH_P
 		; str_cat(Name, '.c', PName), file_exists(PName), SExt = CH_c
 		; file_exists(Name), SExt = CH_x
 		; obj_ext(OExt), str_cat(Name, OExt, PName),
 		  file_exists(PName), SExt = OExt
 		)
-	  %% fle with extension
+	  %% file with extension
 	  ; file_exists(Name), Loc3 is Len - 1, buff_byte(Name, Loc3, Ext),
 	    ( memberchk(Ext, [CH_P,CH_c,CH_O]) -> SExt = Ext ; SExt = CH_x )
 	  ),
 	  %% just the base name
 	  ( Slash < 0 -> 
-	        slash(Slash_chr),  % get the OS-appropriate slash: / or \.
+	        slash(Slash_chr),  %% get the OS-appropriate slash: / or \.
     	    	str_cat('.', Slash_chr, Dir),
 		( SExt =:= CH_x -> Mod = Name
 		; str_substring(Name, 0, Dot, Mod)
@@ -310,18 +308,22 @@ load_dyn(File) :-
 	 ->	true
 	 ;	warning('Wrong type in argument 1 of load_dyn/1'),fail
 	),
-	tilde_expand_filename(File,Filename),
-	get_fname(Filename,SExt,Base),
-	load_dyn0(SExt,Base).
+	get_fname(File,SExt,Base,Mod),
+	load_dyn0(SExt,Base,Mod).
 
-load_dyn0(SExt,Base) :-
+get_fname(Filename,SExt,Base,Mod) :-
+	( search_module(Filename,_Dir,Mod,SExt,_HasObj,Base,_Obj) -> true
+	; warning('Cannot find file'(Filename)), fail
+	).
+
+load_dyn0(SExt,Base,Mod) :-
 	(SExt == CH_x	% no suffix
-	 ->	init_for_load(Base),
+	 ->	init_for_load(Base,Mod),
 		load_dyn1(Base),
 		cleanup_for_load
 	 ; 	tran_ext(SExt,Suff),
 	 	str_cat(Base, Suff, Rfname),
-		init_for_load(Rfname),
+		init_for_load(Rfname,Mod),
 		(SExt == CH_P
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
@@ -360,12 +362,6 @@ load_dyn1(Rfname) :-
 	conget(needs_restart,1), conset(needs_restart, 0),
 	load_dyn1(Rfname).
 
-	
-get_fname(Filename,SExt,Base) :-
-	search_module(Filename,_Dir,_Mod,SExt,_HasObj,Base,_Obj), !.
-get_fname(Filename,_SExt,_Base) :-
-	warning('Cannot find file'(Filename)),
-	fail.
 
 :- dynamic load_dyn_trie_retracted(_).
 :- dynamic load_dyn_retracted(_,_,_,_,_).
@@ -374,7 +370,7 @@ get_fname(Filename,_SExt,_Base) :-
 :- dynamic load_dyn_file(_).
 :- dynamic load_dyn_module(_).
 
-init_for_load(Filename) :-
+init_for_load(Filename,Mod) :-
 	conset(needs_restart, 0), conset(cpp_on, 0), % Cleanup before CPP
 	file_time(Filename,time(Time1,Time2)),
 	retractall(load_dyn_file_loaded(Filename,_)),
@@ -383,7 +379,6 @@ init_for_load(Filename) :-
 	retractall(load_dyn_retracted(_,_,_,_,_)),
 	assert(load_dyn_file(Filename)),
 	retractall(load_dyn_pred_loaded(Filename,_,_,_)),
-	search_module(Filename,_Dir,Mod,_SExt,_HasObj,_Base,_Obj),
 	assert(load_dyn_module(Mod)).
 
 cleanup_for_load :-
@@ -455,18 +450,17 @@ load_dync(File) :-
 	 ->	true
 	 ;	warning('Wrong type in argument 1 of load_dync/1'),fail
 	),
-	tilde_expand_filename(File,Filename),
-	get_fname(Filename,SExt,Base),
-	load_dync0(SExt,Base).
+	get_fname(File,SExt,Base,Mod),
+	load_dync0(SExt,Base,Mod).
 
-load_dync0(SExt,Base) :-
+load_dync0(SExt,Base,Mod) :-
 	(SExt == CH_x	% no suffix
-	 ->	init_for_load(Base),
+	 ->	init_for_load(Base,Mod),
 		load_dync1(Base),
 		cleanup_for_load
 	 ; 	tran_ext(SExt,Suff),
 	 	str_cat(Base, Suff, Rfname),
-		init_for_load(Rfname),
+		init_for_load(Rfname,Mod),
 		(SExt == CH_P
 		 ->	str_cat(Base, '.H', Hfname),
 			(file_exists(Hfname)
@@ -567,7 +561,6 @@ do_assert_and_fail(Term) :-	% Now Term is the output of
 		),
 		t_assert(Term, _Flag)
 
-		
 	;
 		(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
 		 ->	true

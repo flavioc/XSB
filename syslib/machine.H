@@ -86,7 +86,6 @@
 	sys_errno/1, 
 	file_stat/3,
 	file_writequoted/2,
-	fast_ground/1,
         intern_string/2,
  	psc_env/2, 
 	psc_spy/2, 

@@ -31,7 +31,6 @@
 
 #include "builtin.h"
 
-
 /*----------------------------------------------------------------------*/
 
 subsumptive( [] ) :- !.
@@ -72,12 +71,6 @@ tnot(X) :-
 	get_ptcp(PTCP), get_subgoal_ptr(X, SubgPtr),
 	( SubgPtr =:= 0, tcall(X), fail
 	; is_incomplete(X, SubgPtr, PTCP, Subg), slg_not(Subg)
-	).
-
-etnot(X) :-
-	get_ptcp(PTCP), get_osp_breg(Os, Breg),
-	( call(X), cut_if_leader(X, Os, Breg), fail
-	; is_incomplete(X, 0, PTCP, Subg), slg_not(Subg)
 	).
 
 /*----------------------------------------------------------------------*/

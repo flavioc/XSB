@@ -118,7 +118,6 @@ sys_errno(_Errno) :- sys_errno(_Errno).
 
 file_stat(_File, _Which, _RetVal) :- file_stat(_File, _Which, _RetVal).
 file_writequoted(_File, _Term) :- file_writequoted(_File, _Term).
-fast_ground(_Term) :- fast_ground(_Term).
 
 intern_string(_Str,_InternedStr) :- '_$builtin'(INTERN_STRING).
 expand_filename(_FileName, _ExpandedFileName) :- '_$builtin'(EXPAND_FILENAME).
@@ -132,8 +131,7 @@ psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
 
 is_incomplete(_Tab, _SubgoalPtr, _PTCP, _SubgoalFrame) :-
 	'_$builtin'(IS_INCOMPLETE).
-get_osp_breg(_Osp,_Breg):- '_$builtin'(GET_OSP_BREG).
-cut_if_leader(_Call,_Osp,_Breg):- '_$builtin'(CUT_IF_LEADER).
+
 get_ptcp(_PTCP) :- '_$builtin'(GET_PTCP).
 get_subgoal_ptr(Term, SubgoalPtr) :- get_subgoal_ptr(Term, SubgoalPtr).
 dereference_the_bucket(Pair_Pointer, Pair) :-
@@ -209,8 +207,8 @@ is_charlist(List) :- is_charlist(List, _).
 
 conname(Con, Name) :-
 	term_type(Con, Type),
-	( Type =:= CS -> term_psc(Con, Psc), psc_name(Psc, Name)
-	; Type =:= STRING -> Name = Con
+	( Type =:= STRING -> Name = Con
+	; Type =:= CS -> term_psc(Con, Psc), psc_name(Psc, Name)
 	).
 
 conpsc(Con, Psc) :-
