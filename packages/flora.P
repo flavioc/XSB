@@ -29,11 +29,6 @@
 :- import bootstrap_package/2, package_configuration/2 from packaging.
 :- import '_$_$_flora_shell'/0 from usermod.
 :- import slash/1 from machine.
-:- import flconsult/1, flconsult/2,
-	flload/1, dynload/1,
-	dyncompile/1, dyncompile/2,
-	dynconsult/1, dynconsult/2
-   from flrutils.
 
 :- export bootstrap_flora/0, flora_shell/0.
 
