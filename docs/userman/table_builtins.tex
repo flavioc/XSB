@@ -25,19 +25,19 @@ referred to~\cite{RRSSW98,TST99,CuSW99b}.
 
 For our purposes, a table can be seen as a set of entry triples $\langle
 S,\cA,Status \rangle$ where $S$ is a subgoal, $\cA$ is its associated
-answer set, and $Status$ its status~---~whether it is complete or
-incomplete.  In terms of implementation, ``the table'' is actually a
-set of minitables, each one containing entries for a particular
-predicate.  Hence, we may refer to the table containing entries for
-some predicate \code{p/n} as ``the table for \code{p/n}.''  Further
-recall that a particular predicate may be evaluated according to
+answer set, and $Status$ its status~---~whether it is \texttt{complete}
+or \texttt{incomplete}.  In terms of implementation, ``the table'' is
+actually a set of minitables, each one containing entries for a
+particular predicate.  Hence, we may refer to the table containing
+entries for some predicate \code{p/n} as ``the table for \code{p/n}.''
+Further recall that a particular predicate may be evaluated according to
 either a variant or subsumptive strategy as chosen by the user.
-Invocation of a call during an evaluation leads to the classification
-of the call, as well as its possible insertion into the table.  A call
-is classified as either a \emph{generator}, or \emph{producer}, of an
-answer set or a \emph{consumer} of an answer set of some subgoal in
-the table.  Creation of a table entry relies not only on the call and
-the subgoals already present in the table, but upon the tabling
+Invocation of a call during an evaluation leads to the classification of
+the call, as well as its possible insertion into the table.  Each call
+can be classified as either (a) a \emph{generator}, or \emph{producer},
+of an answer set, or (b) a \emph{consumer} of the answer set of some
+subgoal in the table.  Creation of a table entry relies not only on the
+call and the subgoals already present in the table, but upon the tabling
 strategy as well.  We note that a table constructed using a
 subsumption-based strategy may hence contain a producing subgoal which
 is subsumed by another.  Under certain circumstances, it is also

@@ -70,7 +70,7 @@ tnot/1}).
 
 %=====================================================================
 
-\section{Tabling in Definite Programs}
+\section{Definite Programs}
 \label{sec:def}
 
 Definite programs, also called \emph{Horn Clause Programs}, are those
@@ -165,8 +165,6 @@ XSB\@.  It was used in the original formulation of SLG resolution
 the well-founded semantics and interacts well with many of Prolog's
 extra-logical constructs.
 
-%TLS: changes made to make notation a little more consistent with rest
-%of chapter.
 Under variant-based tabling, when a tabled call $C$ is made, a search
 for a table entry containing a variant subgoal $S$ is performed.  Notice
 that if such an $S$ should exist, then \emph{all} of its answers are
@@ -178,7 +176,7 @@ $A$ already present in $\cA$\@.  The insertion of $A$, therefore,
 leads to the return of $A$ to consumers of $S$\@.  However, the return
 of only the most general answers to a consumer, referred to as
 \emph{answer subsumption}, can be flexibly programmed as discussed in
-Section~\ref{sec:table-aggregation}\footnote{We also note that the
+Section~{\ref{sec:table-aggregation}}\footnote{We also note that the
 library {\sf subsumes} contains routines for checking variance and
 subsumption.}.
 
@@ -186,36 +184,40 @@ subsumption.}.
 
 \paragraph{Subsumption-Based Tabled Evaluation}
 \index{tabling!subsumption-based}
-The second measure determines whether one term subsumes another.  A
-term $t_1$ \emph{subsumes} a term $t_2$ if $t_2$ is an instance of
-$t_1$.  Furthermore, we say that $t_1$ \emph{properly subsumes} $t_2$
-if $t_2$ is not a variant of $t_1$.  Under subsumption-based tabling,
-when a tabled call $C$ is issued, a search is made for a table entry
-containing a subsuming subgoal $S$\@.  Notice that the answer set $\cA$
-for $S$ contains all the solutions to satisfy $C$\@.  If such an $S$
-should exist, then the subset of answers for $S$ which unify with, or
-are \emph{relevant to}, $C$ are resolved against it.  Likewise, upon
-the derivation of an answer $A$ for a producing subgoal $S$, $A$ is
-inserted into the answer set $\cA$ of $S$ if and only if $A$ is not
-subsumed by some answer $A'$ already present in $A$\@.
 
-Notice that subsumption-based tabling permits greater reuse of
-computed results, thus avoiding even more program resolution, and
-thereby can lead to time and space performances superior to
-variant-based tabling.  However, there is a downside to this paradigm.
-First of all, subsumptively tabled predicates do not interact well
-with certain Prolog constructs with which variant-tabled predicates
-can (see Example~\ref{example:sub-fail} below).  Further, in the
-current implementation of subsumption-based tabling, subsumptive
-predicates may not take part in negative
-computations.\index{tabling!subsumption-based!interaction with negation}
+The second measure determines whether one term subsumes another.  A term
+$t_1$ \emph{subsumes} a term $t_2$ if $t_2$ is an instance of $t_1$.
+Furthermore, we say that $t_1$ \emph{properly subsumes} $t_2$ if $t_2$
+is not a variant of $t_1$.  Under subsumption-based tabling, when a
+tabled call $C$ is issued, a search is performed for a table entry
+containing a subsuming subgoal $S$\@.  Notice that, if such an entry
+exists, then its answer set $\cA$ logically contains all the solutions
+to satisfy $C$\@.  The subset of answers $\cA' \in \cA$ which unify with
+$C$ are said to be \emph{relevant to} $C$\@.  Likewise, upon the
+derivation of an answer $A$ for a producing subgoal $S$, $A$ is inserted
+into the answer set $\cA$ of $S$ if and only if $A$ is not subsumed by
+some answer $A'$ already present in $\cA$\@.
+
+Notice that subsumption-based tabling permits greater reuse of computed
+results, thus avoiding even more program resolution, and thereby can
+lead to time and space performances superior to variant-based tabling.
+However, there is a downside to this paradigm.  First of all,
+subsumptively tabled predicates do not interact well with certain Prolog
+constructs with which variant-tabled predicates can (see
+Example~\ref{example:sub-fail} below).  Further, in the current
+implementation of subsumption-based tabling, subsumptive predicates may
+not take part in negative computations which result in the \emph{delay}
+\index{tabling!subsumption-based!interaction with negation} of a literal
+containing a subsumptive subgoal (see \refsec{sec:CurrentRestrictions}).
+This requires subcomputations in which subsumptive predicates
+take part to be LRD-stratified.
 
 \begin{example}
 The terms $t_1$: {\tt p(f(Y),X,1)} and $t_2$:~{\tt p(f(Z),U,1)} are
 \emph{variants} as one can be made to look like the other by a
-renaming of the variables.  Therefore, each subsumes the other. \\
+renaming of the variables.  Therefore, each \emph{subsumes} the other. \\
 \noindent The term $t_3$: {\tt p(f(Y),X,1)} \emph{subsumes} the term
-$t_4$:~{\tt p(f(Z),Z,1)}.  However, they are not variants.  Hence
+$t_4$:~{\tt p(f(Z),Z,1)}.  However, they are \emph{not variants}.  Hence
 $t_3$ \emph{properly subsumes}~$t_4$.\fillBox
 \end{example}
 
@@ -364,15 +366,15 @@ Notice that this time the table has not changed!  Only a single entry
 is present, that for the original query \code{p(X,Y)}.
 \end{exercise}
 %
-When using subsumption-based tabling, XSB is able to recognize a
-greater range of ``redundant'' queries and thereby make greater use of
-previously computed answers.  The result is that less program
-resolution is performed and less redundancy is present in the table.
-However, subsumption is not a panacea.  The elimination of redundant
-answers depends upon the presence of a subsuming subgoal in the table
-when the call to \code{p(1,5)} is made.  If the order of these queries
-were reversed, the table would be as it was under variant-based
-evaluation.
+When using subsumption-based tabling, XSB is able to recognize a greater
+range of ``redundant'' queries and thereby make greater use of
+previously computed answers.  The result is that less program resolution
+is performed and less redundancy is present in the table.  However,
+subsumption is not a panacea.  The elimination of redundant answers
+depends upon the presence of a subsuming subgoal in the table when the
+call to \code{p(1,5)} is made.  If the order of these queries were
+reversed, one would find that the same entries would be present in this
+table as the one constructed under variant-based evaluation.
 
 \index{tabling!dynamic predicates}
 \begin{exercise}
@@ -498,12 +500,12 @@ are posed.  Let us compare the outcome of these queries when
 \code{p/1} is (1)~a Prolog predicate, (2)~a variant-tabled predicate,
 and (3)~a subsumptive-tabled predicate.
 
-Both Prolog and variant-based tabling yield the same solutions:
-\code{X = a}\, and\, \code{no}, respectively.  Under subsumption-based
-tabling, the query \verb|?-|$\;$\code{p(X).} likewise results in the
-solution \code{X = a}.  However, the query \verb|?-|$\;$\code{p(a).}
-is subsumed by the tabled subgoal \code{p(X)}, entered into the table
-when the first query was issued, resulting in the incorrect answer
+Both Prolog and variant-based tabling yield the same solutions: \code{X
+= a}\, and\, \code{no}, respectively.  Under subsumption-based tabling,
+the query \verb|?-|$\;$\code{p(X).} likewise results in the solution
+\code{X = a}.  However, the query \verb|?-|$\;$\code{p(a).}  is subsumed
+by the tabled subgoal \code{p(X)}~---~which was entered into the table
+when that query was issued~---~resulting in the incorrect answer
 \code{yes}.\fillBox
 \end{example}
 %
@@ -593,8 +595,7 @@ behavior intuitive or not?\fillBox
 
 %=====================================================================
 
-\section{Stratified Normal Programs}
-\index{negation!stratified}
+\section{Normal Programs}
 
 Normal programs extend definite programs to include default negation,
 which posits a fact as false if all attempts to prove it fail.  As
@@ -608,7 +609,8 @@ well-founded semantics} and it is this semantics that XSB adopts for
 negation (we note that in \version{} the well-founded semantics is
 implemented only for variant-based tabling).
 
-\paragraph*{The Intuition behind Stratified Programs}
+\subsection{Stratified Normal Programs}
+\index{negation!stratified}
 
 Before considering the full well-founded semantics, we discuss how XSB
 can be used to evaluate programs with {\em stratified negation}.

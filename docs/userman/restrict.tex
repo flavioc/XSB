@@ -11,6 +11,7 @@ together with a script that shows the problem.  We will do our best to
 fix it or to assist you to bypass it.
 
 \section{Current Restrictions}
+\label{sec:CurrentRestrictions}
 
 \begin{itemize}
 \item The maximum arity for predicate and function symbols is 255.
@@ -56,9 +57,20 @@ implemented in XSB, the semantics
       though we will try to amend this restriction in future versions of
       XSB.
 %
-\item Subsumption-based tabled predicates may not take part in
-      negative computations.  This restriction will be lifted in a
-      future release.
+\item Subsumption-based tabled predicates may not be \emph{delayed}.
+      \index{tabling!subsumption-based!interaction with negation}
+      Consequently,
+      \begin{itemize}
+      \item the truth value of a negative call on a subsumptive predicate
+	    must be known at completion of the producing call, thus
+	    avoiding a \emph{negative delay} of this negative call, and
+      \item only unconditional answers may be derived for a subsumptive
+	    predicate, thus avoiding the \emph{positive delay} of calls
+	    which consume such an answer.
+      \end{itemize}
+      Violations of either of these conditions raise an exception and
+      abort the computation.
+%
 \end{itemize}
 
 \section{Known Bugs}
