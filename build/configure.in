@@ -1701,10 +1701,6 @@ AC_SUBST(xsb_obj_extension)
 AC_SUBST(xsb_asm_extension)
 AC_SUBST(xsb_dcl_extension)
 
-topdir_base=/`basename $topdir`
-topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
-AC_SUBST(topdir_wind)
-
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
         ${arch_config_prefix}/emuMakefile:emuMakefile.in
         ${arch_config_prefix}/modMakefile:modMakefile.in
@@ -1716,7 +1712,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
         ${emudir}/extensions_xsb.h:extensions_xsb.in
         ${scriptdir}/xsb${config_tag}:xsb.in
         ${scriptdir}/chr_pp${config_tag}:chr_pp.in
-        ${scriptdir}/wxsb.bat:wxsb.in
+        ${scriptdir}/xsb.bat:wxsb.in
         ${arch_config_prefix}/banner.msg:banner.in
         ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
         ${prefix}/packages/xmc/xmc-gui:xmc-gui.in

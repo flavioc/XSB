@@ -2,8 +2,6 @@
 REM Script for running XSB when built natively on Windows
 REM @configure_input@
 
-@topdir_wind@\config\x86-pc-windows\bin\xsb %1 %2 %3 %4 %5 %6 %7
+set BINDIR=%0\..\..
 
-REM Local Variables:
-REM coding-system-for-write:  iso-2022-7bit-dos
-REM End:
+%BINDIR%\config\x86-pc-windows\bin\xsb %1 %2 %3 %4 %5 %6 %7

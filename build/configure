@@ -4226,10 +4226,6 @@ xsb_dcl_extension=.$xsb_dcl_extension_sans_dot
 
 
 
-topdir_base=/`basename $topdir`
-topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
-
-
 trap '' 1 2 15
 cat > confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -4342,7 +4338,7 @@ trap 'rm -fr `echo " ${arch_config_prefix}/topMakefile:topMakefile.in
         ${emudir}/extensions_xsb.h:extensions_xsb.in
         ${scriptdir}/xsb${config_tag}:xsb.in
         ${scriptdir}/chr_pp${config_tag}:chr_pp.in
-        ${scriptdir}/wxsb.bat:wxsb.in
+        ${scriptdir}/xsb.bat:wxsb.in
         ${arch_config_prefix}/banner.msg:banner.in
         ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
         ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
@@ -4467,7 +4463,6 @@ s%@xsb_hdr_extension@%$xsb_hdr_extension%g
 s%@xsb_obj_extension@%$xsb_obj_extension%g
 s%@xsb_asm_extension@%$xsb_asm_extension%g
 s%@xsb_dcl_extension@%$xsb_dcl_extension%g
-s%@topdir_wind@%$topdir_wind%g
 
 CEOF
 EOF
@@ -4520,7 +4515,7 @@ CONFIG_FILES=\${CONFIG_FILES-"${arch_config_prefix}/topMakefile:topMakefile.in
         ${emudir}/extensions_xsb.h:extensions_xsb.in
         ${scriptdir}/xsb${config_tag}:xsb.in
         ${scriptdir}/chr_pp${config_tag}:chr_pp.in
-        ${scriptdir}/wxsb.bat:wxsb.in
+        ${scriptdir}/xsb.bat:wxsb.in
         ${arch_config_prefix}/banner.msg:banner.in
         ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
         ${prefix}/packages/xmc/xmc-gui:xmc-gui.in
