@@ -97,7 +97,7 @@ releaseRT(ID, Token, NewToken) :-
 		 resetbit(RTMode, ID, NewRTMode),
 		 NewToken = token(ServingRT, NewRTMode, NewRTSlots,
 				  NRTAvail, NextNRT))
-	,	NewToken = Token).
+	;	NewToken = Token).
 
 findNextNodeRT(ID,Token,Next,NewToken) :-
 	Token = token(_ServingRT, RTMode, RTSlots, NRTAvail, NextNRT),
@@ -189,8 +189,11 @@ starter(Port) ::=
 	end.
 
 rether ::=
-	{starter(Port) | node(Port,0) | node(Port,1) 
-         | node(Port,2) | node(Port,3) | node(Port,4)}.
+	  starter(Port)
+	| node(Port,0)
+	| node(Port,1) 
+        | node(Port,2)
+	| node(Port,3).
 
 %%----------------------------------------------------------------------
 %	Boolean array arithmetics
