@@ -273,8 +273,11 @@ deb_traceget(N,Spy,Type,Call,C) :-
 
 debug_display_call(Call) :- (debug_display_call_hook(Hook)
 			    	-> Invocation =.. [Hook, Call],
-				   call(Invocation)
-			    	; ll_write(Call)
+				    %% Prevent backtracking through 
+				    %% the print function hook: succeed 
+				    %% even if the print function doesn't.
+				   (call(Invocation) -> true; true)
+			    	;  ll_write(Call)
 			    ).
 
 leashable('Call').
