@@ -206,11 +206,7 @@ do_cleaning:
 	@echo "" >> ./Installation_summary
 	@cp ./Installation_summary $(src_config_prefix)
 	@echo ""
-	@cat /tmp/xsb_*lib_warn 2> /dev/null | \
-			tee -a Installation_summary
-	@cat /tmp/*match_warn 2> /dev/null | \
-			tee -a Installation_summary
-	@cat /tmp/flora_*_warn 2> /dev/null | \
+	@cat $(srcdir)/build/.*.tmp 2> /dev/null | \
 			tee -a Installation_summary
 
 inform_executable:
