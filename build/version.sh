@@ -1,7 +1,7 @@
 #! /bin/sh
 
 xsb_major_version=2
-xsb_minor_version=7
+xsb_minor_version=7.1
 #xsb_beta_version=0
 #xsb_codename="Skol"        # for Version 2.1
 #xsb_codename="Tsingtao"    # for Version 2.2
@@ -13,4 +13,4 @@ xsb_codename="Kinryo"       # 2.7 Jonah's friend's uncle's sake'
 
 # Format: YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
 # With this, XSB should become Y2K compliant :-)
-xsb_release_date=2005-01-04
+xsb_release_date=2005-03-05
