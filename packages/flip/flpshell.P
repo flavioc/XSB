@@ -138,10 +138,12 @@ gen_code(Module, Force) :-
 	open_output(InFileL),
 	package_configuration(dir(flip), FlipDir),
 	slash(Slash),
+	%% prepend tabling directives
 	fmt_write_string(Header,
 			 '%s%slib%sflpheader.P', f(FlipDir,Slash,Slash)),
 	copy_to_output(Header),
 	comp_all,
+	%% append the closure rules for ISA, inheritance, Functional methods
 	fmt_write_string(Trailer,
 			 '%s%slib%sflptrailer.P', f(FlipDir,Slash,Slash)),
 	copy_to_output(Trailer),

@@ -1,8 +1,10 @@
-/*** lib/header:    Prepended automatically using etc/header.P   ************/
+/****** lib/flpheader.P:  Prepended automatically by the FLIP compiler ******/
 
-%:- table_all.  
-%:- auto_table.
-%:- ti_all.
+%% Table all predicates used in FLIP programs
+:- auto_table.
 
-/************************* End of Header ************************************/
+%% Use unification factoring
+:- ti_all.
+
+/************************** End of Header ***********************************/
 
