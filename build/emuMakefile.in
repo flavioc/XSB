@@ -87,6 +87,7 @@ SRCS =	auxlry.c biassert.c builtin.c \
 	load_seg.c  loader.c  memory.c \
 	xpathname.c \
 	psc.c  residual.c  scc.c     \
+	self_orientation.c 	\
 	slgdelay.c  subp.c  system.c \
 	token.c  tr_utils.c  trace.c \
 	tries.c   xmain.c  xsberror.c
@@ -103,6 +104,7 @@ OBJS = auxlry.o  biassert.o  builtin.o \
 	load_seg.o  loader.o  memory.o \
 	xpathname.o \
 	psc.o  residual.o  scc.o     \
+	self_orientation.o 	\
 	slgdelay.o  subp.o  system.o \
 	token.o  tr_utils.o  trace.o \
 	tries.o  xsberror.o
