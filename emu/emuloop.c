@@ -63,8 +63,20 @@ Cell	CallNumVar;
 NODEptr TrieRetPtr;
 ALPtr   OldRetPtr;
 CPtr	VarPosReg;
+/*
+ * Variables ans_var_pos_reg is a pointer to substitution factor of an
+ * answer in the heap.  It is used and set in function
+ * variant_trie_search().  The name of this variable is from VarPosReg, a
+ * variable used in variant_call_search() to save the substitution factor
+ * of the call.
+ */
+CPtr	ans_var_pos_reg;
 
 extern tab_inf_ptr UglyHackForTip;
+
+#ifdef DEBUG
+extern void printterm(Cell, byte, int);
+#endif
 
 /*----------------------------------------------------------------------*/
 
