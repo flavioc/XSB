@@ -38,7 +38,7 @@
 #include "memory.h"
 #include "psc.h"
 #include "xsberror.h"
-
+#include "heap.h"
 #include "binding.h"
 #include "subp.h"
 #include "flags.h"
