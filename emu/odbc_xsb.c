@@ -22,7 +22,7 @@
 ** 
 */
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 
 #ifdef WIN_NT
 #include <windows.h>

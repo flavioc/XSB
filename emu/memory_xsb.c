@@ -37,8 +37,8 @@
 /*======================================================================*/
 
 /* xsb_config.h must be the first #include.  Please don't move it. */
-#include "configs/xsb_config.h"    /* needed by "cell_xsb.h" */
-#include "debugs/xsb_debug.h"
+#include "xsb_config.h"    /* needed by "cell_xsb.h" */
+#include "xsb_debug.h"
 
 
 #include <stdio.h>

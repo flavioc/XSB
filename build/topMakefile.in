@@ -151,10 +151,7 @@ vfast: prepare emu emu_clean
 
 prepare:
 	@cd $(src_emudir); \
-	  rm -f *.o Makefile \
-	    configs/xsb_config.h debugs/xsb_debug.h 2> /dev/null || echo "" ; \
-	  ln -s ${src_config_prefix}/xsb_config.h configs ; \
-	  ln -s ${src_config_prefix}/xsb_debug.h debugs ; \
+	  rm -f *.o Makefile  2> /dev/null || echo "" ; \
 	  ln -s ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
 	  ln -s ${src_config_prefix}/emuMakefile ./Makefile
 	@cd $(srcdir)/gpp; \

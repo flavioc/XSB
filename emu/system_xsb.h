@@ -27,7 +27,7 @@
 extern int    fileno(FILE *f);	        /* this is defined in POSIX */
 #endif
 
-/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
+/* In WIN_NT, this gets redefined into _fdopen by wind2unix.h */
 extern FILE *fdopen(int fildes, const char *type);
 
 #ifndef WIN_NT

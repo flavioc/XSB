@@ -24,8 +24,8 @@
 */
 
 
-#include "configs/xsb_config.h"
-#include "debugs/xsb_debug.h"
+#include "xsb_config.h"
+#include "xsb_debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,7 +81,7 @@
 #ifndef fileno				/* fileno may be a  macro */
 extern int    fileno(FILE *f);	        /* this is defined in POSIX */
 #endif
-/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
+/* In WIN_NT, this gets redefined into _fdopen by wind2unix.h */
 extern FILE *fdopen(int fildes, const char *type);
 
 

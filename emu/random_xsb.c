@@ -37,7 +37,7 @@
  *     (1985), 198--200.
  */
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 #include "cell_xsb.h"
 #include "cinterf.h"
 #include "deref.h"

@@ -24,7 +24,7 @@
 
 
 #include "libwww_util.h"
-#include "libwww_request.h"
+#include "libwww_req.h"
 #include "deref.h"
 
 

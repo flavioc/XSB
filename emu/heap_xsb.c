@@ -87,9 +87,9 @@ Todo:
 
 ****************************************************************************/
 
-/* configs/xsb_config.h must be the first #include. Pls don't move it. */
-#include "configs/xsb_config.h"
-#include "debugs/xsb_debug.h"
+/* xsb_config.h must be the first #include. Pls don't move it. */
+#include "xsb_config.h"
+#include "xsb_debug.h"
 
 #include <string.h>
 #include <stdlib.h>

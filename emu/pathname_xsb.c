@@ -22,8 +22,8 @@
 ** 
 */
 
-#include "configs/xsb_config.h"
-#include "debugs/xsb_debug.h"
+#include "xsb_config.h"
+#include "xsb_debug.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -39,8 +39,8 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-/* special.h must be included after sys/stat.h */
-#include "configs/special.h"
+/* wind2unix.h must be included after sys/stat.h */
+#include "wind2unix.h"
 #include "export.h"
 
 #if (!defined(WIN_NT))

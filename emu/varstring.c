@@ -59,9 +59,9 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 
-#include "configs/special.h"
+#include "wind2unix.h"
 
 #include "auxlry.h"
 #include "cell_xsb.h"

@@ -1,4 +1,4 @@
-/* File:      libwww_request.h
+/* File:      libwww_req.h
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -23,6 +23,8 @@
 */
 
 /* included defs for libwww_request.c only */
+/* this file is named libwww_req.h instead of libwww_request.h to avoid
+   conflict with libwww_request.H on windows, which is case-blind */
 
 
 

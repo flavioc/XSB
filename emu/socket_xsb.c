@@ -22,8 +22,8 @@
 ** 
 */
 
-#include "configs/xsb_config.h"
-#include "debugs/xsb_debug.h"
+#include "xsb_config.h"
+#include "xsb_debug.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -33,8 +33,8 @@
 #include <sys/stat.h>
 #include <signal.h>
 
-/* special.h must be included after sys/stat.h */
-#include "configs/special.h"
+/* wind2unix.h must be included after sys/stat.h */
+#include "wind2unix.h"
 
 /* The socket material */
 
@@ -65,7 +65,7 @@
 #include "timer_xsb.h"
 
 
-/* In WIN_NT, this gets redefined into _fdopen by configs/special.h */
+/* In WIN_NT, this gets redefined into _fdopen by wind2unix.h */
 extern FILE *fdopen(int fildes, const char *type);
 
 int retcode; /* return code from socket operation */

@@ -25,7 +25,7 @@
 #ifndef __EXPORT_H__
 #define __EXPORT_H__
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 
 #ifdef XSB_DLL
 #define DllExport __declspec(dllexport)

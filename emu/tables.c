@@ -23,8 +23,8 @@
 */
 
 
-#include "configs/xsb_config.h"
-#include "debugs/xsb_debug.h"
+#include "xsb_config.h"
+#include "xsb_debug.h"
 
 #include "debugs/debug_tables.h"
 #include "debugs/debug_delay.h"

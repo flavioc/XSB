@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 #include "cell_xsb.h"
 #include "flags_xsb.h"
 #include "error_xsb.h"

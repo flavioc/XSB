@@ -1,13 +1,8 @@
+@echo off
 REM   makexsb_wind.bat
 REM   Script for compiling XSB under Windows using VC++
 
-del ..\emu\configs\xsb_config.h
-del ..\emu\debugs\xsb_debug.h
-
 set XSBCONFIGdir=..\config\x86-pc-windows
-
-copy %XSBCONFIGdir%\xsb_config.h  ..\emu\configs
-copy %XSBCONFIGdir%\xsb_debug.h   ..\emu\debugs
 
 mkdir %XSBCONFIGdir%\saved.o
 mkdir %XSBCONFIGdir%\bin
@@ -16,16 +11,16 @@ mkdir %XSBCONFIGdir%\lib
 
 @cd ..\emu
 
-REM Concatenate config\MSVC_Makefile.mak & MSVC.dep into emu\MSVC_Makefile.mak
-copy %XSBCONFIGdir%\MSVC_Makefile.mak+%XSBCONFIGdir%\MSVC.dep MSVC_Makefile.mak
+REM Concatenate MSVC_mkfile.mak & MSVC.dep into emu\MSVC_mkfile.mak
+copy %XSBCONFIGdir%\MSVC_mkfile.mak+%XSBCONFIGdir%\MSVC.dep MSVC_mkfile.mak
 
-nmake /f "MSVC_Makefile.mak" %1 %2 %3 %4 %5 %6 %7
+nmake /f "MSVC_mkfile.mak" %1 %2 %3 %4 %5 %6 %7
 
-del MSVC_Makefile.mak
+del MSVC_mkfile.mak
 
 @cd ..\gpp
 
-nmake /f "MSVC_Makefile.mak"
+nmake /f "MSVC_mkfile.mak"
 
 @cd ..\build
 

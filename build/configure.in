@@ -1104,7 +1104,8 @@ AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)
 
-topdir_wind=`echo $topdir | sed 's,/,\\\\,g'`
+topdir_base=/`basename $topdir`
+topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`
 AC_SUBST(topdir_wind)
 
 #These are used to compile the interface with sModels
@@ -1126,7 +1127,7 @@ AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
 	    ${scriptdir}/xsb${config_tag}:xsb.in
 	    ${scriptdir}/wxsb.bat:wxsb.in
 	    ${arch_config_prefix}/banner.msg:banner.in
-	    ${arch_config_prefix}/MSVC_Makefile.mak:MSVC_Makefile.in
+	    ${arch_config_prefix}/MSVC_mkfile.mak:MSVC_mkfile.in
 	    ])
 
 chmod 644 ${arch_config_file}

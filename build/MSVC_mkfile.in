@@ -1,4 +1,4 @@
-#   MS_VC_Mfile.mak:  Makefile to compile XSB on Windows using VC++ NMAKE
+#   MSVC_mkfile.mak:  Makefile to compile XSB on Windows using VC++ NMAKE
 #   @configure_input@
 #
 # Usage:
@@ -99,16 +99,19 @@ NULL=nul
 # Begin Project
 CPP=cl.exe
 
+CONFIGDIR=..\config\@canonical@@config_tag@
+CONFIG_INCLUDE_FLAG=/I"$(CONFIGDIR)"
+
 # Assume we are running NMAKE in the emu directory
 #!IF  "$(DLL)" == "yes"
 # Put DLL in the bin directory
-DLLDIR=..\config\@canonical@@config_tag@\bin
-OUTDIR=..\config\@canonical@@config_tag@\bin
+DLLDIR=$(CONFIGDIR)\bin
+OUTDIR=$(CONFIGDIR)\bin
 #!ELSE
-#OUTDIR=..\config\@canonical@@config_tag@\bin
+#OUTDIR=$(CONFIGDIR)\bin
 #!ENDIF
 
-OBJDIR=..\config\@canonical@@config_tag@\saved.o
+OBJDIR=$(CONFIGDIR)\saved.o
 
 INTDIR=.
 
@@ -262,7 +265,8 @@ LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/orastuff.obj
 !MESSAGE Building XSB executable in Release mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- $(ORACLE_FLAG) /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
+ $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)\
+  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -275,7 +279,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !MESSAGE Building XSB executable in Debug mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
- /D "DEBUG" $(ORACLE_FLAG)\
+ /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)\
   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -288,9 +292,11 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG)
 
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- /D "$(CALL_CONV)" $(ORACLE_FLAG) /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
+ /D "$(CALL_CONV)" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)\
+  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 DLL_CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
-  /D "$(CALL_CONV)" $(ORACLE_FLAG) /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
+  /D "$(CALL_CONV)" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)\
+   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib $(SOCKET_LIBRARY) "$(SITE_LIBS)" $(DLLDIR)"\xsb.lib"\
@@ -307,8 +313,9 @@ DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF "$(CFG)" == "debug" &&  "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Debug mode $(ORACLE_MSG)
 
-DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS"\
- /D "DEBUG" $(ORACLE_FLAG) /D "$(CALL_CONV)" /Fp"$(OBJDIR)/xsb.pch" /YX\
+DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG"\
+ /D "_WINDOWS"\ /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)\
+  /D "$(CALL_CONV)" /Fp"$(OBJDIR)/xsb.pch" /YX\
  /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 
 DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
@@ -318,7 +325,7 @@ DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /out:"$(DLLDIR)\xsb.dll"\
  /implib:"$(DLLDIR)/xsb.lib"	 
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
- /D "DEBUG" $(ORACLE_FLAG) /D "$(CALL_CONV)" \
+ /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) /D "$(CALL_CONV)" \
   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\

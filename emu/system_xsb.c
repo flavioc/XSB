@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -53,8 +53,8 @@
 #include "cinterf.h"
 #include "syscall_xsb.h"
 #include "io_builtins_xsb.h"
-/* special.h must be included after sys/stat.h */
-#include "configs/special.h"
+/* wind2unix.h must be included after sys/stat.h */
+#include "wind2unix.h"
 #include "system_xsb.h"
 #include "system_defs_xsb.h"
 

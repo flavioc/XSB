@@ -30,8 +30,8 @@
    Note: even though this is a single builtin, YOU CAN SIMULATE ANY
    NUMBER OF BUILTINS WITH IT.  */
 
-#include "configs/xsb_config.h"
-#include "debugs/xsb_debug.h"
+#include "xsb_config.h"
+#include "xsb_debug.h"
 
 #include <stdio.h>
 #include <signal.h>

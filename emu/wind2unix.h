@@ -1,4 +1,4 @@
-/* File:      configs/special.h -- auxiliary defs that might not be everywhere
+/* File:      wind2unix.h -- some definitions for Unix/Windows compatibility
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

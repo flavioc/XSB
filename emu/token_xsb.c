@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 
 #include "auxlry.h"
 #include "token_xsb.h"

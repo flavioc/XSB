@@ -143,7 +143,7 @@ xsboramod:: $(ORAOBJS)
 
 
 depend::
-	$(DEPEND) $(DEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
+	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix) $(CFLAGS) -- $(SRCS)
 
 
 #=======================================================================
@@ -151,24 +151,24 @@ depend::
 #=======================================================================
 
 init_xsb.o: init_xsb.c
-	$(CC) -c $(CFLAGS) init_xsb.c
+	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) init_xsb.c
 	@cp init_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 dynload.o: dynload.c
-	$(CC) -c $(CFLAGS) dynload.c
+	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dynload.c
 	@cp dynload.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 emuloop.o: emuloop.c
-	$(CC) -c $(emuloopCFLAGS) emuloop.c
+	$(CC) -I$(arch_config_prefix) -c $(emuloopCFLAGS) emuloop.c
 	@cp emuloop.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # Higher optimization level has problem with some versions of gcc
 tr_utils.o: tr_utils.c
-	$(CC) -c $(trutilsCFLAGS) tr_utils.c
+	$(CC) -I$(arch_config_prefix) -c $(trutilsCFLAGS) tr_utils.c
 	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
-	$(CC) -c $(CFLAGS) $*.c
+	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) $*.c
 	@cp $*.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 

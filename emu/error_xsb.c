@@ -28,7 +28,7 @@
 #include <string.h>
 #include <signal.h>
 
-#include "configs/xsb_config.h"
+#include "xsb_config.h"
 
 #include "auxlry.h"
 #include "cell_xsb.h"
