@@ -80,7 +80,7 @@ server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
 	socket_close(Sockfd1,_),
 	socket_close(Sockfd_orig,_),
 	true
-    ;	((F=h; F=g) ->
+    ;	((Goal=h(_); Goal=g(_)) ->
 	    call(Goal), writeln(answer(Goal)),
 	    fmt_write_string(OutGoalStr, '%S.', arg(Goal)),
 	    socket_send(Sockfd1, OutGoalStr, _)
