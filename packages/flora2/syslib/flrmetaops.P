@@ -28,8 +28,44 @@
 
 :- compiler_options([xpp_on]).
 
+:- import flora_module_predicate/4 from flrwrapper.
+
 #include "flora_terms.flh"
 
+
+
+%% This takes care of F-logic molecules with dynamic module specification
+FL_UNIVEQFORM(fllibmodlit(Fun1,Args1,ModuleName1),
+	      fllibmodlit(Fun2,Args2,ModuleName2)) :-
+	!,
+	Fun1 = Fun2,
+	Args1 = Args2,
+	ModuleName1 = ModuleName2.
+FL_UNIVEQFORM(fllibmodlit(Fun,Args,ModuleName), Y) :-
+	!,
+	flora_module_predicate(Fun,Args,ModuleName,Literal),
+	Literal = Y.
+FL_UNIVEQFORM(X, fllibmodlit(Fun,Args,ModuleName)) :-
+	!,
+	flora_module_predicate(Fun,Args,ModuleName,Literal),
+	X = Literal.
+
+%% This takes care of first-order Flora predicates with dynamic 
+%% module specification 
+FL_UNIVEQFORM(fllibmodlit(FL_FIRSTORDER,Fun1,Args1,ModuleName1),
+	      fllibmodlit(FL_FIRSTORDER,Fun2,Args2,ModuleName2)) :-
+	!,
+	Fun1 = Fun2,
+	Args1 = Args2,
+	ModuleName1 = ModuleName2.
+FL_UNIVEQFORM(fllibmodlit(FL_FIRSTORDER,Fun,Args,ModuleName), Y) :-
+	!,
+	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
+	Literal = Y.
+FL_UNIVEQFORM(X, fllibmodlit(FL_FIRSTORDER,Fun,Args,ModuleName)) :-
+	!,
+	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
+	X = Literal.
 
 
 FL_UNIVEQFORM(X,Y) :- X=Y, !.
