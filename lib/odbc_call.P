@@ -1240,19 +1240,36 @@ odbc_open(Server,Name,Passwd) :-
 odbc_open(Server,Name,Passwd,Connection) :- 
 	odbc_connect(Server,Name,Passwd,ConnHandle),
 	(ConnHandle =\= 0
-	 ->	(odbc_connection(_,_)  %% init if first connection
-		 ->	true
-		 ;	init_gensym(table1),init_gensym(null),
-			assert(odbc_error_flg(off)),
-			assert(odbc_show_query(on))
-		),
-		(var(Connection)
-		 ->	asserta(odbc_connection(ConnHandle,ConnHandle))
-		 ;	asserta(odbc_connection(Connection,ConnHandle))
-		)
+	 ->	odbc_newconnection(Connection,ConnHandle)
 	 ;	odbc_error('Connection failed.'),
 		fail
 	).
+
+%%% pass whole Connect string, e.g.
+%%%'DRIVER={Microsoft Access Driver (*.mdb)};DBQ=C:\xsb-tests\sutures.mdb;UID=;PWD=;'
+odbc_open(ConnectIn) :-
+	odbc_open(ConnectIn,_Connection).
+
+odbc_open(ConnectIn,Connection) :-
+	odbc_driver_connect(ConnectIn,ConnHandle),
+	(ConnHandle =\= 0
+	 ->	odbc_newconnection(Connection,ConnHandle)
+	 ;	odbc_error('Connection failed.'),
+		fail
+	).
+
+odbc_newconnection(Connection,ConnHandle) :-
+	(odbc_connection(_,_)	% init if first connection
+	 ->	true
+	 ;	init_gensym(table1),init_gensym(null),
+		assert(odbc_error_flg(off)),
+		assert(odbc_show_query(on))
+	),
+	(var(Connection)
+	 ->	asserta(odbc_connection(ConnHandle,ConnHandle))
+	 ;	asserta(odbc_connection(Connection,ConnHandle))
+	).
+
 
 odbc_shutdown :-
 	findall(Connection,odbc_connection(Connection,_),Connections),
@@ -1876,8 +1893,11 @@ odbc_error(ErrMsg) :-
 	(odbc_error_flg(on) -> fail;true).
 
 odbc_connect(Server,Name,Passwd,ConnHandle) :-
-	odbc_exec_query(1,Server,Name,Passwd,ConnHandle).
+	odbc_exec_query(1,0,Server,Name,Passwd,ConnHandle).
     
+odbc_driver_connect(ConnectIn,ConnHandle) :-
+	odbc_exec_query(1,1,ConnectIn,_,_,ConnHandle).
+
 parse(Cursor, RetVal) :-
 	odbc_exec_query(2,Cursor, RetVal).
     

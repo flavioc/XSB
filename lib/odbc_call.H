@@ -23,7 +23,8 @@
 */
 
 
-:- export odbc_open/3, odbc_open/4,
+:- export odbc_open/1, odbc_open/2,
+        odbc_open/3, odbc_open/4,
 	odbc_close/0, odbc_close/1,
 	odbc_shutdown/0,
 	odbc_sql/3, odbc_sql/4,

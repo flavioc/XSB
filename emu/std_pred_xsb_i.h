@@ -521,7 +521,6 @@ inline static xsbBool sort(void)
   CPtr top = 0;
 
   list = ptoc_tag(1);
-  term = ptoc_tag(2);
   term2 = list; len = 0;
   do {
     XSB_Deref(term2);
@@ -534,6 +533,8 @@ inline static xsbBool sort(void)
       return FALSE;	/* fail */
     }
   } while(1);
+  check_glstack_overflow(3, pcreg, (2*len)*sizeof(Cell), xsb_abort("")) ;
+  list = ptoc_tag(1); /* reset in case moved */
   if (len > 0) {
     term2 = list;
     cell_tbl = (Cell *)malloc((len * sizeof(Cell)));
@@ -557,8 +558,10 @@ inline static xsbBool sort(void)
       }
     } follow(top) = makenil;
     free(cell_tbl);
+    term = ptoc_tag(2);
     return unify(new_list, term);
   }
+  term = ptoc_tag(2);
   return unify(list, term);
 }
 

@@ -199,17 +199,19 @@ void SetCursorClose(struct Cursor *cur)
 /*     ODBCConnect()*/
 /*  PARAMETERS:*/
 /*     R1: 1*/
-/*     R2: Server*/
-/*     R3: User name*/
-/*     R4: Password*/
-/*     R5: var, for returned Connection ID.*/
+/*     R2: 0 -> call connect with server/user/pw */
+/*         1 -> call driver_connect with full connection string */
+/*     R3: Server or connection_string*/
+/*     R4: User name or don't care*/
+/*     R5: Password or don't care*/
+/*     R6: var, for returned Connection ID.*/
 /*  NOTES:*/
 /*     This function is called when a user wants to start a db session,*/
 /*     assuming that she doesn't have one open.  It initializes system*/
 /*     resources for the new session, including allocations of various things:*/
 /*     environment handler, connection handler, statement handlers and then*/
-/*     try to connect to the database indicated by the second parameter prolog*/
-/*     passes us using the third one as user id and fourth one as passward.*/
+/*     tries to connect to the database, either by server,userid,pw if R2=0,*/
+/*     or thrugh a driver by using r3 as the connections tring, if R2=1. */ 
 /*     If any of these allocations or connection fails, function returns a*/
 /*     failure code 1.  Otherwise 0. */
 /*-----------------------------------------------------------------------------*/
@@ -217,6 +219,7 @@ void ODBCConnect()
 {
   UCHAR *server;
   UCHAR *pwd;
+  UCHAR *connectIn;
   HDBC hdbc = NULL;
   RETCODE rc;
 
@@ -226,7 +229,7 @@ void ODBCConnect()
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       xsb_error("Environment allocation failed");   
-      ctop_int(5, 0);
+      ctop_int(6, 0);
       return;
     }
     /*    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2, 
@@ -242,26 +245,38 @@ void ODBCConnect()
   rc = SQLAllocConnect(henv, &hdbc);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
     xsb_error("Connection Resources Allocation Failed");
-    ctop_int(5, 0);
+    ctop_int(6, 0);
     return;
   }
 
-  /* get server name, user id and password*/
-  server = (UCHAR *)ptoc_string(2);
-  strcpy(uid, (UCHAR *)ptoc_string(3));
-  pwd = (UCHAR *)ptoc_string(4);
+  if (!ptoc_int(2)) {
+    /* get server name, user id and password*/
+    server = (UCHAR *)ptoc_string(3);
+    strcpy(uid, (UCHAR *)ptoc_string(4));
+    pwd = (UCHAR *)ptoc_string(5);
 
-  /* connect to database*/
-  rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
-  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-    SQLFreeConnect(hdbc);
-    xsb_error("Connection to server %s failed", server);   
-    ctop_int(5, 0);
-    return;
+    /* connect to database*/
+    rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      SQLFreeConnect(hdbc);
+      xsb_error("Connection to server %s failed", server);   
+      ctop_int(6, 0);
+      return;
+    }
+  } else {
+    /* connecting through driver using a connection string */
+    connectIn = (UCHAR *)ptoc_longstring(3);
+    rc = SQLDriverConnect(hdbc, NULL, connectIn, SQL_NTS, NULL, 0, NULL,SQL_DRIVER_NOPROMPT);
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      SQLFreeConnect(hdbc);
+      xsb_error("Connection to driver failed: %s", connectIn);   
+      ctop_int(6, 0);
+      return;
+    }
   }
 
   serverConnected = 1;
-  ctop_int(5, (long)hdbc);
+  ctop_int(6, (long)hdbc);
   return;
 }
 
