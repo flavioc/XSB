@@ -581,7 +581,7 @@ compwrite_memberof(Source):-
 	write_hdr(memberof_ext(_,_,_,_)),
 	oms_mo(Sub,Sup),
 	get_component_extensional(oms_mo(Sub,Sup),Source),
-	class_cidbound(Sub,_,Nid1,Source1),
+	object(Sub,_,Nid1,Source1),
 	class_cidbound(Sup,_,Nid2,Source2),
 	write_ext_term(
                  memberof_ext(Nid1,Source1,Nid2,Source2)),
@@ -628,7 +628,7 @@ compwrite_attribute(Source):-
 	write_hdr(attribute_ext(_,_,_,_,_,_)),
 	oms_at(Src,Rel,Targ),
 	get_component_extensional(oms_at(Src,Rel,Targ),Source),
-	class_cidbound(Src,_,Nid1,Source1),
+	object(Src,_,Nid1,Source1),
 	class_cidbound(Rel,_,Nid2,Source2),
 	class_cidbound(Targ,_,Nid3,Source3),
 	write_ext_term(
@@ -640,9 +640,9 @@ compwrite_attribute_object(Source):-
 	write_hdr(attribute_object_ext(_,_,_,_,_,_)),
 	oms_ao(Src,Rel,Targ),
 	get_component_extensional(oms_ao(Src,Rel,Targ),Source),
-	class_cidbound(Src,_,Nid1,Source1),
+	object(Src,_,Nid1,Source1),
 	class_cidbound(Rel,_,Nid2,Source2),
-	class_cidbound(Targ,_,Nid3,Source3),
+	object(Targ,_,Nid3,Source3),
 	write_ext_term(
                  attribute_object_ext(Nid1,Source1,Nid2,Source2,Nid3,Source3)),
 	fail.
