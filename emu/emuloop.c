@@ -30,7 +30,9 @@
 
 #ifdef FOREIGN
 #ifndef SOLARIS
+#ifndef FOREIGN_WIN32
 #include <sys/un.h>
+#endif
 #endif
 #endif
 
@@ -1282,7 +1284,9 @@ int xsb(int flag, int argc, char *argv[])
    extern void init_flags(), init_machine(), init_symbols();
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
+#ifndef FOREIGN_WIN32
    extern char tfile[];
+#endif
 #endif
 #endif
 
@@ -1331,7 +1335,9 @@ int xsb(int flag, int argc, char *argv[])
 
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
+#ifndef FOREIGN_WIN32
      if (fopen(tfile, "r")) unlink(tfile);
+#endif
 #endif
 #endif
 

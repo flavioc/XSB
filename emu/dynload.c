@@ -38,6 +38,10 @@ extern char executable[];        /* from self_orientation.c */
 #else
 #ifdef FOREIGN_AOUT
 #include "dynaout.i"
+#else
+#ifdef FOREIGN_WIN32
+#include "dynwin32.i"
+#endif /* FOREIGN_WIN32 */
 #endif /* FOREIGN_AOUT */
 #endif /* FOREIGN_ELF */
 #endif /* FOREIGN_COFF */
