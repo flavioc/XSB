@@ -41,7 +41,6 @@ Prolog = $(XSB) -i -s -m 2000 -c 2000
 
 # Make sure warnings are saved in a file.
 SVFILE = '../build/.apkgs.tmp'
-OWRITE = 1
 STDWARN = 3
 STDERR = 2
 HDRMSG = "While compiling XSB/packages:"
@@ -98,7 +97,7 @@ wildmatch::
 
 init:
 	/bin/rm -f $(SVFILE)
-	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
 	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
