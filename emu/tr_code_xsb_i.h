@@ -195,11 +195,12 @@ int     delay_it;
 #define unify_with_trie_numcon {					\
   XSB_Deref(*reg_arrayptr);					       	\
   if (isref(*reg_arrayptr)) {						\
-    bind_ref((CPtr)*reg_arrayptr, opatom);				\
+    bind_ref((CPtr)*reg_arrayptr, opatom);				 \
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_numcon\n");	\
-    add_interrupt(*reg_arrayptr, opatom);				\
+    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), opatom);		\
+    bind_int_tagged((CPtr)dec_addr(*reg_arrayptr), opatom);          		\
   }									\
   else {								\
     if (*reg_arrayptr != opatom) {					\
@@ -229,7 +230,8 @@ int     delay_it;
   }								\
   else if (isattv(*reg_arrayptr)) {				\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_str\n");	\
-    add_interrupt(*reg_arrayptr, makecs(hreg));			\
+    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makecs(hreg));	\
+    bind_copy((CPtr)dec_addr(*reg_array), makecs(hreg));                       \
     reg_arrayptr--;						\
     *(hreg++) = (Cell) psc;					\
     for (i = arity; i >= 1; i--) {				\
@@ -267,7 +269,8 @@ int     delay_it;
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_list\n");	\
-    add_interrupt(*reg_arrayptr, makelist(hreg));			\
+    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makelist(hreg));	\
+    bind_copy((CPtr)dec_addr(*reg_arrayptr), makelist(hreg));       \
     *reg_arrayptr = (Cell)(hreg+1);         /* tail of list */		\
     will_overflow_reg_array(reg_arrayptr + 1);				\
     *(++reg_arrayptr) = (Cell) hreg;        /* head of list */		\
@@ -335,7 +338,8 @@ int     delay_it;
     bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));			\
   }									\
   else if (isattv(*reg_arrayptr)) {					\
-    bind_ref(clref_val(*reg_arrayptr), makeattv(hreg));			\
+    add_interrupt(cell(((CPtr)dec_addr(*reg_arrayptr) + 1)),makeattv(hreg));   \
+    bind_ref((CPtr)dec_addr(*reg_arrayptr), makeattv(hreg));	\
   }									\
   else {								\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_attv\n");	\
