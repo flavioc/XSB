@@ -1,8 +1,7 @@
-:- compiler_options([ciao_directives]).
-
 :- export 
 	get_component_extensional/2,
 	get_component_intensional/3,
+	get_intensional_mfile_expansion/2,
 	get_full_path_and_loadname/6,
 	load_component/3,
 	init_path_engine/0,
@@ -260,12 +259,27 @@ get_component_extensional(Term,Comp):-
 get_component_intensional(Term,Body,Component):- 
 	component_table_int(Term,Arg,_Deps),
 	arg(Arg,Term,SourceArg),
-	(arg(2,SourceArg,Source),atom(Source) -> 
+	(nonvar(SourceArg),arg(2,SourceArg,Source),atom(Source) -> 
 	    Source = Component
 	 ;  cdf_warning(component,
 	                ['Cannot find component for intensional rule: ',
 			  (:-(Term,Body))]),
 	    fail).
+
+/* TLS: gets all multifile extensions: i.e. if head is isa_int(A,B), call is 
+    isa_int_foo(C,D) */
+/* TLS: Moved out of noshare because it is now used in intialize_state */
+get_intensional_mfile_expansion(Head,Call):- 
+	abolish_table_pred(get_intensional_call(_,_)),
+	component_table_int(Head,_SrcArg,_Arg2),
+	get_intensional_call(Head,Call).
+
+:- table get_intensional_call/2.
+get_intensional_call(Head,Call):- 
+	copy_term(Head,Head1),
+	clause(Head1,Body),
+	functor(Body,F,A),
+	functor(Call,F,A).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- comment(load_component/3,

@@ -1,3 +1,7 @@
+:- compiler_options([xpp_on]).
+
+#include "./cdf_definitions.h"
+
 :- export
             abolish_cdf_tables/0,
 	explosive_isa/2,
@@ -48,6 +52,7 @@
 :- import cdf_flag/1, initial_cdf_flag/2 from usermod.
 
 :- import get_component_extensional/2,
+	  get_intensional_mfile_expansion/2,
 	  load_component/3 from cdf_comps_share.
 
 :- import make_cdf_dirty/1, make_cdf_clean/0, cdf_update_list/1
@@ -63,8 +68,8 @@
 
 %%%%%%%%%%%%% Core Declarations 
 
-%cdf_dynamic(ic_ext/1).
-%cdf_index(ic_ext,1,[]).
+cdf_dynamic(compdlrule/3).
+cdf_dynamic(compdltrans/3).
 
 cdf_dynamic(necessCond_ext/2).
 cdf_index(necessCond_ext,2,[*(1)]).
@@ -227,11 +232,19 @@ initialize_state:-
 	initialize_state_nl.
 
 initialize_state_nl :-
+	clear_mfile_rules,
 	cdf_clear_dynamics,
 	cdf_reset_log,
 	load_component(cdf,'',[]),
 	load_component(cdfpt,'',[]),
 	make_cdf_clean.
+
+/* must be done before cdf_clear_dynamic to find mfile extension */
+clear_mfile_rules:- 
+	get_intensional_mfile_expansion(_HeadTerm,Call),
+	retractall(Call),
+	fail.
+clear_mfile_rules.
 
 cdf_clear_dynamics:- 
 	cdf_dynamic(F/A),
@@ -451,6 +464,10 @@ table_isa(X,Y):- isa(X,Y).
 
 :- comment(isa/2, "The operational semantics of @tt{isa/2} is defined
 in @ref{Using CDF}").
+
+#if TABLEDISA
+:- table isa/2.
+#endif
 
 isa(Sub,Sup):- 
 	apply_checks(query,isa_ext(Sub,Sup)),
@@ -1300,12 +1317,22 @@ retractall_cdf_term(Term) :-
 retractall_cdf_term(_).
 
 abolish_cdf_tables:-
-	abolish_table_pred(table_isa(_,_)),
+	abolish_isas,
 	abolish_hasAttr_inherits,
 	abolish_allAttr_inherits,
 	abolish_classHasAttr_inherits,
 	abolish_maxAttr_inherits,
 	abolish_minAttr_inherits.
+
+
+#ifdef TABLEDISA
+abolish_isas:- 
+	abolish_table_pred(isa(_,_)),
+	abolish_table_pred(table_isa(_,_)).
+#else
+abolish_isas:- 
+	abolish_table_pred(table_isa(_,_)).
+#endif
 
 abolish_nec_tables(minAttr_ext(_,_,_,_)) :- !,
 	abolish_minAttr_inherits.

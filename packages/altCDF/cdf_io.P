@@ -33,7 +33,7 @@
 
 :- comment(module, "These routines load CDF files from a disk file
 system into memory, save them from memory to disk, and merge
-information into a CDF state.  Both intensional an extensional
+information into a CDF state.  Both intensional and extensional
 information may be dumped.  They are also used as building blocks of
 the components system.").
 
@@ -76,7 +76,6 @@ sort_and_write_terms(_Terms).
 cdf_ext_inst(Term):-
 	(Term = allAttr_ext(_,_,_) ; 
 	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
-%	 Term = ic_ext(_) 
              Term = necessCond_ext(_,_) ; Term = isa_ext(_,_) ; 
 	 Term = minAttr_ext(_,_,_,_) ; Term = maxAttr_ext(_,_,_,_) ).
 
@@ -88,7 +87,7 @@ dump_extensional_facts_2:-
 dump_extensional_facts_2.
 %-----------------------------------------------------------------
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 :- comment(load_extensional_facts/1,
 "@tt{load_extensional_facts(DirectoryList)}: loads the file
@@ -153,9 +152,6 @@ merge_intensional_rules :-
 	 ;
 	 retractall(hasAttr_int(_,_,_)),
 
-%	 ic_int(Form),\+ ic_ext(Form),
-%	 asserta(ic_ext(Form)),
-%	 fail
 	 necessCond_int(Class,Form),\+ necessCond_ext(Class,Form),
 	 asserta(necessCond_ext(Class,Form)),
 	 fail
@@ -195,6 +191,7 @@ load_intensional_rules(Dir):-
 	extract_file_name(Dir,Name),
 	load_intensional_rules(Dir,Name).	
 
+% TLS: at some point should use utility instead.
 extract_file_name(File,Name):- 
 	atom_chars(File,Flist),
 	reverse(Flist,Rlist),
@@ -258,6 +255,7 @@ read_intensional_rules_2('<='(Head,Body),Name):- !,
 	asserta((:-(H,NewHead))),
 	asserta((:-(NewHead,B))),
 	fail.
+% these should be executable directives ala table.
 read_intensional_rules_2((:-(Query)),_Name):- !,
 	call(Query),
 	fail.

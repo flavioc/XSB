@@ -283,7 +283,7 @@ check_ind_types_1([Id|T],[List|LT],Context,Term):-
 
 % TLS: check gives an error here, because min and max will give an arithmetic
 % exception if not of the proper type.
-cdfCheckInteger(Context,Id,Term):- 
+cdfCheckPosInt(Context,Id,Term):- 
 	(integer(Id),Id > 0 -> 
 	    true 
 	  ;
@@ -418,7 +418,6 @@ classify_if_necessary(_Context,Name):-
 	get_component_fact(Name,Term),
 	classify_if_necessary_term(Term,Upd1,[]),
 	member(Term1,Upd1),
-	writeln(classifying(Term1)),
 	newExtTerm(Term1),
 	fail.
 classify_if_necessary(_,_Term).
