@@ -140,21 +140,16 @@ extern Float getfloatval(Cell);
 #define enc_addr(addr) ((Cell)(addr) << 2)
 #define dec_addr(dcell) (((Cell)(dcell) >> 2) & 0x3ffffffc)
 
-#elif (defined(MIPS_BASED) || defined(SOLARIS_x86)) 
-#ifdef BITS64
-/* 64 bit, take bits 0-1, 61-63 */
+#elif BITS64
+/* 64 bit, take bits 0, 61-63 */
 /* Encoded integers/addresses */
-#define enc_int(val) ( ((Integer)(val) & 0xe000000000000003) ?\
-	(((Integer)(val) << 5) | 0x10) :\
-	((Integer)(val) << 3) )
-#define dec_int(dcell) ( ((Integer)(dcell) & 0x10) ?\
-	((Integer)(dcell) >> 5) :\
-	(((Integer)(dcell) >> 3) & 0x1ffffffffffffffc) )
-
+#define enc_int(val) ((Integer)(val) << 3)
+#define dec_int(dcell) ((Integer)(dcell) >> 3)
 /* Fewer bit representation of pointers */
-#define enc_addr(addr) ((Cell)(addr) << 2)
-#define dec_addr(dcell) (((Cell)(dcell) >> 2) & 0x3ffffffffffffffc)
-#else
+#define enc_addr(addr) ((Cell)(addr))
+#define dec_addr(dcell) (((Cell)(dcell)) & 0xfffffffffffffff8)
+
+#elif (defined(MIPS_BASED) || defined(SOLARIS_x86)) 
 /* take bits 0-1, 29-31 */
 /* Encoded integers/addresses */
 #define enc_int(val) ( ((Integer)(val) & 0xe0000003) ?\
@@ -163,13 +158,11 @@ extern Float getfloatval(Cell);
 #define dec_int(dcell) ( ((Integer)(dcell) & 0x10) ?\
 	((Integer)(dcell) >> 5) :\
 	(((Integer)(dcell) >> 3) & 0x1ffffffc) )
-
 /* Fewer bit representation of pointers */
-#define enc_addr(addr) ((Cell)(addr) << 2)
-#define dec_addr(dcell) (((Cell)(dcell) >> 2) & 0x3ffffffc)
-#endif
+#define enc_addr(addr) ((Cell)(addr) << 1)
+#define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)
 
-#elif (defined(BIG_MEM) || defined(WIN_NT) || defined(LINUX_ELF))
+#else
 /* take bits 0-1, 30-31 */
 /* BIG_MEM allows Solaris/Sun machines to use 1 gig of memory */
 
@@ -178,15 +171,6 @@ extern Float getfloatval(Cell);
 
 #define enc_addr(addr) ((Cell)(addr) << 1)
 #define dec_addr(dcell) (((Cell)(dcell) >> 1) & 0x7ffffffc)
-
-#else
-/* standard representation of integers */
-#define enc_int(val) ((Integer)(val) << 3)
-#define dec_int(val) ((Integer)(val) >> 3)
-
-/* standard encoding of pointers */
-#define enc_addr(addr) ((Cell)(addr) << 3)
-#define dec_addr(dcell) ((Cell)(dcell) >> 3)
 #endif
 
 /*======================================================================*/
@@ -210,6 +194,9 @@ extern Float getfloatval(Cell);
 #define makeattv(attv) (Cell)(enc_addr(attv) | XSB_ATTV)
 #define trievar_val(dcell) (Integer)dec_int(dcell)
 #define maketrievar(val) (Cell)(enc_int(val) | XSB_TrieVar)
+
+/**#define get_str_psc(dcell) ((cs_val(dcell))->psc_ptr)**/
+#define get_str_psc(dcell) (*((Psc *)dec_addr(dcell)))
 
 #define addr_val(dcell) string_val(dcell)
 #define makeaddr(val) makestring(val)
@@ -256,7 +243,6 @@ extern Float getfloatval(Cell);
 
 #define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_sym)
 
-#define get_str_psc(dcell) ((cs_val(dcell))->psc_ptr)
 
 /*======================================================================*/
 /* Miscellaneous							*/

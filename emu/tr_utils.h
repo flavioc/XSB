@@ -49,7 +49,7 @@ extern void trie_intern(void);
 extern int  trie_interned(void);
 extern void trie_dispose(void);
 extern void trie_dispose_nr(void);
-extern void delete_interned_trie(int);
+extern void delete_interned_trie(Integer);
 extern void trie_undispose(long, BTNptr);
 extern xsbBool check_table_cut;
 

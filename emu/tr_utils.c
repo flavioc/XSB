@@ -889,7 +889,7 @@ BTNptr *Set_ArrayPtr = NULL;
  * set, ..., the last one contains 0.  If first_free_set == 0, that
  * means no free set available.
  */
-static int first_free_set = 0;
+static Integer first_free_set = 0;
 static int Set_ArraySz = 100;
 /*
  * num_sets is the number of sets have been used (including the fixed
@@ -1024,13 +1024,13 @@ void trie_dispose(void)
 
 #define DELETED_SET 1
 
-void delete_interned_trie(int tmpval) {
+void delete_interned_trie(Integer tmpval) {
   /*
    * We can only delete a valid BTNptr, so that only those sets
    * that were used before can be put into the free set list.
    */
   if ((Set_ArrayPtr[tmpval] != NULL) &&
-      (!((long) Set_ArrayPtr[tmpval] & 0x3))) {
+      (!((Integer) Set_ArrayPtr[tmpval] & 0x3))) {
     switch_to_trie_assert;
     delete_trie(Set_ArrayPtr[tmpval]);
     switch_from_trie_assert;

@@ -1482,7 +1482,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(allocate_gc,_allocate_gc) /* PAA */
     Def3ops
     Op2(get_xax);
-    Op3((CPtr) (int)get_xxa);
+    Op3((CPtr) (Cell)get_xxa);
     ADVANCE_PC(size_xxx);
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);

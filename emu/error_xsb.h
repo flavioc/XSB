@@ -59,7 +59,7 @@
    (in a necessarily roundabout manner) determined. 
 */
 #ifdef BITS64
-#define THROWPAD 20
+#define THROWPAD 24
 #else 
 #define THROWPAD 12
 #endif 

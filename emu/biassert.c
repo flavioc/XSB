@@ -603,7 +603,7 @@ int assert_code_to_buff_p(prolog_term Clause)
   int Arity;
   int has_body;
   int Argno;
-  int v;
+  Integer v;
   Pair sym;
 
   /* set catcher */

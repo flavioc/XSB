@@ -1174,7 +1174,7 @@ int builtin_call(byte number)
     ctop_int(3, compare((void *)ptoc_tag(1), (void *)ptoc_tag(2)));
     break;
   case TERM_NEW_MOD: {  /* R1: +ModName, R2: +Term, R3: -NewTerm */
-    int new, disp;
+    Integer new, disp;
     Psc termpsc, modpsc, newtermpsc;
     Cell arg, term = ptoc_tag(2);
     XSB_Deref(term);
@@ -1448,7 +1448,7 @@ int builtin_call(byte number)
     /* When the given module is 0 (null string), current module is used. */
     Psc  psc;
     Pair sym;
-    int  value;
+    Integer  value;
     char *addr = ptoc_string(4);
     if (addr)
       psc = pair_psc(insert_module(0, addr));
@@ -1466,7 +1466,7 @@ int builtin_call(byte number)
      * Creates a PSC record for a predicate and its module (if they
      * don't already exist) and links the predicate into usermod.
      */
-    int  value;
+    Integer  value;
     Psc  psc = pair_psc(insert_module(0, ptoc_string(3)));
     Pair sym = insert(ptoc_string(1), (char)ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
@@ -1555,7 +1555,7 @@ int builtin_call(byte number)
     case TK_QSTR   : fprintf(fptr, "\"%s\"", ptoc_string(3)); break;
     case TK_TERML  : print_term_canonical(fptr, ptoc_tag(3), 1); break;
     case TK_TERM   : print_term_canonical(fptr, ptoc_tag(3), 0); break;
-    default : printf("flg: %d\n",ptoc_int(2));
+    default : printf("flg: %ld\n",(long)ptoc_int(2));
       xsb_abort("[FILE_PUTTOKEN] Unknown token type %d");
     }
     break;
@@ -2219,7 +2219,7 @@ int builtin_call(byte number)
     reclaim_uninterned_nr(ptoc_int(1));
     break;
   case GLOBALVAR:
-    ctop_tag(1, ((int)glstack.low));
+    ctop_tag(1, ((Cell)glstack.low));
     break;
 
   case STORAGE_BUILTIN: {
@@ -2607,7 +2607,7 @@ void retrieve_prof_table() { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt], r4: -NextN
   ubi_btNodePtr NodePtr;
   CPtr pscptrloc, modpscptrloc;
   Cell arg3;
-  int i,tmp;
+  Integer i,tmp;
   Psc apsc;
 
   i = ptoc_int(2);

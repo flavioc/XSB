@@ -202,6 +202,7 @@ static void print_call(Psc psc)
   if (arity != 0) fprintf(stddbg, "(");
   for (i=1; i <= arity; i++) {
     printterm(stddbg, cell(reg+i), 3);
+    fflush(stddbg);
     if (i < arity) fprintf(stddbg, ",");
   }
   if (arity != 0) fprintf(stddbg, ")\n"); else fprintf(stddbg, "\n");
@@ -754,13 +755,13 @@ extern void dis(xsbBool);
 extern byte *print_inst(FILE *, byte *);
 
 struct watch_struct {
-  int  heap_flag;
+  Integer  heap_flag;
   CPtr heap_val;
-  int  stack_flag;
+  Integer  stack_flag;
   CPtr stack_val;
-  int  choice_flag;
+  Integer  choice_flag;
   CPtr choice_val;
-  int  trail_flag;
+  Integer  trail_flag;
   CPtr trail_val;
 } reg_watch, mem_watch;
 
@@ -790,7 +791,7 @@ static void set_register_watch(int num1, CPtr num2)
 
 /*----------------------------------------------------------------------*/ 
 
-static void set_memory_watch(int num1, int num2)
+static void set_memory_watch(Integer num1, int num2)
 {
   memory_watch_flag = 1;
   switch (num1) {
@@ -1379,7 +1380,7 @@ static void print_status(void)
 static void debug_interact(void)
 {
   char command, mod[32], name[32];
-  int num, num1;
+  Integer num, num1;
   Pair sym;
 
  again:
@@ -1392,7 +1393,7 @@ static void debug_interact(void)
     skip_to_nl();
     switch (name[0]) {
     case 'a':
-      xsb_dbgmsg((LOG_DEBUG,"0x%x: 0x%x", num, *(int *)num));
+      xsb_dbgmsg((LOG_DEBUG,"0x%x: 0x%x", num, *(Integer *)num));
       break;
     case 'r':
       print_cell("Reg", (CPtr)num, cell(reg+num), NULL);

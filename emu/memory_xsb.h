@@ -102,7 +102,8 @@ extern System_Stack pdl,            /* PDL                        */
 /*
  *  Size of margin between facing stacks before reallocating a larger area.
  */
-#define OVERFLOW_MARGIN	(2048 * ZOOM_FACTOR)
+//#define OVERFLOW_MARGIN	(2048 * ZOOM_FACTOR)
+#define OVERFLOW_MARGIN	(8192 * ZOOM_FACTOR)
 
 
 /* Calculate New Stack Size
