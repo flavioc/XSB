@@ -111,7 +111,7 @@ DllExport xsbBool call_conv plg2hlg () {
   xsb_dbgmsg("plg2hlg: Arg3=%s", pterm2string(apply_t));
 #endif
 
-  if (!is_string(apply_t))
+  if (!is_atom(apply_t))
     xsb_abort("PLG2HLG: Arg 3 = `%s' (the `apply' functor) isn't an atom.",
 	      pterm2string(apply_t));
 
@@ -135,7 +135,7 @@ DllExport xsbBool call_conv plg2hlg () {
 
 static inline xsbBool is_scalar(prolog_term pterm)
 {
-  if (is_string(pterm) || is_int(pterm) || is_float(pterm))
+  if (is_atom(pterm) || is_int(pterm) || is_float(pterm))
     return TRUE;
   return FALSE;
 }
@@ -168,7 +168,7 @@ static prolog_term hilog2prolog(prolog_term hterm, char *apply)
   arity=p2c_arity(hterm);
 
   pfunctor = p2p_arg(hterm,1);
-  if (!is_string(pfunctor))
+  if (!is_atom(pfunctor))
     xsb_abort("PLG2HLG: HiLog term `%s' not convertible to Prolog.",
 	      pterm2string(hterm));
   if (arity > 1)
