@@ -1,3 +1,5 @@
+/* This demo shows the use of the method meta variable. */
+
 :- import length/2 from basics.
 
 o1[m1@(a1) -> r1].
@@ -10,7 +12,7 @@ o2[@M->R] :-
 	@M =.. [Meth|Args],
 	length(Args,2).
 
-?- X[@M -> R].
+?- writeln('all objects, all method invocations:'), X[@M -> R].
 
-?- writeln('o2:'), o2[@M -> R].
+?- writeln('Methods of o2:'), o2[@M -> R].
 

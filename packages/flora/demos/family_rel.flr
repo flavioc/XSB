@@ -26,9 +26,8 @@
 %%% QUERYING THE PEDIGREE OF ``THE FALLERS'' 
 %%% (German TV serial; see: www.swf.de/diefallers/stammbaum/index.html)
 %%% 
-%%% RELATIONAL (= DATALOG) version
+%%% This demo contains a purely RELATIONAL (= DATALOG) version
 %%%
-%%% $Id$
 %%% ======================================================================
 
 %%% ======================================================================

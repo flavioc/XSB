@@ -7,7 +7,7 @@
     aaa::a.
     aa:aaa.
 
-    ?- aa[@T=>X].
-    ?- aaa[@U=>Y].
+    ?- aa[@T=>X].    %% @T=b, X={c,d}
+    ?- aaa[@U=>Y].   %% @U=b, Y=c; @U=b1, Y=c1
 
-    ?- aa[@SM=>>V].
+    ?- aa[@SM=>>V].  %% @SM=bs, V={e}; @SM=bs1, V={e1,d2}

@@ -30,6 +30,7 @@ times_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
 fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
 
 e(a,b). e(b,a). e(b,c).			% a binary PREDICATE (graph)
+e(b,d).
 
 :- table tc/2.
 
@@ -43,18 +44,20 @@ person[age=>integer; kids=>>person].    % some (optional) SIGNATURE information
 
 mary:employee[				% a more complex MOLECULE involving
 	age->29;			% ... a SINGLE-VALUED (svd) method
-	kids ->> {tim,leo};		% ... a MULTI-VALUED (mvd) method
+	kids ->> {tim,leo,betty};	% ... a MULTI-VALUED (mvd) method
 	salary@(1998) -> a_lot		% ... a PARAMETERIZED (and svd) method
 ].
 
 tim[hobbies ->> {stamps, snowboard}].	% somebodies hobbies
+betty[hobbies->>{fishing,diving}].
 
 snowboard:dangerous_hobby.		% isn't it??
+diving:dangerous_hobby.
 
-X[self->X].				% quite UNSAFE with BOTTOM-UP (e.g. FLORID!)
+X[self->X].				% define self
 
 
-person[believes_in *->>			% INHERITABLE mvd method of CLASS person
+person[believes_in *->>			% INHERITABLE mvd method
        {something, something_else}].	
 
 person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
@@ -65,9 +68,6 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 %%% ===========================================================================
 
 ?- times_flies_like_an_arrow.	% ==> `yes'
-
-%%?- fruit_flies_like_a_banana.	% ==> `no' (and a warning)
-%%?- writeln('>>> Answer NO and WARNING intended! <<<').
 
 ?- fruit_flies_like_a_banana[].	% ==> `yes'
 

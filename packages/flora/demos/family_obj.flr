@@ -26,9 +26,8 @@
 %%% QUERYING THE PEDIGREE OF ``THE FALLERS'' 
 %%% (German TV serial; see: www.swf.de/diefallers/stammbaum/index.html)
 %%% 
-%%% An extended and OBJECT-ORIENTED version of family_rel.flp
+%%% An OBJECT-ORIENTED version of family_rel.flp
 %%%
-%%% $Id$
 %%% ======================================================================
 
 

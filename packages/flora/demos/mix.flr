@@ -1,3 +1,5 @@
+/* Demo that mixes F-logic with Datalog. */
+
 :- import findall/3 from setof.
 
 edge(a,b).

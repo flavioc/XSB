@@ -1,3 +1,6 @@
+/* This demo imports information about the employee class from module2
+** and the two pieces of info get evaluated as one.
+*/
 
 :- import flcompile/1 from flrutils.
 ?- flcompile(module2).
@@ -24,13 +27,12 @@ john[salary@(1998) -> 80].
 
 ?- nl,write('Max Mary''s salary:'), Z := max {X; mary[salary@(Year)->X] }.
 
-// It is strange that Florid will report an error saying invalid
-// aggregate expression for the following query.
-
-?- Z=count{Year; john.salary@(Year) < max{X; john[salary@(Y2)->X], Y2<Year} }.
+?- nl,write('Number of years when John''s salary was less than max of the previous years:'),
+   Z=count{Year; john.salary@(Year) < max{X; john[salary@(Y2)->X], Y2<Year} }.
 
 ?- nl,write('Number of years when John earned less than Mary:'),
    Z=count{Year; john.salary@(Year) < mary.salary@(Year)}.
 
-?- Z= avg{X [Who]; Who[salary@(Year)->X]}.
+?- nl,write('Avg salary per person:'),
+   Z= avg{X [Who]; Who[salary@(Year)->X]}.
 

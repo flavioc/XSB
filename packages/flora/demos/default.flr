@@ -57,11 +57,11 @@ tim[hobbies ->> {stamps, snowboard}].	% somebodies hobbies
 
 snowboard:dangerous_hobby.		% isn't it??
 
-X[self->X].				% quite UNSAFE with BOTTOM-UP (e.g. FLORID!)
+X[self->X].				% defines self
 
 
-person[believes_in *->>			% INHERITABLE mvd method of CLASS person
-       {something, something_else}].	
+person[believes_in *->>			% INHERITABLE mvd method
+       {something, something_else}].	% of CLASS person
 
 person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 
@@ -72,14 +72,11 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 
 ?- times_flies_like_an_arrow.	% ==> `yes'
 
-%%?- fruit_flies_like_an_apple.	% ==> `no' (and a warning)
-%%?- writeln('>>> Answer NO and WARNING intended! <<<').
-
 ?- fruit_flies_like_an_apple[].	% ==> `yes'
 
 ?- tc(X,Y).			% computes the transitive closure of e(_,_)
 
-?- X:person.			% What persons are there?
+?- X:person.			% What persons are there? (mary, john)
 ?- person[instances ->> {X}].	% ... same Q, but asked differently (see above)
 
 ?- X[believes_in ->> {Y}].	% Who believes in what?

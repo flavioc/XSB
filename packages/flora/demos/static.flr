@@ -1,3 +1,9 @@
+/* This module should be loaded statically: [static].
+** It is used in conjunction with module dynamic.flr.
+** Dynamic.flr should be loaded dynamically: <dynamic>.
+** The intent is to show how static and dynamic code work in unison.
+*/
+
 department[faculty=>>professor; coursesOffered=>>string].
 professor[teaches@(string,number)=>>string].
 

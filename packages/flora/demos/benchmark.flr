@@ -136,16 +136,12 @@ whitechapel:station[x->324;y->130;l->>{district,metropolitan}].
 direct::connection.
 
 %%% there's a direct connection from X to Y iff they have a line in common 
-d(X,Y)
-:direct[from->X;to->Y;l->>{L}] :- 
+d(X,Y):direct[from->X;to->Y;l->>{L}] :- 
 	X:station[l->>{L}],
 	Y:station[l->>{L}], not X=Y.
 
-%L:line :- 
-%	X:station[l->>{L}].
+%L:line :- X:station[l->>{L}].
 
-
-%?- sys.eval[].  % for FLORID!
 
 %?- C:connection.
 

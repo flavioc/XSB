@@ -25,6 +25,8 @@
 %%% ==================================================================
 %%% So you're familiar with RELATIONAL OPERATORS and want to know the 
 %%% corresponding rules? Here are some illustrative EXAMPLES:
+%%%
+%%% This has nothing to do with F-logic, actually
 %%% ==================================================================
 
 %%% SELECT some tuples from p(X,Y):

@@ -1,3 +1,5 @@
+/* This demo shows the use of aggregates and assert/retract commands.
+*/
 
 john[salary@(1990) -> 20].
 john[salary@(1991) -> 40].

@@ -1,3 +1,5 @@
+/* This module supplies info about mary to module1 */
+
 :- export employee[salary@(number) => number].
 
 employee[salary@(number) => number].
