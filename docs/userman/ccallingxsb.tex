@@ -312,10 +312,12 @@ provided for that purpose:
     Null-terminates the {\tt VarString}  string {\tt vstr}. This is used in
     conjunction with {\tt vstrAPPENDBLK}, because the latter does not
     null-terminate variable-length strings.
-  \item {\tt vstrENSURE_SIZE(VarString *vstr, int minsize)}:~
+  \item {\tt vstrENSURE\_SIZE(VarString *vstr, int minsize)}:~
     Ensure that the string has room for at least {\tt minsize} bytes.
     This is a low-level routine, which is used to interface to procedures
-    that do not use {\tt VarString} internally.
+    that do not use {\tt VarString} internally. If the string is larger
+    than {\tt minsize}, the size might actually shrink to the nearest
+    increment that is larger {\tt minsize}.
   \item {\tt vstrSHRINK(VarString *vstr, int increment)}:~
     Shrink the size of {\tt vstr} to the minimum necessary to hold the
     data. {\tt increment} becomes the new increment by which {\tt vstr} is

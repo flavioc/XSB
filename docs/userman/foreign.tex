@@ -111,6 +111,63 @@ defaults to $CC$~{\tt -c~file.c} where $CC$ is the name of the C compiler
 used to install \ourprolog.
 Any Prolog compiler options are ignored when compiling a foreign module.
 
+\section{Foreign Modules That Link Dynamically with Other Libraries}
+
+Sometimes a foreign module might have to link dynamically with other
+(non-XSB) libraries. Typically, this happens when the foreign module
+implements an interface to a large external library of utilities.
+One example of this is the package {\tt libwww} in the XSB distribution,
+which provides a high-level interface to the W3C's Libwww library for
+accessing the Web. The library is compiled into a set of shared objects and
+the {\tt libwww} module has to link with them as well as with XSB.
+
+The problem here is that the loader must know at run time where to look for
+the shared objects to link with. On Unix systems, this is specified using
+the environment variable {\tt LD\_LIBRARY\_PATH}. For instance, 
+under Bourne shell or its derivatives, the following will do:
+%%
+\begin{verbatim}
+LD_LIBRARY_PATH=dir1:dir2:dir3
+export LD_LIBRARY_PATH
+\end{verbatim}
+%%
+One problem with this approach is that this variable must be set before
+starting XSB. The other problem is that such a global setting might
+interact with other foreign modules.
+
+To alleviate the problem, XSB dynamically sets {\tt LD\_LIBRARY\_PATH} before
+loading foreign modules by adding the directories specified in the {\tt -L}
+option in {\tt ldoption}. Unfortunately, this works on some systems
+(Linux), but not on others (Solaris). One route around this difficulty is
+to build a runtime library search path directly into the object code of the
+foreign module. This can be specified using a loader flag in {\tt
+  ldoption}.  The problem here is that different systems use a different
+flag!  To circumvent this, XSB provides a predicate that tries to guess the
+right flag for your system:
+%%
+\index{runtime_loader_flag/2}
+%%
+\begin{verbatim}
+runtime_loader_flag(+Hint,-Flag)  
+\end{verbatim}
+%%
+Currently it knows about a handful of the most popular systems, but this
+will be expanded. The argument {\tt Hint} is not currently used.
+It might be used in the future to provide {\tt runtime\_loader\_flag} with
+additional information that can improve the accuracy of finding the right
+runtime flags for various systems.
+
+The above predicate can be used as follows:
+%%
+\begin{verbatim}
+    ...,
+    runtime_loader_flag(_,Flag),
+    fmt_write_string(LDoptions, '%sdir1:dir2:dir2 %s', args(Flag,OldLDoption)),
+    fmt_write(File, ':- ldoption(%s).', LDoptions),
+    file_nl(File).
+\end{verbatim}
+%%
+
 
 \section{Passing Data between XSB and C}
 
