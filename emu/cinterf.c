@@ -165,7 +165,7 @@ DllExport bool call_conv c2p_list(prolog_term var)
 	bind_list(vptr(v), sreg);
 	return TRUE;
     } else {
-	xsb_warn("C2P_LIST: Argument 2 must be a variable");
+	xsb_warn("C2P_LIST: Argument must be a variable");
 	return FALSE;
     }
 }
@@ -177,7 +177,7 @@ DllExport bool call_conv c2p_nil(prolog_term var)
        bind_nil(vptr(v));
        return TRUE;
     } else {
-	xsb_warn("C2P_NIL: Argument 2 must be a variable");
+	xsb_warn("C2P_NIL: Argument must be a variable");
 	return FALSE;
     }
 }
