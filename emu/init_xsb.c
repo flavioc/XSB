@@ -103,6 +103,8 @@ pdl = {NULL, NULL, 0,
 
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
 
+int xsb_profiling_enabled = 0;
+
 DllExport extern char * call_conv strip_names_from_path(char*, int);
 
 /* real_alloc uses malloc only to keep pspacesize straight. */
@@ -326,7 +328,6 @@ char *init_para(int argc, char *argv[])
   xsb_mode = DEFAULT;
   flags[TABLING_METHOD] = VARIANT_TEM;
 
-
   /* Modify Parameters Using Command Line Options
      -------------------------------------------- */
   for (i=1; i<argc; i++) {
@@ -515,6 +516,9 @@ char *init_para(int argc, char *argv[])
       break;
     case '-': /* this was a long option of the form --optionname */
       process_long_option(argv[i]+2);
+      break;
+    case 'p':
+      xsb_profiling_enabled = 1;
       break;
     case 'q':
       break;

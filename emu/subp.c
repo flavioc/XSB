@@ -36,6 +36,7 @@
 #ifdef WIN_NT
 #include <windows.h>
 #include <process.h>	/* _beginthread, _endthread */
+#include <winbase.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <winsock.h>
@@ -47,6 +48,7 @@
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "psc_xsb.h"
+
 #include "memory_xsb.h"
 #include "register.h"
 #include "heap_xsb.h"
@@ -197,7 +199,7 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
     for ( cptr1++, cptr2++, i = 0;  i < (int)get_arity(psc1)-1;  cptr1++, cptr2++, i++ )
       if ( ! are_identical_terms(*cptr1,*cptr2) ) 
 	return FALSE;
-    term1 = *cptr1;
+    term1 = *cptr1; 
     term2 = *cptr2;
     goto begin_are_identical_terms;
   }
@@ -206,11 +208,10 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
     CPtr cptr2 = clref_val(term2);
 
     if ( are_identical_terms(*cptr1, *cptr2) ) {
-      term1 = *(cptr1 + 1);
+      term1 = *(cptr1 + 1); 
       term2 = *(cptr2 + 1);
       goto begin_are_identical_terms;
-    }
-    else return FALSE;
+    } else return FALSE;
   }
   else return FALSE;
 }
@@ -742,4 +743,30 @@ xsbBool startInterruptThread(SOCKET intSocket)
 #endif
   return 1;
 }
+
+extern long if_profiling;
+extern long prof_flag;
+extern long prof_unk_count;
+extern long prof_total;
+
+void setProfileBit() {
+  while (TRUE) {
+    if (if_profiling) asynint_val |= PROFINT_MARK;
+    Sleep(10);
+  }
+}
+
+xsbBool startProfileThread()
+{
+  HANDLE Thread;
+  if (!if_profiling) {
+    Thread = (HANDLE)_beginthread(setProfileBit,0,NULL);
+    SetThreadPriority(Thread,THREAD_PRIORITY_ABOVE_NORMAL);
+    if_profiling = 1;
+  }
+  prof_unk_count = 0;
+  prof_total = 0;
+  return TRUE;
+}
+
 #endif

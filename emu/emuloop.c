@@ -120,6 +120,12 @@ CPtr	ans_var_pos_reg;
 
 #endif
 
+#define handle_xsb_profile_interrupt 				\
+    if (asynint_val && (asynint_val & PROFINT_MARK)) {		\
+      asynint_val &= PROFINT_MARK;				\
+      log_prog_ctr(lpcreg);					\
+    }								\
+
 /* lfcastro: with INSN_BLOCKS, we use a block for each WAM instruction, 
    and define temporary variables locally; otherwise, temp variables are 
    global to the emuloop function */
@@ -258,6 +264,9 @@ extern int  builtin_call(byte), unifunc_call(int, CPtr);
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 extern Pair build_call(Psc);
 
+extern void log_prog_ctr(byte *);
+extern long prof_flag;
+
 #ifdef DEBUG_VM
 extern void debug_inst(byte *, CPtr);
 #endif
@@ -376,7 +385,7 @@ contcase:     /* the main loop */
 	builtin_table[(int) *(lpcreg+3)][1] + 1;
   }
 #endif
-  
+
   switch (*lpcreg) {
 #endif
     
@@ -1491,6 +1500,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(proceed,_proceed)  /* PPP */
+    handle_xsb_profile_interrupt;
     lpcreg = cpreg;
   XSB_End_Instr()
 
@@ -1631,6 +1641,7 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxx); /* this is ok */
     cpreg = lpcreg+sizeof(Cell); 
     check_glstack_overflow(MAX_ARITY, lpcreg,OVERFLOW_MARGIN);
+    handle_xsb_profile_interrupt;
     lpcreg = *(pb *)lpcreg;
   XSB_End_Instr()
 

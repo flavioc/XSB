@@ -239,6 +239,9 @@
 /* added by TLS to support clpqr */
 #define XSB_POW                 236
 
+/* added by dsw to support profiling */
+#define XSB_PROFILE             237
+
 /* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
 #define PRINT_LS                240
 #define PRINT_TR                241

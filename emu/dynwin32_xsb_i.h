@@ -61,7 +61,6 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 #endif
   Pair	search_ptr;
   char	sofilename[128];
-  int 	strl = strlen(pofilename);
   HMODULE handle;
   void	*funcep;
   char  *file_extension_ptr;

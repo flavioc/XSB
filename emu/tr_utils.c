@@ -296,35 +296,25 @@ VariantSF get_call(Cell callTerm, Cell *retTerm) {
 
 /* Stack for top-down traversing and freeing components of a trie
    -------------------------------------------------------------- */
-struct freeing_stack_node{
-  BTNptr item;
-  struct freeing_stack_node *next;
-};
 
-#define push_node(node){\
-     struct freeing_stack_node *temp;\
-     temp = (struct freeing_stack_node *)malloc(sizeof(struct freeing_stack_node));\
-     if (temp == NULL){\
-       xsb_exit("Out of Memory");\
-     } else {\
-       temp->next   = node_stk_top;\
-       temp->item   = node;\
-       node_stk_top = temp;\
-     }\
+#define freeing_stack_increment 50
+BTNptr *freeing_stack = NULL;
+int freeing_stack_size = 0;
+int node_stk_top = 0;
+
+#define push_node(node) {\
+  if (node_stk_top >= freeing_stack_size) {\
+    freeing_stack_size = freeing_stack_size + freeing_stack_increment;\
+    freeing_stack = (BTNptr *)realloc(freeing_stack,freeing_stack_size*sizeof(BTNptr));\
+  }\
+  freeing_stack[node_stk_top] = node;\
+  node_stk_top++;\
+  }
+
+#define pop_node(node) {\
+  node_stk_top--;\
+  node = freeing_stack[node_stk_top];\
 }
-
-#define pop_node(node){\
-    struct freeing_stack_node *temp;\
-    if (node_stk_top == NULL) {\
-       xsb_dbgmsg((LOG_DEBUG,"DELETE_PREDICATE_TABLE: pop attempted from NULL"));\
-       return;\
-    }\
-    node         = node_stk_top->item;\
-    temp         = node_stk_top;\
-    node_stk_top = node_stk_top->next;\
-    free(temp);\
-}
-
 
 static void free_trie_ht(BTHTptr ht) {
 
@@ -336,16 +326,15 @@ static void free_trie_ht(BTHTptr ht) {
 
 static void delete_variant_table(BTNptr x) {
 
-  struct freeing_stack_node *node_stk_top = 0, *call_nodes_top = 0;
+  int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
   BTHTptr ht;
-
 
   if ( IsNULL(x) )
     return;
 
   push_node(x);
-  while (node_stk_top != 0) {
+  while (node_stk_top > 0) {
     pop_node(node);
     if ( IsHashHeader(node) ) {
       ht = (BTHTptr) node;

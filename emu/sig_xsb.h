@@ -43,3 +43,4 @@
 #define ATTVINT_MARK 0x40		/* attributed var interrupt */
 
 #define MSGINT_MARK 0x20		/* software message interrupt */
+#define PROFINT_MARK 0x10		/* XSB Profiling interrupt */

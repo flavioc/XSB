@@ -397,8 +397,8 @@ xsbBool glstack_realloc(int new_size, int arity)
     int size = int_val(cell(interrupt_reg));
     int i;
     for (i=0; i<size; i++) {
-      reallocate_heap_or_ls_pointer(&(attv_interrupts[i][0]));
-      reallocate_heap_or_ls_pointer(&(attv_interrupts[i][1]));
+      reallocate_heap_or_ls_pointer(((CPtr *)&(attv_interrupts[i][0])));
+      reallocate_heap_or_ls_pointer(((CPtr *)&(attv_interrupts[i][1])));
     }
   }
 
@@ -618,9 +618,9 @@ int gc_heap(int arity)
       free(cp_marks) ;
       cp_marks = NULL ;
     }
-    if (slide_buf)    {  
-      free(slide_buf) ;
-      slide_buf = NULL ;
+    if (slide_buf)   { 
+      free(slide_buf); 
+      slide_buf = NULL; 
     }
 #ifdef SAFE_GC
     p = hreg;

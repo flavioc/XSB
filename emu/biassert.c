@@ -59,6 +59,9 @@
 
 extern Cell val_to_hash(Cell);
 
+extern int xsb_profiling_enabled;
+extern void add_prog_seg(Psc, byte *, long);
+extern void remove_prog_seg(byte *);
 
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer.			*/
@@ -1295,6 +1298,9 @@ xsbBool assert_buff_to_clref_p(prolog_term Head,
 	     (NI>0) ? INDEXED_CL : UNINDEXED_CL,
 	     IC_CELLS(NI) + ((Size+0xf)&~0x7)/sizeof(Cell) ) ;
 
+  if (xsb_profiling_enabled)
+    add_prog_seg(get_str_psc(Head),(byte *)Clause,ClRefSize(Clause));
+
   Location = 0; Loc = &Location;
   dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,Loc);    /* will become try */
   write_word(Clause,Loc,0);
@@ -1386,21 +1392,34 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int Inum)
   } else xsb_dbgmsg((LOG_DEBUG,"***Error 3 in assert"));
 }
 
+#define NUMHASHSIZES 16
+/* some primes for hash table sizes */
+static int hashsizes[NUMHASHSIZES] = {17,503,5003,49999,200003,400009,700001,1000003,
+        1000033,1000037,1000039,1000081,1000099,1000117,1000121,1000133}; 
+
 static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
 {
    unsigned int ThisTabSize ;
+   int i;
 
 /* xsb_dbgmsg(LOG_DEBUG,"SOB - %p, with %d cls",
-	      SOBrec, ClRefNumNonemptyBuckets(SOBrec) ) ;
-*/
+	      SOBrec, ClRefNumNonemptyBuckets(SOBrec) ) ; */
    /* Compute number of clauses */
-   if( PredOpCode(Pred) != fail && ClRefType(SOBrec) == SOB_RECORD )
-   {    ThisTabSize = ClRefHashSize(SOBrec) ;
-        if (2*ClRefNumNonemptyBuckets(SOBrec) > ThisTabSize)
-            ThisTabSize = 2*ThisTabSize+1 ;
-	return max(ThisTabSize, OldTabSize) ;
-    }
-    else return OldTabSize ;
+   if( PredOpCode(Pred) != fail && ClRefType(SOBrec) == SOB_RECORD ) {
+     ThisTabSize = ClRefHashSize(SOBrec) ;
+     if (ClRefNumNonemptyBuckets(SOBrec) > (ThisTabSize/4)*3) {
+       if (ThisTabSize >= hashsizes[NUMHASHSIZES-1]) {
+	 ThisTabSize = ThisTabSize+2;
+       } else {
+	 for (i=0; i<NUMHASHSIZES; i++) 
+	   if (hashsizes[i] > ThisTabSize) break; 
+	 ThisTabSize = hashsizes[i];
+       }
+       /*printf("Resizing HT to %d\n",ThisTabSize);*/
+     }
+     return max(ThisTabSize, OldTabSize) ;
+   }
+   else return OldTabSize ;
 }
 
 static int hash_val(int Ind, prolog_term Head, int TabSize )
@@ -1474,7 +1493,7 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
   return Hashval ;
 }
 
-static SOBRef new_SOBblock(int ThisTabSize, int Ind )
+static SOBRef new_SOBblock(int ThisTabSize, int Ind, Psc psc )
 {
    int i, Loc ;
    SOBRef NewSOB ;
@@ -1482,9 +1501,13 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind )
    /* get NEW SOB block */
    MakeClRef(NewSOB,SOB_RECORD,9+ThisTabSize);
    /*   xsb_dbgmsg((LOG_DEBUG,"New SOB %p, size = %d", NewSOB, ThisTabSize)); */
+
+   if (xsb_profiling_enabled)
+     add_prog_seg(psc,(byte *)NewSOB,ClRefSize(NewSOB)); /* dsw profiling */
+
    Loc = 0 ;
    dbgen_inst3_sob( Ind>0xff ? switchon3bound : switchonbound,
- 	  Ind,ClRefHashTable(NewSOB),ThisTabSize,&ClRefSOBInstr(NewSOB),&Loc);
+ 	  Ind,((Integer)ClRefHashTable(NewSOB)),ThisTabSize,&ClRefSOBInstr(NewSOB),&Loc);
    /* set the PrRef inside SOB */
    Loc = 0 ;
    dbgen_inst_ppp(fail,&ClRefJumpInstr(NewSOB),&Loc);
@@ -1586,7 +1609,7 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
 	|| ClRefSOBArg(SOBbuff,1) != (byte)(Ind>>16)  /* for byte-back */
 	|| ClRefSOBArg(SOBbuff,2) != (byte)(Ind>>8)
 	|| ClRefSOBArg(SOBbuff,3) != (byte)Ind) {
-      SOBbuff = new_SOBblock(ThisTabSize,Ind);
+      SOBbuff = new_SOBblock(ThisTabSize,Ind,get_str_psc(Head));
       /* add new SOB block */
       db_addbuff(Arity,SOBbuff,Pred,AZ,Inum);
     }
@@ -1934,6 +1957,8 @@ static int really_delete_clause(ClRef Clause)
 	  xsb_exit( "retract internal error!" ) ;
     }
     mem_dealloc((pb)ClRefAddr(Clause), ClRefSize(Clause));
+    if (xsb_profiling_enabled)
+      remove_prog_seg((pb)Clause);
     return TRUE ;
 }
 
@@ -2188,6 +2213,10 @@ xsbBool db_build_prref( /* PSC, Tabled?, -PrRef */ )
     set_data(psc,global_mod);
     
   p = (CPtr)mem_alloc(sizeof(PrRefData));
+
+  if (xsb_profiling_enabled)
+    add_prog_seg(psc,(byte *)p,sizeof(PrRefData)); /* dsw profiling */
+
   Loc = 0 ;
   dbgen_inst_ppp(fail,p,&Loc) ;
   p[2] = (Cell)p ;
@@ -2219,9 +2248,15 @@ xsbBool db_remove_prref( /* PrRef */ )
     {
       /* free prref, from calld instr set in db_build_prref */
       mem_dealloc((pb)(*(p+6)), sizeof(PrRefData));
+      if (xsb_profiling_enabled)
+	remove_prog_seg((pb)*(p+6));
       mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ; /*free table hdr*/
     }
-  else mem_dealloc((pb)p, sizeof(PrRefData));  /* free prref */
+  else {
+    mem_dealloc((pb)p, sizeof(PrRefData));  /* free prref */
+    if (xsb_profiling_enabled)
+      remove_prog_seg((pb)p);
+  }
   return TRUE ;
 }
 
@@ -2298,15 +2333,20 @@ int gen_retract_all(/* R1: + Prref */)
       if (another_buff(ClRefTryInstr(buffer)))
 	  buffers_to_free[btop++] = ClRefNext(buffer);
       mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
+      if (xsb_profiling_enabled)
+	remove_prog_seg((pb)buffer);
       break ;
     case UNINDEXED_CL: 
     case INDEXED_CL:
       if (another_buff(ClRefTryInstr(buffer)))
 	  buffers_to_free[btop++] = ClRefNext(buffer);
-	  if( ClRefNotRetracted(buffer) )
-	    /*		retract_clause(buffer,0) */
-	    /* really_delete_clause(buffer); */
-	    mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
+      if( ClRefNotRetracted(buffer) ) {
+	/*		retract_clause(buffer,0) */
+	/* really_delete_clause(buffer); */
+	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
+	if (xsb_profiling_enabled)
+	  remove_prog_seg((pb)buffer);
+      }
       break;
     }
   }

@@ -61,6 +61,10 @@
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "psc_xsb.h"
+
+#include "ubi_BinTree.h"
+#include "ubi_SplayTree.h"
+
 #include "hash_xsb.h"
 #include "tries.h"
 #include "choice.h"
@@ -124,9 +128,22 @@ extern xsbBool private_builtin(void);
 
 extern void xsb_segfault_quitter(int err);
 
+extern int xsb_profiling_enabled;
+
 #ifdef WIN_NT
 extern xsbBool startInterruptThread(SOCKET intSocket);
 #endif
+
+long if_profiling = 0;
+long prof_unk_count = 0;
+long prof_total = 0;
+long total_prog_segments = 0;
+long prof_table_length = 0;
+long prof_table_count = 0;
+
+extern xsbBool startProfileThread();
+extern void dump_prof_table();
+extern void retrieve_prof_table();
 
 extern xsbBool assert_code_to_buff(void), assert_buff_to_clref(void);
 extern xsbBool gen_retract_all(void), db_retract0(void), db_get_clause(void);
@@ -2233,6 +2250,28 @@ int builtin_call(byte number)
     ctop_float(3,pow(ptoc_number(1),ptoc_number(2))); 
     return TRUE ;
 
+  case XSB_PROFILE:
+    {
+      if (xsb_profiling_enabled) {
+	int call_type = ptoc_int(1);
+	if (call_type == 1) { /* turn profiling on */
+	  if (!startProfileThread()) {
+	    printf("Error starting profiling thread\n");
+	    return FALSE;
+	  }
+	} else if (call_type == 2) {
+	  if_profiling = 0;
+	} else if (call_type == 3) {
+	  retrieve_prof_table();
+	} else if (call_type == 4) {
+	  dump_prof_table();
+	} else {
+	  printf("Error: unknown profiling command\n");
+	}
+	return TRUE;
+      } else return FALSE;
+    }
+
   case PRINT_LS: print_ls(1) ; return TRUE ;
   case PRINT_TR: print_tr(1) ; return TRUE ;
   case PRINT_HEAP: print_heap(0,2000,1) ; return TRUE ;
@@ -2404,4 +2443,141 @@ int builtin_call(byte number)
   return TRUE; /* catch for every break from switch */
 }
 
+/* Prolog Profiling */
+
+ubi_btRoot TreeRoot;
+ubi_btRootPtr RootPtr = NULL;
+ubi_btNodePtr prof_table;
+ubi_btNodePtr prof_table_free = NULL;
+
+int compareItemNode(ubi_btItemPtr itemPtr, ubi_btNodePtr nodePtr) {
+  if (*itemPtr < nodePtr->code_begin) return -1;
+  else if (*itemPtr == nodePtr->code_begin) return 0;
+  else return 1;
+}
+
+void log_prog_ctr(byte *pcreg) {
+  ubi_btNodePtr NodePtr;
+
+  NodePtr = ubi_sptLocate(RootPtr, &pcreg, ubi_trLE);
+  prof_total++;
+  if (NodePtr == NULL) prof_unk_count++;
+  else if (pcreg <= NodePtr->code_end) {
+    (NodePtr->code_psc)->prof_ct++;
+  }
+  else prof_unk_count++;
+}
+
+#define prof_tab_incr 10000
+
+void add_prog_seg(Psc psc, byte *code_addr, long code_len) {
+  ubi_btNodePtr newNode;
+
+  if (!RootPtr) RootPtr = ubi_btInitTree(&TreeRoot,compareItemNode,ubi_trOVERWRITE);
+
+  if (prof_table_free != NULL) {
+    newNode = prof_table_free;
+    prof_table_free = prof_table_free->Link[0];
+  } else if (prof_table_count >= prof_table_length) {
+    /* printf("Allocating another Profile Table segment\n"); */
+    prof_table = (ubi_btNodePtr)mem_alloc(prof_tab_incr*sizeof(ubi_btNode));
+    prof_table_length = prof_tab_incr;
+    newNode = prof_table;
+    prof_table_count = 1;
+  } else {
+    newNode = prof_table+prof_table_count;
+    prof_table_count++;
+  }
+  newNode->code_begin = code_addr;
+  newNode->code_end = code_addr+code_len;
+  newNode->code_psc = psc;
+  ubi_sptInsert(RootPtr,newNode,&(newNode->code_begin),NULL);
+  //  printf("Adding segment for: %s/%d\n",get_name(newNode->code_psc),get_arity(newNode->code_psc));
+  total_prog_segments++;
+}
+
+void remove_prog_seg(byte *code_addr) {
+  ubi_btNodePtr oldNodePtr;
+
+  oldNodePtr = ubi_sptFind(RootPtr,&code_addr);
+  if (oldNodePtr == NULL) printf("Error: code to delete not found: %p\n", code_addr);
+  else {
+    //    printf("Removing segment for: %s/%d\n",get_name(oldNodePtr->code_psc),get_arity(oldNodePtr->code_psc));
+    ubi_sptRemove(RootPtr,oldNodePtr);
+    oldNodePtr->Link[0] = prof_table_free;
+    prof_table_free = oldNodePtr;
+    total_prog_segments--;
+  }
+}
+
+Psc p3psc = NULL;
+
+void retrieve_prof_table() { /* r2: +NodePtr, r3: -[PSC|Cnt], r4: -NextNodePtr */
+  ubi_btNodePtr PrevNodePtr, NodePtr;
+  CPtr pscptrloc, modpscptrloc;
+  Cell arg3;
+  int tmp;
+
+  PrevNodePtr = (ubi_btNodePtr) ptoc_int(2);
+  if (PrevNodePtr == NULL) NodePtr = ubi_btFirst(RootPtr->root);
+  else NodePtr = ubi_btNext(PrevNodePtr);
+  while (NodePtr != NULL && NodePtr->code_psc->prof_ct == 0) {
+    NodePtr = ubi_btNext(NodePtr);
+  }
+  if (p3psc == NULL) p3psc = insert("p",3,(Psc)flags[CURRENT_MODULE],&tmp)->psc_ptr;
+  arg3 = ptoc_tag(3);
+  bind_cs((CPtr)arg3,hreg);
+  new_heap_functor(hreg,p3psc);
+  pscptrloc = hreg++;
+  modpscptrloc = hreg++;
+  if (NodePtr != NULL) {
+    follow(hreg++) = makeint(NodePtr->code_psc->prof_ct);
+    bld_oint(pscptrloc,(Integer)(NodePtr->code_psc));
+    bld_oint(modpscptrloc,(Integer)(NodePtr->code_psc->data));
+    NodePtr->code_psc->prof_ct = 0;
+  } else {
+    follow(hreg++) = makeint(prof_unk_count);
+    bld_int(pscptrloc,0);
+    bld_int(modpscptrloc,0);
+    prof_unk_count = 0;
+  }
+  ctop_int(4,(Integer)NodePtr);
+}
+
+void dump_prof_table() {
+  ubi_btNodePtr NodePtr;
+  Psc temp_psc = NULL;
+  long percent;
+  long segs_scanned = 0;
+
+  NodePtr = ubi_trFirst(RootPtr->root);
+  while (NodePtr != NULL) {
+    segs_scanned++;
+    temp_psc = NodePtr->code_psc;
+    if (temp_psc->prof_ct > 0) {
+      percent = (100*temp_psc->prof_ct + prof_total/2)/prof_total;
+      if (percent > 0) {
+	printf("  %ld%% (%ld) %s/%d (%s)\n",percent,temp_psc->prof_ct, 
+	       get_name(temp_psc), get_arity(temp_psc),
+	       get_name(temp_psc->data));
+      }
+      temp_psc->prof_ct = 0;
+    }
+    temp_psc = temp_psc->data;
+    if (temp_psc != NULL) {
+      if (temp_psc->prof_ct > 0) {
+	percent = (100*temp_psc->prof_ct + prof_total/2)/prof_total;
+	printf("%ld%% (%ld) mod: %s/%d\n",percent,temp_psc->prof_ct, 
+	       get_name(temp_psc), get_arity(temp_psc));
+	temp_psc->prof_ct = 0;
+      }
+    }
+    NodePtr = ubi_btNext(NodePtr);
+  }
+  printf("%ld%% (%ld) Unknown\n",(100*prof_unk_count+prof_total/2)/prof_total,prof_unk_count);
+  printf("\n  %ld Total\n",prof_total);
+  printf("\n %ld Total program segments, %ld scanned\n",total_prog_segments,segs_scanned);
+}
+
 /*------------------------- end of builtin.c -----------------------------*/
+

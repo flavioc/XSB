@@ -40,10 +40,10 @@
 {       if (heap_bot <= cell_val)                                     \
       /* <= because of heaptop in CP 13-10-1998 */                    \
   {   if (cell_val <= heap_top)                                       \
-                *cell_ptr = (Cell) ((Cell) (cell_val + heap_offset)   \
+                *cell_ptr = (CPtr) ((Cell)(cell_val + heap_offset)   \
                             | PRE_IMAGE_MARK) ;                       \
             else if (cell_val <= ls_bot)                              \
-                 *cell_ptr = (Cell) ((Cell) (cell_val + local_offset) \
+                 *cell_ptr = (CPtr) ((Cell) (cell_val + local_offset) \
                             | PRE_IMAGE_MARK) ;                       \
 } }
 
