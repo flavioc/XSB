@@ -331,9 +331,9 @@ load_component(Name,Path,Arglist):-
 load_component_setup(Name,Path,Arglist):-
 	init_path_engine,
 	retractall(temp_depends(_,_,_,_)),
-            check_atom(Name,'load_component_setup/1',1),
-            check_atom(Path,'load_component_setup/1',2),
-            check_ground(Arglist,'load_component_setup/1',3).
+            check_atom(Name,'load_component_setup/3',1),
+            check_atom(Path,'load_component_setup/3',2),
+            check_ground(Arglist,'load_component_setup/3',3).
 
 load_component_1(Name,Path,Arglist):- 
 	split_arglist_on_version(Arglist,V,Arglist1),
