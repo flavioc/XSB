@@ -1513,8 +1513,8 @@ int  builtin_call(byte number)
   case TRIE_GET_CALL: /* r1: +call_term */
     pcreg = trie_get_calls();
     break;
-  case GET_LASTNODE_AND_RETSKEL:
-    get_lastnode_and_retskel();
+  case GET_LASTNODE_CS_RETSKEL:
+    get_lastnode_cs_retskel();
     break;
   case CONSTRUCT_RET_FOR_CALL:
     construct_ret_for_call();

@@ -360,7 +360,7 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_DELETE_TERM, "trie_delete_term");
   set_builtin_table(TRIE_GET_RETURN, "trie_get_return");
   set_builtin_table(TRIE_GET_CALL, "trie_get_call");
-  set_builtin_table(GET_LASTNODE_AND_RETSKEL, "get_lastnode_and_retskel");
+  set_builtin_table(GET_LASTNODE_CS_RETSKEL, "get_lastnode_cs_retskel");
   set_builtin_table(CONSTRUCT_RET_FOR_CALL, "construct_ret_for_call");
   set_builtin_table(BREG_RETSKEL,"breg_retskel");
 
