@@ -312,9 +312,12 @@ flora_user_flora_dir(Dir) :-
           ( file_exists(Dir) ->
 	      true
 	  ;
-	    fmt_write_string(Cmd,"mkdir %s",args(Dir)),
-	    shell(Cmd,Res),
-	    Res =:= 0
+	    ( path_sysop(mkdir,Dir) ->
+		true
+	    ;
+	      flora_error_line("Cannot create directory %s!",args(Dir)),
+	      abort
+	    )
 	  ),
 	  assert(package_configuration(user_dir(flora),Dir))
 	),
