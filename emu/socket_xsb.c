@@ -135,7 +135,7 @@ static char *get_host_IP(char *host_name_or_IP) {
   listptr = host_struct->h_addr_list;
 
   if ((ptr = (struct in_addr *) *listptr++) != NULL) {
-    xsb_mesg(" Int. address: %s", inet_ntoa(*ptr));
+    xsb_mesg(" IP address: %s", inet_ntoa(*ptr));
     return(inet_ntoa(*ptr));
   }
   return NULL;
@@ -184,6 +184,7 @@ static int readmsg(SOCKET sock_handle, char **msg_buff)
 }
 
 /* socket calls which need timeout control: 
+   socket_accept();
    socket_connect();
    socket_recv();
    socket_send();
@@ -191,6 +192,15 @@ static int readmsg(SOCKET sock_handle, char **msg_buff)
    socket_put();
    The formal parameter is pointer to xsbTimeout.
 */
+
+static void socket_accept(xsbTimeout *pptr) {
+    SOCKET sock_handle_in = (SOCKET) ptoc_int(2);
+    SOCKET sock_handle = accept(sock_handle_in, NULL, NULL);
+
+    pptr->return_code = (int) sock_handle;
+    NOTIFY_PARENT_THREAD(pptr);
+}
+
 
 static void socket_connect(xsbTimeout *pptr) {
     SOCKET sock_handle;
@@ -204,7 +214,7 @@ static void socket_connect(xsbTimeout *pptr) {
     if (domain == 0) domain = AF_INET;
     else if (domain == 1) {
       domain = AF_UNIX;
-      xsb_abort("SOCKET_REQUEST: domain AF_INET is not implemented");
+      xsb_abort("SOCKET_REQUEST: Domain AF_UNIX is not implemented");
     } else  {
       xsb_abort("SOCKET_REQUEST: Invalid domain. Valid domains are: 0(AF_INET), 1(AF_UNIX)");           
     }
@@ -218,7 +228,6 @@ static void socket_connect(xsbTimeout *pptr) {
 
     pptr->return_code =
       connect(sock_handle,(PSOCKADDR)&socket_addr,sizeof(socket_addr));
-
     NOTIFY_PARENT_THREAD(pptr);
 }
 
@@ -264,7 +273,6 @@ static void socket_get0(xsbTimeout * pptr) {
     sock_handle = (SOCKET) ptoc_int(2);
     pptr->return_code =
           recvfrom(sock_handle,(char*)(pptr->sockdata),1,0,NULL,0);
-
     NOTIFY_PARENT_THREAD(pptr);
 }
   
@@ -276,7 +284,6 @@ static void socket_put(xsbTimeout *pptr) {
     tmpch = (char)ptoc_int(3);
 
     pptr->return_code = sendto(sock_handle, &tmpch, 1, 0, NULL,0);
-
     NOTIFY_PARENT_THREAD(pptr);
 }
 
@@ -285,7 +292,7 @@ static void socket_put(xsbTimeout *pptr) {
 xsbBool xsb_socket_request(void)
 {
   static int ecode = 0;  /* error code for socket ops */
-  static SOCKET sock_handle, sock_handle_in;
+  static SOCKET sock_handle;
   static int domain, portnum;
   static SOCKADDR_IN socket_addr;
   static struct linger sock_linger_opt;
@@ -293,7 +300,7 @@ xsbBool xsb_socket_request(void)
   xsbTimeout *pSock;
 
   switch (ptoc_int(1)) {
-  case SOCKET_ROOT:
+  case SOCKET_ROOT: /* this is the socket() request */
     /* socket_request(SOCKET_ROOT,+domain,-socket_fd,-Error,_,_,_) 
        Currently only AF_INET domain */
     domain = ptoc_int(2); 
@@ -372,29 +379,43 @@ xsbBool xsb_socket_request(void)
   case SOCKET_ACCEPT:
     /* socket_request(SOCKET_ACCEPT,+sock_handle_in,
        	       	       	       	    -sock_handle_out, -Error,_,_,_)  */
-    sock_handle_in = (SOCKET) ptoc_int(2);
-    sock_handle = accept(sock_handle_in, NULL, NULL);
+    pSock = make_timeout_obj();
+
+    if (CHECK_TIMER_SET) {
+      int timeout_flag; 
+
+      timeout_flag=make_timed_call(pSock, socket_accept);
+
+      if (timeout_flag == TIMER_SETUP_ERR) {
+        FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,4,"SOCKET_ACCEPT");
+      } else if(timeout_flag) {   /* timed out and return */ 
+        FREE_TIMEOUT_AND_SET_ECODE(TIMEOUT_ERR, 4,"SOCKET_ACCEPT");
+      }
+    } else { /* timer not set */
+      socket_accept(pSock);
+    }
 	
     /* error handling */ 
-    if (BAD_SOCKET(sock_handle)) {
+    if (BAD_SOCKET(pSock->return_code)) {
       ecode = XSB_SOCKET_ERRORCODE;
       perror("SOCKET_ACCEPT");
-    } else
+    } else {
+      sock_handle = pSock->return_code; /* accept() returns sock_out */
       ecode = SOCK_OK;
+    }
 
     ctop_int(3, (SOCKET) sock_handle);
 	
-    return set_error_code(ecode, 4, "SOCKET_ACCEPT");
+    FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_ACCEPT");
   
   case SOCKET_CONNECT: {
     /* socket_request(SOCKET_CONNECT,+domain,+sock_handle,+port,
 				     +hostname,-Error) */
-    int timeout_flag; 
-
     pSock = make_timeout_obj();
 
     /* control time out */
     if (CHECK_TIMER_SET) {
+      int timeout_flag; 
       timeout_flag=make_timed_call(pSock, socket_connect);
 
       if (timeout_flag == TIMER_SETUP_ERR) {
@@ -410,6 +431,7 @@ xsbBool xsb_socket_request(void)
     if (SOCKET_OP_FAILED(pSock->return_code)) {
       ecode = XSB_SOCKET_ERRORCODE;
       perror("SOCKET_CONNECT");
+      /* close, because if connect() fails then socket becomes unusable */
       closesocket(ptoc_int(3));
     } else
       ecode = SOCK_OK;
@@ -432,14 +454,14 @@ xsbBool xsb_socket_request(void)
     
     return set_error_code(ecode, 3, "SOCKET_CLOSE");
     
-  case SOCKET_RECV: {
+  case SOCKET_RECV:
     /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
-    int timeout_flag; 
-
     pSock = make_timeout_obj();
     
     /* control time out */
     if (CHECK_TIMER_SET) {
+      int timeout_flag; 
+
       timeout_flag=make_timed_call(pSock,socket_recv);
       if(timeout_flag == TIMER_SETUP_ERR) {
 	FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR,4,"SOCKET_RECV");
@@ -472,16 +494,14 @@ xsbBool xsb_socket_request(void)
 
     FREE_TIMEOUT_AND_SET_ECODE(ecode,4,"SOCKET_RECV");  
 
-  }
-  
-  case SOCKET_SEND: {
+  case SOCKET_SEND:
     /* socket_request(SOCKET_SEND,+Sockfd, +Msg, -Error,_,_,_) */
-    int timeout_flag; 
-
     pSock = make_timeout_obj();
     
     /* control time out */
     if (CHECK_TIMER_SET) {
+      int timeout_flag; 
+
       timeout_flag=make_timed_call(pSock,socket_send);
       if(timeout_flag == TIMER_SETUP_ERR ) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_SEND");
@@ -498,16 +518,15 @@ xsbBool xsb_socket_request(void)
       ecode = SOCK_OK;
       
      FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_SEND"); 
-  }
 
-  case SOCKET_GET0: {
+  case SOCKET_GET0:
     /* socket_request(SOCKET_GET0,+Sockfd,-C,-Error,_,_,_) */
-    int timeout_flag;
-
     pSock = make_timeout_obj();
 
     /* control time out */
     if (CHECK_TIMER_SET) {
+      int timeout_flag;
+      
       timeout_flag=make_timed_call(pSock,socket_get0);
       if (timeout_flag == TIMER_SETUP_ERR) {
         FREE_TIMEOUT_AND_SET_ECODE(TIMER_SETUP_ERR, 4,"SOCKET_GET0"); 
@@ -531,18 +550,18 @@ xsbBool xsb_socket_request(void)
       perror("SOCKET_GET0");
       ecode = XSB_SOCKET_ERRORCODE;
     }
-
-     FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_GET0");
-  }
-
-  case SOCKET_PUT: {
+    
+    FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_GET0");
+    
+  case SOCKET_PUT:
     /* socket_request(SOCKET_PUT,+Sockfd,+C,-Error_,_,_) */
-    int timeout_flag;
 
     pSock = make_timeout_obj();
 
     /* control time out */
     if (CHECK_TIMER_SET) {
+      int timeout_flag;
+
       timeout_flag=make_timed_call(pSock,socket_put);
 
       if(timeout_flag == TIMER_SETUP_ERR)  {
@@ -562,8 +581,7 @@ xsbBool xsb_socket_request(void)
       perror("SOCKET_PUT");
     }
     
-     FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_PUT");
-  }
+    FREE_TIMEOUT_AND_SET_ECODE(ecode, 4, "SOCKET_PUT");
 
   case SOCKET_SET_OPTION: {
     /* socket_request(SOCKET_SET_OPTION,+Sockfd,+OptionName,+Value,_,_,_) */
@@ -628,16 +646,16 @@ xsbBool xsb_socket_request(void)
 	connections[connection_count].connection_name = connection_name;
  	connections[connection_count].empty_flag = 0;
 
-	/* call the utility function seperately to take the fds in */
+	/* call the utility function separately to take the fds in */
 	list_sockfd(R_sockfd, &connections[connection_count].readset,
 		    &rmax_fd, &connections[connection_count].read_fds,
-			&connections[connection_count].sizer);
+		    &connections[connection_count].sizer);
 	list_sockfd(W_sockfd, &connections[connection_count].writeset,
 		    &wmax_fd, &connections[connection_count].write_fds,
-			&connections[connection_count].sizew);
+		    &connections[connection_count].sizew);
 	list_sockfd(E_sockfd, &connections[connection_count].exceptionset, 
 		    &emax_fd,&connections[connection_count].exception_fds,
-			&connections[connection_count].sizee);
+		    &connections[connection_count].sizee);
 
 	connections[connection_count].maximum_fd =
 	  max(max(rmax_fd,wmax_fd), emax_fd);
