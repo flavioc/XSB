@@ -40,7 +40,7 @@
 #define QUASI_SKIPPING	 9	/* debugger, 1 = quasi skip, 0 = not	NW */
 #define CURRENT_INPUT	10	/* current input file descriptor	NW */
 #define CURRENT_OUTPUT	11	/* current output file descriptor	NW */
-#define CURRENT_MODULE	12	/* current module (0 = usermod)		YW */
+#define CURRENT_MODULE	12	/* current module. USERMOD_PSC=usermod  YW */
 #define MOD_LIST	13	/* the list of module (Psc) entries	YR */
 
 #define SYS_TIMER       16      /* XSB Timer	    	    	    	MK */

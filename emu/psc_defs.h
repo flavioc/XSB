@@ -48,4 +48,9 @@
 #define T_IMPORTED 2
 #define T_GLOBAL   4
 
+
+/* Global module */
+
+#define USERMOD_PSC    1
+
 #endif /* _PSC_DEFS_ */

@@ -739,7 +739,7 @@ void init_symbols(void)
 
   /* insert mod name global */
   tp = insert_module(T_MODU, "global");	/* loaded */
-  set_data(pair_psc(tp), (Psc)1);	/* 1 stands for global mod */
+  set_data(pair_psc(tp), (Psc)USERMOD_PSC);	/* initialize global mod PSC */
   global_mod = pair_psc(tp);
 
   /* insert "[]"/0 into String Table */
