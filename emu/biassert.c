@@ -1001,10 +1001,11 @@ static void db_genmvs(struct instruction *inst_queue, RegStat Reg)
 /*======================================================================*/
 
 /*======================================================================*/
-/* assert_buff_to_clref(+Arg,+Arity,+Prref,+AZ,+Index,+HashTabSize)	*/
+/* assert_buff_to_clref(+Term +Arg,+Arity,+Prref,+AZ,+Index,+HashTabSize)*/
 /*	allocates a Clref, copies the byte-code for the clause from	*/
 /*	an internal buffer into it, and adds to to the chains.		*/
 /*	The arguments are:						*/
+/*	Term:  The term being asserted.					*/
 /*	Arg:   The argument value of the indexed arg (ignored if no ind)*/
 /*	Arity: the number of registers to save in a choice point.	*/
 /*		Note the Arity is one more than the original arity, to  */
