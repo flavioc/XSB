@@ -27,12 +27,10 @@
 
 #include <stdio.h>
 
-#ifdef WIN_NT
-#include <time.h>
+/* take care of the time.h problems */
+#include "xsb_time.h"
 
-#else
-
-#include <sys/time.h>
+#ifndef WIN_NT
 #include <sys/resource.h>
 
 #ifdef SOLARIS

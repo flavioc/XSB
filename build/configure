@@ -1937,7 +1937,7 @@ test "${have_errors}" = "yes" &&
 
 # Checks for header files
 
-for ac_hdr in sys/time.h sys/resource.h
+for ac_hdr in sys/time.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1974,24 +1974,63 @@ EOF
  
 else
   echo "$ac_t""no" 1>&6
+fi
+done
+
+
+for ac_hdr in sys/resource.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:1986: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1991 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1996: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
 have_errors=yes
 fi
 done
 
 test "${have_errors}" = "yes" &&
-    { echo "configure: error: One of these header files is missing on your system:
-			sys/time.h
-			sys/resource.h" 1>&2; exit 1; }
+    { echo "configure: error: sys/resource.h is missing on your system" 1>&2; exit 1; }
 
 for ac_func in malloc
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:1990: checking for $ac_func" >&5
+echo "configure:2029: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1995 "configure"
+#line 2034 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2014,7 +2053,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2018: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2057: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2046,17 +2085,17 @@ for ac_hdr in unistd.h string.h stdlib.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:2050: checking for $ac_hdr" >&5
+echo "configure:2089: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2055 "configure"
+#line 2094 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:2060: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:2099: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -2090,12 +2129,12 @@ test "${have_errors}" = "yes" &&
 			stdlib.h" 1>&2; exit 1; }
 # Checks for typedefs, structures, and compiler characteristics.
 echo $ac_n "checking for working const""... $ac_c" 1>&6
-echo "configure:2094: checking for working const" >&5
+echo "configure:2133: checking for working const" >&5
 if eval "test \"`echo '$''{'ac_cv_c_const'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2099 "configure"
+#line 2138 "configure"
 #include "confdefs.h"
 
 int main() {
@@ -2144,7 +2183,7 @@ ccp = (char const *const *) p;
 
 ; return 0; }
 EOF
-if { (eval echo configure:2148: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2187: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_const=yes
 else
@@ -2166,12 +2205,12 @@ fi
 
 
 echo $ac_n "checking return type of signal handlers""... $ac_c" 1>&6
-echo "configure:2170: checking return type of signal handlers" >&5
+echo "configure:2209: checking return type of signal handlers" >&5
 if eval "test \"`echo '$''{'ac_cv_type_signal'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2175 "configure"
+#line 2214 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #include <signal.h>
@@ -2188,7 +2227,7 @@ int main() {
 int i;
 ; return 0; }
 EOF
-if { (eval echo configure:2192: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2231: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_type_signal=void
 else
@@ -2209,12 +2248,12 @@ EOF
 for ac_func in strdup mkdir
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:2213: checking for $ac_func" >&5
+echo "configure:2252: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2218 "configure"
+#line 2257 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2237,7 +2276,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2241: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2280: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2270,12 +2309,12 @@ test "${have_errors}" = "yes" && \
 for ac_func in gethostbyname gettimeofday socket snprintf
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:2274: checking for $ac_func" >&5
+echo "configure:2313: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2279 "configure"
+#line 2318 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2298,7 +2337,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2302: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2341: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2326,12 +2365,12 @@ done
 for ac_func in regexec regerror regcomp
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:2330: checking for $ac_func" >&5
+echo "configure:2369: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2335 "configure"
+#line 2374 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2354,7 +2393,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2358: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2397: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2382,12 +2421,12 @@ done
 for ac_func in fnmatch glob globfree
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:2386: checking for $ac_func" >&5
+echo "configure:2425: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2391 "configure"
+#line 2430 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2410,7 +2449,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2414: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2453: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2439,12 +2478,12 @@ done
 for ac_func in execvp
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:2443: checking for $ac_func" >&5
+echo "configure:2482: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2448 "configure"
+#line 2487 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -2467,7 +2506,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2471: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2510: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -2642,7 +2681,7 @@ fi
 # Extract the first word of "perl", so it can be a program name with args.
 set dummy perl; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2646: checking for $ac_word" >&5
+echo "configure:2685: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_perl_support'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2713,7 +2752,7 @@ trap 'rm buildxsb.lock; exit 1' 1 2 3 15
 # Extract the first word of "javac", so it can be a program name with args.
 set dummy javac; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2717: checking for $ac_word" >&5
+echo "configure:2756: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_java_support'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2843,7 +2882,7 @@ fi
 # Extract the first word of "itkwish", so it can be a program name with args.
 set dummy itkwish; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2847: checking for $ac_word" >&5
+echo "configure:2886: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_itkwish_path'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2913,16 +2952,16 @@ fi
 TEMP_LDFLAGS=$LDFLAGS
 LDFLAGS="-Wl,-export-dynamic"
 echo $ac_n "checking whether loader understands -Wl""... $ac_c" 1>&6
-echo "configure:2917: checking whether loader understands -Wl" >&5
+echo "configure:2956: checking whether loader understands -Wl" >&5
 cat > conftest.$ac_ext <<EOF
-#line 2919 "configure"
+#line 2958 "configure"
 #include "confdefs.h"
 
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2926: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2965: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   __export_dynamic=yes
 else
@@ -3126,21 +3165,21 @@ esac
 
 if test -z "$with_os" ; then
             echo $ac_n "checking for inline""... $ac_c" 1>&6
-echo "configure:3130: checking for inline" >&5
+echo "configure:3169: checking for inline" >&5
 if eval "test \"`echo '$''{'ac_cv_c_inline'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_cv_c_inline=no
 for ac_kw in inline __inline__ __inline; do
   cat > conftest.$ac_ext <<EOF
-#line 3137 "configure"
+#line 3176 "configure"
 #include "confdefs.h"
 
 int main() {
 } $ac_kw foo() {
 ; return 0; }
 EOF
-if { (eval echo configure:3144: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:3183: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_c_inline=$ac_kw; break
 else
@@ -3858,81 +3897,81 @@ Checking installation directories...
 ( 
 
 echo $ac_n "checking $scriptdir""... $ac_c" 1>&6
-echo "configure:3862: checking $scriptdir" >&5 && \
+echo "configure:3901: checking $scriptdir" >&5 && \
      ((test -d $scriptdir || mkdir -p $scriptdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_bindir""... $ac_c" 1>&6
-echo "configure:3866: checking $arch_bindir" >&5 && \
+echo "configure:3905: checking $arch_bindir" >&5 && \
      ((test -d $arch_bindir || mkdir -p $arch_bindir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_config_libdir""... $ac_c" 1>&6
-echo "configure:3870: checking $arch_config_libdir" >&5 && \
+echo "configure:3909: checking $arch_config_libdir" >&5 && \
      ((test -d $arch_config_libdir || mkdir -p ${arch_config_libdir}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking ${arch_config_objlibdir}""... $ac_c" 1>&6
-echo "configure:3874: checking ${arch_config_objlibdir}" >&5 && \
+echo "configure:3913: checking ${arch_config_objlibdir}" >&5 && \
      ((test -d "${arch_config_objlibdir}" || mkdir -p ${arch_config_objlibdir}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 
 echo $ac_n "checking $site_libdir""... $ac_c" 1>&6
-echo "configure:3879: checking $site_libdir" >&5 && \
+echo "configure:3918: checking $site_libdir" >&5 && \
      ((test -d $site_libdir || mkdir -p $site_libdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $site_config_libdir""... $ac_c" 1>&6
-echo "configure:3883: checking $site_config_libdir" >&5 && \
+echo "configure:3922: checking $site_config_libdir" >&5 && \
      ((test -d $site_config_libdir || mkdir -p $site_config_libdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 
 echo $ac_n "checking $install_emudir""... $ac_c" 1>&6
-echo "configure:3888: checking $install_emudir" >&5 && \
+echo "configure:3927: checking $install_emudir" >&5 && \
      ((test -d $install_emudir || mkdir -p $install_emudir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_libdir""... $ac_c" 1>&6
-echo "configure:3892: checking $install_libdir" >&5 && \
+echo "configure:3931: checking $install_libdir" >&5 && \
      ((test -d $install_libdir || mkdir -p $install_libdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_syslibdir""... $ac_c" 1>&6
-echo "configure:3896: checking $install_syslibdir" >&5 && \
+echo "configure:3935: checking $install_syslibdir" >&5 && \
      ((test -d $install_syslibdir || mkdir -p $install_syslibdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_cmplibdir""... $ac_c" 1>&6
-echo "configure:3900: checking $install_cmplibdir" >&5 && \
+echo "configure:3939: checking $install_cmplibdir" >&5 && \
      ((test -d $install_cmplibdir || mkdir -p $install_cmplibdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_scriptdir""... $ac_c" 1>&6
-echo "configure:3904: checking $install_scriptdir" >&5 && \
+echo "configure:3943: checking $install_scriptdir" >&5 && \
      ((test -d $install_scriptdir || mkdir -p $install_scriptdir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_builddir""... $ac_c" 1>&6
-echo "configure:3908: checking $install_builddir" >&5 && \
+echo "configure:3947: checking $install_builddir" >&5 && \
      ((test -d $install_builddir || mkdir -p $install_builddir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_bindir""... $ac_c" 1>&6
-echo "configure:3912: checking $arch_install_bindir" >&5 && \
+echo "configure:3951: checking $arch_install_bindir" >&5 && \
      ((test -d $arch_install_bindir || mkdir -p $arch_install_bindir) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_config_libdir""... $ac_c" 1>&6
-echo "configure:3916: checking $arch_install_config_libdir" >&5 && \
+echo "configure:3955: checking $arch_install_config_libdir" >&5 && \
      ((test -d $arch_install_config_libdir || mkdir -p ${arch_install_config_libdir}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $arch_install_objdir""... $ac_c" 1>&6
-echo "configure:3920: checking $arch_install_objdir" >&5 && \
+echo "configure:3959: checking $arch_install_objdir" >&5 && \
      ((test -d $arch_install_objdir || mkdir -p ${arch_install_objdir}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_etcdir""... $ac_c" 1>&6
-echo "configure:3924: checking $install_etcdir" >&5 && \
+echo "configure:3963: checking $install_etcdir" >&5 && \
      ((test -d $install_etcdir || mkdir -p ${install_etcdir}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_pkgdir""... $ac_c" 1>&6
-echo "configure:3928: checking $install_pkgdir" >&5 && \
+echo "configure:3967: checking $install_pkgdir" >&5 && \
      ((test -d $install_pkgdir || mkdir -p ${install_pkgdir}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_examples""... $ac_c" 1>&6
-echo "configure:3932: checking $install_examples" >&5 && \
+echo "configure:3971: checking $install_examples" >&5 && \
      ((test -d $install_examples || mkdir -p ${install_examples}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 echo $ac_n "checking $install_prolog_includes""... $ac_c" 1>&6
-echo "configure:3936: checking $install_prolog_includes" >&5 && \
+echo "configure:3975: checking $install_prolog_includes" >&5 && \
      ((test -d $install_prolog_includes || mkdir -p ${install_prolog_includes}) && echo "$ac_t""OK" 1>&6) \
 	|| echo "$ac_t""FAILED" 1>&6
 ) 2> /dev/null

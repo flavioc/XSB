@@ -38,6 +38,8 @@
 /* wind2unix.h must be included after sys/stat.h */
 #include "wind2unix.h"
 
+#include "xsb_time.h"
+
 /* The socket material */
 #ifdef WIN_NT
 #include <windows.h>
@@ -50,7 +52,6 @@
 #include <winsock.h>
 #include "wsipx.h"
 #else /* UNIX */
-#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <netdb.h>

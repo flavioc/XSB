@@ -645,11 +645,11 @@ test "${have_errors}" = "yes" &&
 # Checks for header files
 
 dnl Note, under NT, we sould include time.h instead
-AC_CHECK_HEADERS(sys/time.h sys/resource.h, , have_errors=yes)
+AC_CHECK_HEADERS(sys/time.h)
+
+AC_CHECK_HEADERS(sys/resource.h, , have_errors=yes)
 test "${have_errors}" = "yes" &&
-    AC_MSG_ERROR([One of these header files is missing on your system:
-			sys/time.h
-			sys/resource.h])
+    AC_MSG_ERROR([sys/resource.h is missing on your system])
 
 AC_CHECK_FUNCS(malloc, have_malloc=yes,have_malloc=no)
 test "${have_malloc}" = "no" &&

@@ -94,7 +94,9 @@ Todo:
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <time.h>  /* --lfcastro */
+
+/* Take care of the time.h business */
+#include "xsb_time.h"
 
 #include "auxlry.h"
 #include "cell_xsb.h"
