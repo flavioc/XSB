@@ -24,19 +24,26 @@
 
 (require 'comint)
 
+;; Is it XEmacs?
+(defconst flora-xemacs-p (string-match "XEmacs" emacs-version))
+;; Is it Emacs?
+(defconst flora-emacs-p (not flora-xemacs-p))
+
+(defconst flora-temp-file-prefix (if flora-emacs-p
+				     temporary-file-directory
+				   (temp-directory))
+  "*Directory for temporary files.")
+
 ;; This path has to be set at installation of the F-Logic-System!!!
-(defvar flora-program-name "xsb -e '[flora], flora_shell.'"
+(defvar flora-program-name "xsb"
   "*Program name for invoking an inferior Flora with `run-flora'.")
 
 (defvar flora-mode-syntax-table nil)
 (defvar flora-mode-abbrev-table nil)
 (defvar flora-mode-map nil)
 
-(defvar flora-consult-string "[user].\n"
-  "*Consult stdin as plain input. ")
-
-(defvar flora-forget-string "halt.\n xsb -e '[flora], flora_shell.'\n"
-  "*reinitialise  system")
+(defvar flora-forget-string "halt.\n\n"
+  "*Reinitialise  system")
 
 (defvar flora-offer-save t
   "*If non-nil, ask about saving modified buffers before 
@@ -49,11 +56,23 @@
 
 (defconst flora-quoted-atom-regexp
   "\\(^\\|[^0-9]\\)\\('\\([^\n']\\|\\\\'\\)*'\\)"
-;  "[^0-9]\\('\\([^\n']\\|\\\\'\\)*'\\)"
   "Regexp matching a quoted atom.")
+(defconst flora-atom-regexp
+  "\\(%s\\|[A-Za-z0-9_]+\\)"
+  "Regexp matching an atom.")
 (defconst flora-string-regexp
   "\\(\"\\([^\n\"]\\|\\\\\"\\)*\"\\|'\\([^\n']\\|''\\)*'\\)"
   "Regexp matching a string.")
+(defconst flora-bracketed-object "\\[.*\\]"
+  "Like list. Used to prevent recursion in flora-list-regexp.")
+(defconst flora-list-regexp
+  (format "\\[\\( %s \\| %s \\)\\]" flora-atom-regexp flora-bracketed-object)
+  "Regexp for matching a list.")
+(defconst flora-oid-regexp
+  (format "\\(%s\\|%s\\|%s\\|%s\\|[A-Za-z0-9]+\\)"
+	  flora-list-regexp flora-bracketed-object
+	  flora-string-regexp flora-atom-regexp)
+  "Regexp to recognize atoms.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Do fontifification of F-logic-syntax with font-lock.
@@ -411,7 +430,10 @@ Return not at end copies rest of line to end and sends it.
     (flora-mode-commands inferior-flora-mode-map))
   (use-local-map inferior-flora-mode-map)
   (run-hooks 'flora-mode-hook)
-  (setq comint-input-ring-file-name (expand-file-name "~/.florid-history"))
+  (setq comint-input-ring-file-name 
+	(expand-file-name "~/.flora-history"))
+  (or (file-exists-p comint-input-ring-file-name)
+      (write-region 1 1 comint-input-ring-file-name))
   (comint-read-input-ring)
 )
 
@@ -419,7 +441,12 @@ Return not at end copies rest of line to end and sends it.
   "Run an inferior Flora process, input and output via buffer *flora*."
   (if (not (get-process "flora"))
       (save-excursion
-	(set-buffer (make-comint "flora" flora-program-name))
+	(set-buffer
+	 (make-comint "flora"
+		      flora-program-name
+		      nil
+		      "-e"
+		      "[flora], flora_shell."))
 	(inferior-flora-mode))))
 
 
@@ -432,39 +459,39 @@ switch to the buffer."
   (switch-to-buffer-other-window "*flora*")
 )
 
-(defun flora-consult-region (forget beg end)
+(defun flora-consult-region (dynamically beg end)
   "Send the region to the Flora process.
 The region must be made by \"M-x run-flora\" or created here.
-If FORGET (prefix arg) is not nil, clear program before consulting. 
-PROBLEM: the region has to be correct, complete input."
+If DYNAMICALLY (prefix arg) is not nil, consult dynamically."
   (interactive "P\nr")
-  (run-flora-background)
-  (save-excursion
-    (if forget
-	(flora-reset-system))
-    (process-send-string "flora" flora-consult-string)
-    (process-send-region "flora" beg end)
-    (process-send-string "flora" "\n")
-    (process-send-eof "flora")) ;Send eof to flora process.
-  (display-buffer "*flora*"))
+  (let ((tmpfile-name (flora-make-temp-file beg end)))
+    (run-flora-background)
+    (save-excursion
+      (process-send-string "flora" (format
+				    (if dynamically
+					"<'%s'>.\n"
+				      "['%s'].\n")
+				    tmpfile-name)))
+    (display-buffer "*flora*")
+    ))
 
-(defun flora-consult-region-as-query (forget beg end)
+(defun flora-consult-region-as-query (beg end)
   "Send the region to the Flora process as a query.
-If FORGET (prefix arg) is not nil, clear program before consulting.
-PROBLEM: every line of region has to be correct, complete input."
+The region must be a valid query terminated with a period."
   (interactive "P\nr")
   (run-flora-background)
   (save-excursion
-    (if forget
-	(flora-reset-system))
     (process-send-region "flora" beg end)
     (process-send-string "flora" "\n"))		;May be unnecessary
   (display-buffer "*flora*"))
 
-(defun flora-consult-buffer (forget)
+(defun flora-consult-buffer (dynamically)
   "Send the buffer region to the Flora process like \\[flora-consult-region]."
   (interactive "P")
-  (flora-consult-region forget (point-min-marker) (point-max-marker))
+  (flora-consult-region 
+   (if dynamically
+       t nil)
+   (point-min-marker) (point-max-marker))
 )
 
 (defun flora-interrupt()
@@ -479,7 +506,8 @@ PROBLEM: every line of region has to be correct, complete input."
   (interactive)
   (run-flora-background)
   (process-send-string "flora" flora-forget-string)
-  )
+  (sit-for 2)
+  (run-flora))
 
 (defun flora-switch-to-flora-buffer ()
   (interactive)
@@ -507,6 +535,16 @@ This function is more useful than \\[flora-consult-buffer]."
 			 (format "[%s].\n" buffer-file-name)))
   (display-buffer "*flora*")
 )
+
+(defun flora-make-temp-file (start end)
+  (let* ((f (make-temp-name (concat flora-temp-file-prefix "flora"))))
+    
+    ;; create the file
+    (write-region start end
+		  (concat f ".flr")
+		  nil          ; don't append---erase
+		  'no-message) 
+    (expand-file-name f)))
 
 ;;; flora.el ends here
 
