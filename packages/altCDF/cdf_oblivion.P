@@ -168,8 +168,8 @@ gc_hasAttr_fail :-
 	fail.
 
 gc_maxAttr_fail :-
-	orphan_maxAttr(A,B,C),
-	retractallExtTerm(maxAttr_ext(A,B,C,_)),
+	orphan_maxAttr(A,B,C,N),
+	retractallExtTerm(maxAttr_ext(A,B,C,N)),
 	fail.
 
 gc_minAttr_fail :-
