@@ -262,9 +262,10 @@ cdf_term_ext_arg(maxAttr_ext(_,_,X,_),X).
 /*									*/
 /* rename_things takes a list of pairs of the form OldID>NewID, where	*/
 /* OldID is any ID (Oid,Cid,CRid,...) that is to be renamed to the new	*/
-/* ID NewID.  It doesn't work if a single fact contains multiple 	*/
-/* occurrences of OldID.  It also doesn't look down into product	*/
-/* IDs to change their components.					*/
+/* ID NewID.  It handles multiple occurrences of renamings in the same	*/
+/* tuple, transitive renaming (but usually a bad idea), and renaming	*/
+/* within product ID's.  It will loop if there is a cycle in the	*/
+/* renaming (as in e.g. [a>b,b>a].)					*/
 /*									*/
 /************************************************************************/
 :- import things_to_rename/2 from usermod.
@@ -288,7 +289,7 @@ rename_things(RenameList) :-
 	  ;	 call0(Filt)
 	 ),
 	 cdf_term_ext_arg_rep(Goal,OldThing,NewGoal,NewThing),
-	 things_to_rename(OldThing,NewThing),
+	 rename_one_subthing(OldThing,NewThing),
 	 assert(facts_to_delete(Goal)),
 	 assert(facts_to_add(NewGoal)),
 	 fail
@@ -297,7 +298,6 @@ rename_things(RenameList) :-
 	 retractallExtTerm(Fact),
 	 fail
 	 ;
-	 close_add_facts,
 	 close_add_facts,
 	 facts_to_add(Fact),
 	 newExtTerm(Fact),
@@ -308,24 +308,56 @@ rename_things(_RenameList) :-
 	retractall(facts_to_add(_)),
 	retractall(things_to_rename(_,_)).
 
+rename_one_subthing(OldThing,NewThing) :-
+	things_to_rename(OldThing,NewThing), !.
+rename_one_subthing(OldThing,NewThing) :-
+	cdf_id_fields(OldThing,Typ,Prod,Comp),
+	structure(Prod),
+	nonvar(Comp),
+	\+ concrete_component(Comp),
+	cdf_id_fields(NewThing,Typ,NewProd,Comp),
+	Prod =.. [Fn|OldThingList],
+	rename_one_subthing_list(OldThingList,NewThingList),
+	NewProd =.. [Fn|NewThingList].
+
+rename_one_subthing_list([OldThing|OldThingList],[NewThing|NewThingList]) :-
+	(rename_one_subthing(OldThing,NewThing),
+	 OldThingList = NewThingList
+	 ;
+	 OldThing = NewThing,
+	 rename_one_subthing_list(OldThingList,NewThingList)
+	).
+
 save_rename_list([]).
 save_rename_list([Old>New|Rest]) :-
 	assert(things_to_rename(Old,New)),
 	save_rename_list(Rest).
 
+:- import term_set_arg/4 from machine.
 close_add_facts :-
-	 findall(p(OAddFact,NewAddFact),
-		 (facts_to_add(OAddFact),
-		  cdf_term_ext_arg_rep(OAddFact,OldID,NewAddFact,NewID),
-		  things_to_rename(OldID,NewID)
-		 ),
-		 MFacts),
-	 member(p(OAddFact,NewAddFact),MFacts),
-	 retractall(facts_to_add(OAddFact)),
-	 assert(facts_to_add(NewAddFact)),
-	 fail.
+	Flag = flag(0),
+	(add_closure_facts_and_fail(Flag)
+	 ;
+	 Flag = flag(1),
+	 !,
+	 term_set_arg(Flag,1,0,1),
+	 close_add_facts
+	).
 close_add_facts.
 
+add_closure_facts_and_fail(Flag):-
+	findall(p(OAddFact,NewAddFact),
+		(facts_to_add(OAddFact),
+		 cdf_term_ext_arg_rep(OAddFact,OldID,NewAddFact,NewID),
+		 rename_one_subthing(OldID,NewID)
+		),
+		MFacts),
+	MFacts \== [],
+	term_set_arg(Flag,1,1,1),
+	member(p(OAddFact,NewAddFact),MFacts),
+	retractall(facts_to_add(OAddFact)),
+	assert(facts_to_add(NewAddFact)),
+	fail.
 
 cdf_term_ext_arg_rep(isa_ext(X,A),X,isa_ext(Y,A),Y).
 cdf_term_ext_arg_rep(isa_ext(A,X),X,isa_ext(A,Y),Y).
