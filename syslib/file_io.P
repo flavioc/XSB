@@ -22,7 +22,6 @@
 ** 
 */
 
-
 :- compiler_options([xpp_on,sysmod]).
 #include "io_defs_xsb.h"
 #include "system_defs_xsb.h"
@@ -69,7 +68,8 @@ file_truncate(IOport, Length, Ret) :-
 	file_function(FILE_TRUNCATE, IOport, Length, Ret, _E, _,_).
 file_pos(IOport, Pos) :-
 	file_function(FILE_POS, IOport, Pos, _Ret, _E, _,_).
-file_open(FileName, Mode, IOport) :-
+file_open(FileName, Mode_in, IOport) :-
+	preserve_numeric_calls(Mode_in,Mode),
 	file_function(XSB_FILE_OPEN, FileName, Mode, IOport, _E, _,_).
 /* TLS: file_close/1 is obsolescent */
 file_close(IOport) :-
@@ -84,6 +84,12 @@ file_clearerr(IOport) :-
 	file_function(FILE_CLEARERR, IOport, _, _, _, _, _).
 tmpfile_open(IOport) :-
 	file_function(TMPFILE_OPEN, IOport, _, _, _, _, _).
+
+preserve_numeric_calls(0,r):- !.
+preserve_numeric_calls(1,w):- !.
+preserve_numeric_calls(2,a):- !.
+preserve_numeric_calls(3,sr):- !.
+preserve_numeric_calls(X,X).
 
 %----------------------------------------------------------------------------------------------------
 
