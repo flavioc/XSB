@@ -3,6 +3,7 @@ isa_ext(cid('CDF Primitive Types',cdf),cid('CDF Classes',cdf)).
 isa_ext(cid(allIntegers,cdf),cid('CDF Primitive Types',cdf)).
 isa_ext(cid(allFloats,cdf),cid('CDF Primitive Types',cdf)).
 isa_ext(cid(allAtoms,cdf),cid('CDF Primitive Types',cdf)).
+isa_ext(cid(allStructures,cdf),cid('CDF Primitive Types',cdf)).
 
 isa_ext(cid(componentClasses,cdf),cid('CDF Classes',cdf)).
 isa_ext(cid(cdf,cdf),cid(componentClasses,cdf)).
