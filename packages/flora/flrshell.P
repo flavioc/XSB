@@ -193,7 +193,7 @@ help :-
 	writeln('  dynconsult(FILE[.flr])       : dyncompile FILE.flr; dynamically load FILE.P'),
 	writeln('  dynconsult(FILE[.flr],[...]) : dynconsult(FILE) with options [...]'),
 	writeln('  dynload(FILE[.flr])          : dynamically load FILE.flr or FILE.P'),
-	writeln('  {FILE[.EXT],...}             : dynload a list of .flr or .P files'),
+	writeln('  <FILE[.EXT],...>             : dynload a list of .flr or .P files'),
 	writeln('  rundemo(FILE[.flr])          : flconsult a demo from FLORA demos directory'),
 	writeln('  rundemo(FILE[.flr],[...])    : rundemo(FILE) with options [...]'),
 	writeln('  abolish_all_tables           : flush all tabled data'),

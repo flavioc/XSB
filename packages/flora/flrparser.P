@@ -321,12 +321,12 @@ literal(loadlist(L),_) -->
 	[atom('$]')].
 
 literal(dynloadlist(L),_) -->
-	[atom('${')],
+	[atom('$<')],
 	!,
 	white_space0,
 	atom_name_list(L),
 	white_space0,
-	[atom('$}')].
+	[atom('$>')].
 
 literal(spterm(P,P1,P2),V) -->
 	path_expression(P1,V),
