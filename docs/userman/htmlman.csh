@@ -15,7 +15,7 @@
 echo "XSB Manual"
 echo "latex2html: This might take a LONG time..."
 
-latex2html manual.tex
+latex2html -html_version 3.2,math,table -local_icons manual.tex
 
 echo "latex2html: done"
 
