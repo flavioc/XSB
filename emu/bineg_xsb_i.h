@@ -75,7 +75,13 @@ case LRD_SUCCESS: {
   if ( is_completed(sf) || neg_delay == FALSE )
     return TRUE;
   else {
-    XSB_StrDefine(vsNegSubgoal);
+    /*
+     * Using a static here prevents multiple buffers from being left
+     * dangling when executed multiple times, as no opportunity exists
+     * to reclaim the string after use in xsb_abort().
+     */
+    static XSB_StrDefine(vsNegSubgoal);
+    XSB_StrSet(&vsNegSubgoal,"");
     print_pterm(ptoc_tag(regNegSubgoal),1,&vsNegSubgoal);
     xsb_abort("Illegal table operation\n\t Attempted DELAY of negative "
 	      "subsumptive literal: %s", vsNegSubgoal.string);
