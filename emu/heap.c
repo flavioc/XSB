@@ -421,7 +421,7 @@ pop_more:
 static int mark_root(Cell cell_val)
 {
   int m, i, arity ;
-  CPtr cell_ptr,p ;
+  CPtr cell_ptr;
   int tag, whereto ;
   Cell v ;
 
@@ -435,7 +435,7 @@ static int mark_root(Cell cell_val)
     switch (cell_tag(cell_val))
     { case REF : case REF1 :
     	v = *(CPtr)cell_val ;
-    	p = pointer_from_cell(v,&tag,&whereto) ;
+    	pointer_from_cell(v,&tag,&whereto) ;
     	switch (tag)
     	{ case REF : case REF1 :
     		if (whereto != TO_HEAP) return(0) ;
@@ -450,7 +450,7 @@ static int mark_root(Cell cell_val)
         if (h_marked(i)) return(0) ; 
 	/* now check that at i, there is a Psc */
 	v = *cell_ptr ;
-	p = pointer_from_cell(v,&tag,&whereto) ;
+	pointer_from_cell(v,&tag,&whereto) ;
 	/* v must be a PSC - the following tries to test this */
 	switch (tag)
 	{ case REF: case REF1 :
@@ -469,14 +469,14 @@ static int mark_root(Cell cell_val)
         cell_ptr = clref_val(cell_val) ;
         if (!points_into_heap(cell_ptr)) return(0) ;
 	v = *cell_ptr ;
-	p = pointer_from_cell(v,&tag,&whereto) ;
+	pointer_from_cell(v,&tag,&whereto) ;
 	switch (tag)
 	{ case REF: case REF1 :
 		if (whereto != TO_HEAP) return(0) ;
 		break ;
 	}
 	v = *(++cell_ptr) ;
-	p = pointer_from_cell(v,&tag,&whereto) ;
+	pointer_from_cell(v,&tag,&whereto) ;
 	switch (tag)
 	{ case REF: case REF1 :
 		if (whereto != TO_HEAP) return(0) ;

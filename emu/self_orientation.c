@@ -27,7 +27,7 @@
 #include "configs/config.h"
 #include "basictypes.h"
 
-char executable[MAXPATHLEN];		/* This is set to a real name below */
+char executable[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
 
 char *install_dir; 			/* installation directory */
 char *xsb_config_file;     		/* XSB configuration file */
