@@ -58,6 +58,8 @@
 
 :- import set_load_mode/1, compile_flogic/3 from flrcompiler.
 
+:- import xsb_configuration/2 from configuration.
+
 :- dynamic flora_maxerr(_).
 
 :- export 

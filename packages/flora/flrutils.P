@@ -807,6 +807,27 @@ flora_locate_file(In,Out) :-
 	file_exists(Out),
 	!.
 
+flora_locate_file(In,Out) :-
+	xsb_configuration(libdir, LibDir),
+	slash(S),
+	fmt_write_string(Out,'%s%s%s',f(LibDir,S,In)),
+	file_exists(Out),
+	!.
+
+flora_locate_file(In,Out) :-
+	xsb_configuration(syslibdir, LibDir),
+	slash(S),
+	fmt_write_string(Out,'%s%s%s',f(LibDir,S,In)),
+	file_exists(Out),
+	!.
+
+flora_locate_file(In,Out) :-
+	xsb_configuration(cmplibdir, LibDir),
+	slash(S),
+	fmt_write_string(Out,'%s%s%s',f(LibDir,S,In)),
+	file_exists(Out),
+	!.
+
 flora_locate_file(In,In).
 
 
