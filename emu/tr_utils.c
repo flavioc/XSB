@@ -61,7 +61,7 @@
 
 /*----------------------------------------------------------------------*/
 
-#define dbind_ref_nth_var(addr,n) dbind_ref(addr,VarEnumerator[n])
+#define dbind_ref_nth_var(addr,n) dbind_ref(addr,CallVarEnum[n])
 
 #define MAX_VAR_SIZE	200
 
@@ -132,7 +132,7 @@ static BTNptr  *GNodePtrPtr;
   }									\
   if ( IsHashHeader(*GNodePtrPtr) )					\
     GNodePtrPtr =							\
-      Calculate_Bucket_for_Symbol(((BTHTptr)*GNodePtrPtr),item);	\
+      CalculateBucketForSymbol(((BTHTptr)*GNodePtrPtr),item);		\
   IsInsibling_rdonly(*GNodePtrPtr,Found,item);				\
 }
 /*********************************/
@@ -270,7 +270,7 @@ CPtr get_subgoal_ptr(Cell callTerm, TIFptr pTIF) {
   pTrieRepOfCall = variant_call_lookup(arity, (CPtr)cs_val(callTerm),
 				       TIF_CallTrie(pTIF));
   if ( IsNonNULL(pTrieRepOfCall) )
-    return (CPtr)BTN_GetSF(pTrieRepOfCall);
+    return (CPtr)CallTrieLeaf_GetSF(pTrieRepOfCall);
   else
     return NULL;
 }
@@ -345,7 +345,7 @@ struct freeing_stack_node{
 
 static void free_trie_ht(BTHTptr ht) {
 
-  BTHT_RemoveFromAllocList(ht);
+  TrieHT_RemoveFromAllocList(*smBTHT,ht);
   free(BTHT_BucketArray(ht));
   SM_DeallocateStruct(*smBTHT,ht);
 }
@@ -394,7 +394,7 @@ void delete_predicate_table(BTNptr x)
 	  /*
 	   * Remove the subgoal frame and its dependent structures
 	   */
-	  SGFrame pSF = BTN_GetSF(node);
+	  SGFrame pSF = CallTrieLeaf_GetSF(node);
 	  if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
 	    call_nodes_top = node_stk_top;
 	    push_node((BTNptr)subg_ans_root_ptr(pSF));
@@ -420,7 +420,7 @@ void delete_predicate_table(BTNptr x)
 	    }
 	  } /* free answer trie */
 	  free_answer_list(pSF);
-	  free_subgoal_frame(pSF);
+	  FreeProducerSF(pSF);
 	} /* is leaf */
 	else 
 	  push_node(Child(node));
@@ -484,14 +484,14 @@ static BTNptr get_prev_sibl(BTNptr node)
 
   sibling_chain = BTN_Child(BTN_Parent(node));
   if ( IsHashHeader(sibling_chain) ) {
-    BTHT_NumContents((BTHTptr)sibling_chain)--;
-    sibling_chain =
-      *(BTNptr *)Calculate_Bucket_for_Symbol(sibling_chain,Atom(node));
+    BTHTptr ht = (BTHTptr)sibling_chain;
+    BTHT_NumContents(ht)--;
+    sibling_chain = *CalculateBucketForSymbol(ht,BTN_Symbol(node));
   }
   while(sibling_chain != NULL){
-    if(Sibl(sibling_chain) == node)
+    if (BTN_Sibling(sibling_chain) == node)
       return(sibling_chain);
-    sibling_chain = Sibl(sibling_chain);
+    sibling_chain = BTN_Sibling(sibling_chain);
   }  
   xsb_abort("Error in get_previous_sibling");
   return(NULL);
@@ -525,7 +525,8 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
      */
     set_parent_and_node_hook(lowest_node_in_branch,hook,&parent_ptr,&y1);
     if (is_hash(*y1)) {
-      z = Calculate_Bucket_for_Symbol(*y1,Atom(lowest_node_in_branch));
+      z = CalculateBucketForSymbol((BTHTptr)(*y1),
+				   BTN_Symbol(lowest_node_in_branch));
       if ( *z != lowest_node_in_branch )
 	xsb_dbgmsg("DELETE_BRANCH: trie node not found in hash table");
       *z = NULL;
@@ -557,7 +558,8 @@ void delete_branch(BTNptr lowest_node_in_branch, BTNptr *hook) {
 	Instr(Sibl(lowest_node_in_branch)) -1;
       y1 = &BTN_Child(BTN_Parent(lowest_node_in_branch));
       if (is_hash(*y1)) {
-	z = Calculate_Bucket_for_Symbol(*y1,Atom(lowest_node_in_branch));
+	z = CalculateBucketForSymbol((BTHTptr)(*y1),
+				     BTN_Symbol(lowest_node_in_branch));
 	num_left_in_hash = --BTHT_NumContents((BTHTptr)*y1);
       }
       else
@@ -737,25 +739,6 @@ void  reclaim_del_ret_list(SGFrame sg_frame) {
 }
  
 /*----------------------------------------------------------------------*/
-
-void reclaim_ans_list_nodes(SGFrame sg_frame)
-{
-  ALNptr x, y;
- 
-  x = subg_answers(sg_frame);
- 
-  if (x <= COND_ANSWERS) return;        /* already reclaimed... */
- 
-  subg_answers(sg_frame) = UNCOND_ANSWERS;
- 
-  while (x != NULL) {
-    if (is_conditional_answer(aln_answer_ptr(x)))
-      subg_answers(sg_frame) = COND_ANSWERS;
-    y = x;
-    x = aln_next_aln(x);
-    SM_DeallocateStruct(smALN,y);
-  }
-}
 
 /*
 **   Used in aggregs.P to implement aggregates.
