@@ -1336,22 +1336,26 @@ int builtin_call(byte number)
     
 /*----------------------------------------------------------------------*/
     
-  case TABLE_STATUS:  /* reg1: +term; reg2: -status (int) */
+  case TABLE_STATUS:  /* reg1: +term or +subgoal_ptr; reg2: -status (int) */
     term = ptoc_tag(1);
-    if ((psc = term_psc(term)) == NULL) {
-      err_handle(TYPE, 1, "table_status", 2, "callable term", term);
-      return FALSE;	/* fail */
-    }
-    tip = get_tip(psc);
-    if (tip == NULL) {
-      value = 0; /* undef */
-    } else {
-      subgoal_ptr = get_subgoal_ptr(term, tip);
-      if (subgoal_ptr == NULL) {
-	value = 1; /* no_call_yet */
-      } else {
-	value = (is_completed(subgoal_ptr)) ?  2 : 3;
+    if (!isinteger(term)) {
+      if ((psc = term_psc(term)) == NULL) {
+	err_handle(TYPE, 1, "table_status", 2, "callable term", term);
+	return FALSE;	/* fail */
       }
+      tip = get_tip(psc);
+      if (tip == NULL) {
+	ctop_int(2, 0); /* undef */
+	return TRUE;
+      } 
+      subgoal_ptr = get_subgoal_ptr(term, tip);
+    } else {
+      subgoal_ptr = (CPtr)int_val(term);
+    }
+    if (subgoal_ptr == NULL) {
+      value = 1; /* no_call_yet */
+    } else {
+      value = (is_completed(subgoal_ptr)) ?  2 : 3;
     }
     ctop_int(2, value);
     break;
