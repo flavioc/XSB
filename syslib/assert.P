@@ -44,7 +44,8 @@
 /*	AorZ/\2:  0 for uniform treatment of anonymous variables,	*/
 /*		  2 for special treatment of anonymous variables.	*/
 /*	Index: the number of the argument on which to index; 		*/
-/*		0 for no indexing. 					*/
+/*		0 for no indexing. (If there is index declaration, this	*/
+/*			argument is ignored.)				*/
 /*======================================================================*/
 
 /*======================================================================*/
