@@ -249,10 +249,10 @@ file_size(FileName, Size) :-
 ************************************************************************/
 
 %% These fail if the op doesn't succeed
-path_sysop(isplain, Path) :- is_plain_file(Path).
-path_sysop(isdir, Path) :- is_directory(Path).
-path_sysop(rename, OldPath, NewPath) :- rename(OldPath,NewPath).
-path_sysop(copy, FromPath, ToPath) :-
+path_sysop(isplain, Path) :- !, is_plain_file(Path).
+path_sysop(isdir, Path) :- !, is_directory(Path).
+path_sysop(rename, OldPath, NewPath) :- !, rename(OldPath,NewPath).
+path_sysop(copy, FromPath, ToPath) :- !,
 	file_open(FromPath, r, FromIOport),
 	FromIOport >= 0,
 	file_open(ToPath, w, ToIOport),
@@ -260,23 +260,27 @@ path_sysop(copy, FromPath, ToPath) :-
 	copyIOport(FromIOport, ToIOport),
 	file_close(ToIOport),
 	file_close(FromIOport).
-path_sysop(rm, Path) :- rm(Path).
-path_sysop(unlink, Path) :- rm(Path).
-path_sysop(link, SrsPath, DestPath) :- sys_link(SrsPath,DestPath,Res), Res=:=0.
-path_sysop(cwd, Path) :- cwd(Path).
-path_sysop(chdir, Path) :- cd(Path).
-path_sysop(mkdir, Path) :- sys_mkdir(Path,Res), Res=:=0.
-path_sysop(rmdir, Path) :- sys_rmdir(Path,Res), Res=:=0.
-path_sysop(readable, Path) :- sys_access(Path, 'r', Res), Res =:= 0.
-path_sysop(writable, Path) :- sys_access(Path, 'w', Res), Res =:= 0.
-path_sysop(executable, Path) :- sys_access(Path, 'x', Res), Res =:= 0.
-path_sysop(modtime,Path,Time) :-
+path_sysop(rm, Path) :- !, rm(Path).
+path_sysop(unlink, Path) :- !, rm(Path).
+path_sysop(link, SrsPath, DestPath) :- !,
+	sys_link(SrsPath,DestPath,Res), Res=:=0.
+path_sysop(cwd, Path) :- !, cwd(Path).
+path_sysop(chdir, Path) :- !, cd(Path).
+path_sysop(mkdir, Path) :- !, sys_mkdir(Path,Res), Res=:=0.
+path_sysop(rmdir, Path) :- !, sys_rmdir(Path,Res), Res=:=0.
+path_sysop(readable, Path) :- !, sys_access(Path, 'r', Res), Res =:= 0.
+path_sysop(writable, Path) :- !, sys_access(Path, 'w', Res), Res =:= 0.
+path_sysop(executable, Path) :- !, sys_access(Path, 'x', Res), Res =:= 0.
+path_sysop(modtime,Path,Time) :- !,
 	file_time(Path,time(Time1,Time2)), Time = [Time1,Time2], Time \= [0,0].
-path_sysop(newerthan,Path1,Path2) :-
+path_sysop(newerthan,Path1,Path2) :- !,
 	file_time(Path1,time(Time11,Time12)),
 	file_time(Path2,time(Time21,Time22)),
 	time(Time11,Time12) @>= time(Time21,Time22).
-path_sysop(size,Path,Size) :- sys_system(STAT_FILE_SIZE,Path,Size, _,_,_,_).
-path_sysop(tmpfilename,TmpName) :-
+path_sysop(size,Path,Size) :- !,
+	sys_system(STAT_FILE_SIZE,Path,Size, _,_,_,_).
+path_sysop(tmpfilename,TmpName) :- !,
 	sys_system(GET_TMP_FILENAME,TmpName,_,_,_,_,_).
+path_sysop(X,_,_) :- abort(('[PATH_SYSOP]: Invalid request, ', X)).
+path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request, ', X)).
 
