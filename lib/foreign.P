@@ -63,7 +63,7 @@ compile_so(Path, COptions, LdOptions) :-
 %% runtime_loader_flag(+Compiler,+LibraryDir,-Flag):-
 runtime_loader_flag(Compiler,LibraryDir,Flag):-
 	xsb_configuration(configuration, Configuration),
-	(   Compiler == gcc
+	(   str_sub(gcc,Compiler) %% egcc, kgcc, and friends
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;   str_sub(solaris, Configuration)
 	->  str_cat('-rpath ', LibraryDir, Flag)
@@ -160,7 +160,7 @@ cc_options(CC_Name, Options, CC_Opts) :-
 			     args(Emudir,ConfigDir,CC_Opts1))
 	;   fmt_write_string(CC_Opts2, '-I%s -I%s', args(Emudir, ConfigDir))
 	),
-	(  CC_Name == gcc 
+	(  str_sub(gcc,CC_Name) %% gcc, egcc, kgcc, and friends
 	-> str_cat(' -Wall ', CC_Opts2, CC_Opts)
 	;  CC_Opts = CC_Opts2
 	).
