@@ -155,6 +155,7 @@
 :- dynamic flora_xpp_extra_options/1.
 :- dynamic flora_module_registry/1.
 :- dynamic flora_storage_registry/1.
+:- dynamic flora_current_compile_file/1.
 
 :- index(flora_maxerr/1,trie).
 
