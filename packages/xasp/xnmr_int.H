@@ -23,8 +23,10 @@
 :- import subsumes_chk/2 from subsumes.
 :- import copy_term/2, append/3 from basics.
 
+/*
 :- import is/2, '=\='/2, '=:='/2, '<'/2, '=<'/2, '>'/2
 	from standard.
+*/
 
 /*
 :- import asserta/1 from assert.
