@@ -27,10 +27,9 @@
 
 :- import caching_cdf/1 from usermod.
 
-:- import newIntRule/3,newExtTermBatch/2,transform_intensional_rules/4,
+:- import newIntRule/3,newDLRule/3,
+	 newExtTermBatch/2,transform_intensional_rules/4,
 	 abolish_cdf_tables/0  from cdf_init_cdf.
-
-:- import dlrule_to_cdf/2 from cdftp_rules.
 
 :- import clause_assert/2 from cdf_exceptions.
 
@@ -273,28 +272,15 @@ read_intensional_rules_1(Name):-
 
 read_intensional_rules_2(end_of_file,_Name).
 read_intensional_rules_2('<='(Head,Body),Name):- !,
-	dlrule_to_cdf('<='(Head,Body),CDFList),
-	member((:-(H,B)),CDFList),
-	transform_intensional_rules(H,BlankBody,NewHead,Name),
-%	transform_intensional_rules(H,NewHead,Name),
-	functor(H,T,A),
-	functor(BlankHead,T,A),
-	BlankHead =.. [_|Args],
-	BlankBody =.. [_|Args],
-	clause_assert(BlankHead,BlankBody),
-	assert((:-(NewHead,B))),
+	newDLRule(Head,Body,Name),
+	fail.
+read_intensional_rules_2((Head :- Body),Name):- !,
+	newIntRule(Head,Body,Name),
 	fail.
 % these should be executable directives ala table.
 read_intensional_rules_2((:-(Query)),_Name):- !,
 	call(Query),
 	fail.
-read_intensional_rules_2((Head :- Body),Name):- !,
-	newIntRule(Head,Body,Name),
-	fail.
-%read_intensional_rules_2(auxiliary_cdf_rule(Head,Body),Name):- !,
-%	auxiliary_cdf_rule(Name,Head,Body):- !,
-%	asserta((:-(Head,Body))),
-%	fail.
 read_intensional_rules_2(Head,Name):- 
 	transform_intensional_rules(Head,BlankBody,NewHead,Name),
 %	transform_intensional_rules(T,NewHead,Name),
@@ -305,6 +291,10 @@ read_intensional_rules_2(Head,Name):-
 	clause_assert(BlankHead,BlankBody),
 	assert(NewHead),
 	fail.
+%read_intensional_rules_2(auxiliary_cdf_rule(Head,Body),Name):- !,
+%	auxiliary_cdf_rule(Name,Head,Body):- !,
+%	asserta((:-(Head,Body))),
+%	fail.
 
 :- comment(cdf_exists/1, "@tt{cdf_exists(Dir)} checks whether
 @tt{cdf_extensional.P} file is present in directory @tt{Dir}").

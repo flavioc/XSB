@@ -21,6 +21,8 @@
             retractallExtTerm/1,
 	newIntRule/3, newIntRule/4, newIntRuleBatch/4,
             retractallIntRule/1,
+	newDLRule/3, newDLRule/4, newDLRuleBatch/4,
+            retractallDLRule/1,
 	assert_cdf/1, retractall_cdf/1,
 	updateExtTerm/3,
 	make_cdf_clean/0, make_cdf_clean/1,
@@ -84,7 +86,7 @@
 
 :- import '_$index'/3 from file_op.
 %%:- import conset/2, conget/2, coninc/1 from gensym.
-:- import ground/1 from basics.
+:- import ground/1,member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import concat_atom/2 from string.
 
@@ -137,6 +139,8 @@ cdf_dynamic(cdf_extint_updatable/1).
 
 cdf_dynamic(assert_cdf_int/1).
 cdf_dynamic(retractall_cdf_int/1).
+
+:- import dlrule_to_cdf/2 from cdftp_rules.
 
 %--------------------------------------------------------------------
 
@@ -1693,6 +1697,21 @@ transform_intensional_rules(Head,_BlankHead,_NewHead,Name):-
 	cdf_warning(rule_load,['Cannot intern intensional rule with head ',
 	                                  Head,' for directory ',Name]),
 	fail.
+
+%%%%%%%%%%%%%%%%%
+%DL rules are a specialized form of intensional rules.
+
+newDLRule(Head,Body,Name):- 
+	dlrule_to_cdf('<='(Head,Body),CDFList),
+	member((:-(H,B)),CDFList),
+	transform_intensional_rules(H,BlankBody,NewHead,Name),
+%	transform_intensional_rules(H,NewHead,Name),
+	functor(H,T,A),
+	functor(BlankHead,T,A),
+	BlankHead =.. [_|Args],
+	BlankBody =.. [_|Args],
+	clause_assert(BlankHead,BlankBody),
+	assert((:-(NewHead,B))).
 
 %%%%%%%%%%%%%%%%%
 
