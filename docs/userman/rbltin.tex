@@ -300,7 +300,7 @@ predicate to be tabled.
 
 \subsection{The {\tt storage} Module: Associative Arrays and Backtrackable Updates}
 
-\label{backtrackable update}
+\label{storage module}
 XSB provides a high-level interface that supports efficient storage and
 querying of key-value pairs. A \emph{key-value pair} is an association
 between keys and the corresponding values. There can be at most one value
@@ -409,28 +409,6 @@ typically called just before returning to the top level.
 \section{Execution State}\label{environmental}
 
 \begin{description}
-
-\ouritem{abort}\index{{\tt abort/0}} 
-    Abandons the current execution and returns to the top level.  This
-    predicate is normally used in one of the following two cases: 
-    \begin{itemize} 
-    \item when some error condition or exception has occurred and carrying
-	  on the computation is of no further use.
-    \item when using the debugger (see Chapter~\ref{debugging}).  
-    \end{itemize}
-    Currently, all exception handling routines terminate with a call to 
-    predicate {\tt abort/0}, so an exception encountered at some break level 
-    other than the top level will return the interpreter at the top level.
-
-    The user should be aware of the fact that {\tt abort/0} does not close 
-    any files which may have been opened.  If the program under execution is 
-    doing file manipulation using {\tt see/1} and {\tt tell/1}, then strange 
-    behavior may occur after the program is aborted and restarted, unless
-    the user manually closes the files.
-
-    Aborting closes all incomplete tables (those which may not have a 
-    complete set of answers).  Closed tables are unaffected, even if 
-    the tables were created during the aborted computation.
 
 \ouritem{break}\index{{\tt break/0}}
     Causes the current execution to be suspended at the beginning of the next 
@@ -705,6 +683,113 @@ typically called just before returning to the top level.
 
 %need op (just so we dont forget ???
 
+
+\section{Exception Handling}\label{exception}
+\index{exceptions}
+
+\begin{description}
+
+\ouritem{abort}\index{{\tt abort/0}} 
+    Abandons the current execution and returns to the top level.  This
+    predicate is normally used in one of the following two cases: 
+    \begin{itemize} 
+    \item when some error condition or exception has occurred and carrying
+	  on the computation is of no further use.
+    \item when using the debugger (see Chapter~\ref{debugging}).  
+    \end{itemize}
+    Currently, all exception handling routines terminate with a call to 
+    predicate {\tt abort/0}, so an exception encountered at some break level 
+    other than the top level will return the interpreter at the top level.
+
+    The user should be aware of the fact that {\tt abort/0} does not close 
+    any files which may have been opened.  If the program under execution is 
+    doing file manipulation using {\tt see/1} and {\tt tell/1}, then strange 
+    behavior may occur after the program is aborted and restarted, unless
+    the user manually closes the files.
+
+    Aborting closes all incomplete tables (those which may not have a 
+    complete set of answers).  Closed tables are unaffected, even if 
+    the tables were created during the aborted computation.
+
+\ouritem{catch(?Goal,?Catcher,?Handler)}\index{{\tt catch/3}} 
+\ouritem{throw(+Handler)}\index{{\tt throw/1}} 
+
+While very simple exceptions can be handled by {\tt abort/0}, more
+sophisticated exception handling is performed by using {\tt catch/3}
+and {\tt throw/1} together.  When {\tt catch(Goal,Catcher,Handler)} is
+called, a continuation is saved, and {\tt Goal} is called.  If no
+exceptions are encountered, answers for {\tt Goal} are obtained as
+usual.  Within the execution of {\tt Goal}, an exception can be
+signalled by a call to {\tt throw(Catcher)}.  This predicate searches
+for an ancestor of the current environment in which a catch was set up
+whose catcher (second argument) unifies with {\tt Catcher}.  If such
+an ancestor is found, program execution reverts to the ancestor and
+all intervening choice points are removed.  The ancestor's handler
+(third argument) is called and the exception is thereby handled.  The
+following, somewhat fanciful example, helps clarify these concepts.
+
+The following predicate {\tt userdiv/2} is designed to be called with
+the first argument instantiated to a number.  A second number is then
+read from a console, and the first number is divided by the second,
+and unified with the second argument of {\tt userdiv/2}.  By using
+{\tt catch/3} and {\tt throw/1} together the various types of errors
+can be caught.
+
+\begin{small}
+\begin{verbatim}
+userdiv(X,Ans):- 
+        catch(userdiv1(X,Ans),mydiv1(Y),handlefoo(Y,X)).
+
+userdiv1(X,Ans):- 
+        (number(X) -> true; throw(mydiv1(exception1))),
+        write('Enter a number: '),read(Y),
+        (number(Y) -> true ; throw(mydiv1(exception2(Y)))),
+        (Y =;= 0 -> throw(mydiv1(exception3(Y))); true),
+        Ans is X/Y.
+\end{verbatim}
+\end{small}
+
+The behavior of this program on some representative inputs is shown
+below.
+
+\begin{small}
+\begin{verbatim}
+| ?- userdiv(X,Y).
+userdiv/1 called with non-numeric numerator: _h76
+
+X = _h76
+Y = _h90
+
+yes
+| ?- userdiv(3,Y).
+Enter a number: foo.
+in userdiv/1 a non-numeric denominator was entered: foo
+
+Y = _h84
+
+yes
+| ?- userdiv(3,Y).
+Enter a number: 0.
+in userdiv/1 a denominator of 0 was entered.
+Y = _h84
+
+yes
+| ?- userdiv(3,Y).
+Enter a number: 2.
+
+Y = 1.5000
+
+yes
+\end{verbatim}
+\end{small}
+
+The actions of {\tt catch/3} and {\tt throw/1} resemble that of the
+Prolog cut in that they remove choice points that lie between a call
+to {\tt throw/1} and the matching {\tt catch/3} that serves as its
+ancestor.  However, if this process encounters a choice point for an
+incomplete table, execution is aborted to the top user level.
+
+\end{description}
 
 \section{Tabling} \label{tabling_predicates}
 %===========================================
