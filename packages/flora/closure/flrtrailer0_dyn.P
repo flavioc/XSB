@@ -1,0 +1,203 @@
+/* closure/flrtrailer0_dyn.P: appended automatically by the FLORA compiler  */
+
+
+/*****************************************************************************
+  closure rules for X::Y
+*****************************************************************************/
+:- table '_$_$_flora_subclass_dyn'/2.
+
+'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_sub_dyn'(X,_).
+'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_sub_dyn'(_,X).
+'_$_$_flora_subclass_dyn'(X,Y) :- '_$_$_flora_sub_dyn'(X,Y).
+
+'_$_$_flora_subclass_dyn'(X,Y) :-
+	'_$_$_flora_subclass_dyn'(X,Z), 
+	'_$_$_flora_subclass_dyn'(Z,Y),
+	(X \= Z -> true ; Z\=Y),
+	( X = Y ->
+	    write('*** Warning: cyclic subclass hierarchy: '),
+	    write(X), write('::'), write(Z), write('::'), write(Y), nl
+	  ;
+	    true
+	).
+
+
+/*****************************************************************************
+  closure rules for X:Y
+*****************************************************************************/
+:- table '_$_$_flora_isa_dyn'/2.
+
+'_$_$_flora_isa_dyn'(O,C) :-
+	'_$_$_flora_subclass_dyn'(C1,C),
+	'_$_$_flora_isa_dyn'(O,C1).
+
+
+/*****************************************************************************
+  rules for monotonic behavior inheritance
+*****************************************************************************/
+:- table '_$_$_flora_fd_dyn'/3.
+:- table '_$_$_flora_mvd_dyn'/3.
+:- table '_$_$_flora_ifd_dyn'/3.
+:- table '_$_$_flora_imvd_dyn'/3.
+
+'_$_$_flora_fd_dyn'(O,MethodArgs,R) :-
+	'_$_$_flora_isa_dyn'(O,Class),
+	'_$_$_flora_ifd_dyn'(Class,MethodArgs,R).
+
+'_$_$_flora_mvd_dyn'(O,MethodArgs,R) :-
+	'_$_$_flora_isa_dyn'(O,Class),
+	'_$_$_flora_imvd_dyn'(Class,MethodArgs,R).
+
+'_$_$_flora_ifd_dyn'(Sub,MethodArgs,R) :-
+	'_$_$_flora_subclass_dyn'(Sub,Class),
+	'_$_$_flora_ifd_dyn'(Class,MethodArgs,R).
+
+'_$_$_flora_imvd_dyn'(Sub,MethodArgs,R) :-
+	'_$_$_flora_subclass_dyn'(Sub,Class),
+	'_$_$_flora_imvd_dyn'(Class,MethodArgs,R).
+
+
+/*****************************************************************************
+  rules for nonmonotonic behavior inheritance
+
+:- table '_$_$_flora_fd_dyn'/3.
+:- table '_$_$_flora_mvd_dyn'/3.
+:- table '_$_$_flora_ifd_dyn'/3.
+:- table '_$_$_flora_imvd_dyn'/3.
+:- table '_$_$_flora_defined_fd_dyn'/2.
+:- table '_$_$_flora_defined_mvd_dyn'/2.
+:- table '_$_$_flora_defined_ifd_dyn'/2.
+:- table '_$_$_flora_defined_imvd_dyn'/3.
+:- table '_$_$_flora_overwritten_fd_dyn'/3.
+:- table '_$_$_flora_overwritten_mvd_dyn'/3.
+:- table '_$_$_flora_overwritten_ifd_dyn'/3.
+:- table '_$_$_flora_overwritten_imvd_dyn'/3.
+
+'_$_$_flora_fd_dyn'(Object,Method,Value) :-
+	tnot('_$_$_flora_defined_fd_dyn'(Object,Method)),
+	'_$_$_flora_isa_dyn'(Object,Class),
+	'_$_$_flora_ifd_dyn'(Class,Method,Value),
+	tnot('_$_$_flora_overwritten_fd_dyn'(Object,Class,Method)).
+
+'_$_$_flora_defined_fd_dyn'(Object,Method) :-
+	'_$_$_flora_fd_dyn'(Object,Method,_).
+
+'_$_$_flora_overwritten_fd_dyn'(Object,Class,Method) :-
+	'_$_$_flora_isa_dyn'(Object,SubClass),
+	'_$_$_flora_subclass_dyn'(SubClass,Class),
+	SubClass \= Class,
+	'_$_$_flora_ifd_dyn'(SubClass,Method,_).
+
+
+'_$_$_flora_mvd_dyn'(Object,Method,Value) :-
+	tnot('_$_$_flora_defined_mvd_dyn'(Object,Method)),
+	'_$_$_flora_isa_dyn'(Object,Class),
+	'_$_$_flora_imvd_dyn'(Class,Method,Value),
+	tnot('_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method)).
+
+'_$_$_flora_defined_mvd_dyn'(Object,Method) :-
+	'_$_$_flora_mvd_dyn'(Object,Method,_).
+
+'_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method) :-
+	'_$_$_flora_isa_dyn'(Object,SubClass),
+	'_$_$_flora_subclass_dyn'(SubClass,Class),
+	SubClass \= Class,
+	'_$_$_flora_imvd_dyn'(SubClass,Method,_).
+
+
+'_$_$_flora_ifd_dyn'(Class,Method,Value) :-
+	tnot('_$_$_flora_defined_ifd_dyn'(Class,Method)),
+	'_$_$_flora_subclass_dyn'(Class,Super),
+	'_$_$_flora_ifd_dyn'(Super,Method,Value),
+	tnot('_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method)).
+
+'_$_$_flora_defined_ifd_dyn'(Class,Method) :-
+	'_$_$_flora_ifd_dyn'(Class,Method,_).
+
+'_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method) :-
+	'_$_$_flora_subclass_dyn'(Class,S),
+	'_$_$_flora_subclass_dyn'(S,Super),
+	Super \= S,
+	'_$_$_flora_ifd_dyn'(S,Method,_).
+
+
+'_$_$_flora_imvd_dyn'(Class,Method,Value) :-
+	tnot('_$_$_flora_defined_imvd_dyn'(Class,Method)),
+	'_$_$_flora_subclass_dyn'(Class,Super),
+	'_$_$_flora_imvd_dyn'(Super,Method,Value),
+	tnot('_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method)).
+
+'_$_$_flora_defined_imvd_dyn'(Class,Method) :-
+	'_$_$_flora_imvd_dyn'(Class,Method,_).
+
+'_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method) :-
+	'_$_$_flora_subclass_dyn'(Class,S),
+	'_$_$_flora_subclass_dyn'(S,Super),
+	Super \= S,
+	'_$_$_flora_imvd_dyn'(S,Method,_).
+*****************************************************************************/
+
+
+/*****************************************************************************
+  rules for object existence and empty result sets
+*****************************************************************************/
+:- table '_$_$_flora_exists_dyn'/1.
+:- table '_$_$_flora_mvd_dyn'/2.
+:- table '_$_$_flora_imvd_dyn'/2.
+
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_fd_dyn'(X,_,_).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_fd_dyn'(_,_,X).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_mvd_dyn'(X,_,_).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_mvd_dyn'(_,_,X).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_ifd_dyn'(X,_,_).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_ifd_dyn'(_,_,X).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_imvd_dyn'(X,_,_).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_imvd_dyn'(_,_,X).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_isa_dyn'(X,_).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_isa_dyn'(_,X).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_sub_dyn'(X,_).
+'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_sub_dyn'(_,X).
+
+'_$_$_flora_exists_dyn'(X) :-
+	'_$_$_flora_fd_dyn'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+'_$_$_flora_exists_dyn'(X) :-
+	'_$_$_flora_mvd_dyn'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+'_$_$_flora_exists_dyn'(X) :-
+	'_$_$_flora_ifd_dyn'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+'_$_$_flora_exists_dyn'(X) :-
+	'_$_$_flora_imvd_dyn'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+
+'_$_$_flora_mvd_dyn'(O,M) :- '_$_$_flora_mvd_dyn'(O,M,_).
+
+'_$_$_flora_imvd_dyn'(O,M) :- '_$_$_flora_imvd_dyn'(O,M,_).
+
+
+/*****************************************************************************
+  rules for flattened path expressions on RHS
+*****************************************************************************/
+'_$_$_flora_fd_rhs_dyn'(O,M,R)   :- '_$_$_flora_fd_dyn'(O,M,R).
+'_$_$_flora_mvd_rhs_dyn'(O,M,R)  :- '_$_$_flora_mvd_dyn'(O,M,R).
+'_$_$_flora_ifd_rhs_dyn'(O,M,R)  :- '_$_$_flora_ifd_dyn'(O,M,R).
+'_$_$_flora_imvd_rhs_dyn'(O,M,R) :- '_$_$_flora_imvd_dyn'(O,M,R).
+'_$_$_flora_mvd_rhs_dyn'(O,M)    :- '_$_$_flora_mvd_dyn'(O,M).
+'_$_$_flora_imvd_rhs_dyn'(O,M)   :- '_$_$_flora_imvd_dyn'(O,M).
+'_$_$_flora_isa_rhs_dyn'(O1,O2)  :- '_$_$_flora_isa_dyn'(O1,O2).
+'_$_$_flora_sub_rhs_dyn'(O1,O2)  :- '_$_$_flora_subclass_dyn'(O1,O2).
+'_$_$_flora_fs_rhs_dyn'(O,M,R)   :- '_$_$_flora_fs_dyn'(O,M,R).
+'_$_$_flora_mvs_rhs_dyn'(O,M,R)  :- '_$_$_flora_mvs_dyn'(O,M,R).
+
+
+/****************************  End of Trailer  ******************************/
+

@@ -3,6 +3,7 @@
 ** Author(s): Bertram Ludaescher (V 1.2, 11/13/1998)
 **
 **            Guizhen Yang       (V 2.0, 04/12/1999)
+**            Guizhen Yang	 (V 2.5, 05/06/1999)
 **              supervised by Michael Kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -32,13 +33,21 @@
 
 :- import append/3, member/2 from basics.
 
-:- import sort/2 from setof.
+:- import
+	consult/1, consult/2, compile/2, load_dyn/1
+   from consult.
 
-:- import package_configuration/2 from packaging.
+:- import sort/2, findall/3 from setof.
 
-:- import slash/1 from machine.
+:- import bootstrap_package/2, package_configuration/2 from packaging.
 
-:- import fmt_write_string/3 from file_io.
+:- import library_directory/1 from usermod.
+
+:- import trie_assert/1, trie_retract_all/1 from tables.
+
+:- import slash/1, is_absolute_filename/1, parse_filename/4 from machine.
+
+:- import fmt_write_string/3, file_time/2 from file_io.
 
 :- import unix/1 from unix.
 
@@ -46,12 +55,20 @@
 
 :- import rule/3 from flrparser.
 
-:- import compile_flogic/3 from flrcompiler.
+:- import set_load_mode/1, compile_flogic/3 from flrcompiler.
+
+:- dynamic flora_maxerr(_).
 
 :- export 
-	flora_prefix/1, flora_word/2, terminate_list/1, flora_member/2,
-	displayln_errmsg/1, displayln/0, displayln/1, generate_code/5,
-	read_parse_compile/5.
+	'_$_$_flora_flcompile'/5,
+	'_$_$_flora_read_parse_compile'/6,
+	'_$_$_flora_loadlist'/1,
+	'_$_$_flora_dynloadlist'/1,
+	'_$_$_flora_check_filename'/1,
+	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
+	dyncompile/2, dynconsult/1, dynconsult/2, load/1, dynload/1,
+	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,
+	flora_member/2, displayln_errmsg/1, displayln/0, displayln/1.
 
 
 /*********************************************************************
@@ -60,7 +77,7 @@
 
 
 /********************************************************************/
-flora_prefix("flora_").
+flora_prefix("_$_$_flora_").
 
 flora_word(S,A) :-
 	atom_chars(S,Str),
@@ -105,6 +122,229 @@ displayln(A) :-
 	write(A),
 	put(10),
 	tell(F).
+
+
+/*********************************************************************/
+flcompile(InFile,Dtvs) :-
+	'_$_$_flora_flcompile'(static_mode,Dtvs,InFile,force,Module),
+	displayln,
+	displayln('*** FLORA: calling XSB ...'),
+	compile(Module,[optimize,spec_repr]).
+
+flcompile(InFile) :-
+	flora_default_directives(Dtvs),
+	flcompile(InFile,Dtvs).
+
+
+/*********************************************************************/
+dyncompile(InFile,Dtvs) :-
+	'_$_$_flora_flcompile'(dynamic_mode,Dtvs,InFile,force,Module),
+	displayln,
+	displayln('*** FLORA: calling XSB ...'),
+	compile(Module,[optimize,spec_repr]).
+
+dyncompile(InFile) :-
+	flora_default_directives(Dtvs),
+	dyncompile(InFile,Dtvs).
+
+
+/*********************************************************************/
+flconsult(File,Dtvs) :- 
+	'_$_$_flora_flcompile'(static_mode,Dtvs,File,noforce,Module),
+	displayln, display('*** FLORA: consulting '),
+	display(Module), displayln(' ...'),
+	consult(Module,[optimize,spec_repr]).
+
+flconsult(File) :- 
+	flora_default_directives(Dtvs),
+	flconsult(File,Dtvs).
+
+
+/*********************************************************************/
+dynconsult(File,Dtvs) :- 
+	'_$_$_flora_flcompile'(dynamic_mode,Dtvs,File,noforce,Module),
+	displayln, display('*** FLORA: dynamically loading '),
+	display(Module), displayln(' ...'),
+	load_dyn(Module).
+
+dynconsult(File) :- 
+	flora_default_directives(Dtvs),
+	dynconsult(File,Dtvs).
+
+
+/*********************************************************************/
+'_$_$_flora_loadlist'([X]) :- load(X).
+
+'_$_$_flora_loadlist'([X1,X2|Xs]) :-
+	load(X1),
+	'_$_$_flora_loadlist'([X2|Xs]).
+
+
+/*********************************************************************/
+'_$_$_flora_dynloadlist'([X]) :- dynload(X).
+
+'_$_$_flora_dynloadlist'([X1,X2|Xs]) :-
+	dynload(X1),
+	'_$_$_flora_dynloadlist'([X2|Xs]).
+
+
+/*********************************************************************/
+load(File) :-
+	'_$_$_flora_check_filename'(File),
+	parse_filename(File,D,B,E),
+	( E = 'flr' ->
+	    flconsult(File)
+
+	  ; (E = 'P'; E = 'O') ->
+	    flora_locate_file(File,TFile),
+	    ( file_exists(TFile) ->
+		displayln, display('*** FLORA: consulting '),
+		display(TFile), displayln(' ...'),
+		consult(File)
+
+	      ;
+		displayln, display('+++ Error: '),
+		display(File), displayln(' does NOT exist !'),
+		fail
+	    )
+
+	  ; E \= '' ->
+	    displayln,
+	    displayln('+++ Error: file extension must be flr, P or O !'),
+	    fail
+
+	  ;
+	    fmt_write_string(FlrName,'%s%s.flr',f(D,B)),
+	    flora_locate_file(FlrName,FlrFile),
+	    ( file_exists(FlrFile) ->
+		flconsult(FlrFile)
+
+	      ;
+	        fmt_write_string(PName,'%s%s.P',f(D,B)),
+	        flora_locate_file(PName,PFile),
+		( file_exists(PFile) ->
+		    displayln, display('*** FLORA: consulting '),
+		    display(PFile), displayln(' ...'),
+		    consult(PFile,[optimize,spec_repr])
+
+		  ;
+		    fmt_write_string(OName,'%s%s.O',f(D,B)),
+	            flora_locate_file(OName,OFile),
+		    ( file_exists(OFile) ->
+			displayln, display('*** FLORA: consulting '),
+			display(OFile), displayln(' ...'),
+			consult(OFile,[optimize,spec_repr])
+
+		      ;
+		        displayln, display('+++ Error: '),
+			display(File), displayln(' does NOT exist !'),
+			fail
+		    )
+		)
+	    )
+	).
+
+
+/*********************************************************************/
+dynload(File) :-
+	'_$_$_flora_check_filename'(File),
+	parse_filename(File,D,B,E),
+	( E = 'flr' ->
+	    dynconsult(File)
+
+	  ; E = 'P' ->
+	    flora_locate_file(File,TFile),
+	    ( file_exists(TFile) ->
+		displayln, display('*** FLORA: dynamically loading '),
+		display(TFile), displayln(' ...'),
+		load_dyn(File)
+
+	      ;
+		displayln, display('+++ Error: '),
+		display(File), displayln(' does NOT exist !'),
+		fail
+	    )
+
+	  ; E \= '' ->
+	    displayln,
+	    displayln('+++ Error: file extension must be flr or P!'),
+	    fail
+
+	  ;
+	    fmt_write_string(FlrName,'%s%s.flr',f(D,B)),
+	    flora_locate_file(FlrName,FlrFile),
+	    ( file_exists(FlrFile) ->
+		dynconsult(FlrFile)
+
+	      ;
+	        fmt_write_string(PName,'%s%s.P',f(D,B)),
+	        flora_locate_file(PName,PFile),
+		( file_exists(PFile) ->
+		    displayln, display('*** FLORA: dynamically loading '),
+		    display(PFile), displayln(' ...'),
+		    load_dyn(PFile)
+
+		  ;
+		    displayln, display('+++ Error: '),
+		    display(File), displayln(' does NOT exist !'),
+		    fail
+		)
+	    )
+	).
+
+
+/**********************************************************************
+  '_$_$_flora_flcompile'(+LoadMode,+Directives,+InFile,+Force,-OutFile)
+  InFile must have '.flr' as extension or no extension (in this case,
+  '.flr' is appended).
+**********************************************************************/
+'_$_$_flora_flcompile'(LoadMode,Directives,InFile,Force,OutFile) :-
+	flora_maxerr(MaxErr),
+	flora_check_directives(Directives,Dtvs),
+	'_$_$_flora_check_filename'(InFile),
+	parse_filename(InFile,_,_,E),
+	( E = 'flr' ->
+	    FullFileName=InFile
+	  ;
+	    fmt_write_string(FullFileName,'%s.flr',f(InFile))
+	),
+	flora_locate_file(FullFileName,FlrFile),
+	( not file_exists(FlrFile) ->
+	    displayln, display('+++ Error: '),
+	    display(FlrFile),
+	    displayln(' does NOT exist !'),
+	    fail
+
+	  ;
+	    parse_filename(FlrFile,D,B,_),
+	    ( LoadMode == static_mode ->
+	        fmt_write_string(PFile,'%s%s.P',f(D,B))
+	      ;
+	        fmt_write_string(PFile,'%s%s_dyn.P',f(D,B))
+	    ),
+	    ( Force = force ->
+		generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
+	      ;
+	        ( LoadMode == static_mode ->
+		    fmt_write_string(OFile,'%s%s.O',f(D,B))
+		  ;
+		    OFile=PFile
+		),
+		( file_older_than(OFile,FlrFile) ->
+		    generate_code(LoadMode,Dtvs,FlrFile,PFile,MaxErr,Status)
+		  ;
+		    Status=noneed
+		)
+	    ),
+	    ( Status = failure ->	fail
+
+	      ; Status = noneed -> OutFile=OFile
+
+	      ;
+		OutFile=PFile
+	    )
+	),
+	!.
 
 
 /********************************************************************/
@@ -168,7 +408,7 @@ write_rules(query(Body,NVs)) :-
 	!,
 	write('?- '),
 	flora_word(print_all,A),
-	write(A),
+	write_canonical(A),
 	write('('),
 	write_canonical(Body),
 	write(','),
@@ -176,7 +416,7 @@ write_rules(query(Body,NVs)) :-
 	writeln(').'),
 	nl,
 	flora_word(tag,T),
-	write(T), writeln('(query).').
+	write_canonical(T), writeln('(query).').
 
 write_rules(unbound_warning(F,L)) :-
 	!,
@@ -264,26 +504,34 @@ write_list([X1,X2|Xs]) :-
 
 
 /********************************************************************/
-generate_code(Directives,FlrFile,PFile,MaxErr,Status) :-
+generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	displayln, display('*** FLORA: compiling '), display(FlrFile),
-	display(' with option(s) '),
+	(LoadMode == static_mode -> Str="static" ; Str="dynamic"),
+	atom_chars(A,Str),
+	display(' to '), display(A), displayln(' code,'),
+	display('           with option(s) '),
 	telling(F), tell(userout), write_list(Directives), tell(F),
 	displayln(' ...'),
 	cputime(T0),
 	seeing(PreInFile),
 	telling(PreOutFile),
 	tell(PFile),
-	copy_flrfile('flrheader.P',S1),
+	( LoadMode == static_mode ->
+	    copy_flrfile(closure,'flrheader.P',S1)
+	  ;
+	    copy_flrfile(closure,'flrheader_dyn.P',S1)
+	),
 	( S1 = failure ->
 	    Status=failure
 	  ;
 	    see(FlrFile),
+	    set_load_mode(LoadMode),
 	    compile_flrfile(MaxErr,0,S2,[],Options),
 	    seen,
 	    ( S2 = failure ->
 		Status=failure
 	      ;
-	        directives_options(Directives,Options,Status)
+	        directives_options(LoadMode,Directives,Options,Status)
 	    )
 	),
 	told,
@@ -300,22 +548,59 @@ generate_code(Directives,FlrFile,PFile,MaxErr,Status) :-
 
 
 /********************************************************************/
-directives_options(Directives,Options,Status) :-
+directives_options(LoadMode,Directives,Options,Status) :-
 	( member(flraggregate,Options) ->
-	    copy_flrfile('flraggregate.P',S1)
+	    ( LoadMode == static_mode ->
+		FlrAgg='flraggregate.P'
+	      ;
+	        FlrAgg='flraggregate_dyn.P'
+	    ),
+	    copy_flrfile(lib,FlrAgg,S1)
 	  ;
 	    S1=success
 	),
 	( member(flrassert,Options) ->
-	    copy_flrfile('flrassert.P',S2)
+	    ( LoadMode == static_mode ->
+		FlrAss='flrassert.P'
+	      ;
+	        FlrAss='flrassert_dyn.P'
+	    ),
+	    copy_flrfile(lib,FlrAss,S2)
 	  ;
 	    S2=success
 	),
 	(member(eqlevel(N1),Directives) -> true ; N1=0),
 	(member(skolem,Options) -> N2=1 ; N2=0),
-	(N1 < N2 -> Level=N2 ; Level=N1),
-	fmt_write_string(Trailer,'flrtrailer%d.P',f(Level)),
-	copy_flrfile(Trailer,S3),
+	( N2 == 1, N1 == 0 ->
+	    displayln,
+	    displayln('*** Warning: skolemization in rule head performed')
+	  ;
+	    true
+	),
+	external_options(Options,TempOpts),
+	flora_check_directives(TempOpts,Opts),
+	( member(eqlevel(N3),Opts) ->
+	    displayln, display('*** FLORA: compiler option '),
+	    display(eqlevel(N3)), display(' detected in source code '),
+	    ( N3 > N1 ->
+		displayln('(overriding)')
+
+	      ; N1 > N3 ->
+	        displayln('(overridden)')
+	      ;
+	        displayln
+	    )
+	  ;
+	    N3=0
+	),
+	(N1 < N2 -> N4=N2 ; N4=N1),
+	(N3 < N4 -> Level=N4 ; Level=N3),
+	( LoadMode == static_mode ->
+	    fmt_write_string(Trailer,'flrtrailer%d.P',f(Level))
+	  ;
+	    fmt_write_string(Trailer,'flrtrailer%d_dyn.P',f(Level))
+	),
+	copy_flrfile(closure,Trailer,S3),
 	( S1=success, S2=success, S3=success ->
 	    Status=success
 	  ;
@@ -324,10 +609,30 @@ directives_options(Directives,Options,Status) :-
 
 
 /********************************************************************/
-copy_flrfile(File,Status) :-
-	package_configuration(dir(flora),FloraDir),
+external_options([],[]).
+
+external_options([X|Ints],Exts) :-
+	internal_option(X),
+	!,
+	external_options(Ints,Exts). 
+
+external_options([X|Ints],[X|Exts]) :- external_options(Ints,Exts). 
+
+internal_option(flraggregate) :- !.
+internal_option(flrassert)    :- !.
+internal_option(skolem)       :- !.
+
+
+/********************************************************************/
+copy_flrfile(Dir,File,Status) :-
+	( package_configuration(dir(flora),FloraDir) ->
+	    true
+	  ;
+	    bootstrap_package(flora,flora),
+	    package_configuration(dir(flora),FloraDir)
+	),
 	slash(S),
-	fmt_write_string(FullName,'%s%slib%s%s',f(FloraDir,S,S,File)),
+	fmt_write_string(FullName,'%s%s%s%s%s',f(FloraDir,S,Dir,S,File)),
 	( flora_file_exists(FullName) ->
 	    flora_output_file(FullName),
 	    Status=success
@@ -341,8 +646,8 @@ flora_file_exists(File) :-
 	( file_exists(File) ->
 	    true
 	  ;
-	    display('+++ Error: '), display(File),
-	    displayln(' does NOT exist.'), fail
+	    displayln, display('+++ Error: '), display(File),
+	    displayln(' does NOT exist !'), fail
 	).
 
 
@@ -419,6 +724,12 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 
 
 /********************************************************************/
+'_$_$_flora_read_parse_compile'(LoadMode,L,Tokens,FlattenedRules,Status,Opts) :-
+	set_load_mode(LoadMode),
+	read_parse_compile(L,Tokens,FlattenedRules,Status,Opts).
+
+
+/********************************************************************/
 read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 	read_tokens(Tokens,ReadStatus),
 	( member(error(Msg),ReadStatus) ->
@@ -428,6 +739,9 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 	    write_tokens(userout,Tokens),
 	    displayln(' <--- here?'),
 	    displayln_errmsg(Msg)
+
+	  ; L = [atom('$?'),atom('$-')], rule(null,Tokens,[]) ->
+	    Status=[error(noop)|ReadStatus]
 
 	  ;
 	    append(L,Tokens,Ts),
@@ -464,4 +778,104 @@ discard_tokens(Status) :-
 	).
 
 
-/********************************************************************/
+/*********************************************************************/
+flora_check_directives(Original,Final) :-
+	flora_directives(Original,L1),
+	findall(X1,(member(X1,L1),X1\=eqlevel(_)),L2),
+	findall(eqlevel(X2),member(eqlevel(X2),L1),L3),
+	( L3 = [] ->
+	    L4=[]
+	  ;
+	    member(eqlevel(N1),L3),
+	    not (member(eqlevel(N2),L3),N2>N1),
+	    L4=[eqlevel(N1)]
+	),
+	!,
+	append(L4,L2,Final).
+
+flora_directives([],[]) :- !.
+
+flora_directives([H|T],Opts) :-
+	( flora_directive(H) ->
+	    Opts=[H|R],
+	    flora_directives(T,R)
+
+	  ;
+	    displayln, display('*** Warning: unknown compiler option '),
+	    display(H), displayln(' (discarded)'),
+	    flora_directives(T,Opts)
+	),
+	!.
+
+flora_directives(_,_) :-
+	displayln,
+	displayln('+++ Error: compiler directive must be a LIST of options !'),
+	fail.
+
+flora_directive(eqlevel(N)) :- 0 =< N, N =< 1, !.
+
+flora_default_directives([eqlevel(0)]).
+
+
+/*********************************************************************/
+'_$_$_flora_check_filename'(Name) :-
+	( not atom(Name) ->
+	    displayln, displayln('+++ Error: invalid file name'),
+	    fail
+
+	  ;
+	    true
+	).
+
+
+/*********************************************************************/
+flora_locate_file(In,In) :-
+	is_absolute_filename(In),
+	!.
+
+flora_locate_file(In,Out) :-
+	flora_library_directory(LibDir),
+	slash(S),
+	fmt_write_string(Out,'%s%s%s',f(LibDir,S,In)),
+	file_exists(Out),
+	!.
+
+flora_locate_file(In,In).
+
+
+/*********************************************************************/
+file_older_than(F1,F2) :-
+	( file_exists(F1) ->
+	    file_time(F1,time(F1Time1,F1Time2)),
+	    file_time(F2,time(F2Time1,F2Time2)),
+	    time(F1Time1,F1Time2) @< time(F2Time1,F2Time2)
+
+	  ;
+	    true
+	).
+
+
+/*********************************************************************/
+flora_library_directory('.').
+flora_library_directory(X) :- library_directory(X).
+
+
+/*********************************************************************/
+:- maxerr(5).
+
+maxerr(X) :-
+	( var(X) ->
+	    flora_maxerr(X)
+
+	  ; X \== all, (not integer(X); X < 1) ->
+	    displayln,
+	    displayln('+++ Error: invalid argument to maxerr'),
+	    fail
+
+	  ;
+	    trie_retract_all(flora_maxerr(_)),
+	    trie_assert(flora_maxerr(X))
+	).
+
+
+/*********************************************************************/

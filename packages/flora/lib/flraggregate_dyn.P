@@ -13,75 +13,75 @@
 /*****************************************************************************
   rules for aggregates
 *****************************************************************************/
-'_$_$_flora_min'(G,Matches,Min) :-
+'_$_$_flora_min_dyn'(G,Matches,Min) :-
 	( G = nogrp ->
 	    Matches=[H|T],
-	    '_$_$_flora_minaux1'(T,H,Min)
+	    '_$_$_flora_minaux1_dyn'(T,H,Min)
 
-	  ; '_$_$_flora_var_exists'(G) ->
+	  ; '_$_$_flora_var_exists_dyn'(G) ->
 	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),DL),
 	    DL=[H|T],
-	    '_$_$_flora_minaux1'(T,H,Min)
+	    '_$_$_flora_minaux1_dyn'(T,H,Min)
 
 	  ;
 	    Matches=['_$_$_flora_rslt'(D,_)|T],
-	    '_$_$_flora_minaux2'(T,D,Min)
+	    '_$_$_flora_minaux2_dyn'(T,D,Min)
 	).
 
-'_$_$_flora_minaux1'([],X,X).
-'_$_$_flora_minaux1'([H|T],X,N) :-
-	(H @< X -> '_$_$_flora_minaux1'(T,H,N) ; '_$_$_flora_minaux1'(T,X,N)).
+'_$_$_flora_minaux1_dyn'([],X,X).
+'_$_$_flora_minaux1_dyn'([H|T],X,N) :-
+	(H @< X -> '_$_$_flora_minaux1_dyn'(T,H,N) ; '_$_$_flora_minaux1_dyn'(T,X,N)).
 
-'_$_$_flora_minaux2'([],X,X).
-'_$_$_flora_minaux2'(['_$_$_flora_rslt'(D,_)|T],X,N) :-
-	(D @< X -> '_$_$_flora_minaux2'(T,D,N) ; '_$_$_flora_minaux2'(T,X,N)).
+'_$_$_flora_minaux2_dyn'([],X,X).
+'_$_$_flora_minaux2_dyn'(['_$_$_flora_rslt'(D,_)|T],X,N) :-
+	(D @< X -> '_$_$_flora_minaux2_dyn'(T,D,N) ; '_$_$_flora_minaux2_dyn'(T,X,N)).
 
 
 /****************************************************************************/
-'_$_$_flora_max'(G,Matches,Max) :-
+'_$_$_flora_max_dyn'(G,Matches,Max) :-
 	( G = nogrp ->
 	    Matches=[H|T],
-	    '_$_$_flora_maxaux1'(T,H,Max)
+	    '_$_$_flora_maxaux1_dyn'(T,H,Max)
 
-	  ; '_$_$_flora_var_exists'(G) ->
+	  ; '_$_$_flora_var_exists_dyn'(G) ->
 	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),DL),
 	    DL=[H|T],
-	    '_$_$_flora_maxaux1'(T,H,Max)
+	    '_$_$_flora_maxaux1_dyn'(T,H,Max)
 
 	  ;
 	    Matches=['_$_$_flora_rslt'(D,_)|T],
-	    '_$_$_flora_maxaux2'(T,D,Max)
+	    '_$_$_flora_maxaux2_dyn'(T,D,Max)
 	).
 
-'_$_$_flora_maxaux1'([],X,X).
-'_$_$_flora_maxaux1'([H|T],X,N) :-
-	(H @> X -> '_$_$_flora_maxaux1'(T,H,N) ; '_$_$_flora_maxaux1'(T,X,N)).
+'_$_$_flora_maxaux1_dyn'([],X,X).
+'_$_$_flora_maxaux1_dyn'([H|T],X,N) :-
+	(H @> X -> '_$_$_flora_maxaux1_dyn'(T,H,N) ; '_$_$_flora_maxaux1_dyn'(T,X,N)).
 
-'_$_$_flora_maxaux2'([],X,X).
-'_$_$_flora_maxaux2'(['_$_$_flora_rslt'(D,_)|T],X,N) :-
-	(D @> X -> '_$_$_flora_maxaux2'(T,D,N) ; '_$_$_flora_maxaux2'(T,X,N)).
+'_$_$_flora_maxaux2_dyn'([],X,X).
+'_$_$_flora_maxaux2_dyn'(['_$_$_flora_rslt'(D,_)|T],X,N) :-
+	(D @> X -> '_$_$_flora_maxaux2_dyn'(T,D,N) ; '_$_$_flora_maxaux2_dyn'(T,X,N)).
 
 
 /****************************************************************************/
-'_$_$_flora_sum'(G,Matches,Sum) :-
+'_$_$_flora_sum_dyn'(G,Matches,Sum) :-
 	( G = nogrp ->
-	    '_$_$_flora_sumaux1'(Matches,X,Sum,Warning)
+	    '_$_$_flora_sumaux1_dyn'(Matches,X,Sum,Warning)
 
-	  ; '_$_$_flora_var_exists'(G) ->
+	  ; '_$_$_flora_var_exists_dyn'(G) ->
 	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),DL),
-	    '_$_$_flora_sumaux1'(DL,X,Sum,Warning)
+	    '_$_$_flora_sumaux1_dyn'(DL,X,Sum,Warning)
 
 	  ;
-	    '_$_$_flora_sumaux2'(Matches,X,Sum,Warning), !
+	    '_$_$_flora_sumaux2_dyn'(Matches,X,Sum,Warning), !
 	),
 	( var(Warning) ->
 	    true
@@ -93,47 +93,47 @@
 	    tell(F)
 	).
 
-'_$_$_flora_sumaux1'([],X,X,_) :-
+'_$_$_flora_sumaux1_dyn'([],X,X,_) :-
 	(var(X) -> fail ; true).
 
-'_$_$_flora_sumaux1'([H|T],X,N,Warning) :-
+'_$_$_flora_sumaux1_dyn'([H|T],X,N,Warning) :-
 	( number(H) ->
 	    (var(X) -> S=H ; S is X+H),
-	    '_$_$_flora_sumaux1'(T,S,N,Warning)
+	    '_$_$_flora_sumaux1_dyn'(T,S,N,Warning)
 
 	  ;
 	    Warning=warning,
-	    '_$_$_flora_sumaux1'(T,X,N,_)
+	    '_$_$_flora_sumaux1_dyn'(T,X,N,_)
 	).
 
-'_$_$_flora_sumaux2'([],X,X,_) :-
+'_$_$_flora_sumaux2_dyn'([],X,X,_) :-
 	(var(X) -> fail ; true).
 
-'_$_$_flora_sumaux2'(['_$_$_flora_rslt'(D,_)|T],X,N,Warning) :-
+'_$_$_flora_sumaux2_dyn'(['_$_$_flora_rslt'(D,_)|T],X,N,Warning) :-
 	( number(D) ->
 	    (var(X) -> S=D ; S is X+D),
-	    '_$_$_flora_sumaux2'(T,S,N,Warning)
+	    '_$_$_flora_sumaux2_dyn'(T,S,N,Warning)
 
 	  ;
 	    Warning=warning,
-	    '_$_$_flora_sumaux2'(T,X,N,_)
+	    '_$_$_flora_sumaux2_dyn'(T,X,N,_)
 	).
 
 
 /****************************************************************************/
-'_$_$_flora_avg'(G,Matches,Avg) :-
+'_$_$_flora_avg_dyn'(G,Matches,Avg) :-
 	( G = nogrp ->
-	    '_$_$_flora_avgaux1'(Matches,X1,X2,Avg,Warning)
+	    '_$_$_flora_avgaux1_dyn'(Matches,X1,X2,Avg,Warning)
 
-	  ; '_$_$_flora_var_exists'(G) ->
+	  ; '_$_$_flora_var_exists_dyn'(G) ->
 	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
 	    sort(L,Groups),
 	    member(G,Groups),
 	    findall(D,member('_$_$_flora_rslt'(D,G),Matches),DL),
-	    '_$_$_flora_avgaux1'(DL,X1,X2,Avg,Warning)
+	    '_$_$_flora_avgaux1_dyn'(DL,X1,X2,Avg,Warning)
 
 	  ;
-	    '_$_$_flora_avgaux2'(L,X1,X2,Avg,Warning)
+	    '_$_$_flora_avgaux2_dyn'(L,X1,X2,Avg,Warning)
 	),
 	( var(Warning) ->
 	    true
@@ -145,36 +145,36 @@
 	    tell(F)
 	).
 
-'_$_$_flora_avgaux1'([],S,N,Avg,_) :-
+'_$_$_flora_avgaux1_dyn'([],S,N,Avg,_) :-
 	(var(S) -> fail ; Avg is S/N).
 
-'_$_$_flora_avgaux1'([H|T],X1,X2,Avg,Warning) :-
+'_$_$_flora_avgaux1_dyn'([H|T],X1,X2,Avg,Warning) :-
 	( number(H) ->
 	    (var(X1) -> S=H, N=1 ; S is X1+H, N is X2+1),
-	    '_$_$_flora_avgaux1'(T,S,N,Avg,Warning)
+	    '_$_$_flora_avgaux1_dyn'(T,S,N,Avg,Warning)
 
 	  ;
 	    Warning=warning,
-	    '_$_$_flora_avgaux1'(T,X1,X2,Avg,_)
+	    '_$_$_flora_avgaux1_dyn'(T,X1,X2,Avg,_)
 	).
 
-'_$_$_flora_avgaux2'([],S,N,Avg,_) :-
+'_$_$_flora_avgaux2_dyn'([],S,N,Avg,_) :-
 	(var(S) -> fail ; Avg is S/N).
 
-'_$_$_flora_avgaux2'(['_$_$_flora_rslt'(D,_)|T],X1,X2,Avg,Warning) :-
+'_$_$_flora_avgaux2_dyn'(['_$_$_flora_rslt'(D,_)|T],X1,X2,Avg,Warning) :-
 	( number(D) ->
 	    (var(X1) -> S=D, N=1 ; S is X1+D, N is X2+1),
-	    '_$_$_flora_avgaux2'(T,S,N,Avg,Warning)
+	    '_$_$_flora_avgaux2_dyn'(T,S,N,Avg,Warning)
 
 	  ;
 	    Warning=warning,
-	    '_$_$_flora_avgaux2'(T,X1,X2,Avg,_)
+	    '_$_$_flora_avgaux2_dyn'(T,X1,X2,Avg,_)
 	).
 
 
 /****************************************************************************/
-'_$_$_flora_count'(G,Matches,Count) :-
-	( '_$_$_flora_var_exists'(G) ->
+'_$_$_flora_count_dyn'(G,Matches,Count) :-
+	( '_$_$_flora_var_exists_dyn'(G) ->
 	    findall(Grp,member('_$_$_flora_rslt'(_,Grp),Matches),L),
 	    sort(L,Groups),
 	    member(G,Groups),
@@ -187,20 +187,20 @@
 
 
 /****************************************************************************/
-'_$_$_flora_var_exists'(X) :- var(X), !.
+'_$_$_flora_var_exists_dyn'(X) :- var(X), !.
 
-'_$_$_flora_var_exists'(T) :-
+'_$_$_flora_var_exists_dyn'(T) :-
 	functor(T,_,N),
-	'_$_$_flora_var_exists'(T,N).
+	'_$_$_flora_var_exists_dyn'(T,N).
 
-'_$_$_flora_var_exists'(T,N) :-
+'_$_$_flora_var_exists_dyn'(T,N) :-
 	N>=1,
 	arg(N,T,Arg),
-	( '_$_$_flora_var_exists'(Arg) ->
+	( '_$_$_flora_var_exists_dyn'(Arg) ->
 	    !
 	  ;
 	    M is N-1,
-	    '_$_$_flora_var_exists'(T,M)
+	    '_$_$_flora_var_exists_dyn'(T,M)
 	).
 
 

@@ -1,0 +1,13 @@
+1. Use tnot to translate not. And dynamically generate rules for
+   a list of goals passed to not, table new predicate and pass
+   it to tnot.
+
+2. Support noop.
+
+3. Use Hilog to implement aggregates.
+
+4. Incorporate F-Logic and T-Logic.
+
+5. Work areas.
+
+

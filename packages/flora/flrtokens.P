@@ -3,6 +3,7 @@
 ** Author(s): Bertram Ludaescher (V 1.2, 11/13/1998)
 **
 **            Guizhen Yang       (V 2.0, 04/12/1999)
+**            Guizhen Yang	 (V 2.5, 05/06/1999)
 **              supervised by Michael Kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu

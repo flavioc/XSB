@@ -3,6 +3,7 @@
 ** Author(s): Bertram Ludaescher (V 1.2, 11/05/1998)
 **
 **            Guizhen Yang       (V 2.0, 04/12/1999)
+**            Guizhen Yang	 (V 2.5, 05/06/1999)
 **              supervised by Michael Kifer
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -53,7 +54,8 @@
 
 /**************************************************************/
 rule(_) -->
-	{ trie_retract_all(error(_)),
+	{ trie_assert(error(none)),
+	  trie_retract_all(error(_)),
 	  fail
 	}.
 
@@ -110,6 +112,14 @@ rule(table_directive(auto_table)) -->
 	imply_symbol,
 	white_space0,
 	atom_name(auto_table),
+	rule_delimeter,
+	!.
+
+rule(eqlevel_directive(eqlevel(N))) -->
+	imply_symbol,
+	white_space0,
+	predicate_term(pterm(eqlevel,[number(N)]),_),
+	{integer(N)},
 	rule_delimeter,
 	!.
 
@@ -214,27 +224,15 @@ signature_methlist0(L) -->
 signature_methlist0([]) --> [].
 
 
-signature_method_args([C|L]) -->
+signature_method_args(L) -->
 	[atom('$@'),atom('$(')],
 	!,
 	white_space0,
-	atom_name(C),
-	signature_method_argslist0(L),
+	atom_name_list(L),
 	white_space0,
 	[atom('$)')].
 
 signature_method_args([]) --> [].
-
-
-signature_method_argslist0([C|L]) -->
-	white_space0,
-	[atom('$,')],
-	!,
-	white_space0,
-	atom_name(C),
-	signature_method_argslist0(L).
-
-signature_method_argslist0([]) --> [].
 
 
 signature_method_result([C]) --> atom_name(C), !.
@@ -248,6 +246,20 @@ signature_method_result([]) -->
 /**************************************************************/
 atom_name(N) --> [identifier(N)], !.
 atom_name(N) --> [string_atom(N)], !.
+
+
+atom_name_list([C|L]) -->
+	atom_name(C),
+	atom_name_rest_list(L).
+
+atom_name_rest_list(L) -->
+	white_space0,
+	[atom('$,')],
+	!,
+	white_space0,
+	atom_name_list(L).
+
+atom_name_rest_list([]) --> [].
 
 
 /**************************************************************/
@@ -315,6 +327,22 @@ literal(not(L),V) -->
 	white_space0,
 	[atom('$)')],
 	!.
+
+literal(loadlist(L),_) -->
+	[atom('$[')],
+	!,
+	white_space0,
+	atom_name_list(L),
+	white_space0,
+	[atom('$]')].
+
+literal(dynloadlist(L),_) -->
+	[atom('${')],
+	!,
+	white_space0,
+	atom_name_list(L),
+	white_space0,
+	[atom('$}')].
 
 literal(spterm(P,P1,P2),V) -->
 	path_expression(P1,V),

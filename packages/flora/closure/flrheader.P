@@ -1,0 +1,86 @@
+/**** closure/flrheader.P: Prepended automatically by the FLORA compiler ****/
+
+
+:- table '_$_$_flora_fd'/3.
+:- table '_$_$_flora_mvd'/3.
+:- table '_$_$_flora_ifd'/3.
+:- table '_$_$_flora_imvd'/3.
+:- table '_$_$_flora_isa'/2.
+:- table '_$_$_flora_sub'/2.
+:- table '_$_$_flora_fs'/3.
+:- table '_$_$_flora_mvs'/3.
+
+
+:- import consult/1 from consult.
+
+:- import bootstrap_package/2, package_configuration/2 from packaging.
+
+:- import slash/1 from machine.
+
+:- import fmt_write_string/3 from file_io.
+
+:- import current_predicate/1 from curr_sym.
+
+:- import '_$_$_flora_loadlist'/1, '_$_$_flora_dynloadlist'/1 from flrutils.
+
+
+/****************************************************************************/
+:- dynamic '_$_$_flora_fd_dyn'(_,_,_).
+:- dynamic '_$_$_flora_mvd_dyn'(_,_,_).
+:- dynamic '_$_$_flora_ifd_dyn'(_,_,_).
+:- dynamic '_$_$_flora_imvd_dyn'(_,_,_).
+:- dynamic '_$_$_flora_isa_dyn'(_,_).
+:- dynamic '_$_$_flora_sub_dyn'(_,_).
+:- dynamic '_$_$_flora_fs_dyn'(_,_,_).
+:- dynamic '_$_$_flora_mvs_dyn'(_,_,_).
+:- dynamic '_$_$_flora_exists_dyn'(_).
+:- dynamic '_$_$_flora_mvd_dyn'(_,_).
+:- dynamic '_$_$_flora_imvd_dyn'(_,_).
+
+:- table '_$_$_flora_fd_dyn'/3.
+:- table '_$_$_flora_mvd_dyn'/3.
+:- table '_$_$_flora_ifd_dyn'/3.
+:- table '_$_$_flora_imvd_dyn'/3.
+:- table '_$_$_flora_isa_dyn'/2.
+:- table '_$_$_flora_sub_dyn'/2.
+:- table '_$_$_flora_fs_dyn'/3.
+:- table '_$_$_flora_mvs_dyn'/3.
+:- table '_$_$_flora_exists_dyn'/1.
+:- table '_$_$_flora_mvd_dyn'/2.
+:- table '_$_$_flora_imvd_dyn'/2.
+
+'_$_$_flora_fd'(O,M,R)   :- '_$_$_flora_fd_dyn'(O,M,R).
+'_$_$_flora_mvd'(O,M,R)  :- '_$_$_flora_mvd_dyn'(O,M,R).
+'_$_$_flora_ifd'(O,M,R)  :- '_$_$_flora_ifd_dyn'(O,M,R).
+'_$_$_flora_imvd'(O,M,R) :- '_$_$_flora_imvd_dyn'(O,M,R).
+'_$_$_flora_isa'(O1,O2)  :- '_$_$_flora_isa_dyn'(O1,O2).
+'_$_$_flora_sub'(O1,O2)  :- '_$_$_flora_sub_dyn'(O1,O2).
+'_$_$_flora_fs'(O,M,R)   :- '_$_$_flora_fs_dyn'(O,M,R).
+'_$_$_flora_mvs'(O,M,R)  :- '_$_$_flora_mvs_dyn'(O,M,R).
+'_$_$_flora_exists'(O)   :- '_$_$_flora_exists_dyn'(O).
+'_$_$_flora_mvd'(O,M)    :- '_$_$_flora_mvd_dyn'(O,M).
+'_$_$_flora_imvd'(O,M)   :- '_$_$_flora_imvd_dyn'(O,M).
+
+
+/****************************************************************************/
+'_$_$_flora_tag'(noquery).
+
+?- '_$_$_flora_tag'(query), !,
+   ( current_predicate('_$_$_flora_print_all'/2) ->
+       true
+     ;
+       ( package_configuration(dir(flora),D) ->
+	   true
+	 ;
+	   bootstrap_package(flora,flora),
+	   package_configuration(dir(flora),D)
+       ),
+       slash(S),
+       fmt_write_string(Lib,'%s%slib%sflrdisplay',f(D,S,S)),
+       consult(Lib)
+   ),
+   !.
+
+
+/************************** End of Header ***********************************/
+

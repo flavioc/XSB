@@ -29,5 +29,5 @@
 :- import bootstrap_package/2, package_configuration/2 from packaging.
 
 :- bootstrap_package('flora',flora),
-   assert(package_configuration(version(flora),'2.0 of 04/1999')),
+   assert(package_configuration(version(flora),'2.5 of 05/06/1999')),
    [flrshell].

@@ -1,0 +1,376 @@
+/*** closure/flrtrailer1.P: appended automatically by the FLORA compiler  ***/
+
+
+/*****************************************************************************
+  closure rules for X::Y
+*****************************************************************************/
+:- table '_$_$_flora_subclass'/2.
+
+'_$_$_flora_subclass'(X,X) :- '_$_$_flora_sub'(X,_).
+'_$_$_flora_subclass'(X,X) :- '_$_$_flora_sub'(_,X).
+'_$_$_flora_subclass'(X,Y) :- '_$_$_flora_sub'(X,Y).
+
+'_$_$_flora_subclass'(X,Y) :-
+	'_$_$_flora_subclass'(X,Z), 
+	'_$_$_flora_subclass'(Z,Y),
+	(X \= Z -> true ; Z\=Y),
+	( X = Y ->
+	    write('*** Warning: cyclic subclass hierarchy: '),
+	    write(X), write('::'), write(Z), write('::'), write(Y), nl
+	  ;
+	    true
+	).
+
+
+/*****************************************************************************
+  closure rules for X:Y
+*****************************************************************************/
+:- table '_$_$_flora_isa'/2.
+
+'_$_$_flora_isa'(O,C) :-
+	'_$_$_flora_subclass'(C1,C),
+	'_$_$_flora_isa'(O,C1).
+
+
+/*****************************************************************************
+  rules for monotonic behavior inheritance
+*****************************************************************************/
+:- table '_$_$_flora_fd'/3.
+:- table '_$_$_flora_mvd'/3.
+:- table '_$_$_flora_ifd'/3.
+:- table '_$_$_flora_imvd'/3.
+
+'_$_$_flora_fd'(O,MethodArgs,R) :-
+	'_$_$_flora_ifd'(Class,MethodArgs,R),
+	( '_$_$_flora_isa'(O,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,C), '_$_$_flora_isa'(O,C)
+	).
+
+'_$_$_flora_mvd'(O,MethodArgs,R) :-
+	'_$_$_flora_imvd'(Class,MethodArgs,R),
+	( '_$_$_flora_isa'(O,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,C), '_$_$_flora_isa'(O,C)
+	).
+
+'_$_$_flora_ifd'(Sub,MethodArgs,R) :-
+	'_$_$_flora_ifd'(Class,MethodArgs,R),
+	( '_$_$_flora_subclass'(Sub,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	).
+
+'_$_$_flora_imvd'(Sub,MethodArgs,R) :-
+	'_$_$_flora_imvd'(Class,MethodArgs,R),
+	( '_$_$_flora_subclass'(Sub,Class)
+	  ;
+	  '_$_$_flora_eql'(Class,S), '_$_$_flora_subclass'(Sub,S)
+	).
+
+
+/*****************************************************************************
+  rules for congruence due to single-valued methods
+*****************************************************************************/
+:- table '_$_$_flora_eql'/2.
+:- table '_$_$_flora_metheql'/2.
+
+'_$_$_flora_eql'(X,Y) :-
+	'_$_$_flora_fd'(O,M1,X),
+	(M1=M2 ; '_$_$_flora_metheql'(M1,M2)),
+	'_$_$_flora_fd'(O,M2,Y),
+	not X=Y.
+
+'_$_$_flora_eql'(X,Y) :-
+	'_$_$_flora_eql'(O1,O2),
+	'_$_$_flora_fd'(O1,M1,X),
+	(M1=M2 ; '_$_$_flora_metheql'(M1,M2)),
+	'_$_$_flora_fd'(O2,M2,Y),
+	not X=Y.
+
+'_$_$_flora_eql'(X,Y) :-
+	'_$_$_flora_eql'(X,Z),
+	'_$_$_flora_eql'(Z,Y),
+	not X=Y.
+
+
+'_$_$_flora_metheql'(X,Y) :-
+	( nonvar(X) ->
+	    functor(X,'_$_$_flora_@',N), N >= 1,
+	    functor(Y,'_$_$_flora_@',N)
+
+	  ; nonvar(Y) ->
+	    functor(Y,'_$_$_flora_@',N), N >= 1,
+	    functor(X,'_$_$_flora_@',N)
+	),
+	'_$_$_flora_argeql'(X,Y,N),
+	not X=Y.
+
+
+'_$_$_flora_argeql'(_,_,0).
+
+'_$_$_flora_argeql'(X,Y,N) :-
+	N >= 1,
+	arg(N,X,Xn),
+	arg(N,Y,Yn),
+	(Xn=Yn ; '_$_$_flora_eql'(Xn,Yn)),
+	M is N-1,
+	'_$_$_flora_argeql'(X,Y,M).
+
+
+/*****************************************************************************
+  rules for object existence and empty result sets
+*****************************************************************************/
+:- table '_$_$_flora_exists'/1.
+:- table '_$_$_flora_mvd'/2.
+:- table '_$_$_flora_imvd'/2.
+
+'_$_$_flora_exists'(X) :- '_$_$_flora_fd'(X,_,_).
+'_$_$_flora_exists'(X) :- '_$_$_flora_fd'(_,_,X).
+'_$_$_flora_exists'(X) :- '_$_$_flora_mvd'(X,_,_).
+'_$_$_flora_exists'(X) :- '_$_$_flora_mvd'(_,_,X).
+'_$_$_flora_exists'(X) :- '_$_$_flora_ifd'(X,_,_).
+'_$_$_flora_exists'(X) :- '_$_$_flora_ifd'(_,_,X).
+'_$_$_flora_exists'(X) :- '_$_$_flora_imvd'(X,_,_).
+'_$_$_flora_exists'(X) :- '_$_$_flora_imvd'(_,_,X).
+'_$_$_flora_exists'(X) :- '_$_$_flora_isa'(X,_).
+'_$_$_flora_exists'(X) :- '_$_$_flora_isa'(_,X).
+'_$_$_flora_exists'(X) :- '_$_$_flora_sub'(X,_).
+'_$_$_flora_exists'(X) :- '_$_$_flora_sub'(_,X).
+
+'_$_$_flora_exists'(X) :-
+	'_$_$_flora_fd'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+'_$_$_flora_exists'(X) :-
+	'_$_$_flora_mvd'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+'_$_$_flora_exists'(X) :-
+	'_$_$_flora_ifd'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+'_$_$_flora_exists'(X) :-
+	'_$_$_flora_imvd'(_,M,_),
+	M =.. [_|L],
+	member(X,L).
+
+
+'_$_$_flora_mvd'(O,M) :- '_$_$_flora_mvd'(O,M,_).
+
+'_$_$_flora_imvd'(O,M) :- '_$_$_flora_imvd'(O,M,_).
+
+
+/*****************************************************************************
+  rules for flattened path expressions on RHS
+*****************************************************************************/
+:- table '_$_$_flora_fd_rhs'/3.
+:- table '_$_$_flora_mvd_rhs'/3.
+:- table '_$_$_flora_ifd_rhs'/3.
+:- table '_$_$_flora_imvd_rhs'/3.
+:- table '_$_$_flora_mvd_rhs'/2.
+:- table '_$_$_flora_imvd_rhs'/2.
+:- table '_$_$_flora_isa_rhs'/2.
+:- table '_$_$_flora_sub_rhs'/2.
+:- table '_$_$_flora_fs_rhs'/3.
+:- table '_$_$_flora_mvs_rhs'/3.
+
+
+/****************************************************************************/
+'_$_$_flora_fd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_fd'(Object,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_fd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_fd'(O,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_fd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_fd'(Object,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_fd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_fd'(O,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_mvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_mvd'(Object,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_mvd'(O,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_mvd'(Object,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_mvd'(O,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_ifd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_ifd'(Object,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_ifd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_ifd'(O,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_ifd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_ifd'(Object,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_ifd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_ifd'(O,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_imvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_imvd'(Object,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_imvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_imvd'(O,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_imvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_imvd'(Object,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_imvd_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_imvd'(O,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_mvd_rhs'(Object,Method) :-
+	'_$_$_flora_mvd'(Object,M),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvd_rhs'(Object,Method) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_mvd'(O,M),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_imvd_rhs'(Object,Method) :-
+	'_$_$_flora_imvd'(Object,M),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_imvd_rhs'(Object,Method) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_imvd'(O,M),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_isa_rhs'(Object1,Object2) :-
+	'_$_$_flora_isa'(Object1,Object2).
+
+'_$_$_flora_isa_rhs'(Object1,Object2) :-
+	'_$_$_flora_eql'(Object1,O1),
+	'_$_$_flora_isa'(O1,Object2).
+
+'_$_$_flora_isa_rhs'(Object1,Object2) :-
+	'_$_$_flora_eql'(Object2,O2),
+	'_$_$_flora_isa'(Object1,O2).
+
+'_$_$_flora_isa_rhs'(Object1,Object2) :-
+	'_$_$_flora_eql'(Object1,O1),
+	'_$_$_flora_eql'(Object2,O2),
+	'_$_$_flora_isa'(O1,O2).
+
+/****************************************************************************/
+'_$_$_flora_sub_rhs'(Object1,Object2) :-
+	'_$_$_flora_subclass'(Object1,Object2).
+
+'_$_$_flora_sub_rhs'(Object1,Object2) :-
+	'_$_$_flora_eql'(Object1,O1),
+	'_$_$_flora_subclass'(O1,Object2).
+
+'_$_$_flora_sub_rhs'(Object1,Object2) :-
+	'_$_$_flora_eql'(Object2,O2),
+	'_$_$_flora_subclass'(Object1,O2).
+
+'_$_$_flora_sub_rhs'(Object1,Object2) :-
+	'_$_$_flora_eql'(Object1,O1),
+	'_$_$_flora_eql'(Object2,O2),
+	'_$_$_flora_subclass'(O1,O2).
+
+/****************************************************************************/
+'_$_$_flora_fs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_fs'(Object,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_fs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_fs'(O,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_fs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_fs'(Object,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_fs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_fs'(O,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/****************************************************************************/
+'_$_$_flora_mvs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_mvs'(Object,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_mvs'(O,M,Result),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_mvs'(Object,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+'_$_$_flora_mvs_rhs'(Object,Method,Result) :-
+	'_$_$_flora_eql'(Result,R),
+	'_$_$_flora_eql'(Object,O),
+	'_$_$_flora_mvs'(O,M,R),
+	(M=Method ; '_$_$_flora_metheql'(M,Method)).
+
+/*****************************************************************************
+  complementary rules to protect against "undefined" error reported by XSB 
+*****************************************************************************/
+'_$_$_flora_fd'(_,_,_)   :- fail.
+'_$_$_flora_mvd'(_,_,_)  :- fail.
+'_$_$_flora_ifd'(_,_,_)  :- fail.
+'_$_$_flora_imvd'(_,_,_) :- fail.
+'_$_$_flora_fs'(_,_,_)   :- fail.
+'_$_$_flora_mvs'(_,_,_)  :- fail.
+'_$_$_flora_sub'(_,_)    :- fail.
+'_$_$_flora_isa'(_,_)    :- fail.
+
+
+/****************************  End of Trailer  ******************************/
+

@@ -1,0 +1,196 @@
+/* File:        flrlib.P
+**
+** Authors:     Guizhen Yang       (V 2.0, 04/12/1999)
+**                supervised by Michael Kifer
+**
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+*/
+
+
+/*********************************************************************
+  03/1999, created by Guizhen Yang (guizyang@CS.SunySB.EDU)
+*********************************************************************/
+
+
+:- import
+	call/1, cputime/1, write/1, writeln/1, nl/0,
+	get0/1, functor/3, var/1
+   from standard.
+
+:- import length/2 from basics.
+
+:- import findall/3 from setof.
+
+:- import unix/1 from unix.
+
+:- import current_predicate/1 from curr_sym.
+
+
+/********************************************************************/
+'_$_$_flora_print_all'(Gs,NVs) :-
+	( '_$_$_flora_check_predicates'(Gs) ->
+	    cputime(T0),
+	    ( NVs = [] ->
+		( call(Gs) ->
+		    nl, writeln('Yes.')
+		  ;
+		    nl, writeln('No.')
+		)
+
+	      ;
+		findall(NVs,Gs,TempL),
+		sort(TempL,L),
+		cputime(T1),
+		T is T1-T0,
+		length(L,N),
+		( N = 0 ->
+		    nl, writeln('No.')
+		  ;
+		    '_$_$_flora_write_matches'(L), nl,
+		    write(N), write(' solution(s) in '),
+		    write(T), write(' seconds on '),
+		    unix(hostname),
+		    nl, writeln('Yes.')
+		)
+	    )
+
+	  ;
+	    nl, writeln('No.')
+	).
+
+
+/********************************************************************/
+'_$_$_flora_print_one'(Gs,NVs) :-
+	( '_$_$_flora_check_predicates'(Gs)	->
+	    ( NVs = [] ->
+		( call(Gs) ->
+		    nl, writeln('Yes.')
+		  ;
+		    nl, writeln('No.')
+		)
+
+	      ;
+		( call(Gs),
+		  '_$_$_flora_write_pairs'(NVs),
+		  '_$_$_flora_fail_unless_return', !
+		 ;
+		  nl, writeln('No.')
+		)
+	    )
+
+	  ;
+	    nl, writeln('No.')
+	).
+
+'_$_$_flora_fail_unless_return' :- 
+	get0(C),
+	(C == 10 -> true ; get0(_)),
+	C=10, nl, writeln('Yes.').
+
+
+/********************************************************************/
+'_$_$_flora_check_predicates'(G) :-
+	functor(G,F,N),
+	( current_predicate(F/N) ->
+	    true
+
+	  ;
+	    nl, write('*** Warning: '),
+	    write(F/N),
+	    writeln(' undefined'),
+	    fail
+	).
+
+'_$_$_flora_check_predicates'(','(G,Gs)) :-
+	functor(G,F,N),
+	( current_predicate(F/N) ->
+	    '_$_$_flora_check_predicates'(Gs)
+
+	  ;
+	    nl, write('*** Warning: '),
+	    write(F/N),
+	    writeln(' undefined'),
+	    fail
+	).
+
+
+/********************************************************************/
+'_$_$_flora_write_matches'([]).
+
+'_$_$_flora_write_matches'([M|Ms]) :-
+	'_$_$_flora_write_pairs'(M),
+	nl,
+	'_$_$_flora_write_matches'(Ms).
+
+
+'_$_$_flora_write_pairs'([]).
+
+'_$_$_flora_write_pairs'([var(N,V)|NVs]) :-
+	nl, write(N),
+	write(' = '),
+	( var(V) ->
+	    write(N), write(' (unbound)')
+	  ;
+	    '_$_$_flora_write'(V)
+	),
+	'_$_$_flora_write_pairs'(NVs).
+
+
+'_$_$_flora_write'(X) :-
+	var(X),
+	!,
+	write(X).
+
+'_$_$_flora_write'('_$_$_flora_objref_fd'(O1,O2)) :-
+	!,
+	'_$_$_flora_write'(O1),
+	write('.'),
+	'_$_$_flora_write'(O2).
+
+'_$_$_flora_write'('_$_$_flora_objref_ifd'(O1,O2)) :-
+	!,
+	'_$_$_flora_write'(O1),
+	write('!'),
+	'_$_$_flora_write'(O2).
+
+'_$_$_flora_write'(X) :-
+	X =.. ['_$_$_flora_@',F|Args],
+	!,
+	'_$_$_flora_write'(F),
+	( Args = [] ->
+	    true
+	  ;
+	    write('('),
+	    '_$_$_flora_write_list'(Args),
+	    write(')')
+	).
+
+'_$_$_flora_write'(X) :-
+	write(X).
+
+'_$_$_flora_write_list'([X]) :-
+	!,
+	'_$_$_flora_write'(X).
+
+'_$_$_flora_write_list'([X1,X2|Xs]) :-
+	'_$_$_flora_write'(X1),
+	write(','),
+	'_$_$_flora_write_list'([X2|Xs]).
+
+
+/*********************** End of flrlib.P ****************************/
+
+

@@ -1,0 +1,30 @@
+/** closure/flrheader_dyn.P: Prepended automatically by the FLORA compiler */
+
+
+:- table '_$_$_flora_fd_dyn'/3.
+:- table '_$_$_flora_mvd_dyn'/3.
+:- table '_$_$_flora_ifd_dyn'/3.
+:- table '_$_$_flora_imvd_dyn'/3.
+:- table '_$_$_flora_isa_dyn'/2.
+:- table '_$_$_flora_sub_dyn'/2.
+:- table '_$_$_flora_fs_dyn'/3.
+:- table '_$_$_flora_mvs_dyn'/3.
+
+:- dynamic '_$_$_flora_fd_dyn'/3.
+:- dynamic '_$_$_flora_mvd_dyn'/3.
+:- dynamic '_$_$_flora_ifd_dyn'/3.
+:- dynamic '_$_$_flora_imvd_dyn'/3.
+:- dynamic '_$_$_flora_fs_dyn'/3.
+:- dynamic '_$_$_flora_mvs_dyn'/3.
+:- dynamic '_$_$_flora_sub_dyn'/2.
+:- dynamic '_$_$_flora_isa_dyn'/2.
+:- dynamic '_$_$_flora_exists_dyn'/1.
+:- dynamic '_$_$_flora_mvd_dyn'/2.
+:- dynamic '_$_$_flora_imvd_dyn'/2.
+:- dynamic '_$_$_flora_mvs_dyn'/2.
+
+:- import '_$_$_flora_loadlist'/1, '_$_$_flora_dynloadlist'/1 from flrutils.
+
+
+/************************** End of Header ***********************************/
+
