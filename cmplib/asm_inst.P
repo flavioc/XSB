@@ -105,20 +105,22 @@ asm_inst(movreg(R,R1),		4,	209,	[p, r(R), r(R1)]).
 asm_inst(negate(R),		4,	210,	[pp,r(R)]	).
 asm_inst(and(R,R1),		4,	211,	[p, r(R), r(R1)]).
 asm_inst(or(R,R1),		4,	212,	[p, r(R), r(R1)]).
-asm_inst(logshiftl(R,R1),	4,	213,	[p, r(R), r(R1)]).
-asm_inst(logshiftr(R,R1),	4,	214,	[p, r(R), r(R1)]).
+asm_inst(logshiftl(R,R1),	            4,	213,	[p, r(R), r(R1)]).
+asm_inst(logshiftr(R,R1),	            4,	214,	[p, r(R), r(R1)]).
 asm_inst(addreg(R,R1),		4,	215,	[p, r(R), r(R1)]).
 asm_inst(subreg(R,R1),		4,	216,	[p, r(R), r(R1)]).
 asm_inst(mulreg(R,R1),		4,	217,	[p, r(R), r(R1)]).
 asm_inst(divreg(R,R1),		4,	218,	[p, r(R), r(R1)]).
 asm_inst(idivreg(R,R1),		4,	219,	[p, r(R), r(R1)]).
-asm_inst(int_test_z(R,I,L),    12,	220,	[pp, r(R), n(I), l(L)]).
-asm_inst(int_test_nz(R,I,L),   12,	221,	[pp, r(R), n(I), l(L)]).
-asm_inst(fun_test_ne(R1,R2,L), 8,	222,	[p, r(R1), r(R2), l(L)]).
+asm_inst(int_test_z(R,I,L),         12,	220,	[pp, r(R), n(I), l(L)]).
+asm_inst(int_test_nz(R,I,L),       12,	221,	[pp, r(R), n(I), l(L)]).
+asm_inst(fun_test_ne(R1,R2,L),  8,	222,	[p, r(R1), r(R2), l(L)]).
 
 asm_inst(putdval(V,R),		4,	224,	[p, v(V), r(R)]	).
 asm_inst(putuval(V,R),		4,	225,	[p, v(V), r(R)]	).
-asm_inst(allocate_gc(A1,A2),    4,      231,    [p, a(A1), a(A2)]).
+asm_inst(minreg(R,R1),	            4,	226,	[p, r(R), r(R1)]).
+asm_inst(maxreg(R,R1),	            4,	227,	[p, r(R), r(R1)]).
+asm_inst(allocate_gc(A1,A2),     4,          231,    [p, a(A1), a(A2)]).
 asm_inst(call(S,B),		8,	232,	[pp, a(B), s(S)]).
 	% Address has been preprocessed
 asm_inst(allocate,		4,	233,	[ppp]		).

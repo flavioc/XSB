@@ -347,6 +347,10 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define putdval         0xe0
 #define putuval         0xe1
 
+/* Other Numeric instructions */
+#define minreg               0xe2
+#define maxreg               0xe3
+
 /* Procedure instructions */
 
 #define call_forn       0xe5

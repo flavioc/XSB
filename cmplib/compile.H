@@ -25,7 +25,7 @@
 */
 
 
-:- export compile/4, mc/2, abort_if_syntax_errors/1. 
+:- export compile/4, compile/5, mc/2, abort_if_syntax_errors/1. 
 :- export current_compiled_module/1.
 
 :- import spec/2 from spec.

@@ -247,8 +247,8 @@ XSB_INST(0xdf, no_inst, _no_inst, PPP,X,X,X);
 
 XSB_INST(0xe0, putdval, _putdval, P, V, R,X);
 XSB_INST(0xe1, putuval, _putuval, P, V, R,X);
-XSB_INST(0xe2, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0xe3, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xe2, minreg, _minreg, P,R,R,X);
+XSB_INST(0xe3, maxreg, _maxreg, P,R,R,X);
 XSB_INST(0xe4, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xe5, call_forn, _call_forn, PPP,L, X,X);
 XSB_INST(0xe6, load_pred, _load_pred, PPP,S, X,X);

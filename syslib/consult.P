@@ -51,7 +51,9 @@ compile0(Path, _) :-
 	file_write0(STDERR, Path), file_nl(STDERR), fail.
 
 compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- 
-	compile(Mod, Base, Opts, ExList).
+	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList).
+compile_f(pl, Base, Opts, ExList, Mod, _) :- 
+	compile(Mod, Base, '.pl', Opts, ExList).
 compile_f('c', Base, Opts, ExList, Mod, Dir) :- 
 	compile_cH(Mod, Base, Opts, ExList, Dir).
 compile_f('cpp', Base, Opts, ExList, Mod, Dir) :- 
@@ -59,7 +61,7 @@ compile_f('cpp', Base, Opts, ExList, Mod, Dir) :-
 compile_f('', Base, Opts, ExList, Mod, _) :-
 	str_cat(Base, XSB_SRC_EXTENSION_ATOM, FileName),
 	sys_link(Base, FileName, _Result),
-	compile(Mod, Base, Opts, ExList),
+	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList),
 	rm(FileName).
 
 /*======================================================================*/
@@ -132,6 +134,19 @@ needs_recompile(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Obj) :-
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,Otime2) @< time(HTime1,HTime2)
 	).	  
+needs_recompile(pl, Base, Obj) :-
+	( str_cat(Base, '.pl', PFileName),
+	  file_time(Obj, time(OTime1,OTime2)), 
+	  file_time(PFileName, time(PTime1,PTime2)),
+	  time(OTime1,OTime2) @< time(PTime1,PTime2)
+	)
+	;
+	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
+	  file_time(Obj, time(OTime1,Otime2)),
+	  %% If no header file exists, then HTime = 0
+	  file_time(HFileName, time(HTime1,HTime2)), 
+	  time(OTime1,Otime2) @< time(HTime1,HTime2)
+	).	  
 needs_recompile('', Base, Obj) :-
 	file_time(Obj, time(OTime1,OTime2)), 
 	file_time(Base, time(PTime1,PTime2)),
@@ -180,11 +195,11 @@ file_exists_here_or_configbin(C_Obj,CC_Obj) :-
 /*  search_module(+FileName, -Dir, -Mod, -SExt, -Base, -Obj)	        */
 /*                                                                      */
 /*	Given a FileName (must be an atom), search_module/6 finds the	*/
-/*	location of the corresponding module and returns:		*/
+/*	location of the corresponding module and returns:		            */
 /*		1) the directory (Dir),					*/
 /*		2) the module name (Mod),				*/
 /*		3) the extension (SExt) of the source file		*/
-/*		   ('P'/'c'/''[other name]/[object file only]), 	*/
+/*		   ('P'/'c'/''/pl/[other name]/[object file only]), 	*/
 /*		4) the base name of the file (Base = Dir+Mod), and	*/
 /*		5) the object file name (Obj)				*/
 /* 	The call will fail if the specified file cannot be found.	*/
@@ -206,7 +221,7 @@ search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
 real_search_module(ModName, Dir, Base, Ext) :-
         libpath(Dir),
         str_cat(Dir, ModName, Base),
-	existing_file_extension(Base, Ext).
+        existing_file_extension(Base, Ext).
 
 /*======================================================================*/
 /* load_exec(+File, +ModName)						*/
@@ -241,7 +256,7 @@ load_exec(File, ModName) :-
 co_code_call(A,B,C) :- code_call(A,B,C).
 
 compile_load_user(Options) :-
-	compile(user, user, Options, _), !,
+	compile(user, user, XSB_SRC_EXTENSION_ATOM, Options, _), !,
 	str_cat(user,XSB_OBJ_EXTENSION_ATOM,UserObjFile),
 	load_exec(UserObjFile, user),
 	rm(UserObjFile).

@@ -541,6 +541,9 @@ char *existing_file_extension(char *basename)
   strcpy(filename, basename); strcat(filename, ".cpp");
   if (! stat(filename, &fileinfo) && not_a_dir(fileinfo)) return "cpp";
 
+  strcpy(filename, basename); strcat(filename, ".pl");
+  if (! stat(filename, &fileinfo) && not_a_dir(fileinfo)) return "pl";
+
   strcpy(filename, basename);
   if (! stat(filename, &fileinfo) && not_a_dir(fileinfo)) return ""; /* no extension */
 

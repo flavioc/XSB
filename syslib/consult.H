@@ -43,7 +43,7 @@
 :- import warning/1, time_message/2 from auxlry.
 :- import banner_control/1 from banner.
 :- import append/3, memberchk/2 from basics.
-:- import compile/4 from compile.
+:- import compile/5 from compile.
 :- import predicate_property/2, current_input_port/1 from curr_sym.
 :- import default_assert_size/1 from config.
 :- import file_time/2, file_close/1 from file_io.
