@@ -1066,11 +1066,11 @@ bool bottom_up_unify(void)
  */
 void load_solution_trie(int arity, CPtr cptr, BTNptr TriePtr)
 {
-   if (arity > 0) {
-     num_heap_term_vars = 0;
-     follow_par_chain(TriePtr);
-     load_solution_from_trie(arity,cptr);
-   }
+  num_heap_term_vars = 0;
+  if (arity > 0) {
+    follow_par_chain(TriePtr);
+    load_solution_from_trie(arity,cptr);
+  }
 }
 
 /*----------------------------------------------------------------------*/
