@@ -3,16 +3,14 @@
 xsbdoc_main('../xsbdoc1.P').
 
 % xsbdoc_component/1 indicates the files used for each chapter.
+
 xsbdoc_component('Generating.P').
 xsbdoc_component('comments.P').
-xsbdoc_component('assertions_doc.pl').
-xsbdoc_component('assertions_props.pl').
-xsbdoc_component('native_props.pl').
+
+xsbdoc_component('assertions_props.P').
+
 xsbdoc_component('../autodoc.P').
 xsbdoc_component('../autodocformats.P').
-
-xsbdoc_component('Examples.P').
-xsbdoc_component('Install.P').
 
 % xsbdoc_bibfile/1 indicates the bibtex files to use  if there are any
 % citations. 

@@ -298,9 +298,10 @@ version_descriptor(version(Version,Date,Time)) :-
 
    ").
 
+/*
 :- regtype version_number(Version) 
    # "@var{Version} is a complete version number".
-
+*/
 version_number(Major*Minor+Patch) :-
 	int(Major),
 	int(Minor),
@@ -313,9 +314,10 @@ version_number(Major*Minor+Patch) :-
 :- comment(ymd_date/1,"A Year/Month/Day structure denoting a date:
       @includedef{ymd_date/1}.").
 
+/*
 :- regtype ymd_date(Date) 
    # "@var{Date} is a Year/Month/Day structure denoting a date.".
-
+*/
 ymd_date(Y/M/D) :-
 	int(Y),
 	int(M),
@@ -328,7 +330,9 @@ ymd_date(Y/M/D) :-
 :- comment(time_struct/1,"A struture containing time information:
    @includedef{time_struct/1}").
 
+/*
 :- regtype time_struct(Time) # "@var{Time} contains time information.".
+*/
 
 time_struct(Hours:Minutes*Seconds+TimeZone) :-
 	int(Hours),
@@ -338,6 +342,7 @@ time_struct(Hours:Minutes*Seconds+TimeZone) :-
 
 % ----------------------------------------------------------------------------
 
+/*
 :- comment(doinclude,version_maintenance_type/1).
 
 :- comment(version_maintenance_type/1,"Possible kinds of version
@@ -360,9 +365,13 @@ time_struct(Hours:Minutes*Seconds+TimeZone) :-
 
    @end{itemize}
 
+   The automatic maintenance of version numbers is not (yet)
+   implemented for XSB. 
+
+\comment{
    The automatic maintenance of version numbers is typically done by
    the CIAO @apl{emacs} mode.
-
+}
   ").
 
 :- regtype version_maintenance_type(Type) # "@var{Type} a type of
@@ -372,7 +381,7 @@ version_maintenance_type(on).
 version_maintenance_type(off).
 version_maintenance_type(dir(Path)) :-
 	atm(Path).
-
+*/
 % ----------------------------------------------------------------------------
 
 :- comment(doinclude,docstring/1).
