@@ -17,7 +17,7 @@
 	newSchrel/3, 	newSchrelClass/3, retractallSchrel/3,
 	object/4, newObject/5,retractallObject/4,
 	memberof/2,immediate_memberof/2, 
-	newMemberof/2,retractallMemberof/2,
+	newMemberof/2,retractallmemberof/2,
 	(attribute)/3,immediate_attribute/3, 
 	newAttribute/3,retractallAttribute/3,
             updateAttribute/5,
@@ -32,6 +32,8 @@
 :- import ground/1, member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import search_module/6 from consult.
+:- import new_trie/1, delete_trie/1, trie_interned/4, 
+	  trie_unintern_nr/2, trie_unintern/2, trie_intern/5 from intern.
 
 %%%%%%%%%%%%% Core Declarations 
 
@@ -2258,7 +2260,7 @@ retractall_oms(Term) :-
 	oms_log(retractall(Term)),
 	retractall_oms_term(Term),
 	abolish_nec_tables(Term).
-
+ 
 retractall_oms_term(Term) :-
 	retractall_oms_int(Term),
 	!.
@@ -2305,8 +2307,8 @@ oms_set_log_on:- oms_logging_state(X),
 		   (oms_log_trie(_) -> 
 		        oms_error(logging,['^%*&^%* log state inconsistent!',
 		                                     '(off to on)'])
-		     ;  new_trie(X),
-		         assert(oms_log_trie(X)))).
+		     ;  new_trie(T),
+		         assert(oms_log_trie(T)))).
 
 
 :- comment(oms_set_log_off/0,"This predicate turns logging off, and
@@ -2317,9 +2319,9 @@ oms_set_log_off:- oms_logging_state(X),
 		   true
 	          ;    retractall(oms_logging_state(_)),
 	               asserta(oms_logging_state(off)),
-		   (oms_log_trie(_) -> 
-		        delete_trie(X),
-		        retractall(oms_log_trie(X))
+		   (oms_log_trie(T) -> 
+		        delete_trie(T),
+		        retractall(oms_log_trie(_))
 		     ;  oms_error(logging,['^%*&^%* log state inconsistent!',
 		                                     '(on to off)']))).
 
@@ -2338,18 +2340,24 @@ oms_reset_log:-
 /* Need to handle variables better.  */
 oms_log(Term):- 
 	oms_logging_state(X),
-	(X == on -> oms_log_1(assert(Term)) ; true).
+	(X == on -> oms_log_1(Term) ; true).
 
 oms_log_1(assert(Term)):- 
 	oms_log_trie(T),
 	(trie_interned(retractall(Term),T,Leaf,_skel) -> 
-	    trie_unintern_nr(retractall(T),Leaf) ; true),
+	    trie_unintern_nr(T,Leaf) ; true),
 	trie_intern(assert(Term),T,_,_,_).
 oms_log_1(retractall(Term)):- 
 	oms_log_trie(T),
 	(trie_interned(assert(Term),T,Leaf,_skel) -> 
-	    trie_unintern_nr(Term,Leaf)  
-	  ; trie_intern(delete(Term),T,_,_,_)).
+	    trie_unintern_nr(T,Leaf)  
+	  ; trie_intern(retractall(Term),T,_,_,_)).
+
+show_log:- 
+	oms_log_trie(T),
+	trie_interned(Term,T,_,_),
+	writeln(Term),
+	fail.
 
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
