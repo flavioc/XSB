@@ -552,10 +552,9 @@ void safe_delete_branch(NODEptr lowest_node_in_branch)
 {
   byte choicepttype;
 
-  mark_leaf_node_del(lowest_node_in_branch); /* mark node as deleted */
   choicepttype = 0x3 & Instr(lowest_node_in_branch);
   Instr(lowest_node_in_branch) = choicepttype | 0x90; 
-  /*mark_leaf_node_del(lowest_node_in_branch);*/ /* mark node as deleted */
+  mark_leaf_node_del(lowest_node_in_branch); /* mark node as deleted */
   /* The following is a hack and is not working --- Kostis
   Atom(lowest_node_in_branch) = Atom(lowest_node_in_branch) ^ 0x100000;
     */
@@ -564,23 +563,6 @@ void safe_delete_branch(NODEptr lowest_node_in_branch)
    if it is not, the node will hash into another bucket, resulting  
    in inappropriate behavior on deletion */
 }
-
-void undelete_branch(NODEptr lowest_node_in_branch){
-   byte choicepttype; 
-   byte typeofinstr;
- 
-   if(DelFlag(lowest_node_in_branch) != 0){
-     choicepttype = 0x3 &  Instr(lowest_node_in_branch);
-     typeofinstr = (~0x3) & DelFlag(lowest_node_in_branch);
-
-     Instr(lowest_node_in_branch) = choicepttype | typeofinstr;
-     DelFlag(lowest_node_in_branch) = 0;
-     /*Atom(lowest_node_in_branch) = Atom(lowest_node_in_branch) ^ 0x100000;*/
-   }
-   else{
-     fprintf(stderr,"system warning:Attempt to undelete a node that is not deleted\n");
-   }
- }
 
 /*----------------------------------------------------------------------*/
 
