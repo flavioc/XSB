@@ -1227,7 +1227,7 @@ syntax and declarative semantics make it especially suitable for
 scripts that involve text processing.  There are several ways to
 access script-writing commands from XSB.  The first is to execute the
 command via the predicates {\tt shell/1} or {\tt shell/2}.  These
-predicates can execute any command but they do not provide portablity
+predicates can execute any command but they do not provide streamablity
 across UNIX and Windows commands, and they do not return any output of
 commands to Prolog.  Special predicates are provided to handle
 cross-platform compatability and to bring output into XSB.  
@@ -1260,7 +1260,7 @@ cross-platform compatability and to bring output into XSB.
     the standard predicate {\tt cd/1} described below should be used.
 
 %    {\em Note to DOS users.} \index{DOS}  The {\tt shell/1} command works
-%    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
+%    for DOS through the underlying GNU djgpp mechanism used to stream \ourprolog.
 
 \ouritem{shell(+SystemCall, -Result)}\index{\texttt{shell/2}}
     Calls the operating system with the atom {\tt SystemCall} as argument
@@ -1442,7 +1442,10 @@ For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 {\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
 {\tt /home/john} is what {\tt $\sim$john} expands into).  
 
-\ournewitem{file\_to\_list(IOport, List)}{scrptutls}
+%--------------------------------------------------------------------------------------------
+\comment{ TLS: I think I put this in, and I think its overtaken by
+file_read_line_list plus scan . 
+\ournewitem{file\_to\_list(S, List)}{scrptutls}
 \index{\texttt{file\_to\_list/2}}
 %%
 Read lines from an \emph{open} I/O port. Return a
@@ -1490,6 +1493,8 @@ application program responsibility.
 %%
 %%                yes
 %%\end{verbatim}}
+}
+%--------------------------------------------------------------------------------------------
 
 \ournewitem{sleep(+Seconds)}{shell}
 \index{\texttt{sleep/1}}
@@ -1597,20 +1602,21 @@ unless otherwise noted.
 In the previous section, we have seen several predicates that allow XSB to
 create other processes. However, these predicates offer only a very limited
 way to communicate with these processes. The predicate
-\verb|spawn_process/5| and friends come to the rescue. It allows to spawn
-any process (including multiple copies of XSB) and redirect its standard
-input and output to XSB I/O ports. XSB can then write to the process and
-read from it. The section of socket I/O describes yet another mode of
-interprocess communication. 
+\verb|spawn_process/5| and friends come to the rescue. It allows a user to spawn
+any process (including multiple copies of XSB) and redirect its
+standard input and output to XSB streams. XSB can then write to the
+process and read from it. The section of socket I/O describes yet
+another mode of interprocess communication.
 
-In addition, the predicate {\tt pipe\_open/2} described in this section
-lets one create any number of pipes (that do not need to be connected to
-the standard I/O port) and talk to child processes through these pipes.
+In addition, the predicate {\tt pipe\_open/2} described in this
+section lets one create any number of pipes (that do not need to be
+connected to the standard I/O streem) and talk to child processes
+through these pipes.
 
-All predicates in this section, except {\tt pipe\_open/2} and
-{\tt fd2ioport/2}, must be imported from module {\tt shell}.
-The predicates {\tt pipe\_open/2} and
-{\tt fd2ioport/2} must be imported from {\tt file\_io}.
+All predicates in this section, except {\tt pipe\_open/2} and {\tt
+fd2stream/2}, must be imported from module {\tt shell}.  The
+predicates {\tt pipe\_open/2} and {\tt fd2stream/2} must be imported
+from {\tt file\_io}.
 
 \begin{description}
 \ouritem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc,-ProcStderrStream,-ProcId)}\index{\texttt{spawn\_process/5}} 
@@ -1627,10 +1633,11 @@ specification. That is, {\tt CmdSpec} must represent a single command.
 (But read about process plumbing below and about the related predicate
 {\tt shell/5}.)
 
-The next three parameters of \verb|spawn_process| are XSB I/O ports
-to the process (leading to the subprocess standard input), from the process
-(from its standard output), and a port capturing the
-subprocess standard error output. The last parameter is the system process id.
+The next three parameters of \verb|spawn_process| are XSB I/O stream
+identifiers for the process (leading to the subprocess standard
+input), from the process (from its standard output), and a stream
+capturing the subprocess standard error output. The last parameter is
+the system process id.
 \end{description}
 %%
 
@@ -1657,28 +1664,30 @@ yes
 %%
 
 Here we created a new process, which runs the ``{\tt cat}'' program
-with argument ``--''. This forces {\tt cat} to read from standard input and
-write to standard output. The next line writes a newline-terminated string
-to the XSB port {\tt To} the, which is bound to the standard input of the
-{\tt cat} process. The process then copies the input to the standard output.
-Since standard output of the process is redirected to the XSB port {\tt
-  From}, the last line in our program is able to read it and return in the
-variable {\tt Y}.
+with argument ``--''. This forces {\tt cat} to read from standard
+input and write to standard output. The next line writes a
+newline-terminated string to the XSB stream {\tt To} the, which is
+bound to the standard input of the {\tt cat} process. The process then
+copies the input to the standard output.  Since standard output of the
+process is redirected to the XSB stream {\tt From}, the last line in
+our program is able to read it and return in the variable {\tt Y}.
 
 Note that in the second line we used {\tt file\_flush/2}. Flushing the
-output is extremely important here, because XSB I/O ports are buffered.
-Thus, {\tt cat} might not see its input until the buffer is filled up, so
-the above clause might hang. {\tt file\_flush/2} makes sure that the input
-is immediately available to the subprocess.
+output is extremely important here, because XSB I/O pipe (file)
+streams are buffered.  Thus, {\tt cat} might not see its input until
+the buffer is filled up, so the above clause might hang. {\tt
+file\_flush/2} makes sure that the input is immediately available to
+the subprocess.
 
 In addition to the above general schema, the user can tell
-\verb|spawn_process/5| to not open one of the communication ports or to
-use one of the existing communication ports.  This is useful when you do
-not expect to write or read to/from the subprocess or when one process
-wants to write to another (see the process plumbing example below).
+\verb|spawn_process/5| to not open one of the communication streams or to
+use one of the existing communication streams.  This is useful when
+you do not expect to write or read to/from the subprocess or when one
+process wants to write to another (see the process plumbing example
+below).
 
-To tell that a certain port is not needed, it suffices to bind that port to
-an atom.  For instance,
+To tell that a certain stream is not needed, it suffices to bind that
+stream to an atom.  For instance,
 %%
 \begin{verbatim}
 | ?- spawn_process([cat, '-'], To, none, none, _),
@@ -1699,10 +1708,11 @@ From = 4
 S = The first line of file `test'
 \end{verbatim}
 %%
-In each case, only one of the ports is open. (Note that the shell command
-is specified as an atom rather than a list.) Finally, if both ports are
-suppressed, then \verb|spawn_process| reduces to the usual
-{\tt shell/1} call (in fact, this is how {\tt shell/1} is implemented):
+In each case, only one of the streams is open. (Note that the shell
+command is specified as an atom rather than a list.) Finally, if both
+streams are suppressed, then \verb|spawn_process| reduces to the usual
+{\tt shell/1} call (in fact, this is how {\tt shell/1} is
+implemented):
 %%
 \begin{verbatim}
 | ?- spawn_process([pwd], none, none).
@@ -1710,9 +1720,10 @@ suppressed, then \verb|spawn_process| reduces to the usual
 /usr/local/foo/bar
 \end{verbatim}
 %%
-On the other hand, if any one of the three port variables in
-\verb|spawn_process| is bound to an already existing file port, then the
-subprocess will use that port (see the process plumbing example below).
+On the other hand, if any one of the three stream variables in
+\verb|spawn_process| is bound to an already existing file stream, then the
+subprocess will use that stream (see the process plumbing example
+below).
 
 One of the uses of XSB subprocesses is to create XSB servers that spawn
 subprocesses and control them. A spawned subprocess can be another XSB
@@ -1733,30 +1744,31 @@ yes
 %%
 Here the parent XSB process sends ``\verb|assert(p(1)).|'' and then
 ``\verb|p(X), writeln(X).|'' to the spawned XSB subprocess. The latter
-evaluates the goal and prints (via ``\verb|writeln(X)|'')
-to its standard output. The main process reads it through the {\tt From}
-port and binds the variable {\tt XX} to that output.
+evaluates the goal and prints (via ``\verb|writeln(X)|'') to its
+standard output. The main process reads it through the {\tt From}
+stream and binds the variable {\tt XX} to that output.
 
-Finally, we should note that the port variables in the
+Finally, we should note that the stream variables in the
 \verb|spawn_process| predicate can be used to do process plumbing, {\it
   i.e.}, redirect output of one subprocess into the input of another. Here
 is an example:
 %%
 \begin{verbatim}
-| ?- file_open(test,w,IOport),
+| ?- file_open(test,w,Stream),
      spawn_process([cat, 'data'], none, FromCat1, none, _),
-     spawn_process([sort], FromCat1, IOport, none, _).  
+     spawn_process([sort], FromCat1,Stream, none, _).  
 \end{verbatim}
 %%
-Here, we first open file {\tt test}. Then \verb|cat data| is spawned.  This
-process has the input and standard error ports blocked (as indicated by the
-atom {\tt none}), and its output goes into port FromCat1.  Then we spawn
-another process, {\tt sort}, which picks the output from the first process
-(since it uses the port {\tt FromCat1} as its input) and sends its own
-output (the sorted version of {\tt data}) to its output port {\tt IOport}.
-However, {\tt IOport} has already been open for output into the file {\tt
-  test}. Thus, the overall result of the above clause is tantamount to the
-following shell command:
+Here, we first open file {\tt test}. Then \verb|cat data| is spawned.
+This process has the input and standard error stream blocked (as
+indicated by the atom {\tt none}), and its output goes into stream
+{\tt FromCat1}.  Then we spawn another process, {\tt sort}, which
+picks the output from the first process (since it uses the stream {\tt
+FromCat1} as its input) and sends its own output (the sorted version
+of {\tt data}) to its output stream {\tt Stream}.  However, {\tt
+Stream} has already been open for output into the file {\tt
+test}. Thus, the overall result of the above clause is tantamount to
+the following shell command:
 %%
 \begin{verbatim}
         cat data | sort > test  
@@ -1782,12 +1794,14 @@ following shell command:
   is another XSB process, then it can be terminated by sending the atom
   {\tt end\_of\_file} or {\tt halt} to the standard input of the child.
   (For this to work, the child XSB must waiting at the prompt).
-\item It is very important to not forget to close the I/O ports that the
-  parent uses to communicate with the child. These are the ports that are
-  provided in arguments 2,3,4 of {\tt spawn\_process}. The reason
-  is that the child might terminate, but these ports will remain open,
-  since they belong to the parent process. As a result, the parent will own
-  defunct I/O ports and might eventually run out of file descriptors.
+\item It is very important to not forget to close the streams that the
+  parent uses to communicate with the child. These are the streams
+  that are provided in arguments 2,3,4 of {\tt spawn\_process}. The
+  reason is that the child might terminate, but these streams to the
+  standard input of the child.  forts will remain open, since they
+  belong to the parent process. As a result, the parent will own
+  defunct I/O streams and might eventually run out of file
+  descriptors.
 \end{enumerate}
 
 \begin{description}
@@ -1841,7 +1855,7 @@ following shell command:
     \end{center}
     %%
     The first argument in the term is the process id of the corresponding
-    process, the next three arguments describe the three standard ports
+    process, the next three arguments describe the three standard streams
     of the process, and the lat is an atom that shows the command line used
     to invoke the process.
     This predicate always succeeds.
@@ -1859,9 +1873,9 @@ following shell command:
     code returned by the shell command and not a process id. The code -1
     and 127 mean that the shell command failed.
     
-    The {\tt shell/5} predicate is similar to \verb|spawn_process| in that
-    it spawns another process and can capture that process' input and
-    output ports.
+    The {\tt shell/5} predicate is similar to \verb|spawn_process| in
+    that it spawns another process and can capture that process' input
+    and output sreams.
     
     The important difference, however, is that XSB will ways until the
     process spawned by {\tt shell/5} terminates. In contrast, the process
