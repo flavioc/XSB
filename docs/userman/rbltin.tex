@@ -382,9 +382,18 @@ predicate to be tabled.
 	\>   \>     no \\
 	\>   \>     Yes master >
     }
+
+\ouritem{garbage\_collection(+Option)}\index{{\tt garbage\_collection/1}}
+    Sets the system so that subsequent heap garbage collecting will be
+    done according to the specified {\tt Option}.  {\tt Option} may be
+    the atom \verb|none| indicating that heap garbage collection is
+    turned off; it may be the atom \verb|sliding| indicating that
+    sliding garbage collection will be done; or it may be the atom
+    \verb|copying| indicating that the copying garbage collector will
+    be used.
  
 \ouritem{cputime(-CPU\_Time)}\index{{\tt cputime/1}}
-    Returns the {\tt CPU\_Time} at the time of the call in seconds. 
+    Returns the {\tt CPU\_Time} at the time of the call in seconds.
     The difference between results of successive calls to this
     predicate can measure the time spent in specific predicates.
 

@@ -584,7 +584,8 @@ tries to find the maximal amount of space that will still fit in
 system memory.  Garbage collection is automatically performed for
 retracted clauses.  In addition, heap garbage collection is
 automatically included when the {\tt --enable-chat} configuration
-option is used.
+option is used.  (It can be turned off; see the predicate {\tt
+garbage\_collection/1}.) 
 
 The program area (the area into which the code is loaded) is also
 dynamically expanded as needed, and the area occupied by dynamic code
