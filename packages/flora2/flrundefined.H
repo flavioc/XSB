@@ -37,7 +37,6 @@
 
 :- import 
 	FLORA_DB_FIND_PREDICATE/2, 
-	FLORA_DB_DELETE_PREDICATE/3,
 	FLORA_DB_INSERT_PREDICATE/3
    from storage.
 
@@ -66,12 +65,8 @@
 
 :- import flora_decode_predicate/6 from flrwrapper.
 
-:- import flora_debug_module_registry/1 from flrutils.
-
 :- import flora_error_line/2 from flrprint.
 
 :- export
 	flora_debug_code/2,
-	flora_error_undefined/1,
-	flora_insert_skeleton/1,
-	flora_build_skeleton/2.
+	flora_error_undefined/1.

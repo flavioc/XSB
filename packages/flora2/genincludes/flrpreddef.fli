@@ -45,7 +45,6 @@ d_isa(X,Y) :-
 	check_isa(X,Y),
 	check_sub(X,Y),
 	flora_error_undefined(isa(X,Y)),
-	!,
 	abort.
 
 d_isa(X,Y) :- 
@@ -55,7 +54,6 @@ d_sub(X,Y) :-
 	debugging,
 	check_sub(X,Y),
 	flora_error_undefined(sub(X,Y)),
-	!,
 	abort.
 
 d_sub(X,Y) :- 
@@ -66,7 +64,6 @@ d_meth(X,Y) :-
 	check_meth(X,Y),
 	check_imeth(X,Y),
 	flora_error_undefined(meth(X,Y)),
-	!,
 	abort.
 
 d_meth(X,Y) :-
@@ -76,7 +73,6 @@ d_imeth(X,Y) :-
 	debugging,
 	check_imeth(X,Y),
 	flora_error_undefined(imeth(X,Y)),
-	!,
 	abort.
 
 d_imeth(X,Y) :-
@@ -87,7 +83,6 @@ d_fd(X,Y,Z) :-
 	check_fd(X,Y,Z),
 	check_ifd(X,Y,Z),
 	flora_error_undefined(fd(X,Y,Z)),
-	!,
 	abort.
 
 d_fd(X,Y,Z) :-
@@ -97,7 +92,6 @@ d_ifd(X,Y,Z) :-
 	debugging,
 	check_ifd(X,Y,Z),
 	flora_error_undefined(ifd(X,Y,Z)),
-	!,
 	abort.
 
 d_ifd(X,Y,Z) :-
@@ -109,7 +103,6 @@ d_fddef(X,Y) :-
 	check_fd(X,Y,Z),
 	check_ifd(X,Y,Z),
 	flora_error_undefined(fddef(X,Y)),
-	!,
 	abort.
 
 d_fddef(X,Y) :-
@@ -119,7 +112,6 @@ d_ifddef(X,Y) :-
 	debugging,
 	check_ifd(X,Y,Z),
 	flora_error_undefined(ifddef(X,Y)),
-	!,
 	abort.
 
 d_ifddef(X,Y) :-
@@ -130,7 +122,6 @@ d_fdsig(X,Y,Z) :-
 	check_fdsig(X,Y,Z),
 	check_ifdsig(X,Y,Z),
 	flora_error_undefined(fdsig(X,Y,Z)),
-	!,
 	abort.
 
 d_fdsig(X,Y,Z) :-
@@ -140,7 +131,6 @@ d_ifdsig(X,Y,Z) :-
 	debugging,
 	check_ifdsig(X,Y,Z),
 	flora_error_undefined(ifdsig(X,Y,Z)),
-	!,
 	abort.
 
 d_ifdsig(X,Y,Z) :-
@@ -151,7 +141,6 @@ d_mvd(X,Y,Z) :-
 	check_mvd(X,Y,Z),
 	check_imvd(X,Y,Z),
 	flora_error_undefined(mvd(X,Y,Z)),
-	!,
 	abort.
 
 d_mvd(X,Y,Z) :-
@@ -161,7 +150,6 @@ d_imvd(X,Y,Z) :-
 	debugging,
 	check_imvd(X,Y,Z),
 	flora_error_undefined(imvd(X,Y,Z)),
-	!,
 	abort.
 
 d_imvd(X,Y,Z) :-
@@ -175,7 +163,6 @@ d_mvddef(X,Y) :-
 	check_mvd(X,Y,Z),
 	check_imvd(X,Y,Z),
 	flora_error_undefined(mvddef(X,Y)),
-	!,
 	abort.
 
 d_mvddef(X,Y) :-
@@ -186,7 +173,6 @@ d_imvddef(X,Y) :-
 	check_imvddef(X,Y),
 	check_imvd(X,Y,Z),
 	flora_error_undefined(imvddef(X,Y)),
-	!,
 	abort.
 
 d_imvddef(X,Y) :-
@@ -197,7 +183,6 @@ d_mvdsig(X,Y,Z) :-
 	check_mvdsig(X,Y,Z),
 	check_imvdsig(X,Y,Z),
 	flora_error_undefined(mvdsig(X,Y,Z)),
-	!,
 	abort.
 
 d_mvdsig(X,Y,Z) :-
@@ -207,7 +192,6 @@ d_imvdsig(X,Y,Z) :-
 	debugging,
 	check_imvdsig(X,Y,Z),
 	flora_error_undefined(imvdsig(X,Y,Z)),
-	!,
 	abort.
 
 d_imvdsig(X,Y,Z) :-
@@ -218,7 +202,6 @@ d_mvdinc(X,Y,Z) :-
 	check_mvd(X,Y,Z),
 	check_imvd(X,Y,Z),
 	flora_error_undefined(mvd(X,Y,Z)),
-	!,
 	abort.
 
 d_mvdinc(X,Y,Z) :-
@@ -228,7 +211,6 @@ d_imvdinc(X,Y,Z) :-
 	debugging,
 	check_imvd(X,Y,Z),
 	flora_error_undefined(imvd(X,Y,Z)),
-	!,
 	abort.
 
 d_imvdinc(X,Y,Z) :-
@@ -239,7 +221,6 @@ d_mvdtolist(X,Y,Z) :-
 	check_mvd(X,Y,Z),
 	check_imvd(X,Y,Z),
 	flora_error_undefined(mvd(X,Y,Z)),
-	!,
 	abort.
 
 d_mvdtolist(X,Y,Z) :-
@@ -249,7 +230,6 @@ d_imvdtolist(X,Y,Z) :-
 	debugging,
 	check_imvd(X,Y,Z),
 	flora_error_undefined(imvd(X,Y,Z)),
-	!,
 	abort.
 
 d_imvdtolist(X,Y,Z) :-
@@ -259,7 +239,6 @@ d_tran(X,Y) :-
 	debugging,
 	check_tran(X,Y),
 	flora_error_undefined(tran(X,Y)),
-	!,
 	abort.
 
 d_tran(X,Y) :-
