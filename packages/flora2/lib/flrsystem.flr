@@ -100,17 +100,18 @@ debug[#check_undefined(off)] :-
 	turn_off_debug_all(ML).
 
 debug[#check_undefined(InvalidOpt)] :-
-	%% Note: this is abort defined in this module
+	%% Note: this abort is defined in this module
 	abort(('Invalid option in #check_undefined: ', InvalidOpt)),
 	fail.
 
 
 debug[#check_undefined(_Flag,Module)] :-
 	( var(Module)@prolog(),
-	  %% Note: this is abort defined in this module
-	  abort(('Invalid module name in #check_undefined: ', Module))
-	; (not(flora_module_registry(Module)@prolog()))@prolog(),
-	  %% Note: this is abort defined in this module
+	    %% Note: this abort defined in this module
+	    abort(('Invalid module name in #check_undefined: ', Module))
+	; (Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
+	  (not(flora_module_registry(Mname)@prolog()))@prolog(),
+	  %% Note: this abort defined in this module
 	  abort(('Unloaded module name in #check_undefined: ', Module))
 	),
 	!,
@@ -118,8 +119,9 @@ debug[#check_undefined(_Flag,Module)] :-
 
 debug[#check_undefined(Flag,Module)] :-
 	var(Flag)@prolog(),
+	(Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
 	!,
-	( flora_debug_module_registry(Module)@prolog(), 
+	( flora_debug_module_registry(Mname)@prolog(), 
 	    Flag=on,
 	    !
 	;
@@ -127,17 +129,19 @@ debug[#check_undefined(Flag,Module)] :-
 	).
 	 
 debug[#check_undefined(on,Module)] :-
+	(Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
 	!,
-	(flora_debug_module_registry(Module)@prolog(),!;
-	turn_on_debug(Module)).
+	(flora_debug_module_registry(Mname)@prolog(),!;
+	turn_on_debug(Mname)).
 	
 debug[#check_undefined(off,Module)] :-
+	(Module=flora(X), Mname=..[flora,X]; Module\=flora(_),Mname=Module),
 	!,
-	((not(flora_debug_module_registry(Module)@prolog()))@prolog(),!;
-	turn_off_debug(Module)).
+	((not(flora_debug_module_registry(Mname)@prolog()))@prolog(),!;
+	turn_off_debug(Mname)).
 
 debug[#check_undefined(InvalidOpt,_Module)] :-
-	%% Note: this is abort defined in this module
+	%% Note: this abort is defined in this module
 	abort(('Invalid option in #check_undefined: ', InvalidOpt)).
 
 turn_on_debug_all([]) :- !.
