@@ -107,10 +107,12 @@ struct completion_stack_frame {
   CPtr    ptcp;
   CPtr    cons_copy_list; /* Pointer to a list of consumer copy frames */
 #endif
-  ALNptr   del_ret_list;   /* to reclaim deleted returns */
+  ALNptr  del_ret_list;   /* to reclaim deleted returns */
   int     visited;
+#ifndef LOCAL_EVAL
   EPtr    DG_edges;
   EPtr    DGT_edges;
+#endif
 } ;
 
 #define COMPLFRAMESIZE	(sizeof(struct completion_stack_frame)/sizeof(CPtr))
@@ -125,8 +127,10 @@ struct completion_stack_frame {
 #endif
 #define compl_del_ret_list(b)	((ComplStackFrame)(b))->del_ret_list
 #define compl_visited(b)	((ComplStackFrame)(b))->visited
+#ifndef LOCAL_EVAL
 #define compl_DG_edges(b)	((ComplStackFrame)(b))->DG_edges
 #define compl_DGT_edges(b)	((ComplStackFrame)(b))->DGT_edges
+#endif
 
 #define prev_compl_frame(b)	(((CPtr)(b))+COMPLFRAMESIZE)
 #define next_compl_frame(b)	(((CPtr)(b))-COMPLFRAMESIZE)
@@ -139,6 +143,20 @@ struct completion_stack_frame {
  *  solution to not leaving any dangling pointers to the old area.
  */
 #ifdef CHAT
+#ifdef LOCAL_EVAL
+#define	push_completion_frame(subgoal)	\
+  level_num++; \
+  openreg -= COMPLFRAMESIZE; \
+  compl_subgoal_ptr(openreg) = subgoal; \
+  compl_level(openreg) = level_num; \
+  compl_hreg(openreg) = hreg - 1; /* so that it points to something useful */ \
+  compl_pdreg(openreg) = delayreg; \
+  compl_ptcp(openreg) = ptcpreg; \
+  compl_cons_copy_list(openreg) = NULL; \
+  compl_del_ret_list(openreg) = NULL; \
+  compl_visited(openreg) = FALSE; \
+  check_completion_stack_overflow
+#else
 #define	push_completion_frame(subgoal)	\
   level_num++; \
   openreg -= COMPLFRAMESIZE; \
@@ -152,7 +170,18 @@ struct completion_stack_frame {
   compl_visited(openreg) = FALSE; \
   compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL; \
   check_completion_stack_overflow
+#endif
 #else  /* Regular SLG-WAM */
+#ifdef LOCAL_EVAL
+#define	push_completion_frame(subgoal)	\
+  level_num++; \
+  openreg -= COMPLFRAMESIZE; \
+  compl_subgoal_ptr(openreg) = subgoal; \
+  compl_level(openreg) = level_num; \
+  compl_del_ret_list(openreg) = NULL; \
+  compl_visited(openreg) = FALSE; \
+  check_completion_stack_overflow
+#else
 #define	push_completion_frame(subgoal)	\
   level_num++; \
   openreg -= COMPLFRAMESIZE; \
@@ -162,6 +191,7 @@ struct completion_stack_frame {
   compl_visited(openreg) = FALSE; \
   compl_DG_edges(openreg) = compl_DGT_edges(openreg) = NULL; \
   check_completion_stack_overflow
+#endif
 #endif
 
 #if (!defined(LOCAL_EVAL))
@@ -175,14 +205,14 @@ struct completion_stack_frame {
   compl_cons_copy_list(cp_frame) = compl_cons_copy_list(cs_frame); \
   compl_del_ret_list(cp_frame) = compl_del_ret_list(cs_frame);	\
   compl_visited(cp_frame) = FALSE;				\
-  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL; \
+  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL;  \
   cp_frame = next_compl_frame(cp_frame)
 #else
 #define compact_completion_frame(cp_frame,cs_frame,subgoal)	\
   compl_subgoal_ptr(cp_frame) = subgoal;			\
   compl_level(cp_frame) = compl_level(cs_frame);		\
   compl_visited(cp_frame) = FALSE;				\
-  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL; \
+  compl_DG_edges(cp_frame) = compl_DGT_edges(cp_frame) = NULL;  \
   cp_frame = next_compl_frame(cp_frame)
 #endif
 #endif
@@ -215,8 +245,8 @@ struct subgoal_frame {
   SGFrame prev_subgoal;
   BTNptr leaf_ptr;	/* Used only in remove_open_tries */
   CPtr  cp_ptr;         /* Pointer to the Generator CP */
-  ALNptr ans_list_tail;  /* pointer to the tail of the answer list */
-  CPtr compl_flag;      /* jf: indicate whether subg is completed */
+  ALNptr ans_list_tail; /* pointer to the tail of the answer list */
+  CPtr compl_flag;      /* indicates whether subgoal is completed */
   PNDE nde_list;	/* pointer to a list of negative DEs */
 } ;
 
@@ -345,6 +375,9 @@ extern ALNptr empty_return();
           subg_compl_flag(SUBG_PTR) = (CPtr) -1;  \
           reclaim_del_ret_list((SGFrame)SUBG_PTR); \
         } 
+
+#define subgoal_space_has_been_reclaimed(SUBG_PTR,CS_FRAME) \
+        ((SGFrame)SUBGOAL != compl_subgoal_ptr(CS_FRAME))
 
 #define mark_delayed(csf1, csf2, susp) { \
 	  compl_visited(csf1) = DELAYED; \

@@ -52,8 +52,9 @@
       SUBGOAL = (CPtr) asi_subgoal(Delay(NodePtr));			\
       print_subgoal(stddbg, (SGFrame) SUBGOAL);				\
       fprintf(stddbg, " (positively delaying)\n");			\
-      fprintf(stddbg, ">>>> (in handle_conditional_answers)\
-num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
+      fprintf(stddbg, ">>>> In handle_conditional_answers macro: \n");  \
+      fprintf(stddbg, ">>>>     num_vars_in_var_regs = %d\n",           \
+                      num_vars_in_var_regs);			        \
       if (num_vars_in_var_regs == -1) {					\
 	delay_positively(SUBGOAL, NodePtr,				\
 			 makestring((char *) ret_psc[0]));		\
@@ -66,7 +67,7 @@ num_vars_in_var_regs = %d\n", num_vars_in_var_regs);			\
 	  int i;							\
 	  for (i = 0; i < num_vars_in_var_regs + 1; i++) {		\
 	    cell(hreg++) = (Cell) var_regs[i]; /* new */		\
-	    fprintf(stddbg, ">>>> var_regs[%d] = ", i);			\
+	    fprintf(stddbg, ">>>>     var_regs[%d] = ", i);		\
 	    printterm(cell(var_regs[i]), 1, 25);			\
 	    fprintf(stddbg, "\n");					\
 	  }								\

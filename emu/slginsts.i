@@ -1,6 +1,6 @@
 /*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
 /* File:      slginsts.i
-** Author(s): Swift, Rao, Sagonas, Juliana Freire, Baoqiu Cui
+** Author(s): Swift, Rao, Sagonas, Freire, Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -31,9 +31,7 @@
 #define ARITY	op1	/* register Cell */
 #define Yn	op2	/* register Cell */
 #define LABEL	op3	/* CPtr */
-#ifdef CHAT
 #define COMPL_STK_FRAME	xtemp3	/* The rest are CPtr's ... */
-#endif
 #define GENERATOR_CP	xtemp3
 #define COMPL_SUSP_ENV	xtemp3
 #define VarsInCall	xtemp5
@@ -116,7 +114,9 @@ case tabletrysingle: {
        --------------------------- */
     if (has_answer_code(CallLUR_Subsumer(lookupResults))) {
 #ifdef DEBUG_DELAY
-      xsb_warn("Returning answers from a COMPLETED table...");
+      fprintf(stddbg, "++Returning answers from COMPLETED table: ");
+      print_subgoal(stddbg, (SGFrame)CallLUR_Subsumer(lookupResults));
+      fprintf(stddbg, "\n");
 #endif
       CallNumVar = int_val(cell(CallLUR_VarVector(lookupResults)));
       num_vars_in_var_regs = -1;
@@ -314,22 +314,31 @@ case old_new_answer_dealloc:
 /*----------------------------------------------------------------------*/
 
 case new_answer_dealloc:
-#ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg(">>>> (starting new_answer_dealloc) delayreg =%p",
-	       delayreg);
-#endif
-    if (delayreg != NULL && answer_is_junk(delayreg)) {
-      Fail1; goto contcase;
-    }
-
     pad;
     ARITY = (Cell) (*lpcreg++);
     Yn = (Cell) (*lpcreg++);
     pad64;
     SUBGOAL = (CPtr)cell(ereg-Yn);
-#ifdef CHAT
+#ifdef DEBUG_DELAYVAR
+    xsb_dbgmsg(">>>> New answer for %s subgoal: ",
+	       (is_completed(SUBGOAL) ? "completed" : "incomplete"));
+    print_subgoal(stddbg, (SGFrame)SUBGOAL);
+    xsb_dbgmsg("\n");
+    xsb_dbgmsg(">>>>              has delayreg = %p", delayreg);
+#endif
     COMPL_STK_FRAME = subg_compl_stack_ptr(SUBGOAL);
-    /* substitution factor is now in the heap for generators */
+    /* if the subgoal has been early completed and its space reclaimed
+     * from the stacks, access to its relevant information (e.g. to its
+     * substitution factor) in the stacks is not safe, so better not
+     * try to add this answer; it is a redundant one anyway...
+     */
+    if ((subgoal_space_has_been_reclaimed(SUBGOAL,COMPL_STK_FRAME)) ||
+	(delayreg != NULL && answer_is_junk(delayreg))) {
+      Fail1; goto contcase;
+    }
+
+#ifdef CHAT
+    /* in CHAT, substitution factor is in the heap for generators */
     CallNumVar = int_val(cell(compl_hreg(COMPL_STK_FRAME)));
     VarsInCall = compl_hreg(COMPL_STK_FRAME)-1;
 #else
