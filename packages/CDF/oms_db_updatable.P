@@ -8,10 +8,11 @@
 @section(Updatable External Object Data Sources)
 
 OMS object data (objects and their attributes) can be stored and
-retrieved from external tables within a relations database, accessible
-through the ODBC interface.  Objects can be created and deleted and
-their attributes can be added, deleted and updated.  The table(s) in
-the external relational database are updated to reflect such changes.
+retrieved from external tables within a relational database,
+accessible through the ODBC interface.  Objects can be created and
+deleted and their attributes can be added, deleted and updated.  The
+table(s) in the external relational database are updated to reflect
+such changes.
 
 An Updatable External Object Data Source is stored as a ""component"",
 which is identified by a particular, unique, Source.
@@ -32,11 +33,11 @@ An Object Table contains a column which is the OMS object Native ID,
 and that column must be a key for the object table.  The table may
 have other columns that can be reflected as OMS attributes for the
 objects.  Each such attribute must (clearly) be functional.  There may
-also be other tables, called attribute tables, which have a foreign
+also be other tables, called Attribute Tables, which have a foreign
 key to the object table, and a column that can be reflected as an OMS
 attribute for the object.  These attributes need not be functional.
 
-An object table must be declared with the following fact.
+An Object Table must be declared with the following fact.
 
 ext_object_table(Source,TableName,NOidAttr,NameAttr,
 		 con,MemberofNCid,MemberofSou).
@@ -67,7 +68,7 @@ MemberofSou is the Source of this memberof class.
 The caller must have previously opened an ODBC connection, named
 Source, by using odbc_open/4, before these routines will work.
 
-For each functional attribute represented in an object_table, there
+For each functional attribute represented in an Object Table, there
 must be a fact of the following form:
 
 ext_functional_attribute_table(Source,RelationNatCid,RelationSou,TarAttr,Trans).
@@ -83,19 +84,26 @@ RelationsNatCid is the Native ID of the OMS relationship for this
 @item
 RelationSou is the Source of the OMS relationship for this attribute.
 @item
+
 TarAttr is the name of the column(s) in the table containing the value
 of this attribute.  If the internal target type is a product type,
 then this is a list of the column names of the columns that contain
-the product values.  The predicate coerce_db_type/2 converts from
-internal Native Ids to (and from) (lists of) data field values.
+the product values.  The predicate @tt{coerce_db_type/5} converts from
+internal Native Ids to (and from) (lists of) data field values.  Rules
+for @tt{db_coerce_type/5} are provided to do standard (Trans = std)
+conversion between primitive OMS and database types.  Product types
+are unfolded to be a list of primitive OMS and database types and are
+converted as such.  If desired, @tt{db_coerce_type/5} could be
+extended to include special-purpose conversion methods (probably only
+of interest for special product types.)
 @item
 Trans is an atom that indicates the type of translation from internal to
-external format.  Normally it is 'std'.
+external format.  Normally it is 'std', unless @tt{db_coerce_type/5} has
+been extended to include special translation capabilities.
 @end{itemize}
 
 There must be a schrel in the OMS for each of these OMS relationships
-indicating the type of the attribute value, which must be one of
-atom(_) or integer(_).  (This will be expanded...)
+indicating the OMS type of the attribute value.
 
 For each attribute table, there must be a fact of the following form:
 
@@ -117,8 +125,10 @@ RelationsNatCid is the Native ID of the OMS relationship for this
 @item
 RelationSou is the Source of the OMS relationship for this attribute.
 @item
-TarAttr is the name of the column in the table containing the value of
-  this attribute.
+TarAttr is the name(s) of the column(s) in the table containing the
+value(s) of this attribute.  It is an atomic name if the value is of a
+primitive OMS type; it is a list of names if the value of this
+attribute is of a product type.
 @item
 Trans is an atom that indicates the type of translation from internal to
 external format.  Normally it is 'std'.
@@ -531,6 +541,7 @@ assert_oms_int_udb(oms_ao(Oid,RCid,TOid)) :-
 coerce_db_type(atom(_),std,atom('NULL'),['NULL'|X],X) :- !, fail.
 coerce_db_type(atom(_),std,atom(Atom),[Atom|X],X) :- atom(Atom), !.
 coerce_db_type(integer(_),std,integer(Int),[Int|X],X) :- integer(Int), !.
+coerce_db_type(atom(_),std,aint(Atom),[Atom|X],X) :- atom(Atom), !.
 coerce_db_type(float(_),std,float(Flt),[Flt|X],X) :- float(Flt), !.
 coerce_db_type(Type,Tran,NativeValue,ExtVals0,ExtVals) :-
 	structure(Type),

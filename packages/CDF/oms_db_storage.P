@@ -31,7 +31,7 @@ create :- create_db_oms(lazy).
 The 9 OMS relations, while usually stored in prolog .P files, may also
 be stored in 9 relations in a relational database.  Each relation is
 stored in its external form.  Each field (except an object ID) is
-stored as a Prolog Term.
+stored as a Prolog Term.  Object ID's are stored as strings.
 
 These routines allow the loading of an OMS into memory from an ODBC
 database and the dumping of an OMS from memory to an ODBC database.
@@ -403,6 +403,14 @@ dump_db_attribute_object(Connection,Source) :-
 		 []),
 	fail.
 dump_db_attribute_object(_Connection,_Source).
+
+:- comment(module,"
+@section{Lazy Access to an OMS Stored in a RDB}
+
+A facility is also provided to lazily access an OMS stored externally
+as 9 relations in external form in a relational database.  
+
+").
 
 /********************************************************************************/
 /*										*/
