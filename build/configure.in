@@ -438,8 +438,16 @@ fi
 dnl check for Make feature
 AC_PROG_MAKE_SET
 
-dnl check if 64 bit machine
-AC_CHECK_SIZEOF(long)
+# Check if 64 bit machine
+#
+dnl We use 4 in AC_CHECK_SIZEOF, below, as the size for cross-compiling,
+dnl even though we aren't cross-compiling.
+dnl This is done in order to get rid of a warning:
+dnl    	   AC_TRY_RUN called without default to allow cross compiling
+dnl This warning is really a buglet in the AC_CHECK_SIZEOF macro:
+dnl it invokes AC_TRY_RUN without specifying an action for cross-compilation,
+dnl if the second arg to AC_CHECK_SIZEOF is not given.
+AC_CHECK_SIZEOF(long,4)
 if test "${ac_cv_sizeof_long}" = 8 -o "$ac_force64" = "yes" ; then
    AC_DEFINE(BITS64)
    machine64bit=yes
@@ -450,14 +458,14 @@ fi
 
 if test "${ac_cv_sizeof_long}" = 0; then
   echo ""
-  echo "*** PANIC: Configure tests are not working - compiler $CC is broken."
-  echo "*** $CC says that sizeof(long)=0!"
-  echo "*** Please check config.log for compilation errors and use another compiler."
+  echo "*** PANIC!!! Configure tests are not working - compiler $CC is broken!"
+  echo "*** $CC says that sizeof(long)=0 !!!"
+  echo "*** Please check config.log for compilation errors and use a different compiler."
   echo ""
   exit 1
 fi
 
-dnl Checks for libraries in standard places.
+# A series of checks for essential libraries.
 AC_CHECK_LIB(m, main,, have_errors=yes)
 test -n "$have_errors" && AC_MSG_ERROR(Your system is missing library: \`m')
 
@@ -467,7 +475,7 @@ AC_CHECK_LIB(socket, main,, have_socket=no)
 
 
 
-dnl Checks for header files in standard places.
+# Checks for header files
 
 dnl Note, under NT, we sould include time.h instead 
 AC_CHECK_HEADERS(sys/time.h sys/resource.h, , have_errors=yes)
@@ -484,7 +492,7 @@ test "${have_errors}" = "yes" &&
 			string.h
 			stdlib.h])
 
-dnl Check for typedefs, structures, and compiler characteristics.
+# Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 
 dnl Check for functions that are in standard libraries.
@@ -667,7 +675,7 @@ engine_mode=slg-wam
 AC_ARG_ENABLE(chat,
 [  --enable-chat                 compile using CHAT as the abstract machine;
 				default is SLG-WAM])
-if test "${enable_chat}" = "yes" ; then
+if test "${with_chat}" = "yes" ; then
    enable_chat=yes
 fi
 if test "${enable_chat}" = "yes" ; then

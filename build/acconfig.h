@@ -179,6 +179,18 @@
 #undef FULL_CONFIG_NAME
 
 
+#undef CHAT
+#undef GC
+
+#undef WAM_TRAIL
+#undef CHAT_TREE_COPY
+#undef INCREMENTAL_CP_TRAVERSAL
+
+#undef PTCP_IN_CP
+
+/* The number of bytes in a long.  */
+#undef SIZEOF_LONG
+
 
 
 /* Leave that blank line there!!  Autoheader needs it.

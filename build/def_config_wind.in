@@ -97,6 +97,9 @@
 
 #undef GC
 
+/* The number of bytes in a long.  */
+#undef SIZEOF_LONG
+
 /* Define if you have the gethostbyname function.  */
 #define HAVE_GETHOSTBYNAME 1
 
