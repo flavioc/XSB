@@ -662,7 +662,7 @@ void init_builtin_table(void)
   set_builtin_table(IS_INCOMPLETE, "is_incomplete");
 
   set_builtin_table(GET_PTCP, "get_ptcp");
-  set_builtin_table(GET_PRODUCER_SUBGOAL_FRAME, "get_producer_subgoal_frame");
+  set_builtin_table(GET_PRODUCER_CALL, "get_producer_call");
   set_builtin_table(DEREFERENCE_THE_BUCKET, "dereference_the_bucket");
   set_builtin_table(PAIR_PSC, "pair_psc");
   set_builtin_table(PAIR_NEXT, "pair_next");
@@ -1494,27 +1494,29 @@ int builtin_call(byte number)
 
 /*----------------------------------------------------------------------*/
 
-  case GET_PRODUCER_SUBGOAL_FRAME: {
-    const int Arity = 2;
-    const int regSubgoalTerm  = 1;  /* in: subgoal term */
-    const int regSubgoalFrame = 2;  /* out: producer from which subgoal
-				       consumes */
-    const int regPredTypeCode = 3;  /* out: predicate type (as INT) */
+  case GET_PRODUCER_CALL: {
+    const int Arity = 3;
+    const int regCallTerm = 1;  /* in: tabled subgoal */
+    const int regSF       = 2;  /* out: subgoal frame of producer from
+				        which subgoal can consume */
+    const int regRetTerm  = 3;  /* out: answer template in ret/N form */
 
     Cell term;
     Psc  psc;
     TIFptr tif;
+    void *sf;
+    Cell retTerm;
 
-    term = ptoc_tag(regSubgoalTerm);
+    term = ptoc_tag(regCallTerm);
     if ( isref(term) ) {
-      err_handle(INSTANTIATION, regSubgoalTerm,
-		 BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity, "", term);
+      err_handle(INSTANTIATION, regCallTerm,
+		 BuiltinName(GET_PRODUCER_CALL), Arity, "", term);
       break;
     }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(TYPE, regSubgoalTerm,
-		 BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity,
+      err_handle(TYPE, regCallTerm,
+		 BuiltinName(GET_PRODUCER_CALL), Arity,
 		 "Callable term", term);
       break;
     }
@@ -1522,13 +1524,17 @@ int builtin_call(byte number)
     if ( IsNULL(tif) )
       xsb_abort("Illegal table operation\n\t Untabled predicate (%s/%d)"
 		"\n\t In argument %d of %s/%d",
-		get_name(psc), get_arity(psc), regSubgoalTerm,
-		BuiltinName(GET_PRODUCER_SUBGOAL_FRAME), Arity);
+		get_name(psc), get_arity(psc), regCallTerm,
+		BuiltinName(GET_PRODUCER_CALL), Arity);
+
     if ( IsSubsumptivePredicate(tif) )
-      ctop_addr(regSubgoalFrame, get_subsumer_sf(term, tif));
+      sf = get_subsumer_sf(term, tif, &retTerm);
     else
-      ctop_addr(regSubgoalFrame, get_variant_sf(term, tif));
-    ctop_int(regPredTypeCode, TIF_EvalMethod(tif));
+      sf = get_variant_sf(term, tif, &retTerm);
+    if ( IsNULL(sf) )
+      return FALSE;
+    ctop_addr(regSF, sf);
+    ctop_tag(regRetTerm, retTerm);
     break;
   }
 
@@ -1723,7 +1729,7 @@ int builtin_call(byte number)
       }
       pred_type = TIF_EvalMethod(tif);
       if ( IsVariantPredicate(tif) )
-	goalSF = subsumerSF = get_variant_sf(goalTerm, tif);
+	goalSF = subsumerSF = get_variant_sf(goalTerm, tif, NULL);
       else {
 	BTNptr root, leaf;
 	TriePathType path_type;
@@ -1732,7 +1738,7 @@ int builtin_call(byte number)
 	if ( IsNonNULL(root) )
 	  leaf = subsumptive_trie_lookup(root, get_arity(psc),
 					 clref_val(goalTerm) + 1,
-					 &path_type);
+					 &path_type, NULL);
 	else {
 	  leaf = NULL;
 	  path_type = NO_PATH;
@@ -1894,7 +1900,7 @@ int builtin_call(byte number)
     break;
 
   case GET_LASTNODE_CS_RETSKEL: {
-    const int regCallTerm  = 1;   /* in: call of a subsumptive predicate */
+    const int regCallTerm  = 1;   /* in: call of a tabled predicate */
     const int regTrieLeaf  = 2;   /* out: a unifying trie term handle */
     const int regLeafChild = 3;   /* out: usually to get subgoal frame */
     const int regRetTerm   = 4;   /* out: term in ret/N form:

@@ -27,31 +27,34 @@
       abolish_all_tables/0,
       abolish_table_call/1,
       abolish_table_pred/1,
-      (use_variant_tabling)/1,
-      (use_subsumptive_tabling)/1,
+      delete_return/2,
+      force_truth_value/2,
+      get_call/3,
+      get_calls/3,
+      get_calls_for_table/2,
+      get_lastnode_cs_retskel/4, /* because it is used in intern.P */
+      get_producer_call/3,
+      get_ptcp/1,
+      get_residual/2,
+      get_returns/2,
+      get_returns/3,
+      get_returns_and_dls/3, 
+      get_returns_for_call/2,
+      is_incomplete/2,
+      sk_not/1,
       table_state/2,
       table_state/4,
-      get_calls_for_table/2,
-      get_returns_for_call/2,
       tfindall/3,
       tnot/1,
       't not'/1,
-      sk_not/1,
-      delete_return/2,
-      get_call/3,
-      get_calls/3,
-      get_returns_and_dls/3, 
-      get_returns/2,
-      get_returns/3,
-      get_residual/2,
-      get_lastnode_cs_retskel/4, /* because it is used in intern.P */
-      force_truth_value/2,
       (trie_dynamic)/1,
       trie_assert/1,
       trie_assert/2,
       trie_retract/1,
       trie_retract_nr/1,
-      trie_retract_all/1.
+      trie_retract_all/1,
+      (use_subsumptive_tabling)/1,
+      (use_variant_tabling)/1.
 
 :- import findall/3
      from setof.
@@ -63,8 +66,7 @@
      from assert.
 :- import (=..)/2, abort/1, call/1, functor/3, is_attv/1, (table)/1, tcall/1
      from standard.  
-:- import abolish_table_info/0, delete_attributes/1, get_ptcp/1,
-	  get_producer_subgoal_frame/3, is_incomplete/2, slg_not/1
+:- import abolish_table_info/0, delete_attributes/1
      from machine.
 :- import numbervars/3, unnumbervars/2
      from num_vars.

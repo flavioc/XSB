@@ -322,7 +322,8 @@ typedef enum Trie_Path_Type {
   NO_PATH, VARIANT_PATH, SUBSUMPTIVE_PATH
 } TriePathType;
 
-extern void *subsumptive_trie_lookup(void *root, int, CPtr, TriePathType *);
+extern void *subsumptive_trie_lookup(void *root, int, CPtr,
+				     TriePathType *, Cell[]);
 extern void *variant_trie_lookup(void *root, int, CPtr, Cell[]);
 
 /*---------------------------------------------------------------------*/

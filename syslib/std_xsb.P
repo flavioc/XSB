@@ -110,6 +110,7 @@ standard_symbol(garbage_collection, 1, curr_sym).
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
 standard_symbol(get_call, 3, tables).
+standard_symbol(get_producer_call, 3, tables).
 standard_symbol(get_calls, 3, tables).
 standard_symbol(get_calls_for_table, 2, tables).
 standard_symbol(get_residual, 2, tables).

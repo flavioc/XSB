@@ -141,20 +141,13 @@ psc_env(PSC, Env) :- psc_env(PSC, Env).
 psc_spy(PSC, Spy) :- psc_spy(PSC, Spy).
 psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
 
-get_ptcp(_PTCP) :- '_$builtin'(GET_PTCP).
-is_incomplete(_SubgoalFrame, _PTCP) :- '_$builtin'(IS_INCOMPLETE).
-get_producer_subgoal_frame(Subgoal,SubgoalFrame,PredTypeCode) :-
-	get_producer_subgoal_frame(Subgoal,SubgoalFrame,PredTypeCode).
-
+is_xwammode(Flag) :- is_xwammode(Flag).
 dereference_the_bucket(Pair_Pointer, Pair) :-
 	dereference_the_bucket(Pair_Pointer, Pair).
 pair_psc(Pair, PSC) :- pair_psc(Pair, PSC).
 pair_next(Pair, Next_Pair) :- pair_next(Pair, Next_Pair).
 next_bucket(Bucket, Next_Bucket) :- next_bucket(Bucket, Next_Bucket).
 
-slg_not(SubgoalPtr) :- slg_not(SubgoalPtr).
-
-is_xwammode(Flag) :- is_xwammode(Flag).
 close_open_tables :- close_open_tables.
 
 file_function(Function, A, B, C, D, E, F) :-

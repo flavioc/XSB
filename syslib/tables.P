@@ -68,14 +68,14 @@ set_tabled_eval(Predicate,EvalMethod) :-
  */
 
 table_state(Call, PredType, CallType, AnsSetStatus) :-
-	table_status(Call,PredTypeCode,CallTypeCode,AnsSetStatusCode),
-	predicate_type_code(PredTypeCode,PredType),
-	call_type_code(CallTypeCode,CallType),
-	answer_set_status_code(AnsSetStatusCode,AnsSetStatus).
+	table_status(Call, PredTypeCode, CallTypeCode, AnsSetStatusCode),
+	predicate_type_code(PredTypeCode, PredType),
+	call_type_code(CallTypeCode, CallType),
+	answer_set_status_code(AnsSetStatusCode, AnsSetStatus).
 
 
-table_status(Call,PredType,CallType,AnsSetStatus) :-
-	table_status(Call,PredType,CallType,AnsSetStatus).
+table_status(Call, PredType, CallType, AnsSetStatus) :-
+	table_status(Call, PredType, CallType, AnsSetStatus).
 
 predicate_type_code(UNTABLED_PREDICATE,      undefined).
 predicate_type_code(VARIANT_EVAL_METHOD,     variant).
@@ -98,33 +98,39 @@ answer_set_status_code(INCOMPLETE_ANSWER_SET, incomplete).
 
 table_state(Call, State) :-
 	table_state(Call, PredType, _CallType, AnsSetStatus),
-	( PredType == variant ->
-	  ( AnsSetStatus == undefined
-	    -> State = no_call_yet
-	    ;  State = AnsSetStatus
-	  )
-	; PredType == undefined -> State = undef
-	).
+	PredType == variant
+        -> ( AnsSetStatus == undefined
+	     -> State = no_call_yet
+	     ;  State = AnsSetStatus )
+	; PredType == undefined -> State = undef.
 
 /*----------------------------------------------------------------------*/
 
-get_producer_info(Subgoal, SubgoalFrame, PredicateType) :-
-	get_producer_subgoal_frame(Subgoal, SubgoalFrame, PredTypeCode),
-	predicate_type_code(PredTypeCode, PredicateType).
+/*
+ * Builtins for supporting negation and suspensions.
+ */
 
-get_producer_info(Subgoal, SubgoalFrame) :-
-	get_producer_subgoal_frame(Subgoal, SubgoalFrame, _PTCode).
-	
+get_ptcp(PTCP) :- get_ptcp(PTCP).
+
+is_incomplete(_ProducerSubgoalFrame,_PTCP) :- '_$builtin'(IS_INCOMPLETE).
+
+slg_not(ProducerSF,AnswerTemplate,Subgoal) :-
+	slg_not(ProducerSF,AnswerTemplate,Subgoal).
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 tfindall(T, Call, Result) :-
 	table_state(Call,PredType,_CallType,AnsSetStatus),
 	( PredType \== undefined ->
-	  ( AnsSetStatus == complete -> findall(T,Call,Result)
+	  ( AnsSetStatus == complete ->
+	      findall(T,Call,Result)
           ; AnsSetStatus == undefined ->
-		( call(Call), fail ; tfindall(T,Call,Result) )
+	      ( call(Call), fail ; tfindall(T,Call,Result) )
 	  ; AnsSetStatus == incomplete ->
-	        get_ptcp(PTCP), get_producer_info(Call, SubgPtr),
-		is_incomplete(SubgPtr,PTCP), findall(T,Call,Result)
+	      get_ptcp(PTCP),
+	      get_producer_call(Call,ProdSF,_CallAT),
+	      is_incomplete(ProdSF,PTCP),
+	      findall(T,Call,Result)
 	  )
 	; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
 	).
@@ -132,22 +138,19 @@ tfindall(T, Call, Result) :-
 
 tnot(Goal) :-
 	ground(Goal)
-	 -> 't not'(Goal)
+	-> 't not'(Goal)
 	;   abort(['FLOUNDERING: tnot/1 used with a non-ground subgoal: ',
 		   Goal]).
 
-'t not'(Goal) :-
-	get_producer_info(Goal, SubgPtr, PredType),
-	( PredType == subsumptive ->
-	  abort(['Negation of subsumptive predicates currently',
-	         'not supported.'])
-	; get_ptcp(PTCP),
-	  ( SubgPtr =:= 0
-            -> ( tcall(Goal), fail; get_producer_info(Goal,SF) )
-	    ;  SF = SubgPtr ),
-	  is_incomplete(SF,PTCP),
-	  slg_not(SF)
-        ).
+'t not'(Subgoal) :-
+	get_ptcp(PTCP),
+	( get_producer_call(Subgoal,ProducerSF,AnswerTmplt)
+          -> true
+          ;  ( tcall(Subgoal), fail;
+	       get_producer_call(Subgoal,ProducerSF,AnswerTmplt) ) ),
+	is_incomplete(ProducerSF,PTCP),
+	slg_not(ProducerSF,AnswerTmplt,Subgoal).
+
 
 %% skolemized tnot.  Variables temporarily changed to ground and tnot 
 %% call is made.  Should give existential semantics to nonground negative
@@ -186,6 +189,22 @@ tunnumcall(GGoal) :-
 
 get_call(CallTerm, TableEntryHandle, ReturnTemplate) :-
 	get_call(CallTerm, TableEntryHandle, ReturnTemplate).
+
+
+/*
+ * get_producer_call(+CallTerm, -TableEntryHandle, -ReturnTemplate)
+ *   Performs an interpretive traversal of a Call Trie, using the
+ *   tabling strategy of the given predicate, in searching for CallTerm.
+ *   Under both tabling strategies, a producer entry is identified --
+ *   i.e., a subgoal which maintains its own answer set.  If such a call
+ *   is present, then a reference to the subgoal frame is returned as a
+ *   handle to the producer's table entry, and the Answer Template of
+ *   CallTerm with respect to this producer is constructed as a ret/n
+ *   term in ReturnTemplate.
+ */
+
+get_producer_call(CallTerm, ProducerTableEntry, ReturnTemplate) :-
+	get_producer_call(CallTerm, ProducerTableEntry, ReturnTemplate).
 
 
 /*

@@ -51,7 +51,7 @@
    functions can be categorized into high-level interface functions:
 
      void *variant_trie_lookup(void *, int, CPtr, Cell[])
-     void *subsumptive_trie_lookup(void *, int, CPtr, TriePathType *)
+     void *subsumptive_trie_lookup(void *, int, CPtr, TriePathType *, Cell[])
 
    and low-level internal functions:
 
@@ -692,7 +692,8 @@ static void sub_trie_lookup_error(char *string) {
  *   2) matches to bindings of previously bound trie variables
  *   3) pairings with unbound trie variables (causing new bindings)
  * The search terminates once the first such subsuming path is
- * encountered.  */
+ * encountered.
+ */
 
 typedef enum Search_Strategy_Mode {
   MATCH_SYMBOL_EXACTLY, MATCH_WITH_TRIEVAR
@@ -1500,7 +1501,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
  */
 
 void *subsumptive_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
-			      TriePathType *path_type) {
+			      TriePathType *path_type, Cell subtermArray[]) {
 
   BTNptr leaf;
 
@@ -1520,6 +1521,12 @@ void *subsumptive_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
     TermStack_ResetTOS;
     TermStack_PushLowToHighVector(termVector,nTerms);
     leaf = rec_sub_trie_lookup(trieRoot, path_type);
+    if ( IsNonNULL(leaf) && IsNonNULL(subtermArray) ) {
+      int i = 0;
+      while ( TrieVarBindings[i] != (Cell) (& TrieVarBindings[i]) )
+	subtermArray[i+1] = TrieVarBindings[i++];
+      subtermArray[0] = i;
+    }
     Trail_Unwind_All;
 #ifdef DEBUG_TRIE_LOOKUP
     printTriePathType(stddbg, *path_type, leaf);
@@ -1527,8 +1534,11 @@ void *subsumptive_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
   }
   else {
     leaf = trie_escape_lookup(trieRoot);
-    if ( IsNonNULL(leaf) )
+    if ( IsNonNULL(leaf) ) {
       *path_type = VARIANT_PATH;
+      if ( IsNonNULL(subtermArray) )
+	subtermArray[0] = 0;
+    }
   }
   return leaf;
 }

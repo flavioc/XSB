@@ -30,42 +30,138 @@
 /* Contains builtin predicates for SLG negation (and tfindall/3).	*/
 /*----------------------------------------------------------------------*/
 
-    case SLG_NOT: {	/* reg1: +SubgoalPtr */
-      CPtr subgoal_ptr = (CPtr) ptoc_int(1);
-      if (has_no_answers(subgoal_ptr) &&
-	  (is_completed(subgoal_ptr) || neg_delay == FALSE)) {
-	return TRUE;
-      }
+case SLG_NOT: {
 
-      if (has_unconditional_answers((VariantSF)subgoal_ptr)) {
-	return FALSE;
-      } else {
-	delay_negatively(subgoal_ptr);
-	return TRUE;
-      }
+#ifdef DEBUG
+  const int Arity = 3;
+#endif
+  const int regProducerSF = 1;  /* in: producer on which subgoal is
+				   suspended */
+  const int regRetTerm    = 2;  /* in: answer template of negated subgoal
+				   as ret/n term */
+  const int regNegSubgoal = 3;  /* in: negated subgoal for error reporting */
+  void *sf;
+
+  sf = ptoc_addr(regProducerSF);
+#ifdef DEBUG
+  if ( ! smIsValidStructRef(smVarSF,sf) &&
+       ! smIsValidStructRef(smProdSF,sf) )
+    xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+	      regProducerSF, BuiltinName(SLG_NOT), Arity);
+#endif
+  if ( IsVariantSF(sf) ) {
+    VariantSF variantSF = sf;
+    if ( has_no_answers(variantSF) &&
+	 (is_completed(variantSF) || neg_delay == FALSE) )
+      return TRUE;
+    if ( has_unconditional_answers(variantSF) )
+      return FALSE;
+    else {
+      delay_negatively(variantSF);
+      return TRUE;
     }
+  }
+  else {
+    SubProdSF producerSF;
+    TSTNptr answerRoot;
+    ALNptr answerList;
+    Cell retTerm;
+    int arity;
+
+    producerSF = sf;
+    answerRoot = (TSTNptr)subg_ans_root_ptr(producerSF);
+    answerList = subg_answers(producerSF);
+    if ( IsNonNULL(answerList) ) {
+      retTerm = ptoc_tag(regRetTerm);
+#ifdef DEBUG
+      {
+	Cell retSymbol;
+	if ( isref(retTerm) ) {
+	  err_handle(INSTANTIATION, regRetTerm, BuiltinName(SLG_NOT),
+		     Arity, "", retTerm);
+	  break;
+	}
+	if ( isconstr(retTerm) )
+	  retSymbol = EncodeTrieFunctor(retTerm);  /* ret/n as XSB_STRUCT */
+	else
+	  retSymbol = retTerm;   /* ret/0 would be rep as a XSB_STRING */
+	if ( retSymbol != BTN_Symbol(answerRoot) )
+	  xsb_abort("%s/%d: Illegal answer template", BuiltinName(SLG_NOT),
+		    Arity);
+      }
+#endif
+      if ( isconstr(retTerm) ) {
+	/*
+	 * The producer subgoal is not ground so we must search its
+	 * answer set for a relevant answer(s).
+	 */
+	Cell tempArray[MAX_ARITY];
+	int i;
+	CPtr p;
+
+	arity = get_arity(get_str_psc(retTerm));
+	if ( arity > 0 ) {  /* This should always be the case since STRUCT? */
+	  for ( i = 0, p = clref_val(retTerm) + arity;
+		i < arity;
+		i++, p-- )
+	    tempArray[i] = *p;
+	  answerList =
+	    tst_collect_relevant_answers(answerRoot,0,arity,
+					 &tempArray[arity-1]);
+	}
+      }
+      else /* ret/0 represented as an XSB_STRING */
+	/*
+	 * Negated subgoal and producer are the same (and are both
+	 * ground); use producer's answer list to determine truth.
+	 */
+	arity = 0;
+    }
+    /* Determine Truth of the Literal
+       ------------------------------ */
+    if ( IsNonNULL(answerList) ) {
+      if ( arity > 0 ) {
+	ALNptr last = answerList;
+	while ( IsNonNULL(ALN_Next(last)) )
+	  last = ALN_Next(last);
+	SM_DeallocateStructList(smALN,answerList,last);
+      }
+      return FALSE;
+    }
+    /* There are no relevant answers */
+    else if ( is_completed(producerSF) || neg_delay == FALSE )
+      return TRUE;
+    else {
+      XSB_StrDefine(vsNegSubgoal);
+      print_pterm(ptoc_tag(regNegSubgoal),1,&vsNegSubgoal);
+      xsb_abort("Illegal table operation\n\t Attempted DELAY of negative "
+		"subsumptive literal %s", vsNegSubgoal.string);
+    }
+  }
+}
 
 /*----------------------------------------------------------------------*/
 
 case IS_INCOMPLETE: {
 
+#ifdef DEBUG
   const int Arity = 2;
+#endif
   const int regSubgoalFrame = 1;  /* in: rep of a tabled subgoal */
   const int regRootSubgoal  = 2;  /* in: PTCPreg */
 
   VariantSF producerSF = ptoc_addr(regSubgoalFrame);
   CPtr t_ptcp = ptoc_addr(regRootSubgoal);
-
+#ifdef DEBUG
   if ( ! smIsValidStructRef(smVarSF,producerSF) &&
-       ! smIsValidStructRef(smProdSF,producerSF) &&
-       ! smIsValidStructRef(smConsSF,producerSF) )
+       ! smIsValidStructRef(smProdSF,producerSF) )
     xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
 	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
-
 #ifdef DEBUG_DELAY
   fprintf(stddbg, "Is incomplete for ");
   print_subgoal(stddbg, producerSF);
   fprintf(stddbg, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF));
+#endif
 #endif
   if (is_completed(producerSF)) {
     neg_delay = FALSE;

@@ -846,7 +846,7 @@ extern Structure_Manager smALN;
    void *p ;					\
 						\
    SM_AllocateStruct(smALN,p);			\
-   pALN = (ALNptr)p ;					\
+   pALN = (ALNptr)p;				\
    ALN_Answer(pALN) = (BTNptr)pTN;		\
    ALN_Next(pALN) = (ALNptr)pNext;		\
  }

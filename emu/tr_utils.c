@@ -97,33 +97,49 @@ xsbBool has_unconditional_answers(VariantSF subg)
 
 /*----------------------------------------------------------------------*/
 
-VariantSF get_variant_sf(Cell callTerm, TIFptr pTIF) {
+/*
+ * Given a subgoal of a variant predicate, returns its subgoal frame
+ * if it has a table entry; returns NULL otherwise.  If requested, the
+ * answer template is constructed on the heap as a ret/n term and
+ * passed back via the last argument.
+ */
+
+VariantSF get_variant_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
 
   int arity;
   BTNptr root, leaf;
+  Cell callVars[MAX_VAR_SIZE + 1];
 
   root = TIF_CallTrie(pTIF);
   if ( IsNULL(root) )
     return NULL;
 
   arity = get_arity(TIF_PSC(pTIF));
-  leaf = variant_trie_lookup(root, arity, clref_val(callTerm) + 1, NULL);
-  if ( IsNonNULL(leaf) )
-    return CallTrieLeaf_GetSF(leaf);
-  else
+  leaf = variant_trie_lookup(root, arity, clref_val(callTerm) + 1, callVars);
+  if ( IsNULL(leaf) )
     return NULL;
+  if ( IsNonNULL(retTerm) )
+    *retTerm = build_ret_term(callVars[0], &callVars[1]);
+  return ( CallTrieLeaf_GetSF(leaf) );
 }
 
 /*----------------------------------------------------------------------*/
 
-/* Assumes that a subsumptive predicate is given */
+/*
+ * Given a subgoal of a subsumptive predicate, returns the subgoal
+ * frame of some producing table entry which subsumes it; returns NULL
+ * otherwise.  The answer template with respect to this producer entry
+ * is constructed on the heap as a ret/n term and passed back via the
+ * last argument.
+ */
 
-SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF) {
+SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF, Cell *retTerm) {
 
   BTNptr root, leaf;
   int arity;
   TriePathType path_type;
-  VariantSF sf;
+  SubProdSF sf;
+  Cell ansTmplt[MAX_VAR_SIZE + 1];
 
   root = TIF_CallTrie(pTIF);
   if ( IsNULL(root) )
@@ -131,14 +147,17 @@ SubProdSF get_subsumer_sf(Cell callTerm, TIFptr pTIF) {
 
   arity = get_arity(TIF_PSC(pTIF));
   leaf = subsumptive_trie_lookup(root, arity, clref_val(callTerm) + 1,
-				 &path_type);
+				 &path_type, ansTmplt);
   if ( IsNULL(leaf) )
     return NULL;
-  sf = CallTrieLeaf_GetSF(leaf);
-  if ( IsSubsumptiveProducer(sf) )
-    return ( (SubProdSF)sf );
-  else
-    return ( conssf_producer(sf) );
+  sf = (SubProdSF)CallTrieLeaf_GetSF(leaf);
+  if ( IsProperlySubsumed(sf) ) {
+    sf = conssf_producer(sf);
+    construct_answer_template(callTerm, sf, ansTmplt);
+  }
+  if ( IsNonNULL(retTerm) )
+    *retTerm = build_ret_term(ansTmplt[0], &ansTmplt[1]);
+  return ( sf );
 }
   
 /*----------------------------------------------------------------------*/
@@ -262,7 +281,7 @@ VariantSF get_call(Cell callTerm, Cell *retTerm) {
   if ( IsNULL(root) )
     return NULL;
 
-  arity = get_arity(term_psc(callTerm));
+  arity = get_arity(psc);
   leaf = variant_trie_lookup(root, arity, clref_val(callTerm) + 1, callVars);
   if ( IsNULL(leaf) )
     return NULL;
