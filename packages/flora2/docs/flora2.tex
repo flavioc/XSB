@@ -4328,6 +4328,20 @@ behavior of the system. It is accessible though the system module reference
   \item {\tt tables[\#abolish]} --- abolishes all tabled data in XSB.
 \end{itemize}
 %%
+This module also provides the following amenities:
+%%
+\begin{itemize}
+  \item  {\tt abort(Message)} --- puts {\tt Message} on standard error
+  stream and terminates the current execution. Message can also be in the
+  form {\tt (M1, M2, ..., Mn)}. In this case, all the component strings are
+  concatenated before printing them out.
+\item {\tt warning(Message)} --- prints a warning header, then message,
+  {\tt Message}, and continues. Output goes to standard error
+  stream. {\tt Message} can be of the form {\tt (M1, M2, ..., Mn)}.
+\item {\tt message(Message)} --- Like {\tt warning/1}, but does not print
+  the warning header. {\tt Message} can be of the form {\tt (M1, M2, ..., Mn)}.
+\end{itemize}
+%%
 
 
 \section{A Note on Programming Style}

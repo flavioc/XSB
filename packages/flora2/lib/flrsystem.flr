@@ -58,3 +58,16 @@ abort(X) :-
 	message(PX,STDERR)@prolog(standard),
 	flora_stderr_nl@prolog(flrprint),
 	abort@prolog().
+
+warning(X) :-
+	flP2H(PX,X)@prolog(),
+	flora_warning_heading@prolog(flrprint),
+	flora_stderr_string('[Runtime] ')@prolog(flrprint),
+	message(PX,STDERR)@prolog(standard),
+	flora_stderr_nl@prolog(flrprint).
+
+%% Put a message on stderr
+message(X) :-
+	flP2H(PX,X)@prolog(),
+	message(PX,STDERR)@prolog(standard),
+	flora_stderr_nl@prolog(flrprint).
