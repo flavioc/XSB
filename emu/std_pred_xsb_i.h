@@ -232,9 +232,13 @@ inline static bool univ_builtin(void)
 	bind_copy((CPtr)term, cell(head));	 /* term<-num  */
 	return TRUE;	/* succeed */
       }
-      else err_handle(TYPE, 2, "=..", 2,
-		      "[]-terminated list whose first element is atomic",
-		      list);
+      else
+	{
+	  err_handle(TYPE, 2, "=..", 2,
+		     "[]-terminated list whose first element is atomic",
+		     list);
+	  return(FALSE);
+	}
     }
     if (isnonvar(list))
       err_handle(TYPE, 2, "=..", 2,
