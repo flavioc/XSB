@@ -31,3 +31,10 @@
 #ifdef WIN_NT
 #define snprintf _snprintf
 #endif
+
+/* The separator used between pathnames in PATH environment */
+#ifdef WIN_NT
+#define PATH_SEPARATOR ';'
+#else
+#define PATH_SEPARATOR ':'
+#endif

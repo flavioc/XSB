@@ -316,6 +316,17 @@ How to build:
 	  remake XSB in order to recompile it.
 
 
+How to build C-callable XSB module xsbmodule.o:
+
+    configure
+    makexsb
+    makexsb module
+
+    This will create .../config/<architecture>/saved.o/xsbmodule.o
+    You can link it with C programs that call XSB and pass queries to it.
+    See a sample Makefile in .../examples/c_calling_XSB.
+
+
 Development tricks:
 
     As mentioned before, the present set up allows one to build XSB for

@@ -129,6 +129,15 @@ xsbora:: $(allORAOBJS)
 	cd $(emudir); \
 	$(CC) -o $(EXECUTABLE) $(LINKFLAGS) $(allORAOBJS) $(LDFLAGS)
 
+# Goal for making an XSB load module to be linked with external
+# C-drivers that pass queries to XSB
+xsbmod:: $(OBJS)
+	@echo ""; \
+	   echo "Making a C-callable XSB module $(bindir)/xsbmod.o"; \
+	   echo ""
+	ld -o xsbmodule.o -r $(OBJS)
+	@cp xsbmodule.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
 depend::
 	@$(DEPEND) $(DEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
 

@@ -150,12 +150,12 @@ void xsb_executable_full_path(char *myname)
   pathcounter = path;
   while (*pathcounter != '\0' && found == 0) {
     len = 0;
-    while (*pathcounter != ':' && *pathcounter != '\0') {
+    while (*pathcounter != PATH_SEPARATOR && *pathcounter != '\0') {
       len++;
       pathcounter++;
     }
 
-    /* save the separator ":" and replace it with \0 */
+    /* save the separator ':' (or ';' on NT and replace it with \0 */
     save = *pathcounter;
     *pathcounter = '\0';
 
@@ -168,7 +168,11 @@ void xsb_executable_full_path(char *myname)
     *pathcounter = save;
     if (*pathcounter) pathcounter++;
 
+#ifdef WIN_NT
+    found = (0 == access(executable, 02));	/* readable */
+#else
     found = (0 == access(executable, 01));	/* executable */
+#endif
     if (found) return;
   }
 

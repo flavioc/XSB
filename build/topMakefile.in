@@ -120,6 +120,9 @@ src_scriptdir=$(srcdir)/bin
 
 EXECUTABLE=$(src_bindir)/xsb
 
+# where the object code is found
+arch_config_objlibdir=$(src_config_prefix)/saved.o
+
 # If building with Oracle, `configure' will set this to xsbora target.
 # Otherwise, it'll be the emu target. The right target is dispatched 
 # out of the `all' target.
@@ -160,14 +163,32 @@ emu: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
 	    make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) \
 		| tee -a ../build/Installation_summary
 
-emu_clean:
+# Goal for making an XSB load module to be linked with external
+# C-drivers that pass queries to XSB
+module: prepare xsbmod do_cleaning inform_module
+
+xsbmod: ${src_config_prefix}/config.h ${src_config_prefix}/debug.h
+	cd ${src_emudir}; \
+	    make xsbmod
+
+emu_clean: do_cleaning inform_executable
+
+do_cleaning:
 	@cd $(src_emudir); \
 	  rm -f *.o 2> /dev/null || echo "" ; \
 	  rm -f Makefile Makefile.bak  2> /dev/null || echo ""
 	@cp ./Installation_summary $(src_config_prefix)
+
+inform_executable:
 	@echo "" ; \
 	    echo "Now you can run XSB using the shell script:" ; \
 	    echo "       $(src_scriptdir)/xsb${config_tag}" ; \
+	    echo ""
+
+inform_module:
+	@echo "" ; \
+	    echo "The C-callable XSB module is in:"; \
+	    echo "       $(arch_config_objlibdir)/xsbmodule.o" ; \
 	    echo ""
 
 register:
