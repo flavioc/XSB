@@ -74,6 +74,8 @@ file_get(OIport,Char) :-
 	file_function(FILE_GET, OIport, Char, _X, _Y, _,_).
 file_put(OIport,Char) :-
 	file_function(FILE_PUT, OIport, Char, _X, _Y, _,_).
+file_clearerr(OIport) :-
+	file_function(FILE_CLEARERR, OIport, _, _, _, _, _).
 
 %% These are lower level than file_read_line_atom/list
 %% Therefore, they don''t check their arguments.

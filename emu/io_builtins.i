@@ -444,6 +444,18 @@ inline static bool file_function(void)
     break;
   }
     
+  case FILE_CLEARERR: { /* file_function(16, +OIport) */
+    io_port = ptoc_int(2);
+    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
+    }
+    else {
+      fprintf(stderr,"clearerr %d\n", io_port);
+      SET_FILEPTR(fptr, io_port);
+      clearerr(fptr);
+    }
+    break;
+  }
+
   default:
     xsb_abort("Invalid file function request %d\n", ptoc_int(1));
   }

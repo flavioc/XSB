@@ -40,6 +40,7 @@
 #define FILE_CLONE     	   13
 #define PIPE_OPEN     	   14
 #define FD2IOPORT   	   15
+#define FILE_CLEARERR      16
 
 /* OP numbers for formatted_io */
 #define FMT_WRITE    	   1
