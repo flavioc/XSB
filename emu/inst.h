@@ -310,8 +310,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define negate		0xd2
 #define and 		0xd3
 #define or 		0xd4
-#define lshiftl		0xd5
-#define lshiftr		0xd6
+#define logshiftl	0xd5
+#define logshiftr	0xd6
 #define addreg          0xd7
 #define subreg          0xd8
 #define mulreg          0xd9

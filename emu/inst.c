@@ -192,8 +192,8 @@ static void init_inst_table_3(void)
   set_inst(negate, "negate",           PP, R, X,X);
   set_inst(and, "and",                 P,  R, R,X);
   set_inst(or, "or",                   P,  R, R,X);
-  set_inst(lshiftl, "lshiftl",         P,  R, R,X);
-  set_inst(lshiftr, "lshiftr",         P,  R, R,X);
+  set_inst(logshiftl, "logshiftl",     P,  R, R,X);
+  set_inst(logshiftr, "logshiftr",     P,  R, R,X);
   set_inst(addreg, "addreg",           P,  R, R,X);
   set_inst(subreg, "subreg",           P,  R, R,X);
   set_inst(mulreg, "mulreg",           P,  R, R,X);

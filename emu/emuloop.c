@@ -1152,7 +1152,7 @@ contcase:     /* the main loop */
     lpcreg = *(pb *)lpcreg;
     goto contcase;
 
-  case lshiftr:  /* PRR */
+  case logshiftr:  /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
@@ -1164,7 +1164,7 @@ contcase:     /* the main loop */
     else { bld_int(op3, int_val(op2) >> int_val(op1)); }
     goto contcase; 
 
-  case lshiftl:   /* PRR */
+  case logshiftl:   /* PRR */
     pad;
     op1 = opreg;
     op3 = opregaddr;
