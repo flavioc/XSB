@@ -73,14 +73,16 @@ sort_and_write_terms(_Terms).
 
 cdf_ext_inst(Term):-
 	(Term = allAttr_ext(_,_,_) ; 
-	 Term = classHasAttr(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
+	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
 	 Term = ic_ext(_) ; Term = isa_ext(_,_) ; 
-	 Term = minAttr(_,_,_,_) ; Term = maxAttr(_,_,_,_) ).
+	 Term = minAttr_ext(_,_,_,_) ; Term = maxAttr_ext(_,_,_,_) ).
 
 dump_extensional_facts_2:- 
 	cdf_ext_inst(Term),
 	findall(Term,Term,Set),
-	sort_and_write_terms(Set).
+	sort_and_write_terms(Set),
+	fail.
+dump_extensional_facts_2.
 %-----------------------------------------------------------------
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
