@@ -150,12 +150,12 @@ arch_config_objlibdir=$(src_config_prefix)/saved.o
 emumake_goal=@emumake_goal@
 
 # Normal user
-all: prepare emu xsbmod xsbdll gpp remake_dot_O_files register emu_clean 
+all: prepare emu chr xsbmod xsbdll gpp remake_dot_O_files register emu_clean 
 
 # Developer who just checked out or updated CVS copy
-devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files emu_clean
+devel: prepare emu chr xsbmod xsbdll gpp remake_dot_O_files emu_clean
 
-superdevel: prepare emu xsbmod xsbdll gpp remake_dot_O_files_force packages emu_clean
+superdevel: prepare emu chr xsbmod xsbdll gpp remake_dot_O_files_force packages emu_clean
 
 # Developer who needs a quick re-make of the executable, don't make .O files
 fast: prepare emu gpp do_cleaning
@@ -196,6 +196,9 @@ emu: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 		2>&1 | tee -a ../build/Installation_summary; \
 	    (test ! -f $(srcdir)/build/.xsb_build_failed || \
 	                (rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
+
+chr:
+	cp $(srcdir)/build/chr_pp $(src_scriptdir)
 
 gpp:
 	@echo ""; echo "Making gpp"
