@@ -952,7 +952,7 @@ void abolish_if_tabled(Psc psc)
 
 int abolish_usermod_tables(void)
 {
-  int i;
+  unsigned long i;
   Pair pair;
   Psc psc;
   for (i=0; i<symbol_table.size; i++) {
@@ -1169,10 +1169,15 @@ int builtin_call(byte number)
     break;
   case TERM_NEW_MOD: {  /* R1: +ModName, R2: +Term, R3: -NewTerm */
     int new, disp;
+    Psc termpsc, modpsc, newtermpsc;
     Cell arg, term = ptoc_tag(2);
-    Psc termpsc = term_psc(term);
-    Psc modpsc = pair_psc(insert_module(0,ptoc_string(1)));
-    Psc newtermpsc;
+    XSB_Deref(term);
+    if (isref(term)) {
+      err_handle(INSTANTIATION, 2, BuiltinName(TERM_NEW_MOD), 3, "", term);
+      break;
+    }
+    termpsc = term_psc(term);
+    modpsc = pair_psc(insert_module(0,ptoc_string(1)));
     /*    if (!colon_psc) colon_psc = pair_psc(insert(":",2,global_mod,&new));*/
     while (termpsc == colon_psc) {
       term = cell(clref_val(term)+2);
