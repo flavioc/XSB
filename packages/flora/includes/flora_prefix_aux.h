@@ -1,6 +1,13 @@
 
-#define FLORA_PREFIX	      '_$_$_flora_'
-#define FLORA_METH_PREFIX     '_$_$_flora_@'
+#define FPREFIX(X)     '_$_$_flora_' ## X /* this prefix changes dynamically */
+
+#define DYN_FPREFIX(X)    '_$_$_flora_dyn_' ## X
+#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+/* Use:
+   FPREFIX('isa'(X,Y)).
+   FPREFIX('fd'(O,M,X)).
+   SYN_FPREFIX('isa'/2).
+*/
 
 /* Note: things like '_$_$_flora_tag'(T)
    are to be written as '_$_$_flora_tag'##(T)
