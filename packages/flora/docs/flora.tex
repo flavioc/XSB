@@ -141,7 +141,7 @@
 \newcommand{\dq}{\symbol{34}}
 
 
-\title{\FLORA's Secrets: Object-Oriented Logic Programming}
+\title{\FLORA: The Secret of Object-Oriented Logic Programming}
 
 \author{
   Bertram Lud\"ascher
@@ -1350,8 +1350,8 @@ scalar_type_incorrect(O,M,R) :- O[X -> R] , O:C, C[X => D], tnot(R:D).
 %%
 Here, we defined what it means to violate type checking using the usual
 F-logic semantics. The corresponding predicate can then be queried. The
-``no'' answer means that the corresponding attribute does NOT violates the
-typing rules.
+``no'' answer means that the corresponding attribute \emph{does not}
+violate the typing rules.
 
 \subsection{Meta-programming in \FLORA}
 
@@ -1676,7 +1676,7 @@ Yes.
 Note that when erasing $O_1{\isa}O_2$ or $O_1{\subcl}O_2$, only the object
 references that originate from $O_1$ are followed. For other \fl facts, such as
 $O_1[method{\fd}O_2],O_1[method{\mvd}O_2]$, only the object references
-that originate from $Q_2$ are followed.
+that originate at $Q_2$ are followed.
 
 \paragraph{$\bullet~~\mathtt{eraseall(P_1,\ldots,P_n | C_1,\ldots,C_n)}$} erases \emph{all ground}
 facts corresponding to $\mathtt{P_1,\ldots,P_n}$ for which the conjunction
