@@ -54,28 +54,25 @@
 /*									*/
 /*----------------------------------------------------------------------*/
 
-#if (defined(DEBUG) && !defined(CHAT))
-#define CHECK_TABLE_CUT()\
-    if( *breg == (Cell) &answer_return_inst ||                              \
-        *breg == (Cell) &resume_compl_suspension_inst || *breg <= 2 ) {     \
-       fprintf(stdwarn, "++Warning: Cutting over non Prolog CP: @inst %d: ", \
-                 xctr ) ;                                                   \
-        if( *breg == (Cell) &answer_return_inst )                           \
-            fprintf(stdwarn, "consumer choice point\n" );                   \
-        else if( *breg == (Cell) &resume_compl_suspension_inst )              \
-            fprintf(stdwarn, "negation suspension choice point\n" );        \
-        else if( *breg <= 2 )                                               \
-            fprintf(stdwarn, "negation stuff\n" );                          \
-        fprintf( stdwarn, "b=%p bf=%p tr=%p trf=%p, cut to %p\n",            \
-                 breg, bfreg, trreg, trfreg, cut_breg ) ;                   \
-                break ;                                                     \
+#define CHECK_TABLE_CUT(instruc)       \
+  if (check_table_cut)                 \
+    switch (instruc) {                 \
+    case check_complete:               \
+    case resume_compl_suspension:      \
+    case answer_return:                \
+    case tabletrust:                   \
+    case tableretry:                   \
+      if (!is_completed(tcp_subgoal_ptr(breg))) \
+          xsb_abort("Illegal cut over a tabled predicate (Inst:%1x)\n", \
+		    instruc);          \
+      break;                           \
+    default:                           \
+      break;                           \
     }
-#else
-#define CHECK_TABLE_CUT()
-#endif
 
-#define cut_code(OP1)	\
-   { CPtr cut_breg;					\
+#define cut_code(OP1)	                                        \
+   { CPtr cut_breg;					        \
+     byte inst_cut_over;                                        \
 								\
      deref(OP1);						\
      cut_breg = (CPtr)(tcpstack.high - int_val(OP1));		\
@@ -83,12 +80,16 @@
      if (breg != cut_breg) { /* not cutting back to the current CP */\
 /*      xsb_dbgmsg("Tidying trail (cutbreg = %p, breg = %p)", cut_breg,breg); */\
 	while (cp_prevbreg(breg) != cut_breg) {			\
-           CHECK_TABLE_CUT() ;                                  \
+           inst_cut_over = *cp_pcreg(breg);                     \
+           CHECK_TABLE_CUT(inst_cut_over) ;                     \
 	   breg = cp_prevbreg(breg);				\
 	}							\
+        inst_cut_over = *cp_pcreg(breg);                        \
+        CHECK_TABLE_CUT(inst_cut_over) ;                        \
         unwind_trail(breg,xtemp1,xtemp2);			\
 	breg = cut_breg;					\
      }								\
+     check_table_cut = TRUE;                                    \
      goto contcase;						\
    }
 

@@ -42,3 +42,5 @@ extern void trie_intern(void);
 extern int  trie_interned(void);
 extern void trie_dispose(void);
 extern void delete_interned_trie(int);
+
+extern bool check_table_cut;
