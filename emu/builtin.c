@@ -177,6 +177,7 @@ static void write_quotedname(FILE *, char *);
 
 #ifdef DEBUG
 static void print_predicate_table(char *, int, tab_inf_ptr);
+extern void printterm(Cell, byte, int);
 #endif
 
 #ifdef PROFILE
@@ -524,8 +525,8 @@ int  builtin_call(byte number)
   char hack_char;			/* for standard preds */
   Cell *cell_tbl;			/* for standard preds */
   
-  IDLs dls;				/* for residual program */
-  IDEs idl;				/* for residual program */
+  DL dl;				/* for residual program */
+  DE de;				/* for residual program */
   NODEptr as_leaf;			/* for residual program */
   Cell delay_lists;			/* for residual program */
   CPtr dls_head, dls_tail = NULL;	/* for residual program */
