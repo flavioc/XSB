@@ -193,13 +193,15 @@ check_assert((Head :- Body), Pred) :-
 	!,			% This captures Clause being variable
 	( var(Head) ->
 		abort(('Uninstantiated argument 1 of ', Pred))
-	; check_assert(Head, Pred), 
+	; check_assert_fact(Head, Pred), 
 	  ( check_body(Body) -> true
 	  ; abort(('Wrong type in argument 1 of ', Pred,
 			   ' (callable term expected)'))
 	  )
 	).
-check_assert(Head, Pred) :- 	% asserting a fact
+check_assert(Head, Pred) :- check_assert_fact(Head, Pred).
+
+check_assert_fact(Head, Pred) :- 	% asserting a fact
 	( callable(Head) -> 
 	    ( functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
