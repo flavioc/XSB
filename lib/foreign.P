@@ -46,6 +46,8 @@ compile_c(Modname, Base, Options, Dir, LdOption) :-
 		unix([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
 		unix(['ld -expect_unresolved \* -O1 -shared -o ', Base, '.so ',
 				Base, '.o ', LdOption])
+	; str_sub('windows', Configuration) ->
+	        message(('You are responsible for creating ',Modname,'.dll'))
 	; unix([CC_Name, ' -c ', Base, '.c ', CC_Opts]),
 	  /* The following appears here because C compilers usually put the 
 	     object file in the current directory and not in the source's one.*/
