@@ -38,4 +38,4 @@
 
 :- import conget/2, conset/2 from gensym.
 
-:- import abort/1, integer/1 from standard.
+:- import abort/1  from standard.
