@@ -51,7 +51,7 @@
      from standard.
 :- import code_load/3, code_call/3, buff_byte/3, str_len/2, str_sub/2,
 	  expand_filename/2, tilde_expand_filename/2,
-     	  file_time/2, unload_seg/1, file_size/2,
+     	  file_time/2, unload_seg/1,
 	  buff_word/3, 
 	  assert_code_to_buff/2, assert_buff_to_clref/7,
 	  file_read_canonical/3, stat_flag/2, conpsc/2, 
@@ -60,9 +60,9 @@
      from machine.
 :- import asserta/1, (dynamic)/1, retractall/1, assert/1, retract/1, t_assert/2
 	 from assert.
-:- import warning/1, time_message/2, message/1 from auxlry.
+:- import warning/1, time_message/2 from auxlry.
 :- import append/3, memberchk/2 from basics.
-:- import default_assert_size/1, default_compile_size/1
+:- import default_assert_size/1
      from config.
 :- import '_$index'/3, '_$trie_asserted'/1 from file_op.
 :- import add_hilog_symbol/1 from hilogsym.
