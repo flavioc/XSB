@@ -5,8 +5,16 @@
 \end{center}
 
 XSB has an efficient interface to the Perl interpreter, which allows XSB
-programs to use powerful Perl pattern matching capabilities. You need Perl
+programs to use powerful Perl pattern matching capabilities. this interface
+is provided by the {\tt Perlmatch} package. You need Perl
 5.004 or later to be able to take advantage of this service.
+
+Although the POSIX {\tt Regmatch} package described in the previous section
+is more efficient, the Perl interface also provides powerful string
+substitution facilities that are not available in the {\tt Regmatch}
+package.  The programming interface to the {\tt Perlmatch} package is also
+different from that of {\tt Regmatch} --- it closely mimics the interface
+provided by Perl itself.
 
 The following discussion assumes that you are familiar with the syntax of
 Perl regular expressions and have a reasonably good idea about the
@@ -202,5 +210,5 @@ use a pattern matching or a string substitution predicate.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual2"
 %%% End: 

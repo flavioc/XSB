@@ -43,6 +43,7 @@ xsb_configuration(compiler_flags, '@CFLAGS@').
 xsb_configuration(loader_flags, '@LDFLAGS@').
 
 xsb_configuration(regmatch_support, '@regmatch_support@').
+xsb_configuration(wildmatch_support, '@wildmatch_support@').
 
 xsb_configuration(perl_support, '@perl_support@').
 xsb_configuration(perl_archlib, '@perl_archlib@').

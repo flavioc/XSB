@@ -1,0 +1,225 @@
+\chapter{XSB's POSIX Regular Expression and Wildcard Matching Packages}
+
+\begin{center}
+{\Large {\bf By Michael Kifer}}
+\end{center}
+
+XSB has an efficient interface to POSIX pattern regular expression and
+wildcard matching functions.  To take advantage of these features, you must
+build XSB using a C compiler that supports POSIX 1.0 (for regular
+expression matching) and the forthcoming POSIX 2.0 (for wildcard matching).
+The recent versions of GCC and SunPro compiler will do, as probably will
+many other compilers. This also works under Windows, provided you install
+Cygnus' CygWin and use GCC to compile.
+
+\section{Regular Expression Matching}
+
+The following discussion assumes that you are familiar with the syntax of
+regular expressions and have a reasonably good idea about their
+capabilities. One easily accessible description of POSIX regular
+expressions is found in the on-line Emacs manual.
+
+The regular expression matching functionality is provided by the package
+called {\tt Regmatch}. To use it, type:
+%%
+\begin{quote}
+ {\tt  :- [regmatch]. }
+\end{quote}
+%%
+
+If you are planning to use pattern matching from within an XSB program,
+then you also need to add the following directive:
+%%
+\begin{quote}
+ \tt
+ :- import regmatch/7 from regmatch.
+\end{quote}
+%%
+
+The regmatch predicate has the following calling sequence:
+%%
+\begin{quote}
+ \tt
+ regmatch(+Regexp, +Str, ?IgnoreCase, -Match, -Prematch, -Postmatch, -ParenMatches)
+\end{quote}
+%%
+{\tt Regexp} is a regular expression, {\it e.g.},
+``\verb|abc([^;,]*); (dd|ee)*;|''. It can be a Prolog atom or string ({\it i.e.}, a list of
+characters). The above expression matches any substring that has ``abc''
+followed by a sequence of characters none of which is a ``;'' or a ``,'',
+followed by a ``; '', followed by a sequence that consists of zero or more
+of ``dd'' or ``ee'' segments, followed by a ``;''. An example of a
+where such a match can be found is ``\verb|123abc&*^; ddeedd;poi|''.
+
+{\tt Str} is the string to be matched. It can be a Prolog atom or a string
+(list of characters). {\tt IgnoreCase} indicates whether
+the case of the letters is to be ignored. If this argument is an
+uninstantiated variable, then the case is \emph{not} ignored. If this
+argument is bound to a non-variable, then the case \emph{is} ignored.
+
+The rest of the arguments are used to return the results. {\tt Match} 
+is bound to the maximal substring of {\tt Str} that matches the regular
+expression. In our case, it will be ``\verb|abc&*^; ddeedd|''.
+{\tt Prematch} is bound to the part of {\tt Str} that
+\emph{precedes} the string in {\tt Match}. In our case, it is ``{\tt 123}''.
+{\tt Postmatch} is
+instantiated with the suffix of {\tt Str} that follows the matching
+substring (``{\tt poi}'' in our case).
+
+The most powerful feature of POSIX pattern matching is the ability to
+remember and return substrings matched by parenthesized subexpressions.
+When the predicate succeeds, the list of such matches is bound to {\tt
+  ParenMatch}. For instance, our earlier regular expression 
+  ``\verb|abc([^;,]*); (dd|ee)*;|'' has two parenthetical subexpressions, which
+match ``\verb|&*^|'' and ``{\tt dd}, respectively. So, {\tt ParenMatch} will
+be bound to ``\verb|[&*^, dd]|''.
+
+Here is one more example of the power of POSIX regular expression matching:
+%%
+\begin{verbatim}
+ regmatch("a(b*|e*)cd\\1",'qabbbcdbbbbbo',_,M,P,K,L).  
+\end{verbatim}
+%%
+Here the result is:
+%%
+\begin{verbatim}
+M = abbbcdbbb
+P = q
+K = bbo
+L = [bbb]  
+\end{verbatim}
+%%
+The interesting features here are the positional parameter
+$\backslash\backslash 1$ and the alternating parenthetical expression {\tt
+a(b*|e*)}. The alternating parenthetical expression here can match any
+sequence of b's \emph{or} any sequence of e's. Note that if the string to
+be matched is not known when we write the program, we will not know a
+priori which sequence will be matched: a sequence of b's or a sequence of e's.
+Moreover, we do not even know the length of that sequence.
+
+Now, suppose, we want to make sure that the matching substrings look like this:
+%%
+\begin{verbatim}
+abbbcdbbb
+aeeeecdeeee
+abbbbbbcdbbbbbb
+\end{verbatim}
+%%
+How can we make sure that the suffix that follows ``cd'' is exactly the same
+string that is stuck between ``a'' and ``cd''? This is what
+$\backslash\backslash 1$ precisely does: it represents the substring
+matched by the first parenthetical expression. Similarly, you can use
+$\backslash\backslash 2$, etc., if the regular expression contains more
+than one parenthetical expression.
+
+{\bf Additional features.} So far, we did not discuss the type of the
+result returned in the 7th argument of {\tt regmatch} (apart from saying
+that this is a list). The precise type depends on the type of the second
+argument, {\tt Str}: if {\tt Str} is an atom, them {\tt ParenMatch} is a
+list of atoms. If {\tt Str} is a Prolog string, then {\tt ParenMatch} is a
+list of Prolog strings.
+
+The {\tt regmatch} predicate fails if {\tt Regexp} does not match {\tt Str}.
+Otherwise, it succeeds.
+
+We should also note that parenthetical expressions can also be represented
+using the \verb|\(...\)| notation. What if you want to match a ``('' then?
+You must escape it with a ``\verb|\\|'' then:
+%%
+\begin{verbatim}
+| ?- regmatch("a(b*)cd\\(",'abbbcd(bbo',_,M,P,K,L).
+
+M = abbbcd(
+P = 123
+K = bbo
+L = [bbb]
+\end{verbatim}
+%%
+Now, what about matching the backslash itself? Try harder: you need four
+backslashes: 
+%%
+\begin{verbatim}
+| ?- regmatch("a(b*)cd\\\\",'abbbcd\bbo',_,M,P,K,L).
+
+M = abbbcd\
+P = 123
+K = bbo
+L = [bbb]  
+\end{verbatim}
+%%
+
+\section{Wildcard Matching and Globing}
+
+These interfaces are implemented using the {\tt Wildmatch} package of XSB.
+This package provides the following functionality: 
+%%
+\begin{enumerate}
+\item Telling whether a wildcard, like the ones used in Unix shells match
+  against a given string. Wildcards supported are of the kind available in
+  tcsh or bash. Alternating characters ({\it e.g.}, ``\verb|[abc]|'' or
+  ``\verb|[^abc]|'') are supported.
+\item Finding the list of all file names in a given directory that match a
+  given wildcard. This facility generalizes {\tt directory/2} (in module {\tt
+    directory}), and it is much more efficient.
+\end{enumerate}
+%%
+
+To use this package, you need to type:
+%%
+\begin{verbatim}
+| ?- [wildmatch].  
+\end{verbatim}
+%%
+If you are planning to use it in an XSB program, you will also need to add
+these directive:
+%%
+\begin{verbatim}
+:- import glob_directory/4, wildmatch/3 from wildmatch.
+\end{verbatim}
+%%
+
+The calling sequence for \verb|glob_directory| is:
+%%
+\begin{verbatim}
+   glob_directory(+Wildcard, +Directory, ?MarkDirs, -FileList)  
+\end{verbatim}
+%%
+The parameter {\tt Wildcard} can be either a Prolog atom or a Prolog
+string. {\tt Directory} is also an atom or a string; it specifies the
+directory to be globbed. {\tt MarkDirs} indicates whether directory names
+should be decorated with a trailing slash: if {\tt MarkDirs} is bound, then
+directories will be so decorated. If MarkDirs is an unbound variable, then
+trailing slashes will not be added.
+
+{\tt FileList} gets the list of files in {\tt Directory} that match {\tt
+  Wildcard}.  If {\tt Directory} is bound to an atom, then {\tt FileList}
+gets bound to a list of atoms; if {\tt Directory} is a Prolog string, then
+{\tt FileList} will be bound to a list of strings as well.
+
+This predicate succeeds is at least one match is found. If no matches are
+found or if {\tt Directory} does not exist or cannot be read, then the
+predicate fails.
+
+The calling sequence for wildmatch/3 is as follows:
+%%
+\begin{verbatim}
+    wildmatch(+Wildcard, +String, ?IgnoreCase)  
+\end{verbatim}
+%%
+{\tt Wildcard} is the same as before. {\tt String} represents the string to
+be matched against {\tt Wildcard}. Like {\tt Wildcard}, {\tt String} can be
+an atom or a string. {\tt IgnoreCase} indicates whether case of letters
+should be ignored: if this argument is bound to a non-variable, then case
+is ignored. Otherwise, if {\tt IgnoreCase} is a variable, then the case of
+letters is preserved.
+
+This predicate succeeds when {\tt Wildcard} matches {\tt String} and fails
+otherwise.
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 

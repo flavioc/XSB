@@ -68,9 +68,13 @@ or another object program suitable for further {\tt ld} processing.
 \version\ of \ourprolog\ assumes that the {\tt ld} command resides
 in the file {\tt /usr/bin/ld}.
 
-A foreign predicate assumes that its arguments are always of the correct 
-types and modes. It is the caller's responsibility (in the Prolog level) 
-to guarantee this.
+C functions that implement foreign predicates must return values of type
+{\tt int}. If a non-zero is returned, the foreign predicate succeeds; a
+zero return value means failure.
+
+A well-designed foreign predicate must check that its arguments are of the
+correct types and modes. However, such checks can also be done using
+Prolog-side wrappers that invoke a foreign predicate.
 
 At the C level, the procedure that implements the foreign predicate
 must have the same name as the predicate (that is declared in the 
@@ -133,21 +137,8 @@ interface is that the above procedures assume correct modes and types
 being passed between C and the Prolog level.  So, output unification
 should be explicitly performed in the Prolog level.  The function
 prototypes should be declared before the corresponding functions are
-used.  This can be done by either including the {\tt "cinterf.h"} header
-file (located in the {\tt XSB/emu} directory), or by declaring the
-function prototypes explicitly like the following.
-\begin{verbatim}
-    extern int   ptoc_int(int);            /* defined in builtin.c */
-    extern float ptoc_float(int);          /* defined in builtin.c */
-    extern char* ptoc_string(int);         /* defined in builtin.c */
- 
-    extern void  ctop_int(int, int);       /* defined in builtin.c */
-    extern void  ctop_float(int, float);   /* defined in builtin.c */
-    extern void  ctop_string(int, char *); /* defined in builtin.c */
-    extern void  c2p_string(int, char *);  /* defined in cinterf.c */
-
-    extern char* string_find(char *, int); /* defined in psc.c */
-\end{verbatim}
+used.  This is done by including the {\tt "cinterf.h"} header
+file (located in the {\tt XSB/emu} directory).
 
 In the current implementation, the Prolog procedures that are
 attached to foreign predicates are deterministic, in the sense that
@@ -204,47 +195,53 @@ interface of \ourprolog.  The programs above and below are programs
 
 /*----------------------------------------------------------------------*/
 
-void minus_one(void)
+int minus_one(void)
 {
    int  i = ptoc_int(1);
 
-        ctop_int(2, i-1);
+   ctop_int(2, i-1);
+   return TRUE;
 }
 
 /*----------------------------------------------------------------------*/
 
-void my_sqrt(void)
+int my_sqrt(void)
 {
    int i = ptoc_int(1);
 
-        ctop_float(2, (float) pow((double)i, 0.5));
+   ctop_float(2, (float) pow((double)i, 0.5));
+   return TRUE;
 }
 
 /*----------------------------------------------------------------------*/
 
-void change_char(void)
+int change_char(void)
 {
    char *str_in;
    int  pos;
-   char *c;
+   int c;
    char *str_out;
 
-        str_in = (char *) ptoc_string(1);
-        str_out = (char *) alloca(strlen(str_in)+1);
-        strcpy(str_out, str_in);
-        pos = ptoc_int(2);
-        c = (char *) ptoc_string(3);
-        str_out[pos-1] = c[0];
+   str_in = (char *) ptoc_string(1);
+   str_out = (char *) alloca(strlen(str_in)+1);
+   strcpy(str_out, str_in);
+   pos = ptoc_int(2);
+   c = ptoc_int(3);
+   if (c < 0 || c > 255) /* not a character */
+     return FALSE; /* this predicate will fail on the Prolog side */
 
-        /* Now that we have constructed a new symbol, we must ensure that it
-           appears in the symbol table.  This can be done using function
-           string_find() that searches the symbol table for the symbol, and
-           if the symbol does not appear there, it inserts it.  If we are
-           sure that the symbol already appeared in the symbol table there
-           is no need to use string_find().
-         */
+   str_out[pos-1] = c;
 
-        ctop_string(4, (char *) string_find(str_out,1));  /* 1 = INSERT */
+   /* Now that we have constructed a new symbol, we must ensure that it
+      appears in the symbol table.  This can be done using function
+      string_find() that searches the symbol table for the symbol, and
+      if the symbol does not appear there, it inserts it.  If we are
+      sure that the symbol already appeared in the symbol table there
+      is no need to use string_find().
+    */
+
+   ctop_string(4, (char *) string_find(str_out,1));  /* 1 = INSERT */
+   return TRUE;
 }
 
 /*----------------------------------------------------------------------*/
@@ -254,8 +251,8 @@ void change_char(void)
 Here is a sample session of using these files.
 \begin{small}
 \begin{verbatim}
-XSB Version 1.4.3 (94/12/8)
-[sequential, single word, optimal mode]
+XSB Version 1.9 (Mouton Cadet) of March 31, 1999
+[i686-pc-linux-gnu; mode: optimal; engine: slg-wam; scheduling: batched]
 | ?- [simple_foreign].
 [Compiling C file ./simple_foreign.c using gcc]
 [Compiling Foreign Module ./simple_foreign]
@@ -263,8 +260,8 @@ XSB Version 1.4.3 (94/12/8)
 [simple_foreign loaded]
 
 yes
-| ?- change_char('Kostis', 2, w, TempStr),
-     change_char(TempStr, 5, h, GrkName).
+| ?- change_char('Kostis', 2, 119, TempStr), % 119 is w
+     change_char(TempStr, 5, 104, GrkName).  % 104 is h
 
 TempStr = Kwstis
 GrkName = Kwsths;
@@ -296,3 +293,8 @@ There are some more sample programs in the {\tt examples} directory that
 exhibit most of the features of the foreign language interface, and
 will probably make clear many questions that users may have.
 
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 
