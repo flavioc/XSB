@@ -1,9 +1,11 @@
 \chapter{Library Utilities} \label{library_utilities}
 %====================================================
 
-In this chapter we introduce some useful predicates that are supplied
-with the system. These predicates are available only when imported
-them from (or explicitly consult) the corresponding modules.
+In this chapter we introduce libraries of some useful predicates that
+are supplied with XSB.  Interfaces and more elaborate packages are
+documented in later chapters.  These predicates are available only
+when imported them from (or explicitly consult) the corresponding
+modules.
 
 
 \section{List Processing}
@@ -162,8 +164,7 @@ looking at the sources.
 
 \end{description}
 
-
-\section{Attributed Variables}
+\section{Attributed Variables} \label{sec:attributed-variables}
 %=============================
 
 Attributed variables are a special data type that associates variables
@@ -2529,6 +2530,46 @@ Note that 1.0 will never be generated.
 
 \end{description}
 
+\section{Other Libraries}
+%================================
+
+Not all XSB libraries are currently documented.  We provide brief
+summaries of some of these other libraries.
+
+\subsection{AVL Trees}
+
+AVL trees provide a mechanism to maintain key value pairs so that loop
+up, insertion, and deletion all have complexity ${\cal O}(\log n)$.  This
+library contains predicates to transform a sorted list to an AVL tree
+and back, along with predicates to manipulate the AVL trees.  This
+library was originally written for Sicstus by Mats Carlsson.
+
+% Generic justifier for XSB programs; allows justification of T/F/U values
+% NOTE : Any program predicate that depends recursively 
+%        on itself through negation must be tabled.
+%        This ensures that the delay list of any undefined 
+%        atom can be accessed (say via get_residual/2).
+
+
+\subsection{Justification}
+
+Most Prolog debuggers, including XSB's, are based on a mechanism that
+allows a user to trace the evaluation of a goal by interrupting the
+evaluation at call, success, retry, or failure of various subgoals.
+While this has proved an excellent mechanism for evaluating SLD(NF)
+executions, it is difficult at best to use such a mechanism during a
+tabled evalation.  This is because, unlike with SLD(NF), SLG requires
+answers to be returned to tabled subgoals at various times (depending
+on whether batched or local evaluation is used), negative subgoals to
+be sometimes be delayed and/or simplified, etc.
+
+One approach to understanding tabled evaluation better is to abstract
+away the procedural aspects of debugging and to use the tables
+produced by an evaluation to construct a {\em justification} after the
+evaluation has finished.  The justification library does just this
+using algorithms described in \cite{haifeng}.
+
+%\section{ordsets}
 
 
 %%% Local Variables: 
