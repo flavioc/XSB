@@ -88,18 +88,42 @@ VAR_FPREFIX(imvs)(Sub,MethodArgs,R) :-
 :- table VAR_FPREFIX(mvd)/3.
 :- table VAR_FPREFIX(ifd)/3.
 :- table VAR_FPREFIX(imvd)/3.
+%%
+:- table VAR_FPREFIX(derived_fd)/3.
+:- table VAR_FPREFIX(derived_mvd)/3.
+:- table VAR_FPREFIX(derived_ifd)/3.
+:- table VAR_FPREFIX(derived_imvd)/3.
+%%
 :- table VAR_FPREFIX(defined_fd)/2.
 :- table VAR_FPREFIX(defined_mvd)/2.
 :- table VAR_FPREFIX(defined_ifd)/2.
 :- table VAR_FPREFIX(defined_imvd)/2.
+%%
 :- table VAR_FPREFIX(overwritten_fd)/3.
 :- table VAR_FPREFIX(overwritten_mvd)/3.
 :- table VAR_FPREFIX(overwritten_ifd)/3.
 :- table VAR_FPREFIX(overwritten_imvd)/3.
+%%
 :- table VAR_FPREFIX(conflict_fd)/3.
 :- table VAR_FPREFIX(conflict_ifd)/3.
 :- table VAR_FPREFIX(conflict_mvd)/3.
 :- table VAR_FPREFIX(conflict_imvd)/3.
+
+
+VAR_FPREFIX(derived_fd)(X,Y,Z) :- VAR_FPREFIX(base_fd)(X,Y,Z).
+VAR_FPREFIX(derived_ifd)(X,Y,Z) :- VAR_FPREFIX(base_ifd)(X,Y,Z).
+VAR_FPREFIX(derived_mvd)(X,Y,Z) :- VAR_FPREFIX(base_mvd)(X,Y,Z).
+VAR_FPREFIX(derived_imvd)(X,Y,Z) :- VAR_FPREFIX(base_imvd)(X,Y,Z).
+
+VAR_FPREFIX(fd(X,Y,Z) :- VAR_FPREFIX(derived_fd)(X,Y,Z).
+VAR_FPREFIX(ifd(X,Y,Z) :- VAR_FPREFIX(derived_ifd)(X,Y,Z).
+VAR_FPREFIX(mvd(X,Y,Z) :- VAR_FPREFIX(derived_mvd)(X,Y,Z).
+VAR_FPREFIX(imvd(X,Y,Z) :- VAR_FPREFIX(derived_imvd)(X,Y,Z).
+
+VAR_FPREFIX(defined_fd(X,Y) :- VAR_FPREFIX(derived_fd)(X,Y,_).
+VAR_FPREFIX(defined_ifd(X,Y) :- VAR_FPREFIX(derived_ifd)(X,Y,_).
+VAR_FPREFIX(defined_mvd(X,Y) :- VAR_FPREFIX(derived_mvd)(X,Y,_).
+VAR_FPREFIX(defined_imvd(X,Y) :- VAR_FPREFIX(derived_imvd)(X,Y,_).
 
 
 VAR_FPREFIX(fd)(Object,Method,Value) :-
@@ -108,22 +132,20 @@ VAR_FPREFIX(fd)(Object,Method,Value) :-
 	(ground((Object,Method)) ->
 	    tnot(VAR_FPREFIX(defined_fd)(Object,Method)),
 	    VAR_FPREFIX(isa)(Object,Class),
-	    VAR_FPREFIX(ifd)(Class,Method,Value)
+	    VAR_FPREFIX(derived_ifd)(Class,Method,Value)
 	  ;
 	    VAR_FPREFIX(isa)(Object,Class),
-	    VAR_FPREFIX(ifd)(Class,Method,Value),
+	    VAR_FPREFIX(derived_ifd)(Class,Method,Value),
 	    sk_not(VAR_FPREFIX(defined_fd)(Object,Method))
 	),
 	sk_not(VAR_FPREFIX(overwritten_fd)(Object,Class,Method)),
 	sk_not(VAR_FPREFIX(conflict_fd)(Object,Class,Method)).
 
-VAR_FPREFIX(defined_fd)(Object,Method) :- VAR_FPREFIX(fd)(Object,Method,_).
-
 VAR_FPREFIX(overwritten_fd)(Object,Class,Method) :-
 	VAR_FPREFIX(isa)(Object,SubClass),
 	SubClass \= Class,
 	VAR_FPREFIX(strict_subclass)(SubClass,Class),
-	VAR_FPREFIX(ifd)(SubClass,Method,_).
+	VAR_FPREFIX(defined_ifd)(SubClass,Method,_).
 
 %% When this is called, Object always belongs to Class
 VAR_FPREFIX(conflict_fd)(Object,Class,Method) :-
@@ -139,22 +161,20 @@ VAR_FPREFIX(mvd)(Object,Method,Value) :-
 	(ground((Object,Method)) ->
 	    tnot(VAR_FPREFIX(defined_mvd)(Object,Method)),
 	    VAR_FPREFIX(isa)(Object,Class),
-	    VAR_FPREFIX(imvd)(Class,Method,Value)
+	    VAR_FPREFIX(derived_imvd)(Class,Method,Value)
 	  ;
 	    VAR_FPREFIX(isa)(Object,Class),
-	    VAR_FPREFIX(imvd)(Class,Method,Value),
+	    VAR_FPREFIX(derived_imvd)(Class,Method,Value),
 	    sk_not(VAR_FPREFIX(defined_mvd)(Object,Method))
 	),
 	sk_not(VAR_FPREFIX(overwritten_mvd)(Object,Class,Method)),
 	sk_not(VAR_FPREFIX(conflict_mvd)(Object,Class,Method)).
 
-VAR_FPREFIX(defined_mvd)(Object,Method) :-
-	VAR_FPREFIX(mvd)(Object,Method,_).
 
 VAR_FPREFIX(overwritten_mvd)(Object,Class,Method) :-
 	VAR_FPREFIX(isa)(Object,SubClass),
 	VAR_FPREFIX(strict_subclass)(SubClass,Class),
-	VAR_FPREFIX(imvd)(SubClass,Method,_).
+	VAR_FPREFIX(defined_imvd)(SubClass,Method,_).
 
 VAR_FPREFIX(conflict_mvd)(Object,Class,Method) :-
 	VAR_FPREFIX(defined_imvd)(Class1,Method),
@@ -169,21 +189,20 @@ VAR_FPREFIX(ifd)(Class,Method,Value) :-
 	(ground((Class,Method)) ->
 	    tnot(VAR_FPREFIX(defined_ifd)(Class,Method)),
 	    VAR_FPREFIX(strict_subclass)(Class,Super),
-	    VAR_FPREFIX(ifd)(Super,Method,Value)
+	    VAR_FPREFIX(derived_ifd)(Super,Method,Value)
 	  ;
 	    VAR_FPREFIX(strict_subclass)(Class,Super),
-	    VAR_FPREFIX(ifd)(Super,Method,Value),
+	    VAR_FPREFIX(derived_ifd)(Super,Method,Value),
 	    sk_not(VAR_FPREFIX(defined_ifd)(Class,Method))
 	),
 	sk_not(VAR_FPREFIX(overwritten_ifd)(Class,Super,Method)),
 	sk_not(VAR_FPREFIX(conflict_ifd)(Class,Super,Method)).
 
-VAR_FPREFIX(defined_ifd)(Class,Method) :- VAR_FPREFIX(ifd)(Class,Method,_).
 
 VAR_FPREFIX(overwritten_ifd)(Class,Super,Method) :-
 	VAR_FPREFIX(strict_subclass)(Class,S),
 	VAR_FPREFIX(strict_subclass)(S,Super),
-	VAR_FPREFIX(ifd)(S,Method,_).
+	VAR_FPREFIX(defined_ifd)(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 VAR_FPREFIX(conflict_ifd)(Class,Super,Method) :-
@@ -199,22 +218,20 @@ VAR_FPREFIX(imvd)(Class,Method,Value) :-
 	(ground((Class,Method)) ->
 	    tnot(VAR_FPREFIX(defined_imvd)(Class,Method)),
 	    VAR_FPREFIX(strict_subclass)(Class,Super),
-	    VAR_FPREFIX(imvd)(Super,Method,Value)
+	    VAR_FPREFIX(derived_imvd)(Super,Method,Value)
 	  ;
 	    VAR_FPREFIX(strict_subclass)(Class,Super),
-	    VAR_FPREFIX(imvd)(Super,Method,Value),
+	    VAR_FPREFIX(derived_imvd)(Super,Method,Value),
 	    sk_not(VAR_FPREFIX(defined_imvd)(Class,Method))
 	),
 	sk_not(VAR_FPREFIX(overwritten_imvd)(Class,Super,Method)),
 	sk_not(VAR_FPREFIX(conflict_imvd)(Class,Super,Method)).
 
-VAR_FPREFIX(defined_imvd)(Class,Method) :-
-	VAR_FPREFIX(imvd)(Class,Method,_).
 
 VAR_FPREFIX(overwritten_imvd)(Class,Super,Method) :-
 	VAR_FPREFIX(strict_subclass)(Class,S),
 	VAR_FPREFIX(strict_subclass)(S,Super),
-	VAR_FPREFIX(imvd)(S,Method,_).
+	VAR_FPREFIX(defined_imvd)(S,Method,_).
 
 %% Note: when this is called, Class is always a subclass of Super
 VAR_FPREFIX(conflict_imvd)(Class,Super,Method) :-
