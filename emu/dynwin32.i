@@ -54,6 +54,10 @@ bool dummy()
 static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 {
   char	*name;
+#ifdef XSB_DLL
+  char tempname[128];
+  int  tempsize;
+#endif
   Pair	search_ptr;
   char	sofilename[128];
   int 	strl = strlen(pofilename);
@@ -85,7 +89,15 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   while (search_ptr) {
     name = get_name(search_ptr->psc_ptr);
-    
+#ifdef XSB_DLL
+    tempname = "__";
+    strcpy(tempname[2],name);
+    tempsize=strlen(tempname);
+    tempname[tempsize++] = '@';
+    tempname[tempsize++] = '1';
+    tempname[tempsize++] = '\0';
+    name = tempname;
+#endif
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int (*)) GetProcAddress(handle, name)) == NULL) {
 	fprintf(stderr, "Cannot find function %s\n", name);
