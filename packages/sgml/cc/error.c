@@ -15,8 +15,8 @@
 #include "dtd.h"
 #include "error_term.h"
 
-prolog_term global_error_term = NULL;
-prolog_term global_warning_term = NULL;
+prolog_term global_error_term = (prolog_term)NULL;
+prolog_term global_warning_term = (prolog_term)NULL;
 
 /**
  * Function to handle the errors. It creates an appropriate error term 
