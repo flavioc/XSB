@@ -116,7 +116,7 @@ extern CPtr chat_restore_compl_susp(chat_init_pheader,CPtr,CPtr);
 extern void chat_update_compl_susp(chat_init_pheader);
 extern void chat_restore_compl_susp_trail(chat_init_pheader);
 extern chat_init_pheader save_a_consumer_copy(SGFrame,int);
-extern chat_init_pheader save_a_chat_compl_susp(int,CPtr,SGFrame,CPtr,byte *);
+extern chat_init_pheader save_a_chat_compl_susp(SGFrame,CPtr,byte *);
 
 extern void chat_set_chained(CPtr);
 extern void chat_set_unchained(CPtr);

@@ -491,7 +491,7 @@ static FILE *stropen(char *str)
     if (iostrs[i] == NULL) break;
   }
   if (i>=MAXIOSTRS) return 0;
-  tmp  = (STRFILE *)mem_alloc(sizeof(STRFILE));
+  tmp = (STRFILE *)mem_alloc(sizeof(STRFILE));
   iostrs[i] = tmp;
   tmp->strcnt = strlen(str);
   tmp->strptr = str;
@@ -510,11 +510,12 @@ static void strclose(int i)
 
 int builtin_call(byte number)
 {
-  CPtr var, reg_base;
+  CPtr var;
   char message[80];
   char *addr, *tmpstr;
-  int value, i, disp, arity, tmpval;
-  long c; int new_indicator, len;	/* for standard preds */
+  int  value, i, disp, arity, tmpval;
+  long c;
+  int  new_indicator, len;	        /* for standard preds */
   
   Cell heap_addr, term, term2, index;	/* used in standard preds */
   Cell functor, list, new_list;		/* for standard preds */
@@ -530,8 +531,8 @@ int builtin_call(byte number)
   Cell delay_lists;			/* for residual program */
   CPtr dls_head, dls_tail = NULL;	/* for residual program */
   tab_inf_ptr tip;
-  Psc psc;
-  struct psc_pair *sym;
+  Psc  psc;
+  Pair sym;
   CPtr subgoal_ptr, t_ptcp;
   register CPtr xtemp1, xtemp2;
 #ifdef FOREIGN
@@ -586,7 +587,7 @@ int builtin_call(byte number)
     break;
   case FILE_OPEN:		/* r1: file name (+string);   */
 				/* r2: mode (+int); r3: -file */
-				/* When read, mode=0; when write, mode = 1, 
+				/* When read, mode = 0; when write, mode = 1, 
 				   when append, mode = 2, when opening a 
 				   string for read mode = 3 */
     tmpstr = ptoc_string(1);

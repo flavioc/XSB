@@ -127,7 +127,7 @@ Type definitions are in chat.h
         theCR = alloc_more_cr_space(); \
       } \
     } \
-    /* fprintf(stderr,"NewCR(%p, %p, %p)\n", theCR,theOldRoots,theNewRoot);*/\
+    /* fprintf(stderr,"NewCR(%p, %p, %p)\n",theCR,theOldRoots,theNewRoot);*/\
     cr_root_area(theCR) = theNewRoot; \
     cr_next(theCR) = (CRPtr)theOldRoots; \
     theOldRoots = (CPtr)theCR
@@ -270,7 +270,7 @@ static void chat_free_chat_area(chat_init_pheader phead, bool mode)
 } /* chat_free_chat_area */
 
 /*----------------------------------------------------------------------*/
-/* frees all Chat-areas of consumers of subgoal "subg_ptr"		*/
+/* Frees all Chat-areas of consumers of subgoal "subg_ptr"		*/
 /*----------------------------------------------------------------------*/
 
 void chat_free_cons_chat_areas(SGFrame subg_ptr)
@@ -289,7 +289,7 @@ void chat_free_cons_chat_areas(SGFrame subg_ptr)
 }
 
 /*----------------------------------------------------------------------*/
-/* frees all Chat-areas of completion suspensions of subgoal "subg_ptr"	*/
+/* Frees all Chat-areas of completion suspensions of subgoal "subg_ptr"	*/
 /*----------------------------------------------------------------------*/
 
 void chat_free_compl_susp_chat_areas(SGFrame subg_ptr)
@@ -425,11 +425,11 @@ CPtr chat_restore_compl_susp(chat_init_pheader pheader, CPtr h, CPtr eb)
     int nrarguments;
     CPtr compl_susp_breg;
 
-#ifdef DEBUG
+#ifdef Chat_DEBUG
     fprintf(stderr, "called with eb = %d\n", ((CPtr)glstack.high - 1) - eb);
 #endif
     chat_fill_prevb(pheader, breg);
-#ifdef DEBUG
+#ifdef Chat_DEBUG
     if (is_generator_choicepoint(breg)) {
       SGFrame subg = (SGFrame)tcp_subgoal_ptr(breg);
       fprintf(stderr, "Subgoal = %p", subg);
@@ -855,8 +855,7 @@ chat_init_pheader save_a_consumer_for_generator(SGFrame subg_ptr)
 /* save_a_chat_compl_susp                                               */
 /*----------------------------------------------------------------------*/
 
-chat_init_pheader save_a_chat_compl_susp(int nrarguments, CPtr reg_base,
-					 SGFrame subg_ptr, CPtr ptcp, byte *cp)
+chat_init_pheader save_a_chat_compl_susp(SGFrame subg_ptr, CPtr ptcp, byte *cp)
 {
     CPtr b, h, eb;
     TChoice prev_tcp;
@@ -879,7 +878,7 @@ chat_init_pheader save_a_chat_compl_susp(int nrarguments, CPtr reg_base,
     /* The following is needed because restore_some_wamregs()
        resets from hbreg and not from cp_hreg(top_cp) */
     hbreg = h;
-#ifdef DEBUG /* was Chat_DEBUG */
+#ifdef Chat_DEBUG
     fprintf(stderr, "In save_compl_susp: leader tcp = %p, tcp[eb] = %d\n",
 	    prev_tcp, (((CPtr)glstack.high - 1) - (CPtr)(tcp_ebreg(prev_tcp))));
 #endif
@@ -899,22 +898,24 @@ chat_init_pheader save_a_chat_compl_susp(int nrarguments, CPtr reg_base,
       prev->next_header = pheader; pheader->prev_header = prev;
     }
 
-    /* only one choicepoint needs to be saved: the	*/
-    /* completion suspension and its argument registers	*/
-    chat_save_cons_arguments(pheader, nrarguments, (CPtr *)reg_base);
+    /* only a choice point needs to be saved: the completion suspension */
+    /* argument registers do not make sense in this case	*/
+    chat_get_malloc_start(pheader) = NULL;
+    chat_set_nrargs(pheader,0);
+    /* chat_save_cons_arguments(pheader, nrarguments, (CPtr *)reg_base); */
     where = (CPtr)(&chat_get_cons_start(pheader));
     save_compl_susp_frame(where, subg_ptr, ptcp, cp);
     chat_fill_chat_area(pheader);
 
     dest_tr = tcp_trreg(prev_tcp);
     size_tr = 2 * (trreg - (CPtr *)dest_tr) ;
-#ifdef DEBUG /* was Chat_DEBUG */
+#ifdef Chat_DEBUG
     fprintf(stderr, "Trail to be copied from %p to %p (%ld cells)\n",
                     dest_tr,trreg-1, size_tr);
 #endif
     chat_save_trail(pheader, size_tr, dest_tr);
 
-    chat_update_stats(CHAT_CONS_AREA, nrarguments, size_tr);
+    chat_update_stats(CHAT_CONS_AREA, 0, size_tr);
 
     ip = chat_get_father(pheader);
     New_CR(cr, tcp_chat_roots(prev_tcp), ip);

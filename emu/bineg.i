@@ -87,18 +87,15 @@
 #endif
 	  adjust_level(subg_compl_stack_ptr(subgoal_ptr));
 	  save_find_locx(ereg);
-	  reg_base = (CPtr)cs_val(term);
 #ifdef CHAT
 	  subg_compl_susp_ptr(subgoal_ptr) = (CPtr)
-		save_a_chat_compl_susp(arity, reg_base,
-				       (SGFrame)subgoal_ptr, t_ptcp, cpreg);
+		save_a_chat_compl_susp((SGFrame)subgoal_ptr, t_ptcp, cpreg);
 #else
 	  efreg = ebreg;
 	  if (trreg > trfreg) trfreg = trreg;
 	  if (hfreg < hreg) hfreg = hreg;
 	  if (bfreg > breg) bfreg = breg;
-	/*  check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
-	  save_registers(bfreg, arity, i, reg_base);
+	  /* check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
 	  save_compl_susp_frame(bfreg, ereg, subgoal_ptr, t_ptcp, cpreg);
 	  subg_compl_susp_ptr(subgoal_ptr) = bfreg;
 #endif
