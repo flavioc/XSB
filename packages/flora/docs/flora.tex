@@ -1701,11 +1701,11 @@ predicates, \FLORA compiler will interpret it as an additional condition
 $\mathtt{C_i}$ and generate a warning. For example,
 %%
 \begin{displaymath}
-\mathtt{retract(john[teaches@(S,Y){\mvd}C],Y\leq1999)}
+\mathtt{retract(john[teaches@(S,Y){\mvd}C],~Y\,=<\,1999)}
 \end{displaymath}
 is equivalent to
 \begin{displaymath}
-\mathtt{retract(john[teaches@(S,Y){\mvd}C]|Y\leq1999)};
+\mathtt{retract(john[teaches@(S,Y){\mvd}C]\,|~Y\,=<\,leq1999)};
 \end{displaymath}
 %%
 
