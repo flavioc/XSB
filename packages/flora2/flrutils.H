@@ -26,7 +26,6 @@
 
 
 :- import
-	file_exists/1,
 	cputime/1,
 	integer/1,
 	atom/1
@@ -36,7 +35,7 @@
 
 :- import assert/1, retractall/1 from assert.
 
-:- import compile/2, consult/1 from consult.
+:- import compile/2, consult/1, read_canonical/1 from consult.
 
 :- import library_directory/1 from usermod.
 
@@ -54,14 +53,12 @@
 
 :- import
 	slash/1,
-	is_absolute_filename/1,
 	parse_filename/4,
 	stat_flag/2,
 	stat_set_flag/2
    from machine.
 
 :- import
-	file_time/2,
 	fmt_write_string/3,
 	fmt_write/3,
 	file_close/1,
@@ -74,6 +71,8 @@
 :- import process_control/2 from shell.
 
 :- import xpp_process_file/3 from parse.
+
+:- import storage_insert_fact/3 from storage.
 
 :- import bootstrap_flora/0 from flora2.
 :- bootstrap_flora.
@@ -134,7 +133,7 @@
 
 :- import flora_include/2 from flrlibman.
 
-:- import flora_wspredicate/4 from flrwrapper.
+:- import flora_wspredicate/4, flora_storage_name/2 from flrwrapper.
 
 :- dynamic flora_maxerr(_).
 
@@ -164,4 +163,5 @@
 	flora_set_xpp_options/0,
 	flora_clear_xpp_options/0,
 	flora_list2conjunct/2,
-	flora_check_workspace/1.
+	flora_check_workspace/1,
+	flora_load_dyn/2.

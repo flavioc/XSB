@@ -429,7 +429,6 @@
   FLORA options
 ****************************************************************************/
 #define	FLHEADER		flheader
-#define	FLDBDYN			fldbdyn
 #define	FLTRAILER		fltrailer
 #define FLEQLTRAILER		fleqltrailer
 #define FLSCALAREQL		flscalareql

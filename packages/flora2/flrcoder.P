@@ -116,18 +116,21 @@ is_fllibdb(FLLIBBTERASEALL) :- !.
 
 
 /****************************************************************************
-  flora_divide_program(+CompiledRuleList,-RuleList,-FlogicFactList)
+  flora_divide_program(+CompiledRuleList,-RuleList,-FactList)
+
+  This procedure takes a list of results from the Flora compiler and split
+  into a list of rules plus directives, and a list of facts. The list of
+  facts will be dump into a separate file for loading into the storage trie.
 ****************************************************************************/
 flora_divide_program([],[],[]) :- !.
 
-flora_divide_program([H|T],RuleList,[H|FlogicFactList]) :-
-	is_prfact(H,HF),
-	is_flogic(HF,_Wrap,_N,_L),
+flora_divide_program([H|T],RuleList,[H|FactList]) :-
+	is_prfact(H,_HF),
 	!,
-	flora_divide_program(T,RuleList,FlogicFactList).
+	flora_divide_program(T,RuleList,FactList).
 
-flora_divide_program([H|T],[H|RuleList],FlogicFactList) :-
-	flora_divide_program(T,RuleList,FlogicFactList).
+flora_divide_program([H|T],[H|RuleList],FactList) :-
+	flora_divide_program(T,RuleList,FactList).
 
 
 /****************************************************************************

@@ -6,6 +6,10 @@
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
+/************************************************************************
+  Note: This file should contain Macro only.
+************************************************************************/
+
 #mode standard Prolog
 
 #define	FLORA_PREFIX			'_$_$_flora'
@@ -20,8 +24,4 @@
 #mode restore
 
 
-:- import storage_find_fact/2 from storage.
-
-
-/***********************************************************************/
 

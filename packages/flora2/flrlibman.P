@@ -181,9 +181,6 @@ flora_include(FLLIBCONTROL,IncFile) :- !,
 flora_include(FLHEADER,IncFile) :- !,
 	slash(S),
 	fmt_write_string(IncFile,'headerinc%sflrheader_inc.flh',arg(S)).
-flora_include(FLDBDYN,IncFile) :- !,
-	slash(S),
-	fmt_write_string(IncFile,'headerinc%sflrdbdyn_inc.flh',arg(S)).
 flora_include(FLDEFINITION,IncFile) :- !,
 	slash(S),
 	fmt_write_string(IncFile,'headerinc%sflrdefinition_inc.flh',arg(S)).

@@ -61,21 +61,21 @@ all: init $(ALLOBJS) finish
 	@cat $(SVFILE)
 
 
-standard.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
+standard.P : $(CLOSURE)/flrcommon.flh \
              $(CLOSURE)/flrtrailer.flh $(HEADERINC)/flrheader_inc.flh \
-             $(HEADERINC)/flrdbdyn_inc.flh $(HEADERINC)/flrtrailer_inc.flh
+             $(HEADERINC)/flrtrailer_inc.flh
 	@echo 'flsetuptrailer(none).' >> cmd...
 
 
-eqlbasic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
+eqlbasic.P : $(CLOSURE)/flrcommon.flh \
              $(CLOSURE)/flreqltrailer.flh $(HEADERINC)/flrheader_inc.flh \
-             $(HEADERINC)/flrdbdyn_inc.flh $(HEADERINC)/flreqltrailer_inc.flh
+             $(HEADERINC)/flreqltrailer_inc.flh
 	@echo 'flsetuptrailer(basic).' >> cmd...
 
 
-eqlflogic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
+eqlflogic.P : $(CLOSURE)/flrcommon.flh \
               $(CLOSURE)/flreqltrailer.flh $(CLOSURE)/flrscalareql.flh \
-              $(HEADERINC)/flrheader_inc.flh $(HEADERINC)/flrdbdyn_inc.flh \
+              $(HEADERINC)/flrheader_inc.flh \
               $(HEADERINC)/flreqltrailer_inc.flh $(HEADERINC)/flrscalareql_inc.flh
 	@echo 'flsetuptrailer(flogic).' >> cmd...
 
@@ -83,10 +83,6 @@ eqlflogic.P : $(CLOSURE)/flrdbdyn.flh $(CLOSURE)/flrcommon.flh \
 patch.P : $(GENINCLUDES)/flrpatch.flh $(HEADERINC)/flrheader_inc.flh \
           $(HEADERINC)/flrdefinition_inc.flh
 	@echo 'flsetuppatch.' >> cmd...
-
-
-$(CLOSURE)/flrdbdyn.flh : $(CLOSURE)/flrdbdyn.fli $(CLOSURE)/includes/flrpred.fli
-	@cd $(CLOSURE); make
 
 
 $(CLOSURE)/flrcommon.flh : $(CLOSURE)/flrcommon.fli $(CLOSURE)/includes/flrpred.fli

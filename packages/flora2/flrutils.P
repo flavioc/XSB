@@ -208,7 +208,7 @@ flsetuptrailer(TrailerName) :-
 	telling(PreOutFile),
 	tell(TrailerFullName),
 	flora_trailer_include(TrailerName,TrailerInclude),
-	flora_include_file([FLHEADER,FLDBDYN|TrailerInclude],HeaderStatus),
+	flora_include_file([FLHEADER|TrailerInclude],HeaderStatus),
 	told,
 	tell(PreOutFile),
 	!,
@@ -298,7 +298,7 @@ flora_user_flora_dir(Dir) :-
 	    xsb_configuration(user_home,UserHome),
 	    slash(S),
 	    fmt_write_string(Dir,"%s%s.xsb%sflora",args(UserHome,S,S)),
-	    ( file_exists(Dir) ->
+	    ( path_sysop(exists,Dir) ->
 		true
 	    ;
 		( path_sysop(mkdir,Dir) ->
@@ -410,17 +410,20 @@ flora_locate_file(InFile,ExtType,ExtFile) :-
 
 /*************************************************************************
   flora_locate_file(+InFile,-LocatedFile)
+
+  When it succeeds, it returns the absolute file name.
 *************************************************************************/
 flora_locate_file(In,In) :-
-	is_absolute_filename(In),
+	path_sysop(isabsolute,In),
 	!,
-	file_exists(In).
+	path_sysop(exists,In).
 
 flora_locate_file(In,Loc) :-
 	flora_library_directory(LibDir),
 	slash(S),
-	fmt_write_string(Loc,"%s%s%s",args(LibDir,S,In)),
-	file_exists(Loc),
+	fmt_write_string(File,"%s%s%s",args(LibDir,S,In)),
+	path_sysop(expand,File,Loc),
+	path_sysop(exists,Loc),
 	!.
 
 
@@ -429,10 +432,8 @@ flora_locate_file(In,Loc) :-
   returns true iff File1 exists and is newer than File2. File2 already exists.
 *************************************************************************/
 flora_file_newerthan(File1,File2) :-
-	file_exists(File1),
-	file_time(File1,time(F1Time1,F1Time2)),
-	file_time(File2,time(F2Time1,F2Time2)),
-	time(F1Time1,F1Time2) @>= time(F2Time1,F2Time2).
+	path_sysop(exists,File1),
+	path_sysop(newerthan,File1,File2).
 
 
 /*************************************************************************
@@ -529,11 +530,10 @@ flora_clear_xpp_options :- retractall(xpp_options(_)).
   flora_loaddyn_FDB_filename(+DBFileName)
 *************************************************************************/
 flora_loaddyn_FDB_filename(DBFileName) :-
-	%parse_filename(FileName,_,Base,_),
-	%fmt_write_string(FDBFileName,"%s.%s",args(Base,FLORA_FDB_EXT)),
 	current_output_port(OutPort),
-	fmt_write(OutPort,":- import load_dyn/1 from consult.\n",_),
-	fmt_write(OutPort,"?- load_dyn('%s').\n\n",args(DBFileName)).
+	fmt_write(OutPort,":- import flora_load_dyn/2 from flrutils.\n",_),
+	fmt_write(OutPort,"?- flora_load_dyn('%s',%s).\n\n",
+                  args(DBFileName,'FLORA_VAR_WORKSPACE')).
 
 
 /*************************************************************************
@@ -547,7 +547,7 @@ flora_include_file([Opt|OptList],Status) :-
 	package_configuration(dir(flora),FloraDir),
 	slash(S),
 	fmt_write_string(FullName,"%s%s%s",args(FloraDir,S,File)),
-	( file_exists(FullName) ->
+	( path_sysop(exists,FullName) ->
 	    print_file_contents(FullName),
 	    flora_include_file(OptList,Status)
 	;
@@ -632,23 +632,23 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
   Note: FileStatus returns either FLORA_FAILURE or FLORA_SUCCESS.
 *************************************************************************/
 flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
-	flora_divide_program(CompiledRuleList,RuleList,FlogicFactList),
+	flora_divide_program(CompiledRuleList,RuleList,FactList),
 	sort(FileOptionList,FileOptions),
-	flora_generate_Pfile(PFile,FileOptions,RuleList,FlogicFactList,DBFile,PFileStatus),
+	flora_generate_Pfile(PFile,FileOptions,RuleList,FactList,DBFile,PFileStatus),
 	( PFileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	  ( FlogicFactList == [] ->
+	  ( FactList == [] ->
 	      FileStatus=FLORA_SUCCESS
 	  ;
-	    flora_generate_DBfile(DBFile,FlogicFactList,FileStatus)
+	    flora_generate_DBfile(DBFile,FactList,FileStatus)
 	  )
         ),
 	!.
 
 
 /*************************************************************************
-  flora_generate_Pfile(+PFileName,+FileOptionList,+RuleList,+FlogicFactList,
+  flora_generate_Pfile(+PFileName,+FileOptionList,+RuleList,+FactList,
                        +DBFile,-FileStatus)
 
   Things to do:
@@ -659,18 +659,18 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
   (5) program.
   (6) trailer.
 *************************************************************************/
-flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,DBFile,FileStatus) :-
+flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FileStatus) :-
 	telling(PreOutFile),
 	tell(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
 	%% FLLIBCONTROL (sylibinc/flrcontrol_inc.flh) should probably 
 	%% be included by the compiler
-	flora_include_file([FLHEADER,FLDBDYN,FLDEFINITION,FLPATCH,FLLIBCONTROL|LibOptionList],
+	flora_include_file([FLHEADER,FLDEFINITION,FLPATCH,FLLIBCONTROL|LibOptionList],
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	  (FlogicFactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
+	  (FactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
@@ -694,32 +694,79 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,DBFile,Fil
 
 
 /*************************************************************************
-  flora_generate_DBfile(+DBFileName,+FlogicFactList,-FileStatus)
+  flora_generate_DBfile(+DBFileName,+FactList,-FileStatus)
 
   Things to do:
   (1) include .flh file directive.
   (2) output header file.
-  (3) F-logic facts.
+  (3) facts.
 *************************************************************************/
-flora_generate_DBfile(DBFileName,FlogicFactList,FileStatus) :-
+flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 	telling(PreOutFile),
 	tell(DBFileName),
-	flora_include_file([FLHEADER,FLDBDYN],HeaderStatus),
-	( HeaderStatus == FLORA_FAILURE ->
-	    FileStatus=FLORA_FAILURE
+	%% Include the Macro definitions.
+	writeln('#include "flrheader.flh"'),
+	nl,
+	flora_extern_code(FactList,CoderStatus),
+	( CoderStatus == [] ->
+	    FileStatus=FLORA_SUCCESS
 	;
-	  flora_extern_code(FlogicFactList,CoderStatus),
-	  ( CoderStatus == [] ->
-	      FileStatus=FLORA_SUCCESS
-	  ;
-	    flora_coder_error(CoderStatus),
-	    FileStatus=FLORA_FAILURE
-	  )
-        ),
+	  flora_coder_error(CoderStatus),
+	  FileStatus=FLORA_FAILURE
+	),
 	told,
 	tell(PreOutFile),
 	!.
 
+
+/*************************************************************************
+  flora_load_dyn(+InDBFile,+Module)
+
+  This procedure reads a Flora DB file that contains facts in canonical
+  form and inserts them into the storage trie for the module.
+*************************************************************************/
+flora_load_dyn(InDBFile,Module) :-
+	flora_check_filename(InDBFile),
+	( flora_locate_file(InDBFile,DBFile) ->
+	    flora_message_line("dynamically loading %s into storage trie",args(DBFile)),
+	    cputime(T0),
+	    seeing(PreInFile),
+	    flora_set_xpp_options(Module),
+	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
+	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
+	    flora_storage_name(Module,StorageName),
+	    flora_read_canonical_and_insert(StorageName),
+	    %% Wait, not to leave zombies.
+	    process_control(XPP_process,wait),
+	    %% Release the file descriptor used to read from cpp.
+	    file_close(IOportFromProc),
+	    flora_clear_xpp_options,
+	    see(PreInFile),
+	    cputime(T1),
+	    T is T1-T0,
+	    flora_message_line("Done! CPU time used: %S seconds",args(T))
+	;
+	  flora_error_line("File %s does not exist!",args(InDBFile)),
+          fail
+	),
+	!.
+
+
+/*************************************************************************
+  flora_read_canonical_and_insert(+StorageName)
+
+  It reads the current input in canonical form and inserts all facts
+  into the storage trie.
+*************************************************************************/
+flora_read_canonical_and_insert(StorageName) :-
+	repeat,
+	read_canonical(Term),
+	( Term == end_of_file ->
+	    !
+	;
+	  storage_insert_fact(StorageName,Term,_Inserted),
+	  fail
+	).
 
 
 /*************************************************************************

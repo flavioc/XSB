@@ -31,8 +31,7 @@ XSBDIR = ../../..
 ALLOBJS = flrcommon.flh \
           flrtrailer.flh \
 	  flreqltrailer.flh \
-          flrscalareql.flh \
-          flrdbdyn.flh
+          flrscalareql.flh
 
 XSB = $(XSBDIR)/bin/xsb
 
