@@ -427,8 +427,8 @@ libraries_loaded :-
 /*
  *  Print a new line
  */
-ll_nl :- ( is_backslashing_os -> file_put(1, 13), file_put(1, 10)
-			           ; file_put(1, 10) ).
+ll_nl :- ( is_backslashing_os -> file_put(2, 13), file_put(2, 10)
+			           ; file_put(2, 10) ).
 
 /*
  *  Print a string.
@@ -443,13 +443,13 @@ ll_prompt(N, String) :-
 	),						% eg, from stat_flag
 	buff_byte(String0, N, Char),
 	( Char =:= 0 -> true
-	; file_put(1, Char), N1 is N+1, ll_prompt(N1, String0)
+	; file_put(2, Char), N1 is N+1, ll_prompt(N1, String0)
 	).
 
 /*
  *  Print a small integer
  */
 ll_writearity(Int) :- 
-	( Int < 10 -> Char is Int + 48, file_put(1, Char)
-	; file_put(1, 42)	% when arity > 9, write an asterisk *
+	( Int < 10 -> Char is Int + 48, file_put(2, Char)
+	; file_put(2, 42)	% when arity > 9, write an asterisk *
 	).	

@@ -92,7 +92,7 @@ load_obj(_FileName, _Mod, _LdOption, _InitAddr) :- '_$builtin'(52).
 getenv(_EnvVar, _Value) :- '_$builtin'(54).
 /* sys_syscall(CallNo, Res, Arg, ......) :- '_$builtin'(55). */
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(55).
-sys_system(_CallNo, _Command, _ResultCode_or_Mode, _Stream) :- '_$builtin'(56).
+sys_system(_CallNo, _Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :- '_$builtin'(56).
 sys_gethost(_Name, _Buffer) :- '_$builtin'(57).
 sys_errno(_Errno) :- '_$builtin'(58).
 

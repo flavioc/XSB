@@ -473,9 +473,8 @@ basic_call(I,PSC,Call) :-
 % nec since code_call must be last call in clause.
 code_call_h(Code,Call,Nt) :- code_call(Code,Call,Nt).
 
-ll_write(X) :- file_write(1, X).
-
-ll_nl :- file_put(1, 10).
+ll_write(X) :- file_write(2, X).  % 2 means stderr
+ll_nl :- file_put(2, 10).
 
 /* NOTE: psc_spy/2 now is builtin in machine.P */
 psc_spy(PSC, Spy) :- buff_byte(PSC, 0, Val), Spy is Val /\ 192.

@@ -249,8 +249,8 @@ load_exec(File, ModName) :-
 		file_nl(2), fail
 	),
 	!,
-	file_write0(1, '['), file_write0(1, ModName),
-	file_write0(1, ' loaded]'), file_nl(1),
+	file_write0(2, '['), file_write0(2, ModName),
+	file_write0(2, ' loaded]'), file_nl(2),
 	(Init > 4			% Prolog byte code loaded
 	 ->	co_code_call(Init, true, 2),	% call '_$main'
 		unload_seg(Init)		% free space for '_$main'

@@ -33,9 +33,9 @@ c_callloop :-
 	conset('_$abort_cutpoint', Cp),
 	get_from_caller(Par,VarTerm,Command),
 	(\+integer(Command)
-	 ->	file_write(1,'C command error; must be an integer; is '),
-		file_write(1,Command),
-		file_nl(1),
+	 ->	file_write(2,'C command error; must be an integer; is '),
+		file_write(2,Command),
+		file_nl(2),
 		!,
 		fail
 	 ; Command =:= 0		/* call */

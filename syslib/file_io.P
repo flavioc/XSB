@@ -191,14 +191,18 @@ file_size(FileName, Size) :- file_stat(FileName,1,Size).
 **
 ****************************************************************/
 
-print_file_contents(FileName) :-
+print_file_contents(Filename) :-
+	stat_flag(11, ToFileDes),  % current output
+	print_file_contents(Filename, ToFileDes).
+
+print_file_contents(FileName, ToFileDes) :-
 	file_open(FileName, 0, Fdes),
-	print_fd_contents(Fdes),
+	print_fd_contents(Fdes, ToFileDes),
 	file_close(Fdes).
-print_fd_contents(Fdes) :-
-	(file_read_line(Fdes, Line, _) -> write(Line)),
-	print_fd_contents(Fdes),
+print_fd_contents(Fdes, ToFileDes) :-
+	(file_read_line(Fdes, Line, _) -> file_write(ToFileDes, Line)),
+	print_fd_contents(Fdes, ToFileDes),
 	fail.        	 %% so as to not leave choice points around
-print_fd_contents(_).
+print_fd_contents(_,_).
 
 

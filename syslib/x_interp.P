@@ -49,15 +49,15 @@ interpreter :-
         xsb_flag(goal, CmdGoal),
         (CmdGoal == 'true.' ->
             true
-        ;   file_nl(1),
-            file_write(1, 'Evaluating command line goal:  '),
-            file_nl(1),
-            file_write(1, '| ?- '),
-            file_write(1, CmdGoal), file_nl(1),
+        ;   file_nl(2),
+            file_write(2, 'Evaluating command line goal:  '),
+            file_nl(2),
+            file_write(2, '| ?- '),
+            file_write(2, CmdGoal), file_nl(2),
             file_open(CmdGoal, 3, FileDes),
             eval_command_line_goal(FileDes),
             file_close(FileDes),
-            file_nl(1)
+            file_nl(2)
         ),
         fail.
 
@@ -77,7 +77,7 @@ interpreter1 :-
 	conset('_$break_level', 0),
 	print_debug_state,
 	prompt(Prompt,Prompt),
-	file_write(1, Prompt),
+	file_write(2, Prompt),
 	file_read(0, X, Vars),
 	( nonvar(X), read_in_stop(X), halt, ! % end of top loop; halt
 	; process_query(X, Vars)
@@ -104,7 +104,7 @@ process_query1(X, []) :-	% no printable variables appeared in the input
 	!,
 	call_query(X), close_open_tables,
 	!,
-	file_nl(1), file_write(1, yes), file_nl(1),
+	file_nl(2), file_write(2, yes), file_nl(2),
 	fail.
 process_query1(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
@@ -113,11 +113,11 @@ process_query1(X, Vars) :-
 	( LetterVars =:= 0 -> print_answer(Vars)
 	; ( numbervars(Vars), print_answer(Vars), fail ; true )
 	),
-	file_write(1, MorePrompt),
+	file_write(2, MorePrompt),
 	no_more,
 	close_open_tables,
 	!,
-	file_nl(1), file_write(1, yes), file_nl(1),
+	file_nl(2), file_write(2, yes), file_nl(2),
 	fail.
 
 no_more :- file_get(0, X), ( X =:= -1 /* end_of_file */ ; X =:= 10 ), !.
@@ -134,7 +134,7 @@ call_query(X) :-
 	; stat_set_flag(5, 0), fail		% expose when backtrack to user
 	).
 call_query(_) :- 
-	file_nl(1), file_write(1, no), file_nl(1), fail.
+	file_nl(2), file_write(2, no), file_nl(2), fail.
 
 % hidden version of call
 '_$call'(Y) :- 
@@ -152,8 +152,8 @@ exclude__([V|Vs], PVs) :-
 
 print_answer([]) :- !.
 print_answer([vv(Name,Val)|Tail]) :-
-	file_nl(1), file_write(1, Name), 
-	file_write(1, ' = '), file_write(1, Val),
+	file_nl(2), file_write(2, Name), 
+	file_write(2, ' = '), file_write(2, Val),
 	print_answer(Tail).
 
 
@@ -161,17 +161,17 @@ print_answer([vv(Name,Val)|Tail]) :-
 
 break :- conval('_$break_level', Blevel),
 	Nblevel is Blevel+1, conset('_$break_level', Nblevel),
-	file_write(1, '[ Break (level '), file_write(1, Nblevel),
-	file_write(1, ') ]'),file_nl(1),
+	file_write(2, '[ Break (level '), file_write(2, Nblevel),
+	file_write(2, ') ]'),file_nl(2),
 	readl_brklp1,
 	conset('_$break_level', Blevel),
-	file_write(1, '[ End break (level '),file_write(1, Nblevel),
-	file_write(1, ') ]'),file_nl(1).
+	file_write(2, '[ End break (level '),file_write(2, Nblevel),
+	file_write(2, ') ]'),file_nl(2).
 
 readl_brklp1 :- 
 	x_interp_repeat, 
 		conval('_$break_level', Blevel),
-		file_write(1, Blevel), file_write(1, ': ?- '),
+		file_write(2, Blevel), file_write(2, ': ?- '),
 		file_read(0, X, Vars),
 		( nonvar(X), read_in_stop(X), !
 			% end read loop; pop a break level, out if X=halt.
@@ -198,11 +198,12 @@ version_message :-
 	slash(Slash),
 	%% xsb_configuration(etcdir, EtcDir),
 	%% fmt_write_string(CopyingMsg, '%s%scopying.msg', f(EtcDir,Slash)),
-	%% print_file_contents(CopyingMsg),
+	%% print_file_contents(CopyingMsg,2),
 	%% file_nl(2),
 	xsb_configuration(config_dir, ConfigDir),
 	fmt_write_string(ConfMsg, '%s%sbanner.msg', f(ConfigDir,Slash)),
-	print_file_contents(ConfMsg).
+	%% print everything to stderr
+	print_file_contents(ConfMsg,2).
 
 /* === utilities ======================================================= */
 

@@ -824,13 +824,13 @@ nofileerrors :- stat_set_flag(fileerrors, 0).
 
 % save(_C) :- write('Not implemented'), nl, fail.
 
-ttywrite(T) :- file_write(1, T).
+ttywrite(T) :- file_write(2, T).
 
-ttywritenl(T) :- ttywritenl0(T), file_nl(1).
+ttywritenl(T) :- ttywritenl0(T), file_nl(2).
 
-ttywritenl0(T) :- var(T), !, file_write(1, T).
+ttywritenl0(T) :- var(T), !, file_write(2, T).
 ttywritenl0((X,Y)) :- !, ttywritenl0(X), ttywritenl0(Y).
-ttywritenl0(T) :- file_write(1, T).
+ttywritenl0(T) :- file_write(2, T).
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%

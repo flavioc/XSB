@@ -46,6 +46,6 @@
 	  is_xwammode/1, close_open_tables/0, trimcore/0, slash/1
      from machine.
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
-	  print_file_contents/1
+	  print_file_contents/2
     from file_io.
 
