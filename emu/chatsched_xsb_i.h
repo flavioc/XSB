@@ -58,12 +58,12 @@ static CPtr schedule_subgoal(VariantSF producer_sf, CPtr compl_fr)
 	answer_set = ALN_Next(nlcp_trie_return(consumer_cpf));
 	if ( IsNULL(answer_set) && ((VariantSF)consumer_sf != producer_sf) )
 	  if ( MoreAnswersAvailable(consumer_sf,producer_sf) ) {
-	    CPtr template, *baseTR;
+	    CPtr templ, *baseTR;
 
-	    template = restore_answer_template(chat_ptr, &baseTR);
+	    templ = restore_answer_template(chat_ptr, &baseTR);
 	    answer_set =
 	      table_retrieve_answers((SubProdSF)producer_sf, consumer_sf,
-				     template);
+				     templ);
 	    undo_template_restoration(baseTR);
 	  }
 	if ( IsNonNULL(answer_set) )
