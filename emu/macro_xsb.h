@@ -296,6 +296,7 @@ struct subgoal_frame {
 #define subg_answers(subg) aln_next_aln(subg_ans_list_ptr(subg))
 
 #define ConsumerIsProducerVariant(pSF)	( subg_producer(pSF) == pSF )
+#define SubgoalHasOwnAnswerSet(pSF)	( subg_producer(pSF) == pSF )
 #define ConsumerIsProperlySubsumed(pSF)	( subg_producer(pSF) != pSF )
 
 #define ProducerHasConsumers(pSF)	IsNonNULL(subg_consumers(pSF))
