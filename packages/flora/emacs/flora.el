@@ -499,7 +499,7 @@ Return not at end copies rest of line to end and sends it.
 switch to the buffer."
   (interactive)
   (run-flora-background)
-  (switch-to-buffer-other-window flora-process-buffer))
+  (show-flora-buffer))
 
 (defun flora-consult-region (dynamically beg end)
   "Send the region to the Flora process.
@@ -605,13 +605,15 @@ If DYNAMICALLY (prefix arg) is not nil, consult into dynamic area."
   (pop-to-buffer flora-process-buffer))
 
 (defun show-flora-buffer ()
-  (with-temp-buffer
-    (set-buffer flora-process-buffer)
-    (goto-char (1- (point-max)))
-    (sit-for 1)
-    (display-buffer flora-process-buffer)
-    (recenter)
-    ))
+  (let ((wind (selected-window)))
+    (with-temp-buffer
+      (set-buffer flora-process-buffer)
+      (display-buffer flora-process-buffer)
+      (switch-to-buffer-other-window flora-process-buffer)
+      ;; time is needed for XSB to return. otherwise, the point will be off
+      (sit-for 1))
+      (goto-char (1- (point-max)))
+    (select-window wind)))
 
 
 (defun flora-make-temp-file (start end)
