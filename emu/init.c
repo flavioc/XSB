@@ -116,7 +116,6 @@ Cell proceed_inst;
 Cell reset_inst;
 
 extern double realtime_count;
-extern pw reloc_table[];
 
 extern void perproc_reset_stat(void), reset_stat_total(void); 
 
@@ -184,7 +183,6 @@ static void init_flags(void)
 
   for (i=0; i<64; i++) flags[i] = 0;
   flags[BANNER_CTL] = 1; /* this one is a product of prime numbers */
-  flags[RELOC_TABLE] = (Cell)reloc_table;
 }
 
 /*==========================================================================*/
