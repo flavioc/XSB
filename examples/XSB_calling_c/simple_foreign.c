@@ -13,6 +13,11 @@ int minus_one(void)
 	return TRUE;
 }
 
+/* call as: change_char(+String,+CharPos,+ReplacementString,-ResultString)
+   Will take String and replace the character at position CharPos with the
+   first character in ReplacementString. Both String and ReplacementString must
+   be atoms.
+*/
 int change_char(void)
 {
    char	*str_in; 
