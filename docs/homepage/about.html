@@ -38,14 +38,22 @@ Dynamically compiles tables into trie-based SLG-WAM code. which is indexed
 dynamically and for which full memory management is provided.</li>
 
 <li>
-Finally, Version 2.0 includes an alternative tabling strategy called <i>Local
-Evaluation</i> which can be extremely efficient for applications such as
-program analysis, along with an alternative memory model, called Chat,
-which allows garbage colleciton during tabled evaluations.</li>
+Versions 2.4 and later have as default a tabling strategy called
+<i>Local Evaluation</i> which is efficient for returning all answers
+to a query, and is useful for applications such as program analysis
+and non-monotonic reasoning.  As a configuration alternative, <i>
+Batched Evaluation </i> is a Prolog-like tabling strategy that
+efficiently returns the first answer to a query.
+
+<li> Versions 2.5 and later have as their default stack management
+configuration the SLGWAM configuration, for which a choice of three
+heap garbage collectors are available.  An alternative stack
+management configuration, Chat, is also available for which a choice
+of two heap garbage collectors are available.
 </ul>
 
 <h3>
-<a NAME="SECTION00003000000000000000"></a>Indexing of Dynamic Code</h3>
+<a NAME="SECTION00003000000000000000"></a>Indexing and Dynamic Code</h3>
 XSB contains a variety of features to support in-memory data-oriented applications.
 Using these features, knowledge bases of up to one million clauses can
 be quickly loaded and efficiently indexed.
@@ -60,9 +68,57 @@ Furthermore this indexing can be hash-based, or trie-based if it is necessary
 to perform indexing deep within a term.</li>
 
 <li>
+XSB provides mechanisms for backtrackable asserts: asserts whose
+effects become undone upon backtracking.</li> 
+
+<li>
 For static code XSB provides <i>unification factoring</i> which extends
 clause indexing by factoring common unifications out of clause heads, and
 can be used to optimize many Prolog programs.</li>
+</ul>
+
+
+<h3>
+<a NAME="SECTION00002000000000000000"></a>Interfaces</h3>
+XSB supports a variety of interfaces.  All source code is available so
+that the interfaces can be tuned as needed or ported to other Prologs.
+</li>
+<ul>
+<li>
+Interfaces to call C functions or to be called by them, under UNIX.</li>
+
+<li>
+An interface to Oracle that</li>
+
+<ul>
+<li>
+efficiently generates SQL code for Prolog queries on-demand, making use
+of Level 4 of Oracle's ProC.</li>
+
+<li>
+translates Datalog clauses into SQL automatically.</li>
+</ul>
+
+<li>
+An ODBC interface, to call data stored by other Windows applications.</li>
+<li>
+A DLL interface so that XSB can be called from within a Windows application.</li>
+
+<li>
+      Java interfaces provided through <a
+	href="http://dev.servisoft.pt/interprolog">InterProlog</a> and 
+	<a href="http://www-db.stanford.edu/~stefan/rdf/yajxb/">
+	      YAJXB</a></li>
+
+<li>
+Interfaces to libwww rourines and various pattern-matching utilities,
+	      all of which are useful for Web applications.</li>
+
+<li>
+An interface to the stable model generator 
+	      <a href="http://www.tcs.hut.fi/Software/smodels"> 
+	      SModels</a></li>
+
 </ul>
 
 <h3>
@@ -84,47 +140,15 @@ anywhere in XSB, including the interpreter level.</li>
 <br>Provides a number of meta-logical standard predicates for HiLog terms.</ul>
 </ul>
 
-<h3>
-<a NAME="SECTION00002000000000000000"></a>Interfaces</h3>
-Supported interfaces for XSB include:
-<ul>
-<li>
-Interfaces to call C functions or to be called by them, under UNIX.</li>
-
-<li>
-An interface to Oracle that</li>
-
-<ul>
-<li>
-efficiently generates SQL code for Prolog queries on-demand, making use
-of Level 4 of Oracle's ProC.</li>
-
-<li>
-translates Datalog clauses into SQL automatically.</li>
-</ul>
-
-<li>
-makes public all source-code so that the interface can be tuned as needed,
-or can be ported to other Prologs.</li>
-<li>
-A DLL interface so that XSB can be called from within a Windows application.</li>
-
-<li>
-An ODBC interface, to call data stored by other Windows applications.</li>
-
-<li>
-      Java interface provided through <a
-	href="http://dev.servisoft.pt/interprolog">InterProlog</a>.
-</ul>
-
- <p>
- XSB has been tested on over a dozen hardware and
-operating system platforms under Microsoft Windows 95/98, Windows NT, and
-various versions of 32-bit UNIX. XSB 2.0 has been ported to 
-64-bit architectures and has been tested on 64-bit SGI machines. Various
-versions of XSB have been used to construct large-scale commercial systems for
-the U.S. Customs Service, the U.S. Defense Logistics Agency, the National
-Security Agency, and Medicine Rules, Inc. 
+<p>
+XSB has been tested on over a dozen hardware and operating system
+platforms under Microsoft Windows 95/98, Windows NT, Windows 2000 and
+various versions of 32-bit UNIX. XSB 2.0 has been ported to 64-bit
+architectures and has been tested on 64-bit SGI machines. Various
+versions of XSB have been used to construct large-scale commercial
+systems for the U.S. Customs Service, the U.S. Defense Logistics
+Agency, the National Security Agency, Medicine Rules, Inc, MdLogix
+Inc., and many others.
 
 <p>
 
@@ -134,3 +158,10 @@ Security Agency, and Medicine Rules, Inc.
 $Date$
   </body>
 </html>
+
+
+
+
+
+
+
