@@ -170,32 +170,38 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal
 	return rcode;
 }
 
-JNIEXPORT jint JNICALL 
+JNIEXPORT jint JNICALL
 Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
 (JNIEnv *env, jobject obj, jstring jXSBPath, jobjectArray jXSBParameters) {
         int rcode;
 	int i;
-	int myargc = (*env)->GetArrayLength(env, jXSBParameters) + 2;
-	char * myargv[myargc];
-	char *XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
+	int myargc;
+        char ** myargv;
+	jstring * parameters;
+	char *XSBPath;
+	myargc = (*env)->GetArrayLength(env, jXSBParameters) + 2;
+       	myargv = (char **) malloc(myargc * sizeof(char *));
+
+	XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
 	if (debug==JNI_TRUE) printf("Entering Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	myargv[0] = XSBPath;
-	myargv[1] = "-n"; 
-
-	jstring parameter[myargc - 2];
-	for (i=0; i<myargc-2; i++) {
-          parameter[i] = (jstring)(*env)->GetObjectArrayElement(env, jXSBParameters, i);
-	  myargv[i + 2] = (*env)->GetStringUTFChars(env, parameter[i], 0);
+	myargv[1] = "-n";
+	
+	parameters = (jstring *) malloc((myargc - 2) * sizeof(jstring *));
+	for (i=0; i < myargc-2; i++) {
+          parameters[i] = (jstring)(*env)->GetObjectArrayElement(env, jXSBParameters, i);
+	  myargv[i + 2] = (*env)->GetStringUTFChars(env, parameters[i], 0);
 	}
 
 	rcode=xsb_init(myargc,myargv);
 
 	(*env)->ReleaseStringUTFChars(env,jXSBPath, XSBPath);
 
-      	for (i=0; i<myargc-2; i++) {
-	  (*env)->ReleaseStringUTFChars(env, parameter[i], myargv[i + 2]);
-	  // may be needed ?(*env)->DeleteLocalRef(env, parameter[i]);
-	} 
+      	for (i=0; i < myargc-2; i++) {
+	  (*env)->ReleaseStringUTFChars(env, parameters[i], myargv[i + 2]);
+	  // may be needed ?(*env)->DeleteLocalRef(env, parameters[i]);
+	}
+	free(parameters);
 
 	if (debug==JNI_TRUE) printf("Exiting Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	return rcode;
