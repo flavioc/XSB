@@ -203,7 +203,7 @@ inline static bool file_function(void)
       ctop_int(4, -1000);
       return TRUE;
     default:
-      xsb_warn("FILE_OPEN: Invalid open file mode, %d", mode);
+      xsb_warn("FILE_OPEN: Invalid open file mode");
       ctop_int(4, -1000);
       return TRUE;
     }
@@ -367,7 +367,7 @@ inline static bool file_function(void)
       ctop_int(5, -1000);
       return TRUE;
     default:
-      xsb_warn("FILE_REOPEN: Invalid open file mode, %d", mode);
+      xsb_warn("FILE_REOPEN: Invalid open file mode");
       ctop_int(5, -1000);
       return TRUE;
     }
