@@ -350,6 +350,7 @@
 #define PRFLORALIB		prfloralib
 #define PRNEWPRED		prnewpred
 #define PROLOGTERM		prologterm
+#define PROLOGLIBLIT		prologliblit
 #define FLORASYSLIB		florasyslib
 
 #define PRISA			prisa

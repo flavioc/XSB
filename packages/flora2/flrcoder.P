@@ -74,6 +74,7 @@ is_prfloralib(PRFLORALIB(WS),WS).
 is_prnewpred(PRNEWPRED(Name,N,Vars),Name,N,Vars).
 is_florasyslib(FLORASYSLIB(F,N,Args),F,N,Args).
 is_prologterm(PROLOGTERM(F,N,Args),F,N,Args).
+is_prologliblit(PROLOGLIBLIT(PROLOGTERM(F,N,Args)),F,N,Args).
 
 is_flogic(PRISA(Obj1,Obj2),WRAP_ISA,2,[Obj1,Obj2]) :- !.
 is_flogic(PRSUB(Obj1,Obj2),WRAP_SUB,2,[Obj1,Obj2]) :- !.
@@ -359,6 +360,11 @@ flora_write_struct(Term,Prefix) :-
 
 flora_write_struct(Term,Prefix) :-
 	is_prologterm(Term,F,N,Args),
+	!,
+	flora_write_prolog(F,N,Args,Prefix).
+
+flora_write_struct(Term,Prefix) :-
+	is_prologliblit(Term,F,N,Args),
 	!,
 	flora_write_prolog(F,N,Args,Prefix).
 
@@ -978,6 +984,14 @@ flora_build_struct(Term,DWS,Prefix,VarList,Code) :-
 	is_prologterm(Term,F,N,Args),
 	!,
 	flora_build_prolog(F,N,Args,DWS,Prefix,VarList,Code).
+
+flora_build_struct(Term,DWS,Prefix,VarList,Code) :-
+	is_prologliblit(Term,F,_N,Args),
+	!,
+	flora_build_structlist(Args,DWS,Prefix,VarList,ArgsCodeList),
+	%% If p(a)@prolog(mod) is run from Flora shell, the code generated
+	%% must look like: X =.. [p,a], call(X).
+	Code=','('=..'(P,[F|ArgsCodeList]),call(P)).
 
 flora_build_struct(Term,_DWS,_Prefix,_VarList,Code) :-
 	is_primport(Term,P,A,M),
