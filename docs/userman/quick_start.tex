@@ -14,22 +14,23 @@ installation will be necessary.  The easiest way to install XSB is to
 use the following procedure.
 
 \begin{enumerate}
-\item   Make sure that after you have obtained XSB by anonymous ftp 
-	(using the {\tt bin}ary option) or from the web, you have
-	uncompressed it by following the instructions found in the
-	file {\tt README}.
-
-\item	Decide in which directory in your file system you want to
-	install XSB and copy or move XSB there.
-
-	In the rest of this manual, let us use {\tt \$XSB\_DIR}  to
-	refer to this directory.  Note the original subdirectory
-	structure must be maintained, namely, the directory
-	{\tt \$XSB\_DIR}  should contain all the subdirectories and files
-	that came with the distribution. In particular, the following
-	directories are required for XSB to work:
-	\verb'emu', \verb'syslib', \verb'cmplib', 
-	\verb'lib', \verb'packages', \verb'build', and \verb'etc'.
+\item	Decide in which directory in your file system you want to install
+  XSB and copy or move XSB there.
+\item Make sure that after you have obtained XSB by anonymous ftp (using
+  the {\tt bin}ary option) or from the web, you have uncompressed it by
+  following the instructions found in the file {\tt README}.
+  
+\item Note that after you uncompress and untar the XSB tar file, a
+  subdirectory {\tt XSB} will be tacked on to the current directory. All
+  XSB files will be located in that subdirectory.
+  
+  In the rest of this manual, let us use {\tt \$XSB\_DIR} to refer to this
+  subdirectory.  Note the original directory structure of XSB must be
+  maintained, namely, the directory {\tt \$XSB\_DIR} should contain all the
+  subdirectories and files that came with the distribution. In particular,
+  the following directories are required for XSB to work: \verb'emu',
+  \verb'syslib', \verb'cmplib', \verb'lib', \verb'packages', \verb'build',
+  and \verb'etc'.
 
 \index{configuration}
 
@@ -94,7 +95,8 @@ Here are some legal ways to invoke XSB:
 Here are some ways that are guaranteed to not work in some or all cases:
 %%
 \begin{enumerate}
-\item  creating a hard link to either \verb|bin/xsb| or the executable.
+\item  creating a hard link to either \verb|bin/xsb| or the executable and
+  using {\it it\/} to invoke XSB. (Symbolic links should be ok.)
 \item changing the relative position of either \verb|bin/xsb| or the
   XSB executable with respect to the rest of the XSB directory tree.
 \end{enumerate}
@@ -175,7 +177,7 @@ the entries of any files that cannot be compiled:
 \demo{       -temp=dir}
 
 \noindent
-If you are using the Gnu C compiler, consult its manual pages
+If you are using the GNU C compiler, consult its manual pages
 to find out how you can change the default {\tt tmp} directory or how you
 can use pipes to avoid the use of temporary space during compiling.
 Usually changing the default directory can be done by declaring/modifying
@@ -195,45 +197,52 @@ two directories and hence will not function when some of them are
 missing.  For this reason, distributed versions normally include all
 the object files in {\tt syslib} and {\tt cmplib}.
 
+\section{Installing XSB under Windows}
+\subsection{Using Cygnus Software's \mbox{CygWin32}}
+\label{quick:cygwin}
+
+This is easy: just follow the Unix instructions. This is the preferred way to
+run XSB under Windows, because this ensures that all features of XSB are
+available.
 
 
-\section{Installing XSB under Windows} \label{quick:DOS}
+\subsection{Using Microsoft Visual C++}
+\label{quick:DOS}
 %==========================================
 
 \begin{enumerate}
 \item 
    XSB will unpack into a subdirectory named {\tt xsb}.
-   Assuming that you have {\tt XSB???.ZIP} in the {\tt \$XSB\_DIR} directory,
+   Assuming that you have {\tt XSB.ZIP} in the {\tt \$XSB\_DIR} directory,
    you can issue the command
 \begin{verbatim}
-   unzip386 xsb???.zip
+   unzip386 xsb.zip
 \end{verbatim}
    which will install XSB in the subdirectory {\tt xsb}.
 
-\item 
-   If you have no other source of DPMI support (Windows is one source),
-   unpack {\tt csdpmi1b.zip} somewhere (unpacking in a directory named
-   DJGPP is suggested), and be sure that the exe files are somewhere
-   in your path.  Likewise for {\tt wmemu2b.zip}, if you don't have a
-   floating-point unit.
-
-\item 
-   If you modified {\tt AUTOEXEC.BAT}, either reboot or set the variables
-   by hand.  Start XSB as follows:
-\[
-  \tt
-   \$XSB\_DIR \backslash config\backslash \mbox{\tt
-   x86-pc-pcdos}\backslash bin \backslash xsb
-\]
-If you decide to move XSB to some other place, make sure that the entire
-   directory tree is moved --- XSB executable looks for the files it needs
-   relatively to its current position in the file system.
+%% DOS is no longer supported!
+%%\item 
+%%   If you have no other source of DPMI support (Windows is one source),
+%%   unpack {\tt csdpmi1b.zip} somewhere (unpacking in a directory named
+%%   DJGPP is suggested), and be sure that the exe files are somewhere
+%%   in your path.  Likewise for {\tt wmemu2b.zip}, if you don't have a
+%%   floating-point unit.
+%%
+%%\item 
+%%   If you modified {\tt AUTOEXEC.BAT}, either reboot or set the variables
+%%   by hand.  Start XSB as follows:
+%%\[
+%%  \tt
+%%   \$XSB\_DIR \backslash config\backslash \mbox{\tt
+%%   x86-pc-pcdos}\backslash bin \backslash xsb
+%%\]
+   
+ \item If you decide to move XSB to some other place, make sure that the
+   entire directory tree is moved --- XSB executable looks for the files it
+   needs relatively to its current position in the file system.
 
 \end{enumerate}
 
-
-\section{Building XSB using MS Visual C++}
-%=========================================
 
 You can compile XSB under Microsoft Visual C++ compiler 
 to create a console-supported top loop or a DLL by following
@@ -245,18 +254,19 @@ these steps:
    cd emu
 
 \item
-  Type:\\
-  ~~~~ {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="option" [DLL="yes"] [ORACLE="yes"] [SITE\_LIBS="libraries"]}
+  Type (in one line):\\
+  {\tt NMAKE /f "MS\_VC\_Mfile.mak" CFG="option" \\
+    \hspace*{2cm}[DLL="yes"] [ORACLE="yes"] [SITE\_LIBS="libraries"]}
   %%
   \begin{itemize}
-    \item  The options for {\tt CFG} are: \emph{release} or \emph{debug}.
-      The latter is used when you want to compile XSB with debugging
-      enabled.
-    \item The other parameters to {\tt NMAKE} are optional. The {\tt DLL}
-      parameter tells Visual C++ to compile XSB as a DLL. The {\tt ORACLE}
-      parameter compiles XSB with support for Oracle DBMS. If {\tt ORACLE} is
-      specified, you {\bf must} also specify the necessary Oracle libraries
-      using the parameter {\tt SITE\_LIBS}.
+  \item The items in square brackets are optional.
+  \item The options for {\tt CFG} are: \emph{release} or \emph{debug}.  The
+    latter is used when you want to compile XSB with debugging enabled.
+  \item The other parameters to {\tt NMAKE} are optional. The {\tt DLL}
+    parameter tells Visual C++ to compile XSB as a DLL. The {\tt ORACLE}
+    parameter compiles XSB with support for Oracle DBMS. If {\tt ORACLE} is
+    specified, you {\bf must} also specify the necessary Oracle libraries
+    using the parameter {\tt SITE\_LIBS}.
   \end{itemize}
   %%
    
