@@ -61,7 +61,7 @@
 (make-face 'flora-font-lock-system-face)
 (make-face 'flora-font-lock-arrow-face)
 (copy-face 'default 'flora-font-lock-arrow-face)
-(set-face-foreground 'flora-font-lock-arrow-face "slategrey")
+(set-face-foreground 'flora-font-lock-arrow-face "Maroon")
 (copy-face 'default 'flora-font-lock-system-face)
 (set-face-foreground 'flora-font-lock-system-face "violet")
 (make-face-bold 'flora-font-lock-system-face)
@@ -74,8 +74,11 @@
    (list
     '("\\(\\?-\\|:-\\|\\.[ \t\n]*$\\)"
       1 'flora-font-lock-query-face)
-    '("\\(\\*?->>\\|\\*?->\\|\\*?=>>\\|\\*?=>\\|\\.\\|!\\)"
+    '("\\(\\*?->>\\|\\*?->\\|\\*?=>>\\|\\*?=>\\)"
       1 'flora-font-lock-arrow-face)
+    ;; for objects
+    '("\\([A-Za-z0-9][A-Za-z0-9!.]*\\) *\\["
+      1 'font-lock-variable-name-face)
     '("\\b\\(not\\|avg\\|sum\\|count\\|collectset\\|collectbag\\|assert\\|retract\\|erase\\|retractall\\)\\b"
       1 'font-lock-keyword-face)
     '("\\(:\\|;\\)" 
@@ -84,7 +87,7 @@
       1 'bold)
     '("\\b\\(index\\|from\\|table\\|import\\|export\\)\\b"
       1 'flora-font-lock-system-face)
-    '("\\(\\b[a-z]+\\b\\) *\\*?[---=]>"
+    '("\\(\\b[A-Za-z0-9]+\\b\\) *\\*?[---=]>"
       1 'font-lock-function-name-face)
     )
   "Additional expressions to highlight in flora mode.")
@@ -437,19 +440,4 @@ This function is more useful than \\[flora-consult-buffer]."
 )
 
 ;;; flora.el ends here
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
