@@ -1,0 +1,270 @@
+:- compiler_options([ciao_directives]).
+
+:- export load_extensional_facts/1, 
+	dump_extensional_facts/1, 
+	load_intensional_rules/1,
+	merge_intensional_rules/0.
+
+:- import cdf_error/2 from cdf_exceptions.
+
+:- import isa_ext/2, hasattr_ext/3, strel_ext/3, allattr_ext/3 
+		 from usermod.
+
+:- import isa_int/2, hasattr_int/3, strel_int/3, allattr_int/3
+		 from usermod.
+
+:- import component_table_int/3 from usermod.
+
+:- import newExtTerm/1 from cdf_init_cdf.
+
+
+:- import append/3, member/2,reverse/2 from basics.
+:- import concat_atom/2 from string.
+%:- import load_dync/2 from consult.
+:- import path_sysop/2 from file_io.
+:- import slash/1 from machine.
+
+:- comment(module, "These routines load CDF files from a disk file
+system into memory, save them from memory to disk, and merge
+information into a CDF state.  Both intensional an extensional
+information may be dumped.  They are used as building blocks of the
+components system.").
+
+%-----------------------------------------------------------------
+	
+:- comment(dump_extensional_facts/1,"@tt{dump_extensional_facts(Dir)}
+writes extensional facts to the file @tt{cdf_extensional.P} in
+@tt{Directory}.  No intensional rules are dumped by this predicate.
+
+@pred{dump_extensional_facts/0} writes the @tt{cdf_extensional.P} file
+to the current directory.
+").
+
+dump_extensional_facts(Dir) :-
+	throw_oms_writable(Dir),
+	dump_extensional_facts_1(Dir).
+
+dump_extensional_facts_1(Dir) :-
+	oms_fix_dir(Dir,DirS),
+  	concat_atom([DirS,'cdf_extensional.P'],File),
+	tell(File),
+	i2ie, hasattr2hasattre, strel2strele, allattr2allattre,
+	told.
+
+throw_oms_writable(Dir):-
+	((slash(Slash),concat_atom([Dir,Slash,'cdf_extensional.P'],SchemaPath),
+	  path_sysop(writable, SchemaPath)) -> 
+	    true
+             ;  cdf_error(permissions,['Directory is not writable: ',Dir])).
+
+sort_and_write_terms(Terms) :-
+	sort(Terms,STerms),
+	member(Term,STerms),
+	write_canonical(Term),writeln('.'),
+	fail.
+sort_and_write_terms(_Terms).
+
+i2ie :-
+	findall(isa_ext(NSubCid,NSupCid),
+		isa_ext(NSubCid,NSupCid),
+		SubClasses),
+	sort_and_write_terms(SubClasses).
+
+hasattr2hasattre :-
+	findall(hasattr_ext(NSCid,NRCid,NTCid),
+		hasattr_ext(NSCid,NRCid,NTCid),
+		Relationships),
+	sort_and_write_terms(Relationships).
+	
+strel2strele :-
+	findall(strel_ext(NSCid,NRCid,NTCid),
+		strel_ext(NSCid,NRCid,NTCid),
+		Strels),
+	sort_and_write_terms(Strels).
+
+allattr2allattre :-
+	findall(allattr_ext(NSCid,NRCid,NTCid),
+		allattr_ext(NSCid,NRCid,NTCid),
+		Allattrs),
+	sort_and_write_terms(Allattrs).
+
+%-----------------------------------------------------------------
+
+oms_fix_dir(Dir,DirS) :-
+	(Dir == ''
+	 ->	DirS = Dir
+	 ;	friendly_atom_codes(Dir,DirC),
+		(append(_,[0'/],DirC)
+		 ->	DirS = Dir
+		 ;	append(DirC,[0'/],DirSC),
+			friendly_atom_codes(DirS,DirSC)
+		)
+	).
+
+friendly_atom_codes(A,Codes):- 
+	(atom(A) ; var(A)) -> atom_codes(A,Codes)
+	   ; writeln(non_atomic(A)),
+	     atom_codes(A,Codes) . 	% and so abort.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(load_extensional_facts/1,
+"@tt{load_extensional_facts(DirectoryList)}: loads the file
+@tt{cdf_extensional.P} from directories in @tt{DirectoryList}.  The
+files loaded must contain extensional data.
+@pred{load_extensional_facts/1} does not abolish any extsnsional
+information already in memory; rather, it merges the information from
+the various files with that already loaded.  Intensional rules will
+not be affected by this predicate.  ").
+
+load_extensional_facts([]) :- !.
+load_extensional_facts([Dir|DirList]) :-
+	!,
+	load_extensional_facts(Dir),
+	load_extensional_facts(DirList).
+load_extensional_facts(Dir) :-
+	oms_fix_dir(Dir,DirS),
+	write('Loading '),write(Dir),write(':'),
+	reload_extensional(DirS).
+
+reload_extensional(Dir):- 
+	concat_atom([Dir,'cdf_extensional.P'],File),
+	see(File),
+	reload_extensional,
+	seen.
+
+reload_extensional :-
+	repeat,
+	read_canonical(Term),
+	(Term == end_of_file
+	 ->	!
+	 ; Term = :-(_)
+	 ->	fail
+	 ; 	newExtTerm(Term),
+	  	fail).
+
+%-------------------------------------------------------------- 
+
+:- comment(merge_intensional_rules/0, "@tt{merge_intensional_rules/0}:
+This utility predicate takes the current intensional rules for all
+sources and transforms them to extensional form by backtracking
+through them, and asserting them to the Prolog store.  All intensional
+information is then retracted.").
+
+/* TLS: question: should this do an assert or a newExtTerm? */
+merge_intensional_rules :-
+	 isa_int(CCid,PCid),\+ isa_ext(CCid,PCid),
+	 asserta(isa_ext(CCid,PCid)),
+	 fail
+	 ;
+	 retractall(isa_int(_,_)),
+
+	 hasattr_int(SCid,RCid,TCid),  \+hasattr_ext(SCid,RCid,TCid),
+	 asserta(hasattr_ext(SCid,RCid,TCid)),
+	 fail
+	 ;
+	 retractall(hasattr_int(_,_,_)),
+
+	 strel_int(SCid,RCid,TCid), \+strel_ext(SCid,RCid,TCid),
+	 asserta(strel_ext(SCid,RCid,TCid)),
+	 fail
+	 ;
+	 retractall(strel_int(_,_,_)),
+
+	 allattr_int(SCid,RCid,TCid), \+allattr_ext(SCid,RCid,TCid),
+	 asserta(allattr_ext(SCid,RCid,TCid)),
+	 fail
+	 ;
+	 retractall(allattr_int(_,_,_)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(load_intensional_rules/1," @tt{load_intensional_rules(Dir)}
+ynamically loads intensional rules from @tt{cdf_intensional.P} in
+@tt{Directory}.  This predicate is designed for the component system,
+but can be used outside of it.  The leaf directory name in @tt{Dir} is
+assumed to be the component name of the rules.  As the intensional
+rules are loaded, their functors are rewritten from @tt{XXX_int} to
+@tt{XXX_int_Name}, to avoid any conflicts with intensional rules
+loaded from other components or directories.").
+
+load_intensional_rules(Dir):- 
+	extract_file_name(Dir,Name),
+	load_intensional_rules(Dir,Name).	
+
+extract_file_name(File,Name):- 
+	atom_chars(File,Flist),
+	reverse(Flist,Rlist),
+	strip_extension(Rlist,Rl1),
+	read_till_slash(Rl1,Rn2),
+	reverse(Rn2,Nl),
+	atom_chars(Name,Nl).
+
+strip_extension(Rlist,Rl1):- 
+	(member('.',Rlist) -> 
+	    strip_extension_1(Rlist,Rl1) 
+	  ; Rl1 = Rlist).
+
+strip_extension_1(['.'|T],T):- !.
+strip_extension_1([_|T],Tnew):- 
+	strip_extension_1(T,Tnew).
+
+read_till_slash(L,L1):- 
+	slash(S),
+	(member(S,L) -> 	
+	    read_till_slash_1(L,L1,S)
+	  ; L = L1).
+
+read_till_slash_1([S|_R],[],S):- !.
+read_till_slash_1([H|R],[H|R1],S):- 
+	read_till_slash_1(R,R1,S).
+
+load_intensional_rules(Path,Name):- 
+	retract_intensional_rules(Name),
+	concat_atom([Path,'/cdf_intensional.P'],File),
+	(file_exists(File) -> 
+   	    see(File),
+	    read_intensional_rules_1(Name),
+	    seen
+	  ; true).
+
+retract_intensional_rules(Name):- 
+	component_table_int(Head,_,_),
+	Head =.. [F|T],
+	concat_atom([F,'_',Name],NewF),
+	NewHead =.. [NewF|T],
+	retractall(NewHead),
+	retract((:-(Head,NewHead))),
+	fail.
+retract_intensional_rules(_).
+
+read_intensional_rules_1(Name):- 
+	repeat,
+	read(T),
+	(T = end_of_file -> 
+	   true 
+	 ; 
+	   T = (:-(Head,Body)),
+	   transform_intensional_rules(Head,NewHead,Name),
+	   asserta((:-(Head,NewHead))),
+	   asserta((:-(NewHead,Body))),
+	   fail),
+	!.
+
+transform_intensional_rules(Head,NewHead,Name):- 
+	component_table_int(Head,_,_),
+	Head =.. [F|T],
+	concat_atom([F,'_',Name],NewF),
+	NewHead =.. [NewF|T].
+
+end_of_file.
+
+check_intensional_head(Head,Name):- 
+	(component_table_int(Head,_,_) -> 
+	    true
+	  ; cdf_warning(component,[Head,
+			' is not an intensional rule in component ',Name])).
+
+
+
+

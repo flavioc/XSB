@@ -1,0 +1,47 @@
+isa_ext(cid(c3,test),id('CDF Root','CDF')).
+isa_ext(cid(c13,test),id('CDF Root','CDF')).
+isa_ext(cid(c1,test),cid(c2,test)).
+isa_ext(cid(c2,test),cid(c3,test)).
+isa_ext(cid(c11,test),cid(c12,test)).
+isa_ext(cid(c12,test),cid(c13,test)).
+
+isa_ext(rid(r1,test),rid(r2,test)).
+isa_ext(rid(r2,test),rid(r3,test)).
+isa_ext(rid(r3,test),rid('CDF Inheritable Relations','CDF')).
+isa_ext(rid(r4,test),rid('CDF Inheritable Relations','CDF')).
+isa_ext(cid(f(cid(c1,test),
+                  cid(g(cid(1,'CDF'),cid(c2,test)),
+	             test)),
+	         test),
+    	     cid(c13,test)).
+
+isa_ext(sid(s1,test),sid(s2,test)).
+isa_ext(sid(s2,test),sid(s3,test)).
+isa_ext(sid(s3,test),sid('CDF Set-Valued Relations','CDF')).
+
+isa_ext(oid(o1,test),cid(c1,test)).
+isa_ext(oid(o2,test),cid(c2,test)).
+isa_ext(oid(o3,test),cid(c3,test)).
+isa_ext(oid(o11,test),cid(c11,test)).
+isa_ext(oid(o12,test),cid(c12,test)).
+isa_ext(oid(o13,test),cid(c13,test)).
+
+hasattr_ext(cid(c2,test),rid(r2,test),cid(c12,test)).
+hasattr_ext(cid(c2,test),rid(r2,test),oid(o12,test)).
+hasattr_ext(oid(o2,test),rid(r1,test),cid(c12,test)).
+hasattr_ext(oid(o2,test),rid(r4,test),cid(c12,test)).
+hasattr_ext(oid(o2,test),rid(r2,test),oid(o12,test)).
+hasattr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
+
+strel_ext(cid(c2,test),sid(s2,test),cid(c12,test)).
+strel_ext(cid(c2,test),sid(s2,test),oid(o12,test)).
+
+allattr_ext(cid(c2,test),rid(r2,test),cid(c12,test)).
+allattr_ext(cid(c2,test),rid(r2,test),oid(o12,test)).
+allattr_ext(oid(o2,test),rid(r1,test),cid(c12,test)).
+allattr_ext(oid(o2,test),rid(r4,test),cid(c12,test)).
+allattr_ext(oid(o2,test),rid(r2,test),oid(o12,test)).
+allattr_ext(oid(o2,test),rid(r4,test),oid(o12,test)).
+
+
+

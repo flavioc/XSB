@@ -1,0 +1,146 @@
+/* Utilities for use with OMS's */
+
+:- export 
+	  build_taxonomy/4,
+	  call_assert/1, 
+	  file_latest_version/3,
+	  odbc_sql_local/4,
+	  oms_ascii_scan/0,
+	  oms_clean/0,
+	  oms_clean/2.
+
+:- import oms_warning/2 from oms_exceptions.
+:- import (attribute)/3, retractallAttribute/3 from cdf_init_cdf.
+
+
+:- import member/2 from basics.
+
+%------
+call_assert(Term):- (call(Term) -> true ; asserta(Term)).
+
+%------
+oms_ascii_scan:- oms_warning(obsolete,
+	['oms_ascii_scan/0 is not implemented in CDF.']).
+
+%------
+oms_clean :-  oms_warning(obsolete,
+	['oms_clean/0 is obsolete in CDF as it checked ',
+	  'for dangling classes and objects']).
+
+%------
+/* check for functionality of an attribute. */
+
+oms_clean(attribute_function(RelCid),Fix) :-
+	(attribute(Oid,RelCid,Val),
+	 findall(Val1,(attribute(Oid,RelCid,Val1),Val1 \== Val),Vals),
+	 (Vals \== []
+	  ->	 write('Nonfunctional: Oid='),
+		 write(Oid),write(', Rel Cid='),
+		 write(RelCid),
+		 write(', Values='),write(Val),write(','),writeln(Vals),
+		 Fix == 1,
+		 member(Val1,Vals),
+		 retractallAttribute(Oid,RelCid,Val1),
+		 fail
+	  ;	 fail
+	 )
+	 ;
+	 true
+	).
+
+
+build_taxonomy(_DataAccessor,_HookCid,_RootID,_Source) :-
+	oms_warning(unimplemented,['build_taxonomy/4 has not ',
+	  ' yet been updated to CDF.']).
+
+/*
+:- import apply_lambda_fast/3 from stdutils.
+
+:- dynamic(bc_node(_,_)).
+:- index(bc_node(_,_),trie).
+
+build_taxonomy(DataAccessor,_HookCid,_RootID,_Source) :-
+	retractall(bc_node(_,_)),
+	apply_lambda_fast(DataAccessor,ID,Label),
+	atom_codes(ID,IDC),
+	assert(bc_node(IDC,Label)),
+	fail.
+build_taxonomy(_DataAccessor,HookCid,RootID,Source) :-
+%%	init_oms_rels,
+	bc_node(IDC,Label),
+	find_parent(IDC,HookCid,RootID,Source,PCid),
+	atom_codes(ID,IDC),
+	(class(Oid,OldLabel,ID,Source)
+	 ->	(OldLabel \== Label
+		 ->	updateClass(Oid,Label,ID,Source)
+		)
+	 ;	newClass(Label,PCid,ID,Source,_)
+	),
+	fail.
+build_taxonomy(_,_,_,_) :-
+	retractall(bc_node(_,_)).
+
+find_parent(IDC,HookCid,RootID,Source,PCid) :-
+	lappend(PIDC,Tl,IDC),	% find longest prefix
+	Tl \== [],		% that is proper
+	bc_node(PIDC,PLabel),	% and is id of another node
+	!,
+	atom_codes(PID,PIDC),
+	(class(PCid,_,PID,Source)
+	 ->	true
+	 ;	find_parent(PIDC,HookCid,RootID,Source,GPCid),
+		newClass(PLabel,GPCid,PID,Source,PCid)
+	).
+find_parent(_IDC,HookCid,RootID,Source,PCid) :-	% has no parent, return root
+	(class(PCid,_,RootID,Source)
+	 ->	true
+	 ;	newClass(RootID,HookCid,RootID,Source,PCid)
+	).
+
+lappend([X|L1],L2,[X|L3]) :- lappend(L1,L2,L3).
+lappend([],L,L).
+*/
+
+odbc_sql_local(_DataAccessor,_HookCid,_RootID,_Source) :-
+	oms_warning(unimplemented,['odbc_sql_local/4 has not ',
+	  ' yet been updated to CDF.']).
+
+/*
+:- import odbc_sql/4 from odbc_call.
+:- import conset/2, conget/2, coninc/1 from gensym.
+:- resetdbctr.
+resetdbctr :- conset('_dbctr',0),conset('_duplctr',0).
+
+odbc_sql_local(Connection,Input,Statement,Output):- 
+	conget('_dbctr',DbCtr),DbCtr1 is DbCtr + 1,conset('_dbctr',DbCtr1),
+	(DbCtr1 mod 100 =:= 0 -> write(',') ; true),
+%%	writeq(sQL(Statement,Input)),nl,
+	findall(Output,odbc_sql(Connection,Input,Statement,Output),Outputs1),
+	sort(Outputs1,Outputs),
+	member(Output,Outputs).
+
+*/
+
+%------
+
+file_latest_version(Dir,Name,Version):- 
+	findall(File,short_directory(Dir,File),Files),
+	atom_chars(Name,NameL),
+	file_latest_version_1(Files,NameL,-1,Version).
+		
+file_latest_version_1([],_NameL,V,V1):- V1 is V + 1.
+file_latest_version_1([File|Rest],NameL,V,V1):- 
+	atom_chars(File,FileL),
+	(get_v_from_filelist(NameL,FileL,NumL) -> 
+	    number_chars(N,NumL),
+	    (N > V -> 
+	        file_latest_version_1(Rest,NameL,N,V1)
+	      ; 
+		file_latest_version_1(Rest,NameL,V,V1))
+	  ;
+	    file_latest_version_1(Rest,NameL,V,V1)).
+
+get_v_from_filelist([],['_'|Rest],Rest).
+get_v_from_filelist([H|T],[H|T1],Rest):- 
+	get_v_from_filelist(T,T1,Rest).
+

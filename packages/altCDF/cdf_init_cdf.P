@@ -1,0 +1,1115 @@
+:- compiler_options([ciao_directives]).
+
+:- export
+	isa/2, immediate_isa/2, implicit_isa/2,
+	hasattr/3, immediate_hasattr/3, 
+	allattr/3, immediate_allattr/3, 
+	strel/3, immediate_strel/3, 
+	newExtTerm/1, retractallExtTerm/1,
+	initialize_state/0,
+	set_chk_index/0,
+	assert_cdf/1, retractall_cdf/1,
+	cdf_set_log_on/0, cdf_set_log_off/0, cdf_reset_log/0, show_log/0,
+	newComponent/4, newComponent/3,
+	updateAttribute/5.
+
+/* fool that module system... */
+:- export check_isa_types/1, check_ind_types/2.
+
+:- import isa_ext/2, hasattr_ext/3, strel_ext/3, allattr_ext/3 from usermod.
+:- import isa_int/2, hasattr_int/3, strel_int/3, allattr_int/3 from usermod.
+:- import cdf_dirty/1, cdf_log_trie/1, 
+	  assert_cdf_int/1, retractall_cdf_int/1 from usermod.
+:- import component_table_ext/2 from usermod.
+
+:- import file_latest_version/3 from cdf_utilities.
+:- import cdf_warning/2, cdf_error/2 from cdf_exceptions.
+:- import make_cdf_dirty/1, cdf_update_list/1 from cdf_cdf.
+
+:- import '_$index'/3 from file_op.
+%:- import conset/2, conget/2 from gensym.
+:- import concat_atom/2 from string.
+:- import ground/1, member/2, memberchk/2 from basics.
+:- import abolish_table_pred/1 from tables.
+:- import search_module/6 from consult.
+:- import new_trie/1, delete_trie/1, trie_interned/4, 
+	  trie_unintern_nr/2, trie_intern/5 from intern.
+
+%%%%%%%%%%%%% Core Declarations 
+
+cdf_dynamic(isa_ext/2).
+cdf_index(isa_ext,2,[*(1),*(2)]).
+
+cdf_dynamic(hasattr_ext/3).
+cdf_index(hasattr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+cdf_dynamic(strel_ext/3).
+cdf_index(strel_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+cdf_dynamic(allattr_ext/3). 
+cdf_index(allattr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
+
+cdf_dynamic(cdf_logging_state/1).
+cdf_dynamic(cdf_log_trie/1).
+
+%%%%%%%%%%%%% Declarations for External Intensional View
+
+cdf_dynamic(isa_int/2).
+
+cdf_dynamic(hasattr_int/3).
+cdf_dynamic(strel_int/3).
+cdf_dynamic(allattr_int/3).
+
+cdf_index(_,_,_,_):- fail.
+
+%%%%%%%%%%%%% Declarations for caching and XJ interface
+/* TLS
+:- ensure_loaded(cdf_oblivion).
+*/
+
+:- (search_module(cdf_xj,_,_,_,_,_) -> 
+	    consult(cdf_xj)
+     ;	    consult(cdf_cdf)
+   ).
+
+%%%%%%%%%%%%% Declarations for updatable DB
+%%:- ensure_loaded(cdf_db_updatable).
+
+cdf_dynamic(cdf_extint_updatable/1).
+%cdf_dynamic(newAttribute_int/3).
+
+cdf_dynamic(assert_cdf_int/1).
+cdf_dynamic(retractall_cdf_int/1).
+
+%%%%%%%%%%%%% Declarations for constraint checking
+
+:- ensure_loaded(cdf_config).
+
+:- initialize_cdf.
+
+initialize_cdf:- 
+	init_dynamic_code,
+	init_index_std,
+	retractall(cdf_logging_state(_)),
+	asserta(cdf_logging_state(off)),
+	cdf_set_log_off,
+	init_cdf_rels.
+	
+init_dynamic_code:- 
+	cdf_dynamic(F/A),
+	dynamic(F/A),
+	fail.
+init_dynamic_code.
+
+%--------------------------------------------------------------------
+
+:- comment(module,"@section{Using CDF}
+
+The CDF Programmer's View (@ref{Programmer's View of CDF}) is defined
+in this file.  The Programmer's View supports a semantics of
+inheritance (see @ref{Semantic Axioms for the Programmer's View}) and
+accesses both extensional facts and intensional rules.  Predicates
+defined at the Programmer's View include @pred{isa/2},
+@pred{hasattr/3}, @pred{allattr/3}, and @pred{strel/3} among others
+defined below.
+
+@section{Builtin Classes and Relations}
+
+The following classes and relations are defined in @em{every} CDF
+state.
+
+@begin{itemize}
+
+@item @tt{id(CDF Root,CDF)} @cindex{CDF Root}: Root node of the
+Ontology.  Includes all objects and relation tuples.  As a result, all
+classes are subclasses of @tt{cid('CDF Root','CDF')} and all relations
+are subrelations of @tt{cid('CDF Root','CDF')}.
+
+As mentioned in @ref{A Quick Tour of CDF}, CDF relations can define
+inheritable attributes which hold for isaes and objects, inheritable
+constraints on attributes, and non-inheritable properties of sets.
+
+@item @tt{id('CDF Inheritable Relations','CDF')}: 
+@cindex{CDF Inheritable Relations}
+
+Includes all inheritable relation tuples.  Defined as an immediate
+subrelation of @tt{id('CDF Root','CDF')}.
+
+@item @tt{id('CDF Set-Valued Relations','CDF')}: 
+@cindex{CDF Set-Valued Relations}
+	Includes all non-inheritable set-valued relation tuples.
+Defined as an immediate subrelation of @tt{id('CDF Root','CDF')}.
+
+@end{itemize}
+"). 
+
+%%% (Re-)Initialization %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% TLS: initialize_state/0 may not get used heavily, but I think its useful
+% to have all the re-initialization stuff here in one place, to record
+% what the state consists of and to make future maintenance easier. 
+
+:- comment(initialize_state/0,"Normally, initialization is done
+automatically upon loading CDF at the start of a session.  The routine
+@pred{initialize_state/0} should be called only when a state is to be
+reinitialized during a session.  This predicate removes all data in
+extensional and intensional forat, and reasserts the basic CDF classes
+and relations, and resets internal state variables to values in the
+CDF configuration file. ").
+
+initialize_state:- 
+	reset_dynamics,
+	asserta(cdf_logging_state(off)),
+	cdf_set_log_off,
+	init_cdf_rels.
+
+reset_dynamics:- 
+	cdf_dynamic(F/A),
+	functor(T,F,A),
+	retractall(T),
+	fail.
+reset_dynamics.
+
+%-------
+
+init_index_std :-
+	(    cdf_index(F,A,I),index(F/A,I)
+	   ; cdf_index(F,A,I,N),index(F/A,I,N)  ),
+	fail.
+init_index_std.
+
+%-------
+
+% TLS: perhaps something about names.
+
+init_cdf_rels :-
+
+	newExtTerm(isa_ext(cid('CDF Classes','CDF'),	
+	 		id('CDF Root','CDF'))),
+	
+	newExtTerm(isa_ext(rid('CDF Inheritable Relations','CDF'),	
+	 		id('CDF Root','CDF'))),
+	
+	newExtTerm(isa_ext(sid('CDF Set-Valued Relations','CDF'),
+	 		id('CDF Root','CDF'))),
+
+	newExtTerm(isa_ext(cid('CDF Primitive Types','CDF'),	
+	 		cid('CDF Classes','CDF'))),
+
+	newExtTerm(isa_ext(cid([],'CDF'),cid('CDF Primitive Types','CDF'))),
+
+	init_component_info.
+
+%-----------
+
+init_component_info :-
+	newComponent(cid('CDF','CDF'),cid('.','CDF'),check,OCid),
+	newExtTerm(strel_ext(OCid,sid(componentDepends,'CDF'),OCid)).
+
+/* New component initializes a new component, creating version,
+dependency and path information.  Given a previously existing component, 
+re-creating the component with the same path is a safe operation.
+
+	If Action unifies with check and
+		if a previous component exists with the same path, 
+			no action is taken; 
+		otherwise if a previous component exists with a different path,
+ 			an error occurs. 
+	If Action is replace
+		if a previous component exists 
+		    its directoryPath is overwritten with the new path
+*/
+	
+newComponent(Name,Path,Compout):- 
+	newComponent(Name,Path,check,Compout).
+
+newComponent(cid(Name,Name),Path,Action,
+			cid(component(cid(Name,Name),Pathout,Version),Name)):- 
+	newPathandVersion(Action,cid(Name,Name),Path,Pathout,Version).
+
+/* check gives an error if a component exists whose file path is not
+equal to PATH.  New components are created with filepath PATH and
+version 0 
+
+create renames the path of each component to PATH if its file path is
+not equal to PATH (apart from CDF which it leaves alone). If the
+component is new, or has had its file path reset, its version is 0,
+and its version is updated otherwise.
+
+in_place does not affect existing components.  New components are
+created with filepath PATH and version 0.
+
+The latter two should just be used in component updates. */
+
+newPathandVersion(check,cid(Src,Src),Path,Path,Version):-
+	((strel(cid(Src,Src),sid(hasPath,Src),Path1),Path1 \= Path) ->
+	      cdf_error(component,['Creating a component path ',Path,
+			' for ',Src,' which has path ',Path1]) 
+	    ; 
+	      newExtTerm(strel_ext(cid(Src,Src),sid(hasPath,Src),
+						Path)) ),
+	(strel(cid(compName(cid(Src,Src),cid(Path,Src)),Src),
+			sid(hasVersion,Src),Version) -> 
+	     true 
+	   ; 
+	     newExtTerm(strel_ext(cid(compName(cid(Src,Src),Path),Src),
+			sid(hasVersion,Src),oid(0,Src))),
+	     Version = cid(0,'CDF') ).
+newPathandVersion(create,cid('CDF','CDF'),_Pathin,Path,V):- !,
+	immediate_strel(cid('CDF','CDF'),sid(hasPath,'CDF'),Path),
+	immediate_strel(cid(compName(cid('CDF','CDF'),Path),'CDF'),
+			sid(hasVersion,'CDF'),V).
+/* On create, even if the component has been loaded from somewhere else,  
+   it needs a new path and version, (obtained from the path). */
+newPathandVersion(create,cid(Src,Src),Pathin,Pathin,V1):- 
+        retractallExtTerm(strel_ext(cid(Src,Src),sid(hasPath,Src),_)),
+        retractallExtTerm(strel_ext(cid(compName(cid(Src,Src),_),Src),
+			 	cid(hasVersion,Src),_Int)),
+        newExtTerm(strel_ext(cid(Src,Src),sid(hasPath,Src),Pathin)),
+        concat_atom([Pathin,'/',Name],File),
+        (file_exists(File) ->
+  	     file_latest_version(Pathin,Name,Vold),
+	     V1 is Vold + 1
+	  ;  V1 = 0),
+       newExtTerm(strel_ext(cid(compName(cid(Src,Src),Pathin),Src),
+			sid(hasVersion,Src),cid(V1,Src))).
+/* Assumes merge_check has been done.  Do nothing if the component has been
+   loaded from somewhere.  Otherwise, create it with the new directory path, 
+   and check the directory for the proper version to make the component.  */
+newPathandVersion(in_place,cid(Src,Src),Pathin,Path,V):- 
+	(strel(cid(compName(cid(Src,Src),Path,Src)),sid(hasVersion,Src),V) -> 
+  	     true
+	  ; 
+    	     newExtTerm(strel_ext(cid(Src,Src),sid(hasPath,Src),Path)),
+	     concat_atom([Pathin,'/',Name],File),
+  	     (file_exists(File) ->
+  	         file_latest_version(Pathin,Name,Vold),
+	          V is Vold + 1
+	       ;  V = 0),
+	     newExtTerm(strel_ext(cid(Src,Src),sid(hasPath,Src),Pathin)),
+  	     newExtTerm(strel_ext(cid(compName(cid(Src,Src),Pathin),Src),
+ 				  sid(hasVersion,Src),V)),
+	     Pathin = Path ).
+
+%%%%%%%%%%%%%%%%%%% ISA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(explicit_isa/2, "@tt{immediate_isa(SubCid,SupCid)} is true
+if there is a corresponding fact in @pred{isa_ext/2} or in the
+intensional rules.  In other words, it succeeds if @tt{SubCid} is
+immediately below @tt{SupCid} in the isa hierarchy.").
+
+explicit_isa(SubCid,SupCid) :- 
+	isa_ext(SubCid,SupCid).
+explicit_isa(CCid,PCid) :-
+	isa_int(CCid,PCid).
+
+:- comment(implicit_isa/2,"@tt{implicit_isa(Id1,Id2)} forms a partial
+implementation of the implicit isa axioms for product identifiers
+@ref{???}.  As an example of implicit isaing of product classes,
+@tt{id(f(id(a,source1),id(b,source2),source3)} is a subclass of
+@tt{id(f(id(c,source1),id(b,source2),source3)} if @tt{id(a,source1)}
+is a subset of @tt{id(a,source1)}.  Because the use of product
+identifiers can isa relations that are exponential in the size of the
+product identifiers, the implementation described below attempts to
+partially traverse the implicit isa relation in a manner that is
+semantically meaningful while also remaining tractable.
+
+The semantics of @tt{implicit_isa/2} is mode-dependent.  Let fully
+ground inputs be treated as @tt{+} and partially ground inputs treated
+as @tt{-}.  Suppose we have a call @tt{implicit_isa(C1,C2)}:
+
+@begin{itemize} @item @tt{implicit_isa(+,+)}: succeeds if @tt{C1} is
+not equal to @tt{C2} and @tt{C1} is lower than @tt{C2} on the isa
+hierarchy by the isa axioms.
+
+@begin{itemize} @item @tt{implicit_isa(+,-)}: succeeds if @tt{C1} \=
+@tt{C2}, @tt{C1} is a subclass, (member, etc) of @{C2} by the isa
+axioms @em{and} for some @tt{C3} @tt{immediate_isa(C2,C3)} is
+true.
+
+@item @tt{implicit_isa(-,+)}: fails.
+
+@item @tt{implicit_isa(-,-)}: fails.
+@end{itemize}
+
+The motivation for this partial implementation is as follows.  If both
+terms are ground, determining their relation in the isa hierarchy is
+linear in the sizes of the terms.  In all cases where variables are
+present, there is the possibility of backtracking through a large
+isa_relation.  For the instantiation pattern @tt{immediate_isa(+,-)}
+this is addressed by searching through only those product identifiers
+that occur in the first argument of the explicit isa relation.
+Because of the assumption that product identifiers can occur only in
+the first argument of the explicit isa relation, this option is not
+available for the instantiation patterns @tt{implicit_isa(-,+)} and
+@tt{implicit_isa(-,-)}, so they fail.
+").
+
+implicit_isa(SubCid,SupCid) :- 
+	ground(SubCid),
+	(ground(SupCid) -> 
+	     implicit_isa_bb(SubCid,SupCid)
+	  ; 
+	     implicit_isa_bf(SubCid,SupCid)).
+	
+implicit_isa_bf(SubCid,SupCid):- 
+        skeleton(SubCid,SubSkel), 
+	explicit_isa(SubSkel,_),
+	term_isa(SubCid,SubSkel),
+	SubCid \== SubSkel,
+	SupCid = SubSkel.
+
+implicit_isa_bb(SubCid,SupCid) :- 
+	SubCid \== SupCid,
+	term_isa(SubCid,SupCid).
+
+skeleton(cid(Nid,Src),cid(Nid1,Src)):- 
+	functor(Nid,T,A),
+	functor(Nid1,T,A).
+skeleton(oid(Nid,Src),oid(Nid1,Src)):- 
+	functor(Nid,T,A),
+	functor(Nid1,T,A).
+
+term_isa(cid(Term1,Src),cid(Term2,Src)):- 
+	Term1 =.. [F|R1],
+	Term2 =.. [F|R2],
+	term_isa_list(R1,R2).
+
+term_isa_list([],[]).
+term_isa_list([H|T],[H1|T1]):- 
+	once(isa(H,H1)),
+	term_isa_list(T,T1).
+
+
+:- comment(immediate_isa/2, "@tt{immediate_isa(SubCid,SupCid)} is
+another name for @tt{explicit_isa/2.").
+
+immediate_isa(SubCid,SupCid) :- 
+	explicit_isa(SubCid,SupCid).
+
+:- comment(isa/2, "@tt{isa(Sub,Sup)} is true when
+@begin{enumerate}
+@item @tt{Sub} equals @tt{Sup}; or
+
+@item @tt{explicit_isa(Sub,Mid)}, or @tt{implicit_isa(Sub,Mid)} is
+true, and @tt{Sup} is in the reflexive transitive closure of the
+explicit isa relation stemming from @tt{Mid}.
+@end{enumerate}
+").
+
+isa(Sub,Sup):- 
+	(ground(Sub) -> 
+	    (ground(Sup) -> 
+	        isa_bb(Sub,Sup),!	% want det for bb.
+	      ; isa_bf(Sub,Sup))	
+	  ; isa_fx(Sub,Sup)).
+
+% Here use implicit bb specialization for first step as al alternative
+% to the bf mode.
+
+isa_bb(Sub,Sup):- isa_bf(Sub,Sup).
+isa_bb(Sub,Sup):- 
+	arg(1,Sub,Suba),structure(Suba),
+	arg(1,Sup,Supa),structure(Supa),
+	implicit_isa_bb(Sub,Sup).
+
+% Here use implicit bf specialization for first step, then look upwards 
+isa_bf(Sub,Sub).
+isa_bf(Sub,Sup):- 
+	(   explicit_isa(Sub,Mid)
+	  ; implicit_isa_bf(Sub,Mid) ),
+	isa_bf_inner(Mid,Sup).
+
+isa_bf_inner(Sub,Sub).
+isa_bf_inner(Sub,Sup):- 
+	explicit_isa(Sub,Mid),
+	isa_bf_inner(Mid,Sup).
+
+% Here implicit would fail; just do explicit, and look down. 
+isa_fx(Sub,Sub).
+isa_fx(Sub,Sup):- 
+	explicit_isa(Mid,Sup),
+	isa_fx(Sub,Mid).
+
+:- comment(proper_isa/2, "@tt{proper_isa(Sub,Sup)} is true if @tt{Sub}
+is lower in the isa hierarchy than @tt{Sup}, but is not the same
+identifier.").
+
+proper_isa(SubCid,SupCid) :-
+	isa(SubCid,SupCid),
+	SubCid \== SupCid.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% hasattr %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(is_a_rel/1, "@tt{is_a_rel(RCid)} checks that @tt{RCid} is
+the identifier of a subrelation of @tt{id('CDF Inheritable
+Relations','CDF')}.  If @tt{RCid} is unbound, all such (proper)
+subrelations are returned nondeterministically.").
+
+is_a_rel(RCid):- 
+	RelsCid = rid('CDF Inheritable Relations','CDF'),
+	(ground(RCid)
+	 ->	isa(RCid,RelsCid), RCid \== RelsCid	
+	 ;	findall(RCid,(isa_fx(RCid,RelsCid), RCid \== RelsCid),URCids),
+		sort(URCids,RCids), % eliminate duplicates
+		member(RCid,RCids)
+	).
+
+:- comment(immediate_hasattr/3, "@tt{immediate_hasattr(SCid,RCid,TCid)}
+accesses facts stored directly in @pred{hasattr_ext/3} in the CDF state,
+as well as those defined via intensional rules.").
+
+immediate_hasattr(SCid,RCid,TCid) :- 
+	hasattr_ext(SCid,RCid,TCid).
+immediate_hasattr(SCid,RCid,TCid) :-
+	hasattr_int(SCid,RCid,TCid).
+
+:- comment(hasattr/3, "@tt{hasattr(SCid,RCid,TCid)} defines the
+inheritable relation predicate, where @tt{SCid} is the source class or
+object ID, @tt{RCid} is the relation ID, and @tt{TCid} is the target
+class or object ID.  For these inheritable relations, the taxonomy is
+traversed and the most specific relations consistent with the
+parameters are returned.  ").
+
+hasattr(SCid,RCid,TCid) :-
+	var(SCid),var(RCid),var(TCid), !,
+	immediate_hasattr(SCid,RCid,TCid).
+hasattr(SCid,RCid,TCid) :- 
+	var(RCid), !,  %% relation is free var
+	is_a_rel(RCid),
+	hasattr_2fix(SCid,RCid,TCid).
+hasattr(SCid,RCid,TCid) :-
+	hasattr_2inh(SCid,RCid,TCid).
+
+:- table hasattr_2fix/3.
+hasattr_2fix(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	hasattr_gen13(SCid,RCid,TCid),
+	(hasattr_max_implicative(OutTerm,BindPat) -> fail ; true).
+
+:- table hasattr_2inh/3.
+hasattr_2inh(SCid,RCid,TCid) :-
+	OutTerm = rln(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	hasattr_gen2(SCid,RCid,TCid),
+	(hasattr_max_implicative(OutTerm,BindPat) -> fail ; true).
+
+% Checks downward in arg 2; nee hasattr_inh_gen/3.
+:- table hasattr_gen2/3.
+hasattr_gen2(SCid,RCid,TCid) :-
+	isa(RCidP,RCid),
+	hasattr_gen13(SCid,RCidP,TCid).
+
+% hasattr_gen13(?,+,?).  Checks downward in arg 1; upward in arg 2.
+% nee hasattr_inh_gen_fr/3.
+:- table hasattr_gen13/3.
+hasattr_gen13(SCid,RCid,TCid) :-
+	(var(SCid)
+	 ->	(var(TCid)
+		 ->	immediate_hasattr(SCid,RCid,TCid)
+		 ;	isa(TCidP,TCid),
+			immediate_hasattr(SCid,RCid,TCidP)
+		)
+	 ;      isa(SCid,SCidP),
+		immediate_hasattr(SCidP,RCid,TCidP),
+		(var(TCid)
+		 ->	TCid = TCidP
+		 ;	isa(TCidP,TCid) 
+		)
+	).
+
+
+% Succeeds if Term is maximally implicative for binding pattern,
+% i.e. there is no other Term that unifies with BindPat implied by
+% the axioms of the CDF state that implies Term, other than Term itself.
+hasattr_max_implicative(Term,BindPat) :-
+	BindPat = rln(SCidO,RCidO,TCidO),
+	Term = rln(SCid,RCid,TCid),
+	hasattr_gen2(SCidO,RCidO,TCidO),
+	\+ (BindPat = Term),	
+	isa(RCidO,RCid),	
+	isa(SCid,SCidO),	
+	isa(TCidO,TCid).	
+
+%%% SET-VALUED RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(is_a_strel/1, "@tt{is_a_strel(RCid)} checks that @tt{RCid}
+is the class ID of a subclass of @tt{id('CDF Set-Valued
+Relations','CDF')}.  If @tt{RCid} is unbound, all such (proper)
+subclasses are returned nondeterministically.").
+
+is_a_strel(RCid) :-
+	proper_isa(RCid,sid('CDF Set-Valued Relations','CDF')).
+
+:- comment(strel/3, "@tt{strel(SCid,RCid,TCid)} defines the semantic
+set-valued relation predicate, where @tt{SCid} is the source class ID,
+@tt{RCid} is the relation class ID, and @tt{TCid} is the target class
+ID. ").
+
+immediate_strel(SCid,RCid,TCid) :- strel_ext(SCid,RCid,TCid).
+immediate_strel(SCid,RCid,TCid) :- strel_int(SCid,RCid,TCid).
+
+strel(SCid,RCid,TCid) :-
+	var(SCid),var(RCid),var(TCid), !,
+	immediate_strel(SCid,RCid,TCid).
+strel(SCid,RCid,TCid) :-
+	var(RCid), !,  %% relation is free var
+	is_a_strel(RCid),
+	strel_2fix(SCid,RCid,TCid).
+strel(SCid,RCid,TCid) :-
+	strel_2inh(SCid,RCid,TCid).
+
+:- table strel_2fix/3.
+strel_2fix(SCid,RCid,TCid) :-
+	OutTerm = strel(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	strel_gen13(SCid,RCid,TCid),
+	(strel_max_implicative(OutTerm,BindPat) -> fail ; true).
+
+:- table strel_2inh/3.
+strel_2inh(SCid,RCid,TCid) :-
+	OutTerm = strel(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	strel_gen2(SCid,RCid,TCid),
+	(strel_max_implicative(OutTerm,BindPat) -> fail ; true).
+
+:- table strel_gen2/3.
+strel_gen2(SCid,RCid,TCid) :-
+	isa(RCidP,RCid),
+	strel_gen13(SCid,RCidP,TCid).
+
+:- table strel_gen13/3.
+strel_gen13(SCid,RCid,TCid) :-
+	(var(SCid)
+	 ->	(var(TCid)
+		 ->	immediate_strel(SCid,RCid,TCid)
+		 ;	isa(TCidP,TCid),
+			immediate_strel(SCid,RCid,TCidP)
+		)
+	 ;      immediate_strel(SCid,RCid,TCidP),
+		(var(TCid)
+		 ->	TCid = TCidP
+		 ;	isa(TCidP,TCid) 
+		)
+	).
+
+strel_max_implicative(Term,BindPat) :-
+	BindPat = strel(SCid,RCidO,TCidO),
+	Term = strel(SCid,RCid,TCid),
+	strel_gen2(SCid,RCidO,TCidO),
+	\+ (Term = BindPat),	
+	isa(RCidO,RCid),	
+	isa(TCidO,TCid).
+
+%%% SCHEMA RELATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(immediate_allattr/3, "@tt{immediate_allattr(SCid,RCid,TCid)}
+accesses facts stored directly in @pred{allattr_ext/3} and information
+produced via @pred{allattr_int/6}.").
+
+immediate_allattr(SCid,RCid,TCid) :- allattr_ext(SCid,RCid,TCid).
+immediate_allattr(SCid,RCid,TCid) :- allattr_int(SCid,RCid,TCid).
+
+:- comment(allattr/3, "@tt{allattr(SCid,RCid,TCid)} defines the semantic
+schema relation predicate, where @tt{SCid} is the source class ID,
+@tt{RCid} is the relation class ID, and @tt{TCid} is the target class
+ID.  Since schema relations are inheritable, the taxonomy is traversed
+and the most specific schema relations consistent with the parameters
+are returned.  ").
+
+allattr(SCid,RCid,TCid) :-
+	var(SCid),var(RCid),var(TCid), !,
+	immediate_allattr(SCid,RCid,TCid).
+allattr(SCid,RCid,TCid) :-
+	var(RCid), !,  %% relation is free var
+	is_a_rel(RCid),
+	allattr_2fix(SCid,RCid,TCid).
+allattr(SCid,RCid,TCid) :-
+	allattr_2inh(SCid,RCid,TCid).
+
+:- table allattr_2fix/3.
+allattr_2fix(SCid,RCid,TCid) :-
+	OutTerm = allattr(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	allattr_gen13(SCid,RCid,TCid),
+	(more_specific_allattr(OutTerm,BindPat) -> fail ; true).
+
+:- table allattr_2inh/3.
+allattr_2inh(SCid,RCid,TCid) :-
+	OutTerm = allattr(SCid,RCid,TCid),
+	copy_term(OutTerm,BindPat),
+	allattr_gen2(SCid,RCid,TCid),
+	(more_specific_allattr(OutTerm,BindPat) -> fail ; true).
+
+:- table allattr_gen2/3.
+allattr_gen2(SCid,RCid,TCid) :-
+	isa(RCidP,RCid),
+	allattr_gen13(SCid,RCidP,TCid).
+
+:- table allattr_gen13/3.
+allattr_gen13(SCid,RCid,TCid) :-
+	(var(SCid)
+	 ->	(var(TCid)
+		 ->	immediate_allattr(SCid,RCid,TCid)
+		 ;	isa(TCidP,TCid),
+			immediate_allattr(SCid,RCid,TCidP)
+		)
+	 ;      isa(SCid,SCidP),
+		immediate_allattr(SCidP,RCid,TCidP),
+		(var(TCid)
+		 ->	TCid = TCidP
+		 ;	isa(TCidP,TCid) 
+		)
+	).
+
+more_specific_allattr(OutTerm,BindPat) :-
+	BindPat = allattr(SCidO,RCidO,TCidO),
+	OutTerm = allattr(SCid,RCid,TCid),
+	allattr_gen2(SCidO,RCidO,TCidO),
+	\+ (OutTerm = BindPat),	
+	isa(RCidO,RCid),	
+	isa(SCid,SCidO),	
+	isa(TCidO,TCid).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(retractallExtTerm/1, "@tt{retractallExtTerm(Term)} retracts
+all explicit CDF facts that unify with the parameters.  Note that this
+operation simply removes all matching tuples.  It does not affect
+information derived via intensional rules, and may not affect
+information derived via inheritance.").
+
+retractallExtTerm(Term) :- 
+	cdf_update_list([retractall(Term)]).
+
+:- comment(newExtTerm/1, "@tt{newExtTerm(Term)} is used to add a new
+extensional term to the ontology.
+@begin{itemize}
+@item By default, checks are made that the identifiers in @tt{Term}
+are of the proper type and are consistent.  This can be turned off by
+???.} 
+
+@item Checks may also be made that @tt{Term} is not already implied by
+the ontology before it can be added.  The default is not to make such
+checks, but only to check that @tt{Term} is not explicitly present
+before it can be added.
+
+@item Conformability checks.
+@end{itemize}
+").
+
+newExtTerm(Term):- 
+	newExtTerm(Term,Upd0,[]),
+	cdf_update_list(Upd0).
+
+newExtTerm(Term,Upd0,Upd):- 
+	check_types(update,Term),
+	check_implication(update,Term),
+	Upd0 = [asserta(Term)|Upd].
+
+%-----------------------------------------------------------
+% Type checking.	
+% TLS: should be turned on and off...
+check_types(update,Term):- 
+	(type_table(Term,Typecall) -> 
+	    true
+	  ; cdf_warning(update,[Term,' is not an extensional fact and cannot ',
+				'be added.']),
+	    fail ),
+	call(Typecall).
+
+%------
+check_isa_types(isa_ext(First,Second)):- 
+	(functor(First,F1,2) -> 
+	    true
+	  ; cdf_warning(update,[First,' in ',Term,' is not of proper type.']),
+	    fail ),
+	arg(1,First,A1),
+	check_arg_consist(A1,F1,First,Term),	
+	((Second = id('CDF Root','CDF') 
+	    ; functor(Second,F2,2),isa_consist(F1,F2)) -> 
+	    true
+	  ; cdf_warning(update,['Arguments in ',isa_ext(First,Second),
+				' are not of proper type.']),
+	    fail ),
+	arg(1,Second,A2),
+	check_arg_consist(A2,F2,Second,Term).
+
+isa_consist(F,F):-!.
+isa_consist(oid,cid).
+
+%------
+check_ind_types(Term,List):- 
+	Term =.. [_|R],
+	check_ind_types_1(R,List,Term).
+
+check_ind_types_1([],[],_).
+check_ind_types_1([Id|T],[List|LT],Term):- 
+	(functor(Id,F,2),memberchk(F,List) -> 
+	    arg(1,Id,A),
+	    check_arg_consist(A,F,Id,Term)
+	  ; cdf_warning(update,[Id,' in ',Term,' is not of proper type.']),
+	    fail ),
+	check_ind_types_1(T,LT,Term).
+
+check_arg_consist(Nid,F,Id,Term):- 
+	(atomic(Nid) -> 
+	    true
+	  ; Nid =.. [_Funct|L],
+	    check_arg_consist_list(L,F,Id,Term) ).
+
+check_arg_consist_list([],_F,_Id,_Term). 
+check_arg_consist_list([Nid|T],F,Id,Term):- 
+	     (functor(Nid,F,2) -> 
+	         arg(1,Nid,A),
+		 check_arg_consist(A,F,Id,Term)
+	       ; cdf_warning(update,[Id,' in ',Term,' is ill-formed.']),
+		 fail ),
+	     check_arg_consist_list(T,F,Id,Term).
+	
+type_table(isa_ext(A,B),check_isa_types(isa_ext(A,B))).
+type_table(hasattr_ext(A,B,C),check_ind_types(hasattr_ext(A,B,C),
+				[ [cid,oid], [rid], [cid,oid] ] ) ).
+type_table(allattr_ext(A,B,C),check_ind_types(allattr_ext(A,B,C),
+				[ [cid,oid], [rid], [cid,oid] ] ) ).
+type_table(strel_ext(A,B,C),check_ind_types(strel_ext(A,B,C),
+					[ [cid], [sid], [cid,oid] ] ) ).
+
+% want to change so that it checks for implication also.
+check_implication(update,Term):- 
+	(call(Term) -> fail ; true).
+
+%----------------------------------------------------------------------
+%%%%%%%%%%  Retract tables as appropriate upon update; adjust dirty bits.
+
+assert_cdf(Term) :-
+	cdf_log(assert(Term)),
+	assert_cdf_term(Term),
+	abolish_nec_tables(Term).
+
+assert_cdf_term(Term) :-
+	assert_cdf_int(Term),
+	!.
+assert_cdf_term(Term) :-
+	asserta(Term),
+	get_component_extensional(Term,Name),
+	(cdf_dirty(Name)
+	 ->	true
+	 ;	make_cdf_dirty(Name)
+	).
+
+get_component_extensional(Term,Component):- 
+	component_table_ext(Term,Arg),
+	arg(Arg,Term,CompId),
+	arg(2,CompId,Component).
+
+retractall_cdf(Term) :-
+	cdf_log(retractall(Term)),
+	retractall_cdf_term(Term),
+	abolish_nec_tables(Term).
+ 
+retractall_cdf_term(Term) :- 
+	retractall_cdf_int(Term),
+	fail. 
+retractall_cdf_term(Term) :-
+	retract(Term),
+	get_component_extensional(Term,Name),
+	(cdf_dirty(Name)
+	 ->	true
+	 ;	make_cdf_dirty(Name)
+	),
+	fail.
+retractall_cdf_term(_).
+
+abolish_nec_tables(hasattr_ext(_,_,_)) :- !,
+	abolish_hasattr_inherits.
+abolish_nec_tables(allattr_ext(_,_,_)) :- !,
+	abolish_allattr_inherits.
+abolish_nec_tables(strel_ext(_,_,_)) :- !,
+	abolish_strel_inherits.
+abolish_nec_tables(subclass_ext(_,_)) :- !,
+	abolish_hasattr_inherits,
+	abolish_allattr_inherits,
+	abolish_strel_inherits.
+abolish_nec_tables(_).
+
+abolish_hasattr_inherits :-
+	abolish_table_pred(hasattr_gen13(_,_,_)),
+	abolish_table_pred(hasattr_gen2(_,_,_)),
+	abolish_table_pred(hasattr_2inh(_,_,_)),
+	abolish_table_pred(hasattr_2fix(_,_,_)).
+
+abolish_strel_inherits :-
+	abolish_table_pred(strel_gen2(_,_,_)),
+	abolish_table_pred(strel_gen13(_,_,_)),
+	abolish_table_pred(strel_2fix(_,_,_)),
+	abolish_table_pred(strel_2inh(_,_,_)).
+
+abolish_allattr_inherits :-
+	abolish_table_pred(allattr_gen13(_,_,_)),
+	abolish_table_pred(allattr_gen2(_,_,_)),
+	abolish_table_pred(allattr_2fix(_,_,_)),
+	abolish_table_pred(allattr_2inh(_,_,_)).
+
+%%% Logging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(cdf_set_log_on/0,"This predicate creates a new log and
+ensures that logging will be performed for further updates until
+logging is turned off.").
+
+cdf_set_log_on:- cdf_logging_state(X),
+	       (X == on -> 
+		   true
+	          ;    retractall(cdf_logging_state(_)),
+	               asserta(cdf_logging_state(on)),
+		   (cdf_log_trie(_) -> 
+		        cdf_error(logging,['^%*&^%* log state inconsistent!',
+		                                     '(off to on)'])
+		     ;  new_trie(T),
+		         assert(cdf_log_trie(T)))).
+
+
+:- comment(cdf_set_log_off/0,"This predicate turns logging off, and
+deletes the current log, as it may have become out of date.").
+
+cdf_set_log_off:- cdf_logging_state(X),
+	       (X == off -> 
+		   true
+	          ;    retractall(cdf_logging_state(_)),
+	               asserta(cdf_logging_state(off)),
+		   (cdf_log_trie(T) -> 
+		        delete_trie(T),
+		        retractall(cdf_log_trie(_))
+		     ;  cdf_error(logging,['^%*&^%* log state inconsistent!',
+		                                     '(on to off)']))).
+
+:- comment(cdf_reset_log/0,"If logging is on, this predicate deletes
+the current log, and creates a new one.  If logging is off, no action
+is taken").
+
+cdf_reset_log:- 
+	(cdf_log_trie(X) -> 
+	    delete_trie(X),
+	    retractall(cdf_log_trie(X))
+	  ; true),
+	  new_trie(X),
+	  assert(cdf_log_trie(X)).
+
+/* Need to handle variables better.  */
+cdf_log(Term):- 
+	cdf_logging_state(X),
+	(X == on -> cdf_log_1(Term) ; true).
+
+cdf_log_1(assert(Term)):- 
+	cdf_log_trie(T),
+	(trie_interned(retractall(Term),T,Leaf,_skel) -> 
+	    trie_unintern_nr(T,Leaf) ; true),
+	trie_intern(assert(Term),T,_,_,_).
+cdf_log_1(retractall(Term)):- 
+	cdf_log_trie(T),
+	(trie_interned(assert(Term),T,Leaf,_skel) -> 
+	    trie_unintern_nr(T,Leaf)  
+	  ; trie_intern(retractall(Term),T,_,_,_)).
+
+show_log:- 
+	cdf_log_trie(T),
+	trie_interned(Term,T,_,_),
+	writeln(Term),
+	fail.
+
+%%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% performance testing predicate
+set_chk_index :-
+	set_chk_index(isa_ext(_,_)),
+	set_chk_index(hasattr_ext(_,_,_)),
+	set_chk_index(strel_ext(_,_,_)),
+	set_chk_index(allattr_ext(_,_,_)).
+
+set_chk_index(Goal) :-
+	asserta((Goal :- chk_index(Goal))).
+
+chk_index(Goal) :-
+	('_$index'(Goal,Index,_)
+	 ->	(integer(Index)
+		 ->	\+ bound_on([Index],Goal)
+		 ;	\+ bound_on(Index,Goal)
+		)
+	 ;	\+ bound_on([1],Goal)
+	),
+	telling(OF),tell(user),writeln('Non-indexed call '(Goal)),
+	tell(OF),
+	fail.
+
+bound_on([ArgNo|_ArgNos],Goal) :-
+	bound_on_all(ArgNo,Goal).
+bound_on([_ArgNo|ArgNos],Goal) :-
+	bound_on(ArgNos,Goal).
+
+bound_on_all(ArgNo,Goal) :-
+	ArgNo1 is ArgNo /\ 255,
+	arg(ArgNo1,Goal,Arg),
+	nonvar(Arg),
+	(ArgNo < 256
+	 ->	true
+	 ;	ArgNoM is ArgNo >> 8,
+		bound_on_all(ArgNoM,Goal)
+	).
+
+%%% ATTRIBUTE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- comment(updateAttribute/5,
+"@tt{update_attribute(Oid,RCid,TCid,VarTerm,ValList)} updates a set of
+values, only invalidating those that changed.  VarTerm must contain
+all the free variables in (Oid,RCid,TCid), and ValList is a list of
+instances of VarTerm.  The goal is to minimize invalidation.  The
+semantics is: (retractallAttribute(Oid,RCid,TCid),
+(member(VarTerm,ValList), assert_attribute(Oid,RCid,TCid)), fail ;
+true).").
+
+updateAttribute(_Oid,_Rid,_Cid,_Vars,_NValList) :-
+	cdf_error(cdf,['updateAttribute/5 has not yet been ported to CDF']),
+	fail.
+
+/* OMS form...
+updateAttribute(Oid,Rid,Cid,Vars,NValList) :-
+	findall(Vars,attribute(Oid,Rid,Cid),OValList),
+	sort(NValList,SNValList),
+	sort(OValList,SOValList),
+	updateAttributeMerge(SOValList,SNValList,p(Oid,Rid,Cid,Vars),Updates,[]),
+	cdf_update_list(Updates).
+
+updateAttributeMerge(SOValList,SNValList,ArgsVars,Updates0,Updates) :-
+	SOValList = [OVal|SOVals],
+	SNValList = [NVal|SNVals],
+	!,
+	(OVal == NVal
+	 ->	updateAttributeMerge(SOVals,SNVals,ArgsVars,Updates0,Updates)
+	 ; OVal @< NVal
+	 ->	copy_term(ArgsVars,p(NOid,NRid,NCid,OVal)),
+		(attribute_ext(NOid,NRid,NCid)   % don't delete if inherited
+		 ->	Updates0 = 
+			   [retractall(attribute_ext(NOid,NRid,NCid))|Updates1],
+			updateAttributeMerge(SOVals,SNValList,ArgsVars,
+					       Updates1,Updates)
+		 ;	updateAttributeMerge(SOVals,SNValList,ArgsVars,
+					       Updates0,Updates)
+		)
+	 ;	copy_term(ArgsVars,p(NOid,NRid,NCid,NVal)),
+		newAttribute(NOid,NRid,NCid,Updates0,Updates1),
+		updateAttributeMerge(SOValList,SNVals,ArgsVars,Updates1,Updates)
+	).
+updateAttributeMerge([],[NVal|SNVals],ArgsVars,Updates0,Updates) :- !,
+	copy_term(ArgsVars,p(NOid,NRid,NCid,NVal)),
+	newAttribute(NOid,NRid,NCid,Updates0,Updates1),
+	updateAttributeMerge([],SNVals,ArgsVars,Updates1,Updates).
+updateAttributeMerge([OVal|SOVals],[],ArgsVars,Updates0,Updates) :- !,
+	copy_term(ArgsVars,p(NOid,NRid,NCid,OVal)),
+	(attribute_ext(NOid,NRid,NCid)   % don't delete if inherited
+	 ->	Updates0 = 
+		 	[retractall(attribute_ext(NOid,NRid,NCid))|Updates1],
+		updateAttributeMerge(SOVals,[],ArgsVars,Updates1,Updates)
+	 ;	updateAttributeMerge(SOVals,[],ArgsVars,Updates0,Updates)
+	).
+updateAttributeMerge([],[],_ArgsVars,Updates,Updates).
+*/
+
+end_of_file.
+
+assert_primitive_types(TypsCid):- 
+	newPrimitiveClass(aint(X)),
+	newPrimitiveClass(atom(X)),
+	newPrimitiveClass(cardinal(X)),
+	newPrimitiveClass(float(X)),
+	newPrimitiveClass(integer(X)),
+	newPrimitiveClass(object(_)),
+	newPrimitiveClass(clause(X,Y)),
+
+/* 
+check_class_conformability(Nid,Cid):- (atomic(Nid) ; atomic(Cid)),!.
+check_class_conformability(Nid,Cid):- 
+	get_product_skeleton(Nid,Nidskel),
+	get_product_skeleton(Cid,Cidskel),
+	Nidskel = Cidskel,!.
+check_class_conformability(Nid,Cid):- 
+	cdf_error(update,('Cannot create new object ',Nid,
+	          'as member of ',Cid,'due to non-conformability.')).
+
+get_product_skeleton(Cid,_):- atomic(Cid),!.
+get_product_skeleton(Cid,Skel):- 
+	structure(Cid),!,
+	Cid =..[Functor|List],
+	get_product_skeleton_list(List,NewList),
+	Skel =..[Functor|NewList].
+get_product_skeleton(Cid,_Skel):- 
+	cdf_error(update,('Improper Cid: ',Cid)).
+	
+get_product_skeleton_list([],[]).
+get_product_skeleton_list([H|T],[NH|NT]):- 
+	get_product_skeleton(H,NH),
+	get_product_skeleton_list(T,NT).
+
+add_member_if_nec(_Oid,unk,Upd,Upd) :- !.
+add_member_if_nec(Oid,Cid,Upd,Upd) :-
+	immediate_memberof(Oid,Cid), !.
+add_member_if_nec(Oid,Cid,Upd0,Upd) :-
+	Upd0 = [asserta(memberof_ext(Oid,Cid))|Upd].
+
+*/
+
+/* To be used with class and object creation, and with
+   merging from external files. 
+check_source(id(_,Source),Term):- 
+	(nonvar(Source)
+	 ->	true
+	 ;	cdf_warning(update,('cannot create CDF fact ',
+                         'source unbound: ',Term)),
+		fail
+	),
+	(atomic(Source)
+	 ->	true
+	 ;	cdf_warning(update,('creating CDF fact with',
+			 'non-atomic source: ',Term))
+	).
+*/
+
+/* check_attribute(+,+,+).  This predicate should be used *only* in
+newAttribute. The idea is that newAttribute should add a new attribute
+only if that new attribute is not implied by the ontology.  But using
+attribute as a check in newAttribute is 1) inefficient and 2) not
+quite right.  The not-quite-right part is be cause newAttribute seeks
+to backtrack through all *maximal" attribtues implied by the ontology
+(last ifthenelse of attribute/3) and we want newAttribute to add only
+if the attribute is not implied, regardless if it is maximally implied
+or not. */
+
+check_attribute(Oid,RCid,TCid) :-
+	(immediate_attribute(Oid,RCid,TCid) 
+         ->	true
+	 ;	immediate_isa(Oid,SCid),
+		irel(SCid,RCid,TCid)
+	).
+
+show_cdf_size:- 
+	count_success(isa_ext(_,_)),
+	count_success(hasattr_ext(_,_,_)),
+	count_success(strel_ext(_,_,_)),
+	count_success(allattr_ext(_,_,_)).
+	
+count_success(Term):- 
+	conset('_$size_matters',0),
+	count_success_1(Term),
+	conget('_$size_matters',N),
+	functor(Term,F,A),
+	writeln(('There are ',N,' ',F,'/',A,' successes')).
+	
+count_success_1(Term):- 
+	call(Term),
+	inc_count,
+	fail.
+count_success_1(_).
+
+inc_count:- 
+	conget('_$size_matters',N),
+	N1 is N + 1,
+	conset('_$size_matters',N1).
+

@@ -1,0 +1,102 @@
+:- compiler_options([xpp_on,ciao_directives]).
+
+:- export handle_cdf_error/2, cdf_warning/2, cdf_error/2.
+
+:- import  message/2,messageln/2 from standard.
+
+#include "flag_defs_xsb.h"
+#include "standard.h"
+
+:- import using_xj/0 from usermod.
+
+:- comment(module,"This module is designed to handle different kinds
+of ""exceptions"" that arise in execution of CDF.  The word
+""exceptions"" is used to cover both @em{warnings} and @em{errors}.
+An error is defined as an exception that causes a special action
+(usually a message) along with a change in execution; a warning causes
+a special action (again, usually a message) but no change in
+execution.  Accordingly CDF errors are handled via @tt{cdf_error/2}
+which uses Prolog catch and throw mechanism, while CDF warnings are
+handled directly by the predicate @tt{cdf_warning/2}.
+
+Exceptions and warnings are typed.  While the typing is uncertain at
+this point, the current types are: @tt{update} if the exception arose
+while trying to update CDFS; and @tt{consistency} if the exception
+arose while trying to check the CDF for consistency.  @bf{Need to
+update this, as new warnings and errors have been added}.
+
+Both @tt{cdf_error/2} and @tt{cdf_warning/2} check to see if the
+dynamic preicate @tt{using_xj/0} has been defined.  If not, a message
+is written to XSB's standard error or standard warning stream.  If so,
+a message is displayed via a GUI window and, in the case of an error,
+something or other happens to control (currently there are just stubs).
+").
+
+:- comment(cdf_error/2,"@tt{cdf_error(Type,Error)} can be used to
+handle errors of different types -- currently
+@tt{consistency_warning} and @tt{update_warning}.  Actions taken
+depend on whether @pred{using_xj/0} is defined or not.
+
+In order for @tt{cdf_error/2} to work properly, some ancestor,
+@tt{Goal} for it must be called in the scope of a catch statement of
+the form
+
+@tt{catch(Goal,cdf_error(Type,List),handle_cdf_error(Type,List))}.
+
+Otherwise, @tt{cdf_error/2} will be handled by the default error
+handler.
+").
+
+cdf_error(Type,List):- 
+	throw(cdf_error(Type,List)).
+
+handle_cdf_error(Type,List):- 
+	(using_xj -> 
+	    handle_cdf_error_xj(Type,List)
+	  ;
+	    handle_cdf_error_noxj(Type,List)).
+
+handle_cdf_error_noxj(consistency,Message):- 
+	write_cdf_error_noxj(Message),
+	abort.
+handle_cdf_error_noxj(update,Message):- 
+	write_cdf_error_noxj(Message),
+	abort.
+
+write_cdf_error_noxj(Message):- 
+	message('++Error[CDF]: ', STDERR),
+	message('(Consistency) ', STDERR),
+	messageln(Message, STDERR).
+
+/* TLS: this is basically abort/1 */
+handle_cdf_error_xj(consistency,Message):- 
+	message('++Error[CDF(XJ)]: ', STDERR),
+	message('(Consistency) ', STDERR),
+	messageln(Message, STDERR),
+	abort.
+handle_cdf_error_xj(update,Message):- 
+	message('++Error[CDF(XJ)]: ', STDERR),
+	message('(Update) ', STDERR),
+	messageln(Message, STDERR),
+	abort.
+
+:- comment(cdf_warning/2,"cdf_arning can be used to handle warnings of
+different types -- currently @tt{consistency_warning} and
+@tt{update_warning}.  Actions taken depend on whether
+@pred{using_xj/0} is defined or not.").
+
+cdf_warning(Type,List):- 
+	(using_xj -> 
+	    cdf_warning_xj(Type,List)
+	  ;
+	    cdf_warning_noxj(Type,List)).
+
+cdf_warning_noxj(Type,Message):- 
+	message('++Warning[CDF]: ', STDWARN),
+	message((' '(Type),' '), STDWARN),
+	messageln(Message, STDWARN).
+
+cdf_warning_xj(Type,Message):- 
+	message('++Warning[CDF(XJ)]: ', STDWARN),
+	message((' '(Type),' '), STDWARN),
+	messageln(Message, STDWARN).

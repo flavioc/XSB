@@ -1,0 +1,19 @@
+% TLS: keep all this in usermod.
+
+:- dynamic caching_cdf/1.
+:- dynamic cdf_dirty/1.
+:- dynamic using_xj/0.
+
+component_table_ext(isa_ext(_,_),1).
+component_table_ext(hasattr_ext(_,_,_),2).
+component_table_ext(allattr_ext(_,_,_),2).
+component_table_ext(strel_ext(_,_,_),2).
+
+component_table_int(isa_int(_,_),2,[arg(4,warn)]).
+component_table_int(hasattr_int(_,_,_),4,[arg(2,warn),arg(6,no_warn)]).
+component_table_int(allattr_int(_,_,_),4,[arg(2,warn),arg(6,no_warn)]).
+component_table_int(strel_int(_,_,_),4,[arg(2,warn),arg(6,no_warn)]).
+
+component_table_int(assert_cdf_int(_),null,[]).
+component_table_int(retractall_cdf_int(_),null,[]).
+
