@@ -36,6 +36,17 @@
                  *cell_ptr = cell_val + local_offset ;          \
 }       }
 
+#define realloc_ref_pre_image(cell_ptr, cell_val)                     \
+{       if (heap_bot <= cell_val)                                     \
+      /* <= because of heaptop in CP 13-10-1998 */                    \
+  {   if (cell_val <= heap_top)                                       \
+                *cell_ptr = (Cell) ((Cell) (cell_val + heap_offset)   \
+                            | PRE_IMAGE_MARK) ;                       \
+            else if (cell_val <= ls_bot)                              \
+                 *cell_ptr = (Cell) ((Cell) (cell_val + local_offset) \
+                            | PRE_IMAGE_MARK) ;                       \
+} }
+
 #define reallocate_heap_or_ls_pointer(cell_ptr) 		\
     cell_val = (Cell)*cell_ptr ; 				\
     switch (cell_tag(cell_val)) { 				\

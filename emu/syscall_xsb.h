@@ -212,3 +212,4 @@
 /* XSB-specific numbers */
 
 #define SYS_cwd         300  /* current working directory */
+#define SYS_filecopy    301

@@ -2120,20 +2120,25 @@ int ParsePossibleMeta()
       struct INPUTCONTEXT *N;
       FILE *f = NULL;
       char *incfile_name;
+      char *temp;
+      int pos1,pos2;
 
       if (nparam==2 && WarningLevel > 0)
-	warning("Extra argument to #include ignored");
-      if (!whiteout(&p1start,&p1end)) bug("Missing file name in #include");
-      /* user may put "" or <> */
-      if (((getChar(p1start)=='\"')&&(getChar(p1end-1)=='\"'))||
-	  ((getChar(p1start)=='<')&&(getChar(p1end-1)=='>')))
-	{ p1start++; p1end--; }
-      if (p1start>=p1end) bug("Missing file name in #include");
-      incfile_name=malloc(p1end-p1start+1);
-      /* extract the orig include filename */
-      for (i=0;i<p1end-p1start;i++)
-	incfile_name[i]=getChar(p1start+i);
-      incfile_name[p1end-p1start]=0;
+        warning("Extra argument to #include ignored");
+      temp = ProcessText(C->buf+p1start, p1end-p1start, FLAG_META);
+      pos1 = 0; pos2 = strlen(temp)-1;
+      while ((pos1<=pos2)&&iswhite(temp[pos1])) pos1++;
+      while ((pos1<=pos2)&&iswhite(temp[pos2])) pos2--;
+      if (pos1>pos2) bug("Missing file name in #include");
+      if ((temp[pos1]=='\"' && temp[pos2]=='\"') ||
+          (temp[pos1]=='<' && temp[pos2]=='>')) {
+	pos1++;
+	pos2--;
+      }
+      if (pos1>pos2) bug("Missing file name in #include");
+      incfile_name=malloc(pos2-pos1+2);
+      memcpy(incfile_name, temp+pos1, pos2-pos1+1);
+      incfile_name[pos2-pos1+1] = 0;
 
       /* if absolute path name is specified */
       if (incfile_name[0]==SLASH
@@ -2148,29 +2153,35 @@ int ParsePossibleMeta()
 	}
 
       for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
-	incfile_name =
-	  realloc(incfile_name,p1end-p1start+strlen(includedir[j])+2);
-	strcpy(incfile_name,includedir[j]);
-	incfile_name[strlen(includedir[j])]=SLASH;
-	/* extract the orig include filename */
-	for (i=0;i<p1end-p1start;i++) 
-	  incfile_name[strlen(includedir[j])+1+i]=getChar(p1start+i);
-	incfile_name[p1end-p1start+strlen(includedir[j])+1]=0;
-	f=fopen(incfile_name,"r");
+        incfile_name =
+          realloc(incfile_name,pos2-pos1+strlen(includedir[j])+3);
+        strcpy(incfile_name,includedir[j]);
+        incfile_name[strlen(includedir[j])]=SLASH;
+        /* extract the orig include filename */
+        memcpy(incfile_name+strlen(includedir[j])+1, temp+pos1, pos2-pos1+1);
+        incfile_name[pos2-pos1+strlen(includedir[j])+2] = '\0';
+        f=fopen(incfile_name,"r");
       }
 
       /* If didn't find the file and "." is said to be searched last */
       if (f==NULL && CurDirIncLast) {
-	incfile_name=realloc(incfile_name,p1end-p1start+1);
-	/* extract the orig include filename */
-	for (i=0;i<p1end-p1start;i++) 
-	  incfile_name[i]=getChar(p1start+i);
-	incfile_name[p1end-p1start]=0;
-	f = openInCurrentDir(incfile_name);
+        incfile_name=realloc(incfile_name,pos2-pos1+2);
+        /* extract the orig include filename */
+        memcpy(incfile_name, temp+pos1, pos2-pos1+1);
+        incfile_name[pos2-pos1+1] = '\0';
+        f = openInCurrentDir(incfile_name);
       }
 
-      if (f==NULL)
-	bug("Requested include file not found");
+      free(temp);
+
+      if (f==NULL) {
+	char *msg = "Requested include file not found, ";
+	char *error = (char*)calloc(1,strlen(msg)+strlen(incfile_name)+2);
+	strcat(error, msg);
+	strcat(error, incfile_name);
+	/* no need to dealloc *error because bug(...) kills the process */
+	bug(error);
+      }
 
       N=C;
       C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));

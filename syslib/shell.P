@@ -150,4 +150,5 @@ sys_rename(Old, New, Res)   :-	sys_syscall(SYS_rename, Res, Old, New).
 sys_cwd(Name, Res)   	    :-	sys_syscall(SYS_cwd, Res, Name, _).
 sys_mkdir(Name, Res)   	    :-	sys_syscall(SYS_mkdir, Res, Name, _).
 sys_rmdir(Name, Res)   	    :-	sys_syscall(SYS_rmdir, Res, Name, _).
+sys_filecopy(Source,Dest,Res)  :-  sys_syscall(SYS_filecopy, Res, Source, Dest).
 
