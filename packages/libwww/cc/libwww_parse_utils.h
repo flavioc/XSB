@@ -23,8 +23,8 @@
 */
 
 
-/*
 #define LIBWWW_DEBUG_VERBOSE
+/*
 #define LIBWWW_DEBUG
 #define LIBWWW_DEBUG_TERSE
 */
@@ -121,9 +121,10 @@ PRIVATE int add_to_htable(HKEY item, HASH_TABLE *htable);
 PRIVATE void free_htable(HASH_TABLE *htable);
 PRIVATE int is_in_htable(const HKEY item, HASH_TABLE *htable);
 
-
-PRIVATE int general_parse_abort_handler (HTRequest  *request,
-					 HTResponse *response,
-					 void 	    *param,
-					 int 	    status);
-
+PRIVATE void libwww_abort_request(HTRequest *request,
+				  int       status,
+				  char      *description, ...);
+PRIVATE int parse_termination_handler(HTRequest    *request,
+				      HTResponse   *response,
+				      void 	   *param,
+				      int          status);

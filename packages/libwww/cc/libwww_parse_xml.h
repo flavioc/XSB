@@ -29,7 +29,6 @@ struct XML_userData {
   HTRequest *		  request;
   HTStream *		  target;
   SGML_dtd *		  dtd;
-  int 	      	      	  status;    	    /* status of the HTTP request */
   int	 	     	  suppress_is_default; /* whether we begin parsing by
 						  suppressing tags */
   prolog_term	     	  parsed_term;      /* actual result of the parse */
@@ -43,25 +42,25 @@ struct XML_userData {
     prolog_term    content_list_tail; /* auxil var to help build elements */
   } 	    	    	  stack[MAX_XML_NESTING]; /* keeps nested elements */
 };
-typedef struct XML_userData XML_USERDATA;
+typedef struct XML_userData USERDATA;
 
 
 /* function declarations */
 
-PRIVATE XML_USERDATA *create_userData(XML_Parser parser,
-				      HTRequest  *request,
-				      HTStream   *target_stream);
-PRIVATE void delete_userData(XML_USERDATA *me);
+PRIVATE USERDATA *create_userData(XML_Parser parser,
+				  HTRequest  *request,
+				  HTStream   *target_stream);
+PRIVATE void delete_userData(USERDATA *me);
 
 PRIVATE void setup_xml_request_structure (prolog_term prolog_req, int req_id);
 
-PRIVATE void xml_push_element (XML_USERDATA    *userdata,
+PRIVATE void xml_push_element (USERDATA    *userdata,
 			       const XML_Char  *tag,
 			       const XML_Char  **attrs);
-PRIVATE void xml_pop_element(XML_USERDATA *userdata);
-PRIVATE void xml_push_suppressed_element(XML_USERDATA   *userdata,
+PRIVATE void xml_pop_element(USERDATA *userdata);
+PRIVATE void xml_push_suppressed_element(USERDATA   *userdata,
 					 const XML_Char *tag);
-PRIVATE void xml_pop_suppressed_element(XML_USERDATA *userdata);
+PRIVATE void xml_pop_suppressed_element(USERDATA *userdata);
 PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 				     const XML_Char  **attrs);
 
@@ -73,12 +72,6 @@ PRIVATE void xml_beginElement(void  	     *userdata,
 			      const XML_Char *tag,
 			      const XML_Char **attributes);
 PRIVATE void xml_endElement(void *userdata, const XML_Char *tag);
-PRIVATE int xml_parse_termination_handler(HTRequest    *request,
-					  HTResponse   *response,
-					  void 	       *param,
-					  int          status);
-PRIVATE void xml_libwww_abort_request(HTRequest *request, int status,
-				      char *description, ...);
 
 PRIVATE void HTXML_newInstance (HTStream *		me,
 				HTRequest *		request,

@@ -85,30 +85,31 @@ BOOL  libwww_parse_xml(void)
     xsb_abort("LIBWWW_PARSE_XML: Argument must be a list");
 
   request_list_tail = request_term_list;
+  total_number_of_requests=0;
   while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
     request_id++;
     setup_xml_request_structure(p2p_car(request_list_tail), request_id);
     request_list_tail = p2p_cdr(request_list_tail);
-    total_number_of_requests++;
+    total_number_of_requests = request_id;
   }
-
-#ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In libwww_parse_xml: starting the event loop. Total request#=%d\n",
-	  total_number_of_requests);
-#endif
 
   /* start the event loop and begin to parse all requests in parallel */
   if (total_number_of_requests > 0) {
     int status;
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In libwww_parse_xml: starting event loop. Total requests=%d",
+	     total_number_of_requests);
+#endif
+
     status = HTEventList_newLoop();
     if (status != HT_OK)
       xsb_abort("LIBWWW_PARSE_XML: Couldn't launch HTTP request");
-  }
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr, "In libwww_parse_xml: event loop ended\n");
+  xsb_dbgmsg("In libwww_parse_xml: event loop ended");
 #endif
+  }
   
   /* don't delete the profile: it crashes libwww on the second try */
   return TRUE;
@@ -135,9 +136,6 @@ PRIVATE void setup_xml_request_structure(prolog_term prolog_req, int request_id)
   uri=string_val(p2p_arg(prolog_req,1));
   if (uri == NULL)
     xsb_abort("LIBWWW_PARSE_XML: Arg 1(URI) is invalid");
-
-  HTNet_addAfter(general_parse_abort_handler,
-		 NULL, "LIBWWW_PARSE_XML", HT_ALL, HT_FILTER_LAST);
 
   /* Create a new request and attach the context structure to it */
   request = HTRequest_new();
@@ -182,10 +180,8 @@ PRIVATE void HTXML_newInstance (HTStream *		me,
 				XML_Parser              xmlparser,
 				void * 			context)
 {
-  XML_USERDATA *userdata = create_userData(xmlparser, request, target_stream);
+  USERDATA *userdata = create_userData(xmlparser, request, target_stream);
   XML_SetUserData(xmlparser, (void *) userdata);
-  /* Hook up userdata to the request context */
-  ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata = (void *)userdata;
   if (me && xmlparser) HTXML_setHandlers(xmlparser);
 }
 
@@ -196,16 +192,15 @@ PRIVATE void xml_beginElement(void  *userdata, /* where we build everything */
 			      const XML_Char *tag, /* tag */
 			      const XML_Char **attributes)
 {
-  XML_USERDATA *userdata_obj = (XML_USERDATA *) userdata;
+  USERDATA *userdata_obj = (USERDATA *) userdata;
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In xml_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d\n",
-	  REQUEST_ID(userdata_obj->request),
-	  userdata_obj->stackptr, tag,
-	  IS_SUPPRESSED_TAG((HKEY) tag, userdata_obj->request),
-	  IS_SELECTED_TAG((HKEY) tag, userdata_obj->request)
-	  );
+  xsb_dbgmsg("In xml_beginElement(%d): stackptr=%d tag=%s suppress=%d choose=%d",
+	     REQUEST_ID(userdata_obj->request),
+	     userdata_obj->stackptr, tag,
+	     IS_SUPPRESSED_TAG((HKEY) tag, userdata_obj->request),
+	     IS_SELECTED_TAG((HKEY) tag, userdata_obj->request)
+	     );
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)tag, userdata_obj->request)) return;
@@ -232,22 +227,21 @@ PRIVATE void xml_beginElement(void  *userdata, /* where we build everything */
 /* The callback for the end-tag event */
 PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
 {
-  XML_USERDATA *userdata_obj = (XML_USERDATA *) userdata;
+  USERDATA *userdata_obj = (USERDATA *) userdata;
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In xml_endElement(%d): stackptr=%d, tag=%s\n",
-	  REQUEST_ID(userdata_obj->request),
-	  userdata_obj->stackptr, tag);
+  xsb_dbgmsg("In xml_endElement(%d): stackptr=%d, tag=%s",
+	     REQUEST_ID(userdata_obj->request),
+	     userdata_obj->stackptr, tag);
 #endif
 
   if (IS_STRIPPED_TAG((HKEY)tag, userdata_obj->request)) return;
 
   if (strcasecmp(STACK_TOP(userdata_obj).tag, tag) != 0)
-    xml_libwww_abort_request(userdata_obj->request,
-				 HT_DOC_SYNTAX,
-				 "LIBWWW_PARSE_XML: Closing tag %s doesn't match open tag %s\n",
-	      STACK_TOP(userdata_obj).tag, tag);
+    libwww_abort_request(userdata_obj->request,
+			 HT_DOC_SYNTAX,
+			 "LIBWWW_PARSE_XML: End tag %s/start tag %s mismatch",
+			 tag, STACK_TOP(userdata_obj).tag);
 
   if (parsing(userdata_obj))
     xml_pop_element(userdata_obj);
@@ -268,12 +262,12 @@ PRIVATE void xml_endElement (void *userdata, const XML_Char *tag)
 PRIVATE void xml_addText (void	         *userdata,
 			  const XML_Char *textbuf, int len)
 {
-  XML_USERDATA *userdata_obj = (XML_USERDATA *) userdata;
+  USERDATA *userdata_obj = (USERDATA *) userdata;
   static vstrDEFINE(pcdata_buf);
   int shift = 0;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr, "In xml_addText (%d):\n", REQUEST_ID(userdata_obj->request));
+  xsb_dbgmsg("In xml_addText (%d):", REQUEST_ID(userdata_obj->request));
 #endif
 
   if (IS_STRIPPED_TAG("pcdata", userdata_obj->request)) return;
@@ -295,7 +289,7 @@ PRIVATE void xml_addText (void	         *userdata,
     shift = strlen("\n");
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr, "pcdata=%s\n", pcdata_buf.string+shift);
+  xsb_dbgmsg("pcdata=%s", pcdata_buf.string+shift);
 #endif
 
   /* put the text string into the elt term and then pop it */
@@ -324,7 +318,7 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
     strcpy_lower(attrname.string, (char *)*attrs);
     
 #ifdef LIBWWW_DEBUG_VERBOSE
-    fprintf(stderr, "attr=%s \n", attrname.string);
+    xsb_dbgmsg("attr=%s", attrname.string);
 #endif
     prop_list_head = p2p_car(prop_list_tail);
     c2p_functor("attval",2,prop_list_head);
@@ -347,7 +341,7 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 
 
 /* push element onto HTEXT->stack */
-PRIVATE void xml_push_element (XML_USERDATA    *userdata,
+PRIVATE void xml_push_element (USERDATA    *userdata,
 			       const XML_Char  *tag,
 			       const XML_Char  **attrs)
 {
@@ -365,16 +359,15 @@ PRIVATE void xml_push_element (XML_USERDATA    *userdata,
   userdata->stackptr++;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-    fprintf(stderr,
-	    "In xml_push_element(%d): stackptr=%d tag=%s\n",
-	    REQUEST_ID(userdata->request), userdata->stackptr, tag);
+    xsb_dbgmsg("In xml_push_element(%d): stackptr=%d tag=%s",
+	       REQUEST_ID(userdata->request), userdata->stackptr, tag);
 #endif
 
   if (userdata->stackptr > MAX_XML_NESTING)
-    xml_libwww_abort_request(userdata->request,
-			     HT_DOC_SYNTAX,
-			     "LIBWWW_PARSE_XML: Page element nesting exceeds MAX(%d)",
-			     MAX_XML_NESTING);
+    libwww_abort_request(userdata->request,
+			 HT_DOC_SYNTAX,
+			 "LIBWWW_PARSE_XML: Element nesting exceeds MAX(%d)",
+			 MAX_XML_NESTING);
 
   /* wire the new elt into where it should be in the content list */
   STACK_TOP(userdata).elt_term = p2p_car(location);
@@ -398,7 +391,7 @@ PRIVATE void xml_push_element (XML_USERDATA    *userdata,
   collect_xml_attributes(STACK_TOP(userdata).elt_term, attrs);
   
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr, "elt_name=%s\n", lower_tagname.string);
+  xsb_dbgmsg("elt_name=%s", lower_tagname.string);
   print_prolog_term(STACK_TOP(userdata).elt_term, "elt_term");
 #endif
 
@@ -413,14 +406,13 @@ PRIVATE void xml_push_element (XML_USERDATA    *userdata,
 
 /* when we are done with an elt, we must close its contents list and pop the
    stack */
-PRIVATE void xml_pop_element(XML_USERDATA *userdata)
+PRIVATE void xml_pop_element(USERDATA *userdata)
 {
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr,
-	  "In xml_pop_element(%d): stackptr=%d, elt_name=%s\n",
-	  REQUEST_ID(userdata->request),
-	  userdata->stackptr,
-	  STACK_TOP(userdata).tag);
+  xsb_dbgmsg("In xml_pop_element(%d): stackptr=%d, elt_name=%s",
+	     REQUEST_ID(userdata->request),
+	     userdata->stackptr,
+	     STACK_TOP(userdata).tag);
 #endif
   /* close the property list, for notmal elements */
   if (strcasecmp(STACK_TOP(userdata).tag, "pcdata")!=0) {
@@ -453,7 +445,7 @@ PRIVATE void xml_pop_element(XML_USERDATA *userdata)
 
 
 /* pushes tag, but keeps only the tag info; doesn't convert to prolog term */
-PRIVATE void xml_push_suppressed_element(XML_USERDATA   *userdata,
+PRIVATE void xml_push_suppressed_element(USERDATA   *userdata,
 					 const XML_Char *tag)
 {
   /* non-empty tag */
@@ -474,7 +466,7 @@ PRIVATE void xml_push_suppressed_element(XML_USERDATA   *userdata,
 }
 
 
-PRIVATE void xml_pop_suppressed_element(XML_USERDATA *userdata)
+PRIVATE void xml_pop_suppressed_element(USERDATA *userdata)
 {
   /* chain the list tails back through the sequence of suppressed tags */
   if (userdata->stackptr > 0) {
@@ -486,9 +478,8 @@ PRIVATE void xml_pop_suppressed_element(XML_USERDATA *userdata)
   userdata->stackptr--;
 
 #ifdef LIBWWW_DEBUG_VERBOSE
-  fprintf(stderr,
-	  "In xml_pop_suppressed_element(%d): stackptr=%d\n",
-	  REQUEST_ID(userdata->request), userdata->stackptr);
+  xsb_dbgmsg("In xml_pop_suppressed_element(%d): stackptr=%d",
+	     REQUEST_ID(userdata->request), userdata->stackptr);
   if (userdata->stackptr >= 0)
     print_prolog_term(STACK_TOP(userdata).content_list_tail, "content_list_tail");
   else
@@ -499,95 +490,13 @@ PRIVATE void xml_pop_suppressed_element(XML_USERDATA *userdata)
 }
 
 
-
-/* This is a per-request termination handler */
-PRIVATE int xml_parse_termination_handler (HTRequest  *request,
-					   HTResponse *response,
-					   /* param= XML_USERDATA object
-					      associated with request */
-					   void       *param,
-					   int 	      status)
+PRIVATE USERDATA *create_userData(XML_Parser parser,
+				  HTRequest *request,
+				  HTStream  *target_stream)
 {
-  ((XML_USERDATA *) param)->status = status;
-
-  if (total_number_of_requests > 0)
-    total_number_of_requests--;
-  /* if the last request has finished, stop the event loop 
-     and unregister the callbacks */
-  if (total_number_of_requests == 0) {
-    HTEventList_stopLoop();
-#ifdef LIBWWW_DEBUG
-    fprintf(stderr, "In xml_parse_termination_handler: event loop halted\n");
-#endif
-    /* we probably need to unregister the handlers here */
-  }
-
-  delete_userData((XML_USERDATA *) param);
-
-#ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In xml_parse_termination_handler: cleaning up after request %d\n",
-	  REQUEST_ID(request));
-#endif
-
-  /* Clean Up */
-  free_request_context((REQUEST_CONTEXT *) HTRequest_context(request));
-  HTRequest_clear(request);
-
-  return TRUE;
-}
-
-
-PRIVATE void xml_libwww_abort_request(HTRequest *request, int status,
-				      char *description, ...)
-{
-  va_list args;
-  XML_USERDATA *userdata =
-    (XML_USERDATA *)
-    ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata;
-
-  userdata->status = status;
-
-  va_start(args, description);
-  va_end(args);
-  fprintf(stderr, "In Request %d:\n", REQUEST_ID(request));
-  xsb_warn(description,args);
-
-  if (total_number_of_requests > 0)
-    total_number_of_requests--;
-  /* if the last request has finished, stop the event loop 
-     and unregister the callbacks */
-  if (total_number_of_requests == 0) {
-    HTEventList_stopLoop();
-#ifdef LIBWWW_DEBUG
-    fprintf(stderr, "In xml_libwww_abort_request: event loop halted\n");
-#endif
-    /* we probably need to unregister the handlers here */
-  }
-
-  delete_userData(userdata);
-
-#ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In xml_libwww_abort_request: cleaning up after request %d\n",
-	  REQUEST_ID(request));
-#endif
-
-  /* Clean Up */
-  free_request_context((REQUEST_CONTEXT *) HTRequest_context(request));
-  HTRequest_kill(request);
-
-  return;
-}
-
-
-PRIVATE XML_USERDATA *create_userData(XML_Parser parser,
-				      HTRequest *request,
-				      HTStream  *target_stream)
-{
-  XML_USERDATA *me = NULL;
+  USERDATA *me = NULL;
   if (parser) {
-    if ((me = (XML_USERDATA *) HT_CALLOC(1, sizeof(XML_USERDATA))) == NULL)
+    if ((me = (USERDATA *) HT_CALLOC(1, sizeof(USERDATA))) == NULL)
       HT_OUTOFMEM("libwww_parse_xml");
     me->parser = parser;
     me->request = request;
@@ -597,27 +506,21 @@ PRIVATE XML_USERDATA *create_userData(XML_Parser parser,
     me->parsed_term = p2p_new();
     c2p_list(me->parsed_term);
     me->parsed_term_tail = me->parsed_term;
-    me->status = HT_ERROR;
     me->stackptr = -1;
   }
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr, "In create_userData(%d):\n", REQUEST_ID(request));
+  xsb_dbgmsg("In create_userData(%d):", REQUEST_ID(request));
 #endif
 
-  HTNet_deleteAfter(general_parse_abort_handler);
-  HTRequest_addAfter(request,
-		     xml_parse_termination_handler,
-		     NULL,
-		     me, /* param to pass to the terminate filter */
-		     HT_ALL,
-		     HT_FILTER_LAST,
-		     YES);
+  /* Hook up userdata to the request context */
+  ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata = (void *)me;
+
   return me;
 }
 
 
-PRIVATE void delete_userData(XML_USERDATA *me)
+PRIVATE void delete_userData(USERDATA *me)
 {
   prolog_term 
     parsed_result =
@@ -626,15 +529,14 @@ PRIVATE void delete_userData(XML_USERDATA *me)
     ((REQUEST_CONTEXT *)HTRequest_context(me->request))->status_term;
 #ifdef LIBWWW_DEBUG
   int request_id = REQUEST_ID(me->request);
-  fprintf(stderr,
-	  "In delete_userData(%d): stackptr=%d\n",
-	  request_id, me->stackptr);
+  xsb_dbgmsg("In delete_userData(%d): stackptr=%d",
+	     request_id, me->stackptr);
 #endif
 
   /* if the status code says the doc was loaded fine, but stackptr is != -1,
      it means the doc is ill-formed */
-  if (me->stackptr >= 0 && (me->status == HT_LOADED)) {
-    me->status = HT_DOC_SYNTAX;
+  if (me->stackptr >= 0 && (int_val(status_term) == HT_LOADED)) {
+    c2p_int(HT_DOC_SYNTAX,status_term);
     xsb_warn("LIBWWW_PARSE_XML: Ill-formed document (a syntax error or tags left open)");
   }
 
@@ -647,17 +549,12 @@ PRIVATE void delete_userData(XML_USERDATA *me)
   else
     xsb_warn("LIBWWW_PARSE_XML: Request %d: Arg 4 (Parse result) must be a variable",
 	      REQUEST_ID(me->request));
-  if (is_var(status_term))
-    c2p_int(me->status,status_term);
-  else
-    xsb_warn("LIBWWW_PARSE_XML: Request %d: Arg 5 (Status) must be a variable",
-	      REQUEST_ID(me->request));
 
   if (me->target) FREE_TARGET(me);
   HT_FREE(me);
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr, "Request %d: freed the XML_USERDATA obj\n", request_id);
+  xsb_dbgmsg("Request %d: freed the USERDATA object", request_id);
 #endif
 
   return;
@@ -741,7 +638,7 @@ PRIVATE int xml_externalEntityRef (XML_Parser parser,
   HTAnchor    *anchor = NULL;
   HTRequest *request = HTRequest_new();
   char *uri;
-  XML_USERDATA *userdata = XML_GetUserData(parser);
+  USERDATA *userdata = XML_GetUserData(parser);
   void *context = HTRequest_context(userdata->request);
 
   uri = HTParse((char *)systemId, NULL, PARSE_ALL);
@@ -750,16 +647,14 @@ PRIVATE int xml_externalEntityRef (XML_Parser parser,
 
   /* put the same context on this request */
   HTRequest_setContext(request, (void *) context);
-  XML_SetUserData(extParser, (void *) userdata);
-  /* hook up the context to the request */
-  ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata = (void *)userdata;
-
-  XML_ParserFree(extParser);
+  
+  /* launch the new request; this should add it to the existing event loop */
+  if (YES != HTLoadAnchor(anchor,request))
+    XML_ParserFree(extParser);
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In xml_externalEntityRef(%d): uri=%s\n",
-	  REQUEST_ID(request), uri);
+  xsb_dbgmsg("In xml_externalEntityRef(%d): uri=%s",
+	     REQUEST_ID(request), uri);
 #endif
 
   return TRUE;
@@ -794,9 +689,8 @@ PRIVATE void xml_default (void * userData, const XML_Char * str, int len)
   unparsed.length = len;
   vstrNULL_TERMINATE(&unparsed);
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr,
-	  "In xml_default: Request: %d: Unparsed: %s\n",
-	  REQUEST_ID(((XML_USERDATA *)userData)->request), unparsed.string);
+  xsb_dbgmsg("In xml_default: Request: %d: Unparsed: %s",
+	     REQUEST_ID(((USERDATA *)userData)->request), unparsed.string);
 #endif
 
   return;

@@ -26,41 +26,111 @@
 #include "deref.h"
 
 
-/* This is handler is in use before we set up the per-request handlers.
-   It is needed because some errors happen before the HTTP requests are
-   launched, and we need to catch them. */
-PRIVATE int general_parse_abort_handler (HTRequest  *request,
-					 HTResponse *response,
-					 void 	    *param,
-					 int 	    status)
+/* This is a per-request termination handler */
+PRIVATE int parse_termination_handler (HTRequest   *request,
+				       HTResponse  *response,
+				       void 	   *param,
+				       int 	   status)
 {
   prolog_term status_term =
     ((REQUEST_CONTEXT *)HTRequest_context(request))->status_term;
+  void *userdata = ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata;
 
 #ifdef LIBWWW_DEBUG
-  fprintf(stderr, "In general_parse_abort_handler\n");
+  xsb_dbgmsg("In parse_termination_handler");
 #endif
+
+  if (status == HT_TEMP_REDIRECT || status == HT_PERM_REDIRECT ||
+	status == HT_FOUND || status == HT_SEE_OTHER) {
+    HTAnchor * redirection = HTResponse_redirection(response);
+    /* if loaded redirection successfully, then return: the request will be
+       processed by the existing event loop; otherwise, drop down and terminate
+       the request */ 
+    if (YES==HTLoadAnchor(redirection,request))
+      return TRUE;
+  }
 
   if (total_number_of_requests > 0)
     total_number_of_requests--;
+  /* if the last request has finished, stop the event loop 
+     and unregister the callbacks */
   if (total_number_of_requests == 0) {
     HTEventList_stopLoop();
 #ifdef LIBWWW_DEBUG
-    fprintf(stderr, "In general_parse_abort_handler: event loop halted\n");
+    xsb_dbgmsg("In parse_termination_handler: event loop halted");
 #endif
-    /* we probably need to unregister the handlers here */
+    /*
+      HText_unregisterElementCallback();
+      HText_unregisterTextCallback();
+    */
   }
+
   if (is_var(status_term))
     c2p_int(status, status_term);
   else
-    xsb_warn("%s: Request %d: Arg 5 (Status) must be a variable",
-	     (char *)param, REQUEST_ID(request));
+    xsb_warn("LIBWWW_PARSE_HTML/XML: Request %d: Arg 5 (Status) must be a var",
+	     REQUEST_ID(request));
 
   /* Clean Up */
+  if (userdata)
+    delete_userData((USERDATA *) userdata);
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In parse_termination_handler: Cleanup: request %d, status=%d",
+	     REQUEST_ID(request), status);
+#endif
+
   free_request_context((REQUEST_CONTEXT *) HTRequest_context(request));
   HTRequest_clear(request);
-
   return TRUE;
+}
+
+
+PRIVATE void libwww_abort_request(HTRequest *request,
+				  int status,
+				  char *description, ...)
+{
+  va_list args;
+  USERDATA *userdata =
+    (USERDATA *)
+    ((REQUEST_CONTEXT *)HTRequest_context(request))->userdata;
+  prolog_term status_term =
+    ((REQUEST_CONTEXT *)HTRequest_context(request))->status_term;
+
+  va_start(args, description);
+  va_end(args);
+  xsb_dbgmsg("In Request %d:", REQUEST_ID(request));
+  xsb_warn(description,args);
+
+  if (total_number_of_requests > 0)
+    total_number_of_requests--;
+  /* if the last request has finished, stop the event loop 
+     and unregister the callbacks */
+  if (total_number_of_requests == 0) {
+    HTEventList_stopLoop();
+#ifdef LIBWWW_DEBUG
+    xsb_dbgmsg("In libwww_abort_request: event loop halted");
+#endif
+    /* we probably need to unregister the handlers here */
+  }
+
+  if (is_var(status_term))
+    c2p_int(status, status_term);
+  else
+    xsb_warn("LIBWWW_PARSE_HTML/XML: Request %d: Arg 5 (Status) must be a var",
+	     REQUEST_ID(request));
+
+  /* Clean Up */
+  delete_userData(userdata);
+
+#ifdef LIBWWW_DEBUG
+  xsb_dbgmsg("In libwww_abort_request: Cleanup: request %d, status=%d",
+	     REQUEST_ID(request), status);
+#endif
+
+  free_request_context((REQUEST_CONTEXT *) HTRequest_context(request));
+  HTRequest_kill(request);
+  return;
 }
 
 
@@ -68,9 +138,9 @@ PRIVATE int general_parse_abort_handler (HTRequest  *request,
    conditions handled here are programmatic mistakes rather than network
    conditions. */
 PRIVATE void set_request_context(HTRequest *request,
-			 prolog_term prolog_req,
-			 int request_id,
-			 char *caller)
+				 prolog_term prolog_req,
+				 int request_id,
+				 char *caller)
 {
   REQUEST_CONTEXT *context;
   prolog_term selection;
@@ -79,6 +149,7 @@ PRIVATE void set_request_context(HTRequest *request,
     xsb_abort("%s: Not enough memory", caller);
 
   context->request_id = request_id;
+  context->userdata = NULL;
 
   init_htable(&(context->selected_tags_tbl),SELECTED_TAGS_TBL_SIZE,caller);
   init_htable(&(context->suppressed_tags_tbl),SUPPRESSED_TAGS_TBL_SIZE,caller);
@@ -126,6 +197,13 @@ PRIVATE void set_request_context(HTRequest *request,
   
   /* attach context to the request */
   HTRequest_setContext(request, (void *) context);
+  HTRequest_addAfter(request,
+		     parse_termination_handler,
+		     NULL,
+		     NULL,
+		     HT_ALL,
+		     HT_FILTER_LAST,
+		     YES);
   return;
 }
 
@@ -159,7 +237,7 @@ PRIVATE void print_prolog_term(prolog_term term, char *message)
   vstrSET(&StrArgBuf,"");
   deref(term);
   print_pterm(term, 1, &StrArgBuf); 
-  fprintf(stderr, "%s = %s\n", message, StrArgBuf.string);
+  xsb_dbgmsg("%s = %s", message, StrArgBuf.string);
 } 
 #endif
 

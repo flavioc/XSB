@@ -32,7 +32,6 @@ struct _HText {
   HTParentAnchor * 	  node_anchor; 	   /* not used */
   HTStream *		  target;
   SGML_dtd *		  dtd;
-  int 	      	      	  status;    	    /* status of the HTTP request */
   int	 	     	  suppress_is_default; /* whether we begin parsing by
 						  suppressing tags */
   prolog_term	     	  parsed_term;      /* actual result of the parse */
@@ -47,45 +46,40 @@ struct _HText {
     prolog_term    content_list_tail; /* auxil var to help build elements */
   } 	    	    	  stack[MAX_HTML_NESTING]; /* keeps nested elements */
 };
+typedef HText  USERDATA;
 
 
 /* function declarations */
 
-PRIVATE inline HTTag *special_find_tag(HText *htext, int element_number);
+PRIVATE inline HTTag *special_find_tag(USERDATA *htext, int element_number);
 
-PRIVATE HText *create_HText_obj( HTRequest         *request,
-				 HTParentAnchor    *anchor,
-				 HTStream          *output_stream);
-PRIVATE BOOL delete_HText_obj(HText *me);
+PRIVATE USERDATA *create_userData( HTRequest         *request,
+				   HTParentAnchor    *anchor,
+				   HTStream          *output_stream);
+PRIVATE BOOL delete_userData(USERDATA *me);
 
 PRIVATE void setup_html_request_structure (prolog_term prolog_req, int req_id);
-PRIVATE int find_matching_elt(HText *htext, int elt_number);
+PRIVATE int find_matching_elt(USERDATA *htext, int elt_number);
 
-PRIVATE void html_push_element (HText        *htext,
-				int          element_number,
-				const BOOL   *present,
-				const char  **value);
-PRIVATE void html_pop_element(HText *htext);
-PRIVATE void html_push_suppressed_element(HText *htext, int element_number);
-PRIVATE void html_pop_suppressed_element(HText *htext);
+PRIVATE void html_push_element (USERDATA        *htext,
+				int             element_number,
+				const BOOL      *present,
+				const char     **value);
+PRIVATE void html_pop_element(USERDATA *htext);
+PRIVATE void html_push_suppressed_element(USERDATA *htext, int element_number);
+PRIVATE void html_pop_suppressed_element(USERDATA *htext);
 PRIVATE void collect_html_attributes ( prolog_term  elt_term,
 				  HTTag        *tag,
 				  const BOOL   *present,
 				  const char  **value);
 
 
-PRIVATE void html_addText (HText *htext, const char *textbuf, int len);
-PRIVATE void html_beginElement(HText  	*htext,
-			       int	element_number,
-			       const BOOL *present,
-			       const char **value);
-PRIVATE void html_endElement(HText *htext, int element_number);
-PRIVATE int html_parse_termination_handler(HTRequest    *request,
-					   HTResponse   *response,
-					   void 	*param,
-					   int     	status);
-PRIVATE void html_libwww_abort_request(HTRequest *request, int status,
-				       char *description, ...);
+PRIVATE void html_addText (USERDATA *htext, const char *textbuf, int len);
+PRIVATE void html_beginElement(USERDATA  	*htext,
+			       int	        element_number,
+			       const BOOL       *present,
+			       const char       **value);
+PRIVATE void html_endElement(USERDATA *htext, int element_number);
 
 /*-------------------*/
 enum http_method {FORM_GET, FORM_POST};
