@@ -62,7 +62,7 @@ static vstrDEFINE(input_string_buffer);
 
 /* XSB wildcard matcher entry point 
 ** Arg1: wildcard, Arg2: string to be matched, Arg3: IgnoreCase flag */
-bool do_wildmatch__(void)
+int do_wildmatch__(void)
 {
   int ignorecase=FALSE;
   int flags = 0; /* passed to wildcard matcher */
@@ -120,7 +120,7 @@ bool do_wildmatch__(void)
 ** Arg1: wildcard, Arg2: Mark directories with `/' flag, Arg3: variable that
 ** gets the list of matched files.
 ** Arg4 tells if conversion into a charlist is required. */
-bool do_glob_directory__(void)
+int do_glob_directory__(void)
 {
   glob_t file_vector;
   prolog_term listOfMatches, listHead, listTail;
@@ -211,11 +211,11 @@ static char *uppercase_string(char *str)
 }
 
 
-bool do_convert_string__(void)
+int do_convert_string__(void)
 {
   char *output_ptr=NULL, *input_string=NULL, *conversion_flag=NULL;
   prolog_term conversion_flag_term, output_term;
-  bool to_string_conversion_required=FALSE;
+  int to_string_conversion_required=FALSE;
 
   input_string_term = reg_term(1); /* Arg1: string to convert */
 

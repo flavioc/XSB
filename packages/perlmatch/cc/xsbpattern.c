@@ -40,8 +40,8 @@
 #include "perlpattern.c"          /*pattern match basic functions */   
 
 void build_sub_match_spec( void );
-bool is_global_pattern( char *);
-bool global_pattern_mode = FALSE;
+int is_global_pattern( char *);
+int global_pattern_mode = FALSE;
 
 
 #define xsb_warn(warning)	fprintf(stderr, "++Warning: %s\n", warning)
@@ -423,7 +423,7 @@ void build_sub_match_spec( void ) {
 ** This is needed so that next_match will know that it has to fail immediately,
 ** if no `g' has been specified.
 */
-bool is_global_pattern(char *pattern) {
+int is_global_pattern(char *pattern) {
   int len = strlen(pattern), i = len-1;
 
   /* skip other Perl pattern modifiers and spaces */

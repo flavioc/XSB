@@ -62,7 +62,7 @@ struct regexp_tbl_entry {
 
 struct regexp_tbl_entry regexp_tbl[REGEXP_TBL_SIZE];
 
-static bool xsb_re_match(char *regexp_ptr, char* match_str, int match_flags,
+static int xsb_re_match(char *regexp_ptr, char* match_str, int match_flags,
 			 regmatch_t **match_array, int *paren_number,
 			 char *context);
 static void initialize_regexp_tbl(void);
@@ -92,7 +92,7 @@ static vstrDEFINE(regexp_buffer);
 	     offsets of the match corresponding to the first parenthesized
 	     subexpression, etc.
 */
-bool do_regmatch__(void)
+int do_regmatch__(void)
 {
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
@@ -180,7 +180,7 @@ bool do_regmatch__(void)
 	     All matched substrings are returned. Parenthesized expressions are
 	     ignored.
 */
-bool do_bulkmatch__(void)
+int do_bulkmatch__(void)
 {
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
@@ -267,7 +267,7 @@ bool do_bulkmatch__(void)
        Arg4: new (output) string
    Always succeeds, unless error.
 */
-bool do_regsubstitute__(void)
+int do_regsubstitute__(void)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -394,7 +394,7 @@ bool do_regsubstitute__(void)
        Arg4: new (output) string
    Always succeeds, unless error.
 */
-bool do_regsubstring__(void)
+int do_regsubstring__(void)
 {
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -468,7 +468,7 @@ bool do_regsubstring__(void)
 /* should be removed when XSB gets garbage collector */
 /* converts charlist to string, but doesn't intern */
 static vstrDEFINE(temp_buffer);
-bool do_regcharlist_to_string__(void)
+int do_regcharlist_to_string__(void)
 {
 
   prolog_term input_term = reg_term(1);
@@ -530,7 +530,7 @@ static int make_flags(prolog_term flag_term, char *context)
    Returns: TRUE if matched, false, if not.
  */
 #define ERR_MSG_LEN 100
-static bool xsb_re_match(char *regexp_ptr, char *match_str, int flags,
+static int xsb_re_match(char *regexp_ptr, char *match_str, int flags,
 			 regmatch_t **match_array, int *paren_number,
 			 char *context)
 {

@@ -216,7 +216,7 @@ void load_header(char *url)
   }
 }
 
-bool do_libwww_fetch_url___(void) 
+int do_libwww_fetch_url___(void) 
 {	
   /* char *url, prolog_term Request, prolog_term Response, prolog_term
      Status */ 
@@ -299,7 +299,7 @@ bool do_libwww_fetch_url___(void)
 
 }
 
-bool do_libwww_form_request___(void) 
+int do_libwww_form_request___(void) 
 {	/* form_request(+Url, +Request, -Response) */
   char *string;
   char *url = NULL;
