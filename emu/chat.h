@@ -21,6 +21,8 @@
 ** $Id$
 ** 
 */
+#ifndef __CHAT_H__
+#define __CHAT_H__
 
 #define CHAT_CONS_AREA  0
 #define CHAT_INCR_AREA  1
@@ -117,6 +119,7 @@ extern void chat_update_compl_susp(chat_init_pheader);
 extern void chat_restore_compl_susp_trail(chat_init_pheader);
 extern chat_init_pheader save_a_consumer_copy(SGFrame,int);
 extern chat_init_pheader save_a_chat_compl_susp(SGFrame,CPtr,byte *);
+extern void chat_free_cp_compl_susp_chat_areas(ComplSuspFrame);
 
 extern void chat_set_chained(CPtr);
 extern void chat_set_unchained(CPtr);
@@ -132,4 +135,5 @@ extern chat_init_pheader chat_link_headers;
 extern CPtr restore_answer_template(chat_init_pheader,CPtr **);
 extern void undo_template_restoration(CPtr *);
 
+#endif /* __CHAT_H__ */
 /*------------------------- end of file chat.h --------------------------*/

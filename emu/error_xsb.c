@@ -44,6 +44,9 @@
 #include "macro_xsb.h"
 #include "tr_utils.h"
 #include "cut_xsb.h"
+#ifdef CHAT
+#include "chat.h"
+#endif
 
 extern void exit(int status);
 

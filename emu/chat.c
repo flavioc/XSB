@@ -321,6 +321,27 @@ CPtr chat_free_compl_susp_chat_area(chat_init_pheader ptr)
 }
 #endif
 
+
+/**
+ * chat_free_cp_compl_susp_chat_areas: cleans up CSFs on cuts
+ * @b: Completion Suspension Frame
+ * 
+ * As suggested by Kostis.
+ **/
+void chat_free_cp_compl_susp_chat_areas(ComplSuspFrame b)
+{
+  chat_init_pheader chat_ptr, chat_ptr_tmp;
+
+  chat_ptr = (chat_init_pheader) csf_prevcsf(b);
+  while (chat_ptr != NULL) {
+    chat_ptr_tmp = (chat_init_pheader) 
+      csf_prevcsf((CPtr)(&chat_get_cons_start(chat_ptr)));
+    chat_free_chat_area(chat_ptr, BATCH_MODE);
+    chat_ptr = chat_ptr_tmp;
+  }
+  chat_free_chat_area((chat_init_pheader)csf_chat_area(b),BATCH_MODE);
+}
+
 /*----------------------------------------------------------------------*/
 /* Routines that restore CHAT areas.                                    */
 /*----------------------------------------------------------------------*/

@@ -54,6 +54,14 @@
 /*									*/
 /*----------------------------------------------------------------------*/
 
+#ifdef CHAT
+#define CHAT_CSF_CLEANUP(instruc) \
+ if (instruc == resume_compl_suspension) \
+    chat_free_cp_compl_susp_chat_areas((ComplSuspFrame)breg);
+#else
+#define CHAT_CSF_CLEANUP(instruc)
+#endif
+
 #define CHECK_TABLE_CUT(instruc)       \
   if (check_table_cut)                 \
     switch (instruc) {                 \
@@ -72,7 +80,9 @@
       break;                           \
     default:                           \
       break;                           \
-    }
+    }                                  \
+  CHAT_CSF_CLEANUP(instruc)
+
 
 #define cut_code(OP1)	                                        \
    { CPtr cut_breg;					        \
