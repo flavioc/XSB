@@ -79,7 +79,7 @@ double realtime_count;
 
 extern int *asynint_ptr;	/* 0 - no interrupt (or being processed) */
 
-extern void dis(int), debug_call(Psc);
+extern void dis(xsbBool), debug_call(Psc);
 extern void total_stat(double);
 extern void perproc_stat(void), perproc_reset_stat(void), reset_stat_total(void); 
 
@@ -428,10 +428,12 @@ static inline int sign(Float num)
 /*	in the above ordering list.					*/
 /*======================================================================*/
 
-int compare(Cell val1, Cell val2)
+int compare(void * v1, void * v2)
 {
   int comp;
   CPtr cptr1, cptr2;
+  Cell val1 = (Cell) v1 ;
+  Cell val2 = (Cell) v2 ;
 
   XSB_Deref(val2);		/* val2 is not in register! */
   XSB_Deref(val1);		/* val1 is not in register! */
@@ -537,8 +539,11 @@ int compare(Cell val1, Cell val2)
 /*	standard total order of Prolog terms (see compare()).		*/
 /*======================================================================*/
 
-int key_compare(Cell term1, Cell term2)
+int key_compare(void * t1, void * t2)
 {
+  Cell term1 = (Cell) t1 ;
+  Cell term2 = (Cell) t2 ;
+
   XSB_Deref(term1);		/* term1 is not in register! */
   XSB_Deref(term2);		/* term2 is not in register! */
   return compare(cell(clref_val(term1)+1), cell(clref_val(term2)+1));
