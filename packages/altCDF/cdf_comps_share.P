@@ -474,7 +474,7 @@ load_component_dependencies_pass2(_,_).
 initialize_component(Name,Path):- 
 	slash(Slash),
 	concat_atom([Path,Slash,Name,'/initialization_file.P'],File),
-	(file_exists(File) -> consult(File) ; true).
+	(file_exists(File) -> load_dyn(File) ; true).
 
 %---------------
 

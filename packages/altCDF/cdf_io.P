@@ -264,6 +264,9 @@ read_intensional_rules_2((Head :- Body),Name):- !,
 	asserta((:-(Head,NewHead))),
 	asserta((:-(NewHead,Body))),
 	fail.
+read_intensional_rules_2(auxiliary_cdf_rule(Comp,Head,Body),Name):- !,
+	asserta((:-(Head,Body))),
+	fail.
 read_intensional_rules_2(T,Name):- 
 	transform_intensional_rules(T,NewHead,Name),
 	asserta((:-(T,NewHead))),
