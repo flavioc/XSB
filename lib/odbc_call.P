@@ -22,8 +22,9 @@
 ** 
 */
 
+:- dynamic attribute/4.
 
-% --- for projction goal, we are to use bind variables for those constants. 
+% --- for projection goal, we are to use bind variables for those constants. 
 
 get_mode([],[],[]) :- !.
 
@@ -134,7 +135,8 @@ relation(dept,3,'DEPT').
 */
 %% -- attribute(PrologArgumentPosition,SQLTableName,SQLAttributeName)
 
-attribute(1,'FLIGHT','FLIGHT_NO',string).
+%attribute(1,'FLIGHT','FLIGHT_NO',string).
+
 /*
 attribute(1,'nameid','ID',integer).
 attribute(2,'FLIGHT','DEPARTURE',string).
@@ -1921,16 +1923,16 @@ odbc_delete_record(Table,VList) :-
     Query =.. [Table1|VList],!,
     Query.
         
-db_flag(fail_on_error,on,off) :-
+odbc_flag(fail_on_error,on,off) :-
     retract('$ora_err$'(on)), assert('$ora_err$'(off)).
 
-db_flag(fail_on_error, off, on) :-
+odbc_flag(fail_on_error, off, on) :-
     retract('$ora_err$'(off)), assert('$ora_err$'(on)).
 
-db_flag(show_query, off, on) :-
+odbc_flag(show_query, off, on) :-
     retract('$show_query$'(off)), assert('$show_query$'(on)).
 
-db_flag(show_query, on, off) :-
+odbc_flag(show_query, on, off) :-
     retract('$show_query$'(on)), assert('$show_query$'(off)).
       
 odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
