@@ -210,6 +210,8 @@ standard_symbol(xsb_flag, 2, curr_sym).
 standard_symbol(('_$cutto'), 1, standard).
 standard_symbol(('_$savecp'), 1, standard).
 
+standard_symbol(set_global_compiler_options, 1, auxlry).
+
 standard_symbol((('\+')), 1, standard).
 standard_symbol('!', 0, inline).
 standard_symbol(('=:='), 2, standard).

@@ -721,7 +721,8 @@ and at the time of the call both of its arguments should be ground.
 The second form allows the user to supply a proper list of file names as
 the parameter for {\tt compile/[1,2]}.  In this case the compiler will
 compile all the files in {\tt FileList} with the compiler
-options specified in {\tt OptionList}.
+options specified in {\tt OptionList} (but see
+Section~\ref{compiler_options} below for the precise details.)
 
 % JF
 %\demo{\verb+|+ ?- compile(Files).} 
@@ -798,6 +799,26 @@ for a foreign language module (see Chapter~\ref{foreign}).
 \subsection{Compiler Options}\label{compiler_options}
 \index{Compiler!options}\index{options!Compiler}
 %=================================================
+
+Compiler options can be set in three ways: from a global list of
+options (see {\tt set\_global\_compiler\_options/1}), from the
+compilation command (see {\tt compile/2} and {\tt consult/2}), and
+from a directive in the file to be compiled (see compiler directive
+{\tt compiler\_options/1}).
+
+\begin{description}
+\ouritem{set\_global\_compiler\_options(+OptionsList)}\index{{\tt
+set\_global\_compiler\_options/1}} 
+    {\tt OptionsList} is a list of compiler options (described below).
+    Each can optionally be prefixed by \verb|+| or \verb|-|,
+    indicating that the option is to be turned on, or off,
+    respectively.  (No prefix turns the option on.)  This evaluable
+    predicate sets the global compiler options in the way indicated.
+    These options will be used in any subsequent compilation, unless
+    reset by another call to this predicate, or overridden by options
+    provided in the compile invocation, or overridden by options in
+    the file to be compiled.
+\end{description}
 
 The following options are currently recognized by the compiler:
 \begin{description}
@@ -1411,6 +1432,15 @@ XSB has other directives not found in other Prolog systems.
 \desc{:- ldoption($Options$).}
         This directive is only recognized in the header file ({\tt .H} file) 
 	of a foreign module. See Chapter~\ref{foreign} for its explanation.
+\desc{:- compiler\_options($OptionsList$).}
+	Indicates that the compiler options in the list $OptionsList$
+	should be used to compile this file.  This must appear at the
+	beginning of the file.  Thes options will override any others,
+	including those given in the compilation command.  The options
+	may be optionally prefixed with \verb|+| or \verb|-| to
+	indicate that they should be set on or off.  (No prefix
+	indicates the option should be set on.)
+
 \end{description}
 
 \subsection{Inline Predicates}\label{inline_predicates}
