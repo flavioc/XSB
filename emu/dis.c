@@ -114,7 +114,7 @@ static void dis_data_sub(Pair *chain_ptr, char* modname)
 	    case T_MODU: fprintf(filedes, "'MODU',"); break;
 	    case T_FORN: fprintf(filedes, "'FORN',"); break;
 	    case T_UDEF: fprintf(filedes, "'UDEF',"); break;
-	    default:	 fprintf(filedes, "'????',"); break;
+	    default:	 fprintf(filedes, "\'????\',"); break;
 	}
 	switch(get_env(temp)) {
 	    case T_VISIBLE:  fprintf(filedes, "'VISIBLE',"); break;
