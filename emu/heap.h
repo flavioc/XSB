@@ -43,7 +43,7 @@
 #define new_heap_functor(sh_reg, psc) bld_functor(sh_reg++, psc)
 /* make a new functor node in heap */
 
-#define new_heap_node(sh_reg, x) bld_copy0(sh_reg++, x)
+#define new_heap_node(sh_reg, x) bld_copy(sh_reg++, x)
 /* make a new heap node with value x (one word type) */
 
 /*----- The following functions are used in other parts of the system --*/
