@@ -30,27 +30,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "basictypes.h"
+#include "auxlry.h"
 #include "struct_manager.h"
 #include "cell.h"
 #include "xsberror.h"
 
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 void smPrint(Structure_Manager smRecord, char *string) {
 
   fprintf(stddbg,
 	  "  Structure Manager for %s (%s)\n"
-	  "\tBlock:    %p\t\tFree List:  %p\n"
-	  "\tNextStr:  %p\t\tAlloc List: %p\n"
-	  "\tLastStr:  %p\n"
-	  "\tStructs per block:  %d\tStruct size: %dbytes\n",
-	  SM_StructName(smRecord), string,
-	  SM_CurBlock(smRecord), SM_FreeList(smRecord),
-	  SM_NextStruct(smRecord), SM_AllocList(smRecord),
+	  "\tBlock:   0x%p\t\tFree List:  0x%p\n"
+	  "\tNextStr: 0x%p\t\tAlloc List: 0x%p\n"
+	  "\tLastStr: 0x%p\n"
+	  "\tStructs per block:  %d\tStruct size: %d bytes\n",
+	  SM_StructName(smRecord),	string,
+	  SM_CurBlock(smRecord),	SM_FreeList(smRecord),
+	  SM_NextStruct(smRecord),	SM_AllocList(smRecord),
 	  SM_LastStruct(smRecord),
-	  SM_StructsPerBlock(smRecord), SM_StructSize(smRecord));
+	  SM_StructsPerBlock(smRecord),	SM_StructSize(smRecord));
 }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 void smAllocateBlock(Structure_Manager *pSM) {
 
@@ -60,10 +63,9 @@ void smAllocateBlock(Structure_Manager *pSM) {
   smPrint(*pSM,"before block allocation");
 #endif
   pNewBlock = malloc(SM_NewBlockSize(*pSM));
-  if ( IsNULL(pNewBlock) ) {
+  if ( IsNULL(pNewBlock) )
     xsb_abort("Ran out of memory in allocation of %s block\n",
 	      SM_StructName(*pSM));
-  }
   SMBlk_NextBlock(pNewBlock) = SM_CurBlock(*pSM);
   SM_CurBlock(*pSM) = pNewBlock;
   SM_NextStruct(*pSM) = SMBlk_FirstStruct(pNewBlock);
@@ -75,6 +77,7 @@ void smAllocateBlock(Structure_Manager *pSM) {
 #endif
 }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Return all blocks held by the Structure Manager to the system.
