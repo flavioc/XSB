@@ -40,16 +40,22 @@
    assert(library_directory(LibDir1)),
 
    %% Add the configuration-INDEPENDENT SITE library to the search path
-   xsb_configuration(site_libdir, LibDir2),
-   assert(library_directory(LibDir2)),
+   (xsb_configuration(site_libdir, LibDir2)
+   -> assert(library_directory(LibDir2))
+   ;  true
+   ),
 
    %% Add the configuration-SPECIFIC SITE library to the search path
-   xsb_configuration(site_config_libdir, LibDir3),
-   assert(library_directory(LibDir3)),
+   (xsb_configuration(site_config_libdir, LibDir3)
+   -> assert(library_directory(LibDir3))
+   ;  true
+   ),
 
    %% Add the SYSTEM configuration-SPECIFIC library to the search path
-   xsb_configuration(config_libdir, LibDir4),
-   assert(library_directory(LibDir4)),
+   (xsb_configuration(config_libdir, LibDir4)
+   -> assert(library_directory(LibDir4))
+   ;  true
+   ),
 
    %% Add the $USER_HOME/.xsb/config/<arch> directory -- the place for
    %% dynamically compiles *.so files and similar stuff.

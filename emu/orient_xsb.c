@@ -45,6 +45,8 @@
 #include "export.h"
 #include "basicdefs.h"
 #include "basictypes.h"
+#include "cell_xsb.h"
+#include "error_xsb.h"
 
 char executable[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
 
@@ -85,16 +87,7 @@ void set_xsbinfo_dir () {
   retcode = stat(old_xinitrc, &fileinfo);
 
   if ((retcode == 0) && (stat(new_xinitrc, &fileinfo) != 0)) {
-    fprintf(stderr,
-	    "*************************************************************\n");
-    fprintf(stderr,
-	    "****It appears that you have an old-style `.xsbrc' file!*****\n");
-    fprintf(stderr, "The XSB initialization file is now %s.\n", new_xinitrc);
-    fprintf(stderr, "If your `.xinitrc' defines the `library_directory' predicate.\n");
-    fprintf(stderr,
-	    "Please consult the XSB manual for the new conventions.\n");
-    fprintf(stderr,
-	    "*************************************************************\n");
+    xsb_warn("It appears that you have an old-style `.xsbrc' file!\n           The XSB initialization file is now %s.\n           If your `.xinitrc' defines the `library_directory' predicate,\n           please consult the XSB manual for the new conventions.", new_xinitrc);
   }
 }
 
@@ -106,13 +99,8 @@ static void check_create_dir(char *path) {
   int retcode = stat(path, &fileinfo);
 
   if (retcode == 0 && ! S_ISDIR(fileinfo.st_mode)) {
-    fprintf(stderr,
-	    "*************************************************************\n");
-    fprintf(stderr, "File `%s' exists, but isn't a directory.\n", path);
-    fprintf(stderr, "XSB needs directory `%s' to store data.\n", path);
-    fprintf(stderr,
-	    "*************************************************************\n");
-    exit(1);
+    xsb_warn("File `%s' is not a directory!\n           XSB uses this directory to store data.", path);
+    /* exit(1); */
   }
 
   if (retcode != 0) 
@@ -123,13 +111,8 @@ static void check_create_dir(char *path) {
 #endif
 
   if (retcode != 0) {
-    fprintf(stderr,
-	    "*************************************************************\n");
-    fprintf(stderr, "Cannot create directory `%s'.\n", path);
-    fprintf(stderr, "XSB needs directory `%s' to store data.\n", path);
-    fprintf(stderr,
-	    "*************************************************************\n");
-    exit(1);
+    xsb_warn("Cannot create directory `%s'!\n           XSB uses this directory to store data.", path);
+    /* exit(1); */
   }
 }
 
@@ -267,8 +250,8 @@ void set_config_file() {
 	    "*************************************************************\n");
     fprintf(stderr, "PANIC!! The file configuration.P\n");
     fprintf(stderr,
-	    "is not where it is expected: %s%cconfig%c%s\n",
-	    install_dir, SLASH, SLASH, FULL_CONFIG_NAME);
+	    "is not where it is expected: %s%cconfig%c%s%clib\n",
+	    install_dir, SLASH, SLASH, FULL_CONFIG_NAME, SLASH);
     fprintf(stderr, "Perhaps you moved the XSB executable %s\n", executable);
     fprintf(stderr, "away from its usual place?\n");
     fprintf(stderr,
