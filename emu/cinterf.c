@@ -48,6 +48,13 @@
 #include "error_xsb.h"
 #include "orient_xsb.h"
 
+/*
+  This was the old test for being a kosher Prolog string
+#define PRINTABLE_OR_ESCAPED_CHAR(Ch) (Ch <= 255 || Ch >= 0)
+*/
+#define PRINTABLE_OR_ESCAPED_CHAR(Ch) \
+  ((Ch >= (int)' ' && Ch <= (int)'~') || (Ch >= (int)'\a' && Ch <= (int)'\r'))
+
 /* the following really belongs somewhere else */
 extern char *expand_filename(char *);
 extern void xsb_sprint_variable(char *sptr, CPtr var);
@@ -300,7 +307,8 @@ DllExport prolog_term call_conv p2p_deref(prolog_term term)
 
 
 /* convert Arg 1 -- prolog list of characters (a.k.a. prolog string) into C
-   string and return this string.
+   string and return this string. A character is an integer 1 through 255
+   (i.e., not necessarily printable)
    Arg 2: ptr to string buffer where the result is to be returned.
           Space for this buffer must already be allocated.
    Arg 3: which function was called from.
@@ -331,8 +339,7 @@ char *p_charlist_to_c_string(prolog_term term, VarString *buf,
 		in_func, where);
     }
     head_val = int_val(list_head);
-    /* ' ' is the lowest printable ascii and '~' is the highest */
-    if (head_val < (int)' ' || head_val > (int)'~') {
+    if (! PRINTABLE_OR_ESCAPED_CHAR(head_val) ) {
       xsb_abort("[%s] A Prolog string (a character list) expected, %s",
 		in_func, where);
     }
@@ -414,9 +421,11 @@ void c_string_to_p_charlist(char *name, prolog_term list,
 }
 
 
-/* The following function checks if a given term is a prolog string.
+/* The following function checks if a given term is a prolog string of
+   printable characters.
    It also counts the size of the list.
-   It deals with the same escape sequences as p_charlist_to_c_string */
+   It deals with the same escape sequences as p_charlist_to_c_string.
+*/
 
 DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
 {
@@ -442,7 +451,7 @@ DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
     
     head_char = (char) int_val(head);
     /* ' ' is the lowest printable ascii and '~' is the highest */
-    if (head_char < (int)' ' || head_char > (int)'~')
+    if (! PRINTABLE_OR_ESCAPED_CHAR(head_char) )
       return FALSE;
 
     if (escape_mode)
@@ -482,9 +491,9 @@ DllExport char *call_conv p2c_chars(prolog_term term, char *buf, int bsize)
   
   if (strlen(bufvar.string) > bsize) {
     xsb_abort("Buffer overflow in p2c_chars");
-  } else {
-    strcpy(buf,bufvar.string);
   }
+
+  return strcpy(buf,bufvar.string);
 }
 
 DllExport void call_conv c2p_chars(char *str, prolog_term term)
