@@ -699,7 +699,7 @@ case resume_compl_suspension:
     check_glstack_overflow(MAX_ARITY,lpcreg,OVERFLOW_MARGIN);
     freeze_and_switch_envs(csf, COMPL_SUSP_CP_SIZE);
     ptcpreg = csf_ptcp(csf);
-    neg_delay = csf_neg_loop(csf);
+    neg_delay = (csf_neg_loop(csf) != FALSE);
     delayreg = csf_pdreg(csf);
     cpreg = csf_cpreg(csf); 
     ereg = csf_ereg(csf);
