@@ -222,7 +222,7 @@ extern Float getfloatval(Cell);
 #define bld_nil(addr) cell(addr) = makenil
 #define bld_string(addr, str) cell(addr) = makestring(str)
 #define bld_int(addr, val) cell(addr) = makeint(val)
-#define bld_float(addr, val) cell(addr) = makefloat(val)
+#define bld_float(addr, val) cell(addr) = makefloat((float)val)
 #define bld_ref(addr, val) cell(addr) = (Cell)(val)
 #define bld_cs(addr, str) cell(addr) = makecs(str)
 #define bld_list(addr, list) cell(addr) = makelist(list)

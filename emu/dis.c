@@ -79,7 +79,7 @@ static void dis_data(void)
 	        fprintf(filedes, "/* module %s : LOADED. */\n\n", modname);
 	   else fprintf(filedes, "/* module %s : UNLOADED. */\n\n", modname);
 	   if (strcmp(modname,"global")==0)
-	   	for(i=0; i < symbol_table.size; i++) {
+	   	for(i=0; i < (int)symbol_table.size; i++) {
 		  if ( symbol_table.table[i] ) {
 		    fprintf(filedes, "... ... BUCKET NO. %d\n", i);
 		    dis_data_sub((Pair *)(symbol_table.table + i));

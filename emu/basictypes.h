@@ -51,7 +51,7 @@ typedef unsigned int counter;
 typedef unsigned long word;
 typedef byte *pb;
 typedef word *pw;
-typedef int (*PFI)();
+typedef int (*PFI)(void);
 typedef int *int_ptr;
 
 

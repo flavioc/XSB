@@ -840,7 +840,7 @@ static bool target_is_not_source(int Reg)
   int i;
   
   for (i=inst_queue_bottom; i<inst_queue_top; i++) {
-    if (inst_queue[i].opcode==movreg && inst_queue[i].arg1 == Reg)
+    if (inst_queue[i].opcode==movreg && (int)inst_queue[i].arg1 == Reg)
       return FALSE;
   }
   return TRUE;
@@ -851,7 +851,7 @@ static bool source_is_not_target(int Reg)
   int i;
   
   for (i=inst_queue_bottom; i<inst_queue_top; i++) {
-    if (inst_queue[i].arg2 == Reg) return FALSE;
+    if ((int)inst_queue[i].arg2 == Reg) return FALSE;
   }
   return TRUE;
 }
@@ -1098,7 +1098,7 @@ typedef ClRef SOBRef ;
                                cell_operand1(ClRefEntryAny(Cl))!=66)
 
 static void db_addbuff(byte, ClRef, PrRef, int, int); 
-static void db_addbuff_i(int, ClRef, PrRef, int, int *, int, prolog_term, int);
+static void db_addbuff_i(byte, ClRef, PrRef, int, int *, int, prolog_term, int);
 
 
 /* Used by assert & retract to get through the SOBs */
@@ -1232,9 +1232,9 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int Inum)
   } else xsb_dbgmsg("***Error 3 in assert");
 }
 
-static int hash_resize( PrRef Pred, SOBRef SOBrec, int OldTabSize )
+static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
 {
-   int ThisTabSize ;
+   unsigned int ThisTabSize ;
 
 /* xsb_dbgmsg("SOB - %p, with %d cls",
 	      SOBrec, ClRefNumClauses(SOBrec) ) ;
@@ -1352,7 +1352,7 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
     }
 }
 
-static void addto_allchain( int AZ, ClRef Clause, SOBRef SOBrec, int Arity)
+static void addto_allchain( int AZ, ClRef Clause, SOBRef SOBrec, byte Arity)
 {
   ClRef Last, First ;
   int Loc ;
@@ -1380,11 +1380,11 @@ static void addto_allchain( int AZ, ClRef Clause, SOBRef SOBrec, int Arity)
 }
 
 /* adds an indexed buffer to an index chain */
-static void db_addbuff_i(int Arity, ClRef Clause, PrRef Pred, int AZ,
+static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
 			 int *Index, int NI, prolog_term Head, int HashTabSize)
 { SOBRef SOBbuff ;
   int Inum, Ind;
-  int ThisTabSize, Hashval;
+  unsigned int ThisTabSize; int Hashval;
 
   SOBbuff = AZ == 0 ? Pred->FirstClRef : Pred->LastClRef ;
   HashTabSize = ThisTabSize = hash_resize(Pred, SOBbuff, HashTabSize);
@@ -2146,7 +2146,7 @@ int trie_assert(void)
 
     *(Trie_Asserted_Clref +3) = (Cell)inst_node_ptr;
 
-    db_addbuff(get_arity(psc) + 1,(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,2);
+    db_addbuff((byte)(get_arity(psc) + 1),(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,2);
   }
   else
     inst_node_ptr = (BTNptr)*(Trie_Asserted_Clref +3);

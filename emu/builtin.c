@@ -949,8 +949,8 @@ int builtin_call(byte number)
     break;
   case STAT_SET_FLAG:	/* R1: flagname(+int); R2: value(+int); */
     flags[ptoc_int(1)] = ptoc_int(2);
-    call_intercept = flags[DEBUG_ON]|flags[TRACE_STA]|flags[HITRACE]
-      |flags[CLAUSE_INT];
+    call_intercept = (byte) (flags[DEBUG_ON]|flags[TRACE_STA]|flags[HITRACE]
+      |flags[CLAUSE_INT]);
     break;
   case BUFF_ALLOC: {	/* R1: size (+integer); R2: -buffer; */
 	           /* the length of the buffer is also stored at position 0 */
@@ -1209,7 +1209,7 @@ int builtin_call(byte number)
       psc = pair_psc(insert_module(0, addr));
     else
       psc = (Psc)flags[CURRENT_MODULE];
-    sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
+    sym = insert(ptoc_string(1), (char)ptoc_int(2), psc, &value);
     ctop_addr(3, pair_psc(sym));
     break;
   }
@@ -1223,10 +1223,10 @@ int builtin_call(byte number)
      */
     int  value;
     Psc  psc = pair_psc(insert_module(0, ptoc_string(3)));
-    Pair sym = insert(ptoc_string(1), ptoc_int(2), psc, &value);
+    Pair sym = insert(ptoc_string(1), (char)ptoc_int(2), psc, &value);
     if (value)       /* if predicate is new */
       set_ep(pair_psc(sym), (byte *)(psc));
-    env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, value);
+    env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (bool)value);
     link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
     break;
   }
@@ -1256,7 +1256,7 @@ int builtin_call(byte number)
 	  ctop_int(4, *(long *)(token->value));
 	  break;
         case TK_REAL : case TK_REALFUNC : 
-	  {Float float_temp =  *(double *)(token->value);
+	  {Float float_temp =  (float)(*(double *)(token->value));
 	  ctop_float(4, float_temp);
 	  }
 	  break;
@@ -1462,7 +1462,7 @@ int builtin_call(byte number)
   case NEXT_BUCKET: {     /* R1: +Index of Symbol Table Bucket. */
     /* R2: -Next Index (0 if end of Hash Table) */
     int value = ptoc_int(1);
-    if ( (value >= (symbol_table.size - 1)) || (value < 0) )
+    if ( ((unsigned int)value >= (symbol_table.size - 1)) || (value < 0) )
       ctop_int(2, 0);
     else 
       ctop_int(2, (value + 1));
@@ -1660,18 +1660,18 @@ int builtin_call(byte number)
      * large enough to contain the currently used portion of the data area.
      */
     if (tcpstack.size != tcpstack.init_size)
-      if ( (Integer)((tcpstack.high - (byte *)top_of_cpstack) +
+      if ( (unsigned int)((tcpstack.high - (byte *)top_of_cpstack) +
 		     ((byte *)top_of_trail - tcpstack.low))
 	   < tcpstack.init_size * K - OVERFLOW_MARGIN )
 	tcpstack_realloc(tcpstack.init_size);
 
     if (complstack.size != complstack.init_size)
-      if ( (Integer)(complstack.high - (byte *)openreg)
+      if ( (unsigned int)(complstack.high - (byte *)openreg)
 	   < complstack.init_size * K - OVERFLOW_MARGIN )
 	complstack_realloc(complstack.init_size);
 
 	if (glstack.size != glstack.init_size)
-	  if ( (Integer)((glstack.high - (byte *)top_of_localstk) +
+	  if ( (unsigned int)((glstack.high - (byte *)top_of_localstk) +
 			 ((byte *)hreg - glstack.low))
 	       < glstack.init_size * K - OVERFLOW_MARGIN )
 	glstack_realloc(glstack.init_size,0);

@@ -188,7 +188,7 @@ DllExport bool call_conv c2p_functor(char *functor, int arity, prolog_term var)
     Pair sym;
     int i;
     if (is_var(v)) {
-	sym = (Pair)insert(functor, arity, (Psc)flags[CURRENT_MODULE], &i);
+	sym = (Pair)insert(functor, (byte)arity, (Psc)flags[CURRENT_MODULE], &i);
 	sreg = hreg;
 	hreg += arity + 1;
 	bind_cs(vptr(v), sreg);
@@ -810,8 +810,8 @@ static char *ptoc_term0(char *ptr, char *c_dataptr,
 	case 'f':
 
 	if (!ignore) {
-	    if (is_float(variable)) *((float *)(c_dataptr)) =
-	       p2c_float(variable);
+	    if (is_float(variable)) 
+	      *((float *)(c_dataptr)) = (float)p2c_float(variable);
 	    else cppc_error(13);
 	}
 	c_dataptr_rest = c_dataptr + sizeof(float);
