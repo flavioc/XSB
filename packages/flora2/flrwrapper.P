@@ -347,6 +347,7 @@ flora_decode_firstorder_module_prefix(Funct,ModuleType,Flora_module_prefix_len_p
 *****************************************************************************/
 flora_is_flogic_wrapper(WrapPrefix,Base) :-
 	( WrapPrefix=FLHEADPREFIX
+	; WrapPrefix=FLBODYPREFIX
 	; WrapPrefix=FLFACTPREFIX
 	; WrapPrefix=FLTRAILERPREFIX
 	),
@@ -430,7 +431,7 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	( ModuleType == usermodule ->
 	    ModuleName=Workspace
 
-	; ModuleType == usermodule ->
+	; ModuleType == systemmodule ->
 	    ModuleName=FL_FLORALIB(Workspace)
 	),
 	%% Locate the end of workspace name, assuming the next quote after
@@ -452,34 +453,25 @@ flora_decode_predicate(Predicate,PredicateType,ModuleName,
 	      PredicateSymbol=[],
 	      ArgsList=[]
 	    )
-
-	; flora_is_flogic_base(Wrapper) ->
-	    %% This relies on the fact that the main wrappers
-	    %% like fd, mvd, etc. don't have a prefix!
-	    %% (The prefix here is FLBODYPREFIX='').
-	    PredicateType=flogic,
-	    PredicateSymbol=Wrapper,
-	    WrapPrefix='',
-	    ArgsList=Args
-
-	; str_match('_',Wrapper,reverse,_,S1) ->
-	    %% The predicate consists of a prefix and a base.
-	    substring(Wrapper,0,S1,WrapPrefix),
-	    substring(Wrapper,S1,-1,PredicateSymbol),
-	    ( flora_is_flogic_wrapper(WrapPrefix,PredicateSymbol) ->
-		PredicateType=flogic
-	    ;
-	      PredicateType=flora
-	    ),
-	    ArgsList=Args
 	;
-	  %% a Flora builtin predicate, like difobjeeql/2
-	  PredicateType=flora,
-	  WrapPrefix='',
-	  PredicateSymbol=Wrapper,
-	  ArgsList=Args
-	),
-	!.
+	  %% either an F-logic wrapper or Flora system wrapper predicate
+	  ArgsList=Args,
+	  ( str_match('_',Wrapper,reverse,_,S) ->
+	      %% The predicate consists of a prefix and a base.
+	      substring(Wrapper,0,S,WrapPrefix),
+	      substring(Wrapper,S,-1,PredicateSymbol)
+	  ;
+	    WrapPrefix='',
+	    PredicateSymbol=Wrapper
+	  ),
+	  !,
+	  ( flora_is_flogic_wrapper(WrapPrefix,PredicateSymbol) ->
+	      PredicateType = (flogic)
+	  ;
+	    %% a Flora builtin predicate, like difobjeql/2
+	    PredicateType = (flora)
+	  )
+	).
 
 flora_decode_predicate(Predicate,firstorder,ModuleName,
 		       _WrapPrefix,PredicateSymbol,ArgsList) :-
@@ -491,7 +483,7 @@ flora_decode_predicate(Predicate,firstorder,ModuleName,
 	( ModuleType == usermodule ->
 	    ModuleName=Workspace
 
-	; ModuleType == usermodule ->
+	; ModuleType == systemmodule ->
 	    ModuleName=FL_FLORALIB(Workspace)
 	),
 	%% Locate the end of workspace name, assuming the next quote after
