@@ -36,23 +36,25 @@
 
 /* Change Evaluation Method for Tabled Predicate
    --------------------------------------------- */
-variant(PredSpecList) :-
-	is_list(PredSpecList),
-	( member(PredSpec,PredSpecList),
-	  set_tabled_eval_for_pred(PredSpec,VARIANT_EVAL_METHOD),
-	  fail;
-	  true ).
+use_variant_tabling(CommaList) :-
+	set_eval_method_for_comma(CommaList,VARIANT_EVAL_METHOD).
 
-subsumptive(PredSpecList) :-
-	is_list(PredSpecList),
-	( member(PredSpec,PredSpecList),
-	  set_tabled_eval_for_pred(PredSpec,SUBSUMPTIVE_EVAL_METHOD),
-	  fail;
-	  true ).
+use_subsumptive_tabling(CommaList) :-
+	set_eval_method_for_comma(CommaList,SUBSUMPTIVE_EVAL_METHOD).
 
+set_eval_method_for_comma((PS1,PS2),EvalMethod) :-
+	!, set_eval_method_for_comma(PS1,EvalMethod),
+	set_eval_method_for_comma(PS2,EvalMethod).
+set_eval_method_for_comma(PredSpec,EvalMethod) :-
+	set_tabled_eval_for_pred(PredSpec,EvalMethod).
+
+/*
+ * Setting of the evaluation method will fail if calls exist in the
+ * Call Trie.
+ */
 set_tabled_eval_for_pred(PredSpec,Method) :-
 	( PredSpec = P/N -> functor(Term,P,N); Term = PredSpec ),
-	set_tabled_eval(Term,Method).
+	( set_tabled_eval(Term,Method), fail; true ).
 
 set_tabled_eval(_Term,_Method) :- '_$builtin'(SET_TABLED_EVAL).
 
@@ -90,7 +92,9 @@ answer_set_status_code(INCOMPLETE_ANSWER_SET, incomplete).
 
 /*
  * For [temporary] backward compatibility, redefine table_state/2 in
- * terms of the newer table_state/4.  */
+ * terms of the newer table_state/4.
+ */
+
 table_state(Call, State) :-
 	table_state(Call, PredType, _CallType, AnsSetStatus),
 	( PredType == variant ->
@@ -126,7 +130,8 @@ tfindall(T, Call, Result) :-
 	    ( AnsSetStatus == complete ->
 		warning((Call, ' answer set is complete; continuing...')),
 		findall(T,Call,Result)
-	    ; abort('  Answer set is not complete; cannot continue.')
+	    ; abort([' ', Call,
+	             'answer set is not complete; cannot continue.'])
 	    )
 	  )
         ; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
@@ -142,8 +147,8 @@ tnot(Goal) :-
 't not'(Goal) :-
 	table_state(Goal,PredType,_CallType,_AnsSetStatus),
 	( PredType == subsumptive ->
-	  abort(['tnot/1: Negation of subsumptive predicates currently ',
-	         'not supported'])
+	  abort(['Negation of subsumptive predicates currently',
+	         'not supported.'])
 	; get_ptcp(PTCP), get_subgoal_ptr(Goal, SubgPtr),
 	  ( SubgPtr =:= 0, tcall(Goal), fail
 	  ; is_incomplete(Goal, SubgPtr, PTCP, Subg), slg_not(Subg)
@@ -155,7 +160,7 @@ tnot(Goal) :-
 % calls.
 
 :- table tunnumcall/1.
-:- variant([tunnumcall(_)]).
+:- use_variant_tabling tunnumcall(_).
 
 sk_not(Goal) :-
 	copy_term(Goal,Goal1),

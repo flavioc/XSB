@@ -91,7 +91,7 @@ bagAvg(Call,Avg) :-
 bagPO(Call,Var,PO) :- bagPO1(Call,Var,PO), fail.
 bagPO(Call,Var,PO) :- bagPO1(Call,Var,PO).
 :- table bagPO1/3.
-:- variant([bagPO1(_,_,_)]).
+:- use_variant_tabling bagPO1(_,_,_).
 bagPO1(Call,Var,PO) :- 
 	'_$savecp'(Breg),
 	breg_retskel(Breg,3,Skel,Cs),
@@ -115,7 +115,7 @@ bagPO1(Call,Var,PO) :-
 bagReduce(Call,_Res,Op,Id) :- bagReduce1(Call,_,Op,Id), fail.
 bagReduce(Call,Res,Op,Id) :- bagReduce1(Call,Res0,Op,Id), Res=Res0.
 :- table bagReduce1/4.
-:- variant([bagReduce1(_,_,_,_)]).
+:- use_variant_tabling bagReduce1(_,_,_,_).
 bagReduce1(Call,Res,Op,Id) :-
 	'_$savecp'(Breg),
 	breg_retskel(Breg,4,Skel,Cs),
@@ -152,7 +152,7 @@ min(One,Two,Min):- One > Two -> Min = Two ; Min = One.
 filterReduce(Call,Op,Id,Res) :- filterReduce1(Call,Op,Id,Res), fail.
 filterReduce(Call,Op,Id,Res) :- filterReduce1(Call,Op,Id,Res).
 :- table filterReduce1/4.
-:- variant([filterReduce1(_,_,_,_)]).
+:- use_variant_tabling filterReduce1(_,_,_,_).
 filterReduce1(Call,Op,Id,Res) :-
 	'_$savecp'(Breg),
 	breg_retskel(Breg,4,Skel,Cs),
@@ -185,7 +185,7 @@ filterReduce1(Call,Op,Id,Res) :-
 filterPO(Call,Var,PO) :- filterPO1(Call,Var,PO), fail.
 filterPO(Call,Var,PO) :- filterPO1(Call,Var,PO).
 :- table filterPO1/3.
-:- variant([filterPO1(_,_,_)]).
+:- use_variant_tabling filterPO1(_,_,_).
 filterPO1(Call,Var,PO) :- 
 	'_$savecp'(Breg),
 	breg_retskel(Breg,3,Skel,Cs),
@@ -244,7 +244,7 @@ filterPO(Call,PO) :- filterPO1(Call,PO), fail.
 filterPO(Call,PO) :- filterPO1(Call,PO).
 
 :- table filterPO1/2.
-:- variant([filterPO1(_,_)]).
+:- use_variant_tabling filterPO1(_,_).
 filterPO1(Call,PO) :- 
 	'_$savecp'(Breg),
 	breg_retskel(Breg,2,Skel,Cs),
@@ -271,7 +271,7 @@ filterPO1(Call,PO) :-
 
 %-----------------
 :- table table_once/1.
-:- variant([table_once(_)]).
+:- use_variant_tabling table_once(_).
 table_once(Call) :- 
 	'_$savecp'(Breg),
 	breg_retskel(Breg,1,Skel,Cs),

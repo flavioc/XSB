@@ -176,7 +176,7 @@ compute_query(Q,Q1) :-
 
 
 :- table '{}'/1.
-:- variant(['{}'(_)]).
+:- use_variant_tabling '{}'(_).
 '{}'(Q) :- 
 	'_$savecp'(C), 
 	goal_cut_trans(Q,X,C),
@@ -414,11 +414,3 @@ explicitly_negate_query(X,X1) :-
 -xnmr_dummy :- true.
 
 %-true :- fail.
-
-
-
-
-
-
-
-
