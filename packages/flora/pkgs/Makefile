@@ -25,28 +25,57 @@
 
 ALL = 	
 
+EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
+	../emu/io_defs.h ../emu/msyscall.h ../emu/sig.h \
+	../emu/system.h ../emu/xsbsocket.h 
+PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
+
+
+Option = [optimize]
+
 #-----------------------------------------------------------------------#
 #
 # Self-make: Version 1.4.1
 #
 XSB=../../../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000 -e '[flora], bootstrap_flora.'
+Prolog = $(XSB) -i -s -m 2000 -c 2000 -e 'segfault_handler(warn).'
 #
 #-----------------------------------------------------------------------#
+
+# Make sure warnings are saved in a file.
+SVFILE = '/tmp/flora_pkg_warn'
+OWRITE = 1
+STDWARN = 3
+STDERR = 2
+HDRMSG = "While compiling XSB/packages/flora/pkg:"
 
 
 # suffix rules
 .SUFFIXES: .P .flr
+
+# We should have touch *.flr here when there will be packages
+all: init recompile
+
+recompile: $(ALL) finish
+	@touch cmd...
+	$(Prolog) < cmd...
+	@rm cmd...
+	@cat $(SVFILE)
+
 .flr.P:
 	echo 'import flcompile/1 from flrutils. flcompile($*).' >> cmd...
 
-# We should have touch *.flr here when there will be packages
-all: recompile
+init:
+	/bin/rm -f $(SVFILE)
+	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
+	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+	@echo "file_flush($(STDWARN), _)." >> cmd...
+	@echo "[flora],bootstrap_flora." >> cmd...
 
-recompile: $(ALL)
-	@touch cmd...
-	$(Prolog) < cmd...
-	/bin/rm cmd...
+finish:
+	@echo 'fmt_write($(STDWARN),"---------------------------------------------------\n",_).' >> cmd...
 
 
 .DONE:

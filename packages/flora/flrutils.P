@@ -30,11 +30,13 @@
 #include "standard.h"
 #include "char_defs.h"
 
+#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+
 
 /********************************************************************/
 
-flora_prefix('_$_$_flora_').
-flora_word(S,A) :- flora_prefix(P), str_cat(P,S,A).
+flora_word(S,A) :- str_cat(STD_FPREFIX(''), S, A1), A1=A.
+
 
 
 /********************************************************************/
@@ -67,12 +69,13 @@ flora_error_nl(Fmt, Args) :-
 	fmt_write(STDERR, Fmt, Args),
 	file_nl(STDERR).
 
-flora_warning_nl(M) :-
+STD_FPREFIX('warning_nl'(M)) :-
 	fmt_write(STDWARN, "++FLORA Warning: %S\n", M).
-flora_warning_nl(Fmt, Args) :-
+STD_FPREFIX('warning_nl'(Fmt, Args)) :-
 	fmt_write(STDWARN, '++FLORA Warning: ', _),
 	fmt_write(STDWARN, Fmt, Args),
 	file_nl(STDWARN).
+%% This is not exported, so we don''t wrap it
 flora_warning(M) :-
 	fmt_write(STDWARN, '++FLORA Warning: %S', M).
 
@@ -161,19 +164,19 @@ flora_consult_internal(File, Dtvs, Mode) :-
 
 
 /*********************************************************************/
-flora_loadlist([X]) :- flload(X).
+STD_FPREFIX('loadlist'([X])) :- flload(X).
 
-flora_loadlist([X1,X2|Xs]) :-
+STD_FPREFIX('loadlist'([X1,X2|Xs])) :-
 	flload(X1),
-	flora_loadlist([X2|Xs]).
+	STD_FPREFIX('loadlist'([X2|Xs])).
 
 
 /*********************************************************************/
-flora_dynloadlist([X]) :- dynload(X).
+STD_FPREFIX('dynloadlist'([X])) :- dynload(X).
 
-flora_dynloadlist([X1,X2|Xs]) :-
+STD_FPREFIX('dynloadlist'([X1,X2|Xs])) :-
 	dynload(X1),
-	flora_dynloadlist([X2|Xs]).
+	STD_FPREFIX('dynloadlist'([X2|Xs])).
 
 
 /*********************************************************************/
@@ -302,7 +305,7 @@ write_tokens(S,Ts) :-
 
 %% Like write_tokens/2, but uses I/O port instead of a stream
 write_tokens_message(IOport,Ts) :-
-	current_output_fd(OldOutput),
+	current_output_port(OldOutput),
 	stat_set_flag(CURRENT_OUTPUT, IOport),
 	write_tokens(Ts),
 	stat_set_flag(CURRENT_OUTPUT, OldOutput).
@@ -359,7 +362,7 @@ write_rules(rule(H,Gs)) :-
 write_rules(query(Body,NVs)) :-
 	!,
 	write('?- '),
-	flora_word(print_all,A),
+	A = STD_FPREFIX('print_all'),
 	write_canonical(A),
 	write('('),
 	write_canonical(Body),
@@ -367,7 +370,7 @@ write_rules(query(Body,NVs)) :-
 	write_canonical(NVs),
 	writeln(').'),
 	nl,
-	flora_word(tag,T),
+	T = STD_FPREFIX('tag'),
 	write_canonical(T), writeln('(query).').
 
 write_rules(unbound_warning(F,L)) :-
@@ -450,7 +453,7 @@ write_list([X1,X2|Xs]) :-
 
 %% Like write_list/1 but writes to I/O port
 write_list(IOport,L) :-
-	current_output_fd(OldOut),
+	current_output_port(OldOut),
 	stat_set_flag(CURRENT_OUTPUT, IOport),
 	write_list(L),
 	stat_set_flag(CURRENT_OUTPUT,OldOut).
@@ -459,7 +462,7 @@ write_list(IOport,L) :-
 /********************************************************************/
 generate_code(LoadMode,Directives,FlrFile,PFile,MaxErr,Status) :-
 	(LoadMode == static_mode -> A = static ; A = (dynamic)),
-	flora_message('compiling %s to %s code with options: ',
+	flora_message('compiling %s for %s loading with options: ',
 		      arg(FlrFile,A)),
 	write_list(STDMSG, Directives),
 	fmt_write(STDMSG, "]\n", _),
@@ -515,7 +518,7 @@ directives_options(LoadMode,Directives,Options,Status) :-
 	(member(eqlevel(N1),Directives) -> true ; N1=0),
 	(member(skolem,Options) -> N2=1 ; N2=0),
 	(   N2 == 1, N1 == 0
-	->  flora_warning_nl('skolemization in rule head performed')
+	->  STD_FPREFIX('warning_nl'('skolemization in rule head performed'))
 	;   true
 	),
 	external_options(Options,TempOpts),
@@ -677,7 +680,7 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 /********************************************************************/
 flora_discard_tokens(Status) :-
 	repeat,
-	flora_warning_nl('discarding tokens]'),
+	STD_FPREFIX('warning_nl'('discarding tokens]')),
 	read_tokens(Tokens,Status),
 	(   member(atom(rule_delimeter),Tokens), !
 	;   member(eof,Status), !
@@ -704,8 +707,8 @@ flora_directives([H|T],Opts) :-
 	(   flora_directive(H)
 	->  Opts=[H|R],
 	    flora_directives(T,R)
-	;   flora_warning_nl("unknown compiler option `%S' (discarded)\n",
-			     arg(H)),
+	;   STD_FPREFIX('warning_nl'("unknown compiler option `%S' (discarded)\n",
+			     arg(H))),
 	    flora_directives(T,Opts)
 	),
 	!.

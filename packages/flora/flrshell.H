@@ -23,6 +23,9 @@
 **
 */
 
+:- compiler_options([cpp_on]).
+#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+
 
 :- import
 	write/1, writeln/1, repeat/0, atom_chars/2, abort/0,
@@ -55,20 +58,21 @@
 :- import
 	flora_read_parse_compile/6,
 	flora_flcompile/5,
-	flora_loadlist/1,
-	flora_dynloadlist/1,
+	STD_FPREFIX('loadlist'/1),
+	STD_FPREFIX('dynloadlist'/1),
 	flora_check_filename/1,
 	flora_discard_tokens/1,
 	flcompile/1, flcompile/2, maxerr/1, flconsult/1, flconsult/2,
 	flload/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
-	dynconsult/2, flora_warning_nl/1, flora_warning_nl/2,
+	dynconsult/2, STD_FPREFIX('warning_nl'/1),
+	STD_FPREFIX('warning_nl'/2),
 	flora_display_msg/1, flora_display_msg/2
    from flrutils.
 
 :- import glob_directory/4 from wildmatch.
 
-:- import '_$_$_flora_debugger_data_loaded'/0 from usermod.
+:- import STD_FPREFIX('debugger_data_loaded'/0) from usermod.
 
-%%:- import '_$_$_flora_trace'/0, '_$_$_flora_notrace'/0 from flrdebugger.
+%%:- import STD_FPREFIX('trace'/0), STD_FPREFIX('notrace'/0) from flrdebugger.
 
-:- dynamic '_$_$_flora_switch'/1, '_$_$_flora_debugger_data_loaded'/0.
+:- dynamic STD_FPREFIX('switch'/1), STD_FPREFIX('debugger_data_loaded'/0).

@@ -25,6 +25,9 @@
 **
 */
 
+:- compiler_options([cpp_on]).
+#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+
 
 
 /****************************************************************************
@@ -59,7 +62,7 @@ compile_flogic(rule(Head,HeadVars,Body,BodyVars),Rules,Opts) :-
 	append(BodyCode,AuxCode,AppendedBodyCode),
 	subtract_vars(HeadVars,BodyVars,V1),
 	subtract_vars(V1,AVs,UnboundHeadVars),
-	%% Don't issue "unsafe var" warning for anonymous vars in rule heads
+	%% Don''t issue "unsafe var" warning for anonymous vars in rule heads
 	findall(X,(member(var(X,_),UnboundHeadVars), not str_sub('_',X)),U),
 	( U \= [] ->
 	    W=unbound_warning(rule,U)
@@ -90,7 +93,7 @@ compile_flogic(fact(Head,HeadVars),Facts,Opts) :-
 	!,
 	lhs_flatten_list(Head,HeadCode,AuxCode,AVs),
 	subtract_vars(HeadVars,AVs,UnboundVars),
-	%% Don't issue "unsafe var" warning for anonymous vars in rule heads
+	%% Don''t issue "unsafe var" warning for anonymous vars in rule heads
 	findall(X,(member(var(X,_),UnboundVars),not str_sub('_',X)),U),
 	( U \= [] ->
 	    W=unbound_warning(Form,U)
@@ -124,7 +127,7 @@ compile_flogic(fact(Head,HeadVars),Facts,Opts) :-
 compile_flogic(query(_,_),[],Opts) :-
 	load_mode(dynamic_mode),
 	!,
-	flora_warning_nl('query ignored'),
+	STD_FPREFIX('warning_nl'('query ignored')),
 	retract_options(Opts).
 
 compile_flogic(query(Body,BodyVars),[query(BodyCode,NVs)],Opts) :-
@@ -146,7 +149,7 @@ compile_flogic(table_directive(X),[table_directive(X)],Opts) :-
 compile_flogic(export_directive(_,_),[],Opts) :-
 	load_mode(dynamic_mode),
 	!,
-	flora_warning_nl('export directive ignored'),
+	STD_FPREFIX('warning_nl'('export directive ignored')),
 	retract_options(Opts).
 
 compile_flogic(export_directive(PAs,Sigs),Rules,Opts) :-
@@ -187,30 +190,27 @@ flatten_export_signature(_,[],[],[]) :- !.
 
 flatten_export_signature(Class,[methsig(Method,Args,A,R)|L],PAs,Rules) :-
 	fmt_write_string(Str, '%s_%s', args(Class, Method)),
-	( flora_word(fs,A) ->
-	    str_cat(Str, '_fs', S1),
+	(   A= STD_FPREFIX('fs')
+	->  str_cat(Str, '_fs', S1),
 	    str_cat(Str, '_fd', S2),
-	    flora_word(fd_rhs,RDA)
-	  ;
-	    str_cat(Str, '_mvs', S1),
+	    RDA = STD_FPREFIX('fd_rhs')
+	;   str_cat(Str, '_mvs', S1),
 	    str_cat(Str, '_mvd', S2),
-	    flora_word(mvd_rhs,RDA)
+	    RDA = STD_FPREFIX('mvd_rhs')
 	),
 	flora_word(S1,LSA),
 	flora_word(S2,LDA),
-	flora_word('@',F),
+	F = 'flora_@',
 	length(Args,N),
 	length(UnboundArgs,N),
 	DM =.. [F,Method|UnboundArgs],
-	( N == 0 ->
-	    H1 =.. [LDA,O1,V1],
+	(   N == 0
+	->  H1 =.. [LDA,O1,V1],
 	    A1=2
-
-	  ;
-	    H1 =.. [LDA,O1,DM,V1],
+	;   H1 =.. [LDA,O1,DM,V1],
 	    A1=3
 	),
-	flora_word(isa_rhs,Isa),
+	Isa = STD_FPREFIX('isa_rhs'),
 	G11 =.. [Isa,O1,Class],
 	G12 =.. [RDA,O1,DM,V1],
 	R1=rule(H1,[G11,G12]),
@@ -240,20 +240,19 @@ flatten_import_signature(_,[],[],[]) :- !.
 
 flatten_import_signature(Class,[methsig(Method,Args,A,R)|L],PAs,Rules) :-
 	fmt_write_string(Str, '%s_%s', args(Class,Method)),
-	( flora_word(fs,A) ->
-	    str_cat(Str, '_fs', S1),
+	(   A = STD_FPREFIX('fs')
+	->  str_cat(Str, '_fs', S1),
 	    str_cat(Str, '_fd', S2),
-	    flora_word(fd,TempLDA),
+	    TempLDA = STD_FPREFIX('fd'),
 	    fword(TempLDA,LDA)
-	  ;
-	    str_cat(Str, '_mvs', S1),
+	;   str_cat(Str, '_mvs', S1),
 	    str_cat(Str, '_mvd', S2),
-	    flora_word(mvd,TempLDA),
+	    TempLDA = STD_FPREFIX('mvd'),
 	    fword(TempLDA,LDA)
 	),
 	flora_word(S1,RSA),
 	flora_word(S2,RDA),
-	flora_word('@',F),
+	F = 'flora_@',
 	length(Args,N),
 	length(UnboundArgs,N),
 	DM =.. [F,Method|UnboundArgs],
@@ -305,21 +304,20 @@ rhs_flatten(not(R),null,[not(Code)]) :-
 
 rhs_flatten(loadlist(L),null,Code) :-
 	!,
-	F=flora_loadlist,
+	F=STD_FPREFIX('loadlist'),
 	P =.. [F,L],
 	Code=[P].
 
 rhs_flatten(dynloadlist(L),null,Code) :-
 	!,
-	%%flora_word(dynloadlist,F),
-	F=flora_dynloadlist,
+	F=STD_FPREFIX('dynloadlist'),
 	P =.. [F,L],
 	Code=[P].
 
 rhs_flatten(pterm(assert,Args),null,Code) :-
 	!,
 	lhs_flatten_list(Args,TempC1,A1,_),
-	flora_word(assert,TempF),
+	TempF = STD_FPREFIX('assert'),
 	fword(TempF,F),
 	(load_mode(dynamic_mode) -> C1=TempC1 ; dynlist(TempC1,C1)),
 	P =.. [F,C1],
@@ -351,7 +349,7 @@ rhs_flatten(pterm(F,Args),null,Code) :-
 rhs_flatten(fluniv(meta_meth(_,V),R),null,Code) :-
 	!,
 	rhs_flatten(R,O,C1),
-	flora_word('@',A),
+	A = 'flora_@',
 	P =.. [=..,V,[A|O]],
 	append(C1,[P],Code).
 
@@ -380,11 +378,9 @@ rhs_flatten(objspec(O,Spec),Obj,Code) :-
 	!,
 	rhs_flatten(O,Obj,C1),
 	( Spec = [] ->
-	    ( O = objmeth(_,_) ->
-		Code=C1
-
-	      ;
-		flora_word(exists,TempF),
+	    (	O = objmeth(_,_)
+	    ->	Code=C1
+	    ;	TempF = STD_FPREFIX('exists'),
 		fword(TempF,F),
 		P =.. [F,Obj],
 		append(C1,[P],Code)
@@ -443,8 +439,8 @@ rhs_flatten(aggregt(Op,var(N,V),GVs,Body),Obj,Code) :-
 		P2 =.. [A1,nogrp,Matches,Obj]
 
 	      ;
-		flora_word(grp,A2),
-		flora_word(rslt,A3),
+		A2 = flora_grp,
+		A3 = flora_rslt,
 		extract_vars(GVs,GroupVars),
 		GP =.. [A2|GroupVars],
 		RP =.. [A3,V,GP],
@@ -485,8 +481,7 @@ rhs_flatten(cut,null,['!']) :- !.
 
 /***************************************************************************/
 rhs_flatten_retract(Op,L,C,[P]) :-
-	flora_word(rtrct,Wrapper),
-	flatten_retract(L,Wrapper,Ps),
+	flatten_retract(L,flora_rtrct,Ps),
 	rhs_flatten_list(C,CCode),
 	flora_word(Op,TempF),
 	fword(TempF,F),
@@ -514,21 +509,19 @@ flatten_retract_term(pterm(F,Args),W,Ps) :-
 flatten_retract_term(objspec(O,Spec),W,Ps) :-
 	!,
 	rhs_flatten(O,Obj,C1),
-	( Spec = [] ->
-	    flora_word(exists,TempF),
+	( Spec = [] 
+	->  TempF = STD_FPREFIX('exists'),
 	    dynword(TempF,F),
 	    P1 =.. [F,Obj],
 	    P2 =.. [W,P1],
 	    append(C1,[P2],Ps)
-
-	  ;
-	    flatten_retract_speclist(Obj,Spec,W,C2),
+	;   flatten_retract_speclist(Obj,Spec,W,C2),
 	    append(C1,C2,Ps)
 	).
 
 flatten_retract_term(spterm(Op,E1,E2),_,Ps) :-
-	flora_warning_nl('%S is compiled as a condition for retract operator',
-			 arg(Op)),
+	STD_FPREFIX('warning_nl'('%S is compiled as a condition for retract operator',
+			 arg(Op))),
 	rhs_flatten(spterm(Op,E1,E2),_,Ps).
 
 
@@ -676,11 +669,9 @@ lhs_flatten(objspec(O,Spec),Obj,Code,Aux,AVs) :-
 	!,
 	lhs_flatten(O,Obj,C1,A1,AVs),
 	( Spec = [] ->
-	    ( O = objmeth(_,_) ->
-		Code=C1
-
-	      ;
-		flora_word(exists,TempF),
+	    (	O = objmeth(_,_)
+	    ->	Code=C1
+	    ;	TempF = STD_FPREFIX('exists'),
 		fword(TempF,F),
 		P =.. [F,Obj],
 		append(C1,[P],Code)
@@ -705,10 +696,10 @@ lhs_flatten(objmeth(O,M),Obj,Code,Aux,AVs) :-
 	  ;
 	    true
 	),
-	( flora_word(fd,Arrow) ->
-	    flora_word(objref_fd,F)
+	(   Arrow = STD_FPREFIX('fd')
+	->  F = flora_objref_fd
 	  ;
-	    flora_word(objref_ifd,F)
+	    F = flora_objref_ifd
 	),
 	Obj =.. [F,V,MObj],
 	fword(Arrow,ModeArrow),
@@ -1016,7 +1007,7 @@ fword(A1,A2) :-
 	(load_mode(static_mode) -> A1=A2 ; dynword(A1,A2)).
 
 dynword(A1,A2) :-
-	str_cat(A1, '_dyn', A2).
+	str_cat('dyn', A1, A2).
 
 
 /***************************************************************************
@@ -1027,18 +1018,19 @@ dynlist([],[]).
 
 dynlist([P|Ps],[DynP|DynPs]) :-
 	P =.. [F|L],
-	( (flora_word(fd,F);
-	   flora_word(mvd,F);
-	   flora_word(ifd,F);
-	   flora_word(imvd,F);
-	   flora_word(isa,F);
-	   flora_word(sub,F);
-	   flora_word(exists,F);
-	   flora_word(fs,F);
-	   flora_word(mvs,F)) ->
-	    dynword(F,DynF)
-	  ;
-	    DynF=F
+	(   
+	    (	F = STD_FPREFIX('fd')
+	    ;	F = STD_FPREFIX('mvd')
+	    ;	F = STD_FPREFIX('ifd')
+	    ;	F = STD_FPREFIX('imvd')
+	    ;	F = STD_FPREFIX('isa')
+	    ;	F = STD_FPREFIX('sub')
+	    ;	F = STD_FPREFIX('exists')
+	    ;	F = STD_FPREFIX('fs')
+	    ;	F = STD_FPREFIX('mvs')
+	    )
+	->  dynword(F,DynF)
+	;   DynF=F
 	),
 	DynP =.. [DynF|L],
 	dynlist(Ps,DynPs).

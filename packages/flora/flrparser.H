@@ -34,7 +34,7 @@
 %%:- import fmt_write_string/3 from file_io.
 
 :- import
-	flora_prefix/1, flora_word/2, terminate_list/1,
+	flora_word/2, terminate_list/1,
 	flora_member/2, flora_error_nl/2
    from flrutils.
 

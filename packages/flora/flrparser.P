@@ -26,7 +26,10 @@
 */
 
 
-/**************************************************************/
+:- compiler_options([cpp_on]).
+#include "char_defs.h"
+#define STD_FPREFIX(X)    '_$_$_flora_' ## X
+
 rule(_) -->
 	{ trie_assert(error(none)),
 	  trie_retract_all(error(_)),
@@ -110,8 +113,7 @@ rule(null) --> white_space0, !.
 
 rule(_) -->
 	{ error(reserved_word),
-	  flora_prefix(P),
-          flora_error_nl('symbol prefix `%s'' is reserved', f(P)),
+          flora_error_nl('symbol prefix `%s'' is reserved', STD_FPREFIX('')),
 	  fail
 	}.
 
@@ -340,7 +342,7 @@ fluniv_lhs(L,V) --> path_expression(L,V), !.
 meta_method_var(meta_meth(Name,Var),V) -->
 	[atom('$@'),var(N)],
 	{ atom_codes(N,S),
-	  atom_codes(Name,[0'@|S]),
+	  atom_codes(Name,[CH_AT|S]),
 	  flora_member(var(Name,Var),V)
         },
 	!.
@@ -550,7 +552,7 @@ method_application(M,V) --> meta_method_var(M,V), !.
 method_application(methargs(A,O,Args),V) -->
 	object(O,V),
 	method_arguments0(Args,V),
-	{flora_word('@',A)},
+	{A = 'flora_@'},
 	!.
 	
 
@@ -796,8 +798,7 @@ reserved_word('~') :- !.
 
 reserved_word(A) :-
 	atom(A),
-	flora_prefix(P),
-	str_sub(P,A),
+	str_sub(STD_FPREFIX(''), A),
 	!,
 	trie_assert(error(reserved_word)).
 

@@ -31,7 +31,7 @@ EMU_INCLUDES = ../emu/builtin.h ../emu/celltags.h ../emu/flag_defs.h \
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
 
-Option = [optimize,quit_on_error]
+Option = [optimize]
 
 
 #-----------------------------------------------------------------------#
@@ -47,6 +47,7 @@ Prolog = $(XSB) -s -m 2000 -c 2000 -e 'set_dcg_style(standard),segfault_handler(
 SVFILE = '/tmp/flora_top_warn'
 OWRITE = 1
 STDWARN = 3
+STDERR = 2
 HDRMSG = "While compiling XSB/packages/flora:"
 
 
@@ -79,13 +80,14 @@ all: init $(ALL) finish
 
 init:
 	/bin/rm -f $(SVFILE)
-	@echo 'import file_reopen/4, fmt_write/3 from file_io.' >> cmd...
 	@echo "file_reopen($(SVFILE),$(OWRITE),$(STDWARN),_)." >> cmd...
-	@echo 'fmt_write($(STDWARN),"%s\n",arg("-------------- Warnings --------------------")).' >> cmd...
+	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
+	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
+	@echo "file_flush($(STDWARN), _)." >> cmd...
 
 finish:
-	@echo 'fmt_write($(STDWARN),"%s\n",arg("--------------------------------------------")).' >> cmd...
+	@echo 'fmt_write($(STDWARN),"---------------------------------------------------\n",_).' >> cmd...
 
 
 

@@ -6,295 +6,295 @@
 /*****************************************************************************
   closure rules for X::Y
 *****************************************************************************/
-:- table '_$_$_flora_subclass_dyn'/2.
-:- table '_$_$_flora_strict_subclass_dyn'/2.
+:- table STD_FPREFIX('subclass'/2).
+:- table STD_FPREFIX('strict_subclass'/2).
 
-'_$_$_flora_subclass_dyn'(X,X) :- '_$_$_flora_exists_dyn'(X).
-'_$_$_flora_subclass_dyn'(X,Y) :- '_$_$_flora_strict_subclass_dyn'(X,Y).
+STD_FPREFIX('subclass'(X,X)) :- STD_FPREFIX('exists'(X)).
+STD_FPREFIX('subclass'(X,Y)) :- STD_FPREFIX('strict_subclass'(X,Y)).
 
 %% Using flora_subclass can be a major source of inefficiency
-%% In most cases, you want to use '_$_$_flora_strict_subclass'
-'_$_$_flora_strict_subclass_dyn'(X,Y) :- '_$_$_flora_sub_dyn'(X,Y), X \= Y.
+%% In most cases, we want to use STD_FPREFIX('strict_subclass')
+STD_FPREFIX('strict_subclass'(X,Y)) :- STD_FPREFIX('sub'(X,Y)), X \= Y.
 
-'_$_$_flora_strict_subclass_dyn'(X,Y) :-
-	'_$_$_flora_strict_subclass_dyn'(X,Z), 
-	'_$_$_flora_strict_subclass_dyn'(Z,Y),
+STD_FPREFIX('strict_subclass'(X,Y)) :-
+	STD_FPREFIX('strict_subclass'(X,Z)), 
+	STD_FPREFIX('strict_subclass'(Z,Y)),
 	%%(X \= Z -> true ; Z\=Y),
-	( X = Y
-	->  flora_warning_nl('cyclic subclass hierarchy, %S::%S::%S',
-			     args(X,Z,Y))
+	( X = Y 
+	->  STD_FPREFIX('warning_nl'('cyclic subclass hierarchy, %S::%S::%S',
+			     args(X,Z,Y)))
 	;   true
 	).
 
 
 /*****************************************************************************
-  closure rules for X:Y
+  closure rules for X:Y, X::Z implies X:Z
 *****************************************************************************/
-:- table '_$_$_flora_isa_dyn'/2.
+:- table STD_FPREFIX('isa'/2).
 
-'_$_$_flora_isa_dyn'(O,C) :-
-	'_$_$_flora_strict_subclass_dyn'(C1,C),
-	'_$_$_flora_isa_dyn'(O,C1).
+STD_FPREFIX('isa'(O,C)) :-
+	STD_FPREFIX('strict_subclass'(C1,C)),
+	STD_FPREFIX('isa'(O,C1)).
 
 
 /*****************************************************************************
   rules for monotonic inheritance of signatures
 *****************************************************************************/
-:- table '_$_$_flora_fs_dyn'/3.
-:- table '_$_$_flora_mvs_dyn'/3.
-:- table '_$_$_flora_ifs_dyn'/3.
-:- table '_$_$_flora_imvs_dyn'/3.
+:- table STD_FPREFIX('fs'/3).
+:- table STD_FPREFIX('mvs'/3).
+:- table STD_FPREFIX('ifs'/3).
+:- table STD_FPREFIX('imvs'/3).
 
 %% Instance
-'_$_$_flora_fs_dyn'(O,MethodArgs,R) :-
-	'_$_$_flora_isa_dyn'(O,Class),
-	'_$_$_flora_fs_dyn'(Class,MethodArgs,R).
-'_$_$_flora_ifs_dyn'(O,MethodArgs,R) :-
-	'_$_$_flora_isa_dyn'(O,Class),
-	'_$_$_flora_ifs_dyn'(Class,MethodArgs,R).
+STD_FPREFIX('fs'(O,MethodArgs,R)) :-
+	STD_FPREFIX('isa'(O,Class)),
+	STD_FPREFIX('fs'(Class,MethodArgs,R)).
+STD_FPREFIX('ifs'(O,MethodArgs,R)) :-
+	STD_FPREFIX('isa'(O,Class)),
+	STD_FPREFIX('ifs'(Class,MethodArgs,R)).
 
-'_$_$_flora_mvs_dyn'(O,MethodArgs,R) :-
-	'_$_$_flora_isa_dyn'(O,Class),
-	'_$_$_flora_mvs_dyn'(Class,MethodArgs,R).
-'_$_$_flora_imvs_dyn'(O,MethodArgs,R) :-
-	'_$_$_flora_isa_dyn'(O,Class),
-	'_$_$_flora_imvs_dyn'(Class,MethodArgs,R).
+STD_FPREFIX('mvs'(O,MethodArgs,R)) :-
+	STD_FPREFIX('isa'(O,Class)),
+	STD_FPREFIX('mvs'(Class,MethodArgs,R)).
+STD_FPREFIX('imvs'(O,MethodArgs,R)) :-
+	STD_FPREFIX('isa'(O,Class)),
+	STD_FPREFIX('imvs'(Class,MethodArgs,R)).
 
 %% Subclass
-'_$_$_flora_fs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
-	'_$_$_flora_fs_dyn'(Class,MethodArgs,R).
-'_$_$_flora_ifs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
-	'_$_$_flora_ifs_dyn'(Class,MethodArgs,R).
+STD_FPREFIX('fs'(Sub,MethodArgs,R)) :-
+	STD_FPREFIX('strict_subclass'(Sub,Class)),
+	STD_FPREFIX('fs'(Class,MethodArgs,R)).
+STD_FPREFIX('ifs'(Sub,MethodArgs,R)) :-
+	STD_FPREFIX('strict_subclass'(Sub,Class)),
+	STD_FPREFIX('ifs'(Class,MethodArgs,R)).
 
-'_$_$_flora_mvs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
-	'_$_$_flora_mvs_dyn'(Class,MethodArgs,R).
-'_$_$_flora_imvs_dyn'(Sub,MethodArgs,R) :-
-	'_$_$_flora_strict_subclass_dyn'(Sub,Class),
-	'_$_$_flora_imvs_dyn'(Class,MethodArgs,R).
+STD_FPREFIX('mvs'(Sub,MethodArgs,R)) :-
+	STD_FPREFIX('strict_subclass'(Sub,Class)),
+	STD_FPREFIX('mvs'(Class,MethodArgs,R)).
+STD_FPREFIX('imvs'(Sub,MethodArgs,R)) :-
+	STD_FPREFIX('strict_subclass'(Sub,Class)),
+	STD_FPREFIX('imvs'(Class,MethodArgs,R)).
 
 
 /*****************************************************************************
-  rules for nonmonotonic behavior inheritance
+  rules for nonmonotonic inheritance of behavior
 *****************************************************************************/
 
-:- table '_$_$_flora_fd_dyn'/3.
-:- table '_$_$_flora_mvd_dyn'/3.
-:- table '_$_$_flora_ifd_dyn'/3.
-:- table '_$_$_flora_imvd_dyn'/3.
-:- table '_$_$_flora_defined_fd_dyn'/2.
-:- table '_$_$_flora_defined_mvd_dyn'/2.
-:- table '_$_$_flora_defined_ifd_dyn'/2.
-:- table '_$_$_flora_defined_imvd_dyn'/2.
-:- table '_$_$_flora_overwritten_fd_dyn'/3.
-:- table '_$_$_flora_overwritten_mvd_dyn'/3.
-:- table '_$_$_flora_overwritten_ifd_dyn'/3.
-:- table '_$_$_flora_overwritten_imvd_dyn'/3.
-:- table '_$_$_flora_conflict_fd_dyn'/3.
-:- table '_$_$_flora_conflict_ifd_dyn'/3.
-:- table '_$_$_flora_conflict_mvd_dyn'/3.
-:- table '_$_$_flora_conflict_imvd_dyn'/3.
+:- table STD_FPREFIX('fd'/3).
+:- table STD_FPREFIX('mvd'/3).
+:- table STD_FPREFIX('ifd'/3).
+:- table STD_FPREFIX('imvd'/3).
+:- table STD_FPREFIX('defined_fd'/2).
+:- table STD_FPREFIX('defined_mvd'/2).
+:- table STD_FPREFIX('defined_ifd'/2).
+:- table STD_FPREFIX('defined_imvd'/2).
+:- table STD_FPREFIX('overwritten_fd'/3).
+:- table STD_FPREFIX('overwritten_mvd'/3).
+:- table STD_FPREFIX('overwritten_ifd'/3).
+:- table STD_FPREFIX('overwritten_imvd'/3).
+:- table STD_FPREFIX('conflict_fd'/3).
+:- table STD_FPREFIX('conflict_ifd'/3).
+:- table STD_FPREFIX('conflict_mvd'/3).
+:- table STD_FPREFIX('conflict_imvd'/3).
 
 
-'_$_$_flora_fd_dyn'(Object,Method,Value) :-
+STD_FPREFIX('fd'(Object,Method,Value)) :-
 	%% If Object,Method are ground, check if Object[Method->...]
 	%% is defined right away --an optimization
 	(ground(Object), ground(Method) ->
-	    tnot('_$_$_flora_defined_fd_dyn'(Object,Method)),
-	    '_$_$_flora_isa_dyn'(Object,Class),
-	    '_$_$_flora_ifd_dyn'(Class,Method,Value)
+	    tnot(STD_FPREFIX('defined_fd'(Object,Method))),
+	    STD_FPREFIX('isa'(Object,Class)),
+	    STD_FPREFIX('ifd'(Class,Method,Value))
 	  ;
-	    '_$_$_flora_isa_dyn'(Object,Class),
-	    '_$_$_flora_ifd_dyn'(Class,Method,Value),
+	    STD_FPREFIX('isa'(Object,Class)),
+	    STD_FPREFIX('ifd'(Class,Method,Value)),
 	    ground(Object), ground(Method),
-	    tnot('_$_$_flora_defined_fd_dyn'(Object,Method))
+	    tnot(STD_FPREFIX('defined_fd'(Object,Method)))
 	),
 	ground(Class),
-	tnot('_$_$_flora_overwritten_fd_dyn'(Object,Class,Method)),
+	tnot(STD_FPREFIX('overwritten_fd'(Object,Class,Method))),
 	ground(Class),
-	tnot('_$_$_flora_conflict_fd_dyn'(Object,Class,Method)).
+	tnot(STD_FPREFIX('conflict_fd'(Object,Class,Method))).
 
-'_$_$_flora_defined_fd_dyn'(Object,Method) :-
-	'_$_$_flora_fd_dyn'(Object,Method,_).
+STD_FPREFIX('defined_fd'(Object,Method)) :-
+	STD_FPREFIX('fd'(Object,Method,_)).
 
-'_$_$_flora_overwritten_fd_dyn'(Object,Class,Method) :-
-	'_$_$_flora_isa_dyn'(Object,SubClass),
+STD_FPREFIX('overwritten_fd'(Object,Class,Method)) :-
+	STD_FPREFIX('isa'(Object,SubClass)),
 	SubClass \= Class,
-	'_$_$_flora_strict_subclass_dyn'(SubClass,Class),
-	'_$_$_flora_ifd_dyn'(SubClass,Method,_).
+	STD_FPREFIX('strict_subclass'(SubClass,Class)),
+	STD_FPREFIX('ifd'(SubClass,Method,_)).
 
 %% When this is called, Object always belongs to Class
-'_$_$_flora_conflict_fd_dyn'(Object,Class,Method) :-
-	'_$_$_flora_defined_ifd_dyn'(Class1,Method),
+STD_FPREFIX('conflict_fd'(Object,Class,Method)) :-
+	STD_FPREFIX('defined_ifd'(Class1,Method)),
 	ground(Class1), ground(Class),
 	Class \= Class1,
-	'_$_$_flora_isa_dyn'(Object,Class1),
-	tnot('_$_$_flora_strict_subclass_dyn'(Class1,Class)),
-	tnot('_$_$_flora_strict_subclass_dyn'(Class,Class1)).
+	STD_FPREFIX('isa'(Object,Class1)),
+	tnot(STD_FPREFIX('strict_subclass'(Class1,Class))),
+	tnot(STD_FPREFIX('strict_subclass'(Class,Class1))).
 
 
-'_$_$_flora_mvd_dyn'(Object,Method,Value) :-
+STD_FPREFIX('mvd'(Object,Method,Value)) :-
 	(ground(Object), ground(Method) ->
-	    tnot('_$_$_flora_defined_mvd_dyn'(Object,Method)),
-	    '_$_$_flora_isa_dyn'(Object,Class),
-	    '_$_$_flora_imvd_dyn'(Class,Method,Value)
+	    tnot(STD_FPREFIX('defined_mvd'(Object,Method))),
+	    STD_FPREFIX('isa'(Object,Class)),
+	    STD_FPREFIX('imvd'(Class,Method,Value))
 	  ;
-	    '_$_$_flora_isa_dyn'(Object,Class),
-	    '_$_$_flora_imvd_dyn'(Class,Method,Value),
+	    STD_FPREFIX('isa'(Object,Class)),
+	    STD_FPREFIX('imvd'(Class,Method,Value)),
 	    ground(Object), ground(Method),
-	    tnot('_$_$_flora_defined_mvd_dyn'(Object,Method))
+	    tnot(STD_FPREFIX('defined_mvd'(Object,Method)))
 	),
 	ground(Class),
-	tnot('_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method)),
+	tnot(STD_FPREFIX('overwritten_mvd'(Object,Class,Method))),
 	ground(Class),
-	tnot('_$_$_flora_conflict_mvd_dyn'(Object,Class,Method)).
+	tnot(STD_FPREFIX('conflict_mvd'(Object,Class,Method))).
 
-'_$_$_flora_defined_mvd_dyn'(Object,Method) :-
-	'_$_$_flora_mvd_dyn'(Object,Method,_).
+STD_FPREFIX('defined_mvd'(Object,Method)) :-
+	STD_FPREFIX('mvd'(Object,Method,_)).
 
-'_$_$_flora_overwritten_mvd_dyn'(Object,Class,Method) :-
-	'_$_$_flora_isa_dyn'(Object,SubClass),
-	'_$_$_flora_strict_subclass_dyn'(SubClass,Class),
-	'_$_$_flora_imvd_dyn'(SubClass,Method,_).
+STD_FPREFIX('overwritten_mvd'(Object,Class,Method)) :-
+	STD_FPREFIX('isa'(Object,SubClass)),
+	STD_FPREFIX('strict_subclass'(SubClass,Class)),
+	STD_FPREFIX('imvd'(SubClass,Method,_)).
 
-'_$_$_flora_conflict_mvd_dyn'(Object,Class,Method) :-
-	'_$_$_flora_defined_imvd_dyn'(Class1,Method),
-	ground(Class1), ground(Class),
+STD_FPREFIX('conflict_mvd'(Object,Class,Method)) :-
+	STD_FPREFIX('defined_imvd'(Class1,Method)),
+	ground(Class), ground(Class1),
 	Class \= Class1,
-	'_$_$_flora_isa_dyn'(Object,Class1),
-	tnot('_$_$_flora_strict_subclass_dyn'(Class1,Class)),
-	tnot('_$_$_flora_strict_subclass_dyn'(Class,Class1)).
+	STD_FPREFIX('isa'(Object,Class1)),
+	tnot(STD_FPREFIX('strict_subclass'(Class1,Class))),
+	tnot(STD_FPREFIX('strict_subclass'(Class,Class1))).
 
 
-'_$_$_flora_ifd_dyn'(Class,Method,Value) :-
+STD_FPREFIX('ifd'(Class,Method,Value)) :-
 	(ground(Class), ground(Method) ->
-	    tnot('_$_$_flora_defined_ifd_dyn'(Class,Method)),
-	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
-	    '_$_$_flora_ifd_dyn'(Super,Method,Value)
+	    tnot(STD_FPREFIX('defined_ifd'(Class,Method))),
+	    STD_FPREFIX('strict_subclass'(Class,Super)),
+	    STD_FPREFIX('ifd'(Super,Method,Value))
 	  ;
-	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
-	    '_$_$_flora_ifd_dyn'(Super,Method,Value),
+	    STD_FPREFIX('strict_subclass'(Class,Super)),
+	    STD_FPREFIX('ifd'(Super,Method,Value)),
 	    ground(Class), ground(Method),
-	    tnot('_$_$_flora_defined_ifd_dyn'(Class,Method))
+	    tnot(STD_FPREFIX('defined_ifd'(Class,Method)))
 	),
 	ground(Super),
-	tnot('_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method)),
+	tnot(STD_FPREFIX('overwritten_ifd'(Class,Super,Method))),
 	ground(Super),
-	tnot('_$_$_flora_conflict_ifd_dyn'(Class,Super,Method)).
+	tnot(STD_FPREFIX('conflict_ifd'(Class,Super,Method))).
 
-'_$_$_flora_defined_ifd_dyn'(Class,Method) :-
-	'_$_$_flora_ifd_dyn'(Class,Method,_).
+STD_FPREFIX('defined_ifd'(Class,Method)) :-
+	STD_FPREFIX('ifd'(Class,Method,_)).
 
-'_$_$_flora_overwritten_ifd_dyn'(Class,Super,Method) :-
-	'_$_$_flora_strict_subclass_dyn'(Class,S),
-	'_$_$_flora_strict_subclass_dyn'(S,Super),
-	'_$_$_flora_ifd_dyn'(S,Method,_).
+STD_FPREFIX('overwritten_ifd'(Class,Super,Method)) :-
+	STD_FPREFIX('strict_subclass'(Class,S)),
+	STD_FPREFIX('strict_subclass'(S,Super)),
+	STD_FPREFIX('ifd'(S,Method,_)).
 
 %% Note: when this is called, Class is always a subclass of Super
-'_$_$_flora_conflict_ifd_dyn'(Class,Super,Method) :-
-	'_$_$_flora_defined_ifd_dyn'(Super1,Method),
+STD_FPREFIX('conflict_ifd'(Class,Super,Method)) :-
+	STD_FPREFIX('defined_ifd'(Super1,Method)),
 	ground(Super1), ground(Super),
 	Super1 \= Super,
-	'_$_$_flora_strict_subclass_dyn'(Class,Super1),
-	tnot('_$_$_flora_strict_subclass_dyn'(Super1,Super)),
-	tnot('_$_$_flora_strict_subclass_dyn'(Super,Super1)).
+	STD_FPREFIX('strict_subclass'(Class,Super1)),
+	tnot(STD_FPREFIX('strict_subclass'(Super1,Super))),
+	tnot(STD_FPREFIX('strict_subclass'(Super,Super1))).
 
 
-'_$_$_flora_imvd_dyn'(Class,Method,Value) :-
+STD_FPREFIX('imvd'(Class,Method,Value)) :-
 	(ground(Class), ground(Method) ->
-	    tnot('_$_$_flora_defined_imvd_dyn'(Class,Method)),
-	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
-	    '_$_$_flora_imvd_dyn'(Super,Method,Value)
+	    tnot(STD_FPREFIX('defined_imvd'(Class,Method))),
+	    STD_FPREFIX('strict_subclass'(Class,Super)),
+	    STD_FPREFIX('imvd'(Super,Method,Value))
 	  ;
-	    '_$_$_flora_strict_subclass_dyn'(Class,Super),
-	    '_$_$_flora_imvd_dyn'(Super,Method,Value),
+	    STD_FPREFIX('strict_subclass'(Class,Super)),
+	    STD_FPREFIX('imvd'(Super,Method,Value)),
 	    ground(Class), ground(Method),
-	    tnot('_$_$_flora_defined_imvd_dyn'(Class,Method))
+	    tnot(STD_FPREFIX('defined_imvd'(Class,Method)))
 	),
 	ground(Super),
-	tnot('_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method)),
+	tnot(STD_FPREFIX('overwritten_imvd'(Class,Super,Method))),
 	ground(Super),
-	tnot('_$_$_flora_conflict_ifd_dyn'(Class,Super,Method)).
+	tnot(STD_FPREFIX('conflict_imvd'(Class,Super,Method))).
 
-'_$_$_flora_defined_imvd_dyn'(Class,Method) :-
-	'_$_$_flora_imvd_dyn'(Class,Method,_).
+STD_FPREFIX('defined_imvd'(Class,Method)) :-
+	STD_FPREFIX('imvd'(Class,Method,_)).
 
-'_$_$_flora_overwritten_imvd_dyn'(Class,Super,Method) :-
-	'_$_$_flora_strict_subclass_dyn'(Class,S),
-	'_$_$_flora_strict_subclass_dyn'(S,Super),
-	'_$_$_flora_imvd_dyn'(S,Method,_).
+STD_FPREFIX('overwritten_imvd'(Class,Super,Method)) :-
+	STD_FPREFIX('strict_subclass'(Class,S)),
+	STD_FPREFIX('strict_subclass'(S,Super)),
+	STD_FPREFIX('imvd'(S,Method,_)).
 
 %% Note: when this is called, Class is always a subclass of Super
-'_$_$_flora_conflict_imvd_dyn'(Class,Super,Method) :-
-	'_$_$_flora_defined_imvd_dyn'(Super1,Method),
+STD_FPREFIX('conflict_imvd'(Class,Super,Method)) :-
+	STD_FPREFIX('defined_imvd'(Super1,Method)),
 	ground(Super1), ground(Super),
 	Super1 \= Super,
-	'_$_$_flora_strict_subclass_dyn'(Class,Super1),
-	tnot('_$_$_flora_strict_subclass_dyn'(Super1,Super)),
-	tnot('_$_$_flora_strict_subclass_dyn'(Super,Super1)).
+	STD_FPREFIX('strict_subclass'(Class,Super1)),
+	tnot(STD_FPREFIX('strict_subclass'(Super1,Super))),
+	tnot(STD_FPREFIX('strict_subclass'(Super,Super1))).
 
 
 /*****************************************************************************
   rules for object existence and empty result sets
 *****************************************************************************/
-:- table '_$_$_flora_exists_dyn'/1.
-:- table '_$_$_flora_mvd_dyn'/2.
-:- table '_$_$_flora_imvd_dyn'/2.
+:- table STD_FPREFIX('exists'/1).
+:- table STD_FPREFIX('mvd'/2).
+:- table STD_FPREFIX('imvd'/2).
 
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_fd_dyn'(X,_,_).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_fd_dyn'(_,_,X).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_mvd_dyn'(X,_,_).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_mvd_dyn'(_,_,X).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_ifd_dyn'(X,_,_).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_ifd_dyn'(_,_,X).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_imvd_dyn'(X,_,_).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_imvd_dyn'(_,_,X).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_isa_dyn'(X,_).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_isa_dyn'(_,X).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_sub_dyn'(X,_).
-'_$_$_flora_exists_dyn'(X) :- '_$_$_flora_sub_dyn'(_,X).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('fd'(X,_,_)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('fd'(_,_,X)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('mvd'(X,_,_)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('mvd'(_,_,X)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('ifd'(X,_,_)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('ifd'(_,_,X)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('imvd'(X,_,_)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('imvd'(_,_,X)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('isa'(X,_)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('isa'(_,X)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('sub'(X,_)).
+STD_FPREFIX('exists'(X)) :- STD_FPREFIX('sub'(_,X)).
 
-'_$_$_flora_exists_dyn'(X) :-
-	'_$_$_flora_fd_dyn'(_,M,_),
+STD_FPREFIX('exists'(X)) :-
+	STD_FPREFIX('fd'(_,M,_)),
 	M =.. [_|L],
 	member(X,L).
 
-'_$_$_flora_exists_dyn'(X) :-
-	'_$_$_flora_mvd_dyn'(_,M,_),
+STD_FPREFIX('exists'(X)) :-
+	STD_FPREFIX('mvd'(_,M,_)),
 	M =.. [_|L],
 	member(X,L).
 
-'_$_$_flora_exists_dyn'(X) :-
-	'_$_$_flora_ifd_dyn'(_,M,_),
+STD_FPREFIX('exists'(X)) :-
+	STD_FPREFIX('ifd'(_,M,_)),
 	M =.. [_|L],
 	member(X,L).
 
-'_$_$_flora_exists_dyn'(X) :-
-	'_$_$_flora_imvd_dyn'(_,M,_),
+STD_FPREFIX('exists'(X)) :-
+	STD_FPREFIX('imvd'(_,M,_)),
 	M =.. [_|L],
 	member(X,L).
 
 
-'_$_$_flora_mvd_dyn'(O,M) :- '_$_$_flora_mvd_dyn'(O,M,_).
+STD_FPREFIX('mvd'(O,M)) :- STD_FPREFIX('mvd'(O,M,_)).
 
-'_$_$_flora_imvd_dyn'(O,M) :- '_$_$_flora_imvd_dyn'(O,M,_).
+STD_FPREFIX('imvd'(O,M)) :- STD_FPREFIX('imvd'(O,M,_)).
 
 
 /*****************************************************************************
   rules for flattened path expressions on RHS
 *****************************************************************************/
-'_$_$_flora_fd_rhs_dyn'(O,M,R)   :- '_$_$_flora_fd_dyn'(O,M,R).
-'_$_$_flora_mvd_rhs_dyn'(O,M,R)  :- '_$_$_flora_mvd_dyn'(O,M,R).
-'_$_$_flora_ifd_rhs_dyn'(O,M,R)  :- '_$_$_flora_ifd_dyn'(O,M,R).
-'_$_$_flora_imvd_rhs_dyn'(O,M,R) :- '_$_$_flora_imvd_dyn'(O,M,R).
-'_$_$_flora_mvd_rhs_dyn'(O,M)    :- '_$_$_flora_mvd_dyn'(O,M).
-'_$_$_flora_imvd_rhs_dyn'(O,M)   :- '_$_$_flora_imvd_dyn'(O,M).
-'_$_$_flora_isa_rhs_dyn'(O1,O2)  :- '_$_$_flora_isa_dyn'(O1,O2).
-'_$_$_flora_sub_rhs_dyn'(O1,O2)  :- '_$_$_flora_subclass_dyn'(O1,O2).
-'_$_$_flora_fs_rhs_dyn'(O,M,R)   :- '_$_$_flora_fs_dyn'(O,M,R).
-'_$_$_flora_mvs_rhs_dyn'(O,M,R)  :- '_$_$_flora_mvs_dyn'(O,M,R).
+STD_FPREFIX('fd_rhs'(O,M,R))   :- STD_FPREFIX('fd'(O,M,R)).
+STD_FPREFIX('mvd_rhs'(O,M,R))  :- STD_FPREFIX('mvd'(O,M,R)).
+STD_FPREFIX('ifd_rhs'(O,M,R))  :- STD_FPREFIX('ifd'(O,M,R)).
+STD_FPREFIX('imvd_rhs'(O,M,R)) :- STD_FPREFIX('imvd'(O,M,R)).
+STD_FPREFIX('mvd_rhs'(O,M))    :- STD_FPREFIX('mvd'(O,M)).
+STD_FPREFIX('imvd_rhs'(O,M))   :- STD_FPREFIX('imvd'(O,M)).
+STD_FPREFIX('isa_rhs'(O1,O2))  :- STD_FPREFIX('isa'(O1,O2)).
+STD_FPREFIX('sub_rhs'(O1,O2))  :- STD_FPREFIX('subclass'(O1,O2)).
+STD_FPREFIX('fs_rhs'(O,M,R))   :- STD_FPREFIX('fs'(O,M,R)).
+STD_FPREFIX('mvs_rhs'(O,M,R))  :- STD_FPREFIX('mvs'(O,M,R)).
 
 
 /****************************  End of Trailer  ******************************/

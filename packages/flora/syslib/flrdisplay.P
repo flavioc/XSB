@@ -27,6 +27,7 @@
 :- compiler_options([cpp_on]).
 #include "standard.h"
 #include "char_defs.h"
+#define STD_FPREFIX(X)    '_$_$_flora_' ## X
 
 
 :- import
@@ -48,94 +49,94 @@
 
 :- import trie_assert/1, trie_retract_all/1 from tables.
 
-:- import flora_warning_nl/2 from flrutils.
+:- import STD_FPREFIX('warning_nl'/2) from flrutils.
 
-:- dynamic '_$_$_flora_switch'/1.
+:- dynamic STD_FPREFIX('switch'/1).
 
 
 /********************************************************************/
-'_$_$_flora_print_all'(Gs,NVs) :-
+STD_FPREFIX('print_all'(Gs,NVs)) :-
 	cputime(T0),
 	( NVs == [] ->
-	    ( '_$_$_flora_call'(Gs) ->
-		'_$_$_flora_write_Yes'
+	    ( STD_FPREFIX('call'(Gs)) ->
+		STD_FPREFIX('write_Yes')
 	      ;
-	        '_$_$_flora_write_No'
+	        STD_FPREFIX('write_No')
 	    )
 
 	  ;
-	    '_$_$_flora_findall'(NVs,Gs,TempL),
+	    STD_FPREFIX('findall'(NVs,Gs,TempL)),
 	    sort(TempL,L),
 	    cputime(T1),
 	    T is T1-T0,
 	    length(L,N),
 	    ( N = 0 ->
-	        '_$_$_flora_write_No'
+	        STD_FPREFIX('write_No')
 	      ;
-		('_$_$_flora_switch'(no_chatter) -> true
+		(STD_FPREFIX('switch'(no_chatter)) -> true
 		  ;
-		    '_$_$_flora_write_matches'(L), nl,
+		    STD_FPREFIX('write_matches'(L)), nl,
 		    fmt_write(STDFDBK,
 			      '%d solution(s) in %S seconds on ',
 			      args(N,T)),
 		    shell(hostname,block,STDFDBK,block,_)
 		),
-	        '_$_$_flora_write_Yes'
+	        STD_FPREFIX('write_Yes')
 	    )
 	).
 
 
 /********************************************************************/
-'_$_$_flora_print_one'(Gs,NVs) :-
+STD_FPREFIX('print_one'(Gs,NVs)) :-
 	( NVs == [] ->
-	    ( '_$_$_flora_call'(Gs) ->
-	        '_$_$_flora_write_Yes'
+	    ( STD_FPREFIX('call'(Gs)) ->
+	        STD_FPREFIX('write_Yes')
 	      ;
-	        '_$_$_flora_write_No'
+	        STD_FPREFIX('write_No')
 	    )
 
 	  ;
-	    ( '_$_$_flora_call'(Gs),
-	      '_$_$_flora_write_pairs'(NVs),
-	      '_$_$_flora_fail_unless_return', !
+	    ( STD_FPREFIX('call'(Gs)),
+	      STD_FPREFIX('write_pairs'(NVs)),
+	      STD_FPREFIX('fail_unless_return'), !
 	     ;
-	      '_$_$_flora_write_No'
+	      STD_FPREFIX('write_No')
 	    )
 	).
 
 
-'_$_$_flora_fail_unless_return' :- 
+STD_FPREFIX('fail_unless_return') :- 
 	get0(C),
 	(C == CH_NEWLINE -> true ; get0(_)),
-	C=CH_NEWLINE, '_$_$_flora_write_Yes'.
+	C=CH_NEWLINE, STD_FPREFIX('write_Yes').
 
-'_$_$_flora_write_Yes' :- fmt_write(STDFDBK, "\nYes.\n",_).
-'_$_$_flora_write_No'  :- fmt_write(STDFDBK, "\nNo.\n",_).
+STD_FPREFIX('write_Yes') :- fmt_write(STDFDBK, "\nYes.\n",_).
+STD_FPREFIX('write_No')  :- fmt_write(STDFDBK, "\nNo.\n",_).
 
 /********************************************************************/
 %% Hookup to the Flora debugger
 
 %% flora_call is a wrapper around XSB call
-'_$_$_flora_call'(Goal) :- 
-    	'_$_$_flora_handle_trace',
+STD_FPREFIX('call'(Goal)) :- 
+    	STD_FPREFIX('handle_trace'),
     	call(Goal),
-	'_$_$_flora_handle_end_of_call'.
-'_$_$_flora_call'(_Goal) :- '_$_$_flora_handle_notrace', fail.
+	STD_FPREFIX('handle_end_of_call').
+STD_FPREFIX('call'(_Goal)) :- STD_FPREFIX('handle_notrace'), fail.
 
-'_$_$_flora_findall'(NVs,Gs,TempL) :-
-	'_$_$_flora_handle_trace',
+STD_FPREFIX('findall'(NVs,Gs,TempL)) :-
+	STD_FPREFIX('handle_trace'),
 	findall(NVs,Gs,TempL),
-	'_$_$_flora_handle_notrace'.
-'_$_$_flora_findall'(_NVs,_Gs,_TempL) :- '_$_$_flora_handle_notrace', fail.
+	STD_FPREFIX('handle_notrace').
+STD_FPREFIX('findall'(_NVs,_Gs,_TempL)) :- STD_FPREFIX('handle_notrace'), fail.
 
-'_$_$_flora_handle_trace' :-
-    	( '_$_$_flora_switch'(trace) -> (stat_flag(6, Trace), Trace = 0
+STD_FPREFIX('handle_trace') :-
+    	( STD_FPREFIX('switch'(trace)) -> (stat_flag(6, Trace), Trace = 0
 					 -> trace
 					 ;  true
 					)
 	    	    	    	     ; true
 	).
-'_$_$_flora_handle_notrace' :-
+STD_FPREFIX('handle_notrace') :-
     	(stat_flag(6, Trace), Trace > 0
 	  ->  notrace
 	  ;   true
@@ -145,90 +146,90 @@
 %% subgoal call won''t be traced. However, on backtracking, this turns
 %% trace on and fails, thereby allowing to backtrack over the previous
 %% subgoal.
-'_$_$_flora_handle_end_of_call' :- '_$_$_flora_handle_notrace'.
-'_$_$_flora_handle_end_of_call' :- '_$_$_flora_handle_trace', fail.
+STD_FPREFIX('handle_end_of_call') :- STD_FPREFIX('handle_notrace').
+STD_FPREFIX('handle_end_of_call') :- STD_FPREFIX('handle_trace'), fail.
 
 
 /********************************************************************/
-'_$_$_flora_check_predicates'(G) :-
+STD_FPREFIX('check_predicates'(G)) :-
 	functor(G,F,N),
 	( current_predicate(F/N) ->
 	    true
 
 	  ;
-	    flora_warning_nl('%S/%S is undefined', args(F,N)),
+	    STD_FPREFIX('warning_nl'('%S/%S is undefined', args(F,N))),
 	    fail
 	).
 
-'_$_$_flora_check_predicates'(','(G,Gs)) :-
+STD_FPREFIX('check_predicates'(','(G,Gs))) :-
 	functor(G,F,N),
 	( current_predicate(F/N) ->
-	    '_$_$_flora_check_predicates'(Gs)
+	    STD_FPREFIX('check_predicates'(Gs))
 
 	  ;
-	    flora_warning_nl('%S/%S is undefined', args(F,N)),
+	    STD_FPREFIX('warning_nl'('%S/%S is undefined', args(F,N))),
 	    fail
 	).
 
 
 /********************************************************************/
-'_$_$_flora_write_matches'([]).
+STD_FPREFIX('write_matches'([])).
 
-'_$_$_flora_write_matches'([M|Ms]) :-
-	'_$_$_flora_write_pairs'(M),
+STD_FPREFIX('write_matches'([M|Ms])) :-
+	STD_FPREFIX('write_pairs'(M)),
 	file_nl(STDFDBK),
-	'_$_$_flora_write_matches'(Ms).
+	STD_FPREFIX('write_matches'(Ms)).
 
 
-'_$_$_flora_write_pairs'([]).
+STD_FPREFIX('write_pairs'([])).
 
-'_$_$_flora_write_pairs'([var(N,V)|NVs]) :-
+STD_FPREFIX('write_pairs'([var(N,V)|NVs])) :-
 	file_nl(STDFDBK), file_write(STDFDBK, N),
 	file_write(STDFDBK, ' = '),
-	'_$_$_flora_write'(V),
-	'_$_$_flora_write_pairs'(NVs).
+	STD_FPREFIX('write'(V)),
+	STD_FPREFIX('write_pairs'(NVs)).
 
 
-'_$_$_flora_write'(X) :-
+STD_FPREFIX('write'(X)) :-
 	var(X),
 	!,
 	file_write(STDFDBK, X).
 
-'_$_$_flora_write'('_$_$_flora_objref_fd'(O1,O2)) :-
+STD_FPREFIX('write'(flora_objref_fd(O1,O2))) :-
 	!,
-	'_$_$_flora_write'(O1),
+	STD_FPREFIX('write'(O1)),
 	file_write(STDFDBK, '.'),
-	'_$_$_flora_write'(O2).
+	STD_FPREFIX('write'(O2)).
 
-'_$_$_flora_write'('_$_$_flora_objref_ifd'(O1,O2)) :-
+STD_FPREFIX('write'(flora_objref_ifd(O1,O2))) :-
 	!,
-	'_$_$_flora_write'(O1),
+	STD_FPREFIX('write'(O1)),
 	file_write(STDFDBK, '!'),
-	'_$_$_flora_write'(O2).
+	STD_FPREFIX('write'(O2)).
 
-'_$_$_flora_write'(X) :-
-	X =.. ['_$_$_flora_@',F|Args],
+STD_FPREFIX('write'(X)) :-
+	X =.. ['flora_@',F|Args],
 	!,
-	'_$_$_flora_write'(F),
+	STD_FPREFIX('write'(F)),
 	( Args == [] ->
 	    true
 	  ;
 	    file_write(STDFDBK, '@('),
-	    '_$_$_flora_write_list'(Args),
+	    STD_FPREFIX('write_list'(Args)),
 	    file_write(STDFDBK, ')')
 	).
 
-'_$_$_flora_write'(X) :-
+STD_FPREFIX('write'(X)) :-
 	file_write(STDFDBK, X).
 
-'_$_$_flora_write_list'([X]) :-
+STD_FPREFIX('write_list'([X])) :-
 	!,
-	'_$_$_flora_write'(X).
+	STD_FPREFIX('write'(X)).
 
-'_$_$_flora_write_list'([X1,X2|Xs]) :-
-	'_$_$_flora_write'(X1),
+STD_FPREFIX('write_list'([X1,X2|Xs])) :-
+	STD_FPREFIX('write'(X1)),
 	file_write(STDFDBK, ','),
-	'_$_$_flora_write_list'([X2|Xs]).
+	STD_FPREFIX('write_list'([X2|Xs])).
 
 
 /******************** End of flrdisplay.P *************************/

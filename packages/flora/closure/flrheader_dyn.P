@@ -4,31 +4,33 @@
 #include "standard.h"
 #include "char_defs.h"
 
+#define STD_FPREFIX(X)    'dyn_$_$_flora_' ## X
 
-:- table '_$_$_flora_fd_dyn'/3.
-:- table '_$_$_flora_mvd_dyn'/3.
-:- table '_$_$_flora_ifd_dyn'/3.
-:- table '_$_$_flora_imvd_dyn'/3.
-:- table '_$_$_flora_isa_dyn'/2.
-:- table '_$_$_flora_sub_dyn'/2.
-:- table '_$_$_flora_fs_dyn'/3.
-:- table '_$_$_flora_mvs_dyn'/3.
 
-:- dynamic '_$_$_flora_fd_dyn'/3.
-:- dynamic '_$_$_flora_mvd_dyn'/3.
-:- dynamic '_$_$_flora_ifd_dyn'/3.
-:- dynamic '_$_$_flora_imvd_dyn'/3.
-:- dynamic '_$_$_flora_fs_dyn'/3.
-:- dynamic '_$_$_flora_mvs_dyn'/3.
-:- dynamic '_$_$_flora_sub_dyn'/2.
-:- dynamic '_$_$_flora_isa_dyn'/2.
-:- dynamic '_$_$_flora_exists_dyn'/1.
-:- dynamic '_$_$_flora_mvd_dyn'/2.
-:- dynamic '_$_$_flora_imvd_dyn'/2.
-:- dynamic '_$_$_flora_mvs_dyn'/2.
+:- table STD_FPREFIX('fd'/3).
+:- table STD_FPREFIX('mvd'/3).
+:- table STD_FPREFIX('ifd'/3).
+:- table STD_FPREFIX('imvd'/3).
+:- table STD_FPREFIX('isa'/2).
+:- table STD_FPREFIX('sub'/2).
+:- table STD_FPREFIX('fs'/3).
+:- table STD_FPREFIX('mvs'/3).
 
-:- import flora_loadlist/1, flora_dynloadlist/1, 
-	flora_warning_nl/2
+:- dynamic STD_FPREFIX('fd'/3).
+:- dynamic STD_FPREFIX('mvd'/3).
+:- dynamic STD_FPREFIX('ifd'/3).
+:- dynamic STD_FPREFIX('imvd'/3).
+:- dynamic STD_FPREFIX('fs'/3).
+:- dynamic STD_FPREFIX('mvs'/3).
+:- dynamic STD_FPREFIX('sub'/2).
+:- dynamic STD_FPREFIX('isa'/2).
+:- dynamic STD_FPREFIX('exists'/1).
+:- dynamic STD_FPREFIX('mvd'/2).
+:- dynamic STD_FPREFIX('imvd'/2).
+:- dynamic STD_FPREFIX('mvs'/2).
+
+:- import STD_FPREFIX('loadlist'/1), STD_FPREFIX('dynloadlist'/1), 
+	STD_FPREFIX('warning_nl'/2)
    from flrutils.
 
 :- import member/2, ground/1 from basics.

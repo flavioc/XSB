@@ -24,6 +24,10 @@
 ** 
 */
 
+:- compiler_options([cpp_on]).
+#define STD_FPREFIX(X)    'dyn_$_$_flora_' ## X
+#define DYN_FPREFIX(X)    'dyn_$_$_flora_' ## X
+
 
 :- import var/1, call/1 from standard.
 
@@ -35,88 +39,88 @@
 /*****************************************************************************
   rules for assert/retract
 *****************************************************************************/
-'_$_$_flora_assert_dyn'([]).
+STD_FPREFIX('assert'([])).
 
-'_$_$_flora_assert_dyn'([H|T]) :-
+STD_FPREFIX('assert'([H|T])) :-
 	trie_assert(H),
-	'_$_$_flora_assert_dyn'(T).
+	STD_FPREFIX('assert'(T)).
 
 
 /****************************************************************************/
-'_$_$_flora_retract_dyn'(Gs,Cs) :-
-	'_$_$_flora_prove_goals_dyn'(Gs,Fs),
-	'_$_$_flora_prove_conditions_dyn'(Cs),
-	'_$_$_flora_check_facts_dyn'(Fs),
-	'_$_$_flora_retract_facts_dyn'(Fs).
+STD_FPREFIX('retract'(Gs,Cs)) :-
+	STD_FPREFIX('prove_goals'(Gs,Fs)),
+	STD_FPREFIX('prove_conditions'(Cs)),
+	STD_FPREFIX('check_facts'(Fs)),
+	STD_FPREFIX('retract_facts'(Fs)).
 
 
-'_$_$_flora_prove_goals_dyn'([],[]).
+STD_FPREFIX('prove_goals'([],[])).
 
-'_$_$_flora_prove_goals_dyn'(['_$_$_flora_rtrct'(G)|Gs],[G|Fs]) :-
+STD_FPREFIX('prove_goals'([flora_rtrct(G)|Gs],[G|Fs])) :-
 	!,
 	call(G),
-	'_$_$_flora_prove_goals_dyn'(Gs,Fs).
+	STD_FPREFIX('prove_goals'(Gs,Fs)).
 
-'_$_$_flora_prove_goals_dyn'([G|Gs],Fs) :-
+STD_FPREFIX('prove_goals'([G|Gs],Fs)) :-
 	call(G),
-	'_$_$_flora_prove_goals_dyn'(Gs,Fs).
+	STD_FPREFIX('prove_goals'(Gs,Fs)).
 
 
-'_$_$_flora_prove_conditions_dyn'([]).
+STD_FPREFIX('prove_conditions'([])).
 
-'_$_$_flora_prove_conditions_dyn'([C|Cs]) :-
+STD_FPREFIX('prove_conditions'([C|Cs])) :-
 	call(C),
 	!,
-	'_$_$_flora_prove_conditions_dyn'(Cs).
+	STD_FPREFIX('prove_conditions'(Cs)).
 
 
-'_$_$_flora_check_facts_dyn'([]).
+STD_FPREFIX('check_facts'([])).
 
-'_$_$_flora_check_facts_dyn'([H|Fs]) :-
+STD_FPREFIX('check_facts'([H|Fs])) :-
 	clause(H,true),
-	'_$_$_flora_check_facts_dyn'(Fs).
+	STD_FPREFIX('check_facts'(Fs)).
 
 
-'_$_$_flora_retract_facts_dyn'([]).
+STD_FPREFIX('retract_facts'([])).
 
-'_$_$_flora_retract_facts_dyn'([H|Fs]) :-
+STD_FPREFIX('retract_facts'([H|Fs])) :-
 	trie_retract_nr((H :- true)),
-	'_$_$_flora_retract_facts_dyn'(Fs).
+	STD_FPREFIX('retract_facts'(Fs)).
 
 
 /****************************************************************************/
-'_$_$_flora_retractall_dyn'(Gs,Cs) :-
-	'_$_$_flora_retract_dyn'(Gs,Cs),
+STD_FPREFIX('retractall'(Gs,Cs)) :-
+	STD_FPREFIX('retract'(Gs,Cs)),
 	fail.
 
-'_$_$_flora_retractall_dyn'(_,_).
+STD_FPREFIX('retractall'(_,_)).
 
 
 /****************************************************************************/
-'_$_$_flora_erase_dyn'(Gs,Cs) :-
-	'_$_$_flora_prove_goals_dyn'(Gs,Fs),
-	'_$_$_flora_prove_conditions_dyn'(Cs),
-	'_$_$_flora_check_facts_dyn'(Fs),
-	'_$_$_flora_erase_facts_dyn'(Fs).
+STD_FPREFIX('erase'(Gs,Cs)) :-
+	STD_FPREFIX('prove_goals'(Gs,Fs)),
+	STD_FPREFIX('prove_conditions'(Cs)),
+	STD_FPREFIX('check_facts'(Fs)),
+	STD_FPREFIX('erase_facts'(Fs)).
 
 
-'_$_$_flora_erase_facts_dyn'([]).
+STD_FPREFIX('erase_facts'([])).
 
-'_$_$_flora_erase_facts_dyn'([H|Fs]) :-
-	'_$_$_flora_erase_one_fact_dyn'(H),
-	'_$_$_flora_erase_facts_dyn'(Fs).
+STD_FPREFIX('erase_facts'([H|Fs])) :-
+	STD_FPREFIX('erase_one_fact'(H)),
+	STD_FPREFIX('erase_facts'(Fs)).
 
 
-'_$_$_flora_erase_one_fact_dyn'(G) :-
+STD_FPREFIX('erase_one_fact'(G)) :-
 	trie_retract_nr(G),
-	( G = '_$_$_flora_exists_dyn'(O)     -> true
-	  ; G = '_$_$_flora_isa_dyn'(O,_)    -> true
-	  ; G = '_$_$_flora_fd_dyn'(_,_,O)   -> true
-	  ; G = '_$_$_flora_mvd_dyn'(_,_,O)  -> true
-	  ; G = '_$_$_flora_ifd_dyn'(_,_,O)  -> true
-	  ; G = '_$_$_flora_imvd_dyn'(_,_,O) -> true
-	  ; G = '_$_$_flora_fs_dyn'(_,_,O)   -> true
-	  ; G = '_$_$_flora_mvs_dyn'(_,_,O)  -> true
+	( G = STD_FPREFIX('exists'(O))     -> true
+	  ; G = STD_FPREFIX('isa'(O,_))    -> true
+	  ; G = STD_FPREFIX('fd'(_,_,O))   -> true
+	  ; G = STD_FPREFIX('mvd'(_,_,O))  -> true
+	  ; G = STD_FPREFIX('ifd'(_,_,O))  -> true
+	  ; G = STD_FPREFIX('imvd'(_,_,O)) -> true
+	  ; G = STD_FPREFIX('fs'(_,_,O))   -> true
+	  ; G = STD_FPREFIX('mvs'(_,_,O))  -> true
 	  ; NextAction=no
 	),
 	( NextAction==no ->
@@ -125,31 +129,31 @@
 	  ; var(O) ->
 	    true
 	  ;
-	    '_$_$_flora_erase_object_dyn'(O)
+	    STD_FPREFIX('erase_object'(O))
 	).
 
 
-'_$_$_flora_erase_object_dyn'(O) :-
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_exists_dyn'(O))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_isa_dyn'(O,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_sub_dyn'(O,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_fd_dyn'(O,_,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_mvd_dyn'(O,_,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_mvd_dyn'(O,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_ifd_dyn'(O,_,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_imvd_dyn'(O,_,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_imvd_dyn'(O,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_fs_dyn'(O,_,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_mvs_dyn'(O,_,_))],[]),
-	'_$_$_flora_eraseall_dyn'(['_$_$_flora_rtrct'('_$_$_flora_mvs_dyn'(O,_))],[]).
+STD_FPREFIX('erase_object'(O)) :-
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('exists'(O)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('isa'(O,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('sub'(O,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('fd'(O,_,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('mvd'(O,_,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('mvd'(O,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('ifd'(O,_,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('imvd'(O,_,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('imvd'(O,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('fs'(O,_,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('mvs'(O,_,_)))],[])),
+	STD_FPREFIX('eraseall'([flora_rtrct(DYN_FPREFIX('mvs'(O,_)))],[])).
 
 
 /****************************************************************************/
-'_$_$_flora_eraseall_dyn'(Gs,Cs) :-
-	'_$_$_flora_erase_dyn'(Gs,Cs),
+STD_FPREFIX('eraseall'(Gs,Cs)) :-
+	STD_FPREFIX('erase'(Gs,Cs)),
 	fail.
 
-'_$_$_flora_eraseall_dyn'(_,_).
+STD_FPREFIX('eraseall'(_,_)).
 
 
 /***********************  End of flrassert_syn.P  *******************/

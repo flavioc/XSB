@@ -499,17 +499,14 @@ read_number(Char,TokenList,Status) :-
   returns in Chars a list of digits.
 ****************************************************************************/
 read_digits(Ch,Chars,NextCh) :-
-	( Ch >= CH_0, Ch =< CH_9 ->
-	    Chars=[Ch|Rest],
+	(   Ch >= CH_0, Ch =< CH_9
+	->  Chars=[Ch|Rest],
 	    get0(C1),
 	    read_digits(C1,Rest,NextCh)
-
-	  ; Ch == CH_UNDERSCORE ->
-	    get0(C1),
+	;   Ch == CH_UNDERSCORE
+	->  get0(C1),
 	    read_digits(C1,Chars,NextCh)
-
-	  ;
-	    NextCh=Ch,
+	;   NextCh=Ch,
 	    Chars=[]
 	).
 
@@ -519,17 +516,14 @@ read_digits(Ch,Chars,NextCh) :-
   reads an integer in base Base. The base has been read as Base.
 ****************************************************************************/
 read_based(Ch,NextCh,Base,N0,N) :-
-	( symbol_value(Base,Ch,Digit) ->
-	    N1 is N0*Base+Digit,
+	(   symbol_value(Base,Ch,Digit)
+	->  N1 is N0*Base+Digit,
 	    get0(C1),
 	    read_based(C1,NextCh,Base,N1,N)
-
-	  ; Ch == CH_UNDERSCORE ->
-	    get0(C1),
+	;   Ch == CH_UNDERSCORE
+	->  get0(C1),
 	    read_based(C1,NextCh,Base,N0,N)
-
-	  ; 
-	    N=N0,
+	;   N=N0,
 	    NextCh=Ch
 	).
 
@@ -564,36 +558,28 @@ symbol_value(Base,Char,Digit) :-
 read_float(Char,Integer,[num(Number)|Tokens],Status) :-
 	read_digits(Char,Fraction,C1),
 	append(Integer,[CH_DOT|Fraction],L1),
-	( C1 \/ 32 =:= CH_e ->
-	    get0(C2),
-	    ( C2 =\= CH_MINUS, C2 =\= CH_PLUS ->
-		Sign=[],
+	(   C1 \/ 32 =:= CH_e
+	->  get0(C2),
+	    (	C2 =\= CH_MINUS, C2 =\= CH_PLUS
+	    ->	Sign=[],
 		C3=C2
-
-	      ;
-		Sign=[C2],
+	    ;	Sign=[C2],
 		get0(C3)
 	    ),
 	    append(L1,[C1|Sign],L2),
-	    ( C3 >= CH_0, C3 =< CH_9 ->
-		read_digits(C3,Exponent,NextCh),
+	    (	C3 >= CH_0, C3 =< CH_9
+	    ->	read_digits(C3,Exponent,NextCh),
 		append(L2,Exponent,L3),
 		number_codes(Number,L3),
 		read_tokens(NextCh,Tokens,Status)
-
-	      ;
-		atom_codes(Number,L2),
-		( C3 == -1 ->
-		    Status=[eof,error('unexpected end of file')]
-
-		  ;
-		    Status=[not_eof,error('syntax error in exponent')]
+	    ;	atom_codes(Number,L2),
+		( C3 == -1
+		->  Status=[eof,error('unexpected end of file')]
+		;   Status=[not_eof,error('syntax error in exponent')]
 		),
 		Tokens=[]
 	    )
-
-	  ;
-	    number_codes(Number,L1),
+	;   number_codes(Number,L1),
 	    read_tokens(C1,Tokens,Status)
 	).
 
