@@ -80,15 +80,27 @@ check_index_1(table(DB,Table),Selection,Statement):-
 	(DB == '' -> 
 	    check_index_2(Table,Selection,Statement)
 	;
-	    findall_odbc_sql_2([],['use ',DB],_),
-	    check_index_2(Table,Selection,Statement),
-	    findall_odbc_sql_2([],'use master',_F) ).
+%	    findall_odbc_sql_2([],['use ',DB],_),
+	    check_index_2(DB,Table,Selection,Statement),
+%	    findall_odbc_sql_2([],'use master',_F) ,
+	    true
+	).
 	
 check_index_2(Table,Selection,Statement):- 
-	    findall(Ret,odbc_sql([],['sp_helpindex ',Table],Ret),Retlist),
+%	    findall(Ret,odbc_sql([],['sp_helpindex ',Table],Ret),Retlist),
+	    findall(Ret,odbc_sql([],['my_getindexes ',Table],Ret),Retlist),
 	    ground(Retlist), % should take out.
 	    check_index_3(Retlist,Selection,[],Statement).
 
+check_index_2(DB,Table,Selection,Statement):- 
+%	    findall(Ret,odbc_sql([],['sp_helpindex ',Table],Ret),Retlist),
+	    findall(Ret,odbc_sql([],[DB,'..my_getindexes ',Table],Ret),Retlist),
+	    ground(Retlist), % should take out.
+	    check_index_3(Retlist,Selection,[],Statement).
+
+% my_getindexes returns empty if the table has no indices -- lfcastro
+check_index_3([[]], _Selection, _In, Statement) :-
+	warning(['No indices in table for ', Statement]).
 check_index_3([],_Selection,In,Statement):- 
 	(In == [] -> 
 	    warning(['No indices in place for ',Statement])
@@ -132,13 +144,33 @@ read_until_from -->
 	read_until_from.
 
 table_1(table(DB,Table)) -->
+	[_Server],['.'],[DB],['.'],[_Owner],['.'],[Table],
+	!.
+table_1(table(DB,Table)) -->
+	[DB],['.'],[_Owner],['.'],[Table],
+	!.
+table_1(table(DB,Table)) -->
 	[DB],['.'],['.'],[Table],
+	!.
+table_1(table('',Table)) -->
+	[_Owner],['.'],[Table],
 	!.
 table_1(table('',Table)) -->
 	[Table].
 
+read_until_where -->
+	['WHERE'],
+	!.
+read_until_where -->
+	[_],
+	read_until_where.
 get_selection(Selection) -->
 	['WHERE'],
+	!,
+	get_selection_1(Selection).
+get_selection(Selection) -->
+	{ warning(['Skipping tokens before WHERE -- probably a non-single-table query']) },
+	read_until_where,
 	get_selection_1(Selection).
 
 opt_space --> [''],!.
@@ -151,18 +183,58 @@ get_selection_1([Selection|R]) -->
 get_selection_1_rest([Sel|R]) --> 
 	opt_space,
 	['AND'],!,
-	get_equality(Sel),
+	where_predicate(Sel),
+%	get_equality(Sel),
 	get_selection_1_rest(R).
 get_selection_1_rest([]) --> [].
 	
-get_equality(Sel) --> 
-	['?'],opt_space,
-	['='],opt_space,
-	[Sel],!.
-get_equality(Sel) --> 
-	[Sel],opt_space,
-	['='],opt_space,['?'].
+% get_equality(Sel) --> 
+% 	['?'], opt_space,
+% 	eq_op, opt_space,
+% 	[Sel],!.
+% get_equality(Sel) --> 
+% 	[Sel], opt_space,
+% 	eq_op ,opt_space,['?'].
 
+eq_op --> ['='].
+eq_op --> ['*='].
+eq_op --> ['=*'].
+
+get_relop -->
+	[_Sel], opt_space,
+	rel_op, opt_space,
+	['?'].
+
+rel_op --> ['<'].
+rel_op --> ['>'].
+rel_op --> ['<='].
+rel_op --> ['>='].
+rel_op --> ['<>'].
+rel_op --> ['!='].
+rel_op --> ['!<'].
+
+opt_not --> ['NOT'], !.
+opt_not --> [].
+
+% here, we assume that the first token in a predicate
+% defines the name of the field of interest --lfcastro
+where_predicate(Sel) -->
+	[Sel], opt_space,
+	( rel_op ; eq_op ), opt_space,
+	[_].
+where_predicate(Sel) -->
+	[Sel], opt_not,
+	['LIKE'], opt_space,
+	[_].
+where_predicate(Sel) -->
+	[Sel], opt_not,
+	['BETWEEN'], opt_space,
+	[_], opt_space,
+	['AND'], opt_space,
+	[_].
+where_predicate(Sel) -->
+	[Sel], ['IS'], opt_not, ['NULL'].
+	
 test(Table,Select):- 
 	parse_select_statement(
 	     'select REPLY_TABLENUMBER,REPLY_VALUE,REPLY_CODE
