@@ -1,5 +1,5 @@
 /*  -*-c-*-  Make sure this file comes up in the C mode of emacs */ 
-/* File:      std_pred_cases.i
+/* File:      std_cases.i
 ** Author(s): Kostis F. Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
