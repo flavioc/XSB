@@ -291,11 +291,11 @@ The following \FLORA shell commands are supported:
 \addtocounter{footnote}{1}\footnotetext{Tables need to be flushed if the database has been
 changed since last evaluation.}
 
-All commands with a FILE argument passed to them use the XSB {\tt library\_directory}
-predicate to search for the module, except that the command {\tt rundemo(FILE)}
-first looks for {\tt FILE} in the \FLORA demo directory. In general, all XSB commands
-can be executed from \FLORA shell, if the corresponding XSB library has already been
-loaded.
+All commands with a FILE argument passed to them use the XSB {\tt
+  library\_directory} predicate to search for the module, except that the
+command {\tt rundemo(FILE)} first looks for {\tt FILE} in the \FLORA demo
+directory. In general, all XSB commands can be executed from \FLORA shell,
+if the corresponding XSB library has already been loaded.
 
 After a syntax error, parsing error, or compiling error, \FLORA shell will
 discard tokens read from the current input stream until the end of file or a
@@ -889,7 +889,7 @@ of characters enclosed in a pair of single quotes, e.g.,
 $\texttt{'JOHN SMITH'},\texttt{'default.flr'}$.
 
 \begin{table}[htb]
-\begin{center}
+\begin{quote}
 \texttt{ \small
 \begin{tabular}{|c|r@{\hspace{1.5cm}}|@{\hspace{5mm}}l@{\hspace{5mm}}|}
 \hline
@@ -918,7 +918,7 @@ Escaped String &
 \hline
 \end{tabular}
 }
-\end{center}
+\end{quote}
 \caption{Escaped Character Strings and Their Corresponding Symbols}
 \label{tab:tab-esc-str}
 \end{table}
@@ -964,7 +964,7 @@ a decimal integer followed by a single quote ($\texttt{'}$). The digit string im
 follows the single quote. The letters $A \ldots Z$ or $a \ldots z$ are used to represent
 digits greater than 9. Table~\ref{tab:tab-int-rep} lists a few sample integers.
 \begin{table}[htb]
-\begin{center}
+\begin{quote}
 \texttt{ \small
 \begin{tabular}{|r@{'}l|r@{\hspace{1.5cm}}|c|}
 \hline
@@ -979,7 +979,7 @@ digits greater than 9. Table~\ref{tab:tab-int-rep} lists a few sample integers.
 \hline
 \end{tabular}
 }
-\end{center}
+\end{quote}
 \caption{Representation of Integers}
 \label{tab:tab-int-rep}
 \end{table}
@@ -1057,11 +1057,14 @@ from the result list.
 In general, aggregates can appear wherever a number or a list is
 allowed. Therefore, aggregates can be nested. The following examples
 illustrate the use of aggregates (some borrowed from the \FLORID manual):
-\begin{qrules} ?- Z = min\{S; john[salary@(Year){\fd}S]\}. \\ ?- Z =
-count\{Year; john.salary@(Year) $<$ max\{S; john[salary@(Y){\fd}S],
-Y$<$Year\}\}. \\ ?- avg\{S[Who]; Who{\isa}employee[salary@(Year){\fd}S]\}
-$>$ 20000.  \end{qrules}
-
+%%
+\begin{qrules}
+  ?- Z = min\{S; john[salary@(Year){\fd}S]\}. \\
+  ?- Z = count\{Year; john.salary@(Year) $<$ max\{S; john[salary@(Y){\fd}S],
+  Y$<$Year\}\}. \\
+  ?- avg\{S[Who]; Who{\isa}employee[salary@(Year){\fd}S]\} $>$ 20000. 
+\end{qrules}
+%%
 If an aggregate contains grouping variables that are \emph{not} bound by a
 preceding subgoal, then this aggregate would backtrack over such grouping
 variables. (In other words, they are considered to be existentially
@@ -1069,6 +1072,22 @@ quantified). For instance, in the last query above, the aggregate will
 backtrack over the variable {\tt Who}. Thus, if {\tt john's} and {\tt
   mary's} average salary is greater than 20000, this query will backtrack
 and return both {\tt john} and {\tt mary}.
+
+The following example is a query that for each employee asks for a list of
+years wheen this employee had salary less than 60. This illustrates the use
+of the {\tt collectset} aggregate.
+%%
+\begin{quote}
+\begin{verbatim}
+?- Z= collectset{Year [Who]; Who[salary@(Year) -> X], X < 60}.
+Z = [1990,1991]
+Who = mary
+
+Z = [1990,1991,1997]
+Who = john
+\end{verbatim}
+\end{quote}
+%%
 
 \subsection{Arithmetic Expressions}
 
@@ -1122,7 +1141,7 @@ Table~\ref{tab:tab-op-pre} lists various operators in decreasing precedence
 order, their associativity, and arity.
 %%
 \begin{table}[htb]
-\begin{center}
+\begin{quote}
 \texttt{ \small
 \begin{tabular}{|c|c|c|c|c|}
 \hline
@@ -1146,7 +1165,7 @@ Precedence & Operator & Use & Associativity & Arity \\ \hline
 \hline
 \end{tabular}
 }
-\end{center}
+\end{quote}
 \caption{Operators in Non-Increasing Precedence Order and Their Associativity and Arity}
 \label{tab:tab-op-pre}
 \end{table}
@@ -1369,7 +1388,7 @@ violate the typing rules.
 
 \subsection{Meta-programming in \FLORA}
 
-The syntax of \fl leads itself naturally to meta-programming. For instance,
+The syntax of \fl lends itself naturally to meta-programming. For instance,
 it is easy to examine the methods and types defined for the various classes.
 Here are some simle examples:
 %%
@@ -1418,39 +1437,39 @@ These primitives are described in the XSB manual. However, \FLORA provides
 one primitive of its own: a {\em meta variable\/} that can range over methods of
 any arity.
 
-A meta variable is specified by a normal variable immediately following a
-``@'' sign, {\it e.g.}, @Method, @\_var, @\_. Note that @\_ represents a
-\emph{don't care} meta variable. The ``@'' sign is always considered as
-part of a meta variable's name.  Thus, @M and M represent two different
-variables.
+A meta variable is specified by a normal variable immediately prefixed with
+the ``@'' sign, {\it e.g.}, @Method, @\_var, @\_. Note that @\_ represents
+a \emph{don't care} meta variable. The ``@'' sign is always considered to
+be a part of the meta variable's name.  Thus, @M and M represent two
+different variables.
 
-Currently, a meta variable can only appear where a method together with its arguments
-is allowed. For instance, $\mathtt{john[@M{\fd}Salary], o_1.@M1.o_2[@M2{\mvd}r]}$.
+Currently, a meta variable can appear only where a method invocation is
+allowed. For instance, $\mathtt{john[@M{\fd}Salary],~
+  o_1.@M1.o_2[@M2{\mvd}r]}$. Thus, unlike the regular variables, meta
+variables represent method invocations and \emph{not} object.  So, it is
+more appropriate to call these variables \emph{method meta-variables}.
 
-Note that a meta (method) variable does not represent an \fl object, but a
-method invocation expression instead, {\it i.e.}, a method together with
-its arguments.  The =.. operator (like that of XSB) is used to obtain a
-method and its arguments from a method invocation expression (that is bound
-to a meta variable), or on the other hand, to build a method invocation
-expression out of a method and its arguments. For example,
+The operator ``=..'' (simalar to that of XSB) is used to obtain a method and
+its arguments from a meta variable that is bound to a method invocation
+expression. Alternatively, this operator can be used to \emph{build} a
+method invocation expression from a list and assign the result to a meta
+variable. The first element in the list is assumed to represent the method
+name and the rest represent the arguments.  For instance,
+%%
 \begin{verbatim}
 FLORA> ?- @M =.. [m,a1,a2].
-
 @M = m@(a1,a2)
-
 Yes.
 \end{verbatim}
-
-The left hand side of =.. can be either a normal Prolog term or a meta
-variable. In the former case, =.. just works exactly the same as that of
-XSB, whereas in the latter case, the right hand side of =.. would try to
-unify with a list of \fl objects containing the method object as the first
-element followed by its argument objects.
-
-Consider the example in Figure~\ref{fig:fig-metavar}:
 %%
-\begin{figure}[htb]
-\begin{center}
+\noindent
+The left hand side of ``=..'' can also be a normal Prolog term. In this
+case,
+``=..'' acts exactly as in Prolog, {\it i.e.}, it decomposes the term into
+a list or constructs a term from a list.
+%%
+\begin{figure}[tb]
+\begin{quote}
 \begin{tabular}{l}
 {\bf metavar.flr:}\\ \\
 :- import length/2 from basics. \\ \\
@@ -1463,26 +1482,24 @@ $o_2$[@M{\fd}R] :- \\
 \hspace{1.5cm}	@M =.. [Meth$|$Args], \\
 \hspace{1.5cm}	length(Args,2).
 \end{tabular}
-\end{center}
+\end{quote}
 \caption{Meta Variable} \label{fig:fig-metavar}
 \end{figure}
 
-The rule says that applying to $o_2$ those of $o_1$'s methods that take two arguments 
-yields the same result as applying to $o_1$. To see the effects, from \FLORA
-shell's command prompt, enter:
+Consider the example in Figure~\ref{fig:fig-metavar}.  The rule there
+``copies'' the definitions of methods of arity 1 and 2 from object {\tt o1}
+to {\tt o2}. To do the same without the meta-variable would require two
+rules (and more, if we were to copy the methods of higher arities).  To see
+how this works in \FLORA, try the following:
+%%
 \begin{verbatim}
 FLORA> ?- rundemo(metavar).
-
 Yes.
 
 FLORA> ?- o2[@M->R].
-
 @M = m2@(b1,b2)
 R = r2
-
 Yes.
-
-FLORA> ?- 
 \end{verbatim}
 
 
@@ -1518,7 +1535,7 @@ programs, {\it static.flr} and {\it dynamic.flr}, as shown in
 Figure~\ref{fig:fig-static-dynamic-code}.
 %%
 \begin{figure}[htb]
-\begin{center}
+\begin{quote}
 \begin{tabular}{l}
 {\bf static.flr:}\\ \\
 department[faculty{\Mvd}professor; coursesOffered{\Mvd}string]. \\
@@ -1539,7 +1556,7 @@ john{\isa}professor. \\
 john[teaches@(spring,1999){\mvd}math230]. \\
 john[teaches@(spring,1999){\mvd}math101].
 \end{tabular}
-\end{center}
+\end{quote}
 \caption{Static Code vs. Dynamic Code} \label{fig:fig-static-dynamic-code}
 \end{figure}
 Start XSB in the directory where both \emph{static.flr} and
@@ -1725,7 +1742,7 @@ Let us start XSB in the directory where both \emph{module1.flr} and
 shell:
 %%
 \begin{figure}[htb]
-\begin{center}
+\begin{quote}
 \begin{tabular}{l}
 {\bf module1.flr:}\vspace{3mm} \\
 :- import employee[salary@(number){\Fd}number] from module2. \vspace{2mm}\\
@@ -1747,7 +1764,7 @@ mary[salary@(1996){\fd}70]. \\
 mary[salary@(1997){\fd}80]. \\
 mary[salary@(1998){\fd}90].
 \end{tabular}
-\end{center}
+\end{quote}
 \caption{Example \FLORA Modules} \label{fig:fig-module}
 \end{figure}
 %%
@@ -1812,7 +1829,7 @@ XSB predicates defined in other XSB modules as long as these XSB predicates
 are properly imported and are used correctly.
 %%
 \begin{figure}[tb]
-\begin{center}
+\begin{quote}
 \begin{tabular}{l}
 {\bf mix.flr:}\\ \\
 :- import findall/3 from setof. \\
@@ -1839,7 +1856,7 @@ show(X) :- \\
 writelist([X]) :- write(X). \\
 writelist([$X_1,X_2|$Xs]) :- write($X_1$), write(','), writelist([$X_2|$Xs]).
 \end{tabular}
-\end{center}
+\end{quote}
 \caption{Mixing \FLORA code with XSB code} \label{fig:fig-mix}
 \end{figure}
 
