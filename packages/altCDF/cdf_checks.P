@@ -352,7 +352,12 @@ check_identity_checkflag(Context,Term):-
 	  ; true).
 
 check_identity(_,Term):- 
-	(call0(Term) -> fail ; true).
+	(call0(Term) -> fail ; (ext_to_int_call(Term, TermInt), call0(TermInt) -> fail ; true)).
+
+ext_to_int_call(isa_ext(A,B), isa_int(A,B)).
+ext_to_int_call(hasAttr_ext(A,B,C), hasAttr_int(A,B,C)).
+ext_to_int_call(allAttr_ext(A,B,C), allAttr_int(A,B,C)).
+ext_to_int_call(classHasAttr_ext(A,B,C), classHasAttr_int(A,B,C)).
 	
 %----------------------------------------------------------------------
 
