@@ -27,6 +27,8 @@
    in-lined file_function (to speed up file_get/put). */
 
 
+#include "file_modes_xsb.h"
+
 static struct stat stat_buff;
 extern Cell   ptoc_tag(int i);
 extern char   *expand_filename(char *filename);
@@ -113,6 +115,7 @@ inline static bool file_function(void)
   static char *addr, *tmpstr;
   static prolog_term pterm;
   static Cell term;
+  static char *strmode;
 
   switch (ptoc_int(1)) {
   case FILE_FLUSH: /* file_function(0,+IOport,-Ret,_,_) */
@@ -138,65 +141,92 @@ inline static bool file_function(void)
 #endif
     break;
   case FILE_POS: /* file_function(3, +IOport, -Pos) */
-    io_port = ptoc_int(2);  /* expand for reading from strings?? */
+    io_port = ptoc_int(2); 
     term = ptoc_tag(3);
     if (io_port >= 0) {
       SET_FILEPTR(fptr, io_port);
-      if (isnonvar(term)) return ptoc_int(3) == ftell(fptr);
-      else ctop_int(3, ftell(fptr));
+      if (isnonvar(term))
+	return ptoc_int(3) == ftell(fptr);
+      else
+	ctop_int(3, ftell(fptr));
     } else { /* reading from string */
       sfptr = strfileptr(io_port);
       offset = sfptr->strptr - sfptr->strbase;
       if (isnonvar(term))
 	return ptoc_int(3) == offset;
-      else ctop_int(3, offset);
+      else
+	ctop_int(3, offset);
     }
     break;
-  case FILE_OPEN:		
+  case FILE_OPEN:
     /* file_function(4, +FileName, +Mode, -OIport)
        When read, mode = 0; when write, mode = 1, 
        when append, mode = 2, when opening a 
        string for read mode = 3 */
+
     tmpstr = ptoc_string(2);
     pterm = reg_term(3);
     if (is_int(pterm))
       mode = int_val(pterm);
     else if (is_string(pterm)) {
       switch ((string_val(pterm))[0]) {
-      case 'r': mode = 0; break;
-      case 'w': mode = 1; break;
-      case 'a': mode = 2; break;
-      case 's': mode = 3; break;
+      case 'r': mode = OREAD; break;
+      case 'w': mode = OWRITE; break;
+      case 'a': mode = OAPPEND; break;
+      case 's':
+	if ((string_val(pterm))[1] == 'r')
+	  /* reading from string */
+	  mode = OSTRINGR;
+	else if ((string_val(pterm))[1] == 'w')
+	  /* writing to string */
+	  mode = OSTRINGW;
+	else
+	  mode = -1;
+	break;
       default: mode = -1;
       }
     } else
-      xsb_abort("FILE_OPEN: Open mode must be an atom or an integer");
+      xsb_abort("FILE_OPEN: File opening mode must be an atom or an integer");
 
-    if ((mode >= 0) && (mode<3)) {
-      addr = expand_filename(tmpstr);
-      switch (mode) {
-	/* "b" does nothing, but POSIX allows it */
-      case 0: fptr = fopen(addr, "rb"); break; /* READ_MODE */
-      case 1: fptr = fopen(addr, "wb"); break; /* WRITE_MODE */
-      case 2: fptr = fopen(addr, "ab"); break; /* APPEND_MODE */
-      }
-      if (fptr) {
-	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
-	  /* file exists and isn't a dir */
-	  ctop_int(4, xsb_intern_file(fptr, "FILE_OPEN"));
-	else {
-	  xsb_warn("File %s is a directory, cannot open!", tmpstr);
-	  ctop_int(4, -1);
-	}
-      } else ctop_int(4, -1);
-    } else if (mode==3) {  /* open string! */
-      if ((fptr = stropen(tmpstr))) ctop_int(4, (Integer)fptr);
-      else ctop_int(4, -1000);
-    } else {
-      xsb_warn("Unknown open file mode");
+    switch (mode) {
+      /* "b" does nothing, but POSIX allows it */
+    case OREAD:   strmode = "rb"; break; /* READ_MODE */
+    case OWRITE:  strmode = "wb"; break; /* WRITE_MODE */
+    case OAPPEND: strmode = "ab"; break; /* APPEND_MODE */
+    case OSTRINGR:
+      if ((fptr = stropen(tmpstr)))
+	ctop_int(4, (Integer)fptr);
+      else 
+	ctop_int(4, -1000);
+      return TRUE;
+    case OSTRINGW:
+      xsb_abort("FILE_OPEN: Output to strings has not yet been implemented");
       ctop_int(4, -1000);
+      return TRUE;
+    default:
+      xsb_warn("FILE_OPEN: Invalid open file mode, %d", mode);
+      ctop_int(4, -1000);
+      return TRUE;
     }
+    
+    /* we reach here only if the mode is OREAD,OWRITE,OAPPEND */
+    addr = expand_filename(tmpstr);
+    fptr = fopen(addr, strmode);
+
+    if (fptr) {
+      if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
+	/* file exists and isn't a dir */
+	ctop_int(4, xsb_intern_file(fptr, "FILE_OPEN"));
+      else {
+	xsb_warn("FILE_OPEN: File %s is a directory, cannot open!", tmpstr);
+	fclose(fptr);
+	ctop_int(4, -1);
+      }
+    } else
+      ctop_int(4, -1);
+    
     break;
+
   case FILE_CLOSE: /* file_function(5, +OIport) */
     io_port = ptoc_int(2);
     if (io_port < 0) strclose(io_port);
@@ -306,44 +336,60 @@ inline static bool file_function(void)
       mode = int_val(pterm);
     else if (is_string(pterm)) {
       switch ((string_val(pterm))[0]) {
-      case 'r': mode = 0; break;
-      case 'w': mode = 1; break;
-      case 'a': mode = 2; break;
+      case 'r': mode = OREAD; break;
+      case 'w': mode = OWRITE; break;
+      case 'a': mode = OAPPEND; break;
+      case 's':
+	if ((string_val(pterm))[1] == 'r')
+	  /* reading from string */
+	  mode = OSTRINGR;
+	else if ((string_val(pterm))[1] == 'w')
+	  /* writing to string */
+	  mode = OSTRINGW;
+	else
+	  mode = -1;
+	break;
       default: mode = -1;
       }
     } else
-      xsb_abort("FILE_OPEN: Open mode must be an atom or an integer");
+      xsb_abort("FILE_REOPEN: Open mode must be an atom or an integer");
 
-    if ((mode >= 0) && (mode<3)) {
-      addr = expand_filename(tmpstr);
-      SET_FILEPTR(fptr, ptoc_int(4));
-      fflush(fptr);
-      switch (mode) {
-	/* "b" does nothing, but POSIX allows it */
-      case 0: fptr = freopen(addr, "rb", fptr); break; /* READ_MODE */
-      case 1: fptr = freopen(addr, "wb", fptr); break; /* WRITE_MODE */
-      case 2: fptr = freopen(addr, "ab", fptr); break; /* APPEND_MODE */
-      }
-      if (fptr) {
-	if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
-	  /* file exists and isn't a dir */
-	  ctop_int(5, 0);
-	else {
-	  xsb_warn("File %s is a directory, cannot open!", tmpstr);
-	  ctop_int(5, -2);
-	}
-      } else ctop_int(5, -3);
-    } 
-    /* Whoever knows how to str-reopen a file --- please fix this. mk
-    else if (mode==3) {
-      if ((fptr = stropen(tmpstr))) ctop_int(5, (Integer)fptr);
-      else ctop_int(5, -1000);
-    } 
-    */
-    else {
-      xsb_warn("Unknown open file mode");
+    switch (mode) {
+      /* "b" does nothing, but POSIX allows it */
+    case OREAD:   strmode = "rb";  break; /* READ_MODE */
+    case OWRITE:  strmode = "wb";  break; /* WRITE_MODE */
+    case OAPPEND: strmode = "ab";  break; /* APPEND_MODE */
+    case OSTRINGR:
+      xsb_abort("FILE_REOPEN: Reopening of strings hasn't been implemented");
       ctop_int(5, -1000);
+      return TRUE;
+    case OSTRINGW:
+      xsb_abort("FILE_REOPEN: Reopening of strings hasn't been implemented");
+      ctop_int(5, -1000);
+      return TRUE;
+    default:
+      xsb_warn("FILE_REOPEN: Invalid open file mode, %d", mode);
+      ctop_int(5, -1000);
+      return TRUE;
     }
+    
+    /* we reach here only if the mode is OREAD,OWRITE,OAPPEND */
+    addr = expand_filename(tmpstr);
+    SET_FILEPTR(fptr, ptoc_int(4));
+    fflush(fptr);
+    fptr = freopen(addr, strmode, fptr);
+
+    if (fptr) {
+      if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
+	/* file exists and isn't a dir */
+	ctop_int(5, 0);
+      else {
+	xsb_warn("FILE_REOPEN: File %s is a directory, cannot open!", tmpstr);
+	ctop_int(5, -2);
+      }
+    } else
+      ctop_int(5, -3);
+
     break;
 
   case FILE_CLONE: {
@@ -450,10 +496,19 @@ inline static bool file_function(void)
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
     }
     else {
-      fprintf(stderr,"clearerr %d\n", io_port);
       SET_FILEPTR(fptr, io_port);
       clearerr(fptr);
     }
+    break;
+  }
+
+  case TMPFILE_OPEN: {
+    /* file_function(17, -OIport)
+       Opens a temp file in r/w mode and returns its IO port */
+    if ((fptr = tmpfile()))
+      ctop_int(2, xsb_intern_file(fptr, "TMPFILE_OPEN"));
+    else
+      ctop_int(2, -1);
     break;
   }
 

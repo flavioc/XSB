@@ -55,7 +55,7 @@ server :-
 server_loop(Sockfd_orig, Sockfd0, Sockfd1) :-
     writeln(serverloop1),
     socket_recv(Sockfd0, GoalStr,_),
-    file_open(GoalStr,s,IOport),
+    file_open(GoalStr,sr,IOport),
     file_read(IOport,Goal),
     file_close(IOport),
     writeln(goal(Goal)),

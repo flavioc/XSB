@@ -66,7 +66,7 @@ client_loop(Sockfd0, Sockfd1) :-
       writeln('Answers: '),
       repeat,
       socket_recv(Sockfd1, AnswerStr,_),
-      file_open(AnswerStr,s,IOport),
+      file_open(AnswerStr,sr,IOport),
       file_read(IOport,Answer),
       file_close(IOport),
       (Answer==end_of_file 

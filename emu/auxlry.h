@@ -95,5 +95,5 @@ extern char *xsb_segfault_message;
     if (xsb_filedes < 0 || xsb_filedes >= MAX_OPEN_FILES) \
 	xsb_abort("Invalid file descriptor %d in I/O predicate", xsb_filedes);\
     stream = fileptr(xsb_filedes); \
-    if (stream==NULL) \
+    if ((stream==NULL) && (xsb_filedes != 0)) \
 	xsb_abort("Invalid file descriptor %d in I/O predicate", xsb_filedes);

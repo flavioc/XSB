@@ -1,4 +1,4 @@
-/* File:      prolog_includes/standard.h
+/* File:      file_modes_xsb.h
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -23,17 +23,9 @@
 */
 
 
-#include "file_modes_xsb.h"
+#define OREAD	     0	  /* open for read            	    */
+#define OWRITE	     1	  /* open for write           	    */
+#define OAPPEND	     2	  /* open for append          	    */
+#define OSTRINGR     3	  /* open as a string (for reading) */
+#define OSTRINGW     4	  /* open as a string (for writing) */
 
-
-#define STDIN	     0
-#define STDOUT	     1
-#define STDERR	     2
-#define STDWARN	     3    /* output stream for xsb warnings  */
-#define STDMSG	     4    /* output for regular xsb messages */
-#define STDDBG	     5    /* output for debugging info       */
-#define STDFDBK	     6    /* output for XSB feedback
-			     (prompt/yes/no/Aborting/answers) */
-
-#define AF_INET     0	  /* XSB-side socket request for Internet domain */
-#define AF_UNIX     1     /* XSB-side socket request for UNIX domain */

@@ -56,19 +56,26 @@ interpreter :-
         xsb_flag(goal, CmdGoal),
         (CmdGoal == '' ->
             true
-        ;   file_nl(STDMSG),
-            file_write(STDMSG, 'Evaluating command line goal:  '),
-            file_nl(STDMSG),
+        ;   stat_flag(BANNER_CTL,BannerCtl),
+	    KeepQuiet is BannerCtl mod QUIETLOAD,
+	    (  KeepQuiet =:= 0
+	    -> true
+	    ;  file_nl(STDMSG),
+	       file_write(STDMSG, 'Evaluating command line goal:  '),
+	       file_nl(STDMSG)
+	    ),
 	    %% Don't print prompt, if --noprompt specified on cmd line
 	    %% Useful when spawning xsb subprocesses, 
 	    %% so they won't send junk back to the parent.
-	    stat_flag(BANNER_CTL, BannerCtl),
 	    (	HidePrompt is BannerCtl mod NOPROMPT, HidePrompt =:= 0
 	    ->	true
 	    ;	file_write(STDFDBK, '| ?- ')
 	    ),
-            file_write(STDMSG, CmdGoal), file_nl(STDMSG),
-            file_open(CmdGoal, 3, FileDes),
+	    (  KeepQuiet =:= 0
+	    -> true
+	    ;  file_write(STDMSG, CmdGoal), file_nl(STDMSG)
+	    ),
+            file_open(CmdGoal, sr, FileDes),
             eval_command_line_goal(FileDes),
             file_close(FileDes),
             file_nl(STDMSG)
@@ -111,9 +118,9 @@ read_in_stop(end_of_file) :-   %% pop a break level, out if at top
 eval_command_line_goal(FileDes) :-
 	file_read(FileDes, Goal),
 	Goal \= end_of_file,
-	(call((Goal,!)) -> true
-	  ;
-	  true
+	(call((Goal,!))
+	-> true
+	;  true
 	),
 	eval_command_line_goal(FileDes).
 eval_command_line_goal(_).

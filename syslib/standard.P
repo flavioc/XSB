@@ -59,7 +59,7 @@ see0(F) :-
 	( Type =:= 5, !				% already opened
 	; Type =:= 0, 
 	  psc_name(PSC, Name),
-	  file_open(Name, 0, File),		% 0: "r"
+	  file_open(Name, r, File),		% 0: "r"
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
 	  psc_set_prop(PSC, File),
@@ -106,7 +106,7 @@ tell0(F) :-
 	( Type =:= 5, !				% already opened
 	; Type =:= 0,
 	  psc_name(PSC, Name),
-	  file_open(Name, 1, File), 		% 1: "w"
+	  file_open(Name, w, File), 		% 1: "w"
 	  File > 0,                             % file F exists and
 	  !,					% is writable.
 	  psc_set_prop(PSC, File),
@@ -158,7 +158,7 @@ open(user,read,userin):-!,
 open(F,read,F):-!, 
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
-	( file_open(Name, 0, File),		% 0: "r"
+	( file_open(Name, r, File),		% 0: "r"
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
 	  psc_set_prop(PSC, File),
@@ -173,7 +173,7 @@ open(F,read,F):-!,
 open(F,write,F):-!, 
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
-	( file_open(Name, 1, File),		% 0: "w"
+	( file_open(Name, w, File),		% 0: "w"
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
 	  psc_set_prop(PSC, File),
@@ -188,7 +188,7 @@ open(F,write,F):-!,
 open(F,append,F):-!, 
 	conpsc(F, PSC),
 	psc_name(PSC, Name),
-	( file_open(Name, 2, File),		% 0: "a"
+	( file_open(Name, a, File),		% 0: "a"
 	  File > 0,                             % file F exists and
 	  !,					% is readable.
 	  psc_set_prop(PSC, File),
