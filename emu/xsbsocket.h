@@ -40,7 +40,7 @@
 #ifdef WIN_NT
 #define IPPROTO_TCP                0  /* defined in Unix, but not Windows */
 #define BAD_SOCKET(sockfd)         sockfd==INVALID_SOCKET
-#define SOCKET_OP_FAILED(sock_op)   sockfd==SOCKET_ERROR
+#define SOCKET_OP_FAILED(sockfd)   sockfd==SOCKET_ERROR
 #else
 #define SOCKET 	        int
 #define SOCKADDR_IN 	struct sockaddr_in /* in windows, but not Unix */
@@ -48,7 +48,7 @@
 #define closesocket    	       	   close
 #define WSAGetLastError()      	   1       /* in windows; use 1 in Unix */
 #define BAD_SOCKET(sockfd)         sockfd<0
-#define SOCKET_OP_FAILED(sock_op)  sockfd<0
+#define SOCKET_OP_FAILED(sockfd)   sockfd<0
 #endif
 
 #ifdef WIN_NT
