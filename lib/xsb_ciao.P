@@ -18,11 +18,11 @@
 % Ciao idioms and support -- adapted from operators.pl
 current_prefixop(Op,Less,Prec):- 
 	current_op(Prec, Type, Op),
-	op_ass(Type,_,Less,Prec,pre).
+	op_ass(Type,_,Prec,Less,pre).
 
-current_postfixop(Op,Prec,_):- 
+current_postfixop(Op,Prec,Less):- 
 	current_op(Prec, Type, Op),
-	op_ass(Type,_,_,_,post).
+	op_ass(Type,Less,Prec,_,post).
 
 current_infixop(Op,L,Prec,R):- 
 	current_op(Prec, Type, Op),

@@ -1,4 +1,4 @@
-/* File:      write_term.P
+/* File:      format.P
 ** Author(s): Adapted to XSB (by Swift) from Ciao.  The code
 ** originally came from Quintus code and was  written by Richard
 ** A. O'Keefe and others. 

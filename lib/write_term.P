@@ -38,9 +38,11 @@
 :- op(500,fy,(@)).
 
 :- import (multifile)/1, op/3, abort/1, integer/1, arg/3, put_code/1,
-	display/1, writeq/1, number/1, functor/3, atom/1, atom_codes/2,
+%	display/1, 
+	writeq/1, number/1, functor/3, atom/1, atom_codes/2,
 	set_output/1, current_output/1 from  usermod.
 
+display(Term):- write(Term).
 %---------------------------------------------------------------% 
 % Adapted to XSB (by TLS) from Ciao where the authorship is as follows:
 % Adapted from shared code written by Richard A. O'Keefe.  Changes by
