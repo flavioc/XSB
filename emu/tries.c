@@ -1228,7 +1228,7 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
   CPtr call_arg;
   int  arity, i, j, flag = 1;
   Cell tag = FREE, item;
-  CPtr cptr, VarPosReg, tVarPosReg;
+  CPtr cptr, VarPosReg, tVarPosReg, ls_top, ls_bot;
   TIFptr pTIF;
 
 
@@ -1242,6 +1242,8 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
   cptr = CallInfo_Arguments(*call_info);
   tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
   ctr = attv_ctr = 0;
+  ls_top = top_of_localstk;
+  ls_bot = (CPtr) glstack.high - 1;
 
   for (i = 0; i < arity; i++) {
     call_arg = (CPtr) (cptr + i);            /* Note! */
@@ -1250,13 +1252,31 @@ void variant_call_search(TabledCallInfo *call_info, CallLookupResults *results)
     switch (tag) {
     case FREE: case REF1:
       if (! IsStandardizedVariable(call_arg)) {
+#ifndef CHAT
 	/*
-	 * Save pointers of the substitution factor of the call
-	 * into CP stack.  Each pointer points to a variable in 
-	 * the heap.  The variables may get bound in the later
-	 * computation.
+	 * Point all local variables to heap.  This is required to support
+	 * attributed variables in tabling: in order to share unchanged
+	 * attributed variables between subgoal trie and answer trie, any
+	 * cell in the substitution factor of the call CANNOT be a FREE
+	 * variable itself.
+	 *
+	 * Since the substitution factor will be moved onto heap in CHAT,
+	 * the new substitution factor may contain FREE variables if we
+	 * don't point the local variables to heap here.
 	 */
-	*(--VarPosReg) = (Cell) call_arg;
+	if (ls_top <= call_arg && call_arg <= ls_bot) {
+	  bld_free(hreg);
+	  bind_ref(call_arg, hreg);
+	  call_arg = hreg++;
+	}
+#endif
+	/*
+	 * Save pointers of the substitution factor of the call into CP
+	 * stack.  Each pointer points to a variable in the heap (in CHAT)
+	 * or heap/local stack (in SLG-WAM).  The variables may get bound
+	 * in the later computation.
+	 */
+	*(--VarPosReg) = (Cell) call_arg;	
 	StandardizeVariable(call_arg,ctr);
 	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			 CALL_TRIE_TT);
