@@ -35,6 +35,7 @@
 :- compiler_options([xpp_on]).
 
 #include "flora_terms.flh"
+#include "flora_errors.flh"
 
 #define MAXDEPTH	3
 #define STARTPOINT	0
@@ -399,34 +400,23 @@ assert_rule(HeadCode,BodyCode,(BCI,_I),anu(A,_,U)) :-
 assert_rule(HeadCode,BodyCode,(BCI,Index),anu(A,N,U)) :-
 	is_upd(BodyCode,_,List,Cond),
 	!,
-	is_upd(BCI,_,(ListI,_I),CondIList),
+	is_upd(BCI,_,(ListI,_I),CondI),
 	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(A,N,u))),
-	(CondIList==[] ->
-	    true
-	;
-	    CondIList=[CondI],
-	    assert_rule(HeadCode,Cond,CondI,anu(A,N,U))
-	),
+	assert_rule(HeadCode,Cond,CondI,anu(A,N,U)),
 	assert_rules(HeadCode,List,ListI,anu(A,N,u)).
 
 assert_rule(HeadCode,BodyCode,(BCI,Index),anu(A,N,U)) :-
 	is_updall(BodyCode,_,List,Cond),
 	!,
-	is_updall(BCI,_,(ListI,_I),CondIList),
+	is_updall(BCI,_,(ListI,_I),CondI),
 	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(a,N,u))),
-	(CondIList==[] ->
-	    true
-	;
-	    CondIList=[CondI],
-	    assert_rule(HeadCode,Cond,CondI,anu(A,N,U))
-	),
+	assert_rule(HeadCode,Cond,CondI,anu(A,N,U)),
 	assert_rules(HeadCode,List,ListI,anu(A,N,u)).
 
 assert_rule(HeadCode,BodyCode,(BCI,Index),anu(_,N,U)) :-
 	is_agg(BodyCode,_,_,_,Condition,_),
 	!,
 	is_agg(BCI,_,_,_,ConditionI,_),
-	%% BCI =.. [_AggOP,_Var,_Group,ConditionI|_Rest],
 	assert(rule(HeadCode,(BodyCode,(BCI,Index)),anu(a,N,U))),
 	assert_rule(HeadCode,Condition,ConditionI,anu(a,N,U)).
 
@@ -779,7 +769,10 @@ check_for_dependencies(CodeList,WarnList) :-
 		ProcList),
 	retractall(warning_seen(_,_,_,_,_)),
 	checking_list(TabledList,ProcList),
-	generate_warnings(WarnList).
+	generate_warnings(WarnList),
+	!.
+
+check_for_dependencies(_CodeList,[error(UNKNOWN_ERROR)]).
 
 /****************************************************************************
  checking_list(+TabledPredicateList,+TargetList)

@@ -749,39 +749,32 @@ flora_clear_xpp_options :-
 
 
 /*************************************************************************
-  flora_loaddyn_FDB_filename(+DBFileName)
+  flora_loaddyn_data_filename(+FileName)
 *************************************************************************/
-flora_loaddyn_FDB_filename(DBFileName) :-
+flora_loaddyn_data_filename(FileName) :-
 	%% Output the base file name only. The full path will be taken
-	%% care of by flora_load_dyn_fdb and consult.
-	parse_filename(DBFileName,_Dir,Base,Ext),
-	writeln('#if !defined(FLORA_FDB_FILENAME)'),
-	writeln(':- import flora_load_dyn_fdb/2 from flrutils.'),
-	format("#define FLORA_FDB_FILENAME  '~w.~w'", [Base,Ext]),
+	%% care of by flora_load_dyn_data and consult.
+	parse_filename(FileName,_Dir,Base,Ext),
+	( Ext == FLORA_FDB_EXT, DataCat='FDB'
+	; Ext == FLORA_FLD_EXT, DataCat='FLD'
+	),
+	format("#if !defined(FLORA_~w_FILENAME)",[DataCat]),
 	nl,
-	writeln('?- flora_load_dyn_fdb(FLORA_FDB_FILENAME,FLORA_THIS_MODULE_NAME).'),
-	writeln('#else'),
-	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
-	writeln('?- flora_read_canonical_and_insert(FLORA_FDB_FILENAME,FLORA_THIS_FDB_STORAGE).'),
+	writeln('#if !defined(FLORA_LOAD_DYN_DATA)'),
+	writeln('#define FLORA_LOAD_DYN_DATA'),
+	writeln(':- import flora_load_dyn_data/3 from flrutils.'),
 	writeln('#endif'),
-	nl.
-
-
-/*************************************************************************
-  flora_loaddyn_FLD_filename(+FLDFileName)
-*************************************************************************/
-flora_loaddyn_FLD_filename(FLDFileName) :-
-	%% Output the base file name only. The full path will be taken
-	%% care of by flora_load_dyn_fld and consult.
-	parse_filename(FLDFileName,_Dir,Base,Ext),
-	writeln('#if !defined(FLORA_FLD_FILENAME)'),
-	writeln(':- import flora_load_dyn_fld/2 from flrutils.'),
-	format("#define FLORA_FLD_FILENAME  '~w.~w'", [Base,Ext]),
+	format("#define FLORA_~w_FILENAME  '~w.~w'", [DataCat,Base,Ext]),
 	nl,
-	writeln('?- flora_load_dyn_fld(FLORA_FLD_FILENAME,FLORA_THIS_MODULE_NAME).'),
+	format("?- flora_load_dyn_data(FLORA_~w_FILENAME,FLORA_THIS_MODULE_NAME,'~w').",[DataCat,Ext]),
+	nl,
 	writeln('#else'),
+	writeln('#if !defined(FLORA_READ_CANONICAL_AND_INSERT)'),
+	writeln('#define FLORA_READ_CANONICAL_AND_INSERT'),
 	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
-	writeln('?- flora_read_canonical_and_insert(FLORA_FLD_FILENAME,FLORA_THIS_FLD_STORAGE).'),
+	writeln('#endif'),
+	format("?- flora_read_canonical_and_insert(FLORA_~w_FILENAME,FLORA_THIS_~w_STORAGE).",[DataCat,DataCat]),
+	nl,
 	writeln('#endif'),
 	nl.
 
@@ -875,11 +868,15 @@ flora_compile_file(InputFile,PFile,DBFile,FLDFile,FileStatus) :-
 	( CompileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	    check_for_dependencies(CompiledRuleList, DepWarnList),
-	    check_for_dependencies_warn(DepWarnList, DepWarnNum),
+	    check_for_dependencies(CompiledRuleList,DepWarnList),
+	    check_for_dependencies_errorwarn(DepWarnList,DepWarnNum,DepErrNum),
 	    flora_errorwarn_count(0,DepWarnNum),
 
-	    flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
+	    ( DepErrNum>0 ->
+		FileStatus=FLORA_FAILURE
+	    ;
+	        flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FLDFile,FileStatus)
+	    )
         ),
 	flora_cputime(T1),
 	( FileStatus == FLORA_FAILURE ->
@@ -944,8 +941,8 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FactList,DBFile,FLDFile,F
                            HeaderStatus),
 	( HeaderStatus == FLORA_FAILURE -> FileStatus=FLORA_FAILURE
 	;
-	  (FactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
-	  flora_loaddyn_FLD_filename(FLDFile),
+	  (FactList == [] -> true; flora_loaddyn_data_filename(DBFile)),
+	  flora_loaddyn_data_filename(FLDFile),
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
@@ -1050,41 +1047,45 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 
 
 /*************************************************************************
-  flora_load_dyn_fdb(+InDBFile,+ModuleName)
+  flora_load_dyn_data(+InFile,+ModuleName,+Ext)
 
-  This procedure reads a Flora DB file that contains facts in canonical
+  This procedure reads a Flora DB/FLD file that contains facts in canonical
   form and inserts them into the storage trie for the module. The module
   could be either a Flora user module, or a Flora system module. In the
   latter case, it is structured term.
 *************************************************************************/
-flora_load_dyn_fdb(InDBFile,ModuleName) :-
-	flora_check_filename(InDBFile),
-	( flora_file_op(isabsolute,InDBFile) ->
-	    InDBFileAbs=InDBFile
+flora_load_dyn_data(InFile,ModuleName,Ext) :-
+	flora_check_filename(InFile),
+	( flora_file_op(isabsolute,InFile) ->
+	    InFileAbs=InFile
 
 	; current_loaded_file(LoadedFile) ->
 	    flora_file_op(dirname,LoadedFile,FileDir),
-	    flora_concat_atoms([FileDir,InDBFile],InDBFileAbs)
+	    flora_concat_atoms([FileDir,InFile],InFileAbs)
 	;
-	  InDBFileAbs=InDBFile
+	  InFileAbs=InFile
 	),
 	!,
-	( flora_locate_file(InDBFileAbs,DBFile) ->
+	( flora_locate_file(InFileAbs,File) ->
 	    flora_message_line('Dynamically loading ~w into module ~w',
-			       [DBFile,ModuleName]),
+			       [File,ModuleName]),
 	    flora_cputime(T0),
 	    seeing(PreInFile),
 	    flora_set_xpp_options_for_read(ModuleName),
 	    %% Don't issue irrelevant warnings
 	    flora_add_xpp_options('-warninglevel 1 '),
-	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
+	    xpp_process_file(File,XPP_process,IOportFromProc),
 	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
-	    flora_fdb_storage_name(ModuleName,StorageName),
+	    ( Ext==FLORA_FDB_EXT,
+		flora_fdb_storage_name(ModuleName,StorageName)
+	    ; Ext==FLORA_FLD_EXT,
+		flora_fld_storage_name(ModuleName,StorageName)
+	    ),
 	    flora_read_canonical_and_insert(StorageName),
 	    %% Wait, not to leave zombies.
 	    process_control(XPP_process,wait(ExitStatus)),
 	    (ExitStatus==0, !
-	    ; flora_error_line('Error while preprocessing ~w', [DBFile])
+	    ; flora_error_line('Error while preprocessing ~w', [File])
 	    ),
 	    %% Release the file descriptor used to read from cpp.
 	    file_close(IOportFromProc),
@@ -1094,55 +1095,7 @@ flora_load_dyn_fdb(InDBFile,ModuleName) :-
 	    T is T1-T0,
 	    flora_message_line('Done! CPU time used: ~w seconds',[T])
 	;
-	  flora_error_line('File ~w does not exist!', [InDBFileAbs]),
-	  fail
-	),
-	!.
-
-/*************************************************************************
-  flora_load_dyn_fld(+InFLDFile,+ModuleName)
-
-  This procedure reads a Flora FLD file that contains facts in canonical
-  form and inserts them into the fld storage trie for the module. 
-*************************************************************************/
-flora_load_dyn_fld(InFLDFile,ModuleName) :-
-	flora_check_filename(InFLDFile),
-	( flora_file_op(isabsolute,InFLDFile) ->
-	    InFLDFileAbs=InFLDFile
-
-	; current_loaded_file(LoadedFile) ->
-	    flora_file_op(dirname,LoadedFile,FileDir),
-	    flora_concat_atoms([FileDir,InFLDFile],InFLDFileAbs)
-	;
-	  InFLDFileAbs=InFLDFile
-	),
-	!,
-	( flora_locate_file(InFLDFileAbs,FLDFile) ->
-	    flora_message_line('Dynamically loading ~w into module ~w',
-			       [FLDFile,ModuleName]),
-	    flora_cputime(T0),
-	    seeing(PreInFile),
-	    flora_set_xpp_options_for_read(ModuleName),
-	    %% Don't issue irrelevant warnings
-	    flora_add_xpp_options('-warninglevel 1 '),
-	    xpp_process_file(FLDFile,XPP_process,IOportFromProc),
-	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
-	    flora_fld_storage_name(ModuleName,StorageName),
-	    flora_read_canonical_and_insert(StorageName),
-	    %% Wait, not to leave zombies.
-	    process_control(XPP_process,wait(ExitStatus)),
-	    (ExitStatus==0, !
-	    ; flora_error_line('Error while preprocessing ~w', [FLDFile])
-	    ),
-	    %% Release the file descriptor used to read from cpp.
-	    file_close(IOportFromProc),
-	    flora_clear_xpp_options,
-	    see(PreInFile),
-	    flora_cputime(T1),
-	    T is T1-T0,
-	    flora_message_line('Done! CPU time used: ~w seconds',[T])
-	;
-	  flora_error_line('File ~w does not exist!', [InFLDFileAbs]),
+	  flora_error_line('File ~w does not exist!', [InFileAbs]),
 	  fail
 	),
 	!.
@@ -1610,17 +1563,27 @@ flora_parser_error([error(Msg)|L],ErrNum) :-
 	flora_parser_error(L,EN),
 	ErrNum is EN+1.
 
-check_for_dependencies_warn([],0) :- !.
+check_for_dependencies_errorwarn([],0,0) :- !.
 
-check_for_dependencies_warn([warning(Msg)|L],WarnNum) :-
+check_for_dependencies_errorwarn([warning(Msg)|L],WarnNum,ErrNum) :-
 	!,
 	( flora_current_compile_filename(FileName) ->
 	    flora_warning_line('[~w] [Dependency check] ~w', [FileName,Msg])
 	;
 	    flora_warning_line('[Dependency check] ~w', [Msg])
 	),
-	check_for_dependencies_warn(L,WN),
+	check_for_dependencies_errorwarn(L,WN,ErrNum),
 	WarnNum is WN+1.
+
+check_for_dependencies_errorwarn([error(Msg)|L],WarnNum,ErrNum) :-
+	!,
+	( flora_current_compile_filename(FileName) ->
+	    flora_error_line('[~w] [Dependency check] ~w', [FileName,Msg])
+	;
+	    flora_error_line('[Dependency check] ~w', [Msg])
+	),
+	check_for_dependencies_errorwarn(L,WarnNum,EN),
+	ErrNum is EN+1.
 
 /*************************************************************************
   flora_compiler_errorwarn(+CompilerStatus,-ErrNum,-WarnNum)
