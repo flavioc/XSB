@@ -87,9 +87,6 @@ standard_symbol(fail_if, 1, standard).
 standard_symbol(file_exists, 1, standard).
 standard_symbol(findall, 3, setof).
 standard_symbol(float, 1, standard).
-
-standard_symbol(flora_shell, 0, flora).
-
 standard_symbol(functor, 3, standard).
 
 standard_symbol(fmt_read, 3, file_io).
