@@ -179,9 +179,11 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	 case C:
 	 case L:
 	 case G:
+	   fprintf(fd, "\t0x%lx", cell(lpcreg++));
+	   break;
 	 case I:
 	 case N:
-	   fprintf(fd, "\t0x%lx", cell(lpcreg++));
+	   fprintf(fd, "\t%ld", cell(lpcreg++));
 	   break;
 	 case F:
 	   fprintf(fd, "\t0x%lx", cell(lpcreg++));
