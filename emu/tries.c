@@ -349,7 +349,7 @@ static int num_free_nodes(void)
   NODEptr p;
 
   p = free_trie_nodes;
-  while(p != NULL){
+  while (p != NULL) {
     i++;
     p = Sibl(p);
   }
@@ -988,7 +988,7 @@ NODEptr delay_chk_insert(int arity, CPtr cptr, CPtr *hook)
           one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
         }
         break;
-      case STRING: case INT:  case FLOAT:
+      case STRING: case INT: case FLOAT:
         one_node_chk_ins(flag, (Cell)xtemp1);
         break;
       case LIST:
@@ -1263,28 +1263,46 @@ bool variant_call_search(int arity, CPtr cptr, CPtr *curcallptr)
       }
     }
 
+#ifdef CHAT
     if (!flag) { /* generator is found */
+      CPtr ls_top, ls_bot;
+
       subg_inserts++;
-#if (!defined(CHAT))
-    }
-#else
+
+      ls_top = top_of_localstk;
+      ls_bot = (CPtr)glstack.high - 1;
       for (j=ctr-1; j >= 0; j--) { /* put the subst. factor in heap */
-	tVarPosReg--;
-	bld_free(((CPtr)*tVarPosReg));
 	/* heap grows in the opposite direction than the CP stack */
-	bld_copy0((hreg+j), *tVarPosReg);
+	CPtr sf_var_addr;
+	CPtr h_addr = hreg+j;
+
+	tVarPosReg--;
+	sf_var_addr = (CPtr)*tVarPosReg;
+	bld_free(sf_var_addr);
+	/* preserve WAM invariants: no vars from heap to local stack ! */
+	if ((ls_top <= sf_var_addr) && (sf_var_addr <= ls_bot)) {
+	  bld_free(h_addr);
+	  /* globalize the variable: trailing is needed -- below CP */
+	  bind_ref(sf_var_addr, (Cell)(h_addr));
+	} else {
+	  bld_copy(h_addr, (Cell)(sf_var_addr));
+	}
       }
       hreg += ctr;
       new_heap_num(hreg, ctr);
       VarPosReg = tVarPosReg;
     } else { /* consumer is found */
-#endif
+      /* for consumers the substitution factor is stored in CP stack */
       *(--VarPosReg) = ctr;
-      while (--tVarPosReg > VarPosReg) {
-	bld_free(((CPtr)(*tVarPosReg)));
-      }
-#ifdef CHAT
+      while (--tVarPosReg > VarPosReg) { bld_free(((CPtr)(*tVarPosReg))); }
     }
+#else
+    if (!flag) { /* generator is found */
+      subg_inserts++;
+    }
+    /* the SLG-WAM stores the substitution factor in the CP stack */
+    *(--VarPosReg) = ctr;
+    while (--tVarPosReg > VarPosReg) { bld_free(((CPtr)(*tVarPosReg))); }
 #endif
 
     *curcallptr = (CPtr) (&(Child(Paren)));
@@ -1299,12 +1317,12 @@ static void remove_calls_and_returns(SGFrame CallStrPtr)
   ALPtr AListPtr, TAlistPtr;
 
   TipPtr = subg_tip_ptr(CallStrPtr);
-  delete_branch(subg_leaf_ptr(CallStrPtr),(CPtr)&ti_call_trie_root(TipPtr));
+  delete_branch(subg_leaf_ptr(CallStrPtr), (NODEptr *)&ti_call_trie_root(TipPtr));
   AListPtr = subg_answers(CallStrPtr);
-  while(AListPtr != NULL){
+  while (AListPtr != NULL) {
     TAlistPtr = AListPtr;
     AListPtr = aln_next_aln(AListPtr);
-    delete_branch(aln_answer_ptr(TAlistPtr),(CPtr)&subg_ans_root_ptr(CallStrPtr));
+    delete_branch(aln_answer_ptr(TAlistPtr), &subg_ans_root_ptr(CallStrPtr));
   }
   free_subgoal_frame(CallStrPtr);
 }
@@ -1317,7 +1335,7 @@ void remove_open_tries(CPtr bottom_parameter)
   SGFrame CallStrPtr;
 
   while (openreg < bottom_parameter) {
-    CallStrPtr =(SGFrame) compl_subgoal_ptr(openreg);
+    CallStrPtr = (SGFrame)compl_subgoal_ptr(openreg);
     if (!is_completed(CallStrPtr)) {
       if (warned == FALSE) {
 	xsb_warn("Removing incomplete tables...");
@@ -1449,7 +1467,7 @@ NODEptr one_term_chk_ins(CPtr termptr, CPtr hook, int *flagptr)
 	    one_node_chk_ins(flag, maketrievar(j));
 	    ctr++;
 	  } else {
-	    one_node_chk_ins(flag,maketrievar(trie_var_num(xtemp1)));
+	    one_node_chk_ins(flag, maketrievar(trie_var_num(xtemp1)));
 	  }
           break;
 	case STRING: case INT: case FLOAT:
@@ -1520,11 +1538,10 @@ byte * trie_get_returns_for_call(void)
     retskel = (CPtr)ptoc_tag(2);
     term1 = retskel;
     cptr_deref(term1);
-    /* num_vars_in_var_regs = -1; Bart added */
+    num_vars_in_var_regs = -1; /* Bart added */
     if (isconstr(term1)) {
       psc_ptr = get_str_psc(retskel);
       reg_arrayptr = reg_array -1;
-      num_vars_in_var_regs = -1;
       cptr = (CPtr)cs_val(retskel);
       for (i = get_arity(psc_ptr); i>=1; i--) {
 	pushreg(cell(cptr+i));
