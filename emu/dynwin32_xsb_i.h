@@ -77,7 +77,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   /* (2) open the needed object */
   if (( handle = LoadLibrary(sofilename)) == 0 ) {
-    xsb_warn("Cannot load library %s",sofilename);
+    xsb_warn("Cannot load library %s; error #%d",sofilename,GetLastError());
     return 0;
   }
   
