@@ -43,7 +43,7 @@ default_error_handler(Error) :-
 default_error_handler(Error) :-
 	default_sys_error_handler(Error),
 	!,
-	messageln('Aborting...', STDFDBK),
+%	messageln('Aborting...', STDFDBK),
 	close_open_tables,
 	%%reset_undef_pred_handlers, 
 	fail.
