@@ -9,12 +9,10 @@ testall:-
 
 testall1:- 
 	sat_test(Formula,Val),
-%	writeln(sat_test(Formula,Val)),
+	writeln(sat_test(Formula,Val)),
 	testval(Formula,Val),
 	fail.
 testall1.
-
-:- assert(testing).
 
 ?- [meta].
 

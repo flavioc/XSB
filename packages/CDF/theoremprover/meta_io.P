@@ -1,7 +1,10 @@
-:- compiler_options([ciao_directives]).
+:- compiler_options([ciao_directives,xpp_on]).
 
-:- import smcInit/0, smAddBasicRule/3,smAddChoiceRule/5  from sm_int.
-:- import smcAddRule/2 from sm_int.
+#include tp_debug.h
+
+:- import smcInit/0 from sm_int.
+:- import smcAddRule/2,smcAddFact/1,smcAddBasicRule/2,smcAddSemiDefiniteRule/2,
+	  smcAddChoiceRule/2 from sm_int.
 :- import pretty_print/1 from newpp.
 
 write_header:- 
@@ -15,7 +18,7 @@ write_header:-
 inner_clause_emit(Clause,Abds,Guard,Path) writes a clause for an
 internal disjunction (obtained either from a plain-old disjunction or
 from an @tt{at_least} constructor).  @tt{Clause} is the actual
-disjunctive clause (with a generated head); @tt{Abds} are the
+disjunctive clause (with a generated atomic head); @tt{Abds} are the
 abducibles that must be made true to deduce the clause; @tt{Guard} is
 the abducible that controls entry to the clause; and @tt{Parent} is
 the abducible that of the parent path of the disjunction. E.g.
@@ -38,6 +41,7 @@ c5:- g6.
 ").
 
 inner_clause_emit(Clause,Abds,Guard,Path):- 
+%writeln(inner_clause_emit(Clause,Abds,Guard,Path)),
 	interface(Interface),
 	(Interface == files -> 
 	    inner_clause_emit_files(Clause,Abds,Guard,Path)
@@ -52,7 +56,7 @@ inner_clause_emit_files((H :- B),Abds,Guard,Path):-
 
 inner_clause_emit_capi((H :- Body),Abds,Guard,Path):- 
 	emit_abducibles_capi(Abds,Guard,Path),
-	print_to_capi_nl((H :- [Guard|Body])).
+	tp_printSDrule(H,[Guard|Body]).
 
 emit_abducibles_files([],Guard,Out):- 
 	print_to_file((weightConst(0,[Guard],1) :- Out)).
@@ -61,9 +65,9 @@ emit_abducibles_files([H|T],Guard,Out):-
 	emit_abducibles_files(T,Guard,Out).
 
 emit_abducibles_capi([],Guard,Out):- 
-	print_to_capi((weightConst(0,[Guard],1) :- Out)).
+	tp_printchoicerule([Guard],Out).
 emit_abducibles_capi([H|T],Guard,Out):- 
-	print_to_capi_nl((H :- [Guard])),
+	tp_printbasicrule(H,[Guard]),
 	emit_abducibles_capi(T,Guard,Out).
 
 %---------------------------------------------------------
@@ -97,7 +101,7 @@ write_base_constraints(List):-
 
 write_base_constraints_1([]).
 write_base_constraints_1([Term|T]):- 
-	tp_printterm(Term),tp_nl,
+	tp_printfact_nl(Term),
 	write_base_constraints_1(T).
 
 %-----------
@@ -132,8 +136,8 @@ write_top_level_capi(Head,C1,Newhead):-
 %--------------------------
 
 print_relevant_class_theory:- 
-	(visited_sc(_,omsroot) -> print_top_class_theory ; true),
-	(visited_sc(_,omsbottom) -> print_bottom_class_theory ; true).
+	(visited_mo(_,omsroot) -> print_top_class_theory ; true),
+	(visited_mo(_,omsbottom) -> print_bottom_class_theory ; true).
 
 print_top_class_theory:- 
 	domain_element(A),
@@ -147,8 +151,15 @@ print_bottom_class_theory:-
 	A \== omsbottom,
 	% pretty printing confuses lparse w. e-neg.
 	tp_printterm((false :- [mo(A,omsbottom)])),
+	interface(Ifiles),
+	(Ifiles == files -> write(-false),writeln('.') ; true),	
 	fail.
 print_bottom_class_theory.
+
+/* TLS: needs change: probably just need visited_mo */
+:- table domain_element/1.
+domain_element(A):- 
+	visited_rel(_,_,A) ; visited_invrel(_,_,A) ; visited_mo(_,A).
 
 %--------------------------
 
@@ -185,12 +196,14 @@ print_domains_and_background_capi:-
 print_domains_and_background_capi:- 
 	print_any_transitive_classes,
 	fail.
+/*
 print_domains_and_background_capi:- 
 	print_any_inverse_relations,
 	fail.
 print_domains_and_background_capi:- 
 	print_any_transitive_relations,
 	fail.
+*/
 print_domains_and_background_capi:- 
 	tp_writeln('%----------------').
 
@@ -215,23 +228,119 @@ tp_writeln(H):-
 	interface(Iface),
 	(Iface == files -> writeln(H) ; true).
 
-tp_nl:- 
-	debug_mode(Mode),
-	(Mode == on -> nl ; true).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Nasty Optimized IO
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%------------------------------
+#ifdef DEBUG
+tp_nl:- nl.
+#else 
+tp_nl.
+#endif
 
+#ifdef FILES
 tp_printterm(Term):- 
-	interface(Iface),
-	(Iface == files -> 
-	    print_to_file(Term)
-	  ; print_to_capi(Term) ).
+    print_to_file(Term).
+#else
+#ifdef DEBUG
+tp_printterm(Term):- 
+	print_to_capi_debug(Term).
+#else   
+tp_printterm(Term):- 
+	print_to_capi_nodebug(Term).
+#endif
+#endif
 
-print_to_capi(Term):- 
-	debug_mode(Mode),
-	(Mode == on -> 
-	    print_to_capi_debug(Term) 
-	  ; print_to_capi_nodebug(Term) ).
+%---------------
+
+#ifdef FILES
+tp_printrule(H,B):- 
+    print_to_file((H :- B)),nl.
+#else
+#ifdef DEBUG
+tp_printrule(H,B):- 
+	print_to_capi_debug((H :- B)),nl.
+#else   
+tp_printrule(H,B):- 
+	smcAddRule(H,B).
+#endif
+#endif
+
+%---------------
+
+#ifdef FILES
+tp_printbasicrule(H,B):- 
+    print_to_file((H :- B)),nl.
+#else
+#ifdef DEBUG
+tp_printbasicrule(H,B):- 
+	print_to_capi_debug((H :- B)),nl.
+#else   
+tp_printbasicrule(H,B):- 
+	smcAddBasicRule(H,B).
+#endif
+#endif
+
+%---------------
+
+#ifdef FILES
+tp_printchoicerule(H,B):- 
+    print_to_file((weightConst(0,H,1) :- B)),nl.
+#else
+#ifdef DEBUG
+tp_printchoicerule(H,B):- 
+	print_to_capi_debug((weightConst(0,H,1) :- B)),nl.
+#else   
+tp_printchoicerule(H,B):- 
+	smcAddChoiceRule(H,B).
+#endif
+#endif
+
+%---------------
+
+#ifdef FILES
+tp_printSDrule(H,B):- 
+    print_to_file((H :- B)),nl.
+#else
+#ifdef DEBUG
+tp_printSDrule(H,B):- 
+	print_to_capi_debug((H :- B)),nl.
+#else   
+tp_printSDrule(H,B):- 
+	smcAddSemiDefiniteRule(H,B).
+#endif
+#endif
+
+%---------------
+
+#ifdef FILES
+tp_printfact_nl(Term):- 
+    print_to_file(Term),nl.
+#else
+#ifdef DEBUG
+tp_printfact_nl(Term):- 
+	print_to_capi_debug(Term),nl.
+#else   
+tp_printfact_nl(Term):- 
+	smcAddFact(Term).
+#endif
+#endif
+
+%---------------
+
+#ifdef DEBUG
+print_to_capi_nl(Term):- 
+	print_to_capi_debug(Term),nl.
+#else   
+print_to_capi_nl(Term):- 
+	print_to_capi_nodebug(Term).
+#endif
+
+
+print_to_capi_nodebug((H :- List)):- !,
+	smcAddRule(H,List).
+print_to_capi_nodebug(H):- 
+	smcAddRule(H,[]).
 
 print_to_capi_debug((H :- B)):- !,
 	(is_list(B) -> 
@@ -243,18 +352,14 @@ print_to_capi_debug(H):-
 	print_to_file(H),
 	smcAddRule(H,[]).
 
-print_to_capi_nodebug((H :- List)):- !,
-	smcAddRule(H,List).
-print_to_capi_nodebug(H):- 
-	smcAddRule(H,[]).
+%---------------
 
 print_to_file((H:- B)):- !,
 	(is_list(B) -> list_to_comma(B,Body) ; B = Body),
-	pretty_print((H :- B)).
+	pretty_print((H :- Body)).
 print_to_file(Term):- pretty_print(Term),!.
 print_to_file(_).
 
-% optimize.
-print_to_capi_nl(Term):- 
-	print_to_capi(Term),
-	tp_nl.
+%---------------
+
+

@@ -3,6 +3,7 @@
 */
 
 :- import tp_gensym/2,reset_gennum/0, tp_gennum/1 from tp_utils.
+:- import call_c/1 from standard.
 
 /*
    without atleast(N,R,C) and atmost(N,R,C) this is the logic ALCN
@@ -19,14 +20,15 @@
 /* Ground existential closure in arg 3 of visited_rel.  Used to gen
    negative calls.  */
 :- dynamic negated_rel/2.
+:- index(negated_rel/2,1,17).
+%:- index(negated_rel/2,trie).
+
 /* Ground existential closure in arg 1 of visited_rel.  Used to gen
    negative calls.  */
 :- dynamic negated_invrel/2.
 
-:- dynamic visited_rel/3.
 :- dynamic visited_invrel/3.
-
-:- dynamic visited_sc/2.
+:- index(visited_invrel/2,trie).
 
 /* Translates DL form to a type of query form, 
    and marks all relations and scs visited.  */
@@ -41,12 +43,11 @@ setup_globals(Var):-
 	abolish_all_tables,
 	retractall(am_visited_rel(_,_)),
 	retractall(am_visited_invrel(_,_)),
-	retractall(visited_rel(_,_,_)),
+	reset_metafront_trie,
 	retractall(visited_invrel(_,_,_)),
-	retractall(visited_sc(_,_)),
 	retractall(negated_rel(_,_)),
 	retractall(negated_invrel(_,_)),
-	assert(visited_rel(null,null,Var)).
+	assert_visited_rel(null,null,Var).
 
 metafront_1(','(Term,R),Var,','(T1,R1)):- !,
 	metafront_1(Term,Var,T1),
@@ -56,7 +57,7 @@ metafront_1(';'(D1,D2),Var,';'(D1out,D2out)):- !,
 	metafront_1(D2,Var,D2out).
 metafront_1(not(C),V,Output):- !,
 	metafront_1_not(C,V,Output).
-metafront_1(exists(inv(Rel),C),V,exists(inv(Rel),V,Onew,Oset)):- !,
+metafront_1(exists(inv(Rel),C),V,exists_inv(Rel,V,Onew,Oset)):- !,
 	get_new_invrel_vars(V,Rel,Vset,Vnew),
 	instantiate_invrels(Vset,V,Rel,C,Vnew,Oset,Onew).
 metafront_1(exists(Rel,C),V,exists(Rel,V,Onew,Oset)):- !,
@@ -70,12 +71,11 @@ metafront_1(all(inv(Rel),C),V,Output):- !,
 	     Output = allinvrel(V,Rel,C),
 	     assert_if_not(negated_invrel(V,Rel)) ).
 metafront_1(all(Rel,C),V,Output):- !,
-	(C = omsroot -> 
+	(C == omsroot -> 
              Output = true
 	   ;   
 	     Output = allrel(V,Rel,C),
 	     assert_if_not(negated_rel(V,Rel)) ).
-
 metafront_1(at_least(N,Rel),V,Out):- !,
 	metafront_1(at_least(N,Rel,omsroot),V,Out).
 metafront_1(at_most(N,Rel),V,Out):- !,
@@ -94,7 +94,7 @@ metafront_1(at_most(N,inv(Rel),C),V,at_most(N,invrel(V,Rel,_),C)):- !,
 metafront_1(at_most(N,Rel,C),V,at_most(N,rel(V,Rel,_),C)):- !,
 	assert_if_not(am_visited_rel(V,Rel)).
 metafront_1(Term,V,mo(V,Term)):- 
-	assert_if_not(visited_sc(V,Term)).
+	assert_visited_mo(V,Term).
 
 metafront_1_not(','(Term,R),Var,';'(T1,R1)):- !,
 	metafront_1_not(Term,Var,T1),
@@ -145,16 +145,20 @@ metafront_1_not(at_most(N,Rel,C),V,at_least(N1,rel(V,Rel,_),Cold,Cnew)):- !,
 	N1 is N + 1,
 	assert_q_rel_domain(N1,V,Rel,C,Cold,Cnew).
 metafront_1_not(Term,V,not(mo(V,Term))):-
-	assert_if_not(visited_sc(V,Term)).
+	assert_visited_mo(V,Term).
 
 %-------------------------
-get_new_rel_vars(V,Rel,Yset,Ynew):-
-	(findall(Y,visited_rel(V,Rel,Y),Yset),
-             get_newvar(y,Ynew),
-	     assert(visited_rel(V,Rel,Ynew)) ).
+/*
+get_new_rel_vars(V,Rel,[],Ynew):-
+	tp_gensym(y,Ynew),
+	assert_visited_rel(V,Rel,Ynew).
+*/
 
-get_newvar(y,Ynew):- 
-	    tp_gensym(y,Ynew).
+get_new_rel_vars(V,Rel,Yset,Ynew):-
+	findall(Y,visited_rel(V,Rel,Y),Yset),
+	tp_gensym(y,Ynew),
+	assert_visited_rel(V,Rel,Ynew).
+
 
 instantiate_rels([],V,Rel,C,Vnew,true,Onew):- !,
 	instantiate_rel(V,Rel,C,Vnew,Onew).
@@ -248,7 +252,7 @@ assert_q_rel_domain_1(0,_,_,[]):- !.
 assert_q_rel_domain_1(N,V,Rel,[Y|Rest]):- 
 	N1 is N - 1,
 	tp_gensym(y,Y),
-	assert(visited_rel(V,Rel,Y)),
+	assert_visited_rel(V,Rel,Y),
 	assert_q_rel_domain_1(N1,V,Rel,Rest).
 
 assert_q_rel_domain_2([],_,[]).
@@ -279,117 +283,43 @@ assert_q_invrel_domain_2([Var|R],C,[lambda(Var,Cnew)|R1]):-
 %----------------------
 
 assert_if_not(Term):- 
-	(call(Term) -> true ; assert(Term)).
+	(call_c(Term) -> true ; asserta(Term)).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/*
+:- import t_assert/2 from assert.
+*/
+
+:- dynamic metafront_trie/1.
+%:- index(visited_rel/3,trie).
+
+:- import delete_trie/1, new_trie/1, trie_intern/5, trie_interned/4 	
+	from intern.
+
+reset_metafront_trie:- 
+	(metafront_trie(F) -> delete_trie(F),
+			        retractall(metafront_trie(_)) ; true),
+	new_trie(A),
+	assert(metafront_trie(A)).
+
+assert_visited_rel(One,Two,Three):- 
+	metafront_trie(F),
+	trie_intern(visited_rel(One,Two,Three),F,_,_,_).
+
+visited_rel(One,Two,Three):- 
+	metafront_trie(F),
+	trie_interned(visited_rel(One,Two,Three),F,_,_).
+
+%:- dynamic visited_sc/2.
+
+assert_visited_mo(One,Two):- 
+	metafront_trie(F),
+	trie_intern(visited_mo(One,Two),F,_,_,_).
+
+visited_mo(One,Two):- 
+	metafront_trie(F),
+	trie_interned(visited_mo(One,Two),F,_,_).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end_of_file.
-
-/*
-q_metafront(0,_,_,_,[]):- !.
-q_metafront(N,V,Rel,C,[lambda(Y,Cnew)|T]):- 
-	N1 is N - 1,
-	metafront_1(C,Y,Cnew),
-	q_metafront(N1,V,Rel,C,T).
-*/
-
-get_new_c_rule(Head):- 
-	tp_gensym(c,Head).
-
-emit_list(','(H,T)):- !,
-	emit_list(H),
-	emit_list(T).
-emit_list(T):- emit(T).
-
-?-  retractall(user_replacement_hook(_,_,_,_),
-    assert((user_replacement_hook(rel(L,U,R,C)):- 
-	    write(L),write(' { '),
-	    write(R),write(' , '),write(C),
-	    write(' } '),write(U))).[
-
-/*
-metafront_1(exists(inv(Rel),C),V,Output):- !,
-	get_new_invrel_var(V,Rel,Vnew),
-	(C = omsroot -> 
-             Output = invrel(V,Rel,Vnew)
-	   ;   
-	     metafront_1(C,Vnew,Cnew),
-	     Output = ','(invrel(V,Rel,Vnew),Cnew)).
-metafront_1(exists(Rel,C),V,Output):- !,
-	get_new_rel_var(V,Rel,Vnew),
-	(C = omsroot -> 
-             Output = rel(V,Rel,Vnew)
-	   ;   
-	     metafront_1(C,Vnew,Cnew),
-	     Output = ','(rel(V,Rel,Vnew),Cnew)).
-*/
-
-assert_rel_domain(N,rel(V,Rel,_Var)):- 
-	findall(Old,visited_rel(V,Rel,Old),Oldl),
-	length(Oldl,Oldlen),
-	N1 is N - Oldlen,
-	(N1 =< 0 -> 
-	    true 
-	  ;
-	    get_n_new_vars(N1,Varlist),
-	    vrel_assert(Varlist,V,Rel) ).
-
-assert_invrel_domain(N,invrel(V,Rel,_Var)):- 
-	findall(Old,visited_invrel(V,Rel,Old),Oldl),
-	length(Oldl,Oldlen),
-	N1 is N - Oldlen,
-	(N1 =< 0 -> 
-	    true 
-	  ;
-	    get_n_new_vars(N1,Varlist),
-	    invrel_assert(Varlist,V,Rel) ).
-
-/*
-metafront_1_not(all(inv(Rel),C),V,Output):- !,
-	get_new_invrel_var(V,Rel,Vnew),
-        metafront_1_not(C,Vnew,Cnew),
-	Output = ','(invrel(V,Rel,Vnew),Cnew).
-metafront_1_not(all(Rel,C),V,Output):- !,
-	get_new_invrel_vars(V,Rel,Vset,Vnew),
-	get_new_rel_var(V,Rel,Vnew),
-        metafront_1_not(C,Vnew,Cnew),
-	Output = ','(rel(V,Rel,Vnew),Cnew).
-*/
-
-/* assert only if *no* rels visited */
-get_new_rel_var(V,Rel,Y):-
-	(visited_rel(V,Rel,Y) -> 
-	     true
-	   ; 
-             tp_gensym(y,Y),
-	     assert(visited_rel(V,Rel,Y)) ).
-
-/* assert only if *no* invrels visited */
-get_new_invrel_var(V,Rel,Y):-
-	(visited_invrel(V,Rel,Y) -> 
-	     true
-	   ; 
-             tp_gensym(y,Y),
-	     assert(visited_invrel(V,Rel,Y)) ).
-
-get_new_invrel_var(V,Rel,Y):-
-	(visited_invrel(V,Rel,Y) -> 
-	     true
-	   ; 
-             tp_gensym(y,Y),
-	     assert(visited_invrel(V,Rel,Y)) ).
-
-vrel_assert([],_,_).
-vrel_assert([H|T],V,Rel):- 
-	assert(visited_rel(V,Rel,H)),
-	vrel_assert(T,V,Rel).
-
-invrel_assert([],_,_).
-invrel_assert([H|T],V,Rel):- 
-	assert(visited_invrel(V,Rel,H)),
-	invrel_assert(T,V,Rel).
-
-get_n_new_vars(0,[]):-!.
-get_n_new_vars(N,[H|T]):-
-	tp_gensym(y,H),
-	N1 is N - 1,
-	get_n_new_vars(N1,T).
-

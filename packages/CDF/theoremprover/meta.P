@@ -8,6 +8,7 @@
 :- import smcCommitProgram/0, smComputeModel/0 from sm_int.
 :- import smcSetCompute/1 from sm_int.
 :- import smcExamineModel/1, smEnd/0 from sm_int.
+:- import print_cache/0 from sm_int.
 
 %------------------------------
 % Set up switches.
@@ -16,8 +17,10 @@ backend(smodels).
 %backend(dlv).
 
 :- dynamic interface/1.
+%:- index(interface/1,0,0).
+
 :- dynamic debug_mode/1.
-:- dynamic testing/0.
+%:- index(debug_mode/1,0,0).
 
 :- [sModels].
 
@@ -83,24 +86,32 @@ check_smodels_answer(false,Formula):-
 %---------
 testval_smodels_capi(Formula,Val):- 
 	sat_capi(Formula,Cstmt),
+%	print_cache,
 	check_smodels_answer_capi(Val,Formula,Cstmt),
 	debug_mode(Mode),
 	(Mode == on -> 	smcExamineModel(Model),write(Model),nl ; true),
-	smEnd.
+	smEnd,!.
 
 sat_capi(Expr,Cstmt):- 
 	metafront(Expr,Mid),
-	metaback(Mid,Cstmt).
+	metaback(Mid,Cstmt),
+	!.
 
 check_smodels_answer_capi(true,Formula,Cstmt):- 
 	smcSetCompute([Cstmt]),
+	cputime(A),	
 	smcCommitProgram,
+	cputime(B),C is B - A,
+	writeln(committime(C)),
 	(smComputeModel -> 
 	     true
           ;  writeln('!!!!failing'(Formula)) ).
 check_smodels_answer_capi(false,Formula,Cstmt):- 
 	smcSetCompute([Cstmt]),
+	cputime(A),	
 	smcCommitProgram,
+	cputime(B),C is B - A,
+	writeln(committime(C)),
 	(\+ smComputeModel -> 
   	     true
           ;  writeln('!!!!failing'(Formula)) ).
@@ -125,29 +136,40 @@ check_dlv_answer(false,Formula):-
   	     true
           ;  writeln('!!!!failing'(Formula)) ).
 
-benchval(Formula,Val):- 
-	(backend(smodels) -> 
-	    benchval_smodels(Formula,Val)
-	  ; 
-	    benchval_dlv(Formula,Val) ).
-	
-benchval_smodels(Formula,Val):- 
-	shell('\rm temp.lp'),
-	shell(date),
-	sat(Formula,'temp.lp'),
-	shell(date),
-	shell('\rm foo'),
-	shell('lparse --true-negation temp.lp | smodels > foo'),
-	check_smodels_answer(Val,Formula),
-	shell(date).
+%-----------
 
-benchval_dlv(Formula,Val):- 
-	shell('rm temp.dlv'),
-	shell(date),
-	sat(Formula,'temp.dlv'),
-	shell(date),
-	shell('rm -f foo'),
-	shell('dlv -n=1 -stats  temp.dlv > foo'),
-	check_dlv_answer(Val,Formula),
-	shell(date).
+benchval(Formula,Val):- 
+	cputime(One),
+	benchval_smodels_capi(Formula,Val),
+	cputime(Two),
+	Tot is Two - One,
+	write(total_is(Tot)).
+
+benchval_smodels_capi(Formula,Val):- 
+%	index('sm_atomnum/2',trie),
+	set_debug_off,
+	bench_capi(Formula,Cstmt),
+	check_smodels_answer_capi(Val,Formula,Cstmt),
+	smEnd.
+
+bench_capi(Expr,Cstmt):- 
+	cputime(One),
+	metafront(Expr,Mid),
+	cputime(Two),
+	Front is Two - One,
+	writeln(front_time(Front)),
+	metaback(Mid,Cstmt),
+	cputime(Three),
+	Back is Three - Two,
+	writeln(back_time(Back)).
+
+make_files:- 
+	shell('cp tp_debug.df tp_debug.h'),
+	compile([tp_utils,meta_io]),
+	[tp_utils,meta_io].
+
+make_capi:- 
+	shell('cp tp_debug.none tp_debug.h'),
+	compile([tp_utils,meta_io]),
+	[tp_utils,meta_io].
 

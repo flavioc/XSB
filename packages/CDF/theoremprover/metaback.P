@@ -29,19 +29,18 @@ metaback(C,Cstmt):-
 /* Transforms query form to emittable form and constructs "abducibles"
    via a difference list. 
    Amf causes neg. lits to be emitted as abducibles. */
-metaback_1(','(Term,R),Bodin,Bodout,Abdin,Abdout,Amf,Path):- !,
+metaback_1(','(Term,R),Bodin,Bodout,Abdin,Abdout,Amf,Path):- 
 	metaback_1(Term,Bodin,Bodmid,Abdin,Abdmid,Amf,Path),
 	metaback_1(R,Bodmid,Bodout,Abdmid,Abdout,Amf,Path).
-metaback_1(';'(D1,D2),[Head|Bout],Bout,Tin,Tin,Amf,Parent):- !,
+metaback_1(';'(D1,D2),[Head|Bout],Bout,Tin,Tin,Amf,Parent):- 
 	(Amf == no -> 
 		get_new_c_rule(Head),
-		get_new_guard(G1),
-		get_new_guard(G2),
+	        tp_gensym(g,G1),
+	        tp_gensym(g,G2),
 		metaback_1(D1,D1body,[],T1,[],Amf,[G1]),
 		metaback_1(D2,D2body,[],T2,[],Amf,[G2]),
 		inner_clause_emit((Head :- D1body),T1,G1,[not(G2)|Parent]),
-		inner_clause_emit((Head :- D2body),T2,G2,[not(G1)|Parent]),
-	        tp_nl
+		inner_clause_emit((Head :- D2body),T2,G2,[not(G1)|Parent])
 	  ; 
 		% No abduction within at most
 		get_new_c_rule(Head),
@@ -52,31 +51,31 @@ metaback_1(';'(D1,D2),[Head|Bout],Bout,Tin,Tin,Amf,Parent):- !,
 		tp_printterm((Head :- Body2)),
 		tp_printterm((Head :- Body1)),
 	        tp_nl).
-metaback_1(exists(inv(Rel),Var,Onew,Oset),OutTerm,Bout,
-					Tin,Tout,Amf,Parent):- !,
+metaback_1(exists_inv(Rel,Var,Onew,Oset),OutTerm,Bout,
+					Tin,Tout,Amf,Parent):- 
 	((am_visited_invrel(Var,Rel),Oset \== true) -> 
              metaback_1(';'(Onew,Oset),OutTerm,Bout,Tin,Tout,Amf,Parent)
 	  ; 
              metaback_1(Onew,OutTerm,Bout,Tin,Tout,Amf,Parent) ).
-metaback_1(exists(Rel,Var,Onew,Oset),OutTerm,Bout,Tin,Tout,Amf,Parent):- !,
+metaback_1(exists(Rel,Var,Onew,Oset),OutTerm,Bout,Tin,Tout,Amf,Parent):- 
 	((am_visited_rel(Var,Rel),Oset \== true) -> 
              metaback_1(';'(Onew,Oset),OutTerm,Bout,Tin,Tout,Amf,Parent)
 	  ; 
              metaback_1(Onew,OutTerm,Bout,Tin,Tout,Amf,Parent) ).
-metaback_1(allinvrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- !,
+metaback_1(allinvrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- 
 	get_all_possible_invrels(V,Rel,Rels),
 	allinvrel(Rels,C,OutTerm,Bout,Tin,Tout,Amf,Path).
-metaback_1(allrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- !,
+metaback_1(allrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- 
 	get_all_possible_rels(V,Rel,Rels),
 	allrel(Rels,C,OutTerm,Bout,Tin,Tout,Amf,Path).
-metaback_1(notallinvrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- !,
+metaback_1(notallinvrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- 
 	get_all_possible_invrels(V,Rel,Rels),
 	negated_allinvrel(Rels,C,OutTerm,Bout,Tin,Tout,Amf,Path).
-metaback_1(notallrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- !,
+metaback_1(notallrel(V,Rel,C),OutTerm,Bout,Tin,Tout,Amf,Path):- 
 	get_all_possible_rels(V,Rel,Rels),
 	negated_allrel(Rels,C,OutTerm,Bout,Tin,Tout,Amf,Path).
 metaback_1(at_least(L,invrel(Var,Rel,_),Old,New),[Head|Bout],Bout,
-						Tin,Tout,Amf,Path):- !,
+						Tin,Tout,Amf,Path):- 
 	(am_visited_invrel(Var,Rel) -> 
 	    append(New,Old,Bodies),
             q_get_c_lit_invrels_at_least(L,Bodies,invrel(Var,Rel,_),Head,
@@ -87,7 +86,7 @@ metaback_1(at_least(L,invrel(Var,Rel,_),Old,New),[Head|Bout],Bout,
 							T1,Tmid,Amf,Path),
             Tin = T1,Tmid = Tout). 
 metaback_1(at_least(L,rel(Var,Rel,_),Old,New),[Head|Bout],Bout,
-						Tin,Tout,Amf,Path):- !,
+						Tin,Tout,Amf,Path):- 
 	(am_visited_rel(Var,Rel) -> 
 	    append(New,Old,Bodies),
             q_get_c_lit_rels_at_least(L,Bodies,rel(Var,Rel,_),Head,
@@ -98,18 +97,21 @@ metaback_1(at_least(L,rel(Var,Rel,_),Old,New),[Head|Bout],Bout,
 							T1,Tmid,Amf,Path),
             Tin = T1,Tmid = Tout). 
     
-metaback_1(at_most(L,Rel,Body),[Head|Bout],Bout,Tin,Tin,_Amf,Path):- !,
+metaback_1(at_most(L,Rel,Body),[Head|Bout],Bout,Tin,Tin,_Amf,Path):- 
 	(Rel = rel(_,_,_) -> 
 	    q_get_c_lit_rels_at_most(L,Body,Rel,Head,_Tin,_Tout,Path)
 	  ;
 	    q_get_c_lit_invrels_at_most(L,Body,Rel,Head,_Tin,_Tout,Path) ).
-metaback_1(not(Term),[not(Term)|Bout],Bout,T,T,_Amf,_Path):- !.
+metaback_1(not(Term),[not(Term)|Bout],Bout,T,T,_Amf,_Path).
 %	(Amf == yes -> Tin = [-Term|T] ; Tin = T).
-metaback_1(true,Bout,Bout,Rest,Rest,_Amf,_Path):- !.
-metaback_1(Term,Bout,Bout,[Term|Rest],Rest,_Amf,_Path).  /* mo and rel */
-
-get_new_guard(G):- tp_gensym(g,G).
-
+metaback_1(true,Bout,Bout,Rest,Rest,_Amf,_Path).
+metaback_1(mo(V,C),Bout,Bout,[mo(V,C)|Rest],Rest,_Amf,_Path).
+metaback_1(rel(V,R,V1),Bout,Bout,[rel(V,R,V1)|Rest],Rest,_Amf,_Path).
+metaback_1(invrel(V,R,V1),Bout,Bout,[invrel(V,R,V1)|Rest],Rest,_Amf,_Path).
+/*
+metaback_1(Term,Bout,Bout,[Term|Rest],Rest,_Amf,_Path):- 
+	abort(uncaught(Term)).
+*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%% handle Alls and Invs.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -279,7 +281,7 @@ q_get_c_lit_invrels_at_most_1([invrel(V,Rel,Var)|RR],Body,[H|RH],
 %--------------------------
 
 print_any_transitive_classes:- 
-	visited_sc(Var,C1),visited_sc(Var,C2),C1 \== C2,
+	visited_mo(Var,C1),visited_mo(Var,C2),C1 \== C2,
 	(tp_subclass(C1,C2) -> 
 		  tp_printterm((mo(Var,C2):- [mo(Var,C1)])) ; true),
 	fail.
@@ -337,6 +339,7 @@ relational_subclass(R1,R2):-
                  relational_subclass_bf(R1,R2) )
 	  ;
 	    relational_subclass_fx(R1,R2) ).
+relational_subclass(R,R).
 
 relational_subclass_bf(R1,R2):- 
 	visited_rel(Var,R1,Vto),
@@ -359,10 +362,6 @@ relational_subclass_fx(R1,R2):-
 	visited_invrel(Var,R1,_),
 	(visited_invrel(Var,R2,_) ; negated_invrel(Var,R2) 
 	 ; visited_rel(Vto,R2,_) ; negated_rel(Vto,R2) ).
-	
-:- table domain_element/1.
-domain_element(A):- 
-	visited_rel(_,_,A) ; visited_invrel(_,_,A) ; visited_sc(_,A).
 	
 %---------------------------------------------------------
 
@@ -505,36 +504,6 @@ list_comma_concat([],G,G).
 list_comma_concat([H|T],G,','(H,NT)):-
 	list_comma_concat(T,G,NT).
 
-
-/*
-write_top_level_and_constraints(Body_in,Terms):- 
-	sort(Terms,Termsort),
-	get_new_c_rule(Head),
-	comma_to_list(Body_in,Body_list,[]),
-	partially_evaluate_body(Terms,Body_list,Body_list_out),
-	list_to_comma(Body_list_out,Body_out),
-	write_top_level(Head,Body_out,Newhead),
-	write_base_constraints(Termsort),
-	write_compute_stmt(Newhead).
-*/
-:- index(base_constraint/1,trie).
-
-partially_evaluate_body(C1,In,Out):- 
-	assert_base_constraints(C1),
-	partially_evaluate_body_1(In,Out).
-	
-assert_base_constraints([]).
-assert_base_constraints([H|T]):- 
-	assert(base_constraint(H)),
-	assert_base_constraints(T).
-
-partially_evaluate_body_1([],[]).
-partially_evaluate_body_1([H|T],Tnew):- 
-	base_constraint(H),!,
-	partially_evaluate_body_1(T,Tnew).
-partially_evaluate_body_1([H|T],[H|Tnew]):- 
-	partially_evaluate_body_1(T,Tnew).
-
 /* ------------------- save for benching.
 pretty_print_all(visited_rel(_,_,_)).
 pretty_print_all(visited_invrel(_,_,_)),
@@ -589,3 +558,33 @@ print_to_file_all(Term):-
 print_to_file_all(_).
  ----------------  */
 
+/*
+write_top_level_and_constraints(Body_in,Terms):- 
+	sort(Terms,Termsort),
+	get_new_c_rule(Head),
+	comma_to_list(Body_in,Body_list,[]),
+	partially_evaluate_body(Terms,Body_list,Body_list_out),
+	list_to_comma(Body_list_out,Body_out),
+	write_top_level(Head,Body_out,Newhead),
+	write_base_constraints(Termsort),
+	write_compute_stmt(Newhead).
+*/
+:- index(base_constraint/1,trie).
+
+partially_evaluate_body(C1,In,Out):- 
+	assert_base_constraints(C1),
+	partially_evaluate_body_1(In,Out).
+	
+assert_base_constraints([]).
+assert_base_constraints([H|T]):- 
+	assert(base_constraint(H)),
+	assert_base_constraints(T).
+
+partially_evaluate_body_1([],[]).
+partially_evaluate_body_1([H|T],Tnew):- 
+	base_constraint(H),!,
+	partially_evaluate_body_1(T,Tnew).
+partially_evaluate_body_1([H|T],[H|Tnew]):- 
+	partially_evaluate_body_1(T,Tnew).
+
+	
