@@ -1878,7 +1878,7 @@ static CPtr slide_heap(int num_marked)
 
     { CPtr endcp ;
       endcp = cp_top ;
-      for (p = cp_bot; p >= endcp ; p-- )
+      for (p = cp_bot; p >= endcp ; p--)
 	{ contents = cell(p) ;
 	  q = hp_pointer_from_cell(contents,&tag) ;
 	  if (!q) continue ;
@@ -1905,7 +1905,7 @@ static CPtr slide_heap(int num_marked)
 	  contents = cell(p);
 	  q = hp_pointer_from_cell(contents,&tag);
 	  if (!q) xsb_dbgmsg("bad heap pointer during chaining SF");
-	  if (! h_marked(q-heap_bot)) xsb_dbgmsg("chain SF problem");
+	  if (! h_marked(q-heap_bot)) xsb_dbgmsg("chain SF problem 1");
 	  if (h_is_chained(q)) compl_set_chained(p);
 	  h_set_chained(q);
 	  swap_with_tag(p,q,tag);
@@ -1918,7 +1918,7 @@ static CPtr slide_heap(int num_marked)
 	    if (!q)
 	      xsb_dbgmsg("bad heap pointer during chaining Dreg");
 	    if (! h_marked(q-heap_bot))
-	      xsb_dbgmsg("chain SF problem");
+	      xsb_dbgmsg("chain SF problem 2");
 	    if (h_is_chained(q)) compl_set_chained(p);
 	    h_set_chained(q);
 	    swap_with_tag(p,q,tag);
