@@ -776,14 +776,14 @@ flora_clear_xpp_options :-
 *************************************************************************/
 flora_loaddyn_FDB_filename(DBFileName) :-
 	%% Output the base file name only. The full path will be taken
-	%% care of by flora_load_dyn and consult.
+	%% care of by flora_load_dyn_fdb and consult.
 	parse_filename(DBFileName,_Dir,Base,Ext),
 	writeln('#if !defined(FLORA_FDB_FILENAME)'),
-	writeln(':- import flora_load_dyn/2 from flrutils.'),
+	writeln(':- import flora_load_dyn_fdb/2 from flrutils.'),
 	current_output_port(OutPort),
 	fmt_write(OutPort, "#define FLORA_FDB_FILENAME  '%s.%s'", args(Base,Ext)),
 	nl,
-	writeln('?- flora_load_dyn(FLORA_FDB_FILENAME,FLORA_THIS_MODULE_NAME).'),
+	writeln('?- flora_load_dyn_fdb(FLORA_FDB_FILENAME,FLORA_THIS_MODULE_NAME).'),
 	writeln('#else'),
 	writeln(':- import flora_read_canonical_and_insert/2 from flrutils.'),
 	writeln('?- flora_read_canonical_and_insert(FLORA_FDB_FILENAME,FLORA_THIS_STORAGE).'),
@@ -1037,14 +1037,14 @@ flora_generate_DBfile(DBFileName,FactList,FileStatus) :-
 
 
 /*************************************************************************
-  flora_load_dyn(+InDBFile,+ModuleName)
+  flora_load_dyn_fdb(+InDBFile,+ModuleName)
 
   This procedure reads a Flora DB file that contains facts in canonical
   form and inserts them into the storage trie for the module. The module
   could be either a Flora user module, or a Flora system module. In the
   latter case, it is structured term.
 *************************************************************************/
-flora_load_dyn(InDBFile,ModuleName) :-
+flora_load_dyn_fdb(InDBFile,ModuleName) :-
 	flora_check_filename(InDBFile),
 	( path_sysop(isabsolute,InDBFile) ->
 	    InDBFileAbs=InDBFile
@@ -1066,7 +1066,7 @@ flora_load_dyn(InDBFile,ModuleName) :-
 	    flora_add_xpp_options('-warninglevel 1 '),
 	    xpp_process_file(DBFile,XPP_process,IOportFromProc),
 	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
-	    flora_storage_name(ModuleName,StorageName),
+	    flora_fdb_storage_name(ModuleName,StorageName),
 	    flora_read_canonical_and_insert(StorageName),
 	    %% Wait, not to leave zombies.
 	    process_control(XPP_process,wait(ExitStatus)),
@@ -1110,6 +1110,8 @@ flora_load_dyn_fld(InFLDFile,ModuleName) :-
 	    cputime(T0),
 	    seeing(PreInFile),
 	    flora_set_xpp_options_for_compile(ModuleName),
+	    %% Don't issue irrelevant warnings
+	    flora_add_xpp_options('-warninglevel 1 '),
 	    xpp_process_file(FLDFile,XPP_process,IOportFromProc),
 	    stat_set_flag(CURRENT_INPUT,IOportFromProc),
 	    flora_fld_storage_name(ModuleName,StorageName),

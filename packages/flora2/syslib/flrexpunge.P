@@ -40,7 +40,7 @@
 :- import
 	flora_check_module_name/1,
 	flora_module_predicate_symbol/3,
-	flora_storage_name/2
+	flora_fdb_storage_name/2
    from flrwrapper.
 
 
@@ -53,7 +53,7 @@ fllibexpunge(FAList) :- fllibexpunge(FAList,FLORA_DEFAULT_WORKSPACE).
 %% "ModuleName" could be the name of either a Flora user module or system module.
 fllibexpunge(FAList,ModuleName) :-
 	( flora_check_module_name(ModuleName) ->
-	    flora_storage_name(ModuleName,StorageName),
+	    flora_fdb_storage_name(ModuleName,StorageName),
 	    flora_expunge(FAList,ModuleName,StorageName)
 	;
 	  abort

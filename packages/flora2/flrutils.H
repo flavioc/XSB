@@ -161,7 +161,7 @@
 	flora_user_module_predicate_symbol/3,
 	flora_module_name/3,
 	flora_module_name_error/1,
-	flora_storage_name/2,
+	flora_fdb_storage_name/2,
 	%% support for undefinedness
 	flora_fld_storage_name/2
    from flrwrapper.
@@ -223,7 +223,7 @@
 	flora_storage_registry/1,
 	flora_reclaim_storage_space/0,
 	flora_commit_storage/0,
-	flora_load_dyn/2,
+	flora_load_dyn_fdb/2,
 	%% support for undefinedness
 	flora_load_dyn_fld/2,
 

@@ -198,9 +198,9 @@ flora_module_name_error(ModuleName) :-
 
 
 /***************************************************************************
-  flora_user_storage_name(+Workspace,-StorageName)
+  flora_user_fdb_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
-flora_user_storage_name(WS,StorageName) :-
+flora_user_fdb_storage_name(WS,StorageName) :-
 	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_TRIE_PREFIX,WS)).
 
 /***************************************************************************
@@ -210,9 +210,9 @@ flora_user_fld_storage_name(WS,StorageName) :-
 	fmt_write_string(StorageName,"%s'%s",args(FLORA_USER_FLD_TRIE_PREFIX,WS)).
 
 /***************************************************************************
-  flora_system_storage_name(+Workspace,-StorageName)
+  flora_system_fdb_storage_name(+Workspace,-StorageName)
 ***************************************************************************/
-flora_system_storage_name(WS,StorageName) :-
+flora_system_fdb_storage_name(WS,StorageName) :-
 	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_TRIE_PREFIX,WS)).
 
 /***************************************************************************
@@ -222,9 +222,9 @@ flora_system_fld_storage_name(WS,StorageName) :-
 	fmt_write_string(StorageName,"%s'%s",args(FLORA_SYSTEM_FLD_TRIE_PREFIX,WS)).
 
 /*****************************************************************************
-  flora_storage_name(+ModuleName,-StorageName)
+  flora_storage_fdb_name(+ModuleName,-StorageName)
 
-  It takes a Flora module name as input and returns the name of the storage
+  It takes a Flora module name as input and returns the name of the FDB storage
   trie for this module.
 
   The parameter "ModuleName" could be either the name of a Flora user module,
@@ -232,14 +232,14 @@ flora_system_fld_storage_name(WS,StorageName) :-
 
   If the input is not a valid Flora module name, it fails.
 *****************************************************************************/
-flora_storage_name(ModuleName,StorageName) :-
+flora_fdb_storage_name(ModuleName,StorageName) :-
 	flora_module_name(ModuleName,Type,WS),
 	!,
 	( Type == usermodule ->
-	    flora_user_storage_name(WS,StorageName)
+	    flora_user_fdb_storage_name(WS,StorageName)
 
 	; Type == systemmodule ->
-	    flora_system_storage_name(WS,StorageName)
+	    flora_system_fdb_storage_name(WS,StorageName)
 	;
 	  fail
 	).

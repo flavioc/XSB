@@ -184,7 +184,7 @@ atom_len(Atom,Length) :-
   Returns the Length of an Atom.
 *********************************************************************/
 num_len(Num,Length) :-
-	name(Num,List),
+	number_codes(Num,List),
 	length(List,Length).
 
 /*********************************************************************

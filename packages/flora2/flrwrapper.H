@@ -63,9 +63,9 @@
 	flora_check_module_name/1,
 	flora_module_name_error/1,
 
-	flora_user_storage_name/2,
-	flora_system_storage_name/2,
-	flora_storage_name/2,
+	flora_user_fdb_storage_name/2,
+	flora_system_fdb_storage_name/2,
+	flora_fdb_storage_name/2,
 	flora_user_fld_storage_name/2,
 	flora_system_fld_storage_name/2,
 	flora_fld_storage_name/2,

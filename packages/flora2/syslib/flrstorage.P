@@ -44,7 +44,7 @@
 :- import
 	flora_module_name/3,
 	flora_module_name_error/1,
-	flora_storage_name/2,
+	flora_fdb_storage_name/2,
 	flora_decode_module_name/2,
 	flora_module_predicate/4,
 	flora_firstorder_module_predicate/4
@@ -118,7 +118,7 @@ flora_storage_check_deletepredicate(P,FLSYSDBUPDATE(P,StorageName)) :-
 	functor(P,F,N),
 	( flora_decode_module_name(F,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
-	    flora_storage_name(ModuleName,StorageName),
+	    flora_fdb_storage_name(ModuleName,StorageName),
 	    storage_find_fact(StorageName,P)
 
 	; N == 2, F == ';' ->
@@ -165,7 +165,7 @@ flora_storage_convertlist([FLSYSDBUPDATE(P,StorageName)|Fs],
 flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
                           [flora_storage_check_module_name(ModuleName),
 			   flora_module_predicate(F,Args,ModuleName,P),
-			   flora_storage_name(ModuleName,StorageName),
+			   flora_fdb_storage_name(ModuleName,StorageName),
                            storage_find_fact(StorageName,P)|CL
 			  ],
 			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-
@@ -175,7 +175,7 @@ flora_storage_convertlist([FLLIBMODLIT(F,Args,ModuleName)|Fs],
 flora_storage_convertlist([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|Fs],
                           [flora_storage_check_module_name(ModuleName),
 			   flora_firstorder_module_predicate(F,Args,ModuleName,P),
-			   flora_storage_name(ModuleName,StorageName),
+			   flora_fdb_storage_name(ModuleName,StorageName),
                            storage_find_fact(StorageName,P)|CL
 			  ],
 			  [FLSYSDBUPDATE(P,StorageName)|FL]) :-

@@ -51,7 +51,7 @@
 :- import
 	flora_module_predicate/4,
 	flora_firstorder_module_predicate/4,
-	flora_storage_name/2,
+	flora_fdb_storage_name/2,
 	flora_check_module_name/1,
 	flora_decode_module_name/2,
 	flora_is_flogic_wrapper/3,
@@ -115,7 +115,7 @@ flora_storage_insertfacts_bt([FLLIBMODLIT(F,Args,ModuleName)|T]) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
-	flora_storage_name(ModuleName,StorageName),
+	flora_fdb_storage_name(ModuleName,StorageName),
 	storage_insert_fact_bt(StorageName,P,_Inserted),
 	flora_storage_insertfacts_bt(T).
 
@@ -123,7 +123,7 @@ flora_storage_insertfacts_bt([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)|T]) :
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
-	flora_storage_name(ModuleName,StorageName),
+	flora_fdb_storage_name(ModuleName,StorageName),
 	storage_insert_fact_bt(StorageName,P,_Inserted),
 	flora_storage_insertfacts_bt(T).
 
@@ -156,7 +156,7 @@ flora_storage_insertfacts_bt([P|T]) :-
 	functor(P,F,N),
 	( flora_decode_module_name(F,ModuleName) ->
 	    flora_storage_check_module_name(ModuleName),
-	    flora_storage_name(ModuleName,StorageName),
+	    flora_fdb_storage_name(ModuleName,StorageName),
 	    storage_insert_fact_bt(StorageName,P,_Inserted),
 	    flora_storage_insertfacts_bt(T)
 
@@ -236,7 +236,7 @@ FLLIBBTDELETE([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
-	flora_storage_name(ModuleName,StorageName),
+	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
 	storage_find_fact(StorageName,P),
 	storage_delete_fact_bt(StorageName,P,_Deleted).
@@ -245,7 +245,7 @@ FLLIBBTDELETE([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
-	flora_storage_name(ModuleName,StorageName),
+	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
 	storage_find_fact(StorageName,P),
 	storage_delete_fact_bt(StorageName,P,_Deleted).
@@ -311,7 +311,7 @@ FLLIBBTDELETEALL([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
-	flora_storage_name(ModuleName,StorageName),
+	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
 	flora_storage_deleteall_bt(P,StorageName).
 
@@ -319,7 +319,7 @@ FLLIBBTDELETEALL([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
-	flora_storage_name(ModuleName,StorageName),
+	flora_fdb_storage_name(ModuleName,StorageName),
 	!,
 	flora_storage_deleteall_bt(P,StorageName).
 
