@@ -81,7 +81,7 @@ all: init $(ALLOBJS) finish
 	@rm cmd...
 	@cat $(SVFILE)
 	cd closure; $(MAKE)
-	cd includes; $(MAKE)
+	cd genincludes; $(MAKE)
 	cd syslib; $(MAKE)
 	cd trailer; $(MAKE)
 	cd lib; $(MAKE)
@@ -174,11 +174,12 @@ finish:
 clean:
 	/bin/rm -f *~ *.O
 	cd closure; $(MAKE) clean
-	cd includes; $(MAKE) clean
+	cd genincludes; $(MAKE) clean
 	cd syslib; $(MAKE) clean
 	cd trailer; $(MAKE) clean
 	/bin/rm -f headerinc/*~
 	/bin/rm -f syslibinc/*~
+	/bin/rm -f includes/*~
 
 
 .DONE:

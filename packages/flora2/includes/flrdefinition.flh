@@ -1,21 +1,16 @@
 /************************************************************************
-  file: closureinc/flrheader_inc.flh
+  file: includes/flrdefinition.flh
 
   Author(s): Guizhen Yang
 
   This file is automatically included by the FLORA compiler.
 ************************************************************************/
 
-#mode standard Prolog
+FLORA_WORKSPACE(FLORA_VAR_WORKSPACE,flThisModule)(FLORA_VAR_WORKSPACE).
 
-#define	FLORA_PREFIX		'_$_$_flora'
-#define FLORA_STORAGE_PREFIX	'_$_$_flora_storage'
+:- import storage_delete_all/1 from storage.
 
-#mode save
-#mode nostring "\!#'"
-#define FLORA_WORKSPACE(X,Y)	FLORA_PREFIX'X''Y'
-#define FLORA_WSSTORAGE(X)	FLORA_STORAGE_PREFIX'X'
-#mode restore
+?- storage_delete_all(FLORA_WSSTORAGE(FLORA_VAR_WORKSPACE)).
 
 /***********************************************************************/
 
