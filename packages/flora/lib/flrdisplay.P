@@ -109,7 +109,7 @@
 	    true
 
 	  ;
-	    nl, write('*** Warning: '),
+	    nl, write('*** FLORA Warning: '),
 	    write(F/N),
 	    writeln(' undefined'),
 	    fail
@@ -121,7 +121,7 @@
 	    '_$_$_flora_check_predicates'(Gs)
 
 	  ;
-	    nl, write('*** Warning: '),
+	    nl, write('*** FLORA Warning: '),
 	    write(F/N),
 	    writeln(' undefined'),
 	    fail

@@ -34,6 +34,8 @@
 	atom_chars/2, number_chars/2
    from standard.
 
+:- import fmt_write_string/3 from file_io.
+
 :- import trie_dynamic/1, trie_assert/1, trie_retract/1,
 	  trie_retract_all/1
    from tables.
@@ -45,8 +47,8 @@
 :- import flora_set/1 from flrparser.
 
 :- import
-	flora_word/2, terminate_list/1, displayln/0, displayln/1,
-	displayln_errmsg/1, flora_member/2
+	flora_member/2, flora_word/2, terminate_list/1, displayln/0,
+	displayln_errmsg/1, displayln_warning/1
    from flrutils.
 
 :- dynamic compiler_options(_).
@@ -155,7 +157,7 @@ compile_flogic(fact(Head,HeadVars),Facts,Opts) :-
 compile_flogic(query(_,_),[],Opts) :-
 	load_mode(dynamic_mode),
 	!,
-	displayln, displayln('*** Warning: query ignored'),
+	displayln, displayln_warning('query ignored'),
 	retract_options(Opts).
 
 compile_flogic(query(Body,BodyVars),[query(BodyCode,NVs)],Opts) :-
@@ -174,7 +176,7 @@ compile_flogic(table_directive(X),[table_directive(X)],Opts) :-
 compile_flogic(export_directive(_,_),[],Opts) :-
 	load_mode(dynamic_mode),
 	!,
-	displayln, displayln('*** Warning: export directive ignored'),
+	displayln, displayln_warning('export directive ignored'),
 	retract_options(Opts).
 
 compile_flogic(export_directive(PAs,Sigs),Rules,Opts) :-
@@ -549,9 +551,8 @@ flatten_retract_term(objspec(O,Spec),W,Ps) :-
 
 flatten_retract_term(spterm(Op,E1,E2),_,Ps) :-
 	displayln,
-	display('*** Warning: special predicate '),
-	display(Op),
-	displayln(' will be treated as an extra condition for retract.'),
+	fmt_write_string(Msg,'%s is compiled as a condition for retracts.',f(Op)),
+	displayln_warning(Msg),
 	rhs_flatten(spterm(Op,E1,E2),_,Ps).
 
 

@@ -28,15 +28,16 @@
 
 
 :- import
-	nl/0, write/1, writeln/1, tell/1, telling/1, atom_chars/2,
-	integer/1
+	atom_chars/2, integer/1
    from standard.
 
 :- import append/3 from basics.
 
+:- import fmt_write_string/3 from file_io.
+
 :- import
 	flora_prefix/1, flora_word/2, terminate_list/1,
-	flora_member/2
+	flora_member/2, displayln_errmsg/1, displayln/0
    from flrutils.
 
 :- import
@@ -125,14 +126,10 @@ rule(null) --> white_space0, !.
 
 rule(_) -->
 	{ error(reserved_word),
-	  telling(F),
-	  tell(userout),
-	  nl, write('*** Warning: '),
 	  flora_prefix(P),
-	  atom_chars(Flora,P),
-	  write(Flora),
-	  writeln('* is a reserved FLORA keyword.'),
-	  tell(F),
+	  fmt_write_string(Msg,'%s* is a reserved FLORA keyword.',f(P)),
+          displayln,
+          displayln_errmsg(Msg),
 	  fail
 	}.
 
