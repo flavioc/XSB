@@ -68,6 +68,7 @@
 #include "io_builtins_xsb.h"
 #include "unify_xsb.h"
 #include "emuloop_aux.h"
+#include "remove_unf.h"
 
 #include "hash_xsb.h"
 /*

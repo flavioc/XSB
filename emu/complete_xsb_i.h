@@ -22,7 +22,6 @@
 ** 
 */
 
-
 /* special debug includes */
 #include "debugs/debug_delay.h"
 
@@ -106,6 +105,8 @@ XSB_Start_Instr(check_complete,_check_complete)
       FailIfAnswersFound((cc_tbreg == orig_breg ? 0 : cc_tbreg));
       
       CompleteSimplifyAndReclaim(cs_ptr);
+
+      remove_unfounded_set(cs_ptr);
       
       /* leader has non-returned answers? */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
