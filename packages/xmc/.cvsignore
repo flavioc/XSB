@@ -4,3 +4,6 @@ a.out
 *.o
 parse
 xmc-gui
+lex.yy.c
+xl.tab.c
+xl.tab.h
