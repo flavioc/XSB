@@ -141,13 +141,13 @@
 #define FL_UNIVEQ		'='
 #define FL_UNIVNOTEQ		'\='
 #define FL_EQ			'=='
-#define FL_UNIVEQFORM		'~'
 #define FL_NOTEQ		'\=='
 #define FL_ORDERLT		'@<'
 #define FL_ORDEREQLT		'@=<'
 #define FL_ORDERGT		'@>'
 #define FL_ORDEREQGT		'@>='
 #define FL_METAUNIV		'=..'
+#define FL_UNIVEQFORM		'~'
 #define FL_IS			(is)
 #define FL_MATHEQ		'=:='
 #define FL_OBJEQL		':=:'
@@ -173,8 +173,6 @@
 %%#define FL_PROLOG		(prolog)
 %%#define FL_PROLOGALL		prologall
 #define FL_PLIB			prolog
-#define FL_STATICFIRSTORDER	static
-#define FL_STATICFIRSTORDERALL 	staticall
 #define FL_FIRSTORDER		firstorder
 #define FL_FIRSTORDERALL	firstorderall
 #define FL_FLOGICSTATIC		flogic
@@ -268,6 +266,14 @@
 
   FLIFTHEN(IfCondition,ThenStatement)
   FLIFTHENELSE(IfCondition,ThenStatement,ElseStatement)
+
+  FLUNLESSDO(Condition,ActionWhenCondIsFalse)
+  FLWHILEDO(WhileCondition,Action)
+  FLDOUNTIL(Action,UntilCondition)
+  FLWHILELOOP(WhileCondition,Action)
+  FLLOOPUNTIL(Action,UntilCondition)
+
+  FLUNIVEQFORM(LeftFormula,RightFormula)
 ****************************************************************************/
 #define FLRULE			flrule
 #define FLFACT			flfact
@@ -325,6 +331,13 @@
 
 #define FLIFTHEN		flifthen
 #define FLIFTHENELSE		flifthenelse
+
+#define FLUNLESS		flunless
+#define FLUNTIL			fluntil
+#define FLWHILE			flwhile
+#define FLLOOP			flloop
+
+#define FLUNIVEQFORM            fluniveqform
 
 
 /****************************************************************************
@@ -504,7 +517,15 @@
 #define FLLIBIFTHENELSE		fllibifthenelse
 #define FLLIBIFTHEN		fllibifthen
 
+#define FLLIBUNLESSDO           fllibunlessdo
+#define FLLIBWHILEDO		fllibwhiledo
+#define FLLIBDOUNTIL		fllibdountil
+#define FLLIBWHILELOOP		fllibwhileloop
+#define FLLIBLOOPUNTIL		fllibloopuntil
+
 #define FLLIBMETAOPS		fllibmetaops
+%% The meta ~
+#define FLLIBUNIVEQFORM		fllibuniveqform
 
 
 /*****************************************************************************

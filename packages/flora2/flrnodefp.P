@@ -34,6 +34,8 @@
 %% These are predicates that are not supposed to have definitions.
 %% Parser issues errors when these occur in the head of a rule.
 
+%% PROLOG builtins
+
 flora_nodefp(FL_SEMICOLON,2) :- !.
 flora_nodefp(FL_COMMA,2) :- !.
 
@@ -60,3 +62,19 @@ flora_nodefp(FL_RIGHTTO,2) :- !.
 flora_nodefp(FL_LEFTTO,2) :- !.
 
 flora_nodefp(FL_CUT,0) :- !.
+
+
+%% FLORA builtins
+flora_nodefp(FL_UNIVEQFORM,2) :- !.
+
+%% FLORA special syntax
+flora_nodefp(FL_WHILE,1) :- !.
+flora_nodefp(FL_LOOP,1) :- !.
+flora_nodefp(FL_DO,1) :- !.
+flora_nodefp(FL_DO,2) :- !.
+flora_nodefp(FL_UNTIL,2) :- !.
+
+flora_nodefp(FL_IF,1) :- !.
+flora_nodefp(FL_UNLESS,1) :- !.
+flora_nodefp(FL_THEN,2) :- !.
+flora_nodefp(FL_ELSE,2) :- !.

@@ -83,13 +83,13 @@
 /*****************************************************************************
   fllibbtinsert(+List)
 *****************************************************************************/
-fllibbtinsert(List) :- fllibbtinsert(List,true).
+FLLIBBTINSERT(List) :- FLLIBBTINSERT(List,true).
 
 
 /*****************************************************************************
   fllibbtinsert(+List,+Condition)
 *****************************************************************************/
-fllibbtinsert(List,Condition) :-
+FLLIBBTINSERT(List,Condition) :-
 	call(Condition),
 	flora_storage_insertfacts_bt(List).
 
@@ -185,13 +185,13 @@ flora_storage_insertfacts_bt([P|T]) :-
 /*****************************************************************************
   fllibbtinsertall(+List)
 *****************************************************************************/
-fllibbtinsertall(List) :- fllibbtinsert(List).
+FLLIBBTINSERTALL(List) :- FLLIBBTINSERT(List).
 
 
 /*****************************************************************************
   fllibbtinsertall(+List,+Condition)
 *****************************************************************************/
-fllibbtinsertall(List,Condition) :-
+FLLIBBTINSERTALL(List,Condition) :-
 	findall(List,Condition,FsList),
 	!,
 	flora_btinsertall_facts(FsList).
@@ -212,7 +212,7 @@ flora_btinsertall_facts([Fs|FL]) :-
 /*****************************************************************************
   fllibbtdelete(+List)
 *****************************************************************************/
-fllibbtdelete(List) :- fllibbtdelete(List,true).
+FLLIBBTDELETE(List) :- FLLIBBTDELETE(List,true).
 
 
 /*****************************************************************************
@@ -221,18 +221,18 @@ fllibbtdelete(List) :- fllibbtdelete(List,true).
   The semantics is such that all the literals in "List" must be base facts
   in the storage to be deleted.
 *****************************************************************************/
-fllibbtdelete([P],true) :-
+FLLIBBTDELETE([P],true) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of backtrackable delete operation'),
 	abort.
 
-fllibbtdelete([FLSYSDBUPDATE(P,StorageName)],true) :-
+FLLIBBTDELETE([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,
 	storage_find_fact(StorageName,P),
 	storage_delete_fact_bt(StorageName,P,_Deleted).
 
-fllibbtdelete([FLLIBMODLIT(F,Args,ModuleName)],true) :-
+FLLIBBTDELETE([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
@@ -241,7 +241,7 @@ fllibbtdelete([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	storage_find_fact(StorageName,P),
 	storage_delete_fact_bt(StorageName,P,_Deleted).
 
-fllibbtdelete([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
+FLLIBBTDELETE([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
@@ -250,7 +250,7 @@ fllibbtdelete([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	storage_find_fact(StorageName,P),
 	storage_delete_fact_bt(StorageName,P,_Deleted).
 
-fllibbtdelete(List,Condition) :-
+FLLIBBTDELETE(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
 	!,
@@ -288,7 +288,7 @@ flora_storage_deleteall_bt(P,StorageName) :-
 /*****************************************************************************
   fllibbtdeleteall(+List)
 *****************************************************************************/
-fllibbtdeleteall(List) :- fllibbtdeleteall(List,true).
+FLLIBBTDELETEALL(List) :- FLLIBBTDELETEALL(List,true).
 
 
 /*****************************************************************************
@@ -297,17 +297,17 @@ fllibbtdeleteall(List) :- fllibbtdeleteall(List,true).
   The semantics is such that all the literals in "List" must be base facts
   in the storage to be deleted. This call always succeeds.
 *****************************************************************************/
-fllibbtdeleteall([P],true) :-
+FLLIBBTDELETEALL([P],true) :-
 	var(P),
 	!,
 	flora_error_line('uninstantiated argument of backtrackable delete operation'),
 	abort.
 
-fllibbtdeleteall([FLSYSDBUPDATE(P,StorageName)],true) :-
+FLLIBBTDELETEALL([FLSYSDBUPDATE(P,StorageName)],true) :-
 	!,
 	flora_storage_deleteall_bt(P,StorageName).
 
-fllibbtdeleteall([FLLIBMODLIT(F,Args,ModuleName)],true) :-
+FLLIBBTDELETEALL([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_module_predicate(F,Args,ModuleName,P),
@@ -315,7 +315,7 @@ fllibbtdeleteall([FLLIBMODLIT(F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_deleteall_bt(P,StorageName).
 
-fllibbtdeleteall([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
+FLLIBBTDELETEALL([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_check_module_name(ModuleName),
 	flora_firstorder_module_predicate(F,Args,ModuleName,P),
@@ -323,7 +323,7 @@ fllibbtdeleteall([FLLIBMODLIT(FL_FIRSTORDER,F,Args,ModuleName)],true) :-
 	!,
 	flora_storage_deleteall_bt(P,StorageName).
 
-fllibbtdeleteall(List,Condition) :-
+FLLIBBTDELETEALL(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
 	findall(FactList,Goal,FsList),
@@ -346,13 +346,13 @@ flora_btdeleteall_facts([Fs|FL]) :-
 /*****************************************************************************
   fllibbterase(+List)
 *****************************************************************************/
-fllibbterase(List) :- fllibbterase(List,true).
+FLLIBBTERASE(List) :- FLLIBBTERASE(List,true).
 
 
 /*****************************************************************************
   fllibbterase(+List,+Condition)
 *****************************************************************************/
-fllibbterase(List,Condition) :-
+FLLIBBTERASE(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
 	call(Goal),
@@ -497,13 +497,13 @@ flora_bterase_objects([O|OList],StorageName) :-
 /*****************************************************************************
   fllibbteraseall(+List)
 *****************************************************************************/
-fllibbteraseall(List) :- fllibbteraseall(List,true).
+FLLIBBTERASEALL(List) :- FLLIBBTERASEALL(List,true).
 
 
 /*****************************************************************************
   fllibbteraseall(+List,+Condition)
 *****************************************************************************/
-fllibbteraseall(List,Condition) :-
+FLLIBBTERASEALL(List,Condition) :-
 	flora_storage_convertlist(List,CallList,FactList),
 	flora_list2conjunct([Condition|CallList],Goal),
 	findall(FactList,Goal,FsList),

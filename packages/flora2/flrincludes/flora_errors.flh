@@ -66,13 +66,13 @@
 /**************************************
   errors reported by Flora Operator
 **************************************/
-#define NO_REDEFOP	'redefinition of standard operators not allowed'
+#define NO_REDEFOP	'redefinition of standard operators is not allowed'
 
 
 /**************************************
   errors reported by Flora Arguments directive
 **************************************/
-#define NO_REDEFARG	'redefinition of standard argument types not allowed'
+#define NO_REDEFARG	'redefinition of standard argument types is not allowed'
 
 
 /**************************************
@@ -93,7 +93,7 @@
 #define ERROR_BDLITERAL	'invalid literal/molecule in rule/query body'
 #define ERROR_PRLGLIT	'invalid PROLOG literal'
 #define ERROR_WSNAME	'invalid module name'
-#define ERROR_SYSMOD	'insert/delete ops not allowed on system modules'
+#define ERROR_SYSMOD	'updates of FLORA system modules are not allowed'
 #define ERROR_PATHEXP	'invalid path expression'
 #define ERROR_HDLITERAL 'invalid literal/molecule in rule head'
 #define ERROR_EXPINHEAD 'invalid path expression in rule head'
@@ -117,23 +117,23 @@
 #define EXP_AGGREGVAR	'aggregate variable expected'
 #define EXP_AGGRGRPVAR	'aggregate and grouping variables expected'
 #define EXP_ARGS	'arguments expected'
-#define NO_LISTTAIL	'list tail specification not allowed in this context'
-#define NO_DISJUNCTION	'disjunction not allowed in rule heads and facts'
-#define NO_NEGATION	'negation not allowed in rule head'
-#define NO_WORKSPACE	'invalid association with module specification'
-#define NO_WSINRULEHEAD	'module specification not allowed in rule head'
+#define NO_LISTTAIL	'list tail specification is not allowed in this context'
+#define NO_DISJUNCTION	'disjunction is not allowed in rule heads and facts'
+#define NO_NEGATION	'negation is not allowed in rule head'
+#define NO_WORKSPACE	'invalid use of module specification'
+#define NO_WSINRULEHEAD	'module specification is not allowed in rule head'
 #define NO_WSNESTING	'invalid nesting of module specifications'
-#define NO_REDEFINITION 'redefinition of standard predicates not allowed'
-#define NO_MULTIATT	'multivalued reference not allowed in rule head'
-#define NO_AGGINHEAD	'aggregate not allowed in rule head'
-#define NO_INSERT	'insertion into built-in predicates not allowed'
-#define NO_DELETE	'deletion from built-in predicates not allowed'
-#define NO_INSERTMULATT 'multivalued reference not allowed in insert'
-#define NO_INSERTDISJUN	'disjunction not allowed in insert'
-#define NO_DELETEDISJUN	'disjunction not allowed in delete'
-#define NO_INSERTNEG	'negation not allowed in insert'
-#define NO_DELETENEG	'negation not allowed in delete'
-#define NO_PROLOGUPDATE 'updating Prolog predicates not allowed'
+#define NO_REDEFINITION 'redefinition of built-ins in rule head is not allowed'
+#define NO_MULTIATT	'multivalued reference is not allowed in rule head'
+#define NO_AGGINHEAD	'aggregate is not allowed in rule head'
+#define NO_INSERT	'insertion into a built-in is not allowed'
+#define NO_DELETE	'deletion from a built-in is not allowed'
+#define NO_INSERTMULATT 'multivalued reference is not allowed in insert'
+#define NO_INSERTDISJUN	'disjunction is not allowed in insert'
+#define NO_DELETEDISJUN	'disjunction is not allowed in delete'
+#define NO_INSERTNEG	'negation is not allowed in insert'
+#define NO_DELETENEG	'negation is not allowed in delete'
+#define NO_PROLOGUPDATE 'updating Prolog predicates is not allowed'
 #define UNKNOWN_AGGREGT 'unknown aggregate operator'
 #define UNKNOWN_DIRECT	'unknown compiler directive'
 #define UNREG_SYSMOD	'unregistered system module'
@@ -142,12 +142,12 @@
 #define ERROR_ELSEHEAD	'invalid else-statement in rule head'
 #define ERROR_THENBODY	'invalid then-statement'
 #define ERROR_ELSEBODY	'invalid else-statement'
-#define MISSING_THEN	'missing then-statement in if-then-else-statement'
+#define MISSING_THEN	'missing then-statement in if-then-else'
 #define UNEXPECTED_THEN	'unexpected then-statement'
 #define UNEXPECTED_ELSE	'unexpected else-statement'
-#define NO_UPDATEIF	'updating if-statement not allowed'
-#define NO_UPDATETHEN	'updating then-statement not allowed'
-#define NO_UPDATEELSE	'updating else-statement not allowed'
+#define NO_UPDATEIF	'updating if-statement is not allowed'
+#define NO_UPDATETHEN	'updating then-statement is not allowed'
+#define NO_UPDATEELSE	'updating else-statement is not allowed'
 
 
 /**************************************
@@ -165,10 +165,10 @@
 /**************************************
   errors reported by Flora Compiler
 **************************************/
-#define REPEATED_GVAR	'repeated grouping variable not allowed in aggregates'
+#define REPEATED_GVAR	'repeated grouping variable is not allowed in aggregates'
 #define GVAR_NOTIN	'grouping variable not in aggregate body'
 #define AVAR_NOTIN	'aggregate variable not in aggregate body'
 #define ERROR_GVAR	'invalid grouping variable'
 #define ERROR_AVAR	'invalid aggregate variable'
-#define AVAR_ASGVAR	'aggregation variable not allowed as grouping variable'
+#define AVAR_ASGVAR	'aggregation variable is not allowed as grouping variable'
 #define VARWSINHEAD	'unbound module name in rule head'

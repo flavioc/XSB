@@ -91,6 +91,9 @@ is_flfloralib(FLFLORALIB(P,M),P,M).
 is_flifthenelse(FLIFTHENELSE(Cond,Then,Else),Cond,Then,Else).
 is_flifthen(FLIFTHEN(Cond,Then),Cond,Then).
 
+%% Meta ~
+is_fluniveqform(FLUNIVEQFORM(Left,Right),Left,Right).
+
 is_flterm(FLTERM(Funct,Arity,Args),Funct,Arity,Args).
 is_flinsert(FLINSERT(Op,List,Cond),Op,List,Cond).
 is_flinsert(FLINSERT(Op,List),Op,List).
@@ -532,6 +535,9 @@ ifthenelse_struct(Cond,Then,Else,Code) :-
 
 ifthen_struct(Cond,Then,Code) :-
 	florasyslib_struct(FLLIBIFTHEN,2,[Cond,Then],Code).
+
+univeqform_struct(Left,Right,Code) :-
+	florasyslib_struct(FLLIBUNIVEQFORM,2,[Left,Right],Code).
 
 
 /****************************************************************************
@@ -1337,6 +1343,9 @@ compile_body_literal(ParserTerm,Code,Status) :-
 
 	; is_flifthen(ParserTerm,Cond,Then) ->
 	    compile_flifthen(Cond,Then,Code,Status)
+
+	; is_fluniveqform(ParserTerm,Left,Right) ->
+	    compile_fluniveqform(Left,Right,Code,Status)
 	
 	; is_flcut(ParserTerm,I) ->
 	    cut_struct(I,Code),
@@ -1384,6 +1393,18 @@ compile_flifthen(Cond,Then,Code,Status) :-
 	( S1 == [] ->
 	    compile_body(Then,ThenCode,Status),
 	    (Status == [] -> ifthen_struct(CondCode,ThenCode,Code); true)
+	;
+	  Status=S1
+	).
+
+/****************************************************************************
+  compile_fluniveqform(+Left,+Right,-Code,-Status)
+****************************************************************************/
+compile_fluniveqform(Left,Right,Code,Status) :-
+	compile_body(Left,LeftCode,S1),
+	( S1 == [] ->
+	    compile_body(Right,RightCode,Status),
+	    (Status == [] -> univeqform_struct(LeftCode,RightCode,Code); true)
 	;
 	  Status=S1
 	).

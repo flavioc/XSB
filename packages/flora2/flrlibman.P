@@ -171,10 +171,18 @@ flora_library_file(FLLIBMODLIT,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBMODOBJ,flrdynmod,syslib) :- !.
 flora_library_file(FLLIBEQUALITY,flrequality,syslib) :- !.
 flora_library_file(FLLIBEXPUNGE,flrexpunge,syslib) :- !.
+
 flora_library_file(FLLIBCONTROL,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHENELSE,flrcontrol,syslib) :- !.
 flora_library_file(FLLIBIFTHEN,flrcontrol,syslib) :- !.
+flora_library_file(FLLIBUNLESSDO,flrcontrol,syslib) :- !.
+flora_library_file(FLLIBWHILEDO,flrcontrol,syslib) :- !.
+flora_library_file(FLLIBDOUNTIL,flrcontrol,syslib) :- !.
+flora_library_file(FLLIBWHILELOOP,flrcontrol,syslib) :- !.
+flora_library_file(FLLIBLOOPUNTIL,flrcontrol,syslib) :- !.
+
 flora_library_file(FLLIBMETAOPS,flrmetaops,syslib) :- !.
+flora_library_file(FLLIBUNIVEQFORM,flrmetaops,syslib) :- !.
 
 
 /**************************************************************************

@@ -37,10 +37,10 @@
 
 
 
-FL_UNIVEQFORM(X,Y) :- X=Y, !.
+FLLIBUNIVEQFORM(X,Y) :- X=Y, !.
 
 %% This takes care of F-logic molecules with dynamic module specification
-FL_UNIVEQFORM(X, Y) :-
+FLLIBUNIVEQFORM(X, Y) :-
 	X=FLLIBMODLIT(Fun1,Args1,ModuleName1),
 	Y=FLLIBMODLIT(Fun2,Args2,ModuleName2),
 	!,
@@ -48,7 +48,7 @@ FL_UNIVEQFORM(X, Y) :-
 	Args1 = Args2,
 	ModuleName1 = ModuleName2.
 
-FL_UNIVEQFORM(X, Y) :-
+FLLIBUNIVEQFORM(X, Y) :-
 	X=FLLIBMODLIT(Fun,Args,ModuleName),
 	!,
 	%% this ensures that ModuleName is bound whenever possible
@@ -57,7 +57,7 @@ FL_UNIVEQFORM(X, Y) :-
 	flora_module_predicate(Fun,Args,ModuleName,Literal),
 	Literal = Y.
 
-FL_UNIVEQFORM(X, Y) :-
+FLLIBUNIVEQFORM(X, Y) :-
 	Y=FLLIBMODLIT(Fun,Args,ModuleName),
 	!,
 	%% this ensures that ModuleName is bound whenever possible
@@ -68,14 +68,14 @@ FL_UNIVEQFORM(X, Y) :-
 
 %% This takes care of first-order Flora predicates with dynamic 
 %% module specification 
-FL_UNIVEQFORM(X, Y) :-
+FLLIBUNIVEQFORM(X, Y) :-
 	X=FLLIBMODLIT(FL_FIRSTORDER,Fun1,Args1,ModuleName1),
 	Y=FLLIBMODLIT(FL_FIRSTORDER,Fun2,Args2,ModuleName2),
 	!,
 	Fun1 = Fun2,
 	Args1 = Args2,
 	ModuleName1 = ModuleName2.
-FL_UNIVEQFORM(X, Y) :-
+FLLIBUNIVEQFORM(X, Y) :-
 	X=FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName),
 	!,
 	%% this ensures that ModuleName is bound whenever possible
@@ -83,7 +83,7 @@ FL_UNIVEQFORM(X, Y) :-
 	; flora_decode_predicate(Y,_Type,ModuleName,_WrapPref,_PredSym,_ArgL)),
 	flora_module_predicate(FL_FIRSTORDER,Fun,Args,ModuleName,Literal),
 	Literal = Y.
-FL_UNIVEQFORM(X, Y) :-
+FLLIBUNIVEQFORM(X, Y) :-
 	Y=FLLIBMODLIT(FL_FIRSTORDER,Fun,Args,ModuleName),
 	!,
 	%% this ensures that ModuleName is bound whenever possible

@@ -43,14 +43,10 @@ flora_op(1600,fx,FL_INDEX).
 %%flora_op(1600,fx,FL_IMPORT).
 flora_op(1600,fx,FL_ARGUMENTS).
 %%flora_op(1600,fx,FL_PROLOG).
-%%flora_op(1600,fx,FL_FONOSTORAGE).
 flora_op(1600,fx,FL_FIRSTORDER).
-flora_op(1600,fx,FL_FIRSTORDERALL).
 flora_op(1600,fx,FL_HILOGTABLE).
 flora_op(1600,fx,FL_EQUALITY).
 flora_op(1600,fx,FL_EXPUNGE).
-flora_op(1600,fx,FL_STATICFIRSTORDER).
-flora_op(1600,fx,FL_STATICFIRSTORDERALL).
 flora_op(1600,fx,FL_FLOGICSTATIC).
 flora_op(1600,fx,FL_FLORAPATCH).
 
