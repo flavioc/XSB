@@ -539,6 +539,13 @@ flora_command_directive(CanoniTerm,[Code],[]) :-
   Listed as follows are those parser directives that look like commands.
 ****************************************************************************/
 flora_is_command_directive(auto_table) :- !.
+flora_is_command_directive(spec_repr) :- !.
+flora_is_command_directive(spec_off) :- !.
+flora_is_command_directive(spec_dump) :- !.
+flora_is_command_directive(ti_dump) :- !.
+flora_is_command_directive(ti_long_names) :- !.
+flora_is_command_directive(ti_all) :- !.
+flora_is_command_directive(ti_off_all) :- !.
 
 
 /****************************************************************************
