@@ -279,9 +279,9 @@ static void batched_compute_wfs(CPtr leader_compl_frame,
 		mark_delayed(ComplStkFrame, susp_csf, nsf);
 		non_lrd_stratified = TRUE;
 		xsb_dbgmsg((LOG_DELAY, "\t   Subgoal "));
-		dbg_print_subgoal(LOG_DELAY, (VariantSF)susp_subgoal);
+		dbg_print_subgoal(LOG_DELAY,stddbg,(VariantSF)susp_subgoal);
 		xsb_dbgmsg((LOG_DELAY, " depends negatively on subgoal "));
-		dbg_print_subgoal(LOG_DELAY, curr_subg);
+		dbg_print_subgoal(LOG_DELAY, stddbg, curr_subg);
 		xsb_dbgmsg((LOG_DELAY, "\n"));
 	      } /*  no completed susp_subg */
 	    }
