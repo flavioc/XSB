@@ -16,13 +16,13 @@ fix it or to assist you to bypass it.
 \item	The maximum arity for predicate and function symbols is 255.
 %
 \item	The maximum length of atoms that can be stored in an XSB
-	object code file is  255.  So, users should avoid compiling
-	files 
-      containing atoms whose length is more than 255.  Instead, the
-      files containing these atoms could be loaded into the system
-      using the standard predicate {\tt load\_dyn/1} that asserts the
-      contents of a file in XSB's database (see the section {\em
-	Library Utilities} in Volume 2.  
+  \emph{object} code file is 255.  So, users should avoid compiling files
+  containing atoms whose length is more than 255. This \emph{does not} mean
+  that XSB cannot handle longer atoms. Longer atoms can be read in or
+  loaded dynamicaly (instead of being compiled).  For instance, files
+  containing long atoms can be loaded into XSB using the standard
+  predicate {\tt load\_dyn/1} that asserts the contents of a file in XSB's
+  database (see the section {\em Library Utilities} in Volume 2).
 %
 \item	In the current version, you should never try to rename a byte code 
       file generated for a module, though you can move it around in your 
