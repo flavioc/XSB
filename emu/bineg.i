@@ -1,5 +1,5 @@
 /* File:      bineg.i
-** Author(s): Kostis Sagonas
+** Author(s): Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -116,29 +116,88 @@
 /*----------------------------------------------------------------------*/
 
     case GET_DELAY_LISTS:
-	as_leaf = (NODEptr) ptoc_int(1);
-	delay_lists = ptoc_tag(2);
 
-	if (is_conditional_answer(as_leaf)) {
-/*	  fprintf(stderr, " Conditional answer with DL = ");	*/
-	  bind_list((CPtr)delay_lists, hreg);
-	  for (dls = asi_idl_list((ASI) Delay(as_leaf)); dls != NULL; ) {
-	    dls_head = hreg;
-	    dls_tail = hreg+1;
-	    new_heap_free(hreg);
-	    new_heap_free(hreg);
-	    idl = idlt_idl(idl_list_idl(dls));
-/*	    fprint_delay_list(stderr, idl); fprintf(stderr, "\n"); */
-	    build_delay_list(dls_head, idl);
-	    if ((dls = idl_list_next(dls)) != NULL) {
-	      bind_list(dls_tail, hreg);
-	    }
+      /*
+       * When GET_DELAY_LISTS is called, we can assume that the
+       * corresponding tabled subgoal call has been completed and so trie
+       * code will be used to return the answer (see
+       * trie_get_returns_for_call()).  After the execution of trie code,
+       * var_regs[] contains the substitution factor of the _answer_ to
+       * the call.
+       *
+       * This builtin has been modified since XSB 1.8.1 to handle
+       * variables in delay list.
+       */
+
+#ifdef DEBUG_DELAYVAR
+      fprintf(stderr, ">>>> (at the beginning of GET_DELAY_LISTS\n");
+      fprintf(stderr, ">>>> num_vars_in_var_regs = %d)\n",num_vars_in_var_regs);
+	
+      {
+	int i;
+	for(i = 0; i <= num_vars_in_var_regs; i++){
+	  Cell x;
+	  fprintf(stderr, ">>>> var_regs[%d] =",i);
+	  x = (Cell)var_regs[i];
+	  deref(x);
+	  printterm(x,1,25);
+	  fprintf(stderr, "\n");
+	}
+      }
+#endif /* DEBUG_DELAYVAR */
+
+      as_leaf = (NODEptr) ptoc_int(1);
+      delay_lists = ptoc_tag(2);
+      if (is_conditional_answer(as_leaf)) {
+	bind_list((CPtr)delay_lists, hreg);
+	{ /*
+	   * Make copy of var_regs & num_vars_in_var_regs (after
+	   * get_returns, which calls trie_get_returns_for_call).
+	   * (num_vars_in_var_regs + 1) is the number of variables left 
+	   * in the answer (substitution factor of the answer)
+	   *
+	   * So, copy_of_var_addr[] is the substitution factor of the
+	   * answer for the head predicate.
+	   */
+	  int i;
+	  copy_of_var_addr = calloc(var_addr_arraysz, sizeof(CPtr));
+	  if(copy_of_var_addr == NULL){
+	    fprintf(stderr, "No enough memory to calloc copy_of_var_addr!\n");
+	    xsb_exit("Bye");
 	  }
-	  bind_nil(dls_tail);
-	} else {
-	  bind_nil((CPtr)delay_lists);
-	}   
-	break;
+	  for( i = 0; i <= num_vars_in_var_regs; i++)
+	    copy_of_var_addr[i] = var_regs[i];
+	  
+	  copy_of_num_heap_term_vars = num_vars_in_var_regs + 1;
+	}
+
+	for (dl = asi_dl_list((ASI) Delay(as_leaf)); dl != NULL; ) {
+	  dls_head = hreg;
+	  dls_tail = hreg+1;
+	  new_heap_free(hreg);
+	  new_heap_free(hreg);
+	  de = dl_de_list(dl);
+	  /*
+	   * This answer may have more than one delay list.  We have to
+	   * restore copy_of_num_heap_term_vars for each of them.  But,
+	   * among delay elements of each delay list, it is not
+	   * necessary to restore this value.
+	   *
+	   * Note that num_vars_in_var_regs is always set back to
+	   * copy_of_num_heap_term_vars at the end of build_delay_list().
+	   */
+	  copy_of_num_heap_term_vars = num_vars_in_var_regs + 1;
+	  build_delay_list(dls_head, de);
+	  if ((dl = dl_next(dl)) != NULL) {
+	    bind_list(dls_tail, hreg);
+	  }
+	}
+	bind_nil(dls_tail);
+      } else {
+	bind_nil((CPtr)delay_lists);
+      }
+      free(copy_of_var_addr);
+      break;
 
 /*----------------------------------------------------------------------*/
 
