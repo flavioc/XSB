@@ -55,7 +55,7 @@
 :- [oms_constraints].
 :- [oms_exceptions].
 :- [oms_oblivion].
-:- [oms_xj].
+:- [oms_cdf].
 
 :- dynamic class_int/3.
 :- dynamic immediate_subclass_int/4.
