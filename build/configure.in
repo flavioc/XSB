@@ -78,7 +78,7 @@ AC_ARG_WITH(odbc,
 [  --with-odbc		   compile with support of Oracle])
 
 AC_ARG_WITH(interprolog,
-[  --with-interprolog	   compile with support for InterProlog])
+[  --with-interprolog	   compile with support for InterProlog. It is possible you would need to use --site-includes option to specify locations of jni.h and jni_md.h files])
 
 AC_ARG_ENABLE(no-cygwin,
 [  --enable-no-cygwin	    compiled with option -mno-cygwin (default: disabled)])
@@ -949,6 +949,18 @@ if test "${with_interprolog+set}" = "set"; then
     with_interprolog=yes
    INTERPROLOGSRC="interprolog_callback.c"
    INTERPROLOGOBJ="interprolog_callback.o"
+   dnl needed to pass jni include file locations to windows make file
+   java_win_site_includes=
+dnl --site-includes (multiple dirs)
+if test -n "$site_includes"; then
+  echo "    Appending directories to the C include path:"
+  for arg in $site_includes; do
+    arg=`echo "/I${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
+    java_win_site_includes="${java_win_site_includes} $arg"
+    echo "		$arg"
+  done
+fi
+
 fi
 
 AC_CHECK_PROG(perl_support, perl, "yes", "no")
@@ -1405,6 +1417,7 @@ AC_SUBST(INTERPROLOGOBJ)
 AC_SUBST(mno_cyg_inclib)
 AC_SUBST(mno_cyg_lib)
 AC_SUBST(DLLTYPE)
+AC_SUBST(java_win_site_includes)
 
 topdir_base=/`basename $topdir`
 topdir_wind=`echo $topdir_base | sed 's,/,\\\\,g'`

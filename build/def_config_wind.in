@@ -77,6 +77,9 @@
 /* Define if XSB is built with support for ODBC */
 #undef XSB_ODBC
 
+/* Define if XSB is built with support for INTERPROLOG */
+#undef XSB_INTERPROLOG
+
 #if (defined(FOREIGN_AOUT) || defined(FOREIGN_ELF) || defined(FOREIGN_WIN32))
 #define FOREIGN
 #endif
