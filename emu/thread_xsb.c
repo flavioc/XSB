@@ -14,6 +14,11 @@
 #include "context.h"
 #include "cinterf.h"
 #include "error_xsb.h"
+
+#ifndef SYSTEM_FLAGS
+#include "flags_xsb.h"
+#endif
+
 #include "flag_defs_xsb.h"
 #include "deref.h"
 #include "ptoc_tag_xsb_i.h"

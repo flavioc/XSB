@@ -43,7 +43,6 @@
 #include "tries.h"
 #include "choice.h"
 #include "macro_xsb.h"
-#include "timer_xsb.h"
 #include "token_xsb.h"
 
 #define MAX_REGS 257
