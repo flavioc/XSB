@@ -120,22 +120,6 @@ current_option(mi_dump).
 current_option(mi_warn).
 current_option(mi_foreign).
 
-
-/* more options for type inference -- taken out by Kostis (10/16/92)
-
-current_option(typeinfer).
-current_option(funcinfer).
-current_option(shallow).
-
-current_option(show_et).
-current_option(print_local).
-current_option(write_prog).
-current_option(fix).
-current_option(least).
-current_option(d1).
-current_option(step).
- */
-
 /* options kept only for backwards compatibility;
    should be deleted in the next release.	*/
 

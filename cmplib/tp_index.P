@@ -135,31 +135,24 @@ index_genarglabel([ArgLabel|Rest], [ArgLabel|Pil], Pilr) :-
 
 /*======================================================================*/
 /* index_gentrys(+Arity, +LabelList, -Pil, -PilR, +Tabled, +Tabind)	*/
-/*	NOTE: Changed (23/1/94) to take option(shallow) out.		*/
 /*======================================================================*/
 
 index_gentrys(Arity, [Label|Rest], Pil, Pilr, Tabled, tabled(Ind,Chs,Rhs,_)) :-
-%	( option(shallow) -> Pil = [trys(Arity,Label)|Pilm] ;
-	  ( Tabled =\= 0  -> Pil = [tabletry(Arity,Label,Ind),
-				    tabconfig(Chs,Rhs)|Pilm]
-	  ;		     Pil = [try(Arity,Label)|Pilm]
-	  ),
-%	)
+	( Tabled =\= 0  -> Pil = [tabletry(Arity,Label,Ind),
+				  tabconfig(Chs,Rhs)|Pilm]
+	;                  Pil = [try(Arity,Label)|Pilm]
+	),
 	index_genretrys(Arity, Rest, Pilm, Pilr, Tabled).
 
 index_genretrys(Arity, [L1], Pil, Pilr, Tabled) :-
-%	( option(shallow) -> Pil = [trusts(Arity,L1)|Pilr] ;
-	  ( Tabled =\= 0  -> Pil = [tabletrust(Arity,L1)|Pilr]
-	  ; 		     Pil = [trust(Arity,L1)|Pilr]
-	  ).
-%	).
+	( Tabled =\= 0  -> Pil = [tabletrust(Arity,L1)|Pilr]
+	;                  Pil = [trust(Arity,L1)|Pilr]
+	).
 index_genretrys(Arity, [L1|Rest], Pil, Pilr, Tabled) :-
 	Rest = [_|_],
-%	( option(shallow) -> Pil = [retrys(Arity,L1)|Pilm] ;
-	  ( Tabled =\= 0  -> Pil = [tableretry(Arity,L1)|Pilm]
-	  ;		     Pil = [retry(Arity,L1)|Pilm]
-	  ),
-%	),
+	( Tabled =\= 0  -> Pil = [tableretry(Arity,L1)|Pilm]
+	;                  Pil = [retry(Arity,L1)|Pilm]
+	),
 	index_genretrys(Arity, Rest, Pilm, Pilr, Tabled).
 
 /*======================================================================*/
