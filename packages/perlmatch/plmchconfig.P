@@ -23,8 +23,8 @@
 */
 
 
-:- import file_time/2, fmt_write_string/3, slash/1, str_cat/3,
-	machine_file_exists/1 from machine.
+:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
+:- import fmt_write_string/3, file_time/2 from file_io.
 :- import real_search_module/4 from consult.
 :- import xsb_configuration/2 from configuration.
 
