@@ -526,14 +526,14 @@ flora_clear_xpp_options :- retractall(xpp_options(_)).
 
 
 /*************************************************************************
-  flora_loaddyn_FDB_filename(+FileName)
+  flora_loaddyn_FDB_filename(+DBFileName)
 *************************************************************************/
-flora_loaddyn_FDB_filename(FileName) :-
-	parse_filename(FileName,_,Base,_),
-	fmt_write_string(FDBFileName,"%s.%s",args(Base,FLORA_FDB_EXT)),
+flora_loaddyn_FDB_filename(DBFileName) :-
+	%parse_filename(FileName,_,Base,_),
+	%fmt_write_string(FDBFileName,"%s.%s",args(Base,FLORA_FDB_EXT)),
 	current_output_port(OutPort),
 	fmt_write(OutPort,":- import load_dyn/1 from consult.\n",_),
-	fmt_write(OutPort,"?- load_dyn('%s').\n\n",args(FDBFileName)).
+	fmt_write(OutPort,"?- load_dyn('%s').\n\n",args(DBFileName)).
 
 
 /*************************************************************************
@@ -634,7 +634,7 @@ flora_compile_file(InputFile,PFile,DBFile,FileStatus) :-
 flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
 	flora_divide_program(CompiledRuleList,RuleList,FlogicFactList),
 	sort(FileOptionList,FileOptions),
-	flora_generate_Pfile(PFile,FileOptions,RuleList,FlogicFactList,PFileStatus),
+	flora_generate_Pfile(PFile,FileOptions,RuleList,FlogicFactList,DBFile,PFileStatus),
 	( PFileStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
@@ -648,7 +648,8 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
 
 
 /*************************************************************************
-  flora_generate_Pfile(+PFileName,+FileOptionList,+RuleList,+FlogicFactList,-FileStatus)
+  flora_generate_Pfile(+PFileName,+FileOptionList,+RuleList,+FlogicFactList,
+                       +DBFile,-FileStatus)
 
   Things to do:
   (1) include .flh file directive.
@@ -658,7 +659,7 @@ flora_generate_file(CompiledRuleList,FileOptionList,PFile,DBFile,FileStatus) :-
   (5) program.
   (6) trailer.
 *************************************************************************/
-flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus) :-
+flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,DBFile,FileStatus) :-
 	telling(PreOutFile),
 	tell(PFileName),
 	findall(LibOption,member(FLSYSLIB(LibOption),FileOptionList),LibOptionList),
@@ -669,7 +670,7 @@ flora_generate_Pfile(PFileName,FileOptionList,RuleList,FlogicFactList,FileStatus
 	( HeaderStatus == FLORA_FAILURE ->
 	    FileStatus=FLORA_FAILURE
 	;
-	  (FlogicFactList == [] -> true; flora_loaddyn_FDB_filename(PFileName)),
+	  (FlogicFactList == [] -> true; flora_loaddyn_FDB_filename(DBFile)),
 	  flora_extern_code(RuleList,CoderStatus),
 	  ( CoderStatus == [] ->
 	      ( member(FLEQLFLOGIC,FileOptionList) ->
