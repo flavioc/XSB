@@ -287,20 +287,7 @@ trie_asserted_fact(Term,Psc,Eptr,RootNode) :-
 /* aggregate stuff                                                      */
 /*----------------------------------------------------------------------*/
 
-breg_retskel(BregOffset,Arity,RetTerm,CallStr) :-
-	get_emu_dependent_const(cp_base, CPBase),
-	Breg is CPBase - BregOffset,
-	nvars(Breg,Arity,Nvars),
-	functor(RetTerm,ret,Nvars),
-	breg_retskel_fillskel(RetTerm,Breg,Arity,Nvars,CallStr).
-
-nvars(Breg,Arity,Nvars) :- 	
-	get_emu_dependent_const(tcp_size,TcpSize),
-	get_emu_dependent_const(word_size,WordSize),
-	Tmp2 is TcpSize +Arity,
-	Tmp1 is WordSize*Tmp2,
-	Ptr is Breg + Tmp1,
-	buff_word(Ptr,0,Nvars).
+breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
 
 /*======================================================================*/
 /* builtins to get (and change) trie nodes - they belong somewhere else */
@@ -316,7 +303,6 @@ gr_c(_CallStr,_RetSkel) :- '_$builtin'(150).
 get_calls(_CallSkel)  :- '_$builtin'(151).
 get_lastnode_and_retskel(_LastNode,_Mode,_RetSkel) :- '_$builtin'(152).
 construct_ret_for_call(_RetSkel) :- '_$builtin'(153).
-breg_retskel_fillskel(_RetTerm,_Breg,_Arity,_Nvars,_CallStr) :- '_$builtin'(154).
 
 /*======================================================================*/
 /*  Emulator-dependent constants (make sure they are kept up-to-date).	*/
