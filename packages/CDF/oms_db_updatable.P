@@ -417,6 +417,8 @@ retractall_oms_int_udb(oms_mo(Oid,Cid)) :-
 /* Attributes from an Updatable External Object Data Source 	*/
 /*								*/
 /****************************************************************/
+%% RSou = Source in relational component model
+%% may be anything otherwise
 immediate_attribute_int_udb(SNOid,Source,RNCid,RSou,TNCid,TSou) :-
 	ext_object_table(Source,OTableName,ONOidAttr,_NameAttr,_MC,_CSou),
 	(ext_functional_attribute_table(Source,RNCid,RSou,TarAttr,Tran),
@@ -444,7 +446,7 @@ immediate_attribute_int_udb(SNOid,Source,RNCid,RSou,TNCid,TSou) :-
 		),
 		object(SOid,_,SNOid,Source),
 		schrel(SCid,RCid,Type),
-		memberof(SOid,SCid),
+		memberof(SOid,SCid), 
 		class(Type,_,NType,TSou),
 		coerce_db_type(NType,Tran,TNCid,Results,[])
 	 ;	writeln('ERROR: Attribute_int must have NatOId bound'),
@@ -687,6 +689,7 @@ odbc_sql_local(Connection,Input,Statement,Output):-
 	sort(Outputs1,Outputs),
 	member(Output,Outputs).
 
+/*
 assert_ifnew(Head,Body) :-
 	(clause(Head,Body)
 	 ->	true
@@ -708,4 +711,4 @@ assert_ifnew(Head,Body) :-
 :- assert_ifnew(assert_oms_int(Term),assert_oms_int_udb(Term)).
 
 :- assert_ifnew(retractall_oms_int(Term),retractall_oms_int_udb(Term)).
-
+*/
