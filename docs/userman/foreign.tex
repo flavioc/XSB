@@ -984,32 +984,62 @@ In all modes and types, checks are performed to ensure the types of
 the arguments. Also, all arguments of type '-' are checked to be free
 variables at call time.
 
-\subsection{Compiling the foreign module on Windows}
+\section{Compiling Foreign Modules on Windows}
 
-Due to the complexity of
-creating makefiles for the different compilers under Windows,
-XSB doesn't attempt to compile and build 
-DLL's for the Windows foreign modules.
+Due to the complexity of creating makefiles for the different compilers
+under Windows, XSB doesn't attempt to compile and build DLL's for the
+Windows foreign modules automatically. However, for almost all typical
+cases the user should be able to easily adapt the sample makefile for
+Microsoft VC++:
+%%
+\begin{quote}
+ {\tt XSB/examples/XSB\_calling\_c/MakefileForCreatingDLLs}
+\end{quote}
+%%
+It is important that the C program will have the following lines near the
+top of the file:
+%%
+\begin{verbatim}
+   #include "xsb_config.h"  
+   #ifdef WIN_NT
+   #define XSB_DLL
+   #endif
+   #include "cinterf.h"
+\end{verbatim}
+%%
 
-Instead, the user has to create the DLL herself.  The process is, roughly,
-as follows: first, compile the module from within XSB.
-This will create the \ourprolog-specific object file, and the
-\emph{wrappers}. The \emph{wrappers} are created in a file named
+
+If the above makefile cannot be adapted, then the user has to create the DLL
+herself.  The process is, roughly, as follows: first, compile the module
+from within XSB.  This will create the \ourprolog-specific object file, and
+(if using the higher-level C interface) the \emph{wrappers}. The
+\emph{wrappers} are created in a file named
 \texttt{xsb\_wrap\_}\emph{modulename}\texttt{.c}.
 
-Then, the user has to create a project, using the compiler of choice, for a
-dynamically-linked library. In this project, the user must include the
-source code of the module along with the \emph{wrapper} created by XSB. In
-addition, this DLL should be linked against the library
+Then, create a project, using the compiler of choice, for a
+dynamically-linked library that exports symbols. In this project, the user
+must include the source code of the module along with the \emph{wrapper}
+created by XSB. This DLL should be linked against the library
 %%
 \begin{quote}
    \verb|XSB\config\x86-pc-windows\bin\xsb.lib|
 \end{quote}
 %%
-which is distributed with
-XSB.
-
+which is distributed with XSB. In VC++, this library should be added 
+as part of the linkage specification. In addition, the following
+directories for included header files must be specified as part of the
+preprocessor setup:
 %%
+\begin{verbatim}
+    XSB\config\x86-pc-windows
+    XSB\prolog_includes
+    XSB\emu
+\end{verbatim}
+%%
+In VC++, make sure you check off the ``No precompiled headers'' box as part
+of the ``Precompiled headers'' specification. All these options are
+available through the {\tt Project>>Settings} menu item.
+
 
 
 %%% Local Variables: 
