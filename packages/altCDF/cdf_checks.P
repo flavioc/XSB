@@ -142,12 +142,13 @@ to and loading them from a component.
 	  newExtTerm/1,
 	  immed_hasAttr/3, isa/2,
 	  cdf_id_fields/4 from cdf_init_cdf.
+:- import get_component_extensional/2 from cdf_components.
 
 :- import cdf_flags/2 from usermod.
 
 :- import ground/1, member/2, memberchk/2  from basics.
+:- import conset/2, conget/2 from gensym.
 
-:- import get_component_extensional/2 from cdf_components.
 :- import call0/1 from machine.
 
 /*
@@ -158,6 +159,20 @@ to and loading them from a component.
 */
 
 apply_checks(Context,Term):- 
+        conset('_$cdf_check_flag', 1),
+	cdf_flags(Context,check(Context,Term,Chklist)),
+	member(Check,Chklist),
+	call_check(Check),
+	fail.
+apply_checks(_,_):- 
+        conget('_$cdf_check_flag', Bool),
+	(Bool == 1 -> true ; fail).
+
+call_check(Check):- 
+        (call0(Check) -> true ; conset('_$cdf_check_flag', 0)).
+
+/*
+apply_checks(Context,Term):- 
 	cdf_flags(Context,check(Context,Term,Chklist)),
 	member(Check,Chklist),
 %	arg(1,Check,Context),
@@ -165,6 +180,7 @@ apply_checks(Context,Term):-
 	call0(Check),
 	fail.
 apply_checks(_,_).
+*/
 
 % check_dummy(_,_).
 

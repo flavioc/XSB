@@ -676,9 +676,15 @@ before it can be added.
 newExtTerm(Term):- newExtTerm(newExtTermSingle,Term).
 
 newExtTerm(Context,Term):- 
+	(apply_checks(Context,Term) -> 
+	    cdf_update_list([asserta(Term)])
+	  ; true).
+
+/*
+newExtTerm(Context,Term):- 
 	apply_checks(Context,Term),
 	cdf_update_list([asserta(Term)]).
-
+*/
 newExtTerm(Context,Term,Upd0,Upd):- 
 	(apply_checks(Context,Term) -> 
 	    Upd0 = [asserta(Term)|Upd]
