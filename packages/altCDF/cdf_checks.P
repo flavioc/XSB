@@ -175,22 +175,23 @@ to and loading them from a component.
 
 :- import member/2, memberchk/2,length/2,ground/1  from basics.
 :- import instantiation_error/3, domain_error/4 from error_handler.
-:- import conset/2, conget/2 from gensym.
 
 :- import call0/1 from machine.
 
 apply_checks(Context,Term):- 
-        conset('_$cdf_check_flag', 1),
-	cdf_flags(Context,check(Context,Term,Chklist)),
-	member(Check,Chklist),
-	call_check(Check),
-	fail.
-apply_checks(_,_):- 
-        conget('_$cdf_check_flag', Bool),
-	(Bool == 1 -> true ; fail).
+	CDFFlag = flag(1),
+	(cdf_flags(Context,CheckTerm),
+	 CheckTerm = check(Context,Term,Chklist),
+	 member(Check,Chklist),
+	 call_check(Check,CDFFlag),
+	 fail
+	 ;
+	 CDFFlag == flag(1)
+	).
 
-call_check(Check):- 
-        (call0(Check) -> true ; conset('_$cdf_check_flag', 0)).
+:- import term_set_arg/4 from machine.
+call_check(Check,CDFFlag):- 
+        (call0(Check) -> true ; term_set_arg(CDFFlag,1,0,1)).
 
 %-----------------
 check_ground_checkflag(Context,Term):- 
