@@ -679,7 +679,7 @@ is_alphanumericL([Ch|Rest]) :-
   gpp control utilities
 *************************************************************************/
 %% standard gpp options used by Flora.
-flora_xpp_standard_options_for_compile('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
+flora_xpp_standard_options_for_compile('-P -m -nostdinc -curdirinclast -includemarker "'FLORA_GPP_MARKUP'.@'FLORA_GPP_MARKUP'(?,''?'',''?'')."').
 flora_xpp_standard_options_for_read('-P -m -nostdinc -curdirinclast').
 
 
