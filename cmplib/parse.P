@@ -126,15 +126,29 @@ open_or_xpp_file(File, XPP_process) :-
 	    stat_set_flag(CURRENT_INPUT, IOportFromProc)
 	).
 
+%% FileName can either be a string (a file name), an integer (an I/O port),
+%% or a variable.
+%% In the first case, gpp processes the file. In the second, it takes input 
+%% from the port. In the third, it binds variable to the input port of gpp.
+%% This can then be used, for example, to bind this port to XSB standard 
+%% output (stat_set_flag(CURRENT_OUTPUT,port)
 xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	(xpp_program(XPP_command), !
 	;   make_gpp_command(XPP_command,FileName)
 	),
-	fmt_write_string(FullXPP_command, '%s %s', args(XPP_command,FileName)),
+	((integer(FileName) ; var(FileName))
+	-> fmt_write_string(FullXPP_command,'%s',arg(XPP_command)),
+	    InputStream = FileName
+	; fmt_write_string(FullXPP_command,'%s %s',args(XPP_command,FileName)),
+	    InputStream = block
+	),
 #ifdef DEBUG_GPP
 	fmt_write_string(XPP_command_msg, '[%s]', FullXPP_command),
 #else
-	fmt_write_string(XPP_command_msg, '[Preprocessing %s]', FileName),
+        ((integer(FileName) ; var(FileName))
+	-> XPP_command_msg = '[Preprocessing input stream]'
+	; fmt_write_string(XPP_command_msg, '[Preprocessing %s]', FileName)
+	),
 #endif
         %% If --quietload, don't print Preprocessing messages
 	stat_flag(BANNER_CTL,BannerCtl),
@@ -143,7 +157,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	;   message(XPP_command_msg)
 	),
 	%% Redirect cpp's stderr to XSB's STDWARN
-	spawn_process(FullXPP_command, block, IOportFromProc, STDWARN, XPP_process),
+	spawn_process(FullXPP_command, InputStream, IOportFromProc, STDWARN, XPP_process),
 	!,
 #ifdef DEBUG_GPP
 	message('[Preprocessing done]'),
