@@ -28,8 +28,15 @@ void cleanup_machine(CTXTdecl);
 void init_machine(CTXTdecl);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 
+
+#ifdef WIN_NT
+typedef pthread_t* pthread_t_p;
+#else
+typedef pthread_t pthread_t_p;
+#endif
+
 typedef struct
-{	pthread_t	ptid;
+{	pthread_t_p	ptid;
 	int		valid;
 	int		detached ;
 } xsb_thread_t ;
@@ -41,17 +48,31 @@ pthread_mutex_t sys_mut[MAX_SYS_MUTEXES] ;
 
 pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static int th_find( pthread_t t )
+// pthread_t is a pointer in Unix, structure in Windows libraries
+#ifdef WIN_NT
+#define P_PTHREAD_T_P &tid
+#define P_PTHREAD_T *tid
+#else
+#define P_PTHREAD_T_P tid
+#define P_PTHREAD_T tid
+#endif
+
+static int th_find( pthread_t_p tid )
 {
 	xsb_thread_t *pos;
 
 	for( pos = th_vec ; pos < th_next ; pos++ )
-		if( pos->valid && pthread_equal( t, pos->ptid ) )
+#ifdef WIN_NT
+	  if( pos->valid && pthread_equal( P_PTHREAD_T, *(pos->ptid) ) )
 			return pos - th_vec ;
+#else
+	  if( pos->valid && pthread_equal( P_PTHREAD_T, pos->ptid ) )
+			return pos - th_vec ;
+#endif
 	return -1 ;
 }
 
-static int th_new( pthread_t t )
+static int th_new( pthread_t_p t )
 {
 	xsb_thread_t *pos ;
 	int i ;
@@ -74,12 +95,12 @@ static int th_new( pthread_t t )
 	return pos - th_vec ;
 }
 
-static pthread_t th_get( int i )
+static pthread_t_p th_get( int i )
 {
 	if( th_vec[i].valid )
 		return th_vec[i].ptid ;
 	else
-		return (pthread_t)0 ;
+		return (pthread_t_p)0 ;
 }
 
 static void th_delete( int i )
@@ -89,7 +110,8 @@ static void th_delete( int i )
 
 void init_system_threads( void )
 {
-	th_new( pthread_self() ) ;
+  pthread_t tid = pthread_self();
+  th_new(P_PTHREAD_T_P) ;
 }
 
 void init_system_mutexes( void )
@@ -118,10 +140,12 @@ void init_system_mutexes( void )
 
 static void *xsb_thread_run( void *arg )
 {
+        pthread_t tid;
 	th_context *ctxt = (th_context *)arg ;
 
 	pthread_mutex_lock( &th_mutex );
-	th_new( pthread_self() ) ;
+	tid = pthread_self();
+	th_new( P_PTHREAD_T_P ) ;
 	pthread_mutex_unlock( &th_mutex );
 	emuloop( ctxt, get_ep((Psc)flags[THREAD_RUN]) ) ;
 
@@ -136,7 +160,7 @@ static int xsb_thread_create(th_context *th)
 	int rc ;
 	Cell goal ;
 	th_context *new_th ;
-	pthread_t thr ;
+	pthread_t_p thr ;
 	Integer id ;
 
 	goal = ptoc_tag(th, 2) ;
@@ -161,12 +185,11 @@ static int xsb_thread_create(th_context *th)
 int xsb_thread_self()
 {
 #ifdef MULTI_THREAD
-	pthread_t tid;
 	int id;
+        pthread_t tid = pthread_self();
 
-	tid = pthread_self() ;
         pthread_mutex_lock( &th_mutex );
-        id = th_find( tid ) ;
+        id = th_find( P_PTHREAD_T_P ) ;
         pthread_mutex_unlock( &th_mutex );
 	return id;
 #else
@@ -179,7 +202,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	Integer request_num = ptoc_int(CTXTc 1) ;
 #ifdef MULTI_THREAD
 	Integer id, rval;
-	pthread_t tid ;
+	pthread_t_p tid ;
+	pthread_t tid2;
 	int i;
 	Integer rc ;
 	xsbBool success = TRUE ;
@@ -196,7 +220,12 @@ xsbBool xsb_thread_request( CTXTdecl )
 			free( th ) ;
 			flags[NUM_THREADS]-- ;
 			pthread_mutex_lock( &th_mutex );
-			i = th_find( pthread_self() ) ;
+			tid2 = pthread_self();
+#ifdef WIN_NT
+			i = th_find( &tid2 ) ;
+#else
+			i = th_find( tid2 ) ;
+#endif
 			if( th_vec[i].detached )
 				th_delete(i);
 			pthread_mutex_unlock( &th_mutex );
@@ -209,9 +238,9 @@ xsbBool xsb_thread_request( CTXTdecl )
 			pthread_mutex_lock( &th_mutex );
 			tid = th_get( id ) ;
 			pthread_mutex_unlock( &th_mutex );
-			if( tid == (pthread_t)0 )
+			if( tid == (pthread_t_p)0 )
 				xsb_abort( "thread join - invalid thread id" );
-			rc = pthread_join( tid, (void **)&rval ) ;
+			rc = pthread_join(P_PTHREAD_T, (void **)&rval ) ;
 			pthread_mutex_lock( &th_mutex );
 			th_delete(id);
 			pthread_mutex_unlock( &th_mutex );
@@ -222,10 +251,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 			id = ptoc_int( CTXTc 2 ) ;
 			pthread_mutex_lock( &th_mutex );
 			tid = th_get( id ) ;
-			if( tid == (pthread_t)0 )
+			if( tid == (pthread_t_p)0 )
 				xsb_abort( "thread detach - invalid thread id" );
 			pthread_mutex_unlock( &th_mutex );
-			rc = pthread_detach( tid ) ;
+			rc = pthread_detach(P_PTHREAD_T) ;
 			th_vec[id].detached = 1;
 			break ;
 
