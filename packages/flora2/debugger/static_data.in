@@ -101,3 +101,4 @@ flora_show_this_hide(FLLIBDELETEALL/1).
 flora_show_this_hide(FLLIBDELETE/2).
 flora_show_this_hide(FLLIBDELETE/1).
 
+FLORA_SYMBOL('debugger_static_data_loaded').

@@ -530,7 +530,8 @@ flora_debug_statdata_file(Filename) :-
 %% Otherwise, loading dynamic data for the specified module
 flora_read_debugger_data(WS,_Datafile) :-
 	%% Check if already loaded
-	(var(WS) -> current_predicate(FLORA_SYMBOL('debugger_loaded')/0)
+	(var(WS) 
+	-> current_predicate(FLORA_SYMBOL('debugger_static_data_loaded')/0)
 	; flora_firstorder_module_predicate_symbol(debugger_data_loaded,
 						   WS,
 						   WSSym),
@@ -540,7 +541,7 @@ flora_read_debugger_data(WS,_Datafile) :-
 flora_read_debugger_data(WS,Datafile) :- 
 	(var(WS)
 	-> flora_set_xpp_options
-	; WS = flora(SysmodId)
+	; WS = FL_FLORALIB(SysmodId)
 	-> flora_set_xpp_options(SysmodId),
 	    flora_set_xpp_extra_options(' -D FLORA_COMPILE_SYSTEM_MODULE ')
 	; flora_set_xpp_options(WS)
@@ -557,7 +558,8 @@ flora_read_debugger_data(WS,Datafile) :-
 	conset(xpp_on,0),
 	(var(WS)
 	->  flora_message_line('Static debugger data loaded')
-	;   flora_message_line('Debugger data loaded for module %s', WS)
+	;   flora_message_line('Dynamic debugger data loaded for module %s',
+			       WS)
 	),
 	!.
 
@@ -585,23 +587,42 @@ flora_build_bridge_to_xsb_debugger :-
 	       \+flora_switch(low_level_trace),flora_trace_this_noprint(X/Y))),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),flora_trace_this_print(X/Y))),
+	%% Rule to handle system modules.
+	%% This prevents tracing inside flora system modules.
+	%% We might add a switch that would enable this optionally.
+	%% Not clear if this useful.
+	assert((show_this_hide(X,Y) :-
+	       \+flora_switch(low_level_trace),
+		flora_decode_predicate(X,_,WS,_,_,_),
+		WS = FL_FLORALIB(_)
+	       )),
 	%% Rules for prefixes of predicates that need 
 	%% to be handled by the debugger
 	assert((hide_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_hide_this_hide(pref(X1/Y)),str_sub(X1,X,0))),
+		flora_hide_this_hide(pref(X1/Y)),
+		str_sub(X1,X,0)
+	       )),
 	assert((hide_this_show(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_hide_this_show(pref(X1/Y)),str_sub(X1,X,0))),
+		flora_hide_this_show(pref(X1/Y)),
+		str_sub(X1,X,0)
+	       )),
 	assert((show_this_hide(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_show_this_hide(pref(X1/Y)),str_sub(X1,X,0))),
+		flora_show_this_hide(pref(X1/Y)),
+		str_sub(X1,X,0)
+	       )),
 	assert((trace_this_noprint(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_trace_this_noprint(pref(X1/Y)),str_sub(X1,X,0))),
+		flora_trace_this_noprint(pref(X1/Y)),
+		str_sub(X1,X,0)
+	       )),
 	assert((trace_this_print(X,Y) :-
 	       \+flora_switch(low_level_trace),
-		flora_trace_this_print(pref(X1/Y)),str_sub(X1,X,0))).
+		flora_trace_this_print(pref(X1/Y)),
+		str_sub(X1,X,0)
+	       )).
 
 ?- findall(X,flLoadedModule(X),L),
    flora_load_statdata,
