@@ -23,9 +23,9 @@
 ##
 
 
-ALL = 	flip.O slx.O perlmatch.O gap.O regmatch.O
+ALL = 	flip.O slx.O perlmatch.O gap.O regmatch.O wildmatch.O
 
-SUBDIR = flip slx perlmatch gap regmatch
+SUBDIR = flip slx perlmatch gap regmatch wildmatch
 
 Option = [optimize]
 
@@ -75,6 +75,10 @@ gap::
 regmatch::
 	@echo ""
 	cd regmatch; make
+
+wildmatch::
+	@echo ""
+	cd wildmatch; make
 
 
 # Unfortunately, this needs to be commented on the NeXT.

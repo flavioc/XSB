@@ -57,6 +57,7 @@ extern unsigned long hash(char *objname, byte arity, unsigned long tbl_size);
 
 /* cache table for compiled regular expressions */
 struct regexp_tbl_entry {
+  int     ignorecase;	     	     	/* whether case should be ignored */
   char    *original;	    	    	/* the original regexp */
   regex_t compiled;	    	    	/* the compiled regexp */
 };
@@ -75,8 +76,8 @@ static char temp_buf[MAXBUFSIZE];
 bool do_regmatch__(void)
 {
   prolog_term listOfMatches, listHead, listTail;
-  /* First, Prolog args are assigned t these, since we first examine the types
-     of these, since we allow Prolog strings and atoms. */
+  /* Prolog args are first assigned to these, so we could examine the types
+     of these objects to determine if we got strings or atoms. */
   prolog_term regexp_term, input_string_term,
     match_term, prematch_term, postmatch_term;
   int i;
@@ -96,8 +97,10 @@ bool do_regmatch__(void)
   if (first_call) {
     /* initialize the regexp table */
     first_call = FALSE;
-    for (i=0; i<NMATCH; i++)
+    for (i=0; i<NMATCH; i++) {
       regexp_tbl[i].original = NULL;
+      regexp_tbl[i].ignorecase = FALSE;
+    }
   }
 
   regexp_term = reg_term(1); /* Arg1: regexp */
@@ -166,7 +169,7 @@ bool do_regmatch__(void)
   /* return result */
   for (i=1; i <= paren_number; i++) {
     c2p_list(listTail); /* make it into a list */
-    listHead = p2p_car(listTail);
+    listHead = p2p_car(listTail); /* get head of the list */
 
     GET_MATCH(i, temp_buf);
 
@@ -180,7 +183,6 @@ bool do_regmatch__(void)
   }
 
   c2p_nil(listTail); /* bind tail to nil */
-
   return TRUE;
 }
 
@@ -207,7 +209,7 @@ static bool xsb_re_match(char *regexp_ptr, char *match_str, int ignorecase,
   static regmatch_t matches[NMATCH];   /* the array where matches are stored */
   static char prematch_str[MAXBUFSIZE];
   regex_t *compiled_re;
-  int flags = (ignorecase ? REG_EXTENDED|REG_ICASE : REG_EXTENDED);
+  int flags = (ignorecase ? (REG_EXTENDED | REG_ICASE) : REG_EXTENDED);
   int idx, err_code;
   char err_msg[ERR_MSG_LEN];
 
@@ -221,9 +223,12 @@ static bool xsb_re_match(char *regexp_ptr, char *match_str, int ignorecase,
      well. */
   compiled_re = &regexp_tbl[idx].compiled;
   if ((regexp_tbl[idx].original == NULL)
-      || (0 != strcmp(regexp_ptr, regexp_tbl[idx].original))) {
+      || (0 != strcmp(regexp_ptr, regexp_tbl[idx].original))
+      || (regexp_tbl[idx].ignorecase != ignorecase)
+      ) {
     /* need to recompile regexp */
     regexp_tbl[idx].original = regexp_ptr;
+    regexp_tbl[idx].ignorecase = ignorecase;
     if (0 == (err_code = regcomp(&regexp_tbl[idx].compiled, regexp_ptr, flags)))
       regexp_tbl[idx].original = regexp_ptr;
     else {

@@ -41,6 +41,6 @@
      abort('Your system does not seem to have the POSIX pattern matching library installed.')
      ).
 
-regmatch(Regexp,Str,IsCaseSensitive,Match,Prematch,Postmatch,ParenMatches) :-
-	do_regmatch__(Regexp, Str, IsCaseSensitive,
+regmatch(Regexp,Str,IgnoreCase,Match,Prematch,Postmatch,ParenMatches) :-
+	do_regmatch__(Regexp, Str, IgnoreCase,
 	    	      Match, Prematch, Postmatch, ParenMatches).
