@@ -6,17 +6,29 @@
 ** This is invoked from the middle_layer module in emu.
 */
 
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+
+#ifdef WIN_NT
+#define XSB_DLL
+#endif
 
 #include "mysql_driver_defs.h"
+
+static void driverMySQL_error(MYSQL* mysql);
+static int driverMySQL_getXSBType(MYSQL_FIELD* field);
+static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* query);
 
 struct driverMySQL_connectionInfo* mysqlHandles[MAX_HANDLES];
 struct driverMySQL_queryInfo* mysqlQueries[MAX_QUERIES];
 int numHandles, numQueries;
 char* errorMesg;
+
 //struct driverMySQL_preparedresultset* prepQueries[MAX_PREP_QUERIES];
 
 
-int driverMySQL_initialise()
+DllExport int call_conv driverMySQL_initialise()
 {
 	numHandles = 0;
 	numQueries = 0;
@@ -26,7 +38,7 @@ int driverMySQL_initialise()
 }
 
 
-int driverMySQL_connect(struct xsb_connectionHandle* handle)
+DllExport int call_conv driverMySQL_connect(struct xsb_connectionHandle* handle)
 {
 	struct driverMySQL_connectionInfo* mysqlHandle;
 	MYSQL* mysql;
@@ -56,7 +68,7 @@ int driverMySQL_connect(struct xsb_connectionHandle* handle)
 }
 
 
-int driverMySQL_disconnect(struct xsb_connectionHandle* handle)
+DllExport int call_conv driverMySQL_disconnect(struct xsb_connectionHandle* handle)
 {
 	int i, j;
 
@@ -77,7 +89,7 @@ int driverMySQL_disconnect(struct xsb_connectionHandle* handle)
 }
 
 
-struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle)
+DllExport struct xsb_data** call_conv driverMySQL_query(struct xsb_queryHandle* handle)
 {
 	struct driverMySQL_connectionInfo* connection;
 	struct driverMySQL_queryInfo* query;
@@ -136,7 +148,7 @@ struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle)
 }
 
 
-struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* query)
+static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* query)
 {
 	struct xsb_data** result;
 	MYSQL_ROW row;
@@ -325,7 +337,7 @@ struct xsb_data** driverMySQL_prepNextRow(struct driverMySQL_preparedresultset* 
 ***** END OF PREPARED STATEMENT FUNCTIONALITY ***** */
 
 
-char* driverMySQL_errorMesg()
+DllExport char* call_conv driverMySQL_errorMesg()
 {
 	char* temp;
 	if (errorMesg != NULL)
@@ -339,13 +351,13 @@ char* driverMySQL_errorMesg()
 }
 
 
-void driverMySQL_error(MYSQL* mysql)
+static void driverMySQL_error(MYSQL* mysql)
 {
 	errorMesg = mysql_error(mysql);
 }
 
 
-int driverMySQL_getXSBType(MYSQL_FIELD* field)
+static int driverMySQL_getXSBType(MYSQL_FIELD* field)
 {
 	int type;
 
@@ -389,7 +401,7 @@ int driverMySQL_getXSBType(MYSQL_FIELD* field)
 }
 
 
-int driverMySQL_register(void)
+DllExport int call_conv driverMySQL_register(void)
 {
 	union functionPtrs* funcConnect;
 	union functionPtrs* funcDisconnect;

@@ -85,16 +85,16 @@ make_mysql_driverH(CC, CC_opts) :-
 	make_mysql_driverH(CC, CC_opts),
 	compile_so(Module, [cc(CC), cc_opts(CC_opts)], LDflags),
 	str_cat(Module, '.so', SharedLib),
-	str_cat(Module, '.O', Objfile),
 	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibDir,Slash,Basename)),
 	rename(SharedLib, LibMod),
 	consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	fmt_write_string(LibSharedObjFile,
 			 '%s%s%s.so', a(ConfigLibDir, Slash, Basename)),
 	rename(SharedLib, LibSharedObjFile),
-	fmt_write_string(LibObjFile,
-			 '%s%s%s.O', a(ConfigLibDir, Slash, Basename)),
-	rename(Objfile, LibObjFile)
+	str_cat(Module, '.xwam', ObjfileX),
+	fmt_write_string(LibObjFileX,
+			 '%s%s%s.xwam', a(ConfigLibDir, Slash, Basename)),
+	rename(ObjfileX, LibObjFileX)
      ).
 	
 

@@ -45,20 +45,18 @@ struct driverMySQL_queryInfo
 
 /****** function declarations *******/
 
-int driverMySQL_initialise();
-int driverMySQL_connect(struct xsb_connectionHandle* handle);
-int driverMySQL_disconnect(struct xsb_connectionHandle* handle);
-struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle);
-struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* query);
-int driverMySQL_register();
-int driverMySQL_getXSBType(MYSQL_FIELD* field);
-void driverMySQL_error(MYSQL* mysql);
+DllExport int call_conv driverMySQL_initialise();
+DllExport int call_conv driverMySQL_connect(struct xsb_connectionHandle* handle);
+DllExport int call_conv driverMySQL_disconnect(struct xsb_connectionHandle* handle);
+DllExport struct xsb_data** call_conv driverMySQL_query(struct xsb_queryHandle* handle);
+DllExport int call_conv driverMySQL_register();
+DllExport char* call_conv driverMySQL_errorMesg();
 
 //int driverMySQL_prepareStatement(char*, struct xsb_queryHandle*);
 //struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data**, struct xsb_queryHandle*);
 //struct xsb_data** driverMySQL_prepNextRow(struct driverMySQL_preparedresultset*);
 
-extern int registerXSBDriver(char* dr, int num);
-extern int registerXSBFunction(char* dr, int type, union functionPtrs* func);
+extern DllExport int call_conv registerXSBDriver(char* dr, int num);
+extern DllExport int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
 
