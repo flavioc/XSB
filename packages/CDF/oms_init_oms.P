@@ -124,12 +124,11 @@ cdf_dynamic(retractall_oms_int/1).
 
 initialize_oms:- 
 	init_dynamic_code,
-%	retractall(oms_logging_state(_)),
+	init_index_std,
+	retractall(oms_logging_state(_)),
 	asserta(oms_logging_state(off)),
 	oms_set_log_off,
-	init_oms_rels,
-	init_index_std.
-%	call_assert(oms_checking(partial)).
+	init_oms_rels.
 	
 init_dynamic_code:- 
 	cdf_dynamic(F/A),
@@ -2439,6 +2438,8 @@ assert_oms_term(Term) :-
 	 ;	make_oms_dirty(Name)
 	).
 
+get_component_extensional(oms_cn(_,_,_,Comp),Comp):- !.
+get_component_extensional(oms_obj(_,_,_,Comp),Comp):- !.
 get_component_extensional(Term,Component):- 
 	component_table_ext(Term,arg(Arg,Type),_),
 	arg(Arg,Term,CompId),
