@@ -52,6 +52,10 @@
 extern char *expand_filename(char *);
 
 
+char *p_charlist_to_c_string(prolog_term term, char *buf, int buf_size,
+			     char *in_func, char *where);
+void c_string_to_p_charlist(char *name, prolog_term list,
+			    char *in_func, char *where);
 
 /*======================================================================*/
 /* Low level C interface						*/
