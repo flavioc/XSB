@@ -149,7 +149,9 @@ static CPtr find_fixpoint(VariantSF subg, CPtr producer_cpf) {
 #endif
   complFrame = openreg;
   /* for each subgoal in the ASCC, from youngest to leader there is no
-   * need to include the leader 
+   * need to include the leader.  This is because sched_answers() is
+   * done for each subgoal whenever it executes a check_complete
+   * operation. Thus, scheduling for the leader has already been done.
    */
   while(complFrame < subg_compl_stack_ptr(subg)) {
 #ifdef PROFILE
