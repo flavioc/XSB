@@ -2680,6 +2680,7 @@ current program module.
 \section{Equality Maintenance}\label{sec-eqmaintain}
 
 
+\paragraph{Implicitly derived equality.}
 Unlike in regular Prolog, \FLORA terms can become {\tt equal}, which is a side
 effect of the \fl semantics for scalar methods.  For instance, consider the
 following \fl facts:
@@ -2710,15 +2711,18 @@ then \FLORA will create an internal oid to represent the value of
 \verb|john[mother->sally]| then this internal oid must be equated with
 {\tt sally}.
 
+\paragraph{User-defined equality.}
 In addition, \FLORA users can define equality \emph{explicitly} in the source
 program using the predicate {\tt :=:}, e.g.,
 %%
 \begin{quote}
-\verb|john:=:batman.|
+{\tt john:=:batman.} \\
+{\tt X:=:Y :- X[similar->Y].} \\
 \end{quote}
 
-Once oids are derived to be equal, this information may need to be
-propagate to all \fl 
+\paragraph{Equality maintenance levels.}
+Once an equality between terms is derived, this information may need to be
+propagated to all \fl 
 structures, including the subclass hierarchy, the ISA hierarchy, etc.
 For instance, if {\tt x} and {\tt y} are equal, then so must be {\tt f(x)}
 and {\tt f(y)}. If {\tt x:a} has been previously derived then we should now
@@ -2740,11 +2744,6 @@ by providing the following three compiler directives:
 }
 
 \noindent
-These directives affect the particular user modules in which they are
-included.  Thus, equality can be treated differently in different modules.
-This allows to compartmentalize the problem and, if used judiciously, can
-lead to significant gain in performance.
-
 The first directive, \mbox{\tt equality none}, does not maintain equality
 and {\tt :=:} is considered just like any other user-defined predicate
 without any special semantics.  The directive \mbox{\tt equality basic}
@@ -2762,6 +2761,7 @@ involve the equality predicate {\tt :=:}, then the default equality
 maintenance level is {\tt none}. If the program does define such facts,
 then the default equality maintenance level is {\tt basic}, because it is
 assumed that the use of {\tt :=:} in the program is not accidental.
+In any case, the {\tt equality} directive overrides the default.
 
 Note that even if the module might have path expression in the head, the
 default equality level is still {\tt none} (unless {\tt :=:} is used).  The
@@ -2774,6 +2774,32 @@ above.  However, if this fact is inserted, then the equality maintenance
 level appropriate for this case is {\tt flogic} ({\tt basic} will not be
 sufficient).
 
+\paragraph{Locality of equality.}
+Equality in \FLORA is always local to the module in which it is derived.
+For example, if {\tt a:=:b} is derived by the rules in module {\tt foo}
+then the query
+%%
+\begin{verbatim}
+ ?- (a:=:b)@foo.  
+\end{verbatim}
+%%
+will succeed, but the query
+%%
+\begin{verbatim}
+ ?- (a:=:b)@bar.  
+\end{verbatim}
+%%
+will fail (unless, of course, {\tt a:=:b} is also derived by the rules in
+module {\tt bar}).
+
+Since equality information is local to each module, the directives for
+setting the equality level affect only the particular user modules in which
+they are included.  Thus, equality can be treated differently in different
+modules, which allows the programmer to compartmentalize the performance
+problem associated with equality and, if used judiciously, can lead to
+significant gains in performance.
+
+\paragraph{Run-time changes to the equality maintenance level.}
 In \FLORA, the desired level of equality maintenance can also be changed at
 run time by executing a goal such as
 %%
@@ -2794,6 +2820,7 @@ This might be useful for \emph{dynamic} modules, {\it i.e.}, modules that
 are not associated with any files and whose content is generated completely
 dynamically. (See Section~\ref{sec-updates}.)
 
+\paragraph{Using the preprocessor to avoid the need for equality maintenance.}
 One final advice regarding equality. In many cases, programmers tend to use
 equality as an aliasing technique for long messages, numbers, etc. In this
 case, we recommend to use the preprocessor commands, which achieve the same

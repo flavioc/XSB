@@ -67,11 +67,6 @@
 	flora_storage_is_negation_symbol/1
    from flrstorage.
 
-%% support for undefinedness
-:- import 
-	flora_insert_skeleton/1
-   from flrundefined.
-
 /*********************************************************************
   This file is for the following non-backtrackable FLORA database
   operations: insert, insertall, delete, deleteall, erase, eraseall.
@@ -106,7 +101,6 @@ flora_storage_insertfacts([P|_T]) :-
 flora_storage_insertfacts([FLSYSDBUPDATE(P,StorageName)|T]) :-
 	!,
 	FLORA_DB_INSERT(StorageName,P,_Inserted),
-	flora_insert_skeleton(P),
 	flora_storage_insertfacts(T).
 
 flora_storage_insertfacts([FLLIBMODLIT(F,Args,ModuleName)|T]) :-

@@ -33,6 +33,8 @@
 
 :- import length/2 from basics.
 
+:- import subsumes/2 from subsumes.
+
 :- import 
 	FLORA_DB_FIND_PREDICATE/2, 
 	FLORA_DB_DELETE_PREDICATE/3,
