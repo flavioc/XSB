@@ -31,6 +31,7 @@
 #include <string.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#include <signal.h>
 
 
 #include "auxlry.h"
@@ -82,7 +83,6 @@ bool fmt_write(void)
   char *Fmt;
   prolog_term ValTerm, Arg;
   int i, Arity;
-  char *tmp_segfault_message = xsb_segfault_message;
 
   i = ptoc_int(1);
   fptr = fileptr(i);
@@ -105,6 +105,11 @@ bool fmt_write(void)
       return FALSE;
     }
   }
+
+  xsb_segfault_message =
+    "fmt_write: Argument type doesn't match format specifier";
+  signal(SIGSEGV, &xsb_segfault_catcher);
+
   fprintf(fptr,Fmt,args[2],args[4],args[6],args[8],args[10],args[12],
 	  args[14],args[16],args[18],args[20],args[22],args[24],args[26],
 	  args[28],args[30],args[32],args[34],args[36],args[38],
@@ -112,7 +117,8 @@ bool fmt_write(void)
 	  args[52],args[54],args[56], args[58]
 	  );
 
-  xsb_segfault_message = tmp_segfault_message;
+  xsb_segfault_message = xsb_default_segfault_msg;
+  signal(SIGSEGV, xsb_default_segfault_handler);
   
   return TRUE;
 }
@@ -144,7 +150,6 @@ bool fmt_write_string(void)
   int i, Arity;
   char *Fmt, *OutString = NULL;
   int required_buf_size = INIT_BUF_SIZE+1, old_bufsize = INIT_BUF_SIZE;
-  char *tmp_segfault_message = xsb_segfault_message;
   
   Fmt = ptoc_string(2);
   ValTerm = reg_term(3);
@@ -168,6 +173,7 @@ bool fmt_write_string(void)
 
   xsb_segfault_message =
     "fmt_write_string: Argument type doesn't match format specifier";
+  signal(SIGSEGV, &xsb_segfault_catcher);
 
   /* do snprintf until we get the right size of the output string (needs only
      be done twice at most */
@@ -194,7 +200,8 @@ bool fmt_write_string(void)
 	  args[2],args[4],args[6],args[8],args[10], args[12], args[14]);
 #endif
 
-  xsb_segfault_message = tmp_segfault_message;
+  xsb_segfault_message = xsb_default_segfault_msg;
+  signal(SIGSEGV, xsb_default_segfault_handler);
 
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)

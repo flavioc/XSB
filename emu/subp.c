@@ -76,6 +76,9 @@ extern void perproc_stat(), perproc_reset_stat(), reset_stat_total();
 struct sigaction act, oact;
 #endif
 
+void (*xsb_default_segfault_handler)(int); /* where the previous value of the
+					     SIGSEGV handler is saved */
+
 /*======================================================================*/
 /*  Unification routines.						*/
 /*======================================================================*/
@@ -190,7 +193,8 @@ void keyint_proc(int sig)
   *asynint_ptr |= KEYINT_MARK;
 }
 
-void xsb_segfault_handler (int err)
+/* SIGSEGV handler that catches segfaults; used unless configured with DEBUG */
+void xsb_segfault_catcher (int err)
 {
   longjmp(xsb_fall_back_environment, 1);
 }
@@ -205,9 +209,15 @@ void init_interrupt(void)
 #else
   signal(SIGINT, keyint_proc); 
 #endif
-#ifndef DEBUG
-  signal(SIGSEGV, &xsb_segfault_handler);
+
+#ifdef DEBUG
+  /* Don't handle SIGSEGV if configured with DEBUG */
+  xsb_default_segfault_handler = SIG_DFL;
+#else 
+  xsb_default_segfault_handler = xsb_segfault_catcher;
 #endif
+
+  signal(SIGSEGV, xsb_default_segfault_handler);
 }
 
 
