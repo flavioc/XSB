@@ -31,6 +31,7 @@
 :- import fmt_write_string/3, file_time/2 from file_io.
 :- import search_module/6 from consult.
 :- import xsb_configuration/2 from xsb_configuration.
+:- import runtime_loader_flag/3 from foreign.
 :- import rename/2 from shell.
 
 %% Construct the file cc/xsbpattern.H on the fly
@@ -40,9 +41,11 @@ make_xsbpatternH(CC, CC_opts) :-
     xsb_configuration(perl_libs, Libs),
     xsb_configuration(compiler, XCC),
     xsb_configuration(configuration, XSBconfiguration),
+    fmt_write_string(PerlCORE, '%s%sCORE', f(PerlArchlib,Slash)),
+    runtime_loader_flag(CC, PerlCORE, RunpathFlag),
     fmt_write_string(LD_flags,
-		     ' -L%s%sCORE -lperl %s',
-		     f(PerlArchlib, Slash, Libs)),
+		     ' %s -L%s -lperl %s',
+		     f(RunpathFlag, PerlCORE, Libs)),
     package_configuration(dir(perlmatch), PerlmatchDir),
     fmt_write_string(LD_directives_file,
 		     '%s%scc%sxsbpattern.H', f(PerlmatchDir, Slash, Slash)),
