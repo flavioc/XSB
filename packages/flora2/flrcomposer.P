@@ -110,6 +110,9 @@ is_sole_operator(SYMBOL_TOKEN(FL_COMMA),FL_COMMA) :- !.
 is_sole_operator(SYMBOL_TOKEN(FL_SEMICOLON),FL_SEMICOLON) :- !.
 is_sole_operator(SYMBOL_TOKEN(FL_IMPLYOP),FL_IMPLYOP) :- !.
 is_sole_operator(SYMBOL_TOKEN(FL_QUERYOP),FL_QUERYOP) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_INMETH),FL_INMETH) :- !.
+is_sole_operator(SYMBOL_TOKEN(FL_TRAN),FL_TRAN) :- !.
+
 
 
 /**************************************************************************/
