@@ -78,8 +78,6 @@ calculate_occurences(Term, Occurences) :-
 	arg(NewN, Term, Arg),	% We cannot use ll_arg/3 here (Term may be a list)
 	( Arg = '$VAR'(Number) ->
 		( integer(Number) ->
-		        Number > 0,
-		        Number =< Arity,
 			ll_arg(Number, Occurences, OccCount),
 			( var(OccCount) -> OccCount = found(_)
 			; OccCount = found(Times) -> 
