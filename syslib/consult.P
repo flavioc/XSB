@@ -54,6 +54,8 @@ compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :-
 	compile(Mod, Base, Opts, ExList).
 compile_f('c', Base, Opts, ExList, Mod, Dir) :- 
 	compile_cH(Mod, Base, Opts, ExList, Dir).
+compile_f('cpp', Base, Opts, ExList, Mod, Dir) :- 
+	compile_cH(Mod, Base, Opts, ExList, Dir).
 compile_f('', Base, Opts, ExList, Mod, _) :-
 	str_cat(Base, XSB_SRC_EXTENSION_ATOM, FileName),
 	sys_link(Base, FileName, _Result),
