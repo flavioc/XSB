@@ -62,13 +62,17 @@ flCompile(File,Workspace) :-
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flcompile(FlrFile,Workspace)
 
-	; parse_filename(File,_,_,Ext), Ext \= '', path_sysop(exists,File) ->
+	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_FILE_EXT]),
+	    path_sysop(exists,File)
+	->
 	    flora_stderr_nl,
-	    flora_error_line("File extension names must be %s!",args(FLORA_FILE_EXT)),
+	    flora_error_line("%s: Filename extension must be %s!",
+			     args(File,FLORA_FILE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("File %s does not exist!",args(File)),
+	  flora_error_line("File %s[.%s] does not exist!",
+			   args(File,FLORA_FILE_EXT)),
           fail
         ),
 	!.
@@ -90,13 +94,16 @@ flLoad(File,Workspace) :-
 	( flora_locate_file(File,FLORA_FILE_EXT,FlrFile) ->
 	    flora_flload(FlrFile,Workspace)
 
-	; parse_filename(File,_,_,Ext), Ext \= '', path_sysop(exists,File) ->
-	    flora_stderr_nl,
-	    flora_error_line("File extension names must be %s!",args(FLORA_FILE_EXT)),
+	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_FILE_EXT]),
+	    path_sysop(exists,File)
+	->  flora_stderr_nl,
+	    flora_error_line("%s: Filename extension must be %s!",
+			     args(File,FLORA_FILE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("File %s does not exist!",args(File)),
+	  flora_error_line("File %s[.%s] does not exist!",
+			   args(File,FLORA_FILE_EXT)),
           fail
         ),
 	!.
@@ -121,14 +128,20 @@ flLoad(File) :-
 	    flora_message_line("consulting %s",args(OFile)),
 	    consult(OFile)
 
-	; parse_filename(File,_,_,Ext), Ext \= '', path_sysop(exists,File) ->
+	; parse_filename(File,_,_,Ext),
+	    not member(Ext,['',XSB_OFILE_EXT,XSB_PFILE_EXT,FLORA_FILE_EXT]),
+	    path_sysop(exists,File)
+	->
 	    flora_stderr_nl,
-	    flora_error_line("File extension names must be %s, %s or %s!",
-	                     args(FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
+	    flora_error_line("%s: Filename extension must be %s, %s or %s!",
+	                     args(File,
+				  FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("File %s does not exist!",args(File)),
+	  flora_error_line("File %s[.%s|.%s|.%s] does not exist!",
+			   args(File,
+				FLORA_FILE_EXT,XSB_PFILE_EXT,XSB_OFILE_EXT)),
           fail
         ),
 	!.
@@ -151,13 +164,17 @@ flCompileInclude(File) :-
 	    flora_compile_incfile(FLIFile,FLHFile,Status),
 	    (Status == FLORA_FAILURE -> fail; true)
 
-	; parse_filename(File,_,_,Ext), Ext \= '', path_sysop(exists,File) ->
+	; parse_filename(File,_,_,Ext), not member(Ext,['',FLORA_INCLUDE_EXT]),
+	    path_sysop(exists,File)
+	->
 	    flora_stderr_nl,
-	    flora_error_line("Include file extension must be %s!",args(FLORA_INCLUDE_EXT)),
+	    flora_error_line("%s: Include filename extension must be %s!",
+			     args(File,FLORA_INCLUDE_EXT)),
 	    fail
 	;
 	  flora_stderr_nl,
-	  flora_error_line("File %s does not exist!",args(File)),
+	  flora_error_line("File %s[.%s] does not exist!",
+			   args(File,FLORA_INCLUDE_EXT)),
           fail
         ),
 	!.

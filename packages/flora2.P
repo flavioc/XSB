@@ -38,6 +38,12 @@
 	unload_package/1
    from packaging.
 
+:- import
+	flImportHiLog/4,
+	flImportProlog/4,
+	flImportFloraPred/4
+   from flrimport.
+
 :- import fmt_write_string/3 from file_io.
 
 :- import flora_shell_loop/0 from usermod.
@@ -59,6 +65,7 @@
 :- export
 	bootstrap_flora/0,
 	unstrap_flora/0,
+	flImport/1,
 	flora_shell/0.
 
 
@@ -112,3 +119,27 @@ flora_shell :-
 	  consult(flrshell),
 	  flora_shell_loop
 	).
+
+/************************************************************************
+  Flora import stuff
+
+  Syntax:
+      :- flImport [hilog|prolog|predicate] Pred/Arity as Pred1(_,_,...)
+                                from File[.flr]>>FloraModule
+************************************************************************/
+
+:- op(1150,fx,(prolog)).
+:- op(1150,fx,(predicate)).
+
+:- op(500,yfx,(as)).
+:- op(1170,fx,(flImport)).
+%% The other operators, 'hilog', '>>', and 'from' are already defined in XSB
+
+flImport(hilog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+	flImportHiLog(What,AsWhat,File,Module).
+flImport(prolog(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+	flImportProlog(What,AsWhat,File,Module).
+flImport(predicate(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
+	flImportFloraPred(What,AsWhat,File,Module).
+flImport(X) :-
+	abort(['Invalid flImport syntax: ', X]).
