@@ -88,7 +88,7 @@
       1 'bold)
     '("\\b\\(index\\|from\\|table\\|import\\|export\\)\\b"
       1 'flora-font-lock-system-face)
-    '("\\(\\b[A-Za-z0-9_]+\\b *\\((\\b[^)]+\\b)\\)?\\)[ \t\n]*\\(@[ \t\n]*([^)]+)[ \t\C-m]*\\)?\\*?[---=]>"
+    '("\\(\\b[A-Za-z0-9_]+\\b *\\((\\b[^)]+\\b)\\)?\\)[ \t\n]*\\(@[ \t\n]*(.*)[ \t\C-m]*\\)?\\*?[---=]>"
       1 'font-lock-function-name-face)
     )
   "Additional expressions to highlight in flora mode.")
