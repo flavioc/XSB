@@ -43,6 +43,8 @@
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "varstring_xsb.h"
+#include "string_xsb.h"
+#include "loader_defs.h"
 
 #define BUFFEXTRA 1024
 
@@ -69,6 +71,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   char	sofilename[MAXPATHLEN];
   void	*handle;
   void	*funcep;
+  char  *file_extension_ptr;
   /*
   char  ldtemp; 
   char  *ldp1,*ldp2;
@@ -78,10 +81,11 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   */
   
   /* (1) create filename.so */
-  
   strcpy(sofilename, pofilename);
-  /* replace the .O suffix with the so suffix */
-  strcpy(sofilename+strlen(pofilename)-1, "so");
+  
+  file_extension_ptr = xsb_strrstr(sofilename, XSB_OBJ_EXTENSION_STRING);
+  /* replace the OBJ file suffix with the so suffix */
+  strcpy(file_extension_ptr+1, "so");
   
   /* (1.5) include necessary paths into LD_LIBRARY_PATH
      so that the right libraries would be consulted at loading time.

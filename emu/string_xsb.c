@@ -46,6 +46,7 @@
 #include "cinterf.h"
 
 #include "sp_unify_xsb_i.h"
+#include "string_xsb.h"
 
 extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
@@ -57,7 +58,6 @@ static Cell term, term2, term3;
 static XSB_StrDefine(input_buffer);
 static XSB_StrDefine(subst_buf);
 static XSB_StrDefine(output_buffer);
-static char *xsb_strrstr(char *str, char *pat);
 
 
 #include "ptoc_tag_xsb_i.h"
@@ -373,7 +373,7 @@ xsbBool string_substitute(void)
  *
  */
 
-static char *xsb_strrstr(char *str, char *pat)
+char *xsb_strrstr(char *str, char *pat)
 {
   size_t len, patlen;
   const char *p;

@@ -41,6 +41,8 @@
 #include "flags_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
+#include "string_xsb.h"
+#include "loader_defs.h"
 
 #define BUFFEXTRA 1024
 
@@ -101,6 +103,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   struct exec header;
   char buff[3*MAXPATHLEN], subfile[MAXPATHLEN];
   struct stat statbuff;
+  char  *file_extension_ptr;
   
   sprintf(tfile, "/tmp/xsb-dyn.%d", (int)getpid());
   
@@ -108,8 +111,13 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* to obtain the size of the object code and then allocate space	*/
   /* for it.							*/
   if (strlen(pofilename) >= 127) return 0;
+
+  /* create filename.o */
   strcpy(subfile, pofilename);
-  subfile[strlen(subfile)-1] = 'o';	/* change *.O to *.o */
+  file_extension_ptr = xsb_strrstr(subfile, XSB_OBJ_EXTENSION_STRING);
+  /* replace the OBJ file suffix with the "o" suffix */
+  strcpy(file_extension_ptr+1, "o");
+
   fd = open(subfile, O_RDONLY, 0);
   if (fd < 0) {
     xsb_error("Cannot find the C object file: %s", subfile);
