@@ -20,7 +20,7 @@ capabilities. One easily accessible description of POSIX regular
 expressions is found in the on-line Emacs manual.
 
 The regular expression matching functionality is provided by the package
-called {\tt Regmatch}. To use it, type:
+called {\tt Regmatch}. To use it interactively, type:
 %%
 \begin{verbatim}
    :- [regmatch].
@@ -28,7 +28,7 @@ called {\tt Regmatch}. To use it, type:
 %%
 
 If you are planning to use pattern matching from within an XSB program,
-then you also need to add the following directive:
+then you need to include the following directive:
 %%
 \begin{verbatim}
     :- import re_match/5, re_bulkmatch/5,
@@ -51,7 +51,7 @@ The \verb|re_match/5| predicate has the following calling sequence:
 \end{verbatim}
 %%
 {\tt Regexp} is a regular expression, {\it e.g.},
-``\verb|abc([^;,]*); (dd|ee)*;|''. It can be a Prolog atom or string ({\it i.e.}, a list of
+``\verb/abc([^;,]*); (dd|ee)*;/''. It can be a Prolog atom or string ({\it i.e.}, a list of
 characters). The above expression matches any substring that has ``abc''
 followed by a sequence of characters none of which is a ``;'' or a ``,'',
 followed by a ``; '', followed by a sequence that consists of zero or more
@@ -73,10 +73,15 @@ must unify with a list of the form:
     [match(beg_off0,end_off0), match(beg_off1,end_off1), ...]  
 \end{verbatim}
 %%
+The term \verb|match(beg_off0,end_off0)| represents the substring
+that matches the \emph{entire} regular expression,
+and the terms \verb|match(beg_off1,end_off1)|, ..., represent the matches
+corresponding to the {\em parenthesized subexpressions\/} of the regular
+expression.
 The terms {\tt beg\_off} and {\tt end\_off} above are integers that specify
 beginning and ending offsets of the various matches. Thus, {\tt beg\_off0}
 is the offset into {\tt InputStr} that points to the start of the maximal
-substring that matches the regular expression; {\tt end\_off0} points to the
+substring that matches the entire regular expression; {\tt end\_off0} points to the
 end of such a substring. In our case, the maximal matching substring is 
 ``\verb|abc&*^; ddeedd;|'' and the first term in the list returned by
 %%
@@ -92,7 +97,7 @@ When the above predicate succeeds, the terms 2,3, etc., in the above list
 represent the offsets for the matches corresponding to the parenthesized
 expressions 1,2,etc.
 For instance, our earlier regular expression 
-  ``\verb|abc([^;,]*); (dd|ee)*;|'' has two parenthetical subexpressions, which
+  ``\verb/abc([^;,]*); (dd|ee)*;/'' has two parenthetical subexpressions, which
 match ``\verb|&*^|'' and ``{\tt dd}, respectively. So, the complete output
 from the above call is:
 %%
@@ -104,6 +109,22 @@ L = [match(3,18),match(6,9),match(15,17)]
 The maximal number of parenthetical expressions supported by the Regmatch
 package is 30. Partial matches to parenthetical expressions 31 and over are
 discarded.
+
+The match-terms corresponding to parenthetical expressions can sometimes
+report ``\emph{no-use}.'' This is possible when the regular expression
+specifies that zero or more occurrences of the parenthesized subexpression
+must be matched, and the match was made using zero subexpressions. In this
+case, the corresponding match term is \verb|match(-1,-1)|. For instance, 
+%%
+\begin{verbatim}
+| ?- re_match('ab(de)*', 'abcd',0,_,L).
+L = [match(0,2),match(-1,-1)]
+yes
+\end{verbatim}
+%%
+Here the match that was found is the substring ``ab'' and the parenthesized
+subexpression ``de'' was not used. This fact is reported using the special
+match term \verb|match(-1,-1)|.
 
 Here is one more example of the power of POSIX regular expression matching:
 %%
