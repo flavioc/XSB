@@ -579,7 +579,7 @@ check_component(Name,Path,V,Arglist):-
 	check_conflicting_path(Name,Path,Arglist),
 	check_conflicting_version(Name,Path,V),
 	(   already_present(Name,Path,V,Arglist)
-	->  cdf_warning(component, [Name, ' is already loaded.']),
+	->  %% cdf_warning(component, [Name, ' is already loaded.']),
 	    fail
 	;   assert(loaded_component(Name))
 	).
