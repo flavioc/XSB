@@ -544,7 +544,7 @@ unsigned int read_magic(FILE *fd)
   unsigned int num;
 
   if (get_obj_word(&num) < 4) return 0;
-  fix_bb((byte *)&num);
+  fix_bb4((byte *)&num);
   return num;
 }
 

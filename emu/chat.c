@@ -180,7 +180,7 @@ static CRPtr alloc_more_cr_space(void)
 /*    consumers now... perhaps more errors.                             */
 /*----------------------------------------------------------------------*/
 
-static void chat_update_stats(incremental, nrarguments, size_tr)
+static void chat_update_stats(int incremental, int nrarguments, long size_tr)
 {
     int i = 0;
     
@@ -1017,7 +1017,7 @@ void chat_set_chained(CPtr p)
 { int i;
   char *pc;
 
-  i = (((int)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
+  i = (((Integer)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
   if (i >= sizeof(CPtr))
     xsb_dbgmsg("Alignment error during chat_set_chained");
   p += sizeof(CPtr)-i;
@@ -1029,7 +1029,7 @@ void chat_set_unchained(CPtr p)
 { int i;
   char *pc;
 
-  i = (((int)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
+  i = (((Integer)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
   if (i >= sizeof(CPtr))
     xsb_dbgmsg("Alignment error during chat_set_unchained");
   p += sizeof(CPtr)-i;
@@ -1037,16 +1037,16 @@ void chat_set_unchained(CPtr p)
   *pc = 0;
 } /* chat_set_unchained */
 
-int chat_is_chained(CPtr p)
+Integer chat_is_chained(CPtr p)
 { int i;
   char *pc;
 
-  i = (((int)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
+  i = (((Integer)p)/sizeof(CPtr)) % (sizeof(CPtr) + 1);
   if (i >= sizeof(CPtr))
     xsb_dbgmsg("Alignment error during chat_is_chained");
   p += sizeof(CPtr)-i;
   pc = ((char *)p) + i;
-  return(((int)*pc));
+  return(((Integer)*pc));
 } /* chat_is_chained */
 
 /*-----------------------------------------------------------------------*/

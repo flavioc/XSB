@@ -120,7 +120,7 @@ extern chat_init_pheader save_a_chat_compl_susp(SGFrame,CPtr,byte *);
 
 extern void chat_set_chained(CPtr);
 extern void chat_set_unchained(CPtr);
-extern int  chat_is_chained(CPtr);
+extern Integer  chat_is_chained(CPtr);
 
 #ifdef LOCAL_EVAL
 extern CPtr chat_free_compl_susp_chat_area(chat_init_pheader);
