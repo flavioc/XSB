@@ -23,6 +23,8 @@
 ** 
 */
 
+#include "xsb_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -31,7 +33,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "xsb_config.h"
 
 #ifdef WIN_NT
 #include <windows.h>

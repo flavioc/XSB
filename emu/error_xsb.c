@@ -23,13 +23,13 @@
 */
 
 
+#include "xsb_config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-
-#include "xsb_config.h"
 
 #include "auxlry.h"
 #include "cell_xsb.h"

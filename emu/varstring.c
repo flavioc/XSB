@@ -53,13 +53,13 @@
 #undef DEBUG_VARSTRING
 
 
+#include "xsb_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <string.h>
-
-#include "xsb_config.h"
 
 #include "wind2unix.h"
 

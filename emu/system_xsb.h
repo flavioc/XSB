@@ -23,17 +23,6 @@
 */
 
 
-#ifndef fileno                          /* fileno may be a  macro */
-extern int    fileno(FILE *f);          /* this is defined in POSIX */
-#endif
-
-/* In WIN_NT, this gets redefined into _fdopen by wind2unix.h */
-extern FILE *fdopen(int fildes, const char *type);
-
-#ifndef WIN_NT
-extern int kill(pid_t pid, int sig);
-#endif
-
 #ifdef WIN_NT
 #define PIPE(filedes_array)  _pipe(filedes_array, 5*MAXBUFSIZE, _O_TEXT)
 #define WAIT(pid, status)    _cwait(&status, pid, 0)

@@ -24,11 +24,11 @@
 */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 /* special debug includes */
 #include "debugs/debug_delay.h"

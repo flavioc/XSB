@@ -24,11 +24,11 @@
 */
 
 
+#include "xsb_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-#include "xsb_config.h"
 
 #include "auxlry.h"
 #include "token_xsb.h"

@@ -23,10 +23,10 @@
 */
 
 
-#include <stdio.h>
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
+
+#include <stdio.h>
 
 
 /* special debug includes */

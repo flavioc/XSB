@@ -23,10 +23,10 @@
 */
 
 
-#include <math.h>
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
+
+#include <math.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"

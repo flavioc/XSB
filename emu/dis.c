@@ -24,11 +24,11 @@
 */
 
 
-#include <stdio.h>
-#include <string.h>
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
+
+#include <stdio.h>
+#include <string.h>
 
 #include "auxlry.h"
 #include "psc_xsb.h"

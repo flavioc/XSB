@@ -22,11 +22,11 @@
 ** 
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef CHAT	/* have this here so that gcc is silent with -ansi */
 
