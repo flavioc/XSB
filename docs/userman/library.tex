@@ -972,7 +972,7 @@ Read {\tt BytesRequested} bytes from file represented by I/O port {\tt
   IOport} (which must already be open for reading) into variable {\tt
   String}. This is analogous to {\tt fread} in C.  This predicate always
 succeeds. It does not distinguish between a file error and end of file.
-	You can determine if either of these conditions has happened by verifying
+        You can determine if either of these conditions has happened by verifying
 that $\tt BytesRead < BytesRequested$.
 
 
@@ -1026,7 +1026,7 @@ such as \verb|_$newstream_#123|.
 \section{String Manipulation}
 \label{sec-strings}
 
-	XSB has a number of powerful builtins that simplify the job of string
+        XSB has a number of powerful builtins that simplify the job of string
 manipulation. These builting are especially powerful when they are combined
 with pattern-matching facilities provided by the {\tt regmatch} package
 described in Chapter~\ref{chap-posix}.
@@ -1085,7 +1085,7 @@ offset (from the beginning of {\tt Str}) of the last character of {\tt
 
 \ournewitem{str\_cat(+Str1, +Str2, ?Result)}{string}
 \index{{\tt str\_cat/3}}
-	
+        
 Concatenates {\tt Str1} with {\tt Str2}. Unifies the result with {\tt Result}.
 
 In addition to this, the predicate \verb|fmt_write_string/3| described in
@@ -2418,7 +2418,7 @@ a more convenient interface to the XSB trie-based storage mechanism.
 \begin{description}
   %%
 \ournewitem{newtrie(-Root)}{intern} \index{{\tt newtrie/1}}
-	Root is instantiated to a handle for a new trie.
+        Root is instantiated to a handle for a new trie.
 
 \ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}\index{{\tt trie\_intern/5}}
 %%
@@ -2547,21 +2547,21 @@ lex} or {\em flex}.
 
 \ournewitem{scan(+List,-Tokens)}{stdscan} \index{{\tt scan/2}}  
 
-Given as input a {\tt List} character codes, {\tt scan/2} scans this
-list producing a list of atoms constituting the lexical tokens.  Its
-parameters are set via {\tt set\_scan\_pars/1}.
+Given as input a {\tt List} of character codes, {\tt scan/2} scans
+this list producing a list of atoms constituting the lexical tokens.
+Its parameters are set via {\tt set\_scan\_pars/1}.
 
 Tokens produced are either a sequence of {\em letters} and/or {\em
-numbers} or consist of a single {\em special character} (e.g. {\tt }
+numbers} or consist of a single {\em special character} (e.g. {\tt (}
 or {\tt )}).  Whitespaces may occur between tokens.
 
 \ournewitem{scan(+List,+FieldSeparator,-Tokens)}{stdscan} 
 \index{{\tt scan/3}}  
 
-Given as input a {\tt List} character codes, along with a character
+Given as input a {\tt List} of character codes, along with a character
 code for a field separator, {\tt scan/3} scans this list producing a
 list of list of atoms constituting the lexical tokens in each field.
-{\em scan/3} thus be used to scan tabular information.  Its
+{\em scan/3} thus can be used to scan tabular information.  Its
 parameters are set via {\tt set\_scan\_pars/1}.
 
 \ournewitem{set\_scan\_pars(+List)}{stdscan} 
@@ -2604,9 +2604,9 @@ regarded as whitespace.
 token. By default, ASCII codes for characters {\tt a--z} and {\tt
 A--Z} are regarded as letters.
 
-\item{{\tt letter(Code)}} adds {\tt Code} as a special character.  By
-default, ASCII codes for the following characters are regarded as
-special characters: 
+\item{{\tt special\_char(Code)}} adds {\tt Code} as a special
+  character.  By default, ASCII codes for the following characters are
+  regarded as special characters:
 
 \begin{verbatim}
 | { } [ ] " $ % & ' ( ) * + , - . / : ; < = > ? @ \ ^ _ ~ `
