@@ -66,10 +66,6 @@ b.  No need to lock the common XSB directory. You must have figured out why
 c.  You can set a watch on the files you are interested in, and CVS will
     notify you by email if somebody starts editing them (in their own
     space! -- no one will be editing the common dir any more).
-    (mk: this feature *seems* to work, but I'd not rely on it too much.
-    First, it requires certain discipline from the users. Second, it didn't 
-    work the first time I tried. Then it started to work, but I don't know
-    why!)
 
 d.  Automatic tracking of who changed what. This was possible with RCS as
     well, but for some reason wasn't done.
@@ -404,6 +400,11 @@ started editing <file>, and it would send email to all the users who said
 they want to watch this particular file (or the entire directory where this 
 file lives).
 
+If you are using x/emacs, then the watched files will be read only. You
+will recognize this by the %% sign in the mode line. To start editing, type 
+Control-X Control-Q. This will make the file writable and will also execute 
+cvs-edit.
+
 This is how you add yourself to the list of people who watch files:
 -------------------------------------------------------------------
 
@@ -455,8 +456,7 @@ fix them.
 Gotchas and experience
 ======================
 
-1. The watch mechanism doesn't seem to work for remote users.
-2. When somebody checks out or commits work into the repository,
+1. When somebody checks out or commits work into the repository,
    CVS locks the affected directory. 
    If somebody else tries to do something with CVS and this affects the
    locked directory, you will be getting a message from CVS that it tries
@@ -466,7 +466,7 @@ Gotchas and experience
    The only remedy is to log into sbprolog and delete the lock (which is in 
    the form of an empty subdirectory and looks something like: #cvslock).
 
-3. If your copy of XSB is using the remote facilities of CVS (i.e., you
+2. If your copy of XSB is using the remote facilities of CVS (i.e., you
     aren't on the local NFS), you will notice that you are being asked for your
     RSA pass phrase more often than you'd like. Eventually, you might earn
     carpal tunnel syndrom.
@@ -494,7 +494,7 @@ Gotchas and experience
     remote sites: any site that has your public key will securely log you
     into that site without asking for your password.
 
-4. The checkout/commit process is fairly slow, even when using NFS.
+3. The checkout/commit process is fairly slow, even when using NFS.
    This is because our NFS is slow. At home I achieve much faster speeds.
 
    For remote users, there is what you should expect:
@@ -509,7 +509,7 @@ Gotchas and experience
    how many files were changed by others since you last synch'ed your local 
    copy with the repository.
 
-5. The test suite is real big---bigger than the rest of XSB!
+4. The test suite is real big---bigger than the rest of XSB!
    If you modify it, please check it in.
    However, some .O files get recompiled (~10) when you are testing, so CVS
    would think it has to commit them, too.
@@ -527,12 +527,12 @@ Gotchas and experience
    PLEASE: avoid putting junk into the testsuite. Any experimental changes
    should be confined to your local copy!
 
-6. XEmacs 20.4 (the latest stable release of Jan 98) has a bug *on Linux*,
+5. XEmacs 20.4 (the latest stable release of Jan 98) has a bug *on Linux*,
    which precludes it from asking you for a pass phrase. So, you won't be
    able to use pcl-cvs with XEmacs *remotedly*, unless you use the SSH
    agent as explained in (3).
 
-7. When you do "cvs update" either on command line or from within X/Emacs
+6. When you do "cvs update" either on command line or from within X/Emacs
    using the pcl-cvs front end, it takes 2-3 minutes for CVS to go to the
    repository, compare things with yours, etc. So, don't despair!
 
@@ -554,4 +554,4 @@ Gotchas and experience
    in the ~projects/XSB directory, CVS won't search through the "tests"
    directory.
 
-8. I am sure there are other gotchas. Please add to this list.
+7. I am sure there are other gotchas. Please add to this list.

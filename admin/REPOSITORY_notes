@@ -108,7 +108,11 @@ CVSROOT/notify
 
 Uncoment the line to enable watchlist notification:
 
-DEFAULT mail %s -s "CVS notification"
+ALL mail -s "CVS notification" %s
+
+Note, the line must look as above. The template file CVSROOT/notify
+has a typo in it, where %s appears before -s, which will break the watch
+mechanism.
 
 
 CVSROOT/loginfo
@@ -116,7 +120,9 @@ CVSROOT/loginfo
 
 Uncomment the line:
 
-DEFAULT	(echo ""; who am i; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
+DEFAULT	(echo ""; whoami; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
+
+NOTE: the template file has a typo: it says "who am i" instead of "whoami".
 
 In the future, should set commitlog per directory.
 

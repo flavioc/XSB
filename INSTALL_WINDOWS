@@ -36,5 +36,15 @@
 
    The only purpose of this update is to ensure that the user doesn't get
    an incorrect banner message on startup.
+   Changing this files alone won't enable debugging and/or local scheduling 
+   strategy. You must also recompile XSB with these options enabled.
 
-5. To be figured out.
+5. If you downloaded a precompiled version of XSB, you are done.
+   If you need to recompile XSB, then read (6).
+
+6. Compile the ./emu directory.
+
+   Windows:
+	Load into C++ studio.
+	Define the DEBUG variable (???)
+	Add winsoc32.lib library to the list of libraries to be linked with.
