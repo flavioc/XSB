@@ -23,6 +23,7 @@
 */
 
 #include "setjmp_xsb.h"
+#include "export.h"
 
 /*----------------------------------------------------------------------*/
 /* The following is a list of errors as defined by the Prolog ISO	*/
@@ -63,13 +64,13 @@
 #endif 
 
 
-extern void xsb_exit(char *, ...);
-extern void xsb_abort(char *, ...);
-extern void xsb_bug(char *, ...);
-extern void xsb_warn(char *, ...);
-extern void xsb_mesg(char *, ...);
-extern void xsb_error(char *, ...);
-extern void xsb_dbgmsg(char *, ...);
+DllExport extern void call_conv xsb_exit(char *, ...);
+DllExport extern void call_conv xsb_abort(char *, ...);
+DllExport extern void call_conv xsb_bug(char *, ...);
+DllExport extern void call_conv xsb_warn(char *, ...);
+DllExport extern void call_conv xsb_mesg(char *, ...);
+DllExport extern void call_conv xsb_error(char *, ...);
+DllExport extern void call_conv xsb_dbgmsg(char *, ...);
 extern void arithmetic_abort1(char *, Cell);
 extern void arithmetic_abort(Cell, char *, Cell);
 extern void arithmetic_comp_abort(Cell, char *, int);

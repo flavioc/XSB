@@ -106,6 +106,21 @@ DllExport struct varstr_ops VarStrOps = {vs_set,vs_setv,
 					 vs_shrink,vs_destroy};
 
 
+DllExport void call_conv varstring_init(VarString *vstr)
+{
+  vstr->size = 0;
+  vstr->increment = 0;
+  vstr->length =0;
+  vstr->string = NULL;
+  vstr->op = &VarStrOps;
+}
+
+DllExport void call_conv varstring_create(VarString *vstr)
+{
+  vstr = (VarString *) malloc(sizeof(VarString));
+  varstring_init(vstr);
+}
+
 
 /* initialize a var string. This is the only function that isn't a member of
    the data structure, because somebody must assign functions to the function
