@@ -1160,10 +1160,6 @@ read_till_slash_1([S|_R],[],S):- !.
 read_till_slash_1([H|R],[H|R1],S):- 
 	read_till_slash_1(R,R1,S).
 
-load_intensional(Full):- 
-	concat_atom([Full,'/oms_intensional.P'],File),
-	(file_exists(File) -> load_dync(File) ; true).
-
 load_intensional_rules(Path,Name):- 
 	retract_intensional_rules(Name),
 	concat_atom([Path,'/oms_intensional.P'],File),
@@ -1193,8 +1189,8 @@ read_intensional_rules_1(Name):-
 	   transform_intensional_rules(Head,NewHead,Name),
 	   asserta((:-(Head,NewHead))),
 	   asserta((:-(NewHead,Body))),
-	   fail).
-read_intensional_rules_1(_).
+	   fail),
+	!.
 
 transform_intensional_rules(Head,NewHead,Name):- 
 	intensional_head(Head,_Arg),
