@@ -28,13 +28,17 @@
 	 find_file/1, find_file/2,
 	 get_file_name/2, get_file_date/2,
 	 is_directory/1,
-	 whats_new/3.
+	 whats_new/3,
+	 canonical_pathname/2.
 
 :- import  ca/2, date/1, sysin/2 from scrptutl.
 :- import concat_atom/2, concat_atom/3 from string.
 :- import member/2 from basics.
-:- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1
+:- import atom_codes/2, arg/3, number_codes/2, name/2, integer/1,
+	throw/1
 	from standard.
+:- import xsb_configuration/2 from xsb_configuration.
+:- import cwd/1, sys_chdir/2 from shell.
 
 % I always want this in UNIX.
 whats_new(Directory,Date,List):-
@@ -99,7 +103,10 @@ directory(Argument,Dir):-
 	directory_1(List,date(Year,Month,Day),Dir).
 
 short_directory(Arg,Out):-
-	ca(['\ls',Arg],Command),
+	(   xsb_configuration(host_os,windows)
+	->  ca(['dir /B ',Arg], command)
+	;   ca(['\ls',Arg],Command)
+	),
 	sysin(Command,List1),
 	member(L,List1),
 	concat_atom(L,' ',Out).
@@ -141,4 +148,14 @@ process_date(_,M_in,D,Y,date(Y,Month,D,0,0,0)):-
 %	number_codes(Minute,[M1,M2]).
 %process_time_year(TY,year(TY1)):- aton(TY,TY1).
 
+
+canonical_pathname(Path,CPath) :-
+	(   var(CPath),
+	    nonvar(Path)
+	->  cwd(OldCWD),
+	    sys_chdir(Path,_),
+	    cwd(CPath),
+	    sys_chdir(OldCWD,_)
+	;   throw(instantiation_error(canonical_pathname(Path,CPath)))
+	).
 

@@ -160,13 +160,3 @@ fget_line_1wind(Inlist,Next):-
 		fget_line_1wind(Inlist1,Next)
 	).
 
-canonical_pathname(Path,CPath) :-
-	(   var(CPath),
-	    nonvar(Path)
-	->  cwd(OldCWD),
-	    cd(Path),
-	    cwd(CPath),
-	    cd(OldCWD)
-	;   throw(instantiation_error(canonical_pathname(Path,CPath)))
-	).
-
