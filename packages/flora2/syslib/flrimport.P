@@ -46,7 +46,7 @@ check_args(P,A,Module) :-
 
 %% Clone A in the same module. Return a cloned A and the list of its arguments
 duplicate(A,NewA,Args) :-
-	term_psc(A,PSC), term_new(PSC,NewA),
+	copy_term(A,NewA),
 	(dynamic NewA),
 	NewA =.. [_|Args].
 
@@ -55,10 +55,11 @@ duplicate(A,NewA,Args) :-
 funish_up(NewA,NewP,File,Module) :-
 	assert((NewA :- NewP)), % assert(A :- P).
 	(var(File),!
-	; flora_load_module_internal(File,Module)	% load the module
+	; flora_load_module_internal(File,Module),!	% load the module
+	; abort                                         % load failed
 	).
 
-%% The following three predicate do the following:
+%% The following two predicate do the following:
 %% Get P in the form foo/Arity and A of the form bar(_,_,_,...)
 %% of the same arity and assert
 %%         bar(X,Y,Z) :- PREFIXfoo(X,Y,Z).
@@ -69,7 +70,7 @@ funish_up(NewA,NewP,File,Module) :-
 %%        :- flImport hilog/firstorder P as A from File>>Module.
 
 %% This assumes that P is a Flora predicate
-flImportFloraPred(P,A,File,Module) :-
+flImportFirstorder(P,A,File,Module) :-
 	check_args(P,A,Module),
 	P = FuncP/ArityP,
 	%% attach the workspace

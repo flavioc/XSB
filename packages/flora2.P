@@ -36,7 +36,7 @@
 
 :- import
 	flImportHiLog/4,
-	flImportFloraPred/4
+	flImportFirstorder/4
    from flrimport.
 
 :- import
@@ -159,17 +159,25 @@ flora_shell :-
 %% The other operators, '>>' and 'from', are already defined in Prolog
 
 flImport(hilog(from(as(What,AsWhat),FileMod))) :- !,
-	(atom(FileMod) 
-	-> flImportHiLog(What,AsWhat,_,FileMod)
+	(atom(FileMod)  % in this case FileMod is a module name
+	-> (flLoadedModule(FileMod)
+	   -> flImportHiLog(What,AsWhat,_,FileMod)
+	   ;  abort(['Trying to import hilog predicate ', What,
+		     ' from unloaded FLORA module ', FileMod])
+	   )
 	; FileMod = File>>Module 
 	-> flImportHiLog(What,AsWhat,File,Module)
 	).
 
-flImport(firstorder(from(as(What,AsWhat), '>>'(File,Module)))) :- !,
-	(atom(FileMod)
-	-> flImportFloraPred(What,AsWhat,_,FileMod)
+flImport(firstorder(from(as(What,AsWhat),FileMod))) :- !,
+	(atom(FileMod) % in this case FileMod is a module name
+	-> (flLoadedModule(FileMod)
+	   -> flImportFirstorder(What,AsWhat,_,FileMod)
+	   ;  abort(['Trying to import first order predicate ', What,
+		     ' from unloaded FLORA module ', FileMod])
+	   )
 	; FileMod = File>>Module 
-	-> flImportFloraPred(What,AsWhat,File,Module)
+	-> flImportFirstorder(What,AsWhat,File,Module)
 	).
 flImport(X) :- abort(['Invalid flImport syntax: ', X]).
 
