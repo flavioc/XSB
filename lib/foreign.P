@@ -31,16 +31,17 @@
 compile_cH(Modname, Base, Options, ExList, Dir) :-
 	/* ldoption is needed at compile time for ELF systems,
 	   so compile_H is now done first. */
-	compile_H(Modname, Base, Options, ExList, LdOption, TempFile),
-	compile_c(Modname, Base, Options, Dir, LdOption, TempFile).
+	compile_H(Modname,Base,Options,ExList,LdOption,CompComm,TempFile),
+	compile_c(Modname,Base,Options,Dir,LdOption,CompComm,TempFile).
 
-compile_c(Modname, Base, Options, Dir, LdOption, TempFile) :-
+compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	cc_name(Options, CC_Name), cc_options(Options, CC_Opts),
 	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = ''; true),
-	( str_sub('solaris', Configuration) ->
+	( var(CompComm) ->
+ 	( str_sub('solaris', Configuration) ->
 	    shell([CC_Name, ' -s -o ', Base, '.so',
 		   ' -G ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
 	    ;str_sub('linux', Configuration) ->
@@ -63,7 +64,9 @@ compile_c(Modname, Base, Options, Dir, LdOption, TempFile) :-
 		shell(['mv ', Modname, '.o ', Dir])
 	    )
 	  )
-	).
+	)
+        ;   shell([CompComm])
+        ).
 
 cc_name(Options, CC_Name) :-
 	( memberchk(cc(CC_Name), Options), atom(CC_Name) -> true
@@ -72,7 +75,7 @@ cc_name(Options, CC_Name) :-
 cc_options(Options, CC_Opts) :-
 	( memberchk(cc_opts(CC_Opts), Options) -> true ; CC_Opts = '' ).
 
-compile_H(Modname, Base, Options, ExList, LdOption, TempFile) :-
+compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	hdr_ext(HExt),
 	str_cat(Base, HExt, HFile),
 	( file_exists(HFile) ->
@@ -82,7 +85,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, TempFile) :-
 		message(('[Compiling Foreign Module ', Base, M, ']')),
 		cputime(TimeStart),
 		see(HFile),
-		read_clauses(Modname, ExList, '', LdOption, TempFile),
+		read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile),
 		closefile(TempFile),
 		seen,
 		length(ExList, Count),
@@ -97,7 +100,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, TempFile) :-
 	),
 	!.
 
-read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, TempFile) :-
+read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 	read(Clause),
 	( Clause == end_of_file -> LdOptionOut = LdOptionIn
         ;   ( Clause = (':-'(export(Exports))) ->
@@ -105,6 +108,7 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, TempFile) :-
 		LdOptionMid = LdOptionIn
 	    ; Clause = (':-'(ldoption(Opt))) ->
 		form_ld_option(Opt, LdOptionIn, LdOptionMid)
+	    ; Clause = (':-'(commandline(CompComm))) -> true
 	    ; Clause = (':-'(foreign_pred(PredDecl))) ->
 	        checkfile(ModName, TempFile),  % creates tempfile if necessary
 	        process_from(PredDecl,Exports),
@@ -112,7 +116,8 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, TempFile) :-
 		LdOptionMid = LdOptionIn
 	    ; LdOptionMid = LdOptionIn		% all other clauses are ignored
 	    ),
-            read_clauses(ModName, ExList, LdOptionMid, LdOptionOut, TempFile)
+            read_clauses(ModName, ExList, LdOptionMid, LdOptionOut, 
+	                        CompComm, TempFile)
         ).
 
 
