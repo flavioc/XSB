@@ -172,7 +172,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
     while ( (*path_suffix != '\0') && (*path_suffix != '/') )
       path_suffix++;
     username_len = path_suffix - path_prefix;
-    bcopy(path_prefix, username, username_len);
+    memmove(username, path_prefix, username_len);
     username[username_len] = '\0';
     
     pw_struct = (struct passwd *) getpwnam(username);

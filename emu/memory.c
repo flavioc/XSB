@@ -139,23 +139,23 @@ void tcpstack_realloc(long new_size) {
        --------------------------------- */
     /*
      * 'realloc' copies the data in the reallocated region to the new region.
-     * 'bcopy' can perform an overlap copy: we take the choice point data
+     * 'memmove' can perform an overlap copy: we take the choice point data
      *   from where it was moved and push it to the high end of the newly
      *   allocated region.
      */
     trail_offset = (long)(new_trail - tcpstack.low);
     cps_offset = (long)(new_cps - tcpstack.high);
-    bcopy( cps_top + trail_offset,            /* move from */
-	   cps_top + cps_offset,              /* move to */
-	   (long)(tcpstack.high - cps_top) );  /* number of bytes */
+    memmove(cps_top + cps_offset,              /* move to */
+	    cps_top + trail_offset,            /* move from */
+	    (long)(tcpstack.high - cps_top) ); /* number of bytes */
   }
   else {
 
     /* Float the CP Stack data up and reallocate
        ----------------------------------------- */
-    bcopy( cps_top,                                   /* move from */
-	   cps_top - (tcpstack.size - new_size) * K,  /* move to */
-	   (long)(tcpstack.high - cps_top) );          /* number of bytes */
+    memmove(cps_top - (tcpstack.size - new_size) * K,  /* move to */
+	    cps_top,                                   /* move from */
+	    (long)(tcpstack.high - cps_top) );         /* number of bytes */
     new_trail = (byte *)realloc(tcpstack.low, new_size * K);
     trail_offset = (long)(new_trail - tcpstack.low);
     new_cps = new_trail + new_size * K;
@@ -287,17 +287,17 @@ void complstack_realloc (long new_size) {
        ----------------------------------------- */
     top_offset = (long)(new_top - complstack.low);
     bottom_offset = (long)(new_bottom - complstack.high);
-    bcopy( cs_top + top_offset,        /* move from */
-	   cs_top + bottom_offset,     /* move to */
-	   (long)(complstack.high - cs_top) );
+    memmove(cs_top + bottom_offset,     /* move to */
+	    cs_top + top_offset,        /* move from */
+	    (long)(complstack.high - cs_top) );
   }
   else {
 
     /* Float the Completion Stack data up and reallocate
        ------------------------------------------------- */
-    bcopy( cs_top,                                     /* move from */
-	   cs_top - (complstack.size - new_size) * K,  /* move to */
-           (long)(complstack.high - cs_top) );          /* number of bytes */
+    memmove(cs_top - (complstack.size - new_size) * K,  /* move to */
+	    cs_top,                                     /* move from */
+	    (long)(complstack.high - cs_top) );         /* number of bytes */
     new_top = (byte *)realloc(complstack.low, new_size * K);
     top_offset = (long)(new_top - complstack.low);
     new_bottom = new_top + new_size * K;
