@@ -220,6 +220,7 @@ standard_symbol(telling, 1, standard).
 standard_symbol(tfindall, 3, tables).
 standard_symbol(tmpfile_open, 1, file_io).
 standard_symbol(tnot, 1, tables).
+standard_symbol(sk_not, 1, tables).
 standard_symbol(told, 0, standard).
 standard_symbol(tphrase, 1, dcg).
 standard_symbol(tphrase, 2, dcg).
