@@ -113,7 +113,8 @@ SRCS =	auxlry.c biassert.c builtin.c cinterf.c \
 	storage_xsb.c struct_manager.c sub_delete.c subp.c \
 	system_xsb.c table_stats.c tables.c timer_xsb.c token_xsb.c \
 	tr_utils.c trace_xsb.c trie_lookup.c trie_search.c tries.c \
-	tst_insert.c tst_retrv.c tst_unify.c tst_utils.c varstring.c
+	tst_insert.c tst_retrv.c tst_unify.c tst_utils.c varstring.c \
+	ubi_BinTree.c ubi_SplayTree.c
 
 
 ORASRCS = $(SRCS) orastuff.c
@@ -131,7 +132,8 @@ OBJS =	auxlry.o biassert.o builtin.o cinterf.o \
 	storage_xsb.o struct_manager.o sub_delete.o subp.o \
 	system_xsb.o table_stats.o tables.o timer_xsb.o token_xsb.o \
 	tr_utils.o trace_xsb.o trie_lookup.o trie_search.o tries.o \
-	tst_insert.o tst_retrv.o tst_unify.o tst_utils.o varstring.o
+	tst_insert.o tst_retrv.o tst_unify.o tst_utils.o varstring.o \
+	ubi_BinTree.o ubi_SplayTree.o
 
 
 allOBJS = main_xsb.o ${OBJS} ${ODBCOBJ} ${INTERPROLOGOBJ}
