@@ -254,7 +254,7 @@ static void symstkPrintNextTerm(FILE *fp, xsbBool list_recursion) {
       Psc psc;
       int i;
 
-b      if ( list_recursion )
+      if ( list_recursion )
 	fprintf(fp, "|");
       psc = DecodeTrieFunctor(symbol);
       fprintf(fp, "%s(", get_name(psc));
