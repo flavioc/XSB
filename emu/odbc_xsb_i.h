@@ -36,8 +36,8 @@ switch (ptoc_int(1)) {
  case ODBC_SET_BIND_VAR_NUM:
    SetBindVarNum();
    break;
- case ODBC_FETCH_NEXT_COL:
-   FetchNextCol();
+ case ODBC_FETCH_NEXT_ROW:
+   FetchNextRow();
    break; 
  case ODBC_GET_COLUMN:
    return GetColumn();
@@ -70,6 +70,12 @@ switch (ptoc_int(1)) {
    break;
  case ODBC_USER_TABLES:
    ODBCUserTables();
+   break;
+ case ODBC_DESCRIBE_SELECT:
+   ODBCDescribeSelect();
+   break;
+ case ODBC_CONNECT_OPTION:
+   ODBCConnectOption();
    break;
  default:
    xsb_error("Unknown or unimplemented ODBC request type");

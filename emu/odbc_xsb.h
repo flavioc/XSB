@@ -33,17 +33,19 @@ extern void SetBindVal();
 extern void Parse();
 extern int  GetColumn();
 extern void SetCursorClose(int);
-extern void FetchNextCol();
+extern void FetchNextRow();
 extern void ODBCCommit();
 extern void ODBCRollback();
 extern void ODBCColumns();
 extern void ODBCTables();
 extern void ODBCUserTables();
+extern void ODBCDescribeSelect();
+extern void ODBCConnectOption();
 
 #define ODBC_CONNECT             1
 #define ODBC_PARSE               2
 #define ODBC_SET_BIND_VAR_NUM    3
-#define ODBC_FETCH_NEXT_COL      4
+#define ODBC_FETCH_NEXT_ROW      4
 #define ODBC_GET_COLUMN          5
 #define ODBC_SET_BIND_VAL        6
 #define ODBC_FIND_FREE_CURSOR    7
@@ -54,6 +56,8 @@ extern void ODBCUserTables();
 #define ODBC_COLUMNS            12
 #define ODBC_TABLES             13
 #define ODBC_USER_TABLES        14
+#define ODBC_DESCRIBE_SELECT    15
+#define ODBC_CONNECT_OPTION     16
 
 #endif
 
