@@ -35,8 +35,8 @@
 %% Where to search for FLIP libraries
 :- import library_directory/1 from usermod.
 
-:- import abort/0, write/1, repeat/0,
-	  abort/1
+:- import abort/0, write/1, repeat/0, abort/1, 
+	  push_abort_cutpoint/0, pop_abort_cutpoint/0
    from standard.
 
 :- import unload_package/1 from packaging.
@@ -58,6 +58,8 @@
 
 shell :-
 	welcome_msg,
+	%% This cutpoint is popped then pushed again inside the shell1 loop
+        push_abort_cutpoint,
 	shell1.
 
 welcome_msg :- nl,
@@ -71,18 +73,21 @@ welcome_msg :- nl,
       !.
 
 shell1 :-
-	write('FLIP> ?- '),
-	read_tokens(L),
-	%% drop down to XSB on end of file
-	(L == [atom(end_of_file)] -> nl, end_ ; true),
-	%% Parse
-	(rule(Parsed_Rule, [atom(' ?-') |L], []) ->
-	   comp(Parsed_Rule,[query(Q,Match)]),
-	   print_solutions(Q,Match),nl
-	 ;  portray_list(['*** Parse ERROR: '|L]),nl,
-	    write_list(L), nl
-	),
-	shell1.
+        repeat,
+          pop_abort_cutpoint,
+          push_abort_cutpoint, % reset cutpoint so we stay inside the flip loop
+	  write('FLIP> ?- '),
+	  read_tokens(L),
+	  %% drop down to XSB on end of file
+	  (L == [atom(end_of_file)] -> nl, end_ ; true),
+	  %% Parse
+	  (rule(Parsed_Rule, [atom(' ?-') |L], []) ->
+	     comp(Parsed_Rule,[query(Q,Match)]),
+	     print_solutions(Q,Match),nl
+	   ;  portray_list(['*** Parse ERROR: '|L]),nl,
+	      write_list(L), nl
+	  ),
+	  fail.
 
 
 %%% conv(+Atom_or_String,-Atom)
@@ -240,7 +245,10 @@ all_ :- set(all).
 
 one_ :- del(all).
 
-end_ :- unload_package(flip), writeln('ciao!'), abort.
+end_ :- pop_abort_cutpoint,   % return to XSB abort cutpoint
+        unload_package(flip),
+	writeln('ciao!'),
+	abort.
 
 help_:-	nl,
 	writeln('Flip commands:'),
