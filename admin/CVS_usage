@@ -255,6 +255,22 @@ Step 4: Working with the checked out version.
 
     If there are conflicts between your changes and the version in the main
     repository, you will be told so, as explained above.
+
+    NOTE: *** Remote users ****
+    When you first chec out using the -d option, cvs remembers the host
+    name you used and will always use it by default when you issue 
+    "cvs update" and other commands.
+    Unfortunately, hosts tend to go down from time to time, and when it
+    happens you can't use the repository through that host.
+    In this situation, you can issue 
+
+    cvs -d :ext:<your-id>@<new-host>:/home/u17/sbprolog/CVSROOT update
+
+    CVS will use the new host and will permanently change its default.
+    (It seems that it changes the default only in the current directory.
+    Other directories will still use the old host.)
+    If you prefer the old host, when it recovers, you would have to issue
+    "cvs -d" again to change the default.
     
 
 Step 5: Committing your changes
