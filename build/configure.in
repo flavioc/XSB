@@ -217,6 +217,7 @@ dnl Allow some slack in how local scheduling is specified
 if test "${enable_local_sched}" = "yes" || \
    test "${enable_local_schedule}" = "yes" || \
    test "${enable_local}" = "yes" || \
+   test "${with_local_scheduling}" = "yes" || \
    test "${with_local_schedule}" = "yes" || \
    test "${with_local_sched}" = "yes" || \
    test "${with_local}" = "yes" ; then
