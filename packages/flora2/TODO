@@ -349,7 +349,7 @@
 22.  Make the compiler dump the original source in comments right
      in front of the translated code block.
 
-23.  Implement a richer anonymous oid syntax.
+DONE 23.  Implement a richer anonymous oid syntax.
      In addition to _#, allow _#1, _#2, etc. Tokenizer needs to be updated
      to allow that.
      

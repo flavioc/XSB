@@ -196,7 +196,7 @@ flora_token_text(SPECIAL_TOKEN(_A,Text),TextStr,BLN,BCN,ELN,ECN) :-
 	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
 	
 /***************************************************************************
-Added by Bin Tang for richer anonymous oid syntax
+	    Added by Bin Tang for richer anonymous oid syntax
 ***************************************************************************/
 flora_token_text(SPECIAL_TOKEN(_A,_Num,Text),TextStr,BLN,BCN,ELN,ECN) :-
 	text_info(BLN,BCN,ELN,ECN,TextStr,Text).
@@ -440,16 +440,15 @@ read_variable(C1,LN1,CN1,LN,CN,TokenList,Status) :-
 	!,
 	read_tokens(NextCh,NLN,NCN,NNLN,NNCN,Tokens,Status).
 
+
 /**********************************************************************
-Added by Bin Tang for richer anonymous oid syntax
-get_number(+PrevLN, +PrevCN, +LN1, +CN1, -LN2, -CN2,  -Num, -NLN, -NCN, 
--NCh, -NNLN, -NNCN) 
+get_number(+PrevLN,+PrevCN,+LN1,+CN1,-LN2,-CN2,-Num,-NLN,-NCN,-NCh,-NNLN,-NNCN)
 reads a number Num starting at position (LN1, CN1) and ending at (LN2, CN2),  
 the character right before Num is at (PrevLN,  PrevCN),  
 the first non-digit character NCh is at (NLN, NCN), 
 (NNLN, NNCN) is the position of the char following NCh.
+Used to handle rich anon oid syntax
 **********************************************************************/
-
 get_number(PrevLN,PrevCN,LN1,CN1,LN2,CN2,Num,NLN,NCN,NCh,NNLN,NNCN) :-
 	get_char(LN1, CN1, Ch, NextLN, NextCN),
 	( Ch >= CH_0, Ch =< CH_9 ->

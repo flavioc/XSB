@@ -41,7 +41,7 @@
 #include "flora_errors.flh"
 #include "flora_terms.flh"
 
-:- dynamic already_met(_), ruleoid(_,_).
+:- dynamic ruleoid(_,_,_).
 :- dynamic TMPDIRECT(_).
 :- dynamic TMPOPTION(_).
 
@@ -568,15 +568,15 @@ new_oidobj(Index,OidObject) :-
 	newoid_struct(Name,Index,OidObject).
 
 /*************************************************************************
-Modified by Bin Tang for richer anonymous oid syntax
+	Modified by Bin Tang for richer anonymous oid syntax
 *************************************************************************/
-new_oidobj(Rule_num, Num,Index,OidObject) :-
+new_oidobj(Rule_num,Num,Index,OidObject) :-
 	(
-	already_met(Num)
-	-> ruleoid(Num, Count), Count_new is Count+1,
-	   retract(ruleoid(Num, Count)),
-	   assert(ruleoid(Num,Count_new))
-	;  assert(ruleoid(Num, 1)), assert(already_met(Num))
+	ruleoid(Num,_,Count)
+	-> Count_new is Count+1,
+	   retract(ruleoid(Num,_,Count)),
+	   assert(ruleoid(Num,Index,Count_new))
+	;  assert(ruleoid(Num,Index,1))
 	), 
         fmt_write_string(Name,'%s%d|%s',args(NEWOID,Rule_num,Num)),
 	newoid_struct(Name,Index,OidObject).
@@ -704,44 +704,6 @@ collect_vars(ParserTerm,Vars,Vars) :-
 collect_vars(ParserTerm,Vars,TVars) :-
 	ParserTerm =.. [_F|L],
 	collect_vars(L,Vars,TVars).
-
-/********************************************************************************
-Added by Bin Tang for richer anonymous oid syntax
-
-collect_anonymous(+ParserTermOrList,-Vars)
-collects all occurrences of anonymous oid with number following it(ex. _#123) 
-in a parser term(or a list of parser terms) into Vars.
-
-collect_anonymous((+ParserTermOrList,-Vars,-TailVars)
-*******************************************************************************/
-
-collect_anonymous(ParserTermOrList,Vars) :-
-	collect_anonymous(ParserTermOrList,Vars,[]).
-
-collect_anonymous(ParserTerm,Vars,Vars) :-
-	(var(ParserTerm); atomic(ParserTerm)),
-	!.
-
-collect_anonymous([],Vars,Vars) :- !.
-
-collect_anonymous([H|L],Vars,TVars) :-
-	!,
-	collect_anonymous(H,Vars,LVars),
-	collect_anonymous(L,LVars,TVars).
-
-collect_anonymous(ParserTerm,[ParserTerm|Vars],Vars) :-
-	is_fltoken(ParserTerm,_Token,_Num,_Index),
-	!.
-collect_anonymous(ParserTerm,Vars,Vars) :-
-	( is_flatom(ParserTerm,_Atom);
-	  is_flnumber(ParserTerm,_Number);
-	  is_flstring(ParserTerm,_String);
-	  is_flvar(ParserTerm,_Token,_I)
-        ),
-	!.
-collect_anonymous(ParserTerm,Vars,TVars) :-
-	ParserTerm =.. [_F|L],
-	collect_anonymous(L,Vars,TVars).
 
 /****************************************************************************
   subtract_vars(+VarsList1,+VarsList2,-VarsList)
@@ -941,14 +903,14 @@ flora_compile(ParserTerm,CodeList,OptionList,Status) :-
 	( is_flrule(ParserTerm,Head,Body) ->
 	    compile_rule(Head,Body,CodeList,Status_rule),
 	%% check whether singleton numbered anon oid exists
-	    ( ruleoid(_,1) 
-	      -> referenced_once(Head, Status_rule, Status)
+	    ( ruleoid(_,_,1) 
+	      -> referenced_once(Status_rule, Status)
 	      ;  Status_rule=Status
 	    )
 	; is_flfact(ParserTerm,Head) ->
 	    compile_fact(Head,CodeList,Status_fact),
-	    ( ruleoid(_,1) 
-	      -> referenced_once(Head, Status_fact, Status)
+	    ( ruleoid(_,_,1) 
+	      -> referenced_once(Status_fact, Status)
 	      ;  Status_fact=Status
 	    )
 	; is_flquery(ParserTerm,Body) ->
@@ -959,39 +921,27 @@ flora_compile(ParserTerm,CodeList,OptionList,Status) :-
         ),
 	!,
 	get_option(OptionList),
-	retractall(already_met(_)),
-	retractall(ruleoid(_,_)). 
+	retractall(ruleoid(_,_,_)). 
 	
 /***************************************************************************
-Added by Bin Tang for richer anonymous oid syntax
-referenced_once(+Head,+Status_rf,-Status)
-finds those anonymous oids which are only referenced once and put the
-corresponding warning message in Status
+  Added by Bin Tang for richer anonymous oid syntax
+  referenced_once(+Status_rf,-Status)
+  finds singleton numbered anon oid and puts warning message in Status
 ***************************************************************************/
-referenced_once(Head, Status_rf, Status) :-
-	findall(A, ruleoid(A,1), SingleOidList),
-	collect_anonymous(Head,AnonymousList),
-	singleton_oid_warning(SingleOidList, AnonymousList, WarnList,[]),
+referenced_once(Status_rf, Status) :-
+	findall(Index, ruleoid(_,Index,1), IndexList),
+	singleton_oid_warning(IndexList, WarnList,[]),
 	append(Status_rf, WarnList, Status).
 
 /*************************************************************************
-singleton_oid_warning(+SingleOidList, +AnonymousList,-WarnList,-WarnTail)
+singleton_oid_warning(+SingleOidList,-WarnList,-WarnTail)
 ***********************************************************************/
-singleton_oid_warning([],_AnonymousList,WarnList,WarnList).
-singleton_oid_warning([V|L], AnonymousList, WarnList, WarnTail) :-
-	find_index(V, AnonymousList, Index),
+singleton_oid_warning([],WarnList,WarnList).
+singleton_oid_warning([Index|L], WarnList, WarnTail) :-
 	compiling_warning(Index, SINGLETON_ANON_OID, W),
 	WarnList=[W|T],
-	singleton_oid_warning(L,AnonymousList,T,WarnTail).
+	singleton_oid_warning(L,T,WarnTail).
 
-/**************************************************************************
-find_index(+Num,+AnonymousList,-Index
-finds Index for Num
-**************************************************************************/
-find_index(Num,[fltoken(_Token,Num,Index)|_],Index) :- !.
-find_index(Num,[_|Tail],Index) :-
-	find_index(Num,Tail,Index).
-	
 %% This rule is for debugging.
 flora_compile(_ParserTerm,[],[],[error(UNKNOWN_ERROR)]).
 
@@ -1181,7 +1131,7 @@ compile_fact(Head,CodeList,Status) :-
 	( S == [] ->
 	    factlist(HeadCodeList,CodeList),
 	    check_vars(Head,[],Status)
-	;
+        ;
 	  Status=S
         ).
 
@@ -1196,7 +1146,7 @@ compile_query(Body,CodeList,Status) :-
 	    list_struct(NV,[],NVCode),
 	    florasyslib_struct(FLLIBANSWER,2,[BodyCode,NVCode],Goal),
 	    query_struct(Goal,QueryCode),
-	    get_directive(DirectCodeList),
+            get_directive(DirectCodeList),
 	    append(DirectCodeList,[QueryCode],CodeList)
 	;
 	  true
@@ -1207,7 +1157,7 @@ compile_query(Body,CodeList,Status) :-
   compile_rule(+Head,+Body,-CodeList,-Status)
 ****************************************************************************/
 compile_rule(Head,Body,CodeList,Status) :-
-	compile_head(Head,HeadCodeList,HS),
+        compile_head(Head,HeadCodeList,HS),
 	( HS == [] ->
 	    compile_body(Body,BodyCode,BS),
 	    ( BS == [] ->
