@@ -29,6 +29,7 @@
 XSBDIR = ../../..
 
 ALLOBJS = flranswer.O \
+	  flrcontrol.O \
 	  flrdisplay.O \
 	  flrload.O \
 	  flraggavg.O \
@@ -89,6 +90,9 @@ all: init $(ALLOBJS) finish
 flranswer.O : flranswer.P $(XSB_CHAR_DEFS) $(XSB_EMU_FLAG_DEFS) $(XSB_STANDARD) $(FLORA_TERMS)
 	@echo 'mc(flranswer,$(OPTION)).' >> cmd...
 
+
+flrcontrol.O : flrcontrol.P $(FLORA_TERMS) $(XSB_STANDARD)
+	@echo 'mc(flrcontrol,$(OPTION)).' >> cmd...
 
 flrdisplay.O : flrdisplay.P $(FLORA_TERMS) $(XSB_STANDARD)
 	@echo 'mc(flrdisplay,$(OPTION)).' >> cmd...

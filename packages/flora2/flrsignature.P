@@ -30,6 +30,9 @@
 
 
 flora_sign((findall),3,[FL_OID,FL_BODYFORMULAR,FL_OID]) :- !.
+flora_sign((if),1,[FL_BODYFORMULAR]) :- !
+flora_sign((else),2,[FL_BODYFORMULAR,FL_BODYFORMULAR]) :- !
+flora_sign((then),2,[FL_BODYFORMULAR,FL_BODYFORMULAR]) :- !
 
 
 /****************************************************************************

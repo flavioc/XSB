@@ -31,6 +31,8 @@
 
 #include "flora_terms.flh"
 
+:- [flrcontrol].
+
 
 /*********************************************************************/
 flora_shell_loop :-

@@ -58,6 +58,10 @@ flora_op(1400,xfy,FL_SEMICOLON).
 
 flora_op(1300,xfy,FL_COMMA).
 
+flora_op(1250,fx,FL_IF).
+flora_op(1240,xfx,FL_THEN).
+flora_op(1260,xfy,FL_ELSE).
+
 flora_op(1200,fy,FL_TNOT).
 flora_op(1200,fy,FL_NOT).
 flora_op(1200,fy,FL_NEG).
