@@ -602,7 +602,14 @@ read_syntax_error(List) :-
 	file_nl(STDERR),
         file_write0(STDERR, '*** Discarding input ...  '),
 	file_nl(STDERR),
-        file_write0(STDERR, '|| ?- '),
+	stat_flag(BANNER_CTL,BannerCtl),
+	%% Don't print prompt, if --noprompt specified on cmd line
+	%% Useful when spawning xsb subprocesses, 
+	%% so they won't send junk back to the parent.
+	(	HidePrompt is BannerCtl mod NOPROMPT, HidePrompt =:= 0
+	 ->	true
+	 ;	file_write0(STDFDBK, '| ?- ')
+	),
 	!,
 	fail.	% Force the reader not to return until 
 		% it finds a term with no errors
