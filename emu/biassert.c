@@ -2074,14 +2074,16 @@ static int another_buff(Cell Instr)
 /* a buffer and frees it and all buffers it points to.			*/
 /*======================================================================*/
 
-int gen_retract_all(/* R1: + buff */)
+int gen_retract_all(/* R1: + Prref */)
 {
   ClRef buffers_to_free[200];
   int btop = 0;
-  ClRef buffer ;
+  ClRef buffer;
+  PrRef prref = (PrRef)ptoc_int(1);
+  ClRef frstbuff = prref->FirstClRef;
 
   force_retract_buffers();
-  buffers_to_free[btop++] = (ClRef)ptoc_int(1);
+  buffers_to_free[btop++] = frstbuff;
   while (btop > 0) {
     buffer = buffers_to_free[--btop];
     switch (ClRefType(buffer)) {
