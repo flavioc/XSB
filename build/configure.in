@@ -1221,6 +1221,7 @@ if test "$have_warnings" = "yes"; then
 	echo ""
 fi
 
+
 echo ""
 if test -z "$config_tag" ; then
     echo "***Now compile XSB with:   \`makexsb'"
