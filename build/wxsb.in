@@ -1,0 +1,5 @@
+REM Script for running XSB when built natively on Windows
+
+set XSBInstallDir=@topdir@
+
+%XSBInstallDir%\config\x86-pc-windows\bin\xsb %1 %2 %3 %4 %5 %6 %7
