@@ -148,6 +148,7 @@ extern int  sys_syscall(int);
 extern bool formatted_io(void), read_canonical(void);
 extern bool file_function(void);
 extern bool file_stat(void);
+extern bool private_builtin(void);
 
 extern bool assert_code_to_buff(void), assert_buff_to_clref(void),
   gen_retract_all(void), compiled_to_dynamic(void), db_retract0(void),
@@ -606,6 +607,8 @@ void init_builtin_table(void)
   set_builtin_table(GET_EMU_DEPENDENT_CONST, "get_emu_dependent_const");
   set_builtin_table(TRIMCORE, "trimcore");
 
+  set_builtin_table(PRIVATE_BUILTIN, "private_builtin");
+
   set_builtin_table(VAR, "var");
   set_builtin_table(NONVAR, "nonvar");
   set_builtin_table(ATOM, "atom");
@@ -641,6 +644,7 @@ void init_builtin_table(void)
   set_builtin_table(PRINT_ALL_STACKS, "print_all_stacks");
   set_builtin_table(MARK_HEAP, "mark_heap");
   set_builtin_table(GC_HEAP, "gc_heap");
+
   set_builtin_table(FINDALL_INIT, "$$findall_init");
   set_builtin_table(FINDALL_ADD, "$$findall_add");
   set_builtin_table(FINDALL_GET_SOLS, "$$findall_get_solutions");
@@ -1564,6 +1568,12 @@ int builtin_call(byte number)
   case EXP_HEAP: glstack_realloc(glstack.size + 1,0) ; return TRUE ;
   case MARK_HEAP: mark_heap(ptoc_int(1),&tmpval) ; return TRUE ;
   case GC_HEAP: return(gc_heap(0)) ;
+    
+    /* This is the builtin where people should put their private, experimental
+       builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO
+       DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY
+       NUMBER OF BUILTINS WITH IT.  */
+  case PRIVATE_BUILTIN: return private_builtin();
 
   case FINDALL_INIT: return(findall_init()) ;
   case FINDALL_ADD: return(findall_add()) ;

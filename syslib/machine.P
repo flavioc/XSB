@@ -153,6 +153,13 @@ get_emu_dependent_const(_ConstName, _Value) :- '_$builtin'(156).
 
 trimcore :- '_$builtin'(158).
 
+/* This is the builtin where people should put their private, experimental
+   builtin code. SEE THE EXAMPLE IN emu/private_builtin.c to UNDERSTAND HOW 
+   TO DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE 
+   ANY NUMBER OF BUILTINS WITH IT. */
+private_builtin(_OpCode,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10) :-
+	'_$builtin'(180).
+
 oracle_query(_A, _B, _C, _D, _E, _F, _G) :- '_$builtin'(230).
 odbc_exec_query(_A, _B, _C, _D, _E) :- '_$builtin'(239).
 
@@ -165,6 +172,7 @@ print_all_stacks :- '_$builtin'(245).
 expand_heap :- '_$builtin'(246).
 mark_heap(_) :- '_$builtin'(247).
 gc_heap :- '_$builtin'(248).
+
 '$$findall_init'(_I,_C) :- '_$builtin'(249).
 '$$findall_add'(_T,_I,_C) :- '_$builtin'(250).
 '$$findall_get_solutions'(_L,_T,_I,_C) :- '_$builtin'(251).

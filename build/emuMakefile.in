@@ -102,7 +102,7 @@ OBJS = auxlry.o biassert.o builtin.o \
 	heap.o  init.o  inst.o \
 	io_builtins.o \
 	load_seg.o  loader.o  memory.o \
-	xpathname.o \
+	private_builtin.o xpathname.o \
 	psc.o  residual.o  scc.o     \
 	self_orientation.o 	\
 	slgdelay.o  subp.o  system.o \

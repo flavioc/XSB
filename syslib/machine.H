@@ -126,6 +126,7 @@
 	get_emu_dependent_const/2,
 	oracle_query/7,
 	odbc_exec_query/5,
+	private_builtin/11,
 	trimcore/0,
 	print_ls/0, print_tr/0, print_heap/2, print_cp/0, print_regs/0,
 	print_all_stacks/0, expand_heap/0, mark_heap/1, gc_heap/0,
