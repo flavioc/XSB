@@ -269,7 +269,8 @@ xsbBool fmt_write(void)
 
     Arg = p2p_arg(ValTerm,i);
 
-    if (current_fmt_spec->type == 'S') {
+    if (current_fmt_spec->type == '!') { /* ignore field */
+    } else if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
       XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
@@ -417,7 +418,8 @@ xsbBool fmt_write_string(void)
 
     Arg = p2p_arg(ValTerm,i);
 
-    if (current_fmt_spec->type == 'S') {
+    if (current_fmt_spec->type == '!') { /* ignore field */
+    } else if (current_fmt_spec->type == 'S') {
       /* Any type: print as a string */
       XSB_StrSet(&StrArgBuf,"");
       print_pterm(Arg, TRUE, &StrArgBuf);
@@ -1276,6 +1278,12 @@ struct fmt_spec *next_format_substr(char *format, int initialize, int read_op)
 	result.size = 2;
 	expect = "feEgEscdiuoxX";
       }
+      break;
+
+    case '!':
+      printf("set !\n");
+      result.type = '!';
+      keep_going = FALSE;
       break;
 
     default:

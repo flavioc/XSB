@@ -738,12 +738,9 @@ a file using {\tt consult} and such.)
 \ournewitem{file\_close(+IOport)}{file\_io}\index{{\tt file\_close/1}}
     Closes the file (or string) for descriptor {\tt IOport}.
 
-    \newpage
-    \samepage{
 \ournewitem{fmt\_read(+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/3}}
 \vspace{-7mm}
 \ournewitem{fmt\_read(+IOport,+Fmt,-Term,-Ret)}{file\_io}\index{{\tt fmt\_read/4}}
-}
     These predicates provides a routine for reading data from
     the current input file (which must have been already opened by using
     {\tt see/1}) according to a C format, as used in the C function
@@ -786,11 +783,9 @@ a file using {\tt consult} and such.)
   should use size modifiers in format strings ({\it e.g.}, {\tt \%2000s}),
   if such long strings might occur in the input.
 
-  \samepage{
 \ournewitem{fmt\_write(+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write/2}}
 \vspace{-7mm}
 \ournewitem{fmt\_write(+IOport,+Fmt,+Term)}{file\_io}\index{{\tt fmt\_write/3}}
-}
     This predicate provides a routine for writing data to
     the current output file (which must have been already opened by using
     {\tt tell/1}) according to a C format, as used in the C function
@@ -798,14 +793,16 @@ a file using {\tt consult} and such.)
     To use it, it must be imported from the module {\tt file\_io}.
     {\tt Fmt} must be a string of characters (enclosed in "")
     representing the format that 
-    will be passed to the C call to {\tt scanf}.  See the C
-    documentation for {\tt scanf} for the meaning of this string.
+    will be passed to the C call to {\tt printf}.  See the C
+    documentation for {\tt printf} for the meaning of this string.
     The usual alphabetical C escape characters ({\it e.g.}, $\backslash n$)
     are recognized, but not the octal or the hexadecimal ones.
 
     In addition to the usual C conversion specifiers, {\tt \%S} is also
     allowed. The corresponding argument can be any Prolog term. This
-    provides an easy way to print the values of Prolog variables, etc.
+    provides an easy way to print the values of Prolog variables, etc.  
+    Also {\tt \%!} is supported and indicates that the corresponding argument
+    is to be ignored and will generate nothing in the output.
 
     Another difference with C is that, unlike most C compilers, XSB insists
     that a single {\tt \%} in the format string signifies format conversion
