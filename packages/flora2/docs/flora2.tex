@@ -366,18 +366,23 @@ After a syntax error, parsing error, or compiling error, \FLORA shell will
 discard tokens read from the current input stream until the end of file or a
 rule delimiter (``.'') is encountered. If \FLORA shell seems to hang forever
 after the prompt:
+\begin{quote}
 \begin{verbatim}
 ++FLORA Warning: discarding tokens (rule delimeter `.' or EOF expected)
 \end{verbatim}
+\end{quote}
 hitting the Enter key once, then entering a ``.'' character and Enter again
 will normally reset the current input buffer and cause \FLORA issue a
 command prompt:
+\begin{quote}
 \begin{verbatim}
 flora2 ?-
 \end{verbatim}
+\end{quote}
 
  
 \section{\fl and \FLORA by Example}
+
 
 In the future, this section will contain a number of small
 introductory examples illustrating the use of \fl and \FLORA. Meanwhile, the
@@ -423,9 +428,7 @@ headers and trailers that are automatically included into the {\tt .P} files by 
 \FLORA compiler (explained later).
 
 
-
 \subsection{How It Works}
-
 
 
 \paragraph{Overview.}
@@ -566,13 +569,13 @@ since equality maintenance consumes more resources. To inform the
 \FLORA compiler of the interest in equality maintenance, just include
 the following line in the source program:
 \begin{quote}
-\verb|a:=:a.|
+\verb|o:=:o.|
 \end{quote}
 In fact, the operator ``{\tt :=:}'' can be used to explicitly define
 equality in a program. If the \FLORA compiler sees any equality
 definition in a program, it will automatically use the trailer with
-equality maintenance. Since {\tt a:=:a} only trivially identifies
-the oid {\tt a} with itself, its net effect is just to force the
+equality maintenance. Since {\tt o:=:o} only trivially identifies
+the oid {\tt o} with itself, its net effect is just to force the
 \FLORA compiler to use the trailer with equality maintenance. Note
 that the reflexive and transitive aspects of equality maintenance are
 already automatically taken care of in the \FLORA trailer, users do
@@ -644,8 +647,8 @@ not need to implement them in the program.
   \index{method}
   \index{method!single-valued}
   \index{method!scalar}
-  \index{method!set-valued}
-
+  \index{method!multi-valued}
+  %
   (1) and (2) are \emph{data atoms}, which specify that a \emph{method} $M$
   applied to an object $O$ yields the result object $R_i$. In (1), $M$ is a
   \emph{single-valued} (or \emph{scalar}) method, i.e., there is
@@ -849,8 +852,8 @@ variable {\sf O}.\footnote{
 \end{example}
 
 
-
 \subsection{Path Expressions in the Rule Head}
+
 
 Only single-valued path expressions are allowed in a rule head. Set-valued
 path expressions are not allowed because the semantics is not always clear
@@ -905,10 +908,10 @@ Consequently, all F-molecules of the form (1~--~8)
 have dual reading. Given an
 \fl\ database \db I (see below), an expression has:
 \begin{itemize}
-  \index{molecule!object value of}
+  \index{molecule!object value}
 \item An \emph{object value}, which yields the name(s) of the object(s)
   reachable in \db I by the corresponding expression, and 
-  \index{molecule!truth value of}
+  \index{molecule!truth value}
 \item A \emph{truth value}, like any other literal or molecule of the
   language. In particular, a molecule $r$ evaluates to \emph{false} if
   \db I has no object corresponding to $r$.
@@ -1002,13 +1005,17 @@ collected into the list {\sf L}. Therefore, the formula corresponding
 to the F-molecule needs to be compiled into the predicate
 {\sf findall/3} for evaluation at runtime.
 
+\index{predicate signature}
+\index{compiler directive!{\tt sign}}
+%
 By default, when a path expression appears as an argument to a
 predicate or function symbol, the \FLORA compiler will flatten it and
-pass its object value to the predicate or function. If the truth
-value of a path expression is intended, the compiler directive
-{\sf sign} can be used to signal how the compiler should flatten
-the arguments. For instance, the following compiler directive is
-needed to make {\sf findall/3} function correctly in \FLORA:
+pass its object value to the predicate or function. If the truth value
+of a path expression is intended, the compiler directive {\sf sign}
+can be used to define the signature of a predicate, i.e., to signal
+how the compiler should flatten the arguments. For instance, the
+following compiler directive is needed to make {\sf findall/3}
+function correctly in \FLORA:
 \begin{qrules}
 :- sign findall(oid,form,oid).
 \end{qrules}
@@ -1240,10 +1247,7 @@ only certain portions of the object structure.)
 \subsection{Symbols, Strings, and Comments}
 
 
-\index{symbol!in XSB}
 \index{symbol}
-\index{string}
-\index{comment}
 %%
 \paragraph{Symbols.}
 \FLORA symbols (that are used for the names of constants, predicates, and
@@ -1315,6 +1319,7 @@ escaped by another single quote, e.g., \texttt{'isn''t'}.
 
 \index{string}
 \index{character list}
+%
 Like XSB strings, \FLORA strings are enclosed in a pair of double quotes
 (\texttt{\dq}).  These strings are represented internally as lists of
 ASCII characters. For instance, \mbox{\texttt{[102,111,111]}} is the same
@@ -1332,7 +1337,7 @@ escaped by another double quote, e.g.,
 %%
 \index{integer}
 %%
-\index{float}
+\index{floating number}
 %%
 Normal \FLORA integers are decimals represented by a sequence of digits,
 e.g., \texttt{892, 12}.  \FLORA also recognizes integers in other bases (2 through
@@ -1380,6 +1385,8 @@ recognized as in base 10. For example,
 
 \paragraph{Comments.}
 
+\index{comment}
+%
 \FLORA supports three kinds of comments: (1) all characters following
 {\tt \%} until the end of the line; (2) all characters following
 {\tt //} until the end of the line; (3) all characters inside a pair of
@@ -1392,6 +1399,8 @@ tokens can also be delimited by comments.
 \subsection{Operators}
 
 
+\index{operators}
+%
 All programming constructs in \FLORA, such as ``{\tt ,}'', ``{\tt;}'',
 ``{\tt +}'', ``{\tt .}'', ``{\tt ->}'', and ``{\tt ::}'', are now
 carefully organized as operators.  This brings the programming
@@ -1405,6 +1414,9 @@ prefix, and postfix. An infix operator appears between its two
 arguments, while a prefix operator before its single argument and a
 postfix operator after its single argument.
 
+\index{operators!precedence level}
+\index{operators!type}
+%
 Each operator has a \emph{precedence level}, which is a positive
 integer. Each operator also has a \emph{type}. The possible types for
 infix operatos are: {\tt xfx}, {\tt xfy}, {\tt yfx}, while the
@@ -1432,6 +1444,8 @@ type {\tt yfx}, {\tt *} has precedence level {\tt 700} and type
 Therefore, {\tt 8-2-3*4} is the same as {\tt -(-(8,2),*(3,4))} in
 prefix notation, and {\tt a -> b -> c} will generate a parsing error.
 
+\index{compiler directive!{\tt op}}
+%
 An atom named {\sf Name} can be declared as an operator of type {\sf Type}
 and precedence level {\sf Precedence} by the following compiler directive:
 \begin{qrules}
@@ -1451,6 +1465,8 @@ It is possible to have more than one operator of the same name. But the
 \subsection{Logic Expressions}
 
 
+\index{logic expressions}
+%
 In a \FLORA program, any combination of conjunction, disjunction, and
 negation of literals can appear wherever a logial formula is allowed,
 e.g., in a rule body.
@@ -1468,6 +1484,8 @@ For example, in \FLORA the following expression: \verb|a, b; c, ~d|,
 is equivalent to the the logical formula:
 $\tt (a \wedge b) \vee (c \wedge (\neg d))$.
 
+\index{molecule!logic expressions}
+%
 As a syntactic sugar, any combination of conjunction, disjunciton, and
 negation can also appear inside the specification of an object. For
 instance, the following F-molecule:
@@ -1703,6 +1721,8 @@ Who = john
 \subsection{Boolean Methods}
 
 
+\index{method!boolean}
+%
 As a syntactic sugar, \FLORA introduces boolean methods, which can be
 considered as scalar methods that return some fixed value, e.g.,
 {\tt true}. For example, the following facts:
@@ -1741,6 +1761,8 @@ Buddhist. Since \verb|is_vegetarian| is inheritable, it follows that
 \subsection {Sets vs. Lists}
 
 
+\index{multi-valued methods!set notation}
+%
 As mentioned in Section~\ref{sec-basic-flogic}, \fl uses the set
 notation, \{$\ldots$\}, to specify a subset of the return values of a
 multi-valued method, e.g.,
@@ -1755,6 +1777,8 @@ decompose a set, and Prolog does not support the set notation either,
 breaking down of a set is done by the \FLORA compiler. This drawback
 leads to less flexibility in programing style.
 
+\index{multi-valued methods!list notation}
+%
 But in Prolog there is a data structure very close to sets --- lists.
 Note that lists are indeed complex terms and potentially can also be
 used as oids. To avoid this ambiguity, \FLORA introduces a new
@@ -1775,15 +1799,19 @@ The only limitation to the use of {\tt +>>} and {\tt *+>>} is that
 they cannot appear in a fact or the head of a rule.
 
 
-\subsection{HiLog and Related Issues}
+\subsection{HiLog and Related Issues} \label{sec:hilog}
 
 
+\index{HiLog}
+%
 \FLORA now supports HiLog. In HiLog, complex terms can appear wherever
 a function symbol is allowed, e.g., {\sf group(X)(Y,Z)}, where the
 functor is the complex term {\sf group(X)}. In \FLORA, any id-term,
 including function symbols, predicate symbols, and their arguments,
 can be a HiLog term.
 
+\index{HiLog!translation}
+%
 In fact, HiLog has a higher order syntax but a first order semantics
 \cite{hilog-jlp}. Any HiLog term can be consistently translated into
 a Prolog term. For instance, {\sf group(X)(Y,Z)} can be represented
@@ -1798,6 +1826,8 @@ extra translation will be needed for unification to work correctly at
 runtime. For instance, {\sf foo(a)} will unify with {\sf F(a)} and
 bind the variable {\sf F} to {\sf foo}.
 
+\index{compiler directive!{\tt prolog}}
+%
 However, if the default HiLog translation is not intended, the following
 compiler directive can be used to define a traditional Prolog term:
 \begin{quote}
@@ -1815,6 +1845,8 @@ the following directive is defined in a \FLORA program:
 then a term like {\sf member(foo(a),X)} in this program will be translated
 into {\sf member(flapply(foo,a),X)}.
 
+\index{compiler directive!{\tt prologall}}
+%
 In the case where all Prolog terms should stay as they are, the following
 compiler directive can be used:
 \begin{quote}
@@ -1826,6 +1858,8 @@ the HiLog translation.
 For a list of built-in Prolog term definitions in \FLORA, refer to the
 file {\tt flrprolog.P}.
 
+\index{HiLog!unification}
+%
 The following problem arises as far as unificatoin is concerned:
 Should {\sf foo} unify with {\sf foo()}, which both seem like 0-ary
 terms? Moreover, if the answer is yes, then should {\sf foo} unify
@@ -1833,7 +1867,7 @@ with {\sf foo()()}, which is also a valid HiLog term?  In \FLORA, the
 answers depend on whether these 0-ary terms appear as predicate calls
 in rule heads and bodies, or just as id-terms, i.e., arguments.
 
-In general, the presence of a pair of parenthese in a term would imply
+In general, the presence of a pair of parentheses in a term would imply
 one application of the HiLog translation during
 compilation. Therefore, {\sf foo()} would be represented as
 {\sf flapply(foo)}, {\sf foo()()} as {\sf flapply(flapply(foo))},
@@ -1864,6 +1898,8 @@ to {\sf foo} when the call succeeds.
 \subsection{Meta-programming in \FLORA}
 
 
+\index{meta-programming}
+%
 The syntax of \fl and HiLog lends itself naturally to meta-programming. For
 instance, it is easy to examine the methods and types defined for the
 various classes.  Here are some simle examples:
@@ -1916,6 +1952,8 @@ and F-molecules will be provided through future enhancement.
 \subsection{Anonymous Oid}
 
 
+\index{anonymous oid}
+%
 For applications where oids are not important, \FLORA provides the
 compiler directive \verb|_#| to automatically generate a new
 oid. \verb|_#| can be used wherever an id-term is allowed. Like the
@@ -1953,7 +1991,8 @@ foo['_$_$_flora''newoid4'(X)->Y] :- foo(X,Y).
 
 \section{\FLORA Modules} \label{sec:flora-modules}
 
-
+\index{module}
+%
 \FLORA modules are different from XSB modules in the following two
 ways:
 \begin{enumerate}
@@ -1985,9 +2024,11 @@ to the program file name. For instance, {\tt flcompile(myprog,foomod)}
 would generate the byte code {\tt myprog\_foomod.O}.
 
 
-\subsection{Compilation}
+\subsection{Compilation} \label{sec:flora-modules-compilation}
 
 
+\index{module!compilation}
+%
 To compile a program file for a module, \FLORA actually encodes the
 module name into all predicate names in the program, and into all
 those predicate names used for translating \fl literals. Different
@@ -2009,6 +2050,8 @@ loaded into the module named {\tt foomod}:
 \end{verbatim}
 \end{quote}
 
+\index{compiler directive!{\tt nohilog}}
+%
 In the above examples, the translation of {\tt foo(a)} into
 \verb|'_$_$_flora''foomod''flapply'(foo,a)| is due to the HiLog
 translation. If this is not wanted, the compiler directive,
@@ -2056,6 +2099,8 @@ foo(X) :- '_$_$_flora''foomod''hoo'(goo(X)), goo(flapply(hoo,X)).
 \end{verbatim}
 \end{quote}
 
+\index{compiler directive!{\tt nohilogall}}
+%
 To turn off the HiLog translation for all predicate calls in a program,
 the following compiler directive can be used:
 \begin{quote}
@@ -2068,6 +2113,8 @@ the following compiler directive can be used:
 \subsection{Reference to Literals in Other Modules}
 
 
+\index{module!reference}
+%
 The syntax to refer to literals defined in other modules is as follows:
 \begin{quote}
 \verb|literal @ module|
@@ -2076,6 +2123,8 @@ where {\tt literal} can be any predicate or F-molecule. For instance,
 \verb|foo(a) @ foomod| refers to {\tt foo(a)} in the module named
 {\tt foomod}, be it specified as a fact or defined by a rule.
 
+\index{module!rules}
+%
 By default, if not followed by the ``\verb|@|'' sign and a module
 name, all literals only refer to the module where they reside. To specify
 literal references in a \FLORA program, the following rules need to be
@@ -2146,6 +2195,9 @@ followed:
 \subsection{Calling XSB from \FLORA}
 
 
+\index{module!import}
+\index{compiler directive!{\tt import}}
+%
 Like XSB, \FLORA supports the compiler directive,
 \mbox{\tt import functor/arity from module}, to call a predicate
 with functor {\tt functor} and arity {\tt arity} that is defined in an
@@ -2197,6 +2249,9 @@ will be compiled into the following XSB query:
 \subsection{Calling \FLORA from XSB}
 
 
+\index{module!export}
+\index{compiler directive!{\tt export}}
+%
 The major problem with calling \FLORA from XSB is that XSB does not
 understand the \fl syntax. However, \FLORA supports the XSB syntax and
 since every \FLORA program is finally compiled into an XSB program, it
@@ -2232,6 +2287,8 @@ The only thing that needs extra care is the name of the module.
 Here {\tt module} refers to the name of an XSB module, but not
 a \FLORA module.
 
+\index{module!name}
+%
 As pointed out earlier at the beginning of
 Section~\ref{sec:flora-modules}, module names in XSB are associated
 with file names. Therefore, in the {\tt import} compiler directive the
@@ -2256,6 +2313,8 @@ like an integral part of the calling program and therefore cannot be
 used like a \FLORA module or an XSB module. Ideally these programs
 need to be embeded into the calling program to function correctly.
 
+\index{module!include}
+%
 The only way to use these programs is to include their sources into
 the calling program. To include a file into a program, the following
 preprocessing command can be used:
@@ -2274,9 +2333,12 @@ of the preprocessing commands supported by {\sf gpp}.
 
 \section{\FLORA and Tabling}\label{sec-tabling-flora}
 
-************* should add the flora tabling/non-tabling directives ***
+
+\subsection{Tabling in a Nut Shell}
+
 
 \index{tabling}
+%
 Tabling is a technique that enhances top-down evaluation with a mechanism
 that remembers the calls previously made during query evaluation.
 This technique is known to be essentially equivalent to the Magic Sets
@@ -2289,20 +2351,45 @@ XSB lets the user specify which predicates must be tabled.  The \FLORA
 compiler automatically tables the predicates used to flatten F-molecules.
 However, the user is responsible for telling the system which other
 predicates must be tabled. (Normally, these are predicates defined by the
-user.)  \FLORA programs accepts the same tabling directives as XSB does
+user.)  \FLORA accepts the same tabling directives as XSB does
 (Section~\ref{sec-comp-directives} lists all the compiler directives).
 
-It is important to keep in mind that XSB does not do reordering of objects
-and predicates during joins. Instead, all joins are performed left-to-right.
-The programmer, thus, must write program clauses in such a way as to ensure
-that smaller predicates and classes appear early on in the join. Also, even
-though XSB tables the results obtained from previous queries, the current
-tabling engine has several limitations. In particular, when a new query
-comes in, XSB tries to determine if this query is ``similar'' to one that
-already has been answered (or is in the process of being evaluated).
-Unfortunately, the current notion of similarity used by XSB is fairly weak,
-and many unnecessary recomputations might result. This problem will be
-corrected in a future release.
+\index{table}
+\index{compiler directive!{\tt table}}
+%
+Due to the current implementation of HiLog and module system in \FLORA,
+a HiLog predicate cannot be tabled directly (without hacking into the
+\FLORA implementation). To table a predicate, this predicate must be
+declared either as a Prolog term using the \mbox{\tt prolog functor/arity}
+compiler directive, or as a non-HiLog term using the
+\mbox{\tt nohilog functor/arity} compiler directive (refer to
+Section~\ref{sec:hilog} and Section~\ref{sec:flora-modules-compilation}
+for more information on these compiler directives). For instance,
+the following \FLORA program:
+\begin{quote}
+\begin{verbatim}
+:- prolog tc/2.
+:- table tc/2.
+
+tc(X,Y) :- edge(X,Y).
+tc(X,Y) :- edge(X,Y), tc(Y,Z).
+\end{verbatim}
+\end{quote}
+turns off the HiLog translation for the predicate {\tt tc/2} and
+renders it as a Prolog term to be tabled directly by XSB.
+
+It is important to keep in mind that XSB does not do reordering of
+objects and predicates during joins. Instead, all joins are performed
+left-to-right.  Thus, program clauses must be written in such a way as
+to ensure that smaller predicates and classes appear early on in the
+join. Also, even though XSB tables the results obtained from previous
+queries, the current tabling engine has several limitations. In
+particular, when a new query comes in, XSB tries to determine if this
+query is ``similar'' to one that already has been answered (or is in
+the process of being evaluated).  Unfortunately, the current notion of
+similarity used by XSB is fairly weak, and many unnecessary
+recomputations might result. This problem will be corrected in a
+future release.
 
 \index{abolish\_all\_tables}
 %%
@@ -2310,32 +2397,49 @@ It is also important to be aware that when XSB (and \FLORA) evaluate a program,
 all tabled predicates are partially materialized and all the computed
 tuples are stored in XSB tables. Thus, if you change the set of facts, the
 existing tables must be discarded in order to allow XSB to recompute the
-results. This is accomplished by issuing the predicate {\tt
-  abolish\_all\_tables/0} described in the XSB manual.
+results. This is accomplished by issuing the predicate
+{\tt abolish\_all\_tables/0} described in the XSB manual.
 
-Furthermore, tabling sometimes has undesirable side effects in
-``real-world'' programming, especially when writing methods with
-non-logical side effects ({\it e.g.}, writing or reading a file).  If a
+
+\subsection{Procedural Methods}
+
+
+\index{method!procedural}
+%
+Unfortunately, tabling sometimes has undesirable effects in
+``real-world'' programming, especially on those predicates with
+non-logical ``side effects'' (e.g., writing or reading a file).  If a
 tabled predicate has such side effects, then the first time the predicate
 is called the side effect will be performed, but the second time the call
 simply returns with success or failure (depending on the outcome of the
-first call).  Thus, if the predicate was intended to perform the side
+first call).  Thus, if the predicate is intended to perform the side
 effect each time it is called, it will not operate correctly.
 
-All this is, of course, old news to XSB programmers, but is there anything
-\FLORA-specific in this? It turns out yes, and that the problem is not
-immediately apparent. In the object-oriented style, people tend to define
-methods with side effects and attach them to objects.  However, because
-\FLORA tables everything that comes from F-molecules, methods with side
-effects are subject to the same problem as described above.
+In the object-oriented programming style, people tend to define
+methods with side effects and attach them to objects. These methods
+are \emph{procedural} in nature and should be performed each time they
+are called. Because by default \FLORA tables everything that comes
+from F-molecules, these procedural methods are potentially subject to
+the same problem as described above.
 
- To solve this
-program, \FLORA introduces new syntax to escape those methods with side
-effects, which are translated into non-tables predicates when the program
-is compiled. Refer to Section~\ref{sec:} for information
+To solve this program, \FLORA introduces a new syntax to identify
+procedural methods --- simply put a ``\verb|#|'' sign in front of a
+procedural method. For instance, the following rule defines an
+output method that for every object writes out its oid in canonical
+form:
+\begin{quote}
+\verb|O[# output] :- write_canonical(O).|
+\end{quote}
+
+Like boolean methods in \FLORA, procedural methods do not return any
+value but can take any number of arguments. The only difference is that
+procedural methods are \emph{not} tabled, while boolean methods are.
 
 
-\index{cut in \FLORA}
+\subsection{Cuts}
+
+
+\index{cuts in \FLORA}
 \index{cutting across tables}
 %%
 No discussion of a logic programming language is complete without a few
@@ -2361,82 +2465,358 @@ the body has no F-molecule to the left of that cut).
 
 \section{Updates}
 
-\FLORA provides the users with several predicates to modify the runtime
-database.  
+
+\index{update}
+%
+\FLORA provides the users with several predicates to update the runtime
+database. The first note about these predicates is that they operate
+on \emph{base} facts only, but not on derived facts. That is, an
+insertion predicate only inserts facts into the database, while a
+deletion predicate never remove derived facts from the database.
+
+These update predicates can be categorized into two different groups,
+based on their effects upon backtracking: non-backtrackable and
+backtrackable.
 
 
-\subsection{Non-backtrackable Updates}
+\subsection{Non-backtrackable Updates} \label{sec:non-backtrackable-updates}
+
+
+\index{update!non-backtrackable}
+%
+The effects of non-backtrackable updates persist once the operations are
+executed, even when a later failure causes the system to backtrack.
+
+\FLORA supports the following non-backtrackable update predicates:
+{\tt insert}, {\tt delete}, {\tt deleteall}, {\tt erase}, {\tt eraseall}.
+
+\index{non-backtrackable update!insert}
+%
+\paragraph{Insertion.} The syntax of an insertion predicate is as follows:
+\begin{quote}
+\verb|insert(literals)|
+\end{quote}
+where {\tt literals} stands for any number of comma separated literals,
+including predicates and \mbox{F-molecules}. For instance,
+\begin{quote}
+\verb|insert(p(a),mary[spouse->smith,children->>frank])|
+\end{quote}
+
+Note that each literal appearing inside the insertion predicate is
+treated as a separate fact. Thus these literals should follow the
+syntactic rules for facts and literals in the rule head (e.g,
+multi-valued path expressions are not allowed), except that module
+names can be specified for them, which means it is allowed to update
+the facts for other modules. Moreover, module name specification here
+is distributive over multiple literals enclosed by a pair of
+parentheses. For example, the insertion predicate below:
+\begin{quote}
+\verb|insert((mary[children->>frank], john[father->smith]) @ foomod)|
+\end{quote}
+is equivalent to the following one:
+\begin{quote}
+\verb|insert(mary[children->>frank] @ foomod, john[father->smith] @ foomod)|
+\end{quote}
+
+
+\index{non-backtrackable update!delete}
+\index{non-backtrackable update!deleteall}
+\index{non-backtrackable update!erase}
+\index{non-backtrackable update!eraseall}
+%
+\paragraph{Deletion.} The syntax of a deletion predicate is as follows:
+\begin{quote}
+\begin{verbatim}
+delop(literals [| formula])
+\end{verbatim}
+\end{quote}
+where {\tt delop} stands for any of the following four deletion
+operations: {\tt delete}, {\tt deleteall}, {\tt erase}, and
+{\tt eraseall}, {\tt literals} stands for any number of comma
+separated literals, including predicates and \mbox{F-molecules},
+and {\tt [| formula]} stands for an optional logic formula following
+the vertical bar (``{\tt |}'') to specify additional quantifying
+conditions for the literals that will be deleted.
+
+For instance, the following predicate:
+\begin{quote}
+\begin{verbatim}
+deleteall(john[Year(Semester)->>Course] | Year < 2000)
+\end{verbatim}
+\end{quote}
+will delete {\sf John}'s course selection history before the year
+2000.
+
+Note that the comma separated literals are actually in conjunctive
+form specifying the conditions that the literals should hold jointly
+to be deleted. That is, if variables in these literals have the same
+name, then they should share the same binding. For example, suppose
+the database contains the following facts:
+\begin{quote}
+\begin{verbatim}
+p(a). p(b). q(a). q(c).
+\end{verbatim}
+\end{quote}
+then the predicate below:
+\begin{quote}
+\begin{verbatim}
+delete(p(X),q(X))
+\end{verbatim}
+\end{quote}
+will succeed with the variable {\tt X} bound to {\tt a}.  However, if
+the database contains only the facts {\tt p(b)} and {\tt q(c)}, then
+the above predicate will fail.
+
+\FLORA supports four different deletion operations, {\tt delete},
+{\tt deleteall}, {\tt erase}, and {\tt eraseall}:
+\begin{enumerate}
+\item If there are serveral bindings or matches for
+      the literals to be deleted, then {\tt delete} will choose only
+      one of them and delete it. The choice is nondeterministic.
+      For instance, suppose the database contains the following facts:
+      \begin{quote}
+      \verb|p(a). p(b). q(a). q(b).|
+      \end{quote}
+      then
+      \begin{quote}
+      \verb|delete(p(X),q(X))|
+      \end{quote}
+      will succeed with {\tt X} bound to either {\tt a} or {\tt b},
+      depending on the ordering of facts in the database at runtime.
+
+\item On the other hand, {\tt deleteall} will try to delete ``all''
+      bindings or matches. However, the meaning of ``all'' here is
+      limited to some ``minimum'' semantics. The problem arises when
+      a fact appears in several bindings or matches for the literals.
+      For instance, suppose the database contains the following facts:
+      \begin{quote}
+      \verb|p(a). q(b). q(c).|
+      \end{quote}
+      then both \verb|<p(a),q(b)>| and \verb|<p(a),q(c)>| are good
+      bindings for \verb|<p(a),q(X)>|. But the question is: What will
+      \verb|deleteall(p(a),q(X))| do? Should it delete both or just one?
+
+      \smallskip
+
+      In fact, \FLORA will randomly choose one of them and delete it.
+      The idea is to remove the \emph{minimum} amount of facts to
+      \emph{invalidate} the literals taken together as a conjunctive
+      query. For the above example, after the two facts {\tt p(a)} and
+      {\tt q(b)} (or {\tt q(c)}) are deleted, there will be no binding for
+      \verb|<p(a),q(X)>|. Therefore, further deleting {\tt q(c)}
+      (or {\tt q(b)}) seems like an overkill.
+
+      \smallskip
+
+      Unlike the {\tt delete} predicate, {\tt deleteall} \emph{always}
+      succeeds. However, when it succeeds, {\tt deleteall} will leave
+      all variables unbound.
+
+\item {\tt erase} works like {\tt delete}, but with extra functionalities
+      built for \fl facts. While deleting an \fl fact, {\tt erase}
+      will traverse the object tree starting from the object of
+      interest specified in this fact, and delete \emph{all} \fl facts
+      related those objects encountered on its path.
+
+\item {\tt eraseall} is the full version of {\tt erase}, just like {\tt deleteall}
+      is the full version of {\tt delete}. {\tt eraseall} will try to erase
+      ``all'' bindings or matches. It always succeeds and will leave all
+      variables unbound when it returns.
+\end{enumerate}
+
 
 \subsection{Backtrackable Updates}
 
-\subsection{Asserting, Retracting, and Tabling}
+
+\index{update!backtrackable}
+%
+The effects of backtrackable updates are undone upon backtracking,
+i.e., a previous inserted item will be removed from the database, and
+a previous deleted item will be put back into the database when the
+system backtracks.
+
+\index{backtrackable update!btinsert}
+\index{backtrackable update!btdelete}
+\index{backtrackable update!btdeleteall}
+\index{backtrackable update!bterase}
+\index{backtrackable update!bteraseall}
+%
+In \FLORA, the syntax of backtrackable update predicates is similar
+to that of non-backtrackable update predicates, except that the
+predicate names are different. The syntax of a backtrackable insertion
+predicate is:
+\begin{quote}
+\verb|btinsert(literals)|
+\end{quote}
+while the syntax of a backtrackable deletion predicate is:
+\begin{quote}
+\begin{verbatim}
+btdelop(literals [| formula])
+\end{verbatim}
+\end{quote}
+where {\tt btdelop} stands for any of the following four backtrackable
+deletion operations: {\tt btdelete}, {\tt btdeleteall}, {\tt bterase}, and
+{\tt bteraseall}. The meanings of {\tt literals} and {\tt [| formula]} are
+explained in Section~\ref{sec:non-backtrackable-updates}.
+
+{\tt btinsert}, {\tt btdelete}, {\tt btdeleteall}, {\tt bterase}, and
+{\tt bteraseall} work similarly to {\tt insert}, {\tt delete},
+{\tt deleteall}, {\tt erase}, and {\tt eraseall}, respectively, except that
+the former is backtrackable while the latter is not. Refer to
+Section~\ref{sec:non-backtrackable-updates} for details of these
+operations.
+
+To illustrate the difference between backtrackable and
+non-backtrackable updates, consider the following execution trace
+immediately after the \FLORA system starts:
+\begin{quote}
+\begin{verbatim}
+flora2 ?- insert(p(a)), fail.
+
+No.
+
+flora2 ?- p(a).
+
+Yes.
+
+flora2 ?- btinsert(q(a)), fail.
+
+No.
+
+flora2 ?- q(a).
+
+No.
+\end{verbatim}
+\end{quote}
+In the above example, when the first \verb|fail| executes, the system
+backtracks to {\tt insert(p(a))} and does nothing. Thus the insertion
+of {\tt p(a)} persists and the following query \verb|p(a)| returns
+with {\tt Yes}. However, when the second \verb|fail| executes, the
+system backtracks to {\tt btinsert(q(a))} and removes {\tt q(a)} that
+was previously inserted into the database. Thus the next query
+\verb|q(a)| returns with {\tt No}.
+
+
+\subsection{Updates and Tabling}
+
+
 To implement object properties, \FLORA relies on a feature of XSB called
 \emph{tabling} (see Section~\ref{sec-tabling-flora} for more details).
-Unfortunately, tabling and {\tt retract} do not mix well.
-The problem is that results from previous queries are cached in
-tables, and {\tt retract} does not delete facts from tables. Thus, you
-might get the following counterintuitive result:
-%%
+Unfortunately, tabling and database updates do not mix well.
+The problem is that the results from previous queries are stored in
+XSB tables, and database updates do not modify XSB tables.
+
+Thus, a user might get the following counterintuitive result:
+\begin{quote}
 \begin{verbatim}
-flora ?- assert(o[m->1]).
+flora2 ?- insert(o[m->v]).
+
 Yes.
-flora ?- o[m->1].
+
+flora2 ?- o[m->v].
+
 Yes.
-flora ?- retract(o[m->1]), o[m->1].
+
+flora2 ?- delete(o[m->v]), o[m->v].
+
 Yes.
 \end{verbatim}
-%%
-The reason for the wrong positive answer here is that the cache remembers
-that the query {\tt o[m->1]} is true. So, when the same query is asked
-after {\tt retract}, a wrong result is returned from the cache. Similarly,
-tabling might interact poorly with {\tt assert}:
-%%
+\end{quote}
+The reason for the last positive answer here is that XSB tables remember
+that the query {\tt o[m->v]} is true. So, when the same query is asked
+after {\tt delete}, a ``wrong'' result is returned from the tables. Similarly,
+tabling might interact poorly with {\tt insert}:
+\begin{quote}
 \begin{verbatim}
-flora ?- o[m->1].
+flora2 ?- o[m->v].
+
 No.
-flora ?- assert(o[m->1]), o[m->1].
+
+flora2 ?- insert(o[m->v]), o[m->v].
+
 No.
 \end{verbatim}
-%%
-The reason for the wrong result here is, again, that the cache remembers
-that {\tt o[m->1]} is false, which is no longer correct after the assert
-operation.
+\end{quote}
+The reason for the last result here is, again, that XSB tables
+remember that {\tt o[m->v]} is false. However, this is no longer
+correct after the insertion operation.
 
 \index{abolish\_all\_tables}
 %%
-In a future release, \FLORA will provide a workaround for these problems
-(and it is even possible that a future release of XSB will start doing the
-right thing in these situations. For now, the only remedy is to use a call
-to {\tt abolish\_all\_tables}, which would drop all tables.
-However, at present, the only safe way to do this is by executing {\tt
-  abolish\_all\_tables} as a separate query.
+In a future release, \FLORA will provide a workaround for these
+problems (and it is even possible that a future release of XSB will
+start doing the right thing in these situations). For now, the only
+remedy is to use a call to {\tt abolish\_all\_tables}, which will
+clear all tables.  However, at present, the only safe way to do this
+is by executing {\tt abolish\_all\_tables} as a separate query.
 
-
-************* other problems: tabled should not depend on transactions *****
-
-************* tabled queries that depend on dynamic part of the database
-              should use wrappers that abort tables on backtracking. ******
-
-
+Because of the way a tabled predicate is executed, it is a bad
+programming practice to define a tabled predicate that depends on
+database updates and/or procedural methods. For now, the \FLORA
+compiler does not automatically check this kind of dependency. Such
+a feature will be supported in a future release.
 
 
 \section{Negation} \label{sec:negation}
 
 
-\FLORA uses the well-founded semantics for negation and relies on the
-underlying XSB system for this service. Negation is specified using the
-{\tt tnot} operator. 
+\FLORA supports two kinds of negation: negation based on SLD resolution,
+and negation based on well-founded semantics, which relies on the
+underlying XSB tabling system.
 
-***** Explain that if negation is applied to the molecule then the molecule
-      should not contain transactions.
+For negation based on SLD resolution, it is specified using any of the
+following operators: \verb|~|, \verb|\+|, and {\tt not}. Usually, these
+operators are applied to procedural methods and database updates.
+
+For negation based on well-founded semantics, it is specified using the
+operator {\tt tnot}. Usually, {\tt tnot} is applied to predicates that
+are tabled. Note that except procedural methods, all \fl methods are
+tabled, thus {\tt tnot} can be applied to them.
+
+All tabled predicates should use {\tt tnot} for negation. The
+semantics is not clear when negation based on SLD resolution is
+applied to a tabled predicate.
+
+In \FLORA, {\tt tnot} can also be specified for a non-tabled
+predicate, or a logic formula. The effect is such that the system will
+first generate a new tabled predicate to hold the results from the
+non-tabled predicate or the logic formula, then apply {\tt tnot} to
+this new predicate.
+
+In fact, {\tt tnot} in \FLORA is implemented using the XSB operator
+\verb|sk_not|. Refer to the XSB manual for more information on
+negation, well-founded semantics, and the XSB operators {\tt tnot} and
+\verb|sk_not|.
 
 
-\section{\FLORA Compiler and Loader} \label{sec-comp-directives}
+\section{\FLORA Compiler Directives} \label{sec-comp-directives}
 
-Like XSB compiler, \FLORA compiler can take compilation directives. All
+\index{compiler directive}
+%
+\index{compiler directive!{\tt auto\_table}}
+\index{compiler directive!{\tt dynamic}}
+\index{compiler directive!{\tt index}}
+%
+Like XSB compiler, \FLORA compiler can take compiler directives. All
 such directives must begin with {\tt :-} (while all queries must begin with
 {\tt ?-}). The following is a list of all the compiler directives supported
 by \FLORA:
+\begin{itemize}
+\item \verb!auto_table!
+\item \verb!dynamic functor/arity, ..., functor/arity!
+\item \verb!export functor/arity, ..., functor/arity!
+\item \verb!import functor/arity, ..., functor/arity from module!
+\item \verb!index(functor/arity,trie)!
+\item \verb!nohilog functor/arity, ..., functor/arity!
+\item \verb!nohilogall!
+\item \verb!op(precedence,type,operator)!
+\item \verb!op(precedence,type,[operator, ..., operator])!
+\item \verb!prolog functor/arity, ..., functor/arity!
+\item \verb!prologall!
+\item \verb!sign functor(oid|form, ..., oid|form)!, where \verb!oid|form! means
+      either \verb|oid| or \verb!form!
+\item \verb!table functor/arity, ..., functor/arity!
+\end{itemize}
 
 
 \section{\FLORA Debugger}
@@ -2500,7 +2880,10 @@ specifically for \FLORA programs. Flora-mode provides support for syntactic
 highlighting, automatic indentation, and the ability to run \FLORA programs
 right out of the Emacs buffer.
 
+
 \subsection{Instalation}
+
+
 To install \emph{flora-mode}, you must perform the following steps. Put the
 file
 %%
@@ -2567,7 +2950,10 @@ programs), you can do the following:
 \end{itemize}
 %%
 
+
 \subsection{Functionality}
+
+
 \paragraph{Menubar menu.}
 Once flora editing mode is installed, it provides a number of functions.
 First, whenever you edit a \FLORA program, you will see the ``Flora'' menu
@@ -2643,11 +3029,11 @@ indented automatically.
 nothing is cast in stone. So, although we do not intend to make the life of 
 \FLORA users harder than it already is, we cannot give a guarantee of
 backward compatibility. The following enhancements and features are among
-currently planned:
+those currently planned:
 
 %%
 \begin{description}
-  \item[Aggregates:] \FLORA will provide builtin functions that will
+  \item[Aggregates:] \FLORA will provide built-in functions that will
     directly apply to the outcome of the aggregates {\tt collectbag} and
     {\tt collectset}. This will make it possible to do grouping once and
     then compute multiple aggregates over the groups.
