@@ -32,7 +32,7 @@
 	   sysin/2.
 
 :- import retractall/1, assert/1, (dynamic)/1 from assert.
-:- import file_read_line_list/3, file_close/1 from file_io.
+:- import file_read_line_list/2, file_close/1 from file_io.
 :- import shell/5 from shell.
 
 :- import concat_atom/3 from string.

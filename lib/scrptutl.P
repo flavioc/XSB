@@ -38,7 +38,7 @@ date(date(Y,Mon,D,H,Min,S)):-
 %% Convert file into a list of lists of tokens
 file_to_list(File, List) :-
 	repeat,
-	(   file_read_line_list(File, Line, _)
+	(   file_read_line_list(File, Line)
 	->  (   Line = []
 	    ->	Toklist=[]
 	    ;	simple_tokenize(Line, Toklist)
@@ -58,18 +58,18 @@ file_to_list(File, List) :-
 	    retractall('_$_$_file_to_list'(_))
 	).
 
-month('Jan',0).
-month('Feb',1).
-month('Mar',2).
-month('Apr',3).
-month('May',4).
-month('Jun',5).
-month('Jul',6).
-month('Aug',7).
-month('Sep',8).
-month('Oct',9).
-month('Nov',10).
-month('Dec',11).
+month('Jan',1).
+month('Feb',2).
+month('Mar',3).
+month('Apr',4).
+month('May',5).
+month('Jun',6).
+month('Jul',7).
+month('Aug',8).
+month('Sep',9).
+month('Oct',10).
+month('Nov',11).
+month('Dec',12).
 
 % Utilities.
 %aton(Atom,Number):-
