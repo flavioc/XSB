@@ -155,7 +155,7 @@ hashed_find_label(Elem, label_tab(Hash_Size,_,HashLabelTab)) :-
 	; term_hash(X, Hash_Size, Hash)
 	),
 	HashArg is Hash+1,
-	ll_arg(HashArg, HashLabelTab, BucketList),
+	log_ith(HashArg, HashLabelTab, BucketList),
 	membercheck(Elem, BucketList).
 
 

@@ -39,7 +39,6 @@
 :- import file_read/3, vv/2 from xsb_read.
 :- import add_hilog_symbol/1 from hilogsym.
 :- import conset/2, conget/2 from gensym.
-:- import otherwise/0 from standard.
 :- import append/3, memberchk/2 from basics.
 :- import error/1, message/1, option/1, setoptions1/1, warning/1 from auxlry.
 :- import sym_insert/5, sym_propin/2, sym_complete/1,

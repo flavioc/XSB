@@ -81,8 +81,15 @@ length1([_|R], Nin, Nout) :- Nmid is Nin+1, length1(R, Nmid, Nout).
 insert(Elem, [Elem|_]) :- !.
 insert(Elem, [_|Rest]) :- insert(Elem, Rest).
 
-membercheck(Elem, Table) :- nonvar(Table), Table = [Head|Rest],
-			    (Elem = Head ; membercheck(Elem, Rest)).
+/**membercheck(Elem, Table) :- nonvar(Table), Table = [Head|Rest],
+			    (Elem = Head ; membercheck(Elem, Rest)).*/
+			    
+membercheck(Elem, Table) :-
+	nonvar(Table), Table = [Head|Rest],
+	(Elem = Head
+	 ->	true
+	 ; membercheck(Elem, Rest)
+	).
 
 nthmember(X, [X|_], 1).
 nthmember(X, [_|Rest], N) :- nthmember(X,Rest,N1), nonvar(N1), N is N1 + 1.

@@ -305,7 +305,10 @@ sort_by_index(sym_tab(_,_,HashTab), Sorted_SymList) :-
 	closetail(SymList),		% This closes the open-end of SymList.
 	sort_indices(SymList, Sorted_SymList).
 
-sort_indices([], []).	
+sort_indices(SymList,Sorted_SymList) :-
+	parsort(SymList,[asc(4)],0,Sorted_SymList).
+
+/**sort_indices([], []).	
 sort_indices([Sym|Tail], Sorted_SymList) :-
 	Sym = sym(_,_,_,I),
 	split(Tail, I, Small, Big),
@@ -322,7 +325,7 @@ split([Sym|Tail], Index, Small, Big) :-
 	; Big = [Sym|BigTail],
 	  split(Tail, Index, Small, BigTail)
 	).
-
+***/
 
 /*======================================================================*/
 /* Symbol's Properties:							*/

@@ -103,7 +103,7 @@ asm_PIL(Sym, PilCode, NC, IsModule) :-
 	!,
 	compute_hash_table_size(NC, HashSize),
 	LabelTab = label_tab(HashSize,_LabelTabList,HashLabelTab),
-	functor(HashLabelTab, hash_tab, HashSize),
+%%	functor(HashLabelTab, hash_tab, HashSize),
 	asm_text_size(ProgramCode, 0, TxtSize, HashSize, HashLabelTab),
 	make_label_list(LabelTab),
 	number_index_block(Index, 1),		% first block has number 1. 
@@ -158,6 +158,10 @@ asm_index_inst1(s, 9).
 /*	clauses to be compiled.						*/
 /*----------------------------------------------------------------------*/
 
+%% with log_ith hashtable, take number of clauses as size
+compute_hash_table_size(NumberOfClauses, NumberOfClauses).
+
+/**
 compute_hash_table_size(NumberOfClauses, HashSize) :-
 	Allow_up_to_7_Scans is NumberOfClauses // 7, 
 	nearest_prime(Allow_up_to_7_Scans, HashSize).
@@ -167,7 +171,7 @@ nearest_prime(Number, Prime) :-
 	Number =< High,
 	!.
 nearest_prime(_, 251). % Bart - 4-3-1999 see last fact of prime/2
-
+***/
 
 /*----------------------------------------------------------------------*/
 /*  asm_text_size(+PilCode, +InitialSize, -TextSize,			*/
@@ -195,7 +199,7 @@ hash_insert((X, Lc), HashSize, HashLabelTab) :-
 	; term_hash(X, HashSize, Hash)
 	),
 	HashArg is Hash+1,
-	ll_arg(HashArg, HashLabelTab, BucketList),
+	log_ith(HashArg, HashLabelTab, BucketList),
 	insert((X, Lc),  BucketList).
 
 
@@ -212,7 +216,7 @@ make_label_list(label_tab(HashSize,LabelTabList,HashLabelTab)) :-
 
 make_label_list1(I, HashSize, LabelTabList, HashLabelTab) :-
 	( I =< HashSize ->
-		ll_arg(I, HashLabelTab, LabelTabList),
+		log_ith(I, HashLabelTab, LabelTabList),
 		scan_till_end_of_bucket(LabelTabList, NewLabelTabList),
 		NewI is I+1,
 		make_label_list1(NewI, HashSize, NewLabelTabList, HashLabelTab)
@@ -249,7 +253,7 @@ number_index_block([arglabel(_T,_Val,_Label)|Rest], I) :-
 /*	time when this is written) are used, but only an appropriate	*/
 /*	subset of them.							*/
 /*----------------------------------------------------------------------*/
-
+/***
 prime(1, 1).		% prime(2, 2).
 prime(3, 3).
 prime(6, 5).
@@ -279,4 +283,4 @@ prime(215, 223).	% prime(228, 227).
 prime(231, 229).	% prime(236, 233).
 prime(240, 239).	% prime(246, 241).
 % prime(100000000, 251).
-
+***/

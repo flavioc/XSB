@@ -161,7 +161,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 #endif
         %% If --quietload, don't print Preprocessing messages
 	stat_flag(BANNER_CTL,BannerCtl),
-	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
+	(   BannerCtl mod QUIETLOAD =:= 0
 	->  true
 	;   message(XPP_command_msg)
 	),
@@ -220,8 +220,9 @@ parse_clauses(ModName, Module) :-
 	check_compilable_clause(Clause),
 	expand_term(Clause, Expanded_Clause0),
 	change_multifile_directive(Expanded_Clause0, ModName, Expanded_Clause),
-	( Expanded_Clause == end_of_file, !
-	; otherwise, !,
+	(Expanded_Clause == end_of_file
+	 ->	true
+	 ;	!,
 	    parse_clause(Expanded_Clause, VariableList, Module),
 	    %% stop parsing clauses, if needs_restart parsing
 	    (conget(needs_restart, 1) 
@@ -743,6 +744,8 @@ trans_goals('\+'(A), not(Goal1), SymTab, VidIn, VidOut) :- !,
 	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
 trans_goals(fail_if(A), not(Goal1), SymTab, VidIn, VidOut) :- !, 
 	trans_goals(A, Goal1, SymTab, VidIn, VidOut).
+trans_goals(once(A), Goal, SymTab, VidIn, VidOut) :- !, % optimize once/1
+	trans_goals((A->true), Goal, SymTab, VidIn, VidOut).
 trans_goals(T, Goal, SymTab, VidIn, VidOut) :-
 	trans_goal(T, Goal, SymTab, VidIn, VidOut).
 
