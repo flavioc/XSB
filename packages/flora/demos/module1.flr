@@ -1,7 +1,4 @@
 
-%%:- import bootstrap_flora/0 from flora.
-%%?- bootstrap_flora.
-
 :- import flcompile/1 from flrutils.
 ?- flcompile(module2).
 
@@ -20,16 +17,20 @@ john[salary@(1997) -> 50].
 john[salary@(1998) -> 80].
 
 
-?- Z := max {X; john[salary@(Year)->X] }.
+?- nl,write('Max John''s salary:'), Z := max {X; john[salary@(Year)->X] }.
 
-?- Z := max{X ; john[salary@(Year) ->X], Year < 1996}.
+?- nl,write('Max John''s salary before 1996:'), 
+   Z := max{X ; john[salary@(Year) ->X], Year < 1996}.
+
+?- nl,write('Max Mary''s salary:'), Z := max {X; mary[salary@(Year)->X] }.
 
 // It is strange that Florid will report an error saying invalid
 // aggregate expression for the following query.
 
 ?- Z=count{Year; john.salary@(Year) < max{X; john[salary@(Y2)->X], Y2<Year} }.
 
-?- Z=count{Year; john.salary@(Year) < mary.salary@(Year)}.
+?- nl,write('Number of years when John earned less than Mary:'),
+   Z=count{Year; john.salary@(Year) < mary.salary@(Year)}.
 
 ?- Z= avg{X [Who]; Who[salary@(Year)->X]}.
 
