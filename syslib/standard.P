@@ -251,11 +251,16 @@ skip(C) :- get0(C0), (C0=C ; skip(C)).
 
 % TLS: most error checking assumed to happen in atom_codes or put.
 % Still need put_char/2 and put_code/2
+
+put_char(Str,C):- telling(Cstr),tell(Str),put_char(C),tell(Cstr).
+
 put_char(C):- 			%ISO
 	atom_codes(C,L),
 	(L = [L1] -> true ; 
 		abort('Type error in argument 1 of put_char/1')),
 	put(L1).
+
+put_code(Str,C):- telling(Cstr),tell(Str),put_code(C),tell(Cstr).
 
 put_code(C):- put(C).		%ISO
 
@@ -271,7 +276,10 @@ read(Istr,T) :- see(Istr),read(T),see(userin).
 
 read(T) :- stat_flag(CURRENT_INPUT, File), file_read(File, T).
 
-write(Ostr,Term):- tell(Ostr),	write(Term),tell(userout).
+% write(Ostr,Term):- tell(Ostr),	write(Term),tell(userout).
+
+write(Ostr,Term):- telling(Str),tell(Ostr),	
+		   write(Term),tell(Str).
 
 write(T) :- stat_flag(CURRENT_OUTPUT, File), file_write(File, T).
 
@@ -1085,6 +1093,19 @@ catch(_Goal,Catcher,Handler) :-
 throw(Ball) :-
         asserta('$$exception_ball'(Ball)),
         '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Towards ISO flags
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Needed for ISO: 
+% Max integer
+% Min Integer
+% Debug
+% Undefined predicate.
+
+current_prolog_flag(Flag,Value):- xsb_flag(Flag,Value).
+current_prolog_flag(max_arity,256).
 
 
 /* --------------------- end of file standard.P ----------------------- */
