@@ -231,7 +231,7 @@ copyIOport(FromIOport, ToIOport) :-
 	(file_read_line(FromIOport, Line) 
 	-> file_write(ToIOport, Line),fail
 	; true
-	).
+	), !.
 copyIOport(_,_).
 
 /***************************************************************/
