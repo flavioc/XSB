@@ -468,6 +468,64 @@ Write {\tt ByteCount} bytes into file represented by file descriptor {\tt
     its previous psc value to zero, this predicate can be called with
     {\tt FileDes} of -1000.
 
+\ournewitem{file\_read\_line(+FileDes,-String,-IsFullLine)}{file\_io}
+\index{{\tt file\_read\_line/3}}
+    This is a low-level predicate that allows XSB to read input files
+    efficiently, line by line. It returns the string read from {\tt
+      FileDes} using the variable {\tt String}. The output variable {\tt
+      IsFullLine} is 1, if the line read contains the newline character at
+    the end. Otherwise, it is 0. This latter case arises in two situations:
+    when the last line in the stream does not have a newline  character or
+    when the line is very long, longer than the buffer allocated for that
+    purpose. (In such a case {\tt file\_read\_line/3} will read only as
+    much as the buffer allows.) 
+
+    This predicate fails on reaching the end of file.
+    
+    {\bf Important}: This predicate does not intern the string it reads
+    from the input, so you cannot unify or compare the value read with
+    anything. Moreover, if you use this predicate twice, then the second
+    call replaces the value read by the first call. In other words, this
+    predicate is very low-level and should be used with great care.
+    See \verb|file_read_line_atom| and \verb|file_read_line_list| for
+    alternatives that are often better.
+
+\ournewitem{file\_read\_line\_atom(+FileDes,-String,-IsFullLine)}{file\_io}
+\index{{\tt file\_read\_line\_atom/3}}
+    This predicate is like \verb|file_read_line|, but the line read from
+    the input is interned. Therefore, {\tt String} is instantiated
+    to a normal atom.
+    
+    {\bf Important}: At present, XSB does not have atom table garbage
+    collector. Therefore, each line read from the file using this predicate
+    gets stored in the atom table. Thus, large files can cause XSB to run
+    out of memory.  This problem will go away when atom table garbage
+    collection is implemented.
+
+\ournewitem{file\_read\_line\_atom(-String,-IsFullLine)}{file\_io}
+\index{{\tt file\_read\_line\_atom/2}}
+   Like \verb|file_read_line_atom/3|, but {\tt FileDes} is not required.
+   The file being read is the one previously opened with {\tt see/1}.
+
+\ournewitem{file\_read\_line\_list(+FileDes,-CharList,-IsFullLine)}{file\_io}
+\index{{\tt file\_read\_line\list/3}}
+    This predicate is like \verb|file_read_line_atom|, but the line read from
+    the input is converted into a list of characters.
+    This predicate is \emph{much} more efficient than {{\tt fget\_line/3}}
+    (see below), and is recommended when speed is important.
+
+\ournewitem{file\_read\_line\_list(-String,-IsFullLine)}{file\_io}
+\index{{\tt file\_read\_line\_list/2}}
+   Like \verb|file_read_line_list/3|, but {\tt FileDes} is not required.
+   The file being read is the one previously opened with {\tt see/1}.
+
+\ournewitem{fget\_line(+Str,-Inlist,-Next)}{scrptutl}
+\index{{\tt fget\_line/3}}
+    {\tt fget\_line/3} reads one line from the input stream {\tt Str} and
+    unifies {\tt Inlist} to the list of ASCII integers representing the
+    characters in the line, and {\tt Next} to the line terminator, either
+    a newline ({\tt 10}) or EOF ({\tt-1}).
+
 
 \end{description}
 
@@ -525,39 +583,6 @@ Returns file size.
 specified by path.  Information about the files is similar to that
 obtained by {\tt ls -l}, but transformed for ease of processing.
 
-\ournewitem{fget\_line(+Str,?Inlist,?Next)}{scrptutl}
-\index{{\tt fget\_line/3}}
-
-{\tt fget\_line/3} reads one line from the input stream {\tt Str} and
-unifies {\tt Inlist} to the list of ASCII integers representing the
-characters in the line, and {\tt Next} to the line terminator, either
-a newline ({\tt 10}) or EOF ({\tt-1}).
-
-\ournewitem{file\_read\_line(+FileDes,-String,-IsFullLine)}{file\_io}
-\index{{\tt file\_read\_line/3}}
-\index{{\tt intern\_string/2}}
-    This is a low-level predicate that allows XSB to read input files
-    efficiently, line by line. It returns the string read from {\tt
-      FileDes} using the variable {\tt String}. The output variable {\tt
-      IsFullLine} is 1, if the line read contains the newline character at
-    the end. Otherwise, it is 0. This latter case arises in two situations:
-    when the last line in the stream does not have a newline  character or
-    when the line is very long, longer than the buffer allocated for that
-    purpose. (In such a case {\tt file\_read\_line/3} will read only as
-    much as the buffer allows.) 
-
-    This predicate fails on reaching the end of file.
-
-    This predicate is much more efficient than {{\tt fget\_line/3}}, but it
-    is also much more low level (see next). Also, there is a difference
-    between {{\tt fget\_line/3}} and {\tt file\_read\_line/3} in that the
-    former returns strings, while the latter returns lists of ASCII
-    characters.
-    
-    {\bf Important}: Reading large files using this function can cause XSB
-    to run out of memory, because all strings are converted to atoms.
-    This problem will go away when atom table garbage collection is
-    implemented for XSB.
 
 \ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
 \index{{\tt expand\_filename/2}}
