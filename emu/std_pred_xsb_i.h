@@ -576,7 +576,6 @@ inline static xsbBool keysort(void)
   CPtr top = 0;
 
   list = ptoc_tag(1);
-  term = ptoc_tag(2);
   term2 = list; len = 0;
   do {
     XSB_Deref(term2);
@@ -598,6 +597,9 @@ inline static xsbBool keysort(void)
       return FALSE;	/* fail */
     }
   } while(1);
+  check_glstack_overflow(3, pcreg, (2*len)*sizeof(Cell), xsb_abort("")) ;
+  list = ptoc_tag(1);  /* reset in case moved */
+  term = ptoc_tag(2);
   if (len > 0) {
     term2 = list;
     cell_tbl = (Cell *)malloc(len * sizeof(Cell));
