@@ -1506,7 +1506,7 @@ int builtin_call(byte number)
        * that were used before can be put into the free set list.
        */
       if ((Set_ArrayPtr[tmpval] != NULL) &&
-	  (!((int) Set_ArrayPtr[tmpval] & 0x3))) {
+	  (!((long) Set_ArrayPtr[tmpval] & 0x3))) {
 	delete_trie(Set_ArrayPtr[tmpval]);
 	switch_from_trie_assert;
         /*

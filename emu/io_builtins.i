@@ -1,4 +1,4 @@
-/* File:      io_builtins.c
+/* File:      io_builtins.i
 ** Author(s): davulcu, kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -31,9 +31,9 @@
 
 static struct stat stat_buff;
 #ifndef fileno				/* fileno may be a  macro */
-extern int    fileno(FILE *);	        /* this is defined in POSIX */
+extern int    fileno(FILE *f);	        /* this is defined in POSIX */
 #endif
-extern Cell   ptoc_tag(int);
+extern Cell   ptoc_tag(int i);
 extern char   *expand_filename(char *filename);
 extern char *p_charlist_to_c_string (prolog_term, char *, char *);
 
