@@ -50,5 +50,7 @@
 	flora_nohilog_predicate/3,
 	flora_classify_call/5,
 	flora_wspredicate/4,
+	flora_wssymbol/3,
+	flora_wshilog/2,
 	flora_is_general_predicate/2,
 	flora_storage_name/2.

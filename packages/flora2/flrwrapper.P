@@ -208,15 +208,30 @@ flora_nohilog_predicate(Funct,Predicate,Workspace) :-
 
 
 /*****************************************************************************
+  Take a predicate name, args, and workspace and return a Florified call
+  (dith workspace attached)
   flora_wspredicate(+Functor,+Args,+Workspace,-Predicate)
 *****************************************************************************/
 flora_wspredicate(Functor,Args,WS,Predicate) :-
-	( flora_check_workspace(WS) ->
-	    fmt_write_string(PF,"%s'%s'%s",args(FLORA_PREFIX,WS,Functor)),
-	    Predicate =.. [PF|Args]
-	;
-	  abort
+	flora_wssymbol(Functor,WS,PF),
+	Predicate =.. [PF|Args].
+
+/* Take a symbol and Florify it:
+      flora_wssymbol(+Symbol,+WS,-FlorifiedSymbol)
+*/
+flora_wssymbol(Symbol,WS,FlorifiedSymbol) :-
+	( flora_check_workspace(WS)
+	-> fmt_write_string(FlorifiedSymbol, "%s'%s'%s",
+			    args(FLORA_PREFIX,WS,Symbol))
+	; abort
 	).
+
+/*
+    Returns Florified HiLog Wrapper (with workspace attached)
+    flora_wshilog(+WS, -HiLogPredSym)
+*/
+flora_wshilog(WS,HiLogPredSym) :-
+	flora_wssymbol(WRAP_HILOG,WS,HiLogPredSym).
 
 
 /*****************************************************************************
