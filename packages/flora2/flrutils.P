@@ -177,7 +177,7 @@ flloadtrailer(TrailerName,Workspace) :-
 	  consult(UserTrailerWSOFile),
 	  !,
 	  %% Check if the patch needs to be loaded.
-	  flora_user_module_predicate_symbol(FLORA_THIS_MODULE,Workspace,Predicate),
+	  flora_firstorder_user_module_predicate_symbol(FLORA_THIS_MODULE,Workspace,Predicate),
 	  (current_predicate(Predicate/1) -> true; flloadpatch(Workspace))
         ),
 	!.

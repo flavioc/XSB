@@ -74,6 +74,7 @@ is_flequality(FLEQUALITY(A),A).
 is_flequality(FLEQUALITY(A,M),A,M).
 is_flexpunge(FLEXPUNGE(FAList),FAList).
 is_flexpunge(FLEXPUNGE(FAList,M),FAList,M).
+%% These two are used for the build process only--want to get rid of them
 is_flflogicstatic(FLFLOGICSTATIC(F,N),F,N).
 is_flflorapatch(FLFLORAPATCH(F,N),F,N).
 

@@ -158,7 +158,7 @@
 :- import prettyprint_stdin/0 from flrprettyprint.
 
 :- import
-	flora_user_module_predicate_symbol/3,
+	flora_firstorder_user_module_predicate_symbol/3,
 	flora_module_name/3,
 	flora_module_name_error/1,
 	flora_fdb_storage_name/2,
