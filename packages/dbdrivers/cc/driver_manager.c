@@ -261,6 +261,17 @@ DllExport int call_conv queryConnection(void)
 	if (is_nil(returnList) && result == NULL)
 		return TRUE;
 
+	if (!is_nil(returnList) && result == NULL)
+	{
+		while (!is_nil(returnList))
+		{
+			element = p2p_car(returnList);
+			c2p_nil(element);
+			returnList = p2p_cdr(returnList);
+		}
+		return TRUE;
+	}
+
 	i = 0;
 	while (!is_nil(returnList))
 	{
