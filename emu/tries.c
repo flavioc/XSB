@@ -75,6 +75,10 @@ int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
 Cell CallVarEnum[NUM_TRIEVARS];
 Cell TrieVarBindings[NUM_TRIEVARS];
 
+/*
+ * global_num_vars is a new variable to save the value of variable
+ * num_vars_in_var_regs temporarily.
+ */
 int global_num_vars;
 
 /*
