@@ -64,7 +64,7 @@ extern void printterm(Cell, byte, int);   /* prints to stddbg */
 DynamicStack  tstTermStack;
 struct tstTermStackLog  tstTermStackLog;
 DynamicStack  tstSymbolStack;
-struct tstTrail  tstTrail;
+DynamicStack  tstTrail;
 
 
 void tstInitDataStructs() {
@@ -76,7 +76,7 @@ void tstInitDataStructs() {
   TermStackLog_Init;
   DynStk_Init(&tstSymbolStack, TST_SYMBOLSTACK_INITSIZE, Cell,
 	      "Trie-Symbol Stack");
-  Trail_Init;
+  DynStk_Init(&tstTrail, TST_TRAIL_INITSIZE, CPtr, "TST Trail");
   initSubsumptiveLookup();
   initTSTRetrieve();
 }
@@ -86,6 +86,7 @@ void tstShrinkDynStacks() {
 
   dsShrink(&tstTermStack);
   dsShrink(&tstSymbolStack);
+  dsShrink(&tstTrail);
 }
 
 /* ======================================================================= */

@@ -62,7 +62,8 @@
  */
 
 static CPtr *trail_base;    /* ptr to topmost used Cell on the system Trail;
-			       the beginning of our tstTrail. */
+			       the beginning of our local trail for this
+			       operation. */
 
 static CPtr *orig_trreg;            
 static CPtr orig_hreg;      /* Markers for noting original values of WAM */

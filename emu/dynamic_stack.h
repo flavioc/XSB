@@ -96,6 +96,11 @@ extern void dsShrink(DynamicStack *);
  }
 
 
+/*
+ * In the following macros, "Frame" is assigned a pointer to either
+ * the next or the current frame on the stack.
+ */
+
 /* Operations With Bounds Checking
    ------------------------------- */
 #define DynStk_Push(DS,Frame) {			\

@@ -69,31 +69,31 @@ extern DynamicStack tstTermStack;
    DynStk_Top(tstTermStack) = TermStack_Base + Index
 
 #define TermStack_Push(Term) {			\
-   CPtr newFrame;				\
+   CPtr nextFrame;				\
 						\
-   DynStk_Push(tstTermStack,newFrame);		\
-   *newFrame = Term;				\
+   DynStk_Push(tstTermStack,nextFrame);		\
+   *nextFrame = Term;				\
  }
 
 #define TermStack_BlindPush(Term) {		\
-   CPtr newFrame;				\
+   CPtr nextFrame;				\
 						\
-   DynStk_BlindPush(tstTermStack,newFrame);	\
-   *newFrame = Term;				\
+   DynStk_BlindPush(tstTermStack,nextFrame);	\
+   *nextFrame = Term;				\
  }
 
 #define TermStack_Pop(Term) {			\
-   CPtr newFrame;				\
+   CPtr curFrame;				\
 						\
-   DynStk_BlindPop(tstTermStack,newFrame);	\
-   Term = *newFrame;				\
+   DynStk_BlindPop(tstTermStack,curFrame);	\
+   Term = *curFrame;				\
  }
 
 #define TermStack_Peek(Term) {			\
-   CPtr newFrame;				\
+   CPtr curFrame;				\
 						\
-   DynStk_BlindPeek(tstTermStack,newFrame);	\
-   Term = *newFrame;				\
+   DynStk_BlindPeek(tstTermStack,curFrame);	\
+   Term = *curFrame;				\
  }
 
 /* Specialty Pushing Macros
@@ -243,24 +243,24 @@ extern DynamicStack tstSymbolStack;
 #define SymbolStack_IsEmpty	  DynStk_IsEmpty(tstSymbolStack)
 
 #define SymbolStack_Push(Symbol) {		\
-   CPtr newFrame;				\
+   CPtr nextFrame;				\
 						\
-   DynStk_Push(tstSymbolStack,newFrame);	\
-   *newFrame = Symbol;				\
+   DynStk_Push(tstSymbolStack,nextFrame);	\
+   *nextFrame = Symbol;				\
  }
 
 #define SymbolStack_Pop(Symbol) {		\
-   CPtr newFrame;				\
+   CPtr curFrame;				\
 						\
-   DynStk_BlindPop(tstSymbolStack,newFrame);	\
-   Symbol = *newFrame;				\
+   DynStk_BlindPop(tstSymbolStack,curFrame);	\
+   Symbol = *curFrame;				\
 }
 
 #define SymbolStack_Peek(Symbol) {		\
-   CPtr newFrame;				\
+   CPtr curFrame;				\
 						\
-   DynStk_BlindPeek(tstSymbolStack,newFrame);	\
-   Symbol = *newFrame;				\
+   DynStk_BlindPeek(tstSymbolStack,curFrame);	\
+   Symbol = *curFrame;				\
 }
 
 #define SymbolStack_PushPathRoot(Leaf,Root) {	\
@@ -283,45 +283,40 @@ extern DynamicStack tstSymbolStack;
 /*
  *  tstTrail
  *  ---------
- *  For recording bindings made during processing.  This Trail
- *  performs simple WAM trailing: saves address locations only.
+ *  For recording bindings made during processing.  This Trail performs
+ *  simple WAM trailing -- it saves address locations only.
  */
 
-#define TST_TRAIL_SIZE    K
+extern DynamicStack tstTrail;
+#define TST_TRAIL_INITSIZE    20
 
-struct tstTrail {
-  CPtr *top;           /* next available location to place an entry */
-  CPtr *ceiling;       /* overflow pointer: points to Cell beyond array end */
-  CPtr base[TST_TRAIL_SIZE];
-};
+#define Trail_Top		((CPtr *)DynStk_Top(tstTrail))
+#define Trail_Base		((CPtr *)DynStk_Base(tstTrail))
+#define Trail_NumBindings	DynStk_NumFrames(tstTrail)
+#define Trail_ResetTOS		DynStk_ResetTOS(tstTrail)
 
-extern struct tstTrail    tstTrail;
-
-
-#define Trail_Init         tstTrail.ceiling = tstTrail.base + TST_TRAIL_SIZE
-#define Trail_ResetTOS     tstTrail.top = tstTrail.base
-#define Trail_IsFull       tstTrail.top == tstTrail.ceiling
-#define Trail_NumBindings  ( tstTrail.top - tstTrail.base )
-
-#define Trail_Push(Addr) {              \
-   Trail_OverflowCheck;                 \
-   *tstTrail.top++ = (CPtr)(Addr);      \
+#define Trail_Push(Addr) {			\
+   CPtr *nextFrame;				\
+   DynStk_Push(tstTrail,nextFrame);		\
+   *nextFrame = (CPtr)(Addr);			\
  }
 
-#define Trail_PopAndReset {		\
-   tstTrail.top--;			\
-   bld_free(*tstTrail.top);		\
+#define Trail_PopAndReset {			\
+   CPtr *curFrame;				\
+   DynStk_BlindPop(tstTrail,curFrame);		\
+   bld_free(*curFrame);				\
  }
 
-#define Trail_Unwind_All   Trail_Unwind(tstTrail.base)
+#define Trail_Unwind_All	Trail_Unwind(0)
 
-#define Trail_Unwind(UnwindBase)	\
-   while(tstTrail.top > UnwindBase)	\
-     Trail_PopAndReset
-
-#define Trail_OverflowCheck        \
-   if (Trail_IsFull)               \
-     Print_Overflow_Warning("tstTrail")
+/*
+ * Untrail down to and including the Index-th element.
+ */
+#define Trail_Unwind(Index) {			\
+   CPtr *unwindBase = Trail_Base + Index;	\
+   while(Trail_Top > unwindBase)		\
+     Trail_PopAndReset;				\
+ }
 
 /*=========================================================================*/
 

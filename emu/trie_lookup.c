@@ -178,7 +178,7 @@ static xsbBool save_variant_continuation(BTNptr last_node_match) {
 			     variant_cont.bindings.stack.size,
 			     Trail_NumBindings);
   i = 0;
-  for ( binding = tstTrail.base; binding < tstTrail.top; binding++ ) {
+  for ( binding = Trail_Base;  binding < Trail_Top;  binding++ ) {
     termptr = *binding;
     /*
      * Take only those bindings made to the call variables.
@@ -242,9 +242,9 @@ void *stl_restore_variant_cont() {
 typedef struct {
   BTNptr alt_node;	/* node from which to continue the search */
   BTNptr var_chain;	/* beginning of variable chain */
-  int termstk_top_offset;  /* current top-of-tstTermStack at CP creation */
+  int termstk_top_index;  /* current top-of-tstTermStack at CP creation */
   pLogFrame log_top;	/* current top-of-tstTermStackLog at CP creation */
-  CPtr *trail_top;	/* current top-of-tstTrail at CP creation */
+  int trail_top_index;	/* current top-of-tstTrail at CP creation */
 } tstChoicePointFrame;
 
 typedef tstChoicePointFrame *pCPFrame;
@@ -259,9 +259,9 @@ static struct {
 /**** Use these to access the frame to which `top' points ****/
 #define CPF_AlternateNode	((tstCPStack.top)->alt_node)
 #define CPF_VariableChain	((tstCPStack.top)->var_chain)
-#define CPF_TermStackTopOffset	((tstCPStack.top)->termstk_top_offset)
+#define CPF_TermStackTopIndex	((tstCPStack.top)->termstk_top_index)
 #define CPF_TermStackLogTop	((tstCPStack.top)->log_top)
-#define CPF_TrailTop		((tstCPStack.top)->trail_top)
+#define CPF_TrailTopIndex	((tstCPStack.top)->trail_top_index)
 
 /**** Stack Operations ****/
 #define CPStack_ResetTOS     tstCPStack.top = tstCPStack.base
@@ -283,10 +283,10 @@ static struct {
    CPStack_OverflowCheck;				\
    CPF_AlternateNode = AltNode;				\
    CPF_VariableChain = VarChain;			\
-   CPF_TermStackTopOffset =				\
+   CPF_TermStackTopIndex =				\
      TermStack_Top - TermStack_Base + 1;		\
    CPF_TermStackLogTop = tstTermStackLog.top - 1;	\
-   CPF_TrailTop = tstTrail.top;				\
+   CPF_TrailTopIndex = Trail_Top - Trail_Base;		\
    tstCPStack.top++;					\
  }
 
@@ -296,7 +296,7 @@ static struct {
  *  but only those that will effect the soon-to-be active portion of the
  *  term stack.  Use the following to replace the body of the while loop:
  *      tstTermStackLog.top--;
- *      if (LogFrame_Index < CPF_TermStackTopOffset)
+ *      if (LogFrame_Index < CPF_TermStackTopIndex)
  *        TermStack_Base[LogFrame_Index] = LogFrame_Value;
  */
 
@@ -306,8 +306,8 @@ static struct {
    VarChain = CPF_VariableChain;			\
    while (tstTermStackLog.top > CPF_TermStackLogTop)	\
      TermStackLog_PopAndReset;				\
-   TermStack_SetTOS(CPF_TermStackTopOffset);		\
-   Trail_Unwind(CPF_TrailTop);				\
+   TermStack_SetTOS(CPF_TermStackTopIndex);		\
+   Trail_Unwind(CPF_TrailTopIndex);			\
  }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1117,7 +1117,7 @@ void *variant_trie_lookup(void *trieRoot, int nTerms, CPtr termVector,
 	int i;
 
 	for ( i = 0;  i < Trail_NumBindings;  i++ )
-	  varArray[i+1] = (Cell)tstTrail.base[i];
+	  varArray[i+1] = (Cell)Trail_Base[i];
 	varArray[0] = i;
       }
     }
@@ -1402,7 +1402,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 #endif
     for ( cur = match;  IsNonNULL(cur);  cur = BTN_Sibling(cur) )
       if ( symbol == BTN_Symbol(cur) ) {
-	int origTermStackTopOffset = TermStack_Top - TermStack_Base;
+	int origTermStackTopIndex = TermStack_Top - TermStack_Base;
 #ifdef DEBUG_TRIE_LOOKUP
 	xsb_dbgmsg("  Found matching trie symbol");
 #endif
@@ -1420,7 +1420,7 @@ static BTNptr rec_sub_trie_lookup(BTNptr parent, TriePathType *pathType) {
 #ifdef DEBUG_TRIE_LOOKUP
 	  xsb_dbgmsg("  Matching trie symbol didn't lead to valid path");
 #endif
-	  TermStack_SetTOS(origTermStackTopOffset);
+	  TermStack_SetTOS(origTermStackTopIndex);
 	  break;
 	}
       }
