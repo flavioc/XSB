@@ -168,7 +168,8 @@ int     xctr;
 #endif 
 
 /* place for a meaningful message when segfault is detected */
-char *xsb_default_segfault_msg = "Memory violation occurred during evaluation";
+char *xsb_default_segfault_msg =
+     "++Memory violation occurred during evaluation\n";
 char *xsb_segfault_message;
 jmp_buf xsb_segfault_fallback_environment;
 jmp_buf xsb_abort_fallback_environment;
@@ -227,12 +228,13 @@ static int emuloop(byte *startaddr)
   ALPtr OldRetPtr;
   NODEptr TrieRetPtr;
   char  message[80];
+  byte reset_inst = reset;  /* instruction to initialize abort handler */
 
   xsb_segfault_message = xsb_default_segfault_msg;
 
   rreg = reg; /* for SUN */
   op1 = op2 = (Cell) NULL;
-  lpcreg = startaddr;
+  lpcreg = &reset_inst;  /* start by initializing abort handler */
 
 contcase:     /* the main loop */
 
@@ -1103,17 +1105,6 @@ contcase:     /* the main loop */
     goto contcase; 
 
   case fail:    /* PPP */
-    /* fallback point for segmentation faults */
-    if (setjmp(xsb_segfault_fallback_environment)) {
-      char *tmp_message = xsb_segfault_message;
-      xsb_segfault_message = xsb_default_segfault_msg; /* restore default */
-      /* Restore the default signal handling */
-      signal(SIGSEGV, xsb_default_segfault_handler);
-      xsb_abort(tmp_message);
-    }
-    if (setjmp(xsb_abort_fallback_environment)) {
-    }
-  
     Fail1; 
     goto contcase;
 
@@ -1219,6 +1210,24 @@ contcase:     /* the main loop */
     if (!isinteger(op2)) { bitop_exception(lpcreg); }
     else { bld_int(op3, ~(int_val(op2))); }
     goto contcase; 
+
+  case reset:  /* PPP */
+    /*
+     * This instruction is added just to provide a fall back point for
+     * xsb_abort() or xsb_segfault_catcher().  It is called only once, and 
+     * then control goes to startaddr.
+     */
+    if ((lpcreg = (byte *) setjmp(xsb_abort_fallback_environment))) {
+      /*
+       * Short circuit untrailing to avoid possible seg faults in
+       * switch_envs.
+       */
+      trreg = cp_trreg(breg);
+      /* Restore the default signal handling */
+      signal(SIGSEGV, xsb_default_segfault_handler);
+    }
+    else lpcreg = startaddr;  /* first instruction of entire engine */
+    goto contcase;
 
   default: 
     sprintf(message, "Illegal opcode hex %x", *--lpcreg); 

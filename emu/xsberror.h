@@ -67,8 +67,6 @@ extern char *xsb_segfault_message; /* Put your segfault message here prior to
 extern void (*xsb_default_segfault_handler)(int); /* where the previous value
 						     of the SIGSEGV handler is
 						     saved */ 
-extern jmp_buf xsb_segfault_fallback_environment; /* Environment for segfault
-						     longjump saved here */
 extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
 						  longjump saved here */
 

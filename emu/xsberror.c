@@ -57,8 +57,6 @@ void xsb_abort(char *description, ...)
     char message[MAXBUFSIZE];
     va_list args;
 
-    xsb_default_segfault_handler = signal(SIGSEGV, SIG_DFL);
-
     va_start(args, description);
 
     strcpy(message, "\n++Error: ");
@@ -69,7 +67,6 @@ void xsb_abort(char *description, ...)
     va_end(args);
     pcreg = exception_handler(message);
 
-    signal(SIGSEGV,  xsb_default_segfault_handler);
     /* this allows xsb_abort to jump out even from nested loops */
     longjmp(xsb_abort_fallback_environment, 1);
 }

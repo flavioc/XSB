@@ -193,13 +193,6 @@ void keyint_proc(int sig)
   *asynint_ptr |= KEYINT_MARK;
 }
 
-/* SIGSEGV/SIGBUS handler that catches segfaults; used unless 
-   configured with DEBUG */ 
-void xsb_segfault_catcher(int err)
-{
-  longjmp(xsb_segfault_fallback_environment, 1);
-}
-
 void init_interrupt(void)
 {
 #if (defined(LINUX))
@@ -518,6 +511,16 @@ byte *exception_handler(char *string)
   ebreg = cp_ebreg(breg); 
   remove_open_tables_reset_freezes();
   return cp_pcreg(breg); 
+}
+
+/* SIGSEGV/SIGBUS handler that catches segfaults; used unless 
+   configured with DEBUG */ 
+void xsb_segfault_catcher(int err)
+{
+  char *tmp_message = xsb_segfault_message;
+  xsb_segfault_message = xsb_default_segfault_msg; /* restore default */
+  longjmp(xsb_abort_fallback_environment,
+	  (int) exception_handler(tmp_message));
 }
 
 #ifdef WIN_NT
