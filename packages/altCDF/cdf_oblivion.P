@@ -193,11 +193,13 @@ retractall_subclasses(Cid):-
 thereis_another_parent(Sid,Cid):-
 	immed_isa(Sid,X),\+(X=Cid).
 
-:- import implicit_isa/2 from cdf_init_cdf.
+:- import implicit_isa/2, cdf_root/1 from cdf_init_cdf.
 explicit_implicit_isa(Cid):-
 	immed_isa(Cid,_), !.
 explicit_implicit_isa(Cid):-
-	implicit_isa(Cid,_).
+	implicit_isa(Cid,_), !.
+explicit_implicit_isa(Cid):-
+	cdf_root(Cid).
 
 
 
