@@ -29,5 +29,5 @@
 	  closetail/1, insert/2, membercheck/2, nthmember/3,
 	  absmerge/3, delete/3, delete_ith/4, reverse/2.
 
-:- import member/2 from prof_sbp.
+:- import member/2 from basics.
 

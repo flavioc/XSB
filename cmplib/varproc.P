@@ -53,9 +53,9 @@ get_lastchunk([One|Rest], LastChunk) :-
 	; get_lastchunk(Rest, LastChunk)
 	).
 
-get_lastchunk1(goal(CkId,_,_,_), LastChunk) :- member1(CkId, LastChunk).
-get_lastchunk1(inlinegoal(CkId,_,_,_), LastChunk) :- member1(CkId, LastChunk).
-get_lastchunk1(head(_VOList), LastChunk) :- member1(1, LastChunk).
+get_lastchunk1(goal(CkId,_,_,_), LastChunk) :- memberchk(CkId, LastChunk).
+get_lastchunk1(inlinegoal(CkId,_,_,_), LastChunk) :- memberchk(CkId, LastChunk).
+get_lastchunk1(head(_VOList), LastChunk) :- memberchk(1, LastChunk).
 get_lastchunk1(branch(A,B), LastChunk) :- 
 	get_lastchunk(A, LastChunk),
         get_lastchunk(B, LastChunk).
@@ -209,7 +209,7 @@ mark_type2(ifthenelse(A,B,C), Chunks, LastChunk, Safe, Vid) :-
 
 mark_seen(VOList, CkId, Chunks, LastChunk, Safe, Vid) :-
 	mark_seen1(VOList, CkId, Seen, LastChunk, Safe, Vid),
-	( var(Seen) -> true ; member1(CkId, Chunks) ).
+	( var(Seen) -> true ; memberchk(CkId, Chunks) ).
 
 mark_seen1([], _, _, _, _, _).
 mark_seen1([varocc(Vid0,Prag)|Rest], CkId, Seen, LastChunk, Safe, Vid) :-
@@ -379,12 +379,12 @@ conf_real_use([One|More], Use, UseR, ChkArg) :-
 
 conf_nouse1([], _, _).
 conf_nouse1([One|More], Use, NoUse) :-
-	( member(One, Use) ; member1(One, NoUse) ),
+	( member(One, Use) ; memberchk(One, NoUse) ),
 	conf_nouse1(More, Use, NoUse).
 
 conf_nouse2(N, Use, NoUse) :-
 	( N =:= 0 -> closetail(NoUse)
-	; ( member2(N, Use) ; member1(N, NoUse) ),
+	; ( member2(N, Use) ; memberchk(N, NoUse) ),
 	  N1 is N - 1,
 	  conf_nouse2(N1, Use, NoUse)
 	).

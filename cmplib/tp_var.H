@@ -31,9 +31,9 @@
 	  reserve/3, alloc_reg1/4, release_if_done0/5.
 
 :- import abort/0 from standard.
-:- import append/3 from prof_sbp.
+:- import append/3, memberchk/2 from basics.
 :- import member2/2 from listutil.
-:- import member1/2, error/1, warning/1 from auxlry.
+:- import error/1, warning/1 from auxlry.
 :- import vprag_occ/2, vprag_loc/2, vprag_use/2, vprag_type/2,
 	  vprag_nouse/2, vprag_type1/2
      from varproc.

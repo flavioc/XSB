@@ -34,7 +34,7 @@
 
 :- import table_arity/2 from usermod.
 :- import str_cat/3, oracle_query/7 from machine.
-:- import conset/2, conget/2 from prof_sbp.
+:- import conset/2, conget/2 from gensym.
 :- import (dynamic)/1, assert/1, asserta/1, retract/1,
    retractall/1 from assert.
 :- import write/1, writeln/1, (=..)/2, atom_codes/2 from standard.

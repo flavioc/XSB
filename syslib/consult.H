@@ -67,5 +67,5 @@
 	  '_$multifile'/1, '_$multifile1'/1,
 	  '_$multifile2'/3, '_$apply_arity'/1
      from parse.
-:- import conset/2, conget/2  from prof_sbp.
+:- import conset/2, conget/2  from gensym.
 :- import xsb_configuration/2 from xsb_configuration.

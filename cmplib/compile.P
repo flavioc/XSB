@@ -74,7 +74,7 @@ compile(Modname, Basename, Options, ExportList) :-
 	dispose_symtab( SymTab ),
 	( option(compile_off) -> print_result(Module) ; true ),
 	( conget('error occurred', 1) ->
-		str_cat('/bin/rm ', OFile, Command), system(Command), 
+		sys_unlink(OFile,_), 
 		message(('The file ', OFile, ' is removed')), abort
 	; true
 	), !,
@@ -181,6 +181,8 @@ modeinfer(ModName, Module, SymTab) :-
 
 /*======================================================================*/
 /*======================================================================*/
+
+myclose(F) :- tell(F), told.
 
 compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
       ( option(compile_off) ->		%  generate *.A file

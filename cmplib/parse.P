@@ -431,7 +431,7 @@ parse_spec_directive(table(Term), VariableList, SymTab, DcList) :-
 	fail_if((Term = _/_ ; Term = (_,_))),
 	all_anonymous(VariableList),
 	trans_goal(Term, Goal, SymTab, 0, _VidOut),
-	member1(Goal, DcList).
+	memberchk(Goal, DcList).
 
 all_anonymous([]).
 all_anonymous([vv(VarName,_)|Vars]) :-
@@ -538,7 +538,7 @@ parse_directive(compiler_options(Options),_SymTab) :-
 parse_preddef(H, B, List, SymTab) :-
 	functor(H, F, A),
 	sym_insert(F, A, [defined], SymTab, PredSym),
-	member1(pred(PredSym,PCs,_), List),
+	memberchk(pred(PredSym,PCs,_), List),
 	trans_head(H, goal(_, ArgList), SymTab, 0, VidMed),
 	trans_goals(B, Body, SymTab, VidMed, _VidOut),
 	add_new_clause(clause(ArgList, Body, _), PCs),

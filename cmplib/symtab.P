@@ -223,7 +223,7 @@ sym_propin1(ep(EP), prop(_,_,_,_,ep(OEP),_), N, A) :-
 	!,
 	( EP = OEP -> true ; error((N/A, ' has already an entry point!')) ).
 sym_propin1(tabled, prop(_,_,_,_,_,List), _N, A) :- !,
-	member1(tabled(Tabind,A), List),
+	memberchk(tabled(Tabind,A), List),
 	( integer(Tabind) -> true ; get_and_inc_tabnum(Tabind) ).
 sym_propin1(Other, prop(_,_,_,_,_,OtherList), _N, _A) :- 
 	member(Other, OtherList), !.

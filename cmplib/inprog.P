@@ -169,7 +169,7 @@ inp_arg(Arg, NArg, VOList, VOListr, Head, Argno, Level, VarList) :-
 		vprag_argno(Prag, Argno),
 		VOList = [NArg|VOListr],
 		vprag_common(Prag, Common),
-		member1(variable(Vid, Common), VarList)
+		memberchk(variable(Vid, Common), VarList)
 	; Arg = structure(Sym,Args) ->
 		NArg = structure(Sym,NArgs),
         	inp_subargs(Args, NArgs, VOList, VOListr,Head,Argno,VarList)

@@ -47,7 +47,7 @@
 :- import findall/3 from setof.
 :- import append/3, ground/1, length/2, member/2 from basics.
 :- import str_cat/3 from string.
-:- import conset/2, conget/2 from prof_sbp.
+:- import conset/2, conget/2 from gensym.
 :- import libpath/1 from loader.
 
 :- import '_$call_user'/1 from usermod.

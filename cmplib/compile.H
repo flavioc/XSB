@@ -66,9 +66,9 @@
 :- import message/1, warning/1, error/1, time_message/2,
 	  setoptions/1, option/1
      from auxlry.
-:- import prepare/0, member/2, gennum/1,
-	myclose/1, conget/2, conset/2, system/1
-     from prof_sbp.
+:- import prepare/0, gennum/1, conget/2, conset/2 from gensym.
+:- import sys_unlink/2 from shell.
+:- import member/2 from basics.
 :- import force_ti_mod_loaded/0, ti_pred_block/3 from ti_mod.
 :- import hdr_ext/1, obj_ext/1, asm_ext/1, decl_ext/1 from curr_sym.
 

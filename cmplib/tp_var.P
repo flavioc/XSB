@@ -116,12 +116,12 @@ bldvar_s(t,Loc,[bldtval(Loc)|Pilr],Pilr).
 
 reserve(N, In, Out) :- 
 	( N =:= 0 -> In = Out
-	; ( member1(N, In) -> Out = Out1 ; Out = [N|Out1] ),
+	; ( memberchk(N, In) -> Out = Out1 ; Out = [N|Out1] ),
 	  N1 is N - 1,
 	  reserve(N1, In, Out1)
 	).
 
-hold(N, In, Out) :- ( member1(N, In) -> Out = In ; Out = [N|In] ).
+hold(N, In, Out) :- ( memberchk(N, In) -> Out = In ; Out = [N|In] ).
 
 :- index release/3-2.
 
@@ -137,7 +137,7 @@ release(N, [Reg|R], Rest) :-
 
 getreg(TRList, Reg) :-
 	computil_choose(Reg),
-	\+ member1(Reg, TRList).
+	\+ memberchk(Reg, TRList).
 
 computil_choose(1).
 computil_choose(N) :- 
@@ -208,7 +208,7 @@ release_if_done(Vid,R,VPrag,HoldR,Tin,Tout) :-
 release_if_done(_,_,_,_,T,T).
 
 release_if_done1(Vid,R,HoldR,Tin,Tout,L,Occ) :-
-    \+ member1(Vid,HoldR),
+    \+ memberchk(Vid,HoldR),
     ( ( Occ == v ; Occ == l ) ->
 	( release(R,Tin,Tmid),
 	  ( R =:= L, Tmid = Tout

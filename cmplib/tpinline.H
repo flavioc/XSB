@@ -30,7 +30,8 @@
 
 :- import sym_name/3 from symtab.
 :- import error/1, message/1 from auxlry.
-:- import gennum/1, append/3 from prof_sbp.
+:- import gennum/1 from gensym.
+:- import append/3 from basics.
 :- import tgetpar/6, tputpar/7 from tp_goal.
 :- import term_comp_op/1, term_comp_tab/4 from tp_comp.
 :- import vprag_occ/2, vprag_loc/2, vprag_type/2 from varproc.

@@ -28,7 +28,8 @@
 	shell/5, shell/2, shell/1, sleep/1,
 	spawn_process/5, get_process_table/1, process_status/2, 
 	process_control/2.
-:- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3, sys_exit/1.
+:- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3,
+	sys_unlink/2, sys_exit/1, sys_rename/3.
 
 :- import atom/1, abort/1 from standard.
 :- import sys_system/7, expand_filename/2, sys_syscall/4

@@ -78,7 +78,7 @@
 	trace_standard_predicate(_,_), is_xpar_call(_,_),
 	trace_this_enable_print_on_redo(_,_).
 
-:- import conset/2, conget/2 from prof_sbp.
+:- import conset/2, conget/2 from gensym.
 
 
 /* --------------------- end of file debugger.H ----------------------- */

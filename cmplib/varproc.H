@@ -30,7 +30,6 @@
 	  vprag_context/2, vprag_loc/2, vprag_occ/2, vprag_type/2, 
 	  vprag_use/2, vprag_nouse/2, vprag_lastchunk/2, vprag_type1/2.
 
-:- import member1/2 from auxlry.
-:- import member/2, append/3 from prof_sbp.
+:- import member/2, append/3, memberchk/2 from basics.
 :- import closetail/1, length/2, member2/2 from listutil.
 

@@ -28,5 +28,5 @@
 
 :- import option/1 from auxlry.
 :- import sym_prop/2 from symtab.
-:- import member/2 from prof_sbp.
+:- import member/2 from basics.
 

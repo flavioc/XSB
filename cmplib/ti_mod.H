@@ -27,7 +27,7 @@
 
 :- import option/1 from auxlry.
 :- import str_cat/3 from string.
-:- import gensym/2 from prof_sbp.
+:- import gensym/2 from gensym.
 :- import gensym_pred/2 from preproc.
 :- import membercheck/2 from listutil.
 :- import sym_name/3, sym_insert/5, sym_pass_thru/1 from symtab.

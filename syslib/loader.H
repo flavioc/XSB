@@ -28,7 +28,7 @@
 	  windows_os_loader/0.
 
 :- import abort/1 from standard.
-:- import conset/2 from prof_sbp.
+:- import conset/2 from gensym.
 :- import reconsult/1 from consult.
 :- import standard_symbol/3 from std_xsb.
 :- import library_directory/1 from usermod.

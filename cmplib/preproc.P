@@ -285,7 +285,7 @@ empty_ifthen_else(inlinegoal(true,0,[]), inlinegoal(true,0,[])).
 
 gensym_pred(P, NP) :-
 	gensym('_#', N2),
-	name_append(P, N2, NP).
+	str_cat(P, N2, NP).
 
 force_preprocess_loaded.
 

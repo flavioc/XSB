@@ -193,7 +193,7 @@ compile_popt4([],_,[]).
 compile_popt4([label(T,(Sym,K))|Rest],Seen,[label(T,(Sym,K))|ORest]) :-
 	!,
 	( Sym = disj(_)
-	; member1(Sym,Seen)
+	; memberchk(Sym,Seen)
 	),
 	compile_popt4(Rest,Seen,ORest).
 compile_popt4([execute(Sym),label(T,(Sym,K))|Rest],Seen,OList) :-

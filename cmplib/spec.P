@@ -91,7 +91,7 @@ chb(if(G1,G2), HB) :- chb(G1, HB), chb(G2, HB).
 chb(not(G), HB) :- chb(G, HB).
 chb(goal(Sym,Args), HB) :-
 	( filter_goal(Sym, Args) ->	% partially instantiated (HiLog) call
-		member1(pi_calls(Sym,Calls), HB),	% memberchk
+		memberchk(pi_calls(Sym,Calls), HB),	% memberchk
 		add_new_clause(body_call(Args), Calls)
 	; true
 	).
@@ -139,7 +139,7 @@ filter_goal(Sym, Args) :- sym_prop(defined, Sym), sth_bound(Args).
 interesting_calls([], _, []).
 interesting_calls([pi_calls(Sym,C)|Cs], Preds, ICL) :-
 	Pred = pred(Sym,_Clauses,_),
-	member1(Pred, Preds),
+	memberchk(Pred, Preds),
 	'interesting calls'(C, Pred, IC),
 	( IC == [] -> ICL = ICs ; ICL = [pi_calls(Sym,IC)|ICs] ),
 	interesting_calls(Cs, Preds, ICs).
@@ -741,7 +741,7 @@ generate_table_decl([goal(Sym,Args)|Goals], PICs) :-
 :- mode 'generate table decl'(+,+,+).
 
 'generate table decl'(Sym, PICs, Args) :-
-	( member1(pi_calls(Sym,CallList,_Representable), PICs) ->
+	( memberchk(pi_calls(Sym,CallList,_Representable), PICs) ->
 		'search for call'(CallList, Args)
 	; sym_name(Sym, N, A),
 	  warning(('Table specialisation declaration for ', N, '/', A,
@@ -756,7 +756,7 @@ generate_table_decl([goal(Sym,Args)|Goals], PICs) :-
 'search for call'([], _).
 'search for call'([C|CL], Args) :-
 	C = body_calls(_,_,Cs,NCs,Rep),
-	( member1(Args,Cs) ->
+	( memberchk(Args,Cs) ->
 	    ( nonvar(Rep) ->
 		NCs = [goal(NewSym,_)|_],
 		sym_propin(tabled, NewSym)
@@ -859,7 +859,7 @@ non_overlapping_selection([BC|BCs]) :-
 :- mode disjoint(+,+).
 
 disjoint([], _).
-disjoint([Cl|Cls], SCL) :- fail_if(member1(Cl, SCL)), disjoint(Cls, SCL).
+disjoint([Cl|Cls], SCL) :- fail_if(memberchk(Cl, SCL)), disjoint(Cls, SCL).
 
 end_of_file.
 

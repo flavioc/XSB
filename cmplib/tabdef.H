@@ -26,7 +26,7 @@
 :- export perform_table_all/1, perform_auto_table/1,
 	  call_themselves/3, table_it/1.
 
-:- import ll_arg/3 from prof_sbp.
+:- import ll_arg/3 from auxlry.
 :- import message/1, error/1 from auxlry.
 :- import sym_prop/2, sym_propin/2, sym_gen/2, sym_name/3 from symtab.
 

@@ -32,10 +32,12 @@
 :- export add_new_clause/2, clause_listify/2.
 
 :- import 'table #'/0 from compile.
-:- import error/1, member1/2 from auxlry.
+:- import memberchk/2, append/3, member/2 from basics.
+:- import error/1 from auxlry.
 :- import integer/1, functor/3 from standard.
 :- import membercheck/2, member2/2, closetail/1 from listutil.
-:- import append/3, member/2, ll_arg/3, conget/2, conset/2 from prof_sbp.
+:- import ll_arg/3 from auxlry.
+:- import conget/2, conset/2 from gensym.
 :- import buff_alloc/2, buff_word/3, buff_set_word/3, term_hash/3,
 	  buff_dealloc/3 
      from machine.

@@ -30,5 +30,7 @@
 :- import option/1 from auxlry.
 :- import inline_neg/2, compl_cond/5 from pre_cond.
 :- import sym_prop/2, sym_insert/5, sym_name/3 from symtab.
-:- import conget/2, name_append/3, gensym/2, append/3 from prof_sbp.
+:- import str_cat/3 from machine.
+:- import conget/2, gensym/2 from gensym.
+:- import append/3 from basics.
 

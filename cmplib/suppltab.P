@@ -76,7 +76,7 @@ pred_edb_dependency(Pred, AllPreds) :-
 	; sym_prop(tabled(_,_), Sym) -> assert(edb_dep(Name,Arity,1))
 	; sym_prop((edb), Sym) -> assert(edb_dep(Name,Arity,1))
 	; sym_prop(defined, Sym),
-	  ( nonvar(Cls) ; member1(Pred, AllPreds) ) ->
+	  ( nonvar(Cls) ; memberchk(Pred, AllPreds) ) ->
 		edb_dependencies(Cls, Sym, AllPreds, 0, MaxD, Deps),
 		conget('EDB Dep #', EDB_Dep),
 		( MaxD >= EDB_Dep -> table_it(Sym), Dep = 1 ; Dep = MaxD ),
@@ -310,7 +310,7 @@ cv1([], _).
 cv1([Arg|Args], CV) :- cv2(Arg, CV), cv1(Args, CV).
 
 cv2(Arg, CV):-
-	( Arg = varocc(_) -> member1(Arg, CV)
+	( Arg = varocc(_) -> memberchk(Arg, CV)
 	; Arg = structure(_,Args) -> cv1(Args, CV)
 	; true
 	).
@@ -333,7 +333,7 @@ args_of_new_goal([Var|Vars], Vs, CallVarList) :-
 	( needed(Var, Vs) -> CallVarList = [Var|CVL] ; CallVarList = CVL ),
 	args_of_new_goal(Vars, Vs, CVL).
 
-needed(Var, VL) :- member(VarList, VL), member1(Var, VarList).
+needed(Var, VL) :- member(VarList, VL), memberchk(Var, VarList).
 
 /*----------------------------------------------------------------------*/
 /* can_be_folded(+Body)							*/

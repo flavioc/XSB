@@ -106,9 +106,8 @@
 :- import numbervars/1 from num_vars.
 :- import predicate_property/2 from curr_sym.
 :- import (dynamic)/1, asserta/1, retract/1 from assert.
-:- import conset/2 from prof_sbp.
 
 :- import sys_exit/1 from shell.
-:- import conget/2 from prof_sbp.
+:- import conget/2, conset/2 from gensym.
 
 /* --------------------- end of file standard.H ----------------------- */

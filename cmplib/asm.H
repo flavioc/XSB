@@ -30,7 +30,8 @@
 :- import asm_opt/5 from asm_opt.
 :- import asm_inst/4 from asm_inst.
 :- import term_hash/3, str_len/2 from machine.
-:- import ll_arg/3, write_int/1 from prof_sbp.
+:- import write_int/1 from xsb_writ.
+:- import ll_arg/3 from auxlry.
 :- import functor/3, write/1, put/1, tell/1 from standard.
 :- import asm_gendata/1, asm_genindex/2, asm_gentext/2, asm_putlength/1
      from asmpass2.

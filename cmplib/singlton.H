@@ -28,7 +28,8 @@
 :- import vv/2 from xsb_read.
 :- import warning/1 from auxlry.
 :- import numbervars/3 from num_vars.
-:- import ll_arg/3, append/3 from prof_sbp.
+:- import ll_arg/3 from auxlry.
+:- import append/3 from basics.
 :- import atom_codes/2, functor/3, hilog_functor/3, atomic/1, integer/1,
 	  arg/3, '=..'/2
      from standard.

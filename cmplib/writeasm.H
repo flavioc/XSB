@@ -26,7 +26,7 @@
 
 :- export write_asmheader/4, write_asm_instructions/1.
 
-:- import member/2 from prof_sbp.
+:- import member/2 from basics.
 :- import asm_inst/4 from asm_inst.
 :- import nl/0, write/1, writeln/1, writeq/1, put/1, tell/1,
           arg/3, functor/3 from standard.

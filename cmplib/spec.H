@@ -26,9 +26,10 @@
 :- export spec/2.
 
 :- import name/2, atom_codes/2 from standard.
-:- import append/3, conget/2, conset/2 from prof_sbp.
+:- import conget/2, conset/2 from gensym.
+:- import memberchk/2, append/3 from basics.
 :- import gensym_pred/2, have_hardcut/2 from preproc.
-:- import member1/2, warning/1, message/1, error/1, option/1 from auxlry.
+:- import warning/1, message/1, error/1, option/1 from auxlry.
 :- import sym_name/3, sym_insert/5, sym_prop/2, sym_propin/2,
 	  sym_type/2, add_new_clause/2, clause_listify/2
      from symtab.

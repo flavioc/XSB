@@ -50,7 +50,7 @@
 :- import consult/1 from consult.
 :- consult(sModels).
 
-:- import coninc/1, conget/2 from prof_sbp.
+:- import coninc/1, conget/2 from gensym.
 
 :- import init_smodels/1, a_stable_model/0, print_current_stable_model/0,
 	in_all_stable_models/2, set_query_true/1

@@ -27,7 +27,7 @@
 :- export tcond/10, tvar_hold/3, force_tp_cond_loaded/0.
 
 :- import warning/1 from auxlry.
-:- import gennum/1 from prof_sbp.
+:- import gennum/1 from gensym.
 :- import vprag_loc/2, vprag_type/2 from varproc.
 :- import eval_relop/11, arithrelop/1 from tp_eval.
 :- import geninl_load_lhs/7, geninline/9 from tpinline.

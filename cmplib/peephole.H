@@ -27,5 +27,5 @@
 
 :- export force_peephole_loaded/0, compile_peephole_opt/2.
 
-:- import member1/2 from auxlry.
+:- import memberchk/2 from basics.
 :- import sym_name/3 from symtab.

@@ -29,11 +29,12 @@
 
 :- import name/2 from standard.
 :- import gensym_pred/2 from preproc.
-:- import member/2, conget/2 from prof_sbp.
+:- import conget/2 from gensym.
 :- import call_themselves/3, table_it/1 from tabdef.
 :- import merge/3, reverse/2, closetail/1 from listutil.
 :- import (dynamic)/1, assert/1, retractall/1 from assert.
 :- import sym_prop/2, sym_name/3, sym_insert/5 from symtab.
-:- import member1/2, option/1, error/1, message/1 from auxlry.
+:- import option/1, error/1, message/1 from auxlry.
+:- import memberchk/2, member/2 from basics.
 
 /* --------------------- end of file suppltab.H ----------------------- */
