@@ -28,9 +28,9 @@
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
 
+
+/* need ldoption at compile time for ELF systems, so compile_H is done 1st. */
 compile_cH(Modname, Base, Options, ExList, Dir) :-
-	/* ldoption is needed at compile time for ELF systems,
-	   so compile_H is now done first. */
 	compile_H(Modname,Base,Options,ExList,LdOption,CompComm,TempFile),
 	compile_c(Modname,Base,Options,Dir,LdOption,CompComm,TempFile).
 
@@ -148,7 +148,6 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    ),
 	    closefile(TempFile),
 	    see(OldFile),
-	    tell(OldTell),
 	    conset(xpp_on,0),
 %%%         seen,
 	    length(ExList, Count),
@@ -158,6 +157,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    co_asmhead(Modname, LdOption, Count),
 	    co_asmsym(ExList),
 	    told,
+	    tell(OldTell),
 	    time_message(TimeStart, (Modname, ' compiled'))
 	;   abort(('File ', HFile, ' for foreign module does not exist'))
 	),
