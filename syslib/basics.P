@@ -244,7 +244,7 @@ select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
 for(I,B1,B2) :-
 	(B1 =< B2
 	 ->	forup(I,B1,B2)
-	 ;	fordown(I,B2,B1)
+	 ;	fordown(I,B1,B2)
 	).
 
 forup(L,L,H) :- L =< H.
