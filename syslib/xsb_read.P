@@ -25,10 +25,6 @@
 */
 
 
-
-string_as(list).
-
-
 %   file_read(+File, -Answer).
 
 file_read(File, Answer) :- 
@@ -260,11 +256,7 @@ read5(punc(123), S1, Precedence, Answer, S) :-
 % Term ::= String
 read5(string(String), S0, Precedence, Answer, S) :- 
         !,
-	( string_as(list) -> atom_codes(String, Term)  %This is the case for 
-                                                       %the moment.
-	; string_as(string) -> Term = String
-	; string_as(constant) -> read_getcon(String, Term)
-	),
+	atom_codes(String, Term),
         read_exprtl0(S0, Term, Precedence, Answer, S).
 
 read5(_Token, S0, _, _, _) :- 
@@ -730,16 +722,9 @@ read_lookup([X|_], X) :- !.
 read_lookup([_|T], X) :-
         read_lookup(T, X). 
 
-
 %   gets the constant with the the name "String"
 
-read_getcon(String, Con) :-
-	term_type(test, T),
-	( T =:= 2 -> intern_string(String, Con)	% in buffer
-	; T =:= 5 -> intern_string(String, Con)
-	; T =:= 1 -> psc_insert(String, 0, Psc, 0), term_new(Psc, Con)
-	).
-
+read_getcon(String, Con) :- intern_string(String, Con).
 
 %   reads the next token from the input file when the C tokenizer is used.
 
@@ -747,7 +732,6 @@ read_next_token_c(File, Char, Type, Value, NextChar) :-
 	file_gettoken(File, Char, Type0, Value, NextChar),  %Imported from 
                                                             %  machine.P
 	token_type(Type0, Type).
-
 
 %  token_type(+C_Token_Type, -Prolog_Token_Type)
 %  Prolog_Token_Type is the corresponding token type to the C_Token_Type.
