@@ -157,6 +157,7 @@ ALL:: "$(OUTDIR)\xsb.exe"
 SOCKET_LIBRARY=wsock32.lib
 
 CLEAN : 
+	-@erase "$(OBJDIR)\gpp.obj"
 	-@erase "$(OBJDIR)\auxlry.obj"
 	-@erase "$(OBJDIR)\biassert.obj"
 	-@erase "$(OBJDIR)\builtin.obj"
@@ -168,7 +169,6 @@ CLEAN :
 	-@erase "$(OBJDIR)\emuloop.obj"
 	-@erase "$(OBJDIR)\findall.obj"
 	-@erase "$(OBJDIR)\function.obj"
-	-@erase "$(OBJDIR)\gpp.obj"
 	-@erase "$(OBJDIR)\hash_xsb.obj"
 	-@erase "$(OBJDIR)\hashtable_xsb.obj"
 	-@erase "$(OBJDIR)\heap_xsb.obj"
@@ -215,6 +215,11 @@ CLEAN :
 	-@erase "$(OBJDIR)\ubi_BinTree.obj"
 	-@erase "$(OBJDIR)\ubi_SplayTree.obj"
 	-@erase "$(OBJDIR)\xsb.pch"
+	-@erase "$(OUTDIR)\xsb.exe"
+	-@erase "$(OUTDIR)\xsb.dll"
+	-@erase "$(OUTDIR)\xsb.lib"
+	-@erase "$(OUTDIR)\xsb.exp"
+	-@erase "$(OUTDIR)\gpp.exe"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
