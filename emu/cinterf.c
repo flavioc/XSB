@@ -65,54 +65,63 @@ void c_string_to_p_charlist(char *name, prolog_term list,
 DllExport xsbBool call_conv is_var(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isref(t);
 }
 
 DllExport xsbBool call_conv is_int(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return (isinteger(t) | isboxedinteger(t));
 }
 
 DllExport xsbBool call_conv is_float(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isfloat(t);
 }
 
 DllExport xsbBool call_conv is_string(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isstring(t);
 }
 
 DllExport xsbBool call_conv is_atom(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isatom(t);
 }
 
 DllExport xsbBool call_conv is_list(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return islist(t);
 }
 
 DllExport xsbBool call_conv is_nil(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isnil(t);
 }
 
 DllExport xsbBool call_conv is_functor(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isconstr(t);
 }
 
 DllExport xsbBool call_conv is_attv(prolog_term term)
 {
     Cell t = (Cell)term;
+    XSB_Deref(t);
     return isattv(t);
 }
 
