@@ -62,11 +62,32 @@ The instructions below assume that Oracle is currently installed.
 
 \paragraph{Unix instructions:}
 \begin{enumerate}
-\item When running {\tt configure} durig XSB installation, add these
+\item Set {\tt LDFLAGS} to indicate the Oracle libraries needed to build
+  the system. For instance:
+%%
+\begin{verbatim}
+LDFLAGS=-lclntsh -lcommon -lcore4 -lnlsrtl3
+\end{verbatim}
+%%
+or
+%%
+\begin{verbatim}
+setenv LDFLAGS "-lclntsh -lcommon -lcore4 -lnlsrtl3"  
+\end{verbatim}
+%%
+depending on the shell that you are using.
+Note that libraries might be different depending on the version of Oracle
+or the OS in use. Also, the order of these libraries in the list is usually
+important.
+\item When running {\tt configure} during XSB installation, add these
   options: {\tt --with-oracle} and {\tt
     --site-static-libraries=ORACLE\_LIB\_PATH}, where {\tt
     ORACLE\_LIB\_PATH} is the directory that has the Oracle client
   libraries.
+
+  Sometimes, building Oracle requires that you use a C compiler other than
+  the default one. Use {\tt --with-cc=your-compiler} to tell configure
+  which compiler to use.
 \item run {\tt configure} with appropriate options specified on command
   line.
 \item when done, the {\tt configure} script will tell you  whether you
@@ -909,5 +930,5 @@ and queries for optimization.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "manual"
+%%% TeX-master: "manual2"
 %%% End: 

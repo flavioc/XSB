@@ -157,9 +157,10 @@ Features and packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
 
 --enable and --with options recognized:
-  --with-gcc              use GCC to compile Emacs
-  --with-cc              use CC to compile Emacs
-  --with-acc              use ACC to compile Emacs
+  --with-cc=<compiler>    use <compiler> to compile XSB
+  --with-cc               use CC to compile XSB
+  --with-gcc              use GCC to compile XSB
+  --with-acc              use ACC to compile XSB
   --with-oracle           compile with support of Oracle
   --with-odbc             compile with support of Oracle
   --enable-debug             compile with debugging turned on

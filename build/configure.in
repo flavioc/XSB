@@ -356,11 +356,14 @@ if test ! -f "${emudir}/emuloop.h" -o ! -f "${syslibdir}/tables.P" ; then
   exit 1
 fi
 
-
 if test "${with_gcc+set}" = "set" ; then
   	CC=gcc 
 elif test "${with_cc+set}" = "set" ; then
-  	CC=cc 
+	# allow --with-cc=compiler on cmd line
+  	CC=${with_cc}
+	if test "${with_cc}" = "yes"; then
+	   CC=cc
+	fi
 elif test "${with_acc+set}" = "set" ; then
   	CC=acc 
 fi
