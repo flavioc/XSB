@@ -92,7 +92,8 @@ int findall_init_c()
 	{ int i ;
 	  p = findall_solutions = (findall_solution_list *)
 			malloc(MAX_FINDALLS*sizeof(findall_solution_list)) ;
-	  if (findall_solutions == 0) xsb_exit("init of findall failed") ;
+	  if (findall_solutions == 0)
+	    xsb_exit("init of findall failed") ;
 	  for (i = 0 ; i++ < MAX_FINDALLS ; p++)
 		{ p->size = i ;
 		  p->tail = 0 ;
@@ -102,12 +103,12 @@ int findall_init_c()
 	}
 
   if (nextfree < 0) /* could realloc here - too lazy to do it */
-	xsb_exit("findall: maximum number of active findalls reached");
+	xsb_abort("FINDALL: maximum number of active findalls reached");
   thisfree = nextfree;
 	/* no checking - no trailing - just use findall_init correct :-) */
   p = findall_solutions + nextfree ;
   if (!(w = (CPtr)malloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
-	xsb_exit("no temp space for findall");
+	xsb_abort("FINDALL: not enough memory");
 
   *w = 0 ;
   p->first_chunk = p->current_chunk = w ;
