@@ -3,6 +3,8 @@
 %\documentstyle[11pt,epsf]{report}
 \usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb}
 
+\usepackage[colorlinks]{hyperref}
+
 \pagestyle{headings}
 
 % LaTeX Size Stuff
@@ -25,6 +27,7 @@
 \setlength{\textheight}{8.5in}
 \setlength{\textwidth}{6.5in}
 \setlength{\footskip}{50pt}
+\setlength{\parskip}{2mm}
 
 % JF: not allowed in Latex2e
 %\setlength{\footheight}{24pt}
@@ -64,6 +67,21 @@
 
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
 
+% conditional pdf output stuff
+\newif\ifpdf
+\ifx\pdfoutput\undefined
+   \pdffalse
+\else
+   \pdfoutput=1
+   \pdftrue
+\fi
+
+\ifpdf
+    \newcommand{\xsblogo}{\epsfbox{xsb-logo.pdf}}
+\else
+    \newcommand{\xsblogo}{\epsfbox{xsb-logo.eps}}
+\fi
+
 %------------------------------------------------------------
 \input{predindex.sty}
 \makepredindex
@@ -74,7 +92,7 @@
 
 \title{\bf The XSB System \\ \version \\ Volume 2: Libraries and Interfaces}
 
-\author{{\epsfxsize=230pt \epsfbox{xsb-logo.eps}}\\
+\author{{\epsfxsize=230pt \xsblogo}\\
         \ \\ \ \\
 } 
 
@@ -82,7 +100,6 @@
 
 \maketitle
 
-\bibliographystyle{plain}
 
 \thispagestyle{empty}
 \input{credits2}
@@ -106,9 +123,10 @@
 \input{oracle_inter}
 \input{odbc_man/odbc_man}
 
-%%\input{manual2.ind}
+\bibliographystyle{abbrv}
 \bibliography{manual}
 
+%%\input{manual2.ind}
 \printindex
 
 \end{document}

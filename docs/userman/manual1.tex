@@ -2,6 +2,8 @@
 
 \usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb}
 
+\usepackage[colorlinks]{hyperref}
+
 \pagestyle{headings}
 
 % LaTeX Size Stuff
@@ -59,6 +61,22 @@
 
 \newcommand{\longline}{\noindent\rule{\textwidth}{.01in}}
 
+% conditional pdf output stuff
+\newif\ifpdf
+\ifx\pdfoutput\undefined
+   \pdffalse
+\else
+   \pdfoutput=1
+   \pdftrue
+\fi
+
+\ifpdf
+    \newcommand{\xsblogo}{\epsfbox{xsb-logo.pdf}}
+\else
+    \newcommand{\xsblogo}{\epsfbox{xsb-logo.eps}}
+\fi
+
+
 %------------------------------------------------------------
 \input{predindex.sty}
 \makepredindex
@@ -69,7 +87,7 @@
 
 \title{\bf The XSB System \\ \version \\ Volume 1: Programmer's Manual}
 
-\author{{\epsfxsize=230pt \epsfbox{xsb-logo.eps}}\\
+\author{{\epsfxsize=230pt \xsblogo}\\
         \ \\ \ \\
         {\em Konstantinos Sagonas} \\
         {\em Terrance Swift} \\
