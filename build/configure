@@ -2425,13 +2425,13 @@ ODBCOBJ=""
 if test "${with_odbc+set}" = "set"; then
     if test -n "$with_os" ; then
 #	AC_DEFINE(XSB_ODBC)
-#	cat <<EOT
+	cat <<EOT
 #
 #    Building for $with_os with support for ODBC.
 #    You must ensure that the requisite ODBC libraries
 #    are installed on the target machine.
 #
-#EOT
+EOT
 #
     else
 #	cat <<EOT

@@ -21,7 +21,6 @@
 ** $Id$
 ** 
 */
-#define FAR
 
 #include "xsb_config.h"
 #include "cell_xsb.h"
@@ -33,9 +32,10 @@
 #include <SQLEXT.H>
 #include <string.h>
 #else
-#include "SQL.H"
-#include "SQLEXT.H"
-#include "string.h"
+#define FAR
+#include "sql.h"
+#include "sqlext.h"
+#include "odbc_string.h"
 #endif
 
 #include <stdio.h>
