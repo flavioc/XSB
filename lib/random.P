@@ -1,0 +1,71 @@
+/* File:      random.P
+** Author(s): Baoqiu Cui
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+:- compiler_options([xpp_on,sysmod]).
+
+#include "standard.h"
+
+% random(Num) binds Num to a floating number in [0.0, 1.0)
+
+random(Num) :-
+	wh_random(1, Num, _, _).
+
+% random(+L, +U, -R) binds R to a random integer in [L,U) when L and U
+% are integers, or to a random floating number in [L,U) otherwise.
+
+random(L, U, R) :-
+	L < U,
+	random(X),
+	(integer(L), integer(U)
+	 ->	R is L + floor((U - L) * X)
+	 ;	R is L + ((U - L) * X)
+	).
+
+% getrand(?State) tries to unify State with the term rand(X,Y,Z) where
+% X, Y, and Z are integers describing the state of the random generator.
+
+getrand(rand(X,Y,Z)) :-
+	wh_random(2, X, Y, Z).
+
+% Sets the state of the random generator. X, Y and Z must be integers
+% in the ranges [1,30269), [1,30307), [1,30323).
+
+setrand(rand(X,Y,Z)) :-
+        (integer(X), X > 0, X < 30269
+	 ->	true
+	 ;	abort('First arg of setrand/3 is not in the range [1,30269).')
+        ),
+        (integer(Y), Y > 0, Y < 30307
+	 ->	true
+	 ;	abort('Second arg of setrand/3 is not in the range [1,30307).')
+        ),
+        (   integer(Z), Z > 0, Z < 30323
+	 ->	true
+	 ;	abort('Third arg of setrand/3 is not in the range [1,30323).')
+        ),
+	wh_random(3, X, Y, Z).
+
+% The builtin predicate
+
+wh_random(_Type,_A,_B,_C) :- '_$builtin'(53).
