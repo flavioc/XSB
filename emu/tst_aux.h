@@ -65,7 +65,7 @@
 /*
  *  tstTermStack
  *  ------------
- *  for flattening of the heap term during processing
+ *  for flattening of a heap term during processing
  */
 
 #define TST_TERMSTACK_SIZE    K
@@ -100,6 +100,11 @@ extern struct tstTermStack    tstTermStack;
    TermStack_Push( *(pListHeadCell) );                       \
  }
 
+
+/*
+ * In the following, the Vector pointers point to a valid vector component,
+ * either the highest or lowest (address-wise).
+ */
 
 #define TermStack_PushLowToHighVector(pVectorLow,Magnitude) {    \
    int i, numElements;                                           \
