@@ -459,13 +459,9 @@ name(T, L) :-
 		)
 	; Type =:= 2 -> int_name(T, [], L)	% integer
 	; Type =:= 6 -> real_name(T, [], L)	% real
-	; Type =:= 5 -> str_tolist(T, List), L=List
+	; Type =:= 5 -> atom_chars(T, L)
 	; abort('Wrong type in argument 1 of name/2')
 	).
-/*	; Type =:= 0 -> str_fromlist(Name, L),
-		psc_insert(Name, 0, PSC), term_new(PSC, T)
-	; Type =:= 1 -> term_psc(T, PSC),	% con, structure
-	  psc_name(PSC, Name), str_tolist(Name, List), L=List */
 
 ascii_list([]).
 ascii_list([H|T]) :- check(H), ascii_list(T).	%was l_ascii_list

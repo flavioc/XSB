@@ -23,6 +23,12 @@
 ** 
 */
 
+/*----------------------------------------------------------------------*/
+/* NOTE: This file HAS TO be compiled with the "sysmod" option.		*/
+/*----------------------------------------------------------------------*/
+
+:- compiler_options([sysmod]).
+
 
 %  str_fromlist(-Atom, +List)
 %  Given a list of integers representing characters returns the 
@@ -49,16 +55,6 @@ str_fl_put(Buff, N, [A|T]) :-
 	buff_set_byte(Buff, N, A),
 	N1 is N + 1,
 	str_fl_put(Buff, N1, T).
-
-str_tolist(Buff, List) :- str_tolist(Buff, 0, List).
-
-str_tolist(Buff, N, List) :-
-	buff_byte(Buff, N, Char),
-	( Char =:= 0 -> List = []
-	; List = [Char|Rest],
-	  N1 is N + 1,
-	  str_tolist(Buff, N1, Rest)
-	).
 
 % This could be made more efficient.  Quadratic.
 concat_atom([],'').
