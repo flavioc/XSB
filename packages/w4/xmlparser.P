@@ -55,7 +55,17 @@ start_tag(47,[62|A],B,[],[],47,[62|A]) :- !.
 
 start_tag(62,A,B,[],[],62,A) :- !.
 
-start_tag(A,B,C,D,E,F,G) :- (whitespace(A,B,H,I)  ','  !  ','  listattribs(H,I,C,D,E,F,G)).
+start_tag(9,A,B,C,D,E,F) :- (whitespace(9,A,G,H)  ','  !  ','  listattribs(G,H,B,C,D,E,F)).
+
+start_tag(10,A,B,C,D,E,F) :- (whitespace(10,A,G,H)  ','  !  ','  listattribs(G,H,B,C,D,E,F)).
+
+start_tag(13,A,B,C,D,E,F) :- (whitespace(13,A,G,H)  ','  !  ','  listattribs(G,H,B,C,D,E,F)).
+
+start_tag(32,A,B,C,D,E,F) :- (whitespace(32,A,G,H)  ','  !  ','  listattribs(G,H,B,C,D,E,F)).
+
+start_tag(133,A,B,C,D,E,F) :- (whitespace(133,A,G,H)  ','  !  ','  listattribs(G,H,B,C,D,E,F)).
+
+start_tag(8232,A,B,C,D,E,F) :- (whitespace(8232,A,G,H)  ','  !  ','  listattribs(G,H,B,C,D,E,F)).
 
 
 listattribs(47,[62|A],B,[],[],47,[62|A]) :- !.
@@ -93,7 +103,7 @@ attvalue(10,[A|B],C,D,[32|E],F,G,H) :- (!  ','  attvalue(A,B,C,D,E,F,G,H)).
 
 attvalue(13,[A|B],C,D,E,F,G,H) :- (!  ','  attvalue1(A,B,C,D,E,F,G,H)).
 
-attvalue(A,[B|C],D,E,[A|F],G,H,I) :- (!  ','  attvalue(B,C,D,E,F,G,H,I)).
+attvalue(A,[B|C],D,E,[A|F],G,H,I) :- (!  ','  xml_char(A)  ','  attvalue(B,C,D,E,F,G,H,I)).
 
 
 attvalue1(10,[A|B],C,D,[32|E],F,G,H) :- (!  ','  attvalue(A,B,C,D,E,F,G,H)).
@@ -131,7 +141,7 @@ chardata_in_content(32,[A|B],[32|C],D,E,F,G) :- (!  ','  chardata_in_content(A,B
 
 chardata_in_content(93,[A|B],[93|C],D,no,E,F) :- (!  ','  chardata_in_content2(A,B,C,D,E,F)).
 
-chardata_in_content(A,[B|C],[A|D],E,no,F,G) :- (!  ','  chardata_in_content(B,C,D,E,H,F,G)).
+chardata_in_content(A,[B|C],[A|D],E,no,F,G) :- (!  ','  xml_char(A)  ','  chardata_in_content(B,C,D,E,H,F,G)).
 
 
 chardata_in_content1(10,[A|B],[10|C],D,E,F,G) :- (!  ','  chardata_in_content(A,B,C,D,E,F,G)).
@@ -169,19 +179,19 @@ picdata(45,[45,A|B],C,[D|E],F,G) :- (!  ','  comment_rest(A,B,D,H,I)  ','  conte
 
 cdata_section(93,[A|B],C,D,E,F) :- (!  ','  cdata_section1(A,B,C,D,E,F)).
 
-cdata_section(A,[B|C],[A|D],E,F,G) :- (!  ','  cdata_section(B,C,D,E,F,G)).
+cdata_section(A,[B|C],[A|D],E,F,G) :- (!  ','  xml_char(A)  ','  cdata_section(B,C,D,E,F,G)).
 
 
 cdata_section1(93,[A|B],C,D,E,F) :- (!  ','  cdata_section2(A,B,C,D,E,F)).
 
-cdata_section1(A,[B|C],[93,A|D],E,F,G) :- (!  ','  cdata_section(B,C,D,E,F,G)).
+cdata_section1(A,[B|C],[93,A|D],E,F,G) :- (!  ','  xml_char(A)  ','  cdata_section(B,C,D,E,F,G)).
 
 
 cdata_section2(62,[A|B],C,C,A,B) :- !.
 
 cdata_section2(93,[A|B],[93|C],D,E,F) :- (!  ','  cdata_section2(A,B,C,D,E,F)).
 
-cdata_section2(A,[B|C],[93,93,A|D],E,F,G) :- (!  ','  cdata_section(B,C,D,E,F,G)).
+cdata_section2(A,[B|C],[93,93,A|D],E,F,G) :- (!  ','  xml_char(A)  ','  cdata_section(B,C,D,E,F,G)).
 
 
 end_tag(A,B,C,D,E) :- (getContextName(C,F)  ','  qname(A,B,F,G,H)  ','  whitespace0(G,H,62,[D|E])).
@@ -211,8 +221,6 @@ char_ref(55,A,[B|C],C,D,E) :- (!  ','  decimal_ref(55,A,B,D,E)).
 char_ref(56,A,[B|C],C,D,E) :- (!  ','  decimal_ref(56,A,B,D,E)).
 
 char_ref(57,A,[B|C],C,D,E) :- (!  ','  decimal_ref(57,A,B,D,E)).
-
-char_ref(A,B,C,D,E,F) :- error(A,B,'Expecting ''x'' or number',E,F).
 
 
 hexadecimal_ref(48,[A|B],C,D,E) :- (!  ','  hexadecimal_ref(A,B,0,C,D,E)  ','  xml_char(C)).
@@ -408,22 +416,16 @@ comment_rest(A,B,C,D,E) :- (comment_text(A,B,F,D,E)  ','  createComment(F,C)).
 
 comment_text(45,[45,A|B],[],C,D) :- (!  ','  comment_end(A,B,C,D)).
 
-comment_text(A,[B|C],[A|D],E,F) :- (!  ','  comment_text(B,C,D,E,F)).
-
-comment_text(A,B,C,D,E) :- error(A,B,'Comment not ended.',D,E).
+comment_text(A,[B|C],[A|D],E,F) :- (!  ','  xml_char(A)  ','  comment_text(B,C,D,E,F)).
 
 
 comment_end(62,[A|B],A,B) :- !.
-
-comment_end(A,B,C,D) :- (!  ','  error(A,B,'-- cannot occur inside a comment',C,D)).
 
 
 pi_rest(A,B,C,D,E,F) :- (pi_target(A,B,G,H,I)  ','  pi_instruction(H,I,J,E,F)  ','  createPI(G,J,C,D)).
 
 
 pi_target(A,B,C,D,E) :- (ncname(A,B,C,D,E)  ','  \+invalid_pi(C)  ','  !).
-
-pi_target(A,B,C,D,E) :- error(A,B,'Invalid target in processing instruction ',D,E).
 
 
 pi_instruction(63,[62,A|B],[],A,B) :- !.
@@ -433,9 +435,7 @@ pi_instruction(A,B,C,D,E) :- (whitespace(A,B,F,G)  ','  pi_instruction_text(F,G,
 
 pi_instruction_text(63,[62,A|B],[],A,B) :- !.
 
-pi_instruction_text(A,[B|C],[A|D],E,F) :- (!  ','  pi_instruction_text(B,C,D,E,F)).
-
-pi_instruction_text(A,B,C,D,E) :- error(A,B,'Processing instruction not finished',D,E).
+pi_instruction_text(A,[B|C],[A|D],E,F) :- (!  ','  xml_char(A)  ','  pi_instruction_text(B,C,D,E,F)).
 
 
 internal0(A,B,C,D,E,F,G,H,I,J,K) :- (createDTDContext(C,D,E,L)  ','  internal0(A,B,L,M,J,K)  ','  getLogicalStructsInDTDContext(M,F)  ','  getPhysicalStructsInDTDContext(M,G)  ','  getPIsInDTDContext(M,H / [])  ','  getAllProcessedInDTDContext(M,I)).
@@ -461,7 +461,7 @@ markupdecl(45,[45,A|B],C,C,D,E) :- (!  ','  comment_rest(A,B,F,D,E)).
 
 markupdecl(69,[76,69,77,69,78,84,A|B],C,D,E,F) :- (!  ','  whitespace(A,B,G,H)  ','  qname(G,H,I,J,K)  ','  whitespace(J,K,L,M)  ','  contentspec(L,M,N,O,P)  ','  whitespace0(O,P,Q,[E|F])  ','  62 = Q  ','  createElementSpecificationInDTDContext(C,I,N,D)).
 
-markupdecl(65,[84,84,76,73,83,84,A|B],C,D,E,F) :- (!  ','  whitespace(A,B,G,H)  ','  qname(G,H,I,J,K)  ','  opt_attdefs(J,K,I,C,D,E,F)).
+markupdecl(65,[84,84,76,73,83,84,A|B],C,D,E,F) :- (!  ','  whitespace(A,B,G,H)  ','  qname(G,H,I,J,K)  ','  createAttributeListInDTDContext(C,I,L)  ','  opt_attdefs(J,K,I,L,D,E,F)).
 
 markupdecl(69,[78,84,73,84,89,A|B],C,D,E,F) :- (!  ','  whitespace(A,B,G,H)  ','  entity_gepedecl(G,H,C,D,I,J)  ','  whitespace0(I,J,K,[E|F])  ','  62 = K).
 
@@ -483,7 +483,7 @@ mixed_or_children(A,B,C,D,E) :- (choice_or_seq(A,B,F,G,H)  ','  opt_operator(G,H
 choice_or_seq(A,B,C,D,E) :- (cp(A,B,F,G,H)  ','  whitespace0(G,H,I,J)  ','  rest_choice_or_seq(I,J,F,C,D,E)).
 
 
-rest_choice_or_seq(41,[A|B],C,C,A,B) :- !.
+rest_choice_or_seq(41,[A|B],C,seq([C]),A,B) :- !.
 
 rest_choice_or_seq(124,[A|B],C,choice([C,D|E]),F,G) :- (whitespace0(A,B,H,I)  ','  cp(H,I,D,J,K)  ','  whitespace0(J,K,L,M)  ','  rest_choice(L,M,E,F,G)).
 
@@ -514,7 +514,7 @@ opt_operator(43,[A|B],C,plus(C),A,B) :- !.
 opt_operator(A,B,C,C,A,B).
 
 
-mixed_content(41,[42,A|B],times('#pcdata'),A,B) :- !.
+mixed_content(41,[42,A|B],times(seq(['#pcdata'])),A,B) :- !.
 
 mixed_content(41,[A|B],'#pcdata',A,B) :- !.
 
@@ -533,7 +533,7 @@ opt_attdefs(A,B,C,D,E,F,G) :- (whitespace(A,B,H,I)  ','  attdefs0(H,I,C,D,E,F,G)
 
 attdefs0(62,[A|B],C,D,D,A,B) :- !.
 
-attdefs0(A,B,C,D,E,F,G) :- (qname(A,B,H,I,J)  ','  whitespace(I,J,K,L)  ','  atttype(K,L,M,N,O)  ','  whitespace(N,O,P,Q)  ','  default_decl(P,Q,D,R,S,T)  ','  createAttributeDeclarationInDTDContext(D,H,M,R,U)  ','  !  ','  opt_attdefs(S,T,C,U,E,F,G)).
+attdefs0(A,B,C,D,E,F,G) :- (qname(A,B,H,I,J)  ','  whitespace(I,J,K,L)  ','  atttype(K,L,M,N,O)  ','  whitespace(N,O,P,Q)  ','  default_decl(P,Q,D,R,S,T)  ','  createAttributeDeclarationInDTDContext(D,C,H,M,R,U)  ','  !  ','  opt_attdefs(S,T,C,U,E,F,G)).
 
 
 atttype(67,[68,65,84,65,A|B],cdata,A,B) :- !.
@@ -1018,271 +1018,10 @@ pubid_literal_white(32,[A|B],C,D,E,F) :- (!  ','  pubid_literal_white(A,B,C,D,E,
 
 pubid_literal_white(A,[B|C],D,[32,A|E],F,G) :- (!  ','  pubid_char(A)  ','  pubid_literal(B,C,D,E,F,G)).
 
-
-other_blank(133,[A|B],133,A,B).
-
-other_blank(8232,[A|B],8232,A,B).
-
-
-ncnamestartchar1byte(65,[A|B],65,A,B) :- !.
-
-ncnamestartchar1byte(66,[A|B],66,A,B) :- !.
-
-ncnamestartchar1byte(67,[A|B],67,A,B) :- !.
-
-ncnamestartchar1byte(68,[A|B],68,A,B) :- !.
-
-ncnamestartchar1byte(69,[A|B],69,A,B) :- !.
-
-ncnamestartchar1byte(70,[A|B],70,A,B) :- !.
-
-ncnamestartchar1byte(71,[A|B],71,A,B) :- !.
-
-ncnamestartchar1byte(72,[A|B],72,A,B) :- !.
-
-ncnamestartchar1byte(73,[A|B],73,A,B) :- !.
-
-ncnamestartchar1byte(74,[A|B],74,A,B) :- !.
-
-ncnamestartchar1byte(75,[A|B],75,A,B) :- !.
-
-ncnamestartchar1byte(76,[A|B],76,A,B) :- !.
-
-ncnamestartchar1byte(77,[A|B],77,A,B) :- !.
-
-ncnamestartchar1byte(78,[A|B],78,A,B) :- !.
-
-ncnamestartchar1byte(79,[A|B],79,A,B) :- !.
-
-ncnamestartchar1byte(80,[A|B],80,A,B) :- !.
-
-ncnamestartchar1byte(81,[A|B],81,A,B) :- !.
-
-ncnamestartchar1byte(82,[A|B],82,A,B) :- !.
-
-ncnamestartchar1byte(83,[A|B],83,A,B) :- !.
-
-ncnamestartchar1byte(84,[A|B],84,A,B) :- !.
-
-ncnamestartchar1byte(85,[A|B],85,A,B) :- !.
-
-ncnamestartchar1byte(86,[A|B],86,A,B) :- !.
-
-ncnamestartchar1byte(87,[A|B],87,A,B) :- !.
-
-ncnamestartchar1byte(88,[A|B],88,A,B) :- !.
-
-ncnamestartchar1byte(89,[A|B],89,A,B) :- !.
-
-ncnamestartchar1byte(90,[A|B],90,A,B) :- !.
-
-ncnamestartchar1byte(95,[A|B],95,A,B) :- !.
-
-ncnamestartchar1byte(97,[A|B],97,A,B) :- !.
-
-ncnamestartchar1byte(98,[A|B],98,A,B) :- !.
-
-ncnamestartchar1byte(99,[A|B],99,A,B) :- !.
-
-ncnamestartchar1byte(100,[A|B],100,A,B) :- !.
-
-ncnamestartchar1byte(101,[A|B],101,A,B) :- !.
-
-ncnamestartchar1byte(102,[A|B],102,A,B) :- !.
-
-ncnamestartchar1byte(103,[A|B],103,A,B) :- !.
-
-ncnamestartchar1byte(104,[A|B],104,A,B) :- !.
-
-ncnamestartchar1byte(105,[A|B],105,A,B) :- !.
-
-ncnamestartchar1byte(106,[A|B],106,A,B) :- !.
-
-ncnamestartchar1byte(107,[A|B],107,A,B) :- !.
-
-ncnamestartchar1byte(108,[A|B],108,A,B) :- !.
-
-ncnamestartchar1byte(109,[A|B],109,A,B) :- !.
-
-ncnamestartchar1byte(110,[A|B],110,A,B) :- !.
-
-ncnamestartchar1byte(111,[A|B],111,A,B) :- !.
-
-ncnamestartchar1byte(112,[A|B],112,A,B) :- !.
-
-ncnamestartchar1byte(113,[A|B],113,A,B) :- !.
-
-ncnamestartchar1byte(114,[A|B],114,A,B) :- !.
-
-ncnamestartchar1byte(115,[A|B],115,A,B) :- !.
-
-ncnamestartchar1byte(116,[A|B],116,A,B) :- !.
-
-ncnamestartchar1byte(117,[A|B],117,A,B) :- !.
-
-ncnamestartchar1byte(118,[A|B],118,A,B) :- !.
-
-ncnamestartchar1byte(119,[A|B],119,A,B) :- !.
-
-ncnamestartchar1byte(120,[A|B],120,A,B) :- !.
-
-ncnamestartchar1byte(121,[A|B],121,A,B) :- !.
-
-ncnamestartchar1byte(122,[A|B],122,A,B) :- !.
-
-
-ncnamestartchar2byte(A,[B|C],A,B,C) :- (A =< 2047  ','  !  ','  ns2byte(A)).
-
-
-ncnamestartchar3byte(A,[B|C],A,B,C) :- (A < 65519  ','  !  ','  ns3byte(A)).
-
-
-ncnamestartchar4byte(A,[B|C],A,B,C) :- (A < 1114111  ','  !  ','  A >= 65536).
-
-
-ncnamechar1byte(95,[A|B],95,A,B) :- !.
-
-ncnamechar1byte(46,[A|B],46,A,B) :- !.
-
-ncnamechar1byte(45,[A|B],45,A,B) :- !.
-
-ncnamechar1byte(48,[A|B],48,A,B) :- !.
-
-ncnamechar1byte(49,[A|B],49,A,B) :- !.
-
-ncnamechar1byte(50,[A|B],50,A,B) :- !.
-
-ncnamechar1byte(51,[A|B],51,A,B) :- !.
-
-ncnamechar1byte(52,[A|B],52,A,B) :- !.
-
-ncnamechar1byte(53,[A|B],53,A,B) :- !.
-
-ncnamechar1byte(54,[A|B],54,A,B) :- !.
-
-ncnamechar1byte(55,[A|B],55,A,B) :- !.
-
-ncnamechar1byte(56,[A|B],56,A,B) :- !.
-
-ncnamechar1byte(57,[A|B],57,A,B) :- !.
-
-ncnamechar1byte(65,[A|B],65,A,B) :- !.
-
-ncnamechar1byte(66,[A|B],66,A,B) :- !.
-
-ncnamechar1byte(67,[A|B],67,A,B) :- !.
-
-ncnamechar1byte(68,[A|B],68,A,B) :- !.
-
-ncnamechar1byte(69,[A|B],69,A,B) :- !.
-
-ncnamechar1byte(70,[A|B],70,A,B) :- !.
-
-ncnamechar1byte(71,[A|B],71,A,B) :- !.
-
-ncnamechar1byte(72,[A|B],72,A,B) :- !.
-
-ncnamechar1byte(73,[A|B],73,A,B) :- !.
-
-ncnamechar1byte(74,[A|B],74,A,B) :- !.
-
-ncnamechar1byte(75,[A|B],75,A,B) :- !.
-
-ncnamechar1byte(76,[A|B],76,A,B) :- !.
-
-ncnamechar1byte(77,[A|B],77,A,B) :- !.
-
-ncnamechar1byte(78,[A|B],78,A,B) :- !.
-
-ncnamechar1byte(79,[A|B],79,A,B) :- !.
-
-ncnamechar1byte(80,[A|B],80,A,B) :- !.
-
-ncnamechar1byte(81,[A|B],81,A,B) :- !.
-
-ncnamechar1byte(82,[A|B],82,A,B) :- !.
-
-ncnamechar1byte(83,[A|B],83,A,B) :- !.
-
-ncnamechar1byte(84,[A|B],84,A,B) :- !.
-
-ncnamechar1byte(85,[A|B],85,A,B) :- !.
-
-ncnamechar1byte(86,[A|B],86,A,B) :- !.
-
-ncnamechar1byte(87,[A|B],87,A,B) :- !.
-
-ncnamechar1byte(88,[A|B],88,A,B) :- !.
-
-ncnamechar1byte(89,[A|B],89,A,B) :- !.
-
-ncnamechar1byte(90,[A|B],90,A,B) :- !.
-
-ncnamechar1byte(97,[A|B],97,A,B) :- !.
-
-ncnamechar1byte(98,[A|B],98,A,B) :- !.
-
-ncnamechar1byte(99,[A|B],99,A,B) :- !.
-
-ncnamechar1byte(100,[A|B],100,A,B) :- !.
-
-ncnamechar1byte(101,[A|B],101,A,B) :- !.
-
-ncnamechar1byte(102,[A|B],102,A,B) :- !.
-
-ncnamechar1byte(103,[A|B],103,A,B) :- !.
-
-ncnamechar1byte(104,[A|B],104,A,B) :- !.
-
-ncnamechar1byte(105,[A|B],105,A,B) :- !.
-
-ncnamechar1byte(106,[A|B],106,A,B) :- !.
-
-ncnamechar1byte(107,[A|B],107,A,B) :- !.
-
-ncnamechar1byte(108,[A|B],108,A,B) :- !.
-
-ncnamechar1byte(109,[A|B],109,A,B) :- !.
-
-ncnamechar1byte(110,[A|B],110,A,B) :- !.
-
-ncnamechar1byte(111,[A|B],111,A,B) :- !.
-
-ncnamechar1byte(112,[A|B],112,A,B) :- !.
-
-ncnamechar1byte(113,[A|B],113,A,B) :- !.
-
-ncnamechar1byte(114,[A|B],114,A,B) :- !.
-
-ncnamechar1byte(115,[A|B],115,A,B) :- !.
-
-ncnamechar1byte(116,[A|B],116,A,B) :- !.
-
-ncnamechar1byte(117,[A|B],117,A,B) :- !.
-
-ncnamechar1byte(118,[A|B],118,A,B) :- !.
-
-ncnamechar1byte(119,[A|B],119,A,B) :- !.
-
-ncnamechar1byte(120,[A|B],120,A,B) :- !.
-
-ncnamechar1byte(121,[A|B],121,A,B) :- !.
-
-ncnamechar1byte(122,[A|B],122,A,B) :- !.
-
-
-ncnamechar2byte(A,[B|C],A,B,C) :- (A < 2048  ','  !  ','  n2byte(A)).
-
-
-ncnamechar3byte(A,[B|C],A,B,C) :- (A < 65536  ','  !  ','  n3byte(A)).
-
-
-ncnamechar4byte(A,[B|C],A,B,C) :- (A < 1114111  ','  !  ','  A >= 65536).
-
-reference_in_attribute(A,B,C,D,E,F,G,H) :- (entity_ref(A,B,C,I,J,K,L)  ','  !  ','  (isExternalEntity(I) -> error('Reference in attribute to an external parsed entity not allowed!')  ';'  attrcharend(D,C,M)  ','  getEntityReplacementText(I,[N|O] - [M,C,K|L])  ','  attvalue(N,O,ient,J,E,F,G,H))).
-attrcharend(ient,A,-2) :- !.
-attrcharend(apos,A,-3) :- !.
-attrcharend(quot,A,-4) :- !.
+reference_in_attribute(A,B,C,D,E,F,G,H) :- (entity_ref(A,B,C,I,J,K,L)  ','  !  ','  (isExternalEntity(I) -> error('Reference in attribute to an external parsed entity not allowed!')  ';'  attrcharend(D,M)  ','  getEntityReplacementText(I,[N|O] - [M,C,K|L])  ','  attvalue(N,O,ient,J,E,F,G,H))).
+attrcharend(ient,-2) :- !.
+attrcharend(apos,-3) :- !.
+attrcharend(quot,-4) :- !.
 addchardata(yes,A,B,C,D,E) :- (getContextPreserveSpace(A,default) -> E = D  ';'  mergewhitespace(B,C,D,E)).
 addchardata(no,A,B,C,D,E) :- (!  ','  mergechardata(B,C,D,E)).
 mergechardata([],[],A,A) :- !.
@@ -1332,28 +1071,25 @@ setContextInScopeNamespaces(cx(A,B,C,D,E,F,G),H,cx(A,B,H,D,E,F,G)).
 setContextBaseURI(cx(A,B,C,D,E,F,G),H,cx(A,B,C,D,H,F,G)).
 setContextLang(cx(A,B,C,D,E,F,G),H,cx(A,B,C,D,E,H,G)).
 setContextEntities(cx(A,B,C,D,E,F,G),H,cx(A,B,C,D,E,F,H)).
-createElementFromContext(A,B,C,D,E) :- (getContextDocument(A,F)  ','  getContextInScopeNamespaces(A,G)  ','  getContextName(A,H)  ','  getDocumentDefaultAttributes(F,H,I,J)  ','  createNamedMap(K)  ','  addNamespaceAttributes(C,no,G,K,L,M)  ','  addNamespaceAttributes(J,yes,L,M,N,O)  ','  setContextInScopeNamespaces(A,N,P)  ','  createNamedMap(Q)  ','  addAttributes(B,no,P,Q,R,S)  ','  addAttributes(I,yes,S,R,T,E)  ','  getContextBaseURI(E,U)  ','  getContextLang(E,V)  ','  createElementNS(H,U,N,V,W)  ','  setElementAttributes(W,T,O,D)).
+createElementFromContext(A,B,C,D,E) :- (getContextDocument(A,F)  ','  getContextInScopeNamespaces(A,G)  ','  getContextName(A,H)  ','  H = qname(I,J)  ','  getDocumentDefaultAttributes(F,H,K,L)  ','  createNamedMap(M)  ','  addNamespaceAttributes(C,no,G,M,N,O)  ','  addNamespaceAttributes(L,yes,N,O,P,Q)  ','  setContextInScopeNamespaces(A,P,R)  ','  createNamedMap(S)  ','  addAttributes(B,no,R,S,T,U)  ','  addAttributes(K,yes,U,T,V,E)  ','  getContextBaseURI(E,W)  ','  getContextLang(E,X)  ','  createElementNS(I,J,W,P,X,Y)  ','  setElementAttributes(Y,V,Q,D)).
 addNamespaceAttributes([],A,B,C,B,C).
 addNamespaceAttributes([A|B],C,D,E,F,G) :- (declareNamespace(A,C,D,E,H,I)  ','  !  ','  addNamespaceAttributes(B,C,H,I,F,G)).
-declareNamespace(qname('',xmlns) = A,B,C,D,E,F) :- (!  ','  ucs2utf8(A,G)  ','  atom_codes(H,G)  ','  createAttributeNS('http://www.w3.org/2000/xmlns/',qname('',xmlns),A,B,I)  ','  setNamedItem(C,'',H,E)  ','  addAttribute(B,ename('http://www.w3.org/2000/xmlns/',''),I,D,F)).
-declareNamespace(qname(xmlns,A) = B,C,D,E,F,G) :- (!  ','  (B = [] -> throw(xml('Namespace value cannot be empty',A))  ';'  true)  ','  ucs2utf8(B,H)  ','  atom_codes(I,H)  ','  createAttributeNS('http://www.w3.org/2000/xmlns/',qname(xmlns,A),B,C,J)  ','  setNamedItem(D,A,I,F)  ','  addAttribute(C,ename('http://www.w3.org/2000/xmlns/',A),J,E,G)).
+declareNamespace(qname('',xmlns) = A,B,C,D,E,F) :- (!  ','  ucs2utf8(A,G)  ','  atom_codes(H,G)  ','  createAttributeNS('',xmlns,'http://www.w3.org/2000/xmlns/',A,B,I)  ','  setNamedItem(C,'',H,E)  ','  addAttribute(B,ename('http://www.w3.org/2000/xmlns/',''),I,D,F)).
+declareNamespace(qname(xmlns,A) = B,C,D,E,F,G) :- (!  ','  (B = [] -> throw(xml('Namespace value cannot be empty',A))  ';'  true)  ','  ucs2utf8(B,H)  ','  atom_codes(I,H)  ','  createAttributeNS(xmlns,A,'http://www.w3.org/2000/xmlns/',B,C,J)  ','  setNamedItem(D,A,I,F)  ','  addAttribute(C,ename('http://www.w3.org/2000/xmlns/',A),J,E,G)).
 addAttributes([],A,B,C,C,B).
-addAttributes([A|B],C,D,E,F,G) :- (setAttribute(A,C,D,E,H,I)  ','  !  ','  addAttributes(B,C,I,H,F,G)).
-setAttribute(qname('',A) = B,C,D,E,F,D) :- (!  ','  createAttributeNS('',qname('',A),B,C,G)  ','  addAttribute(C,ename('',A),G,E,F)).
-setAttribute(qname(xml,space) = [100,101,102,97,117,108,116],A,B,C,D,E) :- (!  ','  setContextPreserveSpace(B,default,E)  ','  createAttributeNS('http://www.w3.org/XML/1998/namespace',qname(xml,space),[100,101,102,97,117,108,116],A,F)  ','  addAttribute(A,ename('http://www.w3.org/XML/1998/namespace',space),F,C,D)).
-setAttribute(qname(xml,space) = [112,114,101,115,101,114,118,101],A,B,C,D,E) :- (!  ','  setContextPreserveSpace(B,preserve,E)  ','  createAttributeNS('http://www.w3.org/XML/1998/namespace',qname(xml,space),[112,114,101,115,101,114,118,101],A,F)  ','  addAttribute(A,ename('http://www.w3.org/XML/1998/namespace',space),F,C,D)).
-setAttribute(qname(xml,lang) = A,B,C,D,E,F) :- (!  ','  setContextLang(C,A,F)  ','  createAttributeNS('http://www.w3.org/XML/1998/namespace',qname(xml,lang),A,B,G)  ','  addAttribute(B,ename('http://www.w3.org/XML/1998/namespace',lang),G,D,E)).
-setAttribute(qname(xml,base) = A,B,C,D,E,F) :- (!  ','  parseIRIref(no,A,G)  ','  getContextBaseURI(C,H)  ','  resolveIRIref(G,H,I)  ','  setContextBaseURI(C,I,F)  ','  createAttributeNS('http://www.w3.org/XML/1998/namespace',qname(xml,base),A,B,J)  ','  addAttribute(B,ename('http://www.w3.org/XML/1998/namespace',base),J,D,E)).
-setAttribute(qname(A,B) = C,D,E,F,G,E) :- (!  ','  getContextInScopeNamespaces(E,H)  ','  getNamespaceURI(A,H,I)  ','  createAttributeNS(I,qname(A,B),C,D,J)  ','  addAttribute(D,ename(I,B),J,F,G)).
-addAttribute(no,A,B,C,D) :- (setNamedItemIfNew(C,A,B,D)  ','  !).
-addAttribute(yes,A,B,C,D) :- (setNewNamedItem(C,A,B,D)  ','  !).
-getNamespaceURI(A,B,C) :- (getNamedItem(B,A,C)  ','  !).
-getNamespaceURI(A,B,C) :- error('Namespace not declared').
+addAttributes([qname(A,B) = C|D],E,F,G,H,I) :- (setAttribute(A,B,C,E,F,G,J,K)  ','  !  ','  addAttributes(D,E,K,J,H,I)).
+setAttribute('',A,B,C,D,E,F,D) :- (!  ','  createAttributeNS('',A,'',B,C,G)  ','  addAttribute(C,ename('',A),G,E,F)).
+setAttribute(xml,space,A,B,C,D,E,F) :- (!  ','  (A = [112,114,101,115,101,114,118,101] -> setContextPreserveSpace(C,preserve,F)  ';'  A = [100,101,102,97,117,108,116] -> setContextPreserveSpace(C,default,F))  ','  createAttributeNS(xml,space,'http://www.w3.org/XML/1998/namespace',A,B,G)  ','  addAttribute(B,ename('http://www.w3.org/XML/1998/namespace',space),G,D,E)).
+setAttribute(xml,lang,A,B,C,D,E,F) :- (!  ','  setContextLang(C,A,F)  ','  createAttributeNS(xml,lang,'http://www.w3.org/XML/1998/namespace',A,B,G)  ','  addAttribute(B,ename('http://www.w3.org/XML/1998/namespace',lang),G,D,E)).
+setAttribute(xml,base,A,B,C,D,E,F) :- (!  ','  parseIRIref(no,A,G)  ','  getContextBaseURI(C,H)  ','  resolveIRIref(G,H,I)  ','  setContextBaseURI(C,I,F)  ','  createAttributeNS(xml,base,'http://www.w3.org/XML/1998/namespace',A,B,J)  ','  addAttribute(B,ename('http://www.w3.org/XML/1998/namespace',base),J,D,E)).
+setAttribute(A,B,C,D,E,F,G,E) :- (!  ','  getContextInScopeNamespaces(E,H)  ','  getNamespaceURI(A,H,I)  ','  createAttributeNS(A,B,I,C,D,J)  ','  addAttribute(D,ename(I,B),J,F,G)).
+addAttribute(no,A,B,C,D) :- (!  ','  setNamedItemIfNew(C,A,B,D)).
+addAttribute(yes,A,B,C,D) :- (!  ','  setNewNamedItem(C,A,B,D)).
+getNamespaceURI(A,B,C) :- getNamedItem(B,A,C).
 checkEntities(A) :- (getContextEntities(A,B)  ','  checkEntities(B,A)).
 checkEntities(A,B) :- (getFirstNamedMap(A,C,D) -> checkInternalEntity(B,C,D)  ','  getRestNamedMap(A,E)  ','  !  ','  checkEntities(E,B)  ';'  true).
 checkInternalEntity(A,B,C) :- (\+isInternalEntity(C)  ','  !).
 checkInternalEntity(A,B,C) :- (getEntityReplacementText(C,[D|E] - [60,47,-1])  ','  content(D,E,A,F,-1,[])  ','  !).
-checkInternalEntity(A,B,C) :- (!  ','  error('General Parsed Entity has invalid content')).
 error(A) :- fail.
 error(A,B,C,D,E) :- fail.
 createDTDContext(A,B,C,dtdcx(A,B,C,D,E,F / F)) :- (createLogicalStructures(D)  ','  createPhysicalStructures(E)).
@@ -1364,10 +1100,11 @@ getLogicalStructsInDTDContext(dtdcx(A,B,C,D,E,F),D).
 getPhysicalStructsInDTDContext(dtdcx(A,B,C,D,E,F),E).
 getPIsInDTDContext(dtdcx(A,B,C,D,E,F),F).
 getGeneralEntitiesInDTDContext(dtdcx(A,B,C,D,E,F),G) :- (!  ','  getPhysicalStructuresGeneralEntities(E,G)).
-getParameterEntitiesInDTDContext(dtdcx(A,B,C,D,E,F),G) :- (!  ','  getPhysicalStructuresParameterEntities(E,G)).
 createElementSpecificationInDTDContext(dtdcx(A,B,C,D,E,F),G,H,dtdcx(A,B,C,I,E,F)) :- (!  ','  createElementSpecification(G,H,J)  ','  addLogicalStructuresElementDeclaration(D,G,J,I)).
-createAttributeDeclarationInDTDContext(dtdcx(A,B,skip,C,D,E),F,G,H,dtdcx(A,B,skip,C,D,E)) :- !.
-createAttributeDeclarationInDTDContext(dtdcx(A,B,C,D,E,F),G,H,I,dtdcx(A,B,C,J,E,F)) :- (!  ','  createAttributeDeclaration(G,H,I,K)  ','  addLogicalStructuresAttributeDeclaration(D,L,K,J)).
+createAttributeListInDTDContext(dtdcx(A,B,skip,C,D,E),F,dtdcx(A,B,skip,C,D,E)) :- !.
+createAttributeListInDTDContext(dtdcx(A,B,C,D,E,F),G,dtdcx(A,B,C,H,E,F)) :- (!  ','  createLogicalStructuresAttributeList(D,G,H)).
+createAttributeDeclarationInDTDContext(dtdcx(A,B,skip,C,D,E),F,G,H,I,dtdcx(A,B,skip,C,D,E)) :- !.
+createAttributeDeclarationInDTDContext(dtdcx(A,B,C,D,E,F),G,H,I,J,dtdcx(A,B,C,K,E,F)) :- (!  ','  createAttributeDeclaration(H,I,J,L)  ','  addLogicalStructuresAttributeDeclaration(D,G,L,K)).
 addParameterEntityToDTDContext(dtdcx(A,B,C,D,E,F),G,H,dtdcx(A,B,C,D,I,F)) :- (!  ','  addPhysicalStructuresParameterEntity(E,G,H,I)).
 addGeneralEntityToDTDContext(dtdcx(A,B,skip,C,D,E),F,G,H,dtdcx(A,B,skip,C,D,E)) :- !.
 addGeneralEntityToDTDContext(dtdcx(A,B,C,D,E,F),G,H,I,dtdcx(A,B,J,D,K,F)) :- (!  ','  (H = id(L,M)  ','  C = yes -> J = no  ';'  J = C)  ','  addPhysicalStructuresGeneralEntity(G,H,I,A,E,K)).

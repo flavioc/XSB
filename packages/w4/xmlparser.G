@@ -150,7 +150,7 @@ element_content( Cx, [] ) --> "/>", !.
 
 start_tag( Cx, Attribs, NamespaceAttribs ) --> 
 	+ rest_stag( Cx, Attribs, NamespaceAttribs ).
-start_tag( Cx, Attribs, NamespaceAttribs ) -->				% Should be ::= for better performance
+start_tag( Cx, Attribs, NamespaceAttribs ) ::=				% Should be ::= for better performance
 	whitespace, !,
 	listattribs(  Cx, Attribs, NamespaceAttribs ).
  
@@ -161,8 +161,8 @@ listattribs( Cx, Attribs, NamespaceAttribs ) -->
 	{ splitAttrib( Name, Value, Attribs, RestAttribs, NamespaceAttribs, RestNamespaceAttribs ) }, !,
 	start_tag( Cx, RestAttribs, RestNamespaceAttribs ).
 
-rest_stag( Cx, [], [] ) --> ? "/>", !.
-rest_stag( Cx, [], [] ) --> ? ">", !.
+rest_stag( _Cx, [], [] ) --> ? "/>", !.
+rest_stag( _Cx, [], [] ) --> ? ">", !.
 
 
 % [41]    Attribute    ::=    Name Eq AttValue 
@@ -224,15 +224,15 @@ reference_in_attribute( Look, Rest, GEs, End, Value, RestValue, Out2, SOut2 ) :-
 	( isExternalEntity( Entity ) ->
 		error('Reference in attribute to an external parsed entity not allowed!')
 	;
-		attrcharend( End, GEs, CharEnd ),
+		attrcharend( End, CharEnd ),
 		getEntityReplacementText( Entity, [Look1|Rest1]-[CharEnd,GEs,Out1|SOut1] ),
 	      attvalue( Look1, Rest1, ient, NewGEs, Value, RestValue, Out2, SOut2 ) 		
 	).
 
 % This puts a mark stating where the replacement text of an entity ends 
-attrcharend( ient, GEs, -2 ) :- !.
-attrcharend( apos, GEs, -3 ) :- !.
-attrcharend( quot, GEs, -4 ) :- !.
+attrcharend( ient, -2 ) :- !.
+attrcharend( apos, -3 ) :- !.
+attrcharend( quot, -4 ) :- !.
 
 % Parsing of content
 % [43]    content    ::=    CharData? ((element | Reference | CDSect | PI | Comment) CharData?)* 
@@ -324,7 +324,7 @@ chardata_in_content3( CharData, RestChars ) -->
 
 
 % Should I use document fragments instead of lists?
-markup_in_content( Cx, [] ) --> 
+markup_in_content( _Cx, [] ) --> 
 	"/", !. 
 markup_in_content( Cx, [PI|RestContent] ) --> 
 	"?", !,
@@ -408,8 +408,8 @@ char_ref( [Code|Rest], Rest ) ::=
 	"x", !, hexadecimal_ref( Code ).
 char_ref( [Code|Rest], Rest ) ::= !,
 	decimal_ref( Code ).
-char_ref( _, _ ) -->
-	error( 'Expecting ''x'' or number' ).
+%char_ref( _, _ ) -->
+%	error( 'Expecting ''x'' or number' ).
 
 hexadecimal_ref( Code ) -->
 	+ hexadecimal_char( Value ),
@@ -568,11 +568,11 @@ comment_text( [Char|RestText] ) -->
 	[Char], !, 
 	{ xml_char( Char ) },							% Uncomment for fully conformant XML parser
 	comment_text( RestText ).
-comment_text( _ ) -->
-	error( 'Comment not ended.' ).	
+%comment_text( _ ) -->
+%	error( 'Comment not ended.' ).	
 
 comment_end --> ">", !.
-comment_end --> !, error( '-- cannot occur inside a comment' ).
+%comment_end --> !, error( '-- cannot occur inside a comment' ).
 
 
 % [16]    PI    ::=    '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
@@ -588,8 +588,8 @@ pi_rest( BaseURI, PI ) -->
 pi_target( Target ) -->
 	ncname( Target ),
 	{\+ invalid_pi( Target ) }, !.
-pi_target( Target ) -->
-	error( 'Invalid target in processing instruction ' ).
+%pi_target( Target ) -->
+%	error( 'Invalid target in processing instruction ' ).
 
 invalid_pi( 'xml' ).
 invalid_pi( 'xmL' ).
@@ -610,8 +610,8 @@ pi_instruction_text( [Char|RestInstruction] ) -->
 	[Char], !, 
 	{ xml_char( Char ) },							% Uncomment for fully conformant XML parser
 	pi_instruction_text( RestInstruction ).
-pi_instruction_text( _ ) -->
-	error( 'Processing instruction not finished' ).
+%pi_instruction_text( _ ) -->
+%	error( 'Processing instruction not finished' ).
 
 
 
@@ -650,9 +650,10 @@ createElementFromContext( Cx, Attribs, NamespaceAttribs,  Element, NewCx ) :-
 
 	getContextDocument( Cx, Document ),
 	getContextInScopeNamespaces( Cx, InScope ),
-	getContextName( Cx, ElementQName ),
+	getContextName( Cx, ElemQName ),
 
-	getDocumentDefaultAttributes( Document, ElementQName, DefaultAttribs, NamespaceDefaultAttribs ),
+	ElemQName = qname(ElemPrefix,ElemLocal),
+	getDocumentDefaultAttributes( Document, ElemQName, DefaultAttribs, NamespaceDefaultAttribs ),
 	createNamedMap( EmptyNAttribs ),
 	addNamespaceAttributes( NamespaceAttribs, no, InScope, EmptyNAttribs, AuxInScope, AuxNAttribs ),
 	addNamespaceAttributes( NamespaceDefaultAttribs, yes, AuxInScope, AuxNAttribs, NewInScope, NAttribs ),
@@ -664,7 +665,7 @@ createElementFromContext( Cx, Attribs, NamespaceAttribs,  Element, NewCx ) :-
 
 	getContextBaseURI( NewCx, BaseURI ),
 	getContextLang( NewCx, Lang ),
-	createElementNS( ElementQName, BaseURI, NewInScope, Lang, AuxElement ),
+	createElementNS( ElemPrefix, ElemLocal, BaseURI, NewInScope, Lang, AuxElement ),
 	setElementAttributes( AuxElement, MAttribs, NAttribs, Element ).
  
 
@@ -676,7 +677,7 @@ addNamespaceAttributes( [Decl|RestDecl], Default, InScope, NAttribs, NewInScope,
 declareNamespace( qname( '', xmlns) = Value, Default, InScope, NameAttribs, NewInScope, NewNameAttribs ) :- !,
 	ucs2utf8( Value, URIRefString ),
 	atom_codes( URIRef, URIRefString ),
-	createAttributeNS( 'http://www.w3.org/2000/xmlns/', qname('',xmlns), Value, Default, Attrib ),
+	createAttributeNS( '', xmlns, 'http://www.w3.org/2000/xmlns/', Value, Default, Attrib ),
 	setNamedItem( InScope, '', URIRef, NewInScope ),
 	addAttribute( Default, ename('http://www.w3.org/2000/xmlns/',''), Attrib, NameAttribs, NewNameAttribs ).
 	
@@ -684,68 +685,64 @@ declareNamespace( qname( xmlns, Prefix) = Value, Default, InScope, NameAttribs, 
 	( Value = [] -> throw( xml( 'Namespace value cannot be empty', Prefix ) ) ; true ),
 	ucs2utf8( Value, URIRefString ),
 	atom_codes( URIRef, URIRefString ),
-	createAttributeNS( 'http://www.w3.org/2000/xmlns/', qname(xmlns,Prefix), Value, Default, Attrib ),
+	createAttributeNS( xmlns, Prefix, 'http://www.w3.org/2000/xmlns/', Value, Default, Attrib ),
 	setNamedItem( InScope, Prefix, URIRef, NewInScope ),
 	addAttribute( Default, ename('http://www.w3.org/2000/xmlns/',Prefix), Attrib, NameAttribs, NewNameAttribs ).
 
 
 addAttributes( [], _, Cx, Attribs, Attribs, Cx ).
-addAttributes( [Decl|RestDecl], Default, Cx, Attribs, NewAttribs, NewCx ) :-
-	setAttribute( Decl, Default, Cx, Attribs, AuxAttribs, AuxCx ), !,
+addAttributes( [qname(Prefix,Local)=Value|RestDecl], Default, Cx, Attribs, NewAttribs, NewCx ) :-
+	setAttribute( Prefix, Local, Value, Default, Cx, Attribs, AuxAttribs, AuxCx ), !,
 	addAttributes( RestDecl, Default, AuxCx, AuxAttribs, NewAttribs, NewCx ).
 
 
 % Take care of special XML attributes 
 % Default namespaces do not apply to attributes
-setAttribute( qname('',Local) = Value, Default, Cx, Attribs, NewAttribs, Cx ) :- !,
-	createAttributeNS( '', qname('',Local), Value, Default, Attrib ),
+setAttribute( '', Local, Value, Default, Cx, Attribs, NewAttribs, Cx ) :- !,
+	createAttributeNS( '', Local, '', Value, Default, Attrib ),
 	addAttribute( Default, ename('',Local), Attrib, Attribs, NewAttribs ).
 
-setAttribute( qname(xml,space) = "default", Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
-	setContextPreserveSpace( Cx, default, NewCx ),
-	createAttributeNS( 'http://www.w3.org/XML/1998/namespace', qname(xml,space), "default", Default, Attrib ),
-	addAttribute( Default, ename('http://www.w3.org/XML/1998/namespace',space), Attrib, Attribs, NewAttribs ).
-
-setAttribute( qname(xml,space) = "preserve", Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
-	setContextPreserveSpace( Cx, preserve, NewCx ),
-	createAttributeNS( 'http://www.w3.org/XML/1998/namespace', qname(xml,space), "preserve", Default, Attrib ),
+setAttribute( xml,space, Value, Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
+	( Value = "preserve" -> 
+		setContextPreserveSpace( Cx, preserve, NewCx )
+	; Value = "default" ->
+		setContextPreserveSpace( Cx, default, NewCx )
+	),
+	createAttributeNS( xml, space, 'http://www.w3.org/XML/1998/namespace', Value, Default, Attrib ),
 	addAttribute( Default, ename('http://www.w3.org/XML/1998/namespace',space), Attrib, Attribs, NewAttribs ).
 	
-setAttribute( qname(xml,lang) = Lang, Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
+setAttribute( xml,lang, Lang, Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
 	setContextLang( Cx, Lang, NewCx ),
-	createAttributeNS( 'http://www.w3.org/XML/1998/namespace', qname(xml,lang), Lang, Default, Attrib ),
+	createAttributeNS( xml, lang, 'http://www.w3.org/XML/1998/namespace', Lang, Default, Attrib ),
 	addAttribute( Default, ename('http://www.w3.org/XML/1998/namespace',lang), Attrib, Attribs, NewAttribs ).
 
-setAttribute( qname(xml,base) = Base, Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
+setAttribute( xml,base, Base, Default, Cx, Attribs, NewAttribs, NewCx ) :- !,
 	parseIRIref( no, Base, RelIRI ),
 	getContextBaseURI( Cx, BaseIRI ),
 	resolveIRIref( RelIRI, BaseIRI, AbsIRI ),
 	setContextBaseURI( Cx, AbsIRI, NewCx ),
-	createAttributeNS( 'http://www.w3.org/XML/1998/namespace', qname(xml,base), Base, Default, Attrib ),
+	createAttributeNS( xml, base, 'http://www.w3.org/XML/1998/namespace', Base, Default, Attrib ),
 	addAttribute( Default, ename('http://www.w3.org/XML/1998/namespace',base), Attrib, Attribs, NewAttribs ).
 
 % Ordinary attributes
-setAttribute( qname(Prefix,Local) = Value, Default, Cx, Attribs, NewAttribs, Cx ) :- !,
+setAttribute( Prefix,Local, Value, Default, Cx, Attribs, NewAttribs, Cx ) :- !,
 	getContextInScopeNamespaces( Cx, InScope ),
 	getNamespaceURI( Prefix, InScope, URI ),
-	createAttributeNS( URI, qname(Prefix,Local), Value, Default, Attrib ),
+	createAttributeNS( Prefix, Local, URI, Value, Default, Attrib ),
 	addAttribute( Default, ename(URI,Local), Attrib, Attribs, NewAttribs ).
 
-addAttribute( no, EName, Attrib, Attribs, NewAttribs ) :- 
-	setNamedItemIfNew( Attribs, EName, Attrib, NewAttribs ), !.
-addAttribute( yes, EName, Attrib, Attribs, NewAttribs ) :- 
-	setNewNamedItem( Attribs, EName, Attrib, NewAttribs ), !.
-
-
-% addAttribute( _, EName, Attrib, Attribs, [EName = Attrib|Attribs] ).
+addAttribute( no, EName, Attrib, Attribs, NewAttribs ) :-  !,
+	setNamedItemIfNew( Attribs, EName, Attrib, NewAttribs ).
+addAttribute( yes, EName, Attrib, Attribs, NewAttribs ) :- !,
+	setNewNamedItem( Attribs, EName, Attrib, NewAttribs ).
 
 
 % getNamespaceURI( Prefix, _, Prefix ) :- !.
 
 getNamespaceURI( Prefix, InScope, URI ) :-
-	getNamedItem( InScope, Prefix, URI ), !.
-getNamespaceURI( Prefix, _, _ ) :-
-	error( 'Namespace not declared' ).
+	getNamedItem( InScope, Prefix, URI ).
+%getNamespaceURI( Prefix, _, _ ) :-
+%	error( 'Namespace not declared' ).
 
 checkEntities( Cx ) :-
 	getContextEntities( Cx, Ents ),
@@ -760,13 +757,13 @@ checkEntities( Ents, Cx ) :-
 	   	true
 	).
 
-checkInternalEntity( Cx, Name, Entity ) :-
+checkInternalEntity( _Cx, _Name, Entity ) :-
 	\+ isInternalEntity( Entity ), !.
-checkInternalEntity( Cx, Name, Entity ) :-
+checkInternalEntity( Cx, _Name, Entity ) :-
 	getEntityReplacementText( Entity, [LookUp|Rest]-[0'<,0'/,-1] ),
 	content( LookUp, Rest, Cx, Content, -1, [] ), !.
-checkInternalEntity( _, Name, _ ) :- !,
-	error( 'General Parsed Entity has invalid content' ).
+%checkInternalEntity( _, Name, _ ) :- !,
+%	error( 'General Parsed Entity has invalid content' ).
 
 /*
 error( Msg ) :-

@@ -58,16 +58,16 @@ getDocumentNotations( document(_,_,N,_,_,_,_,_,_,_), N ) :- !.
 getDocumentUnparsedEntities( document(_,_,_,U,_,_,_,_,_,_), U ) :- !.
 getDocumentBaseURI( document(_,_,_,_,B,_,_,_,_,_), B ) :- !.
 getDocumentEncoding(document(_,_,_,_,_,E,_,_,_,_),E).
-getDocumentStandalone(document(_,_,_,_,_,S,_,_,_,_),S).
+getDocumentStandalone(document(_,_,_,_,_,_,S,_,_,_),S).
 getDocumentVersion(document(_,_,_,_,_,_,_,V,_,_),V).
-getDocumentAllProcessed(document(_,_,_,_,_,_,_,V,_,_),V).
+getDocumentAllProcessed(document(_,_,_,_,_,_,_,_,All,_),All).
 getDocumentDTD(document(_,_,_,_,_,_,_,_,_,DTD),DTD).
 
 appendDocumentChildren(document([],Doc,N,U,Base,Enc,S,V,All,DTD), DocFrag/[], document(DocFrag,Doc,N,U,Base,Enc,S,V,All,DTD)) :- !.
 
-getDocumentDefaultAttributes(Document,ElName, Attributes,NamespaceAttributes) :-
+getDocumentDefaultAttributes(Document,ElemName, Attributes,NamespaceAttributes) :-
 	getDocumentDTD(Document,DTD),
-	getDefaultAttributesFromDTD(DTD,ElName, Attributes,NamespaceAttributes).
+	getDefaultAttributesFromDTD(DTD,ElemName, Attributes,NamespaceAttributes).
 	
 
 %% Document Type Information Item
@@ -88,15 +88,19 @@ getDocumentTypeChildren( documenttype(_,_,_,_,_,PIs),PIs).
 getDocumentTypeLogicalStructs( documenttype( _, _, _, Els, Atts, _ ), logical_structs(Els,Atts) ).
 
 
-getDefaultAttributesFromDTD(documenttype(_,_,_,_,AttDecl,_),ElemName,Attributes,NamespaceAttributes) :-
-	getNamedItem( AttDecl, ElemName, attlist(AttList) ), !,
+getElementSpecificationFromDTD( documenttype(_,_,_,ElemDecl,_,_), ElemQName, ElemSpec ) :-
+	getNamedItem( ElemDecl, ElemQName, ElemSpec ), !.
+getElementSpecificationFromDTD( _, _, [] ).
+
+getDefaultAttributesFromDTD(documenttype(_,_,_,_,AttDecl,_),ElemQName,Attributes,NamespaceAttributes) :-
+	getNamedItem( AttDecl, ElemQName, attlist(AttList) ), !,
 	extractDefaultAttributes( AttList, Attributes, NamespaceAttributes ).
-getDefaultAttributesFromDTD(_,_, [],[]) :- !.
+getDefaultAttributesFromDTD(_,_, [],[]).
 	
-getAttributeTypeFromDTD( documenttype(_,_,_,_,AttDecl,_), ElemName, AttName, Type ) :- 
-	getNamedItem( AttDecl, ElemName, AttList ),
-	getAttributeDeclaration( AttList, AttName, Type, _ ), !.
-getAttributeTypeFromDTD( _, _, _, [] ). 
+getAttributeDeclarationFromDTD( documenttype(_,_,_,_,AttDecl,_), ElemQName, AttQName, Type, Default ) :- 
+	getNamedItem( AttDecl, ElemQName, AttList ),
+	getAttributeDeclaration( AttList, AttQName, Type, Default ), !.
+getAttributeDeclarationFromDTD( _, _, _, [], [] ). 
 
 
 extractDefaultAttributes( [], [], [] ).
@@ -173,7 +177,7 @@ createUnparsedEntity( Name, PublicId, SystemId, BaseURI, Notation, unparsed_enti
 
 getEntityName( internal_entity( Name, _ ), Name ) :- !.
 getEntityName( unexpanded_entity( Name, _, _, _ ), Name ) :- !.
-getEntityname( unparsed_entity( Name, _, _, _, _ ), Name ) :- !.
+getEntityName( unparsed_entity( Name, _, _, _, _ ), Name ) :- !.
 
 getEntityPublicId( unexpanded_entity( _, PublicId, _, _ ), PublicId ) :- !.
 getEntityPublicId( unparsed_entity( _, PublicId, _, _, _ ), PublicId ) :- !.
@@ -199,6 +203,10 @@ createLogicalStructures( logical_structs( ElemDecls, AttDecls ) ) :-
 	createNamedMap( ElemDecls ),
 	createNamedMap( AttDecls ).
 
+createLogicalStructuresAttributeList( logical_structs( Els, Atts ), NameEl, logical_structs( Els, NewAtts ) ) :-
+	createAttributeList( AttList ),
+	setNewNamedItem( Atts, NameEl, AttList, NewAtts ).
+	
 addLogicalStructuresElementDeclaration( logical_structs( Els, Atts ), Name, ElDecl, logical_structs( NewEls, Atts ) ) :-
 	setNamedItemIfNew(Els,Name,ElDecl,NewEls).
 addLogicalStructuresAttributeDeclaration( logical_structs( Els, Atts ), NameEl, AttDecl, logical_structs( Els, NewAtts ) ) :-
@@ -223,6 +231,10 @@ getElementSpecification( spec( ContentSpec ), ContentSpec ).
 
 isAttributeListDeclaration( attlist( _ ) ).
 
+getAttributeListDeclaration( attlist(Decls), Decls ) :- !.
+
+createAttributeList( attlist(EmptyMap) ) :- createNamedMap( EmptyMap ).
+
 createAttributeDeclaration( QName, Type, Default, attlist(AttList) ) :-
 	createNamedMap( EmptyMap ),
 	setNamedItem( EmptyMap, QName, attribute_decl(Type, Default), AttList ).
@@ -230,8 +242,13 @@ createAttributeDeclaration( QName, Type, Default, attlist(AttList) ) :-
 mergeNamedItem( attlist(Old), attlist([Name=Value]), attlist(New) ) :- !,
 	setNewNamedItem( Old, Name, Value, New ).	
 
+getAttributeDeclaration( attribute_decl(Type,Default), Type, Default ).
+
 getAttributeDeclaration( attlist(Decls), QName, Type, Default ) :- !,
 	getNamedItem( Decls, QName, attribute_decl(Type,Default) ).
+
+getAttributeDeclaration( attlist(Decls), Prefix, Local, Type, Default ) :- !,
+	getNamedItem( Decls, qname(Prefix,Local), attribute_decl(Type,Default) ).
  
 
 %%%% Notation Information Item
@@ -259,20 +276,31 @@ appendDocumentFragmentChild( DocFrag/[Child|RestDocFrag], Child, DocFrag/RestDoc
 
 %% Element Information Item
 
-isElement(element(_NamespaceURI,_LocalName,_Prefix,_Children,_Attributes,_NameAttributes,_InScope,_BaseURI,_Lang)).
+isElement(element(_NamespaceURI,_LocalName,_Prefix,_Attributes,_NameAttributes,_Children,_InScope,_BaseURI,_Lang)).
+
 	
-createElementNS( qname(Prefix,LocalName), BaseURI, InScope, Lang, element(NamespaceURI,LocalName,Prefix,[],[],[],InScope,BaseURI,Lang)) :-
+createElementNS( Prefix, LocalName, BaseURI, InScope, Lang, element(NamespaceURI,LocalName,Prefix,[],[],[],InScope,BaseURI,Lang)) :-
 	getNamedItem( InScope, Prefix, NamespaceURI ).
 
-setElementAttributes( element(NamespaceURI,LocalName,Prefix,Children,_,_,InScope,Base,Lang), Attributes, NamespaceAttribs, 
-			    element(NamespaceURI,LocalName,Prefix,Children,Attributes,NamespaceAttribs,InScope,Base,Lang)) :- !.
+setElementAttributes( element(NamespaceURI,LocalName,Prefix,_,_,Children,InScope,Base,Lang), Attributes, NamespaceAttribs, 
+			    element(NamespaceURI,LocalName,Prefix,Attributes,NamespaceAttribs,Children,InScope,Base,Lang)) :- !.
 
-setElementContent( element(NamespaceURI,LocalName,Prefix,_,Attributes,NamespaceAttribs,InScope,Base,Lang), Content, 
-			 element(NamespaceURI,LocalName,Prefix,Content,Attributes,NamespaceAttribs,InScope,Base,Lang)) :- !.
+setElementContent( element(NamespaceURI,LocalName,Prefix,Attributes,NamespaceAttribs,_,InScope,Base,Lang), Content, 
+			 element(NamespaceURI,LocalName,Prefix,Attributes,NamespaceAttribs,Content,InScope,Base,Lang)) :- !.
+
+
+/*
+createElementNS( Prefix, LocalName, BaseURI, InScope, Lang, element(NamespaceURI,LocalName,Prefix,_,_,_,InScope,BaseURI,Lang)) :-
+	getNamedItem( InScope, Prefix, NamespaceURI ).
+
+setElementAttributes( El, Attributes, NamespaceAttribs, El ) :- !, El = element(_,_,_,_,Attributes,NamespaceAttribs,_,_,_).
+
+setElementContent( El, Content, El ) :- !, El = element( _, _, _, Content,_,_,_,_,_).
+*/
 
 getElementName( element(NamespaceURI,LocalName,Prefix,_,_,_,_,_,_), NamespaceURI, LocalName, Prefix ) :- !.
-getElementChildren( element(_,_,_,Children,_,_,_,_,_), Children ) :- !.
-getElementAttributes( element(_,_,_,_,Attributes,NamespaceAttribs,_,_,_), Attributes, NamespaceAttribs ) :- !. 
+getElementChildren( element(_,_,_,_,_,Children,_,_,_), Children ) :- !.
+getElementAttributes( element(_,_,_,Attributes,NamespaceAttribs,_,_,_,_), Attributes, NamespaceAttribs ) :- !. 
 getElementInScopeNamespaces( element(_,_,_,_,_,_,InScope,_,_), InScope ) :- !.
 getElementBaseURI( element(_,_,_,_,_,_,_,Base,_), Base) :- !.
 getElementLang( element(_,_,_,_,_,_,_,_,Lang), Lang) :- !.
@@ -282,7 +310,7 @@ getElementLang( element(_,_,_,_,_,_,_,_,Lang), Lang) :- !.
 isAttribute(attribute(_NamespaceURI,_LocalName,_Prefix,_Value,_Specified,_Type)).
 
 	
-createAttributeNS(NamespaceURI,qname(Prefix,LocalName), NormValue, Specified, attribute(NamespaceURI,LocalName,Prefix,NormValue,Specified,[])) :- !.
+createAttributeNS(Prefix, LocalName, NamespaceURI, NormValue, Specified, attribute(NamespaceURI,LocalName,Prefix,NormValue,Specified,[])) :- !.
 
 getAttributeName( attribute(NamespaceURI,LocalName,Prefix,_,_,_), NamespaceURI, LocalName, Prefix ) :- !.
 getAttributeValue( attribute(_,_,_,Value,_,_), Value ) :- !.
@@ -325,8 +353,8 @@ getCharData( whitespace(Text), Text ).
 %%%% Auxiliary predicates
 
 %% NodeLists are represented currently as ordinary lists.
-isNodeList( [] ).
-isNodeList( [_|_] ).
+isNodeList( [] ) :- !.
+isNodeList( [_|_] ) :- !.
 
 createNodeList([]).
 isEmptyNodeList([]).
@@ -336,12 +364,13 @@ getTailNodeList( [_|Tail], Tail ).
 
 %%%% NamedNodeMap
 
-isNamedMap( [] ).
-isNamedMap( [_|_] ).
+isNamedMap( [] ) :- !.
+isNamedMap( [_|_] ) :- !.
 
 createNamedMap( [] ).
 isEmptyNamedMap( [] ).
 
+getFirstNamedMap( [_=Value|_], Value ).
 getFirstNamedMap( [Name=Value|_], Name, Value ).
 getRestNamedMap( [_|RestMap], RestMap ).
 
@@ -373,7 +402,7 @@ setNamedItemIfNew( [Name=Val|RestNamedNodeMap], Name, NewVal, [Name=MergeVal|Res
 setNamedItemIfNew( [Name1=Val1|RestNamedNodeMap], Name, Val, [Name=Val,Name1=Val1|RestNamedNodeMap] ) :- 
 	Name @< Name1, !.
 setNamedItemIfNew( [Map|RestNamedNodeMap], Name, Arg, [Map|NewNamedNodeMap] ) :- !,
-	setNamedItem( RestNamedNodeMap, Name, Arg, NewNamedNodeMap ).
+	setNamedItemIfNew( RestNamedNodeMap, Name, Arg, NewNamedNodeMap ).
 
 % removeNamedItem( [], _, _, _) :- throw( dom_exception( not_found_err ) ).
 removeNamedItem( [Name=Value|RestNamedNodeMap], Name, Value, RestNamedNodeMap ) :- !.

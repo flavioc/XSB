@@ -18,7 +18,7 @@
 :- export reverse/2.
 :- export member/2.
 :- export memberchk/2.
-
+:- export append_atom/3.
 
 :- import xsb_configuration/2 from usermod.
 :- import expand_filename/2 from machine.
@@ -32,7 +32,7 @@ time(T) :- cputime(T).
 % Expands relative file names into absolute ones.
 absolute_filename( Path, AbsPath ) :- expand_filename( Path, AbsPath ).
 
-% The append/3 predicat
+% The append/3 predicate
 append([],L,L).
 append([X|Xs],Ys,[X|Zs]) :- append(Xs,Ys,Zs).
 
@@ -43,9 +43,16 @@ reverse( Ls, Rs ) :- reverse( Ls, [], Rs ).
 reverse( [], Rs, Rs ).
 reverse( [X|Xs], As, Rs ) :- reverse( Xs, [X|As], Rs ).
 
-
 member( X, [X|_] ).
 member( X, [_|Ys] ) :- member( X, Ys ).
 
 memberchk( X, [X|_] ) :- !.
 memberchk( X, [_|Ys] ) :- memberchk( X, Ys ).
+
+
+% Atom concatenation:
+append_atom( Atom1, Atom2, Atom ) :-
+	name( Atom1, Atom1Codes ),
+	name( Atom2, Atom2Codes),
+	append( Atom1Codes, Atom2Codes, AtomCodes ),
+	name( Atom, AtomCodes ).

@@ -224,7 +224,7 @@ iauthority( U, [Char|RestU], UserInfo, Host, Port) --> iunreserved( Char ), !, i
 iauthority( U, [], [], U, [] ) ::= [], !, {nonvar(U)}.		% U is a hostname!
 
 
-iuserinfo_or_port( UserInfo, [], Port, [], UserInfo, [], Port ) ::= [], !.
+iuserinfo_or_port( Host, [], Port, [], [], Host, Port ) ::= [], !.
 iuserinfo_or_port( U, RestU, D, [Dig|RestD], UserInfo, Host, Port ) --> digit( Dig ), !, iuserinfo_or_port( U, RestU, D, RestD, UserInfo, Host, Port ).
 iuserinfo_or_port( U, [0':|D], D, [], U, Host, Port ) --> "@", !, ihost0( Host ), port0( Port ).
 iuserinfo_or_port( U, [0':|D], D, RestU, UserInfo, Host, Port ) --> iauthority_with_iuserinfo(U, RestU, UserInfo, Host, Port ). 
@@ -260,7 +260,7 @@ digits0( [] ) ::= [], !.
 
 
 ihost0( IPV6 )  --> + ipv6reference( IPV6 ), !.
-ihost0( IPV4 )  ::= + ipv4address( IPV4 ), !.
+%ihost0( IPV4 )  ::= + ipv4address( IPV4 ), !.
 ihost0( Host )  --> + ihostname( Host ), !.
 ihost0( [] ) ::= [], !.
 
@@ -488,8 +488,8 @@ hexdig( 0'E ) --> "E", !.
 hexdig( 0'F ) --> "F", !.
 hexdig( 0'a ) --> "a", !.
 hexdig( 0'b ) --> "b", !.
-hexdig( 0'c ) --> "d", !.
-hexdig( 0'd ) --> "e", !.
+hexdig( 0'c ) --> "c", !.
+hexdig( 0'd ) --> "d", !.
 hexdig( 0'e ) --> "e", !.
 hexdig( 0'f ) --> "f", !.
 

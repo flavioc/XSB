@@ -1,5 +1,18 @@
 % The character ranges for XML Name productions
 
+:- - other_blank/1.
+
+:- - ncnamechar1byte/1.
+:- - ncnamechar2byte/1.
+:- - ncnamechar3byte/1.
+:- - ncnamechar4byte/1.
+
+:- - ncnamestartchar1byte/1.
+:- - ncnamestartchar2byte/1.
+:- - ncnamestartchar3byte/1.
+:- - ncnamestartchar4byte/1.
+
+
 other_blank( 16'85 ) --> [16'85].				% Extra white space char allowed in XML 1.1
 other_blank( 16'2028 ) --> [16'2028].			% Extra white space char allowed in XML 1.1
 

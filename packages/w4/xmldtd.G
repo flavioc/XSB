@@ -123,11 +123,11 @@ children( C ) --> choice_or_seq( CS ), opt_operator( CS, C ).
 choice_or_seq( CS ) -->
 	cp( CP ), whitespace0, rest_choice_or_seq( CP, CS ).
 
-rest_choice_or_seq( CP, CP ) --> ")", !.
+rest_choice_or_seq( CP, seq( [CP] ) ) --> ")", !.
 rest_choice_or_seq( CP, choice( [CP,CP1|RestC] ) ) --> "|", whitespace0, cp( CP1 ), whitespace0, rest_choice( RestC ).
 rest_choice_or_seq( CP,    seq( [CP,CP1|RestS] ) ) --> ",", whitespace0, cp( CP1 ), whitespace0, rest_seq( RestS ).
 
-cp( CP ) --> "(", !, + children( CP ).
+cp( CP ) --> "(", !, choice_or_seq( CS ), opt_operator( CS, CP ).
 cp( CP ) --> qname(Name), opt_operator(Name, CP).
 
 rest_choice( [] )         --> ")", !.
@@ -148,7 +148,7 @@ opt_operator( EC, EC ) --> [].
 mixed( MC ) -->
 	"#PCDATA", !, whitespace0, mixed_content( MC ).
 
-mixed_content( times( '#pcdata' ) ) --> ")*", !.
+mixed_content( times( seq(['#pcdata']) ) ) --> ")*", !.
 mixed_content( '#pcdata' ) --> ")", !.
 mixed_content( times( choice( ['#pcdata',Name|RestMC] ) ) ) --> 
 	"|", whitespace0, qname(Name), whitespace0, rest_mixed_children( RestMC ).
@@ -162,7 +162,12 @@ rest_mixed_children( [Name|RestMC] ) --> "|", !, whitespace0, qname(Name), white
 %  [53]    AttDef         ::=    S (QName | NSAttName) S AttType S DefaultDecl 
 
 
-attlist_decl( Cx, NewCx ) --> "ATTLIST", !, whitespace, qname(Name), opt_attdefs(Name,Cx, NewCx ).
+attlist_decl( Cx, NewCx ) --> 
+	"ATTLIST", !, 
+	whitespace, 
+	qname(Name),
+	{ createAttributeListInDTDContext( Cx, Name, AuxCx ) }, 
+	opt_attdefs(Name,AuxCx, NewCx ).
 
 opt_attdefs(_,Cx, Cx) --> ">", !.
 opt_attdefs(ElName,Cx,NewCx) --> whitespace, attdefs0(ElName,Cx,NewCx).
@@ -174,7 +179,7 @@ attdefs0(ElName,Cx,NewCx) -->
 	atttype( Type ),
 	whitespace,
 	default_decl( Cx, Default ),
-	{ createAttributeDeclarationInDTDContext(Cx,Name,Type,Default,AuxCx) }, !,
+	{ createAttributeDeclarationInDTDContext(Cx,ElName, Name,Type,Default,AuxCx) }, !,
 	opt_attdefs(ElName,AuxCx,NewCx).
 
 
@@ -391,16 +396,20 @@ getPhysicalStructsInDTDContext( dtdcx( _, _, _, _, Phys, _), Phys ).
 getPIsInDTDContext( dtdcx( _, _, _, _, _, PIs ), PIs ).
 getGeneralEntitiesInDTDContext( dtdcx( _, _, _, _, Phys, _), Ents ) :- !,
 	getPhysicalStructuresGeneralEntities( Phys, Ents ).
-getParameterEntitiesInDTDContext( dtdcx( _, _, _, _, Phys, _), PEs ) :- !,
-	getPhysicalStructuresParameterEntities( Phys, PEs ).
+%getParameterEntitiesInDTDContext( dtdcx( _, _, _, _, Phys, _), PEs ) :- !,
+%	getPhysicalStructuresParameterEntities( Phys, PEs ).
 
 
 createElementSpecificationInDTDContext( dtdcx( BaseURI, St, All, Log, Phys, PIs ), Name, CSpec, dtdcx( BaseURI, St, All, NewLog, Phys, PIs ) ) :- !,
 	createElementSpecification( Name, CSpec, ElDecl ),
 	addLogicalStructuresElementDeclaration( Log, Name, ElDecl, NewLog ).
 
-createAttributeDeclarationInDTDContext( dtdcx( BaseURI, St, skip, Log, Phys, PIs ), _, _, _, dtdcx( BaseURI, St, skip, Log, Phys, PIs ) ) :- !. 
-createAttributeDeclarationInDTDContext( dtdcx( BaseURI, St, All, Log, Phys, PIs ), Name, Type, Default, dtdcx( BaseURI, St, All, NewLog, Phys, PIs ) ) :- !,
+createAttributeListInDTDContext( dtdcx( BaseURI, St, skip, Log, Phys, PIs ), _, dtdcx( BaseURI, St, skip, Log, Phys, PIs ) ) :- !. 
+createAttributeListInDTDContext( dtdcx( BaseURI, St, All, Log, Phys, PIs ), ElName, dtdcx( BaseURI, St, All, NewLog, Phys, PIs ) ) :- !,
+	createLogicalStructuresAttributeList( Log, ElName, NewLog ).
+
+createAttributeDeclarationInDTDContext( dtdcx( BaseURI, St, skip, Log, Phys, PIs ), _, _, _, _, dtdcx( BaseURI, St, skip, Log, Phys, PIs ) ) :- !. 
+createAttributeDeclarationInDTDContext( dtdcx( BaseURI, St, All, Log, Phys, PIs ), ElName, Name, Type, Default, dtdcx( BaseURI, St, All, NewLog, Phys, PIs ) ) :- !,
 	createAttributeDeclaration(Name,Type,Default,AttDecl),
 	addLogicalStructuresAttributeDeclaration( Log, ElName, AttDecl, NewLog ).
 

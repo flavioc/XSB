@@ -29,7 +29,7 @@
 
 % Document
 :- export isDocument/1.
-:- export createDocument/5.
+:- export createDocument/1.
 :- export setDocumentChildren/3.
 :- export setDocumentElement/3.
 :- export setDocumentPhysicalStructures/3.
@@ -37,6 +37,7 @@
 :- export setDocumentVersion/3.
 :- export setDocumentEncoding/3.
 :- export setDocumentStandalone/3.
+:- export setDocumentAllProcessed/3.
 :- export setDocumentDTD/3.
 
 :- export getDocumentChildren/2.
@@ -47,6 +48,7 @@
 :- export getDocumentVersion/2.
 :- export getDocumentEncoding/2.
 :- export getDocumentStandalone/2.
+:- export getDocumentAllProcessed/2.
 :- export getDocumentDTD/2.
 :- export getDocumentDefaultAttributes/4.
 
@@ -61,10 +63,16 @@
 :- export getDocumentTypeSystemId/2.
 :- export getDocumentTypeElementDeclarations/2.
 :- export getDocumentTypeAttributeDeclarations/2.
-:- export getDocumentTypeProcessingInstructions/2.
+:- export getDocumentTypeChildren/2.
 :- export getDocumentTypeLogicalStructs/2.
 
+:- export getElementSpecificationFromDTD/3.
+:- export getDefaultAttributesFromDTD/4.
+:- export getAttributeDeclarationFromDTD/5.
+
+
 :- export splitAttrib/6.
+
 
 % Physical Structures
 
@@ -96,17 +104,17 @@
 :- export createExternalEntity/5.
 :- export createUnparsedEntity/6.
 :- export getEntityName/2.
-:- export getEntityname/2.
 :- export getEntityPublicId/2.
 :- export getEntitySystemId/2.
 :- export getEntityBaseURI/2.
-:- export getEntityNotation/2.
+:- export getEntityNotationName/2.
 :- export getEntityReplacementText/2.
 
 % Logical Structures
 
 :- export isLogicalStructures/1.
 :- export createLogicalStructures/1.
+:- export createLogicalStructuresAttributeList/3.
 :- export addLogicalStructuresElementDeclaration/4.
 :- export addLogicalStructuresAttributeDeclaration/4.
 :- export getLogicalStructuresElementDeclaration/3.
@@ -121,7 +129,9 @@
 % Attribute List Declarations
 
 :- export isAttributeListDeclaration/1.
+:- export getAttributeListDeclaration/2.
 :- export createAttributeDeclaration/4.
+:- export getAttributeDeclaration/3.
 :- export getAttributeDeclaration/4.
 
 % Notations
@@ -142,7 +152,7 @@
 % Elements
 
 :- export isElement/1.
-:- export createElementNS/5.
+:- export createElementNS/6.
 :- export setElementAttributes/4.
 :- export setElementContent/3.
 
@@ -156,7 +166,7 @@
 % Attributes
 
 :- export isAttribute/1.
-:- export createAttributeNS/5.
+:- export createAttributeNS/6.
 :- export getAttributeName/4.
 :- export getAttributeValue/2.
 :- export getAttributeSpecified/2.
@@ -181,19 +191,24 @@
 % Character Data
 
 :- export isCharData/1.
+:- export isWhiteSpace/1.
+
 :- export createCharData/2.
 :- export getCharData/2.
 
 
 % Auxiliary predicates
 
+:- export isNodeList/1.
 :- export createNodeList/1.
 :- export isEmptyNodeList/1.
 :- export getHeadNodeList/2.
 :- export getTailNodeList/2.
 
-:- export createNamedNodeMap/1.
+:- export isNamedMap/1.
+:- export createNamedMap/1.
 :- export isEmptyNamedMap/1.
+:- export getFirstNamedMap/2.
 :- export getFirstNamedMap/3.
 :- export getRestNamedMap/2.
 :- export getNamedItem/3.

@@ -52,7 +52,7 @@
 
 
 :- import createLogicalStructures/1 from xmldom.
-
+:- import createLogicalStructuresAttributeList/3 from xmldom.
 :- import addLogicalStructuresElementDeclaration/4 from xmldom.
 :- import addLogicalStructuresAttributeDeclaration/4 from xmldom.
 
@@ -66,11 +66,11 @@
 
 :- import createPI/4 from xmldom.
 
-:- import createElementNS/5 from xmldom.
+:- import createElementNS/6 from xmldom.
 :- import setElementContent/3 from xmldom.
 :- import setElementAttributes/4 from xmldom.
 
-:- import createAttributeNS/5 from xmldom.
+:- import createAttributeNS/6 from xmldom.
 
 :- import createComment/2 from xmldom.
 

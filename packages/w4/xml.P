@@ -16,14 +16,12 @@
 %%%
 
 
-:- [iostream,utf].
-
 :- import open_input_stream/2 from iostream.
+:- import read_stream/5 from iostream.
+:- import close_input_stream/1 from iostream.
 :- import read_octets_till/5 from iostream.
 :- import read_octets/5 from iostream.
-:- import close_input_stream/1 from iostream.
 :- import eos/1 from iostream.
-:- import read_stream/5 from usermod.
 
 :- import xml_document/7 from xmlparser.
 :- import xml_declaration0/7 from xmlparser.
@@ -37,6 +35,8 @@
 :- export parse_xml_document/3.
 :- export parse_xml_document/4.
 :- export parse_xml_document/5.
+
+:- export xml_document/4.
 
 :- ensure_loaded( iostream ).
 :- ensure_loaded( iri ).

@@ -1,7 +1,9 @@
 
-:- import atom2iri/2 from iri.
-:- import iri2atom/2 from iri.
-:- import resolveIRI/3 from iri.
+:- ensure_loaded( iri ).
+
+:- import atom2iriref/2 from iri.
+:- import iriref2atom/2 from iri.
+:- import resolveIRIref/3 from iri.
 
 
 testiri( '' ).
@@ -153,19 +155,19 @@ testresolution( 'http:g', 'http://a/b/c/d;p?q' ).
 
 testiris :-
 	testiri( IRIAtom ),
-	write( IRIAtom ), nl,
-	( atom2iri( IRIAtom, IRI ) -> write( IRI ), nl ; write( 'Failed' ) ),
+	writeq( IRIAtom ), nl,
+	( ( atom2iriref( IRIAtom, IRI ), iriref2atom(IRI,IRIAtom) ) -> writeq( IRI ), nl ; write( 'Failed' ) ),
 	nl,
 	fail.
 testiris.
 
 testresolution :-
 	testresolution( Ratom, Batom ),
-	atom2iri( Ratom, IRI_R ),
-	atom2iri( Batom, IRI_B ),
-	resolveIRI( IRI_R, IRI_B, IRI_T ),
-	iri2atom( IRI_T, Tatom ),
-	write( res( Ratom, Batom ) = Tatom ), nl,
+	atom2iriref( Ratom, IRI_R ),
+	atom2iriref( Batom, IRI_B ),
+	resolveIRIref( IRI_R, IRI_B, IRI_T ),
+	iriref2atom( IRI_T, Tatom ),
+	writeq( res( Ratom, Batom ) = Tatom ), nl,
 	fail.
 testresolution.
 	

@@ -116,13 +116,13 @@ iauthority(47,A,B,[],[],B,[],47,A) :- (!  ','  nonvar(B)).
 iauthority(63,A,B,[],[],B,[],63,A) :- (!  ','  nonvar(B)).
 
 
-iuserinfo_or_port(-1,A,B,[],C,[],B,[],C,-1,A) :- !.
+iuserinfo_or_port(-1,A,B,[],C,[],[],B,C,-1,A) :- !.
 
-iuserinfo_or_port(35,A,B,[],C,[],B,[],C,35,A) :- !.
+iuserinfo_or_port(35,A,B,[],C,[],[],B,C,35,A) :- !.
 
-iuserinfo_or_port(47,A,B,[],C,[],B,[],C,47,A) :- !.
+iuserinfo_or_port(47,A,B,[],C,[],[],B,C,47,A) :- !.
 
-iuserinfo_or_port(63,A,B,[],C,[],B,[],C,63,A) :- !.
+iuserinfo_or_port(63,A,B,[],C,[],[],B,C,63,A) :- !.
 
 iuserinfo_or_port(A,B,C,D,E,[F|G],H,I,J,K,L) :- (digit(A,B,F,M,N)  ','  !  ','  iuserinfo_or_port(M,N,C,D,E,G,H,I,J,K,L)).
 
@@ -197,26 +197,6 @@ digits0(63,A,[],63,A) :- !.
 
 ihost0(91,[A|B],[91|C],D,E) :- (!  ','  ipv6address(A,B,C,D,E)  ','  !).
 
-ihost0(48,A,B,C,D) :- (dec_octet(48,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(49,A,B,C,D) :- (dec_octet(49,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(50,A,B,C,D) :- (dec_octet(50,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(51,A,B,C,D) :- (dec_octet(51,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(52,A,B,C,D) :- (dec_octet(52,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(53,A,B,C,D) :- (dec_octet(53,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(54,A,B,C,D) :- (dec_octet(54,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(55,A,B,C,D) :- (dec_octet(55,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(56,A,B,C,D) :- (dec_octet(56,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
-ihost0(57,A,B,C,D) :- (dec_octet(57,A,B,[46|E],46,[F|G])  ','  dec_octet(F,G,E,[46|H],46,[I|J])  ','  dec_octet(I,J,H,[46|K],46,[L|M])  ','  dec_octet(L,M,K,[],C,D)  ','  !).
-
 ihost0(A,B,C,D,E) :- (idomainlabel(A,B,C,F,G,H)  ','  iqualified(G,H,F,D,E)  ','  !).
 
 ihost0(-1,A,[],-1,A) :- !.
@@ -273,9 +253,9 @@ restipv6(97,[A|B],[97|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
 
 restipv6(98,[A|B],[98|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
 
-restipv6(100,[A|B],[99|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
+restipv6(99,[A|B],[99|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
 
-restipv6(101,[A|B],[100|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
+restipv6(100,[A|B],[100|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
 
 restipv6(101,[A|B],[101|C],D,E) :- (!  ','  !  ','  !  ','  restipv6(A,B,C,D,E)).
 
@@ -324,9 +304,9 @@ v6char(97,[A|B],97,A,B) :- (!  ','  !).
 
 v6char(98,[A|B],98,A,B) :- (!  ','  !).
 
-v6char(100,[A|B],99,A,B) :- (!  ','  !).
+v6char(99,[A|B],99,A,B) :- (!  ','  !).
 
-v6char(101,[A|B],100,A,B) :- (!  ','  !).
+v6char(100,[A|B],100,A,B) :- (!  ','  !).
 
 v6char(101,[A|B],101,A,B) :- (!  ','  !).
 
@@ -374,17 +354,7 @@ dec_octet0(56,[A|B],[56|C],C,A,B) :- (!  ','  !).
 
 dec_octet0(57,[A|B],[57|C],C,A,B) :- (!  ','  !).
 
-dec_octet0(-1,A,B,B,-1,A) :- !.
-
-dec_octet0(35,A,B,B,35,A) :- !.
-
 dec_octet0(46,A,B,B,46,A) :- !.
-
-dec_octet0(47,A,B,B,47,A) :- !.
-
-dec_octet0(58,A,B,B,58,A) :- !.
-
-dec_octet0(63,A,B,B,63,A) :- !.
 
 
 dec_octet1(48,[A|B],[48|C],D,E,F) :- (!  ','  !  ','  dec_octet0(A,B,C,D,E,F)).
@@ -407,17 +377,7 @@ dec_octet1(56,[A|B],[56|C],D,E,F) :- (!  ','  !  ','  dec_octet0(A,B,C,D,E,F)).
 
 dec_octet1(57,[A|B],[57|C],D,E,F) :- (!  ','  !  ','  dec_octet0(A,B,C,D,E,F)).
 
-dec_octet1(-1,A,B,B,-1,A) :- !.
-
-dec_octet1(35,A,B,B,35,A) :- !.
-
 dec_octet1(46,A,B,B,46,A) :- !.
-
-dec_octet1(47,A,B,B,47,A) :- !.
-
-dec_octet1(58,A,B,B,58,A) :- !.
-
-dec_octet1(63,A,B,B,63,A) :- !.
 
 
 dec_octet2(48,[A|B],[48|C],D,E,F) :- (!  ','  dec_octet0(A,B,C,D,E,F)).
@@ -440,17 +400,7 @@ dec_octet2(56,[A|B],[56|C],C,A,B) :- !.
 
 dec_octet2(57,[A|B],[57|C],C,A,B) :- !.
 
-dec_octet2(-1,A,B,B,-1,A) :- !.
-
-dec_octet2(35,A,B,B,35,A) :- !.
-
 dec_octet2(46,A,B,B,46,A) :- !.
-
-dec_octet2(47,A,B,B,47,A) :- !.
-
-dec_octet2(58,A,B,B,58,A) :- !.
-
-dec_octet2(63,A,B,B,63,A) :- !.
 
 
 dec_octet25(48,[A|B],[48|C],C,A,B) :- !.
@@ -465,17 +415,7 @@ dec_octet25(52,[A|B],[52|C],C,A,B) :- !.
 
 dec_octet25(53,[A|B],[53|C],C,A,B) :- !.
 
-dec_octet25(-1,A,B,B,-1,A) :- !.
-
-dec_octet25(35,A,B,B,35,A) :- !.
-
 dec_octet25(46,A,B,B,46,A) :- !.
-
-dec_octet25(47,A,B,B,47,A) :- !.
-
-dec_octet25(58,A,B,B,58,A) :- !.
-
-dec_octet25(63,A,B,B,63,A) :- !.
 
 
 iqualified(-1,A,[],-1,A) :- !.
@@ -1260,9 +1200,9 @@ hexdig(97,[A|B],97,A,B) :- !.
 
 hexdig(98,[A|B],98,A,B) :- !.
 
-hexdig(100,[A|B],99,A,B) :- !.
+hexdig(99,[A|B],99,A,B) :- !.
 
-hexdig(101,[A|B],100,A,B) :- !.
+hexdig(100,[A|B],100,A,B) :- !.
 
 hexdig(101,[A|B],101,A,B) :- !.
 

@@ -348,7 +348,7 @@ iric2uri( Code, String, RestString ) :-
 	escapeoctet( Byte2, Rest1, Rest2 ),
 	escapeoctet( Byte3, Rest2, RestString ).
 iric2uri( Code, String, RestString ) :-
-	Code < 16'10FFFF, !,
+	Code =< 16'10FFFF, !,
 	Byte1 is 16'F0 \/ ( Code >> 18 ),
 	Byte2 is 16'80 \/ ( ( Code >> 12 ) /\ 16'3F),
 	Byte3 is 16'80 \/ ( ( Code >>  6 ) /\ 16'3F),
