@@ -188,11 +188,9 @@ static prolog_term prolog2hilog(prolog_term pterm, char *apply)
 
   if (is_scalar(pterm) || is_var(pterm))
     return pterm;
-#ifdef P2HDEBUG
   if (!is_functor(pterm))
     xsb_abort("PLG2HLG: Arg 1 = `%s' (the Prolog term) must be a var, a const, or a functor.",
 	      pterm2string(pterm));
-#endif
 
   arity = p2c_arity(pterm);
   c2p_functor(apply,arity+1,hterm);
