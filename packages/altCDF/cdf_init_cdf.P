@@ -1335,19 +1335,15 @@ bound_on_all(ArgNo,Goal) :-
 
 %%% ATTRIBUTE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- comment(hide,updateAttribute/5).
-:- comment(updateAttribute/5,
-"@tt{update_attribute(Oid,Rid,TCid,VarTerm,ValList)} updates a set of
-values, only invalidating those that changed.  VarTerm must contain
-all the free variables in (Oid,Rid,TCid), and ValList is a list of
-instances of VarTerm.  The goal is to minimize invalidation.  The
-semantics is: (retractallAttribute(Oid,Rid,TCid),
-(member(VarTerm,ValList), assert_attribute(Oid,Rid,TCid)), fail ;
-true).").
+:- comment(hide,updateExtTerm/3).
 
-/**updateAttribute(_Oid,_Rid,_Cid,_Vars,_NValList) :-
-	cdf_error(cdf,['updateAttribute/5 has not yet been ported to CDF']),
-	fail. **/
+:- comment(updateExtTerm/3, "@tt{updateExtTerm(ExtTerm,Vars,NValList)}
+updates a set of values, only invalidating those that changed.
+ExtTerm is a term of the form of an _ext cdf predicate; Vars is a term
+containing the variables appearing in ExtTerm, and NValList is a list
+of ground instances of Vars.  The goal is to minimize invalidation.
+The semantics is: (retractallExtTerm(ExtTerm), member(Vars,NValList),
+newExtTerm(ExtTerm)), fail ; true).").
 
 updateExtTerm(ExtTerm,Vars,NValList) :-
 	findall(Vars,ExtTerm,OValList),
