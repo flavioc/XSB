@@ -155,9 +155,12 @@ tnot(Goal) :-
 	  )
 	).
 	
-% skolemized tnot.  Variables temporarily changed to ground and tnot 
-% call is made.  Should give prolog's semantics to nonground negative
-% calls.
+%% skolemized tnot.  Variables temporarily changed to ground and tnot 
+%% call is made.  Should give existential semantics to nonground negative
+%% calls. That is: ...:- sk_not(p(X)),... is like
+%%  ... :- tnot(pp),...
+%%  pp :- p(X).
+%% where pp is a new proposition.
 
 :- table tunnumcall/1.
 :- use_variant_tabling tunnumcall(_).

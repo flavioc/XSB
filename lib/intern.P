@@ -23,16 +23,12 @@
 */
 
 
-:- export new_trie/1, trie_intern/5, trie_intern/4, trie_interned/4,
-	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1,
-	  trie_unintern_nr/2, unmark_uninterned_nr/2.
+:- compiler_options([sysmod,xpp_on]).
 
-:- import integer/1, abort/1 from standard.
-:- import get_lastnode_cs_retskel/4 from tables.
+#include "builtin.h"
 
 
 % the i_ predicates are internal!
-
 
 /*--------------------------------------------------
 	new_trie(-Root)
@@ -40,7 +36,7 @@
 --------------------------------------------------*/
 
 new_trie(_Root) :-
-	 '_$builtin'(159).
+	 '_$builtin'(NEWTRIE).
 
 /*--------------------------------------------------
 trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
@@ -154,13 +150,13 @@ delete_trie(Root) :- delete_trie(Root,intern).
 
 
 /* builtin calls */
-i_trie_intern(_Term,_Root,_Leaf,_Flag) :- '_$builtin'(160).
-i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(161).
-trie_dispose(_Root,_Leaf) :- '_$builtin'(162).
-bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(163).
-delete_trie(_Root,_Usage) :- '_$builtin'(164).
-trie_dispose_nr(_Leaf) :- '_$builtin'(165).
-trie_undispose(_Root,_Leaf) :- '_$builtin'(166).
+i_trie_intern(_Term,_Root,_Leaf,_Flag) :- '_$builtin'(TRIE_INTERN).
+i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(TRIE_INTERNED).
+trie_dispose(_Root,_Leaf) :- '_$builtin'(TRIE_DISPOSE).
+bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(BOTTOM_UP_UNIFY).
+delete_trie(_Root,_Usage) :- '_$builtin'(DELETE_TRIE).
+trie_dispose_nr(_Leaf) :- '_$builtin'(TRIE_DISPOSE_NR).
+trie_undispose(_Root,_Leaf) :- '_$builtin'(TRIE_UNDISPOSE).
 
 
 
