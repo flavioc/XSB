@@ -6,6 +6,7 @@ xsbdoc_main('main.P').
 xsbdoc_component('../oms_init_oms.P').
 xsbdoc_component('../oms_io.P').
 xsbdoc_component('../oms_queries.P').
+xsbdoc_component('../oms_q_annot.P').
 xsbdoc_component('../oms_constraints.P').
 xsbdoc_component('../oms_exceptions.P').
 xsbdoc_component('../oms_oblivion.P').

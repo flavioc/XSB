@@ -1,7 +1,7 @@
 :- compiler_options([ciao_directives]).
 
-:- comment(title,"Cold Dead Fish").
-:- comment(subtitle,"A system for managing ontologies").
+:- comment(title,"CDF: Cold Dead Fish").
+:- comment(subtitle,"An Ontology Management System (OMS)").
 
 :- comment(author,"Terrance Swift, David S. Warren").
 :- comment(author,"with help from Joseph Gartner, Tanya Vidrevich").
@@ -721,7 +721,7 @@ In the Programmer's View, OMS predicates have the following form
 (described further in in @ref{oms_init_oms (library)}).
 @begin{itemize}
 
-@item @tt{class(CID,Name,NativeID,Source)} (@pred(class/4): where
+@item @tt{class(CID,Name,NativeID,Source)} (@pred{class/4}: where
 @tt{CID} is a class ID, @tt{Name} is the name of the Class (an atom),
 @tt{NativeID} is a user ID for the node, and @tt{Source} is an atom
 that identifies the source ontology of this class.
@@ -792,7 +792,7 @@ for the open formula @begin{itemize} @item @em{(exists Name) (exists
 N_id) .object(0,Name,N_id)}.  @end{itemize} In addition, the
 quantifier @em{exists_one} means @em{there exists a unique}.
 
-@subsubsection{Axioms}
+@subsection{Axioms}
 
 Every correct instance of the OMS must statisfy the following axioms.
 
