@@ -90,20 +90,13 @@ XSB_Start_Instr(check_complete,_check_complete)
 			     subg_tif_ptr(subgoal));
 
 	/*
-	 * This piece of code is new (different from version 1.8.1) for
-	 * delay variable stuff.  In LOCAL_EVAL, in order to save the
-	 * substitution factor of the answer into the delay list for the
-	 * parent subgoal, we have to get it from var_addr[] (the result
-	 * of load_solution_trie()) instead of from the pointer
-	 * `ans_var_pos_reg'.  `ans_var_pos_reg' points to the
-	 * substitution factor of the answer that we saved on the heap in
-	 * variant_answer_search().  Because the space of heap may be
-	 * reclaimed (see restore_some_wamregs() in check_complete), the
-	 * substitution factor information we saved in heap may be
-	 * overwritten.
-	 *
-	 * This is similar to the situation in answer_return and
-	 * lay_down_consumer.
+	 * This piece of code was added in (version 1.8.1) to handle
+	 * properly variables in delay lists.  Itworks in a manner
+	 * similar to answer_return (and lay down consumer, for that
+	 * matter).  In order to save the
+	 * substitution factor of a conditional answer into the delay list 
+	 * for the root subgoal, we have to get it from var_addr[] and
+	 * num_heap_term_vars (both set by table_consume_answer()).
 	 */
 	if (is_conditional_answer(ALN_Answer(tcp_trie_return(breg)))) { 
 #ifdef DEBUG_DELAYVAR
@@ -134,12 +127,19 @@ XSB_Start_Instr(check_complete,_check_complete)
       } 
       else { 
 	tcp_tag(breg) = CHECK_COMPLETE_TAG;      
-      }   
+      }
     } 
   } /* retry_gen_active */
 /*--------------------------------------------------------------------------*/
-#endif /* LOCAL_EVAL */
+#endif /* LOCAL_EVAL, still !CHAT */
 /*--------------------------------------------------------------------------*/
+
+/* 
+ * This code is done regardless of whether breg is a leader.  The
+ * thought was that as long as we're here, why not schedule answers
+ * for this subgoal.  Its purely a heuristic -- perhaps we should test
+ * to see whether its inclusion makes any difference 
+ */
 
   { /* schedule answers */
     CPtr tmp_breg;
@@ -182,6 +182,10 @@ XSB_Start_Instr(check_complete,_check_complete)
     /* check from leader up to the youngest subgoal */
     while (ComplStkFrame >= openreg) {
       compl_subg = compl_subgoal_ptr(ComplStkFrame);
+      /* TLS: I think the following could also be done at early completion
+       * (ans-return), though I'm not sure there's an advantage either
+       * way
+       */
       if (is_completed(compl_subg)) { /* this was early completed */
 #ifdef CHAT
 	chat_free_compl_susp_chat_areas(compl_subg);
@@ -193,10 +197,17 @@ XSB_Start_Instr(check_complete,_check_complete)
 	CPtr nsf;
 	if ((nsf = subg_compl_susp_ptr(compl_subg)) != NULL) { 
 	  CPtr p, prev_nsf = NULL;
-	  /* check each suspension frame for appropriate action: if
-	     their parents are completed these completion suspensions
-	     fail, so forget about them; o/w delay them and let
-	     simplification take care of the rest */
+	  /* 
+	     check each suspension frame for appropriate action: if
+	     their root subgoals are completed these completion
+	     suspensions fail, so forget about them; o/w delay them
+	     and let simplification take care of the rest
+	  
+	     TLS: for a local evaluation, I don't see how the root
+	     subgoal of a neg-susp can be early completed... is this an
+	     artifiact of CHAT non-locality
+
+	   */
 	  while (nsf) {
 	    if ((p = csf_ptcp(nsf)) != NULL) {
 	      if (is_completed(p)) {
