@@ -32,14 +32,14 @@ extern void delete_return(NODEptr, SGFrame);
 extern void reclaim_ans_list_nodes(SGFrame);
 extern void variant_call_search_rdonly(int, CPtr, CPtr *, int *, byte *);
 extern void init_newtrie(void);
-extern int  delete_branch(NODEptr, CPtr);
+extern void delete_branch(NODEptr, NODEptr *);
 extern void safe_delete_branch(NODEptr);
 
 extern bool has_unconditional_answers(SGFrame);
 
 extern void newtrie(void);
 extern void trie_intern(void);
-extern int trie_interned(void);
+extern int  trie_interned(void);
 extern void trie_dispose(void);
 extern void delete_trie(NODEptr);
 

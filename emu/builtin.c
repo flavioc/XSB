@@ -682,7 +682,7 @@ int builtin_call(byte number)
     disp = ptoc_int(2);
     term = ptoc_tag(1);
     if (!ptoc_int(4)) { pushtrail(clref_val(term)+disp,cell(reg+3));}
-    bld_copy0(clref_val(term)+disp, cell(reg+3));
+    bld_copy(clref_val(term)+disp, cell(reg+3));
     break;
   case STAT_FLAG:		/* R1: flagname(+int); R2: value(-int) */
     ctop_int(2, flags[ptoc_int(1)]);
@@ -1452,7 +1452,7 @@ int builtin_call(byte number)
     return trie_retract_safe();
   case TRIE_DELETE_TERM:
     if (ptoc_int(3) == 0)
-      delete_branch((NODEptr)ptoc_int(1),(CPtr)ptoc_int(2)); 
+      delete_branch((NODEptr)ptoc_int(1),(NODEptr *)ptoc_int(2)); 
     else
       delete_return((NODEptr)ptoc_int(1),(SGFrame)ptoc_int(2)); 
     break;

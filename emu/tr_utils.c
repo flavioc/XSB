@@ -426,11 +426,11 @@ static NODEptr gParent(NODEptr y)
 
 /*----------------------------------------------------------------------*/
 
-static NODEptr *parents_childptr(NODEptr y, CPtr hook)
+static NODEptr *parents_childptr(NODEptr y, NODEptr *hook)
 {
-
   NODEptr x;
-  if((x =gParent(y)) == NULL)
+
+  if ((x = gParent(y)) == NULL)
     return((NODEptr *)hook);
   else
     return(&(Child(x)));
@@ -441,12 +441,11 @@ static NODEptr *parents_childptr(NODEptr y, CPtr hook)
 static NODEptr *get_headptr_of_list(NODEptr x, Cell Item)
 {
   NODEptr *z;
-
   struct HASHhdr *hh;
+
   z = (NODEptr *)Child(x);
   hh = (struct HASHhdr *)z -1;
   return(z + HASH(Item,hh->HASHmask));
-  
 }
 
 /*----------------------------------------------------------------------*/
@@ -458,9 +457,10 @@ static int decr_num_in_hashhdr(NODEptr y)
 
 /*----------------------------------------------------------------------*/
 
-static NODEptr get_prev_sibl(NODEptr y, CPtr hook)
+static NODEptr get_prev_sibl(NODEptr y, NODEptr *hook)
 {
   NODEptr x,tempx;
+
   x = *parents_childptr(y,hook);
   if(is_hash(x)){
     tempx = *get_headptr_of_list(x,Atom(y));
@@ -498,22 +498,22 @@ static void free_pointed_hash_hdr(NODEptr x)
 /* deletes and reclaims a whole branch in the return trie               */
 /*----------------------------------------------------------------------*/
 
-int delete_branch(NODEptr lowest_node_in_branch, CPtr hook)
+void delete_branch(NODEptr lowest_node_in_branch, NODEptr *hook)
 {
   int num_left_in_hash;
-  NODEptr prev,parent_ptr, *y1, *z;
+  NODEptr prev, parent_ptr, *y1, *z;
     
   while((lowest_node_in_branch != NULL) && (is_no_cp(lowest_node_in_branch))){
     parent_ptr = gParent(lowest_node_in_branch);   
-    y1 = parents_childptr(lowest_node_in_branch,hook);
-    if(is_hash(*y1)){
+    y1 = parents_childptr(lowest_node_in_branch, hook);
+    if (is_hash(*y1)) {
       z = get_headptr_of_list(*y1,Atom(lowest_node_in_branch));
       *z = NULL;
       num_left_in_hash = decr_num_in_hashhdr(*y1);
       if (num_left_in_hash  > 0) {
 	mark_leaf_node_del(lowest_node_in_branch); /* mark node as deleted */
 	free_node(lowest_node_in_branch);
-	return(0); /* like a try or a retry or trust node with siblings */ 
+	return; /* like a try or a retry or trust node with siblings */ 
       }
       else
 	free_pointed_hash_hdr(*y1);
@@ -543,7 +543,6 @@ int delete_branch(NODEptr lowest_node_in_branch, CPtr hook)
     }
     free_node(lowest_node_in_branch);
   }
-  return(0);
 }
 
 /*----------------------------------------------------------------------*/
@@ -641,10 +640,11 @@ void delete_return(NODEptr l, SGFrame sg_frame)
   }
 }
 
+/*----------------------------------------------------------------------*/
 /* Given a tabled subgoal, go through its list of deleted nodes (in the
  * completion stack), and reclaim the leaves and corresponding branches
- */
-/**************************************************/
+ *----------------------------------------------------------------------*/
+
 void  reclaim_del_ret_list(SGFrame sg_frame) {
   ALPtr x,y;
   
@@ -653,7 +653,7 @@ void  reclaim_del_ret_list(SGFrame sg_frame) {
   while (x != NULL) {
     y = x;
     x = aln_next_aln(x);
-    delete_branch(aln_answer_ptr(y),(CPtr)&subg_ans_root_ptr(sg_frame));
+    delete_branch(aln_answer_ptr(y), &subg_ans_root_ptr(sg_frame));
     free_anslistnode(y);
   }
 }
@@ -864,9 +864,8 @@ void trie_dispose(void)
   switch_to_trie_assert;
   Rootidx = ptoc_int(1);
   Leaf = (NODEptr)ptoc_int(2);
-  delete_branch(Leaf,(CPtr)&(Set_ArrayPtr[Rootidx]));
+  delete_branch(Leaf, &(Set_ArrayPtr[Rootidx]));
   switch_from_trie_assert;
-  
 }
 
 /*----------------------------------------------------------------------*/

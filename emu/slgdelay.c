@@ -467,7 +467,7 @@ static void handle_unsupported_answer_subst(NODEptr as_leaf)
   fprintf(stderr, ">>>> start handle_unsupported_answer_subst()\n");
 #endif
 
-  delete_branch(as_leaf, (CPtr)&subg_ans_root_ptr(unsup_subgoal));
+  delete_branch(as_leaf, &subg_ans_root_ptr(unsup_subgoal));
   simplify_pos_unsupported(as_leaf);
   if (is_completed(unsup_subgoal)) {
     if (subgoal_fails(unsup_subgoal)) {

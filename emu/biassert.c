@@ -2251,7 +2251,7 @@ int trie_retract(void)
     printf(" Deleting from Instrn Node %p\n",  inst_node_ptr );
     printf(" Before: Child of Instrn Node %p\n", Child(inst_node_ptr));
 #endif
-    delete_branch(Last_Nod_Sav,(CPtr)&(Child(inst_node_ptr)));
+    delete_branch(Last_Nod_Sav, &(Child(inst_node_ptr)));
 #ifdef DEBUG_T
     printf(" After : Child of Instrn Node %p\n", Child(inst_node_ptr));
 #endif
