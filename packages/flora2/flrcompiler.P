@@ -102,14 +102,15 @@ is_flmethspec(FLMETHSPEC(Meth),Meth).
 is_flimethspec(FLIMETHSPEC(IMeth),IMeth).
 is_fltranspec(FLTRANSPEC(Tran),Tran).
 is_flobjeql(FLOBJEQL(O1,O2),O1,O2).
-is_flcut(FLCUT).
+is_flcut(FLCUT(_I)).
 
+%% basic building blocks
+is_flatom(FLATOM(Atom,_I),Atom).
+is_flnumber(FLNUMBER(Number,_I),Number).
+is_flstring(FLSTRING(String,_I),String).
+is_fltoken(FLTOKEN(Token,_I),Token).
 is_flvar(FLVAR(Name,Index),Name,Index).
-is_flatom(FLATOM(Atom),Atom).
-is_flnumber(FLNUMBER(Number),Number).
-is_flstring(FLSTRING(String),String).
 is_fllist(FLLIST(L,T),L,T).
-is_fltoken(FLTOKEN(Token),Token).
 
 is_isaspecop(FL_ISA).
 is_subspecop(FL_SUB).
@@ -2011,8 +2012,9 @@ compile_head_flobjeql(Obj1,Obj2,CodeList,Status) :-
 compile_floraliblit(ParserTerm,WS,Code,Status) :-
 	%% Flora system modules are like normal users modules except that
 	%% users cannot load into those areas.
-	report_option(FLSYSMOD(WS)),
-	floralib_struct(WS,WSCode),
+	is_flatom(WS,WSName),
+	report_option(FLSYSMOD(WSName)),
+	floralib_struct(WSName,WSCode),
 	compile_wsliteral(ParserTerm,WSCode,Code,Status).
 
 
@@ -2043,8 +2045,9 @@ compile_wsliteral(ParserTerm,WS,WSCode,Status) :-
   compile_floralibobj(+ParserTerm,+Workspace,-Object,-Code,-Status)
 ****************************************************************************/
 compile_floralibobj(ParserTerm,WS,Object,Code,Status) :-
-	report_option(FLSYSMOD(WS)),
-	floralib_struct(WS,WSCode),
+	is_flatom(WS,WSName),
+	report_option(FLSYSMOD(WSName)),
+	floralib_struct(WSName,WSCode),
 	compile_wspathexp(ParserTerm,WSCode,Object,Code,Status).
 
 
@@ -2511,7 +2514,8 @@ compile_prologliblit(ParserTerm,Module,Code,Status) :-
 	    prologliblit_struct(TCode,PCode),
 	    conjunct_code(ACode,PCode,Code),
 	    %% generate an import statement for the corresponding XSB predicate
-	    import_struct(FAtom,N,Module,ICode),
+	    is_flatom(Module,MName),
+	    import_struct(FAtom,N,MName,ICode),
 	    directive_struct(ICode,DCode),
 	    report_directive(DCode)
 	;
@@ -2576,7 +2580,8 @@ compile_prologlibobj(ParserTerm,Module,Object,Code,Status) :-
 	    %prologterm_struct(FL_METAUNIV,2,[Object,LCode],CCode),
 	    %conjunct_code(ACode,CCode,Code),
 	    %% generate an import statement for the corresponding XSB predicate
-	    import_struct(FAtom,N,Module,ICode),
+	    is_flatom(Module,MName),
+	    import_struct(FAtom,N,MName,ICode),
 	    directive_struct(ICode,DCode),
 	    report_directive(DCode)
 	;

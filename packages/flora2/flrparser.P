@@ -263,6 +263,9 @@ is_pathop(FL_INHERIMVD) :- !.
 get_name(OBJECT(IDENTIFIER(Name),_I),Name)  :- !.
 get_name(OBJECT(QUOTED_ATOM(Name),_I),Name) :- !.
 
+get_flname_struct(OBJECT(IDENTIFIER(Name),I),FLATOM(Name,I))  :- !.
+get_flname_struct(OBJECT(QUOTED_ATOM(Name),I),FLATOM(Name,I)) :- !.
+
 get_atom(OBJECT(SYMBOL_TOKEN(Atom),_I),Atom) :- !.
 get_atom(OBJECT(IDENTIFIER(Atom),_I),Atom)   :- !.
 get_atom(OBJECT(QUOTED_ATOM(Atom),_I),Atom)  :- !.
@@ -353,18 +356,17 @@ flexpungedirect_struct(FAList,M,FLEXPUNGE(FAList,M)).
 flflogicstaticdirect_struct(F,A,FLFLOGICSTATIC(F,A)).
 flflorapatchdirect_struct(F,A,FLFLORAPATCH(F,A)).
 
-flatom_struct(Atom,FLATOM(Atom)).
+flobject_struct(OBJECT(IDENTIFIER(Atom),I),FLATOM(Atom,I))     :- !.
+flobject_struct(OBJECT(QUOTED_ATOM(Atom),I),FLATOM(Atom,I))    :- !.
+flobject_struct(OBJECT(SYMBOL_TOKEN(Atom),I),FLATOM(Atom,I))   :- !.
+flobject_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I))        :- !.
+flobject_struct(OBJECT(NUMBER(Num),I),FLNUMBER(Num,I))         :- !.
+flobject_struct(OBJECT(ASCII_STRING(Str),I),FLSTRING(Str,I))   :- !.
+flobject_struct(OBJECT(SPECIAL_TOKEN(Atom),I),FLTOKEN(Atom,I)) :- !.
 
-flobject_struct(OBJECT(IDENTIFIER(Atom),_I),FLATOM(Atom))     :- !.
-flobject_struct(OBJECT(QUOTED_ATOM(Atom),_I),FLATOM(Atom))    :- !.
-flobject_struct(OBJECT(SYMBOL_TOKEN(Atom),_I),FLATOM(Atom))   :- !.
-flobject_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I))       :- !.
-flobject_struct(OBJECT(NUMBER(Num),_I),FLNUMBER(Num))         :- !.
-flobject_struct(OBJECT(ASCII_STRING(Str),_I),FLSTRING(Str))   :- !.
-flobject_struct(OBJECT(SPECIAL_TOKEN(Atom),_I),FLTOKEN(Atom)) :- !.
-
-is_flnumber_struct(FLNUMBER(_Num)).
-is_flstring_struct(FLSTRING(_Str)).
+is_flatom_struct(FLATOM(Atom,_I),Atom).
+is_flnumber_struct(FLNUMBER(_Num,_I)).
+is_flstring_struct(FLSTRING(_Str,_I)).
 
 get_flvar_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I)).
 is_flvar_struct(FLVAR(_Name,_I)).
@@ -404,7 +406,7 @@ is_fltranspec_struct(FLTRANSPEC(_Tran)).
 
 flobjeql_struct(O1,O2,FLOBJEQL(O1,O2)).
 
-flcut_struct(FLCUT).
+flcut_struct(I,FLCUT(I)).
 
 flconjunct_struct(Cond1,Cond2,FLCONJUNCT(Cond1,Cond2)).
 
@@ -493,7 +495,9 @@ flora_parse(_ComposerTerm,_Code,[error(UNKNOWN_ERROR)]).
 /****************************************************************************
   flora_parse_directive(+CanoniTerm,-Code,-Status)
   is the dispatcher for directives.
-  Code: FLDIRECTIVE([directives])
+  Code: FLDIRECTIVE([directives+])
+
+  Note: Textual information is not reserved for compiler directives.
 ****************************************************************************/
 flora_parse_directive(CanoniTerm,Code,Status) :-
 	( flora_arguments_directive(CanoniTerm,CodeList,Status)
@@ -556,7 +560,7 @@ flora_exec_directive(CanoniTerm,Code,Status) :-
 	; flora_hilogtable_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_equality_directive(CanoniTerm,CodeList,Status)
 	; flora_exec_expunge_directive(CanoniTerm,CodeList,Status)
-        ),
+	),
 	!.
 
 
@@ -600,12 +604,13 @@ flora_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
 	get_atom(T,FL_SLASH),
 	!,
 	( get_atom(Funct,F) ->
-	    ( get_integer(Arity,A), A >= 0
-	    -> Status=[]
-	    ; parsing_error(Arity,EXP_POSINTEGER,Status)
+	    ( get_integer(Arity,A), A >= 0 ->
+		Status=[]
+	    ;
+	      parsing_error(Arity,EXP_POSINTEGER,Status)
 	    )
 	;
-	    parsing_error(Funct,EXP_ATOMICFUNCT,Status)
+	  parsing_error(Funct,EXP_ATOMICFUNCT,Status)
         ).
 
 flora_fapair(CanoniTerm,_F,_A,Status) :-
@@ -618,15 +623,14 @@ flora_fapair(CanoniTerm,_F,_A,Status) :-
 flora_var_fapair(CANOTERM(T,2,FL_PARENTHESIS,[Funct,Arity],_If,_Ip),F,A,Status) :-
 	get_atom(T,FL_SLASH),
 	!,
-	( (get_atom(Funct,F); get_flvar_struct(Funct,F))
-	-> ( (get_integer(Arity,A), A >= 0
-	     ; get_flvar_struct(Arity,A)
-	     )
-	   -> Status=[]
-	   ; parsing_error(Arity,ERROR_ARITY,Status)
-	   )
+	( (get_atom(Funct,F); get_flvar_struct(Funct,F)) ->
+	    ( (get_integer(Arity,A), A >= 0; get_flvar_struct(Arity,A)) ->
+	        Status=[]
+	    ;
+	      parsing_error(Arity,ERROR_ARITY,Status)
+	    )
 	;
-	    parsing_error(Funct,ERROR_FUNCTOR,Status)
+	  parsing_error(Funct,ERROR_FUNCTOR,Status)
         ).
 
 flora_var_fapair(CanoniTerm,_F,_A,Status) :-
@@ -859,8 +863,8 @@ flora_functarg(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,Ip),F,N,A,Status) :-
 	( N == 0 ->
 	    parsing_error(Ip,ERROR_ARGUMENTS,Status)
 
-	; get_atom(Funct,F)
-	-> flora_argspec(Args,A,Status)
+	; get_atom(Funct,F) ->
+	    flora_argspec(Args,A,Status)
 	;
 	  parsing_error(If,EXP_ATOMICFUNCT,Status)
         ).
@@ -873,10 +877,10 @@ flora_argspec([],[],[]) :- !.
 
 flora_argspec([CanoniTerm|CanoniTermList],[A|AL],Status) :-
 	get_name(CanoniTerm,A),
-	( (A == FL_OID; A == FL_BODYFORMULA)
-	->  flora_argspec(CanoniTermList,AL,Status)
+	( (A == FL_OID; A == FL_BODYFORMULA) ->
+	    flora_argspec(CanoniTermList,AL,Status)
 	;
-	    parsing_error(CanoniTerm,ERROR_ARGTYPE,Status)
+	  parsing_error(CanoniTerm,ERROR_ARGTYPE,Status)
         ).
 
 
@@ -890,26 +894,29 @@ flora_operator_directive(CANOTERM(Funct,3,FL_PARENTHESIS,L,_If,_Ip),CodeList,Sta
 	L=[Number,Associativity,Operator],
 	( get_integer(Number,Precedence), Precedence > 0 ->
 	    ( get_name(Associativity,A), flora_operator_definition(A) ->
-		( get_atom(Operator,Op)
-		->  ( flora_conflict_operator(Precedence,A,Op)
-		    ->  parsing_error(Operator,NO_REDEFOP,Status)
-		    ;   flopdef_struct(Precedence,A,Op,Code),
-			CodeList=[Code],
-			Status=[]
+		( get_atom(Operator,Op) ->
+		    ( flora_conflict_operator(Precedence,A,Op) ->
+			parsing_error(Operator,NO_REDEFOP,Status)
+		    ;
+		      flopdef_struct(Precedence,A,Op,Code),
+		      CodeList=[Code],
+		      Status=[]
 		    )
 
-		;  Operator=CANOLIST(OpList,T,N,_I,Ib), N > 0
-		-> ( T == []
-		   -> flora_operator_list(OpList,Precedence,A,CodeList,Status)
-		   ;  parsing_error(Ib,NO_LISTTAIL,Status)
-		   )
-		;  parsing_error(Operator,ERROR_OPERATOR,Status)
+		;  Operator=CANOLIST(OpList,T,N,_I,Ib), N > 0 ->
+		     ( T == [] ->
+			 flora_operator_list(OpList,Precedence,A,CodeList,Status)
+		     ;
+		       parsing_error(Ib,NO_LISTTAIL,Status)
+		     )
+		;
+		  parsing_error(Operator,ERROR_OPERATOR,Status)
 	        )
 	    ;
-		parsing_error(Associativity,ERROR_OPDEF,Status)
+	      parsing_error(Associativity,ERROR_OPDEF,Status)
 	    )
 	;
-	    parsing_error(Number,EXP_POSINTEGER,Status)
+	  parsing_error(Number,EXP_POSINTEGER,Status)
         ).
 
 
@@ -945,14 +952,15 @@ flora_index_directive(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),[Code],Stat
 	get_name(Funct,FL_INDEX),
 	flora_fapair(L,F,A,S),
 	( S == [] ->
-	    ( get_name(R,(trie))
-	    ->  flindxdirect_struct(F,A,(trie),Code),
+	    ( get_name(R,(trie)) ->
+		flindxdirect_struct(F,A,(trie),Code),
 		Status=[]
-	    ;   parsing_error(R,ERROR_INDXDIREC,Status)
+	    ;
+	      parsing_error(R,ERROR_INDXDIREC,Status)
 	    )
 	;
-	    Status=S
-        ).
+	  Status=S
+	).
 
 
 /****************************************************************************
@@ -985,22 +993,24 @@ flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Sta
 	get_name(F,FL_IN),
 	!,
 	( get_name(R,M) ->
-	    ( get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC)
-	    ->  fleqldirect_struct(A,M,Code),
+	    ( get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC) ->
+		fleqldirect_struct(A,M,Code),
 		Status=[]
-	    ;   parsing_error(L,ERROR_EQLSPEC,Status)
+	    ;
+	      parsing_error(L,ERROR_EQLSPEC,Status)
 	    )
 	;
-	    parsing_error(R,ERROR_WSNAME,Status)
+	  parsing_error(R,ERROR_WSNAME,Status)
         ).
 
 flora_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),[Code],Status) :-
 	get_name(Funct,FL_EQUALITY),
 	!,
-	( get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC)
-	->  fleqldirect_struct(A,Code),
+	( get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC) ->
+	    fleqldirect_struct(A,Code),
 	    Status=[]
-	;   parsing_error(T,ERROR_EQLSPEC,Status)
+	;
+	  parsing_error(T,ERROR_EQLSPEC,Status)
 	).
 
 
@@ -1014,12 +1024,11 @@ flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
 	get_name(F,FL_IN),
 	!,
 	( flora_name_or_normvar(R,M) ->
-	    ( (get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC)
-	      ; get_flvar_struct(L,A)
-	      )
-	    ->  fleqldirect_struct(A,M,Code),
+	    ( (get_name(L,A), (A == NONE; A == BASIC; A == FLOGIC); get_flvar_struct(L,A)) ->
+		fleqldirect_struct(A,M,Code),
 		Status=[]
-	    ;   parsing_error(L,ERROR_EQLSPEC,Status)
+	    ;
+	      parsing_error(L,ERROR_EQLSPEC,Status)
 	    )
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
@@ -1029,12 +1038,11 @@ flora_exec_equality_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
 			      [Code],Status) :-
 	get_name(Funct,FL_EQUALITY),
 	!,
-	( (get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC)
-	  ; get_flvar_struct(T,A)
-	  )
-	->  fleqldirect_struct(A,Code),
+	( (get_name(T,A), (A == NONE; A == BASIC; A == FLOGIC); get_flvar_struct(T,A)) ->
+	    fleqldirect_struct(A,Code),
 	    Status=[]
-	;   parsing_error(T,ERROR_EQLSPEC,Status)
+	;
+	  parsing_error(T,ERROR_EQLSPEC,Status)
 	).
 
 
@@ -1047,12 +1055,9 @@ flora_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
-	( get_name(R,M)
-	->  flora_commasep_falist(L,FAList,Status),
-	    (Status == []
-	    -> flexpungedirect_struct(FAList,M,Code)
-	    ;  true
-	    )
+	( get_name(R,M)	->
+	    flora_commasep_falist(L,FAList,Status),
+	    (Status == [] -> flexpungedirect_struct(FAList,M,Code); true)
 	;
 	  parsing_error(R,ERROR_WSNAME,Status)
         ).
@@ -1072,13 +1077,11 @@ flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
 	T=CANOTERM(F,2,FL_PARENTHESIS,[L,R],_IFf,_IFp),
 	get_name(F,FL_IN),
 	!,
-	( flora_name_or_normvar(R,M)
-	->  flora_commasep_var_falist(L,FAList,Status),
-	    (Status == []
-	    -> flexpungedirect_struct(FAList,M,Code)
-	    ; true
-	    )
-	;   parsing_error(R,ERROR_WSNAME,Status)
+	( flora_name_or_normvar(R,M) ->
+	    flora_commasep_var_falist(L,FAList,Status),
+	    (Status == [] -> flexpungedirect_struct(FAList,M,Code); true)
+	;
+	  parsing_error(R,ERROR_WSNAME,Status)
         ).
 
 flora_exec_expunge_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),
@@ -1275,7 +1278,7 @@ flora_head_literal(CanoniTerm,Code,Status) :-
 	( flora_nodefp(A,0) ->
 	    parsing_error(CanoniTerm,ERROR_HDLITERAL,Status)
 	;
-	  flatom_struct(A,Code),
+	  flobject_struct(CanoniTerm,Code),
 	  Status=[]
         ).
 
@@ -1319,7 +1322,7 @@ flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),WS,Code,Status) :-
 		    fldisjunct_struct(LCode,RCode,Code)
 	        )
 	    ;
-		true
+	      true
 	    )
 	;
 	  Status=S
@@ -1390,6 +1393,8 @@ flora_body(CanoniTerm,FLORASYSMOD(Mod),Code,Status) :-
       WSCode=FLORASYSMOD(name)
   (3) Flora user module, which could be either an atom or a variable.
       WSCode=FLORAUSERMOD(name), or FLORAUSERMOD(var)
+
+  Note: Textual information is reserved for module names.
 ****************************************************************************/
 flora_workspace(CanoniTerm,FLORAUSERMOD(NVCode),[]) :-
 	%% Check if it is a Flora user module specification. (@ M)
@@ -1405,14 +1410,15 @@ flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),PROLOGMODULE(MCode)
 	%% Check if it is a Prolog module. (@prolog(xsbmod))
 	get_name(Mod,FL_PLIB),
 	!,
-	(get_name(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
+	(get_flname_struct(M,MCode) -> Status=[]; parsing_error(M,ERROR_WSNAME,Status)).
 
-flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MAtom),Status) :-
+flora_workspace(CANOTERM(Mod,1,FL_PARENTHESIS,[M],_Ifu,_Ipa),FLORASYSMOD(MCode),Status) :-
 	%% Check if it is a Flora system module specification. (@flora(mod))
 	get_name(Mod,FL_FLORALIB),
 	!,
 	( get_name(M,MAtom) ->
 	    ( flora_system_module(MAtom) ->
+		get_flname_struct(M,MCode),
 		Status=[]
 	    ;
 	      parsing_error(M,UNREG_SYSMOD,Status)
@@ -1495,9 +1501,10 @@ flora_body_literal(CanoniTerm,Code,[]) :-
 	get_atom(CanoniTerm,A),
 	!,
 	( A == FL_CUT ->
-	    flcut_struct(Code)
+	    get_index(CanoniTerm,I),
+	    flcut_struct(I,Code)
 	;
-	  flatom_struct(A,Code)
+	  flobject_struct(CanoniTerm,Code)
         ).
 
 flora_body_literal(CanoniTerm,Code,[]) :-
@@ -1551,7 +1558,7 @@ flora_body_wsliteral(CanoniTerm,Code,Status) :-
 	( flora_nowsp(A,0) ->
 	    parsing_error(CanoniTerm,NO_WORKSPACE,Status)
 	;
-	  flatom_struct(A,Code),
+	  flobject_struct(CanoniTerm,Code),
 	  Status=[]
         ).
 
@@ -1605,7 +1612,7 @@ flora_loaditemlist([T|L],[TCode|LCode],Status) :-
 
 flora_loaditem(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_RIGHTTO),
-	flatom_struct(FL_RIGHTTO,FCode),
+	flobject_struct(Funct,FCode),
 	!,
 	( flora_name_or_normvar(L,LCode) ->
 	    ( flora_name_or_normvar(R,RCode) ->
@@ -1628,10 +1635,10 @@ flora_loaditem(CanoniTerm,_Code,Status) :-
 
 
 flora_name_or_normvar(CanoniTerm,Code) :-
-	(  get_name(CanoniTerm,A), flatom_struct(A,Code)
+	( get_flname_struct(CanoniTerm,Code)
         ;
-	    get_flvar_struct(CanoniTerm,Code),
-	    not is_anonymous_flvar_struct(Code)
+	  get_flvar_struct(CanoniTerm,Code),
+	  not is_anonymous_flvar_struct(Code)
         ),
 	!.
 
@@ -1655,9 +1662,8 @@ flora_prlgterm(CANOTERM(Funct,N,FL_PARENTHESIS,Args,If,_Ip),Code,Status) :-
         ).
 
 flora_prlgterm(CanoniTerm,Code,[]) :-
-	get_atom(CanoniTerm,A),
-	!,
-	flatom_struct(A,Code).
+	get_flname_struct(CanoniTerm,Code),
+	!.
 
 flora_prlgterm(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_PRLGLIT,Status).
@@ -1670,7 +1676,7 @@ flora_term(Funct,N,Args,Code,Status) :-
 	get_atom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	flatom_struct(FAtom,F),
+	flobject_struct(Funct,F),
 	flora_argpathexplist(Args,ArgTypes,AList,Status),
 	(Status == [] -> flterm_struct(F,N,AList,Code); true).
 
@@ -1842,13 +1848,13 @@ nowspathexp(S) :- is_flnumber_struct(S), !.
 nowspathexp(S) :- is_flstring_struct(S), !.
 
 nowspathexp(S) :-
-	flatom_struct(FAtom,S),
+	is_flatom_struct(S,FAtom),
 	flora_nowsp(FAtom,0),
 	!.
 
 nowspathexp(S) :-
 	flterm_struct(Funct,N,_Args,S),
-	flatom_struct(FAtom,Funct),
+	is_flatom_struct(Funct,FAtom),
 	flora_nowsp(FAtom,N),
 	!.
 
@@ -2073,7 +2079,7 @@ flora_head_term(Funct,N,Args,Code,Status) :-
 	get_atom(Funct,FAtom),
 	flora_argdef(FAtom,N,ArgTypes),
 	!,
-	flatom_struct(FAtom,F),
+	flobject_struct(Funct,F),
 	flora_head_argpathexplist(Args,ArgTypes,AList,Status),
 	(Status == [] -> flterm_struct(F,N,AList,Code); true).
 
@@ -2473,7 +2479,7 @@ flora_dblit(Mode,CanoniTerm,Code,Status) :-
 	; flora_prlgdef(A,0) ->
 	    parsing_error(CanoniTerm,NO_PROLOGUPDATE,Status)
 	;
-	  flatom_struct(A,Code),
+	  flobject_struct(CanoniTerm,Code),
 	  Status=[]
         ).
 
@@ -2559,7 +2565,7 @@ flora_dbwslit(Mode,CanoniTerm,Code,Status) :-
 	; flora_nowsp(A,0) ->
 	    parsing_error(CanoniTerm,NO_WORKSPACE,Status)
 	;
-	  flatom_struct(A,Code),
+	  flobject_struct(CanoniTerm,Code),
 	  Status=[]
         ).
 

@@ -227,10 +227,10 @@
   FLEXPUNGE(FunctArityList,Module)
 
   FLVAR(Name,Index)
-  FLATOM(Atom)
-  FLNUMBER(Number)
-  FLSTRING(String)
-  FLTOKEN(Token)
+  FLATOM(Atom,Index)
+  FLNUMBER(Number,Index)
+  FLSTRING(String,Index)
+  FLTOKEN(Token,Index)
   FLTERM(FLPATHEXP,Arity,[FLPATHEXPs])
   FLAGGREGATE(Operator,FLVAR,[FLVARs],FLLITERAL|FLCONJUNCT|FLDISJUNCT)
   FLLIST([FLPATHEXPs],FLPATHEXP)
@@ -245,7 +245,7 @@
   FLIMETHSPEC(IMeth)
   FLTRANSPEC(Tran)
   FLOBJEQL(O1,O2)
-  FLCUT
+  FLCUT(Index)
   FLLOAD(FLLIST)
   FLWORKSPACE(FLTERM|FLOBJSPEC|FLBIRELATE,Name)
   FLPLIB(FLTERM,Name)
@@ -255,7 +255,8 @@
   FLDISJUNCT(Goal,Goal)
   FLNOT(Goal)
   FLTNOT(Goal)
-  FLINSERT(LiteralList)
+  FLINSERT(Op,LiteralList,Condition)
+  FLINSERT(Op,LiteralList)
   FLDELETE(Op,LiteralList,Conditon)
   FLDELETE(Op,LiteralList)
 ****************************************************************************/

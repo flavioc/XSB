@@ -56,9 +56,6 @@ index_tokens([],N) :-
 	conset(TKCNT,N).
 
 index_tokens([T|Ts],N) :-
-%	T =.. [F|L],
-%	(L=[A,_], NewT =.. [F,A], !; L=[_], NewT =.. [F], !), %% strip text info
-%	assert(indexed_token(N,NewT)),
 	assert(indexed_token(N,T)),
 	eval(N+1,M),
 	index_tokens(Ts,M),
