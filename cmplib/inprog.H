@@ -32,4 +32,6 @@
 :- import varproc/3, vprag_common/2, vprag_argno/2, vprag_level/2,
 	  vprag_context/2
      from varproc.
+:- import error/1 from auxlry.
+:- import abort/0 from standard.
 

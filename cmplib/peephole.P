@@ -121,6 +121,8 @@ compile_popt1a1(unipval(X), PilRest, [bldpval(X)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt1a1(unitvar(X), PilRest, [bldtvar(X)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
+compile_popt1a1(uniavar, PilRest, [bldavar|OptPilRest]) :-
+	compile_popt1a(PilRest, OptPilRest).
 compile_popt1a1(unitval(X), PilRest, [bldtval(X)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt1a1(unicon(X), PilRest, [bldcon(X)|OptPilRest]) :-

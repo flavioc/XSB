@@ -80,30 +80,32 @@ putvar_s(u,Loc,N,Tab,[Inst|Pil],Pil):-
 putvar_s(d,Loc,N,Tab,[Inst|Pil],Pil):-
 	Tab =:= 1 -> Inst = putpval(Loc,N) ; Inst = putdval(Loc,N).
 
-univarinst(VPrag, Pil, Pilr, Tin) :-
+univarinst(VPrag, Pil, Pilr) :-
 	vprag_type1(VPrag, Typ),
 	vprag_loc(VPrag,Loc),
 	vprag_occ(VPrag, Occ),
-	( ( Occ == v ; Occ == f ) -> univar_f(Typ, Loc, Pil, Pilr)
-	; ( Occ == l ; Occ == s ) -> univar_s(Typ, Loc, Pil, Pilr, Tin)
+	( Occ == v -> univar_v(Typ,Loc,Pil,Pilr)
+	; Occ == f  -> univar_f(Typ, Loc, Pil, Pilr)
+	; ( Occ == l ; Occ == s ) -> univar_s(Typ, Loc, Pil, Pilr)
 	).
 
 univar_f(p,Loc,[unipvar(Loc)|Pilr],Pilr).
 univar_f(t,Loc,[unitvar(Loc)|Pilr],Pilr).
 
-univar_s(p,Loc,[unipval(Loc)|Pilr],Pilr,_).
-univar_s(t,Loc,[unitval(Loc)|Pilr],Pilr,_).
-univar_s(d,Loc,[unipval(Loc)|Pilr],Pilr,_).
-univar_s(u,Loc,[unipval(Loc)|Pilr],Pilr,_).
-/*
-univar_s(u,Loc,[putuval(Loc,N),bldtval(N)|Pilr],Pilr,T) :- getreg(T,N).
- */
+univar_s(p,Loc,[unipval(Loc)|Pilr],Pilr).
+univar_s(t,Loc,[unitval(Loc)|Pilr],Pilr).
+univar_s(d,Loc,[unipval(Loc)|Pilr],Pilr).
+univar_s(u,Loc,[unipval(Loc)|Pilr],Pilr).
+
+univar_v(p,Loc,[unipvar(Loc)|Pilr],Pilr).
+univar_v(t,_Loc,[uniavar|Pilr],Pilr).
 
 bldvarinst(VPrag, Pil, Pilr, _Tin) :-
 	vprag_type(VPrag, Typ),
 	vprag_loc(VPrag,Loc),
 	vprag_occ(VPrag, Occ),
-	( ( Occ == v ; Occ == f ) -> bldvar_f(Typ,Loc,Pil,Pilr)
+	( Occ == v -> bldvar_v(Typ,Loc,Pil,Pilr)
+	; Occ == f -> bldvar_f(Typ,Loc,Pil,Pilr)
 	; ( Occ == l ; Occ == s ) -> bldvar_s(Typ,Loc,Pil,Pilr)
 	).
 
@@ -113,6 +115,8 @@ bldvar_f(t,Loc,[bldtvar(Loc)|Pilr],Pilr).
 bldvar_s(p,Loc,[bldpval(Loc)|Pilr],Pilr).
 bldvar_s(t,Loc,[bldtval(Loc)|Pilr],Pilr).
 
+bldvar_v(p,Loc,[bldpvar(Loc)|Pilr],Pilr).
+bldvar_v(t,_,[bldavar|Pilr],Pilr).
 
 /*======================================================================*/
 /* Register allocation/deallocation utilities --- used by tprog.P	*/

@@ -26,7 +26,7 @@
 
 
 :- export force_tp_var_loaded/0.
-:- export putvarinst/5, getvarinst/5, bldvarinst/4, univarinst/4,
+:- export putvarinst/5, getvarinst/5, bldvarinst/4, univarinst/3,
 	  release/3, alloc_reg/3, release_if_done/6, hold/3, getreg/2,
 	  reserve/3, alloc_reg1/4, release_if_done0/5.
 

@@ -55,6 +55,10 @@ inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag)) :-
     ( (need_alloc(Body) ; sym_type(Sym,tabled(_,_))) -> 
 	ARSize is PvarCount + 2		/* tls changed for XWAM */
     ; ARSize = 0
+    ),
+    (ARSize < 256
+     ->	    true
+     ;	    error('Too many local variables! ... aborting compilation'), abort
     ).
 
 

@@ -191,7 +191,7 @@ tunipars([Subpar|Subpars], Pil, Pilr, T1, T2) :-
 
 tunipar(varocc(Vid,Prag), Pil, Pilr, Tin, Tout) :-
     alloc_reg(Prag, Tin, Tmid),
-    univarinst(Prag, Pil, Pilr, Tmid), 
+    univarinst(Prag, Pil, Pilr), 
     ( vprag_context(Prag, i), Tout = Tmid		/* in inline */
     ; vprag_type(Prag, t), vprag_loc(Prag, Loc),
       release_if_done(Vid, Loc, Prag, [], Tmid, Tout)

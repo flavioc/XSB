@@ -29,7 +29,7 @@
 :- export tgoalargs/7, tgoalargs/6, tgetpar/6, tputpar/6, tputpar/7.
 
 :- import alloc_reg1/4, release_if_done/6, alloc_reg/3, getreg/2,
-	getvarinst/5, putvarinst/5, univarinst/4, bldvarinst/4
+	getvarinst/5, putvarinst/5, univarinst/3, bldvarinst/4
    from tp_var.
 :- import vprag_type/2, vprag_loc/2, vprag_context/2, vprag_nouse/2,
 	vprag_use/2, vprag_lastchunk/2, vprag_argno/2, vprag_level/2,

@@ -57,6 +57,9 @@ asm_inst(bldcon(I),		8,	28,	[ppp, c(I)]	).
 asm_inst(bldnil,		4,	29,	[ppp]		).
 asm_inst(uninumcon(N),		8,	30,	[ppp, n(N)]	). 
 asm_inst(bldnumcon(N),		8,	31,	[ppp, n(N)]	).
+
+asm_inst(uniavar,		4,	33,	[ppp]		).
+asm_inst(bldavar,		4,	34,	[ppp]		).
 asm_inst(getlist_tvar_tvar(R0,R1,R2), 4,72,	[r(R0), r(R1), r(R2)]	).
 
 asm_inst(getfloat(R,Float),	8,	128,	[pp, r(R), n(Float)]	).
