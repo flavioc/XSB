@@ -72,6 +72,7 @@ inline_builtin(psc_set_prop, 2, PSC_SET_PROP).
 inline_builtin(psc_set_spy, 2, PSC_SET_SPY).
 inline_builtin(psc_ep, 2, PSC_EP).
 inline_builtin(psc_set_ep, 2, PSC_SET_EP).
+inline_builtin(psc_data, 2, PSC_DATA).
 
 inline_builtin(conget, 2, CONGET_TERM).
 inline_builtin(conset, 2, CONSET_TERM).
