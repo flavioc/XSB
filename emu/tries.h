@@ -124,11 +124,15 @@ extern NODEptr  one_term_chk_ins(CPtr,CPtr,int *);
 extern NODEptr  whole_term_chk_ins(Cell, CPtr, int *);
 extern NODEptr	get_next_trie_solution(ALPtr *);
 extern NODEptr	variant_trie_search(int, CPtr, CPtr, int *);
+extern NODEptr  delay_chk_insert(int, CPtr, CPtr *);
+extern void     undo_answer_bindings();
+extern void	load_delay_trie(int, CPtr, NODEptr);
 extern void     bottom_up_unify();
 /*---------------------------------------------------------------------*/
 
 /* slg variables */
 extern CPtr VarPosReg;
+extern CPtr ans_var_pos_reg;
 extern int num_vars_in_var_regs;
 
 /* used for statistics */
@@ -238,8 +242,22 @@ extern int  num_heap_term_vars;
 #define is_retry(x) (((Cell)Instr(x) & 0x3)== 3)
 
 #ifdef DEBUG
+
+#define print_trie_atom(X){\
+ if(cell_tag(X) == STRING)\
+   printf("atom(%s)",string_val(X));\
+ else if(cell_tag(X) == CS) \
+   printf("atom(%s/%d)",get_name((Psc)dec_addr(X)), get_arity((Psc)dec_addr(X))) ;\
+ else if(cell_tag(X) == INT)\
+   printf("atom(%d)",int_val(X));\
+ else if(cell_tag(X) == LIST)\
+   printf("./2");\
+ else\
+  printf("Unk(%x)",(int)X);\
+ }
+ 
 #define print_trie_node(X) {\
- printf("%x,I(%x),A(%x),P(%x),S(%x)",X,Instr(X),Atom(X),Parent(X),Sibl(X));\
+ printf("%x,I(%x),A(%x),P(%x),S(%x)",(int)X,Instr(X),(int)Atom(X),(int)Parent(X),(int)Sibl(X));\
  if(cell_tag(Atom(X)) == STRING)\
    printf("atom(%s)\n",string_val(Atom(X)));\
  else if(cell_tag(Atom(X)) == CS) \
@@ -272,3 +290,7 @@ extern Cell * reg_array;
 extern int  reg_array_size;
 
 #define DEFAULT_ARRAYSIZ 512 
+
+extern CPtr *copy_of_var_addr;
+extern int copy_of_num_heap_term_vars;
+extern void printterm(Cell, byte, int);
