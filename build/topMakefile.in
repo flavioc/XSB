@@ -136,9 +136,9 @@ INSTALL_DATA = @INSTALL_DATA@
 XSB = xsb
 
 
-all: prepare emu run_xsb register emu_clean 
+all: prepare emu register emu_clean 
 
-devel: prepare emu run_xsb emu_clean
+devel: prepare emu emu_clean
 
 prepare:
 	@cd $(src_emudir); \
@@ -169,7 +169,7 @@ register:
 	@register.sh
 
 
-install:: copy_files
+install:: copy_files run_xsb_install
 
 copy_files::
 	@( test "${prefix}" = "${srcdir}" && \
@@ -221,10 +221,13 @@ copy_files::
 	    echo "Installed!" \
 	  )
 
-run_xsb:
-	@rm -f $(src_config_prefix)/configuration.O; \
-	  echo "[perlmatch]. halt." | $(src_scriptdir)/xsb$(config_tag); \
+run_xsb_src:
+	run_xsb $(src_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(src_config_prefix)/configuration.O
+
+run_xsb_install:
+	@run_xsb $(install_scriptdir)/xsb$(config_tag) ; \
+	  chmod 644  $(install_config_prefix)/configuration.O
 
 # clean for this architecture only
 configclean::
