@@ -158,6 +158,7 @@
 DllExport extern prolog_int call_conv ptoc_int(reg_num);	/* defined in builtin.c */
 DllExport extern prolog_float call_conv ptoc_float(reg_num);	/* defined in builtin.c */
 DllExport extern char* call_conv ptoc_string(reg_num);	/* defined in builtin.c */
+DllExport extern char* call_conv ptoc_longstring(reg_num);	/* defined in builtin.c */
 DllExport extern char* call_conv ptoc_abs(reg_num);
 
 DllExport extern void  call_conv ctop_int(reg_num, prolog_int); /* defined in builtin.c */
