@@ -74,7 +74,11 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ?- tc(X,Y).			% computes the transitive closure of e(_,_)
 
 ?- X:person.			% What persons are there? (mary, john)
-?- person[instances ->> {X}].	% ... same Q, but asked differently (see above)
+
+:- prolog nl/0, write/1, writeln/1, shell/1.
+
+%%?-  writeln('Bombs out here'),
+ %%   person[instances ->> {X}].  % ... same Q, but asked differently (see above)
 
 ?- X[believes_in ->> {Y}].	% Who believes in what?
 
@@ -85,8 +89,8 @@ person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
 ]. 
 
 
-:- prolog nl/0, write/1, writeln/1, shell/1.
 
+%% Bombs out on this one due to mary[].
 ?- nl, write('mary[] ??'), mary[].
 
 ?- nl, write('mary..kids[] ??'), mary..kids[].
