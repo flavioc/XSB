@@ -12,6 +12,8 @@ files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS \
     	./XSB/build/*.bat \
     	./XSB/build/configure ./XSB/build/README \
         ./XSB/emu ./XSB/syslib ./XSB/cmplib ./XSB/lib \
+	./XSB/gpp \
+	./XSB/prolog_includes \
         ./XSB/config/x86-pc-windows \
         ./XSB/etc \
         ./XSB/packages \
