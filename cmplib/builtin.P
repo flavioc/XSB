@@ -225,7 +225,7 @@ builtin_function('+', 2, 1).
 builtin_function('-', 2, 2).
 builtin_function('*', 2, 3).
 builtin_function('/', 2, 4).
-builtin_function('/\', 2, 5).     % '  The quote is needed to pacify cpp
+builtin_function('/\', 2, 5).
 builtin_function('\/', 2, 6).
 builtin_function('//', 2, 7).
 builtin_function(sin, 1, 9).
