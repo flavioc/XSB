@@ -2,7 +2,7 @@
 %============================================================
 
 This section describes the steps needed to install XSB under UNIX and
-under DOS/Windows.
+under Windows.
 
 \section{Installing XSB under UNIX}
 %==========================================
@@ -30,6 +30,8 @@ use the following procedure.
 	directories are required for XSB to work:
 	\verb'emu', \verb'syslib', \verb'cmplib', 
 	\verb'lib', \verb'packages', \verb'build', and \verb'etc'.
+
+\index{configuration}
 
 \item Change directory to {\tt \$XSB\_DIR/build} and then run these commands:
   %%
@@ -125,6 +127,35 @@ Here are some ways that are guaranteed to not work in some or all cases:
     %%$
 \end{description}
 
+Other options are of interest to advanced users who wish to experiment
+with XSB, or to use XSB for large-scale projects.  In general, however
+users need not concern themselves with these options.
+
+\begin{description}
+\index{scheduling strategy}
+\item[Type of Scheduling Strategy.]  The ordering of operations within
+a tabled evaluation can drastically affect its performance.  XSB
+provides two scheduling strategies: Batched Evaluation and Local
+Evaluation.  Batched Evaluation is the default scheduling strategy for
+XSB and evaluates queries to reduce the time to the first answer of a
+query.  Local Evaluation can be chosen via the {\tt
+--enable-local-scheduling} configure option.  Detailed explanations
+can be found in \cite{JFLP-Scheduling}.
+%
+\index{memory management}
+\index{garbage collection}
+\item[Type of Memory Management.]  Routines for managing execution
+stacks for tabled evaluations can be quite complex, due to
+interdependencies of tabled subgoals.  Indeed, memory management
+algorithms can be based on common elements are shared among
+computation states or are copied.  The default configuration of XSB
+shares these elements while the option {\tt --enable-chat} uses copies
+these elements.  While sharing and copying have minor performance
+differences, the main reason to try the {\tt --enable-chat}
+configuration is to use a heap garbage collector that has been written
+for it \cite{SaSw98,CAT@PLILP-98,CATmem@ISMM-98,CHAT@PADL-99}.
+\end{description}
+
 \subsection{Possible Installation Problems}
 
 \paragraph*{Lack of Space for Optimized Compilation of C Code}
@@ -165,7 +196,7 @@ the object files in {\tt syslib} and {\tt cmplib}.
 
 
 
-\section{Installing XSB under DOS} \label{quick:DOS}
+\section{Installing XSB under Windows} \label{quick:DOS}
 %==========================================
 
 \begin{enumerate}

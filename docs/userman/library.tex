@@ -531,8 +531,8 @@ applied so that the preceding item in the path name is deleted. For
 instance, if the current directory is {\tt /home}, then {\tt
   abc//cde/..///ff/./b} will be converted into {\tt /home/abc/ff/b}.
 
-Under NT and DOS, this predicates does rectification (using backslashes
-when appropriate), but it does not expand the tildas.
+Under NT and Windows, this predicates does rectification (using
+backslashes when appropriate), but it does not expand the tildas.
 
 \ournewitem{tilde\_expand\_filename(+FileName,-ExpandedName)}{machine}
 \index{{\tt tilde\_expand\_filename/2}}
@@ -540,11 +540,10 @@ Like {\tt expand\_filename/2}, but only expands tildas and does
 rectification. This does not prepend the current working directory to
 relative file names.
 
-\ournewitem{is\_absolute\_filename(+FileName)}{machine}
-\index{{\tt is\_absolute\_filename/1}}
-Succeeds, if file name is absolute; fails otherwise.
-This predicate works also under NT and DOS, {\it i.e.}, it recognizes drive
-letters, etc.
+\ournewitem{is\_absolute\_filename(+FileName)}{machine} \index{{\tt
+is\_absolute\_filename/1}} Succeeds, if file name is absolute; fails
+otherwise.  This predicate works also under NT and Windows, {\it
+i.e.}, it recognizes drive letters, etc.
 
 \ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
 \index{{\tt parse\_filename/4}}

@@ -29,7 +29,7 @@ using XSB), simply issue the command:
 \version\ of XSB can also directly execute object code files
 from the command line interface.  Suppose you have a top-level routine
 {\tt go} in a file {\tt foo.P} that you would like to run from the
-UNIX or DOS/Windows command line.  As long as {\tt foo.P} contains a
+UNIX or Windows command line.  As long as {\tt foo.P} contains a
 directive {\tt :- go.}, and {\tt foo} has been compiled to an object
 file ({\tt foo.O}), then
 \begin{verbatim}
@@ -555,14 +555,18 @@ with the command.
 
 \section{Memory Management}\label{memory_management}
 \index{memory management}
+\index{garbage collection}
 %===================================================
 All execution stacks are automatically expenaded in \version\
 including the local stack/heap region, the trail/choice point region
 and the completion stack region.  Each of these regions begin with an
 initial value set by the user (or the default stated in Section
-\ref{emulator_options}), and double their size until it is not possible
-to do so with available system memory.  At that point XSB tries to
-find the maximal amount of space that will still fit in system memory.
+\ref{emulator_options}), and double their size until it is not
+possible to do so with available system memory.  At that point XSB
+tries to find the maximal amount of space that will still fit in
+system memory.  Garbage collection is automatically performed for
+retracted clauses, and for the heap, when the {\tt --enable-chat}
+option is used.
 
 The program area (the area into which the code is loaded) is also
 dynamically expanded as needed, and the area occupied by dynamic code

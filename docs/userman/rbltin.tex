@@ -488,8 +488,8 @@ predicate to be tabled.
     interpreter.  For that reason the standard predicate {\tt cd/1} described 
     below should be used.
 
-    {\em Note to DOS users.} \index{DOS}  The {\tt unix/1} command works
-    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
+%    {\em Note to DOS users.} \index{DOS}  The {\tt unix/1} command works
+%    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
 
 \ouritem{unix(+SystemCall, -Result)}\index{{\tt unix/2}}
     Calls the operating system with the atom {\tt SystemCall} as argument
@@ -497,8 +497,8 @@ predicate to be tabled.
     {\tt unix/1} this predicate always succeeds, even if the {\tt SystemCall} 
     cannot be successfully executed.
 
-    {\em Note to DOS users.} \index{DOS}  The {\tt unix/2} command works
-    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
+%    {\em Note to DOS users.} \index{DOS}  The {\tt unix/2} command works
+%    for DOS through the underlying GNU djgpp mechanism used to port \ourprolog.
 
 \ouritem{ls}\index{{\tt ls/0}} 
     Under UNIX, this command lists in the current output stream the files 
@@ -506,10 +506,10 @@ predicate to be tabled.
     It is the same as {\tt unix('ls -F', 0)}.  
 
 \ouritem{cd(+Dir)}\index{{\tt cd/1}}
-    Under UNIX and DOS, this predicate changes the interpreter's working 
-    directory to {\tt Dir}.  If the directory
-    specified does not exist or is not a directory, or the user does not have 
-    execute permission for that directory, predicate {\tt cd/1} simply fails 
+    Under UNIX and Windows, this predicate changes the interpreter's
+    working directory to {\tt Dir}.  If the directory specified does
+    not exist or is not a directory, or the user does not have execute
+    permission for that directory, predicate {\tt cd/1} simply fails
     raising no permission error.
 
     Exceptions:
