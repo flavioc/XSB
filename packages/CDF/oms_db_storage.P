@@ -1130,10 +1130,10 @@ retractall_oms_int_cdb(oms_mo(Oid,Cid)) :-
 	   )
 	).
 retractall_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
+	get_component_intensional_bind(immediate_attribute_int(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
+	ext_caching(Source,Cx),
 	(ground_or_var(SOid),ground_or_var(RCid),ground_or_var(TCid)
-	 ->	get_component_intensional_bind(immediate_attribute_int(SNatOid,SSource,RNatCid,RSource,TNatCid,TSource),Source),
-		ext_caching(Source,Cx),
-		(var(SSource)
+	 ->	(var(SSource)
 		 ->	(var(RSource)
 			 ->	(var(TCid) -> true ; class(TCid,_,TNatCid,TSource)),
 				(var(SOid) -> true ; object(SOid,_,SNatOid,SSource)),
@@ -1154,7 +1154,16 @@ retractall_oms_int_cdb(oms_at(SOid,RCid,TCid)) :-
 
 		odbc_sql(Cx,BindVars,
 			 ['delete from oms_attribute where ',BindConds], [])
-	 ;      writeln('ERROR Instantiation: retractall_attribute'(SOid,RCid,TCid)), fail
+	 ;      %% to warn or not to warn
+	        %% check that it should actually be handled by this component 
+		(var(SSource)
+		 ->	(var(RSource)
+			 ->	(var(TCid) -> true ; class(TCid,_,TNatCid,TSource))
+			 ;	(var(RCid) -> true ; class(RCid,_,RNatCid,RSource))
+			)
+		 ;	(var(SOid) -> true ; ob_id_map(SOid,_,SNatOid,SSource))
+		),
+		writeln('ERROR Instantiation: retractall_attribute'(SOid,RCid,TCid)), fail
 	).
 retractall_oms_int_cdb(oms_ao(SOid,RCid,TOid)) :-
 	(nonvar(SOid),nonvar(RCid),nonvar(TOid)
