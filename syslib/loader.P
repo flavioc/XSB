@@ -279,23 +279,15 @@ load_pred1(PSC) :-
 		%% '_$cutto'(B)
 		!
 		;
+		xsb_backtrace(BT),
 		throw(error(undefined_predicate(Name,Arity,ModName),
 			    ['The predicate: ', Name, '/', Arity,
-			     ' is not defined in module ', ModName]))
-	    /*
-		call_undef_pred_handlers(PSC, ['The predicate: ',
-					       Name, '/', Arity,
-					       ' is not defined in module ',
-					       ModName])
-	    */
+			     ' is not defined in module ', ModName],BT))
 	    )
 	;
+	    xsb_backtrace(BT),
 	    throw(error(undefined_predicate(Name,Arity,usermod),
-			['Undefined predicate: ', Name, '/', Arity]))
-	/*
-	    call_undef_pred_handlers(PSC, ['Undefined predicate: ',
-					   Name, '/', Arity])
-	*/
+			['Undefined predicate: ', Name, '/', Arity],BT))
 	).
 
 
