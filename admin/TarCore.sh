@@ -4,13 +4,13 @@
 
     # Run this in ./admin/ directory!
 
-files="./LICENSE ./INSTALL ./INSTALL_PROBLEMS ./INSTALL_DOS ./INSTALL_NT \
+files="./LICENSE ./INSTALL ./INSTALL_PROBLEMS ./INSTALL_WINDOWS \
 	./README ./FAQ 
 	./admin \
       ./build/ac* ./build/*.in ./build/config.guess ./build/config.sub \
       ./build/*sh ./build/*.msg ./build/configure ./build/README \
       ./emu/README     ./emu/*.[chi]     ./emu/*.pc    ./emu/*.mk \
-      ./emu/nt ./emu/pcdos ./emu/configs ./emu/debugs \
+      ./emu/configs ./emu/debugs ./emu/orastuff \
       ./syslib/README  ./syslib/Makefile ./syslib/*.[DHPO] \
       ./cmplib/README  ./cmplib/Makefile ./cmplib/*.[DHPO] \
       ./lib/README     ./lib/Makefile    ./lib/*.[DHPO] \
