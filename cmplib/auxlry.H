@@ -32,6 +32,7 @@
 :- import numbervars/3 from num_vars.
 :- import 'error occurred'/0 from compile.
 :- import current_compiled_module/1 from compile.
+:- import load_dyn_module/1 from consult.
 :- import conget/2, conset/2 from gensym.
 :- import member/2 from basics.
 :- import ttywritenl/2, cputime/1, arg/3, functor/3, atomic/1,

@@ -32,11 +32,12 @@
 /*======================================================================*/
 
 :- dynamic(current_compiled_module(_)).
+:- dynamic(load_dyn_module(_)).
 
 message(Message) :- ttywritenl(Message, STDMSG).
 
 warning(Message) :-
-	current_compiled_module(Module),
+	(current_compiled_module(Module), !; load_dyn_module(Module)),
 	ttywritenl(('++Warning: ', Module, ': ', Message), STDWARN).
 
 error(Message) :- 
