@@ -26,7 +26,8 @@
 :- export ma/2.
 :- mode ma(++,++).
 
-:- import 
+:- import
+	variant/1,
 	trie_assert/1, trie_retract/1,
 	trie_retract_all/1, trie_dynamic/1,
 	abolish_table_pred/1, get_calls/3, get_returns/2

@@ -86,7 +86,7 @@ analyze(Goal) :-
 	true.
 
 :- table call_user/1.
-
+:- variant([call_user(_)]).
 
 call_user(Goal) :- '_$call_user'(Goal).
 

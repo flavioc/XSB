@@ -176,6 +176,7 @@ compute_query(Q,Q1) :-
 
 
 :- table '{}'/1.
+:- variant(['{}'(_)]).
 '{}'(Q) :- 
 	'_$savecp'(C), 
 	goal_cut_trans(Q,X,C),

@@ -46,7 +46,7 @@
 :- import file_get/2, file_flush/2, fmt_write_string/3, print_file_contents/2
    from file_io.
 :- import get_calls/3, get_returns/3, abolish_all_tables/0,
-	  table_state/2
+	  table_state/2, variant/1
     from tables.
 
 :- import consult/1 from consult.
