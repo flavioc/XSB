@@ -33,6 +33,7 @@ case check_complete: {
   CPtr    orig_breg = breg;
   bool    leader = FALSE;
   SGFrame subgoal;
+  int	  i;
 
   /* this CP has exhausted program resolution -- backtracking occurs */
   switch_envs(breg);    /* in CHAT: undo_bindings() */
@@ -110,7 +111,6 @@ case check_complete: {
 	    }
 	    else {
 #ifndef IGNORE_DELAYVAR
-	      int i;
 	      CPtr temp_hreg = hreg;
 	      new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	      for (i = 0; i < num_heap_term_vars; i++)
@@ -318,19 +318,9 @@ case check_complete: {
 	get_var_and_attv_nums(template_size, attv_num, tmp);
 	answer_template++;
 #endif
-	/* `answer_template' points to the mth term */
-	{
-	  int  ii;
-	  reg_arrayptr = reg_array-1;
-	  for (ii=0; ii<template_size; ii++) {
-	    CPtr cptr = answer_template;
-	    pushreg(*cptr);
-	    answer_template++;
-	  }
-	}
-	num_vars_in_var_regs = -1;
-
+	/* Now `answer_template' points to the mth term */
 	/* Initialize var_regs[] as the attvs in the call. */
+	num_vars_in_var_regs = -1;
 	if (attv_num > 0) {
 	  CPtr cptr;
 	  for (cptr = answer_template + template_size - 1;
@@ -338,7 +328,14 @@ case check_complete: {
 	    if (isattv(cell(cptr)))
 	      var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
 	  }
-	  /* now num_vars_in_var_regs should be CallNumAttv - 1 */
+	  /* now num_vars_in_var_regs should be attv_num - 1 */
+	}
+
+	reg_arrayptr = reg_array - 1;
+	for (i = 0; i < template_size; i++) {
+	  CPtr cptr = answer_template;
+	  pushreg(*cptr);
+	  answer_template++;
 	}
 
 	lpcreg = (byte *)subg_ans_root_ptr(subgoal);

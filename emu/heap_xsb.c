@@ -831,7 +831,7 @@ static int chat_mark_substitution_factor(void)
   CPtr compl_fr;
   SGFrame subg_ptr;
   CPtr region_to_mark, d;
-  int  CallNumVar, m = 0;
+  int  CallNumVar, attv_num, tmp, m = 0;
 
   /* mark the substitution factor starting from the completion stack */
   compl_fr = openreg;
@@ -839,7 +839,8 @@ static int chat_mark_substitution_factor(void)
     {
       /* substitution factor is now in the heap for generators */
       region_to_mark = compl_hreg(compl_fr);
-      CallNumVar = int_val(cell(region_to_mark))+1; /* mark the Num too */
+      tmp = int_val(cell(region_to_mark)) + 1; /* mark the Num too */
+      get_var_and_attv_nums(CallNumVar, attv_num, tmp);
       while (CallNumVar--)
 	m += mark_cell(region_to_mark--);
 
