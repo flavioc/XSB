@@ -1968,14 +1968,7 @@ predicates must be tabled. (Normally, these are predicates defined by the
 user.)  \FLORA programs accepts the same tabling directives as XSB does
 (Section~\ref{sec-comp-directives} lists all the compiler directives).
 
-It is important to be aware that when XSB (and \FLORA) evaluate a program,
-all tabled predicates are partially materialized and all the computed
-tuples are stored in XSB tables. Thus, if you change the set of facts, the
-existing tables must be discarded in order to allow XSB to recompute the
-results. This is accomplished by issuing the predicate {\tt
-  abolish\_all\_tables/0} described in the XSB manual.
-
-It is also important to realize that XSB does not do reordering of objects
+It is important to keep in mind that XSB does not do reordering of objects
 and predicates during joins. Instead, all joins are performed left-to-right.
 The programmer, thus, must write program clauses in such a way as to ensure
 that smaller predicates and classes appear early on in the join. Also, even
@@ -1986,6 +1979,32 @@ already has been answered (or is in the process of being evaluated).
 Unfortunately, the current notion of similarity used by XSB is fairly weak,
 and many unnecessary recomputations might result. This problem will be
 corrected in a future release.
+
+It is also important to be aware that when XSB (and \FLORA) evaluate a program,
+all tabled predicates are partially materialized and all the computed
+tuples are stored in XSB tables. Thus, if you change the set of facts, the
+existing tables must be discarded in order to allow XSB to recompute the
+results. This is accomplished by issuing the predicate {\tt
+  abolish\_all\_tables/0} described in the XSB manual.
+
+Furthermore, tabling sometimes has undesirable side effects in
+``real-world'' programming, especially when writing methods with
+non-logical side effects ({\it e.g.}, writing or reading a file).  If a
+tabled predicate has such side effects, then the first time the predicate
+is called the side effect will be performed, but the second time the call
+simply returns with success or failure (depending on the outcome of the
+first call).  Thus, if the predicate was intended to perform the side
+effect each time it is called, it will not operate correctly.
+
+All this is, of course, old news to XSB programmers, but is there anything
+\FLORA-specific in this? It turns out that yes, and the problem is not
+immediately apparent.  In the object-oriented style, people tend to define
+methods with side effects and attach them to objects.  However, because
+\FLORA tables everything that comes from F-molecules, methods with side
+effects are subject to the same problem as described above. The current
+interim solution is to use predicates instead of methods whenever side
+effects are needed. In a future release, \FLORA will have special syntax
+for methods with side effects, so this restriction will be lifted.
 
 \index{cut in \FLORA}
 \index{cutting across tables}
