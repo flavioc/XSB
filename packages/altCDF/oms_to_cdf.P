@@ -1,3 +1,4 @@
+:- ensure_loaded(altcdf).
 :- import newExtTerm/1, initialize_state/0 from cdf_init_cdf.
 
 % loads internal OMS facts into memory and converts them into CDF facts that can be dumped using dump_extensional_facts/1 after that.
@@ -7,15 +8,24 @@ oms_to_cdf(OMSDir):-
 	dir_load_dync(OMSDirS,schema_oms),
 	dir_load_dync(OMSDirS,data_oms),
 	newExtTerm(isa_ext(crid('Name',cdf), crid('CDF Class-Object Relations', cdf))),
-	newExtTerm(isa_ext(crrid('Name',cdf), crid('CDF Class-Object Relations', cdf))),
+	newExtTerm(isa_ext(crrid('Name',cdf), crrid('CDF Higher-Order (Object-Object)-Object Relations',cdf))),
+	writeln('converting subclasses'),
 	oms_to_cdf_subclass,
-%	oms_to_cdf_class,
+	writeln('converting classes'),
+	oms_to_cdf_class,
+	writeln('converting irels'),
 	oms_to_cdf_irel,
+	writeln('converting schrels'),
 	oms_to_cdf_schrel,
+	writeln('converting strels'),
 	oms_to_cdf_strel,
+	writeln('converting objects'),
 	oms_to_cdf_object,
+	writeln('converting memberofs'),
 	oms_to_cdf_memberof,
+	writeln('converting attributes'),
 	oms_to_cdf_attribute,
+	writeln('converting attribute_objects'),
 	oms_to_cdf_attribute_object,
 	retract_oms_facts.
 
@@ -56,12 +66,12 @@ oms_to_cdf_class:-
 	\+(Source = 'OMS'), 
 	\+(Name = NatId),
 	atomic(NatId), % do not keep names for product types
-	(convert_system_name(cid(NatId, Source), NewId), isa_ext(NewId,_)
+	(convert_system_name(cid(NatId, Source), cid(NewId,NewSource)), isa_ext(cid(NewId,NewSource),_)
 	 ->	newExtTerm(isa_ext(crid('Name', NewSource), crid('Name', cdf))),
-		newExtTerm(classHasAttr_ext(NewId, crid('Name', NewSource), cid(Name, cdfpt)))
-	 ;	convert_system_name(rid(NatId, Source), NewId), isa_ext(NewId,_), 
+		newExtTerm(classHasAttr_ext(cid(NewId,NewSource), crid('Name', NewSource), cid(Name, cdfpt)))
+	 ;	convert_system_name(rid(NatId, Source), rid(NewId,NewSource)), isa_ext(rid(NewId,NewSource),_), 
 		newExtTerm(isa_ext(crrid('Name', NewSource), crrid('Name', cdf))),
-		newExtTerm(classHasAttr_ext(NewId, crrid('Name',NewSource), cid(Name, cdfpt)))
+		newExtTerm(classHasAttr_ext(rid(NewId,NewSource), crrid('Name',NewSource), cid(Name, cdfpt)))
 	),
 	fail.
 oms_to_cdf_class.
