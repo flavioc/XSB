@@ -535,12 +535,6 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
 }
 
 
-void reclaim_uninterned_nr(BTNptr root)
-{
-  puts("To be implemented");
-}
-
-
 /*----------------------------------------------------------------------*/
 
 #define DELETE_TRIE_STACK_INIT 100
@@ -1018,3 +1012,195 @@ void delete_interned_trie(int tmpval) {
     first_free_set = tmpval;
   }
 }
+
+
+/*  
+ Changes made by Prasad Rao. Jun 20th 2000
+
+ The solution for reclaiming the garbage nodes resulting
+ from trie dispose is as follows.
+ Maintain a datastructure as follows
+ 1)  IGRhead -> Root1 -> Root2 -> Root3 -> null
+                 |        |        |
+                 |        |        |
+                 v        v        v
+                Leaf11   Leaf21   Leaf31
+	         |        |        |  
+                 |        |        |
+                 V        v        v
+                Leaf12    null    Leaf32        
+                 |                 |
+                 v                 |
+                null               v
+                                 Leaf33
+                                   |
+                                   v
+                                  null
+To reclaim all the garbage associated with a particular root
+ a) remove the root from the root list
+ b) remove all the garbage branches assoc with the root 
+    by calling delete_branch(leaf,....)
+   Done!!
+
+*/
+
+static IGRptr IGRhead = NULL;
+
+static IGRptr newIGR(long root)
+{
+  IGRptr igr;
+  
+  igr = malloc(sizeof(InternGarbageRoot));
+  igr -> root   = root;
+  igr -> leaves = NULL;
+  igr -> next   = NULL;
+  return igr;
+}
+
+static IGLptr newIGL(BTNptr leafn)
+{
+  IGLptr igl;
+  
+  igl = malloc(sizeof(InternGarbageLeaf));
+  igl -> leaf = leafn;
+  igl -> next = NULL;
+  return igl;
+}
+
+static IGRptr getIGRnode(long rootn)
+{
+  IGRptr p = IGRhead;  
+
+  while(p != NULL){
+    if(p -> root == rootn)
+      return p;
+    else
+      p = p -> next;
+  }  
+  if(p != NULL)
+    xsb_warn("Invariant p == NULL violated");
+
+  p = newIGR(rootn);
+  p -> next = IGRhead;
+  IGRhead = p;    
+  return p;
+}
+
+static IGRptr getAndRemoveIGRnode(long rootn)
+{
+  IGRptr p = IGRhead;  
+
+  if(p == NULL)
+    return NULL;
+  else if(p -> root == rootn){
+    IGRhead = p -> next;
+    return p;
+  }
+  else{
+    IGRptr q = p;
+    p = p -> next;
+    while(p != NULL){
+      if(p -> root == rootn){
+	q -> next = p -> next;
+	return p;
+      } else{
+	q = p;
+	p = p -> next;
+      }
+    }  
+  }
+  xsb_warn("Root Node not found in Garbage List");
+  return NULL;
+}
+
+
+
+static void insertLeaf(IGRptr r, BTNptr leafn)
+{
+  /* Just make sure that the leaf is not already there */
+  IGLptr p;
+
+  if(r == NULL)
+    return;
+  p = r -> leaves;
+  while(p != NULL){
+    /*    xsb_warn("loopd"); */
+    if(p -> leaf == leafn){
+      xsb_warn(" Leaf Node was previously deleted !");
+      return;
+    }
+    p = p -> next;
+  }
+  p = newIGL(leafn);
+  p -> next = r -> leaves;
+  r -> leaves = p;
+}
+/*
+ * This is builtin : TRIE_DISPOSE_NR(+ROOT, +LEAF), to
+ * mark for  disposal a branch
+ * of the trie rooted at Set_ArrayPtr[ROOT].
+ */
+
+void trie_dispose_nr(void)
+{
+  BTNptr Leaf;
+  long Rootidx;
+
+  Rootidx = ptoc_int(1);
+  Leaf = (BTNptr)ptoc_int(2);
+  switch_to_trie_assert;
+  insertLeaf(getIGRnode(Rootidx), Leaf);
+  safe_delete_branch(Leaf);
+  switch_from_trie_assert;
+}
+
+
+void reclaim_uninterned_nr(long rootidx)
+{
+  IGRptr r = getAndRemoveIGRnode(rootidx);
+  IGLptr l = r-> leaves, p;
+  BTNptr leaf;
+
+  free(r);
+
+  while(l != NULL){
+    /* printf("Loop b %p\n", l); */
+    leaf = l -> leaf;
+    p = l -> next;
+    free(l);
+    switch_to_trie_assert;
+    if(IsDeletedNode(leaf))
+      delete_branch(leaf, &(Set_ArrayPtr[rootidx]));
+    else
+      xsb_warn("Non deleted interned node in garbage list");
+
+    switch_from_trie_assert;
+    l = p;
+  }
+
+}
+
+
+/*----------------------------------------------------------------------*/
+void trie_undispose(long rootIdx, BTNptr leafn)
+{
+  IGRptr r = getIGRnode(rootIdx);
+  IGLptr p = r -> leaves;
+  if(p == NULL){
+    xsb_warn("Possible problem in trie_undispose\n");
+  } else{
+    if(p -> leaf == leafn){
+      r -> leaves = p -> next;
+      free(p);
+      if(r -> leaves == NULL){
+	/* Do not want roots with no leaves hanging around */
+	getAndRemoveIGRnode(rootIdx);
+      }
+    }
+    undelete_branch(leafn);
+  }
+}
+
+
+
+

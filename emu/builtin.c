@@ -1798,13 +1798,13 @@ int builtin_call(byte number)
     trie_dispose();
     break;
   case TRIE_DISPOSE_NR:
-    safe_delete_branch((BTNptr)ptoc_int(1));
+    trie_dispose_nr();
     break;
   case TRIE_UNDISPOSE:
-    undelete_branch((BTNptr) ptoc_int(2));
+    trie_undispose(ptoc_int(1), (BTNptr) ptoc_int(2));
     break;
   case RECLAIM_UNINTERNED_NR:
-    reclaim_uninterned_nr((BTNptr) ptoc_int(1));
+    reclaim_uninterned_nr(ptoc_int(1));
     break;
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify() );
