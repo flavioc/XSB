@@ -393,8 +393,12 @@ abolish_table_predicate(Predicate) :- abolish_table_predicate(Predicate).
 
 abolish_table_call(Call) :-
 	get_calls(Call,Handle,_Template),
-	table_state(Handle,PredType,_CallType,_AnsSetStatus),
-	(   PredType = subsumptive
+	table_state(Handle,PredType,_CallType,AnsSetStatus),
+	(   AnsSetStatus = undefined
+	->  throw(error(table_error(abolishing_undefined_call)))
+	;   AnsSetStatus = incomplete
+	->  throw(error(table_error(abolishing_incomplete_call)))
+	;   PredType = subsumptive
 	->  throw(error(table_error(abolishing_subsumptive_call)))
 	;   abolish_table_call_bi(Handle)
 	),
