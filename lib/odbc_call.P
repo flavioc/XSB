@@ -1911,22 +1911,6 @@ odbc_delete_index(TableName,Index) :-
 		Query))).
 
 %--------------------------------
-odbc_delete_record(Table,VList) :-
-    conset(col,1),
-    assert_attributes_info(Table),
-    conget(col,N), N1 is N - 1,
-    name(Table, Tl), 
-    append([100,101,108,95],Tl,Tl1), 
-    name(Table1,Tl1),
-    assert(relation(Table,N1,Table)),
-    functor(Head1, Table1, N1),
-    Head1 =..[Table1|Tail],
-    Head =..[Table|Tail],
-    odbc_delete(Head1, (Head)),
-    asserta((odbc_delete_record(Table,Values) :- Query =..[Table1|Values] ',' ! ',' Query)), 
-    Query =.. [Table1|VList],!,
-    Query.
-
 :- assert(':-'(odbc_delete_record(Table,VList),
 	       (conset(col,1),
 		assert_attributes_info(Table),
