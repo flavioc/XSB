@@ -2483,11 +2483,11 @@ retractall_oms_term(Term) :-
 	retractall_oms_int(Term),
 	%% fail to check other components if component argument is not bound, 
 	%% i.e. retractall(oms_at(oid,_,_))
-	get_component_intensional(Term,Name),
-	(oms_dirty(Name)
-	 ->	true
-	 ;	make_oms_dirty(Name)
-	),	
+%	get_component_intensional(Term,Name),
+%	(oms_dirty(Name)
+%	 ->	true
+%	 ;	make_oms_dirty(Name)
+%	),	
 	fail. 
 retractall_oms_term(Term) :-
 	retractall(Term),
