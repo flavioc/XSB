@@ -14,12 +14,17 @@ STD_FPREFIX(subclass)(X,Y) :- STD_FPREFIX(strict_subclass)(X,Y).
 
 %% Using flora_subclass can be a major source of inefficiency
 %% In most cases, you want to use '_$_$_flora_strict_subclass'
-STD_FPREFIX(strict_subclass)(X,Y) :- STD_FPREFIX(sub)(X,Y),  X \= Y.
+%% We table strict_sub to avoid repetition
+:- table STD_FPREFIX(strict_sub)/2.
+STD_FPREFIX(strict_sub)(X,Y) :- 
+	ground(X), ground(Y), !,
+	X \= Y, STD_FPREFIX(sub)(X,Y).
+STD_FPREFIX(strict_sub)(X,Y) :- STD_FPREFIX(sub)(X,Y), X \= Y.
+STD_FPREFIX(strict_subclass)(X,Y) :- STD_FPREFIX(strict_sub)(X,Y).
 
 STD_FPREFIX(strict_subclass)(X,Y) :-
 	STD_FPREFIX(strict_subclass)(X,Z), 
-	STD_FPREFIX(strict_subclass)(Z,Y),
-	%%(X \= Z -> true ; Z\=Y),
+	STD_FPREFIX(strict_sub)(Z,Y),
 	(   X = Y
 	->  STD_FPREFIX(warning_nl)('cyclic subclass hierarchy, %S::%S::%S',
 			     args(X,Z,Y))

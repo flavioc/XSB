@@ -49,7 +49,7 @@
 
 :- import current_predicate/1 from curr_sym.
 
-:- import consult/2, compile/1, compile/2 from consult.
+:- import consult/2, compile/1, compile/2, search_module/6 from consult.
 
 :- import conget/2, conset/2 from prof_sbp.
 
