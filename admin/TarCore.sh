@@ -1,6 +1,6 @@
 #!/bin/sh 
 
-    # Create an XSB tarball; to be untarr'ed in the build directory
+    # Create an XSB tarball; to be untarr'ed in the XSB installation directory
 
     # Run this in ./admin/ directory!
 
