@@ -605,7 +605,7 @@ static int oracleCursor_fetch(CursorHandle cursorHandle) {
 
   SQLDA *sliDesc;
   EXEC SQL BEGIN DECLARE SECTION;
-    uint arrayLength;
+    unisgned int arrayLength;
   EXEC SQL END DECLARE SECTION;
 
 
