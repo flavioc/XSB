@@ -72,6 +72,7 @@ static int get_free_process_cell(void);
 static void init_process_table(void);
 static int process_status(int pid);
 static void split_string(char *string, char *params[], char *callname);
+static char *get_next_command_argument(char **buffptr, char **cmdlineprt);
 
 
 static struct proc_table_t {
@@ -780,7 +781,7 @@ static void split_string(char *string, char *params[], char *callname)
   argument. Advances the pointers into the CMD_LINE and BUFFER so that the
   caller can use them to call get_next_command_argument again.
 */
-char *get_next_command_argument(char **buffptr, char **cmdlineprt)
+static char *get_next_command_argument(char **buffptr, char **cmdlineprt)
 {
   short escaped=FALSE;
   char quoted = '\0';

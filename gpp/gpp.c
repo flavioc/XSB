@@ -71,7 +71,7 @@ typedef struct MODE {
    \013 = \o = operator (+-*\/^<>=`~:.?@#&!%|) \213 = \!o
    \014 = \O = operator or ()[]{}              \214 = \!O
 */
-                 /*  st        end   args   sep    arge ref  quot  stk  unstk */
+/*                   st        end   args   sep    arge ref  quot  stk  unstk*/
 struct MODE CUser = {"",       "",   "(",   ",",   ")", "#", '\\', "(", ")" };
 struct MODE CMeta = {"#",      "\n", "\001","\001","\n","#", '\\', "(", ")" };
 struct MODE KUser = {"",       "",   "(",   ",",   ")", "#",  0,   "(", ")" };
@@ -168,6 +168,7 @@ int autoswitch;
    the third with 1, 2 or blank
 */
 char *include_directive_marker = NULL;
+short WarningLevel = 2;
 
 /* controls if standard dirs, like /usr/include, are to be searched for
    #include and whether the current dir is to be searched first or last. */
@@ -297,6 +298,7 @@ void usage() {
   fprintf(stderr," -nostdinc : don't search standard directories for files to include\n\n");
   fprintf(stderr," -nocurinc : don't search the current directory for files to include\n\n");
   fprintf(stderr," -curdirinclast : search the current directory last\n\n");
+  fprintf(stderr," -warninglevel  : use next integer argument as the desired warning level\n\n");
   fprintf(stderr," -includemarker : use next argument as a marker that tells\n\t\t  where #include was in the source file\n\n");
   exit(1);
 }
@@ -380,21 +382,48 @@ char *strnl(char *s) /* the same but with whitespace specifier handling */
     if (*s=='\\') {
       neg=(s[1]=='!');
       switch(s[neg+1]) {
-        case 'n': case 'r': *u='\n'; break;
-        case 't': *u='\t'; break;
-        case 'b': *u='\001'; break;  /* one or more spaces */
-        case 'w': if (neg) bug("\\w and \\W cannot be negated");
-                  *u='\002'; break;  /* zero or more spaces */
-        case 'B': *u='\003'; break;  /* one or more spaces or \n */
-        case 'W': if (neg) bug("\\w and \\W cannot be negated");
-                  *u='\004'; break;  /* zero or more spaces or \n */
-        case 'a': *u='\005'; break;  /* alphabetic */
-        case 'A': *u='\006'; break;  /* alphabetic + space */
-        case '#': *u='\007'; break;  /* numeric */
-        case 'i': *u='\010'; break;  /* identifier */
-        case 'o': *u='\013'; break;  /* operator */
-        case 'O': *u='\014'; break;  /* operator/parenthese */
-        default: *u='\\'; neg=-1;
+      case 'n':
+      case 'r':
+	*u='\n';
+	break;
+      case 't':
+	*u='\t';
+	break;
+      case 'b':  /* one or more spaces */
+	*u='\001';
+	break;
+      case 'w':  /* zero or more spaces */
+	if (neg)
+	  bug("\\w and \\W cannot be negated");
+	*u='\002';
+	break;
+      case 'B':  /* one or more spaces or \n */
+	*u='\003';
+	break;
+      case 'W':  /* zero or more spaces or \n */
+	if (neg)
+	  bug("\\w and \\W cannot be negated");
+	*u='\004';
+	break;
+      case 'a':  /* alphabetic */
+	*u='\005';
+	break;
+      case 'A':  /* alphabetic + space */
+	*u='\006';
+	break;
+      case '#':  /* numeric */
+	*u='\007';
+	break;
+      case 'i':  /* identifier */
+	*u='\010';
+	break;
+      case 'o':  /* operator */
+	*u='\013';
+	break;
+      case 'O':  /* operator/parenthese */
+	*u='\014';
+	break;
+      default: *u='\\'; neg=-1;
       }
       if (neg>0) *u+=(char)128;
       s+=neg+1;
@@ -407,7 +436,8 @@ char *strnl(char *s) /* the same but with whitespace specifier handling */
   return t;
 }
 
-char *strnl2(char *s,int check_delim) /* the same but for C strings & in-place */
+/* same as strnl() but for C strings & in-place */
+char *strnl2(char *s,int check_delim)
 {
   char *u;
   int neg;
@@ -420,22 +450,55 @@ char *strnl2(char *s,int check_delim) /* the same but for C strings & in-place *
     if (*s=='\\') {
       neg=(s[1]=='!');
       switch(s[neg+1]) {
-        case 'n': case 'r': *u='\n'; break;
-        case 't': *u='\t'; break;
-        case 'b': *u='\001'; break;  /* one or more spaces */
-        case 'w': if (neg) bug("\\w and \\W cannot be negated");
-                  *u='\002'; break;  /* zero or more spaces */
-        case 'B': *u='\003'; break;  /* one or more spaces or \n */
-        case 'W': if (neg) bug("\\w and \\W cannot be negated");
-                  *u='\004'; break;  /* zero or more spaces or \n */
-        case 'a': *u='\005'; break;  /* alphabetic */
-        case 'A': *u='\006'; break;  /* alphabetic + space */
-        case '#': *u='\007'; break;  /* numeric */
-        case 'i': *u='\010'; break;  /* identifier */
-        case 'o': *u='\013'; break;  /* operator */
-        case 'O': *u='\014'; break;  /* operator/parenthese */
-        case '"': case '\\': if (!neg) { *u=s[1]; break; }
-        default: bug("unknown escape sequence in syntax specifier");
+      case 'n':
+      case 'r':
+	*u='\n';
+	break;
+      case 't':
+	*u='\t';
+	break;
+      case 'b':  /* one or more spaces */
+	*u='\001';
+	break;
+      case 'w':  /* zero or more spaces */
+	if (neg)
+	  bug("\\w and \\W cannot be negated");
+	*u='\002';
+	break;
+      case 'B':  /* one or more spaces or \n */
+	*u='\003';
+	break;
+      case 'W':  /* zero or more spaces or \n */
+	if (neg)
+	  bug("\\w and \\W cannot be negated");
+	*u='\004';
+	break;
+      case 'a':  /* alphabetic */
+	*u='\005';
+	break;
+      case 'A':  /* alphabetic + space */
+	*u='\006';
+	break;
+      case '#':  /* numeric */
+	*u='\007';
+	break;
+      case 'i':  /* identifier */
+	*u='\010';
+	break;
+      case 'o':  /* operator */
+	*u='\013';
+	break;
+      case 'O':  /* operator/parenthesis */
+	*u='\014';
+	break;
+      case '"':
+      case '\\':
+	if (!neg) {
+	  *u=s[1];
+	  break;
+	}
+      default:
+	bug("unknown escape sequence in syntax specifier");
       }
       if (neg>0) *u+=(char)128;
       s+=neg+1;
@@ -508,14 +571,14 @@ int readModeDescription(char **args,struct MODE *mode,int ismeta)
 int parse_comment_specif(char c)
 {
   switch (c) {
-    case 'I': case 'i': return FLAG_IGNORE;
-    case 'c': return FLAG_COMMENT;
-    case 's': return FLAG_STRING;
-    case 'q': return OUTPUT_TEXT;
-    case 'S': return FLAG_STRING|PARSE_MACROS;
-    case 'Q': return OUTPUT_TEXT|PARSE_MACROS;
-    case 'C': return FLAG_COMMENT|PARSE_MACROS;
-    default: bug("Invalid comment/string modifier"); return 0;
+  case 'I': case 'i': return FLAG_IGNORE;
+  case 'c': return FLAG_COMMENT;
+  case 's': return FLAG_STRING;
+  case 'q': return OUTPUT_TEXT;
+  case 'S': return FLAG_STRING|PARSE_MACROS;
+  case 'Q': return OUTPUT_TEXT|PARSE_MACROS;
+  case 'C': return FLAG_COMMENT|PARSE_MACROS;
+  default: bug("Invalid comment/string modifier"); return 0;
   }
 }
 
@@ -686,47 +749,49 @@ int matchSequence(char *s,int *pos)
     if (!((*s)&0x60)) { /* special sequences */
       match=1;
       switch((*s)&0x1f) {
-        case '\001':
-          c=getChar(i++);
-          if ((c!=' ')&&(c!='\t')) { match=0; break; }
-        case '\002':
-          i--;
-          do { c=getChar(++i); } while ((c==' ')||(c=='\t'));
-          break;
-        case '\003':
-          c=getChar(i++);
-          if ((c!=' ')&&(c!='\t')&&(c!='\n')) { match=0; break; }
-        case '\004':
-          i--;
-          do { c=getChar(++i); } while ((c==' ')||(c=='\t')||(c=='\n'));
-          break;
-        case '\006':
-          c=getChar(i++);
-          match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')) 
-                  ||(c==' ')||(c=='\t')||(c=='\n');
-          break;
-        case '\005':
-          c=getChar(i++);
-          match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')); break;
-        case '\007':
-          c=getChar(i++);
-          match = ((c>='0')&&(c<='9')); break;
-        case '\010':
-          c=getChar(i++);
-          match = IsInCharset(S->id_set,c); break;
-        case '\011':
-          c=getChar(i++);
-          match = (c=='\t'); break;
-        case '\012':
-          c=getChar(i++);
-          match = (c=='\n'); break;
-        case '\013':
-          c=getChar(i++);
-          match = IsInCharset(S->op_set,c); break;
-        case '\014':
-          c=getChar(i++);
-          match = IsInCharset(S->ext_op_set,c) || IsInCharset(S->op_set,c); 
-          break;
+      case '\001':
+	c=getChar(i++);
+	if ((c!=' ')&&(c!='\t'))
+	  { match=0; break; }
+      case '\002':
+	i--;
+	do { c=getChar(++i); } while ((c==' ')||(c=='\t'));
+	break;
+      case '\003':
+	c=getChar(i++);
+	if ((c!=' ')&&(c!='\t')&&(c!='\n'))
+	  { match=0; break; }
+      case '\004':
+	i--;
+	do { c=getChar(++i); } while ((c==' ')||(c=='\t')||(c=='\n'));
+	break;
+      case '\006':
+	c=getChar(i++);
+	match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')) 
+	  ||(c==' ')||(c=='\t')||(c=='\n');
+	break;
+      case '\005':
+	c=getChar(i++);
+	match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')); break;
+      case '\007':
+	c=getChar(i++);
+	match = ((c>='0')&&(c<='9')); break;
+      case '\010':
+	c=getChar(i++);
+	match = IsInCharset(S->id_set,c); break;
+      case '\011':
+	c=getChar(i++);
+	match = (c=='\t'); break;
+      case '\012':
+	c=getChar(i++);
+	match = (c=='\n'); break;
+      case '\013':
+	c=getChar(i++);
+	match = IsInCharset(S->op_set,c); break;
+      case '\014':
+	c=getChar(i++);
+	match = IsInCharset(S->ext_op_set,c) || IsInCharset(S->op_set,c); 
+	break;
       }
       if ((*s)&0x80) match=!match;
       if (!match) return 0;
@@ -756,32 +821,45 @@ int matchStartSequence(char *s,int *pos)
     match=1;
     if (*s==0) return 1;
     switch((*s)&0x1f) {
-      case '\001':
-        if ((c!=' ')&&(c!='\t')) { match=0; break; }
-      case '\002':
-        break;
-      case '\003':
-        if ((c!=' ')&&(c!='\t')&&(c!='\n')) { match=0; break; }
-      case '\004':
-        break;
-      case '\006':
-        if ((c==' ')||(c=='\t')||(c=='\n')) break;
-      case '\005':
-        match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z')); break;
-      case '\007':
-        match = ((c>='0')&&(c<='9')); break;
-      case '\010':
-        match = IsInCharset(S->id_set,c); break;
-      case '\011':
-        match = (c=='\t'); break;
-      case '\012':
-        match = (c=='\n'); break;
-      case '\013':
-        match = IsInCharset(S->op_set,c); break;
-      case '\014':
-        match = IsInCharset(S->ext_op_set,c) || IsInCharset(S->op_set,c);
-        break;
-     }
+    case '\001':
+      if ((c!=' ')&&(c!='\t')) {
+	match=0;
+	break;
+      }
+    case '\002':
+      break;
+    case '\003':
+      if ((c!=' ')&&(c!='\t')&&(c!='\n')) {
+	match=0;
+	break;
+      }
+    case '\004':
+      break;
+    case '\006':
+      if ((c==' ')||(c=='\t')||(c=='\n'))
+	break;
+    case '\005':
+      match = ((c>='a')&&(c<='z')) || ((c>='A')&&(c<='Z'));
+      break;
+    case '\007':
+      match = ((c>='0')&&(c<='9'));
+      break;
+    case '\010':
+      match = IsInCharset(S->id_set,c);
+      break;
+    case '\011':
+      match = (c=='\t');
+      break;
+    case '\012':
+      match = (c=='\n');
+      break;
+    case '\013':
+      match = IsInCharset(S->op_set,c);
+      break;
+    case '\014':
+      match = IsInCharset(S->ext_op_set,c) || IsInCharset(S->op_set,c);
+      break;
+    }
     if ((*s)&0x80) match=!match;
     if (!match) return 0;
     s++;
@@ -806,30 +884,33 @@ CHARSET_SUBSET MakeCharsetSubset(unsigned char *s)
     if (!((*s)&0x60)) { /* special sequences */
       if ((*s)&0x80) bug("negated special sequences not allowed in charset specifications");
       switch((*s)&0x1f) {
-        case '\002': case '\004':  /* \w, \W, \i, \o, \O not allowed */
-        case '\010': case '\013': case '\014':
-          bug("special sequence not allowed in charset specification");
-        case '\003':
-          AddToCharset(x,'\n');
-        case '\001':
-          AddToCharset(x,' ');
-        case '\011':
-          AddToCharset(x,'\t');
-          break;
-        case '\006':
-          AddToCharset(x,'\n');
-          AddToCharset(x,' ');
-          AddToCharset(x,'\t');
-        case '\005':
-          for (c='A';c<='Z';c++) AddToCharset(x,c);
-          for (c='a';c<='z';c++) AddToCharset(x,c);
-          break;
-        case '\007':
-          for (c='0';c<='9';c++) AddToCharset(x,c);
-          break;
-        case '\012':
-          AddToCharset(x,'\n');
-          break;
+      case '\002':  /* \w, \W, \i, \o, \O not allowed */
+      case '\004':
+      case '\010':
+      case '\013':
+      case '\014':
+	bug("special sequence not allowed in charset specification");
+      case '\003':
+	AddToCharset(x,'\n');
+      case '\001':
+	AddToCharset(x,' ');
+      case '\011':
+	AddToCharset(x,'\t');
+	break;
+      case '\006':
+	AddToCharset(x,'\n');
+	AddToCharset(x,' ');
+	AddToCharset(x,'\t');
+      case '\005':
+	for (c='A';c<='Z';c++) AddToCharset(x,c);
+	for (c='a';c<='z';c++) AddToCharset(x,c);
+	break;
+      case '\007':
+	for (c='0';c<='9';c++) AddToCharset(x,c);
+	break;
+      case '\012':
+	AddToCharset(x,'\n');
+	break;
       }
     }
     else if ((s[1]=='-')&&((s[2]&0x60)!=0)&&(s[2]>=*s)) {
@@ -982,27 +1063,36 @@ void initthings(int argc,char **argv)
       strcat(include_directive_marker,"\n");
       continue;
     }
+
+    if (strcmp(*arg, "-warninglevel") == 0) {
+      arg++;
+      WarningLevel = atoi(*arg);
+      continue;
+    }
+
     if (**arg=='+') {
       switch((*arg)[1]) {
-        case 'c':
-            s=(*arg)+2;
-            if (*s==0) s="ccc";
-            if (!(*(++arg))) usage();
-            if (!(*(++arg))) usage();
-            add_comment(S,s,strnl(*(arg-1)),strnl(*arg),0,0);
-            break;
-        case 's':
-            s=(*arg)+2;
-            if (*s==0) s="sss";
-            if (!(*(++arg))) usage();
-            if (!(*(++arg))) usage();
-            if (!(*(++arg))) usage();
-            add_comment(S,s,strnl(*(arg-2)),strnl(*(arg-1)),**arg,0);
-            break;
-        case 'z': 
-            dosmode=0;
-            break;
-        default: ishelp=1;
+      case 'c':
+	s=(*arg)+2;
+	if (*s==0) s="ccc";
+	if (!(*(++arg)))
+	  usage();
+	if (!(*(++arg)))
+	  usage();
+	add_comment(S,s,strnl(*(arg-1)),strnl(*arg),0,0);
+	break;
+      case 's':
+	s=(*arg)+2;
+	if (*s==0) s="sss";
+	if (!(*(++arg))) usage();
+	if (!(*(++arg))) usage();
+	if (!(*(++arg))) usage();
+	add_comment(S,s,strnl(*(arg-2)),strnl(*(arg-1)),**arg,0);
+	break;
+      case 'z': 
+	dosmode=0;
+	break;
+      default: ishelp=1;
       }
     }
     else if (**arg!='-') {
@@ -1012,69 +1102,94 @@ void initthings(int argc,char **argv)
       if (C->in==NULL) bug("Cannot open input file");
     }
     else switch((*arg)[1]) {
-      case 'I': if (nincludedirs==MAXINCL) 
-                   bug("too many include directories");
-                if ((*arg)[2]==0) {
-                  if (!(*(++arg))) usage();
-                  includedir[nincludedirs++]=strdup(*arg);
-                }
-                else includedir[nincludedirs++]=strdup((*arg)+2);
-                break;
-      case 'C': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                S->User=KUser; S->Meta=KMeta;
-                S->preservelf=1;
-                add_comment(S,"ccc",strdup("/*"),strdup("*/"),0,0);
-                add_comment(S,"ccc",strdup("//"),strdup("\n"),0,0);
-                add_comment(S,"ccc",strdup("\\\n"),strdup(""),0,0);
-                add_comment(S,"sss",strdup("\""),strdup("\""),'\\','\n');
-                add_comment(S,"sss",strdup("'"),strdup("'"),'\\','\n');
-                break;
-      case 'P': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                S->User=KUser; S->Meta=KMeta;
-                S->preservelf=1;
-                S->op_set=PrologOp;
-                add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
-                add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
-                add_comment(S,"css",strdup("%"),strdup("\n"),0,0);
-                add_comment(S,"sss",strdup("\""),strdup("\""),0,'\n');
-                add_comment(S,"sss",strdup("\207'"),strdup("'"),0,'\n'); /* \!# */
-                break;
-      case 'T': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                S->User=S->Meta=Tex;
-                break;
-      case 'H': ishelp|=ismode|hasmeta|usrmode; ismode=1;
-                S->User=S->Meta=Html;
-                break;
-      case 'U': ishelp|=ismode|usrmode; usrmode=1;
-                if (!readModeDescription(arg,&(S->User),0)) usage();
-                arg+=9;
-                if (!hasmeta) S->Meta=S->User;
-                break;
-      case 'M': ishelp|=ismode|hasmeta; hasmeta=1;
-                if (!readModeDescription(arg,&(S->Meta),1)) usage();
-                arg+=7;
-                break;
-      case 'O': file_and_stdout = 1;
-      case 'o': if (!(*(++arg))) usage();
-                ishelp|=isoutput; isoutput=1;
-                C->out->f=fopen(*arg,"w");
-                if (C->out->f==NULL) bug("Cannot create output file");
-                break;
-      case 'D': if ((*arg)[2]==0) {
-                  if (!(*(++arg))) usage();
-                  s=strnl0(*arg);
-                }
-                else s=strnl0((*arg)+2);
-                parseCmdlineDefine(s); free(s); break;
-      case 'x': execallowed=1; break;
-      case 'n': S->preservelf=1; break;
-      case 'z': dosmode=1; break;
-      case 'c': case 's':
-                if (!(*(++arg))) usage();
-                delete_comment(S,strnl(*arg));
-                break;
-      case 'm': autoswitch=1; break;
-      default:  ishelp=1;
+    case 'I':
+      if (nincludedirs==MAXINCL) 
+	bug("too many include directories");
+      if ((*arg)[2]==0) {
+	if (!(*(++arg)))
+	  usage();
+	includedir[nincludedirs++]=strdup(*arg);
+      }
+      else includedir[nincludedirs++]=strdup((*arg)+2);
+      break;
+    case 'C':
+      ishelp|=ismode|hasmeta|usrmode; ismode=1;
+      S->User=KUser; S->Meta=KMeta;
+      S->preservelf=1;
+      add_comment(S,"ccc",strdup("/*"),strdup("*/"),0,0);
+      add_comment(S,"ccc",strdup("//"),strdup("\n"),0,0);
+      add_comment(S,"ccc",strdup("\\\n"),strdup(""),0,0);
+      add_comment(S,"sss",strdup("\""),strdup("\""),'\\','\n');
+      add_comment(S,"sss",strdup("'"),strdup("'"),'\\','\n');
+      break;
+    case 'P':
+      ishelp|=ismode|hasmeta|usrmode; ismode=1;
+      S->User=KUser; S->Meta=KMeta;
+      S->preservelf=1;
+      S->op_set=PrologOp;
+      add_comment(S,"css",strdup("\213/*"),strdup("*/"),0,0); /* \!o */
+      add_comment(S,"cii",strdup("\\\n"),strdup(""),0,0);
+      add_comment(S,"css",strdup("%"),strdup("\n"),0,0);
+      add_comment(S,"sss",strdup("\""),strdup("\""),0,'\n');
+      add_comment(S,"sss",strdup("\207'"),strdup("'"),0,'\n'); /* \!# */
+      break;
+    case 'T':
+      ishelp|=ismode|hasmeta|usrmode; ismode=1;
+      S->User=S->Meta=Tex;
+      break;
+    case 'H':
+      ishelp|=ismode|hasmeta|usrmode; ismode=1;
+      S->User=S->Meta=Html;
+      break;
+    case 'U':
+      ishelp|=ismode|usrmode; usrmode=1;
+      if (!readModeDescription(arg,&(S->User),0))
+	  usage();
+      arg+=9;
+      if (!hasmeta) S->Meta=S->User;
+      break;
+    case 'M':
+      ishelp|=ismode|hasmeta; hasmeta=1;
+      if (!readModeDescription(arg,&(S->Meta),1))
+	  usage();
+      arg+=7;
+      break;
+    case 'O':
+      file_and_stdout = 1;
+    case 'o':
+      if (!(*(++arg)))
+	  usage();
+      ishelp|=isoutput; isoutput=1;
+      C->out->f=fopen(*arg,"w");
+      if (C->out->f==NULL) bug("Cannot create output file");
+      break;
+    case 'D':
+      if ((*arg)[2]==0) {
+	if (!(*(++arg)))
+	  usage();
+	s=strnl0(*arg);
+      }
+      else s=strnl0((*arg)+2);
+      parseCmdlineDefine(s); free(s); break;
+    case 'x':
+      execallowed=1;
+      break;
+    case 'n':
+      S->preservelf=1;
+      break;
+    case 'z':
+      dosmode=1;
+      break;
+    case 'c':
+    case 's':
+      if (!(*(++arg)))
+	  usage();
+      delete_comment(S,strnl(*arg));
+      break;
+    case 'm':
+      autoswitch=1; break;
+    default:
+      ishelp=1;
     }
     if (hasmeta&&!usrmode) usage();
     if (ishelp) usage();
@@ -1102,7 +1217,11 @@ int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
     c=getChar(pos);
     i=pos;
     if (c==0) bug("Input ended while scanning a comment/string");
-    if (c==warn) { warn=0; warning("possible comment/string termination problem"); }
+    if (c==warn) {
+      warn=0;
+      if (WarningLevel > 1)
+	warning("possible comment/string termination problem");
+    }
     if (matchSequence(endseq,&i)) return pos;
     if (c==quote) pos+=2;
     else if ((flags&PARSE_MACROS)&&(c==S->User.quotechar)) pos+=2;
@@ -1143,7 +1262,8 @@ void SkipPossibleComments(int *pos,int cmtmode,int silentonly)
 */
 
 int SplicePossibleUser(int *idstart,int *idend,int *sh_end,int *lg_end,
-         int *argb,int *arge,int *argc,int idcheck,int *id,int cmtmode)
+		       int *argb,int *arge,int *argc,int idcheck,
+		       int *id,int cmtmode)
 {
   int match,k,pos;
 
@@ -1209,18 +1329,16 @@ int findMetaArgs(int start,int *p1b,int *p1e,int *p2b,int *p2e,int *endm,int *ar
 
   /* special syntax for #define : 1st arg is a macro call */
   if ((*argc)&&SplicePossibleUser(&pos,p1e,&hyp_end1,&hyp_end2,
-                                  argb,arge,argc,0,NULL,FLAG_META))
-  {
+                                  argb,arge,argc,0,NULL,FLAG_META)) {
     *p1b=pos;
     if (hyp_end2>=0) pos=hyp_end2; else { pos=hyp_end1; *argc=0; }
     if (!matchSequence(S->Meta.mArgSep,&pos)) {
       if (!matchEndSequence(S->Meta.mArgE,&pos))
-        bug("#define/#defeval requires an identifier or a single macro call");
+	bug("#define/#defeval requires an identifier or a single macro call");
       *endm=pos;
       return 1;
     }
-  }
-  else {
+  } else {
     *argc=0;
     k=0;
     while(1) { /* look for mArgE, mArgSep, or comment-start */
@@ -1362,8 +1480,8 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
 
   if (SpliceInfix(buf,pos1,pos2,"!=",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
-        !DoArithmEval(buf,spl2,pos2,&result2))
-    { /* revert to string comparison */
+        !DoArithmEval(buf,spl2,pos2,&result2)) {
+      /* revert to string comparison */
       while ((pos1<spl1)&&iswhite(buf[spl1-1])) spl1--;
       while ((pos2>spl2)&&iswhite(buf[spl2])) spl2++;
       if (spl1-pos1!=pos2-spl2) *result=1;
@@ -1375,8 +1493,8 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
   
   if (SpliceInfix(buf,pos1,pos2,"==",&spl1,&spl2)) {
     if (!DoArithmEval(buf,pos1,spl1,&result1)||
-        !DoArithmEval(buf,spl2,pos2,&result2))
-    { /* revert to string comparison */
+        !DoArithmEval(buf,spl2,pos2,&result2)) {
+      /* revert to string comparison */
       while ((pos1<spl1)&&iswhite(buf[spl1-1])) spl1--;
       while ((pos2>spl2)&&iswhite(buf[spl2])) spl2++;
       if (spl1-pos1!=pos2-spl2) *result=0;
@@ -1622,7 +1740,7 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
   if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
     bug("invalid #mode syntax");
   if (p2start<0) s=strdup("");
-    else s=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+  else s=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
 
   /* argument parsing */
   p=s; opt=NULL;
@@ -1665,14 +1783,14 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
     add_comment(S->stack_next,opt,strdup(args[0]),strdup(args[1]),args[2][0],args[3][0]);
   }
   else if (idequal(C->buf+p1start,p1end-p1start,"save")
-         ||idequal(C->buf+p1start,p1end-p1start,"push")) {
+	   ||idequal(C->buf+p1start,p1end-p1start,"push")) {
     if ((opt!=NULL)||nargs) bug("too many arguments to #mode save");
     P=CloneSpecs(S->stack_next);
     P->stack_next=S->stack_next;
     S->stack_next=P;
   }
   else if (idequal(C->buf+p1start,p1end-p1start,"restore")
-         ||idequal(C->buf+p1start,p1end-p1start,"pop")) {
+	   ||idequal(C->buf+p1start,p1end-p1start,"pop")) {
     if ((opt!=NULL)||nargs) bug("too many arguments to #mode restore");
     P=S->stack_next->stack_next;
     if (P==NULL) bug("#mode restore without #mode save");
@@ -1717,8 +1835,9 @@ void ProcessModeCommand(int p1start,int p1end,int p2start,int p2end)
     else bug("#mode preservelf requires on/off argument");
   }
   else if (idequal(C->buf+p1start,p1end-p1start,"nocomment")
-         ||idequal(C->buf+p1start,p1end-p1start,"nostring")) {
-    if ((opt!=NULL)||(nargs>1)) bug("syntax error in #mode nocomment/nostring");
+	   ||idequal(C->buf+p1start,p1end-p1start,"nostring")) {
+    if ((opt!=NULL)||(nargs>1))
+      bug("syntax error in #mode nocomment/nostring");
     if (nargs==0) FreeComments(S->stack_next);
     else delete_comment(S->stack_next,strdup(args[0]));
   }
@@ -1752,33 +1871,33 @@ int ParsePossibleMeta()
   id=0;
   argc=0; /* for #define with named args */
   if (idequal(C->buf+cklen,nameend-cklen,"define"))      /* check identifier */
-   { id=1; expparams=2; argc=1; }
+    { id=1; expparams=2; argc=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"undef"))
-   { id=2; expparams=1; }
+    { id=2; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"ifdef"))
-   { id=3; expparams=1; }
+    { id=3; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"ifndef"))
-   { id=4; expparams=1; }
+    { id=4; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"else"))
-   { id=5; expparams=0; }
+    { id=5; expparams=0; }
   else if (idequal(C->buf+cklen,nameend-cklen,"endif"))
-   { id=6; expparams=0; }
+    { id=6; expparams=0; }
   else if (idequal(C->buf+cklen,nameend-cklen,"include"))
-   { id=7; expparams=1; }
+    { id=7; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"exec"))
-   { id=8; expparams=1; }
+    { id=8; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"defeval"))
-   { id=9; expparams=2; argc=1; }
+    { id=9; expparams=2; argc=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"ifeq"))
-   { id=10; expparams=2; }
+    { id=10; expparams=2; }
   else if (idequal(C->buf+cklen,nameend-cklen,"ifneq"))
-   { id=11; expparams=2; }
+    { id=11; expparams=2; }
   else if (idequal(C->buf+cklen,nameend-cklen,"eval"))
-   { id=12; expparams=1; }
+    { id=12; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"if"))
-   { id=13; expparams=1; }
+    { id=13; expparams=1; }
   else if (idequal(C->buf+cklen,nameend-cklen,"mode"))
-   { id=14; expparams=2; }
+    { id=14; expparams=2; }
   else return -1;
 
   /* #MODE magic : define "..." to be C-style strings */
@@ -1799,8 +1918,8 @@ int ParsePossibleMeta()
   if (expparams&&!nparam) bug("Missing argument in meta-macro");
 
   switch(id) {
-    case 1: /* DEFINE */
-     if (!commented[iflevel]) {
+  case 1: /* DEFINE */
+    if (!commented[iflevel]) {
       whiteout(&p1start,&p1end); /* recall comments are not allowed here */
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end)) 
         bug("#define requires an identifier (A-Z,a-z,0-9,_ only)");
@@ -1830,194 +1949,196 @@ int ParsePossibleMeta()
         macros[nmacros].argnames[j][arge[j]-argb[j]]=0;
       }
       lookupArgRefs(nmacros++);
-     }
-     break;
+    } else
+      replace_directive_with_blank_line(C->out->f);
+    break;
      
-    case 2: /* UNDEF */
-     replace_directive_with_blank_line(C->out->f);
-     if (!commented[iflevel]) {
-      if (nparam==2) warning("Extra argument to #undef ignored");
+  case 2: /* UNDEF */
+    replace_directive_with_blank_line(C->out->f);
+    if (!commented[iflevel]) {
+      if (nparam==2 && WarningLevel > 0)
+	warning("Extra argument to #undef ignored");
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
         bug("#undef requires an identifier (A-Z,a-z,0-9,_ only)");
       i=findIdent(C->buf+p1start,p1end-p1start);
       if (i>=0) delete_macro(i);
-     }
-     break;
+    }
+    break;
 
-    case 3: /* IFDEF */
-     iflevel++;
-     replace_directive_with_blank_line(C->out->f);
-     if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
-     commented[iflevel]=commented[iflevel-1];
+  case 3: /* IFDEF */
+    iflevel++;
+    replace_directive_with_blank_line(C->out->f);
+    if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
+    commented[iflevel]=commented[iflevel-1];
 
-     if (!commented[iflevel]) {
-      if (nparam==2) warning("Extra argument to #ifdef ignored");
+    if (!commented[iflevel]) {
+      if (nparam==2 && WarningLevel > 0)
+	warning("Extra argument to #ifdef ignored");
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
-        bug("#ifdef requires an identifier (A-Z,a-z,0-9,_ only)");
+	bug("#ifdef requires an identifier (A-Z,a-z,0-9,_ only)");
       i=findIdent(C->buf+p1start,p1end-p1start);
       commented[iflevel]=(i==-1);
-     }
-     break;
+    }
+    break;
 
-    case 4: /* IFNDEF */
-     iflevel++;
-     replace_directive_with_blank_line(C->out->f);
-     if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
-     commented[iflevel]=commented[iflevel-1];
-     if (!commented[iflevel]) {
-      if (nparam==2) warning("Extra argument to #ifndef ignored");
+  case 4: /* IFNDEF */
+    iflevel++;
+    replace_directive_with_blank_line(C->out->f);
+    if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
+    commented[iflevel]=commented[iflevel-1];
+    if (!commented[iflevel]) {
+      if (nparam==2 && WarningLevel > 0)
+	warning("Extra argument to #ifndef ignored");
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end))
         bug("#ifndef requires an identifier (A-Z,a-z,0-9,_ only)");
       i=findIdent(C->buf+p1start,p1end-p1start);
       commented[iflevel]=(i!=-1);
-     }
-     break;
+    }
+    break;
     
-    case 5: /* ELSE */
-     replace_directive_with_blank_line(C->out->f);
-     if (!commented[iflevel]&&(nparam>0))
-          warning("Extra argument to #else ignored");
-     if (iflevel==0) bug("#else without #if");
-     if (!commented[iflevel-1]) commented[iflevel]=!commented[iflevel];
-     break;
+  case 5: /* ELSE */
+    replace_directive_with_blank_line(C->out->f);
+    if (!commented[iflevel] && (nparam>0) && WarningLevel > 0)
+      warning("Extra argument to #else ignored");
+    if (iflevel==0) bug("#else without #if");
+    if (!commented[iflevel-1]) commented[iflevel]=!commented[iflevel];
+    break;
 
-    case 6: /* ENDIF */
-     replace_directive_with_blank_line(C->out->f);
-     if (!commented[iflevel]&&(nparam>0))
-          warning("Extra argument to #endif ignored");
-     if (iflevel==0) bug("#endif without #if");
-     iflevel--;
-     break;
+  case 6: /* ENDIF */
+    replace_directive_with_blank_line(C->out->f);
+    if (!commented[iflevel] && (nparam>0) && WarningLevel > 0)
+      warning("Extra argument to #endif ignored");
+    if (iflevel==0) bug("#endif without #if");
+    iflevel--;
+    break;
 
-    case 7: /* INCLUDE */
-     if (!commented[iflevel]) {
-       struct INPUTCONTEXT *N;
-       FILE *f = NULL;
-       char *incfile_name;
+  case 7: /* INCLUDE */
+    if (!commented[iflevel]) {
+      struct INPUTCONTEXT *N;
+      FILE *f = NULL;
+      char *incfile_name;
 
-       if (nparam==2) warning("Extra argument to #include ignored");
-       if (!whiteout(&p1start,&p1end)) bug("Missing file name in #include");
-       /* user may put "" or <> */
-       if (((getChar(p1start)=='\"')&&(getChar(p1end-1)=='\"'))||
-           ((getChar(p1start)=='<')&&(getChar(p1end-1)=='>')))
-         { p1start++; p1end--; }
-       if (p1start>=p1end) bug("Missing file name in #include");
-       incfile_name=malloc(p1end-p1start+1);
-       /* extract the orig include filename */
-       for (i=0;i<p1end-p1start;i++)
-	 incfile_name[i]=getChar(p1start+i);
-       incfile_name[p1end-p1start]=0;
+      if (nparam==2 && WarningLevel > 0)
+	warning("Extra argument to #include ignored");
+      if (!whiteout(&p1start,&p1end)) bug("Missing file name in #include");
+      /* user may put "" or <> */
+      if (((getChar(p1start)=='\"')&&(getChar(p1end-1)=='\"'))||
+	  ((getChar(p1start)=='<')&&(getChar(p1end-1)=='>')))
+	{ p1start++; p1end--; }
+      if (p1start>=p1end) bug("Missing file name in #include");
+      incfile_name=malloc(p1end-p1start+1);
+      /* extract the orig include filename */
+      for (i=0;i<p1end-p1start;i++)
+	incfile_name[i]=getChar(p1start+i);
+      incfile_name[p1end-p1start]=0;
 
-       /* if absolute path name is specified */
-       if (incfile_name[0]==SLASH
+      /* if absolute path name is specified */
+      if (incfile_name[0]==SLASH
 #ifdef WIN_NT
-	   || (isalpha(incfile_name[0]) && incfile_name[1]==':')
+	  || (isalpha(incfile_name[0]) && incfile_name[1]==':')
 #endif
-	   )
-	 f=fopen(incfile_name,"r");
-       else /* search current dir, if this search isn't turned off */
-	 if (!NoCurIncFirst) {
-	   f = openInCurrentDir(incfile_name);
-	 }
+	  )
+	f=fopen(incfile_name,"r");
+      else /* search current dir, if this search isn't turned off */
+	if (!NoCurIncFirst) {
+	  f = openInCurrentDir(incfile_name);
+	}
        
-       for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
-         incfile_name =
-	   realloc(incfile_name,p1end-p1start+strlen(includedir[j])+2);
-         strcpy(incfile_name,includedir[j]);
-         incfile_name[strlen(includedir[j])]=SLASH;
-	 /* extract the orig include filename */
-         for (i=0;i<p1end-p1start;i++) 
-           incfile_name[strlen(includedir[j])+1+i]=getChar(p1start+i);
-         incfile_name[p1end-p1start+strlen(includedir[j])+1]=0;
-         f=fopen(incfile_name,"r");
-       }
+      for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
+	incfile_name =
+	  realloc(incfile_name,p1end-p1start+strlen(includedir[j])+2);
+	strcpy(incfile_name,includedir[j]);
+	incfile_name[strlen(includedir[j])]=SLASH;
+	/* extract the orig include filename */
+	for (i=0;i<p1end-p1start;i++) 
+	  incfile_name[strlen(includedir[j])+1+i]=getChar(p1start+i);
+	incfile_name[p1end-p1start+strlen(includedir[j])+1]=0;
+	f=fopen(incfile_name,"r");
+      }
 
-       /* If didn't find the file and "." is said to be searched last */
-       if (f==NULL && CurDirIncLast) {
-	 incfile_name=realloc(incfile_name,p1end-p1start+1);
-	 /* extract the orig include filename */
-	 for (i=0;i<p1end-p1start;i++) 
-           incfile_name[i]=getChar(p1start+i);
-	 incfile_name[p1end-p1start]=0;
-	 f = openInCurrentDir(incfile_name);
-       }
+      /* If didn't find the file and "." is said to be searched last */
+      if (f==NULL && CurDirIncLast) {
+	incfile_name=realloc(incfile_name,p1end-p1start+1);
+	/* extract the orig include filename */
+	for (i=0;i<p1end-p1start;i++) 
+	  incfile_name[i]=getChar(p1start+i);
+	incfile_name[p1end-p1start]=0;
+	f = openInCurrentDir(incfile_name);
+      }
 
-       if (f==NULL)
-	 bug("Requested include file not found");
+      if (f==NULL)
+	bug("Requested include file not found");
 
-       N=C;
-       C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
-       C->in=f;
-       C->argc=0;
-       C->argv=NULL;
-       C->filename=incfile_name;
-       C->out=N->out;
-       C->lineno=0;
-       C->bufsize=80;
-       C->len=0;
-       C->buf=C->malloced_buf=malloc(C->bufsize);
-       C->eof=0;
-       C->namedargs=NULL;
-       C->in_comment=0;
-       C->ambience=FLAG_TEXT;
-       PushSpecs(S);
-       if (autoswitch) {
-         if (!strcmp(incfile_name+strlen(incfile_name)-2,".h")
-	     || !strcmp(incfile_name+strlen(incfile_name)-2,".c"))
-           SetStandardMode(S,"C");
-       }
-       if (include_directive_marker != NULL) {
-	 fprintf(N->out->f,
-		 include_directive_marker,
-		 1, C->filename, "1");
-       }
-       ProcessContext();
-       if (include_directive_marker != NULL) {
-	 fprintf(N->out->f,
-		 include_directive_marker,
-		 N->lineno, N->filename, "2");
-	 /* Need to leave the blank line in lieu of #include, like cpp does */
-	 replace_directive_with_blank_line(N->out->f);
-       }
-       free(C);
-       PopSpecs();
-       C=N;
-     }
-     break;
+      N=C;
+      C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
+      C->in=f;
+      C->argc=0;
+      C->argv=NULL;
+      C->filename=incfile_name;
+      C->out=N->out;
+      C->lineno=0;
+      C->bufsize=80;
+      C->len=0;
+      C->buf=C->malloced_buf=malloc(C->bufsize);
+      C->eof=0;
+      C->namedargs=NULL;
+      C->in_comment=0;
+      C->ambience=FLAG_TEXT;
+      PushSpecs(S);
+      if (autoswitch) {
+	if (!strcmp(incfile_name+strlen(incfile_name)-2,".h")
+	    || !strcmp(incfile_name+strlen(incfile_name)-2,".c"))
+	  SetStandardMode(S,"C");
+      }
 
-    case 8: /* EXEC */
-     if (!commented[iflevel]) {
-       if (!execallowed)
-         warning("Not allowed to #exec. Command output will be left blank");
-       else {
-         char *s,*t;
-         int c;
-         FILE *f;
-         s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
-         if (nparam==2) {
-           t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
-           i=strlen(s);
-           s=realloc(s,i+strlen(t)+2);
-           s[i]=' ';
-           strcpy(s+i+1,t);
-           free(t);
-         }
-         f=popen(s,"r");
-         free(s);
-         if (f==NULL) warning("Cannot #exec. Command not found ?");
-         else {
-           while ((c=fgetc(f)) != EOF) outchar((char)c);
-           pclose(f);
-         }
-       }
-     }
-     break;
+      /* Include marker before the included contents */
+      write_include_marker(N->out->f, 1, C->filename, "1");
+      ProcessContext();
+      /* Include marker after the included contents */
+      write_include_marker(N->out->f, N->lineno, N->filename, "2");
 
-    case 9: /* DEFEVAL */
-     if (!commented[iflevel]) {
+      /* Need to leave the blank line in lieu of #include, like cpp does */
+      replace_directive_with_blank_line(N->out->f);
+      free(C);
+      PopSpecs();
+      C=N;
+    } else
+      replace_directive_with_blank_line(C->out->f);
+    break;
+
+  case 8: /* EXEC */
+    if (!commented[iflevel]) {
+      if (!execallowed)
+	warning("Not allowed to #exec. Command output will be left blank");
+      else {
+	char *s,*t;
+	int c;
+	FILE *f;
+	s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
+	if (nparam==2) {
+	  t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
+	  i=strlen(s);
+	  s=realloc(s,i+strlen(t)+2);
+	  s[i]=' ';
+	  strcpy(s+i+1,t);
+	  free(t);
+	}
+	f=popen(s,"r");
+	free(s);
+	if (f==NULL) warning("Cannot #exec. Command not found ?");
+	else {
+	  while ((c=fgetc(f)) != EOF) outchar((char)c);
+	  pclose(f);
+	}
+      }
+    }
+    break;
+
+  case 9: /* DEFEVAL */
+    if (!commented[iflevel]) {
       whiteout(&p1start,&p1end);
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end)) 
         bug("#defeval requires an identifier (A-Z,a-z,0-9,_ only)");
@@ -2047,72 +2168,73 @@ int ParsePossibleMeta()
         macros[nmacros].argnames[j][arge[j]-argb[j]]=0;
       }
       lookupArgRefs(nmacros++);
-     }
-     break;
+    } else
+      replace_directive_with_blank_line(C->out->f);
+    break;
      
-    case 10: /* IFEQ */
-     iflevel++;
-     replace_directive_with_blank_line(C->out->f);
-     if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
-     commented[iflevel]=commented[iflevel-1];
-     if (!commented[iflevel]) {
+  case 10: /* IFEQ */
+    iflevel++;
+    replace_directive_with_blank_line(C->out->f);
+    if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
+    commented[iflevel]=commented[iflevel-1];
+    if (!commented[iflevel]) {
       char *s,*t;
       if (nparam!=2) bug("#ifeq requires two arguments");
       s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
       t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
       commented[iflevel]=(nowhite_strcmp(s,t)!=0);
       free(s); free(t);
-     }
-     break;
+    }
+    break;
 
-    case 11: /* IFNEQ */
-     iflevel++;
-     replace_directive_with_blank_line(C->out->f);
-     if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
-     commented[iflevel]=commented[iflevel-1];
-     if (!commented[iflevel]) {
+  case 11: /* IFNEQ */
+    iflevel++;
+    replace_directive_with_blank_line(C->out->f);
+    if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
+    commented[iflevel]=commented[iflevel-1];
+    if (!commented[iflevel]) {
       char *s,*t;
       if (nparam!=2) bug("#ifneq requires two arguments");
       s=ProcessText(C->buf+p1start,p1end-p1start,FLAG_META);
       t=ProcessText(C->buf+p2start,p2end-p2start,FLAG_META);
       commented[iflevel]=(nowhite_strcmp(s,t)==0);
       free(s); free(t);
-     }
-     break;
+    }
+    break;
 
-    case 12: /* EVAL */
-     if (!commented[iflevel]) {
-       char *s,*t;
-       if (nparam==2) p1end=p2end; /* we really want it all ! */
-       s=ArithmEval(p1start,p1end);
-       for (t=s;*t;t++) outchar(*t);
-       free(s);
-     }
-     break;
+  case 12: /* EVAL */
+    if (!commented[iflevel]) {
+      char *s,*t;
+      if (nparam==2) p1end=p2end; /* we really want it all ! */
+      s=ArithmEval(p1start,p1end);
+      for (t=s;*t;t++) outchar(*t);
+      free(s);
+    }
+    break;
 
-    case 13: /* IF */
-     iflevel++;
-     replace_directive_with_blank_line(C->out->f);
-     if (iflevel==STACKDEPTH) bug("Too many nested #ifs");
-     commented[iflevel]=commented[iflevel-1];
-     if (!commented[iflevel]) {
-       char *s;
-       if (nparam==2) p1end=p2end; /* we really want it all ! */
-       s=ArithmEval(p1start,p1end);
-       commented[iflevel]=((s[0]=='0')&&(s[1]==0));
-       free(s);
-     }
-     break;
+  case 13: /* IF */
+    iflevel++;
+    replace_directive_with_blank_line(C->out->f);
+    if (iflevel==STACKDEPTH) bug("Too many nested #ifs");
+    commented[iflevel]=commented[iflevel-1];
+    if (!commented[iflevel]) {
+      char *s;
+      if (nparam==2) p1end=p2end; /* we really want it all ! */
+      s=ArithmEval(p1start,p1end);
+      commented[iflevel]=((s[0]=='0')&&(s[1]==0));
+      free(s);
+    }
+    break;
 
-    case 14: /* MODE */
-     replace_directive_with_blank_line(C->out->f);
-     if (nparam==1) p2start=-1;
-     if (!commented[iflevel])
-       ProcessModeCommand(p1start,p1end,p2start,p2end);
-     PopSpecs();
-     break;
+  case 14: /* MODE */
+    replace_directive_with_blank_line(C->out->f);
+    if (nparam==1) p2start=-1;
+    if (!commented[iflevel])
+      ProcessModeCommand(p1start,p1end,p2start,p2end);
+    PopSpecs();
+    break;
      
-    default: bug("Internal meta-macro identification error");
+  default: bug("Internal meta-macro identification error");
   }
   shiftIn(macend);
   return 0;
@@ -2309,30 +2431,39 @@ static FILE *openInCurrentDir(char *incfile)
 
 void replace_definition_with_blank_lines(char *start, char *end)
 {
-  while (start <= end) {
-    if (*start == '\n')
-      fprintf(C->out->f,"\n");
-    start++;
+  if (include_directive_marker != NULL) {
+    while (start <= end) {
+      if (*start == '\n')
+	fprintf(C->out->f,"\n");
+      start++;
+    }
   }
 }
 
-/* insert blank line where IFDEF,ELSE,INCLUDE, and similar stood in the inout
-   text
+/* insert blank line where the metas IFDEF,ELSE,INCLUDE, etc., stood in the
+   input text
 */
 void replace_directive_with_blank_line(FILE *f)
 {
-  fprintf(f,"\n");
+  if (include_directive_marker != NULL) {
+    fprintf(f,"\n");
+  }
+}
+
+
+void write_include_marker(FILE *f, int lineno, char *filename, char *marker)
+{
+  if (include_directive_marker != NULL) {
+    fprintf(f, include_directive_marker, lineno, filename, marker);
+  }
 }
 
 
 int main(int argc,char **argv)
 {
   initthings(argc,argv); 
-  if (include_directive_marker != NULL) {
-    fprintf(C->out->f,
-	    include_directive_marker, 
-	    1, C->filename, "");
-  }
+  /* The include marker at the top of the file */
+  write_include_marker(C->out->f, 1, C->filename, "");
   ProcessContext();
   fclose(C->out->f);
   return 0;
