@@ -247,6 +247,7 @@ void constructString(Cell addr, int ivstr)
   int val;
   static char *charstr = "x";
 
+ constructStringBegin:
   XSB_Deref(addr);
   switch (cell_tag(addr)) {
   case XSB_FREE:
@@ -257,13 +258,13 @@ void constructString(Cell addr, int ivstr)
   case XSB_STRUCT:  
     if (get_str_psc(addr) == comma_psc) {
       constructString(cell(clref_val(addr)+1),ivstr);
-      constructString(cell(clref_val(addr)+2),ivstr);
-      return;
+      addr = cell(clref_val(addr)+2);  /* tail recursion opt */
+      goto constructStringBegin;
     } else xsb_abort("PTOC_LONGSTRING: Argument of unknown type");
   case XSB_LIST:
     constructString(cell(clref_val(addr)),ivstr);
-    constructString(cell(clref_val(addr)+1),ivstr);
-    return;
+    addr = cell(clref_val(addr)+1);  /* tail recursion opt */
+    goto constructStringBegin;
   case XSB_INT: 
     val = int_val(addr);
     if (val < 256 && val >= 0) {
