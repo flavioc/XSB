@@ -9,6 +9,36 @@
 
 <hr>
 <center>
+<h1> Release Notes for Version 2.1</h1></center>
+
+<h3> General</h3>
+
+<h3>News</h3>
+
+<p>
+<b>Process management API:</b> XSb can now spawn subprocesses and capture their
+standard I/O into XSB streams. This allows XSB to communicate with other
+processes. See <a href="manual/manual2.pdf">XSB Manual, Voulume2, Communication
+with Subprocesses.</a>
+
+<p>
+<B>Enhancements to the sockets interface:</B>
+New calls such as <tt>socket_set_option</tt>, etc.
+
+<h3>New Packages</h3>
+
+<h3> Backward Incompatibility</h3>
+<p>
+<ul>
+<li>
+  <tt>unix/1</tt> is now called <tt>shell/1</tt>. It exists in module
+  <tt>shell</tt>, and is imported from there automatically.
+</ul>
+
+<hr>
+<p>
+
+<center>
 <h1> Release Notes for Version 2.0</h1></center>
 
 <h3> General</h3>
