@@ -171,7 +171,7 @@ bool fmt_write(void)
   struct fmt_spec *current_fmt_spec;
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
-  fptr = fileptr((int) ptoc_int(2));
+  SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term, "FMT_WRITE", "format string");
@@ -405,7 +405,7 @@ bool fmt_read(void)
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
   
-  fptr = fileptr((int) ptoc_int(2));
+  SET_FILEPTR(fptr, ptoc_int(2));
   Fmt_term = reg_term(3);
   if (is_list(Fmt_term))
     Fmt = p_charlist_to_c_string(Fmt_term, "FMT_READ", "format string");
@@ -565,9 +565,9 @@ static int getvarnum(char *varname)
 }
 
 
-/* read a canonical term from file desc in r1 and put answer in variable 
-in r2, r3 set to 0 if ground fact (non zero-ary), 1 if variable or :-.
-Fail on EOF */
+/* Read a canonical term from file desc in r1 and put answer in variable in r2;
+   r3 set to 0 if ground fact (non zero-ary), to 1 if variable or :-. 
+   Fail on EOF */ 
 
 int read_canonical(void)
 {
@@ -615,7 +615,7 @@ int read_canonical(void)
     filep = NULL;
   } else {
     instr = NULL;
-    filep = fileptr(tempfp);
+    SET_FILEPTR(filep, tempfp);
   }
 
   prevchar = 10;

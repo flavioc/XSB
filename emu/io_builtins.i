@@ -33,6 +33,7 @@ static struct stat stat_buff;
 extern int    fileno(FILE *);	        /* this is defined in POSIX */
 extern Cell   ptoc_tag(int);
 extern char   *expand_filename(char *filename);
+extern char *p_charlist_to_c_string (prolog_term, char *, char *);
 
 static FILE *stropen(char *str)
 {
@@ -108,26 +109,27 @@ bool file_stat(void)
 /* file_flish, file_pos, file_truncate, file_seek */
 inline bool file_function(void)
 {
-  static int file_des, value, size;
+  static int file_des, value, size, offset, length;
   static STRFILE *sfptr;
   static char buf[MAXBUFSIZE+1];
   static char *addr, *tmpstr;
-  Cell term;
+  static prolog_term pterm;
+  static Cell term;
 
   switch (ptoc_int(1)) {
   case FILE_FLUSH: /* file_function(0,+filedes,-ret,-dontcare, -dontcare) */
     /* ptoc_int(2) is file descriptor */
-    fptr = fileptr(ptoc_int(2));   
+    SET_FILEPTR(fptr, ptoc_int(2));   
     value = fflush(fptr);
     ctop_int(3, (int) value);
     break;
   case FILE_SEEK: /* file_function(1,+filedes, +offset, +place, -ret) */
-    fptr = fileptr(ptoc_int(2));
+    SET_FILEPTR(fptr, ptoc_int(2));
     value = fseek(fptr, (long) ptoc_int(3), ptoc_int(4));
     ctop_int(5, (int) value);
     break;
   case FILE_TRUNCATE: /* file_function(2,+filedes,+length,-ret,-dontcare) */
-    fptr = fileptr(ptoc_int(2));
+    SET_FILEPTR(fptr, ptoc_int(2));
     value = ftruncate( fileno(fptr), (off_t) ptoc_int(3));
     ctop_int(4, (int) value);
     break;
@@ -135,8 +137,9 @@ inline bool file_function(void)
     file_des = ptoc_int(2);  /* expand for reading from strings?? */
     term = ptoc_tag(3);
     if (file_des >= 0) {
-      if (isnonvar(term)) return ptoc_int(3) == ftell(fileptr(file_des));
-      else ctop_int(3, ftell(fileptr(file_des)));
+      SET_FILEPTR(fptr, file_des);
+      if (isnonvar(term)) return ptoc_int(3) == ftell(fptr);
+      else ctop_int(3, ftell(fptr));
     } else { /* reading from string */
       int offset;
       sfptr = strfileptr(file_des);
@@ -187,7 +190,8 @@ inline bool file_function(void)
     file_des = ptoc_int(2);
     if (file_des < 0) strclose(file_des);
     else {
-      fclose(fileptr(file_des));
+      SET_FILEPTR(fptr, file_des);
+      fclose(fptr);
       open_files[file_des] = NULL;
     }
     break;
@@ -196,22 +200,24 @@ inline bool file_function(void)
     if ((file_des < 0) && (file_des >= -MAXIOSTRS)) {
       sfptr = strfileptr(file_des);
       ctop_int(3, strgetc(sfptr));
+    } else {
+      SET_FILEPTR(fptr, file_des);
+      ctop_int(3, getc(fptr));
     }
-    else ctop_int(3, getc(fileptr(file_des)));
     break;
   case FILE_PUT:   /* file_function(7, +FileDes, +IntVal) */
     /* ptoc_int(2) is file descriptor */
-    fptr = fileptr(ptoc_int(2));
+    SET_FILEPTR(fptr, ptoc_int(2));
     /* ptoc_int(3) is char to write */
     putc(ptoc_int(3), fptr);
 #ifdef WIN_NT
-    if (file_des==2 && ch==10) fflush(fptr); /* hack for Java interface */
+    if (file_des==2 && ch=='\n') fflush(fptr); /* hack for Java interface */
 #endif
     break;
   case FILE_GETBUF:
-    /* file_function(8, +FileDes, +ByteCount (int), -String)
+    /* file_function(8, +FileDes, +ByteCount (int), -String, -BytesRead)
        Read ByteCount bytes from FileDes into String starting 
-       at position Offset	      */
+       at position Offset. Doesn't intern string.	      */
     size = ptoc_int(3);
     if (size > MAXBUFSIZE) {
       size = MAXBUFSIZE;
@@ -219,33 +225,64 @@ inline bool file_function(void)
 	       size, MAXBUFSIZE);
     }
 
-    fread(buf, 1, size, fileptr(ptoc_int(2)));
+    SET_FILEPTR(fptr, ptoc_int(2));
+    value = fread(buf, 1, size, fptr);
     *(buf+size) = '\0';
     ctop_string(4, buf);
+    ctop_int(5, value);
     break;
   case FILE_PUTBUF:
-    /* file_function(9, +FileDes, +ByteCount (int), +String, +Offset) */
+    /* file_function(9, +FileDes, +ByteCount (int), +String, +Offset,
+			-BytesWritten) */
     /* Write ByteCount bytes into FileDes from String beginning with Offset in
        that string	      */
-    addr = ptoc_string(4);
-    /* ptoc_int(5) is Offset */
-    fwrite(addr+ptoc_int(5), 1, ptoc_int(3), fileptr(ptoc_int(2)));
+    pterm = reg_term(4);
+    if (is_list(pterm))
+      addr = p_charlist_to_c_string(pterm, "FILE_WRITE_LINE", "input string");
+    else if (is_string(pterm))
+      addr = string_val(pterm);
+    else
+      xsb_abort("FILE_PUTBUF: Output argument must be an atom or a character list");
+    size = ptoc_int(3);
+    offset = ptoc_int(5);
+    length = strlen(addr);
+    size = ( size < length - offset ? size : length - offset);
+    SET_FILEPTR(fptr, ptoc_int(2));
+    value = fwrite(addr+offset, 1, size, fptr);
+    ctop_int(6, value);
     break;
   case FILE_READ_LINE:
     /* Works like fgets(buf, size, stdin). Fails on reaching the end of file
     ** Invoke: file_function(FILE_READ_LINE, +File, -Str, -IsFullLine). Returns
     ** the string read and an indicator (IsFullLine = 1 or 0) of whether the
-    ** string read is a full line. 
+    ** string read is a full line. Doesn't intern string.
     ** Prolog invocation: file_read_line(10, +File, -Str, -IsFullLine) */
-    if (fgets(buf, MAXBUFSIZE, fileptr(ptoc_int(2))) == NULL) {
+    SET_FILEPTR(fptr, ptoc_int(2));
+    if (fgets(buf, MAXBUFSIZE, fptr) == NULL) {
       return FALSE;
     } else {
-      ctop_string(3, string_find(buf,1));
+      ctop_string(3, buf);
       if (buf[(strlen(buf)-1)] == '\n')
 	ctop_int(4, 1);
       else ctop_int(4, 0);
       return TRUE;
     }
+    /* Like FILE_PUTBUF, but ByteCount=Line length. Also, takes atoms and lists
+       of characters: file_function(11, +FileDes, +String, +Offset) */
+  case FILE_WRITE_LINE:
+    pterm = reg_term(3);
+    if (is_list(pterm))
+      addr = p_charlist_to_c_string(pterm, "FILE_WRITE_LINE", "input string");
+    else if (is_string(pterm))
+      addr = string_val(pterm);
+    else
+      xsb_abort("FILE_WRITE_LINE: Output argument must be an atom or a character list");
+    offset = ptoc_int(4);
+    size = strlen(addr)-offset;
+    SET_FILEPTR(fptr, ptoc_int(2));
+    fwrite(addr+offset, 1, size, fptr);
+    break;
+
   default:
     xsb_abort("Invalid file function request %d\n", ptoc_int(1));
   }

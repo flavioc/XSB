@@ -50,7 +50,7 @@
 #define UNDERFLOW	15 
 #define ZERO_DIVIDE	16 
 
-extern void xsb_exit(char *);
+extern void xsb_exit(char *, ...);
 extern void xsb_abort(char *, ...);
 extern void xsb_warn(char *, ...);
 extern void xsb_mesg(char *, ...);
@@ -59,9 +59,10 @@ extern void err_handle(int, int, char *, int, char *, Cell);
 #define err(d, a, f, ar)	err_handle(d, a, f, ar, NULL, (Cell)NULL)
 
 extern char *xsb_default_segfault_msg;
-extern char *xsb_segfault_message; /* put your segfault message here prior to
-				      executing the command that might segfault
-				   */ 
+extern char *xsb_segfault_message; /* Put your segfault message here prior to
+				      executing the command that might
+				      segfault. Then restore it to
+				      xsb_default_segfault_message */ 
 
 extern void (*xsb_default_segfault_handler)(int); /* where the previous value
 						     of the SIGSEGV handler is

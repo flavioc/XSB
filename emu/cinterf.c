@@ -45,6 +45,7 @@
 #include "subp.h"
 #include "emuloop.h"
 #include "cinterf.h"
+#include "xsberror.h"
 #include "self_orientation.h"
 
 /* the following really belongs somewhere else */
@@ -114,7 +115,7 @@ DllExport bool call_conv c2p_int(Integer val, prolog_term var)
 	bind_int(vptr(v), val);
 	return TRUE;
     } else {
-	fprintf(stderr,"Non-variable in c2p_*\n");
+	xsb_warn("C2P_INT: Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -126,7 +127,7 @@ DllExport bool call_conv c2p_float(double val, prolog_term var)
 	bind_float(vptr(v), (Float)(val));
 	return TRUE;
     } else {
-	fprintf(stderr,"Non-variable in c2p_*\n");
+	xsb_warn("C2P_FLOAT: Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -138,7 +139,7 @@ DllExport bool call_conv c2p_string(char *val, prolog_term var)
 	bind_string(vptr(v), (char *)string_find(val, 1));
 	return TRUE;
     } else {
-	fprintf(stderr,"Non-variable in c2p_*\n");
+	xsb_warn("C2P_STRING: Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -153,7 +154,7 @@ DllExport bool call_conv c2p_list(prolog_term var)
 	bind_list(vptr(v), sreg);
 	return TRUE;
     } else {
-	fprintf(stderr,"Non-variable in c2p_*\n");
+	xsb_warn("C2P_LIST: Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -165,7 +166,7 @@ DllExport bool call_conv c2p_nil(prolog_term var)
        bind_nil(vptr(v));
        return TRUE;
     } else {
-	fprintf(stderr,"Non-variable in c2p_*\n");
+	xsb_warn("C2P_NIL: Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -190,7 +191,7 @@ DllExport bool call_conv c2p_functor(char *functor, int arity, prolog_term var)
 	for (i=0; i<arity; sreg++,i++) { bld_free(sreg); }
 	return TRUE;
     } else {
-	fprintf(stderr,"Non-variable in c2p_*\n");
+	xsb_warn("C2P_FUNCTOR: Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -847,7 +848,7 @@ int clenpterm(prolog_term term)
           return clen + 1;
       } else return clen;
   } else {
-      fprintf(stderr,"error, unrecognized type");
+      xsb_warn("Unrecognized prolog term type");
       return 0;
   }
 }
@@ -909,7 +910,7 @@ void print_pterm(prolog_term term, int toplevel, char *straddr, int *ind)
           strcpy(straddr+*ind,")");
           *ind += 1;
       }
-  } else fprintf(stderr,"error, unrecognized type");
+  } else xsb_warn("PRINT_PTERM: Unrecognized prolog term type");
 }
 
 /************************************************************************/
@@ -989,13 +990,10 @@ DllExport int call_conv xsb_init_string(char *cmdline_param) {
 	char cmdline[2*MAXPATHLEN+1];
 
 	if (strlen(cmdline_param) > 2*MAXPATHLEN) {
-	    fprintf(stderr,
-		    "**************************************************************************\n");
-	    fprintf(stderr,
-		    "%18s...: command used to call XSB server is too long!\n",
+	    xsb_warn("**************************************************************************");
+	    xsb_warn("XSB_INIT_STRING: %18s...: command used to call XSB server is too long",
 		    cmdline_param);
-	    fprintf(stderr,
-		    "**************************************************************************\n");
+	    xsb_warn("**************************************************************************");
 	    exit(1);
 	}
 	strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);

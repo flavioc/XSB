@@ -99,10 +99,16 @@ void xsb_mesg(char *description, ...)
 
 /*----------------------------------------------------------------------*/
 
-void xsb_exit(char *description)
+void xsb_exit(char *description, ...)
 {
-    fprintf(stderr, "%s\nExiting XSB abnormally...\n", description);
-    exit(1);
+  va_list args;
+
+  va_start(args, description);
+  vfprintf(stderr, description, args);
+  va_end(args);
+
+  fprintf(stderr, "\nExiting XSB abnormally...\n");
+  exit(1);
 }
 
 /*----------------------------------------------------------------------*/

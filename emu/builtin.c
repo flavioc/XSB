@@ -258,13 +258,12 @@ DllExport prolog_int call_conv ptoc_int(int regnum)
   case REF1: 
   case CS:
   case LIST:
-  case FLOAT: xsb_mesg("Wrong arg in ptoc_int");
-    return 0;
+  case FLOAT: xsb_abort("PTOC_INT: Integer argument expected");
   case STRING: return (prolog_int)string_val(addr);	/* dsw */
   case INT: return int_val(addr);
-  default: xsb_mesg("Argument with unknown tag in ptoc_int");
-    return 0;
+  default: xsb_abort("PTOC_INT: Argument of unknown type");
   }
+  return 0;
 }
 
 DllExport prolog_float call_conv ptoc_float(int regnum)
@@ -281,11 +280,12 @@ DllExport prolog_float call_conv ptoc_float(int regnum)
   case LIST:
   case INT:
   case STRING:
-    fprintf(stderr, "Wrong arg in ptoc_float\n"); return 0.0;
+    xsb_abort("PTOC_FLOAT: Float argument expected");
   case FLOAT: return (prolog_float)float_val(addr);
-  default: fprintf(stderr, "Argument with unknown tag in ptoc_float\n");
-    return 0.0;
+  default:
+    xsb_abort("PTOC_FLOAT: Argument of unknown type");
   }
+  return 0.0;
 }
 
 DllExport char* call_conv ptoc_string(int regnum)
@@ -301,13 +301,13 @@ DllExport char* call_conv ptoc_string(int regnum)
   case CS:  
   case LIST:
   case FLOAT:
-    xsb_abort("ptoc_string; Nonstring used where string is required");
-    return ""; 
+    xsb_abort("PTOC_STRING: String (atom) argument expected");
   case INT: return (char *)int_val(addr);
   case STRING: return string_val(addr); 
-  default: fprintf(stderr, "Argument with unknown tag in ptoc_string\n");
-    return "";
+  default:
+    xsb_abort("PTOC_STRING: Argument of unknown type");
   }
+  return "";
 }
 
 
@@ -331,7 +331,7 @@ DllExport void call_conv ctop_int(int regnum, prolog_int value)
     bind_int(vptr(addr), value);
   }
   else
-    xsb_mesg("Wrong arg in ctop_int %lx (Reg = %d)", addr, regnum);
+    xsb_abort("CTOP_INT: Wrong type of argument %lx (Reg = %d)", addr, regnum);
 }
 
 
@@ -344,7 +344,7 @@ DllExport void call_conv ctop_float(int regnum, prolog_float value) /* from floa
   if (isref(addr)) {
     bind_float(vptr(addr), value);
   }
-  else fprintf(stderr, "Wrong arg in ctop_float %lux\n", addr);
+  else xsb_abort("CTOP_FLOAT: Wrong type of argument: %lux", addr);
 }
 
 /* take a C string, form a string node */
@@ -357,7 +357,7 @@ DllExport void call_conv ctop_string(int regnum, char *value)
   if (isref(addr)) {
     bind_string(vptr(addr), value);
   }
-  else fprintf(stderr, "Wrong arg in ctop_string %lux\n", addr);
+  else xsb_abort("CTOP_STRING: Wrong type of argument: %lux", addr);
 }
 
 void ctop_ref(int regnum, CPtr value)  /* from address form a reference node */
@@ -368,7 +368,7 @@ void ctop_ref(int regnum, CPtr value)  /* from address form a reference node */
   if (isref(addr)) {
     bind_ref(vptr(addr), value);
   }
-  else fprintf(stderr, "Wrong arg in ctop_ref %lux\n", addr);
+  else xsb_abort("CTOP_REF: Wrong type of argument: %lux", addr);
 }
 
 void ctop_constr(int regnum, Pair psc_pair)
@@ -379,7 +379,7 @@ void ctop_constr(int regnum, Pair psc_pair)
   if (isref(addr)) {
     bind_cs(vptr(addr), psc_pair);
   }
-  else fprintf(stderr, "Wrong arg in ctop_constr %lux\n", addr);
+  else xsb_abort("CTOP_CONSTR: Wrong type of argument: %lux", addr);
 }
 
 /*
@@ -394,7 +394,7 @@ void ctop_tag(int regnum, Cell term)
   if (isref(addr)) {
     bind_copy(vptr(addr), term);
   }
-  else fprintf(stderr, "Wrong arg in ctop_tag %lux\n", addr);
+  else xsb_abort("CTOP_TAG: Wrong type of argument: %lux", addr);
 }
 
 
@@ -667,7 +667,6 @@ void init_builtin_table(void)
 int builtin_call(byte number)
 {
   CPtr var;
-  char message[80];
   char *addr, *tmpstr;
   int  value, i, disp, arity, tmpval;
   long c;
@@ -806,7 +805,8 @@ int builtin_call(byte number)
     value = ((ptoc_int(3)+7)>>3)<<3;	/* alignment */
     value *= ZOOM_FACTOR ;
     if (value > disp) {
-      fprintf(stderr, "New Buffer Size Cannot exceed the old one!!\n");
+      xsb_warn("BUFF_DEALLOC: New Buffer Size (%d) Cannot exceed the old one (%d)!!",
+	       value, disp);
       break;
     }
     mem_dealloc((byte *)(addr+value), disp-value);
@@ -867,9 +867,7 @@ int builtin_call(byte number)
     case LIST:
       bld_list(vptr(addr+disp), (CPtr)ptoc_int(4)); break;
     default:
-      fprintf(stderr,
-	      "Type %d is not implemented by buff_set_cell\n",
-	      value);
+      xsb_warn("BUFF_SET_CELL: Type %d is not implemented", value);
     }
     break;
   case BUFF_SET_VAR:
@@ -1055,7 +1053,10 @@ int builtin_call(byte number)
     tmpval = ptoc_int(1);
     if ((tmpval < 0) && (tmpval >= -MAXIOSTRS))
       token = GetToken(NULL,strfileptr(tmpval), ptoc_int(2));
-    else token = GetToken(fileptr(tmpval), NULL, ptoc_int(2));
+    else {
+      SET_FILEPTR(fptr, tmpval);
+      token = GetToken(fptr, NULL, ptoc_int(2));
+    }
     if (token->type == TK_ERROR) {
       pcreg = (pb)&fail_inst;
     }
@@ -1089,7 +1090,7 @@ int builtin_call(byte number)
     break;
   case FILE_PUTTOKEN:	/* R1: +File, R2: +Type, R3: +Value; */
     tmpval = ptoc_int(1);
-    fptr = fileptr(tmpval);
+    SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(2)) {
     case FREE   : var = (CPtr)ptoc_tag(3);
       fprint_variable(fptr, var);
@@ -1112,7 +1113,7 @@ int builtin_call(byte number)
     case TK_POSTOP : print_op(fptr, ptoc_string(3), 3); break;
     case TK_QATOM  : print_qatom(fptr, ptoc_string(3)); break;
     case TK_QSTR   : fprintf(fptr, "\"%s\"", ptoc_string(3)); break;
-    default : xsb_abort("Unknown token type in file_puttoken");
+    default : xsb_abort("FILE_PUTTOKEN: Unknown token type");
     }
     break;
   case PSC_INSERTMOD:   /* R1: +String, Module name */
@@ -1145,7 +1146,7 @@ int builtin_call(byte number)
     ctop_int(4, (Integer)load_obj(ptoc_string(1),(Psc)ptoc_addr(2),
 				  ptoc_string(3)));
 #else
-    xsb_abort("Loading foreign object files is not available for this machine");
+    xsb_abort("Loading foreign object files is not implemented for this configuration");
 #endif
     break;
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
@@ -1191,7 +1192,7 @@ int builtin_call(byte number)
     hostptr = gethostbyname(ptoc_string(1));
     memmove(ptoc_string(2), hostptr->h_addr, hostptr->h_length);
 #else
-    xsb_abort("sys_gethost is not available for this configuration");
+    xsb_abort("SYS_GETHOST: Operation not available for this configuration");
 #endif
     break;
   case SYS_ERRNO:			/* R1: -Int (errno) */
@@ -1202,7 +1203,8 @@ int builtin_call(byte number)
     return file_stat();
   case FILE_WRITEQUOTED:
     tmpval = ptoc_int(1);
-    write_quotedname(fileptr(tmpval),ptoc_string(2));
+    SET_FILEPTR(fptr, tmpval);
+    write_quotedname(fptr ,ptoc_string(2));
     break;
   case FAST_GROUND:
     return fast_ground((CPtr)ptoc_tag(1));
@@ -1234,7 +1236,7 @@ int builtin_call(byte number)
       else if (disp == 0) ctop_int(4, (Integer)ti_call_trie_root(tip));
       break;
     case CALL_HASH_SIZE: case RET_HASH_SIZE:
-      fprintf(stderr, "! CHS and RHS are meaningless for tries\n");
+      xsb_warn("CALL_HASH_SIZE/RET_HASH_SIZE: CHS and RHS are meaningless for tries");
       break;
     case FIRST_TIP:
       if (disp == 1) { /* add new tip at END of list of tips */
@@ -1271,10 +1273,7 @@ int builtin_call(byte number)
     arity = get_arity(psc);
     tip = get_tip(psc);
     if (tip == NULL) {
-      sprintf(message, "Predicate %s/%d is not tabled",
-	      get_name(psc), arity);
-      xsb_abort(message);
-      return 0;
+      xsb_abort("Predicate %s/%d is not tabled", get_name(psc), arity);
     }
     subgoal_ptr = ti_call_trie_root(tip);
     get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
@@ -1311,7 +1310,7 @@ int builtin_call(byte number)
     }
     }
 #else
-    xsb_abort("existential negation is not supported...");
+    xsb_abort("Existential negation is not supported");
 #endif
     break;
   case DEREFERENCE_THE_BUCKET:
@@ -1481,7 +1480,7 @@ int builtin_call(byte number)
     tmpstr = ptoc_string(1);
     if (!strcmp(tmpstr, "escape")) ctop_int(2, 0);
     else {
-      xsb_abort("Unknown first arg in get_emu_dependent_const/2");
+      xsb_abort("GET_EMU_DEPENDENT_CONST: Invalid argument 1");
       return FALSE;
     }
     break;
@@ -1560,7 +1559,7 @@ int builtin_call(byte number)
       }
     }
     else {
-      xsb_abort("Unknown usage in intern:delete_trie/2");
+      xsb_abort("DELETE_TRIE: Invalid use of this operation");
     }
     break;
 	    
@@ -1599,18 +1598,17 @@ int builtin_call(byte number)
       else if (domain == 1){
 	/* domain = AF_UNIX; */
 	domain = AF_INET;
-	fprintf(stderr, "default domain is AF_INET.\n");
+	xsb_warn("SOCKET_REQUEST: default domain is AF_INET");
       }
       else  {
-	fprintf(stderr, "Invalid domain value. 0 - AF_INET, \
-1 - AF_UNIX.\n");           
+	xsb_warn("SOCKET_REQUEST: Invalid domain value. Valid domains: 0 - AF_INET, 1 - AF_UNIX");           
 	return FALSE;
       }
 
       sockfd = socket(domain, SOCK_STREAM, 0);
       if (sockfd == INVALID_SOCKET)
 	{
-	  fprintf(stderr, "Cannot open stream socket.\n");
+	  xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
 	  return FALSE;
 	}
 
@@ -1636,7 +1634,7 @@ int builtin_call(byte number)
       err = bind (sockfd, (PSOCKADDR) & localAddr, sizeof (localAddr));
       if (err == SOCKET_ERROR)
 	{
-	  fprintf (stdout, "Socket Bind Failed\n");
+	  xsb_warn("SOCKET_BIND: Socket bind failed");
 	  return FALSE;
 	}
 	      
@@ -1646,7 +1644,7 @@ int builtin_call(byte number)
       err = listen (sockfd, ptoc_int(3));
       if (err == SOCKET_ERROR)
 	{
-	  fprintf (stdout, "Socket Listen Failed\n");
+	  xsb_warn("SOCKET_LISTEN: Socket listen failed");
 	  return FALSE;
 	}
 
@@ -1657,7 +1655,7 @@ int builtin_call(byte number)
       sockfd = accept (sockfd_in, NULL, NULL);
       if (sockfd == INVALID_SOCKET)
 	{
-	  fprintf (stdout, "Accept Failed\n");
+	  xsb_warn("SOCKET_ACCEPT: Accept failed");
 	  return FALSE;
 	}
 	
@@ -1694,7 +1692,7 @@ int builtin_call(byte number)
     }
     case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
       tmpval = ptoc_int(2);
-      fptr = fileptr(tmpval);   
+      SET_FILEPTR(fptr,tmpval);   
       fflush(fptr);
       break;
     case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
@@ -1753,7 +1751,7 @@ int builtin_call(byte number)
       break;
 
     default:
-      fprintf(stderr, "Invalid socket request %d\n",ptoc_int(1));
+      xsb_warn("SOCKET_REQUEST: Invalid socket request %d",ptoc_int(1));
       return FALSE;
     }
     break;
@@ -1772,16 +1770,15 @@ int builtin_call(byte number)
       else if (domain == 1){
 	/* domain = AF_UNIX; */
 	domain = AF_INET;
-	fprintf(stderr, "default domain is AF_INET.\n");
+	xsb_warn("SOCKET_REQUEST: default domain is AF_INET");
       }
       else  {
-	fprintf(stderr, "Invalid domain value. 0 - AF_INET, \
-1 - AF_UNIX.\n");           
+	xsb_warn("SOCKET_REQUEST: Invalid domain. Valid domains are: 0 - AF_INET, 1 - AF_UNIX");           
 	return FALSE;
       }
 	      
       if ((sockfd = socket(domain, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-	fprintf(stderr, "Cannot open stream socket.\n");
+	xsb_warn("SOCKET_REQUEST: Cannot open stream socket");
 	return FALSE;
       }
       ctop_int(3, (Integer) sockfd);
@@ -1802,14 +1799,14 @@ int builtin_call(byte number)
 	socket_addr.sin_zero[i] = 0;
       */
       if (bind(sockfd, (struct sockaddr *) &socket_addr, sizeof(socket_addr)) < 0){ 
-	fprintf(stderr, "Cannot bind address.\n");
+	xsb_warn("SOCKET_BIND: Cannot bind address");
 	return FALSE;
       }
       break;
     case SOCKET_LISTEN:  /* socket_request(2,+sockfd,+length) */
       sockfd = ptoc_int(2);
       if (listen(sockfd, ptoc_int(3)) < 0) {
-	fprintf(stdout, "Cannot listen.\n");
+	xsb_warn("SOCKET_LISTEN: Cannot listen");
 	return FALSE;
       } 
       break;
@@ -1819,13 +1816,13 @@ int builtin_call(byte number)
       sockfd = accept(sockfd_in, NULL, NULL);
       sockptr = fdopen(sockfd, "r+");
       if (sockptr == NULL) {
-	fprintf(stdout, "Cannot accept.\n");
+	xsb_warn("SOCKET_ACCEPT: Cannot accept");
 	return FALSE;
       }
 
       for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
       if (i == MAX_OPEN_FILES) {
-	fprintf(stderr,"Can't accept: too many open files\n");
+	xsb_warn("SOCKET_ACCEPT: Cannot accept -- too many open files");
 	return FALSE;
       }
       else {
@@ -1861,18 +1858,18 @@ int builtin_call(byte number)
 	     && (errno == EINTR) );
       if (con==-1) {
 	close(sockfd);
-	fprintf(stderr, "Cannot connect.\n");
+	xsb_warn("SOCKET_CONNECT: connect failed");
       }
 
       sockptr = fdopen(sockfd, "r+");
       if (sockptr == NULL) {
-	fprintf(stderr, "Cannot connect - fdopen failed.\n");
+	xsb_warn("SOCKET_CONNECT: fdopen failed");
 	return FALSE;
       }
 
       for (i=3; i < MAX_OPEN_FILES && open_files[i] != NULL; i++) ;
       if (i == MAX_OPEN_FILES) {
-	fprintf(stderr, "Cannot connect - too many open files.\n");
+	xsb_warn("SOCKET_CONNECT: failed - too many open files");
 	return FALSE;
       }
       else {
@@ -1883,7 +1880,7 @@ int builtin_call(byte number)
     }
     case SOCKET_FLUSH: 	/* socket_request(5,+sockfd) */
       tmpval = ptoc_int(2);
-      fptr = fileptr(tmpval);   
+      SET_FILEPTR(fptr, tmpval);   
       fflush(fptr);
       break;
     case SOCKET_CLOSE:	/* socket_request(6,+sockfd) */
@@ -1911,7 +1908,7 @@ int builtin_call(byte number)
       break;
 
     default:
-      fprintf(stderr, "Invalid socket request %d\n", (int) ptoc_int(1));
+      xsb_warn("Invalid socket request %d", (int) ptoc_int(1));
       return FALSE;
     }
     break;
@@ -1931,12 +1928,11 @@ int builtin_call(byte number)
       force_answer_true(as_leaf);
     else if (!strcmp(tmpstr, "false"))
       force_answer_false(as_leaf);
-    else xsb_abort("Unknown truth value (arg 2) in force_truth_value/2");
+    else xsb_abort("FORCE_TRUTH_VALUE: Argument 2 has unknown truth value");
   break;
 
   default:
-    sprintf(message, "Builtin #%d is not implemented.\n", number);
-    xsb_exit(message);
+    xsb_exit("Builtin #%d is not implemented", number);
     break;
   }
   return 1;
@@ -2127,9 +2123,8 @@ static int fast_ground(CPtr temp)
     }
     return flag;
   default:
-    fprintf(stderr, "Term with unknown tag (%d) in fast_ground\n",
-	    (int)cell_tag(temp));
-    abort();
+    xsb_abort("FAST_GROUND: Term with unknown tag (%d)",
+	      (int)cell_tag(temp));
     return -1;	/* so that g++ does not complain */
   }
 }

@@ -55,10 +55,7 @@
 	arity = get_arity(psc);
 	if (subgoal_ptr == NULL) {
 	  if ((tip = get_tip(psc)) == NULL) {
-	    sprintf(message, "Predicate %s/%d is not tabled",
-			     get_name(psc), arity);
-	    xsb_abort(message);
-	    return FALSE;
+	    xsb_abort("Predicate %s/%d is not tabled", get_name(psc), arity);
 	  }
 	  subgoal_ptr = ti_call_trie_root(tip);
 	  get_subgoal_ptr(term, arity, (CPtr)&subgoal_ptr);
@@ -123,8 +120,8 @@
        */
 
 #ifdef DEBUG_DELAYVAR
-      fprintf(stderr, ">>>> (at the beginning of GET_DELAY_LISTS\n");
-      fprintf(stderr, ">>>> global_num_vars = %d)\n",global_num_vars);
+      xsb_mesg(">>>> (at the beginning of GET_DELAY_LISTS");
+      xsb_mesg(">>>> global_num_vars = %d)",global_num_vars);
 	
       {
 	int i;
@@ -155,8 +152,7 @@
 	  int i;
 	  copy_of_var_addr = calloc(var_addr_arraysz, sizeof(CPtr));
 	  if(copy_of_var_addr == NULL){
-	    fprintf(stderr, "No enough memory to calloc copy_of_var_addr!\n");
-	    xsb_exit("Bye");
+	    xsb_exit("No enough memory to calloc copy_of_var_addr!\nBye");
 	  }
 	  for( i = 0; i <= global_num_vars; i++)
 	    copy_of_var_addr[i] = var_regs[i];
