@@ -35,10 +35,10 @@
 	sys_mkdir/2, sys_rmdir/2,
 	sys_unlink/2, sys_exit/1, sys_rename/3, sys_filecopy/3.
 
-:- import atom/1, abort/1, is_list/1 from standard.
+:- import ground/1, append/3 from basics.
+:- import check_nonvar/3, check_atom/3 from error_handler.
 :- import sys_system/7, expand_filename/2, sys_syscall/4
    from machine.
-
+:- import atom/1, abort/1, is_list/1 from standard.
 :- import xsb_configuration/2 from xsb_configuration.
 
-:- import ground/1, append/3 from basics.
