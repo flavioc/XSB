@@ -57,7 +57,7 @@
 
 static Cell     nullStrAtom;
 static int      serverConnected = 0;
-static int      numberOfCursors = 0;
+/* static int      numberOfCursors = 0; */
 static long      SQL_NTSval = SQL_NTS;
 
 static HENV henv = NULL;
@@ -84,6 +84,15 @@ struct Cursor {
 /* global cursor table*/
 struct Cursor *FCursor;  /* root of curser chain*/
 struct Cursor *LCursor;  /* tail of curser chain*/
+
+/* Number of Cursors per Connection */
+struct NumberofCursors{
+  HDBC hdbc;
+  int CursorCount;
+  struct NumberofCursors *NCurNum;
+};
+
+struct NumberofCursors *FCurNum; /* First in the list of Number of Cursors */
 
 SWORD ODBCToXSBType(SWORD odbcType)
 {
@@ -226,6 +235,7 @@ void ODBCConnect()
     */
 
     LCursor = FCursor = NULL;
+    FCurNum = NULL;
     nullStrAtom = makestring(string_find("NULL",1));
   }
 
@@ -272,6 +282,7 @@ void ODBCDisconnect()
 {
   struct Cursor *cur = FCursor;
   struct Cursor *tcur;
+  struct NumberofCursors *numi = FCurNum, *numj = FCurNum;
   HDBC hdbc = (HDBC)ptoc_int(2);
 
   if (!serverConnected) return;
@@ -285,6 +296,17 @@ void ODBCDisconnect()
   }
 
   /* only free cursors associated with this connection (hdbc)*/
+  while((numj != NULL) && (numj->hdbc != hdbc)){
+    if(numj != FCurNum) numi=numi->NCurNum;
+    numj=numj->NCurNum;
+  }
+  
+  if(numj != NULL){
+    if(numj == FCurNum) FCurNum=numj->NCurNum;
+    else numi->NCurNum=numj->NCurNum;
+    free(numj);
+  }
+
   while (cur != NULL) {
     if (cur->hdbc == hdbc) {
       tcur = cur->NCursor;
@@ -295,8 +317,8 @@ void ODBCDisconnect()
       if (cur->NCursor) (cur->NCursor)->PCursor = cur->PCursor;
       else LCursor = cur->PCursor;
       free(cur);
-      numberOfCursors--;
-      cur = tcur;
+      /*      (num->CursorCount)-- */
+       cur = tcur;
     }
     else cur = cur->NCursor;
   }
@@ -329,6 +351,7 @@ void ODBCDisconnect()
 void FindFreeCursor()
 { 
   struct Cursor *curi = FCursor, *curj = NULL, *curk = NULL;
+  struct NumberofCursors *num = FCurNum;
   HDBC hdbc = (HDBC)ptoc_int(2);
   char *Sql_stmt = ptoc_longstring(3);
   RETCODE rc;
@@ -368,7 +391,19 @@ void FindFreeCursor()
     curi = curj;
     /*printf("take unused cursor: %p\n",curi);*/
   }
-  else if (numberOfCursors < MAXCURSORNUM) { /* allocate a new cursor if allowed*/
+  else {
+    while((num != NULL) && (num->hdbc != hdbc)){
+      num=num->NCurNum;
+    }
+    if(num == NULL){
+      num = (struct NumberofCursors *)malloc(sizeof(struct NumberofCursors));
+      num->hdbc = hdbc;
+      num->NCurNum=FCurNum;
+      FCurNum=num;
+      num->CursorCount=0;
+    }
+
+    if (num->CursorCount < MAXCURSORNUM) { /* allocate a new cursor if allowed*/
     /* problem here: should have numberOfCursors for each connection */
     curi = (struct Cursor *)calloc(sizeof(struct Cursor),1);
     curi->PCursor = NULL;
@@ -376,25 +411,29 @@ void FindFreeCursor()
     if (FCursor == NULL) LCursor = curi;
     else FCursor->PCursor = curi;
     FCursor = curi;
-    numberOfCursors++;
+
     rc = SQLAllocStmt(hdbc,&(curi->hstmt));
     if (!((rc==SQL_SUCCESS) ||
 	  (rc==SQL_SUCCESS_WITH_INFO))) {
       free(curi);
-      numberOfCursors--;
+      /*      numberOfCursors--; */
       xsb_abort("while trying to allocate ODBC statement\n");
     }
+
+    num->CursorCount++;
+
     /*printf("allocate a new cursor: %p\n",curi);*/
+    }
+    else if (curk == NULL) {  /* no cursor left*/
+      ctop_int(4, 0);
+      return;
+    }
+    else {                    /* steal a cursor*/
+      curi = curk;
+      SetCursorClose(curi);
+      /*printf("steal a cursor: %p\n",curi);*/
+    } 
   }
-  else if (curk == NULL) {  /* no cursor left*/
-    ctop_int(4, 0);
-    return;
-  }
-  else {                    /* steal a cursor*/
-    curi = curk;
-    SetCursorClose(curi);
-    /*printf("steal a cursor: %p\n",curi);*/
-  } 
 
   /* move to front of list.*/
   if (curi != FCursor) {
