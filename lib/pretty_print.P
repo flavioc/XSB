@@ -32,6 +32,13 @@
 
 :- export pretty_print/1, pretty_print/2.
 
+:- import writeq/1,
+	  write/1,
+          nl/0,
+	  put/1,
+	  tab/1
+   from standard.
+
 %:- import from lists.
 
 pretty_print(Clause) :-

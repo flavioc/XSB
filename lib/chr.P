@@ -81,17 +81,22 @@
 	not_locked/1,
 	global_term_ref_1/1,
 	set_global_term_ref_1/1,
+	suspended_chr_constraints/2,
 	suspended_constraints/2,
 	suspended_constraints2/3,
-	gen_ids/1.
+	gen_ids/1,
+	get_chr_store/1,
+	set_chr_store/1,
+	get_chr_answer_store/2,
+	merge_chr_answer_store/1,
+	show_store/1.
 
 :- import globalvar/2 from globalvar.
 
 :- import 
 	create_mutable/2, 
 	update_mutable/2, 
-	get_mutable/2, 
-	is_mutable/1 from mutablevar.
+	get_mutable/2 from mutablevar.
 
 :- import 
 	get_assoc/3,
@@ -105,7 +110,11 @@
 	del_attr/2,
 	put_attr/3 from machine.
 
-:- import take/3 from lists.
+:- import call/1 from standard.
+
+:- import member/2 from basics.
+
+:- import append_lists/2, take/3 from lists.
 
 :- import install_verify_attribute_handler/4 from machine.
 
@@ -139,20 +148,20 @@ listofvars1([T|Ts], Vh, Vt) :-
 %?- nb_setval(chr_global,_).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% show_store(Mod) :-
-%% 	global_term_ref_1(Store),
-%% 	( get_attr(Store,Mod,Attr) ->
-%% 		( Attr =.. [v,_|Susps] ->
-%% 			findall(_,(member(L,Susps),member(S,L),S =.. [_,_,_,_,_,_,F|A],C=..[F|A],write(C),nl),_)
-%% 		
-%% 		;
-%% 			findall(_,(member(S,Attr),S =.. [_,_,_,_,_,_,F|A],C=..[F|A],write(C),nl),_)
-%% 		)
-%% 	;
-%% 		true
-%% 	).
-%% 
-%% 
+show_store(Mod) :-
+ 	global_term_ref_1(Store),
+ 	( get_attr(Store,Mod,Attr) ->
+ 		( Attr =.. [v,_|Susps] ->
+ 			findall(_,(member(L,Susps),member(S,L),S =.. [_,_,_,_,_,_,F|A],C=..[F|A],write(C),nl),_)
+ 		
+ 		;
+ 			findall(_,(member(S,Attr),S =.. [_,_,_,_,_,_,F|A],C=..[F|A],write(C),nl),_)
+ 		)
+ 	;
+ 		true
+ 	).
+ 
+ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 merge_attributes( As, Bs, Cs) :-
 	sbag_union(As,Bs,Cs).
@@ -364,16 +373,16 @@ insert_constraint_internal( [Global|Vars], Self, Closure, F, Args) :-
 	gen_id( Id),
 	Self =.. [suspension,Id,Mref,Closure,Gref,Href,F|Args].
 
-insert_constraint_internal( [Global|Vars], Self, Term, Closure, F, Args) :-
-	term_variables( Term, Vars),
-	none_locked( Vars),
-	global_term_ref_1( Global),
-	empty_history( History),
-	create_mutable( active, Mref),
-	create_mutable( 0, Gref),
-	create_mutable( History, Href),
-	gen_id( Id),
-	Self =.. [suspension,Id,Mref,Closure,Gref,Href,F|Args].
+%% insert_constraint_internal( [Global|Vars], Self, Term, Closure, F, Args) :-
+%% 	term_variables( Term, Vars),
+%% 	none_locked( Vars),
+%% 	global_term_ref_1( Global),
+%% 	empty_history( History),
+%% 	create_mutable( active, Mref),
+%% 	create_mutable( 0, Gref),
+%% 	create_mutable( History, Href),
+%% 	gen_id( Id),
+%% 	Self =.. [suspension,Id,Mref,Closure,Gref,Href,F|Args].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 change_state( Susp, State) :-
@@ -406,9 +415,34 @@ set_global_term_ref_1(X) :-
 	globalvar(chr_global,G),
 	set_arg(G,1,X).
 
+get_chr_store(Store) :- global_term_ref_1(Store).
+set_chr_store(Store) :- set_global_term_ref_1(Store).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simple externalisation of constraints for storage in tables.
+
+merge_chr_answer_store([]).
+merge_chr_answer_store([G|Gs]) :-
+	call(G),
+	merge_chr_answer_store(Gs).
+	
+get_chr_answer_store(Mod,AnswerStore) :-
+	suspended_constraints(AnswerStore,Mod).
+
+suspended_chr_constraints(Mod,List) :-
+	get_chr_store(Store),
+	( get_attr(Store,Mod,Attr) ->
+		( Attr = [] ->
+			List = []
+		; Attr = [_|_] ->
+			List = Attr
+		;
+			Attr =.. [_|Lists],
+			append_lists(Lists,List)
+		)
+	;
+		List = []
+	).
 
 suspended_constraints(L,Mod) :-
 	global_term_ref_1(G),

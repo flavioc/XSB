@@ -45,6 +45,8 @@
 
 :- export main/2.
 
+:- import op/3 from usermod.
+
 :- import append/3, append_lists/2, delete/3, intersect_eq/3,is_not_empty/1,length/2, list_difference_eq/3,member/2, memberchk_eq/2, nth/3, or_list/2, permutation/2, reverse/2,substitute/4,take/3 from lists. 
 
 
@@ -273,10 +275,10 @@ partition_clauses([C|Cs],Ds,Rs,OCs,Mod) :-
       append(D,RDs,Ds),
       Rs = RRs,
       OCs = ROCs
-  ;   C = ( :- module(Mod,_)) ->
+  ;   C = ( :- chr_module(Mod)) ->
       Ds = RDs,
       Rs = RRs,
-      OCs = [C|ROCs]
+      OCs = ROCs
   ;   Ds = RDs,
       Rs = RRs,
       OCs = [C|ROCs]
@@ -692,7 +694,7 @@ gen_cond_attach_clause(Mod,F/A,_I,_N,_Constraints,Id,L,T) :-
 	Clause = ( Head :- Body ),
 	L = [Clause | T].
 
-gen_cond_attach_goal(Mod,F/A,Goal,AllArgs) :-
+gen_cond_attach_goal(_Mod,F/A,Goal,AllArgs) :-
 	vars_susp(A,Args,Susp,AllArgs),
 	build_head(F,A,[0],AllArgs,Closure),
 	atom_concat_list(['attach_',F, (/) ,A],AttachF),
