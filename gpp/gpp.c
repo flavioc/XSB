@@ -206,6 +206,8 @@ void ProcessContext(); /* the main loop */
 static void getDirname(char *fname, char *dirname);
 static FILE *openInCurrentDir(char *incfile);
 char *ArithmEval(int pos1,int pos2);
+void replace_definition_with_blank_lines(char *start, char *end);
+void replace_directive_with_blank_line(FILE *file);
 
 void bug(char *s)
 {
@@ -600,6 +602,8 @@ void sendout(char *s,int l,int proc) /* only process the quotechar, that's all *
         { i++; if (i==l) return; }
       if (s[i]!=0) outchar(s[i]);
     }
+  else
+    replace_definition_with_blank_lines(s+1,s+l);
 }
 
 void extendBuf(int pos)
@@ -1800,10 +1804,12 @@ int ParsePossibleMeta()
       whiteout(&p1start,&p1end); /* recall comments are not allowed here */
       if ((p1start==p1end)||(identifierEnd(p1start)!=p1end)) 
         bug("#define requires an identifier (A-Z,a-z,0-9,_ only)");
+      /* buf starts 1 char before the macro */
       i=findIdent(C->buf+p1start,p1end-p1start);
       if (i>=0) delete_macro(i);
       newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
+      replace_definition_with_blank_lines(C->buf+1,C->buf+p2end);
       macros[nmacros].macrotext=remove_comments(p2start,p2end,FLAG_META);
       macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
       macros[nmacros].defined_in_comment=C->in_comment;
@@ -1828,6 +1834,7 @@ int ParsePossibleMeta()
      break;
      
     case 2: /* UNDEF */
+     replace_directive_with_blank_line(C->out->f);
      if (!commented[iflevel]) {
       if (nparam==2) warning("Extra argument to #undef ignored");
       whiteout(&p1start,&p1end);
@@ -1840,8 +1847,10 @@ int ParsePossibleMeta()
 
     case 3: /* IFDEF */
      iflevel++;
+     replace_directive_with_blank_line(C->out->f);
      if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
      commented[iflevel]=commented[iflevel-1];
+
      if (!commented[iflevel]) {
       if (nparam==2) warning("Extra argument to #ifdef ignored");
       whiteout(&p1start,&p1end);
@@ -1854,6 +1863,7 @@ int ParsePossibleMeta()
 
     case 4: /* IFNDEF */
      iflevel++;
+     replace_directive_with_blank_line(C->out->f);
      if (iflevel==STACKDEPTH) bug("Too many nested #ifdefs");
      commented[iflevel]=commented[iflevel-1];
      if (!commented[iflevel]) {
@@ -1867,6 +1877,7 @@ int ParsePossibleMeta()
      break;
     
     case 5: /* ELSE */
+     replace_directive_with_blank_line(C->out->f);
      if (!commented[iflevel]&&(nparam>0))
           warning("Extra argument to #else ignored");
      if (iflevel==0) bug("#else without #if");
@@ -1874,6 +1885,7 @@ int ParsePossibleMeta()
      break;
 
     case 6: /* ENDIF */
+     replace_directive_with_blank_line(C->out->f);
      if (!commented[iflevel]&&(nparam>0))
           warning("Extra argument to #endif ignored");
      if (iflevel==0) bug("#endif without #if");
@@ -1968,7 +1980,7 @@ int ParsePossibleMeta()
 		 include_directive_marker,
 		 N->lineno, N->filename, "2");
 	 /* Need to leave the blank line in lieu of #include, like cpp does */
-	 fprintf(N->out->f,"\n");
+	 replace_directive_with_blank_line(N->out->f);
        }
        free(C);
        PopSpecs();
@@ -2014,6 +2026,7 @@ int ParsePossibleMeta()
       if (i>=0) delete_macro(i);
       newmacro(C->buf+p1start,p1end-p1start,1);
       if (nparam==1) { p2end=p2start=p1end; }
+      replace_definition_with_blank_lines(C->buf+1,C->buf+p2end);
       macros[nmacros].macrotext=tmpbuf;
       macros[nmacros].macrolen=strlen(macros[nmacros].macrotext);
       macros[nmacros].defined_in_comment=C->in_comment;
@@ -2039,6 +2052,7 @@ int ParsePossibleMeta()
      
     case 10: /* IFEQ */
      iflevel++;
+     replace_directive_with_blank_line(C->out->f);
      if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
      commented[iflevel]=commented[iflevel-1];
      if (!commented[iflevel]) {
@@ -2053,6 +2067,7 @@ int ParsePossibleMeta()
 
     case 11: /* IFNEQ */
      iflevel++;
+     replace_directive_with_blank_line(C->out->f);
      if (iflevel==STACKDEPTH) bug("Too many nested #ifeqs");
      commented[iflevel]=commented[iflevel-1];
      if (!commented[iflevel]) {
@@ -2077,6 +2092,7 @@ int ParsePossibleMeta()
 
     case 13: /* IF */
      iflevel++;
+     replace_directive_with_blank_line(C->out->f);
      if (iflevel==STACKDEPTH) bug("Too many nested #ifs");
      commented[iflevel]=commented[iflevel-1];
      if (!commented[iflevel]) {
@@ -2089,6 +2105,7 @@ int ParsePossibleMeta()
      break;
 
     case 14: /* MODE */
+     replace_directive_with_blank_line(C->out->f);
      if (nparam==1) p2start=-1;
      if (!commented[iflevel])
        ProcessModeCommand(p1start,p1end,p2start,p2end);
@@ -2287,6 +2304,24 @@ static FILE *openInCurrentDir(char *incfile)
   f=fopen(absfile,"r");
   free(absfile);
   return f;
+}
+
+
+void replace_definition_with_blank_lines(char *start, char *end)
+{
+  while (start <= end) {
+    if (*start == '\n')
+      fprintf(C->out->f,"\n");
+    start++;
+  }
+}
+
+/* insert blank line where IFDEF,ELSE,INCLUDE, and similar stood in the inout
+   text
+*/
+void replace_directive_with_blank_line(FILE *f)
+{
+  fprintf(f,"\n");
 }
 
 

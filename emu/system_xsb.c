@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <ctype.h>
 
 
 #ifdef WIN_NT
@@ -336,8 +337,7 @@ xsbBool sys_system(int callno)
 			      fromproc_stderr_fptr);
 
     if (pid_or_status < 0) {
-      xsb_warn("[%s] Subprocess creation failed",
-	       callname);
+      xsb_warn("[%s] Subprocess creation failed", callname);
       return FALSE;
     }
 
@@ -749,55 +749,90 @@ int process_status(int pid)
 
 /* split buffer at spaces, \t, \n, and put components
    in a NULL-terminated array.
+   Take care of quoted strings and escaped symbols
    If you call it twice, the old split is forgotten.
 */
 static void split_string(char *string, char *params[], char *callname)
 {
   int buflen = strlen(string);
-  int idx = 0, pos;
-  char *prev_ptr, *buf_ptr;
+  int idx = 0;
+  char *buf_ptr;
   static char buffer[MAX_CMD_LEN];
 
   if (buflen > MAX_CMD_LEN - 1)
-    xsb_abort("[%s] Command string too long",
-	      callname);
+    xsb_abort("[%s] Command string too long", callname);
 
-  strncpy(buffer, string, MAX_CMD_LEN);
   buf_ptr = buffer;
 
   do {
-    pos = buf_ptr - buffer;
-    /* skip leeding spaces */
-    /* Note: must use string for comparison, since we are modifying the buffer
-       and spaces might no longer be there */
-    while (pos < buflen && (*(string+pos) == ' '
-			    || *(string+pos) == '\t'
-			    || *(string+pos) == '\n')) {
-      buf_ptr++;
-      pos++;
-    }
-    
-    prev_ptr = buf_ptr;
-
-    /* last substring (and has no conversion spec) */
-    if ((buf_ptr=strchr(prev_ptr, ' ')) == NULL) {
-      if (prev_ptr >= (buffer+buflen))
-	params[idx] = NULL;
-      else {
-	params[idx] = prev_ptr;
-	params[idx+1] = NULL;
-      }
-      return;
-    }
-
-    /* space char found */
-    params[idx] = prev_ptr;
-    *(buf_ptr) = '\0';
+    params[idx] = get_next_command_argument(&buf_ptr,&string);
     idx++;
   } while (idx <= MAX_SUBPROC_PARAMS); /* note: params has extra space,
 					  so not to worry */
 
   return;
+}
+
+
+/*
+  Copies next command argument from CMD_LINE to the next free place in buffer
+  and returns the pointer to the null-terminated string that represents that
+  argument. Advances the pointers into the CMD_LINE and BUFFER so that the
+  caller can use them to call get_next_command_argument again.
+*/
+char *get_next_command_argument(char **buffptr, char **cmdlineprt)
+{
+  short escaped=FALSE;
+  char quoted = '\0';
+  char *returnptr = *buffptr;
+
+  /* skip white space */
+  while (isspace(**cmdlineprt))
+    (*cmdlineprt)++;
+
+  /* loop as long as not end of cmd line or until the next command argument has
+     been found and extracted */
+  while ((!isspace(**cmdlineprt) || quoted) && **cmdlineprt != '\0') {
+    if (escaped) {
+      **buffptr=**cmdlineprt;
+      (*buffptr)++;
+      (*cmdlineprt)++;
+      escaped=FALSE;
+      continue;
+    }
+    switch (**cmdlineprt) {
+    case '"':
+    case '\'':
+      if (!quoted) {
+	/* begin quoted string */
+	quoted = **cmdlineprt;
+      } else if (quoted == **cmdlineprt) {
+	/* end the quoted part of the argument */
+	quoted = '\0';
+      } else {
+	/* quote symbol inside string quoted by a different symbol */
+	**buffptr=**cmdlineprt;
+	(*buffptr)++;
+      }
+      (*cmdlineprt)++;
+      break;
+    case '\\':
+      escaped = TRUE;
+      (*cmdlineprt)++;
+      break;
+    default:
+      **buffptr=**cmdlineprt;
+      (*buffptr)++;
+      (*cmdlineprt)++;
+    }
+  }
+
+  if (returnptr==*buffptr)
+    return NULL;
+
+  **buffptr='\0';
+  (*buffptr)++;
+  return returnptr;
 }
 
 
