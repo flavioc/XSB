@@ -64,6 +64,7 @@ reset_dcg_mode :-
 	).
 
 set_tphrase_input(List) :-
+	abolish_all_tables,   % since changind EDB tables depend on.
 	retractall(word(_,_,_)),
 	retractall(num_words(_)),
 	assert_word_list(List,0,N),
@@ -174,8 +175,7 @@ tphrase(Phrase_Type) :-
                  ->     true
 	         ;      abort('No input for tphrase/1')
 	        ),
-	        dcg_body_nonvar(Phrase_Type, 0, End, Goal),
-		abolish_all_tables,
+		dcg_body_nonvar(Phrase_Type, 0, End, Goal),
 	        call(Goal)
 	; abort('Uninstantiated argument 1 of tphrase/1')
 	).
@@ -184,8 +184,7 @@ tphrase(Phrase_Type, List) :-
 	(nonvar(Phrase_Type)
          ->     set_tphrase_input(List),
 	        num_words(End),
-	        dcg_body_nonvar(Phrase_Type, 0, End, Goal),
-		abolish_all_tables,
+		dcg_body_nonvar(Phrase_Type, 0, End, Goal),
 	        call(Goal)
 	; abort('Uninstantiated argument 1 of tphrase/2')
 	).
