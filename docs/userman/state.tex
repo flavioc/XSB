@@ -75,7 +75,7 @@ aspects of XSB along with certain non-changable ISO
 flags~\footnote{The ISO flags {\tt integer\_rounding\_function}, {\tt
 char\_conversion}, {\tt double\_quotes}, and {\tt unknown} are not yet
 implemented.}.  This predicate is based upon the predicate {\tt
-XSB\_flag/2}.
+xsb\_flag/2}.
 
 {\bf Error Cases}
 \bi
@@ -640,37 +640,35 @@ module {\tt "usermod"} may be enumerated using:
 
     \begin{center} 
 \begin{tabular}{||l|p{11cm}||} \hline 
-	{\em Flag Name} & {\em Purpose} \\ \hline \hline 
-	{\tt backtrace\_on\_error} & 
-		{\tt on} iff system-handled errors automatically
-		print out the trace of the execution stack where the
-		error arose, {\tt off} otherwise. Default is {\tt off}.\\ 
-		\hline
-	{\tt debugging}		& 
-		{\tt on} iff debug mode is on; {\tt off} otherwise.\\
-		\hline
-	{\tt tracing}		& 
-		{\tt on} iff trace mode is on; {\tt off} otherwise.\\
-		\hline
-	{\tt goal}		& 
-		the goal passed to XSB on command line with the `-e'
-                switch; `{\tt true.}' if nothing is passed.
-                \\ \hline
-        {\tt dcg\_style}        &
-                the DCG style currently used; {\tt xsb} or {\tt standard}
-                (standard is used in Quintus, SICSTUS, etc.).
-                See Section~\ref{sec-dcg-differences} for more
-	    details. Default is {\tt xsb}.
-	
-                \\ \hline
-	{\tt garbage\_collection} &
-		{\tt indirection}, {\tt none}, {\tt sliding}, or {\tt copying} depending
-		on the garbage collection strategy that is currently
-		being employed (see also
-		Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}. 
-                \\ \hline
-    \end{tabular}
-    \end{center}
+{\em Flag Name} & {\em Purpose} \\ \hline \hline 
+%
+{\tt backtrace\_on\_error} & {\tt on} iff system-handled errors
+automatically print out the trace of the execution stack where the
+error arose, {\tt off} otherwise. Default is {\tt off}.\\ \hline 
+%
+{\tt dcg\_style} & the DCG style currently used; {\tt xsb} or {\tt
+standard} (standard is used in Quintus, SICSTUS, etc.).  See
+Section~\ref{sec-dcg-differences} for more details. Default is {\tt
+xsb}.  \\ \hline 
+%
+{\tt debugging} & {\tt on} iff debug mode is on; {\tt
+off} otherwise.\\ \hline 
+%
+{\tt garbage\_collection} & {\tt
+indirection}, {\tt none}, {\tt sliding}, or {\tt copying} depending on
+the garbage collection strategy that is currently being employed (see
+also Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}.  \\
+\hline 
+%
+{\tt goal} & the goal passed to XSB on command line with the
+`-e' switch; `{\tt true.}' if nothing is passed.  \\ \hline {\tt
+tracing} & {\tt on} iff trace mode is on; {\tt off} otherwise.\\
+\hline 
+%
+{\tt write\_depth} & The depth to which a term is written by
+{\tt write}-like predicates.  Default is 64.  \\ \hline 
+\end{tabular} 
+\end{center}
     
     Note that {\tt xsb\_flag} is used only for dynamic XSB settings, {\it
       i.e.}, settings that might change between sessions or within the same

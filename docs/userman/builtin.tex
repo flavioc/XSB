@@ -1496,19 +1496,19 @@ or alias.
     However, there is no limit on the total size of the output (apart from
     the maximum atom size imposed by XSB).
 
-\ouritem{read\_line\_list(-String)}
-\index{\texttt{read\_line\_list/1}}
+\ouritem{file\_read\_line\_list(-String)}
+\index{\texttt{file\_read\_line\_list/1}}
 A line read from the current input stream is converted into a list of
 character codes.  This predicate 
 %is \emph{much} more efficient than
 %{{\tt fget\_line/3}} (see below), and 
-avoids interning an atom as does {\tt read\_line\_atom/3}, and so is
+avoids interning an atom as does {\tt file\_read\_line\_atom/3}, and so is
 recommended when speed is important.  This predicate fails on reaching
 the end of file.
 
-\ouritem{read\_line\_list(Stream\_or\_alias,-CharList)}
-\index{\texttt{read\_line\_list/2}}
-Acts as does {\tt read\_line\_list}, but uses {\tt Stream\_or\_atom}.
+\ouritem{file\_read\_line\_list(Stream\_or\_alias,-CharList)}
+\index{\texttt{file\_read\_line\_list/2}}
+Acts as does {\tt file\_read\_line\_list}, but uses {\tt Stream\_or\_atom}.
 
 {\bf Error Cases} 
 \bi
@@ -1523,15 +1523,15 @@ or alias.
 \ei
 \ei
 
-\ouritem{read\_line\_atom(-Atom)}
-\index{\texttt{read\_line\_atom/1}}
+\ouritem{file\_read\_line\_atom(-Atom)}
+\index{\texttt{file\_read\_line\_atom/1}}
 %
 Reads a line from the current (textual) input stream, returning it as
 {\tt Atom}.  This predicate fails on reaching the end of file.
 
-\ouritem{read\_line\_atom(+Stream\_or\_alias,-Atom)}
-\index{\texttt{read\_line\_atom/2}}
-Like {\tt read\_line\_atom/1} but reads from {\tt Stream\_or\_alias}.
+\ouritem{file\_read\_line\_atom(+Stream\_or\_alias,-Atom)}
+\index{\texttt{file\_read\_line\_atom/2}}
+Like {\tt file\_read\_line\_atom/1} but reads from {\tt Stream\_or\_alias}.
 %
 {\bf Error Cases} 
 \bi
@@ -1545,13 +1545,14 @@ or alias.
 \item 	{\tt existence\_error(stream,Stream\_or\_alias)}
 \ei
 \ei
-=======
+
 \comment{
 \ournewitem{file\_read\_line(+IOport,-String)}{file\_io}
 \index{\texttt{file\_read\_line/2}}
 } 
-\ournewitem{write\_line(+String, +Offset)}{file\_io}
-\index{\texttt{write\_line/2}}
+
+\ournewitem{file\_write\_line(+String, +Offset)}{file\_io}
+\index{\texttt{file\_write\_line/2}}
    Write {\tt String} beginning with character {\tt Offset} to the
    current output strean. {\tt String} can be an atom or a list of
    ASCII character codes. This does \emph{not} put the newline
@@ -1560,27 +1561,12 @@ or alias.
    recognized if {\tt String} is a character list, but are output as
    is if {\tt String} is an atom.
 
-\ournewitem{write\_line(+Stream\_or\_alias, +String, +Offset)}{file\_io}
-\index{\texttt{write\_line/3}}
-   Like \verb|file_write_line/2|, but output goes to {\tt
-   Stream\_or\_alias}.
-=======
-\ouritem{read\_line\_list(-String)}
-\index{\texttt{read\_line\_list/1}}
-A line read from the current input stream is converted into a list of
-character codes.  This predicate 
-%is \emph{much} more efficient than
-%{{\tt fget\_line/3}} (see below), and 
-avoids interning an atom as does {\tt read\_line\_atom/3}, and so is
-recommended when speed is important.  This predicate fails on reaching
-the end of file.
+\ournewitem{file\_write\_line(+Stream\_or\_alias, +String, +Offset)}{file\_io}
+\index{\texttt{file\_write\_line/3}}
+Like \verb|file_write_line/2|, but output goes to {\tt
+Stream\_or\_alias}.  
 
-\ouritem{read\_line\_list(Stream\_or\_alias,-CharList)}
-\index{\texttt{read\_line\_list/2}}
-Acts as does {\tt read\_line\_list}, but uses {\tt Stream\_or\_atom}.
-
-{\bf Error Cases} are the same as {\tt write\_term/2} but with these
-additions.
+{\bf Error Cases}
 \bi
 \item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
 or alias.
@@ -1594,41 +1580,6 @@ or alias.
 \ei
 
 
-\ouritem{file\_read\_line\_atom(+IOport,-String)}
-\index{\texttt{file\_read\_line\_atom/2}}
-%
-This is a low-level predicate that allows XSB to read input files
-efficiently, line by line. It returns the string read from {\tt
-IOport} using the variable {\tt String}.
-
-This predicate fails on reaching the end of file.
-    
-\ouritem{file\_read\_line\_atom(-String)}
-\index{\texttt{file\_read\_line\_atom/1}}
-Like \verb|file_read_line_atom/2|, but uses the current input stream.
-
-\ournewitem{file\_write\_line(+IOport, +String, +Offset)}{file\_io}
-\index{\texttt{file\_write\_line/3}}
-   Write {\tt String} beginning with character {\tt Offset} to the
-   output file represented by the I/O port {\tt IOport}. {\tt String}
-   can be an atom or a list of ASCII character codes. This does
-   \emph{not} put the newline character at the end of the string
-   (unless {\tt String} already had this character). Note that escape
-   sequences, like \verb|\n|, are recognized if {\tt String} is a
-   character list, but are output as is if {\tt String} is an atom.
-   
-{\bf Error Cases} 
-\bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
-\bi
-\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
-\ei
-\item 	{\tt Stream\_or\_alias} is not associated with an open output stream
-\bi
-\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
-\ei
-\ei
 
 %----------------------------------------------------------------------------------------------
 \comment{ TLS: isnt this file_getbuf_list?
@@ -1644,8 +1595,8 @@ BytesRequested$.
 }
 %----------------------------------------------------------------------------------------------
 
-\ournewitem{getbuf\_list(+Stream\_or\_alias, +BytesRequested, -CharList, -BytesRead)}{file\_io}
-\index{\texttt{getbuf\_list/4}}
+\ournewitem{file\_getbuf\_list(+Stream\_or\_alias, +BytesRequested, -CharList, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf\_list/4}}
 Read {\tt BytesRequested} bytes from file represented by {\tt
 Stream\_or\_alias} (which must already be open for reading) into
 variable {\tt String} as a list of character codes. This is analogous
@@ -1654,15 +1605,15 @@ distinguish between a file error and end of file.  You can determine
 if either of these conditions has happened by verifying that $\tt
 BytesRead < BytesRequested$.
 
-\ournewitem{getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{getbuf\_list/3}}
+\ournewitem{file\_getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_io}
+\index{\texttt{file\_getbuf\_list/3}}
 
 Like \verb|file_getbuf_list/3|, but reads from the currently open input stream
 ({\it i.e.}, with {\tt see/1}).
 
 
-\ournewitem{getbuf\_atom(+Stream\_or\_alias, +BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_atom/4}}
+\ournewitem{file\_getbuf\_atom(+Stream\_or\_alias, +BytesRequested, -String, -BytesRead)}{file\_io}
+\index{\texttt{file\_file\_getbuf\_atom/4}}
 Read {\tt BytesRequested} bytes from file represented by {\tt
 Stream\_or\_alias} (which must already be open for reading) into
 variable {\tt String}. This is analogous to {\tt fread} in C.  This
@@ -1688,7 +1639,7 @@ or alias.
 \ei
 \ei
 
-\ournewitem{getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_io}
+\ournewitem{file\_getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_io}
 \index{\texttt{file\_getbuf\_atom/3}}
 Like \verb|file_getbuf_atom/4|, but reads from the currently open input stream.
 

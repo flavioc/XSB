@@ -324,8 +324,214 @@ predicate to be tabled.
 
 \end{description}
 
-%----------------------------------------------------------------------
-%\input{tr_assert}      % To be uncommented when they become standard.
+\subsection{Reading Dynamic Code from Files} \label{sec:LoadDyn}
+%===============================================
+
+Several builtin predicates are available that can assert the contents
+of a file into XSB's databse.  These predicates are useful when code
+needs to be dynamic, or when the they contain a large number of
+clauses or facts.  Configured properly, files containing millions of
+facts can be read and asserted into memory in under a minute, making
+XSB suitable for certain kinds of in-memory database
+operations~\footnote{In \version{}, loading code dynamically can also
+be useful when the clauses contain atoms whose length is more than 255
+that cannot be handled by the XSB compiler.}.
+
+\begin{description}
+\ouritem{load\_dyn(+FileName)}
+\index{\texttt{load\_dyn/1}}\label{load_dyn/1}
+%\predindex{load\_dyn/1~(L)}
+    Asserts the contents of file {\tt FileName} into the database.
+    All existing clauses of the predicates in the file that already
+    appear in the database, are retracted, unless there is a {\tt
+    multifile/1} declaration for them.  An indexing declaration of a
+    predcate {\tt p/n} in {\tt FileName} will be observed as long as
+    the declarations occur before the first clause of {\tt p/n}.  file
+    will be observed as Clauses in {\tt FileName} must be in a format
+    that {\tt read/1} will process.  So, for example, operators are
+    permitted.  As usual, clauses of predicates are not retracted if
+    they are compiled instead of dynamically asserted.  All predicates
+    are loaded into {\tt usermod}.  Module declarations such as {\tt
+    :- export} are ignored and a warning is issued.
+
+    Dynamically loaded files can be filtered through the XSB preprocessor.
+    To do this, put the following in the source file: 
+    %%
+    \begin{verbatim}
+    :- compiler_options([xpp_on]).      
+    \end{verbatim}
+
+    %%
+    Of course, the name \verb|compiler_options| might seem like a misnomer
+    here (since the file is not being compiled), but it is convenient to
+    use the same directive both for compiling and loading, in case the same
+    source file is used both ways.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is not an atom.
+\bi
+\item 	{\tt type\_error(FileName,atom)}
+\ei
+%
+\ei
+
+\ouritem{load\_dyn(+FileName,+Dir)}
+\index{\texttt{load\_dyn/2}}\label{load_dyn/2}
+    Asserts the contents of file {\tt FileName} into the database.
+    {\tt Dir} indicates whether {\tt assertz} or {\tt asserta} is to
+    be used.  If {\tt Dir} is {\tt z}, then {\tt assertz} is used and
+    the behavior of {\tt load\_dyn(FileName)} is obtained.  If {\tt
+    Dir} is {\tt a}, then {\tt asserta} is used to add the clauses to
+    the database, and clauses will be in the reverse order of their
+    appearance in the input file.  {\tt asserta} is faster than {\tt
+    assertz} for predicates such that their indexing and data result
+    in many hash collisions.  {\tt Dir} is ignored for facts in {\tt
+    FileName} that are trie-indexed.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is not an atom:
+\bi
+\item 	{\tt type\_error(FileName,atom)}
+\ei
+%
+\item 	{\tt Dir} is not equal to {\tt a} or {\tt z}~\footnote{For
+backward compatability, {\tt 0} and {\tt 1} are also allowed.}: 
+\bi
+\item 	{\tt domain\_error(a\_or\_z,Dir)}
+\ei
+%
+\ei
+
+\ouritem{load\_dync(+FileName)}\index{\texttt{load\_dync/1}}
+\index{canonical forma}
+    Acts as {\tt load\_dyn/1}, but assumes that facts are in
+    ``canonical'' format and is much faster as a result.  In XSB, a
+    term is in canonical format if it does not use any operators other
+    than list notation and comma-list notation.  This is the format
+    produced by the predicate {\tt write\_canonical/1}. (See {\tt
+    cvt\_canonical/2} to convert a file from the usual {\tt read/1}
+    format to {\tt read\_canonical} format.)  As usual, clauses of
+    predicates are not retracted if they are compiled instead of
+    dynamically asserted. All predicates are loaded into {\tt
+    usermod}.  {\tt :- export} declarations are ignored and a warning
+    is issued.
+
+    Notice that this predicate can be used to load files of Datalog
+    facts (since they will be in canonical format).  This predicate is
+    significantly faster than {\tt load\_dyn/1} and should be used
+    when speed is important.  (See {\tt load\_dync/2} below for
+    further efficiency considerations.)  A file that is to be
+    dynamically loaded often but not often modified by hand should be
+    loaded with this predicate. 
+
+    As with \verb|load_dyn/1|, the source file can be filtered through the C
+    preprocessor. However, since all clauses in such a file must be in
+    canonical form, the \verb|compiler_options/1| directive should look as
+    follows:
+    %%
+    \begin{verbatim}
+     :-(compiler_options('.'(xpp_on,[]))).      
+    \end{verbatim}
+    %%
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is not an atom.
+\bi
+\item 	{\tt type\_error(FileName,atom)}
+\ei
+%
+\ei
+
+\ournewitem{load\_dync(+FileName,+Dir)}{consult}
+\index{\texttt{load\_dync/2}}\label{load_dync/2}
+    Acts as {\tt load\_dyn/2}, but assumes that facts are in
+    ``canonical'' format.  {\tt Dir} is ignored for trie-asserted
+    code, but otherwise indicates whether {\tt assertz} or {\tt
+    asserta} is to be used.  If {\tt Dir} is {\tt z}, then {\tt
+    assertz} is used and the exact behavior of {\tt
+    load\_dync(FileName)} is obtained.  If {\tt Dir} is {\tt a}, then
+    {\tt asserta} is used to add the clauses to the database, and
+    clauses will end up in the reverse order of their appearance in
+    the input file.  
+
+    Setting {\tt Dir} to {\tt a} for non trie-asserted code can
+    sometimes be {\em much} faster than the default of {\tt z}.  The
+    reason has to do with how indexes on dynamic code are represented.
+    Indexes use hash tables with bucket chains.  No pointers are kept
+    to the ends of bucket chains, so when adding a new clause to the
+    end of a bucket (as in {\tt assertz}), the entire chain must be
+    run.  Notice that in the limiting case of only one populated
+    bucket (e.g., when all clauses have the same index term), this
+    makes assertz-ing a sequence of clauses quadratic.  However, when
+    using {\tt asserta}, the new clause is added to the beginning of
+    its hash bucket, and this can be done in constant time, resulting
+    in linear behavior for asserta-ing a sequence of clauses.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is not an atom:
+\bi
+\item 	{\tt type\_error(FileName,atom)}
+\ei
+%
+\item 	{\tt Dir} is not instantiated to {\tt a} or {\tt z}~\footnote{For
+backward compatability, {\tt 0} and {\tt 1} are also allowed.}: 
+\bi
+\item 	{\tt domain\_error(a\_or\_z,Dir)}
+\ei
+%
+\ei
+
+\ouritem{ensure\_loaded(+FileName,+Action)}
+\index{\texttt{ensure\_loaded/2}}
+%
+This predicate does nothing if {\tt FileName} has been loaded or
+consulted into XSB, and has not changed since it was loaded or
+consulted.  Otherwise
+%
+\bi
+\item If {\tt Action} is instantiated to {\tt dyn} the behavior is as
+{\tt load\_dyn/1} (or {\tt load\_dyn(FileName,a)}).
+
+\item If {\tt Action} is instantiated to {\tt dyna} the behavior is as
+{\tt load\_dyn(FileName,a)}.
+
+\item If {\tt Action} is instantiated to {\tt dync} the behavior is as
+{\tt load\_dync/1} (or {\tt load\_dync(FileName,a)}).
+
+\item If {\tt Action} is instantiated to {\tt dynca} the behavior is as
+{\tt load\_dync(FileName,a)}.
+
+\item If {\tt Action} is instantiated to {\tt consult}, {\tt FileName}
+is consulted.
+
+\ei
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is not an atom:
+\bi
+\item 	{\tt type\_error(FileName,atom)}
+\ei
+%
+\item 	{\tt Action} is not a valid load action as described above
+\bi
+\item 	{\tt domain\_error(loadAction,Action)}
+\ei
+%
+\ei
+
+\ournewitem{cvt\_canonical(+FileName1,+FileName2)}{consult}
+\index{\texttt{cvt\_canonical/2}}
+    Converts a file from standard term format to ``canonical'' format.
+    The input file name is {\tt FileName1}; the converted file is put in
+    {\tt FileName2}.  This predicate can be used to convert a file in
+    standard Prolog format to one loadable by {\tt load\_dync/1}.
+\end{description}
+
 %----------------------------------------------------------------------
 
 \subsection{The {\tt storage} Module: Associative Arrays and Backtrackable Updates}

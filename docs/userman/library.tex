@@ -43,6 +43,14 @@ looking at the sources.
     should be instantiated (but not necessarily ground) at the time of 
     the call.
 
+\ournewitem{delete\_ith(+Index, +List, ?Element, ?RestList)}{listutil}
+\index{\texttt{delete\_ith/4}}
+%\predindex{delete\_ith/4~(L)}
+    Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List}
+    unifies with {\tt Element}, and {\tt RestList} is {\tt List} with
+    {\tt Element} removed.  Fails if {\tt Index} is not a positive
+    integer or greater than the length of {\tt List}.
+
 \ournewitem{log\_ith(?Index, ?Tree, ?Element)}{basics}\index{\texttt{log\_ith/3}}
 %\predindex{log\_ith/3~(L)}
     Succeeds if the ${\tt Index^{th}}$ element of the Tree {\tt Tree}
@@ -128,19 +136,16 @@ looking at the sources.
     also contain duplicates.
 
 \ournewitem{absmerge(+List1, +List2, ?List3)}{listutil}\index{\texttt{absmerge/3}}
-%\predindex{absmerge/3~(L)}
     Predicate {\tt absmerge/3} is similar to {\tt merge/3}, except that 
     it uses predicate {\tt absmember/2} described below rather than 
     {\tt member/2}.
 
 \ournewitem{absmember(+Element, +List)}{listutil}\index{\texttt{absmember/2}}
-%\predindex{absmember/2~(L)}
     Similar to {\tt member}/2, except that it checks for identity
     (through the use of predicate {\tt '=='/2}) rather than unifiability 
     (through {\tt '='/2}) of {\tt Element} with elements of {\tt List}.
 
 \ournewitem{member2(?Element, ?List)}{listutil}\index{\texttt{member2/2}}
-%\predindex{member2/2~(L)}
     Checks whether {\tt Element} unifies with any of the actual elements 
     of {\tt List}.  The only difference between this predicate and 
     predicate {\tt member/2} is on lists having a variable tail, 
@@ -149,21 +154,42 @@ looking at the sources.
     Predicate {\tt member2/2} only checks for membership but does not 
     insert the {\tt Element} into the list if it is not there.
 
-\ournewitem{delete\_ith(+Index, +List, ?Element, ?RestList)}{listutil}
-\index{\texttt{delete\_ith/4}}
-%\predindex{delete\_ith/4~(L)}
-    Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List}
-    unifies with {\tt Element}, and {\tt RestList} is {\tt List} with
-    {\tt Element} removed.  Fails if {\tt Index} is not a positive
-    integer or greater than the length of {\tt List}.
-
 \ournewitem{closetail(?List)}{listutil}\index{\texttt{closetail/1}}
-%\predindex{closetail/1~(L)}
     Predicate {\tt closetail/1} closes the tail of an open-ended list.
     It succeeds only once.
 
 \end{description}
 
+\subsection{Processing Comma Lists}
+%===========================
+
+It is often useful to process comma lists when meta-interpreting or
+preprocessing.  XSB libraries include the following simple utilities.
+
+\begin{description}
+
+\ournewitem{comma\_to\_list(+CommaList,-List)}{basics}
+\index{\texttt{comma\_to\_list/2}}
+%
+Transforms {\tt CommaList} to {\tt List}.
+
+\ourrepeatnewitem{comma\_append(?CL1,?CL2,?CL3)}{basics}
+\index{\texttt{comma\_append/3}}
+%
+\ourrepeatnewitem{comma\_length(?CommaList,?Length)}{basics}
+\index{\texttt{comma\_length/2}}
+%
+\ourrepeatnewitem{comma\_member(?Element,?CommaList)}{basics}
+\index{\texttt{comma\_member/2}}
+%
+\ournewitem{comma\_member(?Element,?CommaList)}{basics}
+\index{\texttt{comma\_memberchk/2}}
+%
+Analogues for comma lists of {\tt append/3}, {\tt length/3}, {\tt member/2} and {\tt
+memberchk/2}, respectively.
+
+\end{description}
+	
 \section{Attributed Variables} \label{sec:attributed-variables}
 %=============================
 
@@ -276,143 +302,6 @@ show_domain(X) :-                            % print out the domain of X
 
 \end{verbatim}
 \end{small}
-
-\section{Asserting Dynamic Code} \label{LoadDyn}
-%===============================================
-
-The module {\tt consult} in directory {\tt lib} provides several handy
-library predicates that can assert the contents of a file into XSB's
-database.  The use of these predicates may be necessary when the code
-needs to be {\tt dynamic} (so that it is retractable), when the code
-size is too large for the XSB compiler (if a file has hundreds of
-thousands or more clauses), or when it contains atoms whose length is
-more than 255 that cannot be handled by the XSB compiler.
-
-\begin{description}
-\ournewitem{load\_dyn(+FileName)}{consult}
-\index{\texttt{load\_dyn/1}}\label{load_dyn/1}
-%\predindex{load\_dyn/1~(L)}
-    Asserts the contents of file {\tt FileName} into the database.
-    All existing clauses of the predicates in the file that already
-    appear in the database, are retracted, unless there is a {\tt
-    multifile/1} declaration for them.  Clauses in the file must be
-    in a format that {\tt read/1} will process.  So, for example,
-    operators are permitted.  As usual, clauses of predicates are not
-    retracted if they are compiled instead of dynamically asserted.
-    All predicates are loaded into {\tt usermod}.  Module declarations
-    such as {\tt :- export} are ignored and a warning is issued.
-
-    Dynamically loaded files can be filtered through the XSB preprocessor.
-    To do this, put the following in the source file: 
-    %%
-    \begin{verbatim}
-    :- compiler_options([xpp_on]).      
-    \end{verbatim}
-
-    %%
-    Of course, the name \verb|compiler_options| might seem like a misnomer
-    here (since the file is not being compiled), but it is convenient to
-    use the same directive both for compiling and loading, in case the same
-    source file is used both ways.
-
-    Exceptions:
-    \begin{description}
-    \item[{\tt type\_error}]
-	{\tt FileName} is not an atom at the time of call.
-    \end{description}
-
-\ournewitem{load\_dyn(+FileName,+Dir)}{consult}
-\index{\texttt{load\_dyn/2}}\label{load_dyn/2}
-    Asserts the contents of file {\tt FileName} into the database.  {\tt Dir}
-    indicates whether {\tt assertz} or {\tt asserta} is to be used.  If {\tt Dir} 
-    is 1, then {\tt assertz} is used and the behavior of {\tt load\_dyn(FileName)}
-    is obtained.  If {\tt Dir} is 0, then {\tt asserta} is used to add the 
-    clauses to the database, and clauses will be in the reverse order of
-    their appearance in the input file.  {\tt asserta} is faster than {\tt assertz}
-    for predicates such that their indexing and data result in many hash collisions.
-
-\ournewitem{ensure\_dyn\_loaded(+FileName)}{consult}
-\index{\texttt{ensure\_dyn\_loaded/1}}
-    Is similar to {\tt load\_dyn/1} except that it does nothing if the
-    file has previously been loaded and the file has not been changed
-    since.  However the file will be reloaded if the index declaration of
-    any predicate in that file has changed to require more indexing, or a
-    larger hash table.
-
-\ournewitem{load\_dync(+FileName)}{consult}\index{\texttt{load\_dync/1}}
-\index{canonical forma}
-    Acts as {\tt load\_dyn/1}, but assumes that facts are in
-    ``canonical'' format and is much faster as a result.  In XSB, a
-    term is in canonical format if it does not use any operators other
-    than list notation and comma-list notation.  This is the format
-    produced by the predicate {\tt write\_canonical/1}. (See {\tt
-    cvt\_canonical/2} to convert a file from the usual {\tt read/1}
-    format to {\tt read\_canonical} format.)  As usual, clauses of
-    predicates are not retracted if they are compiled instead of
-    dynamically asserted. All predicates are loaded into {\tt
-    usermod}.  {\tt :- export} declarations are ignored and a warning
-    is issued.
-
-    Notice that this predicate can be used to load files of Datalog facts
-    (since they will be in canonical format).  This predicate is
-    significantly faster than {\tt load\_dyn/1} and should be used when
-    speed is important.  (See {\tt load\_dync/2 below for further efficiency 
-    considerations.}  A file that is to be dynamically loaded often but
-    not often modified by hand should be loaded with this predicate.  Use
-    predicate {\tt cvt\_canonical/2} (see below) to convert a usual file
-    to a format readable by this predicate.
-
-    As with \verb|load_dyn/1|, the source file can be filtered through the C
-    preprocessor. However, since all clauses in such a file must be in
-    canonical form, the \verb|compiler_options/1| directive should look as
-    follows:
-    %%
-    \begin{verbatim}
-     :-(compiler_options('.'(xpp_on,[]))).      
-    \end{verbatim}
-    %%
-
-\ournewitem{load\_dync(+FileName,+Dir)}{consult}
-\index{\texttt{load\_dync/2}}\label{load_dync/2}
-    Acts as {\tt load\_dyn/2}, but assumes that facts are in
-    ``canonical'' format.  {\tt Dir} indicates whether {\tt assertz} 
-    or {\tt asserta} is to be used.  If {\tt Dir} is 1, then {\tt assertz}
-    is used and the exact behavior of {\tt load\_dync(FileName)}
-    is obtained.  If {\tt Dir} is 0, then {\tt asserta} is used to add the 
-    clauses to the database, and clauses will end up in the reverse order of
-    their appearance in the input file.  Using {\tt Dir} of 0 can sometimes
-    be {\em much} faster than the default of 1.  The reason has to do with how
-    indexes on dynamic code are represented.  Indexes use hash tables with bucket
-    chains.  No pointers are kept to the ends of bucket chains, so when adding
-    a new clause to the end of a bucket (as in {\tt assertz}), the entire chain
-    must be run.  Notice that in the limiting case of only one populated bucket 
-    (e.g., when all clauses have the same index term), this makes assertz-ing a
-    sequence of clauses quadratic.  However, when using {\tt asserta}, the new
-    clause is added to the beginning of its hash bucket, and this can be done in
-    constant time, resulting in linear behavior for asserta-ing a sequence of
-    clauses.
-
-{\tt asserta} is faster than {\tt assertz}
-    for predicates such that their indexing and data result in many hash collisions.
-
-\ournewitem{ensure\_dync\_loaded(+FileName)}{consult}
-\index{\texttt{ensure\_dync\_loaded/1}}
-    Is similar to {\tt load\_dync/1} except that it does nothing if the
-    file has previously been loaded and the file has not been changed
-    since.  However the file will be reloaded if the index declaration of
-    any predicate in that file has changed to require more indexing, or a
-    larger hash table.
-
-\ournewitem{cvt\_canonical(+FileName1,+FileName2)}{consult}
-\index{\texttt{cvt\_canonical/2}}
-    Converts a file from standard term format to ``canonical'' format.
-    The input file name is {\tt FileName1}; the converted file is put in
-    {\tt FileName2}.  This predicate can be used to convert a file in
-    standard Prolog format to one loadable by {\tt load\_dync/1}.
-\end{description}
-
-%----------------------------------------------------------------------
-
 
 \section{Ground, Numbervars, Subsumption, Variant} \label{NumberVars}
 %====================================================================
@@ -1162,7 +1051,11 @@ floats, and {\tt Sep} must be an atom.  This predicate concatenates
 the atoms and integers into a single atom, separating each by {\tt
 Sep}, return the resulting atom in {\tt Atom}.  Integers and floats
 are converted to character strings using {\tt number\_codes/2}.
+\end{description}
 
+%-------------------------------------------------------------------------------------------
+\comment{
+% TLS: not needed with streams.
 \ournewitem{atom\_to\_term(+Atom,-Term)}{string}
 \index{\texttt{atom\_to\_term/2 }}
 
@@ -1204,9 +1097,9 @@ opened and read using XSB's streams and {\tt read\_term/3}.  A minor
 difference with the stream-based approach is that the atom should {\em
 not} contain a terminating period ('.'). If the atom is not a
 syntactically correct term, then this predicate fails, quietly.
-
-\end{description}
+}
 %%
+%-------------------------------------------------------------------------------------------
 
 \section{Script Writing Utilities}
 %========================
@@ -2698,6 +2591,49 @@ programs that define their own meta-predicates.
 currently equivalent to {\tt checkImpExps([],FileNameList)}.
 \end{description}
 
+\section{Pretty Printing}
+
+XSB contains a simple but useful pretty-printer~\footnote{This library
+uses code both from hProlog and Ciao.}.
+
+\begin{description}
+
+\ournewitem{pretty\_print(+ClausePairs)}{pretty\_print}
+\index{\texttt{pretty\_print/1}}
+%
+The input to {\tt pretty\_print/1}, {\tt ClausePairs}, can be either a
+list of clause pairs or a single clause pair.  A clause pair is either
+a Prolog clause (or declaration) or a pair:
+%
+\begin{center}
+{\tt (Clause,Dict)} 
+\end{center}
+%
+Where {\tt Dict} is a list of the form {\tt A = V} where {\tt V} is a
+variable in {\tt Clause} and {\tt A} is the string to be used to
+denote the variable \footnote{Thus the list of variable names returned
+by {\tt read\_term/\{2,3\}} can be used directly in {\tt Dict}.}.
+
+By default, {\tt pretty\_print/1} outputs atomic terms using {\tt
+writeq/1}, but specialized output can be configured via asserting in
+{\tt usermod} a term of the form
+%
+\begin{center}
+{\tt user\_replacement\_hook(Term,Call)}
+\end{center}
+%
+which will use Call to output an atomic literal $A$ whenever $A$
+unifies with {\tt Term}.  For example, pretty printing weight
+constraints in XSB's {\tt XASP} package is done via the hook
+%
+\begin{center}
+{\tt user\_replacement\_hook(weight\_constr(Term),output\_weight\_constr(Term))}
+\end{center}
+%
+which outputs a weight constraint in a (non-Prolog) syntax that is 
+used by several ASP systems.
+
+\end{description}
 
 \section{Other Libraries}
 %================================

@@ -686,7 +686,7 @@ and {\tt abolish\_table\_pred/1}
 %,{\tt abolish\_table\_call/1}.  
 (see Section~\ref{sec:TablingPredicates}).
 
-\section{Compiling and Consulting} \label{Consulting}
+\section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================
 In XSB, both interpreted (i.e. asserted) and compiled code are
 transformed into SLG-WAM instructions.  Compiled code may be more
@@ -762,6 +762,7 @@ Compilation is performed if the update date of a source file ({\tt
 *.P} or {\tt *.H}) is later than that of the the object file ({\tt
 *.xwam}).
 %%
+%----------------------------------------------------------------------
 \comment{
 {\em and} if the source file is not larger than the default compile
 size.  This default compile is set to be 5000 words (via a declaration
@@ -771,7 +772,8 @@ loaded using {\tt load\_dyn/1}, and otherwise it will be compiled
 ({\tt load\_dyn/1} can also be called separately, see the Section {\it
 Asserting Dynamic Code} for details).  While {\tt load\_dyn} gives
 reasonably good execution times, compilation can always be done by
-using {\tt compile/[1,2]} explicitly.  } 
+using {\tt compile/[1,2]} explicitly.  }
+%----------------------------------------------------------------------
 %%
 Currently (\version), a foreign language module is compiled when at
 least one of files {\tt *.c} or {\tt *.H} has been changed from the
@@ -801,8 +803,22 @@ Finally any queries --- that is, any terms with principal functor {\tt
 directives like the ones described in Section~\ref{the_compiler} 
 are executed in the order that they are encountered.
 
+Other predicates for loading files are {\tt ensure\_loaded/\{1,2\}}.  
+
+\begin{description}
+\ouritem{ensure\_loaded(+FileName)}\index{\texttt{ensure\_loaded/1}}
+%
+This predicate checks to see whether the object file for {\tt
+FileName} is newer than the source code and header files for {\tt
+FileName}, and compiles {\tt FileName} if not.  If {\tt FileName} is
+loaded into memory, {\tt ensure\_loaded/1} does not reload it, unlike
+{\tt consult/1} which will always reload
+\end{description}
+% 
+{\tt ensure\_loaded/2} is documented in Section~\ref{sec:LoadDyn}.
+
 \section{The Compiler} \label{the_compiler} \index{Compiler}
-%===========================================================
+%========================================================
 
 The XSB compiler translates XSB source files into
 byte-code object files.  It is written entirely in Prolog.
