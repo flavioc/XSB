@@ -1,6 +1,7 @@
 *.ascii
 *.aux
 *.blg
+*.co
 *.cp
 *.cps
 *.fn
@@ -10,6 +11,7 @@
 *.ky
 *.kys
 *.log
+*.op
 *.pd 
 *.pds
 *.pdf
@@ -24,4 +26,4 @@
 *.tps
 *.vr
 *.vrs
-
+*XXXXXX
