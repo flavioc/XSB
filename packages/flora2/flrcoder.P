@@ -444,6 +444,7 @@ flora_write_wsstruct(Term,WS,Prefix) :-
 	    str_cat(Prefix,F,NewF),
 	    flora_write_flogic(WS,NewF,N,Args,Prefix)
 	;
+	  %% Workspace applied to Prolog terms has no effect.
 	  is_prologterm(Term,F,N,Args),
 	  flora_write_prolog(F,N,Args,Prefix)
         ).

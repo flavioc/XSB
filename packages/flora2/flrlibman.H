@@ -46,6 +46,8 @@
 :- dynamic flora_syslib_loaded(_).
 :- index(flora_register_syslib/1,trie).
 
+:- import flora_error_line/1 from flrprint.
+
 :- export
 	flora_include/2,
 	flora_library/2,

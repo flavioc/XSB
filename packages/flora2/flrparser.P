@@ -352,6 +352,7 @@ is_flstring_struct(FLSTRING(_Str)).
 
 get_flvar_struct(OBJECT(VARIABLE(Name),I),FLVAR(Name,I)).
 is_flvar_struct(FLVAR(_Name,_I)).
+is_anonymous_flvar_struct(FLVAR(FL_UNDERSCORE,_I)).
 
 fllist_struct(L,T,FLLIST(L,T)).
 is_fllist_struct(FLLIST(_L,_T)).
@@ -643,7 +644,7 @@ flora_import_directive(CANOTERM(Funct,1,FL_PARENTHESIS,[T],_If,_Ip),CodeList,Sta
 	    flora_commasep_falist(L,FAList,Status),
 	    (Status == [] -> flora_import_directlist(M,FAList,CodeList); true)
 	;
-	  parsing_error(R,ERROR_MODULE,Status)
+	  parsing_error(R,ERROR_XSBMODULE,Status)
         ).
 
 
@@ -1029,7 +1030,7 @@ flora_body(CANOTERM(Funct,1,FL_PARENTHESIS,[G],_If,_Ip),WS,Code,Status) :-
 flora_body(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!, %% nesting of workspace scope
-	( get_name(R,RCode) -> %% Path expression needs runtime support.
+	( flora_name_or_normvar(R,RCode) -> %% Path expression needs runtime support.
 	    flora_body(L,RCode,Code,Status)
 
 	; R=CANOTERM(Mod,0,FL_PARENTHESIS,[],_Ifu,_Ipa), get_name(Mod,FL_PLIB) ->
@@ -1229,8 +1230,8 @@ flora_loaditem(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_RIGHTTO),
 	flatom_struct(FL_RIGHTTO,FCode),
 	!,
-	( flora_name_or_var(L,LCode) ->
-	    ( flora_name_or_var(R,RCode) ->
+	( flora_name_or_normvar(L,LCode) ->
+	    ( flora_name_or_normvar(R,RCode) ->
 		flterm_struct(FCode,2,[LCode,RCode],Code),
 		Status=[]
 	    ;
@@ -1241,7 +1242,7 @@ flora_loaditem(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Status) :-
         ).
 
 flora_loaditem(CanoniTerm,Code,[]) :-
-	flora_name_or_var(CanoniTerm,Code),
+	flora_name_or_normvar(CanoniTerm,Code),
 	!.
 
 flora_loaditem(CanoniTerm,_Code,Status) :-
@@ -1249,10 +1250,10 @@ flora_loaditem(CanoniTerm,_Code,Status) :-
 	parsing_error(CanoniTerm,ERROR_LOADITEM,Status).
 
 
-flora_name_or_var(CanoniTerm,Code) :-
+flora_name_or_normvar(CanoniTerm,Code) :-
 	( get_name(CanoniTerm,A), flatom_struct(A,Code)
         ;
-	  get_flvar_struct(CanoniTerm,Code)
+	  get_flvar_struct(CanoniTerm,Code), \+ is_anonymous_flvar_struct(Code)
         ),
 	!.
 
@@ -1381,7 +1382,7 @@ flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,Args,_If,_Ip),Code,Status) :-
 flora_pathexp(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( get_name(R,RCode) ->
+	( flora_name_or_normvar(R,RCode) ->
 	    flora_pathexp(L,LCode,S),
 	    ( S == [] ->
 		( is_flworkspace_struct(LCode) ->
@@ -1532,7 +1533,7 @@ flora_attmethspec(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),Code,Status) :-
 flora_attmethspec(CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( get_name(R,RCode) ->
+	( flora_name_or_normvar(R,RCode) ->
 	    flora_attmethspec(L,LCode,S),
 	    ( S == [] ->
 		( ( is_flattspec_struct(LCode);
@@ -1914,7 +1915,7 @@ flora_dbliteral_list(Mode,[H|T],CodeList,Status) :-
 flora_dbliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),CodeList,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( get_name(R,RCode) ->
+	( flora_name_or_normvar(R,RCode) ->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
 	;
@@ -1948,7 +1949,7 @@ flora_dbwsliteral(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],_If,_Ip),_WS,CodeLi
 	get_atom(Funct,FL_AT),
 	!,
 	%% nested workspace
-	( get_name(R,RCode) ->
+	( flora_name_or_normvar(R,RCode) ->
 	    flora_comma_separated_list(L,LList),
 	    flora_dbwsliteral_list(Mode,LList,RCode,CodeList,Status)
 	;
@@ -2123,7 +2124,7 @@ flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,Args,If,_Ip),Code,Status) 
 flora_db_pathexp(Mode,CANOTERM(Funct,2,FL_PARENTHESIS,[L,R],If,_Ip),Code,Status) :-
 	get_atom(Funct,FL_AT),
 	!,
-	( get_name(R,RCode) ->
+	( flora_name_or_normvar(R,RCode) ->
 	    flora_db_pathexp(Mode,L,LCode,S),
 	    ( S == [] ->
 		( is_flworkspace_struct(LCode) ->

@@ -34,6 +34,12 @@
   flora_register_syslib(+LibName)
 **********************************************************************/
 flora_register_syslib(LibName) :-
+	var(LibName),
+	!,
+	flora_error_line('Uninstantiated FLORA system library name! Registration aborted!'),
+	abort.
+
+flora_register_syslib(LibName) :-
 	assert(flora_syslib_loaded(LibName)).
 
 
@@ -43,6 +49,12 @@ flora_register_syslib(LibName) :-
 
   Note: This predicate always succeeds.
 **********************************************************************/
+flora_load_library(LibName) :-
+	var(LibName),
+	!,
+	flora_error_line('Uninstantiated FLORA system library name! Loading aborted!'),
+	abort.
+
 flora_load_library([]) :- !.
 
 flora_load_library([H|T]) :-

@@ -369,23 +369,33 @@
 #define FLLIBCOUNT		fllibcount
 #define	FLLIBCOLLECTSET		fllibcollectset
 #define	FLLIBCOLLECTBAG 	fllibcollectbag
+
 #define	FLLIBLOAD		fllibload
+
 #define FLLIBANSWER		fllibanswer
 #define FLLIBSHELLANS		fllibshellans
 #define FLLIBPROGRAMANS		fllibprogramans
+
 #define FLLIBDISPLAY		fllibdisplay
+
 #define FLLIBDBOP		fllibdbop
 #define FLLIBINSERT		fllibinsert
 #define FLLIBDELETE		fllibdelete
 #define FLLIBDELETEALL		fllibdeleteall
 #define FLLIBERASE		flliberase
 #define FLLIBERASEALL		flliberaseall
+
+#define FLLIBBTDBOP		fllibbtdbop
 #define FLLIBBTINSERT		fllibbtinsert
 #define FLLIBBTDELETE		fllibbtdelete
 #define FLLIBBTDELETEALL	fllibbtdeleteall
 #define FLLIBBTERASE		fllibbterase
 #define FLLIBBTERASEALL		fllibbteraseall
+
 #define FLLIBSHDIRECT		fllibshdirect
+
+#define FLLIBMODLIT		fllibmodlit
+#define FLLIBMODOBJ		fllibmodobj
 
 
 /****************************************************************************
