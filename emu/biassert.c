@@ -2283,16 +2283,15 @@ static void abolish_trie_asserted_stuff(PrRef prref) {
 
    BTNptr pRoot;
    CPtr b;
-   
+
    /*** printf("abolish_trie\n"); ***/
    b = (CPtr)prref->FirstClRef;
    pRoot = (BTNptr)*(b + 3);
    switch_to_trie_assert;
    delete_trie(pRoot);
    switch_from_trie_assert;
-   /**   mem_dealloc(b);  where is this allocated?? */
-   *(b + 3) = (Cell) 0;
-   /* shouldn't we change one of the instr fields too? */
+   *(pb)prref = fail;
+   mem_dealloc((pb)(b-2),6*sizeof(Cell));  /* allocated in trie_assert */
 }
 
 /*----------------------------------------------------------------------*/
