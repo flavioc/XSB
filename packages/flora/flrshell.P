@@ -55,6 +55,7 @@
 	'_$_$_flora_dynloadlist'/1,
 	'_$_$_flora_check_filename'/1,
 	'_$_$_write_flora_warnheader'/0,
+	'_$_$_flora_discard_tokens'/1,
 	flcompile/1, flcompile/2, maxerr/1, flconsult/1, flconsult/2,
 	load/1, dynload/1, dyncompile/1, dyncompile/2, dynconsult/1,
 	dynconsult/2, displayln_warning/1
@@ -109,22 +110,27 @@ flora_shell :-
 	nl, write('FLORA> ?- '),
 	'_$_$_flora_read_parse_compile'(static_mode,
 					[atom('$?'),atom('$-')],
-					_,
+					Tokens,
 					Rules,
 					Status,
 					Opts),
-	( member(error(noop),Status) ->
-	    nl
+	( member(noop,Status) ->
+	    nl, S=Status
 
 	  ; member(error(_),Status) ->
-	    true
+	    ( (member(eof,Status); member(atom(rule_delimeter),Tokens)) ->
+		S=Status
+	      ;
+	        '_$_$_flora_discard_tokens'(S)
+	    )
 
 	  ;
+	    S=Status,
 	    (Opts=[] -> true; '_$_$_flora_check_library'(Opts)),
 	    Rules=[query(Gs,NVs)],
 	    '_$_$_flora_print_answers'(Gs,NVs)
 	),
-	(member(eof,Status) -> end ; fail).
+	(member(eof,S) -> end ; fail).
 
 
 /*********************************************************************/
@@ -188,7 +194,7 @@ help :-
 	writeln('  {FILE[.EXT],...}             : dynload a list of .flr or .P files'),
 	writeln('  rundemo(FILE[.flr])          : flconsult a demo from FLORA demos directory'),
 	writeln('  rundemo(FILE[.flr],[...])    : rundemo(FILE) with options [...]'),
-	writeln('  abolish_all_tables       : flush all tabled data'),
+	writeln('  abolish_all_tables           : flush all tabled data'),
 	writeln('  all                          : show all solutions (default)'),
 	writeln('  one                          : show solutions one by one'),
 	writeln('  maxerr(all/N)                : set/show the max number of errors FLORA reports'),

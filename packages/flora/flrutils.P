@@ -67,6 +67,7 @@
 	'_$_$_flora_dynloadlist'/1,
 	'_$_$_flora_check_filename'/1,
 	'_$_$_write_flora_warnheader'/0,
+	'_$_$_flora_discard_tokens'/1,
 	flcompile/1, flcompile/2, flconsult/1, flconsult/2, dyncompile/1,
 	dyncompile/2, dynconsult/1, dynconsult/2, load/1, dynload/1,
 	maxerr/1, flora_prefix/1, flora_word/2, terminate_list/1,
@@ -328,7 +329,7 @@ dynload(File) :-
 	),
 	flora_locate_file(FullFileName,FlrFile),
 	( not file_exists(FlrFile) ->
-	    displayln, display('+++ Error: '),
+	    displayln, flora_errheader,
 	    display(FlrFile),
 	    displayln(' does NOT exist !'),
 	    fail
@@ -661,7 +662,7 @@ flora_file_exists(File) :-
 	( file_exists(File) ->
 	    true
 	  ;
-	    displayln, display('+++ Error: '), display(File),
+	    displayln, flora_errheader, display(File),
 	    displayln(' does NOT exist !'), fail
 	).
 
@@ -695,7 +696,7 @@ compile_flrfile(MaxErr,ErrorCount,Status,OldOpts,NewOpts) :-
 		member(atom(rule_delimeter),Tokens) ->
 		  compile_flrfile(MaxErr,NewCount,Status,_,_)
 
-	      ; member(not_eof,S1), discard_tokens(S2),
+	      ; member(not_eof,S1), '_$_$_flora_discard_tokens'(S2),
 		member(not_eof,S2) ->
 		  compile_flrfile(MaxErr,NewCount,Status,_,_)
 	      ;
@@ -759,7 +760,7 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 	    displayln_errmsg(Msg)
 
 	  ; L = [atom('$?'),atom('$-')], rule(null,Tokens,[]) ->
-	    Status=[error(noop)|ReadStatus]
+	    Status=[noop|ReadStatus]
 
 	  ;
 	    append(L,Tokens,Ts),
@@ -785,10 +786,10 @@ read_parse_compile(L,Tokens,FlattenedRules,Status,Opts) :-
 
 
 /********************************************************************/
-discard_tokens(Status) :-
+'_$_$_flora_discard_tokens'(Status) :-
 	displayln,
 	repeat,
-	displayln('... discarding tokens ...'),
+	flora_msgheader, displayln('discarding tokens]'),
 	read_tokens(Tokens,Status),
 	( member(atom(rule_delimeter),Tokens), !
 	 ;
@@ -838,7 +839,7 @@ flora_default_directives([eqlevel(0)]).
 /*********************************************************************/
 '_$_$_flora_check_filename'(Name) :-
 	( not atom(Name) ->
-	    displayln, displayln('+++ Error: invalid file name'),
+	    displayln, flora_errheader, displayln('invalid file name'),
 	    fail
 
 	  ;
@@ -899,7 +900,7 @@ maxerr(X) :-
 
 	  ; X \== all, (not integer(X); X < 1) ->
 	    displayln,
-	    displayln('+++ Error: invalid argument to maxerr'),
+	    flora_errheader, displayln('invalid argument to maxerr'),
 	    fail
 
 	  ;
