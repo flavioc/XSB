@@ -48,6 +48,7 @@
 	bagAvg/2.
 
 :- import apply/2,apply/3,apply/4 from usermod.
+:- import sort/2 from setof.
 
 /* 
 bagReduce(+UnaryPred,?Result,+BinOp,+OpId) reduces all values that
@@ -95,7 +96,8 @@ bagPO1(Call,Var,PO) :-
 	 ;	(findall(p(Cs,Ovar,Leaf),
 			 (get_returns(Cs,Oskel,Leaf), PO(Ovar,Var)),
 			 Rets),
-		 member(p(Cs,Ovar,Leaf),Rets),
+		 sort(Rets, Rets1),
+		 member(p(Cs,Ovar,Leaf),Rets1),
 		 delete_return(Cs,Leaf),
 		 fail
 		;
