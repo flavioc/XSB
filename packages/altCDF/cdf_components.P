@@ -533,7 +533,7 @@ assert_dependencies_for_path2(Name,New,Pathnew,Vnew):-
 load_component_pass2(Name,AbsPath,Vin,Anclist):- 
 	slash(Slash),
 	get_full_path_and_loadname(Name,AbsPath,Vin,_Full,_V,Loadname),
-	message(['Loading int rules and initializing componen: ',
+	message(['Loading int rules and initializing component: ',
 			AbsPath,Slash,Loadname]),nl,
 	load_component_dependencies_pass2(Name,Anclist),
 	concat_atom([AbsPath,Slash,Loadname],Dir),
@@ -861,11 +861,11 @@ information with current the path information is created if needed.
 
 create_dependencies_create([],_From,_Compid,_Dir).
 create_dependencies_create([ToName|T],FromName,Compid,Dir):- 
-	FromName \== ToName,!,
-%	writeln(cd_for(FromName,ToName)),
-	create_all_dependencies_create(ToName,Dir,Compid),
-	create_dependencies_create(T,FromName,Compid,Dir).
-create_dependencies_create([_|T],FromName,Compid,Dir):- 
+	(FromName == ToName
+	 ->	true
+	 ;	%	writeln(cd_for(FromName,ToName)),
+		create_all_dependencies_create(ToName,Dir,Compid)
+	),
 	create_dependencies_create(T,FromName,Compid,Dir).
 
 /* TLS: in first clause, we are not necessarily creating a component: 
