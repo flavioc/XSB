@@ -34,12 +34,13 @@
               check_stream/3, 
               check_var/3, 
               default_error_handler/1,
-              default_sys_error_handler/1.
+	      default_sys_error_handler/1,
+	      print_backtrace/1.
 
 :- import (dynamic)/1 from assert.
 :- import ground/1 from basics.
 %%:- import reset_undef_pred_handlers/0 from loader.
-:- import close_open_tables/0 from machine.
+:- import close_open_tables/0, psc_data/2, psc_name/2, psc_arity/2 from machine.
 :- import atom/1, messageln/2, throw/1 from standard.
 :- import concat_atom/2 from string.
 

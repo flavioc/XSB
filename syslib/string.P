@@ -56,6 +56,10 @@ c_atom(A,L0,L) :-
 		 ;	c_atom(R,L0,L1),
 			c_atom(A1,L1,L)
 		)
+	 ; A @= (_,_)
+	 ->	A = (A1,R),
+		c_atom(R,L0,L1),
+		c_atom(A1,L1,L)
 	 ;	(atom(A)
 		 ->	atom_codes(A,AC)
 		 ;	number(A)
@@ -85,6 +89,10 @@ c_atom(A,S,L0,L) :-
 		 ;	c_atom(R,S,L0,L1),
 			c_atom(A1,S,L1,L)
 		)
+	 ; A @= (_,_)
+	 ->	A = (A1,R),
+		c_atom(R,S,L0,L1),
+		c_atom(A1,S,L1,L)
 	 ;	(atom(A)
 		 ->	atom_codes(A,AC)
 		 ;	number(A)
