@@ -37,8 +37,13 @@ e(b,d).
 tc(X,Y) :- e(X,Y).			% a RULE and ...
 tc(X,Y) :- tc(X,Z), tc(Z,Y).		% ... a (doubly) RECURSIVE RULE
  
+person :: object.
+dangerous_hobby :: object.
 john:employee.				% INSTANCE : CLASS 
 employee::person.			% SUBCLASS :: SUPERCLASS
+bob:person.
+tim:person.
+betty:employee.
 
 person[age=>integer; kids=>>person].    % some (optional) SIGNATURE information
 
