@@ -222,6 +222,8 @@ misc_error(Message):-
 
 %--------------------------------
 % These checks can be reused for various types of ISO compatability.
+% atom, number, integer, non-negative integer, nonvar, nonvar_list, 
+% atom_list.
 
 %-------------
 % Checks that a term is an atom.
@@ -240,7 +242,13 @@ check_number(Term,Predicate,Arg) :-
 check_integer(Term,Predicate,Arg) :- 
 	(integer(Term) -> 
 	    true
-	 ;  type_error(number,Term,Predicate,Arg) ).
+	 ;  type_error(integer,Term,Predicate,Arg) ).
+
+%-------------
+check_nonneg_integer(Term,Predicate,Arg) :- 
+	(integer(Term), Term >= 0 -> 
+	    true
+	 ;  type_error(nonNegativeInteger,Term,Predicate,Arg) ).
 
 %-------------
 % Checks that a term is ground

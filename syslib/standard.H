@@ -104,7 +104,7 @@
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
 :- import domain_error/4, check_atom/3, check_nonvar/3,type_error/4,
-  permission_error/4, instantiation_error/3
+  permission_error/4, instantiation_error/3, check_nonneg_integer/3
      from error_handler.
 :- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.

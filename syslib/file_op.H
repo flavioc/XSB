@@ -36,6 +36,7 @@
 :- import assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
 
 :- import conpsc/2, psc_type/2, term_new/2, psc_insert/4 from machine.
+:- import instantiation_error/2 from error_handler.
 
 :- index '_$op1'/3-3.
 

@@ -767,19 +767,43 @@ ok_op(OP) :- atom(OP), OP \== ','.
 
 /* add index declaration */
 index(Ps,Arg,S) :- 
-	nonvar(Ps), nonvar(Arg), nonvar(S),
+	check_nonvar(Ps,(index)/3,1),
+	check_nonneg_integer(S,(index)/3,3),
+	check_nonvar(Arg,(index)/3,1),
+	check_index(Arg),
 	add_index(Ps,Arg,S).
 
 index(Ps,Arg) :-
-	nonvar(Ps), nonvar(Arg),
+	check_nonvar(Ps,(index)/2,1),
+	check_nonvar(Arg,(index)/2,2),
 	(Arg == trie
 	 ->	add_trie_index(Ps)
-	 ;	add_index(Ps,Arg,0)
+	 ;	check_index(Arg),add_index(Ps,Arg,0)
 	).
+
+check_index(X):-
+	(X = [_|_] -> 
+	    check_index_list(X)
+	  ; check_index_element(X) ).
+
+check_index_list([]).
+check_index_list([H|T]):- 
+	check_index_element(H),
+	check_index_list(T).
+
+check_index_element(X):- 
+	(integer(X),X >= 0,X < 255 -> 
+	    true
+	  ; (X = *(Y),check_index_element(Y) -> 
+	       true 
+                 ; (X = Y + Z, check_index_element(Y),check_index_element(Z) -> 
+		true
+	        ;   domain_error(indexElement,X,(index)/[1,2],2) ) ) ).
 
 /* add tabling declaration */
 table(Ps) :- 
-	nonvar(Ps), Ps=_/_,
+	check_nonvar(Ps,(table)/1,1),
+	Ps=_/_,
 	add_table(Ps).
 
 

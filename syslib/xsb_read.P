@@ -25,7 +25,7 @@
 */
 
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod,optimize]).
 #include "standard.h"
 #include "char_defs.h"
 #include "flag_defs_xsb.h"

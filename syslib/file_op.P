@@ -334,15 +334,18 @@ add_table(Spec) :-
 /*======================================================================*/
 /* mpa_to_skel(+MPAorSkel,-Skel) converts M:P/A or P/A to Skel 		*/
 /*======================================================================*/
+% TLS: added some checking here, as I think silently failing cfan be dangerous.
 
 mpa_to_skel(Mod:P/A,Skel) :-
 	atom(Mod),atom(P),integer(A),!,
 	psc_insert(P,A,PSC,Mod),
 	term_new(PSC,Skel).
-mpa_to_skel(P/A,Skel) :- !,
+mpa_to_skel(P/A,Skel) :- 
 	atom(P),integer(A),!,
 	functor(Skel,P,A).
-mpa_to_skel(Skel,Skel) :- nonvar(Skel).
+mpa_to_skel(Skel,Skel) :- nonvar(Skel),!.
+mpa_to_skel(_,_):- 
+	instantiation_error(mpa_to_skel/1,1).
 
 /*======================================================================*/
 /* The purpose of the following is explained in file: interpreter.P     */
