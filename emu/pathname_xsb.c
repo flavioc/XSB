@@ -519,7 +519,11 @@ void transform_cygwin_pathname(char *filename)
 }
 
 /*=========================================================================*/
+#ifdef WIN_NT
 #define not_a_dir(fileinfo) !(fileinfo.st_mode & _S_IFDIR)
+#else
+#define not_a_dir(fileinfo) !(fileinfo.st_mode & S_IFDIR)
+#endif
 
 char *existing_file_extension(char *basename)
 {
