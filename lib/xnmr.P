@@ -35,6 +35,10 @@
 
 :- set_nmr_mode.
 
+?- import(from(set_nmr_mode/0,xnmr)).
+?- import(from(set_answerset_mode/0,xnmr)).
+?- import(from((-)/1,xnmr)).
+
 :- nmr.
 
 nmr :-
@@ -405,6 +409,10 @@ explicitly_negate_query(X,X1) :-
 explicitly_negate_query(X,X1) :-
 	X1 = '-'(X),!.
 
+% some explicitly-negated predicates
+-xnmr_dummy :- true.
+
+%-true :- fail.
 
 
 
