@@ -1,5 +1,5 @@
 /* File:      binding.h
-** Author(s): Jiyang Xu, Terrance Swift, Kostis Sagonas
+** Author(s): Jiyang Xu, Terrance Swift, Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -23,22 +23,63 @@
 ** 
 */
 
-
-/* --- trailing ------------------------------------------------------- */
-
 /*
- *  Structure of a (forward) trail frame is
+ * Structures Of Different Trail Frames:
  *
- * low mem
- *   |   Address  (of trailed variable->a non-tagged ptr)
- *   |   Value  (to which the variable is being bound->tagged)
- *   V   Dynamic Link  (ptr to link field of prev frame)
- * high mem
+ * In SLG-WAM, trreg and trfreg always point to the trail_parent field of
+ * a trail frame, and the trail stack may contain both 3-word trail frames 
+ * and 4-word ones.  After untrailing a trail frame, trreg can be reset by 
+ * following the trail_parent pointer.
  *
- *  TRreg and TRFreg always point to the Dynamic Link field of a trail frame.
+ * In CHAT, trreg always points to the address field of a trail frame, and
+ * the trail stack may contain both 1-word trail frames or 2-word ones.
+ * After untrailing a trail frame, trreg is set to trreg-1 or trreg-2
+ * (depending on the lowest bit of the address field of the trail frame).
+ *
+ * 1) Regular (forward) trail frame in SLG-WAM (3-word trail frame)
+ * ----------------------------------------------------------------
+ *    low memory
+ *     +-----+
+ *     |     | trail_variable : Address of the trailed variable
+ *     +-----+
+ *     |     | trail_value    : New value to which the trailed variable is
+ *     +-----+                  to be bound
+ *     |     | trail_parent   : Pointer to the trail_parent cell of the
+ *     +-----+                  previous trail frame)
+ *    high memory
+ *
+ * 2) Pre-image trail frame in SLG-WAM (4-word trail frame)
+ * --------------------------------------------------------
+ *    low memory
+ *     +-----+
+ *     |     | trail_pre_image: Old value of the trailed variable (cell)
+ *     +---+-+
+ *     |   |1| trail_variable : Address of the trailed variable
+ *     +---+-+                  (with PRE_IMAGE_MARK)
+ *     |     | trail_value    : New value to which the trailed variable is
+ *     +-----+                  to be bound
+ *     |     | trail_parent   : Pointer to the trail_parent cell of the
+ *     +-----+                  previous trail frame)
+ *    high memory
+ *
+ * 3) Regular WAM-TRAIL frame in CHAT (1-word trail frame)
+ * -------------------------------------------------------
+ *     +-----+
+ *     |     | Address of the trailed variable
+ *     +-----+
+ *
+ * 4) Pre-image trail frame in CHAT (2-word trail frame)
+ * -----------------------------------------------------
+ *     +-----+
+ *     |     | Old value of the trailed variable (cell)
+ *     +---+-+
+ *     |   |1| Address of the trailed variable (with PRE_IMAGE_MARK)
+ *     +---+-+
  */
 
-#define PRE_IMAGE_TRAIL   1
+#define PRE_IMAGE_TRAIL
+
+#define PRE_IMAGE_MARK   1
 
 #ifdef WAM_TRAIL
 
@@ -49,16 +90,17 @@
   *(trreg++) = addr;							\
 }
 
-/* push_pre_image_trail0: TO BE FINISHED */
+#ifdef PRE_IMAGE_TRAIL
 #define push_pre_image_trail0(addr, prev_value, new_value) {		\
   if ((char *)(top_of_trail) > ((char *)(top_of_cpstack) - 10)) {	\
     handle_tcpstack_overflow();						\
   }									\
   *(trreg++) = (CPtr) (prev_value);					\
-  *(trreg++) = (CPtr) ((Cell) (addr) | PRE_IMAGE_TRAIL);		\
+  *(trreg++) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);			\
 }
+#endif /* PRE_IMAGE_TRAIL */
 
-#else  /* ifndef WAM_TRAIL */
+#else  /* WAM_TRAIL */
 
 #define TRAIL_FRAME_SIZE  4
 
@@ -84,6 +126,7 @@
      *(trreg-2) = addr;\
    }
 
+#ifdef PRE_IMAGE_TRAIL
 #define push_pre_image_trail0(addr, prev_value, new_value)	\
   if (trfreg > trreg) {						\
     if ((char *)trfreg > ((char *)(top_of_cpstack) -		\
@@ -93,7 +136,7 @@
     *(trfreg + 4) = (CPtr) trreg;				\
     trreg = trfreg + 4;						\
     *(trreg - 1) = (CPtr) (new_value);				\
-    *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_TRAIL);	\
+    *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);	\
     *(trreg - 3) = (CPtr) (prev_value);				\
   }								\
   else {							\
@@ -104,11 +147,12 @@
     trreg = trreg + 4;						\
     *trreg = (CPtr) trreg - 4;					\
     *(trreg - 1) = (CPtr) (new_value);				\
-    *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_TRAIL);	\
+    *(trreg - 2) = (CPtr) ((Cell) (addr) | PRE_IMAGE_MARK);	\
     *(trreg - 3) = (CPtr) (prev_value);				\
   }
+#endif /* PRE_IMAGE_TRAIL */
 
-#endif /* ifdef WAM_TRAIL */
+#endif /* WAM_TRAIL */
 
 #ifdef CHAT
 #define conditional(a)	( ((a) >= ebreg) || ((a) < hbreg) )
@@ -119,8 +163,11 @@
 
 #define pushtrail(a,v)	if (conditional(a)) { pushtrail0(a,v); }
 #define dpushtrail(a,v) pushtrail0(a,v)
+
+#ifdef PRE_IMAGE_TRAIL
 #define push_pre_image_trail(a, prev_v, new_v)			\
   if (conditional(a)) {push_pre_image_trail0(a, prev_v, new_v)}
+#endif /* PRE_IMAGE_TRAIL */
 
 /* --- binding -------------------------------------------------------- */
 
@@ -159,27 +206,30 @@
 
 #define untrail(addr) bld_free(addr)
 
-/* untrail2 is for pre_image trail. */
+#ifdef PRE_IMAGE_TRAIL	/* untrail2 is for pre_image trail. */
 
 #ifdef WAM_TRAIL
 #define untrail2(trail_ptr, addr) {		\
-  if ((addr) & PRE_IMAGE_TRAIL) {		\
-    bld_copy0((CPtr)((addr) - PRE_IMAGE_TRAIL),	\
+  if ((addr) & PRE_IMAGE_MARK) {		\
+    bld_copy0((CPtr)((addr) - PRE_IMAGE_MARK),	\
               cell((CPtr)trail_ptr - 1));	\
     trreg--;					\
   }						\
   else						\
     bld_free((CPtr)(addr));			\
 }
-#else  /* ifndef WAM_TRAIL */
+#else  /* WAM_TRAIL */
 #define untrail2(trail_ptr, addr)		\
-  if ((addr) & PRE_IMAGE_TRAIL) {		\
-    bld_copy0((CPtr)((addr) - PRE_IMAGE_TRAIL),	\
+  if ((addr) & PRE_IMAGE_MARK) {		\
+    bld_copy0((CPtr)((addr) - PRE_IMAGE_MARK),	\
 	      cell((CPtr)trail_ptr - 3));	\
   }						\
   else						\
     bld_free((CPtr)(addr))
-#endif /* ifdef WAM_TRAIL */
+#endif /* WAM_TRAIL */
+
+#endif /* PRE_IMAGE_TRAIL */
+
 
 /* --- testing location of variable ----------------------------------- */
 

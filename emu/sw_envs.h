@@ -24,45 +24,50 @@
 
 
 #if (!defined(CHAT))
-#define freeze_and_switch_envs(tbreg, CPsize)\
-    if (bfreg > breg) {\
-      bfreg = breg + CPsize;\
-      if (trfreg < trreg)  trfreg = trreg;  \
-      if (hfreg < hreg)  hfreg = hreg; \
-      xtemp1 = top_of_localstk; \
-      if (efreg > xtemp1) efreg = xtemp1;\
-    }\
-    switch_envs(tbreg)
+#define freeze_and_switch_envs(tbreg, CPsize)	\
+  if (bfreg > breg) {				\
+    bfreg = breg + CPsize;			\
+    if (trfreg < trreg)  trfreg = trreg;	\
+    if (hfreg < hreg)  hfreg = hreg;		\
+    xtemp1 = top_of_localstk;			\
+    if (efreg > xtemp1) efreg = xtemp1;		\
+  }						\
+  switch_envs(tbreg)
 #endif
 
 #ifdef CHAT
 #define switch_envs(tbreg)	undo_bindings(tbreg)
 #else
+
+/*
+ * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
+ * macro should be changed to:
+ * 	untrail((CPtr) trail_variable(start_trreg));
+ */
 #define switch_envs(tbreg) {						\
+  CPtr *start_trreg, *end_trreg;					\
 									\
-   CPtr *start_trreg, *end_trreg;					\
-									\
-   start_trreg = trreg;							\
-   end_trreg = cp_trreg(tbreg);						\
-   trreg = cp_trreg(tbreg);						\
-   if (start_trreg != end_trreg) {					\
-     do {								\
-       while (start_trreg > end_trreg) {				\
-	 untrail2(start_trreg, (Cell) trail_variable(start_trreg));	\
-	 start_trreg = trail_parent(start_trreg);			\
-       }								\
-       while (end_trreg > start_trreg) {				\
-	 end_trreg = trail_parent(end_trreg);				\
-       }								\
-     } while (start_trreg != end_trreg);				\
-     end_trreg = trreg;							\
-     while (end_trreg > start_trreg) {					\
-       cell((CPtr) trail_variable(end_trreg)) =				\
-	 (Cell) trail_value(end_trreg);					\
-       end_trreg = trail_parent(end_trreg);				\
-     }									\
-   }									\
-  }
+  start_trreg = trreg;							\
+  end_trreg = cp_trreg(tbreg);						\
+  trreg = cp_trreg(tbreg);						\
+  if (start_trreg != end_trreg) {					\
+    do {								\
+      while (start_trreg > end_trreg) {					\
+	untrail2(start_trreg, (Cell) trail_variable(start_trreg));	\
+	start_trreg = trail_parent(start_trreg);			\
+      }									\
+      while (end_trreg > start_trreg) {					\
+	end_trreg = trail_parent(end_trreg);				\
+      }									\
+    } while (start_trreg != end_trreg);					\
+    end_trreg = trreg;							\
+    while (end_trreg > start_trreg) {					\
+      cell((CPtr) trail_variable(end_trreg)) =				\
+	(Cell) trail_value(end_trreg);					\
+      end_trreg = trail_parent(end_trreg);				\
+    }									\
+  }									\
+}
 #endif
 
 #ifdef MEASURE_WAM_STUFF
@@ -77,6 +82,11 @@
 #endif
 
 #ifdef WAM_TRAIL
+/*
+ * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
+ * macro should be changed to:
+ * 	untrail(temp_trreg);
+ */
 #define table_undo_bindings(old_trreg) {	\
   while (trreg > (CPtr *) old_trreg) {		\
     CPtr temp_trreg = *(--trreg);		\
@@ -84,10 +94,16 @@
   }						\
 }
 #else
-#define table_undo_bindings(old_trreg) \
-    while (trreg > (CPtr *) old_trreg) {\
-      untrail2(trreg, (Cell) trail_variable(trreg));\
-      trreg = trail_parent(trreg);\
-    }
+/*
+ * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following
+ * macro should be changed to:
+ * 	untrail((CPtr) trail_variable(trreg));
+ */
+#define table_undo_bindings(old_trreg) {		\
+  while (trreg > (CPtr *) old_trreg) {			\
+    untrail2(trreg, (Cell) trail_variable(trreg));	\
+    trreg = trail_parent(trreg);			\
+  }							\
+}
 #endif
 
