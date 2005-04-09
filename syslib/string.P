@@ -126,63 +126,140 @@ str_sub(S1, S2) :- str_match(S1, S2, forward, _, _).
 /* (It does NOT handle floats.)                                */
 /* Terms to be converted should not contain unary function     */
 /* symbols named ' _$var$_ '.  				       */
-/*                                                             */
+/*                                  */
 /***************************************************************/
 
 term_to_atom(Term,Atom) :-
+	term_to_atom(Term,Atom,[ignore_ops(canonical)]).
+
+term_to_atom(Term,Atom,OptionList) :-
 	copy_term(Term,Term1),  % protect Term's variables
-	term_to_codes(Term1,Codes),
+	term_to_codes(Term1,OptionList,Codes),
 	atom_codes(Atom,Codes).
 
 term_to_codes(Term,Codes) :-
-	term_to_codes(Term,0,_,Codes,[]).
+	term_to_codes(Term,[ignore_ops(canonical)],Codes).
 
-term_to_codes(Term,Var0,Var,Codes0,Codes) :-
+term_to_codes(Term,OptionList,Codes) :-
+	check_nonvar_list(OptionList,term_to_atom/3,3),
+	compute_options(OptionList,Structure),
+	term_to_codes(Term,Structure,0,_,Codes,[]).
+
+compute_options([],option(IgOpts,Quoted,Nvars)):- 
+	(var(Quoted) -> Quoted = false ; true),
+	(var(Nvars) -> Nvars = false ; true),
+	(var(IgOpts) -> IgOpts = canonical ; true).
+compute_options([H|T],Structure):-
+	compute_option(H,Structure),
+	compute_options(T,Structure).
+
+compute_option(ignore_ops(Flag),Structure):- 
+	(Flag = false ; Flag = canonical), !,
+	option_structure(Structure,Flag,_Quoted,_NumVars).
+compute_option(quoted(Flag),Structure):- 
+	boolean(Flag),!,
+	option_structure(Structure,_IgOpts,Flag,_NumVars).
+compute_option(numbervars(Flag),Structure):- 
+	boolean(Flag),!,
+	option_structure(Structure,_IgOpts,_Quoted,Flag).
+compute_option(Opt,_Structure):- 
+            domain_error(write_option, Opt,term_to_atom/3,3).
+
+boolean(true).
+boolean(false).
+
+option_structure(option(IgOpts,Qtd,NumVars),IgOpts,Qtd,NumVars).
+
+ignore_ops(option(V,_,_),V).
+numbervars(option(_,_,V),V).
+quoted(option(_,V,_),V).
+
+term_to_codes(Term,Structure,Var0,Var,Codes0,Codes) :-
 	(var(Term)
 	 ->	Term = ' _$var$_ '(Var0),
 		Var is Var0 + 1,
 		Codes0 = [0'_,0'h|Codes1],
 		number_codes(Var0,IntCodes),
 		append(IntCodes,Codes,Codes1)
-	 ;	Term = ' _$var$_ '(I)
-	 ->	Var = Var0,
-		Codes0 = [0'_,0'h|Codes1],
-		number_codes(I,IntCodes),
-		append(IntCodes,Codes,Codes1)
+	 ;	get_varcode(Term,Structure,Var0,Var,VC)
+	 ->	append(VC,Codes,Codes0)
 	 ;	integer(Term)
 	 ->	Var = Var0,
 		number_codes(Term,IntCodes),
 		append(IntCodes,Codes,Codes0)
 	 ;	atom(Term)
 	 ->	Var = Var0,
-		extern_atom_codes(Term,Codes0,Codes)
+		extern_atom_codes(Term,Structure,Codes0,Codes)
 	 ;	float(Term)
 	 ->	Var = Var0,
 		extern_float_codes(Term,Codes0,Codes)
 	 ;	is_list(Term)
-	 ->	Term=[Term1|Terms],
-		Codes0 = [0'[|Codes1],
-		term_to_codes(Term1,Var0,Var1,Codes1,Codes2),
-		cvt_termlist_to_codes(Terms,Var1,Var,Codes2,[0']|Codes])
+             ->	Term=[Term1|Terms],
+	            get_listcode(Term1,Terms,Structure,Var0,Var,Codes0,Codes)
 	 ;	structure(Term)
 	 ->	Term =.. [Fun,Arg1|Args],
-		extern_atom_codes(Fun,Codes0,[0'(|Codes2]),
-		term_to_codes(Arg1,Var0,Var1,Codes2,Codes3),
-		cvt_termlist_to_codes(Args,Var1,Var,Codes3,[0')|Codes])
+		extern_atom_codes(Fun,Structure,Codes0,[0'(|Codes2]),
+		term_to_codes(Arg1,Structure,Var0,Var1,Codes2,Codes3),
+		cvt_termlist_to_codes(Args,Structure,Var1,Var,Codes3,[0')|Codes])
 	).
 
-cvt_termlist_to_codes([],Var,Var,Codes,Codes).
-cvt_termlist_to_codes([Arg|Args],Var0,Var,[0',|Codes0],Codes) :-
-	term_to_codes(Arg,Var0,Var1,Codes0,Codes1),
-	cvt_termlist_to_codes(Args,Var1,Var,Codes1,Codes).
+cvt_termlist_to_codes([],_Structure,Var,Var,Codes,Codes).
+cvt_termlist_to_codes([Arg|Args],Structure,Var0,Var,[0',|Codes0],Codes) :-
+	term_to_codes(Arg,Structure,Var0,Var1,Codes0,Codes1),
+	cvt_termlist_to_codes(Args,Structure,Var1,Var,Codes1,Codes).
 
-extern_atom_codes(Atom,Codes0,Codes) :-
+% Called in a context in which a var check has already been made.
+get_varcode(' _$var$_ '(N), _Struct,Vin,Vin,Codes) :-
+	Codes = [0'_,0'h|IntCodes],
+	number_codes(N,IntCodes).
+get_varcode('$VAR'(N), OptStruct,Vin,Vout,Codes) :-
+	(numbervars(OptStruct,true) -> 
+	    get_varcode_1(N, OptStruct,Vin,Vout,Codes)
+	 ;  
+	    term_to_codes(N,OptStruct,Vin,Vout,Codes1,[41]),
+	    (quoted(OptStruct,true) -> 
+	         append("'$VAR'(",Codes1,Codes)
+	      ;  append("$VAR(",Codes1,Codes) ) ).
+
+get_varcode_1(N, _Opt,Vin,Vin,[Code|Rest]):- 
+	integer(N), N >= 0, !,
+	Code is N mod 26 + 0'A,
+	(   N>=26 ->
+	    N1 is N//26, get_varcode_1(N1,_opt,_,_, Rest)
+	;   Rest = []
+             ).
+get_varcode_1(N, _Opt,Vin,Vin,[95]) :-       % _
+	integer(N), N < 0,!.
+get_varcode_1(A,_Opt,Vin,Vin,Codes):- 
+	atom(A), !,
+	atom_codes(A,Codes).
+get_varcode_1(N, Opt,Vin,Vout,Codes):- 
+	    term_to_codes(N,Opt,Vin,Vout,Codes,[]).
+
+get_listcode(Term1,Terms,Struct,Var0,Var,Codes0,Codes):-
+	(ignore_ops(Struct,canonical) ->
+   	    Codes0 = [0'[|Codes1],
+	    term_to_codes(Term1,Structure,Var0,Var1,Codes1,Codes2),
+	    cvt_termlist_to_codes(Terms,Structure,Var1,Var,Codes2,[0']|Codes])
+	 ;  get_listhead(Struct,Codes0,Codes1),
+	    term_to_codes(Term1,Struct,Var0,Var1,Codes1,Codes2),
+	    Codes2 = [0', | Codes3],
+	    term_to_codes(Terms,Struct,Var1,Var,Codes3,[0')|Codes]) ).
+
+get_listhead(Struct,Codes0,Codes1):- 
+	(quoted(Struct,true) ->
+	   Codes0 = [0'', 0'., 0'', 0'(|Codes1]
+             ; Codes0 = [ 0'., 0'(|Codes1] ).
+
+extern_atom_codes(Atom,Struct,Codes0,Codes) :-
 	atom_codes(Atom,AtomCodes),
-	(if_not_need_quote(AtomCodes)
-	 ->	append(AtomCodes,Codes,Codes0)
-	 ;	Codes0 = [0''|Codes1],
+	(quoted(Struct,true) -> 
+ 	   (if_not_need_quote(AtomCodes)
+	     ->	append(AtomCodes,Codes,Codes0)
+	    ;	Codes0 = [0''|Codes1],
 		copy_double_quote(AtomCodes,Codes1,[0''|Codes])
-	).
+	   )
+            ;  append(AtomCodes,Codes,Codes0) ).
 
 if_not_need_quote([0'[,0']]) :- !.
 if_not_need_quote([C|Cs]) :-
@@ -417,3 +494,40 @@ read_atom_to_term(Atom,Term,Vars) :-
 		  
 
 /* ---------------------- end of file string.P ------------------------ */
+
+end_of_file.
+
+term_to_codes(Term,Structure,Var0,Var,Codes0,Codes) :-
+	(var(Term)
+	 ->	Term = ' _$var$_ '(Var0),
+		Var is Var0 + 1,
+		Codes0 = [0'_,0'h|Codes1],
+		number_codes(Var0,IntCodes),
+		append(IntCodes,Codes,Codes1)
+	 ;	Term = ' _$var$_ '(I)
+	 ->	Var = Var0,
+		Codes0 = [0'_,0'h|Codes1],
+		number_codes(I,IntCodes),
+		append(IntCodes,Codes,Codes1)
+	 ;	integer(Term)
+	 ->	Var = Var0,
+		number_codes(Term,IntCodes),
+		append(IntCodes,Codes,Codes0)
+	 ;	atom(Term)
+	 ->	Var = Var0,
+		extern_atom_codes(Term,Codes0,Codes)
+	 ;	float(Term)
+	 ->	Var = Var0,
+		extern_float_codes(Term,Codes0,Codes)
+	 ;	is_list(Term)
+	 ->	Term=[Term1|Terms],
+		Codes0 = [0'[|Codes1],
+		term_to_codes(Term1,Structure,Var0,Var1,Codes1,Codes2),
+		cvt_termlist_to_codes(Terms,Structure,Var1,Var,Codes2,[0']|Codes])
+	 ;	structure(Term)
+	 ->	Term =.. [Fun,Arg1|Args],
+		extern_atom_codes(Fun,Codes0,[0'(|Codes2]),
+		term_to_codes(Arg1,Structure,Var0,Var1,Codes2,Codes3),
+		cvt_termlist_to_codes(Args,Structure,Var1,Var,Codes3,[0')|Codes])
+	).
+

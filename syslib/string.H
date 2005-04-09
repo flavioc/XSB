@@ -28,6 +28,7 @@
 :- export str_cat/3, str_sub/2, str_sub/3, str_length/2, substring/4,
 	str_match/5, string_substitute/4.
 :- export term_to_codes/2, term_to_atom/2, codes_to_term/2, atom_to_term/2.
+:- export term_to_codes/3, term_to_atom/3.
 :- export read_atom_to_term/3, read_atom_to_term/2.
 
 :- import append/3, memberchk/2, copy_term/2, length/2 from basics.
@@ -36,5 +37,6 @@
         is_list/1, number_codes/2, float/1 from standard.
 :- import file_open/3, file_close/1 from file_io.
 :- import file_read_foe/3 from xsb_read.
+:- import domain_error/4, check_nonvar_list/3 from error_handler.
 
 /* ---------------------- end of file string.H ------------------------ */
