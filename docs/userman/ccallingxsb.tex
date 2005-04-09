@@ -1,4 +1,4 @@
-\chapter{Calling \ourprolog\ from C}
+\chapter{Calling XSB from C}
 %===================================
 \label{ccallingxsb}
 
@@ -192,15 +192,15 @@ answer.  For the example query, buff would be set to the string:
 \begin{verbatim}
         [];[a,b,c]
 \end{verbatim}
-which is the first answer to the append query.  There are two fields of
-this answer, corresponding to the two variables in the query, \verb|X|
-and \verb|Y|.  The bindings of those variables make up the answer and
-the individual fields are separated by the \verb|sep| string, here the
-semicolon (\verb|;|).  Its returns are
-just as for {\tt xsb\_query\_string}.  In the answer string, \ourprolog\
-atoms are printed in their in their standard print form (without
-quotes).  Complex terms are printed in a canonical form, with atoms
-quoted if necessary, and lists produced in the normal list notation.
+which is the first answer to the append query.  There are two fields
+of this answer, corresponding to the two variables in the query,
+\verb|X| and \verb|Y|.  The bindings of those variables make up the
+answer and the individual fields are separated by the \verb|sep|
+string, here the semicolon (\verb|;|).  Its returns are just as for
+{\tt xsb\_query\_string}.  In the answer string, XSB atoms are printed
+in their standard print form (without quotes).  Complex terms are
+printed in a canonical form, with atoms quoted if necessary, and lists
+produced in the normal list notation.
 
 \ouritem{int xsb\_query\_string\_string\_b(char *query, char *buff,
 int bufflen, int *anslen, char *sep)}

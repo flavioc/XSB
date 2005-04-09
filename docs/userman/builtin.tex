@@ -148,9 +148,9 @@ files differ, while on UNIX they are the same.
 \item {\tt Atom} XSB can read from an atom, just as it can from a file.
 Atoms are considered to be textual and repositionable.  Writing to
 atoms via streams is not currently available in XSB, although 
-the predicate {\tt term\_to\_atom/2} contains some of the
+the predicate {\tt term\_to\_atom/\{2,3\}} contains much of the
 functionality that such streams would provide.
-%
+
 \item {\tt Pipe} XSB can also open pipes either directly, or as part
 of its ability to spawn processes.  When made into streams, pipes are
 textual and not repositionable.
@@ -3122,21 +3122,85 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 \ourusage{atom\_concat(?Atom,?Atom,+Atom)}
 \ourusage{atom\_concat(+Atom,+Atom,-Atom)}
 
+\ournewitem{term\_to\_atom(+Term,-Atom,+Options)}{string}
+\index{\texttt{ term\_to\_atom/3 }}
+%
+Converts {\tt +Term} to an atomic form according to a list of write
+options, {\tt Options}, that are similar to those used by {\tt
+write\_term/\{2,3\}}.  The various options of {\tt
+term\_to\_atom/\{2,3\}} are especially useful for the interface from C
+to XSB (see {\em Calling XSB from C} in Volume 2 of this manual).
+%
+\begin{itemize}
+%
+\item {\tt quoted(+Bool)}.  If {\tt Bool = true}, then atoms and
+    functors that can't be read back by {\tt read/1} are quoted, if
+    {\tt Bool = false}, each atom and functor is written as its
+    unquoted name. Default value is {\tt false}.
+%
+\item {\tt ignore\_ops(+Bool)}. If {\tt Bool = true} each compound term
+is output in functional notation; list braces are ignored, as are all
+explicitly defined operators.  If {\tt Bool = canonical}, bracked list
+notation is used.  Default value is {\tt canonical}.  The
+corresponding value of {\tt false}, that would enable operator
+precedence, is not yet implemented.
+%
+ \item {\tt numbervars(+Bool)}.  If {\tt Bool = true}, a term of the
+form {\tt '\$VAR'(N)} where {\tt N} is an integer, is output as a
+variable name consisting of a capital letter possibly followed by an
+integer.  A term of the form {\tt '\$VAR'(Atom)} where {\tt Atom} is an
+atom, is output as itself (without quotes).  Finally, a term of the
+form {\tt '\$VAR'(String)} where {\tt String} is a character string, is
+output as the atom corresponding to this character string.  If
+{\tt bool} is {\tt false} this cases are not treated in any special
+way.  Default value is {\tt false}.
+%
+\end{itemize}
+
+{\bf Error Cases} 
+\bi
+\item 	{\tt Options} is a variable
+\bi
+\item    {\tt instantiation\_error(Options)}
+\ei
+\item 	{\tt Options} neither a variable nor a list
+\bi
+\item    {\tt type\_error(list,Options)}
+\ei
+\item 	{\tt Options} contains a variable element, {\tt O}
+\bi
+\item    {\tt instantiation\_error(O)}
+\ei
+\item 	{\tt Options} contains an element {\tt O} that is neither a variable
+nor a write option.
+\bi
+\item    {\tt domain\_error(write\_option,O)}
+\ei
+\ei
+
 \ournewitem{term\_to\_atom(+Term,-Atom)}{string}
 \index{\texttt{term\_to\_atom/2 }}
-
+%
 This predicate converts an arbitrary Prolog term {\tt Term} into an
-atom, putting the result in {\tt Atom}.  It uses a format similar to
-the canonical format of {\tt write\_canonical}, but uses a standard
-list format for lists.  An atom created from a term using this
-predicate can be reconverted back to the original term by using {\tt
-atom\_to\_term/2}.
+atom, putting the result in {\tt Atom}.  It is defined using the
+default options for {\tt term\_to\_atom/3}, e.g. {\tt
+ignore\_ops(canonical)}, {\tt quoted(false)}, and {\tt
+numbervars(false)}.
+
+\ournewitem{term\_to\_codes(+Term,-CodeList,+OptionList)}{string}
+\index{\texttt{term\_to\_codes/3 }}
+%
+This predicate is used in the definition of {\tt term\_to\_atom/3} but
+only converts a term into a list of ASCII codes, and does not intern
+the list as an atom.
 
 \ournewitem{term\_to\_codes(+Term,-CodeList)}{string}
 \index{\texttt{term\_to\_codes/2 }}
-
-This predicate is used in the definition of {\tt term\_to\_atom/2} and 
-converts a term into a list of ascii codes.
+%
+This predicate converts a term to a list of ASCII codes.  It is
+defined using the default options for {\tt term\_to\_atom/3},
+e.g. {\tt ignore\_ops(canonical)}, {\tt quoted(false)}, and {\tt
+numbervars(false)}.
 
 \end{description}
 

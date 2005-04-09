@@ -14,11 +14,11 @@ interface may be necessary to:
 
 XSB has both the high-level and the low-level interfaces to C.  The
 low-level interface is much more flexible, but it requires greater
-attention to details of how the data is passed between \ourprolog\ and C.
-To connect XSB to a C program using the high-level interface requires very
-little work, but the program must be used ``as is'' and it must take the
-input and produce the output supported by this high-level interface.  We
-first describe the low-level interface.
+attention to details of how the data is passed between XSB and C.  To
+connect XSB to a C program using the high-level interface requires
+very little work, but the program must be used ``as is'' and it must
+take the input and produce the output supported by this high-level
+interface.  We first describe the low-level interface.
 
 \section{Compiler Directives for Foreign C Modules}
 
@@ -60,11 +60,11 @@ that the compiler generates code that can be dynamically linked by
 XSB.}.
 
 %(Explain more about the directive.....).
-The foreign language interface of \ourprolog\ uses the Unix command 
-{\tt ld} that combines object programs to create an executable file  
-or another object program suitable for further {\tt ld} processing.
-\version\ of \ourprolog\ assumes that the {\tt ld} command resides
-in the file {\tt /usr/bin/ld}.
+The foreign language interface of XSB uses the Unix command {\tt ld}
+that combines object programs to create an executable file or another
+object program suitable for further {\tt ld} processing. \version\ of
+XSB assumes that the {\tt ld} command resides in the file {\tt
+/usr/bin/ld}.
 
 C functions that implement foreign predicates must return values of type
 {\tt int}. If a non-zero is returned, the foreign predicate succeeds; a
@@ -96,26 +96,25 @@ normal Prolog module.  Currently, predicates {\tt consult/[1,2]}
 recompile both the {\tt *.c} and the {\tt *.H} files of a foreign
 module when at least one of them has been changed from the time the
 corresponding object files have been created (see the section {\it
-Compiling and Consulting} in Volume 1. 
-The C compiler used to compile the {\tt *.c} files can be set as a
-compilation option or defaults to that used for the configuration of
-XSB (refer to the section {\it Getting Started with XSB} in Volume 1.
-Moreover, the user can control the compiler options that can be passed
-to the C compiler.  To give an example, the following command will
-compile file {\tt file.c} using the Gnu C Compiler with optimization
-and by including {\tt /usr/local/X11/R6/include} to the directories that
-will be searched for header files.
+Compiling and Consulting} in Volume 1).  The C compiler used to
+compile the {\tt *.c} files can be set as a compilation option or
+defaults to that used for the configuration of XSB (refer to the
+section {\it Getting Started with XSB} in Volume 1).  Moreover, the
+user can control the compiler options that can be passed to the C
+compiler.  To give an example, the following command will compile file
+{\tt file.c} using the Gnu C Compiler with optimization and by
+including {\tt /usr/local/X11/R6/include} to the directories that will
+be searched for header files.
 \begin{center}
 {\tt  :- consult(file,
                  [cc(gcc), cc\_opts('-O2 -I/usr/local/X11/R6/include')]). }
 \end{center}
 If no C compiler options are specified, the compilation of the C-file
-defaults to $CC$~{\tt -c~file.c} where $CC$ is the name of the C compiler
-used to install \ourprolog.
-In addition, if XSB was compiled with the `-g' debugging option, then `-g'
-option will be automatically added to the C compiler options list for the
-foreign module. Any Prolog compiler options are ignored when compiling a
-foreign module.
+defaults to $CC$~{\tt -c~file.c} where $CC$ is the name of the C
+compiler used to install XSB.  In addition, if XSB was compiled with
+the `-g' debugging option, then `-g' option will be automatically
+added to the C compiler options list for the foreign module. Any
+Prolog compiler options are ignored when compiling a foreign module.
 
 \section{Foreign Modules That Link Dynamically with Other Libraries}
 
@@ -241,8 +240,8 @@ to each other.
 \subsubsection*{Examples of Using the Basic C interface}
 
 We end by a very simple example of using the foreign language
-interface of \ourprolog.  The programs above and below are programs
-{\tt simple\_foreign.$\{$H,c$\}$} in the {\tt examples} directory.
+interface of XSB.  The programs above and below are programs {\tt
+simple\_foreign.$\{$H,c$\}$} in the {\tt examples} directory.
 
 \begin{small}
 \begin{verbatim}
@@ -424,25 +423,25 @@ structured term is explained later.
 
 \begin{description}
 \ouritem{int p2c\_int((prolog\_term) V)} \index{\texttt{p2c\_int}}
-    The prolog\_term argument must represent an integer, and {\tt
-    p2c\_int} returns the value of that integer.
+    The {\tt prolog\_term} argument must represent an integer, and
+    {\tt p2c\_int} returns the value of that integer.
 
 \ouritem{double p2c\_float((prolog\_term) V)} \index{\texttt{p2c\_float}}
-    The prolog\_term argument must represent a floating point number,
-    and {\tt p2c\_float} returns the value of that floating point
-    number.
+    The {\tt prolog\_term} argument must represent a floating point
+    number, and {\tt p2c\_float} returns the value of that floating
+    point number.
 
 \ouritem{char *p2c\_string((prolog\_term) V)} \index{\texttt{p2c\_string}}
     The prolog\_term argument must represent an atom, and {\tt
     p2c\_string} returns the name of that atom as a string. The
-    pointer returned points to the actual atom name in \ourprolog 's
-    space, and thus it must NOT be modified by the calling program.
+    pointer returned points to the actual atom name in XSB 's space,
+    and thus it must NOT be modified by the calling program.
 \ouritem{char *p2c\_functor((prolog\_term) V)} \index{\texttt{p2c\_functor}}
     The prolog\_term argument must represent a structured term (not a
     list).  {\tt p2c\_functor} returns the name of the main functor
     symbol of that term as a string. The pointer returned points to
-    the actual functor name in \ourprolog 's space, and thus it must
-    NOT be modified by the calling program.
+    the actual functor name in XSB 's space, and thus it must NOT be
+    modified by the calling program.
 
 \ouritem{int p2c\_arity((prolog\_term) V)} \index{\texttt{p2c\_arity}}
     The prolog\_term argument must represent a structured term (not a
@@ -525,13 +524,13 @@ This is done with the help of the following functions:
 \end{description}
 %%
 
-It is very important to realize that these functions return the actual
-Prolog term that is, say, the head of a list or the actual argument of a
-structured term. Thus, assigning a value to such a prolog term also
-modifies the head of the corresponding list or the relevant argument of the
-structured term. It is precisely this feature that allows passing
-structured terms and lists from the C side to the Prolog side.
-For instance, 
+It is important to realize that these functions return the actual
+Prolog term that is, say, the head of a list or the actual argument of
+a structured term. Thus, assigning a value to such a Prolog term also
+modifies the head of the corresponding list or the relevant argument
+of the structured term. It is precisely this feature that allows
+passing structured terms and lists from the C side to the Prolog side.
+For instance,
 %%
 \begin{verbatim}
    prolog_term plist,        /* a Prolog list           */
@@ -1015,17 +1014,18 @@ Note that these same DLLs will work under Cygwin --- XSB's C interface
 under Cygwin is like that under Windows rather than Unix.
 
 
-If the above makefile cannot be adapted, then the user has to create the DLL
-herself.  The process is, roughly, as follows: first, compile the module
-from within XSB.  This will create the \ourprolog-specific object file, and
-(if using the higher-level C interface) the \emph{wrappers}. The
-\emph{wrappers} are created in a file named
+If the above makefile cannot be adapted, then the user has to create
+the DLL herself.  The process is, roughly, as follows: first, compile
+the module from within XSB.  This will create the XSB-specific object
+file, and (if using the higher-level C interface) the
+\emph{wrappers}. The \emph{wrappers} are created in a file named
 \texttt{xsb\_wrap\_}\emph{modulename}\texttt{.c}.
 
 Then, create a project, using the compiler of choice, for a
-dynamically-linked library that exports symbols. In this project, the user
-must include the source code of the module along with the \emph{wrapper}
-created by XSB. This DLL should be linked against the library
+dynamically-linked library that exports symbols. In this project, the
+user must include the source code of the module along with the
+\emph{wrapper} created by XSB. This DLL should be linked against the
+library
 %%
 \begin{quote}
    \verb|XSB\config\x86-pc-windows\bin\xsb.lib|
