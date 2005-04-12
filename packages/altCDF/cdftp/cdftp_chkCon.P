@@ -358,24 +358,24 @@ retractmytabling:-
 ceDepth(CE,Out):- 
 	ceDepth(CE,1,Out).
 
-ceDepth(','(One,Two),In,Out):- 
+ceDepth(','(One,Two),In,Out):- !,
 	ceDepth(One,In,O),
 	ceDepth(Two,In,T),
 	(T > O -> Out = T ; Out = O).
-ceDepth(';'(One,Two),In,Out):- 
+ceDepth(';'(One,Two),In,Out):- !,
 	ceDepth(One,In,O),
 	ceDepth(Two,In,T),
 	(T > O -> Out = T ; Out = O).
-ceDepth(exists(_Rel,Class),In,Out):- 
+ceDepth(exists(_Rel,Class),In,Out):- !,
 	In1 is In + 1,
 	ceDepth(Class,In1,Out).
-ceDepth(all(_Rel,Class),In,Out):- 
+ceDepth(all(_Rel,Class),In,Out):- !,
 	In1 is In + 1,
 	ceDepth(Class,In1,Out).
-ceDepth(atLeast(_N,_Rel,Class),In,Out):- 
+ceDepth(atLeast(_N,_Rel,Class),In,Out):- !,
 	In1 is In + 1,
 	ceDepth(Class,In1,Out).
-ceDepth(atMost(_N,_Rel,Class),In,Out):- 
+ceDepth(atMost(_N,_Rel,Class),In,Out):- !,
 	In1 is In + 1,
 	ceDepth(Class,In1,Out).
 ceDepth(_,In,In).

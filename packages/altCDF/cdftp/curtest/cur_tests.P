@@ -322,16 +322,16 @@ sat_test((exists(rid(r,test),cid(c1,test)),exists(rid(r,test),not(cid(c1,test)))
 sat_test((exists(inv(rid(r,test)),cid(c1,test)),exists(inv(rid(r,test)),not(cid(c1,test))),
                    atMost(1,inv(rid(r,test)),(cid(c1,test) ; not(cid(c1,test))))),false).
 
-sat_test((c,not(c) ; (exists(rid(r,test),cid(c1,test)),exists(rid(r,test),not(cid(c1,test))),
+sat_test((cid(c,test),not(cid(c,test)) ; (exists(rid(r,test),cid(c1,test)),exists(rid(r,test),not(cid(c1,test))),
                    atMost(1,rid(r,test),(cid(c1,test) ; not(cid(c1,test)))))),false).
 
-sat_test((c,not(c) ; (exists(rid(r,test),cid(c1,test)),exists(rid(r,test),not(cid(c1,test))),
+sat_test((cid(c,test),not(cid(c,test)) ; (exists(rid(r,test),cid(c1,test)),exists(rid(r,test),not(cid(c1,test))),
                    atMost(1,rid(r,test),(cid(c2,test))))),true).
 
-sat_test((c,not(c) ; (exists(inv(rid(r,test)),cid(c1,test)),exists(inv(rid(r,test)),not(cid(c1,test))),
+sat_test((cid(c,test),not(cid(c,test)) ; (exists(inv(rid(r,test)),cid(c1,test)),exists(inv(rid(r,test)),not(cid(c1,test))),
                    atMost(1,inv(rid(r,test)),(cid(c1,test) ; not(cid(c1,test)))))),false).
 
-sat_test((c,not(c) ; (exists(inv(rid(r,test)),cid(c1,test)),exists(inv(rid(r,test)),not(cid(c1,test))),
+sat_test((cid(c,test),not(cid(c,test)) ; (exists(inv(rid(r,test)),cid(c1,test)),exists(inv(rid(r,test)),not(cid(c1,test))),
                    atMost(1,inv(rid(r,test)),(cid(c2,test))))),true).
 
 %------------------
@@ -428,7 +428,8 @@ sat_test((cid(c1,test),atLeast(1,inv(rid(rr1,test)),all(rid(rr2,test),not(cid(c1
 
 sat_test((cid(c1,test),atLeast(1,inv(rid(rr2,test)),all(rid(rr1,test),not(cid(c1,test))))),true).
 
-sat_test((not(cid(c1,test)),(exists(inv(rid(r,test)),cid(c1,test)),(all(inv(rid(r,test)),exists(inv(rid(r,test))),cid(c1,test))))),true).
+sat_test((not(cid(c1,test)),(exists(inv(rid(r,test)),cid(c1,test)),(
+                                      all(inv(rid(r,test)),exists(inv(rid(r,test)),cid(c1,test)))))),true).
 
 %--------------------------------------------------------------
 % SameAs
@@ -445,6 +446,21 @@ sat_test((exists(rid(r1,test),cid(c1,test)),exists(rid(r2,test),not(cid(c1,test)
 sat_test((exists(rid(r1,test),cid(c1,test)),exists(rid(r2,test),not(cid(c1,test))),sameAs(rid(r1,test),cid('CDF Classes',cdf),rid(r2,test),cid('CDF Classes',cdf))),false).
 
 sat_test((exists(rid(r1,test),cid(c1,test)),exists(rid(r2,test),not(cid(c1,test))),sameAs(rid(r1,test),cid(emptyset,cdf),rid(r2,test),cid(emptyset,cdf))),true).
+
+% a hitchhiker has a hand with a thumb and
+% a person with two thumbless hands
+% a person has at most 2 hands
+%
+sat_test((exists(rid(r1,test),(cid(hand,test),(exists(rid(r1,test),cid(thumb,test)),
+	                                                  atMost(1,rid(r1,test))))),
+             atLeast(2,rid(r1,test),(cid(hand,test),exists(rid(r1,test),not(cid(thumb,test))))),
+	 atMost(2,rid(r1,test),cid(hand,test))),false).
+
+sat_test((exists(rid(hP,test),exists(rid(hP,test),cid(thumb,test))),
+	  atMost(2,rid(hP,test)),
+	  atLeast(2,rid(hP,test),not(exists(rid(hP,test),cid(thumb,test)))))).
+
+end_of_file.
 
 sat_test((cid(c1,test),exists(rid(r1,test),exists(rid(r1,test),cid(c1,test))),exists(rid(r2,test),cid(c2,test)),sameAs(rid(r1,test),cid(c1,test),rid(r2,test),cid(c2,test))),true).
 
