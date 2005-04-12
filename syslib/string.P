@@ -154,7 +154,7 @@ compute_options([H|T],Structure):-
 	compute_options(T,Structure).
 
 compute_option(ignore_ops(Flag),Structure):- 
-	(Flag = false ; Flag = canonical), !,
+	(Flag = true ; Flag = canonical), !,
 	option_structure(Structure,Flag,_Quoted,_NumVars).
 compute_option(quoted(Flag),Structure):- 
 	boolean(Flag),!,
