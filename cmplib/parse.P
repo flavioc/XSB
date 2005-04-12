@@ -151,12 +151,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	-> fmt_write_string(FullXPP_command,'%s',arg(XPP_command)),
 	    InputStream = FileName
 	;
-	    (   xsb_configuration(host_os,windows)
-	    -> 
-		fmt_write_string(FullXPP_command,'%s ''"%s"''',args(XPP_command,FileName))
-	    ;
-		fmt_write_string(FullXPP_command,'%s "%s"',args(XPP_command,FileName))
-	    ),
+		 fmt_write_string(FullXPP_command,'%s "%s"',args(XPP_command,FileName)),
 	    InputStream = block
 	),
 #ifdef DEBUG_GPP
@@ -187,19 +182,19 @@ make_gpp_command(GPP_command,FileName) :-
 	make_include_directive(Directive, '-I'),
 	slash(Slash),
 	xsb_configuration(install_dir, InstallDir),
-	fmt_write_string(IncludeDirs, ' %s %s%s%semu %s%s%sprolog_includes ',
+	fmt_write_string(IncludeDirs, ' %s "%s%s%semu" "%s%s%sprolog_includes" ',
 			 args(Directive,
 			      '-I',InstallDir,Slash,
 			      '-I',InstallDir,Slash)),
 	xsb_configuration(config_bindir, Bindir),
 	(   conget(xpp_dump,1)
-	->  fmt_write_string(DumpDirective, ' -O %s_gpp ', arg(FileName))
+	->  fmt_write_string(DumpDirective, ' -O "%s_gpp" ', arg(FileName))
 	;   DumpDirective = ' '
 	),
 	make_gpp_options(GPP_options),
 	%% Construct the gpp command
 	fmt_write_string(GPP_command,
-			 '%s%sgpp %s %s %s -DXSB_PROLOG ',
+			 '"%s%sgpp" %s %s %s -DXSB_PROLOG ',
 			 args(Bindir,Slash,DumpDirective,
 			      GPP_options,IncludeDirs)).
 
@@ -211,7 +206,7 @@ make_include_directive(Directive, Flag) :-
 	make_include_directive1(Directive, Flag, L).
 make_include_directive1(Directive, Flag, [H|Tail]) :-
 	make_include_directive1(Directive1, Flag, Tail),
-	fmt_write_string(Directive, ' %s%s %s', args(Flag, H, Directive1)).
+	fmt_write_string(Directive, ' "%s%s" %s', args(Flag, H, Directive1)).
 make_include_directive1(' ',_, []).
 
 
