@@ -135,7 +135,10 @@ get_mod_pred_arity_list([Psc|Pscs], [ModPred|ModPreds]) :-
 	(Psc =:= 0
 	 ->	ModPred = '... unknown/?'
 	 ;	psc_data(Psc,ModPsc),
-		psc_name(ModPsc,ModName),
+		(ModPsc =:= 0
+		 ->	ModName = usermod % 0 also means usermod
+		 ;	psc_name(ModPsc,ModName)
+		),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity),
 		(ModName == usermod
