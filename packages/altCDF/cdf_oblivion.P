@@ -1,4 +1,3 @@
-<<<<<<< cdf_oblivion.P
 :- compiler_options([ciao_directives]).
 
 :- export
@@ -887,4 +886,3 @@ cdf_term_ext_arg_rep(maxAttr_ext(A,X,B,C),X,maxAttr_ext(A,Y,B,C),Y).
 cdf_term_ext_arg_rep(maxAttr_ext(A,B,X,C),X,maxAttr_ext(A,B,Y,C),Y).
 
 end_of_file.
->>>>>>> 1.19
