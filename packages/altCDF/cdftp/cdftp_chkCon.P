@@ -12,7 +12,7 @@
 	localClassExpression/3,	check_lce/2,
             isCE/1, ceMember/2.
 
-:- document_import isa_ext/2 from usermod.
+:- document_import isa_ext/2,necessCond_ext/2 from usermod.
 :- document_import compdlrule/3 from usermod.
 
 :- document_import classIdentifier/1,topIdentifier/1,
@@ -27,7 +27,8 @@
 
 :- import tp_writeln/2 from tp_utils.
 :- import   isa/2, allAttr/3, hasAttr/3, necessCond/2,
-	   maxAttr/4, minAttr/4,cdf_id_fields/4 from cdf_init_cdf.
+	   maxAttr/4, minAttr/4,cdf_id_fields/4,
+	   assert_cdf_term/1, retractall_cdf_term/1,abolish_cdf_tables/0 from cdf_init_cdf.
 :- import 
 %         cdf_id_fields/4, system_component/1,
 	abolish_cdf_tables/0
@@ -178,6 +179,22 @@ identifier, @tt{consistentWith/2} determines whether there is a model
 in which @tt{Id} @tt{Id} is in @tt{CE}.").
 
 consistentWith(cid(Id,Cmpt),CE):- 
+	assertNecessCond(cid(Id,Cmpt),CE),
+	(checkIdConsistency(cid(Id,Cmpt)) ->
+	    retractNecessCond(cid(Id,Cmpt),CE)
+	  ; retractNecessCond(cid(Id,Cmpt),CE),
+	    fail).
+
+assertNecessCond(cid(Id,Comp),CE):- 
+	abolish_cdf_tables,
+	assert_cdf_term(necessCond_ext(cid(Id,Comp),vid(CE))).
+
+retractNecessCond(Id,CE):- 
+	retractall_cdf_term(necessCond_ext(Id,vid(CE))).
+
+
+/*
+consistentWith(cid(Id,Cmpt),CE):- 
 	retractmytabling,
 	ceDepth(CE,N),
 	N1 is N + 1,
@@ -195,6 +212,7 @@ consistentWith(oid(Id,Cmpt),CE):-
             sat((LCE,CE),abd(Struct,Worlds),Constraints),
 	checkContexts(Constraints,[],Struct,Worlds,Contexts,L),
 	check_worlds(multiple,0,L,Contexts,[]).
+*/
 
 %--------------------------------------------------
 
@@ -212,6 +230,14 @@ This predicate assumes that all class and object identifiers in a
 given CDF instance are correct.").
 
 allModelsEntails(cid(Id,Cmpt),CE):- 
+	assertNecessCond(cid(Id,Cmpt),not(CE)),
+	(checkIdConsistency(cid(Id,Cmpt)) ->
+	    retractNecessCond(cid(Id,Cmpt),not(CE)),
+	    fail
+	  ; retractNecessCond(cid(Id,Cmpt),not(CE)) ).
+
+/*
+allModelsEntails(cid(Id,Cmpt),CE):- 
 	retractmytabling,
 	ceDepth(CE,N),
 	N1 is N + 1,
@@ -225,6 +251,7 @@ allModelsEntails(oid(Id,Cmpt),CE):-
 	localClassExpression([unique(cid(Id,Cmpt))],N1,LCE),
 	tp_prettyPrintCE(2,LCE),
 	\+ allModelsEntails_1((LCE,not(CE)),[]).
+*/
 
 allModelsEntails_1(Expr,AncList):- 
             sat(Expr,abd(Struct,Worlds),_Constr),
@@ -277,8 +304,7 @@ localClassExpr_1(Id,N,Expr):-
 %	writeln(CDFList),
 	N1 is N - 1,
 	localClassExpr_2(CDFList,N1,Expr).
-	
-	
+		
 %-------------------------
 getRelevantFacts(Id,Facts):-
 	extractCDFidentifier(Id,Id1),
@@ -342,14 +368,21 @@ localClassExpr_3(maxAttr(_,Rid,Cid,N),Lev,atMost(N,Rid,Expr)):- !,
 localClassExpr_3(<=(H,B),_,(H ; not(B))):- !.
 localClassExpr_3(necessCond(_,vid(Expr)),_,Expr).
 
+% TLS Im not sure if Expr can ever equal Cid.
 retraverseLevel(N,Cid,OutExpr):- 
 	(N == 0 -> 
 	    OutExpr = Cid
 	  ; localClassExpr_1(Cid,N,Expr),
-	    (Expr \== Cid -> OutExpr = (Cid,Expr) ; OutExpr = Cid)).
+	    (Expr \== Cid -> 
+		(Expr = cid('CDF Classes',cdf) -> 
+		    OutExpr = Cid 
+		;   OutExpr = (Cid,Expr) )
+                 ; OutExpr = Cid)).
 
 retractmytabling:- 
-	retractall(failed(_)),retractall(succeeded(_)),retractall(queried(_)).
+	retractall(failed(_)),
+	retractall(succeeded(_)),
+	retractall(queried(_)).
 
 %--------------------------------------------------
 :- comment(hide,ceDepth/2).

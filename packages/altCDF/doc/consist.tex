@@ -10,7 +10,7 @@ class expressions.  These provers may use based on structural
 subsumption techniques (e.g. as used in CLASSIC~\cite{PMBRB91},
 LOOM~\cite{MacB94} and GRAIL~\cite{RBGHNS97}); tableaux
 construction~\cite{HoPS99}(redo Bibs); or stable model
-generation~\cite{Swif03} --- the CDF theorem prover is based on the
+generation~\cite{Swif04} --- the CDF theorem prover is based on the
 last technique.
 
 At a high level, the CDF prover first translates a class expression
@@ -168,7 +168,7 @@ principle relations between individuals (Definition~\ref{def:redund}).
 For visualization purposes, the above structure is also portrayed via
 a structure graph in Figure~\ref{fig:struct1}~\footnote{Structure
 graphs are used in this paper only for expository purposes,
-\cite{Swif03} provides definitions of a structure graph for ontology
+\cite{Swif04} provides definitions of a structure graph for ontology
 languages.}.  The vertices of a structure graph correspond to the
 individuals in the structure labelled with the principle classes to
 which the individuals belong, along with any uniqueness constraints
@@ -260,7 +260,7 @@ $hasAttr(Id1,R,C2)$, $maxAttr(Id1,R,C2,N)$,  \\
 \> \> \> \> \> \> \>		{\rm /* cf. Definition~\ref{def:redund} */}\\
 %------------------------------------------------------------------------------------
 \ \\
-\>  \underline{LocalClassExpression($Id$)}  \\
+\>  \underline{LocalClassExpression($Expr $)}  \\
 \> \> Let $\cF = getRelevantFacts(Id)$ \\
 \> \> $CE = Id$ \\
 \> \> For each $f \in \cF$ \\
@@ -280,10 +280,10 @@ $hasAttr(Id1,R,C2)$, $maxAttr(Id1,R,C2,N)$,  \\
 \> \> return CE \\
 \\
 %------------------------------------------------------------------------------------
-\>  \underline{LocalClassFormula($Id$)}  \\
+\>  \underline{LocalClassFormula($ Expr $)}  \\
 \> \> Let $\cF = getRelevantFacts(Id)$ \\
-\> \> If $Id$ is a class identifier, CF = $elt(X_0,Id)$ \\
-\> \> Else If $Id$ is an object identifier $oid(I)$ \\
+\> \> If $ Exp $ is a class identifier, CF = $elt(X_0,Id)$ \\
+\> \> Else If $ Exp $ is an object identifier $oid(I)$ \\
 \> \> \> CF = $elt(X_0,cid(I)) 
 	\wedge \forall X_1 [elt(X_1,cid(I)) \Ra X_1 = X_0]$ \\
 \> \> while $\cF$ is non-empty \\

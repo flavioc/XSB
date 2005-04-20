@@ -14,7 +14,7 @@
 %\usepackage{fullpage}
 
 \input{include}
-\input{includeopt}
+%\input{includeopt}
 
 \pagestyle{headings}
 
@@ -180,7 +180,7 @@ Terrance Swift \\ David S. Warren
 
 %\bibliographystyle{plain}
 \bibliographystyle{amsalpha}
-\bibliography{longstring,all}
+\bibliography{longstring,../../../docs/userman/all}
 %\newpage
 
 %\appendix

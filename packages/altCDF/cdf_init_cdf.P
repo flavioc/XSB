@@ -1325,7 +1325,7 @@ immed_necessCond1(Class,Formula):-
 
 necessCond(Class,Formula):- 
 	gens_good_isas(Class),!,
-	check_var(Formula,'inecessCond/2',2),
+	check_var(Formula,'necessCond/2',2),
    	necessCond_1fix(Class,Formula).
 necessCond(Class,Formula):- 
 	check_var(Formula,'inecessCond/2',2),
@@ -1903,6 +1903,7 @@ abolish_minAttr_inherits :-
 	abolish_table_pred(minAttr_23fix_sub(_,_,_,_)).
 
 abolish_necessCond_inherits :-
+	abolish_table_pred(necessCond_1fix(_,_)),
 	abolish_coversAttr_inherits.
 
 %%% OTHER PREDS %%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -317,7 +317,7 @@ checkatMost(Elt,R,Abd,Const):-
 	    findall(E1,((abduced(rel(Elt,Rsub,E1),Abd) 
                                 ; abduced(invrel(E1,Rsub,Elt),Abd)),
   	                        tp_subclass(Rsub,Rsup),
-			writeln(checking(inClass(Class,E1,Abd))),nl,
+%			writeln(checking(inClass(Class,E1,Abd))),nl,
 			inClass(Class,E1,Abd)),Es),
 	    sort(Es,Esort),
 	    length(Esort,L),
