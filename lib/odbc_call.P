@@ -1968,6 +1968,9 @@ odbc_data_sources(N,DataSourceName,Description) :-
 odbc_data_sources(_,DataSourceName,Description) :-
 	odbc_data_sources(2,DataSourceName,Description).
 
+odbc_connection_exists(ConnectionName):-
+        odbc_connection(ConnectionName,_).
+
 odbc_get_info(InfoType, Info) :-
 	odbc_get_info(_, InfoType, Info).
 odbc_get_info(Connection, InfoType, Info) :-

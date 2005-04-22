@@ -40,6 +40,7 @@
 	odbc_insert/2, odbc_insert/3,
 	odbc_delete/2, odbc_delete/3,
   odbc_data_sources/2,
+  odbc_connection_exists/1,
 	odbc_attach/2, odbc_attach/3,
 	odbc_create_table/2, odbc_create_table/3,
 	odbc_create_index/3, odbc_create_index/4,
