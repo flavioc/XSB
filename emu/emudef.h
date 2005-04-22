@@ -278,7 +278,6 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
     lpcreg = (pb)get_ep(PSC);						\
   } else {								\
      if (asynint_val & KEYINT_MARK) {                                   \
-       lpcreg = (pb)get_ep(PSC);					\
         synint_proc(CTXTc PSC, MYSIG_KEYB);	                      	\
         lpcreg = pcreg;							\
         asynint_val = asynint_val & ~KEYINT_MARK;			\
