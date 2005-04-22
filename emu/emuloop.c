@@ -1604,8 +1604,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(proceed,_proceed)  /* PPP */
-    handle_xsb_profile_interrupt;
-    lpcreg = cpreg;
+     proceed_sub;
   XSB_End_Instr()
 
   XSB_Start_Instr(xsb_execute,_xsb_execute) /* PPP-S */
