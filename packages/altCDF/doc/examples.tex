@@ -1,6 +1,90 @@
 
 \chapter{Programming with CDF}
 
+\section{CDF as a Constraint Language}
+
+As do most description logics, Type-1 CDF Ontologies have the ability
+to express a large class of constraint problems in a succinct manner.
+
+\begin{example} \rm
+As a simple example of the relationship between ontologies and
+constraints, we consider a simplified ontology of manufactured metal
+alloys.  Metal alloys are characterized by a number of characteristics
+such as chemical composition and the form in which the alloy is
+primarily manufactured.  For example, the Americal Society for
+Technical Manufacturers alloy ASTM B 107 is manufactured as a form
+TUBE, WIRE, or ROD, while the Sikorsky Corporation specification SS
+9705 indicates that the metal has the form BAR or TUBE.  This
+information is obtained by the fragment.
+%------------------------
+{\tt  {\small 
+\begin{tabbing} foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo\=\kill
+\> necessCond\_ext(cid('SS 9705',specs), \\
+\> \> \>              vid(exists(rid(hasForm,specs),(cid(bar,specs) ; cid(tube,specs)) ), \\
+\> \> \> 	              atMost(1,rid(hasForm,specs)) ) \\
+\\
+\> necessCond\_ext(cid('ASTM B 107',specs), \\
+\>\> \>              vid(exists(rid(hasForm,specs),
+	(cid(wire,specs) ; cid(tube,specs) ; cid(rod,specs)) ), \\
+\\
+\> necessCond\_ext(cid(bar,specs),vid(not(wire,specs))) \\
+\> necessCond\_ext(cid(bar,specs),vid(not(tube,specs))) \\
+\> necessCond\_ext(cid(bar,specs),vid(not(rod,specs))) \\
+\> necessCond\_ext(cid(rod,specs),vid(not(tube,specs))) \\
+\> necessCond\_ext(cid(rod,specs),vid(not(wire,specs))) \\
+\> necessCond\_ext(cid(tube,specs),vid(not(wire,specs))) 
+\end{tabbing} }}
+%------------------------
+CDF has been used in systems that read technical drawings of airplane
+parts and infer properties about the parts.  If a given part {\tt
+oid(p1,specs)} were described by both ASTM B 107 and SS 9705 the goal
+{\tt
+allModelsEntails(oid(p1,specs),exists(rid(hasForm,specs),cid(tube,specs)))}
+would succeed, indicating that the part must have the form of a tube.
+Such information could be useful in automatically deciding that the
+part must be manufactured by a supplier with specialized tube-bending
+machinery, which is often not available for suppliers who perform
+general machining.
+\end{example}
+
+The next example is more abstract, and indicates how CDF ontologies
+can represent propositional clauses.  As discussed in Section \ref{}, in
+\version, the CDF theorem prover is not especially efficient, and
+should not be used for
+
+\begin{example} \rm
+Consider the propositional clauses, $p \vee q \vee \neg r$ and $\neg p
+\vee \neg q \vee r$.  These clauses can be represented by the ontology
+%------------------------
+{\tt  {\small 
+\begin{tabbing} foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo\=\kill
+\> necessCond\_ext(oid(o1,prop), 
+	(cid(p,prop) ; cid(q,prop) ; not(cid(r,prop))) ), \\
+\> necessCond\_ext(oid(o1,prop), 
+	(not(cid(p,prop)) ; not(cid(q,prop)) ; cid(r,prop)) ), \\
+\end{tabbing} }}
+%------------------------
+The consistency of the two clauses can be determined by checking the
+consistency of {\tt oid(o1,prop)}.
+\end{example}
+
+It is no surprise to a reader familiar with description logics that a
+CDF ontology can represent even more expressive theories. A modal
+formula, such as $\square p \vee \Diamond (q \wedge r)$ can easily be
+expressed as a class expression
+
+{\small {\tt 
+all(rid(rel,modal),(cid(p,modal) ; exists(rid(rel,modal),(cid(q,modal) , cid(r,modal)))) } }
+
+and incorporated into an ontology.  It is easy to see from Section
+\ref{} that CDF class expressions express {\em multi-modal} formulas,
+in which more than one relation can exist within a relational
+quantifier, and allows numeric constraints on relational quantifiers
+as well.  On the other hand \version{} of CDF does not allow
+specification of transitive relations~footnote{Soon!}, and so does not
+allow the representation of temporal logics such as CTL* or the
+modal-$\mu$ calculus (see e.g. \cite{Stir}).
+
 \section{Non-Monotonic Reasoning and CDF}
 
 XSB supports non-monotonic reasoning through its implementation of the

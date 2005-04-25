@@ -114,7 +114,7 @@ can be read as ``the element of the singleton class {\tt
 oid(sutureU245H)} is in the class {\tt cid(absorbableSutures)}''.
 Note that {\tt cid(absorbableSutures)} is (potentially) more specific
 than the class {\tt cid(sutures)}, to which {\tt oid(suture547466)}
-belings.  The class {\tt cid('CDF Classes')} is taken to contain all
+belongs.  The class {\tt cid('CDF Classes')} is taken to contain all
 objects in the domain of discourse.  All identifiers in this simple
 taxonomy are atomic.
 
@@ -131,8 +131,9 @@ Implicit in the above example is the fact that we use the term {\em
 object identifiers} or {\em objects} to denote singleton classes,
 class identifiers to denote all classes (including singleton classes).
 Elements cannot be denoted directly by CDF facts, but only through
-singleton classes that contain them.  At this point, we can begin
-defining the semantics of Type-0 CDF instances.
+singleton classes that contain them (and are isomorphic to them).  At
+this point, we can begin defining the semantics of Type-0 CDF
+instances.
 
 %-------------------
 \begin{definition} \label{def:ontolang}
@@ -163,15 +164,15 @@ our attention to ontology languages whose constant and function
 symbols are identifiers as described in Definition~\ref{def:ids}.
 Informally $isClass/1$ indicates that an identifier $I$ is a class
 name or {\em class identifier}; $isElt/1$ indicates that an identifier
-$I$ is an element of a class; $isRel/1$ that $I$ is a or {\em relation
+$I$ is an element of a class; $isRel/1$ that $I$ is a {\em relation
 identifier}; and $isCrel/1$ that $I$ is a {\em class-relation
-identifier}.  $isObj/1$ that $I$ is an {\em object identifier}.  We
-sometimes call these 5 predicates {\em sorting predicates} In CDF an
-object identifier actually represents a singleton class.  $elt(E,C)$
-indicates that an element $O$ is a member of class identifier $C$;
-$rel(O_1,R,O_2)$ indicates that an element $E_1$ has a $R$ relation to
-an element $E_2$; and $crel(C_1,R,E)$ indicates that the class
-identifier $C_1$ has a $R$ relation to an object identifier $E$.
+identifier}; and $isObj/1$ that $I$ is an {\em object identifier}.  We
+sometimes call these 5 predicates {\em sorting predicates}.
+$elt(E,C)$ indicates that an element $O$ is a member of class
+identifier $C$; $rel(O_1,R,O_2)$ indicates that an element $E_1$ has a
+$R$ relation to an element $E_2$; and $crel(C_1,R,E)$ indicates that
+the class identifier $C_1$ has a $R$ relation to an object identifier
+$E$.
 
 The first core axiom ensures that objects, classes, relations and
 class-relations all have distinct identifiers within an ontology
@@ -282,7 +283,7 @@ a subclass of {\tt cid('CDF Classes')}.
 %-----------
 \begin{axiom}[Domain Containment] \label{ax:contained}
 \index{axioms!domain containment} 
-\[ (\forall X) [isElt(X) \Rightarrow elt(X,cid('CDF Classes'))] \]
+\[ (\forall X) [isElt(X) \Rightarrow elt(X,cid('CDF\ Classes'))] \]
 \end{axiom} 
 %-----------
 
@@ -312,14 +313,14 @@ fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
 }
 %
 \noindent
-the {\tt allAttr/3} fact above indicates can be read as ``if any
-object in {\tt cid(absorbableSutures)} has a {\tt
-rid(hasNeedleDesign)} relation, it must be to an object in the class
-{\tt cid(needleDesign)}''.  That {\tt hasNeedleDesign} is a relation
-is indicated by clothing it in the term {\tt rid/1}.  This relation is
-an immediate subclass of all {\tt CDF Relations} which is taken to
-represent the universal binary relation over the domain of discourse.
-Thus the {\tt allAttr/3} fact effectively types the range of {\tt
+The {\tt allAttr/3} fact above can be read as ``if any object in {\tt
+cid(absorbableSutures)} has a {\tt rid(hasNeedleDesign)} relation, it
+must be to an object in the class {\tt cid(needleDesign)}''.  That
+{\tt hasNeedleDesign} is a relation is indicated by clothing it in the
+functor {\tt rid/1}.  This relation is an immediate subclass of all
+{\tt CDF Relations} which in turn is taken to represent the universal
+binary relation over the domain of discourse.  Thus the {\tt
+allAttr/3} fact effectively types the range of {\tt
 rid(hasNeedleDesign)} relations, stemming from objects in the class
 {\tt cid(absorbableSutures)}, but it does not indicate the existence
 of such a relationship.  From a user's point of view, the {\tt
@@ -398,7 +399,7 @@ fooo\=foo\=foo\=foo\=foooooooooooboooooooooooooooo\=ooooooooooooo\=\kill
 \> {\tt isa(cid(regularCuttingEdge),cid(pointStyle))} \\
 \> {\tt isa(cid(reverseCuttingEdge),cid(pointStyle))} \\
 \> {\tt isa(cid(scalpelPoint),cid(pointStyle))} \\
-\> {\tt \% 10 other values.} \\
+\> {\it \% 10 other values.} \\
 \\
 \> {\tt hasAttr(oid(sutureU245H),rid(hasPointStyle),cid(regularCuttingEdge))}
 \end{tabbing}
@@ -433,7 +434,7 @@ various relations.
 For our purposes, an object in {\tt cid(absorbableSutures)} can be
 thought of as consisting of a needle and a thread~\footnote{The thread
 is often called a suture.  We are assuming for purposes of
-illustration that all sutures are, in suture-speak, armed.}.  This is
+illustration that all sutures are --- in suture-speak --- ``armed''.}.  This is
 represented by the facts:
 %
 {\small
@@ -567,12 +568,11 @@ foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo\=\kill
 \noindent
 The {\tt classHasAttr/3} fact can be read as ``the class {\tt
 cid(sutures)} has a {\tt crid(pointStyleWeight)} relation to an object
-in {\tt cid(highWeight)}.  .  Matching weights are made
-non-inheritable via {\tt classHasAttr/3} because a weight may depend
-on a given classification of a part.  For instance if a part were
-classified as a {\tt cid(nonAbsorbableSuture)}, its {\tt
-cid(pointStyle)} might weigh less (or more) for determining whether
-two sutures are equivalent.
+in {\tt cid(highWeight)}.  Matching weights are made non-inheritable
+via {\tt classHasAttr/3} because a weight may depend on a given
+classification of a part.  For instance if a part were classified as a
+{\tt cid(nonAbsorbableSuture)}, its {\tt cid(pointStyle)} might weigh
+less (or more) for determining whether two sutures are equivalent.
 \end{example}
 %------------------
 \begin{instance} [Translation of {\tt classHasAttr/3}] \rm 

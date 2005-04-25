@@ -1,9 +1,10 @@
 \section{Inheritance} \label{sec:inheritance}
 
-Example~\ref{ex:hasAttr} that each object in the class of {\tt
-cid(absorbableSutures)} has a {\tt rid(hasPointStyle)} relation to an
-object in the domain {\tt cid(pointStyle)}.  Thus, if no stronger
-information were provided for, say, part {\tt oid(sutureU245H)}, then
+Example~\ref{ex:hasAttr} indicates that each object in the class of
+{\tt cid(absorbableSutures)} has a {\tt rid(hasPointStyle)} relation
+to an object in the domain {\tt cid(pointStyle)}.  Thus, if no
+stronger information were provided for, say, part {\tt
+oid(sutureU245H)}, then
 %--------------------------
 {\small 
 \begin{tabbing}
@@ -55,9 +56,9 @@ Let $\cM$ be an ontology model.
 					    {\tt isa(Id_0,Id_1)}^{\cI}$ 
 		then $\cM \models {\tt maxAttr(Id_0,Id_2,Id_3,N)}^{\cI}$ 
 %
-\item If $\cM \models {\tt coversAttr(Id_1,Id_2,Id_3)}^{\cI} \wedge
-					    {\tt isa(Id_0,Id_1)}^{\cI}$ 
-		then $\cM \models {\tt coversAttr(Id_0,Id_2,Id_3)}^{\cI}$ 
+%\item If $\cM \models {\tt coversAttr(Id_1,Id_2,Id_3)}^{\cI} \wedge
+%					    {\tt isa(Id_0,Id_1)}^{\cI}$ 
+%		then $\cM \models {\tt coversAttr(Id_0,Id_2,Id_3)}^{\cI}$ 
 %
 \end{enumerate}
 \end{proposition}
@@ -84,21 +85,31 @@ foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo\=\kill
 should also hold in any model of the CDF instance.  
 %-----------------------
 Similiarly,
-
-{\tt allAttr(cid(dlaPart),rid(suturesRusMatch),id(cdfRoot))$^{\cI}$}
-
+{\small 
+\begin{tabbing}
+foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo\=\kill
+\> 
+{\tt allAttr(cid(dlaPart),rid(suturesRusMatch),id('CDF Classes'))$^{\cI}$}
+\end{tabbing} }
+%-----------------------
 \noindent
 should also hold.  In English, every member or subclass of {\tt
-cid(sutures)} that has a {\tt rid(suturesRusMatch)} relation has the
-same relation to a member or subclass of {\tt id(cdfRoot)}.  {\tt
-minAttr/4} and {\tt classHasAttr/4} behave similarly with regards to
-third argument inheritance.
+cid(sutures)} that has a relation {\tt rid(suturesRusMatch)} has the
+same relation to a member or subclass of {\tt \cid{'CDF Classes'}}.
+{\tt minAttr/4} and {\tt classHasAttr/4} behave similarly with regards
+to third argument inheritance.
 
 Third argument inheritance is different for {\tt maxAttr/4}, however.
 The fact
-
+%-----------------------
+{\small 
+\begin{tabbing}
+foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo\=\kill
+\> 
 {\tt maxAttr(cid(person),rid(hasGeneticRelation),cid(mother))}
-
+\end{tabbing} }
+%-----------------------
+\noindent
 states that each person has at most one genetic mother.  If {\tt
 cid(mother)} is a subclass of {\tt cid(parent)}, then it is not true
 that each person has at most one genetic parent.  On the other hand,
@@ -187,11 +198,15 @@ propagates from relations to subrelations both in {\tt allAttr/3} and
 	then $\cM \models {\tt maxAttr(Id_0,Id_4,Id_3,N)}^{\cI} $ 
 \end{enumerate}
 
+We conclude this chapter with a discussion of irredundant sets and
+principle classes, both of which are used in the operational semantics
+of the Type-0 interface in \refchap{sec:impl}.
+
 \index{{\sc inh} proof}
-The above propositions can be made into a simple proof system, {\sc
-inh}, by considering the facts themselves rather than their
-interpretations into an ontology theory.  For instance, give a CDF
-instance $\cO$ containing {\tt hasAttr(Id1,Id2,Id3)} and {\tt
+The above inheritance propositions can be made into a simple proof
+system, {\sc inh}, by considering the facts themselves rather than
+their interpretations into an ontology theory.  For instance, give a
+CDF instance $\cO$ containing {\tt hasAttr(Id1,Id2,Id3)} and {\tt
 isa(Id3,Id4)} then {\tt hasAttr(Id1,Id2,Id4)} can be deduced.  In
 other words, {\sc inh} contains an inference rule,
 \[

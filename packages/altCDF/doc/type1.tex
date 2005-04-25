@@ -70,7 +70,7 @@ an {\em inclusion statement},
 \end{definition}
 Note that in the definition above, $A$ can be either an atomic or
 product identifier. Also note that Prolog-style syntax is used: {\em
-and} is represented as {\em ``,''} and {\em or} as {\em ``;''}.  
+and} is represented as {\em ``,''} and {\em or}\  as {\em ``;''}.  
 
 The meaning of class expressions in terms of ontology theories will be
 defined in \refsec{sec:cesemantics}.  For now, we informally
@@ -113,11 +113,11 @@ fooo\=foooo\=foo\=foo\=foooooooooooooooooooooooooooo\=oooooooooo\=\kill
 \end{tabbing}
 } }
 %-------------
-This class expression can be read in English as ``The class of all
-elements that: 
+This class expression can be read in English as 
 \begin{tabbing}
 fooo\=foooo\=foo\=foo\=foooooooooooooooooooooooooooo\=oooooooooo\=\kill
-\> are in {\tt \cid{absorbableSutures}} and \\
+\> ``The class of all
+elements that are in {\tt \cid{absorbableSutures}} and \\
 \> all of whose {\tt \rid{hasNeedleDesign}} relations are to elements in
 the class {\tt \cid{needleDesign}} and \\
 \> all of whose {\tt \rid{hasPointStyle}} relations are to elements in
@@ -150,12 +150,12 @@ fooo\=foooo\=foo\=foo\=foooooooooooooooooooooooooooo\=oooooooooo\=\kill
 \noindent
 Other facts hold, but they are redundant
 (Definition~\ref{def:redund}).  From these facts along with the
-semantics given in Section~\ref{sec:type0}, it is not hard to see that
-if an element $O$ is in the class {\tt \cid{absorbableSutures}} then it
-must also be in $C$.
+semantics given in Section~\ref{chap:type0}, it is not hard to see
+that if an element $O$ is in the class {\tt \cid{absorbableSutures}}
+then it must also be in $C$.
 \end{example}
 %------------------------------------------
-From Definitions~\ref{def:ontolang} and~\ref{def:idtype} a CDF object
+From Definitions~\ref{def:ontolang} and~\ref{def:IdSort}, a CDF object
 identifier denotes a class with a uniqueness constraint.  Because of
 this, object identifiers and class identifiers can be intermingled
 withing class expressions.
@@ -313,11 +313,11 @@ fooo\=foooo\=foo\=foo\=foooooooooooooooooooooooooooo\=oooooooooo\=\kill
 \end{example}
 
 To summarize this section, CDF instances have direct translations into
-ontology theories, as presented in Chapter~\ref{sec:type0}.  Class
+ontology theories, as presented in Chapter~\ref{chap:type0}.  Class
 expressions can also be translated into ontology theories via
 Definition~\ref{def:fot}, and these two translations induce a unique
 translation from CDF instances to inclusion statements between class
-expressions.  Thus a CDF instance can be seen as a set of sentances in
+expressions.  Thus a CDF instance can be seen as a set of sentences in
 an ontology theory, or as a set of inclusion statements between class
 expressions.  At the same time, there are class expresion constructors
 that are not used when Type-0 instances are translated into class
@@ -391,7 +391,7 @@ Let $\cM$ be an ontology model.
 \end{proposition}
 
 The {\sc inh} proof system can be extended to use a deduction rule
-based on this proposition.
+based on this proposition, in a straightforward way.
 
 %------------------------------------------------------------------------------
 
@@ -476,4 +476,5 @@ Intuitively, constructing a level $n$ local class expression
 times, ignoring cycles.  
 
 The concept of local class expressions is used to explain features of
-the Type-1 CDF interface, as descrined in Section \ref{}.
+the Type-1 CDF interface, as descrined in
+Section~\ref{sec:type1query}.

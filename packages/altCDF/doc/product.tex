@@ -125,9 +125,9 @@ then the identifier
 {\tt \cid{partMatch(\cid{suturesRusMatch},\oid{matchLevelN})}}
 
 \noindent
-is improperly formed.  On the other hand, if {\tt oid{sutureU245H}} is in
-the class {\tt cid{suturesRusPart}}, then the identifier {\tt
-\oid{partMatch(oid{sutureU245H},oid{matchLevelN})}} is a product
+is improperly formed.  On the other hand, if {\tt \oid{sutureU245H}} is in
+the class {\tt \cid{suturesRusPart}}, then the identifier {\tt
+\oid{partMatch(\oid{sutureU245H},\oid{matchLevelN})}} is a product
 identifier that is also an object identifier.
 
 Axiom~\ref{ax:implsc} also means that the inheritance relation of a
@@ -172,8 +172,8 @@ identifier is mapped (among other models).
 
 Type-0 instances have been designed so that checking their consistency
 --- whether they have a model --- is easily done.  Models of Type-0
-instances are discussed in \cite{}, here we review some of the main
-points without proofs.  We begin by defining a model of a Type-0
+instances are discussed in \cite{SwiW03b}, here we review some of the
+main points without proofs.  We begin by defining a model of a Type-0
 instance.
 
 \begin{definition} \label{def:ont-th}
@@ -212,8 +212,8 @@ if CDF instances have Herbrand models, they can be easily implemented
 in Prolog without resorting to a constraint system or to
 meta-interpretation.  Care has been taken to ensure that any Type-0
 CDF instance does in fact have a Herbrand model, so that the Type-0
-interface in \refchap{} can be supported~\footnote{This is one of the
-reasons why object identifiers in CDF denote singleton classes.  If
-two classes $c_1$ and $c_2$ are ``equal'', this simply means that a
+interface in \refchap{sec:impl} can be supported~\footnote{This is one
+of the reasons why object identifiers in CDF denote singleton classes.
+If two classes $c_1$ and $c_2$ are ``equal'', this simply means that a
 model must satisfy the sentence $(\forall X) elt(X,c_1)
 \leftrightarrow elt(X,c_2)$ which has a Herbrand model.}.
