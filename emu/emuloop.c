@@ -1938,6 +1938,7 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 
    extern void dis(xsbBool);
    extern char *init_para(int, char **);
+   extern void perform_IO_Redirect(int, char **);
    extern void init_machine(CTXTdecl), init_symbols(void);
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
@@ -1952,6 +1953,9 @@ DllExport int call_conv xsb(int flag, int argc, char *argv[])
 	The name of the executable could have been set in cinterf.c:xsb_init
 	if XSB is called from C. In this case, we don't want `executable'
 	to be overwritten, so we check if it is initialized. */
+
+	perform_IO_Redirect(argc, argv);
+
 #ifdef SIMPLESCALAR
      strcpy(executable,argv[0]);
 #else

@@ -193,7 +193,7 @@ extern double realtime_count; /* from subp.c */
 
 /* ------- variables also used in other parts of the system -----------	*/
 
-Cell flags[64];			  /* System flags + user flags */
+Cell flags[65];			  /* System flags + user flags */
 
 /* ------- utility routines -------------------------------------------	*/
 

@@ -26,6 +26,7 @@
 :- compiler_options([sysmod,xpp_on]).
 #include "standard.h"
 #include "sig_xsb.h"
+#include "flag_defs_xsb.h"
 
 :- import conget/2, conset/2 from gensym.
 
@@ -84,6 +85,16 @@ do_pcall(Call,VarTerm) :-
 	'_$savecp'(C), 
 	goal_cut_trans(Y,X,C),
 	call_expose(X).
+
+
+string_to_term(Atom,Goal) :-
+	stat_flag(STDERR_BUFFERED,StderrBuffered),
+	1 =:= StderrBuffered,						% If stdio is redirected and buffered we want to capture error messages
+	!,
+	file_open(Atom,sr,Fp),
+	file_read(Fp,Goal,_),
+	file_close(Fp).
+
 
 string_to_term(Atom,Goal) :-
 	file_open(Atom,sr,Fp),

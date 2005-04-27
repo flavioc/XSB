@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -1160,6 +1161,13 @@ int xsb_answer_string(CTXTdeclc VarString *ans, char *sep)
 }
 
 
+static long lastWarningStart = 0L;
+static inline void updateWarningStart(void)
+{
+  if(flags[STDERR_BUFFERED])
+  	lastWarningStart = ftell(stderr);
+}
+
 /************************************************************************/
 /*                                                                      */
 /* xsb_init(argc,argv) initializes XSB to be called from C.             */
@@ -1178,21 +1186,25 @@ int xsb_initted = 0;   /* if xsb has been called */
 
 DllExport int call_conv xsb_init(int argc, char *argv[])
 {
-  char executable1[MAXPATHLEN];
-  if (xsb_initted) return(1);
+int rc = 1;
+char executable1[MAXPATHLEN];
 
-  /* we rely on the caller to tell us in argv[0]
-     the absolute or relative path name to the XSB installation directory */
-  sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
-	  argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
-  strcpy(executable, expand_filename(executable1));
-
-
-  xsb(0, argc,argv);  /* initialize xsb */
-
-  xsb(1, 0, 0);       /* enter xsb to set up regs */
-  xsb_initted = 1;
-  return(0);
+updateWarningStart();
+if (!xsb_initted)
+	{
+	/* we rely on the caller to tell us in argv[0]
+	the absolute or relative path name to the XSB installation directory */
+	sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
+	argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
+	strcpy(executable, expand_filename(executable1));
+	
+	if (0 == (rc = xsb(0,argc,argv)))     /* initialize xsb */
+		{
+		if (0 == (rc = xsb(1,0,0)))       /* enter xsb to set up regs */
+		xsb_initted = 1;
+		}
+	}
+return(rc);
 }
 
 /************************************************************************/
@@ -1209,6 +1221,8 @@ DllExport int call_conv xsb_init_string(char *cmdline_param) {
 	int i = 0, argc = 0;
 	char **argv, delim;
 	char cmdline[2*MAXPATHLEN+1];
+
+  updateWarningStart();
 
 	/*stream_err = freopen("XSB_errlog", "w", stderr);
 	  stream_out = freopen("XSB_outlog", "w", stdout);*/
@@ -1258,6 +1272,7 @@ int xsb_inquery = 0;
 DllExport int call_conv xsb_command(CTXTdecl)
 {
   if (xsb_inquery) return(2);  /* error */
+  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
   xsb(1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
@@ -1281,6 +1296,7 @@ DllExport int call_conv xsb_command(CTXTdecl)
 DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
   if (xsb_inquery) return(2);  /* error */
+  updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
   xsb(1,0,0);
@@ -1309,6 +1325,7 @@ DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 DllExport int call_conv xsb_query(CTXTdecl)
 {
   if (xsb_inquery) return(2);
+  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
   xsb(1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);
@@ -1335,6 +1352,7 @@ DllExport int call_conv xsb_query(CTXTdecl)
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
   if (xsb_inquery) return(2);
+  updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
   xsb(1,0,0);
@@ -1380,14 +1398,14 @@ int call_conv xsb_query_string_string_b(CTXTdeclc
   int rc;
   
   XSB_StrSet(&last_answer,"");
-  rc = xsb_query_string_string(CTXTc goal,&last_answer,sep);
+  rc = xsb_query_string_string(CTXTc goal,&last_answer,sep); 
   if (rc > 0) return rc;
   *anslen = last_answer.length;
   XSB_StrNullTerminate(&last_answer);
   if (last_answer.length < buflen) {
     strcpy(buff,last_answer.string);
     return rc;
-  } else return 3;
+  } else return(3);
 }
 
 /************************************************************************/
@@ -1403,7 +1421,7 @@ DllExport int call_conv
     strcpy(buff,last_answer.string);
     return 0;
   } else 
-    return 3;
+    return(3);
 }    
 
 /************************************************************************/
@@ -1424,6 +1442,7 @@ DllExport int call_conv
 DllExport int call_conv xsb_next(CTXTdecl)
 {
   if (!xsb_inquery) return(2);
+  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
   xsb(1,0,0);
   if (is_var(reg_term(CTXTc 1))) {
@@ -1471,7 +1490,7 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
   if (last_answer.length < buflen) {
     strcpy(buff,last_answer.string);
     return rc;
-  } else return 1;
+  } else return(3);
 }
 
 
@@ -1487,6 +1506,7 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 
 DllExport int call_conv xsb_close_query(CTXTdecl)
 {
+  updateWarningStart();
   if (!xsb_inquery) return(2);
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
   xsb(1,0,0);
@@ -1505,7 +1525,76 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
 
 DllExport int call_conv xsb_close(CTXTdecl)
 {
+  updateWarningStart();
   if (xsb_initted) return(0);
   else return(1);
 }
 
+#if defined(WIN_NT)
+//
+// From: UNIX Application Migration Guide
+// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnucmg/html/UCMGch10.asp
+//
+// The version there won't compile as is, but it can be fixed...
+//
+#include <io.h>
+#include <Basetsd.h>
+typedef SSIZE_T	ssize_t;
+static inline ssize_t pread(int fd, void *buf, size_t count, long offset)
+{
+if (-1 == lseek(fd,offset,SEEK_SET))
+	return(-1);
+return(read(fd,buf,count));
+}
+#else
+//
+// For concurrent access to a file (required for asynchronous I/O (AIO) support)
+// requires the pread() and pwrite() system calls to actually work
+// so let's use the real thing that way we can safely be multi-threaded.
+//
+#include <unistd.h>
+#endif
+
+/************************************************************************/
+/*                                                                      */
+/*	xsb_get_last_error_string returns previous answer.             */
+/*                                                                      */
+/************************************************************************/
+DllExport int call_conv xsb_get_last_error_string(char *buff, int buflen, int *anslen)
+{
+int rc = 2;
+ssize_t bytesRead = 1;
+ssize_t totalBytesRead = 0;
+
+if(!flags[STDERR_BUFFERED])
+	xsb_warn("[xsb_get_last_error_string] This feature must be activated with the -q option");
+else
+	{
+	rc = 1;				// Assume failure on the ftell or read
+	errno = 0;			// Setup to detect error in ftell
+	*anslen = (int)(ftell(stderr) - lastWarningStart);
+	if((0 == errno) && (-1 < *anslen))
+		{				// ftell worked
+		if (*anslen >= buflen)
+			rc = 3;		// Not enough room in the target buffer
+		else
+			{
+			while ((totalBytesRead < *anslen) && (0 < bytesRead) && !ferror(stderr))
+				{
+ 		   		bytesRead = pread(fileno(stderr),&buff[totalBytesRead],(*anslen - totalBytesRead),(lastWarningStart + totalBytesRead));
+ 		   		totalBytesRead += bytesRead;
+ 		   		}
+			if (!ferror(stderr))
+				{
+				rc = 0;
+				if (-1 == bytesRead)
+					*anslen = totalBytesRead + 1;
+				else
+					*anslen = totalBytesRead;
+				buff[*anslen] = 0x00;
+				}
+			}
+		}
+	}
+return(rc);
+}    

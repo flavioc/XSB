@@ -200,7 +200,7 @@ static void init_flags(void)
 {
   int i;
 
-  for (i=0; i<64; i++) flags[i] = 0;
+  for (i=0; i<65; i++) flags[i] = 0;
   flags[SYS_TIMER]  = TIMEOUT_ERR; /* start with expired timer */
   flags[BANNER_CTL] = 1;           /* a product of prime numbers; each prime
 				      determines which banner isn't shown */
@@ -300,6 +300,28 @@ static void process_long_option(char *option)
 /*==========================================================================*/
 FILE *stream_err, *stream_out; 
 
+void perform_IO_Redirect(int argc, char *argv[])
+{
+int i;
+
+init_flags();	// We set one of them
+
+/*
+	This need to be done early so that embedded applications can catch meaningful 
+	initialization failures in the log files
+*/
+for (i=1; i<argc; i++)
+	{ /* check to see if should redirect output */
+	if (!strcmp(argv[i],"-q"))
+		{
+		stream_err = freopen("XSB_errlog", "w+", stderr);
+		flags[STDERR_BUFFERED] = 1;
+		stream_out = freopen("XSB_outlog", "w", stdout);
+		break;
+		}
+	}
+}
+
 /* Initialize System Parameters
    ---------------------------- */
 char *init_para(int argc, char *argv[])
@@ -320,15 +342,7 @@ char *init_para(int argc, char *argv[])
   init_system_mutexes() ;
   init_system_threads() ;
 #endif
-  init_flags();
-  /* this needs to appear here as streams are used below in xsb_warn() */
-  for (i=1; i<argc; i++) { /* check to see if should redirect output */
-    if (!strcmp(argv[i],"-q")) {
-      stream_err = freopen("XSB_errlog", "w", stderr);
-      stream_out = freopen("XSB_outlog", "w", stdout);
-      break;
-    }
-  }
+
   init_open_files();
 
   init_newtrie();

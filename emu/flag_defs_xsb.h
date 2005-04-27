@@ -109,10 +109,11 @@ interrupt flag
 #define ORA_INPUTARRAY_WIDTH      59   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    60   /* max # simultaneous output tuples */
 
-#define TABLING_METHOD	  61      /* Default method used to evaluate tabled */
+#define TABLING_METHOD		61      /* Default method used to evaluate tabled */
 
-#define NUM_THREADS     62      /* always 1 in the sequential system     NW*/
-#define THREAD_RUN      63      /* PSC for the thread handler predicate  NN*/
+#define NUM_THREADS     	62      /* always 1 in the sequential system     NW*/
+#define THREAD_RUN			63      /* PSC for the thread handler predicate  NN*/
+#define STDERR_BUFFERED		65      /* Allow Cinterface to read Stderr back from buffer*/
 
 #define MAXTOINDEX 5              /* depth in term to go when using deep indexing */
 
