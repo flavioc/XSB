@@ -87,7 +87,7 @@ CPtr pmember_trust_addr, abduce_trust_addr;
 
 /*-------------------------------------------------------------------*/
 
-xsbBool hash_list(Cell term)	
+xsbBool hash_list(CTXTdeclc Cell term)	
 {
   int hash = 0;
   Cell addr, car;
@@ -101,7 +101,7 @@ xsbBool hash_list(Cell term)
     addr = cell(clref_val(addr)+1);
     XSB_Deref(addr);
   }
-  ctop_int(4, ihash(hash,ptoc_int(3)));
+  ctop_int(CTXTc 4, ihash(hash,ptoc_int(CTXTc 3)));
   return TRUE;
 }
 
@@ -139,9 +139,9 @@ xsbBool  set_abduction_cp(void) {
     just fail.  Note that you don't have to do trail compaction as the
     failure takes care of the trail. */
 
-xsbBool non_chrono_backtrack() {
+xsbBool non_chrono_backtrack(CTXTdecl) {
   CPtr  new_breg, target_breg;
-  target_breg = (CPtr) ptoc_int(2);
+  target_breg = (CPtr) ptoc_int(CTXTc 2);
   if ((int) target_breg != -1) {
     xsb_dbgmsg(("    breg %x (%d %s) target_breg %x (%d %s) \n",
 	   breg,breg,get_name(((Choice)(breg))->psc),
@@ -163,7 +163,7 @@ xsbBool non_chrono_backtrack() {
     return TRUE;
 }
 
-xsbBool check_breg() {
+xsbBool check_breg(CTXTdecl) {
   if ((CPtr) *breg == pmember_trust_addr) 
     xsb_dbgmsg(("breg is abd\n"));
   else
@@ -171,28 +171,28 @@ xsbBool check_breg() {
   return TRUE;
 }
     
-xsbBool private_builtin(void)
+xsbBool private_builtin(CTXTdecl)
 {
-  switch(ptoc_int(1)) {
+  switch(ptoc_int(CTXTc 1)) {
   case SET_ABDUCTION_CP: 
     return set_abduction_cp();
 
   case NON_CHRONO_BACKTRACK: 
-    return non_chrono_backtrack();
+    return non_chrono_backtrack(CTXT);
 
   case GET_BREG: {
-    ctop_int(2,(int) breg);
+    ctop_int(CTXTc 2,(int) breg);
     return TRUE;
   }
   case CHECK_BREG: 
-    return check_breg();
+    return check_breg(CTXT);
 
   case PRINT_CP: {
-    print_cp(1) ; return TRUE ;
+    print_cp(CTXTc 1) ; return TRUE ;
   }
 
   case HASH_LIST: {
-    return hash_list(ptoc_tag(2));
+    return hash_list(CTXTc ptoc_tag(CTXTc 2));
   }
   
   }
