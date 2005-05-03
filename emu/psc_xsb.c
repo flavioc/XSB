@@ -310,11 +310,12 @@ Pair link_sym(Psc psc, Psc mod_psc)
 	 */
 	type = get_type(pair_psc(found_pair));
 	if ( type != T_ORDI ) {
-	  if (type == T_DYNA || type == T_PRED)
+	  if (type == T_DYNA || type == T_PRED) {
+	    Psc mod_psc = (Psc) get_data(pair_psc(found_pair));
 	    sprintf(message,
 		    "%s/%d (type %d) had been defined in module: %s",
-		    name, arity, type, get_name(get_data(pair_psc(found_pair))));
-	  else 
+		    name, arity, type, mod_psc == 0 ? "usermod" : get_name(mod_psc));
+	  } else 
 	    sprintf(message,
 		    "%s/%d (type %d) had been defined in another module!",
 		    name, arity, type);
