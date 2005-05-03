@@ -289,13 +289,13 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
         pcreg = (byte *)get_ep(PSC);					\
         intercept(CTXTc PSC);						\
         lpcreg = pcreg;							\
-     }  else {                                                          \
-        if (asynint_val & PROFINT_MARK) {				\
-          asynint_val &= ~PROFINT_MARK;					\
-          log_prog_ctr(lpcreg);						\
-        }								\
+     }  else if (asynint_val & PROFINT_MARK) {				\
+        asynint_val &= ~PROFINT_MARK;					\
+        log_prog_ctr(lpcreg);						\
         lpcreg = (byte *)get_ep(PSC);					\
-        asynint_code = 0;		         			\
+     } else {								\
+        lpcreg = (byte *)get_ep(PSC);					\
+        asynint_val = 0;		         			\
      }                                                                  \
   }									\
 }
