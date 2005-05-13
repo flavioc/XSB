@@ -812,12 +812,12 @@ inline static xsbBool parsort(CTXTdecl)
     if (islist(term2)) {
       heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
       if (sort_num_pars == 0 || 
-	  (isconstr(heap_addr) && get_arity(get_str_psc(heap_addr)) >= max_ind) ||
+	  (isconstr(heap_addr) && (get_arity(get_str_psc(heap_addr)) >= max_ind)) ||
 	  (islist(heap_addr) && max_ind <=2)) {
 	len++; term2 = cell(clref_val(term2)+1);
       } else {
 	sprintf(ermsg,"Term with arity at least %d", max_ind);
-	err_handle(CTXTc TYPE, 1, "parsort", 4, ermsg, (Cell)NULL);
+	err_handle(CTXTc TYPE, 1, "parsort", 4, ermsg, (Cell)heap_addr);
 	return FALSE;	/* fail */
       }
     } else {

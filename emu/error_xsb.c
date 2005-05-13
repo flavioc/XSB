@@ -82,7 +82,6 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   ClRef clause;
   Cell *tptr;
   prolog_term term_to_assert;
-
   if (!space_for_ball_assert) {
     /* 3 cells needed for term */
     space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell));
@@ -118,8 +117,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
-
-  sprintf(message," in arg %d of predicate %s/%d)",arg,predicate,arity);
+  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
   if (!space_for_iso_ball) {
     space_for_iso_ball = (Cell *) mem_alloc(8*sizeof(Cell)); /* cells needed for term */
@@ -141,7 +139,8 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   tptr++;
   bld_string(tptr,string_find(valid_type,1));
   tptr++;
-  bld_ref(tptr,culprit);
+  if (culprit == NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
 
   xsb_throw(CTXTc ball_to_throw);
 
@@ -405,7 +404,6 @@ void err_handle(CTXTdeclc int description, int arg, char *f,
 		int ar, char *expected, Cell found)
 {
   char message[240];	/* Allow 3 lines of error reporting.	*/
-  
   switch (description) {
   case INSTANTIATION:
     xsb_instantiation_error(CTXTc f,ar,arg,NULL);
