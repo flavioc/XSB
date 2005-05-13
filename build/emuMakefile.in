@@ -47,6 +47,8 @@ INTERPROLOGOBJ=@INTERPROLOGOBJ@
 DLLTYPE=@DLLTYPE@
 JAVA_HEADER_PATH=@JAVA_HEADER_PATH@
 JAVA_PLATFORM_HEADER_PATH=@JAVA_PLATFORM_HEADER_PATH@
+SHAREDLIB_EXTENSION=@DYNMOD_SHAREDLIB_EXTENSION@
+DYNMOD_LINKFLAGS=@DYNMOD_LINKFLAGS@
 
 # For mno-cygwin 
 # -mdll option is needed so that MSVC files could link to dll
@@ -166,9 +168,9 @@ xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 xsbdynmod::
-	echo "Making XSB Shared Library $(bindir)/libxsb.so"
-	@LD@ -o libxsb.so -shared $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
-	@cp libxsb.so $(bindir) 2>/dev/null || echo ""
+	echo "Making XSB Shared Library $(bindir)/libxsb.$(SHAREDLIB_EXTENSION)"
+	@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LINKFLAGS) $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
+	@cp libxsb.$(SHAREDLIB_EXTENSION) $(bindir) 2>/dev/null || echo ""
 
 # same as xsbmod, but with oracle support
 xsboramod:: $(ORAOBJS)

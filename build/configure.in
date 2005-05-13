@@ -1295,6 +1295,11 @@ if test "${enable_no_cygwin}" != "yes" -o \( "${host_os}" != "cygwin" -a "${host
     LDFLAGS="$LDFLAGS -lm"
 fi
 
+
+# these are used to set up the xsbdynmod parameters under Unixes and MacOS X
+DYNMOD_LINKFLAGS=-shared
+DYNMOD_SHAREDLIB_EXTENSION=so
+
 # Set OS-specific variables for XSB
 case "$canonical" in
     *alpha*)    AC_DEFINE(FOREIGN_ELF)
@@ -1357,8 +1362,9 @@ case "$canonical" in
         ;;
     *-rhapsody* | *-darwin* )
                 AC_DEFINE(DARWIN)
-                # Darwin uses its own format for shared libraries and doesn't
-                # support the dlopen() interface. We need to find a wrapper for that.
+		
+		DYNMOD_LINKFLAGS="-dynamiclib -single_module -nostartfiles"
+		DYNMOD_SHAREDLIB_EXTENSION=jnilib
         ;;
     *sgi* )     AC_DEFINE(FOREIGN_ELF)
                 if test "${machine64bit}" = yes ; then
@@ -1458,6 +1464,9 @@ case "$canonical" in
                 fi
         ;;
 esac
+
+AC_SUBST(DYNMOD_SHAREDLIB_EXTENSION)
+AC_SUBST(DYNMOD_LINKFLAGS)
 
 # check for MIPS
 case "$canonical" in
