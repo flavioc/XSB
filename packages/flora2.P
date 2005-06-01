@@ -1,10 +1,10 @@
-/* File:      flora_porting.flh -- FLORA portability macros
+/* File:      flora2.P
 **
 ** Author(s): Michael Kifer
 **
 ** Contact:   flora-users@lists.sourceforge.net
-**
-** Copyright (C) The Research Foundation of SUNY, 2002
+** 
+** Copyright (C) The Research Foundation of SUNY, 1998 - 2005
 ** 
 ** FLORA-2 is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -21,21 +21,26 @@
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 **
+** $Id$
+** 
 */
 
 
-/* File extensions used by XSB */
-#include "extensions_xsb.h"
+:- export bootstrap_flora/0,  flora_shell/0.
 
-#define PROLOG_PFILE_EXT	XSB_SRC_EXTENSION_ATOM_SANS_DOT
-#define PROLOG_OFILE_EXT	XSB_OBJ_EXTENSION_ATOM_SANS_DOT
-#define PROLOG_HFILE_EXT	XSB_HDR_EXTENSION_ATOM_SANS_DOT
+flora_msg :-
+	nl,
+	nl,
+	writeln('Thank you for your interest in the FLORA-2 package.'),
+	nl,
+	writeln('This package is distributed separately.'),
+	writeln('It can be downloaded from its own Web site:'),
+	nl,
+	writeln('       http://flora.sourceforge.net/download.php'),
+	nl,
+	writeln('                        The FLORA-2 team.'),
+	nl,
+	nl.
 
-#define PROLOG_CUSTOM_DIR       '.xsb'
-
-
-/******************************************************************************
-  Negation predicate
-******************************************************************************/
-#define  FLORA_TNOT_PREDICATE  	      	  flora_tnot
-#define  FLORA_TNOT(Goal)   	      	  FLORA_TNOT_PREDICATE(#1)
+bootstrap_flora :- flora_msg.
+flora_shell :- flora_msg.
