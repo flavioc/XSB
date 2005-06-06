@@ -1495,7 +1495,10 @@ int GetColumn(CTXTdecl)
     Cell nullterm = makecs(hreg);
     new_heap_functor(hreg,nullFctPsc);
     new_heap_free(hreg);
-    return unify(op,nullterm);
+    if (isconstr(op) && get_arity(get_str_psc(op)) == 1) 
+      /* for "string" and "term"... */
+      return unify(cell(clref_val(op)+1),nullterm);
+    else return unify(op,nullterm);
   }
 
   /* convert the string to either integer, float or string*/
@@ -1514,7 +1517,7 @@ int GetColumn(CTXTdecl)
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
 	return unify(cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
-		       build_codes_list(CTXTc cur->Data[ColCurNum]));
+		     build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
 	
@@ -1542,7 +1545,7 @@ int GetColumn(CTXTdecl)
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
 	return unify(cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
-		       build_codes_list(CTXTc cur->Data[ColCurNum]));
+		     build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
 	
