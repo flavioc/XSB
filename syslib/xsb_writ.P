@@ -91,7 +91,13 @@ l_write(File,T,Prec) :-
 
 l_write(File,_,_,0) :-
 	!,
-	file_puttoken(File, TK_ATOM, '...').
+	file_puttoken(File, XSB_STRING, '...').
+l_write(File, Int, _, _) :-
+	integer(Int), !,
+	file_puttoken(File, XSB_INT, Int).
+l_write(File, Flt, _, _) :-
+	float(Flt), !,
+	file_puttoken(File, XSB_FLOAT, Flt).
 l_write(File, Var, _, _D) :- 
 	term_type(Var, Type), 
 	(Type =:= XSB_FREE; Type =:= XSB_ATTV),
