@@ -541,9 +541,15 @@ void env_type_set(Psc psc, byte t_env, byte t_type, xsbBool is_new)
 	  /* Here the psc record of the symbol has already been created */
 	  /* by another module that imported (mistakenly) this symbol.  */
 	  set_env(psc, T_LOCAL);	
-	else /* We are trying to load a module
+	else {/* We are trying to load a module
 		that imports sth not exported. */
-	  xsb_error("module imports something that is not exported");
+	  Psc mod_psc = get_data(psc);
+	  if (mod_psc != NULL) 
+	    fprintf(stderr,"               %s/%d is imported from %s but not exported\n",
+		      get_name(psc),get_arity(psc),get_name(mod_psc));
+	  else fprintf(stderr,"               %s/%d is imported from somewhere but not exported\n",
+		      get_name(psc),get_arity(psc));
+	}
       }
     }
     else set_env(psc, env);
