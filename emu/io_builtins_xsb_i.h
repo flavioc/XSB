@@ -357,7 +357,7 @@ inline static xsbBool file_function(CTXTdecl)
     ** the list of codes read. Rewritten by DSW 5/18/04 to allow \0 in lines.
     ** Prolog invocation: file_read_line_list(+File, -Str) */
     char *atomname;
-    char c;
+    int c;
     Cell new_list;
     CPtr top = NULL;
     int i;
