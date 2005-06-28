@@ -89,7 +89,7 @@ static int th_new( pthread_t_p t )
 			break;
 
 	if( pos - th_vec >= MAX_THREADS )
-		xsb_abort("to many threads");
+		xsb_abort("too many threads");
 	else if( pos == th_next )
 		th_next++ ;
 
