@@ -805,8 +805,11 @@ check_index_element(X):-
 /* add tabling declaration */
 table(Ps) :- 
 	check_nonvar(Ps,(table)/1,1),
-	Ps=_/_,
-	add_table(Ps).
+	(Ps=P/S,nonvar(P),nonvar(S)
+	 ->	Ps1 = Ps
+	 ;	functor(Ps,P,S), Ps1 = P/S
+	),
+	add_table(Ps1).
 
 
 			/***********************/
