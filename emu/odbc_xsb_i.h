@@ -26,65 +26,65 @@
 #ifdef XSB_ODBC
 
 case ODBC_EXEC_QUERY:
-switch (ptoc_int(1)) {
+switch (ptoc_int(CTXTc 1)) {
  case ODBC_CONNECT:
-   ODBCConnect();
+   ODBCConnect(CTXT);
    break;
  case ODBC_PARSE:
-   Parse();
+   Parse(CTXT);
    break;
  case ODBC_SET_BIND_VAR_NUM:
-   SetBindVarNum();
+   SetBindVarNum(CTXT);
    break;
  case ODBC_FETCH_NEXT_ROW:
-   FetchNextRow();
+   FetchNextRow(CTXT);
    break;
  case ODBC_GET_COLUMN:
-   return GetColumn();
+   return GetColumn(CTXT);
    break;
  case ODBC_SET_BIND_VAL:
-   SetBindVal();
+   SetBindVal(CTXT);
    break;
  case ODBC_FIND_FREE_CURSOR:
-   FindFreeCursor();
+   FindFreeCursor(CTXT);
    break;
  case ODBC_DISCONNECT:
-   ODBCDisconnect();
+   ODBCDisconnect(CTXT);
    break;
  case ODBC_SET_CURSOR_CLOSE: {
-   Integer i = ptoc_int(2);
+   Integer i = ptoc_int(CTXTc 2);
    SetCursorClose(i);
    break;
  }
  case ODBC_COMMIT:
-   ODBCCommit();
+   ODBCCommit(CTXT);
    break;
  case ODBC_ROLLBACK:
-   ODBCRollback();
+   ODBCRollback(CTXT);
    break;
  case ODBC_COLUMNS:
-   ODBCColumns();
+   ODBCColumns(CTXT);
    break;
  case ODBC_TABLES:
-   ODBCTables();
+   ODBCTables(CTXT);
    break;
  case ODBC_USER_TABLES:
-   ODBCUserTables();
+   ODBCUserTables(CTXT);
    break;
  case ODBC_DESCRIBE_SELECT:
-   ODBCDescribeSelect();
+   ODBCDescribeSelect(CTXT);
    break;
  case ODBC_CONNECT_OPTION:
-   ODBCConnectOption();
+   ODBCConnectOption(CTXT);
    break;
  case ODBC_DATA_SOURCES:
-   ODBCDataSources();
+   ODBCDataSources(CTXT);
    break;
  case ODBC_GET_INFO:
-   ODBCGetInfo();
+   ODBCGetInfo(CTXT);
    break;
  case ODBC_ROW_COUNT:
-   ODBCRowCount();
+   ODBCRowCount(CTXT);
    break;
  default:
    xsb_error("Unknown or unimplemented ODBC request type");
