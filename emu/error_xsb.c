@@ -47,6 +47,7 @@
 #include "inst_xsb.h"
 #include "macro_xsb.h"
 #include "tr_utils.h"
+#include "binding.h"
 #include "cut_xsb.h"
 #include "flags_xsb.h"
 #include "term_psc_xsb_i.h"
@@ -485,7 +486,8 @@ int set_scope_marker(CTXTdecl)
 int unwind_stack(CTXTdecl)
 {
    byte *cp, *cpmark;
-   CPtr e,b;
+   CPtr e,b, xtemp1, xtemp2;
+   CPtr tmp_compl_frm = NULL;
 
    cpmark = scope_marker;
    /* printf("us sm 2 %d  x%x\n",scope_marker,scope_marker); */
@@ -505,9 +507,17 @@ int unwind_stack(CTXTdecl)
    /* now find the corresponding breg */
    b = breg;
    while (cp_ereg(b) <= e) {
+     if (IS_TABLE_INSTRUC(*cp_pcreg(b))) 
+       tmp_compl_frm = subg_compl_stack_ptr(tcp_subgoal_ptr(b));
      b = cp_prevbreg(b);
    }
+   if (IS_TABLE_INSTRUC(*cp_pcreg(b))) 
+     tmp_compl_frm = subg_compl_stack_ptr(tcp_subgoal_ptr(b));
    breg = b;
+   if (tmp_compl_frm != NULL) {
+     remove_open_tries(CTXTc prev_compl_frame(tmp_compl_frm));
+   }
+   unwind_trail(breg,xtemp1,xtemp2);
    return(FALSE);
 
 } /* unwind_stack */
