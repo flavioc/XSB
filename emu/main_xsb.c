@@ -56,6 +56,10 @@
 
 int main(int argc, char *argv[])
 { 
+#ifdef MULTI_THREAD
+   static th_context *th ;
+#endif
+
 #ifdef HAVE_SOCKET
 #ifdef WIN_NT
   INT err;
@@ -73,10 +77,14 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-  xsb(0, argc, argv);  /* init xsb */
+#ifdef MULTI_THREAD
+     th = malloc( sizeof( th_context ) ) ;
+#endif
 
-  xsb(1, 0, 0);        /* normal execution */
-  xsb(2, 0, 0);        /* when halts, exit */
+  xsb(CTXTc 0, argc, argv);  /* init xsb */
+
+  xsb(CTXTc 1, 0, 0);        /* normal execution */
+  xsb(CTXTc 2, 0, 0);        /* when halts, exit */
   return 0;
 }
 

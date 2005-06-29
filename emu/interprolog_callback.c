@@ -35,27 +35,34 @@ extern void keyint_proc(int);
 #include "error_xsb.h"
 #include "loader_xsb.h"
 #include "cinterf.h"
+#include "thread_xsb.h"
 
 
 JNIEnv *theEnv;
 jobject theObj;
 jboolean debug;
+#ifdef MULTI_THREAD
+   static th_context *th ;
+#endif
+
 
 JNIEXPORT jbyteArray JNICALL 
 Java_com_xsb_interprolog_NativeEngine_get_1bytes
 (JNIEnv *env, jobject obj) {
 		int i = 1;
 		jbyteArray bytes;
-		jsize size = p2p_arg(reg_term(1), 3);
+
+		jsize size = p2p_arg(reg_term(CTXTc 1), 3);
 		int newHead, newTail;
 		jbyte *b;
+
 		if (size == -1) {
-			xsb_close_query();
+			xsb_close_query(CTXT);
 			return NULL;
 		}
 		b = (jbyte *) malloc(size);
-		newHead = p2p_car(p2p_arg(reg_term(1), 2));
-		newTail = p2p_cdr(p2p_arg(reg_term(1), 2));
+		newHead = p2p_car(p2p_arg(reg_term(CTXTc 1), 2));
+		newTail = p2p_cdr(p2p_arg(reg_term(CTXTc 1), 2));
 		b[i-1] = p2c_int(newHead);
 		while(is_nil(newTail) == 0) { 
 			newHead = p2p_car(newTail);
@@ -63,7 +70,7 @@ Java_com_xsb_interprolog_NativeEngine_get_1bytes
 			newTail = p2p_cdr(newTail);
 			i++;
 		}
-		xsb_close_query();
+		xsb_close_query(CTXT);
 		bytes = (*env)->NewByteArray(env, size);
 		(*env)->SetByteArrayRegion(env, bytes, 0, size, b);
 		free(b);
@@ -89,38 +96,38 @@ Java_com_xsb_interprolog_NativeEngine_put_1bytes
 	//printf("C:got bytes array - %d mS",T1);
 	
 	argString = (*env)->GetStringUTFChars(env, jStr, 0);
-	c2p_functor(argString, args, reg_term(1));
-	c2p_list(p2p_arg(reg_term(1),1));
+	c2p_functor(CTXTc argString, args, reg_term(CTXTc 1));
+	c2p_list(CTXTc p2p_arg(reg_term(CTXTc 1),1));
 	if (args == 3) {
-		newVar = p2p_arg(reg_term(1),2);
-		newVar = p2p_new();
-		newVar2 = p2p_arg(reg_term(1),3);
-		newVar2 = p2p_new();
+		newVar = p2p_arg(reg_term(CTXTc 1),2);
+		newVar = p2p_new(CTXT);
+		newVar2 = p2p_arg(reg_term(CTXTc 1),3);
+		newVar2 = p2p_new(CTXT);
 	}
-	head = p2p_car(p2p_arg(reg_term(1),1));
-	tail = p2p_cdr(p2p_arg(reg_term(1),1));
+	head = p2p_car(p2p_arg(reg_term(CTXTc 1),1));
+	tail = p2p_cdr(p2p_arg(reg_term(CTXTc 1),1));
 	if (bytes[0]<0)
-		c2p_int((bytes[0]+256), head);
+		c2p_int(CTXTc (bytes[0]+256), head);
 	else
-		c2p_int(bytes[0], head);
+		c2p_int(CTXTc bytes[0], head);
 	while (i < size) {
-		c2p_list(tail);
+		c2p_list(CTXTc tail);
 		head = p2p_car(tail);
 		tail = p2p_cdr(tail);
 		if (bytes[i]<0)
-			c2p_int((bytes[i]+256), head);
+			c2p_int(CTXTc (bytes[i]+256), head);
 		else
-			c2p_int(bytes[i], head);
+			c2p_int(CTXTc bytes[i], head);
 		i++;
 	}
-	c2p_nil(tail);
+	c2p_nil(CTXTc tail);
 	
 	//T2 = clock() - T0 ;
 	//printf("C:constructed Prolog list - %d mS",T2);
 
 	theEnv = env;
 	theObj = obj;
-	rc = xsb_query();
+	rc = xsb_query(CTXT);
 	
 	//T3 = clock() - T0;
 	//printf("C:Returned from Prolog - %d mS",T3);
@@ -137,7 +144,7 @@ Java_com_xsb_interprolog_NativeEngine_put_1bytes
 JNIEXPORT jint JNICALL 
 Java_com_xsb_interprolog_NativeEngine_xsb_1close_1query
 (JNIEnv *env , jobject obj) {
-	return xsb_close_query();
+	return xsb_close_query(CTXT);
 }
 
 
@@ -148,7 +155,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1command_1string
 	char *CommandString = (*env)->GetStringUTFChars(env, jCommandString, 0);
 	theEnv = env;
 	theObj = obj;
-	rcode=xsb_command_string(CommandString);
+	rcode=xsb_command_string(CTXTc CommandString);
 	(*env)->ReleaseStringUTFChars(env,jCommandString, CommandString);
 	return rcode;
 }
@@ -160,11 +167,16 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal
 	int myargc=2;
 	char * myargv[2];
 	char *XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
+
+#ifdef MULTI_THREAD
+     th = malloc( sizeof( th_context ) ) ;
+#endif
+
 	if (debug==JNI_TRUE) printf("Entering Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	myargv[0] = XSBPath;
 	myargv[1]="-n";
 	
-	rcode=xsb_init(myargc,myargv);
+	rcode=xsb_init(CTXTc myargc,myargv);
 	(*env)->ReleaseStringUTFChars(env,jXSBPath, XSBPath);
 	if (debug==JNI_TRUE) printf("Exiting Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	return rcode;
@@ -179,6 +191,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
         char ** myargv;
 	jstring * parameters;
 	char *XSBPath;
+
 	myargc = (*env)->GetArrayLength(env, jXSBParameters) + 2;
        	myargv = (char **) malloc(myargc * sizeof(char *));
 
@@ -192,8 +205,11 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
           parameters[i] = (jstring)(*env)->GetObjectArrayElement(env, jXSBParameters, i);
 	  myargv[i + 2] = (*env)->GetStringUTFChars(env, parameters[i], 0);
 	}
+#ifdef MULTI_THREAD
+     th = malloc( sizeof( th_context ) ) ;
+#endif
 
-	rcode=xsb_init(myargc,myargv);
+	rcode=xsb_init(CTXTc myargc,myargv);
 
 	(*env)->ReleaseStringUTFChars(env,jXSBPath, XSBPath);
 
@@ -223,7 +239,7 @@ JNIEXPORT void JNICALL Java_com_xsb_interprolog_NativeEngine_xsb_1setDebug
   
 // the XSB Prolog built-in used in interprolog.P
 // arguments: +length, +byte list, -new byte list
-xsbBool interprolog_callback() {
+xsbBool interprolog_callback(CTXTdecl) {
 	JNIEnv *env = theEnv;
 	jobject obj = theObj;
 	jclass cls;
@@ -245,11 +261,11 @@ xsbBool interprolog_callback() {
 	}
 	//printf("Got the method\n");
 	
-	size = p2c_int(reg_term(1));
+	size = p2c_int(reg_term(CTXTc 1));
 
 	b = (jbyte *) malloc(size);
-	newHead = p2p_car(reg_term(2));
-	newTail = p2p_cdr(reg_term(2));
+	newHead = p2p_car(reg_term(CTXTc 2));
+	newTail = p2p_cdr(reg_term(CTXTc 2));
 	b[i-1] = p2c_int(newHead);
 	while(is_nil(newTail) == 0) { 
 		newHead = p2p_car(newTail);
@@ -266,24 +282,24 @@ xsbBool interprolog_callback() {
 	b = (*env)->GetByteArrayElements(env, newBytes, 0);
 	check_glstack_overflow(3, pcreg, size*8*sizeof(Cell)) ;
 
-	c2p_list(reg_term(3));
-	newHead = p2p_car(reg_term(3));
-	newTail = p2p_cdr(reg_term(3));
+	c2p_list(CTXTc reg_term(CTXTc 3));
+	newHead = p2p_car(reg_term(CTXTc 3));
+	newTail = p2p_cdr(reg_term(CTXTc 3));
 	if (b[0]<0)
-		c2p_int((b[0]+256), newHead);
+		c2p_int(CTXTc (b[0]+256), newHead);
 	else
-		c2p_int(b[0], newHead);
+		c2p_int(CTXTc b[0], newHead);
 	i = 1;
 	while (i < size) {
-		c2p_list(newTail);
+		c2p_list(CTXTc newTail);
 		newHead = p2p_car(newTail);
 		newTail = p2p_cdr(newTail);
 		if (b[i]<0)
-			c2p_int((b[i]+256), newHead);
+			c2p_int(CTXTc (b[i]+256), newHead);
 		else
-			c2p_int(b[i], newHead);
+			c2p_int(CTXTc b[i], newHead);
 		i++;
 	}
-	c2p_nil(newTail);
+	c2p_nil(CTXTc newTail);
 	return 1;
 }

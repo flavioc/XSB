@@ -30,7 +30,7 @@
 #ifdef XSB_INTERPROLOG
 
   case INTERPROLOG_CALLBACK: 
-          return interprolog_callback(); 
+          return interprolog_callback(CTXT); 
 
 #endif
 

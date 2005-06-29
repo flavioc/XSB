@@ -1184,7 +1184,7 @@ static inline void updateWarningStart(void)
 
 int xsb_initted = 0;   /* if xsb has been called */
 
-DllExport int call_conv xsb_init(int argc, char *argv[])
+DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
 {
 int rc = 1;
 char executable1[MAXPATHLEN];
@@ -1198,9 +1198,9 @@ if (!xsb_initted)
 	argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
 	strcpy(executable, expand_filename(executable1));
 	
-	if (0 == (rc = xsb(0,argc,argv)))     /* initialize xsb */
+	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
 		{
-		if (0 == (rc = xsb(1,0,0)))       /* enter xsb to set up regs */
+		if (0 == (rc = xsb(CTXTc 1,0,0)))       /* enter xsb to set up regs */
 		xsb_initted = 1;
 		}
 	}
@@ -1217,7 +1217,7 @@ return(rc);
 /************************************************************************/
 /*FILE *stream_err, *stream_out;*/
 
-DllExport int call_conv xsb_init_string(char *cmdline_param) {
+DllExport int call_conv xsb_init_string(CTXTdeclc char *cmdline_param) {
 	int i = 0, argc = 0;
 	char **argv, delim;
 	char cmdline[2*MAXPATHLEN+1];
@@ -1253,7 +1253,7 @@ DllExport int call_conv xsb_init_string(char *cmdline_param) {
 		while (cmdline[i] == ' ') i++;
 	}
 	argv[argc] = 0;
-	return xsb_init(argc,argv);
+	return xsb_init(CTXTc argc,argv);
 }
 
 /************************************************************************/
@@ -1274,10 +1274,10 @@ DllExport int call_conv xsb_command(CTXTdecl)
   if (xsb_inquery) return(2);  /* error */
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(0);  /* goal succeeded */
   (void) xsb_close_query(CTXT);
   return(2);
@@ -1299,10 +1299,10 @@ DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
   updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(0);  /* goal succeeded */
   (void) xsb_close_query(CTXT);
   return(2);
@@ -1327,7 +1327,7 @@ DllExport int call_conv xsb_query(CTXTdecl)
   if (xsb_inquery) return(2);
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);
   xsb_inquery = 1;
   return(0);
@@ -1355,7 +1355,7 @@ DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
   updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);
   xsb_inquery = 1;
   return(0);
@@ -1444,7 +1444,7 @@ DllExport int call_conv xsb_next(CTXTdecl)
   if (!xsb_inquery) return(2);
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery = 0;
     return(1);
@@ -1509,7 +1509,7 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
   updateWarningStart();
   if (!xsb_inquery) return(2);
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
-  xsb(1,0,0);
+  xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery = 0;
     return(0);

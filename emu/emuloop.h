@@ -24,7 +24,8 @@
 */
 
 #include "export.h"
+#include "context.h"
 
-DllExport extern int call_conv xsb(int, int, char **);
+DllExport extern int call_conv xsb(CTXTdeclc int, int, char **);
 
 /*----------------------------------------------------------------------*/

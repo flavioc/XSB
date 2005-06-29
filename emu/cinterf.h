@@ -245,8 +245,8 @@ extern char *vfile_obj(/* vfile */);
 /* Routines to call xsb from C						*/
 /*======================================================================*/
 
-DllExport extern int call_conv xsb_init(int, char **);
-DllExport extern int call_conv xsb_init_string(char *);
+DllExport extern int call_conv xsb_init(CTXTdeclc int, char **);
+DllExport extern int call_conv xsb_init_string(CTXTdeclc char *);
 DllExport extern int call_conv xsb_command(CTXTdecl);
 DllExport extern int call_conv xsb_command_string(CTXTdeclc char *);
 DllExport extern int call_conv xsb_query(CTXTdecl);
