@@ -1016,7 +1016,7 @@ contcase:     /* the main loop */
     /* This is not a good way to do this, but until we put retract into C,
        or add new builtins, it will have to do. */
     for (i = 0; i <= 2; i++) {
-      if (opa[i] != 0) {
+      if (indexreg[i] != 0) {
         if (indexreg[i] > 0x80) {
           int k, depth = 0;
           Cell *stk[MAXTOINDEX];
