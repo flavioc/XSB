@@ -110,11 +110,15 @@ open(userin,read,STDIN):-!,
 	stat_set_flag(CURRENT_INPUT, STDIN).
 open(user_in,read,STDIN):-!,   % ISO
 	stat_set_flag(CURRENT_INPUT, STDIN).
+open(user_input,read,STDIN):-!,   % ISO
+	stat_set_flag(CURRENT_INPUT, STDIN).
 open(user,write,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 open(userout,write,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 open(user_out,write,STDOUT):-!,  % ISO
+	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+open(user_output,write,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 open(pipe(FileDescr),Mode,Stream):- !,
 	file_translate(Mode,M),
@@ -184,6 +188,8 @@ close(userin) :- !.
 close(userout) :- !.
 close(user_in) :- !.
 close(user_out) :- !.
+close(user_input) :- !.
+close(user_output) :- !.
 close(S_or_A) :- 
 	check_stream_or_alias(S_or_A,close/1,1,Str),
 	file_close(Str,NOFORCE_FILE_CLOSE).
@@ -195,6 +201,8 @@ close(userin,_) :- !.
 close(userout,_) :- !.
 close(user_in,_) :- !.
 close(user_out,_) :- !.
+close(user_input,_) :- !.
+close(user_output,_) :- !.
 close(S_or_A,Options) :- 
 	check_stream_or_alias(S_or_A,close/1,1,Str),
 	examine_close_options(Options,Action),
