@@ -55,6 +55,7 @@
 #include "choice.h"
 #include "error_xsb.h"
 #include "macro_xsb.h"
+#include "thread_xsb.h"
 
 #include "flags_xsb.h"
 #include "subp.h"
@@ -87,7 +88,9 @@ byte *mem_alloc(unsigned long size)
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     pspacesize += size;
+    SYS_MUTEX_LOCK(MUTEX_MEM);
     ptr = (byte *) malloc(size);
+    SYS_MUTEX_UNLOCK(MUTEX_MEM);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
@@ -102,7 +105,9 @@ void mem_dealloc(void *addr, unsigned long size)
 {
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     pspacesize -= size;
+    SYS_MUTEX_LOCK(MUTEX_MEM);
     free(addr);
+    SYS_MUTEX_UNLOCK(MUTEX_MEM);
 }
 
 

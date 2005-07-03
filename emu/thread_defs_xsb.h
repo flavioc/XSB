@@ -45,6 +45,7 @@
 #define MUTEX_ATOM_BUF		8
 #define MUTEX_STACKS		10
 #define MUTEX_SM		9
+#define MUTEX_MEM		11
 
 #define MAX_SYS_MUTEXES		40
 
