@@ -53,6 +53,9 @@ pthread_mutex_t sys_mut[MAX_SYS_MUTEXES] ;
 
 pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t completing_mut;
+pthread_cond_t completing_cond;
+
 // pthread_t is a pointer in Unix, structure in Windows libraries
 #ifdef WIN_NT
 #define P_PTHREAD_T_P &tid
@@ -140,6 +143,9 @@ void init_system_mutexes( void )
 		pthread_mutex_init( &sys_mut[i], &attr_std ) ;
 
 	rw_lock_init(&trie_rw_lock);
+
+	pthread_mutex_init( &completing_mut, &attr_std );
+	pthread_cond_init( &completing_cond, NULL );
 }
 
 static void *xsb_thread_run( void *arg )

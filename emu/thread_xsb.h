@@ -17,6 +17,9 @@ int xsb_thread_self() ;
 
 extern pthread_mutex_t sys_mut[] ;
 
+extern pthread_mutex_t completing_mut;
+extern pthread_cond_t completing_cond;
+
 #define SYS_MUTEX_LOCK( M ) ( pthread_mutex_lock( &sys_mut[(M)] ) )
 #define SYS_MUTEX_UNLOCK( M ) ( pthread_mutex_unlock( &sys_mut[(M)] ) )
 #else

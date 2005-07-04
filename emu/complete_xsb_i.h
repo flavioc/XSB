@@ -89,7 +89,14 @@ XSB_Start_Instr(check_complete,_check_complete)
       cc_tbreg = ProcessSuspensionFrames(CTXTc cc_tbreg, cs_ptr);
       FailIfAnswersFound((cc_tbreg == orig_breg ? 0 : cc_tbreg));
       
+#ifdef MULTI_THREAD
+    pthread_mutex_lock(&completing_mut);
+#endif
       CompleteSimplifyAndReclaim(CTXTc cs_ptr);
+#ifdef MULTI_THREAD
+    pthread_cond_broadcast(&completing_cond);
+    pthread_mutex_unlock(&completing_mut);
+#endif
 
       /* leader has non-returned answers? */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
@@ -110,6 +117,9 @@ XSB_Start_Instr(check_complete,_check_complete)
     
 #else /* NOT LOCAL:  FOR BATCHED SCHEDULING */
 
+#ifdef MULTI_THREAD
+    pthread_mutex_lock(&completing_mut);
+#endif
     batched_compute_wfs(CTXTc cs_ptr, orig_breg, subgoal);
 
     /* do all possible stack reclamation */
@@ -119,6 +129,10 @@ XSB_Start_Instr(check_complete,_check_complete)
 	breg = tcp_prevbreg(breg);
       }
     }
+#ifdef MULTI_THREAD
+    pthread_cond_broadcast(&completing_cond);
+    pthread_mutex_unlock(&completing_mut);
+#endif
 
 #endif /* ifdef LOCAL_EVAL */
 
