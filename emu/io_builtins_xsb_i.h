@@ -75,16 +75,16 @@ static void strclose(int i)
 /* file_flush, file_pos, file_truncate, file_seek */
 inline static xsbBool file_function(CTXTdecl)
 {
-  static FILE *fptr;
-  static int io_port, value, size, offset, length, mode;
-  static STRFILE *sfptr;
-  static XSB_StrDefine(VarBuf);
-  static char *addr, *tmpstr;
-  static prolog_term pterm;
-  static Cell term;
-  static char *strmode;
-  static char *line_buff = NULL;
-  static int line_buff_len = 0;
+  FILE *fptr;
+  int io_port, value, size, offset, length, mode;
+  STRFILE *sfptr;
+  XSB_StrDefine(VarBuf);
+  char *addr, *tmpstr;
+  prolog_term pterm;
+  Cell term;
+  char *strmode;
+  char *line_buff = NULL;
+  int line_buff_len = 0;
   int line_buff_disp, ioport;
 
   switch (ptoc_int(CTXTc 1)) {
@@ -197,8 +197,10 @@ inline static xsbBool file_function(CTXTdecl)
 	break;
       default: mode = -1;
       }
-    } else
+    } else {
       xsb_abort("[FILE_OPEN] File opening mode must be an atom.");
+      mode = -1;
+    }
 
     switch (mode) {
 
@@ -310,8 +312,10 @@ inline static xsbBool file_function(CTXTdecl)
 	p_charlist_to_c_string(CTXTc pterm,&VarBuf,"FILE_WRITE_LINE","input string");
     else if (isstring(pterm))
       addr = string_val(pterm);
-    else
+    else {
       xsb_abort("[FILE_PUTBUF] Output argument must be an atom or a character list");
+      addr = NULL;
+    }
     size = ptoc_int(CTXTc 3);
     offset = ptoc_int(CTXTc 5);
     length = strlen(addr);
@@ -410,8 +414,10 @@ inline static xsbBool file_function(CTXTdecl)
 	p_charlist_to_c_string(CTXTc pterm,&VarBuf,"FILE_WRITE_LINE","input string");
     else if (isstring(pterm))
       addr = string_val(pterm);
-    else
+    else {
       xsb_abort("[FILE_WRITE_LINE] Output arg must be an atom or a char list");
+      addr = NULL;
+    }
     offset = ptoc_int(CTXTc 4);
     size = strlen(addr)-offset;
     SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
@@ -441,8 +447,10 @@ inline static xsbBool file_function(CTXTdecl)
 	break;
       default: mode = -1;
       }
-    } else
+    } else {
       xsb_abort("[FILE_REOPEN] Open mode must be an atom or an integer");
+      mode = -1;
+    }
 
     switch (mode) {
       /* "b" does nothing, but POSIX allows it */
@@ -474,7 +482,7 @@ inline static xsbBool file_function(CTXTdecl)
 	/* file exists and isn't a dir */
 	ctop_int(CTXTc 5, 0);
       else {
-	xsb_warn("FILE_REOPEN: File %s is a directory, cannot open!", tmpstr);
+	xsb_warn("FILE_REOPEN: File %s is a directory, cannot open!", addr);
 	ctop_int(CTXTc 5, -2);
       }
     } else
@@ -621,7 +629,10 @@ inline static xsbBool file_function(CTXTdecl)
       } 
       else mode = string_val(pterm);
     }
-    else xsb_abort("[FD2IOPORT] Opening mode must be an atom.");
+    else {
+      xsb_abort("[FD2IOPORT] Opening mode must be an atom.");
+      mode = "x";
+    }
 
     fptr = fdopen(pipe_fd, mode);
 
