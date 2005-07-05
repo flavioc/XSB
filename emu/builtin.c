@@ -1613,19 +1613,19 @@ int builtin_call(CTXTdeclc byte number)
     break;
 
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
-    ctop_string(CTXTc 2, string_find(expand_filename(ptoc_longstring(CTXTc 1)), 1));
+    ctop_string(CTXTc 2, expand_filename(ptoc_longstring(CTXTc 1)));
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
-    ctop_string(CTXTc 2, string_find(tilde_expand_filename(ptoc_longstring(CTXTc 1)), 1));
+    ctop_string(CTXTc 2, tilde_expand_filename(ptoc_longstring(CTXTc 1)));
     break;
   case IS_ABSOLUTE_FILENAME: /* R1: +FN. Ret 1 if name is absolute, 0 else */
     return is_absolute_filename(ptoc_longstring(CTXTc 1));
-  case PARSE_FILENAME: {    /* R1: +FN, R2: -Dir, R3: -Basename, R4: -Ext */
+ case PARSE_FILENAME: {    /* R1: +FN, R2: -Dir, R3: -Basename, R4: -Ext */
     char *dir, *basename, *extension;
     parse_filename(ptoc_longstring(CTXTc 1), &dir, &basename, &extension);
-    ctop_string(CTXTc 2, string_find(dir, 1));
-    ctop_string(CTXTc 3, string_find(basename, 1));
-    ctop_string(CTXTc 4, string_find(extension, 1));
+    ctop_string(CTXTc 2, dir);
+    ctop_string(CTXTc 3, basename);
+    ctop_string(CTXTc 4, extension);
     break;
   }
   case ALMOST_SEARCH_MODULE: /* R1: +FileName, R2: -Dir, R3: -Mod,
@@ -1822,7 +1822,7 @@ int builtin_call(CTXTdeclc byte number)
 			   If file is a directory, add trailing slash and
 			   rectify filename (delete multiple slashes, '..' and
 			   '.'. */
-    ctop_string(CTXTc 2, string_find(dirname_canonic(ptoc_longstring(CTXTc 1)), 1));
+    ctop_string(CTXTc 2, dirname_canonic(ptoc_longstring(CTXTc 1)));
     break;
   case SLASH_BUILTIN: {  /* R1: -Slash. Tells what kind of slash the OS uses */
     static char slash_string[2];

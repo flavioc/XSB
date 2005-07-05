@@ -95,10 +95,9 @@ xsbBool is_absolute_filename(char *filename) {
    Also, strips off excessive trailing slashes. 
 */
 char *dirname_canonic(char *filename) {
-  static char canonicized[MAXPATHLEN];
+  char canonicized[MAXPATHLEN];
   int retcode, len = strlen(filename);
   struct stat fileinfo;
-
   rectify_pathname(filename, canonicized);
   retcode = stat(canonicized, &fileinfo);
 
@@ -108,7 +107,7 @@ char *dirname_canonic(char *filename) {
     canonicized[len] = SLASH;
     canonicized[len+1] = '\0';
   }
-  return canonicized;
+  return string_find(canonicized,1);
 }
 
 
@@ -136,7 +135,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
 			       become the prefix for the absolute filename. */
   char *path_suffix;        /* ptr to a (sub)string containing what will
 			       become the suffix for the absolute filename. */
-  static char username[MAXNAME]; /* the username if filename has ~<name> */
+  char username[MAXNAME]; /* the username if filename has ~<name> */
   int username_len;
   struct passwd *pw_struct;     /* receives passwd structure from getpwnum() */
 
@@ -184,27 +183,30 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
 */
 char *tilde_expand_filename(char *filename) {
   char aux_filename[MAXPATHLEN];
-  static char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
+  char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
 
   tilde_expand_filename_norectify(filename, aux_filename);
-  return rectify_pathname(aux_filename, absolute_filename);
+  return string_find(rectify_pathname(aux_filename, absolute_filename),1);
 }
 
 
 /*
  *  Return full path name for the file passed in as argument.
+ *  This is called from cinterf and may be called before XSB is initialized,
+ *  so to make thread-safe, malloc space to return value (leaky)
  */
 
 char *expand_filename(char *filename) {
   char aux_filename[MAXPATHLEN],
-    aux_filename2[MAXPATHLEN];
-  static char absolute_filename[MAXPATHLEN];
+   aux_filename2[MAXPATHLEN];
+  char *absolute_filename = malloc(MAXPATHLEN); // since xsb may not be initialized
 
   if (is_absolute_filename(filename)) {
     return rectify_pathname(filename, absolute_filename);
 #ifndef WIN_NT
   } else if (filename[0] == '~') {
-    return tilde_expand_filename(filename);
+    tilde_expand_filename_norectify(filename, aux_filename);
+    return rectify_pathname(aux_filename, absolute_filename);
 #endif
   } else {
     getcwd(aux_filename2, MAXPATHLEN-1);
@@ -233,17 +235,14 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 {
   int i, abort_flag=FALSE;
   char *cutoff_ptr;
-  char *buffer = (char *) mem_alloc(MAXPATHLEN);
+  char *buffer = (char *) malloc(MAXPATHLEN);
 
 #ifdef SIMPLESCALAR
   if (!buffer)
     printf("no space to allocate buffer in strip_names_from_path.\n");
-  printf("starting strip_names_from_path.\n");
   
 /*   rectify_pathname(path,buffer); */
   strcpy(buffer,path);
-
-  printf("after rectify_pathname, buffer = %s, path = %s\n",buffer,path);
 
   cutoff_ptr = buffer + strlen(buffer);
 
@@ -344,7 +343,7 @@ static char *rectify_pathname(char *inpath, char *outpath) {
   char names[MAXPATHNAMES][MAXNAME];  /* array of filenames in inpath.
 					 1st index: enumerates names in inpath;
 					 2nd index: scan file names */
-  static char expanded_inpath[MAXPATHLEN];
+  char expanded_inpath[MAXPATHLEN];
   char *inptr1, *inptr2, *inpath_end;
   int length; /* length=inptr2-inptr1 */
   int i, outidx=0, nameidx=0; /* nameidx: 1st index to names */
@@ -464,15 +463,19 @@ static char *rectify_pathname(char *inpath, char *outpath) {
  */
 void parse_filename(char *filename, char **dir, char **base, char **extension)
 {
-  static char absolute_dirname[MAXPATHLEN]; /* abs dirname composed here */
-  static char basename[MAXNAME];    	    /* the rest of the filename  */
+  char absolute_dirname[MAXPATHLEN]; /* abs dirname composed here */
+  char basename[MAXNAME];    	    /* the rest of the filename  */
 
   *base = strcpy(basename, get_file_basename(filename));
   *dir = get_file_dirname(filename, absolute_dirname);
   *extension = get_file_extension(basename);
   /* cut off the extension from the base */
-  if (*extension > *base)
+  if (*extension != "")
     *(*extension-1) = '\0'; 
+  *base = string_find(*base,1);
+  *dir = string_find(*dir,1);
+  *extension = string_find(*extension,1);
+  return;
 }
 
 /* transform_cygwin_pathname takes cygwin-like pathnames
@@ -569,17 +572,18 @@ xsbBool almost_search_module(CTXTdeclc char *filename)
      * function is called "almost_".  Note that arguments 4 and 5 are
      * left unbound here.
      */
-    ctop_string(CTXTc 2, string_find(dir, 1));
-    ctop_string(CTXTc 3, string_find(filename, 1)); /* Mod = FileName */
+    ctop_string(CTXTc 2, dir);
+    ctop_string(CTXTc 3, filename); /* Mod = FileName */
   } else { /* input argument is a full file name */
     if (! strcmp(extension, "")) {
       extension = existing_file_extension(fullname);
       if (! extension) return FALSE; /* file was not found */
+      extension = string_find(extension,1);
     } else {
       if (stat(fullname, &fileinfo)) return FALSE; /* file not found */
     }
     if (! strcmp(dir, "")) {
-      static char dot_dir[MAXPATHLEN];
+      char dot_dir[MAXPATHLEN];
       dot_dir[0] = '.';
       dot_dir[1] = SLASH;
       dot_dir[2] = '\0';
@@ -587,12 +591,14 @@ xsbBool almost_search_module(CTXTdeclc char *filename)
       strcat(dot_dir, basename); /* dot_dir is updated here */
       ctop_string(CTXTc 5, string_find(dot_dir, 1));
     } else {
-      ctop_string(CTXTc 2, string_find(dir, 1));
-      strcat(dir, basename);
-      ctop_string(CTXTc 5, string_find(dir, 1));
+      char dirtmp[MAXPATHLEN];
+      ctop_string(CTXTc 2, dir);
+      strcpy(dirtmp,dir);
+      strcat(dirtmp, basename);
+      ctop_string(CTXTc 5, string_find(dirtmp, 1));
     }
-    ctop_string(CTXTc 3, string_find(basename, 1));
-    ctop_string(CTXTc 4, string_find(extension, 1));
+    ctop_string(CTXTc 3, basename);
+    ctop_string(CTXTc 4, extension);
   }
   return TRUE;
 }
