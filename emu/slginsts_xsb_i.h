@@ -120,6 +120,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CPtr answer_template;
   int template_size, attv_num, tmp;
 #ifdef MULTI_THREAD
+  int table_tid ;
   CPtr tbreg;
 #ifdef SLG_GC
   CPtr old_cptop;
@@ -146,6 +147,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
   check_glstack_overflow(CallInfo_CallArity(callInfo),lpcreg,OVERFLOW_MARGIN);
 
+#ifdef MULTI_THREAD
+  pthread_mutex_lock( &completing_mut );
+#endif
   /*
    *  Perform a call-check/insert operation on the current call.  The
    *  subterms of this call which form the answer template are
@@ -158,7 +162,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    *  CallLUR_VarVector(lookupResults) has the same value as
    *  CallInfo_VarVectorLoc(callInfo).
    */
-
   table_call_search(CTXTc &callInfo,&lookupResults);
 
   producer_sf = CallLUR_Subsumer(lookupResults);
@@ -170,12 +173,14 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    a different thread, wait for it to complete.
  */
   if ( !IsNULL(producer_sf) ) {
-	if (int_val(tcp_tid(subg_cp_ptr(producer_sf))) != xsb_thread_self()) 
+        table_tid = int_val(tcp_tid(subg_cp_ptr(producer_sf))) ;
+	if (table_tid != xsb_thread_self()) 
 		while( !is_completed(producer_sf) )
-		{	pthread_cond_wait(&completing_cond,&completing_mut) ;
-			pthread_mutex_unlock(&completing_mut);
-		}
-  }
+		{	pthread_mutex_unlock(&completing_mut);
+			pthread_cond_wait(&completing_cond,&completing_mut) ;
+		} 
+        pthread_mutex_unlock(&completing_mut);
+  } 
 #endif
 
   if ( IsNULL(producer_sf) ) {
@@ -192,6 +197,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 		    CallInfo_CallArity(callInfo), (hreg - 1));
 #ifdef MULTI_THREAD
     tcp_tid(producer_cpf) = (CPtr)makeint(xsb_thread_self());
+    pthread_mutex_unlock( &completing_mut );
 #endif
 #ifdef SLG_GC
     tcp_prevtop(producer_cpf) = answer_template; 
