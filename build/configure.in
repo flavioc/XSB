@@ -1418,9 +1418,6 @@ case "$canonical" in
                     *i*86-*-*) AC_DEFINE(SOLARIS_x86)
                     ;;
                     *)
-                        if test "$CC" = "gcc" ; then
-                            CFLAGS="-msupersparc ${CFLAGS}"
-                        fi
                     ;;
                 esac
                 
