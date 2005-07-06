@@ -44,6 +44,7 @@
 #include "choice.h"
 #include "macro_xsb.h"
 #include "token_xsb.h"
+#include "findall.h"
 
 #define MAX_REGS 257
 
@@ -135,6 +136,18 @@ BTNptr  _NodePtr,
 
 int     _delay_it;
 
+/* variables for findall buffers */
+findall_solution_list *_findall_solutions;  /*= NULL;*/
+findall_solution_list *_current_findall;
+
+int 	_nextfree ; /* nextfree index in findall array */
+
+CPtr 	_gl_bot, _gl_top ;
+
+f_tr_chunk *_cur_tr_chunk ;
+CPtr 	*_cur_tr_top ;
+CPtr 	*_cur_tr_limit ;
+
 /* Flag used in the locking of called tries */
 
 int	trie_locked;
@@ -222,6 +235,15 @@ typedef struct th_context th_context ;
 #define Last_Nod_Sav		(th->_Last_Nod_Sav)
 
 #define delay_it		(th->_delay_it)
+
+#define findall_solutions	(th->_findall_solutions)
+#define current_findall		(th->_current_findall)
+#define nextfree		(th->_nextfree)
+#define gl_bot			(th->_gl_bot)
+#define gl_top			(th->_gl_top)
+#define cur_tr_chunk		(th->_cur_tr_chunk)
+#define cur_tr_top		(th->_cur_tr_top)
+#define cur_tr_limit		(th->_cur_tr_limit)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)

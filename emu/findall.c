@@ -43,23 +43,38 @@
 #include "flags_xsb.h"
 #include "loader_xsb.h"
 #include "cinterf.h"
+#include "context.h"
 #include "findall.h"
+#include "thread_xsb.h"
+#include "debug_xsb.h"
 
+#ifndef MULTI_THREAD
 findall_solution_list *findall_solutions = NULL;
 findall_solution_list *current_findall;
-
-#define MAX_FINDALLS  250
-/* make MAX_FINDALLS larger if you want */
 
 static int nextfree ; /* nextfree index in findall array */
 
 CPtr gl_bot, gl_top ;
 
+static f_tr_chunk *cur_tr_chunk ;
+static CPtr *cur_tr_top ;
+static CPtr *cur_tr_limit ;
+#endif
+
+extern void findall_free(CTXTdeclc int);
+extern int get_more_chunk(CTXTdecl);
+extern void findall_copy_to_heap(CTXTdeclc Cell, CPtr, CPtr *);
+extern int findall_init_c(CTXTdecl);
+
+#define MAX_FINDALLS  250
+/* make MAX_FINDALLS larger if you want */
+
+#define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
+
 #include "ptoc_tag_xsb_i.h"
 
-
 /* malloc a new chunck and link it in in the current findall */
-int get_more_chunk()
+int get_more_chunk(CTXTdecl)
 { CPtr newchunk ;
 
   if (!(newchunk = (CPtr)mem_alloc(FINDALL_CHUNCK_SIZE * sizeof(Cell))))
@@ -134,7 +149,7 @@ int findall_init(CTXTdecl)
    at the end of findall_get_solutions, and from findall_clean
 */
 
-void findall_free(int i)
+void findall_free(CTXTdeclc int i)
 { CPtr to_free,p ;
 
   p = (findall_solutions + i)->first_chunk ;
@@ -150,14 +165,14 @@ void findall_free(int i)
    interpreter - or just before jumping back into it
 */
 
-void findall_clean()
+void findall_clean(CTXTdecl)
 { findall_solution_list *p ;
   int i ;
 	p = findall_solutions ;
 	if (! p) return ;
 	for (i = 0 ; i < MAX_FINDALLS ; i++)
 		{ if (p->tail != 0)
-			findall_free(i) ;
+			findall_free(CTXTc i) ;
 		  (findall_solutions + i)->size = i+1 ;
 		}
 	(findall_solutions + i - 1)->size = -1 ;
@@ -170,7 +185,7 @@ void findall_clean()
    problem, because they are not needed afterwards anymore, so no trailing
 */
 
-void findall_copy_to_heap(Cell from, CPtr to, CPtr *h)
+void findall_copy_to_heap(CTXTdeclc Cell from, CPtr to, CPtr *h)
 {
 
 copy_again : /* for tail recursion optimisation */
@@ -249,7 +264,7 @@ copy_again : /* for tail recursion optimisation */
 	else
 	  {
 	    *pfirstel = makelist((CPtr)to);
-	    findall_copy_to_heap(q,to,h);
+	    findall_copy_to_heap(CTXTc q,to,h);
 	  }
 
 	from = *(pfirstel+1) ; to++ ;
@@ -284,7 +299,7 @@ copy_again : /* for tail recursion optimisation */
 	while ( --ar )
 	  {
 	    from = *(++pfirstel) ; to++ ;
-	    findall_copy_to_heap(from,to,h) ;
+	    findall_copy_to_heap(CTXTc from,to,h) ;
 	  }
 	from = *(++pfirstel) ; to++ ;
 	goto copy_again ;
@@ -329,20 +344,7 @@ copy_again : /* for tail recursion optimisation */
 
 /* trailing variables during copying a template: a linked list of arrays is used */
 
-#define F_TR_NUM 250 /* the number of trail entries in a chunck of the trail
-			it must be a multiple of 2
-		     */
-
-typedef struct f_tr_chunk {
-  struct f_tr_chunk *previous ;
-  CPtr tr[F_TR_NUM] ;
-} f_tr_chunk ;
-
-static f_tr_chunk *cur_tr_chunk ;
-static CPtr *cur_tr_top ;
-static CPtr *cur_tr_limit ;
-
-static void findall_untrail()
+static void findall_untrail(CTXTdecl)
 {
   CPtr *p, *begin_trail ;
   f_tr_chunk *tr_chunk, *tmp ;
@@ -371,7 +373,7 @@ static void findall_untrail()
 
 /* if tr2 == 0, then we need to trail only the first two */
 
-static int findall_trail(CPtr p, Cell val)
+static int findall_trail(CTXTdeclc CPtr p, Cell val)
 { 
   f_tr_chunk *new_tr_chunk ;
   int trail_left = cur_tr_limit - cur_tr_top;
@@ -391,7 +393,7 @@ static int findall_trail(CPtr p, Cell val)
   return TRUE;
 } /* findall_trail */
 
-static int init_findall_trail()
+static int init_findall_trail(CTXTdecl)
 {
   if (!(cur_tr_chunk = (f_tr_chunk *)mem_alloc(sizeof(f_tr_chunk))))
     xsb_exit("init_findall_trail failed");
@@ -408,7 +410,7 @@ static int init_findall_trail()
    if it "fails", returns a negative number
 */
 
-static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
+static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 {
   int size = 0 ;
   int s ;
@@ -427,7 +429,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
       case XSB_REF1 :
 	if (on_glstack((CPtr)(from)))
 	  {
-	    findall_trail((CPtr)from,from) ;
+	    findall_trail(CTXTc (CPtr)from,from) ;
 	    *(CPtr)from = (Cell)to ;
 	    *to = (Cell)to ;
 	  } else *to = from ;
@@ -464,7 +466,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 
 	  if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 3))
 	    {
-	      if (! get_more_chunk()) return(-1) ;
+	      if (! get_more_chunk(CTXT)) return(-1) ;
 	      *h = current_findall->top_of_chunk ;
 	    }
 
@@ -477,16 +479,16 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 	    if (q == (Cell)pfirstel) /* it is an UNDEF - special care needed */
 	      {
 		/* it is an undef in the part we are copying from */
-		findall_trail(pfirstel,(Cell)pfirstel);
+		findall_trail(CTXTc pfirstel,(Cell)pfirstel);
 		*to = (Cell)to ;
 		*pfirstel = makelist((CPtr)to);
 	      }
 	    else
 	      {
-		findall_trail(pfirstel,q);
+		findall_trail(CTXTc pfirstel,q);
 		*pfirstel = makelist((CPtr)to);
 		XSB_Deref(q);
-		s = findall_copy_template_to_chunk(q,to,h);
+		s = findall_copy_template_to_chunk(CTXTc q,to,h);
 		if (s < 0) return(-1) ;
 		size += s + 2 ;
 	      }
@@ -512,13 +514,13 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 
 	  /* first time we visit this struct */
 
-	  findall_trail(pfirstel,*pfirstel);
+	  findall_trail(CTXTc pfirstel,*pfirstel);
 
 	  ar = get_arity((Psc)(*pfirstel)) ;
 	  /* make sure there is enough space in the chunks */
 	  if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 1 - ar))
 	    {
-	      if (! get_more_chunk()) return(-1) ;
+	      if (! get_more_chunk(CTXT)) return(-1) ;
 	      *h = current_findall->top_of_chunk ;
 	    }
 
@@ -532,7 +534,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
 	  while ( --ar )
 	    {
 	      from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-	      s = findall_copy_template_to_chunk(from,to,h) ;
+	      s = findall_copy_template_to_chunk(CTXTc from,to,h) ;
 	      if (s < 0) return(-1) ;
 	      size += s ;
 	    }
@@ -548,7 +550,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
       from = cell(var + 1); /* from -> the ATTR part of the attv */
       XSB_Deref(from);
       if (*h > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE - 3)) {
-	if (! get_more_chunk()) return(-1) ;
+	if (! get_more_chunk(CTXT)) return(-1) ;
 	*h = current_findall->top_of_chunk ;
       }
       *to = makeattv(*h);
@@ -560,7 +562,7 @@ static int findall_copy_template_to_chunk(Cell from, CPtr to, CPtr *h)
        * just created in the `to area', so that attributed variables
        * are shared in the `to area'.
        */
-      findall_trail(var,(Cell)var);
+      findall_trail(CTXTc var,(Cell)var);
       bld_attv(var, to);
       cell(to) = (Cell) to;
       to++;
@@ -607,16 +609,16 @@ int findall_add(CTXTdecl)
   
   to = current_findall->top_of_chunk ;
   if ((to+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {
-    if (! get_more_chunk()) return(0) ;
+    if (! get_more_chunk(CTXT)) return(0) ;
     to = current_findall->top_of_chunk ;
   }
   
   h = to + 2 ;
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   
-  if (init_findall_trail() &&
-      (0 <= (size = findall_copy_template_to_chunk(arg1,to,&h)))) {
-    findall_untrail() ;
+  if (init_findall_trail(CTXT) &&
+      (0 <= (size = findall_copy_template_to_chunk(CTXTc arg1,to,&h)))) {
+    findall_untrail(CTXT) ;
     current_findall->top_of_chunk = h ;
     /* 2 because of ./2 of solution list */
     current_findall->size += size + 2 ;
@@ -627,7 +629,7 @@ int findall_add(CTXTdecl)
     return TRUE;
   }
   
-  findall_untrail() ;
+  findall_untrail(CTXT) ;
   return FALSE;
 } /* findall_add */
 
@@ -666,9 +668,9 @@ int findall_get_solutions(CTXTdecl)
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   
   from = *(p->first_chunk+1) ; /* XSB_Deref not necessary */
-  findall_copy_to_heap(from,(CPtr)arg1,&hreg) ; /* this can't fail */
+  findall_copy_to_heap(CTXTc from,(CPtr)arg1,&hreg) ; /* this can't fail */
   *(CPtr)arg2 = *(p->tail) ; /* no checking, no trailing */
-  findall_free(cur_f) ;
+  findall_free(CTXTc cur_f) ;
   return TRUE;
 } /* findall_get_solutions */
 
@@ -722,7 +724,7 @@ static long term_size(CTXTdeclc Cell term)
        * tell it has been counted before.
        */
       size += 2;
-      findall_trail(pfirstel,(Cell)pfirstel);
+      findall_trail(CTXTc pfirstel,(Cell)pfirstel);
       bld_attv(pfirstel, hreg); /* bind VAR part to a cell out of hreg */
       bld_free(hreg);
       term = cell(clref_val(term) + 1);
@@ -755,7 +757,7 @@ copy_again : /* for tail recursion optimisation */
     case XSB_REF1 :
       if ((CPtr)from < hreg)  /* meaning: a not yet copied undef */
 	{
-	  findall_trail((CPtr)from,from) ;
+	  findall_trail(CTXTc (CPtr)from,from) ;
 	  *(CPtr)from = (Cell)to ;
 	  *to = (Cell)to ;
 	}
@@ -839,13 +841,13 @@ copy_again : /* for tail recursion optimisation */
 	  if (q == (Cell)pfirstel) /* it is an UNDEF - special care needed */
 	    {
 	      /* it is an undef in the part we are copying from */
-	      findall_trail(pfirstel,(Cell)pfirstel);
+	      findall_trail(CTXTc pfirstel,(Cell)pfirstel);
 	      *to = (Cell)to ;
 	      *pfirstel = makelist((CPtr)to);
 	    }
 	  else
 	    {
-	      findall_trail(pfirstel,q);
+	      findall_trail(CTXTc pfirstel,q);
 	      *pfirstel = makelist((CPtr)to);
 	      XSB_Deref(q);
 	      do_copy_term(CTXTc q,to,h);
@@ -905,7 +907,7 @@ copy_again : /* for tail recursion optimisation */
 
 	/* first time we visit this struct */
 
-	findall_trail(pfirstel,*pfirstel);
+	findall_trail(CTXTc pfirstel,*pfirstel);
 
 	ar = get_arity((Psc)(*pfirstel)) ;
 	
@@ -972,7 +974,7 @@ copy_again : /* for tail recursion optimisation */
 	   * created in the `to area', so that attributed variables are
 	   * shared in the `to area'.
 	   */
-	  findall_trail(var,(Cell)var);
+	  findall_trail(CTXTc var,(Cell)var);
 	  bld_attv(var, to);
 	  cell(to) = (Cell) to;
 	  to++;
@@ -1000,9 +1002,9 @@ int copy_term(CTXTdecl)
   
   if( isref(arg1) ) return 1;
 
-  init_findall_trail() ;
+  init_findall_trail(CTXT) ;
   size = term_size(CTXTc arg1) ;
-  findall_untrail() ;
+  findall_untrail(CTXT) ;
 
   check_glstack_overflow( 2, pcreg, size*sizeof(Cell)) ;
   
@@ -1013,9 +1015,9 @@ int copy_term(CTXTdecl)
   hptr = hreg ;
   
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
-  init_findall_trail() ;
+  init_findall_trail(CTXT) ;
   do_copy_term( CTXTc arg1, &to, &hptr ) ;
-  findall_untrail() ;
+  findall_untrail(CTXT) ;
   
   {
     int size2 = hptr - hreg;
@@ -1041,9 +1043,9 @@ Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 )
 
   hptr = hreg ;
   hreg = from->_hreg ;
-  init_findall_trail() ;
+  init_findall_trail(CTXT) ;
   do_copy_term( th, arg1, &to, &hptr ) ;
-  findall_untrail() ;
+  findall_untrail(CTXT) ;
 
   hreg = hptr ;
 

@@ -51,3 +51,8 @@ extern xsbBool quotes_are_needed(char *string);
 int read_canonical_term(CTXTdeclc FILE *, STRFILE *, int);
 
 void print_term_canonical(CTXTdeclc FILE *, Cell, int);
+
+extern int get_more_chunk(CTXTdecl);
+extern void findall_copy_to_heap(CTXTdeclc Cell, CPtr, CPtr *);
+extern int findall_init_c(CTXTdecl);
+extern void findall_free(CTXTdeclc int);

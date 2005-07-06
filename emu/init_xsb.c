@@ -730,6 +730,8 @@ void init_machine(CTXTdecl)
   tcpstack	= init_tcpstack ;
   complstack	= init_complstack ;
 
+  findall_solutions = NULL;
+
 /*  call_intercept = init_call_intercept ; */
 #endif
   /* Allocate Stack Spaces and set Boundary Parameters

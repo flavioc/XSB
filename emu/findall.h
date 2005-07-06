@@ -23,7 +23,9 @@
 ** 
 */
 
+#ifndef __FINDALL_H__
 
+#define __FINDALL_H__
 
 /* Findall copies its templates to a findall-heap.  This heap is allocated in
    chunks of FINDALL_CHUNCK_SIZE (Cell)entries.  Since more than one findall
@@ -54,6 +56,15 @@
    findall_solutions array: we then call this entry active; the type of the
    entry is findall_solution_list */
 
+#define F_TR_NUM 250 /* the number of trail entries in a chunck of the trail
+			it must be a multiple of 2
+		     */
+
+typedef struct f_tr_chunk {
+  struct f_tr_chunk *previous ;
+  CPtr tr[F_TR_NUM] ;
+} f_tr_chunk ;
+
 typedef struct {
   CPtr	first_chunk ;	 /* chunk in which solution list starts
 			    the solution list starts at offset +1 */
@@ -67,13 +78,10 @@ typedef struct {
 			    checking */ 
 } findall_solution_list ;
 
+#ifndef MULTI_THREAD
 extern findall_solution_list *findall_solutions, *current_findall ;
 
 extern CPtr gl_bot, gl_top ;
-#define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
+#endif
 
-extern void findall_free(int);
-extern int get_more_chunk(void);
-extern void findall_copy_to_heap(Cell, CPtr, CPtr *);
-extern int findall_init_c(CTXTdecl);
-
+#endif /* __FINDALL_H__ */

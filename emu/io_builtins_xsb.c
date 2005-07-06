@@ -57,8 +57,6 @@
 #include "deref.h"
 #include "findall.h"
 
-static struct stat stat_buff;
-
 stream_record open_files[MAX_OPEN_FILES]; /* open file table */
 
 static FILE *fptr;			/* working variable */
@@ -660,23 +658,22 @@ static Psc prevpsc = 0;
 reallocate op stack.
 add clear findall stack at toploop
 ***/
-static int findall_chunk_index;
 
-CPtr init_term_buffer(CTXTdecl) {
-  findall_chunk_index = findall_init_c(CTXT);
-  current_findall = findall_solutions + findall_chunk_index;
+CPtr init_term_buffer(CTXTdeclc int *findall_chunk_index) {
+  *findall_chunk_index = findall_init_c(CTXT);
+  current_findall = findall_solutions + *findall_chunk_index;
   return current_findall->top_of_chunk ;
 }
 
 #define ensure_term_space(ptr,size) \
   if ((ptr+size) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {\
-	if (!get_more_chunk()) xsb_abort("Cannot allocate space for term buffer") ;\
+	if (!get_more_chunk(CTXT)) xsb_abort("Cannot allocate space for term buffer") ;\
 	ptr = current_findall->top_of_chunk ;\
   }
 
-#define free_term_buffer() findall_free(findall_chunk_index)
+#define free_term_buffer() findall_free(CTXTc findall_chunk_index)
 
-static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, Cell prologvar)
+static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, Cell prologvar, int findall_chunk_index)
 {
   char *ptr;
 
@@ -793,6 +790,7 @@ Cell read_canonical_return_var(CTXTdeclc int code) {
 /* read canonical term, and return prev psc pointer, if valid */
 int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_location_code)
 {
+  int findall_chunk_index;
   int funtop = 0;
   int optop = 0;
   int cvarbot = MAXVAR-1;
@@ -817,7 +815,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
   }
 
   /* get findall buffer to read term into */
-  h = init_term_buffer(CTXT);
+  h = init_term_buffer(CTXTc &findall_chunk_index);
   size = 0;
 
   prevchar = 10;
@@ -893,13 +891,13 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		      optop = op1+1;
 		    }
 		  } else {
-  		    return read_can_error(CTXTc filep,instr,prevchar,prologvar); /* ')' ends a list? */
+  		    return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index); /* ')' ends a list? */
 		  }
 		} else if (*token->value == ']') {	/* end of list */
 		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN || funstk[funtop].funtyp == FUNCOMMALIST)
-			return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
 		  ensure_term_space(h,2);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
@@ -948,9 +946,9 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		} else if (*token->value == '|') {
 		  postopreq = FALSE;
 		  if (funstk[funtop-1].funtyp != FUNLIST) 
-			return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
 		  funstk[funtop-1].funtyp = FUNDTLIST;
-		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
       } else {  /* check for neg numbers and backpatch if so */
 		if (opstk[optop-1].typ == TK_ATOM && 
 				!strcmp("-",string_val(opstk[optop-1].op))) {
@@ -961,8 +959,8 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 			opstk[optop-1].typ = TK_REAL;
 			float_temp = (Float) *(double *)(token->value);
 			opstk[optop-1].op = makefloat(-float_temp);
-		  } else return read_can_error(CTXTc filep,instr,prevchar,prologvar);
-		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+		  } else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
       }
     } else {  /* must be an operand */
       switch (token->type) {
@@ -1000,7 +998,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		funtop++;
 
 		if (token->nextch != '(')
-			return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
 		token = GetToken(filep,instr,prevchar);
 		/* print_token(token->type,token->value); */
 		prevchar = token->nextch;
@@ -1103,7 +1101,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
 	unify(CTXTc prologvar,makestring(string_find("end_of_file",1)));
 	return 0;
-      default: return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+      default: return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
       }
     }
     if (funtop == 0) {  /* term is finished */
@@ -1111,7 +1109,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
       /* print_token(token->type,token->value); */
       prevchar = token->nextch; /* accept EOF as end_of_clause */
       if (token->type != TK_EOF && token->type != TK_EOC) 
-	return read_can_error(CTXTc filep,instr,prevchar,prologvar);
+	return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	if (isnonvar(prologvar)) 
@@ -1125,7 +1123,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 	bind_ref((CPtr)prologvar,hreg);  /* build a new var to trail binding */
 	new_heap_free(hreg);
 	gl_bot = (CPtr)glstack.low; gl_top = (CPtr)glstack.high; /* so findall_copy* finds vars */
-	findall_copy_to_heap(term,(CPtr)prologvar,&hreg) ; /* this can't fail */
+	findall_copy_to_heap(CTXTc term,(CPtr)prologvar,&hreg) ; /* this can't fail */
 	free_term_buffer();
 
 	XSB_Deref(prologvar);
@@ -1474,6 +1472,7 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode)
     return 0;
   } 
   else { /* try to intern new file */
+    struct stat stat_buff;
     fptr = fopen(addr, strmode);
     if (!fptr) {*ioport = 0; return -1;}
     else  if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
