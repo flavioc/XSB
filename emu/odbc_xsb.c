@@ -60,6 +60,7 @@
 #include "heap_xsb.h"
 //#include "error_xsb.h"
 #include "context.h"
+#include "varstring_xsb.h"
 
 #define MAXCURSORNUM                    25
 #define MAXVARSTRLEN                    65000
@@ -743,8 +744,7 @@ void SetBindVarNum(CTXTdecl)
 }
 
 DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int letterflag);
-extern char *wcan_string;
-extern int wcan_disp;
+#define wcan_string tsgLBuff1
 
 #define MAX_BIND_VALS 30
 char *term_string[MAX_BIND_VALS] = {0};
@@ -850,12 +850,10 @@ void SetBindVal(CTXTdecl)
 	cur->BindList[j] = term_string[j];
       } else {
 	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
-	wcan_disp = 0;
 	write_canonical_term(CTXTc p2p_arg(BindVal,1),1);
 	if (term_string[j]) free(term_string[j]);
-	term_string[j] = malloc(wcan_disp+1);
-	strncpy(term_string[j],wcan_string,wcan_disp);
-	term_string[j][wcan_disp] = '\0';
+	term_string[j] = malloc(wcan_string->length+1);
+	strcpy(term_string[j],wcan_string->string);
 	cur->BindTypes[j] = 2;
 	cur->BindList[j] = term_string[j];
       }
@@ -891,12 +889,10 @@ void SetBindVal(CTXTdecl)
 	cur->BindTypes[j] = 2;
 	cur->BindList[j] = term_string[j];
     } else {
-      wcan_disp = 0;
       write_canonical_term(CTXTc p2p_arg(BindVal,1),1);
       if (term_string[j]) free(term_string[j]);
-      term_string[j] = malloc(wcan_disp+1);
-      strncpy(term_string[j],wcan_string,wcan_disp);
-      term_string[j][wcan_disp] = '\0';
+      term_string[j] = malloc(wcan_string->length+1);
+      strcpy(term_string[j],wcan_string->string);
       cur->BindTypes[j] = 2;
       cur->BindList[j] = term_string[j];
     }

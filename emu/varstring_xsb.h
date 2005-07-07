@@ -37,6 +37,7 @@ struct varstr_ops {
 					  increase space, if needed         */
   void (*prepend)(VarString*,char*);   /* like append, but prepend instead  */
   void (*appendv)(VarString*,VarString*);  /* append 2nd VarString to 1st   */
+  void (*appendc)(VarString*,char);    /* append char to VarString   */
   void (*prependv)(VarString*,VarString*); /* prepend 2nd VarString to 1st  */
   int  (*compare)(VarString*,VarString*);  /* like strcmp for VarStrings    */
   int  (*strcmp)(VarString*,char*);        /* compare VarString to a char*  */
@@ -79,7 +80,8 @@ extern DllExport struct varstr_ops VarStrOps;
 #define XSB_StrSetV(vstr1,vstr2)       (vstr1)->op->setv(vstr1,vstr2)
 #define XSB_StrAppend(vstr,str)        (vstr)->op->append(vstr,str)
 #define XSB_StrPrepend(vstr,str)       (vstr)->op->prepend(vstr,str)
-#define XSB_StrAppendV(vstr1,vstr2)    (vstr)->op->appendv(vstr1,vstr2)
+#define XSB_StrAppendV(vstr1,vstr2)    (vstr1)->op->appendv(vstr1,vstr2)
+#define XSB_StrAppendC(vstr,code)      (vstr)->op->appendc(vstr,code)
 #define XSB_StrPrependV(vstr1,vstr2)   (vstr)->op->prependv(vstr1,vstr2)
 #define XSB_StrCompare(vstr1,vstr2)    (vstr1)->op->compare(vstr1,vstr2)
 #define XSB_StrCmp(vstr,str)           (vstr)->op->strcmp(vstr,str)

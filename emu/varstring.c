@@ -83,6 +83,7 @@ static void  vs_setv(VarString*, VarString*);
 static void  vs_append(VarString*, char*);
 static void  vs_prepend(VarString*, char*);
 static inline void  vs_appendv(VarString*, VarString*);
+static inline void  vs_appendc(VarString*, char);
 static inline void  vs_prependv(VarString*, VarString*);
 static inline int   vs_compare(VarString*, VarString*);
 static inline int   vs_strcmp(VarString*, char*);
@@ -98,7 +99,7 @@ static inline void vs_null_terminate(VarString *vstr);
 
 DllExport struct varstr_ops VarStrOps = {vs_set,vs_setv,
 					 vs_append,vs_prepend, 
-					 vs_appendv,vs_prependv,
+					 vs_appendv,vs_appendc,vs_prependv,
 					 vs_compare,vs_strcmp,
 					 vs_appendblk,vs_prependblk,
 					 vs_null_terminate,
@@ -213,6 +214,14 @@ static void vs_append(VarString *vstr, char *str)
   }
   vs_appendblk(vstr, str, strlen(str));
   vs_null_terminate(vstr);
+}
+
+static inline void vs_appendc(VarString *vstr, char code) {
+  if (vstr->size < vstr->length+1) 
+    vs_adjust_size(vstr,vstr->length+1);
+  *(vstr->string+vstr->length) = code;
+  vstr->length++;
+  *(vstr->string+vstr->length) = '\0';
 }
 
 static void vs_prepend(VarString *vstr, char *str)

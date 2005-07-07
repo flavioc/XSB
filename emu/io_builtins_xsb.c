@@ -1616,85 +1616,52 @@ void write_quotedname(FILE *file, char *string)
   }
 }
 
-char *wcan_string = NULL;
-int wcan_disp = 0;
+/********************** write_canonical ****************/
 
-static int wcan_string_len = 0;
-static char wcan_buff[32];
 static Psc dollar_var_psc = NULL;
+#define wcan_string tsgLBuff1
+#define wcan_atombuff tsgLBuff2
+#define wcan_buff tsgSBuff1
 
-void expand_wcan_string(int need)
-{
-  wcan_string_len = wcan_string_len + need;
-  wcan_string = realloc(wcan_string,wcan_string_len);
-  /*  printf("expanding buffer to %d\n",wcan_string_len); */
-}
-
-void wcan_append_string(char *string)
-{
-  int wcan_ndisp, string_len;
-
-  string_len = strlen(string);
-  wcan_ndisp = wcan_disp+string_len;
-  if (wcan_ndisp > wcan_string_len) expand_wcan_string(wcan_ndisp);
-  strncpy(wcan_string+wcan_disp,string,string_len);
-  wcan_disp = wcan_ndisp;
-}
-
-void wcan_append_string_chk(char *string)
-{
-  if (quotes_are_needed(string)) {
-    int string_len = strlen(string);
-    int ctr = 0;
-    int maxlen = wcan_disp+2*(string_len+1);
-    if (maxlen > wcan_string_len) 
-      expand_wcan_string(maxlen);
-    wcan_string[wcan_disp++] = '\'';
-    while (string[ctr] != '\0') {
-      if (string[ctr] == '\'') wcan_string[wcan_disp++] = '\'';
-      wcan_string[wcan_disp++] = string[ctr++];
-    }
-    wcan_string[wcan_disp++] = '\'';
-  } else {
-    wcan_append_string(string);
-  }
-}
-
-DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int letter_flag)
+void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_flag)
 {
   XSB_Deref(prologterm);
   switch (cell_tag(prologterm)) 
     {
     case XSB_INT:
-      sprintf(wcan_buff,"%ld",(long)int_val(prologterm));
-      wcan_append_string(wcan_buff);
+      sprintf(wcan_buff->string,"%ld",(long)int_val(prologterm));
+      XSB_StrAppendV(wcan_string,wcan_buff);
       break;
     case XSB_STRING: 
-      wcan_append_string_chk(string_val(prologterm));
-    break;
+      if (quotes_are_needed(string_val(prologterm))) {
+	int len_needed = 2*strlen(string_val(prologterm))+1;
+	XSB_StrEnsureSize(wcan_atombuff,len_needed);
+	double_quotes(string_val(prologterm),wcan_atombuff->string);
+	XSB_StrAppendC(wcan_string,'\'');
+	XSB_StrAppend(wcan_string,wcan_atombuff->string);
+	XSB_StrAppendC(wcan_string,'\'');
+      } else XSB_StrAppend(wcan_string,string_val(prologterm));
+      break;
     case XSB_FLOAT:
-      sprintf(wcan_buff,"%2.4f",float_val(prologterm));
-      wcan_append_string(wcan_buff);
+      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
+      XSB_StrAppendV(wcan_string,wcan_buff);
       break;
     case XSB_REF:
-    case XSB_REF1:
-      {int varval;
-      if (wcan_disp+2 > wcan_string_len) expand_wcan_string(wcan_disp+2);
-      wcan_string[wcan_disp++] = '_';
+    case XSB_REF1: {
+      int varval;
+      XSB_StrAppendC(wcan_string,'_');
       if (prologterm >= (Cell)glstack.low && prologterm <= (Cell)top_of_heap) {
-	wcan_string[wcan_disp++] = 'h';
+	XSB_StrAppendC(wcan_string,'h');
 	varval = (long) ((prologterm-(Cell)glstack.low+1)/sizeof(CPtr));
-      }
-      else {
+      } else {
 	if (prologterm >= (Cell)top_of_localstk && prologterm <= (Cell)glstack.high) {
-	  wcan_string[wcan_disp++] = 'l';
+	  XSB_StrAppendC(wcan_string,'l');
 	  varval = (long) (((Cell)glstack.high-prologterm+1)/sizeof(CPtr));
-	}
-	else varval = prologterm;   /* Should never happen */
+	} else varval = prologterm;   /* Should never happen */
       }
-      sprintf(wcan_buff,"%d",varval);
-      wcan_append_string(wcan_buff);
-      }
+      sprintf(wcan_buff->string,"%d",varval);
+      XSB_StrAppendV(wcan_string,wcan_buff);
+    }
       break;
     case XSB_STRUCT: /* lettervar: i.e., print '$VAR'(i) terms as Cap Alpha-Num */
       if (!dollar_var_psc) {
@@ -1709,48 +1676,48 @@ DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int let
 	ival = int_val(tempi);
 	letter = ival % 26;
 	ival = ival / 26;
-	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-	wcan_string[wcan_disp++] = letter + 'A';
+	XSB_StrAppendC(wcan_string,letter+'A');
 	if (ival != 0) {
-	  sprintf(wcan_buff,"%d",ival);
-	  wcan_append_string(wcan_buff);
+	  sprintf(wcan_buff->string,"%d",ival);
+	  XSB_StrAppendV(wcan_string,wcan_buff);
 	}
       } else {
-	int i;
-	wcan_append_string_chk(get_name(get_str_psc(prologterm)));
-	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-	wcan_string[wcan_disp++] = '(';
+	int i; 
+	char *fnname = get_name(get_str_psc(prologterm));
+	if (quotes_are_needed(fnname)) {
+	  int len_needed = 2*strlen(fnname)+1;
+	  XSB_StrEnsureSize(wcan_atombuff,len_needed);
+	  double_quotes(fnname,wcan_atombuff->string);
+	  XSB_StrAppendC(wcan_string,'\'');
+	  XSB_StrAppend(wcan_string,wcan_atombuff->string);
+	  XSB_StrAppendC(wcan_string,'\'');
+	} else XSB_StrAppend(wcan_string,fnname);
+	XSB_StrAppendC(wcan_string,'(');
 	for (i = 1; i < get_arity(get_str_psc(prologterm)); i++) {
-	  write_canonical_term(CTXTc cell(clref_val(prologterm)+i),letter_flag);
-	  if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-	  wcan_string[wcan_disp++] = ',';
+	  write_canonical_term_rec(CTXTc cell(clref_val(prologterm)+i),letter_flag);
+	  XSB_StrAppendC(wcan_string,',');
 	}
-	write_canonical_term(CTXTc cell(clref_val(prologterm)+i),letter_flag);
-	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-	wcan_string[wcan_disp++] = ')';
+	write_canonical_term_rec(CTXTc cell(clref_val(prologterm)+i),letter_flag);
+	XSB_StrAppendC(wcan_string,')');
       }
       break;
     case XSB_LIST:
       {Cell tail;
-      if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-      wcan_string[wcan_disp++] = '[';
-      write_canonical_term(CTXTc cell(clref_val(prologterm)),letter_flag);
+      XSB_StrAppendC(wcan_string,'[');
+      write_canonical_term_rec(CTXTc cell(clref_val(prologterm)),letter_flag);
       tail = cell(clref_val(prologterm)+1);
       XSB_Deref(tail);
       while (islist(tail)) {
-	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-	wcan_string[wcan_disp++] = ',';
-	write_canonical_term(CTXTc cell(clref_val(tail)),letter_flag);
+	XSB_StrAppendC(wcan_string,',');
+	write_canonical_term_rec(CTXTc cell(clref_val(tail)),letter_flag);
 	tail = cell(clref_val(tail)+1);
 	XSB_Deref(tail);
       } 
       if (!isnil(tail)) {
-	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-	wcan_string[wcan_disp++] = '|';
-	write_canonical_term(CTXTc tail,letter_flag);
+	XSB_StrAppendC(wcan_string,'|');
+	write_canonical_term_rec(CTXTc tail,letter_flag);
       }
-      if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-      wcan_string[wcan_disp++] = ']';
+      XSB_StrAppendC(wcan_string,']');
       }
       break;
     default:
@@ -1760,14 +1727,20 @@ DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int let
   return;
 }
 
+DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int letter_flag)
+{
+  XSB_StrSet(wcan_string,"");
+  XSB_StrEnsureSize(wcan_buff,40);
+  write_canonical_term_rec(CTXTc prologterm, letter_flag);
+}
+
 void print_term_canonical(CTXTdeclc FILE *fptr, Cell prologterm, int letterflag)
 {
 
-  wcan_disp = 0;
   write_canonical_term(CTXTc prologterm, letterflag);
-  if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
-  wcan_string[wcan_disp] = '\0';
-
-  fprintf(fptr, "%s", wcan_string);
+  fprintf(fptr, "%s", wcan_string->string);
 }
 
+#undef wcan_string
+#undef wcan_atombuff
+#undef wcan_buff
