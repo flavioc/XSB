@@ -59,7 +59,7 @@
 
 stream_record open_files[MAX_OPEN_FILES]; /* open file table */
 
-static FILE *fptr;			/* working variable */
+// static FILE *fptr;			/* working variable */
     
 #define setvar(loc,op1) \
     if (vars[opstk[op1].op].varval) \
@@ -83,7 +83,16 @@ struct fmt_spec {
   char *fmt;
 };
 
-struct fmt_spec *next_format_substr(CTXTdeclc char*, int, int);
+struct next_fmt_state {
+  int _current_substr_start;
+  VarString _workspace;
+  char _saved_char;
+};
+#define current_substr_start (fmt_state->_current_substr_start)
+#define workspace (fmt_state->_workspace)
+#define saved_char (fmt_state->_saved_char)
+
+struct fmt_spec *next_format_substr(CTXTdeclc char*, struct next_fmt_state*, int, int);
 char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
 
 /* type is a char: 's', 'i', 'f' */
@@ -154,10 +163,6 @@ char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
 #endif
 
 
-/* these are static & global, to save on alloc overhead and large footprint  */
-static XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
-static XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
-
 xsbBool fmt_write(CTXTdecl);
 xsbBool fmt_write_string(CTXTdecl);
 xsbBool fmt_read(CTXTdecl);
@@ -187,11 +192,14 @@ xsbBool formatted_io (CTXTdecl)
        ValTerm: term whose args are vars to receive values returned.
 ----------------------------------------------------------------------*/
 
-
 xsbBool fmt_write(CTXTdecl)
 {
+  FILE *fptr;			/* working variable */
+  XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
+  XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
+  struct next_fmt_state fmt_state;
   char *Fmt=NULL, *str_arg;
-  static char aux_msg[50];
+  char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity=0;
   long int_arg;     	     	     	      /* holder for int args         */
@@ -200,6 +208,7 @@ xsbBool fmt_write(CTXTdecl)
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
   XSB_StrSet(&StrArgBuf,"");
+  varstring_init(&(fmt_state._workspace));
 
   SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
   Fmt_term = reg_term(CTXTc 3);
@@ -234,7 +243,7 @@ xsbBool fmt_write(CTXTdecl)
     Arity = 1;
   }
 
-  current_fmt_spec = next_format_substr(CTXTc Fmt,
+  current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
 					1,   /* initialize    	      	     */
 					0);  /* write    	      	     */
   xsb_segfault_message =
@@ -293,7 +302,7 @@ xsbBool fmt_write(CTXTdecl)
     } else {
       xsb_abort("[FMT_WRITE] Argument %d has illegal type", i);
     }
-    current_fmt_spec = next_format_substr(CTXTc Fmt,
+    current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
 					  0 /* don't initialize */,
 					  0 /* write */ );
   }
@@ -333,8 +342,11 @@ int sprintf(char *s, const char *format, /* args */ ...);
 xsbBool fmt_write_string(CTXTdecl)
 {
   char *Fmt=NULL, *str_arg;
-  static XSB_StrDefine(OutString);
-  static char aux_msg[50];
+  XSB_StrDefine(OutString);
+  XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
+  XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
+  struct next_fmt_state fmt_state;
+  char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity;
   long int_arg;     	     	     	    /* holder for int args     	    */
@@ -346,6 +358,7 @@ xsbBool fmt_write_string(CTXTdecl)
 					       returned by sprintf/snprintf */
   XSB_StrSet(&StrArgBuf,"");
   XSB_StrSet(&OutString,"");
+  varstring_init(&(fmt_state._workspace));
 
   if (isnonvar(reg_term(CTXTc 2)))
     xsb_abort("[FMT_WRITE_STRING] Arg 1 must be an unbound variable");
@@ -383,7 +396,7 @@ xsbBool fmt_write_string(CTXTdecl)
     Arity = 1;
   }
 
-  current_fmt_spec = next_format_substr(CTXTc Fmt,
+  current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
 					1,  /* initialize     	      	     */
 					0); /* write     	      	     */
   xsb_segfault_message =
@@ -443,7 +456,7 @@ xsbBool fmt_write_string(CTXTdecl)
     } else {
       xsb_abort("[FMT_WRITE_STRING] Argument %d has illegal type", i);
     }
-    current_fmt_spec = next_format_substr(CTXTc Fmt,
+    current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
 					  0 /* don't initialize */,
 					  0 /* write */ );
   }
@@ -479,10 +492,14 @@ xsbBool fmt_write_string(CTXTdecl)
 
 xsbBool fmt_read(CTXTdecl)
 {
+  FILE *fptr;			/* working variable */
   char *Fmt=NULL;
+  XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
+  XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
+  struct next_fmt_state fmt_state;
   prolog_term AnsTerm, Arg, Fmt_term;
   Integer i ;
-  static XSB_StrDefine(aux_fmt);     	      /* auxiliary fmt holder 	     */
+  XSB_StrDefine(aux_fmt);     	      /* auxiliary fmt holder 	     */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -491,6 +508,7 @@ xsbBool fmt_read(CTXTdecl)
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
 
+  varstring_init(&(fmt_state._workspace));
   SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
   Fmt_term = reg_term(CTXTc 3);
   if (islist(Fmt_term))
@@ -525,7 +543,7 @@ xsbBool fmt_read(CTXTdecl)
   if (isnonvar(reg_term(CTXTc 5)))
     xsb_abort("[FMT_READ] Arg 4 must be an unbound variable");
 
-  current_fmt_spec = next_format_substr(CTXTc Fmt,
+  current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
 					1,   /* initialize    	      	     */
 					1);  /* read    	      	     */
   XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
@@ -616,7 +634,7 @@ xsbBool fmt_read(CTXTdecl)
     else
       break;
 
-    current_fmt_spec = next_format_substr(CTXTc Fmt,
+    current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
 					  0 /* don't initialize */,
 					  1 /* read */ );
     XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
@@ -1164,7 +1182,6 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
   }
 }
 
-
 /* Scan format string and return format substrings ending with a conversion
    spec. The return value is a ptr to a struct that has the type of conversion
    spec (i, f, s) and the format substring ('.' if the whole format string has
@@ -1176,13 +1193,13 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 
    FORMAT: format string, INITIALIZE: 1-process new fmt string; 0 - continue
    with old fmt string. READ: 1 if this is called for read op; 0 for write.  */
-struct fmt_spec *next_format_substr(CTXTdeclc char *format, int initialize, 
-				    int read_op)
+struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state,
+				    int initialize, int read_op)
 {
-  static int current_substr_start;   /* current substr pointer */
-  static XSB_StrDefine(workspace);      /* copy of format used as workspace */
-  static char saved_char;    	     /* place to save char that we
-				        temporarily replace with '\0' */
+  //  static int current_substr_start;   /* current substr pointer */
+  //  static XSB_StrDefine(workspace);      /* copy of format used as workspace */
+  //  static char saved_char;    	     /* place to save char that we
+  //				        temporarily replace with '\0' */
   int pos, keep_going;
   char *ptr;
   static struct fmt_spec result;
@@ -1421,6 +1438,7 @@ int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode)
 
 int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode)
 {
+  FILE *fptr;			/* working variable */
   int i, first_null, stream_found; 
   char mode = '\0';
 
