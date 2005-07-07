@@ -66,6 +66,11 @@ CPtr hdfreg;
 CPtr *trdfreg;
 #endif
 
+VarString *tsgLBuff1;
+VarString *tsgLBuff2;
+VarString *tsgSBuff1;
+VarString *tsgSBuff2;
+
 /*
  * interrupt_reg points to interrupt_counter, which stores the number of
  * interrupts in the interrupt chain for attributed variables.

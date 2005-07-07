@@ -85,11 +85,11 @@ struct fmt_spec {
 
 struct next_fmt_state {
   int _current_substr_start;
-  VarString _workspace;
+  VarString *_workspace;
   char _saved_char;
 };
 #define current_substr_start (fmt_state->_current_substr_start)
-#define workspace (fmt_state->_workspace)
+#define workspace (*(fmt_state->_workspace))
 #define saved_char (fmt_state->_saved_char)
 
 struct fmt_spec *next_format_substr(CTXTdeclc char*, struct next_fmt_state*, int, int);
@@ -191,12 +191,12 @@ xsbBool formatted_io (CTXTdecl)
        Format: format as atom or string;
        ValTerm: term whose args are vars to receive values returned.
 ----------------------------------------------------------------------*/
+#define FmtBuf (*tsgSBuff1)
+#define StrArgBuf (*tsgSBuff2)
 
 xsbBool fmt_write(CTXTdecl)
 {
   FILE *fptr;			/* working variable */
-  XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
-  XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
   struct next_fmt_state fmt_state;
   char *Fmt=NULL, *str_arg;
   char aux_msg[50];
@@ -207,8 +207,10 @@ xsbBool fmt_write(CTXTdecl)
   struct fmt_spec *current_fmt_spec;
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
+  XSB_StrSet(&FmtBuf,"");
   XSB_StrSet(&StrArgBuf,"");
-  varstring_init(&(fmt_state._workspace));
+  fmt_state._workspace = tsgLBuff2;
+  XSB_StrSet(fmt_state._workspace,"");
 
   SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
   Fmt_term = reg_term(CTXTc 3);
@@ -318,7 +320,8 @@ xsbBool fmt_write(CTXTdecl)
   return TRUE;
 }
 
-
+#undef FmtBuf
+#undef StrArgBuf
 
 /*----------------------------------------------------------------------
    like sprintf:
@@ -339,12 +342,13 @@ int sprintf(char *s, const char *format, /* args */ ...);
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE/2
 #endif
 
+#define OutString (*tsgLBuff1)
+#define FmtBuf (*tsgSBuff1)
+#define StrArgBuf (*tsgSBuff2)
+
 xsbBool fmt_write_string(CTXTdecl)
 {
   char *Fmt=NULL, *str_arg;
-  XSB_StrDefine(OutString);
-  XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
-  XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
   struct next_fmt_state fmt_state;
   char aux_msg[50];
   prolog_term ValTerm, Arg, Fmt_term;
@@ -356,9 +360,11 @@ xsbBool fmt_write_string(CTXTdecl)
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
 					       returned by sprintf/snprintf */
-  XSB_StrSet(&StrArgBuf,"");
   XSB_StrSet(&OutString,"");
-  varstring_init(&(fmt_state._workspace));
+  XSB_StrSet(&FmtBuf,"");
+  XSB_StrSet(&StrArgBuf,"");
+  fmt_state._workspace = tsgLBuff2;
+  XSB_StrSet(fmt_state._workspace,"");
 
   if (isnonvar(reg_term(CTXTc 2)))
     xsb_abort("[FMT_WRITE_STRING] Arg 1 must be an unbound variable");
@@ -477,7 +483,9 @@ xsbBool fmt_write_string(CTXTdecl)
   
   return TRUE;
 }
-
+#undef OutString
+#undef FmtBuf
+#undef StrArgBuf
 
 
 /*----------------------------------------------------------------------
@@ -489,17 +497,17 @@ xsbBool fmt_write_string(CTXTdecl)
       ArgTerm: Term whose args are vars to receive values returned.
       Status: 0 OK, -1 eof 
 ----------------------------------------------------------------------*/
+#define FmtBuf (*tsgSBuff1)
+#define StrArgBuf (*tsgSBuff2)
+#define aux_fmt (*tsgLBuff1)     	      /* auxiliary fmt holder 	     */
 
 xsbBool fmt_read(CTXTdecl)
 {
   FILE *fptr;			/* working variable */
   char *Fmt=NULL;
-  XSB_StrDefine(FmtBuf);  	       	      /* holder of format            */
-  XSB_StrDefine(StrArgBuf);      	      /* holder for string arguments */
   struct next_fmt_state fmt_state;
   prolog_term AnsTerm, Arg, Fmt_term;
   Integer i ;
-  XSB_StrDefine(aux_fmt);     	      /* auxiliary fmt holder 	     */
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec;
@@ -508,7 +516,12 @@ xsbBool fmt_read(CTXTdecl)
   int cont; /* continuation indicator */
   int chars_accumulator=0, curr_chars_consumed=0;
 
-  varstring_init(&(fmt_state._workspace));
+  XSB_StrSet(&FmtBuf,"");
+  XSB_StrSet(&StrArgBuf,"");
+  XSB_StrSet(&aux_fmt,"");
+  fmt_state._workspace = tsgLBuff2;
+  XSB_StrSet(fmt_state._workspace,"");
+
   SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
   Fmt_term = reg_term(CTXTc 3);
   if (islist(Fmt_term))
@@ -581,12 +594,12 @@ xsbBool fmt_read(CTXTdecl)
 	 if it is a prolog constant, then return FALSE (no unification) */
       if (curr_assignment <= 0) {
 	if (isref(Arg)) break;
-	else return FALSE;
+	else goto EXIT_READ_FALSE;
       }
       if (isref(Arg))
 	c2p_string(CTXTc StrArgBuf.string,Arg);
       else if (strcmp(StrArgBuf.string, string_val(Arg)))
-	return FALSE;
+	goto EXIT_READ_FALSE;
       break;
     case 'n':
       int_arg = -1;
@@ -606,17 +619,17 @@ xsbBool fmt_read(CTXTdecl)
 	 if it is a prolog constant, then return FALSE (no unification) */
       if (curr_assignment <= 0) {
 	if (isref(Arg)) break;
-	else return FALSE;
+	else goto EXIT_READ_FALSE;
       }
       if (isref(Arg))
 	c2p_int(CTXTc int_arg,Arg);
-      else if (int_arg != (Integer)oint_val(Arg)) return FALSE;
+      else if (int_arg != (Integer)oint_val(Arg)) goto EXIT_READ_FALSE;
       break;
     case 'f':
       curr_assignment = fscanf(fptr, aux_fmt.string,
 			       &float_arg, &curr_chars_consumed);
       /* floats never unify with anything */
-      if (!isref(Arg)) return FALSE;
+      if (!isref(Arg)) goto EXIT_READ_FALSE;
       /* if no match, leave prolog variable uninstantiated */
       if (curr_assignment <= 0) break;
       c2p_float(CTXTc float_arg, Arg);
@@ -658,7 +671,14 @@ xsbBool fmt_read(CTXTdecl)
  EXIT_READ:
   ctop_int(CTXTc 5, number_of_successes);
   return TRUE;
+
+ EXIT_READ_FALSE:
+  return FALSE;
 }
+#undef FmtBuf
+#undef StrArgBuf
+#undef aux_fmt
+
 
 /**********
 In scanning a canonical term, we maintain a functor stack, and an
@@ -1196,10 +1216,6 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state,
 				    int initialize, int read_op)
 {
-  //  static int current_substr_start;   /* current substr pointer */
-  //  static XSB_StrDefine(workspace);      /* copy of format used as workspace */
-  //  static char saved_char;    	     /* place to save char that we
-  //				        temporarily replace with '\0' */
   int pos, keep_going;
   char *ptr;
   static struct fmt_spec result;
@@ -1577,8 +1593,6 @@ void double_quotes(char *string, char *new_string)
 
 void write_quotedname(FILE *file, char *string)
 {
-  char* new_string;
-
   if (*string == '\0') 
     fprintf(file,"''");
   else {
@@ -1586,18 +1600,24 @@ void write_quotedname(FILE *file, char *string)
       fprintf(file,"%s",string);
     }
     else {
-      new_string  = (char *)malloc(2*(strlen(string))+1);
-      double_quotes(string,new_string);
-      fprintf(file,"\'%s\'",new_string);
-      free(new_string);
+      int neededlen = 2*strlen(string)+1;
+      if (neededlen < 1000) {
+	char lnew_string[1000];
+      	double_quotes(string,lnew_string);
+	fprintf(file,"\'%s\'",lnew_string);
+      } else {
+	char* new_string;
+	new_string  = (char *)malloc(neededlen);
+	double_quotes(string,new_string);
+	fprintf(file,"\'%s\'",new_string);
+	free(new_string);
+      }
     }
   }
 }
 
-
 char *wcan_string = NULL;
 int wcan_disp = 0;
-int letter_flag = 1;
 
 static int wcan_string_len = 0;
 static char wcan_buff[32];
@@ -1640,7 +1660,7 @@ void wcan_append_string_chk(char *string)
   }
 }
 
-DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm)
+DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int letter_flag)
 {
   XSB_Deref(prologterm);
   switch (cell_tag(prologterm)) 
@@ -1701,11 +1721,11 @@ DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm)
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = '(';
 	for (i = 1; i < get_arity(get_str_psc(prologterm)); i++) {
-	  write_canonical_term(CTXTc cell(clref_val(prologterm)+i));
+	  write_canonical_term(CTXTc cell(clref_val(prologterm)+i),letter_flag);
 	  if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	  wcan_string[wcan_disp++] = ',';
 	}
-	write_canonical_term(CTXTc cell(clref_val(prologterm)+i));
+	write_canonical_term(CTXTc cell(clref_val(prologterm)+i),letter_flag);
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = ')';
       }
@@ -1714,20 +1734,20 @@ DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm)
       {Cell tail;
       if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
       wcan_string[wcan_disp++] = '[';
-      write_canonical_term(CTXTc cell(clref_val(prologterm)));
+      write_canonical_term(CTXTc cell(clref_val(prologterm)),letter_flag);
       tail = cell(clref_val(prologterm)+1);
       XSB_Deref(tail);
       while (islist(tail)) {
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = ',';
-	write_canonical_term(CTXTc cell(clref_val(tail)));
+	write_canonical_term(CTXTc cell(clref_val(tail)),letter_flag);
 	tail = cell(clref_val(tail)+1);
 	XSB_Deref(tail);
       } 
       if (!isnil(tail)) {
 	if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
 	wcan_string[wcan_disp++] = '|';
-	write_canonical_term(CTXTc tail);
+	write_canonical_term(CTXTc tail,letter_flag);
       }
       if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
       wcan_string[wcan_disp++] = ']';
@@ -1743,9 +1763,8 @@ DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm)
 void print_term_canonical(CTXTdeclc FILE *fptr, Cell prologterm, int letterflag)
 {
 
-  letter_flag = letterflag;
   wcan_disp = 0;
-  write_canonical_term(CTXTc prologterm);
+  write_canonical_term(CTXTc prologterm, letterflag);
   if (wcan_disp >= wcan_string_len) expand_wcan_string(wcan_disp+1);
   wcan_string[wcan_disp] = '\0';
 

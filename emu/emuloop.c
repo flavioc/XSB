@@ -50,6 +50,7 @@
 #include "heap_xsb.h"
 #include "sig_xsb.h"
 #include "context.h"
+#include "varstring_xsb.h"
 #include "emudef.h"
 #include "loader_xsb.h"
 #include "binding.h"

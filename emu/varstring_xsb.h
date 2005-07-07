@@ -100,7 +100,7 @@ extern DllExport struct varstr_ops VarStrOps;
    the VarString */
 #define XSB_StrCreate(vstr)    	     varstring_create(vstr)
 /* Assumes vstr points to an uninitialized VarString. Initializes it. */
-#define XSB_StrInit(vstr)    	     varstring_Init(vstr)
+#define XSB_StrInit(vstr)    	     varstring_init(vstr)
 
 
 #define VARSTRING_INCLUDED

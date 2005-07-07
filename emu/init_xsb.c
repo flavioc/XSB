@@ -64,6 +64,7 @@
 #include "timer_defs_xsb.h"
 #include "sig_xsb.h"
 #include "thread_xsb.h"
+#include "varstring_xsb.h"
 
 /*-----------------------------------------------------------------------*/
 
@@ -734,6 +735,16 @@ void init_machine(CTXTdecl)
 
 /*  call_intercept = init_call_intercept ; */
 #endif
+
+  tsgLBuff1 = (VarString *)malloc(sizeof(VarString));
+  XSB_StrInit(tsgLBuff1);
+  tsgLBuff2 = (VarString *)malloc(sizeof(VarString));
+  XSB_StrInit(tsgLBuff2);
+  tsgSBuff1 = (VarString *)malloc(sizeof(VarString));
+  XSB_StrInit(tsgSBuff1);
+  tsgSBuff2 = (VarString *)malloc(sizeof(VarString));
+  XSB_StrInit(tsgSBuff2);
+
   /* Allocate Stack Spaces and set Boundary Parameters
      ------------------------------------------------- */
   pdl.low = (byte *)real_alloc(pdl.init_size * K);

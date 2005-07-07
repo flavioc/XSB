@@ -163,11 +163,12 @@ static inline void vs_shrink(VarString *vstr, int increment)
 
 
 /* ensure that the VarString has room for minsize bytes */
+/* dsw changed, so it will never shrink the buffer */
 static inline void vs_ensure_size(VarString *vstr, int minsize)
 {
   vs_init(vstr,0);
 
-  vs_adjust_size(vstr, xsb_max(vstr->length,minsize)+1);
+  if (minsize > vstr->size) vs_adjust_size(vstr, minsize+1);
 }
 
 
@@ -188,7 +189,8 @@ static void vs_set(VarString *vstr, char *str)
 
   newlength = strlen(str);
 
-  vs_adjust_size(vstr, newlength+1);
+  //  vs_adjust_size(vstr, newlength+1); %% dsw changed to avoid too much realloc
+  vs_ensure_size(vstr, newlength+1);
 
   strcpy(vstr->string, str);
   vstr->length=newlength;
@@ -271,7 +273,8 @@ static inline void  vs_destroy(VarString *vstr)
 	    "Attempt to deallocate uninitialized variable-length string\n");
     return;
 #else
-    xsb_bug("Attempt to deallocate uninitialized variable-length string");
+    return;
+    //    xsb_bug("Attempt to deallocate uninitialized variable-length string");
 #endif
   }
 #ifdef DEBUG_VARSTRING

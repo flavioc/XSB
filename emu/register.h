@@ -26,6 +26,7 @@
 #define __REGISTER_H__
 
 #include "psc_xsb.h"
+#include "varstring_xsb.h"
 
 #ifndef MULTI_THREAD
 
@@ -69,6 +70,12 @@ extern CPtr bdfreg;
 extern CPtr hdfreg;
 extern CPtr *trdfreg;
 #endif
+
+/*---- global thread-specific char buffers for local builtins ----------*/
+extern VarString *tsgLBuff1;
+extern VarString *tsgLBuff2;
+extern VarString *tsgSBuff1;
+extern VarString *tsgSBuff2;
 
 /*---- other stuff added for the SLG-WAM -------------------------------*/
 

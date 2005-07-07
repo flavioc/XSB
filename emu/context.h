@@ -148,8 +148,13 @@ f_tr_chunk *_cur_tr_chunk ;
 CPtr 	*_cur_tr_top ;
 CPtr 	*_cur_tr_limit ;
 
-/* Flag used in the locking of called tries */
+/* Global thread-specific charstring buffers for local use within builtins */
+VarString *_tsgLBuff1;
+VarString *_tsgLBuff2;
+VarString *_tsgSBuff1;
+VarString *_tsgSBuff2;
 
+/* Flag used in the locking of called tries */
 int	trie_locked;
 
 int	_AnsVarCtr;
@@ -244,6 +249,11 @@ typedef struct th_context th_context ;
 #define cur_tr_chunk		(th->_cur_tr_chunk)
 #define cur_tr_top		(th->_cur_tr_top)
 #define cur_tr_limit		(th->_cur_tr_limit)
+
+#define tsgLBuff1		(th->_tsgLBuff1)
+#define tsgLBuff2		(th->_tsgLBuff2)
+#define tsgSBuff1		(th->_tsgSBuff1)
+#define tsgSBuff2		(th->_tsgSBuff2)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)
