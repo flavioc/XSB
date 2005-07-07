@@ -92,7 +92,7 @@ struct next_fmt_state {
 #define workspace (*(fmt_state->_workspace))
 #define saved_char (fmt_state->_saved_char)
 
-struct fmt_spec *next_format_substr(CTXTdeclc char*, struct next_fmt_state*, int, int);
+void next_format_substr(CTXTdeclc char*, struct next_fmt_state*, struct fmt_spec *, int, int);
 char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
 
 /* type is a char: 's', 'i', 'f' */
@@ -204,7 +204,7 @@ xsbBool fmt_write(CTXTdecl)
   int i, Arity=0;
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
-  struct fmt_spec *current_fmt_spec;
+  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)malloc(sizeof(struct fmt_spec));
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
   XSB_StrSet(&FmtBuf,"");
@@ -245,9 +245,9 @@ xsbBool fmt_write(CTXTdecl)
     Arity = 1;
   }
 
-  current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
-					1,   /* initialize    	      	     */
-					0);  /* write    	      	     */
+  next_format_substr(CTXTc Fmt, &fmt_state,current_fmt_spec,
+		     1,   /* initialize    	      	     */
+		     0);  /* write    	      	     */
   xsb_segfault_message =
     "++FMT_WRITE: Argument type doesn't match format specifier\n";
   signal(SIGSEGV, &xsb_segfault_catcher);
@@ -304,9 +304,9 @@ xsbBool fmt_write(CTXTdecl)
     } else {
       xsb_abort("[FMT_WRITE] Argument %d has illegal type", i);
     }
-    current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
-					  0 /* don't initialize */,
-					  0 /* write */ );
+    next_format_substr(CTXTc Fmt, &fmt_state,current_fmt_spec,
+		       0 /* don't initialize */,
+		       0 /* write */ );
   }
 
   /* print the remainder of the format string, if it exists */
@@ -317,6 +317,7 @@ xsbBool fmt_write(CTXTdecl)
   xsb_segfault_message = xsb_default_segfault_msg;
   signal(SIGSEGV, xsb_default_segfault_handler);
   
+  free(current_fmt_spec);
   return TRUE;
 }
 
@@ -355,7 +356,7 @@ xsbBool fmt_write_string(CTXTdecl)
   int i, Arity;
   long int_arg;     	     	     	    /* holder for int args     	    */
   float float_arg;     	     	     	    /* holder for float args   	    */
-  struct fmt_spec *current_fmt_spec;
+  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)malloc(sizeof(struct fmt_spec));
   int width=0, precision=0;      	    /* these are used in conjunction
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
@@ -402,9 +403,9 @@ xsbBool fmt_write_string(CTXTdecl)
     Arity = 1;
   }
 
-  current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
-					1,  /* initialize     	      	     */
-					0); /* write     	      	     */
+  next_format_substr(CTXTc Fmt, &fmt_state,current_fmt_spec,
+		     1,  /* initialize     	      	     */
+		     0); /* write     	      	     */
   xsb_segfault_message =
     "++FMT_WRITE_STRING: Argument type doesn't match format specifier\n";
   signal(SIGSEGV, &xsb_segfault_catcher);
@@ -462,9 +463,9 @@ xsbBool fmt_write_string(CTXTdecl)
     } else {
       xsb_abort("[FMT_WRITE_STRING] Argument %d has illegal type", i);
     }
-    current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
-					  0 /* don't initialize */,
-					  0 /* write */ );
+    next_format_substr(CTXTc Fmt, &fmt_state,current_fmt_spec,
+		       0 /* don't initialize */,
+		       0 /* write */ );
   }
 
   /* print the remainder of the format string, if it exists */
@@ -476,6 +477,7 @@ xsbBool fmt_write_string(CTXTdecl)
   xsb_segfault_message = xsb_default_segfault_msg;
   signal(SIGSEGV, xsb_default_segfault_handler);
 
+  free(current_fmt_spec);
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
      Therefore, must use string_find(..., 1). */
@@ -510,7 +512,7 @@ xsbBool fmt_read(CTXTdecl)
   Integer i ;
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
-  struct fmt_spec *current_fmt_spec;
+  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)malloc(sizeof(struct fmt_spec));
   int Arity=0;
   int number_of_successes=0, curr_assignment=0;
   int cont; /* continuation indicator */
@@ -556,9 +558,9 @@ xsbBool fmt_read(CTXTdecl)
   if (isnonvar(reg_term(CTXTc 5)))
     xsb_abort("[FMT_READ] Arg 4 must be an unbound variable");
 
-  current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
-					1,   /* initialize    	      	     */
-					1);  /* read    	      	     */
+  next_format_substr(CTXTc Fmt, &fmt_state,current_fmt_spec,
+		     1,   /* initialize    	      	     */
+		     1);  /* read    	      	     */
   XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
   XSB_StrAppend(&aux_fmt,"%n");
 
@@ -647,9 +649,9 @@ xsbBool fmt_read(CTXTdecl)
     else
       break;
 
-    current_fmt_spec = next_format_substr(CTXTc Fmt, &fmt_state,
-					  0 /* don't initialize */,
-					  1 /* read */ );
+    next_format_substr(CTXTc Fmt, &fmt_state,current_fmt_spec,
+		       0 /* don't initialize */,
+		       1 /* read */ );
     XSB_StrSet(&aux_fmt, current_fmt_spec->fmt);
     XSB_StrAppend(&aux_fmt,"%n");
   }
@@ -669,10 +671,12 @@ xsbBool fmt_read(CTXTdecl)
     number_of_successes = -1;
 
  EXIT_READ:
+  free(current_fmt_spec);
   ctop_int(CTXTc 5, number_of_successes);
   return TRUE;
 
  EXIT_READ_FALSE:
+  free(current_fmt_spec);
   return FALSE;
 }
 #undef FmtBuf
@@ -1213,12 +1217,13 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 
    FORMAT: format string, INITIALIZE: 1-process new fmt string; 0 - continue
    with old fmt string. READ: 1 if this is called for read op; 0 for write.  */
-struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state,
+void next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state,
+				    struct fmt_spec *result,
 				    int initialize, int read_op)
 {
   int pos, keep_going;
   char *ptr;
-  static struct fmt_spec result;
+  //  static struct fmt_spec result;
   char *exclude, *expect; /* characters to exclude or expect */
 
   if (initialize) {
@@ -1230,14 +1235,14 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
   }
 
   pos = current_substr_start;
-  result.type = '?';
-  result.size = 1;
+  result->type = '?';
+  result->size = 1;
 
   /* done scanning format string */
   if (current_substr_start >= workspace.length) {
-    result.type = '.'; /* last substring (and has no conversion spec) */
-    result.fmt  = "";
-    return(&result);
+    result->type = '.'; /* last substring (and has no conversion spec) */
+    result->fmt  = "";
+    return;
   }
 
   /* find format specification: % not followed by % */
@@ -1245,9 +1250,9 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
     /* last substring (and has no conversion spec) */
     if ((ptr=strchr(workspace.string+pos, '%')) == NULL) {
       current_substr_start = workspace.length;
-      result.type = '.';  /* last substring with no type specifier */
-      result.fmt  = workspace.string+pos;
-      return(&result);
+      result->type = '.';  /* last substring with no type specifier */
+      result->fmt  = workspace.string+pos;
+      return;
     }
 
     pos = (ptr - workspace.string) + 1;
@@ -1310,9 +1315,9 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
       break;
     case 'c':
       if (read_op)
-	result.type = 's';
+	result->type = 's';
       else
-	result.type = 'i';
+	result->type = 'i';
       keep_going = FALSE;
       break;
     case 'd':
@@ -1322,7 +1327,7 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
     case 'x':
     case 'X':
       keep_going = FALSE;
-      result.type = 'i'; /* integer or character */
+      result->type = 'i'; /* integer or character */
       break;
     case 'e':
     case 'E':
@@ -1330,15 +1335,15 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
     case 'g':
     case 'G':
       keep_going = FALSE;
-      result.type = 'f'; /* float */
+      result->type = 'f'; /* float */
       break;
     case 's':
       keep_going = FALSE;
-      result.type = 's'; /* string */
+      result->type = 's'; /* string */
       break;
     case 'S':
       keep_going = FALSE;
-      result.type = 'S'; /* string */
+      result->type = 'S'; /* string */
       workspace.string[pos-1] = 's';
       break;
     case 'p':
@@ -1346,7 +1351,7 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
 		workspace.string+current_substr_start);
     case 'n':
       if (read_op) {
-	result.type = 'n'; /* %n is like integer, but in fmt_read we treat it
+	result->type = 'n'; /* %n is like integer, but in fmt_read we treat it
 			      specially */
 	keep_going = FALSE;
 	break;
@@ -1364,32 +1369,32 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
 	xsb_abort("[FMT_READ] Format specifier [ has no matching ] in: %s",
 		  workspace.string+current_substr_start);
       }
-      result.type = 's';
+      result->type = 's';
       keep_going = FALSE;
       break;
 
     case '*':
       if (read_op) {
-	result.size = 0;
+	result->size = 0;
 	break;
       }
       if (strncmp(workspace.string+pos, ".*", 2) == 0) {
 	pos = pos+2;
 	expect = "feEgEscdiuoxX";
-	result.size = 3;
+	result->size = 3;
       } else if (workspace.string[pos] == '.') {
 	pos++;
 	expect = "0123456789";
-	result.size = 2;
+	result->size = 2;
       } else {
-	result.size = 2;
+	result->size = 2;
 	expect = "feEgEscdiuoxX";
       }
       break;
 
     case '!':
       printf("set !\n");
-      result.type = '!';
+      result->type = '!';
       keep_going = FALSE;
       break;
 
@@ -1402,9 +1407,9 @@ struct fmt_spec *next_format_substr(CTXTdeclc char *format, struct next_fmt_stat
 
   saved_char = workspace.string[pos];
   workspace.string[pos] = '\0';
-  result.fmt = workspace.string+current_substr_start;
+  result->fmt = workspace.string+current_substr_start;
   current_substr_start = pos;
-  return(&result);
+  return;
 }
 
 /* TLS: changed the name of this function.  Here we are just checking
