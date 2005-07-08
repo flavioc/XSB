@@ -33,13 +33,6 @@ void cleanup_machine(CTXTdecl);
 void init_machine(CTXTdecl);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 
-
-#ifdef WIN_NT
-typedef pthread_t* pthread_t_p;
-#else
-typedef pthread_t pthread_t_p;
-#endif
-
 typedef struct
 {	pthread_t_p	ptid;
 	int		valid;

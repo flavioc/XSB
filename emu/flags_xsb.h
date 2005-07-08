@@ -27,6 +27,9 @@
 #ifndef SYSTEM_FLAGS
 
 #define SYSTEM_FLAGS
+
+#include "cell_xsb.h"
+
 extern Cell flags[];		/* System flags + user flags */
 
 #include "flag_defs_xsb.h"

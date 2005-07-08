@@ -26,6 +26,7 @@
 
 #undef __STRICT_ANSI__
 
+#include "xsb_debug.h"
 #include "xsb_config.h"
 
 #ifdef WIN_NT
@@ -40,6 +41,7 @@
 
 #include <stdio.h>
 
+#include "xsb_time.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "setjmp_xsb.h"
@@ -56,7 +58,7 @@
 	       1: Define a structure
 
 	          struct xsb_timeout {
-		     long parent_thread;
+		     xsbTimeoutInfo timeout_info;
 		     ???  return_value;
 		     ???  arg1;
 		     .....
@@ -64,7 +66,7 @@
 		  }
 
 		  that will be used to hold the parameters of foo().
-		  The member PARENT_THREAD is mandatory and must be the
+		  The member TIMEOUT_INFO is mandatory and must be the
 		  first in the structure.
 		  The other members of the structure are optional and they are
 		  intended to represent the return value and the arguments of
@@ -79,7 +81,7 @@
 		  xsb_timeout structure will look as follows: 
 	   
 		   struct xsb_timeout {
-                       long parent_thread;
+                       xsbTimeoutInfo timeout_info;
 		       int  return_value;
 		       char *X;
 		       int   Y;
@@ -97,7 +99,7 @@
        step 2: Instead of calling foo() directly, now call the generic timeout
                control function MAKE_TIMED_CALL:  
    
-   	       int make_timed_call(xsbTimeout*, void (*)(xsbTimeout*));
+   	       int make_timed_call(CTXTdeclc xsbTimeout*, void (*)(xsbTimeout*));
 
 	       For instance, 
    
@@ -121,6 +123,12 @@
        step 3: Free the xsbTimeout object when appropriate.
 */
 
+#ifdef MULTI_THREAD
+
+void init_machine(CTXTdecl);
+
+#else /* not multithreaded */
+
 #ifdef WIN_NT
 static int exitFlag = STILL_WAITING;
 static long timedThread;
@@ -129,10 +137,48 @@ HANDLE sockEvent = NULL;
 sigjmp_buf xsb_timer_env;
 #endif
 
-struct xsb_timeout {
-  long parent_thread;
-};
+#endif /* MULTI_THREAD */
 
+#ifdef MULTI_THREAD
+int op_timed_out(xsbTimeout *timeout)
+{
+  struct timespec wakeup_time;
+  int rc;
+
+  wakeup_time.tv_sec = time(NULL) + (int)flags[SYS_TIMER];
+  pthread_mutex_lock(&timeout->timeout_info.mutex);
+  rc = pthread_cond_timedwait(&timeout->timeout_info.condition, &timeout->timeout_info.mutex, &wakeup_time);
+  pthread_mutex_unlock(&timeout->timeout_info.mutex);
+  if (rc != 0) {
+    switch(rc) {
+    case EINVAL:
+      xsb_bug("pthread_cond_timedwait returned EINVAL");
+      break;
+    case ETIMEDOUT:
+      break;
+    case ENOMEM:
+      xsb_error("Not enough memory to wait\n");
+      break;
+    default:
+      xsb_bug("pthread_cond_timedwait returned an unexpected value (%d)\n", rc);      
+    }
+  }
+  TURNOFFALARM;
+  switch (timeout->timeout_info.exitFlag) {
+  case STILL_WAITING: /* The call timed out */
+    pthread_cancel(*timeout->timeout_info.timedThread);
+    return TRUE;
+  case TIMED_OUT:
+    return TRUE;
+  case NORMAL_TERMINATION:
+    return FALSE;
+  default:
+    xsb_bug("timed call's exit flag is an unexpected value (%d)", timeout->timeout_info.exitFlag);
+    return FALSE;
+  }
+}
+
+#else /* NOT MULTITHREADED */
 
 #ifdef WIN_NT
 VOID CALLBACK xsb_timer_handler(HWND wind, UINT msg, UINT eventid, DWORD time)
@@ -142,10 +188,10 @@ VOID CALLBACK xsb_timer_handler(HWND wind, UINT msg, UINT eventid, DWORD time)
   TerminateThread((HANDLE)timedThread, 1);
 }
 
+/* message_pump is also known as OP_TIMED_OUT (when WIN_NT is defined) */
 int message_pump()
 {
   MSG msg;
-
   if ((xsb_timer_id = SetTimer(NULL,
 			       0,
 			       /* set timeout period */
@@ -182,29 +228,60 @@ void xsb_timer_handler(int signo)
 
 #endif
 
+#endif /* MULTI_THREAD */
+
 /* the following function is a general format for timeout control. it takes 
    function calls which need timeout control as argument and controls the
    timeout for different platform */ 
-int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(CTXTdeclc xsbTimeout *))
+int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(xsbTimeout *))
 {
-#ifdef WIN_NT   
+#if defined(WIN_NT) || defined(MULTI_THREAD)   
   int return_msg; /* message_pump() return value */
 #endif
 
-  SETALARM;     /* specify the timer handler in Unix;
-		   Noop in Windows (done in SetTimer) */
+#ifdef MULTI_THREAD /* USE PTHREADS */
+
+#ifdef WIN_NT
+  pptr->timeout_info.timedThread = malloc(sizeof(pthread_t));
+#define TIMED_THREAD_CREATE_ARG pptr->timeout_info.timedThread
+#else
+#define TIMED_THREAD_CREATE_ARG &pptr->timeout_info.timedThread
+#endif
+  pptr->timeout_info.th=th;
+  if (pthread_create(TIMED_THREAD_CREATE_ARG, NULL, fptr, pptr)) {
+    xsb_error("SOCKET_REQUEST: Can't create concurrent timer thread\n");
+    return TIMER_SETUP_ERR;
+  }
+  pthread_detach(*pptr->timeout_info.timedThread);
+  return_msg = OP_TIMED_OUT(pptr);
+#ifdef WIN_NT
+  free(pptr->timeout_info.timedThread);
+#endif
+  if (return_msg == TIMER_SETUP_ERR) {
+    return TIMER_SETUP_ERR;  
+  } else if (!return_msg) { /* no timeout */
+    TURNOFFALARM;
+    return FALSE;
+  } else { /* timeout */
+    TURNOFFALARM;
+    return TRUE;
+  }
+
+#else /* not multithreaded */
+
 #ifdef WIN_NT
   /* create a concurrent timed thread; 
      pptr points to the procedure to be timed */  
-  pptr->parent_thread=(long)GetCurrentThreadId();
+  pptr->timeout_info.parent_thread = (long)GetCurrentThreadId();
   if((timedThread = _beginthread(fptr,0,(void*)(pptr)))==-1) { 
     xsb_error("SOCKET_REQUEST: Can't create concurrent timer thread\n");
     return TIMER_SETUP_ERR;
   }
+  return_msg = OP_TIMED_OUT(pptr);
   /* OP_TIMED_OUT returns TRUE/FALSE/TIMER_SETUP_ERR */
-  if ((return_msg = OP_TIMED_OUT) == TIMER_SETUP_ERR)
+  if (return_msg == TIMER_SETUP_ERR) {
     return TIMER_SETUP_ERR;  
-  else if (!return_msg) { /* no timeout */
+  } else if (!return_msg) { /* no timeout */
     TURNOFFALARM;
     return FALSE;
   } else { /* timeout */
@@ -212,6 +289,9 @@ int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(CTXTdeclc xsbTimeou
     return TRUE;
   }
 #else /* UNIX */
+  SETALARM;     /* specify the timer handler in Unix;
+		   Noop in Windows (done in SetTimer) */
+
   if ( !OP_TIMED_OUT ) { /* no timeout */
     SET_TIMER; /* specify the timeout period */       
     (*fptr)(CTXTc pptr); /* procedure call that needs timeout control */
@@ -221,6 +301,8 @@ int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(CTXTdeclc xsbTimeou
     TURNOFFALARM;
     return TRUE;
   }
+
+#endif
 
 #endif
 

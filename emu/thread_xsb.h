@@ -4,7 +4,9 @@
 
 #define __THREAD_XSB_H__
 
+#include "context.h"
 #include "thread_defs_xsb.h"
+#include "basictypes.h"
 
 xsbBool xsb_thread_request( CTXTdecl ) ;
 xsbBool mt_random_request( CTXTdecl ) ;
@@ -14,6 +16,14 @@ int xsb_thread_self() ;
 #ifdef MULTI_THREAD
 
 #include <pthread.h>
+
+#ifdef WIN_NT
+typedef pthread_t* pthread_t_p;
+#define PTHREAD_CREATE(a,b,c,d) pthread_create(&a,b,c,d);
+#else
+typedef pthread_t pthread_t_p;
+#define PTHREAD_CREATE(a,b,c,d) pthread_create(a,b,c,d);
+#endif
 
 extern pthread_mutex_t sys_mut[] ;
 
@@ -68,3 +78,18 @@ void init_system_threads( void ) ;
 #endif
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

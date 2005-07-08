@@ -170,7 +170,7 @@ extern void parse_filename(char *filenam, char **dir, char **base, char **ext);
 int print_xsb_backtrace(CTXTdecl);
 prolog_term build_xsb_backtrace(CTXTdecl);
 
-extern xsbBool xsb_socket_request(void);
+extern xsbBool xsb_socket_request(CTXTdecl);
 
 extern int  findall_init(CTXTdecl), findall_add(CTXTdecl),
 	    findall_get_solutions(CTXTdecl);
@@ -203,11 +203,15 @@ Cell flags[65];			  /* System flags + user flags */
 
 DllExport prolog_int call_conv ptoc_int(CTXTdeclc int regnum)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
 
   /* XSB_Deref and then check the type */
   XSB_Deref(addr);
+
   switch (cell_tag(addr)) {
   case XSB_STRUCT:
     if (isboxedinteger(addr)) return(boxedint_val(addr));
@@ -225,7 +229,10 @@ DllExport prolog_int call_conv ptoc_int(CTXTdeclc int regnum)
 
 DllExport prolog_float call_conv ptoc_float(CTXTdeclc int regnum)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
 
   /* XSB_Deref and then check the type */
@@ -248,7 +255,10 @@ DllExport prolog_float call_conv ptoc_float(CTXTdeclc int regnum)
 
 DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
   
   /* XSB_Deref and then check the type */
@@ -277,7 +287,10 @@ DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
    that do the conversion. */
 DllExport prolog_float call_conv ptoc_number(CTXTdeclc int regnum)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
 
   /* XSB_Deref and then check the type */
@@ -351,7 +364,10 @@ void constructString(CTXTdeclc Cell addr, int ivstr)
 
 DllExport char* call_conv ptoc_longstring(CTXTdeclc int regnum)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
   XSB_Deref(addr);
   if (isstring(addr)) return string_val(addr);
@@ -406,7 +422,10 @@ DllExport void call_conv ctop_int(CTXTdeclc int regnum, prolog_int value)
 /* from float value form an int node */
 DllExport void call_conv ctop_float(CTXTdeclc int regnum, prolog_float value)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
 
   XSB_Deref(addr);
@@ -419,7 +438,10 @@ DllExport void call_conv ctop_float(CTXTdeclc int regnum, prolog_float value)
 /* take a C string, form a string node */
 DllExport void call_conv ctop_string(CTXTdeclc int regnum, char *value)
 {
-  /* reg is global array in register.h */
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
   register Cell addr = cell(reg+regnum);
 
   XSB_Deref(addr);
@@ -2395,7 +2417,7 @@ int builtin_call(CTXTdeclc byte number)
 
 #ifdef HAVE_SOCKET
   case SOCKET_REQUEST:
-    return xsb_socket_request();
+    return xsb_socket_request(CTXT);
 #endif /* HAVE_SOCKET */	    
 
 #ifdef WIN_NT

@@ -28,12 +28,15 @@
 #define XSB_ERRORCHECK_MUTEX	3
 
 
-/* first mutexes are recursive */
-
-#define LAST_REC_MUTEX		6
 
 /* Mutexes to protect execution of critical system stuff */
 
+#define MAX_SYS_MUTEXES		40
+
+/* Be sure to update this if you add a recusive mutex */
+#define LAST_REC_MUTEX		6
+
+/* first mutexes are recursive */
 #define MUTEX_DYNAMIC		0
 #define MUTEX_IO		1	/* Must be recursive */
 #define MUTEX_TABLE		2
@@ -41,26 +44,27 @@
 #define MUTEX_SYMBOL		4
 #define MUTEX_FLAGS		5
 #define MUTEX_LOAD_UNDEF	6	/* Must be recursive */
-#define MUTEX_STRING		7
-#define MUTEX_ATOM_BUF		8
-#define MUTEX_STACKS		10
-#define MUTEX_SM		9
-#define MUTEX_MEM		11
 
-#define MAX_SYS_MUTEXES		40
+/* Non-recursive */
+#define MUTEX_STRING		15
+#define MUTEX_ATOM_BUF		16
+#define MUTEX_SM		17
+#define MUTEX_STACKS		18
+#define MUTEX_SOCKETS		19
+#define MUTEX_MEM		20
 
 /* Some mutexes available to users */
+#define MUTEX_CONSOLE		30
+#define MUTEX_USER1		31
+#define MUTEX_USER2		32
+#define MUTEX_USER3		33
+#define MUTEX_USER4		34
+#define MUTEX_USER5		35
+#define MUTEX_USER6		36
+#define MUTEX_USER7		37
+#define MUTEX_USER8		38
+#define MUTEX_USER9		39
 
-#define MUTEX_CONSOLE		20
-#define MUTEX_USER1		21
-#define MUTEX_USER2		22
-#define MUTEX_USER3		23
-#define MUTEX_USER4		24
-#define MUTEX_USER5		25
-#define MUTEX_USER6		26
-#define MUTEX_USER7		27
-#define MUTEX_USER8		28
-#define MUTEX_USER9		29
 
 /* Used for random number generation in testing modules */
 

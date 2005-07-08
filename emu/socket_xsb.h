@@ -22,15 +22,31 @@
 ** 
 */
 
+#ifndef __SOCKET_XSB_H__
+
+#define __SOCKET_XSB_H__
 
 #include "socket_defs_xsb.h"
 
+
+
+
 #ifdef WIN_NT
+
 #define BAD_SOCKET(sockfd)         sockfd==INVALID_SOCKET
 #define SOCKET_OP_FAILED(sockfd)   sockfd==SOCKET_ERROR
 #define IS_IP_ADDR(string)    	   inet_addr(string) != INADDR_NONE
 #define XSB_SOCKET_ERRORCODE	   WSAGetLastError()
-#else
+#define FillWithZeros(addr)    	  ZeroMemory(&addr, sizeof(addr));
+#define EINPROGRESS               WSAEINPROGRESS
+#define EWOULDBLOCK               WSAEWOULDBLOCK
+#define SET_SOCKET_BLOCKING(fd, val) (ioctlsocket(fd, FIONBIO, (u_long FAR *)&val) == 0)
+#define GETSOCKOPT(fd,lvl,optname,optval,optlen) getsockopt(fd, lvl, optname, (char *)optval, optlen)
+#define SETSOCKOPT(fd,lvl,optname,optval,optlen) setsockopt(fd, lvl, optname, (char *)optval, optlen)
+
+
+#else /* UNIX */
+
 #define SOCKET 	        int
 #define SOCKADDR_IN 	struct sockaddr_in /* in windows, but not Unix */
 #define PSOCKADDR       struct sockaddr *  /* in windows, but not Unix */
@@ -39,13 +55,16 @@
 #define BAD_SOCKET(sockfd)        sockfd<0
 #define SOCKET_OP_FAILED(sockfd)  sockfd<0
 #define IS_IP_ADDR(string)    	  inet_addr(string) != -1
+#define FillWithZeros(addr)    	  memset((char *)&addr, (int) 0, sizeof(addr));
+#define SET_SOCKET_BLOCKING(fd, val) (val \
+                                      ? (fcntl(fd, F_SETFL, (fcntl(fd, F_GETFL, 0) | O_NONBLOCK)) != -1) \
+                                      : (fcntl(fd, F_SETFL, (fcntl(fd, F_GETFL, 0) ^ O_NONBLOCK)) != -1))
+#define GETSOCKOPT(fd,lvl,optname,optval,optlen) getsockopt(fd, lvl, optname, (void *)optval, optlen)
+#define SETSOCKOPT(fd,lvl,optname,optval,optlen) setsockopt(fd, lvl, optname, (void *)optval, optlen)
+
 #endif
 
-#ifdef WIN_NT
-#define FillWithZeros(addr)    	  ZeroMemory(&addr, sizeof(addr));
-#else
-#define FillWithZeros(addr)    	  memset((char *)&addr, (int) 0, sizeof(addr));
-#endif
+
 
 #define MAXCONNECT 50	     /* max number of connections per socket_select */
 
@@ -56,3 +75,13 @@
 /* These are used only by the readmsg function */
 #define SOCK_READMSG_FAILED  -1      /* failed socket call     	      	    */
 #define SOCK_READMSG_EOF     -2	     /* when EOF is reached    	       	    */
+
+#endif /* __SOCKET_XSB_H__ */
+
+
+
+
+
+
+
+
