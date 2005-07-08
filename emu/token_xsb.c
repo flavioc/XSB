@@ -30,8 +30,9 @@
 #include <math.h>
 
 #include "auxlry.h"
-#include "token_xsb.h"
 #include "cell_xsb.h"
+#include "context.h"
+#include "token_xsb.h"
 #include "psc_xsb.h"
 #include "subp.h"
 #include "register.h"
@@ -303,10 +304,9 @@ void unGetC(int d, FILE *card, STRFILE *instr)
         EOFCH      -- at beginning of file
 */
 
-struct token res_str;
-struct token *token = &res_str;
-
-#define InitStrLen	1000
+#ifndef MULTI_THREAD
+struct token_t res_str;
+struct token_t *token = &res_str;
 
 int     lastc = ' ';    /* previous character */
 char*   strbuff = NULL;             /* Pointer to token buffer; Will be
@@ -316,6 +316,7 @@ int     strbuff_len = InitStrLen;   /* length of first allocation will be
 				       subsequent overflows */
 double  double_v;
 long	rad_int;
+#endif
 
 char    tok2long[]      = "token too long";
 char    eofinrem[]      = "end of file in comment";
@@ -340,7 +341,7 @@ char    badradix[]      = "radix not 0 or 2..36";
     -- If encounters the EOF, then return -2. (Baoqiu, 2/16/1997)
 */
  
-static int read_character(register FILE *card,
+static int read_character(CTXTdeclc register FILE *card,
 			  register STRFILE *instr,
 			  register int q)
 {
@@ -515,7 +516,7 @@ static int com2plain(register FILE *card,	/* source file */
  
 int token_too_long_warning = 1;
 
-void realloc_strbuff(char **pstrbuff, char **ps, int *pn)
+void realloc_strbuff(CTXTdeclc char **pstrbuff, char **ps, int *pn)
      /* Expand token buffer when needed.
       * pstrbuff: base address of current buffer
       * ps: tail of current buffer
@@ -542,7 +543,7 @@ void realloc_strbuff(char **pstrbuff, char **ps, int *pn)
   return;
 }
 
-struct token *GetToken(FILE *card, STRFILE *instr, int prevch)
+struct token_t *GetToken(CTXTdeclc FILE *card, STRFILE *instr, int prevch)
 {
         char *s;
         register int c, d = 0;
@@ -585,7 +586,7 @@ START:
                         }
                     if (d == 0) {
 		      /*  0'c['] is a character code  */
-		      d = read_character(card, instr, -1);
+		      d = read_character(CTXTc card, instr, -1);
 		      /* TLS: changed to handle some of the important cases
 			 of character code constants, sec 6.4.4 of ISO.
 			 Here is what it does and doesnt do: 
@@ -742,7 +743,7 @@ DECIMAL:                *s++ = '.';
             case BREAK:        /* Modified for HiLog */
 	      do {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n); 
+		      realloc_strbuff(CTXTc &strbuff, &s, &n); 
 		      }
                     *s++ = c, c = GetC(card,instr);
                 } while (InType(c) <= LOWER);
@@ -762,7 +763,7 @@ DECIMAL:                *s++ = '.';
             case UPPER:         /* Modified for HiLog */
                 do {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
+		      realloc_strbuff(CTXTc &strbuff, &s, &n);
 		    }
                     *s++ = c, c = GetC(card,instr);
                 } while (InType(c) <= LOWER);
@@ -782,7 +783,7 @@ DECIMAL:                *s++ = '.';
             case LOWER:
                 do {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
+		      realloc_strbuff(CTXTc &strbuff, &s, &n);
 		    }
                     *s++ = c, c = GetC(card,instr);
                 } while (InType(c) <= LOWER);
@@ -816,7 +817,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                 }
                 while (InType(d) == SIGN) {
                     if (--n == 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
+		      realloc_strbuff(CTXTc &strbuff, &s, &n);
 		    }
                     *++s = d, d = GetC(card,instr);
                 }
@@ -893,7 +894,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                     or string quote is the radix character, we should
                     generate 0'x notation, otherwise `x`.
                 */
-                d = read_character(card, instr, -1);
+                d = read_character(CTXTc card, instr, -1);
                 sprintf(strbuff, "%d", d);
                 d = GetC(card,instr);
 		rad_int = atoi(strbuff);
@@ -903,9 +904,9 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                 return token;
  
             case ATMQT:
-                while ((d = read_character(card, instr, c)) >= 0) {
+                while ((d = read_character(CTXTc card, instr, c)) >= 0) {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
+		      realloc_strbuff(CTXTc &strbuff, &s, &n);
 		    }
                     *s++ = d;
                 }
@@ -915,9 +916,9 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
 
 /**** this case deleted, messed up treatment of $, which was STRQT
             case STRQT:
-                while ((d = read_character(card, instr, c)) >= 0) {
+                while ((d = read_character(CTXTc card, instr, c)) >= 0) {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
+		      realloc_strbuff(CTXTc &strbuff, &s, &n);
 		    }
                     *s++ = d;
                 }
@@ -929,9 +930,9 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
 case deleted ****/
 
 	    case LISQT: 
-                while ((d = read_character(card, instr, c)) >= 0) {
+                while ((d = read_character(CTXTc card, instr, c)) >= 0) {
                     if (--n < 0) {
-		      realloc_strbuff(&strbuff, &s, &n);
+		      realloc_strbuff(CTXTc &strbuff, &s, &n);
 		    }
                     *s++ = d;
 		}
@@ -965,13 +966,13 @@ case deleted ****/
 void main(int arc, char *argv[])
 {
   FILE *card;
-  struct token *res;
+  struct token_t *res;
 
   card = fopen(argv[1], "r");
   if (!card) exit(1);
   token->nextch = ' ';
   do {
-    res = GetToken(card, NULL, token->nextch);
+    res = GetToken(CTXTc card, NULL, token->nextch);
     print_token(res->type, res->value);
   } while (res->type != TK_EOF);
 }

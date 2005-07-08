@@ -27,6 +27,32 @@
 
 #define __CONTEXT_H__
 
+#include "cell_xsb.h"
+#include "basictypes.h"
+
+struct token_t {
+  int type;
+  char *value;
+  int nextch;
+};
+
+struct funstktype {
+    char *fun;		/* functor name */
+    int funop;	        /* index into opstk of first operand */
+    int funtyp; 	/* 0 if functor, 1 if list, 2 if dotted-tail list */
+};
+
+struct opstktype {
+    int typ;
+    prolog_term op;
+};
+
+#define MAXVAR 1000
+struct vartype {
+  Cell varid;
+  prolog_term varval;
+};
+
 #ifdef MULTI_THREAD
 
 #include <sys/types.h>
@@ -43,7 +69,6 @@
 #include "tries.h"
 #include "choice.h"
 #include "macro_xsb.h"
-#include "token_xsb.h"
 #include "findall.h"
 
 #define MAX_REGS 257
@@ -139,11 +164,8 @@ int     _delay_it;
 /* variables for findall buffers */
 findall_solution_list *_findall_solutions;  /*= NULL;*/
 findall_solution_list *_current_findall;
-
 int 	_nextfree ; /* nextfree index in findall array */
-
 CPtr 	_gl_bot, _gl_top ;
-
 f_tr_chunk *_cur_tr_chunk ;
 CPtr 	*_cur_tr_top ;
 CPtr 	*_cur_tr_limit ;
@@ -153,6 +175,20 @@ VarString *_tsgLBuff1;
 VarString *_tsgLBuff2;
 VarString *_tsgSBuff1;
 VarString *_tsgSBuff2;
+/* read_canonical stacks */
+int _opstk_size;
+int _funstk_size;
+struct funstktype *_funstk;
+struct opstktype *_opstk;
+struct vartype *_rc_vars;
+
+/* Global variables for tokenizing */
+struct token_t *_token;
+int     _lastc; // = ' ';    /* previous character */
+char*   _strbuff; // = NULL;  /* Pointer to token buffer; Will be allocated on first call to GetToken */
+int     _strbuff_len; // = InitStrLen;  /* first allocation size, doubled on subsequent overflows */
+double  _double_v;
+long	_rad_int;
 
 /* Flag used in the locking of called tries */
 int	trie_locked;
@@ -254,6 +290,19 @@ typedef struct th_context th_context ;
 #define tsgLBuff2		(th->_tsgLBuff2)
 #define tsgSBuff1		(th->_tsgSBuff1)
 #define tsgSBuff2		(th->_tsgSBuff2)
+
+#define opstk_size		(th->_opstk_size)
+#define funstk_size		(th->_funstk_size)
+#define funstk			(th->_funstk)
+#define opstk			(th->_opstk)
+#define rc_vars			(th->_rc_vars)
+
+#define token			(th->_token)
+#define lastc			(th->_lastc)
+#define strbuff			(th->_strbuff)
+#define strbuff_len		(th->_strbuff_len)
+#define double_v		(th->_double_v)
+#define rad_int			(th->_rad_int)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)

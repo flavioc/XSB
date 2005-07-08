@@ -38,6 +38,7 @@
 #include "setjmp_xsb.h"
 #include "auxlry.h"
 #include "cell_xsb.h"
+#include "context.h"
 #include "error_xsb.h"
 #include "cinterf.h"
 #include "memory_xsb.h"
@@ -61,14 +62,6 @@ stream_record open_files[MAX_OPEN_FILES]; /* open file table */
 
 // static FILE *fptr;			/* working variable */
     
-#define setvar(loc,op1) \
-    if (vars[opstk[op1].op].varval) \
-       cell(loc) = vars[opstk[op1].op].varval; \
-    else { \
-	     cell(loc) = (Cell) loc; \
-	     vars[opstk[op1].op].varval = (Cell) loc; \
-	 }
-
 struct fmt_spec {
   char type; 	     	     	 /* i(nteger), f(loat), s(tring) */
   /* size: in case of a write op a the * format specifier (e.g., %*.*d), size
@@ -191,6 +184,11 @@ xsbBool formatted_io (CTXTdecl)
        Format: format as atom or string;
        ValTerm: term whose args are vars to receive values returned.
 ----------------------------------------------------------------------*/
+/* The following definitions are to use the threadsafe char buffers,
+   but use more reasonable names.  These buffers will just grow
+   (unless the are explicitly shrunk.)  The provide global buffers
+   without having to malloc them every time.  The names are undef'ed
+   at the end. */
 #define FmtBuf (*tsgSBuff1)
 #define StrArgBuf (*tsgSBuff2)
 
@@ -738,7 +736,7 @@ static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, C
     case TK_INTFUNC	: fprintf(stderr,"%d ", *(int *)ptr); break;
     case TK_REALFUNC	: fprintf(stderr,"%f ", *(double *)ptr); break;
     }
-    token = GetToken(filep,instr,prevchar);
+    token = GetToken(CTXTc filep,instr,prevchar);
     prevchar = token-> nextch;
   }
   if (token->type == TK_EOC)
@@ -757,8 +755,27 @@ static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, C
 
 #define INIT_STK_SIZE 32
 #define MAX_INIT_STK_SIZE 1000
+
+#define FUNFUN 0
+#define FUNLIST 1
+#define FUNDTLIST 2
+#define FUNCOMMALIST 3
+
+#ifndef MULTI_THREAD
 int opstk_size = 0;
 int funstk_size = 0;
+struct funstktype *funstk;
+struct opstktype *opstk;
+struct vartype rc_vars[MAXVAR];
+#endif
+
+#define setvar(loc,op1) \
+    if (rc_vars[opstk[op1].op].varval) \
+       cell(loc) = rc_vars[opstk[op1].op].varval; \
+    else { \
+	     cell(loc) = (Cell) loc; \
+	     rc_vars[opstk[op1].op].varval = (Cell) loc; \
+	 }
 
 #define expand_opstk {\
     opstk_size = opstk_size+opstk_size;\
@@ -772,27 +789,6 @@ int funstk_size = 0;
     if (!funstk) xsb_abort("[READ CANONICAL] Out of space for function stack");\
     /*printf("RC funstk expanded to %d\n",funstk_size);*/ \
   }
-
-#define FUNFUN 0
-#define FUNLIST 1
-#define FUNDTLIST 2
-#define FUNCOMMALIST 3
-  struct funstktype {
-    char *fun;		/* functor name */
-    int funop;	        /* index into opstk of first operand */
-    int funtyp; 	/* 0 if functor, 1 if list, 2 if dotted-tail list */
-  } *funstk;
-
-  struct opstktype {
-    int typ;
-    prolog_term op;
-  } *opstk;
-
-#define MAXVAR 1000
-  struct vartype {
-    Cell varid;
-    prolog_term varval;
-  } vars[MAXVAR];
 
 int read_canonical(CTXTdecl)
 {
@@ -862,7 +858,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 
   prevchar = 10;
   while (1) {
-	token = GetToken(filep,instr,prevchar);
+	token = GetToken(CTXTc filep,instr,prevchar);
 /*	print_token((int)(token-f>type),(char *)(token->value)); */
 	prevchar = token->nextch;
 	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
@@ -1010,7 +1006,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		if (*token->value == '[') {
 		  if(token->nextch == ']') {
 		        if (optop >= opstk_size) expand_opstk;
-			token = GetToken(filep,instr,prevchar);
+			token = GetToken(CTXTc filep,instr,prevchar);
 			/* print_token(token->type,token->value); */
 			prevchar = token->nextch;
 			opstk[optop].typ = TK_ATOM;
@@ -1041,7 +1037,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 
 		if (token->nextch != '(')
 			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
-		token = GetToken(filep,instr,prevchar);
+		token = GetToken(CTXTc filep,instr,prevchar);
 		/* print_token(token->type,token->value); */
 		prevchar = token->nextch;
 		break;
@@ -1050,8 +1046,8 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		  if (cvarbot < 0)
 		    xsb_abort("[READ_CANONICAL] too many variables in term");
 		  i = cvarbot;
-		  vars[cvarbot].varid = (Cell) "_";
-		  vars[cvarbot].varval = 0;
+		  rc_vars[cvarbot].varid = (Cell) "_";
+		  rc_vars[cvarbot].varval = 0;
 		  cvarbot--;
 		  if (optop >= opstk_size) expand_opstk;
 		  opstk[optop].typ = TK_VAR;
@@ -1065,14 +1061,14 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		cvar = (char *)string_find(token->value,1);
 		i = MAXVAR-1;
 		while (i>cvarbot) {
-		  if (cvar == (char *)vars[i].varid) break;
+		  if (cvar == (char *)rc_vars[i].varid) break;
 		  i--;
 		}
 		if (i == cvarbot) {
 		  if (cvarbot < 0)
 		    xsb_abort("[READ_CANONICAL] too many variables in term");
-		  vars[cvarbot].varid = (Cell) cvar;
-		  vars[cvarbot].varval = 0;
+		  rc_vars[cvarbot].varid = (Cell) cvar;
+		  rc_vars[cvarbot].varval = 0;
 		  cvarbot--;
 		}
 		if (optop >= opstk_size) expand_opstk;
@@ -1147,7 +1143,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
       }
     }
     if (funtop == 0) {  /* term is finished */
-      token = GetToken(filep,instr,prevchar);
+      token = GetToken(CTXTc filep,instr,prevchar);
       /* print_token(token->type,token->value); */
       prevchar = token->nextch; /* accept EOF as end_of_clause */
       if (token->type != TK_EOF && token->type != TK_EOC) 

@@ -28,6 +28,7 @@
 #include "xsb_debug.h"
 /* Private debugs */
 #include "debugs/debug_delay.h"
+#include "context.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +73,6 @@
 #include "deref.h"
 #include "memory_xsb.h"
 #include "heap_xsb.h"
-#include "context.h"
 #include "register.h"
 #include "flags_xsb.h"
 #include "loader_xsb.h"
@@ -124,6 +124,7 @@
 #include "thread_xsb.h"
 
 /*======================================================================*/
+extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 
 extern int  sys_syscall(CTXTdeclc int);
 extern xsbBool sys_system(CTXTdeclc int);
@@ -373,19 +374,6 @@ DllExport char* call_conv ptoc_longstring(CTXTdeclc int regnum)
   if (isstring(addr)) return string_val(addr);
   if (isinteger(addr)) return (char *)int_val(addr);
   
-  /*
-  if (!LSBuffInitted) 
-    LSBuff = calloc(MAXSBUFFS,4);
-  if (!LSBuff[regnum]) {
-    LSBuff[regnum] = (VarString *) malloc(sizeof(VarString));
-    LSBuff[regnum]->size = 0;
-    LSBuff[regnum]->increment = 0;
-    LSBuff[regnum]->length = 0;
-    LSBuff[regnum]->string = NULL;
-    LSBuff[regnum]->op = &VarStrOps;
-  }
-  XSB_StrShrink(LSBuff[regnum],100);
-  */
   if (LSBuff[regnum]==NULL) {
     XSB_StrCreate(&LSBuff[regnum]);
   }
@@ -1519,11 +1507,11 @@ int builtin_call(CTXTdeclc byte number)
 
     int tmpval = ptoc_int(CTXTc 1);
     if ((tmpval < 0) && (tmpval >= -MAXIOSTRS))
-      token = GetToken(NULL,strfileptr(tmpval), ptoc_int(CTXTc 2));
+      token = GetToken(CTXTc NULL,strfileptr(tmpval), ptoc_int(CTXTc 2));
     else {
       FILE* fptr;
       SET_FILEPTR(fptr, tmpval);
-      token = GetToken(fptr, NULL, ptoc_int(CTXTc 2));
+      token = GetToken(CTXTc fptr, NULL, ptoc_int(CTXTc 2));
     }
     if (token->type == TK_ERROR) {
       //      pcreg = (pb)&fail_inst;

@@ -733,6 +733,17 @@ void init_machine(CTXTdecl)
 
   findall_solutions = NULL;
 
+  opstk_size = 0;
+  funstk_size = 0;
+  funstk = NULL;
+  opstk = NULL;
+  rc_vars = (struct vartype *)malloc(MAXVAR*sizeof(struct vartype));
+
+  token = (struct token_t *)malloc(sizeof(struct token_t));
+  strbuff = NULL;
+  lastc = ' ';
+  strbuff_len = InitStrLen;
+
 /*  call_intercept = init_call_intercept ; */
 #endif
 

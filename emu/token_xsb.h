@@ -44,15 +44,13 @@ struct strbuf {
 extern STRFILE *iostrs[MAXIOSTRS];
 #define iostrdecode(j) (-1-j)
 #define strfileptr(desc) iostrs[iostrdecode(desc)]
+#define InitStrLen	1000
 
-struct token {
-  int type;
-  char *value;
-  int nextch;
-};
+#ifndef MULTI_THREAD
+extern struct token_t *token;
+#endif
 
-extern struct token *token;
-extern struct token *GetToken(FILE *, STRFILE *, int);
+extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 
 extern int intype(int);
 
