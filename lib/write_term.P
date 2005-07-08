@@ -198,7 +198,7 @@ something much simpler for now.
 In any case, I really should tie the spacing in with the tokenizing somehow.
 */
 
-maybe_space(C1,Co):- put_code(0' ).
+maybe_space(_Ci,_Co):- put_code(0' ).
 
 /*
 maybe_space(Ci, Co) :-
@@ -500,8 +500,8 @@ put_string_code(0'") :- !, display('""').
 put_string_code(0'\\) :- !, display('\\\\').
 put_string_code(C) :- put_code(C).
 
-xor(A,B,C):- 
-	C is ((A \/ B) - (A /\ B)).
+%%xor(A,B,C):- 
+%%	C is ((A \/ B) - (A /\ B)).
 
 displayq(Term):- writeq(Term).
 
