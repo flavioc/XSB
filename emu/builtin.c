@@ -312,13 +312,10 @@ DllExport prolog_float call_conv ptoc_number(CTXTdeclc int regnum)
 }
 
 
-#define MAXSBUFFS 30
+#define MAXSBUFFS 30 /* also defined in init_xsb.c (for mt), so if change here.... */
+#ifndef MULTI_THREAD
 static VarString *LSBuff[MAXSBUFFS] = {NULL};
-/*
-VarString **LSBuff;
-int LSBuffInitted = 0;
-*/
-/*static XSB_StrDefine(lsbuff);*/
+#endif
 
 /* construct a long string from prolog... concatenates atoms,
 flattening lists and comma-lists, and treating small ints as ascii
@@ -559,9 +556,6 @@ inline static int is_proper_list(Cell term)	/* for standard preds */
 
 /* --------------------------------------------------------------------	*/
 
-static CPtr mini_trail[MAX_ARITY];
-static CPtr *mini_trail_top;
-
 #define mini_undo_bindings		        \
     while (mini_trail_top >= mini_trail) {	\
 	untrail(*mini_trail_top);		\
@@ -574,6 +568,9 @@ static CPtr *mini_trail_top;
 
 static int is_most_general_term(Cell term)
 {
+  CPtr mini_trail[MAX_ARITY];
+  CPtr *mini_trail_top;
+
   XSB_Deref(term);
   switch (cell_tag(term)) {
   case XSB_STRING:

@@ -733,6 +733,9 @@ void init_machine(CTXTdecl)
 
   findall_solutions = NULL;
 
+#define MAXSBUFFS 30
+  LSBuff = (VarString **)calloc(sizeof(VarString *),MAXSBUFFS);
+
   opstk_size = 0;
   funstk_size = 0;
   funstk = NULL;
