@@ -22,14 +22,6 @@
 ** 
 */
 
-#include "xsb_config.h"
-#include "xsb_debug.h"
-#include "socket_xsb.h"
-#include "flags_xsb.h"
-#include "thread_xsb.h"
-#include "thread_defs_xsb.h"
-#include "timer_xsb.h" 
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,6 +57,14 @@
 #include <fcntl.h> 
 #endif 
 
+#include "xsb_config.h"
+#include "xsb_debug.h"
+#include "socket_xsb.h"
+#include "flags_xsb.h"
+#include "thread_xsb.h"
+#include "thread_defs_xsb.h"
+#include "timer_xsb.h" 
+
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
@@ -78,6 +78,8 @@
 
 #ifdef WIN_NT
 typedef int socklen_t;
+#elif defined(SOLARIS)
+typedef unsigned int socklen_t;
 #endif
 
 static u_long block_true = 1;
@@ -499,6 +501,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	       if (BAD_SOCKET(rc)) {
 		    ecode = XSB_SOCKET_ERRORCODE;
 		    perror("SOCKET_ACCEPT");
+		    sock_handle = rc; /* shut up warning */
 	       } else {
 		    sock_handle = rc; /* accept() returns sock_out */
 		    ecode = SOCK_OK;
@@ -623,7 +626,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  }    
      case SOCKET_PUT:
 	  /* socket_request(SOCKET_PUT,+Sockfd,+C,-Error_,_,_) */
-	  rc = socket_put(CTXTc &rc, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_put(CTXTc &rc, (int)flags[SYS_TIMER]);
 	       
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");
