@@ -66,7 +66,7 @@
 #define MY_MAXINT ((int)0x7fffffff)	/* Modified by Kostis */
 #endif
 
-Char outqt[EOFCH+1];   /* All the "+1" appear because of the EOF char */
+//Char outqt[EOFCH+1];   /* All the "+1" appear because of the EOF char */
  
 struct CHARS
     {

@@ -1526,7 +1526,8 @@ int builtin_call(CTXTdeclc byte number)
       token = GetToken(fptr, NULL, ptoc_int(CTXTc 2));
     }
     if (token->type == TK_ERROR) {
-      pcreg = (pb)&fail_inst;
+      //      pcreg = (pb)&fail_inst;
+      return FALSE;
     }
     else {
       ctop_int(CTXTc 3, token->type);
