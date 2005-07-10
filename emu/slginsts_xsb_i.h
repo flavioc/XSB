@@ -173,13 +173,18 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    a different thread, wait for it to complete.
  */
   if ( !IsNULL(producer_sf) ) {
-        table_tid = int_val(tcp_tid(subg_cp_ptr(producer_sf))) ;
+     if( !is_completed(producer_sf))
+/* if the table is completed its generator cp (where the table tid is stored)
+   might have been removed
+ */
+     {  table_tid = int_val(tcp_tid(subg_cp_ptr(producer_sf))) ;
 	if (table_tid != xsb_thread_self()) 
 		while( !is_completed(producer_sf) )
 		{	pthread_mutex_unlock(&completing_mut);
 			pthread_cond_wait(&completing_cond,&completing_mut) ;
 		} 
-        pthread_mutex_unlock(&completing_mut);
+     }
+     pthread_mutex_unlock(&completing_mut);
   } 
 #endif
 
