@@ -221,9 +221,10 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 /*****************/
 
 
-static Cell *space_for_ball = 0;
 
 #ifndef MULTI_THREAD
+static Cell *space_for_ball = 0;
+
 void call_conv xsb_basic_abort(char *message)
 {
   prolog_term ball_to_throw;
