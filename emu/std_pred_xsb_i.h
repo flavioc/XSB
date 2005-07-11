@@ -724,9 +724,9 @@ inline static xsbBool keysort(CTXTdecl)
   return unify(CTXTc list, term);
 }
 
-long sort_par_dir[10];
-long sort_par_ind[10];
-long sort_num_pars;
+#ifndef MULTI_THREAD
+struct sort_par_spec par_spec;
+#endif
 
 int par_key_compare(CTXTdeclc const void * t1, const void * t2) {
   long ipar, cmp, ind1, ind2;
@@ -735,21 +735,21 @@ int par_key_compare(CTXTdeclc const void * t1, const void * t2) {
 
   XSB_Deref(term1);		/* term1 is not in register! */
   XSB_Deref(term2);		/* term2 is not in register! */
-  if (sort_num_pars > 0) {
+  if (par_spec.sort_num_pars > 0) {
     ipar = 0;
-    while (ipar < sort_num_pars) {
-      ind1 = ind2 = sort_par_ind[ipar];
+    while (ipar < par_spec.sort_num_pars) {
+      ind1 = ind2 = par_spec.sort_par_ind[ipar];
       if (islist(term1)) ind1--;
       if (islist(term2)) ind2--;
       cmp = compare(CTXTc (void*)cell(clref_val(term1)+ind1),
 		          (void*)cell(clref_val(term2)+ind2));
       if (cmp) {
-	if (sort_par_dir[ipar]) return cmp;
+	if (par_spec.sort_par_dir[ipar]) return cmp;
 	else return -cmp;
       } else ipar++;
     }
     return 0;
-  } else if (sort_num_pars == 0) {
+  } else if (par_spec.sort_num_pars == 0) {
     return compare(CTXTc (void*)term1, (void*)term2);
   } else
     return -compare(CTXTc (void*)term1, (void*)term2);
@@ -772,11 +772,11 @@ inline static xsbBool parsort(CTXTdecl)
   elim_dupls = ptoc_int(CTXTc 3);
 
   list = ptoc_tag(CTXTc 2);
-  term2 = list; sort_num_pars = 0;
+  term2 = list; par_spec.sort_num_pars = 0;
 
   XSB_Deref(term2);
-  if (isstring(term2) && !strcmp(string_val(term2),"asc")) sort_num_pars = 0;
-  else if (isstring(term2) && !strcmp(string_val(term2),"desc")) sort_num_pars = -1;
+  if (isstring(term2) && !strcmp(string_val(term2),"asc")) par_spec.sort_num_pars = 0;
+  else if (isstring(term2) && !strcmp(string_val(term2),"desc")) par_spec.sort_num_pars = -1;
   else
     while (TRUE) {
       if (isnil(term2)) break;
@@ -785,20 +785,20 @@ inline static xsbBool parsort(CTXTdecl)
 	if (isconstr(heap_addr) && 
 	    get_arity(get_str_psc(heap_addr)) == 1 &&
 	    !strcmp(get_name(get_str_psc(heap_addr)),"asc")) {
-	  sort_par_dir[sort_num_pars] = 1;
+	  par_spec.sort_par_dir[par_spec.sort_num_pars] = 1;
 	} else if (isconstr(heap_addr) && 
 		   get_arity(get_str_psc(heap_addr)) == 1 &&
 		   !strcmp(get_name(get_str_psc(heap_addr)),"desc")) {
-	  sort_par_dir[sort_num_pars] = 0;
+	  par_spec.sort_par_dir[par_spec.sort_num_pars] = 0;
 	} else xsb_type_error(CTXTc "asc/1 or desc/1 term",heap_addr,"parsort",4,2);
 	tmp_ind = cell(clref_val(heap_addr)+1); XSB_Deref(tmp_ind);
 	if (!isinteger(tmp_ind)) xsb_type_error(CTXTc "integer arg for asc/1 or desc/1",tmp_ind,"parsort",4,2);
 	i = int_val(tmp_ind);
 	/* TLS: Should be range below */
 	if (i < 1 || i > 255) err_handle(CTXTc TYPE,2,"parsort",4,"arity-sized integer",tmp_ind);
-	sort_par_ind[sort_num_pars] = i;
+	par_spec.sort_par_ind[par_spec.sort_num_pars] = i;
 	if (i > max_ind) max_ind = i;
-	sort_num_pars++;
+	par_spec.sort_num_pars++;
 	term2 = cell(clref_val(term2)+1);
 	XSB_Deref(term2);
       } else xsb_type_error(CTXTc "list",list,"parsort",4,2);
@@ -811,7 +811,7 @@ inline static xsbBool parsort(CTXTdecl)
     if (isnil(term2)) break;
     if (islist(term2)) {
       heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
-      if (sort_num_pars == 0 || 
+      if (par_spec.sort_num_pars == 0 || 
 	  (isconstr(heap_addr) && (get_arity(get_str_psc(heap_addr)) >= max_ind)) ||
 	  (islist(heap_addr) && max_ind <=2)) {
 	len++; term2 = cell(clref_val(term2)+1);

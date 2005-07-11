@@ -53,6 +53,12 @@ struct vartype {
   prolog_term varval;
 };
 
+struct sort_par_spec {
+  long sort_num_pars;
+  long sort_par_dir[10];
+  long sort_par_ind[10];
+};
+
 #ifdef MULTI_THREAD
 
 #include <sys/types.h>
@@ -192,6 +198,8 @@ int     _strbuff_len; // = InitStrLen;  /* first allocation size, doubled on sub
 double  _double_v;
 long	_rad_int;
 
+struct sort_par_spec _par_spec;		/* spec for par_sort */
+
 /* Flag used in the locking of called tries */
 int	trie_locked;
 
@@ -307,6 +315,8 @@ typedef struct th_context th_context ;
 #define strbuff_len		(th->_strbuff_len)
 #define double_v		(th->_double_v)
 #define rad_int			(th->_rad_int)
+
+#define par_spec		(th->_par_spec)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)
