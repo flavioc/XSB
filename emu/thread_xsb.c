@@ -404,11 +404,10 @@ xsbBool mt_random_request( CTXTdecl )
 	UInteger rval;
 	UInteger scale = ptoc_int(CTXTc 2);
 	UInteger interval = ((unsigned long) pow(2,32) - 1) / scale;
-	printf("max %lx\n",((unsigned long) pow(2,32)-1));
-	printf("int %x scale %x s1 %d ex %x\n",
-	       interval,scale,scale,16);
+	//	printf("max %lx\n",((unsigned long) pow(2,32)-1));
+	//	printf("int %x scale %x s1 %d ex %x\n", interval,scale,scale,16);
 	rval = RANDOM_CALL(); 
-	printf("rval %x \n",rval);
+	//	printf("rval %x \n",rval);
 	ctop_int(CTXTc 3,floor(rval / interval));
 	break;
       }
