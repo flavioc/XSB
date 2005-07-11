@@ -85,7 +85,7 @@ static int th_new( pthread_t_p t )
 			break;
 
 	if( pos - th_vec >= MAX_THREADS )
-		xsb_abort("too many threads");
+		xsb_abort("[THREAD] Too many threads");
 	else if( pos == th_next )
 		th_next++ ;
 
@@ -125,7 +125,7 @@ void init_system_mutexes( void )
 
 	pthread_mutexattr_init( &attr_rec ) ;
 	if( pthread_mutexattr_settype( &attr_rec, PTHREAD_MUTEX_RECURSIVE_NP )<0 )
-		xsb_abort( "error initializaing mutexes" ) ;
+		xsb_abort( "[THREAD] Error initializing mutexes" ) ;
 
 	pthread_mutexattr_init( &attr_std ) ;
 
@@ -248,7 +248,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 			tid = th_get( id ) ;
 			pthread_mutex_unlock( &th_mutex );
 			if( tid == (pthread_t_p)0 )
-			        xsb_abort( "thread join - invalid thread id" );
+			        xsb_abort( "[THREAD] Thread join - invalid thread id" );
 			rc = pthread_join(P_PTHREAD_T, (void **)&rval ) ;
 			pthread_mutex_lock( &th_mutex );
 			th_delete(id);
@@ -261,7 +261,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 			pthread_mutex_lock( &th_mutex );
 			tid = th_get( id ) ;
 			if( tid == (pthread_t_p)0 )
-				xsb_abort( "thread detach - invalid thread id" );
+				xsb_abort( "[THREAD] Thread detach - invalid thread id" );
 			pthread_mutex_unlock( &th_mutex );
 			rc = pthread_detach(P_PTHREAD_T) ;
 			th_vec[id].detached = 1;
@@ -355,9 +355,13 @@ xsbBool xsb_thread_request( CTXTdecl )
 			rc = 0 ;
 			break ;
 
+		case XSB_THREAD_YIELD:
+			rc = sched_yield();
+			break;
+
 		default:
 			rc = 0 ; /* Keep compiler happy */
-			xsb_abort( "invalid thread operation requested" );
+			xsb_abort( "[THREAD] Invalid thread operation requested %d",request_num);
 			break ;
 	}
 	ctop_int( CTXTc 5, rc ) ;
@@ -374,8 +378,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 			break ;
 		case XSB_ENSURE_ONE_THREAD:
 			break ;
+		case XSB_THREAD_YIELD:
+	       		break ;
 		default:
-			xsb_abort( "thread primitives not compiled" ) ;
+			xsb_abort( "[THREAD] Thread primitives not compiled" ) ;
 			break ;
 	}
 	
@@ -413,7 +419,7 @@ xsbBool mt_random_request( CTXTdecl )
       }
 
     default: 
-      xsb_abort( "Improper case for mt_rand" ) ;
+      xsb_abort( "[THREAD] Improper case for mt_rand" ) ;
     }
   return TRUE ;
 }

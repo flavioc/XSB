@@ -44,7 +44,7 @@ void init_system_threads( void ) ;
 
 #define ENSURE_ONE_THREAD()					\
 {	if( flags[NUM_THREADS] > 1 ) 				\
-		xsb_abort( "more then one thread running" ) ; 	\
+		xsb_abort( "more than one thread running" ) ; 	\
 }
 
 
