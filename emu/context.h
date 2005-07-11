@@ -59,6 +59,16 @@ struct sort_par_spec {
   long sort_par_ind[10];
 };
 
+struct random_seeds_t {
+  short IX;
+  short IY;
+  short IZ;
+
+  double TX;
+  double TY;
+  double TZ;
+};
+
 #ifdef MULTI_THREAD
 
 #include <sys/types.h>
@@ -200,6 +210,8 @@ long	_rad_int;
 
 struct sort_par_spec _par_spec;		/* spec for par_sort */
 
+struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
+
 /* Flag used in the locking of called tries */
 int	trie_locked;
 
@@ -317,6 +329,8 @@ typedef struct th_context th_context ;
 #define rad_int			(th->_rad_int)
 
 #define par_spec		(th->_par_spec)
+
+#define random_seeds		(th->_random_seeds)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)

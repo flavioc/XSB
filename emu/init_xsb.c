@@ -747,6 +747,8 @@ void init_machine(CTXTdecl)
   lastc = ' ';
   strbuff_len = InitStrLen;
 
+  random_seeds = 0;
+
 /*  call_intercept = init_call_intercept ; */
 #endif
 

@@ -37,20 +37,35 @@
  *     (1985), 198--200.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "xsb_config.h"
 #include "cell_xsb.h"
 #include "cinterf.h"
 #include "deref.h"
 #include "register.h"
 #include "ptoc_tag_xsb_i.h"
+#include "error_xsb.h"
+#include "context.h"
 
-static short IX = 6293;
-static short IY = 21877;
-static short IZ = 7943;
+#ifndef MULTI_THREAD
+struct random_seeds_t *random_seeds = 0;
+#endif
 
-static double TX = 1.0/30269.0;
-static double TY = 1.0/30307.0;
-static double TZ = 1.0/30323.0;
+struct random_seeds_t *init_random_seeds() {
+
+  struct random_seeds_t *seeds;
+  seeds = (struct random_seeds_t *)malloc(sizeof(struct random_seeds_t));
+  if (!seeds) xsb_abort("No space for random seeds!!");
+  seeds->IX = 6293;
+  seeds->IY = 21877;
+  seeds->IZ = 7943;
+  seeds->TX = 1.0/30269.0;
+  seeds->TX = 1.0/30307.0;
+  seeds->TX = 1.0/30323.0;
+  return seeds;
+}
 
 /*
  * Returns a float number within the range [0.0, 1.0) in reg 2.
@@ -61,13 +76,15 @@ int ret_random(CTXTdecl) {
   double T;
   Cell term;
 
-  X = (IX*171) % 30269;
-  Y = (IY*172) % 30307;
-  Z = (IZ*170) % 30323;
-  T = X*TX + Y*TY + Z*TZ;
-  IX = X;
-  IY = Y;
-  IZ = Z;
+  if (!random_seeds) random_seeds = init_random_seeds();
+
+  X = (random_seeds->IX*171) % 30269;
+  Y = (random_seeds->IY*172) % 30307;
+  Z = (random_seeds->IZ*170) % 30323;
+  T = X*random_seeds->TX + Y*random_seeds->TY + Z*random_seeds->TZ;
+  random_seeds->IX = X;
+  random_seeds->IY = Y;
+  random_seeds->IZ = Z;
 
   term = ptoc_tag(CTXTc 2);
   if (isref(term)) {
@@ -84,22 +101,23 @@ int ret_random(CTXTdecl) {
 int getrand(CTXTdecl) {
   Cell term;
 
+  if (!random_seeds) random_seeds = init_random_seeds();
   term = ptoc_tag(CTXTc 2);
   if (isref(term))
-    ctop_int(CTXTc 2, IX);
-  else if (!isinteger(term) || (oint_val(term) != IX))
+    ctop_int(CTXTc 2, random_seeds->IX);
+  else if (!isinteger(term) || (oint_val(term) != random_seeds->IX))
     return FALSE;
 
   term = ptoc_tag(CTXTc 3);
   if (isref(term))
-    ctop_int(CTXTc 3, IY);
-  else if (!isinteger(term) || (oint_val(term) != IY))
+    ctop_int(CTXTc 3, random_seeds->IY);
+  else if (!isinteger(term) || (oint_val(term) != random_seeds->IY))
     return FALSE;
 
   term = ptoc_tag(CTXTc 4);
   if (isref(term))
-    ctop_int(CTXTc 4, IZ);
-  else if (!isinteger(term) || (oint_val(term) != IZ))
+    ctop_int(CTXTc 4, random_seeds->IZ);
+  else if (!isinteger(term) || (oint_val(term) != random_seeds->IZ))
     return FALSE;
 
   return TRUE;
@@ -110,7 +128,8 @@ int getrand(CTXTdecl) {
  * range checking are done in random.P.
  */
 void setrand(CTXTdecl) {
-  IX = ptoc_int(CTXTc 2);
-  IY = ptoc_int(CTXTc 3);
-  IZ = ptoc_int(CTXTc 4);
+  if (!random_seeds) random_seeds = init_random_seeds();
+  random_seeds->IX = ptoc_int(CTXTc 2);
+  random_seeds->IY = ptoc_int(CTXTc 3);
+  random_seeds->IZ = ptoc_int(CTXTc 4);
 }
