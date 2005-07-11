@@ -155,6 +155,8 @@
 
 #undef MULTI_THREAD
 
+#undef SHARED_COMPL
+
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
 
