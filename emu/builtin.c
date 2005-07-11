@@ -656,10 +656,6 @@ void xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var)
 
 /* --------------------------------------------------------------------	*/
 
-STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
-
-/* --------------------------------------------------------------------	*/
-
 Cell builtin_table[BUILTIN_TBL_SZ][2];
 
 #define BuiltinName(Code)	( (char *)builtin_table[Code][0] )
@@ -2517,7 +2513,7 @@ int builtin_call(CTXTdeclc byte number)
   return TRUE; /* catch for every break from switch */
 }
 
-/* Prolog Profiling */
+/* Prolog Profiling (NOT thread-safe) */
 
 ubi_btRoot TreeRoot;
 ubi_btRootPtr RootPtr = NULL;

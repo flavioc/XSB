@@ -37,6 +37,9 @@
 #include <io.h>
 #endif
 
+/* protected by MUTEX IO */
+STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
+
 static struct stat stat_buff;
 extern char   *expand_filename(char *filename);
 extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
