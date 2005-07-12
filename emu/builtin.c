@@ -1617,7 +1617,10 @@ int builtin_call(CTXTdeclc byte number)
     break;
 
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
-    ctop_string(CTXTc 2, expand_filename(ptoc_longstring(CTXTc 1)));
+    {char *filename = expand_filename(ptoc_longstring(CTXTc 1));
+    ctop_string(CTXTc 2, string_find(filename,1));
+    free(filename);
+    }
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
     ctop_string(CTXTc 2, tilde_expand_filename(ptoc_longstring(CTXTc 1)));
