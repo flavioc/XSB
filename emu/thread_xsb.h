@@ -20,9 +20,13 @@ int xsb_thread_self() ;
 #ifdef WIN_NT
 typedef pthread_t* pthread_t_p;
 #define PTHREAD_CREATE(a,b,c,d) pthread_create(&a,b,c,d);
+#define PTHREAD_DETACH(a) pthread_detach(*a);
+#define PTHREAD_CANCEL(a) pthread_cancel(*a);
 #else
 typedef pthread_t pthread_t_p;
 #define PTHREAD_CREATE(a,b,c,d) pthread_create(a,b,c,d);
+#define PTHREAD_DETACH(a) pthread_detach(a);
+#define PTHREAD_CANCEL(a) pthread_cancel(a);
 #endif
 
 extern pthread_mutex_t sys_mut[] ;

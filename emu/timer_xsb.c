@@ -48,6 +48,7 @@
 #include "setjmp_xsb.h"
 #include "timer_xsb.h"
 #include "basicdefs.h"
+#include "thread_xsb.h"
 
 /* To set a timeout for a function call such as: 
   ... ...
@@ -167,11 +168,7 @@ int op_timed_out(xsbTimeout *timeout)
   TURNOFFALARM;
   switch (timeout->timeout_info.exitFlag) {
   case STILL_WAITING: /* The call timed out */
-#ifdef WIN_NT
-    pthread_cancel(*timeout->timeout_info.timedThread);
-#else
-    pthread_cancel(timeout->timeout_info.timedThread);
-#endif
+    PTHREAD_CANCEL(timeout->timeout_info.timedThread);
     return TRUE;
   case TIMED_OUT:
     return TRUE;
@@ -257,11 +254,7 @@ int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(xsbTimeout *))
     xsb_error("SOCKET_REQUEST: Can't create concurrent timer thread\n");
     return TIMER_SETUP_ERR;
   }
-#ifdef WIN_NT
-  pthread_detach(*pptr->timeout_info.timedThread);
-#else
-  pthread_detach(pptr->timeout_info.timedThread);
-#endif
+  PTHREAD_DETACH(pptr->timeout_info.timedThread);
   return_msg = OP_TIMED_OUT(pptr);
 #ifdef WIN_NT
   free(pptr->timeout_info.timedThread);

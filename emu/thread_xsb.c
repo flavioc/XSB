@@ -263,7 +263,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 			if( tid == (pthread_t_p)0 )
 				xsb_abort( "[THREAD] Thread detach - invalid thread id" );
 			pthread_mutex_unlock( &th_mutex );
-			rc = pthread_detach(P_PTHREAD_T) ;
+			rc = PTHREAD_DETACH( tid ) ;
 			th_vec[id].detached = 1;
 			break ;
 
