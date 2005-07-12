@@ -7,7 +7,7 @@ XSB has two ways of evaluating predicates.  The default is to use
 Prolog-style evaluation, but by using various declarations a
 programmer can also use tabled resolution which allows for a
 different, more declarative programming style than Prolog.  In this
-section we discuss the various aspects of tabling and how it is
+section we discuss various aspects of tabling and how it is
 implemented in XSB\@.  Our aim in this section is to provide a user
 with enough information to be able to program productively in XSB\@.
 It is best to read this tutorial with a copy of XSB handy, since much
@@ -36,7 +36,8 @@ semantica, CoDS96, DRW96, RRRSSW97, Boul97,CuSW99a,GSTPD00}.
 \label{tabling_env}
 
 Before describing how to program using tabling it is perhaps
-worthwhile to review some of the goals of XSB\@.  Among them are:
+worthwhile to review some of the goals of XSB's implementation of
+tabling*.  Among them are:
 \begin{enumerate}
 \item	To execute tabled predicates at the speed of compiled Prolog.
 \item	To ensure that the speed of compiled Prolog is not slowed
@@ -46,38 +47,40 @@ worthwhile to review some of the goals of XSB\@.  Among them are:
 \item   To provide Prolog functionality in tabled predicates and
 	operators whenever it is semantically sensible to do so.
 \item	To provide standard predicates to manipulate tables
-	taken as objects in themselves.
+	taken as data structures in themselves.
 \end{enumerate}
 
 Goals 1 and 2 are addressed by XSB's engine, which in \version{} is
-based on a memory-copying version of a virtual machine called the
-SLG-WAM\@.  The overhead for SLD resolution using this machine is small,
-and usually less than 5\%.  Thus when XSB is used simply as a Prolog
-system (i.e., no tabling is used), it is reasonably competitive with
-other Prolog implementations based on a WAM emulator written in C or
-assembly.  For example, when compiled as a threaded interpreter (see
-Chapter~\ref{system}) XSB \version\ is about two times slower than
-Quintus 3.1.1 or emulated SICStus Prolog 3.1.
-
+based on a virtual machine called the SLG-WAM\@.  The overhead for SLD
+resolution using this machine is small, and usually less than 5\%.
+Thus when XSB is used simply as a Prolog system (i.e., no tabling is
+used), it is reasonably competitive with other Prolog implementations
+based on a WAM emulator written in C or assembly.  For example, when
+compiled as a threaded interpreter (see Chapter~\ref{system}) XSB
+\version\ is about two times slower than Quintus 3.1.1 or emulated
+SICStus Prolog 3.1.
+%
 Goals 3, 4 and 5 have been nearly met, but there are a few instances
 in which interaction of tabling with a Prolog construct has not been
 accomplished, or is perhaps impossible.  Accordingly we discuss these
 instances throughout this chapter.  XSB is still under development
 however, so that future versions may support more transparent mixing
-of Prolog and tabled code (e.g. allowing tabled predicates in the
+of Prolog and tabled code.
+\comment{
+ (e.g. allowing tabled predicates in the
 scope of \verb|\+/1|) or adding Prolog functionality to tabled
 predicates or operators (e.g. allowing non-ground negation in {\tt
 tnot/1}).
-
+}
 %=====================================================================
 
 \section{Definite Programs}
 \label{sec:def}
 
-Definite programs, also called \emph{Horn Clause Programs}, are those
-programs without negation.  In XSB, this means without the \verb|\+/1|,
-{\tt fail\_if/1}, {\tt not/1} or {\tt tnot/1} operators.  Consider the
-Prolog program
+Definite programs, also called \emph{Horn Clause Programs}, are Prolog
+programs without negation or aggregation.  In XSB, this means without
+the \verb|\+/1|, {\tt fail\_if/1}, {\tt not/1}, {\tt tnot/1} or aggregation 
+operators.  Consider the Prolog program
 \begin{center}
 \begin{minipage}{3.8in}
 \begin{verbatim}
@@ -104,24 +107,27 @@ in a searchable structure together with their proven instances.  This
 collection of \emph{tabled subgoals} paired with their \emph{answers},
 generally referred to as a \emph{table}, is consulted whenever a new
 call, $C$, to a tabled predicate is issued.  If $C$ is sufficiently
-similar to a tabled subgoal $S$, then the answer set $\cA$ associated
-with $S$ may be used to satisfy $C$\footnote{We use the term ``answer
-set'' to describe the set of answers associated with a given subgoal
-during a given state of computation.  As such, it has no relation to
-the use of the term ``answer set'' in the non-monotonic literature.}\@.
+similar to a tabled subgoal $S$, then the set of answers, $\cA$,
+associated with $S$ may be used to satisfy $C$.
+%\footnote{We use
+%the term ``answer set'' to describe the set of answers associated with
+%a given subgoal during a given state of computation.  As such, it has
+%no relation to the use of the term ``answer set'' in the non-monotonic
+%literature.}\@.  
 In such instances, $C$ is resolved against the answers in $\cA$, and
 hence we refer to $C$ as a \emph{consumer}\index{tabling!consumer} of
-$\cA$ (or $S$)\@.  If there is no such $S$, then $C$ is entered into the
-table and is resolved against program clauses as in Prolog~---~i.e.,
-using SLD~resolution.  As each answer is derived during this process,
-it is inserted into the table entry associated with $C$ if it contains
-information not already in $\cA$\@.  We hence refer to $C$ as a
-\emph{generator}, or \emph{producer}\index{tabling!producer,
-generator}, as resolution of $C$ in this manner produces the answers
-stored in its table entry.  If the answer is in fact added to this
-set, then it is additionally scheduled to be returned to all consumers
-of $C$\@.  If instead it is rejected as redundant, then the evaluation
-simply fails and backtracks to generate more answers.
+$\cA$ (or $S$)\@.  If there is no such $S$, then $C$ is entered into
+the table and is resolved against program clauses as in
+Prolog~---~i.e., using SLD~resolution.  As each answer is derived
+during this process, it is inserted into the table entry associated
+with $C$ if it contains information not already in $\cA$\@.  We hence
+refer to $C$ as a \emph{generator}, or
+\emph{producer}\index{tabling!producer, generator}, as resolution of
+$C$ in this manner produces the answers stored in its table entry.  If
+the answer is in fact added to this set, then it is additionally
+scheduled to be returned to all consumers of $C$\@.  If instead it is
+rejected as redundant, then the evaluation simply fails and backtracks
+to generate more answers.
 
 Notice that since consuming subgoals resolve against unique answers
 rather than repeatedly against program clauses, tabling will terminate
@@ -137,129 +143,20 @@ program have a maximum depth~---~SLG computation will terminate.
 These programs include the important class of \emph{Datalog} programs.
 
 %--------------------------------------------------------------------
-
-\subsection{Tabling Strategies}
-\label{sec:TablingStrategies}
-
-The above description gives a general characterization of tabled
-evaluation for definite programs but glosses over certain details.  In
-particular, we have not specified the criteria by which
-\begin{itemize}
-\item a newly issued call is determined to be a producer or consumer, and
-\item a derived answer to a tabled subgoal is determined to contain
-information not in the answer set of that subgoal.
-\end{itemize}
-Many different measures can be used as a basis for these
-determinations.  XSB supports two distinct measures within its engine,
-{\em variance} and {\em subsumption}, and allows users to program
-other measures in certain cases (see Section~\ref{sec:table-aggregation}).
-
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-\paragraph{Variant-Based Tabled Evaluation}
-\index{tabling!variant-based} 
-The first measure determines whether two terms are
-\emph{variants}~---~that is, if they can be made identical through
-variable renaming.  This is the default tabling method employed by
-XSB\@.  It was used in the original formulation of SLG resolution
-\cite{ChWa96} for the evaluation of normal logic programs according to
-the well-founded semantics and interacts well with many of Prolog's
-extra-logical constructs.
-
-Under variant-based tabling, when a tabled call $C$ is made, a search
-for a table entry containing a variant subgoal $S$ is performed.  Notice
-that if such an $S$ should exist, then \emph{all} of its answers are
-also answers to $C$, and therefore will be resolved against it.
-Likewise, when an answer $A$ is derived for a producing subgoal $S$,
-$A$ is inserted into the answer set $\cA$ of $S$ if and only if $A$
-does not already exist in $\cA$~---~that is, if there is no variant of
-$A$ already present in $\cA$\@.  The insertion of $A$, therefore,
-leads to the return of $A$ to consumers of $S$\@.  However, the return
-of only the most general answers to a consumer, referred to as
-\emph{answer subsumption}, can be flexibly programmed as discussed in
-Section~{\ref{sec:table-aggregation}}\footnote{We also note that the
-library {\sf subsumes} contains routines for checking variance and
-subsumption.}.
-
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-\paragraph{Subsumption-Based Tabled Evaluation}
-\index{tabling!subsumption-based}
-
-The second measure determines whether one term subsumes another.  A term
-$t_1$ \emph{subsumes} a term $t_2$ if $t_2$ is an instance of $t_1$.
-Furthermore, we say that $t_1$ \emph{properly subsumes} $t_2$ if $t_2$
-is not a variant of $t_1$.  Under subsumption-based tabling, when a
-tabled call $C$ is issued, a search is performed for a table entry
-containing a subsuming subgoal $S$\@.  Notice that, if such an entry
-exists, then its answer set $\cA$ logically contains all the solutions
-to satisfy $C$\@.  The subset of answers $\cA' \subseteq \cA$ which
-unify with $C$ are said to be \emph{relevant to} $C$\@.  Likewise, upon
-the derivation of an answer $A$ for a producing subgoal $S$, $A$ is
-inserted into the answer set $\cA$ of $S$ if and only if $A$ is not
-subsumed by some answer $A'$ already present in $\cA$\@.
-
-Notice that subsumption-based tabling permits greater reuse of computed
-results, thus avoiding even more program resolution, and thereby can
-lead to time and space performances superior to variant-based tabling.
-However, there is a downside to this paradigm.  First of all,
-subsumptively tabled predicates do not interact well with certain Prolog
-constructs with which variant-tabled predicates can (see
-Example~\ref{example:sub-fail} below).  Further, in the current
-implementation of subsumption-based tabling, subsumptive predicates may
-not take part in negative computations which result in the \emph{delay}
-\index{tabling!subsumption-based!interaction with negation} of a literal
-containing a subsumptive subgoal (see \refsec{sec:CurrentRestrictions}).
-This requires subcomputations in which subsumptive predicates
-take part to be LRD-stratified.
-
-\begin{example}
-The terms $t_1$: {\tt p(f(Y),X,1)} and $t_2$:~{\tt p(f(Z),U,1)} are
-\emph{variants} as one can be made to look like the other by a
-renaming of the variables.  Therefore, each \emph{subsumes} the other. \\
-\noindent The term $t_3$: {\tt p(f(Y),X,1)} \emph{subsumes} the term
-$t_4$:~{\tt p(f(Z),Z,1)}.  However, they are \emph{not variants}.  Hence
-$t_3$ \emph{properly subsumes}~$t_4$.\fillBox
-\end{example}
-
-%--------------------------------------------------------------------
-
-\subsection{Tabling Directives and Declarations}
-\label{sec:TablingDirAndDecl}
-
 Predicates can be declared tabled in a variety of ways.  A common form
 is the compiler directive\index{\texttt{table/1}}
 \[
 	\verb|:- table | p_1/n_1, \ldots, p_k/n_k.
 \]
 where $p_i$ is a predicate symbol and $n_i$ is an integer representing
-the arity of $p_i$.  This directive is normally added to a file
-containing the predicate(s) to be tabled, a consultation of which
-recompiles the predicates to employ tabling.  Often it is tedious to
-decide which predicates must be tabled.  To address this, XSB can
-automatically table predicates in files.  The declaration {\tt
-auto\_table}\index{\texttt{auto\_table}} chooses predicates to table
-to assist in termination, while {\tt
-suppl\_table}\index{\texttt{suppl\_table}} chooses predicates to table
-to optimize data-oriented queries.  Both are explained in
-\refsec{sec:CompilerOptions}.
-
-\index{tabling!strategy selection} As mentioned in
-\refsec{sec:TablingStrategies}, the default tabling strategy used by
-XSB is variant-based.  However, subsumption-based tabling can be made
-the default by giving XSB the \verb|-S| option at invocation (refer to
-\refsec{sec:EmuOptions}).  More versatile constructs are provided by
-XSB so that the tabling method can be selected on a \emph{per
-predicate} basis.  Use of either directive
-\texttt{use\_variant\_tabling/1}\index{\texttt{use\_variant\_tabling/1}}
-or
-\texttt{use\_subsumptive\_tabling/1},\index{\texttt{use\_subsumptive\_tabling/1}}
-described in
-\refsec{sec:TablePred:Decl&Mod}, ensures that a tabled predicate is
-evaluated using the desired strategy regardless of the default tabling
-strategy.
-
-%--------------------------------------------------------------------
+the arity of $p_i$.  For static predicates, this is directive added to
+a file containing the predicate(s) to be tabled, compiles them to use
+tabling.  For dynamic predicates, the executable directive 
+\[
+       \verb| ?- table | p/n.
+\]
+causes {\tt p/n} to be tabled if no clauses have been asserted for
+{\tt p/n}.
 
 \paragraph{Exercises}
 Unless otherwise noted, the file
@@ -267,26 +164,19 @@ Unless otherwise noted, the file
 the code for the running examples in this section.  Invoke XSB with its
 default settings (i.e., don't supply additional options) when working
 through the following exercises.
-\begin{exercise}
-Consult this file into XSB and type the query
-\begin{verbatim}
-         ?- path(1,Y).
-\end{verbatim}
-and continue typing \verb|;<RETURN>| until you have exhausted all
-answers.  Type the query again.  Can you guess why the order of
-answers is different?  Now type
-\begin{verbatim}
-         ?- abolish_all_tables.
-\end{verbatim}
-and retry the \code{path/2} query.\fillBox
-\end{exercise}
 
 \begin{exercise}
-If you are curious, try rewriting the \code{path/2} predicate as it
-would be written in Prolog~---~and without a tabling declaration.
-Will it now terminate for the provided {\tt edge/2} relation?
-(Remember, in XSB you can always hit \verb|<ctrl>-C| if you go into an
-infinite loop).\fillBox
+Consult \textup{\texttt{\$XSB\_DIR/examples/table\_examples.P}} into
+XSB and and try the goal
+\begin{verbatim}
+         ?- path(1,X).
+\end{verbatim}
+and continue typing \verb|;<RETURN>| until you have exhausted all
+answers.  Now, try rewriting the \code{path/2} predicate as it would
+be written in Prolog~---~and without a tabling declaration.  Will it
+now terminate for the provided {\tt edge/2} relation?  (Remember, in
+XSB you can always hit \verb|<ctrl>-C| if you go into an infinite
+loop).\fillBox
 \end{exercise}
 
 The return of answers in tabling aids in filtering out redundant
@@ -310,6 +200,44 @@ use tabling and retry the same query.  What happens?  (Be
 patient~---~or use \verb|<ctrl>-C|).\fillBox
 \end{exercise}
 
+\begin{exercise}
+The file {\tt table\_examples.P} contains a set of facts
+\begin{verbatim}
+         ordered_goal(one).
+         ordered_goal(two).
+         ordered_goal(three).
+         ordered_goal(four).
+\end{verbatim}
+Clearly, the query {\tt ?- ordered\_goal(X)} will return the answers
+in the expected order.  {\tt table\_examples.P} also contains a predicate
+\begin{verbatim}
+         :- table table_ordered_goal/1.
+         table_ordered_goal(X):- ordered_goal(X).
+\end{verbatim}
+which simply calls {\tt ordered\_goal/1} and tables its answers
+(tabling is unnecessary in this case, and is only used for
+illustration).  Call the query {\tt ?- table\_ordered\_goal(X)} and
+backtrack through the answers.  In what order are the answers
+returned?
+\end{exercise}
+%-------------------------------------------------------------------------
+\comment{
+\begin{exercise}
+Consult this file into XSB and type the query
+\begin{verbatim}
+         ?- path(1,Y).
+\end{verbatim}
+and continue typing \verb|;<RETURN>| until you have exhausted all
+answers.  Type the query again.  Can you guess why the order of
+answers is different?  Now type
+\begin{verbatim}
+         ?- abolish_all_tables.
+\end{verbatim}
+and retry the \code{path/2} query.\fillBox
+\end{exercise}
+}
+%-------------------------------------------------------------------------
+
 The examples stress two differences between tabling and SLD resolution
 beyond termination properties.  First, that each solution to a tabled
 subgoal is returned only once~---~a property that is helpful not only
@@ -317,6 +245,150 @@ for {\tt path/2} but also for {\tt same\_generation/2} which
 terminates in Prolog.  Second, because answers are sometimes obtained
 using program clauses and sometimes using the table, answers may be
 returned in an unaccustomed order.
+
+\paragraph*{Tabling Dynamic Predicates}
+
+Dynamic predicates may be tabled just as static predicates, as the
+following exercise shows.
+
+\begin{exercise}
+For instance, restart XSB and at the prompt type the directive
+\begin{verbatim}
+         ?- table(dyn_path/2).
+\end{verbatim}
+and 
+\begin{verbatim}
+         ?- load_dyn(dyn_examples).
+\end{verbatim}
+Try the queries to {\tt path/2} of the previous examples.  Note that
+it is important to dynamically load {\tt dyn\_examples.P} ---
+otherwise the code in the file will be compiled without knowledge of
+the tabling declaration.\fillBox
+\end{exercise}
+
+In general, as long as the directive {\tt table/1} is executed before
+asserting (or dynamically loading) the predicates referred to in the
+directive, any dynamic predicate can be tabled.
+
+\paragraph*{Letting XSB Decide What to Table}
+Other tabling declarations are also provided.  Often it is tedious to
+decide which predicates must be tabled.  To address this, XSB can
+automatically table predicates in files.  The declaration {\tt
+  auto\_table}\index{\texttt{auto\_table}} chooses predicates to table
+to assist in termination, while {\tt
+  suppl\_table}\index{\texttt{suppl\_table}} chooses predicates to
+table to optimize data-oriented queries.  Both are explained in
+\refsec{sec:CompilerOptions}.~\footnote{The reader may have noted that
+  {\tt table/1}, is referred to as a \emph{directive}, while {\tt
+    auto\_table/0} and {\tt suppl\_table/0} were referred to as
+  \emph{declarations}.  The difference is that at the command line,
+  user can execute a directive but not a compiler declaration.}.
+
+%--------------------------------------------------------------------
+
+\subsection{Call Variance vs. Call Subsumption}
+\label{sec:SimilarityMeasures}
+\index{tabling!similarity measures}
+
+The above description gives a general characterization of tabled
+evaluation for definite programs but glosses over certain details.  In
+particular, we have not specified the criteria for 
+\begin{itemize}
+\item {\em Call Similarity} -- whereby a newly issued call $C$ is
+  determined to be ``sufficiently similar'' to a tabled subgoal $S$ so
+  that $C$ can use the answers from the table of $S$ rather than
+  re-deriving its own answers.  In the first case where $C$ uses
+  answers of a tabled subgoal it is termed a consumer; in the second
+  case when $C$ produces its own answers it is called a generator.
+%
+\item {\em Answer Similarity} -- whereby a derived answer to a tabled
+  subgoal is determined to contain information similar to that already
+  in the set of answers for that subgoal.
+\end{itemize}
+Different measures of similarity are possible.  XSB's engine supports
+two measures for call similarity: variance and subsumption.  XSB's
+engine supports a variance-based measure for answer similarity, but
+allows users to program other measures in certain cases.  We discuss
+call similarity here, but defer the discussion of answer similarity
+until Section~\ref{sec:table-aggregation}).
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\paragraph{Determining Call Similarity via Variance}
+\index{tabling!variant-based} 
+%
+By default, XSB determines that a call $C$ is similar to a tabled
+subgoal $S$ if $C$ is a variant of $S$~---~\footnote{Formally, $C$ and
+  $S$ are variants if there are substitutions $\theta_1$ and
+  $\theta_2$ such that the ranges of $\theta_1$ and $\theta_2$ consist
+  only of variables, and $C\theta_1 = S$, and $S\theta_2 = C$.}.  As
+an example {\tt p(X,Y,X)} is a variant of {\tt p(A,B,A)}, but not of
+{\tt p(X,Y,Y)}, or {\tt p(X,Y,Z)}.  Varicance-based call similarity
+was used in the original formulation of SLG resolution \cite{ChWa96}
+for the evaluation of normal logic programs according to the
+well-founded semantics and interacts well with many of Prolog's
+extra-logical constructs.
+
+Under variance-based call similarity, when a tabled call $C$ is made,
+a search for a table entry containing a variant subgoal $S$ is
+performed.  Notice that if such an $S$ should exist, then \emph{all}
+of its answers are also answers to $C$, and therefore will be resolved
+against it.  
+\comment{
+Likewise, when an answer $A$ is derived for a producing
+subgoal $S$, $A$ is inserted into the answer set $\cA$ of $S$ if and
+only if $A$ does not already exist in $\cA$~---~that is, if there is
+no variant of $A$ already present in $\cA$\@.  The insertion of $A$,
+therefore, leads to the return of $A$ to consumers of $S$\@.  However,
+the return of only the most general answers to a consumer, referred to
+as \emph{answer subsumption}, can be flexibly programmed as discussed
+in Section~{\ref{sec:table-aggregation}}
+}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\paragraph{Determining Call Similarity via Subsumption}
+\index{tabling!subsumption-based}
+
+Call similarity can also be based on subsumption.  A term $T_1$
+\emph{subsumes} a term $T_2$ if $T_2$ is more specific than
+$T_1$~\footnote{Formally, $T_1$ subsumes $T_2$ if there is a
+  substitution $\theta$ whose domain consists only of variables from
+  $T_1$ such that $T_1\theta = T_2$.}.  Furthermore, we say that $T_1$
+\emph{properly subsumes} $T_2$ if $T_2$ is not a variant of $T_1$.
+Under subsumption-based tabling, when a tabled call $C$ is issued, a
+search is performed for a table entry containing a subsuming subgoal
+$S$\@.  Notice that, if such an entry exists, then its answer set
+$\cA$ logically contains all the solutions to satisfy $C$\@.  The
+subset of answers $\cA' \subseteq \cA$ which unify with $C$ are said
+to be \emph{relevant to} $C$\@.  Likewise, upon the derivation of an
+answer $A$ for a producing subgoal $S$, $A$ is inserted into the
+answer set $\cA$ of $S$ if and only if $A$ is not subsumed by some
+answer $A'$ already present in $\cA$\@.
+
+Notice that subsumption-based tabling permits greater reuse of
+computed results, thus avoiding even more program resolution, and
+thereby can lead to time and space performances superior to
+variant-based tabling.  However, there is a downside to this paradigm.
+First of all, subsumptively tabled predicates do not interact well
+with certain Prolog constructs with which variant-tabled predicates
+can (see Example~\ref{example:sub-fail} below).  Further, in the
+current implementation of subsumption-based tabling, subsumptive
+predicates may not take part in negative computations which result in
+the \emph{delay} \index{tabling!subsumption-based!interaction with
+  negation} of a literal containing a subsumptive subgoal (see
+\refsec{sec:CurrentRestrictions}).  This requires subcomputations in
+which subsumptive predicates take part to be LRD-stratified (see
+Section~\ref{sec:lrd}).
+
+\begin{example}
+The terms $T_1$: {\tt p(f(Y),X,1)} and $T_2$:~{\tt p(f(Z),U,1)} are
+\emph{variants} as one can be made to look like the other by a
+renaming of the variables.  Therefore, each \emph{subsumes} the other. \\
+\noindent The term $t_3$: {\tt p(f(Y),X,1)} \emph{subsumes} the term
+$t_4$:~{\tt p(f(Z),Z,1)}.  However, they are \emph{not variants}.  Hence
+$t_3$ \emph{properly subsumes}~$t_4$.\fillBox
+\end{example}
 
 The above examples show how a variant-based tabled evaluation can
 reduce certain redundant subcomputations over SLD\@.  However, even
@@ -379,27 +451,126 @@ call to \code{p(1,5)} is made.  If the order of these queries were
 reversed, one would find that the same entries would be present in this
 table as the one constructed under variant-based evaluation.
 
-\index{tabling!dynamic predicates}
-\begin{exercise}
-The reader may have noted that the predicates {\tt table/1},
-\code{use\_variant\_tabling/1}, and \code{use\_subsumptive\_tabling/1}
-were referred to as \emph{directives}, while the predicates {\tt
-auto\_table/0} and {\tt suppl\_table/0} were referred to as
-\emph{declarations}.  The difference is that the user can execute a
-directive at the command line but not a compiler declaration.  For
-instance, restart XSB and at the prompt type the directive
-\begin{verbatim}
-         ?- table(dyn_path/2).
-\end{verbatim}
-and 
-\begin{verbatim}
-         ?- load_dyn(dyn_examples).
-\end{verbatim}
-Try the queries to {\tt path/2} of the previous examples.  Note that
-it is important to dynamically load {\tt dyn\_examples.P} ---
-otherwise the code in the file will be compiled without knowledge of
-the tabling declaration.\fillBox
-\end{exercise}
+\paragraph{Declarations for Call Variance and Call Subsumption}
+By default tabled predicate use call variance.  However,
+subsumption-based tabling can be made the default by giving XSB the
+\verb|-S| option at invocation (refer to \refsec{sec:EmuOptions}).
+More versatile constructs are provided by XSB so that the tabling
+method can be selected on a \emph{per predicate} basis.  Use of either
+directive
+\texttt{use\_variant\_tabling/1}\index{\texttt{use\_variant\_tabling/1}}
+or
+\texttt{use\_subsumptive\_tabling/1},\index{\texttt{use\_subsumptive\_tabling/1}}
+described in \refsec{sec:TablePred:Decl&Mod}, ensures that a tabled
+predicate is evaluated using the desired strategy regardless of the
+default tabling strategy.
+
+%----------------------------------------------------------------------
+
+\subsection{Table Scheduling Strategies} \label{section:scheduling}
+\index{tabling!scheduling strategies}
+¶
+Recall that SLD resolution works by selecting a goal from a list of
+goals to be proved, and selecting a program clause $C$ to resolve
+against that goal.  During resolution of a top level goal $G$, if the
+list of unresolved goals becomes empty, $G$ succeeds, while if there
+is no program clause to resolve against the selected goal from the
+list resolution against $G$ fails.  In Prolog clauses are selected in
+the order they are asserted, while literals are selected in a
+left-to-right selection strategy.  Other strategies are possible for
+SLD, and in fact completeness of SLD for definite programs depends on
+a non-fixed literal selection strategy.  This is why Prolog, which has
+a fixed literal selection strategy is not complete for definite
+programs, even when they have bounded term-depth.
+
+Because tabling uses program clause resolution, the two parameters of
+clause selection and literal selection also apply to tabling.  Tabling
+makes use of a dynamic literal selection strategy for certain
+non-stratified programs (via the delaying mechanism described in
+Section~\ref{negation!unstratified}), but uses the same left-to-right
+literal selection strategy as Prolog for definite programs.  However,
+in tabling there is also a choice of when to return derived answers to
+subgoals that consume these answers.  While full discussion of
+scheduling strategies for tabling is not covered here
+(see~\cite{JFLP-Scheduling}) we discuss two scheduling straqtegies
+that have been implmented for XSB \version~\footnote{Many other
+  scheduling strategies are possible.  For instance, \cite{FrSW97}
+  describes a tabling strategy implemented for the SLG-WAM that
+  emulates magic sets under semi-naive evaluation.  This scheduling
+  strategy, however, is not available in \version{} of XSB.}.
+
+\begin{itemize}
+
+\item {\em Local Scheduling} Local Scheduling depends on the notion of
+  a {\em subgoal dependency graph}.  For the state of a tabled
+  evaluation, a non-completed tabled subgoal $S_1$ directly depends on
+  a non-completed subgoal $S_2$ when $S_2$ is in the SLG tree for
+  $S_1$ -- that is when $S_2$ is called by $S_1$ without any
+  intervening tabled predicate.  The edges of the subgoal dependency
+  graph are then these direct dependency relations, so that the
+  subgoal dependency graph is directed.  As mentioned, the subgoal
+  dependency graph reflects a given state of a tabled evaluation and
+  so may changed as the evaluation proceeds, as new tabled subgoals
+  are encountered, or encountered in different contexts, as tables
+  complete, and so on.  As with any directed graph, the subgoal
+  dependency graph can be divided up into strongly connected
+  components, consisting of tabled subgoals that depend on one
+  another.  Local scheduling then fully evaluates each maximal SCC (a
+  SCC that does not depend on another SCC) before returning answers to
+  any subgoal outside of the SCC~\footnote{XSB's implementation
+    maintains a slight over-approximation of SCCs -- see
+    \cite{JFLP-Scheduling}.}.
+
+\item {\em Batched Scheduling} Unlike Local Scheduling, Batched
+  Scheduling allows answers to be returned outside of a maximal SCC as
+  they are derived, and thus resembles Prolog's tuple at a time
+  scheduling.  
+\end{itemize}
+
+Both Local and Batched Scheduling have their advantages, and we list
+points of comparison.
+
+\begin{itemize}
+
+\item {\em Time for left recursion} Batched Scheduling is somewhat
+  faster than Local Scheduling for left recursion as Local Scheduling
+  imposes overhead to prevent answers from being returned outside of
+  a maximal SCC.  
+
+\item {\em Time to first answer}  Because Batched Scheduling returns
+  answers out of an SCC eagerly, it is faster to derive the first
+  answer to a tabled predicate.
+
+\item {\em Stack space} Local evaluation generally requires less space
+  than batched evaluation as it fully explores a maximal SCC,
+  completes the SCC's subgoals, reclaims space, and then moves on to a
+  new SCC.  
+
+\item {\em Integration with cuts} As discussed in
+  Exercise~\ref{ex:nocut} and throughout Section~\ref{sec:cuts}, Local
+  Scheduling integrates better with cuts, although this is partly
+  because tabled subgoals may be fully evaluated before the cut takes
+  effect. 
+
+\item {\em Efficiency for call subsumption} Because Local Evaluation
+  completes tables earlier than Batched Evaluation it may be faster
+  for some uses of call subsumption, as subsumed calls can make use of
+  completed subsuming tables.
+
+\item {\em Negation and tabled aggregation} As will be shown below,
+  Local Scheduling is superior for tabled aggregation as only optimal
+  answers are returned out of a maximal SCC.  Local Scheduling also
+  can be more efficient for non-stratified negation as it may allow
+  delayed answers that are later simplified away to avoid being
+  propagated.
+\end{itemize}
+
+On the whole, advantages of Local Scheduling outweigh the advantages of
+Batched Scheduling, and for this reason Local Scheduling is the
+default scheduling strategy for \version{} of XSB.  XSB can be
+configured to use batched scheduling via the configuration option {\tt
+  --enable-batched-scheduling} and remaking XSB\@.  This will not
+affect the default version of XSB, which will also remain available.
 
 %--------------------------------------------------------------------
 
@@ -414,12 +585,26 @@ constructs like the cut (\texttt{!}) pose greater difficulties.
 Subsumption-based tabling is also theoretically precluded from correct
 interaction with certain meta-logical predicates.
 
-
 \paragraph{Cuts and Tabling} \label{sec:cuts}
 \index{tabling!cuts}
 
-The following exercise demonstrates the difficulty in using cuts with
-tabling.
+The semantics for cuts in Prolog is largely operational, and is
+usually defined based on an ordered traversal of an SLD search tree.
+Tabling, of course, has a different operational semantics than Prolog
+-- it uses SLG trees rather than SLD trees, for instance -- so it is
+not surprising that the interaction of tabling with cuts is
+operational.  In Prolog, the semantics for a cut can be expressed in
+the following manner: a cut executed in the body of a predicate $P$
+frames from the top (youngest end) of the choice point stack down to
+and including the call for $P$.  In XSB {\em a cut is allowed to
+  succeed as long as it does not cut over a choice point for a
+  non-completed tabled subgoal, otherwise, the computation aborts}.
+This means, among other matters, that the validity of a cut depends on
+the {\em scheduling strategy} used for tabling, that is on the
+strategy used to determine when an answer is to be returned to a
+consuming subgoal.  Scheduling strategy will be discussed further in
+Section~\ref{}.  For now, we assume that XSB's default local
+scheduling is used in the examples for cuts.
 
 \begin{exercise} \label{ex:nocut}
 Consider the program
@@ -430,8 +615,6 @@ cut_p(X) :- cut_q(X), cut_r.
 cut_r :- cut_s.
 cut_s :- cut_q(_).
 cut_q(1).   cut_q(2).
-
-once(Term) :- call(Term), !.
 \end{verbatim}
 What solutions are derived for the goal {\tt ?- cut\_p(X)}\@?  Suppose
 that {\tt cut\_p/1} were rewritten as
@@ -444,21 +627,22 @@ compile it in XSB?\fillBox
 \end{exercise}
 
 In Exercise \ref{ex:nocut}, {\tt cut\_p(1)} and {\tt cut\_p(2)} should
-both be true.  Thus, the cut in the literal {\tt once(cut\_r)} in the
-revised program may inadvertently cut away solutions that are demanded
-by {\tt cut\_p/1}.  \version{} of XSB does not allow cuts over tabled
-predicates.  XSB checks whether a tabled predicate statically lies in
-the scope of a cut at compile time.  If so, the compilation is
-aborted\footnote{A more sophisticated solution is proposed in
-\cite{Swif99b}.}.  At runtime, it also ensures that no incomplete
-tables are cut over whenever it executes a cut.
-
-However, cuts are allowed {\em within} tabled predicates, subject (as
-always) to the restriction that the scope of a cut cannot include a
-call to a tabled predicate.
+both be true.  Thus, the cut in the literal {\tt once(cut\_r)} must
+not inadvertently cut away solutions that are demanded by {\tt
+  cut\_p/1}.  In the default local scheduling of XSB \version{} tabled
+subgoals are fully evaluated whenever possible before returning any of
+their answers.  Thus the first call {\tt cut\_q(X)} in the body of the
+clause for {\tt cut\_p/1} is fully evaluated before proceeding to the
+goal {\tt once(cut\_r)}.  Because of this any choice points for {\tt
+  cut\_q(X)} are to a completed table.  For other scheduling
+strategies, such as batched scheduling, non-completed choice points
+for {\tt cut\_p/1} may be present on the choice point stack so that the
+cut would be disallowed.  In addition, it is also possible to
+construct examples where a cut is allowed if call variance is used,
+but not if call subsumption is used.
 
 \begin{example}
-An example of using cuts in a tabled predicate is a tabled
+A further example of using cuts in a tabled predicate is a tabled
 meta-interpreter.
 \begin{verbatim}
 :- table demo/1.
@@ -472,13 +656,48 @@ instance to implement various extensions of definite or normal
 programs.\fillBox
 \end{example}
 
-In \version{} of XSB a ``cut'' over tables occurs only when the user
-makes a call to a tabled predicate from the interpreter level, but
-does not generate all solutions.  In such a case, the user will see
+In XSB's compilation, the cut above is compiled so that it is valid to
+use with either local or batched (a non-default) evaluaiton.  An
+example of a cut that is valid neither in batched nor in local
+evaluation is as follows.
+
+\begin{example} \label{ex:cutTable}
+Consider the program
+\begin{verbatim}
+:- table cut_a/1, cut_b/1.
+
+cut_a(X):- cut_b(X).
+cut_a(a1).
+
+cut_b(X):- cut_a(X).
+cut_b(b1).
+\end{verbatim}
+For this program the goal {\tt ?- cut\_a(X)} produces two answers, as
+expected: {\tt a1} and {\tt b1}.  However, replacing the first class
+of the above program with 
+\begin{verbatim}
+cut_a(X):- once(cut_b(X)).
+\end{verbatim}
+will abort both in batched or in local evaluation.
+\fillBox
+\end{example}
+
+To summarize, the behavior of cuts with tables depends on dynamic
+operational properties, and we have seen examples of programs in which
+a cut is valid in both local and batched scheduling, in local but not
+batched scheduling, and in neither batched nor local scheduling.  In
+general, any program and goal that allows cuts in batched scheulding
+will allow them in local scheduling as well, and there are programs
+for which cuts are allowed in local scheduling but not in batched.
+
+Finally, we note that in \version{} of XSB a ``cut'' over tables
+implicitly occurs when the user makes a call to a tabled predicate
+from the interpreter level, but does not generate all solutions.  This
+commonly occurs in batched scheduling, but can also occur in local
+scheduling if an exception occurs.  In such a case, the user will see
 the warning {\tt "Removing incomplete tables..."} appear.  Any
 complete tables will not be removed.  They can be abolished by using
 one of XSB's predicates for abolishing tables.
-
 
 \paragraph{Subsumption-Based Tabling and Meta-Logical Predicates}
 \index{tabling!subsumption-based!interaction with meta-logical predicates}
@@ -666,7 +885,10 @@ loop, and no answers are ever produced.  Each of these atoms can be
 failed, thereby proving {\tt s}.  Exercise \ref{ex:lrd} thus
 illustrates an instance of how tabling differs from Prolog in
 executing stratified programs since Prolog would not fail finitely for
-this program.
+this program~\footnote{\LRD stratification may be reminiscent of the
+  Subgoal Dependency Graphs of Section~\ref{section:scheduling} but
+  differ in several respects, most notably in that stratification
+  considers only cycles through negative dependencies.}.
 
 \paragraph*{Completely Evaluated Subgoals}
 \index{tabling!complete evaluation}
@@ -726,14 +948,14 @@ the use of tabled negation ({\tt tnot/1}) with Prolog's negation
 restrictions are discussed in detail below --- for now we focus on
 differences in behavior or these two predicates in stratified
 programs.  Recall that ${\tt '\backslash+'(S)}$ calls $S$ and if $S$
-has a solution, Prolog , executes a cut over the subtree created by
+has a solution, Prolog executes a cut over the subtree created by
 ${\tt '\backslash+'(S)}$, and fails.  {\tt tnot/1} on the other hand,
 does not execute a cut, so that all subgoals in the computation path
 begun by the negative call will be completely evaluated.  The major
 reason for not executing the cut is to insure that XSB evaluates
 ground queries to Datalog programs with negation with polynomial data
-complexity.  As seen in Section \ref{sec:cuts}, this property cannot
-be preserved if negation ``cuts'' over tables.
+complexity.  As seen \cite{ChWa96}, this property cannot be preserved
+if negation ``cuts'' over tables.
 
 There are other small differences between {\tt tnot/1} and \not
 illustrated in the following exercise.
@@ -746,21 +968,35 @@ a case in which non-ground negation is sound.
 ngr_p:- \+ ngr_p(_).
 ngr_p(a).
 \end{verbatim}
-Its tabled analog is 
+One tabled analog is 
 \begin{verbatim}
 :- table ngr_tp/1.
-ngr_tp:- tnot(ngr_tp(_)).
 ngr_tp(a).
+
+ngr_tp:- tnot(ngr_tp(_)).
 \end{verbatim}
 \version{} of XSB will flounder on the call to {\tt ngr\_tp}, but not
-on the call to {\tt ngr\_p/0}.  
+on the call to {\tt ngr\_p/0}.  On the other hand if {\tt sk\_not/1}
+is used
+\begin{verbatim}
+ngr_skp:- sk_not(ngr_tp(_)).
+\end{verbatim}
+the nonground semantics is allowed.  
+\end{exercise}
+
+{\tt sk\_not/1} works by
+asserting a new tabled subgoal, abstractly 
+\begin{verbatim}
+:- table '_$ngr_tp'
+'_$skolem_ngr_tp' :- ngr_tp(_).
+\end{verbatim}
+to avoid the problem with variables.  In addition, since {\tt
+  sk\_not/1} creates a new tabled predicate, it can be used to call
+non-tabled predicates as well, ensuring tabling.
 
 The description of {\tt tnot/1} in Section \ref{sec:control} describes
 other small differences between \not and {\tt tnot/1} as implemented
-in XSB\@.
-\end{exercise}
-
-Before leaving the subject of stratification, we note that the
+in XSB\@.Before leaving the subject of stratification, we note that the
 concepts of stratification also underly XSB's evaluation of tabled
 findall: {\tt tfindall/3}.  Here, the idea is that a program is
 stratified if it contains no loop through tabled findall (See the
@@ -826,10 +1062,11 @@ simpl_s:- simpl_p(X).
 
 simpl_r:- tnot(simpl_s),simpl_r.
 \end{verbatim}
-Is {\tt simpl\_p(X)} true for any {\tt X}?  Try the query {\tt ?-
-simpl\_p(X)} -- be sure to backtrack through all possible answers.
-Now try the query again.  What could possibly account for this
-behavior?
+Try the query {\tt ?- simpl\_p(X)}.  If you have a copy of XSB defined
+using Batched Scheduling load the examples program and query {\tt ?-
+  simpl\_p(X)} -- be sure to backtrack through all possible answers.
+Now try the query again.  What could possibly account for the
+difference in behavior between Local and Batched Scheduling?
 \end{exercise}
 
 At this point, it is worthwhile to examine closely the evaluation of
@@ -849,11 +1086,11 @@ the program shown below in bold:
 Based on evaluating only the bold literals, the three atoms are all
 undefined since they are neither proved true, nor fail.  However if
 the evaluation could only look at the literal in italics, {\em
-simpl\_r}, it would discover that {\em simpl\_r} is involved in a
+  simpl\_r}, it would discover that {\em simpl\_r} is involved in a
 positive loop and, since there is only one clause for {\em simpl\_r},
 the evaluation could conclude that the atom was false.  This is
-exactly what XSB does, {\tt delays} the evaluation of {\tt
-tnot(simpl\_s)} in the clause for {\tt simpl\_r} and looks ahead to
+exactly what XSB does, it {\em delays} the evaluation of {\tt
+  tnot(simpl\_s)} in the clause for {\tt simpl\_r} and looks ahead to
 the next literal in the body of that clause.  This action of looking
 ahead of a negative literal is called {\em delaying}.  A delayed
 literal is moved into the {\em delay list} of a current path of
@@ -861,11 +1098,11 @@ computation.  Whenever an answer is derived, the delay list of the
 current path of computation is copied into the table.  If the delay
 list is empty, the answer is unconditional; otherwise it is
 conditional.  Of course, for definite programs any answers will be
-unconditional --- we therefore omitted delay lists when discussing such
-programs.
+unconditional --- we therefore omitted delay lists when discussing
+such programs.
 
 In the above program, delaying occurs for the negative literals in
-clause for {\tt simpl\_p(X)}, {\tt simpl\_s}, and {\tt simpl\_r}.
+clauses for {\tt simpl\_p(X)}, {\tt simpl\_s}, and {\tt simpl\_r}.
 In the first two cases, conditional answers can be derived, while in
 the third, {\tt simpl\_r} will fail as mentioned above.  Delayed
 literals eventually become evaluated through {\em simplification}.
@@ -932,10 +1169,10 @@ XSB delays only when programs are not \LRD.  In the language of
 \index{well-founded semantics}
 
 XSB delays literals for non-\LRD{} programs and later simplifies them
-away.  But how can the programmer determine when all simplification
-has been done?  One method is to use local evaluation, discussed below
-in Section \ref{sec:local}.  A second method is to make a top-level
-call for a predicate, {\tt p} as follows:
+away.  In Local Scheduling, all simplification will be done before the
+first answer is returned to the user.  In Batched Scheduling it is
+usually better to make a top-level call for a predicate, {\tt p} as
+follows:
 \begin{verbatim}
 ?- p,fail ; p.
 \end{verbatim}
@@ -965,7 +1202,7 @@ certain (pathological?) programs.
 \begin{exercise}
 Consider the following program:
 \begin{verbatim}
-:- table p/1,r/0,s/0.
+:- table ac_p/1,ac_r/0,ac_s/0.
 ac_p(X):- ac_p(X).
 ac_p(X):- tnot(ac_s).
 
@@ -984,7 +1221,7 @@ that it will not be able to later simplify away.  In such a case, an
 operation, called {\em answer completion} is needed to remove the
 clause
 \begin{verbatim}
-      p(X):- p(X)|
+      ac_p(X):- ac_p(X)|
 \end{verbatim}
 Without answer completion, XSB may consider some answers to be
 undefined rather than false.  It is thus is sound, but not complete
@@ -1112,7 +1349,9 @@ stable models will be correspondingly reduced.  In fact, by using XSB
 in conjunction with a Stable Model generator, Smodels \cite{NiSi97},
 an efficient system has been devised for model checking of concurrent
 systems that is 10-20 times faster than competing systems
-\cite{LiRS98}.  
+\cite{LiRS98}.  In addition, using the XASP package (see the separate
+manual, \cite{CaSW02a} in XSB's packages directory) a consistency
+checker for description logics has also been created \cite{Swif04}.
 
 \section{Tabled Aggregation} \label{sec:table-aggregation}
 \index{tabled aggregation}
@@ -1142,12 +1381,14 @@ the query {\tt ?- path(1,5,X)} over the graph provided in the file
 If we could use tabling to compute the path with least cost, or the
 shortest path, the program would not only omit extraneous information,
 but it would also terminate.  Recall that for simple horn programs,
-variant-based tabling ensures termination by only returning a given
-answer $A$ once, and failing on subsequent derivations of $A$\@.  If
-this strategy could be extended so that the engine only returned a new
-answer if it was minimal, termination could be ensured.  The XSB
-predicate, {\tt filterReduce(?Pred,+Binary\_operator,+Identity,Value)},
-does just this.  
+answer similarity is based on variance of answers.  This ensures
+termination by only returning a given answer $A$ once, and failing on
+subsequent derivations of $A$\@.  If the measure of answer similarity
+could be extended so that the engine only returned a new answer if it
+was minimal (compared to other answers in the table when it was
+derived), termination could be ensured.  The XSB predicate, {\tt
+  filterReduce(?Pred,+Binary\_operator,+Identity,Value)}, does just
+this.
 
 \begin{exercise}
 The use of {\tt filterReduce/4} can be seen most easily through an
@@ -1184,12 +1425,15 @@ sp(X,Y,C)} is derived within {\tt filterReduce1/4}, the later
 predicate returns only when {\tt C} is a shorter  path for {\tt X} and
 {\tt Y} than any so far derived.
 
-While {\tt shorter\_path/4} terminates, it returns non-optimal
-solutions, and these solutions can in principle be costly ---
-\cite{JFLP-Scheduling} cites a case in which the shorter path program,
-which should be less than cubic in the number of vertices in a graph,
-has exponential complexity because of the non-optimal solutions that
-are returned.  Fortunately, this has an easy solution.
+{\tt shorter\_path/4} terminates under both Local and Batched
+Scheduling.  Under Batched Scheduling, which returns answers as they
+are derived, non-optimal solutions are returned, and these solutions
+can in principle be costly --- \cite{JFLP-Scheduling} cites a case in
+which the shorter path program, which should be less than cubic in the
+number of vertices in a graph, has exponential complexity because of
+the non-optimal solutions that are returned.  Fortunately, this case
+does not arise in Local Scheduling and even for Batched Scheduling
+there is an easy solution.
 
 \begin{exercise}
 The actual {\tt shortest\_path} program has the following definition.
@@ -1244,50 +1488,137 @@ arguments of {\tt Pred} in the return and whose preference structure
 the use of {\tt filterPO/4} to construct preference logic grammars can
 be found in \cite{CuSW99a}.
 
-\subsection{Local Evaluation} \label{sec:local}
-\index{Local Scheduling}
-
-For the shortest path example, simply failing until a minimal answer
-was derived and then returning that solution was an effective
-technique for computing the shortest path.  However, this approach
-will not always work.  As we have seen in Exercise \ref{ex:scc},
-programs can consist of sets of mutually recursive predicates and in
-principle these sets can be arbitrarily large.  If these computations
-are to use tabled aggregation, the approach taken by {\tt
-filterReduce/4} will not suffice.  To see this, we make the notion of
-mutual recursion more precise.  A tabled computation can be viewed as
-a directed graph, in which there is a link from one non-completed
-tabled predicate $P1$ to a non-completed tabled predicate $P2$ if $P2$
-(or $tnot(P2))$ is called by $P1$.  Of course, this graph constantly
-changes through an evaluation as resolution proceeds, subgoals are
-completed, and so on.  Any directed graph can be uniquely partitioned
-into a set of maximal {\em strongly connected components} or SCCs, and
-these sets correspond to sets of mutually recursive predicates.  The
-SCCs then, are reminiscent of the \LRD stratification discussed in
-Section \ref{sec:lrd}, except that both positive and negative links
-are counted as dependencies.  From this view, to optimally compute
-tabled aggregation, non-optimal answers from a given subgoal $S$ must
-be returned within the SCC of $S$, but not outside the SCC.  This
-action is performed by {\em Local Scheduling}.
-
-It is illustrative to compare local scheduling, the default scheduling
-stratey of XSB, to {\em Batched Scheduling}.  Batched scheduling
-returns answers as they are derived, and resembles Prolog's tuple at a
-time scheduling.  Local scheduling was shown to be quite efficient in
-terms of time and space in \cite{JFLP-Scheduling}, and is the fastest
-scheduling strategy that we know of for computing a sequence of
-answers.  The same paper also introduced Local Scheduling, which
-computes all answers for each SCC and return only the best answer (or
-answers) out of the SCC, when the SCC is completely evaluated ---
-exactly the thing for tabled aggregation.
-
-XSB can be configured to use batched scheduling via the configuration
-option {\tt --enable-batched-scheduling} and remaking XSB\@.  This
-will not affect the default version of XSB, which will also remain
-available.
-
-
 %%% Local Variables: 
 %%% mode: latex
 %%% TeX-master: "manual1"
 %%% End: 
+
+%--------------------------------------------------------------------
+
+\section{Tabling and Multi-Threading}
+\label{sec:TablingMultiThreading}
+
+Tabling can factor out redundant subcomputations from a logical
+evaluation so that the each subcomputation uses program clause
+resolution only once, and uses answer resolution in other cases.  When
+multiple threads are executed within the same XSB process, the
+question arises of how -- or whether -- the threads can share tables
+between themselves.  Abstractly, there are two different perspectives
+one could take.
+
+\begin{itemize}
+\item {\bf Thread-Specific Tables} One point of view is that each
+  thread creates its own tables, and does not share these tables with
+  other threads.  Any tables created by a thread are abolished as soon
+  as the thread exits.
+
+\item {\bf Thread-Shared Tables} The other point of view is that all
+  threads should share tables among themselves, so that no redundant
+  subcomputations are ever performed {\em even by separate threads}.
+  When a thread exits, any tables created by the thread remain, until
+  they are explicitly abolished.
+\end{itemize}
+
+From the perspective of Thread-Specific Tables, threads are acting
+independently, and so there is little need to share tables.
+Thread-Specific Tables are used, for instance, if XSB is incorporated
+into a web-server to aid in query evaluation.  When a new query is
+presented to XSB, a new thread is created and the query is evaluated,
+perhaps making use of tabled computation.  When the query to XSB is
+completed, the thread exits and any space for its tables are
+abolished.  If the queries share relatively little computation among
+themselves, Thread-Specific Tables are a good solution, and in fact
+Thread-Specific Tables are being used in a XSB web-server that is
+under development to answer engineering questions about aircraft
+parts.
+
+Thread-Specific Tables are not adequate for two other multi-threading
+applications.  One involves queries to a multi-threaded system that
+share information.  An example of such an application is a
+multi-threaded web-server that uses the FLORA package, or XSB's
+Coherent Description Framework package (under development).  Both of
+these packages use tabling to evaluate core inheritance structures
+used to answer many different queries.  A second application involves
+using tabling as a communication for parallelism, the so-called {\em
+  Table Parallelism} of \cite{FHSW95,???}.  From this perspective,
+threads do not act independently, nor do they simply allow reuse of
+shared information, but multiple threads, working on multiple
+processors coordinate to speed up costly computations.
+
+\version{} of XSB offers both thread-specific and thread-shared tables
+for multi-threading.  The current version of XSB makes thread-shared
+tables the default for multi-threading, using the following simple
+mechanism.
+
+\begin{sf}
+\begin{tabbing}
+foooo\=foooo\=foooo\=foooo\=fooooooooooooooooooooo\=ooo\=\kill
+\> Upon a call to a tabled subgoal $S$ by thread $i$ \\
+\\
+\> \>   if (a variant of) $S$ is not in the shared table, add it to the
+  common table, \\
+\> \> \> marking it as begun by thread $i$, then proceed as in
+  the sequential case.\\
+\\
+\> \>   if $S$ is completed, proceed as in the sequential case.\\
+
+\> \>   if $S$ is in the shared table but is not completed and was not
+  marked as being begun by $i$, \\
+\> \> \> suspend the thread $i$ until the completion of $S$.
+\end{tabbing}
+\end{sf}
+\noindent
+Thus calls to thread-shared tables differ only from sequential
+computation when a thread $i$ calls a non-completed table that was
+begun by another thread.  In such a case, $i$ suspends until the
+completion of the tabled subgoal by another thread.  Such a mechanism
+can easily lead to deadlocks, as shown below, so that if threads
+suspend on mutually dependent subgoals, a deadlock detection thread
+will abort the computation.
+
+\begin{example}
+Consider a variant of the program in Example~\ref{ex:cutTable}
+\begin{verbatim}
+     :- table a/1, b/1.
+
+     a(a1).
+     a(X):- b(X).
+
+     b(b1).
+     b(X):- a(X).
+\end{verbatim}
+By default, tables are thread-shared if multiple threads are active.
+Thus, if thread $i$ evaluates and completes a query {\tt a(X)}, other
+threads may use the completed tables just as in the sequential engine.
+
+On the other hand, consider the following sequence of events.
+
+{\em Time 1} Thread $i$ calls {\tt a(X)} for the first time in the session
+
+{\em Time 2} Thread $j$ calls {\tt b(X)} for the first time in the session
+
+{\em Time 3} Thread $j$ calls {\tt a(X)}, discovers an incomplete
+table, and suspends
+
+{\em Time 4} Thread $i$ calls {\tt b(X)}, discovers an incomplete
+table, and suspends
+
+\noindent
+In this case a deadlock occurs, and XSB's deadlock detection thread
+will abort the computation.
+
+Had the declaration been
+\begin{verbatim}
+:- table_thread_specific a/1, b/1.
+\end{verbatim}
+then the tables would only be visible to thread $i$: other threads
+would re-evaluate the query {\tt a(X)}.
+\end{example}
+
+In \version{} of XSB, multi-threading with thread-shared tables is
+supported only for local evaluation.  In addition, call subsumption is
+not supported when there are multiple threads.
+
+%--------------------------------------------------------------------
+
+
