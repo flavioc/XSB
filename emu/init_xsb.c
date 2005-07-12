@@ -749,6 +749,13 @@ void init_machine(CTXTdecl)
 
   random_seeds = 0;
 
+  asrtBuff = (struct asrtBuff_t *)malloc(sizeof(struct asrtBuff_t));
+  asrtBuff->Buff = NULL;
+  asrtBuff->Buff_size = 512;
+  asrtBuff->Loc = NULL;
+  asrtBuff->BLim = 0;
+  asrtBuff->Size = 0;
+
 /*  call_intercept = init_call_intercept ; */
 
   th->tid = xsb_thread_self() ;

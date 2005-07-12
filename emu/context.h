@@ -69,6 +69,14 @@ struct random_seeds_t {
   double TZ;
 };
 
+struct asrtBuff_t {
+ char *Buff;
+ int Buff_size;
+ int *Loc;
+ int BLim;
+ int Size;
+};
+
 #ifdef MULTI_THREAD
 
 #include <sys/types.h>
@@ -212,6 +220,8 @@ struct sort_par_spec _par_spec;		/* spec for par_sort */
 
 struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
 
+struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
+
 /* Flag used in the locking of called tries */
 int	trie_locked;
 
@@ -336,6 +346,8 @@ typedef struct th_context th_context ;
 #define par_spec		(th->_par_spec)
 
 #define random_seeds		(th->_random_seeds)
+
+#define asrtBuff		(th->_asrtBuff)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)

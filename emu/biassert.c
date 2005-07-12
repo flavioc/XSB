@@ -284,63 +284,63 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
   pad64bits(Loc);					\
 }
 
-#define dbgen_instB3_tv(Opcode,Arg1,Arg2,Arg3) {		\
-  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);		\
-  if (*Loc >= BLim) Buff = buff_realloc();			\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1);	\
-  write_byte(Buff,Loc,Arg2); write_byte(Buff,Loc,Arg3);		\
-  pad64bits(Loc);						\
+#define dbgen_instB3_tv(Opcode,Arg1,Arg2,Arg3) {							\
+  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);							\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);				\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg2); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg3);		\
+  pad64bits(asrtBuff->Loc);										\
 }
 
-#define dbgen_instB3_sob(Opcode,Arg1,Arg2,Arg3) {		\
-  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);		\
-  if (*Loc >= BLim) Buff = buff_realloc();			\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,Arg1>>16);	\
-  write_byte(Buff,Loc,Arg1>>8); write_byte(Buff,Loc,Arg1);	\
-  pad64bits(Loc);						\
-  write_word(Buff,Loc,Arg2); write_word(Buff,Loc,Arg3);		\
+#define dbgen_instB3_sob(Opcode,Arg1,Arg2,Arg3) {							\
+  dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);							\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);				\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1>>16);	\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1>>8); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
+  pad64bits(asrtBuff->Loc);										\
+  write_word(asrtBuff->Buff,asrtBuff->Loc,Arg2); write_word(asrtBuff->Buff,asrtBuff->Loc,Arg3);		\
 }
 
-#define dbgen_instB_pvv(Opcode,Arg1,Arg2) {		\
-  dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);		\
-  if (*Loc >= BLim) Buff = buff_realloc();		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,Arg1); write_byte(Buff,Loc,Arg2);	\
-  pad64bits(Loc);					\
+#define dbgen_instB_pvv(Opcode,Arg1,Arg2) {							\
+  dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);						\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg2);	\
+  pad64bits(asrtBuff->Loc);									\
 }
 
-#define dbgen_instB_ppv(Opcode,Arg1) {			\
-  dbgen_printinst_macro(Opcode, Arg1,0);		\
-  if (*Loc >= BLim) Buff = buff_realloc();		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
-  pad64bits(Loc);					\
+#define dbgen_instB_ppv(Opcode,Arg1) {								\
+  dbgen_printinst_macro(Opcode, Arg1,0);							\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
+  pad64bits(asrtBuff->Loc);									\
 }
 
-#define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {		\
-  dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);		\
-  if (*Loc >= BLim) Buff = buff_realloc();		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);	\
-  pad64bits(Loc);					\
-  write_word(Buff,Loc,Arg2);				\
+#define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {							\
+  dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);						\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
+  pad64bits(asrtBuff->Loc);									\
+  write_word(asrtBuff->Buff,asrtBuff->Loc,Arg2);						\
 }
 
-#define dbgen_instB_pppw(Opcode,Arg1) {			\
-    dbgen_printinst_macro(Opcode, (Integer)Arg1, 0);	\
-    if (*Loc >= BLim) Buff = buff_realloc();		\
-    write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-    write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);		\
-    pad64bits(Loc);						\
-    write_word(Buff,Loc,Arg1);					\
+#define dbgen_instB_pppw(Opcode,Arg1) {									\
+    dbgen_printinst_macro(Opcode, (Integer)Arg1, 0);							\
+    if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);				\
+    write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
+    write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);		\
+    pad64bits(asrtBuff->Loc);										\
+    write_word(asrtBuff->Buff,asrtBuff->Loc,Arg1);							\
 }
 
-#define dbgen_instB_ppp(Opcode) {			\
-  dbgen_printinst_macro(Opcode,0,0);			\
-  if (*Loc >= BLim) Buff = buff_realloc();		\
-  write_byte(Buff,Loc,Opcode); write_byte(Buff,Loc,0);	\
-  write_byte(Buff,Loc,0); write_byte(Buff,Loc,0);	\
-  pad64bits(Loc);					\
+#define dbgen_instB_ppp(Opcode) {								\
+  dbgen_printinst_macro(Opcode,0,0);								\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
+  write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
+  pad64bits(asrtBuff->Loc);									\
 }
 
 
@@ -552,22 +552,20 @@ static void reg_release(int R0)
     }
 }
 
+#ifndef MULTI_THREAD
+struct asrtBuff_t asrtBuffB = {NULL,512,NULL,0,0};
+struct asrtBuff_t *asrtBuff = &asrtBuffB;
+#endif
 
-static char *Buff = NULL;
-static int Buff_size = 512;
-static int *Loc;
-static int BLim = 0;
-static int Size;
-
-static char *buff_realloc(void)
+static char *buff_realloc(CTXTdecl)
 {
-  /*  xsb_dbgmsg((LOG_DEBUG,"Enter buff_realloc(%d) %X", Buff_size,Buff)); */
-  Buff_size = Buff_size + Buff_size;
-  if (Buff == NULL) Buff = (char *)malloc(Buff_size);
-  else Buff = (char *)realloc(Buff,Buff_size);
-  BLim = Buff_size-16;
-  /*  xsb_dbgmsg((LOG_DEBUG,"Leave buff_realloc(%d) %X", Buff_size,Buff)); */
-  return(Buff);
+  /*  xsb_dbgmsg((LOG_DEBUG,"Enter buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
+  asrtBuff->Buff_size = asrtBuff->Buff_size + asrtBuff->Buff_size;
+  if (asrtBuff->Buff == NULL) asrtBuff->Buff = (char *)malloc(asrtBuff->Buff_size);
+  else asrtBuff->Buff = (char *)realloc(asrtBuff->Buff,asrtBuff->Buff_size);
+  asrtBuff->BLim = asrtBuff->Buff_size-16;
+  /*  xsb_dbgmsg((LOG_DEBUG,"Leave buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
+  return(asrtBuff->Buff);
 }
 
 /*----------------------------------------------------------------------*/
@@ -608,7 +606,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
   int v;
   Pair sym;
 
-  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
 
   /* set catcher */
   if ((Argno = setjmp(assertcmp_env))) {
@@ -634,9 +632,9 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
   }
   Arity = arity(Head);
   Location = 0;
-  Loc = &Location;
+  asrtBuff->Loc = &Location;
   dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched */
-  Loc_size = *Loc - sizeof(Cell);
+  Loc_size = *asrtBuff->Loc - sizeof(Cell);
   if (has_body) Reg = reg_init(xsb_max(Arity,(int)get_arity(get_str_psc(Body))));
   else Reg = reg_init(Arity);
   for (Argno = 1; Argno <= Arity; Argno++) {
@@ -650,8 +648,8 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
     db_genmvs(CTXTc inst_queue,Reg);
     dbgen_instB_pppw(xsb_execute, get_str_psc(Body));
   } else dbgen_instB_ppp(proceed);
-  Size = *Loc;
-  write_word(Buff,&Loc_size,(Size/sizeof(Cell)));  /* backpatch max heap needed*/
+  asrtBuff->Size = *asrtBuff->Loc;
+  write_word(asrtBuff->Buff,&Loc_size,(asrtBuff->Size/sizeof(Cell)));  /* backpatch max heap needed*/
 
   return TRUE;
 }
@@ -1015,7 +1013,7 @@ static void db_genmvs(CTXTdeclc struct instruction *inst_queue, RegStat Reg)
 
 /*======================================================================*/
 /*	The following byte offsets are valid for 32 bit architectures	*/
-/*	For 64 bit architecture multiply everithing by 2		*/
+/*	For 64 bit architecture multiply everything by 2		*/
 /*======================================================================*/
 
 /*======================================================================*/
@@ -1043,7 +1041,7 @@ static void db_genmvs(CTXTdeclc struct instruction *inst_queue, RegStat Reg)
 /*		0: BC instruction: fail (if empty),			*/
 /*			jump and save breg (if nonempty)		*/
 /*		4: Addr of first Clref on ALL chain			*/
-/*		8: Addr of last Clref on ALL chain			*/
+/*		8: Addr of last Clref on ALL chainXSBENV/tests/		*/
 /*									*/
 /* PrRef's point to chain of clRef's (one of 2 types):			*/
 /* (the -8 location stores length of buff + flag indicating ClRef type	*/
@@ -1061,10 +1059,10 @@ static void db_genmvs(CTXTdeclc struct instruction *inst_queue, RegStat Reg)
 /*			if trust-type then ptr to prref, if first-level	*/
 /*			SOB, or ptr to previous enclosing SOB+20  	*/
 /*		8: BC switch-on-bound instruction (drop thru if var)	*/
-/*		11: (cont) arg to index on				*/
+/*		11: (cont) arg(s) to index on				*/
 /*		12: (cont) address of Hash Table			*/
 /*		16: (cont) size of Hash Table				*/
-/*		20: BC jump to	(or fail if empty)			*/
+/*		20: BC jump to...	(or fail if empty)		*/
 /*		24: (cont) Addr of first ClRefI on all subchain		*/
 /*		    or to ClRef1 for next index				*/
 /*		28: Addr of last ClRefI on all subchain			*/
@@ -1315,7 +1313,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 
   MakeClRef( Clause,
 	     (NI>0) ? INDEXED_CL : UNINDEXED_CL,
-	     IC_CELLS(NI) + ((Size+0xf)&~0x7)/sizeof(Cell) ) ;
+	     IC_CELLS(NI) + ((asrtBuff->Size+0xf)&~0x7)/sizeof(Cell) ) ;
 
   if (xsb_profiling_enabled)
     add_prog_seg(get_str_psc(Head),(byte *)Clause,ClRefSize(Clause));
@@ -1331,13 +1329,14 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
     write_word(Clause,Loc,0);
   }
 
-/* Buff is a global variable used to communicate from assert_code_to_buff
+/* asrtBuff->Buff is a global variable used to communicate from assert_code_to_buff
    to assert_buff_to_clref through PROLOG calls */
 
-  memmove(((pb)Clause)+Location,Buff,Size); /* fill in clause with code from Buff */
+  memmove(((pb)Clause)+Location,asrtBuff->Buff,asrtBuff->Size); /* fill in clause with code from Buff */
   /* ctop_int(7, (Integer)Clause);  DO NOT RETURN ANYTHING */
   /* *Clref = Clause; */
   
+  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
   if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,1);
   else db_addbuff_i(Arity,Clause,Pred,AZ,Index,NI,Head,HashTabSize);
 
@@ -1350,7 +1349,9 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 static void prefix_to_chain(byte Arity, ClRef FirstClause, ClRef NewClause)
 {
   int Loc = 0;
+  dbgen_inst_ppvw(trymeelse,Arity,FirstClause,NewClause,&Loc);
 
+  Loc = 0;
   if (ClRefTryOpCode(FirstClause) == noop)
   {  dbgen_inst_ppvw(dyntrustmeelsefail,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc); }
@@ -1363,8 +1364,6 @@ static void prefix_to_chain(byte Arity, ClRef FirstClause, ClRef NewClause)
   ClRefPrev(NewClause)   = ClRefPrev(FirstClause);
   ClRefPrev(FirstClause) = NewClause;
 
-  Loc = 0;
-  dbgen_inst_ppvw(trymeelse,Arity,FirstClause,NewClause,&Loc);
 }
 
 /* add NewClause after LastClause on try-retry chain */
@@ -1373,6 +1372,7 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
   int Loc = 0;
   dbgen_inst_ppvw(dyntrustmeelsefail,Arity,ClRefNext(LastClause),
 		  NewClause,&Loc);
+  SetClRefPrev(NewClause, LastClause);
 
   Loc = 0;
   if (ClRefTryOpCode(LastClause) == noop)
@@ -1384,7 +1384,6 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
   else xsb_dbgmsg((LOG_DEBUG,"***Error 2 in assert: 0x%x",
 		  ClRefTryOpCode(LastClause)));
 
-  SetClRefPrev(NewClause, LastClause);
 }
 
 /* add Clause to end of Pred */
@@ -1395,13 +1394,13 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int Inum)
   
   if (PredOpCode(Pred) == fail) {
     Loc = 0;
+    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,&Loc);
+    SetClRefNext(Clause, Pred) ;
+    Loc = 0;
     if (Inum > 1) {dbgen_inst_pppw(jump,Clause,Pred,&Loc);}
     else {dbgen_inst_ppvw(jumptbreg,Arity,Clause,Pred,&Loc);}
     Pred->LastClRef = Clause ;
     SetClRefPrev(Clause, Pred) ;
-    Loc = 0;
-    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,&Loc);
-    SetClRefNext(Clause, Pred) ;
   } else if ( PredOpCode(Pred) == jumptbreg || PredOpCode(Pred) == jump ) {
     if (AZ == 0) {
       prefix_to_chain(Arity, Pred->FirstClRef, Clause);
@@ -1557,8 +1556,8 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
       IndRefNext(NewInd) = (CPtr) SOBrec ;
       ClRefNumNonemptyBuckets(SOBrec)++ ;
     } else if (AZ == 0) { /* add at beginning */
-      *Bucketaddr = NewInd ;
-      IndRefPrev(NewInd) = (CPtr) Bucketaddr ;
+      Loc = 0;
+      dbgen_inst_ppvw(trymeelse,Arity,OldInd,NewInd,&Loc);
       Loc = 0;
       if (cell_opcode(OldInd) == noop)
       {  dbgen_inst_ppvw(dyntrustmeelsefail,Arity,IndRefNext(OldInd),
@@ -1566,10 +1565,12 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
       else
       {  dbgen_inst_ppvw(retrymeelse,Arity,IndRefNext(OldInd),
 			 OldInd,&Loc); }
-      Loc = 0;
-      dbgen_inst_ppvw(trymeelse,Arity,OldInd,NewInd,&Loc);
       IndRefPrev(OldInd) = NewInd;
+      *Bucketaddr = NewInd ;
+      IndRefPrev(NewInd) = (CPtr) Bucketaddr ;
     } else { /* AZ == 1 add at end */
+      Loc = 0;
+      dbgen_inst_ppvw(dyntrustmeelsefail,Arity, SOBrec, NewInd,&Loc);
       Loc = 0;
       if (cell_opcode(OldInd) == noop)
       {  dbgen_inst_ppvw(trymeelse,Arity,NewInd,OldInd,&Loc); }
@@ -1578,8 +1579,6 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
           OldInd = IndRefNext(OldInd);
         dbgen_inst_ppvw(retrymeelse,Arity,NewInd,OldInd,&Loc);
       }
-      Loc = 0;
-      dbgen_inst_ppvw(dyntrustmeelsefail,Arity, SOBrec, NewInd,&Loc);
       IndRefPrev(NewInd) = OldInd ;
     }
 }
@@ -1591,12 +1590,12 @@ static void addto_allchain( int AZ, ClRef Clause, SOBRef SOBrec, byte Arity)
 
   /* add code buff to all chain */
   if (PredOpCode(ClRefPrRef(SOBrec)) == fail) { /* insert first clrefI into SOB buff */
+    Loc = 0;
+    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,&Loc);
     Loc = 0 ;
     dbgen_inst_pppw(jump,Clause,ClRefPrRef(SOBrec),&Loc);
     ClRefLastIndex(SOBrec) = (Cell) Clause ;
     ClRefPrev(Clause) = SOBrec ;
-    Loc = 0;
-    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,&Loc);
     SetClRefNext(Clause, SOBrec);
   } else if (AZ == 0) {  /* add at beginning */
     First = (ClRef) ClRefFirstIndex(SOBrec);
