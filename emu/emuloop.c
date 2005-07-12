@@ -1935,7 +1935,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    static double realtime;	/* To retain its value across invocations */
 
    extern void dis(xsbBool);
-   extern char *init_para(int, char **);
+   extern char *init_para(CTXTdeclc int, char **);
    extern void perform_IO_Redirect(int, char **);
    extern void init_machine(CTXTdecl), init_symbols(void);
 #ifdef FOREIGN
@@ -1968,7 +1968,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 
      realtime = real_time();
      setbuf(stdout, NULL);
-     startup_file = init_para(argc, argv);	/* init parameters */
+     startup_file = init_para(CTXTc argc, argv);	/* init parameters */
 
      init_machine(CTXT);	/* init space, regs, stacks */
      init_inst_table();		/* init table of instruction types */

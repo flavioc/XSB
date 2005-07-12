@@ -325,7 +325,7 @@ for (i=1; i<argc; i++)
 
 /* Initialize System Parameters
    ---------------------------- */
-char *init_para(int argc, char *argv[])
+char *init_para(CTXTdeclc int argc, char *argv[])
 {
   int i;
   char warning[80];
@@ -341,7 +341,7 @@ char *init_para(int argc, char *argv[])
 
 #ifdef MULTI_THREAD
   init_system_mutexes() ;
-  init_system_threads() ;
+  init_system_threads(th) ;
 #endif
 
   init_open_files();
@@ -750,6 +750,9 @@ void init_machine(CTXTdecl)
   random_seeds = 0;
 
 /*  call_intercept = init_call_intercept ; */
+
+  th->tid = xsb_thread_self() ;
+  th->waiting_for_thread = NULL ;
 #endif
 
   tsgLBuff1 = (VarString *)malloc(sizeof(VarString));

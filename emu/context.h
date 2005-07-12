@@ -226,6 +226,11 @@ DynamicStack  _tstTermStackLog;
 DynamicStack  _tstSymbolStack;
 DynamicStack  _tstTrail;
 
+/* stuff for deadlock detection in completion */
+
+struct th_context * waiting_for_thread;
+int tid ;
+
 } ;
 
 typedef struct th_context th_context ;

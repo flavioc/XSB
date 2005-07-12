@@ -121,6 +121,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   int template_size, attv_num, tmp;
 #ifdef MULTI_THREAD
   int table_tid ;
+  th_context * waiting_for_thread;
   CPtr tbreg;
 #ifdef SLG_GC
   CPtr old_cptop;
@@ -178,12 +179,17 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    might have been removed
  */
      {  table_tid = int_val(tcp_tid(subg_cp_ptr(producer_sf))) ;
-	if (table_tid != xsb_thread_self()) 
+	if (table_tid != th->tid) 
+		waiting_for_thread = find_context(table_tid) ;
+		if( would_deadlock( waiting_for_thread, th ) )
+			xsb_abort( "deadlock in concurrent tabling detected" );
+                th->waiting_for_thread = waiting_for_thread ;
 		while( !is_completed(producer_sf) )
 		{	pthread_mutex_unlock(&completing_mut);
 			pthread_cond_wait(&completing_cond,&completing_mut) ;
 		} 
      }
+     th->waiting_for_thread = NULL ;
      pthread_mutex_unlock(&completing_mut);
   } 
 #endif
@@ -201,7 +207,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     SaveProducerCPF(producer_cpf, continuation, producer_sf,
 		    CallInfo_CallArity(callInfo), (hreg - 1));
 #ifdef MULTI_THREAD
-    tcp_tid(producer_cpf) = (CPtr)makeint(xsb_thread_self());
+    tcp_tid(producer_cpf) = (CPtr)makeint(th->tid);
     pthread_mutex_unlock( &completing_mut );
 #endif
 #ifdef SLG_GC

@@ -37,6 +37,7 @@ typedef struct
 {	pthread_t_p	ptid;
 	int		valid;
 	int		detached ;
+	th_context *	ctxt ;
 } xsb_thread_t ;
 
 static xsb_thread_t th_vec[MAX_THREADS];
@@ -73,7 +74,7 @@ static int th_find( pthread_t_p tid )
 	return -1 ;
 }
 
-static int th_new( pthread_t_p t )
+static int th_new( pthread_t_p t, th_context *ctxt )
 {
 	xsb_thread_t *pos ;
 	int i ;
@@ -89,6 +90,7 @@ static int th_new( pthread_t_p t )
 	else if( pos == th_next )
 		th_next++ ;
 
+	pos->ctxt = ctxt ;
 	pos->valid = 1;
 	pos->ptid = t;
 	pos->detached = 0;
@@ -108,10 +110,10 @@ static void th_delete( int i )
 	th_vec[i].valid = 0;
 }
 
-void init_system_threads( void )
+void init_system_threads( th_context *ctxt )
 {
   pthread_t tid = pthread_self();
-  th_new(P_PTHREAD_T_P) ;
+  th_new(P_PTHREAD_T_P, ctxt) ;
 }
 
 void init_system_mutexes( void )
@@ -148,7 +150,7 @@ static void *xsb_thread_run( void *arg )
 
 	pthread_mutex_lock( &th_mutex );
 	tid = pthread_self();
-	th_new( P_PTHREAD_T_P ) ;
+	th_new( P_PTHREAD_T_P, ctxt ) ;
 	pthread_mutex_unlock( &th_mutex );
 	emuloop( ctxt, get_ep((Psc)flags[THREAD_RUN]) ) ;
 
@@ -182,11 +184,32 @@ static int xsb_thread_create(th_context *th)
 #endif
 
 	pthread_mutex_lock( &th_mutex );
-	id = th_new( thr ) ;
+	id = th_new( thr, new_th ) ;
 	pthread_mutex_unlock( &th_mutex );
 
 	ctop_int( th, 3, id ) ;
 	return rc ;
+}
+
+th_context *find_context( int id )
+{
+	if (th_vec[id].valid)
+		return th_vec[id].ctxt;
+	else
+		return NULL;
+}
+
+int would_deadlock( th_context *t1, th_context *t2 )
+{
+	th_context * t = t1 ;
+
+	while( t != NULL )
+		if( t == t2 )
+			return 1 ;
+		else
+			t = t->waiting_for_thread;
+
+	return 0 ;
 }
 
 #endif /* MULTI_THREAD */

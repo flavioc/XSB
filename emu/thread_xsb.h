@@ -43,7 +43,11 @@ extern pthread_cond_t completing_cond;
 
 #ifdef MULTI_THREAD
 void init_system_mutexes( void ) ;
-void init_system_threads( void ) ;
+void init_system_threads( th_context * ctxt ) ;
+
+th_context *find_context( int tid );
+
+int would_deadlock( th_context *t1, th_context *t2 ) ;
 #endif
 
 #define ENSURE_ONE_THREAD()					\
