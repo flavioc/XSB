@@ -758,9 +758,9 @@ void init_machine(CTXTdecl)
 
 /*  call_intercept = init_call_intercept ; */
 
-/* This is here just for the first thread - others initialize its tid
-   on xsb_thread_run */
-  th->tid = xsb_thread_self() ;
+/* This is here just for the first thread - others initialize its xsb tid
+   on xsb_thread_run - the first thread has always tid = 0 */
+  th->tid = 0 ;
 
   th->waiting_for_thread = NULL ;
 #endif
