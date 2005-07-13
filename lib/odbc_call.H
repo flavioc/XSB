@@ -34,6 +34,7 @@
   odbc_import/2, odbc_import/3, odbc_import/4,
   odbc_transaction/1, odbc_transaction/2,
 	odbc_connect_option/5,
+   set_connect_option/3, get_connect_option/3,
 	odbc_get_schema/2, odbc_get_schema/3,
 	odbc_show_schema/1, odbc_show_schema/2,
 	odbc_user_tables/1, odbc_user_tables/2,

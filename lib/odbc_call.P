@@ -1622,12 +1622,17 @@ odbc_transaction(Connection,rollback) :-
 	 ;	true
 	).
 odbc_transaction(Connection,autocommit(on)) :-
-	odbc_connection_check(Connection,ConnHandle),
-	odbc_connect_option(ConnHandle,1,102,1,RetVal),
-	RetVal =:= 0.
+	set_connect_option(Connection,102,1).
 odbc_transaction(Connection,autocommit(off)) :-
+	set_connect_option(Connection,102,0).
+
+set_connect_option(Connection,Attr,Value):-
 	odbc_connection_check(Connection,ConnHandle),
-	odbc_connect_option(ConnHandle,1,102,0,RetVal),
+	odbc_connect_option(ConnHandle,1,Attr,Value,RetVal),
+	RetVal =:= 0.
+get_connect_option(Connection,Attr,Value):-
+	odbc_connection_check(Connection,ConnHandle),
+	odbc_connect_option(ConnHandle,0,Attr,Value,RetVal),
 	RetVal =:= 0.
 
 odbc_delete(Head,Body) :-
