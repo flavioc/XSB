@@ -324,7 +324,6 @@ codes.  Puts result in a fixed buffer (if nec.) automatically extended */
 void constructString(CTXTdeclc Cell addr, int ivstr)
 {
   int val;
-  static char charstr[2] = "x";
 
  constructStringBegin:
   XSB_Deref(addr);
@@ -347,8 +346,7 @@ void constructString(CTXTdeclc Cell addr, int ivstr)
   case XSB_INT: 
     val = int_val(addr);
     if (val < 256 && val >= 0) {
-      charstr[0] = val;
-      XSB_StrAppend(LSBuff[ivstr],charstr);
+      XSB_StrAppendC(LSBuff[ivstr],val);
       return;
     } else xsb_abort("[PTOC_LONGSTRING] Argument of unknown type");
   case XSB_STRING: 
