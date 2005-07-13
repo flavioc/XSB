@@ -511,7 +511,6 @@ DllExport void call_conv c2p_chars(CTXTdeclc char *str, prolog_term term)
 
 #include "setjmp_xsb.h"
 
-static char *subformat[10];
 static char *c_dataptr_rest;
 static jmp_buf env;
 
@@ -643,7 +642,7 @@ static int count_csize(char *ptr, int quote)
 **
 */
 
-static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
+static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 			prolog_term variable, int ignore)
 {
     char ch;
@@ -704,7 +703,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
 	for (i = 1; i <= fields; i++) {
 	    if (*(ptr+1)=='*') ignore1 = 1;
 	    else { ignore1 = ignore; argno++; }
-	    ptr = ctop_term0(CTXTc ptr,c_dataptr,p2p_arg(variable,argno),ignore1);
+	    ptr = ctop_term0(CTXTc ptr,c_dataptr,subformat,p2p_arg(variable,argno),ignore1);
 	    c_dataptr = c_dataptr_rest;
 	}
 	ptr = skip_subfmt(ptr, ']');
@@ -726,7 +725,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
 		for (i = 1; i <= fields; i++) {
 		    if (*(ptr+1)=='*') ignore = 1;
 		    else { ignore = 0; argno++; }
-		    ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_arg(variable,argno),ignore);
+		    ptr = ctop_term0(CTXTc ptr,cdptr2,subformat,p2p_arg(variable,argno),ignore);
 		    cdptr2 = c_dataptr_rest;
 		}
 	    } else c2p_nil(CTXTc variable);
@@ -751,11 +750,11 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
 		    if (*(ptr+1)=='*') ignore = 1;
 		    else { ignore = 0; argno++; }
 		    if (argno==1) 
-		       ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_car(variable),ignore);
+		       ptr = ctop_term0(CTXTc ptr,cdptr2,subformat,p2p_car(variable),ignore);
 		    else if (argno==2)
-		       ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_cdr(variable),ignore);
+		       ptr = ctop_term0(CTXTc ptr,cdptr2,subformat,p2p_cdr(variable),ignore);
 		    else if (argno==0)
-		       ptr = ctop_term0(CTXTc ptr,cdptr2,p2p_car(variable),ignore);
+		       ptr = ctop_term0(CTXTc ptr,cdptr2,subformat,p2p_car(variable),ignore);
 		       /* always ignored */
 		    else cppc_error(30);
 		    cdptr2 = c_dataptr_rest;
@@ -779,7 +778,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
 
 	if (!ignore) {
 	    if (*(char **)(c_dataptr)) {
-		ctop_term0(CTXTc subformat[ch-'0'], c_dataptr, variable, 0);
+		ctop_term0(CTXTc subformat[ch-'0'], c_dataptr, subformat,variable, 0);
 	    } else c2p_nil(CTXTc variable);
 	}
 	c_dataptr_rest = c_dataptr + 4;
@@ -795,7 +794,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr,
 **
 */
 
-static char *ptoc_term0(char *ptr, char *c_dataptr,
+static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 			prolog_term variable, int ignore)
 {
     char ch;
@@ -876,7 +875,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr,
 	for (i = 1; i <= fields; i++) {
 	    if (*(ptr+1)=='*') ignore1 = 1;
 	    else { ignore1 = ignore; argno++; }
-	    ptr = ptoc_term0(ptr, c_dataptr,p2p_arg(variable,argno),ignore1);
+	    ptr = ptoc_term0(ptr, c_dataptr,subformat,p2p_arg(variable,argno),ignore1);
 	    c_dataptr = c_dataptr_rest;
 	}
 	ptr = skip_subfmt(ptr, ']');
@@ -897,7 +896,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr,
 	    for (i = 1; i <= fields; i++) {
 		if (*(ptr+1)=='*') ignore = 1;
 		else { ignore = 0; argno++; }
-		ptr = ptoc_term0(ptr,cdptr2,p2p_arg(variable,argno),ignore);
+		ptr = ptoc_term0(ptr,cdptr2,subformat,p2p_arg(variable,argno),ignore);
 		cdptr2 = c_dataptr_rest;
 	    }
 	}
@@ -920,9 +919,9 @@ static char *ptoc_term0(char *ptr, char *c_dataptr,
 		if (*(ptr+1)=='*') ignore = 1;
 		else { ignore = 0; argno++; }
 		if (argno==1)
-		   ptr = ptoc_term0(ptr,cdptr2,p2p_car(variable),ignore);
+		   ptr = ptoc_term0(ptr,cdptr2,subformat,p2p_car(variable),ignore);
 		else if (argno==2)
-		   ptr = ptoc_term0(ptr,cdptr2,p2p_cdr(variable),ignore);
+		   ptr = ptoc_term0(ptr,cdptr2,subformat,p2p_cdr(variable),ignore);
 		else cppc_error(31);
 		cdptr2 = c_dataptr_rest;
 	    }
@@ -944,7 +943,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr,
 
 	if (!ignore) {
 	    if (!is_nil(variable)) {
-		ptoc_term0(subformat[ch-'0'], c_dataptr, variable, 0);
+		ptoc_term0(subformat[ch-'0'], c_dataptr, subformat, variable, 0);
 	    } else *(int *)(c_dataptr) = 0;
 	}
 	c_dataptr_rest = c_dataptr + 4;
@@ -964,10 +963,11 @@ int ctop_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
 {
     prolog_term variable;
     int my_errno;
+    char *subformat[10];
 
     variable = reg_term(CTXTc regnum);
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ctop_term0(CTXTc fmt, c_dataptr, variable, 0);
+    ctop_term0(CTXTc fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
 
@@ -980,10 +980,11 @@ int ptoc_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
 {
     prolog_term variable;
     int my_errno;
+    char *subformat[10];
 
     variable = reg_term(CTXTc regnum);
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ptoc_term0(fmt, c_dataptr, variable, 0);
+    ptoc_term0(fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
 
@@ -995,9 +996,10 @@ int ptoc_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
 int c2p_term(CTXTdeclc char *fmt, char *c_dataptr, prolog_term variable)
 {
     int my_errno;
+    char *subformat[10];
 
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ctop_term0(CTXTc fmt, c_dataptr, variable, 0);
+    ctop_term0(CTXTc fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
 
@@ -1009,9 +1011,10 @@ int c2p_term(CTXTdeclc char *fmt, char *c_dataptr, prolog_term variable)
 int p2c_term(char *fmt, char *c_dataptr, prolog_term variable)
 {
     int my_errno;
+    char *subformat[10];
 
     if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ptoc_term0(fmt, c_dataptr, variable, 0);
+    ptoc_term0(fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
 /* quick test to see whether atom must be quoted */

@@ -73,8 +73,6 @@ static char *err_msg[] = {
 extern void print_cp_backtrace();
 #endif
 
-static Cell *space_for_ball_assert = 0;
-
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 {
   Psc exceptballpsc;
@@ -83,11 +81,10 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   ClRef clause;
   Cell *tptr;
   prolog_term term_to_assert;
-  if (!space_for_ball_assert) {
-    /* 3 cells needed for term */
-    space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell));
-    if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
-  }
+  Cell *space_for_ball_assert;
+
+  space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell));
+  if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
 					pair_psc(insert_module(0,"standard")), 
@@ -102,6 +99,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   /* need arity of 3, for extra cut_to arg */
   Prref = (PrRef)get_ep(exceptballpsc);
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
+  free(space_for_ball_assert);
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
 
@@ -109,7 +107,6 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
 
-static Cell *space_for_iso_ball = 0;
 
 /*****************/
 void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit, 
@@ -118,12 +115,10 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
+  Cell space_for_iso_ball[10];  /* xsb_throw will copy it out of here */
+
   sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  if (!space_for_iso_ball) {
-    space_for_iso_ball = (Cell *) mem_alloc(8*sizeof(Cell)); /* cells needed for term */
-    if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
-  }
   tptr = space_for_iso_ball;
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -155,13 +150,10 @@ void call_conv xsb_permission_error(CTXTdeclc
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
+  Cell space_for_iso_ball[10];  /* xsb_throw will copy it out of here */
 
   sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
 
-  if (!space_for_iso_ball) {
-    space_for_iso_ball = (Cell *) mem_alloc(8*sizeof(Cell)); /* cells needed for term */
-    if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
-  }
   tptr = space_for_iso_ball;
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -191,6 +183,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
+  Cell space_for_iso_ball[10];  /* xsb_throw will copy it out of here */
 
   if (! IsNULL(state)) {
     sprintf(message," in arg %d of predicate %s/%d must be %s",arg,predicate,arity,
@@ -199,10 +192,6 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
     sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
   }    
 
-  if (!space_for_iso_ball) {
-    space_for_iso_ball = (Cell *) mem_alloc(4*sizeof(Cell)); /* cells needed for term */
-    if (!space_for_iso_ball) xsb_exit("out of memory in xsb_type_error!");
-  }
   tptr = space_for_iso_ball;
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -223,18 +212,14 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 
 
 #ifndef MULTI_THREAD
-static Cell *space_for_ball = 0;
 
 void call_conv xsb_basic_abort(char *message)
 {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr;
+  Cell space_for_ball[4]; /* xsb_throw will copy this */
 
-  if (!space_for_ball) {
-    space_for_ball = (Cell *) mem_alloc(3*sizeof(Cell)); /* 3 cells needed for term */
-    if (!space_for_ball) xsb_exit("out of memory in xsb_basic_abort!");
-  }
   tptr = space_for_ball;
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("_$abort_ball",2,
@@ -283,11 +268,10 @@ DllExport void call_conv xsb_bug(char *description, ...)
 
 /*----------------------------------------------------------------------*/
 
+#define str_op1 (*tsgSBuff1)
+#define str_op2 (*tsgSBuff2)
 void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
 {
-  static XSB_StrDefine(str_op1);
-  static XSB_StrDefine(str_op2);
-
   XSB_StrSet(&str_op1,"");
   XSB_StrSet(&str_op2,"");
   print_pterm(CTXTc op1, TRUE, &str_op1);
@@ -306,11 +290,12 @@ void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
 	      str_op1.string, OP, str_op2.string);
   }
 }
+#undef str_op1
+#undef str_op2
 
+#define str_op (*tsgSBuff1)
 void arithmetic_abort1(CTXTdeclc char *OP, Cell op)
 {
-  static XSB_StrDefine(str_op);
-  
   XSB_StrSet(&str_op,"_Var");
   if (! isref(op)) print_pterm(CTXTc op, TRUE, &str_op);
   xsb_abort("%s evaluable function %s/2\n%s %s(%s) %s",
@@ -318,17 +303,18 @@ void arithmetic_abort1(CTXTdeclc char *OP, Cell op)
 	    OP, "   Goal:", OP, str_op.string,
 	    ", probably as 2nd arg of is/2");  
 }
+#undef str_op
 
+#define str_op1 (*tsgSBuff1)
 void arithmetic_comp_abort(CTXTdeclc Cell op1, char *OP, int op2)
 {
-  static XSB_StrDefine(str_op1);
-
   XSB_StrSet(&str_op1,"_Var");
   if (! isref(op1)) print_pterm(CTXTc op1, TRUE, &str_op1);
   xsb_abort("%s arithmetic comparison %s/2\n%s %s %s %d",
 	    (isref(op1) ? "Uninstantiated argument of" : "Wrong type in"),
 	    OP, "   Goal:", str_op1.string, OP, op2);
 }
+#undef str_op1
 
 /*----------------------------------------------------------------------*/
 
