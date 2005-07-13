@@ -150,7 +150,9 @@ static void *xsb_thread_run( void *arg )
 
 	pthread_mutex_lock( &th_mutex );
 	tid = pthread_self();
-	th_new( P_PTHREAD_T_P, ctxt ) ;
+/* if the xsb thread id was just created we need to re-initialize it on the
+   thread context */
+	ctxt->tid = th_new( P_PTHREAD_T_P, ctxt ) ;
 	pthread_mutex_unlock( &th_mutex );
 	emuloop( ctxt, get_ep((Psc)flags[THREAD_RUN]) ) ;
 
@@ -183,6 +185,7 @@ static int xsb_thread_create(th_context *th)
 	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th ) ;
 #endif
 
+/* This repetition of the call to th_new is need for concurrency reasons */
 	pthread_mutex_lock( &th_mutex );
 	id = th_new( thr, new_th ) ;
 	pthread_mutex_unlock( &th_mutex );
