@@ -694,36 +694,312 @@ The linking is done by using {\it psc\_pairs} which have the form
 \label{fig:dynamic-code}
 \end{figure}
 
-(Updated 2/01)
+(Rewritten 7/05 by DSW)
 
-A dynamic predicate $p$ is stored slightly differently from a compiled
-predicate, in that it contains a {\em Predicate Reference} structure
-in addition to code normally found for a predicate.  As shown in
-Figure \ref{fig:dynamic-code}, the predicate reference contains an
-instruction as well as a pointer to a first clause and a last clause
-of $p$.  In addition, if $p$ is tabled, the assert code effectively
-performs a transformation.
+A dynamic predicate $p$ is stored differently from a compiled
+predicate.  A dynamic predicate is stored as WAM bytecode with a
+possibly complex index structure.  The entry point field of a psc
+record for a (nontabled) dynamic predicate points to a {\em Predicate
+Reference} structure (PrRef), whose first field contains a bytecode
+instruction that enters the executable code defining the dynamic
+predicate.  (The instruction is a fail if there are no clauses at
+all.)  If the code is a trie (when using trie indexing), this
+instruction is a jump to the root trie-node.  If the code is regular
+dynamic code, the instruction is a jumptbreg, which saves a pointer to
+the current choicepoint in a register (made to be the next unused
+argument register) for use by cuts, and then jumps to enter the code
+that implements the asserted clauses.
+
+If the dynamic predicate is tabled, then the psc entry point points to
+a ``table wrapper'' structure which contains code that simulates a
+single tabled clause that ``calls'' the PrRef.  Effectively, the
+assert code simulates a transformation:
 \begin{center}
-:- table p'/n.
+:- table p/n.
 \[
-p'(\vec{X}):- p(\vec{X}). 
+p(\vec{X}):- p_{dyn}(\vec{X}). 
 \]
 \end{center}
-and sets the {\tt ep} of $p$ to point to $p'$.
+where $p_{dyn}(\vec{X})$ is the dynamic code asserted to $p(\vec{X})$.
 
-Within a predicate reference structure, the instruction cell is set to
-{\tt fail} if the predicate has no clauses asserted to it.  If the
-predicate is trie-indexed, the instruction is a {\tt jump} to the
-first trie node.  Otherwise, the instruction is a {\tt jumptbreg}
-which jumps and sets a choice point so that cuts may be handled in
-asserted clauses.
+The second and third fields of the PrRef contain pointers to
+(respectively) the first and last clauses in the chain of all clauses
+in the dynamic predicate, which allow fast access to the last clause
+of the predicate for the assertz operation.
 
-In addition to code, clause reference structures contain a pointer to
-any previous clause reference structure (for use in retracting) and a
-buffer length cell.  The last cell, somewhat misnamed, contains not
-only the buffer length, but the type of code that is in the clause
-reference buffer: whether it is indexed, non-indexed, or a SOB record
-(question: why is the type needed?)
+Figure \ref{fig:dynamic-code} shows a simple layout.
+
+Assert (a/z) works by first using the function
+assert\_code\_to\_buff\_p to generating code into a buffer, and then using
+the function assert\_buff\_to\_clref\_p to link the buffer into the index
+structure for the clauses already there.
+
+The function assert\_code\_to\_buff\_p is a simple compiler of Prolog
+clauses into WAM bytecode written in C.  It treats every clause as
+though it had a single literal for its body.  This means that facts
+are compiled close to optimally, and clauses with a single literal are
+also compiled very much as the general compiler would compile them,
+except that the assert\_code\_to\_buff\_p compiler uses a simpler
+register allocation strategy.  If a clause has a complex body, then
+the body will be compiled as a single call to the ``,'' (or
+conjunction, or or, or if-then-else, or whatever control) predicate.
+Cuts are supported by transforming the clause to have an extra
+argument which is the choicepoint address to use when cutting (with
+put(tp)breg).  This address is set during execution by the jumptbreg
+that initially enters the dynamic code.
+
+The more complex operation of adding the code into the indexing
+structure for the dynamic predicate is done by the function
+assert\_buff\_to\_clref\_p.
+
+We'll first dispose of the rather simple case in which there is no
+index on the dynamic predicate (obtainable only by explicitly
+declaring an index of 0.)  In this case, a {\em Clause Reference Type
+0} (ClRef0) record is created.  Its format is as follows:
+\begin{verbatim}
+        ClRef0 (for unindexed asserted code):
+                -8: length of buffer (+0)
+                -4: Addr of previous ClRef (or PrRef)
+                0: Trymeelse-type instruction, for chain
+                4: (cont) Addr of next ClRef on chain
+                8+: BC for asserted clause
+\end{verbatim}
+In effect words are prepended to the buffer containing the bytecode
+for the asserted clause.  These words allow the buffers to be kept in
+a doubly linked chain.  The first word is the length of the entire
+buffer, including the bytecode; the second is the address of the
+ClRef0 for the previous clause on the chain (or the PrRef if it is the
+first clause); the third and fourth make up a bytecode instruction,
+which will be a noop if it is the only clause, a trymeelse if it is
+the first of several clauses, a retrymeelse if it is a middle of
+several clauses, and dyntrustmeelsefail if it is the last of several
+clauses.  The second words of each of these instructions naturally
+form the forward chain.  (The noop has an argument that tells it to
+skip the next word; the dyntrustmeelsefail has a second argument that
+it ignores.)  Now branching to the first ClRef0 will result in the WAM
+backtracking through the clauses in the predicate.  Also, it is now
+easy to update this structure: asserta adds a buffer to the beginning
+of the chain, modifying the instructions accordingly.  Assertz does
+the same for the end of the chain.  Retract (brutal) can remove a
+clause anywhere in the chain, since it is doubly linked.
+
+Next we turn to considering how indexed clauses are represented.  In
+XSB a predicate may have multiple indexes.  In this case if a given
+call has arugments bound enough for the first index to apply, it will
+be used; if not, it will see if the second index can be used and, if
+so, will use it, etc.  This means that a single clause may have
+multiple indexes and so may be on multiple different hash chains.
+(The indexes we are describing here are all hash indexes.  Trie
+indexing is available, but that uses a completely different data
+structure described (I hope) elsewhere in this document.)
+
+So each clause in an indexed predicate has a buffer called the {\em
+Clause Reference Index} structure (ClRefI).  It contains its bytecode,
+which is prefixed by links for the hashing chains for each index.  The
+format is as follows (where NI is the Number of Indexes):
+\begin{verbatim}
+        ClRefI (for an indexed clause):
+                -8: length of buffer (+3)
+                -4: Addr of previous ClRefI on all chain
+                0: Try-type instruction, for all subchain
+                4: (cont) Addr of next ClRefI on all subchain
+            For each index we have the following four fields: 
+                8: BC noop(14) to skip next NI*8-2 bytes
+                12: Addr of previous ClRefI on bucket chain
+                16: Try-type instruction, for hash bucket subchain
+                20: (cont) Addr of next ClRefI in bucket,
+                    or back to SOB rec if last
+                24: BC noop(6) to skip next (NI-1)*8-2 bytes
+                28: Addr of previous ClRefI on bucket chain
+                32: Try-type instruction, for hash bucket subchain
+                36: (cont) Addr of next ClRefI in bucket
+           NI*16+8: BC for asserted code
+\end{verbatim}
+
+So a clause with NI indexes is prefixed by 4+4*NI words.  Again the
+first word is the length of the buffer (or'ed with 3 to indicate that
+it is a ClRefI buffer); the second word is a pointer to the ClRefI of
+the previous clause in this predicate; the third and fourth words are
+a trymeelse-type bytecode instruction (again a noop, try, retry, or
+trust, depending of its location in the chain) whose second word
+participates in the forward chain of all clauses in the predicate.
+Again branching to the address of the first ClRefI structure (note
+that is a try-retry-trust chain) will backtrack through all the
+clauses.  However, since a trymeelse-type instruction falls through to
+execute the bytecode of the clause to try, when it does, we have to
+jump to the actual byte code.  So the 5th word is a jump (here called
+a noop with a parameter to say how many words to skip forward) to
+cause the WAM to jump over the intermediate indexing chains.  Then the
+6th word is the backwards link for the hashchain of this clause for
+the first index; the 7th and 8th make up the trymeelse-type
+instruction for the hashchain of the first index, and if there is
+another index, the 9th word is a bytecode instruction to branch
+forward the necessary number of words to skip those indexing
+instructions to get to the WAM code for the clause.  And this
+continues for as many indexes as there are.
+
+So the question now is how the hashing is done, and the hashchains are
+accessed and maintained.  This is done with {\em Clause Reference Type
+1} (ClRef1) records (also know as SOB records, for SwitchOnBound, the
+name of the WAM indexing instruction in XSB.)  The format is as
+follows:
+\begin{verbatim}
+        ClRef1 (for group of indexed clauses, aka SOB record):
+               -8: length of buffer (+1)
+               -4: Addr of previous ClRef (or PrRef)
+                0: Try-type instruction, for chain
+                4: (cont) Addr of next ClRef on chain,
+                        if trust-type then ptr to prref, if first-level
+                        SOB, or ptr to previous enclosing SOB+20  
+                8: BC switch-on-bound instruction (drop thru if var)
+                11: (cont) arg(s) to index on
+                12: (cont) address of Hash Table
+                16: (cont) size of Hash Table
+                20: BC jump to...        (or fail if empty)
+                24: (cont) Addr of first ClRefI on all subchain
+                    or to ClRef1 for next index
+                28: Addr of last ClRefI on all subchain
+                32: Number of clauses accessible thru this hash table
+                36+: Hash Table
+\end{verbatim}
+
+In an indexed predicate ClRef1 blocks take the place of ClRef0 blocks
+for unindexed predicates.  In the simplest case (of one (small) index
+with all the clauses ground on the indexed argument) there will be
+only one such block.  Again the first word is the length and type; the
+second is the backward link in the ``all'' chain (when it becomes
+necessary), and the third and fourth are the trymeelse-type
+instruction for the all chain.  (In the simple case we are now
+discussing, this would be a noop, since there would be only one block
+on this chain.)  The interesting part is the WAM SwitchOnBound
+instruction in words 5-8.  This instruction checks its argument (the
+one it's indexing on, in a register) to see if it's ground (or
+sufficiently instantiated to be used.)  If so, it hashes the functor
+symbol (or whatever), finds the corresponding entry in the hash table
+(13th and following words in this block), and branches to that
+address.  That address will point to a chain of ClRefI blocks for the
+clauses in that hash bucket.  If the argument is not bound, and so
+cannot be indexed on, it falls through, to the 5th word in the block.
+The 5th and 6th words contain a bytecode instruction which with branch
+to the appropriate code to try next (or fail if there are no clauses
+in this hashtable at all.)  If this is the last index to try, then it
+will be a branch to the ClRefI block of the first asserted clause
+(i.e., the try-chain containing all the clauses.)  If there is another
+index to try, it will branch to another chain of ClRef1 (i.e., SOB)
+records.  And the process continues.
+
+We may need multiple ClRef1 (i.e., SOB) blocks chained through the
+try-type instructions of their 3rd words.  Consider a sequence of
+clauses: p(a),p(b),p(X),p(c),p(d), indexed on the (only) argument.
+These will be represented with first a ClRef1 (SOB) block for p(a) and
+p(b), then a ClRef0 block for p(X), and then another ClRef1 (SOB)
+block for p(c) and p(d).  So one can think of this as being compiled
+to be something like:
+\begin{verbatim}
+p(X) :- p1(X).           p1(a).
+p(X).                    p1(b).
+p(X) :- p2(X).
+                         p2(c).
+                         p2(d).
+\end{verbatim}
+where p1/1 and p2/1 are ``fully'' indexed.  Note that something like
+this is required to preserve the order of clauses demanded by Prolog
+semantics.
+
+At any point we can add a new ClRef0 or ClRef1 block to the chain of
+these blocks.  For example consider assertz, adding a new ClRef1 (SOB)
+at the end of the chain would ``close off'' the previous ones (since
+assertz won't add to them any more,) and will start a new index for the
+subsequently assertz-ed clauses.  This is useful for handling
+predicates that get very many clauses asserted to them.  The idea is
+that when a hashtable fills up, we will create another hashtable
+that's twice as big as the previous one and just add it as the next
+ClRef1 (SOB) block.  So in the 12th word (displacement 32) of an SOB
+block is maintained the number of clauses in that hashtable, and when
+it gets to be too many, a new larger SOB is allocated and added to the
+end (for assertz, or the beginning for asserta.)  In this way, we get
+a poor man's version of extensible hashing very easily.
+
+Assert and retract manipulate this data structure to maintain its
+consistency and correctness.  Both assert and retract operate directly
+on these data structures when they are called.  Note that this means
+that there may be references to these data structures in the
+choicepoint stack when the structures are modified.  In such cases
+there may be problems.  For assert, structures are only extended.  We
+have been careful to try to be sure that assert will always leave the
+data structures in a state that is consistent for any computation
+waiting on the choicepoint stack.  So the semantics of asserting into
+a clause when backtracking through it is not specified (and surely
+weird), but at least the user should get something.  For retract, the
+situation is more serious.  Since retract removes buffers and there
+may be pointers to them from the choicepoint stack, the system will
+crash in some of these cases.  There is a version of retract, called
+retract\_nr (for ``No Reclaim'', I believe), that leaves all buffers in
+place, overwriting code with fail instructions to get the effect of
+removing clauses but not changing the data structure.
+
+\subsubsection{Multi-threading and Dynamic Code}
+In the multi-threading engine, dynamic code is intended to be global
+by default.  We have tried to make assert (-a and -z) thread-safe.
+(Retract is {\bf not} thread-safe and must be used with great care.
+See previous discussion.)
+
+Assert (and retract) when they are manipulating the dynamic data
+structure use a mutex to lock out other modifiers.  However, readers
+are not locked out, so there is a possibility of a reader of a dynamic
+predicate being interrupted {\em at any point} by assert, which then
+changes the data structure the reader is looking at.  We separate the
+issues for assertz and asserta.  For assertz, we don't need locks.  We
+need only have a single word assignment be atomic.  We can set up the
+data structures so that everything currently there is unchanged,
+except the dyntrustmeelsefail instruction that must be changed to a
+retrymeelse instruction.  We can change the second word of the
+dyntrustmeelsefail without bothering a reader since that word is
+ignored in its execution.  Then by changing the first word of that
+instruction atomically, the data structure will be correct before and
+after that single assignment.  So by doing things in this order, we
+can ensure that the assertz does not interfere with any reader.  The
+other possible situation, that with one clause (a noop) being changed
+to trymeelse, can be handled similarly.
+
+The more difficult issue is with asserta.  Here (in the general case)
+we have an existing trymeelse instruction and we need to add a new
+trymeelse for the new clause being added and change that old trymeelse
+to a retrymeelse.  Here there is a problem in that we have two words
+in the old data structure that need to be changed, and both are used
+by the executing code.  We need to change the pointer to the old first
+clause to point to the new first clause, and we need to change the
+instruction of the old first clause to become a retrymeelse.  No
+matter in which order we do them, the data structure between the
+assignments will be inconsistent for a reader.  (Note a similar
+situation can occur when the second clause is added, and a noop is
+changed to a dyntrustmeelsefail.)
+
+To solve this problem, we require that readers acquire the lock used
+by assert (and retract.)  So a reader needs to acquire the lock before
+it branches to a trymeelse instruction (or noop instruction) that
+might be changed, must keep it till it has completed execution of the
+trymeelse (or noop) instruction, and it must then release the lock.
+This will guarantee that the reader sees a consistent data structure.
+
+So in the multi-threaded engine, the following changes have been made
+to implement this strategy.  The jumptpreg instruction used to enter
+dynamic code gets the lock.  New instructions have been created:
+dyntrymeelse, dynnoop, and dynfail.  These instructions are used
+instead of their correspondents for the instructions that cause the
+execution of clause bytecode in ClRefI buffers.  They do their work
+and then as the last thing, release the lock (if it is held.)  Dynfail
+is necessary for releasing the lock when indexing determines that no
+code is executed, so the hashtables are initialized to point to a
+dynfail instruction to ensure the lock is released in this case.
+
+These instructions may be called in cases in which the lock has
+already been released, so they keep track of whether they have the
+lock (with i\_have\_dyn\_lock) and release it only if they do.  With a
+sequence like asserta(p(b2)), asserta(p(b1)), asserta(p(X)),
+asserta(p(a2)), asserta(p(a1)), which generates multiple ClRef1 (and
+0) blocks, there will be multiple dyntrymeelse instructions executed
+when backtracking through it.
 
 \subsection{Storage of Compiled Code in Program Segments}
 %===========================
