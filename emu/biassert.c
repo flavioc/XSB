@@ -189,6 +189,8 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     xsb_dbgmsg((LOG_ASSERT,"proceed - - -\n")); break;
   case noop:
     xsb_dbgmsg((LOG_ASSERT,"noop - - -\n")); break;
+  case dynnoop:
+    xsb_dbgmsg((LOG_ASSERT,"dynnoop - - -\n")); break;
   case jumptbreg:
     xsb_dbgmsg((LOG_ASSERT,"jumptbreg - - %d 0x%x\n", Arg1, Arg2)); break;
   case test_heap:
@@ -197,8 +199,8 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     xsb_dbgmsg((LOG_ASSERT,"dyntrustmeelsefail - - %d 0x%x\n", Arg1, Arg2)); break;
   case retrymeelse:
     xsb_dbgmsg((LOG_ASSERT,"retrymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
-  case trymeelse:
-    xsb_dbgmsg((LOG_ASSERT,"trymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
+  case dyntrymeelse:
+    xsb_dbgmsg((LOG_ASSERT,"dyntrymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
   case jump:
     xsb_dbgmsg((LOG_ASSERT,"jump - - - 0x%x\n", Arg1)); break;
   case fail:
@@ -258,6 +260,17 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     write_byte(Buff,Loc,0); write_byte(Buff,Loc,Arg1);		\
     pad64bits(Loc);						\
     write_word(Buff,Loc,Arg2);					\
+}
+
+#define dbgen_inst_ppvw_safe(Opcode,Arg1,Arg2,Buff,Loc) {	\
+    int tLoc = 0, tempLoc = *Loc; char tBuff[4]; 		\
+    dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);		\
+    *Loc += 4;							\
+    pad64bits(Loc);						\
+    write_word(Buff,Loc,Arg2);					\
+    write_byte(tBuff,&tLoc,Opcode); write_byte(tBuff,&tLoc,0);  \
+    write_byte(tBuff,&tLoc,0); write_byte(tBuff,&tLoc,Arg1);	\
+    memmove(Buff+tempLoc,tBuff,4);				\
 }
 
 #define dbgen_inst_ppvww(Opcode,Arg1,Arg2,Arg3,Buff,Loc) {	\
@@ -1199,7 +1212,7 @@ typedef ClRef SOBRef ;
 #define ClRefNotRetracted(Cl) (cell_opcode(ClRefEntryAny(Cl))!=fail || \
                                cell_operand1(ClRefEntryAny(Cl))!=66)
 
-static void db_addbuff(byte, ClRef, PrRef, int, int); 
+static void db_addbuff(byte, ClRef, PrRef, int, int, int); 
 static void db_addbuff_i(byte, ClRef, PrRef, int, int *, int, prolog_term, int);
 
 /************************************************************/
@@ -1232,7 +1245,7 @@ void dump_assert_index_block(FILE *fd, ClRef clrefptr, ClRef lastclrefptr, int i
 	      ClRefLastIndex(clrefptr), ClRefNumNonemptyBuckets(clrefptr));
       htsize = ClRefHashSize(clrefptr);
       for (i=0; i<htsize; i++) {
-	if (ClRefHashBucket(clrefptr,i) != &fail_inst) {
+	if (ClRefHashBucket(clrefptr,i) != &dynfail_inst) {
 	  asrt_tab(fd,indent+12);
 	  fprintf(fd,"HT %p: %p\n",&ClRefWord(clrefptr,i+9),ClRefHashBucket(clrefptr,i));
 	}
@@ -1335,14 +1348,16 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
   if (xsb_profiling_enabled)
     add_prog_seg(get_str_psc(Head),(byte *)Clause,ClRefSize(Clause));
 
+  //  printf("asserting clause for: %s/%d\n",get_name(get_str_psc(Head)),get_arity(get_str_psc(Head)));
+
   Location = 0; Loc = &Location;
-  dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,Loc);    /* will become try */
+  dbgen_inst_ppv(dynnoop,sizeof(Cell)/2,Clause,Loc);    /* will become dyntry */
   write_word(Clause,Loc,0);
   for (Inum = NI; Inum > 0; Inum--) {
     /* put template code for chaining buffers from hash tables  */
     dbgen_inst_ppv(noop,(4*Inum-1)*sizeof(Cell)/2,Clause,Loc);  /* noop(6) */
     write_word(Clause,Loc,0);
-    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,Loc);             /* noop(2) */
+    dbgen_inst_ppv(dynnoop,sizeof(Cell)/2,Clause,Loc);             /* noop(2) */
     write_word(Clause,Loc,0);
   }
 
@@ -1355,7 +1370,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
   
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
 
-  if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,1);
+  if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,FALSE,1);
   else db_addbuff_i(Arity,Clause,Pred,AZ,Index,NI,Head,HashTabSize);
 
   SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
@@ -1364,16 +1379,17 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 }
 
 /* add NewClause to beginning of try-retry chain beginning with FirstClause */
-static void prefix_to_chain(byte Arity, ClRef FirstClause, ClRef NewClause)
+static void prefix_to_chain(int ifSOB, byte Arity, ClRef FirstClause, ClRef NewClause)
 {
   int Loc = 0;
-  dbgen_inst_ppvw(trymeelse,Arity,FirstClause,NewClause,&Loc);
+  dbgen_inst_ppvw(ifSOB?trymeelse:dyntrymeelse,Arity,FirstClause,NewClause,&Loc);
 
   Loc = 0;
-  if (ClRefTryOpCode(FirstClause) == noop)
+  if (ClRefTryOpCode(FirstClause) == dynnoop || ClRefTryOpCode(FirstClause) == noop)
   {  dbgen_inst_ppvw(dyntrustmeelsefail,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc); }
-  else if (ClRefTryOpCode(FirstClause) == trymeelse)
+  else if (ClRefTryOpCode(FirstClause) == dyntrymeelse ||
+	   ClRefTryOpCode(FirstClause) == trymeelse)
   {  dbgen_inst_ppvw(retrymeelse,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc);}
   else xsb_dbgmsg((LOG_DEBUG,"***Error 1 in assert: 0x%x",
@@ -1393,11 +1409,14 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
   SetClRefPrev(NewClause, LastClause);
 
   Loc = 0;
-  if (ClRefTryOpCode(LastClause) == noop)
-  {  dbgen_inst_ppvw(trymeelse,Arity,NewClause,
+  if (ClRefTryOpCode(LastClause) == dynnoop)
+  {  dbgen_inst_ppvw_safe(dyntrymeelse,Arity,NewClause,
+		     LastClause,&Loc);  }
+  else if (ClRefTryOpCode(LastClause) == noop)
+  {  dbgen_inst_ppvw_safe(trymeelse,Arity,NewClause,
 		     LastClause,&Loc);  }
   else if (ClRefTryOpCode(LastClause) == dyntrustmeelsefail)
-  {  dbgen_inst_ppvw(retrymeelse,Arity,NewClause,
+  {  dbgen_inst_ppvw_safe(retrymeelse,Arity,NewClause,
 		     LastClause,&Loc);  }
   else xsb_dbgmsg((LOG_DEBUG,"***Error 2 in assert: 0x%x",
 		  ClRefTryOpCode(LastClause)));
@@ -1405,23 +1424,23 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
 }
 
 /* add Clause to end of Pred */
-static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int Inum) 
+static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int ifSOB, int Inum) 
 {
   int Loc; 
   ClRef LastClause ;
   
   if (PredOpCode(Pred) == fail) {
     Loc = 0;
-    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,&Loc);
+    dbgen_inst_ppv(ifSOB?noop:dynnoop,sizeof(Cell)/2,Clause,&Loc);
     SetClRefNext(Clause, Pred) ;
     Loc = 0;
     if (Inum > 1) {dbgen_inst_pppw(jump,Clause,Pred,&Loc);}
-    else {dbgen_inst_ppvw(jumptbreg,Arity,Clause,Pred,&Loc);}
+    else dbgen_inst_ppvw(jumptbreg,Arity,Clause,Pred,&Loc);
     Pred->LastClRef = Clause ;
     SetClRefPrev(Clause, Pred) ;
   } else if ( PredOpCode(Pred) == jumptbreg || PredOpCode(Pred) == jump ) {
     if (AZ == 0) {
-      prefix_to_chain(Arity, Pred->FirstClRef, Clause);
+      prefix_to_chain(ifSOB, Arity, Pred->FirstClRef, Clause);
       Pred->FirstClRef = Clause ;
     } else {
       LastClause = Pred->LastClRef ;
@@ -1556,7 +1575,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind, Psc psc )
       
    /* Initialize hash table */
    for (i = 0; i < ThisTabSize; i++)
-      ClRefHashTable(NewSOB)[i] = (Cell)&fail_inst ;
+      ClRefHashTable(NewSOB)[i] = (Cell)&dynfail_inst ;
 
    return NewSOB ;
 }
@@ -1568,16 +1587,16 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
     CPtr OldInd = *Bucketaddr ;
     int Loc ;
 
-    if ((pb)OldInd == (pb)&fail_inst) { /* empty bucket, add first clause */
+    if ((pb)OldInd == (pb)&dynfail_inst) { /* empty bucket, add first clause */
       *Bucketaddr = NewInd ;
       IndRefPrev(NewInd) = (CPtr) Bucketaddr ;
       IndRefNext(NewInd) = (CPtr) SOBrec ;
       ClRefNumNonemptyBuckets(SOBrec)++ ;
     } else if (AZ == 0) { /* add at beginning */
       Loc = 0;
-      dbgen_inst_ppvw(trymeelse,Arity,OldInd,NewInd,&Loc);
+      dbgen_inst_ppvw(dyntrymeelse,Arity,OldInd,NewInd,&Loc);
       Loc = 0;
-      if (cell_opcode(OldInd) == noop)
+      if (cell_opcode(OldInd) == dynnoop)
       {  dbgen_inst_ppvw(dyntrustmeelsefail,Arity,IndRefNext(OldInd),
 			 OldInd,&Loc); }
       else
@@ -1590,12 +1609,12 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
       Loc = 0;
       dbgen_inst_ppvw(dyntrustmeelsefail,Arity, SOBrec, NewInd,&Loc);
       Loc = 0;
-      if (cell_opcode(OldInd) == noop)
-      {  dbgen_inst_ppvw(trymeelse,Arity,NewInd,OldInd,&Loc); }
+      if (cell_opcode(OldInd) == dynnoop)
+      {  dbgen_inst_ppvw_safe(dyntrymeelse,Arity,NewInd,OldInd,&Loc); }
       else {
         while (cell_opcode(OldInd) != dyntrustmeelsefail)
           OldInd = IndRefNext(OldInd);
-        dbgen_inst_ppvw(retrymeelse,Arity,NewInd,OldInd,&Loc);
+        dbgen_inst_ppvw_safe(retrymeelse,Arity,NewInd,OldInd,&Loc);
       }
       IndRefPrev(NewInd) = OldInd ;
     }
@@ -1609,7 +1628,7 @@ static void addto_allchain( int AZ, ClRef Clause, SOBRef SOBrec, byte Arity)
   /* add code buff to all chain */
   if (PredOpCode(ClRefPrRef(SOBrec)) == fail) { /* insert first clrefI into SOB buff */
     Loc = 0;
-    dbgen_inst_ppv(noop,sizeof(Cell)/2,Clause,&Loc);
+    dbgen_inst_ppv(dynnoop,sizeof(Cell)/2,Clause,&Loc);
     Loc = 0 ;
     dbgen_inst_pppw(jump,Clause,ClRefPrRef(SOBrec),&Loc);
     ClRefLastIndex(SOBrec) = (Cell) Clause ;
@@ -1617,7 +1636,7 @@ static void addto_allchain( int AZ, ClRef Clause, SOBRef SOBrec, byte Arity)
     SetClRefNext(Clause, SOBrec);
   } else if (AZ == 0) {  /* add at beginning */
     First = (ClRef) ClRefFirstIndex(SOBrec);
-    prefix_to_chain(Arity,First,Clause);
+    prefix_to_chain(FALSE,Arity,First,Clause);
     ClRefPrev(First) = Clause;
     ClRefFirstIndex(SOBrec) = (Cell) Clause;
   } else {  /* add at end */
@@ -1650,7 +1669,7 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
 	|| ClRefSOBArg(SOBbuff,3) != (byte)Ind) {
       SOBbuff = new_SOBblock(ThisTabSize,Ind,get_str_psc(Head));
       /* add new SOB block */
-      db_addbuff(Arity,SOBbuff,Pred,AZ,Inum);
+      db_addbuff(Arity,SOBbuff,Pred,AZ,TRUE,Inum);
     }
     Pred = ClRefPrRef(SOBbuff) ; /* fake a prref */
     addto_hashchain(AZ, Hashval, SOBbuff, ClRefIndPtr(Clause,Inum), Arity);
@@ -1692,7 +1711,7 @@ static void find_usable_index(prolog_term Head, ClRef *s,
      t = ClRefHashSize(sob); 					\
      h = hash_val( (Ind), (H), t ) ;				\
      cl = (ClRef) ClRefHashTable(sob)[h] ;			\
-     if ((pb)cl != (pb)&fail_inst)				\
+     if ((pb)cl != (pb)&dynfail_inst)				\
 	return IndPtrClRef(cl,Level) ;				\
 }
 
@@ -1762,7 +1781,8 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 
     if( ClRefType(Clause) != INDEXED_CL ) {	/* mixed clause types */
 	if( ClRefTryOpCode(Clause) == dyntrustmeelsefail
-	    || ClRefTryOpCode(Clause) == noop )
+	    || ClRefTryOpCode(Clause) == dynnoop 
+	    || ClRefTryOpCode(Clause) == noop)
 	  return 0 ;
 	else if( ClRefType(ClRefNext(Clause)) != SOB_RECORD )
 	  return ClRefNext(Clause) ;
@@ -1783,7 +1803,7 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 	}
     }
     else if( *IndexLevel == 0 ) { /* look in all chain */
-	if( ClRefTryOpCode(Clause) == trymeelse || /* mid chain */
+	if( ClRefTryOpCode(Clause) == dyntrymeelse || /* mid chain */
 	    ClRefTryOpCode(Clause) == retrymeelse ) 
 	    return ClRefNext(Clause) ;
         else /* INDEXED_CL, look on next SOB */
@@ -1800,7 +1820,7 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
     }
     else	/* look in appropriate hash chain */
     {	PI = ClRefIndPtr(Clause,*IndexLevel) ;
-	if( cell_opcode(PI) == trymeelse || /* mid chain */
+	if( cell_opcode(PI) == dyntrymeelse || /* mid chain */
 	    cell_opcode(PI) == retrymeelse ) 
 	    return IndPtrClRef(IndRefNext(PI),*IndexLevel) ;
 	else /* end of chain */
@@ -1825,13 +1845,23 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 #define delete_from_chain( c, PC, Displ )                               \
 {   switch( c )                                                         \
     {   case noop: /* uniq */                                           \
+        case dynnoop: /* uniq */                                        \
             break ;                                                     \
         case trymeelse: /* first */                                     \
             IndRefPrev(IndRefNext(PC)) = IndRefPrev(PC) ;               \
             if( cell_opcode(IndRefNext(PC)) == retrymeelse )            \
                 cell_opcode(IndRefNext(PC)) = trymeelse ;               \
-            else /* dyntrustme */                                       \
+            else /* trustme */                                          \
             {   cell_opcode(IndRefNext(PC)) = noop ;                    \
+                cell_operand3(IndRefNext(PC)) = (Displ) ;               \
+            }                                                           \
+            break ;                                                     \
+        case dyntrymeelse: /* first */                                  \
+            IndRefPrev(IndRefNext(PC)) = IndRefPrev(PC) ;               \
+            if( cell_opcode(IndRefNext(PC)) == retrymeelse )            \
+                cell_opcode(IndRefNext(PC)) = dyntrymeelse ;            \
+            else /* dyntrustme */                                       \
+            {   cell_opcode(IndRefNext(PC)) = dynnoop ;                 \
                 cell_operand3(IndRefNext(PC)) = (Displ) ;               \
             }                                                           \
             break ;                                                     \
@@ -1843,8 +1873,12 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
             IndRefNext(IndRefPrev(PC)) = IndRefNext(PC) ;               \
             if( cell_opcode(IndRefPrev(PC)) == retrymeelse )            \
                 cell_opcode(IndRefPrev(PC)) = dyntrustmeelsefail ;      \
-            else /* trymeelse */                                        \
-            {   cell_opcode(IndRefPrev(PC)) = noop ;                    \
+            else if (cell_opcode(IndRefPrev(PC)) == trymeelse )         \
+            {   cell_opcode(IndRefPrev(PC)) = noop ;			\
+                cell_operand3(IndRefPrev(PC)) = (Displ) ;               \
+	    }								\
+            else /* dyntrymeelse */                                     \
+            {   cell_opcode(IndRefPrev(PC)) = dynnoop ;                 \
                 cell_operand3(IndRefPrev(PC)) = (Displ) ;               \
             }                                                           \
             break ;                                                     \
@@ -1863,14 +1897,16 @@ static void delete_from_hashchain( ClRef Clause, int Ind, int NI )
 
     delete_from_chain(c,PI,((NI-Ind)*4+1)*sizeof(Cell)/2) ;
 
-    if( cell_opcode(PI) == noop )
-        *IndRefPrev(PI) = (Cell) &fail_inst ;
-    else if( cell_opcode(PI) == trymeelse )
+    if( cell_opcode(PI) == dynnoop) {
+      *IndRefPrev(PI) = (Cell) &dynfail_inst ;
+    }
+    /**    else if( cell_opcode(PI) == noop)
+     *IndRefPrev(PI) = (Cell) &dynfail_inst ; **/
+    else if( cell_opcode(PI) == dyntrymeelse /**|| cell_opcode(PI) == trymeelse**/)
         *IndRefPrev(PI) = (Cell) IndRefNext(PI) ;
 }
 
 /* delete from the chain pointed by a prref - a all chain or a sob chain */
-/* Works for SOBs and all sorts of clauses */
 
 static void delete_from_allchain( ClRef Clause )
 {  
@@ -1880,11 +1916,12 @@ static void delete_from_allchain( ClRef Clause )
     delete_from_chain( c, (CPtr)Clause, sizeof(Cell)/2 ) ;
 
     switch( c )
-    {   case noop:
+    {   case dynnoop:
             Pred = ClRefPrRef(ClRefPrev(Clause)) ;
-            PredOpCode(Pred) = fail ;
+	    PredOpCode(Pred) = fail ;
             Pred->FirstClRef = Pred->LastClRef = (ClRef) Pred ;
             break ;
+        case dyntrymeelse:
         case trymeelse:
             Pred = ClRefPrRef(ClRefPrev(Clause)) ;
             Pred->FirstClRef = ClRefNext(Clause) ;
@@ -1904,11 +1941,17 @@ static void delete_from_sobchain(ClRef Clause)
     delete_from_chain( c, (CPtr)Clause, sizeof(Cell)/2 ) ;
 
     switch( c )
-    {   case noop:
+    {   case dynnoop:
+            Pred = (PrRef)ClRefPrev(Clause) ;
+	    PredOpCode(Pred) = fail ;
+            Pred->FirstClRef = Pred->LastClRef = (ClRef) Pred ;
+            break ;
+    	case noop:
             Pred = (PrRef)ClRefPrev(Clause) ;
             PredOpCode(Pred) = fail ;
             Pred->FirstClRef = Pred->LastClRef = (ClRef) Pred ;
             break ;
+        case dyntrymeelse:
         case trymeelse:
             Pred = (PrRef)ClRefPrev(Clause) ;
             Pred->FirstClRef = ClRefNext(Clause) ;
@@ -1972,7 +2015,7 @@ static int really_delete_clause(ClRef Clause)
             /* remove it from index chains */
             for( i = NI; i >= 1; i-- ) {
 	      IP = ClRefIndPtr(Clause, i);
-	      if (cell_opcode(IP) == noop) /* deleting last in bucket */
+	      if (cell_opcode(IP) == dynnoop) /* deleting last in bucket */
 		sob = (SOBRef)IndRefNext(IP); /* so get SOB addr */
 	      else sob = NULL;
 
@@ -2062,11 +2105,13 @@ ClRef previous_clref(ClRef Clause) {
 
   if (ClRefType(Clause) == INDEXED_CL) {
     opcode = ClRefTryOpCode(Clause);
-    if (opcode == noop || opcode == trymeelse) {
+    if (opcode == dynnoop || opcode == dyntrymeelse
+	|| opcode == noop || opcode == trymeelse) {
       numInds = ClRefNumInds(Clause);
       Clause = ClRefPrev(Clause); /* get used_up parent SOB */
       opcode = ClRefTryOpCode(Clause);
-      while (opcode == noop || opcode == trymeelse) {
+      while (opcode == dynnoop || opcode == dyntrymeelse
+	     || opcode == noop || opcode == trymeelse) {
 	if (--numInds) {
 	  Clause = (ClRef)(((Cell *)ClRefPrev(Clause)) - 5);
 	  opcode = ClRefTryOpCode(Clause);
@@ -2153,6 +2198,8 @@ xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Claus
   prolog_term Head = reg_term(CTXTc 5);
   CPtr EntryPoint = 0;
   Integer failed = ptoc_int(CTXTc 6) ;
+
+  //  printf("entered db_get_clause: %s/%d\n",get_name(get_str_psc(Head)),get_arity(get_str_psc(Head)));
 
     xsb_dbgmsg((LOG_RETRACT_GC,
 	       "GET CLAUSE P-%p(%x) C-%p(%x) F-%p L-%p",
@@ -2341,7 +2388,8 @@ static void abolish_trie_asserted_stuff(CTXTdeclc PrRef prref) {
 static int another_buff(Cell Instr)
 {
   int op = cell_opcode(&Instr) ;
-  return op != noop && op != dyntrustmeelsefail && op != fail ;
+  return (op != dynnoop && op != dyntrustmeelsefail && op != fail 
+    && op != noop);
 }
 
 /*======================================================================*/
@@ -2480,7 +2528,7 @@ int trie_assert(CTXTdecl)
 
     *(Trie_Asserted_Clref +3) = (Cell)inst_node_ptr;
 
-    db_addbuff((byte)(get_arity(psc) + 1),(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,2);
+    db_addbuff((byte)(get_arity(psc) + 1),(ClRef)Trie_Asserted_Clref,(PrRef)Prref,1,TRUE,2);
   }
   else
     inst_node_ptr = (BTNptr)*(Trie_Asserted_Clref +3);

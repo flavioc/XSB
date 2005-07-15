@@ -279,6 +279,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 /* Non-determinism instructions */
 
+#define dynfail		0x9e
+#define dyntrymeelse    0x9f
 #define trymeelse       0xa0
 #define retrymeelse     0xa1
 #define trustmeelsefail 0xa2
@@ -350,6 +352,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 /* Other Numeric instructions */
 #define minreg               0xe2
 #define maxreg               0xe3
+
+#define dynnoop         0xe4
 
 /* Procedure instructions */
 

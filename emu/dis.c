@@ -220,6 +220,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	}  /* switch */
 	/*if (cell_opcode(&instr) == noop) loc_pcreg += 2 * *(loc_pcreg-1); */
 	if (cell_opcode(&instr) == noop) loc_pcreg += cell_operand3(&instr)/2; /* ?!@% */
+	else if (cell_opcode(&instr) == dynnoop) loc_pcreg += cell_operand3(&instr)/2; /* ?!@% */
     } /* for */
     fprintf(fd, ")");
     fflush(fd);

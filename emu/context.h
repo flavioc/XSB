@@ -197,10 +197,13 @@ CPtr 	*_cur_tr_limit ;
 VarString **_LSBuff; /* 30 buffers for making longstring in ctop_longstring */
 
 /* Global thread-specific charstring buffers for local use within builtins */
+VarString *_last_answer;  /* for c-calling-xsb interface */
 VarString *_tsgLBuff1;
 VarString *_tsgLBuff2;
 VarString *_tsgSBuff1;
 VarString *_tsgSBuff2;
+
+
 /* read_canonical stacks */
 int _opstk_size;
 int _funstk_size;
@@ -221,6 +224,7 @@ struct sort_par_spec _par_spec;		/* spec for par_sort */
 struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
 
 struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
+int    _i_have_dyn_mutex;	/* This thread has dynamic mutex, for asserted code read */
 
 /* Flag used in the locking of called tries */
 int	trie_locked;
@@ -325,6 +329,7 @@ typedef struct th_context th_context ;
 
 #define LSBuff			(th->_LSBuff)
 
+#define last_answer		(th->_last_answer)
 #define tsgLBuff1		(th->_tsgLBuff1)
 #define tsgLBuff2		(th->_tsgLBuff2)
 #define tsgSBuff1		(th->_tsgSBuff1)
@@ -348,6 +353,7 @@ typedef struct th_context th_context ;
 #define random_seeds		(th->_random_seeds)
 
 #define asrtBuff		(th->_asrtBuff)
+#define i_have_dyn_mutex	(th->_i_have_dyn_mutex)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)

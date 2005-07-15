@@ -277,7 +277,7 @@ extern long prof_flag;
 extern void debug_inst(CTXTdeclc byte *, CPtr);
 #endif
 
-/**static int  (*dyn_pred)(); unused-remove soon**/
+int debug_assert = 0;
 
 #ifndef MULTI_THREAD
 xsbBool neg_delay;
@@ -814,6 +814,20 @@ contcase:     /* the main loop */
     SUBTRYME
   XSB_End_Instr()
 
+  XSB_Start_Instr(dyntrymeelse,_dyntrymeelse) /* PPA-L */
+    Def2ops
+    Op1(get_xxa);
+    Op2(get_xxxl);
+    ADVANCE_PC(size_xxxX);
+    SUBTRYME
+#ifdef MULTI_THREAD
+    if (i_have_dyn_mutex) {
+      SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
+      i_have_dyn_mutex = 0;
+    }
+#endif
+  XSB_End_Instr()
+
   XSB_Start_Instr(retrymeelse,_retrymeelse) /* PPA-L */
     Def1op
     Op1(get_xxa);
@@ -908,6 +922,11 @@ contcase:     /* the main loop */
     Op1(get_xxr);
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
     lpcreg = *(byte **)(lpcreg+sizeof(Cell));
+#ifdef MULTI_THREAD
+    if (i_have_dyn_mutex) xsb_abort("DYNAMIC MUTEX ERROR\n");
+    SYS_MUTEX_LOCK(MUTEX_DYNAMIC);
+    i_have_dyn_mutex = 1;
+#endif
   XSB_End_Instr()
 
   XSB_Start_Instr(test_heap,_test_heap) /* PPA-N */
@@ -1706,12 +1725,36 @@ contcase:     /* the main loop */
     Fail1; 
   XSB_End_Instr()
 
+  XSB_Start_Instr(dynfail,_dynfail)    /* PPP */
+#ifdef MULTI_THREAD
+    if (i_have_dyn_mutex) {
+      SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
+      i_have_dyn_mutex = 0;
+    }
+#endif
+    Fail1; 
+  XSB_End_Instr()
+
   XSB_Start_Instr(noop,_noop)  /* PPA */
     Def1op
     Op1(get_xxa);
     ADVANCE_PC(size_xxx);
     lpcreg += (int)op1;
     lpcreg += (int)op1;
+  XSB_End_Instr()
+
+  XSB_Start_Instr(dynnoop,_dynnoop)  /* PPA */
+    Def1op
+    Op1(get_xxa);
+    ADVANCE_PC(size_xxx);
+    lpcreg += (int)op1;
+    lpcreg += (int)op1;
+#ifdef MULTI_THREAD
+    if (i_have_dyn_mutex) {
+      SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
+      i_have_dyn_mutex = 0;
+    }
+#endif
   XSB_End_Instr()
 
   XSB_Start_Instr(halt,_halt)  /* PPP */
