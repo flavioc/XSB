@@ -40,7 +40,6 @@
 /* protected by MUTEX IO */
 STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
 
-static struct stat stat_buff;
 extern char   *expand_filename(char *filename);
 extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
 
@@ -481,6 +480,7 @@ inline static xsbBool file_function(CTXTdecl)
     fptr = freopen(addr, string_val(pterm), fptr);
 
     if (fptr) {
+      struct stat stat_buff;
       if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
 	/* file exists and isn't a dir */
 	ctop_int(CTXTc 5, 0);
