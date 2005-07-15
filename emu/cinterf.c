@@ -1393,20 +1393,23 @@ int call_conv xsb_query_string_string(CTXTdeclc char *goal,
 /*      xsb_get_last_answer.                                            */
 /*                                                                      */
 /************************************************************************/
-static XSB_StrDefine(last_answer);
+#ifndef MULTI_THREAD
+static XSB_StrDefine(last_answer_lc);
+#define last_answer (&last_answer_lc)
+#endif
 
 int call_conv xsb_query_string_string_b(CTXTdeclc
 	     char *goal, char *buff, int buflen, int *anslen, char *sep) 
 {
   int rc;
   
-  XSB_StrSet(&last_answer,"");
-  rc = xsb_query_string_string(CTXTc goal,&last_answer,sep); 
+  XSB_StrSet(last_answer,"");
+  rc = xsb_query_string_string(CTXTc goal,last_answer,sep); 
   if (rc > 0) return rc;
-  *anslen = last_answer.length;
-  XSB_StrNullTerminate(&last_answer);
-  if (last_answer.length < buflen) {
-    strcpy(buff,last_answer.string);
+  *anslen = last_answer->length;
+  XSB_StrNullTerminate(last_answer);
+  if (last_answer->length < buflen) {
+    strcpy(buff,last_answer->string);
     return rc;
   } else return(3);
 }
@@ -1417,11 +1420,11 @@ int call_conv xsb_query_string_string_b(CTXTdeclc
 /*                                                                      */
 /************************************************************************/
 DllExport int call_conv 
-   xsb_get_last_answer_string(char *buff, int buflen, int *anslen) {
+   xsb_get_last_answer_string(CTXTdeclc char *buff, int buflen, int *anslen) {
 
- *anslen = last_answer.length;
-  if (last_answer.length < buflen) {
-    strcpy(buff,last_answer.string);
+ *anslen = last_answer->length;
+  if (last_answer->length < buflen) {
+    strcpy(buff,last_answer->string);
     return 0;
   } else 
     return(3);
@@ -1485,17 +1488,16 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 {
   int rc;
 
-  XSB_StrSet(&last_answer,"");
-  rc = xsb_next_string(CTXTc &last_answer,sep);
+  XSB_StrSet(last_answer,"");
+  rc = xsb_next_string(CTXTc last_answer,sep);
   if (rc > 0) return rc;
-  *anslen = last_answer.length;
-  XSB_StrNullTerminate(&last_answer);
-  if (last_answer.length < buflen) {
-    strcpy(buff,last_answer.string);
+  *anslen = last_answer->length;
+  XSB_StrNullTerminate(last_answer);
+  if (last_answer->length < buflen) {
+    strcpy(buff,last_answer->string);
     return rc;
   } else return(3);
 }
-
 
 /************************************************************************/
 /*                                                                      */
