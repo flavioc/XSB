@@ -46,7 +46,7 @@
   cp_prevtop(cps_top) = old_top;                                          \
   breg = cps_top;                                                         \
   hbreg = hreg;                                                           \
-  XSB_Next_Instr();                                                       \
+/*  XSB_Next_Instr();  */                                                     \
 } 
 #else
 #define SUBTRYME                                                          \
@@ -60,7 +60,7 @@
   save_choicepoint(cps_top, ereg, (byte *)op2, breg);                     \
   breg = cps_top;                                                         \
   hbreg = hreg;                                                           \
-  XSB_Next_Instr();                                                       \
+/*  XSB_Next_Instr(); */                                                      \
 } 
 #endif
 /*----------------------------------------------------------------------*/
