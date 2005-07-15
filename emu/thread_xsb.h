@@ -77,7 +77,7 @@ int would_deadlock( th_context *t1, th_context *t2 ) ;
 
 /* TLS: for Cygwin, these constants must be re-defined */
 
-#if defined(DARWIN)
+#if defined(DARWIN) || defined(FREEBSD)
 
 #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
 #define PTHREAD_MUTEX_ERRORCHECK_NP PTHREAD_MUTEX_ERRORCHECK

@@ -58,6 +58,9 @@
 /* Defined under OS X */
 #undef DARWIN
 
+/* Defined under FreeBSD */
+#undef FREEBSD
+
 /* Older Linux using a.out format */
 #undef LINUX_AOUT
 
