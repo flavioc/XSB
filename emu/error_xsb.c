@@ -502,7 +502,7 @@ int unwind_stack(CTXTdecl)
      tmp_compl_frm = subg_compl_stack_ptr(tcp_subgoal_ptr(b));
    breg = b;
    if (tmp_compl_frm != NULL) {
-     remove_open_tries(CTXTc prev_compl_frame(tmp_compl_frm));
+     remove_incomplete_tries(CTXTc prev_compl_frame(tmp_compl_frm));
    }
    unwind_trail(breg,xtemp1,xtemp2);
    return(FALSE);

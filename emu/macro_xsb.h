@@ -608,9 +608,9 @@ void tstCreateTSIs(TSTNptr);
      xsb_exit("pdlreg grew too much"); \
    else (pdlreg = (CPtr)(pdl.high) - 1)
 
-#define remove_open_tables_loop(Endpoint) remove_open_tries(Endpoint)
+#define remove_incomplete_tables_loop(Endpoint) remove_incomplete_tries(Endpoint)
 
-#define remove_open_tables() remove_open_tries(CTXTc COMPLSTACKBOTTOM)
+#define remove_incomplete_tables() remove_incomplete_tries(CTXTc COMPLSTACKBOTTOM)
 
 /*----------------------------------------------------------------------*/
 

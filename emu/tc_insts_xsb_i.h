@@ -38,6 +38,7 @@ XSB_Start_Instr(trie_no_cp_str,_trie_no_cp_str)
 	non_ftag_lpcreg;
 XSB_End_Instr()
 
+     /* TLS: opfail below is actually the sibling trie node */
 XSB_Start_Instr(trie_try_str,_trie_try_str) 
 	CPtr tbreg;
 #ifdef SLG_GC

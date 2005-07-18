@@ -723,10 +723,10 @@ void print_op(FILE *file, char *string, int pos)
 
 /* ----- The following is also called from the Prolog level ----------- */
 
-void remove_open_tables_reset_freezes(CTXTdecl)
+void remove_incomplete_tables_reset_freezes(CTXTdecl)
 {
   if (xwammode) {
-    remove_open_tables();
+    remove_incomplete_tables();
     reset_freeze_registers;
   }
 }

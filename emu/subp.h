@@ -32,7 +32,7 @@ extern void print_qatom(FILE *, char *);
 extern void print_aqatom(FILE *, char *);
 extern void print_dqatom(FILE *, char *);
 extern void print_op(FILE *, char *, int);
-extern void remove_open_tables_reset_freezes(CTXTdecl);
+extern void remove_incomplete_tables_reset_freezes(CTXTdecl);
 
 extern xsbBool unify(CTXTdeclc Cell, Cell);
 extern xsbBool are_identical_terms(Cell, Cell);

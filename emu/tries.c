@@ -1429,8 +1429,7 @@ static void remove_calls_and_returns(CTXTdeclc VariantSF CallStrPtr)
   FreeProducerSF(CallStrPtr);
 }
 
-
-void remove_open_tries(CTXTdeclc CPtr bottom_parameter)
+void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
 {
   xsbBool warned = FALSE;
   VariantSF CallStrPtr;
