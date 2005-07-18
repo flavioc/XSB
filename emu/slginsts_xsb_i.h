@@ -174,21 +174,16 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
    a different thread, wait for it to complete.
  */
   if ( !IsNULL(producer_sf) ) {
-     if( !is_completed(producer_sf))
-/* if the table is completed its generator cp (where the table tid is stored)
-   might have been removed
- */
+     while( !is_completed(producer_sf))
      {  table_tid = int_val(tcp_tid(subg_cp_ptr(producer_sf))) ;
-	if (table_tid != th->tid) 
-	{	waiting_for_thread = find_context(table_tid) ;
-		if( would_deadlock( waiting_for_thread, th ) )
-			xsb_abort( "deadlock in concurrent tabling detected" );
-                th->waiting_for_thread = waiting_for_thread ;
-		while( !is_completed(producer_sf) )
-		{	pthread_mutex_unlock(&completing_mut);
-			pthread_cond_wait(&completing_cond,&completing_mut) ;
-		} 
-	}
+	if (table_tid == th->tid) 
+		break ;
+	waiting_for_thread = find_context(table_tid) ;
+	if( would_deadlock( waiting_for_thread, th ) )
+		xsb_exit( "deadlock in concurrent tabling detected" );
+        th->waiting_for_thread = waiting_for_thread ;
+	pthread_mutex_unlock(&completing_mut);
+	pthread_cond_wait(&completing_cond,&completing_mut) ;
      }
      th->waiting_for_thread = NULL ;
      pthread_mutex_unlock(&completing_mut);
