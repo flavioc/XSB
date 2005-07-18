@@ -42,7 +42,6 @@
 #include "inst_xsb.h"
 #include "error_xsb.h"
 
-
 /* ======================================================================= */
 
 extern void printterm(FILE *, Cell, int);   /* prints to stddbg */
@@ -168,6 +167,11 @@ void printTrieSymbol(FILE *fp, Cell symbol) {
       break;
     case XSB_STRUCT:
       {
+          if (isboxedfloat(symbol))
+          {
+              fprintf(fp, "%lf", boxedfloat_val(symbol));
+              break;              
+          }
 	Psc psc = DecodeTrieFunctor(symbol);
 	fprintf(fp, "%s/%d", get_name(psc), get_arity(psc));
       }
@@ -253,6 +257,14 @@ static void symstkPrintNextTerm(CTXTdeclc FILE *fp, xsbBool list_recursion) {
     break;
   case XSB_STRUCT:
     {
+      if (isboxedfloat(symbol))
+      {
+        if ( list_recursion )
+          fprintf(fp, "|%lf]", boxedfloat_val(symbol));
+        else
+          fprintf(fp, "%lf", boxedfloat_val(symbol));
+        break;         
+      }
       Psc psc;
       int i;
 

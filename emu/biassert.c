@@ -12,8 +12,8 @@
 ** 
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
-** more details.
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License
+** for more details.
 ** 
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
@@ -152,13 +152,13 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
   case putnumcon:
     xsb_dbgmsg((LOG_ASSERT,"putnumcon - - %d 0x%x\n", Arg1, int_val(Arg2))); break;
   case putfloat:
-    xsb_dbgmsg((LOG_ASSERT,"putfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"putfloat - - %d %f (0x%x)\n", Arg1, ofloat_val(Arg2), ofloat_val(Arg2))); break;
   case getcon:
     xsb_dbgmsg((LOG_ASSERT,"getcon - - %d 0x%x\n", Arg1, Arg2)); break;
   case getnumcon:
     xsb_dbgmsg((LOG_ASSERT,"getnumcon - - %d 0x%x\n", Arg1, int_val(Arg2))); break;
   case getfloat:
-    xsb_dbgmsg((LOG_ASSERT,"getfloat - - %d %f (0x%x)\n", Arg1, float_val(Arg2), float_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"getfloat - - %d %f (0x%x)\n", Arg1, ofloat_val(Arg2), ofloat_val(Arg2))); break;
   case putstr:
     xsb_dbgmsg((LOG_ASSERT,"putstr - - %d 0x%x\n", Arg1, Arg2)); break;
   case getstr:
@@ -172,13 +172,13 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
   case bldnumcon:
     xsb_dbgmsg((LOG_ASSERT,"bldnumcon - - - 0x%x\n", int_val(Arg1))); break;
   case bldfloat:
-    xsb_dbgmsg((LOG_ASSERT,"bldfloat - - - %f\n", float_val(Arg1))); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldfloat - - - %f\n", ofloat_val(Arg1))); break;
   case unicon:
     xsb_dbgmsg((LOG_ASSERT,"unicon - - - 0x%x\n", Arg1)); break;
   case uninumcon:
     xsb_dbgmsg((LOG_ASSERT,"uninumcon - - - 0x%x\n", int_val(Arg1))); break;
   case unifloat:
-    xsb_dbgmsg((LOG_ASSERT,"unifloat - - - %f\n", float_val(Arg1))); break;
+    xsb_dbgmsg((LOG_ASSERT,"unifloat - - - %f\n", ofloat_val(Arg1))); break;
   case xsb_execute:
     xsb_dbgmsg((LOG_ASSERT,"execute - - - 0x%x\n", Arg1)); break;
   case bldnil:
@@ -438,12 +438,14 @@ static void assertcmp_printerror(CTXTdeclc int num)
 
 static Integer p2c_float_as_int(prolog_term T0)
 {
-    union float_conv {
-	Float f;
-	Integer i;
-    } float_conv;
-    float_conv.f = float_val(T0);
-    return float_conv.i;
+//  union float_conv {
+//	float f;
+//	Integer i;
+//    } 
+    
+    FloatConv converter;
+    converter.f = (float)ofloat_val(T0);
+    return converter.i;
 }
 
 static int is_frozen_var(prolog_term T0)

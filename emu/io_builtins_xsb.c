@@ -91,7 +91,7 @@ char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
 /* type is a char: 's', 'i', 'f' */
 #define TYPE_ERROR_CHK(ch_type, Label) \
         if (current_fmt_spec->type != ch_type) { \
-	    xsb_abort("[%s] Type mismatch in argument value %d", Label, i); \
+	    xsb_abort("[%s] in argument value %d. Expected %c, got %c.", Label, i,current_fmt_spec->type,ch_type); \
         }
 
 #define PRINT_ARG(arg) switch (current_fmt_spec->size) { \
@@ -218,9 +218,8 @@ xsbBool fmt_write(CTXTdecl)
     Fmt = string_val(Fmt_term);
   else
     xsb_abort("[FMT_WRITE] Format must be an atom or a character string");
-
   ValTerm = reg_term(CTXTc 4);
-  if (isconstr(ValTerm))
+  if (isconstr(ValTerm) && !isboxed(ValTerm))
     Arity = get_arity(get_str_psc(ValTerm));
   else if (isref(ValTerm))
     /* Var in the argument position means, no arguments */
@@ -234,11 +233,10 @@ xsbBool fmt_write(CTXTdecl)
       c2p_string(CTXTc string_val(ValTerm), p2p_arg(TmpValTerm,1));
     else if (isinteger(ValTerm)|isboxedinteger(ValTerm))
       c2p_int(CTXTc oint_val(ValTerm), p2p_arg(TmpValTerm,1));
-    else if (isfloat(ValTerm))
-      c2p_float(CTXTc float_val(ValTerm), p2p_arg(TmpValTerm,1));
+     else if (isofloat(ValTerm))
+      c2p_float(CTXTc ofloat_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
       xsb_abort("Usage: fmt_write([+IOport,] +FmtStr, +args(A1,A2,...))");
-
     ValTerm = TmpValTerm;
     Arity = 1;
   }
@@ -295,9 +293,9 @@ xsbBool fmt_write(CTXTdecl)
       TYPE_ERROR_CHK('i', "FMT_WRITE");
       int_arg = oint_val(Arg);
       PRINT_ARG(int_arg);
-    } else if (isfloat(Arg)) {
+    } else if (isofloat(Arg)) {
       TYPE_ERROR_CHK('f', "FMT_WRITE")
-      float_arg = float_val(Arg);
+      float_arg = ofloat_val(Arg);
       PRINT_ARG(float_arg);
     } else {
       xsb_abort("[FMT_WRITE] Argument %d has illegal type", i);
@@ -378,7 +376,7 @@ xsbBool fmt_write_string(CTXTdecl)
     xsb_abort("[FMT_WRITE_STRING] Format must be an atom or a character string");
 
   ValTerm = reg_term(CTXTc 4);
-  if (isconstr(ValTerm))
+  if (isconstr(ValTerm) && ! isboxed(ValTerm))
     Arity = get_arity(get_str_psc(ValTerm));
   else if (isref(ValTerm))
     /* Var in the argument position means, no arguments */
@@ -392,8 +390,8 @@ xsbBool fmt_write_string(CTXTdecl)
       c2p_string(CTXTc string_val(ValTerm), p2p_arg(TmpValTerm,1));
     else if (isinteger(ValTerm)|isboxedinteger(ValTerm))
       c2p_int(CTXTc oint_val(ValTerm), p2p_arg(TmpValTerm,1));
-    else if (isfloat(ValTerm))
-      c2p_float(CTXTc float_val(ValTerm), p2p_arg(TmpValTerm,1));
+    else if (isofloat(ValTerm))
+      c2p_float(CTXTc ofloat_val(ValTerm), p2p_arg(TmpValTerm,1));
     else
       xsb_abort("Usage: fmt_write_string(-OutStr, +FmtStr, +args(A1,A2,...))");
 
@@ -454,9 +452,9 @@ xsbBool fmt_write_string(CTXTdecl)
       TYPE_ERROR_CHK('i', "FMT_WRITE_STRING");
       int_arg = oint_val(Arg);
       SPRINT_ARG(int_arg);
-    } else if (isfloat(Arg)) {
+    } else if (isofloat(Arg)) {
       TYPE_ERROR_CHK('f', "FMT_WRITE_STRING");
-      float_arg = float_val(Arg);
+      float_arg = ofloat_val(Arg);
       SPRINT_ARG(float_arg);
     } else {
       xsb_abort("[FMT_WRITE_STRING] Argument %d has illegal type", i);
@@ -1167,7 +1165,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 	XSB_Deref(prologvar);
 	term = (prolog_term) prologvar;
 	if ((isinteger(term)|isboxedinteger(term)) || 
-	    isfloat(term) || 
+	    isofloat(term) || 
 	    isstring(term) ||
 	    varfound) {
 	  retpscptr = 0;
@@ -1665,6 +1663,22 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
     }
       break;
     case XSB_STRUCT: /* lettervar: i.e., print '$VAR'(i) terms as Cap Alpha-Num */
+     //first, check to see if we are dealing with boxed int or boxed float, and if so,
+     // do it's respective case, but with boxed value, then break. Otherwise, 
+     // do the struct case
+     if (isboxedinteger(prologterm))
+     {
+      sprintf(wcan_buff->string,"%ld",(long)boxedint_val(prologterm));
+      XSB_StrAppendV(wcan_string,wcan_buff);
+          break;         
+     }
+     else if (isboxedfloat(prologterm))
+     {
+          sprintf(wcan_buff->string,"%2.4f",boxedfloat_val(prologterm));
+          XSB_StrAppendV(wcan_string,wcan_buff);
+          break;         
+     }
+        
       if (!dollar_var_psc) {
 	int new_indicator;
 	dollar_var_psc = pair_psc(insert("$VAR", 1, global_mod, &new_indicator));

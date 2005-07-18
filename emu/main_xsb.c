@@ -53,7 +53,7 @@
 
 #include "orient_xsb.h"
 #include "basicdefs.h"
-
+#include "context.h"
 int main(int argc, char *argv[])
 { 
 #ifdef MULTI_THREAD

@@ -51,7 +51,7 @@
 /*				a CPtr to the address it points to.	*/
 /*	cs_val(dcell):		assume derefed cs cell, return Pair	*/
 /*	bld_int(addr, val):	build a new integer cell		*/
-/*	bld_float(addr, val):	build a new float cell			*/
+/*	bld_boxedfloat(addr, val):	build a new float cell			*/
 /*	bld_ref(addr, val):	build a new reference cell		*/
 /*	bld_cs(addr, str):	build a new cs cell			*/
 /*	bld_string(addr, str):	build a new string cell			*/
@@ -67,6 +67,10 @@
 /*                    (in set CP and resume CP)				*/
 /*                    For variable as selfpointer, no differnce.    	*/
 /*======================================================================*/
+#include "xsb_config.h"
+#include "cell_def_xsb.h"
+#include "basictypes.h"
+#include "box_defines.h"
 
 /* ==== types of cells =================================================*/
 
@@ -76,30 +80,12 @@
 /* CELL: an element in the local stack or global stack (heap).		*/
 /*======================================================================*/
 
-#include "cell_def_xsb.h"
-
-typedef Cell *CPtr;
-
-#ifdef BITS64
-typedef long Integer ;
-typedef unsigned long UInteger ;
-#else
-typedef int Integer ;
-typedef unsigned int UInteger ;
-#endif
- 
-#ifdef BITS64
-typedef double Float ;
-#else
-typedef float Float ;
-#endif
-
 #define cell(cptr) *(cptr)
 #define follow(cell) (*(CPtr)(cell))
 
-extern Float asfloat(Cell);
-extern Cell  makefloat(Float);
-extern Float getfloatval(Cell);
+extern float asfloat(Cell);
+extern Cell  makefloat(float);
+extern float getfloatval(Cell);
 
 #define isref(cell)  (!((word)(cell)&0x3))
 #define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> xsbBool */
@@ -125,7 +111,7 @@ extern unsigned long enc[], dec[];
 #define enc_int(val)  (((Integer)(val) << 3))
 #define dec_int(val)  ((Integer)(val) >> 3)
 
-#define enc_addr(addr) ((Cell)((enc[((unsigned long)addr)>>28] | ((unsigned long)(addr) & 0x0ffffffc)) << 1))
+#define enc_addr(addr) ((Cell)((enc[((unsigned long)(addr))>>28] | ((unsigned long)(addr) & 0x0ffffffc)) << 1))
 #define dec_addr(dcell) ((Cell)(dec[(unsigned long)(dcell)>>29] | (((unsigned long)(dcell) >> 1) & 0x0ffffffc)))
 
 #elif BITS64
@@ -191,7 +177,8 @@ extern unsigned long enc[], dec[];
 #define bld_int_tagged(addr, val) cell(addr) = val
 #define bld_int(addr, val) cell(addr) = makeint(val)
 #define bld_float_tagged(addr, val) cell(addr) = val
-#define bld_float(addr, val) cell(addr) = makefloat((float)val)
+//Note: See section 'Miscellaneous' for implementation of bld_boxedfloat & bld_boxedint.
+#define bld_float(addr, val) cell(addr) = makefloat(val)
 #define bld_ref(addr, val) cell(addr) = (Cell)(val)
 #define bld_cs(addr, str) cell(addr) = makecs(str)
 #define bld_list(addr, list) cell(addr) = makelist(list)
@@ -203,6 +190,7 @@ extern unsigned long enc[], dec[];
 #define bld_free(addr) cell(addr) = (Cell)(addr) /* CPtr => XSB_FREE cell */
 
 #define isinteger(dcell) (cell_tag(dcell)==XSB_INT)	/* dcell -> xsbBool */
+//Note: See section 'Miscellaneous' for implementation of isboxedfloat.
 #define isfloat(dcell) (cell_tag(dcell)==XSB_FLOAT)	/* dcell -> xsbBool */
 #define isconstr(dcell) (cell_tag(dcell)==XSB_STRUCT)	/* dcell -> xsbBool */
 #define islist(dcell) (cell_tag(dcell)==XSB_LIST)	/* dcell -> xsbBool */
@@ -219,25 +207,68 @@ extern unsigned long enc[], dec[];
 			 (isconstr(dcell) && get_arity(get_str_psc(dcell))==0))
 
 #define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_sym)
-
+#define isboxed(term) (isconstr(term) && get_str_psc(term) == box_psc )
 
 /*======================================================================*/
 /* Miscellaneous							*/
 /*======================================================================*/
 
 #define MAX_ARITY	255
+#define CELL_DEFS_INCLUDED
 
 #define arity_integer(dcell) \
 			(isinteger(dcell) && int_val(dcell) >= 0 \
 					  && int_val(dcell) <= MAX_ARITY)
+            
+            
+#define isboxedinteger(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) \
+                               && (int_val(cell(clref_val(dcell)+1))>>16 == ID_BOXED_INT))
 
-#define CELL_DEFS_INCLUDED
+#ifdef PRECISE_FLOATS
+#define isboxedfloat(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) \
+                             && (int_val(cell(clref_val(dcell)+1))>>16 == ID_BOXED_FLOAT))
+#else
+//If PRECISE_FLOATS isn't defined, there should be no boxed floats (only Cell floats). 
+//  isboxedfloat is therefore expanded to FALSE (0), in hopes that the optimizer will remove.
+//  any code exclusively dependent on it.
 
-#define isboxedinteger(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) && (int_val(cell(clref_val(dcell)+1)) == 1))
+#define isboxedfloat(dcell) 0
+#endif
 
 #define boxedint_val(dcell) \
        ((Integer)((((unsigned long)int_val(cell(clref_val(dcell)+2))<<24)   \
                   | int_val(cell(clref_val(dcell)+3))))) 
+       
+#ifdef PRECISE_FLOATS
+//make_float_from_ints, defined in emuloop.c, is used by EXTRACT_FLOAT_FROM_16_24_24 to combine
+//    two UInteger values into a Float value that is twice the size the UInteger, in bytes. 
+
+// It assumes that the double type is twice the size of the integer type on the target machine.
+//    It is an inline function that joins the two ints in a struct, unions this struct with a 
+//    Float variable, and returns this Float.
+extern inline Float make_float_from_ints(UInteger, UInteger);
+
+// EXTRACT_FLOAT_FROM_16_24_24 works by first merging the three ints together into 
+//    two Integers (assuming high-order 16 bits are in the first, middle-24 bits in the 
+//    second, and low-24 bits in the third).
+#define EXTRACT_FLOAT_FROM_16_24_24(highInt, middleInt, lowInt)        \
+      (make_float_from_ints(  (((((UInteger) highInt) & LOW_16_BITS_MASK) <<16) | (((UInteger) middleInt) >> 8)), \
+                              ((((UInteger) middleInt)<<24) | (UInteger)lowInt)) )
+#define boxedfloat_val(dcell)                           \
+    (                                                   \
+     (Float)(    EXTRACT_FLOAT_FROM_16_24_24(           \
+                   (int_val(cell(clref_val(dcell)+1))), \
+                   (int_val(cell(clref_val(dcell)+2))), \
+                   (int_val(cell(clref_val(dcell)+3)))  \
+                 )                                      \
+            )                                           \
+    )
+#else 
+//if PRECISE_FLOATS isn't defined, then boxedfloat_val should never get called. To satisfy the 
+//  compiler, boxedfloat_val has been turned into an alias for float_val, since everything that 
+//  would have been a boxedfloat should now be a float.
+#define boxedfloat_val(dcell) float_val(dcell)
+#endif
 
 #define oint_val(dcell)      \
     (isinteger(dcell)        \
@@ -246,20 +277,67 @@ extern unsigned long enc[], dec[];
        ?boxedint_val(dcell)  \
        :0x80000000))
 
+
+#ifdef PRECISE_FLOATS
+/* below returns the error-code 12345.6789 if the macro is called on a non-float related cell. 
+   One should be careful with this (possibly change?), since it ordinarily can return any double
+   in the full floating point domain, including 12345.6789.*/
+#define ofloat_val(dcell)    \
+    (isfloat(dcell)          \
+     ?float_val(dcell)         \
+     :(isboxedfloat(dcell) \
+       ?boxedfloat_val(dcell)  \
+       :12345.6789))
+#else
+//when PRECISE_FLOATS isn't defined, ofloat_val exists for the same reason that boxedfloat_val 
+//  does in the undefined PRECISE_FLOATS case. See boxedfloat_val for comments.
+#define ofloat_val(dcell) float_val(dcell)
+#endif
+
+
+#ifdef PRECISE_FLOATS
+#define isofloat(val)  ( (isboxedfloat(val)) || (isfloat(val)) )
+#else
+#define isofloat(val) isfloat(val)
+#endif
+
 #define int_overflow(value)                 \
    (int_val(makeint(value)) != (value))
 
-#define bld_boxedint(addr, value)				\
-     {Cell binttemp = makecs(hreg);				\
-      new_heap_functor(hreg,box_psc);				\
-      bld_int(hreg,1); hreg++;					\
-      bld_int(hreg,(((unsigned)(value)) >> 24)); hreg++;	\
-      bld_int(hreg,((value) & 0xffffff)); hreg++;		\
+#define bld_boxedint(addr, value)				                    \
+     {Cell binttemp = makecs(hreg);	                                \
+      new_heap_functor(hreg,box_psc);				                \
+      bld_int(hreg,((ID_BOXED_INT << BOX_ID_OFFSET ) )); hreg++;	\
+      bld_int(hreg,INT_LOW_24_BITS(value)); hreg++;	                \
+      bld_int(hreg,((value) & LOW_24_BITS_MASK)); hreg++;		    \
       cell(addr) = binttemp;}
 
-#define bld_oint(addr, value)					\
-    if (int_overflow(((Integer)value))) {					\
-      bld_boxedint(addr, ((Integer)value));				\
+      
+#define bld_oint(addr, value)					    \
+    if (int_overflow(((Integer)value))) {			\
+      bld_boxedint(addr, ((Integer)value));			\
     } else {bld_int(addr,((Integer)value));}
 
+    
+//if PRECISE_FLOATS isn't defined, then bld_boxedfloat becomes an alias for bld_float. If it is
+//defined, bld_boxedfloat is a function declaired here and implemented in emuloop.c.
+#ifdef PRECISE_FLOATS
+
+#include "context.h"
+//Note: anything that includes cell_xsb.h in the multithreaded environment implicitly includes
+//context.h as well, since bld_boxedfloat references hreg.
+extern inline void bld_boxedfloat(CTXTdeclc CPtr, Float);
+#else
+
+//the formal parameters for bld_boxedfloat vary depending on whether XSB is multi-threaded
+//or not.
+#ifdef MULTI_THREAD
+#define bld_boxedfloat(context, addr, value) bld_float(addr, value);
+#else
+#define bld_boxedfloat(addr, value) bld_float(addr, value);
+#endif /*MULTI_THREAD*/
+
+#endif /*PRECISE_FLOATS*/
+
+   
 #endif /* __CELL_XSB_H__ */

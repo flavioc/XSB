@@ -179,7 +179,7 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
     /* op1 is FREE */							\
     bind_float_tagged(vptr(OP1), OP2);                	                \
   }									\
-  else if (isfloat(OP1)) {						\
+  else if (isofloat(OP1)) {						\
     if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
   }									\
   else if (isattv(OP1)) {						\

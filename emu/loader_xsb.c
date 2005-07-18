@@ -106,8 +106,7 @@ extern void remove_prog_seg(byte *);
 			       *(Cell *)(x) = makeint(*(int *)(x));}
 #define get_obj_word_bbsig_notag(x) {get_obj_word(x) ; fix_bb4(x) ; \
 			       *(Integer *)(x) = *(int *)(x);}
-#define get_obj_word_bbflt(x) {get_obj_word(x) ; fix_bb4(x) ; \
-			       *(Cell *)(x) = makefloat(*(float*)x);}
+                   
 
 /* === local declarations =============================================	*/
 
@@ -385,7 +384,30 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	inst_addr ++;
 	break;
       case F:
-	get_obj_word_bbflt(inst_addr);
+    get_obj_word(inst_addr) ; 
+
+    //swapping the byte order:
+    byte tempSwappingByte;
+    CellToBytesConv converter;
+    converter.cell_val = *inst_addr;
+    
+    //swap outer bytes
+    tempSwappingByte = converter.byte_vals.b1;
+    converter.byte_vals.b1 = converter.byte_vals.b4;
+    converter.byte_vals.b4 = tempSwappingByte;
+    
+    //swap inner bytes
+    tempSwappingByte = converter.byte_vals.b2;
+    converter.byte_vals.b2 = converter.byte_vals.b3;
+    converter.byte_vals.b3 = tempSwappingByte;
+    
+    *inst_addr = converter.cell_val;
+    //printf("\nIN LOADER: swapped! New val is: %0X\n",*(unsigned int *)(inst_addr) );
+    
+    //printf("\nIN LOADER: About to make float...\n");
+    // and returning the new integer, as a cell
+    *(Cell *)(inst_addr) = makefloat(*(float *)inst_addr);
+    //printf("\nmakefloat done making float!\n");
 	inst_addr ++;
 	break;
       case I:

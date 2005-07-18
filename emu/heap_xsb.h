@@ -38,7 +38,7 @@
 /* make a new num node on the heap, with value val */
 
 #define new_heap_float(sh_reg, val) bld_float_tagged(sh_reg, val); sh_reg++
-/* make a new float node on the heap, with value val */
+/* make a new float node on the heap, with value val in tagged format.*/
 
 #define new_heap_functor(sh_reg, psc) bld_functor(sh_reg++, psc)
 /* make a new functor node in heap */

@@ -201,7 +201,6 @@ static void help_message(void)
 static void init_flags(void)
 {
   int i;
-
   for (i=0; i<65; i++) flags[i] = 0;
   flags[SYS_TIMER]  = TIMEOUT_ERR; /* start with expired timer */
   flags[BANNER_CTL] = 1;           /* a product of prime numbers; each prime

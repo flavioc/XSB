@@ -197,7 +197,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	   loc_pcreg++;
 	   break;
 	 case F:
-	   fprintf(fd, ", %f", float_val(cell(loc_pcreg)));
+	   fprintf(fd, ", %f", ofloat_val(cell(loc_pcreg)));
 	   loc_pcreg++;
 	   break;
 	 case PP:

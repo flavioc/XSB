@@ -27,6 +27,9 @@
  * -------------------------------------------------------------------------- **
  *
  * $Log$
+ * Revision 1.2  2005/07/18 21:54:26  crojo
+ * *** empty log message ***
+ *
  * Revision 1.1  2004/01/14 20:27:14  dwarren
  * XSB Prolog Profiling as command line option -p
  *
@@ -511,7 +514,7 @@ long ubi_btSgn( register long x )
   return( (x)?((x>0)?(1):(-1)):(0) );
   } /* ubi_btSgn */
 
-ubi_btNodePtr ubi_btInitNode( ubi_btNodePtr NodePtr )
+ubi_btNodePtr ubi_btInitNode( ubi_btNodePtr LocalNodePtr )
   /* ------------------------------------------------------------------------ **
    * Initialize a tree node.
    *
@@ -521,12 +524,12 @@ ubi_btNodePtr ubi_btInitNode( ubi_btNodePtr NodePtr )
    * ------------------------------------------------------------------------ **
    */
   {
-  NodePtr->Link[ ubi_trLEFT ]   = NULL;
-  NodePtr->Link[ ubi_trPARENT ] = NULL;
-  NodePtr->Link[ ubi_trRIGHT ]  = NULL;
-  NodePtr->gender               = ubi_trEQUAL;
-  NodePtr->balance              = ubi_trEQUAL;
-  return( NodePtr );
+  LocalNodePtr->Link[ ubi_trLEFT ]   = NULL;
+  LocalNodePtr->Link[ ubi_trPARENT ] = NULL;
+  LocalNodePtr->Link[ ubi_trRIGHT ]  = NULL;
+  LocalNodePtr->gender               = ubi_trEQUAL;
+  LocalNodePtr->balance              = ubi_trEQUAL;
+  return( LocalNodePtr );
   } /* ubi_btInitNode */
 
 ubi_btRootPtr ubi_btInitTree( ubi_btRootPtr   RootPtr,

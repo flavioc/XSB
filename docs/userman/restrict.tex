@@ -35,10 +35,16 @@ fix it or to assist you to bypass it.
       other machines it is $-2^{27}$---$(2^{27}-1)$.  This restriction can
       cause unexpected results when numbers are computed.  The amount
       of space allowed for floating point numbers is similar for each
-      machine.  For 64-bit platforms, addresses, integers, and
-      floating point numbers are all stored in 60 bits. However, as the
-      \emph{object} code file format is the same as for the 32-bit versions,
-      compiled constants are subject to 32-bit limitations.
+      machine, but if the PRECISE_FLOATS tag is specified at configure time
+      (syntax: --enable-precise-floats), then floats will take on double precision
+      for the target machine, and be stored in a boxed representation, where the 
+      bits of the floating point value are split into 3 prolog integers that are
+      stored on the heap, contained in a '$BOX$' structure. This reflects a tradeoff
+      for floating point percision over heap space/growth rate.
+      For 64-bit platforms, addresses, integers, and floating point numbers are 
+      all stored in 60 bits. However, as the \emph{object} code file format is 
+      the same as for the 32-bit versions, compiled constants are subject to 
+      32-bit limitations.
 %
 \item	Indexing on floating-point numbers does not work, since, as
 implemented in XSB, the semantics

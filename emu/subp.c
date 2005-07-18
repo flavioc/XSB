@@ -12,7 +12,7 @@
 ** 
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public Livallcense for
 ** more details.
 ** 
 ** You should have received a copy of the GNU Library General Public License
@@ -467,7 +467,9 @@ void intercept(CTXTdeclc Psc psc) {
 }
 
 /*======================================================================*/
-/* floating point conversions						*/
+/* floating point conversions                                           */
+/*    The below 3 methods are to be used when floats and Cells are the  */
+/*    same size, in bytes, to convert between the two.                  */
 /*======================================================================*/
 
 /* lose some precision in conversions from 32 bit formats */
@@ -477,27 +479,19 @@ void intercept(CTXTdeclc Psc psc) {
 #define FLOAT_MASK 0xfffffff8
 #endif
 
-static union float_conv {
-  Float f;
-  Cell i;
-} float_conv;
 
-Float getfloatval(Cell w)
+float getfloatval(Cell w)
 {
-  float_conv.i = w & FLOAT_MASK;
-  return float_conv.f;
+    FloatConv converter;
+    converter.i = w & FLOAT_MASK;
+    return converter.f;
 }
 
-Cell makefloat(Float f)
+Cell makefloat(float f)
 {
-  float_conv.f = f;
-  return ( float_conv.i & FLOAT_MASK ) | XSB_FLOAT;
-}
-
-Float asfloat(Cell w)
-{
-  float_conv.i = w;
-  return float_conv.f;
+    FloatConv converter;
+    converter.f = f;
+    return (Cell)(( converter.i & FLOAT_MASK ) | XSB_FLOAT);
 }
 
 static inline int sign(Float num)
@@ -563,31 +557,39 @@ int compare(CTXTdeclc const void * v1, const void * v2)
     }
   case XSB_FLOAT:
     if (isref(val2) || isattv(val2)) return 1;
-    else if (isfloat(val2)) 
-      return sign(float_val(val1) - float_val(val2));
+    else if (isofloat(val2)) 
+      return sign(float_val(val1) - ofloat_val(val2));
     else return -1;
   case XSB_INT:
-    if (isref(val2) || isfloat(val2) || isattv(val2)) return 1;
+    if (isref(val2) || isofloat(val2) || isattv(val2)) return 1;
     else if (isinteger(val2)) 
       return int_val(val1) - int_val(val2);
     else if (isboxedinteger(val2))
       return int_val(val1) - boxedint_val(val2);
     else return -1;
   case XSB_STRING:
-    if (isref(val2) || isfloat(val2) || isinteger(val2) || isattv(val2)) 
+    if (isref(val2) || isofloat(val2) || isinteger(val2) || isattv(val2)) 
       return 1;
     else if (isstring(val2)) {
       return strcmp(string_val(val1), string_val(val2));
     }
     else return -1;
   case XSB_STRUCT:
+    // below, first 2 if-checks test to see if this struct is actually a number representation,
+    // (boxed float or boxed int) and if so, does what the number case would do, only with boxed_val
+    // macros.
     if (isboxedinteger(val1)) {
-      if (isref(val2) || isfloat(val2) || isattv(val2)) return 1;
+      if (isref(val2) || isofloat(val2) || isattv(val2)) return 1;
       else if (isinteger(val2)) 
 	return boxedint_val(val1) - int_val(val2);
       else if (isboxedinteger(val2))
 	return boxedint_val(val1) - boxedint_val(val2);
       else return -1;
+    } else if (isboxedfloat(val1)) {
+        if (isref(val2) || isattv(val2)) return 1;
+        else if (isofloat(val2)) 
+          return sign(boxedfloat_val(val1) - ofloat_val(val2));
+        else return -1;            
     } else if (cell_tag(val2) != XSB_STRUCT && cell_tag(val2) != XSB_LIST) return 1;
     else {
       int arity1, arity2;

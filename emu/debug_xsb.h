@@ -112,6 +112,7 @@ extern void print_subgoal(FILE *, VariantSF);
 extern void print_delay_list(FILE *, CPtr);
 extern void printterm(FILE *, Cell, int);
 #else
+
 #define xsb_dbgmsg(a)
 #define dbg_print_subgoal(L,F,S)
 #define dbg_printterm(L,F,T,D)

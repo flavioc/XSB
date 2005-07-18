@@ -1869,12 +1869,14 @@ manual.
 Before describing {\tt is/2} and the expressions that it can evaluate,
 we note that in \version{} of XSB, integers and floats in XSB are
 represented using a single word of 32 or 64 bits, depending on the
-machine architecture.  Since type tags constitute part of this word,
-this means that there may be as little as 28 bits available to
-represent a floating point number.  In addition, evaluation of
-arithmetic expressions through {\tt is/2} does not check for overflow
-or underflow.  As a result, XSB's floating point operations do not
-conform to IEEE floating point standards, and deviates in this regard
+machine architecture and assuming that precise floating point values have
+not been enabled at configure time (which would maintain all the bits of
+the number wrapped in a "$BOX$" structure on the heap).  Since type tags 
+constitute part of this word in a non-boxed number, this means that there 
+may be as little as 28 bits available to represent a floating point number. 
+In addition, evaluation of arithmetic expressions through {\tt is/2} does not 
+check for overflow or underflow.  As a result, XSB's floating point operations 
+do not conform to IEEE floating point standards, and deviates in this regard
 from the ISO Prolog standard (see \cite{ISO-Prolog} Section 9).  We
 hope to fix these problems in a future release \footnote{We also note
 that the ISO Prolog evaluable functors {\tt sign/1}, {\tt

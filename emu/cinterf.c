@@ -23,7 +23,6 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
@@ -88,7 +87,7 @@ DllExport xsbBool call_conv is_float(prolog_term term)
 {
     Cell t = (Cell)term;
     XSB_Deref(t);
-    return isfloat(t);
+    return isofloat(t);
 }
 
 DllExport xsbBool call_conv is_string(prolog_term term)
@@ -158,7 +157,7 @@ DllExport xsbBool call_conv c2p_float(CTXTdeclc double val, prolog_term var)
 {
     Cell v = (Cell)var;
     if (is_var(v)) {
-	bind_float(vptr(v), (Float)(val));
+	bind_boxedfloat(vptr(v), (Float)(val));
 	return TRUE;
     } else {
 	xsb_warn("[C2P_FLOAT] Argument 2 must be a variable");
@@ -240,7 +239,7 @@ DllExport Integer call_conv p2c_int(prolog_term term)
 DllExport double call_conv p2c_float(prolog_term term)
 {
     Cell t = (Cell)term;
-    return (double)(float_val(t));
+    return (double)(ofloat_val(t));
 }
 
 DllExport char* call_conv p2c_string(prolog_term term)

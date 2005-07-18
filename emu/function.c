@@ -67,7 +67,7 @@
 
 #define set_fvalue_from_value  \
     if (isinteger(value)) fvalue = (Float) int_val(value); \
-    else if (isfloat(value)) fvalue = float_val(value);   \
+    else if (isofloat(value)) fvalue = ofloat_val(value);   \
     else if (isboxedinteger(value)) fvalue = (Float) boxedint_val(value); \
     else return 0
 
@@ -83,7 +83,7 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
   switch (funcnum) {
   case FUN_float:
     set_fvalue_from_value;
-    bld_float(regaddr, fvalue);
+    bld_boxedfloat(CTXTc regaddr, fvalue);
     break;
   case FUN_floor:
     set_fvalue_from_value;
@@ -97,48 +97,58 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
   case FUN_AND:
   case FUN_OR:
     return 0;		/* should not come here */
-      case FUN_sin:
-	  set_fvalue_from_value;
-	  bld_float(regaddr, sin(fvalue));
-	  break;
-      case FUN_cos:
-	  set_fvalue_from_value;
-	  bld_float(regaddr, cos(fvalue));
-	  break;
-      case FUN_tan:
-	  set_fvalue_from_value;
-	  bld_float(regaddr, tan(fvalue));
-	  break;
-      case FUN_exp:
-          set_fvalue_from_value;
-          bld_float(regaddr, exp(fvalue));
-          break;
-      case FUN_log:
-          set_fvalue_from_value;
-	  bld_float(regaddr, log(fvalue));
-	  break;
-      case FUN_log10:
-          set_fvalue_from_value;
-	  bld_float(regaddr, log10(fvalue));
-	  break;
-      case FUN_sqrt:
-          set_fvalue_from_value;
-	  bld_float(regaddr, sqrt(fvalue));
-	  break;
-      case FUN_asin:
-          set_fvalue_from_value;
-	  bld_float(regaddr, asin(fvalue));
-	  break;
+  case FUN_sin:
+      set_fvalue_from_value;
+      fvalue = sin(fvalue);
+      bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
+  case FUN_cos:
+      set_fvalue_from_value;
+      fvalue = cos(fvalue);
+      bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
+  case FUN_tan:
+      set_fvalue_from_value;
+      fvalue = tan(fvalue);
+      bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
+  case FUN_exp:
+      set_fvalue_from_value;
+      fvalue = exp(fvalue);
+      bld_boxedfloat(CTXTc regaddr, fvalue);
+      break;
+  case FUN_log:
+      set_fvalue_from_value;
+      fvalue = log(fvalue);
+  bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
+  case FUN_log10:
+      set_fvalue_from_value;
+      fvalue = log10(fvalue);
+  bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
+  case FUN_sqrt:
+      set_fvalue_from_value;
+      fvalue = sqrt(fvalue);
+  bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
+  case FUN_asin:
+      set_fvalue_from_value;
+      fvalue = asin(fvalue);
+      bld_boxedfloat(CTXTc regaddr, fvalue);
+  break;
   case FUN_acos:
     set_fvalue_from_value;
-    bld_float(regaddr, acos(fvalue));
+    fvalue = acos(fvalue);
+    bld_boxedfloat(CTXTc regaddr, fvalue);
     break;
   case FUN_atan:
     set_fvalue_from_value;
-    bld_float(regaddr, atan(fvalue));
+    fvalue = atan(fvalue);
+    bld_boxedfloat(CTXTc regaddr, fvalue);
     break;
   case FUN_abs:
-    if (isinteger(value)) { 
+    if (isinteger(value)) {
       ivalue = int_val(value);
       if (ivalue > 0) 
 	bld_int(regaddr,ivalue);
@@ -150,11 +160,17 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
 	{bld_oint(regaddr,ivalue)}
       else bld_oint(regaddr,-ivalue)
     } 
-    else if (isfloat(value)) {
-      fvalue = float_val(value);
-      if (fvalue > 0) 
-	bld_float(regaddr,fvalue);
-      else bld_float(regaddr,-fvalue);
+    else if (isofloat(value) ) {
+      fvalue = ofloat_val(value);
+      if (fvalue > 0)
+      {
+          bld_boxedfloat(CTXTc regaddr,fvalue);
+      }
+      else 
+      {
+          fvalue = -fvalue;
+          bld_boxedfloat(CTXTc regaddr,fvalue);
+      }
     } else return 0;
     break;
   case FUN_truncate:
@@ -166,11 +182,18 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       ivalue = boxedint_val(value);
       bld_oint(regaddr,ivalue);
     }
-    else if (isfloat(value)) {
-      fvalue = float_val(value);
+    else if (isofloat(value)) {
+      fvalue = ofloat_val(value);
       if (fvalue > 0) 
-	bld_float(regaddr,floor(fvalue));
-      else bld_float(regaddr,-floor(-fvalue));
+      {
+          fvalue = floor(fvalue);
+          bld_boxedfloat(CTXTc regaddr,fvalue);
+      }
+      else 
+      {
+          fvalue = -floor(-fvalue);
+          bld_boxedfloat(CTXTc regaddr,fvalue);
+      }
     } else return 0;
     break;
   case FUN_round:
@@ -182,9 +205,10 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       ivalue = boxedint_val(value);
       bld_oint(regaddr,ivalue);
     }
-    else if (isfloat(value)) {
-      fvalue = float_val(value);
-      bld_float(regaddr,floor(fvalue+0.5));
+    else if (isofloat(value)) {
+      fvalue = ofloat_val(value);
+      fvalue = floor(fvalue+0.5);
+      bld_boxedfloat(CTXTc regaddr, fvalue);
     } else return 0;
     break;
   case FUN_ceiling:
@@ -196,9 +220,10 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       ivalue = boxedint_val(value);
       bld_oint(regaddr,ivalue);
     }
-    else if (isfloat(value)) {
-      fvalue = float_val(value);
-      bld_float(regaddr,-floor(-fvalue));
+    else if (isofloat(value)) {
+      fvalue = ofloat_val(value);
+      fvalue = -floor(-fvalue);
+      bld_boxedfloat(CTXTc regaddr,fvalue);
     } else return 0;
     break;
   default:  return 0;

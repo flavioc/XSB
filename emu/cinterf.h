@@ -203,7 +203,7 @@ DllExport extern void call_conv c2p_chars(CTXTdeclc char *str, prolog_term term)
 
 
 DllExport extern prolog_int   call_conv p2c_int(prolog_term);
-DllExport extern prolog_float call_conv p2c_float(prolog_term);
+DllExport extern double   call_conv p2c_float(prolog_term);
 DllExport extern char*    call_conv p2c_string(prolog_term);
 DllExport extern char*    call_conv p2c_functor(prolog_term);
 DllExport extern int      call_conv p2c_arity(prolog_term);

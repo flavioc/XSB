@@ -36,28 +36,30 @@
     return isatom(ptoc_tag(CTXTc 1));
     
   case INTEGER:	/* r1: ?term */ {
-     Cell tmp1;
-     Psc tmp2;
+//     Cell tmp1;
+//     Psc tmp2;
 
-      Cell tag = ptoc_tag(CTXTc 1);
-      if (isinteger(tag)) return TRUE;
-      if (!isconstr(tag)) return FALSE;
-      tmp1 = dec_addr(tag);
-      /*printf("tag = %x, tmp1 = %p, hreg = %p\n",tag,tmp1,hreg);*/
-      tmp2 = *((Psc *)tmp1);
-      if (tmp2 != box_psc) return FALSE;
-      return (int_val(cell(clref_val(tag)+1)) == 1);
+ //     Cell tag = ptoc_tag(CTXTc 1);
+ //     if (isinteger(tag)) return TRUE;
+ //     if (!isconstr(tag)) return FALSE;
+ //     tmp1 = dec_addr(tag);
+ //     /*printf("tag = %x, tmp1 = %p, hreg = %p\n",tag,tmp1,hreg);*/
+ //     tmp2 = *((Psc *)tmp1);
+ //     if (tmp2 != box_psc) return FALSE;
+ //     return (int_val(cell(clref_val(tag)+1)) == 1);
 
-      /**      int tag = ptoc_tag(1);
-	       return (isinteger(tag) || isboxedinteger(tag));**/
+            int tag = ptoc_tag(CTXTc 1);
+	       return (isinteger(tag) || isboxedinteger(tag));
   }
     
   case REAL:		/* r1: ?term */
-    return isfloat(ptoc_tag(CTXTc 1));
-    
+  {
+    Cell term = ptoc_tag(CTXTc 1);
+    return isofloat(term);
+  }  
   case NUMBER:	/* r1: ?term */ {
       Cell tag = ptoc_tag(CTXTc 1);
-      return (isnumber(tag) || isboxedinteger(tag));
+      return (isnumber(tag) || isboxedinteger(tag) || isboxedfloat(tag));
   }
   case ATOMIC: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
@@ -67,12 +69,12 @@
   case COMPOUND: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
     return (((isconstr(term) && get_arity(get_str_psc(term))) ||
-	    (islist(term))) && !isboxedinteger(term));
+	    (islist(term))) && !isboxedfloat(term) && !isboxedinteger(term));
   }
 
   case CALLABLE: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
-    return (isconstr(term) || isstring(term) || islist(term));
+    return ((isconstr(term) && !isboxed(term)) || isstring(term) || islist(term));
   }
 
   case IS_LIST:	/* r1: ?term */

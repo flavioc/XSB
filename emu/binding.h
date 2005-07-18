@@ -1,4 +1,4 @@
-/* File:      binding.h
+				/* File:      binding.h
 ** Author(s): Jiyang Xu, Terrance Swift, Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -57,6 +57,11 @@
  *     +-----+                  previous trail frame)
  *    high memory
  */
+
+#include "xsb_config.h"
+#include "basictypes.h"
+#include "box_defines.h"
+
 
 #define PRE_IMAGE_TRAIL
 
@@ -128,29 +133,63 @@
 #define bind_int_tagged(addr, val)	pushtrail(addr, (Cell) val); \
    				        bld_int_tagged(addr, val)
 
-#define bind_float_tagged(addr, val)	pushtrail(addr, (Cell) val); \
-				        bld_float_tagged(addr, val)
-
+#define bind_float_tagged(addr, val) pushtrail(addr, (Cell) val);\
+                        bld_float_tagged(addr, val)
+                        
 #define bind_int(addr, val)	pushtrail(addr, makeint(val));\
 				bld_int(addr, val)
 
-#define bind_boxedint(addr, val)				 \
+#define bind_float(addr, val) pushtrail(addr, makefloat(val)); bld_float(addr, val)
+//below is old boxedint code. Retained in case new boxedint is faulty
+/*#define bind_boxedint(addr, val)				 \
      {Cell temp = makecs(hreg);					 \
       new_heap_functor(hreg,box_psc);				 \
       bld_int(hreg,1); hreg++;					 \
       bld_int(hreg,(((unsigned long)(val)) >> 24)); hreg++;	 \
       bld_int(hreg,((val) & 0xffffff)); hreg++;			 \
       pushtrail(addr, temp);					 \
-      cell(addr) = temp;}
+      cell(addr) = temp;} */
 
-#define bind_oint(addr, val)					\
-     if (int_overflow(val)) {					\
+#define bind_boxedint(addr, value)				                    \
+     {Cell binttemp = makecs(hreg);	    \
+      new_heap_functor(hreg,box_psc);				                \
+      bld_int(hreg,((ID_BOXED_INT << BOX_ID_OFFSET ) )); hreg++;	\
+      bld_int(hreg,INT_LOW_24_BITS(value)); hreg++;	                \
+      bld_int(hreg,((value) & LOW_24_BITS_MASK)); hreg++;		    \
+      pushtrail(addr, binttemp);		                            \
+      cell(addr) = binttemp;}
+
+
+#ifdef PRECISE_FLOATS
+//Below, bind_boxedfloat builds a boxedfloat, from Float 'value', on the heap.
+//It also creates a Cell pointing to it, and inserts it at addr. 
+//Pre-condition: value must be a 64-bit floating point value
+/*#define bind_boxedfloat(addr, value)				            \
+     {Float tempFloat = value;                          \
+      Cell bfloattemp = makecs(hreg);				        \
+      new_heap_functor(hreg,box_psc);				        \
+      bld_int(hreg,(ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ); \
+      hreg++;                                               \
+      bld_int(hreg,FLOAT_MIDDLE_24_BITS(tempFloat)); hreg++;	\
+      bld_int(hreg,FLOAT_LOW_24_BITS(tempFloat)); hreg++;		\
+      pushtrail(addr, bfloattemp);				            \
+      cell(addr) = bfloattemp;}
+      
+      */
+      
+#define bind_boxedfloat(addr, value)   \
+    {   pushtrail(addr, (Cell)makecs(hreg)); \
+        bld_boxedfloat(CTXTc addr, value); }                                   
+#else
+#define bind_boxedfloat(addr, value) bind_float(addr, value)
+#endif
+
+
+#define bind_oint(addr, val)                \
+     if (int_overflow(val)) {               \
 	bind_boxedint(addr, val);				\
       } else {bind_int(addr, val);}
 
-
-#define bind_float(addr, val)	pushtrail(addr, (Cell) makefloat(val)); \
-				bld_float(addr, val)
 
 #define bind_ref(addr, val)	pushtrail(addr, val);\
 				bld_ref(addr, val)

@@ -25,6 +25,7 @@
 
 
 /*----------------------------------------*/
+#include "xsb_config.h"
 #include "builtin.h"
 #include "sp_unify_xsb_i.h"
 /*----------------------------------------*/
@@ -45,7 +46,7 @@ inline static xsbBool functor_builtin(CTXTdecl)
 
   term = ptoc_tag(CTXTc 1);
   if (isnonvar(term)) {
-    if (isconstr(term) && !isboxedinteger(term)) {
+    if (isconstr(term) && !isboxedfloat(term) && !isboxedinteger(term)) {
       psc = get_str_psc(term);
       name = get_name(psc);
       arity = get_arity(psc);
@@ -58,7 +59,7 @@ inline static xsbBool functor_builtin(CTXTdecl)
 		 int_unify(CTXTc makeint(0), ptoc_tag(CTXTc 3)));
   } else {	/* term is a variable */
     functor = ptoc_tag(CTXTc 2);
-    if (isstring(functor) || isinteger(functor) || isfloat(functor) ||
+    if (isstring(functor) || isinteger(functor) || isofloat(functor) ||
 	isboxedinteger(functor) ||
 	(isconstr(term) && get_arity(get_str_psc(term)) == 0)) {
       arity = ptoc_tag(CTXTc 3);
@@ -481,13 +482,15 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
       bind_int((CPtr)(term), c);
     } else {
       Float float_temp;
-#ifdef BITS64
-      if (sscanf(str, "%le%c", &float_temp, &hack_char) == 1)
+      //TODO: Refactor the below few lines of code once the "Floats are always double?" 
+      //situation is resolved.
+#ifdef PRECISE_FLOATS
+      if (sscanf(str, "%lf%c", &float_temp, &hack_char) == 1)
 #else
-      if (sscanf(str, "%e%c", &float_temp, &hack_char) == 1)
+      if (sscanf(str, "%f%c", &float_temp, &hack_char) == 1)
 #endif
 	{
-	  bind_float((CPtr)(term), float_temp);
+	  bind_boxedfloat((CPtr)(term), float_temp);
 	}
       else return FALSE;	/* fail */
     }
@@ -495,8 +498,8 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
     if (isinteger(term)) {
       sprintf(str, "%ld", (long)int_val(term));
     } else {
-      if (isfloat(term)) {
-	sprintf(str, "%e", float_val(term));
+      if (isofloat(term)) {
+	sprintf(str, "%e", ofloat_val(term));
       } else {
 	if (isboxedinteger(term)) {
 	  sprintf(str,"%ld",(long)boxedint_val(term));

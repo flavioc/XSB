@@ -126,6 +126,17 @@ static void print_term(FILE *fp, Cell term, byte car, int level)
     fprintf(fp, "_%p", (CPtr)dec_addr(term));
     return;
   case XSB_STRUCT:
+      //NOTE: Below is a check for boxed numbers. If such is the case, then
+      //  the behavior is the same as XSB_INT or XSB_FLOAT, but with boxed[X]_val macro
+      //  instead of [X]_val macro
+    if (isboxedfloat(term)) {
+        fprintf(fp, "%f", boxedfloat_val(term));
+        return;   
+    }
+    else if (isboxedinteger(term)) {
+        fprintf(fp, "%ld", (long)boxedint_val(term));
+        return;
+    }
     psc = get_str_psc(term);
     fprintf(fp, "%s", get_name(psc));
     arity = get_arity(psc);
@@ -247,43 +258,41 @@ static int count_producer_subgoals(void)
 
 void print_help(void)
 {
-  xsb_dbgmsg((LOG_DEBUG,"      a r/v/d/a <addr>: inspect the content of the address"));
-  xsb_dbgmsg((LOG_DEBUG,"      b <module> <name> <arity>: spy the predicate"));
-  xsb_dbgmsg((LOG_DEBUG,"      B <num>: print detailed Prolog choice points from the top"));
-  xsb_dbgmsg((LOG_DEBUG,"\tof the choice point stack with <num>-Cell overlap"));
-  xsb_dbgmsg((LOG_DEBUG,"      c <num>: print top of choice point stack with <num> overlap"));
-  xsb_dbgmsg((LOG_DEBUG,"      C <num>: print choice point stack (around bfreg) with <num> overlap"));
-  xsb_dbgmsg((LOG_DEBUG,"      d: print disassembled code for module"));
-  xsb_dbgmsg((LOG_DEBUG,"      D: print current value of delay list (pointed by delayreg)"));
-  xsb_dbgmsg((LOG_DEBUG,"      e <size>: expand trail/cp stack to <size> K-byte blocks"));
-  xsb_dbgmsg((LOG_DEBUG,"      E <num>: print top of environment (local) stack with <num> overlap"));
-  xsb_dbgmsg((LOG_DEBUG,"      g: leap to the next check_complete instruction"));
-  xsb_dbgmsg((LOG_DEBUG,"      G: same as 'g', but does not print intermediate info"));
-  xsb_dbgmsg((LOG_DEBUG,"      h: help"));
-  xsb_dbgmsg((LOG_DEBUG,"      H <num>: print top of heap with <num> overlap"));
-  xsb_dbgmsg((LOG_DEBUG,"      k <int>: print and skip <int> instructions"));
-  xsb_dbgmsg((LOG_DEBUG,"      K <int>: skip <int> instructions"));
-  xsb_dbgmsg((LOG_DEBUG,"      l: leap to the next spy point"));
-  xsb_dbgmsg((LOG_DEBUG,"      L: same as 'l', but does not print intermediate info"));
-  xsb_dbgmsg((LOG_DEBUG,"      M: print statistics"));
-  xsb_dbgmsg((LOG_DEBUG,"      n: leap to the next call"));
-  xsb_dbgmsg((LOG_DEBUG,"      N: nodebugging, continue to the end"));
-  xsb_dbgmsg((LOG_DEBUG,"      o: print completion stack"));
-  xsb_dbgmsg((LOG_DEBUG,"      P: print PDLSTK"));
-  xsb_dbgmsg((LOG_DEBUG,"      q: quit XSB"));
-  xsb_dbgmsg((LOG_DEBUG,"      r <num>: print register <num> as term"));
-  xsb_dbgmsg((LOG_DEBUG,"      R <num>: print register <num> as ptr"));
-  xsb_dbgmsg((LOG_DEBUG,"      s: step (execute a single instruction)"));
-  xsb_dbgmsg((LOG_DEBUG,"      S: print status registers"));
-  xsb_dbgmsg((LOG_DEBUG,"      T <num>: print top of trail with <num> overlap"));
-  xsb_dbgmsg((LOG_DEBUG,"      u <name> <arity>: unspy the predicate"));
-  xsb_dbgmsg((LOG_DEBUG,"      v <num>: print variable <num>"));
-  xsb_dbgmsg((LOG_DEBUG,"      w <stack> <val>: watch <stack> register for <val>"));
-  xsb_dbgmsg((LOG_DEBUG,"      W <stack> <val>: watch memory area of <stack> for <val>"));
-  xsb_dbgmsg((LOG_DEBUG,"      x: exit XSB"));
-  xsb_dbgmsg((LOG_DEBUG,"      1: print top of (persistent) subgoal stack"));
-  xsb_dbgmsg((LOG_DEBUG,"      2 <num>: print val of table pointer"));
-  xsb_dbgmsg((LOG_DEBUG,"      ?: help"));
+      fprintf(stddbg, "\n      a r/v/d/a <addr>: inspect the content of the address");
+      fprintf(stddbg, "\n      b <module> <name> <arity>: spy the predicate");
+      fprintf(stddbg, "\n      B <num>: print detailed Prolog choice points from the top");
+      fprintf(stddbg, "\n\tof the choice point stack with <num>-Cell overlap");
+      fprintf(stddbg, "\n      c <num>: print top of choice point stack with <num> overlap");
+      fprintf(stddbg, "\n      C <num>: print choice point stack (around bfreg) with <num> overlap");
+      fprintf(stddbg, "\n      d: print disassembled code for module");
+      fprintf(stddbg, "\n      D: print current value of delay list (pointed by delayreg)");
+      fprintf(stddbg, "\n      e <size>: expand trail/cp stack to <size> K-byte blocks");
+      fprintf(stddbg, "\n      E <num>: print top of environment (local) stack with <num> overlap");
+      fprintf(stddbg, "\n      g: leap to the next check_complete instruction");
+      fprintf(stddbg, "\n      G: same as 'g', but does not print intermediate info");
+      fprintf(stddbg, "\n      h: help");
+      fprintf(stddbg, "\n      H <num>: print top of heap with <num> overlap");
+      fprintf(stddbg, "\n      k <int>: print and skip <int> instructions");
+      fprintf(stddbg, "\n      K <int>: skip <int> instructions");
+      fprintf(stddbg, "\n      l: leap to the next spy point");
+      fprintf(stddbg, "\n      L: same as 'l', but does not print intermediate info");
+      fprintf(stddbg, "\n      M: print statistics");
+      fprintf(stddbg, "\n      n: leap to the next call");
+      fprintf(stddbg, "\n      N: nodebugging, continue to the end");
+      fprintf(stddbg, "\n      o: print completion stack");
+      fprintf(stddbg, "\n      P: print PDLSTK");
+      fprintf(stddbg, "\n      q: quit XSB");
+      fprintf(stddbg, "\n      r <num>: print register <num> as term");
+      fprintf(stddbg, "\n      R <num>: print register <num> as ptr");
+      fprintf(stddbg, "\n      S: print status registers");
+      fprintf(stddbg, "\n      T <num>: print top of trail with <num> overlap");
+      fprintf(stddbg, "\n      u <name> <arity>: unspy the predicate");
+      fprintf(stddbg, "\n      w <stack> <val>: watch <stack> register for <val>");
+      fprintf(stddbg, "\n      W <stack> <val>: watch memory area of <stack> for <val>");
+      fprintf(stddbg, "\n      1: print top of (persistent) subgoal stack");
+      fprintf(stddbg, "\n      2 <num>: print val of table pointer");
+      fprintf(stddbg, "\n      ?: help");
+      fprintf(stddbg, "\n");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -873,7 +882,7 @@ static void monitor_memory_watch(void)
 void debug_inst(CTXTdeclc byte *lpcreg, CPtr le_reg)
 {
   if (!print_hide) {
-    fprintf(stddbg, "xctr %d ",xctr);
+    fprintf(stddbg, "\nxctr %d ",xctr);
     print_inst(stddbg, lpcreg);
   }
   if (register_watch_flag) monitor_register_watch(CTXT);

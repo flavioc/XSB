@@ -51,7 +51,6 @@ static inline xsbBool conset(Cell string, Integer newval)
 
   if (!isstring(string))
     xsb_abort("[CONSET] Non-string in the first argument");
-
   psc = (Psc)flags[CURRENT_MODULE];
   sym = insert(string_val(string), 0, psc, &value);
   str_psc = pair_psc(sym);

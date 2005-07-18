@@ -27,7 +27,7 @@
 
 #define __CONTEXT_H__
 
-#include "cell_xsb.h"
+#include "cell_def_xsb.h"
 #include "basictypes.h"
 
 struct token_t {

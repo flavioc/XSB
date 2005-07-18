@@ -23,9 +23,9 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
+
 /* Private debugs */
 #include "debugs/debug_delay.h"
 #include "context.h"
@@ -241,13 +241,15 @@ DllExport prolog_float call_conv ptoc_float(CTXTdeclc int regnum)
   switch (cell_tag(addr)) {
   case XSB_FREE:
   case XSB_REF1: 
-  case XSB_ATTV:
-  case XSB_STRUCT:  
+  case XSB_ATTV: 
   case XSB_LIST:
   case XSB_INT:
   case XSB_STRING:
     xsb_abort("[PTOC_FLOAT] Float argument expected");
-  case XSB_FLOAT: return (prolog_float)float_val(addr);
+  case XSB_STRUCT: 
+      if (!isboxedfloat(addr))
+          xsb_abort("[PTOC_FLOAT] Float argument expected");      
+  case XSB_FLOAT: return (prolog_float)ofloat_val(addr);
   default:
     xsb_abort("[PTOC_FLOAT] Argument of unknown type");
   }
@@ -260,10 +262,12 @@ DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
    * and is defined as a thread-specific macro in context.h in the
    * multi-threaded engine
    */  
+
   register Cell addr = cell(reg+regnum);
   
   /* XSB_Deref and then check the type */
   XSB_Deref(addr);
+  //printf("\nBUILTIN.C: dereferenced address: %lu\n", addr);
   switch (cell_tag(addr)) {
   case XSB_FREE:
   case XSB_REF1:
@@ -272,13 +276,19 @@ DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
   case XSB_FLOAT:
     xsb_abort("[PTOC_STRING] String (atom) argument expected");
   case XSB_STRUCT:  /* tentative approach to fix boxed ints --lfcastro */
+    //printf("\nBUILTIN.C: fell into struct case...\n");
     if (isboxedinteger(addr)) 
       return (char *)boxedint_val(addr);
     else
       xsb_abort("[PTOC_STRING] String (atom) argument expected");
-  case XSB_INT: return (char *)int_val(addr);
-  case XSB_STRING: return string_val(addr); 
+  case XSB_INT: 
+      //printf("\nBUILTIN.C: fell into int case...\n");
+      return (char *)int_val(addr);
+  case XSB_STRING: 
+      //printf("\nBUILTIN.C: fell into string case...\n");
+      return string_val(addr); 
   default:
+    //printf("\nBUILTIN.C: fell into unknown case...\n");
     xsb_abort("[PTOC_STRING] Argument of unknown type");
   }
   return "";
@@ -298,6 +308,7 @@ DllExport prolog_float call_conv ptoc_number(CTXTdeclc int regnum)
   XSB_Deref(addr);
   switch (cell_tag(addr)) {
   case XSB_STRUCT:
+    if (isboxedfloat(addr)) return(boxedfloat_val(addr));
     if (isboxedinteger(addr)) return(boxedint_val(addr));
   case XSB_FREE:
   case XSB_REF1: 
@@ -413,7 +424,7 @@ DllExport void call_conv ctop_float(CTXTdeclc int regnum, prolog_float value)
 
   XSB_Deref(addr);
   if (isref(addr)) {
-    bind_float(vptr(addr), value);
+    bind_boxedfloat(vptr(addr), value);
   }
   else xsb_abort("[CTOP_FLOAT] Wrong type of argument: %lux", addr);
 }
@@ -483,6 +494,24 @@ Cell  val_to_hash(Cell term)
       value = (Cell)(list_str);
       break;
     case XSB_STRUCT:
+      //to make a hash val for a boxed int, we take the int value inside the box and cast it
+      //to a Cell.
+      if (isboxedinteger(term))
+      {
+          value = (Cell)boxedint_val(term);
+          break;
+      }
+      //to make a hash val for a boxed float, we take the int values inside the 3 boxes for
+      //the float bits, and XOR them together
+      else if (isboxedfloat(term))
+      {
+          value = int_val(cell(clref_val(term)+1)) ^
+                    int_val(cell(clref_val(term)+2)) ^
+                    int_val(cell(clref_val(term)+3));
+          break;
+      }
+      //but if this structure isn't any special boxed representation, then we use it's PSC as
+      //a hash value.
       value = (Cell)get_str_psc(term);
       break;
     case XSB_STRING: /* The following test is a necessary nuisance caused  */
@@ -1522,8 +1551,9 @@ int builtin_call(CTXTdeclc byte number)
 	  ctop_int(CTXTc 4, *(long *)(token->value));
 	  break;
         case TK_REAL : case TK_REALFUNC : 
-	  {Float float_temp =  (float)(*(double *)(token->value));
-	  ctop_float(CTXTc 4, float_temp);
+	  {
+          Float float_temp =  (Float)(*(double *)(token->value));
+          ctop_float(CTXTc 4, float_temp);
 	  }
 	  break;
         case TK_PUNC : case TK_HPUNC :
@@ -1535,6 +1565,7 @@ int builtin_call(CTXTdeclc byte number)
     break;
   }
   case FILE_PUTTOKEN: {	/* R1: +File, R2: +Type, R3: +Value; */
+    //printf("\nPUTTOKEN ENTERED!\n");
     FILE* fptr;
     int tmpval = ptoc_int(CTXTc 1);
     SYS_MUTEX_LOCK(MUTEX_IO);
@@ -1552,16 +1583,19 @@ int builtin_call(CTXTdeclc byte number)
     }
     case XSB_INT    : fprintf(fptr, "%ld", (long)ptoc_int(CTXTc 3)); break;
     case XSB_STRING : fprintf(fptr, "%s", ptoc_string(CTXTc 3)); break;
-    case XSB_FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(CTXTc 3)); break;
+    case XSB_FLOAT  : fprintf(fptr, "%2.4lf", ptoc_float(CTXTc 3)); break;
     case TK_INT_0  : {
       int tmp = (int) ptoc_int(CTXTc 3);
       fix_bb4((byte *)&tmp);
       fwrite(&tmp, 4, 1, fptr); break;
     }
     case TK_FLOAT_0: {
+      //printf("TK_FLOAT_0 case in put token entered\n");
       float ftmp = (float)ptoc_float(CTXTc 3);
       fix_bb4((byte *)&ftmp);
-      fwrite(&ftmp, 4, 1, fptr); break;
+      fwrite(&ftmp, 4, 1, fptr); 
+      //printf("TK_FLOAT_0 case in put token left\n"); 
+      break;
     }
     case TK_PREOP  : print_op(fptr, ptoc_string(CTXTc 3), 1); break;
     case TK_INOP   : print_op(fptr, ptoc_string(CTXTc 3), 2); break;

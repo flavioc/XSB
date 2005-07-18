@@ -49,7 +49,7 @@ extern STRFILE *iostrs[MAXIOSTRS];
 #ifndef MULTI_THREAD
 extern struct token_t *token;
 #endif
-
+#include "context.h"
 extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 
 extern int intype(int);
