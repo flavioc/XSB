@@ -34,6 +34,8 @@ xsb_thread_create( Goal, ThreadId, ErrorVal ) :-
 xsb_thread_exit( ExitCode, ErrorVal ) :-
 	ts_abolish_tables,
 	ts_abolish,
+	ds_abolish_tables,
+	ds_abolish,
 	thread_request( XSB_THREAD_EXIT, ExitCode, _, _, ErrorVal ).
 xsb_thread_join( ThreadId, ExitCode, ErrorVal ) :-
 	thread_request( XSB_THREAD_JOIN, ThreadId, ExitCode, _, ErrorVal ).
@@ -41,6 +43,8 @@ xsb_thread_detach( ThreadId, ErrorVal ) :-
 	thread_request( XSB_THREAD_DETACH, ThreadId, _, _, ErrorVal ).
 xsb_thread_self( ThreadId, ErrorVal ) :-
 	thread_request( XSB_THREAD_SELF, ThreadId, _, _, ErrorVal ).
+xsb_thread_yield(ErrorVal) :-
+	thread_request( XSB_THREAD_YIELD, _,_,_, ErrorVal).
 
 xsb_mutex_init_np0( MutexId, KindNP, ErrorVal ) :-
 	thread_request( XSB_MUTEX_INIT, KindNP, MutexId, _, ErrorVal ).
@@ -100,12 +104,22 @@ xsb_sys_mutex_lock( Id ) :-
 xsb_sys_mutex_unlock( Id ) :- 
 	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, _ ).
 
+xsb_thread_yield :- xsb_thread_yield(_).
+
 /***************************************************************/
 
 /* private predicate that runs a thread */
 
-'_$thread_run'( Goal ) :- ts_init_tables, call(Goal), xsb_thread_exit(0,_).
-'_$thread_run'( _ ) :- xsb_thread_exit(0,_).
+/***'_$thread_run'( Goal ) :- ts_init_tables, call(Goal), xsb_thread_exit(0,_).
+'_$thread_run'( _ ) :- xsb_thread_exit(0,_).***/
+
+'_$thread_run'( Goal ) :-
+	ds_init_thread,
+	ts_init_tables,
+	(catch(call(Goal),Ball,default_error_handler(Ball)), xsb_thread_exit
+	 ;
+	 xsb_thread_exit
+	).
 
 /* store thread flag predicate in THREAD_RUN flag */
 
@@ -125,11 +139,11 @@ user_mutex( N, N1 ) :-
 
 xsb_user_mutex_lock(N) :- user_mutex(N,N1), xsb_sys_mutex_lock(N1, Rc), 
 			  Rc == 0, !.
-xsb_user_mutex_lock(N) :- writeln( 'Error trying to lock mutex '(N) ).
+xsb_user_mutex_lock(N) :- writeln(userout, 'Error trying to lock mutex '(N) ).
 
 xsb_user_mutex_unlock(N) :- user_mutex(N,N1), xsb_sys_mutex_unlock(N1, Rc),
 			  Rc == 0, !.
-xsb_user_mutex_lock(N) :- writeln( 'Error trying to unlock mutex '(N) ).
+xsb_user_mutex_unlock(N) :- writeln(userout, 'Error trying to unlock mutex '(N) ).
 
 
 /**************************************************************/
@@ -181,6 +195,169 @@ ts_abolish :-
 	make_ts_goal(_, TSPred),
 	abolish( TSPred ).
 
+/****************************************************************/
+/** DSW thread specific stuff
+
+On entry each thread creates facts in global predicates, if not
+already there:
+ds_cvt_goal(#,GoalVar,TSGoalVar,_$ds_cvt_goal_#(GoalVar,TSGoalVar)).
+ds_assert_goal(#,GoalVar,_$ds_assert_goal_#(GoalVar))
+ds_table_goal(#,GoalVar,_$ds_table_goal_#(GoalVar))
+
+And it creates the following (empty) thread-specific predicates:
+_$ds_cvt_goal_#(Goal,DSGoal)
+_$ds_assert_goal_#(Goal)
+_$ds_table_goal_#(Goal)
+
+It also initializes the global var my_thread_id to be the thread id of
+the current thread.
+*****************************************************************/
+:- dynamic ds_cvt_goal(_,_,_,_).
+:- dynamic ds_assert_goal(_,_,_).
+:- dynamic ds_table_goal(_,_,_).
+
+ds_init_thread :-
+	xsb_thread_self(TID),
+	globalvar(my_thread_id,TID),
+	(ds_cvt_goal(TID,_,_,_)
+	 ->	true
+	 ;	concat_atom(['_$ds_cvt_goal_',TID],CvtGoalName),
+		CvtGoal =.. [CvtGoalName,CGoal,DSGoal],
+		assert(ds_cvt_goal(TID,CGoal,DSGoal,CvtGoal)),
+		dynamic(CvtGoal)
+	),
+	(ds_assert_goal(TID,_,_)
+	 ->	true
+	 ;	concat_atom(['_$ds_assert_goal_',TID],AstGoalName),
+		AstGoal =.. [AstGoalName,AGoal],
+		assert(ds_assert_goal(TID,AGoal,AstGoal)),
+		dynamic(AstGoal)
+	),
+	(ds_table_goal(TID,_,_)
+	 ->	true
+	 ;	concat_atom(['_$ds_table_goal_',TID],TabGoalName),
+		TabGoal =.. [TabGoalName,TGoal],
+		assert(ds_table_goal(TID,TGoal,TabGoal)),
+		dynamic(TabGoal)
+	).
+
+make_ds_goal(Goal,TSGoal) :-
+	globalvar(my_thread_id,TID),
+	(var(TID)
+	 ->	TSGoal = Goal
+	 ;	ds_cvt_goal(TID,Goal,TSGoal,CvtGoal),
+		(call_c(CvtGoal)
+		 ->	true
+		 ;	functor(Goal,Pred,Arity),
+			concat_atom([Pred,'$ts$',TID],TSGoalName),
+			functor(GGoal,Pred,Arity),
+			GGoal =.. [Pred|VArgs],
+			GTSGoal =.. [TSGoalName|VArgs],
+			concat_atom(['_$ds_cvt_goal_',TID],TSCvtGoalName),
+			TSCvtGoal =.. [TSCvtGoalName,GGoal,GTSGoal],
+			assert(TSCvtGoal),
+			call_c(CvtGoal)
+		)
+	).
+
+ds_call(Goal) :-
+	make_ds_goal(Goal,TSGoal),
+	call_c(TSGoal).
+
+ds_assert(Goal) :-
+	(Goal = (Head:-Body)
+	 ->	true
+	 ;	Head = Goal,
+		Body = true
+	),
+	make_ds_goal(Head,TSHead),
+	globalvar(my_thread_id,TID),
+	(var(TID)
+	 ->	true
+	 ;	ds_assert_goal(TID,TSHead,AssertGoalChk),
+		(call_c(AssertGoalChk)
+		 ->	true
+		 ;	functor(TSHead,Pred,Arity),
+			functor(GTSHead,Pred,Arity),
+			ds_assert_goal(TID,GTSHead,AssertGoal),
+			assert(AssertGoal)
+		)
+	),
+	assert((TSHead:-Body)).
+
+ds_retractall(Goal) :-
+	make_ds_goal(Goal,TSGoal),
+	globalvar(my_thread_id,TID),
+	(var(TID)
+	 ->	true
+	 ;	ds_assert_goal(TID,TSGoal,AssertGoalChk),
+		(call_c(AssertGoalChk)
+		 ->	true
+		 ;	functor(TSGoal,Pred,Arity),
+			functor(GTSGoal,Pred,Arity),
+			ds_assert_goal(TID,GTSGoal,AssertGoal),
+			assert(AssertGoal)
+		)
+	),
+	retractall(TSGoal).
+	
+
+ds_abolish_table_call(G) :-
+	make_ds_goal(G, TSG),
+	abolish_table_call(TSG).
+
+ds_tnot(G) :-
+	make_ds_goal(G,TSG),
+	tnot(TSG).
+
+ds_table_ds(PSpec) :-
+	ds_table_ds(PSpec,_).
+
+ds_table(PSpec) :-
+	ds_table_ds(PSpec,Goal),
+	ds_assert((Goal:-Goal)).
+
+ds_table_ds(PSpec,Goal) :-
+	(PSpec = Pred/Arity,nonvar(Pred)
+	 ->	functor(Goal,Pred,Arity)
+	 ;	functor(PSpec,Pred,Arity),
+		functor(Goal,Pred,Arity)
+	),
+	make_ds_goal(Goal,TSGoal),
+	globalvar(my_thread_id,TID),
+	(var(TID)
+	 ->	abolish(TSGoal),
+		table(TSGoal),
+		dynamic(TSGoal)
+	 ;	ds_table_goal(TID,TSGoal,AssertGoal),
+%%		writeln(userout,init_table(AssertGoal)),
+		(call_c(AssertGoal)
+		 ->	true
+		 ;	assert(AssertGoal),
+			abolish(TSGoal),
+			table(TSGoal),
+			dynamic(TSGoal)
+		)
+	).
+
+ds_abolish_tables :-
+	globalvar(my_thread_id,TID),
+	nonvar(TID),
+	ds_table_goal(TID,TabGoal,TabGoalCall),
+	retract(TabGoalCall),
+	abolish_table_pred(TabGoal),
+	fail.
+ds_abolish_tables.
+
+ds_abolish :-
+	globalvar(my_thread_id,TID),
+	nonvar(TID),
+	ds_assert_goal(TID,AstGoal,AstGoalCall),
+	retract(AstGoalCall),
+	abolish(AstGoal),
+	fail.
+ds_abolish.
+
 /**************************************************************/
 
 /** Higher level stuff **/
@@ -190,10 +367,10 @@ par_execute( GoalList ) :-
 	par_wait( ThreadList ).
 
 n_par_execute( Goal, N ) :-
-	n_list( N, Goal, GoalList ),
+	n_list( Goal, N, GoalList ),
 	par_execute( GoalList ).
 
-n_list( _, 0, [] ).
+n_list( _, 0, [] ) :- !.
 n_list( X, N, [X|L] ) :- N1 is N - 1, n_list( X, N1, L ).
 
 

@@ -751,7 +751,10 @@ void xsb_segfault_catcher(int err)
 
 void xsb_segfault_quitter(int err)
 {
-  print_xsb_backtrace();
+#ifdef MULTI_THREAD
+  th_context *th = find_context(xsb_thread_self());
+#endif
+  print_xsb_backtrace(CTXT);
   xsb_exit(xsb_segfault_message);
 }
 

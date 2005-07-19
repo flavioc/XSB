@@ -53,6 +53,8 @@
 #include "term_psc_xsb_i.h"
 #include "thread_xsb.h"
 
+extern void remove_incomplete_tries(CTXTdeclc CPtr);
+
 FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
 FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
 FILE *stdwarn;	     	     	  /* stream for XSB warnings */
@@ -211,7 +213,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 
 
 
-#ifndef MULTI_THREAD
+//#ifndef MULTI_THREAD
 
 void call_conv xsb_basic_abort(char *message)
 {
@@ -219,20 +221,31 @@ void call_conv xsb_basic_abort(char *message)
   int isnew;
   Cell *tptr;
   Cell space_for_ball[4]; /* xsb_throw will copy this */
+#ifdef MULTI_THREAD
+  char mtmessage[MAXBUFSIZE];
+  int tid = xsb_thread_self();
+  th_context *th;
+  th = find_context(xsb_thread_self());
+#endif
 
   tptr = space_for_ball;
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("_$abort_ball",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
   tptr++;
+#ifdef MULTI_THREAD
+  sprintf(mtmessage,"[th %d] %s",tid,message);
+  bld_string(tptr,string_find(mtmessage,1));
+#else  
   bld_string(tptr,string_find(message,1));
+#endif
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
-  xsb_throw(ball_to_throw);
+  xsb_throw(CTXTc ball_to_throw);
 }
-#endif
+//#endif
 
-#ifndef MULTI_THREAD
+//#ifndef MULTI_THREAD
 DllExport void call_conv xsb_abort(char *description, ...)
 {
   char message[MAXBUFSIZE];
@@ -245,9 +258,9 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_end(args);
   xsb_basic_abort(message);
 }
-#endif
+//#endif
 
-#ifndef MULTI_THREAD
+//#ifndef MULTI_THREAD
 /* could give this a different ball to throw */
 DllExport void call_conv xsb_bug(char *description, ...)
 {
@@ -264,7 +277,7 @@ DllExport void call_conv xsb_bug(char *description, ...)
   va_end(args);
   xsb_basic_abort(message);
 }
-#endif
+//#endif
 
 /*----------------------------------------------------------------------*/
 
