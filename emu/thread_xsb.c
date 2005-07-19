@@ -34,7 +34,7 @@ void init_machine(CTXTdecl);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 
 typedef struct
-{	pthread_t_p	ptid;
+{	pthread_t	ptid;
 	int		valid;
 	int		detached ;
 	th_context *	ctxt ;
@@ -65,10 +65,10 @@ static int th_find( pthread_t_p tid )
 
 	for( pos = th_vec ; pos < th_next ; pos++ )
 #ifdef WIN_NT
-	  if( pos->valid && pthread_equal( P_PTHREAD_T, *(pos->ptid) ) )
+	  if(pos->valid && pthread_equal( P_PTHREAD_T, (pos->ptid) ) )
 			return pos - th_vec ;
 #else
-	  if( pos->valid && pthread_equal( P_PTHREAD_T, pos->ptid ) )
+	  if( pos->valid && pthread_equal( P_PTHREAD_T, &(pos->ptid) ) )
 			return pos - th_vec ;
 #endif
 	return -1 ;
@@ -80,7 +80,6 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 	int i ;
 	if( (i = th_find(t)) != -1 )
 		return i ;
-
 	for( pos = th_vec ; pos < th_vec + MAX_THREADS ; pos++ )
 		if( !pos->valid ) 
 			break;
@@ -92,7 +91,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 
 	pos->ctxt = ctxt ;
 	pos->valid = 1;
-	pos->ptid = t;
+	pos->ptid = *t;
 	pos->detached = 0;
 	return pos - th_vec ;
 }
@@ -100,7 +99,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 static pthread_t_p th_get( int i )
 {
 	if( th_vec[i].valid )
-		return th_vec[i].ptid ;
+		return &th_vec[i].ptid ;
 	else
 		return (pthread_t_p)0 ;
 }
