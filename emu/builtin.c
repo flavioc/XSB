@@ -129,7 +129,7 @@ extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 extern int  sys_syscall(CTXTdeclc int);
 extern xsbBool sys_system(CTXTdeclc int);
 extern xsbBool formatted_io(CTXTdecl), read_canonical(CTXTdecl);
-extern xsbBool private_builtin(void);
+//extern xsbBool private_builtin(void);
 
 extern void xsb_segfault_quitter(int err);
 
@@ -2389,7 +2389,7 @@ int builtin_call(CTXTdeclc byte number)
        builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO
        DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY
        NUMBER OF BUILTINS WITH IT.  */
-  case PRIVATE_BUILTIN: return private_builtin();
+  case PRIVATE_BUILTIN: return TRUE; //private_builtin();
 
   case SEGFAULT_HANDLER: { /* Set the desired segfault handler:
 			      +Arg1:  none  - don't catch segfaults;

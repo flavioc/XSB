@@ -129,7 +129,7 @@ OBJS =	auxlry.o biassert.o builtin.o cinterf.o \
 	hash_xsb.o  hashtable_xsb.o \
 	heap_xsb.o init_xsb.o inst_xsb.o io_builtins_xsb.o \
 	loader_xsb.o memory_xsb.o orient_xsb.o \
-	pathname_xsb.o private_builtin.o psc_xsb.o random_xsb.o \
+	pathname_xsb.o psc_xsb.o random_xsb.o \
         remove_unf.o residual.o rw_lock.o \
 	scc_xsb.o slgdelay.o socket_xsb.o string_xsb.o \
 	storage_xsb.o struct_manager.o sub_delete.o subp.o \
