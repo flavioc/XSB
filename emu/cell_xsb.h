@@ -327,17 +327,6 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
 //Note: anything that includes cell_xsb.h in the multithreaded environment implicitly includes
 //context.h as well, since bld_boxedfloat references hreg.
 extern inline void bld_boxedfloat(CTXTdeclc CPtr, Float);
-#else
-
-//the formal parameters for bld_boxedfloat vary depending on whether XSB is multi-threaded
-//or not.
-#ifdef MULTI_THREAD
-#define bld_boxedfloat(context, addr, value) bld_float(addr, value);
-#else
-#define bld_boxedfloat(addr, value) bld_float(addr, value);
-#endif /*MULTI_THREAD*/
-
 #endif /*PRECISE_FLOATS*/
-
    
 #endif /* __CELL_XSB_H__ */

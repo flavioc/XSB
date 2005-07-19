@@ -71,6 +71,7 @@
     else if (isboxedinteger(value)) fvalue = (Float) boxedint_val(value); \
     else return 0
 
+extern inline void bld_boxedfloat(CTXTdeclc CPtr, Float);
 
 int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
 {
