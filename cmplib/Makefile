@@ -27,6 +27,7 @@ OBJEXT=.xwam
 
 ALL =	asm${OBJEXT} asm_inst${OBJEXT} asm_opt${OBJEXT} asmpass2${OBJEXT} \
 	auxlry${OBJEXT} builtin${OBJEXT} \
+	ciao_directives${OBJEXT} \
 	compile${OBJEXT} config${OBJEXT} cp_opt${OBJEXT} cutcheck${OBJEXT} \
 	flatten${OBJEXT} inprog${OBJEXT} \
 	listutil${OBJEXT} makemode${OBJEXT} modeinf${OBJEXT} modes${OBJEXT} \
