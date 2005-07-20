@@ -233,6 +233,11 @@ typedef struct subgoal_frame {
   CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
   CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
+#ifdef MULTI_THREAD
+  int tid;		  /* Thread id of the generator thread for this sg */
+  byte grabbed; 	  /* Subgoal is marked to be computed for leader in
+			     deadlock detection */
+#endif
 } variant_subgoal_frame;
 
 #define subg_sf_type(b)		((VariantSF)(b))->sf_type
@@ -253,6 +258,8 @@ typedef struct subgoal_frame {
 #define subg_compl_susp_ptr(b)	((VariantSF)(b))->compl_suspens_ptr
 #define subg_nde_list(b)	((VariantSF)(b))->nde_list
 
+#define subg_tid(b)		((VariantSF)(b))->tid
+#define subg_grabbed(b)		((VariantSF)(b))->grabbed
 
 /* Subsumptive Producer Subgoal Frame
    ---------------------------------- */

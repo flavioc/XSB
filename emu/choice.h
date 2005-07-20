@@ -123,9 +123,6 @@ typedef struct tabled_choice_point {
 #ifdef LOCAL_EVAL
     ALNptr trie_return;
 #endif
-#ifdef MULTI_THREAD
-    CPtr tid;
-#endif
 } *TChoice;
 
 #define TCP_SIZE	(sizeof(struct tabled_choice_point)/sizeof(CPtr))
@@ -161,10 +158,6 @@ typedef struct tabled_choice_point {
 
 #ifdef LOCAL_EVAL
 #define tcp_trie_return(b)	((TChoice)(b))->trie_return
-#endif
-
-#ifdef MULTI_THREAD
-#define tcp_tid(b)		((TChoice)(b))->tid
 #endif
 
 #define is_generator_choicepoint(b)			\

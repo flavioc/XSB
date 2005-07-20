@@ -175,7 +175,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
  */
   if ( !IsNULL(producer_sf) ) {
      while( !is_completed(producer_sf))
-     {  table_tid = int_val(tcp_tid(subg_cp_ptr(producer_sf))) ;
+     {  table_tid = subg_tid(producer_sf) ;
 	if (table_tid == th->tid) 
 		break ;
 	waiting_for_thread = find_context(table_tid) ;
@@ -197,15 +197,16 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     CPtr producer_cpf;
     NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
 		  CallInfo_TableInfo(callInfo));
+#ifdef MULTI_THREAD
+    subg_tid(producer_sf) = th->tid;
+    subg_grabbed(producer_sf) = 0;
+    pthread_mutex_unlock( &completing_mut );
+#endif
     producer_cpf = answer_template;
     save_find_locx(ereg);
     save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
     SaveProducerCPF(producer_cpf, continuation, producer_sf,
 		    CallInfo_CallArity(callInfo), (hreg - 1));
-#ifdef MULTI_THREAD
-    tcp_tid(producer_cpf) = (CPtr)makeint(th->tid);
-    pthread_mutex_unlock( &completing_mut );
-#endif
 #ifdef SLG_GC
     tcp_prevtop(producer_cpf) = answer_template; 
     /* answer_template points to the previous top, since the A.T. proper
