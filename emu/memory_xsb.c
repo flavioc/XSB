@@ -87,8 +87,8 @@ byte *mem_alloc(unsigned long size)
     byte * ptr;
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
-    pspacesize += size;
     SYS_MUTEX_LOCK(MUTEX_MEM);
+    pspacesize += size;
     ptr = (byte *) malloc(size);
     SYS_MUTEX_UNLOCK(MUTEX_MEM);
 #if defined(GENERAL_TAGGING)
@@ -104,8 +104,8 @@ byte *mem_alloc(unsigned long size)
 void mem_dealloc(void *addr, unsigned long size)
 {
     size = (size+7) & ~0x7 ;	      /* round to 8 */
-    pspacesize -= size;
     SYS_MUTEX_LOCK(MUTEX_MEM);
+    pspacesize -= size;
     free(addr);
     SYS_MUTEX_UNLOCK(MUTEX_MEM);
 }
