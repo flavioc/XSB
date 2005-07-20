@@ -3826,9 +3826,9 @@ EOF
                     config_dot_h_templ=def_config_mnoc.in
                     GPPWNTFLAG="-D WIN_NT"
 
-                    if test "${xsb_scheduling_strategy}" = "local" ; then
-                        emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
-                    fi
+#                    if test "${xsb_scheduling_strategy}" = "local" ; then
+#                        emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+#                    fi
 
                     LDFLAGS="$LDFLAGS -lwsock32 -luser32"
                 fi

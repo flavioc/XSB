@@ -51,7 +51,7 @@
 /*				a CPtr to the address it points to.	*/
 /*	cs_val(dcell):		assume derefed cs cell, return Pair	*/
 /*	bld_int(addr, val):	build a new integer cell		*/
-/*	bld_boxedfloat(addr, val):	build a new float cell			*/
+/*	bld_float(addr, val):	build a new float cell			*/
 /*	bld_ref(addr, val):	build a new reference cell		*/
 /*	bld_cs(addr, str):	build a new cs cell			*/
 /*	bld_string(addr, str):	build a new string cell			*/
@@ -66,6 +66,10 @@
 /*                    non-var, or where semantics is to resume/set.	*/
 /*                    (in set CP and resume CP)				*/
 /*                    For variable as selfpointer, no differnce.    	*/
+/*      bld_boxedint		builds an integer with no precision     */
+/*			loss on the heap (hreg)                         */
+/*      bld_boxedfloat          builds a double float with no precision */
+/*                      loss on the heap (hreg)                         */
 /*======================================================================*/
 #include "xsb_config.h"
 #include "cell_def_xsb.h"
@@ -83,9 +87,21 @@
 #define cell(cptr) *(cptr)
 #define follow(cell) (*(CPtr)(cell))
 
-extern float asfloat(Cell);
-extern Cell  makefloat(float);
+/*======================================================================*/
+/* floating point conversions                                           */
+/*    The below 3 methods are to be used when floats and Cells are the  */
+/*    same size, in bytes, to convert between the two.                  */
+/*======================================================================*/
+
+/* lose some precision in conversions from 32 bit formats */
+#ifdef BITS64
+#define FLOAT_MASK 0xfffffffffffffff8
+#else
+#define FLOAT_MASK 0xfffffff8
+#endif
 extern float getfloatval(Cell);
+extern Cell makefloat(float);
+extern int sign(Float);
 
 #define isref(cell)  (!((word)(cell)&0x3))
 #define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> xsbBool */
