@@ -388,7 +388,7 @@ struct flatten_q {
 };
 
 
-#define INST_QUEUE_SIZE	16384	/* was 1024 (which was too low) */
+#define INST_QUEUE_SIZE	4096 /* was 1024 (which was too low) 16384 too high for default java stack*/
 
 struct instruction {
 	Cell opcode;
