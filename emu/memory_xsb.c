@@ -90,11 +90,11 @@ byte *mem_alloc(unsigned long size)
     SYS_MUTEX_LOCK(MUTEX_MEM);
     pspacesize += size;
     ptr = (byte *) malloc(size);
-    SYS_MUTEX_UNLOCK(MUTEX_MEM);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
+    SYS_MUTEX_UNLOCK(MUTEX_MEM);
     return ptr;
 }
 
