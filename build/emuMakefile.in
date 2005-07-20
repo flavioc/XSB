@@ -104,7 +104,7 @@ DEPEND = makedepend
 
 
 SRCS =	auxlry.c biassert.c builtin.c cinterf.c \
-	debug_xsb.c dis.c dynload.c dynamic_stack.c \
+	debug_xsb.c dis.c dynload.c dynamic_stack.c deadlock.c \
 	emuloop.c error_xsb.c findall.c function.c \
 	hash_xsb.c hashtable_xsb.c \
 	heap_xsb.c init_xsb.c inst_xsb.c io_builtins_xsb.c \
@@ -124,7 +124,7 @@ ORASRCS = $(SRCS) orastuff.c
 
 
 OBJS =	auxlry.o biassert.o builtin.o cinterf.o \
-	debug_xsb.o dis.o dynload.o dynamic_stack.o \
+	debug_xsb.o dis.o dynload.o dynamic_stack.o deadlock.o \
 	emuloop.o error_xsb.o findall.o function.o \
 	hash_xsb.o  hashtable_xsb.o \
 	heap_xsb.o init_xsb.o inst_xsb.o io_builtins_xsb.o \

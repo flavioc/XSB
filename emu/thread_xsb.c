@@ -214,19 +214,6 @@ th_context *find_context( int id )
 		return NULL;
 }
 
-int would_deadlock( th_context *t1, th_context *t2 )
-{
-	th_context * t = t1 ;
-
-	while( t != NULL )
-		if( t == t2 )
-			return 1 ;
-		else
-			t = t->waiting_for_thread;
-
-	return 0 ;
-}
-
 #endif /* MULTI_THREAD */
 
 int xsb_thread_self()

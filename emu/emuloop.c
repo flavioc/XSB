@@ -72,6 +72,7 @@
 #include "emuloop_aux.h"
 #include "remove_unf.h"
 #include "thread_xsb.h"
+#include "deadlock.h"
 #include "rw_lock.h"
 #include "debug_xsb.h"
 
