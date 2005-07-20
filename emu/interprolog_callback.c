@@ -218,6 +218,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
 	  // may be needed ?(*env)->DeleteLocalRef(env, parameters[i]);
 	}
 	free(parameters);
+	free(myargv);
 
 	if (debug==JNI_TRUE) printf("Exiting Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	return rcode;
