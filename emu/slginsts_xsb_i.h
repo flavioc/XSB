@@ -191,7 +191,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 		break ;
 	waiting_for_thread = find_context(table_tid) ;
 	if( would_deadlock( waiting_for_thread, th ) )
-#define BREAK_DEADLOCK
 #ifndef BREAK_DEADLOCK
 		xsb_exit( "deadlock in concurrent tabling detected" );
 #else
