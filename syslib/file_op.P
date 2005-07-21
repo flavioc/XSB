@@ -330,6 +330,9 @@ add_table(Spec) :-
 	retractall('_$table1'(Call)),
 	assertai('_$table1'(Call),1).
 
+retract_table(Spec) :-
+	mpa_to_skel(Spec,Call),
+	retractall('_$table1'(Call)).
 
 /*======================================================================*/
 /* mpa_to_skel(+MPAorSkel,-Skel) converts M:P/A or P/A to Skel 		*/

@@ -2334,6 +2334,8 @@ xsbBool db_remove_prref( CTXTdecl /* PrRef */ )
 
   if ( *(pb)p == tabletrysingle )
     {
+      TIFptr mtTIF = (TIFptr) *(p+2);
+      Free_TIF(mtTIF);
       /* free prref, from calld instr set in db_build_prref */
       mem_dealloc((pb)(*(p+6)), sizeof(PrRefData));
       if (xsb_profiling_enabled)

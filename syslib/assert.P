@@ -547,6 +547,7 @@ abolish(Pred,Arity) :-
 abolish1(Term) :-
 	retract_index(Term),
 	retract_trie_index(Term),
+	retract_table(Term),
 	conpsc(Term,Psc),
 	psc_type(Psc, Type),
 	(Type =:= T_DYNA	    % DYNA
