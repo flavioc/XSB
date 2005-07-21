@@ -35,11 +35,7 @@ Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 
 typedef struct
 {	
-#ifdef WIN_NT
 	pthread_t	tid;
-#else
-	pthread_t_p	ptid;
-#endif
 	int		valid;
 	int		detached ;
 	th_context *	ctxt ;
@@ -69,13 +65,8 @@ static int th_find( pthread_t_p tid )
 	xsb_thread_t *pos;
 
 	for( pos = th_vec ; pos < th_next ; pos++ )
-#ifdef WIN_NT
-	  if(pos->valid && pthread_equal( P_PTHREAD_T, pos->tid ) )
+	  if( pos->valid && pthread_equal( P_PTHREAD_T, pos->tid ) )
 			return pos - th_vec ;
-#else
-	  if( pos->valid && pthread_equal( P_PTHREAD_T, pos->ptid ) )
-			return pos - th_vec ;
-#endif
 	return -1 ;
 }
 
@@ -99,7 +90,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 #ifdef WIN_NT
 	pos->tid = *t;
 #else
-	pos->ptid = t;
+	pos->tid = t;
 #endif
 	pos->detached = 0;
 	return pos - th_vec ;
@@ -111,7 +102,7 @@ static pthread_t_p th_get( int i )
 #ifdef WIN_NT
 		return &th_vec[i].tid ;
 #else
-		return th_vec[i].ptid ;
+		return th_vec[i].tid ;
 #endif
 	else
 		return (pthread_t_p)0 ;
