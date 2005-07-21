@@ -1,3 +1,7 @@
+#include "xsb_config.h"
+
+#ifdef MULTI_THREAD
+                                                                                
 #include "context.h"
 #include "basicdefs.h"
 #include "choice.h"
@@ -10,8 +14,6 @@
 #include "thread_xsb.h"
 #include "trie_internals.h"
 
-#ifdef MULTI_THREAD
-                                                                                
 int would_deadlock( th_context *t1, th_context *t2 )
 {
         th_context * t = t1 ;

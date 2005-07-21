@@ -217,7 +217,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
      th->waiting_for_subgoal = NULL ;
      pthread_mutex_unlock(&completing_mut);
   } 
-#endif
 
   if ( IsNULL(producer_sf) || grabbed ) {
 
@@ -228,15 +227,26 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     {
     	NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
 		      CallInfo_TableInfo(callInfo));
-#ifdef MULTI_THREAD
     	subg_tid(producer_sf) = th->tid;
     	subg_grabbed(producer_sf) = 0;
     	pthread_mutex_unlock( &completing_mut );
-#endif
     }
     else
     {	subg_compl_stack_ptr(producer_sf) = openreg - COMPLFRAMESIZE;
     }
+#else
+  if ( IsNULL(producer_sf) ) {
+
+    /* New Producer
+       ------------ */
+    CPtr producer_cpf;
+    NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
+		  CallInfo_TableInfo(callInfo));
+#endif
+
+
+
+
     producer_cpf = answer_template;
     save_find_locx(ereg);
     save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
