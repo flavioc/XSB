@@ -120,7 +120,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CPtr answer_template;
   int template_size, attv_num, tmp;
 #ifdef MULTI_THREAD
+  byte * inst_addr = lpcreg;
   int table_tid ;
+  int grabbed = FALSE;
   th_context * waiting_for_thread;
   CPtr tbreg;
 #ifdef SLG_GC
@@ -175,38 +177,74 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
  */
   if ( !IsNULL(producer_sf) ) {
      while( !is_completed(producer_sf))
-     {  table_tid = subg_tid(producer_sf) ;
+     {  
+        /* if is leader and subgoal is marked to be computed by leader */
+        if( th->deadlock_brk_leader && subg_grabbed(producer_sf) )
+        {       subg_tid(producer_sf) = th->tid ;
+                subg_grabbed(producer_sf) = FALSE ;
+                grabbed = TRUE ;
+                break ;
+        }
+	table_tid = subg_tid(producer_sf) ;
+        /* if the thread owns the table, proceed */
 	if (table_tid == th->tid) 
 		break ;
 	waiting_for_thread = find_context(table_tid) ;
 	if( would_deadlock( waiting_for_thread, th ) )
+#ifndef BREAK_DEADLOCK
 		xsb_exit( "deadlock in concurrent tabling detected" );
+#else
+        {       /* code for leader */
+                reset_other_threads( th, waiting_for_thread, producer_sf );
+                th->deadlock_brk_leader = TRUE ;
+                pthread_cond_broadcast(&completing_cond) ;
+                continue ;
+        }
+#endif
+        th->waiting_for_subgoal = producer_sf ;
         th->waiting_for_thread = waiting_for_thread ;
 	pthread_mutex_unlock(&completing_mut);
 	pthread_cond_wait(&completing_cond,&completing_mut) ;
+        if( th->reset_thread )
+        {       th->reset_thread = FALSE ;
+                pthread_mutex_unlock(&completing_mut) ;
+                /* restart the tabletry instruction */
+                lpcreg = pcreg ;
+                XSB_Next_Instr() ;
+        }
      }
      th->waiting_for_thread = NULL ;
+     th->waiting_for_subgoal = NULL ;
      pthread_mutex_unlock(&completing_mut);
   } 
 #endif
 
-  if ( IsNULL(producer_sf) ) {
+  if ( IsNULL(producer_sf) || grabbed ) {
 
     /* New Producer
        ------------ */
     CPtr producer_cpf;
-    NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
-		  CallInfo_TableInfo(callInfo));
+    if( !grabbed )
+    {
+    	NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
+		      CallInfo_TableInfo(callInfo));
 #ifdef MULTI_THREAD
-    subg_tid(producer_sf) = th->tid;
-    subg_grabbed(producer_sf) = 0;
-    pthread_mutex_unlock( &completing_mut );
+    	subg_tid(producer_sf) = th->tid;
+    	subg_grabbed(producer_sf) = 0;
+    	pthread_mutex_unlock( &completing_mut );
 #endif
+    }
+    else
+    {	subg_compl_stack_ptr(producer_sf) = openreg - COMPLFRAMESIZE;
+    }
     producer_cpf = answer_template;
     save_find_locx(ereg);
     save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
     SaveProducerCPF(producer_cpf, continuation, producer_sf,
 		    CallInfo_CallArity(callInfo), (hreg - 1));
+#ifdef MULTI_THREAD
+    tcp_reset_pcreg(producer_cpf) = inst_addr ;
+#endif
 #ifdef SLG_GC
     tcp_prevtop(producer_cpf) = answer_template; 
     /* answer_template points to the previous top, since the A.T. proper

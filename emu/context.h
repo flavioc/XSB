@@ -242,8 +242,11 @@ DynamicStack  _tstTrail;
 
 /* stuff for deadlock detection in completion */
 
-struct th_context * waiting_for_thread;
+struct th_context *	waiting_for_thread;
+struct subgoal_frame *	waiting_for_subgoal;
 int tid ;
+int deadlock_brk_leader ;
+int reset_thread ;
 
 } ;
 
