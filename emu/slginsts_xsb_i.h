@@ -243,10 +243,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
 		  CallInfo_TableInfo(callInfo));
 #endif
-
-
-
-
     producer_cpf = answer_template;
     save_find_locx(ereg);
     save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
