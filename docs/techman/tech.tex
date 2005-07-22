@@ -359,13 +359,13 @@ value and the other is for tags and other usage.
 
 XSB supports both a single word format and a double word
 format.  In the single word version, 4 bits are used as tags, and the
-remaining 28 bits are for all types of values. Integers and
-floating point numbers are therefore coded only with 28 bits. The
-double word version uses two host machine words (64 bits) as a Prolog
-word. One machine word is used for tag, and the other is for value.
-Integers and floating point numbers have the same format as the host
-machine, unless extra precision for floating point numbers is specified at
-configuration time, in which case floats will be 64 bit in all circumstances.
+remaining 28 bits are for all types of values. Integers are therefore coded only 
+with 28 bits. Floating point values maintain double precision (64 bits) by defualt, 
+but do so by being stored as single-word references to an internal structure that
+contains the 64 bits of data. The double word version of XSB uses two host machine 
+words (64 bits) as a Prolog word. One machine word is used for tag, and the other 
+is for value. Integers and floating point numbers have the same format as the host
+machine.
 
 There is also a variation of the single word format, called {\it
 one-and-half-word} or {\it single-word-by-reference}. 
@@ -1673,7 +1673,7 @@ argument types listed in the table have the following meaning:
   \item[C] a constant (four bytes)
   \item[L] a label (address, four bytes)
   \item[G] a string
-  \item[N] a number (integer, floating point, or ref to a boxed number. four bytes)
+  \item[N] a number (integer, fast floating point, or ref to a boxed number. four bytes)
   \item[I] special; for the 2nd and 3rd arguments of switchonbound
   \item[P] pad, use a ``-'' in the table: the byte is not used (one byte)
   \item[PP] double pad, use two ``-'' in the table (two bytes)

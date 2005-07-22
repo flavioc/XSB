@@ -68,8 +68,8 @@
 #define CONFIG_INCLUDED
 #endif
 
-/* Double precision floats */
-#undef PRECISE_FLOATS
+/* Single precision floats */
+#undef FAST_FLOATS
 
 /* Use local eval strategy. Default is `batched' */
 #undef LOCAL_EVAL

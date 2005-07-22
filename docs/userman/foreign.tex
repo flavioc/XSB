@@ -207,9 +207,13 @@ to each other.
         Argument {\tt N} is assumed to hold a Prolog floating point number,
         and this function returns its floating point value in C format.
         (Precision can be either double precision or less then single precision,
-        depending on whether or not precise floats are enabled. This can be done
-        by specifying the --enable-precise-floats flag at configure time, which 
-        would turn all normal prolog floats into double values, stored on the heap).
+        depending on whether or not fas floats are activated. The default is to
+	have double precision, but single precision(fast) floats can be activated
+        by specifying the --enable-fast-floats flag at configure time. This will
+        turn all floating point values, normally stored as references to double
+	precision values, into directly tagged single precision values. Speed 
+	increases in arithmatic can be gained from this optimization, in exchange
+	for significant precision loss on floating point numbers).
 \desc{char *ptoc\_string(int N)}
         Argument {\tt N} is assumed to hold a Prolog atom, and this
         function returns the C string (of type {\tt char *}) that 

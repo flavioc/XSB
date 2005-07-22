@@ -32,8 +32,8 @@
 #undef _GNU_SOURCE
 #endif
 
-/* Double precision floats */
-#undef PRECISE_FLOATS
+/* Single precision floats */
+#undef FAST_FLOATS
 
 /* sometimes needed for C preprocessor under HP-UX */
 #undef _HPUX_SOURCE
