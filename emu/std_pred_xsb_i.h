@@ -484,7 +484,7 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
       Float float_temp;
       //TODO: Refactor the below few lines of code once the "Floats are always double?" 
       //situation is resolved.
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
       if (sscanf(str, "%lf%c", &float_temp, &hack_char) == 1)
 #else
       if (sscanf(str, "%f%c", &float_temp, &hack_char) == 1)

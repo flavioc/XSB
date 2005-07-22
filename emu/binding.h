@@ -160,7 +160,7 @@
       cell(addr) = binttemp;}
 
 
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 //Below, bind_boxedfloat builds a boxedfloat, from Float 'value', on the heap.
 //It also creates a Cell pointing to it, and inserts it at addr. 
 //Pre-condition: value must be a 64-bit floating point value

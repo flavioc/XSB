@@ -254,9 +254,9 @@ static void *instr_addr[256];
 
 
 //Below is the implementation of the inline functions for creating and manipulating boxed floats,
-// declared in cell_xsb.h. They only exist if the PRECISE_FLOATS tag is defined. Otherwise, they
+// declared in cell_xsb.h. They only exist if the FAST_FLOATS tag is undefined. Otherwise, they
 // are defined as Cell-based macros. See cell_xsb.h for details.
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value)
 {
     Float tempFloat = value;

@@ -74,9 +74,9 @@ ac_help="$ac_help
 ac_help="$ac_help
   --enable-mt                  compile multithreaded engine"
 ac_help="$ac_help
-  --enable-precise-floats      compile with double precision floats"
+  --enable-fast-floats         compile with single precision floats"
 ac_help="$ac_help
-  --enable-shc                  compile mt engine with shared completion"
+  --enable-shc                 compile mt engine with shared completion"
 ac_help="$ac_help
   --enable-profiling           force gcc to generate information for profiling"
 ac_help="$ac_help
@@ -693,10 +693,10 @@ if test "${enable_mt+set}" = set; then
   :
 fi
 
-# Check whether --enable-precise-floats or --disable-precise-floats was given.
-if test "${enable_precise_floats+set}" = set; then
-  enableval="$enable_precise_floats"
-  precise_floats=yes
+# Check whether --enable-fast-floats or --disable-fast-floats was given.
+if test "${enable_fast_floats+set}" = set; then
+  enableval="$enable_fast_floats"
+  fast_floats=yes
 fi
 
 # Check whether --enable-shc or --disable-shc was given.
@@ -718,9 +718,9 @@ if test "${enable_electric_fence+set}" = set; then
 fi
 
                    
-if test "${precise_floats}" = "yes" ; then
+if test "${fast_floats}" = "yes" ; then
    cat >> confdefs.h <<\EOF
-#define PRECISE_FLOATS 1
+#define FAST_FLOATS 1
 EOF
 
 fi

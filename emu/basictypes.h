@@ -30,7 +30,7 @@
 
 /*******************
 * Definitions for the basic Integer and Floating point types. 
-*   Each type varies depending on whether the BITS64 and PRECISE_FLOATS flags are set.
+*   Each type varies depending on whether the BITS64 and FAST_FLOATS flags are set.
 *   These types should be used in place of 'float' and 'int'
 *******************/
 #ifdef BITS64
@@ -45,7 +45,7 @@ typedef unsigned int UInteger ;
 
 typedef double prolog_float;
 
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 typedef double Float;
 #else
 typedef float Float;

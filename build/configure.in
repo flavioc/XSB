@@ -131,18 +131,18 @@ AC_ARG_ENABLE(jumptable,
                    disable_jumptable=yes)
 AC_ARG_ENABLE(mt,
 [  --enable-mt                  compile multithreaded engine])
-AC_ARG_ENABLE(precise-floats,
-[  --enable-precise-floats      compile with double precision floats],
-                   precise_floats=yes)
+AC_ARG_ENABLE(fast-floats,
+[  --enable-fast-floats         compile with single precision floats],
+                   fast_floats=yes)
 AC_ARG_ENABLE(shc,
-[  --enable-shc                  compile mt engine with shared completion])
+[  --enable-shc                 compile mt engine with shared completion])
 AC_ARG_ENABLE(profiling,
 [  --enable-profiling           force gcc to generate information for profiling])
 AC_ARG_ENABLE(electric-fence,
 [  --enable-electric-fence      link with the electric fence malloc debugger])
                    
-if test "${precise_floats}" = "yes" ; then
-   AC_DEFINE(PRECISE_FLOATS)
+if test "${fast_floats}" = "yes" ; then
+   AC_DEFINE(FAST_FLOATS)
 fi
 
 if test "${with_debug}" = "yes" ; then

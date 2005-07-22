@@ -240,11 +240,11 @@ extern unsigned long enc[], dec[];
 #define isboxedinteger(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) \
                                && (int_val(cell(clref_val(dcell)+1))>>16 == ID_BOXED_INT))
 
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 #define isboxedfloat(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) \
                              && (int_val(cell(clref_val(dcell)+1))>>16 == ID_BOXED_FLOAT))
 #else
-//If PRECISE_FLOATS isn't defined, there should be no boxed floats (only Cell floats). 
+//If FAST_FLOATS is defined, there should be no boxed floats (only Cell floats). 
 //  isboxedfloat is therefore expanded to FALSE (0), in hopes that the optimizer will remove.
 //  any code exclusively dependent on it.
 
@@ -255,7 +255,7 @@ extern unsigned long enc[], dec[];
        ((Integer)((((unsigned long)int_val(cell(clref_val(dcell)+2))<<24)   \
                   | int_val(cell(clref_val(dcell)+3))))) 
        
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 //make_float_from_ints, defined in emuloop.c, is used by EXTRACT_FLOAT_FROM_16_24_24 to combine
 //    two UInteger values into a Float value that is twice the size the UInteger, in bytes. 
 
@@ -280,7 +280,7 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
             )                                           \
     )
 #else 
-//if PRECISE_FLOATS isn't defined, then boxedfloat_val should never get called. To satisfy the 
+//if FAST_FLOATS is defined, then boxedfloat_val should never get called. To satisfy the 
 //  compiler, boxedfloat_val has been turned into an alias for float_val, since everything that 
 //  would have been a boxedfloat should now be a float.
 #define boxedfloat_val(dcell) float_val(dcell)
@@ -294,7 +294,7 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
        :0x80000000))
 
 
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 /* below returns the error-code 12345.6789 if the macro is called on a non-float related cell. 
    One should be careful with this (possibly change?), since it ordinarily can return any double
    in the full floating point domain, including 12345.6789.*/
@@ -305,13 +305,13 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
        ?boxedfloat_val(dcell)  \
        :12345.6789))
 #else
-//when PRECISE_FLOATS isn't defined, ofloat_val exists for the same reason that boxedfloat_val 
-//  does in the undefined PRECISE_FLOATS case. See boxedfloat_val for comments.
+//when FAST_FLOATS is defined, ofloat_val exists for the same reason that boxedfloat_val 
+//  does in the FAST_FLOATS defined case. See boxedfloat_val for comments.
 #define ofloat_val(dcell) float_val(dcell)
 #endif
 
 
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 #define isofloat(val)  ( (isboxedfloat(val)) || (isfloat(val)) )
 #else
 #define isofloat(val) isfloat(val)
@@ -335,14 +335,14 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
     } else {bld_int(addr,((Integer)value));}
 
     
-//if PRECISE_FLOATS isn't defined, then bld_boxedfloat becomes an alias for bld_float. If it is
+//if FAST_FLOATS is defined, then bld_boxedfloat becomes an alias for bld_float. If it is
 //defined, bld_boxedfloat is a function declaired here and implemented in emuloop.c.
-#ifdef PRECISE_FLOATS
+#ifndef FAST_FLOATS
 
 #include "context.h"
 //Note: anything that includes cell_xsb.h in the multithreaded environment implicitly includes
 //context.h as well, since bld_boxedfloat references hreg.
 extern inline void bld_boxedfloat(CTXTdeclc CPtr, Float);
-#endif /*PRECISE_FLOATS*/
+#endif /*FAST_FLOATS*/
    
 #endif /* __CELL_XSB_H__ */
