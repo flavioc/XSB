@@ -4,6 +4,7 @@
                                                                                 
 #include "context.h"
 #include "basicdefs.h"
+#include "cell_xsb.h"
 #include "choice.h"
 #include "cut_xsb.h"
 #include "binding.h"

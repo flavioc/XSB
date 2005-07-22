@@ -85,7 +85,6 @@ struct asrtBuff_t {
 #include "debugs/debug_attv.h"
 
 #include "basictypes.h"
-#include "cell_xsb.h"
 #include "memory_xsb.h"
 #include "varstring_xsb.h"
 #include "dynamic_stack.h"
