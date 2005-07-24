@@ -814,7 +814,7 @@ inline static xsbBool parsort(CTXTdecl)
     if (isnil(term2)) break;
     if (islist(term2)) {
       heap_addr = cell(clref_val(term2)); XSB_Deref(heap_addr);
-      if (par_spec.sort_num_pars == 0 || 
+      if (par_spec.sort_num_pars <= 0 || 
 	  (isconstr(heap_addr) && (get_arity(get_str_psc(heap_addr)) >= max_ind)) ||
 	  (islist(heap_addr) && max_ind <=2)) {
 	len++; term2 = cell(clref_val(term2)+1);
