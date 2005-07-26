@@ -1,4 +1,4 @@
-/* File:      emudef.h
+/* File:      context.h
 ** Author(s): Warren, Swift, Xu, Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -36,7 +36,7 @@ struct token_t {
   int nextch;
 };
 
-struct funstktype {
+struct funstktype {                                         
     char *fun;		/* functor name */
     int funop;	        /* index into opstk of first operand */
     int funtyp; 	/* 0 if functor, 1 if list, 2 if dotted-tail list */
@@ -92,7 +92,22 @@ struct asrtBuff_t {
 #include "tries.h"
 #include "choice.h"
 #include "macro_xsb.h"
+#include "token_defs_xsb.h"
+#include "odbc_def_xsb.h"
 #include "findall.h"
+
+
+//BELOW INCLUDES ARE FOR SQL Interfaces
+#ifdef CYGWIN
+#define FAR
+#include "sql.h"
+#else
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+#include <sql.h>
+#endif
+//end of SQL related includes.
 
 #define MAX_REGS 257
 
@@ -201,8 +216,6 @@ VarString *_tsgLBuff1;
 VarString *_tsgLBuff2;
 VarString *_tsgSBuff1;
 VarString *_tsgSBuff2;
-
-
 /* read_canonical stacks */
 int _opstk_size;
 int _funstk_size;
@@ -239,9 +252,17 @@ DynamicStack  _tstTermStackLog;
 DynamicStack  _tstSymbolStack;
 DynamicStack  _tstTrail;
 
+/* Pointers to cursor information used by odbc_xsb.c */
+/* context-local cursor table*/
+
+struct Cursor *_FCursor;  /* root of curser chain*/
+struct Cursor *_LCursor;  /* tail of curser chain*/
+struct NumberofCursors *_FCurNum;
+
+
 /* stuff for deadlock detection in completion */
 
-struct th_context *	waiting_for_thread;
+struct th_context * 	waiting_for_thread;
 struct subgoal_frame *	waiting_for_subgoal;
 int tid ;
 int deadlock_brk_leader ;
@@ -331,7 +352,7 @@ typedef struct th_context th_context ;
 
 #define LSBuff			(th->_LSBuff)
 
-#define last_answer		(th->_last_answer)
+#define last_answer           (th->_last_answer)
 #define tsgLBuff1		(th->_tsgLBuff1)
 #define tsgLBuff2		(th->_tsgLBuff2)
 #define tsgSBuff1		(th->_tsgSBuff1)
@@ -354,8 +375,8 @@ typedef struct th_context th_context ;
 
 #define random_seeds		(th->_random_seeds)
 
-#define asrtBuff		(th->_asrtBuff)
-#define i_have_dyn_mutex	(th->_i_have_dyn_mutex)
+#define asrtBuff              (th->_asrtBuff)
+#define i_have_dyn_mutex      (th->_i_have_dyn_mutex)
 
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)
@@ -368,11 +389,18 @@ typedef struct th_context th_context ;
 #define  tstSymbolStack		(th->_tstSymbolStack)
 #define  tstTrail		(th->_tstTrail)
 
+#define FCursor (th->_FCursor)
+#define LCursor (th->_LCursor)
+#define FCurNum (th->_FCurNum)
+
 #define CTXT			th
 #define CTXTc			th ,
 
 #define CTXTdecl		th_context *th
 #define CTXTdeclc		th_context *th ,
+
+#define CTXTdecltype		th_context *
+#define CTXTdecltypec		th_context *,
 
 #else
 
@@ -381,6 +409,9 @@ typedef struct th_context th_context ;
 
 #define CTXTdecl
 #define CTXTdeclc
+
+#define CTXTdecltype
+#define CTXTdecltypec
 
 #endif /* MULTI_THREAD */
 

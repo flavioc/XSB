@@ -53,6 +53,7 @@
 #define MUTEX_STACKS		18
 #define MUTEX_SOCKETS		19
 #define MUTEX_MEM		20
+#define MUTEX_ODBC		21
 
 /* Some mutexes available to users */
 #define MUTEX_CONSOLE		30

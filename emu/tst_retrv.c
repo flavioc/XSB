@@ -40,7 +40,7 @@
 #include "binding.h"
 #include "cut_xsb.h"	   /* trail frame field access macros */
 #include "sw_envs.h"
-#include "subp.h"          /* xsbBool unify(Cell, Cell) */
+#include "subp.h"          /* xsbBool unify(CTXTc Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "macro_xsb.h"

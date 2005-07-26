@@ -86,7 +86,7 @@
 \
   op1 = (Cell)(clref_val(op1));\
   op2 = (Cell)(clref_val(op2));\
-  if ( !unify(cell((CPtr)op1), cell((CPtr)op2)))\
+  if ( !unify(CTXTc cell((CPtr)op1), cell((CPtr)op2)))\
     { IFTHEN_FAILED; }\
   op1 = (Cell)((CPtr)op1+1);\
   op2 = (Cell)((CPtr)op2+1);\
@@ -109,7 +109,7 @@
     while (--arity)\
       {\
 	op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);\
-	if (!unify(cell((CPtr)op1), cell((CPtr)op2)))\
+	if (!unify(CTXTc cell((CPtr)op1), cell((CPtr)op2)))\
 	  {\
 	    IFTHEN_FAILED;\
 	  }\

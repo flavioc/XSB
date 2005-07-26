@@ -61,19 +61,19 @@
 //#include "error_xsb.h"
 #include "context.h"
 #include "varstring_xsb.h"
+#include "thread_xsb.h"
 
 #define MAXCURSORNUM                    25
 #define MAXVARSTRLEN                    65000
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
-static Psc     nullFctPsc;
+static Psc     nullFctPsc = NULL;
 /* static int      numberOfCursors = 0; */
 static long      SQL_NTSval = SQL_NTS;
 static long      SQL_NULL_DATAval = SQL_NULL_DATA;
 
 static HENV henv = NULL;
 /*HDBC hdbc;*/
-UCHAR uid[128];
 
 struct Cursor {
   struct Cursor *NCursor; /* Next Cursor in cursor chain*/
@@ -92,10 +92,6 @@ struct Cursor {
   UCHAR **Data;         /* pointer to array of pointers to data*/
 };
 
-/* global cursor table*/
-struct Cursor *FCursor;  /* root of curser chain*/
-struct Cursor *LCursor;  /* tail of curser chain*/
-
 /* Number of Cursors per Connection */
 struct NumberofCursors{
   HDBC hdbc;
@@ -103,7 +99,15 @@ struct NumberofCursors{
   struct NumberofCursors *NCurNum;
 };
 
+//The below variables are declaired global for single-threaded XSB, and declaired
+//in thread context for multi-threaded XSB.
+#ifndef MULTI_THREAD
 struct NumberofCursors *FCurNum; /* First in the list of Number of Cursors */
+/* global cursor table*/
+struct Cursor *FCursor;  /* root of curser chain*/
+struct Cursor *LCursor;  /* tail of curser chain*/
+
+#endif
 
 /* for debugging: just dumps memory... */
 void print_hdbc(char *msg, HDBC hdbc) {
@@ -451,6 +455,7 @@ void SetCursorClose(struct Cursor *cur)
 /*-----------------------------------------------------------------------------*/
 void ODBCConnect(CTXTdecl)
 {
+  UCHAR uid[128];
   UCHAR *server;
   UCHAR *pwd;
   UCHAR *connectIn;
@@ -460,6 +465,8 @@ void ODBCConnect(CTXTdecl)
 
   /* if we don't yet have an environment, allocate one.*/
   if (!henv) {
+    //locked to prevent two threads from fighting over who creates the env.
+    SYS_MUTEX_LOCK( MUTEX_ODBC) ;
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
@@ -473,7 +480,9 @@ void ODBCConnect(CTXTdecl)
 
     LCursor = FCursor = NULL;
     FCurNum = NULL;
-    nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
+    if (nullFctPsc == NULL)
+        nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
+    SYS_MUTEX_UNLOCK( MUTEX_ODBC) ;
   }
 
   /* allocate connection handler*/
@@ -489,7 +498,7 @@ void ODBCConnect(CTXTdecl)
     server = (UCHAR *)ptoc_string(CTXTc 3);
     strcpy(uid, (UCHAR *)ptoc_string(CTXTc 4));
     pwd = (UCHAR *)ptoc_string(CTXTc 5);
-
+    
     /* connect to database*/
     rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
@@ -814,7 +823,7 @@ void SetBindVal(CTXTdecl)
 	}
       }
       *((int *)cur->BindList[j]) = oint_val(BindVal);
-    } else if (isfloat(BindVal)) {
+    } else if (isofloat(BindVal)) {
       if (cur->BindTypes[j] != 1) {
 	/*printf("ODBC: Changing Type: flt to %d\n",cur->BindTypes[j]);*/
 	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
@@ -829,7 +838,7 @@ void SetBindVal(CTXTdecl)
 	  return;
 	}
       }
-      *((float *)cur->BindList[j]) = (float)float_val(BindVal);
+      *((float *)cur->BindList[j]) = (float)ofloat_val(BindVal);
     } else if (isstring(BindVal)) {
       if (cur->BindTypes[j] != 2) {
 	/*printf("ODBC: Changing Type: str to %d\n",cur->BindTypes[j]);*/
@@ -871,12 +880,12 @@ void SetBindVal(CTXTdecl)
     if (!cur->BindList[j])
       xsb_abort("[ODBC] Not enough memory for an int in SetBindVal!");
     *((int *)cur->BindList[j]) = oint_val(BindVal);
-  } else if (isfloat(BindVal)) {
+  } else if (isofloat(BindVal)) {
     cur->BindTypes[j] = 1;
     cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
     if (!cur->BindList[j])
       xsb_abort("[ODBC] Not enough memory for a float in SetBindVal!");
-    *((float *)cur->BindList[j]) = (float)float_val(BindVal);
+    *((float *)cur->BindList[j]) = (float)ofloat_val(BindVal);
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
     cur->BindList[j] = string_val(BindVal);
@@ -1186,7 +1195,7 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
     return 0;
   }
 }
-extern xsbBool unify(Cell, Cell);
+extern xsbBool unify(CTXTdecltypec Cell, Cell);
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
@@ -1200,8 +1209,8 @@ extern xsbBool unify(Cell, Cell);
 /*-----------------------------------------------------------------------------*/
 void ODBCDataSources(CTXTdecl)
 {
-  static SQLCHAR DSN[SQL_MAX_DSN_LENGTH+1];
-  static SQLCHAR Description[SQL_MAX_DSN_LENGTH+1];
+  SQLCHAR DSN[SQL_MAX_DSN_LENGTH+1];
+  SQLCHAR Description[SQL_MAX_DSN_LENGTH+1];
   RETCODE rc;
   int seq, new;
   SWORD dsn_size, descr_size;
@@ -1209,6 +1218,8 @@ void ODBCDataSources(CTXTdecl)
   Cell op3 = ptoc_tag(CTXTc 4);
 
   if (!henv) {
+    //locked to prevent two threads from fighting over who creates the env
+    SYS_MUTEX_LOCK( MUTEX_ODBC) ;
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
@@ -1218,11 +1229,12 @@ void ODBCDataSources(CTXTdecl)
     }
     LCursor = FCursor = NULL;
     FCurNum = NULL;
-    nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
+    if (nullFctPsc == NULL)
+        nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
+    SYS_MUTEX_UNLOCK( MUTEX_ODBC) ;
   }
 
   seq = ptoc_int(CTXTc 2);
-
   if (seq == 1) {
     rc = SQLDataSources(henv,SQL_FETCH_FIRST,DSN,
 			SQL_MAX_DSN_LENGTH,&dsn_size,
@@ -1254,7 +1266,11 @@ void ODBCDataSources(CTXTdecl)
   }
   XSB_Deref(op2);
   if (isref(op2))
-    unify(op2, makestring(string_find(DSN,1)));
+  {
+	  char * tempDSNstring= string_find(DSN,1);
+	  Cell cellStr = makestring(tempDSNstring);
+    unify(CTXTc op2, cellStr);
+  }
   else {
     xsb_error("[ODBCDataSources] Param 2 should be a free variable.");
     ctop_int(CTXTc 5,1);
@@ -1262,7 +1278,9 @@ void ODBCDataSources(CTXTdecl)
   }
   XSB_Deref(op3);
   if (isref(op3))
-    unify(op3, makestring(string_find(Description,1)));
+  {
+    unify(CTXTc op3, makestring(string_find(Description,1)));
+  }
   else {
     xsb_error("[ODBCDataSources] Param 3 should be a free variable.");
     ctop_int(CTXTc 5,1);
@@ -1473,13 +1491,11 @@ int GetColumn(CTXTdecl)
   int ColCurNum = ptoc_int(CTXTc 3);
   Cell op = ptoc_tag(CTXTc 4);
   UDWORD len;
-
   if (ColCurNum < 0 || ColCurNum >= cur->NumCols) {
     /* no more columns in the result row*/
     ctop_int(CTXTc 5,1);
     return TRUE;
   }
-
   ctop_int(CTXTc 5,0);
 
   /* get the data*/
@@ -1490,8 +1506,8 @@ int GetColumn(CTXTdecl)
     new_heap_free(hreg);
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) 
       /* for "string" and "term"... */
-      return unify(cell(clref_val(op)+1),nullterm);
-    else return unify(op,nullterm);
+      return unify(CTXTc cell(clref_val(op)+1),nullterm);
+    else return unify(CTXTc op,nullterm);
   }
 
   /* convert the string to either integer, float or string*/
@@ -1506,10 +1522,10 @@ int GetColumn(CTXTdecl)
     /* compare strings here, so don't intern strings unnecessarily*/
     XSB_Deref(op);
     if (isref(op))
-      return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
+      return unify(CTXTc op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
-	return unify(cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
+	return unify(CTXTc cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
 		     build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
@@ -1534,10 +1550,10 @@ int GetColumn(CTXTdecl)
     /* compare strings here, so don't intern strings unnecessarily*/
     XSB_Deref(op);
     if (isref(op))
-      return unify(op, makestring(string_find(cur->Data[ColCurNum],1)));
+      return unify(CTXTc op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
-	return unify(cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
+	return unify(CTXTc cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
 		     build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
@@ -1552,11 +1568,10 @@ int GetColumn(CTXTdecl)
     if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
     return TRUE;
   case SQL_C_SLONG:
-    return unify(op,makeint(*(long *)(cur->Data[ColCurNum])));
+    return unify(CTXTc op,makeint(*(long *)(cur->Data[ColCurNum])));
   case SQL_C_FLOAT:
-    return unify(op,makefloat(*(float *)(cur->Data[ColCurNum])));
+    return unify(CTXTc op,makefloat(*(float *)(cur->Data[ColCurNum])));
   }
-
   return FALSE;
 }
 /*-----------------------------------------------------------------------------*/

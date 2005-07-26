@@ -350,7 +350,7 @@ static int read_character(CTXTdeclc register FILE *card,
         c = GetC(card,instr);
 BACK:   if (c < 0) {
           if (c == EOF) /* to mostly handle cygwin stdio.h bug ... */
-ERROR:      if (q < 0) {
+READ_ERROR:      if (q < 0) {
                 SyntaxError("end of file in character constant");
 		return -2;		/* encounters EOF */
             } else {
@@ -375,7 +375,7 @@ ERROR:      if (q < 0) {
         switch (c) {
             case EOF:
 		clearerr(card);
-                goto ERROR;
+                goto READ_ERROR;
             case 'n': case 'N':         /* newline */
                 return 10;
             case 't': case 'T':         /* tab */
@@ -398,7 +398,7 @@ ERROR:      if (q < 0) {
                 return  7;
             case '^':                   /* control */
                 c = GetC(card,instr);
-                if (c < 0) goto ERROR;
+                if (c < 0) goto READ_ERROR;
                 return c == '?' ? 127 : c&31;
             case 'c': case 'C':         /* continuation */
                 while (IsLayout(c = GetC(card,instr))) ;
@@ -407,7 +407,7 @@ ERROR:      if (q < 0) {
                 {   int i, n;
                     for (n = 0, i = 2; --i >= 0; n = (n<<4) + DigVal(c))
                         if (DigVal(c = GetC(card,instr)) >= 16) {
-                            if (c < 0) goto ERROR;
+                            if (c < 0) goto READ_ERROR;
                             (void)unGetC(c, card, instr);
                             break;
                         }
@@ -416,7 +416,7 @@ ERROR:      if (q < 0) {
             case 'o': case 'O':         /* octal */
                 c = GetC(card,instr);
                 if (DigVal(c) >= 8) {
-                    if (c < 0) goto ERROR;
+                    if (c < 0) goto READ_ERROR;
                     (void) unGetC(c, card, instr);
                     return 0;
                 }
@@ -425,7 +425,7 @@ ERROR:      if (q < 0) {
                 {   int i, n;
                     for (n = c-'0', i = 2; --i >= 0; n = (n<<3) + DigVal(c))
                         if (DigVal(c = GetC(card,instr)) >= 8) {
-                            if (c < 0) goto ERROR;
+                            if (c < 0) goto READ_ERROR;
                             (void) unGetC(c, card, instr);
                             break;
                         }
