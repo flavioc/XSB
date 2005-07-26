@@ -90,6 +90,7 @@
 #include "trie_internals.h"
 #include "table_status_defs.h"
 #include "rw_lock.h"
+#include "deadlock.h"
 
 #ifdef ORACLE
 #include "oracle_xsb.h"

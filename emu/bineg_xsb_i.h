@@ -98,6 +98,11 @@ case IS_INCOMPLETE: {
   const int regSubgoalFrame = 1;  /* in: rep of a tabled subgoal */
   const int regRootSubgoal  = 2;  /* in: PTCPreg */
 
+#ifdef MULTI_THREAD
+	int table_tid ;
+	th_context *waiting_for_thread ;
+#endif
+
   VariantSF producerSF = ptoc_addr(regSubgoalFrame);
   CPtr t_ptcp = ptoc_addr(regRootSubgoal);
 #ifdef DEBUG_ASSERTIONS
@@ -109,6 +114,34 @@ case IS_INCOMPLETE: {
   xsb_dbgmsg((LOG_DELAY, "Is incomplete for "));
   dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);
   xsb_dbgmsg((LOG_DELAY, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF)));
+
+#ifdef MULTI_THREAD
+/* This allows sharing of completed tables.  */
+     pthread_mutex_lock(&completing_mut);
+     while( !is_completed(producerSF) )
+     {
+	table_tid = subg_tid(producerSF) ;
+        /* if the thread owns the table, proceed */
+        if (table_tid == th->tid)
+                break ;
+        waiting_for_thread = find_context(table_tid) ;
+        if( would_deadlock( waiting_for_thread, th ) )
+                xsb_exit( "deadlock in concurrent tabling detected" );
+	th->waiting_for_subgoal = producerSF ;
+        th->waiting_for_thread = waiting_for_thread ;
+        pthread_mutex_unlock(&completing_mut);
+        pthread_cond_wait(&completing_cond,&completing_mut) ;
+        if( th->reset_thread )
+        {       th->reset_thread = FALSE ;
+                pthread_mutex_unlock(&completing_mut) ;
+                /* restart the tabletry instruction */
+		return TRUE ;
+        }
+     }
+     th->waiting_for_thread = NULL ;
+     th->waiting_for_subgoal = NULL ;
+     pthread_mutex_unlock(&completing_mut);
+#endif
 
   if (is_completed(producerSF)) {
     neg_delay = FALSE;
