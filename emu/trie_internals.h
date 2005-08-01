@@ -476,11 +476,7 @@ extern Cell TrieVarBindings[];
  *  Threshold to determine when to change from a chain of children to a
  *  hash table for them.
  */
-#ifndef MULTI_THREAD
 #define MAX_SIBLING_LEN   8
-#else
-#define MAX_SIBLING_LEN   10000
-#endif
 #define IsLongSiblingChain(ChainLength)	   ( ChainLength > MAX_SIBLING_LEN )
 
 /*

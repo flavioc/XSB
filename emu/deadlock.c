@@ -41,10 +41,13 @@ static void ReclaimDSandMarkReset(th_context *th, VariantSF to, int leader)
 {
 	CPtr csf = openreg ;
 	for(;;)
-	{	subg_grabbed(compl_subgoal_ptr(csf)) = TRUE ;
-		subg_tid(compl_subgoal_ptr(csf)) = leader ;
-    		subg_asf_list_ptr(compl_subgoal_ptr(csf)) = NULL;
-    		subg_compl_susp_ptr(compl_subgoal_ptr(csf)) = NULL;
+	{	if( !is_completed(compl_subgoal_ptr(csf)))
+		/* Handle early completion */
+		{	subg_grabbed(compl_subgoal_ptr(csf)) = TRUE ;
+			subg_tid(compl_subgoal_ptr(csf)) = leader ;
+    			subg_asf_list_ptr(compl_subgoal_ptr(csf)) = NULL;
+    			subg_compl_susp_ptr(compl_subgoal_ptr(csf)) = NULL;
+		}
         	if( compl_subgoal_ptr(csf) == to ) 
 			break;
                 csf = prev_compl_frame(csf) ;
@@ -79,6 +82,12 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf )
 
 	/* delete the generator cp */
         breg = tcp_prevbreg(breg) ; 
+}
+
+void reset_leader( th_context *th )
+{
+	reset_thread( th, th, compl_subgoal_ptr(openreg) );
+	th->reset_thread = FALSE ;
 }
 				
 
