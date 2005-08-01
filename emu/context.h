@@ -104,8 +104,8 @@ struct asrtBuff_t {
 #else
 #ifdef WIN_NT
 #include <windows.h>
-#endif
 #include <sql.h>
+#endif
 #endif
 //end of SQL related includes.
 
