@@ -1153,7 +1153,7 @@ int builtin_call(CTXTdeclc byte number)
   }
   case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
     Psc psc = (Psc)ptoc_addr(1);
-    if (get_type(psc) == T_PRED) {
+    if (get_type(psc) == T_PRED || get_type(psc) == T_DYNA) {
       xsb_warn("[psc_set_prop/2] Cannot set property of predicate.\n");
       return FALSE;
     }

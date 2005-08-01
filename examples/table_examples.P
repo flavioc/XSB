@@ -15,6 +15,17 @@ edge(2,3).
 edge(3,5).
 
 %--------------------------------------------------------------------
+
+:- table table_ordered_goal/1.
+
+table_ordered_goal(X):- ordered_goal(X).
+
+ordered_goal(one).
+ordered_goal(two).
+ordered_goal(three).
+ordered_goal(four).
+
+%--------------------------------------------------------------------
 %:- table same_generation/2.
 same_generation(X,X).
 same_generation(X,Y) :- cyl(X,Z), same_generation(Z,Z),cyl(Y,Z).
@@ -34,12 +45,22 @@ complete binary tree of depth 24
 %--------------------------------------------------------------------
 :- table cut_p/1,cut_q/1,cut_r/0,cut_s/0.
 
-cut_p(X):- cut_q(X),cut_r.
+cut_p(X):- cut_q(X),once(cut_r).
 cut_r:- cut_s.
 cut_s:- cut_q(_).
 cut_q(1).       cut_q(2).
 
 examp_once(Term):- call(Term),!.
+
+%--------------------------------------------------------------------
+:- table cut_a/1,cut_b/1.
+
+cut_a(X):- cut_b(X).
+cut_a(a1).
+
+cut_b(b1).
+cut_b(X):- cut_a(X).
+
 %--------------------------------------------------------------------
 
 genlist(0,[]):-!.
@@ -95,6 +116,8 @@ ngr_tp:- tnot(ngr_tp(_)).
 
 ngr_tp(a).
 
+ngr_skp:- sk_not(ngr_tp(_)).
+
 %--------------------------------------------------------------------
 
 :- table simpl_p/1,simpl_r/0,simpl_s/0.
@@ -106,7 +129,7 @@ simpl_s:- simpl_p(_X).
 simpl_r:- tnot(simpl_s),simpl_r.
 
 %--------------------------------------------------------------------
-:- table p/1,r/0,s/0.
+:- table ac_p/1,ac_r/0,ac_s/0.
 ac_p(X):- ac_p(X).
 ac_p(_X):- tnot(ac_s).
 

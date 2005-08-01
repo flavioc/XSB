@@ -122,6 +122,7 @@ static void dis_data_sub(Pair *chain_ptr, char* modname)
 	    case T_UNLOADED: fprintf(filedes, "'UNLOADED',"); break;
 	    default:	     fprintf(filedes, "error_env,"); break;
 	}
+	// TLS: should T_DYNA be checked, also???
 	if (get_type(temp) == T_PRED) {
 	  if (get_tip(temp) == NULL) 
 	    fprintf(filedes, "'UNTABLED',"); 

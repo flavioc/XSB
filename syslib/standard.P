@@ -1177,6 +1177,18 @@ arity_integer(N) :-
 	integer(N),
 	N >= 0, N =< 255.
 
+% TLS: Like arity_integer, but performs checks.
+% conflating integer + var checks, as well as > 0 (domain) and =<
+% 255 (representation).  But it seems pedantic to add unnecessary ISO
+% checks. 
+check_arity_integer(N,Pred,Arg) :-
+	(integer(N) -> 
+	    (N >= 0, N =< 255 -> 
+		true 
+	     ;  domain_error(arity_integer,N,Pred,Arg) )
+         ; type_error(integer,N,Pred,Arg) ).
+
+
 %  all_atoms(+List)
 %  Given a proper list List determines whether it contains atoms only.
 

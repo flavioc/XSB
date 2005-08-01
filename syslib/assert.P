@@ -23,7 +23,7 @@
 */
 
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod,optimize]).
 #include "builtin.h"
 #include "psc_defs.h"
 #include "thread_defs_xsb.h"
@@ -117,17 +117,18 @@ assert0(Clause) :- assert(Clause,1,1).
 assert(Clause)  :-
 	check_assert(Clause, 'assert/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
-	assert(Clause,1,1).
+	assert(Clause,1,1,'assert/1').
 asserta(Clause) :-
 	check_assert(Clause,'asserta/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
-	assert(Clause,0,1).
+	assert(Clause,0,1,'asserta/1').
 assertz(Clause) :-
 	check_assert(Clause,'assertz/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
-	assert(Clause,1,1).
+	assert(Clause,1,1,'assertz/1').
 
-/*
+
+/* Obsolete.
 call_assert_hook(Clause) :-
 	term_psc(assert_hook(_),Psc),
 	psc_type(Psc,Type),
@@ -146,7 +147,10 @@ asserti(Clause, Index) :- assert(Clause,1,Index).
 assertai(Clause,Index) :- assert(Clause,0,Index).
 assertzi(Clause,Index) :- assert(Clause,1,Index).
 
-assert(Clause, AZL, Index1) :-
+% Safeguard.
+assert(Clause,AZL,Index):- assert(Clause,AZL,Index,'assert/1').
+
+assert(Clause, AZL, Index1,ErrPred) :-
 	(Clause = (Head:-_)
 	 ->	conpsc(Head, PSC)
 	 ;	Clause = Head -> conpsc(Head, PSC)
@@ -166,7 +170,7 @@ assert(Clause, AZL, Index1) :-
 		 ;	Index = Index1,default_assert_size(HashTabSize)
 		),
 		NArity is Arity+1, % to hold the cut addr
-		convert_to_dyna(Head,Prref),
+		convert_to_dyna(Head,Prref,ErrPred),
 		cut_transform(Clause,Nclause),
 		code_to_buff(Nclause,AZL),
 		AZ is AZL /\ 1,
@@ -241,25 +245,24 @@ bind_single_occs([V1|RVars],V1a,Val) :-
 check_assert((Head :- Body), Pred) :- 
 	!,			% This captures Clause being variable
 	( var(Head) ->
-		abort(('Uninstantiated argument 1 of ', Pred))
+	    instantiation_error(Pred,1,nonvar)
 	; check_assert_fact(Head, Pred), 
 	  ( check_body(Body) -> true
-	  ; abort(('Wrong type in argument 1 of ', Pred,
-			   ' (callable term expected)'))
+	  ; type_error(callable,Body,Pred,1)
 	  )
 	).
 check_assert(Head, Pred) :- check_assert_fact(Head, Pred).
 
+% TLS: note that checking for static is done in convert_to_dyna
 check_assert_fact(Head, Pred) :- 	% asserting a fact
 	( callable(Head) -> 
 	    ( functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
 		\+ standard_dynamic_symbol(F, A) ->
-		abort(('Not permitted to assert to a built-in predicate: ',F/A))
+		permission_error(modify,builtin,F/A,Pred)
 	    ;	true
 	    )
-	; abort(('Wrong type in argument 1 of ', Pred, 
-			 ' (callable term expected)'))
+	; type_error(callable,Head,Pred,1)
 	).
 
 check_body(X) :- var(X), !.
@@ -279,15 +282,28 @@ cut_transform((Head:-Body),(Nhead:-Nbody)) :- !,
 cut_transform(Head,Head). /* leave unchanged, Arity is one less */
 
 /*======================================================================*/
-/* convert_to_dyna(+PredHead, -Prref)					*/
+/* convert_to_dyna(+PredHead, -Prref, +ErrPred)				*/
 /*	Convert the predicate to DYNA, and return its Prref.		*/
 /*	If it is already a dynamic pred, simply return its Prref.	*/
 /*======================================================================*/
 
-dynamic((P1,P2)) :- !, dynamic(P1), dynamic(P2).
-dynamic(Spec) :- mpa_to_skel(Spec,Head), convert_to_dyna(Head,_).
+% TLS: went into inf loop when Spec was var and failed when Spec was
+% 1.  Note that convert_to_dyna/3 only handles cases where there is a 
+% prref and that prref is inconsistent.
 
-convert_to_dyna(PHead,Prref) :-
+dynamic(Spec):- 
+	(var(Spec) -> 
+	    instantiation_error(dynamic,1,nonvar)
+	 ;  dynamic_1(Spec) ).
+
+dynamic_1((P1,P2)) :- !, dynamic(P1), dynamic(P2).
+dynamic_1(Spec) :- 
+	mpa_to_skel(Spec,Head), 
+	convert_to_dyna(Head,_,'dynamic/1'),!.
+dynamic_1(Spec) :- 
+	type_error(comma_list_callable,Spec,dynamic,1).
+
+convert_to_dyna(PHead,Prref,ErrPred) :-
 	xsb_sys_mutex_lock(MUTEX_DYNAMIC),
 	conpsc(PHead, PSC),
 	psc_type(PSC, SYMTYPE),
@@ -312,10 +328,10 @@ convert_to_dyna(PHead,Prref) :-
 	; SYMTYPE =:= T_PRED ->		     /* compiled, illegal */
                 functor(PHead, F, A),
 		xsb_sys_mutex_unlock(MUTEX_DYNAMIC),
-		abort(['Not permitted to assert to static predicate', F/A])
+		permission_error(modify,static,F/A,ErrPred)
 	; 
 		xsb_sys_mutex_unlock(MUTEX_DYNAMIC),
-		abort(('Asserting to something illegal (Type = ', SYMTYPE, ')'))
+		type_error(callable,PHead,ErrPred,1)
 	),
 	xsb_sys_mutex_unlock(MUTEX_DYNAMIC).
 
@@ -341,7 +357,7 @@ db_new_prref(PSC,PHead,Prref) :-
 	db_build_prref(PSC, Tabled, Prref).
 
 /*======================================================================*/
-/* db_dynamic_prref(+PHead,+CallingRef,-Prref):				*/
+/* get_dynamic_prref(+PHead,+CallingRef,-Prref):			*/
 /*	returns the Prref for the predicate that is the main functor	*/
 /*      symbol of PHead.  CallingRef is used in the error message	*/
 /*      thrown if PHead is a compiled predicate.  The predicate fails	*/
@@ -355,8 +371,7 @@ get_dynamic_prref(Head,CallingPred,Prref) :-
 	psc_type(PSC,Type),
 	(Type =:= T_PRED		/* is compiled */
 	 ->	functor(Head,F,A),
-	        throw(error(predicate_type_error,
-			    (CallingPred, ' cannot be appled to compiled predicate', F/A)))
+		permission_error(modify,static,F/A,CallingPred)
 	 ;	Type =:= T_DYNA, % is DYNA 
 		psc_ep(PSC, Prref) % get Prref
 	).
@@ -458,8 +473,7 @@ reclaim_space(Fact) :-
 retract_last_fact(Skel) :-
 	(is_most_general_term(Skel)
 	 ->	true
-	 ;	throw(error(instantiation_error,
-			    ('retract_last_fact/1, First argument is not an open term: ',Skel)))
+	 ;      instantiation_error(retract_last_fact/1,1,skeleton)
 	),
 	get_dynamic_prref(Skel,'retract_last_fact/1',Prref),
 	db_get_last_clause(Prref,Clref,_Type,EntryPoint),
@@ -486,18 +500,18 @@ do_dyn_code_call(EntryPt,Skel) :-
 /*	predicate retract or retractall simply fail.			*/
 /*======================================================================*/
 
+% TLS: note that static check is done in get_dynamic_prref
 check_retract(Head, Pred) :-
 	( var(Head) ->
-		abort(('Uninstantiated argument 1 of ', Pred))
-	; callable(Head) -> 
+	    instantiation_error(Pred,1,nonvar)
+	; (callable(Head) -> 
 	    (   functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
 		\+ standard_dynamic_symbol(F, A) ->
-		   abort(('Not permitted to retract clauses of built-in predicate ', F/A, ' ', Head, ' in ', Pred))
+		    permission_error(modify,builtin,F/A,Pred)
 		;   true
 		)
-	; abort(('Wrong type in argument 1 of ', Pred,
-			 ' (callable term expected)'))
+	;  type_error(callable,Head,Pred,1))
 	).
 
 /*======================================================================*/
@@ -512,22 +526,20 @@ check_retract(Head, Pred) :-
 /*	As it ought to, abolish/[1,2] does not complain when trying to	*/
 /*	abolish an undefined predicate.					*/
 /*======================================================================*/
-
 abolish(Spec) :-
 	(var(Spec)
-	 ->	abort('Uninstantiated argument of abolish/1'),
-		Nspec=_,Pred=Arity
+	 ->     instantiation_error(abolish/1,1,nonvar)
 	 ; Spec = (Pred/Arity)
 	 ->	(var(Pred)
-		 ->	abort('Uninstantiated argument of abolish/1'),Nspec=_
-		 ; arity_integer(Arity)
-		 ->	functor(Nspec,Pred,Arity)
-		 ;	abort('Incorrect arity in abolish/1'),Nspec=_
+                 -> instantiation_error(abolish/1,1,
+		                        'nonvar predicate indicator')
+		 ; check_arity_integer(Arity,abolish/1,1),
+		   functor(Nspec,Pred,Arity)
 		)
 	 ; Nspec = Spec, functor(Nspec,Pred,Arity)
 	),
 	(standard_symbol(Pred,Arity,_Prop)
-	 ->	abort('Not permitted to abolish built-in predicates')
+	 ->	permission_error(modify,builtin,Pred/Arity,abolish/1)
 	 ;      call_xsb_hook(xsb_retract_hook(_),[Nspec,true],all),
 		abolish1(Nspec)
 	).
@@ -603,18 +615,18 @@ clause0(Head, Body) :-
 /*	simply fails.							*/
 /*======================================================================*/
 
+% TLS: note that static check is done in get_dynamic_prref
 check_clause(Head) :-
 	( var(Head) ->
-	    abort('Uninstantiated argument 1 of clause/2')
+	    instantiation_error(clause/2,1,nonvar)
 	;   callable(Head) -> 
 	    (	functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
 		\+ standard_dynamic_symbol(F, A)
-	    ->	abort(('Not permitted to access clauses of built-in predicate ', F/A))
+	    ->	permission_error(access,builtin,F/A,clause/1)
 	    ;	true
 	    )
-	;   abort(('Wrong type in argument 1 of clause/2', 
-		   ' (callable term expected)'))
+	  ; type_error(callable,Head,clause/1,1)
 	).
 
 /*======================================================================*/
@@ -628,7 +640,7 @@ t_assert_1((Head :- Body), _Flag) :- t_assert_exit((Head :- Body)).
 t_assert_1(Clause, Flag) :- 
 	conpsc(Clause, PSC),
 	psc_arity(PSC, Arity),
-	convert_to_dyna(Clause,Prref),
+	convert_to_dyna(Clause,Prref,trie_assert/1),
 %	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
 	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).
 

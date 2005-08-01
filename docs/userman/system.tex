@@ -1842,7 +1842,7 @@ and that of the ISO standard in certain cases.
 The main difference of XSB with the ISO standard is in terms of
 parsing.  \version{} of XSB does not support full ISO syntax, nor does
 it support multiple character sets.  Rectifying these limitations is a
-high priority for future releases.
+priority for future releases.
 
 A second difference involves XSB's implementation of ISO streams.  XSB
 can create streams from several first class objects, including pipes,
@@ -1853,17 +1853,21 @@ difference in UNIX or LINUX, for which text and binary streams are
 identical, but does make a difference in Windows, where text files are
 processed more than binary files.
 
+% TLS: how about floats?
+% public/private
+
 The final difference involves error handling in XSB.  XSB implements a
 catch and throw mechanism that is similar to the ISO standard.  In
-addition, XSB usually thows errors under the same conditions as
-specified in the standard.  The only difference in error handling is
-in the types of errors that XSB throws: it may throw domain errors in
-some cases in which XSB throws type errors.  The reasons for this have
-to do with XSB's nascent type system, as described in
-Section~\ref{sec:types}.  This difference should cause minimal
-portability problems, as it only affects the type terms thrown at
-error, and these terms are implementation-dependant as defined in the
-standard.
+addition, XSB usually thows errors for ISO-predicates under the same
+conditions as specified in the standard.  The only differences in
+error handling are: (1) the type of error thrown may differ in XSB due
+to an effort to minimize the amount of checking performed; and (2) ISO
+may specify domain errors in some cases in which XSB throws type
+errors.  The reasons for this have to do with XSB's nascent type
+system, as described in Section~\ref{sec:types}.  The difference in
+error terms should cause minimal portability problems, as it only
+affects the type terms thrown at error, and these terms are
+implementation-dependant as defined in the standard.
 
 
 

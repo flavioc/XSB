@@ -1858,31 +1858,33 @@ unless otherwise noted.
 \label{Arithmetic} 
 
 As do most Prologs, XSB supports evaluation of arithmetic expressions
-in two ways.  First, XSB supports evaluation of ground arithmetic
-expressions throught the {\tt is/2} operator.  Support of comparisons
-of non-ground arithmetic expressions is provided through the port to
-XSB of the CLPQR constraint handling interface.  In this section we
-describe how arithmetic expressions can be evaluated through {\tt
-is/2}, while the CLPQR interface is described in Volume 2 of this
-manual.
+in two ways.  First, ground arithmetic expressions can be evaluated
+through the {\tt is/2} operator.  Solving non-ground arithmetic
+expressions is provided through XSB's port of the CLPQR constraint
+handling interface.  In this section we describe how arithmetic
+expressions can be evaluated through {\tt is/2}, while the CLPQR
+interface is described in Volume 2 of this manual.
 
 Before describing {\tt is/2} and the expressions that it can evaluate,
-we note that in \version{} of XSB, integers in XSB are represented using a 
-single word of 32 or 64 bits, depending on the machine architecture. Floating
-point values are, by default, stored as word-sized references to double precision 
-values, regardless of the target machine. Direct (non-referenced, tagged) single 
-precision floats can be activated for speed purposes by passing the option 
---enable-fast-floats to the configure script at configuration time. Since type 
-tags constitute part of this word in any tagged number, this means that there 
-may be as little as 28 bits available to represent a given number value. 
-In addition, evaluation of arithmetic expressions through {\tt is/2} does not 
-check for overflow or underflow.  As a result, XSB's floating point operations 
-do not conform to IEEE floating point standards, and deviates in this regard
+we note that in \version{} of XSB, integers in XSB are represented
+using a single word of 32 or 64 bits, depending on the machine
+architecture. Floating point values are, by default, stored as
+word-sized references to double precision values, regardless of the
+target machine. Direct (non-referenced, tagged) single precision
+floats can be activated for speed purposes by passing the option
+--enable-fast-floats to the configure script at configuration time.
+This option is not described when any sort of precision is desired, as
+there may be as little as 28 bits available to represent a given
+number value under a tagged architecture.  In addition, evaluation of
+arithmetic expressions through {\tt is/2} does not check for overflow
+or underflow.  As a result, XSB's floating point operations do not
+conform to IEEE floating point standards, and deviates in this regard
 from the ISO Prolog standard (see \cite{ISO-Prolog} Section 9).  We
 hope to fix these problems in a future release \footnote{We also note
-that the ISO Prolog evaluable functors {\tt sign/1}, {\tt
-float\_round/1}, {\tt float\_truncate/1}, {\tt float\_integer\_part/1}
-and {\tt float\_fractional\_part/1} are not implemented in \version .}
+  that the ISO Prolog evaluable functors {\tt sign/1}, {\tt
+    float\_round/1}, {\tt float\_truncate/1}, {\tt
+    float\_integer\_part/1} and {\tt float\_fractional\_part/1} are
+  not implemented in \version .}
 
 All of the evaluable functors describe below throw a type error if
 their evaluated input is not numeric.  We describe below only their

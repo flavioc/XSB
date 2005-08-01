@@ -42,6 +42,7 @@
 #include "choice.h"
 #include "flags_xsb.h"
 #include "heap_xsb.h"
+#include "thread_xsb.h"
 
 /*======================================================================*/
 
@@ -248,6 +249,12 @@ void total_stat(CTXTdeclc double elapstime) {
 #ifdef GC
   printf("\n");
   print_gc_statistics();
+#endif
+
+#ifdef MULTI_THREAD
+
+  /*  print_mutex_use();*/
+
 #endif
 
   printf("Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",

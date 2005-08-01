@@ -60,14 +60,8 @@ defining it, the call will quietly fail instead of issuing an {\sf
 
 \begin{description}
 
-\ouritem{assert(+Clause)}\index{\texttt{assert/1}}
-adds a dynamic clause, {\tt Clause}, to the database. {\tt Clause}
-must be of one of the forms: {\tt Head} or {\tt Head :- Body}. Note
-that because of the precedence of {\tt :-/2}, using the second form
-requires an extra set of parentheses: {\tt assert((Head :- Body))}.
-Default: first-argument indexing.
-
-\ouritem{asserta(+Clause)}\index{\texttt{asserta/1}}
+\ouritem{asserta(+Clause)}\index{\texttt{asserta/1}} 
+%
 If the index specification for the preicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
 before} any other clauses for the same predicate currently in the
@@ -75,42 +69,165 @@ database.  If the index specification for the predicate is {\tt trie},
 the clause is asserted arbitrarily within the trie, and a warning
 message sent to {\tt stderr}.
 
+Note that because of the precedence of {\tt :-/2}, using the second
+form requires an extra set of parentheses: {\tt assert((Head :-
+  Body))}.
 
-\ouritem{assertz(+Clause)}\index{\texttt{assertz/1}}
+{\bf Error Cases}
+\bi
+\item 	{\tt Clause} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Clause} is not a callable clause.
+\bi
+\item 	{\tt domain\_error(callable,Clause)}
+\ei
+%
+\item 	{\tt Clause} has a head that is a static builtin
+\bi
+\item 	{\tt permission\_error(modify,builtin,Clause)}
+\ei
+\item 	{\tt Clause} has a head that is a static user predicate
+\bi
+\item 	{\tt permission\_error(modify,static,Clause)}
+\ei
+%
+\ei
+
+\ouritem{assertz(+Clause)}\index{\texttt{assertz/1}} 
+%
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
-after} any other clauses for the same predicate currently in the
+  after} any other clauses for the same predicate currently in the
 database.  If the index specification for the predicate is {\tt trie},
 the clause is asserted arbitrarily within the trie, and a warning
-message sent to {\tt stderr}.
+message sent to {\tt stderr}.  Error cases are as with {\tt
+  asserta/1}.
 
-\ouritem{retract(+Clause)}\index{\texttt{retract/1}}
-removes through backtracking all clauses in the database that match with
-{\tt Clause}.  {\tt Clause} must be of one of the forms:  {\tt Head} or
-{\tt Head :- Body}.  Note, that because of the precedence of {\tt :-/2},
-using the second form requires an extra set of parentheses:
-{\tt retract((Head :- Body))}.  Space is reclaimed when a 
-clause is retracted.
+Note that because of the precedence of {\tt :-/2}, using the second
+form requires an extra set of parentheses: {\tt assert((Head :-
+  Body))}.
 
-\ouritem{retractall(+Head)}\index{\texttt{retractall/1}}
-removes every clause in the database whose head matches with {\tt Head}.
-The predicate whose clauses have been retracted retains the {\tt dynamic}
-property (contrast this behavior with that of predicates 
-{\tt abolish/[1,2]} below).
-Predicate {\tt retractall/1} is determinate and always succeeds.
-The term {\tt Head} is not further instantiated by this call.
+\ouritem{assert(+Clause)}\index{\texttt{assert/1}}
+%
+If the index specification for the predicate is not {\tt trie}, this
+predicate adds a dynamic clause, {\tt Clause}, to the database {\em
+  after} any other clauses for the same predicate currently in the
+database (acting as {\tt assertz/1}).  If the index specification for
+the predicate is {\tt trie}, the clause is asserted arbitrarily within
+the trie.  Error cases are as with {\tt assertz/1}.
 
-\ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}}
-Removes the definition of the specified predicate.  {\tt PredSpec}
-is of the form {\tt Pred/Arity}.  Everything about the abolished
-predicate is completely forgotten by the system (including the
-{\tt dynamic} property).  There is also an {\tt abolish/2} which
-takes {\tt Pred} and {\tt Arity} as its two arguments.
+Note that because of the precedence of {\tt :-/2}, using the second
+form requires an extra set of parentheses: {\tt assert((Head :-
+  Body))}.
+
+\ouritem{retract(+Clause)}\index{\texttt{retract/1}} 
+%
+removes through backtracking all clauses in the database that match
+with {\tt Clause}.  {\tt Clause} must be of one of the forms: {\tt
+  Head} or {\tt Head :- Body}.  Note, that because of the precedence
+of {\tt :-/2}, using the second form requires an extra set of
+parentheses: {\tt retract((Head :- Body))}.  Space is reclaimed after
+a clause is retracted.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Clause} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Clause} is not a callable clause.
+\bi
+\item 	{\tt domain\_error(callable,Clause)}
+\ei
+%
+\item 	{\tt Clause} has a head that is a static builtin
+\bi
+\item 	{\tt permission\_error(modify,builtin,Clause)}
+\ei
+\item 	{\tt Clause} has a head that is a static user predicate
+\bi
+\item 	{\tt permission\_error(modify,static,Clause)}
+\ei
+%
+\ei
+
+\ouritem{retractall(+Head)}\index{\texttt{retractall/1}} removes every
+clause in the database whose head matches with {\tt Head}.  The
+predicate whose clauses have been retracted retains the {\tt dynamic}
+property (contrast this behavior with that of predicates {\tt
+  abolish/[1,2]} below).  Predicate {\tt retractall/1} is determinate
+and always succeeds.  The term {\tt Head} is not further instantiated
+by this call.  Error cases are as with {\tt retract/1}.
+
+\ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}} Removes the
+definition of the specified predicate.  {\tt PredSpec} is of the form
+{\tt Pred/Arity}.  Everything about the abolished predicate is
+completely forgotten by the system (including the {\tt dynamic or static}
+property) \footnote{For compatability with older Prologs, there is
+  also an {\tt abolish/2} which takes {\tt Pred} and {\tt Arity} as
+  its two arguments.}
+
+\compatability \version{} of XSB allows static predicates to be
+abolished and their space reclaimed.  Such space is reclaimed
+immediately, and no check is made to ensure that XSB's choice point
+stack is free of choice points for the abolished predicate.
+Abolishing static code is thus dangerous and should be avoided unless
+a user is certain it is safe to use.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt PredInd}, {\tt Pred} or {\tt Arity} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Arity} is not in the range 0..255 ({\tt max\_arity})
+\bi
+\item 	{\tt domain\_error(arity\_indicator,Arity)}
+\ei
+%
+\item 	{\tt PredInd} indicates a static builtin
+\bi
+\item 	{\tt permission\_error(modify,builtin,Predind)}
+\ei
+\item 	{\tt Clause} has a head that is a static user predicate
+\bi
+\item 	{\tt permission\_error(modify,static,Clause)}
+\ei
+%
+\ei
 
 \ouritem{clause(+Head,?Body)}\index{\texttt{clause/2}}
 Returns through backtracking all dynamic clauses in the database whose head
 matches {\tt Head} and Body matches {\tt Body}.  For facts the {\tt Body} is
 {\tt true}.  
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Head} or {\tt Body} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Head} (or {\tt Body}) is not a callable clause.
+\bi
+\item 	{\tt domain\_error(callable,Head)}
+\ei
+%
+\item 	{\tt Head} is a static builtin
+\bi
+\item 	{\tt permission\_error(access,builtin,Head)}
+\ei
+\item 	{\tt Head} is a static user predicate
+\bi
+\item 	{\tt permission\_error(access,static,Clause)}
+\ei
+%
+\ei
 
 \ouritem{retract\_nr(+Clause)}\index{\texttt{retract\_nr/1}}
 Performs just as {\tt retract/1} does, except that it does not reclaim the

@@ -35,18 +35,21 @@
 :- export t_assert/2.
 :- export exchange_definitions/2.
 
-:- import append/3 from basics.
-:- import ground/1 from basics.
-:- import (=..)/2, functor/3, integer/1, callable/1, throw/1,
-  goal_cut_trans/3, goal_cut_untrans/2, abort/1, arity_integer/1,
-  is_most_general_term/1, atomic/1
-     from standard.
-%%:- import call_c/1 from standard.
+:- import append/3,ground/1 from basics.
+
+:- import default_assert_size/1 from config.
+
 :- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,
   db_retract_nr/3, db_reclaim_space/2
      from dbclause.
+
+:- import instantiation_error/3 , permission_error/4, 
+             type_error/4 from error_handler.
+
 :- import '_$index'/3, '_$trie_asserted'/1, retract_trie_index/1,
 	  retract_index/1, retract_table/1, mpa_to_skel/2  from file_op.
+:- import '_$table'/1 from file_op.
+
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2, buff_byte/3,
 	  buff_word/3, conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
   psc_tabled/2, psc_set_ep/2, unload_seg/1, db_build_prref/3,
@@ -54,13 +57,16 @@
      from machine.
 :- import parsort/4 from machine.
 :- import db_get_last_clause/4 from machine.
-%%:- import term_psc/2 from machine.
-:- import '_$table'/1 from file_op.
-:- import standard_symbol/3, standard_dynamic_symbol/2 from std_xsb.
-:- import default_assert_size/1 from config.
+
 :- import '_$multifile_retract'/3 from parse.
-%%:- import assert_hook/1, retract_hook/2 from usermod.
-:- import call_xsb_hook/3, xsb_assert_hook/1, xsb_retract_hook/1 from xsb_hook.
+
+:- import (=..)/2, functor/3, integer/1, callable/1, 
+  goal_cut_trans/3, goal_cut_untrans/2, abort/1, check_arity_integer/3,
+  is_most_general_term/1, atomic/1
+     from standard.
+
+:- import standard_symbol/3, standard_dynamic_symbol/2 from std_xsb.
 
 :- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
 
+:- import call_xsb_hook/3, xsb_assert_hook/1, xsb_retract_hook/1 from xsb_hook.
