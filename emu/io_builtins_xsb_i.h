@@ -85,9 +85,6 @@ inline static xsbBool file_function(CTXTdecl)
   prolog_term pterm;
   Cell term;
   char *strmode;
-  char *line_buff = NULL;
-  int line_buff_len = 0;
-  int line_buff_disp, ioport;
 
   switch (ptoc_int(CTXTc 1)) {
   case FILE_FLUSH: /* file_function(0,+IOport,-Ret,_,_) */
@@ -157,7 +154,7 @@ inline static xsbBool file_function(CTXTdecl)
     /* file_function(4, +FileName, +Mode, -IOport) TLS: changing modes
      and differentiating binaries, so its best to not allow integer
      modes any more */
-
+    int ioport;
     int str_type = 0;
     char string_mode[3];
 
@@ -362,6 +359,9 @@ inline static xsbBool file_function(CTXTdecl)
     ** Invoke: file_function(FILE_READ_LINE, +File, -List). Returns
     ** the list of codes read. Rewritten by DSW 5/18/04 to allow \0 in lines.
     ** Prolog invocation: file_read_line_list(+File, -Str) */
+    char *line_buff = NULL;
+    int line_buff_len = 0;
+    int line_buff_disp;
     char *atomname;
     int c;
     Cell new_list;
@@ -374,7 +374,8 @@ inline static xsbBool file_function(CTXTdecl)
     do {
       if (line_buff_disp >= line_buff_len) {
 	line_buff_len = line_buff_disp+MAX_IO_BUFSIZE;
-	line_buff = realloc(line_buff,line_buff_len);
+	if(!(line_buff = realloc(line_buff,line_buff_len)))
+	  xsb_exit("No space for line buffer");
       }
       *(line_buff+line_buff_disp) = c = getc(fptr);
       if (c == EOF) break;
@@ -399,6 +400,8 @@ inline static xsbBool file_function(CTXTdecl)
 
     ctop_tag(CTXTc 3, new_list);
     
+    if (line_buff) free(line_buff);
+
     /* this complex cond takes care of incomplete lines: lines that end with
        end of file and not with end-of-line. */
     //    if ((line_buff_disp>0) || (c != EOF))
