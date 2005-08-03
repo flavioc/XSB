@@ -153,13 +153,13 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       ivalue = int_val(value);
       if (ivalue > 0) 
 	bld_int(regaddr,ivalue);
-      else bld_oint(regaddr,-ivalue)
+      else bld_int(regaddr,-ivalue);
     } 
     else if (isboxedinteger(value)) {
       ivalue = boxedint_val(value);
       if (ivalue > 0) 
 	{bld_oint(regaddr,ivalue)}
-      else bld_oint(regaddr,-ivalue)
+      else bld_oint(regaddr,-ivalue);
     } 
     else if (isofloat(value) ) {
       fvalue = ofloat_val(value);
@@ -187,13 +187,13 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       fvalue = ofloat_val(value);
       if (fvalue > 0) 
       {
-          fvalue = floor(fvalue);
-          bld_boxedfloat(CTXTc regaddr,fvalue);
+          ivalue = (prolog_int) floor(fvalue);
+          bld_oint(CTXTc regaddr,ivalue);
       }
       else 
       {
-          fvalue = -floor(-fvalue);
-          bld_boxedfloat(CTXTc regaddr,fvalue);
+          ivalue = (prolog_int) -floor(-fvalue);
+          bld_oint(CTXTc regaddr,ivalue);
       }
     } else return 0;
     break;
@@ -208,8 +208,8 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
     }
     else if (isofloat(value)) {
       fvalue = ofloat_val(value);
-      fvalue = floor(fvalue+0.5);
-      bld_boxedfloat(CTXTc regaddr, fvalue);
+      ivalue = (prolog_int) floor(fvalue+0.5);
+      bld_oint(CTXTc regaddr, ivalue);
     } else return 0;
     break;
   case FUN_ceiling:
@@ -223,8 +223,8 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
     }
     else if (isofloat(value)) {
       fvalue = ofloat_val(value);
-      fvalue = -floor(-fvalue);
-      bld_boxedfloat(CTXTc regaddr,fvalue);
+      ivalue = (prolog_int) -floor(-fvalue);
+      bld_oint(CTXTc regaddr,ivalue);
     } else return 0;
     break;
   default:  return 0;
