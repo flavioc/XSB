@@ -126,14 +126,14 @@ case IS_INCOMPLETE: {
                 break ;
         waiting_for_thread = find_context(table_tid) ;
         if( would_deadlock( waiting_for_thread, th ) )
-#ifndef BREAK_DEADLOCK
-                xsb_exit( "deadlock in concurrent tabling detected" );
-#else
-	{	reset_leader( th ) ;
+	{	/* code for leader */
+                reset_other_threads( th, waiting_for_thread, producerSF );
+                th->deadlock_brk_leader = TRUE ;
+                pthread_cond_broadcast(&completing_cond) ;
+		reset_leader( th ) ;
                 pthread_mutex_unlock(&completing_mut) ;
 		return TRUE ;
 	}
-#endif
 	th->waiting_for_subgoal = producerSF ;
         th->waiting_for_thread = waiting_for_thread ;
         pthread_mutex_unlock(&completing_mut);

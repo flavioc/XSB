@@ -191,16 +191,12 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 		break ;
 	waiting_for_thread = find_context(table_tid) ;
 	if( would_deadlock( waiting_for_thread, th ) )
-#ifndef BREAK_DEADLOCK
-		xsb_exit( "deadlock in concurrent tabling detected" );
-#else
         {       /* code for leader */
                 reset_other_threads( th, waiting_for_thread, producer_sf );
                 th->deadlock_brk_leader = TRUE ;
                 pthread_cond_broadcast(&completing_cond) ;
                 continue ;
         }
-#endif
         th->waiting_for_subgoal = producer_sf ;
         th->waiting_for_thread = waiting_for_thread ;
 	pthread_mutex_unlock(&completing_mut);
