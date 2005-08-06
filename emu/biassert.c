@@ -69,6 +69,8 @@ extern void remove_prog_seg(byte *);
 /* dbgen_inst: Generate an instruction in the buffer.			*/
 /*======================================================================*/
 
+#define MARKED_FOR_DELETION 66
+
 #define write_word(Buff,Loc,w) { *(CPtr)((pb)Buff + *(Loc)) = (Cell)(w); *(Loc) += 4; \
 				pad64bits(Loc); }
 #define write_byte(Buff,Loc,w) { *(pb)((pb)Buff + *(Loc)) = (byte)(w); *(Loc) += 1; }
@@ -1212,7 +1214,7 @@ typedef ClRef SOBRef ;
 	))
 
 #define ClRefNotRetracted(Cl) (cell_opcode(ClRefEntryAny(Cl))!=fail || \
-                               cell_operand1(ClRefEntryAny(Cl))!=66)
+                               cell_operand1(ClRefEntryAny(Cl))!=MARKED_FOR_DELETION)
 
 static void db_addbuff(byte, ClRef, PrRef, int, int, int); 
 static void db_addbuff_i(byte, ClRef, PrRef, int, int *, int, prolog_term, int);
@@ -1981,6 +1983,72 @@ ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
                                 NewestCl = next_in_buffer(NewestCl))
 #define remove_from_buffer() (OldestCl = next_in_buffer(OldestCl))
 
+/********************************************************************/
+// TLS: working area, to be ignored, for now.
+
+/* 
+   First check whether freeze registers are active.  If so, then skip
+   gc for now, as I'm not sure how traverse all paths in the CP stack.
+*/
+
+char *trie_node_type_table[] = {"interior_nt","hashed_interior_nt","leaf_nt",
+			   "hashed_leaf_nt","hash_header_nt","undefined",
+			   "undefined","undefined","trie_root_nt"};
+
+char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
+				"ts_answer_trie_tt","delay_trie_tt",
+				"assert_trie_tt","intern_trie_tt"
+};
+
+void gc_clauses_follow_par_chain(CTXTdeclc BTNptr pLeaf)
+{
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
+			       ((int) TN_Instr(pLeaf) != 0x94) ) {
+    printf("%x, Trie type: %d %s Node type: %d %s\n",pLeaf,
+	   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
+	   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)]);
+    pLeaf = BTN_Parent(pLeaf);
+  }
+  printf("%x,Type for Root: %d %s, Node for Root: %d %s Parent %x\n", pLeaf,
+	 TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
+	 TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
+	 TN_Parent(pLeaf));
+}
+
+void gc_clauses(CTXTdecl) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int trie_type;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  if (bfreg < cp_bot && bfreg > 0) {
+    printf("skipping gc_clauses because of freezes\n");
+  }
+  else {
+    cp_top = breg ;				 
+    while ( cp_top < cp_bot ) {
+      cp_inst = *(byte *)*cp_top;
+      printf("Cell %x (%s)\n",cp_top,
+	     (char *)(inst_table[cp_inst][0])) ;
+      if ( ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80)
+	   || ((int) cp_inst >= 90 && (int) cp_inst <= 0x94) ) {
+	printf("found a trie instruction ^\n");
+	trie_type = (int) TN_TrieType((BTNptr) *cp_top);
+	printf("Trie type: %d %s\n",
+	       trie_type,trie_trie_type_table[trie_type]);
+	if (trie_type < 4) {
+	  printf("would abort here\n");
+	}
+      }
+      cp_top = cp_prevbreg(cp_top);
+    }
+  }
+}
+
+
+/********************************************************************/
 /* Insert in retract buffer and remove old clauses */
 
 #define delete_clause(Clause)\
@@ -2056,6 +2124,7 @@ static int force_retract_buffers()
 }
 
 
+
 static int retract_clause( ClRef Clause, int retract_nr )
 {
   xsb_dbgmsg((LOG_RETRACT,"Retract clause(%p) op(%x) type(%d)",
@@ -2065,20 +2134,23 @@ static int retract_clause( ClRef Clause, int retract_nr )
         case UNINDEXED_CL:
 	    /* set fail for retract_nr AND protection */
 	  if (cell_opcode(ClRefEntryPoint(Clause)) == fail &&
-	      cell_operand1(ClRefEntryPoint(Clause)) == 66) 
+	      cell_operand1(ClRefEntryPoint(Clause)) == MARKED_FOR_DELETION) 
 	    retract_nr = 1;  /* previously scheduled for deletion */
 	  else {
 	    cell_opcode(ClRefEntryPoint(Clause)) = fail ;
-	    cell_operand1(ClRefEntryPoint(Clause)) = 66;
+	    cell_operand1(ClRefEntryPoint(Clause)) = MARKED_FOR_DELETION;
 	  }
 	  break ;
         case INDEXED_CL:
-	  if (cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) == fail 
-	      && cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) == 66)
+	  if (cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
+	           == fail 
+	      && cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
+	           == MARKED_FOR_DELETION)
 	    retract_nr = 1;  /* previously scheduled for deletion */
 	  else {
 	    cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = fail ;
-	    cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = 66;
+	    cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
+	            = MARKED_FOR_DELETION;
 	  }
 	  break ;
         case SOB_RECORD:

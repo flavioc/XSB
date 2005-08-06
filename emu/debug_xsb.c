@@ -160,6 +160,7 @@ static void print_term(FILE *fp, Cell term, byte car, int level)
     return;
   case XSB_FLOAT:
     fprintf(fp, "%f", float_val(term));
+    fprintf(fp, "%f", ofloat_val(term));
     return;
   case XSB_LIST:
     cptr = clref_val(term);

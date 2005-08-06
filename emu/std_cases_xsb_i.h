@@ -148,3 +148,6 @@
     /* r2: +list of sort paramater specs			*/
     /* r3: ?sorted list of terms			*/
    return parsort(CTXT);
+
+  case GC_CLAUSES: 
+  return gc_clauses(CTXT);

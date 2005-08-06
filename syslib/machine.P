@@ -295,6 +295,8 @@ print_all_stacks :- print_all_stacks.
 expand_heap :- expand_heap.
 mark_heap(X) :- mark_heap(X).
 gc_heap :- gc_heap.
+gc_clauses:- '_$builtin'(GC_CLAUSES).
+
 '$$findall_init'(_I,_C) :- '$$findall_init'(_I,_C).
 '$$findall_add'(_T,_I,_C) :- '$$findall_add'(_T,_I,_C).
 '$$findall_get_solutions'(_L,_T,_I,_C) :-

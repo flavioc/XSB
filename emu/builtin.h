@@ -228,6 +228,8 @@
 #define KEYSORT			221
 #define PARSORT			222
 
+#define GC_CLAUSES              223
+
 #define ORACLE_QUERY		230
 #define ODBC_EXEC_QUERY		231
 
@@ -237,9 +239,6 @@
 
 #define THREAD_REQUEST		235
 #define MT_RANDOM_REQUEST       236
-
-/* TLS: took out DUMMY = 235 -- don't know why it was here */
-
 
 /* added by dsw to support profiling, and backtracing */
 #define XSB_PROFILE             237

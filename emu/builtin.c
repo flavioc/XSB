@@ -156,7 +156,7 @@ extern void retrieve_prof_table();
 
 extern xsbBool assert_code_to_buff(CTXTdecl), assert_buff_to_clref(CTXTdecl);
 extern xsbBool gen_retract_all(CTXTdecl), db_retract0(CTXTdecl), 
-	       db_get_clause(CTXTdecl);
+  db_get_clause(CTXTdecl), gc_clauses(CTXTdecl);
 extern xsbBool db_get_last_clause(CTXTdecl);
 extern xsbBool db_build_prref(CTXTdecl), db_remove_prref(CTXTdecl), 
 	       db_reclaim0(CTXTdecl);
@@ -883,6 +883,8 @@ void init_builtin_table(void)
   set_builtin_table(KEYSORT, "keysort");
   set_builtin_table(PARSORT, "parsort");
 
+  set_builtin_table(GC_CLAUSES, "gc_clauses");
+
   set_builtin_table(ORACLE_QUERY, "oracle_query");
   set_builtin_table(ODBC_EXEC_QUERY, "odbc_exec_query");
   set_builtin_table(SET_SCOPE_MARKER, "set_scope_marker");
@@ -950,6 +952,47 @@ inline static int abolish_table_predicate(CTXTdeclc Psc psc)
   return 1;
 }
 
+/* TLS: for use in abolish_all_tables. Aborts if it detects the
+   presence of CPs for completed tables (incomplete tables are caught
+   as before, by examining the completion stack).  abolish_table_pred
+   will have something similar, but will actually make use of GC.
+*/
+
+void abolish_table_cps_check(CTXTdecl) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int trie_type;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  if (bfreg < cp_bot && bfreg > 0) {
+      xsb_abort("[abolish_all_tables/0] Illegal table operation"
+		"\n\t Cannot abolish incomplete tables");
+    //    printf("skipping gc_clauses because of freezes\n");
+  }
+  else {
+    cp_top = breg ;				 
+    while ( cp_top < cp_bot ) {
+      cp_inst = *(byte *)*cp_top;
+      /* Check for trie instructions */
+      if ( ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80)
+	   || ((int) cp_inst >= 90 && (int) cp_inst < 0x94) ) {
+	trie_type = (int) TN_TrieType((BTNptr) *cp_top);
+	//	printf("Trie type: %d %s\n",
+	//     trie_type,trie_trie_type_table[trie_type]);
+	/* Here, we want call_trie_tt,basic_answer_trie_tt,
+	   ts_answer_trie_tt","delay_trie_tt */
+	if (trie_type < 4) {
+	  xsb_abort("[abolish_all_tables/0] Illegal table operation"
+		"\n\t Backtracking through tables to be abolished.");
+	}
+      }
+      cp_top = cp_prevbreg(cp_top);
+    }
+  }
+}
+
 inline static void abolish_table_info(CTXTdecl)
 {
   CPtr csf;
@@ -960,6 +1003,8 @@ inline static void abolish_table_info(CTXTdecl)
     if ( ! is_completed(compl_subgoal_ptr(csf)) )
       xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		"\n\t Cannot abolish incomplete tables");
+
+  abolish_table_cps_check(CTXT) ;
 
   for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
     TIF_CallTrie(pTIF) = NULL;
