@@ -2402,6 +2402,10 @@ Note that 1.0 will never be generated.
     \texttt{Z} must be integers in the ranges [1,30269), [1,30307),
     [1,30323), respectively.
 
+\ournewitem{datime\_setrand}{random} \index{\texttt{datime\_setrand/0}}
+This simple initialization utility sets the random seed triple based on a
+function of the current day, hour, minute and second. 
+
 \ournewitem{randseq(+K, +N, -RandomSeq)}{random} \index{\texttt{randseq/3}}
     Generates a sequence of \texttt{K} unique integers chosen randomly
     in the range from 1 to \texttt{N}.  \texttt{RandomSeq} is not

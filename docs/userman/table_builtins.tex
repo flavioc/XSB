@@ -10,63 +10,57 @@ In XSB, tables are designed so that they can be used transparently by
 computations.  However, it is necessary to first inform the system of
 which predicates should be evaluated using tabled resolution
 (\refsec{sec:CompilerOptions}), and whether variant or subsumptive
-tabling shoud be used (\refsec{sec:TablingStrategies}).  Further, it
+tabling shoud be used (\refchap{chap:TablingOverview}).  Further, it
 is often useful to be able to explicitly inspect a table, or to alter
 its state.  The predicates described in this section are provided for
 these purposes.  In order to ground the discussion of these
 predicates, we continue our overview of tables and table creation from
 \refchap{chap:TablingOverview}.  For a detailed description of the
 implemntation of table access routines in XSB, the reader is referred
-to~\cite{RRSSW98,TST99,CuSW99b}.
+to~\cite{RRSSW98,TST99,CuSW99b} and other papers listed in the
+bibliography.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \subsubsection*{Tables and Table Entries}
 
-For our purposes, a table can be seen as a set of entry triples $\langle
+Abstractly, a table can be seen as a set of entry triples $\langle
 S,\cA,Status \rangle$ where $S$ is a subgoal, $\cA$ is its associated
-answer set, and $Status$ its status~---~whether it is \texttt{complete}
-or \texttt{incomplete}.  In terms of implementation, ``the table'' is
-actually a set of minitables, each one containing entries for a
-particular predicate.  Hence, we may refer to the table containing
-entries for some predicate \code{p/n} as ``the table for \code{p/n}.''
-Further recall that a particular predicate may be evaluated according to
-either a variant or subsumptive strategy as chosen by the user.
-Invocation of a call during an evaluation leads to the classification of
-the call, as well as its possible insertion into the table.  Each call
-can be classified as either (a) a \emph{generator}, or \emph{producer},
-of an answer set, or (b) a \emph{consumer} of the answer set of some
-subgoal in the table.  Creation of a table entry relies not only on the
-call and the subgoals already present in the table, but upon the tabling
-strategy as well.  
+answer set, and $Status$ its status~---~whether it is
+\texttt{complete} or \texttt{incomplete}.  In terms of implementation,
+``the table'' is actually a set of minitables, each one containing
+entries for a particular predicate.  Hence, we may refer to the table
+containing entries for some predicate \code{p/n} as ``the table for
+\code{p/n}.''  Further recall that a particular predicate may be
+evaluated according to either a variant or subsumptive strategy as
+chosen by the user.  Invocation of a call during an evaluation leads
+to the classification of the call, as well as its possible insertion
+into the table.  Each call can be classified as either (a) a
+\emph{generator}, or \emph{producer}, of an answer set, or (b) a
+\emph{consumer} of the answer set of some subgoal in the table.
+Creation of a table entry thus relies not only on the call and on the
+subgoals already present in the table, but also upon whether
+call-variance or call-subsumption is used (cf. \cite{TST99}).
 
-\comment{ TLS: this wasn't entirely clear to me, so it may be
-confusing to users. 
-
-We note that a table constructed using a subsumption-based strategy
-may hence contain a producing subgoal which is subsumed by another.
-Under certain circumstances, it is also convenient to store certain
-subsumed (consumer) subgoals in the table~\cite{TST99}.  We bring
-these issues to the user's attention as inspection of a table may
-reveal such entries.  }
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \subsubsection*{Answers, Returns, and Templates}
 
 Given a table entry $(S,\cA,Status)$, each answer in $\cA$ is
 maintained in XSB as an {\em answer substitution}, that is a
-substitution to the variables of $S$\@.  The table inspection predicates
-allow access to answer substitutions through a term whose principle
-functor is \retn, where \code{n} is the number of distinct variables
-in the producer subgoal.  The order of arguments in \retn{}
-corresponds to the order of distinct variables in a left-to-right
-traversal of $S$.
+substitution to the variables of $S$\@.  The table inspection
+predicates allow access to answer substitutions through a family of
+terms whose principle functors are \retn, where \code{n} is the number
+of distinct variables in the producer subgoal.  The order of arguments
+in \retn{} corresponds to the order of distinct variables in a
+left-to-right traversal of $S$.
 
 \begin{example}
-Let $S =$ \code{p(X,f(Y))} be a producer subgoal and $\alpha =$
-\code{\{X=a,Y=b\}} be an answer substitution.  The representation of
-$\alpha$ as a return is \code{ret(a,b)} and the application of that
-return to $S$ yields the answer \code{p(a,f(b))}.\fillBox
+Let $S =$ \code{p(X,f(Y))} be a producer subgoal (or simply, a subgoal
+if call-variance is used) and $\alpha =$ \code{\{X=a,Y=b\}} be an
+answer substitution.  The representation of $\alpha$ as a return is
+\code{ret(a,b)} and the application of bindings in that return to $S$
+yields the answer \code{p(a,f(b))}.\fillBox
 \end{example}
 
 In a similar manner, XSB maintains substitutions between producer
@@ -97,21 +91,21 @@ a variant of $S$, selects all returns of $S$ such that
 
 \index{skeleton}
 
-\emph{Skeletal information} refers to the name and arity of the
-primary functor of a term.  A \emph{skeleton} for a functor \code{f/n}
-is any structure of the form \code{f($Arg_1$,\ldots,$Arg_n$)} where
-$Arg_i$ can be any term.  Thus the skeletal information derived from
-the skeletons \code{f(1,2)} and \code{f(A,B)} would be the same.  A
-\emph{return skeleton} is a specific application of this notion to
-answer returns.  From it, one may discern the size of the template for
-a given subgoal.  Finally, we assume that a predicate specification
-for a predicate \code{p} and arity \code{n}, represented as
+A \emph{skeleton} for a functor \code{f/n} is a structure of the form
+\code{f($Arg_1$,\ldots,$Arg_n$)} where each $Arg_i$ is a distinct
+variable.  Similarly the skeleton of a term is the skeleton formed
+from the prinicple functor of the turm, so that skeletons from the
+terms \code{f(1,2)} and \code{f(A,B)} are the same.  A \emph{return
+  skeleton} is a specific application of this notion to answer
+returns.  From it, one may discern the size of the template for a
+given subgoal.  Finally, we assume that a predicate specification for
+a predicate \code{p} and arity \code{n}, represented as
 \code{PredSpec} below, can be given either using the notation
-\code{p/n} or as a skeleton, \code{p($t_1$,\ldots,$t_n$)} for any term
-$t_i$.
+\code{p/n} or as a skeleton, \code{p($t_1$,\ldots,$t_n$)}.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+\comment{
+TLS: Unnecessary, as exceptions are described elsewhere
 \subsubsection*{Exceptions}
 
 Exceptions caught by the following predicates include:
@@ -121,11 +115,11 @@ Exceptions caught by the following predicates include:
 \item[Table Error] Argument does not contain a tabled predicate, or a valid
         reference to a table component.
 \end{description}
-
+}
 
 %--------------------------------------------------------------------------
 
-\subsection{Operators for Declaring and Modifying Tabled Predicates}
+\subsection{Declaring and Modifying Tabled Predicates}
 \label{sec:TablePred:Decl&Mod}
 \index{tabling!directives}\index{tabling!strategy selection}
 
@@ -135,7 +129,11 @@ Exceptions caught by the following predicates include:
 \ournewitem{table\ \ +P$_1$/N$_1$, \ldots, +P$_k$/N$_k$.}{Tabling}
 \index{\texttt{table/1}}
 %
-Declares each predicate denoted by \code{P$_i$/N$_i$} to be tabled.
+Used as a compiler declaration, it indicates that each predicate
+denoted by the predicate indicator \code{P$_i$/N$_i$} is to be
+compiled using tabling.  Executed as a directive in a state of
+execution where no clauses exist for {\tt P$_i$/N$_i$}, {\tt table/1}
+ensures that any clauses asserted for {\tt P$_i$/N$_i$} use tabling.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -143,8 +141,8 @@ Declares each predicate denoted by \code{P$_i$/N$_i$} to be tabled.
 \index{\texttt{use\_subsumptive\_tabling/1}}
 %
 Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
-to use subsumption-based tabling, thus overriding the current system
-default.  The tabling strategy can be changed at will through the
+to use call-subsumption, thus overriding the system default of call
+variance.  The tabling strategy can be changed at will through the
 invocation of this and the following predicate.  Note, however, that
 the table for the predicate must be empty at the time of the change.
 
@@ -154,8 +152,8 @@ the table for the predicate must be empty at the time of the change.
 \index{\texttt{use\_variant\_tabling/1}}
 %
 Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
-to use variant-based tabling, thus overriding the current system
-default.  The same comments apply as above.
+to use call-variance, thus overriding the current system default.  The
+same comments apply as for {\tt use\_subsumptive\_tabling/1}.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \end{description}
@@ -252,6 +250,18 @@ Searches the table for an entry whose subgoal is a \emph{variant} of
 entry is assigned to the second argument, while in the third, its
 return template is constructed.  These latter two arguments should be
 given as variables.
+
+{\bf Error Cases}
+\bi
+\item {\tt CallTerm} is not a callable term
+\bi
+\item {\tt domain\_error(callable,CallTerm)}
+\ei
+\item {\tt CallTerm} does not correspond to a tabled predicate
+\bi
+\item {\tt table\_error}
+\ei
+\ei
 
 \begin{minipage}{6in}
 \begin{example}\ \\
@@ -875,6 +885,18 @@ when the interpreter level is resumed.
 Removes the tables presently in the system and frees all the memory
 held by XSB for these structures.  Predicates which have been declared
 tabled remain so, but their table entries, if any, are deleted.
+
+{\bf Error Cases}
+\bi
+\item There are currently incomplete tables, or the choice point stack
+  contains choice points for backtracking through completed tables.
+\bi
+\item 	{\tt table\_error}
+\ei
+%
+%
+\ei
+
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
