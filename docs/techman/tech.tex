@@ -626,6 +626,12 @@ new          & T\_VISIBLE & T\_HIDDEN & T\_UNLOADED & T\_VISIBLE \\
 \label{t:envset}
 \end{table}
 %
+The environment type is stored in the low-order 2 bits fo the enb byte
+in the psc record.  The high-order 2 bits are used to store spy
+information used by the debugger.  Bit x20 is used to indicate that
+the predicate is a shared predicate (for multi-threading).  Bit 0x80
+is used to indicate that the predicate is tabled.
+
 \begin{table}\centering
 \begin{tabular}{l|l|l}
 \hline
@@ -706,10 +712,10 @@ instruction that enters the executable code defining the dynamic
 predicate.  (The instruction is a fail if there are no clauses at
 all.)  If the code is a trie (when using trie indexing), this
 instruction is a jump to the root trie-node.  If the code is regular
-dynamic code, the instruction is a jumptbreg, which saves a pointer to
-the current choicepoint in a register (made to be the next unused
-argument register) for use by cuts, and then jumps to enter the code
-that implements the asserted clauses.
+dynamic code, the instruction is a jumptbreg, which saves a pointer
+(actually displacement) to the current choicepoint in a register (made
+to be the next unused argument register) for use by cuts, and then
+jumps to enter the code that implements the asserted clauses.
 
 If the dynamic predicate is tabled, then the psc entry point points to
 a ``table wrapper'' structure which contains code that simulates a
@@ -731,7 +737,7 @@ of the predicate for the assertz operation.
 Figure \ref{fig:dynamic-code} shows a simple layout.
 
 Assert (a/z) works by first using the function
-assert\_code\_to\_buff\_p to generating code into a buffer, and then using
+assert\_code\_to\_buff\_p to generate code into a buffer, and then using
 the function assert\_buff\_to\_clref\_p to link the buffer into the index
 structure for the clauses already there.
 
@@ -745,9 +751,9 @@ register allocation strategy.  If a clause has a complex body, then
 the body will be compiled as a single call to the ``,'' (or
 conjunction, or or, or if-then-else, or whatever control) predicate.
 Cuts are supported by transforming the clause to have an extra
-argument which is the choicepoint address to use when cutting (with
-put(tp)breg).  This address is set during execution by the jumptbreg
-that initially enters the dynamic code.
+argument which is the choicepoint address (actually displacement) to
+use when cutting (with put(tp)breg).  This address is set during
+execution by the jumptbreg that initially enters the dynamic code.
 
 The more complex operation of adding the code into the indexing
 structure for the dynamic predicate is done by the function
@@ -765,7 +771,7 @@ declaring an index of 0.)  In this case, a {\em Clause Reference Type
                 4: (cont) Addr of next ClRef on chain
                 8+: BC for asserted clause
 \end{verbatim}
-In effect words are prepended to the buffer containing the bytecode
+In effect words are prepended to the buffer that contains the bytecode
 for the asserted clause.  These words allow the buffers to be kept in
 a doubly linked chain.  The first word is the length of the entire
 buffer, including the bytecode; the second is the address of the
@@ -822,7 +828,7 @@ first word is the length of the buffer (or'ed with 3 to indicate that
 it is a ClRefI buffer); the second word is a pointer to the ClRefI of
 the previous clause in this predicate; the third and fourth words are
 a trymeelse-type bytecode instruction (again a noop, try, retry, or
-trust, depending of its location in the chain) whose second word
+trust, depending on its location in the chain) whose second word
 participates in the forward chain of all clauses in the predicate.
 Again branching to the address of the first ClRefI structure (note
 that is a try-retry-trust chain) will backtrack through all the
@@ -881,7 +887,7 @@ symbol (or whatever), finds the corresponding entry in the hash table
 address.  That address will point to a chain of ClRefI blocks for the
 clauses in that hash bucket.  If the argument is not bound, and so
 cannot be indexed on, it falls through, to the 5th word in the block.
-The 5th and 6th words contain a bytecode instruction which with branch
+The 5th and 6th words contain a bytecode instruction which will branch
 to the appropriate code to try next (or fail if there are no clauses
 in this hashtable at all.)  If this is the last index to try, then it
 will be a branch to the ClRefI block of the first asserted clause
@@ -904,7 +910,7 @@ p(X) :- p2(X).
                          p2(d).
 \end{verbatim}
 where p1/1 and p2/1 are ``fully'' indexed.  Note that something like
-this is required to preserve the order of clauses demanded by Prolog
+this is required to preserve the order of clauses as demanded by Prolog
 semantics.
 
 At any point we can add a new ClRef0 or ClRef1 block to the chain of
@@ -940,28 +946,47 @@ place, overwriting code with fail instructions to get the effect of
 removing clauses but not changing the data structure.
 
 \subsubsection{Multi-threading and Dynamic Code}
-In the multi-threading engine, dynamic code is intended to be global
-by default.  We have tried to make assert (-a and -z) thread-safe.
-(Retract is {\bf not} thread-safe and must be used with great care.
-See previous discussion.)
+In the multi-threading engine, dynamic code may be shared (or global)
+or private (or local.)  Shared dynamic code means that every thread
+will see, and operate, on the clauses of the predicate.  Private
+dynamic code means that each thread will work with its own version of
+the predicate, not seeing any clauses in any other thread's version.
+Dynamic code is private by default.  The user may declare a predicate
+to be shared with a declaration:
+\begin{verbatim}
+:- thread_shared Name/Arity.
+\end{verbatim}
+Note that the {\em predicate} is shared or private, so all threads
+must agree on the shared/private status of the predicate.
 
-Assert (and retract) when they are manipulating the dynamic data
-structure use a mutex to lock out other modifiers.  However, readers
-are not locked out, so there is a possibility of a reader of a dynamic
-predicate being interrupted {\em at any point} by assert, which then
-changes the data structure the reader is looking at.  We separate the
-issues for assertz and asserta.  For assertz, we don't need locks.  We
-need only have a single word assignment be atomic.  We can set up the
-data structures so that everything currently there is unchanged,
-except the dyntrustmeelsefail instruction that must be changed to a
-retrymeelse instruction.  We can change the second word of the
-dyntrustmeelsefail without bothering a reader since that word is
-ignored in its execution.  Then by changing the first word of that
-instruction atomically, the data structure will be correct before and
-after that single assignment.  So by doing things in this order, we
-can ensure that the assertz does not interfere with any reader.  The
-other possible situation, that with one clause (a noop) being changed
-to trymeelse, can be handled similarly.
+For shared dynamic code, we have tried to make assert (-a and -z)
+thread-safe.  (Retract is {\bf not} thread-safe and must be used with
+great care.  See previous discussion.)
+
+For private dynamic code, both assert[a/z] and retract[all] are
+thread-safe.  Private code is implemented by interposing a ``dispatch
+table'' between the jump from the psc record and the PrRef (or
+tabletrysingle code).  There is an instruction switchonthread that
+branches through thte table based on the current thread.
+
+For shared predicates assert (and retract) use a mutex to lock out
+other code modifiers when they are manipulating the dynamic data
+structure.  However, readers are not locked out, so there is a
+possibility of a reader of a dynamic predicate being interrupted {\em
+at any point} by assert, which then changes the data structure the
+reader is looking at.  We separate the issues for assertz and asserta.
+For assertz, we don't need locks.  We need only have a single word
+assignment be atomic.  We can set up the data structures so that
+everything currently there is unchanged, except the dyntrustmeelsefail
+instruction that must be changed to a retrymeelse instruction.  We can
+change the second word of the dyntrustmeelsefail without bothering a
+reader since that word is ignored in its execution.  Then by changing
+the first word of that instruction atomically, the data structure will
+be correct before and after that single assignment.  So by doing
+things in this order, we can ensure that the assertz does not
+interfere with any reader.  The other possible situation, that with
+one clause (a noop) being changed to trymeelse, can be handled
+similarly.
 
 The more difficult issue is with asserta.  Here (in the general case)
 we have an existing trymeelse instruction and we need to add a new
