@@ -39,11 +39,11 @@
 /************************************************************************/
 
 
-% db_retract(+Head,+Body,+Prref) deletes clauses and reclaims space
+% db_retract(+Head,+Body,+PredEP) deletes clauses and reclaims space
 
-db_retract(Head,Body,Prref) :-
+db_retract(Head,Body,PredEP) :-
 	goal_cut_trans_a(Body,Tbody,_),
-	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
+	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
 	(Result == trie
 	 ->	call_trie_retract(Head,Body,Clref,TrieNodeAddr)
@@ -53,9 +53,9 @@ db_retract(Head,Body,Prref) :-
 
 
 %% Don''t reclaim space
-db_retract_nr(Head,Body,Prref) :-
+db_retract_nr(Head,Body,PredEP) :-
 	goal_cut_trans_a(Body,Tbody,_),
-	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
+	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
 	(Result == trie
 	 ->	call_trie_retract_nr(Head,Body,TrieNodeAddr)
@@ -64,8 +64,9 @@ db_retract_nr(Head,Body,Prref) :-
 	).
 
 db_do_retract(1,_Clref,_) :- !, fail.
-db_do_retract(2,_Clref,_) :- abort('Cannot erase compiled code').
-db_do_retract(_Typ,Clref,DontReclaim) :- db_retract0(Clref,DontReclaim).
+db_do_retract(2,_Clref,_) :- !, abort('Cannot erase compiled code').
+db_do_retract(_Typ,Clref,DontReclaim) :-
+	db_retract0(Clref,DontReclaim).
 
 % transform a goal to turn cuts (!) into '_$cutto's. Differs from
 % goal_cut_trans in that variables are not wrapped with call/1,
@@ -90,11 +91,11 @@ hack_consult([X],consult(X)) :- !.
 hack_consult([X|Y],(consult(X),Z)) :- !,hack_consult(Y,Z).
 
 
-% db_retractall(+Call,+Prref) deletes all clauses matching a pattern
+% db_retractall(+Call,+PredEP) deletes all clauses matching a pattern
 
-db_retractall(Call,Prref) :-
-	( is_most_general_term(Call) ->	db_retract_abol(Prref)
-	;   db_retract(Call,_,Prref)
+db_retractall(Call,PredEP) :-
+	( is_most_general_term(Call) ->	db_retract_abol(PredEP)
+	;   db_retract(Call,_,PredEP)
 	),
 	fail.
 db_retractall(_,_).
@@ -110,41 +111,22 @@ sets a choice point so that cuts in asserted code may be handled, and
 then jumps. */
 
 %%:- import writeln/1 from standard.
-db_retract_abol(Prref1) :-
-	buff_byte(Prref1,0,Op1),
-	((Op1 =:= 197 ; Op1 =:= 192)   % tabletryfail or tabletrysingle
-	 ->	buff_word(Prref1,24,Prref)
-	 ;	Prref = Prref1
-	),
-	buff_byte(Prref,0,Op),
-	(Op =\= 248	% fail	
-	 ->	(Op =:= 240  % jump to trie code?
-		 ->	buff_word(Prref,4,Buffaddr),
-			buff_word(Buffaddr,12,TrieInst),
-			buff_byte(TrieInst,0,Inst),
-			(Inst =:= 124   %% trie instruction
-			 ->	gen_retract_all(Prref)  %% abolish trie
-			 ;	abort('retractall: inconsistent code structure')
-			)
-		 ;	gen_retract_all(Prref)
-		)
-	 ;	true
-	),
-	buff_set_byte(Prref,0,248).	% fail
+db_retract_abol(PredEP1) :-
+	gen_retract_all(PredEP1).
 
-
-/* db_abolish(+Prref) deletes all clauses of a predicate and abolishes
+/* db_abolish(+Psc) deletes all clauses of a predicate and abolishes
 its prref structures */
 
-db_abolish(Prref) :-
-	db_retract_abol(Prref),
-        db_remove_prref(Prref).
+db_abolish(Psc) :-
+	psc_ep(Psc, PredEP),
+	db_retract_abol(PredEP),
+        db_remove_prref(Psc).
 
-% db_clause(+Head,?Body,+Prref,-Clref) retrieves a clause.
+% db_clause(+Head,?Body,+PredEP,-Clref) retrieves a clause.
 
-db_clause(Head,Body,Prref,Clref) :-
+db_clause(Head,Body,PredEP,Clref) :-
 	goal_cut_trans_a(Body,Tbody,_),
-	db_get_clauses(Prref,0,Head,0,Clref,Typ,EntryP),
+	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
 	(Typ =:= 2	% compiled code
 	 ->	chk_if_trie_assert(Clref,Result,_),
 		(Result == trie
@@ -164,7 +146,7 @@ db_clause_match(Head,Body,Entry) :-
 	log_ith(0,GlobVar,BodyStore),
 	BodyStore = '_$body'(true), % init first time, and match subsequent
 	(db_do_call(Entry,Head)
-	 ->	stat_set_flag(CLAUSE_INT,0),
+	 ->  	stat_set_flag(CLAUSE_INT,0),
 		BodyStore = '_$body'(Body0), % get body as set in interrupt
 		(Body0 == true
 		 ->	Body = true
@@ -181,7 +163,7 @@ db_clause_match(Head,Body,Entry) :-
 	).
 
 db_clause_match_trassert(Head) :-
-	stat_set_flag(CLAUSE_INT,0),
+%%	stat_set_flag(CLAUSE_INT,0),  % why was this here?
 	call_c(Head).
 
 
@@ -209,14 +191,14 @@ db_do_call(Entry, Head) :-
 	term_set_arg(BodyStore,1,Call,1).
 
 
-%% db_get_clauses(+Prref,+Ind, +Term, +Failed, -Clref,-Typ,Entp) returns Clrefs
+%% db_get_clauses(+PredEP,+Ind, +Term, +Failed, -Clref,-Typ,Entp) returns Clrefs
 %%       for each clause whose head might unify with Term. It uses the SOB 
 %%       index blocks to efficiently find them. It may return clauses whose
 %%	head won''t unify with Term. (Ind is no longer used.)
 %%	Failed means fetch retract(ed)_nr clauses.
 
-db_get_clauses( PrRef, _Index1, Head, Failed, ClRef, Typ, EntryP ) :-
-	db_get_clauses0( PrRef, Head, Failed, ClRef, Typ, EntryP ).
+db_get_clauses( PredEP, _Index1, Head, Failed, ClRef, Typ, EntryP ) :-
+	db_get_clauses0( PredEP, Head, Failed, ClRef, Typ, EntryP ).
 	
 
 %% db_get_clauses0 calls the builtin, db_get_clause, to get the next ClRef.  It
@@ -252,8 +234,8 @@ db_get_clauses1(ClRef0,CurrILvl0,CurrInd0,PrRef,Head,Failed,
 /* that were erased without reclaiming their space.			*/
 /************************************************************************/
 
-db_reclaim_space(Head,Prref):-
-	db_get_clauses(Prref,0,Head,1,Clref,Typ,_IndLevel),
+db_reclaim_space(Head,PredEP):-
+	db_get_clauses(PredEP,0,Head,1,Clref,Typ,_IndLevel),
 	db_reclaim0(Clref,Typ),
 	fail.
 db_reclaim_space(_,_).
@@ -295,7 +277,7 @@ trie_retract_clref_nr(_WhatToDo) :- '_$builtin'(TRIE_RETRACT_SAFE).
 % will result.
 
 call_trie_retract_nr(Head,true,NodeAddr) :-
-	%write(call_trie_retract_nr(Head,Body,Prref,Clref)),write(':'),
+	%write(call_trie_retract_nr(Head)),write(':'),
 	repeat,
 	(trie_retract_clref(0), % Zero out Last_Nod_Sav
 	 root_is_not_null(NodeAddr),

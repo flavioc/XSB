@@ -91,8 +91,10 @@ extern xsbBool quotes_are_needed(char *string);
 
 double realtime_count;
 
+#ifndef MULTI_THREAD
 extern int asynint_val;	/* 0 - no interrupt (or being processed) */
 extern int asynint_code;	/* 0 means keyboard interrupt */
+#endif
 
 extern void dis(xsbBool), debug_call(CTXTdeclc Psc);
 extern void total_stat(CTXTdeclc double);
@@ -382,6 +384,9 @@ void init_interrupt(void);
    can be called from interprolog_callback.c */
 void keyint_proc(int sig)
 {
+#ifdef MULTI_THREAD
+  th_context *th = find_context(xsb_thread_self());
+#endif
 #ifndef LINUX
   init_interrupt();  /* reset interrupt, if using signal */
 #endif
@@ -423,7 +428,7 @@ void init_interrupt(void)
  */
 void intercept(CTXTdeclc Psc psc) {
 
-  if (flags[CLAUSE_INT])
+  if (clause_int)
     synint_proc(CTXTc psc, MYSIG_CLAUSE);
   else if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
     if (get_spy(psc)) { /* spy'ed pred, interrupted */
@@ -797,6 +802,9 @@ extern long if_profiling;
 extern long prof_flag;
 
 void setProfileBit(void *place_holder) {
+#ifdef MULTI_THREAD
+  th_context *th = find_context(xsb_thread_self());
+#endif
   while (TRUE) {
     if (if_profiling) {
       asynint_val |= PROFINT_MARK;

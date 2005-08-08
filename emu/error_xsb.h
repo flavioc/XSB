@@ -102,8 +102,6 @@ extern char *xsb_segfault_message; /* Put your segfault message here prior to
 extern void (*xsb_default_segfault_handler)(int); /* where the previous value
 						     of the SIGSEGV handler is
 						     saved */ 
-extern jmp_buf xsb_abort_fallback_environment; /* Environment for abort
-						  longjump saved here */
 
 extern int print_xsb_backtrace(CTXTdecl);
 
@@ -123,11 +121,6 @@ typedef struct
 	struct ClRefHdr *FirstClRef ;
 	struct ClRefHdr *LastClRef ;
 }	*PrRef, PrRefData ;
-
-typedef struct ClRefHdr
-{	unsigned long buflen ;
-	struct ClRefHdr *prev ;
-}	*ClRef, ClRefData, ClRefHdr ;
 
 xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term, byte, PrRef, int,
 			       prolog_term, int, ClRef *);

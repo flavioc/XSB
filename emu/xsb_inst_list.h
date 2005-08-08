@@ -197,7 +197,7 @@ XSB_INST(0xb1, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xb2, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xb3, switchonbound, _switchonbound, PPR, I, I,X);
 XSB_INST(0xb4, switchon3bound, _switchon3bound, RRR, I, I,X);
-XSB_INST(0xb5, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xb5, switchonthread, _switchonthread, PPP, L, X,X);
 XSB_INST(0xb6, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xb7, trymeorelse, _trymeorelse, PP, A, L,X);
 XSB_INST(0xb8, retrymeorelse, _retrymeorelse, PP, A, L,X);

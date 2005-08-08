@@ -45,7 +45,7 @@
 /* --------------- The following are working variables ----------------	*/
 
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
-extern TIFptr get_tip(Psc);
+extern TIFptr get_tip_or_tdisp(Psc);
 
 /*static FILE *filedes ;*/
 #define filedes stdout
@@ -124,7 +124,7 @@ static void dis_data_sub(Pair *chain_ptr, char* modname)
 	}
 	// TLS: should T_DYNA be checked, also???
 	if (get_type(temp) == T_PRED) {
-	  if (get_tip(temp) == NULL) 
+	  if (get_tip_or_tdisp(temp) == NULL) 
 	    fprintf(filedes, "'UNTABLED',"); 
 	  else 
 	    fprintf(filedes, "'TABLED',");

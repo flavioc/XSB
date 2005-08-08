@@ -31,6 +31,7 @@
 		/************************************/
 
 :- local dyn_op/3.	% make it local
+:- thread_shared 'dyn_op'(_,_,_).
 
 '_$op'(P, T, S) :- 
 	dyn_op(P, T, S),
@@ -111,6 +112,8 @@ deactivate_op(T, S) :-
 '_$op1'(1100,fx,(table)).	% Added for tabling
 '_$op1'(1100,fx,(use_variant_tabling)).		% Added for tabling
 '_$op1'(1100,fx,(use_subsumptive_tabling)).	% Added for tabling
+'_$op1'(1100,fx,(thread_shared)).	% Added for threads
+'_$op1'(1100,fx,(thread_private)).	% Added for threads
 '_$op1'(1100,fx,(edb)).		% Added for tabling
 '_$op1'(1100,fy,(index)).	% Not in the Prolog standard
 '_$op1'(1100,fy,(ti)).		% Added for transformational indexing
@@ -219,10 +222,12 @@ table to use. */
         ).
 
 :- dynamic '_$index1'(_,_,_).
+:- thread_shared('_$index1'(_,_,_)).
 :- assert('_$index1'(dyn_op(_,_,_),3,17)),
    assert('_$index1'('_$index'(_,_,_),1,29)).
 
 :- dynamic '_$trie_asserted1'(_).
+:- thread_shared('_$trie_asserted1'(_)).
 '_$trie_asserted'(Term) :- 
 	conpsc('_$trie_asserted1'(_),Psc),
 	psc_type(Psc, Type),
@@ -316,6 +321,7 @@ conv_one_indx(A,Arity,Aout) :-
 /* quick hack to get dynamic tabling in. robustify it!!! */
 
 :- dynamic '_$table1'(_).
+:- thread_shared('_$table1'(_)).
 '_$table'(Term) :- %% bootstrapping issue, since dynamic calls this.
 	conpsc('_$table1'(_),Psc),
 	psc_type(Psc, Type),
@@ -324,11 +330,12 @@ conv_one_indx(A,Arity,Aout) :-
          ;      fail     % table doesn't exist yet, so it is empty
         ).
 
-
 add_table(Spec) :-
 	mpa_to_skel(Spec,Call),
 	retractall('_$table1'(Call)),
-	assertai('_$table1'(Call),1).
+	assertai('_$table1'(Call),1),
+	term_psc(Call,Psc),
+	psc_set_tabled(Psc,1).  %% set it as tabled
 
 retract_table(Spec) :-
 	mpa_to_skel(Spec,Call),

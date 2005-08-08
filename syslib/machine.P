@@ -63,6 +63,11 @@ psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
 psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 psc_data(PSC, Data) :- psc_data(PSC, Data).
+psc_set_tabled(PSC, Bool) :- psc_set_tabled(PSC, Bool).
+
+psc_get_set_env_byte(_PSC, _And, _Or, _Res) :- '_$builtin'(PSC_GET_SET_ENV_BYTE).
+psc_set_shared(PSC, Bool) :- Or is Bool<<5, psc_get_set_env_byte(PSC,16'df,Or,_).
+psc_shared(PSC, Bool) :- psc_get_set_env_byte(PSC,255,0,Res), Bool is (Res >> 5) /\ 1.
 
 term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
 term_psc(Term, PSC) :- term_psc(Term, PSC).
@@ -183,6 +188,7 @@ db_retract0(_Clause,_DontReclaim) :- '_$builtin'(DB_RETRACT0).
 db_get_clause(_CC0,_CIL,_CI,_PrRef,_Head,_Failed,_Clause,_Type,_Entry,_NCIL,_NCI) :- 
 	'_$builtin'(DB_GET_CLAUSE).
 db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(DB_BUILD_PRREF).
+db_get_prref(_PSC,_PrRef) :- '_$builtin'(DB_GET_PRREF).
 db_remove_prref(_Prref) :- '_$builtin'(DB_REMOVE_PRREF).
 db_reclaim0(_Clause,_Type) :- '_$builtin'(DB_RECLAIM0).
 
@@ -324,6 +330,7 @@ conname(Con, Name) :-
 	).
 
 conpsc(Con, Psc) :-
+%%	term_psc(Con, Psc), Psc \== 0.
 	term_type(Con, Type),
 	( Type =:= XSB_STRUCT -> term_psc(Con, Psc)
 	; Type =:= XSB_STRING -> psc_insert(Con, 0, Psc, 0)

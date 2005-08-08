@@ -48,11 +48,9 @@
 
 :- import '_$index'/3, '_$trie_asserted'/1, retract_trie_index/1,
 	  retract_index/1, retract_table/1, mpa_to_skel/2  from file_op.
-:- import '_$table'/1 from file_op.
-
-:- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2, buff_byte/3,
-	  buff_word/3, conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
-  psc_tabled/2, psc_set_ep/2, unload_seg/1, db_build_prref/3,
+:- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2,
+	  conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
+  psc_set_ep/2, unload_seg/1, db_build_prref/3, db_get_prref/2,
   code_call/3, db_retract0/2
      from machine.
 :- import parsort/4 from machine.

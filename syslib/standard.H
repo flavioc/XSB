@@ -75,7 +75,7 @@
 	'\=='/2,	'@<'/2,		'@>'/2,		'@=<'/2,
 	'@>='/2,	';'/2,		','/2,		'->'/2,
 	':'/2,		'_$cutto'/1,	'_$savecp'/1.	
-
+:- export (thread_shared)/1, (thread_private)/1.
 
 /* --------------------------------------------------------------- */
 /*  exported predicates used in other modules (but not "standard")  */
@@ -102,7 +102,7 @@
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/2,
   fd2iostream/3      from file_io.
 :- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
-          add_trie_index/1, add_table/1
+  add_trie_index/1, add_table/1
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.

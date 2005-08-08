@@ -32,6 +32,7 @@
 	  current_loaded_file/1,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,
 	  ensure_loaded/1, ensure_loaded/2,
+          (thread_shared)/1,
 	  cvt_canonical/2.
 
 :- local load_dyn_retracted/5, load_dyn_trie_retracted/1,
@@ -47,16 +48,17 @@
 :- import predicate_property/2, current_input_port/1 from curr_sym.
 :- import default_assert_size/1 from config.
 :- import file_time/2, file_close/1 from file_io.
-:- import '_$index'/3, '_$trie_asserted'/1 from file_op.
+:- import '_$index'/3, '_$trie_asserted'/1, mpa_to_skel/2 from file_op.
 :- import compile_cH/5 from foreign.
 :- import conset/2, conget/2, gensym/2  from gensym.
 :- import add_hilog_symbol/1 from hilogsym.
 :- import libpath/1 from loader.
 :- import code_load/3, code_call/3, file_read_canonical/3,
   expand_filename/2, unload_seg/1, 
-	  buff_word/3, assert_code_to_buff/1, assert_buff_to_clref/6,
-	  conpsc/2, psc_ep/2, psc_tabled/2, psc_type/2, psc_name/2, slash/1,
-	  psc_arity/2, existing_file_extension/2, almost_search_module/5
+	  assert_code_to_buff/1, assert_buff_to_clref/6,
+	  conpsc/2, psc_type/2, psc_name/2, slash/1, psc_arity/2, 
+	  existing_file_extension/2, almost_search_module/5, db_get_prref/2,
+	  term_psc/2, psc_set_shared/2
      from machine.
 :- import get_p_mod/3, change_multifile_directive/3, open_or_xpp_file/2,
 	  '_$multifile'/1, '_$multifile1'/1,

@@ -103,8 +103,10 @@ Psc ret_psc[MAX_ARITY];
 
 char *list_dot;
 
+#ifndef MULTI_THREAD
 int asynint_code = 0;
 int asynint_val = 0;
+#endif
 
 int next_free_code = 0;
 unsigned long enc[16] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,

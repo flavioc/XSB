@@ -308,19 +308,7 @@ convert_to_dyna(PHead,Prref,ErrPred) :-
 	conpsc(PHead, PSC),
 	psc_type(PSC, SYMTYPE),
 	( SYMTYPE =:= T_DYNA ->			/* already dynamic */
-		psc_tabled(PSC, Tabled),
-		(Tabled =:= 0
-		 ->	psc_ep(PSC, Prref),		/* get the Prref */
-			buff_byte(Prref, 0, Tmp),
-			(Tmp =:= 124	/* a trie_assert_inst instruction!!*/
-			 ->	functor(PHead,P,_),
-				abort(('Asserting to trie_assert predicate: ',
-					P))
-			 ;	true
-			)
-		 ;	psc_ep(PSC, Prrefa),
-			buff_word(Prrefa, 24, Prref)	% !! into calld
-		)
+	   db_get_prref(PSC,Prref)
 	; SYMTYPE =:= T_ORDI  ->   	     /* undefined, it's first clause */
 		db_new_prref(PSC,PHead,Prref)
 	; SYMTYPE =:= T_UDEF  ->    	     /* unloaded, this is 1st clause */
@@ -349,31 +337,27 @@ convert_to_dyna(PHead,Prref,ErrPred) :-
 /*		4: Addr of first Clref on ALL chain			*/
 /*======================================================================*/
 
-db_new_prref(PSC,PHead,Prref) :-
-	('_$table'(PHead)
-	 ->	Tabled = 1
-	 ;	Tabled = 0
-	),
-	db_build_prref(PSC, Tabled, Prref).
+db_new_prref(PSC,_PHead,Prref) :-
+	db_build_prref(PSC, _Tabled, Prref).
 
 /*======================================================================*/
-/* get_dynamic_prref(+PHead,+CallingRef,-Prref):			*/
-/*	returns the Prref for the predicate that is the main functor	*/
+/* get_dynamic_pred_ep(+PHead,+CallingRef,-PredEP):			*/
+/*	returns the PredEP for the predicate that is the main functor	*/
 /*      symbol of PHead.  CallingRef is used in the error message	*/
 /*      thrown if PHead is a compiled predicate.  The predicate fails	*/
-/*      if PHead is undefined, and succeeds returning the Prref if	*/
+/*      if PHead is undefined, and succeeds returning the PredEP if	*/
 /*      PHead is a dynamic predicate.					*/
 /*									*/
 /*======================================================================*/
 
-get_dynamic_prref(Head,CallingPred,Prref) :-
+get_dynamic_pred_ep(Head,CallingPred,PredEP) :-
 	conpsc(Head, PSC),
 	psc_type(PSC,Type),
 	(Type =:= T_PRED		/* is compiled */
 	 ->	functor(Head,F,A),
 		permission_error(modify,static,F/A,CallingPred)
 	 ;	Type =:= T_DYNA, % is DYNA 
-		psc_ep(PSC, Prref) % get Prref
+		psc_ep(PSC, PredEP) % get PredEP
 	).
 	
 
@@ -403,16 +387,12 @@ retract(Rule) :-	% changed for multifile predicates (2/24/98)
 	 ;	retract0((Head :- Body))
 	).
 
-
-
-
-
 do_multifile_retract(Head, Body) :-
 	'_$multifile_retract'(Head, _, New_Head),
 	check_retract(New_Head, multifile_retract/1),
-	(get_dynamic_prref(New_Head,'retract/1',Prref)
+	(get_dynamic_pred_ep(New_Head,'retract/1',PredEP)
 	 ->	true
-	 ;	db_retract(New_Head, Body, Prref)
+	 ;	db_retract(New_Head, Body, PredEP)
 	).
 
 
@@ -422,8 +402,8 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract/1),
-	get_dynamic_prref(Head,'retract/1',Prref),
-	db_retract(Head, Body, Prref).
+	get_dynamic_pred_ep(Head,'retract/1',PredEP),
+	db_retract(Head, Body, PredEP).
 
 retractall(Fact) :-
 	call_xsb_hook(xsb_retract_hook(_),[Fact,true],all),
@@ -440,8 +420,8 @@ do_multifile_retractall(_).
 
 retractall0(Fact) :-
 	check_retract(Fact, retractall/1),
-	(get_dynamic_prref(Fact,'retractall/1',Prref)
-	 ->	db_retractall(Fact, Prref)
+	(get_dynamic_pred_ep(Fact,'retractall/1',PredEP)
+	 ->	db_retractall(Fact, PredEP)
 	 ;	true
 	).
 
@@ -451,13 +431,13 @@ retract_nr(Rule) :-
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract_nr/1),
-	get_dynamic_prref(Head,'retract_nr/1',Prref),
-	db_retract_nr(Head, Body, Prref).
+	get_dynamic_pred_ep(Head,'retract_nr/1',PredEP),
+	db_retract_nr(Head, Body, PredEP).
 
 reclaim_space(Fact) :-
 	check_retract(Fact, reclaim_space/1),
-	(get_dynamic_prref(Fact,'reclaim_space/1',Prref)
-	 ->	db_reclaim_space(Fact, Prref)
+	(get_dynamic_pred_ep(Fact,'reclaim_space/1',PredEP)
+	 ->	db_reclaim_space(Fact, PredEP)
 	 ;	true
 	).
 
@@ -475,8 +455,8 @@ retract_last_fact(Skel) :-
 	 ->	true
 	 ;      instantiation_error(retract_last_fact/1,1,skeleton)
 	),
-	get_dynamic_prref(Skel,'retract_last_fact/1',Prref),
-	db_get_last_clause(Prref,Clref,_Type,EntryPoint),
+	get_dynamic_pred_ep(Skel,'retract_last_fact/1',PredEP),
+	db_get_last_clause(PredEP,Clref,_Type,EntryPoint),
 	do_dyn_code_call(EntryPoint,Skel),
 	db_retract0(Clref,0).
 
@@ -500,7 +480,7 @@ do_dyn_code_call(EntryPt,Skel) :-
 /*	predicate retract or retractall simply fail.			*/
 /*======================================================================*/
 
-% TLS: note that static check is done in get_dynamic_prref
+% TLS: note that static check is done in get_dynamic_pred_ep
 check_retract(Head, Pred) :-
 	( var(Head) ->
 	    instantiation_error(Pred,1,nonvar)
@@ -563,10 +543,7 @@ abolish1(Term) :-
 	conpsc(Term,Psc),
 	psc_type(Psc, Type),
 	(Type =:= T_DYNA	    % DYNA
-	 ->	psc_ep(Psc, Prref),
-		db_abolish(Prref),
-		psc_set_type(Psc, T_ORDI),
-		psc_set_ep(Psc, 0)
+	 ->	db_abolish(Psc)
 	 ; Type =:= T_PRED	    % normal compiled predicate
 	 ->	psc_ep(Psc,Ep),	    % get entry point
 		unload_seg(Ep),	    % free the space
@@ -595,8 +572,8 @@ clause(Head, Body) :-
 
 
 clause0(Head, Body) :-
-	get_dynamic_prref(Head,'clause0/2',Prref),
-	db_clause(Head,Body,Prref,_Clref).
+	get_dynamic_pred_ep(Head,'clause0/2',PredEP),
+	db_clause(Head,Body,PredEP,_Clref).
 
 
 /*======================================================================*/
@@ -615,7 +592,7 @@ clause0(Head, Body) :-
 /*	simply fails.							*/
 /*======================================================================*/
 
-% TLS: note that static check is done in get_dynamic_prref
+% TLS: note that static check is done in get_dynamic_pred_ep
 check_clause(Head) :-
 	( var(Head) ->
 	    instantiation_error(clause/2,1,nonvar)

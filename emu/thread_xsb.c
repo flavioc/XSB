@@ -44,6 +44,10 @@ typedef struct
 static xsb_thread_t th_vec[MAX_THREADS];
 static xsb_thread_t *th_next = th_vec;
 
+extern void thread_free_dyn_blks(CTXTdecl);
+extern void thread_free_tab_blks(CTXTdecl);
+extern void delete_predicate_table(CTXTdeclc TIFptr);
+
 pthread_mutex_t sys_mut[MAX_SYS_MUTEXES] ;
 
 pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -242,6 +246,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 		case XSB_THREAD_EXIT:
 			rval = ptoc_int(CTXTc 2 ) ;
 			cleanup_machine(CTXT) ;
+			thread_free_dyn_blks(CTXT);
+			thread_free_tab_blks(CTXT);
 			free( th ) ;
 			flags[NUM_THREADS]-- ;
 			pthread_mutex_lock( &th_mutex );

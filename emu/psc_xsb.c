@@ -138,7 +138,7 @@ static Pair make_psc_pair(Psc psc_ptr, Pair *link_ptr) {
 
 /* === get_tip: get the TIP from a PSC record =========================	*/
 
-TIFptr get_tip(Psc temp) 
+TIFptr *get_tip_or_tdisp(Psc temp)
 {
     CPtr temp1 ;
 
@@ -150,30 +150,47 @@ TIFptr get_tip(Psc temp)
 	  switch (*(pb)temp1) {
 	    case tabletry:
 	    case tabletrysingle:
-	      return (TIFptr) (temp1[2]) ;
+	      return (TIFptr *) (temp1+2) ;
 	    case test_heap:
 	      if (*(pb)(temp1+2) == tabletry ||
 		  *(pb)(temp1+2) == tabletrysingle)
-		return (TIFptr) (temp1[4]) ;
-	      else return NULL;
+		return (TIFptr *) (temp1+4) ;
+	      else return (TIFptr *)NULL;
 	      break;
 	    case switchon3bound:
 	    case switchonbound:
 	    case switchonterm:
 	      if (  *(pb) (temp1+3) == tabletry 
 	        ||  *(pb) (temp1+3) == tabletrysingle) 
-		return (TIFptr) (temp1[5]) ;
-	      else return (TIFptr) NULL;
+		return (TIFptr *) (temp1+5) ;
+	      else return (TIFptr *) NULL;
 	    default:
-	      return (TIFptr) NULL;
+	      return (TIFptr *) NULL;
 	  }
 	}
-	else return (TIFptr) NULL;
+	else return (TIFptr *) NULL;
       default: 
-	return (TIFptr) NULL;
+	return (TIFptr *) NULL;
     }
 }
 
+TIFptr get_tip(CTXTdeclc Psc psc) {
+  TIFptr *tip = get_tip_or_tdisp(psc);
+#ifndef MULTI_THREAD
+  return tip?(*tip):NULL;
+#else
+  if (!tip) return NULL;
+  if (TIF_EvalMethod(*tip) != 3 /*DISPATCH_BLOCK*/) return *tip;
+  { struct TDispBlk_t *tdispblk = (struct TDispBlk_t *)(((CPtr)(*tip))-2);
+    TIFptr rtip = (TIFptr)((&(tdispblk->Thread0))[th->tid]);
+    if (!rtip) {
+      New_TIF(rtip,psc);
+      (&(tdispblk->Thread0))[th->tid] = rtip;
+    }
+    return rtip;
+  }
+#endif
+}
 
 /* === is_globalmod: Is a global module ===============================	*/
 

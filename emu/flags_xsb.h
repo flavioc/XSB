@@ -31,6 +31,9 @@
 #include "cell_xsb.h"
 
 extern Cell flags[];		/* System flags + user flags */
+#ifndef MULTI_THREAD
+extern Cell clause_int;		/* former flag, must be thread-specific */
+#endif
 
 #include "flag_defs_xsb.h"
 

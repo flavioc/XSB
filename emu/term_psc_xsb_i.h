@@ -31,8 +31,10 @@ static inline Psc term_psc(Cell term)
   Psc psc;
   Pair sym;
 
-  if (isconstr(term))
-    return get_str_psc(term);
+  if (isconstr(term)) {
+    psc = get_str_psc(term);
+    return psc;
+  }
   else {
     if (isstring(term)) {
       psc = (Psc)flags[CURRENT_MODULE];

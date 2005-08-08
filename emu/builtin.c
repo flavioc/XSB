@@ -140,6 +140,8 @@ extern int xsb_profiling_enabled;
 extern xsbBool startInterruptThread(SOCKET intSocket);
 #endif
 
+extern TIFptr get_tip(CTXTdeclc Psc);
+
 long if_profiling = 0;
 static long prof_unk_count = 0;
 static long prof_total = 0;
@@ -159,7 +161,7 @@ extern xsbBool gen_retract_all(CTXTdecl), db_retract0(CTXTdecl),
   db_get_clause(CTXTdecl), gc_clauses(CTXTdecl);
 extern xsbBool db_get_last_clause(CTXTdecl);
 extern xsbBool db_build_prref(CTXTdecl), db_remove_prref(CTXTdecl), 
-	       db_reclaim0(CTXTdecl);
+	       db_reclaim0(CTXTdecl), db_get_prref(CTXTdecl);
 
 extern char *dirname_canonic(char *);
 extern xsbBool almost_search_module(CTXTdeclc char *);
@@ -196,6 +198,9 @@ extern double realtime_count; /* from subp.c */
 /* ------- variables also used in other parts of the system -----------	*/
 
 Cell flags[65];			  /* System flags + user flags */
+#ifndef MULTI_THREAD
+Cell clause_int = 0;  /* former flag that must be local */
+#endif
 
 /* ------- utility routines -------------------------------------------	*/
 
@@ -221,7 +226,7 @@ DllExport prolog_int call_conv ptoc_int(CTXTdeclc int regnum)
   case XSB_REF1: 
   case XSB_ATTV:
   case XSB_LIST:
-  case XSB_FLOAT: xsb_abort("[PTOC_INT] Integer argument expected");
+  case XSB_FLOAT: xsb_abort("[PTOC_INT] Integer argument expected, %d tag found\n",cell_tag(addr));
   case XSB_STRING: return (prolog_int)string_val(addr);	/* dsw */
   case XSB_INT: return int_val(addr);
   default: xsb_abort("[PTOC_INT] Argument of unknown type");
@@ -775,9 +780,11 @@ void init_builtin_table(void)
   set_builtin_table(GET_DATE, "get_date");
   set_builtin_table(STAT_WALLTIME, "stat_walltime");
 
+  set_builtin_table(PSC_GET_SET_ENV_BYTE, "psc_get_set_env_byte");
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
   set_builtin_table(PSC_TABLED, "psc_tabled");
+  set_builtin_table(PSC_SET_TABLED, "psc_set_tabled");
 
   set_builtin_table(IS_INCOMPLETE, "is_incomplete");
 
@@ -809,6 +816,7 @@ void init_builtin_table(void)
   set_builtin_table(DB_RETRACT0, "db_retract0");
   set_builtin_table(DB_GET_CLAUSE, "db_get_clause");
   set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
+  set_builtin_table(DB_GET_PRREF, "db_get_prref");
   set_builtin_table(DB_REMOVE_PRREF, "db_remove_prref");
   set_builtin_table(DB_RECLAIM0, "db_reclaim0");
 
@@ -937,7 +945,7 @@ inline static xsbBool is_completed_table(TIFptr tif) {
 inline static int abolish_table_predicate(CTXTdeclc Psc psc)
 {
   TIFptr tif;
-  tif = get_tip(psc);
+  tif = get_tip(CTXTc psc);
   if ( IsNULL(tif) )
     xsb_abort("[abolish_table_pred] Attempt to delete untabled predicate (%s/%d)\n",
 	      get_name(psc), get_arity(psc));
@@ -998,11 +1006,14 @@ inline static void abolish_table_info(CTXTdecl)
   CPtr csf;
   TIFptr pTIF;
 
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
   for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
 	csf = csf + COMPLFRAMESIZE )
-    if ( ! is_completed(compl_subgoal_ptr(csf)) )
+    if ( ! is_completed(compl_subgoal_ptr(csf)) ) {
+      SYS_MUTEX_UNLOCK( MUTEX_TABLE );
       xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		"\n\t Cannot abolish incomplete tables");
+    }
 
   abolish_table_cps_check(CTXT) ;
 
@@ -1014,6 +1025,7 @@ inline static void abolish_table_info(CTXTdecl)
   openreg = COMPLSTACKBOTTOM;
   release_all_tabling_resources();
   abolish_wfs_space(); 
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
 
 void abolish_if_tabled(CTXTdeclc Psc psc)
@@ -1323,15 +1335,24 @@ int builtin_call(CTXTdeclc byte number)
     bld_copy(arg_loc, new_val);
     break;
   }
-  case STAT_FLAG:	/* R1: flagname(+int); R2: value(-int) */
-    ctop_int(CTXTc 2, flags[ptoc_int(CTXTc 1)]);
+  case STAT_FLAG: {	/* R1: flagname(+int); R2: value(-int) */
+    int flagname = ptoc_int(CTXTc 1);
+    int flagval;
+    if (flagname == CLAUSE_INT) flagval = clause_int;
+    else flagval = flags[flagname];
+    ctop_int(CTXTc 2, flags[flagname]);
     break;
-  case STAT_SET_FLAG:	/* R1: flagname(+int); R2: value(+int); */
-    flags[ptoc_int(CTXTc 1)] = ptoc_int(CTXTc 2);
-    if (flags[DEBUG_ON]||flags[TRACE_STA]||flags[HITRACE]||flags[CLAUSE_INT])
+  }
+  case STAT_SET_FLAG: {	/* R1: flagname(+int); R2: value(+int); */
+    int flagval = ptoc_int(CTXTc 2);
+    int flagname = ptoc_int(CTXTc 1);
+    if (flagname == CLAUSE_INT) clause_int = flagval;
+    else flags[flagname] = flagval;
+    if (flags[DEBUG_ON]||flags[TRACE_STA]||flags[HITRACE]||clause_int)
       asynint_val |= MSGINT_MARK;
     else asynint_val &= ~MSGINT_MARK;
     break;
+  }
   case BUFF_ALLOC: {	/* R1: size (+integer); R2: -buffer; */
 	           /* the length of the buffer is also stored at position 0 */
     char *addr;
@@ -1780,6 +1801,13 @@ int builtin_call(CTXTdeclc byte number)
   case GROUND:
     return ground(CTXTc (CPtr)ptoc_tag(CTXTc 1));
 
+  case PSC_GET_SET_ENV_BYTE: { /* reg 1: +PSC, reg 2: +And-bits, reg 3: +Or-bits, reg 4: -Result */
+    Psc psc = (Psc)ptoc_addr(1);
+    psc->env = (psc->env & (byte)ptoc_int(CTXTc 2)) | (byte)ptoc_int(CTXTc 3);
+    ctop_int(CTXTc 4, (Integer)(psc->env));
+    break;
+  }
+
   case PSC_ENV:	{       /* reg 1: +PSC; reg 2: -int */
     /* env: 0 = exported, 1 = local, 2 = imported */
     Psc psc = (Psc)ptoc_addr(1);
@@ -1794,9 +1822,24 @@ int builtin_call(CTXTdeclc byte number)
   }
   case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
     Psc psc = (Psc)ptoc_addr(1);
-    ctop_int(CTXTc 2, (Integer)get_tip(psc));
+    ctop_int(CTXTc 2, get_tabled(psc));  //(Integer)get_tip(CTXTc psc));
     break;
   }
+  case PSC_SET_TABLED: {	/* reg 1: +PSC; reg 2: +int */
+    Psc psc = (Psc)ptoc_addr(1);
+    if (ptoc_int(CTXTc 2)) set_tabled(psc,0x08);
+    else psc->env = psc->env & ~0x8; /* turn off */
+    break;
+  }
+    //  case PSC_ENV: {	/* reg 1: +PSC; reg 2: +int-anded; reg 3: +int-orred; reg 4: -Result*/
+    //    Psc psc = (Psc)ptoc_addr(1);
+    //    psc->env = ((psc->env & ptoc_int(CTXTc 2)) | ptoc_int(CTXTc 3));
+    //    ctop_int(CTXTc 4, psc->env);
+    //    break;
+    //  }
+
+
+
 /*----------------------------------------------------------------------*/
 
 #include "bineg_xsb_i.h"
@@ -1829,7 +1872,7 @@ int builtin_call(CTXTdeclc byte number)
 		 "Callable term", term);
       break;
     }
-    tif = get_tip(psc);
+    tif = get_tip(CTXTc psc);
     if ( IsNULL(tif) )
       xsb_abort("Illegal table operation\n\t Untabled predicate (%s/%d)"
 		"\n\t In argument %d of %s/%d",
@@ -1936,6 +1979,9 @@ int builtin_call(CTXTdeclc byte number)
     break;
   case DB_BUILD_PRREF:
     db_build_prref(CTXT);
+    break;
+  case DB_GET_PRREF:
+    db_get_prref(CTXT);
     break;
   case DB_REMOVE_PRREF:
     db_remove_prref(CTXT);
@@ -2044,7 +2090,7 @@ int builtin_call(CTXTdeclc byte number)
 		   4, "Callable term", goalTerm);
 	break;
       }
-      tif = get_tip(psc);
+      tif = get_tip(CTXTc psc);
       if ( IsNULL(tif) ) {
 	ctop_int(CTXTc regPredType, UNTABLED_PREDICATE);
 	ctop_int(CTXTc regGoalType, UNDEFINED_CALL);
@@ -2375,7 +2421,7 @@ int builtin_call(CTXTdeclc byte number)
 		 Arity, "Predicate specification", term);
       break;
     }      
-    tif = get_tip(psc);
+    tif = get_tip(CTXTc psc);
     if ( IsNULL(tif) ) {
       xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
       return FALSE;

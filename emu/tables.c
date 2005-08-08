@@ -129,7 +129,7 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
      * size of the vector is now at the high end, but the components
      * are still arranged from high mem (first) to low (last).
      */
-    CPtr tmplt_component, tmplt_var_addr, h_addr;
+    CPtr tmplt_component, tmplt_var_addr, hrg_addr;
     int size, j;
 
     tmplt_component = CallLUR_VarVector(*results);
@@ -146,8 +146,8 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 	  j--, tmplt_component-- ) {
       tmplt_var_addr = (CPtr)*tmplt_component;
       /* Now we are sure that tmplt_var_addr is a var on the heap */
-      h_addr = hreg+j;
-      bld_copy(h_addr, (Cell)(tmplt_var_addr));
+      hrg_addr = hreg+j;
+      bld_copy(hrg_addr, (Cell)(tmplt_var_addr));
     }
     hreg += size;
     bld_copy(hreg, cell(CallLUR_VarVector(*results)));

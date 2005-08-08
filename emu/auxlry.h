@@ -44,7 +44,9 @@ struct trace_str {		/* for tracing purpose below */
 
 extern struct trace_str tds;
 
+#ifndef MULTI_THREAD
 extern int asynint_val;
+#endif
 
 #define local_global_exception "! Local/Global Stack Overflow Exception\n"
 

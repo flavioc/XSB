@@ -54,6 +54,7 @@
 #include "memory_xsb.h"
 #include "register.h"
 #include "varstring_xsb.h"
+#include "thread_xsb.h"
 
 #ifdef FOREIGN
 #include "dynload.h"
@@ -63,11 +64,12 @@
  
 /* === stuff used from elsewhere ======================================	*/
 
-extern TIFptr get_tip(Psc);
+extern TIFptr *get_tip_or_tdisp(Psc);
 
 extern int xsb_profiling_enabled;
 extern void add_prog_seg(Psc, byte *, long);
 extern void remove_prog_seg(byte *);
+extern void delete_predicate_table(CTXTdeclc TIFptr);
 
 /* === macros =========================================================	*/
 
@@ -127,6 +129,8 @@ struct hrec {
 Psc global_mod;	/* points to "global", whose ep is globallist */
 
 struct tif_list  tif_list = {NULL, NULL};
+
+struct TDispBlkHdr_t tdispblkhdr = {NULL, NULL};
 
 /* === working variables ==============================================	*/
 
@@ -335,6 +339,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
   CPtr inst_addr, end_addr;
   int  current_opcode, oprand;
   Cell tab_config_hold;	/* working pointer */
+  CellToBytesConv converter;
   
   *current_tab = -1;
   inst_addr = seg_text(current_seg);
@@ -412,10 +417,8 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	break;
       case T:	  
 	*current_tab = 1;	/* flag for load index */
-	if (current_opcode == tabletry || current_opcode == tabletrysingle)
-	  New_TIF(tab_info_ptr,NULL);
 	get_obj_word(&tab_config_hold);          /* space holder */
-	cell(inst_addr) = (Cell) tab_info_ptr;
+	cell(inst_addr) = (Cell)NULL; /* TIFptr will be set later when know PSC */
 	inst_addr ++;
 	break;
       default:
@@ -611,7 +614,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
   get_obj_byte(&t_env);
   /* this simple check can avoid worse situations in case of compiler bugs */
-  if (t_env > T_GLOBAL) 
+  if ((t_env&~0x28) > T_GLOBAL) 
     xsb_abort("[LOADER] The loaded object file %s%s is corrupted",
 	      cur_mod->nameptr, XSB_OBJ_EXTENSION_STRING);
 
@@ -621,7 +624,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   if (t_type == T_MODU)
     temp_pair = insert_module(0, str.string);
   else {
-    if (t_env == T_IMPORTED) {
+    if ((t_env&0x7) == T_IMPORTED) {
       byte t_modlen;
       char modname[MAXNAME+1];
 
@@ -630,12 +633,12 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       modname[t_modlen] = '\0';
       temp_pair = insert_module(0, modname);
       mod = temp_pair->psc_ptr;
-    } else if (t_env == T_GLOBAL) 
+    } else if ((t_env&0x7) == T_GLOBAL) 
       mod = global_mod;
     else 
       mod = cur_mod;
     temp_pair = insert(str.string, t_arity, mod, &is_new);
-/*     if (is_new && t_env==T_IMPORTED) */
+/*     if (is_new && (t_env & 0x7)==T_IMPORTED) */
     /* make sure all data fields of predicates PSCs point to 
        their corresponding module */
     if (is_new ||
@@ -644,9 +647,11 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	 get_data(temp_pair->psc_ptr) == NULL))
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
-    env_type_set(temp_pair->psc_ptr, t_env, t_type, (xsbBool)is_new);
+    env_type_set(temp_pair->psc_ptr, (t_env&0x7), t_type, (xsbBool)is_new);
+    set_shared(temp_pair->psc_ptr, (t_env&0x20));
+    set_tabled(temp_pair->psc_ptr, (t_env&0x08));
     /* dsw added following, maybe wrongly */
-    if (exp && t_env == T_EXPORTED) {
+    if (exp && (t_env&0x7) == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
       if (is_new) 
 	set_data(temp_pair->psc_ptr, mod);
@@ -697,6 +702,24 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
   return TRUE;
 }
 
+#ifdef MULTI_THREAD
+static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
+  struct TDispBlk_t *tdispblk;
+
+  if (!(tdispblk = (struct TDispBlk_t *)calloc(sizeof(struct TDispBlk_t)+MAXTABTHREAD*sizeof(Cell),1)))
+    xsb_exit("No space for table dispatch block");
+  if (tdispblkhdr.firstDB) tdispblkhdr.firstDB->PrevDB = tdispblk;
+  tdispblk->NextDB = tdispblkhdr.firstDB;
+  tdispblkhdr.firstDB = tdispblk;
+  if (!tdispblkhdr.lastDB) tdispblkhdr.lastDB = tdispblk;
+
+  tdispblk->psc_ptr = psc;
+  tdispblk->method = 3 /*DISPATCH_BLOCK*/;
+  tdispblk->MaxThread = MAXTABTHREAD;
+  *instr_ptr = (TIFptr)(((CPtr)tdispblk)+2);
+}
+#endif
+
 /************************************************************************/
 static byte *loader1(FILE *fd, int exp)
 {
@@ -708,7 +731,7 @@ static byte *loader1(FILE *fd, int exp)
   pseg seg_first_inst, first_inst;
   Psc cur_mod;
   Pair ptr;
-  TIFptr tip;
+  TIFptr *instruct_tip;
  
   seg_count = 0; first_inst = 0;
   get_obj_byte(&name_len);
@@ -760,8 +783,14 @@ static byte *loader1(FILE *fd, int exp)
 	if (xsb_profiling_enabled)
 	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
       }
-      if ((tip = get_tip(ptr->psc_ptr)) != NULL) {
-	TIF_PSC(tip) = (ptr->psc_ptr);
+      instruct_tip = get_tip_or_tdisp(ptr->psc_ptr);
+      if (instruct_tip != NULL) {
+#ifdef MULTI_THREAD
+	if (get_tabled(ptr->psc_ptr) && !get_shared(ptr->psc_ptr)) {
+	  new_tdispblk(instruct_tip, ptr->psc_ptr);
+	} else
+#endif
+	  New_TIF(*instruct_tip,(ptr->psc_ptr));
       }
       break;
     case T_PRED:
@@ -773,8 +802,14 @@ static byte *loader1(FILE *fd, int exp)
 	if (xsb_profiling_enabled)
 	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
       }
-      if ((tip = get_tip(ptr->psc_ptr)) != NULL) {
-	TIF_PSC(tip) = (ptr->psc_ptr);
+      instruct_tip = get_tip_or_tdisp(ptr->psc_ptr);
+      if (instruct_tip != NULL) {
+#ifdef MULTI_THREAD
+	if (get_tabled(ptr->psc_ptr) && !get_shared(ptr->psc_ptr)) {
+	  new_tdispblk(instruct_tip, ptr->psc_ptr);
+	} else
+#endif
+	  New_TIF(*instruct_tip,(ptr->psc_ptr));
       }
       /* set data to point to module's psc */
       set_data(ptr->psc_ptr, cur_mod);
@@ -883,3 +918,24 @@ byte *loader(char *file, int exp)
   reloc_table = 0;
   return first_inst;
 } /* loader */
+
+#ifdef MULTI_THREAD
+void thread_free_tab_blks(CTXTdecl) {
+  struct TDispBlk_t *tdispblk;
+  TIFptr tip;
+
+  //  printf("Enter thread_free_tab_blks\n");
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+  for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
+    if (th->tid <= tdispblk->MaxThread) {
+      tip = (&(tdispblk->Thread0))[th->tid];
+      if (tip) {
+	delete_predicate_table(CTXTc tip);
+	//	printf("set prref free for thread %d\n",th->tid);
+	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
+      }
+    }
+  }
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+}
+#endif

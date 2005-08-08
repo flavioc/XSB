@@ -303,6 +303,7 @@ standard_symbol(tell, 1, standard).
 standard_symbol(telling, 1, standard).
 standard_symbol(tfindall, 3, tables).
 standard_metapredicate(tfindall,3,2).
+standard_symbol((thread_shared), 1, consult).
 
 standard_symbol(tmpfile_open, 1, file_io).
 standard_symbol(tnot, 1, tables).

@@ -608,6 +608,9 @@ parse_directive(compiler_options(Options),_SymTab,_ModName) :-
 	check_file_compiler_options(Options),
 	setoptions1(Options).
 parse_directive(comment(_,_),_SymTab,_ModName).
+parse_directive(thread_shared(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[(thread_shared)],(thread_shared)).
+parse_directive(thread_private(_PredCList),_SymTab,_ModName).  % now the default, ....
 parse_directive(Directive,_SymTab,_ModName) :-
 	option(ciao_directives),
 	included_ciao_directive(Directive).

@@ -335,7 +335,10 @@ int  xctr;
 char *xsb_default_segfault_msg =
      "\n++Memory violation occurred during evaluation.\n++Please report this problem using the XSB bug tracking system accessible from\n++\t http://sourceforge.net/projects/xsb\n++Please supply the steps necessary to reproduce the bug.\n";
 char *xsb_segfault_message;
+
+#ifndef MULTI_THREAD
 jmp_buf xsb_abort_fallback_environment;
+#endif
 
 /*======================================================================*/
 /* the main emulator loop.						*/
@@ -1151,6 +1154,18 @@ contcase:     /* the main loop */
       }
     }
     lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
+  XSB_End_Instr()
+
+  XSB_Start_Instr(switchonthread,_switchonthread) /* PPP-L */
+#ifdef MULTI_THREAD
+    Def1op
+    Op1(get_xxxl);
+    if (th->tid > *((long *)op1+2)) Fail1;
+    //    fprintf(stderr,"switchonthread to %p\n",(pb)(*((long *)op1+3+(th->tid))));
+    if (!(lpcreg = (pb)(*((long *)op1+3+(th->tid))))) Fail1;
+#else
+    xsb_exit("Not configured for Multithreading");
+#endif
   XSB_End_Instr()
 
   XSB_Start_Instr(trymeorelse,_trymeorelse) /* PPA-L */

@@ -29,6 +29,12 @@
 
 #include "cell_def_xsb.h"
 #include "basictypes.h"
+#include "setjmp_xsb.h"
+
+typedef struct ClRefHdr
+{	unsigned long buflen ;
+	struct ClRefHdr *prev ;
+}	*ClRef, ClRefData, ClRefHdr ;
 
 struct token_t {
   int type;
@@ -76,6 +82,8 @@ struct asrtBuff_t {
  int BLim;
  int Size;
 };
+
+#define MAX_RETRACTED_CLAUSES   20
 
 #ifdef MULTI_THREAD
 
@@ -162,6 +170,9 @@ CPtr _delayreg;
 CPtr _interrupt_reg;
 Cell _interrupt_counter;
 
+int _asynint_code;
+int _asynint_val;
+
 /* Compiled trie stuff - some of this may be able to be changed to
   local variables */
 
@@ -232,6 +243,15 @@ double  _double_v;
 long	_rad_int;
 
 struct sort_par_spec _par_spec;		/* spec for par_sort */
+
+jmp_buf _assertcmp_env;
+jmp_buf _xsb_abort_fallback_environment;
+
+ClRef _retracted_buffer[MAX_RETRACTED_CLAUSES+1];
+ClRef *_OldestCl;
+ClRef *_NewestCl;
+
+Cell _clause_int;  /* former flag, but must be thread-specific */
 
 struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
 
@@ -308,6 +328,8 @@ typedef struct th_context th_context ;
 #define interrupt_reg		(th->_interrupt_reg)
 #define interrupt_counter	(th->_interrupt_counter)
 
+#define asynint_code		(th->_asynint_code)
+#define asynint_val		(th->_asynint_val)
 
 #define reg_array		(th->_reg_array)
 #define reg_arrayptr		(th->_reg_arrayptr)
@@ -372,6 +394,15 @@ typedef struct th_context th_context ;
 #define rad_int			(th->_rad_int)
 
 #define par_spec		(th->_par_spec)
+
+#define assertcmp_env		(th->_assertcmp_env)
+#define xsb_abort_fallback_environment (th->_xsb_abort_fallback_environment)
+
+#define retracted_buffer	(th->_retracted_buffer)
+#define OldestCl		(th->_OldestCl)
+#define NewestCl		(th->_NewestCl)
+
+#define clause_int		(th->_clause_int)
 
 #define random_seeds		(th->_random_seeds)
 

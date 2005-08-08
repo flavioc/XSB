@@ -110,6 +110,22 @@ extern struct tif_list  tif_list;
   mem_dealloc((pTIF),sizeof(TableInfoFrame));				\
 }
 
+#define MAXTABTHREAD 100
+
+struct TDispBlk_t {
+  struct TDispBlk_t *PrevDB;
+  struct TDispBlk_t *NextDB;
+  Psc psc_ptr;
+  TabledEvalMethod method;
+  int MaxThread;
+  TIFptr Thread0;
+};
+
+struct TDispBlkHdr_t {
+  struct TDispBlk_t *firstDB;
+  struct TDispBlk_t *lastDB;
+};
+
 /*===========================================================================*/
 
 typedef struct ascc_edge *EPtr;

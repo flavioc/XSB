@@ -119,6 +119,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   VariantSF producer_sf, consumer_sf;
   CPtr answer_template;
   int template_size, attv_num, tmp;
+  TIFptr tip;
 #ifdef MULTI_THREAD
   byte * inst_addr = lpcreg;
   int table_tid ;
@@ -135,7 +136,21 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CallInfo_CallArity(callInfo) = get_xxa; 
   LABEL = (CPtr)((byte *) get_xxxl);  
   Op1(get_xxxxl);
-  CallInfo_TableInfo(callInfo) = (TIFptr) get_xxxxl;
+  tip =  (TIFptr) get_xxxxl;
+#ifdef MULTI_THREAD
+  /* get right TIF, if thread_private */
+  if (TIF_EvalMethod(tip) == 3 /*DISPATCH_BLOCK*/) {
+    struct TDispBlk_t *tdispblk;
+    tdispblk = (struct TDispBlk_t *)(((CPtr)tip)-2);
+    if (th->tid > tdispblk->MaxThread) xsb_abort("Table Dispatch block too small");
+    tip = (TIFptr)((&(tdispblk->Thread0))[th->tid]);
+    if (!tip) {
+      New_TIF(tip,tdispblk->psc_ptr);
+      (&(tdispblk->Thread0))[th->tid] = tip;
+    }
+  }
+#endif
+  CallInfo_TableInfo(callInfo) = tip;
   ADVANCE_PC(size_xxxXX);
 
   check_tcpstack_overflow;

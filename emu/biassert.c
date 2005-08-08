@@ -81,6 +81,32 @@ extern void remove_prog_seg(byte *);
 #define pad64bits(Loc)	{}
 #endif
 
+struct DispBlk_t {
+  struct DispBlk_t *PrevDB;
+  struct DispBlk_t *NextDB;
+  int MaxThread;
+  CPtr Thread0;
+  };
+
+struct DispBlkHdr_t {
+  struct DispBlk_t *firstDB;
+  struct DispBlk_t *lastDB;
+} DispBlkHdr = {NULL, NULL};
+
+static inline PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
+#ifdef MULTI_THREAD
+  if (cell_opcode((CPtr)(pred_ep)) == switchonthread) {
+    if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
+      xsb_abort("Dynamic Dispatch block too small");
+    pred_ep = (pb) (&((struct DispBlk_t **)pred_ep)[1]->Thread0)[th->tid];
+  }
+  if (!pred_ep) return NULL;
+#endif
+  if (cell_opcode((CPtr)(pred_ep)) == tabletrysingle)
+    return (PrRef)((CPtr *)(pred_ep))[6];
+  else return pred_ep;
+}
+
 /* #ifdef DEBUG */
 /* I hope we can trust any decent C compiler to compile away
    empty switch statements like the ones below, if DEBUG is not set
@@ -372,7 +398,9 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 /*======================================================================*/
 
 
+#ifndef MULTI_THREAD
 static jmp_buf assertcmp_env;
+#endif
 
 struct flatten_elt {
 	union {
@@ -404,7 +432,7 @@ struct instruction_q {
   struct instruction inst_queue[INST_QUEUE_SIZE];
 };
 
-static void assertcmp_throw(int num)
+static void assertcmp_throw(CTXTdeclc int num)
 {
     longjmp(assertcmp_env, num);
 }
@@ -413,12 +441,12 @@ static void assertcmp_throw(int num)
 #define ERR_FUNCTOR	1
 #define ERR_REGISTER	2
 
-static int arity(prolog_term T0)
+static int arity(CTXTdeclc prolog_term T0)
 {
   if (isconstr(T0)) return p2c_arity(T0);
   else if (islist(T0)) return 2;
   else if (isstring(T0)) return 0;
-  else assertcmp_throw(ERR_FUNCTOR);
+  else assertcmp_throw(CTXTc ERR_FUNCTOR);
   return -1;
 }
 
@@ -554,7 +582,7 @@ static void reg_init(RegStat Reg, int Size)
 }
 
 /* Type: RVAR=-1 - used for real var; TVAR=-2 - used for introduced var */
-static int reg_get(RegStat Reg, int Type)
+static int reg_get(CTXTdeclc RegStat Reg, int Type)
 {
     int new_reg;
 
@@ -562,7 +590,7 @@ static int reg_get(RegStat Reg, int Type)
     if (Reg->RegArray[Reg->FreeReg]==0) {
 	Reg->FreeReg++;
 	if (Reg->FreeReg >= MAX_REGS) {
-	  assertcmp_throw(ERR_REGISTER);
+	  assertcmp_throw(CTXTc ERR_REGISTER);
 	}
 	Reg->RegArray[Reg->FreeReg] = 0;
     } else Reg->FreeReg = Reg->RegArray[Reg->FreeReg];
@@ -636,8 +664,6 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
   struct instruction_q inst_queue_lc;
   struct instruction_q *inst_queue = &inst_queue_lc;
 
-  //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-
   /* set catcher */
   if ((Argno = setjmp(assertcmp_env))) {
     assertcmp_printerror(CTXTc Argno);
@@ -660,7 +686,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
     Body = (prolog_term) NULL;
     has_body = 0;
   }
-  Arity = arity(Head);
+  Arity = arity(CTXTc Head);
   Location = 0;
   asrtBuff->Loc = &Location;
   dbgen_instB_ppvw(test_heap,Arity,0);  /* size will be backpatched */
@@ -672,7 +698,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
   }
   if (has_body) {
     inst_queue_init(inst_queue);
-    for (Argno=1; Argno<=arity(Body); Argno++) {
+    for (Argno=1; Argno<=arity(CTXTc Body); Argno++) {
       db_genaput(CTXTc p2p_arg(Body,Argno),Argno,inst_queue,Reg);
     }
     db_genmvs(CTXTc inst_queue,Reg);
@@ -736,11 +762,11 @@ static void db_genterms(CTXTdeclc struct instruction_q *inst_queue,
 	int Rt1, Rt2;
 	c2p_functor(CTXTc "$assertVAR", 1, T1);
 	T1 = p2p_arg(T1, 1);
-	Rt1 = reg_get(Reg, RVAR);
+	Rt1 = reg_get(CTXTc Reg, RVAR);
 	c2p_int(CTXTc Rt1, T1);
 	c2p_functor(CTXTc "$assertVAR", 1, T2);
 	T2 = p2p_arg(T2, 1);
-	Rt2 = reg_get(Reg, RVAR);
+	Rt2 = reg_get(CTXTc Reg, RVAR);
 	c2p_int(CTXTc Rt2, T2);
 	dbgen_instB3_tv(getlist_tvar_tvar, Argno, Rt1, Rt2);
 	Reg->RegArrayInit[Rt1] = 1;	/* Reg is initted */
@@ -788,7 +814,7 @@ static void db_geninst(CTXTdeclc prolog_term Sub, RegStat Reg,
   } else if (isref(Sub)) {
     c2p_functor(CTXTc "$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);
-    Rt = reg_get(Reg, RVAR);
+    Rt = reg_get(CTXTc Reg, RVAR);
     c2p_int(CTXTc Rt, Sub);
     dbgen_instB_ppv(unitvar, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
@@ -799,7 +825,7 @@ static void db_geninst(CTXTdeclc prolog_term Sub, RegStat Reg,
      * An ATTV is treated as a real variable, so that the register will
      * never be released.
      */
-    Rt = reg_get(Reg, RVAR);
+    Rt = reg_get(CTXTc Reg, RVAR);
     dbgen_instB_ppv(unitvar, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
     inst_queue_push(CTXTc inst_queue, Rt, Sub, 0);
@@ -809,7 +835,7 @@ static void db_geninst(CTXTdeclc prolog_term Sub, RegStat Reg,
     Sub = p2p_arg(Sub, 1);
     c2p_int(CTXTc Rt, Sub);
   } else {
-    Rt = reg_get(Reg, TVAR);
+    Rt = reg_get(CTXTc Reg, TVAR);
     dbgen_instB_ppv(unitvar, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
     inst_queue_push(CTXTc inst_queue, Rt, Sub, 0);
@@ -827,7 +853,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
   if (isref(T0)) {
     c2p_functor(CTXTc "$assertVAR", 1, T0);
     T0 = p2p_arg(T0, 1);
-    Rt = reg_get(Reg, RVAR);
+    Rt = reg_get(CTXTc Reg, RVAR);
     c2p_int(CTXTc Rt, T0);  /* used to be TempVar???? */
     dbgen_instB_pvv(puttvar, Rt, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
@@ -843,7 +869,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
     inst_queue_push(CTXTc inst_queue, putnil, 0, Argno);
   } else if (isstring(T0)) {
     if (!strcmp(string_val(T0),"$assertAVAR")) {
-      Rt = reg_get(Reg, RVAR);
+      Rt = reg_get(CTXTc Reg, RVAR);
       dbgen_instB_pvv(puttvar, Rt, Rt);
       Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
       inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
@@ -851,7 +877,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
   } else if (isattv(T0)) {
     prolog_term T1;
     
-    Rt = reg_get(Reg, RVAR);
+    Rt = reg_get(CTXTc Reg, RVAR);
     inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
     flatten_stack_init(flatten_stackq);
 
@@ -863,7 +889,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
 
     db_putterm(CTXTc Rt,T0,Reg,flatten_stackq);    
   } else {  /* structure */
-    Rt = reg_get(Reg, TVAR);
+    Rt = reg_get(CTXTc Reg, TVAR);
     inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
     flatten_stack_init(flatten_stackq);
     db_putterm(CTXTc Rt,T0,Reg,flatten_stackq);
@@ -944,7 +970,7 @@ static void db_bldsubs(CTXTdeclc prolog_term Sub, RegStat Reg,
   } else if (isref(Sub)) {
     c2p_functor(CTXTc "$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);
-    Rt = reg_get(Reg, RVAR);
+    Rt = reg_get(CTXTc Reg, RVAR);
     c2p_int(CTXTc Rt, Sub);
     flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);    /* bldtvar(Ri) */
   } else if (isnil(Sub)) {
@@ -954,7 +980,7 @@ static void db_bldsubs(CTXTdeclc prolog_term Sub, RegStat Reg,
   } else if (isattv(Sub)) {
     prolog_term T1;
 
-    Rt = reg_get(Reg, RVAR);
+    Rt = reg_get(CTXTc Reg, RVAR);
     flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);
 
     T1 = p2p_arg(Sub, 0);	/* the VAR part of the attv */
@@ -966,7 +992,7 @@ static void db_bldsubs(CTXTdeclc prolog_term Sub, RegStat Reg,
 
     db_putterm(CTXTc Rt, Sub, Reg, flatten_stackq);
   } else {
-    Rt = reg_get(Reg, TVAR);
+    Rt = reg_get(CTXTc Reg, TVAR);
     flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);
     db_putterm(CTXTc Rt,Sub,Reg,flatten_stackq);
   }
@@ -1034,7 +1060,7 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
       /* delay the instruction at the end */
       /* else if (Arg>T0) dbgen_instB_pvv(movreg,Arg,T0); movreg */
       else {
-	R0 = reg_get(Reg, TVAR);
+	R0 = reg_get(CTXTc Reg, TVAR);
 	dbgen_instB_pvv(movreg, Arg, R0); /* movreg */
 	reg_release(Reg,Arg);
 	inst_queue_push(CTXTc inst_queue, movreg, R0, T0);
@@ -1968,10 +1994,11 @@ static void delete_from_sobchain(ClRef Clause)
 }
 
 /* circular buffer for retracted clauses */
-#define MAX_RETRACTED_CLAUSES   25
 
+#ifndef MULTI_THREAD
 ClRef retracted_buffer[MAX_RETRACTED_CLAUSES+1]  ;
 ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
+#endif
 
 #define next_in_buffer(pCl) ((pCl)>=(retracted_buffer+MAX_RETRACTED_CLAUSES)\
                                 ? retracted_buffer : (pCl) + 1)
@@ -2004,12 +2031,12 @@ void gc_clauses_follow_par_chain(CTXTdeclc BTNptr pLeaf)
 {
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 			       ((int) TN_Instr(pLeaf) != 0x94) ) {
-    printf("%x, Trie type: %d %s Node type: %d %s\n",pLeaf,
+    printf("%p, Trie type: %d %s Node type: %d %s\n",pLeaf,
 	   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
 	   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)]);
     pLeaf = BTN_Parent(pLeaf);
   }
-  printf("%x,Type for Root: %d %s, Node for Root: %d %s Parent %x\n", pLeaf,
+  printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
 	 TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
 	 TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
 	 TN_Parent(pLeaf));
@@ -2030,7 +2057,7 @@ void gc_clauses(CTXTdecl)
     cp_top = breg ;				 
     while ( cp_top < cp_bot ) {
       cp_inst = *(byte *)*cp_top;
-      printf("Cell %x (%s)\n",cp_top,
+      printf("Cell %p (%s)\n",cp_top,
 	     (char *)(inst_table[cp_inst][0])) ;
       if ( ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80)
 	   || ((int) cp_inst >= 90 && (int) cp_inst <= 0x94) ) {
@@ -2114,7 +2141,7 @@ static int really_delete_clause(ClRef Clause)
     return TRUE ;
 }
 
-static int force_retract_buffers()
+static int force_retract_buffers(CTXTdecl)
 {
   while (!retract_buffer_empty()) {
     really_delete_clause(*OldestCl);
@@ -2124,11 +2151,11 @@ static int force_retract_buffers()
 }
 
 
-
-static int retract_clause( ClRef Clause, int retract_nr )
+static int retract_clause(CTXTdeclc ClRef Clause, int retract_nr )
 {
   xsb_dbgmsg((LOG_RETRACT,"Retract clause(%p) op(%x) type(%d)",
 	     Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ));
+  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
     switch( ClRefType(Clause) )
     {
         case UNINDEXED_CL:
@@ -2166,6 +2193,7 @@ static int retract_clause( ClRef Clause, int retract_nr )
 		 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ));
       delete_clause(Clause) ;
     }
+    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
     return TRUE ;
 }
 
@@ -2217,10 +2245,8 @@ xsbBool db_get_last_clause( CTXTdecl /*+(PrRef)Pred, -(ClRef)Clause,
   CPtr EntryPoint = 0;
   int numInds;
 
-  if (cell_opcode((CPtr)Pred) == tabletrysingle) {
-	/* Tabled pred, fetch real prref */
-    	Pred = (PrRef)((CPtr *)Pred)[6];
-  }
+  Pred = dynpredep_to_prref(CTXTc Pred);
+  if (!Pred) return FALSE;
     
   if (Pred->LastClRef == (ClRef)Pred) return FALSE;
   Clause = Pred->LastClRef;
@@ -2264,7 +2290,7 @@ xsbBool db_get_last_clause( CTXTdecl /*+(PrRef)Pred, -(ClRef)Clause,
  * Arg 11 returns the index fields mask (pass back in Arg 3 on subsequent calls)
  */
 
-xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Clause, -Type, -EntryPoint, -NewCI, -NewCIL */ )
+xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PredEP, +Head, +Failed, -Clause, -Type, -EntryPoint, -NewCI, -NewCIL */ )
 {
   PrRef Pred = (PrRef)ptoc_int(CTXTc 4);
   int IndexLevel = 0, IndexArg = 0, nimInds ;
@@ -2281,11 +2307,10 @@ xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PrRef, +Head, +Failed, -Claus
 	       ptoc_int(CTXTc 1) ? *(pb)(ptoc_int(CTXTc 1)) : 0,
 	       Pred->FirstClRef, Pred->LastClRef ));
 
-    if( cell_opcode((CPtr)Pred) == tabletrysingle )
-	/* Tabled pred, fetch real prref */
-    	Pred = (PrRef)((CPtr *)Pred)[6] ;
+    Pred = dynpredep_to_prref(CTXTc Pred);
     
-    if( Pred->LastClRef == (ClRef)Pred )
+    SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+    if( !(Pred) || (Pred->LastClRef == (ClRef)Pred) )
     {	Clause = 0 ;
 	goto set_outputs;
     }
@@ -2322,6 +2347,7 @@ set_outputs:
 
     xsb_dbgmsg((LOG_RETRACT_GC,
 	       "GOT CLAUSE C-%p(%x)", Clause, Clause ? *(pb)Clause : 0 ));
+    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
 
     ctop_int(CTXTc  7, (Integer)Clause ) ;
     ctop_int(CTXTc  8, Clause != 0 ? (Integer)ClRefType(Clause) : 4 ) ;
@@ -2335,7 +2361,7 @@ xsbBool db_reclaim0( CTXTdecl /* CLRef, Type */ )
 {
   ClRef Clause = (ClRef)ptoc_int(CTXTc 1) ;
 
-  return retract_clause( Clause, 0 ) ;
+  return retract_clause(CTXTc Clause, 0 ) ;
 }
 
 xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
@@ -2343,7 +2369,7 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
   ClRef Clause = (ClRef)ptoc_int(CTXTc 1) ;
   int retract_nr = (int)ptoc_int(CTXTc 2) ;
 
-  return retract_clause( Clause, retract_nr ) ;
+  return retract_clause(CTXTc Clause, retract_nr ) ;
 }
 
 /*----------------------------------------------------------------------
@@ -2355,70 +2381,152 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
   ----------------------------------------------------------------------*/
 #define FIXED_BLOCK_SIZE_FOR_TABLED_PRED     (8 * sizeof(Cell))
 
-xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
-{
-  CPtr p, tp;
-  TIFptr tip;
+#define MAXTHREAD 100
+
+static inline void allocate_prref_tab(Psc psc, PrRef *prref, pb *new_ep) {
   int Loc;
-  Psc psc = (Psc)ptoc_int(CTXTc 1);
-  Integer Arity = get_arity(psc);
-  Integer Tabled = ptoc_int(CTXTc 2);
 
-  /* moved this functionality from Prolog (very ugly and error-prone) to C */
-  set_type(psc, T_DYNA);
-  set_env(psc, T_VISIBLE);
-
-  /* set data to point to usemod -- lfcastro */
-  if (get_data(psc) == NULL) 
-    set_data(psc,global_mod);
-    
-  p = (CPtr)mem_alloc(sizeof(PrRefData));
+  if (!(*prref = (PrRef)mem_alloc(sizeof(PrRefData)))) xsb_exit("No space for a PrRef\n");
+  //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",get_name(psc),get_arity(ps),get_shared(psc),prref);
 
   if (xsb_profiling_enabled)
-    add_prog_seg(psc,(byte *)p,sizeof(PrRefData)); /* dsw profiling */
+    add_prog_seg(psc,(byte *)*prref,sizeof(PrRefData)); /* dsw profiling */
 
   Loc = 0 ;
-  dbgen_inst_ppp(fail,p,&Loc) ;
-  p[2] = (Cell)p ;
-  if ( Tabled )
+  dbgen_inst_ppp(fail,*prref,&Loc) ;
+  ((CPtr)(*prref))[2] = (Cell)(*prref) ;
+  if ( get_tabled(psc) )
     {
+      TIFptr tip;
+      CPtr tp;
       New_TIF(tip,psc);
       tp  = (CPtr)mem_alloc(FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ;
       Loc = 0 ;
-      dbgen_inst_ppvww(tabletrysingle,Arity,(tp+3),tip,tp,&Loc) ;
+      dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
       dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
       dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
-      dbgen_inst_ppvw(calld,3,p,tp,&Loc) ; /* p is *(tp+6), see remove_prref*/
-      dbgen_inst_pvv(new_answer_dealloc,Arity,2,tp,&Loc) ;
-      set_ep(psc, (pb)tp);
+      dbgen_inst_ppvw(calld,3,*prref,tp,&Loc) ; /* *prref is *(tp+6), see remove_prref*/
+      dbgen_inst_pvv(new_answer_dealloc,get_arity(psc),2,tp,&Loc) ;
+      *new_ep = (pb)tp;
     }
-  else set_ep(psc, (pb)p);
+  else *new_ep = (pb)*prref;
+}
 
+
+xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
+{
+  CPtr p;
+  pb new_ep;
+  Psc psc = (Psc)ptoc_int(CTXTc 1);
+  //  Integer Tabled = ptoc_int(CTXTc 2);
+
+  set_type(psc, T_DYNA);
+  set_env(psc, T_VISIBLE);
+
+  /* set data to point to usermod -- lfcastro */
+  if (get_data(psc) == NULL) 
+    set_data(psc,global_mod);
+    
+  allocate_prref_tab(psc,(PrRef *)&p,&new_ep);
+
+#ifdef MULTI_THREAD
+  //  printf("prref disp tab for %s/%d? shared=%d\n",get_name(psc),get_arity(psc),get_shared(psc));
+
+  //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  if ((*(pb)get_ep(psc) == switchonthread) || !get_shared(psc)) {
+    struct DispBlk_t *dispblk;
+    if (*(pb)get_ep(psc) != switchonthread) {
+      /* create new switchonthread instruction and dispblock */
+      pb disp_instr_addr = calloc(sizeof(Cell),2);
+      dispblk = (struct DispBlk_t *)calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),1);
+
+      if (DispBlkHdr.firstDB) DispBlkHdr.firstDB->PrevDB = dispblk;
+      dispblk->NextDB = DispBlkHdr.firstDB;
+      DispBlkHdr.firstDB = dispblk;
+      if (!DispBlkHdr.lastDB) DispBlkHdr.lastDB = dispblk;
+
+      dispblk->MaxThread = MAXTHREAD;
+      *disp_instr_addr = switchonthread;
+      *(((CPtr *)disp_instr_addr)+1) = (CPtr)dispblk;
+      set_ep(psc,disp_instr_addr);
+    } else {
+    /* add to dispblock if room, extending if nec */
+    dispblk = (struct DispBlk_t *)*((CPtr)get_ep(psc)+1);
+    }
+    if (dispblk->MaxThread >= th->tid) {
+      (&(dispblk->Thread0))[th->tid] = (CPtr)new_ep;
+    } else xsb_exit("must expand dispatch-block");
+  } else set_ep(psc,new_ep);
+  //  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+#else
+  set_ep(psc,new_ep);
+#endif /* MULTI_THREAD */
   ctop_int(CTXTc 3,(Integer)p) ;
   return TRUE ;
 }
 
-xsbBool db_remove_prref( CTXTdecl /* PrRef */ ) 
+PrRef get_prref(CTXTdeclc Psc psc) {
+  PrRef prref = dynpredep_to_prref(CTXTc get_ep(psc));
+#ifdef MULTI_THREAD
+  //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  if (!prref) {
+    pb new_ep;
+    struct DispBlk_t *dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
+    allocate_prref_tab(psc,&prref,&new_ep);
+    if (dispblk->MaxThread >= th->tid) {
+      (&(dispblk->Thread0))[th->tid] = (CPtr) new_ep;
+    } else {
+      //      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+      xsb_exit("must expand dispatch-block");
+    }
+  }
+  //  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+#endif
+  return prref;
+}
+
+xsbBool db_get_prref( CTXTdecl /* PSC, -PrRef */ ) {
+  ctop_int(CTXTc 2,(Integer)get_prref(CTXTc (Psc)ptoc_int(CTXTc 1)));
+  return TRUE;
+}
+
+void free_prref(CTXTdeclc CPtr *p) {
+
+    if ( *(pb)p == tabletrysingle )
+      {
+	TIFptr mtTIF = (TIFptr) *(p+2);
+	Free_TIF(mtTIF);
+	/* free prref, from calld instr set in db_build_prref */
+	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData));
+	if (xsb_profiling_enabled)
+	  remove_prog_seg((pb)*(p+6));
+	mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ; /*free table hdr*/
+      }
+    else {
+      mem_dealloc((pb)p, sizeof(PrRefData));  /* free prref */
+      if (xsb_profiling_enabled)
+	remove_prog_seg((pb)p);
+    }
+}
+
+xsbBool db_remove_prref( CTXTdecl /* Psc */ ) 
 {
-  CPtr *p = (CPtr *)ptoc_int(CTXTc 1) ;
+  Psc psc = (Psc)ptoc_int(CTXTc 1) ;
 
   xsb_dbgmsg((LOG_RETRACT_GC, "DEL Prref %p", p ));
 
-  if ( *(pb)p == tabletrysingle )
-    {
-      TIFptr mtTIF = (TIFptr) *(p+2);
-      Free_TIF(mtTIF);
-      /* free prref, from calld instr set in db_build_prref */
-      mem_dealloc((pb)(*(p+6)), sizeof(PrRefData));
-      if (xsb_profiling_enabled)
-	remove_prog_seg((pb)*(p+6));
-      mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ; /*free table hdr*/
-    }
-  else {
-    mem_dealloc((pb)p, sizeof(PrRefData));  /* free prref */
-    if (xsb_profiling_enabled)
-      remove_prog_seg((pb)p);
+#ifdef MULTI_THREAD
+  if (get_shared(psc)) { /* noop if not shared */
+    SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+#endif
+    free_prref(CTXTc (CPtr *)get_ep(psc));
+    set_type(psc, T_ORDI);
+    set_ep(psc, ((byte *)(&(psc->load_inst))));
+#ifdef MULTI_THREAD
+    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   }
+#endif
+
   return TRUE ;
 }
 
@@ -2473,53 +2581,88 @@ static int another_buff(Cell Instr)
 /* equivalent of retractall(p(_,_,_,..,_)). It is given the address of	*/
 /* a buffer and frees it and all buffers it points to.			*/
 /*======================================================================*/
+#define MAXDYNFREEBUFF 200
 
-int gen_retract_all(CTXTdecl/* R1: + Prref */)
-{
-  ClRef buffers_to_free[200];
+void retractall_prref(CTXTdeclc PrRef prref) {
   int btop = 0;
   ClRef buffer;
-  PrRef prref = (PrRef)ptoc_int(CTXTc 1);
-  ClRef frstbuff = prref->FirstClRef;
+  ClRef frstbuff;
+  ClRef buffers_to_free[MAXDYNFREEBUFF];
 
-  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-  if (PredOpCode(prref) == jump) {  /* should be trie-asserted */
-    abolish_trie_asserted_stuff(CTXTc prref);
-    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
-    return TRUE;
-  }
-
-  force_retract_buffers();
-  buffers_to_free[btop++] = frstbuff;
-  while (btop > 0) {
-    buffer = buffers_to_free[--btop];
-    switch (ClRefType(buffer)) {
-    case SOB_RECORD: 
-      if (another_buff(ClRefJumpInstr(buffer)))
+  if (prref && (cell_opcode((CPtr)prref) != fail)) {
+    if (PredOpCode(prref) == jump) {  /* should be trie-asserted */
+      abolish_trie_asserted_stuff(CTXTc prref);
+      return;
+    }
+    frstbuff = prref->FirstClRef;
+    force_retract_buffers(CTXT);
+    buffers_to_free[btop++] = frstbuff;
+    while (btop > 0) {
+      if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
+      buffer = buffers_to_free[--btop];
+      switch (ClRefType(buffer)) {
+      case SOB_RECORD: 
+	if (another_buff(ClRefJumpInstr(buffer)))
 	  buffers_to_free[btop++] = (ClRef) ClRefFirstIndex(buffer);
-      if (another_buff(ClRefTryInstr(buffer)))
+	if (another_buff(ClRefTryInstr(buffer)))
 	  buffers_to_free[btop++] = ClRefNext(buffer);
-      mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
-      if (xsb_profiling_enabled)
-	remove_prog_seg((pb)buffer);
-      break ;
-    case UNINDEXED_CL: 
-    case INDEXED_CL:
-      if (another_buff(ClRefTryInstr(buffer)))
-	  buffers_to_free[btop++] = ClRefNext(buffer);
-      if( ClRefNotRetracted(buffer) ) {
-	/*		retract_clause(buffer,0) */
-	/* really_delete_clause(buffer); */
 	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
 	if (xsb_profiling_enabled)
 	  remove_prog_seg((pb)buffer);
+	break ;
+      case UNINDEXED_CL: 
+      case INDEXED_CL:
+	if (another_buff(ClRefTryInstr(buffer)))
+	  buffers_to_free[btop++] = ClRefNext(buffer);
+	if( ClRefNotRetracted(buffer) ) {
+	  /*		retract_clause(buffer,0) */
+	  /* really_delete_clause(buffer); */
+	  mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
+	  if (xsb_profiling_enabled)
+	    remove_prog_seg((pb)buffer);
+	}
+	break;
       }
-      break;
     }
+    cell_opcode((CPtr)prref) = fail;
   }
+}
+
+
+int gen_retract_all(CTXTdecl/* R1: + PredEP */)
+{
+  PrRef prref = (PrRef)ptoc_int(CTXTc 1);
+
+  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  retractall_prref(CTXTc dynpredep_to_prref(CTXTc prref));
   SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   return TRUE;
 }
+
+#ifdef MULTI_THREAD
+void thread_free_dyn_blks(CTXTdecl) {
+  struct DispBlk_t *dispblk;
+  PrRef prref0, prref;
+
+  //  printf("Enter thread_free_dyn_blks\n");
+  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  for (dispblk=DispBlkHdr.firstDB ; dispblk != NULL ; dispblk=dispblk->NextDB) {
+    if (th->tid <= dispblk->MaxThread) {
+      prref0 = (PrRef)(&(dispblk->Thread0))[th->tid];
+      if (prref0) {
+	if (cell_opcode((CPtr *)prref0) == tabletrysingle) 
+	  prref = (PrRef)((CPtr *)prref0)[6];
+	else prref = prref0;
+	retractall_prref(CTXTc prref);
+	free_prref(CTXTc (CPtr *)prref0);
+	//	printf("set prref free for thread %d\n",th->tid);
+       	(&(dispblk->Thread0))[th->tid] = (CPtr) NULL;
+      }
+    }
+  }
+  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+}
+#endif
 
 /*---------------------------------------------------------------*/
 
@@ -2565,7 +2708,6 @@ int trie_assert(CTXTdecl)
   BTNptr inst_node_ptr;
   int  found = 1;
 
-
   Clause = reg_term(CTXTc 1);
   psc    = (Psc)ptoc_int(CTXTc 2);
   Prref  = (CPtr)ptoc_int(CTXTc 4);
@@ -2588,7 +2730,6 @@ int trie_assert(CTXTdecl)
   xsb_dbgmsg((LOG_ASSERT, " Trie_Asserted_Clref %p",Trie_Asserted_Clref));
 
   switch_to_trie_assert;
-  
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
   if(Trie_Asserted_Clref == NULL){
     /*
@@ -2610,9 +2751,8 @@ int trie_assert(CTXTdecl)
     inst_node_ptr = (BTNptr)*(Trie_Asserted_Clref +3);
 
   one_term_chk_ins(CTXTc (CPtr)Clause,inst_node_ptr,&found);
-
-  switch_from_trie_assert;	
   SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+  switch_from_trie_assert;	
   ctop_int(CTXTc 5,found);
   return TRUE;
 }

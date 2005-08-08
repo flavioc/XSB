@@ -684,7 +684,7 @@ START:
 		else if (c == intab.dpoint) {
                     d = GetC(card,instr);
                     if (InType(d) == DIGIT) {
-DECIMAL:                *s++ = '.';
+LAB_DECIMAL:                *s++ = '.';
                         do {
                             if (d != '_') *s++ = d;
                             d = GetC(card,instr);
@@ -813,7 +813,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                 } else
                 if (c == intab.dpoint && InType(d) == DIGIT) {
                     *s++ = '0';
-                    goto DECIMAL;
+                    goto LAB_DECIMAL;
                 }
                 while (InType(d) == SIGN) {
                     if (--n == 0) {

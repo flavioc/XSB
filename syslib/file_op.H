@@ -28,6 +28,7 @@
 :- export add_index/3, retract_index/1, add_trie_index/1, retract_trie_index/1, 
   '_$index'/3 , '_$trie_asserted'/1.
 :- export add_table/1, retract_table/1, '_$table'/1.
+%%%:- export add_shared/1, add_private/1, '_$shared'/1.
 :- export mpa_to_skel/2.
 :- export force_file_op_loaded/0.
 
@@ -35,7 +36,8 @@
 :- import integer/1, functor/3, atom/1 from standard.
 :- import assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
 
-:- import conpsc/2, psc_type/2, term_new/2, psc_insert/4 from machine.
+:- import conpsc/2, psc_type/2, term_new/2, psc_insert/4, 
+	term_psc/2, psc_set_tabled/2 from machine.
 :- import instantiation_error/2 from error_handler.
 
 :- index '_$op1'/3-3.

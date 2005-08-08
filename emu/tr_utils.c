@@ -69,6 +69,10 @@
 
 /*----------------------------------------------------------------------*/
 
+extern struct Table_Info_Frame *get_tip(CTXTdeclc Psc);
+
+/*----------------------------------------------------------------------*/
+
 xsbBool has_unconditional_answers(VariantSF subg)
 {
   ALNptr node_ptr = subg_answers(subg);
@@ -267,7 +271,7 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
     return NULL;
   }
 
-  tif = get_tip(psc);
+  tif = get_tip(CTXTc psc);
   if ( IsNULL(tif) )
     xsb_abort("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
 

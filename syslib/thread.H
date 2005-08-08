@@ -32,13 +32,9 @@
 :- import default_error_handler/1 from error_handler.
 :- import append/3 from basics.
 :- import assert/1, (dynamic)/1 from assert.
-:- import retract/1, retractall/1 from assert.
 :- import (table)/1, functor/3, (=..)/2, name/2 from standard.
-:- import call_c/1 from standard.
 :- import abolish_table_call/1, abolish_table_pred/1, tnot/1 from tables.
 :- import abolish/1 from assert.
-:- import concat_atom/2 from string.
-:- import globalvar/2 from globalvar.
 
 :-export xsb_thread_create/3, xsb_thread_exit/2, xsb_thread_join/3,
 	xsb_thread_detach/2, xsb_thread_self/2.
@@ -69,9 +65,6 @@
 :- export ts_assert/1, ts_call/1, ts_tnot/1. % ts_abolish_table_pred/1.
 :- export ts_init_tables/0, ts_abolish_tables/0, ts_abolish/0.
 :- export ts_abolish_table_call/1.
-
-:- export ds_call/1, ds_assert/1, ds_retractall/1, ds_table/1, ds_table_ds/1,
-	ds_tnot/1, ds_abolish_table_call/1, ds_abolish_tables/0.
 
 /* Higher level */
 

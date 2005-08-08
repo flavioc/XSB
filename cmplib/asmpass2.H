@@ -35,5 +35,5 @@
 :- import write/1, put/1, integer/1 from standard.
 :- import write_int/1, write_float/1 from xsb_writ.
 :- import member/2 from basics.
-:- import sym_offset/2, sym_env/2, sym_category/2, sym_name/3 from symtab.
+:- import sym_offset/2, sym_env/2, sym_category/2, sym_name/3, sym_prop/2 from symtab.
 

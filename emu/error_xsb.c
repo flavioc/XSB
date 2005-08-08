@@ -54,6 +54,11 @@
 #include "thread_xsb.h"
 
 extern void remove_incomplete_tries(CTXTdeclc CPtr);
+extern PrRef get_prref(CTXTdeclc Psc psc);
+
+#ifndef MULTI_THREAD
+extern jmp_buf xsb_abort_fallback_environment;
+#endif
 
 FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
 FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
@@ -99,12 +104,11 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 
   assert_code_to_buff_p(CTXTc term_to_assert);
   /* need arity of 3, for extra cut_to arg */
-  Prref = (PrRef)get_ep(exceptballpsc);
+  Prref = get_prref(CTXTc exceptballpsc);
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
   free(space_for_ball_assert);
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
-
   /* Resume main emulator instruction loop */
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
@@ -213,8 +217,6 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 
 
 
-//#ifndef MULTI_THREAD
-
 void call_conv xsb_basic_abort(char *message)
 {
   prolog_term ball_to_throw;
@@ -243,9 +245,7 @@ void call_conv xsb_basic_abort(char *message)
   bld_copy(tptr,build_xsb_backtrace(CTXT));
   xsb_throw(CTXTc ball_to_throw);
 }
-//#endif
 
-//#ifndef MULTI_THREAD
 DllExport void call_conv xsb_abort(char *description, ...)
 {
   char message[MAXBUFSIZE];
@@ -258,9 +258,7 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_end(args);
   xsb_basic_abort(message);
 }
-//#endif
 
-//#ifndef MULTI_THREAD
 /* could give this a different ball to throw */
 DllExport void call_conv xsb_bug(char *description, ...)
 {
@@ -277,7 +275,6 @@ DllExport void call_conv xsb_bug(char *description, ...)
   va_end(args);
   xsb_basic_abort(message);
 }
-//#endif
 
 /*----------------------------------------------------------------------*/
 

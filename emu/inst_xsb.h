@@ -301,6 +301,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define switchonterm    0xb0
 #define switchonbound	0xb3
 #define switchon3bound	0xb4
+#define switchonthread  0xb5
 
 /* Instructions to compile body ors	*/
 

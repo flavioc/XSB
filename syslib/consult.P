@@ -640,12 +640,7 @@ set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize) :-
 	 ->	dynamic(Head)
 	 ;	true
 	),
-	psc_tabled(Psc, Tabled),
-	(Tabled =:= 0
-	 ->	psc_ep(Psc, Prref)		/* get the Prref */
-	 ;	psc_ep(Psc, Prrefa),
-		buff_word(Prrefa, 24, Prref)	% !! into calld
-	),
+	db_get_prref(Psc,Prref),
 	asserta(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)),
 	load_dyn_file(Filename),
 	asserta(load_dyn_pred_loaded(Filename,Head,Index,Hashsize)).
@@ -672,6 +667,8 @@ proc_directive(table(Pred)) :- !,
 	proc_table(Pred).
 proc_directive(table_all) :- !, 
 	warning('table_all directive ignored. Use table/n explicitly').
+proc_directive(thread_shared(Preds)) :- !,
+	thread_shared(Preds).
 proc_directive(op(P,T,S)) :- !, op(P,T,S).
 proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
 %proc_directive(multifile(P/A)) :- !,
@@ -706,6 +703,14 @@ proc_table((Pred, Preds)) :- !,
 	proc_table(Preds).
 proc_table(Pname/Arity) :- 
 	table(Pname/Arity).
+
+thread_shared((Pred, Preds)) :- !,
+	thread_shared(Pred),
+	thread_shared(Preds).
+thread_shared(PredSpec) :- 
+	mpa_to_skel(PredSpec,Skel),
+	term_psc(Skel,PSC),
+	psc_set_shared(PSC,1).
 
 ensure_loaded(File,dyn) :- ensure_dyn_loaded(File,1).
 ensure_loaded(File,dyna) :- ensure_dyn_loaded(File,0).
@@ -772,6 +777,7 @@ indexes_subsumed(Ispec,OIndex) :-
 	memberchk(Ispec,OIndex).
 
 %% The stack of files currently being loaded
+:- thread_shared loading_stack(_,_).
 :- dynamic loading_stack(_,_).
 :- index loading_stack/2-1.
 
@@ -786,6 +792,6 @@ push_loaded_file(File,Rand) :-
 
 
 pop_loaded_file(Rand) :-
-	retract(loading_stack(Rand,_)).
+	retract(loading_stack(Rand,_)),!.
 
 current_loaded_file(File) :- loading_stack(_,File), !.

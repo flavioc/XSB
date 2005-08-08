@@ -167,12 +167,13 @@ void printTrieSymbol(FILE *fp, Cell symbol) {
       break;
     case XSB_STRUCT:
       {
-          if (isboxedfloat(symbol))
+	Psc psc;
+	if (isboxedfloat(symbol))
           {
               fprintf(fp, "%lf", boxedfloat_val(symbol));
               break;              
           }
-	Psc psc = DecodeTrieFunctor(symbol);
+	psc = DecodeTrieFunctor(symbol);
 	fprintf(fp, "%s/%d", get_name(psc), get_arity(psc));
       }
       break;
@@ -257,6 +258,8 @@ static void symstkPrintNextTerm(CTXTdeclc FILE *fp, xsbBool list_recursion) {
     break;
   case XSB_STRUCT:
     {
+      Psc psc;
+      int i;
       if (isboxedfloat(symbol))
       {
         if ( list_recursion )
@@ -265,8 +268,6 @@ static void symstkPrintNextTerm(CTXTdeclc FILE *fp, xsbBool list_recursion) {
           fprintf(fp, "%lf", boxedfloat_val(symbol));
         break;         
       }
-      Psc psc;
-      int i;
 
       if ( list_recursion )
 	fprintf(fp, "|");

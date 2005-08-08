@@ -36,7 +36,9 @@
 /*======================================================================*/
 
 struct psc_rec {
-  byte env;			/* 0 - visible; 1 - local; 2 - unloaded */
+  byte env;			/* 0&0x3 - visible; 1&0x3 - local; 2&0x3 - unloaded;  */
+  				/* 0xc0, 2 bits for spy */
+				/* 0x20 - shared; 0x8 - tabled */
   byte entry_type;		/* see psc_defs.h */
   byte arity;
   byte length;
@@ -68,16 +70,20 @@ typedef struct psc_pair *Pair;
 /*======================================================================*/
 
 #define  get_type(psc)		((psc)->entry_type)
-#define  get_env(psc)		((psc)->env & 0x0f)
-#define  get_spy(psc)		((psc)->env & 0xf0)
+#define  get_env(psc)		((psc)->env & 0x03)
+#define  get_spy(psc)		((psc)->env & 0xc0)
+#define  get_shared(psc)	((psc)->env & 0x20)
+#define  get_tabled(psc)	((psc)->env & 0x08)
 #define  get_arity(psc)		((psc)->arity)
 #define  get_ep(psc)		((psc)->ep)
 #define  get_data(psc)		((psc)->data)
 #define  get_name(psc)		((psc)->nameptr)
 
 #define  set_type(psc, type)	(psc)->entry_type = type
-#define  set_env(psc, envir)	(psc)->env = get_spy(psc) | envir
-#define  set_spy(psc, spy)	(psc)->env = get_env(psc) | spy
+#define  set_env(psc, envir)	(psc)->env = get_spy(psc) | get_shared(psc) | get_tabled(psc) | envir
+#define  set_spy(psc, spy)	(psc)->env = spy | get_shared(psc) | get_tabled(psc) | get_env(psc)
+#define  set_shared(psc, shar)	(psc)->env = get_spy(psc) | shar | get_tabled(psc) | get_env(psc)
+#define  set_tabled(psc, tab)	(psc)->env = get_spy(psc) | get_shared(psc) | tab | get_env(psc)
 #define  set_arity(psc, ari)	((psc)->arity = ari)
 #define  set_length(psc, len)	((psc)->length = len)
 #define  set_ep(psc, val)	((psc)->ep = val)
@@ -126,7 +132,7 @@ inline static char *get_ret_string()	{ return (char *)ret_psc[0]; }
 
 extern Psc get_intern_psc();
 
-extern struct Table_Info_Frame *get_tip(Psc);
+//extern struct Table_Info_Frame *get_tip(CTXTdeclc Psc);
 
 extern void print_symbol_table();
 extern Psc get_psc_from_ep(void *);
