@@ -141,7 +141,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   tptr++;
   bld_string(tptr,string_find(valid_type,1));
   tptr++;
-  if (culprit == NULL) bld_int(tptr,0); 
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
   else bld_ref(tptr,culprit);
 
   xsb_throw(CTXTc ball_to_throw);

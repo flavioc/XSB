@@ -34,6 +34,7 @@
 #include "celltags_xsb.h"
 #include "flag_defs_xsb.h"
 #include "syscall_xsb.h"
+#include "psc_defs.h"
 
 /*======================================================================*/
 /* This file contains definitions for predicates implemented by the	*/
@@ -64,13 +65,19 @@ psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 psc_data(PSC, Data) :- psc_data(PSC, Data).
 
+psc_set_shared(PSC, Bool) :- psc_set_env(PSC, Bool, T_SHARED).
+psc_shared(PSC, Bool) :- psc_get_env(PSC, Bool, T_SHARED).
+psc_set_private(PSC, Bool) :- psc_set_env(PSC, Bool, T_PRIVATE).
+psc_private(PSC, Bool) :- psc_get_env(PSC, Bool, T_PRIVATE).
+psc_set_tabled(PSC, Bool) :- psc_set_env(PSC, Bool, T_TABLED).
+psc_tabled(PSC, Tabled) :- psc_get_env(PSC, Tabled, T_TABLED).
+
+psc_set_env(PSC,Bool,Mask) :-
+	Or is Bool*Mask, And is \(Mask),
+	psc_get_set_env_byte(PSC,And,Or,_).
+psc_get_env(PSC,Bool,Mask) :-
+	psc_get_set_env_byte(PSC,255,0,Res), Bool is (Res /\ Mask) // Mask.
 psc_get_set_env_byte(_PSC, _And, _Or, _Res) :- '_$builtin'(PSC_GET_SET_ENV_BYTE).
-psc_set_shared(PSC, Bool) :- Or is Bool<<5, psc_get_set_env_byte(PSC,16'df,Or,_).
-psc_shared(PSC, Bool) :- psc_get_set_env_byte(PSC,255,0,Res), Bool is (Res >> 5) /\ 1.
-%%psc_set_tabled(PSC, Bool) :- psc_set_tabled(PSC, Bool).
-%%psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
-psc_set_tabled(PSC, Bool) :- Or is Bool<<3, psc_get_set_env_byte(PSC,16'f7,Or,_).
-psc_tabled(PSC, Tabled) :- psc_get_set_env_byte(PSC,255,0,Res), Tabled is (Res >> 3) /\ 1.
 
 term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
 term_psc(Term, PSC) :- term_psc(Term, PSC).

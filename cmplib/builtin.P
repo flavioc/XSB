@@ -143,8 +143,6 @@ inline_builtin(existing_file_extension, 2, EXISTING_FILE_EXTENSION).
 
 inline_builtin(psc_env, 2, PSC_ENV).
 inline_builtin(psc_spy, 2, PSC_SPY).
-inline_builtin(psc_tabled, 2, PSC_TABLED).
-inline_builtin(psc_set_tabled, 2, PSC_SET_TABLED).
 
 % Should not be inlined -- Kostis !!
 % inline_builtin(is_incomplete, 2, IS_INCOMPLETE).

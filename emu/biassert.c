@@ -2415,7 +2415,7 @@ static inline void allocate_prref_tab(Psc psc, PrRef *prref, pb *new_ep) {
 
 xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
 {
-  CPtr p;
+  PrRef p;
   pb new_ep;
   Psc psc = (Psc)ptoc_int(CTXTc 1);
   //  Integer Tabled = ptoc_int(CTXTc 2);
@@ -2427,7 +2427,7 @@ xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
   if (get_data(psc) == NULL) 
     set_data(psc,global_mod);
     
-  allocate_prref_tab(psc,(PrRef *)&p,&new_ep);
+  allocate_prref_tab(psc,&p,&new_ep);
 
 #ifdef MULTI_THREAD
   //  printf("prref disp tab for %s/%d? shared=%d\n",get_name(psc),get_arity(psc),get_shared(psc));

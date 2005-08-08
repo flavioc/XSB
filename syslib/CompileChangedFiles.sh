@@ -4,7 +4,7 @@ XSB=$1
 
 ../build/touch.sh cmd...
 
-split -l 10 cmd... cmd..._
+split -l 40 cmd... cmd..._
 
 for f in cmd..._*; do
      cat cmd...hdr $f | "$XSB"

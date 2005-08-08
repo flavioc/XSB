@@ -43,7 +43,7 @@ ALL =	assert${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
 	../emu/system_defs_xsb.h ../emu/socket_defs_xsb.h \
-	../emu/thread_defs_xsb.h
+	../emu/thread_defs_xsb.h ../emu/psc_defs.h
 PROLOG_INCLUDES = ../prolog_includes/char_defs.h ../prolog_includes/standard.h
 
 

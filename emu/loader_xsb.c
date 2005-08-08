@@ -647,9 +647,9 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	 get_data(temp_pair->psc_ptr) == NULL))
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
-    env_type_set(temp_pair->psc_ptr, (t_env&0x7), t_type, (xsbBool)is_new);
-    set_shared(temp_pair->psc_ptr, (t_env&0x20));
-    set_tabled(temp_pair->psc_ptr, (t_env&0x08));
+    env_type_set(temp_pair->psc_ptr, (t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
+    set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+    set_tabled(temp_pair->psc_ptr, (t_env&T_TABLED));
     /* dsw added following, maybe wrongly */
     if (exp && (t_env&0x7) == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */

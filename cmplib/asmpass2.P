@@ -43,11 +43,11 @@ asm_putsym(Sym) :-
 	sym_name(Sym, Name, Arity), str_len(Name, L),
 	sym_env(Sym, Env), env_code(Env, DomCode),
 	(sym_prop((thread_shared),Sym)
-	 ->	DomCode1 is DomCode \/ 16'20
+	 ->	DomCode1 is DomCode \/ T_SHARED
 	 ;	DomCode1 = DomCode
 	),
 	(sym_prop(tabled(_,_),Sym)
-	 ->	DomCode2 is DomCode1 \/ 16'08
+	 ->	DomCode2 is DomCode1 \/ T_TABLED
 	 ;	DomCode2 = DomCode1
 	),
 	sym_category(Sym, Cat), category_code(Cat, CatCode),

@@ -28,6 +28,11 @@
 #define T_VISIBLE	0
 #define T_HIDDEN	1
 #define T_UNLOADED	2
+#define T_ENV		3
+#define T_TABLED	8
+#define T_SHARED	32 // 0x20  use decimal for Prolog include
+#define T_PRIVATE	16 // 0x10  use decimal for Prolog include
+#define T_SPY		192 // 0xc0 use decimal for Prolog include
 
 /* === type definition: (entry_type) ============================== */
 
