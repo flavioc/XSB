@@ -729,6 +729,7 @@ void init_machine(CTXTdecl)
 
   asynint_code = 0;
   asynint_val = 0;
+  clause_int = 0;
 
   pdl		= init_pdl ;
   glstack	= init_glstack ;

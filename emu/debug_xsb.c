@@ -884,6 +884,7 @@ void debug_inst(CTXTdeclc byte *lpcreg, CPtr le_reg)
 {
   if (!print_hide) {
     fprintf(stddbg, "\nxctr %d ",xctr);
+    printf(" (intFlg:%x)",asynint_val);
     print_inst(stddbg, lpcreg);
   }
   if (register_watch_flag) monitor_register_watch(CTXT);
