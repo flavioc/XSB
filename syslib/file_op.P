@@ -318,28 +318,16 @@ conv_one_indx(A,Arity,Aout) :-
 		Aout is A1+128
 	).
 
-/* quick hack to get dynamic tabling in. robustify it!!! */
-
-:- dynamic '_$table1'(_).
-:- thread_shared('_$table1'(_)).
-'_$table'(Term) :- %% bootstrapping issue, since dynamic calls this.
-	conpsc('_$table1'(_),Psc),
-	psc_type(Psc, Type),
-	(Type =:= 1				% DYNA so exists 
-	 ->     '_$table1'(Term)
-         ;      fail     % table doesn't exist yet, so it is empty
-        ).
-
 add_table(Spec) :-
 	mpa_to_skel(Spec,Call),
-	retractall('_$table1'(Call)),
-	assertai('_$table1'(Call),1),
 	term_psc(Call,Psc),
 	psc_set_tabled(Psc,1).  %% set it as tabled
 
 retract_table(Spec) :-
 	mpa_to_skel(Spec,Call),
-	retractall('_$table1'(Call)).
+	term_psc(Call,Psc),
+	psc_set_tabled(Psc,0).  %% set it as non-tabled
+	
 
 /*======================================================================*/
 /* mpa_to_skel(+MPAorSkel,-Skel) converts M:P/A or P/A to Skel 		*/

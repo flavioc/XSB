@@ -63,11 +63,14 @@ psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
 psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 psc_data(PSC, Data) :- psc_data(PSC, Data).
-psc_set_tabled(PSC, Bool) :- psc_set_tabled(PSC, Bool).
 
 psc_get_set_env_byte(_PSC, _And, _Or, _Res) :- '_$builtin'(PSC_GET_SET_ENV_BYTE).
 psc_set_shared(PSC, Bool) :- Or is Bool<<5, psc_get_set_env_byte(PSC,16'df,Or,_).
 psc_shared(PSC, Bool) :- psc_get_set_env_byte(PSC,255,0,Res), Bool is (Res >> 5) /\ 1.
+%%psc_set_tabled(PSC, Bool) :- psc_set_tabled(PSC, Bool).
+%%psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
+psc_set_tabled(PSC, Bool) :- Or is Bool<<3, psc_get_set_env_byte(PSC,16'f7,Or,_).
+psc_tabled(PSC, Tabled) :- psc_get_set_env_byte(PSC,255,0,Res), Tabled is (Res >> 3) /\ 1.
 
 term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
 term_psc(Term, PSC) :- term_psc(Term, PSC).
@@ -157,7 +160,6 @@ conset(_Term,_Val) :- '_$builtin'(CONSET_TERM).
 
 psc_env(PSC, Env) :- psc_env(PSC, Env).
 psc_spy(PSC, Spy) :- psc_spy(PSC, Spy).
-psc_tabled(PSC, Tabled) :- psc_tabled(PSC, Tabled).
 
 is_xwammode(Flag) :- is_xwammode(Flag).
 dereference_the_bucket(Pair_Pointer, Pair) :-
