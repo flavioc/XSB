@@ -1782,7 +1782,11 @@ int builtin_call(CTXTdeclc byte number)
 #ifdef HAVE_GETHOSTBYNAME
     static struct hostent *hostptr;
     hostptr = gethostbyname(ptoc_longstring(CTXTc 1));
+#ifdef DARWIN	/* OS X returns an array of hostnames in h_addr_list */
+    memmove(ptoc_longstring(CTXTc 2), hostptr->h_addr_list[0], hostptr->h_length);
+#else
     memmove(ptoc_longstring(CTXTc 2), hostptr->h_addr, hostptr->h_length);
+#endif
 #else
     xsb_abort("[SYS_GETHOST] Operation not available for this configuration");
 #endif
