@@ -339,7 +339,6 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
   CPtr inst_addr, end_addr;
   int  current_opcode, oprand;
   Cell tab_config_hold;	/* working pointer */
-  CellToBytesConv converter;
   
   *current_tab = -1;
   inst_addr = seg_text(current_seg);
@@ -648,8 +647,10 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
     env_type_set(temp_pair->psc_ptr, (t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
-    set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+    if (t_env&T_SHARED) printf("loaded %s/%d as shared\n",get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr));
+    if (is_new || !get_shared(temp_pair->psc_ptr)) set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
     set_tabled(temp_pair->psc_ptr, (t_env&T_TABLED));
+
     /* dsw added following, maybe wrongly */
     if (exp && (t_env&0x7) == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
