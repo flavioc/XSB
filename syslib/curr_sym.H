@@ -46,7 +46,7 @@
 	  term_type/2, stat_flag/2, stat_set_flag/2, machine_file_exists/1, 
 	  psc_env/2, psc_spy/2, psc_tabled/2, dereference_the_bucket/2,
 	  pair_psc/2, pair_next/2, next_bucket/2, conpsc/2,
-	  str_cat/3, intern_string/2, slash/1
+	  str_cat/3, intern_string/2, slash/1, psc_shared/2
      from machine.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import fmt_write_string/3 from file_io.

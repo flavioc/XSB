@@ -33,6 +33,7 @@
 :- import stat_set_flag/2 from machine.
 :- import xsb_configuration/2 from xsb_configuration.
 
+:- thread_shared library_directory/1.
 :- dynamic library_directory/1.
 
 :- %% Add the packages dir to the search path

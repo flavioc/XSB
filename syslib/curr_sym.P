@@ -530,6 +530,9 @@ psc_properties(PSC, Property) :-
 psc_properties(PSC, Property) :- 
 	psc_tabled(PSC, Tabled),
 	( Tabled =\= 0 -> Property = tabled ).
+psc_properties(PSC, Property) :- 
+	psc_shared(PSC, Shared),
+	( Shared =\= 0 -> Property = shared ).
 psc_properties(PSC, Property) :-
 	psc_name(PSC, Functor),		% Finding the Functor and the Arity
 	psc_arity(PSC, Arity),		% twice is silly, isn''t it?

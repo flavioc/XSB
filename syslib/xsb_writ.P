@@ -60,19 +60,23 @@ file_write0(File, Term) :- xsb_sys_mutex_lock(MUTEX_IO),
                            fail.
 file_write0(_, _).
 
-    	    	/******************************/
-    	        /* write_int/1, write_float/1 */
-    	    	/******************************/
-
+    	    	/**********************************/
+    	        /* write_int/1-2, write_float/1-2 */
+    	    	/**********************************/
 
 write_int(Num) :- 
 	stat_flag(11, File),
 	file_puttoken(File, TK_INT_0, Num).
 
+write_int(Str,Num) :-
+	file_puttoken(Str,TK_INT_0,Num).
+
 write_float(Num) :- 
 	stat_flag(11, File),
 	file_puttoken(File, TK_FLOAT_0, Num).
 
+write_float(Str,Num) :-
+	file_puttoken(Str,TK_FLOAT_0,Num).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
