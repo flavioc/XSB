@@ -272,7 +272,7 @@ compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
       ; open(OFile,write,OStr),
 	asm_genheader(OStr, Modname, SymTab, IsModule), % generate OBJ header
 	compile0(Module, 0, dummy, OStr, TIFile, IsModule),
-	close(OStr), writeln(userout,closed(OFile))
+	close(OStr)
       ).
 
 /*======================================================================*/

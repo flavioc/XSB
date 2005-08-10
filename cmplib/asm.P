@@ -90,8 +90,6 @@ asm_genheader0(OStr, ModName, SymTab, IsModule) :-
 /* asm_PIL(+OStr, +Sym, +PilCode, +NumberOfClauses, +IsModule).		*/
 /*	Generates byte code from the PIL code of a predicate block.	*/
 /*	The magic number for the block of byte code is 17-18-19-6.	*/
-/*	The predicate assumes that we are already telling the output	*/
-/*	byte-code file.							*/
 /*======================================================================*/
 
 asm_PIL(OStr, Sym, PilCode, NC, IsModule) :-
