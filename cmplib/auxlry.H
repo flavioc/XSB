@@ -35,8 +35,8 @@
 :- import load_dyn_module/1 from consult.
 :- import conget/2, conset/2 from gensym.
 :- import member/2 from basics.
-:- import  '=..'/2, arg/3, atomic/1, cputime/1, functor/3, nl/0, op/3,
-	  tell/1, telling/1, ttywritenl/2, write/1
+:- import  '=..'/2, arg/3, atomic/1, cputime/1, functor/3, nl/1, op/3,
+	  ttywritenl/2, write/2
      from standard.
 :- import assert/1, retractall/1, (dynamic)/1 from assert.
 :- import sys_exit/1 from shell.

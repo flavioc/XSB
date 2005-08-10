@@ -61,44 +61,43 @@
 /*======================================================================*/
 
 /*======================================================================*/
-/*  asm_genheader(+OFile, +ModName, +SymTab, +IsModule).		*/
+/*  asm_genheader(+OStr, +ModName, +SymTab, +IsModule).			*/
 /*	Generates the header and data segment of the byte code file	*/
 /*	(OFile).  When IsModule is 0, the module is assumed to be	*/
 /*	global (No distiction again!).					*/
 /*======================================================================*/
 
-asm_genheader(OFile, ModName, SymTab, IsModule) :-
-	asm_genheader0(OFile, ModName, SymTab, IsModule), 
+asm_genheader(OStr, ModName, SymTab, IsModule) :-
+	asm_genheader0(OStr, ModName, SymTab, IsModule), 
 	fail.	% reclaim space (remove all choice points left) and undo
 		% the binding of the tail of the hash table part of the
 		% symbol table (caused by the sorting of the symbols).
-asm_genheader(_OFile, _ModName, _SymTab, _IsModule).
+asm_genheader(_OStr, _ModName, _SymTab, _IsModule).
 
-asm_genheader0(OFile, ModName, SymTab, IsModule) :-
-	tell(OFile),
-	asm_magic(7),	/* use magic number 17-18-19-7 */
-	( IsModule =:= 0 -> put(0)
-	; str_len(ModName, L), put(L), write(ModName)
+asm_genheader0(OStr, ModName, SymTab, IsModule) :-
+	asm_magic(OStr,7),	/* use magic number 17-18-19-7 */
+	( IsModule =:= 0 -> file_put(OStr,0)
+	; str_len(ModName, L), file_put(OStr,L), write(OStr,ModName)
 	),
 	sym_count(SymTab, Count),
-	write_int(Count),
+	write_int(OStr,Count),
         sort_by_index(SymTab, Sorted_SymList),
-	asm_gendata(Sorted_SymList),
+	asm_gendata(OStr,Sorted_SymList),
 	!.
 
 
 /*======================================================================*/
-/* asm_PIL(+Sym, +PilCode, +NumberOfClauses, +IsModule).		*/
+/* asm_PIL(+OStr, +Sym, +PilCode, +NumberOfClauses, +IsModule).		*/
 /*	Generates byte code from the PIL code of a predicate block.	*/
 /*	The magic number for the block of byte code is 17-18-19-6.	*/
 /*	The predicate assumes that we are already telling the output	*/
 /*	byte-code file.							*/
 /*======================================================================*/
 
-asm_PIL(Sym, PilCode, NC, IsModule) :-
-	asm_magic(6),				% use magic number 17-18-19-6
+asm_PIL(OStr, Sym, PilCode, NC, IsModule) :-
+	asm_magic(OStr,6),				% use magic number 17-18-19-6
 	sym_name(Sym, PredName, Arity), 
-	put(Arity), str_len(PredName, L), asm_putlength(L), write(PredName),
+	file_put(OStr,Arity), str_len(PredName, L), asm_putlength(OStr,L), write(OStr,PredName),
 	asm_get_index(PilCode, ProgramCode, Index, IndSize, 0),
 	!,
 	compute_hash_table_size(NC, HashSize),
@@ -108,10 +107,10 @@ asm_PIL(Sym, PilCode, NC, IsModule) :-
 	make_label_list(LabelTab),
 	number_index_block(Index, 1),		% first block has number 1. 
 	!,
-	write_int(TxtSize), write_int(IndSize),	% Generate code segment header
+	write_int(OStr,TxtSize), write_int(OStr,IndSize),	% Generate code segment header
 	asm_opt(ProgramCode, Index, Sym, IsModule, OptProgramCode),
-	asm_gentext(OptProgramCode, LabelTab),	% Generate text  segment
-	asm_genindex(Index, LabelTab),		% Generate index segment
+	asm_gentext(OStr, OptProgramCode, LabelTab),	% Generate text  segment
+	asm_genindex(OStr, Index, LabelTab),		% Generate index segment
 	!.
 
 /*======================================================================*/
@@ -137,7 +136,7 @@ asm_get_index([Inst|Rest], ProgramCode, Index, IndexSize, Ni) :-
 /*	language files.							*/
 /*======================================================================*/
 
-asm_magic(N) :- put(17), put(18), put(19), put(N).
+asm_magic(OStr,N) :- file_put(OStr,17), file_put(OStr,18), file_put(OStr,19), file_put(OStr,N).
 
 /*======================================================================*/
 /* --- local utilities ------------------------------------------------	*/
@@ -284,3 +283,5 @@ prime(231, 229).	% prime(236, 233).
 prime(240, 239).	% prime(246, 241).
 % prime(100000000, 251).
 ***/
+
+force_asm_loaded.

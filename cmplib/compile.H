@@ -45,7 +45,7 @@
 :- import force_tp_comp_loaded/0 from tp_comp.
 :- import force_tp_cond_loaded/0 from tp_cond.
 :- import force_tp_goal_loaded/0 from tp_goal.
-:- import asm_genheader/4, asm_PIL/4 from asm.
+:- import force_asm_loaded/0, asm_genheader/4, asm_PIL/5 from asm.
 :- import force_varproc_loaded/0 from varproc.
 :- import force_asm_opt_loaded/0 from asm_opt.
 :- import force_asm_inst_loaded/0 from asm_inst.
@@ -59,8 +59,8 @@
 :- import force_tprog_loaded/0, compile_clause/5 from tprog.
 :- import force_tp_index_loaded/0, makeindex/6 from tp_index.
 :- import force_preprocess_loaded/0, preprocess/3 from preproc.
-:- import write_asmheader/4, write_asm_instructions/1 from writeasm.
-:- import throw/1, tell/1, telling/1, told/0, cputime/1 from standard.
+:- import write_asmheader/4, write_asm_instructions/2 from writeasm.
+:- import throw/1, tell/1, telling/1, told/0, cputime/1, open/3, close/1 from standard.
 :- import force_peephole_loaded/0, compile_peephole_opt/2 from peephole.
 :- import message/1, warning/1, error/1, time_message/2,
 	  setoptions/1, option/1

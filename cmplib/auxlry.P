@@ -272,21 +272,21 @@ meltargs(I, X, Y, FrozenVarDict) :-
 /*----writetop----------------------------------------------------------*/
 
 writetop(Term, Level) :-
-	telling(F), tell(userout), writetop0(Term, Level), nl, tell(F).
+	writetop0(Term, Level), nl(userout).
 
-writetop0(Term, _Level) :- atomic(Term), !, write(Term).
-writetop0(Term, _Level) :- var(Term), !, write(Term).
+writetop0(Term, _Level) :- atomic(Term), !, write(userout,Term).
+writetop0(Term, _Level) :- var(Term), !, write(userout,Term).
 writetop0(Term, Level) :- 
 	Level1 is Level - 1,
 	Term =.. [F|Args],
-	write(F),write('('),
-	( Level1 < 0 -> write('_') ; writetop_args(Args,Level1), ! ),
-	write(')'),
+	write(userout,F),write(userout,'('),
+	( Level1 < 0 -> write(userout,'_') ; writetop_args(Args,Level1), ! ),
+	write(userout,')'),
 	!.
 
 writetop_args([X], Level) :- writetop0(X, Level), !.
 writetop_args([X|R], Level) :-
-	writetop0(X, Level), write(','), writetop_args(R, Level).
+	writetop0(X, Level), write(userout,','), writetop_args(R, Level).
 
 
 /*======================================================================*/

@@ -24,12 +24,13 @@
 */
 
 
-:- export write_asmheader/4, write_asm_instructions/1.
+:- export write_asmheader/4, write_asm_instructions/2.
 
 :- import member/2 from basics.
 :- import asm_inst/4 from asm_inst.
-:- import nl/0, write/1, writeln/1, writeq/1, put/1, tell/1,
+:- import nl/1, write/2, writeln/2, writeq/2,
           arg/3, functor/3 from standard.
+:- import file_put/2 from file_io.
 :- import sym_name/3, sym_env/2, sym_category/2, sort_by_index/2,
           sym_prop/2 from symtab.
 :- import option/1 from auxlry.

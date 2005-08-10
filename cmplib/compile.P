@@ -93,7 +93,9 @@ compile(Modname, Basename, Extension,Options, ExportList) :-
 	tell(OldFile).
 
 compile(Modname, Basename, Options, ExportList) :-
-	telling(OldFile),
+	compile(Modname, Basename, XSB_SRC_EXTENSION_ATOM, Options, ExportList).
+
+/****	telling(OldFile),
 	file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, _OptFile),
 	setoptions(Options), initialize,
@@ -141,7 +143,7 @@ compile(Modname, Basename, Options, ExportList) :-
 	!,
 %	close_ti_file(TIFile),
 	retractall(current_compiled_module(_)),
-	tell(OldFile).
+	tell(OldFile).******/
 
 
 file_names(Basename, Ext,PFile, HFile, OFile, AFile, DFile,
@@ -156,7 +158,7 @@ file_names(Basename, Ext,PFile, HFile, OFile, AFile, DFile,
 	str_cat(Basename, '.table', TableFile),
 	str_cat(PFile, '.opt', OptFile).
 
-file_names(Basename, PFile, HFile, OFile, AFile, DFile,
+/**file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 	   SpecFile, TIFile, TableFile, OptFile) :-
 	str_cat(Basename,XSB_SRC_EXTENSION_ATOM,PFile),
 	str_cat(Basename,XSB_HDR_EXTENSION_ATOM,HFile),
@@ -166,7 +168,7 @@ file_names(Basename, PFile, HFile, OFile, AFile, DFile,
 	str_cat(Basename, '.spec', SpecFile),
 	str_cat(Basename, '.ti', TIFile),
 	str_cat(Basename, '.table', TableFile),
-	str_cat(PFile, '.opt', OptFile).
+	str_cat(PFile, '.opt', OptFile).***/
 
 initialize :-
 	conset('table #', 0),
@@ -252,44 +254,47 @@ modeinfer(ModName, Module, SymTab) :-
 /*======================================================================*/
 /*======================================================================*/
 
-myclose(F) :- tell(F), told.
-
+:- import writeln/2 from standard.
 compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
       ( option(compile_off) ->		%  generate *.A file
-	  write_asmheader(AFile, Modname, SymTab, IsModule), myclose(AFile)
+	  open(AFile,write,AStr),write_asmheader(AStr, Modname, SymTab, IsModule), close(AStr)
       ; conget('error occurred', 1) ->
 	  error(('Aborting compilation of module ',Modname,' due to errors')),
 	  abort_quietly
       ; option(asm_dump) -> 
-	  write_asmheader(AFile,Modname,SymTab, IsModule), % generate .A header
-	  asm_genheader(OFile, Modname, SymTab, IsModule), % generate OBJ header
-	  compile0(Module, 1, AFile, OFile, TIFile, IsModule),
-	  myclose(AFile), myclose(OFile)
-      ; asm_genheader(OFile, Modname, SymTab, IsModule),   % generate OBJ header
-	compile0(Module, 0, AFile, OFile, TIFile, IsModule),
-	myclose(OFile)
+	  open(AFile,write,AStr),
+	  write_asmheader(AStr,Modname,SymTab, IsModule), % generate .A header
+	  open(OFile,write,OStr),
+	  asm_genheader(OStr, Modname, SymTab, IsModule), % generate OBJ header
+	  compile0(Module, 1, AStr, OStr, TIFile, IsModule),
+	  close(AStr),
+	  close(OStr)
+      ; open(OFile,write,OStr),
+	asm_genheader(OStr, Modname, SymTab, IsModule), % generate OBJ header
+	compile0(Module, 0, dummy, OStr, TIFile, IsModule),
+	close(OStr), writeln(userout,closed(OFile))
       ).
 
 /*======================================================================*/
-/* compile0(+Module, +GenAsm, +AFile, +OFile, +IsModule)		*/
+/* compile0(+Module, +GenAsm, +AStr, +OStr, +IsModule)		*/
 /*	Compiles a module in the internal form.				*/
 /*======================================================================*/
 
-compile0(module(SymTab,_,ClList,[MainPred]),GenAsm,AFile,OFile,TIFile,M) :-
+compile0(module(SymTab,_,ClList,[MainPred]),GenAsm,AStr,OStr,TIFile,M) :-
 	member(PredBlk, [MainPred|ClList]),
-	compile_predicate(PredBlk, GenAsm, AFile, OFile, TIFile, M, SymTab),
+	compile_predicate(PredBlk, GenAsm, AStr, OStr, TIFile, M, SymTab),
 	fail.	/* just reclaim space */
 compile0(_, _, _, _, _, _).
 
 
 /*======================================================================*/
 /* compile_predicate(+pred(Sym,Clauses,_), +GenAsm,	 		*/
-/*		     +AFile, +OFile, +IsModule, +SymTab)		*/
+/*		     +AStr, +OStr, +IsModule, +SymTab)			*/
 /*	Compile the clauses of a single predicate into an assembly	*/
 /*	(*.A) file and/or an object file.				*/
 /*======================================================================*/
 
-compile_predicate(PredDef, GenAsm, AFile, OFile, TIFile, IsModule, SymTab) :-
+compile_predicate(PredDef, GenAsm, AStr, OStr, TIFile, IsModule, SymTab) :-
 	PredDef = pred(Sym,_,_),
 	(compile_check_ok(Sym)
 	 ->	preprocess(PredDef, PredBlks, SymTab),
@@ -299,8 +304,8 @@ compile_predicate(PredDef, GenAsm, AFile, OFile, TIFile, IsModule, SymTab) :-
 		compile_pred_block(TIPredBlks, PilCode-[], 0, NC),
 		!,		% needed to cut unnecessary choice points... (bmd & kostis)
 		compile_peephole_opt(PilCode, PilCode1),
-		( GenAsm =:= 0 -> true; tell(AFile), write_asm_instructions(PilCode1) ),
-		tell(OFile), asm_PIL(Sym, PilCode1, NC, IsModule),
+		( GenAsm =:= 0 -> true; write_asm_instructions(AStr,PilCode1) ),
+		asm_PIL(OStr, Sym, PilCode1, NC, IsModule),
 		!
 	 ;	true
 	).
@@ -400,6 +405,7 @@ hack_self_compile :-
 	force_tp_comp_loaded,
 	force_tp_cond_loaded,
 	force_tp_goal_loaded,
+	force_asm_loaded,
 	force_asm_opt_loaded,
 	force_tp_index_loaded,
 	force_listutil_loaded,

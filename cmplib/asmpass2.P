@@ -28,33 +28,33 @@
 #include "psc_defs.h"
 
 /*======================================================================*/
-/*  asm_gendata(+SymList)						*/ 
+/*  asm_gendata(+OStr, +SymList)						*/ 
 /*	Generates the data segment of the byte code file.  The data	*/
 /*	segment contains information about the symbols in the module.	*/
 /*======================================================================*/
 
-asm_gendata(SymList) :- 
+asm_gendata(OStr,SymList) :- 
 	member(Sym, SymList),	% Non-deterministically get a symbol
-	asm_putsym(Sym),
+	asm_putsym(OStr,Sym),
 	fail.		% reclaim space (remove all choice points left)
-asm_gendata(_).
+asm_gendata(_,_).
 
-asm_putsym(Sym) :-
+asm_putsym(OStr,Sym) :-
 	sym_name(Sym, Name, Arity), str_len(Name, L),
 	sym_env(Sym, Env), env_code(Env, DomCode),
 	(sym_prop((thread_shared),Sym)
-	 ->	DomCode1 is DomCode \/ T_SHARED
+	 ->	DomCode1 is DomCode \/ 16'20 %%T_SHARED
 	 ;	DomCode1 = DomCode
 	),
 	(sym_prop(tabled(_,_),Sym)
-	 ->	DomCode2 is DomCode1 \/ T_TABLED
+	 ->	DomCode2 is DomCode1 \/ 16'08 %%T_TABLED
 	 ;	DomCode2 = DomCode1
 	),
 	sym_category(Sym, Cat), category_code(Cat, CatCode),
-	put(DomCode2), put(CatCode), put(Arity), asm_putlength(L),
-	write(Name),
+	file_put(OStr,DomCode2), file_put(OStr,CatCode), file_put(OStr,Arity), asm_putlength(OStr,L),
+	write(OStr,Name),
 	( DomCode =\= T_IMPORTED -> true
-	; Env = im(Mod), str_len(Mod, LM), put(LM), write(Mod)
+	; Env = im(Mod), str_len(Mod, LM), file_put(OStr,LM), write(OStr,Mod)
 	),
 	!.
 
@@ -63,8 +63,8 @@ asm_putsym(Sym) :-
 % with length 255 and higher, the escape byte 255 is used and the
 % length of the atom is written as an integer (next 4 bytes).
 
-asm_putlength(L) :-
-	( L < 255 -> put(L) ; put(255), write_int(L) ).
+asm_putlength(OStr,L) :-
+	( L < 255 -> file_put(OStr,L) ; file_put(OStr,255), write_int(OStr,L) ).
 
 env_code(ex, T_EXPORTED).
 env_code((local), T_LOCAL).
@@ -78,7 +78,7 @@ category_code(module, T_MODU).
 
 
 /*======================================================================*/
-/*  asm_gentext(+PilCode, +LabelTab)					*/
+/*  asm_gentext(+OStr, +PilCode, +LabelTab)				*/
 /*	Generates the text segment of the byte code file.  Each time	*/
 /*	text segment for a single predicate block is generated.  The	*/
 /*	PilCode for the predicate contains the non-index code ONLY	*/
@@ -86,66 +86,66 @@ category_code(module, T_MODU).
 /*	out of the PilCode by predicate asm_get_index/5 of asm).	*/
 /*======================================================================*/
 
-asm_gentext(Program, LabelTab) :-
+asm_gentext(OStr, Program, LabelTab) :-
 	member(Inst, Program),
-	asm_gentext_inst(Inst, LabelTab),
+	asm_gentext_inst(OStr, Inst, LabelTab),
 	fail.		% reclaim space (remove all choice points left)
-asm_gentext(_, _).
+asm_gentext(_, _, _).
 
-asm_gentext_inst(Inst, LabelTab) :-
+asm_gentext_inst(OStr, Inst, LabelTab) :-
 	asm_inst(Inst, _Len, Opcode, Args),
-	( Opcode >= 0 -> put(Opcode), asm_genargs(Args, LabelTab)
+	( Opcode >= 0 -> file_put(OStr,Opcode), asm_genargs(OStr, Args, LabelTab)
 	; Opcode =:= -2 -> true		% label
 	; error(('unknown pil text instruction: ', Inst))
 	),
 	!.
 
-asm_genargs([], _).
-asm_genargs([One|More], LabelTab) :- 
-	asm_genarg(One, LabelTab), 
-	asm_genargs(More, LabelTab).
+asm_genargs(_OStr,[], _).
+asm_genargs(OStr,[One|More], LabelTab) :- 
+	asm_genarg(OStr,One, LabelTab), 
+	asm_genargs(OStr,More, LabelTab).
 
-asm_genarg(p, _) :- put(0).
-asm_genarg(pp, _) :- put(0), put(0).
-asm_genarg(ppp, _) :- put(0), put(0), put(0).
-asm_genarg(s(Sym), _) :- sym_offset(Sym, I), write_int(I).
-asm_genarg(c(Sym), _) :- sym_offset(Sym, I), write_int(I).
-asm_genarg(g(Sym), _) :- sym_offset(Sym, I), write_int(I).
-asm_genarg(n(I), _) :- integer(I) -> write_int(I) ; write_float(I).
-asm_genarg(i(I), _) :-  write_int(I).
-asm_genarg(l(L), LabelTab) :- hashed_find_label((L,I), LabelTab), write_int(I).
-asm_genarg(r(I), _) :- put(I).
-asm_genarg(v(I), _) :- put(I).
-asm_genarg(a(I), _) :- put(I).
-asm_genarg(t(T), _) :- write(T).
+asm_genarg(OStr,p, _) :- file_put(OStr,0).
+asm_genarg(OStr,pp, _) :- file_put(OStr,0), file_put(OStr,0).
+asm_genarg(OStr,ppp, _) :- file_put(OStr,0), file_put(OStr,0), file_put(OStr,0).
+asm_genarg(OStr,s(Sym), _) :- sym_offset(Sym, I), write_int(OStr,I).
+asm_genarg(OStr,c(Sym), _) :- sym_offset(Sym, I), write_int(OStr,I).
+asm_genarg(OStr,g(Sym), _) :- sym_offset(Sym, I), write_int(OStr,I).
+asm_genarg(OStr,n(I), _) :- integer(I) -> write_int(OStr,I) ; write_float(OStr,I).
+asm_genarg(OStr,i(I), _) :-  write_int(OStr,I).
+asm_genarg(OStr,l(L), LabelTab) :- hashed_find_label((L,I), LabelTab), write_int(OStr,I).
+asm_genarg(OStr,r(I), _) :- file_put(OStr,I).
+asm_genarg(OStr,v(I), _) :- file_put(OStr,I).
+asm_genarg(OStr,a(I), _) :- file_put(OStr,I).
+asm_genarg(OStr,t(T), _) :- write(OStr,T).
 
 
 /*======================================================================*/
-/*  asm_genindex(+IndexCode, +LabelTab)					*/
+/*  asm_genindex(+OStr, +IndexCode, +LabelTab)				*/
 /*	Generates the index segment of the byte code file.  Each time	*/
 /*	index code for a single predicate block is generated.		*/
 /*======================================================================*/
 
-asm_genindex(IndexCode, LabelTab) :-
+asm_genindex(OStr, IndexCode, LabelTab) :-
 	member(Inst, IndexCode),
-	asm_proc_index(Inst, LabelTab),
+	asm_proc_index(OStr,Inst, LabelTab),
 	fail.		% reclaim space
-asm_genindex(_, _).
+asm_genindex(_, _, _).
 
-asm_proc_index(cases(_Label,Arity,Num,OrderNum), _) :-
-	asm_genindex_inst(cases(Arity,OrderNum,Num), _), !.
-asm_proc_index(arglabel(T,Val,L), LabelTab) :-
+asm_proc_index(OStr, cases(_Label,Arity,Num,OrderNum), _) :-
+	asm_genindex_inst(OStr, cases(Arity,OrderNum,Num), _), !.
+asm_proc_index(OStr, arglabel(T,Val,L), LabelTab) :-
 	( T = c, sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
 	; T = s, sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
 	; T = i, Inst = arglabel(T,Val,L)
 	; Inst = arglabel(T,L)
 	), 
-	asm_genindex_inst(Inst, LabelTab), !.
+	asm_genindex_inst(OStr, Inst, LabelTab), !.
 
-asm_genindex_inst(Inst, LabelTab) :-
+asm_genindex_inst(OStr, Inst, LabelTab) :-
 	asm_inst(Inst, _Len, Opcode, Args),
-	( Opcode >= 0 -> put(Opcode), asm_genargs(Args, LabelTab)
-	; Opcode =:= -3 -> asm_genargs(Args, LabelTab)	% arglabel
+	( Opcode >= 0 -> file_put(OStr,Opcode), asm_genargs(OStr,Args, LabelTab)
+	; Opcode =:= -3 -> asm_genargs(OStr,Args, LabelTab)	% arglabel
 	; error(('unknown pil index instruction: ', Inst))
 	),
 	!.

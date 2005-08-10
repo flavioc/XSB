@@ -24,16 +24,17 @@
 */
 
 
-:- export asm_genheader/4, asm_PIL/4, asm_magic/1.
+:- export asm_genheader/4, asm_PIL/5, asm_magic/2, force_asm_loaded/0.
 
 :- import insert/2 from listutil.
 :- import asm_opt/5 from asm_opt.
 :- import asm_inst/4 from asm_inst.
 :- import term_hash/3, str_len/2 from machine.
-:- import write_int/1 from xsb_writ.
+:- import write_int/2 from xsb_writ.
 :- import log_ith/3 from basics.
-:- import write/1, put/1, tell/1 from standard.
-:- import asm_gendata/1, asm_genindex/2, asm_gentext/2, asm_putlength/1
+:- import write/2 from standard.
+:- import file_put/2 from file_io.
+:- import asm_gendata/2, asm_genindex/3, asm_gentext/3, asm_putlength/2
      from asmpass2.
 :- import sym_name/3, sym_count/2, sym_propin/2, sort_by_index/2 from symtab.
 
