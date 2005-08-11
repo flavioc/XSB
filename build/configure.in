@@ -1377,8 +1377,9 @@ case "$canonical" in
                 fi
         ;;
     *-rhapsody* | *-darwin* )
+				CFLAGS="-faltivec -fPIC ${CFLAGS} "
                 AC_DEFINE(DARWIN)
-		
+			    AC_DEFINE(FOREIGN_ELF)
 		DYNMOD_LINKFLAGS="-dynamiclib -single_module -nostartfiles"
 		DYNMOD_SHAREDLIB_EXTENSION=jnilib
         ;;

@@ -3698,7 +3698,9 @@ EOF
                 fi
         ;;
     *-rhapsody* | *-darwin* )
+		CFLAGS="-faltivec -fPIC ${CFLAGS} "
                 cat >> confdefs.h <<\EOF
+#define FOREIGN_ELF 1
 #define DARWIN 1
 EOF
 
