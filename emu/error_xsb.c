@@ -80,6 +80,7 @@ static char *err_msg[] = {
 extern void print_cp_backtrace();
 #endif
 
+/* TLS: now frees Ball, which was assumed to be malloced */
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 {
   Psc exceptballpsc;
@@ -106,6 +107,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   /* need arity of 3, for extra cut_to arg */
   Prref = get_prref(CTXTc exceptballpsc);
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
+  free(cs_val(Ball));
   free(space_for_ball_assert);
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
@@ -121,11 +123,11 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
-  Cell space_for_iso_ball[10];  /* xsb_throw will copy it out of here */
 
   sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  tptr = space_for_iso_ball;
+  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
@@ -149,6 +151,40 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
 }
 
 /*****************/
+void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit, 
+					char *predicate,int arity, int arg) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+
+  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+
+  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("domain_error",2,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(valid_domain,1));
+  tptr++;
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
+
+  xsb_throw(CTXTc ball_to_throw);
+
+}
+
+/*****************/
 void call_conv xsb_permission_error(CTXTdeclc
 				    char *operation,char *object,int rtrn,
 				    char *predicate,int arity) 
@@ -156,11 +192,11 @@ void call_conv xsb_permission_error(CTXTdeclc
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
-  Cell space_for_iso_ball[10];  /* xsb_throw will copy it out of here */
 
   sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
 
-  tptr = space_for_iso_ball;
+  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
@@ -189,7 +225,6 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
-  Cell space_for_iso_ball[10];  /* xsb_throw will copy it out of here */
 
   if (! IsNULL(state)) {
     sprintf(message," in arg %d of predicate %s/%d must be %s",arg,predicate,arity,
@@ -198,7 +233,8 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
     sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
   }    
 
-  tptr = space_for_iso_ball;
+  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
@@ -215,14 +251,11 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 
 /*****************/
 
-
-
 void call_conv xsb_basic_abort(char *message)
 {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr;
-  Cell space_for_ball[4]; /* xsb_throw will copy this */
 #ifdef MULTI_THREAD
   char mtmessage[MAXBUFSIZE];
   int tid = xsb_thread_self();
@@ -230,10 +263,11 @@ void call_conv xsb_basic_abort(char *message)
   th = find_context(xsb_thread_self());
 #endif
 
-  tptr = space_for_ball;
+  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("_$abort_ball",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
+
   tptr++;
 #ifdef MULTI_THREAD
   sprintf(mtmessage,"[th %d] %s",tid,message);
