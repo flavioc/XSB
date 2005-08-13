@@ -106,9 +106,12 @@ static Psc make_psc_rec(char *name, char arity) {
   
   length = strlen(name);
   temp = (Psc)mem_alloc(sizeof(struct psc_rec));
-  set_env(temp, 0);
   set_type(temp, 0);
-  set_spy(temp, 0);
+  temp->env = 0;
+  //  set_env(temp, 0);
+  //  set_spy(temp, 0);
+  //  set_shared(temp, 0);
+  //  set_tabled(temp, 0);
   set_arity(temp, arity);
   set_length(temp, length);
   set_data(temp, 0);
