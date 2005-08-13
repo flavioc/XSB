@@ -379,7 +379,7 @@ static void batched_compute_wfs(CTXTdeclc CPtr leader_compl_frame,
 	 mark_as_completed(curr_subg);
 	 reclaim_incomplete_table_structs(curr_subg);
 	 if (neg_simplif_possible(curr_subg)) {
-	   simplify_neg_fails(curr_subg);
+	   simplify_neg_fails(CTXTc curr_subg);
 	 }
        }
        
@@ -504,7 +504,7 @@ static void batched_compute_wfs(CTXTdeclc CPtr leader_compl_frame,
       curr_subg = compl_subgoal_ptr(ComplStkFrame);
       mark_as_completed(curr_subg);
       if (neg_simplif_possible(curr_subg)) {
-	simplify_neg_fails(curr_subg);
+	simplify_neg_fails(CTXTc curr_subg);
       }
       ComplStkFrame = next_compl_frame(ComplStkFrame);
     }

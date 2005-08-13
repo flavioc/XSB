@@ -266,7 +266,7 @@ typedef struct subgoal_frame {
   CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
   CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
   int tid;		  /* Thread id of the generator thread for this sg */
   byte grabbed; 	  /* Subgoal is marked to be computed for leader in
 			     deadlock detection */

@@ -1,6 +1,6 @@
 #include "xsb_config.h"
 
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
                                                                                 
 #include "context.h"
 #include "basicdefs.h"

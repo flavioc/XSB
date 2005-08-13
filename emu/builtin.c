@@ -2138,7 +2138,7 @@ int builtin_call(CTXTdeclc byte number)
      * Now both goalSF and subsumerSF should be set for all cases.
      * Determine status values based on these pointers.
      */
-#ifndef MULTI_THREAD
+#ifndef SHARED_COMPL_TABLES
     if ( IsNonNULL(goalSF) ) {
 #else
     if ( IsNonNULL(goalSF) && !subg_grabbed(goalSF)) {
@@ -2151,7 +2151,7 @@ int builtin_call(CTXTdeclc byte number)
     else
       goal_type = NO_CALL_ENTRY;
 
-#ifndef MULTI_THREAD
+#ifndef SHARED_COMPL_TABLES
     if ( IsNonNULL(subsumerSF) ) {
 #else
     if ( IsNonNULL(subsumerSF) && !subg_grabbed(subsumerSF)) {

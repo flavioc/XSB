@@ -98,7 +98,7 @@ case IS_INCOMPLETE: {
   const int regSubgoalFrame = 1;  /* in: rep of a tabled subgoal */
   const int regRootSubgoal  = 2;  /* in: PTCPreg */
 
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
 	int table_tid ;
 	th_context *waiting_for_thread ;
 #endif
@@ -115,7 +115,7 @@ case IS_INCOMPLETE: {
   dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);
   xsb_dbgmsg((LOG_DELAY, ", (%x)\n", (int)&subg_ans_root_ptr(producerSF)));
 
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
 /* This allows sharing of completed tables.  */
      pthread_mutex_lock(&completing_mut);
      while( !is_completed(producerSF) )
