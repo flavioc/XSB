@@ -301,6 +301,7 @@ odbc_exec_query(_A, _B, _C, _D, _E, _F) :- '_$builtin'(ODBC_EXEC_QUERY).
 
 pow(_X,_Y,_Z):- '_$builtin'(XSB_POW).
 
+float_op(_Op, _L1, _L2, _L3, _R1, _R2, _R3, _Res1, _Res2, _Res3):- '_$builtin'(FLOAT_OP).
 print_ls :- print_ls.
 print_tr :- print_tr.
 print_heap(X,Y) :- print_heap(X,Y).

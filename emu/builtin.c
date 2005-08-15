@@ -91,7 +91,6 @@
 #include "table_status_defs.h"
 #include "rw_lock.h"
 #include "deadlock.h"
-
 #ifdef ORACLE
 #include "oracle_xsb.h"
 #endif
@@ -282,19 +281,15 @@ DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
   case XSB_FLOAT:
     xsb_abort("[PTOC_STRING] String (atom) argument expected");
   case XSB_STRUCT:  /* tentative approach to fix boxed ints --lfcastro */
-    //printf("\nBUILTIN.C: fell into struct case...\n");
     if (isboxedinteger(addr)) 
       return (char *)boxedint_val(addr);
     else
       xsb_abort("[PTOC_STRING] String (atom) argument expected");
   case XSB_INT: 
-      //printf("\nBUILTIN.C: fell into int case...\n");
       return (char *)int_val(addr);
   case XSB_STRING: 
-      //printf("\nBUILTIN.C: fell into string case...\n");
       return string_val(addr); 
   default:
-    //printf("\nBUILTIN.C: fell into unknown case...\n");
     xsb_abort("[PTOC_STRING] Argument of unknown type");
   }
   return "";
@@ -860,6 +855,7 @@ void init_builtin_table(void)
   set_builtin_table(PRIVATE_BUILTIN, "private_builtin");
   set_builtin_table(SEGFAULT_HANDLER, "segfault_handler");
 
+  set_builtin_table(FLOAT_OP, "float_op");
   set_builtin_table(IS_ATTV, "is_attv");
   set_builtin_table(VAR, "var");
   set_builtin_table(NONVAR, "nonvar");
@@ -1993,7 +1989,7 @@ int builtin_call(CTXTdeclc byte number)
   case DB_RECLAIM0:
     db_reclaim0(CTXT);
     break;
-    
+
 /*----------------------------------------------------------------------*/
 
 #include "std_cases_xsb_i.h"
@@ -2493,8 +2489,52 @@ int builtin_call(CTXTdeclc byte number)
        builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO
        DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY
        NUMBER OF BUILTINS WITH IT.  */
-  case PRIVATE_BUILTIN: return TRUE; //private_builtin();
-
+       
+  case FLOAT_OP:
+  {
+    char * operator = ptoc_string(1);
+    Float result;
+    switch((*operator))
+    {
+    case '+':
+    result = 
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        +
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        break;
+    case '-':
+    result = 
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        -
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        break;
+    case '*':
+    result = 
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        *
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        break;
+    case '/':
+    result = 
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        /
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        break;
+    default:
+        result = 0.0;
+        xsb_abort("[float_op] unsupported operator: %s\n", operator);
+        return FALSE;
+    }
+    ctop_int(CTXTc 8, ((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(result) ));
+    ctop_int(CTXTc 9, (FLOAT_MIDDLE_24_BITS(result)));
+    ctop_int(CTXTc 10, (FLOAT_LOW_24_BITS(result)));    
+    return TRUE;
+  }
+  case PRIVATE_BUILTIN: 
+  {
+      //private_builtin();
+    return TRUE;
+  }
   case SEGFAULT_HANDLER: { /* Set the desired segfault handler:
 			      +Arg1:  none  - don't catch segfaults;
 				      warn  - warn and exit;

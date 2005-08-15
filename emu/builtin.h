@@ -199,8 +199,9 @@
 
 #define SEGFAULT_HANDLER	182
 
+#define FLOAT_OP        188
 #define IS_ATTV			189 /* similar to IS_LIST */
-#define VAR			190
+#define VAR             190
 #define NONVAR			191
 #define ATOM			192
 #define INTEGER			193
@@ -211,7 +212,7 @@
 #define CALLABLE		198
 #define IS_LIST			199
 #define FUNCTOR			200
-#define ARG			201
+#define ARG             201
 #define UNIV			202
 #define IS_MOST_GENERAL_TERM    203
 
