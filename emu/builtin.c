@@ -2492,33 +2492,33 @@ int builtin_call(CTXTdeclc byte number)
        
   case FLOAT_OP:
   {
-    char * operator = ptoc_string(1);
+    char * operator = ptoc_string(CTXTc 1);
     Float result;
     switch((*operator))
     {
     case '+':
     result = 
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 2)), (ptoc_int(CTXTc 3)), (ptoc_int(CTXTc 4))))
         +
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 5)), (ptoc_int(CTXTc 6)), (ptoc_int(CTXTc 7))));
         break;
     case '-':
     result = 
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 2)), (ptoc_int(CTXTc 3)), (ptoc_int(CTXTc 4))))
         -
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 5)), (ptoc_int(CTXTc 6)), (ptoc_int(CTXTc 7))));
         break;
     case '*':
     result = 
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 2)), (ptoc_int(CTXTc 3)), (ptoc_int(CTXTc 4))))
         *
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 5)), (ptoc_int(CTXTc 6)), (ptoc_int(CTXTc 7))));
         break;
     case '/':
     result = 
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(2)), (ptoc_int(3)), (ptoc_int(4))))
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 2)), (ptoc_int(CTXTc 3)), (ptoc_int(CTXTc 4))))
         /
-        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(5)), (ptoc_int(6)), (ptoc_int(7))));
+        (EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 5)), (ptoc_int(CTXTc 6)), (ptoc_int(CTXTc 7))));
         break;
     default:
         result = 0.0;
