@@ -42,7 +42,6 @@ mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 :- dynamic(current_compiled_module(_)).
 
 compile(Modname, Basename, Extension,Options, ExportList) :-
-	telling(OldFile),
 	file_names(Basename, Extension,PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, _OptFile),
 	setoptions(Options), initialize,
@@ -88,9 +87,7 @@ compile(Modname, Basename, Extension,Options, ExportList) :-
 	;   time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
 	),
 	!,
-%	close_ti_file(TIFile),
-	retractall(current_compiled_module(_)),
-	tell(OldFile).
+	retractall(current_compiled_module(_)).
 
 compile(Modname, Basename, Options, ExportList) :-
 	compile(Modname, Basename, XSB_SRC_EXTENSION_ATOM, Options, ExportList).
@@ -141,7 +138,6 @@ compile(Modname, Basename, Options, ExportList) :-
 	;   time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
 	),
 	!,
-%	close_ti_file(TIFile),
 	retractall(current_compiled_module(_)),
 	tell(OldFile).******/
 
@@ -254,7 +250,6 @@ modeinfer(ModName, Module, SymTab) :-
 /*======================================================================*/
 /*======================================================================*/
 
-:- import writeln/2 from standard.
 compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
       ( option(compile_off) ->		%  generate *.A file
 	  open(AFile,write,AStr),write_asmheader(AStr, Modname, SymTab, IsModule), close(AStr)
@@ -334,21 +329,11 @@ compile_check_ok(Sym) :-
 ti_transform(PredBlks, TIPredBlks, TIFile, SymTab) :-
 	ti_pred_block(PredBlks, TIPredBlks, SymTab),
 	( option(ti_dump) ->
-		telling(F),
-		tell(TIFile),
-		write_preds(TIPredBlks),
-		told,
-		tell(F)
+		open(TIFile,write,TIStr),
+		write_preds(TIStr,TIPredBlks),
+		close(TIStr)
 	; true
 	).
-
-/* TLS: this just erases the file created by tidump 
-close_ti_file(TIFile) :-
-	( option(ti_dump) ->
-		telling(F), tell(TIFile), told, tell(F)
-	; true
-	).
-*/
 
 compile_pred_block([], PilCode-PilCode, NCin, NCin).
 compile_pred_block([PredDef|PRest], PilCode-PilCodeR, NCin, NCout) :-

@@ -221,13 +221,13 @@ table to use. */
          ;      fail     % index1 doesn't exist yet, so it is empty
         ).
 
-:- dynamic '_$index1'(_,_,_).
 :- thread_shared('_$index1'(_,_,_)).
+:- dynamic '_$index1'(_,_,_).
 :- assert('_$index1'(dyn_op(_,_,_),3,17)),
    assert('_$index1'('_$index'(_,_,_),1,29)).
 
-:- dynamic '_$trie_asserted1'(_).
 :- thread_shared('_$trie_asserted1'(_)).
+:- dynamic '_$trie_asserted1'(_).
 '_$trie_asserted'(Term) :- 
 	conpsc('_$trie_asserted1'(_),Psc),
 	psc_type(Psc, Type),

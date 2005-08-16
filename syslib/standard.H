@@ -98,7 +98,7 @@
 :- import predicate_property/2 from curr_sym.
 :- import dcg/2 from dcg.
 :- import eval/2 from eval.
-:- import file_open/3, file_close/2, file_get/2, file_put/2,
+:- import file_open/3, file_open/4, file_close/2, file_get/2, file_put/2,
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/2,
   fd2iostream/3      from file_io.
 :- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,

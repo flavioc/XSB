@@ -66,7 +66,7 @@ see(Integer):-
 	set_input(Integer).
 see(File) :- 
 	check_atom(File,see/1,1),
-	open(File,read,Str),
+	open(File,read,0,Str),
 	set_input(Str).
 
 seeing(Str) :- stat_flag(CURRENT_INPUT, Str).
@@ -86,7 +86,7 @@ tell(Integer):-
 	set_output(Integer).
 tell(File) :- 
 	check_atom(File,tell/1,1),
-	open(File,write,Str),
+	open(File,write,0,Str),
 	set_output(Str).
 
 telling(Str) :- stat_flag(CURRENT_OUTPUT, Str).
@@ -101,32 +101,34 @@ told :-    stat_flag(CURRENT_OUTPUT, Str),
 
 % TLS considering user, userin, userout, user_in and user_out as aliases.
 
-open(File,_,_):-
+open(File,Mode,Stream) :- open(File,Mode,0,Stream).
+
+open(File,_,_,_):-
 	var(File), !, 
 	instantiation_error(open/3,1,bound).
-open(user,read, STDIN):-!,
+open(user,read,_,STDIN):-!,
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(userin,read,STDIN):-!,
+open(userin,read,_,STDIN):-!,
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(user_in,read,STDIN):-!,   % ISO
+open(user_in,read,_,STDIN):-!,   % ISO
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(user_input,read,STDIN):-!,   % ISO
+open(user_input,read,_,STDIN):-!,   % ISO
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(user,write,STDOUT):-!,
+open(user,write,_,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(userout,write,STDOUT):-!,
+open(userout,write,_,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(user_out,write,STDOUT):-!,  % ISO
+open(user_out,write,_,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(user_output,write,STDOUT):-!,  % ISO
+open(user_output,write,_,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(pipe(FileDescr),Mode,Stream):- !,
+open(pipe(FileDescr),Mode,_,Stream):- !,
 	file_translate(Mode,M),
 	fd2iostream(FileDescr,M,Stream),
 	(Stream < 0 -> 
 	    permission_error(open,file,FileDescr,open/3)
 	 ;  true).
-open(atom(Atom),Mode,Stream):- !,
+open(atom(Atom),Mode,_,Stream):- !,
 	(Mode == read -> 
 	    true
 	 ;  domain_error(read,Mode,open/3,2) ),
@@ -134,16 +136,16 @@ open(atom(Atom),Mode,Stream):- !,
 	 (Stream = -1000 -> 
 	    permission_error(open,file,atom/1,open/3)
 	 ;  true).
-open(file(File),Mode,Stream):- !,
-	open(File,Mode,Stream).
-open(File,Mode,Stream):- 
+open(file(File),Mode,New,Stream):- !,
+	open(File,Mode,New,Stream).
+open(File,Mode,New,Stream):- 
 	atom(File),!,
 	file_translate(Mode,M),
-	file_open(File, M, Stream),
+	file_open(File, M, New, Stream),
 	(Stream < 0 -> 
 	    permission_error(open,file,File,open/3)
 	 ;  true).
-open(SrcSnk,_,_):- 
+open(SrcSnk,_,_,_):- 
 	domain_error(source_or_sink,SrcSnk,open/3,1).
 
 file_translate(read,r):- !.

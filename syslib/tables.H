@@ -66,7 +66,7 @@
      from basics.
 :- import (dynamic)/1, retract/1, retract_nr/1, retractall/1, t_assert/2
      from assert.
-:- import (=..)/2, abort/1, call/1, functor/3, is_attv/1, (table)/1, tcall/1
+:- import (=..)/2, abort/1, call/1, functor/3, is_attv/1, tcall/1
      from standard.
 :- import throw/1 from standard.
 

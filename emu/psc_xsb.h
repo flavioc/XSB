@@ -80,10 +80,10 @@ typedef struct psc_pair *Pair;
 #define  get_name(psc)		((psc)->nameptr)
 
 #define  set_type(psc, type)	(psc)->entry_type = type
-#define  set_env(psc, envir)	(psc)->env = get_spy(psc) | get_shared(psc) | get_tabled(psc) | envir
-#define  set_spy(psc, spy)	(psc)->env = spy | get_shared(psc) | get_tabled(psc) | get_env(psc)
-#define  set_shared(psc, shar)	(psc)->env = get_spy(psc) | shar | get_tabled(psc) | get_env(psc)
-#define  set_tabled(psc, tab)	(psc)->env = get_spy(psc) | get_shared(psc) | tab | get_env(psc)
+#define  set_env(psc, envir)	(psc)->env = ((psc)->env & ~T_ENV) | envir
+#define  set_spy(psc, spy)	(psc)->env = ((psc)->env & ~T_SPY) | spy
+#define  set_shared(psc, shar)	(psc)->env = ((psc)->env & ~T_SHARED) | shar
+#define  set_tabled(psc, tab)	(psc)->env = ((psc)->env & ~T_TABLED) | tab
 #define  set_arity(psc, ari)	((psc)->arity = ari)
 #define  set_length(psc, len)	((psc)->length = len)
 #define  set_ep(psc, val)	((psc)->ep = val)

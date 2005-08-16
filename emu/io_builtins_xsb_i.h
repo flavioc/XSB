@@ -154,7 +154,7 @@ inline static xsbBool file_function(CTXTdecl)
     /* file_function(4, +FileName, +Mode, -IOport) TLS: changing modes
      and differentiating binaries, so its best to not allow integer
      modes any more */
-    int ioport;
+    int ioport, opennew;
     int str_type = 0;
     char string_mode[3];
 
@@ -212,17 +212,17 @@ inline static xsbBool file_function(CTXTdecl)
     case OAPPEND: strmode = "ab"; break; /* APPEND_MODE */
     case OSTRINGR:
       if ((fptr = stropen(tmpstr)))
-	ctop_int(CTXTc 4, (Integer)fptr);
+	ctop_int(CTXTc 5, (Integer)fptr);
       else 
-	ctop_int(CTXTc 4, -1000);
+	ctop_int(CTXTc 5, -1000);
       return TRUE;
     case OSTRINGW:
       xsb_abort("[FILE_OPEN] Output to strings has not been implemented yet");
-      ctop_int(CTXTc 4, -1000);
+      ctop_int(CTXTc 5, -1000);
       return TRUE;
     default:
       xsb_warn("FILE_OPEN: Invalid open file mode");
-      ctop_int(CTXTc 4, -1000);
+      ctop_int(CTXTc 5, -1000);
       return TRUE;
     }
     
@@ -231,12 +231,13 @@ inline static xsbBool file_function(CTXTdecl)
 
     /*    printf("xsb_intern_file addr %s,string_mode %s\n",addr,string_mode); */
 
-
-    if (!xsb_intern_file("FILE_OPEN",addr, &ioport,strmode)) {
+    opennew = ptoc_int(CTXTc 4);
+    if (!xsb_intern_file("FILE_OPEN",addr, &ioport,strmode,opennew)) {
+      //printf("Open file %s, port %d (%d)\n",addr,ioport,opennew);
       open_files[ioport].stream_type = str_type;
-      ctop_int(CTXTc 4,ioport);
+      ctop_int(CTXTc 5,ioport);
     }
-    else ctop_int(CTXTc 4,-1);
+    else ctop_int(CTXTc 5,-1);
 
     break;
   }
@@ -262,6 +263,7 @@ inline static xsbBool file_function(CTXTdecl)
 	  { flags[CURRENT_INPUT] = STDIN;}
 	if (flags[CURRENT_OUTPUT] == (Cell) io_port) 
 	  { flags[CURRENT_OUTPUT] = STDOUT;}
+	//printf("Close port %d\n",io_port);
       }
     break;
     }

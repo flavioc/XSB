@@ -71,8 +71,10 @@ file_pos(IOport, Pos) :-
 	file_function(FILE_POS, IOport, Pos_1, _Ret, _E, _,_),
 	(Pos_1 < 0 -> Pos = end_of_file ; Pos = Pos_1).
 file_open(FileName, Mode_in, IOport) :-
+	file_open(FileName, Mode_in, 0, IOport).
+file_open(FileName, Mode_in, OpenNew, IOport) :-
 	preserve_numeric_calls(Mode_in,Mode),
-	file_function(XSB_FILE_OPEN, FileName, Mode, IOport, _E, _,_).
+	file_function(XSB_FILE_OPEN, FileName, Mode, OpenNew, IOport, _,_).
 /* TLS: file_close/1 is obsolescent */
 file_close(IOport) :-
 	file_function(FILE_CLOSE,IOport,NOFORCE_FILE_CLOSE,_Y,_Z, _,_).

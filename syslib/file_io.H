@@ -58,7 +58,7 @@
 	  copyIOport/2,
   file_seek/4, file_truncate/3,
   file_pos/2, file_size/2, file_time/2,
-  file_open/3, file_close/1, file_close/2,
+  file_open/3, file_open/4, file_close/1, file_close/2,
               file_get/2, file_put/2,
 	  file_getbuf/4,
 	  file_getbuf_atom/4, file_getbuf_atom/3,

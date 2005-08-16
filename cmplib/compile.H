@@ -52,7 +52,7 @@
 :- import force_listutil_loaded/0 from listutil.
 :- import supplementary_tabling/2 from suppltab.
 :- import force_asm_pass2_loaded/0 from asmpass2.
-:- import dump_module/2, write_preds/1 from sanity.
+:- import dump_module/2, write_preds/2 from sanity.
 :- import force_tp_geninline_loaded/0 from tpinline.
 :- import sym_name/3, sym_type/2, sym_prop/2 from symtab.
 :- import dispose_symtab/1 from symtab.
@@ -60,7 +60,7 @@
 :- import force_tp_index_loaded/0, makeindex/6 from tp_index.
 :- import force_preprocess_loaded/0, preprocess/3 from preproc.
 :- import write_asmheader/4, write_asm_instructions/2 from writeasm.
-:- import throw/1, tell/1, telling/1, told/0, cputime/1, open/3, close/1 from standard.
+:- import throw/1, cputime/1, open/3, close/1 from standard.
 :- import force_peephole_loaded/0, compile_peephole_opt/2 from peephole.
 :- import message/1, warning/1, error/1, time_message/2,
 	  setoptions/1, option/1

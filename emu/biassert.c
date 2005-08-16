@@ -2432,7 +2432,6 @@ xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
 #ifdef MULTI_THREAD
   //  printf("prref disp tab for %s/%d? shared=%d\n",get_name(psc),get_arity(psc),get_shared(psc));
 
-  //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
   if ((*(pb)get_ep(psc) == switchonthread) || !get_shared(psc)) {
     struct DispBlk_t *dispblk;
     if (*(pb)get_ep(psc) != switchonthread) {
@@ -2457,7 +2456,6 @@ xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
       (&(dispblk->Thread0))[th->tid] = (CPtr)new_ep;
     } else xsb_exit("must expand dispatch-block");
   } else set_ep(psc,new_ep);
-  //  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
 #else
   set_ep(psc,new_ep);
 #endif /* MULTI_THREAD */

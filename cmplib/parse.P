@@ -432,19 +432,20 @@ multifile_query(ModName, Module) :-
 /* parse_clause(+Clause, +VariableList,					*/
 /*		#module(#SymTab,#DcList,#ClList,#QrList),ModName)	*/
 /*======================================================================*/
-
+%% VariableList is no longer used, since parse_spec_directive is deactivated..
 parse_clause([], _, _,_) :- !.
 parse_clause([Cl|Cls], VariableList, Module,ModName) :- !,
 	parse_clause(Cl, VariableList, Module,ModName),
 	parse_clause(Cls, VariableList, Module,ModName).
-parse_clause(Cl, VariableList, module(SymTab,DcList,ClList,QrList),ModName) :-
+parse_clause(Cl, _VariableList, module(SymTab,_DcList,ClList,QrList),ModName) :-
 	( Cl = (':-'(H, B)) ->		parse_preddef(H, B, ClList, SymTab)
-	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
-						QrList, SymTab)
+%%	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
+%%						QrList, SymTab)
 	; Cl = (':-'(PDirective)) ->	transform_directive(PDirective,Directive),
-	                                ( parse_spec_directive(Directive,
-					     VariableList, SymTab, DcList), !
-					; parse_directive(Directive, SymTab,ModName), !
+	                                (%% parse_spec_directive(Directive,
+					 %%    VariableList, SymTab, DcList), !
+					%%;
+					 parse_directive(Directive, SymTab,ModName), !
 					; parse_query(Directive, QrList,SymTab)
 					)
 	; Cl = ('?-'(Q)) -> 		parse_query(Q,QrList,SymTab)
@@ -481,6 +482,13 @@ transform_slash_to_skel(Spec,Skel) :-
 /* parse_spec_directive(+Directive, +VariableList, #SymTab, #DcList)	*/
 /*======================================================================*/
 
+/******* Deleted, since hasn't been invoked for quite awhile, putting
+it back in naively seems not to work, and I can't debug it (now, at
+least)
+
+%% if this is debugged and put back in, it must call %%
+%% parse_comma_list(PredCList,SymTab,[tabled],(table)) to indicate the
+%%predicate is tabled, since parse_directive won't be called...
 parse_spec_directive(table(Term), VariableList, SymTab, DcList) :-
 	fail_if((Term = _/_ ; Term = (_,_))),
 	all_anonymous(VariableList),
@@ -495,11 +503,14 @@ all_anonymous([vv(VarName,_)|Vars]) :-
 	  message('           (treated as anonymous)')
 	),
 	all_anonymous(Vars).
+******************************************************************/
 
 /*======================================================================*/
 /* parse_table_directive(+PAs, #QrList, #SymTab)			*/
 /*======================================================================*/
 
+/********* Now do differently, thru xwam file as regular directive.
+Keep this until we know it works?!?!
 parse_table_directive((PA, PAs), QrList, SymTab) :- !,
 	parse_table_directive(PA, QrList, SymTab),
 	parse_table_directive(PAs, QrList, SymTab).
@@ -514,7 +525,7 @@ parse_table_directive(Skel, QrList, SymTab) :-
 	sym_insert(P, A, [tabled], SymTab, _),
 	add_table(P/A),
 	parse_query(table(P/A), QrList, SymTab).
-
+********************/
 /*======================================================================*/
 /* parse_directive(+Directive, #Symbol_Table,ModName)			*/
 /*	Processes the given directive and updates the symbol table	*/
@@ -610,7 +621,14 @@ parse_directive(compiler_options(Options),_SymTab,_ModName) :-
 parse_directive(comment(_,_),_SymTab,_ModName).
 parse_directive(thread_shared(PredCList),SymTab,_ModName) :-
 	parse_comma_list(PredCList,SymTab,[(thread_shared)],(thread_shared)).
-parse_directive(thread_private(_PredCList),_SymTab,_ModName).  % now the default, ....
+parse_directive(thread_private(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[(thread_private)],(thread_private)).
+parse_directive(table(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[tabled],(table)).
+parse_directive(use_subsumptive_tabling(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[(use_subsumptive_tabling)],(use_subsumptive_tabling)).
+parse_directive(use_variant_tabling(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[(use_variant_tabling)],(use_variant_tabling)).
 parse_directive(Directive,_SymTab,_ModName) :-
 	option(ciao_directives),
 	included_ciao_directive(Directive).

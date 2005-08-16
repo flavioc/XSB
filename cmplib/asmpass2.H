@@ -27,7 +27,7 @@
 :- export force_asm_pass2_loaded/0.
 :- export asm_gendata/2, asm_gentext/3, asm_genindex/3, asm_putlength/2.
 
-:- import error/1 from auxlry.
+:- import error/1, warning/1 from auxlry.
 :- import log_ith/3 from basics.
 :- import asm_inst/4 from asm_inst.
 :- import membercheck/2 from listutil.

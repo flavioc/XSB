@@ -1822,7 +1822,7 @@ int builtin_call(CTXTdeclc byte number)
   }
   case PSC_TABLED: {	/* reg 1: +PSC; reg 2: -int */
     Psc psc = (Psc)ptoc_addr(1);
-    ctop_int(CTXTc 2, get_tabled(psc));  //(Integer)get_tip(CTXTc psc));
+    ctop_int(CTXTc 2, (get_tabled(psc)?TRUE:FALSE));  //(Integer)get_tip(CTXTc psc));
     break;
   }
   case PSC_SET_TABLED: {	/* reg 1: +PSC; reg 2: +int */
@@ -2401,27 +2401,31 @@ int builtin_call(CTXTdeclc byte number)
     }
     break;
 
-  case SET_TABLED_EVAL: {
-    const int Arity = 2;
-    const int regTerm = 1;   /* in: tabled predicate as term */
-    const int regTEM = 2;    /* in: table eval method to use for pred */
-    Cell term;
+    case SET_TABLED_EVAL: { /* reg 1=psc, reg 2=eval method to use */
     Psc psc;
-    TIFptr tif;
+    Cell term = ptoc_tag(CTXTc 1);
+    int eval_meth = ptoc_int(CTXTc 2);
 
-    term = ptoc_tag(CTXTc regTerm);
     if ( isref(term) ) {
-      err_handle(CTXTc INSTANTIATION, regTerm, BuiltinName(SET_TABLED_EVAL),
-		 Arity, "", term);
+      err_handle(CTXTc INSTANTIATION, 1, BuiltinName(SET_TABLED_EVAL),
+		 2, "", term);
       break;
     }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(CTXTc TYPE, regTerm, BuiltinName(SET_TABLED_EVAL),
-		 Arity, "Predicate specification", term);
+      err_handle(CTXTc TYPE, 1, BuiltinName(SET_TABLED_EVAL),
+		 2, "Predicate specification", term);
       break;
     }      
-    tif = get_tip(CTXTc psc);
+    if ((eval_meth == VARIANT_EVAL_METHOD) && (get_tabled(psc) != T_TABLED_VAR)) {
+      if (get_tabled(psc) == T_TABLED) set_tabled(psc,T_TABLED_VAR);
+      else xsb_warn("Cannot change to variant tabling method for %s/%d",get_name(psc),get_arity(psc));
+    } else if ((eval_meth == SUBSUMPTIVE_EVAL_METHOD) && (get_tabled(psc) != T_TABLED_SUB)) {
+      if (get_tabled(psc) == T_TABLED) set_tabled(psc,T_TABLED_SUB);
+      else xsb_warn("Cannot change to subsumptive tabling method for %s/%d",get_name(psc),get_arity(psc));
+    }
+
+    /***    tif = get_tip(CTXTc psc);
     if ( IsNULL(tif) ) {
       xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
       return FALSE;
@@ -2432,7 +2436,8 @@ int builtin_call(CTXTdeclc byte number)
 	       get_name(psc), get_arity(psc), get_name(psc), get_arity(psc));
       return FALSE;
     }
-    TIF_EvalMethod(tif) = (TabledEvalMethod)ptoc_int(CTXTc regTEM);
+    TIF_EvalMethod(tif) = (TabledEvalMethod)ptoc_int(CTXTc regTEM); 
+***/
     return TRUE;
   }
 

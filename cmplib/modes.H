@@ -27,7 +27,6 @@
 :- mode ma(++,++).
 
 :- import
-	(use_variant_tabling)/1,
 	trie_assert/1, trie_retract/1,
 	trie_retract_all/1, trie_dynamic/1,
 	abolish_table_pred/1, get_calls/3, get_returns/2
@@ -39,7 +38,7 @@
 	abort/0, atom_codes/2, cputime/1, call/1, 
 	expand_term/2, file_exists/1, functor/3,
 	(index)/3, name/2, nl/0, (not)/1, op/3, read/1, repeat/0,
-	statistics/0, see/1, seeing/1, seen/0, (table)/1, tell/1,
+	statistics/0, see/1, seeing/1, seen/0, tell/1,
 	telling/1, told/0, write/1, writeln/1, write_canonical/1,
 	writeq/1, ('=..')/2
    from standard.

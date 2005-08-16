@@ -613,7 +613,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
   get_obj_byte(&t_env);
   /* this simple check can avoid worse situations in case of compiler bugs */
-  if ((t_env&~0x28) > T_GLOBAL) 
+  if (t_env&0x80)
     xsb_abort("[LOADER] The loaded object file %s%s is corrupted",
 	      cur_mod->nameptr, XSB_OBJ_EXTENSION_STRING);
 
@@ -647,10 +647,18 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       set_data(temp_pair->psc_ptr, mod);
     /* set psc_data to the psc record of the module name */
     env_type_set(temp_pair->psc_ptr, (t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
-    if (t_env&T_SHARED) printf("loaded %s/%d as shared\n",get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr));
-    if (is_new || !get_shared(temp_pair->psc_ptr)) set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
-    set_tabled(temp_pair->psc_ptr, (t_env&T_TABLED));
 
+    if (is_new || !get_shared(temp_pair->psc_ptr)) {
+      if (!(get_ep(temp_pair->psc_ptr)) && (*(pb)get_ep(temp_pair->psc_ptr) == switchonthread))
+	xsb_warn("Shared declaration ignored for %s/%d\n",
+		get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr));
+      else set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+    }
+
+    if (t_env&T_TABLED_SUB_LOADFILE) 
+      set_tabled(temp_pair->psc_ptr,((t_env&T_TABLED_VAR) | T_TABLED_SUB));
+    else set_tabled(temp_pair->psc_ptr,(t_env&T_TABLED_VAR));
+    //printf("sym loaded: %s/%d, tabled=%x\n",get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr),get_tabled(temp_pair->psc_ptr));
     /* dsw added following, maybe wrongly */
     if (exp && (t_env&0x7) == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
@@ -793,6 +801,7 @@ static byte *loader1(FILE *fd, int exp)
 #endif
 	  New_TIF(*instruct_tip,(ptr->psc_ptr));
       }
+      //printf("table: %s/%d, psc_tabled: %x\n",get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),get_tabled(ptr->psc_ptr));
       break;
     case T_PRED:
       if (strcmp(name, "_$main")!=0) {
@@ -925,14 +934,12 @@ void thread_free_tab_blks(CTXTdecl) {
   struct TDispBlk_t *tdispblk;
   TIFptr tip;
 
-  //  printf("Enter thread_free_tab_blks\n");
   SYS_MUTEX_LOCK( MUTEX_TABLE );
   for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
     if (th->tid <= tdispblk->MaxThread) {
       tip = (&(tdispblk->Thread0))[th->tid];
       if (tip) {
 	delete_predicate_table(CTXTc tip);
-	//	printf("set prref free for thread %d\n",th->tid);
 	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
       }
     }

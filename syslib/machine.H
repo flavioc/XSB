@@ -100,7 +100,6 @@
  	psc_set_shared/2, 
  	psc_shared/2, 
  	psc_set_private/2, 
-	psc_private/2,
  	psc_env/2, 
 	psc_spy/2, 
 	psc_tabled/2, 

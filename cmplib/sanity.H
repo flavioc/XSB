@@ -24,12 +24,12 @@
 
 
 
-:- export dump_module/2, write_preds/1.
+:- export dump_module/2, write_preds/2.
 
 :- import sym_name/3, sym_prop/2, sym_gen/2 from symtab.
-:- import nl/0, told/0, tell/1, telling/1, put/1,
-	  tab/1, write/1, writeq/1, integer/1
+:- import nl/1, write/2, writeq/2, integer/1, open/3, close/1
      from standard.
+:- import file_put/2 from file_io.
 
 /* --------------------- end of file sanity.H ------------------------- */
 
