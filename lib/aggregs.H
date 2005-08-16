@@ -59,7 +59,7 @@
 :- import arg/3, call/1, call_c/1, atom/1, functor/3, '=..'/2 from standard.
 :- import member/2, copy_term/2, append/3 from basics.
 :- import sort/2, findall/3, bagof/3, excess_vars/4 from setof.
-:- import (table)/1, ','/2 from usermod.
+:- import ','/2 from usermod.
 :- import variant/2 from subsumes.
 
 :- import delete_return/2,
@@ -67,6 +67,5 @@
 	  get_ptcp/1,
 	  get_returns/3,
 	  is_incomplete/2,
-	  table_state/4,
-	  (use_variant_tabling)/1
+	  table_state/4
      from tables.
