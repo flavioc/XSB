@@ -448,5 +448,58 @@ extern int  copy_of_num_heap_term_vars;
 
 /*=========================================================================*/
 
+struct VariantContinuation {
+  BTNptr last_node_matched;
+  struct subterms_desc {
+    counter num;		/* number of subterms in the stack */
+    struct termstack_desc{
+      size_t size;		/* number of elements in the stack */
+      Cell *ptr;		/* dynamic memory allocated for the stack */
+    } stack;
+  } subterms;
+  struct bindings_desc {
+    counter num;		/* number of bindings in the trail */
+    struct trail_desc{
+      size_t size;		/* number of elements in the trail */
+      struct frame {
+	CPtr var;
+	Cell value;
+      } *ptr;			/* dynamic memory allocated for the trail */
+    } stack;
+  } bindings;
+};
+
+typedef struct {
+  BTNptr alt_node;	/* node from which to continue the search */
+  BTNptr var_chain;	/* beginning of variable chain */
+  int termstk_top_index;  /* current top-of-tstTermStack at CP creation */
+  int log_top_index;	/* current top-of-tstTermStackLog at CP creation */
+  int trail_top_index;	/* current top-of-tstTrail at CP creation */
+} tstCallChoicePointFrame;
+
+typedef tstCallChoicePointFrame *pCPFrame;
+#define CALL_CPSTACK_SIZE   1024
+
+struct tstCCPStack_t {
+  pCPFrame top;          /* next available location to place an entry */
+  pCPFrame ceiling;      /* overflow pointer: ptr to CPF off array end */
+  tstCallChoicePointFrame base[CALL_CPSTACK_SIZE];
+};
+
+typedef struct {
+  TSTNptr alt_node;	/* sibling of the TSTN whose child ptr we took */
+  int ts_top_index;	/* current top-of-tstTermStack at CP creation */
+  int log_top_index;	/* current top-of-tstTermStackLog at CP creation */
+  CPtr *trail_top;	/* current top-of-trail at CP creation */
+  CPtr heap_bktrk;	/* current hbreg at time of CP creation */
+} tstChoicePointFrame;
+
+#define TST_CPSTACK_SIZE   1024
+
+struct tstCPStack_t {
+  tstChoicePointFrame *top;     /* next available location to place an entry */
+  tstChoicePointFrame *ceiling; /* overflow pointer: points beyond array end */
+  tstChoicePointFrame base[TST_CPSTACK_SIZE];
+};
 
 #endif

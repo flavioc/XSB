@@ -63,6 +63,7 @@
  *  process.
  */
 
+#ifndef MULTI_THREAD
 static CPtr *trail_base;    /* ptr to topmost used Cell on the system Trail;
 			       the beginning of our local trail for this
 			       operation. */
@@ -71,6 +72,7 @@ static CPtr *orig_trreg;
 static CPtr orig_hreg;      /* Markers for noting original values of WAM */
 static CPtr orig_hbreg;     /* registers so they can be reset upon exiting */
 static CPtr orig_ebreg;
+#endif
 
 /* 
  * Set backtrack registers to the tops of stacks to force trailing in
@@ -120,21 +122,9 @@ static CPtr orig_ebreg;
  *  point down an alternate path in the time-stamped trie.
  */
 
-typedef struct {
-  TSTNptr alt_node;	/* sibling of the TSTN whose child ptr we took */
-  int ts_top_index;	/* current top-of-tstTermStack at CP creation */
-  int log_top_index;	/* current top-of-tstTermStackLog at CP creation */
-  CPtr *trail_top;	/* current top-of-trail at CP creation */
-  CPtr heap_bktrk;	/* current hbreg at time of CP creation */
-} tstChoicePointFrame;
-
-#define TST_CPSTACK_SIZE   K
-
-static struct {
-  tstChoicePointFrame *top;     /* next available location to place an entry */
-  tstChoicePointFrame *ceiling; /* overflow pointer: points beyond array end */
-  tstChoicePointFrame base[TST_CPSTACK_SIZE];
-} tstCPStack;
+#ifndef MULTI_THREAD
+static struct tstCPStack_t tstCPStack;
+#endif
 
 /* Use these to access the frame to which `top' points */
 #define tstCPF_AlternateNode    ((tstCPStack.top)->alt_node)
@@ -146,7 +136,7 @@ static struct {
 #define CPStack_IsEmpty    (tstCPStack.top == tstCPStack.base)
 #define CPStack_IsFull     (tstCPStack.top == tstCPStack.ceiling)
 
-void initCollectRelevantAnswers() {
+void initCollectRelevantAnswers(CTXTdecl) {
 
   tstCPStack.ceiling = tstCPStack.base + TST_CPSTACK_SIZE;
 }

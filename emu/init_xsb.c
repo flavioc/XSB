@@ -754,6 +754,10 @@ void init_machine(CTXTdecl)
 
   random_seeds = 0;
 
+  a_tstCCPStack = (struct tstCCPStack_t *)malloc(sizeof(struct tstCCPStack_t));
+  a_variant_cont = (struct VariantContinuation *)malloc(sizeof(struct VariantContinuation));
+  a_tstCPStack = (struct tstCPStack_t *)malloc(sizeof(struct tstCPStack_t));
+
   asrtBuff = (struct asrtBuff_t *)malloc(sizeof(struct asrtBuff_t));
   asrtBuff->Buff = NULL;
   asrtBuff->Buff_size = 512;

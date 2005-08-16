@@ -210,6 +210,15 @@ BTNptr  _NodePtr,
 
 int     _delay_it;
 
+struct VariantContinuation *_variant_cont;
+struct tstCCPStack_t *_tstCCPStack;
+struct tstCPStack_t *_tstCPStack;
+CPtr *_trail_base;
+CPtr *_orig_trreg;            
+CPtr _orig_hreg;
+CPtr _orig_hbreg;
+CPtr _orig_ebreg;
+
 /* variables for findall buffers */
 findall_solution_list *_findall_solutions;  /*= NULL;*/
 findall_solution_list *_current_findall;
@@ -362,6 +371,19 @@ typedef struct th_context th_context ;
 #define Last_Nod_Sav		(th->_Last_Nod_Sav)
 
 #define delay_it		(th->_delay_it)
+
+#define variant_cont		(*(th->_variant_cont))
+#define a_variant_cont		(th->_variant_cont)
+#define tstCCPStack		(*(th->_tstCCPStack))
+#define a_tstCCPStack		(th->_tstCCPStack)
+#define tstCPStack		(*(th->_tstCPStack))
+#define a_tstCPStack		(th->_tstCPStack)
+
+#define trail_base		(th->_trail_base)
+#define orig_trreg		(th->_orig_trreg)
+#define orig_hreg		(th->_orig_hreg)
+#define orig_hbreg		(th->_orig_hbreg)
+#define orig_ebreg		(th->_orig_ebreg)
 
 #define findall_solutions	(th->_findall_solutions)
 #define current_findall		(th->_current_findall)

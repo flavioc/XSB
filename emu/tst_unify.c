@@ -106,6 +106,9 @@ static void consumption_error(CTXTdeclc char *string) {
 
   char *abort_string;
 
+#ifdef MULTI_THREAD
+  fprintf(stderr,"This error has occurred, but the following diagnostics may be wrong due to global variables\n");
+#endif
   fprintf(stderr,"\nAnswer Return ERROR:  Failed to unify answer\n\t");
 #ifdef DEBUG_VERBOSE
   printTriePath(stderr,gAnsLeaf,YES);

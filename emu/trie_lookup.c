@@ -42,6 +42,7 @@
 #include "subp.h"
 #include "debug_xsb.h"
 #include "flags_xsb.h"
+#include "context.h"
 #if (defined(DEBUG_VERBOSE) || defined(DEBUG_ASSERTIONS))
 #include "tst_utils.h"
 #endif
@@ -103,26 +104,9 @@
  *  variant entry of the terms, if need be.
  */
 
-static struct VariantContinuation {
-  BTNptr last_node_matched;
-  struct subterms_desc {
-    counter num;		/* number of subterms in the stack */
-    struct termstack_desc{
-      size_t size;		/* number of elements in the stack */
-      Cell *ptr;		/* dynamic memory allocated for the stack */
-    } stack;
-  } subterms;
-  struct bindings_desc {
-    counter num;		/* number of bindings in the trail */
-    struct trail_desc{
-      size_t size;		/* number of elements in the trail */
-      struct frame {
-	CPtr var;
-	Cell value;
-      } *ptr;			/* dynamic memory allocated for the trail */
-    } stack;
-  } bindings;
-} variant_cont;
+#ifndef MULTI_THREAD
+static struct VariantContinuation variant_cont;
+#endif
 
 #define VAR_CONT_INIT_STACK_SIZE  64
 
@@ -240,37 +224,24 @@ void *stl_restore_variant_cont(CTXTdecl) {
 /* Choice Point Stack and Operations
    --------------------------------- */
 
-typedef struct {
-  BTNptr alt_node;	/* node from which to continue the search */
-  BTNptr var_chain;	/* beginning of variable chain */
-  int termstk_top_index;  /* current top-of-tstTermStack at CP creation */
-  int log_top_index;	/* current top-of-tstTermStackLog at CP creation */
-  int trail_top_index;	/* current top-of-tstTrail at CP creation */
-} tstChoicePointFrame;
-
-typedef tstChoicePointFrame *pCPFrame;
-#define CALL_CPSTACK_SIZE   K
-
-static struct {
-  pCPFrame top;          /* next available location to place an entry */
-  pCPFrame ceiling;      /* overflow pointer: ptr to CPF off array end */
-  tstChoicePointFrame base[CALL_CPSTACK_SIZE];
-} tstCPStack;
+#ifndef MULTI_THREAD
+static struct tstCCPStack_t tstCCPStack;
+#endif
 
 /**** Use these to access the frame to which `top' points ****/
-#define CPF_AlternateNode	((tstCPStack.top)->alt_node)
-#define CPF_VariableChain	((tstCPStack.top)->var_chain)
-#define CPF_TermStackTopIndex	((tstCPStack.top)->termstk_top_index)
-#define CPF_TermStackLogTopIndex	((tstCPStack.top)->log_top_index)
-#define CPF_TrailTopIndex	((tstCPStack.top)->trail_top_index)
+#define CPF_AlternateNode	((tstCCPStack.top)->alt_node)
+#define CPF_VariableChain	((tstCCPStack.top)->var_chain)
+#define CPF_TermStackTopIndex	((tstCCPStack.top)->termstk_top_index)
+#define CPF_TermStackLogTopIndex	((tstCCPStack.top)->log_top_index)
+#define CPF_TrailTopIndex	((tstCCPStack.top)->trail_top_index)
 
 /**** TST CP Stack Operations ****/
-#define CPStack_ResetTOS     tstCPStack.top = tstCPStack.base
-#define CPStack_IsEmpty      (tstCPStack.top == tstCPStack.base)
-#define CPStack_IsFull       (tstCPStack.top == tstCPStack.ceiling)
+#define CPStack_ResetTOS     tstCCPStack.top = tstCCPStack.base
+#define CPStack_IsEmpty      (tstCCPStack.top == tstCCPStack.base)
+#define CPStack_IsFull       (tstCCPStack.top == tstCCPStack.ceiling)
 #define CPStack_OverflowCheck				\
    if (CPStack_IsFull)					\
-     SubsumptiveTrieLookupError("tstCPStack overflow!")
+     SubsumptiveTrieLookupError("tstCCPStack overflow!")
 
 /*
  *  All that is assumed on CP creation is that the term stack and log have
@@ -289,7 +260,7 @@ static struct {
    CPF_TermStackLogTopIndex =			\
      TermStackLog_Top - TermStackLog_Base - 1;	\
    CPF_TrailTopIndex = Trail_Top - Trail_Base;	\
-   tstCPStack.top++;				\
+   tstCCPStack.top++;				\
  }
 
 /*
@@ -297,7 +268,7 @@ static struct {
  */
 
 #define CPStack_PopFrame(CurNode,VarChain) {		\
-   tstCPStack.top--;					\
+   tstCCPStack.top--;					\
    CurNode = CPF_AlternateNode;				\
    VarChain = CPF_VariableChain;			\
    TermStackLog_Unwind(CPF_TermStackLogTopIndex);	\
@@ -370,7 +341,7 @@ void initSubsumptiveLookup(CTXTdecl) {
 
   int i;
 
-  tstCPStack.ceiling = tstCPStack.base + CALL_CPSTACK_SIZE;
+  tstCCPStack.ceiling = tstCCPStack.base + CALL_CPSTACK_SIZE;
 
   variant_cont.subterms.stack.ptr =
     malloc(VAR_CONT_INIT_STACK_SIZE *
