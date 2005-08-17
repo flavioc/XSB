@@ -1543,7 +1543,9 @@ DllExport int call_conv xsb_close(CTXTdecl)
 //
 #include <io.h>
 #include <Basetsd.h>
-//typedef SSIZE_T	ssize_t;
+#if !defined(CYGWIN)
+typedef SSIZE_T	ssize_t;
+#endif
 static inline ssize_t pread(int fd, void *buf, size_t count, long offset)
 {
 if (-1 == lseek(fd,offset,SEEK_SET))
