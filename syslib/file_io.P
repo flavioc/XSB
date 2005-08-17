@@ -62,13 +62,13 @@ fmt_read(IOport, Fmt, Result, Status) :-
 /***************************************************************/
 
 file_flush(IOport, Ret) :-
-	file_function(FILE_FLUSH, IOport, Ret, _D, _E, _,_).
+	file_function(FILE_FLUSH, IOport, Ret).
 file_seek(IOport, Offset, Place, Ret) :-
 	file_function(FILE_SEEK, IOport, Offset, Place, Ret, _,_).
 file_truncate(IOport, Length, Ret) :-
 	file_function(FILE_TRUNCATE, IOport, Length, Ret, _E, _,_).
 file_pos(IOport, Pos) :-
-	file_function(FILE_POS, IOport, Pos_1, _Ret, _E, _,_),
+	file_function(FILE_POS, IOport, Pos_1),
 	(Pos_1 < 0 -> Pos = end_of_file ; Pos = Pos_1).
 file_open(FileName, Mode_in, IOport) :-
 	file_open(FileName, Mode_in, 0, IOport).
@@ -77,17 +77,17 @@ file_open(FileName, Mode_in, OpenNew, IOport) :-
 	file_function(XSB_FILE_OPEN, FileName, Mode, OpenNew, IOport, _,_).
 /* TLS: file_close/1 is obsolescent */
 file_close(IOport) :-
-	file_function(FILE_CLOSE,IOport,NOFORCE_FILE_CLOSE,_Y,_Z, _,_).
+	file_function(FILE_CLOSE,IOport,NOFORCE_FILE_CLOSE).
 file_close(IOport,Force) :-
-	file_function(FILE_CLOSE,IOport,Force,_Y,_Z, _,_).
+	file_function(FILE_CLOSE,IOport,Force).
 file_get(IOport,Char) :-
-	file_function(FILE_GET, IOport, Char, _X, _Y, _,_).
+	file_function(FILE_GET, IOport, Char).
 file_put(IOport,Char) :-
-	file_function(FILE_PUT, IOport, Char, _X, _Y, _,_).
+	file_function(FILE_PUT, IOport, Char).
 file_clearerr(IOport) :-
-	file_function(FILE_CLEARERR, IOport, _, _, _, _, _).
+	file_function(FILE_CLEARERR, IOport, _).
 tmpfile_open(IOport) :-
-	file_function(TMPFILE_OPEN, IOport, _, _, _, _, _).
+	file_function(TMPFILE_OPEN, IOport, _).
 
 preserve_numeric_calls(0,r):- !.
 preserve_numeric_calls(1,w):- !.

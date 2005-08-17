@@ -160,6 +160,7 @@ inline_builtin(is_xwammode, 1, IS_XWAMMODE).
 inline_builtin(close_open_tables, 0, CLOSE_OPEN_TABLES).
 
 inline_builtin(file_function, 7, FILE_FUNCTION).
+inline_builtin(file_function, 3, FILE_FUNCTION).
 inline_builtin(slash, 1, SLASH_BUILTIN).
 inline_builtin(formatted_io, 5, FORMATTED_IO).
 

@@ -24,7 +24,7 @@
 
 :- import (dynamic)/1,asserta/1 from assert.
 
-:- import stat_flag/2, file_function/7,
+:- import stat_flag/2, file_function/7, file_function/3,
 	parse_filename/4, is_absolute_filename/1,
 	expand_filename/2,
 	sys_system/7, formatted_io/5 

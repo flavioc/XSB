@@ -163,8 +163,8 @@
 :- import write/1, writeln/1, is_attv/1 from standard.
 
 :- export 
-	file_function/7, conname/2, conpsc/2, machine_file_exists/1,
-  	slash/1.
+	file_function/7, file_function/3, conname/2, conpsc/2, 
+	machine_file_exists/1, slash/1.
 
 :- export set_pil_on/0, set_pil_off/0, set_prof_on/1, set_prof_off/0.
 
