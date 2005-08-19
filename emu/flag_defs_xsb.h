@@ -47,61 +47,12 @@
 #define PROFFLAG        12
 #define TABLING_METHOD	13      /* Default method used to evaluate tabled */
 
-#define MAX_PRIVATE_FLAGS 25
-
-/* Thread shared flags */
-
-#define TRACE_STA	26	/* 1 = keep max stack size stats	YW */
-#define CURRENT_MODULE	27	/* current module. USERMOD_PSC=usermod  YW */
-#define MOD_LIST	28	/* the list of module (Psc) entries	YR */
-#define BANNER_CTL      29      /* Controls whether banner, "loaded" msgs
-				   are displayed; passed to Prolog side.
-				   Check BANNER_CTL values at the end      */
-#define CMD_LINE_GOAL  	30	/* The Prolog goal passed on cmd 
-				   line with -e	       	       	           */
-#define USER_HOME  	31	/* $HOME, if not null. Else INSTALL_DIR    */
-#define INSTALL_DIR	32	/* set dynamically in orient_xsb.c         */
-#define CONFIG_FILE	33	/* Where xsb_configuration.P lives	   */
-/* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
-#define CONFIG_NAME	34	/* this looks like this: cpu-vendor-os	   */
-#define LETTER_VARS	35      /* For printing vars in the interpreter */
-#define BOOT_MODULE     36      /* First file loaded; usually loader.P  */
-#define CMD_LOOP_DRIVER 37      /* File that contains top-level command
-				     loop driver */
-#define NUM_THREADS     38      /* always 1 in the sequential system     NW*/
-#define THREAD_RUN	39      /* PSC for the thread handler predicate  NN*/
-#define STDERR_BUFFERED	40      /* Allow Cinterface to read Stderr back from buffer*/
-
-/* The following flags may be made private in the future */
-
-#define PIL_TRACE 	41	/* 0 = pil trace off, 1 = on		YW */
-#define HITRACE		42	/* 0 = hitrace off, 1 = on		YW */
-#define DEBUG_ON	43	/* 1 = debug on; 0 = off 		YW */
-#define HIDE_STATE	45	/* 0 = no hide, >0 = hide level 	YW */
-#define TRACE		46	/* 1 = trace on, 0 = trace off	    	YW */
-#define INVOKE_NUM	47	/* debugger, the ordinal invoke number 	NW */
-#define SKIPPING	48	/* debugger, 1 = skip, 0 = not	   	NW */
-#define QUASI_SKIPPING	49	/* debugger, 1 = quasi skip, 0 = not	NW */
-
-/* The following flags may be obsolete */
-
-#define DCG_MODE        50      /* DGC mode: standard or xsb	           */
-
-/* This flag is used by the loader to tell itself whether it should look into
-   user-supplied library search paths or not. If 0, the loader will look only
-   in lib/syslib/cmplib. If 1, the loader will look in library_directory/1
-   before checking the standard places. */
-#define LIBS_LOADED	  51
-
-#define ORA_INPUTARRAY_LENGTH     52   /* max # simultaneous input tuples */
-#define ORA_INPUTARRAY_WIDTH      53   /* max size of each input value    */
-#define ORA_OUTPUTARRAY_LENGTH    54   /* max # simultaneous output tuples */
-
+/* Flags 14-24 are reserved for future use */
 
 /*
- *  Flags 32-48 are reserved for Interrupt Handler PSCs.
+ *  Flags 25-41 are reserved for Interrupt Handler PSCs.
  */
-#define INT_HANDLERS_FLAGS_START   60  /* the first interrupt flag */
+#define INT_HANDLERS_FLAGS_START   25  /* the first interrupt flag */
 
 /* ----------------------------------------------------------------------------
    The following exist/are defined in sig_xsb.h:
@@ -116,8 +67,59 @@
 These values are added to INT_HANDLERS_FLAGS_START to obtain the actual
 interrupt flag
 ---------------------------------------------------------------------------- */
+#define MAX_PRIVATE_FLAGS 41
 
-#define MAX_FLAGS		80
+/* Thread shared flags */
+
+#define TRACE_STA	42	/* 1 = keep max stack size stats	YW */
+#define CURRENT_MODULE	43	/* current module. USERMOD_PSC=usermod  YW */
+#define MOD_LIST	44	/* the list of module (Psc) entries	YR */
+#define BANNER_CTL      45      /* Controls whether banner, "loaded" msgs
+				   are displayed; passed to Prolog side.
+				   Check BANNER_CTL values at the end      */
+#define CMD_LINE_GOAL  	46	/* The Prolog goal passed on cmd 
+				   line with -e	       	       	           */
+#define USER_HOME  	47	/* $HOME, if not null. Else INSTALL_DIR    */
+#define INSTALL_DIR	48	/* set dynamically in orient_xsb.c         */
+#define CONFIG_FILE	49	/* Where xsb_configuration.P lives	   */
+/* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
+#define CONFIG_NAME	50	/* this looks like this: cpu-vendor-os	   */
+#define LETTER_VARS	51      /* For printing vars in the interpreter */
+#define BOOT_MODULE     52      /* First file loaded; usually loader.P  */
+#define CMD_LOOP_DRIVER 53      /* File that contains top-level command
+				     loop driver */
+#define NUM_THREADS     54      /* always 1 in the sequential system     NW*/
+#define THREAD_RUN	55      /* PSC for the thread handler predicate  NN*/
+#define STDERR_BUFFERED	56      /* Allow Cinterface to read Stderr back from buffer*/
+
+/* The following flags may be made private in the future */
+
+#define PIL_TRACE 	57	/* 0 = pil trace off, 1 = on		YW */
+#define HITRACE		58	/* 0 = hitrace off, 1 = on		YW */
+#define DEBUG_ON	59	/* 1 = debug on; 0 = off 		YW */
+#define HIDE_STATE	60	/* 0 = no hide, >0 = hide level 	YW */
+#define TRACE		61	/* 1 = trace on, 0 = trace off	    	YW */
+#define INVOKE_NUM	62	/* debugger, the ordinal invoke number 	NW */
+#define SKIPPING	63	/* debugger, 1 = skip, 0 = not	   	NW */
+#define QUASI_SKIPPING	64	/* debugger, 1 = quasi skip, 0 = not	NW */
+
+/* The following flags may be obsolete */
+
+#define DCG_MODE        65      /* DGC mode: standard or xsb	           */
+
+/* This flag is used by the loader to tell itself whether it should look into
+   user-supplied library search paths or not. If 0, the loader will look only
+   in lib/syslib/cmplib. If 1, the loader will look in library_directory/1
+   before checking the standard places. */
+#define LIBS_LOADED	  66
+
+#define ORA_INPUTARRAY_LENGTH     67   /* max # simultaneous input tuples */
+#define ORA_INPUTARRAY_WIDTH      68   /* max size of each input value    */
+#define ORA_OUTPUTARRAY_LENGTH    69   /* max # simultaneous output tuples */
+
+
+
+#define MAX_FLAGS		75
 
 #define MAXTOINDEX 5              /* depth in term to go when using deep indexing */
 
