@@ -87,13 +87,13 @@ xsb_configuration(os_type, '@os_type@').
 /* This is where XSB is currently installed. It is not cast in stone, and
    the whole enchelada can be moved. */
 xsb_configuration(install_dir, InstallDir) :-
-	 stat_flag(23, InstallDir1), intern_string(InstallDir1, InstallDir).
+	 stat_flag(32, InstallDir1), intern_string(InstallDir1, InstallDir).
 
 /* User home directory. Usually $HOME. If that is null, then it would
    be the directory where XSB is currently installed (install_dir) 
    This is where we expect to find the .xsb directory */
 xsb_configuration(user_home, Home) :-
-    	 stat_flag(22, Home1), intern_string(Home1, Home).
+    	 stat_flag(31, Home1), intern_string(Home1, Home).
 
 xsb_configuration(srcdir, '@topdir@').
 

@@ -196,7 +196,7 @@ extern double realtime_count; /* from subp.c */
 
 /* ------- variables also used in other parts of the system -----------	*/
 
-Cell flags[65];			  /* System flags + user flags */
+Cell flags[MAX_FLAGS];			  /* System flags + user flags */
 #ifndef MULTI_THREAD
 Cell clause_int = 0;  /* former flag that must be local */
 #endif

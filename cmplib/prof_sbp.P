@@ -28,6 +28,8 @@
     ALL PREDICATES HERE ARE OBSOLETE!!!!!
 ***********/
 
+:- compiler_options([sysmod,optimize,spec_repr,xpp_on]).
+#include "flag_defs_xsb.h"
 
 /*======================================================================*/
 /* prepare for compiler and type inference				*/
@@ -139,11 +141,11 @@ getcounter(C) :-
 write_int(Num) :- 
 	obsolete('write_int/1 in module prof_sbp',
 		 'use write_int/1 in module xsb_writ'),
-	stat_flag(11, File),
+	stat_flag(CURRENT_OUTPUT, File),
 	file_puttoken(File, 16, Num).
 
 write_float(Num) :- 
 	obsolete('write_float/1 in module prof_sbp',
 		 'use write_float/1 in module xsb_writ'),
-	stat_flag(11, File),
+	stat_flag(CURRENT_OUTPUT, File),
 	file_puttoken(File, 17, Num).
