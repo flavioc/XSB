@@ -340,7 +340,7 @@ Pair build_call(CTXTdeclc Psc psc)
 
 Psc synint_proc(CTXTdeclc Psc psc, int intcode)
 {
-  if (flags[intcode+INT_HANDLERS_FLAGS_START]==(Cell)0) {
+  if (pflags[intcode+INT_HANDLERS_FLAGS_START]==(Cell)0) {
     /* default hard handler */
     default_inthandler(intcode);
     psc = 0;
@@ -353,7 +353,7 @@ Psc synint_proc(CTXTdeclc Psc psc, int intcode)
     case MYSIG_TRACE:		/*  4 */
     case MYSIG_CLAUSE:		/* 16 */
       if (psc) bld_cs(reg+1, build_call(CTXTc psc));
-      psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
+      psc = (Psc)pflags[intcode+INT_HANDLERS_FLAGS_START];
       bld_int(reg+2, asynint_code);
       pcreg = get_ep(psc);
       break;
@@ -361,7 +361,7 @@ Psc synint_proc(CTXTdeclc Psc psc, int intcode)
       /* the old call must be built first */
       if (psc)
 	bld_cs(reg+2, build_call(CTXTc psc));
-      psc = (Psc)flags[intcode+INT_HANDLERS_FLAGS_START];
+      psc = (Psc)pflags[intcode+INT_HANDLERS_FLAGS_START];
       /*
        * Pass the interrupt chain to reg 1.  The counter of attv
        * interrupts (stored in *interrupt_reg) will be reset to 0 in

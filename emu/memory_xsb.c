@@ -286,7 +286,7 @@ void tcpstack_realloc(CTXTdeclc long new_size) {
 
 void handle_tcpstack_overflow(CTXTdecl)
 {
-  if (flags[STACK_REALLOC]) {
+  if (pflags[STACK_REALLOC]) {
     xsb_warn("Expanding the Trail and Choice Point Stack...");
     tcpstack_realloc(CTXTc resize_stack(tcpstack.size,0));
   }

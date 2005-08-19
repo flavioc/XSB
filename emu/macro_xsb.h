@@ -83,7 +83,7 @@ extern struct tif_list  tif_list;
      xsb_abort("Ran out of memory in allocation of TableInfoFrame");	\
    TIF_PSC(pTIF) = pPSC;						\
    if (get_tabled(pPSC)==T_TABLED) {					\
-     TIF_EvalMethod(pTIF) = (TabledEvalMethod)flags[TABLING_METHOD];	\
+     TIF_EvalMethod(pTIF) = (TabledEvalMethod)pflags[TABLING_METHOD];	\
      if (TIF_EvalMethod(pTIF) == VARIANT_EVAL_METHOD)			\
        set_tabled(pPSC,T_TABLED_VAR);					\
      else set_tabled(pPSC,T_TABLED_SUB);				\

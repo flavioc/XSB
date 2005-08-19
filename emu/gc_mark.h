@@ -691,8 +691,8 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 
   /* the following seems unnecessary, but it is not !
      mark_heap() may be called directly and not only through gc_heap() */
-  slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) |
-    (flags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC);
+  slide = (pflags[GARBAGE_COLLECT] == SLIDING_GC) |
+    (pflags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC);
   
   stack_boundaries ;
   
@@ -706,7 +706,7 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
     if (!slide_buf)
       xsb_exit("Not enough space to allocate slide_buf");
     slide_top=0;
-    if (flags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC)
+    if (pflags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC)
       slide_buffering=1;
     else
       slide_buffering=0;

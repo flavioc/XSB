@@ -492,7 +492,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  return set_error_code(CTXTc ecode, 4, "SOCKET_LISTEN");
 
      case SOCKET_ACCEPT:
-	  timeout_flag = socket_accept(CTXTc &rc, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_accept(CTXTc &rc, (int)pflags[SYS_TIMER]);
 	  
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");
@@ -514,7 +514,7 @@ xsbBool xsb_socket_request(CTXTdecl)
      case SOCKET_CONNECT: {
 	  /* socket_request(SOCKET_CONNECT,+domain,+sock_handle,+port,
 	     +hostname,-Error) */
-	  timeout_flag = socket_connect(CTXTc &rc, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_connect(CTXTc &rc, (int)pflags[SYS_TIMER]);
 
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 6, "SOCKET_CONNECT");
@@ -551,7 +551,7 @@ xsbBool xsb_socket_request(CTXTdecl)
     
      case SOCKET_RECV:
 	  /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
-	  timeout_flag = socket_recv(CTXTc &rc, &message_buffer, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_recv(CTXTc &rc, &message_buffer, (int)pflags[SYS_TIMER]);
 	  
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");
@@ -584,7 +584,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	       
      case SOCKET_SEND:
 	  /* socket_request(SOCKET_SEND,+Sockfd, +Msg, -Error,_,_,_) */
-	  timeout_flag = socket_send(CTXTc &rc, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_send(CTXTc &rc, (int)pflags[SYS_TIMER]);
     
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");
@@ -602,7 +602,7 @@ xsbBool xsb_socket_request(CTXTdecl)
      case SOCKET_GET0:
 	  /* socket_request(SOCKET_GET0,+Sockfd,-C,-Error,_,_,_) */
 	  message_buffer = &char_read;
-	  timeout_flag = socket_get0(CTXTc &rc, message_buffer, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_get0(CTXTc &rc, message_buffer, (int)pflags[SYS_TIMER]);
 	  
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");
@@ -626,7 +626,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  }    
      case SOCKET_PUT:
 	  /* socket_request(SOCKET_PUT,+Sockfd,+C,-Error_,_,_) */
-	  timeout_flag = socket_put(CTXTc &rc, (int)flags[SYS_TIMER]);
+	  timeout_flag = socket_put(CTXTc &rc, (int)pflags[SYS_TIMER]);
 	       
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");

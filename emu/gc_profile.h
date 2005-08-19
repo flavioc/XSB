@@ -104,9 +104,9 @@ do { \
 } while(0)
 
 #define INIT_GC_PROFILE \
-  verbose_gc=flags[VERBOSE_GC]; \
-  examine_data=flags[EXAMINE_DATA]; \
-  count_chains=flags[COUNT_CHAINS]
+  verbose_gc=pflags[VERBOSE_GC]; \
+  examine_data=pflags[EXAMINE_DATA]; \
+  count_chains=pflags[COUNT_CHAINS]
 
 #define DECL_GC_PROFILE \
   unsigned long begin_slidetime, begin_copy_time

@@ -158,7 +158,7 @@ extern void extend_enc_dec_as_nec(void *,void *);
 /*=========================================================================*/
 
 /* to choose between copying or sliding collector:
-   its value is determined based on the the value of flags[GARBAGE_COLLECT] */
+   its value is determined based on the the value of pflags[GARBAGE_COLLECT] */
 static xsbBool slide;
 
 #ifdef GC
@@ -478,11 +478,11 @@ int gc_heap(CTXTdeclc int arity)
   SYS_MUTEX_LOCK( MUTEX_STACKS ) ;
   
   INIT_GC_PROFILE;
-  if (flags[GARBAGE_COLLECT] != NO_GC) {
+  if (pflags[GARBAGE_COLLECT] != NO_GC) {
     num_gc++ ;
     GC_PROFILE_PRE_REPORT;
-    slide = (flags[GARBAGE_COLLECT] == SLIDING_GC) | 
-      (flags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC);
+    slide = (pflags[GARBAGE_COLLECT] == SLIDING_GC) | 
+      (pflags[GARBAGE_COLLECT] == INDIRECTION_SLIDE_GC);
     
     if (fragmentation_only) 
       slide = FALSE;
@@ -673,7 +673,7 @@ int gc_heap(CTXTdeclc int arity)
       *p++ = 0;
 #endif
     
-  } /* if (flags[GARBAGE_COLLECT]) */
+  } /* if (pflags[GARBAGE_COLLECT]) */
 #else
   /* for no-GC, there is no gc, but stack expansion can be done */
 #endif
@@ -694,7 +694,7 @@ int gc_heap(CTXTdeclc int arity)
 /*--------------------------------------------------------------------------*/
 
 xsbBool glstack_ensure_space(CTXTdeclc int extra, int arity) {
-  if (flags[GARBAGE_COLLECT] != NO_GC && arity < 255) {
+  if (pflags[GARBAGE_COLLECT] != NO_GC && arity < 255) {
     gc_heap(CTXTc arity);
   }
   if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + extra) {

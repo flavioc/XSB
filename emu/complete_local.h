@@ -77,7 +77,7 @@ void makeConsumerFromGenerator(CTXTdeclc VariantSF producer_sf)
     if (num_compl_susps_in_ascc > max_compl_susps_in_ascc) { \
       max_compl_susps_in_ascc = num_compl_susps_in_ascc; \
     } \
-    if (flags[PROFFLAG] > 2) { \
+    if (pflags[PROFFLAG] > 2) { \
       fprintf(stdmsg, \
               "p(lev(%d),lead(%d),subg(%d),ec(%d),cons(%d),cs(%d)).\n", \
 	      level_num,leader_level,num_subgoals,num_completed, \

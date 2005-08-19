@@ -117,7 +117,7 @@
   case PUT: {	/* r1: +integer	*/
     Cell term = ptoc_tag(CTXTc 1);
     if (isinteger(term)) {
-      putc(int_val(term), fileptr(flags[CURRENT_OUTPUT]));
+      putc(int_val(term), fileptr(pflags[CURRENT_OUTPUT]));
     } else {
       if (isnonvar(term)) err_handle(CTXTc TYPE, 1, "put", 1, "integer", term);
       else err(INSTANTIATION, 1, "put", 1);
@@ -129,7 +129,7 @@
     if (isinteger(term)) {
       int  i;
       for (i=1; i<=int_val(term); i++)
-	putc(' ', fileptr(flags[CURRENT_OUTPUT]));
+	putc(' ', fileptr(pflags[CURRENT_OUTPUT]));
     } else {
       if (isnonvar(term)) err_handle(CTXTc TYPE, 1, "tab", 1, "integer", term);
       else err(INSTANTIATION, 1, "tab", 1);

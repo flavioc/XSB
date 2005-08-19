@@ -38,7 +38,7 @@
     else fprintf(stddbg, " (incomplete) ===\n"); }
 
 /* extern int cur_log_level; */
-#define cur_log_level flags[VERBOSENESS_LEVEL]
+#define cur_log_level pflags[VERBOSENESS_LEVEL]
 typedef struct subgoal_frame *VariantSF;
 /* Verboseness levels */
 #define LOG_QUIET 0

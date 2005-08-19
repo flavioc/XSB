@@ -113,10 +113,10 @@ CPtr	ans_var_pos_reg;
 #ifdef PROFILE
 
 #define XSB_Profile_Instr                                     \
-    if (flags[PROFFLAG]) {                                    \
+    if (pflags[PROFFLAG]) {                                   \
       inst_table[(int) *(lpcreg)][sizeof(Cell)+1]             \
         = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1;    \
-      if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin)    \
+      if (pflags[PROFFLAG] > 1 && (int) *lpcreg == builtin)   \
         builtin_table[(int) *(lpcreg+3)][1] =                 \
   	  builtin_table[(int) *(lpcreg+3)][1] + 1;            \
     } 
@@ -416,10 +416,10 @@ contcase:     /* the main loop */
   xctr++;
 #endif
 #ifdef PROFILE
-  if (flags[PROFFLAG]) {
+  if (pflags[PROFFLAG]) {
     inst_table[(int) *(lpcreg)][sizeof(Cell)+1]
       = inst_table[(int) *(lpcreg)][sizeof(Cell)+1] + 1;
-    if (flags[PROFFLAG] > 1 && (int) *lpcreg == builtin) 
+    if (pflags[PROFFLAG] > 1 && (int) *lpcreg == builtin) 
       builtin_table[(int) *(lpcreg+3)][1] = 
 	builtin_table[(int) *(lpcreg+3)][1] + 1;
   }
@@ -984,7 +984,7 @@ contcase:     /* the main loop */
 #endif
         if (gc_heap(CTXTc op1)) { /* garbage collection potentially modifies hreg */
 	  if ((ereg - hreg) < (long)op2) {
-	    if (flags[STACK_REALLOC]) {
+	    if (pflags[STACK_REALLOC]) {
 	      if (glstack_realloc(CTXTc resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {
 		xsb_basic_abort(local_global_exception);
 	      }
@@ -1589,7 +1589,7 @@ contcase:     /* the main loop */
       bld_cs(reg + 2, hreg);	/* see subp.c: build_call() */
       new_heap_functor(hreg, true_psc);
       bld_copy(reg + 1, build_interrupt_chain(CTXT));
-      lpcreg = get_ep((Psc) flags[MYSIG_ATTV + INT_HANDLERS_FLAGS_START]);
+      lpcreg = get_ep((Psc) pflags[MYSIG_ATTV + INT_HANDLERS_FLAGS_START]);
     }
   XSB_End_Instr()
 
@@ -1645,7 +1645,7 @@ contcase:     /* the main loop */
 	 get_name(get_data(psc)),get_name(psc),get_arity(psc)); */
       bld_cs(reg+1, build_call(CTXTc psc));   /* put call-term in r1 */
       /* get psc of undef handler */
-      psc = (Psc)flags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START];
+      psc = (Psc)pflags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START];
       bld_int(reg+2, MYSIG_UNDEF);      /* undef-pred code */
       lpcreg = get_ep(psc);             /* ep of undef handler */
       break;

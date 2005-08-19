@@ -371,7 +371,7 @@ static CPtr slide_heap(int num_marked)
       }
     } else {
 #ifdef GC_PROFILE
-      if (verbose_gc && flags[GARBAGE_COLLECT]==INDIRECTION_SLIDE_GC)
+      if (verbose_gc && pflags[GARBAGE_COLLECT]==INDIRECTION_SLIDE_GC)
 	fprintf(stddbg,"{GC} Giving up Fast-Slide scheme.\n");
 #endif
 #endif /* INDIRECTION_SLIDE */

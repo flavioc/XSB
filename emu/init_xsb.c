@@ -201,12 +201,13 @@ static void help_message(void)
 static void init_flags(void)
 {
   int i;
-  for (i=0; i<65; i++) flags[i] = 0;
-  flags[SYS_TIMER]  = TIMEOUT_ERR; /* start with expired timer */
+  for (i=0; i<MAX_FLAGS; i++) flags[i] = 0;
+  for (i=0; i<MAX_PRIVATE_FLAGS; i++) pflags[i] = 0;
+  pflags[SYS_TIMER]  = TIMEOUT_ERR; /* start with expired timer */
   flags[BANNER_CTL] = 1;           /* a product of prime numbers; each prime
 				      determines which banner isn't shown */
   flags[NUM_THREADS] = 1;          /* 1 thread will be run at start */
-  flags[BACKTRACE] = 1;           /* Backtrace on error by default */
+  pflags[BACKTRACE] = 1;           /* Backtrace on error by default */
 }
 
 /*==========================================================================*/
@@ -352,11 +353,11 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   perproc_reset_stat();
   reset_stat_total();
 
-  flags[STACK_REALLOC] = TRUE;
+  pflags[STACK_REALLOC] = TRUE;
 #ifdef GC
-  flags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
+  pflags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
 #else
-  flags[GARBAGE_COLLECT] = NO_GC;
+  pflags[GARBAGE_COLLECT] = NO_GC;
 #endif
   flags[DCG_MODE] = XSB_STYLE_DCG;
 
@@ -377,7 +378,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
 
   xsb_mode = DEFAULT;
-  flags[TABLING_METHOD] = VARIANT_TEM;
+  pflags[TABLING_METHOD] = VARIANT_TEM;
 
   /* Modify Parameters Using Command Line Options
      -------------------------------------------- */
@@ -394,23 +395,23 @@ char *init_para(CTXTdeclc int argc, char *argv[])
        Will dump core if the accompanying argument is omitted. */
     switch((argv[i][1])) {
     case 'r':
-      flags[STACK_REALLOC] = FALSE;
+      pflags[STACK_REALLOC] = FALSE;
       break;
     case 'g':
       i++;
 #ifdef GC
       if (i < argc) {
 	if (strcmp(argv[i],"sliding")==0)
-	  flags[GARBAGE_COLLECT] = SLIDING_GC;
+	  pflags[GARBAGE_COLLECT] = SLIDING_GC;
 	else
 	if (strcmp(argv[i],"copying")==0)
-	  flags[GARBAGE_COLLECT] = COPYING_GC;
+	  pflags[GARBAGE_COLLECT] = COPYING_GC;
 	else
         if (strcmp(argv[i],"indirection")==0)
-          flags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
+          pflags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
         else
 	if (strcmp(argv[i],"none")==0)
-	  flags[GARBAGE_COLLECT] = NO_GC;
+	  pflags[GARBAGE_COLLECT] = NO_GC;
 	else
 	xsb_warn("Unrecognized garbage collection type");
       } else
@@ -500,7 +501,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       asynint_val |= MSGINT_MARK;
       break;
     case 'S':
-      flags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
+      pflags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
       break;
     case 'd':
       if ( (xsb_mode != DEFAULT) && (xsb_mode != CUSTOM_BOOT_MODULE) )

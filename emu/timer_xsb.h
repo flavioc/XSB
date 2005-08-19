@@ -94,7 +94,7 @@ int make_timed_call(CTXTdeclc xsbTimeout*, void (*) (xsbTimeout*));
 #define OP_TIMED_OUT(timeout)        (op_timed_out(timeout))
 
 #define TURNOFFALARM        /* no-op */
-#define CHECK_TIMER_SET     ((int)flags[SYS_TIMER] > 0)
+#define CHECK_TIMER_SET     ((int)pflags[SYS_TIMER] > 0)
 #define NOTIFY_PARENT_THREAD(timeout)                          \
    if (CHECK_TIMER_SET) {                                      \
       /* Send msg to the timer thread immediately,             \
@@ -117,7 +117,7 @@ int message_pump();
 UINT xsb_timer_id; 
 
 #define TURNOFFALARM        KillTimer(NULL, xsb_timer_id);
-#define CHECK_TIMER_SET     ((int)flags[SYS_TIMER] > 0)
+#define CHECK_TIMER_SET     ((int)pflags[SYS_TIMER] > 0)
 #define NOTIFY_PARENT_THREAD(timeout)       \
    if (CHECK_TIMER_SET) {\
       /* Send msg to the timer thread immediately, \
@@ -133,9 +133,9 @@ void xsb_timer_handler(int signo);
 
 #define SETALARM     	              (signal(SIGALRM, xsb_timer_handler))
 #define TURNOFFALARM                  alarm(0);
-#define CHECK_TIMER_SET               ((int)flags[SYS_TIMER] > 0)
+#define CHECK_TIMER_SET               ((int)pflags[SYS_TIMER] > 0)
 #define NOTIFY_PARENT_THREAD(timeout)  ;  /* no-op */
-#define SET_TIMER                     alarm((int)flags[SYS_TIMER])
+#define SET_TIMER                     alarm((int)pflags[SYS_TIMER])
 #define OP_TIMED_OUT                  (sigsetjmp(xsb_timer_env,1) != 0)
 
 #endif /* WIN_NT (else part) */

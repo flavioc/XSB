@@ -165,7 +165,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      else {								\
        fprintf(stdwarn,							\
 	       "\n++Warning: Trail / Choice Point Stack overflow:   "); \
-       if (flags[STACK_REALLOC]) {					\
+       if (pflags[STACK_REALLOC]) {					\
 	 fprintf(stdwarn, "Expanding ...\n");				\
          tcpstack_realloc(CTXTc resize_stack(tcpstack.size,0));		\
        }								\
@@ -186,7 +186,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      }									   \
      else {								   \
        fprintf(stdwarn, "\n++Warning: Heap / Local Stack overflow:   ");   \
-       if (flags[STACK_REALLOC]) {					   \
+       if (pflags[STACK_REALLOC]) {					   \
 	 fprintf(stdwarn, "Expanding ...\n");				   \
 	 glstack_realloc(CTXTc resize_stack(glstack.size,		   \
 			 EXTRA+OVERFLOW_MARGIN), arity);		   \
@@ -202,7 +202,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 #define check_completion_stack_overflow					\
    if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {		\
      fprintf(stdwarn, "\n++Warning: Completion Stack overflow:   ");	\
-     if (flags[STACK_REALLOC]) {					\
+     if (pflags[STACK_REALLOC]) {					\
        fprintf(stdwarn, "Expanding ...\n");				\
        complstack_realloc(CTXTc resize_stack(complstack.size,0));	\
      }									\
@@ -227,7 +227,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 				  "clobbered Choice Point Stack --\n");	\
      }									\
      else {								\
-       if (flags[STACK_REALLOC])					\
+       if (pflags[STACK_REALLOC])					\
          tcpstack_realloc(CTXTc resize_stack(tcpstack.size,0));		\
        else {								\
          xsb_basic_abort(trail_cp_exception);				\
@@ -243,7 +243,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 				 "Local Stack clobbered Heap --\n");	      \
      }									      \
      else {								      \
-       if ((flags[STACK_REALLOC] == FALSE) ||				      \
+       if ((pflags[STACK_REALLOC] == FALSE) ||				      \
 	   (glstack_ensure_space(CTXTc EXTRA,arity) != 0)) {			      \
 	 xsb_basic_abort(local_global_exception);			      \
        }								      \
@@ -252,7 +252,7 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 #define check_completion_stack_overflow				\
    if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {	\
-     if (flags[STACK_REALLOC])					\
+     if (pflags[STACK_REALLOC])					\
        complstack_realloc(CTXTc resize_stack(complstack.size,0));\
      else {							\
        xsb_basic_abort(complstack_exception);		        \

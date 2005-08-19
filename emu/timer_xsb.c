@@ -147,7 +147,7 @@ int op_timed_out(xsbTimeout *timeout)
   struct timespec wakeup_time;
   int rc;
 
-  wakeup_time.tv_sec = time(NULL) + (int)flags[SYS_TIMER];
+  wakeup_time.tv_sec = time(NULL) + (int)pflags[SYS_TIMER];
   pthread_mutex_lock(&timeout->timeout_info.mutex);
   rc = pthread_cond_timedwait(&timeout->timeout_info.condition, &timeout->timeout_info.mutex, &wakeup_time);
   pthread_mutex_unlock(&timeout->timeout_info.mutex);
@@ -197,7 +197,7 @@ int message_pump()
   if ((xsb_timer_id = SetTimer(NULL,
 			       0,
 			       /* set timeout period */
-			       (UINT)((int)flags[SYS_TIMER] * 1000),
+			       (UINT)((int)pflags[SYS_TIMER] * 1000),
 			       (TIMERPROC)xsb_timer_handler))
       == 0) {
     xsb_error("SOCKET_REQUEST: Can't create timer: %d\n", GetLastError());
