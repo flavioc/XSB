@@ -30,6 +30,7 @@
 #include "cell_def_xsb.h"
 #include "basictypes.h"
 #include "setjmp_xsb.h"
+#include "flag_defs_xsb.h"
 
 typedef struct ClRefHdr
 {	unsigned long buflen ;
@@ -119,8 +120,6 @@ struct asrtBuff_t {
 
 #define MAX_REGS 257
 
-#define MAX_FLAGS 64
-
 struct th_context
 {
 /* System & user Flags */
@@ -152,12 +151,10 @@ byte *_cpreg;		/* return point register        */
 byte *_pcreg;		/* program counter              */
 CPtr _ebreg;		/* breg into environment stack	*/
 
-#if (!defined(CHAT))
 CPtr _efreg;
 CPtr _bfreg;
 CPtr _hfreg;
 CPtr *_trfreg;
-#endif
 CPtr _pdlreg;
 CPtr _openreg;
 xsbBool _neg_delay;
@@ -260,8 +257,6 @@ ClRef _retracted_buffer[MAX_RETRACTED_CLAUSES+1];
 ClRef *_OldestCl;
 ClRef *_NewestCl;
 
-Cell _clause_int;  /* former flag, but must be thread-specific */
-
 struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
 
 struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
@@ -288,14 +283,21 @@ struct Cursor *_FCursor;  /* root of curser chain*/
 struct Cursor *_LCursor;  /* tail of curser chain*/
 struct NumberofCursors *_FCurNum;
 
+/* Private flags */
+
+Cell _pflags[MAX_PRIVATE_FLAGS];
+
+/* Thread Id (for fast access) */
+
+int tid ;
 
 /* stuff for deadlock detection in completion */
-
+#ifdef SHARED_COMPL_TABLES
 struct th_context * 	waiting_for_thread;
 struct subgoal_frame *	waiting_for_subgoal;
-int tid ;
 int deadlock_brk_leader ;
 int reset_thread ;
+#endif
 
 } ;
 
@@ -424,8 +426,6 @@ typedef struct th_context th_context ;
 #define OldestCl		(th->_OldestCl)
 #define NewestCl		(th->_NewestCl)
 
-#define clause_int		(th->_clause_int)
-
 #define random_seeds		(th->_random_seeds)
 
 #define asrtBuff              (th->_asrtBuff)
@@ -445,6 +445,8 @@ typedef struct th_context th_context ;
 #define FCursor (th->_FCursor)
 #define LCursor (th->_LCursor)
 #define FCurNum (th->_FCurNum)
+
+#define  pflags			(th->_pflags)
 
 #define CTXT			th
 #define CTXTc			th ,

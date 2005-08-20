@@ -198,7 +198,7 @@ static void help_message(void)
 
 /* Initialize System Flags
    ----------------------- */
-static void init_flags(void)
+static void init_flags(CTXTdecl)
 {
   int i;
   for (i=0; i<MAX_FLAGS; i++) flags[i] = 0;
@@ -302,11 +302,11 @@ static void process_long_option(char *option)
 /*==========================================================================*/
 FILE *stream_err, *stream_out; 
 
-void perform_IO_Redirect(int argc, char *argv[])
+void perform_IO_Redirect(CTXTdeclc int argc, char *argv[])
 {
 int i;
 
-init_flags();	// We set one of them
+init_flags(CTXT);	// We set one of them
 
 /*
 	This need to be done early so that embedded applications can catch meaningful 
@@ -730,7 +730,6 @@ void init_machine(CTXTdecl)
 
   asynint_code = 0;
   asynint_val = 0;
-  clause_int = 0;
 
   pdl		= init_pdl ;
   glstack	= init_glstack ;

@@ -2383,7 +2383,7 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
 
 #define MAXTHREAD 100
 
-static inline void allocate_prref_tab(Psc psc, PrRef *prref, pb *new_ep) {
+static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_ep) {
   int Loc;
 
   if (!(*prref = (PrRef)mem_alloc(sizeof(PrRefData)))) xsb_exit("No space for a PrRef\n");
@@ -2427,7 +2427,7 @@ xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
   if (get_data(psc) == NULL) 
     set_data(psc,global_mod);
     
-  allocate_prref_tab(psc,&p,&new_ep);
+  allocate_prref_tab(CTXTc psc,&p,&new_ep);
 
 #ifdef MULTI_THREAD
   //  printf("prref disp tab for %s/%d? shared=%d\n",get_name(psc),get_arity(psc),get_shared(psc));
@@ -2470,7 +2470,7 @@ PrRef get_prref(CTXTdeclc Psc psc) {
   if (!prref) {
     pb new_ep;
     struct DispBlk_t *dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
-    allocate_prref_tab(psc,&prref,&new_ep);
+    allocate_prref_tab(CTXTc psc,&prref,&new_ep);
     if (dispblk->MaxThread >= th->tid) {
       (&(dispblk->Thread0))[th->tid] = (CPtr) new_ep;
     } else {

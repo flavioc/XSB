@@ -23,6 +23,7 @@
 ** 
 */
 
+#include "context.h"
 
 #define REL_TAB_SIZE      32768
 #define FOREIGN_NAMELEN   128
@@ -90,7 +91,7 @@ typedef struct text_segment text_seg, seg_hdr, *pseg ;
 
 /* === functions used in other parts of the system ====================== */
 
-extern byte *loader(char *, int);
+extern byte *loader(CTXTdeclc char *, int);
 extern void env_type_set(Psc, byte, byte, xsbBool);
 extern void unload_seg(pseg);
 extern unsigned int read_magic(FILE *);

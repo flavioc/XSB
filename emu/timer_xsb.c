@@ -142,7 +142,7 @@ sigjmp_buf xsb_timer_env;
 #endif /* MULTI_THREAD */
 
 #ifdef MULTI_THREAD
-int op_timed_out(xsbTimeout *timeout)
+int op_timed_out(CTXTdeclc xsbTimeout *timeout)
 {
   struct timespec wakeup_time;
   int rc;

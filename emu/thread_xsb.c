@@ -169,6 +169,14 @@ static void *xsb_thread_run( void *arg )
 	return NULL ;
 }
 
+static void copy_pflags( th_context *to, th_context *from )
+{
+	int i ;
+
+	for( i = 0; i < MAX_PRIVATE_FLAGS; i++ )
+		to->_pflags[i] = from->_pflags[i] ;
+}
+
 static int xsb_thread_create(th_context *th)
 {
 	int rc ;
@@ -180,6 +188,7 @@ static int xsb_thread_create(th_context *th)
 	goal = ptoc_tag(th, 2) ;
 	new_th = malloc(sizeof(th_context)) ;
 
+	copy_pflags(new_th, th) ;
 	init_machine(new_th) ;
 	new_th->_reg[1] = copy_term_from_thread(new_th, th, goal) ;
 

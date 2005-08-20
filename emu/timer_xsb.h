@@ -91,7 +91,7 @@ int make_timed_call(CTXTdeclc xsbTimeout*, void (*) (xsbTimeout*));
 #ifdef MULTI_THREAD /* PTHREADS */
 
 #define SETALARM            ;  /* no-op */
-#define OP_TIMED_OUT(timeout)        (op_timed_out(timeout))
+#define OP_TIMED_OUT(timeout)        (op_timed_out(CTXTc timeout))
 
 #define TURNOFFALARM        /* no-op */
 #define CHECK_TIMER_SET     ((int)pflags[SYS_TIMER] > 0)

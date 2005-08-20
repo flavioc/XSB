@@ -428,7 +428,7 @@ void init_interrupt(void)
  */
 void intercept(CTXTdeclc Psc psc) {
 
-  if (clause_int)
+  if (pflags[CLAUSE_INT])
     synint_proc(CTXTc psc, MYSIG_CLAUSE);
   else if (flags[DEBUG_ON] && !flags[HIDE_STATE]) {
     if (get_spy(psc)) { /* spy'ed pred, interrupted */

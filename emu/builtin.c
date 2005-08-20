@@ -197,9 +197,8 @@ extern double realtime_count; /* from subp.c */
 /* ------- variables also used in other parts of the system -----------	*/
 
 Cell flags[MAX_FLAGS];			  /* System flags + user flags */
-Cell pflags[MAX_PRIVATE_FLAGS];		  /* Thread private flags */
 #ifndef MULTI_THREAD
-Cell clause_int = 0;  /* former flag that must be local */
+Cell pflags[MAX_PRIVATE_FLAGS];		  /* Thread private flags */
 #endif
 
 /* ------- utility routines -------------------------------------------	*/
@@ -1335,8 +1334,7 @@ int builtin_call(CTXTdeclc byte number)
   case STAT_FLAG: {	/* R1: flagname(+int); R2: value(-int) */
     int flagname = ptoc_int(CTXTc 1);
     int flagval;
-    if (flagname == CLAUSE_INT) flagval = clause_int;
-    else if (flagname <= MAX_PRIVATE_FLAGS ) flagval = pflags[flagname];
+    if (flagname < MAX_PRIVATE_FLAGS ) flagval = pflags[flagname];
     else flagval = flags[flagname];
     ctop_int(CTXTc 2, flagval);
     break;
@@ -1344,11 +1342,10 @@ int builtin_call(CTXTdeclc byte number)
   case STAT_SET_FLAG: {	/* R1: flagname(+int); R2: value(+int); */
     int flagval = ptoc_int(CTXTc 2);
     int flagname = ptoc_int(CTXTc 1);
-    if (flagname == CLAUSE_INT) clause_int = flagval;
-    else if (flagname <= MAX_PRIVATE_FLAGS )
+    if (flagname < MAX_PRIVATE_FLAGS )
     	pflags[flagname] = flagval;
     else flags[flagname] = flagval;
-    if (flags[DEBUG_ON]||flags[TRACE_STA]||flags[HITRACE]||clause_int)
+    if (flags[DEBUG_ON]||flags[TRACE_STA]||flags[HITRACE]||pflags[CLAUSE_INT])
       asynint_val |= MSGINT_MARK;
     else asynint_val &= ~MSGINT_MARK;
     break;
@@ -1546,7 +1543,7 @@ int builtin_call(CTXTdeclc byte number)
 				/* R2: -int, addr of 1st instruction;	     */
 				/*	0 indicates an error                 */
 				/* R3 = 1 if exports to be exported, 0 otw   */
-    ctop_int(CTXTc 2, (Integer)loader(ptoc_string(CTXTc 1), ptoc_int(CTXTc 3)));
+    ctop_int(CTXTc 2, (Integer)loader(CTXTc ptoc_string(CTXTc 1), ptoc_int(CTXTc 3)));
     break;
 
   case PSC_INSERT: {	/* R1: +String, symbol name

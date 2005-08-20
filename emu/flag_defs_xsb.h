@@ -67,7 +67,7 @@
 These values are added to INT_HANDLERS_FLAGS_START to obtain the actual
 interrupt flag
 ---------------------------------------------------------------------------- */
-#define MAX_PRIVATE_FLAGS 41
+#define MAX_PRIVATE_FLAGS 42
 
 /* Thread shared flags */
 
