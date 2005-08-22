@@ -941,18 +941,23 @@ inline static xsbBool is_completed_table(TIFptr tif) {
 inline static int abolish_table_predicate(CTXTdeclc Psc psc)
 {
   TIFptr tif;
+  SYS_MUTEX_LOCK(MUTEX_TABLE);
   tif = get_tip(CTXTc psc);
-  if ( IsNULL(tif) )
+  if ( IsNULL(tif) ) {
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     xsb_abort("[abolish_table_pred] Attempt to delete untabled predicate (%s/%d)\n",
 	      get_name(psc), get_arity(psc));
-
-  if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) 
+  }
+  if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     return 1;
-
-  if ( ! is_completed_table(tif) )
+  }
+  if ( ! is_completed_table(tif) ) {
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     return 0;
-
+  }
   delete_predicate_table(CTXTc tif);
+  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
   return 1;
 }
 

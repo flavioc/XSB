@@ -88,6 +88,24 @@
 CPtr	ans_var_pos_reg;
 #endif
 
+#ifdef MULTI_THREAD
+FILE *th_log_file[100] = {NULL};
+int th_log_cnt[100] = {0};
+
+void open_th_log_file(int tid) {
+  char fname[100];
+  sprintf(fname,"c:\\xsbsys\\XSBDEV\\EMall2\\test_multithread\\temp_th_log_file_%d",tid);
+  th_log_file[tid] = fopen(fname,"w");
+  return;
+}
+
+void log_rec(CTXTdeclc Psc psc, char *ctype) {
+    if (!th_log_file[th->tid]) open_th_log_file(th->tid);
+    fprintf(th_log_file[th->tid],"inst(%d,%s,'%s',%d).\n",++th_log_cnt[th->tid],ctype,get_name(psc),get_arity(psc));
+    return;
+}
+#endif
+
 /*----------------------------------------------------------------------*/
 
 #include "tr_delay.h"
@@ -1604,6 +1622,9 @@ contcase:     /* the main loop */
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
+#ifdef MULTI_THREAD
+    log_rec(CTXTc psc, "call");
+#endif
     call_sub(psc);
   XSB_End_Instr()
 
@@ -1716,6 +1737,9 @@ contcase:     /* the main loop */
     Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
     psc = (Psc)op1;
+#ifdef MULTI_THREAD
+    log_rec(CTXTc psc, "exec");
+#endif
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
