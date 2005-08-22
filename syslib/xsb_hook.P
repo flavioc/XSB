@@ -27,6 +27,13 @@
 #include "psc_defs.h"
 
 %% Hooks
+:- thread_shared 
+	xsb_exit_hook(_),
+	xsb_assert_hook(_),
+	xsb_retract_hook(_),
+	xsb_before_prompt_hook(_),
+	xsb_undefined_predicate_hook(_).
+
 :- dynamic
 	xsb_exit_hook(_),
 	xsb_assert_hook(_),
