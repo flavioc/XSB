@@ -88,13 +88,18 @@
 CPtr	ans_var_pos_reg;
 #endif
 
-#ifdef MULTI_THREAD
+//#define MULTI_THREAD_LOGGING
+#ifdef MULTI_THREAD_LOGGING
+/* To help debug multithreaded applications: 
+Creates a log-file for each thread, and
+Logs calls and executes to it.
+*/
 FILE *th_log_file[100] = {NULL};
 int th_log_cnt[100] = {0};
 
 void open_th_log_file(int tid) {
   char fname[100];
-  sprintf(fname,"c:\\xsbsys\\XSBDEV\\EMall2\\test_multithread\\temp_th_log_file_%d",tid);
+  sprintf(fname,"temp_th_log_file_%d",tid);
   th_log_file[tid] = fopen(fname,"w");
   return;
 }
@@ -1622,7 +1627,7 @@ contcase:     /* the main loop */
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_LOGGING
     log_rec(CTXTc psc, "call");
 #endif
     call_sub(psc);
@@ -1737,7 +1742,7 @@ contcase:     /* the main loop */
     Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
     psc = (Psc)op1;
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_LOGGING
     log_rec(CTXTc psc, "exec");
 #endif
 #ifdef CP_DEBUG
