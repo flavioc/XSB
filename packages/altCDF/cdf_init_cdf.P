@@ -39,6 +39,7 @@
 % TLS: this should probably be first.
 
 :- import using_xj/0 from usermod.
+:- thread_shared using_xj/0.
 :- dynamic using_xj/0.
 
 :- import  isa_ext/2, allAttr_ext/3, hasAttr_ext/3,

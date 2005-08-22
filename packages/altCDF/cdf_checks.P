@@ -561,7 +561,7 @@ delete them.
 
 %TLS the original was saved after end_of_file.
 
-:- import conset/2, conget/2, coninc/1 from gensym.
+:- import pconset/2, pconget/2, pconinc/1 from globalvar.
 :- import message/1 from standard.
 
 cdf_check_redundancies(Context,Component,Mode):- 
@@ -569,11 +569,11 @@ cdf_check_redundancies(Context,Component,Mode):-
 
 check_redundancies(Context,f(Component,Mode)):- 
 	cputime(Start),
-	conset(redund,0),
+	pconset(redund,0),
 	check_redundancies_notime(Context,f(Component,Mode)),
 	cputime(End),
 	Tot is End - Start,
-	conget(redund,N),
+	pconget(redund,N),
 	message(['Redundancy Cputime ',Tot,' for ',N,' Fact checks.']).
  
 % The main reason I folded this is for testing.
@@ -586,7 +586,7 @@ check_redundancies_notime(Context,f(Component,Mode)):-
 
 allAttr_redundancy_check(Context,Component,Mode) :-
 	 allAttr_ext(S,R,T),
-             coninc(redund),
+             pconinc(redund),
 	 get_component_extensional(allAttr_ext(S,R,T),Component),
 	 allAttr_redundancy_check_1(Context,Component,allAttr(S,R,T),Mode),
 	 fail.
@@ -605,7 +605,7 @@ allAttr_redundancy_check_1(Context,Component,allAttr(S,R,T),Mode):-
 
 classHasAttr_redundancy_check(Context,Component,Mode) :-
 	 classHasAttr_ext(S,R,T),
-             coninc(redund),
+             pconinc(redund),
 	 get_component_extensional(classHasAttr_ext(S,R,T),Component),
 	 classHasAttr_redundancy_check_1(Context,Component,
 	                                                     classHasAttr(S,R,T),Mode),
@@ -627,7 +627,7 @@ classHasAttr_redundancy_check_1(Context,Component,
 
 hasAttr_redundancy_check(Context,Component,Mode) :-
 	 hasAttr_ext(S,R,T),
-             coninc(redund),
+             pconinc(redund),
 	 get_component_extensional(hasAttr_ext(S,R,T),Component),
 	 hasAttr_redundancy_check_1(Context,Component,hasAttr(S,R,T),
 	                                            Mode),
@@ -647,7 +647,7 @@ hasAttr_redundancy_check_1(Context,Component,hasAttr(S,R,T),Mode):-
 
 minAttr_redundancy_check(Context,Component,Mode) :-
 	 minAttr_ext(S,R,T,N),
-             coninc(redund),
+             pconinc(redund),
 	 get_component_extensional(minAttr_ext(S,R,T,N),Component),
 	 minAttr_redundancy_check_1(Context,Component,minAttr(S,R,T,N),
                                                          Mode),
@@ -667,7 +667,7 @@ minAttr_redundancy_check_1(Context,Component,minAttr(S,R,T,N),Mode):-
 
 maxAttr_redundancy_check(Context,Component,Mode) :-
 	 maxAttr_ext(S,R,T,N),
-             coninc(redund),
+             pconinc(redund),
 	 get_component_extensional(maxAttr_ext(S,R,T,N),Component),
 	 maxAttr_redundancy_check_1(Context,Component,maxAttr(S,R,T,N),
 	                                             Mode),
@@ -689,17 +689,17 @@ maxAttr_redundancy_check_1(Context,Component,maxAttr(S,R,T,N),Mode):-
 
 check_object_constraints(Context,Component):- 
 	cputime(Start),
-	conset(object,0),
+	pconset(object,0),
 	check_allAttr_constraints(Context,Component),
 	check_minAttr_constraints(Context,Component),
 	check_maxAttr_constraints(Context,Component),
 	cputime(End),
 	Tot is End - Start,
-	conget(object,N),
+	pconget(object,N),
 	message(['Object Check Cputime ',Tot,' for ',N,' Fact checks.']).
 
 check_allAttr_constraints(Context,Component):- 
-	coninc(object),
+	pconinc(object),
 	immed_allAttr(S,R,T),
 	get_component_extensional(allAttr_ext(S,R,T),Component),
 	check_allAttr_constraints_1(Context,allAttr(S,R,T)),
@@ -716,7 +716,7 @@ check_allAttr_constraints_1(Context,allAttr(S,R,T)):-
                                                  'constraint ',allAttr(S,R,T)]) ).
 
 check_minAttr_constraints(Context,Component):- 
-	coninc(object),
+	pconinc(object),
 	immed_minAttr(S,R,T,N),
 	get_component_extensional(minAttr_ext(S,R,T,N),Component),
 	check_minAttr_constraints_1(Context,minAttr(S,R,T,N)),
@@ -734,7 +734,7 @@ check_minAttr_constraints_1(Context,minAttr(S,R,T,N)):-
                                                  ' constraint ',minAttr(S,R,T,N)]) ).
 
 check_maxAttr_constraints(Context,Component):- 
-	coninc(object),
+	pconinc(object),
 	immed_maxAttr(S,R,T,N),
 	get_component_extensional(maxAttr_ext(S,R,T,N),Component),
 	check_maxAttr_constraints_1(Context,maxAttr(S,R,T,N)),
@@ -858,19 +858,19 @@ hasAttr_redundancy_check :-
 	 fail
 	 ;	
 	 writeln('marginals generated'),
-	 conset(lastind,0), conset(firstind,0),
+	 pconset(lastind,0), pconset(firstind,0),
 	 F = f(S,R,T), F1 = f(S1,R1,T1),
 	 immed_hasAttr(S,R,T),
 	 isa(R1,R),
 	 marginal_get(first(R1,S),CntFirst),
 	 marginal_get(last(R1,T),CntLast),
 	 (CntLast < CntFirst
-	  ->	 coninc(lastind),
+	  ->	 pconinc(lastind),
 		 isa(T1,T),
 		 immed_hasAttr(S1,R1,T1),
 		 F \== F1,
 		 isa(S,S1)
-	  ;	 coninc(firstind),
+	  ;	 pconinc(firstind),
 		 isa(S,S1),
 		 immed_hasAttr(S1,R1,T1),
 		 F \== F1,
@@ -883,7 +883,7 @@ hasAttr_redundancy_check :-
 	),
 	cputime(T1),
 	T is T1-T0, writeln(cputime=T),
-	conget(lastind,Last), conget(firstind,First),
+	pconget(lastind,Last), pconget(firstind,First),
 	writeln(['Use 1+2 index count'=First, 'Use 2+3 index count'=Last]).
 
 check_identity_checkflag(Context,Term):- 
