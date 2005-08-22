@@ -173,6 +173,19 @@ void SpitOutGraph(CPtr cs_ptr)
         subg_compl_susp_ptr(subgoal) = NULL
 #define DeleteCSF(nsf) \
         csf_prevcsf(nsf)
+
+/* TLS: A pass has been made through the CSF chain to remove those
+ * whose root subgoal was early completed.  So what we do now is to
+ * reset the hreg and breg of each.  Frankly I don't think that this
+ * step should be needed if the freeze registers are not unset until
+ * final completion, and the test suite passes if the alternate form
+ * (below) is used.  I'll wait until the MT engine stabilizes until I
+ * make the change, though.
+ * 
+ * 8/05 Took out lines     
+ * cs_pcreg(nsftmp) = (pb) &resume_compl_suspension_inst;  
+ * as these should be unnecessary, and appears to be an artifact from old code
+ */
 #define ResumeCSFs() \
 { \
   CPtr nsftmp; \
@@ -183,17 +196,33 @@ void SpitOutGraph(CPtr cs_ptr)
     cur_breg = nsf; \
   } \
   for (nsftmp = cur_breg; csf_prevcsf(nsftmp); nsftmp = csf_prevcsf(nsftmp)) {\
-    cs_pcreg(nsftmp) = (pb) &resume_compl_suspension_inst; \
     cs_hreg(nsftmp) = hreg; \
     cs_ebreg(nsftmp) = ebreg; \
   } \
-  cs_pcreg(nsftmp) = (pb) &resume_compl_suspension_inst; \
   cs_hreg(nsftmp) = hreg; \
   cs_ebreg(nsftmp) = ebreg; \
   csf_prevcsf(nsftmp) = breg; \
   cur_breg = nsftmp; \
   subg_compl_susp_ptr(compl_subg) = NULL; \
 }
+
+/* TLS: alternate form, that does not need to reset the hreg/ebreg.
+define ResumeCSFs()				\
+{ \
+  CPtr nsftmp; \
+  if (!cur_breg) { \
+    cur_breg = cc_tbreg = nsf; \
+  } else { \
+    csf_prevcsf(cur_breg) = nsf; \
+    cur_breg = nsf; \
+  } \
+  for (nsftmp = cur_breg; csf_prevcsf(nsftmp); nsftmp = csf_prevcsf(nsftmp)) {\
+  } \
+  csf_prevcsf(nsftmp) = breg; \
+  cur_breg = nsftmp; \
+  subg_compl_susp_ptr(compl_subg) = NULL; \
+}
+*/
   
 static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in, 
 					   CPtr cs_ptr)
@@ -206,22 +235,26 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
   /* check from leader up to the youngest subgoal */
   while (ComplStkFrame >= openreg) {
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
-    /* TLS: I think the following could also be done at early completion
-     * (ans-return), though I'm not sure there's an advantage either
-     * way
+    /* TLS: Explanation for the dull-witted (i.e. me).  If compl_subg
+     * is early completed, this means it has an unconditional answer.
+     * Since a completion suspension is set up only for ground
+     * negative calls, this means that the compl suspension will fail,
+     * so we just dispose of it.  BTW, this could also be done at
+     * early completion (ans-return), though there's no big advantage
+     * either way.
      */
     if (is_completed(compl_subg)) { /* this was early completed */
-      DisposeOfComplSusp(compl_subg);
+      DisposeOfComplSusp(compl_subg); /* set SGF pointer to null */
     }
     else { /* if not early completed */
       CPtr nsf;
       if ((nsf = subg_compl_susp_ptr(compl_subg)) != NULL) { 
 	CPtr p, prev_nsf = NULL;
-	/* 
-	   check each suspension frame for appropriate action: if
-	   their root subgoals are completed these completion
-	   suspensions fail, so forget about them; o/w delay them
-	   and let simplification take care of the rest
+	/* check each suspension frame for appropriate action: if
+	 * their root subgoals are completed these completion
+	 * suspensions are irrelevant, so skip over them; o/w keep
+	 * them on chain, delay them, and let simplification take care
+	 * of the rest 
 	*/
 	while (nsf) {
 	  if ((p = csf_ptcp(nsf)) != NULL) {
