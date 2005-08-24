@@ -2413,11 +2413,10 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
 }
 
 
-xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
+PrRef build_prref( CTXTdeclc Psc psc )
 {
   PrRef p;
   pb new_ep;
-  Psc psc = (Psc)ptoc_int(CTXTc 1);
   //  Integer Tabled = ptoc_int(CTXTc 2);
 
   set_type(psc, T_DYNA);
@@ -2459,27 +2458,38 @@ xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ )
 #else
   set_ep(psc,new_ep);
 #endif /* MULTI_THREAD */
-  ctop_int(CTXTc 3,(Integer)p) ;
-  return TRUE ;
+  return p;
 }
 
+xsbBool db_build_prref( CTXTdecl /* PSC, Tabled?, -PrRef */ ) {
+
+  ctop_int(CTXTc 3, (Integer)build_prref(CTXTc (Psc)ptoc_int(CTXTc 1)));
+  return TRUE;
+}
+
+
 PrRef get_prref(CTXTdeclc Psc psc) {
-  PrRef prref = dynpredep_to_prref(CTXTc get_ep(psc));
+  PrRef prref;
+  if (get_ep(psc) == (byte *)&fail_inst) {
+    prref = build_prref(CTXTc psc);
+  } else {
+    prref = dynpredep_to_prref(CTXTc get_ep(psc));
 #ifdef MULTI_THREAD
-  //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-  if (!prref) {
-    pb new_ep;
-    struct DispBlk_t *dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
-    allocate_prref_tab(CTXTc psc,&prref,&new_ep);
-    if (dispblk->MaxThread >= th->tid) {
-      (&(dispblk->Thread0))[th->tid] = (CPtr) new_ep;
-    } else {
-      //      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
-      xsb_exit("must expand dispatch-block");
+    //  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+    if (!prref) {
+      pb new_ep;
+      struct DispBlk_t *dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
+      allocate_prref_tab(CTXTc psc,&prref,&new_ep);
+      if (dispblk->MaxThread >= th->tid) {
+	(&(dispblk->Thread0))[th->tid] = (CPtr) new_ep;
+      } else {
+	//      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+	xsb_exit("must expand dispatch-block");
+      }
     }
-  }
-  //  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+    //  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
 #endif
+  }
   return prref;
 }
 

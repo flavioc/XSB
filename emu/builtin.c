@@ -1240,8 +1240,9 @@ int builtin_call(CTXTdeclc byte number)
   }
   case PSC_SET_EP: {	       /* R1: +PSC; R2: +int */
     Psc psc = (Psc)ptoc_addr(1);
-    pb ep = (pb)ptoc_int(CTXTc 2);
-    set_ep(psc, (ep==NULL?((byte *)(&(psc->load_inst))):ep));
+    byte *ep = (pb)ptoc_int(CTXTc 2);
+    if (ep == (byte *)NULL) set_ep(psc,(byte *)(&(psc->load_inst)));
+    else if (ep == (byte *)4) set_ep(psc,(byte *)&fail_inst);
     break;
   }
 
