@@ -140,6 +140,7 @@ static Pair make_psc_pair(Psc psc_ptr, Pair *link_ptr) {
 
 
 /* === get_tip: get the TIP from a PSC record =========================	*/
+extern CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep);
 
 TIFptr *get_tip_or_tdisp(Psc temp)
 {
@@ -182,7 +183,16 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
 #ifndef MULTI_THREAD
   return tip?(*tip):NULL;
 #else
-  if (!tip) return NULL;
+  if (!tip) { /* get it out of dispatch table */
+    CPtr temp1 = (CPtr) get_ep(psc);
+    if ((get_type(psc) == T_DYNA) &&
+	(*(pb)(temp1) ==  switchonthread)) {
+      temp1 = dynpredep_to_prortb(CTXTc temp1);
+      if (temp1 && (*(pb)temp1 == tabletrysingle)) 
+	return *(TIFptr *)(temp1+2);
+      else return (TIFptr) NULL;
+    }
+  }
   if (TIF_EvalMethod(*tip) != 3 /*DISPATCH_BLOCK*/) return *tip;
   { struct TDispBlk_t *tdispblk = (struct TDispBlk_t *)(((CPtr)(*tip))-2);
     TIFptr rtip = (TIFptr)((&(tdispblk->Thread0))[th->tid]);

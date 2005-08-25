@@ -93,6 +93,14 @@ struct DispBlkHdr_t {
   struct DispBlk_t *lastDB;
 } DispBlkHdr = {NULL, NULL};
 
+#ifdef MULTI_THREAD
+CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
+    if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
+      xsb_abort("Dynamic Dispatch block too small");
+    return (CPtr) ((&((struct DispBlk_t **)pred_ep)[1]->Thread0)[th->tid]);
+}
+#endif
+
 static inline PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
 #ifdef MULTI_THREAD
   if (cell_opcode((CPtr)(pred_ep)) == switchonthread) {
@@ -2448,8 +2456,8 @@ PrRef build_prref( CTXTdeclc Psc psc )
       *(((CPtr *)disp_instr_addr)+1) = (CPtr)dispblk;
       set_ep(psc,disp_instr_addr);
     } else {
-    /* add to dispblock if room, extending if nec */
-    dispblk = (struct DispBlk_t *)*((CPtr)get_ep(psc)+1);
+      /* add to dispblock if room, extending if nec */
+      dispblk = (struct DispBlk_t *)*((CPtr)get_ep(psc)+1);
     }
     if (dispblk->MaxThread >= th->tid) {
       (&(dispblk->Thread0))[th->tid] = (CPtr)new_ep;
