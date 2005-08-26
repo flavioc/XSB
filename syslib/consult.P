@@ -796,3 +796,18 @@ pop_loaded_file(Rand) :-
 	retract(loading_stack(Rand,_)),!.
 
 current_loaded_file(File) :- loading_stack(_,File), !.
+
+
+if_file_loaded(FileName) :-
+	(atom(FileName)
+	 ->	search_module(FileName,_Dir,_Mod,_SExt,_Base,Obj),
+		expand_filename(Obj,ExpObj),
+		(consult_file_loaded(ExpObj)
+		 ->	true
+		 ;	get_fname(FileName,SExtd,Based,_Modd),
+			get_HRname(SExtd,Based,_Hfname,Rfname),
+			expand_filename(Rfname,ARfname),
+			load_dyn_file_loaded(ARfname,_)
+		)
+	 ;      instantiation_error(if_file_loaded/1,1)
+	).
