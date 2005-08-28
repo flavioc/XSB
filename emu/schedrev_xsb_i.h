@@ -51,6 +51,9 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
   subinst_table[SCHED_ANSWERS][1]++;
 #endif	
 
+#ifdef CONC_COMPL
+  pthread_mutex_lock( &completing_mut ) ;
+#endif
   first_sched_cons = last_sched_cons = NULL;
   consumer_cpf = subg_asf_list_ptr(producer_sf);
 
@@ -83,6 +86,11 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
       }
     else
       while ( IsNonNULL(consumer_cpf) ) {
+#ifdef CONC_COMPL
+	if( int_val(nlcp_tid(consumer_cpf)) != th->tid )
+		;
+	else
+#endif
 	if ( IsNonNULL(ALN_Next(nlcp_trie_return(consumer_cpf))) )
 	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
@@ -91,6 +99,9 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
     if ( IsNonNULL(last_sched_cons))
       nlcp_prevbreg(last_sched_cons) = breg;
   } /* if any answers and active nodes */
+#ifdef CONC_COMPL
+  pthread_mutex_unlock( &completing_mut ) ;
+#endif
 
   xsb_dbgmsg((LOG_SCHED, "schedule active nodes: ccbreg=%d, breg=%d", 
 	     (int)producer_cpf,(int)breg));

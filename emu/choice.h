@@ -237,6 +237,9 @@ typedef struct consumer_choice_point {
     CPtr subgoal_ptr;	/* where the answer list lives */
     CPtr prevlookup;	/* link for chain of consumer CPFs */
     ALNptr trie_return;	/* last answer consumed by this consumer */
+#ifdef CONC_COMPL
+    Cell tid ;		/* Thread whose stacks the cp resides in */
+#endif
 }
 *NLChoice;
 #define NLCP_SIZE	(sizeof(struct consumer_choice_point)/sizeof(CPtr))
@@ -257,6 +260,7 @@ typedef struct consumer_choice_point {
 #ifdef SLG_GC
 #define nlcp_prevtop(b)         ((NLChoice)(b))->prev_top
 #endif
+#define nlcp_tid(b)        	((NLChoice)(b))->tid
 
 #define is_consumer_choicepoint(b) \
     (cp_pcreg(b) == (byte *) &answer_return_inst)

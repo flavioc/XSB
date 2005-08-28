@@ -81,7 +81,11 @@ xsbBool has_unconditional_answers(VariantSF subg)
   /* and its answer list has already been reclaimed. */
   /* In either case, the result is immediately obtained. */
  
+#ifndef CONC_COMPL
   if (node_ptr <= COND_ANSWERS) return (node_ptr == UNCOND_ANSWERS);
+#else
+  if (subg_tag(subg) <= COND_ANSWERS) return (subg_tag(subg) == UNCOND_ANSWERS);
+#endif
  
   /* If the subgoal has not been completed, or is early completed but its */
   /* answer list has not been reclaimed yet, check each of its nodes. */

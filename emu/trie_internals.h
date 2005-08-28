@@ -873,6 +873,7 @@ extern Structure_Manager smALN;
    ALN_Next(pALN) = (ALNptr)pNext;		\
  }
 
+#ifndef CONC_COMPL
 #define free_answer_list(SubgoalFrame) {			\
    if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
      SM_DeallocateStructList(smALN,				\
@@ -881,6 +882,14 @@ extern Structure_Manager smALN;
    else								\
      SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame))	\
  }
+#else
+#define free_answer_list(SubgoalFrame) {			\
+   if ( !IsNULL(subg_answers(SubgoalFrame)) )			\
+     SM_DeallocateStructList(smALN,				\
+			     subg_ans_list_ptr(SubgoalFrame),	\
+			     subg_ans_list_tail(SubgoalFrame))	\
+ }
+#endif
 
 /*===========================================================================*/
 

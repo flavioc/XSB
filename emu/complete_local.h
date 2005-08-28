@@ -30,6 +30,9 @@ void makeConsumerFromGenerator(CTXTdeclc VariantSF producer_sf)
   nlcp_trie_return(breg) = subg_ans_list_ptr(producer_sf);
   nlcp_pcreg(breg) = (pb) &answer_return_inst;
   nlcp_prevlookup(breg) = subg_asf_list_ptr(producer_sf);
+#ifdef CONC_COMPL
+  nlcp_tid(breg) = makeint(th->tid);
+#endif
   subg_asf_list_ptr(producer_sf) = breg;
 }
 #endif /* LOCAL */

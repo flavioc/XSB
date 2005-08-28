@@ -401,7 +401,11 @@ void table_complete_entry(VariantSF producerSF) {
       }
       pALN = ALN_Next(pALN);
     } while ( IsNonNULL(pALN) );
+#ifndef CONC_COMPL
     subg_answers(producerSF) = tag;
+#else
+    subg_tag(producerSF) = tag;
+#endif
 
       xsb_dbgmsg((LOG_STRUCT_MANAGER, "  Reclaiming ALN chain for subgoal\n"));
       dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  before chain reclamation");
@@ -409,8 +413,10 @@ void table_complete_entry(VariantSF producerSF) {
     if ( IsNULL(subg_ans_list_tail(producerSF)) ||
 	 IsNonNULL(ALN_Next(subg_ans_list_tail(producerSF))) )
       xsb_abort("Answer-List exception: Tail pointer incorrectly maintained");
+#ifndef CONC_COMPL
     SM_DeallocateStructList(smALN,pRealAnsList,subg_ans_list_tail(producerSF));
     subg_ans_list_tail(producerSF) = NULL;
+#endif
 
     dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  after chain reclamation");
   }

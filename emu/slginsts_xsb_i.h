@@ -248,13 +248,23 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     {	subg_compl_stack_ptr(producer_sf) = openreg - COMPLFRAMESIZE;
     }
 #else
+#ifdef CONC_COMPL
+    pthread_mutex_lock( &completing_mut ) ;
+#endif
   if ( IsNULL(producer_sf) ) {
+#ifdef CONC_COMPL
+    pthread_mutex_unlock( &completing_mut ) ;
+#endif
 
     /* New Producer
        ------------ */
     CPtr producer_cpf;
     NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
 		  CallInfo_TableInfo(callInfo));
+#endif
+#ifdef CONC_COMPL
+    subg_tid(producer_sf) = th->tid;
+    subg_tag(producer_sf) = INCOMP_ANSWERS;
 #endif
     producer_cpf = answer_template;
     save_find_locx(ereg);
@@ -282,6 +292,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
   else if ( is_completed(producer_sf) ) {
 
+#ifdef CONC_COMPL
+    pthread_mutex_unlock( &completing_mut ) ;
+#endif
     /* Unify Call with Answer Trie
        --------------------------- */
     if (has_answer_code(producer_sf)) {
@@ -361,6 +374,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
     /* Create Consumer Choice Point
        ---------------------------- */
+#ifdef CONC_COMPL
+    if( subg_tid(producer_sf) == th->tid )
+#endif
     adjust_level(subg_compl_stack_ptr(producer_sf));
     save_find_locx(ereg);
 
@@ -381,6 +397,11 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     nlcp_prevtop(consumer_cpf) = prev_cptop;
 #endif
     subg_asf_list_ptr(producer_sf) = breg = bfreg = consumer_cpf;
+#ifdef CONC_COMPL
+    nlcp_tid(consumer_cpf) = makeint(th->tid) ;
+    for(;;)
+    {
+#endif
 
     /* Consume First Answer or Suspend
        ------------------------------- */
@@ -440,11 +461,27 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 	}
       }
       lpcreg = cpreg;
+#ifdef CONC_COMPL
+      break;
+#endif
     }
     else {
+#ifdef CONC_COMPL
+      if( is_completed(producer_sf) || subg_tid(producer_sf) == th->tid ){
+#endif
       breg = nlcp_prevbreg(consumer_cpf);
       Fail1;
+#ifdef CONC_COMPL
+      break;
+      }
+#endif
     }
+#ifdef CONC_COMPL
+    pthread_mutex_unlock(&completing_mut);
+    pthread_cond_wait(&completing_cond,&completing_mut);
+    }
+    pthread_mutex_unlock(&completing_mut);
+#endif
   }
 XSB_End_Instr()
 
@@ -477,6 +514,11 @@ XSB_Start_Instr(answer_return,_answer_return)
   answer_continuation = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
   consumer_sf = (VariantSF)nlcp_subgoal_ptr(breg);
   answer_template = nlcp_template(breg);
+#ifdef CONC_COMPL
+  pthread_mutex_lock(&completing_mut);
+  for(;;)
+  {
+#endif
   table_pending_answer( nlcp_trie_return(breg),
 			answer_continuation,
 			next_answer,
@@ -533,9 +575,17 @@ XSB_Start_Instr(answer_return,_answer_return)
       }
     }
     lpcreg = cpreg;
+#ifdef CONC_COMPL
+    break;
+#endif
   }
 
   else {
+#ifdef CONC_COMPL
+    if ( is_completed(nlcp_subgoal_ptr(breg)) || 
+	 subg_tid(nlcp_subgoal_ptr(breg)) == th->tid )
+    {
+#endif
 
     /* Suspend this Consumer
        --------------------- */
@@ -543,7 +593,17 @@ XSB_Start_Instr(answer_return,_answer_return)
     restore_trail_condition_registers(breg);
     if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg;
     Fail1;
+#ifdef CONC_COMPL
+    break;
+    }
+#endif
   }
+#ifdef CONC_COMPL
+  pthread_mutex_unlock(&completing_mut);
+  pthread_cond_wait(&completing_cond,&completing_mut);
+  }
+  pthread_mutex_unlock(&completing_mut);
+#endif
 XSB_End_Instr()
 
 /*-------------------------------------------------------------------------*/
@@ -697,6 +757,9 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 #endif
       }
     }
+#ifdef CONC_COMPL
+    pthread_cond_broadcast( &completing_cond ); 
+#endif
 #ifdef LOCAL_EVAL
     Fail1;	/* and do not return answer to the generator */
 #else
