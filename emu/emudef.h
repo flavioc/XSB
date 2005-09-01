@@ -53,7 +53,11 @@ CPtr *trfreg;
 
 CPtr pdlreg;
 CPtr openreg;
-CPtr root_address;
+
+/* TLS 08/05: Root address is the address of the first tabled choice
+   point on the thread's stack.  It is used to reclaim freeze
+   registers, but could be removed, I think. */
+CPtr root_address;      
 
 CPtr ptcpreg = NULL;
 CPtr delayreg;

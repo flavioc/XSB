@@ -2026,35 +2026,38 @@ ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
    gc for now, as I'm not sure how traverse all paths in the CP stack.
 */
 
-char *trie_node_type_table[] = {"interior_nt","hashed_interior_nt","leaf_nt",
-			   "hashed_leaf_nt","hash_header_nt","undefined",
-			   "undefined","undefined","trie_root_nt"};
-
-char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
-				"ts_answer_trie_tt","delay_trie_tt",
-				"assert_trie_tt","intern_trie_tt"
-};
-
 void gc_clauses_follow_par_chain(CTXTdeclc BTNptr pLeaf)
 {
+
+  TIFptr tif_ptr;
+
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 			       ((int) TN_Instr(pLeaf) != 0x94) ) {
-    printf("%p, Trie type: %d %s Node type: %d %s\n",pLeaf,
-	   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
-	   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)]);
+    //    printf("%x, Trie type: %d %s Node type: %d %s parent %x\n",pLeaf,
+    //   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
+    //   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
+    //   TN_Parent(pLeaf));
     pLeaf = BTN_Parent(pLeaf);
   }
-  printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
-	 TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
-	 TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
-	 TN_Parent(pLeaf));
+  //  printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
+  // TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
+  // TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
+  // TN_Parent(pLeaf));
+
+  tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
+  //  printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
+  // get_arity(TIF_PSC(tif_ptr)));
+
+
 }
 
-void gc_clauses(CTXTdecl) 
+/* TLS: still just a stub.  Will get working very soon. */
+
+void gc_dynamic(CTXTdecl) 
 {
   CPtr cp_top,cp_bot ;
   byte cp_inst;
-  int trie_type;
+  //  int trie_type;
 
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -2067,21 +2070,18 @@ void gc_clauses(CTXTdecl)
       cp_inst = *(byte *)*cp_top;
       printf("Cell %p (%s)\n",cp_top,
 	     (char *)(inst_table[cp_inst][0])) ;
+      // Want trie insts, but will need to dist from. asstd and intnd tries
       if ( ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80)
-	   || ((int) cp_inst >= 90 && (int) cp_inst <= 0x94) ) {
-	printf("found a trie instruction ^\n");
-	trie_type = (int) TN_TrieType((BTNptr) *cp_top);
-	printf("Trie type: %d %s\n",
-	       trie_type,trie_trie_type_table[trie_type]);
-	if (trie_type < 4) {
-	  printf("would abort here\n");
-	}
+	   || ((int) cp_inst >= 0x90 && (int) cp_inst <= 0x94) ) {
+	// Below we want basic_answer_trie_tt, ts_answer_trie_tt, delay_trie_tt
+	if (TN_TrieType((BTNptr) *cp_top) > 0 
+	    && TN_TrieType((BTNptr) *cp_top) < 3) 
+	  gc_clauses_follow_par_chain(CTXTc (BTNptr) *cp_top);
       }
       cp_top = cp_prevbreg(cp_top);
     }
   }
 }
-
 
 /********************************************************************/
 /* Insert in retract buffer and remove old clauses */

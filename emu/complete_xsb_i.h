@@ -98,6 +98,8 @@ XSB_Start_Instr(check_complete,_check_complete)
     pthread_mutex_unlock(&completing_mut);
 #endif
 
+    /* TLS: not sure about condition: how could subg_answers be true
+       and has_answer_code be false? */
       /* leader has non-returned answers? */
 #ifndef CONC_COMPL
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {

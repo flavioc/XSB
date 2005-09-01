@@ -170,8 +170,10 @@ Cell _interrupt_counter;
 int _asynint_code;
 int _asynint_val;
 
-/* Compiled trie stuff - some of this may be able to be changed to
-  local variables */
+  /*********** Global Variables for various tries --- some of this may
+  be able to be changed to local variables.  Regarray size is the size
+  of the reg_array, used for expanding the reg_array (and is
+  reset). ***********/
 
 Cell *_reg_array;
 CPtr _reg_arrayptr;
@@ -201,12 +203,18 @@ long _term_stacksize;
 
 int _global_num_vars;
 
-
 BTNptr  _NodePtr, 
 	_Last_Nod_Sav;
 
 int     _delay_it;
 
+int	_AnsVarCtr;
+CPtr	_ans_var_pos_reg;
+
+/* Flag used in the locking of called tries */
+int	trie_locked;
+
+  /* Variables for subsumptive and TST tries.  */
 struct VariantContinuation *_variant_cont;
 struct tstCCPStack_t *_tstCCPStack;
 struct tstCPStack_t *_tstCPStack;
@@ -216,7 +224,12 @@ CPtr _orig_hreg;
 CPtr _orig_hbreg;
 CPtr _orig_ebreg;
 
-/* variables for findall buffers */
+DynamicStack  _tstTermStack;
+DynamicStack  _tstTermStackLog;
+DynamicStack  _tstSymbolStack;
+DynamicStack  _tstTrail;
+
+  /********** variables for findall buffers **********/
 findall_solution_list *_findall_solutions;  /*= NULL;*/
 findall_solution_list *_current_findall;
 int 	_nextfree ; /* nextfree index in findall array */
@@ -227,7 +240,9 @@ CPtr 	*_cur_tr_limit ;
 
 VarString **_LSBuff; /* 30 buffers for making longstring in ctop_longstring */
 
-/* Global thread-specific charstring buffers for local use within builtins */
+  /********** Global thread-specific charstring buffers for local use
+	      within io-builtins **********/
+
 VarString *_last_answer;  /* for c-calling-xsb interface */
 VarString *_tsgLBuff1;
 VarString *_tsgLBuff2;
@@ -240,7 +255,7 @@ struct funstktype *_funstk;
 struct opstktype *_opstk;
 struct vartype *_rc_vars;
 
-/* Global variables for tokenizing */
+  /********** Global variables for tokenizing **********/
 struct token_t *_token;
 int     _lastc; // = ' ';    /* previous character */
 char*   _strbuff; // = NULL;  /* Pointer to token buffer; Will be allocated on first call to GetToken */
@@ -250,34 +265,25 @@ long	_rad_int;
 
 struct sort_par_spec _par_spec;		/* spec for par_sort */
 
+  /********** Global variables for assert / retract **********/
+  /* used for C-level longjumps in assert */
 jmp_buf _assertcmp_env;
+
 jmp_buf _xsb_abort_fallback_environment;
 
 ClRef _retracted_buffer[MAX_RETRACTED_CLAUSES+1];
 ClRef *_OldestCl;
 ClRef *_NewestCl;
-
-struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
-
 struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
 int    _i_have_dyn_mutex;	/* This thread has dynamic mutex, for asserted code read */
 
-/* Flag used in the locking of called tries */
-int	trie_locked;
-
-int	_AnsVarCtr;
-CPtr	_ans_var_pos_reg;
+struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
 
 struct Structure_Manager *_smBTN;
 struct Structure_Manager *_smBTHT;
 
-DynamicStack  _tstTermStack;
-DynamicStack  _tstTermStackLog;
-DynamicStack  _tstSymbolStack;
-DynamicStack  _tstTrail;
-
-/* Pointers to cursor information used by odbc_xsb.c */
-/* context-local cursor table*/
+  /************ Pointers to cursor information used by
+ odbc_xsb.c context-local cursor table ***********/
 
 struct Cursor *_FCursor;  /* root of curser chain*/
 struct Cursor *_LCursor;  /* tail of curser chain*/
