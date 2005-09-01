@@ -149,5 +149,15 @@
     /* r3: ?sorted list of terms			*/
    return parsort(CTXT);
 
-  case GC_CLAUSES: 
-  return gc_clauses(CTXT);
+  case GC_CLAUSES: {
+    switch (ptoc_int(CTXTc 1)) {
+      case GC_TABLED_PREDS: {
+	ctop_int(CTXTc 2, (Integer) gc_tabled_preds(CTXT));
+	return TRUE;
+      }
+      case GC_DYNAMIC: {
+	xsb_abort("gc_dynamic/1 not yet functional\n");
+	//	return gc_dynamic(CTXT);
+      }
+    }
+  }

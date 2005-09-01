@@ -114,6 +114,9 @@ typedef struct InstructionPlusTypeFrame {
 #define IPT_TrieType(IPT)	((IPT).trie_type)
 #define IPT_NodeType(IPT)	((IPT).node_type)
 
+extern char *trie_node_type_table[9];
+extern char *trie_trie_type_table[6];
+
 /*===========================================================================*/
 
 /*

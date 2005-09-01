@@ -93,6 +93,16 @@ static CPtr VarEnumerator_trail[NUM_TRIEVARS];
 static CPtr *VarEnumerator_trail_top;
 #endif
 
+
+char *trie_node_type_table[] = {"interior_nt","hashed_interior_nt","leaf_nt",
+			   "hashed_leaf_nt","hash_header_nt","undefined",
+			   "undefined","undefined","trie_root_nt"};
+
+char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
+				"ts_answer_trie_tt","delay_trie_tt",
+				"assert_trie_tt","intern_trie_tt"
+};
+
 /*----------------------------------------------------------------------*/
 /* Safe assignment -- can be generalized by type.
    CPtr can be abstracted out */
@@ -104,7 +114,14 @@ static CPtr *VarEnumerator_trail_top;
 }
 
 /*----------------------------------------------------------------------*/
-/*****************Addr Stack*************/
+/*****************Addr Stack************* 
+
+ TLS 08/05: The addr_stack and term_stack (below) are used by
+ answer_return.  to copy information out of a trie and into a ret/n
+ structure.  Its also used by table predicates to get delay lists.
+
+ */
+
 #ifndef MULTI_THREAD
 static int addr_stack_pointer = 0;
 static CPtr *Addr_Stack;
@@ -261,6 +278,21 @@ BTNptr newBasicTrie(CTXTdeclc Cell symbol, int trie_type) {
   BTNptr pRoot;
 
   New_BTN( pRoot, trie_type, TRIE_ROOT_NT, symbol, NULL, NULL );
+  return pRoot;
+}
+
+/*-------------------------------------------------------------------------*/
+
+/*
+ * Creates a root node for a given type of trie.  Differs from above in that
+ * the parent is intended to be set to the subgoal frame.
+ */
+
+BTNptr newBasicAnswerTrie(CTXTdeclc Cell symbol, CPtr Paren, int trie_type) {
+
+  BTNptr pRoot;
+
+  New_BTN( pRoot, trie_type, TRIE_ROOT_NT, symbol, Paren, NULL );
   return pRoot;
 }
 
@@ -744,7 +776,8 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
     else
       retSymbol = EncodeTrieConstant(makestring(get_ret_string()));
     subg_ans_root_ptr(subgoal_ptr) =
-      newBasicTrie(CTXTc retSymbol, BASIC_ANSWER_TRIE_TT);
+      newBasicAnswerTrie(CTXTc retSymbol, (CPtr) subgoal_ptr, 
+			 BASIC_ANSWER_TRIE_TT);
   }
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);

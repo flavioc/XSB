@@ -234,6 +234,11 @@
 
 #define GC_CLAUSES              223
 
+/* TLS: cases for GC_CLAUSES */
+#define GC_TABLED_PREDS           0
+#define GC_DYNAMIC                1
+
+
 #define ORACLE_QUERY		230
 #define ODBC_EXEC_QUERY		231
 

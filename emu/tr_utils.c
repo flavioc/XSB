@@ -731,7 +731,6 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
   }
 }
 
-
 /*======================================================================*/
 
 /*
@@ -1289,3 +1288,301 @@ void trie_undispose(long rootIdx, BTNptr leafn)
     undelete_branch(leafn);
   }
 }
+
+/*----------------------------------------------------------------------*/
+
+/* TABLE ABOLISHING AND GARBAGE COLLECTING 
+ *
+ * When a table is abolished, two checks must be made before its space
+ * can be reclaimed.  First, the table must be completed, and second
+ * it must be ensured that there are not any trie choice points for
+ * the table in the choice point stack.  
+ *
+ * In the case of abolish_all_tables, if there are any incomplete
+ * tables, or if there are trie nodes for completed tables on the
+ * choice point stack, errors are thrown.  In the case of
+ * abolish_table_pred(P), if P is not completed an error is thrown;
+ * while if trie choice points for P are on the stack, P is
+ * "abolished" (pointers in the TIF are reset) but its space is not
+ * yet reclaimed.  Rather, a deleted table frame (DelTF) is set up so
+ * that P can later be reclaimed upon a call to gc_tables/1.  In
+ * addition, if the freeze registers are set, then a DelTF is also
+ * set up (this can be changed, but it doesn't seem necessary right
+ * now) 
+ *
+ * Later, on a call to gc_tables/1, the choice point stacks may be
+ * traversed to mark those DelTF frames corresponding to tables with
+ * trie CPs in the CP stack.  Once this is done, the chain of DelTF
+ * frames is traversed to reclaim tables for those unmarked DelTF
+ * frames (and free the frames) as well as to unmark the marked DelTF
+ * frames.
+ * 
+ * These predicates emit a warning and take no action if more than
+ * one thread is active.  Soon to be fixed.
+ */
+
+DelTFptr deltf_chain_begin = (DelTFptr) NULL;
+
+#define is_trie_instruction(inst) \
+ ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
+	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
+
+/* in other words, a basic_answer_trie_tt or ts_answer_trie_tt */
+#define is_answer_trie_node(node) \
+  TN_TrieType((BTNptr) node) > 0 \
+	    && TN_TrieType((BTNptr) node) < 3
+
+inline static xsbBool is_completed_table(TIFptr tif) {
+  VariantSF sf;
+
+  for ( sf = TIF_Subgoals(tif);  IsNonNULL(sf);  
+	sf = (VariantSF)subg_next_subgoal(sf) )
+    if ( ! is_completed(sf) )
+      return FALSE;
+  return TRUE;
+}
+
+Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf) 
+{
+  TIFptr tif_ptr;
+
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
+			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+    //    printf("%x, Trie type: %d %s Node type: %d %s parent %x\n",pLeaf,
+    //   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
+    //   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
+    //   (int) TN_Parent(pLeaf));
+    pLeaf = BTN_Parent(pLeaf);
+  }
+  //  printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
+  // TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
+  // TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
+  // TN_Parent(pLeaf));
+
+  tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
+  //  printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
+  //	 get_arity(TIF_PSC(tif_ptr)));
+  
+  return TIF_PSC(tif_ptr);
+}
+
+/* 
+   Recurse through CP stack looking for trie nodes that match PSC.
+   Returns 1 if frozen stack or found a psc match, 0 if safe to delete now
+*/
+int abolish_table_pred_cps_check(CTXTdeclc Psc psc) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int found_psc_match;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  if (bfreg < cp_bot && bfreg > 0) {
+    return 1;
+  }
+  else {
+    cp_top = breg ;				 
+    found_psc_match = 0;
+    while ( cp_top < cp_bot && !(found_psc_match)) {
+      cp_inst = *(byte *)*cp_top;
+      // Want trie insts, but will need to distinguish from
+      // asserted and interned tries
+      if ( is_trie_instruction(cp_inst) ) {
+	// Below we want basic_answer_trie_tt, ts_answer_trie_tt
+	if (is_answer_trie_node( *cp_top ) )
+	  if (psc == get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) {
+	    found_psc_match = 1;
+	  }
+      }
+      cp_top = cp_prevbreg(cp_top);
+    }
+    return found_psc_match;
+  }
+}
+
+void check_insert_new_deltf(CTXTdeclc TIFptr tif)
+{
+  DelTFptr dtf = TIF_DelTF(tif);
+  BTNptr call_trie = TIF_CallTrie(tif);
+  VariantSF subgoals = TIF_Subgoals(tif);	
+  int found = 0;
+
+  while (dtf != 0 && !found) {
+    if (DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
+      found = 1;
+    else dtf = DTF_NextPredDTF(dtf);
+  }
+  if (!found) {
+    New_DelTF(dtf,tif);
+  }
+}
+
+
+inline int abolish_table_predicate(CTXTdeclc Psc psc)
+{
+  TIFptr tif;
+  int action;
+
+  SYS_MUTEX_LOCK(MUTEX_TABLE);
+  tif = get_tip(CTXTc psc);
+  if ( IsNULL(tif) ) {
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+    xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",
+	      get_name(psc), get_arity(psc));
+  }
+  if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+    return 1;
+  }
+
+  if ( ! is_completed_table(tif) ) {
+      SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+      xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
+		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
+  }
+
+  action = abolish_table_pred_cps_check(CTXTc psc);
+  if (!action) {
+      delete_predicate_table(CTXTc tif);
+      SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+      return 1;
+  }
+  else {
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+    check_insert_new_deltf(CTXTc tif);
+    return 1; 
+  }
+}
+    
+
+/*------------------------------------------------------------------*/
+/* TLS: for use in abolish_all_tables. Aborts if it detects the
+   presence of CPs for completed tables (incomplete tables are caught
+   as before, by examining the completion stack).  abolish_table_pred
+   will have something similar, but will actually make use of GC.
+*/
+
+void abolish_all_tables_cps_check(CTXTdecl) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int trie_type;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  if (bfreg < cp_bot && bfreg > 0) {
+      xsb_abort("[abolish_all_tables/0] Illegal table operation"
+		"\n\t Cannot abolish incomplete tables");
+  }
+  else {
+    cp_top = breg ;				 
+    while ( cp_top < cp_bot ) {
+      cp_inst = *(byte *)*cp_top;
+      /* Check for trie instructions */
+      if ( is_trie_instruction(cp_inst)) {
+	trie_type = (int) TN_TrieType((BTNptr) *cp_top);
+	/* Here, we want call_trie_tt,basic_answer_trie_tt,
+	   ts_answer_trie_tt","delay_trie_tt */
+	if (is_answer_trie_node((*cp_top))) {
+	  xsb_abort("[abolish_all_tables/0] Illegal table operation"
+		"\n\t Backtracking through tables to be abolished.");
+	}
+      }
+      cp_top = cp_prevbreg(cp_top);
+    }
+  }
+}
+
+TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
+{
+
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
+			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+    pLeaf = BTN_Parent(pLeaf);
+  }
+  return subg_tif_ptr(TN_Parent(pLeaf));
+}
+
+int mark_tabled_preds(CTXTdecl) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  TIFptr tif;
+  
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  if (bfreg < cp_bot && bfreg > 0) {
+    return 1;
+  }
+  else {
+    cp_top = breg ;				 
+    while ( cp_top < cp_bot ) {
+      cp_inst = *(byte *)*cp_top;
+      //   printf("Cell %p (%s)\n",cp_top,
+      //     (char *)(inst_table[cp_inst][0])) ;
+      // Want trie insts, but will need to distinguish from
+      // asserted and interned tries
+      if ( is_trie_instruction(cp_inst) ) {
+	if (is_answer_trie_node( *cp_top ) ) {
+	  tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	  DelTFptr dtf = TIF_DelTF(tif);
+	  BTNptr call_trie = TIF_CallTrie(tif);
+	  VariantSF subgoals = TIF_Subgoals(tif);	
+	  int marked = 0;
+
+	  while (dtf && !marked ) {
+	    if (DTF_CallTrie(dtf) == call_trie 
+		&& DTF_Subgoals(dtf) == subgoals) {
+	      marked = 1;
+	      DTF_Mark(dtf) = 1;
+	    }
+	    else dtf = DTF_NextPredDTF(dtf);
+	  }
+	}
+      }
+      cp_top = cp_prevbreg(cp_top);
+    }
+    return 0;
+  }
+}
+
+int sweep_tabled_preds(CTXTdecl) 
+{
+  DelTFptr deltf_ptr;
+  int dtf_cnt = 0;
+
+  deltf_ptr = deltf_chain_begin;
+  while (deltf_ptr) {
+    if (DTF_Mark(deltf_ptr)) {
+      DTF_Mark(deltf_ptr) = 0;
+      dtf_cnt++;
+    }
+    else {
+      delete_predicate_table(CTXTc subg_tif_ptr(DTF_Subgoals(deltf_ptr)));
+      Free_DelTF(deltf_ptr);
+    }
+    deltf_ptr = DTF_NextDTF(deltf_ptr);
+  }
+  return dtf_cnt;
+}
+
+/* Returns -1 in situations it cant handle: currently, calling with
+ * frozen stacks or multiple threads
+ */
+
+int gc_tabled_preds(CTXTdecl) 
+{
+
+  if (flags[NUM_THREADS] == 1) {
+    if (!mark_tabled_preds(CTXT)) {
+      return sweep_tabled_preds(CTXT);
+    }
+    else return -1;
+  }
+  else {
+    xsb_warn("Cannot garbage collect tables with more than one thread active."); 
+    return -1;
+  }
+}
+

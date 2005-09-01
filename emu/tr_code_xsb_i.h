@@ -120,6 +120,14 @@
 
 #ifndef MULTI_THREAD
 
+/* TLS: 08/05 reg_array is an array used for unificiation by trie
+   instructions from a completed table (assert???)  The answer
+   template is copied to the reg_array, and the trie instructions
+   unify positionally with cells in the reg_array (via reg_arrayptr).
+   I'm not sure why this can't be done directly on the answer
+   template, but there's probably a good reason. There is a separate
+   array, var_regs that */
+
 Cell *reg_array;
 CPtr reg_arrayptr;
 int  reg_array_size = DEFAULT_ARRAYSIZ;

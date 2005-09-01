@@ -923,85 +923,6 @@ void init_builtin_table(void)
 
 /*----------------------------------------------------------------------*/
 
-inline static xsbBool is_completed_table(TIFptr tif) {
-
-  VariantSF sf;
-
-  for ( sf = TIF_Subgoals(tif);  IsNonNULL(sf);  
-	sf = (VariantSF)subg_next_subgoal(sf) )
-    if ( ! is_completed(sf) )
-      return FALSE;
-  return TRUE;
-}
-
-/*----------------------------------------------------------------------*/
-
-/* TLS: if non-completed table failure is caught in builtin 
-   and abort happens there.*/
-inline static int abolish_table_predicate(CTXTdeclc Psc psc)
-{
-  TIFptr tif;
-  SYS_MUTEX_LOCK(MUTEX_TABLE);
-  tif = get_tip(CTXTc psc);
-  if ( IsNULL(tif) ) {
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
-    xsb_abort("[abolish_table_pred] Attempt to delete untabled predicate (%s/%d)\n",
-	      get_name(psc), get_arity(psc));
-  }
-  if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
-    return 1;
-  }
-  if ( ! is_completed_table(tif) ) {
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
-    return 0;
-  }
-  delete_predicate_table(CTXTc tif);
-  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
-  return 1;
-}
-
-/* TLS: for use in abolish_all_tables. Aborts if it detects the
-   presence of CPs for completed tables (incomplete tables are caught
-   as before, by examining the completion stack).  abolish_table_pred
-   will have something similar, but will actually make use of GC.
-*/
-
-void abolish_table_cps_check(CTXTdecl) 
-{
-  CPtr cp_top,cp_bot ;
-  byte cp_inst;
-  int trie_type;
-
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
-
-  if (bfreg < cp_bot && bfreg > 0) {
-      xsb_abort("[abolish_all_tables/0] Illegal table operation"
-		"\n\t Cannot abolish incomplete tables");
-    //    printf("skipping gc_clauses because of freezes\n");
-  }
-  else {
-    cp_top = breg ;				 
-    while ( cp_top < cp_bot ) {
-      cp_inst = *(byte *)*cp_top;
-      /* Check for trie instructions */
-      if ( ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80)
-	   || ((int) cp_inst >= 90 && (int) cp_inst < 0x94) ) {
-	trie_type = (int) TN_TrieType((BTNptr) *cp_top);
-	//	printf("Trie type: %d %s\n",
-	//     trie_type,trie_trie_type_table[trie_type]);
-	/* Here, we want call_trie_tt,basic_answer_trie_tt,
-	   ts_answer_trie_tt","delay_trie_tt */
-	if (trie_type < 4) {
-	  xsb_abort("[abolish_all_tables/0] Illegal table operation"
-		"\n\t Backtracking through tables to be abolished.");
-	}
-      }
-      cp_top = cp_prevbreg(cp_top);
-    }
-  }
-}
-
 inline static void abolish_table_info(CTXTdecl)
 {
   CPtr csf;
@@ -1016,7 +937,7 @@ inline static void abolish_table_info(CTXTdecl)
 		"\n\t Cannot abolish incomplete tables");
     }
 
-  abolish_table_cps_check(CTXT) ;
+  abolish_all_tables_cps_check(CTXT) ;
 
   for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
     TIF_CallTrie(pTIF) = NULL;
@@ -2193,9 +2114,6 @@ int builtin_call(CTXTdeclc byte number)
     }
     if (abolish_table_predicate(CTXTc psc))
       return TRUE;
-    else
-      xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
-		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
   }
 
   case ABOLISH_TABLE_CALL: {
