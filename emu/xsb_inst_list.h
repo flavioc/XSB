@@ -203,7 +203,7 @@ XSB_INST(0xb7, trymeorelse, _trymeorelse, PP, A, L,X);
 XSB_INST(0xb8, retrymeorelse, _retrymeorelse, PP, A, L,X);
 XSB_INST(0xb9, trustmeorelsefail, _trustmeorelsefail, PP, A, X,X);
 XSB_INST(0xba, dyntrustmeelsefail, _dyntrustmeelsefail, PP, A, L,X); 
-XSB_INST(0xbb, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xbb, dynretrymeelse, _dynretrymeelse, PP, A, L,X); 
 XSB_INST(0xbc, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xbd, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xbe, no_inst, _no_inst, PPP,X,X,X);

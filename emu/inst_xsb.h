@@ -310,6 +310,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define trustmeorelsefail	0xb9
 
 #define dyntrustmeelsefail	0xba	/* Dynamic trust instruction */
+#define dynretrymeelse      	0xbb	/* Dynamic retry inst (for gc) */
 
 /* Tabling instructions --- they should really be changed to be as shown */
 

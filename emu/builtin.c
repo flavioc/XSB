@@ -937,8 +937,12 @@ inline static void abolish_table_info(CTXTdecl)
 		"\n\t Cannot abolish incomplete tables");
     }
 
-  abolish_all_tables_cps_check(CTXT) ;
-
+  if (flags[NUM_THREADS] == 1) {
+    abolish_all_tables_cps_check(CTXT) ;
+  } else {
+    xsb_warn("abolish_all_tables/0 called with more than one active thread.  No CP check.\n");
+  }
+   
   for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
     TIF_CallTrie(pTIF) = NULL;
     TIF_Subgoals(pTIF) = NULL;

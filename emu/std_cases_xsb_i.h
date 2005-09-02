@@ -156,8 +156,8 @@
 	return TRUE;
       }
       case GC_DYNAMIC: {
-	xsb_abort("gc_dynamic/1 not yet functional\n");
-	//	return gc_dynamic(CTXT);
+	ctop_int(CTXTc 2, (Integer) gc_dynamic(CTXT));
+	return TRUE;
       }
     }
   }

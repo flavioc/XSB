@@ -899,6 +899,18 @@ contcase:     /* the main loop */
     RESTORE_SUB
   XSB_End_Instr()
 
+      /* TLS: added to distinguish dynamic from static choice points when 
+	 gc-ing retracted clauses. */ 
+
+  XSB_Start_Instr(dynretrymeelse,_dynretrymeelse) /* PPA-L */
+    Def1op
+    Op1(get_xxa);
+    cp_pcreg(breg) = (byte *)get_xxxl;
+    restore_type = 0;
+    ADVANCE_PC(size_xxxX);
+    RESTORE_SUB
+  XSB_End_Instr()
+
   XSB_Start_Instr(trustmeelsefail,_trustmeelsefail) /* PPA */
     Def1op
     Op1(get_xxa);

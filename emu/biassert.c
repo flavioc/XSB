@@ -233,8 +233,8 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     xsb_dbgmsg((LOG_ASSERT,"test_heap - - %d %d\n", Arg1, int_val(Arg2))); break;
   case dyntrustmeelsefail:
     xsb_dbgmsg((LOG_ASSERT,"dyntrustmeelsefail - - %d 0x%x\n", Arg1, Arg2)); break;
-  case retrymeelse:
-    xsb_dbgmsg((LOG_ASSERT,"retrymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
+  case dynretrymeelse:
+    xsb_dbgmsg((LOG_ASSERT,"dynretrymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
   case dyntrymeelse:
     xsb_dbgmsg((LOG_ASSERT,"dyntrymeelse - - %d 0x%x\n", Arg1, Arg2)); break;
   case jump:
@@ -1428,7 +1428,7 @@ static void prefix_to_chain(int ifSOB, byte Arity, ClRef FirstClause, ClRef NewC
 		     FirstClause,&Loc); }
   else if (ClRefTryOpCode(FirstClause) == dyntrymeelse ||
 	   ClRefTryOpCode(FirstClause) == trymeelse)
-  {  dbgen_inst_ppvw(retrymeelse,Arity,ClRefNext(FirstClause),
+  {  dbgen_inst_ppvw(dynretrymeelse,Arity,ClRefNext(FirstClause),
 		     FirstClause,&Loc);}
   else xsb_dbgmsg((LOG_DEBUG,"***Error 1 in assert: 0x%x",
 		  ClRefTryOpCode(FirstClause)));
@@ -1454,7 +1454,7 @@ static void append_to_chain(byte Arity, ClRef LastClause, ClRef NewClause)
   {  dbgen_inst_ppvw_safe(trymeelse,Arity,NewClause,
 		     LastClause,&Loc);  }
   else if (ClRefTryOpCode(LastClause) == dyntrustmeelsefail)
-  {  dbgen_inst_ppvw_safe(retrymeelse,Arity,NewClause,
+  {  dbgen_inst_ppvw_safe(dynretrymeelse,Arity,NewClause,
 		     LastClause,&Loc);  }
   else xsb_dbgmsg((LOG_DEBUG,"***Error 2 in assert: 0x%x",
 		  ClRefTryOpCode(LastClause)));
@@ -1638,7 +1638,7 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
       {  dbgen_inst_ppvw(dyntrustmeelsefail,Arity,IndRefNext(OldInd),
 			 OldInd,&Loc); }
       else
-      {  dbgen_inst_ppvw(retrymeelse,Arity,IndRefNext(OldInd),
+      {  dbgen_inst_ppvw(dynretrymeelse,Arity,IndRefNext(OldInd),
 			 OldInd,&Loc); }
       IndRefPrev(OldInd) = NewInd;
       *Bucketaddr = NewInd ;
@@ -1652,7 +1652,7 @@ static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
       else {
         while (cell_opcode(OldInd) != dyntrustmeelsefail)
           OldInd = IndRefNext(OldInd);
-        dbgen_inst_ppvw_safe(retrymeelse,Arity,NewInd,OldInd,&Loc);
+        dbgen_inst_ppvw_safe(dynretrymeelse,Arity,NewInd,OldInd,&Loc);
       }
       IndRefPrev(NewInd) = OldInd ;
     }
@@ -1842,7 +1842,7 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
     }
     else if( *IndexLevel == 0 ) { /* look in all chain */
 	if( ClRefTryOpCode(Clause) == dyntrymeelse || /* mid chain */
-	    ClRefTryOpCode(Clause) == retrymeelse ) 
+	    ClRefTryOpCode(Clause) == dynretrymeelse ) 
 	    return ClRefNext(Clause) ;
         else /* INDEXED_CL, look on next SOB */
 	  {   numInds = curLevel = ClRefNumInds(Clause);
@@ -1859,7 +1859,7 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
     else	/* look in appropriate hash chain */
     {	PI = ClRefIndPtr(Clause,*IndexLevel) ;
 	if( cell_opcode(PI) == dyntrymeelse || /* mid chain */
-	    cell_opcode(PI) == retrymeelse ) 
+	    cell_opcode(PI) == dynretrymeelse ) 
 	    return IndPtrClRef(IndRefNext(PI),*IndexLevel) ;
 	else /* end of chain */
 	  {
@@ -1887,7 +1887,7 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
             break ;                                                     \
         case trymeelse: /* first */                                     \
             IndRefPrev(IndRefNext(PC)) = IndRefPrev(PC) ;               \
-            if( cell_opcode(IndRefNext(PC)) == retrymeelse )            \
+            if( cell_opcode(IndRefNext(PC)) == dynretrymeelse )            \
                 cell_opcode(IndRefNext(PC)) = trymeelse ;               \
             else /* trustme */                                          \
             {   cell_opcode(IndRefNext(PC)) = noop ;                    \
@@ -1896,20 +1896,20 @@ static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
             break ;                                                     \
         case dyntrymeelse: /* first */                                  \
             IndRefPrev(IndRefNext(PC)) = IndRefPrev(PC) ;               \
-            if( cell_opcode(IndRefNext(PC)) == retrymeelse )            \
+            if( cell_opcode(IndRefNext(PC)) == dynretrymeelse )            \
                 cell_opcode(IndRefNext(PC)) = dyntrymeelse ;            \
             else /* dyntrustme */                                       \
             {   cell_opcode(IndRefNext(PC)) = dynnoop ;                 \
                 cell_operand3(IndRefNext(PC)) = (Displ) ;               \
             }                                                           \
             break ;                                                     \
-        case retrymeelse: /* mid */                                     \
+        case dynretrymeelse: /* mid */                                     \
             IndRefPrev(IndRefNext(PC)) = IndRefPrev(PC) ;               \
             IndRefNext(IndRefPrev(PC)) = IndRefNext(PC) ;               \
             break ;                                                     \
         case dyntrustmeelsefail: /* last */                             \
             IndRefNext(IndRefPrev(PC)) = IndRefNext(PC) ;               \
-            if( cell_opcode(IndRefPrev(PC)) == retrymeelse )            \
+            if( cell_opcode(IndRefPrev(PC)) == dynretrymeelse )            \
                 cell_opcode(IndRefPrev(PC)) = dyntrustmeelsefail ;      \
             else if (cell_opcode(IndRefPrev(PC)) == trymeelse )         \
             {   cell_opcode(IndRefPrev(PC)) = noop ;			\
@@ -2051,35 +2051,57 @@ void gc_clauses_follow_par_chain(CTXTdeclc BTNptr pLeaf)
 
 }
 
-/* TLS: still just a stub.  Will get working very soon. */
+#define is_dynamic_clause_inst(inst) \
+       (int) inst == dynretrymeelse ||					       \
+       (int) inst == dyntrustmeelsefail
 
-void gc_dynamic(CTXTdecl) 
+int mark_dynamic(CTXTdecl) 
 {
   CPtr cp_top,cp_bot ;
   byte cp_inst;
-  //  int trie_type;
-
+  
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
   if (bfreg < cp_bot && bfreg > 0) {
-    printf("skipping gc_clauses because of freezes\n");
+    return 1;
   }
+
   else {
     cp_top = breg ;				 
     while ( cp_top < cp_bot ) {
       cp_inst = *(byte *)*cp_top;
-      printf("Cell %p (%s)\n",cp_top,
-	     (char *)(inst_table[cp_inst][0])) ;
-      // Want trie insts, but will need to dist from. asstd and intnd tries
-      if ( ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80)
-	   || ((int) cp_inst >= 0x90 && (int) cp_inst <= 0x94) ) {
+        printf("Cell %p (%s)\n",cp_top,
+          (char *)(inst_table[cp_inst][0])) ;
+      if ( is_dynamic_clause_inst(cp_inst) ) {
 	// Below we want basic_answer_trie_tt, ts_answer_trie_tt, delay_trie_tt
-	if (TN_TrieType((BTNptr) *cp_top) > 0 
-	    && TN_TrieType((BTNptr) *cp_top) < 3) 
-	  gc_clauses_follow_par_chain(CTXTc (BTNptr) *cp_top);
+	printf("Found one!\n");
       }
       cp_top = cp_prevbreg(cp_top);
     }
+    return 0;
+  }
+}
+
+int sweep_dynamic(CTXTdecl) {
+  return 0;
+}
+
+/* Returns -1 in situations it cant handle: currently, calling with
+ * frozen stacks or multiple threads
+ */
+
+int gc_dynamic(CTXTdecl) 
+{
+
+  if (flags[NUM_THREADS] == 1) {
+    if (!mark_dynamic(CTXT)) {
+      return sweep_dynamic(CTXT);
+    }
+    else return -1;
+  }
+  else {
+    xsb_warn("Cannot garbage collect dynamic clauses with more than one active thread."); 
+    return -1;
   }
 }
 
