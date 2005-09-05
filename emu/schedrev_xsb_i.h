@@ -40,8 +40,7 @@
    Last = Consumer;					\
  }
 
-static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
-			  xsbBool is_leader)
+static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 {
 
   CPtr first_sched_cons, last_sched_cons, consumer_cpf;
@@ -95,16 +94,17 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
 	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
-    
-    if ( IsNonNULL(last_sched_cons))
-      nlcp_prevbreg(last_sched_cons) = breg;
+
+    if( last_consumer )
+      *last_consumer = last_sched_cons;
+    if( last_sched_cons )
+      /* by default the schain points to the leader */
+      nlcp_prevbreg(last_sched_cons) = breg ;
   } /* if any answers and active nodes */
 #ifdef CONC_COMPL
   pthread_mutex_unlock( &completing_mut ) ;
 #endif
 
-  xsb_dbgmsg((LOG_SCHED, "schedule active nodes: ccbreg=%d, breg=%d", 
-	     (int)producer_cpf,(int)breg));
   xsb_dbgmsg((LOG_SCHED, "first active =%d, last=%d",
 	     (int)first_sched_cons,(int)last_sched_cons));
   return first_sched_cons;
@@ -119,12 +119,12 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr producer_cpf,
  * check_complete instruction.
  */
 
-static CPtr find_fixpoint(CTXTdeclc VariantSF subg, CPtr producer_cpf) 
+static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf) 
 {
 
   VariantSF currSubg;
   CPtr complFrame; /* completion frame for currSubg */
-  CPtr tcp; /* choice point for currSubg */
+  CPtr last_cons; /* last consumer scheduled */
   CPtr sched_chain = 0, prev_sched = 0, tmp_sched = 0; /* build sched chain */
 
 #ifdef PROFILE
@@ -136,34 +136,31 @@ static CPtr find_fixpoint(CTXTdeclc VariantSF subg, CPtr producer_cpf)
    * done for each subgoal whenever it executes a check_complete
    * operation. Thus, scheduling for the leader has already been done.
    */
-  while(complFrame < subg_compl_stack_ptr(subg)) {
+  while(complFrame < leader_csf) {
 #ifdef PROFILE
     subinst_table[ITER_FIXPOINT][1]++;
 #endif
     currSubg = compl_subgoal_ptr(complFrame);
     /* check if all answers have been resolved for this subgoal */
-    tcp = subg_cp_ptr(currSubg);
 
     /* if there are unresolved answers for currSubg */
-    if ((tmp_sched = sched_answers(CTXTc currSubg, tcp, FALSE))) {
+    if ((tmp_sched = sched_answers(CTXTc currSubg, &last_cons))) {
       if (prev_sched) { /* if there is a prev subgoal scheduled */
 	/* link new node to the previous one */
-	tcp_prevbreg(prev_sched) = tmp_sched;
+	nlcp_prevbreg(prev_sched) = tmp_sched;
       }
       else {
 	sched_chain = tmp_sched; /* first node in the chain */
       }
-      prev_sched = tcp;
-    }
-    else { /* no unresolved answers for currSubg */
-      tcp_prevbreg(tcp) = producer_cpf;  /* backtrack to leader */
+      if( last_cons == NULL ) printf("lc NULL");
+      prev_sched = last_cons;
     }
     complFrame = prev_compl_frame(complFrame);	
   }  /* while */
 
   if (prev_sched)  /* if anything has been scheduled */
     /* the first generator should backtrack to leader */
-    tcp_prevbreg(prev_sched) = producer_cpf;  
+    nlcp_prevbreg(prev_sched) = producer_cpf;  
 
   return sched_chain;
 }

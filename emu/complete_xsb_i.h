@@ -66,7 +66,7 @@ XSB_Start_Instr(check_complete,_check_complete)
  * for this subgoal.  Its purely a heuristic -- perhaps we should test
  * to see whether its inclusion makes any difference 
  */
-  FailIfAnswersFound(sched_answers(CTXTc subgoal, breg, leader));
+  FailIfAnswersFound(sched_answers(CTXTc subgoal, NULL));
 
   if (leader) {
 
@@ -77,7 +77,7 @@ XSB_Start_Instr(check_complete,_check_complete)
     /* SpitOutGraph(cs_ptr); */
     /* check if fixpoint has been reached, otherwise schedule any
      * unresolved answers */
-    FailIfAnswersFound(check_fixpoint(subgoal,breg));
+    FailIfAnswersFound(check_fixpoint(cs_ptr,breg));
 
 #ifdef LOCAL_EVAL
     {
