@@ -1,3 +1,4 @@
+
 /* File:      psc_defs.h
 ** Author(s): Jiyang Xu, Terry Swift, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -38,13 +39,20 @@
 #define T_SPY		192 // 0xc0 use decimal for Prolog include
 
 /* === type definition: (entry_type) ============================== */
+/* T_FILE is still used in set_current_input and set_current_output in
+   loader_xsb.c At some point, the s*/
 
 #define T_ORDI  0	/* constant-type: no ep definition, may be set later */
 #define T_DYNA	1	/* constant-type: dynamic, code in buffer */
 #define T_PRED  2	/* constant-type: ep points to compiled code */
 
 #define T_MODU  4	/* ep field is used to hold psc-list */
-#define T_FILE  5	/* ep field could be file descriptor (not now) */
+
+/* TLS: PSCs should no longer represent files (or file descriptors).
+Use the stream table instead.  By the way, I think I've gotten all of
+the PSC files out of the system, but now and then I come across one
+I've forgotten.  */
+//#define T_FILE  5	/* ep field could be file descriptor (not now) */
 
 #define T_UDEF 12	/* unloaded T_PRED */
 #define T_FORN 13	/* predicate in foreign language */

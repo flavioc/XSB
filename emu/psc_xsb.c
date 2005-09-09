@@ -45,8 +45,6 @@
 #include "register.h"
 #include "thread_xsb.h"
 
-
-
 extern Psc synint_proc(Psc, int);
 
 /* === String Table manipulation ======================================	*/

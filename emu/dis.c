@@ -110,7 +110,7 @@ static void dis_data_sub(Pair *chain_ptr, char* modname)
 	    case T_PRED: fprintf(filedes, "'PRED',"); break;
 	    case T_DYNA: fprintf(filedes, "'DYNA',"); break;
 	    case T_ORDI: fprintf(filedes, "'ORDI',"); break;
-	    case T_FILE: fprintf(filedes, "'FILE',"); break;
+	      //	    case T_FILE: fprintf(filedes, "'FILE',"); break;
 	    case T_MODU: fprintf(filedes, "'MODU',"); break;
 	    case T_FORN: fprintf(filedes, "'FORN',"); break;
 	    case T_UDEF: fprintf(filedes, "'UDEF',"); break;

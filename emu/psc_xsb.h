@@ -35,6 +35,40 @@
 /* Type definitions: Psc						*/
 /*======================================================================*/
 
+/* PSC records are highly overloaded structures. See psc_defs.h for
+   further documentation.
+
+   env_byte: Two lowest-order bits of env byte indicate whether the
+   symbol is visible by any module, local to a module, or unloaded.
+   Bit 2 indicates whether the predicate is tabled for subsumption,
+   bit 3 indicates whether the predicate is tabled for variance. Bit 5
+   indicates the predicate is shared among threads in the MT engine.
+   Higher order bits in env_byte are used by get_spy.
+
+   ??? T_TABLED_SUB_LOADFILE 64 // for use in xwamfile, since T_GLOBAL took 4.
+   ??? T_SHARED_DET	16 // 0x10  use decimal for Prolog include
+
+   data: If the psc record indicates a predicate data indicates its
+   module; otherwise it contains data, as used in conpsc-style
+   functions.  (how about foreign?)
+
+   ep/load_inst: If the psc record indicates a (loaded prolog)
+   predicate name, then the ep is its entry point; otherwise if a
+   module, its ep is the beginning of the chain of psc pairs for
+   predicates in the module.  
+
+   If the psc record indicates a loaded foreign function ep points to
+   the call_forn instruction, and load_inst is a pointer to the
+   function itself.
+
+   If the psc record indicates an unloaded predicate/foreign function,
+   the ep points to the load_pred instruction, and this_psc is its
+   opcode.  The action of calling this instruction will be to load the
+   predicate, set the ep to the entry point of the byte code, and then
+   branch to the byte code.
+
+*/
+
 struct psc_rec {
   byte env;			/* 0&0x3 - visible; 1&0x3 - local; 2&0x3 - unloaded;  */
   				/* 0xc0, 2 bits for spy */
