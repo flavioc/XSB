@@ -113,32 +113,29 @@ set_current_module :-
 	stat_set_flag(CURRENT_MODULE, 0).
 
 
-/*
- *  Create PSCs for userin/0 and current_input/0, associate userin/0
- *  with stdin and associate current_input/0 with userin/0.  Set
- *  emulator flag flags[CURRENT_INPUT] to stdin.
- */
+/* 
+ * TLS 9/05.  Changed these so that they dont do any PSC hacking -- as
+ * we now should use the stream table throughout.  
+ * 
+ * (old doc)
+ * Create PSCs for userXX/0 and current_input/0, associate userXX/0 
+ * with stdin and associate current_input/0 with userXX/0.  Set 
+ * emulator flag flags[CURRENT_XXPUT] to stdXX.  */
 
 set_current_input :-
-	conpsc(userin, UserInPSC),
-	psc_set_type(UserInPSC, T_FILE),   % ``ep'' field contains file desc
-	psc_set_prop(UserInPSC, STDIN),    % ``data'' field set to stdin
-	conset(current_input, UserInPSC),
+/*	conpsc(userin, UserInPSC),
+ *	psc_set_type(UserInPSC, T_FILE),   % ``ep'' field contains file desc
+ *	psc_set_prop(UserInPSC, STDIN),    % ``data'' field set to stdin
+ *	conset(current_input, UserInPSC),*/
 	stat_set_flag(CURRENT_INPUT, STDIN).
 
 
-/*
- *  Create PSCs for userout/0 and current_output/0, associate
- *  userout/0 with stdout and associate current_output/0 with
- *  userout/0.  Set emulator flag flags[CURRENT_OUTPUT] to stdout.
- */
-
-set_current_output :-
-	conpsc(userout, UserOutPSC),
-	psc_set_type(UserOutPSC, 5),       % ``ep'' field contains file desc
-	psc_set_prop(UserOutPSC, 1),       % ``data'' field set to stdout
-	conset(current_output, UserOutPSC),
-	stat_set_flag(CURRENT_OUTPUT, 1).
+set_current_output :- 
+/*	conpsc(userout, UserOutPSC),
+ *	psc_set_type(UserOutPSC, 5),       % ``ep'' field contains file desc
+ *	psc_set_prop(UserOutPSC, 1),       % ``data'' field set to stdout
+ *	conset(current_output, UserOutPSC),*/
+        stat_set_flag(CURRENT_OUTPUT, STDOUT).
 
 
 /*

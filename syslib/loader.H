@@ -31,14 +31,16 @@
 
 :- import catch/3,throw/1 from standard.
 :- import default_error_handler/1 from error_handler.
-:- import conset/2 from gensym.
+%:- import conset/2 from gensym.
 :- import reconsult/1 from consult.
 :- import compile/1 from consult.
 :- import standard_symbol/3 from std_xsb.
 :- import library_directory/1 from usermod.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import term_type/2, term_psc/2, psc_name/2, psc_arity/2, psc_env/2,
-	  psc_type/2, psc_set_type/2, psc_prop/2, psc_set_prop/2,
+	  psc_type/2, 
+          % psc_set_type/2, 
+          psc_prop/2, psc_set_prop/2,
 	  psc_insert/4, psc_import/3, conpsc/2, str_cat/3,
 	  str_match/5,
 	  code_call/3, code_load/3, intern_string/2,
