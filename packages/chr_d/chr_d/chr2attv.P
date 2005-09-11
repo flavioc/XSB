@@ -1,0 +1,1849 @@
+
+%% translator of CHR rules to attv solver for XSB 2.7
+
+:- import length/2, member/2, append/3, ith/3 from basics.
+:- import delete_ith/4 from listutil.
+:- import permutation/2 from lists.
+:- import pretty_print/1 from pretty_print.
+:- import lookup_eq/3,pairup/3,translate/3 from pairlist.
+
+:- op(1200,xfx,@).
+:- op(1190,xfx,pragma).
+:- op(1180,xfx,==>).
+:- op(1180,xfx,<=>).
+:- op(500,yfx,#).
+:- op(1150,fx,constraints).
+:- op(1100,xfx,'|').
+:- op(1100,xfx,\).
+
+
+
+chr2attv(From,To) :-
+	read_chr(From,CHR),
+	translate(CHR,Attv),
+	write_attv(Attv,To).
+
+
+read_chr(File,Content) :-
+	see(File),
+	read_content(Content),
+	seen.
+
+
+read_content(Content) :-
+	read(X),
+	(X = (:- op(Prec,Fix,Op))
+	 -> op(Prec,Fix,Op)
+	  ; true
+	),   
+	(X == end_of_file
+	 -> Content = []
+	  ; Content = [X|Xs],
+	    read_content(Xs)
+	).
+
+
+
+write_attv(Attv,To) :-
+	tell(To),
+	write_content(Attv),
+	told.
+
+write_content([]).
+write_content([C|Cs]) :-
+	pretty_print(C),
+	write_content(Cs).
+
+
+
+
+translate(CHR,Attv) :-
+	split_clauses(CHR, Declarations, Rules, Other, Mod),
+	(var(Mod) -> Mod = junk; true),
+	check_rules(Rules,Declarations,_RCnt),
+	generate_aux_preds(Declarations,Mod,AuxPreds),
+	compile_chr_rules(Declarations,Mod,Rules,RuleClauses),
+	append_lists([[(:-compiler_options([singleton_warnings_off]))],
+		      [(:- import install_verify_attribute_handler/4,
+			          get_attr/3,
+			          put_attr/3 from machine)],
+		      [(:- local attr_unify_hook/2)],
+		      [(:- install_verify_attribute_handler(Mod,Attr,Val,
+					           attr_unify_hook(Attr,Val)))],
+		      [(:- import ground/1,
+			          member/2,
+			          append/3,
+			          ith/3 from basics)],
+		      [(:- import delete_ith/4 from listutil)],
+		      [(:- [attv_aux])],
+		      Other,
+	              AuxPreds,
+		      RuleClauses,
+		      [(show_atts(X) :- show_atts(X,Mod))]],
+		     Attv).
+
+
+% divide chr file contents [C|Cs] into constraint declarations Declarations,
+% chr rules Rules, other clauses Other and module name Mod
+split_clauses([],[],[],[],_).
+split_clauses([C|Cs], Declarations,Rules,Other,Mod) :-
+	(is_rule(C,R)
+	 -> Declarations = Ds,
+	    Rules = [R|Rs],
+	    Other = Os
+	  ; is_declaration(C,D)
+	    -> append(D,Ds,Declarations),
+	       Rules = Rs,
+	       Other = Os
+	     ; C = ( :- chr_module(Mod))
+	       -> Declarations = Ds,
+	          Rules = Rs,
+	          Other = Os
+	        ; Declarations = Ds,
+	          Rules = Rs,
+	          Other = [C|Os]
+	),
+	split_clauses(Cs,Ds,Rs,Os,Mod).
+
+
+% parse constraint declaration
+is_declaration((:- DC),Constraints) :-
+	DC =.. [constraints,Cs],
+	and2list(Cs,Constraints).
+
+
+% parse chr rule
+is_rule((_ @ C1),R) :-
+	is_rule(C1,R).
+is_rule((RI pragma P),R) :-
+	is_rule(RI,R1,IDs),
+	and2list(P,Pragmas),
+	R = pragma(R1,IDs,Pragmas).
+is_rule(RI,R) :-
+	is_rule(RI,R1,IDs),
+	R = pragma(R1,IDs,[]).
+
+
+is_rule((H ==> B),R,IDs) :-
+	and2list(H,IdHead2),
+	get_ids(IdHead2,IDs2,Head2),
+	IDs = ([],IDs2),
+	(B = (Guard | Body)
+	 -> R = rule([],Head2,Guard,Body)
+	  ; R = rule([],Head2,true,B)
+	).
+
+
+% CHR simpagation rule has the same meaning as simplification
+% --> convert to the same rule definition 
+is_rule((H <=> B),R,IDs) :-
+	(B = (Guard|Body)
+	 -> true
+	  ; Guard = true,
+	    Body = B
+	),
+	(H = (H1 \ H2)
+	 -> and2list(H1,IdHead1),
+	    get_ids(IdHead1,IDs1,Head1,0,N),
+	    and2list(H2,IdHead2),
+	    get_ids(IdHead2,IDs2,Head2,N,_),
+	    IDs = (IDs1,IDs2)
+	  ; and2list(H,IdHead1),
+	    get_ids(IdHead1,IDs1,Head1),
+	    Head2 = [],
+	    IDs = (IDs1,[])
+	),
+	R = rule(Head1,Head2,Guard,Body).
+
+
+
+% get ids for heads of a chr rule
+get_ids(Cs,IDs,NCs) :-
+	get_ids(Cs,IDs,NCs,0,_).
+
+get_ids([],[],[],N,N).
+get_ids([C|Cs],[N|IDs],[NC|NCs],N,NN) :-
+	( C = (NC # N) ->
+		true
+	;
+		NC = C
+	),
+	M is N + 1,
+	get_ids(Cs,IDs,NCs, M,NN).
+
+
+
+% check if each constraint used in a head of a rule is declared in the program
+% record number of rules in RCnt
+check_rules(Rs,Ds,RCnt) :-
+	check_rules(Rs,Ds,0,RCnt).
+
+check_rules([],_,N,N).
+check_rules([pragma(rule(Head1,Head2,_G,_B),_,_)|Rs],Declarations,N1,N2) :-
+	append(Head1,Head2,HeadConstr),
+	check_head_constr(HeadConstr,Declarations),
+	N is N1+1,
+	check_rules(Rs,Declarations,N,N2).
+
+check_head_constr([],_).
+check_head_constr([C|Cs],Ds) :-
+	functor(C,F,A),
+	member(F/A, Ds),!,
+	check_head_constr(Cs,Ds).
+check_head_constr([C|_],_) :-
+	write('Undefined constraint: '), writeln(C),
+	fail.
+
+
+%
+% Auxiliary predicate generation
+%
+
+generate_aux_preds(Declarations,Mod,AuxPreds) :-
+	get_attr_cnt(Declarations,AttrCnt),
+	generate_attribute_declaration(Declarations,AttrDecl),
+	generate_unification_handler(Declarations,Mod,UnificationHandler),
+	generate_get_attr_clause(AttrCnt,Mod,GetAttrClause),
+	generate_put_attr_clause(AttrCnt,Mod,PutAttrClause),
+	generate_check_constr_clauses(Declarations,AttrCnt,Mod,CheckClauses),
+	generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses),
+	generate_add_constr_clauses(Declarations,AttrCnt,Mod,AddClauses),
+	generate_remove_constr_clauses(Declarations,AttrCnt,Mod,RmClauses),
+	append_lists([AttrDecl,
+		      UnificationHandler,
+		      GetAttrClause,
+		      PutAttrClause,
+		      CheckClauses,
+		      MatchClauses,
+		      AddClauses,
+		      RmClauses],
+		     AuxPreds).
+
+
+% generate declaration of attributes corresponding to chr constraints
+generate_attribute_declaration(ConstrDs,AttrDecl) :-
+	list2and(ConstrDs,Atts),
+	AttrDecl = [(:- attribute Atts)].
+
+
+
+% generate predicates to retrieve all constraints (attributes) of a variable
+generate_get_attr_clause(AttrCnt,Mod,[Clause]) :-
+	length(AttrList,AttrCnt),
+	Atts =.. [v|AttrList],
+	fmt_write_string(HeadName, "get_%s_atts", arg(Mod)),
+	Head =.. [HeadName,Var|AttrList],
+
+	GetAttrCall =.. ['get_attr',Var,Mod,Atts],
+	make_all_empty(AttrList,AllEmpty),
+
+	Body = (GetAttrCall
+		-> true
+		 ; AllEmpty),
+
+	Clause = (Head :- Body).
+
+
+make_all_empty(Atts,Stmts) :-
+	make_all_empty(Atts,[],Stmts).
+
+make_all_empty([],StmtList,Stmts) :-
+	list2and(StmtList,Stmts).
+make_all_empty([L|Ls],StmtList,Stmts) :-
+	make_all_empty(Ls,[L = []|StmtList],Stmts).
+
+
+
+
+% generate predicates to insert all constraints (attributes) of a variable
+generate_put_attr_clause(AttrCnt,Mod,[Clause]) :-
+	length(AttrList,AttrCnt),
+	Atts =.. [v|AttrList],
+	fmt_write_string(HeadName, "put_%s_atts", arg(Mod)),
+	Head =.. [HeadName,Var|AttrList],
+
+	PutAttrCall =.. ['nf_put_atts',Var,Mod,Atts],
+
+	Clause = (Head :- PutAttrCall).
+
+
+
+
+% generate predicates to check if given constraint is already stored
+generate_check_constr_clauses(Declarations,AttrCnt,Mod,CheckClauses) :-
+	generate_check_constr_clauses(1,Declarations,AttrCnt,Mod,CheckClauses).
+
+generate_check_constr_clauses(_,[],_,_,[]).
+generate_check_constr_clauses(Off,[F/A|FAs],AttrCnt,Mod,[C|Cs]) :-
+	generate_check_constr_clause(Off,AttrCnt,F,A,Mod,C),
+	Off1 is Off + A,
+	generate_check_constr_clauses(Off1,FAs,AttrCnt,Mod,Cs).
+
+
+% generate code to check for constraint F/A
+generate_check_constr_clause(Off,AttrCnt,F,A,Mod,Clause) :-
+	length(Args,A),
+	fmt_write_string(HeadName, "check_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_check_constr_body(Off,AttrCnt,F,A,0,Args,Mod,_,Body),
+	Clause = (Head :- var_in_list(Args),Body).
+
+generate_check_constr_body(_,_,_,A,A,_,_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_check_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CL,C) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(AllArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	ith(AttrNum,AllArgAtts,IdAttr),
+	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+	ArgAttr =.. ['attr'|OtherArgs],
+	
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      var_member(ArgAttr,IdAttr)
+		    ; true),
+	append(CL,[ArgCode],CL1),
+	generate_check_constr_body(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL1,C).
+
+
+
+
+% generate predicates to find a constraint of desired form
+generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses) :-
+	generate_match_constr_clauses(1,Declarations,AttrCnt,Mod,MatchClauses).
+
+generate_match_constr_clauses(_,[],_,_,[]).
+generate_match_constr_clauses(Off,[F/A|Cs],AttrCnt,Mod,MatchClauses) :-
+	fmt_write_string(HName, "match_%s", arg(F)),
+	generate_match_one_constr_clauses(Off,AttrCnt,F,A,1,HName,Mod,FClauses),
+	Off_A is Off + A,
+	generate_match_constr_clauses(Off_A,Cs,AttrCnt,Mod,CsClauses),
+	append(FClauses,CsClauses,MatchClauses).
+
+
+% generate code to find constraint F/A
+generate_match_one_constr_clauses(_,_,_,A,A1,_,_,[]) :-
+	A1 is A + 1.
+generate_match_one_constr_clauses(Off,AttrCnt,F,A,ArgId,HN,Mod,[C|Cs]) :-
+	generate_match_one_constr_clause(Off,AttrCnt,A,ArgId,HN,Mod,C),
+	Off1 is Off + 1,
+	NextArg is ArgId + 1,
+	generate_match_one_constr_clauses(Off1,AttrCnt,F,A,NextArg,HN,Mod,Cs).
+
+generate_match_one_constr_clause(Off,AttrCnt,A,ArgId,HName,Mod,Clause) :-
+	length(Args,A),
+	Head =.. [HName|Args],
+	delete_ith(ArgId,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(ArgAtts,AttrCnt),
+	ith(Off,ArgAtts,IdAttr),
+	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+	ArgAttr =.. ['attr'|OtherArgs],
+	
+	Body = (var(Arg),
+	       GetAttsCall,
+	       member(ArgAttr,IdAttr)),
+	Clause = (Head :- Body).
+
+
+
+
+% generate predicates to add each declared constraint
+generate_add_constr_clauses(Declarations,AttrCnt,Mod,AddClauses) :-
+	generate_add_constr_clauses(1,Declarations,AttrCnt,Mod,AddClauses).
+
+generate_add_constr_clauses(_,[],_,_,[]).
+generate_add_constr_clauses(Off,[F/A|Cs],AttrCnt,Mod,[Clause|Clauses]) :-
+	generate_add_constr_clause(Off,AttrCnt,F,A,Mod,Clause),
+	Off_A is Off + A,
+	generate_add_constr_clauses(Off_A,Cs,AttrCnt,Mod,Clauses).
+
+
+% generate code to add constraint F/A
+generate_add_constr_clause(Off,AttrCnt,F,A,Mod,[CheckClause,AddClause]) :-
+
+	length(AddArgs,A),
+	fmt_write_string(AddHeadName, "add_%s_1", arg(F)),
+	AddHead =.. [AddHeadName|AddArgs],
+	generate_add_constr_body(Off,AttrCnt,F,A,0,AddArgs,Mod,_,AddBody),
+	AddClause = (AddHead :- AddBody),
+
+	length(CheckArgs,A),
+	fmt_write_string(CheckHeadName, "add_%s", arg(F)),
+	CheckHead =.. [CheckHeadName|CheckArgs],
+	fmt_write_string(CheckStmtName, "check_%s", arg(F)),
+	CheckStmt =.. [CheckStmtName|CheckArgs],
+	AddCall =.. [AddHeadName|CheckArgs],
+	CheckClause = (CheckHead :- (CheckStmt -> true ; AddCall)).
+
+generate_add_constr_body(_,_,_,A,A,_,_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_add_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(ArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
+	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	AppendCall =.. ['append_unique',Arg,IdAttr,[ArgAttr],NewIdAttr],
+
+	fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
+	delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
+	PutAttsCall =.. [PutAttsName,Arg|NewArgAtts],
+	
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      AppendCall,
+		      PutAttsCall
+		    ; true),
+	append(CodeList,[ArgCode],CL),
+	generate_add_constr_body(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL,Code).
+
+
+
+% generate predicates to remove each declared constraint
+generate_remove_constr_clauses(Declarations,AttrCnt,Mod,Clauses) :-
+	generate_remove_constr_clauses(1,Declarations,AttrCnt,Mod,Clauses).
+
+generate_remove_constr_clauses(_,[],_,_,[]).
+generate_remove_constr_clauses(Off,[F/A|Cs],AttrCnt,Mod,[Clause|Clauses]) :-
+	generate_remove_constr_clause(Off,AttrCnt,F,A,Mod,Clause),
+	Off_A is Off + A,
+	generate_remove_constr_clauses(Off_A,Cs,AttrCnt,Mod,Clauses).
+
+
+% generate code to remove constraint F/A
+generate_remove_constr_clause(Off,AttrCnt,F,A,Mod,Clause) :-
+	length(Args,A),
+	fmt_write_string(HeadName, "remove_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_remove_constr_body(Off,AttrCnt,F,A,0,Args,Mod,_,Body),
+	Clause = (Head :- Body).
+
+generate_remove_constr_body(_,_,_,A,A,_,_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_remove_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(ArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
+	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	IthCall =.. ['abs_ith',I,IdAttr,ArgAttr],
+	DeleteIthCall =.. ['delete_ith',I,IdAttr,ArgAttr,NewIdAttr],
+
+	fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
+	delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
+	PutAttsCall =.. [PutAttsName,Arg|NewArgAtts],
+
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      IthCall,
+		      DeleteIthCall,
+		      PutAttsCall
+		    ; true),
+	append(CodeList,[ArgCode],CL),
+	generate_remove_constr_body(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL,Code).
+
+
+generate_show_atts_clause(Mod,ShowAttsClause) :-
+	ShowAttsClause = (show_atts(X) :- show_atts(X,Mod)).
+
+
+
+%
+% Unification handler generation
+%
+
+generate_unification_handler(Declarations,Mod,[Clause]) :-
+	length(Declarations,N),
+	(N = 1
+	 -> Declarations = [F/A],
+	    generate_unification_handler_one(F,A,Mod,Clause)
+	  ; generate_unification_handler_many(Declarations,Mod,Clause)
+	).
+
+generate_unification_handler_one(F,A,Mod,Clause) :-
+	length(VAttrList,A),
+	VAtts =.. [v|VAttrList],
+	Head = attr_unify_hook(VAtts,Term),
+	
+	length(TAttrList,A),
+	length(AttrList,A),
+	fmt_write_string(GetAttrName, "get_%s_atts", arg(Mod)),
+	TermGetAttrCall =.. [GetAttrName,Term|TAttrList],
+
+
+	Body = (var(Term)
+	        -> TermGetAttrCall,
+		   merge_attr_lists(VAttrList,TAttrList,AttrList),
+		   pose_all_constr([F/A],1,Term,AttrList)
+		 ; pose_all_constr([F/A],1,Term,VAttrList)
+		),
+
+	Clause = (Head :- Body).
+
+
+generate_unification_handler_many(Declarations,Mod,Clause) :-
+	get_attr_cnt(Declarations,AttrCnt),
+	length(VarAttrList,AttrCnt),
+	VarAtts =.. [v|VarAttrList],
+	Head = attr_unify_hook(VarAtts,Term),
+
+	length(TermAttrList,AttrCnt),
+	length(AttrList,AttrCnt),
+	fmt_write_string(GetAttrName, "get_%s_atts", arg(Mod)),
+	TermGetAttrCall =.. [GetAttrName,Term|TermAttrList],
+
+	Body = (var(Term)
+	        -> TermGetAttrCall,
+		   merge_attr_lists(VarAttrList,TermAttrList,AttrList),
+		   pose_all_constr(Declarations,1,Term,AttrList)
+	         ; pose_all_constr(Declarations,1,Term,VarAttrList)
+	       ),
+	Clause = (Head :- Body).
+
+
+
+get_attr_cnt([],0).
+get_attr_cnt([_F/A|Ds],N) :-
+	get_attr_cnt(Ds,N1),
+	N is N1+A.
+
+
+
+%
+% Rule compilation
+%
+
+% compile chr rule into attv code
+compile_chr_rules(Constrs,Mod,Rules,Clauses) :-
+	constraints_code(Constrs,Mod,Constrs,Rules,Clauses,[]).
+
+constraints_code([],_,_,_,L,L).
+constraints_code([C|Cs],Mod,Constrs,Rules,L,T) :-
+	constraint_code(C,Mod,Constrs,Rules,L,T1),
+	constraints_code(Cs,Mod,Constrs,Rules,T1,T).
+
+
+constraint_code(C,Mod,Constrs,Rules,L,T) :-
+	constraint_prelude(C,Prelude),
+	L = [Prelude|L1],
+	rule_clauses(Rules,Mod,C,1,N,0,_,Constrs,PropRuleCnt,L1,L2),
+	(PropRuleCnt = 0
+	 -> build_add_constr(C,N,L2,T)
+	  ; build_propagation_tail_rule(C,PropRuleCnt,L2,L3),
+	    build_propagation_prelude(C,N,L3,T)
+	).
+	
+
+
+constraint_prelude(F/A,Clause) :-
+	length(Vs,A),
+	Head =.. [F|Vs],
+	str_cat(F,'_eval_1',PName),
+	PHead =.. [PName|Vs],
+	Clause = (Head :- PHead).
+
+
+build_add_constr(F/A,N,L,T) :-
+	
+	build_head(F/A,N,Vs,Head),	
+
+	str_cat('add_',F,AddName),
+	AddConstr =.. [AddName|Vs],
+	
+	L = [(Head :- !, AddConstr)|T].
+
+
+build_propagation_prelude(F/A,N,L,T) :-
+	build_head(F/A,N,Args,RHead),
+
+	fmt_write_string(AddConstrLabel, "add_%s", arg(F)),
+	AddConstrCall =.. [AddConstrLabel|Args],
+
+	fmt_write_string(PropLabel, "%s_prop_1", arg(F)),
+	PropCall =.. [PropLabel|Args],
+
+	Prelude = (RHead :-
+		      AddConstrCall,
+		      PropCall, !
+		  ),
+		
+	L = [Prelude|T].
+
+
+build_propagation_tail_rule(F/A,N,L,T) :-
+	I is N+1,
+	length(Args,A),
+
+	fmt_write_string(PropTailLabel, "%s_prop_%d", arg(F,I)),
+	PropTailCall =.. [PropTailLabel|Args],
+
+	L = [PropTailCall|T].
+
+
+	
+rule_clauses([],_,_,I,I,J,J,_,0,L,L).
+rule_clauses([R|Rs],Mod,Constr,RI,RN,PI,PN,Constrs,PropCnt,L,T) :-
+	rule_code(R,Constr,RI,RJ,PI,PJ,Constrs,Mod,PF1,L,T1),
+	rule_clauses(Rs,Mod,Constr,RJ,RN,PJ,PN,Constrs,PF2,T1,T),
+	PropCnt is PF1 + PF2.
+
+rule_code(R,F/A,RI,RN,PI,PN,Constrs,Mod,PCnt,L,T) :-
+	R = pragma(rule(Head1,Head2,_Guard,_Body),IDs,_Pragmas),
+	IDs = (IDs1,IDs2),
+	head2code(Head2,[],IDs2,[],R,F/A,RI,RJ,PI,PN,Constrs,Mod,PCnt,L,L1),
+	head1code(Head1,[],IDs1,[],R,F/A,RJ,RN,Constrs,Mod,L1,T).
+
+
+
+head1code([],_,_,_,_,_,I,I,_,_,L,L).
+head1code([H|Hs],RestHs,[ID|IDs],RestIDs,R,F/A,I,N,Constrs,Mod,L,T) :-
+	R = pragma(Rule,_,Pragmas),
+	(functor(H,F,A),
+	 \+ check_unnecessary_active(H,RestHs,Rule),
+	 \+ var_member(passive(ID),Pragmas)
+	 -> append(Hs,RestHs,OtherHs),
+	    append(IDs,RestIDs,OtherIDs),
+	    head1code_1(H,OtherHs,OtherIDs,R,F/A,I,J,Constrs,Mod,L,L1)
+	  ; J = I, L1 = L
+	),
+	head1code(Hs,[H|RestHs],IDs,[ID|RestIDs],R,F/A,J,N,Constrs,Mod,L1,T).
+
+
+head1code_1(H,OtherHs,_OtherIDs,R,F/A,I,N,Constrs,Mod,L,T) :-
+	R = pragma(Rule,_IDs,_Pragmas),
+	Rule = rule(_Head1,Head2,_Guard,_Body),
+	(Head2 == []
+	 -> simplification_code(H,OtherHs,Rule,F/A,I,N,Constrs,L,T)
+	  ; simpagation1_code(H,OtherHs,R,F/A,I,N,Constrs,Mod,L,T)
+	).
+
+
+
+head2code([],_,[],_,_,_,I,I,J,J,_,_,0,L,L).
+head2code([H|Hs],RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,PI,PN,Cs,Mod,PC,L,T) :-
+	R = pragma(Rule,_,Pragmas),	
+	(functor(H,F,A),
+	 \+ check_unnecessary_active(H,RestHs,Rule),
+	 \+ var_member(passive(ID),Pragmas)	    
+	 -> append(Hs,RestHs,OtherHs),
+	    append(IDs,RestIDs,OtherIDs),	    
+	    head2code_1(H,OtherHs,OtherIDs,R,F/A,RI,RJ,PI,PJ,Cs,Mod,PF1,L,L1)
+	  ; RJ = RI, PJ = PI, L1 = L, PF1 = 0
+	),
+	head2code(Hs,[H|RestHs],IDs,[ID|RestIDs],R,F/A,RJ,RN,PJ,PN,Cs,Mod,PF,
+		  L1,T),
+	PC is PF1 + PF.
+
+
+head2code_1(H,OtherHs,_OtherIDs,R,F/A,RI,RN,PI,PN,Constrs,Mod,PCnt,L,T) :-
+	R = pragma(Rule,_,_),
+	Rule = rule(Head1,_Head2,_Guard,_Body),
+	(Head1 == []
+	 -> propagation_code(H,OtherHs,Rule,F/A,PI,PN,Constrs,Mod,L,T),
+	    RN = RI, PCnt = 1
+	  ; simpagation2_code(H,OtherHs,R,F/A,RI,RN,Constrs,L,T),
+	    PN = PI, PCnt = 0
+	).
+	
+	
+
+simplification_code(Head,OtherHs,R,F/A,I,N,Constrs,L,T) :-
+	Head =.. [F|Args],
+	build_head(F/A,I,HeadVs,RHead),
+	N is I+1,
+	build_head(F/A,N,HeadVs,NextRHead),
+
+	pairup(Args,HeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	
+	my_term_copy(OtherHs,VarDict,VarDict1,OtherHsCp),
+	
+	heads_join_order(HeadVs,OtherHsCp,FreeParHs,BoundParsHs),
+	append(FreeParHs,BoundParsHs,OrderedHs),
+
+	build_constr_check_match(HeadVs,Constrs,OrderedHs,OtherHsCM),
+
+	R = rule(_Head1,_Head2,Guard,Body),
+	list_copies([Guard,Body],VarDict1,[GuardCp,BodyCp]),
+
+	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
+	
+	RCode = (RHead :-
+		    (FirstMatching,
+		     FreeParsGuards,
+		     OtherHsCM,
+		     BoundParGuards
+		     -> 
+		        BodyCp
+		      ; NextRHead)),
+	L = [RCode|T].
+
+
+
+
+%%
+%% SIMPAGATION
+%%
+
+
+simpagation1_code(Head,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
+	Head =.. [F|Args],
+	str_cat(F, '_eval', Label),
+	build_head(F/A,I,HeadVs,RHeadLabel,RHead),	
+	N is I+1,
+	build_head(F/A,N,HeadVs,NextRHead),
+	
+	pairup(Args,HeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	R = pragma(rule(_Head1,Head2,Guard,Body),_,_),
+	
+	list_copies([Head,OtherHs,Head2,Guard,Body],VarDict,
+		    [HeadCp,OtherHsCp,Head2Cp,GuardCp,BodyCp]),
+
+	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
+
+	heads_intersect(OtherHsCp,Head2Cp,MatchRecHs),
+	append(OtherHsCp,Head2Cp,RestHsCp),
+	abs_remove_same(RestHsCp,MatchRecHs,MatchOnceHs,[]),
+
+	heads_join_order(HeadVs,MatchOnceHs,FreeParHs,BoundParsHs),
+
+	(MatchRecHs = [MatchRecH|OtherMatchRecHs]
+	 -> append(FreeParHs,[MatchRecH],GetNthAttrHs)
+	  ; GetNthAttrHs = FreeParHs, OtherMatchRecHs = []
+	),
+	build_head_arg_passive_head_match(HeadVs,GetNthAttrHs,AttrVarMatches),
+	build_get_nth_attr_clauses(AttrVarMatches,Constrs,Mod,
+		          GetNthAttrClauseList,NthAtts,AttrLists,AttrChecks),
+	list2and(GetNthAttrClauseList,GetNthAttrClauses),
+
+	str_cat(RHeadLabel, '_1', RecursiveCallLabel),
+	append(HeadVs,NthAtts,RecursiveArgs),
+	RecursiveCall =.. [RecursiveCallLabel|RecursiveArgs],
+	    
+	RCode = (RHead :-
+		  (FirstMatching,
+		   FreeParsGuards,
+		   GetNthAttrClauses
+		   -> RecursiveCall,
+		      NextRHead
+		    ; NextRHead
+		  )
+		),
+	
+	    L = [RCode|L1],
+	    simpagation_recursive_code(Label,HeadVs,I,A,AttrLists,AttrChecks,
+		      Constrs,Mod,HeadCp,BoundParsHs,OtherMatchRecHs,Head2Cp,
+				                  BoundParGuards,BodyCp,L1,T).
+	
+
+
+simpagation2_code(Head,OtherHs,R,F/A,I,N,Constrs,L,T) :-
+	Head =.. [F|Args],
+	build_head(F/A,I,HeadVs,RHead),	
+	N is I+1,
+	build_head(F/A,N,HeadVs,NextRHead),
+	
+	pairup(Args,HeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	R = pragma(rule(Head1,_Head2,Guard,Body),_,_),
+	list_copies([Head1,OtherHs,Guard,Body],VarDict,
+		    [Head1Cp,OtherHsCp,GuardCp,BodyCp]),
+	append(Head1Cp,OtherHsCp,RestHsCp),
+
+	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
+
+	heads_join_order(HeadVs,RestHsCp,FreeParHs,BoundParsHs),
+	append(FreeParHs,BoundParsHs,OrderedHs),
+	build_constr_check_match(HeadVs,Constrs,OrderedHs,OrderedHsCM),
+	
+	heads_join_order(HeadVs,OtherHsCp,FreeParRmHs,BoundParsRmHs),
+	append(FreeParRmHs,BoundParsRmHs,OrderedRmHs),
+	build_constr_remove(OrderedRmHs,RemoveCode),
+
+        RCode = (RHead :-
+		    (FirstMatching,
+		     FreeParsGuards,
+		     OrderedHsCM,
+		     BoundParGuards
+		     -> RemoveCode,
+			BodyCp
+		      ; NextRHead
+		    )
+		),
+
+	L = [RCode|T].
+
+
+
+simpagation_recursive_code(HeadLb,HeadVs,I,A,AttrLists,AttrChecks,Constrs,Mod,
+			Head,MatchOnceHs,MatchRecHs,Head2,Guard,Body,L,T) :-
+	simpagation_recursive_code(HeadLb,HeadVs,I,1,A,AttrLists,AttrChecks,
+		Constrs,Mod,Head,MatchOnceHs,MatchRecHs,Head2,Guard,Body,L,T).
+
+
+simpagation_recursive_code(_,_,_,_,_,[],_,_,_,_,[],[],_,_,_,L,L).
+
+%% No OtherHs ( == constraints to be matched) left -- call body
+simpagation_recursive_code(HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]],[AttrCheck],
+		_Constrs,_Mod,Head,[],[],Head2,Guard,Body,L,T) :-
+
+	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
+
+	length(BaseHeadVs,A),
+
+	append_lists([BaseHeadVs,[[]]],BaseArgs),
+	BaseCase =.. [HeadName|BaseArgs],
+
+	Attr =.. [attr|AttrArgs],
+	length(AttrArgs,AA),
+
+	append(HeadArgs,AttrArgs,AllArgs),
+
+	length(RecursiveHeadVs,A),
+	length(AttrVs,AA),
+	append(RecursiveHeadVs,AttrVs,AllVs),
+
+	pairup(AllArgs,AllVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	list_copies([Head,Head2,Atts,AttrCheck,Guard,Body],VarDict,
+		   [HeadCp,Head2Cp,AttsCp,AttrCheckCp,GuardCp,BodyCp]),
+
+	AttrCp =.. [attr|AttrVs],
+	append(RecursiveHeadVs,[[AttrCp|AttsCp]],RecursiveArgs),
+	RecursiveHead =.. [HeadName|RecursiveArgs],
+
+	abs_remove_same(Head2Cp,[HeadCp],RemoveHs,_CallHs),
+	build_constr_remove(RemoveHs,RemoveCode),
+	
+	append(RecursiveHeadVs,[AttsCp],RecursiveNextArgs),
+	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
+
+	RecursiveCase = (RecursiveHead :-
+			    (FirstMatching,
+			     AttrCheckCp,
+			     GuardCp
+			     -> RemoveCode,
+			        BodyCp
+			      ; true
+			    ),
+			    RecursiveNextHead
+			),
+	
+	L = [BaseCase,RecursiveCase|T].
+
+
+
+%% More constraints to match -- generate another level of recursion
+simpagation_recursive_code(HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|AttrRest],
+                           [AttrCheck|AttrChecks],Constrs,Mod,Head,MatchOnceHs,
+			   MatchRecHs,Head2,Guard,Body,L,T) :-
+	
+	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
+
+	length(BaseHeadVs,A),
+	length(AttrRest,RA),
+	length(AttrRest1,RA),
+	append_lists([BaseHeadVs,[[]],AttrRest1],BaseArgs),
+	BaseCase =.. [HeadName|BaseArgs],
+
+	Attr =.. [attr|AttrArgs],
+	length(AttrArgs,AA),
+
+	append(HeadArgs,AttrArgs,AllArgs),
+
+	length(RecursiveHeadVs,A),
+	length(AttrVs,AA),
+	append(RecursiveHeadVs,AttrVs,AllVs),
+
+	pairup(AllArgs,AllVs,HeadPairs),	
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	length(AttrRest2,RA),
+	list_copies([Head,MatchOnceHs,MatchRecHs,Head2,
+		[Atts,AttrRest,AttrRest2,AttrCheck,AttrChecks],Guard,Body],
+		    VarDict,
+	            [HeadCp,MatchOnceHsCp,MatchRecHsCp,Head2Cp,
+	        [AttsCp,AttrRestCp,AttrRest2Cp,AttrCheckCp,AttrChecksCp],
+		     GuardCp,BodyCp]),
+
+	AttrCp =.. [attr|AttrVs],
+	heads_join_order(AttrVs,MatchOnceHsCp,HaveFreeHs,AllBoundHs),
+
+	(MatchRecHsCp = [MatchRecH|OtherMatchRecHs]
+	 -> append(HaveFreeHs,[MatchRecH],AllHaveFreeHs)
+	  ; AllHaveFreeHs = HaveFreeHs, OtherMatchRecHs = []
+	),
+	append(AttrVs,RecursiveHeadVs,FreeVs1),
+	build_head_arg_passive_head_match(FreeVs1,AllHaveFreeHs,AttrVarMatches),
+	build_get_nth_attr_clauses(AttrVarMatches,Constrs,Mod,
+			GetNthAttrClauseList,NthAtts,AttrLists,NthAttrChecks),
+	list2and(GetNthAttrClauseList,GetNthAttrClauses),
+
+	guards_join_order(FreeVs1,GuardCp,FreeParsGuards,BoundParGuards),
+
+	append(MatchOnceHs,MatchRecHs,OtherHsCp),
+	abs_remove_same(Head2Cp,[HeadCp|OtherHsCp],RemoveHs,_CallHs),
+	HeadCp =.. [_|HeadArgsCp],
+	append(AttrVs,HeadArgsCp,FreeVs2),
+	heads_join_order(FreeVs2,RemoveHs,FreeParsRmHs,OtherRmHs1,OtherRmHs2),
+	build_constr_remove(FreeParsRmHs,RemoveCode),
+	append(OtherRmHs1,OtherRmHs2,OtherRmHs),
+
+	append_lists([RecursiveHeadVs,[[AttrCp|AttsCp]],AttrRest2Cp],
+		     RecursiveArgs),
+	RecursiveHead =.. [HeadName|RecursiveArgs],
+	
+	NextN is N+1,
+	fmt_write_string(NextCaseHeadName,"%s_%d_%d", args(HeadLabel,I,NextN)),
+	append_lists([RecursiveHeadVs,AttrVs,AttrRest2Cp,NthAtts],NextCaseArgs),
+	NextCaseHead =.. [NextCaseHeadName|NextCaseArgs],
+
+	append_lists([RecursiveHeadVs,[AttsCp],AttrRest2Cp],RecursiveNextArgs),
+	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
+
+	RecursiveCase = (RecursiveHead :-
+			    (FirstMatching,
+			     AttrCheckCp,
+			     FreeParsGuards
+			     -> RemoveCode,
+				GetNthAttrClauses,
+				NextCaseHead
+			      ; true
+			    ),
+			    RecursiveNextHead
+			),
+
+	L = [BaseCase,RecursiveCase|L1],
+
+	append(RecursiveHeadVs,AttrVs,HeadArgs1),
+	length(AttrVs,AttrVsL),
+	A1 is A+AttrVsL,
+	append(AttrLists,AttrRestCp,OtherAtts),
+	append(AttrChecksCp,NthAttrChecks,OtherAttrChecks),
+	
+	simpagation_recursive_code(HeadLabel,HeadArgs1,I,NextN,A1,OtherAtts,
+	      OtherAttrChecks,Constrs,Mod,HeadCp,AllBoundHs,OtherMatchRecHs,
+			                OtherRmHs,BoundParGuards,BodyCp,L1,T).
+
+
+
+
+
+%%
+%% PROPAGATION
+%%
+
+
+propagation_code(H,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
+	(OtherHs == []
+	 -> propagation_single_head(H,R,F/A,I,N,L,T)
+	  ; propagation_mutli_head(H,OtherHs,R,F/A,I,N,Constrs,Mod,L,T)
+	).
+
+
+propagation_single_head(Head,R,F/A,I,N,L,T) :-
+	Head =.. [F|Args],
+
+	length(HeadVs,A),
+	N is I+1,
+
+	fmt_write_string(PropHeadLabel, "%s_prop_%d", args(F,N)),
+	RHead =.. [PropHeadLabel|HeadVs],
+
+	pairup(Args,HeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	R = rule(_Head1,_Head2,Guard,Body),
+	list_copies([Guard,Body],VarDict,[GuardCp,BodyCp]),
+
+	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
+
+	NextI is N+1,
+	fmt_write_string(NextPropRuleName,"%s_prop_%d", args(F,NextI)),
+	NextPropRuleCall =.. [NextPropRuleName|HeadVs],
+
+	RCode = (RHead :-
+		    (FirstMatching,
+		     FreeParsGuards,
+		     BoundParGuards
+		     -> BodyCp
+		      ; NextPropRuleCall)
+		),
+	L = [RCode|T].
+
+
+propagation_mutli_head(Head,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
+	Head =.. [F|Args],
+
+	length(HeadVs,A),
+	N is I+1,
+	str_cat(F,'_prop',PropLabel),
+	fmt_write_string(PropHeadLabel, "%s_%d", args(PropLabel,N)),
+	RHead =.. [PropHeadLabel|HeadVs],
+	
+	pairup(Args,HeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	R = rule(_Head1,_Head2,Guard,Body),
+	list_copies([OtherHs,Guard,Body],VarDict,[OtherHsCp,GuardCp,BodyCp]),
+
+	heads_join_order(HeadVs,OtherHsCp,FreeParHs,BoundParsHs),
+	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
+
+	build_head_arg_passive_head_match(HeadVs,FreeParHs,HeadArgMatchList),
+	build_get_nth_attr_clauses(HeadArgMatchList,Constrs,Mod,
+				   GetNthAttrClauseList,NthAtts,AttrLists,_),
+	list2and(GetNthAttrClauseList,GetNthAttrClauses),
+
+	str_cat(PropHeadLabel,'_1',RecursiveCallLabel),
+	append(HeadVs,NthAtts,RecursiveArgs),
+	RecursiveCall =.. [RecursiveCallLabel|RecursiveArgs],
+
+	RCode = (RHead :-
+		    FirstMatching,
+		    FreeParsGuards,!,
+		    GetNthAttrClauses, 
+		    RecursiveCall),
+	L = [RCode|L1],
+	propagation_recursive_code(PropLabel,HeadVs,N,A,AttrLists,BoundParsHs,
+				Constrs,Mod,BoundParGuards,BodyCp,L1,T).
+
+
+
+heads_intersect(Hs1,Hs2,Hs) :-
+	Hs1 \== [], Hs2 \== [],!,
+	get_functors(Hs1,Fs1),
+	get_functors(Hs2,Fs2),
+	heads_intersect(Hs1,Fs1,Hs2,Fs2,Hs).
+heads_intersect(_,_,[]).
+
+heads_intersect([],[],_,_,[]).
+heads_intersect([H1|Hs1],[F|Fs1],[H2|Hs2],Fs2,[H1,H2|Hs]) :-
+	member(F,Fs2),
+	heads_intersect(Hs1,Fs1,Hs2,Fs2,Hs).
+heads_intersect([_|Hs1],[F|Fs1],[_|Hs2],Fs2,Hs) :-
+	\+ member(F,Fs2),
+	heads_intersect(Hs1,Fs1,Hs2,Fs2,Hs).
+
+get_functors([],[]).
+get_functors([H|Hs],[F|Fs]) :-
+	functor(H,F,_A),
+	get_functors(Hs,Fs).
+
+
+heads_join_order(ParList,Hs,HaveFreeParHs,AllBoundParsHs) :-
+	get_par_lists(Hs,HPs),
+	order_heads(ParList,HPs,[],OrderedHPs),
+	split_heads(ParList,OrderedHPs,HaveFreeParHs,AllBoundParsHs).
+
+heads_join_order(ParList,Hs,AllFreeParsHs,HaveFreeParHs,AllBoundParsHs) :-
+	get_par_lists(Hs,HPs),
+	order_heads(ParList,HPs,[],OrderedHPs),
+	split_heads(ParList,OrderedHPs,AllFreeParsHs,
+		                       HaveFreeParHs,
+		                       AllBoundParsHs).
+
+var_permutation(L1,L2) :-
+	sort(L1,SL1),
+	sort(L2,SL2),
+	SL1 == SL2.
+
+%% split only, keep order given in the rule
+guards_join_order(ParList,Gs,AllFreeParsGs,HaveBoundParGs) :-
+	and2list(Gs,GLs),
+	get_par_lists(GLs,GPs),
+	split_guards(ParList,GPs,AllFreeParsGs1,HaveBoundParGs1),
+	list2and(AllFreeParsGs1,AllFreeParsGs),
+	list2and(HaveBoundParGs1,HaveBoundParGs).
+
+get_par_lists([],[]).
+get_par_lists([H|Hs],[(H,Ps)|HPs]) :-
+	H =.. [_|Pars],
+	get_par_list(Pars,Ps),
+	get_par_lists(Hs,HPs).
+
+get_par_list([],[]).
+get_par_list([X|Xs],ParList) :-
+	get_par_list(Xs,PL),
+	(var(X)
+	 -> ParList = [X|PL]
+	  ; X =.. [_|XPars],
+	    get_par_list(XPars,XL),
+	    append(XL,PL,ParList)
+	).
+
+
+order_heads(ParList,HPs,InHPs,OutHPs) :-
+	get_list_head_param_subsets(ParList,HPs,HP1s,HeadListHPs),
+	get_head_list_param_subsets(ParList,HP1s,HP2s,ListHeadHPs,NewParList),
+	append_lists([InHPs,HeadListHPs,ListHeadHPs],OutHP1s),
+	(NewParList = ParList
+	 -> param_diff_sort(ParList,HP2s,OutHP2s),
+	    append(OutHP1s,OutHP2s,OutHPs)
+	  ; order_heads(NewParList,HP2s,OutHP1s,OutHPs)
+	).
+
+get_list_head_param_subsets(_,[],[],[]).
+get_list_head_param_subsets(ParList,[(H,HP)|HPs],LeftHPs,SubsetHPs) :-
+	get_list_head_param_subsets(ParList,HPs,LeftHP1s,SubsetHP1s),
+	(subset(HP,ParList)
+	 -> LeftHPs = LeftHP1s, SubsetHPs = [(H,HP)|SubsetHP1s]
+	  ; LeftHPs = [(H,HP)|LeftHP1s], SubsetHPs = SubsetHP1s
+	).
+
+get_head_list_param_subsets(L,[],[],[],L).
+get_head_list_param_subsets(ParList,[(H,HP)|HPs],LeftHPs,SubsetHPs,
+			    NewParList) :-
+	get_head_list_param_subsets(ParList,HPs,LeftHP1s,SubsetHP1s,ParList1),
+	(subset(ParList,HP)
+	 -> LeftHPs = LeftHP1s, SubsetHPs = [(H,HP)|SubsetHP1s],
+	    append_unique(ParList1,HP,NewParList) 
+	  ; LeftHPs = [(H,HP)|LeftHP1s], SubsetHPs = SubsetHP1s,
+	    NewParList = ParList1
+	).
+
+subset([],_).
+subset([X|Xs],L) :-
+	var_member(X,L),
+	subset(Xs,L).
+
+
+param_diff_sort(ParList,HeadPars,SortedHeadPars) :-
+	get_param_diff(ParList,HeadPars,DiffHeadPars),
+	keysort(DiffHeadPars,SortedDiffHeadPars),
+	get_head_pars(SortedDiffHeadPars,SortedHeadPars).
+
+get_param_diff(_,[],[]).
+get_param_diff(ParList,[(H,Ps)|HPs],[D-(H,Ps)|DHPs]) :-
+	length(Ps,A),
+	intersect(ParList,Ps,IPs),
+	length(IPs,I),
+	Diff is A-I,
+	D is Diff/A,
+	get_param_diff(ParList,HPs,DHPs).
+
+get_heads([],[]).
+get_heads([_-(H,_)|HPs],[H|Hs]) :-
+	get_heads(HPs,Hs).
+
+
+get_head_pars([],[]).
+get_head_pars([_-(H,P)|HPs],[(H,P)|Hs]) :-
+	get_head_pars(HPs,Hs).
+
+intersect(_,[],[]).
+intersect(L,[X|Xs],[X|Ys]) :-
+	var_member(X,L),
+	intersect(L,Xs,Ys).
+intersect(L,[X|Xs],Ys) :-
+	\+ var_member(X,L),
+	intersect(L,Xs,Ys).
+
+
+
+%
+% split heads into those with a parameter in ParList and those with not
+%
+split_heads(_,[],[],[]).	
+split_heads(ParList,[(H,Ps)|HPs],[H|HaveFreeParHs],AllBoundParsHs) :-
+	intersect(ParList,Ps,L),
+	L \= [],!,
+	split_heads(ParList,HPs,HaveFreeParHs,AllBoundParsHs).
+split_heads(ParList,[(H,Ps)|HPs],HaveFreeParHs,[H|AllBoundParsHs]) :-
+	intersect(ParList,Ps,[]),!,
+	split_heads(ParList,HPs,HaveFreeParHs,AllBoundParsHs).
+
+
+%
+% split heads into those with all parameters in ParList, with some 
+% parameters in ParList and with no parameters in ParList
+%
+split_heads(_,[],[],[],[]).	
+split_heads(ParList,[(H,Ps)|HPs],[H|AllFreePars],HaveFreePar, AllBoundPars) :-
+	subset(Ps,ParList),!,
+	split_heads(ParList,HPs,AllFreePars,HaveFreePar,AllBoundPars).
+split_heads(ParList,[(H,Ps)|HPs],AllFreePars,[H|HaveFreePar],AllBoundPars) :-
+	intersect(ParList,Ps,L),
+	L \= [],!,
+	split_heads(ParList,HPs,AllFreePars,HaveFreePar,AllBoundPars).
+split_heads(ParList,[(H,Ps)|HPs],AllFreePars,HaveFreePar,[H|AllBoundPars]) :-
+	intersect(ParList,Ps,[]),!,
+	split_heads(ParList,HPs,AllFreePars,HaveFreePar,AllBoundPars).
+
+
+%
+% split guards into those with all parameters in ParList and those with not
+%
+split_guards(_,[],[],[]).	
+split_guards(ParList,[(G,Ps)|GPs],[G|AllFreeParGs],HaveBoundParsGs) :-
+	subset(Ps,ParList),!,
+	split_guards(ParList,GPs,AllFreeParGs,HaveBoundParsGs).
+split_guards(ParList,[(G,_Ps)|GPs],AllFreeParGs,[G|HaveBoundParsGs]) :-
+	split_guards(ParList,GPs,AllFreeParGs,HaveBoundParsGs).
+
+% same, but parameter lists are kept for all-free-variable guards
+split_gps(_,[],[],[]).	
+split_gps(ParList,[(G,Ps)|GPs],[(G,Ps)|AllFreeParGs],HaveBoundParsGs) :-
+	subset(Ps,ParList),!,
+	split_gps(ParList,GPs,AllFreeParGs,HaveBoundParsGs).
+split_gps(ParList,[(G,_Ps)|GPs],AllFreeParGs,[G|HaveBoundParsGs]) :-
+	split_gps(ParList,GPs,AllFreeParGs,HaveBoundParsGs).
+
+
+
+
+/*
+ * recursive code for all passive heads with a parameter in the active head
+ * (all get_attr calls can be, and are, done in the top-level recursive clause)
+ */
+
+propagation_recursive_code(HeadLb,HeadVs,I,A,AttrLists,BoundParsHs,Constrs,
+			Mod,Guard,Body,L,T) :-
+	propagation_recursive_code(HeadLb,HeadVs,I,1,A,AttrLists,BoundParsHs,
+				   Constrs,Mod,Guard,Body,L,T).
+
+propagation_recursive_code(_,_,_,_,_,[],_,_,_,_,_,L,L).
+
+
+%% No OtherHs ( == constraints to be matched) left -- call body
+propagation_recursive_code(HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|[]],[],
+			   _Constrs,_Mod,Guard,Body,L,T) :-
+	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
+
+	length(BaseHeadVs,A),
+	append_lists([BaseHeadVs,[[]]],BaseArgs),
+	BaseHead =.. [HeadName|BaseArgs],
+	(N = 1
+	 -> NextI is I+1,
+	    fmt_write_string(NextPropRuleName,"%s_%d", args(HeadLabel,NextI)),
+	    NextPropRuleCall =.. [NextPropRuleName|BaseHeadVs],
+	    BaseCase = (BaseHead :- NextPropRuleCall)
+	  ; NextI = I, BaseCase = BaseHead
+	),
+
+	length(RecursiveHeadVs,A),
+
+	pairup(HeadArgs,RecursiveHeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	list_copies([[Attr,Atts],Guard,Body],VarDict,
+		    [[AttrCp,AttsCp],GuardCp,BodyCp]),
+
+	append(RecursiveHeadVs,[[AttrCp|AttsCp]],RecursiveArgs),
+	RecursiveHead =.. [HeadName|RecursiveArgs],
+	
+	append(RecursiveHeadVs,[AttsCp],RecursiveNextArgs),
+	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
+
+	RecursiveCase = (RecursiveHead :-
+			    FirstMatching,
+			    GuardCp,!,
+			    BodyCp,
+			    RecursiveNextHead
+			),
+	
+	L = [BaseCase,RecursiveCase|T].
+
+
+%% More constraints to match -- generate another level of recursion
+propagation_recursive_code(HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|[]],OtherHs,
+			   Constrs,Mod,Guard,Body,L,T) :-
+	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
+
+	length(BaseHeadVs,A),
+	append_lists([BaseHeadVs,[[]]],BaseArgs),
+	BaseHead =.. [HeadName|BaseArgs],
+	(N = 1
+	 -> NextI is I+1,
+	    fmt_write_string(NextPropRuleName,"%s_%d", args(HeadLabel,NextI)),
+	    NextPropRuleCall =.. [NextPropRuleName|BaseHeadVs],
+	    BaseCase = (BaseHead :- NextPropRuleCall)
+	  ; NextI = I, BaseCase = BaseHead
+	),
+	
+	length(RecursiveHeadVs,A),
+
+	pairup(HeadArgs,RecursiveHeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	list_copies([OtherHs,[Attr,Atts],Guard,Body],VarDict,
+		    [OtherHsCp,[AttrCp,AttsCp],GuardCp,BodyCp]),
+
+	AttrCp = attr(AttrVar),
+	heads_join_order([AttrVar],OtherHsCp,FreeParHs,BoundParsHs),
+
+	append(RecursiveHeadVs,[[AttrCp|AttsCp]],RecursiveArgs),
+	RecursiveHead =.. [HeadName|RecursiveArgs],
+
+	build_head_arg_passive_head_match([AttrVar],FreeParHs,AttrVarMatches),
+	build_get_nth_attr_clauses(AttrVarMatches,Constrs,Mod,
+				   GetNthAttrClauseList,NthAtts,AttrLists,_),
+	list2and(GetNthAttrClauseList,GetNthAttrClauses),
+
+	guards_join_order([AttrVar|RecursiveHeadVs],GuardCp,
+			  FreeParsGuards,BoundParGuards),
+	
+	NextN is N+1,
+	fmt_write_string(NextLevelCallLabel,"%s_%d_%d",args(HeadLabel,I,NextN)),
+	append(RecursiveHeadVs,[AttrVar|NthAtts],NextLevelArgs),
+	NextLevelCall =.. [NextLevelCallLabel|NextLevelArgs],
+	
+	append(RecursiveHeadVs,[AttsCp],RecursiveNextArgs),
+	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
+
+	RecursiveCase = (RecursiveHead :-
+			    FirstMatching,
+			    FreeParsGuards,!,
+			    GetNthAttrClauses,
+			    NextLevelCall,
+			    RecursiveNextHead
+			),
+
+	L = [BaseCase,RecursiveCase|L1],
+
+	append(RecursiveHeadVs,[AttrVar],HeadArgs1),
+	A1 is A+1,
+	
+	propagation_recursive_code(HeadLabel,HeadArgs1,I,NextN,A1,AttrLists,
+		       BoundParsHs,Constrs,Mod,BoundParGuards,BodyCp,L1,T).
+
+
+
+%% this may need two cases, for OtherHs empty and non-empty,
+%% similarly as the previous one
+propagation_recursive_code(HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|AttrRest],
+			   OtherHs,Constrs,Mod,Guard,Body,L,T) :-
+	AttrRest \= [],
+	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
+
+	length(BaseHeadVs,A),
+	length(AttrRest,RA),
+	length(AttrRest1,RA),
+	append_lists([BaseHeadVs,[[]],AttrRest1],BaseArgs),
+	BaseHead =.. [HeadName|BaseArgs],
+	(N = 1
+	 -> NextI is I+1,
+	    fmt_write_string(NextPropRuleName,"%s_%d", args(HeadLabel,NextI)),
+	    NextPropRuleCall =.. [NextPropRuleName|BaseHeadVs],
+	    BaseCase = (BaseHead :- NextPropRuleCall)
+	  ; NextI = I, BaseCase = BaseHead
+	),
+
+	length(RecursiveHeadVs,A),
+
+	pairup(HeadArgs,RecursiveHeadVs,HeadPairs),
+	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+
+	length(AttrRest2,RA),
+	list_copies([OtherHs,[Attr,Atts,AttrRest,AttrRest2],Guard,Body],VarDict,
+	     [OtherHsCp,[AttrCp,AttsCp,AttrRestCp,AttrRest2Cp],GuardCp,BodyCp]),
+
+	AttrCp = attr(AttrVar),
+	heads_join_order([AttrVar],OtherHsCp,FreeParHs,BoundParsHs),
+
+	append_lists([RecursiveHeadVs,[[AttrCp|AttsCp]],AttrRest2Cp],
+		     RecursiveArgs),
+	RecursiveHead =.. [HeadName|RecursiveArgs],
+
+	build_head_arg_passive_head_match([AttrVar],FreeParHs,AttrVarMatches),
+	build_get_nth_attr_clauses(AttrVarMatches,Constrs,Mod,
+				   GetNthAttrClauseList,NthAtts,AttrLists,_),
+	list2and(GetNthAttrClauseList,GetNthAttrClauses),
+
+	guards_join_order([AttrVar|RecursiveHeadVs],GuardCp,
+			  FreeParsGuards,BoundParGuards),
+
+	
+	NextN is N+1,
+	fmt_write_string(NextCaseHeadName,"%s_%d_%d", args(HeadLabel,I,NextN)),
+	append_lists([RecursiveHeadVs,[AttrVar|AttrRest2Cp],NthAtts],
+		     NextCaseArgs),
+	NextCaseHead =.. [NextCaseHeadName|NextCaseArgs],
+
+	append_lists([RecursiveHeadVs,[AttsCp],AttrRest2Cp],RecursiveNextArgs),
+	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
+
+	RecursiveCase = (RecursiveHead :-
+			    FirstMatching,
+			    FreeParsGuards,!,
+			    GetNthAttrClauses,
+			    NextCaseHead,
+			    RecursiveNextHead
+			),
+
+	L = [BaseCase,RecursiveCase|L1],
+
+	append(RecursiveHeadVs,[AttrVar],HeadArgs1),
+	A1 is A+1,
+	append(AttrLists,AttrRestCp,OtherAtts),
+	
+	propagation_recursive_code(HeadLabel,HeadArgs1,I,NextN,A1,OtherAtts,
+		       BoundParsHs,Constrs,Mod,BoundParGuards,BodyCp,L1,T).
+	
+
+
+
+all_empty_lists([],[]).
+all_empty_lists([_|Ls],[[]|ELs]) :-
+	all_empty_lists(Ls,ELs).
+
+
+build_head_arg_passive_head_match([],_,[]).
+build_head_arg_passive_head_match([V|Vs],Hs,[Match|Matches]) :-
+	head_arg_match(V,Hs,M),
+	Match = in_passive_heads(V,M),
+	build_head_arg_passive_head_match(Vs,Hs,Matches).
+
+head_arg_match(_,[],[]).
+head_arg_match(V,[H|Hs],ML) :-
+	H =.. [F|HVs],
+	(abs_ith(I,HVs,V)
+	 -> delete_ith(I,HVs,V,OtherHVs),
+	    M = (H,F,I,OtherHVs),
+	    head_arg_match(V,Hs,Ms),
+	    ML = [M|Ms]
+	  ; head_arg_match(V,Hs,ML)
+	).
+	
+
+
+abs_ith(Index,List,Element) :-
+	( integer(Index) -> ith(Index,List,Element)
+	;   abs_ith1(List,1,Index,Element)
+	).
+
+abs_ith1([X|_],I,I,Y) :- X == Y.
+abs_ith1([_|L],I1,I,X) :- I2 is I1+1, abs_ith1(L,I2,I,X).
+
+
+
+
+build_get_nth_attr_clauses([],_,_,[],[],[],[]).
+build_get_nth_attr_clauses([in_passive_heads(V,ML)|Vs],Constrs,Mod,
+			   Clauses,Atts,Lists,Checks) :-
+	build_get_nth_attr_clauses_1(V,ML,Constrs,Mod,C,A,L,Ch),
+	build_get_nth_attr_clauses(Vs,Constrs,Mod,Cs,As,Ls,Chs),
+	append_lists([C,Cs],Clauses),
+	append_lists([A,As],Atts),
+	append_lists([L,Ls],Lists),
+	append_lists([Ch,Chs],Checks).
+
+build_get_nth_attr_clauses_1(_,[],_,_,[],[],[],[]).
+build_get_nth_attr_clauses_1(V,[(Head,F,Pos,Args)|Matches],Constrs,Mod,
+		  [C|Cs],[Attr|Atts],[AttrList|AttrLs],[HeadCheck|HCs]) :-
+	build_constr_check(Head,HeadCheck),
+	atts_before_constr(F,Constrs,N),
+	AttrPos is N+Pos,
+	C = get_nth_attr(V,Mod,AttrPos,Attr),
+	AttrH =.. [attr|Args],
+	AttrList = [AttrH|_],
+	build_get_nth_attr_clauses_1(V,Matches,Constrs,Mod,Cs,Atts,AttrLs,HCs).
+
+
+build_constr_check(Head,HeadCheck) :-
+	Head =.. [F|Args],
+	str_cat('check_',F,CheckF),
+	HeadCheck =.. [CheckF|Args].
+
+atts_before_constr(F,[F/_|_],0).
+atts_before_constr(F,[F_i/A_i|Fs],N) :-
+	F \= F_i,
+	atts_before_constr(F,Fs,Ns),
+	N is A_i+Ns.
+
+
+%
+% substitute parameters matched in passive heads with fresh variables
+%
+substitute_body_args(Body,ArgMatchList,VarDict,BodySubst) :-
+	and2list(Body,BodyL),
+	substitute_body_args(BodyL,ArgMatchList,[],VarDict,BodySubstL),
+	list2and(BodySubstL,BodySubst).
+
+substitute_body_args([],_,VarDict,VarDict,[]).
+substitute_body_args([C|Cs],VMatches,VarDict,NewVarDict,[NewC|NewCs]) :-
+	substitute_body_args_1(C,VMatches,VarDict,VarDict1,NewC),
+	substitute_body_args(Cs,VMatches,VarDict1,NewVarDict,NewCs).
+	
+substitute_body_args_1(C,VMatches,VarDict,NewVarDict,NC) :-
+	C =.. [F|CVs],
+	substitute_clause_args(CVs,VMatches,VarDict,NewVarDict,NCVs),
+	NC =.. [F|NCVs].
+
+substitute_clause_args(Vs,[],VD,VD,Vs).
+substitute_clause_args(Vs,[in_passive_heads(_,VM)|VMs],VD,NVD,NVs) :-
+	substitute_match(Vs,VM,VD,VD1,Vs1),
+	substitute_clause_args(Vs1,VMs,VD1,NVD,NVs).
+
+substitute_match(Vs,[],VD,VD,Vs).
+substitute_match(Vs,[(_F,_Pos,Args)|Ms],VD,NVD,NVs) :-
+	substitute_match_1(Vs,Args,VD,VD1,Vs1),
+	substitute_match(Vs1,Ms,VD1,NVD,NVs).
+
+substitute_match_1(Vs,[],VD,VD,Vs).
+substitute_match_1(Vs,[X|Xs],VD,NVD,NVs) :-
+	substitute_arg(Vs,X,VD,VD1,Vs1),
+	substitute_match_1(Vs1,Xs,VD1,NVD,NVs).
+
+substitute_arg(Vs,X,VD,[X-Y|VD],NVs) :-
+	substitute_arg_1(Vs,X,Y,NVs).
+
+substitute_arg_1(Vs,X,Y,NVs) :-
+	(abs_ith(I,Vs,X)
+	 -> delete_ith(I,Vs,X,Vs1),
+	    delete_ith(I,Vs2,Y,Vs1),
+	    substitute_arg_1(Vs2,X,Y,NVs)
+	  ; NVs = Vs
+	).
+
+
+
+% build rule head
+build_head(F/A,HeadVs,RHead) :-
+	length(HeadVs,A),
+	fmt_write_string(HeadName, "%s_eval", arg(F)),
+	RHead =.. [HeadName|HeadVs].
+
+build_head(F/A,RNum,HeadVs,RHead) :-
+	length(HeadVs,A),
+	fmt_write_string(HeadName, "%s_eval_%d", args(F,RNum)),
+	RHead =.. [HeadName|HeadVs].
+
+build_head(F/A,RNum,HeadVs,HeadName,RHead) :-
+	length(HeadVs,A),
+	fmt_write_string(HeadName, "%s_eval_%d", args(F,RNum)),
+	RHead =.. [HeadName|HeadVs].
+
+% build call to the next rule (if possible)
+build_next_rule_call(N,N,_F,_HeadVs,true).
+build_next_rule_call(PrevRNum,RCnt,F,HeadVs,NextRuleCall) :-
+	RNum is PrevRNum + 1,
+	RNum =< RCnt,
+	fmt_write_string(HeadName, "%s_eval_%d", args(F,RNum)),
+	NextRuleCall =.. [HeadName|HeadVs].
+
+
+% replace constraint name Constr with check_Constr or match_Constr
+% in predicate name
+build_constr_check_match(ActiveVs,Constrs,PassiveHs,CMs) :-
+	build_cms(ActiveVs,Constrs,PassiveHs,CMList),
+	list2and(CMList,CMs).
+
+build_cms(_,_,[],[]).
+build_cms(ActiveVs,Constrs,[C|Cs],[CM|CMs]) :-
+	functor(C,F,A),
+	member(F/A,Constrs),!,
+	C =.. [_|PassiveVs],
+	(same_vars(PassiveVs,ActiveVs)
+	 -> fmt_write_string(Label,"check_%s",arg(F))
+	  ; fmt_write_string(Label,"match_%s",arg(F))
+	),
+	CM =.. [Label|PassiveVs],
+	build_cms(ActiveVs,Constrs,Cs,CMs).
+build_cms(ActiveVs,Constrs,[C|Cs],[C|CMs]) :-
+	build_cms(ActiveVs,Constrs,Cs,CMs).
+
+
+same_vars([],_).
+same_vars([V|Vs],Vars) :-
+	var_member(V,Vars),
+	same_vars(Vs,Vars).
+
+
+% build remove clauses for constraints in Heads list
+build_constr_remove(Heads,RmClauses) :-
+	build_constr_rm(Heads,RmList),
+	list2and(RmList,RmClauses).
+
+build_constr_rm([],[]).
+build_constr_rm([H|Hs],[C|Cs]) :-
+	H =.. [F|Args],
+	fmt_write_string(CLabel, "remove_%s", arg(F)),
+	C =.. [CLabel|Args],
+	build_constr_rm(Hs,Cs).
+
+
+% build add clauses for constraints in Heads list
+build_constr_add(Heads,AddClauses) :-
+	build_constr_add_1(Heads,AddList),
+	list2and(AddList,AddClauses).
+
+build_constr_add_1([],[]).
+build_constr_add_1([H|Hs],[C|Cs]) :-
+	H =.. [F|Args],
+	fmt_write_string(CLabel, "add_%s", arg(F)),
+	C =.. [CLabel|Args],
+	build_constr_add_1(Hs,Cs).
+
+
+
+% remove terms in abs_intersection (== matching) of two lists from each list:
+% abs_remove_same(Xs,Ys,Xs1,Ys1): Xs1 = Xs-(abs_intersection(Xs,Ys)),
+%                             Ys1 = Ys-(abs_intersection(Xs,Ys)),
+abs_remove_same([],L,[],L).
+abs_remove_same([X|Xs],Ys,Xs1,Ys1) :-
+	var_member(X,Ys), !,
+	abs_remove_one(X,Ys,Ys2),
+	abs_remove_same(Xs,Ys2,Xs1,Ys1).
+abs_remove_same([X|Xs],Ys,[X|Xs1],Ys1) :-
+	abs_remove_same(Xs,Ys,Xs1,Ys1).
+
+abs_remove_one(X,[Y|Ys],Ys) :-
+	X == Y.
+abs_remove_one(X,[Y|Ys],[Y|Ys1]) :-
+	X \== Y,
+	abs_remove_one(X,Ys,Ys1).
+
+
+% replace constraint name Constr with remove_Constr in predicate name
+build_constr_remove(Constr,RmCode) :-
+	build_rms(Constr,RmList),
+	list2and(RmList,RmCode).
+
+build_rms([],[]).
+build_rms([C|Cs],[Rm|Rms]) :-
+	C =.. [F|Args],
+	fmt_write_string(RmLabel,"remove_%s",arg(F)),
+	Rm =.. [RmLabel|Args],
+	build_rms(Cs,Rms).
+
+
+
+% from chr translation: replace parameter unification with extra guards
+% active head only
+intermediate_head_arg_matches(Pairs,VarDict,Goal,NVarDict) :-
+	intermediate_head_arg_matches_(Pairs,VarDict,GoalList,NVarDict),
+	list2and(GoalList,Goal).
+ 
+intermediate_head_arg_matches_([],VarDict,[],VarDict).
+intermediate_head_arg_matches_([Arg-Var| Rest],VarDict,GoalList,NVarDict) :-
+   (   var(Arg) ->
+       (   lookup_eq(VarDict,Arg,OtherVar) ->
+           GoalList = [Var == OtherVar | RestGoalList],
+           VarDict1 = VarDict
+       ;   VarDict1 = [Arg-Var | VarDict],
+           GoalList = RestGoalList
+       ),
+       Pairs = Rest
+   ;   atomic(Arg) ->
+       GoalList = [ Var == Arg | RestGoalList],
+       VarDict = VarDict1,
+       Pairs = Rest
+   ;   Arg =.. [_|Args],
+       functor(Arg,Fct,N),
+       functor(Term,Fct,N),
+       Term =.. [_|Vars],
+       GoalList = [nonvar(Var), Var = Term | RestGoalList], 
+       pairup(Args,Vars,NewPairs),
+       append(NewPairs,Rest,Pairs),
+       VarDict1 = VarDict
+   ),
+   intermediate_head_arg_matches_(Pairs,VarDict1,RestGoalList,NVarDict).
+
+
+
+
+% from chr translation
+code_copies(Rule,VarDict,PreCondCopy,GuardCopy,BodyCopy) :-
+	Rule = rule(_,PreCond,Guard,Body),
+	my_term_copy(PreCond,VarDict,VarDict1,PreCondCopy),
+	my_term_copy(Guard,VarDict1,VarDict2,GuardCopy),
+	my_term_copy(Body,VarDict2,BodyCopy).
+
+rule_copies(Rule,VarDict,RuleCopy) :-
+	Rule = rule(Head1,Head2,Guard,Body),
+	my_term_copy(Head1,VarDict,VarDict1,Head1Copy),
+	my_term_copy(Head2,VarDict1,VarDict2,Head2Copy),
+	my_term_copy(Guard,VarDict2,VarDict3,GuardCopy),
+	my_term_copy(Body,VarDict3,BodyCopy),
+	RuleCopy = rule(Head1Copy,Head2Copy,GuardCopy,BodyCopy).
+
+
+my_term_copy(X,Dict,Y) :-
+   my_term_copy(X,Dict,_,Y).
+
+my_term_copy(X,Dict1,Dict2,Y) :-
+	(var(X)
+	 -> (lookup_eq(Dict1,X,Y)
+	     -> Dict2 = Dict1
+	      ; Dict2 = [X-Y|Dict1]
+	    )
+	  ; functor(X,XF,XA),
+	    functor(Y,XF,XA),
+	    X =.. [_|XArgs],
+	    Y =.. [_|YArgs],
+	    my_term_copy_list(XArgs,Dict1,Dict2,YArgs)
+	).
+
+list_copies(L1,D,L2) :-
+	my_term_copy_list(L1,D,_,L2).
+
+my_term_copy_list([],Dict,Dict,[]).
+my_term_copy_list([X|Xs],Dict1,Dict3,[Y|Ys]) :-
+   my_term_copy(X,Dict1,Dict2,Y),
+   my_term_copy_list(Xs,Dict2,Dict3,Ys).
+
+
+
+
+
+%
+% Auxiliaries
+%
+
+% convert a coma-separated list (conjunction) into a Prolog list
+and2list(Cs,L) :-
+	and2list(Cs,L,[]).
+and2list(Cs,L,T) :-
+	Cs = (G1,G2),!,
+	and2list(G1,L,T1),
+	and2list(G2,T1,T).
+and2list(G,[G|T],T).
+
+
+% and vice-versa
+list2and([],true).
+list2and([G],X) :- !, X = G.
+list2and([G|Gs],(G,R)) :-
+	list2and(Gs,R).
+
+
+% from XSB v. 2.7., lib/lists.P
+append_lists([],[]).
+append_lists([X|Xs],L) :-
+	append(X,T,L),
+	append_lists(Xs,T).
+
+
+
+% append with no duplicates
+append_unique(L1,L2,L) :-
+	append(L1,L2,L3),
+	remove_duplicates(L3,L).
+
+% remove duplicates from a list
+remove_duplicates([],[]).
+remove_duplicates([X|Xs],L) :-
+	remove_duplicates(Xs,Ys),
+	(var_member(X,Xs)
+	 -> L = Ys
+	  ; L = [X|Ys]).
+
+
+
+% set membership on variables
+var_member(V, [X|_Xs]) :-
+	V == X.
+var_member(V, [X|Xs]) :-
+	V \== X,
+	var_member(V,Xs).
+
+
+% select greater of two numbers
+max(X,Y,X) :-
+	X >= Y.
+max(X,Y,Y) :-
+	X < Y.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Rule Equivalence - copied from from chr_pp
+
+check_unnecessary_active(Constraint,Previous,Rule) :-
+	member(Other,Previous),
+	variable_replacement(Other,Constraint,List),
+	copy_with_variable_replacement(Rule,Rule2,List),
+	identical_rules(Rule,Rule2), !,
+	writeln(identical_rules(Rule,Rule2)),nl.
+
+% have to check for no duplicates in value list
+
+% check wether two rules are identical
+identical_rules(rule(H11,H21,G1,B1),rule(H12,H22,G2,B2)) :-
+   G1 == G2,
+   identical_bodies(B1,B2),
+   permutation(H11,P1),
+   P1 == H12,
+   permutation(H21,P2),
+   P2 == H22.
+
+identical_bodies(B1,B2) :-
+   ( B1 = (X1 = Y1),
+     B2 = (X2 = Y2) ->
+     ( X1 == X2,
+       Y1 == Y2
+     ; X1 == Y2,
+       X2 == Y1
+     ),
+     !
+   ; B1 == B2
+   ).
+ 
+% replace variables in list
+   
+copy_with_variable_replacement(X,Y,L) :-
+   ( var(X) ->
+     ( lookup_eq(L,X,Y) ->
+       true
+     ; X = Y
+     )
+   ; functor(X,F,A),
+     functor(Y,F,A),
+     X =.. [_|XArgs],
+     Y =.. [_|YArgs],
+     copy_with_variable_replacement_l(XArgs,YArgs,L)
+   ).
+
+copy_with_variable_replacement_l([],[],_).
+copy_with_variable_replacement_l([X|Xs],[Y|Ys],L) :-
+   copy_with_variable_replacement(X,Y,L),
+   copy_with_variable_replacement_l(Xs,Ys,L).
+   
+%% build variable replacement list
+
+variable_replacement(X,Y,L) :-
+   variable_replacement(X,Y,[],L).
+   
+variable_replacement(X,Y,L1,L2) :-
+   ( var(X) ->
+     var(Y),
+     ( lookup_eq(L1,X,Z) ->
+       Z == Y,
+       L2 = L1
+     ; L2 = [X-Y|L1]
+     )
+   ; X =.. [F|XArgs],
+     nonvar(Y),
+     Y =.. [F|YArgs],
+     variable_replacement_l(XArgs,YArgs,L1,L2)
+   ).
+
+variable_replacement_l([],[],L,L).
+variable_replacement_l([X|Xs],[Y|Ys],L1,L3) :-
+   variable_replacement(X,Y,L1,L2),
+   variable_replacement_l(Xs,Ys,L2,L3).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

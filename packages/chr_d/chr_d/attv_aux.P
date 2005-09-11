@@ -1,0 +1,153 @@
+
+:- import put_attr/3, get_attr/3 from machine.
+:- import member/2, append/3, ith/3 from basics.
+:- import delete_ith/4 from listutil.
+
+%
+% Auxiliary predicates for attv constraint processing
+%
+
+% pose_all_constr(Constr,Pos,X,Atts):
+% - pose each constraint declared in Constr for X against each element
+%   of corresponding attribute list in Atts 
+pose_all_constr(_,_,_,[]).
+pose_all_constr([F/A|Cs],Pos,X,ConstrAtts) :-
+	pose_one_constr(F,A,0,X,ConstrAtts,OtherConstrAtts),
+	NextPos is Pos+A,
+	pose_all_constr(Cs,NextPos,X,OtherConstrAtts).
+
+
+% pose_one_constr(F,A,Pos,X,ALs,OtherALs):
+% - pose F constraint for X against each element of Atts
+pose_one_constr(_,A,A,_,L,L).
+pose_one_constr(F,A,I,X,[AL|ALs],OtherConstrAtts) :-
+	Pos is I+1,
+	pose_constraints(F,Pos,X,AL),
+	pose_one_constr(F,A,Pos,X,ALs,OtherConstrAtts).
+
+
+pose_constraints(_,_,_,[]).
+pose_constraints(F,Pos,X,[C|Cs]) :-
+	pose_constraint(F,Pos,X,C),
+	pose_constraints(F,Pos,X,Cs).
+
+pose_constraint(F,Pos,X,C) :-
+	C =.. [attr|Args],
+	delete_ith(Pos,AllArgs,X,Args),
+	Goal =.. [F|AllArgs],
+	call(Goal).
+
+
+% merge corresponding attribute sets
+merge_attr_lists([],[],[]).
+merge_attr_lists([A1|A1s],[A2|A2s],[A|As]) :-
+	append_unique(A1,A2,A),
+	merge_attr_lists(A1s,A2s,As).
+
+
+% merge_atts(Var,L1,L2,L):
+% L is sorted result of combining L1 and L2 
+% with Var omitted and no repetitions
+merge_atts(Var,L1,L2,L) :-
+	append_unique(Var,L1,L2,L3),
+	sort(L3,L).
+
+
+% append_unique(Var,L1,L2,L):
+% L is result of appending L1 and L2 with Var
+% and any duplicated elements omitted
+append_unique(Var,[],L1,L) :-
+	var_member(Var,L1), !,
+	append_unique(Var,L1,[],L).
+append_unique(_,[],L,L).
+append_unique(Var,[X|L1],L2,L3) :-
+	Var == X,!,
+	append_unique(Var,L1,L2,L3).
+append_unique(Var,[X|L1],L2,L3) :-
+	var_member(X,L2),!,
+	append_unique(Var,L1,L2,L3).
+append_unique(Var,[X|L1],L2,[X|L3]) :-
+	append_unique(Var,L1,L2,L3).
+ 
+
+
+
+% append with no duplicates
+append_unique(L1,L2,L) :-
+	append(L1,L2,L3),
+	remove_duplicates(L3,L).
+
+% remove duplicates from a list
+remove_duplicates([],[]).
+remove_duplicates([X|Xs],L) :-
+	remove_duplicates(Xs,Ys),
+	(var_member(X,Xs)
+	 -> L = Ys
+	  ; L = [X|Ys]).
+
+
+% set membership on variables
+var_member(V, [X|_Xs]) :-
+	V == X.
+var_member(V, [X|Xs]) :-
+	V \== X,
+	var_member(V,Xs).
+
+
+% check if any element of L is a variable
+var_in_list([]) :- fail.
+var_in_list([X|Xs]) :-
+	var(X), !
+	;
+	var_in_list(Xs).
+
+
+% a no-fail put_atts in case the variable gets bound
+nf_put_atts(Var,Mod,Atts) :-
+	var(Var),
+	put_attr(Var,Mod,Atts).
+
+nf_put_atts(Term,_) :-
+	\+ var(Term).
+
+
+% no-fail pred retrieving N-th attribute Attr from variable V's attribute set
+get_nth_attr(V,Mod,N,Attr) :-
+	(var(V)
+	 -> get_attr(V,Mod,Atts),
+	    arg(N,Atts,Attr)
+	  ; Attr = []
+	).
+
+
+
+abs_ith(Index,List,Element) :-
+	( integer(Index) -> ith(Index,List,Element)
+	;   abs_ith1(List,1,Index,Element)
+	).
+
+abs_ith1([X|_],I,I,Y) :- X == Y.
+abs_ith1([_|L],I1,I,X) :- I2 is I1+1, abs_ith1(L,I2,I,X).
+
+
+
+% formatting
+list_show_atts([],_).
+list_show_atts([X|Xs],Mod) :-
+	show_atts(X,Mod),
+	list_show_atts(Xs,Mod).
+
+show_atts(L,Mod) :-
+	is_list(L), !,
+	list_show_atts(L,Mod).
+show_atts(X,_) :-
+	X == no,
+	nl, writeln(no_answers), nl.
+show_atts(X,_) :-
+	atomic(X),
+	nl, writeln(value_of(X)), nl.
+show_atts(X,Mod) :-
+	var(X),
+	(get_attr(X,Mod,Atts) -> true; Atts = []),
+	nl, writeln(attributes(X,Atts)), nl.
+
