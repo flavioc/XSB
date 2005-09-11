@@ -133,6 +133,10 @@ VariantSF get_variant_sf(CTXTdeclc Cell callTerm, TIFptr pTIF, Cell *retTerm) {
  * otherwise.  The answer template with respect to this producer entry
  * is constructed on the heap as a ret/n term and passed back via the
  * last argument.
+ * 
+ * Note that unlike get_variant_sf, the answer template is derived
+ * from the subsuming tabled call and the call itself (via
+ * construct_answer_template), before building the ret_term.
  */
 
 SubProdSF get_subsumer_sf(CTXTdeclc Cell callTerm, TIFptr pTIF, Cell *retTerm) {
@@ -308,9 +312,11 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
    -------------------------------------------------------------- */
 
 #define freeing_stack_increment 50
-BTNptr *freeing_stack = NULL;
-int freeing_stack_size = 0;
-int node_stk_top = 0;
+
+#ifndef MULTI_THREAD
+BTNptr *freeing_stack;
+int freeing_stack_size;
+#endif
 
 #define push_node(node) {\
   if (node_stk_top >= freeing_stack_size) {\
@@ -363,7 +369,7 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 	push_node(BTN_Sibling(node));
       if ( IsNonNULL(BTN_Child(node)) ) {
 	if ( IsLeafNode(node) ) {
-	  /*
+	  /**
 	   * Remove the subgoal frame and its dependent structures
 	   */
 	  VariantSF pSF = CallTrieLeaf_GetSF(node);
@@ -383,7 +389,7 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 		free_trie_ht(CTXTc ht);
 	      }
 	      else {
-		if (BTN_Sibling(rnod)) 
+	       	if (BTN_Sibling(rnod)) 
 		  push_node(BTN_Sibling(rnod));
 		if ( ! IsLeafNode(rnod) )
 		  push_node(BTN_Child(rnod));

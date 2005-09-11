@@ -229,6 +229,11 @@ DynamicStack  _tstTermStackLog;
 DynamicStack  _tstSymbolStack;
 DynamicStack  _tstTrail;
 
+  /* Used for freeing tries (including private tries) */
+
+BTNptr *_freeing_stack;
+int _freeing_stack_size;
+
   /********** variables for findall buffers **********/
 findall_solution_list *_findall_solutions;  /*= NULL;*/
 findall_solution_list *_current_findall;
@@ -447,6 +452,9 @@ typedef struct th_context th_context ;
 #define  tstTermStackLog	(th->_tstTermStackLog)
 #define  tstSymbolStack		(th->_tstSymbolStack)
 #define  tstTrail		(th->_tstTrail)
+
+#define  freeing_stack          (th->_freeing_stack)
+#define  freeing_stack_size     (th->_freeing_stack_size)
 
 #define FCursor (th->_FCursor)
 #define LCursor (th->_LCursor)

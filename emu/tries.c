@@ -68,10 +68,11 @@ long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
 #ifndef MULTI_THREAD
 int  num_heap_term_vars;
 CPtr *var_addr;
-int  var_addr_arraysz = DEFAULT_ARRAYSIZ;
+int  var_addr_arraysz;
 Cell VarEnumerator[NUM_TRIEVARS];
 Cell TrieVarBindings[NUM_TRIEVARS];
 #endif
+
 xsbBool check_table_cut = TRUE;  /* flag for close_open_tables to turn off
 				    cut-over-table check */
 
@@ -229,6 +230,9 @@ void init_trie_aux_areas(CTXTdecl)
   alloc_arr(CPtr,var_addr,var_addr_arraysz);
   alloc_arr(Cell,reg_array,reg_array_size);
   reg_arrayptr = reg_array -1;
+
+  freeing_stack = NULL;
+  freeing_stack_size = 0;
 
   for (i = 0; i < NUM_TRIEVARS; i++)
     VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
