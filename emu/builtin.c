@@ -2284,7 +2284,7 @@ int builtin_call(CTXTdeclc byte number)
     break;
 
   case NEWTRIE:
-    ctop_int(CTXTc 1,newtrie());
+    ctop_int(CTXTc 1,newtrie(CTXT));
     break;
   case TRIE_INTERN:
     trie_intern(CTXT);
@@ -2309,7 +2309,7 @@ int builtin_call(CTXTdeclc byte number)
 
   case STORAGE_BUILTIN: {
     STORAGE_HANDLE *storage_handle =
-      storage_builtin(ptoc_int(CTXTc 1),(Cell)ptoc_tag(CTXTc 2));
+      storage_builtin(CTXTc ptoc_int(CTXTc 1),(Cell)ptoc_tag(CTXTc 2));
     if (storage_handle != NULL) {
       ctop_int(CTXTc 3, (Integer)storage_handle->handle);
       ctop_int(CTXTc 4, (Integer)storage_handle->snapshot_number);

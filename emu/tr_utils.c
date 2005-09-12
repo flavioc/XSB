@@ -99,6 +99,10 @@ xsbBool has_unconditional_answers(VariantSF subg)
 
 /*----------------------------------------------------------------------*/
 
+/* get_call() and supporting code. */
+
+/*----------------------------------------------------------------------*/
+
 /*
  * Given a subgoal of a variant predicate, returns its subgoal frame
  * if it has a table entry; returns NULL otherwise.  If requested, the
@@ -253,8 +257,8 @@ void construct_answer_template(CTXTdeclc Cell callTerm, SubProdSF producer,
   templ[0] = sizeAnsTmplt;
 }
 
-/*----------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------*/
 /*
  * Given a term representing a tabled call, determine whether it is
  * recorded in the Call Table.  If it is, then return a pointer to its
@@ -307,6 +311,13 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
  *                     ===========================
  */
 
+
+/*----------------------------------------------------------------------*/
+/* delete_table() and supporting code.
+ * 
+ * Used to delete a predicate-level call and answer trie, works for
+ * both call-variance and call subsumption. */
+/*----------------------------------------------------------------------*/
 
 /* Stack for top-down traversing and freeing components of a trie
    -------------------------------------------------------------- */
@@ -409,10 +420,6 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
   TRIE_W_UNLOCK();
 }
 
-/*----------------------------------------------------------------------*/
-/* Delete the table for a given tabled predicate, specified as a TIF    */
-/*----------------------------------------------------------------------*/
-
 void delete_predicate_table(CTXTdeclc TIFptr tif) {
 
   if ( TIF_CallTrie(tif) != NULL ) {
@@ -426,6 +433,14 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
 }
 
 /*----------------------------------------------------------------------*/
+/* delete_branch(), safe_delete_branch(), undelete_branch() and
+ * supporting code. */
+/*----------------------------------------------------------------------*/
+
+ /* 
+ * Used for call tries (abolish_table_call/1), answer tries (within
+ * delay handling routines), and by trie_retract.
+ */
 
 static int is_hash(BTNptr x) 
 {
@@ -435,7 +450,7 @@ static int is_hash(BTNptr x)
     return( IsHashHeader(x) );
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  * Set values for "parent" -- the parent node of "current" -- and
@@ -492,17 +507,14 @@ static BTNptr get_prev_sibl(BTNptr node)
   return(NULL);
 }
 
-/*----------------------------------------------------------------------*/
-/* deletes and reclaims a whole branch in the return trie               */
-/*----------------------------------------------------------------------*/
+/*---------------------------------------------------------*/
 
 /*
  * Delete a branch in the trie down from node `lowest_node_in_branch'
  * up to the level pointed to by the hook location, as pointed to by
  * `hook'.  Under normal use, the "hook" is either for the root of the
  * trie, or for the first level of the trie (is a pointer to the child
- * field of the root).
- */
+ * field of the root).  */
 
 void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 
@@ -572,7 +584,7 @@ void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
   }
 }
 
-/*----------------------------------------------------------------------*/
+/*------------------------------*/
 
 void safe_delete_branch(BTNptr lowest_node_in_branch) {
 
@@ -609,18 +621,20 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
 
 
 /*----------------------------------------------------------------------*/
+/* delete_trie() and supporting code.  
+ * 
+ * Code to support deletion of asserted or interned tries.
+ * delete_trie() is used by gen_retractall (i.e. abolish or retractall
+ * with an open atomic formula) to delete an entire asserted trie.
+ * Its also called via the builtin DELETE_TRIE --
+ * delete_interned_trie() to delete an interned trie */
+/*----------------------------------------------------------------------*/
 
 #define DELETE_TRIE_STACK_INIT 100
 #define MAX_DELETE_TRIE_STACK_SIZE 1000
 #define DT_NODE 0
 #define DT_DS 1
 #define DT_HT 2
-
-char *delete_trie_op = NULL;
-BTNptr *delete_trie_node = NULL;
-BTHTptr *delete_trie_hh = NULL;
-
-int trie_op_size, trie_node_size, trie_hh_size;
 
 #define push_delete_trie_node(node,op) {\
   trie_op_top++;\
@@ -666,6 +680,11 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
   int trie_op_top = 0;
   int trie_node_top = 0;
   int trie_hh_top = -1;
+
+  char *delete_trie_op = NULL;
+  BTNptr *delete_trie_node = NULL;
+  BTHTptr *delete_trie_hh = NULL;
+  int trie_op_size, trie_node_size, trie_hh_size;
 
   if (!delete_trie_op) {
     delete_trie_op = (char *)malloc(DELETE_TRIE_STACK_INIT*sizeof(char));
@@ -751,6 +770,9 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
  * the node as deleted and changes the try instruction to fail.
  * The deleted node is then linked into the del_nodes_list
  * in the completion stack.
+ * 
+ * TLS: I have a question about the simplification done at the end of
+ * this predicate.  It should only be performed if the trie is completed.
  */
 void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame) 
 {
@@ -898,7 +920,8 @@ void breg_retskel(CTXTdecl)
 
 #define ADJUST_SIZE 100
 
-BTNptr *Set_ArrayPtr = NULL;
+#ifndef MULTI_THREAD
+BTNptr *Set_ArrayPtr;
 /*
  * first_free_set is the index of the first deleted set.  The deleted
  * tries are deleted in builtin DELETE_TRIE, and the corresponding
@@ -907,21 +930,26 @@ BTNptr *Set_ArrayPtr = NULL;
  * set, ..., the last one contains 0.  If first_free_set == 0, that
  * means no free set available.
  */
-static Integer first_free_set = 0;
-static int Set_ArraySz = 100;
+Integer first_free_set;
+int Set_ArraySz;
 /*
  * num_sets is the number of sets have been used (including the fixed
  * trie, Set_ArrayPtr[0] (see trie_intern/3)).  It is also the index for
  * the next element to use when no free element is available.
  */
-static int num_sets = 1;
+int num_sets;
+#endif
 
 /*----------------------------------------------------------------------*/
 
-/* Allocate an array of handles to interned tries. */
+/* Allocate an array of handles to interned tries, and initialize
+   global variables. */
 
-void init_newtrie(void)
+void init_newtrie(CTXTdecl)
 {
+  first_free_set = 0;
+  Set_ArraySz = 100;
+  num_sets = 1;
   Set_ArrayPtr = (BTNptr *) calloc(Set_ArraySz,sizeof(BTNptr));
 }
 
@@ -929,7 +957,7 @@ void init_newtrie(void)
 
 /* Returns a handle to an unused interned trie. */
 
-Integer newtrie(void)
+Integer newtrie(CTXTdecl)
 {
   Integer i;
   Integer result;

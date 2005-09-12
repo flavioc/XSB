@@ -44,5 +44,5 @@ struct storage_handle {
 };
 
 
-extern STORAGE_HANDLE *storage_builtin(int builtin_number, Cell storage_name);
+extern STORAGE_HANDLE *storage_builtin(CTXTdeclc int builtin_number, Cell storage_name);
 

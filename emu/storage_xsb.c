@@ -59,7 +59,7 @@ static xsbHashTable hash_table =
   {STORAGE_TBL_SIZE,sizeof(STORAGE_HANDLE),FALSE,NULL};
 
 
-static inline STORAGE_HANDLE *get_storage_handle(Cell name)
+static inline STORAGE_HANDLE *get_storage_handle(CTXTdeclc Cell name)
 {
   STORAGE_HANDLE *handle_cell;
 
@@ -70,7 +70,7 @@ static inline STORAGE_HANDLE *get_storage_handle(Cell name)
     xsb_dbgmsg((LOG_STORAGE,
 	       "GET_STORAGE_HANDLE: New trie created for %s\n", 
 	       string_val(name)));
-    handle_cell->handle= newtrie();
+    handle_cell->handle= newtrie(CTXT);
     /* Note: not necessary to initialize snapshot_number&changed: handle_cell
        was calloc()'ed 
        handle_cell->snapshot_number=0;
@@ -84,11 +84,11 @@ static inline STORAGE_HANDLE *get_storage_handle(Cell name)
   return handle_cell;
 }
 
-STORAGE_HANDLE *storage_builtin(int builtin_number, Cell name)
+STORAGE_HANDLE *storage_builtin(CTXTdeclc int builtin_number, Cell name)
 {
   switch (builtin_number) {
   case GET_STORAGE_HANDLE:
-    return get_storage_handle(name);
+    return get_storage_handle(CTXTc name);
   case INCREMENT_STORAGE_SNAPSHOT:
     return increment_storage_snapshot(name);
   case MARK_STORAGE_CHANGED:

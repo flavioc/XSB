@@ -347,7 +347,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
   init_open_files();
 
-  init_newtrie();
+  init_newtrie(CTXT);
 
   /* init stat. structures */
   perproc_reset_stat();

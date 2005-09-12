@@ -231,6 +231,7 @@ void init_trie_aux_areas(CTXTdecl)
   alloc_arr(Cell,reg_array,reg_array_size);
   reg_arrayptr = reg_array -1;
 
+  /* used by delete_table() */
   freeing_stack = NULL;
   freeing_stack_size = 0;
 
@@ -1181,14 +1182,17 @@ static void bottomupunify(CTXTdeclc Cell term, BTNptr Root, BTNptr Leaf)
 /*
  *  Used with tries created via the builtin trie_intern.
  */
+
+#ifndef MULTI_THREAD
+  extern  BTNptr *Set_ArrayPtr;
+#endif
+
 xsbBool bottom_up_unify(CTXTdecl)
 {
   Cell    term;
   BTNptr root;
   BTNptr leaf;
   int     rootidx;
-  extern  BTNptr *Set_ArrayPtr;
-
 
   leaf = (BTNptr) ptoc_int(CTXTc 3);   
   if( IsDeletedNode(leaf) )

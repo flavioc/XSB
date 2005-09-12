@@ -234,6 +234,11 @@ DynamicStack  _tstTrail;
 BTNptr *_freeing_stack;
 int _freeing_stack_size;
 
+  BTNptr *_Set_ArrayPtr;
+  Integer _first_free_set;
+  int _Set_ArraySz;
+  int _num_sets;
+
   /********** variables for findall buffers **********/
 findall_solution_list *_findall_solutions;  /*= NULL;*/
 findall_solution_list *_current_findall;
@@ -455,6 +460,11 @@ typedef struct th_context th_context ;
 
 #define  freeing_stack          (th->_freeing_stack)
 #define  freeing_stack_size     (th->_freeing_stack_size)
+
+#define  Set_ArrayPtr           (th->_Set_ArrayPtr)
+#define  first_free_set         (th->_first_free_set)
+#define  Set_ArraySz            (th->_Set_ArraySz)
+#define  num_sets               (th->_num_sets)
 
 #define FCursor (th->_FCursor)
 #define LCursor (th->_LCursor)
