@@ -95,6 +95,11 @@ AC_ARG_WITH(itkwish,
 AC_ARG_ENABLE(no-cygwin,
 [  --enable-no-cygwin           compiled with option -mno-cygwin (default: enabled)], ,
                             enable_no_cygwin=yes)
+AC_ARG_ENABLE(general-tagging,
+[  --enable-general-tagging     When this option is enabled XSB will determine 
+                               which bits in the address to tag during 
+                               runtime. This option is required for Linux 
+                               kernels > 2.6], general_tagging=yes)
 AC_ARG_ENABLE(debug,
 [  --enable-debug               compile with debugging turned on])
 AC_ARG_ENABLE(debug-verbose,
@@ -1482,6 +1487,10 @@ case "$canonical" in
                 fi
         ;;
 esac
+
+if test "${general_tagging}" = "yes" ; then
+   AC_DEFINE(GENERAL_TAGGING)
+fi
 
 AC_SUBST(DYNMOD_SHAREDLIB_EXTENSION)
 AC_SUBST(DYNMOD_LINKFLAGS)
