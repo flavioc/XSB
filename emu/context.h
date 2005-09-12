@@ -231,8 +231,8 @@ DynamicStack  _tstTrail;
 
   /* Used for freeing tries (including private tries) */
 
-BTNptr *_freeing_stack;
-int _freeing_stack_size;
+  //BTNptr *_freeing_stack;
+  //int _freeing_stack_size;
 
   BTNptr *_Set_ArrayPtr;
   Integer _first_free_set;
@@ -457,9 +457,6 @@ typedef struct th_context th_context ;
 #define  tstTermStackLog	(th->_tstTermStackLog)
 #define  tstSymbolStack		(th->_tstSymbolStack)
 #define  tstTrail		(th->_tstTrail)
-
-#define  freeing_stack          (th->_freeing_stack)
-#define  freeing_stack_size     (th->_freeing_stack_size)
 
 #define  Set_ArrayPtr           (th->_Set_ArrayPtr)
 #define  first_free_set         (th->_first_free_set)

@@ -324,11 +324,6 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 
 #define freeing_stack_increment 50
 
-#ifndef MULTI_THREAD
-BTNptr *freeing_stack;
-int freeing_stack_size;
-#endif
-
 #define push_node(node) {\
   if (node_stk_top >= freeing_stack_size) {\
     freeing_stack_size = freeing_stack_size + freeing_stack_increment;\
@@ -357,6 +352,9 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
   int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
   BTHTptr ht;
+  
+  BTNptr *freeing_stack;
+  int freeing_stack_size = 0;
 
   if ( IsNULL(x) )
     return;

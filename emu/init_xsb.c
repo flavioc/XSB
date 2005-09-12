@@ -347,7 +347,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
   init_open_files();
 
-  init_newtrie(CTXT);
+  //  init_newtrie(CTXT);
 
   /* init stat. structures */
   perproc_reset_stat();
@@ -737,6 +737,8 @@ void init_machine(CTXTdecl)
   complstack	= init_complstack ;
 
   findall_solutions = NULL;
+
+  init_newtrie(CTXT);
 
 #define MAXSBUFFS 30
   LSBuff = (VarString **)calloc(sizeof(VarString *),MAXSBUFFS);

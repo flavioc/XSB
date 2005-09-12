@@ -231,10 +231,6 @@ void init_trie_aux_areas(CTXTdecl)
   alloc_arr(Cell,reg_array,reg_array_size);
   reg_arrayptr = reg_array -1;
 
-  /* used by delete_table() */
-  freeing_stack = NULL;
-  freeing_stack_size = 0;
-
   for (i = 0; i < NUM_TRIEVARS; i++)
     VarEnumerator[i] = (Cell) & (VarEnumerator[i]);
 }
