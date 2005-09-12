@@ -141,14 +141,15 @@ XSB has been designed as a module-oriented Prolog system.  Modules
 provide a small step towards {\em logic programming ``in the large''}
 that facilitates large programs or projects to be put together from
 components which can be developed, compiled and tested separately.
-Also module systems enforce the {\em principle of information hiding}
+Also module systems support the {\em principle of information hiding}
 and can provide a basis for {\em data abstraction}.  The module system
-of XSB, bears some similarities to an {\em atom-based} module system,
-where any symbol in a module can be imported, exported or be a local
-symbol, as opposed to the predicate-based ones where this can be done
-only for predicate symbols~\footnote{Operator symbols can be exported
-as any other symbols, but their precedence must be redeclared in the
-importing module.}.
+of XSB is {\em file based} -- one module per file -- and {\em flat} --
+modules cannot be nested.  In addition, XSB's module system is to some
+extent {\em atom-based}, where any symbol in a module can be imported,
+exported or be a local symbol, as opposed to the predicate-based ones
+where this can be done only for predicate symbols~\footnote{Operator
+  symbols can be exported as any other symbols, but their precedence
+  must be redeclared in the importing module.}.
 
 \index{module name}
 By default, files are not treated as modules.  In order for a file to
@@ -164,6 +165,10 @@ set of symbols are {\it visible by this module only}, and therefore
 cannot be accessed by any other module.  Export, local, and import
 declarations can appear anywhere in the source or header files and
 have the following forms:
+
+The module system of XSB is {\em file based} (one module per
+file), {\em atom based} (where all non-predicate symbols are normally
+assumed to be global to all modules), and {\em flat} (modules cannot
 
 \demo{:- export $sym_1$, \ldots, $sym_l$. }
 
@@ -700,7 +705,17 @@ reclaimed through use of the predicates {\tt abolish\_all\_tables/0}
 and {\tt abolish\_table\_pred/1} 
 %,{\tt abolish\_table\_call/1}.  
 (potentially together with {\tt gc\_tables/1} see
-Section~\ref{sec:TablingPredicates}).
+Section~\ref{sec:TablingPredicates}). 
+
+When multiple threads are used, memory specific to a thread is
+reclaimed upon a thread's exit.  This includes not only stack space,
+but space for thread-private dynamic code and tables.  Heap garbage
+collection works with multiple threads just as it works in the
+single-threaded engine, since the data structures involved in heap
+garbage collection are all thread-private.  For a thread-shared
+predicate $P$, space reclamation for abolished tables for goals to $P$
+or retracted clauses for $P$ may be deferred until a later garbage
+collection phase.
 
 \section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================

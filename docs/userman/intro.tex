@@ -2,33 +2,41 @@
 %==========================================
 
 XSB is a research-oriented, commercial-grade Logic Programming system
-for Unix and Windows-based platforms.  In addition to providing 
-the functionality of Prolog, XSB includes the following features: 
+for Unix and Windows-based platforms.  In addition to providing nearly
+all functionality of ISO-Prolog, XSB includes the following features:
 \begin{itemize}
-\item Evaluation according to the Well-Founded Semantics \cite{VGRS91}
-  through full SLG resolution;
+%
+\item Evaluation of queries according to the Well-Founded Semantics
+  \cite{VGRS91} through full SLG resolution;
+%
+\item A fully multi-threaded evaluation mechanism with thread-shared
+  static code, and that allows dynamic code and tables to be
+  thread-shared or thread-private.
+%
 \item Constraint handling for tabled programs based on an engine-level
   implementation of annotated variables and a package, {\tt clpqr} for
   handling real constraints, and the addition of Constraint Handling
   Rules \cite{};
+% 
 \item A variety of indexing techniques for asserted code 
-including variable-depth indexing on several alternate arguments,
-fixed-depth indexing on combined arguments, trie-indexing.  In
-addition, both backtrackable and non-backtrackable updates to asserted
-code are supported.
+  including variable-depth indexing on several alternate arguments,
+  fixed-depth indexing on combined arguments, trie-indexing.  In
+  addition, both backtrackable and non-backtrackable updates to asserted
+  code are supported.
 %
 \item A set of mature packages, to extend XSB to evaluate
-F-logic~\cite{KLW95} through the {\em FLORA} package, to manage
-ontologogies through the {\em Cold Dead Fish} package, to support
-literate programming through the {\tt xsbdoc} package, and to support
-answer set programming through the {\tt XASP} package among other
-features.
+  F-logic~\cite{KLW95} through the {\em FLORA} package, to model check
+  concurrent systems through the {\em XMC} system, to manage
+  ontologies through the {\em Cold Dead Fish} package, to support
+  literate programming through the {\tt xsbdoc} package, and to
+  support answer set programming through the {\tt XASP} package among
+  other features.
 %
 \item A number of interfaces to other software systems, such a C, Java,
   Perl, ODBC, SModels \cite{NiSi97}, and Oracle.
 %
 \item Fast loading of large files by the {\tt load\_dync}
-predicate, and by other means.
+  predicate, and by other means.
 %
 \item A compiled HiLog implementation;
 %
@@ -40,33 +48,37 @@ factoring} that can improve program speed and indexing for compiled
 code; 
 %
 \item Macro substitution for Prolog files via the {\tt xpp}
-preprocessor (included with the XSB distribution).
+  preprocessor (included with the XSB distribution).
 %
 \item Preprocessors and Interpreters so that XSB can be used to evaluate
   programs that are based on advanced formalisms, such as extended logic
   programs (according to the Well-Founded Semantics \cite{ADP94});
-Generalized Annotated Programs \cite{KiSu92}.
+  Generalized Annotated Programs \cite{KiSu92}.
 %
-\item Source code availability for portability and extensibility.
+\item Source code availability for portability and extensibility under
+  the GNU General Public Library License.
 \end{itemize}
  
 Though XSB can be used as a Prolog system\footnote{Many of the Prolog
-components of XSB are originally based on PSB-Prolog~\cite{Xu90},
-which itself is based on version 2.0 of SB-Prolog~\cite{Debr88}.}, we
-avoid referring to XSB as such, because of the availability of SLG
+  components of XSB were originally based on PSB-Prolog~\cite{Xu90},
+  which itself is based on version 2.0 of SB-Prolog~\cite{Debr88}.},
+we avoid referring to XSB as such, because of the availability of SLG
 resolution and the handling of HiLog terms.  These facilities, while
 seemingly simple, significantly extend its capabilities beyond those
 of a typical Prolog system. We feel that these capabilities justify
-viewing XSB as a new paradigm for Logic Programming.
+viewing XSB as a new paradigm for Logic Programming.  We briefly
+discuss some of these features; others are discussed in Volumes 1 and
+2 of the XSB manual, as well as the manuals for various XSB packages
+such as FLORA, XMC, Cold Dead Fish, xsbdoc, and XASP.
 
-To understand the implications of SLG resolution \cite{ChWa96}, recall
-that Prolog is based on a depth-first search through trees that are
-built using program clause resolution (SLD).  As such, Prolog is
-susceptible to getting 
-lost in an infinite branch of a search tree, where it may loop
-infinitely.  SLG evaluation, available in XSB, can correctly evaluate
-many such logic programs.  To take the simplest of examples, any query
-to the program:
+\paragraph{Well-Founded Semantics} To understand the implications of
+SLG resolution \cite{ChWa96}, recall that Prolog is based on a
+depth-first search through trees that are built using program clause
+resolution (SLD).  As such, Prolog is susceptible to getting lost in
+an infinite branch of a search tree, where it may loop infinitely.
+SLG evaluation, available in XSB, can correctly evaluate many such
+logic programs.  To take the simplest of examples, any query to the
+program:
 \begin{center}
 \begin{minipage}{3.8in}
 \begin{verbatim}
@@ -125,12 +137,87 @@ Prolog, of course, would enter an infinite loop.  XSB's treatment of
 negation is discussed further in Chapter \ref{chap:TablingOverview}.
 \end{example}
 
-The second important extension in XSB is support of HiLog
-programming \cite{ChKW93,SaWa95}.  HiLog allows a form of 
-higher-order programming, in
-which predicate ``symbols'' can be variable or structured.  For example,
-definition and execution of {\em generic predicates} like this generic
-transitive closure relation are allowed:
+\index{multi-threading}
+\paragraph{Multi-threading} New to \version{} of XSB is a thorough
+revision of XSB to support multi-threading using Posix or
+Windows-level threads.  Detached XSB threads can be created to execute
+specific tasks, and these threads will exit when the query succeeds
+(or fails) and all thread memory reclaimed.  While a thread's
+execution state is, of course, private, it shares many resources with
+other threads, such as static code and I/O streams.  Dynamic code and
+tables are thread-private by default, but if a predicate is declared
+thread-shared, any dynamic code and tables for this predicate will be
+shared among threads.  {\sc should mention something about, shared
+  completed tables}.
+
+We also note that tabled programs can be used with attributed
+variables, leading to constraint tabled programs (see Volume 2 of this
+manual for a discussion of the interfaces to attributed variables).
+
+\comment{TLS: constraint handling?}
+
+\index{indexing!star-indexing}
+\paragraph{Indexing Methods} Data oriented applications may also
+require indices other than Prolog's first argument indexing.  XSB
+offers a variety of indexing techniques for asserted code.  Clauses
+can be indexed on a group of arguments or on alternative arguments.
+For instance, the executable directive {\tt index(p/4,[3,2+1])}
+specifies indexes on the (outer functor symbol of) the third argument
+{\em or} on a combination of (the outer function symbol of) the second
+and first arguments.  If data is expected to be structured within
+function symbols and is in unit clauses, the directive {\tt
+  index(p/4,trie)} constructs an indexing trie of the {\tt p/4}
+clauses using a depth-first, left-to-right traversal through each
+clause.  Representing data in this way allows discrimination of
+information nested arbitrarily deep within clauses.  Advantages of
+both kinds of indexing can be combined via {\em star-indexing}.
+Star-indexing indicates that up to the first 5 fields in an argument
+will be used for indexing (the ordering of the fields is via a
+depth-first traversal).  For instance, {\tt index(p/4,[*(4),3,2+1])}
+acts as above, but looks within 4th argument of {\tt p/4} before
+examining the outer functor of argument 3 (and finally examining the
+outer functors of arguments 2 and 1 together.  Using such indexing XSB
+routinely performs efficiently perform intensive analyses of in-memory
+knowledge bases with millions of highly structured facts.  Indexing
+techniques for asserted code are covered in Section \ref{sec:assert}.
+
+\index{InterProlog} \index{ODBC Interface}
+\paragraph{Interfaces} A number of interfaces are available to link XSB
+to other systems.  In UNIX systems XSB can be directly linked into C
+programs; in Windows-based system XSB can be linked into C programs
+through a DLL interface.  On either class of operating system, C
+functions can be made callable from XSB either directly within a
+process, or using a socket library.  XSB can also inter-communicate
+with Java through the InterProlog interface, \footnote{InterProlog is
+  available at \url{www.declarativa.com/InterProlog/default.htm}.}, or
+YJXSB.  Within Interprolog, XSB and Java can be linked either through
+Java's jni interface, or through sockets.  XSB can access external
+data in a variety of ways: through an ODBC interface, through an
+Oracle interface, or through a variety of mechanisms to read data from
+flat files.  These interfaces are all described in Volume 2 of this
+manual.
+
+\paragraph{Fast Loading of Code}  A further goal of XSB is to provide
+in implementation engine for both logic programming and for
+data-oriented applications such as in-memory deductive database
+queries and data mining \cite{SaSw94}.  One prerequisite for this
+functionality is the ability to load a large amount of data very
+quickly.  We have taken care to code in C a compiler for asserted
+clauses.  The result is that the speed of asserting and retracting
+code is faster in XSB than in any other Prolog system of which we are
+aware, even when some of the sophisticated indexing mechanisms
+described above are employed.  At the same time, because asserted code
+is compiled into SLG-WAM code, the speed of executing asserted code in
+XSB is faster than that of many other Prologs as well.  We note
+however, that XSB does not follow the ISO-semantics of
+assert~\cite{LiOk87}.
+
+\paragraph{HiLog} XSB also supports HiLog programming
+\cite{ChKW93,SaWa95}.  HiLog allows a form of higher-order
+programming, in which predicate ``symbols'' can be variable or
+structured.  For example, definition and execution of {\em generic
+  predicates} like this generic transitive closure relation are
+allowed:
 \begin{center}
 \begin{minipage}{3.7in}
 \begin{verbatim}
@@ -171,147 +258,35 @@ a/2} were a binary relation to which the {\tt closure} predicate would
 be applied, then the declaration {\tt :- hilog a.} would also need to
 be included.
 
-We also note that tabled programs can be used with attributed
-variables, leading to constraint tabled programs (see Volume 2 of this
-manual for a discussion of the interfaces to attributed variables).
+\paragraph{Unification Factoring} For compiled code, XSB offers {\em
+  unification factoring}, which extends clause indexing methods found
+in functional programming into the logic programming framework.
+Briefly, unification factoring can offer not only complete indexing
+through non-deterministic indexing automata, but can also $factor$
+elementary unification operations.  The general technique is described
+in \cite{DRSS96}, and the XSB directives needed to use it are covered
+in Section \ref{the_compiler}.
 
-A further goal of XSB is to provide in implementation engine for both
-logic programming and for data-oriented applications such as in-memory
-deductive database queries and data mining \cite{SaSw94}.  One
-prerequisite for this functionality is the ability to load a large
-amount of data very quickly.  We have taken care to code in C a
-compiler for asserted clauses.  The result is that the speed of
-asserting and retracting code is faster in XSB than in any other
-Prolog system of which we are aware.  At the same time, because
-asserted code is compiled into SLG-WAM code, the speed of executing
-asserted code in XSB is faster than that of many other Prologs as
-well.  We note however, that XSB does not follow the semantics of
-assert specified in \cite{LiOk87}.
+\index{Flora} \index{xsbdoc} \index{XASP}
+\paragraph{XSB Packages} Based on these features, a number of
+sophisticated packages have been implemented using XSB.  For instance,
+XSB supports a sophisticated object-oriented interface called {\em
+  Flora}.  {\em Flora} (\url{http://flora.sourceforge.net}) is
+available as an XSB package and is described in its own manual,
+available from the same site from which XSB was downloaded.  Another
+package, XMC \url{http://www.cs.sunnysb.edu/~lmc} depends on XSB to
+perform sophisticated model-checking of concurrent systems.  Within
+the XSB project, the Cold Dead Fish package supports maintenance of,
+and reasoning over ontologies; xsbdoc supports literate programming in
+XSB, and XASP provides an interface to Smodels to support Answer Set
+programming.  XSB packages also support Perl-style pattern matching
+and Posix-style pattern matching.  In addition, experimental
+preprocessing libararies currently supported are Extended logic
+programs (under the well-founded semantics), and Annotated Logic
+Programs.  These latter libraries are described in Volume 2 of this
+manual.
 
-Data oriented applications may also require indices other than
-Prolog's first argument indexing.  XSB offers a variety of indexing
-techniques for asserted code.  Clauses can be indexed on a group of
-arguments or on alternative arguments.  For instance, the executable
-directive {\tt index(p/4,[3,2+1])} specifies indexes on the (outer
-functor symbol of) the third argument {\em or} on a combination of
-(the outer function symbol of) the second and first arguments.  If
-data is expected to be structured within function symbols and is in
-unit clauses, the directive {\tt index(p/4,trie)} constructs an
-indexing trie of the {\tt p/4} clauses using a left-to-right traversal
-through each clause.  Representing data in this way allows
-discrimination of information nested arbitrarily deep within clauses.
-These modes of indexing can be combined: {\tt index(p/4,[3,2+1],trie)}
-creates alternative trie indices beginning with the third argument and
-with the second and first argument.  Using such indexing XSB can
-efficiently perform intensive analyses of in-memory knowledge bases
-with millions of facts.  Indexing techniques for asserted code are
-covered in Section \ref{sec:assert}.
-
-For compiled code, XSB offers {\em unification factoring}, which
-extends clause indexing methods found in functional programming into
-the logic programming framework.  Briefly, unification factoring can
-offer not only complete indexing through non-deterministic indexing
-automata, but can also $factor$ elementary unification operations.
-The general technique is described in \cite{DRSS96}, and the XSB
-directives needed to use it are covered in Section
-\ref{the_compiler}.
-
-\index{InterProlog} A number of interfaces are available to link XSB
-to other systems.  In UNIX systems XSB can be directly linked into C
-programs; in Windows-based system XSB can be linked into C programs
-through a DLL interface.  On either class of operating system, C
-functions can be made callable from XSB either directly within a
-process, or using a socket library.  XSB can also inter-communicate
-with Java through the InterProlog interface, \footnote{InterProlog is
-available at {\tt www.declarativa.com/InterProlog/default.htm}.}.  XSB
-can access external data in a variety of ways: through an ODBC
-interface, through an Oracle interface, or through a variety of
-mechanisms to read data from flat files.  These interfaces are all
-described in Volume 2 of this manual.
-
-\index{Flora} 
-
-Another feature of XSB is its support for extensions of normal logic
-programs through preprocessing libraries.  In particular, XSB supports
-a sophisticated object-oriented interface called {\em Flora}.  {\em
-Flora} is available as an XSB package and is described in its own
-manual, available from the same site from which XSB was downloaded.
-In addition, other preprocessing libararies currently supported are
-Extended logic programs (under the well-founded semantics), F-Logic,
-and Annotated Logic Programs.  These latter libraries are described in
-Volume 2 of this manual.
-
-Source code is provided for the whole of XSB, including the
-engine, interfaces and supporting functions written in C, along with
-the compiler, top-level interpreter and libraries written in Prolog.
-
-\comment{
-One reason for making everything available is to allow users to port
-XSB to new platforms --- which they have done.  The system can be
-compiled using most C compilers (though we recommend using the GNU C
-Compiler), and currently we have tested XSB on Microsoft Windows,
-Windows 95, and Windows NT.  For 32-bit UNIX architectures, XSB has
-been tested on PowerMacs running MkLinux, SUN-3 workstations,
-SUN-4/SPARCstations (running SunOS 4.x.x or Solaris 2.x), NeXT
-machines (running Mach), 80386/80486/80586 based machines running
-Linux, 386BSD, Solaris, or NeXTSTEP, Silicon Graphics machines running
-IRIX, Hewlett-Packard 300/400 or 700 series machines running HP-UX,
-DECstations running Ultrix, Amiga machines running AmigaDOS, IBM
-RS/6000 machines running AIX, and Sony NEWS workstations running NEWS
-OS 4.2.x or higher.  The ability to run on 64-bit architectures is new
-to Version 1.8 and our 64-bit port has been tested on Other ports are
-planned, particularly to 64 bit Silicon Graphics machines running
-IRIX.  Parties interested in doing other ports should contact us at
-{\tt xsb-contact@cs.sunysb.edu}.  }
-
-\comment{
-%Taken out for version 1.8
-
-%The other advantage of source code availability is that it allows
-%users to extend the system themselves.  The user can experiment with
-%new builtins, implement alternate clause indexing, or even add new
-%emulator instructions at a fraction of the effort involved in creating
-%a system from scratch.  Of course, while we encourage experimentation,
-%users must support their own code in such cases.
-
-%Indeed, while support of SB-Prolog at SUNY Stony Brook and at University
-%of Arizona has ended, we intend to support XSB (to the extent we
-%can) in the future.  We hope that former users of SB-Prolog will switch
-%to XSB and notice a more robust system with faster compilation
-%and execution.
-
-
-%XSB can also be used as a Prolog system, without SLG or HiLog.  As a
-%Prolog system, there are several features of XSB which may be
-%of interest to users.
-%\begin{itemize}
-%\item Fast compilation of dynamic code.
-%\item Object file compilation.
-%\item Module system and inference of symbol usage at compilation.
-%\item Dynamic loading of Prolog and C code.
-%\end{itemize}
-
-The module system of XSB is {\em file based} (one module per
-file), {\em atom based} (where all non-predicate symbols are normally
-assumed to be global to all modules), and {\em flat} (modules cannot
-be nested).  Though the user is not obliged to use the module system,
-the dynamic loader and the foreign language interface are both based
-upon it.  Additionally, the module system permits operation of a use
-inferencer which indicates at compile-time whether symbols in a module
-are unused (not called by an exported predicate) or undefined.
-
-The dynamic loader lazily loads files containing predicates when they 
-are first called, which can be useful for reducing program space and
-start-up time.  (Files can also be loaded explicitly by the use of 
-standard predicates {\tt consult/[1,2]}).  
-
-While these features are explained in detail below, this document does
-not intend to be a tutorial for using the Prolog language;
-rather it focuses on the extensions of XSB to Prolog
-systems.  For users new to Prolog, a textbook such as
-\cite{Brat86,ClMe84,MaWa88,StSh86} should be used along with this manual.
-}
-
+\section{Using This Manual}
 It should be mentioned that we adopt some standard notational
 conventions, such as the name/arity convention for describing
 predicates and functors, {\tt +} to denote input arguments, {\tt -} to

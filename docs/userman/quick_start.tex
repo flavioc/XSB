@@ -135,28 +135,40 @@ specified.  A full listing can be obtained by typing {\tt
 
 \index{cc} \index{gcc} \index{acc}  
 \item[Choice of the C Compiler and Other options] \label{cc} The {\tt
-configure} script will attempt to use {\tt gcc}, if it is available.
-Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions of
-{\tt gcc} are broken for particular platforms, in which case you would
-have to give {\tt configure} an additional directive {\tt --with-cc}
-(or {\tt --with-acc}).  If you must use some special compiler, use
-{\tt --with-cc=your-own-compiler}.  You can also use the {\tt
-optimization-level} option to disable the default C compiler
-optimization level.  (or {\tt --disable-optimization} to disable all
-compiler optimizations).  {\tt --enable-debug}, and there are many
-other options.  Finally, the {\tt force64} option forces compilation
-to use 64 bit mode on 64-bit machines that default to 32 bit
-compilation.  Type {\tt configure --help} to see them all. Also see
-the file~\verb'$XSB_DIR/INSTALL' for more details.
+  configure} script will attempt to use {\tt gcc}, if it is available.
+  Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions
+  of {\tt gcc} are broken for particular platforms, in which case you
+  would have to give {\tt configure} an additional directive {\tt
+    --with-cc} (or {\tt --with-acc}).  If you must use some special
+  compiler, use {\tt --with-cc=your-own-compiler}.  You can also use
+  the {\tt optimization-level} option to disable the default C
+  compiler optimization level.  (or {\tt --disable-optimization} to
+  disable all compiler optimizations).  {\tt --enable-debug}, and
+  there are many other options.  Finally, the {\tt force64} option
+  forces compilation to use 64 bit mode on 64-bit machines that
+  default to 32 bit compilation.  Type {\tt configure --help} to see
+  them all. Also see the file~\verb'$XSB_DIR/INSTALL' for more
+  details.
 
 \item[XSB and Site-specific Information] Using the option {\tt
---prefix=PREFIX} installs architecture-independent files in the
-directory {\tt PREFIX}, e.g. {\tt /usr/local}, which can be useful if
-XSB is to be shared at a site.  Using the option {\tt
---site-prefix=DIR} installs site-specific libraries in {\tt DIR/site}.
-Other options indicate directories in which to search for
-site-specific static and dynamic libraries, and for include files.
+  --prefix=PREFIX} installs architecture-independent files in the
+  directory {\tt PREFIX}, e.g. {\tt /usr/local}, which can be useful
+  if XSB is to be shared at a site.  Using the option {\tt
+    --site-prefix=DIR} installs site-specific libraries in {\tt
+    DIR/site}.  Other options indicate directories in which to search
+  for site-specific static and dynamic libraries, and for include
+  files.
 
+\item[Multi-threading] \version{} of XSB is the first version that
+  supports multi-threading.  The multi-threaded engine is slightly
+  slower than the single-threaded engine, mostly due to its need for
+  concurrency control.  To obtain the benefits of multiple threads on
+  a platform that supports either Posix or Windows threads (i.e.
+  nearly all platforms) users must configure XSB with the directive
+  {\tt enable-mt}.  The multi-threaded engine works with other
+  configuration options, multi-threading can be compiled with batched
+  or local scheduling, with the ODBC or Interprolog interfaces, and so
+  on.
 
 %%$
 \index{InterProlog Interface}
@@ -205,22 +217,6 @@ explanations of the scheduling strategies can be found in
 \cite{JFLP-Scheduling}, and further experimentation in \cite{CaSW02}.
 
 %
-\comment{
-\index{memory management}
-\index{garbage collection}
-\item[Type of Memory Management.]  Routines for managing execution
-stacks for tabled evaluations can be quite complex, due to
-interdependencies of tabled subgoals.  Stack management algorithms can
-be based on common elements are shared among computation states or are
-copied.  The default configuration of XSB (sometimes called the
-SLG-WAM configuration) shares these elements while the option {\tt
---enable-chat} copies these elements.  Each of these configurations
-has advantages.  The Chat configuration is faster and requires less
-space for Prolog execution, while the SLG-WAM configuration is faster
-and requires less space for large tabled evaluations.  See
-\cite{SaSw98,CHAT@PADL-99,CaSW02,CAT@PLILP-98,CATmem@ISMM-98} for
-in-depth discussion of the engine memory management.
-}
 \end{description}
 
 Other options are of interest to advanced users who wish to experiment
