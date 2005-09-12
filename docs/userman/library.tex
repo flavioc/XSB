@@ -2271,28 +2271,34 @@ very low-level and require good understanding of the trie mechanism in XSB.
 The module {\tt storage} described in Volume 1 provides a higher-level and
 a more convenient interface to the XSB trie-based storage mechanism.
 
+When multiple threads are used, all interned tries are private to a
+thread, so that information interned by one trie will not be visible
+to other threads.
+
 %%
 \begin{description}
   %%
 \ournewitem{newtrie(-Root)}{intern} \index{\texttt{newtrie/1}}
-        Root is instantiated to a handle for a new trie.
+        {\tt Root} is instantiated to a handle for a new trie.
 
-\ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}\index{\texttt{trie\_intern/5}}
+\ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}
+\index{\texttt{trie\_intern/5}}
 %%
-{\tt Term} is the Prolog term to be interned. {\tt Root} is the handle for
-a trie. {\tt Leaf} is the handle for the interned {\tt Term} in the trie.
-{\tt Flag} is 1 if the term is ``old'' (already exists in the trie); it is
-0, if the term is newly inserted.  {\tt Skel} represents the collection of
-all the variables in {\tt Term}. It has the form ret(V1,V2,...,VN), exactly
-as in {\tt get\_calls}.
-
+\texttt{Term} is the Prolog term to be interned. {\tt Root} is the handle
+for a trie. {\tt Leaf} is the handle for the interned {\tt Term} in
+the trie.  {\tt Flag} is 1 if the term is ``old'' (already exists in
+the trie); it is 0, if the term is newly inserted.  {\tt Skel}
+represents the collection of all the variables in {\tt Term}. It has
+the form {\tt ret(V1,V2,...,VN)}, exactly as in {\tt get\_calls} (see
+Vol. 1 of the XSB manual).
 
 \ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{\texttt{trie\_intern/3}}
 %%
 Interns {\tt Term} into the default trie. Does not return the new/old flag.
 
 
-\ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}\index{\texttt{trie\_interned/4}}
+\ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}
+\index{\texttt{trie\_interned/4}}
 %%
 This predicate will backtrack through the terms interned into the trie
 represented by the handle {\tt Root} if {\tt Leaf} is a free variable.
@@ -2336,7 +2342,7 @@ be done just before returning to the top level.
 
 \ournewitem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
 %%
-Deletes all the terms in the trie pointed to by Root.
+Deletes all the terms in the trie pointed to by {\tt Root}.
 
 
 %%

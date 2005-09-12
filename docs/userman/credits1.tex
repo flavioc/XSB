@@ -16,60 +16,60 @@ Castro.
 
 In \version, the core engine development of the SLG-WAM has been
 mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao,
-Juliana Freire, Ernie Johnson, and Luis Castro.  The breakdown,
-very roughly, was that Terrance Swift wrote the initial tabling
-engine, the SLG-WAM, and builtins.  Prasad Rao reimplemented the
-engine's tabling subsystem to use tries for variant-based table access
-and Ernie Johnson extended these routines in a number of ways,
-including adding call subsumption.  Kostis Sagonas implemented most of
-tabled negation.  Juliana Freire revised the table scheduling
-mechanism starting from Version~1.5.0 to create a more efficient
-engine, and implemented the engine for local evaluation.  Finally,
-Luis Castro rewrote the emulator to use jump tables and wrote a
-heap-garbage collector for the engine.
+Juliana Freire, Ernie Johnson, Luis Castro and Rui Marques.  The
+breakdown, very roughly, was that Terrance Swift wrote the initial
+tabling engine, the SLG-WAM, and builtins.  Prasad Rao reimplemented
+the engine's tabling subsystem to use tries for variant-based table
+access and Ernie Johnson extended and refactored these routines in a
+number of ways, including adding call subsumption.  Kostis Sagonas
+implemented most of tabled negation.  Juliana Freire revised the table
+scheduling mechanism starting from Version~1.5.0 to create the batched
+and local scheduling that is currently used.  Baoqiu Cui revised the
+data structures used to maintain delay lists, and added attributed
+variables to the engine.  Finally, Luis Castro rewrote the emulator to
+use jump tables and wrote a heap-garbage collector for the SLG-WAM.
+Rui Marques was mainly responsible for making XSB multi-threaded, as
+well as for the concurrency control algorithms used for shared tables.
 
-Starting from XSB Version~2.0, XSB includes another tabling engine,
-CHAT, which was designed and developed by Kostis Sagonas and Bart
-Demoen.  CHAT supports heap garbage collection which was developed and
-implemented by Bart Demoen and Kostis Sagonas.
+Other engine work includes the following.  Memory expansion code for
+WAM stacks was written by Ernie Johnson and Bart Demoen.  Heap garbage
+collection was written by Luis de Castro, Kostis Sagonis and Bart
+Demoen.  Rui Marques improved the trailing of the SLG-WAM and rewrote
+much of the engine to make it compliant with 64-bit architectures.
+Assert and retract code was based on code written by Jiyang Xu and
+significantly revised by David S. Warren and Rui Marques.  Trie
+assert/retract code, and trie interning code was written by Prasad
+Rao, as was most code for reclaiming table space. The current version
+of {\tt findall/3} was re-written from scratch by Bart Demoen, as was
+XSB's throw and catch mechanism.  64-bit floats were added by Charles
+Rojo.
 
-Memory expansion code for WAM stacks was written by Ernie Johnson and
-Bart Demoen, while memory management code for CHAT areas was written
-by Bart Demoen and Kostis Sagonas.  Rui Marques improved the trailing
-of the SLG-WAM and rewrote much of the engine to make it compliant
-with 64-bit architectures.  Assert and retract code was based on code
-written by Jiyang Xu and significantly revised by David S. Warren and
-Rui Marques.  Trie assert and retract code was written by Prasad Rao.
-The current version of {\tt findall/3} was re-written from scratch by
-Bart Demoen.  
-
-In the XSB complier, Kostis Sagonas was responsible for HiLog
+In terms of Prolog code, Kostis Sagonas was responsible for HiLog
 compilation and associated builtins.  Steve Dawson implemented
-Unification Factoring.  The {\tt auto\_table} and {\tt suppl\_table}
-directives were written by Kostis Sagonas.  The DCG expansion module
-was written by Kostis Sagonas for non-tabled code and by Baoqiu Cui,
-Terrance Swift and David Warren for tabled code.  The handling of the
-{\tt multifile} directive was written by Baoqiu Cui. C.R. Ramakrishnan
-wrote the mode analyzer for XSB.
+Unification Factoring.  The revision of XSB's I/O into ISO-compatable
+streams was done by Michael Kifer and Terrance Swift.  The {\tt
+  auto\_table} and {\tt suppl\_table} directives were written by
+Kostis Sagonas.  The DCG expansion module was written by Kostis
+Sagonas for non-tabled code and by Baoqiu Cui, Terrance Swift and
+David Warren for tabled code.  The handling of the {\tt multifile}
+directive was written by Baoqiu Cui. C.R. Ramakrishnan wrote the mode
+analyzer for XSB.  Michael Kifer implemented the {\tt storage} module.
 
-Michael Kifer rewrote parts of the XSB code to make XSB configurable
-with GNU's Autoconf, revised the socket handling routines, and added
-many new file\_io predicates.  
-
-\comment{ Harald Schroepfer helped the XSB group with the Solaris
-port, and Yiorgos Adamopoulos suggested the bits to use for the HP-700
-series port.  Steven Dawson, Larry B. Daniel and Franklin Chen were
-responsible for the MkLinux and Solaris x86 ports.  }
-
-GPP, the source code preprocessor used by XSB, was written by Denis Auroux.
-He also wrote the GPP manual reproduced in Appendix A.
+For configuration management, Michael Kifer rewrote parts of the XSB
+code to make XSB configurable with GNU's Autoconf, implemented XSB's
+package system, and integrated GPP with XSB's compiler.  GPP, the
+source code preprocessor used by XSB, was written by Denis Auroux, who
+also wrote the GPP manual reproduced in Appendix A.
 
 The starting point of XSB (in 1990) was PSB-Prolog 2.0 by Jiyang Xu.
 PSB-Prolog in its turn was based on SB-Prolog, primarily designed and
 written by Saumya Debray, David S. Warren, and Jiyang Xu.  Thanks are
 also due to Weidong Chen for his work on Prolog clause indexing for
-SB-Prolog and to Richard O'Keefe, who contributed the Prolog code for
-the Prolog reader and the C code for the tokenizer.  
+SB-Prolog, to Richard O'Keefe, who contributed the Prolog code for the
+Prolog reader and the C code for the tokenizer, and to Ciao Prolog
+whose {\tt write\_term/[2,3]} we use.
+
+... Now what did I forget this time ?
 
 \end{quote}
 

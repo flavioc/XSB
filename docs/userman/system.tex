@@ -550,7 +550,7 @@ cmd_loop_driver:
          -o N : allocate N KB for the SLG completion stack
          -u N : allocate N KB for the SLG unification stack
            -r : turn off automatic stack expansion
-   -g gc_type : choose garbage collection ("none", "indirection", "sliding", or "copying") 
+   -g gc_type : choose heap garbage collection ("none", "indirection", "sliding", or "copying") 
            -s : maintain detailed statistical information
            -S : set default tabling method to subsumption-based
            -T : print a trace of each called predicate
@@ -619,12 +619,12 @@ The order in which these options appear makes no difference.
 \item[{\tt -r}] Turns off automatic stack expansion.
 %
 \index{garbage collection}
-\item[{\tt -g gc\_type}] Chooses the garbage collection strategy that
-is employed; choice of the strategy is between {\tt "none"} (meaning
-perform no garbage collection), or garbage collection based on {\tt
-sliding} on {\tt copying}, or on {\tt indirection} (See
-\cite{CATmem@ISMM-98} for descriptions of the first two garbage
-collectors, and \cite{CaSC01} for a description of the third).  
+\item[{\tt -g gc\_type}] Chooses the heap garbage collection strategy
+  that is employed; choice of the strategy is between {\tt "none"}
+  (meaning perform no garbage collection), or garbage collection based
+  on {\tt sliding} on {\tt copying}, or on {\tt indirection} (See
+  \cite{CATmem@ISMM-98} for descriptions of the first two garbage
+  collectors, and \cite{CaSC01} for a description of the third).
 %
 \item[{\tt -s}] Maintains information on the size of program stacks 
     for the predicate {\tt statistics/0}.  This option may be expected
@@ -682,10 +682,10 @@ initial value set by the user (or the default stated in
 Section~\ref{sec:EmuOptions}), and double their size until it is not
 possible to do so with available system memory.  At that point XSB
 tries to find the maximal amount of space that will still fit in
-system memory.  .  In addition, heap garbage collection is
-automatically included in XSB \cite{CaSC01,CATmem@ISMM-98}.  (To
-change the algorithm used for heap garbage collection or to turn it
-off altogether, see the predicate {\tt garbage\_collection/1} or
+system memory.  In addition, heap garbage collection is automatically
+included in XSB \cite{CaSC01,CATmem@ISMM-98}.  (To change the
+algorithm used for heap garbage collection or to turn it off
+altogether, see the predicate {\tt garbage\_collection/1} or
 Section~\ref{sec:EmuOptions} for command-line options).  In \version{}
 the default behavior is indirect garbage collection.
 
@@ -697,9 +697,10 @@ used by dynamic code is reclaimed when that code is retracted or
 abolished.  \version{} provides memory management for table space as
 well.  Space for tables is dynamically allocated as needed and
 reclaimed through use of the predicates {\tt abolish\_all\_tables/0}
-and {\tt abolish\_table\_pred/1}
+and {\tt abolish\_table\_pred/1} 
 %,{\tt abolish\_table\_call/1}.  
-(see Section~\ref{sec:TablingPredicates}).
+(potentially together with {\tt gc\_tables/1} see
+Section~\ref{sec:TablingPredicates}).
 
 \section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================

@@ -245,11 +245,14 @@ the subgoal \code{q(X,Y)}\@.
 \ournewitem{get\_call(+CallTerm,-TableEntryHandle,-ReturnTemplate)}{Tabling}
 \index{\texttt{get\_call/3}}
 %
-Searches the table for an entry whose subgoal is a \emph{variant} of
-\code{CallTerm}.  Should the subgoal exist, then the handle to this
-entry is assigned to the second argument, while in the third, its
-return template is constructed.  These latter two arguments should be
-given as variables.
+If call variance is used for the predicate corresponding to {\tt
+  CallTerm}, then this predicate searches the table for an entry whose
+subgoal is a \emph{variant} of \code{CallTerm}.  If subsumption is
+used, then this predicate searches for some entry that subsumes
+(properly or not) {\tt CallTerm}.  In either case, should the entry
+exist, then the handle to this entry is assigned to the second
+argument, while in the third, its return template is constructed.
+These latter two arguments should be given as variables.
 
 {\bf Error Cases}
 \bi
@@ -262,10 +265,10 @@ given as variables.
 \item {\tt table\_error}
 \ei
 \ei
-
+\ \\
 \begin{minipage}{6in}
 \begin{example}\ \\
-\\
+ \\
 \begin{tabular}{l@{\hspace{4em}}r}
 \begin{tabular}{c} \hline \hline
 \rule{0ex}{2.5ex}\textbf{Variant Predicate} \\ \hline \hline
@@ -872,7 +875,9 @@ The following predicates succeed whenever the table(s) in question are
 \emph{complete}.  In order to ensure correct evaluations, incomplete
 tables may not be removed by the user.  Note that incomplete tables
 are abolished \emph{automatically} by the system on exceptions and
-when the interpreter level is resumed.
+when the interpreter level is resumed.  In addition, tables private to
+a thread are abolished automatically when the thread exits (normally
+or via an exception).
 
 \vspace{2ex}
 
@@ -888,8 +893,7 @@ tabled remain so, but their table entries, if any, are deleted.
 
 {\bf Error Cases}
 \bi
-\item There are currently incomplete tables, or the choice point stack
-  contains choice points for backtracking through completed tables.
+\item There are currently incomplete tables.
 \bi
 \item 	{\tt table\_error}
 \ei
@@ -917,6 +921,35 @@ all of its other table entries remain intact. Throws a
 Removes all entries from the table for the predicate denoted by
 \code{PredSpec}.  The predicate remains tabled but the memory held by
 its former table entries is returned to XSB for future entry creation.
+
+{\bf Error Cases}
+\bi
+\item There is currently an incomplete table for a atomic subgoal of
+  {\tt PredSpec}
+\bi
+\item 	{\tt table\_error}
+\ei
+%
+%
+\ei
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{gc\_tables(-Number)}{Tabling}
+\index{\texttt{gc\_tables/1}}
+%
+When a table $T$ is abolished, reclamation of its space may be
+postponed, for instance if choice points to a completed tabled call to
+$T$ are found on a choice point stack.  Space for all abolished tables
+is reclaimed whenever the engine re-executes the main command-line
+interpreter code, but this strategy is not adequate for all
+applications, especially when XSB is called from C or Java.  For this
+reason, the user can explicitly call the table ``garbage collector''
+to reclaim space for any deleted tables (for which choice points are
+not present on a choice point stack).  This predicate always succeeds,
+unifying {\tt Number} to $-1$ if garbage collection was not attempted
+(due to multiple active threads) and otherwise to the number of tables
+still unreclaimed at the end of garbage collection.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
