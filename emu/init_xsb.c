@@ -725,6 +725,8 @@ void init_machine(CTXTdecl)
   cell_opcode(&halt_inst) = halt;
   cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
 
+  init_newtrie(CTXT);
+
 #ifdef MULTI_THREAD
   interrupt_reg = &interrupt_counter;
 
@@ -737,8 +739,6 @@ void init_machine(CTXTdecl)
   complstack	= init_complstack ;
 
   findall_solutions = NULL;
-
-  init_newtrie(CTXT);
 
 #define MAXSBUFFS 30
   LSBuff = (VarString **)calloc(sizeof(VarString *),MAXSBUFFS);
