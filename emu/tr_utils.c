@@ -353,7 +353,7 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
   BTNptr node, rnod, *Bkp; 
   BTHTptr ht;
   
-  BTNptr *freeing_stack;
+  BTNptr *freeing_stack = NULL;
   int freeing_stack_size = 0;
 
   if ( IsNULL(x) )
@@ -1469,7 +1469,7 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
 		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
   }
 
-  if (flags[NUM_THREADS] == 1) {
+  if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
     action = abolish_table_pred_cps_check(CTXTc psc);
   }
   else action = 1;

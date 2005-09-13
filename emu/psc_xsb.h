@@ -41,9 +41,16 @@
    env_byte: Two lowest-order bits of env byte indicate whether the
    symbol is visible by any module, local to a module, or unloaded.
    Bit 2 indicates whether the predicate is tabled for subsumption,
-   bit 3 indicates whether the predicate is tabled for variance. Bit 5
-   indicates the predicate is shared among threads in the MT engine.
-   Higher order bits in env_byte are used by get_spy.
+   bit 3 indicates whether the predicate is tabled for variance.
+   (Bits 2 and 3 can both be on, indicating that the predicate is
+   tabled, but whether it is variant or subsumptive has not yet been
+   determined.)  Bit 4 indicates whether the predicate is
+   thread-shared or thread-private.
+
+
+Bit 5 indicates the predicate is shared among threads
+   in the MT engine.  Higher order bits in env_byte are used by
+   get_spy.
 
    ??? T_TABLED_SUB_LOADFILE 64 // for use in xwamfile, since T_GLOBAL took 4.
    ??? T_SHARED_DET	16 // 0x10  use decimal for Prolog include

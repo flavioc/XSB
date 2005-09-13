@@ -94,6 +94,7 @@ struct DispBlkHdr_t {
 } DispBlkHdr = {NULL, NULL};
 
 #ifdef MULTI_THREAD
+/* For a private dynamic predicate, return addr of its prref or its table wrapper */
 CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
     if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
       xsb_abort("Dynamic Dispatch block too small");

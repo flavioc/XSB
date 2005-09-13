@@ -30,12 +30,18 @@
 #define T_HIDDEN	1
 #define T_UNLOADED	2
 #define T_ENV		3
-#define T_TABLED	12
-#define T_TABLED_VAR	8
-#define T_TABLED_SUB	4
-#define T_TABLED_SUB_LOADFILE 64 // for use in xwamfile, since T_GLOBAL took 4.
-#define T_SHARED	32 // 0x20  use decimal for Prolog include
-#define T_SHARED_DET	16 // 0x10  use decimal for Prolog include
+#define T_TABLED	12 /* both bits may be on if it is known that pred is tabled, but not
+			      yet determined whether it is variant or subsumptive tabled */
+#define T_TABLED_VAR	8 /* Variant tabled (unless T_TABLED_SUB is also on, in which case
+			     it is tabled, but not yet determined which kind. */
+#define T_TABLED_SUB	4 /* Subsumptive tabled (unless T_TABLED_VAR is also on, ...*/
+#define T_TABLED_SUB_LOADFILE 64 /* Bit in the t_env byte in .xwam (objcode) file symtab 
+				    that is used to set T_TABLED_SUB in the psc.  
+				    (Nec since T_GLOBAL took 4, which would have been used.) */
+#define T_SHARED	32 /* 0x20 (decimal for Prolog include) On: thread shared, Off: private */
+#define T_SHARED_DET	16 /* 0x10 (decimal for Prolog include) On if T_SHARED bit determines
+			      sharedness.  Off means sharedness not yet determined. 
+			      Nec for error messages */
 #define T_SPY		192 // 0xc0 use decimal for Prolog include
 
 /* === type definition: (entry_type) ============================== */

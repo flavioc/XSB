@@ -723,9 +723,9 @@ static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
   if (!tdispblkhdr.lastDB) tdispblkhdr.lastDB = tdispblk;
 
   tdispblk->psc_ptr = psc;
-  tdispblk->method = 3 /*DISPATCH_BLOCK*/;
+  tdispblk->method = DISPATCH_BLOCK;
   tdispblk->MaxThread = MAXTABTHREAD;
-  *instr_ptr = (TIFptr)(((CPtr)tdispblk)+2);
+  *instr_ptr = (TIFptr)tdispblk;
 }
 #endif
 
