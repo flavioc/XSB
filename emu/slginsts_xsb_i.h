@@ -145,8 +145,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     struct TDispBlk_t *tdispblk;
     tdispblk = (struct TDispBlk_t *)tip;
     if (th->tid > tdispblk->MaxThread) xsb_abort("Table Dispatch block too small");
-    tip = (TIFptr)((&(tdispblk->Thread0))[th->tid]);
-    if (!tip) {
+    tip = (&(tdispblk->Thread0))[th->tid];
+    if (!tip) { /* this may not be possible, as it may always be initted in get_tip? */
       New_TIF(tip,tdispblk->psc_ptr);
       (&(tdispblk->Thread0))[th->tid] = tip;
     }
