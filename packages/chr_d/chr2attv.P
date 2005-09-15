@@ -75,7 +75,7 @@ translate(CHR,Attv) :-
 			          append/3,
 			          ith/3 from basics)],
 		      [(:- import delete_ith/4 from listutil)],
-		      [(:- [attv_aux])],
+		      [(:- [chr_d])],
 		      Other,
 	              AuxPreds,
 		      RuleClauses,

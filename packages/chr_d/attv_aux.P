@@ -113,10 +113,12 @@ nf_put_atts(Term,_) :-
 
 % retrieve N-th attribute Attr from variable V's attribute set
 get_nth_attr(V,Mod,N,Attr) :-
-	var(V),
-	get_attr(V,Mod,Atts),
-	arg(N,Atts,Attr),
-	Attr \== [].
+	(var(V)
+	 -> get_attr(V,Mod,Atts),
+	    arg(N,Atts,Attr),
+	    Attr \== []
+	  ; Attr = []
+	).
 
 % same non-failing
 nf_get_nth_attr(V,Mod,N,Attr) :-
