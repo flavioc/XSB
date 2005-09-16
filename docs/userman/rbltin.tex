@@ -651,20 +651,39 @@ is consulted.
 
 %----------------------------------------------------------------------
 
+\index{transaction logic}
 \subsection{The {\tt storage} Module: Associative Arrays and Backtrackable Updates}
-
 \label{storage module}
-XSB provides a high-level interface that supports efficient storage and
-querying of key-value pairs. A \emph{key-value pair} is an association
-between keys and the corresponding values. There can be at most one value
-associated with a given key. A key-value pair can be stored, deleted or
-queried. XSB provides two sets of predicates for handling such pairs:
-backtrackable and non-backtrackable. The backtrackable primitives for
-insertion and deletion of key-value pairs commit their changes to the
-database only if the goal succeeds. Otherwise, if the goal fails, the
-change is undone. Similarly, XSB provides primitive for backtrackable
-updates analogous to {\tt assert} and {\tt retract}. The semantics of
-backtrackable updates is defined using Transaction logic \cite{BoKi94}.
+
+XSB provides a high-level interface that allows the creation of
+``objects'' that efficiently manage the storage of facts or of
+associations between keys and values.  Of course, facts and
+associative arrays can be easily managed in Prolog itself, but the
+{\tt storage} module is highly efficient and supports the semantics of
+backtrackable updates as defined by Transaction logic \cite{BoKi94} in
+addition to immediate updates.  The semantics of backtrackable updates
+means that an update made by the storage module may is provisional
+until the update is committed.  Otherwise, if a subgoal calling the
+update fails, the change is undone. The commit itself may be made
+either by the predicate {\tt storage\_commit/1}, or less cleanly by
+cutting over the update itself.
+
+A storage object $O$ is referred to by a name, which must be a
+Prolog atom.  $O$ can be associated either with a set of facts or a
+set of \emph{key-value pairs}.  Within a given storage object each key
+is associated with a unique value: however since keys and values can
+be arbitrary Prolog terms, this constraint need not be a practical
+restriction.  A storage object $O$ is created on demand, simply by
+calling (a backtrackable or non-backtrackable) update predicate that
+refers to $O$.  However to reclaim $O$'s space within a running
+thread, the predicate {\tt storage\_reclaim\_space/1} must be called.
+Backtackable non-backtrackable updates can be made to the same storage
+object, although doing so may not always be a good programming practice.
+
+If multiple threads are used, each storage object is private to a
+thread, and space for a storage object is reclaimed upon a thread's
+exit.  Thread-shared storage objects may be supported in future
+versions.
 
 All the predicates described in this section must be imported from
 module {\tt storage}.
@@ -674,30 +693,31 @@ module {\tt storage}.
 \begin{description}
 \ouritem{storage\_insert\_keypair(+StorageName,+Key, +Value, ?Inserted)}\index{\texttt{storage\_insert\_keypair/4}}
 %%
-Insert the given Key-Value pair into the database. If the pair is new, then
-{\tt Inserted} unifies with 1. If the pair is already in the database, then
-{\tt Inserted} unifies with 0. If the database already contains a pair with
-the given key that is associated with a \emph{different} value, then
-{\tt Inserted} unifies with -1.
-The first argument, {\tt Storage}, must be an atom naming the storage to be
-used. Different names denote different storages.
-In both cases the predicate succeeds.
+Insert the given Key-Value pair into {\tt StorageName}.  If the pair
+is new, then {\tt Inserted} unifies with {\tt 1}. If the pair is
+already in {\tt StorageName}, then {\tt Inserted} unifies with {\tt
+  0}. If {\tt StorageName} already contains a pair with the given key
+that is associated with a \emph{different} value, then {\tt Inserted}
+unifies with {\tt -1}.  The first argument, {\tt StorageName}, must be
+an atom naming the storage to be used. Different names denote
+different storages.  In all cases the predicate succeeds.
 
 \ouritem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}
 \index{\texttt{storage\_delete\_keypair/3}}
 %%
-Delete the key-value pair with the given key from the databases. If
-the pair was in the database then {\tt Deleted} unifies with 1.
-If it was \emph{not} in the databases then {\tt Deleted} unifies with 0.
-The first argument, {\tt Storage}, must be an atom naming the storage to be
-used. Different names denote different storages.
-In both cases the predicate succeeds.
+Delete the key-value pair with the given key from {\tt
+  StorageName}. If the pair was in {\tt StorageName} then {\tt
+  Deleted} unifies with {\tt 1}.  If it was \emph{not} in {\tt
+  StorageName}s then {\tt Deleted} unifies with {\tt 0}.  The first
+argument, {\tt StorageName}, must be an atom naming the storage object
+to be used. Different names denote different storages.  In both cases
+the predicate succeeds.
 
 \ouritem{storage\_find\_keypair(+StorageName, +Key, ?Value)}
 \index{\texttt{storage\_find\_keypair/3}}
 %%
-If the database has a key pair with the given key, then {\tt Value} unifies
-with the value stored in the database. If no such pair exists in the
+If {\tt StorageName} has a key pair with the given key, then {\tt Value} unifies
+with the value stored in {\tt StorageName}. If no such pair exists in the
 database, then the goal fails.
 
 Note that this predicate works with non-backtrackable associative arrays
@@ -722,23 +742,30 @@ key pairs.
 
 \begin{description}
 \ouritem{storage\_insert\_keypair\_bt(+StorageName, +Key, +Value, ?Inserted)}
-\index{\texttt{storage\_insert\_keypair\_bt/4}}
-This predicate works exactly as its non-backtrackable counterpart,
-{\tt storage\_insert\_keypair/4}, when the top-level goal succeeds.
-However, if the top-level goal fails, then the result of the insertion is
-undone. In other words, the pair remains in the database until it is
-explicitly deleted or until the top-level query fails. The exact semantics
-is defined by Transaction Logic \cite{BoKi94}.
+\index{\texttt{storage\_insert\_keypair\_bt/4}} 
+%%
+A call to this predicate inserts a key pair into {\tt StorageName} as
+does {\tt storage\_insert\_keypair/4}, and the key-value pair may be
+queried via {\tt storage\_find\_keypair/3}, just as with the
+non-backtrackable updates described above.  In addition, the key-value
+pair can be removed from {\tt StorageName} by explicit deletion.
+However, the key pair will be removed from {\tt StorageName} upon
+failing over the insertion goal {\em unless} a commit is made to {\tt
+  StorageName} through the goal {\tt storage\_commit(StorageName)}.
+The exact semantics is defined by Transaction Logic \cite{BoKi94}.
 
-Backtrackable key-value pairs are kept in the same database as
-non-backtrackable pairs and are queried through the same predicate
-{\tt keypair\_find/2}.
+Note it is the update itself that is backtrackable, not the key-value
+pair.  Hence, a key-pair may be (provisionally) inserted by a
+backtrackable update and deleted by a non-backtrackable update, or
+inserted by a non-backtrackable update and (provisionally) deleted by
+a backtrackable update.  Of course, whether such a mixture makes sense
+would depend on a given application.
 
 \ouritem{storage\_delete\_keypair\_bt(+StorageName, +Key, ?Deleted)}
 \index{\texttt{storage\_delete\_keypair\_bt/3}}
 %%
-Like {\tt storage\_delete\_keypair/3}, but backtrackable.
-
+Like {\tt storage\_delete\_keypair/3}, but backtrackable as described
+for {\tt storage\_insert\_keypair\_bt/4}.
 
 \ouritem{storage\_insert\_fact\_bt(+StorageName, +Goal)} \index{\texttt{storage\_insert\_fact\_bt/2}}
 %%
@@ -749,6 +776,18 @@ Like {\tt storage\_insert\_fact/2}, but backtrackable.
 %%
 This is a backtrackable version of {\tt storage\_delete\_fact/2}.
 
+\ouritem{storage\_commit(+StorageName)} \index{\texttt{storage\_commit/1}}
+%%
+Commits to {\tt StorageName} any backtrackable updates since the last
+commit, or since initialization if no commit has been made to {\tt
+  StorageName}.  If {\tt StorageName} does not exist, the predicate
+silently fails.
+%%
+\end{description}
+%%
+\subsubsection{Reclaiming Space}
+%%
+\begin{description}
 \ouritem{storage\_reclaim\_space(+StorageName)} \index{\texttt{storage\_reclaim\_space/1}}
 %%
 This is similar to {\tt reclaim\_space/1} for {\tt assert} and {\tt
