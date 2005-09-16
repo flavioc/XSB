@@ -31,6 +31,7 @@
 #include "basictypes.h"
 #include "setjmp_xsb.h"
 #include "flag_defs_xsb.h"
+#include "hashtable_xsb.h"
 
 typedef struct ClRefHdr
 {	unsigned long buflen ;
@@ -229,15 +230,14 @@ DynamicStack  _tstTermStackLog;
 DynamicStack  _tstSymbolStack;
 DynamicStack  _tstTrail;
 
-  /* Used for freeing tries (including private tries) */
-
-  //BTNptr *_freeing_stack;
-  //int _freeing_stack_size;
-
-  BTNptr *_Set_ArrayPtr;
+  /* Variables for array of interned tries */
+BTNptr *_Set_ArrayPtr;
   Integer _first_free_set;
   int _Set_ArraySz;
   int _num_sets;
+
+  /* for backtrackable updates & assoc arrays (storage_xsb) */
+  xsbHashTable _bt_storage_hash_table;
 
   /********** variables for findall buffers **********/
 findall_solution_list *_findall_solutions;  /*= NULL;*/
@@ -462,6 +462,8 @@ typedef struct th_context th_context ;
 #define  first_free_set         (th->_first_free_set)
 #define  Set_ArraySz            (th->_Set_ArraySz)
 #define  num_sets               (th->_num_sets)
+
+#define  bt_storage_hash_table             (th-> _bt_storage_hash_table)
 
 #define FCursor (th->_FCursor)
 #define LCursor (th->_LCursor)

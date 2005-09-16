@@ -46,3 +46,9 @@ struct storage_handle {
 
 extern STORAGE_HANDLE *storage_builtin(CTXTdeclc int builtin_number, Cell storage_name);
 
+/* 127 is a prime that is close to 2^7 */
+#define STORAGE_TBL_SIZE  127
+
+#ifndef MULTI_THREAD
+extern xsbHashTable bt_storage_hash_table;
+#endif

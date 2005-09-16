@@ -37,27 +37,25 @@
 #include "error_xsb.h"
 #include "tr_utils.h"
 #include "storage_xsb.h"
-#include "hashtable_xsb.h"
+
 #include "debug_xsb.h"
 #include "flags_xsb.h"
+#include "context.h"
 
 /* this func would insert handle into hashtable, if it isn't there */
 #define find_or_insert_storage_handle(name)  \
-    	    (STORAGE_HANDLE *)search_bucket(name,&hash_table,hashtable_insert)
+    	    (STORAGE_HANDLE *)search_bucket(name,&bt_storage_hash_table,hashtable_insert)
 #define destroy_storage_handle(name) \
-    	    search_bucket(name,&hash_table,hashtable_delete)
-#define show_table_state()    show_table_state(&hash_table)
+    	    search_bucket(name,&bt_storage_hash_table,hashtable_delete)
+#define show_table_state()    show_table_state(&bt_storage_hash_table)
 
-/* 127 is a prime that is close to 2^7 */
-#define STORAGE_TBL_SIZE  127
+static STORAGE_HANDLE        *increment_storage_snapshot(CTXTdeclc Cell name);
+static STORAGE_HANDLE        *mark_storage_changed(CTXTdeclc Cell name);
 
-static STORAGE_HANDLE        *increment_storage_snapshot(Cell name);
-static STORAGE_HANDLE        *mark_storage_changed(Cell name);
-
-
-static xsbHashTable hash_table =
+#ifndef MULTI_THREAD
+xsbHashTable bt_storage_hash_table =
   {STORAGE_TBL_SIZE,sizeof(STORAGE_HANDLE),FALSE,NULL};
-
+#endif
 
 static inline STORAGE_HANDLE *get_storage_handle(CTXTdeclc Cell name)
 {
@@ -90,9 +88,9 @@ STORAGE_HANDLE *storage_builtin(CTXTdeclc int builtin_number, Cell name)
   case GET_STORAGE_HANDLE:
     return get_storage_handle(CTXTc name);
   case INCREMENT_STORAGE_SNAPSHOT:
-    return increment_storage_snapshot(name);
+    return increment_storage_snapshot(CTXTc name);
   case MARK_STORAGE_CHANGED:
-    return mark_storage_changed(name);
+    return mark_storage_changed(CTXTc name);
   case DESTROY_STORAGE_HANDLE: {
     xsb_dbgmsg((LOG_STORAGE,
 	       "STORAGE_BUILTIN: Destroying storage handle for %s\n",
@@ -111,7 +109,7 @@ STORAGE_HANDLE *storage_builtin(CTXTdeclc int builtin_number, Cell name)
 }
 
 
-static STORAGE_HANDLE *increment_storage_snapshot(Cell name)
+static STORAGE_HANDLE *increment_storage_snapshot(CTXTdeclc Cell name)
 {
   STORAGE_HANDLE *ptr = find_or_insert_storage_handle(name);
   ptr->snapshot_number++;
@@ -119,7 +117,7 @@ static STORAGE_HANDLE *increment_storage_snapshot(Cell name)
   return ptr;
 }
 
-static STORAGE_HANDLE *mark_storage_changed(Cell name)
+static STORAGE_HANDLE *mark_storage_changed(CTXTdeclc Cell name)
 {
   STORAGE_HANDLE *ptr = find_or_insert_storage_handle(name);
   ptr->changed = TRUE;

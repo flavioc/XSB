@@ -59,6 +59,7 @@
 #include "rw_lock.h"
 #include "debug_xsb.h"
 #include "thread_xsb.h"
+#include "storage_xsb.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -625,7 +626,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
  * delete_trie() is used by gen_retractall (i.e. abolish or retractall
  * with an open atomic formula) to delete an entire asserted trie.
  * Its also called via the builtin DELETE_TRIE --
- * delete_interned_trie() to delete an interned trie */
+ * delete_interned_trie() to delete an interned trie or storage trie */
 /*----------------------------------------------------------------------*/
 
 #define DELETE_TRIE_STACK_INIT 100
@@ -949,6 +950,11 @@ void init_newtrie(CTXTdecl)
   Set_ArraySz = 100;
   num_sets = 1;
   Set_ArrayPtr = (BTNptr *) calloc(Set_ArraySz,sizeof(BTNptr));
+
+  bt_storage_hash_table.length = STORAGE_TBL_SIZE;
+  bt_storage_hash_table.bucket_size = sizeof(STORAGE_HANDLE);
+  bt_storage_hash_table.initted = FALSE;
+  bt_storage_hash_table.table = NULL;
 }
 
 /*----------------------------------------------------------------------*/

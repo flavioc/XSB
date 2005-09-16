@@ -38,7 +38,6 @@
 #include "macro_xsb.h"
 #include "error_xsb.h"
 
-#include "hashtable_xsb.h"
 #include "tr_utils.h"
 #include "debug_xsb.h"
 #include "flags_xsb.h"

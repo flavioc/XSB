@@ -31,8 +31,8 @@ struct bucket {
   xsbBucket  *next;
 };
 
-typedef struct hash_table  xsbHashTable;
-struct hash_table {
+typedef struct bt_storage_hash_table_struct  xsbHashTable;
+struct bt_storage_hash_table_struct {
   int           length;
   int           bucket_size;  
   xsbBool       initted;
