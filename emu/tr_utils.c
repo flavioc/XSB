@@ -417,6 +417,9 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
     }
   }
   TRIE_W_UNLOCK();
+
+  free(freeing_stack);
+
 }
 
 void delete_predicate_table(CTXTdeclc TIFptr tif) {
@@ -1610,4 +1613,7 @@ int gc_tabled_preds(CTXTdecl)
     return -1;
   }
 }
+
+
+
 
