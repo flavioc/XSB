@@ -122,10 +122,8 @@ Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
 
 int xsb_profiling_enabled = 0;
 
+/* from pathname_xsb.c */
 DllExport extern char * call_conv strip_names_from_path(char*, int);
-
-/* real_alloc uses malloc only to keep pspacesize straight. */
-#define real_alloc(X) malloc(X) 
 
 Cell answer_return_inst;
 Cell resume_compl_suspension_inst;
@@ -300,6 +298,8 @@ static void process_long_option(char *option)
 }
 
 /*==========================================================================*/
+/* Currently done on process startup after init_para(). */
+
 FILE *stream_err, *stream_out; 
 
 void perform_IO_Redirect(CTXTdeclc int argc, char *argv[])
@@ -309,7 +309,7 @@ int i;
 init_flags(CTXT);	// We set one of them
 
 /*
-	This need to be done early so that embedded applications can catch meaningful 
+	This needs to be done early so that embedded applications can catch meaningful 
 	initialization failures in the log files
 */
 for (i=1; i<argc; i++)
@@ -324,8 +324,10 @@ for (i=1; i<argc; i++)
 	}
 }
 
-/* Initialize System Parameters
-   ---------------------------- */
+/*==========================================================================*/
+/* Initialize System Parameters: This is done only on process start
+ * up, not on thread startup */
+
 char *init_para(CTXTdeclc int argc, char *argv[])
 {
   int i;
@@ -347,7 +349,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
   init_open_files();
 
-  /* init stat. structures */
+  /* init statistics. structures */
   perproc_reset_stat();
   reset_stat_total();
 
@@ -494,10 +496,15 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 	  xsb_warn("Missing size value");
       }
       break;
+#ifndef MULTI_THREAD
     case 's':
       flags[TRACE_STA] = 1;
       asynint_val |= MSGINT_MARK;
       break;
+#else
+      sprintf(warning, "-s option not available with multi-threaded engine.");
+      xsb_warn(warning);
+#endif
     case 'S':
       pflags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
       break;
@@ -618,6 +625,10 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   /* install_dir is computed dynamically at system startup (in orient_xsb.c).
      Therefore, the entire directory tree can be moved --- only the relative
      positions count.
+
+     Initializing these flags could probably be done in init_flags --
+     which would be cleaner.  However, this would mean rearranging
+     main_xsb.c
   */ 
   flags[INSTALL_DIR] = (Cell) mem_alloc(strlen(install_dir) + 1);   
   strcpy( (char *)flags[INSTALL_DIR], install_dir );
@@ -702,16 +713,21 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   }
 
   return ( (char *) flags[BOOT_MODULE] );
+
 }
 
 /*==========================================================================*/
 
-/* Initialize Memory Regions and Related Variables
+/* Initialize Memory Regions and Related Variables.  Done whenever
+   threads are initialized.
    ----------------------------------------------- */
 void init_machine(CTXTdecl)
 {
   void tstInitDataStructs(CTXTdecl);
   /* set special SLG_WAM instruction addresses */
+  /* these need only be done on process initialization, but there's a core-dump
+     if you move them to init_machine() */
+
   cell_opcode(&answer_return_inst) = answer_return;
   cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
   cell_opcode(&resume_compl_suspension_inst2) = resume_compl_suspension;
@@ -741,12 +757,14 @@ void init_machine(CTXTdecl)
 #define MAXSBUFFS 30
   LSBuff = (VarString **)calloc(sizeof(VarString *),MAXSBUFFS);
 
+  /* vars for io_builtins_XXX */
   opstk_size = 0;
   funstk_size = 0;
   funstk = NULL;
   opstk = NULL;
   rc_vars = (struct vartype *)malloc(MAXVAR*sizeof(struct vartype));
 
+  /* vars for token_xsb_XXX */
   token = (struct token_t *)malloc(sizeof(struct token_t));
   strbuff = NULL;
   lastc = ' ';
@@ -754,6 +772,7 @@ void init_machine(CTXTdecl)
 
   random_seeds = 0;
 
+  /* used in trie_lookup */
   a_tstCCPStack = (struct tstCCPStack_t *)malloc(sizeof(struct tstCCPStack_t));
   a_variant_cont = (struct VariantContinuation *)malloc(sizeof(struct VariantContinuation));
   a_tstCPStack = (struct tstCPStack_t *)malloc(sizeof(struct tstCPStack_t));
@@ -792,13 +811,13 @@ void init_machine(CTXTdecl)
 
   /* Allocate Stack Spaces and set Boundary Parameters
      ------------------------------------------------- */
-  pdl.low = (byte *)real_alloc(pdl.init_size * K);
+  pdl.low = (byte *)malloc(pdl.init_size * K);
   if (!pdl.low)
     xsb_exit("Not enough core for the PDL Stack!");
   pdl.high = pdl.low + pdl.init_size * K;
   pdl.size = pdl.init_size;
 
-  glstack.low = (byte *)real_alloc(glstack.init_size * K);
+  glstack.low = (byte *)malloc(glstack.init_size * K);
   if (!glstack.low)
     xsb_exit("Not enough core for the Global and Local Stacks!");
   glstack.high = glstack.low + glstack.init_size * K;
@@ -808,13 +827,13 @@ void init_machine(CTXTdecl)
     extend_enc_dec_as_nec(glstack.low,glstack.high);
 #endif
 
-  tcpstack.low = (byte *)real_alloc(tcpstack.init_size * K);
+  tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
   if (!tcpstack.low)
     xsb_exit("Not enough core for the Trail and Choice Point Stack!");
   tcpstack.high = tcpstack.low + tcpstack.init_size * K;
   tcpstack.size = tcpstack.init_size;
 
-  complstack.low = (byte *)real_alloc(complstack.init_size * K);
+  complstack.low = (byte *)malloc(complstack.init_size * K);
   if (!complstack.low)
     xsb_exit("Not enough core for the Completion Stack!");
   complstack.high = complstack.low + complstack.init_size * K;
@@ -824,27 +843,26 @@ void init_machine(CTXTdecl)
      So, the layout of the memory looks as follows:
 
      pdl.low
-     /\
+             /\
      pdlreg   |
      pdl.high
      ===================
      glstack.low
      hreg   |
-     \/
-     /\
+           \/
+           /\
      ereg   |
      glstack.high
      ===================
      tcpstack.low
      trreg  |
-     \/
-     /\
+           \/
+           /\
      breg   |
      tcpstack.high
      ===================
      complstack.low
-
-     /\
+             /\
      openreg  |
      complstack.high
      --------------------------------------------------------------------- */
