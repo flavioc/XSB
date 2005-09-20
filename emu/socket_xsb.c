@@ -402,11 +402,12 @@ static int socket_put(CTXTdeclc int *rc, int timeout) {
      sock_handle = (SOCKET) ptoc_int(CTXTc 2);
      tmpch = (char)ptoc_int(CTXTc 3);
 
-     if (!write_select(sock_handle, timeout)) {
-	  return -1;
+     if (write_select(sock_handle, timeout)) {
+        *rc = sendto(sock_handle, &tmpch, 1, 0, NULL,0);
+	  return NORMAL_TERMINATION;
+     } else {
+	  return TIMED_OUT;
      }
-
-     return sendto(sock_handle, &tmpch, 1, 0, NULL,0);
 }
 
 /* in order to save builtin numbers, create a single socket function with
