@@ -27,7 +27,7 @@
 :- export parse/4, get_symtab/2, parse_preddef/4.
 :- export get_p_mod/3, change_multifile_directive/3, 
 	xpp_process_file/3, open_or_xpp_file/2, xpp_include_dir/1,
-	xpp_program/1,
+	xpp_program/1, xpp_options/1,
 	'_$multifile'/1, '_$multifile1'/1,
 	'_$multifile2'/3, '_$apply_arity'/1,
 	'_$multifile_retract'/3.
