@@ -8,7 +8,6 @@
 */
 
 :- import file_read_canonical/3 from machine.
-:- import file_open/3 from file_io.
 :- import length/2 from basics.
 
 %% opening connection to the database
@@ -83,7 +82,7 @@ db_statement_close(QueryHandle) :-
 db_term([], []).
 
 db_term([X|ReturnListTail], [term(Y)|ListTail]):-
-		file_open(Y, sr, IO), file_read_canonical(IO, X, _), 
+		open(atom(Y), read, IO), file_read_canonical(IO, X, _), 
 		db_term(ReturnListTail, ListTail).
 
 db_term([X|ReturnListTail], [X|ListTail]) :-
