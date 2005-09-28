@@ -41,6 +41,78 @@
 
 XSB_Start_Instr(check_complete,_check_complete)
   CPtr    cs_ptr;
+#ifdef CONC_COMPL 
+  CPtr	new_leader;
+  CPtr	tmp_breg ;
+  int busy ;
+  switch_envs(breg);    /* in CHAT: undo_bindings() */
+  ptcpreg = tcp_ptcp(breg);
+  delayreg = tcp_pdreg(breg);
+
+  cs_ptr = tcp_compl_stack_ptr(breg);
+  pthread_mutex_lock(&completing_mut);
+  for(;;)
+  {
+  	if (prev_compl_frame(cs_ptr) < COMPLSTACKBOTTOM && !is_leader(cs_ptr))
+    	{
+		breg = tcp_prevbreg(breg); 
+		break ;
+	}
+	if( (tmp_breg = check_fixpoint(cs_ptr,breg)) )
+	{
+		breg = tmp_breg ;
+		break ;
+	}
+	new_leader = cs_ptr ;
+
+	UpdateDeps( th, &busy, &new_leader ) ;
+
+	if( new_leader > cs_ptr )
+	{
+		adjust_level(new_leader) ;
+		breg = tcp_prevbreg(breg); 
+		break ;
+	}
+
+/*	if( EmptyThreadDepList(&th->TDL) )
+	{	CPtr orig_breg = breg;	
+    		batched_compute_wfs(CTXTc cs_ptr, breg, 
+				(VariantSF)tcp_subgoal_ptr(breg));
+    		if (openreg == prev_compl_frame(cs_ptr))
+		{	if (breg == orig_breg)
+			{	reclaim_stacks(orig_breg);
+				breg = tcp_prevbreg(breg);
+      		}	}
+  		pthread_mutex_unlock(&completing_mut);
+		Fail1;
+		XSB_Next_Instr();
+	}
+*/	
+	if( !busy )
+		busy = MayHaveAnswers(th) ;
+
+	if( !busy )
+	{	if( CheckForSCC(th) )
+		{
+			CompleteOtherThreads(th);
+			CompleteTop(th, cs_ptr);
+			break;
+		}
+		else
+			WakeOtherThreads(th) ;
+	}
+	th->may_have_answers = busy ;
+	th->completing = TRUE ;
+	th->completed = FALSE ;
+	th->cc_leader = cs_ptr ;
+	pthread_mutex_unlock(&completing_mut) ;
+	pthread_cond_wait(&th->cond_var, &completing_mut) ;
+	th->completing = FALSE ;
+	if( th->completed )
+		break ;
+  }
+  pthread_mutex_unlock(&completing_mut);
+#else
   CPtr    orig_breg = breg;
   xsbBool leader = FALSE;
   VariantSF subgoal;
@@ -89,11 +161,11 @@ XSB_Start_Instr(check_complete,_check_complete)
       cc_tbreg = ProcessSuspensionFrames(CTXTc cc_tbreg, cs_ptr);
       FailIfAnswersFound((cc_tbreg == orig_breg ? 0 : cc_tbreg));
       
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
     pthread_mutex_lock(&completing_mut);
 #endif
       CompleteSimplifyAndReclaim(CTXTc cs_ptr);
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
     pthread_cond_broadcast(&completing_cond);
     pthread_mutex_unlock(&completing_mut);
 #endif
@@ -101,11 +173,7 @@ XSB_Start_Instr(check_complete,_check_complete)
     /* TLS: not sure about condition: how could subg_answers be true
        and has_answer_code be false? */
       /* leader has non-returned answers? */
-#ifndef CONC_COMPL
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
-#else
-      if (has_answer_code(subgoal) && (subg_tag(subgoal) > COND_ANSWERS)) {
-#endif
 	reclaim_incomplete_table_structs(subgoal);
 	/* schedule return of answers from trie code */
 	SetupReturnFromLeader(CTXTc orig_breg, cs_ptr, subgoal);
@@ -123,14 +191,7 @@ XSB_Start_Instr(check_complete,_check_complete)
     
 #else /* NOT LOCAL:  FOR BATCHED SCHEDULING */
 
-#ifdef CONC_COMPL
-    pthread_mutex_lock(&completing_mut);
-#endif
     batched_compute_wfs(CTXTc cs_ptr, orig_breg, subgoal);
-#ifdef CONC_COMPL
-    pthread_cond_broadcast(&completing_cond);
-    pthread_mutex_unlock(&completing_mut);
-#endif
 
     /* do all possible stack reclamation */
     if (openreg == prev_compl_frame(cs_ptr)) {
@@ -157,6 +218,7 @@ XSB_Start_Instr(check_complete,_check_complete)
     ebreg = tcp_ebreg(breg);
 #endif
   }
+#endif /* CONC_COMPL */
   Fail1;
 XSB_End_Instr()
 /* end of check_complete */

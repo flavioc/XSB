@@ -103,7 +103,7 @@ DEPEND = makedepend
 #
 
 
-SRCS =	auxlry.c biassert.c builtin.c cinterf.c \
+SRCS =	auxlry.c biassert.c builtin.c cinterf.c conc_compl.c \
 	debug_xsb.c dis.c dynload.c dynamic_stack.c deadlock.c \
 	emuloop.c error_xsb.c findall.c function.c \
 	hash_xsb.c hashtable_xsb.c \
@@ -123,7 +123,7 @@ SRCS =	auxlry.c biassert.c builtin.c cinterf.c \
 ORASRCS = $(SRCS) orastuff.c
 
 
-OBJS =	auxlry.o biassert.o builtin.o cinterf.o \
+OBJS =	auxlry.o biassert.o builtin.o cinterf.o conc_compl.o \
 	debug_xsb.o dis.o dynload.o dynamic_stack.o deadlock.o \
 	emuloop.o error_xsb.o findall.o function.o \
 	hash_xsb.o  hashtable_xsb.o \

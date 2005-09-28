@@ -45,6 +45,7 @@
 #include "inst_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
+#include "thread_xsb.h"
 
 static void simplify_neg_succeeds(CTXTdeclc VariantSF);
 extern void simplify_pos_unsupported(CTXTdeclc NODEptr);

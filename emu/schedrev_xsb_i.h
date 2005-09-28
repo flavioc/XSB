@@ -50,9 +50,6 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
   subinst_table[SCHED_ANSWERS][1]++;
 #endif	
 
-#ifdef CONC_COMPL
-  pthread_mutex_lock( &completing_mut ) ;
-#endif
   first_sched_cons = last_sched_cons = NULL;
   consumer_cpf = subg_asf_list_ptr(producer_sf);
 
@@ -101,9 +98,6 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
       /* by default the schain points to the leader */
       nlcp_prevbreg(last_sched_cons) = breg ;
   } /* if any answers and active nodes */
-#ifdef CONC_COMPL
-  pthread_mutex_unlock( &completing_mut ) ;
-#endif
 
   xsb_dbgmsg((LOG_SCHED, "first active =%d, last=%d",
 	     (int)first_sched_cons,(int)last_sched_cons));
@@ -136,7 +130,13 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
    * done for each subgoal whenever it executes a check_complete
    * operation. Thus, scheduling for the leader has already been done.
    */
+#ifdef CONC_COMPL
+  InitThreadDepList(&th->TDL);
+
+  while(complFrame <= leader_csf) {
+#else
   while(complFrame < leader_csf) {
+#endif
 #ifdef PROFILE
     subinst_table[ITER_FIXPOINT][1]++;
 #endif
@@ -144,7 +144,15 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
     /* check if all answers have been resolved for this subgoal */
 
     /* if there are unresolved answers for currSubg */
+#ifdef CONC_COMPL
+    if ( IsNonNULL(compl_ext_cons(complFrame)) )
+    	last_cons=tmp_sched=sched_external(CTXTc compl_ext_cons(complFrame));
+    else
+    	tmp_sched = sched_answers(CTXTc currSubg, &last_cons) ;
+    if (tmp_sched) {
+#else
     if ((tmp_sched = sched_answers(CTXTc currSubg, &last_cons))) {
+#endif
       if (prev_sched) { /* if there is a prev subgoal scheduled */
 	/* link new node to the previous one */
 	nlcp_prevbreg(prev_sched) = tmp_sched;

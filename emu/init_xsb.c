@@ -799,6 +799,10 @@ void init_machine(CTXTdecl)
 #ifdef SHARED_COMPL_TABLES
   th->waiting_for_thread = NULL ;
 #endif
+#ifdef CONC_COMPL
+  pthread_cond_init( &th->cond_var, NULL );
+  th->completing = FALSE;
+#endif
 
   tsgLBuff1 = (VarString *)malloc(sizeof(VarString));
   XSB_StrInit(tsgLBuff1);

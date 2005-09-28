@@ -123,8 +123,11 @@ typedef struct tabled_choice_point {
 #ifdef LOCAL_EVAL
     ALNptr trie_return;
 #endif
-#ifdef MULTI_THREAD
+#ifdef SHARED_COMPL_TABLES
     byte * reset_pcreg;
+#endif
+#ifdef CONC_COMPL
+    CPtr compl_stack_ptr; 
 #endif
 } *TChoice;
 
@@ -140,6 +143,9 @@ typedef struct tabled_choice_point {
 #define tcp_pdreg(b)		((TChoice)(b))->pdreg
 #define tcp_ptcp(b)		((TChoice)(b))->ptcp
 #define tcp_subgoal_ptr(b)	((TChoice)(b))->subgoal_ptr
+#ifdef CONC_COMPL
+#define tcp_compl_stack_ptr(b)	((TChoice)(b))->compl_stack_ptr
+#endif
 
 #ifdef CP_DEBUG
 #define tcp_psc(b)              ((TChoice)(b))->psc
@@ -173,11 +179,14 @@ typedef struct tabled_choice_point {
      (cell_opcode(cp_pcreg(b)) == tableretry))
 
 /* The following macro is used to perform early completion */
+#ifdef CONC_COMPL
+#define perform_early_completion(ProdSF,ProdCPF)
+#else
 #define perform_early_completion(ProdSF,ProdCPF)	    \
     if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) \
       tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   \
     mark_as_completed(ProdSF)
-
+#endif
 
 #define _SaveProducerCPF_common(TopCPS, Cont, pSF) {    \
    TopCPS -= TCP_SIZE;					\
@@ -260,7 +269,9 @@ typedef struct consumer_choice_point {
 #ifdef SLG_GC
 #define nlcp_prevtop(b)         ((NLChoice)(b))->prev_top
 #endif
+#ifdef CONC_COMPL
 #define nlcp_tid(b)        	((NLChoice)(b))->tid
+#endif
 
 #define is_consumer_choicepoint(b) \
     (cp_pcreg(b) == (byte *) &answer_return_inst)

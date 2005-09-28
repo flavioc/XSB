@@ -27,10 +27,12 @@
 
 #define __CONTEXT_H__
 
+
 #include "cell_def_xsb.h"
 #include "basictypes.h"
 #include "setjmp_xsb.h"
 #include "flag_defs_xsb.h"
+#include "conc_compl.h"
 #include "hashtable_xsb.h"
 
 typedef struct ClRefHdr
@@ -91,6 +93,7 @@ struct asrtBuff_t {
 
 #include <sys/types.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "debugs/debug_attv.h"
 
@@ -313,6 +316,15 @@ struct th_context * 	waiting_for_thread;
 struct subgoal_frame *	waiting_for_subgoal;
 int deadlock_brk_leader ;
 int reset_thread ;
+#endif
+
+#ifdef CONC_COMPL
+int may_have_answers ;
+int completing ;
+int completed ;
+CPtr cc_leader ;
+ThreadDepList TDL ;
+pthread_cond_t cond_var ;
 #endif
 
 } ;
