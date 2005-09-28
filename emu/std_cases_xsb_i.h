@@ -63,7 +63,7 @@
   }
   case ATOMIC: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
-    return (isatomic(term) || isboxedinteger(term));
+    return (isatomic(term) || isboxedinteger(term) || isboxedfloat(term));
   }
 
   case COMPOUND: {	/* r1: ?term */
