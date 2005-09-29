@@ -1180,6 +1180,7 @@ typedef ClRef SOBRef ;
 
 #define UNINDEXED_CL	0
 #define SOB_RECORD	1
+#define TRIE_CL		2
 #define INDEXED_CL	3
 
 #define MakeClRef(ptr,Type,NCells)\
@@ -2730,6 +2731,13 @@ static inline void print_bytes(CPtr x, int lo, int hi)
 }
 
 /*----------------------------------------------------------------*/
+BTNptr trie_asserted_trienode(CPtr clref) {
+      if ((ClRefType(clref) == TRIE_CL) && clref_trie_asserted(clref))
+	return((BTNptr)*(clref + 3));
+      else return NULL;
+}
+
+/*----------------------------------------------------------------*/
 
 int trie_assert(CTXTdecl)
 {
@@ -2772,7 +2780,7 @@ int trie_assert(CTXTdecl)
      * block and pray.  See Note 1 below.
      */
     Trie_Asserted_Clref = ((CPtr)mem_alloc(6*sizeof(Cell))) + 2;
-    *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+2; /* store size, encode type */
+    *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+TRIE_CL; /* store size, encode type */
     *(byte *)(Trie_Asserted_Clref +2) = jump;
 
     inst_node_ptr = newBasicTrie(CTXTc EncodeTriePSC(psc),ASSERT_TRIE_TT);
