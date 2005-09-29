@@ -1451,9 +1451,10 @@ void check_insert_new_deltf(CTXTdeclc TIFptr tif)
   if (!found) {
     New_DelTF(dtf,tif);
   }
+  TIF_CallTrie(tif) = NULL;
+  TIF_Subgoals(tif) = NULL;
   SYS_MUTEX_UNLOCK(MUTEX_SM);
 }
-
 
 inline int abolish_table_predicate(CTXTdeclc Psc psc)
 {
