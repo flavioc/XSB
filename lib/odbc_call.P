@@ -1340,6 +1340,13 @@ odbc_connection_check(Connection,ConnHandle):-
 	    true
 	 ;  misc_error([Connection,' is not a valid ODBC connection.'])).
 
+findall_odbc_sql(BindVals,SQLStmt,Result) :-
+	findall_odbc_sql(defaultConnection,BindVals,SQLStmt,Result).
+
+findall_odbc_sql(Connection,BindVals,SQLStmt,Result) :-
+	odbc_connection_check(Connection,ConnHandle),
+	findall_odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result).
+
 findall_odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result):- 
 	findall(R,odbc_sql_i(ConnHandle,BindVals,SQLStmt,R),Results),
 	member(Result,Results).
@@ -1420,7 +1427,10 @@ check_odbc_import_options(Input,_Findall):-
 	domain_error(odbcImportOptionList,Input,odbc_import/4,4).
 
 odbc_import(Connection,DbPredicate,PredName) :-
-	odbc_import_1(Connection,DbPredicate,PredName,option(false)).
+	odbc_import_1(Connection,DbPredicate,PredName,option(false)),
+	!.
+odbc_import(_,PredName,_) :-
+	abort([PredName,' has already been used for odbc_import.']).
 
 odbc_import_1(Connection,DbPredicate,PredName,Options) :-
 	odbc_connection_check(Connection,ConnHandle),
@@ -1437,8 +1447,6 @@ odbc_import_1(Connection,DbPredicate,PredName,Options) :-
 	assert_import_attributes(PredName,Attributes,TableName,ConnHandle,1),
 	functor(SymPred,PredName,Arity),
 	odbc_query(Connection,SymPred,SymPred,Options).
-odbc_import(_,PredName,_) :-
-	abort([PredName,' has already been used for odbc_import.']).
 
 assert_import_attributes(_,[],_,_,_).
 assert_import_attributes(PredName,[HAttr|RAttr],TableName,ConnHandle,Num) :-
@@ -2009,7 +2017,8 @@ odbc_deactivate_cursor(Cursor) :-
 	 ->	(retract(odbc_active_cursors(ACursor)),
 		 (Cursor =\= ACursor
 		  ->	 writeln('Closing trapped cursor '(ACursor)),
-			 odbc_set_cursor_close(ACursor)
+			 odbc_set_cursor_close(ACursor),
+			 fail
 		  ;	 true
 		 ),
 		 Cursor =:= ACursor,

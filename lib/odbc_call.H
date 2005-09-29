@@ -28,6 +28,7 @@
 	odbc_close/0, odbc_close/1,
 	odbc_shutdown/0,
 	odbc_sql/3, odbc_sql/4,
+	findall_odbc_sql/3, findall_odbc_sql/4,
 	odbc_sql_cnt/4,
 	odbc_query/2, odbc_query/3,
 	odbc_deallocate_query/1, odbc_deallocate_query/2,
