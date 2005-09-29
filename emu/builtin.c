@@ -194,6 +194,9 @@ extern int clean_up_block(CTXTdecl);
 
 extern double realtime_count; /* from subp.c */
 
+extern BTNptr trie_asserted_trienode(CPtr clref);
+extern int gc_dynamic(CTXTdecl);
+
 /* ------- variables also used in other parts of the system -----------	*/
 
 Cell flags[MAX_FLAGS];			  /* System flags + user flags */
@@ -826,6 +829,8 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_RETRACT_SAFE, "trie_retract_safe");
   set_builtin_table(TRIE_DELETE_RETURN, "trie_delete_return");
   set_builtin_table(TRIE_GET_RETURN, "trie_get_return");
+  set_builtin_table(TRIE_ASSERT_HDR_INFO, "trie_assert_hdr_info");
+
 
   /* Note: TRIE_GET_CALL previously used for get_calls/1, before get_call/3
      was made a builtin itself. */
@@ -2218,6 +2223,22 @@ int builtin_call(CTXTdeclc byte number)
     pcreg = trie_get_returns(CTXTc sf, retTerm);
     break;
   }
+
+  case TRIE_ASSERT_HDR_INFO: /* r1: 0 -> r2: +TrieNodeAddr, r3: -RootOfCall
+				r1: 1 -> r2: +Clref, r3: -trieNodeAddr, 
+					     fail if Clref not for a trie. */
+    switch (ptoc_int(CTXTc 1)) {
+    case 0:  /* r1: 0 -> r2: +TrieNodeAddr, r3: -RootOfCall */
+      ctop_int(CTXTc 3,(Integer)(((BTNptr)(ptoc_int(CTXTc 2)))->child));
+      break;
+    case 1: {
+      BTNptr trienode = trie_asserted_trienode((CPtr)ptoc_int(CTXTc 2));
+      if (trienode) ctop_int(CTXTc 3, (Integer)trienode);
+      else return FALSE;
+      break;
+    }
+    }
+    break;
 
   case TRIE_UNIFY_CALL: /* r1: +call_term */
     pcreg = trie_get_calls(CTXT);
