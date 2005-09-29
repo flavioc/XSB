@@ -32,4 +32,4 @@
 :- import integer/1, abort/1 from standard.
 :- import get_lastnode_cs_retskel/4 from tables.
 
-:- import buff_word/3, buff_set_word/3  from machine.
+%%%:- import buff_word/3, buff_set_word/3  from machine.

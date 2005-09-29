@@ -106,14 +106,15 @@ atomic value is an integer (and must not have a sibling).
 This predicate resets that last integer to IntVal.
 (This should be moved to a builtin in C.)
 --------------------------------------------------*/
-trie_set_last_int(Leaf,Val) :-
-	buff_word(Leaf,12,Par),
+trie_set_last_int(_Leaf,_Val) :-
+	abort('trie_set_last_int/2 is no longer available').
+/****	buff_word(Leaf,12,Par),
 	buff_word(Par,8,Child),
 	Child =:= Leaf,
 	buff_word(Leaf,16,TagVal),
 	(TagVal /\ 7) =:= 2,
 	NTagVal is (Val << 3) + 2,
-	buff_set_word(Leaf,16,NTagVal).
+	buff_set_word(Leaf,16,NTagVal). ****/
 
 /*--------------------------------------------------
 trie_unintern(+Root,+Leaf)
