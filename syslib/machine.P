@@ -108,6 +108,8 @@ buff_byte(Buffer, Disp, Value) :- buff_byte(Buffer, Disp, Value).
 buff_set_byte(Buffer, Disp, Value) :- buff_set_byte(Buffer, Disp, Value).
 code_call(CodeAddr, Term, Type) :- code_call(CodeAddr, Term, Type).
 
+trie_assert_hdr_info(_Code,_Arg1,_Ret1) :- '_$builtin'(TRIE_ASSERT_HDR_INFO).
+
 substring(_String, _From, _To, _Result) :- '_$builtin'(SUBSTRING).
 str_len(String, Length) :- str_len(String, Length).
 str_cat(Str1, Str2, Str3) :- str_cat(Str1, Str2, Str3).

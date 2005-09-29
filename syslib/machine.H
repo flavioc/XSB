@@ -66,6 +66,7 @@
 	buff_set_byte/3, 
 	file_puttoken/3,
 	code_call/3, 
+	trie_assert_hdr_info/3,
 	call0/1,
 	code_load/3, 
 	file_gettoken/5,

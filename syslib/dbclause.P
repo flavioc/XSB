@@ -245,16 +245,10 @@ db_reclaim_space(_,_).
 %==================================================
 
 root_is_not_null(NodeAddr) :-
-	buff_word(NodeAddr,8,RootOfCall), RootOfCall =\= 0.
+	trie_assert_hdr_info(0,NodeAddr,Root), Root =\= 0.
 
-
-chk_if_trie_assert(Y,trie,TrieNodeAddr) :- 
-	buff_word(Y, -8, Lenflg),
-	Flag is Lenflg /\ 3,
-	Flag = 2,
-	buff_word(Y,12,TrieNodeAddr),
-	buff_byte(TrieNodeAddr,0,Inst),
-	Inst = 124,
+chk_if_trie_assert(Clref,trie,TrieNodeAddr) :-
+	trie_assert_hdr_info(1,Clref,TrieNodeAddr),
 	!.
 chk_if_trie_assert(_,nottrie,_).
 
