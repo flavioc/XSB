@@ -319,7 +319,6 @@ int reset_thread ;
 #endif
 
 #ifdef CONC_COMPL
-int may_have_answers ;
 int completing ;
 int completed ;
 CPtr cc_leader ;

@@ -101,7 +101,6 @@ XSB_Start_Instr(check_complete,_check_complete)
 		else
 			WakeOtherThreads(th) ;
 	}
-	th->may_have_answers = busy ;
 	th->completing = TRUE ;
 	th->completed = FALSE ;
 	th->cc_leader = cs_ptr ;

@@ -212,14 +212,13 @@ void WakeOtherThreads( th_context * th )
 {
     th_context * dep_th ;
     ThreadDep *dep ;
-    VariantSF sgf ;
+    int tid;
 
     dep = GetInitDep(&th->TDL); 
     while( dep != NULL )
-    {   sgf = GetDepSubgoal(dep) ;
-	dep_th = find_context(subg_tid(sgf)) ;
-	if( dep_th->may_have_answers )
-	    pthread_cond_signal(&dep_th->cond_var) ;
+    {   tid = GetDepTid(dep) ;
+	dep_th = find_context(tid) ;
+	pthread_cond_signal(&dep_th->cond_var) ;
 	dep = GetNextDep(&th->TDL, dep); 
     }
 }

@@ -386,20 +386,19 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 #endif
     adjust_level(subg_compl_stack_ptr(producer_sf));
 #ifdef CONC_COMPL
+    consumer_cpf = answer_template;
     }
     else
     {
 	producer_cpf = answer_template;
     	SaveProducerCPF(producer_cpf, (pb)&check_complete_inst, producer_sf,
                     	CallInfo_CallArity(callInfo), (hreg - 1));
-	breg = producer_cpf;
+	consumer_cpf = breg = producer_cpf;
     }
 #endif
     save_find_locx(ereg);
 
-#ifdef CONC_COMPL
-    consumer_cpf = producer_cpf;
-#else
+#ifndef CONC_COMPL
     consumer_cpf = answer_template;
 #endif
 #ifdef SLG_GC
