@@ -216,7 +216,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
         }
         th->waiting_for_subgoal = producer_sf ;
         th->waiting_for_thread = waiting_for_thread ;
-	pthread_mutex_unlock(&completing_mut);
 	pthread_cond_wait(&completing_cond,&completing_mut) ;
         if( th->reset_thread )
         {       th->reset_thread = FALSE ;

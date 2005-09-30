@@ -136,7 +136,6 @@ case IS_INCOMPLETE: {
 	}
 	th->waiting_for_subgoal = producerSF ;
         th->waiting_for_thread = waiting_for_thread ;
-        pthread_mutex_unlock(&completing_mut);
         pthread_cond_wait(&completing_cond,&completing_mut) ;
         if( th->reset_thread )
         {       th->reset_thread = FALSE ;

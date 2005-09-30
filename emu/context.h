@@ -321,6 +321,7 @@ int reset_thread ;
 #ifdef CONC_COMPL
 int completing ;
 int completed ;
+int last_ans ;
 CPtr cc_leader ;
 ThreadDepList TDL ;
 pthread_cond_t cond_var ;

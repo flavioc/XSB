@@ -802,6 +802,7 @@ void init_machine(CTXTdecl)
 #ifdef CONC_COMPL
   pthread_cond_init( &th->cond_var, NULL );
   th->completing = FALSE;
+  th->last_ans = 1;
 #endif
 
   tsgLBuff1 = (VarString *)malloc(sizeof(VarString));

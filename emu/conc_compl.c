@@ -17,6 +17,7 @@
 
 #define GetDepSubgoal(d)	((d)->Subgoal)
 #define GetDepCompleting(d)	((d)->completing)
+#define GetDepLast(d)		((d)->last)
 #define GetDepTid(d)		(subg_tid((d)->Subgoal))
 
 static ThreadDep * find_tid( ThreadDepList *TDL, int tid )
@@ -127,6 +128,10 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 		dep_th = find_context(subg_tid(sgf)) ;
 		GetDepCompleting(dep1) = dep_th->completing ;
 		if( dep_th->completing )
+			GetDepLast(dep1) = dep_th->last_ans ;
+		else
+			GetDepLast(dep1) = 0 ;
+		if( dep_th->completing )
 		    PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps ) ;
 		else
 		    *busy = TRUE ;
@@ -140,9 +145,10 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 
 int MayHaveAnswers( th_context * th )
 {
-    th_context * dep_th ;
+    th_context * dep_th, *th1 ;
     ThreadDep *dep, *dep1 ;
-    int tid ;
+    int tid, tid1 ;
+    int rc = FALSE ;
 
     dep = GetInitDep(&th->TDL); 
     while( dep != NULL )
@@ -150,13 +156,18 @@ int MayHaveAnswers( th_context * th )
 	dep_th = find_context(tid) ;
     	dep1 = GetInitDep(&dep_th->TDL); 
     	while( dep1 != NULL )
-    	{   if( GetDepTid(dep1) != th->tid && !GetDepCompleting(dep1) )
-		return TRUE ;
+    	{   tid1 = GetDepTid(dep1) ;
+	    th1 = find_context(tid1) ;
+	    if( !GetDepCompleting(dep1) && GetDepLast(dep1) < th1->last_ans )
+	    {
+		rc = TRUE ;
+		GetDepCompleting(dep) = FALSE ;
+	    }
 	    dep1 = GetNextDep(&dep_th->TDL, dep1); 
 	}
 	dep = GetNextDep(&th->TDL, dep); 
     }
-    return FALSE ;
+    return rc ;
 }
 
 int CheckForSCC( th_context * th )
