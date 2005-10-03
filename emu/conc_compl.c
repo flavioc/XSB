@@ -16,7 +16,7 @@
 #include "error_xsb.h"
 
 #define GetDepSubgoal(d)	((d)->Subgoal)
-#define GetDepCompleting(d)	((d)->completing)
+#define GetDepMore(d)		((d)->more)
 #define GetDepLast(d)		((d)->last)
 #define GetDepTid(d)		(subg_tid((d)->Subgoal))
 
@@ -62,6 +62,14 @@ int EmptyThreadDepList( ThreadDepList *TDL )
 void InitThreadDepList( ThreadDepList *TDL )
 {
 	TDL->NumDeps = 0 ;
+}
+
+void CopyThreadDepList( ThreadDepList *to, ThreadDepList *from )
+{
+	int i ;
+	to->NumDeps = from->NumDeps ;
+	for( i = 0 ; i < to->NumDeps ; i++ )
+		to->Deps[i] = from->Deps[i] ;
 }
 
 ThreadDep *GetInitDep( ThreadDepList *TDL )
@@ -126,7 +134,7 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 		check_ins_subg(&NewTDL, sgf) ;
 		dep1 = find_tid(&NewTDL,subg_tid(sgf));
 		dep_th = find_context(subg_tid(sgf)) ;
-		GetDepCompleting(dep1) = dep_th->completing ;
+		GetDepMore(dep1) = !dep_th->completing ;
 		if( dep_th->completing )
 			GetDepLast(dep1) = dep_th->last_ans ;
 		else
@@ -138,7 +146,7 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 	    }
 	    dep = GetNextDep(&th->TDL, dep); 
 	}
-    	th->TDL = NewTDL ;
+    	CopyThreadDepList( &th->TDL, &NewTDL ) ;
     }
     while( new_deps ) ;
 }
@@ -158,10 +166,10 @@ int MayHaveAnswers( th_context * th )
     	while( dep1 != NULL )
     	{   tid1 = GetDepTid(dep1) ;
 	    th1 = find_context(tid1) ;
-	    if( !GetDepCompleting(dep1) && GetDepLast(dep1) < th1->last_ans )
+	    if( GetDepMore(dep1) && GetDepLast(dep1) < th1->last_ans )
 	    {
 		rc = TRUE ;
-		GetDepCompleting(dep) = FALSE ;
+		GetDepMore(dep) = TRUE ;
 	    }
 	    dep1 = GetNextDep(&dep_th->TDL, dep1); 
 	}
