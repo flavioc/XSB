@@ -139,6 +139,7 @@ extern int xsb_profiling_enabled;
 extern xsbBool startInterruptThread(SOCKET intSocket);
 #endif
 
+// Externs for profiler
 extern TIFptr get_tip(CTXTdeclc Psc);
 
 long if_profiling = 0;
@@ -155,6 +156,7 @@ extern xsbBool startProfileThread();
 extern void dump_prof_table();
 extern void retrieve_prof_table();
 
+// Externs for assert/retract
 extern xsbBool assert_code_to_buff(CTXTdecl), assert_buff_to_clref(CTXTdecl);
 extern xsbBool gen_retract_all(CTXTdecl), db_retract0(CTXTdecl), 
   db_get_clause(CTXTdecl), gc_clauses(CTXTdecl);
@@ -185,9 +187,11 @@ extern xsbBool str_cat(CTXTdecl);
 extern xsbBool str_sub(void);
 extern xsbBool str_match(CTXTdecl);
 
+// For force_truth_value (which may not be used much)
 extern void force_answer_true(BTNptr);
 extern void force_answer_false(BTNptr);
 
+// catch/throw.
 extern int set_scope_marker(CTXTdecl);
 extern int unwind_stack(CTXTdecl);
 extern int clean_up_block(CTXTdecl);
@@ -1034,7 +1038,7 @@ int abolish_module_tables(CTXTdeclc const char *module_name)
 }
 /* --------------------------------------------------------------------	*/
 
-#ifdef PROFILE
+#if defined(PROFILE) && !defined(MULTI_THREAD)
 static void write_out_profile(void)
 { 
   unsigned long i, isum, ssum, tot;
@@ -1251,6 +1255,9 @@ int builtin_call(CTXTdeclc byte number)
     ctop_tag(CTXTc 3, cell(clref_val(term)+disp));
     break;
   }
+
+    /* TLS: it turns out that term_set_arg, and the perm. flag are
+       still used in array.P. */
   case TERM_SET_ARG: {	/* R1: +term; R2: index (+int) */
 			/* R3: newarg (+term) */
     /* used in file_read.P, array.P, array1.P */
@@ -1863,8 +1870,8 @@ int builtin_call(CTXTdeclc byte number)
     abolish_table_info(CTXT);
     break;
 
-#ifdef PROFILE
   case ZERO_OUT_PROFILE:
+#if defined(PROFILE) && !defined(MULTI_THREAD)
     { 
       int i;
       for (i = 0 ; i <= BUILTIN_TBL_SZ ; i++) {
@@ -1875,9 +1882,15 @@ int builtin_call(CTXTdeclc byte number)
       num_switch_envs=0;
     }
     break;
-  case WRITE_OUT_PROFILE:
+#else
+    xsb_abort("Profiling is not enabled for this configuration");  
+#endif
+case WRITE_OUT_PROFILE:
+#if defined(PROFILE) && !defined(MULTI_THREAD)
     write_out_profile();
     break;
+#else
+    xsb_abort("Profiling is not enabled for this configuration");  
 #endif
   case ASSERT_CODE_TO_BUFF:
     assert_code_to_buff(CTXT);

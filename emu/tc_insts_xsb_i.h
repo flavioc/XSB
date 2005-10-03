@@ -28,8 +28,6 @@
 /* The following is the list of Trie-Code instructions.			*/
 /*----------------------------------------------------------------------*/
 
-
-
 XSB_Start_Instr(trie_no_cp_str,_trie_no_cp_str)
 	TRIE_R_LOCK();
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_str"));
@@ -38,7 +36,7 @@ XSB_Start_Instr(trie_no_cp_str,_trie_no_cp_str)
 	non_ftag_lpcreg;
 XSB_End_Instr()
 
-     /* TLS: opfail below is actually the sibling trie node */
+/* TLS: opfail below is actually the sibling trie node */
 XSB_Start_Instr(trie_try_str,_trie_try_str) 
 	CPtr tbreg;
 #ifdef SLG_GC
@@ -52,11 +50,11 @@ XSB_Start_Instr(trie_try_str,_trie_try_str)
 #ifdef SLG_GC
 	old_cptop = tbreg;
 #endif
-	save_trie_registers(tbreg);
-	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);
-#ifdef SLG_GC
-	cp_prevtop(tbreg) = old_cptop;
-#endif
+	save_trie_registers(tbreg);                        
+	save_choicepoint(tbreg,ereg,(byte *)opfail,breg);  
+#ifdef SLG_GC                                              
+        cp_prevtop(tbreg) = old_cptop;
+#endif                                                     
 	breg = tbreg;
 	hbreg = hreg;
 	unify_with_trie_str;
@@ -588,39 +586,57 @@ XSB_Start_Instr(hash_opcode,_hash_opcode)
 #ifdef SLG_GC
 	CPtr old_cptop;
 #endif
+	BTHTptr hash_header;
+	BTHTptr *hash_base;
+	int hashed_hash_offset;
+
 	xsb_dbgmsg((LOG_TRIE_INSTR, "hash_opcode"));
    /*
     *  Under new trie structure, NodePtr is actually pointing at a
     *  Hash Table Header struct.
     */
-	NodePtr = (BTNptr) lpcreg;
-	save_find_locx(ereg);
-	tbreg = top_of_cpstack;
-#ifdef SLG_GC
-	old_cptop = tbreg;
-#endif
-	save_trie_registers(tbreg);
+	hash_header = (BTHTptr) lpcreg;
 	temp_ptr_for_hash = (CPtr)*reg_arrayptr;
-	XSB_CptrDeref(temp_ptr_for_hash);
-	if (isref(temp_ptr_for_hash))
-	  cell(--tbreg) = makeint(HASH_IS_FREE);
-	else
-	  cell(--tbreg) = makeint(HASH_IS_NOT_FREE);
+        XSB_CptrDeref(temp_ptr_for_hash);
+        if (!isref(temp_ptr_for_hash) 
+	    && (BTHT_BucketArray(hash_header) == NULL)){ 
+            /* Ground call and no variables in hash table */
+	    hash_nonvar_subterm(temp_ptr_for_hash,hash_header,
+				hashed_hash_offset);
+	    if(*(hash_base + hashed_hash_offset) == NULL)
+	      /* fail to previous CPF */
+	      lpcreg = (byte *) cp_pcreg(breg);
+	    else
+	      /* execute code of tries in this bucket */
+	      lpcreg = (byte *) *(hash_base + hashed_hash_offset);
+	}
+        else {  
+	  save_find_locx(ereg);
+	  tbreg = top_of_cpstack;
+#ifdef SLG_GC
+	  old_cptop = tbreg;
+#endif
+	  save_trie_registers(tbreg);
+	  if (isref(temp_ptr_for_hash))
+	    cell(--tbreg) = makeint(HASH_IS_FREE);
+	  else 
+	    cell(--tbreg) = makeint(HASH_IS_NOT_FREE);
     /*
      *  For normal trie nodes, this next CP value was given as the beginning
      *  of the hash table (bucket array).  With the new trie structure, I
      *  instead pass in the header, allowing access to all needed fields,
      *  including the bucket array.
      */
-	cell(--tbreg) = makestring(NodePtr);
-	cell(--tbreg) = makeint(FIRST_HASH_NODE);
-	save_choicepoint(tbreg,ereg,(byte *)&hash_handle_inst,breg);
+	  cell(--tbreg) = makestring(hash_header);
+	  cell(--tbreg) = makeint(FIRST_HASH_NODE);
+	  save_choicepoint(tbreg,ereg,(byte *)&hash_handle_inst,breg);
 #ifdef SLG_GC
-	cp_prevtop(tbreg) = old_cptop;
+	  cp_prevtop(tbreg) = old_cptop;
 #endif
-	breg = tbreg;
-	hbreg = hreg;
-	lpcreg = (byte *) &hash_handle_inst;
+	  breg = tbreg;
+	  hbreg = hreg;
+	  lpcreg = (byte *) &hash_handle_inst;
+	} 
 XSB_End_Instr()
 
 /*
@@ -638,7 +654,7 @@ XSB_Start_Instr(hash_handle,_hash_handle)
     hash_offset = int_val(cell(breg+CP_SIZE));
     hash_hdr = (BTHTptr) string_val(cell(breg+CP_SIZE+1));
     hash_base = (BTHTptr *) BTHT_BucketArray(hash_hdr);
-    if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
+if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
       /* Unify with nonvar */
       if ( (hash_offset != FIRST_HASH_NODE) &&
 	   (hash_offset != NO_MORE_IN_HASH) ) {

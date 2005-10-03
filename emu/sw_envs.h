@@ -83,18 +83,10 @@
   }									\
 }
 
-#ifdef MEASURE_WAM_STUFF
-#define undo_bindings(TBREG) {			\
-   CPtr *old_trreg = cp_trreg(TBREG);		\
-   undbind_num++;				\
-   table_undo_bindings(old_trreg);		\
-}
-#else
 #define undo_bindings(TBREG) {			\
    CPtr *old_trreg = cp_trreg(TBREG);		\
    table_undo_bindings(old_trreg);		\
 }
-#endif
 
 /*
  * If PRE_IMAGE_TRAIL is never used, the line of untrail2 in the following

@@ -28,31 +28,16 @@
 #include "basicdefs.h"
 #include "basictypes.h"
 
-
-#define ihash(val, size) ((word)(val) % (size))
-
 extern double cpu_time(void);
 extern double real_time(void);
 extern void get_date(int *year, int *month, int *day,
 		    int *hour, int *minute, int *second);
 
-struct trace_str {		/* for tracing purpose below */
-    unsigned long maxlstack_count, maxgstack_count, maxtrail_count, maxcpstack_count;
-    unsigned long maxopenstack_count, maxlevel_num;
-    double time_count;
-};
-
-extern struct trace_str tds;
+#define ihash(val, size) ((word)(val) % (size))
 
 #ifndef MULTI_THREAD
 extern int asynint_val;
 #endif
-
-#define local_global_exception "! Local/Global Stack Overflow Exception\n"
-
-#define complstack_exception "! Completion Stack Overflow Exception\n"
-
-#define trail_cp_exception "! Trail/CP Stack Overflow Exception\n"
 
 /*
  *  Mode in which XSB is run.

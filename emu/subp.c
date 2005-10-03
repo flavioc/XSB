@@ -50,7 +50,6 @@
 #include <unistd.h>
 #endif
 
-
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "debug_xsb.h"
@@ -76,6 +75,7 @@
 #include "thread_xsb.h"
 #include "debug_xsb.h"
 #include "hash_xsb.h"
+#include "trace_xsb.h"
 
 /*======================================================================*/
 extern xsbBool quotes_are_needed(char *string);
@@ -94,11 +94,12 @@ double realtime_count;
 #ifndef MULTI_THREAD
 extern int asynint_val;	/* 0 - no interrupt (or being processed) */
 extern int asynint_code;	/* 0 means keyboard interrupt */
+
 #endif
 
+
+
 extern void dis(xsbBool), debug_call(CTXTdeclc Psc);
-extern void total_stat(CTXTdeclc double);
-extern void perproc_stat(void), perproc_reset_stat(void), reset_stat_total(void); 
 
 #ifdef LINUX
 static struct sigaction act, oact;
@@ -254,6 +255,7 @@ void print_statistics(CTXTdeclc int amount) {
     xsb_mesg("Statistics is reset.");
     break;
   case 1:		    /* Print Stack Usage and CPUtime: */
+
     perproc_stat();		/* move max usage into 'ttt' struct variable */
     total_stat(CTXTc real_time()-realtime_count);   /* print */
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */

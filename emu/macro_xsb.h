@@ -33,15 +33,13 @@
 
 /*===========================================================================*/
 
-/*
- *                         Table Information Frame
- *                         =======================
+/*             
+ * 		     Deleted Table Frame Records
+ *                   ===========================
  *
- *  Table Information Frames are created for each tabled predicate,
- *  allowing access to its calls and their associated answers.
- */
-
-#include "table_status_defs.h"
+ *    These records are used to hold pointers to abolished call     
+ *    and answer tries for table garbage collection  
+ */     
 
 typedef struct Deleted_Table_Frame *DelTFptr;
 typedef struct Deleted_Table_Frame {
@@ -100,12 +98,26 @@ typedef struct Deleted_Table_Frame {
   free(pDTF);								\
 }
 
+/*===========================================================================*/
+
+/*
+ *                         Table Information Frame
+ *                         =======================
+ *
+ *  Table Information Frames are created for each tabled predicate,
+ *  allowing access to its calls and their associated answers.
+ */
+
+#include "table_status_defs.h"
 
 typedef enum Tabled_Evaluation_Method {
   VARIANT_TEM      = VARIANT_EVAL_METHOD,
   SUBSUMPTIVE_TEM  = SUBSUMPTIVE_EVAL_METHOD,
   DISPATCH_BLOCK    = 3
 } TabledEvalMethod;
+
+#define isSharedTIF(pTIF)   (TIF_EvalMethod(pTIF) != DISPATCH_BLOCK)
+#define isPrivateTIF(pTIF)  (TIF_EvalMethod(pTIF) == DISPATCH_BLOCK)
 
 typedef struct Table_Info_Frame *TIFptr;
 typedef struct Table_Info_Frame {
@@ -188,6 +200,20 @@ extern struct tif_list  tif_list;
  mem_dealloc((pTIF),sizeof(TableInfoFrame));			\
  }
 
+/*===========================================================================*/
+
+/*
+ *                         Table Dispatch Blocks
+ *                         =======================
+ *
+ *  Table Information Frames are created in the multi-threaded engine
+ *  to allow a single predicate to have multiple TIFs (and by
+ *  extension tries), one for each thread.  A Table Dispatch Block
+ *  stands between the outer TIF (to which tabletry(single)
+ *  instructions point, and the per-predicate TIFs that are used to
+ *  manage thread-private tables.
+ */
+
 #define MAXTABTHREAD 100
 
 struct TDispBlk_t { /* first two fields must be same as Table_Info_Frame for coercion! */
@@ -198,11 +224,33 @@ struct TDispBlk_t { /* first two fields must be same as Table_Info_Frame for coe
   int MaxThread;
   TIFptr Thread0;
 };
+typedef struct TDispBlk_t *TDBptr;
+ 
+#define TIF_DispatchBlock(pTIF)	   ((TDBptr) (pTIF)->psc_ptr )
+#define TDB_MaxThread(pTDB)	   ( (pTDB)->MaxThread )
+#define TDB_TIFArray(pTDB)         ( (&(pTDB)->Thread0) )
+#define TDB_PrivateTIF(pTDB,tid)    ( TDB_TIFArray(pTDB)[(tid)] )
 
 struct TDispBlkHdr_t {
   struct TDispBlk_t *firstDB;
   struct TDispBlk_t *lastDB;
 };
+
+/* If private predicate in MT engine, find the thread's private TIF,
+   otherwise leave unchanged */
+#define  handle_dispatch_block(tip)                     \
+  if ( isPrivateTIF(tip) ) {			        \
+    TDBptr tdispblk;                                    \
+    tdispblk = (TDBptr) tip;                            \
+    if (th->tid > TDB_MaxThread(tdispblk))		\
+	xsb_abort("Table Dispatch block too small");	\
+    tip = TDB_PrivateTIF(tdispblk,th->tid);              \
+    if (!tip) {                                         \
+      /* this may not be possible, as it may always be initted in get_tip? */\
+      New_TIF(tip,tdispblk->psc_ptr);                    \
+      TDB_PrivateTIF(tdispblk,th->tid) = tip;\
+    }\
+  }
 
 /*===========================================================================*/
 
@@ -328,8 +376,23 @@ struct completion_stack_frame {
 /*----------------------------------------------------------------------*/
 
 enum SubgoalFrameType {
-  VARIANT_PRODUCER_SFT, SUBSUMPTIVE_PRODUCER_SFT, SUBSUMED_CONSUMER_SFT
+  SHARED_VARIANT_PRODUCER_SFT        = 0x06,   /* binary 0110 */
+  SHARED_SUBSUMPTIVE_PRODUCER_SFT    = 0x05,   /* binary 0101 */
+  SHARED_SUBSUMED_CONSUMER_SFT       = 0x04,   /* binary 0100 */
+  PRIVATE_VARIANT_PRODUCER_SFT       = 0x02,   /* binary 0010 */
+  PRIVATE_SUBSUMPTIVE_PRODUCER_SFT   = 0x01,   /* binary 0001 */
+  PRIVATE_SUBSUMED_CONSUMER_SFT      = 0x00    /* binary 0000 */
 };
+
+#define VARIANT_PRODUCER_SFT   0x02
+#define SUBSUMPTIVE_PRODUCER_SFT   0x01
+#define SUBSUMED_CONSUMER_SFT   0x00
+
+#define VARIANT_SUBSUMPTION_MASK  0x03
+
+#define SHARED_PRIVATE_MASK 0x04
+#define SHARED_SFT 0x01
+#define PRIVATE_SFT 0x00
 
 /* Variant (Producer) Subgoal Frame
    -------------------------------- */
@@ -422,10 +485,17 @@ typedef struct SubsumedConsumerSubgoalFrame {
 /* beginning of REAL answers in the answer list */
 #define subg_answers(subg)	ALN_Next(subg_ans_list_ptr(subg))
 
+#define IsVariantSF(pSF) \
+  ((subg_sf_type(pSF) & VARIANT_SUBSUMPTION_MASK) == VARIANT_PRODUCER_SFT)
+#define IsSubProdSF(pSF) \
+  ((subg_sf_type(pSF) & VARIANT_SUBSUMPTION_MASK) == SUBSUMPTIVE_PRODUCER_SFT)
+#define IsSubConsSF(pSF) \
+  ((subg_sf_type(pSF) & VARIANT_SUBSUMPTION_MASK) == SUBSUMED_CONSUMER_SFT)
 
-#define IsVariantSF(pSF)      (subg_sf_type(pSF) == VARIANT_PRODUCER_SFT)
-#define IsSubProdSF(pSF)      (subg_sf_type(pSF) == SUBSUMPTIVE_PRODUCER_SFT)
-#define IsSubConsSF(pSF)      (subg_sf_type(pSF) == SUBSUMED_CONSUMER_SFT)
+#define IsPrivateSF(pSF) \
+  ((subg_sf_type(pSF) & SHARED_PRIVATE_MASK) == PRIVATE_SFT)
+#define IsSharedSF(pSF) \
+  ((subg_sf_type(pSF) & SHARED_PRIVATE_MASK) == SHARED_SFT)
 
 #define IsVariantProducer(pSF)		IsVariantSF(pSF)
 #define IsSubsumptiveProducer(pSF)	IsSubProdSF(pSF)

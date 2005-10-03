@@ -98,9 +98,11 @@
 /* Error Reporting
    --------------- */
 
+#ifndef MULTI_THREAD
 static BTNptr gAnsLeaf;    /* answer to consume */
 static CPtr gAnsTmplt;      /* ... using this template */
 static int gSizeTmplt;      /* ... of this size */
+#endif
 
 static void consumption_error(CTXTdeclc char *string) {
 

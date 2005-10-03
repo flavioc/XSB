@@ -43,6 +43,7 @@
 #include "flags_xsb.h"
 #include "heap_xsb.h"
 #include "thread_xsb.h"
+#include "trace_xsb.h"
 
 /*======================================================================*/
 
@@ -202,6 +203,10 @@ void total_stat(CTXTdeclc double elapstime) {
 	 tablespace_alloc - tablespace_used);
   printf("\n");
 
+/* TLS: Max stack stuff is probably not real useful with multiple
+   threads -- to even get it to work correcly you'd have to use locks.
+*/
+#ifndef MT_ENGINE
   if (flags[TRACE_STA]) {
     /* Report Maximum Usages
        --------------------- */
@@ -218,6 +223,7 @@ void total_stat(CTXTdeclc double elapstime) {
 	   maximum_total_tablespace_usage());
     printf("\n");
   }
+#endif
 
   printf("Tabling Operations\n");
   printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"

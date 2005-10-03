@@ -233,7 +233,17 @@ DynamicStack  _tstTermStackLog;
 DynamicStack  _tstSymbolStack;
 DynamicStack  _tstTrail;
 
-  /* Variables for array of interned tries */
+  /* Error checking for TST unification */
+BTNptr _gAnsLeaf;    
+CPtr _gAnsTmplt;     
+int _gSizeTmplt;     
+
+  /* delay, simplification, etc. */
+Cell _cell_array[500];
+CPtr *_copy_of_var_addr;
+int _copy_of_num_heap_term_vars;
+
+  /********* Variables for array of interned tries *********/
 BTNptr *_Set_ArrayPtr;
   Integer _first_free_set;
   int _Set_ArraySz;
@@ -291,11 +301,11 @@ struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
 int    _i_have_dyn_mutex;	/* This thread has dynamic mutex, for asserted code read */
 
 struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
-
+ 
 struct Structure_Manager *_smBTN;
 struct Structure_Manager *_smBTHT;
 
-  /************ Pointers to cursor information used by
+ /************ Pointers to cursor information used by
  odbc_xsb.c context-local cursor table ***********/
 
 struct Cursor *_FCursor;  /* root of curser chain*/
@@ -390,7 +400,7 @@ typedef struct th_context th_context ;
 #define addr_stack_pointer	(th->_addr_stack_pointer)
 #define Addr_Stack		(th->_Addr_Stack)
 #define addr_stack_size		(th->_addr_stack_size)
-                                                                                
+
 #define term_stackptr		(th->_term_stackptr)
 #define term_stack		(th->_term_stack)
 #define term_stacksize		(th->_term_stacksize)
@@ -469,6 +479,14 @@ typedef struct th_context th_context ;
 #define  tstTermStackLog	(th->_tstTermStackLog)
 #define  tstSymbolStack		(th->_tstSymbolStack)
 #define  tstTrail		(th->_tstTrail)
+
+#define  gAnsLeaf               (th->_gAnsLeaf)
+#define  gAnsTmplt              (th->_gAnsTmplt)
+#define  gSizeTmplt             (th->_gSizeTmplt)
+
+#define  cell_array                         (th->_cell_array)
+#define  copy_of_var_addr                   (th->_copy_of_var_addr)
+#define  copy_of_num_heap_term_vars         (th->_copy_of_num_heap_term_vars)
 
 #define  Set_ArrayPtr           (th->_Set_ArrayPtr)
 #define  first_free_set         (th->_first_free_set)

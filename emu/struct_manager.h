@@ -136,6 +136,7 @@ typedef struct Structure_Manager {
     void *dealloc;	   /* - deallocated structs, poised for reuse */
   } struct_lists;
 } Structure_Manager;
+typedef struct Structure_Manager *SMptr;
 
 
 /* Macro Short-Hands  (mainly for "internal" use)

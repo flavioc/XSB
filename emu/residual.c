@@ -67,18 +67,17 @@
 
 /*----------------------------------------------------------------------*/
 
+#ifndef MULTI_THREAD
 static Cell cell_array[500];
+CPtr *copy_of_var_addr;
+int copy_of_num_heap_term_vars;
+#endif
 
 /*----------------------------------------------------------------------*/
 
 #define build_subgoal_args(SUBG)	\
 	load_solution_trie(CTXTc arity, 0, &cell_array[arity-1], subg_leaf_ptr(SUBG))
 
-
-CPtr *copy_of_var_addr;
-int copy_of_num_heap_term_vars;
-
-/*----------------------------------------------------------------------*/
 
 /*
  * Function build_delay_list() is called by builtin #143 GET_DELAY_LISTS

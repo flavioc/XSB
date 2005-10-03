@@ -120,13 +120,45 @@
 
 #ifndef MULTI_THREAD
 
-/* TLS: 08/05 reg_array is an array used for unificiation by trie
-   instructions from a completed table (assert???)  The answer
-   template is copied to the reg_array, and the trie instructions
-   unify positionally with cells in the reg_array (via reg_arrayptr).
-   I'm not sure why this can't be done directly on the answer
-   template, but there's probably a good reason. There is a separate
-   array, var_regs that */
+/* TLS: 08/05 documentation of reg_array and var_regs.
+ * 
+ * reg_array is a stack used for unificiation by trie instructions
+ * from a completed table and asserted tries.  In the former case, the
+ * reg_array is init'd by tabletry; in the latter by trie_assert_inst.
+ * After initialization, the values of reg_array point to the
+ * dereferenced values of the answer_template (for tables) or of the
+ * registers of the call (for asserted tries).  These values are
+ * placed in reg_array in reverse order, so that at the end of
+ * initialization the first argument of the call or answer template is
+ * at the top of the stack.  Actions are then as follows: 
+ * 
+ * 1) When a structure/list is encountered, and the symbol unifies
+ * with the top of reg_array, additional cells are pushed onto
+ * reg_array.  In the case where the trie is unifying with a variable,
+ * a WAM build-type operation is performed so that these new reg_array
+ * cells point to new heap cells.  In the case where the trie is
+ * unifying with a structure on the heap, the new cells point to the
+ * arguments of the structure, in preparation for further
+ * unifications. 
+ * 
+ * 2) When a constant/number is encountered, an attempt is made to
+ * unify this value with the referent of reg_array.  If it unifies,
+ * the cell is popped off of reg_array, and the algorithm continues.
+ * 
+ * 3) When a variable is encountered in the trie it is handled like a
+ * constant from the perspective of reg_array, but now the var_regs
+ * array comes into play.
+ * 
+ * Variables in the path of a trie are numbered sequentially in the
+ * order of their occurrence in a LR traversal of the trie.  Trie
+ * instructions distinguish first occurrences (_vars) from subsequent
+ * occurrences (_vals).  When a _var numbered N is encountered while
+ * traversing a trie path, the Nth cell of var_regs is set to the
+ * value of the top of the reg_array stack, and the unification
+ * (binding) performed.  If a _val N is later encountered, a
+ * unification is attempted between the top of the reg_array stack,
+ * and the value of var_regs(N).
+ */
 
 Cell *reg_array;
 CPtr reg_arrayptr;

@@ -44,16 +44,14 @@
    bit 3 indicates whether the predicate is tabled for variance.
    (Bits 2 and 3 can both be on, indicating that the predicate is
    tabled, but whether it is variant or subsumptive has not yet been
-   determined.)  Bit 4 indicates whether the predicate is
-   thread-shared or thread-private.
+   determined.)  Bit 4 indicates whether it has been determined that
+   the predicate is thread-shared or thread-private.  Bit 5 indicates
+   the predicate is shared among threads in the MT engine.  Thus, bit
+   5 is meaningful only if bit 4 is also set.  
 
+   Still dont understand why bit 6 is needed???
 
-Bit 5 indicates the predicate is shared among threads
-   in the MT engine.  Higher order bits in env_byte are used by
-   get_spy.
-
-   ??? T_TABLED_SUB_LOADFILE 64 // for use in xwamfile, since T_GLOBAL took 4.
-   ??? T_SHARED_DET	16 // 0x10  use decimal for Prolog include
+   Bits 7 and 8 are used for get_spy.
 
    data: If the psc record indicates a predicate data indicates its
    module; otherwise it contains data, as used in conpsc-style
@@ -114,7 +112,10 @@ typedef struct psc_pair *Pair;
 #define  get_env(psc)		((psc)->env & T_ENV)
 #define  get_spy(psc)		((psc)->env & T_SPY)
 #define  get_shared(psc)	((psc)->env & T_SHARED)
+#define  get_private(psc)	((psc)->env & ~T_SHARED & T_SHARED_DET)
 #define  get_tabled(psc)	((psc)->env & T_TABLED)
+#define  get_subsumptive_tabled(psc)	((psc)->env & T_TABLED_VAR & ~T_TABLED_SUB)
+#define  get_variant tabled(psc)	((psc)->env & T_TABLED_SUB & ~T_TABLED_VAR)
 #define  get_arity(psc)		((psc)->arity)
 #define  get_ep(psc)		((psc)->ep)
 #define  get_data(psc)		((psc)->data)

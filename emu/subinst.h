@@ -33,15 +33,21 @@
 #define NEW_ANSWER_SIMPL_NEG_FAIL 13
 #define NEW_ANSWER_SIMPL_NEG_SUC 14
 
-/* The following global variables are used for ProfileLeader, and
-   represent summary statistics on the size and confomation of SCCs. */
+extern Cell subinst_table[256][2];
 
+/* --------------------------------------------------------------------- */
+
+/* The following global variables are used for ProfileLeader, and
+   represent summary statistics on the size and confomation of SCCs. 
+   It can only be configured with Profile nd cannot be configured with the 
+   multi-threaded engine. */
+
+#if defined(PROFILE) && !defined(MULTI_THREAD)
+extern int trapped_prolog_cps;
 extern int max_subgoals;
 extern int max_completed;
 extern int max_consumers_in_ascc;
 extern int max_compl_susps_in_ascc;
-
-extern int trapped_prolog_cps;
 
 /* The following global variables are used for SpitOutGraph, which 
    prints out the entire SDG */
@@ -49,6 +55,7 @@ extern int trapped_prolog_cps;
 extern int sdg_sample_rate;
 extern int sdg_check_num;
 
-extern Cell subinst_table[256][2];
+#endif
+
 
 

@@ -59,12 +59,6 @@ extern int abolish_table_predicate(CTXTdeclc Psc);
 extern void abolish_all_tables_cps_check(CTXTdecl);
 extern int gc_tabled_preds(CTXTdecl);
 
-#ifndef MULTI_THREAD
-extern BTNptr *freeing_stack;
-extern int freeing_stack_size;
-
-#endif
-
 /* Prasad's changes */
 
 typedef struct InternGarbageLeafFrame *IGLptr;

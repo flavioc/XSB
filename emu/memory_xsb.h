@@ -148,6 +148,11 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 /* Stack Overflow Checkers
    ----------------------- */
+#define local_global_exception "! Local/Global Stack Overflow Exception\n"
+
+#define complstack_exception "! Completion Stack Overflow Exception\n"
+
+#define trail_cp_exception "! Trail/CP Stack Overflow Exception\n"
 
 #ifdef DEBUG_ASSERTIONS
 

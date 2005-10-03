@@ -140,17 +140,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   Op1(get_xxxxl);
   tip =  (TIFptr) get_xxxxl;
 #ifdef MULTI_THREAD
-  /* get right TIF, if thread_private */
-  if (TIF_EvalMethod(tip) == DISPATCH_BLOCK) {
-    struct TDispBlk_t *tdispblk;
-    tdispblk = (struct TDispBlk_t *)tip;
-    if (th->tid > tdispblk->MaxThread) xsb_abort("Table Dispatch block too small");
-    tip = (&(tdispblk->Thread0))[th->tid];
-    if (!tip) { /* this may not be possible, as it may always be initted in get_tip? */
-      New_TIF(tip,tdispblk->psc_ptr);
-      (&(tdispblk->Thread0))[th->tid] = tip;
-    }
-  }
+  handle_dispatch_block(tip);
 #endif
   CallInfo_TableInfo(callInfo) = tip;
   ADVANCE_PC(size_xxxXX);

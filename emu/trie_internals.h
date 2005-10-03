@@ -211,14 +211,22 @@
  *			Trie-Type Definitions
  *			=====================
  *
- *  Should denote both:
+ *  Should denote:
  *  1) The underlying structure of the trie: Basic or Time-Stamped
  *  2) The role the trie is playing in the system
+ *  3) Whether the trie is thread-private or thread-shared
+ * 
+ *  3 is orthogonal to 1,2.  Lower 3 bits represents 1,2, upper bit
+ *  represents 3.
  */
 
 enum Types_of_Tries {
-  CALL_TRIE_TT, BASIC_ANSWER_TRIE_TT, TS_ANSWER_TRIE_TT,
-  DELAY_TRIE_TT, ASSERT_TRIE_TT, INTERN_TRIE_TT
+  CALL_TRIE_TT              = 0x06,     /* binary:  0110 */
+  BASIC_ANSWER_TRIE_TT      = 0x05,     /* binary:  0101 */
+  TS_ANSWER_TRIE_TT         = 0x04,     /* binary:  0100 */
+  DELAY_TRIE_TT             = 0x03,     /* binary:  0011 */
+  ASSERT_TRIE_TT            = 0x02,     /* binary:  0010 */
+  INTERN_TRIE_TT            = 0x01      /* binary:  0001 */
 };
 
 #define IsInCallTrie(pTSC)	   ( TSC_TrieType(pTSC) == CALL_TRIE_TT )
@@ -231,6 +239,9 @@ enum Types_of_Tries {
 
 #define IsInTimeStampedTrie(pTSC)  ( TSC_TrieType(pTSC) == TS_ANSWER_TRIE_TT )
 #define IsInBasicTrie(pTSC)        ( ! IsInTimeStampedTrie(pTSC) )
+
+#define IsPrivateTrie(pTSC) ( TSC_TrieType(pTSC) & 0x08 = 0)
+#define IsSharedTrie(pTSC) ( TSC_TrieType(pTSC) & 0x08 = 1)
 
 /*---------------------------------------------------------------------------*/
 
@@ -500,12 +511,7 @@ extern Cell TrieVarBindings[];
 #define TrieHT_INIT_SIZE     64
 #define TrieHT_NewSize(pHT)  ( TrieHT_NumBuckets(pHT) << 1 )
 
-#ifndef MULTI_THREAD
-extern void  hashify_children(BTNptr, int);
-#else
-extern void  hashify_children(struct th_context*, BTNptr, int);
-#endif
-
+extern void  hashify_children(CTXTdeclc BTNptr, int);
 
 /*
  *  Inserting into a bucket with few nodes reflects a good hash.  In
@@ -583,13 +589,8 @@ extern Structure_Manager smAssertBTN;
 extern Structure_Manager *smBTN;
 #endif
 
-#ifndef MULTI_THREAD
-extern BTNptr new_btn(int TrieType, int NodeType, Cell Symbol,
+extern BTNptr new_btn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
 		      BTNptr Parent, BTNptr Sibling);
-#else
-extern BTNptr new_btn(struct th_context *th, int TrieType, int NodeType, Cell Symbol,
-		      BTNptr Parent, BTNptr Sibling);
-#endif
 
 #define New_BTN(BTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
    BTN = new_btn(CTXTc TrieType,NodeType,Symbol,(BTNptr)Parent,(BTNptr)Sibling)
@@ -901,13 +902,8 @@ extern Structure_Manager smALN;
 
 /* Term Lookup
    ----------- */
-#ifndef MULTI_THREAD
-extern void *var_trie_lookup(void *, xsbBool *, Cell *);
-extern void *iter_sub_trie_lookup(void *trieNode, TriePathType *);
-#else
-extern void *var_trie_lookup(struct th_context *, void *, xsbBool *, Cell *);
-extern void *iter_sub_trie_lookup(struct th_context *, void *trieNode, TriePathType *);
-#endif
+extern void *var_trie_lookup(CTXTdeclc void *, xsbBool *, Cell *);
+extern void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *);
 
 #define trie_escape_lookup(Root)		\
    ( IsEscapeNode(TN_Child((BTNptr)Root))	\
@@ -917,27 +913,14 @@ extern void *iter_sub_trie_lookup(struct th_context *, void *trieNode, TriePathT
 
 /* Term Insertion
    -------------- */
-#ifndef MULTI_THREAD
-void *stl_restore_variant_cont(void);
-#else
-void *stl_restore_variant_cont(struct th_context *);
-#endif
+void *stl_restore_variant_cont(CTXTdecl);
 
 enum {NO_INSERT_SYMBOL = 0};
-#ifndef MULTI_THREAD
-extern BTNptr  bt_escape_search(BTNptr root, xsbBool *isNew);
-extern BTNptr  bt_insert(BTNptr root, BTNptr start, Cell firstSym);
-extern TSTNptr tst_insert(TSTNptr root, TSTNptr start, Cell firstSym,
+
+extern BTNptr  bt_escape_search(CTXTdeclc BTNptr root, xsbBool *isNew);
+extern BTNptr  bt_insert(CTXTdeclc BTNptr root, BTNptr start, Cell firstSym);
+extern TSTNptr tst_insert(CTXTdeclc TSTNptr root, TSTNptr start, Cell firstSym,
 			  xsbBool maintainTSI);
-#else
-extern BTNptr  bt_escape_search(struct th_context *th,
-			 BTNptr root, xsbBool *isNew);
-extern BTNptr  bt_insert(struct th_context *th,
-			 BTNptr root, BTNptr start, Cell firstSym);
-extern TSTNptr tst_insert(struct th_context *th,
-			  TSTNptr root, TSTNptr start, Cell firstSym,
-			  xsbBool maintainTSI);
-#endif
 
 #define TST_InsertEscapeNode(Root,NewNode) {				    \
    CreateEscapeTSTN(NewNode,TSTN_TrieType(Root),Root);			    \

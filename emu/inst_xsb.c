@@ -34,6 +34,7 @@
 
 extern void init_builtin_table(void);
 
+/* ------------------------------------------------------------------- */
 #ifdef PROFILE
 
 /* Initialize this stuff for profiling.  In profiling, the number of
@@ -85,7 +86,7 @@ Cell inst_table[BUILTIN_TBL_SZ][5];
 	inst_table[inst][2] = op2type; \
 	inst_table[inst][3] = op3type; \
 	inst_table[inst][4] = op4type
-#endif
+#endif /* PROFILE */
 
 /*----------------------------------------------------------------------*/
 
