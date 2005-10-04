@@ -197,6 +197,7 @@ int CheckForSCC( th_context * th )
 	    dep1 = GetNextDep(&dep_th->TDL, dep1); 
 	}
     	dep1 = GetInitDep(&th->TDL); 
+    	while( dep1 != NULL )
     	{   tid1 = GetDepTid(dep1) ;
 	    if( tid1 != dep_th->tid && !find_tid(&dep_th->TDL,tid1) )
 		return FALSE ;
