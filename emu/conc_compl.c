@@ -123,7 +123,6 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 
     InitThreadDepList( &NewTDL ) ;
     *busy = FALSE ;
-    th->may_have_answers = FALSE ;
 
     do
     {
@@ -144,8 +143,6 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 		    PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps ) ;
 		else
 		    *busy = TRUE ;
-		if( *busy || dep_th->may_have_answers )
-		    th->may_have_answers = TRUE ;
 	    }
 	    dep = GetNextDep(&th->TDL, dep); 
 	}
@@ -169,7 +166,7 @@ int MayHaveAnswers( th_context * th )
     	while( dep1 != NULL )
     	{   tid1 = GetDepTid(dep1) ;
 	    th1 = find_context(tid1) ;
-	    if( th1->may_have_answers && GetDepLast(dep1) < th1->last_ans )
+	    if( GetDepLast(dep1) < th1->last_ans )
 		rc = TRUE ;
 	    dep1 = GetNextDep(&dep_th->TDL, dep1); 
 	}
