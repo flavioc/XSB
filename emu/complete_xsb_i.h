@@ -75,7 +75,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 		break ;
 	}
 
-/*	if( EmptyThreadDepList(&th->TDL) )
+	if( EmptyThreadDepList(&th->TDL) )
 	{	CPtr orig_breg = breg;	
     		batched_compute_wfs(CTXTc cs_ptr, breg, 
 				(VariantSF)tcp_subgoal_ptr(breg));
@@ -88,7 +88,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 		Fail1;
 		XSB_Next_Instr();
 	}
-*/	
+	
 	if( !busy )
 	{	
 

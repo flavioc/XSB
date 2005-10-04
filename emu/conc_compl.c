@@ -64,7 +64,7 @@ void InitThreadDepList( ThreadDepList *TDL )
 	TDL->NumDeps = 0 ;
 }
 
-void CopyThreadDepList( ThreadDepList *to, ThreadDepList *from )
+static void CopyThreadDepList( ThreadDepList *to, ThreadDepList *from )
 {
 	int i ;
 	to->NumDeps = from->NumDeps ;
