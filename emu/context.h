@@ -332,6 +332,7 @@ int reset_thread ;
 int completing ;
 int completed ;
 int last_ans ;
+int may_have_answers ;
 CPtr cc_leader ;
 ThreadDepList TDL ;
 pthread_cond_t cond_var ;

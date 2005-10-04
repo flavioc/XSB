@@ -12,7 +12,6 @@ struct subgoal_frame ;
 typedef struct thread_dep
 {
 	struct subgoal_frame *Subgoal;
-	int more ;
 	int last ;
 }
 ThreadDep ;

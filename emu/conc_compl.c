@@ -16,7 +16,6 @@
 #include "error_xsb.h"
 
 #define GetDepSubgoal(d)	((d)->Subgoal)
-#define GetDepMore(d)		((d)->more)
 #define GetDepLast(d)		((d)->last)
 #define GetDepTid(d)		(subg_tid((d)->Subgoal))
 
@@ -36,7 +35,7 @@ static int check_ins_subg( ThreadDepList *TDL, VariantSF subg )
 {	int i ;
 	i = 0 ;
 	while ( i < TDL->NumDeps )
-		if ( GetDepTid(&TDL->Deps[i]) == subg_tid(subg) )
+	{	if ( GetDepTid(&TDL->Deps[i]) == subg_tid(subg) )
 		{	if( subg_compl_stack_ptr(subg) > 
 			    subg_compl_stack_ptr(GetDepSubgoal(&TDL->Deps[i])) )
 			{	GetDepSubgoal(&TDL->Deps[i]) = subg ;
@@ -47,6 +46,7 @@ static int check_ins_subg( ThreadDepList *TDL, VariantSF subg )
 		}
 		else
 			i++ ;
+	}
 	if( TDL->NumDeps == MAX_TDEP_LIST - 1 )
 		xsb_abort( "Too many inter-thread dependencies" );
 
@@ -106,7 +106,8 @@ static void PropagateDeps( th_context *th, th_context *dep_th,
 		*leader = subg_compl_stack_ptr(sgf) ;
 	}
 	else
-		*new_deps = *new_deps || check_ins_subg(NewTDL, sgf) ;
+		if( check_ins_subg(NewTDL, sgf) )
+			*new_deps = TRUE ;
 	dep = GetNextDep(&dep_th->TDL, dep); 
     }
 }
@@ -122,6 +123,7 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 
     InitThreadDepList( &NewTDL ) ;
     *busy = FALSE ;
+    th->may_have_answers = FALSE ;
 
     do
     {
@@ -134,7 +136,6 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 		check_ins_subg(&NewTDL, sgf) ;
 		dep1 = find_tid(&NewTDL,subg_tid(sgf));
 		dep_th = find_context(subg_tid(sgf)) ;
-		GetDepMore(dep1) = !dep_th->completing ;
 		if( dep_th->completing )
 			GetDepLast(dep1) = dep_th->last_ans ;
 		else
@@ -143,6 +144,8 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 		    PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps ) ;
 		else
 		    *busy = TRUE ;
+		if( *busy || dep_th->may_have_answers )
+		    th->may_have_answers = TRUE ;
 	    }
 	    dep = GetNextDep(&th->TDL, dep); 
 	}
@@ -166,11 +169,8 @@ int MayHaveAnswers( th_context * th )
     	while( dep1 != NULL )
     	{   tid1 = GetDepTid(dep1) ;
 	    th1 = find_context(tid1) ;
-	    if( GetDepMore(dep1) && GetDepLast(dep1) < th1->last_ans )
-	    {
+	    if( th1->may_have_answers && GetDepLast(dep1) < th1->last_ans )
 		rc = TRUE ;
-		GetDepMore(dep) = TRUE ;
-	    }
 	    dep1 = GetNextDep(&dep_th->TDL, dep1); 
 	}
 	dep = GetNextDep(&th->TDL, dep); 
