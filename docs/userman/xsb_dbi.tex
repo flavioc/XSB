@@ -46,10 +46,10 @@ driver without problems. For the MySQL driver one has to edit the file
 to indicate where MySQL is installed.
 
 
-Under Unix, the {\tt configure} script should also build the drivers
-automatically.  If, however, ODBC and MySQL are not installed in their
-standard places, you will have to provide the following parameters to the
-configure script:
+Under Unix, the {\tt configure} script will build the drivers automatically
+if the {\tt --with-dbdrivers} option is specified.  If, however, ODBC and
+MySQL are not installed in their standard places, you will have to provide
+the following parameters to the configure script:
 %%
 \begin{itemize}
 \item  {\tt --with-odbc-libdir=LibDIR} -- {\tt LibDIR} is the directory
@@ -84,11 +84,11 @@ ODBC interface separately, you can type
 %%
 Again, if ODBC is installed in a non-standard location, you might need to
 supply the options {\tt --with-odbc-libdir} and {\tt --with-odbc-incdir} to
-the configure script. (Again, under Cygwin ODBC is always installed in a
-standard place, and {\tt configure} needs no additional parameters.)
+the configure script. Under Cygwin ODBC is always installed in a
+standard place, and {\tt configure} needs no additional parameters.
 
 Under Windows, separate configuration of the XSB-DB interfaces is also
-possible, but you need Visual Studio installed. For instance, to do so for
+possible, but you need Visual Studio installed. For instance, to configure
 the MySQL interface, type
 %%
 \begin{verbatim}
@@ -97,7 +97,36 @@ the MySQL interface, type
 \end{verbatim}
 %%
 As before, you might need to edit the NMakefile.mak script to tell the
-compiler where the required MySQL's libraries are.
+compiler where the required MySQL's libraries are. You also need the file
+{\tt packages$\backslash$dbdrivers$\backslash$mysql$\backslash$mysql\_init.P} with the following content:
+%%
+\begin{verbatim}
+:- export mysql_info/2.
+mysql_info(support, 'yes').
+mysql_info(libdir,  '').
+mysql_info(ccflags, '').
+mysql_info(ldflags, '').
+\end{verbatim}
+%%
+
+Similarly, to configure the ODBC interface, do
+%%
+\begin{verbatim}
+    cd packages\dbdrivers\odbc\cc  
+    nmake /f NMakefile.mak
+\end{verbatim}
+%%
+You will also need to create the file {\tt packages$\backslash$dbdrivers$\backslash$odbc$\backslash$odbc\_init.P}
+with the following contents:
+%%
+\begin{verbatim}
+:- export odbc_info/2.
+odbc_info(support, 'yes').
+odbc_info(libdir,  '').
+odbc_info(ccflags, '').
+odbc_info(ldflags, '').
+\end{verbatim}
+%%
 
 
 \section{Using the Interface}
