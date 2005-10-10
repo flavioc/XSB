@@ -601,7 +601,7 @@ XSB_Start_Instr(hash_opcode,_hash_opcode)
 	temp_ptr_for_hash = (CPtr)*reg_arrayptr;
         XSB_CptrDeref(temp_ptr_for_hash);
         if (!isref(temp_ptr_for_hash) 
-	    && (BTHT_BucketArray(hash_header) == NULL)){ 
+	    && (*hash_base == NULL)){ 
             /* Ground call and no variables in hash table */
 	    hash_nonvar_subterm(temp_ptr_for_hash,hash_header,
 				hashed_hash_offset);
