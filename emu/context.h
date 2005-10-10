@@ -24,13 +24,10 @@
 */
 
 #ifndef __CONTEXT_H__
-
 #define __CONTEXT_H__
-
 
 #include "cell_def_xsb.h"
 #include "basictypes.h"
-#include "setjmp_xsb.h"
 #include "flag_defs_xsb.h"
 #include "conc_compl.h"
 #include "hashtable_xsb.h"
