@@ -595,7 +595,9 @@ XSB_Start_Instr(hash_opcode,_hash_opcode)
     *  Under new trie structure, NodePtr is actually pointing at a
     *  Hash Table Header struct.
     */
-	hash_header = (BTHTptr) lpcreg;
+    hash_header = (BTHTptr) lpcreg;
+    hash_base = (BTHTptr *) BTHT_BucketArray(hash_header);
+
 	temp_ptr_for_hash = (CPtr)*reg_arrayptr;
         XSB_CptrDeref(temp_ptr_for_hash);
         if (!isref(temp_ptr_for_hash) 
