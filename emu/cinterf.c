@@ -29,7 +29,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#if !defined(WIN_NT) || defined(CYGWIN)
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #include "auxlry.h"
