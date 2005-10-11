@@ -59,6 +59,8 @@
 :- import fmt_write_string/3, file_close/1 from file_io.
 :- import file_size/2 from file_io.
 
+:- import standard_symbol/3 from std_xsb.
+
 %%:- import windows_os_loader/0 from loader.
 
 :- import findall/3 from setof.

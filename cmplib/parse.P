@@ -438,9 +438,11 @@ parse_clause([Cl|Cls], VariableList, Module,ModName) :- !,
 	parse_clause(Cl, VariableList, Module,ModName),
 	parse_clause(Cls, VariableList, Module,ModName).
 parse_clause(Cl, _VariableList, module(SymTab,_DcList,ClList,QrList),ModName) :-
-	( Cl = (':-'(H, B)) ->		parse_preddef(H, B, ClList, SymTab)
-%%	; Cl = (':-'(table(PAs))) ->	parse_table_directive(PAs,
-%%						QrList, SymTab)
+	( Cl = (':-'(H, B)) ->		parse_preddef_chk_dyn(H, B, ClList, QrList, SymTab)
+	; Cl = (':-'(dynamic(PAs))) ->
+		transform_slash_to_skel(PAs,Skels),
+		parse_comma_list_dyn(Skels, SymTab),
+		parse_query(dynamic(Skels), QrList, SymTab)
 	; Cl = (':-'(PDirective)) ->	transform_directive(PDirective,Directive),
 	                                (%% parse_spec_directive(Directive,
 					 %%    VariableList, SymTab, DcList), !
@@ -449,15 +451,13 @@ parse_clause(Cl, _VariableList, module(SymTab,_DcList,ClList,QrList),ModName) :-
 					; parse_query(Directive, QrList,SymTab)
 					)
 	; Cl = ('?-'(Q)) -> 		parse_query(Q,QrList,SymTab)
-	; parse_preddef(Cl, true, ClList, SymTab)
+	; parse_preddef_chk_dyn(Cl, true, ClList, QrList, SymTab)
 	).
 
 /*======================================================================*/
 /* transform_directive(+Directive, -TDirective)                  	*/
 /*======================================================================*/
 
-transform_directive(dynamic(Args),dynamic(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
 transform_directive(table(Args),table(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
 transform_directive(index(Args),index(TArgs)) :- !,
@@ -640,10 +640,35 @@ parse_directive(Directive,_SymTab,_ModName) :-
 /* dont break cp_opt/2							*/
 /*======================================================================*/
 
+parse_preddef_chk_dyn(H, B, List, QrList, SymTab) :-
+	functor(H, F, A),
+	sym_insert(F, A, [defined], SymTab, PredSym),
+	(sym_prop((dynamic),PredSym)
+	 ->	(sym_prop(has_dynamic_clauses,PredSym)
+		 ->	true
+		 ;	standard_symbol(retractall,1,Mod1),
+			sym_insert(Mod1,0,[module],SymTab,_),
+			sym_insert(retractall,1,im(Mod1),SymTab,_),
+			standard_symbol(assertz,1,Mod2),
+			sym_insert(Mod2,0,[module],SymTab,_),
+			sym_insert(assertz,1,im(Mod2),SymTab,_),
+			sym_propin([has_dynamic_clauses],PredSym),
+			functor(GenH,F,A),
+			parse_preddef('_$main',(retractall(GenH),fail),QrList,SymTab)
+		),
+		(B == true
+		 ->	parse_preddef('_$main',(assertz(H),fail),QrList,SymTab)
+		 ;	parse_preddef('_$main',(assertz((H:-B)),fail),QrList,SymTab)
+		)
+	 ;      parse_preddef_sym(H, B, List, PredSym, SymTab)
+	).
 
 parse_preddef(H, B, List, SymTab) :-
 	functor(H, F, A),
 	sym_insert(F, A, [defined], SymTab, PredSym),
+	parse_preddef_sym(H, B, List, PredSym, SymTab).
+
+parse_preddef_sym(H, B, List, PredSym, SymTab) :- 
 	memberchk(pred(PredSym,PCs,_), List),
 	trans_head(H, goal(_, ArgList), SymTab, 0, VidMed),
 	trans_goals(B, Body, SymTab, VidMed, _VidOut),
@@ -682,6 +707,21 @@ parse_comma_list(Spec, SymTab, SymbolProp, _Directive) :-
 parse_comma_list(X, _, _, Directive) :-
 	warning(('Non predicate specification "', X, 
 		 '" found in ', Directive, ' directive. Ignored!')).
+
+parse_comma_list_dyn((Spec,Specs),SymTab) :- !,
+	parse_comma_list_dyn(Spec,SymTab),
+	parse_comma_list_dyn(Specs,SymTab).
+parse_comma_list_dyn(Spec,SymTab) :-
+	(is_most_general_term(Spec)
+	 ->	functor(Spec,P,A),
+		sym_insert(P,A,[(dynamic)],SymTab,Sym),
+		(sym_prop(defined,Sym)
+		 ->	warning((P,'/',A,' defined before its dynamic declaration'))
+		 ;	true
+		)
+	 ;      warning(('Non predicate specification "', Spec,
+		 '" found in dynamic directive. Ignored!'))
+	).	
 
 parse_list([], _SymTab, _SymbolProp, _Directive).
 parse_list([Pred|Preds], SymTab, SymbolProp, Directive) :- 
