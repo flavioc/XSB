@@ -85,9 +85,9 @@ static EPtr alloc_more_edge_space(void)
     next_edge(theEdge) = FromEptr; \
     FromEptr = theEdge
 
-/* Add a dependency graph edge, and its transpose as long as the DG
-   "from" node (DGT "to" node) is not completed and lies within the
-   ASCC */
+/* Add a dependency graph edge, and its transpose as long as the
+   parent node csf2 (DG "from" node / DGT "to" node) is not completed
+   and lies within the ASCC */
 
 #define add_ascc_edges(subgoal,cs_frame,leader_cs_frame)	\
     csf2 = (ComplStackFrame)subg_compl_stack_ptr(subgoal);	\
@@ -205,9 +205,9 @@ static void batched_compute_wfs(CTXTdeclc CPtr leader_compl_frame,
   /* The general algorithm for exact SCC check is defined in the 1998
      SLGWAM TOPLAS paper. Below we will 
 
-     1) Construct a dependency graph (technically its transpose): via
+     1) Construct a dependency graph (DG) + its transpose (DGT) via
      construct_dep_graph((ComplStackFrame)leader_compl_frame).  Nodes
-     of this graph are formed via elements of the completion stack,
+     of this graph are formed via cells in compretion stack frames
      compl_DG_edges, and compl_DGT_edges.
      
      2) Traverse that dependency graph to find an independent SCC,

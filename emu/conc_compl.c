@@ -31,6 +31,14 @@ static ThreadDep * find_tid( ThreadDepList *TDL, int tid )
 	return NULL ;
 }
 
+/********************************************************************* 
+   Updates thread dependency list (TDL) for a thread t (accessible
+   through the context for t).  The TDL for t includes each thread t_1
+   upon which some subgoal computed by t depends, along with the
+   oldest subgoal computed by t_1 upon which there is a dependency.
+   Returns TRUE if a new dependency is found; and FALSE if not.
+*/
+
 static int check_ins_subg( ThreadDepList *TDL, VariantSF subg )
 {	int i ;
 	i = 0 ;
@@ -91,6 +99,13 @@ ThreadDep *GetNextDep( ThreadDepList *TDL, ThreadDep *dep )
 
 }
 
+/********************************************************************* 
+   Propagates dependencies from the TDL of the dep_th to the TDL of
+   th, using check_ins_subg().  If the process finds a new leader in
+   th, then *leader is set to TRUE; otherwise, if some other new
+   dependency is found, *new_deps is set to TRUE.
+ */
+
 static void PropagateDeps( th_context *th, th_context *dep_th, 
 		    	ThreadDepList *NewTDL, CPtr *leader, int *new_deps )
 {
@@ -112,6 +127,17 @@ static void PropagateDeps( th_context *th, th_context *dep_th,
     }
 }
 
+/********************************************************************* 
+  UpdateDeps updates all of a given thread t's dependencies.  If th ->
+  completing is TRUE, the thread is waiting on the completing mutex;
+  if false, its either doing work or executing the completion
+  algorithm -- but only one thread can execute the completion
+  algorithm at one time.  In the inner loop, for each completing
+  (blocked) thread t1 that t depends on, the dependencies are updated
+  as is last_ans.  It turns out that by propagating dependencies from
+  t1 to t, new dependencies may arise, which are handled by the outer
+  loop.  If busy is set to TRUE, the thread will later resuspend.
+ */
 
 void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 {
@@ -151,6 +177,15 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
     while( new_deps ) ;
 }
 
+/********************************************************************* 
+   MayHaveAnswers is only called by a thread th after UpdateDeps
+   traverses all dependencies and it is determined that each dependent
+   thread th0 for th is "completing", i.e.  blocked on the completing
+   mutex.  MayHaveAnswers then conducts a second pass that checks
+   whether the last answer in th0 is the same as the last answer known
+   to th.
+*/
+
 int MayHaveAnswers( th_context * th )
 {
     th_context * dep_th, *th1 ;
@@ -174,6 +209,18 @@ int MayHaveAnswers( th_context * th )
     }
     return rc ;
 }
+
+/********************************************************************* 
+  CheckForSCC() is only called by a thread th after UpdateDeps
+  traverses all dependencies and it is determined that each dependent
+  thread th0 for th is "completing", i.e.  blocked on the completing
+  mutex.  Once called, it traverses through the TDL for th and for
+  each dependent thread dep_th, ensures that dep_th's TDL contains all
+  and only the dependencies of th's TDL.
+
+  Question: is cc_leader necessary??
+
+*/
 
 int CheckForSCC( th_context * th )
 {

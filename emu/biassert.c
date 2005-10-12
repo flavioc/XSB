@@ -2553,7 +2553,7 @@ xsbBool db_remove_prref( CTXTdecl /* Psc */ )
 {
   Psc psc = (Psc)ptoc_int(CTXTc 1) ;
 
-  xsb_dbgmsg((LOG_RETRACT_GC, "DEL Prref %p", p ));
+  //  xsb_dbgmsg((LOG_RETRACT_GC, "DEL Prref %p", p )); TLS: p?
 
     SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
     if (get_ep(psc) != ((byte *)(&(psc->load_inst)))) {

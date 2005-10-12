@@ -39,7 +39,7 @@
 /* need _POSIX_C_SOURCE for setjmp.h to define the right stuff with gcc */
 #ifndef WIN_NT
 
-#ifndef _POSIX_C_SOURCE
+#if (!defined(_POSIX_C_SOURCE) && !defined(SOLARIS))
 #define _POSIX_C_SOURCE  1
 
 /* needed to make sure feature.h is included */
@@ -47,7 +47,7 @@
 #undef _FEATURES_H
 #endif
 
-#endif /* _POSIX_C_SOURCE */
+#endif /* _POSIX_C_SOURCE / SOLARIS */
 
 #endif /* WIN_NT */
 
