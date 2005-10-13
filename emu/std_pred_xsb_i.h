@@ -538,6 +538,12 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
 
 #ifdef MULTI_THREAD
 
+/* Define own qsort routine when multithreading because it has to pass
+   the thread ID to the compare routine when comparing terms.  The
+   standard system qsort routine, which is used when single threading,
+   does not support such an extra parameter.
+*/
+
 typedef int (*compfptr)(CTXTdeclc const void *, const void *) ;
 
 #define INSERT_SORT	8
