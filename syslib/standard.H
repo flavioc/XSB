@@ -31,7 +31,7 @@
 
 :- export 
         arg/3,		arg0/3,		atom/1,		
-        atom_concat/3,   atomic/1,
+	atom_concat/3,   atomic/1,	atom_length/2,
 	goal_arg/3,	atom_chars/2,   atom_codes/2,
 	call/1,		call_expose/1,	callable/1,
         check_arity_integer/3,  
@@ -113,7 +113,7 @@
 :- import '_$load_undef'/1 from loader.
 :- import windows_os_loader/0 from loader.
 
-:- import call0/1, conname/2,
+:- import call0/1, conname/2, str_len/2,
 	  expand_filename/2, machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
 	  psc_name/2, psc_type/2,

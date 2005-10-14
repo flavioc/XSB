@@ -618,6 +618,8 @@ hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
 % Type conversion Predicates %
 %----------------------------%
 
+atom_length(A, N) :- str_len(A, N).
+
 atom_chars(A, L) :- atom_chars(A, L).
 atom_codes(A, L) :- atom_codes(A, L).
 

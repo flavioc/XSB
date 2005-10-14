@@ -59,6 +59,7 @@ standard_symbol(at_end_of_stream,1,file_io).                        % ISO
 standard_symbol(atom, 1, standard).                               % ISO
 standard_symbol(atom_concat, 3, standard).                   % ISO
 standard_symbol(atomic, 1, standard).                            % ISO
+standard_symbol(atom_length, 2, standard).                     % ISO
 standard_symbol(atom_chars, 2, standard).                     % ISO
 standard_symbol(atom_codes, 2, standard).                    % ISO
 standard_symbol(bagof, 3, setof).			% ISO
