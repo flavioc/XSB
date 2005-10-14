@@ -443,6 +443,7 @@ parse_clause(Cl, _VariableList, module(SymTab,_DcList,ClList,QrList),ModName) :-
 		transform_slash_to_skel(PAs,Skels),
 		parse_comma_list_dyn(Skels, SymTab),
 		parse_query(dynamic(Skels), QrList, SymTab)
+	; Cl = (':-'(initialization(Q))) ->	parse_query(Q,QrList,SymTab)
 	; Cl = (':-'(PDirective)) ->	transform_directive(PDirective,Directive),
 	                                (%% parse_spec_directive(Directive,
 					 %%    VariableList, SymTab, DcList), !
@@ -685,7 +686,7 @@ parse_query(B, List, SymTab) :-
 	parse_preddef('_$main', (B->fail), List, SymTab).
 
 /*======================================================================*/
-/* parse_comma_list(+PredList, #SymTab, +SymbolProp, +Directive) 		*/
+/* parse_comma_list(+PredList, #SymTab, +SymbolProp, +Directive) 	*/
 /*	Processes export/import/local lists (records the appropriate	*/
 /*	information in symbol table).  It also does the same for	*/
 /*	parallel/table lists.						*/
