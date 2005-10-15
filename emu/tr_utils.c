@@ -750,12 +750,10 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
       break;
     }
   }
-  if (trie_op_size > MAX_DELETE_TRIE_STACK_SIZE) {
-    free(delete_trie_op); delete_trie_op = NULL;
-    free(delete_trie_node); delete_trie_node = NULL;
-    free(delete_trie_hh); delete_trie_hh = NULL;
-    trie_op_size = 0; 
-  }
+  free(delete_trie_op); delete_trie_op = NULL;
+  free(delete_trie_node); delete_trie_node = NULL;
+  free(delete_trie_hh); delete_trie_hh = NULL;
+  trie_op_size = 0; 
 }
 
 /*======================================================================*/
