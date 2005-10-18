@@ -2623,7 +2623,6 @@ static int another_buff(Cell Instr)
 void retractall_prref(CTXTdeclc PrRef prref) {
   int btop = 0;
   ClRef buffer;
-  ClRef frstbuff;
   ClRef buffers_to_free[MAXDYNFREEBUFF];
 
   if (prref && (cell_opcode((CPtr)prref) != fail)) {
@@ -2632,8 +2631,7 @@ void retractall_prref(CTXTdeclc PrRef prref) {
       return;
     }
     force_retract_buffers(CTXT);
-    frstbuff = prref->FirstClRef;
-    buffers_to_free[btop++] = frstbuff;
+    buffers_to_free[btop++] = prref->FirstClRef;
     while (btop > 0) {
       if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
       buffer = buffers_to_free[--btop];
