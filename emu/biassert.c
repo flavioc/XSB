@@ -2158,7 +2158,8 @@ static int really_delete_clause(ClRef Clause)
 	      if (sob && --ClRefNumNonemptyBuckets(sob) == 0) 
                 { /* if emptied bucket, decrement count; if all empty, reclaim SOB */
                     xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
-                    delete_from_sobchain(sob) ;
+		    delete_from_sobchain(sob) ;
+		    mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob));
 		}
             }
             break ;
@@ -2419,7 +2420,7 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
   int Loc;
 
   if (!(*prref = (PrRef)mem_alloc(sizeof(PrRefData)))) xsb_exit("No space for a PrRef\n");
-  //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",get_name(psc),get_arity(ps),get_shared(psc),prref);
+  //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",get_name(psc),get_arity(psc),get_shared(psc),prref);
 
   if (xsb_profiling_enabled)
     add_prog_seg(psc,(byte *)*prref,sizeof(PrRefData)); /* dsw profiling */
@@ -2630,8 +2631,8 @@ void retractall_prref(CTXTdeclc PrRef prref) {
       abolish_trie_asserted_stuff(CTXTc prref);
       return;
     }
-    frstbuff = prref->FirstClRef;
     force_retract_buffers(CTXT);
+    frstbuff = prref->FirstClRef;
     buffers_to_free[btop++] = frstbuff;
     while (btop > 0) {
       if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
