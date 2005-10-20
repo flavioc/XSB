@@ -2631,6 +2631,7 @@ void retractall_prref(CTXTdeclc PrRef prref) {
       return;
     }
     force_retract_buffers(CTXT);
+    if (cell_opcode((CPtr)prref) == fail) return; /* if freeing buffered clauses empties it */
     buffers_to_free[btop++] = prref->FirstClRef;
     while (btop > 0) {
       if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
