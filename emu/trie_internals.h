@@ -108,10 +108,12 @@
    case XSB_TrieVar:						\
      if (IsNewTrieVar(Symbol))					\
        TN_Instr(pTN) = (byte)trie_try_var;			\
-     else if (IsNewTrieAttv(Symbol))				\
+     else if (IsNewTrieAttv(Symbol)) {				\
        TN_Instr(pTN) = (byte)trie_try_attv;			\
-     else							\
+     } \
+     else {							\
        TN_Instr(pTN) = (byte)trie_try_val;			\
+     } \
      break;							\
    case XSB_LIST:						\
      TN_Instr(pTN) = (byte)trie_try_list;			\

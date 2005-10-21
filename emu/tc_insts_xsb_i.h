@@ -339,7 +339,8 @@ XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
     cell2deref = (Cell) var_regs[(int)int_val(opatom)];			
     XSB_Deref(cell2deref);     						
     if (*reg_arrayptr != cell2deref) {					
-      /* Do not trigger attv interrupt! */				
+      /* Do not trigger attv interrupt! */			      
+      
       bind_ref(clref_val(*reg_arrayptr), cell2deref);			
     }									
     else {								

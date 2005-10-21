@@ -1292,22 +1292,38 @@ void load_delay_trie(CTXTdeclc int arity, CPtr cptr, BTNptr TriePtr)
 
 /*----------------------------------------------------------------------*/
 
+/* TLS gloss: 
+ * 
+ * To me it seems this function is written in an overly general way.
+ * I dont see a real need to encapsulate all of its input and output
+ * as it is only called once, in tabletry.  What's lost is: 
+ * cptr is simply a pointer to the reg_array, cptr = reg+1 
+ * VarPosReg is top_of_cpstack;
+ * 
+ * In addition, the manner in which attributed variables are handled
+ * could probably be cleaned up a little.  Attributed variables must
+ * eventually point into the heap, but all of the variables in the CP
+ * stack substitution factor are eagerly redirected to the heap --
+ * and probably unnecessarily.
+ */
+
 /*
  * Searches/inserts a subgoal call structure into a subgoal call trie.
- * During search/insertion, the variables of the subgoal call are pushed
- *   on top of the CP stack (through VarPosReg), along with the # of
- *   variables that were pushed.  This forms the substitution factor.
+ * During search/insertion, the variables of the subgoal call are
+ * pushed on top of the CP stack (through VarPosReg), along with the #
+ * of variables that were pushed.  This forms the substitution factor.
  * Prolog variables are standardized during this process to recognize
- *   multiple (nonlinear) occurences.  They must be reset to an unbound
- *   state before termination.
- * Many global variables:
+ * multiple (nonlinear) occurences.  They must be reset to an unbound
+ * state before termination.
+ * 
+ * Important variables: 
  * Paren - to be set to point to inserted term's leaf
  * VarPosReg - pointer to top of CPS; place to put the substitution factor
  *    in high-to-low memory format.
- * GNodePtrPtr - local to file?  Points to the parent-internal-structure's
+ * GNodePtrPtr - Points to the parent-internal-structure's
  *    "child" or "NODE_link" field.  It's a place to anchor any newly
  *    created NODEs.
- * ctr - local to file; contains the number of distinct variables found
+ * ctr - contains the number of distinct variables found
  *    in the call.
  * Pay careful attention to the expected argument vector accepted by this
  * function.  It actually points one Cell *before* the term vector!  Notice
@@ -1341,17 +1357,15 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
     case XSB_FREE:
     case XSB_REF1:
       if (! IsStandardizedVariable(call_arg)) {
+
 	/*
-	 * Point all local variables to heap.  This is required to support
-	 * attributed variables in tabling: in order to share unchanged
-	 * attributed variables between subgoal trie and answer trie, any
-	 * cell in the substitution factor of the call CANNOT be a FREE
-	 * variable itself.
-	 *
-	 * Since the substitution factor will be moved onto heap in CHAT,
-	 * the new substitution factor may contain FREE variables if we
-	 * don't point the local variables to heap here.
+	 * Before proceeding, point all local variables to heap to
+	 * support attributed variables in tabling. In order to share
+	 * unchanged attributed variables between subgoal trie and
+	 * answer trie, any cell in the substitution factor of the
+	 * call CANNOT be a FREE variable itself.
 	 */
+
 	if (top_of_localstk <= call_arg &&
 	    call_arg <= (CPtr) glstack.high - 1) {
 	  bld_free(hreg);
@@ -1359,11 +1373,10 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 	  call_arg = hreg++;
 	}
 	/*
-	 * Save pointers of the substitution factor of the call into CP
-	 * stack.  Each pointer points to a variable in the heap (in CHAT)
-	 * or heap/local stack (in SLG-WAM).  The variables may get bound
-	 * in the later computation.
-	 */
+	 * Make VarPosReg, which is in the choice point stack, point
+	 * to call_arg, which is in the heap.  Then make the heap
+	 * cell into a trie-variable.  But where is VarEnumerator init'd???
+         */
 	*(--VarPosReg) = (Cell) call_arg;	
 	StandardizeVariable(call_arg,ctr);
 	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
@@ -1394,7 +1407,8 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
       recvariant_call(flag,CALL_TRIE_TT,call_arg);
       break;
     case XSB_ATTV:
-      /* Now call_arg can only be the first occurrence of an attv */
+      /* call_arg is derefed register value pointing to heap.  Make
+	 the subst factor CP-stack pointer, VarPosReg, point to it. */
       *(--VarPosReg) = (Cell) call_arg;
       call_arg = clref_val(call_arg); /* the VAR part of the attv */
       /*

@@ -157,3 +157,10 @@ double real_time(void)
 }
 
 /*----------------------------------------------------------------------*/
+
+/* My version of gdb gets confused when I set a breakpoint in include
+   files within emuloop.  Thus the use of gdb_dummy() */
+
+void gdb_dummy(void) 
+  {
+  }

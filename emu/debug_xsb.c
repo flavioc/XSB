@@ -67,9 +67,6 @@ int print_hide = 0;
 int memory_watch_flag = 0;
 int register_watch_flag = 0;
 #endif
-/* #ifdef DEBUG_VERBOSE */
-/* int cur_log_level=0; */
-/* #endif */
 
 /*----------------------------------------------------------------------*/
 
@@ -205,6 +202,7 @@ void printterm(FILE *fp, Cell term, int depth) {
 }
 
 /*----------------------------------------------------------------------*/
+/* Used to print out call using WAM registers */
 
 static void print_call(CTXTdeclc Psc psc)
 {
@@ -240,8 +238,6 @@ void debug_call(CTXTdeclc Psc psc)
 /*======================================================================*/
 
 #if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
-
-
 
 static int count_producer_subgoals(void)
 {
@@ -697,6 +693,7 @@ void print_tables(void)
 /*----------------------------------------------------------------------*/ 
 
 /*----------------------------------------------------------------------*/ 
+/* TLS 10/05: now unused? */
 
 void pofsprint(CPtr base, int arity)
 {     
@@ -712,6 +709,9 @@ void pofsprint(CPtr base, int arity)
 }
 
 /*----------------------------------------------------------------------*/ 
+
+/* TLS: CP_DEBUG needs to be specially defined in order to place a PSC
+   record in the various choice point frames */
 
 #ifdef CP_DEBUG
 void print_cpf_pred(CPtr cpf)
@@ -762,6 +762,10 @@ void print_cp_backtrace()
 #endif	/* DEBUG */
 
 #ifdef DEBUG_VM
+
+/* TLS: written many years ago, these may be overtaken by advances in
+   GDB and other general-purpose debuggers. */
+
 extern void dis(xsbBool);
 extern byte *print_inst(FILE *, byte *);
 
