@@ -305,7 +305,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       if (attv_num > 0) {
 	CPtr cptr;
 	for (cptr = answer_template - 1;
-	     cptr >= answer_template + template_size; cptr++) {
+	     cptr >= answer_template - template_size; cptr--) {
+	  // tls changed from 10/05   cptr >= answer_template + template_size; cptr++) 
 	  if (isattv(cell(cptr)))
 	    var_regs[++num_vars_in_var_regs] = (CPtr) cell(cptr);
 	}
