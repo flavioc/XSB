@@ -1384,22 +1384,25 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
-    //    printf("%x, Trie type: %d %s Node type: %d %s parent %x\n",pLeaf,
+    //printf("%x, Trie type: %d %s Node type: %d %s parent %x\n",pLeaf,
     //   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
     //   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
     //   (int) TN_Parent(pLeaf));
     pLeaf = BTN_Parent(pLeaf);
   }
-  //  printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
+  //printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
   // TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
   // TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
   // TN_Parent(pLeaf));
 
-  tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
-  //  printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
-  //	 get_arity(TIF_PSC(tif_ptr)));
-  
-  return TIF_PSC(tif_ptr);
+  if (TN_Parent(pLeaf)) { /* workaround till can get all roots pointing to subg's */
+    tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
+    //printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
+    //   get_arity(TIF_PSC(tif_ptr)));
+    return TIF_PSC(tif_ptr);
+  } else {
+    return NULL;
+  }
 }
 
 /* 
@@ -1422,10 +1425,11 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (is_answer_trie_node( *cp_top ) )
+      if (is_answer_trie_node( *cp_top ) ) {
 	if (psc == get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) {
 	  found_psc_match = 1;
 	}
+      }
     }
     cp_top = cp_prevtop(cp_top);
   }
@@ -1488,6 +1492,7 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   }
   else {
     SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",get_name(psc),get_arity(psc));
     check_insert_new_deltf(CTXTc tif);
     return 1; 
   }
