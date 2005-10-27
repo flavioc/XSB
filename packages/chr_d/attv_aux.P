@@ -21,6 +21,7 @@ pose_all_constr([F/A|Cs],Pos,X,ConstrAtts) :-
 % - pose F constraint for X against each element of Atts
 pose_one_constr(_,A,A,_,L,L).
 pose_one_constr(F,A,I,X,[AL|ALs],OtherConstrAtts) :-
+	I < A,
 	Pos is I+1,
 	pose_constraints(F,Pos,X,AL),
 	pose_one_constr(F,A,Pos,X,ALs,OtherConstrAtts).
