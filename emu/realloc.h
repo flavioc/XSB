@@ -62,6 +62,10 @@
       if (heap_bot<=(clref_val(cell_val)) && (clref_val(cell_val))<heap_top)\
           *cell_ptr = (CPtr)makelist((Cell)(clref_val(cell_val)+heap_offset));\
       break ; 						\
+    case XSB_ATTV:							\
+      if (heap_bot<=(clref_val(cell_val)) && (clref_val(cell_val))<heap_top)\
+          *cell_ptr = (CPtr)makeattv((Cell)(clref_val(cell_val)+heap_offset));\
+      break ; 						\
     default : /* no need to reallocate */ 			\
       break ; 						\
     }
