@@ -783,19 +783,24 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);
 
-  /*
-   * For each attributed variable in the call, reserve an element for it
-   * in VarEnumerator[].  And, if the attv is not changed in the answer,
-   * bind its VAR part to the corresponding element of VarEnumerator[], so
-   * that the later occurrences of this unchanged attv in the answer will
-   * be dereferenced into VarEnumerator[].
-   *
-   * (For the changed attvs, their new attributes will be constructed in
-   * the answer trie anyway, and their VAR part are not in the range of
-   * VarEnumerator[], so we don't need to do any thing for them.)
+  /* Documentation rewritten by TLS: 
+   * For attributed variables, you want to know which attributed
+   * variables are identical to those in the call, and which have
+   * changed (i.e. are new attributed variables), hence the marking,
+   * which binds the VAR part of the attvs to an element of
+   * VarEnumerator[].  In the for() loop these variables will be
+   * treated as vals and a trie_xxx_val instruction generated.  
+   * Those attvs that whose corresponding call cell is a variable or
+   * a different attv will be unmarked in the first pass (I hope).  Their VAR
+   * part will not be part of VarEnumerator, and they will be handled
+   * in the for() loop by a trie_xxx_attv instruction.
+   * 
+   * I do find the use of cell() in the marking rather than a
+   * dereference a little scary.
    *
    * To save time, this is only done when there is at least one attv in
    * the call (attv_num > 0).
+   * TLS: probably only need to inc counter for shared attvs.
    */
   if (attv_num > 0) {
     for (i = 0; i < arity; i++) {
@@ -831,7 +836,7 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
 	 * 	bld_ref(xtemp1, VarEnumerator[ctr]);
 	 * 	*(++VarEnumerator_trail_top) = xtemp1
 	 *
-	 * Notice that all the variables appear in the answer are bound
+	 * Notice that all the variables appearing in the answer are bound
 	 * to elements in VarEnumerator[], and each element in
 	 * VarEnumerator[] is a free variable itself.  Besides, all
 	 * these variables are trailed (saved in VarEnumerator_trail[]) and they
@@ -1298,7 +1303,9 @@ void load_delay_trie(CTXTdeclc int arity, CPtr cptr, BTNptr TriePtr)
  * I dont see a real need to encapsulate all of its input and output
  * as it is only called once, in tabletry.  What's lost is: 
  * cptr is simply a pointer to the reg_array, cptr = reg+1 
- * VarPosReg is top_of_cpstack;
+ * VarPosReg is top_of_cpstack.  This can cause confusion since in
+ * table_call_search (which calls this function) the substitution
+ * factor is moved over to the heap.
  * 
  * In addition, the manner in which attributed variables are handled
  * could probably be cleaned up a little.  Attributed variables must
@@ -1345,11 +1352,13 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   Paren = TIF_CallTrie(CallInfo_TableInfo(*call_info));
   GNodePtrPtr = &BTN_Child(Paren);
   arity = CallInfo_CallArity(*call_info);
+  /* cptr is set to point to the reg_array */
   cptr = CallInfo_Arguments(*call_info);
   tVarPosReg = VarPosReg = CallInfo_VarVectorLoc(*call_info);
   ctr = attv_ctr = 0;
 
   for (i = 0; i < arity; i++) {
+    xsb_dbgmsg((LOG_DEBUG,">>>> (argument %d)",i+1));
     call_arg = (CPtr) (cptr + i);            /* Note! */
     XSB_CptrDeref(call_arg);
     tag = cell_tag(call_arg);
@@ -1358,13 +1367,17 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
     case XSB_REF1:
       if (! IsStandardizedVariable(call_arg)) {
 
-	/*
-	 * Before proceeding, point all local variables to heap to
-	 * support attributed variables in tabling. In order to share
+	/* Call_arg is now a dereferenced register value.  If it
+	 * points to a local variable, make both the local variable
+	 * and call_arg point to a new free variable in the heap.
+	 * Apparently, this is to support attributed variables in
+	 * tabling.   In order to share 
 	 * unchanged attributed variables between subgoal trie and
 	 * answer trie, any cell in the substitution factor of the
-	 * call CANNOT be a FREE variable itself.
+	 * call CANNOT be a FREE variable itself. (why?)
 	 */
+
+	xsb_dbgmsg((LOG_DEBUG,"   new variable ctr = %d)",ctr));
 
 	if (top_of_localstk <= call_arg &&
 	    call_arg <= (CPtr) glstack.high - 1) {
@@ -1374,8 +1387,9 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 	}
 	/*
 	 * Make VarPosReg, which is in the choice point stack, point
-	 * to call_arg, which is in the heap.  Then make the heap
-	 * cell into a trie-variable.  But where is VarEnumerator init'd???
+	 * to call_arg, which now points a free variable in the
+	 * heap.  Make that heap free variable point to the
+	 * VarEnumerator array, via StandardizeVariable.   
          */
 	*(--VarPosReg) = (Cell) call_arg;	
 	StandardizeVariable(call_arg,ctr);
@@ -1410,6 +1424,8 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
       /* call_arg is derefed register value pointing to heap.  Make
 	 the subst factor CP-stack pointer, VarPosReg, point to it. */
       *(--VarPosReg) = (Cell) call_arg;
+      xsb_dbgmsg((LOG_TRIE,"In VSC: attv deref'd reg %x; val: %x into AT: %x",
+		 call_arg,clref_val(call_arg),VarPosReg));
       call_arg = clref_val(call_arg); /* the VAR part of the attv */
       /*
        * Bind the VAR part of this attv to VarEnumerator[ctr], so all the
@@ -1443,6 +1459,9 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   }
 
   cell(--VarPosReg) = makeint(attv_ctr << 16 | ctr);
+  /* Untrail any variable that used to point to VarEnumerator.  Note
+   * that we just have to free them all, as the substitution factor
+   * only includes the set of free variables. */
   while (--tVarPosReg > VarPosReg) {
     if (isref(*tVarPosReg))	/* a regular variable */
       ResetStandardizedVariable(*tVarPosReg);
