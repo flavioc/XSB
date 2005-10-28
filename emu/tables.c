@@ -103,10 +103,7 @@ inline static  BTNptr newCallIndex(CTXTdeclc Psc predicate) {
 /*
  * Note that the call index of the TIF is not allocated until the first
  * call is entered.  Upon exit, CallLUR_VarVector(*results) points to
- * the size of the answer template on the CPS, unless a producer was
- * found and we're running in CHAT node.  In that case, this value is
- * the same as CallInfo_VarVector(*call_info), and the AT is sitting on
- * the heap, its size pointed to by (hreg - 1).  See slginsts_xsb_i.h
+ * the size of the answer template on the CPS.  See slginsts_xsb_i.h
  * for answer template layout.
  */
 
@@ -124,16 +121,23 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
     subsumptive_call_search(CTXTc call_info,results);
   {
     /*
-     * Move answer template from CPS to Heap.  The
-     * arrangement of this vector is similar to that in the CPS: the
+     * Copy substitution factor from CPS to Heap.  The arrangement of
+     * this second s.f.  is similar to that in the CPS: the
      * size of the vector is now at the high end, but the components
-     * are still arranged from high mem (first) to low (last).
+     * are still arranged from high mem (first) to low (last) -- see
+     * picture at beginning of slginsts_xsb_i.h.  At the return of
+     * this function, each cell of the heap s.f. will have the same
+     * value as the corresponding cell in the CPS s.g.  This is done so
+     * that attvs can be analyzed upon interning answers -- see
+     * documentation at the beginning of variant_call_search().
      */
     CPtr tmplt_component, tmplt_var_addr, hrg_addr;
     int size, j;
 
     tmplt_component = CallLUR_VarVector(*results);
     size = int_val(*tmplt_component) & 0xffff;
+    xsb_dbgmsg((LOG_TRIE,
+		"done with vcs, answer_template %x\n",tmplt_component));
 
     /* expand heap if there's not enough space */
     if ((pb)top_of_localstk < (pb)top_of_heap + size +
@@ -145,6 +149,8 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 	  j >= 0;
 	  j--, tmplt_component-- ) {
       tmplt_var_addr = (CPtr)*tmplt_component;
+      xsb_dbgmsg((LOG_TRIE,"in TSC, copying AT to heap At[%d]: %x val: %x",
+		  (size-(j)),tmplt_component,tmplt_var_addr));
       /* Now we are sure that tmplt_var_addr is a var on the heap */
       hrg_addr = hreg+j;
       bld_copy(hrg_addr, (Cell)(tmplt_var_addr));
@@ -206,13 +212,13 @@ BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
       }
     }
   }
-  else {
+  else {  /* Variant Producer */
     /*
      * We want to save the substitution factor of the answer in the
      * heap, so we have to change variant_answer_search().
      */
     xsbBool wasFound = TRUE;
-
+    
 #ifndef IGNORE_DELAYVAR
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 #endif /* IGNORE_DELAYVAR */

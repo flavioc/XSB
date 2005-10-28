@@ -408,20 +408,24 @@ static void record_de_usage(DL dl)
 }
 
 /*
- * Function do_delay_stuff() is called in the SLG instruction
- * `new_answer_dealloc', when an answer (new or not) is returned for the
- * current call.  Here, `as_leaf' is the leaf node of the answer trie
- * (TrieRetPtr, the return value of variant_answer_search), `subgoal' is
- * the subgoal frame of the current call, and `sf_exists' tells whether
- * this answer is new or not.
+ * For predicates using call variance, do_delay_stuff() is called in
+ * table_answer_search(), immediately after variant_answer_search(),
+ * (conditional answer handling is not implemented for predicates
+ * using call subsumption), regardless of whether the answer is new.  
+ * Here, `as_leaf' is the leaf node of the answer trie (the
+ * return value of variant_answer_search), `subgoal' is the subgoal
+ * frame of the current call, and `sf_exists' tells whether the
+ * non-conditional part of this answer is new or not. 
  *
- * At this time, `delayreg' is the delay register of the _current_ call.
- * If it is not NULL, then it means this answer has some delay elements
- * and is a conditional one.  (Remember, all the delay elements under
- * this current call have been processed by delay_positively() or
- * delay_negatively(), and `delayreg' has been updated and pointed to the
- * delay list.  All the information about the delay list is still saved
- * on the heap.)
+ * At this time, `delayreg' is the delay register of the _current_
+ * execution state.  If delayreg is not NULL, then it means this
+ * answer has some delay elements and is conditional.  (If non-NULL,
+ * delayreg points to a delay list of delay elements on the heap).
+ * This function assumes that conditional answers have previously been
+ * checked to ensure none of their delay elements is non-satisfiable
+ * (done in new_answer_dealloc).  At the same time, do_delay_stuff()
+ * will recheck the delay elements to remove any that have become
+ * unconditional.  Thus, two traversals of the delay list are required.
  *
  * Function intern_delay_list() will be called to save the delay list
  * information in the Delay Info node of current call's answer leaf.  It

@@ -796,7 +796,8 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
    * in the for() loop by a trie_xxx_attv instruction.
    * 
    * I do find the use of cell() in the marking rather than a
-   * dereference a little scary.
+   * dereference a little scary.  The code assumes the pointers have
+   * been set up using a dereference in variant_call_search().
    *
    * To save time, this is only done when there is at least one attv in
    * the call (attv_num > 0).
@@ -829,19 +830,26 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
     case XSB_REF1:
       if (! IsStandardizedVariable(xtemp1)) {
 	/*
-	 * If this is the first occurrence of this variable, then:
+	 * Note that unlike variant_call_search(), vas() trails
+	 * variables (by using VarEnumerator_trail_top, rather than
+	 * full SLG-WAM trailing.  Thus, if this is the first
+	 * occurrence of this variable, then: 
 	 *
 	 * 	StandardizeAndTrailVariable(xtemp1, ctr)
 	 * 			||
 	 * 	bld_ref(xtemp1, VarEnumerator[ctr]);
 	 * 	*(++VarEnumerator_trail_top) = xtemp1
 	 *
-	 * Notice that all the variables appearing in the answer are bound
-	 * to elements in VarEnumerator[], and each element in
-	 * VarEnumerator[] is a free variable itself.  Besides, all
-	 * these variables are trailed (saved in VarEnumerator_trail[]) and they
-	 * will be used in delay_chk_insert() (in function
-	 * do_delay_stuff()).
+	 * By doing this, all the variables appearing in the answer
+	 * are bound to elements in VarEnumerator[], and each element
+	 * in VarEnumerator[] is a free variable itself.  vcs() was
+	 * able to avoid the trail because all variables were placed
+	 * on the substitution factor; variables encountered in an
+	 * answer substitution can be anywhere on the heap.  Also
+	 * note that this function uses the pdl stack rather than
+	 * reg_array, as does vsc().
+         * The variables will be used in 
+	 * delay_chk_insert() (in function do_delay_stuff()).
 	 */
 #ifndef IGNORE_DELAYVAR
 	bld_free(hreg); /* To make sure there is no pointer from heap to 
@@ -920,10 +928,10 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
    * the arity of the substitution factor is 0, then put integer 0
    * into cell ans_var_pos_reg).
    *
-   * Notice that simple_table_undo_bindings in the old version of XSB
+   * Notice that simple_table_undo_bindings in pre-1.9 version of XSB
    * has been removed here, because all the variable bindings of this
-   * answer will be used later on (in do_delay_stuff()) when we build
-   * the delay list for this answer.
+   * answer will be used in do_delay_stuff() immediatly after the
+   * return of vas() when we build the delay list for this answer.
    */
   if (ctr == 0)
     bld_int(ans_var_pos_reg, 0);
@@ -1303,15 +1311,31 @@ void load_delay_trie(CTXTdeclc int arity, CPtr cptr, BTNptr TriePtr)
  * I dont see a real need to encapsulate all of its input and output
  * as it is only called once, in tabletry.  What's lost is: 
  * cptr is simply a pointer to the reg_array, cptr = reg+1 
- * VarPosReg is top_of_cpstack.  This can cause confusion since in
+ * VarPosReg is top_of_cpstack.  This can cause confusion since later in
  * table_call_search (which calls this function) the substitution
- * factor is moved over to the heap.
+ * factor is copied to the heap.
  * 
  * In addition, the manner in which attributed variables are handled
- * could probably be cleaned up a little.  Attributed variables must
- * eventually point into the heap, but all of the variables in the CP
- * stack substitution factor are eagerly redirected to the heap --
- * and probably unnecessarily.
+ * gives rise to some special features in the code.  When adding an
+ * answer, it is not straightforward to determine whether a binding
+ * to a substitution factor was made in the original call or as part
+ * of program clause resolution.  variant_call_search() creates a
+ * substitution factor on the choice point stack.  Immediately after
+ * variant_call_search() returns, table_call_search() will copy the
+ * substitution factor from the choice point stack to the heap.  It
+ * can then be determined whether attributed variables are old or new
+ * by comparing the value of a cell in the choice point stack to the
+ * corresponding value in the heap.  If they are the same, the
+ * attributed variable was in the call, and a trie_xxx_val
+ * instruction can be used.  If not, other actions must be taken --
+ * generating either a trie_xxx_val or trie_xxx_attv.
+ * 
+ * While most of this happens in later functions, certain
+ * features of vcs() can be accounted for by these later actions.
+ * For instance, each local variable is copied to the heap in vcs().
+ * This is to avoid pointers from the heap substitution factor (once
+ * it is created) into the local stack.
+ *
  */
 
 /*
@@ -1370,11 +1394,8 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 	/* Call_arg is now a dereferenced register value.  If it
 	 * points to a local variable, make both the local variable
 	 * and call_arg point to a new free variable in the heap.
-	 * Apparently, this is to support attributed variables in
-	 * tabling.   In order to share 
-	 * unchanged attributed variables between subgoal trie and
-	 * answer trie, any cell in the substitution factor of the
-	 * call CANNOT be a FREE variable itself. (why?)
+	 * As noted in the documentation at the start of this function,
+	 * this is to support attributed variables in tabling.   
 	 */
 
 	xsb_dbgmsg((LOG_DEBUG,"   new variable ctr = %d)",ctr));
@@ -1386,10 +1407,14 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 	  call_arg = hreg++;
 	}
 	/*
-	 * Make VarPosReg, which is in the choice point stack, point
-	 * to call_arg, which now points a free variable in the
+	 * Make VarPosReg, which points to the top of the choice point
+	 * stack, point to call_arg, which now points a free variable in the
 	 * heap.  Make that heap free variable point to the
-	 * VarEnumerator array, via StandardizeVariable.   
+	 * VarEnumerator array, via StandardizeVariable.   The
+	 * VarEnumerator array contains variables that point to
+	 * themselves (init'd in init_trie_aux_areas()).  vcs() does
+	 * not change bindings in the VarEnumerator array -- it just
+	 * changes bindings of heap variables that point into it.
          */
 	*(--VarPosReg) = (Cell) call_arg;	
 	StandardizeVariable(call_arg,ctr);
@@ -1459,9 +1484,15 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   }
 
   cell(--VarPosReg) = makeint(attv_ctr << 16 | ctr);
-  /* Untrail any variable that used to point to VarEnumerator.  Note
-   * that we just have to free them all, as the substitution factor
-   * only includes the set of free variables. */
+  /* 
+   * "Untrail" any variable that used to point to VarEnumerator.  For
+   * variables, note that *VarPosReg is the address of a cell in the
+   * heap.  To reset that variable, we make that address free.
+   * Similarly, *VarPosReg may contain the (encoded) address of an
+   * attv on the heap.  In this case, we make the VAR part of that
+   * attv point to itself.  The actual value in VarPosReg (i.e. the
+   * of a substitution factor) doesn't change in either case.
+   */     
   while (--tVarPosReg > VarPosReg) {
     if (isref(*tVarPosReg))	/* a regular variable */
       ResetStandardizedVariable(*tVarPosReg);
